@@ -725,13 +725,6 @@ nav.bottom button.on { color:var(--accent); font-weight:700; }
 .libRate { font-size:13px; font-weight:800; }
 .libListenCta { width:100%; margin-top:8px; border-radius:14px; }
 .libReaderBody .libSpeaking { background:var(--surface2); border-radius:8px; box-shadow:0 0 0 6px var(--surface2); transition:background .2s; }
-.audSteps { margin:8px 0 10px; padding-left:20px; font-size:14px; line-height:1.5; } .audSteps li { margin-bottom:6px; }
-.audVoices { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; }
-.audVoice { display:flex; align-items:stretch; border:1.5px solid var(--border2); border-radius:12px; overflow:hidden; background:var(--surface); }
-.audVoice.on { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
-.audPick { flex:1; min-width:0; background:none; border:0; padding:8px 10px; text-align:left; font:inherit; color:var(--ink); cursor:pointer; display:flex; flex-direction:column; }
-.audPick span { font-size:12px; color:var(--muted); } .audPlay { flex:0 0 40px; border:0; border-left:1px solid var(--border2); background:none; color:var(--ink); font-size:15px; cursor:pointer; }
-.audBar { height:8px; border-radius:4px; background:var(--surface2); overflow:hidden; } .audBar span { display:block; height:100%; background:var(--accent); }
 .libTally { display:block; width:100%; margin-top:12px; text-align:left; border:0; border-radius:12px; padding:10px 12px; background:var(--surface2); color:var(--ink); font:inherit; font-size:14px; font-weight:700; cursor:pointer; }
 .reqCard { padding:14px; } .reqCard.reqAlert { border:1.5px solid var(--bad); }
 .reqHead { display:flex; align-items:center; gap:10px; margin-bottom:8px; } .reqHeadIcon { font-size:24px; }
@@ -5706,8 +5699,13 @@ function libReaderHtml_(b){
 var LIBA={ on:false, chunks:[], i:0, token:0, wake:null, key:'' };
 var LIB_RATES=[0.8, 1, 1.25, 1.5];
 function libSpeechOk_(){ return typeof window!=='undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance!=='undefined'; }
-function libAudioOk_(){ return libSpeechOk_() || typeof Audio!=='undefined'; }
-/* Recorded audio (Admin → Library audio, Azure voices): which books have it, per
+/* Off for now (Oct 2026, Uriah: the phone voices — iPhone's above all — are not
+   good enough). The player stays, ready: when the books have recorded audio
+   (scripts/record-library-audio.mjs), set this to true and 🎧 comes back,
+   playing the recordings first and the phone's voice only where there is none. */
+var LIB_AUDIO_ON=false;
+function libAudioOk_(){ return LIB_AUDIO_ON && (libSpeechOk_() || typeof Audio!=='undefined'); }
+/* Recorded audio (scripts/record-library-audio.mjs, Azure voices): which books have it, per
    language — loaded once when the Library opens; a phone without it falls back to
    its own voice. */
 S.libAudioIdx=null; S.libAudioIdxLoading=false;
@@ -5838,6 +5836,7 @@ function libAudioBind_(){
     else if(LIBA.on) libAudioPlay_(Math.max(0, LIBA.i-1)); };   // the same sentence again, at the new speed
   var lst=document.getElementById('libListenStart');
   if(lst) lst.onclick=function(){ gpTap(); libAudioUnlock_(); var id=S.libBook, at=libProg_()[id]; LIBA.on=true; LIBA.key=''; libGo_(at && !libRead_()[id] ? at : 0); };
+  if(!LIB_AUDIO_ON) return;
   libAudioIdxLoad_();
   if(!LIBA.on || !document.getElementById('libReader')) return;
   if(LIBA.key===libAudioKey_()){
@@ -8032,8 +8031,7 @@ var ADMIN_SUBS = [
   { id:'broadcast', label:'Announcements', emoji:'📣', blurb:'A message to everyone’s notification bell' },
   { id:'merge', label:'Merge duplicates', emoji:'🔀', blurb:'Two profiles that are really one person' },
   { id:'groups', label:'Arrivals & departures', emoji:'👥', blurb:'A sign-up link for a new school or team, and archiving several people at once' },
-  { id:'loose', label:'Loose ends', emoji:'🧵', blurb:'Small gaps that quietly make the totals wrong — and who to nudge' },
-  { id:'audio', label:'Library audio', emoji:'🎧', blurb:'Record every book in natural English and Khmer voices' }
+  { id:'loose', label:'Loose ends', emoji:'🧵', blurb:'Small gaps that quietly make the totals wrong — and who to nudge' }
 ];
 function adminBackHtml_(to, label){
   return '<button class="linkbtn" id="adminBack" data-adminback="'+to+'" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(label)+'</button>';
@@ -8083,102 +8081,7 @@ function adminHtml(){
   if(sub==='merge') return h+adminMergeHtml_();
   if(sub==='loose') return h+adminLooseHtml_();
   if(sub==='groups') return h+adminGroupsHtml_();
-  if(sub==='audio') return h+adminAudioHtml_();
   return h+adminAccountsHtml_();
-}
-/* ---------- Admin → 🎧 Library audio ----------
-   Records every book once in natural voices (Microsoft Azure: the only service
-   with natural Khmer — Sreymom, Piseth — as well as English). The key lives in
-   Netlify (AZURE_SPEECH_KEY, AZURE_SPEECH_REGION); until it is there this page
-   says how to add it, and the books keep reading with the phone's own voice.
-   Pick a voice per language (▶ plays a sample), then record: the server records
-   only books that are new or changed since last time, in the background, one
-   book at a time — the page can be closed. libStepTexts_ is what each screen
-   says, in the reader's own order and words. */
-S.audAdm=null; S.audAdmLoading=false; S.audAdmTimer=null;
-var AUD_LANG_NAME={ en:'English', km:'ខ្មែរ' };
-function libStepTexts_(b, lang){
-  var K=(lang==='km' && typeof GP_LIBRARY_KM!=='undefined') ? GP_LIBRARY_KM[b.id] : null;
-  var tt=function(x){ return lang==='km' ? (BUILTIN_KM[x]||x) : x; };
-  var fm=function(x, o){ return tt(x).replace(/\{(\w+)\}/g, function(m, k){ return o[k]; }); };
-  var T=K ? { vibe:K.vibe, bigIdea:K.bigIdea, tryThis:K.tryThis, forUs:K.forUs, oneLine:K.oneLine,
-    insights:b.insights.map(function(x, i){ var y=K.insights[i]||{}; return { title:y.title||x.title, body:y.body||x.body }; }) } : b;
-  var n=b.insights.length, out=[];
-  out.push([tt('Intro'), ((K && K.title) || b.title)+' — '+b.author, T.vibe, T.bigIdea].join('\n\n'));
-  T.insights.forEach(function(x, i){ out.push([fm('Key idea {n} of {m}',{n:i+1, m:n}), x.title, x.body].join('\n\n')); });
-  out.push([tt('Final summary'), tt('In one line')+': '+T.oneLine, tt('Try this week')].concat(T.tryThis, [tt('For us at GP'), T.forUs]).join('\n\n'));
-  return out;
-}
-function audAdmLoad_(){
-  if(S.audAdmLoading) return; S.audAdmLoading=true;
-  run('libAudioStatus',[S.auth.user,S.auth.pin],function(d){ S.audAdmLoading=false; S.audAdm=d && d.ok ? d : { ok:false, err:(d && d.err) || 'error' };
-    if(S.view==='admin' && S.adminSub==='audio') render(); },
-    function(){ S.audAdmLoading=false; S.audAdm={ ok:false, err:'offline' }; if(S.view==='admin' && S.adminSub==='audio') render(); });
-}
-function audVoice_(lang){ var A=S.audAdm, v=lsGet('gp-aud-voice-'+lang), list=(A && A.voices && A.voices[lang]) || [];
-  return list.some(function(x){ return x.id===v; }) ? v : (list[0] ? list[0].id : ''); }
-function adminAudioHtml_(){
-  libLoad_(); libLoadKm_();
-  var A=S.audAdm;
-  if(!A){ audAdmLoad_(); return '<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>'; }
-  if(!A.ok) return '<div class="card"><p class="sub" style="margin:0 0 8px">'+esc(t('Couldn’t load this — pull down to try again.'))+'</p><button class="btn ghost" id="audRetry">'+esc(t('Try again'))+'</button></div>';
-  if(!A.configured) return '<div class="card"><div class="goalCardTitle">🔑 '+esc(t('Not set up yet'))+'</div>'+
-    '<p class="sub">'+esc(t('The recordings use Microsoft Azure’s voices. Until its key is added, every book still reads aloud with the phone’s own voice.'))+'</p><ol class="audSteps">'+
-    ['At portal.azure.com, create a “Speech service” — region Southeast Asia, pricing tier Standard S0.',
-     'Open it → Keys and Endpoint, and copy KEY 1 and the Location/Region.',
-     'In Netlify → this project → Project configuration → Environment variables, add AZURE_SPEECH_KEY (the key, marked secret) and AZURE_SPEECH_REGION (southeastasia).',
-     'Redeploy the site (Deploys → Trigger deploy), then open this page again.'].map(function(x){ return '<li>'+esc(t(x))+'</li>'; }).join('')+'</ol>'+
-    '<p class="hint" style="margin:0">'+esc(t('Never paste the key into the app or a chat — it belongs in Netlify only.'))+'</p></div>';
-  var books=(typeof GP_LIBRARY!=='undefined') ? GP_LIBRARY.books : [], J=A.job, running=J && J.state==='running', h='';
-  if(J){
-    var titleOf=function(id){ var b=libById_(id); return b ? b.title : id; };
-    h+='<div class="card"><div class="goalCardTitle">'+(running?'⏳ ':J.state==='done'?'✅ ':'⏹ ')+esc(running ? t('Recording now') : J.state==='done' ? t('Last recording finished') : t('Recording stopped'))+'</div>'+
-      '<p class="sub" style="margin:4px 0 8px">'+esc(gpT('{lang} · {done} of {total} books',{lang:AUD_LANG_NAME[J.lang]||J.lang, done:J.done, total:J.total}))+
-        (running && J.next ? ' · '+esc(gpT('now: {book}',{book:titleOf(J.next)})) : '')+'</p>'+
-      '<div class="audBar"><span style="width:'+Math.round((J.done+J.failed.length)/Math.max(1,J.total)*100)+'%"></span></div>'+
-      (J.failed.length ? '<p class="hint" style="margin:8px 0 0">⚠️ '+esc(gpT('{n} could not be recorded: {list}',{n:J.failed.length, list:J.failed.map(function(f){ return titleOf(f.id)+' ('+f.err+')'; }).join(', ')}))+'</p>' : '')+
-      (J.stopReason==='azure_key' ? '<p class="hint" style="margin:8px 0 0">⚠️ '+esc(t('Azure turned the key down — check AZURE_SPEECH_KEY and AZURE_SPEECH_REGION in Netlify.'))+'</p>' : '')+
-      (running ? '<button class="btn ghost" id="audStop" style="margin-top:10px">⏹ '+esc(t('Stop after this book'))+'</button>' : '')+'</div>';
-  }
-  ['en','km'].forEach(function(lang){
-    var have=Object.keys((A.index||{})[lang]||{}).length, cur=audVoice_(lang), kmReady=lang!=='km' || typeof GP_LIBRARY_KM!=='undefined';
-    h+='<div class="card"><div class="goalCardTitle">'+(lang==='km'?'🗣️ ខ្មែរ · Khmer':'🗣️ English')+'</div>'+
-      '<p class="sub" style="margin:4px 0 8px">'+esc(gpT('{n} of {total} books recorded',{n:have, total:books.length}))+'</p>'+
-      '<div class="audVoices">'+((A.voices||{})[lang]||[]).map(function(v){
-        return '<div class="audVoice'+(v.id===cur?' on':'')+'"><button class="audPick" data-audvoice="'+lang+'|'+esc(v.id)+'"><b>'+esc(v.name)+'</b><span>'+esc(v.note)+'</span></button>'+
-          '<button class="audPlay" data-audsample="'+lang+'|'+esc(v.id)+'" aria-label="'+esc(gpT('Hear {name}',{name:v.name}))+'">▶</button></div>'; }).join('')+'</div>'+
-      '<button class="btn" data-audstart="'+lang+'|0"'+(running||!books.length||!kmReady?' disabled':'')+' style="margin-top:10px">🎙️ '+esc(have ? t('Record new and changed books') : t('Record every book'))+'</button>'+
-      (have ? '<button class="linkbtn" data-audstart="'+lang+'|1"'+(running?' disabled':'')+'>'+esc(t('Re-record everything with this voice'))+'</button>' : '')+
-    '</div>';
-  });
-  return h+'<p class="hint">'+esc(t('About 12 hours of audio a language. Recording runs in the background, one book at a time — you can close this page. Books without a recording read aloud with the phone’s own voice.'))+'</p>';
-}
-function bindAdminAudio_(){
-  var A=S.audAdm;
-  // the books (and their Khmer) load in the background: draw the page again once they are here
-  if((typeof GP_LIBRARY==='undefined' || typeof GP_LIBRARY_KM==='undefined') && !S.audLibWait){ S.audLibWait=true;
-    setTimeout(function(){ S.audLibWait=false; if(S.view==='admin' && S.adminSub==='audio') render(); }, 900); }
-  if(S.audAdmTimer){ clearTimeout(S.audAdmTimer); S.audAdmTimer=null; }
-  if(A && A.job && A.job.state==='running') S.audAdmTimer=setTimeout(function(){ if(S.view==='admin' && S.adminSub==='audio') audAdmLoad_(); }, 6000);
-  var rt=document.getElementById('audRetry'); if(rt) rt.onclick=function(){ S.audAdm=null; render(); };
-  document.querySelectorAll('[data-audvoice]').forEach(function(b){ b.onclick=function(){ gpTap(); var v=b.getAttribute('data-audvoice').split('|'); lsSet('gp-aud-voice-'+v[0], v[1]); render(); }; });
-  document.querySelectorAll('[data-audsample]').forEach(function(b){ b.onclick=function(){
-    var v=b.getAttribute('data-audsample').split('|'); b.disabled=true; b.textContent='…';
-    run('libAudioSample',[S.auth.user,S.auth.pin,v[0],v[1]],function(d){ b.disabled=false; b.textContent='▶';
-      if(d && d.ok){ try { var au=new Audio('data:audio/mpeg;base64,'+d.mp3); var p=au.play(); if(p && p.catch) p.catch(function(){}); } catch(e){} }
-      else showMsg(d && d.err==='azure_key' ? t('Azure turned the key down — check AZURE_SPEECH_KEY and AZURE_SPEECH_REGION in Netlify.') : t('Couldn’t play a sample — try again.')); },
-      function(){ b.disabled=false; b.textContent='▶'; showMsg(t('No connection — try again when you are online.')); }); }; });
-  document.querySelectorAll('[data-audstart]').forEach(function(b){ b.onclick=function(){
-    var v=b.getAttribute('data-audstart').split('|'), lang=v[0], force=v[1]==='1';
-    if(typeof GP_LIBRARY==='undefined' || (lang==='km' && typeof GP_LIBRARY_KM==='undefined')){ showMsg(t('Loading…')); return; }
-    if(force && !confirm(t('Re-record every book in this language? It costs the same as the first time.'))) return;
-    var books=GP_LIBRARY.books.map(function(x){ return { id:x.id, steps:libStepTexts_(x, lang) }; });
-    if(S.busy) return; S.busy=true; b.disabled=true;
-    run('libAudioStart',[S.auth.user,S.auth.pin,lang,audVoice_(lang),books,force],function(d){ S.busy=false;
-      if(d && d.ok){ S.audAdm=d; showMsg(t('Recording has started.')); }
-      else showMsg(d && d.err==='busy' ? t('A recording is already running.') : d && d.err==='not_set_up' ? t('Not set up yet') : t('Could not start — try again.'));
-      render(); }, function(){ S.busy=false; showMsg(t('No connection — try again when you are online.')); render(); }); }; });
-  var sp=document.getElementById('audStop'); if(sp) sp.onclick=function(){ gpTap(); run('libAudioStop',[S.auth.user,S.auth.pin],function(d){ if(d && d.ok) S.audAdm=d; render(); }); };
 }
 function adminHomeHtml_(){
   var list=S.adminStaff, loading=list===null;
@@ -15527,7 +15430,6 @@ function bindAway(){
   bindReqRows_();
   ['libHomeTile','personBooks','profBooks'].forEach(function(id){ var b=document.getElementById(id); if(b) b.onclick=function(){ gpTap(); libOpen_(); }; });
   if(S.view==='admin' && S.adminSub==='groups') bindAdminGroups_();
-  if(S.view==='admin' && S.adminSub==='audio') bindAdminAudio_();
   bindHosp();
   if(S.view==='ministry') bindLead_();
   if(typeof dutyHtml==='function') bindSched_();

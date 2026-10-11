@@ -1,18 +1,17 @@
-/* The Library's recorded audio: shared by api.js (admin: voices, samples, start /
-   stop a recording run), library-audio-background.js (does the recording, one book
-   per run, then hands itself the next) and audio.js (plays the files to anyone).
+/* The Library's recorded audio — shared by scripts/record-library-audio.mjs (which
+   records it, run by hand — not from the app), audio.js (plays the files to anyone)
+   and api.js libAudioIndex (says which books have it).
 
    Microsoft Azure Speech makes the voices — the one service with natural Khmer
-   voices (Sreymom, Piseth) as well as English. Its key is AZURE_SPEECH_KEY, with
-   AZURE_SPEECH_REGION, set only in Netlify's environment; never in this public
-   repo, never sent to a phone. Without them nothing records and the app keeps
-   reading aloud with the phone's own voice.
+   voices (Sreymom, Piseth) as well as English. Its key, AZURE_SPEECH_KEY with
+   AZURE_SPEECH_REGION, lives only in the environment of whoever runs the script;
+   never in this public repo, never sent to a phone.
 
    One MP3 per reader screen (intro, each key idea, the final summary) in the store
    'gp-audio' — kept apart from 'gp-data' so the nightly backup doesn't copy
-   hundreds of MB of audio that can always be made again. 'index' says which
-   books are recorded in which language (and with which voice and text, so
-   "only new or changed" skips the rest); 'job' is the run in progress. */
+   hundreds of MB of audio that can always be made again. 'index' says which books
+   are recorded in which language, with which voice and a hash of each screen's
+   text, so a second run records only what changed. */
 import { getStore } from '@netlify/blobs';
 import crypto from 'node:crypto';
 
@@ -32,7 +31,6 @@ export const AUDIO_VOICES = {
   ]
 };
 export const AUDIO_LANGS = ['en', 'km'];
-const MAX_STEP_CHARS = 9000, MAX_STEPS = 16, MAX_BOOKS = 80;
 
 export function audioStore() { return getStore({ name: 'gp-audio', consistency: 'strong' }); }
 export function audioConfigured() {
@@ -42,24 +40,6 @@ export function voiceOk(lang, voice) { return (AUDIO_VOICES[lang] || []).some(fu
 export function bookIdOk(id) { return typeof id === 'string' && /^[a-z0-9-]{2,80}$/.test(id); }
 export function stepKey(lang, book, step) { return lang + '/' + book + '/' + step; }
 export function hashOf(voice, text) { return crypto.createHash('sha256').update(voice + '\n' + text, 'utf8').digest('hex').slice(0, 16); }
-
-/* A book as the reader shows it: one string per screen, paragraphs split by a
-   blank line. Sent by the admin's page (it has the library loaded); checked here. */
-export function cleanSteps(steps) {
-  if (!Array.isArray(steps) || steps.length < 2 || steps.length > MAX_STEPS) return null;
-  const out = steps.map(function (s) { return typeof s === 'string' ? s.replace(/\r/g, '').trim().slice(0, MAX_STEP_CHARS) : ''; });
-  return out.every(Boolean) ? out : null;
-}
-export function cleanBooks(books) {
-  if (!Array.isArray(books) || !books.length || books.length > MAX_BOOKS) return null;
-  const out = [], seen = {};
-  for (const b of books) {
-    const steps = cleanSteps(b && b.steps);
-    if (!b || !bookIdOk(b.id) || !steps || seen[b.id]) return null;
-    seen[b.id] = 1; out.push({ id: b.id, steps: steps });
-  }
-  return out;
-}
 
 function xml_(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;'); }
 export function ssml(lang, voice, text) {

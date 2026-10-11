@@ -1303,21 +1303,22 @@ leading at GP (culture, teams, hard conversations, vision, systems, execution).
   About 2,000–2,500 words each (Oct 2026: lengthened towards Blinkist, `mins` 10) — each
   key idea 180–240 words with a story or example from the book (ours are labelled
   "Simple everyday example").
-- **Recorded audio** (Oct 2026): Admin → 🎧 Library audio records every book in Microsoft
-  Azure's voices (English: Ava, Andrew, Emma, Brian, Sonia, Ryan; Khmer: Sreymom, Piseth) —
-  chosen because it is the one service with natural Khmer. The key is AZURE_SPEECH_KEY +
-  AZURE_SPEECH_REGION in Netlify only (until then the page shows the set-up steps). The admin's
-  page sends each book as its screens (`libStepTexts_`, the reader's own order and words);
-  api `libAudioStart` stores them and starts `library-audio-background.js`, which records ONE
-  book per run and calls itself for the next (a random job token guards it), so the page can
-  close. One MP3 per screen in the blob store `gp-audio` (NOT `gp-data`, so the nightly backup
-  doesn't copy it; it can always be re-made); 'index' says what is recorded with which voice
-  and a hash per screen, so "Record new and changed" only pays for what changed. `audio.js`
-  serves the index and the files to anyone (read-only). The reader's 🎧 plays a book's
-  recording when it has one in that language (fetched whole — iPhones won't play a streamed
-  function response — next screen fetched ahead, lock-screen controls via Media Session),
-  otherwise the phone's voice below. Shared code: `library-audio-lib.js`.
-- **Read aloud** (🎧, Oct 2026): `libAudio*` in teams.html use the phone's own voice
+- **Audio is OFF in the app for now** (Oct 2026, Uriah: the phone voices — iPhone's above
+  all — aren't good enough). `LIB_AUDIO_ON=false` in teams.html hides every 🎧 and fetches
+  nothing; the player below stays, tested, for when the books are recorded.
+- **Recording is by hand, not in the app:** `scripts/record-library-audio.mjs` (Andrew will
+  set up the Azure account; Microsoft Azure Speech is the one service with natural Khmer —
+  Sreymom, Piseth — as well as English). `--lang en|km --voice andrew|ava|…|sreymom|piseth`,
+  `--dry-run` (characters, rough cost: ~$10 a language), `--books a,b`, `--force`; files to
+  ./library-audio (gitignored), or `--upload` (NETLIFY_SITE_ID + NETLIFY_AUTH_TOKEN) straight
+  into the blob store `gp-audio` — NOT `gp-data`, so the nightly backup doesn't copy it. One
+  MP3 per reader screen, saying exactly what that screen shows; a second run records only
+  screens whose text or voice changed. AZURE_SPEECH_KEY / AZURE_SPEECH_REGION live only in
+  the runner's environment. `audio.js` (files, read-only, public) and api `libAudioIndex`
+  (which books are recorded) serve it; turn `LIB_AUDIO_ON` on and the reader plays a book's
+  recording (fetched whole for iPhones, next screen fetched ahead, page turned on its end,
+  Media Session lock-screen controls), the phone's voice only where there is none.
+- **The player** (🎧, built Oct 2026, off — see above): `libAudio*` in teams.html; without a recording it uses the phone's own voice
   (speechSynthesis — free, offline, nothing stored). 🎧 Listen on a book page, or 🎧 in the
   reader's top bar, reads the open screen in order (the paragraph lit, `.libSpeaking`),
   turns the page at the end of each step and stops at the final summary; ⏸ stops; the

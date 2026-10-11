@@ -1,4 +1,6 @@
-/* The Library read aloud: 🎧 on a book page and in the reader. A stand-in for the
+/* The Library read aloud — OFF in the app for now (LIB_AUDIO_ON in teams.html):
+   checked off first, then switched on here so the player stays tested for when
+   recordings exist. 🎧 on a book page and in the reader. A stand-in for the
    phone's voice (speechSynthesis) records what is read: the screen's own words in
    order, the paragraph being read lit up, the page turned by itself at the end of a
    step and stopped at the final summary; ⏸ stops; the speed is kept; leaving the
@@ -81,6 +83,7 @@ async function open(user, opts) {
   await page.addInitScript(a => { localStorage.setItem('gp-staff', JSON.stringify({ user: a.u, pin: '1234' })); if (a.lib) localStorage.setItem('gp-lib-lang', a.lib); }, { u: user, lib: opts.lib || '' });
   await page.goto(BASE + '/teams.html', { waitUntil: 'load' });
   await page.waitForSelector('nav.bottom button', { timeout: 15000 });
+  if (!opts.off) await page.evaluate(() => { LIB_AUDIO_ON = true; });   // off in the app for now; switched on here to keep the player tested
   await page.click('nav.bottom [data-tab="library"]'); await page.waitForTimeout(900);
   return { ctx, page };
 }
@@ -89,9 +92,17 @@ const B = C.L.books.find(b => b.id === 'start-with-why'), N = B.insights.length;
 const spoken = p => p.evaluate(() => window.__spoken.map(x => x.text).join(' '));
 const step = p => p.evaluate(() => S.libStep);
 {
+  const { ctx, page } = await open('sreilea', { off: true });
+  await page.click('[data-libbook="start-with-why"]'); await page.waitForTimeout(500);
+  ok('audio is off in the app for now: no 🎧 on a book page', !(await page.$('#libListenStart')));
+  await page.click('#libStart'); await page.waitForTimeout(400);
+  ok('… nor in the reader, and nothing asks which books are recorded', !(await page.$('#libListen')) && !(await page.evaluate(() => S.libAudioIdxLoading || S.libAudioIdx)));
+  await ctx.close();
+}
+{
   const { ctx, page } = await open('sreilea');
   await page.click('[data-libbook="start-with-why"]'); await page.waitForTimeout(500);
-  ok('a book page has 🎧 Listen next to Start reading', !!(await page.$('#libListenStart')));
+  ok('switched on: a book page has 🎧 Listen next to Start reading', !!(await page.$('#libListenStart')));
   await page.click('#libListenStart'); await page.waitForTimeout(250);
   ok('Listen opens the reader at the intro and starts reading it', await step(page) === 0 && /Intro/i.test(await spoken(page)) && (await spoken(page)).includes(B.vibe.slice(0, 20)));
   ok('… the paragraph being read is lit up', !!(await page.$('.libReaderBody .libSpeaking')));

@@ -26,7 +26,7 @@ import TEAM_SEED from './team-seed.js';
 import PORTAL_FORMS_DEFAULT from './portal-forms-default.js';
 import LEGAL_DOCS_DEFAULT, { STAFF_CONTRACT } from './legal-docs-default.js';
 import { buildSignedPdf, isJpeg as isJpeg_ } from './legal-pdf.js';
-import { audioStore, audioConfigured, AUDIO_VOICES, AUDIO_LANGS, voiceOk, cleanBooks, synthesize, readIndex, publicIndex } from './library-audio-lib.js';
+import { audioStore, readIndex, publicIndex } from './library-audio-lib.js';
 
 const SENSITIVE = ['Base Finances ($)', 'Base Cash Reserve ($)'];
 
@@ -7652,66 +7652,14 @@ async function finProjSave(code, campus, months) {
   return finProjGet(code, c);
 }
 
-/* ---- The Library's recorded audio (admins) ----
-   See library-audio-lib.js. Status says whether the Azure key is set (never the
-   key), the voices, what is recorded and the run in progress; a sample is a few
-   seconds in one voice; Start takes the books' screens from the admin's page and
-   hands them to the background function; Stop ends the run after its current book. */
-const AUDIO_SAMPLE = { en: 'Hi, I am reading the GP Library for you. Every book, one key idea at a time.',
-  km: 'សួស្តី! ខ្ញុំនឹងអានបណ្ណាល័យ GP ជូនអ្នក ម្តងមួយគំនិតសំខាន់ៗ។' };
-/* Which books are recorded — for every reader, guests too (the books are open to all). */
+/* ---- The Library's recorded audio ----
+   Recorded by scripts/record-library-audio.mjs (not from the app); this only says
+   which books have it — for every reader, guests too (the books are open to all). */
 async function libAudioIndex() { return { ok: true, index: publicIndex(await readIndex(audioStore())) }; }
-async function libAudioStatus(username, pin) {
-  const s = await adminGate_(username, pin);
-  if (!s) return { ok: false, err: 'not_authorized' };
-  const st = audioStore();
-  const job = await st.get('job', { type: 'json' });
-  return { ok: true, configured: audioConfigured(), voices: AUDIO_VOICES, index: publicIndex(await readIndex(st)),
-    job: job ? { lang: job.lang, voice: job.voice, state: job.state, stopReason: job.stopReason || '', total: job.total,
-      done: (job.done || []).length, failed: job.failed || [], next: job.queue[0] || '', started: job.started, updated: job.updated } : null };
-}
-async function libAudioSample(username, pin, lang, voice) {
-  const s = await adminGate_(username, pin);
-  if (!s) return { ok: false, err: 'not_authorized' };
-  if (!audioConfigured()) return { ok: false, err: 'not_set_up' };
-  if (AUDIO_LANGS.indexOf(lang) === -1 || !voiceOk(lang, voice)) return { ok: false, err: 'bad_voice' };
-  try { const mp3 = await synthesize(lang, voice, AUDIO_SAMPLE[lang]); return { ok: true, mp3: Buffer.from(mp3).toString('base64') }; }
-  catch (e) { return { ok: false, err: String((e && e.message) || e).slice(0, 40) }; }
-}
-async function libAudioStart(username, pin, lang, voice, books, force) {
-  const s = await adminGate_(username, pin);
-  if (!s) return { ok: false, err: 'not_authorized' };
-  if (!audioConfigured()) return { ok: false, err: 'not_set_up' };
-  if (AUDIO_LANGS.indexOf(lang) === -1 || !voiceOk(lang, voice)) return { ok: false, err: 'bad_voice' };
-  const list = cleanBooks(books);
-  if (!list) return { ok: false, err: 'bad_books' };
-  const st = audioStore();
-  const cur = await st.get('job', { type: 'json' });
-  if (cur && cur.state === 'running' && Date.now() - Date.parse(cur.updated || cur.started) < 20 * 60000) return { ok: false, err: 'busy' };
-  const texts = {}; list.forEach(function (b) { texts[b.id] = b.steps; });
-  const job = { token: crypto.randomBytes(18).toString('hex'), lang: lang, voice: voice, force: !!force, state: 'running',
-    queue: list.map(function (b) { return b.id; }), total: list.length, done: [], failed: [], by: s.id, started: new Date().toISOString(), updated: new Date().toISOString() };
-  await st.setJSON('jobtexts', texts);
-  await st.setJSON('job', job);
-  try { await fetch(new URL('/.netlify/functions/library-audio-background', process.env.URL || 'http://localhost:8888'), { method: 'POST', body: JSON.stringify({ token: job.token }) }); }
-  catch (e) { job.state = 'stopped'; job.stopReason = 'start_failed'; await st.setJSON('job', job); return { ok: false, err: 'start_failed' }; }
-  return libAudioStatus(username, pin);
-}
-async function libAudioStop(username, pin) {
-  const s = await adminGate_(username, pin);
-  if (!s) return { ok: false, err: 'not_authorized' };
-  const st = audioStore(), job = await st.get('job', { type: 'json' });
-  if (job && job.state === 'running') { job.state = 'stopped'; job.stopReason = 'admin'; job.updated = new Date().toISOString(); await st.setJSON('job', job); }
-  return libAudioStatus(username, pin);
-}
 
 const HANDLERS = {
   getMyBoot: function (a) { return getMyBoot(a[0], a[1]); },
   libAudioIndex: function () { return libAudioIndex(); },
-  libAudioStatus: function (a) { return libAudioStatus(a[0], a[1]); },
-  libAudioSample: function (a) { return libAudioSample(a[0], a[1], a[2], a[3]); },
-  libAudioStart: function (a) { return libAudioStart(a[0], a[1], a[2], a[3], a[4], a[5]); },
-  libAudioStop: function (a) { return libAudioStop(a[0], a[1]); },
   cafePos: function (a) { return cafePos(a[0], a[1], a[2], a[3]); },
   saveLeadTuesday: function (a) { return saveLeadTuesday(a[0], a[1], a[2]); },
   finProjGet: function (a) { return finProjGet(a[0], a[1]); },
