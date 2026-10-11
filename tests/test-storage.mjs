@@ -254,8 +254,8 @@ function isKhmer(s) { return /[ក-៿]/.test(String(s || '')); }
   ok('staff page, storage blocked: the boot data actually arrived', loaded);
   if (loggedIn) {
     const tabs = (await p.$$eval('nav.bottom button', function (b) { return b.map(function (x) { return x.textContent.trim(); }).join(' | '); }));
-    ok('staff page, storage blocked: all four tabs are there',
-      ['Base', 'My Home', 'Team', 'Health'].every(function (x) { return tabs.indexOf(x) > -1; }),
+    ok('staff page, storage blocked: all five tabs are there',
+      ['My Home', 'My Ministry', 'Team', 'Health', 'Library'].every(function (x) { return tabs.indexOf(x) > -1; }),
       tabs);
   }
   await ctx.close();

@@ -19,6 +19,7 @@ const SERVER = [
   'test-library.mjs',   // the Library's books: every field, shelves, unique ids, valid ISBNs, no quotations
   'test-required.mjs',  // books read on your account; the papers everyone signs, who sees what, versions, the contract
   'test-ministry-tools.mjs', // Campus Leadership "My week" and the Cafe tool fill their weekly numbers; who may use them; server-side prices
+  'test-library-audio.mjs', // recorded Library audio: admins only, the Azure key never leaves Netlify, book-by-book background runs, only what changed, Stop, tokens, retries
   'test-firstrun.mjs',   // empty / junk / ragged store, malformed requests
   'test-boot.mjs',       // getMyBoot: one call per page open
   'test-week-auth.mjs',  // weekly health: anonymity + mentor visibility
@@ -64,6 +65,7 @@ const SERVER = [
 const BROWSER = [
   'test-library-ui.mjs',  // Menu → Library: loads when opened, covers or drawn ones, shelves, book page, read ticks, Khmer, retry
   'test-library-audio-ui.mjs', // 🎧 reads the screen aloud (phone's voice stood in), turns the page, ⏸, speed kept, stops on close, Khmer needs a Khmer voice
+  'test-library-audio-rec-ui.mjs', // Admin → Library audio (set-up steps, voices, ▶ sample, record with progress); the reader plays a recording, turns the page on its end
   'test-guest-ui.mjs',    // Look around without an account: the tour, the whole Library, Base (counts, no names), Team/Health locked, no credentials ever sent
   'test-required-ui.mjs', // books-read tally, "Finish your profile", read + sign with a drawn signature, admin view, HR → Required
   'test-ministry-tools-ui.mjs', // My week: log, partners, reflection, base plants; Cafe: open, till, counters, expenses, rota, close, set up; Khmer at 320px

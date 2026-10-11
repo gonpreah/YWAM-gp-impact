@@ -1303,6 +1303,20 @@ leading at GP (culture, teams, hard conversations, vision, systems, execution).
   About 2,000–2,500 words each (Oct 2026: lengthened towards Blinkist, `mins` 10) — each
   key idea 180–240 words with a story or example from the book (ours are labelled
   "Simple everyday example").
+- **Recorded audio** (Oct 2026): Admin → 🎧 Library audio records every book in Microsoft
+  Azure's voices (English: Ava, Andrew, Emma, Brian, Sonia, Ryan; Khmer: Sreymom, Piseth) —
+  chosen because it is the one service with natural Khmer. The key is AZURE_SPEECH_KEY +
+  AZURE_SPEECH_REGION in Netlify only (until then the page shows the set-up steps). The admin's
+  page sends each book as its screens (`libStepTexts_`, the reader's own order and words);
+  api `libAudioStart` stores them and starts `library-audio-background.js`, which records ONE
+  book per run and calls itself for the next (a random job token guards it), so the page can
+  close. One MP3 per screen in the blob store `gp-audio` (NOT `gp-data`, so the nightly backup
+  doesn't copy it; it can always be re-made); 'index' says what is recorded with which voice
+  and a hash per screen, so "Record new and changed" only pays for what changed. `audio.js`
+  serves the index and the files to anyone (read-only). The reader's 🎧 plays a book's
+  recording when it has one in that language (fetched whole — iPhones won't play a streamed
+  function response — next screen fetched ahead, lock-screen controls via Media Session),
+  otherwise the phone's voice below. Shared code: `library-audio-lib.js`.
 - **Read aloud** (🎧, Oct 2026): `libAudio*` in teams.html use the phone's own voice
   (speechSynthesis — free, offline, nothing stored). 🎧 Listen on a book page, or 🎧 in the
   reader's top bar, reads the open screen in order (the paragraph lit, `.libSpeaking`),

@@ -3111,3 +3111,38 @@ now). "Read" means "I have read this book".
 | Pause | ផ្អាក |
 | Speed | ល្បឿន |
 | This phone has no Khmer voice yet. Switch the book to English to listen, or add a Khmer voice in your phone’s settings. | ទូរស័ព្ទនេះមិនទាន់មានសំឡេងភាសាខ្មែរនៅឡើយទេ។ ប្តូរសៀវភៅទៅជាភាសាអង់គ្លេសដើម្បីស្តាប់ ឬបន្ថែមសំឡេងខ្មែរនៅក្នុងការកំណត់ទូរស័ព្ទរបស់អ្នក។ |
+
+### Library audio (recorded voices, Admin)
+
+| English | Khmer (draft) |
+|---|---|
+| This book has no recording yet, and this phone cannot read aloud. | សៀវភៅនេះមិនទាន់មានការថតសំឡេងនៅឡើយទេ ហើយទូរស័ព្ទនេះមិនអាចអានឮៗបានទេ។ |
+| Tap 🎧 to start listening. | ចុច 🎧 ដើម្បីចាប់ផ្តើមស្តាប់។ |
+| GP Library | បណ្ណាល័យ GP |
+| Not set up yet | មិនទាន់បានរៀបចំនៅឡើយ |
+| The recordings use Microsoft Azure’s voices. Until its key is added, every book still reads aloud with the phone’s own voice. | ការថតសំឡេងប្រើសំឡេងរបស់ Microsoft Azure។ មុនពេលបញ្ចូលកូនសោ (key) សៀវភៅនីមួយៗនៅតែអានឮៗដោយសំឡេងរបស់ទូរស័ព្ទផ្ទាល់។ |
+| At portal.azure.com, create a “Speech service” — region Southeast Asia, pricing tier Standard S0. | នៅ portal.azure.com បង្កើត “Speech service” — តំបន់ Southeast Asia កម្រិតតម្លៃ Standard S0។ |
+| Open it → Keys and Endpoint, and copy KEY 1 and the Location/Region. | បើកវា → Keys and Endpoint រួចចម្លង KEY 1 និង Location/Region។ |
+| In Netlify → this project → Project configuration → Environment variables, add AZURE_SPEECH_KEY (the key, marked secret) and AZURE_SPEECH_REGION (southeastasia). | នៅក្នុង Netlify → គម្រោងនេះ → Project configuration → Environment variables បន្ថែម AZURE_SPEECH_KEY (កូនសោ ដោយសម្គាល់ថាសម្ងាត់) និង AZURE_SPEECH_REGION (southeastasia)។ |
+| Redeploy the site (Deploys → Trigger deploy), then open this page again. | ដាក់គេហទំព័រឡើងវិញ (Deploys → Trigger deploy) រួចបើកទំព័រនេះម្តងទៀត។ |
+| Never paste the key into the app or a chat — it belongs in Netlify only. | កុំបិទភ្ជាប់កូនសោចូលក្នុងកម្មវិធី ឬការជជែកឡើយ — វាត្រូវនៅក្នុង Netlify តែប៉ុណ្ណោះ។ |
+| Recording now | កំពុងថតសំឡេង |
+| Last recording finished | ការថតចុងក្រោយបានបញ្ចប់ |
+| Recording stopped | ការថតបានឈប់ |
+| {lang} · {done} of {total} books | {lang} · {done} ក្នុងចំណោម {total} សៀវភៅ |
+| now: {book} | ឥឡូវ៖ {book} |
+| Azure turned the key down — check AZURE_SPEECH_KEY and AZURE_SPEECH_REGION in Netlify. | Azure មិនទទួលយកកូនសោទេ — សូមពិនិត្យ AZURE_SPEECH_KEY និង AZURE_SPEECH_REGION នៅក្នុង Netlify។ |
+| Stop after this book | ឈប់បន្ទាប់ពីសៀវភៅនេះ |
+| {n} of {total} books recorded | បានថត {n} ក្នុងចំណោម {total} សៀវភៅ |
+| Hear {name} | ស្តាប់ {name} |
+| Record new and changed books | ថតសៀវភៅថ្មី និងសៀវភៅដែលបានកែប្រែ |
+| Record every book | ថតសៀវភៅទាំងអស់ |
+| Re-record everything with this voice | ថតទាំងអស់ឡើងវិញដោយសំឡេងនេះ |
+| About 12 hours of audio a language. Recording runs in the background, one book at a time — you can close this page. Books without a recording read aloud with the phone’s own voice. | ប្រហែល 12 ម៉ោងនៃសំឡេងក្នុងមួយភាសា។ ការថតដំណើរការនៅខាងក្រោយ ម្តងមួយសៀវភៅ — អ្នកអាចបិទទំព័រនេះបាន។ សៀវភៅដែលមិនទាន់ថត នឹងអានឮៗដោយសំឡេងរបស់ទូរស័ព្ទផ្ទាល់។ |
+| Couldn’t play a sample — try again. | មិនអាចចាក់គំរូសំឡេងបានទេ — សូមព្យាយាមម្តងទៀត។ |
+| Re-record every book in this language? It costs the same as the first time. | ថតសៀវភៅទាំងអស់ក្នុងភាសានេះឡើងវិញមែនទេ? វាចំណាយដូចលើកទីមួយដែរ។ |
+| Recording has started. | ការថតបានចាប់ផ្តើមហើយ។ |
+| A recording is already running. | មានការថតមួយកំពុងដំណើរការរួចហើយ។ |
+| Could not start — try again. | មិនអាចចាប់ផ្តើមបានទេ — សូមព្យាយាមម្តងទៀត។ |
+| Library audio | សំឡេងបណ្ណាល័យ |
+| Record every book in natural English and Khmer voices | ថតសៀវភៅទាំងអស់ដោយសំឡេងធម្មជាតិជាភាសាអង់គ្លេស និងខ្មែរ |

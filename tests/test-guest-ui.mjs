@@ -123,7 +123,7 @@ const credCalls = () => CALLS.filter(c => c.args.some(a => a === '1234' || a ===
   ok('the menu: Library, Create my profile, Log in — nothing else', (await page.$$eval('[data-menu-item]', bs => bs.map(b => b.getAttribute('data-menu-item')))).join() === 'library,guestreg,guestlogin');
   await page.click('[data-menu-item="library"]'); await page.waitForTimeout(500);
   ok('… and the Library is in it', await page.evaluate(() => S.view === 'library'));
-  ok('a guest never sends a username or PIN, and never boots — only the public calls', CALLS.every(c => ['getData', 'teamRoster'].indexOf(c.fn) > -1) && credCalls().length === 0 && !CALLS.some(c => c.fn === 'getMyBoot'), [...new Set(CALLS.map(c => c.fn))].join(','));
+  ok('a guest never sends a username or PIN, and never boots — only the public calls (the dashboard, the nameless roster, which books have recordings)', CALLS.every(c => ['getData', 'teamRoster', 'libAudioIndex'].indexOf(c.fn) > -1) && credCalls().length === 0 && !CALLS.some(c => c.fn === 'getMyBoot'), [...new Set(CALLS.map(c => c.fn))].join(','));
   ok('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
 
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(900);
