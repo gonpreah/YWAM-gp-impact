@@ -91,7 +91,7 @@ ok('voices by name, and a wrong one is refused', script.resolveVoice('en', 'andr
 
 console.log('\n=== recording ===');
 let r = await script.main(['--lang', 'en', '--dry-run'], {}, log);
-ok('a dry run counts all 46 books and calls nothing', r.books === 46 && r.chars > 500000 && azure.length === 0);
+ok('a dry run counts every book and calls nothing', r.books === lib.books.length && r.chars > 500000 && azure.length === 0, String(r.books));
 let err = ''; try { await script.main(['--lang', 'en', '--books', 'start-with-why'], {}, log); } catch (e) { err = e.message; }
 ok('without the key it stops and says so', /AZURE_SPEECH_KEY/.test(err) && azure.length === 0);
 const ENV = { AZURE_SPEECH_KEY: 'test-key-123', AZURE_SPEECH_REGION: 'southeastasia' };

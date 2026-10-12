@@ -5569,7 +5569,36 @@ var LIB_MOTIFS={
     '<path d="M0 86 Q12 82 24 86 T48 86 T72 86 T100 86" fill="none" stroke="'+c.a+'" stroke-width="2.5" stroke-opacity=".5"/>'; },
   angkor:function(c){ var tower=function(x,w,h){ return '<path d="M'+(x-w/2)+' 82 V'+(82-h*0.45)+' Q'+x+' '+(82-h*1.15)+' '+(x+w/2)+' '+(82-h*0.45)+' V82 Z" fill="'+c.b+'"/>'; };
     return '<circle cx="50" cy="40" r="20" fill="'+c.a+'"'+cvA_('cvSunrise')+'/>'+tower(18,12,34)+tower(34,14,44)+tower(50,18,62)+tower(66,14,44)+tower(82,12,34)+
-      '<rect x="4" y="80" width="92" height="8" fill="'+c.b+'"/><rect x="0" y="88" width="100" height="10" fill="'+c.b+'" fill-opacity=".45"/>'; }
+      '<rect x="4" y="80" width="92" height="8" fill="'+c.b+'"/><rect x="0" y="88" width="100" height="10" fill="'+c.b+'" fill-opacity=".45"/>'; },
+  /* YWAM classics (Oct 2026) */
+  waves:function(c){ var o='<path d="M8 40 C 14 22, 36 20, 40 34 S 30 58, 18 56 S 4 52, 8 40 Z" fill="'+c.b+'" fill-opacity=".3"/><path d="M56 22 C 70 14, 92 22, 90 40 S 76 62, 64 56 S 46 30, 56 22 Z" fill="'+c.b+'" fill-opacity=".3"/>';
+    for(var k=0;k<3;k++){ var y=62+k*12; o+='<path d="M-6 '+y+' Q 6 '+(y-9)+' 18 '+y+' T 42 '+y+' T 66 '+y+' T 90 '+y+' T 114 '+y+'" fill="none" stroke="'+c.a+'" stroke-width="'+(6-k*1.5)+'" stroke-linecap="round"'+(k===1?' stroke-opacity=".7"':k===2?' stroke-opacity=".45"':'')+cvA_(k%2?'cvNudgeL':'cvNudgeR','animation-delay:-'+(k*0.8)+'s')+'/>'; }
+    return o; },
+  edge:function(c){ return '<path d="M-2 98 V54 H38 L42 98 Z" fill="'+c.b+'"/><path d="M66 98 L70 64 H102 V98 Z" fill="'+c.b+'" fill-opacity=".55"/>'+
+    '<path d="M36 44 Q 54 14 76 52" fill="none" stroke="'+c.a+'" stroke-width="3" stroke-dasharray="3 6" stroke-linecap="round"/>'+
+    '<g'+cvA_('cvBob')+'><circle cx="28" cy="34" r="6" fill="'+c.a+'"/><rect x="23" y="41" width="10" height="13" rx="4" fill="'+c.a+'"/></g>'+
+    '<circle cx="84" cy="18" r="9" fill="'+c.a+'" fill-opacity=".5"'+cvA_('cvPulse')+'/>'; },
+  crown:function(c){ return '<g'+cvA_('cvBob')+'><path d="M24 54 L28 22 L40 38 L50 16 L60 38 L72 22 L76 54 Z" fill="'+c.a+'"/><rect x="24" y="54" width="52" height="8" rx="2" fill="'+c.a+'"/>'+
+    '<circle cx="50" cy="44" r="4" fill="'+c.b+'"/></g>'+
+    '<path d="M8 74 Q 26 96 48 80 M92 74 Q 74 96 52 80" fill="none" stroke="'+c.b+'" stroke-width="6" stroke-linecap="round"/>'; },
+  openbook:function(c){ var o=''; for(var k=0;k<7;k++){ var an=Math.PI*(0.15+k*0.7/6); o+='<line x1="'+(50-Math.cos(an)*20).toFixed(1)+'" y1="'+(46-Math.sin(an)*20).toFixed(1)+'" x2="'+(50-Math.cos(an)*42).toFixed(1)+'" y2="'+(46-Math.sin(an)*42).toFixed(1)+'" stroke="'+c.a+'" stroke-width="4" stroke-linecap="round"/>'; }
+    return '<g'+cvA_('cvPulse')+'>'+o+'</g><path d="M50 58 Q 30 48 8 52 V88 Q 30 84 50 94 Z" fill="'+c.b+'"/><path d="M50 58 Q 70 48 92 52 V88 Q 70 84 50 94 Z" fill="'+c.b+'" fill-opacity=".8"/>'+
+      '<path d="M16 62 Q 30 60 42 66 M16 72 Q 30 70 42 76 M58 66 Q 70 60 84 62 M58 76 Q 70 70 84 72" stroke="'+c.bg+'" stroke-width="2" fill="none"/>'; },
+  flame:function(c){ return '<circle cx="50" cy="58" r="38" fill="'+c.a+'" fill-opacity=".14"'+cvA_('cvPulse')+'/>'+
+    '<g'+cvA_('cvFlick')+'><path d="M50 10 C 64 30, 76 42, 76 62 C 76 78, 64 90, 50 90 C 36 90, 24 78, 24 62 C 24 46, 38 38, 50 10 Z" fill="'+c.a+'"/>'+
+    '<path d="M50 46 C 58 58, 64 64, 64 74 C 64 82, 58 88, 50 88 C 42 88, 36 82, 36 74 C 36 64, 44 60, 50 46 Z" fill="'+c.b+'"/></g>'; },
+  incense:function(c){ var o=''; for(var k=0;k<3;k++){ var x=34+k*16; o+='<path d="M'+x+' 62 C '+(x-8)+' 50, '+(x+8)+' 40, '+x+' 28 S '+(x-6)+' 12, '+(x+2)+' 4" fill="none" stroke="'+c.a+'" stroke-width="4" stroke-linecap="round"'+(k===1?'':' stroke-opacity=".6"')+cvA_('cvRise','animation-delay:-'+(k*0.9)+'s')+'/>'; }
+    return o+'<path d="M18 66 H82 Q 80 90 50 92 Q 20 90 18 66 Z" fill="'+c.b+'"/><rect x="40" y="90" width="20" height="6" rx="2" fill="'+c.b+'"/>'; },
+  heart:function(c){ var h=function(x,y,r){ return 'M'+x+' '+(y+r*0.9)+' C '+(x-r*1.6)+' '+(y-r*0.2)+', '+(x-r*0.9)+' '+(y-r*1.4)+', '+x+' '+(y-r*0.55)+' C '+(x+r*0.9)+' '+(y-r*1.4)+', '+(x+r*1.6)+' '+(y-r*0.2)+', '+x+' '+(y+r*0.9)+' Z'; };
+    return '<path d="'+h(50,52,34)+'" fill="'+c.a+'"'+cvA_('cvPulse')+'/><path d="'+h(50,56,12)+'" fill="'+c.b+'"/>'; },
+  shield:function(c){ return '<g'+cvA_('cvSway')+'><path d="M50 8 L84 20 V48 C 84 70, 68 84, 50 92 C 32 84, 16 70, 16 48 V20 Z" fill="'+c.a+'"/>'+
+    '<rect x="45" y="24" width="10" height="52" rx="2" fill="'+c.b+'"/><rect x="30" y="38" width="40" height="10" rx="2" fill="'+c.b+'"/></g>'; },
+  globe:function(c){ return '<circle cx="50" cy="50" r="40" fill="'+c.a+'" fill-opacity=".18"/><circle cx="50" cy="50" r="40" fill="none" stroke="'+c.a+'" stroke-width="5"/>'+
+    '<g'+cvA_('cvSpin')+'><ellipse cx="50" cy="50" rx="16" ry="40" fill="none" stroke="'+c.a+'" stroke-width="3"/><ellipse cx="50" cy="50" rx="30" ry="40" fill="none" stroke="'+c.a+'" stroke-width="2.5" stroke-opacity=".6"/></g>'+
+    '<path d="M12 36 H88 M12 64 H88" stroke="'+c.a+'" stroke-width="2.5" stroke-opacity=".6"/>'+
+    '<g'+cvA_('cvGrowUp','transform-origin:50% 100%')+'><path d="M50 50 V30" stroke="'+c.b+'" stroke-width="4" stroke-linecap="round"/><path d="M50 36 C 40 34, 36 26, 38 20 C 46 22, 50 28, 50 36 Z M50 32 C 58 28, 64 22, 64 16 C 56 16, 50 22, 50 32 Z" fill="'+c.b+'"/></g>'; },
+  pair:function(c){ var p=function(x,col,d){ return '<g'+cvA_('cvBob','animation-delay:'+d+'s')+'><circle cx="'+x+'" cy="40" r="11" fill="'+col+'"/><path d="M'+(x-16)+' 92 V70 Q '+(x-16)+' 54 '+x+' 54 Q '+(x+16)+' 54 '+(x+16)+' 70 V92 Z" fill="'+col+'"/></g>'; };
+    return '<path d="M10 30 Q 50 -6 90 30" fill="none" stroke="'+c.a+'" stroke-width="4" stroke-linecap="round" stroke-opacity=".6"/>'+p(32,c.a,0)+p(68,c.b,-1.5); }
 };
 function libPal_(){ return GP_LIBRARY.palette || {}; }
 function libCol_(k, fallback){ var p=libPal_(); return p[k] || k || fallback; }
@@ -5653,7 +5682,7 @@ function libraryHtml(){
   if(S.libShelf==='start' && !picks.length) S.libShelf='all';
   var readN=books.filter(function(x){ return read[x.id]; }).length;
   var h=back+'<h2>📚 '+esc(t('Library'))+'</h2>'+
-    '<p class="sub">'+esc(t('Ten-minute reads of the best books on leading, culture, habits and creativity — the big ideas, made for us.'))+'</p>'+
+    '<p class="sub">'+esc(t('Ten-minute reads of the best books on leading, culture, habits and creativity, and the YWAM classics — the big ideas, made for us.'))+'</p>'+
     '<div class="libProgress"><b>'+readN+'</b> / '+books.length+' '+esc(t('read'))+'<span class="libProgressBar"><span style="width:'+Math.round(readN/Math.max(1,books.length)*100)+'%"></span></span></div>'+
     '<div class="libShelves">'+[{id:'all', name:'All'}].concat(picks.length ? [{id:'start', name:'Start here', emoji:'⭐'}] : [], libShelvesShown_()).map(function(sh){
       return '<button class="libShelfBtn'+(S.libShelf===sh.id?' on':'')+'" data-libshelf="'+esc(sh.id)+'"'+(sh.color&&S.libShelf===sh.id?' style="background:'+sh.color+';border-color:'+sh.color+'"':'')+'>'+(sh.emoji?sh.emoji+' ':'')+esc(t(sh.name))+'</button>';
@@ -6338,7 +6367,7 @@ function gpGuestHomeHtml_(){
     '<p>'+esc(t('This is the GP app, as a guest. Read the Library, see how the base is doing, and see what every tool does. Nothing here is saved to an account.'))+'</p>'+
     gpGuestButtonsHtml_()+'</div>';
   h+='<button class="card guestBig" id="guestLibrary"><span class="guestBigIcon">📚</span><span style="flex:1"><b>'+esc(t('Library'))+'</b>'+
-    '<span>'+esc(nb ? gpT('{n} books read',{n:nb}) : t('Ten-minute reads of the best books on leading, culture, habits and creativity — the big ideas, made for us.'))+'</span></span>'+PCHEV+'</button>';
+    '<span>'+esc(nb ? gpT('{n} books read',{n:nb}) : t('Ten-minute reads of the best books on leading, culture, habits and creativity, and the YWAM classics — the big ideas, made for us.'))+'</span></span>'+PCHEV+'</button>';
   h+='<button class="card guestBig" id="guestBase"><span class="guestBigIcon">📈</span><span style="flex:1"><b>'+esc(t('Base'))+'</b>'+
     '<span>'+esc(t('How the base is doing this week — ministry numbers for Siem Reap and Poipet.'))+'</span></span>'+PCHEV+'</button>';
   h+='<h3>✨ '+esc(t('What staff use the app for'))+'</h3><div class="guestTools">'+GUEST_TOOLS.map(function(x){

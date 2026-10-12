@@ -1,14 +1,15 @@
 /*  The Library — ten-minute reads of the books on Craig Groeschel's four
     leadership book lists (craiggroeschel.com, "44 leadership books" series),
-    written for GP in our own words. Not the authors' or publishers' text and not
-    any summary service's; no quotations.
+    written for GP in our own words — and the YWAM classics shelf (Loren Cunningham,
+    Joy Dawson, Floyd McClung, Dean Sherman, Darrow Miller), summarized the same way.
+    Not the authors' or publishers' text and not any summary service's; no quotations.
     The covers are drawn by teams.html (libCoverHtml_) in one series look from the
     shelf colours and the brand paper, ink and marigold below — nothing is fetched.
 
     Plain script, loaded only when the Library is opened (libLoad_ in teams.html).
     To add a book: add an object with the same fields to GP_LIBRARY.books —
     tests/test-library.mjs checks every field, the shelf, the ISBN check digit
-    and that ids are unique. The summaries are English on purpose for now. */
+    and that ids are unique. The Khmer of every book is in library-km.js. */
 var GP_LIBRARY = {
  "shelves": [
   {
@@ -45,6 +46,13 @@ var GP_LIBRARY = {
    "emoji": "🌉",
    "color": "#17150F",
    "ink": "#17150F"
+  },
+  {
+   "id": "ywam",
+   "name": "YWAM classics",
+   "emoji": "🌊",
+   "color": "#1F44FF",
+   "ink": "#1430B0"
   }
  ],
  "cover": {
@@ -3515,6 +3523,769 @@ var GP_LIBRARY = {
     "motif": "angkor",
     "layout": "top",
     "font": "sans"
+   }
+  },
+  {
+   "id": "is-that-really-you-god",
+   "title": "Is That Really You, God?",
+   "author": "Loren Cunningham with Janice Rogers",
+   "year": 1984,
+   "shelf": "ywam",
+   "mins": 10,
+   "vibe": "A young man, a map of the world and waves of young people. You can hear God too.",
+   "bigIdea": "Loren Cunningham believed that God still speaks to ordinary people today. This book, written with Janice Rogers, is two things at once. It is the story of how Youth With A Mission began, and it is a simple guide to hearing God's voice. In 1956, Loren was a twenty-year-old Bible college student on a singing tour in the Bahamas. While he was resting, he saw a picture in his mind: a map of the world, with waves rolling onto every continent. The waves became young people, going out to tell others about Jesus. A few years later, in 1960, he started YWAM. The book follows those early years: the joy, the mistakes, the painful choices and the times God provided just in time. Again and again, Loren and his team had to ask the question in the title. Was this really God, or only their own idea? Through the stories, Loren draws out principles that anyone can use. Hearing God is not only for famous leaders. It grows out of a friendship with God, a humble heart and a willingness to obey, one step at a time.",
+   "insights": [
+    {
+     "emoji": "🌊",
+     "title": "A map, and waves of young people",
+     "body": "Loren grew up in a family of preachers. His parents were pastors, and from a young age he wanted to serve God. As a boy he sensed God calling him to take the good news to all the world, but he had no idea what that would look like.\n\nIn 1956, when he was twenty, Loren travelled to the Bahamas with a singing group from his Bible college. One day, while he was resting where he was staying, he saw a picture in his mind. It was a map of the world. Waves were rolling onto the shores of every continent, and then covering them. As he watched, the waves became young people. They were going out to every nation, talking to people on the streets, visiting homes and sharing about Jesus.\n\nThis was a new idea at the time. Most missionaries were older people with long training. Loren saw ordinary young people going out, some maybe only for a short time, and God using them.\n\nWhy does this matter? The vision came years before there was any plan, team or money. God often shows us where we are going first, and the road later. And the picture was not about one great leader. It was about many ordinary people saying yes to God."
+    },
+    {
+     "emoji": "🪜",
+     "title": "One step at a time",
+     "body": "After the vision, Loren did not suddenly have a mission. He kept studying and serving in his church work, travelling and preaching to young people. He did not know how the picture of the waves would come true. So he took small steps. He shared the idea with others, he prayed, and he looked for ways to send young people out to serve.\n\nIn 1960 he started Youth With A Mission. At first it was very small. There was little money, there were no buildings, and only a few volunteers went out. But Loren believed that God had spoken, so he kept going.\n\nOne lesson from these years is that God rarely shows us the whole plan at once. He gives light for the next step, like a lamp for our feet (Psalm 119:105). If we obey in that step, more light comes. If we wait until we understand everything, we may never begin.\n\nAnother lesson is patience. A vision from God usually takes longer than we expect. There are seasons of waiting, when nothing seems to happen. These seasons are not wasted. God uses them to shape the person who will carry the vision. Being faithful in small and hidden work prepares us for what comes next."
+    },
+    {
+     "emoji": "🕊️",
+     "title": "When a vision has to die",
+     "body": "As YWAM began to grow, Loren faced one of the hardest choices of his life. He was serving in a denomination that he loved, the church of his parents. Some of its leaders were not at peace with the way the new mission was growing, and Loren was asked to choose. He could keep his secure position, or follow the vision God had given him. In the end, he resigned and stepped out with YWAM. It was painful, and it cost him a lot.\n\nFrom this time and others, Loren draws a principle often called the death of a vision. God gives a vision. Then, often, the vision seems to die. Things go wrong, doors close, or God asks us to lay it down. Later, God may bring it back to life in His own way.\n\nHe points to Abraham. God promised him a son, and then asked him to offer Isaac back to Him (Genesis 22). Abraham obeyed, and God provided.\n\nWhy does God allow this? So that we hold on to God, not to our vision. A vision can slowly become our idol or the place where we find our worth. When it dies and God gives it back, we know it belongs to Him. Then we hold it with open hands."
+    },
+    {
+     "emoji": "👂",
+     "title": "Three simple steps to hearing God",
+     "body": "Loren teaches that every believer can hear God, not only pastors or prophets. Jesus said that his sheep know his voice (John 10:27). To help us, Loren gives three simple steps.\n\nFirst, submit to His lordship. Ask God to help you quiet your own thoughts, wishes and opinions. We all have strong desires, and they can sound like God's voice. So we give our own ideas to Him and tell Him that we want His will, not ours.\n\nSecond, resist the enemy. The Bible tells us to submit to God and resist the devil (James 4:7). Using the authority Jesus gives us, we can ask God to silence any voice that does not come from Him. We do not need to be afraid.\n\nThird, expect an answer. God wants to speak more than we want to listen. After asking, wait quietly. Do not rush. The answer may come as a Bible verse, a thought, a picture or a sense of peace. It may come right away, or later.\n\nLoren also says that a clean heart matters. If we hold on to sin we know about, it becomes hard to hear. So we confess it and receive forgiveness first.\n\nThese steps are not a magic formula. They are a way to come humbly to a Father who loves to talk with His children."
+    },
+    {
+     "emoji": "📖",
+     "title": "Many ways God speaks, one book to test them",
+     "body": "God is creative. In the Bible He spoke through a quiet voice, dreams, visions, angels, other people, events and the Scriptures themselves. Loren's stories show the same variety. Sometimes guidance came as a clear picture, like the waves. Sometimes it came as a Bible verse that suddenly stood out. Sometimes it came through a friend, a leader, or a door that opened or closed.\n\nBecause God speaks in many ways, we need a way to test what we hear. Loren's answer is the Bible. God will never tell us to do something that goes against His written Word or His character. If a message that claims to be from God leads to pride, fear, sin or harm to others, it is not from Him.\n\nThis is also why it is important to know the Bible well. The more we read it, the more we learn how God thinks and what He is like. Then we can recognize His voice, just as we recognize the voice of a close friend on the phone.\n\nHearing God also does not mean switching off our minds. God gave us the ability to think. Often He guides us through wise thinking, good advice and the gifts He has already given us. Listening to God and good sense work together, not against each other."
+    },
+    {
+     "emoji": "✅",
+     "title": "Ask God to confirm it",
+     "body": "What should we do when we think God has spoken, especially about something big? Loren's advice is to ask God to confirm it. The Bible says that every matter should be settled by two or three witnesses (2 Corinthians 13:1). God is not offended when we ask Him to make things clear.\n\nConfirmation can come in different ways. God may say the same thing through a Bible passage, through a mature friend or leader, through what happens around us, or through a deep peace that stays. When several of these agree, we can step forward with more confidence.\n\nLoren also teaches the value of counsel and of the leaders God has placed over us. We are not meant to follow guidance alone. Sharing what we heard with trusted leaders protects us from mistakes and from our own blind spots. A humble person is happy to have their guidance checked.\n\nTiming is part of guidance too. God may show us what He will do long before He shows us when. Acting too fast can cause damage, even if the direction is right. So we ask not only whether this is God, but also whether this is the right time.\n\nWaiting for confirmation can feel slow. But it saves us from a lot of pain, and it gives us courage when hard times come later."
+    },
+    {
+     "emoji": "👥",
+     "title": "Hearing God together",
+     "body": "Loren and his team learned that guidance is not only for individuals. A group can hear God together. This became a habit in YWAM, and it is still practised on many YWAM bases today.\n\nThe idea is simple. When a team needs to make a decision, they first pray through the steps. They give up their own opinions, resist the enemy and wait on God. Then each person listens quietly and notes what they sense from God. After that they share and compare. Often God gives the same direction, or pieces that fit together, to different people. When there is agreement, the team moves forward in unity.\n\nThis way of deciding has many good fruits. It keeps leaders humble, because they have to listen. It gives every member a voice, including young people and new staff. It also protects the group from one strong person pushing their own plans.\n\nHearing God together does not remove leaders. Leaders still carry responsibility and make the final decision when it is needed. But they lead from listening, not only from their own ideas.\n\nIt takes time, and it can feel slow. But when a team knows that God has spoken, they can face hard times together without blaming each other."
+    },
+    {
+     "emoji": "💰",
+     "title": "Where God guides, He provides",
+     "body": "Many of the stories in the book are about money, or the lack of it. A new mission of young volunteers had very little. Yet God kept asking Loren and his team to step out: to send teams, to start schools and to buy property. Each time they faced the same question. Is this really God? And if it is, how will we pay for it?\n\nLoren tells of times when the need was big and the deadline was close. The team prayed, checked their guidance and did what they could. Often the provision came in surprising ways, through people they did not expect or at the last possible moment. These stories built their faith.\n\nThe principle is that God pays for what He asks us to do. If He truly guides us to do something, He will make a way to provide for it. But this is not a promise that God will pay for our own plans. That is one more reason why hearing God clearly matters so much.\n\nLoren also shows that faith is often tested. Provision does not always come quickly, and the waiting can be hard. During the wait, we keep obeying, keep giving and keep trusting. Faith is not pretending there is no need. It is trusting the One who knows the need."
+    },
+    {
+     "emoji": "🤝",
+     "title": "It is all about friendship with God",
+     "body": "By the end of the book, it is clear that hearing God is not a technique. It is the fruit of a relationship. God is not a machine that gives directions when we push the right buttons. He is a Father who wants to know us and be known by us.\n\nLoren encourages readers to get to know God's character. We do this by reading the Bible, by worship, by spending time with Him and by obeying what we already know. The better we know someone, the easier it is to recognize their voice and to know what they would or would not say.\n\nObedience is also key. God often speaks about small things before big things. If we obey in small matters, like saying sorry to someone or giving something away, we grow in hearing. If we ignore what He says, it gets harder to hear.\n\nLoren is honest that he and his team did not always hear perfectly. Sometimes they made mistakes. But God is patient with learners. When we get it wrong, we can repent, learn and keep listening.\n\nSo the question in the title is not a question of fear. It is the question of a child learning to know a Father's voice, one conversation at a time."
+    }
+   ],
+   "tryThis": [
+    "Take fifteen minutes this week to use the three steps: give God your own ideas, resist the enemy, then wait quietly and write down what you sense.",
+    "Check one thing you think God has said against the Bible, and share it with a trusted leader or friend.",
+    "Obey one small thing you already know God wants you to do, like saying sorry, giving a gift or making a phone call."
+   ],
+   "forUs": "YWAM Gon Preah exists because a young man in 1956 asked if a picture of waves was really from God. Every DTS student and staff member here is part of that story. At GP we try to hear God together: in worship, in intercession, in staff meetings and when outreach teams plan where to go. This book reminds us that Khmer staff and international staff can both hear God. A new Khmer believer can hear Him as clearly as a missionary who has served for many years. So when we wait on God as a team, make room for every voice, especially people who are quiet or still learning English or Khmer. Test what we hear with the Bible and with each other, and be patient when guidance is slow. Many of us live by faith and raise our own support, so the stories of God providing will feel close to home. When money is late or the next step is not clear, remember that God guided Loren one step at a time. He can do the same for us in our community schools, the cafe, our youth work and every outreach.",
+   "oneLine": "God still speaks to ordinary people: listen humbly, test it with the Bible, and obey.",
+   "cover": {
+    "bg": "cobalt",
+    "fg": "paper",
+    "a": "marigold",
+    "b": "paper",
+    "motif": "waves",
+    "layout": "top",
+    "font": "serif"
+   }
+  },
+  {
+   "id": "making-jesus-lord",
+   "title": "Making Jesus Lord",
+   "author": "Loren Cunningham",
+   "year": 1988,
+   "shelf": "ywam",
+   "mins": 10,
+   "vibe": "What happens when you give God the things you think you deserve?",
+   "bigIdea": "Many Christians call Jesus Lord. But what does that really mean in daily life? In this short book, Loren Cunningham, the founder of Youth With A Mission, gives a simple and searching answer. If Jesus is Lord, he is the owner, and we are not. So making Jesus Lord means giving him our rights. Loren looks at the things we feel we deserve: our possessions, our comfort, our good name, our relationships, the hope of a husband or wife and children, and more. We often hold these things tightly, even after we have given our lives to Christ. Loren says we can lay each of them down before God, one by one. This is not about despising good gifts. Jesus himself laid down his rights when he came to earth as a servant. And in the end it is not a loss. When we give a right to God, he often gives it back to us as a privilege, to enjoy and to look after for him. The surprise of this book is freedom. People who have nothing to protect are hard to offend, hard to frighten and free to obey. This teaching is close to the heart of YWAM.",
+   "insights": [
+    {
+     "emoji": "👑",
+     "title": "Lord means owner",
+     "body": "Jesus once asked a hard question: why do you call me Lord, and not do what I say? (Luke 6:46). Loren starts here. It is easy to sing that Jesus is Lord. It is much harder to live it.\n\nIn the Bible, a lord is a master or an owner. If Jesus is Lord, then my life belongs to him. My time, my money, my plans and my body are his. I am a manager of what he has given me, not the owner.\n\nMost of us say yes to this in a general way. The struggle comes in the details. We give God our life, but we keep a few rooms locked. We still feel we have a right to certain things. When God touches one of those areas, we get upset, or we argue, or we quietly say no.\n\nLoren's point is simple. Lordship is not only a feeling or a song. It is a change of ownership, and we decide it with our will. Many believers trust Jesus as Saviour, but have not yet let him be Lord of every part of life.\n\nSo the book asks each reader to look honestly at their life. Which things do I still treat as mine? Where do I say Lord with my mouth, but no with my choices?"
+    },
+    {
+     "emoji": "✝️",
+     "title": "Jesus laid down his rights first",
+     "body": "Before Loren asks us to give up anything, he points to Jesus. Paul writes that Jesus was equal with God, but he did not hold on to that position. He made himself nothing, took the form of a servant, became a man, and obeyed the Father all the way to death on a cross (Philippians 2:5–8).\n\nThink about what Jesus had a right to. He had a right to worship, honour, comfort and safety. Yet he was born in a humble place, had no home of his own during his ministry, was misunderstood by his own family, was betrayed by a friend and was killed like a criminal. He did not demand his rights. He gave them to his Father, for our sake.\n\nPaul says we should have the same attitude. This changes how we see the whole topic. Laying down rights is not a strange, extreme idea for a few very spiritual people. It is simply following Jesus.\n\nIt also tells us something about God. The One who asks us to let go is the One who let go of the most. And the cross was not the end of the story. The Father raised Jesus up and gave him the name above every name."
+    },
+    {
+     "emoji": "🎁",
+     "title": "Rights become privileges",
+     "body": "One of the most helpful ideas in the book is the difference between a right and a privilege. A right is something I feel I am owed. If I do not get it, I feel cheated. A privilege is a gift. When I receive it, I feel thankful.\n\nWhen we give a right to God, we are not always giving up the thing itself. Often God gives it back. But now it comes back as a privilege, not a right. The house, the money, the friendship or the marriage may still be there, but our hands are open. We enjoy it with thanks, and we look after it for him. If he asks for it again, we can let it go without bitterness.\n\nThe Bible story of Abraham gives a picture of this. God promised him a son, and Isaac was born. Later God asked Abraham to offer Isaac back to him. Abraham obeyed, and God stopped him and provided a ram instead (Genesis 22). Abraham received his son again, now clearly as a gift from God.\n\nThis changes our feelings. A person who lives by rights is often anxious, demanding and easily hurt. A person who lives by privileges is often grateful and content. The things they have may be the same. The heart is very different."
+    },
+    {
+     "emoji": "🏠",
+     "title": "The right to possessions",
+     "body": "Possessions are often the first place we feel the pull of ownership. My phone, my motorbike, my savings, my room. Loren teaches that everything we have belongs to God, and we are stewards. A steward looks after someone else's property and uses it the way the owner wants.\n\nThis does not mean that God wants everyone to be poor, or that owning things is sin. The problem is not that we have possessions. The problem is when possessions have us. The test is simple: if God asks for this, will I let it go? Jesus warned that we cannot serve both God and money (Matthew 6:24). He also told a rich young man to sell what he had and follow him, and the man went away sad, because he owned a lot (Mark 10:17–22).\n\nWhen we give God the right to our possessions, several things change. We are freer to give when he leads us to. We worry less about losing things, because they were never really ours. We hold our plans for money with open hands. And we often find that God is a generous provider who meets our needs in his own way and time.\n\nThe point is not how much or how little we own. The point is who owns it."
+    },
+    {
+     "emoji": "🛏️",
+     "title": "The right to comfort",
+     "body": "Most of us want an easy life. We want good food, a soft bed, cool air and a familiar place. None of these things are wrong. But when comfort becomes a right, it quietly decides what we will and will not do for God.\n\nObedience is often uncomfortable. God may ask us to go to a hot place, a cold place, a crowded city or a poor village. He may ask us to eat food we do not know, sleep on the floor, or stay where we would rather leave. If we hold on to our right to comfort, we will find many reasons why we cannot go.\n\nThe apostle Paul is a good example. He lists the hard things he went through: hunger, cold, danger, sleepless nights and shipwreck (2 Corinthians 11). Yet he says he learned to be content with much and with little, because Christ gave him strength (Philippians 4:11–13).\n\nGiving God our right to comfort does not mean we must look for hardship. God also gives rest and good things, and we can receive them with joy. It means that comfort no longer has the final word. When God leads, we can follow, even when the path is hard. And often we discover that his presence is the deepest comfort of all."
+    },
+    {
+     "emoji": "🪞",
+     "title": "The right to a good name",
+     "body": "We care a lot about what people think of us. We want to be respected, understood and treated fairly. When someone spreads a false story about us, or judges our motives wrongly, it hurts deeply. Often our first reaction is to defend ourselves and fix our image.\n\nLoren points again to Jesus. An older English Bible says that he made himself of no reputation (Philippians 2:7). People called him a friend of sinners and a drunkard, and some even said he worked by the power of the devil. At his trial, people lied about him and mocked him. Yet he did not fight to protect his name. He trusted his Father with it.\n\nGiving God our right to a reputation means we let him be our defender. We still tell the truth, and sometimes it is right to explain a misunderstanding calmly. But we do not need to win. We do not need everyone to like us. We can obey God even when it makes us look foolish or weak to others.\n\nThis is a great freedom. A person who is always protecting their image is tired and easily hurt. A person who has given their name to God can admit mistakes, serve in hidden places and bless people who speak against them. Their worth is safe with God."
+    },
+    {
+     "emoji": "💍",
+     "title": "Marriage, family and the people we love",
+     "body": "Some of the deepest rights we hold are about people. The right to be married. The right to a certain husband or wife. The right to have children. The right to stay close to our parents and family. These are good desires, and many of them come from God himself.\n\nLoren encourages single people to give God the right to be married, and to trust him with the timing and the person. He encourages married people and parents to give God their spouse and children, instead of holding them as if they owned them.\n\nGiving God these rights does not mean we stop hoping, or stop caring. It means we trust that God loves the people in our lives even more than we do, and that he knows what is best. A single person who has given this right to God can live with peace and purpose now, not only waiting for the future. A parent who has given their children to God can release them to follow his call, even to a faraway place.\n\nJesus promised that anyone who leaves home or family for his sake will receive much more, in this life and in the age to come (Mark 10:29–30)."
+    },
+    {
+     "emoji": "🔥",
+     "title": "Anger, offense and the rights we hold",
+     "body": "This teaching also shines a light on anger. Much of our anger comes from rights that we feel have been broken. Someone took my seat. Someone did not thank me. Someone used my things without asking. Inside, a voice says: that was mine, and they took it.\n\nIf we have given that right to God, the situation looks different. It may still be painful, and a wrong may still be wrong. But the thing was not ours to defend in the first place. It belongs to God, and he can deal with it. This makes it much easier to forgive, and much harder to be offended.\n\nThis is why laying down rights leads to freedom. Think of a person who has nothing left to protect. It is hard to rob them, because they have already given everything to God. It is hard to insult them, because their name is in God's hands. It is hard to frighten them, because their life belongs to him.\n\nLaying down our own rights is different from ignoring injustice done to others. The Bible calls us to speak up for the weak. But in our own personal hurts, we can let go of the demand to be treated fairly. Each time we feel anger rising, we can ask a simple question: which right am I still holding on to?"
+    },
+    {
+     "emoji": "🙌",
+     "title": "Open hands, every day",
+     "body": "How do we actually lay down our rights? It helps to be specific. Instead of only saying, God, everything is yours, we can name the things. My plans for next year. My savings. My wish to be married. My good name in this community. My right to be comfortable. We can give each one to God in prayer, clearly and on purpose.\n\nThere is a first big decision when we make Jesus Lord of all. But there is also a daily practice. New situations show us rights we did not know we were holding. A new job, a move, a hard teammate or a disappointment can reveal something still in our closed hand. Each time, we can open it again.\n\nThis is not a gloomy process. We are not giving our things to a cruel master. We are giving them to a loving Father who gave his own Son for us. He is good, he is wise, and he can be trusted with all that we have and all that we are.\n\nMany people fear that if they give God everything, they will lose their life. Jesus said the opposite. Whoever loses their life for his sake will find it (Matthew 16:25). Making Jesus Lord is the way into a free and full life."
+    }
+   ],
+   "tryThis": [
+    "Write down five things you feel you have a right to. Pray through the list and give each one to God by name.",
+    "The next time you feel angry or offended this week, stop and ask: which right am I holding on to?",
+    "Choose one possession or one comfort and hold it with open hands this week: lend it, share it or give it away as God leads."
+   ],
+   "forUs": "Many of us at GP have already laid down big rights to be here. International staff left home, family, careers and familiar food. Some Khmer staff chose this path when their families hoped for a different job or a bigger income. Staff who live by faith and raise support have given God the right to a fixed salary. But this book reminds us that lordship is daily, and small rights hide in small places. My room, my motorbike, my way of doing things in the cafe or the kitchen. My right to rest when a visiting outreach team arrives late. My right to be understood when I am still learning Khmer or English. In DTS, students often meet this teaching for the first time, and it can change their lives. As staff, we can model it gently, not by demanding that others give up their rights, but by laying down our own with joy. When tension rises in a team, we can ask together: which right are we holding? A base full of people with open hands is a place of peace and freedom.",
+   "oneLine": "Give God your rights, and he gives you freedom.",
+   "cover": {
+    "bg": "ink",
+    "fg": "paper",
+    "a": "marigold",
+    "b": "paper",
+    "motif": "crown",
+    "layout": "top",
+    "font": "serif"
+   }
+  },
+  {
+   "id": "daring-to-live-on-the-edge",
+   "title": "Daring to Live on the Edge",
+   "author": "Loren Cunningham",
+   "year": 1991,
+   "shelf": "ywam",
+   "mins": 10,
+   "vibe": "Faith and money: trust God, give freely, receive with thanks.",
+   "bigIdea": "Many people feel uncomfortable talking about money, and missionaries are no different. Loren Cunningham wrote this book after about thirty years of leading Youth With A Mission, where thousands of staff serve without a salary and trust God for their needs. He wanted to share what he and others had learned about faith and finances. His first point surprises many people. Living by faith is not only for missionaries. Every Christian lives by faith, whether money comes from a job, a business or supporters. God is the true source. The book shows how to trust God with money in practical ways: hearing God about what to give, giving generously, receiving with humility and thanks, sharing needs without pushing people, and handling money with honesty. Loren warns against two errors. One says that being poor makes you more holy. The other says that God wants every believer to be rich. Both miss the point. Money is a tool for God's purposes. Living on the edge means stepping out where we cannot see everything, trusting that God sees, and that He will provide for what He asks us to do.",
+   "insights": [
+    {
+     "emoji": "🧭",
+     "title": "Everyone lives by faith",
+     "body": "Some people think there are two kinds of Christians. Some have normal jobs and salaries. Others are faith missionaries who trust God for money. Loren says this is a false picture. Every believer is called to live by faith.\n\nA person with a salary still depends on God. Jobs can be lost, businesses can fail and health can change. The salary is not the source. God is. He simply chooses to provide through a job at that time. For a missionary, God may provide through many supporters, gifts and churches. The channel is different, but the Provider is the same.\n\nIn the Bible, God showed Himself to Abraham as the Lord who provides (Genesis 22:14). Jesus taught His followers not to worry about food and clothes, but to seek God's kingdom first, trusting that the Father knows what they need (Matthew 6:25-33).\n\nThis truth brings freedom to both sides. Missionaries do not need to feel like second-class workers or beggars. People with jobs do not need to feel that they are less spiritual. Both look to the same Father. The real question for each of us is not where our money comes from. It is whether we trust God and obey Him with what He gives."
+    },
+    {
+     "emoji": "🏦",
+     "title": "God owns it all",
+     "body": "Loren teaches that everything belongs to God. The earth and everything in it are His (Psalm 24:1). The silver and the gold are His (Haggai 2:8). This includes our money, our things, our time and our gifts.\n\nIf God is the owner, then we are managers, or stewards. A manager does not ask what he wants to do with his money. He asks what the owner wants him to do with the owner's money. This changes how we spend, save and give.\n\nIt also brings peace. If the money belongs to God, then the needs of His work belong to Him too. We are not carrying the whole weight. Our part is to listen and obey. His part is to provide.\n\nBeing a good steward also means being faithful in small things. Jesus said that whoever is faithful with little will be faithful with much (Luke 16:10). How we use a small amount shows what is in our heart. Loren encourages us to ask God about everyday choices, not only about big gifts or big projects.\n\nOne day, each of us will give an account to God for what He trusted to us. That is not meant to frighten us. It reminds us that our money is part of our worship and our service to Him."
+    },
+    {
+     "emoji": "🎁",
+     "title": "Giving opens the door",
+     "body": "At the center of this book is giving. Loren believes that giving is one of the main ways God's provision flows. Jesus said to give, and it will be given to you (Luke 6:38). Paul wrote that whoever sows generously will also reap generously, and that God loves a cheerful giver (2 Corinthians 9:6-7).\n\nThis does not mean giving is a trick to get rich. If we give only to get more back, our hearts are still focused on ourselves. The goal is to become like God, who is the greatest giver. He gave His own Son.\n\nLoren encourages people to give as God leads. Just as we can hear God about where to go, we can hear Him about what to give, to whom and when. Sometimes God asks us to give something that feels too big. Sometimes He asks for a small, quiet gift. Giving that comes from God's leading is free from pressure and guilt.\n\nEven people with little can give. Jesus praised the poor widow who put two small coins in the temple offering, because she gave everything she had (Mark 12:41-44).\n\nSome missionaries think they cannot give because they live on support. Loren says that people who live by faith need to be givers too. Giving keeps our hearts free and open to God."
+    },
+    {
+     "emoji": "🙌",
+     "title": "Learning to receive",
+     "body": "For many people, receiving is harder than giving. When we give, we feel strong and generous. When we receive, we may feel weak, ashamed or in debt to the other person. Loren says that learning to receive well is part of living by faith.\n\nPride can block God's provision. Sometimes God sends help through a friend, a church or a stranger, and we refuse it because we do not want to look needy. But if God is the giver, then turning away His gift is not humility. It can be a form of pride.\n\nReceiving well means accepting a gift as from God's hand, while also thanking the person He used. It means saying thank you clearly and remembering that person in prayer. Paul did this in his letter to the Philippians. He thanked them for their gifts and told them that God would meet all their needs too (Philippians 4:10-19).\n\nIt also means not becoming proud or careless when we receive. A gift is a trust. We should use it for its purpose and handle it with care.\n\nReceiving also gives others the joy of giving. When we let people share in God's work through their gifts, we are not taking from them. We are inviting them into the blessing."
+    },
+    {
+     "emoji": "🗣️",
+     "title": "Telling people your needs",
+     "body": "Should a missionary tell people about financial needs, or tell only God? Christians have answered this question in different ways. Some faithful missionaries chose to tell no one but God, and God provided for them in amazing ways. Others shared their needs openly with churches and friends.\n\nLoren says that both can be right. The question is not which method is more spiritual. The question is what God is asking me to do. Sometimes God may lead us to tell only Him. At other times He may lead us to share clearly and to ask people to give.\n\nIn the Bible, Paul sometimes asked churches to give, for example for the poor believers in Jerusalem (2 Corinthians 8 and 9). At other times he worked with his own hands so that he would not be a burden to anyone.\n\nWhat matters most is honesty and a pure motive. We should never manipulate people. That means no guilt, no pressure, no making the need sound bigger than it is, and no hidden hints while we say we trust only God. People should be free to say no.\n\nWhen we share our needs in the right spirit, we are not begging. We are telling the story of what God is doing and inviting others to join in. And our trust stays in God, not in the people we asked."
+    },
+    {
+     "emoji": "🤲",
+     "title": "Goers and senders are partners",
+     "body": "Missions needs two kinds of people: those who go, and those who send. Paul asked how people can hear the good news unless someone is sent to them (Romans 10:14-15). Senders are not less important than goers. Both are part of the same work.\n\nPaul thanked the believers in Philippi for their partnership in the gospel from the first day (Philippians 1:5). They did not travel with him, but they shared in his work through their prayers and their gifts. In the same way, people who pray and give today share in the fruit of the mission.\n\nThis changes how a missionary thinks about support raising. You are not asking for charity for yourself. You are inviting people into a partnership in God's work. Paul told the Philippians that he was not looking for a gift for his own sake. He wanted good fruit to grow in their account before God (Philippians 4:17).\n\nPartnership is a relationship, and good partners communicate. Missionaries can share news, stories and prayer requests, report honestly, say thank you and pray for their supporters. Supporters, in turn, pray, give and encourage. Neither side is above the other. Together they help to finish the task Jesus gave His church."
+    },
+    {
+     "emoji": "⚖️",
+     "title": "Neither poverty nor greed",
+     "body": "Loren warns against two opposite mistakes about money.\n\nThe first mistake is to think that poverty is holy. Some Christians believe that having little makes them more spiritual, or that wanting anything is wrong. They may feel guilty when God blesses them, or look down on believers who have more. But the Bible does not teach that being poor in itself makes us holy. God cares deeply for the poor, and He is also generous to His children.\n\nThe second mistake is to think that God's main plan is to make every believer rich. Some teaching says that if you have enough faith, or give enough, you will always have wealth. This can turn God into a tool for getting what we want. Paul warned that the love of money is a root of all kinds of evil, and that godliness with contentment is great gain (1 Timothy 6:6-10).\n\nLoren's answer starts with a simple question: what is the money for? Money is a tool to do God's will and to bless others. Sometimes God gives a lot, so we can give a lot. Sometimes we have little, and we learn to trust Him.\n\nPaul said he had learned to be content in every situation, with much or with little, through Christ who gave him strength (Philippians 4:11-13). That is the goal: freedom from the control of money."
+    },
+    {
+     "emoji": "⏳",
+     "title": "When the money does not come yet",
+     "body": "What happens when we pray and the money does not come? Loren does not pretend this never happens. In YWAM's story there were many times of waiting, when bills were due and there was almost nothing in the bank.\n\nHe encourages people in that place to ask God some honest questions. Am I really doing what God told me to do? Is there sin, or a broken relationship, that I need to make right? Have I been faithful with what He already gave me? Is there something He wants me to give? Sometimes God uses a lack of money to bring us back to Him, or to change our direction.\n\nBut sometimes the delay is not a sign that something is wrong. It is a test of faith. God may be teaching us to keep trusting when we cannot see. Many stories in the Bible include long waits before the answer came.\n\nThe title of the book points to this. Living on the edge is not comfortable. It is the place where we cannot see the end of the road and must depend on God. It is also the place where faith grows, and where we see God do things only He can do.\n\nSo in the waiting, keep obeying, keep giving, keep thanking God, and do not give up."
+    },
+    {
+     "emoji": "📒",
+     "title": "Honesty with every gift",
+     "body": "For people who live by faith, honesty with money is very important. Others have trusted us with gifts that came from their hard work. Loren teaches that we must be faithful with every one of them.\n\nThis means using gifts for the purpose they were given. If someone gives for an outreach, that money should go to the outreach. It means keeping simple and honest records, paying bills when we say we will and being careful about debt. It means being open and accountable to leaders, and giving honest reports to supporters.\n\nHonesty also covers how we live. If people see a missionary who complains, wastes money or shows off, they lose trust in the message. If they see someone who is content, generous and careful, they see God's faithfulness.\n\nIt also means that our words and our trust match. We cannot say that we trust God alone, and then quietly push people for money. We cannot say that God provides, and then live in constant worry.\n\nJesus asked who will trust us with true riches if we are not faithful with worldly wealth (Luke 16:11). God watches how we handle small amounts. A mission that is honest with money builds trust with churches and communities, and that trust opens doors for the good news."
+    }
+   ],
+   "tryThis": [
+    "Before you buy something you do not really need this week, stop and ask God if this is His plan for His money.",
+    "Ask God what to give this week, even if it is small, and give it with a cheerful heart.",
+    "Send a short thank-you message to one person who has supported you or blessed you."
+   ],
+   "forUs": "At GP, many of us live this book every month. International staff raise support from churches and friends at home. Khmer staff also trust God for their needs, and many give generously from very little. This book reminds us that we are all living by faith together, whatever our income. No one is second class. Talk about money honestly and kindly, without shame. When you share your needs with supporters, tell real stories from DTS, outreach, the community schools, the cafe and our youth work, and say thank you often. Remember that your supporters are partners, not just donors, so pray for them by name. Learn to receive well, too, when a teammate or a visiting outreach team blesses you. Let giving be part of base life: in offerings, in sharing meals and in helping a teammate who is in need. When money is late, pray together and keep trusting. Be careful and honest with every riel and every dollar, because they were given to God. And as Khmer and international staff learn each other's language and culture, let generosity be a language we all speak.",
+   "oneLine": "God is the source: hear Him, give freely, receive humbly and be honest with every gift.",
+   "cover": {
+    "bg": "marigold",
+    "fg": "ink",
+    "a": "paper",
+    "b": "ink",
+    "motif": "edge",
+    "layout": "top",
+    "font": "display",
+    "upper": true
+   }
+  },
+  {
+   "id": "intimate-friendship-with-god",
+   "title": "Intimate Friendship with God",
+   "author": "Joy Dawson",
+   "year": 1986,
+   "shelf": "ywam",
+   "mins": 10,
+   "vibe": "God has close friends. This book shows the way to become one.",
+   "bigIdea": "Can a person really be a close friend of God? Joy Dawson, a Bible teacher from New Zealand who taught for many years with Youth With A Mission, says yes. The Bible calls Abraham the friend of God, and it says God spoke with Moses face to face, as a man speaks with his friend. Jesus told his disciples that he no longer called them servants but friends, because he had shared with them what he heard from his Father (John 15:15). But Joy points to a key that many Christians miss. Psalm 25:14 says the Lord shares his secrets, or his close friendship, with those who fear him. So the way into deep friendship with God is the fear of the Lord. This is not being scared of God. It is a deep respect for his holiness that leads us to hate sin, as God hates it. In this book Joy explains what the fear of the Lord is, how we can grow in it, and the many blessings it brings. Her message is simple and strong: God wants intimate friends, and he tells us clearly how to become one.",
+   "insights": [
+    {
+     "emoji": "🤝",
+     "title": "God is looking for friends",
+     "body": "Many Christians know a lot about God, but they do not know him as a close friend. Joy Dawson believes God wants much more for us. The Bible shows that real friendship with God is possible. God called Abraham his friend (Isaiah 41:8, James 2:23). Moses met with God, and God spoke to him face to face, like a man speaks to a friend (Exodus 33:11).\n\nJesus took this even further. On the night before he died, he told his disciples that he no longer called them servants. A servant does not know what his master is doing. Instead he called them friends, because he had told them everything he heard from his Father (John 15:15).\n\nJoy points out that friendship goes both ways. We share our hearts with God, and he shares his heart with us. A friend does not only come to ask for things. A friend wants to know the other person, and enjoys being with them. Like any friendship, this one needs time, honesty and trust.\n\nSo the question is not whether God wants intimate friends. He clearly does. The real question is what kind of person he chooses to share his heart with."
+    },
+    {
+     "emoji": "🗝️",
+     "title": "The key that opens the door",
+     "body": "Joy's whole book grows out of one verse. Psalm 25:14 says that the secret of the Lord, or his close friendship, is with those who fear him, and he will show them his covenant. So the fear of the Lord is the key to intimate friendship with God.\n\nThis makes sense when we think about our own friendships. We do not tell our deepest secrets to everyone. We share them with people we trust, people who care about what we care about. God is the same. He shares his plans and his heart with those who take him seriously, love what he loves and hate what he hates.\n\nThe Bible gives examples. Before God judged Sodom, he asked whether he should hide from Abraham what he was about to do (Genesis 18:17). Then he told him, and Abraham prayed for the city. The prophet Amos says that God does nothing without first revealing his secret to his servants the prophets (Amos 3:7).\n\nJoy wants us to see that this is not only for famous Bible heroes. Any believer who learns to fear the Lord can know God's heart in this close way."
+    },
+    {
+     "emoji": "🔥",
+     "title": "What the fear of the Lord really is",
+     "body": "Many people hear the words fear of the Lord and think of being scared of God, as if he were waiting to punish us. Joy says that is not what the Bible means. The Bible says perfect love drives out the kind of fear that is about punishment (1 John 4:18). God's children do not need to live in terror.\n\nInstead, the fear of the Lord is a deep awe and respect for who God is. It comes from seeing his holiness, his power, his justice and his great love. The clearest definition, Joy says, is in Proverbs 8:13: the fear of the Lord is to hate evil. When we truly see how holy God is, we begin to feel about sin the way he feels about it.\n\nThis is not only an Old Testament idea. The early church grew as it lived in the fear of the Lord and in the comfort of the Holy Spirit (Acts 9:31). Paul told believers to make their holiness complete out of reverence for God (2 Corinthians 7:1).\n\nSo the fear of the Lord and the love of God belong together. The more we understand both, the closer we come to him."
+    },
+    {
+     "emoji": "💔",
+     "title": "Hating sin the way God does",
+     "body": "If the fear of the Lord is to hate evil, then we must ask honestly: do I hate sin? It is easy to dislike sin in other people, or to dislike the trouble it causes us, without really hating it in our own lives.\n\nGod hates sin because it destroys the people he loves and because it goes against his holy character. When King David saw his own sin, he told God that he had sinned against him above all (Psalm 51:4). David understood that sin is not just a broken rule. It wounds the heart of God.\n\nHating sin does not mean hating sinners. God loves every person, and so must we. But we cannot be close friends with God and stay comfortable with the things that grieve him. Proverbs 8:13 names some of them: pride, arrogance, evil ways and twisted speech. So our words matter too, like gossip, exaggeration and unkind jokes.\n\nThe answer is not to try harder in our own strength. It is to ask God to give us his view of sin, to confess quickly, and to turn away from it with his help."
+    },
+    {
+     "emoji": "🙇",
+     "title": "Pride is first on the list",
+     "body": "In Proverbs 8:13, pride and arrogance come first among the things God hates. Pride deserves special attention, because it is at the root of so much other sin. Pride says I know best. It wants credit, it hides weakness and it finds it hard to say sorry. James writes that God opposes the proud but gives grace to the humble (James 4:6).\n\nHumility is the opposite. A humble person is honest about who they really are, without pretending to be better than they are. They are willing to be known, even in their weak areas. They admit when they are wrong and ask for help. They do not need to look good in front of others.\n\nGod promises to come close to such people. Isaiah 66:2 says God looks with favour on the one who is humble and sorry for sin, and who trembles at his word. That last phrase is another picture of the fear of the Lord: taking God's word so seriously that we are ready to obey it.\n\nThe fear of the Lord and humility grow together. As we see how great and holy God is, our pride shrinks, and there is more room for friendship with him."
+    },
+    {
+     "emoji": "🏃",
+     "title": "Friends of God obey him",
+     "body": "Jesus said his friends are those who do what he commands (John 15:14). For Joy, this is a very practical sign of the fear of the Lord. If we truly respect God, we will do what he says.\n\nJoy calls believers to obey God fully, not just partly, and quickly, not someday. Obeying only the parts we like, or waiting until it feels easy, is not true obedience. A person who fears the Lord does not argue or bargain with God. They trust that his commands come from his love and wisdom, even when they do not understand.\n\nObedience is not a way to earn God's love. We are loved before we do anything. But obedience is how friendship with God grows. Think of an everyday example: if a friend keeps breaking their promises, trust grows thin. When they keep their word, the friendship grows deeper. In the same way, God entrusts more of his heart to those who show they will act on what he shares.\n\nSo the next time God speaks through his Word or by his Spirit, the simplest way to grow closer to him is to say yes and do it."
+    },
+    {
+     "emoji": "🧭",
+     "title": "Knowing God's ways, not only his acts",
+     "body": "Psalm 103:7 says that God made his ways known to Moses, but the people of Israel only saw his acts. Joy points to this verse. The people saw the miracles: the sea opened, food came from heaven, water came from a rock. But Moses came to know why God did things. He understood God's character.\n\nJoy encourages every believer to want this deeper knowledge. It is good to see God do great things, but it is better to know the one who does them. When we study God's character in the Bible, his holiness, justice, faithfulness, mercy and love, we learn how he thinks. That helps us trust him when life does not make sense.\n\nThis also helps with guidance. Psalm 25:12 says that God will teach the person who fears him the way he should choose. A good friend often knows what the other would want, even before asking. In the same way, as we know God's ways, we become more able to recognise his voice and his leading.\n\nFriendship with God is not built on exciting experiences alone. It is built on knowing who he really is."
+    },
+    {
+     "emoji": "⛏️",
+     "title": "How to grow in the fear of the Lord",
+     "body": "The fear of the Lord does not come automatically. Joy shows from Proverbs 2:1–5 that God gives it to those who seek it. The passage says that if we receive God's words, treasure his commands, cry out for understanding, and search for it like silver or hidden treasure, then we will understand the fear of the Lord.\n\nFrom this, some simple steps come out. First, ask God for it. He is glad to give it. Second, spend time in his Word, not just reading quickly, but searching to know him. Third, study his character, especially his holiness. Fourth, be willing for the Holy Spirit to show you sin as God sees it, and respond with real sorrow and change.\n\nThe picture of searching for treasure is important. People who look for gold or silver work hard. They dig, they wait and they do not give up easily, because they know the treasure is worth it. The fear of the Lord is worth that same kind of effort.\n\nThis is good news. No one is shut out. Anyone who hungers for God and is willing to seek him can grow in the fear of the Lord."
+    },
+    {
+     "emoji": "🛡️",
+     "title": "Fearing God frees us from fearing people",
+     "body": "Proverbs 29:25 says that the fear of man brings a snare, but the one who trusts in the Lord is safe. Everyone fears something. If we do not fear God, we will end up fearing people: their opinions, their anger or their rejection.\n\nThe fear of man is a quiet trap. It makes us stay silent when we should speak. It makes us say yes when God is saying no. It makes us care more about how we look than about what God thinks. It can even stop us obeying God, because we worry what family, friends or leaders will say.\n\nThe fear of the Lord is the answer. When God's opinion matters most to us, other people's opinions lose their power over us. We can still respect and honour people, and we should. But we are no longer controlled by them. We can love them freely, because we are not living for their approval.\n\nJesus lived this way. He loved people deeply, yet he did not change his message to please the crowds or the religious leaders. His security came from his Father. As we grow in fearing God, we find the same freedom."
+    },
+    {
+     "emoji": "🎁",
+     "title": "The rewards of fearing God",
+     "body": "Joy shows that the Bible makes many promises to those who fear the Lord. It is the beginning of wisdom (Proverbs 9:10). It gives strong confidence and a safe place for our children (Proverbs 14:26). It is a fountain of life that keeps us from the traps of death (Proverbs 14:27). Together with humility, it brings honour and life (Proverbs 22:4).\n\nThe Psalms add more. The angel of the Lord camps around those who fear him and rescues them (Psalm 34:7). The eyes of the Lord are on those who fear him and hope in his love (Psalm 33:18). As a father has compassion on his children, the Lord has compassion on those who fear him (Psalm 103:13).\n\nThese promises show that fearing God is not a heavy, gloomy way to live. It is the safest and happiest place a person can be. It brings protection, wisdom, guidance and peace.\n\nBut the greatest reward is God himself. The fear of the Lord leads us to the very thing our hearts were made for: knowing God closely, as a friend, and being trusted with his heart."
+    }
+   ],
+   "tryThis": [
+    "Read Proverbs 2:1–5 each day this week, and ask God to teach you the fear of the Lord.",
+    "Ask the Holy Spirit to show you one sin you have treated lightly. Confess it, and ask God to help you see it as he does.",
+    "Spend 15 minutes with God as a friend this week: tell him what is on your heart, then be quiet and listen."
+   ],
+   "forUs": "Many of us first heard Joy Dawson's teaching in a DTS, and her call to fear the Lord is still at the heart of YWAM. At GP it is easy to be busy for God and forget to be close to him. Classes, outreach plans, the cafe, the community schools and visiting teams all need us. This book reminds us that God wants friends, not just workers.\n\nThe fear of the Lord also shapes daily life on base. It means honesty when no one is watching: in the kitchen, with money, and in the stories we tell in support letters. It means confessing quickly when we hurt a teammate, whether Khmer or international. It means humility across cultures, being willing to be known and corrected.\n\nFearing God more than people also brings freedom. Khmer believers may face pressure from family, and international staff may worry about supporters or leaders. When God's opinion matters most, we can love everyone without being controlled by them. As we seek God together in worship and intercession, let us ask him to make GP a base full of his friends.",
+   "oneLine": "Hate what God hates, love what he loves, and he will share his heart with you as a friend.",
+   "cover": {
+    "bg": "plum",
+    "fg": "paper",
+    "a": "marigold",
+    "b": "paper",
+    "motif": "flame",
+    "layout": "top",
+    "font": "serif"
+   }
+  },
+  {
+   "id": "intercession-thrilling-and-fulfilling",
+   "title": "Intercession, Thrilling and Fulfilling",
+   "author": "Joy Dawson",
+   "year": 1997,
+   "shelf": "ywam",
+   "mins": 10,
+   "vibe": "Prayer that begins by listening to God, not by reading him our list.",
+   "bigIdea": "Many people find prayer meetings dull. They hear the same requests, said in the same way, week after week. Joy Dawson, a Bible teacher who taught for decades with Youth With A Mission, believes intercession should be one of the most exciting parts of the Christian life. Intercession means standing between God and people, asking God to act in their lives and in the nations. The Bible says Jesus always lives to intercede for us (Hebrews 7:25). So when we intercede, we share in the very work Jesus is doing right now. The heart of Joy's teaching is that God himself should direct our prayers. Instead of coming with our own list, we prepare our hearts and let the Holy Spirit lead. Her simple principles have been taught across YWAM for many years: get a clean heart, depend on the Holy Spirit, deal with the enemy, lay down your own ideas, praise God in faith, wait on him in silence, pray what he shows you, use the Bible and finish with thanks. Prayer like this is thrilling, because God shows us his heart. It is fulfilling, because we work with him.",
+   "insights": [
+    {
+     "emoji": "🌍",
+     "title": "A privilege, not a duty",
+     "body": "Joy wants us to see intercession as an honour. God does not need our help, but he has chosen to work through the prayers of his people. In the Bible, he looks for someone to stand in the gap for others (Ezekiel 22:30).\n\nAbraham prayed for the city of Sodom, and God listened (Genesis 18). When Israel made the golden calf, Moses pleaded for the people, and God held back the judgment he had spoken of (Exodus 32). Daniel confessed the sins of his nation and asked God to restore it (Daniel 9). These men were close to God, and they cared about what he cared about.\n\nThe greatest intercessor is Jesus. The New Testament says he is at the right hand of God, praying for us (Romans 8:34). When we intercede, we join him in that work.\n\nThat is why Joy's first step is to praise God for the privilege of sharing in this ministry. Before we ask for anything, we stop and thank him. It changes our attitude. Prayer is no longer a heavy job we have to finish. It becomes an invitation to work alongside the King of the universe."
+    },
+    {
+     "emoji": "🧼",
+     "title": "First, a clean heart",
+     "body": "Joy teaches that the next step is to make sure our hearts are clean before God. Psalm 66:18 says that if we hold on to sin in our hearts, the Lord will not listen. Unconfessed sin blocks our prayers like a wall.\n\nSo before we pray for others, we give the Holy Spirit time to search us. We can pray like David: search me, God, and know my heart, and see if there is any wrong way in me (Psalm 139:23–24). Then we wait quietly and let him bring things to mind. It might be a harsh word, a bad attitude, some pride or a hidden habit. It might be unforgiveness toward someone. Jesus said that when we pray, we must forgive anyone we have something against (Mark 11:25).\n\nWhen the Spirit shows us something, we confess it simply and honestly, and we receive God's forgiveness. The Bible promises that if we confess our sins, he is faithful and just to forgive us and make us clean (1 John 1:9).\n\nThis is not about digging for guilt. It is about being honest with God, so that nothing stands between us. A clean heart makes clear prayer possible."
+    },
+    {
+     "emoji": "🕊️",
+     "title": "We need the Holy Spirit",
+     "body": "We may think we already know how to pray. But Paul says that we do not know what we ought to pray for, and the Spirit helps us in our weakness (Romans 8:26). Joy teaches that we should admit this openly before we begin.\n\nThis is a step of humility. We tell God that without his Spirit, our prayers will only come from our own thinking. Then we ask him to fill us and control us by his Holy Spirit, as the Bible tells us to be filled with the Spirit (Ephesians 5:18). And we receive this by faith, without waiting for a special feeling. God has promised to give the Spirit to those who ask (Luke 11:13).\n\nWhy does this matter? Our natural minds are limited. We see only a small part of any situation. We do not know what is happening in a person's heart, or what God is doing behind the scenes in a nation. The Spirit knows everything, and he knows the will of God.\n\nWhen the Holy Spirit leads our prayers, we pray in line with God's plans. This is where the thrill of intercession begins: prayer that starts in God's heart, not in ours."
+    },
+    {
+     "emoji": "⚔️",
+     "title": "Deal with the enemy",
+     "body": "The Bible is clear that we have a real enemy. Satan does not want God's people to pray, because prayer moves God's hand. He tries to distract us, discourage us, fill our minds with other thoughts, or make us doubt that God will speak.\n\nJoy teaches that we should deal firmly with the enemy before we start to intercede. James 4:7 says to submit to God and resist the devil, and he will flee. We do this in the name of Jesus, who defeated him on the cross. We use the sword of the Spirit, which is the word of God (Ephesians 6:17). We remind ourselves that Jesus has all authority in heaven and on earth (Matthew 28:18).\n\nThis step does not need to be long. Our focus is not on the enemy but on God. It is a short, clear step of faith. We take our place under Christ's victory, and we refuse to let the enemy control the prayer time.\n\nThen we move on. With the door closed to the enemy, we can turn our full attention to God. We can expect him to lead us clearly, because he is not a God of confusion but of peace (1 Corinthians 14:33)."
+    },
+    {
+     "emoji": "⚰️",
+     "title": "Die to your own ideas",
+     "body": "This step is often the hardest. We usually come to prayer already knowing what we want to pray about. We have our burdens, our worries and our ideas about what God should do. Joy teaches that we need to lay these down and die to them.\n\nThe Bible says to trust the Lord with all your heart and not lean on your own understanding (Proverbs 3:5–6). God's thoughts and ways are higher than ours (Isaiah 55:8–9). Our own ideas, even good ones, can get in the way of what God wants to do.\n\nThis does not mean our concerns are unimportant to God. He cares about every one of them. But he sees the whole picture, and he knows what is most important to pray for right now. Sometimes the subject he leads us to is one we would never have chosen. Sometimes he leads us to pray in a very different way about a need we already know.\n\nSo we give our list to God and say: Lord, I lay down my own plans for this time. Show me what is on your heart. This is how the prayer meeting becomes his meeting, not ours."
+    },
+    {
+     "emoji": "🎶",
+     "title": "Praise God in faith",
+     "body": "Before God has shown us anything, Joy encourages us to praise him in faith. We thank him in advance for the prayer time we are about to have. Why? Because he is a wonderful God, and he will do something that fits his wonderful character.\n\nPraise has power. It lifts our eyes from the problems to the one who can solve them. It builds faith, and the Bible says that without faith it is impossible to please God, because whoever comes to him must believe that he exists and rewards those who seek him (Hebrews 11:6). Praise also reminds us who is in charge. Problems that seemed huge become smaller next to a great God.\n\nPraise also shows our trust. When we praise before we see the answer, we are saying that we believe God is good and that he will lead us. This is very different from coming to God anxious and unsure.\n\nThink of an everyday example. A child who trusts a loving father does not worry about whether the father will listen. The child simply expects good things. Praise puts us in that same place of happy trust before our Father in heaven."
+    },
+    {
+     "emoji": "👂",
+     "title": "Wait on God in silence",
+     "body": "After preparing our hearts, we wait. Joy teaches that we should wait before God in silent expectation, listening for his direction. The psalmist says that his soul waits in silence for God alone, and his hope comes from him (Psalm 62:5). Micah says he will watch for the Lord and wait for God (Micah 7:7).\n\nMany of us find silence hard, especially in a group. It can feel awkward, and someone usually rushes to fill the gap. But Joy believes God wants to speak, and that we need to give him space. Jesus said his sheep hear his voice (John 10:27). God can guide us in many ways: a thought that comes clearly to mind, a Bible verse, a picture, a name, a country, or a deep burden in our hearts.\n\nAt first we may not be sure whether a thought is from God. That is normal. We learn by practice, by checking with the Bible, and by noticing when several people in a group sense the same thing.\n\nWaiting is not wasted time. It shows that we trust God to lead, and that his ideas matter more than ours."
+    },
+    {
+     "emoji": "🗣️",
+     "title": "Pray what God shows you",
+     "body": "When God brings something to mind, Joy teaches that we should pray it out in obedience and faith, even if it seems small or strange. We trust that the Good Shepherd is leading, and we keep asking him for more direction as we go.\n\nShe also gives wise advice for groups. Do not move quickly to the next subject. Stay with one burden until God has finished what he wants to say about it. Several people may pray about the same thing in turn, each adding a little more as the Spirit leads. In this way the whole group moves together, instead of each person praying through their own separate list.\n\nEveryone can take part. New believers, quiet people and people praying in a second language all have something to give. Short, simple prayers make it easier for others to join in. Jesus said that when two or three agree on earth about something they ask, his Father will do it (Matthew 18:19).\n\nThe result can be surprising. A group that started with no plan may end up praying for a nation, a leader or a person they never expected. That is part of what makes intercession thrilling."
+    },
+    {
+     "emoji": "📖",
+     "title": "Keep your Bible open",
+     "body": "Joy encourages intercessors to have their Bibles with them when they pray. God often gives direction or confirmation through his Word. The psalmist says that God's word is a lamp to our feet and a light to our path (Psalm 119:105).\n\nDuring intercession, the Holy Spirit may bring a verse or passage to mind. It might show us how to pray, or give us a promise to stand on. We can then pray that Scripture back to God, asking him to do what he has said. Praying God's word is powerful, because we know it agrees with his will. And when we pray according to his will, we can be sure he hears us (1 John 5:14–15).\n\nThe Bible also acts as a safety check. Anything we sense in prayer should agree with what God has already said in Scripture. God never contradicts himself. If an impression goes against the Bible, we can be sure it did not come from him.\n\nThis is one reason why knowing the Bible well makes us better intercessors. The more of God's Word we carry in our hearts, the more the Spirit has to draw on when he leads us in prayer."
+    },
+    {
+     "emoji": "🙌",
+     "title": "Finish with thanks, and keep God's secrets",
+     "body": "When God stops bringing things to mind, the prayer time is over. Joy teaches that we should end by praising and thanking him for what he has done. Romans 11:36 says that everything comes from him, through him and back to him, and that the glory belongs to him forever. Our prayer started with God, was led by God, and now ends with honour to God.\n\nJoy also adds a careful warning. Our hearts easily lean toward pride. If God has shown us something special during intercession, we may want to tell everyone about it. But that can feed pride and take glory away from God. God shares his secrets with those who can keep them. So unless he clearly tells us to share something, it is usually wise to stay silent.\n\nThis guards our hearts and keeps intercession pure. It is not about being seen as a powerful prayer warrior. It is about friendship with God and love for the people we pray for.\n\nIntercession done this way is thrilling, because we never know what God will lead us to pray. And it is fulfilling, because we know we have prayed his will, with him and for his glory."
+    }
+   ],
+   "tryThis": [
+    "Before your next prayer time, spend five quiet minutes asking the Holy Spirit to search your heart, and confess what he shows you.",
+    "In one group prayer time this week, lay down your own list and wait two or three minutes in silence before anyone prays.",
+    "Pray one Bible promise back to God for a person or a nation he puts on your heart."
+   ],
+   "forUs": "Intercession is part of YWAM's story, and Joy Dawson's principles are still taught in many DTSs today. At GP we pray for Cambodia, for our neighbours, the community schools, the cafe, our youth work and the outreach teams we host. These principles can keep our prayer times from becoming a tired list of needs.\n\nPraying together across cultures is a gift. Khmer staff can pray in Khmer and international staff in their own languages, because God understands every one. Silence may feel uncomfortable at first, for some cultures more than others, but it gives room for everyone to hear God, not only the quickest speakers. Leaders can explain the steps clearly to new DTS students, and then let them take turns leading.\n\nLiving by faith also gives us many reasons to pray. We will often bring our own needs to God, and he cares about them. But we can also lay them down and ask what is on his heart for this nation. As we wait on him together, Khmer and international, young and old, GP can become a place where God shares his plans and we see him answer.",
+   "oneLine": "Clean your heart, lay down your list, and let God lead the prayer.",
+   "cover": {
+    "bg": "teal",
+    "fg": "paper",
+    "a": "paper",
+    "b": "marigold",
+    "motif": "incense",
+    "layout": "top",
+    "font": "serif"
+   }
+  },
+  {
+   "id": "the-father-heart-of-god",
+   "title": "The Father Heart of God",
+   "author": "Floyd McClung",
+   "year": 1985,
+   "shelf": "ywam",
+   "mins": 10,
+   "vibe": "Maybe you see God the way you saw your father. The real Father is far kinder than you think.",
+   "bigIdea": "Many Christians believe that God loves the world, but they find it hard to believe that he loves them. They know about God, but they do not feel safe with him. Floyd McClung wrote this book for people like that. Floyd and his wife Sally served for many years with Youth With A Mission in Amsterdam, among people whose lives were full of hurt. Again and again he saw that a person's picture of God was shaped by the people who raised them, especially their father. If your father was harsh, absent or hard to please, it is easy to think that God is the same. Floyd's big message is simple: God is not like the fathers who failed us. Jesus came to show us what the Father is really like, and he is kind, patient, faithful and full of love. The book looks honestly at the wounds many of us carry: rejection, fear, guilt and old hurts. It asks hard questions, like why God allows suffering. And it shows a way to healing: being honest with God, forgiving, and slowly learning to receive his love as his sons and daughters.",
+   "insights": [
+    {
+     "emoji": "👨‍👧",
+     "title": "God is a Father, and he is good",
+     "body": "Jesus spoke about God as Father again and again. He taught his friends to pray to 'our Father'. He called God 'Abba', a warm family word that a child would use. And when Philip asked to see the Father, Jesus answered that anyone who had seen him had seen the Father (John 14:9).\n\nFloyd says this is the key to knowing what God is like. We do not have to guess. We look at Jesus. We see him touch people no one else would touch. We see him welcome children, forgive sinners and weep with his friends. That is the Father's heart, shown in a human life.\n\nThis matters because many people carry a picture of God that is not true. Some see him as a strict judge who is waiting for them to fail. Others see him as far away and too busy to care. Others think he is kind to other people, but not to them.\n\nFloyd invites us to let Jesus correct our picture. God is not cold or distant. He is a Father who made us, wants us and delights in us. Everything else in the book grows from this truth."
+    },
+    {
+     "emoji": "🪞",
+     "title": "Our fathers shape our picture of God",
+     "body": "Floyd noticed that when people talk about God, they often describe their own father without knowing it. A child first learns about love, trust and safety at home. So the father a child grows up with often becomes the lens through which they later see God.\n\nFathers can fail their children in many ways. Some are absent. They left the family, or they were there in body but never really present. Some are harsh. They shouted, hit or criticized, and nothing was ever good enough. Some are weak and passive, and do not protect or guide their children. Some love their children, but rarely show it with words or touch.\n\nEach of these can leave a mark. A person with an absent father may feel that God is far away. A person with a harsh father may live in fear of God's anger. A person who could never please their father may try very hard to earn God's love.\n\nFloyd is not trying to blame parents. Many fathers were hurt themselves, and many did their best. But we need to be honest about the picture of God we carry, because we cannot change what we refuse to look at."
+    },
+    {
+     "emoji": "🏃",
+     "title": "The father who ran",
+     "body": "Jesus told a story about a father and two sons (Luke 15:11–32). The younger son asked for his share of the family money early, and left home. He wasted everything and ended up feeding pigs, hungry and ashamed. So he decided to go back and ask his father to take him as a hired worker.\n\nBut while he was still far away, his father saw him. The father ran to him, hugged him and kissed him. He gave him a robe, a ring and sandals, and he threw a party. His son had come home.\n\nThis story shows the Father's heart. In that culture, it was not normal for an older man to run. But this father did not care about looking important. He cared about his son. He had been watching the road.\n\nThe story also has an older son, who stayed home and worked hard, but was angry and cold. He lived near his father but did not know his heart. Many faithful church people are like him: busy serving, but not enjoying the Father's love. The father went out to him too, and gently invited him in."
+    },
+    {
+     "emoji": "🩹",
+     "title": "Hurts are real, and God cares",
+     "body": "Some Christians think that if they have enough faith, they should not feel pain from the past. So they hide it, even from themselves. Floyd says this does not bring healing. Hurts that are buried do not die. They come out later as anger, fear, coldness or broken relationships.\n\nEmotional hurts are wounds of the heart. They can come from abuse, from words spoken in anger, from a parent who left, from being ignored, or from being let down by people we trusted, even in church.\n\nThe first step to healing is honesty. God already knows what happened, and he is not shocked. We can bring our pain to him in plain words: this happened, and it hurt me. The Psalms are full of people who did this. They cried out, asked hard questions and told God how they really felt.\n\nHealing is often a journey, not one moment. God may bring up old memories slowly, as we are ready. He may use a friend, a counsellor or a time of prayer. But he wants us to be whole, and he is patient as he works in us."
+    },
+    {
+     "emoji": "💔",
+     "title": "Rejection and what it grows",
+     "body": "Rejection is the feeling, or the fact, of not being wanted or accepted. Floyd saw how deeply it marks people. A child who feels unwanted, a young person who is laughed at, a wife who is left: each of them can learn to believe that they are not worth loving.\n\nRejection often grows in hidden ways. Some people who have been rejected start to reject themselves. They dislike how they look or who they are. Some push others away first, so they will not be hurt again. Some become hard and rebellious. Others become people-pleasers, working very hard to be liked. Many find it hard to trust anyone, including God.\n\nFloyd points us to Jesus, who knew rejection better than anyone. He was rejected in his hometown, misunderstood by his family, left alone by his friends and killed by the leaders of his own people. Isaiah describes him as despised and rejected (Isaiah 53:3). So Jesus understands. He does not stand far away from our pain.\n\nThe answer to rejection is not to work harder for acceptance. It is to receive the acceptance God already gives us in Christ. He has chosen us and he wants us, not because we earned it, but because he loves us."
+    },
+    {
+     "emoji": "🕊️",
+     "title": "Forgiving the people who hurt us",
+     "body": "Healing from hurt almost always includes forgiveness. Floyd is honest that this is hard. When someone has wounded us deeply, forgiving them can feel unfair, as if we are saying that it did not matter.\n\nBut forgiveness does not mean pretending. It does not mean saying the wrong was small, or that we must trust the person again straight away. It means we choose to let go of our right to punish them. We hand the case over to God, who is a fair judge.\n\nJesus taught that we forgive because we have been forgiven (Matthew 6:12–15). And forgiveness is also for our own good. Bitterness ties us to the person who hurt us. It keeps the wound open and slowly poisons our heart. When we forgive, we are set free, even if the other person never changes.\n\nFor many people, this means forgiving their father or mother. It may also mean forgiving teachers, leaders or others who had power over them. Forgiveness is a choice, and feelings often follow later. Sometimes we need to forgive again and again, as old pain comes back. Each time, we can ask God to help us release it into his hands."
+    },
+    {
+     "emoji": "❓",
+     "title": "Is God to blame?",
+     "body": "When life is painful, many people ask: if God is a loving Father, why did he let this happen? Floyd does not avoid this question.\n\nHe explains that God made people with real freedom to choose. Love is not possible without freedom. But freedom means that people can also choose evil, and their choices hurt others. Much of our pain comes from sin, our own and other people's. Some comes from the enemy, who comes to steal, kill and destroy (John 10:10). And we live in a broken world, where sickness and disaster happen.\n\nGod is not the author of evil. He grieves over it more than we do. Jesus wept at the grave of his friend Lazarus, even though he knew he was about to raise him.\n\nThis does not answer every question. Some things we will not understand in this life. But we can look at the cross. There God did not stay far away from suffering. He entered it himself, in Jesus, to defeat evil and bring us home. A God who would do that can be trusted, even when we do not understand."
+    },
+    {
+     "emoji": "😰",
+     "title": "Free from fear",
+     "body": "Fear is one of the most common fruits of a wounded heart. Fear of failure, fear of people, fear of being left, fear of the future, and even fear of God himself. Many people serve God because they are afraid he will punish them if they get it wrong.\n\nFloyd shows that this is not the relationship God wants. The Bible says that perfect love drives out fear, because fear has to do with punishment (1 John 4:18). Paul writes that we did not receive a spirit that makes us slaves to fear again. We received the Spirit who makes us God's children, so we can call him Abba, Father (Romans 8:15).\n\nFear says: you are on your own, so you must protect yourself. The Father's love says: you are mine, and I am with you.\n\nThe way out of fear is not to try harder to be brave. It is to know, more and more deeply, how much we are loved. As we bring our fears to God one by one, and trust him in small steps, his love grows stronger in us and fear loses its power."
+    },
+    {
+     "emoji": "⚖️",
+     "title": "Real guilt and false guilt",
+     "body": "Guilt can be a gift or a heavy load. Floyd helps us tell the difference.\n\nReal guilt comes when we have truly done wrong. The Holy Spirit shows us our sin, not to crush us, but to bring us back. This kind of guilt is clear. It points to something we did, and it leads us to confess, make things right and receive forgiveness. The Bible promises that if we confess our sins, God is faithful and just to forgive us and make us clean (1 John 1:9).\n\nFalse guilt is different. It is a vague, heavy feeling that we are never good enough. It does not lead to change, only to shame. It often comes from a childhood where love depended on performance, or from harsh words that still sound in our minds. Sometimes it comes from the enemy, whom the Bible calls the accuser.\n\nMany Christians live under condemnation, even after they have confessed. They keep paying for sins that Jesus already paid for. But Paul says there is now no condemnation for those who are in Christ Jesus (Romans 8:1). When God forgives, he does not hold it over us. We can stop punishing ourselves and walk in freedom."
+    },
+    {
+     "emoji": "🤗",
+     "title": "Learning to receive the Father's love",
+     "body": "For some people, the hardest thing in the Christian life is not giving, but receiving. They can serve, pray and help others, but they find it hard to believe that God really loves them.\n\nFloyd's hope is that readers will move from knowing about God's love to experiencing it. This happens in many small ways. We read the Bible not only as rules, but as words from a Father. We spend time with God not to perform, but simply to be with him. We let him speak to the hurt places. And we let other believers love us too, because God often shows his love through people.\n\nThe Bible says that God has adopted us into his family (Galatians 4:4–7). We are not servants hoping to be allowed to stay in the house. We are sons and daughters, with a place at the table.\n\nAs we receive this love, something changes. We stop striving to earn what is already ours. People who have been comforted by God can comfort others with the same comfort (2 Corinthians 1:3–4). Then the Father's heart begins to flow through us to the hurting people around us."
+    }
+   ],
+   "tryThis": [
+    "Write three words that describe your earthly father, and three that describe how you feel about God. Notice if they are alike, and talk to God about it.",
+    "Read Luke 15:11–32 slowly, and picture yourself as the son the father runs to meet.",
+    "Name one person you need to forgive. In prayer, tell God that you choose to let go of your right to punish them."
+   ],
+   "forUs": "Many people come to GP carrying hurts they do not talk about. A DTS student may arrive full of zeal and still feel unwanted inside. A staff member may serve faithfully for years while secretly feeling that God is disappointed with them. Many Cambodian families carry deep loss from the past, and that pain can pass from parents to children. In Western and Asian homes too, father wounds are common. So this book speaks to Khmer and international staff alike. In DTS, small groups and one-to-one times, we can make space for honest talk about hurt, without rushing or pushing people. In the community schools and youth work, we meet children who need to see what a loving father looks like. Staff can show it by how we listen, keep our promises and stay patient. Living by faith and raising support can also stir up fear and old feelings of not being good enough. Let our worship and prayer times be places where people come home to the Father, not places where they have to perform.",
+   "oneLine": "God is not like the fathers who failed us; he is the Father who runs to meet us.",
+   "cover": {
+    "bg": "berry",
+    "fg": "paper",
+    "a": "paper",
+    "b": "marigold",
+    "motif": "heart",
+    "layout": "top",
+    "font": "sans"
+   }
+  },
+  {
+   "id": "spiritual-warfare-for-every-christian",
+   "title": "Spiritual Warfare for Every Christian",
+   "author": "Dean Sherman",
+   "year": 1990,
+   "shelf": "ywam",
+   "mins": 10,
+   "vibe": "The battle is real. Do not fear it, and do not ignore it. Jesus has already won.",
+   "bigIdea": "Christians often make one of two mistakes about the devil. Some ignore him, as if spiritual warfare were only for a few unusual people. Others are afraid of him, and see demons behind every problem. Dean Sherman, who taught for many years in YWAM schools around the world, wrote this book to give a balanced, Bible-based view. He says spiritual warfare is not a special ministry for experts. It is part of normal Christian life, for every believer. The Bible shows a real enemy who hates God and wants to destroy people. But it also shows that Jesus defeated that enemy on the cross. So we do not fight to win the victory; we fight from a victory that is already won. Dean explains how the conflict began, why God gave people authority on the earth, and how that authority was lost and won back. He shows that the main battlefield is often our own mind, where the enemy works through lies. And he teaches that our strongest weapons are not strange methods, but truth, holy living, love, unity, prayer and praise. The full title speaks of living in victory and retaking the land for God.",
+   "insights": [
+    {
+     "emoji": "⚖️",
+     "title": "Neither fear nor ignorance",
+     "body": "Dean begins with balance. On one side are Christians who never think about the enemy. They may believe in the devil in theory, but they live as if he does not exist. They are surprised when trouble comes, and they do not recognize his tactics. Paul says we should not be unaware of the enemy's schemes (2 Corinthians 2:11).\n\nOn the other side are Christians who think about the devil too much. They blame every headache, delay or bad mood on demons. They become fearful, and they focus more on the enemy than on God.\n\nBoth mistakes help the enemy. Ignoring him lets him work freely. Fearing him gives him more honour than he deserves.\n\nThe healthy way is to keep our eyes on God, while staying awake and alert. Peter tells us to be sober and watchful, because the enemy prowls like a lion, and to resist him, standing firm in faith (1 Peter 5:8–9). Spiritual warfare is not a hobby or a show. It is simply part of following Jesus in a world where evil is real, but where God is far greater."
+    },
+    {
+     "emoji": "🌍",
+     "title": "How the battle began",
+     "body": "To understand the war, Dean goes back to the beginning. Like many Bible teachers, he sees Satan as a created angel who chose pride and rebelled against God. He is not God's equal, and never was. He is a creature who turned against his Creator.\n\nThen God made people in his image and gave them a task: to fill the earth and rule over it with him (Genesis 1:26–28). This was real authority, given to humans to care for God's world.\n\nWhen Adam and Eve listened to the serpent instead of God, they did more than break a rule. They gave their place away to the enemy. Sin and death came into the world, and Satan gained influence over it. Jesus later calls him the ruler of this world (John 12:31), and Paul calls him the god of this age (2 Corinthians 4:4).\n\nThis helps explain why the world is so full of evil. It is not because God wants it this way. It is because the earth has been invaded by a rebel. But God did not give up on his plan. Right at the start, he promised that a child of the woman would crush the serpent's head (Genesis 3:15)."
+    },
+    {
+     "emoji": "✝️",
+     "title": "The victory of the cross",
+     "body": "The heart of the book is that Jesus has already won. He came to destroy the devil's work (1 John 3:8). By his death and resurrection, he broke the power of sin and death. Paul says that on the cross Jesus disarmed the powers and authorities, and made a public show of them as a defeated enemy (Colossians 2:15).\n\nThis changes how we see spiritual warfare. We are not fighting an enemy who might still win. The deciding battle is over. Our part is to stand in the victory Jesus has already gained, and to apply it where we live.\n\nJesus took back what was lost in the garden. Now he has all authority in heaven and on earth, and he sends his followers out under that authority to make disciples of all nations (Matthew 28:18–20).\n\nSo we do not need to be impressed by the enemy. He is real, but he is defeated. He can still lie, accuse and tempt, and he can still do damage where people give him room. But he has no right to rule a person who belongs to Jesus. When we stand in what Christ has done, the enemy must give way."
+    },
+    {
+     "emoji": "🧠",
+     "title": "The battle for the mind",
+     "body": "Dean teaches that the main battlefield is often our own mind. The enemy's most common weapon is not frightening signs, but lies. Jesus called him a liar and the father of lies (John 8:44).\n\nHe still works this way. He whispers lies about God: God does not care, God is holding back something good. He lies about us: you are worthless, you will never change. He lies about others: they are against you, you cannot trust them. If we believe these lies, they shape our feelings and our choices.\n\nPaul says our weapons are not the weapons of this world. They have God's power to pull down strongholds, arguments and proud ideas that rise up against the knowledge of God. We take every thought captive to obey Christ (2 Corinthians 10:4–5). A stronghold is a fixed pattern of thinking, like a fortress built on a lie.\n\nSo guarding our mind matters. We notice the thoughts that come, and we test them against God's Word. We reject what is false and choose to think about what is true (Philippians 4:8). Day by day, God changes us by renewing our mind (Romans 12:2)."
+    },
+    {
+     "emoji": "👑",
+     "title": "Our authority in Christ",
+     "body": "Jesus gave his followers authority over all the power of the enemy (Luke 10:19). Authority is not the same as strength. Think of a simple picture: a traffic police officer is not stronger than a truck, but when he raises his hand, the truck stops. He stands for the government. In the same way, we stand for Jesus.\n\nThis authority does not come from our own strength, our feelings or loud prayers. It comes from our relationship with Jesus and from his name. It also depends on submission. James says: submit to God, resist the devil, and he will flee from you (James 4:7). We can only use authority well when we are living under God's authority.\n\nThere are two errors to avoid. One is never to use the authority we have, and to live like helpless victims. The other is to treat it like magic words, or to use it carelessly and proudly. Jesus told his disciples to rejoice, not mainly that spirits obeyed them, but that their names were written in heaven (Luke 10:20).\n\nSo when the enemy pushes, we do not simply accept it. Calmly and firmly, we stand in Jesus' name and resist him."
+    },
+    {
+     "emoji": "🛡️",
+     "title": "The armour of God",
+     "body": "Paul tells us to be strong in the Lord and to put on the full armour of God, so that we can stand against the devil's schemes (Ephesians 6:10–18). He reminds us that our fight is not against flesh and blood, against people, but against spiritual powers of evil.\n\nEach piece of the armour describes a part of life with God. The belt of truth is honesty and living in what is true. The breastplate of righteousness is a right relationship with God and a clean life. The shoes of the gospel of peace speak of being ready to share the good news and to walk in peace. The shield of faith is trusting God, and it stops the burning arrows of the enemy's lies and accusations. The helmet of salvation guards our mind with the knowledge that we are saved and belong to God. The sword of the Spirit is the word of God, spoken in faith, as Jesus did when he was tempted in the desert.\n\nThen Paul adds prayer, in the Spirit, at all times, for all of God's people.\n\nThe armour is a way of life, and we put it on by walking with God every day."
+    },
+    {
+     "emoji": "🚪",
+     "title": "Do not give the enemy a foothold",
+     "body": "Paul writes: do not give the devil a foothold (Ephesians 4:27). He says this in the middle of teaching about anger, honesty and kindness. Dean draws an important lesson from this. Much of the enemy's influence in our lives comes through doors that we open ourselves.\n\nSin that we keep hiding, bitterness that we will not let go, lies, sexual sin, pride and involvement with the occult can all give the enemy ground. He looks for places where he has room to work.\n\nThis is why holy living is a weapon. It is not about being perfect, or about earning God's love. It is about closing the doors. When we repent, confess and turn away from sin, we take back ground the enemy had. When we forgive, we remove a hook he could use.\n\nJesus said that the ruler of this world had no hold on him (John 14:30). There was nothing in Jesus that the enemy could grab. We are not there yet, but this is the direction we walk. The more we live in the light, honest with God and with each other, the less room the enemy has. Many battles are won simply through obedience in small daily choices."
+    },
+    {
+     "emoji": "🤝",
+     "title": "Warfare through love and unity",
+     "body": "One of Dean's strongest points is that spiritual warfare is very practical, and very relational. The enemy loves to divide. He works through offence, gossip, suspicion, jealousy and misunderstanding. If he can split a family, a team or a church, he has won a battle without anyone noticing.\n\nSo love is a weapon, and unity is a weapon. When believers forgive each other quickly, speak well of each other and refuse to take offence, they are fighting the enemy. Jesus prayed that his followers would be one, so that the world would believe (John 17:21).\n\nLike many YWAM teachers, Dean speaks about living in the opposite spirit. When we meet greed, we answer with generosity. When we meet hatred, we answer with love. When we meet pride, we choose humility. Paul says: do not be overcome by evil, but overcome evil with good (Romans 12:21). This is how Jesus fought. He did not answer insults with insults. He gave his life for his enemies.\n\nThis kind of warfare does not look dramatic. But a humble apology, a kind word to a difficult person, or a choice to bless instead of curse can push back darkness in a real way."
+    },
+    {
+     "emoji": "🎶",
+     "title": "Praise and prayer",
+     "body": "Worship is not only something we offer to God. It is also a weapon. When we praise God in hard times, we declare what is true: God is still on the throne, and he is good.\n\nThe Bible gives clear examples. When a great army came against King Jehoshaphat, he and the people fasted and prayed. Then he sent singers ahead of the army, praising God, and God gave them the victory (2 Chronicles 20). Paul and Silas sang hymns in prison at midnight, and God shook the prison open (Acts 16:25–26).\n\nPrayer works in a similar way. Through prayer we invite God to act on earth. In the book of Daniel, Daniel prays and waits, and an angel tells him there was a battle in the spiritual world while he was praying (Daniel 10). Prayer is part of a real conflict, even when we cannot see it.\n\nSo we do not need to shout at the devil all the time. Most of our warfare is turning toward God: thanking him, worshipping him, asking him to move and declaring his promises. The enemy hates this, because it puts God at the centre, where he belongs."
+    },
+    {
+     "emoji": "🗺️",
+     "title": "Retaking the land",
+     "body": "The full title of the book speaks of retaking the land. Dean sees spiritual warfare not only as personal defence, but as part of God's mission. God wants his kingdom to come and his will to be done on earth as it is in heaven. Jesus said that the gates of hell will not overcome his church (Matthew 16:18).\n\nThis means Christians are not called to hide and wait. We are called to go into every part of society and every nation, bringing the truth and love of Jesus. Where there is darkness in a family, a city or a nation, God's people can pray, serve and speak the truth, and ground is taken back for God.\n\nEvery time someone hears the good news and turns to Jesus, the enemy loses ground. Every act of justice, healing and kindness pushes back his work.\n\nThis is not about Christians grabbing worldly power. It is about serving, praying and living as Jesus did, until his rule of love is seen in more and more places. The battle is real, but the end is sure. One day every knee will bow to Jesus (Philippians 2:10)."
+    }
+   ],
+   "tryThis": [
+    "Notice one lie you often believe about yourself or about God. Find a Bible verse that says the truth, write it down and read it each day.",
+    "Before you pray for needs this week, spend five minutes only praising God for who he is.",
+    "If there is tension with someone, take one step of love: say sorry, bless them, or speak well of them to others."
+   ],
+   "forUs": "In Cambodia, the spirit world is not a strange idea. Many Khmer families have grown up with spirit houses, offerings, and fear of spirits and curses. Some international staff come from places where people hardly think about the spiritual world at all. This book helps both. It takes the enemy seriously, but it puts Jesus at the centre and takes away fear. On a YWAM base, this teaching is very practical. The enemy often attacks through tiredness, offence and cultural misunderstanding, when staff from different countries read each other wrongly. Choosing to forgive quickly, honour each other and learn each other's language is real warfare. In DTS and on outreach, we pray for the villages and communities where we serve, not with fear, but with confidence in the victory of Jesus. Our worship and intercession times are not just nice meetings; they are part of the battle. When we live by faith and trust God for our support, we also stand against fear and worry. And in our community schools and youth work, every child who learns that God loves them is ground taken back.",
+   "oneLine": "Jesus has already won, so stand in his victory with truth, love, holy living and praise.",
+   "cover": {
+    "bg": "ink",
+    "fg": "paper",
+    "a": "marigold",
+    "b": "ink",
+    "motif": "shield",
+    "layout": "top",
+    "font": "sans",
+    "upper": true
+   }
+  },
+  {
+   "id": "discipling-nations",
+   "title": "Discipling Nations",
+   "author": "Darrow L. Miller with Stan Guthrie",
+   "year": 1998,
+   "shelf": "ywam",
+   "mins": 10,
+   "vibe": "Poverty starts in the mind. So does the way out.",
+   "bigIdea": "Why do some communities stay poor while others flourish? Darrow Miller worked for many years in relief and development with the Christian agency Food for the Hungry. He saw that money, food and new technology often did not bring lasting change. In this book, written with Stan Guthrie, he gives his answer: ideas have consequences. What a people believe about God, the world and themselves shapes how they work, plan, farm, govern and treat each other. Miller compares three big ways of seeing the world. Animism sees a world full of spirits that must be feared and kept happy. Secularism sees only matter, with no God and no lasting meaning. The biblical view sees a personal God who made an orderly world, and who made people in his image to care for it. Miller argues that physical poverty often has deep roots in false beliefs, and that the Western church has often missed this. So the church's task is bigger than saving souls. Jesus told us to disciple nations: to bring God's truth into every part of life, so that whole communities can flourish.",
+   "insights": [
+    {
+     "emoji": "🧠",
+     "title": "Ideas have consequences",
+     "body": "Every person sees the world through a set of beliefs, like a pair of glasses. Miller calls this a worldview. Most of us never chose our glasses. We received them from our parents, our village, our school and our religion. We rarely notice them, but they shape everything we see.\n\nA worldview answers big questions. Is there a God, and what is he like? What is the world made of? What is a human being worth? Where is history going? Our answers to these questions shape our values, and our values shape the way we act. Over time, the choices of many people together form a culture. Miller's point is simple but strong: beliefs come first, and actions follow. You could picture a culture as a tree, with its worldview as the roots.\n\nThis means that the way a community farms, saves money, treats women and children, cares for the sick or chooses its leaders is not random. It grows from what people believe is true. If the roots are healthy, the fruit tends to be healthy. If the roots hold lies, the fruit will be damaged, no matter how much fertilizer is poured on the leaves."
+    },
+    {
+     "emoji": "🍚",
+     "title": "Poverty begins in the mind",
+     "body": "Miller spent years in relief and development work. He saw food, wells, seeds and money given to poor communities, and he saw that the help often did not last. Sometimes it even made things worse, because people learned to wait for the next gift from outside.\n\nHe came to believe that physical poverty is often rooted in a deeper poverty: a poverty of mind and spirit. People may believe that they are worthless, that nothing can change, that the future is controlled by fate, or that there is only so much wealth in the world. Lies like these can keep a family poor even when resources are near.\n\nThis does not mean poor people are to blame for their poverty. Injustice, war, disaster and corruption are real, and the Bible takes them seriously. Miller also shows that rich nations have their own deep poverty. But he insists that we cannot fix poverty only with things. If we give a well but leave the lies in place, we have treated the symptom and missed the disease.\n\nSo the most important help is often the truth: about God, about the world, and about who people really are."
+    },
+    {
+     "emoji": "🕯️",
+     "title": "Animism: a world full of spirits",
+     "body": "The first worldview Miller describes is animism. In this view, the world is full of spirits: spirits of ancestors, and spirits of the land, trees, rivers and homes. These spirits are powerful and often unpredictable. People must keep them happy with offerings and rituals, or they may bring sickness, accidents or a bad harvest.\n\nMiller argues that this way of seeing the world has heavy results for daily life. If unseen powers control what happens, people tend to feel that their own choices matter little. Life is shaped by fate, not by planning. Changing old ways can feel dangerous, because it might anger the spirits. Nature is something to fear and calm, not something to study and develop. And if someone in the village becomes rich, others may suspect that their gain came from someone else's loss.\n\nIt is important to read this part with humility. Animism takes the unseen world seriously, and so does the Bible. Many secular Westerners have lost that awareness. People who live with these beliefs are not foolish. They are trying to survive in a world they experience as frightening. The good news is that there is a loving God who is greater than every spirit, and in him there is freedom from fear."
+    },
+    {
+     "emoji": "🏙️",
+     "title": "Secularism: only what we can see",
+     "body": "The second worldview is secularism, which has shaped much of the modern West. In this view, only the physical world is real. There is no God and no spirit world, only matter, energy and chance. Truth is what science can measure, and right and wrong are whatever each person or society decides.\n\nMiller shows that this view also has heavy results. If people are only clever animals, then their value depends on what they can produce or consume. In development work, poor people can then be seen mainly as mouths to feed and problems to manage, instead of minds that can think and hands that can create. Nature becomes a machine to use, or else something people worship in place of God.\n\nSecularism has brought wealth and technology to many countries, but Miller says it leaves people poor in other ways. Many in rich nations feel lonely, empty and without purpose. Families break down. Life has comfort but little meaning.\n\nMiller also warns that much aid from the West carries secular assumptions with it. It sends money, tools and experts, but treats the human heart as unimportant. When that happens, the West may export its emptiness along with its machines."
+    },
+    {
+     "emoji": "✨",
+     "title": "The God who is there",
+     "body": "Against these two views, Miller sets out the biblical worldview. It begins with God. The God of the Bible really exists, whether we believe in him or not. He is personal: he thinks, speaks, loves and acts. And he is infinite, the creator of everything else, far above every spirit and every power.\n\nThis changes how we see the world. Because God is wise and faithful, the world he made has order. It follows laws that people can discover. Miller argues that modern science grew strongly in places where people believed that a wise God had made an orderly world, so it was worth studying. Farmers, doctors and engineers can learn how creation works and use that knowledge to bless others.\n\nBecause God is good and has spoken, truth is real, and there is a moral order that applies to everyone. Right and wrong are not just local customs. This gives a foundation for justice, honesty and the protection of the weak.\n\nAnd because God is loving and stronger than all other powers, people do not need to live in fear. They can pray to a Father who cares, instead of trying to calm forces they cannot see. Faith brings freedom to plan, to hope and to try new things."
+    },
+    {
+     "emoji": "👐",
+     "title": "Made in God's image",
+     "body": "At the heart of the biblical worldview is a truth about people. God made human beings, male and female, in his own image (Genesis 1:27). This gives every person great dignity. A poor farmer, a child with a disability, an old widow and a rich businessman all carry the same image and have the same worth.\n\nBeing made in God's image also means we share something of his nature. God is a creator, so people can create. God thinks, plans and chooses, so people can think, plan and choose. We are not prisoners of fate, and we are not only consumers. Each person has a mind, gifts and the ability to make things better.\n\nThis is why Miller argues that people are the most important resource a community has. A new baby is not only another mouth to feed. That child has a mind that can solve problems and hands that can build.\n\nThis changes how we help the poor. If we see people as helpless, we will do things for them and keep them dependent. If we see them as image bearers, we will ask what gifts they already have, and work alongside them as partners. Real help restores dignity."
+    },
+    {
+     "emoji": "🌱",
+     "title": "Stewards of God's garden",
+     "body": "In the first chapters of the Bible, God places people in a garden and gives them a task: to fill the earth, to rule over it, and to work it and take care of it (Genesis 1:28, 2:15). Miller and others call this the cultural mandate. It is God's first job description for humanity.\n\nThis gives a new view of nature. Creation is not a god to fear, as in animism, and it is not a machine to use up, as in secularism. It is God's good gift, placed in our care. We are stewards, not owners. We may develop the land, but we must not destroy it.\n\nIt also gives a new view of work. Work was part of God's plan before sin entered the world, so work is good. Farming, cooking, teaching, building and running a business can all be done as worship. Wealth can be created through work and creativity, so one family's success does not have to mean another family's loss.\n\nFinally, the Bible teaches that history is going somewhere. It is not an endless circle. God is moving his story toward a good end. That makes it worth planning, saving and building for the future."
+    },
+    {
+     "emoji": "⛪",
+     "title": "When the church splits life in two",
+     "body": "Miller makes a sharp point about the church itself. He says many evangelical Christians have fallen into a way of thinking similar to an ancient error called Gnosticism. The Gnostics believed that the spiritual world is good and the physical world is not important. Miller calls the modern version evangelical Gnosticism.\n\nIn this way of thinking, life is split in two. Prayer, worship and evangelism are spiritual and matter to God. Farming, business, government, art and science are secular and do not. Missionaries may preach about heaven but say little about how to raise children, run a fair business or care for the land. When that happens, the church loses its voice in most of life, and other worldviews fill the gap.\n\nSome Christians fall into the opposite mistake. They give food, clinics and schools but leave out the truth about God, as if only the physical mattered.\n\nMiller calls the church back to a whole gospel. Jesus came to save souls, but also to make all things new. God is reconciling all things to himself through Christ (Colossians 1:20). So every part of life, from the rice field to the classroom, belongs to him and can show his kingdom."
+    },
+    {
+     "emoji": "🌍",
+     "title": "Discipling nations",
+     "body": "Jesus told his followers to go and make disciples of all nations, teaching them to obey everything he had commanded (Matthew 28:19–20). Miller asks us to read this carefully. Jesus did not only say to win individual converts. He spoke of discipling nations: whole peoples, with their families, customs, work and leaders.\n\nThis means the Great Commission and the cultural mandate belong together. We invite people to follow Jesus, and we also help them see how his truth shapes farming, health, money, justice and family life. Over time, as many people think and live by God's truth, a culture begins to change.\n\nMiller sees the local church as the main agent of this change. It is not mainly the work of foreign experts or large programs. A church that loves its neighbors, tells the truth, works hard and serves the poor can become a small picture of God's kingdom in its community.\n\nThis work is slow and humble. It is not about forcing beliefs on anyone, or making one culture copy another. It is about letting the light of God's truth shine into every corner of life, so that people and communities can become what God created them to be."
+    }
+   ],
+   "tryThis": [
+    "Write down three beliefs you grew up with about God, work or money, and ask which of them agree with the Bible.",
+    "Choose one ordinary task this week, like cooking, cleaning or teaching, and do it as worship, thanking God that work is good.",
+    "Ask a teammate from another culture how people in their home community explain poverty or bad luck, and listen without judging."
+   ],
+   "forUs": "Cambodia has a rich and beautiful culture. Many Khmer families have deep respect for elders, strong family loyalty, warm hospitality and a real awareness of the spiritual world. These are gifts that reflect God. At the same time, many people here grew up with spirit houses, fear of offended spirits and the idea that life is fixed by fate. International staff bring their own blind spots, often the secular habit of keeping God inside Sunday. Every culture has things to celebrate and lies to give up, including our own. So we talk about worldview with humility, by listening and asking questions, never with contempt. In DTS we teach that God is there, that he is good, and that each person is made in his image. Our community schools can help children believe that they can learn, create and shape their future. The cafe and other work can show that ordinary work is worship. On outreach, we can share a whole gospel: freedom from fear, and truth for all of life. And as Khmer and international staff work side by side as equals, we show the dignity of every person made in God's image.",
+   "oneLine": "Change what a people believe about God, and you begin to change how they live.",
+   "cover": {
+    "bg": "blue",
+    "fg": "paper",
+    "a": "paper",
+    "b": "marigold",
+    "motif": "globe",
+    "layout": "top",
+    "font": "sans",
+    "upper": true
+   }
+  },
+  {
+   "id": "the-book-that-transforms-nations",
+   "title": "The Book That Transforms Nations",
+   "author": "Loren Cunningham with Janice Rogers",
+   "year": 2007,
+   "shelf": "ywam",
+   "mins": 10,
+   "vibe": "The Bible is not only for your heart. It is for your whole nation.",
+   "bigIdea": "Loren Cunningham, the founder of Youth With A Mission, has travelled to every nation in the world. He noticed a pattern. Where the Bible has deeply shaped a people, there is often more freedom, more justice and more care for the weak. Where it has not, people are often held back by fear, corruption and poverty. In this book, written with Janice Rogers, he asks why. His answer is that the Bible is not only a book for personal faith. It is God's guide for all of life. It shows how families can live, how leaders should govern, how business can be honest, how children can be taught, and how art and media can serve the truth. Jesus told his followers to make disciples of all nations, teaching them to obey everything he commanded (Matthew 28:19–20). Loren believes this means whole societies, not only individuals. He looks at the main areas, or spheres, that shape how a people thinks, and shows Bible principles for each one. He also calls the church to bring the Bible to every people group in their own language, because a nation changes as its people know and live God's Word.",
+   "insights": [
+    {
+     "emoji": "📖",
+     "title": "More than a personal book",
+     "body": "Many Christians read the Bible only for personal comfort and guidance. But Loren says we often stop there. We use the Bible to lead people to Jesus and to help them grow, and then we leave the rest of society to other ideas.\n\nThe Bible speaks to much more. In the books of Moses, God gave Israel teaching about courts and judges, land and money, care for the poor, health, families and worship. The prophets spoke to kings and to whole nations about justice. Jesus told his followers to disciple nations, not only to win individuals.\n\nLoren also looks at history. When ordinary people began to read the Bible in their own language, it changed more than their private faith. It shaped how they thought about leaders, work, learning and the value of each person. Over time, these ideas helped build schools, fairer laws and freer societies.\n\nThis does not mean that any nation is perfect. Even nations with a long Bible heritage have done great wrong, and many have turned away from its teaching. But Loren is convinced that the principles of the Bible, when people live them, bring blessing to any people in any culture."
+    },
+    {
+     "emoji": "🧭",
+     "title": "Seven spheres that shape a nation",
+     "body": "Loren tells of a time in 1975 when he believed God showed him a list. To change a nation, he sensed, we must reach the areas of society that shape how people think. Soon after, he met Bill Bright, the founder of Campus Crusade for Christ, who shared a very similar list that God had put on his heart. Around the same time, the Christian thinker Francis Schaeffer was teaching about the same areas.\n\nThe list is often called the seven spheres, or mind-molders. They are the family, the church, education, media, celebration (which includes the arts, entertainment and sports), economics (which includes business, science and technology), and government.\n\nEvery nation has these areas, whether it is rich or poor, big or small. Together they shape what children believe, what adults value and how a society makes decisions. If Christians stay only in the church sphere, the other six will be shaped by other ideas.\n\nSo Loren encourages believers to see their daily work as a calling. A teacher, a farmer, a reporter, a business owner and a nurse can all serve God and bring his ways into their sphere. Ministry is not only for pastors and missionaries."
+    },
+    {
+     "emoji": "👤",
+     "title": "Every person is made in God’s image",
+     "body": "Underneath every sphere is one big truth: every human being is made in the image of God (Genesis 1:27). Loren shows how much grows from this one idea.\n\nIf every person carries God's image, then every person has worth. Poor people, women, children, people with disabilities and people from minority groups all matter to God. They are not tools for powerful people to use. They have dignity, and the law should protect them.\n\nIf people are made in God's image, they are also responsible. God gave humans the ability to think, choose and create. So people can be trusted with freedom, and they must answer for how they use it.\n\nWhen a society believes that people have no special value, the weak are often ignored or used. When a society believes that some people are born higher than others, injustice can start to seem normal. The Bible says something different. Kings and servants stand before the same God.\n\nThis is one reason why the Bible has been a seedbed for ideas such as human rights and equality before the law. Change in a nation often begins with a change in how people see a single person."
+    },
+    {
+     "emoji": "🏡",
+     "title": "The family: the first school",
+     "body": "Loren sees the family as the foundation of a nation. It is the first sphere God created, before any government or church. In the family, children first learn who God is, what is right and wrong, how to work and how to treat other people.\n\nThe Bible gives parents a clear task. Moses told Israel to teach God's words to their children at home and on the road, when they lie down and when they get up (Deuteronomy 6:6–7). Faith was meant to be part of ordinary daily life in every home.\n\nThe Bible also paints a picture of family life built on love and faithfulness. Husbands and wives are to love and honour each other. Children are to honour their parents. Parents are not to make their children angry, but to train them with patience (Ephesians 6:4). Widows, orphans and foreigners are to be cared for, so that no one is left without a family.\n\nWhen families are strong, many other problems in a society become smaller. When families break down, governments and schools struggle to fill the gap. So one of the most powerful ways to bless a nation is to strengthen its families, one home at a time."
+    },
+    {
+     "emoji": "⚖️",
+     "title": "Government: servants under God",
+     "body": "Leaders have great power to help or to harm, so Loren gives government careful attention. The Bible holds principles for good government that have shaped many nations.\n\nFirst, leaders are under God and under the law, not above it. In Deuteronomy, a future king of Israel had to write his own copy of God's law and read it every day, so that he would not think he was better than his people (Deuteronomy 17:18–20). No ruler should have unlimited power.\n\nSecond, power should be shared. Moses was told to choose capable and honest leaders to judge smaller cases, so that the whole burden did not rest on one man (Exodus 18).\n\nThird, justice must be fair for everyone. Judges were not to take bribes or to favour anyone because they were rich or poor (Deuteronomy 16:19). The prophets spoke strongly against leaders who used their power to crush the weak.\n\nFinally, rulers are meant to be servants. Jesus said that the greatest among his followers must be the servant of all. When leaders see themselves as servants of God and of the people, corruption loses its power, and a nation can begin to flourish."
+    },
+    {
+     "emoji": "💼",
+     "title": "Economics: work, honesty and generosity",
+     "body": "Why are some nations poor and others wealthy? Loren believes the answer is not only natural resources. Bible principles about work, property and honesty make a big difference.\n\nThe Bible honours work. God himself worked in creation, and he gave Adam a garden to tend. Paul told believers to work with their hands, so that they could provide for themselves and give to people in need (Ephesians 4:28).\n\nThe command not to steal assumes that people may own things. When people are secure in what they own, they are more willing to build, plant and invest. When corruption or theft takes away what they earn, people lose hope and stop building.\n\nThe Bible also calls for honest weights and fair trade. And it protects the poor. In Israel, farmers left the edges of their fields for the poor to gather (Leviticus 19:9–10). In the year of Jubilee, land went back to its family, so that poverty would not trap a family for ever.\n\nScience and technology belong in this sphere too. Because God made an orderly world, people can study it, learn how it works and use that knowledge to serve others."
+    },
+    {
+     "emoji": "🎓",
+     "title": "Education: a people who read",
+     "body": "The Bible and learning have always gone together. Because God speaks through a written book, his people have a strong reason to read.\n\nIn many places, the wish to read the Bible was the start of schools for ordinary people. Leaders of the Reformation wanted farmers and children, not only priests and scholars, to read God's Word for themselves. Missionaries around the world often created alphabets for languages that had never been written, translated the Bible and started schools. Many early universities were first founded to train people in the knowledge of God.\n\nThe Bible also gives a reason to learn. If God made the world with order and wisdom, then studying it is a way to honour him. Proverbs says that the fear of the Lord is the beginning of knowledge (Proverbs 1:7).\n\nLoren also cares about what education teaches. Schools do more than give information. They shape what children believe about God, truth and themselves. When God is left out, people may gain knowledge but lose wisdom.\n\nSo believers in education have an important calling: to teach with excellence, to love their students, and to help each one grow in both knowledge and character."
+    },
+    {
+     "emoji": "🎨",
+     "title": "Media, arts and celebration",
+     "body": "Loren includes two spheres that many Christians have ignored or feared. One is media. The other is celebration: the arts, entertainment and sports.\n\nMedia is every way that news and ideas spread, such as newspapers, radio, television, film and the internet. The Bible values truth, and God hates lies and false witness. So believers in media can serve their nation by reporting fairly, bringing hidden wrongs into the light and giving a voice to people who are not heard.\n\nCelebration is also God's idea. In the Old Testament, God gave Israel feasts and festivals, with food, music and dancing, to remember what he had done. God is the first Creator. When people paint, sing, write, build and play, they reflect his creativity.\n\nArts and entertainment shape the heart of a culture, often more than speeches or laws. Songs and stories teach values without people even noticing. Sport can teach discipline, teamwork and fair play, or it can teach pride and cheating.\n\nSo Loren encourages Christians not to run away from these areas, but to enter them with skill and integrity, so that a nation's stories, songs and celebrations point toward what is true, good and beautiful."
+    },
+    {
+     "emoji": "⛪",
+     "title": "The church: to equip and serve, not to control",
+     "body": "The church is one of the seven spheres, and it has a special role. But that role is not to rule over the other spheres or to take control of the government. History shows that when church leaders grab political power, both the church and the nation are harmed.\n\nInstead, each sphere has its own purpose and authority from God. Parents lead families. Governments keep order and justice. Businesses create work and wealth. The church's task is to worship God, preach the gospel, and teach and equip believers, who then go out to serve God in every sphere.\n\nThis means the church is like a training ground and a sending base. People gather to worship and learn, and then go out as teachers, nurses, farmers, officials, artists and shop owners, and their faith goes with them into their work.\n\nThe church also has a prophetic role. Like the prophets of old, it can speak about truth and justice to the nation, and it can care for the poor and needy when no one else will.\n\nWhen the church sees itself in this way, it is no longer a small religious corner of society. Its people become salt and light in every part of national life (Matthew 5:13–16)."
+    },
+    {
+     "emoji": "🌍",
+     "title": "A Bible for every people",
+     "body": "If the Bible can transform nations, then every nation needs the Bible. Loren is deeply concerned that many people groups still do not have God's Word in their own language. Others have it, but cannot read it, cannot get a copy, or have never been taught what it says.\n\nHistory shows the power of translation. When the Bible was put into the language of ordinary people in Europe, such as Martin Luther's German Bible and William Tyndale's English New Testament, it shaped those languages and nations for centuries.\n\nLoren calls the church to finish the task: to translate the Bible into every language, to put it in people's hands, to teach people to read, and to help them understand and apply it. This is work for translators, but also for teachers, printers, storytellers, media workers, intercessors and givers.\n\nBut owning a Bible is not enough. The goal is that people read it, love it and live it. A Bible on a shelf changes nothing. A Bible read in families, taught in schools and obeyed by leaders can change a great deal. That is the hope at the heart of this book."
+    }
+   ],
+   "tryThis": [
+    "Choose one of the seven spheres that you care about. Find a Bible passage that speaks to it, and write down one principle.",
+    "Pray this week for one leader in Cambodia by name: a teacher, an official, a business owner or a pastor.",
+    "Ask a friend how their daily work could serve God and their community, and listen well to the answer."
+   ],
+   "forUs": "Cambodia has known deep suffering, and many families still carry the wounds of the past. People here long for good leaders, fair justice, strong families and good schools. This book reminds us that the gospel speaks to all of these. At GP, our ministries already touch several spheres. The community schools serve education. Youth work and DTS strengthen young people and their families. The cafe is part of business and hospitality. Worship and the arts belong to celebration. Intercession for Cambodia's leaders touches government. After outreach, DTS students can ask God which sphere he is calling them into, and know that a Khmer teacher, nurse, farmer or business owner can serve him fully. Khmer and international staff can study together what the Bible says about each sphere, and how it fits Cambodian life. And we can help more people read and love the Bible in their own heart language. A nation changes one family, one classroom and one leader at a time.",
+   "oneLine": "When God’s Word shapes a people, it can reshape their whole nation.",
+   "cover": {
+    "bg": "paper",
+    "fg": "ink",
+    "a": "marigold",
+    "b": "cobalt",
+    "motif": "openbook",
+    "layout": "top",
+    "font": "sans"
+   }
+  },
+  {
+   "id": "why-not-women",
+   "title": "Why Not Women?",
+   "author": "Loren Cunningham and David Joel Hamilton",
+   "year": 2000,
+   "shelf": "ywam",
+   "mins": 10,
+   "vibe": "What if God is calling his daughters too?",
+   "bigIdea": "Can women preach, teach and lead in the church and on the mission field? Christians have answered this question in different ways, and many sincere believers disagree. In this book, YWAM founder Loren Cunningham and Bible teacher David Joel Hamilton give their answer, which is also YWAM's position: yes. God calls and gifts women, as well as men, for every kind of ministry and leadership. The authors begin with the size of the Great Commission. The task is huge, and the church cannot finish it while half of its people are told to stay quiet. Then they walk through the Bible. They look at creation, where man and woman both bear God's image. They look at the fall, and at how Jesus treated women in a world that often saw them as less. They look at the women who worked with Paul. Then they study the hard passages that seem to limit women, reading them carefully in their language, history and culture. They conclude that these passages answered local problems and were not rules for all time. This summary presents the book's argument as fairly as we can.",
+   "insights": [
+    {
+     "emoji": "🌾",
+     "title": "The cost of half a church",
+     "body": "The book begins with the size of the task. Billions of people have still not clearly heard the good news of Jesus. Cunningham and Hamilton ask a simple question: if the harvest is this big, why would the church tell half of its workers to stay home?\n\nLoren shares from YWAM's own story. From the early years, he and his wife Darlene, who started YWAM together, released both women and men to preach, teach, pioneer and lead. They saw God use women powerfully on the mission field, and they did not want to stand in the way of what God was doing.\n\nThe authors note that women have long made up a large part of the missionary force, and many went to hard places to do pioneering work. Yet back home, the same women were often not allowed to teach or lead in their own churches.\n\nThe cost of limiting women is not only that their gifts are lost. Women themselves are hurt when their calling is ignored, and the world misses the witness of women and men serving side by side. For the authors, this is not a side issue. It touches how the church will finish its mission."
+    },
+    {
+     "emoji": "🌸",
+     "title": "Made together in God's image",
+     "body": "The authors start their Bible study at the beginning. In Genesis 1, God creates human beings in his image, male and female. He blesses them both and gives them both the task of filling the earth and ruling over it. There is no hint that one carries God's image more than the other, or that one is meant to rule the other.\n\nIn Genesis 2, God says it is not good for the man to be alone, and he makes a helper suitable for him. Some readers take helper to mean an assistant of lower rank. The authors look at the Hebrew word, ezer. In the Old Testament, it is used most often of God himself, the helper of his people. It speaks of strong help that comes alongside.\n\nThe word suitable carries the idea of someone who corresponds to him, a partner who stands face to face. When Adam sees Eve, he recognizes her as sharing his own nature.\n\nFor the authors, these chapters show God's first design: man and woman as equal partners, sharing God's image and sharing God's work. Everything the Bible says later should be read in the light of this good beginning."
+    },
+    {
+     "emoji": "🥀",
+     "title": "The fall: a curse to break, not a rule to keep",
+     "body": "In Genesis 3, sin enters the world. God tells the woman that her desire will be for her husband, and he will rule over her (Genesis 3:16). Some have read this as God's command that men should rule over women.\n\nCunningham and Hamilton read it differently. They see it as a description of what sin will bring, not a plan for how things should be. In the same passage, God says the ground will grow thorns and that work will become painful. No one thinks we must protect the thorns. In the same way, men ruling over women is a result of the fall, not a goal to keep.\n\nThe Bible's story then moves toward redemption. Jesus came to break the power of sin and its curse. In him, the broken relationship between men and women can begin to heal. The authors argue that it makes little sense for the church, which lives by the power of the cross, to build its life around a result of the fall.\n\nThis shapes how they read the rest of Scripture. Where the curse brought division and domination, Christ brings men and women back into partnership."
+    },
+    {
+     "emoji": "💛",
+     "title": "Jesus and women",
+     "body": "In the world of Jesus' time, women were often treated as less than men. Many teachers would not teach women the Scriptures. A woman's word was often not trusted as a witness.\n\nJesus broke these patterns again and again. He let Mary of Bethany sit at his feet, the place of a student, and he defended her right to be there when her sister complained (Luke 10:38–42). He talked at length about worship with a Samaritan woman at a well, and she went back to tell her whole town about him (John 4). He healed women, touched them, and called one of them a daughter of Abraham (Luke 13:16).\n\nWomen travelled with Jesus and his disciples, and some supported his ministry with their own money (Luke 8:1–3). They stayed near the cross when most of the men had run away. And on the morning of the resurrection, women were the first to see the risen Lord. Jesus sent Mary Magdalene to tell the disciples the news (John 20:17–18).\n\nThe authors point out that Jesus did much more than accept women. He taught them, trusted them and sent them out with his message."
+    },
+    {
+     "emoji": "🔥",
+     "title": "Sons and daughters will prophesy",
+     "body": "On the day of Pentecost, the Holy Spirit came on the believers, both men and women. Peter explained what was happening by pointing to the prophet Joel: God would pour out his Spirit on all people, and both sons and daughters would prophesy (Acts 2:17–18).\n\nThe authors stress that the Spirit gives gifts as he chooses (1 Corinthians 12:11). In the lists of gifts in Romans, Corinthians and Ephesians, nothing says that some gifts are only for men. Teaching, leading, prophecy and pastoring are given to the church, through the people the Spirit chooses.\n\nThey also show that this was not completely new. In the Old Testament, God already used women as leaders and prophets. Deborah was a prophet and a judge who led Israel (Judges 4–5). Huldah was a prophet whom the king's officials asked about the Book of the Law (2 Kings 22). Miriam is named with Moses and Aaron as a leader God sent (Micah 6:4). In the New Testament, Philip had four daughters who prophesied (Acts 21:9).\n\nIf God gives his Spirit and his gifts to women, the authors ask, who are we to tell them not to use them?"
+    },
+    {
+     "emoji": "🤝",
+     "title": "Paul's women co-workers",
+     "body": "Paul is sometimes seen as the apostle who held women back. The authors show a different picture by looking at the people he names in his letters.\n\nIn Romans 16, Paul greets many co-workers, and a number of them are women. He begins with Phoebe, a deacon of the church in Cenchreae, who had been a helper and patron to many, including Paul. He greets Priscilla and her husband Aquila, who risked their lives for him. Priscilla is often named first, and together they explained the way of God more clearly to the gifted preacher Apollos (Acts 18:26). Paul also greets Junia, who with Andronicus was well known among the apostles (Romans 16:7). The authors argue that Junia was a woman and was counted as an apostle.\n\nIn Philippians, Paul speaks of Euodia and Syntyche, who had worked hard beside him in spreading the gospel (Philippians 4:2–3). Lydia, a businesswoman, opened her home to the first church in Philippi (Acts 16).\n\nThe authors conclude that Paul valued, trusted and worked with women in ministry. So when we read his harder sentences, we should read them as the words of a man who had many women as partners in the gospel."
+    },
+    {
+     "emoji": "🔍",
+     "title": "How to read the hard passages",
+     "body": "Some verses do seem to limit women, and the authors do not avoid them. But first they explain how they read the Bible. They believe all Scripture comes from God, and they want to take it seriously. Taking it seriously means reading it carefully.\n\nThey use simple principles. Read each verse in its context: who wrote it, to whom, and why. Let the many clear passages help explain the few that are hard to understand. Do not build a rule for every church from one unclear verse. Notice the difference between a lasting principle and a local way of applying it. For example, Paul tells believers to greet each other with a holy kiss. Most churches keep the principle of a warm welcome, but not the exact custom.\n\nThe authors also point to Paul's missionary heart. He was willing to become all things to all people, so that nothing would stop them from hearing the gospel (1 Corinthians 9:19–23). In some cities, if Christian women had acted in ways that seemed shameful in that culture, it could have closed doors to the message. Some of Paul's instructions may have protected the gospel in a particular place and time."
+    },
+    {
+     "emoji": "🤫",
+     "title": "Silent in the churches?",
+     "body": "In 1 Corinthians 14:34–35, Paul says that women should be silent in the churches, and if they want to learn something, they should ask their husbands at home. Read alone, this sounds like a ban on women speaking at all.\n\nBut the authors point out that just three chapters earlier, in the same letter, Paul gives instructions about how women should pray and prophesy in worship (1 Corinthians 11:5). He clearly expects women to speak aloud in church. So chapter 14 cannot mean total silence for all women at all times.\n\nThe context helps. Chapter 14 is about order in worship. Paul also tells people speaking in tongues to be silent if there is no interpreter, and tells a prophet to be silent when another person receives a revelation. The silence he asks for is about a specific kind of disorder.\n\nThe authors explain that many women in that culture had little education, and some were probably interrupting the meeting with questions. Paul tells them to ask at home for now, so the meeting can stay in order. He also wants them to learn, which was generous in that culture. The point is order and learning, not a permanent ban on women's voices."
+    },
+    {
+     "emoji": "📜",
+     "title": "Timothy, Ephesus and false teaching",
+     "body": "The other hard passage is 1 Timothy 2:11–15, where Paul says he does not permit a woman to teach or to have authority over a man.\n\nThe authors look closely at the setting. Paul had left Timothy in Ephesus to stop false teachers who were spreading errors in the church. Ephesus was a centre of the worship of the goddess Artemis. Some women in the church seem to have been caught up in false teaching and were passing it on.\n\nNotice what Paul says first: let a woman learn. In that culture, this was a big step forward. Paul wants women taught, so they will not be deceived. The authors also note that the Greek word translated as having authority is very rare, and seems to carry a strong, negative sense, like grabbing control or dominating in a wrong way. Paul is not banning godly leadership. He is stopping a harmful kind of power.\n\nThey see the mention of Adam and Eve as an example of what happens when someone who has been deceived spreads error. Their conclusion is that Paul was giving a needed instruction for a specific problem in Ephesus, not a rule that silences all women for all time."
+    },
+    {
+     "emoji": "👫",
+     "title": "Partners, not rivals",
+     "body": "For the authors, this is not a battle between women and men. Their goal is for the whole body of Christ to work together, with each person using the gifts God has given.\n\nPaul wrote that in Christ there is neither Jew nor Greek, slave nor free, male nor female, for all are one in Christ Jesus (Galatians 3:28). He also called all believers to submit to one another out of reverence for Christ (Ephesians 5:21), just before he spoke to husbands and wives. In the authors' view, Christian leadership is about serving, not about rank. Jesus taught that the greatest must be the servant of all. If leadership is service, there is no good reason to keep half the church from serving.\n\nIt is important to say that sincere Christians who love the Bible disagree on this question. Many churches keep some roles for men only, out of faithfulness to Scripture as they understand it. The authors invite every reader to study these passages with an open heart.\n\nIn the end, they say, a person should be released into ministry because of God's call, their character and their gifts, not because they are a man or a woman."
+    }
+   ],
+   "tryThis": [
+    "Read Romans 16 slowly and list every woman Paul greets and what he says about her.",
+    "Ask a woman on your team what gift she feels God has given her, and look for one way to make room for it.",
+    "If you lead a meeting this week, invite a woman who rarely speaks up to pray or share."
+   ],
+   "forUs": "YWAM has held this conviction from its early years, and GP lives by it. Here women lead DTS small groups, teach, preach on outreach, lead worship and intercession, and lead ministries like the community schools and the cafe. But we come from many cultures and churches. In many places, including some Khmer families and some Western churches, girls learn that women should stay quiet and let men lead. Some staff and students come from churches that see this question differently. We can honor them as brothers and sisters while we live out YWAM's position. For a young Khmer woman, being asked to lead may feel strange or uncomfortable at first. Leaders can help by encouraging and training her patiently, without pushing. Men can help by making room, sharing housework and childcare, and speaking up for their sisters. Women can help each other by saying yes to God, even when they feel unsure. When a Khmer sister preaches in her own language on outreach, or leads her team in prayer, the whole church grows stronger, and the people she serves see the gospel lived out.",
+   "oneLine": "God pours out his Spirit on sons and daughters alike, and the world needs them all.",
+   "cover": {
+    "bg": "paper",
+    "fg": "ink",
+    "a": "berry",
+    "b": "cobalt",
+    "motif": "pair",
+    "layout": "bottom",
+    "font": "serif"
    }
   }
  ]

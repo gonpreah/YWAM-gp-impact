@@ -1332,6 +1332,16 @@ leading at GP (culture, teams, hard conversations, vision, systems, execution).
   body and men and women, and learning each other's language. Their
   fine print says they are not published books and describe tendencies, not rules. The
   shelf's colour is GP ink (#17150F), not laterite — the brown clashed with the black GP.
+- **YWAM classics** (shelf `ywam`, 🌊, cobalt; shown right after Made at GP; Oct 2026):
+  ten foundational YWAM books in the same ten-minute shape, in English and Khmer — Is That
+  Really You, God?, Making Jesus Lord, Daring to Live on the Edge (Loren Cunningham),
+  Intimate Friendship with God and Intercession, Thrilling and Fulfilling (Joy Dawson),
+  The Father Heart of God (Floyd McClung), Spiritual Warfare for Every Christian (Dean
+  Sherman), Discipling Nations (Darrow Miller), The Book That Transforms Nations and Why
+  Not Women? (Cunningham). No ISBNs (not guessed). Written by Claude from what is known
+  of each book, without the books to hand — details it was unsure of were left out;
+  someone who has read them should check. Covers use motifs waves, crown, edge, flame,
+  incense, heart, shield, globe, openbook, pair. The test expects 44 + the GP guides + 10.
 - **Khmer** (`public/library-km.js`, `GP_LIBRARY_KM`, keyed by book id, same parts in the
   same order) is loaded only when someone reads in Khmer (`libLoadKm_`), and is NOT in the
   service worker's install list (~1.8 MB raw) — it is kept offline after that first read. The

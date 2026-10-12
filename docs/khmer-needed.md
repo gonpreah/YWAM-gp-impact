@@ -3181,3 +3181,23 @@ Book titles and authors (in `public/library-km.js`; authors are sounded out in K
 | The War of Art — Steven Pressfield | សង្គ្រាមនៃសិល្បៈ — ស្ទីវិន ប្រេសហ្វៀល |
 | Working Well with Westerners — GP Library | ធ្វើការជាមួយជនជាតិលោកខាងលិចឲ្យបានល្អ — បណ្ណាល័យ GP |
 | Working Well with Cambodians — GP Library | ធ្វើការជាមួយជនជាតិខ្មែរឱ្យបានល្អ — បណ្ណាល័យ GP |
+
+
+### The YWAM classics shelf (ten books, whole text in Khmer)
+
+The whole Khmer text of each book is in `public/library-km.js` (ids below the GP guides). Please check especially the Christian terms (ការកោតខ្លាចព្រះអម្ចាស់, ការអធិស្ឋានអង្វរ, ឆ្នាំយូបេល) against the Khmer Bible we use.
+
+| English | Khmer (draft) |
+|---|---|
+| YWAM classics | សៀវភៅសំខាន់ៗរបស់ YWAM |
+| Is That Really You, God? — Loren Cunningham with Janice Rogers | តើនោះពិតជាព្រះអង្គមែនឬ ព្រះជាម្ចាស់? — ឡូរិន ខានីងហាំ ជាមួយ ចេនីស រ៉ូជើស |
+| Making Jesus Lord — Loren Cunningham | ការតាំងព្រះយេស៊ូវជាព្រះអម្ចាស់ — ឡូរិន ខានីងហាំ |
+| Daring to Live on the Edge — Loren Cunningham | ហ៊ានរស់នៅលើគែម — ឡូរិន ខានីងហាំ |
+| Intimate Friendship with God — Joy Dawson | មិត្តភាពស្និទ្ធស្នាលជាមួយព្រះ — ជយ ដាសុន |
+| Intercession, Thrilling and Fulfilling — Joy Dawson | ការអធិស្ឋានអង្វរ៖ រំភើប និងពេញចិត្ត — ជយ ដាសុន |
+| The Father Heart of God — Floyd McClung | ព្រះហឫទ័យជាព្រះវរបិតារបស់ព្រះ — ហ្វ្លយដ៍ ម៉ាក់ក្លាំង |
+| Spiritual Warfare for Every Christian — Dean Sherman | សង្គ្រាមខាងវិញ្ញាណ សម្រាប់គ្រីស្ទានគ្រប់រូប — ឌីន ស៊ើរម៉ាន់ |
+| Discipling Nations — Darrow L. Miller with Stan Guthrie | ការបង្កើតសិស្សក្នុងចំណោមប្រជាជាតិ — ដារ៉ូ អិល មីលល័រ ជាមួយ ស្ដេន ហ្គាធ្រី |
+| The Book That Transforms Nations — Loren Cunningham with Janice Rogers | សៀវភៅដែលផ្លាស់ប្រែប្រជាជាតិ — ឡូរិន ខានីងហាំ ជាមួយ ចេនីស រ៉ូជើស |
+| Why Not Women? — Loren Cunningham and David Joel Hamilton | ហេតុអ្វីមិនឲ្យស្ត្រីដឹកនាំ? — ឡូរិន ខានីងហាំ និង ដាវីឌ យ៉ូអែល ហាមីលតុន |
+| Ten-minute reads of the best books on leading, culture, habits and creativity, and the YWAM classics — the big ideas, made for us. | ការអានរយៈពេលដប់នាទីពីសៀវភៅល្អបំផុតស្តីពីការដឹកនាំ វប្បធម៌ ទម្លាប់ ការច្នៃប្រឌិត និងសៀវភៅសំខាន់ៗរបស់ YWAM — គំនិតធំៗ រៀបចំសម្រាប់យើង។ |

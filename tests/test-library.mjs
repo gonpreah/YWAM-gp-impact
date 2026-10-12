@@ -15,7 +15,7 @@ function ok(name, cond, extra) {
 const ctx = {}; vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(PUBLIC + '/library.js', 'utf8') + ';this.L=GP_LIBRARY;', ctx);
 const L = ctx.L, shelves = L.shelves.map((s) => s.id), books = L.books;
-ok('four shelves of 44 books, and the Made at GP shelf of guides', shelves.length === 5 && books.filter((b) => !b.original).length === 44 && books.filter((b) => b.original && b.shelf === 'gp').length >= 2, shelves.join() + ' · ' + books.length + ' books');
+ok('four shelves of 44 books, the Made at GP guides, and the ten YWAM classics', shelves.length === 6 && books.filter((b) => !b.original && b.shelf !== 'ywam').length === 44 && books.filter((b) => b.original && b.shelf === 'gp').length >= 2 && books.filter((b) => b.shelf === 'ywam').length === 10, shelves.join() + ' · ' + books.length + ' books');
 ok('every shelf has a name, an emoji and two colours', L.shelves.every((s) => s.name && s.emoji && /^#[0-9A-F]{6}$/i.test(s.color) && /^#[0-9A-F]{6}$/i.test(s.ink)));
 ok('ids are unique slugs', new Set(books.map((b) => b.id)).size === books.length && books.every((b) => /^[a-z0-9-]+$/.test(b.id)));
 const str = (v) => typeof v === 'string' && v.trim().length > 0;
