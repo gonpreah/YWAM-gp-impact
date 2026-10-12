@@ -113,7 +113,7 @@ community**, and the account someone makes here is the one they keep through the
 with us. So:
 
 - **Sign in with Google or with an email and password** (done). An applicant's username is
-  their email. Staff keep their My GP username and PIN. Google needs `GP_GOOGLE_CLIENT_ID`
+  their email. Staff keep their My YWAM GP username and PIN. Google needs `GP_GOOGLE_CLIENT_ID`
   on Netlify (Google Cloud → Credentials → OAuth client, type Web, with the portal's origin
   as an authorised JavaScript origin); without it the sign-in is email + password only.
 - **Installable like the GP app** (done): `portal-manifest.json`, the shared service worker,

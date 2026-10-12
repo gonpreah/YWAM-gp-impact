@@ -1,4 +1,4 @@
-/* GP Strengths — the free strengths finder, GP's own: the content, the pairs,
+/* GP Strengths — the free strengths finder, YWAM GP's own: the content, the pairs,
    the scoring and who sees what.
 
    Checked here: thirty-four strengths in four groups of 9, 8, 9 and 8, six
@@ -34,8 +34,8 @@ const mem = blobs.__mem;
 const G = new Function(fs.readFileSync(PUBLIC + '/gpstrengths.js', 'utf8') +
   ';return {GP_GSGROUPS, GP_GSTRENGTHS, GP_GS_IDS, GP_GSPAIRS, gpGSScore, gpGSById, gpGSGroup};')();
 /* Gallup's 34 CliftonStrengths theme names — here only so the test can make
-   sure none of GP's own strengths ever borrows one. The app never shows or
-   uses them; GP Strengths is GP's own. */
+   sure none of YWAM GP's own strengths ever borrows one. The app never shows or
+   uses them; GP Strengths is YWAM GP's own. */
 const GALLUP_34 = ['Achiever', 'Arranger', 'Belief', 'Consistency', 'Deliberative', 'Discipline', 'Focus',
   'Responsibility', 'Restorative', 'Activator', 'Command', 'Communication', 'Competition', 'Maximizer',
   'Self-Assurance', 'Significance', 'Woo', 'Adaptability', 'Connectedness', 'Developer', 'Empathy', 'Harmony',
@@ -88,8 +88,8 @@ function answersFor(likes, strength) {
     G.GP_GSTRENGTHS.every(s => gallup.indexOf(low(s.name)) === -1 && gallup.indexOf(low(s.id)) === -1),
     G.GP_GSTRENGTHS.filter(s => gallup.indexOf(low(s.name)) > -1).map(s => s.name).join(','));
   /* not just the exact names — no variant of one either (Achieving, Focused,
-     Communicator…): a Gallup name's first five letters may not appear in a GP
-     strength's name, nor a GP name's in a Gallup one */
+     Communicator…): a Gallup name's first five letters may not appear in a YWAM GP
+     strength's name, nor a YWAM GP name's in a Gallup one */
   const stem = x => low(x).slice(0, 5);
   const clash = G.GP_GSTRENGTHS.filter(s => GALLUP_34.some(g => low(s.name).indexOf(stem(g)) > -1 || low(g).indexOf(stem(s.name)) > -1));
   ok('and no strength is a variant of a Gallup theme name', clash.length === 0, clash.map(s => s.name).join(','));

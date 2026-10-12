@@ -595,7 +595,7 @@ former "work" trip.
 
 | English | ខ្មែរ |
 |---|---|
-| Baked into My GP — nothing to fill out on another site. | បង្កប់នៅក្នុង My GP រួចហើយ — មិនចាំបាច់បំពេញនៅគេហទំព័រផ្សេងទៀតទេ។ |
+| Baked into My YWAM GP — nothing to fill out on another site. | បង្កប់នៅក្នុង My YWAM GP រួចហើយ — មិនចាំបាច់បំពេញនៅគេហទំព័រផ្សេងទៀតទេ។ |
 | Personal Time Off | ថ្ងៃឈប់សម្រាកផ្ទាល់ខ្លួន |
 | UofN Cambodia allocates a maximum of 6 weeks (30 work days) off per year for vacation, furlough, support raising and home visits. | UofN កម្ពុជា បម្រុងទុកអតិបរមា ៦ សប្តាហ៍ (៣០ ថ្ងៃធ្វើការ) ក្នុងមួយឆ្នាំ សម្រាប់ការឈប់សម្រាក ការត្រឡប់ទៅផ្ទះ ការរៃអង្គាសមូលនិធិ និងការទស្សនាគ្រួសារ។ |
 | / {cap} days used | / {cap} ថ្ងៃបានប្រើ |
@@ -1521,7 +1521,7 @@ terms. If a better standard Khmer term is in common use, prefer it._
 | Neutral | អព្យាក្រឹត |
 | Slightly agree | យល់ស្របបន្តិច |
 | Strongly agree | យល់ស្របខ្លាំង |
-| Uses the same four letters as Myers–Briggs®. This is GP’s own short questionnaire, not the official MBTI® assessment. | ប្រើអក្សរបួនដូចគ្នានឹង Myers–Briggs®។ នេះជាកម្រងសំណួរខ្លីរបស់ GP ផ្ទាល់ មិនមែនការវាយតម្លៃ MBTI® ផ្លូវការទេ។ |
+| Uses the same four letters as Myers–Briggs®. This is YWAM GP’s own short questionnaire, not the official MBTI® assessment. | ប្រើអក្សរបួនដូចគ្នានឹង Myers–Briggs®។ នេះជាកម្រងសំណួរខ្លីរបស់ YWAM GP ផ្ទាល់ មិនមែនការវាយតម្លៃ MBTI® ផ្លូវការទេ។ |
 | A type describes what comes naturally to you — not what you are able to do. | ប្រភេទមួយពិពណ៌នាអ្វីដែលកើតឡើងដោយធម្មជាតិចំពោះអ្នក — មិនមែនអ្វីដែលអ្នកអាចធ្វើបាននោះទេ។ |
 | No type chosen yet. | មិនទាន់បានជ្រើសរើសប្រភេទនៅឡើយ។ |
 | {name}’s type | ប្រភេទរបស់ {name} |
@@ -1844,9 +1844,9 @@ _A type name is translated as one phrase ("The Guide" → អ្នកណែន�
 
 ## 53. GP Strengths (the free strengths test)
 
-GP's own strengths finder: 102 pairs of statements ("Which is more like you?"),
+YWAM GP's own strengths finder: 102 pairs of statements ("Which is more like you?"),
 then a Top 5 of 34 strengths in four groups (Doing, Leading, Relating,
-Thinking), with what each means for work. Every word is GP's own,
+Thinking), with what each means for work. Every word is YWAM GP's own,
 so all of it is translated. The statements matter
 most — each pair is two good things, and the Khmer should keep them equally
 attractive, so neither side sounds better. Strength names should read as a
@@ -1899,7 +1899,7 @@ kind of person ("អ្នក…").
 | Retake the test | ធ្វើតេស្តម្តងទៀត |
 | Answer every pair first. | សូមឆ្លើយគ្រប់គូជាមុនសិន។ |
 
-| GP Strengths is GP’s own free questionnaire. | GP Strengths គឺជាកម្រងសំណួរឥតគិតថ្លៃរបស់ GP ផ្ទាល់។ |
+| GP Strengths is YWAM GP’s own free questionnaire. | GP Strengths គឺជាកម្រងសំណួរឥតគិតថ្លៃរបស់ YWAM GP ផ្ទាល់។ |
 
 ### Groups, strengths, descriptions and the 204 statements
 
@@ -2798,20 +2798,20 @@ now). "Read" means "I have read this book".
 | Habits & goals | ទម្លាប់ និងគោលដៅ |
 | Create & communicate | ច្នៃប្រឌិត និងទំនាក់ទំនង |
 | {n} min | {n} នាទី |
-| Summaries written for GP in our own words — not by the authors or publishers. Love one? Read the whole book. | សេចក្តីសង្ខេបសរសេរសម្រាប់ GP ដោយពាក្យរបស់យើងផ្ទាល់ — មិនមែនដោយអ្នកនិពន្ធ ឬអ្នកបោះពុម្ពទេ។ ចូលចិត្តសៀវភៅណាមួយ? សូមអានសៀវភៅទាំងមូល។ |
+| Summaries written for YWAM GP in our own words — not by the authors or publishers. Love one? Read the whole book. | សេចក្តីសង្ខេបសរសេរសម្រាប់ YWAM GP ដោយពាក្យរបស់យើងផ្ទាល់ — មិនមែនដោយអ្នកនិពន្ធ ឬអ្នកបោះពុម្ពទេ។ ចូលចិត្តសៀវភៅណាមួយ? សូមអានសៀវភៅទាំងមូល។ |
 | Covers from Open Library. | ក្របសៀវភៅពី Open Library។ |
 | {n}-minute read | ការអាន {n} នាទី |
 | The big idea | គំនិតធំ |
 | {n} key insights | ចំណុចសំខាន់ៗ {n} |
 | Try this week | សាកល្បងសប្តាហ៍នេះ |
-| For us at GP | សម្រាប់យើងនៅ GP |
+| For us at YWAM GP | សម្រាប់យើងនៅ YWAM GP |
 | In one line | ក្នុងមួយបន្ទាត់ |
 | Read | បានអាន |
 | Mark as read | សម្គាល់ថាបានអាន |
 | Next book | សៀវភៅបន្ទាប់ |
-| Summary written for GP in our own words — not by the author or publisher. | សេចក្តីសង្ខេបសរសេរសម្រាប់ GP ដោយពាក្យរបស់យើងផ្ទាល់ — មិនមែនដោយអ្នកនិពន្ធ ឬអ្នកបោះពុម្ពទេ។ |
+| Summary written for YWAM GP in our own words — not by the author or publisher. | សេចក្តីសង្ខេបសរសេរសម្រាប់ YWAM GP ដោយពាក្យរបស់យើងផ្ទាល់ — មិនមែនដោយអ្នកនិពន្ធ ឬអ្នកបោះពុម្ពទេ។ |
 | Start here | ចាប់ផ្តើមនៅទីនេះ |
-| {n} books to read first for leading at GP: culture, teams, hard conversations, vision, systems and getting things done. | សៀវភៅ {n} ក្បាលដែលគួរអានមុនគេ សម្រាប់ការដឹកនាំនៅ GP៖ វប្បធម៌ ក្រុមការងារ ការសន្ទនាពិបាកៗ ចក្ខុវិស័យ ប្រព័ន្ធ និងការធ្វើការងារឱ្យបានសម្រេច។ |
+| {n} books to read first for leading at YWAM GP: culture, teams, hard conversations, vision, systems and getting things done. | សៀវភៅ {n} ក្បាលដែលគួរអានមុនគេ សម្រាប់ការដឹកនាំនៅ YWAM GP៖ វប្បធម៌ ក្រុមការងារ ការសន្ទនាពិបាកៗ ចក្ខុវិស័យ ប្រព័ន្ធ និងការធ្វើការងារឱ្យបានសម្រេច។ |
 | Continue reading | បន្តអាន |
 | See all | មើលទាំងអស់ |
 | What’s it about? | និយាយអំពីអ្វី? |
@@ -2824,9 +2824,9 @@ now). "Read" means "I have read this book".
 | {n} key ideas | គំនិតសំខាន់ៗ {n} |
 | Key idea {n} of {m} | គំនិតសំខាន់ទី {n} នៃ {m} |
 | Continue — key idea {n} | បន្ត — គំនិតសំខាន់ទី {n} |
-| Made at GP | បង្កើតនៅ GP |
-| Original GP guide | មគ្គុទ្ទេសក៍ដើមរបស់ GP |
-| An original guide written for GP — not a published book. Every person is different: use it to start conversations, not to put people in boxes. | មគ្គុទ្ទេសក៍ដើមដែលសរសេរសម្រាប់ GP — មិនមែនជាសៀវភៅបោះពុម្ពទេ។ មនុស្សម្នាក់ៗខុសៗគ្នា៖ ប្រើវាដើម្បីចាប់ផ្តើមការសន្ទនា មិនមែនដើម្បីដាក់មនុស្សក្នុងប្រអប់ទេ។ |
+| Made at YWAM GP | បង្កើតនៅ YWAM GP |
+| Original GP guide | មគ្គុទ្ទេសក៍ដើមរបស់ YWAM GP |
+| An original guide written for YWAM GP — not a published book. Every person is different: use it to start conversations, not to put people in boxes. | មគ្គុទ្ទេសក៍ដើមដែលសរសេរសម្រាប់ YWAM GP — មិនមែនជាសៀវភៅបោះពុម្ពទេ។ មនុស្សម្នាក់ៗខុសៗគ្នា៖ ប្រើវាដើម្បីចាប់ផ្តើមការសន្ទនា មិនមែនដើម្បីដាក់មនុស្សក្នុងប្រអប់ទេ។ |
 
 ## 66. Books read and required documents (signatures)
 
@@ -3205,7 +3205,7 @@ The whole Khmer text of each book is in `public/library-km.js` (ids below the GP
 
 ### 1-on-1s: the check-in, the sheet and the monthly count
 
-The five values are GP's FIGHT — the letters stay in English so the word still spells FIGHT. Their Khmer names, statements and behaviours are GP's own (from Uriah, Oct 2026) and live in OO_VALUES in teams.html, not here. "Check-in" uses ការរាយការណ៍ as in the weekly health check-in.
+The five values are YWAM GP's FIGHT — the letters stay in English so the word still spells FIGHT. Their Khmer names, statements and behaviours are YWAM GP's own (from Uriah, Oct 2026) and live in OO_VALUES in teams.html, not here. "Check-in" uses ការរាយការណ៍ as in the weekly health check-in.
 
 | English | Khmer (draft) |
 |---|---|
@@ -3275,7 +3275,7 @@ The five values are GP's FIGHT — the letters stay in English so the word still
 
 ### Library: FIGHT: Our Values (a GP guide)
 
-The whole text is in `public/library-km.js` (`fight-our-values`). It quotes GP's own Khmer
+The whole text is in `public/library-km.js` (`fight-our-values`). It quotes YWAM GP's own Khmer
 value statements and behaviours word for word — including ដ៏ទៃ in the Generous statement,
 where ដទៃ is the usual spelling; worth fixing at the source if leadership agrees.
 
@@ -3286,8 +3286,8 @@ where ដទៃ is the usual spelling; worth fixing at the source if leadership 
 ### FIGHT v2: the check-in's values (Oct 2026)
 
 The values now carry a statement, three "I…" behaviours, a verse and a guardrail each, in
-English and Khmer, in `OO_VALUES` / `OO_FLOW` in teams.html. GP's Khmer value names are
-unchanged; the Khmer statements build on GP's own; the "I…" behaviours, verses and
+English and Khmer, in `OO_VALUES` / `OO_FLOW` in teams.html. YWAM GP's Khmer value names are
+unchanged; the Khmer statements build on YWAM GP's own; the "I…" behaviours, verses and
 guardrails are Claude's drafts — please check, along with the guide's terms: ផ្លូវភេទ
 (sexuality), រូបភាព និងវីដេអូអាសអាភាស (pornography), ការទាក់ទាញចំពោះភេទដូចគ្នា (same-sex
 attraction), របាំងការពារ (guardrail), ចិត្តតស៊ូ (Grit). ដ៏ទៃ → ដទៃ in the Generous statement.
@@ -3323,7 +3323,7 @@ attraction), របាំងការពារ (guardrail), ចិត្តត�
 | No one yet — an admin sets each person’s YWAM GP role. | មិនទាន់មាននរណាម្នាក់នៅឡើយទេ — អ្នកគ្រប់គ្រងកំណត់តួនាទី YWAM GP របស់ម្នាក់ៗ។ |
 | Campus leadership teams | ក្រុមដឹកនាំមូលដ្ឋាន |
 | Campuses | មូលដ្ឋាន |
-| The advisory board stands alongside GP’s leaders, outside the campus structure. If you ever need to raise something serious — about a leader, someone’s safety, abuse or misconduct — you can contact them directly. Your message goes to them, not to campus leadership. | ក្រុមប្រឹក្សាយោបល់ឈរនៅក្បែរថ្នាក់ដឹកនាំ GP ប៉ុន្តែនៅក្រៅរចនាសម្ព័ន្ធមូលដ្ឋាន។ ប្រសិនបើអ្នកត្រូវលើកឡើងរឿងធ្ងន់ធ្ងរ — អំពីអ្នកដឹកនាំ សុវត្ថិភាពរបស់នរណាម្នាក់ ការរំលោភបំពាន ឬអំពើខុសឆ្គង — អ្នកអាចទាក់ទងពួកគាត់ដោយផ្ទាល់។ សាររបស់អ្នកទៅដល់ពួកគាត់ មិនមែនទៅថ្នាក់ដឹកនាំមូលដ្ឋានទេ។ |
+| The advisory board stands alongside YWAM GP’s leaders, outside the campus structure. If you ever need to raise something serious — about a leader, someone’s safety, abuse or misconduct — you can contact them directly. Your message goes to them, not to campus leadership. | ក្រុមប្រឹក្សាយោបល់ឈរនៅក្បែរថ្នាក់ដឹកនាំ YWAM GP ប៉ុន្តែនៅក្រៅរចនាសម្ព័ន្ធមូលដ្ឋាន។ ប្រសិនបើអ្នកត្រូវលើកឡើងរឿងធ្ងន់ធ្ងរ — អំពីអ្នកដឹកនាំ សុវត្ថិភាពរបស់នរណាម្នាក់ ការរំលោភបំពាន ឬអំពើខុសឆ្គង — អ្នកអាចទាក់ទងពួកគាត់ដោយផ្ទាល់។ សាររបស់អ្នកទៅដល់ពួកគាត់ មិនមែនទៅថ្នាក់ដឹកនាំមូលដ្ឋានទេ។ |
 | Email the whole board | ផ្ញើអ៊ីមែលទៅក្រុមប្រឹក្សាទាំងមូល |
 | The board’s members will be listed here. | សមាជិកក្រុមប្រឹក្សានឹងបង្ហាញនៅទីនេះ។ |
 | Director: {names} | នាយក៖ {names} |

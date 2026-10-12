@@ -1,11 +1,11 @@
-/*  GP Strengths — a free strengths finder, written for GP.
+/*  GP Strengths — a free strengths finder, written for YWAM GP.
 
     Thirty-four strengths in four groups — Doing (9), Leading (8), Relating (9)
     and Thinking (8) — found through 102 "which is more like you?" choices.
     Everything in this file — the strengths, their names, the 204 statements,
-    the descriptions and the grouping — is GP's own.
+    the descriptions and the grouping — is YWAM GP's own.
 
-    The names, statements and descriptions are GP's own and must stay that
+    The names, statements and descriptions are YWAM GP's own and must stay that
     way: no borrowed names or wording from any commercial strengths test
     (tests/test-gpstrengths.mjs checks the names).
 

@@ -1103,7 +1103,7 @@ function noAccessHtml_(){
 }
 /* ---- signing in (Oct 2026) ----
    Applicants sign in with Google or with their email and password — their
-   username IS their email. Staff who work in applications keep their My GP
+   username IS their email. Staff who work in applications keep their My YWAM GP
    username and PIN, behind "Staff, or a username and PIN?". Older applicant
    accounts made with a username and PIN still work there too. */
 function loginHtml_(){
@@ -1118,7 +1118,7 @@ function loginHtml_(){
       '<button class="btn" id="loginBtn"'+(P.busy?' disabled':'')+'>'+esc(P.busy?t('Signing in…'):t('Sign in'))+'</button>'+
       '<p class="hint">'+esc(t('Forgot your password? Message our team on WhatsApp or Telegram and we will reset it.'))+'</p></div>';
   } else {
-    h+='<div class="card"><h2>'+esc(t('Username and PIN'))+'</h2><p class="sub">'+esc(t('YWAM staff sign in with their My GP username and PIN. An older applicant account made with a username and PIN signs in here too.'))+'</p>'+
+    h+='<div class="card"><h2>'+esc(t('Username and PIN'))+'</h2><p class="sub">'+esc(t('YWAM staff sign in with their My YWAM GP username and PIN. An older applicant account made with a username and PIN signs in here too.'))+'</p>'+
       '<label class="f">'+esc(t('Username'))+'</label><input type="text" id="l_user" autocomplete="username" autocapitalize="none" value="'+esc(P.reg.username||'')+'">'+
       '<label class="f">'+esc(t('PIN'))+'</label><input type="password" id="l_pin" inputmode="numeric" maxlength="4" autocomplete="current-password">'+
       '<button class="btn" id="pinLoginBtn"'+(P.busy?' disabled':'')+'>'+esc(P.busy?t('Signing in…'):t('Sign in'))+'</button></div>';
@@ -1382,7 +1382,7 @@ function strengthsHtml_(){
     h+='<div class="card"><h3 style="margin-top:0">'+esc(gpT('{name}’s type',{name:who.name||''}))+'</h3><p class="sub">'+esc(t('Took it before? Pick the four letters.'))+'</p><div class="pPick">'+GP_PTYPE_CODES.map(function(c){ return '<button type="button" class="pPickBtn" data-ppick="'+c+'">'+gpPAvatar(c, pSexOf_(who), 40)+'<b>'+c+'</b><span>'+esc(pTypeName_(c))+'</span></button>'; }).join('')+'</div>'+
       '<button class="linkbtn inline" id="ppickCancel">'+esc(t('Cancel'))+'</button></div>';
   }
-  h+='<p class="hint" style="text-align:center">'+esc(t('Uses the same four letters as Myers–Briggs®. This is GP’s own short questionnaire, not the official MBTI® assessment.'))+'</p>';
+  h+='<p class="hint" style="text-align:center">'+esc(t('Uses the same four letters as Myers–Briggs®. This is YWAM GP’s own short questionnaire, not the official MBTI® assessment.'))+'</p>';
   return h+'</div>';
 }
 function pTestHtml_(){

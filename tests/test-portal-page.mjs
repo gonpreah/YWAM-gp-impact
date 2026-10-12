@@ -574,7 +574,7 @@ async function open(viewport, query, seed) {
   ok('an applicant signs in with her email and password and lands on her dashboard, which says how she signs in', /Email and password/.test(await page.$eval('#main', e => e.textContent)) && !!(await page.$('#changePw')));
   await page.click('#outBtn'); await page.waitForTimeout(150);
   await page.click('#toPinLogin'); await page.waitForTimeout(100);
-  ok('the username-and-PIN door is for staff and older accounts', !!(await page.$('#l_user')) && /YWAM staff sign in with their My GP username and PIN/.test(await page.$eval('#main', e => e.textContent)));
+  ok('the username-and-PIN door is for staff and older accounts', !!(await page.$('#l_user')) && /YWAM staff sign in with their My YWAM GP username and PIN/.test(await page.$eval('#main', e => e.textContent)));
   await page.fill('#l_user', 'bopha'); await page.fill('#l_pin', '1234'); await page.click('#pinLoginBtn');
   await page.waitForTimeout(400);
   ok('a staff member without portal access is told so and sees no applicants', /No portal access/.test(await page.$eval('#main', e => e.textContent)) && !(await page.$('.trow')));

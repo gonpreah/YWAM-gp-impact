@@ -17,7 +17,7 @@
    dashboard flash for ~200ms on every single app open before landing on their own
    page. Nothing above this line paints. */
 (function(){
-  /* A guest belongs in My GP's own guest mode (teams.html?guest=1: the tour, the
+  /* A guest belongs in My YWAM GP's own guest mode (teams.html?guest=1: the tour, the
      Library, Base), not on this old dashboard — whether they chose "Look around"
      in the app (gp-app-guest) or "View as guest" here before it moved (gp-guest).
      gp-skip-teams is the one way to ask for this page on purpose. */
@@ -1022,7 +1022,7 @@ function renderWelcome(){
   document.getElementById('langBtn').onclick = toggleLang;
   document.getElementById('wCreate').onclick = function(){ window.location.href='teams.html?reg=1'; };
   document.getElementById('wLogin').onclick = function(){ window.location.href='teams.html'; };
-  /* Guests look around inside My GP (the tour, the Library, Base) — the same
+  /* Guests look around inside My YWAM GP (the tour, the Library, Base) — the same
      guest mode as "Look around" on the app's log-in screen. */
   document.getElementById('wGuest').onclick = function(){ window.location.href='teams.html?guest=1'; };
 }

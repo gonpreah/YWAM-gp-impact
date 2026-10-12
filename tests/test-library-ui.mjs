@@ -93,7 +93,7 @@ const openLib = async page => { await page.click('nav.bottom [data-tab="library"
   await page.click('nav.bottom [data-tab="library"]'); await page.waitForTimeout(900);
   const rows = await page.$$eval('.libSecHead', hs => hs.map(h => h.innerText.replace(/\s+/g, ' ')));
   const SHOWN = C.L.shelves.filter(x => x.id === 'gp').concat(C.L.shelves.filter(x => x.id !== 'gp'));
-  ok('the home is rows: Start here, the GP guides, then one per shelf, each with See all', rows.length === 1 + SHOWN.length && /Start here/.test(rows[0]) && /Made at GP/.test(rows[1]) && rows.slice(1).every((r, i) => r.includes(SHOWN[i].name) && /See all/.test(r)), rows.join(' | '));
+  ok('the home is rows: Start here, the GP guides, then one per shelf, each with See all', rows.length === 1 + SHOWN.length && /Start here/.test(rows[0]) && /Made at YWAM GP/.test(rows[1]) && rows.slice(1).every((r, i) => r.includes(SHOWN[i].name) && /See all/.test(r)), rows.join(' | '));
   const ids = new Set(await page.$$eval('.libTile', ts => ts.map(t => t.getAttribute('data-libbook'))));
   ok('every book is on its shelf’s row', ids.size === BOOKS.length && BOOKS.every(b => ids.has(b.id)), ids.size + ' of ' + BOOKS.length);
   const shelfRows = await page.$$eval('.libRow', rs => rs.slice(1).map(r => [...r.querySelectorAll('.libTile')].map(t => ({
@@ -121,8 +121,8 @@ const openLib = async page => { await page.click('nav.bottom [data-tab="library"
   await page.click('[data-libbook="atomic-habits"]'); await page.waitForTimeout(400);
   const txt = await page.$eval('#main', e => e.innerText);
   ok('a book page: cover, title, author, minutes, key ideas, the vibe line', !!(await page.$('.libHead .libCover')) && /Atomic Habits/.test(txt) && /James Clear/.test(txt) && /10-minute read/.test(txt) && new RegExp(AHN + ' key ideas').test(txt) && txt.includes(AH.vibe.slice(0, 24)));
-  ok('… Start reading, what it’s about, what’s inside and for us at GP',
-    /Start reading/.test(await page.$eval('#libStart', e => e.innerText)) && /What’s it about\?/.test(txt) && (await page.$$('.libInsideItem')).length === AHN && /For us at GP/i.test(txt));
+  ok('… Start reading, what it’s about, what’s inside and for us at YWAM GP',
+    /Start reading/.test(await page.$eval('#libStart', e => e.innerText)) && /What’s it about\?/.test(txt) && (await page.$$('.libInsideItem')).length === AHN && /For us at YWAM GP/i.test(txt));
   await page.screenshot({ path: OUT + '/book.png' });
   await page.click('#libStart'); await page.waitForTimeout(300);
   let r = await page.$eval('#libReader', e => e.innerText);
@@ -151,7 +151,7 @@ const openLib = async page => { await page.click('nav.bottom [data-tab="library"
   ok('Continue opens where you were', new RegExp('Key idea 2 of ' + AHN, 'i').test(await page.$eval('#libReader', e => e.innerText)));
   for (let i = 0; i < AHN - 1; i++) { await page.click('#libNext'); await page.waitForTimeout(120); }
   r = await page.$eval('#libReader', e => e.innerText);
-  ok('the last screen is the final summary: in one line, try this week, for us at GP', /Final summary/i.test(r) && /In one line/i.test(r) && /Try this week/i.test(r) && /For us at GP/i.test(r) && !!(await page.$('#libFinish')));
+  ok('the last screen is the final summary: in one line, try this week, for us at YWAM GP', /Final summary/i.test(r) && /In one line/i.test(r) && /Try this week/i.test(r) && /For us at YWAM GP/i.test(r) && !!(await page.$('#libFinish')));
   const full = await page.evaluate(() => { const r = document.getElementById('libReader').getBoundingClientRect(), cs = getComputedStyle(document.getElementById('libReader'));
     return { pos: cs.position, top: Math.round(r.top), bottom: Math.round(innerHeight - r.bottom), w: Math.round(r.width - innerWidth), tabs: getComputedStyle(document.querySelector('nav.bottom')).display, bg: cs.backgroundColor, bodyBg: getComputedStyle(document.body).backgroundColor }; });
   ok('reading is full-screen on the plain page colour, the tab bar out of the way', full.pos === 'fixed' && full.top === 0 && full.bottom === 0 && full.w === 0 && full.tabs === 'none', JSON.stringify(full));

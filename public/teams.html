@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>My GP</title>
+<title>My YWAM GP</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -289,8 +289,8 @@ header { background:var(--headerBg); color:var(--onDark); display:flex; justify-
 .brandRow { display:flex; align-items:center; gap:10px; min-width:0; }
 .logoImg { height:30px; width:auto; flex-shrink:0; display:block; }
 .brand { display:flex; flex-direction:column; padding-left:10px; border-left:1px solid var(--onDarkBorder); }
-.brandKh { font-family:'Koulen',sans-serif; font-size:22px; letter-spacing:1px; line-height:1; }
-.brandEn { font-size:9px; letter-spacing:3px; color:var(--amber); font-weight:700; }
+.brandKh { font-family:'Koulen',sans-serif; font-size:22px; letter-spacing:1px; line-height:1;  white-space:nowrap; }
+.brandEn { font-size:9px; letter-spacing:2px; color:var(--amber); font-weight:700; white-space:nowrap; }   /* "MY YWAM GP" on one line, down to 320px */
 .hbtns { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
 .hbtn { border:1px solid var(--onDarkBorder); background:transparent; color:var(--onDark); border-radius:999px; padding:6px 12px; font-size:13px; cursor:pointer; }
 .hbtn.icon { padding:6px; display:flex; align-items:center; justify-content:center; }
@@ -2172,7 +2172,7 @@ footer { text-align:center; font-size:12px; color:var(--muted); margin-top:26px;
 <header>
   <div class="brandRow">
     <img id="brandLogo" alt="YWAM GP — Gon Preah" class="logoImg">
-    <div class="brand"><div class="brandKh">កូនព្រះ</div><div class="brandEn">MY GP</div></div>
+    <div class="brand"><div class="brandKh">កូនព្រះ</div><div class="brandEn">MY YWAM GP</div></div>
   </div>
   <div class="hbtns" id="hbtns"></div>
 </header>
@@ -4721,7 +4721,7 @@ function mentorshipCardHtml(){
 /* ---------- 1-on-1s (Oct 2026) ----------
    Uriah: every mentee should have at least two 1-on-1s a month, and each one
    should have a little structure. The mentee fills in a short check-in when
-   they ask for one (or right after accepting one): six areas of life and GP's
+   they ask for one (or right after accepting one): six areas of life and YWAM GP's
    five values — FIGHT: Faithful, Innovative, Generous, Humble, Tenacious —
    each 1-5, plus what they'd like help with and what they're working toward.
    The mentor sees it beside their goals and last time's follow-ups, then marks
@@ -4730,10 +4730,10 @@ function mentorshipCardHtml(){
 var OO_AREAS=[ {id:'money',emoji:'💰',label:'Fundraising & finances'}, {id:'language',emoji:'🗣️',label:'Language study'},
   {id:'physical',emoji:'💪',label:'Physical health'}, {id:'emotional',emoji:'💛',label:'Emotional health'},
   {id:'relational',emoji:'🤝',label:'Relationships'}, {id:'spiritual',emoji:'🙏',label:'Spiritual life'} ];
-/* GP's values, FIGHT — v2 (Oct 2026, with Uriah): each with its statement, three
+/* YWAM GP's values, FIGHT — v2 (Oct 2026, with Uriah): each with its statement, three
    "I…" behaviours to rate yourself against, a verse and a guardrail (what it is
-   not). English and GP's Khmer side by side rather than through t(): the Khmer
-   names are GP's own and stay as they are (ការចុះចូល — submitting to and
+   not). English and YWAM GP's Khmer side by side rather than through t(): the Khmer
+   names are YWAM GP's own and stay as they are (ការចុះចូល — submitting to and
    honouring one another). They build on each other: OO_FLOW. */
 var OO_FLOW={ en:"They build on each other: start with yourself (Faithful), keep improving (Innovative), from a heart to serve (Generous), open to correction (Humble), and never give up (Tenacious).", km:"ចាប់ផ្តើមពីខ្លួនឯង (ស្មោះត្រង់) → បន្តរីកចម្រើន (គំនិតច្នៃប្រឌិត) → ឱ្យសេចក្តីស្រឡាញ់ជំរុញចិត្ត (សប្បុរស) → ទទួលយកការកែតម្រូវ (ការចុះចូល) → ស្តាប់ ស្តាប់បង្គាប់ ហើយកុំបោះបង់ (ការខិតខំប្រឹងប្រែង)។" };
 var OO_VALUES=[
@@ -4752,10 +4752,10 @@ var OO_VALUES=[
     verse:"Isaiah 43:19 — See, I am doing a new thing.", verseKm:"អេសាយ ៤៣:១៩ — ព្រះមានបន្ទូលថា ទ្រង់កំពុងធ្វើការថ្មីមួយ។",
     not:"Not tech for its own sake, or change for change’s sake. Tools serve people and the mission.", notKm:"មិនមែនជាការប្រើបច្ចេកវិទ្យា ដើម្បីតែបច្ចេកវិទ្យា ឬការផ្លាស់ប្តូរ ដើម្បីតែការផ្លាស់ប្តូរទេ។ ឧបករណ៍ត្រូវបម្រើមនុស្ស និងបេសកកម្ម។" },
   { id:'generous', letter:'G', label:"Generous", km:"សប្បុរស",
-    say:"We give sacrificially of our time, talents and treasures, and love others as ourselves. Nation over location: we protect unity across GP and the wider Church over growing our own ministry.",
-    sayKm:"យើងលះបង់ពេលវេលា សមត្ថភាព និងទ្រព្យសម្បត្ដិរបស់យើង ហើយស្រឡាញ់អ្នកដទៃដូចស្រឡាញ់ខ្លួនយើង។ ផ្តល់អាទិភាពដល់ប្រទេសលើតំបន់៖ យើងការពារការរួបរួមនៅ GP និងនៅក្នុងពួកជំនុំរបស់ព្រះគ្រីស្ទទាំងមូល ជាជាងពង្រីកកិច្ចការបម្រើផ្ទាល់ខ្លួនរបស់យើង។",
-    does:["I welcome people (guests, teams, new staff) like family.", "I put GP’s unity and the bigger mission over growing my own ministry.", "I share what I have (time, skills and money), even when it costs me."],
-    doesKm:["ខ្ញុំស្វាគមន៍មនុស្ស (ភ្ញៀវ ក្រុមនានា និងបុគ្គលិកថ្មី) ដូចជាក្រុមគ្រួសារ។", "ខ្ញុំផ្តល់អាទិភាពដល់ការរួបរួមរបស់ GP និងបេសកកម្មដ៏ធំ លើការពង្រីកកិច្ចការបម្រើផ្ទាល់ខ្លួនរបស់ខ្ញុំ។", "ខ្ញុំចែករំលែកអ្វីដែលខ្ញុំមាន (ពេលវេលា ជំនាញ និងលុយ) ទោះបីជាវាធ្វើឱ្យខ្ញុំខាតក៏ដោយ។"],
+    say:"We give sacrificially of our time, talents and treasures, and love others as ourselves. Nation over location: we protect unity across YWAM GP and the wider Church over growing our own ministry.",
+    sayKm:"យើងលះបង់ពេលវេលា សមត្ថភាព និងទ្រព្យសម្បត្ដិរបស់យើង ហើយស្រឡាញ់អ្នកដទៃដូចស្រឡាញ់ខ្លួនយើង។ ផ្តល់អាទិភាពដល់ប្រទេសលើតំបន់៖ យើងការពារការរួបរួមនៅ YWAM GP និងនៅក្នុងពួកជំនុំរបស់ព្រះគ្រីស្ទទាំងមូល ជាជាងពង្រីកកិច្ចការបម្រើផ្ទាល់ខ្លួនរបស់យើង។",
+    does:["I welcome people (guests, teams, new staff) like family.", "I put YWAM GP’s unity and the bigger mission over growing my own ministry.", "I share what I have (time, skills and money), even when it costs me."],
+    doesKm:["ខ្ញុំស្វាគមន៍មនុស្ស (ភ្ញៀវ ក្រុមនានា និងបុគ្គលិកថ្មី) ដូចជាក្រុមគ្រួសារ។", "ខ្ញុំផ្តល់អាទិភាពដល់ការរួបរួមរបស់ YWAM GP និងបេសកកម្មដ៏ធំ លើការពង្រីកកិច្ចការបម្រើផ្ទាល់ខ្លួនរបស់ខ្ញុំ។", "ខ្ញុំចែករំលែកអ្វីដែលខ្ញុំមាន (ពេលវេលា ជំនាញ និងលុយ) ទោះបីជាវាធ្វើឱ្យខ្ញុំខាតក៏ដោយ។"],
     verse:"Acts 4:32 — All the believers were one in heart and mind, and shared everything they had.", verseKm:"កិច្ចការ ៤:៣២ — អ្នកជឿទាំងអស់មានចិត្ត និងគំនិតតែមួយ ហើយពួកគេចែករំលែកអ្វីៗទាំងអស់ដែលពួកគេមាន។",
     not:"Not giving to be seen, or saying yes to everything. Generous people still keep healthy limits.", notKm:"មិនមែនជាការឱ្យ ដើម្បីឱ្យគេមើលឃើញ ឬការឆ្លើយព្រមគ្រប់រឿងទេ។ មនុស្សសប្បុរស នៅតែរក្សាព្រំដែនដែលល្អ។" },
   { id:'humble', letter:'H', label:"Humble", km:"ការចុះចូល",
@@ -5599,7 +5599,7 @@ function pScaleWord(n){
   return t(['Strongly disagree','Disagree','Slightly disagree','Neutral','Slightly agree','Agree','Strongly agree'][n+3]);
 }
 function pFineHtml(){
-  return '<p class="pFine">'+esc(t('Uses the same four letters as Myers–Briggs®. This is GP’s own short questionnaire, not the official MBTI® assessment.'))+' '+
+  return '<p class="pFine">'+esc(t('Uses the same four letters as Myers–Briggs®. This is YWAM GP’s own short questionnaire, not the official MBTI® assessment.'))+' '+
     esc(t('A type describes what comes naturally to you — not what you are able to do.'))+'</p>';
 }
 
@@ -5846,7 +5846,7 @@ function teamStrengthsHtml_(campus){
 
 /* ==================== Library ====================
    Five-minute reads of the books on Craig Groeschel's leadership lists, written
-   for GP in our own words (public/library.js — GP_LIBRARY). Menu → Library.
+   for YWAM GP in our own words (public/library.js — GP_LIBRARY). Menu → Library.
    The books load only when the Library is opened (libLoad_), so they cost the
    app's start nothing; sw.js keeps a copy for offline reading.
 
@@ -5891,7 +5891,7 @@ function libAuthor_(b){
   var k=(libLang_()==='km' && typeof GP_LIBRARY_KM!=='undefined') ? GP_LIBRARY_KM[b.id] : null;
   return (k && k.author) || b.author;
 }
-/* Shelves in the order the home shows them: the guides made at GP first. */
+/* Shelves in the order the home shows them: the guides made at YWAM GP first. */
 function libShelvesShown_(){ return GP_LIBRARY.shelves.filter(function(x){ return x.id==='gp'; }).concat(GP_LIBRARY.shelves.filter(function(x){ return x.id!=='gp'; })); }
 /* In Khmer, the Khmer library is fetched the first time it's needed; until it
    arrives everything shows in English, and a failed fetch says so. */
@@ -6207,10 +6207,10 @@ function libraryHtml(){
     });
   } else {
     var shown = S.libShelf==='start' ? picks : books.filter(function(x){ return x.shelf===S.libShelf; });
-    if(S.libShelf==='start') h+='<p class="sub libStartNote">'+esc(gpT('{n} books to read first for leading at GP: culture, teams, hard conversations, vision, systems and getting things done.',{n:picks.length}))+'</p>';
+    if(S.libShelf==='start') h+='<p class="sub libStartNote">'+esc(gpT('{n} books to read first for leading at YWAM GP: culture, teams, hard conversations, vision, systems and getting things done.',{n:picks.length}))+'</p>';
     h+='<div class="libGrid">'+shown.map(function(b){ return libTileHtml_(b, read, prog); }).join('')+'</div>';
   }
-  return h+'<p class="pFine">'+esc(t('Summaries written for GP in our own words — not by the authors or publishers. Love one? Read the whole book.'))+'</p>';
+  return h+'<p class="pFine">'+esc(t('Summaries written for YWAM GP in our own words — not by the authors or publishers. Love one? Read the whole book.'))+'</p>';
 }
 function libBookHtml_(b){
   var sh=libShelf_(b.shelf), read=libRead_()[b.id], at=libProg_()[b.id], T=libText_(b);
@@ -6227,12 +6227,12 @@ function libBookHtml_(b){
   h+='<div class="libSec'+(T.km?' libKm':'')+'"><h3>'+esc(t('What’s inside'))+'</h3><div class="libInside">'+T.insights.map(function(x, k){
     return '<button class="libInsideItem" data-libstep="'+(k+1)+'"><span class="libInsightNum" style="background:'+sh.color+'">'+(k+1)+'</span><span>'+esc(x.emoji||'')+' '+esc(x.title)+'</span><span class="libInsideGo">›</span></button>';
   }).join('')+'</div></div>';
-  h+='<div class="card libForUs'+(T.km?' libKm':'')+'" style="border-left-color:'+sh.color+'"><div class="libKicker">🌏 '+esc(t('For us at GP'))+'</div>'+libParas_(T.forUs)+'</div>';
+  h+='<div class="card libForUs'+(T.km?' libKm':'')+'" style="border-left-color:'+sh.color+'"><div class="libKicker">🌏 '+esc(t('For us at YWAM GP'))+'</div>'+libParas_(T.forUs)+'</div>';
   h+='<div class="btnRow" style="margin-top:14px">'+
     '<button class="btn ghost" id="libMarkRead" data-libid="'+esc(b.id)+'">'+esc(read ? '✓ '+t('Read') : t('Mark as read'))+'</button>'+
     (next && next!==b ? '<button class="btn ghost" data-libbook="'+esc(next.id)+'">'+esc(t('Next book'))+' →</button>' : '')+'</div>';
-  return h+'<p class="pFine">'+esc(b.original ? t('An original guide written for GP — not a published book. Every person is different: use it to start conversations, not to put people in boxes.')
-    : t('Summary written for GP in our own words — not by the author or publisher.'))+'</p>';
+  return h+'<p class="pFine">'+esc(b.original ? t('An original guide written for YWAM GP — not a published book. Every person is different: use it to start conversations, not to put people in boxes.')
+    : t('Summary written for YWAM GP in our own words — not by the author or publisher.'))+'</p>';
 }
 /* One screen per step: 0 the intro, 1…n the key ideas, n+1 the final summary. */
 function libReaderHtml_(b){
@@ -6246,7 +6246,7 @@ function libReaderHtml_(b){
   else if(k<=n){ var x=T.insights[k-1]; h+='<div class="libReaderEmoji">'+esc(x.emoji||'')+'</div><h2>'+esc(x.title)+'</h2>'+libParas_(x.body); }
   else h+='<div class="libOneLine" style="background:'+sh.color+'"><span>'+esc(t('In one line'))+'</span>'+esc(T.oneLine)+'</div>'+
     '<div class="libKicker" style="margin-top:20px">✅ '+esc(t('Try this week'))+'</div><ul class="libTry">'+T.tryThis.map(function(x){ return '<li>'+esc(x)+'</li>'; }).join('')+'</ul>'+
-    '<div class="libKicker" style="margin-top:18px">🌏 '+esc(t('For us at GP'))+'</div>'+libParas_(T.forUs);
+    '<div class="libKicker" style="margin-top:18px">🌏 '+esc(t('For us at YWAM GP'))+'</div>'+libParas_(T.forUs);
   /* Turning the page is a swipe (or a tap on the page's edge, where a quiet ‹ › sits);
      the only button is Done, on the last page. The first few books opened show how. */
   h+='</div>'+
@@ -6903,7 +6903,7 @@ function bindGuest_(){
 }
 
 /* ==================== YWAM GP: titles, GP leadership, the advisory board ====================
-   Oct 2026 (Uriah). GP is four parts now: YWAM Poipet, YWAM Siem Reap, YWAM GP (the
+   Oct 2026 (Uriah). YWAM GP is four parts now: YWAM Poipet, YWAM Siem Reap, YWAM GP (the
    whole organisation) and the YWAM GP Advisory Board. From getYwamGp (in the boot as
    `org`): each Campus Leadership person's title — International / National Campus
    Director, Director of <department> — the YWAM GP roles, each campus's leadership
@@ -6971,7 +6971,7 @@ function orgBoardHtml_(){
   var B=(S.org && S.org.board) || [];
   var emails=B.map(function(b){ return b.email; }).filter(Boolean);
   var h='<h3 id="orgBoard">🛡️ '+esc(t('YWAM GP Advisory Board'))+'</h3>';
-  if(!S.board) h+='<div class="card orgBoardNote"><p>'+esc(t('The advisory board stands alongside GP’s leaders, outside the campus structure. If you ever need to raise something serious — about a leader, someone’s safety, abuse or misconduct — you can contact them directly. Your message goes to them, not to campus leadership.'))+'</p>'+
+  if(!S.board) h+='<div class="card orgBoardNote"><p>'+esc(t('The advisory board stands alongside YWAM GP’s leaders, outside the campus structure. If you ever need to raise something serious — about a leader, someone’s safety, abuse or misconduct — you can contact them directly. Your message goes to them, not to campus leadership.'))+'</p>'+
     (emails.length ? '<a class="btn" id="orgEmailBoard" href="mailto:'+emails.map(encodeURIComponent).join(',')+'?subject='+encodeURIComponent('To the YWAM GP Advisory Board')+'">✉️ '+esc(t('Email the whole board'))+'</a>' : '')+'</div>';
   if(!B.length) h+='<div class="card"><p class="sub" style="margin:4px 0">'+esc(t('The board’s members will be listed here.'))+'</p></div>';
   B.forEach(function(b){ h+=orgBoardMemberHtml_(b); });
@@ -7624,7 +7624,7 @@ function bindLeadTools_(){
    shared (rosterStaff_ carries avatar.type only while "Show my type to the team"
    is on; season never leaves its owner). For the whole campus, a department or
    one ministry. The four groups, the four pairs with what the team's lean tends
-   to mean — GP's own words — and who has which type. Counts only: no scores. */
+   to mean — YWAM GP's own words — and who has which type. Counts only: no scores. */
 var TP_LEAN = 0.65;   // this share or more on one side of a pair is a lean
 var TP_LEAN_TEXT = {
   E: 'Mostly Extraverted — this team talks things through and gets its energy from people. Make room for the quieter voices to speak first.',
@@ -7706,14 +7706,14 @@ function teamPersonalityHtml_(campus){
 }
 
 /* ==================== GP Strengths (the free test) ====================
-   GP's own strengths finder — thirty-four strengths in four groups, found
+   YWAM GP's own strengths finder — thirty-four strengths in four groups, found
    through 102 "which is more like you?" pairs (public/gpstrengths.js has the words
    and says why it is pairs). The server works out the Top 5 from the answers.
 
    Screens: the Strengths card on My Home, the test (S.view 'gtest'), and the
    results page (S.view 'gstr') — yours in full, or a teammate's Top 5 when
    opened from their profile. The Team tab's Strengths map adds up GP Top 5s.
-   Every word is GP's own, so it all goes through t() like everything else. */
+   Every word is YWAM GP's own, so it all goes through t() like everything else. */
 var GS_PAGE = 5;
 var GS_DRAFT_KEY = 'gp_gstr_draft';
 function gsOK(){ return typeof GP_GSTRENGTHS!=='undefined' && typeof gpGSScore==='function'; }
@@ -7741,7 +7741,7 @@ function gsLean(top){
   return GP_GSGROUPS.filter(function(g){ return g.id===best; })[0];
 }
 function gsFineHtml(){
-  return '<p class="pFine">'+esc(t('GP Strengths is GP’s own free questionnaire.'))+' '+
+  return '<p class="pFine">'+esc(t('GP Strengths is YWAM GP’s own free questionnaire.'))+' '+
     esc(gpT('A strength is what comes naturally to you — everyone can grow in all {n}.',{n:GP_GS_IDS.length}))+'</p>';
 }
 
@@ -14958,7 +14958,7 @@ function leaveEntryHtml(){
 function leaveHtml(){
   var h='<button class="linkbtn" id="leaveBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('My Home'))+'</button>';
   h+='<h2>'+esc(t('Leave Request'))+'</h2>';
-  h+='<p class="sub">'+esc(t('Baked into My GP — nothing to fill out on another site.'))+'</p>';
+  h+='<p class="sub">'+esc(t('Baked into My YWAM GP — nothing to fill out on another site.'))+'</p>';
 
   var d=S.trips;
   if(!d) return h+'<div class="card"><p class="sub" style="margin:6px 0">'+esc(t('Loading…'))+'</p></div>';

@@ -427,7 +427,7 @@ function cleanCountry_(v) {
 }
 
 /* ==================== personality types ====================
-   A person's four-letter type, from GP's own questionnaire in personality.js
+   A person's four-letter type, from YWAM GP's own questionnaire in personality.js
    (or picked directly by someone who already knows theirs). Stored on the staff
    record as:
 
@@ -470,9 +470,9 @@ function cleanPScores_(scores, type) {
   return out;
 }
 
-/* ==================== GP Strengths (the free one, GP's own) ====================
+/* ==================== GP Strengths (the free one, YWAM GP's own) ====================
    Thirty-four strengths in four groups, found by 102 "which is more like
-   you?" pairs — all GP's own words, see public/gpstrengths.js. The person sends only their answers;
+   you?" pairs — all YWAM GP's own words, see public/gpstrengths.js. The person sends only their answers;
    the Top 5 is worked out HERE, so what teammates see always follows from the
    choices that made it.
 
@@ -7813,8 +7813,8 @@ async function finProjSave(code, campus, months) {
    which books have it — for every reader, guests too (the books are open to all). */
 async function libAudioIndex() { return { ok: true, index: publicIndex(await readIndex(audioStore())) }; }
 
-/* ==================== YWAM GP: titles, GP roles and the advisory board ====================
-   Oct 2026 (Uriah). Four parts to GP now: YWAM Poipet, YWAM Siem Reap, YWAM GP (the
+/* ==================== YWAM GP: titles, YWAM GP roles and the advisory board ====================
+   Oct 2026 (Uriah). Four parts to YWAM GP now: YWAM Poipet, YWAM Siem Reap, YWAM GP (the
    whole organisation) and the YWAM GP Advisory Board.
    - Campus Leadership titles. The department stays as it is (its ministries are the
      Campus Director row and one row per department — the join keys for its

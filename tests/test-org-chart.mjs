@@ -28,8 +28,8 @@ function ok(name, cond, extra) {
   else { fail++; console.log('FAIL ' + name + (extra !== undefined ? '  → ' + extra : '')); }
 }
 const base = { campus: 'siemreap', photo: '', mentorId: '', isAdmin: false, leads: [] };
-const URIAH = { ...base, id: 'st_uriah', name: 'Uriah Lyford', username: 'uriah', dept: 'Campus Leadership', ministry: 'Campus Director', role: 'GP Campus Director', isAdmin: true };
-const NAOMI = { ...base, id: 'st_naomi', name: 'Naomi Lyford', username: 'naomi', dept: 'Campus Leadership', ministry: 'Campus Director', role: 'GP Co-Director' };
+const URIAH = { ...base, id: 'st_uriah', name: 'Uriah Lyford', username: 'uriah', dept: 'Campus Leadership', ministry: 'Campus Director', role: 'YWAM GP Campus Director', isAdmin: true };
+const NAOMI = { ...base, id: 'st_naomi', name: 'Naomi Lyford', username: 'naomi', dept: 'Campus Leadership', ministry: 'Campus Director', role: 'YWAM GP Co-Director' };
 const SINA = { ...base, id: 'st_sina', name: 'Sina Sok', username: 'sina', dept: 'Campus Leadership', ministry: 'Community Service', role: 'Overseer' };
 const SREILEA = { ...base, id: 'st_sreilea', name: 'Sreilea Chan', username: 'sreilea', dept: 'Community Service', ministry: 'Cafe', role: 'Cafe manager', leads: ['Community Service|Cafe'] };
 const DARA = { ...base, id: 'st_dara', name: 'Dara Pen', username: 'dara', dept: 'Community Service', ministry: 'Cafe', role: 'Barista' };

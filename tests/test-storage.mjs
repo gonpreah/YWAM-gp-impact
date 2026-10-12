@@ -159,7 +159,7 @@ function isKhmer(s) { return /[ក-៿]/.test(String(s || '')); }
   ok('storage blocked: the front door still renders', gate);
   let usable = false;
   if (gate) {
-    await p.click('#wGuest');   // → My GP's guest mode, which needs no storage (?guest=1)
+    await p.click('#wGuest');   // → My YWAM GP's guest mode, which needs no storage (?guest=1)
     try { await p.waitForURL(/teams\.html\?guest=1/, { timeout: 15000 }); await p.waitForSelector('nav.bottom button', { timeout: 15000 }); usable = true; } catch (e) { }
   }
   await p.waitForTimeout(400);

@@ -86,7 +86,7 @@ console.log('   nav hidden: ' + await page.$eval('#nav', n => n.innerHTML === ''
 console.log('   dashboard leaked behind gate: ' + await page.evaluate(() => !!document.querySelector('.hero')));
 await page.screenshot({ path: OUT + 'gate.png', fullPage: true });
 
-/* ---- 2. view as guest: into My GP's guest mode, not the old dashboard ---- */
+/* ---- 2. view as guest: into My YWAM GP's guest mode, not the old dashboard ---- */
 await page.click('#wGuest');
 await page.waitForURL(/teams\.html\?guest=1/, { timeout: 8000 });
 await page.waitForSelector('nav.bottom button', { timeout: 12000 });

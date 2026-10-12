@@ -84,7 +84,7 @@ const en = script.stepTexts(B, 'en', lib), km = script.stepTexts(B, 'km', lib);
 ok('one text per reader screen: the intro, each key idea, the final summary', en.length === N + 2 && km.length === N + 2);
 ok('… the intro names the book and author, then the vibe and big idea', en[0].startsWith('Intro\n\nStart with Why — Simon Sinek\n\n' + B.vibe) && en[0].includes(B.bigIdea.slice(0, 40)));
 ok('… a key idea is announced, then its title and body', en[1] === 'Key idea 1 of ' + N + '\n\n' + B.insights[0].title + '\n\n' + B.insights[0].body);
-ok('… the summary has the one line, try this week, and for us at GP', en[N + 1].includes(B.oneLine) && B.tryThis.every((x) => en[N + 1].includes(x)) && en[N + 1].includes('For us at GP'));
+ok('… the summary has the one line, try this week, and for us at YWAM GP', en[N + 1].includes(B.oneLine) && B.tryThis.every((x) => en[N + 1].includes(x)) && en[N + 1].includes('For us at YWAM GP'));
 ok('in Khmer it says the Khmer, with Khmer labels', /[ក-៿]/.test(km[1]) && !km[1].startsWith('Key idea') && km[1].includes(lib.km['start-with-why'].insights[0].title));
 ok('voices by name, and a wrong one is refused', script.resolveVoice('en', 'andrew') === 'en-US-AndrewMultilingualNeural' && script.resolveVoice('km', 'Piseth') === 'km-KH-PisethNeural' &&
   script.resolveVoice('km') === 'km-KH-SreymomNeural' && (() => { try { script.resolveVoice('km', 'andrew'); return false; } catch (e) { return true; } })());

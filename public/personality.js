@@ -1,4 +1,4 @@
-/*  Personality types — GP's own questionnaire, types, avatars and tips.
+/*  Personality types — YWAM GP's own questionnaire, types, avatars and tips.
 
     The four preference pairs (Energy E/I, Information S/N, Decisions T/F,
     Structure J/P) and the sixteen four-letter codes are the same ones people

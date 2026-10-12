@@ -1,8 +1,16 @@
-# GonPreah (GP) Impact App
+# GonPreah (YWAM GP) Impact App
 
 A mobile-first, bilingual (Khmer-first) web app for YWAM GonPreah (កូនព្រះ), Cambodia.
 It tracks ministry KPIs, OKRs, a weekly staff health check-in, and per-staff daily
 logging across the Poipet and Siem Reap campuses.
+
+## The name: always "YWAM GP", never a bare "GP" (Uriah, Oct 2026)
+"We don't want GonPreah to be removed from YWAM, ever." In every word a person reads —
+English and Khmer, the Library, emails, notes like these — a bare **GP** is written
+**YWAM GP** ("at YWAM GP", "YWAM GP's values", "My YWAM GP"). A name that is "GP
+<something>" stays as it is: GP Education, GP Media, GP Strengths, GP Impact, the GP app,
+the GP Library, GP Director, GP Team, GPDTS (in Khmer the word comes first: កម្មវិធី GP,
+បណ្ណាល័យ GP, នាយក GP…). Code names (GP_LIBRARY, gpT, gp-…) are not words people read.
 
 ## Architecture (single deploy target)
 Everything lives in this repo and deploys as one Netlify site — push to `main`,
@@ -26,7 +34,7 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   Dashboard, Log Numbers, OKRs — **Health moved to the staff page** (see below). Has weekly ▲/▼ trend badges, a spinning-logo "Impact Loading" state,
   click-through drill-down on dashboard totals, and the ✦ Teams / 📖 buttons (plain
   page nav now, not postMessage). Calls the backend via the `apiCall(fn, args)` helper.
-- `teams.html` — per-staff space ("My GP"), five tabs: **Base · My week · Team · Me · Health**.
+- `teams.html` — per-staff space ("My YWAM GP"), five tabs: **Base · My week · Team · Me · Health**.
   Username + 4-digit PIN, profile + photo, daily logging, streaks, mentor view +
   mentor-request approval, days away from campus. `?reg=1` opens the create-profile form
   directly (the front door links straight to it).
@@ -147,7 +155,7 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   of week 1, teams mirrors the API's ISO week); the engine only uses it to bound trends.
 - `help.html` — bilingual clickable KPI guide (job focus + KPI explanations per ministry).
 - `manifest.json`, `icon-180.png`, `icon-512.png` — PWA assets. **The icons are
-  placeholders** (cobalt circle + "GP" wordmark) — swap in real ones when available.
+  placeholders** (cobalt circle + "YWAM GP" wordmark) — swap in real ones when available.
 
 ### netlify/functions/api.js
 Handlers (see the sections below for the newer ones — HR, candidates, portal, structure, teams): getMyBoot, getData, saveEntries, saveObjective, deleteObjective, teamRoster,
@@ -362,7 +370,7 @@ is never a doubt whose boxes these are:
   `test-ministry-browse.mjs`, `test-personal-metrics-cadence.mjs` (browser) cover it.
 
 ## YWAM GP: four parts, titles, and the advisory board (Oct 2026)
-Uriah: GP is YWAM Poipet, YWAM Siem Reap, **YWAM GP** (the organisation) and the
+Uriah: YWAM GP is YWAM Poipet, YWAM Siem Reap, **YWAM GP** (the organisation) and the
 **YWAM GP Advisory Board**.
 - **Campus Leadership titles** are read off the department, which is unchanged (its
   ministries are join keys): `orgTitle_` (api.js) / `orgTitleOf_` (teams.html) — a Campus
@@ -382,7 +390,7 @@ Uriah: GP is YWAM Poipet, YWAM Siem Reap, **YWAM GP** (the organisation) and the
   (`adminListBoard` / `adminSaveBoardMember` / `adminDeleteBoardMember`).
 - **`getYwamGp`** (also the boot's `org`) — for staff or a board member (`verifyViewer_`
   picks the store by username, so a board member's requests never count as failed staff
-  logins): titles, GP roles, each campus's leadership team, who leads each ministry,
+  logins): titles, YWAM GP roles, each campus's leadership team, who leads each ministry,
   staff counts, and the board. **teamRoster and staffProfile gain nothing.**
 - **The YWAM GP page** (☰ → YWAM GP, `S.view='ywamgp'`): GP leadership, both campus
   leadership teams, and the board with Email / Call for each and "Email the whole board",
@@ -1235,7 +1243,7 @@ forms, documents and references follow.
   practical | arrived | closed. The applicant never sees the owner or the next step.
   `CAND_STAGES` gained `practical` (fees, packing, visa, travel) and `CAND_TYPES` gained
   `team` — both sides.
-- **portal.html has its own look, on purpose — it is NOT in the GP theme.** Black page,
+- **portal.html has its own look, on purpose — it is NOT in the YWAM GP theme.** Black page,
   white type, Inter + Kantumruy Pro, one centred card at a time (the way an application
   portal reads: logo and "YWAM GP Portal" on top, then sign in, with "Start an
   application" leading to the seven choices). Its `:root` tokens live in the page;
@@ -1261,7 +1269,7 @@ female), a description, and tips that change with their ministry and the season
 they say they are in. Entry: the Personality card on My Home; a teammate's type
 from their profile. Screens: `ptestHtml` (S.view 'ptest') and `ptypeHtml` ('ptype').
 
-- **Everything in personality.js is GP's own** — the questions, type names ("The
+- **Everything in personality.js is YWAM GP's own** — the questions, type names ("The
   Guide", "The Host"…), descriptions, tips and the avatar art. Only the four
   letters and the idea of four preference pairs come from Jung / Myers–Briggs.
   "Myers-Briggs" and "MBTI" are trademarks and the official questionnaire is
@@ -1281,7 +1289,7 @@ from their profile. Screens: `ptestHtml` (S.view 'ptest') and `ptypeHtml` ('ptyp
   added up on the page from the roster's shared `avatar.type` — so someone with sharing
   off is neither counted nor named, and season never appears. Whole campus by default;
   a department or one ministry from the select (`S.teamPScope`). The four groups, each
-  pair with the team's lean (`TP_LEAN` 65% or more on one side; `TP_LEAN_TEXT` is GP's
+  pair with the team's lean (`TP_LEAN` 65% or more on one side; `TP_LEAN_TEXT` is YWAM GP's
   own wording) and who has which type. Counts only, never anyone's bars.
 - **The server re-checks the maths.** `cleanPScores_` refuses bars that disagree
   with the letters (E:80 on an I type), so the screen can never contradict itself.
@@ -1293,7 +1301,7 @@ from their profile. Screens: `ptestHtml` (S.view 'ptest') and `ptypeHtml` ('ptyp
   docs/khmer-needed.md §52, questions first). Type names translate as one phrase
   via `pTheName()` — Khmer has no article, so never glue a translated "The" on.
 
-## GP Strengths (public/gpstrengths.js) — the free strengths finder, GP's own
+## GP Strengths (public/gpstrengths.js) — the free strengths finder, YWAM GP's own
 
 Thirty-four strengths in four groups — Doing (9), Leading (8), Relating (9),
 Thinking (8) — found through 102 "which is more like you?" pairs (~15 min,
@@ -1303,9 +1311,9 @@ groups and all 34 ranked. The Team tab's Strengths map adds up everyone's Top 5.
 (A CliftonStrengths recorder existed briefly; it was removed. Any Gallup
 results saved then are still in `staff.strengths` but nothing reads them.)
 
-- **GP's own, through and through — Uriah's call.** The app has no
+- **YWAM GP's own, through and through — Uriah's call.** The app has no
   CliftonStrengths feature and never mentions Gallup or CliftonStrengths on
-  screen. Every name, statement and description is GP's own; never borrow a
+  screen. Every name, statement and description is YWAM GP's own; never borrow a
   Gallup theme name or a variant of one (the test checks five-letter stems
   both ways against Gallup's 34, kept in the test only), their wording or
   their domain names.
@@ -1330,9 +1338,9 @@ Menu → Library. All 44 books from Craig Groeschel's four leadership lists ("44
 Every Leader Should Read", the current list Uriah sent — Lead Like Jesus, not Dalio's
 Principles), on four shelves (Lead & grow, People & culture, Habits & goals, Create &
 communicate). `GP_LIBRARY.startHere` is the "⭐ Start here" chip: ten to read first for
-leading at GP (culture, teams, hard conversations, vision, systems, execution).
+leading at YWAM GP (culture, teams, hard conversations, vision, systems, execution).
 - **Our own words.** Each summary (vibe, big idea, 8–10 key ideas, try this week, "for us
-  at GP", one line) is written for GP — no quotations, nothing from the books or any
+  at YWAM GP", one line) is written for YWAM GP — no quotations, nothing from the books or any
   summary service. Brain and money claims are framed as the author's view where debated.
   About 2,000–2,500 words each (Oct 2026: lengthened towards Blinkist, `mins` 10) — each
   key idea 180–240 words with a story or example from the book (ours are labelled
@@ -1359,16 +1367,16 @@ leading at GP (culture, teams, hard conversations, vision, systems, execution).
   speed (0.8–1.5×) is kept as `gp-lib-rate`; leaving the reader stops it. Khmer needs a
   Khmer voice on the phone (many Androids can add one; iPhones have none) — without it the
   app says so rather than reading Khmer in an English voice. tests/test-library-audio-ui.mjs.
-- **Made at GP** (shelf `gp`, shown first after Start here): original guides written for
-  GP — `original: true`, author "GP Library", no ISBN — so far Working Well with
+- **Made at YWAM GP** (shelf `gp`, shown first after Start here): original guides written for
+  YWAM GP — `original: true`, author "GP Library", no ISBN — so far Working Well with
   Westerners (for Khmer staff) and Working Well with Cambodians (for Western staff), 11 key
   ideas and ~3,000 words each (`mins` 14) — and **FIGHT: Our Values** (`fight-our-values`,
-  Oct 2026), a guide to GP's five values built on leadership's statements and behaviours
+  Oct 2026), a guide to YWAM GP's five values built on leadership's statements and behaviours
   (cover motif `fight`) — the first two mirroring each other on money, conflict, the
   body and men and women, and learning each other's language. Their
   fine print says they are not published books and describe tendencies, not rules. The
-  shelf's colour is GP ink (#17150F), not laterite — the brown clashed with the black GP.
-- **YWAM classics** (shelf `ywam`, 🌊, cobalt; shown right after Made at GP; Oct 2026):
+  shelf's colour is YWAM GP ink (#17150F), not laterite — the brown clashed with the black YWAM GP.
+- **YWAM classics** (shelf `ywam`, 🌊, cobalt; shown right after Made at YWAM GP; Oct 2026):
   ten foundational YWAM books in the same ten-minute shape, in English and Khmer — Is That
   Really You, God?, Making Jesus Lord, Daring to Live on the Edge (Loren Cunningham),
   Intimate Friendship with God and Intercession, Thrilling and Fulfilling (Joy Dawson),
@@ -1664,7 +1672,7 @@ copy of anything.
 ## The front door (index.html)
 Anyone not signed in, who hasn't chosen to browse as a guest, gets a welcome screen
 first: **Create my profile** → `teams.html?reg=1`, **I already have a profile** →
-`teams.html`, or **View as guest** → `teams.html?guest=1`, My GP's guest mode (it used
+`teams.html`, or **View as guest** → `teams.html?guest=1`, My YWAM GP's guest mode (it used
 to open this dashboard; see "Looking around without an account"). It renders before the data arrives, so the dashboard never flashes
 behind it.
 
@@ -1689,14 +1697,14 @@ Uriah: "formalize one-on-ones just a little bit more". Same `oneOnOnes` store; a
 also carries `menteeId`, the mentee's `prep`, and once it happened `heldOn`, `notes` and
 `followUps` ([{text, done}]). Status: pending → accepted → **held** (or declined).
 - **The mentee's check-in** (`prep`): six areas of life — `money` (fundraising &
-  finances), `language`, `physical`, `emotional`, `relational`, `spiritual` — and GP's
+  finances), `language`, `physical`, `emotional`, `relational`, `spiritual` — and YWAM GP's
   five values, **FIGHT**: `faithful`, `innovative`, `generous`, `humble`, `tenacious`,
   each 1-5 — the form shows each value's statement and three "I…" behaviours, with its
   verse and guardrail (what it is not) under a fold, and `OO_FLOW` (how the five build:
   Faithful → Innovative → Generous → Humble → Tenacious) under the heading. FIGHT v2
   (Oct 2026, with Uriah): unity and "nation over location" under Generous, walking in the
   light (1 John 1) under Humble, grit and hear-obey under Tenacious. English and Khmer
-  side by side in `OO_VALUES` (not through t()); GP's Khmer value names stay as GP has
+  side by side in `OO_VALUES` (not through t()); YWAM GP's Khmer value names stay as YWAM GP has
   them (ការចុះចូល = submitting to and honouring one another). The FIGHT guide in the
   Library follows the same v2 text; plus `helpWith`, `workingOn` (personal goals) and `other`. A mentee's ☕ opens
   the form and the request carries it; when the mentor asks, the mentee is taken to it
@@ -1720,7 +1728,7 @@ also carries `menteeId`, the mentee's `prep`, and once it happened `heldOn`, `no
   tests/test-one-on-one-ui.mjs (27).
 
 ## Health lives on the staff page
-The weekly health section sits on My GP's **Health** tab. Reading order: **my
+The weekly health section sits on My YWAM GP's **Health** tab. Reading order: **my
 check-in** for the chosen week, **against last week** question by question, **my
 weeks** (every week I've answered, newest first), then **the base average** my week
 feeds — score for the week and YTD, check-in rate, and the per-question averages
@@ -1778,7 +1786,7 @@ section is a roll-up over existing weekly entries, nothing new is stored:
    `LD_SCHOOL_MINISTRIES` (GPDTS/DTS, DBS, SMS, BCS, SOMD).
 3. **Community schools** — `CS_SCHOOL_MINISTRIES` (GP Education, Ponlork, LTN,
    Sry Noi) counting `Students Enrolled` + `YE_SCHOOL_MINISTRIES` (YDC) counting
-   `Youth Enrolled`. **Poipet runs two** (GP Education = GP Kids, YDC); **Siem Reap
+   `Youth Enrolled`. **Poipet runs two** (GP Education = YWAM GP Kids, YDC); **Siem Reap
    four** (Ponlork, LTN, Sry Noi, YDC — GP Education is Poipet's only, since Oct 2026;
    the dashboard label names only the schools the campus on show has). A ministry reporting its own `Schools` number contributes that instead of 1,
    so a multi-site ministry counts honestly; otherwise any ministry with data at all

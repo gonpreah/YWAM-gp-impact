@@ -50,7 +50,7 @@ export function stepTexts(b, lang, lib) {
   const n = b.insights.length, out = [];
   out.push([tt('Intro'), ((K && K.title) || b.title) + ' — ' + b.author, T.vibe, T.bigIdea].join('\n\n'));
   T.insights.forEach((x, i) => out.push([fm('Key idea {n} of {m}', { n: i + 1, m: n }), x.title, x.body].join('\n\n')));
-  out.push([tt('Final summary'), tt('In one line') + ': ' + T.oneLine, tt('Try this week'), ...T.tryThis, tt('For us at GP'), T.forUs].join('\n\n'));
+  out.push([tt('Final summary'), tt('In one line') + ': ' + T.oneLine, tt('Try this week'), ...T.tryThis, tt('For us at YWAM GP'), T.forUs].join('\n\n'));
   return out;
 }
 export function resolveVoice(lang, v) {
