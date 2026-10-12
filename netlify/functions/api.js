@@ -946,7 +946,7 @@ async function adminUpdateStaff(username, pin, staffId, payload) {
     if (payload.country !== undefined) rec.country = cleanCountry_(payload.country);
     // YWAM GP: which Campus Director (international / national), and an organisation-wide role
     if (payload.cdKind !== undefined) rec.cdKind = CD_KINDS.indexOf(payload.cdKind) > -1 ? payload.cdKind : '';
-    if (payload.gpRole !== undefined) rec.gpRole = ooText_(payload.gpRole, 60);
+    if (payload.gpRole !== undefined) rec.gpRole = GP_ROLE_IDS.indexOf(payload.gpRole) > -1 ? payload.gpRole : '';
     if (payload.username !== undefined) {
       // Same shape sign-up already enforces (staffRegister above) — a username
       // is also how someone logs in, so it can't collide with anyone else's.
@@ -7822,17 +7822,21 @@ async function libAudioIndex() { return { ok: true, index: publicIndex(await rea
      International or the National one (`cdKind`); everyone else on the team is
      "Director of <their department>" (`orgTitle_`).
    - YWAM GP roles: a staff member can hold an organisation-wide role on top of their
-     campus one (`gpRole`, admin-set, free text — e.g. "GP Director").
+     campus one (`gpRole`, admin-set): YWAM GP's leadership team is its Director(s) and a lead
+     for each of five areas — Campuses, Leaders, Music, Media, Education (GP_ROLES).
    - The advisory board is NOT staff and is kept out of the staff store altogether,
      so nobody on it ever shows up in a roster, a headcount, health, the org chart or
      any campus list. Each member has a role (President, Secretary, Treasurer,
      Advisor, or another), a photo, a short bio and how to reach them — every staff
      member can see the board and contact it (Uriah: so people know who they are and
-     how to reach them, e.g. for a serious allegation). A member who is also staff is
+     how to reach them, e.g. for a serious allegation). A serious concern goes only to the
+     members an admin marks as safeguarding contacts (`safeguarding`) — ideally people not
+     on staff, since GP's own leaders sit on the board. A member who is also staff is
      linked (`staffId`) and uses their staff login; anyone else gets their own
      username + PIN for a board-only view of both campuses (`boardLogin`).
    Served by `getYwamGp`, not by teamRoster or staffProfile, which stay as they are. */
 const CD_KINDS = ['international', 'national'];
+const GP_ROLE_IDS = ['director', 'campuses', 'leaders', 'music', 'media', 'education'];
 const CAMPUS_IDS_ = ['poipet', 'siemreap'];
 const BOARD_ROLES = ['President', 'Secretary', 'Treasurer', 'Advisor'];
 const BOARD_PHOTO_MAX_B64 = 160 * 1024;
@@ -7848,7 +7852,8 @@ async function getBoard_() { return readJSON('board', []); }
 function boardOut_(b, staff) {
   const st = b.staffId ? (staff || []).find(function (x) { return x.id === b.staffId && x.active !== false; }) : null;
   return { id: b.id, name: b.name || (st ? st.name : ''), role: b.role || 'Advisor', photo: b.photo || (st ? st.photo || '' : ''),
-    bio: b.bio || '', email: b.email || (st ? st.email || '' : ''), phone: b.phone || '', staffId: b.staffId || '', order: Number(b.order) || 0 };
+    bio: b.bio || '', email: b.email || (st ? st.email || '' : ''), phone: b.phone || '', staffId: b.staffId || '', order: Number(b.order) || 0,
+    safeguarding: !!b.safeguarding };
 }
 function boardAdminOut_(b, staff) {
   return Object.assign(boardOut_(b, staff), { username: b.username || '', hasLogin: !!b.pinHash, active: b.active !== false });
@@ -7899,7 +7904,7 @@ async function getYwamGp(username, pin) {
   const titles = {}, gp = [];
   staff.forEach(function (r) {
     const tl = orgTitle_(r); if (tl) titles[r.id] = tl;
-    if (r.gpRole) gp.push(Object.assign(person(r), { gpRole: r.gpRole }));
+    if (GP_ROLE_IDS.indexOf(r.gpRole) > -1) gp.push(Object.assign(person(r), { gpRole: r.gpRole }));
   });
   const campuses = CAMPUS_IDS_.map(function (c) {
     const here = staff.filter(function (r) { return r.campus === c; });
@@ -7919,7 +7924,8 @@ async function getYwamGp(username, pin) {
   const board = (await getBoard_()).filter(function (b) { return b.active !== false; })
     .map(function (b) { return boardOut_(b, staff); }).sort(boardSort_);
   return { ok: true, viewer: v.kind, me: v.kind === 'board' ? boardOut_(v.who, staff) : null,
-    titles: titles, gp: gp.sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); }),
+    titles: titles, gpRoles: GP_ROLE_IDS,
+    gp: gp.sort(function (a, b) { return GP_ROLE_IDS.indexOf(a.gpRole) - GP_ROLE_IDS.indexOf(b.gpRole) || String(a.name).localeCompare(String(b.name)); }),
     campuses: campuses, board: board, boardRoles: BOARD_ROLES };
 }
 
@@ -7952,7 +7958,8 @@ async function adminSaveBoardMember(username, pin, m) {
     else return { ok: false, err: 'bad_photo' };
   }
   Object.assign(rec, { name: name, role: role, email: email || '', phone: ooText_(m.phone, 40), bio: ooText_(m.bio, 600),
-    photo: photo, staffId: linked ? linked.id : '', order: Number(m.order) || 0, active: m.active !== false, updated: new Date().toISOString() });
+    photo: photo, staffId: linked ? linked.id : '', order: Number(m.order) || 0, active: m.active !== false,
+    safeguarding: !!m.safeguarding, updated: new Date().toISOString() });
   if (linked) { delete rec.username; delete rec.pinHash; delete rec.pinSalt; }
   else if (m.username !== undefined || m.newPin) {
     const u = normUser_(m.username !== undefined ? m.username : rec.username);

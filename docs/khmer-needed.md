@@ -3362,3 +3362,24 @@ attraction), របាំងការពារ (guardrail), ចិត្តត�
 | Director | នាយក |
 | Advisory Board | ក្រុមប្រឹក្សាយោបល់ |
 | The YWAM GP Advisory Board — who is on it, their roles, how staff reach them, and their sign-in | ក្រុមប្រឹក្សាយោបល់ YWAM GP — អ្នកណាខ្លះនៅក្នុងនោះ តួនាទីរបស់ពួកគាត់ របៀបដែលបុគ្គលិកទាក់ទងពួកគាត់ និងការចូលរបស់ពួកគាត់ |
+
+
+### YWAM GP leadership team places, and the board's safeguarding contacts
+
+| English | Khmer (draft) |
+|---|---|
+| Safeguarding contact | អ្នកទំនាក់ទំនងការពារសុវត្ថិភាព |
+| Not filled yet | មិនទាន់មានអ្នកកាន់តួនាទីនៅឡើយ |
+| Raising a serious concern | ការលើកឡើងបញ្ហាធ្ងន់ធ្ងរ |
+| Raise a concern | លើកឡើងបញ្ហា |
+| The advisory board stands alongside YWAM GP’s leaders, outside the campus structure. | ក្រុមប្រឹក្សាយោបល់ឈរនៅក្បែរថ្នាក់ដឹកនាំ YWAM GP ប៉ុន្តែនៅក្រៅរចនាសម្ព័ន្ធមូលដ្ឋាន។ |
+| Safeguarding contact — serious concerns from staff go to them | អ្នកទំនាក់ទំនងការពារសុវត្ថិភាព — បញ្ហាធ្ងន់ធ្ងរពីបុគ្គលិកនឹងទៅដល់គាត់ |
+| Best someone who is not on staff — a concern may be about a staff leader. | ល្អបំផុតជាអ្នកដែលមិនមែនជាបុគ្គលិក — ព្រោះបញ្ហាអាចទាក់ទងនឹងអ្នកដឹកនាំបុគ្គលិក។ |
+| YWAM GP leadership team (optional) | ក្រុមដឹកនាំ YWAM GP (មិនចាំបាច់) |
+| If you ever need to raise something serious — about a leader, someone’s safety, abuse or misconduct — write to {names}. They are the board’s safeguarding contacts, and your message goes only to them. | ប្រសិនបើអ្នកត្រូវលើកឡើងរឿងធ្ងន់ធ្ងរ — អំពីអ្នកដឹកនាំ សុវត្ថិភាពរបស់នរណាម្នាក់ ការរំលោភបំពាន ឬអំពើខុសឆ្គង — សូមសរសេរទៅ {names}។ ពួកគាត់ជាអ្នកទំនាក់ទំនងការពារសុវត្ថិភាពរបស់ក្រុមប្រឹក្សា ហើយសាររបស់អ្នកទៅដល់តែពួកគាត់ប៉ុណ្ណោះ។ |
+| YWAM GP Director | នាយក YWAM GP |
+| Campuses Lead | អ្នកដឹកនាំផ្នែកមូលដ្ឋាន |
+| Leaders Lead | អ្នកដឹកនាំផ្នែកអ្នកដឹកនាំ |
+| Music Lead | អ្នកដឹកនាំផ្នែកតន្ត្រី |
+| Media Lead | អ្នកដឹកនាំផ្នែកប្រព័ន្ធផ្សព្វផ្សាយ |
+| Education Lead | អ្នកដឹកនាំផ្នែកអប់រំ |

@@ -53,8 +53,11 @@ for (const k of Object.keys(mem)) delete mem[k];
 mem.staff = STAFF.map((s) => ({ ...s, pinSalt: s.id, pinHash: mkHash('1234', s.id) }));
 
 /* ---------- Campus Leadership titles ---------- */
-let r = await call('adminUpdateStaff', ['uriah', '1234', 'st_admin', { cdKind: 'international', gpRole: 'GP Director' }]);
-ok('an admin marks a Campus Director international and gives a YWAM GP role', r.body.ok && r.body.staff.cdKind === 'international' && r.body.staff.gpRole === 'GP Director');
+let r = await call('adminUpdateStaff', ['uriah', '1234', 'st_admin', { cdKind: 'international', gpRole: 'director' }]);
+ok('an admin marks a Campus Director international and puts them on the YWAM GP team as its Director', r.body.ok && r.body.staff.cdKind === 'international' && r.body.staff.gpRole === 'director');
+r = await call('adminUpdateStaff', ['uriah', '1234', 'st_cs', { gpRole: 'Chief Wizard' }]);
+ok('… only the team\'s places: Director, or a lead for Campuses, Leaders, Music, Media, Education', r.body.ok && r.body.staff.gpRole === '');
+await call('adminUpdateStaff', ['uriah', '1234', 'st_pp', { gpRole: 'media' }]);
 await call('adminUpdateStaff', ['uriah', '1234', 'st_nat', { cdKind: 'national' }]);
 r = await call('adminUpdateStaff', ['uriah', '1234', 'st_cs', { cdKind: 'bogus' }]);
 ok('… only international or national', r.body.ok && r.body.staff.cdKind === '');
@@ -66,11 +69,11 @@ ok('every staff member gets the titles: International / National Campus Director
   r.body.ok && r.body.titles.st_admin === 'International Campus Director' && r.body.titles.st_nat === 'National Campus Director' &&
   r.body.titles.st_cs === 'Director of Community Service' && r.body.titles.st_pp === 'Director of Youth Education' && !r.body.titles.st_cafe, JSON.stringify(r.body.titles));
 ok('each campus\'s leadership team, the international director first', sr.clt.map((p) => p.id).join() === 'st_admin,st_nat,st_cs' && pp.clt.map((p) => p.id).join() === 'st_pp');
-ok('… with who leads each ministry, and the YWAM GP roles', JSON.stringify(sr.leaders['Community Service|Cafe']) === '["Kanha"]' && r.body.gp.length === 1 && r.body.gp[0].gpRole === 'GP Director');
+ok('… with who leads each ministry, and the YWAM GP roles', JSON.stringify(sr.leaders['Community Service|Cafe']) === '["Kanha"]' && r.body.gp.map((p) => p.gpRole).join() === 'director,media' && r.body.gpRoles.join() === 'director,campuses,leaders,music,media,education');
 ok('the roster gains nothing new', (await call('teamRoster', ['kanha', '1234'])).body.every((p) => !('cdKind' in p) && !('gpRole' in p)));
 
 /* ---------- the advisory board ---------- */
-r = await call('adminSaveBoardMember', ['uriah', '1234', { name: 'Mary Board', role: 'President', email: 'MARY@board.org', phone: '+855 12 345 678', bio: 'Pastor in Phnom Penh.', username: 'mary', newPin: '4321' }]);
+r = await call('adminSaveBoardMember', ['uriah', '1234', { name: 'Mary Board', role: 'President', email: 'MARY@board.org', phone: '+855 12 345 678', bio: 'Pastor in Phnom Penh.', username: 'mary', newPin: '4321', safeguarding: true }]);
 const mary = r.body.board && r.body.board.find((b) => b.name === 'Mary Board');
 ok('an admin adds a board member with their own login', r.body.ok && mary && mary.role === 'President' && mary.email === 'mary@board.org' && mary.hasLogin && mary.username === 'mary');
 r = await call('adminSaveBoardMember', ['uriah', '1234', { staffId: 'st_admin', role: 'Advisor' }]);
@@ -86,6 +89,7 @@ r = await call('getYwamGp', ['kanha', '1234']);
 ok('every staff member sees the board, President first, with how to reach them',
   r.body.board.length === 3 && r.body.board[0].role === 'President' && r.body.board[0].email === 'mary@board.org' && r.body.board[0].phone && r.body.board.map((b) => b.role).join() === 'President,Treasurer,Advisor', r.body.board.map((b) => b.role).join());
 ok('… and never their login details', r.body.board.every((b) => !('username' in b) && !('pinHash' in b)));
+ok('… and which of them are the safeguarding contacts', r.body.board.filter((b) => b.safeguarding).map((b) => b.name).join() === 'Mary Board');
 
 /* ---------- a board member's own view ---------- */
 r = await call('boardLogin', ['mary', '4321']);

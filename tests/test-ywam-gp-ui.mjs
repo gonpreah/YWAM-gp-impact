@@ -34,12 +34,12 @@ const H = (p, s) => crypto.createHash('sha256').update(s + ':' + String(p), 'utf
 const mk = o => Object.assign({ active: true, campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe',
   role: 'Staff', staffType: 'campus', country: 'Cambodia', surveyToken: 'tok_' + o.id }, o, { pinSalt: o.id, pinHash: H('1234', o.id) });
 mem.staff = [
-  mk({ id: 'st1', name: 'Uriah Lyford', username: 'uriah', email: 'u@e.com', dept: 'Campus Leadership', ministry: 'Campus Director', isAdmin: true, cdKind: 'international', gpRole: 'GP Director' }),
+  mk({ id: 'st1', name: 'Uriah Lyford', username: 'uriah', email: 'u@e.com', dept: 'Campus Leadership', ministry: 'Campus Director', isAdmin: true, cdKind: 'international', gpRole: 'director' }),
   mk({ id: 'st2', name: 'Sokha Chan', username: 'sokha', email: 's@e.com', dept: 'Campus Leadership', ministry: 'Campus Director', cdKind: 'national' }),
   mk({ id: 'st3', name: 'Dara Sok', username: 'dara', email: 'd@e.com', dept: 'Campus Leadership', ministry: 'Community Service' }),
   mk({ id: 'st4', name: 'Kanha Lim', username: 'kanha', email: 'k@e.com', dept: 'Community Service', ministry: 'Cafe', leads: ['Community Service|Cafe'] })
 ];
-mem.board = [{ id: 'bd1', name: 'Mary Board', role: 'President', email: 'mary@board.org', phone: '+855 12 345 678', bio: 'A pastor in Phnom Penh who has walked with YWAM for twenty years.', username: 'mary', pinSalt: 'bd1', pinHash: H('4321', 'bd1'), active: true },
+mem.board = [{ id: 'bd1', name: 'Mary Board', role: 'President', email: 'mary@board.org', phone: '+855 12 345 678', bio: 'A pastor in Phnom Penh who has walked with YWAM for twenty years.', username: 'mary', pinSalt: 'bd1', pinHash: H('4321', 'bd1'), active: true, safeguarding: true },
   { id: 'bd2', name: '', role: 'Advisor', staffId: 'st1', active: true }];
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer(async (req, res) => {
@@ -113,7 +113,10 @@ const main = (page) => page.$eval('#main', e => e.innerText);
     !!(await page.$('a[href="mailto:mary%40board.org"]')) && !!(await page.$('a[href^="tel:+85512345678"]')));
   ok('a staff member on the board shows with their own name and photo', /Uriah Lyford/.test(txt.slice(txt.search(/Advisory Board/i))));
   const all = await page.getAttribute('#orgEmailBoard', 'href');
-  ok('"Email the whole board", and the note on raising something serious', /mary%40board\.org/.test(all) && /u%40e\.com/.test(all) && /raise something serious/.test(txt));
+  ok('"Email the whole board" goes to everyone on it', /mary%40board\.org/.test(all) && /u%40e\.com/.test(all));
+  const concern = await page.getAttribute('#orgConcern', 'href');
+  ok('a serious concern goes only to the safeguarding contacts — not to a board member who is a staff leader', /mary%40board\.org/.test(concern) && !/u%40e\.com/.test(concern) && /raise something serious/.test(txt) && /Safeguarding contact/.test(txt));
+  ok('the YWAM GP team shows every place: its Director, and the areas not filled yet', /YWAM GP Director/.test(txt) && /Education Lead/.test(txt) && /Not filled yet/.test(txt));
   await page.screenshot({ path: OUT + '/ywam-gp.png', fullPage: true });
   await page.click('[data-orgperson="st3"]'); await page.waitForTimeout(600);
   ok('tapping a leader opens their page, with their title', /Director of Community Service/.test(await main(page)) && await page.evaluate(() => S.view === 'team' && !!S.person));

@@ -379,8 +379,16 @@ Uriah: YWAM GP is YWAM Poipet, YWAM Siem Reap, **YWAM GP** (the organisation) an
   (Khmer: នាយក + the department). They show on My Ministry (Campus Leadership: "Your role"
   on every tab, the team card on Overview), the org chart (Campus Directors / Department
   directors / Director — "Overseer" is gone), and a person's page.
-- **YWAM GP roles** (`gpRole`, admin-set free text, e.g. GP Director) sit on top of a
-  person's campus role.
+- **YWAM GP's leadership team** (`gpRole`, admin-set from a fixed list, `GP_ROLE_IDS` /
+  `GP_ROLES`): its **Director(s)** and a lead for each of five areas — **Campuses, Leaders,
+  Music, Media, Education**. On top of a person's campus role; the YWAM GP page shows
+  every place, an empty one as "Not filled yet". One person can hold all three kinds of
+  role at once — a campus title, a YWAM GP place and a linked board seat — with one login.
+- **Safeguarding contacts** (`safeguarding` on a board member, admin-set): a serious
+  concern ("Raise a concern") goes ONLY to them, because YWAM GP's own leaders sit on the
+  board (Uriah is President and Naomi Secretary) — ideally people not on staff, and Admin
+  warns when a staff member is marked. "Email the whole board" stays for ordinary contact.
+  No contact marked → no concern card.
 - **The advisory board is not staff**: its own `board` store, so nobody on it is ever in a
   roster, headcount, health figure, required papers or the org chart. A member: name, role
   (President / Secretary / Treasurer / Advisor, or another), email, phone, bio, photo. A
