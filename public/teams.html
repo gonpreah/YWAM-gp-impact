@@ -2824,6 +2824,11 @@ function gpInviteLink_(c, d, m){
   var base=location.origin+location.pathname.replace(/[^\/]*$/, '')+'teams.html';
   return base+'?reg=1&campus='+encodeURIComponent(c)+(d?'&dept='+encodeURIComponent(d):'')+(m?'&ministry='+encodeURIComponent(m):'');
 }
+/* Back from pulling in a new version (gpReloadForUpdate_): the same tab as before. */
+function gpResumeView_(){
+  try { var rv=sessionStorage.getItem('gp-resume');
+    if(rv){ sessionStorage.removeItem('gp-resume'); if(['week','base','team','health','library','ministry','mentor','goals','leave','admin'].indexOf(rv)>-1) S.view=rv; } } catch(e){}
+}
 function boot(){
   /* The dashboard's front door links straight here: ?reg=1 opens the create
      form rather than making someone find the "New here?" link first. */
@@ -2840,6 +2845,7 @@ function boot(){
        to come first is not needed. Logging in by hand still uses staffLogin,
        because there the answer to "is this PIN right" is the whole point. */
     S.auth = saved;
+    gpResumeView_();
     var kept = gpBootCacheLoad_(saved.user);
     if(kept){ S.bootStale = true; S.me = kept.d.staff; S.profile = kept.d.profile; applyBoot(kept.d, true); }
     run('getMyBoot', [saved.user, saved.pin], function(d){
@@ -2889,6 +2895,7 @@ function afterLogin(){
     if(qv.get('view')==='mycontract'){ S.view='mycontract'; S.myc=null; }
     /* back from filling out a contract with someone: their HR profile, fresh */
     if(qv.get('view')==='hr' && qv.get('hr')){ S.view='hr'; S.hrTab='staff'; S.hrSub='person'; S.hrPersonId=qv.get('hr'); S.hrStaff=null; } } catch(e){}
+  gpResumeView_();
   /* ONE request for everything this page needs. It used to be nine on top of the
      login — each verifying the same PIN, each re-rendering when it landed, so the
      page rebuilt itself nine times while it loaded. Sections that fail come back
@@ -17278,9 +17285,65 @@ function refreshAll(){
   ]).then(function(){ render(); });
 }
 
+/* ---- pulling down also brings in a new version of the app (Oct 2026) ----
+   Uriah: "fix the refresh pull down to bring the updated version". The data
+   always refreshed; the page itself did not — an app on an iPhone's home screen
+   can sit in memory for days running yesterday's code. So the page notes which
+   version it started on (the ETags of teams.html, km.js and library.js, read
+   with HEAD: a few hundred bytes, never through the service worker), and a pull
+   asks again. Anything changed → it reloads, back to the same tab, telling the
+   worker to wait for the network instead of the 4-second offline copy (sw.js,
+   ?fresh). If the page itself came from the offline copy (the worker leaves a
+   note in the gp-meta cache), the first pull that reaches the server reloads. */
+var GP_VER_FILES=['teams.html','km.js','library.js'];
+var gpVerBase=null, gpVerStale=false;
+function gpVerSig_(){
+  return Promise.all(GP_VER_FILES.map(function(f){
+    return fetch(f+'?ver='+Date.now(), { method:'HEAD', cache:'no-store' }).then(function(r){
+      var e=r.ok && (r.headers.get('etag') || r.headers.get('last-modified'));
+      if(!e) throw new Error('no version');
+      return String(e).replace(/^W\//,'').replace(/"/g,'').split('-')[0];   // Netlify adds -df etc. per encoding
+    });
+  })).then(function(a){ return a.join('|'); });
+}
+function gpVerInit_(){
+  try {
+    if(window.caches) caches.open('gp-meta').then(function(c){
+      return c.match('served-from-cache').then(function(r){
+        if(!r) return;
+        return r.text().then(function(at){ if(Date.now()-Number(at) < 5*60*1000) gpVerStale=true; return c.delete('served-from-cache'); });
+      });
+    }).catch(function(){});
+  } catch(e){}
+  setTimeout(function(){ gpVerSig_().then(function(sig){ if(!gpVerBase) gpVerBase=sig; }, function(){}); }, 1500);
+}
+function gpNewVersion_(){
+  var check=gpVerSig_().then(function(sig){
+    if(gpVerStale) return true;
+    if(!gpVerBase){ gpVerBase=sig; return false; }
+    return sig!==gpVerBase;
+  }, function(){ return false; });
+  // never hold the pull up for long on a slow connection
+  return Promise.race([check, new Promise(function(res){ setTimeout(function(){ res(false); }, 3500); })]);
+}
+function gpReloadForUpdate_(){
+  showMsg(t('Updating to the latest version…'));
+  try { if(S.me && !S.guest) sessionStorage.setItem('gp-resume', S.view||''); } catch(e){}
+  try { navigator.serviceWorker && navigator.serviceWorker.getRegistration().then(function(r){ if(r) r.update(); }).catch(function(){}); } catch(e){}
+  var q=new URLSearchParams(location.search||''); q.set('fresh', String(Date.now()));
+  setTimeout(function(){ location.replace(location.pathname+'?'+q.toString()); }, 250);
+  return new Promise(function(){});   // the spinner stays until the new page is up
+}
+function gpPullRefresh_(){
+  return gpNewVersion_().then(function(newer){ return newer ? gpReloadForUpdate_() : refreshAll(); });
+}
+/* the ?fresh= a reload asked for has done its job — keep the address clean */
+try { if(/[?&]fresh=/.test(location.search)){ var gq=new URLSearchParams(location.search); gq.delete('fresh'); history.replaceState(null,'',location.pathname+(gq.toString()?'?'+gq.toString():'')+location.hash); } } catch(e){}
+gpVerInit_();
+
 /* Shared with the dashboard — see gpPullToRefresh in rollup.js. The staff page
    also sits out the gesture while nobody is logged in. */
-gpPullToRefresh(function(){ return refreshAll(); }, { blocked: function(){ return !S.me; } });
+gpPullToRefresh(function(){ return gpPullRefresh_(); }, { blocked: function(){ return !S.me; } });
 
 /* ---- the bottom bar and the on-screen keyboard ----
    iOS does not shrink the page for the keyboard: it only shrinks what is

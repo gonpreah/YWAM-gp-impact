@@ -3295,3 +3295,9 @@ attraction), របាំងការពារ (guardrail), ចិត្តត�
 | English | Khmer (draft) |
 |---|---|
 | Verse · what it isn’t | ខគម្ពីរ · អ្វីដែលវាមិនមែន |
+
+### Pull to refresh brings in a new version
+
+| English | Khmer (draft) |
+|---|---|
+| Updating to the latest version… | កំពុងដំឡើងកំណែចុងក្រោយបំផុត… |

@@ -1489,6 +1489,16 @@ themselves). Long lists show five and fold the rest.
   days" lists nobody until 30 days after `started`; it says when it fills in.
 
 ## Opening with no connection (public/sw.js and the boot copy)
+- **Pull to refresh also brings in a new version** (Oct 2026, Uriah). Data refreshed but
+  the page didn't — an iPhone home-screen app can stay in memory for days on old code.
+  The page notes its version at start (`gpVerBase`: ETags of teams.html, km.js and
+  library.js by `HEAD …?ver=`, which the worker never touches); `gpPullRefresh_` checks
+  again (3.5s cap) and, if anything changed, `gpReloadForUpdate_` reloads with `?fresh=`
+  — sw.js then waits up to 15s for the network instead of 4 — back to the same tab
+  (`gp-resume` in sessionStorage, `gpResumeView_`), and the address is cleaned. When the
+  worker serves a page from its kept copy it leaves `served-from-cache` in the
+  `gp-meta` cache; that page's first pull that reaches the server reloads. No ETag or no
+  network → no reload, the data still refreshes. tests/test-pull-update-ui.mjs.
 - **sw.js is network first, always.** A push to main is live at once, and a phone
   running yesterday's page against today's server is worse than a slow load. Pages
   and scripts come from the network; the kept copy is used only when the network

@@ -15,6 +15,10 @@
 var SHELL = 'gp-shell-v6';   // v2: the portal is in the shell too; v3: the Library; v4: its Khmer; v5: the letterhead;
                               // v6: the Library's Khmer is kept the first time it's read, not downloaded on install
 var NET_WAIT_MS = 4000;
+/* A reload the page asked for to pick up a new version (pull to refresh adds
+   ?fresh=) waits longer for the network — falling back to the old copy after 4s
+   would just reload yesterday's page again. */
+var FRESH_WAIT_MS = 15000;
 var PRECACHE = [
   'teams.html', 'manifest.json', 'km.js', 'taxonomy.js', 'rollup.js', 'logo.js', 'duty.js',
   'jobfocus.js', 'personality.js', 'gpstrengths.js', 'kpiguide.js', 'sr-checkin-history.js',
@@ -56,17 +60,25 @@ function networkFirst_(req, e) {
     }
     return res;
   });
+  var isPage = req.mode === 'navigate';
   return new Promise(function (resolve) {
     var done = false;
     var fallback = function () {
       if (done) return;
-      cached().then(function (hit) { if (hit && !done) { done = true; resolve(hit); } });
+      cached().then(function (hit) {
+        if (!hit || done) return;
+        done = true;
+        /* the page will want to know it is running the kept copy: its next pull
+           that reaches the server reloads it (gpVerInit_ in teams.html) */
+        if (isPage) e.waitUntil(noteServedFromCache_());
+        resolve(hit);
+      });
     };
-    var timer = setTimeout(fallback, NET_WAIT_MS);
+    var timer = setTimeout(fallback, (isPage && /[?&]fresh=/.test(req.url)) ? FRESH_WAIT_MS : NET_WAIT_MS);
     net.then(function (res) {
       clearTimeout(timer);
       if (done) return;
-      if (res && res.ok) { done = true; resolve(res); return; }
+      if (res && res.ok) { done = true; if (isPage) e.waitUntil(caches.open('gp-meta').then(function (c) { return c.delete('served-from-cache'); })); resolve(res); return; }
       // a 404 or 500 from the network: the kept copy if there is one, else the error as it was
       cached().then(function (hit) { if (!done) { done = true; resolve(hit || res); } });
     }, function () {
@@ -74,6 +86,7 @@ function networkFirst_(req, e) {
       cached().then(function (hit) {
         if (done) return;
         done = true;
+        if (hit && isPage) e.waitUntil(noteServedFromCache_());
         resolve(hit || new Response('Offline — this page has not been opened on this phone before.',
           { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }));
       });
@@ -84,4 +97,8 @@ function networkFirst_(req, e) {
 function stripSearch_(req) {
   var u = new URL(req.url); u.search = '';
   return new Request(u.toString());
+}
+
+function noteServedFromCache_() {
+  return caches.open('gp-meta').then(function (c) { return c.put('served-from-cache', new Response(String(Date.now()))); }).catch(function () {});
 }
