@@ -1074,6 +1074,7 @@ async function adminMergeStaff(username, pin, keepId, mergeId) {
   oneOnOnes.forEach(function (r) {
     if (r.fromId === mergeId) r.fromId = keepId;
     if (r.toId === mergeId) r.toId = keepId;
+    if (r.menteeId === mergeId) r.menteeId = keepId;
   });
   await writeJSON('oneOnOnes', oneOnOnes);
 
@@ -2205,7 +2206,9 @@ async function getDeptPulse(username, pin, dept) {
   /* 1-on-1s this month that someone in the department was part of */
   const month = today.slice(0, 7);
   const oneOnOnes = ones.filter(function (o) {
-    return o.status === 'accepted' && (ids[o.fromId] || ids[o.toId]) && String(o.decidedAt || o.created || '').slice(0, 7) === month;
+    if (!(ids[o.fromId] || ids[o.toId])) return false;
+    if (o.status === 'held') return String(o.heldOn || '').slice(0, 7) === month;
+    return o.status === 'accepted' && String(o.decidedAt || o.created || '').slice(0, 7) === month;
   }).length;
 
   /* numbers in on time, this week and last */
@@ -2904,12 +2907,62 @@ async function adminDecideTrip(username, pin, tripId, approve) {
   return adminListTrips(username, pin);
 }
 
-/* ==================== 1-on-1 requests ====================
+/* ==================== 1-on-1s ====================
    Either side of an approved mentor/mentee relationship can ask the other
    for a 1-on-1 — a mentor asking a mentee, or a mentee asking their mentor.
-   Nothing here is tied to a calendar; it's just a request-and-respond flow
-   living next to the relationship itself. */
+   Nothing here is tied to a calendar; it's a request-and-respond flow living
+   next to the relationship itself.
+
+   Oct 2026 (Uriah: "formalize one-on-ones just a little bit more"): each one
+   carries the mentee's short check-in (`prep`: six areas of life and the five
+   FIGHT values, 1-5, plus what they want help with and are working toward),
+   and once it has happened the mentor marks it held (`heldOn`) with notes and
+   things to follow up next time (`followUps`). Every mentee should have two a
+   month — counted by `heldOn`. A mentor can also log one that happened without
+   a request (`logOneOnOne`).
+
+   Privacy: the check-in, notes and follow-ups are the pair's alone — the
+   mentee always sees their own, the mentor only while they are still that
+   person's approved mentor. Leadership only ever gets a count. */
+const OO_AREAS = ['money', 'language', 'physical', 'emotional', 'relational', 'spiritual'];
+const OO_VALUES = ['faithful', 'innovative', 'generous', 'humble', 'tenacious'];
+const OO_PER_MONTH = 2;
 async function getOneOnOnes_() { return readJSON('oneOnOnes', []); }
+
+function ooText_(v, max) { return String(v == null ? '' : v).replace(/\s+$/g, '').trim().slice(0, max); }
+function ooScores_(src, keys) {
+  const out = {};
+  keys.forEach(function (k) { const n = Number(src && src[k]); if (Number.isInteger(n) && n >= 1 && n <= 5) out[k] = n; });
+  return out;
+}
+/* The mentee's check-in, cleaned. Null if there is nothing in it. */
+function ooPrep_(p) {
+  if (!p || typeof p !== 'object') return null;
+  const out = { areas: ooScores_(p.areas, OO_AREAS), values: ooScores_(p.values, OO_VALUES),
+    helpWith: ooText_(p.helpWith, 600), workingOn: ooText_(p.workingOn, 600), other: ooText_(p.other, 600) };
+  const any = Object.keys(out.areas).length || Object.keys(out.values).length || out.helpWith || out.workingOn || out.other;
+  if (!any) return null;
+  out.at = new Date().toISOString();
+  return out;
+}
+function ooFollowUps_(list) {
+  if (!Array.isArray(list)) return [];
+  return list.slice(0, 10).map(function (f) {
+    const text = ooText_(f && typeof f === 'object' ? f.text : f, 200);
+    return text ? { text: text, done: !!(f && f.done) } : null;
+  }).filter(Boolean);
+}
+/* Which side of a row is the mentee. Rows from before Oct 2026 don't say, so
+   it is read off the relationship as it stands. */
+function ooMenteeOf_(r, staff) {
+  if (r.menteeId) return r.menteeId;
+  const from = staff.find(function (x) { return x.id === r.fromId; });
+  return (from && from.mentorId === r.toId) ? r.fromId : r.toId;
+}
+function ooPairNow_(staff, mentorId, menteeId) {
+  const m = staff.find(function (x) { return x.id === menteeId; });
+  return !!(m && m.mentorId === mentorId && m.mentorStatus === 'approved');
+}
 
 async function getMyOneOnOnes(username, pin) {
   const s = await verifyStaff_(username, pin);
@@ -2921,16 +2974,23 @@ async function getMyOneOnOnes(username, pin) {
       const mine = r.fromId === s.id;
       const otherId = mine ? r.toId : r.fromId;
       const who = staff.find(function (x) { return x.id === otherId; });
-      return {
+      const menteeId = ooMenteeOf_(r, staff), mentorId = menteeId === r.fromId ? r.toId : r.fromId;
+      const out = {
         id: r.id, otherId: otherId, otherName: who ? who.name : '—', mine: mine,
-        status: r.status, note: r.note || '', created: r.created, decidedAt: r.decidedAt || ''
+        status: r.status, note: r.note || '', created: r.created, decidedAt: r.decidedAt || '',
+        menteeId: menteeId, iMentor: mentorId === s.id, heldOn: r.heldOn || ''
       };
+      /* the pair's own words: the mentee always, the mentor while still theirs */
+      if (menteeId === s.id || ooPairNow_(staff, s.id, menteeId)) {
+        out.prep = r.prep || null; out.notes = r.notes || ''; out.followUps = r.followUps || [];
+      }
+      return out;
     })
     .sort(function (a, b) { return (b.created || '') < (a.created || '') ? -1 : 1; });
-  return { ok: true, oneOnOnes: list };
+  return { ok: true, oneOnOnes: list, perMonth: OO_PER_MONTH };
 }
 
-async function requestOneOnOne(username, pin, otherId, note) {
+async function requestOneOnOne(username, pin, otherId, note, prep) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
   const staff = await getStaff_();
@@ -2941,11 +3001,14 @@ async function requestOneOnOne(username, pin, otherId, note) {
   if (!isMentee && !isMentor) return { ok: false, err: 'not_mentor_pair' };
   const rows = await getOneOnOnes_();
   const now = new Date().toISOString();
-  rows.push({
+  const row = {
     id: 'oo' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     fromId: s.id, toId: otherId, note: str_(note, 300) || '', status: 'pending',
-    created: now, updated: now, decidedAt: ''
-  });
+    created: now, updated: now, decidedAt: '', menteeId: isMentor ? s.id : otherId
+  };
+  /* only the mentee's own check-in rides along with a request */
+  if (isMentor) { const pp = ooPrep_(prep); if (pp) row.prep = pp; }
+  rows.push(row);
   await writeJSON('oneOnOnes', rows);
   return getMyOneOnOnes(username, pin);
 }
@@ -2959,6 +3022,90 @@ async function respondToOneOnOne(username, pin, requestId, approve) {
   rows[idx].status = approve ? 'accepted' : 'declined';
   rows[idx].decidedAt = new Date().toISOString();
   rows[idx].updated = rows[idx].decidedAt;
+  await writeJSON('oneOnOnes', rows);
+  return getMyOneOnOnes(username, pin);
+}
+
+/* The mentee fills in (or updates) their check-in — any time before it is held. */
+async function saveOneOnOnePrep(username, pin, id, prep) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const staff = await getStaff_();
+  const rows = await getOneOnOnes_();
+  const r = rows.find(function (x) { return x.id === id && (x.fromId === s.id || x.toId === s.id); });
+  if (!r || ooMenteeOf_(r, staff) !== s.id) return { ok: false, err: 'not_found' };
+  if (r.status === 'declined' || r.status === 'held') return { ok: false, err: 'closed' };
+  const pp = ooPrep_(prep);
+  if (!pp) return { ok: false, err: 'empty' };
+  r.prep = pp; r.menteeId = s.id; r.updated = pp.at;
+  await writeJSON('oneOnOnes', rows);
+  return getMyOneOnOnes(username, pin);
+}
+
+/* The mentor's side: notes, what to follow up next time, and — with `held` —
+   the date it happened, which is what counts toward the two a month. */
+function ooHeldOn_(v) {
+  const d = String(v || '');
+  if (!isDate_(d)) return null;
+  const today = baseToday_();
+  return d <= today && d >= String(Number(today.slice(0, 4)) - 1) + today.slice(4) ? d : null;
+}
+async function saveOneOnOneNotes(username, pin, id, notes, followUps, heldOn) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const staff = await getStaff_();
+  const rows = await getOneOnOnes_();
+  const r = rows.find(function (x) { return x.id === id && (x.fromId === s.id || x.toId === s.id); });
+  if (!r) return { ok: false, err: 'not_found' };
+  const menteeId = ooMenteeOf_(r, staff);
+  if (menteeId === s.id || !ooPairNow_(staff, s.id, menteeId)) return { ok: false, err: 'not_mentor' };
+  if (r.status === 'declined') return { ok: false, err: 'closed' };
+  if (heldOn) {
+    const d = ooHeldOn_(heldOn);
+    if (!d) return { ok: false, err: 'bad_date' };
+    r.heldOn = d; r.status = 'held';
+    if (!r.decidedAt) r.decidedAt = new Date().toISOString();
+  }
+  r.notes = ooText_(notes, 2000);
+  r.followUps = ooFollowUps_(followUps);
+  r.menteeId = menteeId; r.updated = new Date().toISOString();
+  await writeJSON('oneOnOnes', rows);
+  return getMyOneOnOnes(username, pin);
+}
+
+/* A 1-on-1 that happened without a request in the app — the mentor logs it. */
+async function logOneOnOne(username, pin, menteeId, notes, followUps, heldOn) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const staff = await getStaff_();
+  if (!ooPairNow_(staff, s.id, menteeId)) return { ok: false, err: 'not_mentor_pair' };
+  const d = ooHeldOn_(heldOn || baseToday_());
+  if (!d) return { ok: false, err: 'bad_date' };
+  const rows = await getOneOnOnes_();
+  const now = new Date().toISOString();
+  rows.push({
+    id: 'oo' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    fromId: s.id, toId: menteeId, menteeId: menteeId, note: '', status: 'held',
+    created: now, updated: now, decidedAt: now, heldOn: d,
+    notes: ooText_(notes, 2000), followUps: ooFollowUps_(followUps)
+  });
+  await writeJSON('oneOnOnes', rows);
+  return getMyOneOnOnes(username, pin);
+}
+
+/* Either of the pair ticks off a follow-up ("we said you'd…" — done). */
+async function tickOneOnOneFollowUp(username, pin, id, index, done) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const staff = await getStaff_();
+  const rows = await getOneOnOnes_();
+  const r = rows.find(function (x) { return x.id === id && (x.fromId === s.id || x.toId === s.id); });
+  if (!r) return { ok: false, err: 'not_found' };
+  const menteeId = ooMenteeOf_(r, staff);
+  if (menteeId !== s.id && !ooPairNow_(staff, s.id, menteeId)) return { ok: false, err: 'not_found' };
+  const i = Number(index);
+  if (!Array.isArray(r.followUps) || !Number.isInteger(i) || !r.followUps[i]) return { ok: false, err: 'not_found' };
+  r.followUps[i].done = !!done; r.updated = new Date().toISOString();
   await writeJSON('oneOnOnes', rows);
   return getMyOneOnOnes(username, pin);
 }
@@ -7725,7 +7872,11 @@ const HANDLERS = {
   deleteTask: function (a) { return deleteTask(a[0], a[1], a[2]); },
   clearDoneTasks: function (a) { return clearDoneTasks(a[0], a[1]); },
   getMyOneOnOnes: function (a) { return getMyOneOnOnes(a[0], a[1]); },
-  requestOneOnOne: function (a) { return requestOneOnOne(a[0], a[1], a[2], a[3]); },
+  requestOneOnOne: function (a) { return requestOneOnOne(a[0], a[1], a[2], a[3], a[4]); },
+  saveOneOnOnePrep: function (a) { return saveOneOnOnePrep(a[0], a[1], a[2], a[3]); },
+  saveOneOnOneNotes: function (a) { return saveOneOnOneNotes(a[0], a[1], a[2], a[3], a[4], a[5]); },
+  logOneOnOne: function (a) { return logOneOnOne(a[0], a[1], a[2], a[3], a[4], a[5]); },
+  tickOneOnOneFollowUp: function (a) { return tickOneOnOneFollowUp(a[0], a[1], a[2], a[3], a[4]); },
   respondToOneOnOne: function (a) { return respondToOneOnOne(a[0], a[1], a[2], a[3]); },
   saveMetricOverrides: function (a) { return saveMetricOverrides(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]); },
   renameCustomMetric: function (a) { return renameCustomMetric(a[0], a[1], a[2], a[3], a[4], a[5], a[6]); },

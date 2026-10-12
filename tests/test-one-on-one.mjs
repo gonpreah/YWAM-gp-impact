@@ -26,6 +26,7 @@ fs.copyFileSync(REPO + '/netlify/functions/team-seed.js', TMP + '/team-seed.js')
 fs.copyFileSync(REPO + '/netlify/functions/portal-forms-default.js', TMP + '/portal-forms-default.js'); // and the portal's shipped forms // api.js imports it
 fs.copyFileSync(REPO + '/netlify/functions/legal-docs-default.js', TMP + '/legal-docs-default.js');  // the legal forms teams sign
 fs.copyFileSync(REPO + '/netlify/functions/legal-pdf.js', TMP + '/legal-pdf.js');  // and the signed-PDF builder
+fs.copyFileSync(REPO + '/netlify/functions/library-audio-lib.js', TMP + '/library-audio-lib.js');  // the Library audio index
 process.env.GP_LEADER_CODE = 'leadercode';
 const blobs = await import(TMP + '/node_modules/@netlify/blobs/index.js');
 const api = await import(TMP + '/api.js');
@@ -108,6 +109,66 @@ ok('the recipient sees mine:false', r.body && r.body.oneOnOnes[0].mine === false
 seed();
 r = await call('requestOneOnOne', ['andrew', '9999', 'st_mentee', '']);
 ok('a wrong PIN is refused', r.body && r.body.ok === false && (mem.oneOnOnes || []).length === 0);
+
+/* ---------- 6. the mentee's check-in rides with their request ---------- */
+const PREP = { areas: { money: 2, language: 4, physical: 3, emotional: 2, relational: 5, spiritual: 4, bogus: 5 },
+  values: { faithful: 4, innovative: 3, generous: 5, humble: 4, tenacious: 2 }, helpWith: 'Support raising', workingOn: 'Khmer level 2', other: '' };
+seed();
+r = await call('requestOneOnOne', ['sokha', '1234', 'st_mentor', '', PREP]);
+let row = (mem.oneOnOnes || [])[0] || {};
+ok('a mentee\'s request carries their check-in (areas, values, help, goals)',
+  r.body.ok && row.prep && row.prep.areas.money === 2 && row.prep.values.tenacious === 2 && row.prep.helpWith === 'Support raising' && row.menteeId === 'st_mentee');
+ok('… only the six areas and five values are kept, 1-5', !('bogus' in row.prep.areas) && Object.keys(row.prep.areas).length === 6);
+r = await call('getMyOneOnOnes', ['andrew', '1234']);
+ok('the mentor sees the check-in, and knows they are the mentor', r.body.oneOnOnes[0].prep && r.body.oneOnOnes[0].prep.areas.relational === 5 && r.body.oneOnOnes[0].iMentor === true && r.body.perMonth === 2);
+seed();
+r = await call('requestOneOnOne', ['andrew', '1234', 'st_mentee', '', PREP]);
+ok('a mentor cannot fill in a check-in for their mentee', r.body.ok && !(mem.oneOnOnes[0].prep));
+
+/* ---------- 7. the mentee adds it later; nobody else can ---------- */
+seed([{ id: 'oo3', fromId: 'st_mentor', toId: 'st_mentee', note: '', status: 'accepted', created: '2026-01-03T00:00:00.000Z', updated: '', decidedAt: '2026-01-03T00:00:00.000Z' }]);
+r = await call('saveOneOnOnePrep', ['andrew', '1234', 'oo3', PREP]);
+ok('the mentor cannot write the mentee\'s check-in', r.body.ok === false && !mem.oneOnOnes[0].prep);
+r = await call('saveOneOnOnePrep', ['sokha', '1234', 'oo3', PREP]);
+ok('the mentee can add it after accepting', r.body.ok && mem.oneOnOnes[0].prep && mem.oneOnOnes[0].prep.areas.spiritual === 4);
+r = await call('saveOneOnOnePrep', ['sokha', '1234', 'oo3', {}]);
+ok('an empty check-in is refused', r.body.ok === false && r.body.err === 'empty');
+
+/* ---------- 8. the mentor marks it held, with notes and follow-ups ---------- */
+const today = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+r = await call('saveOneOnOneNotes', ['sokha', '1234', 'oo3', 'mine', [], today]);
+ok('the mentee cannot write the mentor\'s notes or mark it held', r.body.ok === false && mem.oneOnOnes[0].status === 'accepted');
+r = await call('saveOneOnOneNotes', ['andrew', '1234', 'oo3', 'Talked about support letters', ['Send 5 letters', { text: 'Book a Khmer tutor' }, ''], today]);
+row = mem.oneOnOnes[0];
+ok('the mentor marks it held, with notes and follow-ups', r.body.ok && row.status === 'held' && row.heldOn === today && row.notes === 'Talked about support letters' && row.followUps.length === 2 && row.followUps[1].text === 'Book a Khmer tutor');
+r = await call('saveOneOnOnePrep', ['sokha', '1234', 'oo3', PREP]);
+ok('once held, the check-in is closed', r.body.ok === false && r.body.err === 'closed');
+r = await call('saveOneOnOneNotes', ['andrew', '1234', 'oo3', 'x', [], '2999-01-01']);
+ok('a date in the future is refused', r.body.ok === false && r.body.err === 'bad_date');
+r = await call('tickOneOnOneFollowUp', ['sokha', '1234', 'oo3', 0, true]);
+ok('either of the pair can tick a follow-up done', r.body.ok && mem.oneOnOnes[0].followUps[0].done === true);
+r = await call('tickOneOnOneFollowUp', ['mealea', '1234', 'oo3', 1, true]);
+ok('… nobody else can', r.body.ok === false && mem.oneOnOnes[0].followUps[1].done === false);
+
+/* ---------- 9. logging one that happened without a request ---------- */
+seed();
+r = await call('logOneOnOne', ['andrew', '1234', 'st_mentee', 'Coffee after church', ['Pray about the move'], today]);
+ok('a mentor can log a 1-on-1 that already happened', r.body.ok && mem.oneOnOnes[0].status === 'held' && mem.oneOnOnes[0].heldOn === today && mem.oneOnOnes[0].menteeId === 'st_mentee');
+r = await call('logOneOnOne', ['sokha', '1234', 'st_mentor', 'x', [], today]);
+ok('a mentee cannot log one for their mentor', r.body.ok === false && mem.oneOnOnes.length === 1);
+r = await call('logOneOnOne', ['andrew', '1234', 'st_stranger', 'x', [], today]);
+ok('nor a mentor for someone who isn\'t their mentee', r.body.ok === false && mem.oneOnOnes.length === 1);
+
+/* ---------- 10. the words stay with the pair ---------- */
+seed([{ id: 'oo4', fromId: 'st_mentee', toId: 'st_mentor', menteeId: 'st_mentee', note: '', status: 'held', heldOn: today,
+  created: '2026-01-04T00:00:00.000Z', prep: { areas: { money: 1 }, values: {}, helpWith: 'secret', workingOn: '', other: '' }, notes: 'private', followUps: [] }]);
+mem.staff.find((x) => x.id === 'st_mentee').mentorId = 'st_stranger';
+r = await call('getMyOneOnOnes', ['andrew', '1234']);
+ok('a former mentor keeps the count but no longer sees the check-in or notes', r.body.ok && r.body.oneOnOnes.length === 1 && !('prep' in r.body.oneOnOnes[0]) && !('notes' in r.body.oneOnOnes[0]));
+r = await call('getMyOneOnOnes', ['sokha', '1234']);
+ok('the mentee still sees their own', r.body.oneOnOnes[0].prep.helpWith === 'secret' && r.body.oneOnOnes[0].notes === 'private');
+r = await call('saveOneOnOneNotes', ['andrew', '1234', 'oo4', 'rewrite', [], '']);
+ok('… and the former mentor cannot change the notes', r.body.ok === false && mem.oneOnOnes[0].notes === 'private');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 fs.rmSync(TMP, { recursive: true, force: true });

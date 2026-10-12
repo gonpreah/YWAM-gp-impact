@@ -3201,3 +3201,74 @@ The whole Khmer text of each book is in `public/library-km.js` (ids below the GP
 | The Book That Transforms Nations — Loren Cunningham with Janice Rogers | សៀវភៅដែលផ្លាស់ប្រែប្រជាជាតិ — ឡូរិន ខានីងហាំ ជាមួយ ចេនីស រ៉ូជើស |
 | Why Not Women? — Loren Cunningham and David Joel Hamilton | ហេតុអ្វីមិនឲ្យស្ត្រីដឹកនាំ? — ឡូរិន ខានីងហាំ និង ដាវីឌ យ៉ូអែល ហាមីលតុន |
 | Ten-minute reads of the best books on leading, culture, habits and creativity, and the YWAM classics — the big ideas, made for us. | ការអានរយៈពេលដប់នាទីពីសៀវភៅល្អបំផុតស្តីពីការដឹកនាំ វប្បធម៌ ទម្លាប់ ការច្នៃប្រឌិត និងសៀវភៅសំខាន់ៗរបស់ YWAM — គំនិតធំៗ រៀបចំសម្រាប់យើង។ |
+
+
+### 1-on-1s: the check-in, the sheet and the monthly count
+
+The five values are GP's FIGHT (Faithful, Innovative, Generous, Humble, Tenacious) — the letters stay in English so the word still spells FIGHT; please check the Khmer names. "Check-in" uses ការរាយការណ៍ as in the weekly health check-in.
+
+| English | Khmer (draft) |
+|---|---|
+| Open the 1-on-1 | បើកការជួបមួយទល់មួយ |
+| {n} 1-on-1s this month ✓ | ជួបមួយទល់មួយ {n} ដងខែនេះ ✓ |
+| {n} of {target} 1-on-1s this month | ជួបមួយទល់មួយ {n} ក្នុងចំណោម {target} ដងខែនេះ |
+| A quick, honest check-in, so your 1-on-1 can focus on what matters. 1 = struggling · 5 = thriving. | ការរាយការណ៍ខ្លីៗ និងស្មោះត្រង់ ដើម្បីឲ្យការជួបមួយទល់មួយរបស់អ្នកផ្ដោតលើអ្វីដែលសំខាន់។ ១ = ពិបាក · ៥ = រីកចម្រើនល្អ។ |
+| How I’m doing | ខ្ញុំសុខសប្បាយយ៉ាងណា |
+| Living our values — FIGHT | រស់នៅតាមគុណតម្លៃរបស់យើង — FIGHT |
+| Is there anything specific you’d like help with? | តើមានអ្វីជាក់លាក់ដែលអ្នកចង់បានជំនួយទេ? |
+| What are you working toward right now? (your personal goals) | តើពេលនេះអ្នកកំពុងខិតខំឆ្ពោះទៅរកអ្វី? (គោលដៅផ្ទាល់ខ្លួនរបស់អ្នក) |
+| Anything else your mentor should know? (optional) | មានអ្វីផ្សេងទៀតដែលអ្នកណែនាំរបស់អ្នកគួរដឹងទេ? (មិនចាំបាច់) |
+| Date you met | ថ្ងៃដែលបានជួបគ្នា |
+| What did you talk about? What stood out? | តើបាននិយាយអំពីអ្វីខ្លះ? អ្វីដែលលេចធ្លោ? |
+| To follow up next time | ត្រូវតាមដានលើកក្រោយ |
+| Something they are growing in, or will try | អ្វីដែលគាត់កំពុងរីកចម្រើន ឬនឹងសាកល្បង |
+| Add another | បន្ថែមមួយទៀត |
+| Only the two of you see the check-in and these notes. | មានតែអ្នកទាំងពីរនាក់ទេដែលឃើញការរាយការណ៍ និងកំណត់ចំណាំទាំងនេះ។ |
+| Done · {date} | រួចរាល់ · {date} |
+| Requested | បានស្នើសុំ |
+| Waiting for you | កំពុងរង់ចាំអ្នក |
+| No goals for this year yet. | មិនទាន់មានគោលដៅសម្រាប់ឆ្នាំនេះនៅឡើយទេ។ |
+| 1-on-1 with {name} | ជួបមួយទល់មួយជាមួយ {name} |
+| From last time | ពីលើកមុន |
+| Things you said you’d follow up — tick what’s done. | អ្វីដែលបាននិយាយថានឹងតាមដាន — គូសធីកលើអ្វីដែលធ្វើរួច។ |
+| Your check-in | ការរាយការណ៍របស់អ្នក |
+| A note for {name} (optional) | សារសម្រាប់ {name} (មិនចាំបាច់) |
+| e.g. Can we meet this week? | ឧ. តើយើងអាចជួបគ្នាសប្ដាហ៍នេះបានទេ? |
+| Send my request | ផ្ញើសំណើរបស់ខ្ញុំ |
+| Ask {name} for a 1-on-1 — they’ll fill in a short check-in first, so you can see how they’re doing before you meet. | ស្នើសុំជួបមួយទល់មួយជាមួយ {name} — គាត់នឹងបំពេញការរាយការណ៍ខ្លីមួយជាមុនសិន ដើម្បីឲ្យអ្នកឃើញថាគាត់សុខសប្បាយយ៉ាងណា មុនពេលជួបគ្នា។ |
+| Ask {name} for a 1-on-1 | ស្នើសុំជួបមួយទល់មួយជាមួយ {name} |
+| Already met? Log it | បានជួបគ្នារួចហើយ? កត់ត្រាវា |
+| Save this 1-on-1 | រក្សាទុកការជួបនេះ |
+| {name}’s check-in | ការរាយការណ៍របស់ {name} |
+| Save my check-in | រក្សាទុកការរាយការណ៍របស់ខ្ញុំ |
+| Change my check-in | កែការរាយការណ៍របស់ខ្ញុំ |
+| Waiting for {name} to fill in their check-in. | កំពុងរង់ចាំ {name} បំពេញការរាយការណ៍របស់គាត់។ |
+| No check-in for this one. | លើកនេះគ្មានការរាយការណ៍ទេ។ |
+| {name}’s goals this year | គោលដៅឆ្នាំនេះរបស់ {name} |
+| Your goals this year | គោលដៅឆ្នាំនេះរបស់អ្នក |
+| Notes and follow-ups | កំណត់ចំណាំ និងការតាមដាន |
+| When you meet | ពេលអ្នកជួបគ្នា |
+| Mark as done ✓ | សម្គាល់ថារួចរាល់ ✓ |
+| Ask for, or log, a 1-on-1 | ស្នើសុំ ឬកត់ត្រា ការជួបមួយទល់មួយ |
+| 1-on-1s coming up | ការជួបមួយទល់មួយដែលនឹងមកដល់ |
+| Fill in your check-in | បំពេញការរាយការណ៍របស់អ្នក |
+| Accepted — now a quick check-in | បានទទួល — ឥឡូវបំពេញការរាយការណ៍ខ្លីមួយ |
+| Please rate each area and value first | សូមដាក់ពិន្ទុលើផ្នែក និងគុណតម្លៃនីមួយៗជាមុនសិន |
+| Pick the date you met | ជ្រើសរើសថ្ងៃដែលបានជួបគ្នា |
+| Saved — your mentor can see it now | បានរក្សាទុក — ឥឡូវអ្នកណែនាំរបស់អ្នកអាចមើលឃើញ |
+| Done — counted for this month | រួចរាល់ — បានរាប់សម្រាប់ខែនេះ |
+| Fill in your check-in before your 1-on-1 with {name} | បំពេញការរាយការណ៍របស់អ្នក មុនពេលជួបមួយទល់មួយជាមួយ {name} |
+| The app counts {n} this month | កម្មវិធីរាប់បាន {n} ដងខែនេះ |
+| Fundraising & finances | ការរៃអង្គាសប្រាក់ និងហិរញ្ញវត្ថុ |
+| Physical health | សុខភាពរាងកាយ |
+| Emotional health | សុខភាពផ្លូវចិត្ត |
+| Relationships | ទំនាក់ទំនង |
+| Spiritual life | ជីវិតខាងវិញ្ញាណ |
+| Faithful | ស្មោះត្រង់ |
+| Innovative | ច្នៃប្រឌិត |
+| Generous | ចិត្តទូលាយ |
+| Humble | សុភាពរាបសា |
+| Tenacious | តស៊ូមិនបោះបង់ |
+| Would like help with | ចង់បានជំនួយលើ |
+| Working toward | កំពុងខិតខំឆ្ពោះទៅរក |
+| Also | ផ្សេងទៀត |

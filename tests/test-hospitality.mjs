@@ -33,6 +33,7 @@ fs.writeFileSync(TMP + '/team-seed.js', 'export default [];');   // no imported 
 fs.copyFileSync(REPO + '/netlify/functions/portal-forms-default.js', TMP + '/portal-forms-default.js');
 fs.copyFileSync(REPO + '/netlify/functions/legal-docs-default.js', TMP + '/legal-docs-default.js');  // the legal forms teams sign
 fs.copyFileSync(REPO + '/netlify/functions/legal-pdf.js', TMP + '/legal-pdf.js');  // and the signed-PDF builder
+fs.copyFileSync(REPO + '/netlify/functions/library-audio-lib.js', TMP + '/library-audio-lib.js');  // the Library audio index (api.js imports it)
 process.env.GP_LEADER_CODE = 'leadercode';
 process.env.GP_ADMIN_CODE = 'admincode';
 const blobs = await import(TMP + '/node_modules/@netlify/blobs/index.js');

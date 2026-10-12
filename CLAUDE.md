@@ -1638,6 +1638,34 @@ Poipet's log form. Still switchable — reading across campuses is normal. The h
 lock ("you may only log your own campus") waits until everyone has an account;
 until then it would shut real people out.
 
+## 1-on-1s: a check-in, a sheet, two a month (Oct 2026)
+Uriah: "formalize one-on-ones just a little bit more". Same `oneOnOnes` store; a row now
+also carries `menteeId`, the mentee's `prep`, and once it happened `heldOn`, `notes` and
+`followUps` ([{text, done}]). Status: pending → accepted → **held** (or declined).
+- **The mentee's check-in** (`prep`): six areas of life — `money` (fundraising &
+  finances), `language`, `physical`, `emotional`, `relational`, `spiritual` — and GP's
+  five values, **FIGHT**: `faithful`, `innovative`, `generous`, `humble`, `tenacious`,
+  each 1-5; plus `helpWith`, `workingOn` (personal goals) and `other`. A mentee's ☕ opens
+  the form and the request carries it; when the mentor asks, the mentee is taken to it
+  on accepting (`ooAfterAccept_`) and the bell nudges until it is filled. It starts from
+  their last answers, and the summary shows ▲▼ against last time. Only the mentee can
+  write it (`saveOneOnOnePrep`), until it is held.
+- **The sheet** (`S.view='oneonone'`, `oneOnOneHtml`, `ooGo_(id, withId)`): the
+  check-in, the mentee's SMART goals for the year (the mentor's copy via
+  getMenteeLogs), last time's follow-ups to tick (either of the pair), and for the
+  mentor the date, notes and "to follow up next time" → **Mark as done**
+  (`saveOneOnOneNotes`). A mentor can also **log** one that happened without a request
+  (`logOneOnOne`). Drafts live on `S.ooDrafts` / `S.ooNotes`, so a re-render never loses
+  typing.
+- **Two a month** (`OO_PER_MONTH`), counted by `heldOn`: ●○ dots on My Home's Mentorship
+  card (each mentee, and your own), on the Mentor page and on a mentee's page (which also
+  lists their 1-on-1s). The monthly health question "2 one-on-ones?" shows the count.
+  Department pulse counts held ones by `heldOn` (accepted older rows by decision date).
+- **Privacy:** the check-in, notes and follow-ups go to the mentee always and to the
+  mentor only while still their approved mentor (`ooPairNow_`); nobody else gets the
+  rows, and leadership only ever a count. tests/test-one-on-one.mjs (API, 30),
+  tests/test-one-on-one-ui.mjs (27).
+
 ## Health lives on the staff page
 The weekly health section sits on My GP's **Health** tab. Reading order: **my
 check-in** for the chosen week, **against last week** question by question, **my
