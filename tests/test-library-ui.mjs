@@ -127,6 +127,8 @@ const openLib = async page => { await page.click('nav.bottom [data-tab="library"
   await page.click('#libStart'); await page.waitForTimeout(300);
   let r = await page.$eval('#libReader', e => e.innerText);
   ok('the reader opens on the intro, with a bar of every step', /Intro/i.test(r) && (await page.$$('.libSegs span')).length === AHN + 2 && (await page.$$('.libSegs span.on')).length === 1 && !(await page.$('#libPrev')));
+  ok('… a "Swipe to turn the page" hint the first time, and no Back / Next buttons along the bottom',
+    /Swipe to turn the page/.test(await page.$eval('#libSwipeHint', e => e.innerText)) && !(await page.$('.libReaderNav')) && !!(await page.$('.libEdge.next')));
   await page.click('#libNext'); await page.waitForTimeout(200);
   r = await page.$eval('#libReader', e => e.innerText);
   ok('Next: key idea 1 of all, one idea on the screen', new RegExp('Key idea 1 of ' + AHN, 'i').test(r) && !!(await page.$('.libReaderEmoji')) && (await page.$$('.libSegs span.on')).length === 2);
@@ -150,11 +152,10 @@ const openLib = async page => { await page.click('nav.bottom [data-tab="library"
   for (let i = 0; i < AHN - 1; i++) { await page.click('#libNext'); await page.waitForTimeout(120); }
   r = await page.$eval('#libReader', e => e.innerText);
   ok('the last screen is the final summary: in one line, try this week, for us at GP', /Final summary/i.test(r) && /In one line/i.test(r) && /Try this week/i.test(r) && /For us at GP/i.test(r) && !!(await page.$('#libFinish')));
-  const barAt = () => page.evaluate(() => { const n = document.querySelector('.libReaderNav').getBoundingClientRect(); return { gap: Math.round(innerHeight - n.bottom), tabs: getComputedStyle(document.querySelector('nav.bottom')).display }; });
-  let bar = await barAt();
-  await page.evaluate(() => window.scrollTo(0, 99999)); await page.waitForTimeout(200);
-  const barEnd = await barAt();
-  ok('reading is full-screen: Back / Next sit at the very bottom, top or end of the page, the tab bar out of the way', bar.gap === 0 && barEnd.gap === 0 && bar.tabs === 'none', JSON.stringify([bar, barEnd]));
+  const full = await page.evaluate(() => { const r = document.getElementById('libReader').getBoundingClientRect(), cs = getComputedStyle(document.getElementById('libReader'));
+    return { pos: cs.position, top: Math.round(r.top), bottom: Math.round(innerHeight - r.bottom), w: Math.round(r.width - innerWidth), tabs: getComputedStyle(document.querySelector('nav.bottom')).display, bg: cs.backgroundColor, bodyBg: getComputedStyle(document.body).backgroundColor }; });
+  ok('reading is full-screen on the plain page colour, the tab bar out of the way', full.pos === 'fixed' && full.top === 0 && full.bottom === 0 && full.w === 0 && full.tabs === 'none', JSON.stringify(full));
+  ok('… the only button at the end is Done — mark as read, no Back / Next', (await page.$$('.libReaderNav button')).length === 1 && !!(await page.$('.libReaderNav #libFinish')));
   ok('nothing in the reader scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await page.screenshot({ path: OUT + '/summary.png' });
   await page.click('#libFinish'); await page.waitForTimeout(250);
@@ -191,11 +192,13 @@ const openLib = async page => { await page.click('nav.bottom [data-tab="library"
   await page.click('[data-libbook]'); await page.waitForTimeout(600);
   ok('… and a book page fits a 320px phone', await page.evaluate(() => document.documentElement.scrollWidth <= 321));
   const kmAbout = await page.$eval('.libSec p', e => e.innerText);
-  ok('in Khmer the summary itself is Khmer, and ខ្មែរ is on', /[\u1780-\u17FF]{5}/.test(kmAbout) && !!(await page.$('[data-liblang="km"].on')), kmAbout.slice(0, 40));
-  await page.click('[data-liblang="en"]'); await page.waitForTimeout(250);
+  ok('in Khmer the summary itself is Khmer, with no separate language switch — the Library follows the app', /[\u1780-\u17FF]{5}/.test(kmAbout) && !(await page.$('[data-liblang]')), kmAbout.slice(0, 40));
+  ok('… the cover, title and author are Khmer too', /[\u1780-\u17FF]{3}/.test(await page.$eval('.libHead .libCover', e => e.textContent)) &&
+    /[\u1780-\u17FF]{3}/.test(await page.$eval('.libHead .libTitle', e => e.innerText)) && /[\u1780-\u17FF]{3}/.test(await page.$eval('.libHead .libAuthor', e => e.innerText)));
+  await page.click('#langBtn'); await page.waitForTimeout(400);
   const enAbout = await page.$eval('.libSec p', e => e.innerText);
-  ok('… English switches it to the English, and that is remembered', !/[\u1780-\u17FF]/.test(enAbout) && await page.evaluate(() => localStorage.getItem('gp-lib-lang') === 'en'), enAbout.slice(0, 40));
-  await page.click('[data-liblang="km"]'); await page.waitForTimeout(250);
+  ok('… switching the app to English turns the whole Library English, cover included', !/[\u1780-\u17FF]/.test(enAbout) && !/[\u1780-\u17FF]/.test(await page.$eval('.libHead', e => e.textContent)), enAbout.slice(0, 40));
+  await page.click('#langBtn'); await page.waitForTimeout(400);
   await page.click('#libStart'); await page.waitForTimeout(250); await page.click('#libNext'); await page.waitForTimeout(200);
   ok('… and the reader too, in Khmer — the key idea itself Khmer', await page.evaluate(() => document.documentElement.scrollWidth <= 321) && /គំនិតសំខាន់ទី 1/.test(await page.$eval('#libReader', e => e.innerText)) &&
     /[\u1780-\u17FF]{5}/.test(await page.$eval('.libReaderBody p', e => e.innerText)));

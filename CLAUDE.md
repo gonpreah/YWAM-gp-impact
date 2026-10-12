@@ -1330,13 +1330,17 @@ leading at GP (culture, teams, hard conversations, vision, systems, execution).
   Westerners (for Khmer staff) and Working Well with Cambodians (for Western staff), 11 key
   ideas and ~3,000 words each (`mins` 14), mirroring each other on money, conflict, the
   body and men and women, and learning each other's language. Their
-  fine print says they are not published books and describe tendencies, not rules. Their
-  Khmer entry has a `title` too (`libTitle_`), drawn in Kantumruy Pro on the cover.
+  fine print says they are not published books and describe tendencies, not rules. The
+  shelf's colour is GP ink (#17150F), not laterite — the brown clashed with the black GP.
 - **Khmer** (`public/library-km.js`, `GP_LIBRARY_KM`, keyed by book id, same parts in the
   same order) is loaded only when someone reads in Khmer (`libLoadKm_`), and is NOT in the
-  service worker's install list (~1.8 MB raw) — it is kept offline after that first read. The language
-  follows the app's unless switched on a book page (English | ខ្មែរ, `gp-lib-lang` on this
-  phone). Written by Claude in plain spoken Khmer; "ministry" is កិច្ចការបម្រើ as in km.js.
+  service worker's install list (~1.8 MB raw) — it is kept offline after that first read. The
+  Library **follows the app's language, with no switch of its own** (`libLang_`; the old
+  `gp-lib-lang` is ignored): in Khmer every cover, tile, title and author is Khmer too —
+  every entry has a `title` and `author` (`libTitle_`, `libAuthor_`; authors sounded out in
+  Khmer letters), and covers draw Khmer titles in Kantumruy Pro, sized by length.
+  `libKmEnsure_` loads the file and says so if it can't. Written by Claude in plain spoken
+  Khmer; "ministry" is កិច្ចការបម្រើ as in km.js. Titles and authors are in khmer-needed.md for review.
   When a summary changes in library.js, change its Khmer too — the test checks the shape.
 - **Loaded only when opened** (`libLoad_`, `data-optional` so a failed load says so on
   the page instead of the whole-app error screen); sw.js precaches it for offline reading.
@@ -1355,8 +1359,16 @@ leading at GP (culture, teams, hard conversations, vision, systems, execution).
   reading, Start here, one per shelf, each with See all → a two-column grid), tiles with
   the cover on a tinted square; a book page with Start reading, What's it about, What's
   inside; a reader (`libReaderHtml_`, `S.libStep`) one key idea per screen — intro, the
-  ideas, a final summary — with a progress bar, Back/Next and swipe. Library headings use
-  the body font; Koulen is for the covers only.
+  ideas, a final summary — with a progress bar. **Pages turn by swiping** (a slide-in
+  animation, `S.libDir`); there are no Back/Next buttons along the bottom — only slim ‹ ›
+  tabs at the screen edges (`#libPrev` / `#libNext`) and, on the last screen, Done — mark
+  as read. The first three times a book is opened a "Swipe to turn the page" pill with a
+  moving 👆 shows (`S.libHint`, `gp-lib-swipehint`; a swipe retires it). The reader is a
+  full-screen fixed layer on the plain page colour; while it is open the body has class
+  `libReading` (NOT `reading` — that is the Bible verse banner's class, and sharing it
+  painted the reader yellow-brown). Tiles, the book page and the reader take the tint of
+  the book's own cover (`libTint_`). Library headings use the body font; Koulen is for the
+  covers only.
 - "Read" ticks (`gp-lib-read`) and where you are in a book (`gp-lib-progress`) are this
   phone's only (localStorage). To add a book, add an object to `GP_LIBRARY.books`;
   tests/test-library.mjs checks the shape.

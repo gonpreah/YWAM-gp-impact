@@ -43,8 +43,8 @@ var GP_LIBRARY = {
    "id": "gp",
    "name": "Made at GP",
    "emoji": "🌉",
-   "color": "#A4572A",
-   "ink": "#6B3315"
+   "color": "#17150F",
+   "ink": "#17150F"
   }
  ],
  "cover": {

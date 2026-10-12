@@ -80,7 +80,7 @@ async function open(user, opts) {
   page.on('console', m => { if (m.type() === 'error' && !/net::|ERR_/.test(m.text())) errors.push('CONSOLE ' + m.text()); });
   await page.route('**fonts.g**', r => r.abort());
   await page.addInitScript(FAKE, { km: !!opts.kmVoice });
-  await page.addInitScript(a => { localStorage.setItem('gp-staff', JSON.stringify({ user: a.u, pin: '1234' })); if (a.lib) localStorage.setItem('gp-lib-lang', a.lib); }, { u: user, lib: opts.lib || '' });
+  await page.addInitScript(a => { localStorage.setItem('gp-staff', JSON.stringify({ user: a.u, pin: '1234' })); if (a.lib === 'km') localStorage.setItem('gp-lang', 'km'); }, { u: user, lib: opts.lib || '' });
   await page.goto(BASE + '/teams.html', { waitUntil: 'load' });
   await page.waitForSelector('nav.bottom button', { timeout: 15000 });
   if (!opts.off) await page.evaluate(() => { LIB_AUDIO_ON = true; });   // off in the app for now; switched on here to keep the player tested
@@ -138,7 +138,7 @@ const step = p => p.evaluate(() => S.libStep);
   const { ctx, page } = await open('sreilea', { lib: 'km' });
   await page.click('[data-libbook="start-with-why"]'); await page.waitForTimeout(1500);
   await page.click('#libListenStart'); await page.waitForTimeout(400);
-  ok('a Khmer book on a phone with no Khmer voice says so, and reads nothing in English', await page.evaluate(() => window.__spoken.length) === 0 && /Khmer voice/.test(await page.$eval('#msg', e => e.textContent)));
+  ok('a Khmer book on a phone with no Khmer voice says so, and reads nothing in English', await page.evaluate(() => window.__spoken.length) === 0 && /សំឡេងភាសាខ្មែរ/.test(await page.$eval('#msg', e => e.textContent)));
   await ctx.close();
 }
 {

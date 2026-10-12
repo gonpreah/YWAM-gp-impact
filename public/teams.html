@@ -843,7 +843,26 @@ button.reqRow { cursor:pointer; }
 .libInsightNum { flex:0 0 26px; height:26px; border-radius:50%; color:var(--pOnMark); font-weight:900; font-size:12.5px; display:flex; align-items:center; justify-content:center; }
 .libForUs { margin-top:20px; border-left:4px solid; } .libForUs p { margin:0; font-size:15px; line-height:1.6; }
 .libKicker { font-size:12px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
-.libReader { display:flex; flex-direction:column; }
+/* The reader is a page of its own (Oct 2026): over the header, in the app's paper. */
+.libReader { position:fixed; inset:0; z-index:70; background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding:calc(env(safe-area-inset-top) + 6px) 32px 0; display:flex; flex-direction:column; }
+.libReader > * { width:100%; max-width:600px; margin-left:auto; margin-right:auto; }
+.libEdge { position:fixed; top:50%; transform:translateY(-50%); z-index:72; width:28px; height:96px; border:0; padding:0; cursor:pointer;
+  background:none; display:flex; align-items:center; justify-content:center; color:var(--libink, var(--muted)); max-width:none; margin:0; }
+.libEdge span { display:flex; align-items:center; justify-content:center; width:16px; height:44px; border-radius:8px; background:var(--surface2);
+  font-size:17px; font-weight:800; line-height:1; opacity:.9; }
+.libEdge.prev { left:0; justify-content:flex-start; padding-left:4px; } .libEdge.next { right:0; justify-content:flex-end; padding-right:4px; }
+.libReader > .libSwipeHint, .libSwipeHint { position:fixed; left:50%; margin:0; bottom:calc(28px + env(safe-area-inset-bottom)); transform:translateX(-50%); z-index:73; width:auto; max-width:none;
+  display:flex; align-items:center; gap:10px; background:var(--ink); color:var(--bg); border-radius:999px; padding:10px 20px 10px 26px;
+  font-size:14px; font-weight:700; white-space:nowrap; box-shadow:0 6px 20px var(--shadowSoft); transition:opacity .35s; }
+.libSwipeHint.out { opacity:0; pointer-events:none; }
+.libSwipeHand { display:inline-block; font-size:20px; animation:libSwipe 1.4s ease-in-out infinite; }
+@keyframes libSwipe { 0% { transform:translateX(10px); opacity:0; } 20% { opacity:1; } 70% { transform:translateX(-10px); opacity:1; } 100% { transform:translateX(-10px); opacity:0; } }
+.libTurn-next { animation:libInNext .28s ease-out; } .libTurn-prev { animation:libInPrev .28s ease-out; }
+@keyframes libInNext { from { transform:translateX(28px); opacity:0; } to { transform:none; opacity:1; } }
+@keyframes libInPrev { from { transform:translateX(-28px); opacity:0; } to { transform:none; opacity:1; } }
+@media (prefers-reduced-motion: reduce) { .libTurn-next, .libTurn-prev, .libSwipeHand { animation:none; } }
+.libCoverAuthor.km { font-family:'Kantumruy Pro', sans-serif; }
 .libReaderTop { position:sticky; top:0; z-index:4; background:var(--bg); display:flex; align-items:center; gap:12px; padding:8px 0 10px; }
 .libReaderClose { flex:0 0 36px; height:36px; border-radius:50%; border:1.5px solid var(--border2); background:var(--surface); color:var(--ink); font:inherit; font-size:15px; font-weight:800; cursor:pointer; }
 .libSegs { flex:1; display:flex; gap:3px; } .libSegs span { flex:1; height:4px; border-radius:2px; background:var(--surface2); } .libSegs span.on { background:var(--libc); }
@@ -866,7 +885,7 @@ button.reqRow { cursor:pointer; }
 /* Reading is full-screen (Uriah: the bar didn't stay at the bottom): the tab bar
    steps aside while a book is open in the reader (body.reading) and Back / Next
    are fixed to the bottom edge, above the phone's home bar. */
-body.reading nav.bottom { display:none; }
+body.libReading nav.bottom { display:none; } body.libReading { overflow:hidden; }
 .libReaderNav { position:fixed; left:0; right:0; bottom:0; z-index:11; background:var(--bg); border-top:1px solid var(--border);
   padding:10px max(16px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
 .libReaderNavIn { display:flex; gap:10px; max-width:608px; margin:0 auto; }
@@ -2981,7 +3000,7 @@ function render(){
     return '<button class="'+(S.view===tab[0]?'on':'')+'" data-tab="'+tab[0]+'"><span class="ic">'+NAV_ICONS[tab[0]]+'</span>'+navLabel_(tab[1])+'</button>';
   }).join('');
   var m=document.getElementById('main');
-  document.body.classList.toggle('reading', S.view==='library' && !!S.libBook && S.libStep!=null);
+  document.body.classList.toggle('libReading', S.view==='library' && !!S.libBook && S.libStep!=null);   // not 'reading': that is the Bible-reading box's class, and its yellow, border and font leaked onto the whole page
   if(LIBA.on && !(S.view==='library' && S.libBook && S.libStep!=null)) libAudioStop_();
   if(S.guest && S.view==='week') m.innerHTML=gpGuestHomeHtml_();
   else if(S.guest && (S.view==='team' || S.view==='health')) m.innerHTML=gpGuestLockHtml_(S.view);
@@ -5337,7 +5356,9 @@ var LIB_READ_KEY='gp-lib-read', LIB_PROG_KEY='gp-lib-progress';
 /* Which language the summaries are read in: the app's own unless switched on a book
    page (remembered on this phone). Khmer lives in library-km.js, loaded only when
    it is wanted; until it is there — or if it cannot load — the English shows. */
-function libLang_(){ var v=lsGet('gp-lib-lang'); return v==='en'||v==='km' ? v : (LANG==='km' ? 'km' : 'en'); }
+/* The Library follows the app's language (Oct 2026, Uriah): Khmer app, Khmer
+   Library — summaries, titles, authors and covers. No switch of its own. */
+function libLang_(){ return LANG==='km' ? 'km' : 'en'; }
 function libLoadKm_(){
   if(typeof GP_LIBRARY_KM!=='undefined' || S.libKmLoading) return;
   S.libKmLoading=true; S.libKmError=false;
@@ -5360,14 +5381,18 @@ function libTitle_(b){
   var k=(libLang_()==='km' && typeof GP_LIBRARY_KM!=='undefined') ? GP_LIBRARY_KM[b.id] : null;
   return (k && k.title) || b.title;
 }
+function libAuthor_(b){
+  var k=(libLang_()==='km' && typeof GP_LIBRARY_KM!=='undefined') ? GP_LIBRARY_KM[b.id] : null;
+  return (k && k.author) || b.author;
+}
 /* Shelves in the order the home shows them: the guides made at GP first. */
 function libShelvesShown_(){ return GP_LIBRARY.shelves.filter(function(x){ return x.id==='gp'; }).concat(GP_LIBRARY.shelves.filter(function(x){ return x.id!=='gp'; })); }
-function libLangSwitch_(){
-  if(libLang_()==='km' && typeof GP_LIBRARY_KM==='undefined' && !S.libKmError) libLoadKm_();
-  var on=libLang_();
-  return '<div class="libLangSwitch" role="group" aria-label="'+esc(t('Language'))+'">'+
-    '<button data-liblang="en" class="'+(on==='en'?'on':'')+'">English</button><button data-liblang="km" class="'+(on==='km'?'on':'')+'">ខ្មែរ</button></div>'+
-    (on==='km' && S.libKmError ? '<p class="hint libKmNote">'+esc(t('The library could not load. Check your connection and try again.'))+'</p>' : '');
+/* In Khmer, the Khmer library is fetched the first time it's needed; until it
+   arrives everything shows in English, and a failed fetch says so. */
+function libKmEnsure_(){
+  if(libLang_()!=='km') return '';
+  if(typeof GP_LIBRARY_KM==='undefined' && !S.libKmError) libLoadKm_();
+  return S.libKmError ? '<p class="hint libKmNote">'+esc(t('The library could not load. Check your connection and try again.'))+'</p>' : '';
 }
 function libLoad_(){
   if(typeof GP_LIBRARY!=='undefined' || S.libLoading) return;
@@ -5562,11 +5587,11 @@ function libCoverHtml_(b, big){
   var font=sp.font||'sans', perChar = font==='display' ? 0.46 : font==='serif' ? (sp.upper?0.66:0.53) : (sp.upper?0.68:0.57);
   var longest=Math.max.apply(null, title.split(/\s+/).map(function(w){ return w.length; }));
   var byLen = n<=8 ? (font==='display'?28:21) : n<=12 ? (font==='display'?20:15.5) : n<=22 ? (font==='display'?15:12.5) : n<=34 ? 10.5 : 9.2;
-  var fs = km ? 9.5 : Math.min(byLen, 82/(longest*perChar));
+  var fs = km ? (n<=7 ? 15 : n<=12 ? 12.5 : n<=18 ? 10.5 : n<=28 ? 9.5 : 8.5) : Math.min(byLen, 82/(longest*perChar));   // Khmer: by length — wide glyphs, no spaces to break on
   return '<div class="libCover cv '+(top?'top':'bottom')+(big?' big':'')+'" style="background:'+c.bg+';color:'+c.fg+'">'+
     '<svg class="cvArt" viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g transform="'+place+'">'+LIB_MOTIFS[sp.motif](c, b)+'</g></svg>'+
     '<div class="cvText"><div class="libCoverTitle cvT-'+font+(sp.upper?' up':'')+(km?' km':'')+'" style="font-size:'+fs.toFixed(2)+'cqw">'+esc(title)+'</div>'+
-    '<div class="libCoverAuthor">'+esc(b.author)+'</div></div></div>';
+    '<div class="libCoverAuthor'+(km?' km':'')+'">'+esc(libAuthor_(b))+'</div></div></div>';
 }
 /* A title whose longest word is still too wide in the type the phone actually
    has (the cover font may not have loaded yet, or ever, offline) steps down
@@ -5588,19 +5613,21 @@ function libLiveCovers_(){
   all.forEach(function(el){ _libCoverObs.observe(el); });
 }
 function libCoverSeries_(b, big, title, n){
-  var sh=libShelf_(b.shelf), C=GP_LIBRARY.cover||{};
+  var sh=libShelf_(b.shelf), C=GP_LIBRARY.cover||{}, km=/[\u1780-\u17FF]/.test(title);
   return '<div class="libCover'+(big?' big':'')+'" style="background:'+(C.paper||sh.color)+';color:'+(C.ink||sh.ink)+'">'+
     '<div class="libCoverArt" style="background:linear-gradient(155deg,'+sh.color+','+sh.ink+')">'+libMotif_(b)+'</div>'+
     '<div class="libCoverText"><div class="libCoverRule" style="background:'+sh.color+'"></div>'+
-    '<div class="libCoverTitle '+(n<=12?'l1':n<=22?'l2':n<=34?'l3':'l4')+(/[\u1780-\u17FF]/.test(title)?' km':'')+'">'+esc(title)+'</div>'+
-    '<div class="libCoverAuthor">'+esc(b.author)+'</div></div></div>';
+    '<div class="libCoverTitle '+(n<=12?'l1':n<=22?'l2':n<=34?'l3':'l4')+(km?' km':'')+'">'+esc(title)+'</div>'+
+    '<div class="libCoverAuthor'+(km?' km':'')+'">'+esc(libAuthor_(b))+'</div></div></div>';
 }
 function libParas_(txt){ return String(txt||'').split(/\n\s*\n/).map(function(x){ return x.trim() ? '<p>'+esc(x.trim())+'</p>' : ''; }).join(''); }
+/* The colour a book's tile, page and reader take: its cover's own, else its shelf's. */
+function libTint_(b){ return (b.cover && b.cover.bg) ? libCol_(b.cover.bg) : libShelf_(b.shelf).color; }
 function libTileHtml_(b, read, prog){
   var sh=libShelf_(b.shelf), steps=b.insights.length+2, at=prog[b.id];
-  return '<button class="libTile" data-libbook="'+esc(b.id)+'" aria-label="'+esc(b.title+' — '+b.author)+'" style="--libc:'+sh.color+'">'+
+  return '<button class="libTile" data-libbook="'+esc(b.id)+'" aria-label="'+esc(libTitle_(b)+' — '+libAuthor_(b))+'" style="--libc:'+libTint_(b)+'">'+
     '<span class="libTileArt">'+libCoverHtml_(b)+(read[b.id]?'<span class="libReadTag">✓</span>':'')+'</span>'+
-    '<span class="libTileTitle">'+esc(libTitle_(b))+'</span><span class="libTileAuthor">'+esc(b.author)+'</span>'+
+    '<span class="libTileTitle">'+esc(libTitle_(b))+'</span><span class="libTileAuthor">'+esc(libAuthor_(b))+'</span>'+
     '<span class="libTileMeta">⏱ '+esc(gpT('{n} min',{n:b.mins||5}))+' · 💡 '+b.insights.length+'</span>'+
     (at && !read[b.id] ? '<span class="libTileBar"><span style="width:'+Math.round(at/(steps-1)*100)+'%"></span></span>' : '')+'</button>';
 }
@@ -5615,6 +5642,7 @@ function libraryHtml(){
       ? '<div class="card"><p class="sub" style="margin:0 0 10px">'+esc(t('The library could not load. Check your connection and try again.'))+'</p><button class="btn ghost" id="libRetry">'+esc(t('Try again'))+'</button></div>'
       : '<p class="sub">'+esc(t('Loading…'))+'</p>');
   }
+  libKmEnsure_();   // a Khmer app shows the Khmer titles, authors and covers as soon as they arrive
   if(S.libBook){
     var b=libById_(S.libBook);
     if(b) return S.libStep!=null ? libReaderHtml_(b) : back+libBookHtml_(b);
@@ -5647,9 +5675,9 @@ function libraryHtml(){
 function libBookHtml_(b){
   var sh=libShelf_(b.shelf), read=libRead_()[b.id], at=libProg_()[b.id], T=libText_(b);
   var list=GP_LIBRARY.books, i=list.indexOf(b), next=list[(i+1)%list.length];
-  var h=libLangSwitch_()+'<div class="libHead'+(T.km?' libKm':'')+'" style="--libc:'+sh.color+';--libink:'+sh.ink+'">'+libCoverHtml_(b, true)+
+  var h=libKmEnsure_()+'<div class="libHead'+(T.km?' libKm':'')+'" style="--libc:'+libTint_(b)+';--libink:'+sh.ink+'">'+libCoverHtml_(b, true)+
     '<span class="libShelfTag">'+(sh.emoji||'')+' '+esc(t(sh.name))+'</span>'+(b.original?' <span class="libShelfTag">✨ '+esc(t('Original GP guide'))+'</span>':'')+
-    '<h2 class="libTitle">'+esc(libTitle_(b))+'</h2><div class="libAuthor">'+esc(b.author)+(b.year?' · '+b.year:'')+'</div>'+
+    '<h2 class="libTitle">'+esc(libTitle_(b))+'</h2><div class="libAuthor">'+esc(libAuthor_(b))+(b.year?' · '+b.year:'')+'</div>'+
     '<div class="libVibe">'+esc(T.vibe)+'</div>'+
     '<div class="libStats"><span>⏱ '+esc(gpT('{n}-minute read',{n:b.mins||5}))+'</span><span>💡 '+esc(gpT('{n} key ideas',{n:b.insights.length}))+'</span>'+(read?'<span>✓ '+esc(t('Read'))+'</span>':'')+'</div></div>';
   h+='<button class="btn libCta" id="libStart" style="background:'+sh.color+';border-color:'+sh.color+'">'+
@@ -5670,20 +5698,23 @@ function libBookHtml_(b){
 function libReaderHtml_(b){
   var sh=libShelf_(b.shelf), T=libText_(b), n=b.insights.length, last=n+1, k=Math.max(0, Math.min(last, S.libStep|0));
   var segs=''; for(var j=0;j<=last;j++) segs+='<span'+(j<=k?' class="on"':'')+'></span>';
-  var h='<div class="libReader" id="libReader" style="--libc:'+sh.color+';--libink:'+sh.ink+'">'+
+  var h='<div class="libReader" id="libReader" style="--libc:'+libTint_(b)+';--libink:'+sh.ink+'">'+
     '<div class="libReaderTop"><button class="libReaderClose" id="libClose" aria-label="'+esc(t('Close'))+'">✕</button><div class="libSegs">'+segs+'</div>'+libAudioBtnsHtml_()+'</div>'+
-    '<div class="libReaderBook"><span>'+esc(libTitle_(b))+' · '+esc(b.author)+'</span>'+libLangSwitch_()+'</div>'+
-    '<div class="libReaderKicker">'+esc(k===0 ? t('Intro') : k<=n ? gpT('Key idea {n} of {m}',{n:k, m:n}) : t('Final summary'))+'</div><div class="libReaderBody'+(T.km?' libKm':'')+'">';
+    '<div class="libReaderBook"><span>'+esc(libTitle_(b))+' · '+esc(libAuthor_(b))+'</span></div>'+libKmEnsure_()+
+    '<div class="libReaderKicker libTurn-'+(S.libDir||'none')+'">'+esc(k===0 ? t('Intro') : k<=n ? gpT('Key idea {n} of {m}',{n:k, m:n}) : t('Final summary'))+'</div><div class="libReaderBody libTurn-'+(S.libDir||'none')+(T.km?' libKm':'')+'">';
   if(k===0) h+='<h2>'+esc(T.vibe)+'</h2>'+libParas_(T.bigIdea);
   else if(k<=n){ var x=T.insights[k-1]; h+='<div class="libReaderEmoji">'+esc(x.emoji||'')+'</div><h2>'+esc(x.title)+'</h2>'+libParas_(x.body); }
   else h+='<div class="libOneLine" style="background:'+sh.color+'"><span>'+esc(t('In one line'))+'</span>'+esc(T.oneLine)+'</div>'+
     '<div class="libKicker" style="margin-top:20px">✅ '+esc(t('Try this week'))+'</div><ul class="libTry">'+T.tryThis.map(function(x){ return '<li>'+esc(x)+'</li>'; }).join('')+'</ul>'+
     '<div class="libKicker" style="margin-top:18px">🌏 '+esc(t('For us at GP'))+'</div>'+libParas_(T.forUs);
-  h+='</div><div class="libReaderNav"><div class="libReaderNavIn">'+
-    (k>0 ? '<button class="btn ghost" id="libPrev">← '+esc(t('Back'))+'</button>' : '')+
-    (k<last ? '<button class="btn" id="libNext" style="background:'+sh.color+';border-color:'+sh.color+'">'+esc(t('Next'))+' →</button>'
-            : '<button class="btn" id="libFinish" style="background:'+sh.color+';border-color:'+sh.color+'">✓ '+esc(t('Done — mark as read'))+'</button>')+
-    '</div></div></div>';
+  /* Turning the page is a swipe (or a tap on the page's edge, where a quiet ‹ › sits);
+     the only button is Done, on the last page. The first few books opened show how. */
+  h+='</div>'+
+    (k>0 ? '<button class="libEdge prev" id="libPrev" aria-label="'+esc(t('Back'))+'"><span>‹</span></button>' : '')+
+    (k<last ? '<button class="libEdge next" id="libNext" aria-label="'+esc(t('Next'))+'"><span>›</span></button>' : '')+
+    (k===last ? '<div class="libReaderNav"><div class="libReaderNavIn"><button class="btn" id="libFinish" style="background:'+sh.color+';border-color:'+sh.color+'">✓ '+esc(t('Done — mark as read'))+'</button></div></div>' : '')+
+    (S.libHint ? '<div class="libSwipeHint" id="libSwipeHint" aria-hidden="true"><span class="libSwipeHand">👆</span><span>'+esc(t('Swipe to turn the page'))+'</span></div>' : '')+
+    '</div>';
   return h;
 }
 /* ---------- The Library, read aloud (Oct 2026, Uriah: "an audio function
@@ -5763,7 +5794,7 @@ function libAudioPlay_(from){
   if(rec && libAudioEl_() && !LIBA.noRec) return libRecPlay_(b, T.km ? 'km' : 'en', rec);
   if(!libSpeechOk_()){ libAudioStop_(); showMsg(t('This book has no recording yet, and this phone cannot read aloud.')); return; }
   var voice=libVoice_(T.km);
-  if(T.km && !voice){ libAudioStop_(); showMsg(t('This phone has no Khmer voice yet. Switch the book to English to listen, or add a Khmer voice in your phone’s settings.')); return; }
+  if(T.km && !voice){ libAudioStop_(); showMsg(t('This phone has no Khmer voice yet. Switch the app to English to listen, or add a Khmer voice in your phone’s settings.')); return; }
   var token=++LIBA.token;
   try { window.speechSynthesis.cancel(); } catch(e){}
   LIBA.on=true; LIBA.chunks=libAudioChunks_(); LIBA.i=Math.max(0, Math.min(LIBA.chunks.length, from|0)); LIBA.key=libAudioKey_();
@@ -5847,7 +5878,11 @@ function libAudioBind_(){
 }
 function libGo_(step){
   var b=libById_(S.libBook); if(!b) return;
-  S.libStep=Math.max(0, Math.min(b.insights.length+1, step));
+  var was=S.libStep; S.libStep=Math.max(0, Math.min(b.insights.length+1, step));
+  S.libDir = was==null ? 'none' : S.libStep>was ? 'next' : S.libStep<was ? 'prev' : 'none';
+  /* "Swipe to turn the page": the first three times a book is opened, never again after a first swipe */
+  if(was==null){ var seen=Number(lsGet('gp-lib-swipehint'))||0; S.libHint = seen<3; if(S.libHint) lsSet('gp-lib-swipehint', String(seen+1)); }
+  else S.libHint=false;
   if(!libRead_()[b.id]) libSetProg_(b.id, S.libStep);
   render(); window.scrollTo(0,0);
 }
@@ -5862,7 +5897,6 @@ function bindLibrary_(){
   document.querySelectorAll('[data-libshelf]').forEach(function(b){ b.onclick=function(){ gpTap(); S.libShelf=b.getAttribute('data-libshelf'); render(); if(b.classList.contains('libSeeAll')) window.scrollTo(0,0); }; });
   document.querySelectorAll('[data-libbook]').forEach(function(b){ b.onclick=function(){ gpTap(); S.libBook=b.getAttribute('data-libbook'); S.libStep=null; render(); window.scrollTo(0,0); }; });
   document.querySelectorAll('[data-libstep]').forEach(function(b){ b.onclick=function(){ gpTap(); libGo_(+b.getAttribute('data-libstep')); }; });
-  document.querySelectorAll('[data-liblang]').forEach(function(b){ b.onclick=function(){ gpTap(); lsSet('gp-lib-lang', b.getAttribute('data-liblang')); S.libKmError=false; render(); }; });
   libAudioBind_();
   var st=document.getElementById('libStart');
   if(st) st.onclick=function(){ gpTap(); var id=S.libBook, at=libProg_()[id]; libGo_(at && !libRead_()[id] ? at : 0); };
@@ -5874,6 +5908,9 @@ function bindLibrary_(){
   if(pv) pv.onclick=function(){ gpTap(); libGo_(S.libStep-1); };
   if(nx) nx.onclick=function(){ gpTap(); libGo_(S.libStep+1); };
   if(fin) fin.onclick=function(){ gpTap(); libSetRead_(S.libBook, true); libSetProg_(S.libBook, 0); S.libStep=null; render(); window.scrollTo(0,0); };
+  var hint=document.getElementById('libSwipeHint');
+  if(hint){ var gone=function(){ S.libHint=false; hint.classList.add('out'); };
+    setTimeout(gone, 3600); var rr=document.getElementById('libReader'); if(rr) rr.addEventListener('touchstart', gone, { once:true, passive:true }); }
   var rd=document.getElementById('libReader');
   if(rd){   // swipe left for the next screen, right for the one before
     var x0=null, y0=null;
@@ -5883,6 +5920,7 @@ function bindLibrary_(){
       var dx=e.changedTouches[0].clientX-x0, dy=e.changedTouches[0].clientY-y0; x0=null;
       if(Math.abs(dx)<60 || Math.abs(dx)<Math.abs(dy)*1.5) return;
       var b=libById_(S.libBook); if(!b) return;
+      lsSet('gp-lib-swipehint','3');   // they know now
       if(dx<0 && S.libStep<b.insights.length+1) libGo_(S.libStep+1);
       else if(dx>0 && S.libStep>0) libGo_(S.libStep-1);
     }, { passive:true });

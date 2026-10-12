@@ -3110,7 +3110,7 @@ now). "Read" means "I have read this book".
 | Listen | ស្តាប់ |
 | Pause | ផ្អាក |
 | Speed | ល្បឿន |
-| This phone has no Khmer voice yet. Switch the book to English to listen, or add a Khmer voice in your phone’s settings. | ទូរស័ព្ទនេះមិនទាន់មានសំឡេងភាសាខ្មែរនៅឡើយទេ។ ប្តូរសៀវភៅទៅជាភាសាអង់គ្លេសដើម្បីស្តាប់ ឬបន្ថែមសំឡេងខ្មែរនៅក្នុងការកំណត់ទូរស័ព្ទរបស់អ្នក។ |
+| This phone has no Khmer voice yet. Switch the app to English to listen, or add a Khmer voice in your phone’s settings. | ទូរស័ព្ទនេះមិនទាន់មានសំឡេងភាសាខ្មែរនៅឡើយទេ។ ប្តូរកម្មវិធីទៅជាភាសាអង់គ្លេសដើម្បីស្តាប់ ឬបន្ថែមសំឡេងខ្មែរនៅក្នុងការកំណត់ទូរស័ព្ទរបស់អ្នក។ |
 
 ### Library audio (the player)
 
@@ -3119,3 +3119,65 @@ now). "Read" means "I have read this book".
 | This book has no recording yet, and this phone cannot read aloud. | សៀវភៅនេះមិនទាន់មានការថតសំឡេងនៅឡើយទេ ហើយទូរស័ព្ទនេះមិនអាចអានឮៗបានទេ។ |
 | Tap 🎧 to start listening. | ចុច 🎧 ដើម្បីចាប់ផ្តើមស្តាប់។ |
 | GP Library | បណ្ណាល័យ GP |
+
+
+### The Library follows the app's language: Khmer covers, titles and authors
+
+The Library no longer has its own English / ខ្មែរ switch: when the app is in Khmer, every
+book's cover, title, author and summary is Khmer. Pages turn by swiping, with a short hint
+the first few times.
+
+| English | Khmer (draft) |
+|---|---|
+| Swipe to turn the page | អូសដើម្បីបើកទំព័រ |
+
+Book titles and authors (in `public/library-km.js`; authors are sounded out in Khmer letters):
+
+| English | Khmer (draft) |
+|---|---|
+| Developing the Leader Within You — John C. Maxwell | អភិវឌ្ឍអ្នកដឹកនាំនៅក្នុងខ្លួនអ្នក — ចន ស៊ី. ម៉ាក់ស្វែល |
+| First, Break All the Rules — Marcus Buckingham & Curt Coffman | ដំបូង ចូរបំបែកច្បាប់ទាំងអស់ — ម៉ាកឃឹស ប៊ុកឃីងហាំ និង ឃឺត ខូហ្វមែន |
+| Good to Great — Jim Collins | ពីល្អ ទៅអស្ចារ្យ — ជីម ខូលីនស៍ |
+| Never Split the Difference — Chris Voss (with Tahl Raz) | កុំចែកពាក់កណ្ដាលឲ្យសោះ — គ្រីស វ៉ូស (ជាមួយ តាល់ រ៉ាស) |
+| Predictable Success — Les McKeown | ជោគជ័យដែលអាចទាយទុកបាន — ឡេស ម៉ាក់ឃីអូន |
+| The 4 Disciplines of Execution — Chris McChesney, Sean Covey & Jim Huling | វិន័យទាំង 4 នៃការអនុវត្ត — គ្រីស ម៉ាក់ឆេសនី, ស៊ន ខូវី និង ជីម ហ៊ូលីង |
+| Thou Shall Prosper — Rabbi Daniel Lapin | ចូរចម្រើនរុងរឿង — រ៉ាប៊ី ដានីយ៉ែល ឡាពីន |
+| The E-Myth Revisited — Michael E. Gerber | ទេវកថាសហគ្រិន ពិនិត្យឡើងវិញ — ម៉ៃឃើល អ៊ី. ហ្គឺប័រ |
+| The Tipping Point — Malcolm Gladwell | ចំណុចរបត់ — ម៉ាល់ខម ហ្គ្លែដវែល |
+| The 21 Irrefutable Laws of Leadership — John C. Maxwell | ច្បាប់ 21 នៃភាពជាអ្នកដឹកនាំ ដែលមិនអាចប្រកែកបាន — ចន ស៊ី. ម៉ាក់ស្វែល |
+| How to Win Friends & Influence People — Dale Carnegie | របៀបរាប់អានមិត្ត និងមានឥទ្ធិពលលើមនុស្ស — ដេល ខាណេហ្គី |
+| Extreme Ownership — Jocko Willink & Leif Babin | ការទទួលខុសត្រូវទាំងស្រុង — ចូកូ វីលលីង និង លីហ្វ បាប៊ីន |
+| Thanks for the Feedback — Douglas Stone & Sheila Heen | អរគុណសម្រាប់មតិកែលម្អ — ដាក់ក្លាស ស្តូន និង ស៊ីឡា ហ៊ីន |
+| The Five Dysfunctions of a Team — Patrick Lencioni | ចំណុចខ្សោយទាំង 5 នៃក្រុមការងារ — ផាទ្រីក លេនស៊ីអូនី |
+| Emotional Intelligence — Daniel Goleman | បញ្ញាផ្លូវអារម្មណ៍ — ដានីយ៉ែល ហ្គោលមែន |
+| Leaders Eat Last — Simon Sinek | អ្នកដឹកនាំញ៉ាំក្រោយគេ — ស៊ីម៉ូន ស៊ីណេក |
+| Lean In — Sheryl Sandberg | ហ៊ានឈានចូល — ស៊ែរីល សេនប៊ឺក |
+| Start with Why — Simon Sinek | ចាប់ផ្តើមពីហេតុអ្វី — ស៊ីម៉ូន ស៊ីណេក |
+| Boundaries — Henry Cloud & John Townsend | ព្រំដែន — ហេនរី ក្លោដ និង ចន តោនសិន |
+| The Power of Moments — Chip Heath & Dan Heath | អំណាចនៃគ្រាពិសេស — ឈីប ហ៊ីធ និង ដេន ហ៊ីធ |
+| The Advantage — Patrick Lencioni | គុណសម្បត្តិឈ្នះ — ផាទ្រីក លេនស៊ីអូនី |
+| Multipliers — Liz Wiseman (with Greg McKeown) | អ្នកពង្រីកសមត្ថភាព — លីស វ៉ាយស៍មែន (ជាមួយ ហ្គ្រេក ម៉ាក់ឃីអូន) |
+| Crucial Conversations — Kerry Patterson, Joseph Grenny, Ron McMillan & Al Switzler | ការសន្ទនាដ៏សំខាន់ — ឃែរី ផាត់ធើសិន, យ៉ូសែប គ្រេននី, រ៉ុន ម៉ាក់មីឡាន និង អាល់ ស្វីតស្លឺរ |
+| The Ideal Team Player — Patrick Lencioni | សមាជិកក្រុមដ៏ល្អឥតខ្ចោះ — ផាទ្រីក លេនស៊ីអូនី |
+| Atomic Habits — James Clear | ទម្លាប់តូចៗ ផលធំៗ — ជេមស៍ ក្លៀរ |
+| Decisive — Chip Heath & Dan Heath | ការសម្រេចចិត្តដ៏មុតមាំ — ឈីប ហ៊ីធ និង ដេន ហ៊ីធ |
+| Drive — Daniel H. Pink | កម្លាំងជំរុញ — ដានីយ៉ែល អេច. ភីង |
+| Getting Things Done — David Allen | ធ្វើការងារឲ្យបានសម្រេច — ដេវីដ អាឡែន |
+| Grit — Angela Duckworth | ការតស៊ូ — អេនជេឡា ដាក់វឺត |
+| Mindset — Carol S. Dweck | ផ្នត់គំនិត — ខារ៉ុល អេស. ដវែក |
+| Rich Dad Poor Dad — Robert T. Kiyosaki | ឪពុកអ្នកមាន ឪពុកអ្នកក្រ — រ៉ូប៊ឺត ធី. គីយ៉ូសាគី |
+| Think Like a Freak — Steven D. Levitt & Stephen J. Dubner | គិតឲ្យប្លែកពីគេ — ស្ទីវិន ឌី. លេវីត និង ស្ទីវិន ជេ. ដាប់ណឺ |
+| Lead Like Jesus — Ken Blanchard & Phil Hodges | ដឹកនាំដូចព្រះយេស៊ូវ — ខេន ប្លែនឆាដ និង ហ្វីល ហដជីស |
+| The 4-Hour Workweek — Tim Ferriss | ធ្វើការ 4 ម៉ោងក្នុងមួយសប្តាហ៍ — ធីម ហ្វែរីស |
+| The 7 Habits of Highly Effective People — Stephen R. Covey | ទម្លាប់ទាំង 7 របស់មនុស្សដែលមានប្រសិទ្ធភាពខ្ពស់ — ស្ទីវិន អរ. ខូវី |
+| The Compound Effect — Darren Hardy | ឥទ្ធិពលបូកបន្ថែម — ដារិន ហាឌី |
+| The Power of Habit — Charles Duhigg | អំណាចនៃទម្លាប់ — ឆាលស៍ ឌូហ៊ីក |
+| Deep Work — Cal Newport | ការងារផ្ចង់អារម្មណ៍ជ្រៅ — ខាល់ ញូវផត |
+| The Psychology of Money — Morgan Housel | ចិត្តវិទ្យានៃលុយកាក់ — ម៉ក់ហ្គិន ហៅស៍ល |
+| Made to Stick — Chip Heath & Dan Heath | គំនិតដែលចាំមិនភ្លេច — ឈីប ហ៊ីធ និង ដេន ហ៊ីធ |
+| Purple Cow — Seth Godin | គោពណ៌ស្វាយ — សេត ហ្គូឌីន |
+| Switch On Your Brain — Dr. Caroline Leaf | បើកដំណើរការខួរក្បាលរបស់អ្នក — វេជ្ជបណ្ឌិត ខារ៉ូឡាញ លីហ្វ |
+| Building a StoryBrand — Donald Miller | កសាងម៉ាកតាមរយៈរឿង (StoryBrand) — ដូណាល់ មីល័រ |
+| The War of Art — Steven Pressfield | សង្គ្រាមនៃសិល្បៈ — ស្ទីវិន ប្រេសហ្វៀល |
+| Working Well with Westerners — GP Library | ធ្វើការជាមួយជនជាតិលោកខាងលិចឲ្យបានល្អ — បណ្ណាល័យ GP |
+| Working Well with Cambodians — GP Library | ធ្វើការជាមួយជនជាតិខ្មែរឱ្យបានល្អ — បណ្ណាល័យ GP |
