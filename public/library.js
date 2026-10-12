@@ -3526,6 +3526,91 @@ var GP_LIBRARY = {
    }
   },
   {
+   "id": "fight-our-values",
+   "title": "FIGHT: Our Values",
+   "author": "GP Library",
+   "year": 2026,
+   "shelf": "gp",
+   "mins": 14,
+   "original": true,
+   "vibe": "Five values, one family. This is who we are becoming at GP, by God's grace.",
+   "bigIdea": "Every team has a culture, whether it chooses one or not. Culture is not words on a wall. It is what we do every day: how we use our time, how we welcome a visitor, how we answer a message, and how we respond when someone corrects us. At GP, Khmer and international staff live and serve together on one base. We come from different families, churches and countries. So we need a shared picture of the people God is making us into.\n\nGP's leaders have described that picture in five values. Together they spell FIGHT: Faithful, Innovative, Generous, Humble and Tenacious. Each value has a short statement and a few behaviours. The behaviours are simple actions that show the value in real life.\n\nThis guide walks through each value and each behaviour. It explains what they mean, where they come from in the Bible, and how they look at GP: in the office and the kitchen, in DTS and on outreach, and between Khmer and international teammates. Read it slowly. Ask yourself which value comes easily to you, and which one God may want to grow in you next.",
+   "insights": [
+    {
+     "emoji": "🥊",
+     "title": "Why we FIGHT",
+     "body": "Why did GP choose the word FIGHT? Not because we want to fight people. In a letter to young Timothy, the apostle Paul told him to fight the good fight of the faith (1 Timothy 6:12). In a later letter, written from prison, Paul said that he himself had fought the good fight, finished the race and kept the faith (2 Timothy 4:7). For Paul, the fight was not against other people. It was the daily choice to stay faithful to Jesus when life was hard, when he was tired, and when no one was watching.\n\nThat is the fight we mean. It is a fight against laziness, pride, fear and selfishness in our own hearts. It is also a fight for each other, for our students and for Cambodia.\n\nThe letters help us remember: F for Faithful, I for Innovative, G for Generous, H for Humble and T for Tenacious.\n\nOne more thing matters most. These values describe who we are becoming by God's grace. They are not a score to earn God's love. You are already loved and accepted in Christ. We grow in these values because we are loved, not so that we will be loved. When we fall short, and we all do, grace is still there, and so is your GP family."
+    },
+    {
+     "emoji": "🌾",
+     "title": "Faithful: small things, long road",
+     "body": "The first value is Faithful. GP says it like this: we're committed to living disciplined lives, responsible for how we steward our time, talents and treasures, to stay healthy for the long term.\n\nTo steward something means to look after it for its real owner. Our time, our gifts and our money all belong to God. He has put them in our hands for a while.\n\nJesus said that a person who is faithful with a little will also be faithful with much (Luke 16:10). In his story of the talents (Matthew 25), a master trusted his servants with his money before he went away. Two servants worked with it and made it grow. The third was afraid, so he buried it in the ground. When the master came back, he praised the first two: well done, good and faithful servant. He praised them for being faithful with what they were given, not for being big or famous.\n\nFaithfulness often looks like small things done well, many times: preparing a lesson on time, counting the cafe money carefully, keeping a promise to a child at the community school. But small things done for years build trust, and trust is what helps a base like ours last.\n\nThe last words of the statement matter too: for the long term. Faithful does not mean working until you break. God wants us still serving, still joyful and still healthy in ten or twenty years."
+    },
+    {
+     "emoji": "⏰",
+     "title": "What faithful looks like",
+     "body": "GP names six behaviours that show faithfulness.\n\nStarts with you. Faithfulness begins with me, not with my leader or my team. I do not wait for others to change first. If the kitchen is messy, I can clean my part.\n\nOn time. Being on time for class, prayer, meetings and transport honours the people who are waiting. It says, your time matters to me. If you will be late, send a message early.\n\nFollow through. When you say you will do something, finish it. If you cannot, say so early and kindly. A clear 'not yet' is better than a quiet yes that never happens.\n\nSelf motivated. A faithful person does not need someone watching. You see what needs doing and you do it, because you serve God, not only your leader.\n\nSelf control. This means leading yourself well: your words, your anger, your phone, your spending and your habits. It also means doing the right thing when you work alone.\n\nHealthy. We cannot serve for the long haul if we are always exhausted. God rested on the seventh day, and he gave his people the Sabbath as a gift. Jesus often went away to quiet places to pray. So take your day off. Sleep, eat well, move your body and spend unhurried time with God. Rest is not laziness. It is part of being faithful."
+    },
+    {
+     "emoji": "💡",
+     "title": "Innovative: systems that serve people",
+     "body": "The second value is Innovative. GP's statement says: we use systems and technology to maximize organizational clarity, unity and impact. Some people think systems are cold, and that ministry is only about people. But the Bible shows that good systems can be a way of loving people.\n\nIn Exodus 18, Moses sat from morning until evening, judging every problem for the whole nation. The people waited all day. His father-in-law Jethro saw this and said it was not good. Moses would wear himself out, and the people too. Jethro advised him to choose honest, God-fearing leaders over groups of thousands, hundreds, fifties and tens. They would handle the simple cases, and Moses would take the hard ones. Moses listened, and the load was shared.\n\nLater, Nehemiah led God's people to rebuild the broken wall of Jerusalem. He prayed, and he also organised. Each family repaired one section, often near their own house. When enemies threatened them, some worked while others stood guard. The wall was finished in fifty-two days.\n\nThat is what we want. Clarity means everyone knows what is happening and who is doing what. Unity means we work as one team, not as many small islands. Impact means more lives touched for Jesus. Systems and technology are tools, not the goal. They serve people, so that we have more time and energy for the people God sends us."
+    },
+    {
+     "emoji": "🛠️",
+     "title": "Tech savvy, always improving, open to new things",
+     "body": "Innovative has three behaviours.\n\nTech savvy. We learn to use the tools that help our work: a shared calendar, a spreadsheet, a message group, a video call with a supporter. You do not need to be an expert. You only need to be willing to learn, and to ask for help when you are stuck. If you are already good with technology, be patient and teach others. Many people learn best when a friend sits beside them.\n\nAlways improving. Good is not the end. After a DTS, an outreach or a big event, we ask: what went well, and what can we do better next time? We write it down, so the next team does not start from zero. Small improvements, made again and again, add up.\n\nOpen to new things. New ideas can feel uncomfortable, especially when the old way still works. But being open does not mean we lose what is good. It means we test new ideas with prayer and wisdom, keep what helps, and let go of what does not.\n\nThe My GP app is one small example. Staff can use it to plan 1-on-1s with their mentor, and to read books like this one in English or Khmer. It is not perfect, and it will keep changing. When you see something that could be better, say so. That is innovation too."
+    },
+    {
+     "emoji": "🎁",
+     "title": "Generous: nation over location",
+     "body": "The third value is Generous. GP's statement says: we give sacrificially of our time, talents and treasures, putting nation over location and loving others as ourselves.\n\nGenerosity is more than money. You can give your time to a student who needs to talk. You can give your skills to a ministry that is not your own. And you can give money and things too. To give sacrificially means it costs us something. Many GP staff, Khmer and international, already live this way, serving by faith and on small support.\n\nNation over location is a phrase to remember. It means we choose what is best for Cambodia and for the mission, not only what is best for our own place, our team or our preferences. Sometimes a leader asks you to help another ministry for a season. Sometimes your team must share its budget, its room or its best people with another team. Nation over location says that the kingdom of God in Cambodia matters more than my small corner of it.\n\nJesus said the second great command is to love your neighbour as yourself (Mark 12:31). We all know how to look after ourselves. We notice when we are hungry, tired or left out. Generosity turns that same care towards others. It asks: what would I want if I were in their place?"
+    },
+    {
+     "emoji": "🍲",
+     "title": "Hospitable, relational, sacrificial",
+     "body": "Generous has three behaviours.\n\nHospitable. GP often hosts outreach teams from other countries and other YWAM bases. They arrive tired, hot and unsure. A warm welcome, a clean room, a good meal and someone to answer their questions can shape their whole outreach. Khmer culture already knows this well. Many Khmer families will share food with a guest even when they have little. International staff can learn so much from Khmer hospitality.\n\nRelational. People are not projects. We take time to know each other: we eat together, ask about family, and visit when someone is sick. Work goes better when trust is strong, and trust grows through time spent together. This is true between Khmer and Western staff, and between staff and students.\n\nSacrificial. Real love has a cost. Jesus gave his own life for us. We give in smaller ways: a free afternoon to help a teammate move house, a seat on the bus for someone older, money given quietly to someone in need, and sharing what we have. Sacrifice is not about looking good. Jesus told us to give in secret, and our Father sees it (Matthew 6:3-4).\n\nWhen we are generous, we show people what God is like. He is the most generous giver of all. He gave us his own Son."
+    },
+    {
+     "emoji": "🪞",
+     "title": "Humble: radical honesty",
+     "body": "The fourth value is Humble. GP's statement says: we practice radical honesty, living openly and asking for feedback regularly.\n\nThis may surprise you. Many people think humility means being quiet or thinking badly of yourself. But GP connects humility with honesty. A humble person does not hide. They tell the truth about themselves, their mistakes and their needs. They let others see their life. And they ask others to help them see what they cannot see.\n\nThe Bible says that a person who loves correction loves knowledge, but one who hates correction is foolish (Proverbs 12:1). James tells us to confess our sins to each other and pray for each other, so that we may be healed (James 5:16). Healing comes when we stop hiding.\n\nWe must also be honest about culture. In Khmer culture, direct criticism, especially in front of others, can cause a deep loss of face. Many Westerners grew up with blunt words, and they can sound harsh without meaning to. Radical honesty does not mean saying every thought, loudly, in a meeting. It means truth spoken with love.\n\nSo ask for feedback privately and gently. Make it safe. You can say, 'What is one thing I could do better?' When someone answers, thank them, even if it hurts. Never punish a person for being honest with you."
+    },
+    {
+     "emoji": "🙋",
+     "title": "Teachable, curious and real",
+     "body": "Humble has three behaviours.\n\nTeachable. A teachable person is still learning, whatever their age or position. A leader with twenty years of experience can learn from a new DTS student. A Westerner can learn from a Khmer teammate about the village, the language and the culture. A Khmer staff member can learn a new skill from a visiting outreach team. When someone corrects you, try to listen first, before you explain.\n\nAsk great questions more than give opinions. Opinions are easy. Good questions are harder, and often more helpful. Instead of telling someone what to do, ask: what do you think? What have you tried? What would help? Questions show respect. They also open a door for quieter people, who may not speak up, to share their wisdom. Jesus asked many questions too.\n\nBeing real more than being right. It is tempting to win every argument and protect our image. But a person who must always be right is hard to trust. A person who can say, I was wrong, I am sorry, or I do not know, is safe to be around. Being real means being the same person in the office, at home and in the prayer room.\n\nHumility like this builds a team where people can tell the truth, and where truth helps us grow instead of hurting us."
+    },
+    {
+     "emoji": "🔥",
+     "title": "Tenacious: driven by love",
+     "body": "The fifth value is Tenacious. GP's statement says: we're driven by love to become all God has created us to be and accomplish all he's called us to do.\n\nTenacious means you do not give up easily. But notice what drives us. It is not fear, guilt or pride. It is love. Paul wrote that the love of Christ compels us (2 Corinthians 5:14). We are God's handiwork, created in Christ Jesus to do good works that he prepared for us beforehand (Ephesians 2:10). So we want to become all he made us to be.\n\nTenacious has four behaviours.\n\nReading. Read the Bible first. Then read books that help you grow, like the ones in this library.\n\nGrowing. Keep growing in your walk with God, your character and your skills. Take a course, learn a language, or ask a mentor for help.\n\nImproving. Look at your own work and ask how it can be better next year than this year.\n\nFruitful. Jesus said that he is the vine and we are the branches. When we stay close to him, we bear much fruit (John 15:5). The Father prunes the branches so they bear even more. Fruit grows from staying connected to Jesus, not from stress.\n\nSome seasons are hard: a team member leaves, support is low, or a ministry seems slow. Tenacity means staying faithful in those seasons too, and trusting God with the harvest."
+    },
+    {
+     "emoji": "🤝",
+     "title": "Living FIGHT together",
+     "body": "Values only matter if we live them. At GP, FIGHT is part of our everyday life together.\n\nIn 1-on-1s. Before every 1-on-1 with their mentor, staff now rate themselves on each of the five values, from 1 to 5. This is not a test. It is a way to notice where you are growing and where you feel stuck. Only you and your mentor see it. Your mentor can then ask good questions, pray with you and help you take one next step.\n\nIn DTS. Students see our values more than they hear them. When staff are on time, honest about mistakes, generous with visitors and full of hope on a hard outreach, students learn what following Jesus looks like.\n\nIn staff meetings and ministries. In the cafe, the community schools, youth work, hospitality and the office, we can ask: which value does this situation need? Faithfulness? A new idea? A generous heart? An honest question? Tenacity?\n\nCelebrate them in each other. When you see a teammate live one of these values, tell them. A short message like, 'I saw how you welcomed that team. That was Generous,' can encourage someone for days.\n\nGive grace when we fall short. None of us lives FIGHT perfectly. We will be late, proud, closed or tired. When that happens, we forgive, we help each other up, and we keep going. That is the good fight, and we fight it together."
+    }
+   ],
+   "tryThis": [
+    "Before your next 1-on-1, rate yourself on each FIGHT value, and choose one behaviour you want to grow in this month.",
+    "Ask one teammate, privately and gently: 'What is one thing I could do better?' Then thank them for their answer.",
+    "This week, tell one teammate which FIGHT value you saw in them, and how it encouraged you."
+   ],
+   "forUs": "GP is a YWAM base in Cambodia where Khmer and international staff live, work and worship together. We run DTS and send outreach teams. We serve through community schools, the cafe, youth work and hospitality for visiting teams. Many of us live by faith and raise our own support. In a life like this, it is easy to drift: to get tired, to work alone, to protect our own corner, or to hide our struggles.\n\nFIGHT gives us a shared language to stay on course. A Khmer staff member and an international staff member can look at the same five words and talk honestly about them, in English or in Khmer. A mentor and a staff member can talk about real life, not only tasks.\n\nThese values are not a heavy load. They are a picture of Jesus in us: faithful in small things, creative in how we serve, generous with what we have, humble enough to be taught, and tenacious because we are loved. Let us fight the good fight together.",
+   "oneLine": "We fight the good fight together, not to earn God's love, but because we already have it.",
+   "cover": {
+    "bg": "marigold",
+    "fg": "ink",
+    "a": "ink",
+    "b": "cobalt",
+    "motif": "fight",
+    "layout": "top",
+    "font": "display",
+    "upper": true
+   }
+  },
+  {
    "id": "is-that-really-you-god",
    "title": "Is That Really You, God?",
    "author": "Loren Cunningham with Janice Rogers",

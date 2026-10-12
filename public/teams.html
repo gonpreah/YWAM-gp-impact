@@ -441,6 +441,12 @@ input[type=text], input[type=search], input[type=email], input[type=tel], input[
 .ooQ { display:flex; align-items:center; justify-content:space-between; gap:8px 10px; padding:8px 0; border-bottom:1px solid var(--line); flex-wrap:wrap; }
 .ooQLabel { flex:1 1 140px; font-size:14px; display:flex; align-items:center; }
 .ooScale { flex-wrap:nowrap; }
+.ooQv { display:block; }
+.ooQv .ooQLabel { font-weight:700; }
+.ooVSay { font-size:12.5px; color:var(--muted); line-height:1.4; margin:4px 0 6px 30px; }
+.ooBeh { display:flex; flex-wrap:wrap; gap:4px; margin:0 0 9px 30px; }
+.ooBeh span { font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px; background:var(--surface2); color:var(--ink); }
+.ooQv .ooScale { margin-left:30px; }
 .ooScale button { width:34px; height:34px; }
 .ooLetter { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:6px; background:var(--ink); color:var(--bg); font-family:'Koulen',sans-serif; font-size:14px; font-weight:400; margin-right:8px; }
 .ooSum { display:flex; align-items:center; gap:10px; padding:6px 0; font-size:13.5px; }
@@ -4675,8 +4681,37 @@ function mentorshipCardHtml(){
 var OO_AREAS=[ {id:'money',emoji:'💰',label:'Fundraising & finances'}, {id:'language',emoji:'🗣️',label:'Language study'},
   {id:'physical',emoji:'💪',label:'Physical health'}, {id:'emotional',emoji:'💛',label:'Emotional health'},
   {id:'relational',emoji:'🤝',label:'Relationships'}, {id:'spiritual',emoji:'🙏',label:'Spiritual life'} ];
-var OO_VALUES=[ {id:'faithful',letter:'F',label:'Faithful'}, {id:'innovative',letter:'I',label:'Innovative'},
-  {id:'generous',letter:'G',label:'Generous'}, {id:'humble',letter:'H',label:'Humble'}, {id:'tenacious',letter:'T',label:'Tenacious'} ];
+/* GP's values, in leadership's own words — English and GP's own Khmer, side by
+   side rather than through t(), because the two lists are written for their
+   readers, not translated line by line (Uriah, Oct 2026). */
+var OO_VALUES=[
+  { id:'faithful', letter:'F', label:'Faithful', km:'ស្មោះត្រង់',
+    say:'We’re committed to living disciplined lives, responsible for how we steward our time, talents and treasures, to stay healthy for the long term.',
+    sayKm:'យើងប្តេជ្ញាចិត្តក្នុងការរស់នៅប្រកបដោយវិន័យ និងទទួលខុសត្រូវចំពោះ ពេលវេលា សមត្ថភាព និងទ្រព្យសម្បត្តិរបស់យើង',
+    does:['Starts with you','On time','Follow through','Self-motivated','Self-control','Healthy'],
+    doesKm:['ចាប់ផ្តើមជាមួយខ្លួនឯង','ទាន់ពេល','បញ្ចប់បានល្អ','រុញខ្លួនឯង','អាចធ្វើការដោយឯករាជ្យ','មានសុខភាពល្អ'] },
+  { id:'innovative', letter:'I', label:'Innovative', km:'គំនិតច្នៃប្រឌិត',
+    say:'We use systems and technology to maximize organizational clarity, unity and impact.',
+    sayKm:'យើងប្រើប្រាស់ប្រព័ន្ធទំនើប និងបច្ចេកវិទ្យាដើម្បីបង្កើនភាពច្បាស់លាស់និងឥទ្ធិពលរបស់យើង។',
+    does:['Tech savvy','Always improving','Open to new things'],
+    doesKm:['ចេះប្រើបច្ចេកវិទ្យា','តែងតែប្រសើរឡើង','បើកចំហចំពោះអ្វីដែលថ្មី'] },
+  { id:'generous', letter:'G', label:'Generous', km:'សប្បុរស',
+    say:'We give sacrificially of our time, talents and treasures, putting nation over location and loving others as ourselves.',
+    sayKm:'យើងលះបង់ពេលវេលា សមត្ថភាព និងទ្រព្យសម្បត្ដិរបស់យើង ផ្តល់អាទិភាពដល់ប្រទេសលើតំបន់ និងស្រឡាញ់អ្នកដ៏ទៃដូចស្រឡាញ់ខ្លួនយើង។',
+    does:['Hospitable','Relational','Sacrificial'],
+    doesKm:['រាក់ទាក់','ទំនាក់ទំនង','ចែករំលែកអ្វីដែលយើងមាន'] },
+  { id:'humble', letter:'H', label:'Humble', km:'ការចុះចូល',
+    say:'We practice radical honesty, living openly and asking for feedback regularly.',
+    sayKm:'យើងក្លាហានក្នុងការនិយាយ និងទទួលយកការពិតនៅក្នុងជីវិត ហើយសុំមតិកែលម្អជាប្រចាំ។',
+    does:['Teachable','Ask great questions more than give opinions','Being real more than being right'],
+    doesKm:['សុំយោបល់ពីអ្នកដទៃ','សួរសំណួរច្រើនជាងឱ្យយោបល់','ខ្លួនឯងជាខ្លួនឯងសំខាន់ជាងខ្លួនឯងជាត្រូវ'] },
+  { id:'tenacious', letter:'T', label:'Tenacious', km:'ការខិតខំប្រឹងប្រែង',
+    say:'We’re driven by love to become all God has created us to be and accomplish all he’s called us to do.',
+    sayKm:'យើងត្រូវបានជំរុញដោយសេចក្តីស្រឡាញ់ដើម្បីអភិវឌ្ឍខ្លួនឯង និងសម្រេចបាននូវអ្វីដែលទ្រង់បានត្រាស់ហៅយើងឱ្យធ្វើ។',
+    does:['Reading','Growing','Improving','Fruitful'],
+    doesKm:['ការអាន','រីកលូតលាស់','ការកែលម្អ','មហាផល'] }
+];
+function ooValName_(v){ return LANG==='km' ? v.km : v.label; }
 var OO_PER_MONTH=2;
 function ooById_(id){ return (S.oneOnOnes||[]).filter(function(o){ return o.id===id; })[0]||null; }
 function ooHeldThisMonth_(menteeId){
@@ -4741,7 +4776,13 @@ function ooPrepFormHtml_(key, d){
   h+='<div class="mentorLabel" style="margin-top:8px">'+esc(t('How I’m doing'))+'</div>';
   OO_AREAS.forEach(function(a){ h+=ooScaleRowHtml_('ooarea', a.id, a.emoji+' '+esc(t(a.label)), d.areas[a.id]); });
   h+='<div class="mentorLabel" style="margin-top:14px">'+esc(t('Living our values — FIGHT'))+'</div>';
-  OO_VALUES.forEach(function(v){ h+=ooScaleRowHtml_('ooval', v.id, '<b class="ooLetter">'+v.letter+'</b>'+esc(t(v.label)), d.values[v.id]); });
+  OO_VALUES.forEach(function(v){
+    var km=LANG==='km', b=''; for(var n=1;n<=5;n++) b+='<button type="button" data-ooval="'+v.id+'|'+n+'" class="'+(d.values[v.id]===n?'on':'')+'" aria-label="'+n+'">'+n+'</button>';
+    h+='<div class="ooQ ooQv"><div class="ooQLabel"><b class="ooLetter">'+v.letter+'</b>'+esc(ooValName_(v))+'</div>'+
+      '<div class="ooVSay">'+esc(km ? v.sayKm : v.say)+'</div>'+
+      '<div class="ooBeh">'+(km ? v.doesKm : v.does).map(function(x){ return '<span>'+esc(x)+'</span>'; }).join('')+'</div>'+
+      '<div class="scale ooScale">'+b+'</div></div>';
+  });
   h+='<label class="f" style="margin-top:14px">'+esc(t('Is there anything specific you’d like help with?'))+'</label>'+
     '<textarea data-oodraft="helpWith" maxlength="600" rows="2">'+esc(d.helpWith)+'</textarea>'+
     '<label class="f">'+esc(t('What are you working toward right now? (your personal goals)'))+'</label>'+
@@ -4766,7 +4807,7 @@ function ooPrepSummaryHtml_(p, prev){
   h+='<div class="mentorLabel" style="margin-top:12px">'+esc(t('Living our values — FIGHT'))+'</div><div class="ooVals">';
   OO_VALUES.forEach(function(v){
     var n=p.values&&p.values[v.id];
-    h+='<div class="ooVal'+(n&&n<=2?' lo':'')+'"><b>'+v.letter+'</b><span>'+(n||'—')+ooTrendHtml_(n, prev.values&&prev.values[v.id])+'</span><small>'+esc(t(v.label))+'</small></div>';
+    h+='<div class="ooVal'+(n&&n<=2?' lo':'')+'"><b>'+v.letter+'</b><span>'+(n||'—')+ooTrendHtml_(n, prev.values&&prev.values[v.id])+'</span><small>'+esc(ooValName_(v))+'</small></div>';
   });
   h+='</div>';
   [['helpWith','Would like help with'],['workingOn','Working toward'],['other','Also']].forEach(function(q){
@@ -5997,6 +6038,11 @@ var LIB_MOTIFS={
     '<g'+cvA_('cvSpin')+'><ellipse cx="50" cy="50" rx="16" ry="40" fill="none" stroke="'+c.a+'" stroke-width="3"/><ellipse cx="50" cy="50" rx="30" ry="40" fill="none" stroke="'+c.a+'" stroke-width="2.5" stroke-opacity=".6"/></g>'+
     '<path d="M12 36 H88 M12 64 H88" stroke="'+c.a+'" stroke-width="2.5" stroke-opacity=".6"/>'+
     '<g'+cvA_('cvGrowUp','transform-origin:50% 100%')+'><path d="M50 50 V30" stroke="'+c.b+'" stroke-width="4" stroke-linecap="round"/><path d="M50 36 C 40 34, 36 26, 38 20 C 46 22, 50 28, 50 36 Z M50 32 C 58 28, 64 22, 64 16 C 56 16, 50 22, 50 32 Z" fill="'+c.b+'"/></g>'; },
+  fight:function(c){ var o='', L='FIGHT';
+    for(var k=0;k<5;k++){ var x=6+k*18.5, h=26+k*13;
+      o+='<g'+cvA_('cvGrowUp','transform-origin:50% 100%;animation-delay:'+(k*0.18).toFixed(2)+'s')+'><rect x="'+x+'" y="'+(94-h)+'" width="14" height="'+h+'" rx="3" fill="'+(k===4?c.b:c.a)+'"/></g>'+
+        '<text x="'+(x+7)+'" y="'+(94-h-4)+'" text-anchor="middle" font-family="Koulen, sans-serif" font-size="15" fill="'+c.a+'">'+L[k]+'</text>'; }
+    return o; },
   pair:function(c){ var p=function(x,col,d){ return '<g'+cvA_('cvBob','animation-delay:'+d+'s')+'><circle cx="'+x+'" cy="40" r="11" fill="'+col+'"/><path d="M'+(x-16)+' 92 V70 Q '+(x-16)+' 54 '+x+' 54 Q '+(x+16)+' 54 '+(x+16)+' 70 V92 Z" fill="'+col+'"/></g>'; };
     return '<path d="M10 30 Q 50 -6 90 30" fill="none" stroke="'+c.a+'" stroke-width="4" stroke-linecap="round" stroke-opacity=".6"/>'+p(32,c.a,0)+p(68,c.b,-1.5); }
 };

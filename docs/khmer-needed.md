@@ -3205,7 +3205,7 @@ The whole Khmer text of each book is in `public/library-km.js` (ids below the GP
 
 ### 1-on-1s: the check-in, the sheet and the monthly count
 
-The five values are GP's FIGHT (Faithful, Innovative, Generous, Humble, Tenacious) — the letters stay in English so the word still spells FIGHT; please check the Khmer names. "Check-in" uses ការរាយការណ៍ as in the weekly health check-in.
+The five values are GP's FIGHT — the letters stay in English so the word still spells FIGHT. Their Khmer names, statements and behaviours are GP's own (from Uriah, Oct 2026) and live in OO_VALUES in teams.html, not here. "Check-in" uses ការរាយការណ៍ as in the weekly health check-in.
 
 | English | Khmer (draft) |
 |---|---|
@@ -3265,10 +3265,20 @@ The five values are GP's FIGHT (Faithful, Innovative, Generous, Humble, Tenaciou
 | Relationships | ទំនាក់ទំនង |
 | Spiritual life | ជីវិតខាងវិញ្ញាណ |
 | Faithful | ស្មោះត្រង់ |
-| Innovative | ច្នៃប្រឌិត |
-| Generous | ចិត្តទូលាយ |
-| Humble | សុភាពរាបសា |
-| Tenacious | តស៊ូមិនបោះបង់ |
+| Innovative | គំនិតច្នៃប្រឌិត |
+| Generous | សប្បុរស |
+| Humble | ការចុះចូល |
+| Tenacious | ការខិតខំប្រឹងប្រែង |
 | Would like help with | ចង់បានជំនួយលើ |
 | Working toward | កំពុងខិតខំឆ្ពោះទៅរក |
 | Also | ផ្សេងទៀត |
+
+### Library: FIGHT: Our Values (a GP guide)
+
+The whole text is in `public/library-km.js` (`fight-our-values`). It quotes GP's own Khmer
+value statements and behaviours word for word — including ដ៏ទៃ in the Generous statement,
+where ដទៃ is the usual spelling; worth fixing at the source if leadership agrees.
+
+| English | Khmer (draft) |
+|---|---|
+| FIGHT: Our Values — GP Library | FIGHT៖ គុណតម្លៃរបស់យើង — បណ្ណាល័យ GP |

@@ -1328,7 +1328,9 @@ leading at GP (culture, teams, hard conversations, vision, systems, execution).
 - **Made at GP** (shelf `gp`, shown first after Start here): original guides written for
   GP — `original: true`, author "GP Library", no ISBN — so far Working Well with
   Westerners (for Khmer staff) and Working Well with Cambodians (for Western staff), 11 key
-  ideas and ~3,000 words each (`mins` 14), mirroring each other on money, conflict, the
+  ideas and ~3,000 words each (`mins` 14) — and **FIGHT: Our Values** (`fight-our-values`,
+  Oct 2026), a guide to GP's five values built on leadership's statements and behaviours
+  (cover motif `fight`) — the first two mirroring each other on money, conflict, the
   body and men and women, and learning each other's language. Their
   fine print says they are not published books and describe tendencies, not rules. The
   shelf's colour is GP ink (#17150F), not laterite — the brown clashed with the black GP.
@@ -1645,7 +1647,9 @@ also carries `menteeId`, the mentee's `prep`, and once it happened `heldOn`, `no
 - **The mentee's check-in** (`prep`): six areas of life — `money` (fundraising &
   finances), `language`, `physical`, `emotional`, `relational`, `spiritual` — and GP's
   five values, **FIGHT**: `faithful`, `innovative`, `generous`, `humble`, `tenacious`,
-  each 1-5; plus `helpWith`, `workingOn` (personal goals) and `other`. A mentee's ☕ opens
+  each 1-5 — the form shows each value's statement and behaviours in leadership's own
+  words, English and GP's own Khmer side by side in `OO_VALUES` (not through t(); the two
+  behaviour lists differ a little on purpose — keep both as GP wrote them); plus `helpWith`, `workingOn` (personal goals) and `other`. A mentee's ☕ opens
   the form and the request carries it; when the mentor asks, the mentee is taken to it
   on accepting (`ooAfterAccept_`) and the bell nudges until it is filled. It starts from
   their last answers, and the summary shows ▲▼ against last time. Only the mentee can
