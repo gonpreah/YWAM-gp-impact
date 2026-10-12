@@ -3282,3 +3282,16 @@ where ដទៃ is the usual spelling; worth fixing at the source if leadership 
 | English | Khmer (draft) |
 |---|---|
 | FIGHT: Our Values — GP Library | FIGHT៖ គុណតម្លៃរបស់យើង — បណ្ណាល័យ GP |
+
+### FIGHT v2: the check-in's values (Oct 2026)
+
+The values now carry a statement, three "I…" behaviours, a verse and a guardrail each, in
+English and Khmer, in `OO_VALUES` / `OO_FLOW` in teams.html. GP's Khmer value names are
+unchanged; the Khmer statements build on GP's own; the "I…" behaviours, verses and
+guardrails are Claude's drafts — please check, along with the guide's terms: ផ្លូវភេទ
+(sexuality), រូបភាព និងវីដេអូអាសអាភាស (pornography), ការទាក់ទាញចំពោះភេទដូចគ្នា (same-sex
+attraction), របាំងការពារ (guardrail), ចិត្តតស៊ូ (Grit). ដ៏ទៃ → ដទៃ in the Generous statement.
+
+| English | Khmer (draft) |
+|---|---|
+| Verse · what it isn’t | ខគម្ពីរ · អ្វីដែលវាមិនមែន |

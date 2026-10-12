@@ -1647,9 +1647,14 @@ also carries `menteeId`, the mentee's `prep`, and once it happened `heldOn`, `no
 - **The mentee's check-in** (`prep`): six areas of life — `money` (fundraising &
   finances), `language`, `physical`, `emotional`, `relational`, `spiritual` — and GP's
   five values, **FIGHT**: `faithful`, `innovative`, `generous`, `humble`, `tenacious`,
-  each 1-5 — the form shows each value's statement and behaviours in leadership's own
-  words, English and GP's own Khmer side by side in `OO_VALUES` (not through t(); the two
-  behaviour lists differ a little on purpose — keep both as GP wrote them); plus `helpWith`, `workingOn` (personal goals) and `other`. A mentee's ☕ opens
+  each 1-5 — the form shows each value's statement and three "I…" behaviours, with its
+  verse and guardrail (what it is not) under a fold, and `OO_FLOW` (how the five build:
+  Faithful → Innovative → Generous → Humble → Tenacious) under the heading. FIGHT v2
+  (Oct 2026, with Uriah): unity and "nation over location" under Generous, walking in the
+  light (1 John 1) under Humble, grit and hear-obey under Tenacious. English and Khmer
+  side by side in `OO_VALUES` (not through t()); GP's Khmer value names stay as GP has
+  them (ការចុះចូល = submitting to and honouring one another). The FIGHT guide in the
+  Library follows the same v2 text; plus `helpWith`, `workingOn` (personal goals) and `other`. A mentee's ☕ opens
   the form and the request carries it; when the mentor asks, the mentee is taken to it
   on accepting (`ooAfterAccept_`) and the bell nudges until it is filled. It starts from
   their last answers, and the summary shows ▲▼ against last time. Only the mentee can

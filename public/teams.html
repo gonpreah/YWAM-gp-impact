@@ -444,8 +444,14 @@ input[type=text], input[type=search], input[type=email], input[type=tel], input[
 .ooQv { display:block; }
 .ooQv .ooQLabel { font-weight:700; }
 .ooVSay { font-size:12.5px; color:var(--muted); line-height:1.4; margin:4px 0 6px 30px; }
-.ooBeh { display:flex; flex-wrap:wrap; gap:4px; margin:0 0 9px 30px; }
-.ooBeh span { font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px; background:var(--surface2); color:var(--ink); }
+.ooBeh { margin:0 0 6px 30px; padding:0 0 0 16px; font-size:13px; line-height:1.45; }
+.ooBeh li { margin:2px 0; }
+.ooFlow { font-size:12.5px; margin:2px 0 4px; }
+.ooMore { margin:0 0 9px 30px; font-size:12.5px; }
+.ooMore summary { cursor:pointer; color:var(--accent); font-weight:700; list-style:none; }
+.ooMore summary::-webkit-details-marker { display:none; }
+.ooVerse { margin:6px 0 4px; font-style:italic; }
+.ooNot { color:var(--muted); line-height:1.4; }
 .ooQv .ooScale { margin-left:30px; }
 .ooScale button { width:34px; height:34px; }
 .ooLetter { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:6px; background:var(--ink); color:var(--bg); font-family:'Koulen',sans-serif; font-size:14px; font-weight:400; margin-right:8px; }
@@ -4681,35 +4687,48 @@ function mentorshipCardHtml(){
 var OO_AREAS=[ {id:'money',emoji:'💰',label:'Fundraising & finances'}, {id:'language',emoji:'🗣️',label:'Language study'},
   {id:'physical',emoji:'💪',label:'Physical health'}, {id:'emotional',emoji:'💛',label:'Emotional health'},
   {id:'relational',emoji:'🤝',label:'Relationships'}, {id:'spiritual',emoji:'🙏',label:'Spiritual life'} ];
-/* GP's values, in leadership's own words — English and GP's own Khmer, side by
-   side rather than through t(), because the two lists are written for their
-   readers, not translated line by line (Uriah, Oct 2026). */
+/* GP's values, FIGHT — v2 (Oct 2026, with Uriah): each with its statement, three
+   "I…" behaviours to rate yourself against, a verse and a guardrail (what it is
+   not). English and GP's Khmer side by side rather than through t(): the Khmer
+   names are GP's own and stay as they are (ការចុះចូល — submitting to and
+   honouring one another). They build on each other: OO_FLOW. */
+var OO_FLOW={ en:"They build on each other: start with yourself (Faithful), keep improving (Innovative), from a heart to serve (Generous), open to correction (Humble), and never give up (Tenacious).", km:"ចាប់ផ្តើមពីខ្លួនឯង (ស្មោះត្រង់) → បន្តរីកចម្រើន (គំនិតច្នៃប្រឌិត) → ឱ្យសេចក្តីស្រឡាញ់ជំរុញចិត្ត (សប្បុរស) → ទទួលយកការកែតម្រូវ (ការចុះចូល) → ស្តាប់ ស្តាប់បង្គាប់ ហើយកុំបោះបង់ (ការខិតខំប្រឹងប្រែង)។" };
 var OO_VALUES=[
-  { id:'faithful', letter:'F', label:'Faithful', km:'ស្មោះត្រង់',
-    say:'We’re committed to living disciplined lives, responsible for how we steward our time, talents and treasures, to stay healthy for the long term.',
-    sayKm:'យើងប្តេជ្ញាចិត្តក្នុងការរស់នៅប្រកបដោយវិន័យ និងទទួលខុសត្រូវចំពោះ ពេលវេលា សមត្ថភាព និងទ្រព្យសម្បត្តិរបស់យើង',
-    does:['Starts with you','On time','Follow through','Self-motivated','Self-control','Healthy'],
-    doesKm:['ចាប់ផ្តើមជាមួយខ្លួនឯង','ទាន់ពេល','បញ្ចប់បានល្អ','រុញខ្លួនឯង','អាចធ្វើការដោយឯករាជ្យ','មានសុខភាពល្អ'] },
-  { id:'innovative', letter:'I', label:'Innovative', km:'គំនិតច្នៃប្រឌិត',
-    say:'We use systems and technology to maximize organizational clarity, unity and impact.',
-    sayKm:'យើងប្រើប្រាស់ប្រព័ន្ធទំនើប និងបច្ចេកវិទ្យាដើម្បីបង្កើនភាពច្បាស់លាស់និងឥទ្ធិពលរបស់យើង។',
-    does:['Tech savvy','Always improving','Open to new things'],
-    doesKm:['ចេះប្រើបច្ចេកវិទ្យា','តែងតែប្រសើរឡើង','បើកចំហចំពោះអ្វីដែលថ្មី'] },
-  { id:'generous', letter:'G', label:'Generous', km:'សប្បុរស',
-    say:'We give sacrificially of our time, talents and treasures, putting nation over location and loving others as ourselves.',
-    sayKm:'យើងលះបង់ពេលវេលា សមត្ថភាព និងទ្រព្យសម្បត្ដិរបស់យើង ផ្តល់អាទិភាពដល់ប្រទេសលើតំបន់ និងស្រឡាញ់អ្នកដ៏ទៃដូចស្រឡាញ់ខ្លួនយើង។',
-    does:['Hospitable','Relational','Sacrificial'],
-    doesKm:['រាក់ទាក់','ទំនាក់ទំនង','ចែករំលែកអ្វីដែលយើងមាន'] },
-  { id:'humble', letter:'H', label:'Humble', km:'ការចុះចូល',
-    say:'We practice radical honesty, living openly and asking for feedback regularly.',
-    sayKm:'យើងក្លាហានក្នុងការនិយាយ និងទទួលយកការពិតនៅក្នុងជីវិត ហើយសុំមតិកែលម្អជាប្រចាំ។',
-    does:['Teachable','Ask great questions more than give opinions','Being real more than being right'],
-    doesKm:['សុំយោបល់ពីអ្នកដទៃ','សួរសំណួរច្រើនជាងឱ្យយោបល់','ខ្លួនឯងជាខ្លួនឯងសំខាន់ជាងខ្លួនឯងជាត្រូវ'] },
-  { id:'tenacious', letter:'T', label:'Tenacious', km:'ការខិតខំប្រឹងប្រែង',
-    say:'We’re driven by love to become all God has created us to be and accomplish all he’s called us to do.',
-    sayKm:'យើងត្រូវបានជំរុញដោយសេចក្តីស្រឡាញ់ដើម្បីអភិវឌ្ឍខ្លួនឯង និងសម្រេចបាននូវអ្វីដែលទ្រង់បានត្រាស់ហៅយើងឱ្យធ្វើ។',
-    does:['Reading','Growing','Improving','Fruitful'],
-    doesKm:['ការអាន','រីកលូតលាស់','ការកែលម្អ','មហាផល'] }
+  { id:'faithful', letter:'F', label:"Faithful", km:"ស្មោះត្រង់",
+    say:"We’re committed to living disciplined lives, responsible for how we steward our time, talents and treasures, to stay healthy for the long term. Change starts with us: we look honestly at ourselves before we judge anyone else.",
+    sayKm:"យើងប្តេជ្ញាចិត្តក្នុងការរស់នៅប្រកបដោយវិន័យ និងទទួលខុសត្រូវចំពោះ ពេលវេលា សមត្ថភាព និងទ្រព្យសម្បត្តិរបស់យើង ដើម្បីរក្សាសុខភាពល្អបានយូរអង្វែង។ ការផ្លាស់ប្តូរចាប់ផ្តើមពីយើង៖ យើងពិនិត្យមើលខ្លួនឯងដោយស្មោះត្រង់ មុននឹងវិនិច្ឆ័យអ្នកដទៃ។",
+    does:["I change what I can in myself before I critique others.", "I’m on time, and I finish what I said I’d do.", "I lead myself well (rest, health, self-control), even when no one is watching."],
+    doesKm:["ខ្ញុំផ្លាស់ប្តូរអ្វីដែលខ្ញុំអាចផ្លាស់ប្តូរបាននៅក្នុងខ្លួនខ្ញុំ មុននឹងរិះគន់អ្នកដទៃ។", "ខ្ញុំមកទាន់ពេល ហើយខ្ញុំធ្វើឱ្យចប់ នូវអ្វីដែលខ្ញុំបាននិយាយថានឹងធ្វើ។", "ខ្ញុំដឹកនាំខ្លួនឯងបានល្អ (ការសម្រាក សុខភាព និងការគ្រប់គ្រងខ្លួនឯង) ទោះបីជាគ្មាននរណាម្នាក់មើលឃើញក៏ដោយ។"],
+    verse:"Luke 16:10 — Whoever is faithful in small things will be faithful in big things.", verseKm:"លូកា ១៦:១០ — អ្នកណាដែលស្មោះត្រង់ក្នុងរឿងតូច ក៏នឹងស្មោះត្រង់ក្នុងរឿងធំដែរ។",
+    not:"Not perfectionism or burnout. Faithful is steady, not frantic, and rest is part of it. Honest self-evaluation, never self-condemnation.", notKm:"មិនមែនជាការចង់បានភាពល្អឥតខ្ចោះ ឬការធ្វើការរហូតដល់អស់កម្លាំងទេ។ ស្មោះត្រង់ មានភាពនឹងនរ មិនប្រញាប់ប្រញាល់ ហើយការសម្រាកក៏ជាផ្នែកមួយរបស់វា។ ពិនិត្យខ្លួនឯងដោយស្មោះត្រង់ តែមិនដាក់ទោសខ្លួនឯងទេ។" },
+  { id:'innovative', letter:'I', label:"Innovative", km:"គំនិតច្នៃប្រឌិត",
+    say:"We use systems and technology, from social media to AI, to maximize organizational clarity, unity and impact, so more people are reached and discipled. We never settle for comfortable; we keep improving.",
+    sayKm:"យើងប្រើប្រាស់ប្រព័ន្ធទំនើប និងបច្ចេកវិទ្យា ចាប់ពីបណ្តាញសង្គម រហូតដល់បញ្ញាសិប្បនិម្មិត ដើម្បីបង្កើនភាពច្បាស់លាស់ ការរួបរួម និងឥទ្ធិពលរបស់យើង ដើម្បីឱ្យមនុស្សកាន់តែច្រើន បានឮដំណឹងល្អ និងក្លាយជាសិស្សរបស់ព្រះយេស៊ូវ។ យើងមិនដែលស្កប់ចិត្តនឹងភាពស្រួលស្រាលទេ យើងបន្តកែលម្អជានិច្ច។",
+    does:["I learn and use the tools we have (the app, social media, AI) to serve the mission.", "I don’t settle for comfortable. I look for one thing to do better.", "I try a new idea before I say no."],
+    doesKm:["ខ្ញុំរៀន និងប្រើឧបករណ៍ដែលយើងមាន (កម្មវិធី បណ្តាញសង្គម និង AI) ដើម្បីបម្រើបេសកកម្ម។", "ខ្ញុំមិនស្កប់ចិត្តនឹងភាពស្រួលទេ។ ខ្ញុំរកមើលរឿងមួយ ដែលខ្ញុំអាចធ្វើបានល្អជាងមុន។", "ខ្ញុំសាកល្បងគំនិតថ្មី មុននឹងនិយាយថា ទេ។"],
+    verse:"Isaiah 43:19 — See, I am doing a new thing.", verseKm:"អេសាយ ៤៣:១៩ — ព្រះមានបន្ទូលថា ទ្រង់កំពុងធ្វើការថ្មីមួយ។",
+    not:"Not tech for its own sake, or change for change’s sake. Tools serve people and the mission.", notKm:"មិនមែនជាការប្រើបច្ចេកវិទ្យា ដើម្បីតែបច្ចេកវិទ្យា ឬការផ្លាស់ប្តូរ ដើម្បីតែការផ្លាស់ប្តូរទេ។ ឧបករណ៍ត្រូវបម្រើមនុស្ស និងបេសកកម្ម។" },
+  { id:'generous', letter:'G', label:"Generous", km:"សប្បុរស",
+    say:"We give sacrificially of our time, talents and treasures, and love others as ourselves. Nation over location: we protect unity across GP and the wider Church over growing our own ministry.",
+    sayKm:"យើងលះបង់ពេលវេលា សមត្ថភាព និងទ្រព្យសម្បត្ដិរបស់យើង ហើយស្រឡាញ់អ្នកដទៃដូចស្រឡាញ់ខ្លួនយើង។ ផ្តល់អាទិភាពដល់ប្រទេសលើតំបន់៖ យើងការពារការរួបរួមនៅ GP និងនៅក្នុងពួកជំនុំរបស់ព្រះគ្រីស្ទទាំងមូល ជាជាងពង្រីកកិច្ចការបម្រើផ្ទាល់ខ្លួនរបស់យើង។",
+    does:["I welcome people (guests, teams, new staff) like family.", "I put GP’s unity and the bigger mission over growing my own ministry.", "I share what I have (time, skills and money), even when it costs me."],
+    doesKm:["ខ្ញុំស្វាគមន៍មនុស្ស (ភ្ញៀវ ក្រុមនានា និងបុគ្គលិកថ្មី) ដូចជាក្រុមគ្រួសារ។", "ខ្ញុំផ្តល់អាទិភាពដល់ការរួបរួមរបស់ GP និងបេសកកម្មដ៏ធំ លើការពង្រីកកិច្ចការបម្រើផ្ទាល់ខ្លួនរបស់ខ្ញុំ។", "ខ្ញុំចែករំលែកអ្វីដែលខ្ញុំមាន (ពេលវេលា ជំនាញ និងលុយ) ទោះបីជាវាធ្វើឱ្យខ្ញុំខាតក៏ដោយ។"],
+    verse:"Acts 4:32 — All the believers were one in heart and mind, and shared everything they had.", verseKm:"កិច្ចការ ៤:៣២ — អ្នកជឿទាំងអស់មានចិត្ត និងគំនិតតែមួយ ហើយពួកគេចែករំលែកអ្វីៗទាំងអស់ដែលពួកគេមាន។",
+    not:"Not giving to be seen, or saying yes to everything. Generous people still keep healthy limits.", notKm:"មិនមែនជាការឱ្យ ដើម្បីឱ្យគេមើលឃើញ ឬការឆ្លើយព្រមគ្រប់រឿងទេ។ មនុស្សសប្បុរស នៅតែរក្សាព្រំដែនដែលល្អ។" },
+  { id:'humble', letter:'H', label:"Humble", km:"ការចុះចូល",
+    say:"We submit to one another and practice radical honesty: living transparently and vulnerably, even about our sexuality and our finances, and asking for feedback regularly. We walk in the light: not hiding, but being known.",
+    sayKm:"យើងចុះចូលនឹងគ្នាទៅវិញទៅមក ហើយក្លាហានក្នុងការនិយាយ និងទទួលយកការពិតនៅក្នុងជីវិត៖ យើងរស់នៅដោយបើកចំហ និងមិនលាក់បាំង សូម្បីតែអំពីផ្លូវភេទ និងហិរញ្ញវត្ថុរបស់យើង ហើយសុំមតិកែលម្អជាប្រចាំ។ ដូចនៅក្នុង ១យ៉ូហាន ជំពូក ១ យើងដើរក្នុងពន្លឺ៖ មិនលាក់ខ្លួនទេ តែឱ្យគេស្គាល់យើង។",
+    does:["I’m open about my life, including my sexuality and finances, with my mentor and my community.", "I ask for feedback and receive correction without defending myself.", "I ask questions more than I give opinions, and I’d rather be real than right."],
+    doesKm:["ខ្ញុំបើកចំហអំពីជីវិតរបស់ខ្ញុំ រួមទាំងផ្លូវភេទ និងហិរញ្ញវត្ថុ ជាមួយអ្នកណែនាំ និងសហគមន៍របស់ខ្ញុំ។", "ខ្ញុំសុំមតិកែលម្អ ហើយទទួលយកការកែតម្រូវ ដោយមិនការពារខ្លួន។", "ខ្ញុំសួរសំណួរច្រើនជាងឱ្យយោបល់ ហើយខ្ញុំចង់ជាខ្លួនឯងពិតៗ ជាជាងចង់ជាអ្នកត្រូវ។"],
+    verse:"1 John 1:7 — If we walk in the light, we have fellowship with one another.", verseKm:"១យ៉ូហាន ១:៧ — បើយើងដើរក្នុងពន្លឺ យើងមានសេចក្តីប្រកបជាមួយគ្នាទៅវិញទៅមក។",
+    not:"Not shaming, or calling people out in public, and not putting yourself down. Openness is safe, private and full of grace.", notKm:"មិនមែនជាការធ្វើឱ្យគេអាម៉ាស់ ការចង្អុលកំហុសគេនៅមុខមនុស្ស ឬការមើលងាយខ្លួនឯងទេ។ ការបើកចំហ មានសុវត្ថិភាព ជារឿងឯកជន និងពោរពេញដោយព្រះគុណ។" },
+  { id:'tenacious', letter:'T', label:"Tenacious", km:"ការខិតខំប្រឹងប្រែង",
+    say:"We’re driven by love to become all God has created us to be and accomplish all he’s called us to do. We hear and obey, and we don’t give up: grit, passion and perseverance for the long haul.",
+    sayKm:"យើងត្រូវបានជំរុញដោយសេចក្តីស្រឡាញ់ ដើម្បីអភិវឌ្ឍខ្លួនឯង ឱ្យក្លាយជាមនុស្សដែលព្រះបានបង្កើតយើងមក និងសម្រេចបាននូវអ្វីដែលទ្រង់បានត្រាស់ហៅយើងឱ្យធ្វើ។ យើងស្តាប់ ហើយស្តាប់បង្គាប់ ហើយយើងមិនបោះបង់ទេ៖ ចិត្តតស៊ូ ចិត្តស្រឡាញ់យ៉ាងខ្លាំង និងការព្យាយាមជាប់លាប់ សម្រាប់ផ្លូវវែង។",
+    does:["I listen to God and do what he says, even when it’s hard.", "I keep going through hard seasons and finish what God gave me.", "I keep growing, reading and learning, so my life bears fruit."],
+    doesKm:["ខ្ញុំស្តាប់ព្រះ ហើយធ្វើតាមអ្វីដែលទ្រង់មានបន្ទូល ទោះបីជាវាពិបាកក៏ដោយ។", "ខ្ញុំបន្តទៅមុខ ឆ្លងកាត់រដូវដ៏ពិបាក ហើយបញ្ចប់អ្វីដែលព្រះបានប្រគល់ឱ្យខ្ញុំ។", "ខ្ញុំបន្តរីកលូតលាស់ អាន និងរៀន ដើម្បីឱ្យជីវិតរបស់ខ្ញុំបង្កើតផល។"],
+    verse:"Galatians 6:9 — Don’t grow weary of doing good; at the right time we will reap, if we don’t give up.", verseKm:"កាឡាទី ៦:៩ — កុំណាយចិត្តក្នុងការធ្វើល្អឡើយ ព្រោះដល់ពេលកំណត់ យើងនឹងច្រូតកាត់ផល បើយើងមិនបោះបង់។",
+    not:"Not stubbornness or workaholism. Grit listens to God, rests, and changes course when he says so.", notKm:"មិនមែនជាភាពរឹងរូស ឬការញៀនការងារទេ។ ចិត្តតស៊ូ ស្តាប់ព្រះ សម្រាក ហើយប្តូរទិសដៅ ពេលទ្រង់មានបន្ទូលប្រាប់។" }
 ];
 function ooValName_(v){ return LANG==='km' ? v.km : v.label; }
 var OO_PER_MONTH=2;
@@ -4775,12 +4794,15 @@ function ooPrepFormHtml_(key, d){
   var h='<p class="sub" style="margin:2px 0 6px">'+esc(t('A quick, honest check-in, so your 1-on-1 can focus on what matters. 1 = struggling · 5 = thriving.'))+'</p>';
   h+='<div class="mentorLabel" style="margin-top:8px">'+esc(t('How I’m doing'))+'</div>';
   OO_AREAS.forEach(function(a){ h+=ooScaleRowHtml_('ooarea', a.id, a.emoji+' '+esc(t(a.label)), d.areas[a.id]); });
-  h+='<div class="mentorLabel" style="margin-top:14px">'+esc(t('Living our values — FIGHT'))+'</div>';
+  h+='<div class="mentorLabel" style="margin-top:14px">'+esc(t('Living our values — FIGHT'))+'</div>'+
+    '<p class="sub ooFlow">'+esc(LANG==='km' ? OO_FLOW.km : OO_FLOW.en)+'</p>';
   OO_VALUES.forEach(function(v){
     var km=LANG==='km', b=''; for(var n=1;n<=5;n++) b+='<button type="button" data-ooval="'+v.id+'|'+n+'" class="'+(d.values[v.id]===n?'on':'')+'" aria-label="'+n+'">'+n+'</button>';
     h+='<div class="ooQ ooQv"><div class="ooQLabel"><b class="ooLetter">'+v.letter+'</b>'+esc(ooValName_(v))+'</div>'+
       '<div class="ooVSay">'+esc(km ? v.sayKm : v.say)+'</div>'+
-      '<div class="ooBeh">'+(km ? v.doesKm : v.does).map(function(x){ return '<span>'+esc(x)+'</span>'; }).join('')+'</div>'+
+      '<ul class="ooBeh">'+(km ? v.doesKm : v.does).map(function(x){ return '<li>'+esc(x)+'</li>'; }).join('')+'</ul>'+
+      '<details class="ooMore"><summary>📖 '+esc(t('Verse · what it isn’t'))+'</summary>'+
+        '<div class="ooVerse">'+esc(km ? v.verseKm : v.verse)+'</div><div class="ooNot">🚧 '+esc(km ? v.notKm : v.not)+'</div></details>'+
       '<div class="scale ooScale">'+b+'</div></div>';
   });
   h+='<label class="f" style="margin-top:14px">'+esc(t('Is there anything specific you’d like help with?'))+'</label>'+
