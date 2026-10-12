@@ -424,6 +424,30 @@ input[type=text], input[type=search], input[type=email], input[type=tel], input[
 .mentorBlock { display:flex; align-items:center; gap:12px; padding:4px 0 14px; }
 .mentorName { font-size:14px; font-weight:700; }
 .mentorMeta { font-size:12px; color:var(--muted); margin-top:1px; }
+/* YWAM GP (Oct 2026): leadership teams, titles and the advisory board */
+.orgYou { font-size:13px; font-weight:700; color:var(--accent); margin:2px 0 8px; }
+.orgClt { padding-bottom:6px; }
+.orgCltRow { display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:none; border:0; border-bottom:1px solid var(--line); padding:9px 0; font:inherit; color:var(--ink); cursor:pointer; }
+div.orgCltRow { cursor:default; }
+.orgCltRow:last-child { border-bottom:0; }
+.orgCltRow.me b { color:var(--accent); }
+.orgCltText { flex:1; min-width:0; display:flex; flex-direction:column; }
+.orgCltText b { font-size:14px; }
+.orgCltText small { font-size:12px; color:var(--muted); margin-top:1px; }
+.orgChipTitle { display:block; font-size:10.5px; color:var(--muted); font-weight:600; }
+.orgPersonTitle { color:var(--ink); font-weight:700; }
+.orgRole { font-size:12.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--accent); margin-top:2px; }
+.orgBio { font-size:14px; line-height:1.5; margin:10px 0 0; }
+.orgActs { display:flex; gap:8px; margin-top:10px; }
+.orgAct { flex:1; margin:0; padding:9px 6px; font-size:14px; text-decoration:none; text-align:center; }
+.orgBoardNote p { font-size:14px; line-height:1.5; margin:0 0 10px; }
+.orgBoardNote .btn { display:block; text-align:center; text-decoration:none; margin:0; }
+.orgDept { padding:9px 0; border-bottom:1px solid var(--line); }
+.orgDept:last-child { border-bottom:0; }
+.orgDeptHead { display:flex; justify-content:space-between; align-items:baseline; gap:8px; font-size:14px; }
+.orgDeptMins { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+.orgDeptMins span { font-size:11.5px; padding:3px 8px; border-radius:999px; background:var(--surface2); }
+.bdPhotoRow { display:flex; align-items:center; gap:10px; }
 /* 1-on-1s (Oct 2026): the month dots, the check-in form and its summary */
 .ooMonth { display:flex; align-items:center; gap:4px; margin-top:5px; font-size:11.5px; color:var(--muted); }
 .ooDot { width:9px; height:9px; border-radius:50%; border:1.5px solid var(--border2); flex:0 0 auto; }
@@ -2838,6 +2862,7 @@ function boot(){
   try { saved = JSON.parse(lsGet('gp-staff')||'null'); } catch(e){}
   var wantGuest = false;
   try { wantGuest = String(location.search||'').indexOf('guest=1')>-1; } catch(e){}
+  if(!(saved && saved.user && saved.pin) && lsGet(BOARD_KEY) && boardResume_()) return;
   if(!(saved && saved.user && saved.pin) && (wantGuest || lsGet(GUEST_KEY))){ gpEnterGuest_(); return; }
   if(saved && saved.user && saved.pin){
     /* A remembered session goes straight to getMyBoot: it verifies the PIN and
@@ -2923,6 +2948,7 @@ function applyBoot(d, fromCache){
   if(d.trips) S.trips = d.trips;
   S.tripRequests = d.tripRequests || [];
   if(d.ministry) S.ministry = d.ministry;
+  if(d.org && d.org.ok) S.org = d.org;   // titles, YWAM GP roles, the advisory board
   S.personal = d.personal || null;
   S.hrDue = (d.hrDue===undefined) ? null : d.hrDue;
   S.backup = d.backup || null;   // admins only: the nightly backup's last run
@@ -3028,7 +3054,8 @@ function render(){
     return;
   }
   var notifN = S.guest ? 0 : visibleNotifItems_().length;
-  if(S.guest && GUEST_VIEWS.indexOf(S.view)===-1) S.view='week';
+  if(S.board){ if(BOARD_VIEWS.indexOf(S.view)===-1) S.view='ywamgp'; }
+  else if(S.guest && GUEST_VIEWS.indexOf(S.view)===-1) S.view='week';
   hb.innerHTML = '<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>'+ (S.guest ? '' :
     '<button class="hbtn icon" id="bellBtn" style="position:relative" aria-label="'+esc(gpT('Notifications ({n})',{n:notifN}))+'">'+BELL_SVG+
     (notifN?'<span class="notifDot"></span>':'')+'</button>')+
@@ -3049,13 +3076,15 @@ function render(){
     week: NAV_SVG_OPEN+'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>',
     team: NAV_SVG_OPEN+'<circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.6"/><path d="M3.5 20c.6-3.4 3-5.4 5.5-5.4s4.9 2 5.5 5.4"/><path d="M14.8 15c1.9.2 3.6 1.9 4.1 5"/></svg>',
     health: NAV_SVG_OPEN+'<path d="M12 20.5s-7.5-4.6-9.8-9.6C.6 7.3 2.4 4 5.7 4c2 0 3.5 1.1 4.3 2.5C10.8 5.1 12.3 4 14.3 4c3.3 0 5.1 3.3 3.5 6.9C15.5 15.9 12 20.5 12 20.5Z"/></svg>',
+    ywamgp: NAV_SVG_OPEN+'<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.8 2.6 4 5.6 4 9s-1.2 6.4-4 9c-2.8-2.6-4-5.6-4-9s1.2-6.4 4-9Z"/></svg>',
     ministry: NAV_SVG_OPEN+'<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M21 20H3"/></svg>',
     library: NAV_SVG_OPEN+'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>'
   };
   /* Oct 2026 (Uriah): My Ministry takes Base's place and the Library joins the
      bar; Base moves to the menu, and its key numbers sit on My Home's card. */
   var tabs=[['week','My Home'],['ministry','My Ministry'],['team','Team'+(reqN?' ('+reqN+')':'')],['health','Health'],['library','Library']];
-  if(S.guest) tabs=[['week','Look around'],['base','Base'],['team','Team'],['health','Health'],['library','Library']];
+  if(S.board) tabs=[['ywamgp','YWAM GP'],['base','Campuses'],['library','Library']];
+  else if(S.guest) tabs=[['week','Look around'],['base','Base'],['team','Team'],['health','Health'],['library','Library']];
   nav.classList.remove('hidden');
   nav.innerHTML = tabs.map(function(tab){
     return '<button class="'+(S.view===tab[0]?'on':'')+'" data-tab="'+tab[0]+'"><span class="ic">'+NAV_ICONS[tab[0]]+'</span>'+navLabel_(tab[1])+'</button>';
@@ -3065,7 +3094,8 @@ function render(){
   if(LIBA.on && !(S.view==='library' && S.libBook && S.libStep!=null)) libAudioStop_();
   if(S.guest && S.view==='week') m.innerHTML=gpGuestHomeHtml_();
   else if(S.guest && (S.view==='team' || S.view==='health')) m.innerHTML=gpGuestLockHtml_(S.view);
-  else if(S.view==='base') m.innerHTML=(S.guest ? gpGuestCampusHtml_() : '')+baseHtml();
+  else if(S.view==='base') m.innerHTML=(S.guest ? gpGuestCampusHtml_() : '')+(S.board ? orgCampusProfileHtml_(S.me.campus) : '')+baseHtml();
+  else if(S.view==='ywamgp') m.innerHTML=ywamGpHtml();
   else if(S.view==='week') m.innerHTML=homeHtml();
   else if(S.view==='health') m.innerHTML=healthHtml();
   else if(S.view==='team') m.innerHTML=teamHtml();
@@ -3276,10 +3306,14 @@ function renderMenu(){
   IC.mycontract='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>';
   IC.base='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>';
   IC.library='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7M9 11h5"/></svg>';
-  var sections= S.guest ? [
+  IC.ywamgp='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.8 2.6 4 5.6 4 9s-1.2 6.4-4 9c-2.8-2.6-4-5.6-4-9s1.2-6.4 4-9Z"/></svg>';
+  IC.boardlogout=IC.profile;
+  var sections= S.board ? [
+    { title:'', items:[it('ywamgp', t('YWAM GP')), it('library', t('Library')), it('boardlogout', t('Log out'))] }
+  ] : S.guest ? [
     { title:'', items:[it('library', t('Library')), it('guestreg', t('Create my profile')), it('guestlogin', t('Log in'))] }
   ] : [
-    { title:'', items:[it('base', t('Base')), it('leave', t('Leave Request')), it('mycontract', t('My contract')), it('profile', t('Profile & settings'))] },
+    { title:'', items:[it('base', t('Base')), it('ywamgp', t('YWAM GP')), it('leave', t('Leave Request')), it('mycontract', t('My contract')), it('profile', t('Profile & settings'))] },
     { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : []) },
     { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal'))] : [] },
     { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : []) }
@@ -3308,6 +3342,8 @@ function renderMenu(){
       else if(id==='mycontract'){ openMyContract_(); }
       else if(id==='library'){ S.view='library'; S.libBook=null; libLoad_(); render(); }
       else if(id==='guestreg' || id==='guestlogin'){ gpLeaveGuest_(id==='guestreg'); }
+      else if(id==='ywamgp'){ S.view='ywamgp'; S.person=null; render(); window.scrollTo(0,0); }
+      else if(id==='boardlogout'){ boardLeave_(false); }
       else if(id==='profile'){ S.view='profile'; render(); }
       else if(id==='admin'){ S.view='admin'; render(); }
       else if(id==='hr'){ S.view='hr'; S.hrSub='home'; render(); }
@@ -3443,7 +3479,7 @@ function baseHtml(){
   /* Asked once of the people who have not answered: these two are the only facts
      the base counts people by, so an unanswered one is a hole in the very figures
      underneath it. */
-  if(!S.me.staffType || !S.me.country){
+  if(!S.guest && (!S.me.staffType || !S.me.country)){
     h+='<div class="banner">'+esc(t('Say what kind of staff you are and where you are from — it is what these numbers count.'))+
        ' <button class="linkbtn inline" id="goProfileMix">'+esc(t('Add it to my profile'))+'</button></div>';
   }
@@ -6866,6 +6902,215 @@ function bindGuest_(){
   document.querySelectorAll('[data-guestcampus]').forEach(function(b){ b.onclick=function(){ gpTap(); S.me.campus=b.getAttribute('data-guestcampus'); lsSet('gp-guest-campus', S.me.campus); render(); }; });
 }
 
+/* ==================== YWAM GP: titles, GP leadership, the advisory board ====================
+   Oct 2026 (Uriah). GP is four parts now: YWAM Poipet, YWAM Siem Reap, YWAM GP (the
+   whole organisation) and the YWAM GP Advisory Board. From getYwamGp (in the boot as
+   `org`): each Campus Leadership person's title — International / National Campus
+   Director, Director of <department> — the YWAM GP roles, each campus's leadership
+   team, and the board, whom every staff member can see and contact. A board member
+   who is not staff signs in to a board-only view (S.board): the YWAM GP page, both
+   campuses as the board sees them, and the Library — nothing staff. */
+function orgTitleOf_(p){
+  if(!p || p.dept!==BL_DEPT) return '';
+  var srv=S.org && S.org.titles && S.org.titles[p.id];
+  if(p.ministry==='Campus Director') return (srv && /Campus Director$/.test(srv)) ? srv : 'Campus Director';
+  return p.ministry ? 'Director of '+p.ministry : '';
+}
+function orgTitleText_(title){
+  var m=/^Director of (.+)$/.exec(title||'');
+  return m ? gpT('Director of {dept}',{dept:t(m[1])}) : t(title||'');
+}
+function orgCampus_(c){ return ((S.org && S.org.campuses) || []).filter(function(x){ return x.id===c; })[0] || null; }
+function orgLoad_(){
+  if(S.orgLoading) return;
+  var a=S.board ? S.boardAuth : S.auth;
+  if(!a || !a.user) return;
+  S.orgLoading=true;
+  run('getYwamGp',[a.user,a.pin],function(d){ S.orgLoading=false; if(d && d.ok){ S.org=d; render(); } else if(S.board) boardLeave_(true); },
+    function(){ S.orgLoading=false; });
+}
+function orgPersonRowHtml_(p, sub){
+  var me=S.me && !S.board && p.id===S.me.id, tag=S.board ? 'div' : 'button';
+  return '<'+tag+' class="orgCltRow'+(me?' me':'')+'"'+(S.board ? '' : ' data-orgperson="'+esc(p.id)+'"')+'>'+avatarHtml(p,'sm')+
+    '<span class="orgCltText"><b>'+esc(p.name)+(me ? ' · '+esc(t('you')) : '')+'</b><small>'+esc(sub)+'</small></span>'+(S.board ? '' : '<span class="ooChev">›</span>')+'</'+tag+'>';
+}
+/* A campus's leadership team: the two campus directors, then a director per department. */
+function orgCltCardHtml_(c){
+  var oc=orgCampus_(c), list=oc ? oc.clt : [];
+  var h='<div class="card orgClt"><div class="mentorLabel">🧭 '+esc(t('Campus Leadership Team'))+' · '+esc(t(campusName(c)))+'</div>';
+  if(!S.org) h+='<p class="sub" style="margin:4px 0">'+esc(t('Loading…'))+'</p>';
+  else if(!list.length) h+='<p class="sub" style="margin:4px 0">'+esc(t('Nobody here yet'))+'</p>';
+  list.forEach(function(p){ h+=orgPersonRowHtml_(p, orgTitleText_(p.title)); });
+  return h+'</div>';
+}
+function orgBoardMemberHtml_(b){
+  var acts=(b.email ? '<a class="btn ghost orgAct" href="mailto:'+encodeURIComponent(b.email)+'">✉️ '+esc(t('Email'))+'</a>' : '')+
+    (b.phone ? '<a class="btn ghost orgAct" href="tel:'+esc(b.phone.replace(/[^\d+]/g,''))+'">📞 '+esc(t('Call'))+'</a>' : '');
+  return '<div class="card orgMember"><div class="mentorBlock" style="padding:0">'+avatarHtml(b,'lg')+
+    '<div style="flex:1;min-width:0"><div class="mentorName">'+esc(b.name)+'</div><div class="orgRole">'+esc(t(b.role))+'</div></div></div>'+
+    (b.bio ? '<p class="orgBio">'+esc(b.bio)+'</p>' : '')+
+    (acts ? '<div class="orgActs">'+acts+'</div>' : '')+'</div>';
+}
+function ywamGpHtml(){
+  var O=S.org;
+  if(!O) orgLoad_();
+  var h='';
+  if(S.board && S.me) h+='<div class="card orgWelcome"><div class="mentorBlock" style="padding:0">'+avatarHtml(S.me,'lg')+
+    '<div><div class="mentorName">'+esc(gpT('Welcome, {name}',{name:S.me.name}))+'</div><div class="orgRole">'+esc(t(S.me.boardRole||'Advisor'))+' · '+esc(t('YWAM GP Advisory Board'))+'</div></div></div></div>';
+  h+='<h2>🌏 '+esc(t('YWAM GP'))+'</h2><p class="sub">'+esc(t('One family in four parts: YWAM Poipet, YWAM Siem Reap, YWAM GP’s own leadership, and the YWAM GP Advisory Board.'))+'</p>';
+  if(!O) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
+  h+='<h3>✦ '+esc(t('YWAM GP leadership'))+'</h3><div class="card">';
+  if(!O.gp.length) h+='<p class="sub" style="margin:4px 0">'+esc(t('No one yet — an admin sets each person’s YWAM GP role.'))+'</p>';
+  O.gp.forEach(function(p){ h+=orgPersonRowHtml_(p, t(p.gpRole)+' · '+t(campusName(p.campus))); });
+  h+='</div>';
+  h+='<h3>🏠 '+esc(t('Campus leadership teams'))+'</h3>'+CAMPUSES.map(function(c){ return orgCltCardHtml_(c.id); }).join('');
+  h+=orgBoardHtml_();
+  return h;
+}
+function orgBoardHtml_(){
+  var B=(S.org && S.org.board) || [];
+  var emails=B.map(function(b){ return b.email; }).filter(Boolean);
+  var h='<h3 id="orgBoard">🛡️ '+esc(t('YWAM GP Advisory Board'))+'</h3>';
+  if(!S.board) h+='<div class="card orgBoardNote"><p>'+esc(t('The advisory board stands alongside GP’s leaders, outside the campus structure. If you ever need to raise something serious — about a leader, someone’s safety, abuse or misconduct — you can contact them directly. Your message goes to them, not to campus leadership.'))+'</p>'+
+    (emails.length ? '<a class="btn" id="orgEmailBoard" href="mailto:'+emails.map(encodeURIComponent).join(',')+'?subject='+encodeURIComponent('To the YWAM GP Advisory Board')+'">✉️ '+esc(t('Email the whole board'))+'</a>' : '')+'</div>';
+  if(!B.length) h+='<div class="card"><p class="sub" style="margin:4px 0">'+esc(t('The board’s members will be listed here.'))+'</p></div>';
+  B.forEach(function(b){ h+=orgBoardMemberHtml_(b); });
+  return h;
+}
+/* A campus as the board sees it: its leadership, its departments with their directors,
+   each ministry and who leads it, and how many staff — then the base's figures. */
+function orgCampusProfileHtml_(c){
+  var oc=orgCampus_(c);
+  var h=orgCltCardHtml_(c);
+  if(!oc) return h;
+  var deps=getDepartments(c), dirOf={};
+  oc.clt.forEach(function(p){ if(p.dept) (dirOf[p.dept]=dirOf[p.dept]||[]).push(p.name); });
+  h+='<div class="card"><div class="mentorLabel">🗂️ '+esc(t('Departments'))+' · '+esc(gpT('{n} staff',{n:oc.staff}))+'</div>';
+  Object.keys(deps).filter(function(d){ return d!==BL_DEPT; }).forEach(function(d){
+    h+='<div class="orgDept"><div class="orgDeptHead"><b>'+(MIN_EMOJI[d]?MIN_EMOJI[d]+' ':'')+esc(t(d))+'</b><span class="pmeta">'+esc(gpT('{n} staff',{n:(oc.deptStaff||{})[d]||0}))+'</span></div>'+
+      (dirOf[d] ? '<div class="pmeta">'+esc(gpT('Director: {names}',{names:dirOf[d].join(', ')}))+'</div>' : '')+
+      '<div class="orgDeptMins">'+Object.keys(deps[d]||{}).map(function(m){
+        var ld=(oc.leaders||{})[d+'|'+m];
+        return '<span>'+esc(t(m))+(ld ? ' · <b>'+esc(ld.join(', '))+'</b>' : '')+'</span>';
+      }).join('')+'</div></div>';
+  });
+  return h+'</div>';
+}
+function bindOrg_(){
+  document.querySelectorAll('[data-orgperson]').forEach(function(b){
+    b.onclick=function(){
+      gpTap(); var id=b.getAttribute('data-orgperson');
+      run('staffProfile',[S.auth.user,S.auth.pin,id],function(d){
+        if(d && d.ok){ S.view='team'; S.person=d; render(); window.scrollTo(0,0); } else showMsg(t('Not available'));
+      });
+    };
+  });
+}
+
+/* ---------- a board member's own sign-in (not staff) ---------- */
+var BOARD_KEY='gp-board';
+var BOARD_VIEWS=['ywamgp','base','library'];
+function boardEnter_(member, creds){
+  lsSet(BOARD_KEY, JSON.stringify(creds));
+  S.board=member; S.boardAuth=creds; S.guest=true;
+  S.me={ id:'board', name:member.name, photo:member.photo||'', boardRole:member.role, username:'', campus:lsGet('gp-guest-campus')||'siemreap',
+    dept:'', ministry:'', role:'', staffType:'', country:'', ministries:[], leads:[], guest:true };
+  S.profile={}; S.auth={ user:'', pin:'' }; S.regMode=false; S.view='ywamgp'; S.roster=[]; S.required=null; S.reqDocs=[];
+  gpGuestLoadBase_(); orgLoad_();
+  render(); window.scrollTo(0,0);
+}
+function boardLeave_(expired){
+  lsDel(BOARD_KEY);
+  S.board=null; S.boardAuth=null; S.guest=false; S.me=null; S.base=null; S.org=null; S.menuOpen=false; S.view='week';
+  renderMenu(); render(); window.scrollTo(0,0);
+  if(expired) showMsg(t('Please sign in again'));
+}
+function boardResume_(){
+  var c=null; try { c=JSON.parse(lsGet(BOARD_KEY)||'null'); } catch(e){}
+  if(!c || !c.user) return false;
+  S.boardAuth=c;
+  run('boardLogin',[c.user,c.pin],function(d){ if(d && d.ok) boardEnter_(d.member, c); else boardLeave_(true); }, function(){ boardLeave_(false); });
+  return true;
+}
+
+/* ---------- Admin → Advisory Board ---------- */
+function adminBoardHtml_(){
+  if(!S.adminBoard){
+    if(!S.adminBoardLoading){ S.adminBoardLoading=true; run('adminListBoard',[S.auth.user,S.auth.pin],function(d){ S.adminBoardLoading=false; if(d && d.ok){ S.adminBoard=d; render(); } }); }
+    return '<p class="sub">'+esc(t('Loading…'))+'</p>';
+  }
+  var B=S.adminBoard.board, ed=S.adminBoardEdit;
+  var h='<p class="sub">'+esc(t('The YWAM GP Advisory Board — not staff, so never in a roster, headcount or campus chart. Every staff member can see them on the YWAM GP page and contact them. Someone already on staff is linked to their profile; anyone else gets their own username and PIN for a board-only view.'))+'</p>';
+  if(!ed) h+='<button class="btn" id="bdAdd">＋ '+esc(t('Add a board member'))+'</button>';
+  if(ed) h+=adminBoardFormHtml_(ed);
+  B.forEach(function(b){
+    h+='<div class="card"><div class="mentorBlock" style="padding:0">'+avatarHtml(b,'sm')+'<div style="flex:1;min-width:0"><div class="mentorName">'+esc(b.name)+'</div>'+
+      '<div class="mentorMeta">'+esc(t(b.role))+(b.staffId ? ' · '+esc(t('on staff')) : b.hasLogin ? ' · '+esc(gpT('signs in as {u}',{u:b.username})) : ' · '+esc(t('no sign-in yet')))+'</div></div>'+
+      '<button class="linkbtn" style="width:auto;margin:0" data-bdedit="'+esc(b.id)+'">'+esc(t('Edit'))+'</button></div></div>';
+  });
+  return h;
+}
+function adminBoardFormHtml_(ed){
+  var roles=(S.adminBoard && S.adminBoard.roles) || ['President','Secretary','Treasurer','Advisor'];
+  var staffOpts=(S.adminStaff||[]).filter(function(x){ return x.active; }).sort(function(a,b){ return String(a.name).localeCompare(b.name); });
+  return '<div class="card" id="bdForm"><div class="mentorLabel">'+esc(ed.id ? t('Edit board member') : t('New board member'))+'</div>'+
+    '<label class="f">'+esc(t('Already on staff?'))+'</label><select id="bd_staff"><option value="">'+esc(t('No — someone outside the staff'))+'</option>'+
+      staffOpts.map(function(x){ return '<option value="'+esc(x.id)+'"'+(ed.staffId===x.id?' selected':'')+'>'+esc(x.name)+'</option>'; }).join('')+'</select>'+
+    '<label class="f">'+esc(t('Name'))+'</label><input type="text" id="bd_name" maxlength="80" value="'+esc(ed.name||'')+'">'+
+    '<label class="f">'+esc(t('Role on the board'))+'</label><input type="text" id="bd_role" maxlength="40" list="bd_roles" value="'+esc(ed.role||'Advisor')+'">'+
+      '<datalist id="bd_roles">'+roles.map(function(r){ return '<option value="'+esc(r)+'">'; }).join('')+'</datalist>'+
+    '<label class="f">'+esc(t('Email'))+'</label><input type="email" id="bd_email" maxlength="120" value="'+esc(ed.email||'')+'">'+
+    '<label class="f">'+esc(t('Phone (optional)'))+'</label><input type="tel" id="bd_phone" maxlength="40" value="'+esc(ed.phone||'')+'">'+
+    '<label class="f">'+esc(t('A short bio'))+'</label><textarea id="bd_bio" maxlength="600" rows="3">'+esc(ed.bio||'')+'</textarea>'+
+    '<label class="f">'+esc(t('Photo'))+'</label><div class="bdPhotoRow">'+avatarHtml({ name:ed.name||'?', photo:ed.photo||'' },'sm')+'<input type="file" id="bd_photo" accept="image/*"></div>'+
+    '<div id="bd_login"'+(ed.staffId?' style="display:none"':'')+'><label class="f">'+esc(t('Username for their own sign-in'))+'</label><input type="text" id="bd_user" maxlength="20" value="'+esc(ed.username||'')+'" autocapitalize="off">'+
+      '<label class="f">'+esc(ed.hasLogin ? t('New 4-digit PIN (leave empty to keep it)') : t('4-digit PIN'))+'</label><input type="text" id="bd_pin" inputmode="numeric" maxlength="4"></div>'+
+    '<div class="btnRow"><button class="btn" id="bdSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="bdCancel">'+esc(t('Cancel'))+'</button></div>'+
+    (ed.id ? '<button class="linkbtn" id="bdDelete" style="color:var(--bad)">'+esc(t('Remove from the board'))+'</button>' : '')+'</div>';
+}
+function bindAdminBoard_(){
+  var add=document.getElementById('bdAdd');
+  if(add) add.onclick=function(){ S.adminBoardEdit={ role:'Advisor' }; render(); };
+  document.querySelectorAll('[data-bdedit]').forEach(function(b){
+    b.onclick=function(){ var id=b.getAttribute('data-bdedit'); S.adminBoardEdit=Object.assign({}, (S.adminBoard.board||[]).filter(function(x){ return x.id===id; })[0]); render(); window.scrollTo(0,0); };
+  });
+  var ed=S.adminBoardEdit; if(!ed) return;
+  var keep=function(){ ['name','role','email','phone','bio'].forEach(function(k){ var el=document.getElementById('bd_'+k); if(el) ed[k]=el.value; });
+    var u=document.getElementById('bd_user'); if(u) ed.username=u.value; };
+  var st=document.getElementById('bd_staff');
+  if(st) st.onchange=function(){ keep(); ed.staffId=st.value; if(st.value && !ed.name){ var p=(S.adminStaff||[]).filter(function(x){ return x.id===st.value; })[0]; if(p) ed.name=p.name; } render(); };
+  var ph=document.getElementById('bd_photo');
+  if(ph) ph.onchange=function(){
+    var f=ph.files && ph.files[0]; if(!f) return; keep();
+    var rd=new FileReader(); rd.onload=function(e){ var img=new Image(); img.onload=function(){
+      var max=300, w=img.width, h=img.height;
+      if(w>h && w>max){ h=Math.round(h*max/w); w=max; } else if(h>max){ w=Math.round(w*max/h); h=max; }
+      var cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h);
+      ed.photo=cv.toDataURL('image/jpeg',0.7); render();
+    }; img.src=e.target.result; }; rd.readAsDataURL(f);
+  };
+  var cancel=document.getElementById('bdCancel'); if(cancel) cancel.onclick=function(){ S.adminBoardEdit=null; render(); };
+  var save=document.getElementById('bdSave');
+  if(save) save.onclick=function(){
+    keep();
+    var pin=(document.getElementById('bd_pin')||{}).value||'';
+    var m={ id:ed.id, staffId:ed.staffId||'', name:ed.name, role:ed.role, email:ed.email, phone:ed.phone, bio:ed.bio, photo:ed.photo||'' };
+    if(!ed.staffId){ m.username=ed.username||''; if(pin) m.newPin=pin; }
+    save.disabled=true;
+    run('adminSaveBoardMember',[S.auth.user,S.auth.pin,m],function(d){
+      save.disabled=false;
+      if(d && d.ok){ S.adminBoard=d; S.adminBoardEdit=null; S.org=null; showMsg(t('Saved')); render(); }
+      else showMsg(t({ username_taken:'That username is already taken', bad_username:'Usernames are 2–20 letters or numbers', bad_pin:'The PIN must be 4 digits',
+        bad_email:'That email doesn’t look right', name_required:'Add their name', bad_photo:'That photo didn’t work — try a smaller one' }[d && d.err] || 'Could not save'));
+    });
+  };
+  var del=document.getElementById('bdDelete');
+  if(del) del.onclick=function(){
+    if(!confirm(t('Remove this person from the advisory board?'))) return;
+    run('adminDeleteBoardMember',[S.auth.user,S.auth.pin,ed.id],function(d){ if(d && d.ok){ S.adminBoard=d; S.adminBoardEdit=null; S.org=null; render(); } });
+  };
+}
+
 /* ==================== ministry tools (My Ministry) ====================
    My Ministry as a tool each ministry uses, with its numbers as a by-product
    (Uriah, Oct 2026). Campus Leadership has "My week"; the Cafe has a till and
@@ -8573,7 +8818,8 @@ var ADMIN_SUBS = [
   { id:'broadcast', label:'Announcements', emoji:'📣', blurb:'A message to everyone’s notification bell' },
   { id:'merge', label:'Merge duplicates', emoji:'🔀', blurb:'Two profiles that are really one person' },
   { id:'groups', label:'Arrivals & departures', emoji:'👥', blurb:'A sign-up link for a new school or team, and archiving several people at once' },
-  { id:'loose', label:'Loose ends', emoji:'🧵', blurb:'Small gaps that quietly make the totals wrong — and who to nudge' }
+  { id:'loose', label:'Loose ends', emoji:'🧵', blurb:'Small gaps that quietly make the totals wrong — and who to nudge' },
+  { id:'board', label:'Advisory Board', emoji:'🛡️', blurb:'The YWAM GP Advisory Board — who is on it, their roles, how staff reach them, and their sign-in' }
 ];
 function adminBackHtml_(to, label){
   return '<button class="linkbtn" id="adminBack" data-adminback="'+to+'" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(label)+'</button>';
@@ -8623,6 +8869,7 @@ function adminHtml(){
   if(sub==='merge') return h+adminMergeHtml_();
   if(sub==='loose') return h+adminLooseHtml_();
   if(sub==='groups') return h+adminGroupsHtml_();
+  if(sub==='board') return h+adminBoardHtml_();
   return h+adminAccountsHtml_();
 }
 function adminHomeHtml_(){
@@ -9244,6 +9491,11 @@ function adminRowBodyHtml_(s){
       '<div class="leadsPick" id="adm_ministries">'+leadsPickHtml_(dCampus, d.ministries!==undefined?d.ministries:(s.ministries||[]), 'data-admmin', (s.dept||'')+'|'+(s.ministry||''))+'</div>'+
       '<label class="f">'+esc(t('Role / team'))+'</label><input type="text" id="adm_role" value="'+esc(d.role!==undefined?d.role:(s.role||''))+'">'+
       staffTypeFieldHtml('adm_type', d.staffType!==undefined?d.staffType:(s.staffType||''))+
+      (function(){ var ck=d.cdKind!==undefined?d.cdKind:(s.cdKind||'');
+        return '<label class="f">🧭 '+esc(t('If Campus Director: which one'))+'</label><select id="adm_cdkind">'+
+          [['',t('—')],['international',t('International Campus Director')],['national',t('National Campus Director')]].map(function(o){ return '<option value="'+o[0]+'"'+(ck===o[0]?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('')+'</select>'; })()+
+      '<label class="f">🌏 '+esc(t('YWAM GP role (optional)'))+'</label><input type="text" id="adm_gprole" maxlength="60" list="adm_gproles" placeholder="'+esc(t('e.g. GP Director'))+'" value="'+esc(d.gpRole!==undefined?d.gpRole:(s.gpRole||''))+'">'+
+        '<datalist id="adm_gproles"><option value="GP Director"><option value="Associate GP Director"></datalist>'+
       countryFieldHtml('adm_country', d.country!==undefined?d.country:(s.country||''))+
       '<label class="f">👑 '+esc(t('Ministry leader of'))+'</label>'+
       '<p class="hint" style="margin:0 0 6px">'+esc(t('A leader can add, rename, remove and re-time the metrics their ministry tracks. Anyone can still log the numbers.'))+'</p>'+
@@ -9925,6 +10177,8 @@ function bindAdmin(){
         ministry:(document.getElementById('adm_ministry')||{}).value||'',
         role:document.getElementById('adm_role').value.trim(),
         staffType:document.getElementById('adm_type').value,
+        cdKind:(document.getElementById('adm_cdkind')||{}).value||'',
+        gpRole:((document.getElementById('adm_gprole')||{}).value||'').trim(),
         country:countryValue('adm_country'),
         leads:[].map.call(document.querySelectorAll('[data-admlead]:checked'), function(c){ return c.getAttribute('data-admlead'); }),
         ministries:[].map.call(document.querySelectorAll('[data-admmin]:checked'), function(c){ return c.getAttribute('data-admmin'); }),
@@ -11042,13 +11296,16 @@ function myMinistryHtml(){
        the board, pulse and the Director's quarter a tab away. */
     if(mine && S.me.dept===BL_DEPT && S.me.ministry){
       var lwt=S.lwTab==='board' || S.lwTab==='base' ? S.lwTab : 'week';
+      /* who you are on the team — International / National Campus Director, Director of … */
+      var myTitle=orgTitleOf_(S.me);
+      if(myTitle) h+='<div class="orgYou">🧭 '+esc(gpT('Your role: {title}',{title:orgTitleText_(myTitle)}))+'</div>';
       h+='<div class="campusSeg" style="max-width:none">'+[['week','🗓️','My week'],['base','🧭','Overview'],['board','📋','Board']].map(function(x){
         return '<button class="campusBtn'+(lwt===x[0]?' on':'')+'" data-lwtab="'+x[0]+'">'+x[1]+' '+esc(t(x[2]))+'</button>'; }).join('')+'</div>';
       if(lwt==='week') return h+lwHtml_();
-      if(lwt==='base') return h+leadBaseHtml_(ph);
+      if(lwt==='base') return h+orgCltCardHtml_(S.me.campus)+leadBaseHtml_(ph);
       return h+(mine ? directorQuarterHtml_() : '')+leadSectionHtml_();
     }
-    return h+ph+(mine ? directorQuarterHtml_() : '')+leadSectionHtml_();
+    return h+ph+orgCltCardHtml_(S.me.campus)+(mine ? directorQuarterHtml_() : '')+leadSectionHtml_();
   }
   /* The Cafe runs its day here — open, sell, close, the rota — and its numbers
      fill themselves in; the usual numbers are a tab away. */
@@ -14815,8 +15072,9 @@ function leaveHtml(){
    is editing their profile in Admin — one source of truth, nothing to
    hand-draw and nothing to fall out of date. Tap anyone to open them. */
 function orgPersonChip_(p, lead){
+  var title=orgTitleOf_(p);
   return '<button class="orgPerson'+(lead?' lead':'')+'" '+(S.orgArranging ? 'data-arrange' : 'data-person')+'="'+esc(p.id)+'">'+avatarHtml(p,'sm')+
-    '<span>'+(lead?'👑 ':'')+esc(p.name)+'</span></button>';
+    '<span>'+(lead?'👑 ':'')+esc(p.name)+(title ? '<small class="orgChipTitle">'+esc(orgTitleText_(title))+'</small>' : '')+'</span></button>';
 }
 function orgPeople_(list, leads){
   return '<div class="orgPeople">'+list.map(function(p){ return orgPersonChip_(p, leads.indexOf(p)>-1); }).join('')+'</div>';
@@ -14984,11 +15242,11 @@ function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging){
 
   // level 1 — campus leadership
   h+='<div class="orgLevelLabel">'+esc(t('Campus Leadership'))+'</div>';
-  h+='<div class="orgBox top" data-orgbox="leadership"'+(arranging?' data-drop="Campus Leadership|Campus Director"':'')+'><div class="orgBoxTitle">🧭 '+esc(t('Campus Director'))+'</div>';
+  h+='<div class="orgBox top" data-orgbox="leadership"'+(arranging?' data-drop="Campus Leadership|Campus Director"':'')+'><div class="orgBoxTitle">🧭 '+esc(t('Campus Directors'))+'</div>';
   if(directors.length) h+=orgPeople_(directors, directors); else h+='<div class="orgEmpty">'+esc(t('Nobody here yet'))+'</div>';
   directors.forEach(function(p){ placed[p.id]=1; });
   if(overseers.length){
-    h+='<div class="orgSub">'+esc(t('Department overseers'))+'</div>'+orgPeople_(overseers, []);
+    h+='<div class="orgSub">'+esc(t('Department directors'))+'</div>'+orgPeople_(overseers, []);
     overseers.forEach(function(p){ placed[p.id]=1; });
   }
   h+='</div>';
@@ -15002,8 +15260,8 @@ function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging){
     var mins=Object.keys(deps[dept]||{});
     h+='<div class="orgBox dept" data-orgbox="'+esc(dept)+'"><div class="orgBoxTitle">'+(MIN_EMOJI[dept]?MIN_EMOJI[dept]+' ':'')+esc(t(dept))+
       '<span class="orgBoxMeta">'+esc(gpT('{n} staff',{n:staffN}))+'</span></div>';
-    if(ov.length) h+='<div class="orgSub">'+esc(t('Overseen by'))+'</div>'+orgPeople_(ov, ov);
-    if(arranging) h+='<div class="orgDropOverseer" data-drop="Campus Leadership|'+esc(dept)+'">＋ '+esc(t('Overseer'))+'</div>';
+    if(ov.length) h+='<div class="orgSub">'+esc(t('Director'))+'</div>'+orgPeople_(ov, ov);
+    if(arranging) h+='<div class="orgDropOverseer" data-drop="Campus Leadership|'+esc(dept)+'">＋ '+esc(t('Director'))+'</div>';
     h+='<div class="orgMins">';
     mins.forEach(function(min){
       var key=dept+'|'+min;
@@ -15111,6 +15369,9 @@ function personHtml(){
   var h='<button class="linkbtn" id="personBack" style="text-align:left;text-decoration:none">← '+esc(t('Team'))+'</button>';
   h+='<div class="card"><div class="pcard">'+avatarHtml(p,'lg')+
     '<div><div class="pname">'+esc(p.name)+'</div>'+
+    (orgTitleOf_(p) ? '<div class="pmeta orgPersonTitle">🧭 '+esc(orgTitleText_(orgTitleOf_(p)))+'</div>' : '')+
+    (function(){ var g=((S.org&&S.org.gp)||[]).filter(function(x){ return x.id===p.id; })[0]; return g ? '<div class="pmeta orgPersonTitle">🌏 '+esc(t(g.gpRole))+' · YWAM GP</div>' : ''; })()+
+    (function(){ var b=((S.org&&S.org.board)||[]).filter(function(x){ return x.staffId===p.id; })[0]; return b ? '<div class="pmeta orgPersonTitle">🛡️ '+esc(t(b.role))+' · '+esc(t('YWAM GP Advisory Board'))+'</div>' : ''; })()+
     (p.role?'<div class="pmeta">'+esc(t(p.role))+'</div>':'')+
     '<div class="pmeta">'+esc(t(p.dept))+(p.ministry?' · '+esc(t(p.ministry)):'')+'</div>'+
     '<div class="pmeta">'+esc(t(campusName(p.campus)))+'</div></div></div>';
@@ -15975,6 +16236,8 @@ function bindAway(){
   bindReqRows_();
   ['libHomeTile','personBooks','profBooks'].forEach(function(id){ var b=document.getElementById(id); if(b) b.onclick=function(){ gpTap(); libOpen_(); }; });
   if(S.view==='admin' && S.adminSub==='groups') bindAdminGroups_();
+  if(S.view==='admin' && S.adminSub==='board') bindAdminBoard_();
+  bindOrg_();
   bindHosp();
   if(S.view==='ministry') bindLead_();
   if(typeof dutyHtml==='function') bindSched_();
@@ -16992,6 +17255,13 @@ function bind(){
     lb.disabled=true; lb.textContent='…';
     run('staffLogin',[u,pin],function(d){
       if(d.ok){ S.auth={user:u,pin:pin}; S.me=d.staff; S.profile=d.profile; afterLogin(); }
+      else if(!d.err){
+        /* not staff — perhaps a member of the advisory board, with their own sign-in */
+        run('boardLogin',[u,pin],function(b){
+          if(b && b.ok){ boardEnter_(b.member, {user:u,pin:pin}); return; }
+          lb.disabled=false; lb.textContent='Log in'; showMsg('Wrong username or PIN');
+        });
+      }
       else {
         lb.disabled=false; lb.textContent='Log in';
         if(d.err==='applicant'){ showMsg(t('That is a portal account — opening the YWAM GP Portal.')); setTimeout(function(){ location.href='portal.html'; }, 900); return; }
@@ -17268,6 +17538,7 @@ function runP(fn, args){
 
 function refreshAll(){
   if(!S.me) return Promise.resolve();
+  if(S.board){ S.orgLoading=false; orgLoad_(); return gpGuestLoadBase_(); }
   if(S.guest) return gpGuestLoadBase_();
   var u=S.auth.user, k=S.auth.pin;
   return Promise.all([

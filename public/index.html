@@ -24,9 +24,17 @@
   var guest = false;
   try { guest = localStorage.getItem('gp-app-guest')==='1'; } catch(e){}
   try { guest = guest || sessionStorage.getItem('gp-guest')==='1'; } catch(e){}
+  /* a member of the advisory board, signed in on the app: the app is their home */
+  var board = false;
+  try { board = !!localStorage.getItem('gp-board'); } catch(e){}
   try {
     if(sessionStorage.getItem('gp-skip-teams')) return;
     var saved = JSON.parse(localStorage.getItem('gp-staff')||'null');
+    if(!(saved && saved.user && saved.pin) && board){
+      window.gpLeaving = true;
+      window.location.replace('teams.html');
+      return;
+    }
     if(!(saved && saved.user && saved.pin) && guest){
       window.gpLeaving = true;
       window.location.replace('teams.html?guest=1');

@@ -361,6 +361,40 @@ is never a doubt whose boxes these are:
 - `test-ministry-leader.mjs` (server) and `test-ministry-redesign.mjs`,
   `test-ministry-browse.mjs`, `test-personal-metrics-cadence.mjs` (browser) cover it.
 
+## YWAM GP: four parts, titles, and the advisory board (Oct 2026)
+Uriah: GP is YWAM Poipet, YWAM Siem Reap, **YWAM GP** (the organisation) and the
+**YWAM GP Advisory Board**.
+- **Campus Leadership titles** are read off the department, which is unchanged (its
+  ministries are join keys): `orgTitle_` (api.js) / `orgTitleOf_` (teams.html) — a Campus
+  Director is the **International** or **National Campus Director** (`cdKind`, admin-set,
+  "If Campus Director: which one"), everyone else on the team **Director of <department>**
+  (Khmer: នាយក + the department). They show on My Ministry (Campus Leadership: "Your role"
+  on every tab, the team card on Overview), the org chart (Campus Directors / Department
+  directors / Director — "Overseer" is gone), and a person's page.
+- **YWAM GP roles** (`gpRole`, admin-set free text, e.g. GP Director) sit on top of a
+  person's campus role.
+- **The advisory board is not staff**: its own `board` store, so nobody on it is ever in a
+  roster, headcount, health figure, required papers or the org chart. A member: name, role
+  (President / Secretary / Treasurer / Advisor, or another), email, phone, bio, photo. A
+  member who is staff is linked (`staffId`, their profile's name/photo/email, their staff
+  login); anyone else gets a username + PIN (`boardLogin`) — usernames are one namespace
+  with staff (`usernameTaken_`, staffRegister, adminUpdateStaff). Admin → Advisory Board
+  (`adminListBoard` / `adminSaveBoardMember` / `adminDeleteBoardMember`).
+- **`getYwamGp`** (also the boot's `org`) — for staff or a board member (`verifyViewer_`
+  picks the store by username, so a board member's requests never count as failed staff
+  logins): titles, GP roles, each campus's leadership team, who leads each ministry,
+  staff counts, and the board. **teamRoster and staffProfile gain nothing.**
+- **The YWAM GP page** (☰ → YWAM GP, `S.view='ywamgp'`): GP leadership, both campus
+  leadership teams, and the board with Email / Call for each and "Email the whole board",
+  under a note that anything serious — about a leader, safety, abuse, misconduct — can
+  go straight to them.
+- **A board member's sign-in** is a guest-mode variant (`S.board`, `S.guest` true, staff
+  `S.auth` empty, `gp-board` in localStorage; index.html sends them here): tabs YWAM GP ·
+  Campuses (each campus's leadership, departments with directors and ministry leaders,
+  then the public base figures) · Library; nothing staff. The login screen tries
+  `boardLogin` after a staff login fails with no other reason.
+- tests/test-ywam-gp.mjs (server, 24), tests/test-ywam-gp-ui.mjs (browser, 23).
+
 ## Team → Structure (the org chart)
 The Team tab has a Directory / Structure toggle (`S.teamMode`). Structure (`orgChartHtml_`)
 is the campus as **levels**, the way the Canva chart reads: **Campus Leadership** on top

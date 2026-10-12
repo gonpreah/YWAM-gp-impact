@@ -3301,3 +3301,64 @@ attraction), របាំងការពារ (guardrail), ចិត្តត�
 | English | Khmer (draft) |
 |---|---|
 | Updating to the latest version… | កំពុងដំឡើងកំណែចុងក្រោយបំផុត… |
+
+
+### YWAM GP: Campus Leadership titles, YWAM GP roles and the advisory board
+
+"Director of {dept}" fills in the department's Khmer name (នាយក + ផ្នែក), e.g. នាយកសេវាសហគមន៍. Please check the titles especially: នាយកមូលដ្ឋានអន្តរជាតិ / នាយកមូលដ្ឋានជាតិ, and the board roles.
+
+| English | Khmer (draft) |
+|---|---|
+| YWAM GP | អង្គការ YWAM GP |
+| Director of {dept} | នាយក{dept} |
+| Your role: {title} | តួនាទីរបស់អ្នក៖ {title} |
+| Call | ហៅទូរស័ព្ទ |
+| Advisor | ទីប្រឹក្សា |
+| President | ប្រធាន |
+| Secretary | លេខាធិការ |
+| Treasurer | ហិរញ្ញិក |
+| YWAM GP Advisory Board | ក្រុមប្រឹក្សាយោបល់ YWAM GP |
+| One family in four parts: YWAM Poipet, YWAM Siem Reap, YWAM GP’s own leadership, and the YWAM GP Advisory Board. | គ្រួសារតែមួយ មានបួនផ្នែក៖ YWAM ប៉ោយប៉ែត YWAM សៀមរាប ថ្នាក់ដឹកនាំរបស់ YWAM GP ផ្ទាល់ និងក្រុមប្រឹក្សាយោបល់ YWAM GP។ |
+| YWAM GP leadership | ថ្នាក់ដឹកនាំ YWAM GP |
+| No one yet — an admin sets each person’s YWAM GP role. | មិនទាន់មាននរណាម្នាក់នៅឡើយទេ — អ្នកគ្រប់គ្រងកំណត់តួនាទី YWAM GP របស់ម្នាក់ៗ។ |
+| Campus leadership teams | ក្រុមដឹកនាំមូលដ្ឋាន |
+| Campuses | មូលដ្ឋាន |
+| The advisory board stands alongside GP’s leaders, outside the campus structure. If you ever need to raise something serious — about a leader, someone’s safety, abuse or misconduct — you can contact them directly. Your message goes to them, not to campus leadership. | ក្រុមប្រឹក្សាយោបល់ឈរនៅក្បែរថ្នាក់ដឹកនាំ GP ប៉ុន្តែនៅក្រៅរចនាសម្ព័ន្ធមូលដ្ឋាន។ ប្រសិនបើអ្នកត្រូវលើកឡើងរឿងធ្ងន់ធ្ងរ — អំពីអ្នកដឹកនាំ សុវត្ថិភាពរបស់នរណាម្នាក់ ការរំលោភបំពាន ឬអំពើខុសឆ្គង — អ្នកអាចទាក់ទងពួកគាត់ដោយផ្ទាល់។ សាររបស់អ្នកទៅដល់ពួកគាត់ មិនមែនទៅថ្នាក់ដឹកនាំមូលដ្ឋានទេ។ |
+| Email the whole board | ផ្ញើអ៊ីមែលទៅក្រុមប្រឹក្សាទាំងមូល |
+| The board’s members will be listed here. | សមាជិកក្រុមប្រឹក្សានឹងបង្ហាញនៅទីនេះ។ |
+| Director: {names} | នាយក៖ {names} |
+| Not available | មិនមានទេ |
+| Please sign in again | សូមចូលម្តងទៀត |
+| The YWAM GP Advisory Board — not staff, so never in a roster, headcount or campus chart. Every staff member can see them on the YWAM GP page and contact them. Someone already on staff is linked to their profile; anyone else gets their own username and PIN for a board-only view. | ក្រុមប្រឹក្សាយោបល់ YWAM GP — មិនមែនជាបុគ្គលិកទេ ដូច្នេះមិនដែលនៅក្នុងបញ្ជីឈ្មោះ ការរាប់ចំនួន ឬតារាងមូលដ្ឋានឡើយ។ បុគ្គលិកគ្រប់រូបអាចឃើញពួកគាត់នៅទំព័រ YWAM GP ហើយទាក់ទងពួកគាត់បាន។ អ្នកដែលជាបុគ្គលិករួចហើយ ត្រូវភ្ជាប់ទៅប្រវត្តិរូបរបស់គាត់ ចំណែកអ្នកផ្សេងទៀតទទួលបានឈ្មោះអ្នកប្រើ និងលេខ PIN ផ្ទាល់ខ្លួន សម្រាប់ទិដ្ឋភាពសម្រាប់តែក្រុមប្រឹក្សា។ |
+| Add a board member | បន្ថែមសមាជិកក្រុមប្រឹក្សា |
+| on staff | ជាបុគ្គលិក |
+| signs in as {u} | ចូលជា {u} |
+| no sign-in yet | មិនទាន់មានការចូលនៅឡើយ |
+| Edit board member | កែសមាជិកក្រុមប្រឹក្សា |
+| New board member | សមាជិកក្រុមប្រឹក្សាថ្មី |
+| Already on staff? | ជាបុគ្គលិករួចហើយឬ? |
+| No — someone outside the staff | ទេ — អ្នកនៅក្រៅបុគ្គលិក |
+| Role on the board | តួនាទីក្នុងក្រុមប្រឹក្សា |
+| Phone (optional) | ទូរស័ព្ទ (មិនចាំបាច់) |
+| A short bio | ប្រវត្តិរូបសង្ខេប |
+| Username for their own sign-in | ឈ្មោះអ្នកប្រើសម្រាប់ការចូលផ្ទាល់ខ្លួន |
+| New 4-digit PIN (leave empty to keep it) | PIN ៤ ខ្ទង់ថ្មី (ទុកទទេដើម្បីរក្សាដដែល) |
+| Remove from the board | ដកចេញពីក្រុមប្រឹក្សា |
+| Usernames are 2–20 letters or numbers | ឈ្មោះអ្នកប្រើមាន ២–២០ អក្សរ ឬលេខ |
+| The PIN must be 4 digits | PIN ត្រូវតែមាន ៤ ខ្ទង់ |
+| That email doesn’t look right | អ៊ីមែលនោះមើលទៅមិនត្រឹមត្រូវ |
+| Add their name | បន្ថែមឈ្មោះរបស់គាត់ |
+| That photo didn’t work — try a smaller one | រូបថតនោះមិនដំណើរការ — សាកល្បងរូបតូចជាងនេះ |
+| Remove this person from the advisory board? | ដកអ្នកនេះចេញពីក្រុមប្រឹក្សាយោបល់ឬ? |
+| If Campus Director: which one | បើជានាយកមូលដ្ឋាន៖ មួយណា |
+| International Campus Director | នាយកមូលដ្ឋានអន្តរជាតិ |
+| National Campus Director | នាយកមូលដ្ឋានជាតិ |
+| YWAM GP role (optional) | តួនាទីក្នុង YWAM GP (មិនចាំបាច់) |
+| e.g. GP Director | ឧ. នាយក GP |
+| GP Director | នាយក GP |
+| Associate GP Director | នាយករង GP |
+| Campus Directors | នាយកមូលដ្ឋាន |
+| Department directors | នាយកផ្នែក |
+| Director | នាយក |
+| Advisory Board | ក្រុមប្រឹក្សាយោបល់ |
+| The YWAM GP Advisory Board — who is on it, their roles, how staff reach them, and their sign-in | ក្រុមប្រឹក្សាយោបល់ YWAM GP — អ្នកណាខ្លះនៅក្នុងនោះ តួនាទីរបស់ពួកគាត់ របៀបដែលបុគ្គលិកទាក់ទងពួកគាត់ និងការចូលរបស់ពួកគាត់ |

@@ -685,6 +685,7 @@ async function staffRegister(payload) {
   if (!/^\d{4}$/.test(String(payload.pin))) return { ok: false, err: 'bad_pin' };
   const rows = await getStaff_();
   if (findStaff_(rows, u)) return { ok: false, err: 'taken' };
+  if ((await getBoard_()).some(function (b) { return b.username === u; })) return { ok: false, err: 'taken' };
   // One profile per email, going forward — a name can repeat (two staff can
   // share one), an inbox can't. Existing accounts made before this may still
   // carry no email at all; those are nudged to add one, not locked out.
@@ -770,6 +771,7 @@ function adminStaffOut_(s) {
     ministry: s.ministry || '', role: s.role, active: s.active !== false, isAdmin: !!s.isAdmin, hr: !!s.hr,
     kind: s.kind || 'staff', portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin,
     staffType: s.staffType || '', country: s.country || '', email: s.email || '',
+    cdKind: s.cdKind || '', gpRole: s.gpRole || '',
     mentorId: s.mentorId || '', mentorStatus: s.mentorStatus || '',
     leads: leadsOf_(s), ministries: ministriesOf_(s),
     archived: archivedOf_(s),
@@ -927,6 +929,9 @@ async function adminResetPin(username, pin, staffId, newPin) {
 async function adminUpdateStaff(username, pin, staffId, payload) {
   const admin = await adminGate_(username, pin);
   if (!admin) return { ok: false };
+  if (payload && payload.username !== undefined && (await getBoard_()).some(function (b) { return b.username === normUser_(payload.username); })) {
+    return { ok: false, err: 'username_taken' };
+  }
   return mutateStaff_(function (rows) {
     const idx = rows.findIndex(function (r) { return r.id === staffId; });
     if (idx === -1) return { abort: true, ok: false, err: 'not_found' };
@@ -939,6 +944,9 @@ async function adminUpdateStaff(username, pin, staffId, payload) {
     if (payload.role !== undefined) rec.role = payload.role;
     if (payload.staffType !== undefined) rec.staffType = cleanStaffType_(payload.staffType);
     if (payload.country !== undefined) rec.country = cleanCountry_(payload.country);
+    // YWAM GP: which Campus Director (international / national), and an organisation-wide role
+    if (payload.cdKind !== undefined) rec.cdKind = CD_KINDS.indexOf(payload.cdKind) > -1 ? payload.cdKind : '';
+    if (payload.gpRole !== undefined) rec.gpRole = ooText_(payload.gpRole, 60);
     if (payload.username !== undefined) {
       // Same shape sign-up already enforces (staffRegister above) — a username
       // is also how someone logs in, so it can't collide with anyone else's.
@@ -3422,7 +3430,7 @@ async function backupStatus_() {
    It deliberately does NOT fail as a unit: each section is caught on its own, so
    a problem reading trips cannot stop the page from having the base's figures. */
 const BOOT_KEYS = ['entries', 'survey', 'okrs', 'dailyLogs', 'goals', 'holidays', 'smartGoals', 'broadcasts',
-  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs'];
+  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board'];
 async function getMyBoot(username, pin) {
   prefetch_(['staff', 'loginThrottle'].concat(BOOT_KEYS));   // before the PIN check, so they travel together
   const s = await verifyStaff_(username, pin);
@@ -3491,6 +3499,7 @@ async function getMyBoot(username, pin) {
     reqDocs: reqDocs ? reqDocsAnswer_(reqDocs) : [],
     required: (reqDocs && !isApplicant_(s)) ? requiredFor_(s, reqDocs) : null,
     // admins only: when the nightly backup last ran (netlify/functions/backup.js)
+    org: await part(function () { return getYwamGp(username, pin); }),   // titles, YWAM GP roles, the advisory board
     backup: s.isAdmin ? await part(backupStatus_) : null,
     // the roster is already top-level above; no need to ship it twice in one response
     base: base ? Object.assign({}, base, { roster: undefined }) : null
@@ -7804,6 +7813,174 @@ async function finProjSave(code, campus, months) {
    which books have it — for every reader, guests too (the books are open to all). */
 async function libAudioIndex() { return { ok: true, index: publicIndex(await readIndex(audioStore())) }; }
 
+/* ==================== YWAM GP: titles, GP roles and the advisory board ====================
+   Oct 2026 (Uriah). Four parts to GP now: YWAM Poipet, YWAM Siem Reap, YWAM GP (the
+   whole organisation) and the YWAM GP Advisory Board.
+   - Campus Leadership titles. The department stays as it is (its ministries are the
+     Campus Director row and one row per department — the join keys for its
+     numbers), and a title is read off it: an admin marks a Campus Director as the
+     International or the National one (`cdKind`); everyone else on the team is
+     "Director of <their department>" (`orgTitle_`).
+   - YWAM GP roles: a staff member can hold an organisation-wide role on top of their
+     campus one (`gpRole`, admin-set, free text — e.g. "GP Director").
+   - The advisory board is NOT staff and is kept out of the staff store altogether,
+     so nobody on it ever shows up in a roster, a headcount, health, the org chart or
+     any campus list. Each member has a role (President, Secretary, Treasurer,
+     Advisor, or another), a photo, a short bio and how to reach them — every staff
+     member can see the board and contact it (Uriah: so people know who they are and
+     how to reach them, e.g. for a serious allegation). A member who is also staff is
+     linked (`staffId`) and uses their staff login; anyone else gets their own
+     username + PIN for a board-only view of both campuses (`boardLogin`).
+   Served by `getYwamGp`, not by teamRoster or staffProfile, which stay as they are. */
+const CD_KINDS = ['international', 'national'];
+const CAMPUS_IDS_ = ['poipet', 'siemreap'];
+const BOARD_ROLES = ['President', 'Secretary', 'Treasurer', 'Advisor'];
+const BOARD_PHOTO_MAX_B64 = 160 * 1024;
+function orgTitle_(s) {
+  if (!s || deptOf_(s) !== LEADERSHIP_DEPT) return '';
+  if (s.ministry === 'Campus Director') {
+    return s.cdKind === 'international' ? 'International Campus Director'
+      : s.cdKind === 'national' ? 'National Campus Director' : 'Campus Director';
+  }
+  return s.ministry ? 'Director of ' + s.ministry : '';
+}
+async function getBoard_() { return readJSON('board', []); }
+function boardOut_(b, staff) {
+  const st = b.staffId ? (staff || []).find(function (x) { return x.id === b.staffId && x.active !== false; }) : null;
+  return { id: b.id, name: b.name || (st ? st.name : ''), role: b.role || 'Advisor', photo: b.photo || (st ? st.photo || '' : ''),
+    bio: b.bio || '', email: b.email || (st ? st.email || '' : ''), phone: b.phone || '', staffId: b.staffId || '', order: Number(b.order) || 0 };
+}
+function boardAdminOut_(b, staff) {
+  return Object.assign(boardOut_(b, staff), { username: b.username || '', hasLogin: !!b.pinHash, active: b.active !== false });
+}
+function boardSort_(a, b) {
+  const ra = BOARD_ROLES.indexOf(a.role), rb = BOARD_ROLES.indexOf(b.role);
+  const x = ra === -1 ? 3.5 : ra, y = rb === -1 ? 3.5 : rb;
+  return x - y || (a.order - b.order) || String(a.name).localeCompare(String(b.name));
+}
+/* A board member with their own login (not a staff member). */
+async function verifyBoard_(username, pin) {
+  if (await isLoginLocked_(username)) return null;
+  const u = normUser_(username);
+  const b = (await getBoard_()).find(function (x) { return x.username && x.username === u; });
+  if (!b || b.staffId || b.active === false || !credOk_(b, pin)) { await recordFailedLogin_(username); return null; }
+  await clearLoginThrottle_(username);
+  return b;
+}
+/* Staff, or a board member — decided by which list holds the username, so a board
+   member's every request never counts as a failed staff login (and vice versa). */
+async function verifyViewer_(username, pin) {
+  const u = normUser_(username);
+  if (!u) return null;
+  const staff = await getStaff_();
+  if (findStaff_(staff, u)) { const s = await verifyStaff_(username, pin); return s ? { kind: 'staff', who: s } : null; }
+  const b = await verifyBoard_(username, pin);
+  return b ? { kind: 'board', who: b } : null;
+}
+async function usernameTaken_(u, exceptBoardId) {
+  if (findStaff_(await getStaff_(), u)) return true;
+  return (await getBoard_()).some(function (b) { return b.username === u && b.id !== exceptBoardId; });
+}
+
+async function boardLogin(username, pin) {
+  // the login screen tries this after a failed staff login — a staff username has
+  // already counted its failure there, and must not count twice
+  if (findStaff_(await getStaff_(), username)) return { ok: false };
+  const b = await verifyBoard_(username, pin);
+  if (!b) return { ok: false };
+  return { ok: true, member: boardOut_(b, []) };
+}
+
+async function getYwamGp(username, pin) {
+  const v = await verifyViewer_(username, pin);
+  if (!v) return { ok: false };
+  const staff = (await getStaff_()).filter(function (r) { return r.active && !r.archived && !isApplicant_(r); });
+  const person = function (r) { return { id: r.id, name: r.name, photo: r.photo || '', campus: r.campus }; };
+  const titles = {}, gp = [];
+  staff.forEach(function (r) {
+    const tl = orgTitle_(r); if (tl) titles[r.id] = tl;
+    if (r.gpRole) gp.push(Object.assign(person(r), { gpRole: r.gpRole }));
+  });
+  const campuses = CAMPUS_IDS_.map(function (c) {
+    const here = staff.filter(function (r) { return r.campus === c; });
+    const clt = here.filter(function (r) { return titles[r.id]; }).map(function (r) {
+      return Object.assign(person(r), { title: titles[r.id], cd: r.ministry === 'Campus Director', dept: r.ministry === 'Campus Director' ? '' : r.ministry });
+    }).sort(function (a, b) {
+      const k = function (p) { return p.title === 'International Campus Director' ? 0 : p.title === 'National Campus Director' ? 1 : p.cd ? 2 : 3; };
+      return k(a) - k(b) || String(a.dept).localeCompare(String(b.dept)) || String(a.name).localeCompare(String(b.name));
+    });
+    /* who leads each ministry, by name — the campus as the board sees it */
+    const leaders = {};
+    here.forEach(function (r) { leadsOf_(r).forEach(function (k) { (leaders[k] = leaders[k] || []).push(r.name); }); });
+    const counts = {};
+    here.forEach(function (r) { const d = deptOf_(r); if (d && d !== LEADERSHIP_DEPT) counts[d] = (counts[d] || 0) + 1; });
+    return { id: c, staff: here.length, clt: clt, leaders: leaders, deptStaff: counts };
+  });
+  const board = (await getBoard_()).filter(function (b) { return b.active !== false; })
+    .map(function (b) { return boardOut_(b, staff); }).sort(boardSort_);
+  return { ok: true, viewer: v.kind, me: v.kind === 'board' ? boardOut_(v.who, staff) : null,
+    titles: titles, gp: gp.sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); }),
+    campuses: campuses, board: board, boardRoles: BOARD_ROLES };
+}
+
+async function adminListBoard(username, pin) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  const staff = await getStaff_();
+  return { ok: true, board: (await getBoard_()).map(function (b) { return boardAdminOut_(b, staff); }).sort(boardSort_), roles: BOARD_ROLES };
+}
+async function adminSaveBoardMember(username, pin, m) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  m = m && typeof m === 'object' ? m : {};
+  const staff = await getStaff_();
+  const rows = await getBoard_();
+  const idx = m.id ? rows.findIndex(function (b) { return b.id === m.id; }) : -1;
+  if (m.id && idx === -1) return { ok: false, err: 'not_found' };
+  const rec = idx > -1 ? rows[idx] : { id: 'bd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), created: new Date().toISOString() };
+  const linked = m.staffId ? staff.find(function (x) { return x.id === m.staffId && !isApplicant_(x); }) : null;
+  if (m.staffId && !linked) return { ok: false, err: 'no_staff' };
+  const name = ooText_(m.name, 80) || (linked ? linked.name : '');
+  if (!name) return { ok: false, err: 'name_required' };
+  const role = ooText_(m.role, 40) || 'Advisor';
+  const email = m.email ? cleanEmail_(m.email) : '';
+  if (email === null) return { ok: false, err: 'bad_email' };
+  let photo = rec.photo || '';
+  if (m.photo !== undefined) {
+    if (m.photo === '' || m.photo === null) photo = '';
+    else if (typeof m.photo === 'string' && /^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/.test(m.photo) && m.photo.length <= BOARD_PHOTO_MAX_B64 + 40) photo = m.photo;
+    else return { ok: false, err: 'bad_photo' };
+  }
+  Object.assign(rec, { name: name, role: role, email: email || '', phone: ooText_(m.phone, 40), bio: ooText_(m.bio, 600),
+    photo: photo, staffId: linked ? linked.id : '', order: Number(m.order) || 0, active: m.active !== false, updated: new Date().toISOString() });
+  if (linked) { delete rec.username; delete rec.pinHash; delete rec.pinSalt; }
+  else if (m.username !== undefined || m.newPin) {
+    const u = normUser_(m.username !== undefined ? m.username : rec.username);
+    if (u) {
+      if (!/^[a-z0-9._-]{2,20}$/.test(u)) return { ok: false, err: 'bad_username' };
+      if (await usernameTaken_(u, rec.id)) return { ok: false, err: 'username_taken' };
+      rec.username = u;
+    }
+    if (m.newPin) {
+      if (!/^\d{4}$/.test(String(m.newPin))) return { ok: false, err: 'bad_pin' };
+      if (!rec.username) return { ok: false, err: 'bad_username' };
+      rec.pinSalt = pinSalt_(); rec.pinHash = hashPin_(m.newPin, rec.pinSalt);
+    }
+  }
+  if (idx > -1) rows[idx] = rec; else rows.push(rec);
+  await writeJSON('board', rows);
+  return adminListBoard(username, pin);
+}
+async function adminDeleteBoardMember(username, pin, id) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  const rows = await getBoard_();
+  const left = rows.filter(function (b) { return b.id !== id; });
+  if (left.length === rows.length) return { ok: false, err: 'not_found' };
+  await writeJSON('board', left);
+  return adminListBoard(username, pin);
+}
+
 const HANDLERS = {
   getMyBoot: function (a) { return getMyBoot(a[0], a[1]); },
   libAudioIndex: function () { return libAudioIndex(); },
@@ -7872,6 +8049,11 @@ const HANDLERS = {
   deleteTask: function (a) { return deleteTask(a[0], a[1], a[2]); },
   clearDoneTasks: function (a) { return clearDoneTasks(a[0], a[1]); },
   getMyOneOnOnes: function (a) { return getMyOneOnOnes(a[0], a[1]); },
+  getYwamGp: function (a) { return getYwamGp(a[0], a[1]); },
+  boardLogin: function (a) { return boardLogin(a[0], a[1]); },
+  adminListBoard: function (a) { return adminListBoard(a[0], a[1]); },
+  adminSaveBoardMember: function (a) { return adminSaveBoardMember(a[0], a[1], a[2]); },
+  adminDeleteBoardMember: function (a) { return adminDeleteBoardMember(a[0], a[1], a[2]); },
   requestOneOnOne: function (a) { return requestOneOnOne(a[0], a[1], a[2], a[3], a[4]); },
   saveOneOnOnePrep: function (a) { return saveOneOnOnePrep(a[0], a[1], a[2], a[3]); },
   saveOneOnOneNotes: function (a) { return saveOneOnOneNotes(a[0], a[1], a[2], a[3], a[4], a[5]); },

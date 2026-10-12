@@ -98,9 +98,9 @@ ok('nothing to hand-edit — no Edit button — but a year picker and quarter ch
 ok('this quarter is live from profiles; a member gets no Save button', s.live && !s.save);
 ok('the only fetch is for this quarter’s own saved-on note, once', sent.filter(f => f === 'getStructure').length === 1);
 const lead = await box('[data-orgbox="leadership"]');
-ok('the top box names the directors, crowned, then the department overseers', lead && lead.people.slice(0, 2).every(p => /^👑 (Uriah|Naomi)/.test(p)) && lead.people.includes('Sina Sok'), JSON.stringify(lead && lead.people));
+ok('the top box names the directors, crowned, then the department directors, each with their title', lead && lead.people.slice(0, 2).every(p => /^👑 (Uriah|Naomi).*Campus Director$/.test(p)) && lead.people.includes('Sina SokDirector of Community Service'), JSON.stringify(lead && lead.people));
 const cs = await box('[data-orgbox="Community Service"]');
-ok('a department box: its overseer crowned, and how many staff', cs && cs.people[0] === '👑 Sina Sok' && /2 staff/.test(cs.title), JSON.stringify(cs && [cs.title, cs.people]));
+ok('a department box: its director crowned, and how many staff', cs && cs.people[0] === '👑 Sina SokDirector of Community Service' && /2 staff/.test(cs.title), JSON.stringify(cs && [cs.title, cs.people]));
 const cafe = cs && cs.mins.find(m => /Cafe/.test(m.name));
 ok('its ministries inside, each with its leader crowned and its people', cafe && cafe.n === '2' && cafe.people[0] === '👑 Sreilea Chan' && cafe.people[1] === 'Dara Pen', JSON.stringify(cafe));
 ok('an empty ministry is still on the chart, quiet, with a dash', cs.mins.some(m => m.bare && m.n === '—'));
