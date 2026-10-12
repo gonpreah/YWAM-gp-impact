@@ -98,13 +98,13 @@ const overflow = (page) => page.evaluate(() => document.documentElement.scrollWi
 console.log('=== everyone: My Home, the menu, reading, the picture ===');
 {
   const { ctx, page, errors, sent } = await open(KIM);
-  await page.waitForSelector('#schedHome [data-schedopen]');
+  await page.waitForSelector('#schedHome [data-schedopen]', { timeout: 15000 });
   const home = await page.$eval('#schedHome', e => e.textContent);
-  ok('My Home’s dashboard card has this week’s schedules: cooking out, chores dimmed until it is', !!(await page.$('.hero #schedHome')) && !(await page.$eval('#schedHome [data-schedopen="kitchen"]', b => b.classList.contains('notOut'))) && await page.$eval('#schedHome [data-schedopen="chores"]', b => b.classList.contains('notOut')), home);
+  ok('My Home’s dashboard card shows just my duties — no “this week’s schedules” label or Cooking / Chores buttons', !!(await page.$('.hero #schedHome')) && !(await page.$('#schedHome .heroSchedLabel')) && !(await page.$('#schedHome .heroQuick')) && !!(await page.$('#schedMineCook')), home);
   ok('it asked for the week that began on Sunday', sent.find(b => b.fn === 'getMySchedules').args[2] === W0);
   ok('and names my cooking duties', /Cooking: Mon · Breakfast 7:30, Tue · Dinner 6:30/.test(home), home);
   ok('My Home has no daily check-in for now, and no “Log today” banner', !(await page.$('#moreToday')) && !(await page.$('#jumpToday')) && !/Daily check-in/.test(await page.$eval('#main', e => e.textContent)));
-  ok('no separate schedules card below it', (await page.$$('#schedHome')).length === 1 && !(await page.$('.card #schedHome')));
+  ok('no separate schedules card below it', (await page.$$('#schedHome')).length === 1 && !(await page.$('.card:not(.hero) #schedHome')));
   await page.click('[data-schedopen="kitchen"]'); await page.waitForTimeout(400);
   ok('the schedule opens on the week of 4 October', /Oct 4 – Oct 10/.test(await page.$eval('#schedWeek', e => e.textContent)));
   const grid = await page.evaluate(() => ({
@@ -211,7 +211,7 @@ console.log('=== Hospitality fills the morning chores ===');
 console.log('=== desktop ===');
 {
   const { ctx, page, errors } = await open(KIM, { viewport: { width: 1280, height: 900 } });
-  await page.waitForSelector('#schedHome [data-schedopen]');
+  await page.waitForSelector('#schedHome [data-schedopen]', { timeout: 15000 });
   await page.click('[data-schedopen="kitchen"]'); await page.waitForTimeout(400);
   ok('desktop: the table fits without a sideways page scroll', !!(await page.$('.dutyGrid')) && !(await overflow(page)));
   ok('no errors (desktop)', errors.length === 0, errors.join(' | '));
@@ -241,7 +241,8 @@ console.log('=== the morning chores at a glance ===');
 {
   const ch = CHORES(); ch.sections[0].rows[1].people = ['Kara'];
   const { ctx, page } = await open(KIM, { chores: { ...ch, published: true } });
-  await page.click('[data-schedopen="chores"]'); await page.waitForTimeout(700);
+  ok('with no chore, My Home shows no chore row', !(await page.$('#schedMineChore')));
+  await page.evaluate(() => schedOpen_('chores', false, 'home')); await page.waitForTimeout(700);
   ok('someone with no chore sees no “your chore” and no Mine switch', !(await page.$('#schedMine')) && !(await page.$('[data-schedonly]')));
   await ctx.close();
 }

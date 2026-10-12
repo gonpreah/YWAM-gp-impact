@@ -12994,24 +12994,18 @@ function schedAssignCounts_(s){
   else (s.sections||[]).forEach(function(sec){ (sec.rows||[]).forEach(function(r){ add(r.people); }); });
   return n;
 }
-/* This week's schedules, as one small row inside My Home's dashboard card:
-   a button for each (dimmed until it is out) and, when your name is on one,
-   how many duties you have — the schedule itself is a tap away. */
+/* Your duties this week, inside My Home's dashboard card: the chore by name —
+   "🧹 Your chore: Rooftop" — and the cooking, each a tap from its schedule.
+   Nothing on the schedules is yours → nothing here (Uriah, Oct 2026: the
+   "this week's schedules" label and its Cooking / Chores buttons were
+   redundant; the schedules themselves are in the menu). */
 function schedHomeHtml_(){
-  var d=S.sched;
-  var h='<div class="heroSched" id="schedHome"><div class="heroSchedLabel">📋 '+esc(t('This week’s schedules'))+'</div><div class="heroQuick" style="margin-top:6px">';
-  var me=schedMyName_(), mine=0;
-  h+=SCHED_KINDS.map(function(k){
-    var s=d && d.now && d.now[k[0]];
-    if(s) mine+=dutyMine(s, me, t).length;
-    return '<button class="'+(s?'':'notOut')+'" data-schedopen="'+k[0]+'"'+(d && !s?' title="'+esc(t('Not out yet'))+'"':'')+'>'+k[1]+' '+esc(k[0]==='kitchen' ? t('Cooking') : t('Chores'))+'</button>';
-  }).join('')+'</div>';
-  if(mine){
-    /* the chore by name — "🧹 Your chore: Rooftop" — and the cooking as a count */
-    var ch=d.now.chores ? dutyMine(d.now.chores, me, t) : [], ck=d.now.kitchen ? dutyMine(d.now.kitchen, me, t) : [];
-    if(ch.length) h+='<button class="heroSchedMine" data-schedopen="chores" id="schedMineChore">🧹 '+esc(gpT(ch.length===1?'Your chore: {what}':'Your chores: {what}',{what:ch.join(', ')}))+' ›</button>';
-    if(ck.length) h+='<button class="heroSchedMine" data-schedopen="kitchen">🍲 '+esc(ck.length<=2 ? gpT('Cooking: {what}',{what:ck.join(', ')}) : gpT('You have {n} cooking duties this week',{n:ck.length}))+' ›</button>';
-  }
+  var d=S.sched, me=schedMyName_();
+  var ch=(d && d.now && d.now.chores) ? dutyMine(d.now.chores, me, t) : [], ck=(d && d.now && d.now.kitchen) ? dutyMine(d.now.kitchen, me, t) : [];
+  if(!ch.length && !ck.length) return '<span id="schedHome" hidden></span>';   // still there, so this week's schedules get loaded (bind)
+  var h='<div class="heroSched" id="schedHome">';
+  if(ch.length) h+='<button class="heroSchedMine" data-schedopen="chores" id="schedMineChore">🧹 '+esc(gpT(ch.length===1?'Your chore: {what}':'Your chores: {what}',{what:ch.join(', ')}))+' ›</button>';
+  if(ck.length) h+='<button class="heroSchedMine" data-schedopen="kitchen" id="schedMineCook">🍲 '+esc(ck.length<=2 ? gpT('Cooking: {what}',{what:ck.join(', ')}) : gpT('You have {n} cooking duties this week',{n:ck.length}))+' ›</button>';
   return h+'</div>';
 }
 function schedLoad_(kind, week, edit){
