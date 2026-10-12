@@ -97,10 +97,12 @@ await p.close();
 console.log('\nSTAFF PAGE (all tabs)');
 p=await mk(()=>localStorage.setItem('gp-staff',JSON.stringify({user:'sokha',pin:'1234'})));
 await p.goto('http://localhost:4414/teams.html'); await p.waitForSelector('nav.bottom button',{timeout:15000}); await p.waitForTimeout(900);
-for(const [tab,label] of [['base','Base'],['week','My Home'],['team','Team'],['health','Health']]){
+/* the bottom bar since Oct 2026: My Home, My Ministry, Team, Health, Library — Base is in the ☰ menu */
+for(const [tab,label] of [['week','My Home'],['ministry','My Ministry'],['team','Team'],['health','Health'],['library','Library']]){
   await visit(p,'tab: '+label,async p=>{await p.click(`nav.bottom [data-tab="${tab}"]`);await p.waitForTimeout(900);});
 }
-await visit(p,'Base: dept explorer',async p=>{await p.click('#menuBtn'); await p.waitForTimeout(250); await p.click('[data-menu-item="base"]');   // Base is in the menu nowawait p.waitForTimeout(700);
+await visit(p,'Base (from the menu)',async p=>{await p.click('#menuBtn');await p.waitForTimeout(250);await p.click('[data-menu-item="base"]');await p.waitForTimeout(900);});
+await visit(p,'Base: dept explorer',async p=>{await p.click('#menuBtn'); await p.waitForTimeout(250); await p.click('[data-menu-item="base"]'); await p.waitForTimeout(700);   // Base is in the menu now
   await p.click('[data-acc="explorer"]');await p.waitForTimeout(500); // the accordion row starts closed
   await p.selectOption('#baseDeptSel','Skills Training');await p.waitForTimeout(700);});
 await visit(p,'Base: drill a tile',async p=>{await p.click('#main .heroSubRow');await p.waitForTimeout(500);await p.click('#ddClose');});
@@ -120,7 +122,8 @@ await visit(p,'My Home: profile & settings',async p=>{await p.click('nav.bottom 
 await visit(p,'Health: week switch',async p=>{await p.click('nav.bottom [data-tab="health"]');await p.waitForTimeout(800);
   await p.click('#healthPrevWeek');await p.waitForTimeout(800);});
 await visit(p,'Khmer across all tabs',async p=>{await p.click('#langBtn');await p.waitForTimeout(700);
-  for(const tb of ['base','week','team','health']){await p.click(`nav.bottom [data-tab="${tb}"]`);await p.waitForTimeout(650);}
+  for(const tb of ['week','ministry','team','health','library']){await p.click(`nav.bottom [data-tab="${tb}"]`);await p.waitForTimeout(650);}
+  await p.click('#menuBtn');await p.waitForTimeout(250);await p.click('[data-menu-item="base"]');await p.waitForTimeout(650);
   await p.click('#langBtn');});
 await p.close();
 
