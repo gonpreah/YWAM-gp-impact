@@ -17,9 +17,21 @@
    dashboard flash for ~200ms on every single app open before landing on their own
    page. Nothing above this line paints. */
 (function(){
+  /* A guest belongs in My GP's own guest mode (teams.html?guest=1: the tour, the
+     Library, Base), not on this old dashboard — whether they chose "Look around"
+     in the app (gp-app-guest) or "View as guest" here before it moved (gp-guest).
+     gp-skip-teams is the one way to ask for this page on purpose. */
+  var guest = false;
+  try { guest = localStorage.getItem('gp-app-guest')==='1'; } catch(e){}
+  try { guest = guest || sessionStorage.getItem('gp-guest')==='1'; } catch(e){}
   try {
     if(sessionStorage.getItem('gp-skip-teams')) return;
     var saved = JSON.parse(localStorage.getItem('gp-staff')||'null');
+    if(!(saved && saved.user && saved.pin) && guest){
+      window.gpLeaving = true;
+      window.location.replace('teams.html?guest=1');
+      return;
+    }
     if(saved && saved.user && saved.pin){
       /* replace() does not stop this document: scripts below keep running until
          the navigation commits. Left alone they would render the dashboard and
@@ -1002,10 +1014,9 @@ function renderWelcome(){
   document.getElementById('langBtn').onclick = toggleLang;
   document.getElementById('wCreate').onclick = function(){ window.location.href='teams.html?reg=1'; };
   document.getElementById('wLogin').onclick = function(){ window.location.href='teams.html'; };
-  document.getElementById('wGuest').onclick = function(){
-    try { sessionStorage.setItem('gp-guest','1'); } catch(e){}
-    render();
-  };
+  /* Guests look around inside My GP (the tour, the Library, Base) — the same
+     guest mode as "Look around" on the app's log-in screen. */
+  document.getElementById('wGuest').onclick = function(){ window.location.href='teams.html?guest=1'; };
 }
 
 /* Shown in place of a form a guest can't use. Says what's missing and gives the

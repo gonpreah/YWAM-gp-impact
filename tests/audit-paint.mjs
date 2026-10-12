@@ -24,7 +24,7 @@ async function run(label, fontMode){
     else r.abort();
   });
   await p.route('**fonts.gstatic.com**', r=>r.abort());
-  await p.addInitScript(()=>sessionStorage.setItem('gp-guest','1'));
+  await p.addInitScript(()=>(sessionStorage.setItem('gp-guest','1'),sessionStorage.setItem('gp-skip-teams','1')));
   const t0=Date.now();
   await p.goto('http://localhost:4411/index.html',{waitUntil:'commit'});
   // when does anything become visible?

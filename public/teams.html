@@ -3595,7 +3595,7 @@ function baseHtml(){
   h+='<p class="hint" style="margin-top:14px">'+
      esc(t('Every figure here is built from what each ministry logs each week — including yours.'))+
      ' '+esc(t('Tap any number to see which ministries and weeks it came from.'))+
-     ' <button class="linkbtn inline" id="goFullDash">'+esc(t('See the full dashboard'))+' →</button></p>';
+     (S.guest ? '' : ' <button class="linkbtn inline" id="goFullDash">'+esc(t('See the full dashboard'))+' →</button>')+'</p>';
   return h;
 }
 

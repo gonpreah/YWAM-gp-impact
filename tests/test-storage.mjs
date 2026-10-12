@@ -159,15 +159,13 @@ function isKhmer(s) { return /[ក-៿]/.test(String(s || '')); }
   ok('storage blocked: the front door still renders', gate);
   let usable = false;
   if (gate) {
-    await p.click('#wGuest');
-    try { await p.waitForSelector('.hero', { timeout: 15000 }); usable = true; } catch (e) { }
+    await p.click('#wGuest');   // → My GP's guest mode, which needs no storage (?guest=1)
+    try { await p.waitForURL(/teams\.html\?guest=1/, { timeout: 15000 }); await p.waitForSelector('nav.bottom button', { timeout: 15000 }); usable = true; } catch (e) { }
   }
   await p.waitForTimeout(400);
   const errBar = await p.evaluate(
     "(function(){var e=document.getElementById('errorBar');return e&&!e.classList.contains('hidden')?e.textContent:'';})()");
-  const hero = (await p.textContent('.hero').catch(function () { return ''; })) || '';
-  ok('storage blocked: guest entry reaches the dashboard', usable,
-    'hero=' + hero.replace(/\s+/g, ' ').trim().slice(0, 60));
+  ok('storage blocked: guest entry reaches the app\'s guest mode', usable, p.url());
   ok('storage blocked: no error bar', !errBar, errBar);
   ok('storage blocked: no page errors', errs.length === 0, errs.join(' | '));
   // The language toggle must not throw either, even though it cannot save.
@@ -175,7 +173,7 @@ function isKhmer(s) { return /[ក-៿]/.test(String(s || '')); }
     await p.click('#langBtn').catch(function () { });
     await p.waitForTimeout(250);
     ok('storage blocked: the language toggle still works',
-      (await p.evaluate('state.lang')) === 'km' && errs.length === 0, errs.join(' | '));
+      (await p.evaluate('LANG')) === 'km' && errs.length === 0, errs.join(' | '));
   }
   await ctx.close();
 }

@@ -118,7 +118,7 @@ const WATCH = function () {
   const splashGone = await p.evaluate("!document.getElementById('splash')");
   ok('and the splash is gone once the profile is up', splashGone);
   const tabs = await p.$$eval('nav.bottom button', function (b) { return b.map(function (x) { return x.textContent.trim(); }).join(' | '); });
-  ok('the profile really rendered', tabs.indexOf('Base') > -1, tabs);
+  ok('the profile really rendered', tabs.indexOf('My Home') > -1, tabs);
   await ctx.close();
   netDelay = 0;
 }
@@ -266,7 +266,7 @@ for (const page of ['index.html', 'teams.html']) {
   const p = await ctx.newPage();
   await p.route('**fonts.g**', function (r) { r.abort(); });
   await api(p, 0);
-  await p.addInitScript(function () { try { sessionStorage.setItem('gp-guest', '1'); } catch (e) { } });
+  await p.addInitScript(function () { try { sessionStorage.setItem('gp-guest', '1'); sessionStorage.setItem('gp-skip-teams', '1'); } catch (e) { } });
   await p.goto(BASE + '/index.html', { waitUntil: 'commit' });
   // Tolerant: report a missing dashboard as a failure rather than crashing the run.
   await p.waitForSelector('.hero', { timeout: 15000 }).catch(function () { });

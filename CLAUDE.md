@@ -1394,7 +1394,11 @@ profile). `S.guest` with a stand-in `S.me` (`gpGuestMe_`, id 'guest') and EMPTY 
 - **Locked with a reason:** Team (names, photos, goals) and Health (private check-ins);
   the menu is Library / Create my profile / Log in. Any other view falls back to the tour.
 - No call a guest makes carries a username or PIN, and the boot never runs (test-guest-ui).
-  index.html's own "View as guest" (the old dashboard) is separate and unchanged.
+  **Guests never see the old dashboard (Oct 2026):** index.html's "View as guest" goes to
+  `teams.html?guest=1`, and its `<head>` guard sends any guest (`gp-app-guest` in
+  localStorage, or the old `gp-guest` in sessionStorage) there too, unless
+  `gp-skip-teams` is set — the one way to open that page on purpose (tests do). Base's
+  "See the full dashboard" link is hidden for guests.
 
 ## Required papers and the books-read tally (Oct 2026)
 - **Books read** are on the staff record (`libRead: {bookId: date}`, `libSaveReads`), with the
@@ -1614,8 +1618,8 @@ copy of anything.
 ## The front door (index.html)
 Anyone not signed in, who hasn't chosen to browse as a guest, gets a welcome screen
 first: **Create my profile** → `teams.html?reg=1`, **I already have a profile** →
-`teams.html`, or **View as guest** (sets `sessionStorage['gp-guest']`, lasts the
-browser session). It renders before the data arrives, so the dashboard never flashes
+`teams.html`, or **View as guest** → `teams.html?guest=1`, My GP's guest mode (it used
+to open this dashboard; see "Looking around without an account"). It renders before the data arrives, so the dashboard never flashes
 behind it.
 
 Guests get every reading screen. The two writing views — **Log Numbers** and

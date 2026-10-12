@@ -86,8 +86,30 @@ console.log('   nav hidden: ' + await page.$eval('#nav', n => n.innerHTML === ''
 console.log('   dashboard leaked behind gate: ' + await page.evaluate(() => !!document.querySelector('.hero')));
 await page.screenshot({ path: OUT + 'gate.png', fullPage: true });
 
-/* ---- 2. view as guest: dashboard visible, write tabs locked ---- */
+/* ---- 2. view as guest: into My GP's guest mode, not the old dashboard ---- */
 await page.click('#wGuest');
+await page.waitForURL(/teams\.html\?guest=1/, { timeout: 8000 });
+await page.waitForSelector('nav.bottom button', { timeout: 12000 });
+console.log('\n2a. VIEW AS GUEST opens the app\'s guest mode: ' + /teams\.html\?guest=1/.test(page.url()) +
+  ' · tabs: ' + (await page.$$eval('nav.bottom button', b => b.map(x => x.textContent.trim()))).join(' | '));
+await page.close();
+/* … and a guest who comes back to the front door is sent there too, not shown the dashboard */
+page = await newPage();
+await page.addInitScript(() => { localStorage.setItem('gp-app-guest', '1'); });
+await page.goto(BASE + '/index.html', { waitUntil: 'commit' });
+await page.waitForURL(/teams\.html\?guest=1/, { timeout: 8000 });
+console.log('   a returning guest skips the old dashboard: ' + /teams\.html\?guest=1/.test(page.url()));
+await page.close();
+page = await newPage();
+await page.addInitScript(() => { sessionStorage.setItem('gp-guest', '1'); });
+await page.goto(BASE + '/index.html', { waitUntil: 'commit' });
+await page.waitForURL(/teams\.html\?guest=1/, { timeout: 8000 });
+console.log('   … and so does one from before the move (gp-guest): ' + /teams\.html\?guest=1/.test(page.url()));
+await page.close();
+/* The old dashboard, asked for on purpose (gp-skip-teams), still gates its write tab */
+page = await newPage();
+await page.addInitScript(() => { sessionStorage.setItem('gp-guest', '1'); sessionStorage.setItem('gp-skip-teams', '1'); });
+await page.goto(BASE + '/index.html', { waitUntil: 'networkidle' });
 await page.waitForSelector('.hero', { timeout: 8000 });
 await page.waitForTimeout(900);
 console.log('\n2. GUEST');

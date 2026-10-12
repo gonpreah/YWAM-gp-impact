@@ -187,7 +187,7 @@ await page.click('#menuBtn'); await page.waitForTimeout(250); await page.click('
 await page.waitForTimeout(600);
 
 // 3. compare against the dashboard's own section list
-const dash = await newPage(() => { sessionStorage.setItem('gp-guest', '1'); });
+const dash = await newPage(() => { sessionStorage.setItem('gp-guest', '1'); sessionStorage.setItem('gp-skip-teams', '1'); });
 await dash.goto('http://localhost:4401/index.html', { waitUntil: 'load' });
 await dash.waitForSelector('.hero', { timeout: 15000 });
 await dash.waitForTimeout(1000);
