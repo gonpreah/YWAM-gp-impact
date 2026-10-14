@@ -1557,7 +1557,7 @@ function meHtml_(){
   h+=guideCardHtml_(app);
   var submitted = !!app.submittedAt;
   var total = d.form ? askedAll_(d.form, app.audience).length : 0, done = d.form ? askedAll_(d.form, app.audience).filter(function(q){ return answered_(q, P.answers[q.id]); }).length : 0;
-  h+='<div class="card"><div class="panelHead"><h3 style="margin-top:0">📝 '+esc(t('Application form'))+'</h3>'+(submitted?'<button class="linkbtn inline" id="viewAnswers">'+esc(P.showAnswers?t('Hide'):t('View my answers'))+'</button>':'')+'</div>'+
+  h+='<div class="card"><div class="panelHead"><h3 style="margin-top:0">📝 '+esc(t('Application form'))+'</h3>'+(submitted?'<button class="linkbtn inline" id="viewAnswers">'+esc(P.showAnswers?t('Hide'):t('View my application'))+'</button>':'')+'</div>'+
     (submitted ? '<p class="sub" style="margin:0">✓ '+esc(t('Submitted'))+(app.submittedAt?' · '+esc(fmtDate_(app.submittedAt)):'')+(app.answersUpdatedAt?' · '+esc(gpT('updated {when}',{when:fmtDate_(app.answersUpdatedAt)})):'')+'</p>'+
         (app.type==='team' ? '<p class="hint">'+esc(t('Dates and head counts can be estimates — come back and update them here as your plans firm up.'))+'</p>' : '')+
         (app.status!=='closed' && app.status!=='completed' ? '<button class="btn ghost small" id="editAnswersMine" style="margin-top:10px">'+esc(t('Edit my answers'))+'</button>' : '')+
@@ -1719,7 +1719,7 @@ function panelHtml_(c, byId){
     ['docs','📎',t('Documents'), panelVisaHtml_(c)+panelDocsHtml_(c)+panelReferenceHtml_(c), docsN ? String(docsN) : ''],
     ['numbers','📊',t('Numbers'), panelTeamNumbersHtml_(c), ''],
     ['legal','✍️',t('Legal'), panelLegalHtml_(c), legalBadge_(c)],
-    ['answers','📝',t('Answers'), panelAnswersHtml_(c), ''],
+    ['answers','📝',t('Application'), panelAnswersHtml_(c), ''],
     ['notes','💬',t('Notes'), '', String((c.log||[]).filter(function(l){ return l.kind!=='stage'; }).length||'')]
   ].filter(function(x){ return x[0]==='notes' || x[3]; });
   if(!tabs.some(function(x){ return x[0]===P.ptab; })) P.ptab='overview';
@@ -2860,13 +2860,13 @@ function panelAnswersHtml_(c){
   var form=(P.boot.forms||{})[c.formKey]; if(!form) return '';
   var submitted=!!(c.portal && c.portal.submittedAt);
   var answers=(c.portal && ((c.portal.form && c.portal.form.answers) || c.portal.draft)) || {};
-  var h='<div class="panelHead" style="margin-top:14px"><h3 style="margin:0">'+esc(t('Answers'))+(submitted?'':' · <span class="pill draft" style="font-size:11px">'+esc(t('draft'))+'</span>')+'</h3>'+
+  var h='<div class="panelHead" style="margin-top:14px"><h3 style="margin:0">'+esc(t('Application'))+(submitted?'':' · <span class="pill draft" style="font-size:11px">'+esc(t('draft'))+'</span>')+'</h3>'+
     (P.editAnswers ? '' : '<button class="linkbtn inline" id="editAnswers">'+esc(t('Edit'))+'</button>')+'</div>';
   if(P.editAnswers){
     (form.sections||[]).forEach(function(sec){ var qs=askedIn_(sec, c.audience); if(!qs.length) return; h+='<div class="eyebrow" style="margin-top:10px">'+esc(lt_(sec.title))+'</div>'+qs.map(function(q){ return questionHtml_(q, P.staffAnswers[q.id], 's_', false); }).join(''); });
     h+='<button class="btn small" id="saveAnswers"'+(P.busy?' disabled':'')+'>'+esc(t('Save answers'))+'</button> <button class="linkbtn inline" id="cancelAnswers">'+esc(t('Cancel'))+'</button>';
   } else if(Object.keys(answers).length){
-    h+='<input type="search" id="ansQ" placeholder="'+esc(t('Find in answers — a word, a name, a date'))+'" value="'+esc(P.ansQ||'')+'" style="margin:8px 0 6px">'+
+    h+='<input type="search" id="ansQ" placeholder="'+esc(t('Find in the application — a word, a name, a date'))+'" value="'+esc(P.ansQ||'')+'" style="margin:8px 0 6px">'+
       '<div id="ansBody">'+answersHtml_(form, answers, c.audience, { fold:true, q:P.ansQ })+'</div>';
   } else h+='<p class="sub" style="margin:0">'+esc(t('Nothing answered yet.'))+'</p>';
   return h;
@@ -3009,7 +3009,7 @@ function bindPanelExtras_(){
   on_('saveAnswers', function(){
     var saved=P.answers; P.answers=P.staffAnswers; readAnswers_(document.getElementById('panel')); P.staffAnswers=P.answers; P.answers=saved;
     P.busy=true; render();
-    run('portalStaffSaveAnswers', [P.auth.user, P.auth.pin, c.id, P.staffAnswers], function(d){ P.busy=false; if(putCand_(d)){ P.editAnswers=false; showMsg(t('Answers saved')); } render(); });
+    run('portalStaffSaveAnswers', [P.auth.user, P.auth.pin, c.id, P.staffAnswers], function(d){ P.busy=false; if(putCand_(d)){ P.editAnswers=false; showMsg(t('Application saved')); } render(); });
   });
 }
 

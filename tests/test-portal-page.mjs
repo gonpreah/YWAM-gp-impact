@@ -661,7 +661,7 @@ async function open(viewport, query, seed) {
   await page.waitForSelector('#panel');
   await ptab(page, 'answers');
   let pan = await page.$eval('#panel', e => e.textContent);
-  ok('the record panel shows the submitted answers under their questions', /Answers/.test(pan) && /Date of birth/.test(pan) && /1999-05-05/.test(pan) && /Long story/.test(pan) && /Music/.test(pan));
+  ok('the record panel shows the submitted answers under their questions', /Application/.test(pan) && /Date of birth/.test(pan) && /1999-05-05/.test(pan) && /Long story/.test(pan) && /Music/.test(pan));
   ok('the record is in tabs — a student has Overview, Documents, Legal, Answers and Notes, no trip or people', (await page.$$eval('[data-ptab]', b => b.map(x => x.getAttribute('data-ptab')).join())) === 'overview,docs,legal,answers,notes' && await page.$eval('[data-ptab="answers"]', b => b.classList.contains('on')));
   ok('each form section of the answers is a fold, the first one open, with how many are answered', (await page.$$('.ansFold')).length >= 2 && await page.$eval('.ansFold', d => d.open) && /\d+\/\d+/.test(await page.$eval('.ansFold summary .n', e => e.textContent)));
   await page.fill('#ansQ', 'music'); await page.waitForTimeout(120);
