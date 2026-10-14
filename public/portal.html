@@ -1227,7 +1227,7 @@ var TEAM_TYPE='team';
    🧭 Team strengths — the staff app's personality questionnaire, taken by
       everyone on the team, side by side.
    📚 Resources — the guides, emergency numbers and places to know. */
-var AVIEWS=[['status','📋','Application'],['team','👥','Our team'],['strengths','🧭','Strengths'],['metrics','📊','Metrics'],['resources','📚','Resources']];
+var AVIEWS=[['status','📋','Application'],['team','👥','Our team'],['strengths','🧭','Strengths'],['metrics','📊','Metrics'],['schedule','📅','Schedule'],['resources','📚','Resources']];
 function applicantNavHtml_(attr){
   attr=attr||'data-aview';
   var cur=P.aview||'status', app=P.boot && P.boot.application, team=app && app.type==='team';
@@ -1237,7 +1237,7 @@ function applicantNavHtml_(attr){
 }
 function meTabHtml_(){
   var v=P.aview||'status';
-  return v==='team' ? meetTeamHtml_() : v==='strengths' ? strengthsHtml_() : v==='resources' ? resourcesHtml_() : v==='metrics' ? metricsTabHtml_() : meHtml_();
+  return v==='team' ? meetTeamHtml_() : v==='strengths' ? strengthsHtml_() : v==='resources' ? resourcesHtml_() : v==='metrics' ? metricsTabHtml_() : v==='schedule' ? scheduleTabHtml_() : meHtml_();
 }
 /* ---- 📊 Team metrics: the team's outreach numbers, straight into the Teams Database ---- */
 function metricsTabHtml_(){
@@ -1538,7 +1538,6 @@ function meHtml_(){
   }).join('')+'</ol></div>';
   h+='</div><div>';
   h+=guideCardHtml_(app);
-  h+=schedulesCardHtml_();
   var submitted = !!app.submittedAt;
   var total = d.form ? askedAll_(d.form, app.audience).length : 0, done = d.form ? askedAll_(d.form, app.audience).filter(function(q){ return answered_(q, P.answers[q.id]); }).length : 0;
   h+='<div class="card"><div class="panelHead"><h3 style="margin-top:0">📝 '+esc(t('Application form'))+'</h3>'+(submitted?'<button class="linkbtn inline" id="viewAnswers">'+esc(P.showAnswers?t('Hide'):t('View my answers'))+'</button>':'')+'</div>'+
@@ -2332,19 +2331,32 @@ function membersCardHtml_(app){
   return h+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn small" id="saveMembers"'+(P.busy?' disabled':'')+'>'+esc(t('Save the list'))+'</button>'+
     '<button class="linkbtn inline" id="cancelMembers">'+esc(t('Cancel'))+'</button></div></div>';
 }
-function schedulesCardHtml_(){
-  var sc=P.boot && P.boot.schedules;
-  if(!sc || typeof dutyHtml!=='function') return '';
-  var kinds=[['kitchen','🍲',t('Cooking schedule')],['chores','🧹',t('Morning chores')]];
-  var h='<div class="card" id="teamSchedules"><h3 style="margin-top:0">📋 '+esc(t('This week at the base'))+'</h3>'+
-    '<p class="sub" style="margin:0 0 8px">'+esc(t('Who cooks, washes up and does the morning chores this week — your team’s names included.'))+'</p><div class="chips">'+
-    kinds.map(function(k){ return '<button class="chip'+(P.schedShow===k[0]?' on':'')+'" data-pschedshow="'+k[0]+'"'+(sc[k[0]]?'':' disabled')+'>'+k[1]+' '+esc(k[2])+(sc[k[0]]?'':' · '+esc(t('not out yet')))+'</button>'; }).join('')+'</div>';
-  var s=P.schedShow && sc[P.schedShow];
-  if(s){
-    h+='<div style="margin-top:10px">'+dutyHtml(s, { t:t, esc:esc })+'</div>'+
-      '<button class="btn small" id="pschedShare" style="margin-top:10px">📤 '+esc(t('Share as image'))+'</button>';
-  }
-  return h+'</div>';
+/* ---- 📅 Schedule: the base's cooking and morning chores, from the GP app ----
+   This week's and next week's once Culinary / Hospitality put them out, while
+   they are here (portalBoot's `schedules`, drawn by duty.js — on a phone the
+   cooking table reads day by day). Their own names are picked out. */
+function schedPick_(){
+  var sc=P.boot && P.boot.schedules; if(!sc || !sc.here) return null;
+  var nextOut=!!(sc.next && (sc.next.kitchen || sc.next.chores));
+  var wk = P.schedWeek==='next' && nextOut ? 'next' : 'now', box = wk==='next' ? sc.next : sc;
+  var kind = P.schedShow==='kitchen' || P.schedShow==='chores' ? P.schedShow : (box.kitchen ? 'kitchen' : box.chores ? 'chores' : 'kitchen');
+  return { sc:sc, wk:wk, box:box, kind:kind, s:box[kind]||null, nextOut:nextOut };
+}
+function schedRange_(week){ var e=dutyAddDays(week,6), m=function(iso){ return t(MONTH_SHORT_[Number(iso.slice(5,7))-1])+' '+Number(iso.slice(8,10)); }; return m(week)+' – '+m(e); }
+function scheduleTabHtml_(){
+  var h='<div class="wide"><div class="gateTitle"><h2>'+esc(t('Weekly schedule'))+'</h2><p class="sub">'+esc(t('Who cooks and who does the morning chores at the base — your names picked out.'))+'</p></div>';
+  var x=schedPick_();
+  if(!x || typeof dutyHtml!=='function') return h+'<div class="card" id="schedNotYet"><p class="sub" style="margin:0">📅 '+esc(t('The cooking and morning chores schedules show here while you are at the base, as soon as they are put out each week.'))+'</p></div></div>';
+  h+='<div class="card" id="pSchedule">';
+  if(x.nextOut) h+='<div class="seg" style="max-width:420px;margin:0 0 10px"><button data-pschedweek="now" class="'+(x.wk==='now'?'on':'')+'">'+esc(t('This week'))+' · '+esc(schedRange_(x.sc.week))+'</button><button data-pschedweek="next" class="'+(x.wk==='next'?'on':'')+'">'+esc(t('Next week'))+' · '+esc(schedRange_(x.sc.nextWeek))+'</button></div>';
+  else h+='<p class="sub" style="margin:0 0 8px">'+esc(gpT('Week of {a}',{a:schedRange_(x.sc.week)}))+'</p>';
+  h+='<div class="chips">'+[['kitchen','🍲',t('Cooking schedule')],['chores','🧹',t('Morning chores')]].map(function(k){
+    return '<button class="chip'+(x.kind===k[0]?' on':'')+'" data-pschedshow="'+k[0]+'">'+k[1]+' '+esc(k[2])+(x.box[k[0]]?'':' · '+esc(t('not out yet')))+'</button>'; }).join('')+'</div>';
+  if(!x.s) h+='<p class="sub" style="margin:12px 0 0">'+esc(x.kind==='kitchen' ? t('The cooking schedule for this week isn’t out yet.') : t('The morning chores for this week aren’t out yet.'))+'</p>';
+  else h+='<div style="margin-top:12px">'+(x.s.title?'<h3 style="margin:0 0 8px">'+esc(x.s.title)+'</h3>':'')+dutyHtml(x.s, { t:t, esc:esc, me:x.sc.mine||[] })+'</div>'+
+    (x.s.notes?'<p class="hint" style="white-space:pre-line">'+esc(x.s.notes)+'</p>':'')+
+    '<button class="btn small" id="pschedShare" style="margin-top:10px">📤 '+esc(t('Share as image'))+'</button>';
+  return h+'</div></div>';
 }
 function openMySign_(){ P.sign={ token:{ user:P.auth.user, pin:P.auth.pin }, inApp:true, data:null, who:null, under18:null, idx:0, form:{}, pads:{}, done:false }; P.view='sign'; render(); window.scrollTo(0,0); }
 function bindMembersAndSchedules_(){
@@ -2372,12 +2384,13 @@ function bindMembersAndSchedules_(){
       render();
     }, function(){ P.busy=false; showMsg(t('Connection problem — try again.')); render(); });
   });
-  document.querySelectorAll('[data-pschedshow]').forEach(function(b){ b.onclick=function(){ var k=b.getAttribute('data-pschedshow'); P.schedShow = P.schedShow===k ? null : k; render(); }; });
+  document.querySelectorAll('[data-pschedshow]').forEach(function(b){ b.onclick=function(){ P.schedShow=b.getAttribute('data-pschedshow'); render(); }; });
+  document.querySelectorAll('[data-pschedweek]').forEach(function(b){ b.onclick=function(){ P.schedWeek=b.getAttribute('data-pschedweek'); P.schedShow=null; render(); }; });
   on_('pschedShare', function(){
-    var sc=P.boot.schedules, s=sc && sc[P.schedShow]; if(!s) return;
+    var x=schedPick_(), s=x && x.s; if(!s) return;
     var e=dutyAddDays(s.week,6), m=function(iso){ return t(MONTH_SHORT_[Number(iso.slice(5,7))-1])+' '+Number(iso.slice(8,10)); };
     dutyImage(s, { t:t, weekLabel:gpT('Week of {a} – {b}',{a:m(s.week), b:m(e)+', '+e.slice(0,4)}) }).then(function(blob){
-      return dutyShare(blob, (P.schedShow==='kitchen'?'cooking-schedule-':'morning-chores-')+s.week+'.png', s.title);
+      return dutyShare(blob, (x.kind==='kitchen'?'cooking-schedule-':'morning-chores-')+s.week+'.png', s.title);
     }).then(function(how){ if(how==='downloaded') showMsg(t('Saved as a picture — send it from your photos or downloads.')); }, function(){ showMsg(t('Could not make the picture.')); });
   });
 }

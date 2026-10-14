@@ -37,6 +37,9 @@ function dutyAddDays(iso, n){ var d=new Date(iso+'T12:00:00'); d.setDate(d.getDa
     '.dutyGrid th.dutyRowHead{position:sticky;left:0;z-index:1;background:var(--surface2);text-align:left;min-width:108px;max-width:140px;font-weight:700}'+
     '.dutyGrid td{min-width:84px}'+
     '.dutyGrid td.off{background:var(--surface2)}'+
+    /* phones: the day-by-day view instead of the table (read only) */
+    '.dutyDays{display:none}'+
+    '@media (max-width:640px){.dutyGridWrap .dutyScroll{display:none}.dutyGridWrap .dutyDays{display:block}.dutyGridWrap .dutyDays .dutySec:first-child{margin-top:0}}'+
     '.dutyKm{display:block;font-size:11px;font-weight:600;color:var(--muted)}'+
     '.dutyTime{display:block;font-size:11px;font-weight:600;color:var(--muted)}'+
     /* a full name stays on one line ("Uriah Lyford", not Uriah / Lyford); the table scrolls sideways if it needs to */
@@ -46,18 +49,18 @@ function dutyAddDays(iso, n){ var d=new Date(iso+'T12:00:00'); d.setDate(d.getDa
     '.dutyCell{cursor:pointer}'+
     '.dutySec{font-weight:800;font-size:13px;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}'+
     '.dutyList{border:1px solid var(--border);border-radius:12px;background:var(--surface);overflow:hidden}'+
-    '.dutyItem{display:grid;grid-template-columns:1fr minmax(96px,auto);gap:10px;padding:10px 12px;border-top:1px solid var(--border);color:var(--ink);text-align:left;width:100%;background:none;border-left:0;border-right:0;border-bottom:0;font:inherit}'+
+    '.dutyItem{display:grid;grid-template-columns:minmax(0,1fr) fit-content(60%);gap:10px;padding:10px 12px;border-top:1px solid var(--border);color:var(--ink);text-align:left;width:100%;background:none;border-left:0;border-right:0;border-bottom:0;font:inherit}'+
     '.dutyItem:first-child{border-top:0}'+
     '.dutyPlace{font-weight:700;font-size:14px}'+
     '.dutyWhat{font-size:12.5px;color:var(--muted);margin-top:2px;white-space:pre-line}'+
-    '.dutyWho{font-size:13.5px;font-weight:700;text-align:right}'+
+    /* the names column takes what it needs up to 60%; past that the next name goes on the line below, never cut off */
+    '.dutyWho{font-size:13.5px;font-weight:700;text-align:right;min-width:0}'+
     '.dutyWho .dutyName.me{display:inline-block;margin-top:1px}'+
     '.dutyList.compact .dutyItem{padding:7px 12px;align-items:center}'+
     '.dutyList.compact .dutyPlace{font-size:13.5px;font-weight:600}'+
     '.dutyList.compact .dutyWho{font-size:13px}'+
     '.dutyList.compact .dutyWho .dutyName{display:inline}'+
-    '.dutyList.compact .dutyWho .dutyName+.dutyName:before{content:", "}'+
-    '.dutyList.compact .dutyWho .dutyName.me+.dutyName:before,.dutyList.compact .dutyWho .dutyName+.dutyName.me:before{content:" "}';
+    '.dutyList.compact .dutyWho .dutyName:not(:last-child):after{content:","}';
   document.head.appendChild(st);
 })();
 
@@ -68,7 +71,8 @@ function dutyHtml(s, o){
   var t=o.t, esc=o.esc;
   var names=function(list, attr){
     var l=list||[];
-    var inner = l.length ? l.map(function(n){ return '<span class="dutyName'+(dutyIsMe_(n, o.me)?' me':'')+'">'+esc(n)+'</span>'; }).join('')
+    // a space between names: the line can break there, and only there (a name is never split)
+    var inner = l.length ? l.map(function(n){ return '<span class="dutyName'+(dutyIsMe_(n, o.me)?' me':'')+'">'+esc(n)+'</span>'; }).join(' ')
       : (o.edit ? '<span class="dutyEmpty">＋</span>' : '');
     return inner;
   };
@@ -90,7 +94,23 @@ function dutyHtml(s, o){
       });
       h+='</tr>';
     });
-    return h+'</tbody></table></div>';
+    h+='</tbody></table></div>';
+    /* On a phone the week's table is wider than the screen and names were cut
+       off at the edge (Uriah, Oct 2026): there it reads day by day instead —
+       each meal with its names under one another, nothing off the side. The
+       table stays for wider screens, the picture, and whoever is editing. */
+    if(o.edit) return h;
+    var hasNames=function(l){ return (l||[]).length>0; };
+    var item=function(r, list){ return '<div class="dutyItem"><div><div class="dutyPlace">'+esc(r.label)+(r.km?' <span class="dutyKm" style="display:inline">'+esc(r.km)+'</span>':'')+'</div>'+(r.time?'<div class="dutyWhat">'+esc(r.time)+'</div>':'')+'</div>'+
+      '<div class="dutyWho">'+(hasNames(list) ? names(list) : '<span class="dutyEmpty">—</span>')+'</div></div>'; };
+    var days='<div class="dutyDays" data-duty="days">', spans=s.rows.filter(function(r){ return r.span; });
+    if(spans.length) days+='<div class="dutySec">'+esc(t('Every day'))+'</div><div class="dutyList">'+spans.map(function(r){ return item(r, s.cells[r.id+'|all']); }).join('')+'</div>';
+    s.days.forEach(function(d){
+      var rows=s.rows.filter(function(r){ return !r.span && (r.off||[]).indexOf(d)===-1; });
+      if(!rows.length) return;
+      days+='<div class="dutySec" data-dutyday="'+d+'">'+esc(t(DUTY_DAY_NAMES[d]))+'</div><div class="dutyList">'+rows.map(function(r){ return item(r, s.cells[r.id+'|'+d]); }).join('')+'</div>';
+    });
+    return '<div class="dutyGridWrap">'+h+days+'</div></div>';
   }
   var out='';
   (s.sections||[]).forEach(function(sec){

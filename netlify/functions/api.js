@@ -4691,6 +4691,22 @@ async function dutyPublished_(campus, week) {
   Object.keys(DUTY_KINDS).forEach(function (k) { const r = d[k].weeks[week]; out[k] = r && r.published ? dutyOut_(r, week, k) : null; });
   return out;
 }
+/* The base's weekly schedules for an applicant — the portal's 📅 Schedule tab:
+   this week's and next week's, once published, while they are here (arrived,
+   or a team whose dates in Cambodia take in this week or next — not before,
+   it would only confuse). mine: the names to pick out — theirs, or everyone
+   on the team. */
+async function applicantSchedules_(cand, trip) {
+  const wk = dutyThisWeek_(), nx = addDays_(wk, 7), end = addDays_(nx, 6);
+  const here = !cand.archived && (cand.stage === 'arrived' || !!(trip && trip.from && trip.to && trip.from <= end && trip.to >= wk));
+  const out = { here: here, week: wk, nextWeek: nx, kitchen: null, chores: null, next: { kitchen: null, chores: null }, mine: [] };
+  if (!here) return out;
+  const campus = cand.campus || PORTAL_DEFAULT_CAMPUS;
+  Object.assign(out, await dutyPublished_(campus, wk));
+  out.next = await dutyPublished_(campus, nx);
+  out.mine = cand.type === 'team' ? teamPeople_(cand).map(function (p) { return p.name; }) : [str_(cand.name, 120)].filter(Boolean);
+  return out;
+}
 async function getMySchedules(username, pin, week) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
@@ -6386,9 +6402,8 @@ async function portalBoot(username, pin) {
       const trip = (await linkedTrip_(cand)) || (!cand.archived ? await syncTeamTrip_(cand, s.id) : null);
       out.application.trip = teamTripOut_(trip);
       out.metricOverrides = (await getMetricOverrides_()).filter(function (o) { return o.dept === TEAM_DEPT && o.ministry === TEAM_MIN; });
-      // the base's weekly schedules, once the team is here (not before — it would only confuse)
-      if (cand.stage === 'arrived' && !cand.archived) { const wk = dutyThisWeek_(); out.schedules = Object.assign({ week: wk }, await dutyPublished_(cand.campus || PORTAL_DEFAULT_CAMPUS, wk)); }
-    }
+      out.schedules = await applicantSchedules_(cand, trip);
+    } else out.schedules = await applicantSchedules_(cand, null);
     return out;
   }
   if (!canPortal_(s)) return { ok: false, err: 'not_authorized' };
@@ -6774,7 +6789,9 @@ async function portalViewAs(username, pin, opts) {
       referenceDone: idx >= portalStageIdx_('interview'), references: idx >= portalStageIdx_('interview') ? [{ id: 'ref_sample', usedAt: now, leaderName: 'Sample Leader', createdAt: now }] : [] },
     log: [], archived: null, created: now, updated: now };
   const me = { id: 'preview', name: cand.name, username: 'sample', email: cand.email, phone: cand.phone, messenger: 'whatsapp', country: cand.country, campus: campus, type: type, school: school };
-  return { ok: true, preview: 'sample', role: 'applicant', me: me, application: portalAppOut_(cand), form: forms[formKeyOf_(cand)], strengths: strengthsOut_(cand, { people: {} }) };
+  /* View as applicant shows this week's real schedules, as someone here would see them */
+  const schedules = await applicantSchedules_(Object.assign({}, cand, { stage: 'arrived' }), null);
+  return { ok: true, preview: 'sample', role: 'applicant', me: me, application: portalAppOut_(cand), form: forms[formKeyOf_(cand)], strengths: strengthsOut_(cand, { people: {} }), schedules: schedules };
 }
 /* ==================== the leader reference ====================
    International applicants (and every staff / volunteer applicant) send one

@@ -728,8 +728,19 @@ names, a `span` row (Pray – Announcements) has one `cells['row|all']`, `off` d
   for Culinary / Hospitality has the way in (`#goSchedEdit`).
 - **Portal**: a team lists its members (`portalSaveTeamMembers` → `portal.members`, name +
   man / woman; "👥 Your team members" card; staff see them on the record). Once the team has
-  **arrived**, `portalBoot` carries `schedules` (this week's published ones) and the
-  dashboard shows "📋 This week at the base" with Share as image — never before arrival.
+  arrived they are on the schedules. Every applicant has a **📅 Schedule** tab (`AVIEWS`
+  'schedule', `scheduleTabHtml_` / `schedPick_`): `portalBoot.schedules` (`applicantSchedules_`) =
+  `{here, week, nextWeek, kitchen, chores, next:{kitchen, chores}, mine}` — published weeks only,
+  and only while they are here (stage arrived, or a team whose dates take in this week or next);
+  `mine` (their name, or the whole team's) is picked out. This week / Next week (once out),
+  Cooking / Morning chores, Share as image; before they are here it says when it will show. View
+  as applicant gets this week's real schedules. (Oct 2026: replaces the "This week at the base"
+  card on the dashboard.)
+- **Phones (Oct 2026)**: when not editing, `dutyHtml` draws the cooking grid twice — the table and
+  a day-by-day list (`.dutyDays`, "Every day" for span rows); under 640px only the day list shows,
+  so no name is cut off at the screen edge. In the chores list the names column is
+  `fit-content(60%)` and names are joined with a space (the comma comes from CSS), so a name is
+  never split and the next one goes underneath instead of being cut off.
 - **Oct 2026 (Uriah)**: names on the schedules are **full names** (`dutyShortNames_` now returns
   the full name; older weeks hold the first-name form, and `schedMyName_` answers both so
   `dutyIsMe_` matches either — `me` may be a list). **Campus staff and YAP are one group**

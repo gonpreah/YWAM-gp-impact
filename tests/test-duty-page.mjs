@@ -109,15 +109,23 @@ console.log('=== everyone: My Home, the menu, reading, the picture ===');
   ok('the schedule opens on the week of 4 October', /Oct 4 – Oct 10/.test(await page.$eval('#schedWeek', e => e.textContent)));
   const grid = await page.evaluate(() => ({
     heads: [].map.call(document.querySelectorAll('.dutyGrid thead th'), th => th.textContent),
-    me: [].map.call(document.querySelectorAll('.dutyName.me'), x => x.textContent),
+    me: [].map.call(document.querySelectorAll('.dutyGrid .dutyName.me'), x => x.textContent),
     span: (document.querySelector('.dutyGrid tbody tr:nth-child(2) td[colspan]') || {}).colSpan,
     off: document.querySelectorAll('.dutyGrid td.off').length,
   }));
   ok('a table, Sunday to Friday', grid.heads.join() === 'Time,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday', grid.heads.join());
   ok('my name stands out', grid.me.join() === 'Kim,Kim');
   ok('Pray – Announcements spans the week; Sunday’s off boxes are shaded', grid.span === 5 && grid.off === 2, JSON.stringify(grid));
-  const full = await page.evaluate(() => { const n = [].filter.call(document.querySelectorAll('.dutyName'), x => x.textContent === 'Uriah Lyford')[0]; return n ? { h: n.getBoundingClientRect().height, lh: parseFloat(getComputedStyle(n).lineHeight) } : null; });
-  ok('a full name stays on one line — “Uriah Lyford”, not Uriah over Lyford', full && full.h < full.lh * 1.5, JSON.stringify(full));
+  const phone = await page.evaluate(() => {
+    const days = document.querySelector('.dutyDays'), table = document.querySelector('.dutyScroll');
+    const vis = [].filter.call(document.querySelectorAll('.dutyDays .dutyName'), n => n.getBoundingClientRect().width > 0);
+    const uriah = vis.filter(n => n.textContent === 'Uriah Lyford')[0];
+    return { days: days && getComputedStyle(days).display, table: table && getComputedStyle(table).display, sundayFirst: (document.querySelector('.dutyDays [data-dutyday]') || {}).textContent,
+      allIn: vis.length > 0 && vis.every(n => { const b = n.getBoundingClientRect(); return b.left >= 0 && b.right <= innerWidth; }),
+      uriahOneLine: !!uriah && uriah.getBoundingClientRect().height < parseFloat(getComputedStyle(uriah).lineHeight) * 1.5 };
+  });
+  ok('on a phone the cooking schedule reads day by day, not a table cut off at the edge', phone.days === 'block' && phone.table === 'none', JSON.stringify(phone));
+  ok('… every name shows in full, inside the screen — “Uriah Lyford” on one line', phone.allIn && phone.uriahOneLine, JSON.stringify(phone));
   ok('the table scrolls inside its card, not the page', !(await overflow(page)));
   ok('someone outside Culinary has no Edit', !(await page.$('#schedEditBtn')));
   const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }).catch(() => null), page.click('#schedShare')]);
@@ -213,7 +221,7 @@ console.log('=== desktop ===');
   const { ctx, page, errors } = await open(KIM, { viewport: { width: 1280, height: 900 } });
   await page.waitForSelector('#schedHome [data-schedopen]', { timeout: 15000 });
   await page.click('[data-schedopen="kitchen"]'); await page.waitForTimeout(400);
-  ok('desktop: the table fits without a sideways page scroll', !!(await page.$('.dutyGrid')) && !(await overflow(page)));
+  ok('desktop: the week as a table, without a sideways page scroll', await page.$eval('.dutyScroll', e => getComputedStyle(e).display) !== 'none' && await page.$eval('.dutyDays', e => getComputedStyle(e).display) === 'none' && !(await overflow(page)));
   ok('no errors (desktop)', errors.length === 0, errors.join(' | '));
   await ctx.close();
 }
@@ -228,7 +236,7 @@ console.log('=== the morning chores at a glance ===');
   const mine = await page.$eval('#schedMine', e => e.textContent.replace(/\s+/g, ' '));
   ok('at the top: my chore, what to do, and who I am with', /Your chore this week/.test(mine) && /Rooftop/.test(mine) && /Sweep and mop the rooftop/.test(mine) && /With Hana/.test(mine), mine);
   const rows = await page.$$eval('.dutyItem', r => r.map(x => x.querySelector('.dutyPlace').textContent + ' = ' + x.querySelector('.dutyWho').textContent));
-  ok('the list is one line a chore with the names beside it — no “what to do” in the way', rows.join(' | ') === 'Stairs 1–4 = Kara | Rooftop = KimHana | Plants = ' && (await page.$$('.dutyWhat')).length === 0 && await page.$eval('.dutyList', e => e.classList.contains('compact')), rows.join(' | '));
+  ok('the list is one line a chore with the names beside it — no “what to do” in the way', rows.join(' | ') === 'Stairs 1–4 = Kara | Rooftop = Kim Hana | Plants = ' && (await page.$$('.dutyWhat')).length === 0 && await page.$eval('.dutyList', e => e.classList.contains('compact')), rows.join(' | '));
   await page.click('#schedDetails'); await page.waitForTimeout(200);
   ok('“Show what to do” brings the descriptions back', (await page.$$('.dutyWhat')).length === 3);
   await page.click('#schedDetails'); await page.click('[data-schedonly="1"]'); await page.waitForTimeout(200);

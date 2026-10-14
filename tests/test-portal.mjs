@@ -1158,5 +1158,23 @@ console.log('\n=== deleting a team cancels it in the Teams Database ===');
   ok('the team’s row is kept but cancelled, so it stops counting and SR Hospitality shows any booked beds as cancelled', r.body.ok === true && tr && tr.status === 'cancelled' && !mem.candidates.some(c => c.id === 'cd_del'));
 }
 
+console.log('\n=== the weekly schedules, for applicants who are here ===');
+{
+  const thisWeek = (() => { const d = new Date(Date.now() + 7 * 3600000); d.setUTCHours(0, 0, 0, 0); d.setUTCDate(d.getUTCDate() - d.getUTCDay()); return d.toISOString().slice(0, 10); })();
+  const annaCand = mem.candidates.find(c => c.staffId === (mem.staff.find(x => x.username === 'anna.b') || {}).id);
+  const campus = annaCand.campus || 'siemreap';
+  mem['duty:' + campus] = { kitchen: { weeks: { [thisWeek]: { layout: 'grid', title: 'Cooking', days: ['mon'], rows: [{ id: 'bf', label: 'Breakfast', off: [], span: false }], cells: { 'bf|mon': [annaCand.name] }, published: true } }, extras: [] },
+    chores: { weeks: { [thisWeek]: { layout: 'list', title: 'Chores', sections: [{ id: 's', title: 'Base', rows: [{ id: 'r', place: 'Rooftop', duty: '', people: ['Somebody'] }] }], published: false } }, extras: [] } };
+  const stage0 = annaCand.stage, arch0 = annaCand.archived;
+  annaCand.stage = 'applied'; annaCand.archived = null;
+  r = await call('portalBoot', ['anna.b', '2468']);
+  ok('before they are here, an applicant gets no schedules — just that they are not here yet', r.body.ok && r.body.schedules && r.body.schedules.here === false && !r.body.schedules.kitchen);
+  annaCand.stage = 'arrived';
+  r = await call('portalBoot', ['anna.b', '2468']);
+  ok('once arrived: this week’s published cooking schedule, with their own name to pick out', r.body.schedules.here === true && r.body.schedules.kitchen && r.body.schedules.kitchen.cells['bf|mon'][0] === annaCand.name && r.body.schedules.mine.includes(annaCand.name), JSON.stringify(r.body.schedules && r.body.schedules.mine));
+  ok('… a draft is not shown', r.body.schedules.chores === null);
+  annaCand.stage = stage0; annaCand.archived = arch0;
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
