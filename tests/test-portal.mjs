@@ -388,7 +388,7 @@ console.log('=== the portal as a tool: meet our team, team strengths, resources 
   let r = await call('portalMeetTeam', ['tool.team', '2468']);
   ok('Meet our team: the campus staff and YAP of the applicant’s campus, as one list — no ministry staff, nobody inactive, nobody from Poipet, no applicants',
     r.body && r.body.ok && r.body.campus === 'siemreap' && r.body.staff.map(x => x.name).join('|') === 'Chan Campus|Yan Yap' && r.body.staff[0].hasPhoto === true && r.body.staff[1].hasPhoto === false, JSON.stringify(r.body && r.body.staff));
-  ok('… only a name, role, ministry and department leave — no username, email or phone', r.body && Object.keys(r.body.staff[0]).sort().join() === 'dept,edited,hasPhoto,id,ministry,name,role');
+  ok('… only a name, role, ministry and department leave — no username, email or phone', r.body && Object.keys(r.body.staff[0]).sort().join() === 'dept,edited,hasPhoto,hidden,id,ministry,name,role');
   r = await call('portalStaffPhoto', ['tool.team', '2468', 'st_cs1']);
   ok('a staff photo comes one at a time', r.body && r.body.ok && r.body.photo === 'data:image/jpeg;base64,/9j/AAAA');
   r = await call('portalStaffPhoto', ['tool.team', '2468', 'st_min1']);
@@ -473,6 +473,27 @@ console.log('=== the portal as a tool: meet our team, team strengths, resources 
   ok('portal staff who are not admins cannot', r.body && r.body.ok === false && r.body.err === 'not_authorized');
   r = await call('portalSaveStaffCard', ['tool.team', '2468', 'st_cs1', { role: 'x' }]);
   ok('… nor an applicant', r.body && r.body.ok === false && r.body.err === 'not_authorized' && mem.portalTeamCards.cards.st_cs1.role === 'Head host');
+  r = await call('portalMeetTeam', ['tool.team', '2468']);
+  const chan = r.body.staff.find(x => x.id === 'st_cs1');
+  ok('a role written in the portal shows on its own — not the GP app’s ministry beside it', chan.role === 'Head host' && chan.ministry === '' && chan.dept === '');
+  r = await call('portalSaveStaffCard', ['sina', '1234', '', { name: 'Visiting Teacher', role: 'Guest teacher' }]);
+  const vt = r.body.staff;
+  ok('a portal admin adds someone who isn’t in the GP app: a name and a role', r.body.ok && /^pc_/.test(vt.id) && vt.name === 'Visiting Teacher' && vt.role === 'Guest teacher' && vt.custom === true && !mem.staff.some(x => x.name === 'Visiting Teacher'));
+  r = await call('portalSaveStaffCard', ['sina', '1234', '', { role: 'no name' }]);
+  ok('… a name is needed', r.body.ok === false && r.body.err === 'name_required');
+  r = await call('portalMeetTeam', ['tool.team', '2468']);
+  ok('… and applicants see them', r.body.staff.some(x => x.id === vt.id && x.name === 'Visiting Teacher'));
+  r = await call('portalSaveStaffCard', ['sina', '1234', 'st_cs1', { hidden: true }]);
+  ok('a card can be hidden from applicants', r.body.ok && r.body.staff.hidden === true);
+  r = await call('portalMeetTeam', ['tool.team', '2468']);
+  ok('… applicants no longer see it', !r.body.staff.some(x => x.id === 'st_cs1'));
+  r = await call('portalMeetTeam', ['sina', '1234']);
+  ok('… the admin still does, marked hidden', r.body.staff.find(x => x.id === 'st_cs1').hidden === true);
+  r = await call('portalSaveStaffCard', ['sina', '1234', 'st_cs1', { hidden: false }]);
+  r = await call('portalSaveStaffCard', ['dara', '1234', '', { name: 'Not Allowed' }]);
+  ok('only a portal admin adds people', r.body.ok === false && r.body.err === 'not_authorized');
+  r = await call('portalSaveStaffCard', ['sina', '1234', vt.id, { remove: true }]);
+  ok('someone added by hand can be removed', r.body.ok && r.body.removed === vt.id && !(mem.portalTeamCards.extra || []).some(x => x.id === vt.id));
 
   /* the preview carries the strengths so staff can see every tab */
   r = await call('portalViewAs', ['sina', '1234', { candidateId: 'cd_tool' }]);

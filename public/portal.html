@@ -130,6 +130,7 @@ textarea { min-height:80px; resize:vertical; }
 .meetName { font-weight:600; font-size:14.5px; }
 .meetRole { font-size:12px; color:var(--muted); margin-top:2px; line-height:1.35; }
 .meetCard.editing { text-align:left; grid-column:1 / -1; }
+.meetCard.meetHidden { opacity:.55; border-style:dashed; }
 .meetCard.editing .meetPhoto { margin-bottom:8px; }
 .meetBtns { display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:center; }
 .meetCard.editing input[type=text] { width:100%; }
@@ -1276,22 +1277,29 @@ function meetPhotoHtml_(s){
    drops it. */
 function teamAdminHtml_(){
   var d=P.meet;
-  var h='<div class="wide"><div class="panelHead"><div><h1 style="font-size:28px">👥 '+esc(t('Our team'))+'</h1><p class="sub">'+esc(t('What applicants see under Our team: the campus staff and YAP of your campus, filled in from the GP app. Fix a name or role or change a photo here — it stays in the portal and never changes the GP app.'))+'</p></div></div>';
+  var h='<div class="wide"><div class="panelHead"><div><h1 style="font-size:28px">👥 '+esc(t('Our team'))+'</h1><p class="sub">'+esc(t('What applicants see under Our team. It starts from the campus staff and YAP in the GP app; write the names and roles as you want them shown, add someone, hide someone, or change a photo — it stays in the portal and never changes the GP app.'))+'</p></div></div>';
   if(!d) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div></div>';
-  if(!(d.staff||[]).length) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Nobody yet — in the GP app, set who is campus staff or YAP and they appear here.'))+'</p></div></div>';
   var e=P.teamEdit||{};
-  h+='<div class="meetGrid">'+d.staff.map(function(s){
-    var ph=P.staffPhotos[s.id], editing=e.id===s.id;
-    if(!editing) return '<div class="meetCard" data-meetcard="'+esc(s.id)+'">'+meetPhotoHtml_(s)+'<div class="meetName">'+esc(s.name)+'</div><div class="meetRole">'+esc(meetRole_(s))+'</div>'+
-      '<button type="button" class="linkbtn inline" data-meetedit="'+esc(s.id)+'" style="margin-top:6px">✏️ '+esc(t('Edit'))+'</button></div>';
-    return '<div class="meetCard editing" data-meetcard="'+esc(s.id)+'">'+meetPhotoHtml_(s)+
-      '<div class="meetBtns"><button type="button" class="camBtn" id="meetPhotoBtn">📷 '+esc(ph ? t('Change the photo') : t('Add a photo'))+'</button>'+(ph ? '<button type="button" class="linkbtn inline danger" id="meetPhotoDel">'+esc(t('Remove'))+'</button>' : '')+'</div>'+
-      '<input type="file" accept="image/*" id="meetPhotoInput" hidden>'+
+  h+='<div class="meetBtns" style="margin:0 0 12px"><button type="button" class="btn small" id="meetAdd">＋ '+esc(t('Add someone'))+'</button></div>';
+  if(!(d.staff||[]).length && !(P.teamEdit && !e.id)) h+='<div class="card"><p class="sub" style="margin:0">'+esc(t('Nobody yet — add someone, or in the GP app set who is campus staff or YAP.'))+'</p></div>';
+  var editForm=function(s){
+    var ph=s && P.staffPhotos[s.id], isNew=!s;
+    return '<div class="meetCard editing" data-meetcard="'+esc(s ? s.id : 'new')+'">'+(s ? meetPhotoHtml_(s) : '')+
+      (s ? '<div class="meetBtns"><button type="button" class="camBtn" id="meetPhotoBtn">📷 '+esc(ph ? t('Change the photo') : t('Add a photo'))+'</button>'+(ph ? '<button type="button" class="linkbtn inline danger" id="meetPhotoDel">'+esc(t('Remove'))+'</button>' : '')+'</div>'+
+        '<input type="file" accept="image/*" id="meetPhotoInput" hidden>' : '<p class="hint" style="margin:0 0 6px">'+esc(t('Someone who isn’t in the GP app. Add a photo after saving.'))+'</p>')+
       '<label class="f">'+esc(t('Full name'))+'</label><input type="text" id="meet_name" maxlength="120" value="'+esc(e.name||'')+'">'+
       '<label class="f">'+esc(t('Role'))+'</label><input type="text" id="meet_role" maxlength="80" value="'+esc(e.role||'')+'" placeholder="'+esc(t('e.g. Host, Cook, YAP'))+'">'+
-      (s.ministry ? '<p class="hint" style="margin:6px 0 0">'+esc(gpT('Ministry: {name} — from the GP app.',{name:s.ministry}))+'</p>' : '')+
-      (s.edited ? '<p class="hint" style="margin:6px 0 0">✏️ '+esc(t('Changed here in the portal.'))+' <button type="button" class="linkbtn inline" id="meetReset">'+esc(t('Back to the GP app’s details'))+'</button></p>' : '')+
-      '<div class="meetBtns" style="margin-top:10px"><button type="button" class="btn small" id="meetSave"'+(P.busy?' disabled':'')+'>'+esc(P.busy ? t('Saving…') : t('Save'))+'</button><button type="button" class="linkbtn inline" id="meetCancel">'+esc(t('Cancel'))+'</button></div></div>';
+      '<p class="hint" style="margin:6px 0 0">'+esc(t('Applicants see the name and role exactly as you write them here.'))+'</p>'+
+      '<div class="meetBtns" style="margin-top:10px"><button type="button" class="btn small" id="meetSave"'+(P.busy?' disabled':'')+'>'+esc(P.busy ? t('Saving…') : (isNew ? t('Add') : t('Save')))+'</button><button type="button" class="linkbtn inline" id="meetCancel">'+esc(t('Cancel'))+'</button></div>'+
+      (s ? '<div class="meetBtns" style="margin-top:8px"><button type="button" class="linkbtn inline" id="meetHide">'+esc(s.hidden ? '👁 '+t('Show to applicants again') : '🙈 '+t('Hide from applicants'))+'</button>'+
+        (s.custom ? '<button type="button" class="linkbtn inline danger" id="meetRemove">'+esc(t('Remove this person'))+'</button>'
+          : s.edited ? '<button type="button" class="linkbtn inline" id="meetReset">'+esc(t('Back to the GP app’s details'))+'</button>' : '')+'</div>' : '')+'</div>';
+  };
+  h+='<div class="meetGrid">'+(P.teamEdit && !e.id ? editForm(null) : '')+(d.staff||[]).map(function(s){
+    if(e.id===s.id) return editForm(s);
+    return '<div class="meetCard'+(s.hidden?' meetHidden':'')+'" data-meetcard="'+esc(s.id)+'">'+meetPhotoHtml_(s)+'<div class="meetName">'+esc(s.name)+'</div><div class="meetRole">'+esc(meetRole_(s))+'</div>'+
+      (s.hidden ? '<div class="hint" data-meethidden>🙈 '+esc(t('Hidden from applicants'))+'</div>' : '')+
+      '<button type="button" class="linkbtn inline" data-meetedit="'+esc(s.id)+'" style="margin-top:6px">✏️ '+esc(t('Edit'))+'</button></div>';
   }).join('')+'</div>';
   return h+'</div>';
 }
@@ -1299,17 +1307,26 @@ function bindTeamAdmin_(){
   if(P.view!=='team' || !P.meet) return;
   document.querySelectorAll('[data-meetedit]').forEach(function(b){ b.onclick=function(){ var s=(P.meet.staff||[]).filter(function(x){ return x.id===b.getAttribute('data-meetedit'); })[0]; if(s){ P.teamEdit={ id:s.id, name:s.name, role:s.role||'' }; render(); } }; });
   on_('meetCancel', function(){ P.teamEdit=null; render(); });
+  on_('meetAdd', function(){ P.teamEdit={ id:'', name:'', role:'' }; render(); var n=document.getElementById('meet_name'); if(n) n.focus(); });
   var keep=function(){ var n=document.getElementById('meet_name'), r=document.getElementById('meet_role'); if(n) P.teamEdit.name=n.value; if(r) P.teamEdit.role=r.value; };
   var save=function(patch, done){
     P.busy=true; render();
     run('portalSaveStaffCard', [P.auth.user, P.auth.pin, P.teamEdit.id, patch], function(d){
       P.busy=false;
-      if(d && d.ok){ P.meet.staff=(P.meet.staff||[]).map(function(x){ return x.id===d.staff.id ? d.staff : x; }); P.staffPhotos[d.staff.id]=d.photo||''; if(done) done(d); showMsg(t('Saved')); }
+      if(d && d.ok && d.removed){ P.meet.staff=(P.meet.staff||[]).filter(function(x){ return x.id!==d.removed; }); if(done) done(d); showMsg(t('Removed')); }
+      else if(d && d.ok){ var had=(P.meet.staff||[]).some(function(x){ return x.id===d.staff.id; });
+        P.meet.staff = had ? P.meet.staff.map(function(x){ return x.id===d.staff.id ? d.staff : x; }) : (P.meet.staff||[]).concat([d.staff]);
+        P.staffPhotos[d.staff.id]=d.photo||''; if(done) done(d); showMsg(had ? t('Saved') : t('Added — you can add a photo now.')); }
       else showMsg(d && d.err==='too_large' ? t('That photo is too big — try again.') : d && d.err==='name_required' ? t('Add the full name.') : d && d.err==='not_authorized' ? t('Only a portal admin can do this') : t('Could not save — try again.'));
       render();
     }, function(){ P.busy=false; showMsg(t('Connection problem — try again.')); render(); });
   };
-  on_('meetSave', function(){ keep(); if(!String(P.teamEdit.name||'').trim()){ showMsg(t('Add the full name.')); return; } save({ name:P.teamEdit.name.trim(), role:String(P.teamEdit.role||'').trim() }, function(){ P.teamEdit=null; }); });
+  on_('meetSave', function(){ keep(); if(!String(P.teamEdit.name||'').trim()){ showMsg(t('Add the full name.')); return; }
+    var isNew=!P.teamEdit.id;
+    /* a new person stays open after adding, so a photo can go on */
+    save({ name:P.teamEdit.name.trim(), role:String(P.teamEdit.role||'').trim() }, function(d){ P.teamEdit = isNew ? { id:d.staff.id, name:d.staff.name, role:d.staff.role } : null; }); });
+  on_('meetHide', function(){ var s=(P.meet.staff||[]).filter(function(x){ return x.id===P.teamEdit.id; })[0]; if(!s) return; keep(); save({ hidden:!s.hidden }); });
+  on_('meetRemove', function(){ if(!confirm(t('Remove this person from Our team?'))) return; save({ remove:true }, function(){ P.teamEdit=null; }); });
   var inp=document.getElementById('meetPhotoInput');
   on_('meetPhotoBtn', function(){ keep(); if(inp) inp.click(); });
   if(inp) inp.onchange=function(){ var f=inp.files && inp.files[0]; inp.value=''; if(!f) return; keep(); shrinkPhoto_(f, 384).then(function(b64){ save({ photo:b64 }); }, function(){ showMsg(t('That file is not a photo.')); }); };

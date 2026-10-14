@@ -5984,23 +5984,36 @@ async function portalSetPassword(username, pin, newPassword) {
 async function portalMeetTeam(username, pin) {
   const s = await verifyStaff_(username, pin, true);
   if (!s) return { ok: false, err: 'auth' };
-  const campus = s.campus || PORTAL_DEFAULT_CAMPUS;
-  const cards = await getTeamCards_();
+  const campus = s.campus || PORTAL_DEFAULT_CAMPUS, admin = isPortalAdmin_(s);
+  const blob = await getTeamBlob_(), cards = blob.cards;
   const list = (await getStaff_()).filter(function (r) {
     const st = cleanStaffType_(r.staffType);
     return r && r.active !== false && !r.archived && !isApplicant_(r) && r.campus === campus && (st === 'campus' || st === 'yap');
-  }).map(function (r) { return meetCard_(r, cards[r.id]); }).sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
-  return { ok: true, campus: campus, staff: list, canEdit: isPortalAdmin_(s) };
+  }).map(function (r) { return meetCard_(r, cards[r.id]); })
+    .concat(blob.extra.filter(function (c) { return c.campus === campus; }).map(meetExtraCard_))
+    .filter(function (c) { return admin || !c.hidden; })   // hidden ones only for the admin
+    .sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
+  return { ok: true, campus: campus, staff: list, canEdit: admin };
 }
 /* The card: the GP app's staff record fills it in, and whatever a portal admin
    changed on top (the 'portalTeamCards' blob, by staff id) wins — the GP app
    itself never sees those changes. */
 function meetCard_(r, ov) {
   ov = ov || {};
-  return { id: r.id, name: ov.name || r.name, role: ov.role !== undefined ? ov.role : (r.role || ''), ministry: r.ministry || '', dept: deptOf_(r) || '', hasPhoto: !!meetPhoto_(r, ov), edited: !!(ov.name || ov.role !== undefined || ov.photo !== undefined) };
+  /* a role written in the portal is shown as written — nothing from the GP app beside it */
+  const own = ov.role !== undefined;
+  return { id: r.id, name: ov.name || r.name, role: own ? ov.role : (r.role || ''), ministry: own ? '' : (r.ministry || ''), dept: own ? '' : (deptOf_(r) || ''), hidden: !!ov.hidden, hasPhoto: !!meetPhoto_(r, ov), edited: !!(ov.name || ov.role !== undefined || ov.photo !== undefined) };
 }
 function meetPhoto_(r, ov) { return ov && ov.photo !== undefined ? ov.photo : (r.photo || ''); }
-async function getTeamCards_() { const b = await readJSON('portalTeamCards', { cards: {} }); return (b && b.cards) || {}; }
+async function getTeamCards_() { return (await getTeamBlob_()).cards; }
+/* 'portalTeamCards': { cards: { <staffId>: changes }, extra: [people added by hand] } */
+async function getTeamBlob_() {
+  const b = (await readJSON('portalTeamCards', { cards: {} })) || {};
+  return { cards: b.cards && typeof b.cards === 'object' ? b.cards : {}, extra: Array.isArray(b.extra) ? b.extra : [] };
+}
+/* someone a portal admin added by hand — not in the GP app at all */
+function meetExtraCard_(c) { return { id: c.id, name: c.name, role: c.role || '', ministry: '', dept: '', hidden: !!c.hidden, hasPhoto: !!c.photo, edited: true, custom: true }; }
+const MEET_EXTRA_MAX = 60;
 function meetStaffOk_(r, s) {
   const st = r && cleanStaffType_(r.staffType);
   return !!(r && r.active !== false && !r.archived && !isApplicant_(r) && r.campus === (s.campus || PORTAL_DEFAULT_CAMPUS) && (st === 'campus' || st === 'yap'));
@@ -6008,9 +6021,14 @@ function meetStaffOk_(r, s) {
 async function portalStaffPhoto(username, pin, staffId) {
   const s = await verifyStaff_(username, pin, true);
   if (!s) return { ok: false, err: 'auth' };
-  const r = (await getStaff_()).find(function (x) { return x.id === str_(staffId, 60); });
+  const id = str_(staffId, 60), blob = await getTeamBlob_();
+  if (/^pc_/.test(id)) {
+    const c = blob.extra.find(function (x) { return x.id === id && x.campus === (s.campus || PORTAL_DEFAULT_CAMPUS); });
+    return c ? { ok: true, id: c.id, photo: c.photo || '' } : { ok: false, err: 'not_found' };
+  }
+  const r = (await getStaff_()).find(function (x) { return x.id === id; });
   if (!meetStaffOk_(r, s)) return { ok: false, err: 'not_found' };
-  return { ok: true, id: r.id, photo: meetPhoto_(r, (await getTeamCards_())[r.id]) };
+  return { ok: true, id: r.id, photo: meetPhoto_(r, blob.cards[r.id]) };
 }
 /* A portal admin fixes a card from the portal's Our team page — the name, the
    role or the photo (a square jpeg the page shrank, or '' to take it off).
@@ -6036,19 +6054,38 @@ async function portalSaveStaffCard(username, pin, staffId, patch) {
   const name = patch.name !== undefined ? dutyText_(patch.name, 120) : undefined;
   if (name !== undefined && !name) return { ok: false, err: 'name_required' };
   const role = patch.role !== undefined ? dutyText_(patch.role, 80) : undefined;
-  const reset = patch.reset === true;
-  if (!reset && name === undefined && role === undefined && photoUri === undefined) return { ok: false, err: 'nothing' };
+  const reset = patch.reset === true, hidden = typeof patch.hidden === 'boolean' ? patch.hidden : undefined, remove = patch.remove === true;
+  if (!reset && !remove && name === undefined && role === undefined && photoUri === undefined && hidden === undefined) return { ok: false, err: 'nothing' };
+  const blob = await getTeamBlob_(), campus = s.campus || PORTAL_DEFAULT_CAMPUS, now = new Date().toISOString();
+  /* someone added by hand: '' adds a new one (a name needed), 'pc_…' changes or removes one */
+  if (!id || /^pc_/.test(id)) {
+    let c = id ? blob.extra.find(function (x) { return x.id === id && x.campus === campus; }) : null;
+    if (id && !c) return { ok: false, err: 'not_found' };
+    if (remove) { blob.extra = blob.extra.filter(function (x) { return x !== c; }); await writeJSON('portalTeamCards', blob); return { ok: true, removed: id }; }
+    if (!c) {
+      if (!name) return { ok: false, err: 'name_required' };
+      if (blob.extra.length >= MEET_EXTRA_MAX) return { ok: false, err: 'too_many' };
+      c = { id: 'pc_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), campus: campus, name: name, role: '', photo: '' };
+      blob.extra.push(c);
+    }
+    if (name !== undefined) c.name = name;
+    if (role !== undefined) c.role = role;
+    if (photoUri !== undefined) c.photo = photoUri;
+    if (hidden !== undefined) c.hidden = hidden;
+    c.at = now; c.by = s.id;
+    await writeJSON('portalTeamCards', blob);
+    return { ok: true, staff: meetExtraCard_(c), photo: c.photo || '' };
+  }
   const r = (await getStaff_()).find(function (x) { return x.id === id; });
   if (!meetStaffOk_(r, s)) return { ok: false, err: 'not_found' };
-  const blob = await readJSON('portalTeamCards', { cards: {} });
-  blob.cards = blob.cards || {};
   if (reset) delete blob.cards[id];
   else {
     const ov = Object.assign({}, blob.cards[id] || {});
     if (name !== undefined) ov.name = name;
     if (role !== undefined) ov.role = role;
     if (photoUri !== undefined) ov.photo = photoUri;
-    ov.at = new Date().toISOString(); ov.by = s.id;
+    if (hidden !== undefined) ov.hidden = hidden;
+    ov.at = now; ov.by = s.id;
     blob.cards[id] = ov;
   }
   await writeJSON('portalTeamCards', blob);

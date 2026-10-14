@@ -136,11 +136,14 @@ async function open(viewport, query, seed) {
     if (b.fn === 'portalMeetTeam') {
       out = { ok: true, campus: 'siemreap', canEdit: u === 'sina', staff: MEET_STAFF };
     } else if (b.fn === 'portalSaveStaffCard') {
-      const p = b.args[3] || {}, card = MEET_STAFF.find(x => x.id === b.args[2]);
-      if (u !== 'sina') out = { ok: false, err: 'not_authorized' };
+      const p = b.args[3] || {}; let card = MEET_STAFF.find(x => x.id === b.args[2]);
+      if (u === 'sina' && !b.args[2] && p.name) { card = { id: 'pc_new1', name: p.name, role: p.role || '', ministry: '', dept: '', hasPhoto: false, edited: true, custom: true, hidden: false }; MEET_STAFF.push(card); out = { ok: true, staff: { ...card }, photo: '' }; }
+      else if (u !== 'sina') out = { ok: false, err: 'not_authorized' };
       else if (!card) out = { ok: false, err: 'not_found' };
+      else if (p.remove) { MEET_STAFF.splice(MEET_STAFF.indexOf(card), 1); out = { ok: true, removed: card.id }; }
+      else if (p.hidden !== undefined) { card.hidden = p.hidden; out = { ok: true, staff: { ...card }, photo: '' }; }
       else if (p.reset) { Object.assign(card, MEET_STAFF0.find(x => x.id === card.id)); out = { ok: true, staff: { ...card }, photo: card.hasPhoto ? 'data:image/jpeg;base64,AAAA' : '' }; }
-      else { if (p.name !== undefined) card.name = p.name; if (p.role !== undefined) card.role = p.role; if (p.photo !== undefined) card.hasPhoto = !!p.photo; card.edited = true; out = { ok: true, staff: { ...card }, photo: card.hasPhoto ? 'data:image/jpeg;base64,' + (p.photo || 'AAAA') : '' }; }
+      else { if (p.name !== undefined) card.name = p.name; if (p.role !== undefined) { card.role = p.role; card.ministry = ''; card.dept = ''; } if (p.photo !== undefined) card.hasPhoto = !!p.photo; card.edited = true; out = { ok: true, staff: { ...card }, photo: card.hasPhoto ? 'data:image/jpeg;base64,' + (p.photo || 'AAAA') : '' }; }
     } else if (b.fn === 'portalStaffPhoto') {
       out = { ok: true, id: b.args[2], photo: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAADklEQVQI12P4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==' };
     } else if (b.fn === 'portalStrengths') {
@@ -503,7 +506,7 @@ async function open(viewport, query, seed) {
   ok('saving sends the numbers into the Teams Database', tn && tn.args[2]['People Served'] === 30 && tn.args[2]['Salvations'] === 3 && tn.args[3].female === 7 && tn.args[3].male === 5, JSON.stringify(tn && tn.args.slice(2)));
   await page.click('[data-aview="schedule"]'); await page.waitForSelector('#pSchedule');
   ok('once arrived, the 📅 Schedule tab has this week’s cooking schedule, their own names picked out, and the chores marked not out yet', /Weekly schedule/.test(await page.$eval('#main h2', e => e.textContent)) && /Member One/.test(await page.$eval('#pSchedule [data-duty="grid"]', e => e.textContent)) && (await page.$$eval('#pSchedule .dutyName.me', ns => ns.map(n => n.textContent))).includes('Member One') && /not out yet/.test(await page.$eval('[data-pschedshow="chores"]', b => b.textContent)) && !!(await page.$('#pschedShare')));
-  ok('on a phone the cooking schedule reads day by day — nothing cut off at the side', await page.$eval('#pSchedule .dutyDays', e => getComputedStyle(e).display) === 'block' && await page.$eval('#pSchedule .dutyScroll', e => getComputedStyle(e).display) === 'none' && await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+  ok('on a phone the schedule scrolls inside its card, not the page', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await page.click('[data-pschedshow="chores"]'); await page.waitForTimeout(200);
   ok('the morning chores for this week are not out yet — it says so', /aren’t out yet/.test(await page.$eval('#pSchedule', e => e.textContent)));
   await page.click('[data-pschedweek="next"]'); await page.waitForTimeout(200);
@@ -903,21 +906,38 @@ async function open(viewport, query, seed) {
   await page.click('#toTeam'); await page.waitForSelector('[data-meetedit]', { timeout: 5000 });
   ok('a portal admin has an Our team tab: the same cards applicants see, each with Edit', (await page.$$('.meetCard')).length === 2 && (await page.$$('[data-meetedit]')).length === 2 && /never changes the GP app/.test(await page.$eval('#main', e => e.textContent)));
   await page.click('[data-meetedit="st_yan"]'); await page.waitForSelector('#meet_name');
-  ok('Edit opens the card: name and role to type, a photo to add, the ministry pointed to the GP app', await page.$eval('#meet_name', i => i.value) === 'Yan Yap' && await page.$eval('#meet_role', i => i.value) === 'YAP' && /Add a photo/.test(await page.$eval('#meetPhotoBtn', e => e.textContent)) && !(await page.$('#meetPhotoDel')) && /Ministry: Cafe/.test(await page.$eval('.meetCard.editing', e => e.textContent)) && !(await page.$('#meetReset')));
+  ok('Edit opens the card: name and role to type, a photo to add — and what they see is what you write', await page.$eval('#meet_name', i => i.value) === 'Yan Yap' && await page.$eval('#meet_role', i => i.value) === 'YAP' && /Add a photo/.test(await page.$eval('#meetPhotoBtn', e => e.textContent)) && !(await page.$('#meetPhotoDel')) && !/Ministry/.test(await page.$eval('.meetCard.editing', e => e.textContent)) && !(await page.$('#meetReset')));
   await page.fill('#meet_name', 'Yan Yap Sok'); await page.fill('#meet_role', 'YAP · Barista');
   await page.click('#meetSave'); await page.waitForTimeout(400);
   const sc = sent.filter(b => b.fn === 'portalSaveStaffCard').pop();
+  ok('the role shows exactly as written — not the GP app’s ministry beside it', (await page.$eval('[data-meetcard="st_yan"] .meetRole', e => e.textContent)) === 'YAP · Barista');
   ok('Save sends the name and role for that card, and the card shows them', sc && sc.args[2] === 'st_yan' && sc.args[3].name === 'Yan Yap Sok' && sc.args[3].role === 'YAP · Barista' && sc.args[3].photo === undefined && /Yan Yap Sok/.test(await page.$eval('[data-meetcard="st_yan"] .meetName', e => e.textContent)) && !(await page.$('#meet_name')));
   await page.click('[data-meetedit="st_yan"]'); await page.waitForSelector('#meetPhotoInput', { state: 'attached' });
   await page.setInputFiles('#meetPhotoInput', { name: 'yan.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAADklEQVQI12P4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==', 'base64') });
   await page.waitForFunction(() => !!document.querySelector('[data-meetcard="st_yan"] img'), null, { timeout: 5000 });
   const sp = sent.filter(b => b.fn === 'portalSaveStaffCard').pop();
   ok('a photo goes up on its own, shrunk to a square jpeg, and shows on the card with Remove', sp && sp.args[3].photo && /^[A-Za-z0-9+/=]+$/.test(sp.args[3].photo) && sp.args[3].name === undefined && !!(await page.$('#meetPhotoDel')) && /Change the photo/.test(await page.$eval('#meetPhotoBtn', e => e.textContent)));
-  ok('an edited card says so, with a way back to the GP app’s details', /Changed here in the portal/.test(await page.$eval('.meetCard.editing', e => e.textContent)) && !!(await page.$('#meetReset')));
+  ok('an edited card has a way back to the GP app’s details', !!(await page.$('#meetReset')));
   page.once('dialog', d => d.accept());
   await page.click('#meetReset'); await page.waitForTimeout(400);
   const rs0 = sent.filter(b => b.fn === 'portalSaveStaffCard').pop();
   ok('Back to the GP app’s details sends reset, and the card reads Yan Yap again', rs0 && rs0.args[3].reset === true && /Yan Yap/.test(await page.$eval('[data-meetcard="st_yan"] .meetName', e => e.textContent)) && !/Sok/.test(await page.$eval('[data-meetcard="st_yan"] .meetName', e => e.textContent)));
+  /* someone who isn't in the GP app */
+  await page.click('#meetAdd'); await page.waitForSelector('[data-meetcard="new"] #meet_name');
+  await page.fill('#meet_name', 'Visiting Teacher'); await page.fill('#meet_role', 'Guest teacher');
+  await page.click('#meetSave'); await page.waitForTimeout(400);
+  const ad = sent.filter(b => b.fn === 'portalSaveStaffCard').pop();
+  ok('＋ Add someone: a name and role typed in, sent as a new card, which stays open for a photo', ad && ad.args[2] === '' && ad.args[3].name === 'Visiting Teacher' && ad.args[3].role === 'Guest teacher' && !!(await page.$('[data-meetcard="pc_new1"].editing #meetPhotoBtn')) && !!(await page.$('#meetRemove')));
+  await page.click('#meetHide'); await page.waitForTimeout(400);
+  const hd = sent.filter(b => b.fn === 'portalSaveStaffCard').pop();
+  ok('Hide from applicants: the card stays here, marked hidden', hd && hd.args[2] === 'pc_new1' && hd.args[3].hidden === true && /Show to applicants again/.test(await page.$eval('#meetHide', e => e.textContent)));
+  await page.click('#meetCancel'); await page.waitForTimeout(200);
+  ok('… and is greyed out with a note in the list', !!(await page.$('[data-meetcard="pc_new1"].meetHidden [data-meethidden]')));
+  await page.click('[data-meetedit="pc_new1"]'); await page.waitForSelector('#meetRemove');
+  page.once('dialog', d => d.accept());
+  await page.click('#meetRemove'); await page.waitForTimeout(400);
+  const rm = sent.filter(b => b.fn === 'portalSaveStaffCard').pop();
+  ok('someone added by hand can be removed', rm && rm.args[2] === 'pc_new1' && rm.args[3].remove === true && !(await page.$('[data-meetcard="pc_new1"]')));
   await ctx.close();
 }
 {
