@@ -310,7 +310,7 @@ const UNPLACED = { id: 'k2', category: 'volunteer', name: 'Volunteer Example', f
       mixed: hospBedSex_({ males: 1, females: 1, bedNames: { f1: 'Fay' }, people: [{ name: 'Fay', sex: 'f' }] }, 'f1', { style: 'mixed' }),
       blue: getComputedStyle(document.querySelector('[data-hboard="m0"]')).borderColor };
   });
-  ok('beds are coloured: men blue, women pink, a family green', /\bheld\b/.test(col.m0) && /bed-m/.test(col.m0) && /bed-m/.test(col.m2) && /free/.test(col.m1) && /bed-m/.test(col.m1) && /bed-f/.test(col.f0) && !/bed-/.test(col.f3) && col.fam === 'fam' && col.mixed === 'f' && col.blue === 'rgb(59, 130, 246)', JSON.stringify(col));
+  ok('beds are coloured: men blue, women pink, a family green', /\bheld\b/.test(col.m0) && /bed-m/.test(col.m0) && /bed-m/.test(col.m2) && /free/.test(col.m1) && /bed-m/.test(col.m1) && /bed-f/.test(col.f0) && !/bed-/.test(col.f3) && col.fam === 'fam' && col.mixed === 'f' && col.blue === 'rgb(37, 99, 235)', JSON.stringify(col));
   ok('a key says what the colours mean', col.key);
   await page.click('[data-hboard="m0"]'); await page.waitForTimeout(150);
   ok('tapping a person picks them up', !!(await page.$('#hospMoveBar')) && await page.$eval('[data-hboard="m0"]', b => b.classList.contains('moving')));

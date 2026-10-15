@@ -545,7 +545,9 @@ quietest bucket named), Requests, Calendar, Bookings, Rooms.
   *Bed colours* (`hospBedSex_`, key `#hospBedKey` on the board and bed picker): men blue
   (`bed-m`), women pink (`bed-f`), couple / family green (`bed-fam`). A taken bed goes by the
   booking — `family`, else the named person's `sex`, else all-male / all-female counts —
-  falling back to the room style; free beds get a light tint from the room style.
+  falling back to the room style (couple rooms green); a taken bed is filled solid with white
+  text, a free one tinted with a coloured border, each with ♂ / ♀ / 👪; rooms carry a coloured
+  style tag (`hospStyleTag_`).
 
 ## The hamburger menu, by role
 `renderMenu` draws sections, and leaves out a section with nothing in it:
