@@ -303,6 +303,15 @@ const UNPLACED = { id: 'k2', category: 'volunteer', name: 'Volunteer Example', f
   let o = await occ();
   ok('tonight: who is in which bed', o.m0 === 'k1' && o.m2 === 'k2' && o.m1 === '', JSON.stringify(o));
   ok('people still without a bed wait at the top', /Volunteer Example ×2/.test(await page.$eval('.hospWait', e => e.textContent)));
+  const col = await page.evaluate(() => {
+    const c = id => document.querySelector('[data-hboard="' + id + '"]').className;
+    return { m0: c('m0'), m1: c('m1'), m2: c('m2'), f0: c('f0'), f3: c('f3'), key: !!document.getElementById('hospBedKey'),
+      fam: hospBedSex_({ family: true, males: 1, females: 1 }, 'm0', { style: 'male' }),
+      mixed: hospBedSex_({ males: 1, females: 1, bedNames: { f1: 'Fay' }, people: [{ name: 'Fay', sex: 'f' }] }, 'f1', { style: 'mixed' }),
+      blue: getComputedStyle(document.querySelector('[data-hboard="m0"]')).borderColor };
+  });
+  ok('beds are coloured: men blue, women pink, a family green', /\bheld\b/.test(col.m0) && /bed-m/.test(col.m0) && /bed-m/.test(col.m2) && /free/.test(col.m1) && /bed-m/.test(col.m1) && /bed-f/.test(col.f0) && !/bed-/.test(col.f3) && col.fam === 'fam' && col.mixed === 'f' && col.blue === 'rgb(59, 130, 246)', JSON.stringify(col));
+  ok('a key says what the colours mean', col.key);
   await page.click('[data-hboard="m0"]'); await page.waitForTimeout(150);
   ok('tapping a person picks them up', !!(await page.$('#hospMoveBar')) && await page.$eval('[data-hboard="m0"]', b => b.classList.contains('moving')));
   await page.click('[data-hboard="m1"]'); await page.waitForTimeout(300);
