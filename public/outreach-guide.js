@@ -28,7 +28,7 @@ var OUTREACH_GUIDE = {
   pages: [
     { title: 'Pre-Arrival & Arrival in Cambodia', icon: '🛂', blocks: [
       { h: '1. Letter of Invitation & Visa' },
-      { p: 'Your visa steps — sending us everyone’s passport copies, receiving the letter of invitation, and applying for the e-visa — are in your portal, under **Visa**. We walk you through each one there and check it off as it’s done.' },
+      { p: 'Your visa steps — sending us everyone’s passport copies, receiving the letter of invitation, and applying for the e-visa — are in your portal, under **Where you are**. We check each one off as it’s done, and once your letter of invitation is in, **How to apply for your e-visa online** opens under the e-visa step with everything you need.' },
       { h: 'Preparing to come' },
       { list: [
         'Print 2 color copies of the letter of invitation.',
