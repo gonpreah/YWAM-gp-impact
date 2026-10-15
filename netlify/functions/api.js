@@ -5594,6 +5594,7 @@ const TEAM_STAGE_FROM = { contacted: 'call1', interview: 'call1', accepted: 'doc
 function stagesFor_(type) { return type === 'team' ? TEAM_STAGES : CAND_STAGES; }
 function teamStage_(stage) { return TEAM_STAGE_FROM[stage] || stage; }
 const CAND_FOLLOWUP_DAYS = 7, CAND_MAX = 2000, CAND_LOG_MAX = 300;
+const CAND_CALLS_MAX = 300, CAND_CALL_TEXT_MAX = 5000;
 /* A member listed before members carried ids (Oct 2026) gets one on read, made
    from the name so it is the same every time until the list is next saved —
    then the photos and the strengths know them too. */
@@ -5630,6 +5631,7 @@ function cleanCandidate_(c, prev, me) {
     // documents, references), which only the portal handlers write.
     messenger: PORTAL_MESSENGERS.indexOf(c.messenger) > -1 ? c.messenger : (prev ? (prev.messenger || '') : ''),
     portal: prev ? (prev.portal || null) : null,
+    calls: prev && Array.isArray(prev.calls) ? prev.calls : undefined,   // call notes: only hrCandidateCall writes them
     log: prev ? (Array.isArray(prev.log) ? prev.log : []) : [], archived: prev ? (prev.archived || null) : null, archiveOff: prev && prev.archiveOff ? true : undefined,
     created: prev ? prev.created : now, createdBy: prev ? prev.createdBy : me.id, updated: now, updatedBy: me.id
   };
@@ -5681,6 +5683,42 @@ async function hrCandidateNote(username, pin, id, text) {
   rows[idx].updated = now; rows[idx].updatedBy = g.s.id;
   await writeJSON('candidates', rows);
   return { ok: true, candidate: rows[idx] };
+}
+/* Notes from a call with a team's leader (or any applicant): the day, who was
+   on the call and what was said. Kept on the record as `calls`, apart from the
+   short log, and never sent to the applicant (portalAppOut_ lists its fields).
+   call = {date, with, text} adds one; with {id} it edits it; {id, remove:true}
+   deletes it. Only the one who wrote a call note, or a portal admin, can
+   change or delete it. */
+async function hrCandidateCall(username, pin, id, call) {
+  const g = await hrGate_(username, pin); if (g.out) return g.out;
+  call = call && typeof call === 'object' ? call : {};
+  const rows = await getCandidates_();
+  const idx = rows.findIndex(function (r) { return r && r.id === str_(id, 60); });
+  if (idx === -1) return { ok: false, err: 'not_found' };
+  if (!canHR_(g.s) && !portalMaySee_(g.s, rows[idx])) return { ok: false, err: 'not_authorized' };
+  const c = rows[idx], now = new Date().toISOString();
+  const calls = Array.isArray(c.calls) ? c.calls.slice() : [];
+  const cid = str_(call.id, 40);
+  const at = cid ? calls.findIndex(function (x) { return x && x.id === cid; }) : -1;
+  if (cid && at === -1) return { ok: false, err: 'not_found' };
+  if (at > -1 && calls[at].by !== g.s.id && !isPortalAdmin_(g.s)) return { ok: false, err: 'not_authorized' };
+  if (call.remove) {
+    if (at === -1) return { ok: false, err: 'not_found' };
+    calls.splice(at, 1);
+  } else {
+    const raw = String(call.text == null ? '' : call.text).trim();
+    if (!raw) return { ok: false, err: 'empty' };
+    if (raw.length > CAND_CALL_TEXT_MAX) return { ok: false, err: 'too_long' };
+    const rec = { id: at > -1 ? calls[at].id : hrId_('cl'), date: isoDate_(call.date) || now.slice(0, 10), with: str_(call.with, 120) || '', text: raw,
+      by: at > -1 ? calls[at].by : g.s.id, at: at > -1 ? calls[at].at : now };
+    if (at > -1) { rec.edited = now; rec.editedBy = g.s.id; calls[at] = rec; }
+    else { if (calls.length >= CAND_CALLS_MAX) return { ok: false, err: 'too_many' }; calls.push(rec); }
+  }
+  c.calls = calls;
+  c.updated = now; c.updatedBy = g.s.id;
+  await writeJSON('candidates', rows);
+  return { ok: true, candidate: c };
 }
 async function hrArchiveCandidate(username, pin, id, info) {
   const g = await hrGate_(username, pin); if (g.out) return g.out;
@@ -8192,6 +8230,7 @@ const HANDLERS = {
   hrCandidates: function (a) { return hrCandidates(a[0], a[1]); },
   hrSaveCandidate: function (a) { return hrSaveCandidate(a[0], a[1], a[2]); },
   hrCandidateNote: function (a) { return hrCandidateNote(a[0], a[1], a[2], a[3]); },
+  hrCandidateCall: function (a) { return hrCandidateCall(a[0], a[1], a[2], a[3]); },
   hrArchiveCandidate: function (a) { return hrArchiveCandidate(a[0], a[1], a[2], a[3]); },
   getMyBroadcasts: function (a) { return getMyBroadcasts(a[0], a[1]); },
   sendBroadcast: function (a) { return sendBroadcast(a[0], a[1], a[2]); },

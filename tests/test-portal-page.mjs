@@ -276,6 +276,17 @@ async function open(viewport, query, seed) {
     } else if (b.fn === 'portalDeleteApplicant') {
       CANDS = CANDS.filter(x => x.id !== b.args[2]);
       out = { ok: true, role: 'portal-admin', me: STAFF[1], applicants: CANDS, scope: null, staff: STAFF, stages: ['new', 'contacted', 'applied', 'interview', 'accepted', 'practical', 'arrived'], teamStages: ['new', 'applied', 'call1', 'docs', 'call2', 'practical', 'arrived'], types: [], schools: [], deleted: b.args[2], accountRemoved: true };
+    } else if (b.fn === 'hrCandidateCall') {
+      const k = b.args[3];
+      CANDS = CANDS.map(x => {
+        if (x.id !== b.args[2]) return x;
+        let calls = (x.calls || []).slice();
+        if (k.remove) calls = calls.filter(c => c.id !== k.id);
+        else if (k.id) calls = calls.map(c => c.id === k.id ? { ...c, date: k.date, with: k.with, text: k.text, edited: '2026-10-01T00:00:00Z' } : c);
+        else calls.push({ id: 'cl' + calls.length + Date.now(), date: k.date, with: k.with, text: k.text, by: 'st_dara', at: new Date().toISOString() });
+        return { ...x, calls };
+      });
+      out = { ok: true, candidate: CANDS.find(x => x.id === b.args[2]) };
     } else if (b.fn === 'hrCandidateNote') {
       CANDS = CANDS.map(x => x.id === b.args[2] ? { ...x, log: x.log.concat([{ at: new Date().toISOString(), by: 'st_dara', kind: 'note', text: b.args[3] }]) } : x);
       out = { ok: true, candidate: CANDS.find(x => x.id === b.args[2]) };
@@ -654,6 +665,41 @@ async function open(viewport, query, seed) {
   ok('a note goes through hrCandidateNote and shows in the log', note && note.args[3] === 'Spoke today, very keen' && /Spoke today, very keen/.test(await page.$eval('#panel .log', e => e.textContent)));
   ok('no PIN or hash anywhere on the page', !/2468|1234|pinHash/.test(await page.$eval('#main', e => e.textContent)));
   ok('portal staff are offered no delete', !(await page.$('#deleteCand')));
+  ok('a student has no Call notes tab', !(await page.$('[data-ptab="calls"]')));
+  {
+    await page.click('[data-open="cd_team"]'); await page.waitForSelector('#panel');
+    ok('a team has a Call notes tab', !!(await page.$('[data-ptab="calls"]')));
+    await ptab(page, 'calls');
+    ok('the form starts on today with the leader’s name', await page.$eval('#call_date', i => i.value) === await page.evaluate(() => ymd_(new Date())) && await page.$eval('#call_with', i => i.value) === 'Pat Leader');
+    ok('an empty list says so', /No call notes yet/.test(await page.$eval('#callList', e => e.textContent)));
+    await page.fill('#call_date', '2026-09-30');
+    await page.fill('#call_with', 'Pat and Sam');
+    await page.fill('#call_text', 'Talked about dates.\nThey need airport pickup.');
+    await page.click('#saveCall'); await page.waitForTimeout(300);
+    const cl = sent.filter(b => b.fn === 'hrCandidateCall').pop();
+    ok('Save sends the day, who, and the notes for that team', cl && cl.args[2] === 'cd_team' && cl.args[3].date === '2026-09-30' && cl.args[3].with === 'Pat and Sam' && cl.args[3].text === 'Talked about dates.\nThey need airport pickup.' && !cl.args[3].id, JSON.stringify(cl && cl.args[3]));
+    const item = await page.$eval('#callList .callItem', e => ({ t: e.textContent, pre: getComputedStyle(e.querySelector('.callText')).whiteSpace }));
+    ok('it shows in the list: date, who, notes with the line break, who wrote it', /30 Sept? 2026/.test(item.t) && /with Pat and Sam/.test(item.t) && /airport pickup/.test(item.t) && /Dara Pen/.test(item.t) && item.pre === 'pre-wrap', item.t);
+    ok('the form is cleared for the next call', await page.$eval('#call_text', i => i.value) === '');
+    ok('the tab counts the calls', await page.$eval('[data-ptab="calls"]', b => b.textContent.includes('1')));
+    await page.fill('#call_text', 'half typed');
+    await page.click('[data-calledit]'); await page.waitForTimeout(200);
+    ok('Edit opens the note in the form', await page.$eval('#call_text', i => i.value) === 'Talked about dates.\nThey need airport pickup.' && /Edit call note/.test(await page.$eval('#callForm', e => e.textContent)) && !!(await page.$('#cancelCall')));
+    await page.fill('#call_text', 'Talked about dates. Pickup sorted.');
+    await page.click('#saveCall'); await page.waitForTimeout(300);
+    const ed = sent.filter(b => b.fn === 'hrCandidateCall').pop();
+    ok('… and saves it under its id', ed.args[3].id && ed.args[3].text === 'Talked about dates. Pickup sorted.' && /Pickup sorted/.test(await page.$eval('#callList', e => e.textContent)) && /edited/.test(await page.$eval('#callList', e => e.textContent)));
+    page.once('dialog', d => d.accept());
+    await page.click('[data-calldel]'); await page.waitForTimeout(300);
+    const del = sent.filter(b => b.fn === 'hrCandidateCall').pop();
+    ok('Delete asks, then removes it', del.args[3].remove === true && /No call notes yet/.test(await page.$eval('#callList', e => e.textContent)));
+    CANDS = CANDS.map(x => x.id === 'cd_team' ? { ...x, calls: [{ id: 'clx', date: '2026-09-01', with: '', text: 'Sina’s call', by: 'st_sina', at: '2026-09-01T00:00:00Z' }] } : x);
+    await page.evaluate(() => { P.boot.applicants = P.boot.applicants.map(x => x.id === 'cd_team' ? { ...x, calls: [{ id: 'clx', date: '2026-09-01', with: '', text: 'Sina’s call', by: 'st_sina', at: '2026-09-01T00:00:00Z' }] } : x); render(); });
+    ok('someone else’s call note has no Edit or Delete for portal staff', /Sina’s call/.test(await page.$eval('#callList', e => e.textContent)) && !(await page.$('[data-calledit]')) && !(await page.$('[data-calldel]')));
+    await page.setViewportSize({ width: 375, height: 800 }); await page.waitForTimeout(150);
+    ok('the call form fits a phone', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+    await page.setViewportSize({ width: 1280, height: 900 }); await page.waitForTimeout(100);
+  }
   await page.click('#navMenu'); await page.waitForSelector('#staffMenu');
   ok('portal staff open the ☰ menu and get Staff access only — no Forms, no Admin access group', !(await page.$('#toForms')) && !!(await page.$('#toPreview')) && /Staff access/.test(await page.$eval('#staffMenu', e => e.textContent)) && !/Admin access/.test(await page.$eval('#staffMenu', e => e.textContent)));
   ok('but do get the GP app home link', !!(await page.$('#toGpApp')));
@@ -1241,7 +1287,7 @@ async function open(viewport, query, seed) {
   ok('and the row says what is next for them', /→ 1st call — getting to know each other/.test(await page.$eval('.trow[data-open="cd_team"]', e => e.textContent)));
   await page.click('[data-open="cd_team"]');
   await page.waitForSelector('#panel');
-  ok('a team record opens on Overview with every tab: Trip, People, Documents, Numbers, Answers, Notes', (await page.$$eval('[data-ptab]', b => b.map(x => x.getAttribute('data-ptab')).join())) === 'overview,trip,people,docs,numbers,legal,answers,notes' && await page.$eval('[data-ptab="overview"]', b => b.classList.contains('on')) && !!(await page.$('#p_stage')) && !(await page.$('#tripTotal')));
+  ok('a team record opens on Overview with every tab: Trip, People, Documents, Numbers, Legal, Application, Call notes, Notes', (await page.$$eval('[data-ptab]', b => b.map(x => x.getAttribute('data-ptab')).join())) === 'overview,trip,people,docs,numbers,legal,answers,calls,notes' && await page.$eval('[data-ptab="overview"]', b => b.classList.contains('on')) && !!(await page.$('#p_stage')) && !(await page.$('#tripTotal')));
   const pan = await page.$eval('#panel', e => e.textContent);
   await ptab(page, 'trip');
   ok('the record shows the trip: total in Cambodia, each place with dates and days, who handles the visa', /14 days · 10 Jan 2027 – 23 Jan 2027/.test(await page.$eval('#tripTotal', e => e.textContent)) && (await page.$$eval('.tripStay', r => r.map(x => x.textContent.replace(/\s+/g, ' ').trim()))).join(' | ') === '📍 YWAM Siem Reap10 Jan 2027 – 20 Jan 2027 · 11 days | 📍 Phnom Penh20 Jan 2027 – 23 Jan 2027 · 4 days' && /Arrives first at/.test(await page.$eval('#panel', e => e.textContent)) && /we handle the visa/.test(await page.$eval('#panel', e => e.textContent)));

@@ -582,6 +582,10 @@ ok('and so is HR’s', r.body.ok === true && r.body.staff.every(p => p.username 
 console.log('\n=== who may open the portal ===');
 r = await call('portalBoot', ['anna.b', '9999']);
 ok('a wrong PIN is "auth"', r.body.ok === false && r.body.err === 'auth');
+r = await call('hrCandidateCall', ['uriah', '1234', cand.id, { text: 'Private call note: sounded unsure' }]);
+ok('staff write a call note on the application', r.body.ok === true && r.body.candidate.calls.length === 1);
+r = await call('portalBoot', ['anna.b', '2468']);
+ok('the applicant never gets the call notes', r.body.ok === true && !JSON.stringify(r.body).includes('sounded unsure') && !('calls' in r.body.application));
 r = await call('portalBoot', ['anna.b', '2468']);
 ok('an applicant sees their own application, nothing else', r.body.ok === true && r.body.role === 'applicant' && r.body.application.id === cand.id && !r.body.applicants);
 ok('and none of the other applicant’s details', !JSON.stringify(r.body).includes('tom@example.org') && !JSON.stringify(r.body).includes('Tom'));
@@ -624,6 +628,10 @@ r = await call('hrSaveCandidate', ['rithy', '1234', { ...teamCand, stage: 'inter
 ok('an older stage maps across (interview → 1st call)', r.body.ok === true && r.body.candidate.stage === 'call1');
 r = await call('hrCandidateNote', ['rithy', '1234', teamCand.id, 'Team of 12, coming in March']);
 ok('notes on a team too', r.body.ok === true);
+r = await call('hrCandidateCall', ['rithy', '1234', teamCand.id, { with: 'Pastor Example', text: 'First call: 12 people, March' }]);
+ok('Outreach Teams writes call notes on a team', r.body.ok === true && r.body.candidate.calls[0].with === 'Pastor Example');
+r = await call('hrCandidateCall', ['rithy', '1234', cand.id, { text: 'peeking' }]);
+ok('but not on a student they can’t see', r.body.ok === false && r.body.err === 'not_authorized');
 r = await call('portalBoot', ['dara', '1234']);
 ok('everyone else with access still sees teams alongside the rest', r.body.applicants.some(a => a.type === 'team') && r.body.applicants.some(a => a.type === 'student'));
 r = await call('hrCandidates', ['mealea', '1234']);

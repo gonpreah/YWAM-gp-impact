@@ -438,6 +438,17 @@ body.menuOn { overflow:hidden; }
 .log { list-style:none; padding:0; margin:8px 0 0; font-size:13.5px; }
 .log li { padding:8px 0; border-bottom:1px solid var(--border); } .log li:last-child { border-bottom:0; }
 .log .when { color:var(--faint); font-size:11.5px; display:block; }
+.callForm { border:1px solid var(--border); border-radius:12px; padding:12px; background:var(--surface2, transparent); }
+.callRow { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.4fr); gap:10px; }
+@media (max-width:480px){ .callRow { grid-template-columns:minmax(0,1fr); } }
+.callList { margin-top:14px; display:flex; flex-direction:column; gap:10px; }
+.callItem { border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:10px; padding:10px 12px; min-width:0; }
+.callItem.editing { outline:2px solid var(--accent); }
+.callHead { font-size:14px; } .callWith { color:var(--muted); font-size:13px; }
+.callText { white-space:pre-wrap; overflow-wrap:anywhere; margin:6px 0; font-size:14px; line-height:1.45; }
+.callFoot { display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; color:var(--faint); font-size:12px; align-items:center; }
+.callFoot > span:last-child:not(:first-child) { display:inline-flex; gap:12px; }
+.callFoot .linkbtn { display:inline; width:auto; margin:0; padding:4px 2px; font-size:13px; }
 .empty { font-size:13.5px; color:var(--muted); padding:16px; text-align:center; }
 .langRow { text-align:center; margin-top:22px; font-size:13px; color:var(--faint); }
 .langRow button { background:none; border:0; color:var(--muted); text-decoration:underline; text-underline-offset:3px; cursor:pointer; font-size:13px; padding:4px 6px; }
@@ -1761,6 +1772,66 @@ function crmHtml_(){
   h+='</div>';
   return h;
 }
+/* Call notes (teams): what was said on each call with the team's leaders —
+   the day, who was on it and the notes, newest first. P.call is the open form
+   (a new note, or one being edited), kept as it is typed so a re-render loses
+   nothing. Only the writer or a portal admin may edit or delete a note. */
+function callDraft_(c){
+  if(!P.call || P.call.for!==c.id) P.call={ for:c.id, id:'', date:ymd_(new Date()), with:c.name||'', text:'' };
+  return P.call;
+}
+function panelCallsHtml_(c, byId){
+  var d=callDraft_(c), admin=P.boot.role==='portal-admin', me=P.boot.me && P.boot.me.id;
+  var h='<div class="callForm" id="callForm"><h3 style="margin-top:0">'+esc(d.id ? t('Edit call note') : t('Add a call note'))+'</h3>'+
+    '<div class="callRow"><div><label class="f" for="call_date">'+esc(t('Date of the call'))+'</label><input type="date" id="call_date" value="'+esc(d.date)+'"></div>'+
+    '<div><label class="f" for="call_with">'+esc(t('Who was on the call'))+'</label><input type="text" id="call_with" maxlength="120" value="'+esc(d.with)+'"></div></div>'+
+    '<label class="f" for="call_text">'+esc(t('Notes'))+'</label><textarea id="call_text" rows="7" maxlength="5000" placeholder="'+esc(t('What did you talk about? Questions, decisions, what to follow up…'))+'">'+esc(d.text)+'</textarea>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn small" id="saveCall"'+(P.busy?' disabled':'')+'>'+esc(P.busy ? t('Saving…') : d.id ? t('Save changes') : t('Save call note'))+'</button>'+
+    (d.id ? '<button class="btn small ghost" id="cancelCall">'+esc(t('Cancel'))+'</button>' : '')+'</div></div>';
+  var list=(c.calls||[]).slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||'') || (b.at||'').localeCompare(a.at||''); });
+  h+='<div class="callList" id="callList">'+(list.length ? list.map(function(x){
+    var who=byId[x.by] ? byId[x.by].name : '—', mine=admin || x.by===me;
+    return '<div class="callItem'+(d.id===x.id?' editing':'')+'" data-call="'+esc(x.id)+'"><div class="callHead"><b>📞 '+esc(fmtDate_(x.date))+'</b>'+(x.with?' <span class="callWith">'+esc(gpT('with {name}',{name:x.with}))+'</span>':'')+'</div>'+
+      '<div class="callText">'+esc(x.text)+'</div>'+
+      '<div class="callFoot"><span>'+esc(gpT('Written by {name}',{name:who}))+(x.edited?' · '+esc(t('edited')):'')+'</span>'+
+      (mine ? '<span><button class="linkbtn" data-calledit="'+esc(x.id)+'">'+esc(t('Edit'))+'</button> <button class="linkbtn danger" data-calldel="'+esc(x.id)+'">'+esc(t('Delete'))+'</button></span>' : '')+'</div></div>';
+  }).join('') : '<p class="sub" style="margin:12px 0 0">'+esc(t('No call notes yet. After a call with the leaders, write down what you talked about here.'))+'</p>')+'</div>';
+  return h;
+}
+function saveCall_(){
+  var c=selected_(); if(!c) return;
+  var d=callDraft_(c);
+  if(!String(d.text||'').trim()){ showMsg(t('Write the notes first.')); return; }
+  P.busy=true; render();
+  run('hrCandidateCall', [P.auth.user, P.auth.pin, c.id, { id:d.id, date:d.date, with:d.with, text:d.text }], function(r){
+    P.busy=false;
+    if(putCand_(r)){ P.call=null; showMsg(t('Call note saved')); }
+    render();
+  });
+}
+function bindCalls_(){
+  if(!document.getElementById('callForm')) return;
+  var c=selected_(); if(!c) return;
+  var d=callDraft_(c);
+  [['call_date','date'],['call_with','with'],['call_text','text']].forEach(function(f){ var el=document.getElementById(f[0]); if(el) el.oninput=el.onchange=function(){ d[f[1]]=el.value; }; });
+  on_('saveCall', saveCall_);
+  on_('cancelCall', function(){ P.call=null; render(); });
+  document.querySelectorAll('[data-calledit]').forEach(function(b){ b.onclick=function(){
+    var x=(c.calls||[]).filter(function(k){ return k.id===b.getAttribute('data-calledit'); })[0]; if(!x) return;
+    P.call={ for:c.id, id:x.id, date:x.date||'', with:x.with||'', text:x.text||'' }; render();
+    var f=document.getElementById('callForm'); if(f) f.scrollIntoView({ block:'start', behavior:'smooth' });
+  }; });
+  document.querySelectorAll('[data-calldel]').forEach(function(b){ b.onclick=function(){
+    if(!confirm(t('Delete this call note?'))) return;
+    var id=b.getAttribute('data-calldel');
+    P.busy=true; render();
+    run('hrCandidateCall', [P.auth.user, P.auth.pin, c.id, { id:id, remove:true }], function(r){
+      P.busy=false;
+      if(putCand_(r)){ if(P.call && P.call.id===id) P.call=null; showMsg(t('Deleted')); }
+      render();
+    });
+  }; });
+}
 function panelHtml_(c, byId){
   var chat=chatHref_(c.messenger, c.phone);
   var h='<div class="panel" id="panel"><div class="panelHead"><div><h2 style="margin:0">'+esc(candName_(c))+'</h2><p class="sub" style="margin:2px 0 0">'+(candName_(c)!==c.name ? esc(gpT('Leader: {name}',{name:c.name}))+' · ' : '')+esc(applyLabel_(c.type, c.school))+' · '+esc(campusName_(c.campus))+(c.country?' · '+esc(c.country):'')+'</p></div>'+
@@ -1788,6 +1859,7 @@ function panelHtml_(c, byId){
     ['numbers','📊',t('Numbers'), panelTeamNumbersHtml_(c), ''],
     ['legal','✍️',t('Legal'), panelLegalHtml_(c), legalBadge_(c)],
     ['answers','📝',t('Application'), panelAnswersHtml_(c), ''],
+    ['calls','📞',t('Call notes'), c.type==='team' ? panelCallsHtml_(c, byId) : '', String((c.calls||[]).length||'')],
     ['notes','💬',t('Notes'), '', String((c.log||[]).filter(function(l){ return l.kind!=='stage'; }).length||'')]
   ].filter(function(x){ return x[0]==='notes' || x[3]; });
   if(!tabs.some(function(x){ return x[0]===P.ptab; })) P.ptab='overview';
@@ -3236,6 +3308,7 @@ function bind_(){
   on_('closePanel', function(){ P.sel=null; render(); });
   on_('saveCand', saveCand_);
   on_('addNote', addNote_);
+  bindCalls_();
   on_('archiveCand', archiveCand_);
   on_('deleteCand', deleteCand_);
   on_('viewAsCand', function(){ var c=selected_(); if(!c) return; P.pv.mode='record'; P.pv.candId=c.id; P.pv.boot=null; P.pv.screen='me'; P.pv.sec=0; P.view='preview'; render(); window.scrollTo(0,0); });

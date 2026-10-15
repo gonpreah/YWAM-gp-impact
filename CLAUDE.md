@@ -1022,6 +1022,13 @@ forms, documents and references follow.
   Notes, only the tabs a record has; the actions sit in `.panelFoot`. Only the open tab is drawn, so a test
   calls `ptab(page, id)` before reaching into one. Answers fold per form section (`.ansFold`, first
   open, answered/asked) with `#ansQ` Find in answers (`answersHtml_(…, {fold, q})`, `answerText_`).
+- **Call notes (teams, Oct 2026)**: a 📞 Call notes tab on team records (`panelCallsHtml_`,
+  `bindCalls_`, draft in `P.call`) for what was said on calls with the leaders: date, who was on
+  the call (starts as the leader), notes (≤5000, line breaks kept), newest first. Stored as
+  `calls` [{id, date, with, text, by, at, edited, editedBy}] on the candidate, written ONLY by
+  `hrCandidateCall(user, pin, candId, {id?, date, with, text} | {id, remove:true})` (HR / portal
+  reach as for notes; edit and delete by the writer or a portal admin). `hrSaveCandidate` keeps
+  `calls` from the stored record, and `portalAppOut_` never sends them to the applicant.
 - **Staff side bar and menu (Oct 2026)**: above the bar, a small text link "← Go back to GP Home"
   (`#toGpApp`, `.gpHomeLink` — Uriah kept tapping the old ‹ button by mistake); the bar is one ☰ button
   that says where you are (`staffNavHtml_`, `P.menuOpen`, `#navMenu`, `.menuHere`); the portal opens on
