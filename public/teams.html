@@ -8755,12 +8755,34 @@ function myOkrEntryHtml(){
     (S.me.ministry?'<div class="pmeta">'+esc(t(S.me.ministry))+'</div>':'')+'</span>'+
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--faint);flex:0 0 auto"><path d="M9 6l6 6-6 6"/></svg></button>';
 }
+/* Leadership's OKRs for everyone to see (Uriah, Oct 2026) — read only: the
+   cards have no slider, no − / +, no Edit or Delete. Your own campus first.
+   Not for Campus Leadership (theirs are their own, above) nor admins (they
+   have every department's, editable, below). */
+function leadershipOkrsHtml_(q){
+  var myDept = S.me.dept==='Base Director' ? 'Campus Leadership' : S.me.dept;
+  if(myDept==='Campus Leadership' || S.me.isAdmin || !S.base) return '';
+  var list = (S.base.okrs||[]).filter(function(o){ return o.dept==='Campus Leadership' && Number(o.quarter)===q; });
+  var camps = CAMPUSES.map(function(c){ return c.id; }).sort(function(a,b){ return a===S.me.campus ? -1 : b===S.me.campus ? 1 : 0; });
+  var h='<h3 id="leadOkrs">🧭 '+esc(t('Leadership OKRs'))+'</h3><p class="sub" style="margin:0 0 6px">'+esc(t('What the leadership team is working on this quarter — to see, not to change.'))+'</p>';
+  if(!list.length) return h+'<p class="sub">'+esc(t('No leadership objectives set yet this quarter.'))+'</p>';
+  var R = baseR(), shown=0;
+  camps.forEach(function(c){
+    var mine = list.filter(function(o){ return o.campus===c; });
+    if(!mine.length) return;
+    h+='<div class="mentorLabel" style="margin:10px 0 6px">'+esc(campusName(c))+'</div><div data-leadokrs="'+esc(c)+'">';
+    mine.forEach(function(o, i){ h+=okrCardHtml(o, R, false, i+1); shown++; });
+    h+='</div>';
+  });
+  return h;
+}
 /* The OKR tab of My Ministry — what used to be its own page. */
 function okrTabHtml_(){
   var wk = thisWeek(), qNow = Math.min(4, Math.floor((wk-1)/13)+1);
   var h='<h3 style="margin-top:0">🎯 Q'+qNow+' '+esc(t('OKRs'))+'</h3>';
   h+='<p class="sub" style="margin:0 0 2px">'+esc(t(S.me.dept))+(S.me.ministry?' · '+esc(t(S.me.ministry)):'')+'</p>';
   h+=okrSectionHtml(S.me, true, true);
+  h+=leadershipOkrsHtml_(qNow);
 
   /* Admin sees — and can edit, delete and add — every department's objectives
      on both campuses, collapsed by default so the page still opens on your

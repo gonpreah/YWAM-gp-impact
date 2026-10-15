@@ -162,6 +162,18 @@ ok('“Objective 1:” on its own line takes the title from the next line', pars
 ok('an objective with no key results is flagged', parsed.notes.some(n => /Objective 2 has no key results/.test(n)), parsed.notes.join(' | '));
 ok('more than ten key results is cut to ten, and says so', parsed.objectives[2].krs.length === 10 && parsed.notes.some(n => /only the first 10/.test(n)), parsed.notes.join(' | '));
 
+/* ---------- leadership OKRs, for everyone to see ---------- */
+ok('Campus Leadership sees its own OKRs to edit — no separate read-only copy', !(await p.$('#leadOkrs')));
+const leadCount = BASE.okrs.filter(o => o.dept === 'Campus Leadership').length;
+Object.assign(ME, { id: 'st_cafe', name: 'Cafe Person', username: 'cafe', dept: 'Community Service', ministry: 'Cafe' });
+await p.reload(); await p.waitForSelector('nav.bottom button', { timeout: 15000 });
+await p.evaluate(() => { S.view = 'ministry'; S.mmTab = 'okr'; render(); });
+await p.waitForTimeout(300);
+const lead = await p.evaluate(() => { const box = document.querySelectorAll('[data-leadokrs] .okrCard'), root = document.querySelector('[data-leadokrs]');
+  return { n: box.length, controls: root ? root.querySelectorAll('input, button, [data-okr-step], [data-okr-manual], [data-okr-edit], [data-okr-del], [data-okr-count]').length : -1, head: (document.querySelector('#leadOkrs') || {}).textContent || '' }; });
+ok('someone in another ministry sees Leadership OKRs on the OKR tab — every leadership objective this quarter', /Leadership OKRs/.test(lead.head) && lead.n === leadCount && leadCount > 0, JSON.stringify(lead));
+ok('… to read only: no slider, no − / +, no Edit or Delete', lead.controls === 0, JSON.stringify(lead));
+
 ok('no page errors', errs.length === 0, errs.slice(0, 3).join(' | '));
 await b.close(); srv.close();
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
