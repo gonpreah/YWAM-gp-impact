@@ -220,7 +220,7 @@ console.log('=== desktop ===');
 
 console.log('=== the morning chores at a glance ===');
 {
-  const ch = CHORES(); ch.sections[0].rows[0].people = ['Kara']; ch.sections[0].rows[1].people = ['Kim', 'Hana'];
+  const ch = CHORES(); ch.sections[0].rows[0].people = ['Kara']; ch.sections[0].rows[1].people = ['Kim', 'Hana']; ch.sections[1].rows[0].people = ['Uriah Lyford', 'Sreymom Chantha', 'Pastor Example Longname'];
   const { ctx, page, errors } = await open(KIM, { chores: { ...ch, published: true } });
   const home = await page.$eval('#schedHome', e => e.textContent);
   ok('My Home names my chore', /Your chore: Rooftop/.test(home), home);
@@ -228,7 +228,9 @@ console.log('=== the morning chores at a glance ===');
   const mine = await page.$eval('#schedMine', e => e.textContent.replace(/\s+/g, ' '));
   ok('at the top: my chore, what to do, and who I am with', /Your chore this week/.test(mine) && /Rooftop/.test(mine) && /Sweep and mop the rooftop/.test(mine) && /With Hana/.test(mine), mine);
   const rows = await page.$$eval('.dutyItem', r => r.map(x => x.querySelector('.dutyPlace').textContent + ' = ' + x.querySelector('.dutyWho').textContent));
-  ok('the list is one line a chore with the names beside it — no “what to do” in the way', rows.join(' | ') === 'Stairs 1–4 = Kara | Rooftop = KimHana | Plants = ' && (await page.$$('.dutyWhat')).length === 0 && await page.$eval('.dutyList', e => e.classList.contains('compact')), rows.join(' | '));
+  ok('the list is one line a chore with the names beside it — no “what to do” in the way', rows.join(' | ') === 'Stairs 1–4 = Kara | Rooftop = Kim Hana | Plants = Uriah Lyford Sreymom Chantha Pastor Example Longname' && (await page.$$('.dutyWhat')).length === 0 && await page.$eval('.dutyList', e => e.classList.contains('compact')), rows.join(' | '));
+  const fits = await page.evaluate(() => [].every.call(document.querySelectorAll('.dutyList .dutyName'), n => { const b = n.getBoundingClientRect(), l = n.closest('.dutyList').getBoundingClientRect(); return b.right <= l.right + 1 && b.left >= l.left - 1; }));
+  ok('every name on the morning chores shows in full inside the card', fits);
   await page.click('#schedDetails'); await page.waitForTimeout(200);
   ok('“Show what to do” brings the descriptions back', (await page.$$('.dutyWhat')).length === 3);
   await page.click('#schedDetails'); await page.click('[data-schedonly="1"]'); await page.waitForTimeout(200);

@@ -160,12 +160,17 @@ ok('people are kept per place, a place can be added, one without a name goes', r
 ok('a week of chores is published for everyone', (await call('getMySchedules', ['kim', '1234', W0])).now.chores.sections[0].rows[0].people.includes('Hana'));
 
 console.log('=== the team in the portal ===');
+const tripT = mem.teamTrips.find(t => t.id === 'ta_cd_t'), tripDates = { from: tripT.from, to: tripT.to };
+Object.assign(tripT, { from: addD(W0, 30), to: addD(W0, 40) });   // not here yet: their dates are next month
 r = await call('portalSaveTeamMembers', ['lead', '1234', [{ name: '  Member  One ', sex: 'f' }, { name: '' }, 'Plain Name', { name: 'x'.repeat(200), sex: 'zz' }]]);
 ok('the leader keeps the team’s member list: names cleaned, blanks dropped', r.ok && r.application.members.length === 3 && r.application.members[0].name === 'Member One' && r.application.members[1].name === 'Plain Name' && r.application.members[2].name.length === 80 && r.application.members[2].sex === '', JSON.stringify(r.application && r.application.members));
-ok('before the team has arrived, the portal shows no schedules', !r.schedules);
+ok('before the team has arrived, the portal shows no schedules — only that they are not here yet', r.schedules && r.schedules.here === false && !r.schedules.kitchen && !r.schedules.chores, JSON.stringify(r.schedules));
+Object.assign(tripT, tripDates);
+r = await call('portalBoot', ['lead', '1234']);
+ok('a team whose dates in Cambodia take in this week sees them, even before it is marked arrived', r.schedules && r.schedules.here === true && !!r.schedules.kitchen);
 mem.candidates[0].stage = 'arrived';
 r = await call('portalBoot', ['lead', '1234']);
-ok('once arrived, it shows this week’s published schedules', r.schedules && r.schedules.week === W0 && r.schedules.kitchen && r.schedules.kitchen.cells['bf|mon'] && r.schedules.chores);
+ok('once arrived, it shows this week’s published schedules', r.schedules && r.schedules.here === true && r.schedules.week === W0 && r.schedules.kitchen && r.schedules.kitchen.cells['bf|mon'] && r.schedules.chores);
 ok('only portal team accounts keep a member list', (await call('portalSaveTeamMembers', ['kim', '1234', []])).ok === false);
 r = await call('getDuty', [...K, 'kitchen', W0]);
 ok('the new member list is on offer to the kitchen', r.people.find(x => x.id === 'team_ta_cd_t').names.includes('Plain Name'));

@@ -690,6 +690,15 @@ carry `holidays` (last year to next) so the leave page lists them under the allo
 counts a new request the same way (`leaveWorkDays_`, with a "… not counted" hint).
 `test-holidays.mjs` and `test-holidays-page.mjs` cover it.
 
+## Our team (portal), Oct 2026
+`portalMeetTeam` starts from the GP app's campus staff and YAP of the campus; a portal admin's
+changes live in the portal only (`portalTeamCards` = `{cards:{<staffId>: {name, role, photo,
+hidden}}, extra:[people added by hand]}`, `getTeamBlob_`). A role written there is shown exactly as
+written — the GP app's ministry / department are not put beside it (`meetCard_`). `portalSaveStaffCard`
+with id '' adds someone who isn't in the GP app (`pc_…`, `meetExtraCard_`, name needed, up to 60),
+`{hidden:true}` hides a card from applicants (the admin still sees it, greyed), `{remove:true}` takes
+an added person off, `{reset:true}` drops the portal's changes to a GP app person.
+
 ## Weekly schedules — the cooking schedule and the morning chores
 Two schedules the base sends out every Sunday for the week ahead, made in the app and read
 by everyone. **Cooking schedule** (`kitchen`, made by Skills Training › Culinary): a GRID of
@@ -728,8 +737,17 @@ names, a `span` row (Pray – Announcements) has one `cells['row|all']`, `off` d
   for Culinary / Hospitality has the way in (`#goSchedEdit`).
 - **Portal**: a team lists its members (`portalSaveTeamMembers` → `portal.members`, name +
   man / woman; "👥 Your team members" card; staff see them on the record). Once the team has
-  **arrived**, `portalBoot` carries `schedules` (this week's published ones) and the
-  dashboard shows "📋 This week at the base" with Share as image — never before arrival.
+  arrived they are on the schedules. Every applicant has a **📅 Schedule** tab (`AVIEWS`
+  'schedule', `scheduleTabHtml_` / `schedPick_`): `portalBoot.schedules` (`applicantSchedules_`) =
+  `{here, week, nextWeek, kitchen, chores, next:{kitchen, chores}, mine}` — published weeks only,
+  and only while they are here (stage arrived, or a team whose dates take in this week or next);
+  `mine` (their name, or the whole team's) is picked out. This week / Next week (once out),
+  Cooking / Morning chores, Share as image; before they are here it says when it will show. View
+  as applicant gets this week's real schedules. (Oct 2026: replaces the "This week at the base"
+  card on the dashboard.)
+- **Morning chores names (Oct 2026)**: in the list the names column is `fit-content(60%)` and names
+  are joined with a space (the comma comes from CSS), so a name is never split and the next one goes
+  underneath the rest instead of being cut off.
 - **Oct 2026 (Uriah)**: names on the schedules are **full names** (`dutyShortNames_` now returns
   the full name; older weeks hold the first-name form, and `schedMyName_` answers both so
   `dutyIsMe_` matches either — `me` may be a list). **Campus staff and YAP are one group**

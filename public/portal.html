@@ -130,6 +130,7 @@ textarea { min-height:80px; resize:vertical; }
 .meetName { font-weight:600; font-size:14.5px; }
 .meetRole { font-size:12px; color:var(--muted); margin-top:2px; line-height:1.35; }
 .meetCard.editing { text-align:left; grid-column:1 / -1; }
+.meetCard.meetHidden { opacity:.55; border-style:dashed; }
 .meetCard.editing .meetPhoto { margin-bottom:8px; }
 .meetBtns { display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:center; }
 .meetCard.editing input[type=text] { width:100%; }
@@ -1227,7 +1228,7 @@ var TEAM_TYPE='team';
    🧭 Team strengths — the staff app's personality questionnaire, taken by
       everyone on the team, side by side.
    📚 Resources — the guides, emergency numbers and places to know. */
-var AVIEWS=[['status','📋','Application'],['team','👥','Our team'],['strengths','🧭','Strengths'],['metrics','📊','Metrics'],['resources','📚','Resources']];
+var AVIEWS=[['status','📋','Application'],['team','👥','Our team'],['strengths','🧭','Strengths'],['metrics','📊','Metrics'],['schedule','📅','Schedule'],['resources','📚','Resources']];
 function applicantNavHtml_(attr){
   attr=attr||'data-aview';
   var cur=P.aview||'status', app=P.boot && P.boot.application, team=app && app.type==='team';
@@ -1237,7 +1238,7 @@ function applicantNavHtml_(attr){
 }
 function meTabHtml_(){
   var v=P.aview||'status';
-  return v==='team' ? meetTeamHtml_() : v==='strengths' ? strengthsHtml_() : v==='resources' ? resourcesHtml_() : v==='metrics' ? metricsTabHtml_() : meHtml_();
+  return v==='team' ? meetTeamHtml_() : v==='strengths' ? strengthsHtml_() : v==='resources' ? resourcesHtml_() : v==='metrics' ? metricsTabHtml_() : v==='schedule' ? scheduleTabHtml_() : meHtml_();
 }
 /* ---- 📊 Team metrics: the team's outreach numbers, straight into the Teams Database ---- */
 function metricsTabHtml_(){
@@ -1276,22 +1277,29 @@ function meetPhotoHtml_(s){
    drops it. */
 function teamAdminHtml_(){
   var d=P.meet;
-  var h='<div class="wide"><div class="panelHead"><div><h1 style="font-size:28px">👥 '+esc(t('Our team'))+'</h1><p class="sub">'+esc(t('What applicants see under Our team: the campus staff and YAP of your campus, filled in from the GP app. Fix a name or role or change a photo here — it stays in the portal and never changes the GP app.'))+'</p></div></div>';
+  var h='<div class="wide"><div class="panelHead"><div><h1 style="font-size:28px">👥 '+esc(t('Our team'))+'</h1><p class="sub">'+esc(t('What applicants see under Our team. It starts from the campus staff and YAP in the GP app; write the names and roles as you want them shown, add someone, hide someone, or change a photo — it stays in the portal and never changes the GP app.'))+'</p></div></div>';
   if(!d) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div></div>';
-  if(!(d.staff||[]).length) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Nobody yet — in the GP app, set who is campus staff or YAP and they appear here.'))+'</p></div></div>';
   var e=P.teamEdit||{};
-  h+='<div class="meetGrid">'+d.staff.map(function(s){
-    var ph=P.staffPhotos[s.id], editing=e.id===s.id;
-    if(!editing) return '<div class="meetCard" data-meetcard="'+esc(s.id)+'">'+meetPhotoHtml_(s)+'<div class="meetName">'+esc(s.name)+'</div><div class="meetRole">'+esc(meetRole_(s))+'</div>'+
-      '<button type="button" class="linkbtn inline" data-meetedit="'+esc(s.id)+'" style="margin-top:6px">✏️ '+esc(t('Edit'))+'</button></div>';
-    return '<div class="meetCard editing" data-meetcard="'+esc(s.id)+'">'+meetPhotoHtml_(s)+
-      '<div class="meetBtns"><button type="button" class="camBtn" id="meetPhotoBtn">📷 '+esc(ph ? t('Change the photo') : t('Add a photo'))+'</button>'+(ph ? '<button type="button" class="linkbtn inline danger" id="meetPhotoDel">'+esc(t('Remove'))+'</button>' : '')+'</div>'+
-      '<input type="file" accept="image/*" id="meetPhotoInput" hidden>'+
+  h+='<div class="meetBtns" style="margin:0 0 12px"><button type="button" class="btn small" id="meetAdd">＋ '+esc(t('Add someone'))+'</button></div>';
+  if(!(d.staff||[]).length && !(P.teamEdit && !e.id)) h+='<div class="card"><p class="sub" style="margin:0">'+esc(t('Nobody yet — add someone, or in the GP app set who is campus staff or YAP.'))+'</p></div>';
+  var editForm=function(s){
+    var ph=s && P.staffPhotos[s.id], isNew=!s;
+    return '<div class="meetCard editing" data-meetcard="'+esc(s ? s.id : 'new')+'">'+(s ? meetPhotoHtml_(s) : '')+
+      (s ? '<div class="meetBtns"><button type="button" class="camBtn" id="meetPhotoBtn">📷 '+esc(ph ? t('Change the photo') : t('Add a photo'))+'</button>'+(ph ? '<button type="button" class="linkbtn inline danger" id="meetPhotoDel">'+esc(t('Remove'))+'</button>' : '')+'</div>'+
+        '<input type="file" accept="image/*" id="meetPhotoInput" hidden>' : '<p class="hint" style="margin:0 0 6px">'+esc(t('Someone who isn’t in the GP app. Add a photo after saving.'))+'</p>')+
       '<label class="f">'+esc(t('Full name'))+'</label><input type="text" id="meet_name" maxlength="120" value="'+esc(e.name||'')+'">'+
       '<label class="f">'+esc(t('Role'))+'</label><input type="text" id="meet_role" maxlength="80" value="'+esc(e.role||'')+'" placeholder="'+esc(t('e.g. Host, Cook, YAP'))+'">'+
-      (s.ministry ? '<p class="hint" style="margin:6px 0 0">'+esc(gpT('Ministry: {name} — from the GP app.',{name:s.ministry}))+'</p>' : '')+
-      (s.edited ? '<p class="hint" style="margin:6px 0 0">✏️ '+esc(t('Changed here in the portal.'))+' <button type="button" class="linkbtn inline" id="meetReset">'+esc(t('Back to the GP app’s details'))+'</button></p>' : '')+
-      '<div class="meetBtns" style="margin-top:10px"><button type="button" class="btn small" id="meetSave"'+(P.busy?' disabled':'')+'>'+esc(P.busy ? t('Saving…') : t('Save'))+'</button><button type="button" class="linkbtn inline" id="meetCancel">'+esc(t('Cancel'))+'</button></div></div>';
+      '<p class="hint" style="margin:6px 0 0">'+esc(t('Applicants see the name and role exactly as you write them here.'))+'</p>'+
+      '<div class="meetBtns" style="margin-top:10px"><button type="button" class="btn small" id="meetSave"'+(P.busy?' disabled':'')+'>'+esc(P.busy ? t('Saving…') : (isNew ? t('Add') : t('Save')))+'</button><button type="button" class="linkbtn inline" id="meetCancel">'+esc(t('Cancel'))+'</button></div>'+
+      (s ? '<div class="meetBtns" style="margin-top:8px"><button type="button" class="linkbtn inline" id="meetHide">'+esc(s.hidden ? '👁 '+t('Show to applicants again') : '🙈 '+t('Hide from applicants'))+'</button>'+
+        (s.custom ? '<button type="button" class="linkbtn inline danger" id="meetRemove">'+esc(t('Remove this person'))+'</button>'
+          : s.edited ? '<button type="button" class="linkbtn inline" id="meetReset">'+esc(t('Back to the GP app’s details'))+'</button>' : '')+'</div>' : '')+'</div>';
+  };
+  h+='<div class="meetGrid">'+(P.teamEdit && !e.id ? editForm(null) : '')+(d.staff||[]).map(function(s){
+    if(e.id===s.id) return editForm(s);
+    return '<div class="meetCard'+(s.hidden?' meetHidden':'')+'" data-meetcard="'+esc(s.id)+'">'+meetPhotoHtml_(s)+'<div class="meetName">'+esc(s.name)+'</div><div class="meetRole">'+esc(meetRole_(s))+'</div>'+
+      (s.hidden ? '<div class="hint" data-meethidden>🙈 '+esc(t('Hidden from applicants'))+'</div>' : '')+
+      '<button type="button" class="linkbtn inline" data-meetedit="'+esc(s.id)+'" style="margin-top:6px">✏️ '+esc(t('Edit'))+'</button></div>';
   }).join('')+'</div>';
   return h+'</div>';
 }
@@ -1299,17 +1307,26 @@ function bindTeamAdmin_(){
   if(P.view!=='team' || !P.meet) return;
   document.querySelectorAll('[data-meetedit]').forEach(function(b){ b.onclick=function(){ var s=(P.meet.staff||[]).filter(function(x){ return x.id===b.getAttribute('data-meetedit'); })[0]; if(s){ P.teamEdit={ id:s.id, name:s.name, role:s.role||'' }; render(); } }; });
   on_('meetCancel', function(){ P.teamEdit=null; render(); });
+  on_('meetAdd', function(){ P.teamEdit={ id:'', name:'', role:'' }; render(); var n=document.getElementById('meet_name'); if(n) n.focus(); });
   var keep=function(){ var n=document.getElementById('meet_name'), r=document.getElementById('meet_role'); if(n) P.teamEdit.name=n.value; if(r) P.teamEdit.role=r.value; };
   var save=function(patch, done){
     P.busy=true; render();
     run('portalSaveStaffCard', [P.auth.user, P.auth.pin, P.teamEdit.id, patch], function(d){
       P.busy=false;
-      if(d && d.ok){ P.meet.staff=(P.meet.staff||[]).map(function(x){ return x.id===d.staff.id ? d.staff : x; }); P.staffPhotos[d.staff.id]=d.photo||''; if(done) done(d); showMsg(t('Saved')); }
+      if(d && d.ok && d.removed){ P.meet.staff=(P.meet.staff||[]).filter(function(x){ return x.id!==d.removed; }); if(done) done(d); showMsg(t('Removed')); }
+      else if(d && d.ok){ var had=(P.meet.staff||[]).some(function(x){ return x.id===d.staff.id; });
+        P.meet.staff = had ? P.meet.staff.map(function(x){ return x.id===d.staff.id ? d.staff : x; }) : (P.meet.staff||[]).concat([d.staff]);
+        P.staffPhotos[d.staff.id]=d.photo||''; if(done) done(d); showMsg(had ? t('Saved') : t('Added — you can add a photo now.')); }
       else showMsg(d && d.err==='too_large' ? t('That photo is too big — try again.') : d && d.err==='name_required' ? t('Add the full name.') : d && d.err==='not_authorized' ? t('Only a portal admin can do this') : t('Could not save — try again.'));
       render();
     }, function(){ P.busy=false; showMsg(t('Connection problem — try again.')); render(); });
   };
-  on_('meetSave', function(){ keep(); if(!String(P.teamEdit.name||'').trim()){ showMsg(t('Add the full name.')); return; } save({ name:P.teamEdit.name.trim(), role:String(P.teamEdit.role||'').trim() }, function(){ P.teamEdit=null; }); });
+  on_('meetSave', function(){ keep(); if(!String(P.teamEdit.name||'').trim()){ showMsg(t('Add the full name.')); return; }
+    var isNew=!P.teamEdit.id;
+    /* a new person stays open after adding, so a photo can go on */
+    save({ name:P.teamEdit.name.trim(), role:String(P.teamEdit.role||'').trim() }, function(d){ P.teamEdit = isNew ? { id:d.staff.id, name:d.staff.name, role:d.staff.role } : null; }); });
+  on_('meetHide', function(){ var s=(P.meet.staff||[]).filter(function(x){ return x.id===P.teamEdit.id; })[0]; if(!s) return; keep(); save({ hidden:!s.hidden }); });
+  on_('meetRemove', function(){ if(!confirm(t('Remove this person from Our team?'))) return; save({ remove:true }, function(){ P.teamEdit=null; }); });
   var inp=document.getElementById('meetPhotoInput');
   on_('meetPhotoBtn', function(){ keep(); if(inp) inp.click(); });
   if(inp) inp.onchange=function(){ var f=inp.files && inp.files[0]; inp.value=''; if(!f) return; keep(); shrinkPhoto_(f, 384).then(function(b64){ save({ photo:b64 }); }, function(){ showMsg(t('That file is not a photo.')); }); };
@@ -1538,10 +1555,9 @@ function meHtml_(){
   }).join('')+'</ol></div>';
   h+='</div><div>';
   h+=guideCardHtml_(app);
-  h+=schedulesCardHtml_();
   var submitted = !!app.submittedAt;
   var total = d.form ? askedAll_(d.form, app.audience).length : 0, done = d.form ? askedAll_(d.form, app.audience).filter(function(q){ return answered_(q, P.answers[q.id]); }).length : 0;
-  h+='<div class="card"><div class="panelHead"><h3 style="margin-top:0">📝 '+esc(t('Application form'))+'</h3>'+(submitted?'<button class="linkbtn inline" id="viewAnswers">'+esc(P.showAnswers?t('Hide'):t('View my answers'))+'</button>':'')+'</div>'+
+  h+='<div class="card"><div class="panelHead"><h3 style="margin-top:0">📝 '+esc(t('Application form'))+'</h3>'+(submitted?'<button class="linkbtn inline" id="viewAnswers">'+esc(P.showAnswers?t('Hide'):t('View my application'))+'</button>':'')+'</div>'+
     (submitted ? '<p class="sub" style="margin:0">✓ '+esc(t('Submitted'))+(app.submittedAt?' · '+esc(fmtDate_(app.submittedAt)):'')+(app.answersUpdatedAt?' · '+esc(gpT('updated {when}',{when:fmtDate_(app.answersUpdatedAt)})):'')+'</p>'+
         (app.type==='team' ? '<p class="hint">'+esc(t('Dates and head counts can be estimates — come back and update them here as your plans firm up.'))+'</p>' : '')+
         (app.status!=='closed' && app.status!=='completed' ? '<button class="btn ghost small" id="editAnswersMine" style="margin-top:10px">'+esc(t('Edit my answers'))+'</button>' : '')+
@@ -1703,7 +1719,7 @@ function panelHtml_(c, byId){
     ['docs','📎',t('Documents'), panelVisaHtml_(c)+panelDocsHtml_(c)+panelReferenceHtml_(c), docsN ? String(docsN) : ''],
     ['numbers','📊',t('Numbers'), panelTeamNumbersHtml_(c), ''],
     ['legal','✍️',t('Legal'), panelLegalHtml_(c), legalBadge_(c)],
-    ['answers','📝',t('Answers'), panelAnswersHtml_(c), ''],
+    ['answers','📝',t('Application'), panelAnswersHtml_(c), ''],
     ['notes','💬',t('Notes'), '', String((c.log||[]).filter(function(l){ return l.kind!=='stage'; }).length||'')]
   ].filter(function(x){ return x[0]==='notes' || x[3]; });
   if(!tabs.some(function(x){ return x[0]===P.ptab; })) P.ptab='overview';
@@ -2332,19 +2348,32 @@ function membersCardHtml_(app){
   return h+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn small" id="saveMembers"'+(P.busy?' disabled':'')+'>'+esc(t('Save the list'))+'</button>'+
     '<button class="linkbtn inline" id="cancelMembers">'+esc(t('Cancel'))+'</button></div></div>';
 }
-function schedulesCardHtml_(){
-  var sc=P.boot && P.boot.schedules;
-  if(!sc || typeof dutyHtml!=='function') return '';
-  var kinds=[['kitchen','🍲',t('Cooking schedule')],['chores','🧹',t('Morning chores')]];
-  var h='<div class="card" id="teamSchedules"><h3 style="margin-top:0">📋 '+esc(t('This week at the base'))+'</h3>'+
-    '<p class="sub" style="margin:0 0 8px">'+esc(t('Who cooks, washes up and does the morning chores this week — your team’s names included.'))+'</p><div class="chips">'+
-    kinds.map(function(k){ return '<button class="chip'+(P.schedShow===k[0]?' on':'')+'" data-pschedshow="'+k[0]+'"'+(sc[k[0]]?'':' disabled')+'>'+k[1]+' '+esc(k[2])+(sc[k[0]]?'':' · '+esc(t('not out yet')))+'</button>'; }).join('')+'</div>';
-  var s=P.schedShow && sc[P.schedShow];
-  if(s){
-    h+='<div style="margin-top:10px">'+dutyHtml(s, { t:t, esc:esc })+'</div>'+
-      '<button class="btn small" id="pschedShare" style="margin-top:10px">📤 '+esc(t('Share as image'))+'</button>';
-  }
-  return h+'</div>';
+/* ---- 📅 Schedule: the base's cooking and morning chores, from the GP app ----
+   This week's and next week's once Culinary / Hospitality put them out, while
+   they are here (portalBoot's `schedules`, drawn by duty.js — on a phone the
+   cooking table reads day by day). Their own names are picked out. */
+function schedPick_(){
+  var sc=P.boot && P.boot.schedules; if(!sc || !sc.here) return null;
+  var nextOut=!!(sc.next && (sc.next.kitchen || sc.next.chores));
+  var wk = P.schedWeek==='next' && nextOut ? 'next' : 'now', box = wk==='next' ? sc.next : sc;
+  var kind = P.schedShow==='kitchen' || P.schedShow==='chores' ? P.schedShow : (box.kitchen ? 'kitchen' : box.chores ? 'chores' : 'kitchen');
+  return { sc:sc, wk:wk, box:box, kind:kind, s:box[kind]||null, nextOut:nextOut };
+}
+function schedRange_(week){ var e=dutyAddDays(week,6), m=function(iso){ return t(MONTH_SHORT_[Number(iso.slice(5,7))-1])+' '+Number(iso.slice(8,10)); }; return m(week)+' – '+m(e); }
+function scheduleTabHtml_(){
+  var h='<div class="wide"><div class="gateTitle"><h2>'+esc(t('Weekly schedule'))+'</h2><p class="sub">'+esc(t('Who cooks and who does the morning chores at the base — your names picked out.'))+'</p></div>';
+  var x=schedPick_();
+  if(!x || typeof dutyHtml!=='function') return h+'<div class="card" id="schedNotYet"><p class="sub" style="margin:0">📅 '+esc(t('The cooking and morning chores schedules show here while you are at the base, as soon as they are put out each week.'))+'</p></div></div>';
+  h+='<div class="card" id="pSchedule">';
+  if(x.nextOut) h+='<div class="seg" style="max-width:420px;margin:0 0 10px"><button data-pschedweek="now" class="'+(x.wk==='now'?'on':'')+'">'+esc(t('This week'))+' · '+esc(schedRange_(x.sc.week))+'</button><button data-pschedweek="next" class="'+(x.wk==='next'?'on':'')+'">'+esc(t('Next week'))+' · '+esc(schedRange_(x.sc.nextWeek))+'</button></div>';
+  else h+='<p class="sub" style="margin:0 0 8px">'+esc(gpT('Week of {a}',{a:schedRange_(x.sc.week)}))+'</p>';
+  h+='<div class="chips">'+[['kitchen','🍲',t('Cooking schedule')],['chores','🧹',t('Morning chores')]].map(function(k){
+    return '<button class="chip'+(x.kind===k[0]?' on':'')+'" data-pschedshow="'+k[0]+'">'+k[1]+' '+esc(k[2])+(x.box[k[0]]?'':' · '+esc(t('not out yet')))+'</button>'; }).join('')+'</div>';
+  if(!x.s) h+='<p class="sub" style="margin:12px 0 0">'+esc(x.kind==='kitchen' ? t('The cooking schedule for this week isn’t out yet.') : t('The morning chores for this week aren’t out yet.'))+'</p>';
+  else h+='<div style="margin-top:12px">'+(x.s.title?'<h3 style="margin:0 0 8px">'+esc(x.s.title)+'</h3>':'')+dutyHtml(x.s, { t:t, esc:esc, me:x.sc.mine||[] })+'</div>'+
+    (x.s.notes?'<p class="hint" style="white-space:pre-line">'+esc(x.s.notes)+'</p>':'')+
+    '<button class="btn small" id="pschedShare" style="margin-top:10px">📤 '+esc(t('Share as image'))+'</button>';
+  return h+'</div></div>';
 }
 function openMySign_(){ P.sign={ token:{ user:P.auth.user, pin:P.auth.pin }, inApp:true, data:null, who:null, under18:null, idx:0, form:{}, pads:{}, done:false }; P.view='sign'; render(); window.scrollTo(0,0); }
 function bindMembersAndSchedules_(){
@@ -2372,12 +2401,13 @@ function bindMembersAndSchedules_(){
       render();
     }, function(){ P.busy=false; showMsg(t('Connection problem — try again.')); render(); });
   });
-  document.querySelectorAll('[data-pschedshow]').forEach(function(b){ b.onclick=function(){ var k=b.getAttribute('data-pschedshow'); P.schedShow = P.schedShow===k ? null : k; render(); }; });
+  document.querySelectorAll('[data-pschedshow]').forEach(function(b){ b.onclick=function(){ P.schedShow=b.getAttribute('data-pschedshow'); render(); }; });
+  document.querySelectorAll('[data-pschedweek]').forEach(function(b){ b.onclick=function(){ P.schedWeek=b.getAttribute('data-pschedweek'); P.schedShow=null; render(); }; });
   on_('pschedShare', function(){
-    var sc=P.boot.schedules, s=sc && sc[P.schedShow]; if(!s) return;
+    var x=schedPick_(), s=x && x.s; if(!s) return;
     var e=dutyAddDays(s.week,6), m=function(iso){ return t(MONTH_SHORT_[Number(iso.slice(5,7))-1])+' '+Number(iso.slice(8,10)); };
     dutyImage(s, { t:t, weekLabel:gpT('Week of {a} – {b}',{a:m(s.week), b:m(e)+', '+e.slice(0,4)}) }).then(function(blob){
-      return dutyShare(blob, (P.schedShow==='kitchen'?'cooking-schedule-':'morning-chores-')+s.week+'.png', s.title);
+      return dutyShare(blob, (x.kind==='kitchen'?'cooking-schedule-':'morning-chores-')+s.week+'.png', s.title);
     }).then(function(how){ if(how==='downloaded') showMsg(t('Saved as a picture — send it from your photos or downloads.')); }, function(){ showMsg(t('Could not make the picture.')); });
   });
 }
@@ -2830,13 +2860,13 @@ function panelAnswersHtml_(c){
   var form=(P.boot.forms||{})[c.formKey]; if(!form) return '';
   var submitted=!!(c.portal && c.portal.submittedAt);
   var answers=(c.portal && ((c.portal.form && c.portal.form.answers) || c.portal.draft)) || {};
-  var h='<div class="panelHead" style="margin-top:14px"><h3 style="margin:0">'+esc(t('Answers'))+(submitted?'':' · <span class="pill draft" style="font-size:11px">'+esc(t('draft'))+'</span>')+'</h3>'+
+  var h='<div class="panelHead" style="margin-top:14px"><h3 style="margin:0">'+esc(t('Application'))+(submitted?'':' · <span class="pill draft" style="font-size:11px">'+esc(t('draft'))+'</span>')+'</h3>'+
     (P.editAnswers ? '' : '<button class="linkbtn inline" id="editAnswers">'+esc(t('Edit'))+'</button>')+'</div>';
   if(P.editAnswers){
     (form.sections||[]).forEach(function(sec){ var qs=askedIn_(sec, c.audience); if(!qs.length) return; h+='<div class="eyebrow" style="margin-top:10px">'+esc(lt_(sec.title))+'</div>'+qs.map(function(q){ return questionHtml_(q, P.staffAnswers[q.id], 's_', false); }).join(''); });
     h+='<button class="btn small" id="saveAnswers"'+(P.busy?' disabled':'')+'>'+esc(t('Save answers'))+'</button> <button class="linkbtn inline" id="cancelAnswers">'+esc(t('Cancel'))+'</button>';
   } else if(Object.keys(answers).length){
-    h+='<input type="search" id="ansQ" placeholder="'+esc(t('Find in answers — a word, a name, a date'))+'" value="'+esc(P.ansQ||'')+'" style="margin:8px 0 6px">'+
+    h+='<input type="search" id="ansQ" placeholder="'+esc(t('Find in the application — a word, a name, a date'))+'" value="'+esc(P.ansQ||'')+'" style="margin:8px 0 6px">'+
       '<div id="ansBody">'+answersHtml_(form, answers, c.audience, { fold:true, q:P.ansQ })+'</div>';
   } else h+='<p class="sub" style="margin:0">'+esc(t('Nothing answered yet.'))+'</p>';
   return h;
@@ -2979,7 +3009,7 @@ function bindPanelExtras_(){
   on_('saveAnswers', function(){
     var saved=P.answers; P.answers=P.staffAnswers; readAnswers_(document.getElementById('panel')); P.staffAnswers=P.answers; P.answers=saved;
     P.busy=true; render();
-    run('portalStaffSaveAnswers', [P.auth.user, P.auth.pin, c.id, P.staffAnswers], function(d){ P.busy=false; if(putCand_(d)){ P.editAnswers=false; showMsg(t('Answers saved')); } render(); });
+    run('portalStaffSaveAnswers', [P.auth.user, P.auth.pin, c.id, P.staffAnswers], function(d){ P.busy=false; if(putCand_(d)){ P.editAnswers=false; showMsg(t('Application saved')); } render(); });
   });
 }
 

@@ -46,18 +46,18 @@ function dutyAddDays(iso, n){ var d=new Date(iso+'T12:00:00'); d.setDate(d.getDa
     '.dutyCell{cursor:pointer}'+
     '.dutySec{font-weight:800;font-size:13px;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}'+
     '.dutyList{border:1px solid var(--border);border-radius:12px;background:var(--surface);overflow:hidden}'+
-    '.dutyItem{display:grid;grid-template-columns:1fr minmax(96px,auto);gap:10px;padding:10px 12px;border-top:1px solid var(--border);color:var(--ink);text-align:left;width:100%;background:none;border-left:0;border-right:0;border-bottom:0;font:inherit}'+
+    '.dutyItem{display:grid;grid-template-columns:minmax(0,1fr) fit-content(60%);gap:10px;padding:10px 12px;border-top:1px solid var(--border);color:var(--ink);text-align:left;width:100%;background:none;border-left:0;border-right:0;border-bottom:0;font:inherit}'+
     '.dutyItem:first-child{border-top:0}'+
     '.dutyPlace{font-weight:700;font-size:14px}'+
     '.dutyWhat{font-size:12.5px;color:var(--muted);margin-top:2px;white-space:pre-line}'+
-    '.dutyWho{font-size:13.5px;font-weight:700;text-align:right}'+
+    /* the names column takes what it needs up to 60%; past that the next name goes on the line below, never cut off */
+    '.dutyWho{font-size:13.5px;font-weight:700;text-align:right;min-width:0}'+
     '.dutyWho .dutyName.me{display:inline-block;margin-top:1px}'+
     '.dutyList.compact .dutyItem{padding:7px 12px;align-items:center}'+
     '.dutyList.compact .dutyPlace{font-size:13.5px;font-weight:600}'+
     '.dutyList.compact .dutyWho{font-size:13px}'+
     '.dutyList.compact .dutyWho .dutyName{display:inline}'+
-    '.dutyList.compact .dutyWho .dutyName+.dutyName:before{content:", "}'+
-    '.dutyList.compact .dutyWho .dutyName.me+.dutyName:before,.dutyList.compact .dutyWho .dutyName+.dutyName.me:before{content:" "}';
+    '.dutyList.compact .dutyWho .dutyName:not(:last-child):after{content:","}';
   document.head.appendChild(st);
 })();
 
@@ -68,7 +68,8 @@ function dutyHtml(s, o){
   var t=o.t, esc=o.esc;
   var names=function(list, attr){
     var l=list||[];
-    var inner = l.length ? l.map(function(n){ return '<span class="dutyName'+(dutyIsMe_(n, o.me)?' me':'')+'">'+esc(n)+'</span>'; }).join('')
+    // a space between names: the line can break there, and only there (a name is never split)
+    var inner = l.length ? l.map(function(n){ return '<span class="dutyName'+(dutyIsMe_(n, o.me)?' me':'')+'">'+esc(n)+'</span>'; }).join(' ')
       : (o.edit ? '<span class="dutyEmpty">＋</span>' : '');
     return inner;
   };
