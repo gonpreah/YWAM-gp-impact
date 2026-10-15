@@ -1491,6 +1491,38 @@ async function open(viewport, query, seed) {
 }
 
 ok('no console/page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
+/* ---------- every passport at once: View all, and a .zip that opens as a folder ---------- */
+{
+  CANDS = JSON.parse(JSON.stringify(CANDS0));
+  const team = CANDS.find(c => c.id === 'cd_team');
+  team.portal.docs = [
+    { id: 'pd_a', kind: 'passports', name: 'lee.png', mime: 'image/png', size: 900, added: '2026-09-18T10:00:00Z', by: 'st_team' },
+    { id: 'pd_b', kind: 'passports', name: 'sam.png', mime: 'image/png', size: 900, added: '2026-09-18T10:01:00Z', by: 'st_team' },
+    { id: 'pd_c', kind: 'passports', name: 'mia.pdf', mime: 'application/pdf', size: 1200, added: '2026-09-18T10:02:00Z', by: 'st_team' },
+    { id: 'pd_d', kind: 'flights', name: 'flights.pdf', mime: 'application/pdf', size: 1200, added: '2026-09-18T10:03:00Z', by: 'st_team' }];
+  const { ctx, page } = await open({ width: 390, height: 844 }, '', () => localStorage.setItem('gp-portal', JSON.stringify({ user: 'sina', pin: '1234' })));
+  await page.waitForSelector('.trow[data-open="cd_team"]');
+  await page.click('.trow[data-open="cd_team"]'); await page.waitForSelector('[data-ptab]');
+  await ptab(page, 'docs');
+  ok('a kind with several files has View all and Download all; the record has All documents (.zip)', /View all 3/.test(await page.$eval('[data-dockind="passports"] [data-docviewall]', b => b.textContent)) && !!(await page.$('[data-dockind="passports"] [data-doczip="passports"]')) && !(await page.$('[data-dockind="flights"] [data-docviewall]')) && /All 4 documents/.test(await page.$eval('[data-doczip="*"]', b => b.textContent)));
+  await page.click('[data-docviewall="passports"]'); await page.waitForSelector('#docGallery');
+  ok('View all shows every passport on one page — the pictures themselves, PDFs a tap away', (await page.$$('#docGallery .docGalItem')).length === 3 && (await page.$$('#docGallery .docGalItem img')).length === 2 && /mia\.pdf/.test(await page.$eval('#docGallery', e => e.textContent)) && sent.filter(b => b.fn === 'portalGetDoc').length >= 3);
+  ok('… and it fits the phone', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }).catch(() => null), page.click('#docGallery [data-doczip="passports"]')]);
+  let zipOk = false, names = '';
+  if (dl) { const buf = fs.readFileSync(await dl.path()); const txt = buf.toString('utf8'); names = (txt.match(/Grace Church Team - Passports\/[^\u0000-\u001f]*?\.(png|pdf)/g) || []).join(' | ');
+    zipOk = buf.slice(0, 2).toString() === 'PK' && buf.readUInt32LE(buf.length - 22) === 0x06054b50 && buf.readUInt16LE(buf.length - 12) === 3; }
+  ok('Download all is one .zip: a folder named for the team, every passport in it, numbered', dl && /Grace Church Team - Passports\.zip$/.test(dl.suggestedFilename()) && zipOk && /1 - lee\.png/.test(names) && /3 - mia\.pdf/.test(names), (dl && dl.suggestedFilename()) + ' ' + names);
+  await page.click('#docGalClose'); await page.waitForTimeout(150);
+  ok('✕ closes it', !(await page.$('#docGallery')));
+  const [dl2] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }).catch(() => null), page.click('[data-doczip="*"]')]);
+  let sub = '';
+  if (dl2) { sub = fs.readFileSync(await dl2.path()).toString('utf8'); }
+  ok('All documents is one .zip with a folder for each kind', dl2 && /Grace Church Team - Documents\/Passports\//.test(sub) && /Grace Church Team - Documents\/Flights\//.test(sub));
+  await ctx.close();
+  CANDS = JSON.parse(JSON.stringify(CANDS0));
+}
+
 /* ---------- fits a phone: nothing cut off, nothing sliding sideways ---------- */
 {
   const { ctx, page } = await open({ width: 360, height: 740 }, '', () => localStorage.setItem('gp-portal', JSON.stringify({ user: 'sina', pin: '1234' })));
