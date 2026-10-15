@@ -366,7 +366,13 @@ a.staffNavBtn { text-decoration:none; text-align:center; }
 .staffNavBtn.home { flex:0 0 auto; width:38px; padding:6px 0; font-size:24px; line-height:1; font-weight:400; color:var(--muted); border:0; display:flex; align-items:center; justify-content:center; }
 .staffNavBtn.home:hover { color:var(--ink); background:var(--surface2); }
 .srOnly { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-.staffNavBtn.menuBtn { flex:0 1 auto; margin-left:auto; }
+.staffNavBtn.menuBtn { flex:1 1 auto; display:flex; align-items:center; gap:10px; text-align:left; color:var(--ink); }
+.staffNavBtn.menuBtn .menuIc { font-size:18px; line-height:1; } .staffNavBtn.menuBtn .menuHere { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.staffNavBtn.menuBtn .menuHint { font-size:12px; font-weight:600; color:var(--muted); }
+.staffNavBtn.menuBtn.on .menuHint { color:inherit; }
+/* the way back to the GP app: small text on its own line, not a button by the menu */
+.gpHomeLink { display:inline-block; margin:0 0 8px; font-size:13px; color:var(--muted); text-decoration:underline; text-underline-offset:3px; }
+.gpHomeLink:hover { color:var(--ink); }
 .menuScrim { position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:60; animation:menuFade .18s ease-out; }
 .staffMenu { position:fixed; top:0; right:0; bottom:0; width:min(300px, 86vw); z-index:61; overflow-y:auto; padding:14px 12px calc(16px + env(safe-area-inset-bottom)); background:var(--surface); border-left:1px solid var(--border); box-shadow:-8px 0 28px rgba(0,0,0,.18); display:flex; flex-direction:column; gap:14px; animation:menuIn .2s ease-out; }
 .menuHead { display:flex; align-items:center; justify-content:space-between; padding:0 0 4px 10px; font-size:16px; }
@@ -690,15 +696,19 @@ function staffNavHtml_(v){
      for the rest, in two groups: what staff access has, what admin access adds. */
   var staffItems=[['preview','toPreview','👁 '+t('View as applicant')],['link','toLink','🔗 '+t('Link for applicants')]];
   var adminItems=[['forms','toForms','📝 '+t('Forms')],['accounts','toAccounts','👤 '+t('Accounts')],['team','toTeam','👥 '+t('Our team')],['resources','toResources','📚 '+t('Resources')],['legal','toLegal','✍️ '+t('Legal documents')],['access','toAccess','🔑 '+t('Who has access')]];
-  var here=staffItems.concat(admin ? adminItems : []).filter(function(x){ return x[0]===v; })[0];
+  var crmItem=['crm','navCrm','📋 '+t('Applications')];
+  var here=[crmItem].concat(staffItems, admin ? adminItems : []).filter(function(x){ return x[0]===v; })[0];
   var item=function(x){ return '<button class="menuItem'+(v===x[0] || (x[0]==='link' && P.linkOpen)?' on':'')+'" id="'+x[1]+'">'+esc(x[2])+'</button>'; };
-  /* Staff come here from the GP app; a small ‹ on the left takes them back to its home. */
-  return '<nav class="staffNav" id="staffNav"><a class="staffNavBtn home" id="toGpApp" href="teams.html" title="'+esc(t('GP app home'))+'"><span aria-hidden="true">‹</span><span class="srOnly">'+esc(t('GP app home'))+'</span></a>'+
-    '<button class="staffNavBtn'+(v==='crm'?' on':'')+'" id="navCrm">📋 '+esc(t('Applications'))+'</button>'+
-    '<button class="staffNavBtn menuBtn'+(here || P.menuOpen ? ' on':'')+'" id="navMenu" aria-expanded="'+(P.menuOpen?'true':'false')+'" aria-controls="staffMenu">☰ '+esc(here ? here[2] : t('Menu'))+'</button></nav>'+
+  /* Uriah, Oct 2026: the way back to the GP app is a small line of text on
+     its own (no more tapping it by mistake), the bar is one ☰ button that says
+     where you are, and Applications sits first in the menu. */
+  return '<a class="gpHomeLink" id="toGpApp" href="teams.html">← '+esc(t('Go back to GP Home'))+'</a>'+
+    '<nav class="staffNav" id="staffNav"><button class="staffNavBtn menuBtn'+(P.menuOpen ? ' on':'')+'" id="navMenu" aria-expanded="'+(P.menuOpen?'true':'false')+'" aria-controls="staffMenu">'+
+    '<span class="menuIc" aria-hidden="true">☰</span><span class="menuHere">'+esc(here ? here[2] : t('Menu'))+'</span><span class="menuHint">'+esc(t('Menu'))+' ▾</span></button></nav>'+
     /* the menu slides in from the side, over the page; tap outside, ✕ or Esc closes it */
     (P.menuOpen ? '<div class="menuScrim" id="menuScrim"></div><aside class="staffMenu" id="staffMenu" role="dialog" aria-modal="true" aria-label="'+esc(t('Menu'))+'">'+
       '<div class="menuHead"><b>'+esc(t('Menu'))+'</b><button type="button" class="hbtn" id="menuClose" aria-label="'+esc(t('Close'))+'">✕</button></div>'+
+      '<div class="menuGroup">'+item(crmItem)+'</div>'+
       '<div class="menuGroup"><div class="eyebrow">'+esc(t('Staff access'))+'</div>'+staffItems.map(item).join('')+'</div>'+
       (admin ? '<div class="menuGroup"><div class="eyebrow">'+esc(t('Admin access'))+'</div>'+adminItems.map(item).join('')+'</div>' : '')+
       '<a class="menuItem menuHome" href="teams.html">🏠 '+esc(t('GP app home'))+'</a></aside>' : '')+
