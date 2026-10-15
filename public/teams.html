@@ -1366,6 +1366,20 @@ body.libReading nav.bottom { display:none; } body.libReading { overflow:hidden; 
 .hospBed.board.target { border-style:dashed; border-color:var(--accent); }
 .hospBed.board.moving { outline:3px solid var(--accent); outline-offset:1px; }
 .hospBed.board.drop { background:var(--accentSoft); }
+/* men blue, women pink, couple / family green: solid colour for someone in the bed, a tint for an empty one */
+:root { --bedM:#2563eb; --bedF:#db2777; --bedFam:#16a34a; --onBed:#fff; }
+.hospBed.bed-m { --bedc:var(--bedM); } .hospBed.bed-f { --bedc:var(--bedF); } .hospBed.bed-fam { --bedc:var(--bedFam); }
+.hospBed.held.bed-m, .hospBed.held.bed-f, .hospBed.held.bed-fam { background:var(--bedc); border-color:var(--bedc); color:var(--onBed); box-shadow:0 2px 6px color-mix(in srgb, var(--bedc) 35%, transparent); }
+.hospBed.held.bed-m small, .hospBed.held.bed-f small, .hospBed.held.bed-fam small { color:var(--onBed); }
+.hospBed.held.bed-m .hospBedLab, .hospBed.held.bed-f .hospBedLab, .hospBed.held.bed-fam .hospBedLab { color:rgba(255,255,255,.85); }
+.hospBed.free.bed-m, .hospBed.free.bed-f, .hospBed.free.bed-fam { background:color-mix(in srgb, var(--bedc) 14%, var(--surface)); border:2px solid var(--bedc); }
+.hospBed.free.bed-m small, .hospBed.free.bed-f small, .hospBed.free.bed-fam small { color:var(--bedc); }
+.hospBedSym { font-size:15px; line-height:1; }
+.hospStyleTag { display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; font-weight:700; color:var(--onBed); background:var(--muted); }
+.hospStyleTag.st-m { background:var(--bedM); } .hospStyleTag.st-f { background:var(--bedF); } .hospStyleTag.st-fam { background:var(--bedFam); }
+.hospBedKey { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 10px; font-size:13px; }
+.hospBedKey span { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; color:var(--onBed); font-weight:700; }
+.hospBedKey .bm { background:var(--bedM); } .hospBedKey .bf { background:var(--bedF); } .hospBedKey .bfam { background:var(--bedFam); }
 .hospWho.on { background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
 @media (min-width:720px){ .hospCalGrid { grid-template-columns:80px repeat(14, minmax(36px, 1fr)); min-width:0; } }
 @media (min-width:900px){
@@ -12235,17 +12249,18 @@ function hospFormHtml_(H){
       if(leftAll.length && sel.length && f.category==='team') h+='<button class="btn ghost small" id="hospNamesAuto" style="margin:0 0 6px">✨ '+esc(gpT('Fill the beds in order ({n} names)',{n:leftAll.length}))+'</button>';
       h+='<datalist id="hospPeopleList">'+pplAll.map(function(n){ return '<option value="'+esc(n)+'">'; }).join('')+'</datalist>';
     }
+    h+=hospBedKeyHtml_();
     H.buildings.forEach(function(b){
       var rooms=H.rooms.filter(function(r){ return r.buildingId===b.id; });
       if(!rooms.length) return;
       h+='<div class="hospPickBld">'+esc(b.name)+'</div>';
       rooms.forEach(function(r){
         var free=r.beds.filter(function(x){ return !x.out && !taken[x.id]; }).length;
-        h+='<div class="hospPickRoom"><div class="rowSub"><b>'+esc(r.name)+'</b> · '+esc(hospStyle_(r.style))+' · '+esc(gpT('{n} free',{n:free}))+'</div><div class="hospBeds">';
+        h+='<div class="hospPickRoom"><div class="rowSub"><b>'+esc(r.name)+'</b> '+hospStyleTag_(r.style)+' · '+esc(gpT('{n} free',{n:free}))+'</div><div class="hospBeds">';
         r.beds.forEach(function(x){
           var on=sel.indexOf(x.id)>-1, who=taken[x.id];
           var full = !on && !x.out && !who && (totalFull || (caps && (r.style==='male'||r.style==='female') && picks[r.style]>=caps[r.style]));
-          var cls=on?'sel':x.out?'out':who?'taken':full?'full':'free';
+          var cls=(on?'sel':x.out?'out':who?'taken':full?'full':'free')+(!on && !x.out && !who && !full ? (r.style==='male'?' bed-m':r.style==='female'?' bed-f':r.style==='couple'?' bed-fam':'') : '');
           if(on && ((r.style==='male' && Number(f.females)>0 && !Number(f.males)) || (r.style==='female' && Number(f.males)>0 && !Number(f.females)))) warn.push(r.name);
           var fullWhy = full ? (totalFull ? t('All the beds this booking needs are picked') : r.style==='male' ? t('All the men’s beds this booking needs are picked') : t('All the women’s beds this booking needs are picked')) : '';
           var mine=on && f.bedNames && f.bedNames[x.id];
@@ -12355,6 +12370,24 @@ function hospNamesForRoom_(H, f, room){
 }
 /* The name a bed shows: the person in it — "Name (Team)" for a team or a
    family — or else the booking's own name. */
+/* Bed colours (Uriah, Oct 2026): men blue, women pink, a couple or family
+   green. Who is in a bed: a family booking is green; else the person named on
+   that bed, by their man / woman; else a booking of only men or only women;
+   else the room's own style. An empty bed takes a light tint from its room. */
+function hospBedSex_(k, bedId, room){
+  if(k){
+    if(k.family) return 'fam';
+    var n=k.bedNames && k.bedNames[bedId], p=n && (k.people||[]).filter(function(x){ return x.name===n; })[0];
+    if(p && (p.sex==='m' || p.sex==='f')) return p.sex;
+    var m=Number(k.males)||0, w=Number(k.females)||0;
+    if(m && !w) return 'm';
+    if(w && !m) return 'f';
+  }
+  return room && room.style==='male' ? 'm' : room && room.style==='female' ? 'f' : room && room.style==='couple' ? 'fam' : '';
+}
+var HOSP_BED_SYM={m:'♂', f:'♀', fam:'👪'};
+function hospBedKeyHtml_(){ return '<div class="hospBedKey" id="hospBedKey"><span class="bm">♂ '+esc(t('Men'))+'</span><span class="bf">♀ '+esc(t('Women'))+'</span><span class="bfam">👪 '+esc(t('Couple / family'))+'</span></div>'; }
+function hospStyleTag_(st){ var c=st==='male'?'st-m':st==='female'?'st-f':st==='couple'?'st-fam':''; return '<span class="hospStyleTag '+c+'">'+esc(hospStyle_(st))+'</span>'; }
 function hospBedWho_(k, bedId){
   var n=k.bedNames && k.bedNames[bedId];
   return n ? n+' ('+k.name+')' : k.name;
@@ -12523,7 +12556,7 @@ function hospRoomsHtml_(H){
       '<button class="linkbtn inline" data-hospbldedit="'+esc(b.id)+'">'+esc(t('Rename'))+'</button></div><div class="hospRoomGrid">';
     rooms.forEach(function(r){
       var out=r.beds.filter(function(x){ return x.out; }).length;
-      h+='<button class="hospRoomRow" data-hosproom="'+esc(r.id)+'"><span><b>'+esc(r.name)+'</b> · '+esc(hospStyle_(r.style))+'</span><span class="rowSub">'+
+      h+='<button class="hospRoomRow" data-hosproom="'+esc(r.id)+'"><span><b>'+esc(r.name)+'</b> '+hospStyleTag_(r.style)+'</span><span class="rowSub">'+
         esc(gpT('{n} beds',{n:r.beds.length}))+(out?' · '+esc(gpT('{n} out',{n:out})):'')+' ›</span></button>';
     });
     h+='</div><button class="btn ghost small" data-hospaddroom="'+esc(b.id)+'" style="margin:8px 0 0">＋ '+esc(t('Add a room'))+'</button>';
@@ -12660,20 +12693,21 @@ function hospBoardHtml_(H){
     if(!rooms.length) return;
     h+='<div class="hospPickBld">'+esc(b.name)+'</div><div class="hospGrid">';
     rooms.forEach(function(r){
-      h+='<div class="card slim hospBoardRoom"><div class="rowSub"><b>'+esc(r.name)+'</b> · '+esc(hospStyle_(r.style))+'</div><div class="hospBeds">';
+      h+='<div class="card slim hospBoardRoom"><div class="rowSub"><b>'+esc(r.name)+'</b> '+hospStyleTag_(r.style)+'</div><div class="hospBeds">';
       r.beds.forEach(function(x){
         var k=N.byBed[x.id], c=k && hospCat_(k.category), on=mv && k && mv.id===k.id && mv.bed===x.id;
         if(k) used++; else if(!x.out) free++;
-        var cls=x.out?'out':k?'held hospCat '+c[0]:'free';
+        var sx=x.out ? '' : hospBedSex_(k, x.id, r);
+        var cls=(x.out?'out':k?'held hospCat '+c[0]:'free')+(sx?' bed-'+sx:'');
         if(mv && !on && !x.out && who) cls+=' target';
         h+='<button class="hospBed board '+cls+(on?' moving':'')+'" data-hboard="'+esc(x.id)+'"'+(k?' data-hmove="'+esc(k.id)+'" data-hmovebed="'+esc(x.id)+'" draggable="true"':'')+(x.out?' disabled':'')+'>'+
-          '<span class="hospBedLab">'+esc(x.label)+'</span>'+(k?'<small>'+c[2]+' '+esc(hospBedWho_(k, x.id))+'</small>':x.out?'<small>'+esc(t('Out of use'))+'</small>':'<small>'+esc(t('Free'))+'</small>')+'</button>';
+          '<span class="hospBedLab">'+(sx?'<span class="hospBedSym">'+HOSP_BED_SYM[sx]+'</span> ':'')+esc(x.label)+'</span>'+(k?'<small>'+c[2]+' '+esc(hospBedWho_(k, x.id))+'</small>':x.out?'<small>'+esc(t('Out of use'))+'</small>':'<small>'+esc(t('Free'))+'</small>')+'</button>';
       });
       h+='</div></div>';
     });
     h+='</div>';
   });
-  return '<p class="sub" id="hospBoardSum" style="margin:0 0 6px">'+esc(gpT('{a} in a bed · {b} beds free',{a:used,b:free}))+'</p>'+h;
+  return '<p class="sub" id="hospBoardSum" style="margin:0 0 6px">'+esc(gpT('{a} in a bed · {b} beds free',{a:used,b:free}))+'</p>'+hospBedKeyHtml_()+h;
 }
 function hospCalTabHtml_(H){
   var mode=S.hospCalMode==='board'?'board':'cal';
@@ -12775,7 +12809,7 @@ function hospStaffHtml_(H){
     if(!rooms.length) return;
     h+='<div class="hospPickBld">'+esc(b.name)+'</div><div class="hospGrid">';
     rooms.forEach(function(r){
-      h+='<div class="card slim hospStaffRoom"><div class="rowSub"><b>'+esc(r.name)+'</b> · '+esc(hospStyle_(r.style))+'</div>';
+      h+='<div class="card slim hospStaffRoom"><div class="rowSub"><b>'+esc(r.name)+'</b> '+hospStyleTag_(r.style)+'</div>';
       r.beds.forEach(function(x){
         var o=other[x.id];
         h+='<label class="hospWhoRow hospStaffRow"><span>'+esc(x.label)+'</span>'+
