@@ -710,7 +710,7 @@ async function open(viewport, query, seed) {
   const { ctx, page } = await open({ width: 1280, height: 900 }, '', () => localStorage.setItem('gp-portal', JSON.stringify({ user: 'sina', pin: '1234' })));
   await page.waitForSelector('.trow');
   await page.click('#navMenu'); await page.waitForSelector('#staffMenu');
-  ok('a portal admin finds Forms under Admin access in the ☰ menu, apart from Staff access', !!(await page.$('#toForms')) && /Staff access/.test(await page.$eval('#staffMenu', e => e.textContent)) && /Admin access/.test(await page.$eval('#staffMenu', e => e.textContent)) && (await page.$$eval('#staffMenu .menuGroup', g => g.map(x => [...x.querySelectorAll('button')].map(b => b.id).join(',')).join('|'))) === 'toPreview,toLink|toForms,toAccounts,toTeam,toResources,toLegal,toAccess');
+  ok('a portal admin finds Forms under Admin access in the ☰ menu, apart from Staff access', !!(await page.$('#toForms')) && /Staff access/.test(await page.$eval('#staffMenu', e => e.textContent)) && /Admin access/.test(await page.$eval('#staffMenu', e => e.textContent)) && (await page.$$eval('#staffMenu .menuGroup', g => g.map(x => [...x.querySelectorAll('button')].map(b => b.id).join(',')).join('|'))) === 'navCrm|toPreview,toLink|toForms,toAccounts,toTeam,toResources,toLegal,toAccess');
   if(!(await page.$('#toForms'))){ await page.click('#navMenu'); await page.waitForSelector('#toForms'); }
   await page.click('#toForms');
   await page.waitForSelector('#formSave');
@@ -1331,8 +1331,8 @@ async function open(viewport, query, seed) {
     noScroll: document.documentElement.scrollWidth <= innerWidth + 1
   }));
   ok('on a phone the header keeps only language and Sign out', JSON.stringify(bar.header) === JSON.stringify(['langBtn', 'outBtn']), JSON.stringify(bar.header));
-  ok('the bar is just Applications and a ☰ menu — the rest sits in the menu', JSON.stringify(bar.nav) === JSON.stringify(['navCrm', 'navMenu']) && !(await page.$('#staffMenu')), JSON.stringify(bar.nav));
-  ok('and the bar starts with a small ‹ back to the GP app home (named for screen readers)', await page.$eval('#staffNav > :first-child', a => a.id === 'toGpApp' && a.tagName === 'A' && a.getAttribute('href') === 'teams.html' && /GP app home/.test(a.textContent) && a.getBoundingClientRect().width <= 44 && /‹/.test(a.textContent)));
+  ok('the bar is one ☰ button that says where you are — Applications when the portal opens', JSON.stringify(bar.nav) === JSON.stringify(['navMenu']) && /Applications/.test(await page.$eval('#navMenu', b => b.textContent)) && !(await page.$('#staffMenu')), JSON.stringify(bar.nav));
+  ok('the way back to the GP app is small text on its own line, not a button beside the menu', await page.$eval('#toGpApp', a => a.tagName === 'A' && a.getAttribute('href') === 'teams.html' && /Go back to GP Home/.test(a.textContent) && !a.closest('#staffNav') && a.getBoundingClientRect().bottom <= document.querySelector('#staffNav').getBoundingClientRect().top));
   await page.click('#navMenu'); await page.waitForSelector('#staffMenu'); await page.waitForTimeout(350);
   ok('☰ opens the menu as a panel on the side, over the page, with a backdrop', await page.$eval('#staffMenu', m => { const r = m.getBoundingClientRect(), cs = getComputedStyle(m); return cs.position === 'fixed' && Math.abs(r.right - innerWidth) < 1 && r.top === 0 && r.width < innerWidth; }) && !!(await page.$('#menuScrim')) && await page.evaluate(() => document.body.classList.contains('menuOn')), JSON.stringify(await page.$eval('#staffMenu', m => { const r = m.getBoundingClientRect(); return { pos: getComputedStyle(m).position, r: [r.left, r.top, r.right, r.width], w: innerWidth }; })));
   await page.click('#menuScrim', { position: { x: 10, y: 400 } }); await page.waitForTimeout(150);
@@ -1345,10 +1345,12 @@ async function open(viewport, query, seed) {
   if(!(await page.$('#toPreview'))){ await page.click('#navMenu'); await page.waitForSelector('#toPreview'); }
   await page.click('#toPreview');
   await page.waitForSelector('#pvFrame');
-  ok('the ☰ button marks where you are (and closes the menu), with Applications to go back', await page.$eval('#navMenu', b => b.classList.contains('on') && /View as applicant/.test(b.textContent)) && !(await page.$('#staffMenu')) && !!(await page.$('#navCrm')));
+  ok('the ☰ button says where you are (and the menu closes)', /View as applicant/.test(await page.$eval('#navMenu', b => b.textContent)) && !(await page.$('#staffMenu')) && !(await page.$('#navCrm')));
+  await page.click('#navMenu'); await page.waitForSelector('#navCrm');
+  ok('Applications is the first thing in the menu', await page.$eval('#staffMenu .menuItem', b => b.id) === 'navCrm');
   await page.click('#navCrm');
   await page.waitForSelector('.trow');
-  ok('Applications in the bar returns to the list', await page.$eval('#navCrm', b => b.classList.contains('on')));
+  ok('… and takes you back to the list', /Applications/.test(await page.$eval('#navMenu', b => b.textContent)) && !(await page.$('#staffMenu')));
   await ctx.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {});
   if(!(await page.$('#toLink'))){ await page.click('#navMenu'); await page.waitForSelector('#toLink'); }
   await page.click('#toLink');
