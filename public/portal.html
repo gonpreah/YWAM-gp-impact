@@ -608,12 +608,14 @@ var P = { aview:'status', meet:null, teamEdit:null, menuOpen:false, access:null,
   }
   if(qs.sign){ P.view='sign'; P.sign={ token:String(qs.sign), data:null, who:null, under18:null, idx:0, form:{}, pads:{}, done:false }; }
   if(qs.open) P.openCand=String(qs.open);   // portal.html?open=<candidateId> — the GP app's Teams Database links here
+  /* portal.html?stay=<campus>: a guest or speaker asks for a room — no account (SR Hospitality sends the link) */
+  if(qs.stay && CAMPUS_SCHOOLS[qs.stay]){ P.view='stay'; P.stay={ campus:String(qs.stay), f:{ category:'guest' }, busy:false, done:false, miss:{} }; }
   var saved=null; try { saved=JSON.parse(lsGet('gp-portal')||'null'); } catch(e){}
-  if(saved && saved.user && saved.pin && !P.sign){ P.auth=saved; P.view='booting'; boot_(); }
+  if(saved && saved.user && saved.pin && !P.sign && !P.stay){ P.auth=saved; P.view='booting'; boot_(); }
 })();
 /* Is Google sign-in on? (GP_GOOGLE_CLIENT_ID on the server.) Asked once; the
    sign-in redraws when the answer lands. */
-run('portalAuthConfig', [], function(d){ if(d && d.ok){ P.authCfg=d; if(d.google) gsiLoad_(); if(!P.auth && P.view!=='booting' && P.view!=='ref' && P.view!=='sign') render(); } }, function(){});
+run('portalAuthConfig', [], function(d){ if(d && d.ok){ P.authCfg=d; if(d.google) gsiLoad_(); if(!P.auth && P.view!=='booting' && P.view!=='ref' && P.view!=='sign' && P.view!=='stay') render(); } }, function(){});
 /* The portal installs like the staff app: same service worker (network first,
    the last copy when offline), its own manifest. */
 (function(){
@@ -683,7 +685,7 @@ function render(){
   document.body.classList.toggle('wideStaff', !!(staffView && v==='crm'));   // the list and a record side by side want the room
   try { m.innerHTML = (staffView ? staffNavHtml_(v) : applicantTabs ? applicantNavHtml_() : '') + (v==='booting' ? '<p class="sub" style="text-align:center;padding:40px 0">'+esc(t('Loading…'))+'</p>'
     : v==='register' ? registerHtml_() : v==='choose' ? chooseHtml_() : v==='me' ? meTabHtml_() : v==='crm' ? crmHtml_() : v==='form' ? formHtml_() : v==='forms' ? formsHtml_() : v==='resources' ? resourcesAdminHtml_() : v==='team' ? teamAdminHtml_() : v==='access' ? accessHtml_() : v==='accounts' ? accountsHtml_() : v==='preview' ? previewHtml_()
-    : v==='noaccess' ? noAccessHtml_() : v==='ref' ? refHtml_() : v==='sign' ? signHtml_() : v==='legal' ? legalAdminHtml_() : loginHtml_())
+    : v==='noaccess' ? noAccessHtml_() : v==='ref' ? refHtml_() : v==='stay' ? stayHtml_() : v==='sign' ? signHtml_() : v==='legal' ? legalAdminHtml_() : loginHtml_())
     + (P.guideOpen && P.boot && typeof outreachGuideHtml==='function' ? guideOverlayHtml_() : '')
     + (staffView && P.docGallery ? docGalleryHtml_() : '');
   document.body.classList.toggle('guideOn', !!(P.guideOpen && P.boot));
@@ -1096,6 +1098,50 @@ function makeRefLink_(candidateId, after){
 }
 function copyText_(txt){ try { navigator.clipboard.writeText(txt).then(function(){ showMsg(t('Copied')); }, function(){ showMsg(t('Select the link and copy it')); }); } catch(e){ showMsg(t('Select the link and copy it')); } }
 function readRefAnswers_(){ var saved=P.answers; P.answers=P.refAnswers; readAnswers_(); P.refAnswers=P.answers; P.answers=saved; }
+/* ---- 🛏 Stay with us: the short form a guest or speaker fills in ---- */
+function stayHtml_(){
+  var S=P.stay, f=S.f, camp=campusName_(S.campus), m=S.miss||{};
+  var h='<div class="center"><div class="gateTitle"><h2>'+esc(gpT('Stay with us at {campus}',{campus:camp}))+'</h2>';
+  if(S.done) return h+'</div><div class="card" id="stayDone"><h3 style="margin-top:0">✓ '+esc(t('Thank you'))+'</h3><p class="sub" style="margin:0">'+esc(gpT('Your request has reached our hospitality team. We will be in touch to confirm your room, {name}.',{name:String(f.name||'').split(' ')[0]}))+'</p></div>'+langRowHtml_()+'</div>';
+  h+='<p class="sub">'+esc(t('Coming to speak, visit or serve for a short time? Tell us when, and we will get a room ready.'))+'</p></div><div class="card" id="stayForm">';
+  var inp=function(id, label, type, extra, req){ return '<label class="f" for="st_'+id+'">'+esc(label)+(req?' <span class="req">*</span>':'')+'</label><input type="'+(type||'text')+'" id="st_'+id+'" value="'+esc(f[id]||'')+'"'+(m[id]?' class="miss"':'')+(extra||'')+'>'; };
+  h+=inp('name', t('Full name'), 'text', ' maxlength="120" autocomplete="name"', true);
+  h+='<label class="f">'+esc(t('Coming as'))+'</label><div class="seg" style="max-width:320px">'+[['guest',t('Guest')],['speaker',t('Speaker')]].map(function(x){ return '<button type="button" data-stcat="'+x[0]+'" class="'+(f.category===x[0]?'on':'')+'">'+esc(x[1])+'</button>'; }).join('')+'</div>';
+  h+='<div class="two2">'+'<div>'+inp('from', t('Arriving'), 'date', '', true)+'</div><div>'+inp('to', t('Leaving'), 'date', '', true)+'</div></div>';
+  h+='<p class="hint" style="margin:10px 0 0">'+esc(t('How many people, you included?'))+'</p><div class="two2"><div>'+inp('males', t('Men'), 'number', ' min="0" max="50" inputmode="numeric"')+'</div><div>'+inp('females', t('Women'), 'number', ' min="0" max="50" inputmode="numeric"')+'</div></div>';
+  if(m.people) h+='<p class="hint" style="margin:4px 0 0;color:var(--bad)">'+esc(t('Tell us how many are coming.'))+'</p>';
+  h+=inp('phone', t('Phone or WhatsApp'), 'tel', ' maxlength="40" autocomplete="tel"')+inp('email', t('Email'), 'email', ' maxlength="120" autocomplete="email"');
+  if(m.contact) h+='<p class="hint" style="margin:4px 0 0;color:var(--bad)">'+esc(t('A phone number or an email, so we can reach you.'))+'</p>';
+  h+=inp('org', t('Church or organisation, or who invited you'), 'text', ' maxlength="120"');
+  h+='<label class="f" for="st_notes">'+esc(t('Anything we should know?'))+'</label><textarea id="st_notes" rows="3" maxlength="1000" placeholder="'+esc(t('Food, travel, who is coming with you…'))+'">'+esc(f.notes||'')+'</textarea>';
+  /* a box people never see: robots fill it in */
+  h+='<input type="text" id="st_website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">';
+  h+='<button class="btn" id="staySend" style="margin-top:14px"'+(S.busy?' disabled':'')+'>'+esc(S.busy ? t('Sending…') : t('Send the request'))+'</button></div>'+langRowHtml_()+'</div>';
+  return h;
+}
+function bindStay_(){
+  if(P.view!=='stay') return;
+  var S=P.stay, f=S.f, keep=function(){ ['name','from','to','males','females','phone','email','org','notes'].forEach(function(k){ var el=document.getElementById('st_'+k); if(el) f[k]=el.value; }); };
+  document.querySelectorAll('[data-stcat]').forEach(function(b){ b.onclick=function(){ keep(); f.category=b.getAttribute('data-stcat'); render(); }; });
+  on_('staySend', function(){
+    keep();
+    var m={}, n=function(v){ var x=Number(v); return isFinite(x) && x>0 ? Math.round(x) : 0; };
+    if(!String(f.name||'').trim()) m.name=1;
+    if(!f.from) m.from=1; if(!f.to || (f.from && f.to<=f.from)) m.to=1;
+    if(n(f.males)+n(f.females)<1){ m.males=1; m.females=1; m.people=1; }
+    if(!String(f.phone||'').trim() && !String(f.email||'').trim()){ m.phone=1; m.email=1; m.contact=1; }
+    S.miss=m;
+    if(Object.keys(m).length){ showMsg(m.to && f.from && f.to ? t('The leaving date must be after the arriving date.') : t('Please fill in the boxes marked in red.')); render(); return; }
+    var web=document.getElementById('st_website');
+    S.busy=true; render();
+    run('stayRequest', [S.campus, { name:f.name, category:f.category, from:f.from, to:f.to, males:n(f.males), females:n(f.females), phone:f.phone, email:f.email, org:f.org, notes:f.notes, website: web ? web.value : '' }], function(d){
+      S.busy=false;
+      if(d && d.ok){ S.done=true; window.scrollTo(0,0); }
+      else showMsg(d && d.err==='bad_dates' ? t('Please check the dates.') : d && d.err==='contact_required' ? t('A phone number or an email, so we can reach you.') : t('Could not send — try again.'));
+      render();
+    }, function(){ S.busy=false; showMsg(t('Connection problem — try again.')); render(); });
+  });
+}
 function bindRef_(){
   if(P.view!=='ref') return;
   if(P.refData===null){
@@ -3220,7 +3266,7 @@ function bind_(){
   document.querySelectorAll('[data-linkkind]').forEach(function(b){ b.onclick=function(){ P.linkKind=b.getAttribute('data-linkkind'); render(); copyText_(applyLinkUrl_(P.linkKind)); }; });
   on_('toPreview', function(){ P.menuOpen=false; if(P.view==='preview') return; P.view='preview'; P.pv.boot=null; P.pv.screen='me'; P.pv.sec=0; render(); });
   on_('toAccounts', function(){ P.menuOpen=false; if(P.view==='accounts') return; P.view='accounts'; P.accSel=null; P.accNew=false; P.accounts=null; render(); });
-  bindForm_(); bindForms_(); bindAccounts_(); bindRef_(); bindSign_(); bindLegalAdmin_(); bindPreview_(); bindStays_(); bindPeople_(); bindDocs_(); if(P.view==='crm') bindPanelExtras_();
+  bindForm_(); bindForms_(); bindAccounts_(); bindRef_(); bindStay_(); bindSign_(); bindLegalAdmin_(); bindPreview_(); bindStays_(); bindPeople_(); bindDocs_(); if(P.view==='crm') bindPanelExtras_();
 }
 /* Typing in the search box re-draws only the list, so the box keeps focus. */
 function renderList_(){

@@ -4075,8 +4075,49 @@ function cleanHospBooking_(k) {
   return {
     id: str_(k.id, 60) || hospId_('hk'), category: category, name: name, from: from, to: to, permanent: permanent,
     males: males, females: females, count: count, family: !!k.family, bedIds: kept, bedNames: bedNames, people: people,
-    notes: str_(k.notes, 1000) || '', tripId: str_(k.tripId, 60) || ''
+    notes: str_(k.notes, 1000) || '', tripId: str_(k.tripId, 60) || '', stayId: str_(k.stayId, 60) || ''
   };
+}
+/* ---- a guest or speaker asks for a room (Oct 2026, Uriah) ----
+   SR Hospitality copies a link — portal.html?stay=<campus> — and sends it to
+   a guest or speaker coming for a short stay. They fill in a short form (no
+   account): name, guest or speaker, the dates, how many men and women, a
+   phone or email, who invited them, notes. It lands in Hospitality's
+   Requests like a team does; "Book beds" fills the booking in from it
+   (stayId links the two) and Decline takes it off the list. One blob per
+   campus, 'stayReq:<campus>' = { reqs: [...] }. */
+const STAY_MAX_OPEN = 200;
+function stayKey_(campus) { return 'stayReq:' + campus; }
+async function getStays_(campus) { const b = await readJSON(stayKey_(campus), { reqs: [] }); return Array.isArray(b && b.reqs) ? b.reqs : []; }
+async function stayRequest(campus, p) {
+  campus = HR_CAMPUSES.indexOf(campus) > -1 ? campus : '';
+  if (!campus) return { ok: false, err: 'bad_campus' };
+  p = p && typeof p === 'object' ? p : {};
+  if (p.website) return { ok: true };   // a robot filled the hidden box: say thanks, keep nothing
+  const name = dutyText_(p.name, 120);
+  if (!name) return { ok: false, err: 'name_required' };
+  const today = new Date().toISOString().slice(0, 10), from = isoDate_(p.from), to = isoDate_(p.to);
+  if (!from || !to || to <= from) return { ok: false, err: 'bad_dates' };
+  if (from < addDays_(today, -1) || from > addDays_(today, 730) || to > addDays_(from, 120)) return { ok: false, err: 'bad_dates' };
+  const males = Math.min(50, hospCount_(p.males)), females = Math.min(50, hospCount_(p.females));
+  const count = Math.max(males + females, 1);
+  const email = cleanEmail_(p.email) || '', phone = str_(p.phone, 40);
+  if (!email && !phone) return { ok: false, err: 'contact_required' };
+  const reqs = (await getStays_(campus)).filter(function (r) { return r.to >= addDays_(today, -30); });
+  if (reqs.filter(function (r) { return r.status !== 'declined'; }).length >= STAY_MAX_OPEN) return { ok: false, err: 'too_many' };
+  reqs.push({ id: hospId_('sr'), name: name, category: p.category === 'speaker' ? 'speaker' : 'guest', from: from, to: to, males: males, females: females, count: count,
+    email: email, phone: phone, org: str_(p.org, 120), notes: str_(p.notes, 1000), at: new Date().toISOString(), status: 'new' });
+  await writeJSON(stayKey_(campus), { reqs: reqs });
+  return { ok: true };
+}
+/* Hospitality declines one (it goes off the list) — or brings it back */
+async function hospStayStatus(username, pin, id, status) {
+  const a = await hospAuth_(username, pin); if (a.out) return a.out;
+  const reqs = await getStays_(a.s.campus), r = reqs.find(function (x) { return x.id === str_(id, 60); });
+  if (!r) return { ok: false, err: 'not_found' };
+  r.status = status === 'declined' ? 'declined' : 'new'; r.by = a.s.id; r.updated = new Date().toISOString();
+  await writeJSON(stayKey_(a.s.campus), { reqs: reqs });
+  return getHospitality(username, pin);
 }
 /* Every team in the Teams Database with dates that hasn't left yet is a bed
    request until a booking points at it. */
@@ -4096,8 +4137,8 @@ async function hospRequests_(campus, bookings) {
   const pend = await pendingTeamIds_();
   const byCand = {};
   (await getCandidates_()).forEach(function (c) { if (c && c.id) byCand[c.id] = c; });
-  const booked = {};
-  bookings.forEach(function (k) { if (k.tripId) booked[k.tripId] = k.id; });
+  const booked = {}, bookedStay = {};
+  bookings.forEach(function (k) { if (k.tripId) booked[k.tripId] = k.id; if (k.stayId) bookedStay[k.stayId] = k.id; });
   /* a team whose application was deleted in the portal is gone too */
   const goneCand = function (t) { return !!(t.candidateId && !byCand[t.candidateId]); };
   const trips = await getTeamTrips_();
@@ -4129,7 +4170,11 @@ async function hospRequests_(campus, bookings) {
       candidateId: t.candidateId || '', bookingId: booked[t.id] || '',
       people: teamPeople_(t.candidateId && byCand[t.candidateId])
     };
-  }).concat(gone).sort(function (a, b) { return a.from < b.from ? -1 : a.from > b.from ? 1 : 0; });
+  }).concat(gone, (await getStays_(campus)).filter(function (r) { return r.status !== 'declined' && r.to >= today; }).map(function (r) {
+    return { stayId: r.id, kind: 'stay', category: r.category, tripId: '', name: r.name, country: '', from: r.from, to: r.to, size: r.count,
+      males: r.males, females: r.females, couples: null, pending: false, portalStage: '', candidateId: '', bookingId: bookedStay[r.id] || '',
+      people: [{ name: r.name, sex: '' }], email: r.email || '', phone: r.phone || '', org: r.org || '', notes: r.notes || '', at: r.at };
+  })).sort(function (a, b) { return a.from < b.from ? -1 : a.from > b.from ? 1 : 0; });
 }
 async function hospAuth_(username, pin) {
   const s = await verifyStaff_(username, pin);
@@ -4167,6 +4212,7 @@ async function hospSave(username, pin, kind, rec) {
     });
     if (clash) return { ok: false, err: 'bed_taken', with: clash.name };
     if (clean.tripId && d.bookings.some(function (o) { return o.id !== clean.id && o.tripId === clean.tripId; })) return { ok: false, err: 'already_booked' };
+    if (clean.stayId && d.bookings.some(function (o) { return o.id !== clean.id && o.stayId === clean.stayId; })) return { ok: false, err: 'already_booked' };
   }
   clean.updated = new Date().toISOString(); clean.updatedBy = a.s.id;
   if (idx > -1) list[idx] = clean; else list.push(clean);
@@ -8150,6 +8196,7 @@ const HANDLERS = {
   getMyBroadcasts: function (a) { return getMyBroadcasts(a[0], a[1]); },
   sendBroadcast: function (a) { return sendBroadcast(a[0], a[1], a[2]); },
   portalRegister: function (a) { return portalRegister(a[0]); },
+  stayRequest: function (a) { return stayRequest(a[0], a[1]); },
   portalAuthConfig: function () { return portalAuthConfig(); },
   portalLoginGoogle: function (a) { return portalLoginGoogle(a[0]); },
   portalSetPassword: function (a) { return portalSetPassword(a[0], a[1], a[2]); },
@@ -8198,6 +8245,7 @@ const HANDLERS = {
   getHospitality: function (a) { return getHospitality(a[0], a[1]); },
   hospSave: function (a) { return hospSave(a[0], a[1], a[2], a[3]); },
   hospDelete: function (a) { return hospDelete(a[0], a[1], a[2], a[3]); },
+  hospStayStatus: function (a) { return hospStayStatus(a[0], a[1], a[2], a[3]); },
   hospMoveBed: function (a) { return hospMoveBed(a[0], a[1], a[2], a[3], a[4]); },
   hospStaffBeds: function (a) { return hospStaffBeds(a[0], a[1], a[2]); },
   hospImport: function (a) { return hospImport(a[0], a[1], a[2]); },

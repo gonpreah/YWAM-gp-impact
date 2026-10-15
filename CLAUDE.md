@@ -511,6 +511,14 @@ quietest bucket named), Requests, Calendar, Bookings, Rooms.
   with `pending` from `pendingTeamIds_` and `bookingId` when a booking has its `tripId`.
   "Fits / Short by N" is worked out in the page (`hospFit_`: the tightest night of the
   stay against beds in use). Students aren't requests yet (no dates on the portal).
+- **Guests and speakers ask from a link (Oct 2026)**: Requests has "🔗 Link for guests and speakers"
+  (`hospStayLink_`, `#hospStayUrl`, Copy / Share) = `portal.html?stay=<campus>` — a short form with no account
+  (`stayHtml_` / `bindStay_`: name, guest or speaker, arriving / leaving, men / women, phone or email, church
+  or who invited them, notes; a hidden `website` box catches robots). `stayRequest(campus, p)` (public; dates
+  from yesterday to two years ahead, up to 120 nights; 200 open per campus) keeps it in `stayReq:<campus>`;
+  `hospRequests_` lists the open ones (`stayId`, `kind:'stay'`, `category`, contact, `org`, `notes`) with the
+  teams — key `hospReqKey_` = 'sr:<id>'. Book beds fills the booking (category, counts, contact in the notes,
+  `stayId`, one booking each); Decline (`hospStayStatus`) takes it off. Not in the portal's Applications.
 - **A cancelled or deleted team with beds booked** (closed in the portal → its Teams Database row is
   cancelled; deleted in the portal → `portalDeleteApplicant` cancels the row; or cancelled / deleted in the
   Teams Database) is still listed by `hospRequests_` while its booking runs, as `cancelled: 'cancelled' |
