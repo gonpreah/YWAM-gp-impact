@@ -690,6 +690,14 @@ carry `holidays` (last year to next) so the leave page lists them under the allo
 counts a new request the same way (`leaveWorkDays_`, with a "… not counted" hint).
 `test-holidays.mjs` and `test-holidays-page.mjs` cover it.
 
+## Documents: every file at once (portal staff, Oct 2026)
+On a record's Documents tab, a kind with more than one file (passports above all) has **👁 View all n**
+— one full-screen page (`P.docGallery`, `#docGallery`, `docGalleryHtml_`) with every picture shown and
+PDFs a tap away — and **⬇ Download all (.zip)**; the record has **All n documents (.zip)** with a folder
+per kind. Files come one by one through `portalGetDoc` (`fetchDocs_`); the zip is made in the browser
+(`makeZip_`, stored entries, CRC32, UTF-8 names) as "<Team> - Passports/1 - name.jpg"…, so it opens
+as one folder.
+
 ## Our team (portal), Oct 2026
 `portalMeetTeam` starts from the GP app's campus staff and YAP of the campus; a portal admin's
 changes live in the portal only (`portalTeamCards` = `{cards:{<staffId>: {name, role, photo,
