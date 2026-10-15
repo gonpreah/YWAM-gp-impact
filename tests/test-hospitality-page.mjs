@@ -67,7 +67,8 @@ async function open(who, opts) {
   if (opts.extra) H.bookings.push(...opts.extra);
   const hospOut = () => ({ ok: true, campus: 'siemreap', buildings: H.buildings, rooms: H.rooms, bookings: H.bookings,
     requests: H.trips.map(q => ({ ...q, bookingId: (H.bookings.find(k => k.tripId === q.tripId) || {}).id || '' }))
-      .concat((opts.gone || []).filter(q => H.bookings.some(k => k.id === q.bookingId))) });
+      .concat((opts.gone || []).filter(q => H.bookings.some(k => k.id === q.bookingId)))
+      .concat((opts.stays || []).filter(q => !q.declined).map(q => ({ ...q, bookingId: (H.bookings.find(k => k.stayId === q.stayId) || {}).id || '' }))) });
   await ctx.route('**/.netlify/functions/api', r => {
     const b = JSON.parse(r.request().postData() || '{}'); sent.push(b);
     let out = { ok: true };
@@ -85,6 +86,7 @@ async function open(who, opts) {
       const i = list.findIndex(x => x.id === rec.id); if (i > -1) list[i] = rec; else list.push(rec);
       out = { ...hospOut(), saved: rec };
     }
+    else if (b.fn === 'hospStayStatus') { (opts.stays || []).forEach(q => { if (q.stayId === b.args[2]) q.declined = b.args[3] === 'declined'; }); out = hospOut(); }
     else if (b.fn === 'hospStaffBeds') {
       const map = b.args[2];
       Object.keys(map).forEach(id => {
@@ -468,6 +470,34 @@ console.log('=== staff beds ===');
   const del = sent.filter(b => b.fn === 'hospDelete').pop();
   ok('Free the beds deletes that booking, and the card goes', del && del.args[2] === 'booking' && del.args[3] === 'kgone' && !(await page.$('[data-hospreq="ta_gone"]')));
   ok('no errors (cancelled team)', errors.length === 0, errors.join(' | '));
+  await ctx.close();
+}
+
+{
+  /* a guest and a speaker asked from the link */
+  const stays = [
+    { stayId: 'sr_1', kind: 'stay', category: 'speaker', tripId: '', name: 'Pastor Visit', country: '', from: day(3), to: day(6), size: 2, males: 1, females: 1, couples: null, pending: false, portalStage: '', candidateId: '', people: [{ name: 'Pastor Visit', sex: '' }], phone: '+855 12 000 000', email: 'pastor@example.org', org: 'Example Church', notes: 'Vegetarian' },
+    { stayId: 'sr_2', kind: 'stay', category: 'guest', tripId: '', name: 'Quick Visitor', country: '', from: day(8), to: day(9), size: 1, males: 0, females: 1, couples: null, pending: false, portalStage: '', candidateId: '', people: [{ name: 'Quick Visitor', sex: '' }], phone: '', email: 'q@example.org', org: '', notes: '' }];
+  const { ctx, page, errors, sent } = await open(HANA, { stays });
+  await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(300);
+  await page.click('#goHosp'); await page.waitForTimeout(500);
+  await page.click('[data-hosptab="req"]'); await page.waitForTimeout(200);
+  ok('Requests has the link for guests and speakers, ready to copy', /portal\.html\?stay=siemreap$/.test(await page.$eval('#hospStayUrl', i => i.value)) && !!(await page.$('#hospStayCopy')));
+  const card = await page.$eval('[data-hospreq="sr:sr_1"]', e => e.textContent);
+  ok('a speaker’s request shows like a team’s: who, speaker, the dates, how many, how to reach them, the notes', /Pastor Visit/.test(card) && /Speaker/.test(card) && /Example Church/.test(card) && /\+855 12 000 000/.test(card) && /Vegetarian/.test(card) && !!(await page.$('[data-hospbookreq="sr:sr_1"]')) && !!(await page.$('[data-hospstaydecline="sr_1"]')));
+  ok('… and counts in the Requests badge', /4/.test(await page.$eval('[data-hosptab="req"]', b => b.textContent)));
+  await page.click('[data-hospbookreq="sr:sr_1"]'); await page.waitForTimeout(250);
+  const f = await page.evaluate(() => S.hospForm);
+  ok('Book beds fills the booking in from it: speaker, name, dates, men and women, contact in the notes', f && f.category === 'speaker' && f.name === 'Pastor Visit' && f.from && f.stayId === 'sr_1' && String(f.males) === '1' && /Example Church/.test(f.notes) && /pastor@example\.org/.test(f.notes), JSON.stringify(f));
+  await page.click('#hospSaveBtn'); await page.waitForTimeout(300);
+  const sv = sent.filter(b => b.fn === 'hospSave').pop();
+  ok('… saved with its stayId, so the request shows as booked', sv && sv.args[3].stayId === 'sr_1');
+  await page.click('[data-hosptab="req"]').catch(() => {}); await page.waitForTimeout(200);
+  page.once('dialog', d => d.accept());
+  await page.click('[data-hospstaydecline="sr_2"]'); await page.waitForTimeout(300);
+  const dc = sent.filter(b => b.fn === 'hospStayStatus').pop();
+  ok('Decline takes a request off the list', dc && dc.args[2] === 'sr_2' && dc.args[3] === 'declined' && !(await page.$('[data-hospreq="sr:sr_2"]')));
+  ok('no errors (guest requests)', errors.length === 0, errors.join(' | '));
   await ctx.close();
 }
 

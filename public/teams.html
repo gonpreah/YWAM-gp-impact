@@ -11997,7 +11997,9 @@ function hospReqNeed_(q){ var n=Number(q.size)||0; var mf=(Number(q.males)||0)+(
 // the team requests nobody has booked yet, as bookings-to-be (for "if they all come")
 /* teams cancelled or deleted with beds still booked for them */
 function hospGoneReqs_(H){ return (H.requests||[]).filter(function(q){ return q.cancelled; }); }
-function hospOpenReqs_(H){ return (H.requests||[]).filter(function(q){ return !q.bookingId && !q.cancelled; }).map(function(q){ return { id:'req_'+q.tripId, from:q.from, to:q.to, count:hospReqNeed_(q) }; }); }
+/* a request's own key: a team's tripId, or 'sr:<id>' for a guest or speaker who asked from the link */
+function hospReqKey_(q){ return q.stayId ? 'sr:'+q.stayId : q.tripId; }
+function hospOpenReqs_(H){ return (H.requests||[]).filter(function(q){ return !q.bookingId && !q.cancelled; }).map(function(q){ return { id:'req_'+hospReqKey_(q), from:q.from, to:q.to, count:hospReqNeed_(q) }; }); }
 /* Does a stay of `need` people over [from, to) fit? Against the tightest night. */
 function hospFit_(H, from, to, need, skip){
   var cap=hospCap_(H), d=hospDaily_(H.bookings, from, to, skip), peak=0;
@@ -12109,22 +12111,32 @@ function hospReqCardHtml_(H, q){
     '<div class="rowSub">'+esc(q.cancelled==='deleted' ? t('This team was deleted. Their beds are still booked — free them if they are not coming.') : t('This team was cancelled. Their beds are still booked — free them if they are not coming.'))+'</div>'+
     '<div class="hospActions"><button class="btn small" data-hospfree="'+esc(q.bookingId)+'">'+esc(t('Free the beds'))+'</button><button class="btn ghost small" data-hospedit="'+esc(q.bookingId)+'">'+esc(t('Open booking'))+'</button></div></div>';
   var need=hospReqNeed_(q), f=hospFit_(H, q.from, q.to, need);
-  var h='<div class="card slim hospReq" data-hospreq="'+esc(q.tripId)+'">';
-  h+='<div class="rowName"><b>'+esc(q.name)+'</b>'+(q.pending?' <span class="teamStat pending" data-pending>⏳ '+esc(t('Pending'))+'</span>':'')+'</div>';
+  var h='<div class="card slim hospReq'+(q.stayId?' hospStay':'')+'" data-hospreq="'+esc(hospReqKey_(q))+'">';
+  h+='<div class="rowName"><b>'+esc(q.name)+'</b>'+(q.pending?' <span class="teamStat pending" data-pending>⏳ '+esc(t('Pending'))+'</span>':'')+
+    (q.stayId ? ' <span class="teamStat" data-staycat>'+(q.category==='speaker' ? '🎤 '+esc(t('Speaker')) : '🧳 '+esc(t('Guest')))+'</span>' : '')+'</div>';
+  if(q.org) h+='<div class="rowSub">⛪ '+esc(q.org)+'</div>';
   if(q.country) h+='<div class="rowSub">📍 '+esc(q.country)+'</div>';
   h+='<div class="rowSub">📅 '+esc(hospRange_(q))+'</div>';
   h+='<div class="rowSub">👥 '+esc(teamPeopleLine_(q))+'</div>';
+  if(q.stayId && (q.phone || q.email)) h+='<div class="rowSub">'+(q.phone?'📞 <a href="tel:'+esc(q.phone.replace(/[^\d+]/g,''))+'">'+esc(q.phone)+'</a>':'')+(q.phone && q.email?' · ':'')+(q.email?'✉️ <a href="mailto:'+esc(q.email)+'">'+esc(q.email)+'</a>':'')+'</div>';
+  if(q.stayId && q.notes) h+='<div class="rowSub" style="white-space:pre-line">📝 '+esc(q.notes)+'</div>';
   h+='<div class="teamStats">'+(q.bookingId ? '<span class="teamStat hospFit ok" data-booked>✓ '+esc(t('Booked'))+'</span>' : hospFitChip_(f, need))+'</div>';
   h+='<div class="hospActions">'+(q.bookingId
     ? '<button class="btn ghost small" data-hospedit="'+esc(q.bookingId)+'">'+esc(t('Open booking'))+'</button>'
-    : '<button class="btn small" data-hospbookreq="'+esc(q.tripId)+'">🛏 '+esc(t('Book beds'))+'</button>')+
+    : '<button class="btn small" data-hospbookreq="'+esc(hospReqKey_(q))+'">🛏 '+esc(t('Book beds'))+'</button>')+
+    (q.stayId && !q.bookingId ? '<button class="btn ghost small" data-hospstaydecline="'+esc(q.stayId)+'">'+esc(t('Decline'))+'</button>' : '')+
     (q.candidateId && canPortalClient_() ? '<a class="btn ghost small" href="portal.html?open='+encodeURIComponent(q.candidateId)+'" target="_blank" rel="noopener">🛂 '+esc(t('Open application'))+'</a>' : '')+'</div>';
   return h+'</div>';
 }
+/* the link a guest or speaker uses to ask for a room (portal.html?stay=<campus>) */
+function hospStayLink_(H){ return location.origin+location.pathname.replace(/[^/]*$/,'')+'portal.html?stay='+encodeURIComponent(H.campus||S.me.campus||'siemreap'); }
 function hospReqsHtml_(H){
   var reqs=H.requests||[];
-  var h='<p class="sub" style="margin:0 0 10px">'+esc(t('Every team in the Teams Database that hasn’t left yet. Pending teams applied on the portal and haven’t confirmed flights.'))+'</p>';
-  if(!reqs.length) return h+'<div class="card slim"><p class="sub" style="margin:0">'+esc(t('No upcoming teams.'))+'</p></div>';
+  var h='<div class="card slim" id="hospStayLink"><b>🔗 '+esc(t('Link for guests and speakers'))+'</b><p class="sub" style="margin:4px 0 8px">'+esc(t('Send it to a guest or speaker coming for a short stay: they fill in their name, dates and how many are coming, and it shows here as a request.'))+'</p>'+
+    '<input type="text" id="hospStayUrl" readonly value="'+esc(hospStayLink_(H))+'" onclick="this.select()"><div class="hospActions" style="margin-top:8px"><button class="btn small" id="hospStayCopy">'+esc(t('Copy link'))+'</button>'+
+    (navigator.share ? '<button class="btn ghost small" id="hospStayShare">📤 '+esc(t('Share'))+'</button>' : '')+'</div></div>';
+  h+='<p class="sub" style="margin:0 0 10px">'+esc(t('Every team in the Teams Database that hasn’t left yet, and guests and speakers who asked from the link. Pending teams applied on the portal and haven’t confirmed flights.'))+'</p>';
+  if(!reqs.length) return h+'<div class="card slim"><p class="sub" style="margin:0">'+esc(t('No upcoming requests.'))+'</p></div>';
   var gone=hospGoneReqs_(H), open=reqs.filter(function(q){ return !q.bookingId && !q.cancelled; }), done=reqs.filter(function(q){ return q.bookingId && !q.cancelled; });
   if(gone.length) h+='<h3>'+esc(t('Cancelled — beds still booked'))+' <small>· '+gone.length+'</small></h3><div class="hospGrid">'+gone.map(function(q){ return hospReqCardHtml_(H, q); }).join('')+'</div>'+(open.length?'<h3>'+esc(t('Waiting for beds'))+' <small>· '+open.length+'</small></h3>':'');
   h+='<div class="hospGrid">'+open.map(function(q){ return hospReqCardHtml_(H, q); }).join('')+'</div>';
@@ -12779,7 +12791,7 @@ function hospStaffHtml_(H){
     (dirty ? '<button class="linkbtn" id="hospStaffUndo">'+esc(t('Undo changes'))+'</button>' : '')+'</div>';
   return h;
 }
-function hospBlank_(){ return { id:'', category:'guest', name:'', from:'', to:'', males:'', females:'', count:'', family:false, permanent:false, bedIds:[], bedNames:{}, people:[], notes:'', tripId:'' }; }
+function hospBlank_(){ return { id:'', category:'guest', name:'', from:'', to:'', males:'', females:'', count:'', family:false, permanent:false, bedIds:[], bedNames:{}, people:[], notes:'', tripId:'', stayId:'' }; }
 function hospErr_(d){
   var e=d && d.err;
   if(e==='bed_taken') return gpT('That bed is already taken by {name} on those nights.',{name:d.with||''});
@@ -12839,10 +12851,23 @@ function bindHosp(){
     if(!confirm(gpT('Free the beds booked for “{name}”? The booking is deleted.',{name:k ? k.name : ''}))) return;
     send('hospDelete', ['booking', id], function(){ showMsg(t('Beds freed')); }, b);
   }; });
+  document.querySelectorAll('[data-hospstaydecline]').forEach(function(b){ b.onclick=function(){
+    var q=(S.hosp.requests||[]).filter(function(x){ return x.stayId===b.getAttribute('data-hospstaydecline'); })[0];
+    if(!confirm(gpT('Decline the request from “{name}”? It comes off the list.',{name:q ? q.name : ''}))) return;
+    send('hospStayStatus', [b.getAttribute('data-hospstaydecline'), 'declined'], function(){ showMsg(t('Declined')); }, b);
+  }; });
+  var su=document.getElementById('hospStayUrl');
+  var sc=document.getElementById('hospStayCopy');
+  if(sc) sc.onclick=function(){ var done=function(){ showMsg(t('Link copied')); }; if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(su.value).then(done, function(){ su.select(); document.execCommand('copy'); done(); }); else { su.select(); document.execCommand('copy'); done(); } };
+  var ss=document.getElementById('hospStayShare');
+  if(ss) ss.onclick=function(){ navigator.share({ title:t('Stay with us'), text:t('Ask for a room at YWAM Siem Reap here:'), url:su.value }).catch(function(){}); };
   document.querySelectorAll('[data-hospbookreq]').forEach(function(b){ b.onclick=function(){
-    var q=(S.hosp.requests||[]).filter(function(x){ return x.tripId===b.getAttribute('data-hospbookreq'); })[0];
+    var q=(S.hosp.requests||[]).filter(function(x){ return hospReqKey_(x)===b.getAttribute('data-hospbookreq'); })[0];
     if(!q) return; gpTap();
-    S.hospBedPick=null; S.hospForm=Object.assign(hospBlank_(), { category:'team', name:q.name, from:q.from, to:q.to, males:q.males==null?'':q.males, females:q.females==null?'':q.females,
+    S.hospBedPick=null;
+    if(q.stayId) S.hospForm=Object.assign(hospBlank_(), { category:q.category==='speaker'?'speaker':'guest', name:q.name, from:q.from, to:q.to, males:q.males||'', females:q.females||'',
+      count:hospReqNeed_(q)||'', notes:[q.org, q.phone, q.email, q.notes].filter(Boolean).join(' · '), stayId:q.stayId });
+    else S.hospForm=Object.assign(hospBlank_(), { category:'team', name:q.name, from:q.from, to:q.to, males:q.males==null?'':q.males, females:q.females==null?'':q.females,
       count:hospReqNeed_(q)||'', tripId:q.tripId });
     render(); top('hospFormCard'); }; });
   /* staff beds */
@@ -12935,7 +12960,7 @@ function bindHosp(){
       if(!f.permanent && (!f.to || f.to<=f.from)){ showMsg(t('The leaving date has to be after the arriving date.')); return; }
       var num=function(v){ return v===''||v==null ? 0 : Number(v); };
       var doc={ id:f.id||'', category:f.category, name:f.name.trim(), from:f.from, to:f.permanent?'':f.to, permanent:!!f.permanent,
-        males:num(f.males), females:num(f.females), count:hospFormCount_(f), family:!!f.family, bedIds:f.bedIds.slice(), bedNames:Object.assign({}, f.bedNames||{}), people:(f.people||[]).filter(function(p){ return String(p.name||'').trim(); }).map(function(p){ return { name:String(p.name).trim(), sex:p.sex||'' }; }), notes:f.notes||'', tripId:f.tripId||'' };
+        males:num(f.males), females:num(f.females), count:hospFormCount_(f), family:!!f.family, bedIds:f.bedIds.slice(), bedNames:Object.assign({}, f.bedNames||{}), people:(f.people||[]).filter(function(p){ return String(p.name||'').trim(); }).map(function(p){ return { name:String(p.name).trim(), sex:p.sex||'' }; }), notes:f.notes||'', tripId:f.tripId||'', stayId:f.stayId||'' };
       send('hospSave', ['booking', doc], function(){ S.hospForm=null; showMsg(t('Booking saved')); }, sv);
     };
     var dl=document.getElementById('hospDeleteBtn');

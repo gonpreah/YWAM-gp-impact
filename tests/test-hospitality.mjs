@@ -316,5 +316,32 @@ r = await call('hospStaffBeds', [...H, { s1: 'Kara' }]);
 const kara = r.bookings.find(k => k.name === 'Kara');
 ok('a staff bed is taken in the booking book: a booking for that bed is refused', (await call('hospSave', [...H, 'booking', { category: 'guest', name: 'G', from: day(30), to: day(32), count: 1, bedIds: ['s1'] }])).err === 'bed_taken' && kara.permanent);
 
+console.log('=== guests and speakers ask from a link ===');
+{
+  const ask = (p) => call('stayRequest', ['siemreap', { name: 'Pastor Visit', category: 'speaker', from: day(40), to: day(44), males: 1, females: 1, phone: '+855 12 000 000', email: '', org: 'Example Church', notes: 'Vegetarian', ...p }]);
+  ok('a guest or speaker asks for a room with no account', (await ask({})).ok === true);
+  ok('… a name is needed', (await ask({ name: ' ' })).err === 'name_required');
+  ok('… dates the right way round', (await ask({ to: day(39) })).err === 'bad_dates');
+  ok('… not in the past', (await ask({ from: day(-10), to: day(-5) })).err === 'bad_dates');
+  ok('… a phone or an email', (await ask({ phone: '', email: '' })).err === 'contact_required');
+  ok('… a real campus', (await call('stayRequest', ['nowhere', { name: 'X', from: day(40), to: day(41), phone: '1' }])).err === 'bad_campus');
+  const n0 = (mem['stayReq:siemreap'] || { reqs: [] }).reqs.length;
+  ok('a robot filling the hidden box is thanked and nothing is kept', (await ask({ website: 'http://spam.example' })).ok === true && mem['stayReq:siemreap'].reqs.length === n0);
+  let r = await call('getHospitality', H);
+  const q = r.requests.find(x => x.stayId);
+  ok('it shows in Hospitality’s requests: who, guest or speaker, the dates, how many, how to reach them', q && q.name === 'Pastor Visit' && q.category === 'speaker' && q.from === day(40) && q.to === day(44) && q.size === 2 && q.males === 1 && q.phone === '+855 12 000 000' && q.org === 'Example Church' && q.notes === 'Vegetarian' && !q.bookingId, JSON.stringify(q));
+  ok('… and only to Hospitality', (await call('getHospitality', ['tom', '1234'])).requests === undefined);
+  r = await call('hospSave', [...H, 'booking', { category: 'speaker', name: q.name, from: q.from, to: q.to, males: 1, females: 1, stayId: q.stayId }]);
+  ok('booking from it links the two — the request shows as booked', r.ok && r.saved.stayId === q.stayId && r.requests.find(x => x.stayId === q.stayId).bookingId === r.saved.id);
+  ok('… booked once', (await call('hospSave', [...H, 'booking', { category: 'speaker', name: 'Again', from: q.from, to: q.to, stayId: q.stayId }])).err === 'already_booked');
+  await ask({ name: 'Second Guest', category: 'guest' });
+  r = await call('getHospitality', H);
+  const q2 = r.requests.find(x => x.name === 'Second Guest');
+  ok('a guest is a guest', q2 && q2.category === 'guest');
+  ok('only Hospitality declines', (await call('hospStayStatus', ['tom', '1234', q2.stayId, 'declined'])).ok === false);
+  r = await call('hospStayStatus', [...H, q2.stayId, 'declined']);
+  ok('declining takes it off the list', r.ok && !r.requests.some(x => x.stayId === q2.stayId));
+}
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

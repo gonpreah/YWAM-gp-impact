@@ -216,6 +216,8 @@ async function open(viewport, query, seed) {
       const o = b.args[2] || {};
       if (o.candidateId) { const c = CANDS.find(x => x.id === o.candidateId); out = c ? { ok: true, preview: 'record', role: 'applicant', me: { ...ME_APP, name: c.name, type: c.type, school: c.school }, application: { ...ANNA, id: c.id, name: c.name, type: c.type, school: c.school, stage: c.stage, status: c.status, submittedAt: c.stage === 'new' ? null : '2026-09-20T10:00:00Z', answers: (c.portal && c.portal.form && c.portal.form.answers) || {}, refNeeded: c.type !== 'team', formKey: c.type === 'student' ? c.school : c.type }, form: FORMS[c.type === 'student' ? c.school : c.type], strengths: c.type === 'team' ? { people: STRENGTH_PEOPLE(), results: STRENGTHS } : { people: [{ key: 'me', name: c.name, role: 'me' }], results: {} } } : { ok: false, err: 'not_found' }; }
       else out = { ok: true, preview: 'sample', role: 'applicant', me: { ...ME_APP, name: o.type === 'team' ? 'Sample Team' : 'Sample Applicant', type: o.type, school: o.school, country: o.audience === 'khmer' ? 'Cambodia' : 'Australia' }, application: { ...ANNA, id: 'preview', type: o.type, school: o.school, stage: o.stage, status: o.stage === 'new' ? 'draft' : o.stage === 'applied' ? 'pending' : o.stage, submittedAt: o.stage === 'new' ? null : '2026-09-20T10:00:00Z', audience: o.audience === 'khmer' ? 'khmer' : 'international', needsVisa: o.audience !== 'khmer', refNeeded: !(o.type === 'team' || (o.type === 'student' && o.audience === 'khmer')), formKey: o.type === 'student' ? o.school : o.type, docKinds: o.type === 'team' ? TEAM_DOCS : [], docs: [], members: o.type === 'team' && o.stage !== 'new' ? [{ id: 'msample01', name: 'Sam Sample', sex: 'm' }, { id: 'msample02', name: 'Mia Sample', sex: 'f' }] : [], steps: STEPS(o.stage === 'new' ? 'form' : 'contact') }, form: FORMS[o.type === 'student' ? o.school : o.type], strengths: { people: o.type === 'team' ? [{ key: 'leader', name: 'Sample Team', role: 'leader' }, { key: 'msample01', name: 'Sam Sample', role: 'member', sex: 'm' }, { key: 'msample02', name: 'Mia Sample', role: 'member', sex: 'f' }] : [{ key: 'me', name: 'Sample Applicant', role: 'me' }], results: {} } };
+    } else if (b.fn === 'stayRequest') {
+      out = b.args[0] === 'siemreap' ? { ok: true } : { ok: false, err: 'bad_campus' };
     } else if (b.fn === 'portalSignOpen') {
       out = b.args[0] && b.args[0].user === 'team.au' ? { ok: true, isTeam: true, team: 'Grace Church Team', ...SIGN_EXTRA, people: [{ key: 'leader', name: 'Lee Leader', done: SIGN_DONE.leader || {} }, { key: 'm1', name: 'Member One', done: SIGN_DONE.m1 || {} }], docs: SIGN_DOCS }
         : b.args[0] === 'tok123' ? { ok: true, isTeam: true, team: 'Grace Church Team', ...SIGN_EXTRA, people: [{ key: 'leader', name: 'Lee Leader', done: SIGN_DONE.leader || {} }, { key: 'm1', name: 'Member One', done: SIGN_DONE.m1 || {} }], docs: SIGN_DOCS } : { ok: false, err: 'invalid' };
@@ -1521,6 +1523,24 @@ ok('no console/page errors', errors.length === 0, errors.slice(0, 3).join(' | ')
   ok('All documents is one .zip with a folder for each kind', dl2 && /Grace Church Team - Documents\/Passports\//.test(sub) && /Grace Church Team - Documents\/Flights\//.test(sub));
   await ctx.close();
   CANDS = JSON.parse(JSON.stringify(CANDS0));
+}
+
+/* ---------- a guest or speaker asks for a room from the Hospitality link ---------- */
+{
+  const { ctx, page } = await open({ width: 390, height: 844 }, '?stay=siemreap', () => localStorage.setItem('gp-portal', JSON.stringify({ user: 'sina', pin: '1234' })));
+  await page.waitForSelector('#stayForm');
+  ok('the link opens a short form, no account — even on a phone signed in as staff', /Stay with us at YWAM Siem Reap/.test(await page.$eval('#main', e => e.textContent)) && !!(await page.$('#st_name')) && !(await page.$('#staffNav')));
+  await page.click('#staySend'); await page.waitForTimeout(200);
+  ok('sending it empty marks what is missing and sends nothing', (await page.$$('#stayForm input.miss')).length >= 4 && !sent.some(b => b.fn === 'stayRequest'));
+  await page.fill('#st_name', 'Pastor Visit'); await page.click('[data-stcat="speaker"]');
+  await page.fill('#st_from', '2027-02-01'); await page.fill('#st_to', '2027-02-05');
+  await page.fill('#st_males', '1'); await page.fill('#st_females', '1');
+  await page.fill('#st_phone', '+855 12 000 000'); await page.fill('#st_org', 'Example Church'); await page.fill('#st_notes', 'Vegetarian');
+  await page.click('#staySend'); await page.waitForSelector('#stayDone', { timeout: 5000 });
+  const sr = sent.filter(b => b.fn === 'stayRequest').pop();
+  ok('it sends who, speaker, the dates, how many, a phone and the notes for that campus — and says thank you', sr && sr.args[0] === 'siemreap' && sr.args[1].name === 'Pastor Visit' && sr.args[1].category === 'speaker' && sr.args[1].from === '2027-02-01' && sr.args[1].to === '2027-02-05' && sr.args[1].males === 1 && sr.args[1].females === 1 && sr.args[1].phone === '+855 12 000 000' && sr.args[1].org === 'Example Church' && sr.args[1].website === '' && /Thank you/.test(await page.$eval('#stayDone', e => e.textContent)));
+  ok('… and fits the phone', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+  await ctx.close();
 }
 
 /* ---------- fits a phone: nothing cut off, nothing sliding sideways ---------- */
