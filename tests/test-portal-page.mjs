@@ -71,6 +71,9 @@ const TEAM_FORM = { key: 'team', title: { en: 'Short-term team application', km:
     { id: 'males', type: 'number', label: { en: 'How many males?', km: '' }, help: { en: '', km: '' }, required: true, options: [], audience: 'all' } ] } ] };
 const TEAM_DOCS = [{ id: 'passports', required: true }, { id: 'photo', required: true }, { id: 'flights', required: true }, { id: 'invitation', required: false, from: 'us' }, { id: 'evisa', required: false }];
 let TEAM_APP = null, NEW_TEAM_APP = null;
+/* e-visa info: what portalVisaInfo keeps per campus (fake details, a two-part supporting document) */
+let VISA = { campus: 'siemreap', info: { org: 'Example Org', address: 'Example Village, Example Commune', phone: '+855 00 000 000', email: 'visa@example.org', extra: '' }, docs: [{ id: 'vd1', name: 'Example certificate.pdf', mime: 'application/pdf', size: 3500000, parts: 2, added: '2026-10-01T00:00:00Z' }], isDefault: true };
+const VISA_PARTS = [];   // parts uploaded through portalVisaDocPart
 // this week's published schedules, as portalBoot hands them to a team that has arrived (made-up names)
 const TEAM_SCHED = { here: true, week: '2026-10-04', nextWeek: '2026-10-11', mine: ['Member One'],
   next: { kitchen: null, chores: { kind: 'chores', week: '2026-10-11', layout: 'list', title: 'Morning chores', km: '', notes: '', sections: [{ id: 's1', title: 'Base', km: '', rows: [{ id: 'r1', place: 'Rooftop', km: '', duty: 'Sweep', people: ['Member One', 'Somebody Else'] }] }], published: true } },
@@ -172,6 +175,7 @@ async function open(viewport, query, seed) {
       else if (u === 'anna@example.org' && pin === 'secret123') out = { ok: true, role: 'applicant', me: { ...ME_APP, username: 'anna@example.org', authKind: 'password' }, application: ANNA, form: FORM };
       else if (u === 'srey.k' && pin === '2468') out = { ok: true, role: 'applicant', me: { ...ME_APP, name: 'Srey Khmer', username: 'srey.k', country: 'Cambodia' }, application: { ...ANNA, name: 'Srey Khmer', stage: 'accepted', status: 'accepted', audience: 'khmer', needsVisa: false, refNeeded: false, steps: STEPS('practical').map(s => s.id === 'docs' ? { ...s, items: [{ id: 'documents', done: true }] } : s), submittedAt: '2026-09-01T00:00:00Z' }, form: FORM };
       else if (u === 'team.au' && pin === '2468') { TEAM_APP = TEAM_APP || { ...ANNA, type: 'team', school: '', stage: 'docs', status: 'docs', refNeeded: false, formKey: 'team', steps: TEAM_STEPS('invitation'), trip: { id: 'ta_cd_team', from: '2026-09-01', to: '2026-09-20', metrics: { 'People Served': 30 }, reached: { male: 5, female: null } }, submittedAt: '2026-09-01T00:00:00Z', visa: { flightsConfirmed: true, invitationSent: false }, docKinds: TEAM_DOCS, docs: [] }; out = { ok: true, role: 'applicant', me: { ...ME_APP, name: 'Grace Team', username: 'team.au', country: 'Australia', type: 'team', school: '' }, application: TEAM_APP, form: TEAM_FORM, metricOverrides: [], schedules: TEAM_APP.stage === 'arrived' ? TEAM_SCHED : { here: false } }; }
+      else if (u === 'team.visa' && pin === '2468') out = { ok: true, role: 'applicant', me: { ...ME_APP, name: 'Visa Team', username: 'team.visa', country: 'Australia', type: 'team', school: '' }, application: { ...ANNA, type: 'team', school: '', stage: 'docs', status: 'docs', refNeeded: false, formKey: 'team', steps: TEAM_STEPS('evisa'), submittedAt: '2026-09-01T00:00:00Z', visa: {}, visaOpen: true, members: [{ id: 'm1', name: 'Mia Member', sex: 'f' }], docKinds: TEAM_DOCS, docs: [{ id: 'pd_p', kind: 'passports', name: 'passports.pdf', mime: 'application/pdf' }, { id: 'pd_f', kind: 'flights', name: 'flights.pdf', mime: 'application/pdf' }, { id: 'pd_inv', kind: 'invitation', name: 'Letter of invitation.pdf', mime: 'application/pdf' }] }, form: TEAM_FORM, metricOverrides: [], schedules: { here: false } };
       else if (u === 'team.new' && pin === '2468') { NEW_TEAM_APP = NEW_TEAM_APP || { ...ANNA, type: 'team', school: '', stage: 'new', status: 'draft', submittedAt: null, refNeeded: false, formKey: 'team', answers: {}, docKinds: TEAM_DOCS, docs: [] }; out = { ok: true, role: 'applicant', me: { ...ME_APP, name: 'New Team', username: 'team.new', country: 'Australia', type: 'team', school: '' }, application: NEW_TEAM_APP, form: TEAM_FORM }; }
       else if (u === 'dara' && pin === '1234') out = { ok: true, role: 'portal-staff', me: STAFF[0], applicants: CANDS, staff: STAFF, stages: ['new', 'contacted', 'applied', 'interview', 'accepted', 'practical', 'arrived'], teamStages: ['new', 'applied', 'call1', 'docs', 'call2', 'practical', 'arrived'], types: ['student', 'staff', 'volunteer', 'team'], schools: ['dts', 'dbs', 'bcs', 'sms'], forms: FORMS };
       else if (u === 'rithy' && pin === '1234') out = { ok: true, role: 'portal-staff', me: { id: 'st_teams', name: 'Rithy Team', username: 'rithy', campus: 'siemreap', role: 'portal-staff' }, applicants: CANDS.filter(c => c.type === 'team'), scope: ['team'], staff: STAFF, stages: ['new', 'contacted', 'applied', 'interview', 'accepted', 'practical', 'arrived'], teamStages: ['new', 'applied', 'call1', 'docs', 'call2', 'practical', 'arrived'], types: ['student', 'staff', 'volunteer', 'team'], schools: ['dts', 'dbs', 'bcs', 'sms'] };
@@ -206,6 +210,20 @@ async function open(viewport, query, seed) {
       if (cid) { const c = CANDS.find(x => x.id === cid); c.portal.docs = (c.portal.docs || []).concat([doc]); out = { ok: true, doc, docs: c.portal.docs }; }
       else if (b.args[0] === 'team.new') { NEW_TEAM_APP = { ...NEW_TEAM_APP, docs: (NEW_TEAM_APP.docs || []).concat([doc]) }; out = { ok: true, doc, docs: NEW_TEAM_APP.docs, application: NEW_TEAM_APP }; }
       else { TEAM_APP = { ...TEAM_APP, docs: (TEAM_APP.docs || []).concat([doc]) }; out = { ok: true, doc, docs: TEAM_APP.docs, application: TEAM_APP }; }
+    } else if (b.fn === 'portalVisaInfo') {
+      out = { ok: true, ...VISA };
+    } else if (b.fn === 'portalSaveVisaInfo') {
+      VISA = { ...VISA, info: b.args[3], isDefault: false }; out = { ok: true, ...VISA };
+    } else if (b.fn === 'portalVisaDocPart') {
+      const [, , , id, name, mime, n, total, data] = b.args;
+      VISA_PARTS.push({ id, n, total, len: data.length });
+      const nid = id || 'vd_new';
+      if (n + 1 < total) out = { ok: true, id: nid, done: false };
+      else { VISA = { ...VISA, docs: VISA.docs.concat([{ id: nid, name, mime, size: 100, parts: total, added: new Date().toISOString() }]) }; out = { ok: true, id: nid, done: true, ...VISA }; }
+    } else if (b.fn === 'portalVisaDocGet') {
+      out = { ok: true, id: b.args[3], name: 'Example certificate.pdf', mime: 'application/pdf', parts: 2, index: b.args[4], data: b.args[4] === 0 ? 'JVBERi0x' : 'LjQK' };
+    } else if (b.fn === 'portalVisaDocDelete') {
+      VISA = { ...VISA, docs: VISA.docs.filter(d => d.id !== b.args[3]) }; out = { ok: true, ...VISA };
     } else if (b.fn === 'portalGetDoc') {
       const img = CANDS.flatMap(c => (c.portal && c.portal.docs) || []).find(d => d.id === b.args[2] && /^image\//.test(d.mime));
       out = img ? { ok: true, id: img.id, name: img.name, mime: 'image/png', dataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAADklEQVQI12P4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==' }
@@ -473,6 +491,32 @@ async function open(viewport, query, seed) {
   await ctx.close();
 }
 
+/* ---------- a team whose letter of invitation is in: How to apply for your e-visa online ---------- */
+{
+  const { ctx, page } = await open({ width: 390, height: 844 }, '', () => localStorage.setItem('gp-portal', JSON.stringify({ user: 'team.visa', pin: '2468' })));
+  await page.waitForSelector('#statusPill');
+  const how = await page.$('[data-step="evisa"] #visaHow');
+  ok('under the e-visa step, a drop-down: How to apply for your e-visa online (closed to start)', !!how && /How to apply for your e-visa online/.test(await page.$eval('#visaHow summary', e => e.textContent)) && !(await page.$eval('#visaHow', d => d.open)));
+  await page.click('#visaHow summary'); await page.waitForTimeout(400);
+  const body = await page.$eval('#visaHow', e => e.textContent);
+  ok('it loads the campus’s e-visa info', sent.some(b => b.fn === 'portalVisaInfo'));
+  ok('inside: the letter of invitation and the supporting documents to open', !!(await page.$('#visaHow [data-docopen="pd_inv"]')) && !!(await page.$('#visaHow [data-visadoc="vd1"]')) && /Letter of invitation\.pdf/.test(body) && /Example certificate\.pdf/.test(body));
+  ok('what the e-visa form asks about us, each with Copy', /Example Org/.test(body) && /Example Village/.test(body) && /\+855 00 000 000/.test(body) && /visa@example\.org/.test(body) && (await page.$$('#visaHow [data-copytext]')).length === 4);
+  ok('the steps: evisa.gov.kh, Visa E, every member their own, and getting ready', /Visa E/.test(body) && /evisa\.gov\.kh/.test(body) && /Every team member needs their own e-visa/.test(body) && /e-Arrival/.test(body) && /white sticker/.test(body));
+  await page.evaluate(() => { window.__opened = []; window.open = (u) => { window.__opened.push(u); return null; }; HTMLAnchorElement.prototype.click = function(){ window.__opened.push(this.href); }; });
+  await page.click('#visaHow [data-visadoc="vd1"]'); await page.waitForTimeout(400);
+  const gets = sent.filter(b => b.fn === 'portalVisaDocGet');
+  ok('a supporting document comes in its parts and opens', gets.length === 2 && gets[0].args[4] === 0 && gets[1].args[4] === 1 && (await page.evaluate(() => window.__opened.length)) === 1, JSON.stringify(gets.map(g => g.args.slice(2))));
+  ok('it stays open after a re-render', await page.$eval('#visaHow', d => d.open));
+  const docs = await page.$('details#myDocs');
+  ok('Documents folds, with a summary of what is in — folded when nothing is missing', !!docs && !(await page.$eval('#myDocs', d => d.open)) && /2 of 3 in|All in/.test(await page.$eval('#myDocs summary', e => e.textContent)), await page.$eval('#myDocs summary', e => e.textContent));
+  ok('Your team members folds too, with how many and the photos', !!(await page.$('details#teamMembers')) && /1 person|people/.test(await page.$eval('#teamMembers summary', e => e.textContent)));
+  await page.click('#teamMembers summary'); await page.waitForTimeout(150);
+  ok('… and opens to the list', await page.$eval('#teamMembers', d => d.open) && !!(await page.$('#editMembers')));
+  ok('no sideways scroll on a phone', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+  await ctx.close();
+}
+
 /* ---------- Khmer student, team: the visa guide and what we need ---------- */
 {
   const { ctx, page } = await open({ width: 390, height: 844 }, '', () => localStorage.setItem('gp-portal', JSON.stringify({ user: 'srey.k', pin: '2468' })));
@@ -486,7 +530,7 @@ async function open(viewport, query, seed) {
   const { ctx, page } = await open({ width: 390, height: 844 }, '', () => localStorage.setItem('gp-portal', JSON.stringify({ user: 'team.au', pin: '2468' })));
   await page.waitForSelector('#statusPill');
   const txt = await page.$eval('#main', e => e.textContent);
-  ok('with passports, photo and flights in, the team gets the e-visa guide, step by step', /Your e-visa, step by step/.test(txt) && /Visa E/.test(txt) && /e-Arrival/.test(txt) && /white sticker/.test(txt));
+  ok('before the letter of invitation is in, the e-visa step says the how-to opens there — and there is no visa card any more', !(await page.$('#visaHow')) && !/Your e-visa, step by step/.test(txt) && /How to apply for your e-visa online” opens right here/.test(await page.$eval('[data-step="evisa"]', e => e.textContent)));
   ok('a team’s visa card leaves the letter and flights to its own steps', !/Flights confirmed/.test(txt) && !/Letter of invitation sent to you/.test(txt));
   const tl = await page.$$eval('#timeline .step', li => li.map(x => x.getAttribute('data-step') + ':' + x.className.replace('step ', '')));
   ok('the team follows its own steps, on the letter of invitation now', tl.join(',') === 'account:done,form:done,call1:done,passports:done,photo:done,flights:done,invitation:current,evisa:todo,call2:todo,practical:todo,arrived:todo', tl.join(','));
@@ -497,7 +541,7 @@ async function open(viewport, query, seed) {
   await page.click('#openGuide'); await page.waitForTimeout(300);
   const guide = await page.$eval('#outreachGuide', e => e.textContent);
   ok('it opens over the page: the whole guide — arrival, travel, budget, tips', await page.$eval('#guideOverlay', e => getComputedStyle(e).position === 'fixed') && /Pre-Arrival & Arrival in Cambodia/.test(guide) && /Travel → Siem Reap/.test(guide) && /Budget/.test(guide) && /Additional Tips/.test(guide) && /Debriefing Time/.test(guide), [await page.$eval('#guideOverlay', e => getComputedStyle(e).position), /Pre-Arrival & Arrival in Cambodia/.test(guide), /Travel → Siem Reap/.test(guide), /Additional Tips/.test(guide), /Debriefing Time/.test(guide)].join());
-  ok('the e-visa steps are not in it — they are in the portal — and it says so', !/evisa\.gov\.kh/.test(guide) && !/Click apply now/.test(guide) && /are in your portal, under Visa/.test(guide));
+  ok('the e-visa steps are not in it — they are in the portal — and it says so', !/evisa\.gov\.kh/.test(guide) && !/Click apply now/.test(guide) && /are in your portal, under Where you are/.test(guide));
   ok('the tuktuk prices: $14 and $17', /Villages 30–40 min away: \$14\/tuktuk/.test(guide) && /Villages 50–60 min away: \$17\/tuktuk/.test(guide) && !/\$12\/tuktuk|\$15\/tuktuk/.test(guide));
   ok('the accommodation table is there', (await page.$$('#outreachGuide .ogTable tbody tr')).length === 3);
   ok('it can be printed or saved as a PDF', !!(await page.$('#guidePrint')));
@@ -696,6 +740,11 @@ async function open(viewport, query, seed) {
     CANDS = CANDS.map(x => x.id === 'cd_team' ? { ...x, calls: [{ id: 'clx', date: '2026-09-01', with: '', text: 'Sina’s call', by: 'st_sina', at: '2026-09-01T00:00:00Z' }] } : x);
     await page.evaluate(() => { P.boot.applicants = P.boot.applicants.map(x => x.id === 'cd_team' ? { ...x, calls: [{ id: 'clx', date: '2026-09-01', with: '', text: 'Sina’s call', by: 'st_sina', at: '2026-09-01T00:00:00Z' }] } : x); render(); });
     ok('someone else’s call note has no Edit or Delete for portal staff', /Sina’s call/.test(await page.$eval('#callList', e => e.textContent)) && !(await page.$('[data-calledit]')) && !(await page.$('[data-calldel]')));
+    await page.evaluate((st) => { P.boot.applicants = P.boot.applicants.map(x => x.id === 'cd_team' ? { ...x, steps: st } : x); P.ptab = 'overview'; render(); }, TEAM_STEPS('invitation'));
+    ok('when the letter of invitation is next, staff are told on Overview', /Next for us: the letter of invitation/.test(await page.$eval('#invNudge', e => e.textContent)));
+    await page.click('#invNudge [data-ptab="docs"]'); await page.waitForTimeout(200);
+    ok('… with a button straight to Documents', await page.$eval('[data-ptab="docs"].ptab', b => b.classList.contains('on')));
+    await ptab(page, 'calls');
     await page.setViewportSize({ width: 375, height: 800 }); await page.waitForTimeout(150);
     ok('the call form fits a phone', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
     await page.setViewportSize({ width: 1280, height: 900 }); await page.waitForTimeout(100);
@@ -758,7 +807,20 @@ async function open(viewport, query, seed) {
   const { ctx, page } = await open({ width: 1280, height: 900 }, '', () => localStorage.setItem('gp-portal', JSON.stringify({ user: 'sina', pin: '1234' })));
   await page.waitForSelector('.trow');
   await page.click('#navMenu'); await page.waitForSelector('#staffMenu');
-  ok('a portal admin finds Forms under Admin access in the ☰ menu, apart from Staff access', !!(await page.$('#toForms')) && /Staff access/.test(await page.$eval('#staffMenu', e => e.textContent)) && /Admin access/.test(await page.$eval('#staffMenu', e => e.textContent)) && (await page.$$eval('#staffMenu .menuGroup', g => g.map(x => [...x.querySelectorAll('button')].map(b => b.id).join(',')).join('|'))) === 'navCrm|toPreview,toLink|toForms,toAccounts,toTeam,toResources,toLegal,toAccess');
+  ok('a portal admin finds Forms under Admin access in the ☰ menu, apart from Staff access', !!(await page.$('#toForms')) && /Staff access/.test(await page.$eval('#staffMenu', e => e.textContent)) && /Admin access/.test(await page.$eval('#staffMenu', e => e.textContent)) && (await page.$$eval('#staffMenu .menuGroup', g => g.map(x => [...x.querySelectorAll('button')].map(b => b.id).join(',')).join('|'))) === 'navCrm|toPreview,toLink|toForms,toAccounts,toTeam,toResources,toLegal,toVisaInfo,toAccess');
+  await page.click('#toVisaInfo'); await page.waitForSelector('#vi_org');
+  ok('☰ → E-visa info: the details the e-visa form asks, filled in', await page.$eval('#vi_org', i => i.value) === 'Example Org' && await page.$eval('#vi_email', i => i.value) === 'visa@example.org' && /defaults/.test(await page.$eval('#main', e => e.textContent)));
+  await page.fill('#vi_phone', '+855 11 111 111'); await page.fill('#vi_extra', 'Bring two photos');
+  await page.click('#viSave'); await page.waitForTimeout(300);
+  const vs = sent.filter(b => b.fn === 'portalSaveVisaInfo').pop();
+  ok('Save sends them for the campus', vs && vs.args[2] === 'siemreap' && vs.args[3].phone === '+855 11 111 111' && vs.args[3].extra === 'Bring two photos' && vs.args[3].org === 'Example Org');
+  ok('the supporting documents are listed', /Example certificate\.pdf/.test(await page.$eval('#main', e => e.textContent)));
+  await page.setInputFiles('#viUpload', { name: 'Big licence.pdf', mimeType: 'application/pdf', buffer: Buffer.alloc(3 * 1024 * 1024, 65) });
+  await page.waitForFunction(() => /Big licence\.pdf/.test(document.getElementById('main').textContent) && !document.getElementById('viProgress'), null, { timeout: 8000 }).catch(() => {});
+  ok('a big scan goes up in parts and is listed', VISA_PARTS.length === 2 && VISA_PARTS[0].n === 0 && VISA_PARTS[0].id === '' && VISA_PARTS[1].id === 'vd_new' && VISA_PARTS.every(x => x.total === 2 && x.len <= 3 * 1024 * 1024) && /Big licence\.pdf/.test(await page.$eval('#main', e => e.textContent)), JSON.stringify(VISA_PARTS));
+  page.once('dialog', d => d.accept());
+  await page.click('[data-visadocdel="vd_new"]'); await page.waitForTimeout(300);
+  ok('Remove takes it off', sent.some(b => b.fn === 'portalVisaDocDelete' && b.args[3] === 'vd_new') && !/Big licence\.pdf/.test(await page.$eval('#main', e => e.textContent)));
   if(!(await page.$('#toForms'))){ await page.click('#navMenu'); await page.waitForSelector('#toForms'); }
   await page.click('#toForms');
   await page.waitForSelector('#formSave');

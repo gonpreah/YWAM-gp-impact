@@ -5928,6 +5928,7 @@ function portalAppOut_(c) {
     archived: c.archived ? { at: c.archived.at } : null,
     audience: audienceOf_(c), needsVisa: needsVisa_(c), refNeeded: refNeeded_(c), formKey: formKeyOf_(c),
     visa: (c.portal && c.portal.visa) || {},
+    visaOpen: visaOpen_(c),
     photos: c.type === 'team' ? ((c.portal && c.portal.photos) || null) : undefined,
     answers: (c.portal && c.portal.form && c.portal.form.answers) || (c.portal && c.portal.draft) || {},
     draftAt: (c.portal && c.portal.draftAt) || null,
@@ -7372,6 +7373,121 @@ async function portalStaffCand_(username, pin, candidateId) {
   if (!canHR_(g.s) && !portalMaySee_(g.s, rows[idx])) return { out: { ok: false, err: 'not_authorized' } };
   return { s: g.s, rows: rows, cand: rows[idx] };
 }
+/* ==================== e-visa info (per campus) ====================
+   What the Cambodian e-visa form asks a visitor about us (organisation,
+   address, phone, email, and any extra note) and the supporting documents
+   that go with the letter of invitation. Portal admins keep it (☰ → E-visa
+   info). A team sees it under its e-visa step once its letter of invitation
+   is uploaded; anyone else once "Letter of invitation sent" is ticked
+   (visaOpen_). The documents are big scans, so each is kept in parts
+   ('vdoc:<id>:<n>', ≤ 3 MB of base64 each) and read part by part — one
+   function call can't carry a 4 MB PDF. They live in Blobs, never in the
+   repo (it is public). */
+const VISA_INFO_DEFAULT = { siemreap: { org: 'University of the Nations', address: 'Trang Village Slorkrum Commune Siem Reap District, Siem Reap', phone: '+85595539520', email: 'info@ywamsiemreap.org', extra: '' } };
+const VISA_DOCS_MAX = 12, VISA_DOC_PART_B64 = 3 * 1024 * 1024, VISA_DOC_PARTS_MAX = 8;
+function visaCampus_(c) { return Object.prototype.hasOwnProperty.call(PORTAL_CAMPUSES, c) ? c : PORTAL_DEFAULT_CAMPUS; }
+function visaOpen_(c) {
+  if (!c || !needsVisa_(c)) return false;
+  const v = (c.portal && c.portal.visa) || {};
+  return c.type === 'team' ? (hasDoc_(c, 'invitation') || !!v.invitationSent) : !!v.invitationSent;
+}
+async function getVisaInfo_(campus) {
+  campus = visaCampus_(campus);
+  const saved = await readJSON('visaInfo:' + campus, null);
+  const def = VISA_INFO_DEFAULT[campus] || {};
+  const src = saved && saved.info ? saved.info : def;
+  const info = { org: src.org || '', address: src.address || '', phone: src.phone || '', email: src.email || '', extra: src.extra || '' };
+  return { campus: campus, info: info, docs: saved && Array.isArray(saved.docs) ? saved.docs : [], isDefault: !(saved && saved.info), updated: (saved && saved.updated) || null };
+}
+/* who is asking: staff with portal or HR access see every campus; an
+   applicant only their own campus, and only once their visa part is open */
+async function visaReader_(username, pin, campus) {
+  const s = await verifyStaff_(username, pin, true);
+  if (!s) return { out: { ok: false, err: 'auth' } };
+  if (isApplicant_(s)) {
+    const cand = await candidateFor_(await getCandidates_(), s);
+    if (!cand || !visaOpen_(cand)) return { out: { ok: false, err: 'not_yet' } };
+    return { s: s, campus: visaCampus_(cand.campus) };
+  }
+  if (!(canPortal_(s) || canHR_(s))) return { out: { ok: false, err: 'not_authorized' } };
+  return { s: s, campus: visaCampus_(campus) };
+}
+async function visaAdmin_(username, pin) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { out: { ok: false, err: 'auth' } };
+  if (!isPortalAdmin_(s)) return { out: { ok: false, err: 'not_authorized' } };
+  return { s: s };
+}
+async function portalVisaInfo(username, pin, campus) {
+  const r = await visaReader_(username, pin, campus); if (r.out) return r.out;
+  return Object.assign({ ok: true }, await getVisaInfo_(r.campus));
+}
+async function portalSaveVisaInfo(username, pin, campus, info) {
+  const a = await visaAdmin_(username, pin); if (a.out) return a.out;
+  campus = visaCampus_(campus); info = info && typeof info === 'object' ? info : {};
+  const cut = function (v, n) { return String(v == null ? '' : v).trim().slice(0, n); };
+  const saved = (await readJSON('visaInfo:' + campus, null)) || {};
+  saved.info = { org: cut(info.org, 160), address: cut(info.address, 300), phone: cut(info.phone, 60), email: cut(info.email, 120), extra: cut(info.extra, 2000) };
+  saved.docs = Array.isArray(saved.docs) ? saved.docs : [];
+  saved.updated = new Date().toISOString(); saved.by = a.s.id;
+  await writeJSON('visaInfo:' + campus, saved);
+  return Object.assign({ ok: true }, await getVisaInfo_(campus));
+}
+/* One part of a supporting document. Part 0 starts it (docId '') and gets
+   its id back; the parts then come in order; the last one lists it. */
+async function portalVisaDocPart(username, pin, campus, docId, name, mime, index, total, data) {
+  const a = await visaAdmin_(username, pin); if (a.out) return a.out;
+  campus = visaCampus_(campus);
+  index = Number(index); total = Number(total);
+  if (!(Number.isInteger(total) && total >= 1 && total <= VISA_DOC_PARTS_MAX && Number.isInteger(index) && index >= 0 && index < total)) return { ok: false, err: 'bad_part' };
+  if (typeof data !== 'string' || !data || data.length > VISA_DOC_PART_B64 || !/^[A-Za-z0-9+/=]+$/.test(data)) return { ok: false, err: 'bad_file' };
+  let pend;
+  if (index === 0) {
+    if (str_(docId, 60)) return { ok: false, err: 'bad_part' };   // part 1 starts a new one; it has no id yet
+    mime = str_(mime, 80);
+    if (HR_FILE_MIME.indexOf(mime) === -1) return { ok: false, err: 'bad_type' };
+    const cur = await readJSON('visaInfo:' + campus, null);
+    if (cur && Array.isArray(cur.docs) && cur.docs.length >= VISA_DOCS_MAX) return { ok: false, err: 'too_many' };
+    pend = { id: 'vd' + pinSalt_(), campus: campus, name: str_(name, 160) || 'document', mime: mime, total: total, next: 0, size: 0, by: a.s.id };
+  } else {
+    pend = await readJSON('vdocPending:' + str_(docId, 60), null);
+    if (!pend || pend.campus !== campus || pend.total !== total || pend.by !== a.s.id) return { ok: false, err: 'not_found' };
+  }
+  if (pend.next !== index) return { ok: false, err: 'bad_part' };
+  await writeJSON('vdoc:' + pend.id + ':' + index, { data: data });
+  pend.next = index + 1; pend.size += Math.floor(data.length * 3 / 4);
+  if (pend.next < total) { await writeJSON('vdocPending:' + pend.id, pend); return { ok: true, id: pend.id, done: false }; }
+  const saved = (await readJSON('visaInfo:' + campus, null)) || {};
+  saved.docs = (Array.isArray(saved.docs) ? saved.docs : []).concat([{ id: pend.id, name: pend.name, mime: pend.mime, size: pend.size, parts: total, added: new Date().toISOString(), by: a.s.id }]);
+  saved.updated = new Date().toISOString(); saved.by = a.s.id;
+  await writeJSON('visaInfo:' + campus, saved);
+  try { await store().delete('vdocPending:' + pend.id); } catch (e) { /* only a marker */ }
+  return Object.assign({ ok: true, id: pend.id, done: true }, await getVisaInfo_(campus));
+}
+async function portalVisaDocGet(username, pin, campus, docId, index) {
+  const r = await visaReader_(username, pin, campus); if (r.out) return r.out;
+  const info = await getVisaInfo_(r.campus);
+  const doc = info.docs.filter(function (d) { return d.id === str_(docId, 60); })[0];
+  if (!doc) return { ok: false, err: 'not_found' };
+  index = Number(index) || 0;
+  if (!(Number.isInteger(index) && index >= 0 && index < doc.parts)) return { ok: false, err: 'bad_part' };
+  const part = await readJSON('vdoc:' + doc.id + ':' + index, null);
+  if (!part || !part.data) return { ok: false, err: 'not_found' };
+  return { ok: true, id: doc.id, name: doc.name, mime: doc.mime, parts: doc.parts, index: index, data: part.data };
+}
+async function portalVisaDocDelete(username, pin, campus, docId) {
+  const a = await visaAdmin_(username, pin); if (a.out) return a.out;
+  campus = visaCampus_(campus);
+  const saved = (await readJSON('visaInfo:' + campus, null)) || {};
+  const docs = Array.isArray(saved.docs) ? saved.docs : [];
+  const doc = docs.filter(function (d) { return d.id === str_(docId, 60); })[0];
+  if (!doc) return { ok: false, err: 'not_found' };
+  saved.docs = docs.filter(function (d) { return d !== doc; });
+  saved.updated = new Date().toISOString(); saved.by = a.s.id;
+  await writeJSON('visaInfo:' + campus, saved);
+  for (let i = 0; i < doc.parts; i++) { try { await store().delete('vdoc:' + doc.id + ':' + i); } catch (e) { /* the list is already clean */ } }
+  return Object.assign({ ok: true }, await getVisaInfo_(campus));
+}
 async function portalSetVisaFlags(username, pin, candidateId, flags) {
   const a = await portalStaffCand_(username, pin, candidateId); if (a.out) return a.out;
   flags = flags && typeof flags === 'object' ? flags : {};
@@ -8252,6 +8368,11 @@ const HANDLERS = {
   portalReferenceLink: function (a) { return portalReferenceLink(a[0], a[1], a[2]); },
   portalViewAs: function (a) { return portalViewAs(a[0], a[1], a[2]); },
   portalUploadDoc: function (a) { return portalUploadDoc(a[0], a[1], a[2], a[3], a[4], a[5], a[6]); },
+  portalVisaInfo: function (a) { return portalVisaInfo(a[0], a[1], a[2]); },
+  portalSaveVisaInfo: function (a) { return portalSaveVisaInfo(a[0], a[1], a[2], a[3]); },
+  portalVisaDocPart: function (a) { return portalVisaDocPart(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8]); },
+  portalVisaDocGet: function (a) { return portalVisaDocGet(a[0], a[1], a[2], a[3], a[4]); },
+  portalVisaDocDelete: function (a) { return portalVisaDocDelete(a[0], a[1], a[2], a[3]); },
   portalGetDoc: function (a) { return portalGetDoc(a[0], a[1], a[2]); },
   portalDeleteDoc: function (a) { return portalDeleteDoc(a[0], a[1], a[2]); },
   portalReferenceForm: function (a) { return portalReferenceForm(a[0]); },

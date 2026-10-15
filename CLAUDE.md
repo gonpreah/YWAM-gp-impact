@@ -1022,6 +1022,23 @@ forms, documents and references follow.
   Notes, only the tabs a record has; the actions sit in `.panelFoot`. Only the open tab is drawn, so a test
   calls `ptab(page, id)` before reaching into one. Answers fold per form section (`.ansFold`, first
   open, answered/asked) with `#ansQ` Find in answers (`answersHtml_(…, {fold, q})`, `answerText_`).
+- **E-visa how-to and supporting documents (Oct 2026)**: once a team's letter of invitation is
+  uploaded (or "Letter of invitation sent" is ticked — `visaOpen_` in api.js, `app.visaOpen`), a
+  drop-down **How to apply for your e-visa online** (`visaHowHtml_`, `#visaHow`) opens under the
+  e-visa step in Where you are: the letter (`data-docopen`), the supporting documents
+  (`data-visadoc`), what the e-visa form asks about us with Copy (`data-copytext`), the steps
+  (`VISA_HOW`) and Preparing to come. Teams no longer get the separate visa card; individuals get
+  the same drop-down inside theirs. Portal admins keep it under ☰ → 🛂 E-visa info
+  (`visaAdminHtml_`, view `visa`): blob `visaInfo:<campus>` = {info:{org,address,phone,email,extra},
+  docs:[{id,name,mime,size,parts}]}, defaults in `VISA_INFO_DEFAULT`. Supporting documents are big
+  scans, so they go up and come down in ≤3 MB base64 parts (`portalVisaDocPart` in order, part 0
+  starts it, the last lists it; `portalVisaDocGet` per part; blobs `vdoc:<id>:<n>`). Readers:
+  portal/HR staff, or an applicant for their own campus once `visaOpen_` (`not_yet` before);
+  writers: portal admins. The real PDFs (tax certificate, MOU, licence) are uploaded in the portal,
+  never committed. Staff Overview shows "Next for us: the letter of invitation" (`#invNudge`) with a
+  button to Documents. **Your team members** and **Documents** are folding cards
+  (`foldCardHtml_`, `P.fold`): members open only while empty, Documents only while something is
+  missing.
 - **Call notes (teams, Oct 2026)**: a 📞 Call notes tab on team records (`panelCallsHtml_`,
   `bindCalls_`, draft in `P.call`) for what was said on calls with the leaders: date, who was on
   the call (starts as the leader), notes (≤5000, line breaks kept), newest first. Stored as

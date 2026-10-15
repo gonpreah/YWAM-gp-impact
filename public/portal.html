@@ -269,6 +269,25 @@ textarea { min-height:80px; resize:vertical; }
 .formNav { display:flex; justify-content:space-between; gap:10px; margin-top:6px; }
 .formNav .btn { margin-top:0; }
 .guide { margin:6px 0 0; padding-left:22px; font-size:14px; line-height:1.55; } .guide li { margin-bottom:6px; }
+/* cards that fold, and the e-visa how-to under its step */
+details.foldCard > summary, details.visaHow > summary { list-style:none; cursor:pointer; display:flex; align-items:center; gap:4px 8px; flex-wrap:wrap; }
+details.visaHow > summary { flex-wrap:nowrap; }
+details.foldCard > summary::-webkit-details-marker, details.visaHow > summary::-webkit-details-marker { display:none; }
+details.foldCard > summary { font-size:17px; font-weight:800; }
+.foldTitle { flex:1 1 auto; min-width:0; }
+.foldSum { font-size:13px; font-weight:600; color:var(--muted); }
+.foldChev { margin-left:auto; transition:transform .15s; color:var(--muted); }
+details[open] > summary .foldChev { transform:rotate(180deg); }
+.foldBody { margin-top:10px; }
+details.visaHow { margin:10px 0 4px; border:2px solid var(--accent); border-radius:12px; background:var(--surface); }
+details.visaHow > summary { padding:12px 14px; font-weight:800; font-size:15px; }
+.visaHowBody { padding:0 14px 14px; }
+.visaSec { margin-top:14px; }
+.visaFile { display:flex; align-items:center; gap:8px; width:100%; text-align:left; margin-top:6px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:var(--surface2); color:var(--ink); font:inherit; cursor:pointer; }
+.visaFile span { flex:1; min-width:0; overflow-wrap:anywhere; } .visaFile b { font-size:13px; }
+.visaKv { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
+.visaKv > div { flex:1; min-width:0; } .visaKv small { display:block; color:var(--muted); font-size:12px; } .visaKv span { overflow-wrap:anywhere; font-weight:600; }
+.visaExtra { white-space:pre-wrap; margin:10px 0 0; font-size:14px; }
 .ansSec { margin-top:10px; } .kv.ans { flex-direction:column; align-items:flex-start; gap:2px; } .kv.ans span { text-align:left; color:var(--ink); white-space:pre-wrap; }
 /* the forms editor */
 .two2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
@@ -581,7 +600,7 @@ var TEAM_STEP_NOTE = {
   photo:'Nothing to upload — under Your team members, add everyone coming and take a photo of each. We use the names for the cooking and morning chores schedules while you are here.',
   flights:'Important — we need them to start your visa process, and we arrange your airport pick-up from them.',
   invitation:'We send these once your passports, your team’s names and photos, and flights are in. They appear under Documents for you to download.',
-  evisa:'Apply at evisa.gov.kh with the letter of invitation. Once the e-visas are approved, upload them under Documents.',
+  evisa:'Once we upload your letter of invitation, “How to apply for your e-visa online” opens right here, with everything you need. Then upload each approved e-visa under Documents.',
   call2:'A call with your whole team to prepare for Cambodian culture and serving here.',
   practical:'Pack, pray and get ready. Message us with any last questions.'
 };
@@ -690,13 +709,13 @@ function render(){
   var v=P.view;
   /* The gate — everything before you are signed in — is the portal's name
      and logo on top and one card underneath; signed in, the bar goes slim. */
-  document.body.classList.toggle('gate', v!=='me' && v!=='crm' && v!=='form' && v!=='forms' && v!=='accounts' && v!=='preview' && v!=='resources' && v!=='team' && v!=='access' && v!=='legal');
-  var staffView = P.auth && P.boot && P.boot.role!=='applicant' && (v==='crm'||v==='forms'||v==='accounts'||v==='preview'||v==='resources'||v==='team'||v==='access'||v==='legal');
+  document.body.classList.toggle('gate', v!=='me' && v!=='crm' && v!=='form' && v!=='forms' && v!=='accounts' && v!=='preview' && v!=='resources' && v!=='team' && v!=='access' && v!=='legal' && v!=='visa');
+  var staffView = P.auth && P.boot && P.boot.role!=='applicant' && (v==='crm'||v==='forms'||v==='accounts'||v==='preview'||v==='resources'||v==='team'||v==='access'||v==='legal'||v==='visa');
   var applicantTabs = P.auth && P.boot && P.boot.role==='applicant' && v==='me';
   document.body.classList.toggle('wideStaff', !!(staffView && v==='crm'));   // the list and a record side by side want the room
   try { m.innerHTML = (staffView ? staffNavHtml_(v) : applicantTabs ? applicantNavHtml_() : '') + (v==='booting' ? '<p class="sub" style="text-align:center;padding:40px 0">'+esc(t('Loading…'))+'</p>'
     : v==='register' ? registerHtml_() : v==='choose' ? chooseHtml_() : v==='me' ? meTabHtml_() : v==='crm' ? crmHtml_() : v==='form' ? formHtml_() : v==='forms' ? formsHtml_() : v==='resources' ? resourcesAdminHtml_() : v==='team' ? teamAdminHtml_() : v==='access' ? accessHtml_() : v==='accounts' ? accountsHtml_() : v==='preview' ? previewHtml_()
-    : v==='noaccess' ? noAccessHtml_() : v==='ref' ? refHtml_() : v==='stay' ? stayHtml_() : v==='sign' ? signHtml_() : v==='legal' ? legalAdminHtml_() : loginHtml_())
+    : v==='noaccess' ? noAccessHtml_() : v==='ref' ? refHtml_() : v==='stay' ? stayHtml_() : v==='sign' ? signHtml_() : v==='legal' ? legalAdminHtml_() : v==='visa' ? visaAdminHtml_() : loginHtml_())
     + (P.guideOpen && P.boot && typeof outreachGuideHtml==='function' ? guideOverlayHtml_() : '')
     + (staffView && P.docGallery ? docGalleryHtml_() : '');
   document.body.classList.toggle('guideOn', !!(P.guideOpen && P.boot));
@@ -720,7 +739,7 @@ function staffNavHtml_(v){
   /* The bar keeps the two everyone uses — home and Applications — and a ☰ menu
      for the rest, in two groups: what staff access has, what admin access adds. */
   var staffItems=[['preview','toPreview','👁 '+t('View as applicant')],['link','toLink','🔗 '+t('Link for applicants')]];
-  var adminItems=[['forms','toForms','📝 '+t('Forms')],['accounts','toAccounts','👤 '+t('Accounts')],['team','toTeam','👥 '+t('Our team')],['resources','toResources','📚 '+t('Resources')],['legal','toLegal','✍️ '+t('Legal documents')],['access','toAccess','🔑 '+t('Who has access')]];
+  var adminItems=[['forms','toForms','📝 '+t('Forms')],['accounts','toAccounts','👤 '+t('Accounts')],['team','toTeam','👥 '+t('Our team')],['resources','toResources','📚 '+t('Resources')],['legal','toLegal','✍️ '+t('Legal documents')],['visa','toVisaInfo','🛂 '+t('E-visa info')],['access','toAccess','🔑 '+t('Who has access')]];
   var crmItem=['crm','navCrm','📋 '+t('Applications')];
   var here=[crmItem].concat(staffItems, admin ? adminItems : []).filter(function(x){ return x[0]===v; })[0];
   var item=function(x){ return '<button class="menuItem'+(v===x[0] || (x[0]==='link' && P.linkOpen)?' on':'')+'" id="'+x[1]+'">'+esc(x[2])+'</button>'; };
@@ -1297,7 +1316,10 @@ function registerHtml_(){
 }
 /* "Application received" reads "Application & reference received" for anyone a reference is asked of. */
 function stepKey_(st, isTeam, app){ return !isTeam && st.id==='received' && app.refNeeded ? 'received2' : st.id; }
-function statusNote_(app){ return (app.type===TEAM_TYPE && TEAM_STATUS_NOTE[app.status]) || STATUS_NOTE[app.status] || ''; }
+function statusNote_(app){
+  if(app.type===TEAM_TYPE && app.visaOpen && (app.steps||[]).some(function(st){ return st.id==='evisa' && !st.done; })) return 'Your letter of invitation is in. Open “How to apply for your e-visa online” under Where you are — everything you need is there.';
+  return (app.type===TEAM_TYPE && TEAM_STATUS_NOTE[app.status]) || STATUS_NOTE[app.status] || '';
+}
 var TEAM_TYPE='team';
 /* ---- the applicant's dashboard ---- */
 /* ==================== the portal as a tool (Oct 2026, Uriah) ====================
@@ -1530,6 +1552,88 @@ function resourcesHtml_(){
   return h+'</div>';
 }
 /* the editor (staff side, portal admins) */
+/* ==================== ☰ → E-visa info (portal admins) ====================
+   What "How to apply for your e-visa online" shows a team once its letter of
+   invitation is in: the details the e-visa form asks about us, and the
+   supporting documents. Per campus. Big scans go up in parts. */
+var VISA_PART_CHARS = 3*1024*1024, VISA_FILE_MAX = 15*1024*1024;
+function visaAdminCampus_(){ return P.visaCampus || DEFAULT_CAMPUS; }
+function visaAdminHtml_(){
+  var campus=visaAdminCampus_(), V=visaInfoFor_(campus), campuses=Object.keys((P.boot && P.boot.campuses) || {});
+  var h='<div class="wide"><div class="panelHead"><div><h1 style="font-size:28px">🛂 '+esc(t('E-visa info'))+'</h1><p class="sub">'+esc(t('What a team sees under “How to apply for your e-visa online” once you upload its letter of invitation: the letter, these supporting documents, and the details the e-visa form asks about us.'))+'</p></div></div>';
+  if(campuses.length>1) h+='<div class="seg" style="margin-bottom:12px">'+campuses.map(function(c){ return '<button data-vicampus="'+esc(c)+'" class="'+(c===campus?'on':'')+'">'+esc(campusName_(c))+'</button>'; }).join('')+'</div>';
+  if(!V) return h+'<div class="card"><p class="sub" style="margin:0" data-visaload="'+esc(campus)+'">'+esc(t('Loading…'))+'</p></div></div>';
+  var d=P.viDraft && P.viDraft.campus===campus ? P.viDraft : Object.assign({ campus:campus }, V.info||{});
+  var fld=function(id, label, type, max){ return '<label class="f" for="vi_'+id+'">'+esc(t(label))+'</label><input type="'+type+'" id="vi_'+id+'" data-vif="'+id+'" maxlength="'+max+'" value="'+esc(d[id]||'')+'">'; };
+  h+='<div class="card"><h3 style="margin-top:0">'+esc(t('What the e-visa form asks about us'))+'</h3>'+
+    fld('org','Organisation','text',160)+fld('address','Address for the visa','text',300)+fld('phone','Contact number','tel',60)+fld('email','Email','email',120)+
+    '<label class="f" for="vi_extra">'+esc(t('Anything else they should know (optional)'))+'</label><textarea id="vi_extra" data-vif="extra" rows="3" maxlength="2000">'+esc(d.extra||'')+'</textarea>'+
+    '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px"><button class="btn small" id="viSave"'+(P.busy?' disabled':'')+'>'+esc(P.busy?t('Saving…'):t('Save'))+'</button>'+
+    (V.isDefault ? '<span class="hint">'+esc(t('These are the defaults — edit and save to make them yours.'))+'</span>' : '')+'</div></div>';
+  h+='<div class="card"><h3 style="margin-top:0">'+esc(t('Supporting documents'))+'</h3>'+
+    (V.docs.length ? V.docs.map(function(x){ return '<div class="visaKv"><div><span>📄 '+esc(x.name)+'</span><small>'+esc(fmtDate_(x.added))+' · '+esc(Math.max(0.1, Math.round((x.size||0)/1024/102.4)/10)+' MB')+'</small></div>'+
+      '<button type="button" class="btn ghost small" data-visadocadm="'+esc(x.id)+'">'+esc(t('Open'))+'</button><button type="button" class="linkbtn inline danger" data-visadocdel="'+esc(x.id)+'">'+esc(t('Remove'))+'</button></div>'; }).join('')
+      : '<p class="sub" style="margin:0 0 8px">'+esc(t('None yet. Add the supporting documents that go with every letter of invitation — for example the tax certificate, the MOU and the licence.'))+'</p>')+
+    (P.viUp ? '<p class="sub" id="viProgress" style="margin:10px 0 0">⏳ '+esc(P.viUp)+'</p>' :
+      '<label class="btn ghost small" style="margin-top:10px;display:inline-block;cursor:pointer">＋ '+esc(t('Add documents'))+'<input type="file" id="viUpload" accept="application/pdf,image/*" multiple hidden></label>')+
+    '<p class="hint">'+esc(t('PDF or pictures, up to 15 MB each. To check how it looks to a team, use View as applicant.'))+'</p></div>';
+  return h+'</div>';
+}
+function uploadVisaDocs_(files){
+  var campus=visaAdminCampus_(), i=0;
+  var finish=function(){ P.viUp=''; render(); };
+  var one=function(){
+    if(i>=files.length){ finish(); showMsg(t('Uploaded')); return; }
+    var f=files[i];
+    if(f.size>VISA_FILE_MAX){ showMsg(gpT('{name} is over 15 MB',{name:f.name})); i++; one(); return; }
+    var r=new FileReader();
+    r.onerror=function(){ i++; one(); };
+    r.onload=function(){
+      var m=/^data:([^;]+);base64,(.*)$/.exec(String(r.result||'')); if(!m){ i++; one(); return; }
+      var mime=m[1], b64=m[2], parts=[];
+      for(var k=0;k<b64.length;k+=VISA_PART_CHARS) parts.push(b64.slice(k, k+VISA_PART_CHARS));
+      var id='';
+      var send=function(n){
+        P.viUp=gpT('Uploading {name} ({n} of {total})…',{name:f.name, n:n+1, total:parts.length}); render();
+        run('portalVisaDocPart', [P.auth.user, P.auth.pin, campus, id, f.name, mime, n, parts.length, parts[n]], function(res){
+          if(!(res && res.ok)){ showMsg(res && res.err==='bad_type' ? t('Only PDF or pictures') : res && res.err==='too_many' ? t('That is the most documents there can be') : t('Could not upload it')); finish(); return; }
+          id=res.id;
+          if(!res.done){ send(n+1); return; }
+          P.visaInfo=P.visaInfo||{}; P.visaInfo[campus]=res; i++; one();
+        }, function(){ showMsg(t('Could not upload it')); finish(); });
+      };
+      send(0);
+    };
+    r.readAsDataURL(f);
+  };
+  one();
+}
+function bindVisaAdmin_(){
+  if(P.view!=='visa') return;
+  var campus=visaAdminCampus_();
+  document.querySelectorAll('[data-vicampus]').forEach(function(b){ b.onclick=function(){ P.visaCampus=b.getAttribute('data-vicampus'); P.viDraft=null; render(); }; });
+  document.querySelectorAll('[data-vif]').forEach(function(el){ el.oninput=function(){
+    var V=visaInfoFor_(campus); if(!P.viDraft || P.viDraft.campus!==campus) P.viDraft=Object.assign({ campus:campus }, (V && V.info)||{});
+    P.viDraft[el.getAttribute('data-vif')]=el.value; }; });
+  on_('viSave', function(){
+    var V=visaInfoFor_(campus), d=P.viDraft && P.viDraft.campus===campus ? P.viDraft : Object.assign({}, (V && V.info)||{});
+    P.busy=true; render();
+    run('portalSaveVisaInfo', [P.auth.user, P.auth.pin, campus, { org:d.org, address:d.address, phone:d.phone, email:d.email, extra:d.extra }], function(r){
+      P.busy=false; if(r && r.ok){ P.visaInfo[campus]=r; P.viDraft=null; showMsg(t('Saved')); } else showMsg(t('Could not save'));
+      render();
+    });
+  });
+  var up=document.getElementById('viUpload');
+  if(up) up.onchange=function(){ var files=[].slice.call(up.files||[]); up.value=''; if(files.length) uploadVisaDocs_(files); };
+  document.querySelectorAll('[data-visadocadm]').forEach(function(b){ b.onclick=function(){ openVisaDoc_(campus, b.getAttribute('data-visadocadm'), b); }; });
+  document.querySelectorAll('[data-visadocdel]').forEach(function(b){ b.onclick=function(){
+    if(!confirm(t('Remove this document? Teams will no longer see it.'))) return;
+    run('portalVisaDocDelete', [P.auth.user, P.auth.pin, campus, b.getAttribute('data-visadocdel')], function(r){
+      if(r && r.ok){ P.visaInfo[campus]=r; showMsg(t('Removed')); } else showMsg(t('Could not remove it'));
+      render();
+    });
+  }; });
+}
 function resourcesAdminHtml_(){
   var d=P.resources;
   var h='<div class="wide"><div class="panelHead"><div><h1 style="font-size:28px">📚 '+esc(t('Resources'))+'</h1><p class="sub">'+esc(t('What applicants and teams see under Resources: guides, emergency numbers, apps to download, links and notes. Anything we ship later is added to your list on its own.'))+'</p></div></div>';
@@ -1627,9 +1731,10 @@ function meHtml_(){
     var grp = isTeam && st.group && (!app.steps[i-1] || app.steps[i-1].group!==st.group) ? '<div class="stepGroup">'+esc(t(TEAM_GROUP_LABEL[st.group]||''))+'</div>' : '';
     return '<li class="step '+st.state+'" data-step="'+st.id+'"><span class="dot">'+(st.state==='done'?'✓':(i+1))+'</span><div>'+grp+
       '<div class="stepName">'+esc(t(LBL[stepKey_(st, isTeam, app)]||st.id))+(isTeam && st.state!=='done' && st.who ? ' <span class="whoTag '+esc(st.who)+'">'+esc(st.who==='you' ? t('You') : t('Us'))+'</span>' : '')+'</div>'+
-      (NOTE[st.id] && st.state!=='done' ? '<div class="stepNote">'+esc(t(NOTE[st.id]))+'</div>' : '')+
+      (NOTE[st.id] && st.state!=='done' && !(isTeam && st.id==='evisa' && app.visaOpen) ? '<div class="stepNote">'+esc(t(NOTE[st.id]))+'</div>' : '')+
       (st.items ? '<ul class="subItems">'+st.items.map(function(it){ return '<li class="'+(it.done?'done':'')+'">'+(it.done?'✓':'○')+' '+esc(t(SUBITEM_LABEL[it.id]||it.id))+(it.done?'':' · <i>'+esc(t('pending'))+'</i>')+
         (it.id==='reference' && !it.done && app.submittedAt && app.status!=='closed' ? ' <button class="linkbtn inline" data-refgo="1">'+esc(t('Send the link to my leader'))+' →</button>' : '')+'</li>'; }).join('')+'</ul>' : '')+
+      (isTeam && st.id==='evisa' && app.visaOpen ? visaHowHtml_(app) : '')+
       '</div></li>';
   }).join('')+'</ol></div>';
   h+='</div><div>';
@@ -1647,9 +1752,9 @@ function meHtml_(){
   h+=legalCardHtml_(app);
   h+=membersCardHtml_(app);
   h+=visaCardHtml_(app);
-  h+='<div class="card"><h3 style="margin-top:0">📎 '+esc(t('Documents'))+'</h3>'+
+  h+=foldCardHtml_('myDocs', '📎 '+t('Documents'), myDocsSummary_(app), myDocsOpen_(app),
     ((app.docKinds||[]).filter(function(k){ return k.id!=='photo'; }).length ? docsBodyHtml_((app.docKinds||[]).filter(function(k){ return k.id!=='photo' && (app.type!=='team' || teamDocsIn_(app) || (k.id!=='invitation' && k.id!=='evisa')); }), app.docs||[], app.submittedAt ? 'me' : 'before', '')
-      : '<p class="sub" style="margin:0">'+esc(t('After you apply, the things to attach for your kind of application are listed here, each one checked off as it arrives.'))+'</p>')+'</div>';
+      : '<p class="sub" style="margin:0">'+esc(t('After you apply, the things to attach for your kind of application are listed here, each one checked off as it arrives.'))+'</p>'));
   h+='<div class="card"><div class="panelHead"><h3 style="margin-top:0">📱 '+esc(t('How we reach you'))+'</h3>'+(P.editContact?'':'<button class="linkbtn inline" id="editContact">'+esc(t('Edit'))+'</button>')+'</div>';
   if(P.editContact){
     var c=P.contact||{ phone:me.phone, messenger:me.messenger, country:me.country };
@@ -2473,12 +2578,14 @@ function bindCountrySearch_(){
 function membersCardHtml_(app){
   if(app.type!=='team' || !app.submittedAt) return '';
   var list=P.members || app.members || [];
-  var h='<div class="card" id="teamMembers"><h3 style="margin-top:0">👥 '+esc(t('Your team members'))+'</h3>'+
-    '<p class="sub" style="margin:0 0 8px">'+esc(t('Everyone coming, each with a photo. The names go on the cooking and morning chores schedules while you are here, and the photos are your team photo. Keep it up to date as your team changes.'))+'</p>';
+  var intro='<p class="sub" style="margin:0 0 8px">'+esc(t('Everyone coming, each with a photo. The names go on the cooking and morning chores schedules while you are here, and the photos are your team photo. Keep it up to date as your team changes.'))+'</p>';
   if(!P.members){
-    h+=rosterHtml_(P.tphotos, true, '');
-    return h+'<button class="btn small" id="editMembers" style="margin-top:8px">'+esc(list.length?t('Edit the list'):t('Add your team members'))+'</button></div>';
+    var tp=P.tphotos, ppl=tp ? (tp.people||[]) : list, have=tp ? ppl.filter(function(p){ return (tp.photos||{})[p.key]; }).length : 0;
+    var sum=ppl.length ? (ppl.length===1 ? t('1 person') : gpT('{n} people',{n:ppl.length}))+(tp ? ' · '+(have>=ppl.length ? '✓ '+t('all with a photo') : gpT('{have} of {n} have a photo',{have:have, n:ppl.length})) : '') : t('No one listed yet.');
+    return foldCardHtml_('teamMembers', '👥 '+t('Your team members'), sum, !list.length,
+      intro+rosterHtml_(P.tphotos, true, '')+'<button class="btn small" id="editMembers" style="margin-top:8px">'+esc(list.length?t('Edit the list'):t('Add your team members'))+'</button>');
   }
+  var h='<div class="card" id="teamMembers"><h3 style="margin-top:0">👥 '+esc(t('Your team members'))+'</h3>'+intro;
   h+=list.map(function(m,i){
     return '<div class="memberRow"><input type="text" data-mname="'+i+'" maxlength="80" value="'+esc(m.name)+'" placeholder="'+esc(t('Full name'))+'" aria-label="'+esc(t('Full name'))+'">'+
       '<div class="seg memberSeg"><button data-msex="'+i+'|m" class="'+(m.sex==='m'?'on':'')+'">'+esc(t('Man'))+'</button><button data-msex="'+i+'|f" class="'+(m.sex==='f'?'on':'')+'">'+esc(t('Woman'))+'</button></div>'+
@@ -2627,7 +2734,7 @@ function panelTeamNumbersHtml_(c){
 }
 function visaCardHtml_(app){
   if(!app.needsVisa) return '';
-  if(app.type==='team' && !teamDocsIn_(app)) return '<div class="card" id="visaCard"><h3 style="margin-top:0">🛂 '+esc(t('Visa'))+'</h3><p class="sub" style="margin:0">'+esc(t('The visa steps open here once your passport copies, team photo and flight itineraries are in.'))+'</p></div>';
+  if(app.type==='team') return '';   // a team's visa part sits under its e-visa step in Where you are (visaHowHtml_)
   var idx=['new','applied','contacted','interview','accepted','practical','arrived'].indexOf(app.stage);
   if(idx<4 && app.type!=='team') return '<div class="card"><h3 style="margin-top:0">🛂 '+esc(t('Visa'))+'</h3><p class="sub" style="margin:0">'+esc(t('You will need a visa for Cambodia. The step-by-step e-visa guide appears here once you are accepted.'))+'</p></div>';
   var v=app.visa||{};
@@ -2636,9 +2743,96 @@ function visaCardHtml_(app){
     '<p class="sub">'+esc(t('The Cambodian government has changed how visitors enter, so the process looks a little different now.'))+'</p>'+
     (app.type==='team' ? '<div class="banner">'+esc(t('The location your team arrives at first is responsible for your visa. If that is us, we send the letter of invitation once your flights are confirmed; if you start elsewhere in Cambodia, that location will.'))+'</div>' : '')+
     (app.type==='team' ? '' : '<ul class="subItems" style="margin-bottom:10px">'+tick(!!v.flightsConfirmed, t('Flights confirmed'))+tick(!!v.invitationSent, t('Letter of invitation sent to you'))+'</ul>')+
+    (app.visaOpen ? visaHowHtml_(app) :
     '<ol class="guide">'+VISA_STEPS.map(function(s){ return '<li>'+esc(t(s))+'</li>'; }).join('')+'</ol>'+
     '<div class="eyebrow" style="margin-top:12px">'+esc(t('Preparing to come'))+'</div><ol class="guide">'+VISA_PREP.map(function(s){ return '<li>'+esc(t(s))+'</li>'; }).join('')+'</ol>'+
-    '<p class="hint"><a href="https://www.evisa.gov.kh/" target="_blank" rel="noopener">evisa.gov.kh ↗</a></p></div>';
+    '<p class="hint"><a href="https://www.evisa.gov.kh/" target="_blank" rel="noopener">evisa.gov.kh ↗</a></p>')+'</div>';
+}
+/* ---- How to apply for your e-visa online ----
+   Opens once the letter of invitation is in (app.visaOpen): a drop-down with
+   the letter, the supporting documents (portal admins keep them under ☰ →
+   E-visa info), what the e-visa form asks about us — each with Copy — and
+   the steps. The info and documents come from portalVisaInfo, per campus. */
+var VISA_HOW = [
+  'Download your letter of invitation and the supporting documents above.',
+  'Go to evisa.gov.kh and click Apply now.',
+  'Choose Visa E ($35), not T. Under occupation you can write “Volunteer”.',
+  'Where the form asks about the organisation, address and contact in Cambodia, copy the details above.',
+  'Attach the letter of invitation and the supporting documents.',
+  'Pay and send. The e-visa comes by email as a PDF in 3–4 business days — apply sooner rather than later.'
+];
+function visaInfoFor_(campus){ P.visaInfo=P.visaInfo||{}; return P.visaInfo[campus||DEFAULT_CAMPUS]; }
+function visaHowHtml_(app){
+  var open=P.fold && P.fold.visaHow;
+  return '<details class="visaHow" id="visaHow" data-fold="visaHow"'+(open?' open':'')+'><summary><span class="foldTitle">🛂 '+esc(t('How to apply for your e-visa online'))+'</span><span class="foldChev" aria-hidden="true">▾</span></summary>'+
+    '<div class="visaHowBody">'+visaHowBodyHtml_(app)+'</div></details>';
+}
+function visaHowBodyHtml_(app){
+  var V=visaInfoFor_(app.campus), team=app.type==='team';
+  var inv=(app.docs||[]).filter(function(d){ return d.kind==='invitation'; });
+  var file=function(attr, id, name){ return '<button type="button" class="visaFile" '+attr+'="'+esc(id)+'">📄 <span>'+esc(name)+'</span><b>'+esc(t('Open'))+'</b></button>'; };
+  var h='<div class="visaSec"><div class="eyebrow">1 · '+esc(t('Your letter of invitation'))+'</div>'+
+    (inv.length ? inv.map(function(d){ return file('data-docopen', d.id, d.name); }).join('') : '<p class="sub" style="margin:4px 0 0">'+esc(t('We have sent you your letter of invitation. Ask us if you can’t find it.'))+'</p>')+'</div>';
+  if(!V) return h+'<p class="sub" data-visaload="'+esc(app.campus||DEFAULT_CAMPUS)+'">'+esc(t('Loading…'))+'</p>';
+  h+='<div class="visaSec"><div class="eyebrow">2 · '+esc(t('Supporting documents'))+'</div>'+
+    (V.docs.length ? V.docs.map(function(d){ return file('data-visadoc', d.id, d.name); }).join('') : '<p class="sub" style="margin:4px 0 0">'+esc(t('We send the supporting documents with your letter of invitation.'))+'</p>')+'</div>';
+  var I=V.info||{}, rows=[['Organisation',I.org],['Address for the visa',I.address],['Contact number',I.phone],['Email',I.email]].filter(function(r){ return r[1]; });
+  if(rows.length) h+='<div class="visaSec"><div class="eyebrow">3 · '+esc(t('What the e-visa form asks about us'))+'</div>'+rows.map(function(r){
+    return '<div class="visaKv"><div><small>'+esc(t(r[0]))+'</small><span>'+esc(r[1])+'</span></div><button type="button" class="btn ghost small" data-copytext="'+esc(r[1])+'">'+esc(t('Copy'))+'</button></div>'; }).join('')+'</div>';
+  if(I.extra) h+='<p class="visaExtra">'+esc(I.extra)+'</p>';
+  h+='<div class="visaSec"><div class="eyebrow">'+(rows.length?'4':'3')+' · '+esc(t('Steps'))+'</div><ol class="guide">'+VISA_HOW.map(function(x){ return '<li>'+esc(t(x))+'</li>'; }).join('')+
+    '<li>'+esc(team ? t('Every team member needs their own e-visa. Upload each one under Documents when it comes.') : t('Send the e-visa PDF to your contact here.'))+'</li></ol>'+
+    '<a class="btn small" href="https://www.evisa.gov.kh/" target="_blank" rel="noopener" style="margin-top:4px">evisa.gov.kh ↗</a></div>';
+  h+='<div class="visaSec"><div class="eyebrow">'+esc(t('Preparing to come'))+'</div><ol class="guide">'+VISA_PREP.map(function(x){ return '<li>'+esc(t(x))+'</li>'; }).join('')+'</ol></div>';
+  return h;
+}
+/* A supporting document comes in parts (portalVisaDocGet); put it back together and open it. */
+function openVisaDoc_(campus, id, btn){
+  var parts=[], total=1;
+  if(btn) btn.disabled=true;
+  var done=function(ok){ if(btn) btn.disabled=false; if(!ok) showMsg(t('Could not open the file')); };
+  var next=function(i){
+    run('portalVisaDocGet', [P.auth.user, P.auth.pin, campus, id, i], function(r){
+      if(!(r && r.ok)){ done(false); return; }
+      parts.push(r.data); total=r.parts;
+      if(parts.length<total) next(i+1);
+      else { done(true); openDataUrl_('data:'+r.mime+';base64,'+parts.join(''), r.name); }
+    }, function(){ done(false); });
+  };
+  next(0);
+}
+function bindVisaHow_(){
+  document.querySelectorAll('[data-visaload]').forEach(function(el){
+    var campus=el.getAttribute('data-visaload'); P.visaLoading=P.visaLoading||{};
+    if(P.visaLoading[campus]) return; P.visaLoading[campus]=true;
+    run('portalVisaInfo', [P.auth.user, P.auth.pin, campus], function(r){ P.visaLoading[campus]=false; P.visaInfo=P.visaInfo||{}; P.visaInfo[campus] = r && r.ok ? r : { info:{}, docs:[] }; render(); },
+      function(){ P.visaLoading[campus]=false; P.visaInfo=P.visaInfo||{}; P.visaInfo[campus]={ info:{}, docs:[] }; render(); });
+  });
+  document.querySelectorAll('[data-visadoc]').forEach(function(b){ b.onclick=function(){
+    var app=(P.view==='preview' && P.pv.boot) ? P.pv.boot.application : P.boot.application;
+    openVisaDoc_((app && app.campus) || DEFAULT_CAMPUS, b.getAttribute('data-visadoc'), b); }; });
+  document.querySelectorAll('[data-copytext]').forEach(function(b){ b.onclick=function(){ copyText_(b.getAttribute('data-copytext')); }; });
+  document.querySelectorAll('details[data-fold]').forEach(function(d){ d.ontoggle=function(){ P.fold=P.fold||{}; P.fold[d.getAttribute('data-fold')]=d.open; }; });
+}
+/* A card that folds: the title and a one-line summary, tap to open. It
+   remembers being opened or closed while the page is up (P.fold). */
+function foldCardHtml_(id, title, summary, openByDefault, body){
+  P.fold=P.fold||{};
+  var open = id in P.fold ? P.fold[id] : !!openByDefault;
+  return '<details class="card foldCard" id="'+esc(id)+'" data-fold="'+esc(id)+'"'+(open?' open':'')+'><summary><span class="foldTitle">'+esc(title)+'</span>'+
+    (summary ? '<span class="foldSum">'+esc(summary)+'</span>' : '')+'<span class="foldChev" aria-hidden="true">▾</span></summary><div class="foldBody">'+body+'</div></details>';
+}
+function myDocsSummary_(app){
+  var kinds=(app.docKinds||[]).filter(function(k){ return k.id!=='photo' && k.from!=='us' && k.required; }), docs=app.docs||[];
+  if(!kinds.length) return '';
+  var have=kinds.filter(function(k){ return docs.some(function(d){ return d.kind===k.id; }); }).length;
+  return have===kinds.length ? '✓ '+t('All in') : gpT('{have} of {total} in',{have:have,total:kinds.length});
+}
+/* open while there is something for them to upload; folded once it is all in */
+function myDocsOpen_(app){
+  if(!app.submittedAt) return false;
+  var kinds=(app.docKinds||[]).filter(function(k){ return k.id!=='photo' && k.from!=='us' && k.required; }), docs=app.docs||[];
+  return kinds.some(function(k){ return !docs.some(function(d){ return d.kind===k.id; }); });
 }
 /* ==================== documents ====================
    Kind by kind, as the server lists them for this kind of application
@@ -3190,6 +3384,8 @@ function panelTeamFlowHtml_(c){
   if(c.type!=='team' || !c.steps) return '';
   var next=teamNext_(c);
   var h='<h3>🧭 '+esc(t('Team steps'))+'</h3>'+
+    (next && next.id==='invitation' ? '<div class="banner" id="invNudge" style="margin:0 0 10px"><b>'+esc(t('Next for us: the letter of invitation'))+'</b><br>'+esc(t('Upload it under Documents. The team then sees “How to apply for your e-visa online” with the letter, the supporting documents and our details (☰ → E-visa info).'))+
+      '<div style="margin-top:8px"><button class="btn small" data-ptab="docs">📎 '+esc(t('Go to Documents'))+'</button></div></div>' : '')+
     (next ? '<p class="sub" style="margin:0 0 8px" id="teamNext">'+esc(t('Next'))+': <b>'+esc(t(TEAM_STEP_LABEL[next.id]||next.id))+'</b> · '+esc(next.who==='you' ? t('waiting on the team') : t('on us'))+'</p>'
       : '<p class="sub" style="margin:0 0 8px" id="teamNext">✓ '+esc(t('Every step is done.'))+'</p>');
   h+='<ul class="flowList">'+c.steps.filter(function(st){ return st.id!=='account'; }).map(function(st){
@@ -3325,6 +3521,7 @@ function bind_(){
   on_('menuClose', function(){ P.menuOpen=false; render(); var b=document.getElementById('navMenu'); if(b) b.focus(); });
   on_('menuScrim', function(){ P.menuOpen=false; render(); });
   on_('toForms', function(){ P.menuOpen=false; if(P.view==='forms') return; P.view='forms'; render(); });
+  on_('toVisaInfo', function(){ P.menuOpen=false; if(P.view==='visa') return; P.view='visa'; P.viDraft=null; render(); });
   on_('toResources', function(){ P.menuOpen=false; if(P.view==='resources') return; P.view='resources'; P.resDraft=null; render(); });
   on_('toTeam', function(){ P.menuOpen=false; if(P.view==='team') return; P.view='team'; P.teamEdit=null; render(); });
   on_('toLegal', function(){ P.menuOpen=false; if(P.view==='legal') return; P.view='legal'; P.legalDocs=null; P.legalPreview=null; render(); });
@@ -3339,7 +3536,7 @@ function bind_(){
   document.querySelectorAll('[data-linkkind]').forEach(function(b){ b.onclick=function(){ P.linkKind=b.getAttribute('data-linkkind'); render(); copyText_(applyLinkUrl_(P.linkKind)); }; });
   on_('toPreview', function(){ P.menuOpen=false; if(P.view==='preview') return; P.view='preview'; P.pv.boot=null; P.pv.screen='me'; P.pv.sec=0; render(); });
   on_('toAccounts', function(){ P.menuOpen=false; if(P.view==='accounts') return; P.view='accounts'; P.accSel=null; P.accNew=false; P.accounts=null; render(); });
-  bindForm_(); bindForms_(); bindAccounts_(); bindRef_(); bindStay_(); bindSign_(); bindLegalAdmin_(); bindPreview_(); bindStays_(); bindPeople_(); bindDocs_(); if(P.view==='crm') bindPanelExtras_();
+  bindForm_(); bindForms_(); bindAccounts_(); bindRef_(); bindStay_(); bindSign_(); bindLegalAdmin_(); bindPreview_(); bindStays_(); bindPeople_(); bindDocs_(); bindVisaHow_(); bindVisaAdmin_(); if(P.view==='crm') bindPanelExtras_();
 }
 /* Typing in the search box re-draws only the list, so the box keeps focus. */
 function renderList_(){
