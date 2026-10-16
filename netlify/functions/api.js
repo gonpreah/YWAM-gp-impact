@@ -683,8 +683,6 @@ async function staffRegister(payload) {
   const u = normUser_(payload.username);
   if (!/^[a-z0-9._-]{2,20}$/.test(u)) return { ok: false, err: 'bad_username' };
   if (!/^\d{4}$/.test(String(payload.pin))) return { ok: false, err: 'bad_pin' };
-  const rows = await getStaff_();
-  if (findStaff_(rows, u)) return { ok: false, err: 'taken' };
   if ((await getBoard_()).some(function (b) { return b.username === u; })) return { ok: false, err: 'taken' };
   // One profile per email, going forward — a name can repeat (two staff can
   // share one), an inbox can't. Existing accounts made before this may still
@@ -692,7 +690,6 @@ async function staffRegister(payload) {
   const email = cleanEmail_(payload.email);
   if (email === null) return { ok: false, err: 'bad_email' };
   if (!email) return { ok: false, err: 'email_required' };
-  if (rows.some(function (r) { return r.email && r.email === email; })) return { ok: false, err: 'email_taken' };
   const salt = pinSalt_();
   const id = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const now = new Date().toISOString();
@@ -708,8 +705,14 @@ async function staffRegister(payload) {
     isAdmin: false, created: now, updated: now
   };
   if (CD_KINDS.indexOf(payload.cdKind) > -1 && rec.dept === LEADERSHIP_DEPT && rec.ministry === 'Campus Director') rec.cdKind = payload.cdKind;
-  rows.push(rec);
-  await saveStaff_(rows);
+  // checked and added in one write, so two sign-ups at once can't both take a username or an email
+  const added = await mutateStaff_(function (rows) {
+    if (findStaff_(rows, u)) return { abort: true, ok: false, err: 'taken' };
+    if (rows.some(function (r) { return r.email && r.email === email; })) return { abort: true, ok: false, err: 'email_taken' };
+    rows.push(rec);
+    return { ok: true };
+  });
+  if (!added.ok) return added;
   // No staff/profile in a pending response: this account has no session yet,
   // and returning one would let the client log it straight in anyway.
   if (pending) return { ok: true, pending: true };
@@ -825,9 +828,15 @@ async function adminGate_(username, pin) {
    once. A few milliseconds of jitter is enough to break that symmetry. */
 async function mutateStaff_(mutate) {
   const s = store();
+  /* A read straight after the write that still shows the list exactly as it was
+     before it is a read that hasn't caught up yet, not someone else's write (that
+     would show THEIR change). Every attempt seeing only that means our write is the
+     newest one there is, so it stands rather than failing as 'busy'. */
+  let lagOnly = true, last = null;
   for (let attempt = 0; attempt < 10; attempt++) {
     if (attempt > 0) await new Promise(function (r) { setTimeout(r, Math.random() * 40); });
-    const rows = ensureStaffIds_(normRows_(shaped_(await s.get('staff', { type: 'json' }), []))).rows;
+    const raw = shaped_(await s.get('staff', { type: 'json' }), []);
+    const rows = ensureStaffIds_(normRows_(copy_(raw))).rows;
     const result = mutate(rows);
     if (result && result.abort) { const out = Object.assign({}, result); delete out.abort; return out; }
     await s.setJSON('staff', rows);
@@ -837,6 +846,13 @@ async function mutateStaff_(mutate) {
       if (mine) mine.set('staff', copy_(rows));
       return result;
     }
+    if (JSON.stringify(after) !== JSON.stringify(raw)) lagOnly = false;
+    last = { rows: rows, result: result };
+  }
+  if (lagOnly && last) {
+    const mine = requestScope.getStore();
+    if (mine) mine.set('staff', copy_(last.rows));
+    return last.result;
   }
   return { ok: false, err: 'busy' };
 }
@@ -1126,74 +1142,75 @@ async function adminMergeStaff(username, pin, keepId, mergeId) {
 async function updateProfile(username, pin, payload) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
-  const rows = await getStaff_();
-  const idx = rows.findIndex(function (r) { return r.id === s.id; });
-  const rec = rows[idx];
-  if (payload.name !== undefined) rec.name = payload.name;
-  if (payload.campus !== undefined) rec.campus = payload.campus;
-  /* Moving yourself INTO Campus Leadership waits for an admin (Oct 2026, Uriah) — the
-     same rule as a Campus Leadership sign-up, since the department carries the
-     leadership tools (the meeting board, other ministries' numbers, a title). The
-     rest of the profile saves; the move is kept as a request (cltRequest) that an
-     admin approves or declines in Admin → Approvals. Already in it, you move freely. */
-  let cltPending = false;
-  const wasLeadership = deptOf_(rec) === LEADERSHIP_DEPT;
-  const wantDept = payload.dept !== undefined ? normDept_(payload.dept, payload.ministry) : rec.dept;
-  if (!wasLeadership && wantDept === LEADERSHIP_DEPT) {
-    rec.cltRequest = { ministry: normMinistry_(LEADERSHIP_DEPT, str_(payload.ministry, 80) || ''),
-      cdKind: CD_KINDS.indexOf(payload.cdKind) > -1 ? payload.cdKind : '', at: new Date().toISOString() };
-    cltPending = true;
-  } else {
-    if (payload.dept !== undefined) rec.dept = normDept_(payload.dept);
-    if (payload.ministry !== undefined) rec.ministry = normMinistry_(rec.dept, payload.ministry);
-    rec.dept = normDept_(rec.dept, rec.ministry);   // a ministry that moved department goes where it is now
-    // Campus Leadership picks its own title (Oct 2026): International or National Campus Director
-    if (payload.cdKind !== undefined) rec.cdKind = CD_KINDS.indexOf(payload.cdKind) > -1 ? payload.cdKind : '';
-  }
-  if (payload.cancelCltRequest) delete rec.cltRequest;
-  if (payload.role !== undefined) rec.role = payload.role;
-  if (payload.staffType !== undefined) rec.staffType = cleanStaffType_(payload.staffType);
-  if (payload.country !== undefined) rec.country = cleanCountry_(payload.country);
-  if (payload.sex !== undefined) rec.sex = cleanSex_(payload.sex);
-  if (payload.ministries !== undefined) rec.ministries = cleanMinistries_(payload.ministries, rec);
-  else if (rec.ministries) rec.ministries = cleanMinistries_(rec.ministries, rec);   // a new main one drops out of the rest
-  // nor through the side door: nobody adds a Campus Leadership row as an extra ministry
-  if (deptOf_(rec) !== LEADERSHIP_DEPT && rec.ministries) rec.ministries = rec.ministries.filter(function (k) { return k.split('|')[0] !== LEADERSHIP_DEPT; });
-  if (payload.mentorId !== undefined) {
-    const newMentorId = payload.mentorId || '';
-    // Picking a new/different mentor always resets to pending — the mentor
-    // must accept before they get access to this person's private data.
-    if (newMentorId !== rec.mentorId) rec.mentorStatus = newMentorId ? 'pending' : '';
-    rec.mentorId = newMentorId;
-  }
-  if (payload.phone !== undefined) rec.phone = payload.phone;
-  if (payload.joined !== undefined) rec.joined = payload.joined;
-  if (payload.debt !== undefined) rec.debt = !!payload.debt;
-  if (payload.email !== undefined) {
-    const email = cleanEmail_(payload.email);
-    if (email === null) return { ok: false, err: 'bad_email' };
-    if (email && rows.some(function (r) { return r.id !== s.id && r.email && r.email === email; })) {
-      return { ok: false, err: 'email_taken' };
+  // one write that re-reads the list (mutateStaff_), so a save at the same moment as an admin's edit can't undo it
+  return mutateStaff_(function (rows) {
+    const idx = rows.findIndex(function (r) { return r.id === s.id; });
+    if (idx === -1) return { abort: true, ok: false };
+    const rec = rows[idx];
+    if (payload.name !== undefined) rec.name = payload.name;
+    if (payload.campus !== undefined) rec.campus = payload.campus;
+    /* Moving yourself INTO Campus Leadership waits for an admin (Oct 2026, Uriah) — the
+       same rule as a Campus Leadership sign-up, since the department carries the
+       leadership tools (the meeting board, other ministries' numbers, a title). The
+       rest of the profile saves; the move is kept as a request (cltRequest) that an
+       admin approves or declines in Admin → Approvals. Already in it, you move freely. */
+    let cltPending = false;
+    const wasLeadership = deptOf_(rec) === LEADERSHIP_DEPT;
+    const wantDept = payload.dept !== undefined ? normDept_(payload.dept, payload.ministry) : rec.dept;
+    if (!wasLeadership && wantDept === LEADERSHIP_DEPT) {
+      rec.cltRequest = { ministry: normMinistry_(LEADERSHIP_DEPT, str_(payload.ministry, 80) || ''),
+        cdKind: CD_KINDS.indexOf(payload.cdKind) > -1 ? payload.cdKind : '', at: new Date().toISOString() };
+      cltPending = true;
+    } else {
+      if (payload.dept !== undefined) rec.dept = normDept_(payload.dept);
+      if (payload.ministry !== undefined) rec.ministry = normMinistry_(rec.dept, payload.ministry);
+      rec.dept = normDept_(rec.dept, rec.ministry);   // a ministry that moved department goes where it is now
+      // Campus Leadership picks its own title (Oct 2026): International or National Campus Director
+      if (payload.cdKind !== undefined) rec.cdKind = CD_KINDS.indexOf(payload.cdKind) > -1 ? payload.cdKind : '';
     }
-    rec.email = email;
-  }
-  // A free color wheel rather than a fixed palette — any hex works, so the
-  // only guard is the shape, not membership in some list.
-  if (payload.dashboardColor !== undefined) {
-    rec.dashboardColor = /^#[0-9a-fA-F]{6}$/.test(payload.dashboardColor) ? payload.dashboardColor : '';
-  }
-  rec.updated = new Date().toISOString();
-  rows[idx] = rec;
-  await saveStaff_(rows);
-  return {
-    ok: true, staff: publicStaff_(rec), cltPending: cltPending,
-    profile: {
-      phone: rec.phone, joined: rec.joined, debt: rec.debt, mentorStatus: rec.mentorStatus || '',
-      dashboardColor: rec.dashboardColor || '', dashboardBg: rec.dashboardBg || '', email: rec.email || '',
-      sex: cleanSex_(rec.sex), personality: ownPersonality_(rec),
-      gstrengths: ownGStrengths_(rec), cltRequest: cltRequestOut_(rec)
+    if (payload.cancelCltRequest) delete rec.cltRequest;
+    if (payload.role !== undefined) rec.role = payload.role;
+    if (payload.staffType !== undefined) rec.staffType = cleanStaffType_(payload.staffType);
+    if (payload.country !== undefined) rec.country = cleanCountry_(payload.country);
+    if (payload.sex !== undefined) rec.sex = cleanSex_(payload.sex);
+    if (payload.ministries !== undefined) rec.ministries = cleanMinistries_(payload.ministries, rec);
+    else if (rec.ministries) rec.ministries = cleanMinistries_(rec.ministries, rec);   // a new main one drops out of the rest
+    // nor through the side door: nobody adds a Campus Leadership row as an extra ministry
+    if (deptOf_(rec) !== LEADERSHIP_DEPT && rec.ministries) rec.ministries = rec.ministries.filter(function (k) { return k.split('|')[0] !== LEADERSHIP_DEPT; });
+    if (payload.mentorId !== undefined) {
+      const newMentorId = payload.mentorId || '';
+      // Picking a new/different mentor always resets to pending — the mentor
+      // must accept before they get access to this person's private data.
+      if (newMentorId !== rec.mentorId) rec.mentorStatus = newMentorId ? 'pending' : '';
+      rec.mentorId = newMentorId;
     }
-  };
+    if (payload.phone !== undefined) rec.phone = payload.phone;
+    if (payload.joined !== undefined) rec.joined = payload.joined;
+    if (payload.debt !== undefined) rec.debt = !!payload.debt;
+    if (payload.email !== undefined) {
+      const email = cleanEmail_(payload.email);
+      if (email === null) return { abort: true, ok: false, err: 'bad_email' };
+      if (email && rows.some(function (r) { return r.id !== s.id && r.email && r.email === email; })) {
+        return { abort: true, ok: false, err: 'email_taken' };
+      }
+      rec.email = email;
+    }
+    // A free color wheel rather than a fixed palette — any hex works, so the
+    // only guard is the shape, not membership in some list.
+    if (payload.dashboardColor !== undefined) {
+      rec.dashboardColor = /^#[0-9a-fA-F]{6}$/.test(payload.dashboardColor) ? payload.dashboardColor : '';
+    }
+    rec.updated = new Date().toISOString();
+    return {
+      ok: true, staff: publicStaff_(rec), cltPending: cltPending,
+      profile: {
+        phone: rec.phone, joined: rec.joined, debt: rec.debt, mentorStatus: rec.mentorStatus || '',
+        dashboardColor: rec.dashboardColor || '', dashboardBg: rec.dashboardBg || '', email: rec.email || '',
+        sex: cleanSex_(rec.sex), personality: ownPersonality_(rec),
+        gstrengths: ownGStrengths_(rec), cltRequest: cltRequestOut_(rec)
+      }
+    };
+  });
 }
 
 /* Save (or clear) someone's personality type. Every field is optional, so the
@@ -1243,13 +1260,14 @@ async function changePin(username, pin, newPin) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
   if (!/^\d{4}$/.test(String(newPin))) return { ok: false, err: 'bad_pin' };
-  const rows = await getStaff_();
-  const idx = rows.findIndex(function (r) { return r.id === s.id; });
   const salt = pinSalt_();
-  rows[idx].pinHash = hashPin_(newPin, salt);
-  rows[idx].pinSalt = salt;
-  await saveStaff_(rows);
-  return { ok: true };
+  return mutateStaff_(function (rows) {
+    const idx = rows.findIndex(function (r) { return r.id === s.id; });
+    if (idx === -1) return { abort: true, ok: false };
+    rows[idx].pinHash = hashPin_(newPin, salt);
+    rows[idx].pinSalt = salt;
+    return { ok: true };
+  });
 }
 
 const PHOTO_MIME_ALLOWLIST = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -1260,11 +1278,12 @@ async function uploadPhoto(username, pin, base64, mime) {
   if (mime && PHOTO_MIME_ALLOWLIST.indexOf(mime) === -1) return { ok: false, err: 'bad_type' };
   const dataUri = 'data:' + (mime || 'image/jpeg') + ';base64,' + base64;
   if (dataUri.length > 200000) return { ok: false, err: 'too_large' };
-  const rows = await getStaff_();
-  const idx = rows.findIndex(function (r) { return r.id === s.id; });
-  rows[idx].photo = dataUri;
-  await saveStaff_(rows);
-  return { ok: true, photo: dataUri };
+  return mutateStaff_(function (rows) {
+    const idx = rows.findIndex(function (r) { return r.id === s.id; });
+    if (idx === -1) return { abort: true, ok: false };
+    rows[idx].photo = dataUri;
+    return { ok: true, photo: dataUri };
+  });
 }
 
 async function uploadDashboardBg(username, pin, base64, mime) {
@@ -1273,21 +1292,23 @@ async function uploadDashboardBg(username, pin, base64, mime) {
   if (mime && PHOTO_MIME_ALLOWLIST.indexOf(mime) === -1) return { ok: false, err: 'bad_type' };
   const dataUri = 'data:' + (mime || 'image/jpeg') + ';base64,' + base64;
   if (dataUri.length > 400000) return { ok: false, err: 'too_large' };
-  const rows = await getStaff_();
-  const idx = rows.findIndex(function (r) { return r.id === s.id; });
-  rows[idx].dashboardBg = dataUri;
-  await saveStaff_(rows);
-  return { ok: true, dashboardBg: dataUri };
+  return mutateStaff_(function (rows) {
+    const idx = rows.findIndex(function (r) { return r.id === s.id; });
+    if (idx === -1) return { abort: true, ok: false };
+    rows[idx].dashboardBg = dataUri;
+    return { ok: true, dashboardBg: dataUri };
+  });
 }
 
 async function clearDashboardBg(username, pin) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
-  const rows = await getStaff_();
-  const idx = rows.findIndex(function (r) { return r.id === s.id; });
-  rows[idx].dashboardBg = '';
-  await saveStaff_(rows);
-  return { ok: true };
+  return mutateStaff_(function (rows) {
+    const idx = rows.findIndex(function (r) { return r.id === s.id; });
+    if (idx === -1) return { abort: true, ok: false };
+    rows[idx].dashboardBg = '';
+    return { ok: true };
+  });
 }
 
 /* ==================== personal habits ====================
@@ -1363,34 +1384,37 @@ const MAX_KPI_PINS = 8;
 async function saveMyKpiPins(username, pin, pins) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
-  const rows = await getStaff_();
-  const idx = rows.findIndex(function (r) { return r.id === s.id; });
-  if (idx === -1) return { ok: false };
   const seen = {};
-  rows[idx].kpiPins = (Array.isArray(pins) ? pins : [])
+  const clean = (Array.isArray(pins) ? pins : [])
     .map(function (m) { return str_(m, 80); })
     .filter(function (m) {
       if (!m || seen[m] || SENSITIVE.indexOf(m) > -1) return false;
       seen[m] = 1; return true;
     })
     .slice(0, MAX_KPI_PINS);
-  rows[idx].updated = new Date().toISOString();
-  await saveStaff_(rows);
+  const r = await mutateStaff_(function (rows) {
+    const idx = rows.findIndex(function (x) { return x.id === s.id; });
+    if (idx === -1) return { abort: true, ok: false };
+    rows[idx].kpiPins = clean;
+    rows[idx].updated = new Date().toISOString();
+    return { ok: true };
+  });
+  if (!r.ok) return r;
   return getMyMinistry(username, pin);
 }
 
 async function saveMyHabits(username, pin, habits, bibleDay) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
-  const rows = await getStaff_();
-  const idx = rows.findIndex(function (r) { return r.id === s.id; });
-  if (idx === -1) return { ok: false };
-  if (habits !== undefined) rows[idx].habits = cleanHabitConfig_(habits);
   const day = finiteNum_(bibleDay, 0, 365);
-  if (day !== null) rows[idx].bibleDay = day;
-  rows[idx].updated = new Date().toISOString();
-  await saveStaff_(rows);
-  return { ok: true, habits: habitsOf_(rows[idx]), bibleDay: rows[idx].bibleDay || 0 };
+  return mutateStaff_(function (rows) {
+    const idx = rows.findIndex(function (r) { return r.id === s.id; });
+    if (idx === -1) return { abort: true, ok: false };
+    if (habits !== undefined) rows[idx].habits = cleanHabitConfig_(habits);
+    if (day !== null) rows[idx].bibleDay = day;
+    rows[idx].updated = new Date().toISOString();
+    return { ok: true, habits: habitsOf_(rows[idx]), bibleDay: rows[idx].bibleDay || 0 };
+  });
 }
 
 /* ---- daily log ---- */
@@ -1565,12 +1589,14 @@ async function getMyMentorRequests(username, pin) {
 async function respondToMentorRequest(username, pin, menteeId, approve) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
-  const rows = await getStaff_();
-  const idx = rows.findIndex(function (x) { return x.id === menteeId; });
-  if (idx === -1 || rows[idx].mentorId !== s.id) return { ok: false, err: 'not_found' };
-  if (approve) rows[idx].mentorStatus = 'approved';
-  else { rows[idx].mentorId = ''; rows[idx].mentorStatus = ''; }
-  await saveStaff_(rows);
+  const r = await mutateStaff_(function (rows) {
+    const idx = rows.findIndex(function (x) { return x.id === menteeId; });
+    if (idx === -1 || rows[idx].mentorId !== s.id) return { abort: true, ok: false, err: 'not_found' };
+    if (approve) rows[idx].mentorStatus = 'approved';
+    else { rows[idx].mentorId = ''; rows[idx].mentorStatus = ''; }
+    return { ok: true };
+  });
+  if (!r.ok) return r;
   return getMyMentorRequests(username, pin);
 }
 
@@ -1898,11 +1924,13 @@ async function saveMyWeek(username, pin, week, payload) {
   if (wk == null) return { ok: false, err: 'bad_week' };
   const p = payload || {};
 
-  const staffRows = await getStaff_();
-  const si = staffRows.findIndex(function (r) { return r.id === s.id; });
-  if (si === -1) return { ok: false };
-  const token = surveyTokenFor_(staffRows[si]);
-  await saveStaff_(staffRows);
+  const minted = await mutateStaff_(function (rows) {
+    const si = rows.findIndex(function (r) { return r.id === s.id; });
+    if (si === -1) return { abort: true, ok: false };
+    return { ok: true, token: surveyTokenFor_(rows[si]) };
+  });
+  if (!minted.ok) return { ok: false };
+  const token = minted.token;
 
   const rec = { campus: s.campus, week: wk, year: currentYear_(), device: token, source: 'weekly',
     days: 7, updated: new Date().toISOString() };
@@ -1914,8 +1942,12 @@ async function saveMyWeek(username, pin, week, payload) {
   if (WEEK_SCALES.some(function (k) { return rec[k] == null; })) return { ok: false, err: 'incomplete' };
 
   // Staff debt is part of the profile, not just this week's answer.
-  staffRows[si].debt = !!p.debt;
-  await saveStaff_(staffRows);
+  await mutateStaff_(function (rows) {
+    const si = rows.findIndex(function (r) { return r.id === s.id; });
+    if (si === -1) return { abort: true, ok: false };
+    rows[si].debt = !!p.debt;
+    return { ok: true };
+  });
 
   const rows = await getSurvey_();
   const idx = rows.findIndex(function (r) {

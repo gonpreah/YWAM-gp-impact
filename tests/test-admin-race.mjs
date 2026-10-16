@@ -105,5 +105,29 @@ const final = mem.staff.find((s) => s.id === 'st_spicy');
 ok('the role change survived the concurrent department change', final.role === 'Team Lead', final.role);
 ok('the department change survived the concurrent role change', final.dept === 'Campus Leadership', final.dept);
 
+const HABITS = [{ id: 'bible' }, { id: 'quietTime' }];
+// A person's own saves against an admin's edit of the same record, at the same moment
+// (Oct 2026): Profile & settings, a photo, a PIN change and the habit picker used to
+// read-modify-write the whole list too.
+mem.staff = [ADMIN, SPICY].map((s) => ({ ...s, pinSalt: s.id, pinHash: mkHash('1234', s.id) }));
+const [profRes, admRes, habRes] = await Promise.all([
+  call('updateProfile', ['spicy', '1234', { phone: '012 345 678' }]),
+  call('adminUpdateStaff', ['uriah', '1234', 'st_spicy', { role: 'Team Lead' }]),
+  call('saveMyHabits', ['spicy', '1234', HABITS]),
+]);
+let me = mem.staff.find((s) => s.id === 'st_spicy');
+ok('a profile save, an admin edit and a habit save at once: all three reported success', profRes.body.ok && admRes.body.ok && habRes.body.ok);
+ok('… and all three survived', me.phone === '012 345 678' && me.role === 'Team Lead' && Array.isArray(me.habits) && me.habits.length > 0, [me.phone, me.role, JSON.stringify(me.habits)].join(' / '));
+const [pinRes2, photoRes] = await Promise.all([
+  call('changePin', ['spicy', '1234', '4444']),
+  call('uploadPhoto', ['spicy', '1234', 'aGVsbG8=', 'image/png']),
+]);
+me = mem.staff.find((s) => s.id === 'st_spicy');
+ok('a PIN change and a new photo at once both stick', pinRes2.body.ok && photoRes.body.ok && /^data:image\/png/.test(me.photo || '') && (await call('staffLogin', ['spicy', '4444'])).body.ok === true);
+mem.staff = [ADMIN].map((s) => ({ ...s, pinSalt: s.id, pinHash: mkHash('1234', s.id) }));
+const reg = (u, e) => call('staffRegister', [{ username: u, pin: '1234', email: e, name: u, campus: 'poipet', dept: 'Community Service', ministry: 'Cafe' }]);
+const [r1, r2] = await Promise.all([reg('dara', 'a@e.com'), reg('dara', 'b@e.com')]);
+ok('two sign-ups for the same username at once: only one gets it', [r1.body.ok, r2.body.ok].filter(Boolean).length === 1 && mem.staff.filter((s) => s.username === 'dara').length === 1, JSON.stringify([r1.body, r2.body]));
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
