@@ -744,6 +744,18 @@ async function open(viewport, query, seed) {
     ok('when the letter of invitation is next, staff are told on Overview', /Next for us: the letter of invitation/.test(await page.$eval('#invNudge', e => e.textContent)));
     await page.click('#invNudge [data-ptab="docs"]'); await page.waitForTimeout(200);
     ok('… with a button straight to Documents', await page.$eval('[data-ptab="docs"].ptab', b => b.classList.contains('on')));
+    await page.evaluate(() => { P.boot.applicants = P.boot.applicants.map(x => x.id === 'cd_team' ? { ...x, portal: { ...(x.portal || {}), docs: [{ id: 'pd_x1', kind: 'passports', name: 'Mia passport.pdf', mime: 'application/pdf', added: '2026-10-01T00:00:00Z' }] } } : x); render(); });
+    ok('staff see Open on a file but no Remove beside it — only “Remove files…”', !!(await page.$('[data-dockind="passports"] [data-docopen="pd_x1"]')) && !(await page.$('[data-dockind="passports"] [data-docdel]')) && /Remove files…/.test(await page.$eval('[data-dockind="passports"] [data-docedit]', b => b.textContent)));
+    await page.click('[data-dockind="passports"] [data-docedit]'); await page.waitForTimeout(150);
+    const delBtn = await page.$eval('[data-dockind="passports"] [data-docdel="pd_x1"]', b => { const o = document.querySelector('[data-dockind="passports"] [data-docopen="pd_x1"]').getBoundingClientRect(), r = b.getBoundingClientRect(); return { gap: Math.max(r.left - o.right, r.top - o.bottom), cls: b.className }; });
+    ok('“Remove files…” shows a red Remove at the far end, away from Open, and Done', delBtn.cls === 'docDel' && delBtn.gap >= 8 && /Done/.test(await page.$eval('[data-dockind="passports"] [data-docedit]', b => b.textContent)), JSON.stringify(delBtn));
+    ok('… only for that kind', !(await page.$('[data-dockind="flights"] [data-docdel]')));
+    let asked = '';
+    page.once('dialog', d => { asked = d.message(); d.dismiss(); });
+    await page.click('[data-docdel="pd_x1"]'); await page.waitForTimeout(150);
+    ok('Remove asks, naming the file; saying no keeps it', /Remove “Mia passport\.pdf”\? This can’t be undone\./.test(asked) && !sent.some(b => b.fn === 'portalDeleteDoc' && b.args[2] === 'pd_x1'), asked);
+    await page.click('[data-dockind="passports"] [data-docedit]'); await page.waitForTimeout(150);
+    ok('Done hides Remove again', !(await page.$('[data-docdel]')));
     await ptab(page, 'calls');
     await page.setViewportSize({ width: 375, height: 800 }); await page.waitForTimeout(150);
     ok('the call form fits a phone', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
@@ -818,6 +830,8 @@ async function open(viewport, query, seed) {
   await page.setInputFiles('#viUpload', { name: 'Big licence.pdf', mimeType: 'application/pdf', buffer: Buffer.alloc(3 * 1024 * 1024, 65) });
   await page.waitForFunction(() => /Big licence\.pdf/.test(document.getElementById('main').textContent) && !document.getElementById('viProgress'), null, { timeout: 8000 }).catch(() => {});
   ok('a big scan goes up in parts and is listed', VISA_PARTS.length === 2 && VISA_PARTS[0].n === 0 && VISA_PARTS[0].id === '' && VISA_PARTS[1].id === 'vd_new' && VISA_PARTS.every(x => x.total === 2 && x.len <= 3 * 1024 * 1024) && /Big licence\.pdf/.test(await page.$eval('#main', e => e.textContent)), JSON.stringify(VISA_PARTS));
+  ok('E-visa info: no Remove until “Remove files…”', !(await page.$('[data-visadocdel]')) && !!(await page.$('[data-docedit="visa"]')));
+  await page.click('[data-docedit="visa"]'); await page.waitForTimeout(150);
   page.once('dialog', d => d.accept());
   await page.click('[data-visadocdel="vd_new"]'); await page.waitForTimeout(300);
   ok('Remove takes it off', sent.some(b => b.fn === 'portalVisaDocDelete' && b.args[3] === 'vd_new') && !/Big licence\.pdf/.test(await page.$eval('#main', e => e.textContent)));
