@@ -126,6 +126,7 @@ const openLib = async page => { await page.click('nav.bottom [data-tab="library"
   await page.screenshot({ path: OUT + '/book.png' });
   await page.click('#libStart'); await page.waitForTimeout(300);
   let r = await page.$eval('#libReader', e => e.innerText);
+  ok('an ordinary book has no FIGHT overview', !(await page.$('#fightOv')));
   ok('the reader opens on the intro, with a bar of every step', /Intro/i.test(r) && (await page.$$('.libSegs span')).length === AHN + 2 && (await page.$$('.libSegs span.on')).length === 1 && !(await page.$('#libPrev')));
   ok('… a "Swipe to turn the page" hint the first time, and no Back / Next buttons along the bottom',
     /Swipe to turn the page/.test(await page.$eval('#libSwipeHint', e => e.innerText)) && !(await page.$('.libReaderNav')) && !!(await page.$('.libEdge.next')));
@@ -203,6 +204,30 @@ const openLib = async page => { await page.click('nav.bottom [data-tab="library"
   ok('… and the reader too, in Khmer — the key idea itself Khmer', await page.evaluate(() => document.documentElement.scrollWidth <= 321) && /គំនិតសំខាន់ទី 1/.test(await page.$eval('#libReader', e => e.innerText)) &&
     /[\u1780-\u17FF]{5}/.test(await page.$eval('.libReaderBody p', e => e.innerText)));
   await page.screenshot({ path: OUT + '/reader-km.png' });
+  await ctx.close();
+}
+/* FIGHT: Our Values opens on the same overview the 1-on-1 check-in shows */
+for (const km of [false, true]) {
+  const { ctx, page } = await open('sreilea', { km });
+  await openLib(page);
+  await page.click('[data-libbook="fight-our-values"]'); await page.waitForTimeout(500);
+  await page.click('#libStart'); await page.waitForTimeout(300);
+  const ov = await page.evaluate(() => {
+    const o = document.getElementById('fightOv'); if (!o) return null;
+    return { vals: [...o.querySelectorAll('[data-fightval]')].map(v => v.getAttribute('data-fightval')).join(), letters: [...o.querySelectorAll('.ooLetter')].map(b => b.textContent).join(''),
+      beh: o.querySelectorAll('.fightBeh li').length, folds: o.querySelectorAll('details.fightMore').length, text: o.innerText, kicker: document.querySelector('.libReaderKicker').innerText };
+  });
+  if (!km) {
+    ok('FIGHT’s first page has the overview: how they build, then F-I-G-H-T, each with its statement and three “I…” behaviours', ov && /Intro/i.test(ov.kicker) && ov.vals === 'faithful,innovative,generous,humble,tenacious' && ov.letters === 'FIGHT' && ov.beh === 15 &&
+      /They build on each other/.test(ov.text) && /I change what I can in myself before I critique others\./.test(ov.text) && /Nation over location/.test(ov.text), JSON.stringify(ov && { ...ov, text: ov.text.slice(0, 80) }));
+    ok('… the verse and what it isn’t under a fold for each', ov && ov.folds === 5 && !(await page.$eval('details.fightMore', d => d.open)));
+    await page.click('details.fightMore summary'); await page.waitForTimeout(150);
+    ok('… which opens to the verse and the guardrail', /Luke 16:10/.test(await page.$eval('details.fightMore', d => d.innerText)) && /Not perfectionism or burnout/.test(await page.$eval('details.fightMore', d => d.innerText)));
+    await page.screenshot({ path: OUT + '/fight-overview.png', fullPage: true });
+  } else {
+    ok('… in Khmer, the overview is Khmer, YWAM GP’s value names first', ov && ov.vals.split(',').length === 5 && /ស្មោះត្រង់/.test(ov.text) && /ការចុះចូល/.test(ov.text) && /FIGHT ដោយសង្ខេប/.test(ov.text));
+  }
+  ok('… and fits the phone', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await ctx.close();
 }
 {

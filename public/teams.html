@@ -963,6 +963,14 @@ button.reqRow { cursor:pointer; }
 .libReaderBody h2 { font-size:24px; line-height:1.25; margin:4px 0 14px; letter-spacing:-.01em; }
 .libReaderBody p, .libSec p, .libForUs p { margin:0; } .libReaderBody p + p, .libSec p + p, .libForUs p + p { margin-top:12px; }
 .libReaderBody p { font-size:17.5px; line-height:1.7; }
+.fightOv { margin-top:22px; }
+.libReaderBody .fightFlow { font-size:15px; line-height:1.55; color:var(--muted); margin:6px 0 12px; }
+.fightVal { border:1px solid var(--border); border-left:4px solid var(--ink); border-radius:12px; padding:12px 14px; margin-top:10px; background:var(--surface); }
+.fightValHead { display:flex; align-items:center; flex-wrap:wrap; gap:2px 0; font-weight:800; font-size:17px; }
+.fightValAlt { margin-left:8px; font-weight:600; font-size:13px; color:var(--muted); }
+.libReaderBody .fightSay { font-size:15px; line-height:1.55; margin:8px 0 6px; }
+.fightBeh { margin:0 0 6px; padding-left:20px; font-size:14.5px; line-height:1.5; } .fightBeh li { margin:3px 0; }
+.fightMore { margin:4px 0 0; font-size:13.5px; }
 .libReaderEmoji { font-size:46px; line-height:1; margin:10px 0 6px; }
 /* Reading is full-screen (Uriah: the bar didn't stay at the bottom): the tab bar
    steps aside while a book is open in the reader (body.reading) and Back / Next
@@ -6253,6 +6261,22 @@ function libBookHtml_(b){
   return h+'<p class="pFine">'+esc(b.original ? t('An original guide written for YWAM GP — not a published book. Every person is different: use it to start conversations, not to put people in boxes.')
     : t('Summary written for YWAM GP in our own words — not by the author or publisher.'))+'</p>';
 }
+/* The FIGHT book's first page also carries the overview the 1-on-1 check-in shows
+   (Oct 2026, Uriah): how the five build (OO_FLOW), then each value — its letter,
+   statement, three "I…" behaviours, and the verse and what it isn't under a fold.
+   Same OO_VALUES text, so the book and the form never drift apart. */
+function fightOverviewHtml_(km){
+  return '<div class="fightOv" id="fightOv"><div class="libKicker">'+esc(t('FIGHT at a glance'))+'</div>'+
+    '<p class="fightFlow">'+esc(km ? OO_FLOW.km : OO_FLOW.en)+'</p>'+
+    OO_VALUES.map(function(v){
+      return '<div class="fightVal" data-fightval="'+v.id+'"><div class="fightValHead"><b class="ooLetter">'+v.letter+'</b>'+esc(km ? v.km : v.label)+
+        '<span class="fightValAlt">'+esc(km ? v.label : v.km)+'</span></div>'+
+        '<p class="fightSay">'+esc(km ? v.sayKm : v.say)+'</p>'+
+        '<ul class="fightBeh">'+(km ? v.doesKm : v.does).map(function(x){ return '<li>'+esc(x)+'</li>'; }).join('')+'</ul>'+
+        '<details class="ooMore fightMore"><summary>📖 '+esc(t('Verse · what it isn’t'))+'</summary>'+
+          '<div class="ooVerse">'+esc(km ? v.verseKm : v.verse)+'</div><div class="ooNot">🚧 '+esc(km ? v.notKm : v.not)+'</div></details></div>';
+    }).join('')+'</div>';
+}
 /* One screen per step: 0 the intro, 1…n the key ideas, n+1 the final summary. */
 function libReaderHtml_(b){
   var sh=libShelf_(b.shelf), T=libText_(b), n=b.insights.length, last=n+1, k=Math.max(0, Math.min(last, S.libStep|0));
@@ -6261,7 +6285,7 @@ function libReaderHtml_(b){
     '<div class="libReaderTop"><button class="libReaderClose" id="libClose" aria-label="'+esc(t('Close'))+'">✕</button><div class="libSegs">'+segs+'</div>'+libAudioBtnsHtml_()+'</div>'+
     '<div class="libReaderBook"><span>'+esc(libTitle_(b))+' · '+esc(libAuthor_(b))+'</span></div>'+libKmEnsure_()+
     '<div class="libReaderKicker libTurn-'+(S.libDir||'none')+'">'+esc(k===0 ? t('Intro') : k<=n ? gpT('Key idea {n} of {m}',{n:k, m:n}) : t('Final summary'))+'</div><div class="libReaderBody libTurn-'+(S.libDir||'none')+(T.km?' libKm':'')+'">';
-  if(k===0) h+='<h2>'+esc(T.vibe)+'</h2>'+libParas_(T.bigIdea);
+  if(k===0) h+='<h2>'+esc(T.vibe)+'</h2>'+libParas_(T.bigIdea)+(b.overview==='fight' ? fightOverviewHtml_(T.km) : '');
   else if(k<=n){ var x=T.insights[k-1]; h+='<div class="libReaderEmoji">'+esc(x.emoji||'')+'</div><h2>'+esc(x.title)+'</h2>'+libParas_(x.body); }
   else h+='<div class="libOneLine" style="background:'+sh.color+'"><span>'+esc(t('In one line'))+'</span>'+esc(T.oneLine)+'</div>'+
     '<div class="libKicker" style="margin-top:20px">✅ '+esc(t('Try this week'))+'</div><ul class="libTry">'+T.tryThis.map(function(x){ return '<li>'+esc(x)+'</li>'; }).join('')+'</ul>'+

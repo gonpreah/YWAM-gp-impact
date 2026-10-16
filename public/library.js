@@ -3528,6 +3528,7 @@ var GP_LIBRARY = {
   {
    "id": "fight-our-values",
    "title": "FIGHT: Our Values",
+   "overview": "fight",
    "author": "GP Library",
    "year": 2026,
    "shelf": "gp",
