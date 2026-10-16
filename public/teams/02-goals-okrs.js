@@ -1,5 +1,5 @@
-/* My YWAM GP — teams.html, part 2 of 9: OKRs, My week, Goals & Tasks, weekly goals and habits.
-   Plain script, loaded in order by teams.html; the nine parts share one global
+/* My YWAM GP — teams.html, part 2 of 10: OKRs, My week, Goals & Tasks, weekly goals and habits.
+   Plain script, loaded in order by teams.html; the parts share one global
    scope, exactly as when this was one inline script. A function may call any
    function in any part. Code that RUNS while a part loads (not inside a
    function) can only use what this or an earlier part has defined. */
@@ -910,9 +910,19 @@ function ooMonthHtml_(menteeId){
   return '<div class="ooMonth'+(ok?' ok':'')+'">'+dots+'<span class="ooTxt">'+
     esc(ok ? gpT('{n} 1-on-1s this month ✓',{n:n}) : gpT('{n} of {target} 1-on-1s this month',{n:n,target:OO_PER_MONTH}))+'</span></div>';
 }
+/* A 1-on-1's day on Cambodia's calendar: the day it was held, else the day it was
+   asked. heldOn is a Phnom Penh date already; `created` is a UTC timestamp, whose
+   first ten characters are the UTC date — between midnight and 7am that was
+   yesterday, so a request made just now sorted (and showed) before one held today. */
+function ooDay_(o){
+  if(o.heldOn) return o.heldOn;
+  var c=String(o.created||''); if(!c) return '';
+  var d=new Date(new Date(c).getTime()+7*3600000);
+  return isNaN(d) ? c.slice(0,10) : d.toISOString().slice(0,10);
+}
 /* every 1-on-1 of one mentee, newest first (by the day held, else asked) */
 function ooPairRows_(menteeId){
-  var key=function(o){ return (o.heldOn||String(o.created||'').slice(0,10))+'|'+(o.created||''); };
+  var key=function(o){ return ooDay_(o)+'|'+(o.created||''); };
   return (S.oneOnOnes||[]).filter(function(o){ return o.menteeId===menteeId && o.status!=='declined'; })
     .sort(function(a,b){ return key(a)<key(b) ? 1 : -1; });
 }
@@ -1110,7 +1120,7 @@ function ooMenteeSectionHtml_(m){
   var rows=ooPairRows_(m.id);
   var h='<h3>☕ '+esc(t('1-on-1s'))+'</h3><div class="card">'+ooMonthHtml_(m.id);
   rows.slice(0,8).forEach(function(o){
-    var when=o.heldOn || String(o.created||'').slice(0,10);
+    var when=ooDay_(o);
     h+='<button class="ooRow" data-ooopen="'+esc(o.id)+'"><span class="rowName">'+esc(when)+' '+ooStatusHtml_(o)+
       (o.notes ? '<div class="ooTodo" style="color:var(--muted)">'+esc(String(o.notes).slice(0,80))+(o.notes.length>80?'…':'')+'</div>' : '')+
       '</span><span class="ooChev">›</span></button>';

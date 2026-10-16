@@ -109,6 +109,7 @@ const BROWSER = [
   'test-ywam-gp-ui.mjs',  // the YWAM GP page, Team views for YWAM GP and the board, the board's own sign-in, picking a title, approvals
   'test-one-on-one-ui.mjs', // 1-on-1s: the check-in, the mentor's sheet, follow-ups, the monthly dots
   'test-pull-update-ui.mjs', // pulling down brings in a new version of the app
+  'test-dashboard-view-ui.mjs', // one page: the leadership dashboard as a view of the app, index.html only forwarding, the leadership code, styles kept to it
   'test-prayer-ui.mjs',   // prayer requests: campus / all of YWAM GP / only my mentor, seen by exactly those; I prayed is a count; answered by the asker
   'test-support-ui.mjs',  // support raising: your partners and goal, private; the mentor sees totals only and only when shared
   'test-first30-ui.mjs',  // My Home's first 30 days: ticked by itself from what the app knows, rows go where it's done, gone after 45 days or hidden

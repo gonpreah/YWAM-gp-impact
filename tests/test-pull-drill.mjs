@@ -101,7 +101,7 @@ const RELEASE = `(function(){
 })()`;
 
 for (const [file, wait, label, refreshFn] of [
-  ['index.html', '.hero', 'dashboard', 'getData'],
+  ['index.html', '#dashMain .hero', 'dashboard', 'getData'],
   ['teams.html', 'nav.bottom button', 'staff page', 'getMyBoot'],
 ]) {
   // slow API on purpose: with an instant answer the whole spin is over in under
@@ -147,7 +147,10 @@ for (const [file, wait, label, refreshFn] of [
   /* An inline rotate left behind would fight the CSS animation and freeze it. */
   ok(label + ': and the drag rotation is cleared first', spun.inline === '', JSON.stringify(spun.inline));
 
-  await p.waitForTimeout(1400);
+  /* Waited for, not timed: the answer takes 1.5s on purpose, and before it the pull
+     asks the server whether the page's files have changed (a new version). A fixed
+     1.4s wait left a few milliseconds of slack and failed on a busy machine. */
+  await p.waitForFunction("document.getElementById('ptr').className.indexOf('spinning')===-1", null, { timeout: 6000 }).catch(function () { });
   const done = await p.evaluate("document.getElementById('ptr').className");
   ok(label + ': the coin stops once the data is in', done.indexOf('spinning') === -1, JSON.stringify(done));
   await ctx.close();
@@ -156,7 +159,7 @@ for (const [file, wait, label, refreshFn] of [
 /* ---------- the two pages offer the same breakdowns ---------- */
 const seen = {};
 for (const [file, wait, label] of [
-  ['index.html', '.hero', 'dashboard'],
+  ['index.html', '#dashMain .hero', 'dashboard'],
   ['teams.html', 'nav.bottom button', 'Base'],
 ]) {
   const { ctx, p } = await open(file, wait, false);
@@ -228,7 +231,7 @@ for (const [file, wait, label] of [
 
 /* ---------- a group breakdown actually adds up ---------- */
 {
-  const { ctx, p } = await open('index.html', '.hero', false);
+  const { ctx, p } = await open('index.html', '#dashMain .hero', false);
   const r = await p.evaluate(`(function(){
     var tile=[].slice.call(document.querySelectorAll('.stat[data-drill-metric]')).filter(function(el){
       var l=el.querySelector('.statLabel');

@@ -1,5 +1,5 @@
-/* My YWAM GP — teams.html, part 9 of 9: bind() — every screen's handlers — and starting the app.
-   Plain script, loaded in order by teams.html; the nine parts share one global
+/* My YWAM GP — teams.html, part 10 of 10: bind() — every screen's handlers — and starting the app.
+   Plain script, loaded in order by teams.html; the parts share one global
    scope, exactly as when this was one inline script. A function may call any
    function in any part. Code that RUNS while a part loads (not inside a
    function) can only use what this or an earlier part has defined. */
@@ -497,6 +497,7 @@ function bindAway(){
   if(S.view==='profile') bindReminders_();
   bindOrg_();
   bindKmReview_();
+  if(S.view==='dashboard' && window.gpDashboard) gpDashboard.mount();   // fills the frame render() drew
   bindBoardReport_();
   bindF30_();
   bindSupport_();
@@ -1794,10 +1795,14 @@ function bind(){
 }
 
 function gpGo(p){
-  // Asking for the dashboard means asking not to be redirected back here for
-  // the rest of this browser session (see the guard at the top of index.html).
-  if(p!=='teams'){ try { sessionStorage.setItem('gp-skip-teams','1'); } catch(e){} }
-  window.location.href = p==='teams' ? 'teams.html' : 'index.html';
+  if(p==='teams'){ window.location.href='teams.html'; return; }
+  /* The dashboard is a view of this page now (teams/09-dashboard.js, Oct 2026) —
+     anyone may read it, as before, so someone not signed in looks around as a guest. */
+  gpOpenDashboard_();
+}
+function gpOpenDashboard_(){
+  if(!S.me) gpEnterGuest_();
+  S.menuOpen=false; renderMenu(); S.view='dashboard'; render(); window.scrollTo(0,0);
 }
 
 /* Promise flavour of run() for the refresh gesture. Always resolves, even on a
@@ -1841,7 +1846,7 @@ function refreshAll(){
    ?fresh). If the page itself came from the offline copy (the worker leaves a
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
-var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-bind-boot.js','km.js','library.js'];
+var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-dashboard.js','teams/10-bind-boot.js','teams/dashboard.css','km.js','library.js'];
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){
   return Promise.all(GP_VER_FILES.map(function(f){
@@ -1881,7 +1886,10 @@ function gpReloadForUpdate_(){
   return new Promise(function(){});   // the spinner stays until the new page is up
 }
 function gpPullRefresh_(){
-  return gpNewVersion_().then(function(newer){ return newer ? gpReloadForUpdate_() : refreshAll(); });
+  return gpNewVersion_().then(function(newer){
+    if(newer) return gpReloadForUpdate_();
+    return (S.view==='dashboard' && window.gpDashboard) ? Promise.all([refreshAll(), gpDashboard.refresh()]) : refreshAll();
+  });
 }
 /* the ?fresh= a reload asked for has done its job — keep the address clean */
 try { if(/[?&]fresh=/.test(location.search)){ var gq=new URLSearchParams(location.search); gq.delete('fresh'); history.replaceState(null,'',location.pathname+(gq.toString()?'?'+gq.toString():'')+location.hash); } } catch(e){}

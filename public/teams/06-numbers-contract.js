@@ -1,5 +1,5 @@
-/* My YWAM GP — teams.html, part 6 of 9: department pulse, numbers people, My Ministry, My contract.
-   Plain script, loaded in order by teams.html; the nine parts share one global
+/* My YWAM GP — teams.html, part 6 of 10: department pulse, numbers people, My Ministry, My contract.
+   Plain script, loaded in order by teams.html; the parts share one global
    scope, exactly as when this was one inline script. A function may call any
    function in any part. Code that RUNS while a part loads (not inside a
    function) can only use what this or an earlier part has defined. */

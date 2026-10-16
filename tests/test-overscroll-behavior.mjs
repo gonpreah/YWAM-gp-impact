@@ -12,10 +12,10 @@
    This can't reproduce the underlying Chrome bug itself (a synthetic wheel
    sequence in a quick headless test never hit it either — that's part of
    why it took this long to find) — it just holds the actual fix in place:
-   neither `html` nor `body`, on any of the three pages, may declare
+   neither `html` nor `body`, on any page, may declare
    `overscroll-behavior` at all, at any value. */
 import fs from 'node:fs';
-import { REPO } from './env.mjs';
+import { REPO, pageSource } from './env.mjs';
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra) {
@@ -23,8 +23,10 @@ function ok(name, cond, extra) {
   else { fail++; console.log('FAIL ' + name + (extra ? '  → ' + extra : '')); }
 }
 
-for (const file of ['public/teams.html', 'public/index.html', 'public/help.html']) {
-  const src = fs.readFileSync(REPO + '/' + file, 'utf8');
+/* index.html is only the old address now and forwards before painting — it has no
+   html/body rules of its own; teams.html's styles are read with its teams/ files. */
+for (const file of ['public/teams.html', 'public/help.html']) {
+  const src = pageSource(file.replace('public/', ''));
   const styleBlocks = [...src.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n');
   const rules = [...styleBlocks.matchAll(/(html|body)\s*\{([^}]*)\}/g)];
   ok(file + ': has html/body rules to check', rules.length > 0, rules.length);

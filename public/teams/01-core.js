@@ -1,5 +1,5 @@
-/* My YWAM GP — teams.html, part 1 of 9: state, the page frame and render(), helpers, the Base tab.
-   Plain script, loaded in order by teams.html; the nine parts share one global
+/* My YWAM GP — teams.html, part 1 of 10: state, the page frame and render(), helpers, the Base tab.
+   Plain script, loaded in order by teams.html; the parts share one global
    scope, exactly as when this was one inline script. A function may call any
    function in any part. Code that RUNS while a part loads (not inside a
    function) can only use what this or an earlier part has defined. */
@@ -595,8 +595,11 @@ function boot(){
   S.regPrefill = gpInviteFromUrl_();
   var saved = null;
   try { saved = JSON.parse(lsGet('gp-staff')||'null'); } catch(e){}
-  var wantGuest = false;
+  var wantGuest = false, wantDash = false;
   try { wantGuest = String(location.search||'').indexOf('guest=1')>-1; } catch(e){}
+  /* teams.html?view=dashboard — where index.html (and its old links) send now */
+  try { wantDash = new URLSearchParams(location.search||'').get('view')==='dashboard'; } catch(e){}
+  if(wantDash && !(saved && saved.user && saved.pin) && !lsGet(BOARD_KEY)){ gpEnterGuest_(); S.view='dashboard'; render(); return; }
   if(!(saved && saved.user && saved.pin) && lsGet(BOARD_KEY) && boardResume_()) return;
   if(!(saved && saved.user && saved.pin) && (wantGuest || lsGet(GUEST_KEY))){ gpEnterGuest_(); return; }
   if(saved && saved.user && saved.pin){
@@ -606,6 +609,7 @@ function boot(){
        because there the answer to "is this PIN right" is the whole point. */
     S.auth = saved;
     gpResumeView_();
+    if(wantDash) S.view='dashboard';
     var kept = gpBootCacheLoad_(saved.user);
     if(kept){ S.bootStale = true; S.me = kept.d.staff; S.profile = kept.d.profile; applyBoot(kept.d, true); }
     run('getMyBoot', [saved.user, saved.pin], function(d){
@@ -653,6 +657,7 @@ function afterLogin(){
   /* back from signing on the portal: straight to My contract */
   try { var qv=new URLSearchParams(location.search||'');
     if(qv.get('view')==='mycontract'){ S.view='mycontract'; S.myc=null; }
+    if(qv.get('view')==='dashboard') S.view='dashboard';
     /* back from filling out a contract with someone: their HR profile, fresh */
     if(qv.get('view')==='hr' && qv.get('hr')){ S.view='hr'; S.hrTab='staff'; S.hrSub='person'; S.hrPersonId=qv.get('hr'); S.hrStaff=null; } } catch(e){}
   gpResumeView_();
@@ -837,6 +842,7 @@ function render(){
   else if(S.view==='base') m.innerHTML=(S.guest ? gpGuestCampusHtml_() : '')+(S.board ? orgCampusProfileHtml_(S.me.campus) : '')+baseHtml();
   else if(S.view==='ywamgp') m.innerHTML=ywamGpHtml();
   else if(S.view==='kmreview') m.innerHTML=kmReviewHtml();
+  else if(S.view==='dashboard') m.innerHTML=window.gpDashboard ? gpDashboard.html() : '<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
   else if(S.view==='report') m.innerHTML=boardReportHtml_();
   else if(S.view==='support') m.innerHTML=supportHtml_();
   else if(S.view==='prayer') m.innerHTML=prayerHtml_();
@@ -1052,6 +1058,7 @@ function renderMenu(){
   IC.library='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7M9 11h5"/></svg>';
   IC.ywamgp='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.8 2.6 4 5.6 4 9s-1.2 6.4-4 9c-2.8-2.6-4-5.6-4-9s1.2-6.4 4-9Z"/></svg>';
   IC.boardlogout=IC.profile;
+  IC.dashboard='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>';
   IC.prayer='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-1.2 2.5-1.8 5-1.8 7.5L7 15.5V20h4l1-2.5"/><path d="M12 3c1.2 2.5 1.8 5 1.8 7.5l3.2 5V20h-4L12 17.5"/></svg>';
   IC.kmreview='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h8M8 3v2M5.5 5c.8 3.2 3 5.6 6 7"/><path d="M10.5 5c-.7 3.6-3 6.4-6 8"/><path d="M12.5 21l4-9 4 9M14 18h5"/></svg>';
   var sections= S.board ? [
@@ -1059,7 +1066,7 @@ function renderMenu(){
   ] : S.guest ? [
     { title:'', items:[it('library', t('Library')), it('guestreg', t('Create my profile')), it('guestlogin', t('Log in'))] }
   ] : [
-    { title:'', items:[it('base', t('Base')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer')), it('leave', t('Leave Request')), it('mycontract', t('My contract')), it('profile', t('Profile & settings'))] },
+    { title:'', items:[it('base', t('Base'))].concat((S.me.isAdmin || S.me.dept===BL_DEPT) ? [it('dashboard', t('Dashboard'))] : [], [it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer')), it('leave', t('Leave Request')), it('mycontract', t('My contract')), it('profile', t('Profile & settings'))]) },
     { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : []) },
     { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal'))] : [] },
     { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : []) },
@@ -1090,6 +1097,7 @@ function renderMenu(){
       else if(id==='library'){ S.view='library'; S.libBook=null; libLoad_(); render(); }
       else if(id==='guestreg' || id==='guestlogin'){ gpLeaveGuest_(id==='guestreg'); }
       else if(id==='ywamgp'){ S.view='ywamgp'; S.person=null; render(); window.scrollTo(0,0); }
+      else if(id==='dashboard'){ gpOpenDashboard_(); }
       else if(id==='prayer'){ S.view='prayer'; S.pr=null; render(); window.scrollTo(0,0); }
       else if(id==='kmreview'){ S.view='kmreview'; S.kmr=null; S.kmrErr=''; render(); window.scrollTo(0,0); }
       else if(id==='boardlogout'){ boardLeave_(false); }

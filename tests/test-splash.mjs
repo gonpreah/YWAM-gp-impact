@@ -208,7 +208,9 @@ const WATCH = function () {
    is the first element in the body, fixed, opaque and above everything, so on any
    engine — including the WebKit one that paints the document it is leaving — there
    is nothing to see underneath. */
-for (const page of ['index.html', 'teams.html']) {
+/* index.html is only the old address now: with scripts off its <noscript> refresh moves
+   on to teams.html at once, so the page that has to hold the guarantee is teams.html. */
+for (const page of ['teams.html']) {
   const ctx = await browser.newContext(Object.assign({}, devices['iPhone 13'], { javaScriptEnabled: false }));
   const p = await ctx.newPage();
   await p.route('**fonts.g**', function (r) { r.abort(); });
@@ -269,15 +271,16 @@ for (const page of ['index.html', 'teams.html']) {
   await p.addInitScript(function () { try { sessionStorage.setItem('gp-guest', '1'); sessionStorage.setItem('gp-skip-teams', '1'); } catch (e) { } });
   await p.goto(BASE + '/index.html', { waitUntil: 'commit' });
   // Tolerant: report a missing dashboard as a failure rather than crashing the run.
-  await p.waitForSelector('.hero', { timeout: 15000 }).catch(function () { });
+  await p.waitForSelector('#dashMain .hero', { timeout: 15000 }).catch(function () { });
   await p.waitForTimeout(500);
   const st = await p.evaluate(`(function(){
     var s=document.getElementById('splash');
     return { splash: !s || s.className.indexOf('gone')>-1,
-             hero: !!document.querySelector('.hero'),
+             hero: !!document.querySelector('#dashMain .hero'),
              url: location.pathname };
   })()`);
-  ok('a guest is not redirected to the staff page', st.url.indexOf('index.html') > -1, st.url);
+  /* One page (Oct 2026): the dashboard a guest asked for is a view of teams.html now. */
+  ok('a guest who asked for the dashboard gets it (as a view of the app)', /teams\.html/.test(st.url) && st.hero, st.url);
   ok('the splash lifts for them too', st.splash);
   ok('and the dashboard is there behind it', st.hero);
   await ctx.close();

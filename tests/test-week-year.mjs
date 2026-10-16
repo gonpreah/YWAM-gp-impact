@@ -64,7 +64,8 @@ function lift(src, names) {
   }).join('\n');
 }
 const TEAMS = pageSource('teams.html');
-const INDEX = fs.readFileSync(REPO + '/public/index.html', 'utf8');
+/* the dashboard's own copy of the week rule — index.html's until it moved into the app (one page, Oct 2026) */
+const INDEX = fs.readFileSync(REPO + '/public/teams/09-dashboard.js', 'utf8');
 const API = fs.readFileSync(REPO + '/netlify/functions/api.js', 'utf8');
 const MONTHS = TEAMS.match(/var MONTH_ABBR=\[[^\]]*\];/)[0];
 const CLIENT_SRC = MONTHS + '\n' + lift(TEAMS, ['dayNoOf_', 'mondayOfW1No_', 'weekYearOf', 'isoWeekOf', 'thisWeek', 'thisWeekYear',

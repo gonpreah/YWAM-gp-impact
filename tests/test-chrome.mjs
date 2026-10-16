@@ -153,7 +153,9 @@ delayLogo = 0;
 /* env() cannot be driven from Playwright, so assert the rules are there and that
    they resolve — a typo'd env() silently computes to 0 and the bug comes back. */
 {
-  const files = ['index.html', 'teams.html', 'help.html'];
+  /* index.html is only the old address now (it forwards to teams.html before
+     painting), so it has no frame of its own to pad. */
+  const files = ['teams.html', 'help.html'];
   for (const f of files) {
     const src = pageSource(f, ROOT);
     const cover = /viewport-fit=cover/.test(src);
@@ -201,17 +203,17 @@ delayLogo = 0;
     } catch (e) { }
   });
   await p.goto(BASE + '/index.html', { waitUntil: 'commit' });
-  await p.waitForSelector('.hero', { timeout: 15000 });
+  await p.waitForSelector('#dashMain .hero', { timeout: 15000 });
   const box = await p.evaluate(`(function(){
     var h=getComputedStyle(document.querySelector('header'));
     var b=getComputedStyle(document.body);
     return { headTop:h.paddingTop, bodyBottom:b.paddingBottom,
              de:document.documentElement.scrollWidth, cw:document.documentElement.clientWidth };
   })()`);
-  /* 14px, not 18px: below 480px the phone rule takes over. That rule carries the
-     inset too — which is the whole point, since it wins on every phone. */
-  ok('dashboard header top padding still resolves', box.headTop === '14px', box.headTop);
-  ok('dashboard body bottom padding still resolves', box.bodyBottom === '44px', box.bodyBottom);
+  /* The dashboard is a view of the staff page now (one page, Oct 2026), so it sits
+     in the staff page's frame: the same paddings as above. */
+  ok('dashboard (a view of the app now) header top padding still resolves', box.headTop === '16px', box.headTop);
+  ok('dashboard body bottom padding still resolves', box.bodyBottom === '76px', box.bodyBottom);
   ok('dashboard does not scroll sideways', box.de === box.cw, box.de + ' vs ' + box.cw);
   await ctx.close();
 }

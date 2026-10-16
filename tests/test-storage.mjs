@@ -1,4 +1,6 @@
-/* Two load-path failures that had nothing to do with the data:
+/* (One page, Oct 2026: the dashboard is a view of teams.html now — index.html
+   forwards there — and it reads the app's own language, LANG.)
+   Two load-path failures that had nothing to do with the data:
    1. a Khmer reader's language choice was thrown away by the first data load;
    2. a browser with storage blocked throws on getItem, which used to happen
       while `state` was still being built — a blank page, not a degraded one. */
@@ -27,6 +29,12 @@ const DATA = {
   ],
 };
 
+const BOOT = { ok: true, staff: { id: 'a', name: 'Sokha Chan', username: 'sokha', campus: 'poipet', dept: 'Community Service', ministry: 'Outreach Teams' },
+  profile: {}, roster: DATA.roster, logs: [], habits: null, mentees: [], mentorRequests: [], goals: [], checkins: [], tripRequests: [], base: DATA };
+const answer = function (r) {
+  const fn = (r.request().postDataJSON() || {}).fn;
+  r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fn === 'getMyBoot' ? BOOT : DATA) });
+};
 const TYPES = { '.html': 'text/html', '.js': 'application/javascript', '.png': 'image/png', '.css': 'text/css' };
 const srv = http.createServer(function (req, res) {
   const f = path.join(ROOT, req.url.split('?')[0]);
@@ -52,12 +60,7 @@ async function open(opts) {
   p.on('pageerror', function (e) { errs.push(String(e.message)); });
   // Never let the real font CDN hold the load up.
   await p.route('**fonts.g**', function (r) { r.abort(); });
-  await p.route('**/api', function (r) {
-    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(DATA) });
-  });
-  await p.route('**/.netlify/functions/**', function (r) {
-    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(DATA) });
-  });
+  await p.route('**/.netlify/functions/**', answer);
   if (opts.killStorage) {
     // What a browser with storage blocked actually does: throw, not return null.
     await p.addInitScript(function () {
@@ -91,15 +94,15 @@ function isKhmer(s) { return /[ក-៿]/.test(String(s || '')); }
 /* ---------- 1. Khmer survives a reload ---------- */
 {
   const { ctx, p, errs } = await open({ seed: "try{localStorage.setItem('gp-lang','km');}catch(e){}" });
-  await p.waitForSelector('.hero', { timeout: 15000 });
+  await p.waitForSelector('#dashMain .hero', { timeout: 15000 });
   await p.waitForTimeout(600);
-  const lang = await p.evaluate('state.lang');
+  const lang = await p.evaluate('LANG');
   const btn = (await p.textContent('#langBtn').catch(function () { return ''; })) || '';
-  const heroLabel = (await p.textContent('.heroLabel').catch(function () { return ''; })) || '';
+  const heroLabel = (await p.textContent('#dashMain .heroLabel').catch(function () { return ''; })) || '';
   /* #main only, not the whole body: the toggle button is itself Khmer text, so a
      body-wide check passes even when every translated label has fallen back. */
-  const main = (await p.textContent('#main')) || '';
-  ok('gp-lang=km is still km after the data load', lang === 'km', 'state.lang=' + lang);
+  const main = (await p.textContent('#dashMain')) || '';
+  ok('gp-lang=km is still km after the data load', lang === 'km', 'LANG=' + lang);
   ok('the toggle button and the page agree', btn.trim() === 'EN', 'button=' + JSON.stringify(btn.trim()));
   ok('the dashboard body renders Khmer script', isKhmer(main),
     'hero label=' + JSON.stringify(heroLabel.trim()));
@@ -110,9 +113,9 @@ function isKhmer(s) { return /[ក-៿]/.test(String(s || '')); }
 /* ---------- 2. English stays English ---------- */
 {
   const { ctx, p, errs } = await open({ seed: "try{}catch(e){}" });
-  await p.waitForSelector('.hero', { timeout: 15000 });
+  await p.waitForSelector('#dashMain .hero', { timeout: 15000 });
   await p.waitForTimeout(400);
-  ok('no saved choice means English', (await p.evaluate('state.lang')) === 'en');
+  ok('no saved choice means English', (await p.evaluate('LANG')) === 'en');
   ok('English page has no errors', errs.length === 0, errs.join(' | '));
   await ctx.close();
 }
@@ -124,8 +127,7 @@ function isKhmer(s) { return /[ក-៿]/.test(String(s || '')); }
   const errs = [];
   p.on('pageerror', function (e) { errs.push(String(e.message)); });
   await p.route('**fonts.g**', function (r) { r.abort(); });
-  await p.route('**/api', function (r) { r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(DATA) }); });
-  await p.route('**/.netlify/functions/**', function (r) { r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(DATA) }); });
+  await p.route('**/.netlify/functions/**', answer);
   await p.addInitScript(function () {
     try {
       localStorage.setItem('gp-staff', JSON.stringify({ user: 'sokha', pin: '1234' }));
@@ -136,13 +138,13 @@ function isKhmer(s) { return /[ក-៿]/.test(String(s || '')); }
   await p.waitForSelector('#langBtn', { timeout: 15000 });
   await p.click('#langBtn');
   await p.waitForTimeout(300);
-  ok('toggle switches to Khmer', (await p.evaluate('state.lang')) === 'km');
+  ok('toggle switches to Khmer', (await p.evaluate('LANG')) === 'km');
   await p.reload({ waitUntil: 'commit' });
-  await p.waitForSelector('.hero', { timeout: 15000 });
+  await p.waitForSelector('#dashMain .hero', { timeout: 15000 });
   await p.waitForTimeout(600);
-  ok('and Khmer is still there after a reload', (await p.evaluate('state.lang')) === 'km',
-    'state.lang=' + (await p.evaluate('state.lang')));
-  ok('Khmer script on the dashboard after the reload', isKhmer(await p.textContent('#main')));
+  ok('and Khmer is still there after a reload', (await p.evaluate('LANG')) === 'km',
+    'LANG=' + (await p.evaluate('LANG')));
+  ok('Khmer script on the dashboard after the reload', isKhmer(await p.textContent('#dashMain')));
   ok('no errors across the toggle and reload', errs.length === 0, errs.join(' | '));
   await ctx.close();
 }
@@ -155,12 +157,12 @@ function isKhmer(s) { return /[ក-៿]/.test(String(s || '')); }
      entry from there still works. sessionStorage is untouched, which is what
      the guest marker uses. */
   let gate = false;
-  try { await p.waitForSelector('#wGuest', { timeout: 15000 }); gate = true; } catch (e) { }
+  try { await p.waitForSelector('#lookAround', { timeout: 15000 }); gate = true; } catch (e) { }
   ok('storage blocked: the front door still renders', gate);
   let usable = false;
   if (gate) {
-    await p.click('#wGuest');   // → My YWAM GP's guest mode, which needs no storage (?guest=1)
-    try { await p.waitForURL(/teams\.html\?guest=1/, { timeout: 15000 }); await p.waitForSelector('nav.bottom button', { timeout: 15000 }); usable = true; } catch (e) { }
+    await p.click('#lookAround');   // → the app's guest mode, which needs no storage
+    try { await p.waitForSelector('nav.bottom button', { timeout: 15000 }); usable = true; } catch (e) { }
   }
   await p.waitForTimeout(400);
   const errBar = await p.evaluate(
@@ -182,7 +184,7 @@ function isKhmer(s) { return /[ក-៿]/.test(String(s || '')); }
 {
   const { ctx, p, errs } = await open({ seed: "try{localStorage.setItem('gp-staff','{oops');localStorage.setItem('gp-staff-card','not json');}catch(e){}" });
   let usable = false;
-  try { await p.waitForSelector('.hero', { timeout: 15000 }); usable = true; } catch (e) { }
+  try { await p.waitForSelector('#dashMain .hero', { timeout: 15000 }); usable = true; } catch (e) { }
   await p.waitForTimeout(400);
   ok('corrupt saved session: page still renders', usable);
   ok('corrupt saved session: no page errors', errs.length === 0, errs.join(' | '));

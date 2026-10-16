@@ -1,5 +1,6 @@
-/* Drive the four entry states end to end: welcome gate, guest (locked tabs),
-   signed-in (unlocked + own campus), and the Teams page's new logo/loader. */
+/* Drive the entry states end to end: the front door (index.html hands over to My
+   YWAM GP's own), a guest (the app's guest mode; on the dashboard view, locked
+   tabs), signed in (unlocked + own campus), and the Teams page's logo/loader. */
 /* Paths and the browser binary come from tests/env.mjs so this runs from a clone
    rather than from one machine's scratch directory. */
 import { PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
@@ -75,30 +76,29 @@ async function newPage() {
   return page;
 }
 
-/* ---- 1. welcome gate: no session, no guest choice ---- */
+/* ---- 1. the front door: index.html is only the old address now (Oct 2026, one page) —
+   it hands over to My YWAM GP, whose own log-in screen is the door: create a profile,
+   log in, or look around ---- */
 let page = await newPage();
-await page.goto(BASE + '/index.html', { waitUntil: 'networkidle' });
-await page.waitForSelector('.welcome', { timeout: 8000 });
-console.log('1. WELCOME GATE');
-console.log('   buttons: ' + (await page.$$eval('.welcome button', b => b.map(x => x.textContent.trim()))).join(' | '));
-console.log('   logo painted: ' + await page.$eval('.wLogo', i => i.src.startsWith('data:image/png') && i.naturalWidth > 0));
-console.log('   nav hidden: ' + await page.$eval('#nav', n => n.innerHTML === ''));
-console.log('   dashboard leaked behind gate: ' + await page.evaluate(() => !!document.querySelector('.hero')));
+await page.goto(BASE + '/index.html', { waitUntil: 'commit' });
+await page.waitForURL(/teams\.html$/, { timeout: 8000 });
+await page.waitForSelector('#loginBtn', { timeout: 8000 });
+console.log('1. FRONT DOOR');
+console.log('   index.html hands over to teams.html: ' + /teams\.html$/.test(page.url()));
+console.log('   log in, create a profile and look around are all here: ' + await page.evaluate(() =>
+  !!document.querySelector('#loginBtn') && /profile/i.test(document.querySelector('#main').innerText) && !!document.querySelector('[data-guestgo], #lookAround, #guestBtn, .guestLink, button')));
+console.log('   dashboard leaked behind it: ' + await page.evaluate(() => !!document.querySelector('.hero')));
 await page.screenshot({ path: OUT + 'gate.png', fullPage: true });
-
-/* ---- 2. view as guest: into My YWAM GP's guest mode, not the old dashboard ---- */
-await page.click('#wGuest');
-await page.waitForURL(/teams\.html\?guest=1/, { timeout: 8000 });
-await page.waitForSelector('nav.bottom button', { timeout: 12000 });
-console.log('\n2a. VIEW AS GUEST opens the app\'s guest mode: ' + /teams\.html\?guest=1/.test(page.url()) +
-  ' · tabs: ' + (await page.$$eval('nav.bottom button', b => b.map(x => x.textContent.trim()))).join(' | '));
 await page.close();
-/* … and a guest who comes back to the front door is sent there too, not shown the dashboard */
+
+/* ---- 2. a guest (from either flag) goes to My YWAM GP's guest mode ---- */
 page = await newPage();
 await page.addInitScript(() => { localStorage.setItem('gp-app-guest', '1'); });
 await page.goto(BASE + '/index.html', { waitUntil: 'commit' });
 await page.waitForURL(/teams\.html\?guest=1/, { timeout: 8000 });
-console.log('   a returning guest skips the old dashboard: ' + /teams\.html\?guest=1/.test(page.url()));
+await page.waitForSelector('nav.bottom button', { timeout: 12000 });
+console.log('\n2a. a returning guest goes to the app\'s guest mode: ' + /teams\.html\?guest=1/.test(page.url()) +
+  ' · tabs: ' + (await page.$$eval('nav.bottom button', b => b.map(x => x.textContent.trim()))).join(' | '));
 await page.close();
 page = await newPage();
 await page.addInitScript(() => { sessionStorage.setItem('gp-guest', '1'); });
@@ -106,29 +106,31 @@ await page.goto(BASE + '/index.html', { waitUntil: 'commit' });
 await page.waitForURL(/teams\.html\?guest=1/, { timeout: 8000 });
 console.log('   … and so does one from before the move (gp-guest): ' + /teams\.html\?guest=1/.test(page.url()));
 await page.close();
-/* The old dashboard, asked for on purpose (gp-skip-teams), still gates its write tab */
+/* The dashboard, asked for on purpose (gp-skip-teams, or ?view=dashboard): a view of the
+   app now, which still gates its write tab for a guest */
 page = await newPage();
-await page.addInitScript(() => { sessionStorage.setItem('gp-guest', '1'); sessionStorage.setItem('gp-skip-teams', '1'); });
-await page.goto(BASE + '/index.html', { waitUntil: 'networkidle' });
-await page.waitForSelector('.hero', { timeout: 8000 });
+await page.addInitScript(() => { sessionStorage.setItem('gp-skip-teams', '1'); });
+await page.goto(BASE + '/index.html', { waitUntil: 'commit' });
+await page.waitForURL(/view=dashboard/, { timeout: 8000 });
+await page.waitForSelector('#dashMain .hero', { timeout: 8000 });
 await page.waitForTimeout(900);
-console.log('\n2. GUEST');
-console.log('   tabs: ' + (await page.$$eval('#nav button', b => b.map(x => x.textContent.trim()))).join(' | '));
-console.log('   hero label: ' + await page.$eval('.heroLabel', x => x.textContent));
-console.log('   hero number: ' + await page.$eval('.heroNum', x => x.textContent));
-console.log('   hero sub: ' + await page.$eval('.heroSub', x => x.textContent.trim().replace(/\s+/g, ' ')));
+console.log('\n2. GUEST ON THE DASHBOARD');
+console.log('   tabs: ' + (await page.$$eval('#dashNav button', b => b.map(x => x.textContent.trim()))).join(' | '));
+console.log('   hero label: ' + await page.$eval('#dashMain .heroLabel', x => x.textContent));
+console.log('   hero number: ' + await page.$eval('#dashMain .heroNum', x => x.textContent));
+console.log('   hero sub: ' + await page.$eval('#dashMain .heroSub', x => x.textContent.trim().replace(/\s+/g, ' ')));
 await page.screenshot({ path: OUT + 'guest-dash.png', fullPage: true });
 await page.click('[data-view="log"]');
 await page.waitForTimeout(500);
-console.log('   log view gated: ' + await page.evaluate(() => !!document.querySelector('.gate')));
+console.log('   log view gated: ' + await page.evaluate(() => !!document.querySelector('#dashMain .gate')));
 console.log('   log form present: ' + await page.evaluate(() => !!document.querySelector('#deptSel')));
-console.log('   gate heading: ' + await page.$eval('.gate h3', x => x.textContent));
+console.log('   gate heading: ' + await page.$eval('#dashMain .gate h3', x => x.textContent));
 await page.screenshot({ path: OUT + 'guest-gate.png', fullPage: true });
 console.log('   no Health tab on the dashboard: ' + await page.evaluate(() =>
   !document.querySelector('[data-view="health"]')));
 await page.click('[data-view="okr"]');
 await page.waitForTimeout(500);
-console.log('   OKRs still readable for guests: ' + await page.evaluate(() => !document.querySelector('.gate')));
+console.log('   OKRs still readable for guests: ' + await page.evaluate(() => !document.querySelector('#dashMain .gate')));
 await page.close();
 
 /* ---- 3. signed in: tabs unlocked, campus defaults to mine (Siem Reap) ---- */
@@ -136,13 +138,12 @@ page = await newPage();
 await page.addInitScript(() => {
   localStorage.setItem('gp-staff', JSON.stringify({ user: 'sokha', pin: '1234' }));
   localStorage.setItem('gp-staff-card', JSON.stringify({ name: 'Sokha Chan', photo: '', ministry: 'Outreach Teams', campus: 'siemreap' }));
-  sessionStorage.setItem('gp-skip-teams', '1');   // stay on the dashboard
 });
-await page.goto(BASE + '/index.html', { waitUntil: 'networkidle' });
-await page.waitForSelector('.hero', { timeout: 8000 });
+await page.goto(BASE + '/teams.html?view=dashboard', { waitUntil: 'networkidle' });
+await page.waitForSelector('#dashMain .hero', { timeout: 8000 });
 await page.waitForTimeout(800);
 console.log('\n3. SIGNED IN');
-console.log('   tabs: ' + (await page.$$eval('#nav button', b => b.map(x => x.textContent.trim()))).join(' | '));
+console.log('   tabs: ' + (await page.$$eval('#dashNav button', b => b.map(x => x.textContent.trim()))).join(' | '));
 console.log('   padlocks: ' + await page.evaluate(() => document.querySelectorAll('.navLock').length));
 console.log('   campus selected: ' + await page.$eval('#campusRow .cbtn.on', b => b.textContent.trim()));
 await page.click('[data-view="log"]');

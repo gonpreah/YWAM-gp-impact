@@ -246,7 +246,8 @@ for (const scheme of ['light', 'dark']) {
    --headerBg) on body — a shade darker than the splash but visible next to
    it. Checked on all three pages, before the splash would ever be
    dismissed. */
-for (const file of ['index.html', 'teams.html', 'help.html']) {
+/* index.html forwards to teams.html before anything paints (one page, Oct 2026). */
+for (const file of ['teams.html', 'help.html']) {
   const ctx = await browser.newContext(Object.assign({}, devices['iPhone 13'], { colorScheme: 'dark' }));
   const p = await ctx.newPage();
   await p.route('**fonts.g**', function (r) { r.abort(); });
@@ -333,7 +334,8 @@ for (const file of ['index.html', 'teams.html', 'help.html']) {
 
 /* ---------- 4. the theme is applied before anything paints ---------- */
 {
-  for (const f of ['index.html', 'teams.html', 'help.html']) {
+  /* index.html has no stylesheet of its own now — it forwards to teams.html */
+  for (const f of ['teams.html', 'help.html']) {
     const src = pageSource(f, ROOT);
     const boot = src.indexOf("localStorage.getItem('gp-theme')");
     const style = src.search(/^<style>\n\*\s*\{\s*box-sizing/m);

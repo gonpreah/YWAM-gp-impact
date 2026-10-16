@@ -1,5 +1,5 @@
-/* My YWAM GP — teams.html, part 3 of 9: personality, the Library, the papers everyone signs, guest mode, YWAM GP and the board, the quarter report, first 30 days, prayer, support raising, reminders, Khmer review.
-   Plain script, loaded in order by teams.html; the nine parts share one global
+/* My YWAM GP — teams.html, part 3 of 10: personality, the Library, the papers everyone signs, guest mode, YWAM GP and the board, the quarter report, first 30 days, prayer, support raising, reminders, Khmer review.
+   Plain script, loaded in order by teams.html; the parts share one global
    scope, exactly as when this was one inline script. A function may call any
    function in any part. Code that RUNS while a part loads (not inside a
    function) can only use what this or an earlier part has defined. */
@@ -1454,7 +1454,7 @@ function bindReqHr_(){
    with credentials — S.auth stays empty, so every save path is never reached.
    Kept on this phone (gp-app-guest) until they log in or make a profile. */
 var GUEST_KEY='gp-app-guest';
-var GUEST_VIEWS=['week','base','team','health','library'];
+var GUEST_VIEWS=['week','base','team','health','library','dashboard'];   // the dashboard has always been public
 function gpGuestMe_(){
   return { id:'guest', name:t('Guest'), username:'', campus: lsGet('gp-guest-campus') || 'siemreap', dept:'', ministry:'', role:'',
     photo:'', staffType:'campus', country:'—', ministries:[], leads:[], guest:true };

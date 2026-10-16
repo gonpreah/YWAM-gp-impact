@@ -12,16 +12,16 @@
    answered from here; nor are Google Fonts (the page has fallbacks).
 
    Bump SHELL when the list changes; old caches are dropped on activate. */
-var SHELL = 'gp-shell-v8';   // v2: the portal is in the shell too; v3: the Library; v4: its Khmer; v5: the letterhead;
+var SHELL = 'gp-shell-v9';   // v2: the portal is in the shell too; v3: the Library; v4: its Khmer; v5: the letterhead;
                               // v6: the Library's Khmer is kept the first time it's read, not downloaded on install;
-                              // v7: the legal documents' Khmer (legal-km.js); v8: teams.html's code in teams/
+                              // v7: the legal documents' Khmer (legal-km.js); v8: teams.html's code in teams/; v9: the dashboard joins it
 var NET_WAIT_MS = 4000;
 /* A reload the page asked for to pick up a new version (pull to refresh adds
    ?fresh=) waits longer for the network — falling back to the old copy after 4s
    would just reload yesterday's page again. */
 var FRESH_WAIT_MS = 15000;
 var PRECACHE = [
-  'teams.html', 'teams/teams.css', 'teams/01-core.js', 'teams/02-goals-okrs.js', 'teams/03-library-org.js', 'teams/04-ministry-strengths.js', 'teams/05-admin-hr.js', 'teams/06-numbers-contract.js', 'teams/07-health-leave.js', 'teams/08-team-profile.js', 'teams/09-bind-boot.js',
+  'teams.html', 'teams/teams.css', 'teams/01-core.js', 'teams/02-goals-okrs.js', 'teams/03-library-org.js', 'teams/04-ministry-strengths.js', 'teams/05-admin-hr.js', 'teams/06-numbers-contract.js', 'teams/07-health-leave.js', 'teams/08-team-profile.js', 'teams/09-dashboard.js', 'teams/10-bind-boot.js', 'teams/dashboard.css',
   'manifest.json', 'km.js', 'taxonomy.js', 'rollup.js', 'logo.js', 'duty.js',
   'jobfocus.js', 'personality.js', 'gpstrengths.js', 'kpiguide.js', 'sr-checkin-history.js',
   'icon-180.png', 'icon-512.png', 'icon-maskable-512.png', 'ywam-logo.png', 'library.js',
