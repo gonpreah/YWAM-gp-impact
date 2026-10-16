@@ -4176,6 +4176,35 @@ async function hospRequests_(campus, bookings) {
       people: [{ name: r.name, sex: '' }], email: r.email || '', phone: r.phone || '', org: r.org || '', notes: r.notes || '', at: r.at };
   })).sort(function (a, b) { return a.from < b.from ? -1 : a.from > b.from ? 1 : 0; });
 }
+/* Every write of a campus's rooms and bookings goes through here, so a team's
+   "Rooms booked" step in the portal (teamSteps_) keeps up: for each team trip
+   with a booking, cand.portal.rooms = {beds, from, to}; null once there is
+   none. A failure here never undoes the booking. */
+async function saveHosp_(campus, d) {
+  await writeJSON(hospKey_(campus), d);
+  try { await syncTeamRooms_(campus, d.bookings); } catch (e) { console.error('rooms sync', e); }
+}
+async function syncTeamRooms_(campus, bookings) {
+  const byTrip = {};
+  (bookings || []).forEach(function (k) {
+    if (!k || !k.tripId) return;
+    const beds = Number(k.count) || (k.bedIds || []).length || 0, b = byTrip[k.tripId];
+    if (!b) byTrip[k.tripId] = { beds: beds, from: k.from || '', to: k.to || '' };
+    else { b.beds += beds; if (k.from && k.from < b.from) b.from = k.from; if (k.to && k.to > b.to) b.to = k.to; }
+  });
+  const trips = (await getTeamTrips_()).filter(function (t) { return t && t.campus === campus && t.candidateId; });
+  if (!trips.length) return;
+  const rows = await getCandidates_();
+  let changed = false;
+  trips.forEach(function (t) {
+    const c = rows.find(function (r) { return r && r.id === t.candidateId; });
+    if (!c) return;
+    const want = byTrip[t.id] || null, have = (c.portal && c.portal.rooms) || null;
+    if (JSON.stringify(want) === JSON.stringify(have)) return;
+    c.portal = c.portal || {}; c.portal.rooms = want; changed = true;
+  });
+  if (changed) await writeJSON('candidates', rows);
+}
 async function hospAuth_(username, pin) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { out: { ok: false } };
@@ -4187,6 +4216,7 @@ async function getHospitality(username, pin) {
   const campus = a.s.campus;
   await backfillTeamTrips_();
   const d = await getHosp_(campus);
+  try { await syncTeamRooms_(campus, d.bookings); } catch (e) { console.error('rooms sync', e); }   // catches up teams booked before the step existed; writes only on a change
   return { ok: true, campus: campus, buildings: d.buildings, rooms: d.rooms, bookings: d.bookings, requests: await hospRequests_(campus, d.bookings) };
 }
 /* One save for all three kinds — a building, a room (with its beds), a
@@ -4222,7 +4252,7 @@ async function hospSave(username, pin, kind, rec) {
     d.rooms.forEach(function (r) { r.beds.forEach(function (b) { ids[b.id] = 1; }); });
     d.bookings.forEach(function (k) { k.bedIds = (k.bedIds || []).filter(function (id) { return ids[id]; }); });
   }
-  await writeJSON(hospKey_(campus), d);
+  await saveHosp_(campus, d);
   const out = await getHospitality(username, pin);
   out.saved = clean;
   return out;
@@ -4290,7 +4320,7 @@ async function hospStaffBeds(username, pin, map) {
     d.bookings.push({ id: hospId_('hk'), category: 'staff', name: x.name, from: today, to: '', permanent: true, males: 0, females: 0, count: 1, family: false,
       bedIds: [x.bed], bedNames: {}, notes: '', tripId: '', created: now, createdBy: a.s.id, updated: now, updatedBy: a.s.id });
   });
-  await writeJSON(hospKey_(campus), d);
+  await saveHosp_(campus, d);
   return getHospitality(username, pin);
 }
 /* The bed board's one move, done in one write so a swap can't half-happen:
@@ -4334,7 +4364,7 @@ async function hospMoveBed(username, pin, bookingId, fromBed, toBed) {
   // the person in the bed goes with it (or comes off with it)
   if (fromBed && A.bedNames && A.bedNames[fromBed]) { if (toBed) A.bedNames[toBed] = A.bedNames[fromBed]; delete A.bedNames[fromBed]; }
   A.updated = now; A.updatedBy = a.s.id;
-  await writeJSON(hospKey_(campus), d);
+  await saveHosp_(campus, d);
   return getHospitality(username, pin);
 }
 /* Bringing a whole house in at once — the rooms, beds and who sleeps where —
@@ -4399,7 +4429,7 @@ async function hospImport(username, pin, rows) {
       males: 0, females: 0, count: p.bedIds.length, family: p.family && p.bedIds.length > 1, bedIds: p.bedIds, notes: '', tripId: '', updated: now, updatedBy: a.s.id });
     out.people++;
   });
-  await writeJSON(hospKey_(campus), d);
+  await saveHosp_(campus, d);
   const res = await getHospitality(username, pin);
   res.imported = out;
   return res;
@@ -4422,7 +4452,7 @@ async function hospDelete(username, pin, kind, id) {
     d.bookings.forEach(function (k) { k.bedIds = (k.bedIds || []).filter(function (b) { return !gone[b]; }); });
   }
   list.splice(idx, 1);
-  await writeJSON(hospKey_(campus), d);
+  await saveHosp_(campus, d);
   return getHospitality(username, pin);
 }
 
@@ -5861,12 +5891,13 @@ function teamSteps_(c) {
     { id: 'flights', done: past || hasDoc_(c, 'flights') || !!visa.flightsConfirmed, who: 'you', auto: true, group: 'docs' },
     intl && { id: 'invitation', done: past || hasDoc_(c, 'invitation') || !!visa.invitationSent, who: 'us', auto: true, group: 'visa' },
     intl && { id: 'evisa', done: past || hasDoc_(c, 'evisa'), who: 'you', auto: true, group: 'visa' },
+    { id: 'rooms', done: !!(c.portal && c.portal.rooms) || at('arrived'), who: 'us', auto: true, side: true },   // SR Hospitality booked their beds (syncTeamRooms_); any time, so never the current step
     { id: 'call2', done: !!f.call2 || at('practical'), who: 'us', tick: true },
     { id: 'practical', done: at('arrived'), who: 'you' },
     { id: 'arrived', done: at('arrived'), who: 'us', tick: true }
   ].filter(Boolean);
   let current = -1;
-  steps.forEach(function (st, i) { if (current === -1 && !st.done) current = i; });
+  steps.forEach(function (st, i) { if (current === -1 && !st.done && !st.side) current = i; });
   if (current === -1) current = steps.length - 1;
   steps.forEach(function (st, i) { st.state = st.done ? 'done' : (i === current ? 'current' : 'todo'); });
   if (c.archived) steps.forEach(function (st) { if (st.state === 'current') st.state = 'todo'; });
@@ -5929,6 +5960,7 @@ function portalAppOut_(c) {
     audience: audienceOf_(c), needsVisa: needsVisa_(c), refNeeded: refNeeded_(c), formKey: formKeyOf_(c),
     visa: (c.portal && c.portal.visa) || {},
     visaOpen: visaOpen_(c),
+    rooms: c.type === 'team' ? ((c.portal && c.portal.rooms) || null) : undefined,
     photos: c.type === 'team' ? ((c.portal && c.portal.photos) || null) : undefined,
     answers: (c.portal && c.portal.form && c.portal.form.answers) || (c.portal && c.portal.draft) || {},
     draftAt: (c.portal && c.portal.draftAt) || null,

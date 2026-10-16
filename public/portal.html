@@ -595,7 +595,7 @@ var SUBITEM_LABEL = { documents:'Documents', reference:'Leader reference' };
    line on what it means while it is still ahead, and who does it. */
 var TEAM_STEP_LABEL = { account:'Create your account', form:'Send your application', call1:'1st call — getting to know each other',
   passports:'Passport copies for the whole team', photo:'Your team’s names and photos', flights:'Flight itineraries',
-  invitation:'Letter of invitation & supporting documents', evisa:'E-visas approved', call2:'2nd call — cultural orientation with your team',
+  invitation:'Letter of invitation & supporting documents', evisa:'E-visas approved', rooms:'Rooms booked', call2:'2nd call — cultural orientation with your team',
   practical:'Getting ready to travel', arrived:'Arrival at the base' };
 var TEAM_STEP_NOTE = {
   form:'Your answers save as a draft — come back any time.',
@@ -605,6 +605,7 @@ var TEAM_STEP_NOTE = {
   flights:'Important — we need them to start your visa process, and we arrange your airport pick-up from them.',
   invitation:'We send these once your passports, your team’s names and photos, and flights are in. They appear under Documents for you to download.',
   evisa:'Once we upload your letter of invitation, “How to apply for your e-visa online” opens right here, with everything you need. Then upload each approved e-visa under Documents.',
+  rooms:'Our hospitality team books your beds for your dates. It ticks here once they have.',
   call2:'A call with your whole team to prepare for Cambodian culture and serving here.',
   practical:'Pack, pray and get ready. Message us with any last questions.'
 };
@@ -1749,6 +1750,7 @@ function meHtml_(){
       (st.items ? '<ul class="subItems">'+st.items.map(function(it){ return '<li class="'+(it.done?'done':'')+'">'+(it.done?'✓':'○')+' '+esc(t(SUBITEM_LABEL[it.id]||it.id))+(it.done?'':' · <i>'+esc(t('pending'))+'</i>')+
         (it.id==='reference' && !it.done && app.submittedAt && app.status!=='closed' ? ' <button class="linkbtn inline" data-refgo="1">'+esc(t('Send the link to my leader'))+' →</button>' : '')+'</li>'; }).join('')+'</ul>' : '')+
       (isTeam && st.id==='evisa' && app.visaOpen ? visaHowHtml_(app) : '')+
+      (isTeam && st.id==='rooms' && app.rooms ? '<div class="stepNote">🛏 '+esc(roomsLine_(app.rooms))+'</div>' : '')+
       '</div></li>';
   }).join('')+'</ol></div>';
   h+='</div><div>';
@@ -2762,6 +2764,11 @@ function visaCardHtml_(app){
     '<div class="eyebrow" style="margin-top:12px">'+esc(t('Preparing to come'))+'</div><ol class="guide">'+VISA_PREP.map(function(s){ return '<li>'+esc(t(s))+'</li>'; }).join('')+'</ol>'+
     '<p class="hint"><a href="https://www.evisa.gov.kh/" target="_blank" rel="noopener">evisa.gov.kh ↗</a></p>')+'</div>';
 }
+/* "Rooms booked": how many beds and the nights, as SR Hospitality booked them */
+function roomsLine_(r){
+  var beds = Number(r.beds)===1 ? t('1 bed') : gpT('{n} beds',{n:Number(r.beds)||0});
+  return r.from ? beds+' · '+rangeLabel_(r.from, r.to) : beds;
+}
 /* ---- How to apply for your e-visa online ----
    Opens once the letter of invitation is in (app.visaOpen): a drop-down with
    the letter, the supporting documents (portal admins keep them under ☰ →
@@ -3415,8 +3422,9 @@ function panelTeamFlowHtml_(c){
   h+='<ul class="flowList">'+c.steps.filter(function(st){ return st.id!=='account'; }).map(function(st){
     var name=esc(t(TEAM_STEP_LABEL[st.id]||st.id));
     if(st.tick) return '<li class="'+(st.state==='current'?'cur':'')+'"><label class="portalTick"><input type="checkbox" data-teamstep="'+esc(st.id)+'"'+(st.done?' checked':'')+(P.busy?' disabled':'')+'> '+name+'</label></li>';
+    if(st.id==='rooms' && st.done && c.portal && c.portal.rooms) name+=' <span class="hint">· 🛏 '+esc(roomsLine_(c.portal.rooms))+'</span>';
     return '<li class="auto'+(st.done?' done':'')+(st.state==='current'?' cur':'')+'"><span class="flowMark">'+(st.done?'✓':'○')+'</span> '+name+
-      ' <span class="hint">'+esc(st.id==='form' ? t('when they submit') : st.id==='invitation' ? t('ticks when you upload it below') : st.id==='practical' ? t('until they arrive') : t('ticks when they upload it'))+'</span></li>';
+      ' <span class="hint">'+esc(st.id==='form' ? t('when they submit') : st.id==='invitation' ? t('ticks when you upload it below') : st.id==='rooms' ? t('ticks when SR Hospitality books their beds') : st.id==='practical' ? t('until they arrive') : t('ticks when they upload it'))+'</span></li>';
   }).join('')+'</ul><p class="hint">'+esc(t('The stage follows the steps: the 1st call moves them to Awaiting documents, the last e-visa to the 2nd call, and the 2nd call to Getting ready. The team sees the same steps on their dashboard, and is in the Teams Database from the day it applies.'))+'</p>';
   return h;
 }

@@ -174,7 +174,17 @@ ok('a team request reaches nobody outside Hospitality', (await call('getHospital
 
 console.log('=== a team cancelled or deleted with beds booked ===');
 r = await call('hospSave', [...H, 'booking', { category: 'team', name: portalTeam.name, from: portalTeam.from, to: portalTeam.to, males: 4, females: 4, tripId: portalTeam.tripId }]);
-const cdBooking = r.saved.id;
+let cdBooking = r.saved.id;
+let cdRooms = mem.candidates.find(c => c.id === 'cd1').portal.rooms;
+ok('booking a portal team ticks its “Rooms booked” step: beds and nights on its application', cdRooms && cdRooms.beds === 8 && cdRooms.from === portalTeam.from && cdRooms.to === portalTeam.to, JSON.stringify(cdRooms));
+r = await call('hospDelete', [...H, 'booking', cdBooking]);
+ok('… deleting the booking unticks it', mem.candidates.find(c => c.id === 'cd1').portal.rooms === null);
+r = await call('hospSave', [...H, 'booking', { category: 'team', name: portalTeam.name, from: portalTeam.from, to: portalTeam.to, males: 4, females: 4, tripId: portalTeam.tripId }]);
+cdBooking = r.saved.id;
+ok('… and booking it again ticks it again', mem.candidates.find(c => c.id === 'cd1').portal.rooms.beds === 8);
+mem.candidates.find(c => c.id === 'cd1').portal.rooms = null;   // as if booked before the step existed
+await call('getHospitality', H);
+ok('opening SR Hospitality catches up a team booked before', mem.candidates.find(c => c.id === 'cd1').portal.rooms && mem.candidates.find(c => c.id === 'cd1').portal.rooms.beds === 8);
 mem.teamTrips = mem.teamTrips.map(t => t.id === 'ta_cd1' ? { ...t, status: 'cancelled' } : t);   // closed in the portal
 r = await call('getHospitality', H);
 let gq = r.requests.find(q => q.tripId === 'ta_cd1');
