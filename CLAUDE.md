@@ -154,8 +154,10 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   in because the two pages compute "this week" differently (index counts from the Monday
   of week 1, teams mirrors the API's ISO week); the engine only uses it to bound trends.
 - `help.html` — bilingual clickable KPI guide (job focus + KPI explanations per ministry).
-- `manifest.json`, `icon-180.png`, `icon-512.png` — PWA assets. **The icons are
-  placeholders** (cobalt circle + "YWAM GP" wordmark) — swap in real ones when available.
+- `manifest.json`, `icon-180.png`, `icon-512.png`, `icon-maskable-512.png` — PWA assets: the
+  YWAM mark and gold star on YWAM cobalt, full-bleed and opaque (iOS rounds the corners
+  itself). The maskable one (Android's adaptive icons) is the same art shrunk into the
+  safe circle, so the star isn't cropped off.
 
 ### netlify/functions/api.js
 Handlers (see the sections below for the newer ones — HR, candidates, portal, structure, teams): getMyBoot, getData, saveEntries, saveObjective, deleteObjective, teamRoster,
@@ -2164,8 +2166,6 @@ Each of these looked harmless and took the whole page down. `test-degraded.mjs`,
   username + PIN through `saveEntries` and check them in `api.js`, so an unattributed
   number can't reach the blob at all. This is also what makes the campus lock real
   rather than cosmetic.
-- **Real PWA icons.** `icon-180.png` / `icon-512.png` are still generated placeholders.
-  `logo.js` now holds the real marks, so these can be generated from `GP_LOGO`.
 - **Web push for the daily nudge.** iOS 16.4+ supports it for installed PWAs; one
   reminder at a chosen time is the difference between a daily tool and a forgotten one.
 

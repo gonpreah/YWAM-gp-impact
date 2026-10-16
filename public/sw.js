@@ -23,7 +23,7 @@ var FRESH_WAIT_MS = 15000;
 var PRECACHE = [
   'teams.html', 'manifest.json', 'km.js', 'taxonomy.js', 'rollup.js', 'logo.js', 'duty.js',
   'jobfocus.js', 'personality.js', 'gpstrengths.js', 'kpiguide.js', 'sr-checkin-history.js',
-  'icon-180.png', 'icon-512.png', 'ywam-logo.png', 'library.js',
+  'icon-180.png', 'icon-512.png', 'icon-maskable-512.png', 'ywam-logo.png', 'library.js',
   /* the YWAM GP Portal installs as its own app (portal-manifest.json) off the same worker */
   'portal.html', 'portal-manifest.json', 'outreach-guide.js', 'letterhead.jpg', 'legal-km.js'
 ];
