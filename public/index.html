@@ -836,14 +836,26 @@ var state = {
   leaderCode: lsGet('gp-leadercode') || ''
 };
 
-/* ---------- weeks & dates ---------- */
-function mondayOfW1(){
-  var y = new Date().getFullYear();
+/* ---------- weeks & dates ----------
+   The same rule as isoWeekOf / weekYearOf in teams.html and isoWeek_ / weekYear_
+   in api.js: week 1 is the Monday–Sunday week that holds 1 January, so 28–31
+   December 2026 are already week 1 of 2027. currentWeekYear() is the year that
+   goes with currentWeek(), and the one getData answers with when asked for none.
+   (When next year's 1 January is a Monday, the last days of December still clamp
+   onto week 52 of their own year — see weekYear_.) */
+function weekYearOf(d){
+  var y = d.getFullYear(), jan1 = new Date(y + 1, 0, 1);
+  var nextW1 = new Date(y + 1, 0, 1 - ((jan1.getDay() + 6) % 7));
+  return d >= nextW1 ? y + 1 : y;
+}
+function currentWeekYear(){ return weekYearOf(new Date()); }
+function mondayOfW1(year){
+  var y = year ? Number(year) : currentWeekYear();
   var jan1 = new Date(y, 0, 1);
   return new Date(y, 0, 1 - ((jan1.getDay() + 6) % 7));
 }
-function weekRange(w){
-  var start = new Date(mondayOfW1().getTime() + (w-1)*7*86400000);
+function weekRange(w, year){
+  var start = new Date(mondayOfW1(year).getTime() + (w-1)*7*86400000);
   var end = new Date(start.getTime() + 6*86400000);
   return [start, end];
 }
@@ -857,7 +869,7 @@ function weekLabel(w){
   return 'W'+w+' · '+fmtDate(r[0])+'–'+fmtDate(r[1])+' · Q'+(qOf(w)+1);
 }
 function currentWeek(){
-  var diff = Math.floor((new Date() - mondayOfW1()) / (7*86400000)) + 1;
+  var now = new Date(), diff = Math.floor((now - mondayOfW1(weekYearOf(now))) / (7*86400000)) + 1;
   return Math.max(1, Math.min(52, diff));
 }
 state.week = currentWeek();

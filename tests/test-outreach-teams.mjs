@@ -8,7 +8,7 @@
    ministry dashboard's period toggle and the folded personal card are
    checked on a Cafe page too. */
 import { PUBLIC, CHROMIUM } from './env.mjs';
-import { testNow, pinClock, weekOf, quarterOf } from './clock.mjs';
+import { testNow, pinClock, weekOf, weekYearOf, quarterOf } from './clock.mjs';
 /* Two clocks. The trips are one year's story — teams that came January to May,
    one next January — so those pages run on a fixed day after them (12 Aug).
    The Cafe block is about "this quarter" versus "this year", which must hold on
@@ -244,7 +244,8 @@ console.log('\n=== a Cafe member: period toggle, folded personal card, teams rea
   await page.waitForTimeout(300);
   const yr = await tileOf(page, 'Cups Sold');
   ok('Year adds the other quarter’s week in; the quarter did not', Number(yr.replace(/,/g, '')) === 1556 && Number(q.replace(/,/g, '')) === 556, q + ' → ' + yr);
-  ok('and the heading says so', await page.evaluate(() => document.querySelector('h3').textContent.includes(String(new Date().getFullYear()))));
+  // The year the week is in, not the calendar's: on 30 December 2026 this is 2027's week 1.
+  ok('and the heading says so', await page.evaluate((y) => document.querySelector('h3').textContent.includes(String(y)), weekYearOf(NOW)));
   await page.click('[data-mmperiod="month"]');
   await page.waitForTimeout(300);
   ok('Month reads “this month”', await page.evaluate(() => /this month/.test(document.querySelector('.mmTileSub').textContent)));

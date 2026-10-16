@@ -64,18 +64,82 @@ function finiteNum_(v, min, max) {
    to the wrong year, which is rare and was unknowable either way. */
 const YEAR_MIN = 2020, YEAR_MAX = 2100;
 
+/* The calendar year, for things that are about dates rather than weeks — legacy
+   rows, holidays, the org chart's quarters, the leadership board's objectives. A
+   year that goes with a week number comes from weekYear_ / thisWeekYear_ /
+   yearForWeek_ below. */
 function currentYear_() { return new Date().getUTCFullYear(); }
+
+/* ---- the week a date is in, and the year that week belongs to ----
+   The app numbers weeks by its own rule, not ISO 8601's: week 1 of a year is the
+   Monday–Sunday week that contains 1 January, so its Monday can fall in the
+   December before. isoWeekOf in teams.html and mondayOfW1 in index.html count
+   the same way — change one, change all three.
+
+   So the last days of December can already be next year's week 1. 1 January
+   2027 is a Friday, which makes Monday 28 – Thursday 31 December 2026 week 1 of
+   2027; they used to count as "week 53" of 2026 and clamp onto week 52, on top of
+   the real week 52. weekYear_ says which year a date's week belongs to, and every
+   row keyed by a week stores that year rather than the date's.
+
+   One case is left as it was: when next year's 1 January is a Monday (2023 into
+   2024, 2029 into 2030), the last seven days of December are a 53rd week that
+   holds no 1 January, so they are nobody's week 1. They still clamp onto week 52
+   of their own year. It is rare, and week 53 exists nowhere else in the app.
+
+   Dates are 'YYYY-MM-DD' and counted as whole UTC days, so neither the server's
+   time zone nor a daylight-saving change can move a date into the wrong week. */
+function dayNo_(dateStr) {
+  const t = Date.parse(String(dateStr || '').slice(0, 10) + 'T00:00:00Z');
+  return isNaN(t) ? null : Math.round(t / 86400000);
+}
+function mondayOfWeek1No_(y) {
+  const jan1 = Date.UTC(y, 0, 1);
+  return Math.round(jan1 / 86400000) - ((new Date(jan1).getUTCDay() + 6) % 7);
+}
+function weekYear_(dateStr) {
+  const n = dayNo_(dateStr);
+  if (n == null) return null;
+  const y = new Date(n * 86400000).getUTCFullYear();
+  return n >= mondayOfWeek1No_(y + 1) ? y + 1 : y;
+}
+function isoWeek_(dateStr) {
+  const n = dayNo_(dateStr);
+  if (n == null) return NaN;
+  return Math.max(1, Math.min(52, Math.floor((n - mondayOfWeek1No_(weekYear_(dateStr))) / 7) + 1));
+}
+/* The week year it is now, on the base's own calendar (baseToday_, Cambodia).
+   From 28 to 31 December 2026 this is already 2027. */
+function thisWeekYear_() { return weekYear_(baseToday_()); }
+
+/* The year a week number from the page belongs to. The page sends a bare week,
+   worked out from its own clock, so this is the year that week most plausibly
+   means right now:
+   - early in the year (this is week 1 or 2), a week 51 or 52 is last year's — the
+     backfill of the week just gone, which used to land on this year instead;
+   - on the last day before next year's week 1 begins, a week 1 is next year's —
+     a phone whose clock is a little ahead of the base's;
+   - anything else is this week year's.
+   The December end is deliberately narrow: a week 1 sent in mid-December is
+   somebody correcting January's, not a phone a fortnight ahead. */
+function yearForWeek_(week) {
+  const today = baseToday_(), y = weekYear_(today), now = isoWeek_(today), wk = Number(week);
+  if (now <= 2 && wk >= 51) return y - 1;
+  if (wk === 1 && now >= 51 && weekYear_(addDays_(today, 1)) > y) return y + 1;
+  return y;
+}
 
 function legacyYear_() {
   const n = finiteNum_(process.env.GP_LEGACY_YEAR, YEAR_MIN, YEAR_MAX);
   return n == null ? currentYear_() : n;
 }
 
-/* The year a request is asking about. Absent or junk means "this year", so every
-   existing caller keeps working without passing anything. */
+/* The year a request is asking about. Absent or junk means "this year" — the week
+   year, since everything read this way is keyed by week — so every existing caller
+   keeps working without passing anything. */
 function askedYear_(v) {
   const n = finiteNum_(v, YEAR_MIN, YEAR_MAX);
-  return n == null ? currentYear_() : Math.round(n);
+  return n == null ? thisWeekYear_() : Math.round(n);
 }
 
 function yearFromDate_(d) {
@@ -1419,14 +1483,7 @@ async function saveMyHabits(username, pin, habits, bibleDay) {
   });
 }
 
-/* ---- daily log ---- */
-function isoWeek_(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
-  const y = d.getFullYear();
-  const jan1 = new Date(y, 0, 1);
-  const monW1 = new Date(y, 0, 1 - ((jan1.getDay() + 6) % 7));
-  return Math.max(1, Math.min(52, Math.floor((d - monW1) / (7 * 86400000)) + 1));
-}
+/* ---- daily log ---- (isoWeek_ and weekYear_ live with the year rules at the top) */
 
 async function getDaily_() { return readJSON('dailyLogs', []); }
 
@@ -1438,7 +1495,7 @@ async function saveDaily(username, pin, dateStr, payload) {
   const b = function (v) { return !!v; };
   const n = function (v) { const x = Number(v); return isNaN(x) ? null : x; };
   const rec = {
-    staffId: s.id, date: dateStr, week: isoWeek_(dateStr),
+    staffId: s.id, date: dateStr, week: isoWeek_(dateStr), year: weekYear_(dateStr) || undefined,
     langHours: n(payload.langHours) || 0, minHours: n(payload.minHours) || 0,
     workout: b(payload.workout), bible: b(payload.bible), quietTime: b(payload.quietTime),
     oneOnOne: b(payload.oneOnOne), sharedFaith: b(payload.sharedFaith), sabbath: b(payload.sabbath),
@@ -1545,7 +1602,7 @@ async function getMenteeLogs(username, pin, menteeId) {
   let checkins = [];
   if (m.surveyToken) {
     checkins = (await getSurvey_())
-      .filter(function (r) { return r.device === m.surveyToken && yearOf_(r) === currentYear_(); })
+      .filter(function (r) { return r.device === m.surveyToken && yearOf_(r) === thisWeekYear_(); })
       .map(function (r) {
         return {
           week: Number(r.week), lonely: r.lonely, clarity: r.clarity, porn: r.porn,
@@ -1688,7 +1745,6 @@ async function saveEntries(campus, updates, code, username, pin) {
   }
   const rows = await getEntries_();
   const now = new Date().toISOString();
-  const yr = currentYear_();
   campus = str_(campus, 40);
   if (!campus) return getData(code);
   // Staff write their own campus whatever the request says it is.
@@ -1697,6 +1753,7 @@ async function saveEntries(campus, updates, code, username, pin) {
     const dept = str_(u.dept, 80), ministry = str_(u.ministry, 80), metric = str_(u.metric, 80);
     const week = finiteNum_(u.week, 1, 52);
     if (!dept || !ministry || !metric || week == null) return;
+    const yr = yearForWeek_(week);
     // Reads are already filtered by leader status in getData(); mirror that
     // here so a non-leader can't blindly overwrite a value they can't see.
     if (!leader && SENSITIVE.indexOf(metric) > -1) return;
@@ -1815,8 +1872,8 @@ async function deleteObjective(id, code, username, pin) {
 
 /* ==================== weekly goals ====================
    Three goals a week, written at the start and checked off at the end. Keyed
-   by ISO week number to match how entries/survey already store weeks (no
-   year component — same convention, same caveat at a year boundary). */
+   by week number and the year that week belongs to, the way entries and survey
+   rows are (yearForWeek_ for a week the page sends). */
 const MAX_GOALS = 3;
 
 async function getGoals_() { return readJSON('goals', []); }
@@ -1878,7 +1935,7 @@ async function saveGoals(username, pin, week, items) {
     };
   });
   const rows = await getGoals_();
-  const yr = currentYear_();
+  const yr = yearForWeek_(wk);
   const idx = rows.findIndex(function (r) {
     return r.staffId === s.id && Number(r.week) === wk && yearOf_(r) === yr;
   });
@@ -1935,7 +1992,7 @@ async function saveMyWeek(username, pin, week, payload) {
   if (!minted.ok) return { ok: false };
   const token = minted.token;
 
-  const rec = { campus: s.campus, week: wk, year: currentYear_(), device: token, source: 'weekly',
+  const rec = { campus: s.campus, week: wk, year: yearForWeek_(wk), device: token, source: 'weekly',
     days: 7, updated: new Date().toISOString() };
   WEEK_SCALES.forEach(function (k) { rec[k] = finiteNum_(p[k], 1, 10); });
   WEEK_FLAGS.forEach(function (k) { rec[k] = p[k] ? 1 : 0; });
@@ -1968,7 +2025,7 @@ async function deleteMyWeek(username, pin, week) {
   const wk = finiteNum_(week, 1, 52);
   if (wk == null) return { ok: false, err: 'bad_week' };
   let rows = await getSurvey_();
-  const yr = currentYear_();
+  const yr = yearForWeek_(wk);
   rows = rows.filter(function (r) {
     return !(r.device === s.surveyToken && Number(r.week) === wk && yearOf_(r) === yr);
   });
@@ -1985,7 +2042,7 @@ async function getMyWeekly(username, pin) {
   let checkins = [];
   if (s.surveyToken) {
     checkins = (await getSurvey_())
-      .filter(function (r) { return r.device === s.surveyToken && yearOf_(r) === currentYear_(); })
+      .filter(function (r) { return r.device === s.surveyToken && yearOf_(r) === thisWeekYear_(); })
       .map(function (r) {
         return {
           week: Number(r.week), lonely: r.lonely, clarity: r.clarity, porn: r.porn,
@@ -2038,12 +2095,12 @@ function prevLevels_(rows, campus, dept, ministry, yr, wk) {
 
 async function ministryDataFor2_(campus, dept, ministry) {
   const out = {}, daily = {};
-  const yr = currentYear_();
+  const yr = thisWeekYear_();
   let prev = {};
   if (ministry) {
     let rows = await getEntries_();
     if (dept === TEAM_DEPT && ministry === TEAM_MIN) rows = await withTeamRows_(rows);
-    prev = prevLevels_(rows, campus, dept, ministry, yr, isoWeek_(new Date().toISOString().slice(0, 10)));
+    prev = prevLevels_(rows, campus, dept, ministry, yr, isoWeek_(baseToday_()));
     rows.forEach(function (r) {
       if (r.campus !== campus || r.dept !== dept || r.ministry !== ministry) return;
       if (SENSITIVE.indexOf(r.metric) > -1) return;
@@ -2151,7 +2208,7 @@ async function withNumbers_(d, s) {
   const [np, rows, entries] = await Promise.all([getNumbersPeople_(), getStaff_(), getEntries_()]);
   const n = numbersPeopleFor_(np, rows, d.campus, d.dept, d.ministry);
   n.canSet = canSetNumbers_(s, d.dept, d.ministry);
-  const yr = currentYear_(), last = {};
+  const yr = thisWeekYear_(), last = {};
   entries.forEach(function (r) {
     if (r.campus !== d.campus || r.dept !== d.dept || r.ministry !== d.ministry || yearOf_(r) !== yr || !r.by) return;
     const w = String(r.week);
@@ -2176,7 +2233,7 @@ async function numbersStatus_(s, rows) {
   const entries = await getEntries_();
   const wk = isoWeek_(baseToday_());
   const weeks = [wk]; if (wk > 1) weeks.push(wk - 1);
-  const yr = currentYear_();
+  const yr = thisWeekYear_();
   const logged = {};
   weeks.forEach(function (w) { logged[w] = {}; });
   entries.forEach(function (r) {
@@ -2269,8 +2326,8 @@ async function getDeptPulse(username, pin, dept) {
   if (!canSeePulse_(s, dept)) return { ok: false, err: 'not_authorized' };
   const [rows, np, entries, survey, trips, ones] = await Promise.all([
     getStaff_(), getNumbersPeople_(), getEntries_(), getSurvey_(), getTrips_(), getOneOnOnes_()]);
-  const campus = s.campus, yr = currentYear_();
   const today = baseToday_(), wk = isoWeek_(today);
+  const campus = s.campus, yr = weekYear_(today);
   const staff = rows.filter(function (r) { return r.active && r.campus === campus && !isApplicant_(r) && deptOf_(r) === dept; });
   const ids = {}; staff.forEach(function (r) { ids[r.id] = r; });
 
@@ -2357,7 +2414,7 @@ async function saveStaffDebt(username, pin, values) {
     if (v[d] === undefined || v[d] === null || v[d] === '') continue;
     const n = finiteNum_(v[d], 0, 1e9);
     if (n === null) return { ok: false, err: 'bad_amount' };
-    await saveMinistryInternal_(s.campus, 'Campus Leadership', d, wk, [{ metric: 'Staff Debt ($)', value: n }], s.id);
+    await saveMinistryInternal_(s.campus, 'Campus Leadership', d, wk, [{ metric: 'Staff Debt ($)', value: n }], s.id, thisWeekYear_());
   }
   return getStaffDebt(username, pin);
 }
@@ -2412,12 +2469,14 @@ function kpiOutOfRange_(ministry, metric, value) {
   return !!r && (value < r.min || value > r.max);
 }
 
-async function saveMinistryInternal_(campus, dept, ministry, week, updates, by) {
+/* `year` is passed when the caller knows it (a tool syncing a dated week, or this
+   week); a week from the page goes through yearForWeek_. */
+async function saveMinistryInternal_(campus, dept, ministry, week, updates, by, year) {
   const wk = finiteNum_(week, 1, 52);
   if (wk == null) return { ok: false, err: 'bad_week' };
   const rows = await getEntries_();
   const now = new Date().toISOString();
-  const yr = currentYear_();
+  const yr = finiteNum_(year, YEAR_MIN, YEAR_MAX) || yearForWeek_(wk);
   const rejected = [];
   (Array.isArray(updates) ? updates : []).forEach(function (u) {
     const metric = str_(u && u.metric, 80);
@@ -2595,7 +2654,7 @@ async function renameCustomMetric(username, pin, campus, dept, ministry, oldName
    is handed, so the list can grow without a migration. */
 async function getPersonalRows_() { return readJSON('personalKpi', []); }
 function personalOut_(rows, staffId) {
-  const yr = currentYear_();
+  const yr = thisWeekYear_();
   const out = {};
   rows.forEach(function (r) {
     if (r.staffId !== staffId || yearOf_(r) !== yr) return;
@@ -2616,7 +2675,7 @@ async function saveMyPersonalWeek(username, pin, week, updates) {
   if (wk == null) return { ok: false, err: 'bad_week' };
   const rows = await getPersonalRows_();
   const now = new Date().toISOString();
-  const yr = currentYear_();
+  const yr = yearForWeek_(wk);
   (Array.isArray(updates) ? updates : []).forEach(function (u) {
     const metric = str_(u && u.metric, 80);
     if (!metric) return;
@@ -2666,6 +2725,10 @@ async function saveKpiDayInternal_(campus, dept, ministry, dateStr, updates, sta
   const date = str_(dateStr, 10);
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return { ok: false, err: 'bad_date' };
   const wk = isoWeek_(date);
+  /* The days themselves are dated, so the week they roll into belongs to the year
+     that week is in — not to whatever year it happens to be when this runs, and
+     not to the date's own calendar year either: 30 December 2026 is week 1 of 2027. */
+  const dayYear = weekYear_(date) || thisWeekYear_();
 
   const daily = await getKpiDaily_();
   const touched = {};
@@ -2687,7 +2750,7 @@ async function saveKpiDayInternal_(campus, dept, ministry, dateStr, updates, sta
     if (kpiOutOfRange_(ministry, metric, value)) { delete touched[metric]; return; }
     const rec = {
       campus: campus, dept: dept, ministry: ministry, metric: metric,
-      date: date, week: wk, year: yearFromDate_(date) || currentYear_(),
+      date: date, week: wk, year: dayYear,
       value: value, staffId: staffId, updated: new Date().toISOString()
     };
     if (idx > -1) daily[idx] = rec; else daily.push(rec);
@@ -2697,9 +2760,6 @@ async function saveKpiDayInternal_(campus, dept, ministry, dateStr, updates, sta
   // Push the derived weekly totals into the shared entries the dashboard reads.
   const entries = await getEntries_();
   const now = new Date().toISOString();
-  /* The days themselves are dated, so the week they roll into belongs to the year
-     those days are in — not to whatever year it happens to be when this runs. */
-  const dayYear = yearFromDate_(date) || currentYear_();
   Object.keys(touched).forEach(function (metric) {
     const days = daily.filter(function (r) {
       return r.campus === campus && r.dept === dept && r.ministry === ministry &&
@@ -4234,7 +4294,7 @@ function teamEntryRows_(trips) {
   const acc = {};
   trips.forEach(function (t) {
     if (!t || t.status === 'cancelled' || !isoDate_(t.to)) return;
-    const yr = Number(t.to.slice(0, 4)), wk = isoWeek_(t.to);
+    const yr = weekYear_(t.to), wk = isoWeek_(t.to);
     const add = function (metric, v) {
       const k = t.campus + '|' + yr + '|' + wk + '|' + metric;
       if (!acc[k]) acc[k] = { campus: t.campus, dept: TEAM_DEPT, ministry: TEAM_MIN, metric: metric, week: wk, year: yr, value: 0, derived: true };
@@ -8157,10 +8217,13 @@ async function adminLooseEnds(username, pin) {
   const s = await adminGate_(username, pin);
   if (!s) return { ok: false, err: 'not_authorized' };
   const [np, entries, okrs, seenRec] = await Promise.all([getNumbersPeople_(), getEntries_(), getOkrs_(), readJSON('lastSeen', {})]);
-  const yr = currentYear_(), today = baseToday_(), wk = isoWeek_(today);
+  /* Numbers are keyed by week, so they are read in this week's year; objectives
+     have no year of their own (yearOf_ reads their edit stamp) and go by the
+     calendar quarter, so they keep the calendar year. */
+  const yr = currentYear_(), today = baseToday_(), wk = isoWeek_(today), wkYr = weekYear_(today);
   const lastWeek = {};
   entries.forEach(function (r) {
-    if (yearOf_(r) !== yr || r.value === null || r.value === undefined) return;
+    if (yearOf_(r) !== wkYr || r.value === null || r.value === undefined) return;
     const k = r.campus + '|' + r.dept + '|' + r.ministry, w = Number(r.week);
     if (w <= wk && !(lastWeek[k] >= w)) lastWeek[k] = w;
   });
@@ -8191,8 +8254,8 @@ async function adminLooseEnds(username, pin) {
    My Ministry's Numbers tab all read them like any logged week. A week the
    tool has nothing for is never touched; when a week's last record goes, only
    the rows the tool wrote are cleared — a number someone typed stays. */
-async function toolSync_(campus, dept, ministry, week, values, tag) {
-  const rows = await getEntries_(), yr = currentYear_();
+async function toolSync_(campus, dept, ministry, week, values, tag, year) {
+  const rows = await getEntries_(), yr = finiteNum_(year, YEAR_MIN, YEAR_MAX) || yearForWeek_(week);
   const updates = Object.keys(values).map(function (metric) {
     const v = values[metric];
     if (v !== null) return { metric: metric, value: v };
@@ -8200,7 +8263,7 @@ async function toolSync_(campus, dept, ministry, week, values, tag) {
       String(r.week) === String(week) && yearOf_(r) === yr; });
     return (had && had.by === tag) ? { metric: metric, value: null } : null;
   }).filter(Boolean);
-  if (updates.length) await saveMinistryInternal_(campus, dept, ministry, week, updates, tag);
+  if (updates.length) await saveMinistryInternal_(campus, dept, ministry, week, updates, tag, yr);
 }
 function toolId_(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function toolDate_(v) { const d = isoDate_(v); if (!d) return ''; const t = Date.parse(d + 'T00:00:00Z'), now = Date.now();
@@ -8218,8 +8281,10 @@ const LEAD_RATINGS = { vision: 'Base Vision (1-10)', comms: 'Communications (1-1
 const PLANT_STAGES = ['praying', 'exploring', 'planning', 'preparing', 'launched'];
 const LEAD_DIRECTOR = 'Campus Director';
 function canLeadTool_(s) { return !!(s && s.dept === 'Campus Leadership' && s.ministry); }
-async function leadSync_(s, week) {
-  const yr = currentYear_();
+/* `year` is the week year of `week` — the log rows carry it, so a week is synced
+   into the year it belongs to whenever the change is made. */
+async function leadSync_(s, week, year) {
+  const yr = year;
   const mine = (await readJSON('leadLog', [])).filter(function (r) { return r.campus === s.campus && r.ministry === s.ministry && Number(r.week) === week && Number(r.year) === yr; });
   const vals = {};
   Object.keys(LEAD_KINDS).forEach(function (k) {
@@ -8230,15 +8295,16 @@ async function leadSync_(s, week) {
     const rf = (await readJSON('leadReflect', [])).find(function (r) { return r.campus === s.campus && r.ministry === s.ministry && Number(r.week) === week && Number(r.year) === yr; });
     Object.keys(LEAD_RATINGS).forEach(function (k) { vals[LEAD_RATINGS[k]] = rf && rf[k] ? rf[k] : null; });
     const plants = (await readJSON('basePlants', [])).filter(function (p) { return p.campus === s.campus && p.stage !== 'launched'; });
-    if (week === isoWeek_(new Date().toISOString().slice(0, 10))) vals['Base Plants in Planning'] = plants.length;
+    if (week === isoWeek_(baseToday_()) && yr === thisWeekYear_()) vals['Base Plants in Planning'] = plants.length;
   }
-  await toolSync_(s.campus, 'Campus Leadership', s.ministry, week, vals, 'tool:lead');
+  await toolSync_(s.campus, 'Campus Leadership', s.ministry, week, vals, 'tool:lead', yr);
 }
 async function leadWeek(username, pin, week) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
   if (!canLeadTool_(s)) return { ok: false, err: 'not_leadership' };
-  const yr = currentYear_(), wk = finiteNum_(week, 1, 52) || isoWeek_(new Date().toISOString().slice(0, 10));
+  const asked = finiteNum_(week, 1, 52);
+  const wk = asked || isoWeek_(baseToday_()), yr = asked ? yearForWeek_(asked) : thisWeekYear_();
   const log = (await readJSON('leadLog', [])).filter(function (r) { return r.staffId === s.id && Number(r.week) === wk && Number(r.year) === yr; })
     .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.at < b.at ? -1 : 1); });
   const rf = (await readJSON('leadReflect', [])).find(function (r) { return r.staffId === s.id && Number(r.week) === wk && Number(r.year) === yr; }) || null;
@@ -8257,7 +8323,7 @@ async function leadLogAdd(username, pin, entry) {
   if (!date) return { ok: false, err: 'bad_date' };
   const qty = e.kind === 'gospel' ? finiteNum_(e.qty, 0.25, 24) : 1;
   if (qty == null) return { ok: false, err: 'bad_hours' };
-  const wk = isoWeek_(date), yr = Number(date.slice(0, 4));
+  const wk = isoWeek_(date), yr = weekYear_(date);
   const row = { id: toolId_('ll'), staffId: s.id, campus: s.campus, ministry: s.ministry, date: date, week: wk, year: yr, kind: e.kind, qty: qty,
     who: str_(e.who, 60) || '', whoName: str_(e.whoName, 80) || '', note: str_(e.note, 200) || '', at: new Date().toISOString() };
   const rows = await readJSON('leadLog', []); rows.push(row); await writeJSON('leadLog', rows);
@@ -8265,7 +8331,7 @@ async function leadLogAdd(username, pin, entry) {
     const ps = await readJSON('leadPartners', []), p = ps.find(function (x) { return x.id === row.who && x.staffId === s.id; });
     if (p && (!p.last || p.last < date)) { p.last = date; await writeJSON('leadPartners', ps); }
   }
-  if (yr === currentYear_()) await leadSync_(s, wk);
+  if (yr === thisWeekYear_()) await leadSync_(s, wk, yr);
   return leadWeek(username, pin, wk);
 }
 async function leadLogDelete(username, pin, id) {
@@ -8274,7 +8340,7 @@ async function leadLogDelete(username, pin, id) {
   const rows = await readJSON('leadLog', []), hit = rows.find(function (r) { return r.id === id && r.staffId === s.id; });
   if (!hit) return { ok: false, err: 'not_found' };
   await writeJSON('leadLog', rows.filter(function (r) { return r !== hit; }));
-  if (Number(hit.year) === currentYear_()) await leadSync_(s, Number(hit.week));
+  if (Number(hit.year) === thisWeekYear_()) await leadSync_(s, Number(hit.week), Number(hit.year));
   return leadWeek(username, pin, Number(hit.week));
 }
 async function leadReflectSave(username, pin, week, ratings) {
@@ -8282,13 +8348,13 @@ async function leadReflectSave(username, pin, week, ratings) {
   if (!s) return { ok: false };
   if (!canLeadTool_(s)) return { ok: false, err: 'not_leadership' };
   const wk = finiteNum_(week, 1, 52); if (wk == null) return { ok: false, err: 'bad_week' };
-  const yr = currentYear_(), rows = await readJSON('leadReflect', []);
+  const yr = yearForWeek_(wk), rows = await readJSON('leadReflect', []);
   let r = rows.find(function (x) { return x.staffId === s.id && Number(x.week) === wk && Number(x.year) === yr; });
   if (!r) { r = { staffId: s.id, campus: s.campus, ministry: s.ministry, week: wk, year: yr }; rows.push(r); }
   Object.keys(LEAD_RATINGS).forEach(function (k) { const v = finiteNum_(ratings && ratings[k], 1, 10); r[k] = v == null ? null : Math.round(v); });
   r.note = str_(ratings && ratings.note, 300) || ''; r.at = new Date().toISOString();
   await writeJSON('leadReflect', rows);
-  await leadSync_(s, wk);
+  await leadSync_(s, wk, yr);
   return leadWeek(username, pin, wk);
 }
 async function leadPartnerSave(username, pin, partner, week) {
@@ -8330,7 +8396,7 @@ async function basePlantSave(username, pin, plant, week) {
     hit.notes = str_(p.notes, 300) || ''; hit.updated = new Date().toISOString(); hit.by = s.id;
     await writeJSON('basePlants', rows);
   }
-  if (s.dept === 'Campus Leadership' && s.ministry === LEAD_DIRECTOR) await leadSync_(s, isoWeek_(new Date().toISOString().slice(0, 10)));
+  if (s.dept === 'Campus Leadership' && s.ministry === LEAD_DIRECTOR) await leadSync_(s, isoWeek_(baseToday_()), thisWeekYear_());
   return leadWeek(username, pin, week);
 }
 
@@ -8388,7 +8454,11 @@ async function cafeWeek_(campus, date) {
     d.orders.forEach(function (o) { o.items.forEach(function (i) { t.best[i.name] = (t.best[i.name] || 0) + i.qty; }); }); return t; });
 }
 async function cafeSync_(campus, date) {
-  if (Number(date.slice(0, 4)) !== currentYear_()) return;
+  /* Only this week year's numbers follow the till, as before — compared as week
+     years, so a day from 28–31 December still reaches week 1 when it is edited on
+     2 January. */
+  const yr = weekYear_(date);
+  if (yr !== thisWeekYear_()) return;
   const wk = cafeWeekNo_(date), week = await cafeWeek_(campus, date);
   const used = week.some(function (d) { return d.touched; });
   const sum = function (k) { return week.reduce(function (a, d) { return a + d[k]; }, 0); };
@@ -8401,7 +8471,7 @@ async function cafeSync_(campus, date) {
     'Salvations': used ? sum('salvations') : null,
     'Weekly Expenses ($)': used ? r2(sum('spent')) : null,
     'Weekly Profit ($)': used ? r2(sum('takings') - sum('spent')) : null
-  }, 'tool:cafe');
+  }, 'tool:cafe', yr);
 }
 function cafeWeekNo_(date) { return isoWeek_(date); }
 async function cafeAnswer_(s, date) {

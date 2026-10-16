@@ -209,8 +209,8 @@ self-scoped write left in place, not a live path.
 
 **`saveMyWeek`/`deleteMyWeek` bound weeks to 1-52**, matching `saveEntries` and both
 week pickers. They allowed 53, which no screen can offer or read back, so such a row
-would sit in the base average invisible to the person who wrote it. Weeks carry no
-year anywhere in the store — see "Known limits" below.
+would sit in the base average invisible to the person who wrote it. Each row's year is
+the year its week belongs to — see the week-year bullet in "Known limits" below.
 
 **The staff number is counted from people, not logged.** `staffType` (campus / yap /
 ministry) and `country` live on the staff record, are asked for at sign-up and changed
@@ -2097,11 +2097,26 @@ inferred from volunteer counts.
     is why every other test passed while this was broken. The scope must stay
     **per-request** — a module-level cache would let one invocation read another's writes
     on a warm instance, which is worse than the bug it fixes.
-- **The last days of a 53-week year still clamp onto week 52.** Both pages compute the
-  week from the Monday of week 1 of the current calendar year and clamp to 52, so the
-  days belonging to the *next* year's week 1 land on week 52 instead. The year field
-  keeps those days in the right year now, so this is a mis-numbered week rather than
-  lost history — much smaller than it was, still not right.
+- **A week belongs to a week year, and late December can be next year's week 1.**
+  The app's week 1 is the Monday–Sunday week holding 1 January (its own rule, not ISO
+  8601), so 28–31 December 2026 are week 1 of **2027** — they used to compute as "week
+  53" of 2026 and clamp onto the real week 52. `weekYearOf(d)` / `thisWeekYear()` in
+  teams.html, `weekYearOf` / `currentWeekYear()` in index.html and `weekYear_` /
+  `thisWeekYear_()` in api.js say which year a date's week is in; `isoWeekOf` still
+  returns just the number, and `mondayOfWeek_(week, year)` / `weekRange_` /
+  `weekBounds_` take an optional year that defaults to this week year. Anything that
+  pairs a year with a week uses the week year; dates (leave, birthdays, contracts,
+  SMART goals, the org chart's quarters) keep the calendar one. The server's
+  `yearForWeek_(wk)` decides the year of a bare week the page sends: week 51/52 in
+  weeks 1–2 is last year's (so backfilling the week just gone in early January no
+  longer lands on the new year), week 1 on the Sunday before next year's week 1 is
+  next year's (a phone slightly ahead), anything else this week year's — all on
+  Cambodia's calendar (`baseToday_`), not UTC. Reads with no year (`getData`, goals,
+  check-ins, My Ministry) default to this week year. **Still clamped, on purpose:**
+  when next year's 1 January is a Monday (2023→2024, 2029→2030) the last seven days of
+  December are a 53rd week that is nobody's week 1, and they stay on week 52 of their
+  own year — rare, and week 53 exists nowhere in the app. "Last week" from week 1 is
+  still week 0 (nothing), as every January. Test: `tests/test-week-year.mjs`.
 - **~4,000 Khmer strings are translated but unreviewed** (`PENDING_KM` in `km.js`). They
   are on screen now rather than sitting in English, which was Uriah's call, but nobody
   who speaks Khmer has read them yet. **Khmer review** (below) is how they get read.
@@ -2275,6 +2290,8 @@ now)` before the first goto (time is shifted, not frozen). Count quarters the ap
 28 Sep (week 40) the app is in Q4. A test whose fixtures are one fixed scenario pins itself
 (`testNow('2026-08-12')`, as test-base does); one that should hold on any day uses
 `testNow()` and is checked at the edges with `GP_TEST_NOW=YYYY-MM-DD node tests/<file>`.
+A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
+`getFullYear()`: on 30 December 2026 `weekOf` is 1 and the year is 2027.
 - **Structure: the next quarter can be saved early** (`nextQuarter_`, `structIsNext_`, `structIsLive_` in teams.html): it shows the live chart like the current quarter, with "Save Q{n} {year} structure early" for admins, so the base can set up a quarter while planning it a couple of weeks ahead. Q4's next is Q1 of next year (the year picker then offers next year). The server already took any quarter from an admin.
 - **Structure: staff who are students for a quarter** (`saveStructurePlan`, blob `structurePlans`, one row per campus / year / quarter: `students: {staffId: 'dts'|'dbs'|'bcs'|'sms'}`): set by an admin from Structure on the current or next quarter ("🎓 Students in Q4 2026"), for that quarter only — profiles are untouched. The chart moves them out of their ministry into a "Students this quarter" box by school; `saveStructure` writes `student` onto each snapshot person, and changing the plan updates a snapshot already saved. `getStructure` answers with `plan`. Portal applicant accounts are never on the chart: `saveStructure` skips them and `structPeopleOnly_` drops them from snapshots saved before that rule.
 - **Leadership OKRs for everyone (Oct 2026, Uriah)**: the OKR tab of My Ministry shows a read-only

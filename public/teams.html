@@ -2489,14 +2489,28 @@ function myHabits(){
     : [{id:'bible',mentorVisible:true},{id:'quietTime',mentorVisible:true},{id:'workout',mentorVisible:true}];
 }
 
-/* ---------- week helpers (must match isoWeek_ in netlify/functions/api.js) ---------- */
+/* ---------- week helpers (must match isoWeek_ / weekYear_ in netlify/functions/api.js) ----------
+   Week 1 of a year is the Monday–Sunday week that holds 1 January, so the last
+   days of December can already be next year's week 1: Monday 28 – Thursday 31
+   December 2026 are week 1 of 2027. weekYearOf says which year a date's week
+   belongs to, and anything that pairs a year with a week number uses it rather
+   than getFullYear(). When next year's 1 January is a Monday (2023, 2029) the
+   last seven days of December belong to no week 1 and still clamp onto week 52
+   of their own year — rare, and week 53 exists nowhere in the app.
+   Days are counted from the date's own year/month/day, so a daylight-saving
+   change on a test machine cannot move midnight into the week before. */
+function dayNoOf_(d){ return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())/86400000); }
+function mondayOfW1No_(y){ var jan1=new Date(y,0,1); return dayNoOf_(jan1)-((jan1.getDay()+6)%7); }
+function weekYearOf(d){ var y=d.getFullYear(); return dayNoOf_(d)>=mondayOfW1No_(y+1) ? y+1 : y; }
 function isoWeekOf(d){
-  var y=d.getFullYear();
-  var jan1=new Date(y,0,1);
-  var monW1=new Date(y,0,1-((jan1.getDay()+6)%7));
-  return Math.max(1, Math.min(52, Math.floor((d-monW1)/(7*86400000))+1));
+  return Math.max(1, Math.min(52, Math.floor((dayNoOf_(d)-mondayOfW1No_(weekYearOf(d)))/7)+1));
 }
 function thisWeek(){ return isoWeekOf(new Date()); }
+function thisWeekYear(){ return weekYearOf(new Date()); }
+/* Today, or — on the days that are already next year's week 1 — 1 January of
+   that year: the date the "this month" and "this quarter" defaults are read
+   from, so they name the same month and quarter as thisWeek() does. */
+function weekYearToday_(){ var d=new Date(), y=weekYearOf(d); return y>d.getFullYear() ? new Date(y,0,1) : d; }
 /* A monthly/quarterly-cadence metric still lives in the weekly-keyed
    `entries` store — it's just always read and written under the ONE week
    that contains the period's first day, so repeated saves within the same
@@ -2505,11 +2519,11 @@ function thisWeek(){ return isoWeekOf(new Date()); }
    past period yet — this is "log it whenever this month/quarter", not a
    full picker. */
 function monthAnchorWeek_(){
-  var d=new Date();
+  var d=weekYearToday_();
   return isoWeekOf(new Date(d.getFullYear(), d.getMonth(), 1));
 }
 function quarterAnchorWeek_(){
-  var d=new Date();
+  var d=weekYearToday_();
   return isoWeekOf(new Date(d.getFullYear(), Math.floor(d.getMonth()/3)*3, 1));
 }
 function goalsViewWeek(){ return S.goalsWeek==null ? thisWeek() : S.goalsWeek; }
@@ -2532,36 +2546,38 @@ function oversightDeptOf_(person){
 
 /* Same Monday-anchored math as isoWeekOf, run backwards: a week NUMBER back
    to the calendar date its Monday actually falls on, so the Weekly Goals
-   header can say "Aug 17 – Aug 23" instead of a bare week number. */
+   header can say "Aug 17 – Aug 23" instead of a bare week number. `year` is
+   the week year and defaults to this one, so week 1 looked at on 30 December
+   2026 is 28 Dec 2026 – 3 Jan 2027, not the January just gone. */
 var MONTH_ABBR=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-function mondayOfWeek_(week){
-  var y=new Date().getFullYear();
+function mondayOfWeek_(week, year){
+  var y=year ? Number(year) : thisWeekYear();
   var jan1=new Date(y,0,1);
   var monW1=new Date(y,0,1-((jan1.getDay()+6)%7));
   var d=new Date(monW1);
   d.setDate(d.getDate()+(Number(week)-1)*7);
   return d;
 }
-function weekRange_(week){
-  var mon=mondayOfWeek_(week);
+function weekRange_(week, year){
+  var mon=mondayOfWeek_(week, year);
   var sun=new Date(mon); sun.setDate(sun.getDate()+6);
   var a=MONTH_ABBR[mon.getMonth()]+' '+mon.getDate();
   var b=sun.getMonth()===mon.getMonth() ? String(sun.getDate()) : MONTH_ABBR[sun.getMonth()]+' '+sun.getDate();
   return { short:a+' – '+b, year:sun.getFullYear() };
 }
-function weekRangeLabel_(week){
-  var r=weekRange_(week);
+function weekRangeLabel_(week, year){
+  var r=weekRange_(week, year);
   return gpT('Week of {range}, {year}',{range:r.short, year:r.year});
 }
 /* A compact "Aug 17 – 23" for secondary labels (the ministry KPI card),
    where the full "Week of …, 2026" sentence would be too long. */
-function weekRangeShort_(week){ return weekRange_(week).short; }
+function weekRangeShort_(week, year){ return weekRange_(week, year).short; }
 function isoDateOf_(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
 /* The Monday and Sunday of a given week, as YYYY-MM-DD — used to pick which
    date a backfilled ministry number should land on when you're not looking
    at the current week. */
-function weekBounds_(week){
-  var mon=mondayOfWeek_(week), sun=new Date(mon); sun.setDate(sun.getDate()+6);
+function weekBounds_(week, year){
+  var mon=mondayOfWeek_(week, year), sun=new Date(mon); sun.setDate(sun.getDate()+6);
   return { from:isoDateOf_(mon), to:isoDateOf_(sun) };
 }
 function kpiEntryDate_(week){
@@ -9171,7 +9187,7 @@ function prevLevel_(wks, wk, metric, prevMap){
   return { week:qw, value:qv, year:qy };
 }
 
-function kpiYear_(){ return new Date().getFullYear(); }
+function kpiYear_(){ return thisWeekYear(); }
 
 /*  The " · carried from week 50, 2025 ▲ 12" tail under a level's box. Your own
     ministry's weekly card and an overseer's had drifted into two copies of this
@@ -9397,7 +9413,7 @@ function kpiCardHtml(wk){
      card's week pointer at the top of this page. */
   if(monthlyCounts.length){
     var mwk = monthAnchorWeek_();
-    var monthLabel = MONTH_ABBR[new Date().getMonth()];
+    var monthLabel = MONTH_ABBR[weekYearToday_().getMonth()];
     var mSummary = gpT('{n} for {month}', {n: monthlyCounts.length, month: monthLabel});
     h += accRowHtml('dbAcc', 'kpiMonth', esc(t('This month')), mSummary, function(){
       var b = '<div id="kpiMonthCard">';
@@ -9412,7 +9428,7 @@ function kpiCardHtml(wk){
   }
   if(quarterlyCounts.length){
     var qwk = quarterAnchorWeek_();
-    var qNum = Math.floor(new Date().getMonth()/3)+1;
+    var qNum = Math.floor(weekYearToday_().getMonth()/3)+1;
     var qSummary = gpT('{n} for Q{q}', {n: quarterlyCounts.length, q: qNum});
     h += accRowHtml('dbAcc', 'kpiQuarter', esc(t('This quarter')), qSummary, function(){
       var b = '<div id="kpiQuarterCard">';
@@ -11278,7 +11294,7 @@ function ministryWeekLogged_(data, wk){
 function weekInPeriod_(w, period){
   var now=thisWeek();
   if(period==='quarter') return qOf(w)===qOf(now);
-  if(period==='month'){ var b=weekBounds_(w), m=todayStr().slice(0,7); return b.from.slice(0,7)===m || b.to.slice(0,7)===m; }
+  if(period==='month'){ var b=weekBounds_(w), m=isoDateOf_(weekYearToday_()).slice(0,7); return b.from.slice(0,7)===m || b.to.slice(0,7)===m; }
   if(period==='ytd') return w<=now;
   return true;
 }
@@ -11293,7 +11309,7 @@ function ministryDashboardHtml_(campus, dept, ministry, data){
   if(!metrics.length) return '';
   var entries=(data&&data.entries)||{};
   // aggregate() takes rollup.js's 0-based quarter (qOf); people read Q1–Q4.
-  var wk=thisWeek(), q0=qOf(wk), p=S.mmPeriod||'quarter', yr=new Date().getFullYear();
+  var wk=thisWeek(), q0=qOf(wk), p=S.mmPeriod||'quarter', yr=thisWeekYear();
   var list = S.mmDashAll ? metrics : metrics.slice(0,6);
   var title = p==='month' ? t('This month at a glance') : p==='quarter' ? gpT('Q{q} at a glance',{q:q0+1})
     : p==='year' ? gpT('{year} at a glance',{year:yr}) : t('Year to date at a glance');
@@ -15062,11 +15078,11 @@ function healthHtml(){
     return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading your base…'))+'</p></div>';
   }
   var ids = [S.me.campus];
-  var curYear = new Date().getFullYear();
+  var curYear = thisWeekYear();   // S.base is this week year's, and the pickers pair with it
   var scope = S.healthScope || 'week';
   var hYear = Number(S.healthYear || curYear);
   var hQ = Number(S.healthQuarter || (qOf(cur)+1)); // 1-4, human-facing like the OKR quarter picker
-  var hM = Number(S.healthMonth!=null ? S.healthMonth : new Date().getMonth()); // 0-11
+  var hM = Number(S.healthMonth!=null ? S.healthMonth : weekYearToday_().getMonth()); // 0-11
 
   h += '<h3>🏠 '+esc(t('Base health'))+' · '+esc(t(campusName(S.me.campus)))+'</h3>';
   h += hxBtnHtml_('health');
@@ -15205,7 +15221,7 @@ function hxSrData_(){
    picker, Siem Reap's own Month / Quarter / Year picker, or the Base tab's
    period chips. month is 0-11, quarter 1-4, wk an ISO week. */
 function hxSpec_(source){
-  var campus = S.me.campus, cur = thisWeek(), now = new Date(), yr = now.getFullYear();
+  var campus = S.me.campus, cur = thisWeek(), now = new Date(), yr = thisWeekYear();
   if(source==='base'){
     var p = S.baseHealthPeriod || 'week';
     var by = (S.base && Number(S.base.year)) || yr;
@@ -15223,7 +15239,7 @@ function hxSpec_(source){
   var hs = S.healthScope||'week';
   if(hs==='quarters') hs='year';
   return { campus:campus, scope:hs, wk:Number(S.healthWeek||cur),
-    month:Number(S.healthMonth!=null ? S.healthMonth : now.getMonth()),
+    month:Number(S.healthMonth!=null ? S.healthMonth : weekYearToday_().getMonth()),
     quarter:Number(S.healthQuarter || (qOf(cur)+1)), year:Number(S.healthYear||yr) };
 }
 function hxRowsFor_(R, spec, ids){
@@ -15265,7 +15281,7 @@ function hxModel_(spec){
   /* S.base is always the current year's data; a payload without a year
      field (getData never sets one) still means "this year", so an unmatched
      current-year request falls back to it rather than to nothing. */
-  var R = spec.scope==='year' ? (baseRFor(spec.year) || (spec.year===new Date().getFullYear() ? baseR() : null)) : baseR();
+  var R = spec.scope==='year' ? (baseRFor(spec.year) || (spec.year===thisWeekYear() ? baseR() : null)) : baseR();
   if(!R) return null;
   var ids = [spec.campus];
   var rows = hxRowsFor_(R, spec, ids);
@@ -15612,7 +15628,7 @@ function hqModel_(campus){
     qs.push(e);
   }
   var withData = qs.filter(function(e){ return e.rows!==0; });
-  return { campus:campus, year:new Date().getFullYear(), quarters:qs,
+  return { campus:campus, year:thisWeekYear(), quarters:qs,
     hasData:withData.length>0, compared:withData.length>=2,
     score: hqSeries_(qs, 'score', 'Staff Health Score', '/10', true),
     scales: HX_SCALES.map(function(s){ return hqSeries_(qs, s.id, s.label, s.hours ? 'hrs' : '/10', s.higherBetter!==false, s.hours); }),
@@ -16356,9 +16372,9 @@ function mentorHtml(){
     /* Any week, not just the latest: a picker at the top, and every section
        below — check-in, habits, goals, daily logs — follows it. Opens on the
        newest week they checked in (or this week). */
-    var yrNow=new Date().getFullYear(), wkNow=thisWeek();
+    var yrNow=thisWeekYear(), wkNow=thisWeek();
     var logWeek=function(l){ return l.week ? Number(l.week) : isoWeekOf(new Date(String(l.date)+'T00:00:00')); };
-    wl=(wl||[]).filter(function(l){ return !l.date || String(l.date).slice(0,4)===String(yrNow); });
+    wl=(wl||[]).filter(function(l){ return !l.date || weekYearOf(new Date(String(l.date)+'T00:00:00'))===yrNow; });
     var ckWeeks=(S.menteeCheckins||[]).map(function(c){ return Number(c.week); });
     var anyWeeks=ckWeeks.concat(wl.map(logWeek)).concat((S.menteeGoals||[]).map(function(g){ return Number(g.week); })).filter(function(w){ return w>0; });
     var minWk=anyWeeks.length ? Math.min.apply(null, anyWeeks) : wkNow;
