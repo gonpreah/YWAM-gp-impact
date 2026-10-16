@@ -34,6 +34,22 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   Dashboard, Log Numbers, OKRs — **Health moved to the staff page** (see below). Has weekly ▲/▼ trend badges, a spinning-logo "Impact Loading" state,
   click-through drill-down on dashboard totals, and the ✦ Teams / 📖 buttons (plain
   page nav now, not postMessage). Calls the backend via the `apiCall(fn, args)` helper.
+- **Where teams.html's code is (Oct 2026):** `teams.html` is now just the page — head, the
+  inline theme tokens and splash (they must paint on the first frame, and tests compare
+  them with index.html's), the markup and the script tags. Its styles are
+  `public/teams/teams.css`, its code nine plain scripts loaded in order:
+  `teams/01-core.js` (state, render, helpers, Base) · `02-goals-okrs.js` · `03-library-org.js`
+  (personality, Library, papers, guest, YWAM GP & the board, report, first 30 days, prayer,
+  support raising, reminders, Khmer review) · `04-ministry-strengths.js` · `05-admin-hr.js` ·
+  `06-numbers-contract.js` · `07-health-leave.js` · `08-team-profile.js` · `09-bind-boot.js`
+  (bind() and starting the app). **One global scope**, exactly as when it was one inline
+  script: any function may call any other, but code that RUNS while a file loads (not
+  inside a function) may only use what that file or an earlier one defines. Add new code to
+  the file holding its section. A new file must go in teams.html's script tags, sw.js's
+  PRECACHE (bump SHELL) and GP_VER_FILES (pull to refresh). Tests that read the page's
+  source use `pageSource('teams.html')` from tests/env.mjs, which puts the files back inline;
+  every test's little file server knows `.css` (a stylesheet served as text/plain is ignored).
+  When this file says "in teams.html", read "in teams.html's code".
 - `teams.html` — per-staff space ("My YWAM GP"), five tabs: **Base · My week · Team · Me · Health**.
   Username + 4-digit PIN, profile + photo, daily logging, streaks, mentor view +
   mentor-request approval, days away from campus. `?reg=1` opens the create-profile form
