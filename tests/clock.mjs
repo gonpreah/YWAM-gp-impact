@@ -15,6 +15,8 @@
                       BrowserContext; call it before the first goto.
    weekOf / quarterOf the app's week number (isoWeekOf in teams.html) and its
                       0-based 13-week quarter (qOf in rollup.js).
+   weekYearOf         the year that week belongs to (weekYearOf in teams.html):
+                      28–31 December 2026 are week 1 of 2027.
 
    Check a date-sensitive test at the edges with, for example:
      GP_TEST_NOW=2026-09-28 node tests/test-outreach-teams.mjs   (first week of Q4)
@@ -39,8 +41,12 @@ export async function pinClock(p, now) {
     window.Date = Shifted;
   }, now.getTime());
 }
+const monW1Of = (y) => { const jan1 = new Date(y, 0, 1); return new Date(y, 0, 1 - ((jan1.getDay() + 6) % 7)); };
+export function weekYearOf(d) {
+  const y = d.getFullYear();
+  return d >= monW1Of(y + 1) ? y + 1 : y;
+}
 export function weekOf(d) {
-  const y = d.getFullYear(), jan1 = new Date(y, 0, 1), monW1 = new Date(y, 0, 1 - ((jan1.getDay() + 6) % 7));
-  return Math.max(1, Math.min(52, Math.floor((d - monW1) / (7 * 86400000)) + 1));
+  return Math.max(1, Math.min(52, Math.floor((d - monW1Of(weekYearOf(d))) / (7 * 86400000)) + 1));
 }
 export function quarterOf(week) { return Math.min(3, Math.floor((week - 1) / 13)); }

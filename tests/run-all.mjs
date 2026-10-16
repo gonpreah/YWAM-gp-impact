@@ -25,6 +25,7 @@ const SERVER = [
   'test-week-auth.mjs',  // weekly health: anonymity + mentor visibility
   'test-okr-auth.mjs',   // OKR writes stay inside your campus + department
   'test-year.mjs',       // weeks belong to a year; writing numbers needs a name
+  'test-week-year.mjs',  // 28–31 Dec 2026 are week 1 of 2027: both pages and the server agree, and a week 1 saved then lands in 2027
   'test-read-your-writes.mjs', // a save answers with what it saved, not a stale read
   'test-goals.mjs',      // weekly goals are percentages, and old ticked rows still read
   'test-smart-goals.mjs', // Annual Goals (SMART): year+category isolation, ownership
