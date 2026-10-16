@@ -3438,6 +3438,26 @@ The guide itself (Library → Made at YWAM GP → Keeping Each Other Safe) is in
 | {n} places on the YWAM GP Leadership Team are not filled yet. | តួនាទី {n} ក្នុងក្រុមដឹកនាំ YWAM GP មិនទាន់មានអ្នកកាន់នៅឡើយទេ។ |
 | See what’s missing | មើលអ្វីដែលខ្វះ |
 
+### The quarter report (the board's Report tab)
+
+| English | Khmer (draft) |
+|---|---|
+| The quarter report the board sees | របាយការណ៍ប្រចាំត្រីមាសដែលក្រុមប្រឹក្សាមើលឃើញ |
+| needs {n} check-ins or more | ត្រូវការការរាយការណ៍ {n} ឬច្រើនជាងនេះ |
+| {n} check-ins | ការរាយការណ៍ {n} |
+| Leadership school students | សិស្សសាលាអភិវឌ្ឍន៍ភាពជាអ្នកដឹកនាំ |
+| Leadership school graduates | អ្នកបញ្ចប់សាលាអភិវឌ្ឍន៍ភាពជាអ្នកដឹកនាំ |
+| Community school students | សិស្សសាលាសហគមន៍ |
+| YWAM GP · Q{q} {year} report | YWAM GP · របាយការណ៍ត្រីមាសទី{q} ឆ្នាំ{year} |
+| Objectives for Q{q} | គោលបំណងសម្រាប់ត្រីមាសទី{q} |
+| None set for this quarter. | មិនទាន់កំណត់សម្រាប់ត្រីមាសនេះទេ។ |
+| Health is shown only from three check-ins or more, so nobody’s answers can be picked out. Staff numbers are as of today. | សុខភាពត្រូវបានបង្ហាញ តែពីការរាយការណ៍បី ឬច្រើនជាងនេះ ដើម្បីកុំឱ្យនរណាម្នាក់អាចដឹងចម្លើយរបស់អ្នកណាម្នាក់បាន។ ចំនួនបុគ្គលិកគឺគិតត្រឹមថ្ងៃនេះ។ |
+| Each campus and YWAM GP as a whole, compared with Q{p}. Made {date}. | សាខានីមួយៗ និង YWAM GP ទាំងមូល ប្រៀបធៀបជាមួយត្រីមាសទី{p}។ បានធ្វើនៅ {date}។ |
+| {n}% along on average | ជាមធ្យមបាន {n}% |
+| Report | របាយការណ៍ |
+
+"Report" is a bottom-bar tab for board members (about 9 characters of room).
+
 ### Reminders (Profile & settings → Reminders, Admin → Reminders)
 
 | English | Khmer (draft) |

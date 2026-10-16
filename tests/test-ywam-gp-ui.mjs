@@ -43,6 +43,14 @@ mem.staff = [
 ];
 mem.board = [{ id: 'bd1', name: 'Mary Board', role: 'President', email: 'mary@board.org', phone: '+855 12 345 678', bio: 'A pastor in Phnom Penh who has walked with YWAM for twenty years.', username: 'mary', pinSalt: 'bd1', pinHash: H('4321', 'bd1'), active: true, safeguarding: true },
   { id: 'bd2', name: '', role: 'Advisor', staffId: 'st1', active: true }];
+/* figures for the quarter report: three check-ins and some salvations this quarter, fewer the quarter before */
+const YR = new Date().getFullYear();
+const WK = (() => { const d = new Date(), j = new Date(YR, 0, 1); const m = new Date(YR, 0, 1 - ((j.getDay() + 6) % 7)); return Math.max(1, Math.min(52, Math.floor((d - m) / (7 * 86400000)) + 1)); })();
+const srow = (id) => ({ campus: 'siemreap', week: WK, year: YR, device: 'tok_' + id, lonely: 2, clarity: 8, porn: 0, oneOnOne: 1, exercise: 1, quietTime: 1, debt: 0 });
+mem.survey = [srow('st1'), srow('st2'), srow('st3')];
+mem.entries = [{ campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', metric: 'Salvations', week: WK, year: YR, value: 5, updated: '' },
+  { campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', metric: 'Salvations', week: Math.max(1, WK - 13), year: YR, value: 2, updated: '' }];
+mem.okrs = [{ id: 'o1', campus: 'siemreap', dept: 'Community Service', quarter: Math.min(3, Math.floor((WK - 1) / 13)) + 1, year: YR, objective: 'Open the second cafe', krs: [] }];
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer(async (req, res) => {
   if (req.url.indexOf('/.netlify/functions/api') === 0) {
@@ -227,6 +235,10 @@ const main = (page) => page.$eval('#main', e => e.innerText);
   ok('an admin is told on the YWAM GP page how many places are empty', /5 places on the YWAM GP Leadership Team are not filled yet/.test(await main(page)));
   await page.click('[data-adminsubgo="loose"]'); await page.waitForTimeout(1200);
   const loose = await main(page);
+  await page.evaluate(() => { S.view = 'ywamgp'; render(); }); await page.waitForTimeout(300);
+  await page.click('#orgReport'); await page.waitForTimeout(500);
+  ok('Campus Leadership and admins open the board\'s report from the YWAM GP page', await page.evaluate(() => S.view === 'report') && /report/.test(await main(page)));
+  await page.evaluate(() => { S.view = 'admin'; S.adminSub = 'loose'; render(); }); await page.waitForTimeout(900);
   ok('… and Loose ends lists them under the YWAM GP structure', /The YWAM GP structure isn’t filled in/.test(loose) && /Education Lead/.test(loose) && !/YWAM GP Director\s*nobody yet/.test(loose));
   await page.evaluate(() => { const x = S.adminStaff.find((p) => p.id === 'st2'); x.cdKind = ''; render(); }); await page.waitForTimeout(300);
   ok('… and a Campus Director with no International / National chosen', /International or National not chosen yet/.test(await main(page)) && /Sokha Chan/.test(await main(page)));
@@ -247,7 +259,7 @@ const main = (page) => page.$eval('#main', e => e.innerText);
   await page.fill('#li_user', 'mary'); await page.fill('#li_pin', '4321');
   await page.click('#loginBtn'); await page.waitForTimeout(1500);
   const tabs = await page.$$eval('nav.bottom button', (b) => b.map((x) => x.textContent.trim()));
-  ok('a board member signs in on the same screen and gets their own app: YWAM GP · Campuses · Library', tabs.join('|') === 'YWAM GP|Campuses|Library', tabs.join('|'));
+  ok('a board member signs in on the same screen and gets their own app: YWAM GP · Campuses · Report · Library', tabs.join('|') === 'YWAM GP|Campuses|Report|Library', tabs.join('|'));
   let txt = await main(page);
   ok('… welcomed by name and role', /Welcome, Mary Board/.test(txt) && /President/i.test(txt));
   ok('… with no staff sign-in behind it', await page.evaluate(() => !S.auth.user && S.board && S.guest));
@@ -257,6 +269,12 @@ const main = (page) => page.$eval('#main', e => e.innerText);
   ok('… without the staff-only prompt to fill in a profile', !/Add it to my profile/.test(txt));
   ok('… and nobody in it can be opened — no staff pages', !(await page.$('[data-orgperson]')) && !(await page.$('[data-person]')));
   ok('the board view fits a 320px phone', await page.evaluate(() => document.documentElement.scrollWidth <= 321));
+  await page.click('nav.bottom [data-tab="report"]'); await page.waitForTimeout(700);
+  const rep = await main(page);
+  ok('Report: the quarter for YWAM GP and each campus — staff, health from 3+ check-ins, salvations against last quarter, objectives',
+    /Q\d \d{4} report/.test(rep) && /YWAM Poipet/.test(rep) && /YWAM Siem Reap/.test(rep) && /3 check-ins/.test(rep) && /needs 3 check-ins or more/.test(rep) && /Salvations\n5\nQ\d: \d/.test(rep) && /Open the second cafe/.test(rep) && /Dara Sok/.test(rep), rep.slice(0, 400).replace(/\n/g, ' / '));
+  ok('… with Print or save as PDF, and it fits the phone too', !!(await page.$('#repPrint')) && await page.evaluate(() => document.documentElement.scrollWidth <= 321));
+  await page.screenshot({ path: OUT + '/board-report.png', fullPage: true });
   await page.screenshot({ path: OUT + '/board-campus.png', fullPage: true });
   await page.reload(); await page.waitForSelector('nav.bottom button', { timeout: 15000 }); await page.waitForTimeout(1200);
   ok('opening the app again keeps them signed in', await page.evaluate(() => !!S.board));

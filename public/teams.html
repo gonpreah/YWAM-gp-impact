@@ -1794,6 +1794,26 @@ body.hxOn { overflow:hidden; }
 /* Team → Structure: the org chart as nested cards. Leads wear the crown;
    children hang off a rule on the left, the way the Canva chart draws it. */
 .teamModeSeg { margin-bottom:8px; display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); max-width:none; width:100%; box-sizing:border-box; }
+.repGrid { display:grid; grid-template-columns:1fr; gap:0; }
+@media (min-width:760px){ .repGrid { grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; } .repGrid .card { margin-top:0; } }
+.repTitle { font-weight:800; font-size:16px; margin-bottom:6px; }
+.repRow { display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-top:1px solid var(--border); }
+.repRow:first-of-type { border-top:0; }
+.repLabel small, .repObj small, .repLeaders small { display:block; color:var(--muted); font-size:11.5px; font-weight:400; }
+.repVal { font-weight:800; white-space:nowrap; text-align:right; }
+.repDelta { display:block; font-size:11.5px; font-weight:600; color:var(--muted); }
+.repDelta.up { color:var(--good, #1f8a4c); } .repDelta.down { color:var(--bad, #b3261e); }
+.repSub { font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:800; margin:14px 0 4px; }
+.repLeaders div { padding:3px 0; font-size:13.5px; }
+.repObj { display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-top:1px solid var(--border); font-size:13.5px; }
+.repEmpty { font-size:13px; color:var(--muted); }
+@media print {
+  body.repOn header, body.repOn nav.bottom, body.repOn #menuRoot, body.repOn .noPrint, body.repOn .banner, body.repOn .a2hs, body.repOn #a2hs { display:none !important; }
+  body.repOn { background:#fff !important; color:#000; }
+  body.repOn main { padding:0 !important; max-width:none !important; }
+  body.repOn .repGrid { grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; }
+  body.repOn .card { box-shadow:none !important; border:1px solid #ccc !important; break-inside:avoid; }
+}
 label.f.remBox { display:flex; align-items:center; gap:8px; text-transform:none; letter-spacing:0; font-weight:400; font-size:14px; color:var(--ink); margin-top:10px; }
 .kmrSearch { width:100%; box-sizing:border-box; margin:0 0 10px; }
 .kmrCard .kmrPos { font-size:12px; color:var(--muted); font-weight:700; }
@@ -3127,6 +3147,7 @@ function render(){
      original mockup pairing so each tab's icon actually matches its name. */
   var NAV_SVG_OPEN = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">';
   var NAV_ICONS = {
+    report: NAV_SVG_OPEN+'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 17v-3M12 17v-6M16 17v-2"/></svg>',
     base: NAV_SVG_OPEN+'<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>',
     week: NAV_SVG_OPEN+'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>',
     team: NAV_SVG_OPEN+'<circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.6"/><path d="M3.5 20c.6-3.4 3-5.4 5.5-5.4s4.9 2 5.5 5.4"/><path d="M14.8 15c1.9.2 3.6 1.9 4.1 5"/></svg>',
@@ -3138,13 +3159,14 @@ function render(){
   /* Oct 2026 (Uriah): My Ministry takes Base's place and the Library joins the
      bar; Base moves to the menu, and its key numbers sit on My Home's card. */
   var tabs=[['week','My Home'],['ministry','My Ministry'],['team','Team'+(reqN?' ('+reqN+')':'')],['health','Health'],['library','Library']];
-  if(S.board) tabs=[['ywamgp','YWAM GP'],['base','Campuses'],['library','Library']];
+  if(S.board) tabs=[['ywamgp','YWAM GP'],['base','Campuses'],['report','Report'],['library','Library']];
   else if(S.guest) tabs=[['week','Look around'],['base','Base'],['team','Team'],['health','Health'],['library','Library']];
   nav.classList.remove('hidden');
   nav.innerHTML = tabs.map(function(tab){
     return '<button class="'+(S.view===tab[0]?'on':'')+'" data-tab="'+tab[0]+'"><span class="ic">'+NAV_ICONS[tab[0]]+'</span>'+navLabel_(tab[1])+'</button>';
   }).join('');
   var m=document.getElementById('main');
+  document.body.classList.toggle('repOn', S.view==='report');
   document.body.classList.toggle('libReading', S.view==='library' && !!S.libBook && S.libStep!=null);   // not 'reading': that is the Bible-reading box's class, and its yellow, border and font leaked onto the whole page
   if(LIBA.on && !(S.view==='library' && S.libBook && S.libStep!=null)) libAudioStop_();
   if(S.guest && S.view==='week') m.innerHTML=gpGuestHomeHtml_();
@@ -3152,6 +3174,7 @@ function render(){
   else if(S.view==='base') m.innerHTML=(S.guest ? gpGuestCampusHtml_() : '')+(S.board ? orgCampusProfileHtml_(S.me.campus) : '')+baseHtml();
   else if(S.view==='ywamgp') m.innerHTML=ywamGpHtml();
   else if(S.view==='kmreview') m.innerHTML=kmReviewHtml();
+  else if(S.view==='report') m.innerHTML=boardReportHtml_();
   else if(S.view==='week') m.innerHTML=homeHtml();
   else if(S.view==='health') m.innerHTML=healthHtml();
   else if(S.view==='team') m.innerHTML=teamHtml();
@@ -7083,6 +7106,7 @@ function ywamGpHtml(){
   var empty=GP_ROLES.filter(function(r){ return !O.gp.some(function(p){ return p.gpRole===r[0]; }); }).length;
   if(S.me && S.me.isAdmin && !S.board && empty) h+='<div class="banner" id="orgFillIn">🧩 '+esc(gpT('{n} places on the YWAM GP Leadership Team are not filled yet.',{n:empty}))+
     ' <button class="linkbtn inline" data-adminsubgo="loose" style="width:auto;padding:0">'+esc(t('See what’s missing'))+'</button></div>';
+  if(S.me && !S.board && (S.me.isAdmin || S.me.dept===BL_DEPT)) h+='<button class="btn ghost" id="orgReport">📄 '+esc(t('The quarter report the board sees'))+'</button>';
   h+='<h3>✦ '+esc(t('YWAM GP leadership'))+'</h3><div class="card">';
   GP_ROLES.forEach(function(r){
     var who=O.gp.filter(function(p){ return p.gpRole===r[0]; });
@@ -7188,6 +7212,80 @@ function bindOrg_(){
       });
     };
   });
+}
+
+/* ==================== The quarter report (the board's Report tab) ====================
+   One page a board member can read, or print to PDF for a board meeting: each campus
+   and YWAM GP as a whole, for one quarter of this year against the one before — staff
+   today, the health score (only from three check-ins or more, the same rule as
+   department health), salvations, students in the leadership and community schools,
+   and each campus's objectives with how far along they are. Only figures the board
+   already sees on Campuses (the public getData), the roster's counts and the org's
+   leadership teams: no names beyond the leaders, nothing private. Campus Leadership
+   and admins open it from the YWAM GP page, to see what the board sees. */
+S.repQ=null;
+var REP_MIN_ANSWERS=3;
+function repQ_(){ var cur=qOf(thisWeek()); return (S.repQ===null || S.repQ>cur) ? cur : S.repQ; }
+/* last quarter's figure under this one: "Q3: 17", green when this one is higher */
+function repDelta_(now, before, prevQ, show){
+  if(before===null || before===undefined || prevQ<1) return '';
+  var cls=(now===null || now===undefined || now===before) ? '' : (now>before ? ' up' : ' down');
+  return '<small class="repDelta'+cls+'">Q'+prevQ+': '+(show ? show(before) : fmt(before))+'</small>';
+}
+function repHealth_(R, ids, q){
+  if(q<0) return null;
+  var rows=R.surveyRows(ids, undefined, q);
+  return rows.length>=REP_MIN_ANSWERS ? Math.round(R.healthScore(ids, undefined, q)*10)/10 : null;
+}
+function repRow_(label, now, before, note, prevQ){
+  return '<div class="repRow"><span class="repLabel">'+esc(label)+(note ? '<small>'+esc(note)+'</small>' : '')+'</span>'+
+    '<span class="repVal">'+(now===null || now===undefined ? '—' : fmt(now))+repDelta_(now, before, prevQ)+'</span></div>';
+}
+function repFigures_(R, ids, q){
+  var p=q-1, hs=repHealth_(R, ids, q), hp=repHealth_(R, ids, p), n=R.surveyRows(ids, undefined, q).length;
+  return repRow_(t('Staff'), R.totalStaff(ids), null, t('today'))+
+    '<div class="repRow"><span class="repLabel">'+esc(t('Staff Health Score'))+'<small>'+esc(hs===null ? gpT('needs {n} check-ins or more',{n:REP_MIN_ANSWERS}) : gpT('{n} check-ins',{n:n}))+'</small></span>'+
+      '<span class="repVal">'+(hs===null ? '—' : hs.toFixed(1)+'/10')+repDelta_(hs, hp, q, function(v){ return v.toFixed(1); })+'</span></div>'+
+    repRow_(t('Salvations'), R.headlineFor(ids, 'Salvations', q), p>=0 ? R.headlineFor(ids, 'Salvations', p) : null, '', q)+
+    repRow_(t('Leadership school students'), R.ldStudents(ids, q), p>=0 ? R.ldStudents(ids, p) : null, '', q)+
+    repRow_(t('Leadership school graduates'), R.ldGraduates(ids, q), p>=0 ? R.ldGraduates(ids, p) : null, '', q)+
+    repRow_(t('Community school students'), R.communityStudents(ids, q), p>=0 ? R.communityStudents(ids, p) : null, '', q);
+}
+function boardReportHtml_(){
+  var yr=new Date().getFullYear(), q=repQ_(), cur=qOf(thisWeek());
+  var h=(S.board ? '' : '<button class="linkbtn noPrint" id="repBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('YWAM GP'))+'</button>')+
+    '<div class="repHead"><h2>📄 '+esc(gpT('YWAM GP · Q{q} {year} report',{q:q+1, year:yr}))+'</h2>'+
+    '<p class="sub">'+esc(gpT('Each campus and YWAM GP as a whole, compared with Q{p}. Made {date}.',{p:q>0?q:4, date:teamDate_(todayStr())}))+'</p></div>';
+  h+='<div class="deptChips noPrint">'+[0,1,2,3].map(function(i){
+    return '<button class="deptChip'+(i===q?' on':'')+'" data-repq="'+i+'"'+(i>cur?' disabled':'')+'>Q'+(i+1)+'</button>'; }).join('')+
+    '<button class="deptChip" id="repPrint">🖨️ '+esc(t('Print or save as PDF'))+'</button></div>';
+  if(!S.base) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
+  if(!S.org) orgLoad_();
+  var R=baseR(), all=CAMPUSES.map(function(c){ return c.id; });
+  h+='<div class="repGrid">';
+  h+='<div class="card repCard repAll"><div class="repTitle">🌏 '+esc(t('YWAM GP'))+'</div>'+repFigures_(R, all, q)+'</div>';
+  CAMPUSES.forEach(function(c){
+    var ids=[c.id], oc=orgCampus_(c.id);
+    h+='<div class="card repCard"><div class="repTitle">🏠 '+esc(t(c.name))+'</div>'+repFigures_(R, ids, q);
+    if(oc && oc.clt.length) h+='<div class="repSub">'+esc(t('Campus Leadership Team'))+'</div><div class="repLeaders">'+
+      oc.clt.map(function(p){ return '<div>'+esc(p.name)+' <small>'+esc(orgTitleText_(p.title))+'</small></div>'; }).join('')+'</div>';
+    var objs=((S.base && S.base.okrs)||[]).filter(function(o){ return o.campus===c.id && Number(o.quarter)===q+1; });
+    h+='<div class="repSub">'+esc(gpT('Objectives for Q{q}',{q:q+1}))+(objs.length ? ' · '+esc(gpT('{n}% along on average',{n:Math.round(objs.reduce(function(a,o){ return a+R.objProgress(o); },0)/objs.length)})) : '')+'</div>';
+    h+=objs.length ? objs.map(function(o){ var pc=R.objProgress(o);
+        return '<div class="repObj"><span>'+esc(o.objective)+'<small>'+esc(t(o.dept))+'</small></span><b>'+pc+'%</b></div>'; }).join('')
+      : '<div class="repEmpty">'+esc(t('None set for this quarter.'))+'</div>';
+    h+='</div>';
+  });
+  h+='</div><p class="hint">'+esc(t('Health is shown only from three check-ins or more, so nobody’s answers can be picked out. Staff numbers are as of today.'))+'</p>';
+  return h;
+}
+function bindBoardReport_(){
+  var g=document.getElementById('orgReport');
+  if(g) g.onclick=function(){ gpTap(); S.view='report'; render(); window.scrollTo(0,0); };
+  if(S.view!=='report') return;
+  document.querySelectorAll('[data-repq]').forEach(function(b){ b.onclick=function(){ S.repQ=Number(b.getAttribute('data-repq')); render(); }; });
+  var pr=document.getElementById('repPrint'); if(pr) pr.onclick=function(){ window.print(); };
+  var bk=document.getElementById('repBack'); if(bk) bk.onclick=function(){ S.view='ywamgp'; render(); };
 }
 
 /* ==================== Reminders (Profile & settings → Reminders) ====================
@@ -7433,7 +7531,7 @@ function bindKmReview_(){
 
 /* ---------- a board member's own sign-in (not staff) ---------- */
 var BOARD_KEY='gp-board';
-var BOARD_VIEWS=['ywamgp','base','library'];
+var BOARD_VIEWS=['ywamgp','base','report','library'];
 function boardEnter_(member, creds){
   lsSet(BOARD_KEY, JSON.stringify(creds));
   S.board=member; S.boardAuth=creds; S.guest=true;
@@ -16821,6 +16919,7 @@ function bindAway(){
   if(S.view==='profile') bindReminders_();
   bindOrg_();
   bindKmReview_();
+  bindBoardReport_();
   bindHosp();
   if(S.view==='ministry') bindLead_();
   if(typeof dutyHtml==='function') bindSched_();

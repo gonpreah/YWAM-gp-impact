@@ -432,6 +432,15 @@ Uriah: YWAM GP is YWAM Poipet, YWAM Siem Reap, **YWAM GP** (the organisation) an
 - **Filling it in**: Admin → Loose ends has "The YWAM GP structure isn't filled in" — each
   campus's Campus Directors with no International / National chosen, and every YWAM GP place
   nobody holds. Admins also get a banner on the YWAM GP page with the count and a link there.
+- **The quarter report** (`S.view='report'`; the board's **Report** tab, and "The quarter
+  report the board sees" on the YWAM GP page for Campus Leadership and admins;
+  `boardReportHtml_`): YWAM GP as a whole and each campus for one quarter of this year, each
+  figure with last quarter's under it — staff (today), Staff Health Score (only from
+  `REP_MIN_ANSWERS` = 3 check-ins or more), salvations, leadership-school students and
+  graduates, community-school students — then the campus leadership team and the quarter's
+  objectives with their progress. Only what the board already sees (public getData, roster
+  counts, org). "Print or save as PDF" → window.print(); `body.repOn` print rules hide the
+  app around it.
 - **A board member's sign-in** is a guest-mode variant (`S.board`, `S.guest` true, staff
   `S.auth` empty, `gp-board` in localStorage; index.html sends them here): tabs YWAM GP ·
   Campuses (each campus's leadership, departments with directors and ministry leaders,
