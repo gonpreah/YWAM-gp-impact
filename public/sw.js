@@ -103,3 +103,23 @@ function stripSearch_(req) {
 function noteServedFromCache_() {
   return caches.open('gp-meta').then(function (c) { return c.put('served-from-cache', new Response(String(Date.now()))); }).catch(function () {});
 }
+
+/* Reminders (web push): the server sends { title, body, tag, url }, encrypted to this
+   phone; one notification, replacing the last one with the same tag. Tapping it opens
+   the app, or brings an open copy to the front. */
+self.addEventListener('push', function (e) {
+  var d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'My YWAM GP', {
+    body: d.body || '', tag: d.tag || 'gp-reminder', renotify: true,
+    icon: 'icon-512.png', badge: 'icon-180.png', data: { url: d.url || 'teams.html' }
+  }));
+});
+self.addEventListener('notificationclick', function (e) {
+  e.notification.close();
+  var url = new URL((e.notification.data && e.notification.data.url) || 'teams.html', self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
+    for (var i = 0; i < list.length; i++) { if (list[i].url.indexOf(self.registration.scope) === 0 && 'focus' in list[i]) return list[i].focus(); }
+    return self.clients.openWindow(url);
+  }));
+});

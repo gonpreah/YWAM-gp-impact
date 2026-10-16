@@ -2094,6 +2094,30 @@ inferred from volunteer counts.
   are on screen now rather than sitting in English, which was Uriah's call, but nobody
   who speaks Khmer has read them yet. **Khmer review** (below) is how they get read.
 
+## Reminders — web push (Oct 2026)
+- **Off until an admin turns them on**: Admin → Reminders → "Turn on reminders for the app"
+  (`adminSetUpPush`) makes a P-256 key pair once and keeps it in the `pushKeys` blob,
+  server-side only. GP_VAPID_PUBLIC / GP_VAPID_PRIVATE (raw base64url) / GP_VAPID_SUBJECT in
+  Netlify's environment win if set. No keys → the boot's `push` is null and nothing shows.
+- **Per phone**: Profile & settings → Reminders. iPhone needs the app opened from the Home
+  Screen (iOS 16.4+), and says so. Subscribing uses the boot's public key; the server keeps
+  `{ staffId, endpoint, p256dh, auth, lang }` in `pushSubs`, only for push services in
+  `PUSH_HOSTS` (FCM, Mozilla, Apple, Windows) over https — so a subscription can never point
+  the server elsewhere. Max 5 phones each. Prefs on the staff record (`push`: hour 05–22,
+  daily, oneonone, admin, hr) — never in the roster.
+- **netlify/functions/reminders.js, hourly** → `runReminders` (exported from api.js): each
+  person whose hour it is (Phnom Penh) gets ONE notification listing what applies — today's
+  check-in not in (daily); a mentee with fewer than 2 1-on-1s held this month, Mondays from
+  the 8th (oneonone); sign-ups / moves into Campus Leadership waiting (admins); contracts
+  ending soon, Mondays (HR). Nothing to say → nothing sent. `pushRun` stops an hour sending
+  twice; a 404/410 from the push service drops that subscription.
+- **No library**: VAPID (RFC 8292, ES256 via node crypto, `vapidJwt_`) and aes128gcm payload
+  encryption (RFC 8291, `pushEncrypt_`). The notification text is `PUSH_TEXT` in api.js (en +
+  draft km, chosen by the phone's language at subscribe time) — not km.js.
+- sw.js shows it (`push`) and opens/focuses the app on a tap (`notificationclick`).
+- tests/test-reminders.mjs (decrypts as a phone would, verifies the signature),
+  tests/test-reminders-ui.mjs (a stood-in PushManager).
+
 ## Khmer review (☰ → Language → Khmer review, Oct 2026)
 - For staff an admin ticks as **Khmer reviewer** (`kmReviewer`, Admin → staff) and admins
   (`isKmReviewer_`). One draft at a time from PENDING_KM (minus anything already in
@@ -2193,8 +2217,6 @@ Each of these looked harmless and took the whole page down. `test-degraded.mjs`,
   username + PIN through `saveEntries` and check them in `api.js`, so an unattributed
   number can't reach the blob at all. This is also what makes the campus lock real
   rather than cosmetic.
-- **Web push for the daily nudge.** iOS 16.4+ supports it for installed PWAs; one
-  reminder at a chosen time is the difference between a daily tool and a forgotten one.
 
 
 **Dates in tests** (`tests/clock.mjs`): a browser test whose fixtures depend on today must

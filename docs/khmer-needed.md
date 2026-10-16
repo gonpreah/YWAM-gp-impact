@@ -3427,7 +3427,50 @@ Shown in Profile & settings (the waiting note) and Admin → Approvals.
 
 The guide itself (Library → Made at YWAM GP → Keeping Each Other Safe) is in library-km.js; a Khmer speaker should read it, especially ការបញ្ឆោតទាក់ទាញ for grooming.
 
-### Khmer review (☰ → Khmer review)
+### Reminders (Profile & settings → Reminders, Admin → Reminders)
+
+| English | Khmer (draft) |
+|---|---|
+| Reminders | ការរំលឹក |
+| Reminders are not turned on for the app yet. Turn them on in Admin → Reminders. | ការរំលឹកមិនទាន់បើកសម្រាប់កម្មវិធីនៅឡើយទេ។ បើកវានៅក្នុង អ្នកគ្រប់គ្រង → ការរំលឹក។ |
+| This phone or browser can’t show reminders from the app. | ទូរសព្ទ ឬកម្មវិធីរុករកនេះ មិនអាចបង្ហាញការរំលឹកពីកម្មវិធីបានទេ។ |
+| On iPhone, add the app to your Home Screen first (Share → Add to Home Screen), open it from there, and turn reminders on here. | នៅលើ iPhone សូមបន្ថែមកម្មវិធីទៅអេក្រង់ដើមជាមុនសិន (ចែករំលែក → បន្ថែមទៅអេក្រង់ដើម) បើកវាពីទីនោះ ហើយបើកការរំលឹកនៅទីនេះ។ |
+| Notifications are blocked for this app in your phone’s settings. Allow them there, then come back. | ការជូនដំណឹងត្រូវបានបិទសម្រាប់កម្មវិធីនេះ ក្នុងការកំណត់ទូរសព្ទរបស់អ្នក។ សូមអនុញ្ញាតវានៅទីនោះ រួចត្រឡប់មកវិញ។ |
+| One reminder a day at a time you choose — only when there is something to do. | ការរំលឹកមួយដងក្នុងមួយថ្ងៃ នៅម៉ោងដែលអ្នកជ្រើសរើស — តែនៅពេលមានអ្វីត្រូវធ្វើប៉ុណ្ណោះ។ |
+| Turn on reminders | បើកការរំលឹក |
+| Reminders are on for this phone. | ការរំលឹកត្រូវបានបើកសម្រាប់ទូរសព្ទនេះ។ |
+| Remind me at | រំលឹកខ្ញុំនៅម៉ោង |
+| When today’s check-in isn’t in | ពេលការរាយការណ៍ថ្ងៃនេះមិនទាន់មាន |
+| When my 1-on-1s with a mentee are behind (Mondays) | ពេលការជួបមួយទល់មួយជាមួយកូនសិស្សរបស់ខ្ញុំយឺត (ថ្ងៃច័ន្ទ) |
+| When sign-ups are waiting for approval | ពេលមានការចុះឈ្មោះរង់ចាំការអនុម័ត |
+| When contracts end soon (Mondays) | ពេលកិច្ចសន្យាជិតផុតកំណត់ (ថ្ងៃច័ន្ទ) |
+| Send me a test | ផ្ញើសាកល្បងមកខ្ញុំ |
+| Turn off | បិទ |
+| Reminders could not be turned on on this phone. | មិនអាចបើកការរំលឹកនៅលើទូរសព្ទនេះបានទេ។ |
+| Allow notifications to get reminders. | សូមអនុញ្ញាតការជូនដំណឹង ដើម្បីទទួលការរំលឹក។ |
+| Reminders are on | ការរំលឹកត្រូវបានបើក |
+| Sent — it should arrive in a moment | បានផ្ញើ — វាគួរតែមកដល់បន្តិចទៀតនេះ |
+| It could not be sent. Try turning reminders off and on again. | មិនអាចផ្ញើបានទេ។ សូមសាកល្បងបិទ ហើយបើកការរំលឹកម្ដងទៀត។ |
+| Reminders are off for this phone | ការរំលឹកត្រូវបានបិទសម្រាប់ទូរសព្ទនេះ |
+| Phone reminders: one a day at the time each person chooses, only when there is something to do — today’s check-in, 1-on-1s that are behind, approvals waiting, contracts ending. | ការរំលឹកតាមទូរសព្ទ៖ មួយដងក្នុងមួយថ្ងៃ នៅម៉ោងដែលម្នាក់ៗជ្រើសរើស តែនៅពេលមានអ្វីត្រូវធ្វើ — ការរាយការណ៍ថ្ងៃនេះ ការជួបមួយទល់មួយដែលយឺត ការអនុម័តដែលកំពុងរង់ចាំ កិច្ចសន្យាដែលជិតផុតកំណត់។ |
+| Reminders are off for the app. Turning them on lets each person switch them on for their own phone in Profile & settings. | ការរំលឹកត្រូវបានបិទសម្រាប់កម្មវិធី។ ការបើកវា អនុញ្ញាតឱ្យម្នាក់ៗបើកវាសម្រាប់ទូរសព្ទផ្ទាល់ខ្លួន ក្នុង ប្រវត្តិរូប និងការកំណត់។ |
+| Turn on reminders for the app | បើកការរំលឹកសម្រាប់កម្មវិធី |
+| On | បើក |
+| People with reminders | មនុស្សដែលមានការរំលឹក |
+| Phones | ទូរសព្ទ |
+| Last sent | ផ្ញើចុងក្រោយ |
+| Reminders are on for the app | ការរំលឹកត្រូវបានបើកសម្រាប់កម្មវិធី |
+
+**The notifications themselves** are written on the server (`PUSH_TEXT` in netlify/functions/api.js), not in km.js — a fix goes there:
+
+| English | Khmer (draft) |
+|---|---|
+| Your check-in for today isn’t in yet. | ការរាយការណ៍ប្រចាំថ្ងៃរបស់អ្នកសម្រាប់ថ្ងៃនេះ មិនទាន់មាននៅឡើយទេ។ |
+| {n} of 2 1-on-1s with {name} this month. | ជួបមួយទល់មួយជាមួយ {name} បាន {n} ក្នុងចំណោម 2 ដងក្នុងខែនេះ។ |
+| {n} waiting for your approval in Admin. | {n} កំពុងរង់ចាំការអនុម័តរបស់អ្នក ក្នុងផ្នែកអ្នកគ្រប់គ្រង។ |
+| {n} contracts end soon. | កិច្ចសន្យា {n} នឹងផុតកំណត់ឆាប់ៗនេះ។ |
+| Reminders are on. You will hear from the app at the time you chose. | ការរំលឹកត្រូវបានបើក។ កម្មវិធីនឹងរំលឹកអ្នកនៅម៉ោងដែលអ្នកបានជ្រើសរើស។ |
+
 
 | English | Khmer (draft) |
 |---|---|

@@ -3495,6 +3495,234 @@ async function backupStatus_() {
   };
 }
 
+/* ==================== Reminders: web push (Oct 2026) ====================
+   One reminder a day at the hour a person chooses (Phnom Penh time), only when there
+   is something to say, all in one notification:
+     - today's check-in is not in yet                         (daily)
+     - a mentee you have had fewer than two 1-on-1s with this month, from the 8th, Mondays (oneonone)
+     - sign-ups or moves into Campus Leadership waiting       (admin, admins only)
+     - contracts ending within HR_DUE_DAYS, Mondays           (hr, HR and admins)
+   Sent by netlify/functions/reminders.js every hour (runReminders below).
+
+   The signing keys (VAPID). GP_VAPID_PUBLIC / GP_VAPID_PRIVATE (base64url, the raw
+   65-byte public point and 32-byte private scalar) and GP_VAPID_SUBJECT in Netlify's
+   environment are used when set; otherwise an admin turns reminders on in Admin →
+   Reminders, which makes a key pair once and keeps it in the 'pushKeys' blob — server
+   side only, like the PIN hashes. Without keys, reminders don't exist anywhere.
+
+   Push messages are encrypted to each phone (RFC 8291, aes128gcm) with node's crypto —
+   no library. Subscriptions are in 'pushSubs' ({ staffId, endpoint, p256dh, auth, lang,
+   at }); a push service only from PUSH_HOSTS is ever called, so a subscription can't
+   point the server at anything else. A subscription the service says is gone (404/410)
+   is dropped. Prefs are on the staff record (`push`), never in the roster. */
+const PUSH_HOSTS = [/^fcm\.googleapis\.com$/, /^updates\.push\.services\.mozilla\.com$/, /^([a-z0-9-]+\.)*push\.apple\.com$/, /^([a-z0-9-]+\.)*notify\.windows\.com$/];
+const PUSH_MAX_SUBS = 5;
+const PUSH_HOURS_MIN = 5, PUSH_HOURS_MAX = 22;
+const PUSH_TEXT = {
+  title: { en: 'My YWAM GP', km: 'My YWAM GP' },
+  daily: { en: 'Your check-in for today isn’t in yet.', km: 'ការរាយការណ៍ប្រចាំថ្ងៃរបស់អ្នកសម្រាប់ថ្ងៃនេះ មិនទាន់មាននៅឡើយទេ។' },
+  oneonone: { en: '{n} of 2 1-on-1s with {name} this month.', km: 'ជួបមួយទល់មួយជាមួយ {name} បាន {n} ក្នុងចំណោម 2 ដងក្នុងខែនេះ។' },
+  admin: { en: '{n} waiting for your approval in Admin.', km: '{n} កំពុងរង់ចាំការអនុម័តរបស់អ្នក ក្នុងផ្នែកអ្នកគ្រប់គ្រង។' },
+  hr: { en: '{n} contracts end soon.', km: 'កិច្ចសន្យា {n} នឹងផុតកំណត់ឆាប់ៗនេះ។' },
+  test: { en: 'Reminders are on. You will hear from the app at the time you chose.', km: 'ការរំលឹកត្រូវបានបើក។ កម្មវិធីនឹងរំលឹកអ្នកនៅម៉ោងដែលអ្នកបានជ្រើសរើស។' }
+};
+function pushText_(key, lang, params) {
+  const t = PUSH_TEXT[key] || {};
+  let out = (lang === 'km' && t.km) || t.en || key;
+  Object.keys(params || {}).forEach(function (k) { out = out.split('{' + k + '}').join(String(params[k])); });
+  return out;
+}
+const b64u_ = function (buf) { return Buffer.from(buf).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const unb64u_ = function (s) { return Buffer.from(String(s || '').replace(/-/g, '+').replace(/_/g, '/'), 'base64'); };
+function hkdf_(salt, ikm, info, len) { return Buffer.from(crypto.hkdfSync('sha256', ikm, salt, info, len)); }
+async function pushKeys_() {
+  if (process.env.GP_VAPID_PUBLIC && process.env.GP_VAPID_PRIVATE) {
+    return { pub: process.env.GP_VAPID_PUBLIC, priv: process.env.GP_VAPID_PRIVATE, subject: process.env.GP_VAPID_SUBJECT || 'mailto:admin@gonpreah.org' };
+  }
+  const k = await readJSON('pushKeys', {});
+  return (k && k.pub && k.priv) ? k : null;
+}
+function vapidKeyObject_(pub, priv) {
+  const p = unb64u_(pub);
+  return crypto.createPrivateKey({ key: { kty: 'EC', crv: 'P-256', d: b64u_(unb64u_(priv)), x: b64u_(p.subarray(1, 33)), y: b64u_(p.subarray(33, 65)) }, format: 'jwk' });
+}
+/* The VAPID token for one push service (RFC 8292): ES256 over {aud, exp, sub}. */
+function vapidJwt_(endpoint, keys, nowSec) {
+  const aud = new URL(endpoint).origin;
+  const head = b64u_(JSON.stringify({ typ: 'JWT', alg: 'ES256' }));
+  const body = b64u_(JSON.stringify({ aud: aud, exp: (nowSec || Math.floor(Date.now() / 1000)) + 12 * 3600, sub: keys.subject }));
+  const sig = crypto.sign('sha256', Buffer.from(head + '.' + body), { key: vapidKeyObject_(keys.pub, keys.priv), dsaEncoding: 'ieee-p1363' });
+  return head + '.' + body + '.' + b64u_(sig);
+}
+/* RFC 8291 aes128gcm: one record, encrypted to the phone's key (p256dh) and secret (auth). */
+function pushEncrypt_(sub, payload) {
+  const uaPub = unb64u_(sub.p256dh), auth = unb64u_(sub.auth);
+  const ecdh = crypto.createECDH('prime256v1'); ecdh.generateKeys();
+  const asPub = ecdh.getPublicKey();
+  const secret = ecdh.computeSecret(uaPub);
+  const ikm = hkdf_(auth, secret, Buffer.concat([Buffer.from('WebPush: info\0'), uaPub, asPub]), 32);
+  const salt = crypto.randomBytes(16);
+  const cek = hkdf_(salt, ikm, Buffer.from('Content-Encoding: aes128gcm\0'), 16);
+  const nonce = hkdf_(salt, ikm, Buffer.from('Content-Encoding: nonce\0'), 12);
+  const c = crypto.createCipheriv('aes-128-gcm', cek, nonce);
+  const body = Buffer.concat([c.update(Buffer.concat([Buffer.from(payload, 'utf8'), Buffer.from([2])])), c.final(), c.getAuthTag()]);
+  const rs = Buffer.alloc(4); rs.writeUInt32BE(4096);
+  return Buffer.concat([salt, rs, Buffer.from([asPub.length]), asPub, body]);
+}
+function pushHostOk_(endpoint) {
+  try { const u = new URL(endpoint); return u.protocol === 'https:' && PUSH_HOSTS.some(function (re) { return re.test(u.hostname); }); }
+  catch (e) { return false; }
+}
+/* Sends one message to one subscription. 'gone' when the push service has dropped it. */
+async function pushSend_(sub, message, keys) {
+  if (!pushHostOk_(sub.endpoint)) return 'bad_host';
+  try {
+    const res = await fetch(sub.endpoint, {
+      method: 'POST',
+      headers: { 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', TTL: '43200', Urgency: 'normal',
+        Authorization: 'vapid t=' + vapidJwt_(sub.endpoint, keys) + ', k=' + keys.pub },
+      body: pushEncrypt_(sub, JSON.stringify(message))
+    });
+    if (res.status === 404 || res.status === 410) return 'gone';
+    return res.ok ? 'sent' : 'failed';
+  } catch (e) { return 'failed'; }
+}
+function pushPrefsOf_(s) {
+  const p = (s && s.push) || {};
+  const h = finiteNum_(p.hour, PUSH_HOURS_MIN, PUSH_HOURS_MAX);
+  return { hour: h == null ? 19 : Math.round(h), daily: p.daily !== false, oneonone: p.oneonone !== false, admin: p.admin !== false, hr: p.hr !== false };
+}
+async function getPushSubs_() { return readJSON('pushSubs', []); }
+
+async function savePushSub(username, pin, sub, lang) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!(await pushKeys_())) return { ok: false, err: 'not_set_up' };
+  const endpoint = sub && typeof sub.endpoint === 'string' ? sub.endpoint.slice(0, 1200) : '';
+  const k = (sub && sub.keys) || {};
+  if (!pushHostOk_(endpoint)) return { ok: false, err: 'bad_endpoint' };
+  if (unb64u_(k.p256dh).length !== 65 || unb64u_(k.auth).length !== 16) return { ok: false, err: 'bad_keys' };
+  let rows = (await getPushSubs_()).filter(function (r) { return r.endpoint !== endpoint; });
+  const mine = rows.filter(function (r) { return r.staffId === s.id; });
+  if (mine.length >= PUSH_MAX_SUBS) { const oldest = mine.sort(function (a, b) { return a.at < b.at ? -1 : 1; })[0]; rows = rows.filter(function (r) { return r !== oldest; }); }
+  rows.push({ staffId: s.id, endpoint: endpoint, p256dh: k.p256dh, auth: k.auth, lang: lang === 'km' ? 'km' : 'en', at: new Date().toISOString() });
+  await writeJSON('pushSubs', rows);
+  return { ok: true, prefs: pushPrefsOf_(s) };
+}
+async function deletePushSub(username, pin, endpoint) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const rows = await getPushSubs_();
+  const left = rows.filter(function (r) { return !(r.staffId === s.id && r.endpoint === endpoint); });
+  if (left.length !== rows.length) await writeJSON('pushSubs', left);
+  return { ok: true };
+}
+async function savePushPrefs(username, pin, prefs) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const p = prefs || {};
+  const h = finiteNum_(p.hour, PUSH_HOURS_MIN, PUSH_HOURS_MAX);
+  return mutateStaff_(function (rows) {
+    const i = rows.findIndex(function (r) { return r.id === s.id; });
+    if (i === -1) return { abort: true, ok: false };
+    rows[i].push = { hour: h == null ? 19 : Math.round(h), daily: p.daily !== false, oneonone: p.oneonone !== false, admin: p.admin !== false, hr: p.hr !== false };
+    return { ok: true, prefs: pushPrefsOf_(rows[i]) };
+  });
+}
+async function sendTestPush(username, pin) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const keys = await pushKeys_();
+  if (!keys) return { ok: false, err: 'not_set_up' };
+  const subs = (await getPushSubs_()).filter(function (r) { return r.staffId === s.id; });
+  if (!subs.length) return { ok: false, err: 'no_subscription' };
+  let sent = 0;
+  for (const sub of subs) {
+    const r = await pushSend_(sub, { title: pushText_('title', sub.lang), body: pushText_('test', sub.lang), tag: 'gp-test', url: 'teams.html' }, keys);
+    if (r === 'sent') sent++;
+  }
+  return { ok: sent > 0, sent: sent, err: sent ? undefined : 'not_sent' };
+}
+/* Admin → Reminders: make the app's key pair, once. */
+async function adminSetUpPush(username, pin) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  const have = await pushKeys_();
+  if (have) return { ok: true, ready: true, fromEnv: !!process.env.GP_VAPID_PUBLIC };
+  const ecdh = crypto.createECDH('prime256v1'); ecdh.generateKeys();
+  await writeJSON('pushKeys', { pub: b64u_(ecdh.getPublicKey()), priv: b64u_(ecdh.getPrivateKey()),
+    subject: admin.email ? 'mailto:' + admin.email : 'mailto:admin@gonpreah.org', at: new Date().toISOString(), by: admin.id });
+  return { ok: true, ready: true, fromEnv: false };
+}
+async function adminPushStatus(username, pin) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  const subs = await getPushSubs_();
+  return { ok: true, ready: !!(await pushKeys_()), fromEnv: !!process.env.GP_VAPID_PUBLIC,
+    people: new Set(subs.map(function (r) { return r.staffId; })).size, phones: subs.length, last: await readJSON('pushRun', {}) };
+}
+
+/* What a person's reminder says right now, if anything (keys of PUSH_TEXT + params). */
+function reminderItems_(s, ctx) {
+  const p = pushPrefsOf_(s), out = [];
+  if (p.daily && !ctx.loggedToday[s.id]) out.push({ key: 'daily' });
+  if (p.oneonone && ctx.monday && ctx.dayOfMonth >= 8) {
+    ctx.staff.filter(function (m) { return m.mentorId === s.id && m.mentorStatus === 'approved' && m.active !== false && !m.archived; }).forEach(function (m) {
+      const n = ctx.held[s.id + '|' + m.id] || 0;
+      if (n < OO_PER_MONTH) out.push({ key: 'oneonone', params: { n: n, name: String(m.name || '').split(' ')[0] } });
+    });
+  }
+  if (p.admin && s.isAdmin && ctx.waiting) out.push({ key: 'admin', params: { n: ctx.waiting } });
+  if (p.hr && canHR_(s) && ctx.monday && ctx.hrDue) out.push({ key: 'hr', params: { n: ctx.hrDue } });
+  return out;
+}
+/* netlify/functions/reminders.js, every hour: everyone whose hour it is gets one
+   notification with whatever applies to them. `now` is for tests. */
+async function runReminders(now) {
+  return requestScope.run(new Map(), async function () {
+    const at = now || new Date();
+    const keys = await pushKeys_();
+    if (!keys) return { ok: false, err: 'not_set_up' };
+    const local = new Date(at.getTime() + 7 * 3600 * 1000);
+    const hour = local.getUTCHours(), today = local.toISOString().slice(0, 10), month = today.slice(0, 7);
+    const subs = await getPushSubs_();
+    if (!subs.length) return { ok: true, sent: 0, people: 0 };
+    const run = await readJSON('pushRun', {});
+    if (run.slot === today + 'T' + hour) return { ok: true, sent: 0, skipped: 'already_ran' };
+    const staff = (await getStaff_()).filter(function (r) { return !isApplicant_(r); });
+    const daily = await getDaily_(), loggedToday = {};
+    daily.forEach(function (r) { if (r.date === today) loggedToday[r.staffId] = 1; });
+    const held = {};
+    (await getOneOnOnes_()).forEach(function (r) {
+      if (!r.heldOn || String(r.heldOn).slice(0, 7) !== month) return;
+      const menteeId = ooMenteeOf_(r, staff), mentorId = menteeId === r.fromId ? r.toId : r.fromId;
+      held[mentorId + '|' + menteeId] = (held[mentorId + '|' + menteeId] || 0) + 1;
+    });
+    const ctx = { staff: staff, loggedToday: loggedToday, held: held, monday: local.getUTCDay() === 1, dayOfMonth: local.getUTCDate(),
+      waiting: staff.filter(function (r) { return (!r.active && !r.archived) || (r.active && r.cltRequest); }).length,
+      hrDue: hrDueCount_(staff) };
+    let sent = 0, people = 0, gone = [];
+    for (const s of staff) {
+      if (s.active === false || s.archived) continue;
+      const mine = subs.filter(function (r) { return r.staffId === s.id; });
+      if (!mine.length || pushPrefsOf_(s).hour !== hour) continue;
+      const items = reminderItems_(s, ctx);
+      if (!items.length) continue;
+      people++;
+      for (const sub of mine) {
+        const msg = { title: pushText_('title', sub.lang), body: items.map(function (x) { return pushText_(x.key, sub.lang, x.params); }).join('\n'), tag: 'gp-reminder', url: 'teams.html' };
+        const r = await pushSend_(sub, msg, keys);
+        if (r === 'sent') sent++;
+        if (r === 'gone') gone.push(sub.endpoint);
+      }
+    }
+    if (gone.length) await writeJSON('pushSubs', (await getPushSubs_()).filter(function (r) { return gone.indexOf(r.endpoint) === -1; }));
+    await writeJSON('pushRun', { slot: today + 'T' + hour, at: at.toISOString(), sent: sent, people: people, dropped: gone.length });
+    return { ok: true, sent: sent, people: people, dropped: gone.length };
+  });
+}
+export { runReminders, pushEncrypt_, vapidJwt_ };
+
 /* ---------- Khmer review (Oct 2026) ----------
    About 4,000 of the app's Khmer strings are drafts nobody who speaks Khmer has read
    (PENDING_KM in km.js); 266 are checked (REVIEWED_KM). A Khmer reviewer — an admin
@@ -3559,7 +3787,7 @@ async function saveKmReview(username, pin, key, verdict, km) {
    It deliberately does NOT fail as a unit: each section is caught on its own, so
    a problem reading trips cannot stop the page from having the base's figures. */
 const BOOT_KEYS = ['entries', 'survey', 'okrs', 'dailyLogs', 'goals', 'holidays', 'smartGoals', 'broadcasts',
-  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview'];
+  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys'];
 async function getMyBoot(username, pin) {
   prefetch_(['staff', 'loginThrottle'].concat(BOOT_KEYS));   // before the PIN check, so they travel together
   const s = await verifyStaff_(username, pin);
@@ -3630,6 +3858,7 @@ async function getMyBoot(username, pin) {
     // admins only: when the nightly backup last ran (netlify/functions/backup.js)
     org: await part(function () { return getYwamGp(username, pin); }),   // titles, YWAM GP roles, the advisory board
     kmFixes: await part(async function () { return kmFixesOf_(await getKmReview_()); }),   // a Khmer reviewer's corrections, live for everyone
+    push: await part(async function () { const k = await pushKeys_(); return k ? { key: k.pub, prefs: pushPrefsOf_(s) } : null; }),   // reminders: the app's public key and your times
     backup: s.isAdmin ? await part(backupStatus_) : null,
     // the roster is already top-level above; no need to ship it twice in one response
     base: base ? Object.assign({}, base, { roster: undefined }) : null
@@ -8398,6 +8627,12 @@ const HANDLERS = {
   adminMergeStaff: function (a) { return adminMergeStaff(a[0], a[1], a[2], a[3]); },
   adminUpdateStaff: function (a) { return adminUpdateStaff(a[0], a[1], a[2], a[3]); },
   getKmReview: function (a) { return getKmReview(a[0], a[1]); },
+  savePushSub: function (a) { return savePushSub(a[0], a[1], a[2], a[3]); },
+  deletePushSub: function (a) { return deletePushSub(a[0], a[1], a[2]); },
+  savePushPrefs: function (a) { return savePushPrefs(a[0], a[1], a[2]); },
+  sendTestPush: function (a) { return sendTestPush(a[0], a[1]); },
+  adminSetUpPush: function (a) { return adminSetUpPush(a[0], a[1]); },
+  adminPushStatus: function (a) { return adminPushStatus(a[0], a[1]); },
   saveKmReview: function (a) { return saveKmReview(a[0], a[1], a[2], a[3], a[4]); },
   updateProfile: function (a) { return updateProfile(a[0], a[1], a[2]); },
   changePin: function (a) { return changePin(a[0], a[1], a[2]); },
