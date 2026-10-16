@@ -5268,15 +5268,18 @@ function miniDashboardHtml(){
    menu now): the staff, the base's health score and salvations this year —
    the same figures, from the same rollup, as Base's own hero. Tap → Base. */
 function homeBaseHtml_(){
-  if(!S.base || !S.me || !S.me.campus) return '';
-  var R=baseR(), ids=[S.me.campus], staff=R.totalStaff(ids), hs=R.healthScore(ids), salv=R.headlineFor(ids,'Salvations');
+  if(!S.me || !S.me.campus) return '';
+  /* Drawn before the base's figures arrive too, with a dash for each — so the card is
+     its full size from the first moment and doesn't grow when they land. */
+  var R=S.base ? baseR() : null, ids=[S.me.campus];
+  var staff=R ? R.totalStaff(ids) : null, hs=R ? R.healthScore(ids) : null, salv=R ? R.headlineFor(ids,'Salvations') : null;
   return '<div class="heroDivider"></div>'+
     '<button class="homeBase" id="dashToBase">'+
       '<span class="homeBaseHead"><span>🏠 '+esc(t(campusName(S.me.campus)))+'</span><span class="homeBaseGo">'+esc(t('Base'))+' →</span></span>'+
       '<span class="homeBaseRow">'+
         '<span><b>'+(staff===null?'—':staff)+'</b>'+esc(t('Staff'))+'</span>'+
         '<span><b>'+(hs===null?'—':hs.toFixed(1))+'</b>'+esc(t('Base health'))+'</span>'+
-        '<span><b>'+fmt(salv)+'</b>'+esc(t('Salvations'))+'</span>'+
+        '<span><b>'+(salv===null?'—':fmt(salv))+'</b>'+esc(t('Salvations'))+'</span>'+
       '</span>'+
     '</button>';
 }

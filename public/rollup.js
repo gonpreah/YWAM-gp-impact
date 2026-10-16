@@ -932,10 +932,17 @@ function gpTap(ms){
    markup carries the truth and an interrupted animation still ends up correct.
    Skipped entirely when the reader has asked for less motion: a number sliding up
    is decoration, and the final value is the information. */
+/* A page redraws several times as its data arrives (the boot, then the week's
+   schedules, then a refresh…). A figure that was already on screen with the same
+   value just stays put — it used to count up from 0 and pop in again on every
+   redraw, which read as the card shrinking and growing (Uriah, Oct 2026). Known by
+   where it sits (its nearest id'd box and its place in it) and its value. */
+var gpCountsShown = {};
 function gpAnimateCounts(root){
   var scope = root || document;
   var reduce = false;
   try { reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+  var place = {};
   scope.querySelectorAll('[data-count]').forEach(function(el){
     var target = Number(el.getAttribute('data-count'));
     if(isNaN(target)) return;
@@ -945,6 +952,11 @@ function gpAnimateCounts(root){
     var show = function(v){
       el.textContent = prefix + (dec ? v.toFixed(1) : Math.round(v).toLocaleString()) + suffix;
     };
+    var box = el.closest('[id]'), where = (box ? box.id : '') + '#' + (el.className || '');
+    place[where] = (place[where] || 0) + 1;
+    var key = where + '#' + place[where];
+    if(gpCountsShown[key] === target){ el.style.animation = 'none'; show(target); return; }
+    gpCountsShown[key] = target;
     if(reduce){ show(target); return; }
     var start = performance.now(), dur = 700;
     function tick(now){

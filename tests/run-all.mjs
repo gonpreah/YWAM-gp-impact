@@ -103,6 +103,7 @@ const BROWSER = [
   'test-hr-candidates-page.mjs', // the Candidates tab and the bell: reminders open HR, tiles + follow-ups due, type/stage chips + search, add, move stage, next step, note, archive
   'test-habit-taps.mjs',    // habit tiles stay responsive on a slow or dead connection
   'test-personality-ui.mjs', // the test, the type page and the directory avatars, driven for real
+  'test-hero-steady-ui.mjs',  // My Home's card is one size while it loads; numbers don't re-count on a redraw
   'test-home-layout-ui.mjs',  // My Home: sections in order, said once; Updates capped; annual goals folded; tiles; 320px Khmer
   'test-team-personality-ui.mjs',  // Team → Personalities: the team's mix from shared types only, by campus / department / ministry
   'test-weekly-health-home-ui.mjs',  // My Home health is the weekly check-in only; no daily inputs; habits stay
