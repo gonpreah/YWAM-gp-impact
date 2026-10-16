@@ -3438,6 +3438,46 @@ The guide itself (Library → Made at YWAM GP → Keeping Each Other Safe) is in
 | {n} places on the YWAM GP Leadership Team are not filled yet. | តួនាទី {n} ក្នុងក្រុមដឹកនាំ YWAM GP មិនទាន់មានអ្នកកាន់នៅឡើយទេ។ |
 | See what’s missing | មើលអ្វីដែលខ្វះ |
 
+### Support raising (My Home → Support raising)
+
+| English | Khmer (draft) |
+|---|---|
+| Support raising | ការរកការគាំទ្រ |
+| ${n} of ${goal} a month | ${n} ក្នុងចំណោម ${goal} ក្នុងមួយខែ |
+| Your partners and monthly goal | ដៃគូរបស់អ្នក និងគោលដៅប្រចាំខែ |
+| Your ministry partners and what you are trusting God for each month. Only you see this list. | ដៃគូក្នុងកិច្ចការបម្រើរបស់អ្នក និងអ្វីដែលអ្នកទុកចិត្តលើព្រះជាម្ចាស់សម្រាប់ជារៀងរាល់ខែ។ មានតែអ្នកទេដែលឃើញបញ្ជីនេះ។ |
+| My monthly goal (US$) | គោលដៅប្រចាំខែរបស់ខ្ញុំ (ដុល្លារ) |
+| ${n} a month pledged | បានសន្យា ${n} ក្នុងមួយខែ |
+| giving | កំពុងផ្ដល់ |
+| asked | បានសុំ |
+| to ask | ត្រូវសុំ |
+| to thank or follow up | ត្រូវអរគុណ ឬតាមដាន |
+| My mentor can see these totals — never the names | អ្នកណែនាំរបស់ខ្ញុំអាចឃើញចំនួនសរុបទាំងនេះ — មិនមែនឈ្មោះទេ |
+| Partners | ដៃគូ |
+| Giving | កំពុងផ្ដល់ |
+| Asked | បានសុំ |
+| To ask | ត្រូវសុំ |
+| Paused | ផ្អាក |
+| To thank or follow up | ត្រូវអរគុណ ឬតាមដាន |
+| Add a partner | បន្ថែមដៃគូ |
+| Add the people and churches who give to your ministry, or who you hope to ask. | បន្ថែមមនុស្ស និងក្រុមជំនុំ ដែលផ្ដល់ដល់កិច្ចការបម្រើរបស់អ្នក ឬដែលអ្នកសង្ឃឹមថានឹងសុំ។ |
+| last in touch {date} | ទាក់ទងចុងក្រោយ {date} |
+| Kept on your account and seen by nobody else. A partner shows under "to thank or follow up" when you have not been in touch for {n} days. | រក្សាទុកក្នុងគណនីរបស់អ្នក ហើយគ្មាននរណាម្នាក់ផ្សេងទៀតឃើញទេ។ ដៃគូម្នាក់នឹងបង្ហាញនៅក្រោម «ត្រូវអរគុណ ឬតាមដាន» ពេលអ្នកមិនបានទាក់ទងរយៈពេល {n} ថ្ងៃ។ |
+| Amount (US$) | ចំនួនទឹកប្រាក់ (ដុល្លារ) |
+| Where things are | ស្ថានភាព |
+| Last in touch | ទាក់ទងចុងក្រោយ |
+| Remove this partner | ដកដៃគូនេះចេញ |
+| Remove this partner? | ដកដៃគូនេះចេញ? |
+| a month | ក្នុងមួយខែ |
+| a year | ក្នុងមួយឆ្នាំ |
+| once | ម្ដង |
+| ${n} of ${goal} a month ({pct}%) | ${n} ក្នុងចំណោម ${goal} ក្នុងមួយខែ ({pct}%) |
+| {a} giving · {b} asked · {c} still to ask | {a} កំពុងផ្ដល់ · {b} បានសុំ · {c} នៅត្រូវសុំ |
+| {n} to thank or follow up | {n} ត្រូវអរគុណ ឬតាមដាន |
+| {name} shares these totals with you — never the names. | {name} ចែករំលែកចំនួនសរុបទាំងនេះជាមួយអ្នក — មិនមែនឈ្មោះទេ។ |
+
+Private money words — worth a careful read: ការរកការគាំទ្រ for support raising, ដៃគូ for partner, សន្យា for pledged.
+
 ### Your first 30 days (My Home, for someone new)
 
 | English | Khmer (draft) |

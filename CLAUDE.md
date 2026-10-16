@@ -2106,6 +2106,24 @@ inferred from volunteer counts.
   are on screen now rather than sitting in English, which was Uriah's call, but nobody
   who speaks Khmer has read them yet. **Khmer review** (below) is how they get read.
 
+## Support raising (My Home → Support raising, Oct 2026)
+- Each staff member's ministry partners and monthly goal (US$), on their own staff record
+  (`support`: { goal, partners[{ id, name, amount, freq month|year|once, status
+  giving|asked|toask|paused, last, note }], mentorVisible }), `getMySupport` /
+  `saveMySupport` (whole list, via mutateStaff_; max 300). **Private like debt**: never in
+  the roster, staffProfile, admin or HR lists, or anyone's boot but your own (your boot has
+  only your totals, `supportSummary`, for the My Home tile).
+- **The mentor sees totals only, and only with consent** (`mentorVisible`, "My mentor can see
+  these totals — never the names"): getMenteeLogs' `support` is `supportSummary_` — goal,
+  pledged a month, % of goal, counts giving / asked / to ask, and how many to thank or
+  follow up. Partner names never leave the person's account. Leadership sees nothing.
+- Pledged a month = giving partners: monthly as is, yearly / 12, once not counted.
+  "To thank or follow up": not paused and not in touch for `SUP_FOLLOW_DAYS` (90), or asked /
+  giving with no contact date.
+- **Language** needed nothing new: the "Language study" habit tile streaks, the weekly
+  check-in has language hours, and the 1-on-1 check-in rates language 1–5.
+- tests/test-support-ui.mjs.
+
 ## Your first 30 days (My Home, Oct 2026)
 - For someone whose account is under `F30_DAYS` (45) old (`created`, now in the boot's own
   staff card — not the roster): a card above the goals with what makes a good start, every

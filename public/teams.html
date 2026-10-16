@@ -1802,7 +1802,7 @@ body.hxOn { overflow:hidden; }
 .repLabel small, .repObj small, .repLeaders small { display:block; color:var(--muted); font-size:11.5px; font-weight:400; }
 .repVal { font-weight:800; white-space:nowrap; text-align:right; }
 .repDelta { display:block; font-size:11.5px; font-weight:600; color:var(--muted); }
-.repDelta.up { color:var(--goodInk); } .repDelta.down { color:var(--bad); }
+.repDelta.up { color:var(--good); } .repDelta.down { color:var(--bad); }
 .repSub { font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:800; margin:14px 0 4px; }
 .repLeaders div { padding:3px 0; font-size:13.5px; }
 .repObj { display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-top:1px solid var(--border); font-size:13.5px; }
@@ -1818,7 +1818,21 @@ body.hxOn { overflow:hidden; }
 .f30Row > span:nth-child(2) { flex:1; }
 .f30Row.done { color:var(--muted); cursor:default; }
 .f30Tick { width:22px; height:22px; flex:none; border-radius:50%; border:2px solid var(--border2, var(--border)); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; }
-.f30Row.done .f30Tick { background:var(--goodSoft); border-color:var(--goodSoft); color:var(--goodInk); }
+.f30Row.done .f30Tick { background:var(--goodSoft); border-color:var(--goodSoft); color:var(--good); }
+.supStats { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px; font-size:13px; color:var(--muted); }
+.supStats b { color:var(--ink); }
+.supStats .supDue b { color:var(--bad); }
+.supRow { display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:none; border:0; border-top:1px solid var(--border); padding:10px 0; font:inherit; color:var(--ink); cursor:pointer; }
+.supRow:first-child { border-top:0; }
+.supName { flex:1; min-width:0; font-weight:700; }
+.supName small { display:block; font-weight:400; color:var(--muted); font-size:12px; }
+.supStatus { font-size:11.5px; font-weight:800; padding:3px 9px; border-radius:999px; background:var(--surface2); color:var(--muted); white-space:nowrap; }
+.supStatus.giving { background:var(--goodSoft); color:var(--good); }
+.supStatus.asked { background:var(--surface2); color:var(--ink); }
+.supDueDot { width:8px; height:8px; border-radius:50%; background:var(--bad); flex:none; }
+.supTwo { display:flex; gap:10px; }
+.supTwo > span { flex:1; min-width:0; }
+.supForm { padding:10px 0; border-top:1px solid var(--border); }
 label.f.remBox { display:flex; align-items:center; gap:8px; text-transform:none; letter-spacing:0; font-weight:400; font-size:14px; color:var(--ink); margin-top:10px; }
 .kmrSearch { width:100%; box-sizing:border-box; margin:0 0 10px; }
 .kmrCard .kmrPos { font-size:12px; color:var(--muted); font-weight:700; }
@@ -1827,7 +1841,7 @@ label.f.remBox { display:flex; align-items:center; gap:8px; text-transform:none;
 .kmrEn { font-size:15px; line-height:1.45; }
 .kmrKm { font-size:17px; line-height:1.7; }
 .kmrDone { margin:12px 0 0; padding:10px 12px; border-radius:10px; background:var(--surface2); font-size:13px; }
-.kmrDone.ok { color:var(--goodInk); }
+.kmrDone.ok { color:var(--good); }
 .kmrCard textarea { width:100%; box-sizing:border-box; font-size:17px; line-height:1.6; }
 .kmrActs { display:flex; gap:8px; margin-top:12px; }
 .kmrActs .btn { margin:0; flex:1; }
@@ -3037,6 +3051,7 @@ function applyBoot(d, fromCache){
   S.hrFollowUps = (d.hrFollowUps===undefined) ? null : d.hrFollowUps;
   S.reqDocs = d.reqDocs || [];
   S.required = d.required || null;      // what this profile still needs (the papers and the contract)
+  S.supSum = d.supportSummary || null;   // support raising: your own totals (the full list loads on its page)
   libAdoptServer_(d.libRead, fromCache);
   if(d.teamTrips && d.teamTrips.ok) S.teamTrips[d.teamTrips.campus] = { trips: d.teamTrips.trips || [], canEdit: !!d.teamTrips.canEdit };
   S.smartGoals = d.smartGoals || [];
@@ -3180,6 +3195,7 @@ function render(){
   else if(S.view==='ywamgp') m.innerHTML=ywamGpHtml();
   else if(S.view==='kmreview') m.innerHTML=kmReviewHtml();
   else if(S.view==='report') m.innerHTML=boardReportHtml_();
+  else if(S.view==='support') m.innerHTML=supportHtml_();
   else if(S.view==='week') m.innerHTML=homeHtml();
   else if(S.view==='health') m.innerHTML=healthHtml();
   else if(S.view==='team') m.innerHTML=teamHtml();
@@ -5588,6 +5604,8 @@ function aboutMeHtml_(){
       ? homeTile_('gsSeeMine', '💪', t('Strengths'), '<span class="sChips homeTileChips">'+g.top.map(function(id,i){ return gsChipHtml(id,i+1); }).join('')+'</span>')
       : homeTile_('gsStart', '💪', t('Strengths'), esc(t('Find your top 5 strengths')));
   }
+  var ss=S.supSum;
+  tiles += homeTile_('supTile', '💰', t('Support raising'), esc(ss && ss.goal ? gpT('${n} of ${goal} a month',{n:fmt(ss.pledged), goal:fmt(ss.goal)}) : t('Your partners and monthly goal')));
   var nb=libBooksRead_();
   tiles += homeTile_('libHomeTile', '📚', t('Library'), esc(nb ? gpT('{n} books read',{n:nb}) : t('Ten-minute reads')));
   return '<h3 id="sec-ptype">🧭 '+esc(t('About me'))+'</h3><div class="homeTiles" id="sec-strengths">'+tiles+'</div>';
@@ -7347,6 +7365,119 @@ function bindF30_(){
   });
   var hd=document.getElementById('f30Hide');
   if(hd) hd.onclick=function(){ lsSet(F30_HIDE_KEY, S.me.id); render(); };
+}
+
+/* ==================== Support raising (My Home → Support raising) ====================
+   Your ministry partners and the monthly support you are trusting God for — private,
+   like staff debt: only you see the list; your mentor sees the totals, and only if you
+   tick it (getMySupport / saveMySupport, "Support raising" in api.js). The whole list is
+   saved at once on every change; it loads only on this page. */
+S.sup=null; S.supErr=''; S.supEdit=null; S.supFilter='all'; S.supBusy=false;
+var SUP_STATUS_LABEL={ giving:'Giving', asked:'Asked', toask:'To ask', paused:'Paused' };
+var SUP_FREQ_LABEL={ month:'a month', year:'a year', once:'once' };
+function supLoad_(){
+  if(S.supLoading) return; S.supLoading=true;
+  run('getMySupport',[S.auth.user,S.auth.pin],function(d){ S.supLoading=false; if(d && d.ok){ S.sup=d; S.supSum=d.summary; } else S.supErr=t('Could not load'); if(S.view==='support') render(); },
+    function(){ S.supLoading=false; S.supErr=t('Could not load'); if(S.view==='support') render(); });
+}
+function supSave_(next, msg){
+  S.supBusy=true;
+  run('saveMySupport',[S.auth.user,S.auth.pin,next],function(d){
+    S.supBusy=false;
+    if(d && d.ok){ S.sup=d; S.supSum=d.summary; S.supEdit=null; render(); if(msg) showMsg(msg); }
+    else { render(); showMsg(t('Could not save')); }
+  });
+}
+function supDue_(p, days){
+  if(p.status==='paused') return false;
+  if(!p.last) return p.status!=='toask';
+  return (new Date(todayStr())-new Date(p.last))/86400000 >= days;
+}
+function supportHtml_(){
+  var h='<button class="linkbtn" id="supBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('My Home'))+'</button>'+
+    '<h2>💰 '+esc(t('Support raising'))+'</h2><p class="sub">'+esc(t('Your ministry partners and what you are trusting God for each month. Only you see this list.'))+'</p>';
+  if(!S.sup){ supLoad_(); return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.supErr||t('Loading…'))+'</p></div>'; }
+  var sup=S.sup.support, sm=S.sup.summary, days=S.sup.followDays||90, pct=sm.goal ? Math.min(100, sm.pct) : 0;
+  h+='<div class="card"><label class="f" for="supGoal">'+esc(t('My monthly goal (US$)'))+'</label>'+
+    '<input type="number" id="supGoal" inputmode="numeric" min="0" value="'+(sup.goal||'')+'" placeholder="0">'+
+    '<div class="pBar" style="margin-top:12px"><div class="pBarTop"><b>'+esc(gpT('${n} a month pledged',{n:fmt(sm.pledged)}))+'</b><span>'+(sm.goal ? sm.pct+'%' : '')+'</span></div>'+
+    '<div class="pTrack"><div class="pFill" style="left:0;width:'+pct+'%;background:var(--accent)"></div></div></div>'+
+    '<div class="supStats"><span><b>'+sm.giving+'</b> '+esc(t('giving'))+'</span><span><b>'+sm.asked+'</b> '+esc(t('asked'))+'</span><span><b>'+sm.toask+'</b> '+esc(t('to ask'))+'</span>'+
+      (sm.followUp ? '<span class="supDue"><b>'+sm.followUp+'</b> '+esc(t('to thank or follow up'))+'</span>' : '')+'</div>'+
+    '<label class="f remBox"><input type="checkbox" id="supShare"'+(sup.mentorVisible?' checked':'')+'> '+esc(t('My mentor can see these totals — never the names'))+'</label></div>';
+  var chip=function(id, label, n){ return '<button class="deptChip'+(S.supFilter===id?' on':'')+'" data-supfilter="'+id+'">'+esc(label)+(n!==undefined?' · '+n:'')+'</button>'; };
+  var list=sup.partners.filter(function(p){ return S.supFilter==='all' ? true : S.supFilter==='due' ? supDue_(p, days) : p.status===S.supFilter; })
+    .sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); });
+  h+='<h3>🤝 '+esc(t('Partners'))+' <small>· '+sup.partners.length+'</small></h3>';
+  h+='<div class="deptChips">'+chip('all', t('All'))+chip('giving', t('Giving'), sm.giving)+chip('asked', t('Asked'), sm.asked)+chip('toask', t('To ask'), sm.toask)+
+    (sm.followUp ? chip('due', t('To thank or follow up'), sm.followUp) : '')+'</div>';
+  if(S.supEdit==='new') h+=supFormHtml_({ id:'', name:'', amount:'', freq:'month', status:'toask', last:'', note:'' }, true);
+  else h+='<button class="btn" id="supAdd"'+(S.supBusy?' disabled':'')+'>＋ '+esc(t('Add a partner'))+'</button>';
+  if(!sup.partners.length && S.supEdit!=='new') h+='<div class="card"><p class="sub" style="margin:0">'+esc(t('Add the people and churches who give to your ministry, or who you hope to ask.'))+'</p></div>';
+  else if(list.length){
+    h+='<div class="card">';
+    list.forEach(function(p){
+      if(S.supEdit===p.id){ h+=supFormHtml_(p, false); return; }
+      h+='<button class="supRow" data-supedit="'+esc(p.id)+'"><span class="supName">'+esc(p.name)+
+        '<small>'+(p.amount ? '$'+esc(fmt(p.amount))+' '+esc(t(SUP_FREQ_LABEL[p.freq])) : '')+(p.last ? ' · '+esc(gpT('last in touch {date}',{date:teamDate_(p.last)})) : '')+'</small></span>'+
+        '<span class="supStatus '+p.status+'">'+esc(t(SUP_STATUS_LABEL[p.status]))+'</span>'+(supDue_(p, days)?'<span class="supDueDot" title="'+esc(t('To thank or follow up'))+'"></span>':'')+'</button>';
+    });
+    h+='</div>';
+  }
+  return h+'<p class="hint">🔒 '+esc(gpT('Kept on your account and seen by nobody else. A partner shows under "to thank or follow up" when you have not been in touch for {n} days.',{n:days}))+'</p>';
+}
+function supFormHtml_(p, isNew){
+  var sel=function(id, map, cur){ return '<select id="'+id+'">'+Object.keys(map).map(function(k){ return '<option value="'+k+'"'+(k===cur?' selected':'')+'>'+esc(t(map[k]))+'</option>'; }).join('')+'</select>'; };
+  return '<div class="supForm'+(isNew?' card':'')+'" data-supform="'+esc(p.id)+'">'+
+    '<label class="f" for="supName">'+esc(t('Name'))+'</label><input id="supName" maxlength="80" value="'+esc(p.name)+'">'+
+    '<div class="supTwo"><span><label class="f" for="supAmt">'+esc(t('Amount (US$)'))+'</label><input type="number" id="supAmt" inputmode="decimal" min="0" value="'+esc(p.amount===''?'':String(p.amount))+'"></span>'+
+      '<span><label class="f" for="supFreq">'+esc(t('How often'))+'</label>'+sel('supFreq', SUP_FREQ_LABEL, p.freq)+'</span></div>'+
+    '<label class="f" for="supStatus">'+esc(t('Where things are'))+'</label>'+sel('supStatus', SUP_STATUS_LABEL, p.status)+
+    '<label class="f" for="supLast">'+esc(t('Last in touch'))+'</label><div class="supTwo"><span><input type="date" id="supLast" value="'+esc(p.last)+'"></span><span><button class="btn ghost" id="supToday" style="margin:0">'+esc(t('Today'))+'</button></span></div>'+
+    '<label class="f" for="supNote">'+esc(t('Note'))+'</label><textarea id="supNote" rows="2" maxlength="300">'+esc(p.note)+'</textarea>'+
+    '<div class="kmrActs"><button class="btn" id="supSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="supCancel">'+esc(t('Cancel'))+'</button></div>'+
+    (isNew ? '' : '<button class="linkbtn inline" id="supDel" style="width:auto;padding:0;margin-top:8px;color:var(--bad)">'+esc(t('Remove this partner'))+'</button>')+'</div>';
+}
+function bindSupport_(){
+  var tile=document.getElementById('supTile');
+  if(tile) tile.onclick=function(){ gpTap(); S.sup=null; S.supErr=''; S.supEdit=null; S.view='support'; render(); window.scrollTo(0,0); };
+  if(S.view!=='support' || !S.sup) { var bk0=document.getElementById('supBack'); if(bk0) bk0.onclick=function(){ S.view='week'; render(); }; return; }
+  var sup=S.sup.support;
+  var copy=function(){ return JSON.parse(JSON.stringify(sup)); };
+  var on=function(id, fn){ var el=document.getElementById(id); if(el) el.onclick=fn; };
+  on('supBack', function(){ S.view='week'; render(); });
+  var g=document.getElementById('supGoal');
+  if(g) g.onchange=function(){ var c=copy(); c.goal=Math.max(0, Math.round(Number(g.value)||0)); supSave_(c, t('Saved')); };
+  var sh=document.getElementById('supShare');
+  if(sh) sh.onchange=function(){ var c=copy(); c.mentorVisible=!!sh.checked; supSave_(c, t('Saved')); };
+  document.querySelectorAll('[data-supfilter]').forEach(function(b){ b.onclick=function(){ S.supFilter=b.getAttribute('data-supfilter'); render(); }; });
+  document.querySelectorAll('[data-supedit]').forEach(function(b){ b.onclick=function(){ S.supEdit=b.getAttribute('data-supedit'); render(); }; });
+  on('supAdd', function(){ S.supEdit='new'; render(); var n=document.getElementById('supName'); if(n) n.focus(); });
+  on('supCancel', function(){ S.supEdit=null; render(); });
+  on('supToday', function(){ var l=document.getElementById('supLast'); if(l) l.value=todayStr(); });
+  on('supSave', function(){
+    var name=(document.getElementById('supName').value||'').trim();
+    if(!name){ showMsg(t('Add their name')); return; }
+    var p={ id:S.supEdit==='new' ? '' : S.supEdit, name:name, amount:Number(document.getElementById('supAmt').value)||0,
+      freq:document.getElementById('supFreq').value, status:document.getElementById('supStatus').value,
+      last:document.getElementById('supLast').value||'', note:document.getElementById('supNote').value||'' };
+    var c=copy();
+    if(S.supEdit==='new') c.partners.push(p);
+    else c.partners=c.partners.map(function(x){ return x.id===S.supEdit ? p : x; });
+    supSave_(c, t('Saved'));
+  });
+  on('supDel', function(){
+    if(!confirm(t('Remove this partner?'))) return;
+    var c=copy(); c.partners=c.partners.filter(function(x){ return x.id!==S.supEdit; }); supSave_(c, t('Removed'));
+  });
+}
+/* On a mentee's page: their totals, when they share them. Never the names. */
+function supMentorCardHtml_(ss, m){
+  if(!ss) return '';
+  return '<div class="card"><div class="mentorLabel">💰 '+esc(t('Support raising'))+'</div>'+
+    '<p style="margin:4px 0 0">'+esc(ss.goal ? gpT('${n} of ${goal} a month ({pct}%)',{n:fmt(ss.pledged), goal:fmt(ss.goal), pct:ss.pct}) : gpT('${n} a month pledged',{n:fmt(ss.pledged)}))+'</p>'+
+    '<p class="hint" style="margin:4px 0 0">'+esc(gpT('{a} giving · {b} asked · {c} still to ask',{a:ss.giving, b:ss.asked, c:ss.toask}))+(ss.followUp ? ' · '+esc(gpT('{n} to thank or follow up',{n:ss.followUp})) : '')+'</p>'+
+    '<p class="hint" style="margin:4px 0 0">🔒 '+esc(gpT('{name} shares these totals with you — never the names.',{name:firstName_(m.name)}))+'</p></div>';
 }
 
 /* ==================== Reminders (Profile & settings → Reminders) ====================
@@ -16135,6 +16266,7 @@ function mentorHtml(){
     h+='<div class="card"><div class="pcard">'+avatarHtml(m,'lg')+'<div><div class="pname">'+esc(m.name)+'</div><div class="pmeta">'+esc(m.dept)+(m.role?' · '+esc(m.role):'')+'</div></div></div></div>';
     h+='<div class="banner">🔒 Shared with you as '+esc(m.name.split(' ')[0])+'\u2019s mentor. Hold it with care and prayer — this is trust, not surveillance.</div>';
     if(S.menteeProfile && S.menteeProfile.debt) h+='<div class="banner">💰 Currently carrying staff debt.</div>';
+    h+=supMentorCardHtml_(S.menteeSupport, m);
     h+=ooMenteeSectionHtml_(m);
 
     /* Any week, not just the latest: a picker at the top, and every section
@@ -16983,6 +17115,7 @@ function bindAway(){
   bindKmReview_();
   bindBoardReport_();
   bindF30_();
+  bindSupport_();
   bindHosp();
   if(S.view==='ministry') bindLead_();
   if(typeof dutyHtml==='function') bindSched_();
@@ -17095,7 +17228,7 @@ function bindHome(){
       run('getMenteeLogs',[S.auth.user,S.auth.pin,id],function(d){
         if(d.ok){
           S.view='mentor'; S.mentee=d.mentee; S.menteeWeek=null; S.menteeLogs=d.logs; S.menteeGoals=d.goals||[];
-          S.menteeProfile=d.profile; S.menteeCheckins=d.checkins||[];
+          S.menteeProfile=d.profile; S.menteeCheckins=d.checkins||[]; S.menteeSupport=d.support||null;
           S.menteeHabits=d.habits||[]; S.menteeMinistry=d.ministry||null; S.menteeTrips=d.trips||null; S.menteeSmart=d.smartGoals||[];
           render();
         }
@@ -18144,7 +18277,7 @@ function bind(){
       run('getMenteeLogs',[S.auth.user,S.auth.pin,id],function(d){
         if(d.ok){
           S.mentee=d.mentee; S.menteeWeek=null; S.menteeLogs=d.logs; S.menteeGoals=d.goals||[];
-          S.menteeProfile=d.profile; S.menteeCheckins=d.checkins||[];
+          S.menteeProfile=d.profile; S.menteeCheckins=d.checkins||[]; S.menteeSupport=d.support||null;
           S.menteeHabits=d.habits||[]; S.menteeMinistry=d.ministry||null; S.menteeTrips=d.trips||null; S.menteeSmart=d.smartGoals||[];
           render();
         }

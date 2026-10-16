@@ -1576,6 +1576,7 @@ async function getMenteeLogs(username, pin, menteeId) {
     goals: goalsFor_(await getGoals_(), m.id),
     checkins: checkins,
     profile: { debt: m.debt },
+    support: (m.support && m.support.mentorVisible) ? supportSummary_(m.support) : null,   // totals only, and only when shared
     ministry: await ministryDataFor_(m),
     trips: { trips: menteeTrips.map(tripOut_), totals: awayTotals_(menteeTrips), ptoCap: PTO_ANNUAL_CAP, holidays: holidayList_() },
     smartGoals: smartGoalsOut_(menteeSmart, menteeTasks)
@@ -3495,6 +3496,72 @@ async function backupStatus_() {
   };
 }
 
+/* ==================== Support raising (Oct 2026) ====================
+   Living by faith: each staff member's own list of ministry partners and the monthly
+   support they are aiming for — private like staff debt. The person sees and edits
+   everything (getMySupport / saveMySupport); their mentor sees TOTALS only (goal,
+   pledged a month, how many giving / asked / still to ask, how many to thank or follow
+   up), and only while the person has ticked "my mentor can see my totals"
+   (`mentorVisible`, the same consent as a habit's). Partner names never leave the
+   person's own account. Leadership sees nothing. Kept on the staff record (`support`),
+   never in the roster or anyone else's boot.
+   Partner: { id, name, amount (USD), freq 'month'|'year'|'once', status
+   'giving'|'asked'|'toask'|'paused', last (date of last contact), note }. Monthly
+   pledged counts giving partners: a month as it is, a year / 12; once is not monthly. */
+const SUP_MAX_PARTNERS = 300;
+const SUP_FREQS = ['month', 'year', 'once'];
+const SUP_STATUS = ['giving', 'asked', 'toask', 'paused'];
+const SUP_FOLLOW_DAYS = 90;
+function cleanSupport_(v) {
+  const o = v || {};
+  const goal = finiteNum_(o.goal, 0, 1000000);
+  const seen = {};
+  const partners = (Array.isArray(o.partners) ? o.partners : []).slice(0, SUP_MAX_PARTNERS).map(function (p) {
+    const name = String(str_(p && p.name, 80) || '').trim();
+    if (!name) return null;
+    let id = String(str_(p.id, 24) || '').replace(/[^a-z0-9]/gi, '');
+    if (!id || seen[id]) id = 'p' + crypto.randomBytes(5).toString('hex');
+    seen[id] = 1;
+    const amt = finiteNum_(p.amount, 0, 1000000);
+    return { id: id, name: name, amount: amt == null ? 0 : Math.round(amt * 100) / 100,
+      freq: SUP_FREQS.indexOf(p.freq) > -1 ? p.freq : 'month', status: SUP_STATUS.indexOf(p.status) > -1 ? p.status : 'toask',
+      last: isDate_(p.last) ? p.last : '', note: String(str_(p.note, 300) || '') };
+  }).filter(Boolean);
+  return { goal: goal == null ? 0 : Math.round(goal), partners: partners, mentorVisible: !!o.mentorVisible };
+}
+function supMonthly_(p) { return p.status !== 'giving' ? 0 : p.freq === 'month' ? p.amount : p.freq === 'year' ? p.amount / 12 : 0; }
+function supportSummary_(v) {
+  const s = cleanSupport_(v), today = baseToday_();
+  const pledged = Math.round(s.partners.reduce(function (a, p) { return a + supMonthly_(p); }, 0));
+  const count = function (st) { return s.partners.filter(function (p) { return p.status === st; }).length; };
+  const follow = s.partners.filter(function (p) {
+    if (p.status === 'paused') return false;
+    if (!p.last) return p.status !== 'toask';
+    return (new Date(today) - new Date(p.last)) / 86400000 >= SUP_FOLLOW_DAYS;
+  }).length;
+  return { goal: s.goal, pledged: pledged, pct: s.goal ? Math.round(pledged / s.goal * 100) : null,
+    giving: count('giving'), asked: count('asked'), toask: count('toask'), followUp: follow };
+}
+async function getMySupport(username, pin) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const sup = cleanSupport_(s.support);
+  return { ok: true, support: sup, summary: supportSummary_(sup), followDays: SUP_FOLLOW_DAYS };
+}
+async function saveMySupport(username, pin, support) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const clean = cleanSupport_(support);
+  const r = await mutateStaff_(function (rows) {
+    const i = rows.findIndex(function (x) { return x.id === s.id; });
+    if (i === -1) return { abort: true, ok: false };
+    rows[i].support = clean;
+    return { ok: true };
+  });
+  if (!r.ok) return r;
+  return { ok: true, support: clean, summary: supportSummary_(clean), followDays: SUP_FOLLOW_DAYS };
+}
+
 /* ==================== Reminders: web push (Oct 2026) ====================
    One reminder a day at the hour a person chooses (Phnom Penh time), only when there
    is something to say, all in one notification:
@@ -3853,6 +3920,7 @@ async function getMyBoot(username, pin) {
     hrFollowUps: canHR_(s) ? candFollowUpsCount_(candRows || []) : null,
     // the books they have marked read in the Library, and the papers every staff member signs
     libRead: cleanLibRead_(s.libRead),
+    supportSummary: s.support ? supportSummary_(s.support) : null,   // support raising: your own totals, for My Home's tile
     reqDocs: reqDocs ? reqDocsAnswer_(reqDocs) : [],
     required: (reqDocs && !isApplicant_(s)) ? requiredFor_(s, reqDocs) : null,
     // admins only: when the nightly backup last ran (netlify/functions/backup.js)
@@ -8628,6 +8696,8 @@ const HANDLERS = {
   adminUpdateStaff: function (a) { return adminUpdateStaff(a[0], a[1], a[2], a[3]); },
   getKmReview: function (a) { return getKmReview(a[0], a[1]); },
   savePushSub: function (a) { return savePushSub(a[0], a[1], a[2], a[3]); },
+  getMySupport: function (a) { return getMySupport(a[0], a[1]); },
+  saveMySupport: function (a) { return saveMySupport(a[0], a[1], a[2]); },
   deletePushSub: function (a) { return deletePushSub(a[0], a[1], a[2]); },
   savePushPrefs: function (a) { return savePushPrefs(a[0], a[1], a[2]); },
   sendTestPush: function (a) { return sendTestPush(a[0], a[1]); },
