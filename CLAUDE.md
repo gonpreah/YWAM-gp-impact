@@ -429,6 +429,9 @@ Uriah: YWAM GP is YWAM Poipet, YWAM Siem Reap, **YWAM GP** (the organisation) an
   lists them under "Moving into Campus Leadership" → `adminDecideCltRequest(…, staffId,
   yes)`. Nobody outside Campus Leadership can add a Campus Leadership row as an extra
   ministry either. Moving within, or out of, Campus Leadership needs nobody.
+- **Filling it in**: Admin → Loose ends has "The YWAM GP structure isn't filled in" — each
+  campus's Campus Directors with no International / National chosen, and every YWAM GP place
+  nobody holds. Admins also get a banner on the YWAM GP page with the count and a link there.
 - **A board member's sign-in** is a guest-mode variant (`S.board`, `S.guest` true, staff
   `S.auth` empty, `gp-board` in localStorage; index.html sends them here): tabs YWAM GP ·
   Campuses (each campus's leadership, departments with directors and ministry leaders,

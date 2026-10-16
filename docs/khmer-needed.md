@@ -3427,6 +3427,17 @@ Shown in Profile & settings (the waiting note) and Admin → Approvals.
 
 The guide itself (Library → Made at YWAM GP → Keeping Each Other Safe) is in library-km.js; a Khmer speaker should read it, especially ការបញ្ឆោតទាក់ទាញ for grooming.
 
+### Filling in the YWAM GP structure (Admin → Loose ends, the YWAM GP page)
+
+| English | Khmer (draft) |
+|---|---|
+| Campus Director — International or National not chosen yet | នាយកមូលដ្ឋាន — មិនទាន់ជ្រើសរើស អន្តរជាតិ ឬជាតិ នៅឡើយ |
+| nobody yet — set it on their account under YWAM GP role | មិនទាន់មាននរណាម្នាក់ — កំណត់វានៅលើគណនីរបស់គាត់ ក្រោម តួនាទី YWAM GP |
+| The YWAM GP structure isn’t filled in | រចនាសម្ព័ន្ធ YWAM GP មិនទាន់បំពេញ |
+| So the charts, the YWAM GP page and the board see the real picture. | ដើម្បីឱ្យតារាង ទំព័រ YWAM GP និងក្រុមប្រឹក្សា ឃើញរូបភាពពិតប្រាកដ។ |
+| {n} places on the YWAM GP Leadership Team are not filled yet. | តួនាទី {n} ក្នុងក្រុមដឹកនាំ YWAM GP មិនទាន់មានអ្នកកាន់នៅឡើយទេ។ |
+| See what’s missing | មើលអ្វីដែលខ្វះ |
+
 ### Reminders (Profile & settings → Reminders, Admin → Reminders)
 
 | English | Khmer (draft) |

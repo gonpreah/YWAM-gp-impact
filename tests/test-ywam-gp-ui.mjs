@@ -223,6 +223,13 @@ const main = (page) => page.$eval('#main', e => e.innerText);
 /* ---------- 3. an admin adds a board member ---------- */
 {
   const { ctx, page } = await open('uriah');
+  await page.evaluate(() => { S.view = 'ywamgp'; render(); }); await page.waitForTimeout(400);
+  ok('an admin is told on the YWAM GP page how many places are empty', /5 places on the YWAM GP Leadership Team are not filled yet/.test(await main(page)));
+  await page.click('[data-adminsubgo="loose"]'); await page.waitForTimeout(1200);
+  const loose = await main(page);
+  ok('… and Loose ends lists them under the YWAM GP structure', /The YWAM GP structure isn’t filled in/.test(loose) && /Education Lead/.test(loose) && !/YWAM GP Director\s*nobody yet/.test(loose));
+  await page.evaluate(() => { const x = S.adminStaff.find((p) => p.id === 'st2'); x.cdKind = ''; render(); }); await page.waitForTimeout(300);
+  ok('… and a Campus Director with no International / National chosen', /International or National not chosen yet/.test(await main(page)) && /Sokha Chan/.test(await main(page)));
   await page.evaluate(() => { S.view = 'admin'; S.adminSub = 'board'; render(); }); await page.waitForTimeout(900);
   ok('Admin → Advisory Board lists the board', /Mary Board/.test(await main(page)) && /signs in as mary/.test(await main(page)));
   await page.click('#bdAdd'); await page.waitForTimeout(200);

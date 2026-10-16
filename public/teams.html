@@ -7080,6 +7080,9 @@ function ywamGpHtml(){
     '<div><div class="mentorName">'+esc(gpT('Welcome, {name}',{name:S.me.name}))+'</div><div class="orgRole">'+esc(t(S.me.boardRole||'Advisor'))+' · '+esc(t('YWAM GP Advisory Board'))+'</div></div></div></div>';
   h+='<h2>🌏 '+esc(t('YWAM GP'))+'</h2><p class="sub">'+esc(t('One family in four parts: YWAM Poipet, YWAM Siem Reap, YWAM GP’s own leadership, and the YWAM GP Advisory Board.'))+'</p>';
   if(!O) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
+  var empty=GP_ROLES.filter(function(r){ return !O.gp.some(function(p){ return p.gpRole===r[0]; }); }).length;
+  if(S.me && S.me.isAdmin && !S.board && empty) h+='<div class="banner" id="orgFillIn">🧩 '+esc(gpT('{n} places on the YWAM GP Leadership Team are not filled yet.',{n:empty}))+
+    ' <button class="linkbtn inline" data-adminsubgo="loose" style="width:auto;padding:0">'+esc(t('See what’s missing'))+'</button></div>';
   h+='<h3>✦ '+esc(t('YWAM GP leadership'))+'</h3><div class="card">';
   GP_ROLES.forEach(function(r){
     var who=O.gp.filter(function(p){ return p.gpRole===r[0]; });
@@ -7170,6 +7173,9 @@ function orgCampusProfileHtml_(c){
   return h+'</div>';
 }
 function bindOrg_(){
+  document.querySelectorAll('[data-adminsubgo]').forEach(function(b){
+    b.onclick=function(){ gpTap(); S.view='admin'; S.adminSub=b.getAttribute('data-adminsubgo'); render(); window.scrollTo(0,0); };
+  });
   /* the Library's safeguarding guide, from the concern card */
   document.querySelectorAll('[data-safeguide]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.person=null; S.view='library'; S.libBook='keeping-each-other-safe'; S.libStep=null; libLoad_(); render(); window.scrollTo(0,0); };
@@ -9447,6 +9453,16 @@ function adminLooseHtml_(){
   }).map(function(o){ return esc(o.objective)+'<div class="rowSub">'+esc(t(o.dept))+' · '+esc(o.updated ? gpT('last edited {date}',{date:looseDay_(o.updated.slice(0,10))}) : t('never edited'))+'</div>'; });
   out+=looseSection_('🎯', gpT('Q{q} objectives nobody has touched in 30 days',{q:L.quarter}), t('Ones fed by a ministry’s numbers move by themselves and are not listed.'), r6);
   total+=r6.length;
+
+  // 7. the YWAM GP structure: Campus Directors with no International / National, and empty YWAM GP places
+  var r7=staff.filter(function(x){ return x.dept===BL_DEPT && x.ministry==='Campus Director' && !x.cdKind; })
+    .map(function(x){ return loosePersonBtn_(x, t('Campus Director — International or National not chosen yet')); });
+  GP_ROLES.forEach(function(r){
+    var held=(S.adminStaff||[]).some(function(x){ return x.active && !x.archived && x.gpRole===r[0]; });
+    if(!held) r7.push(esc(gpRoleLabel_(r[0]))+'<div class="rowSub">'+esc(t('nobody yet — set it on their account under YWAM GP role'))+'</div>');
+  });
+  out+=looseSection_('🌏', t('The YWAM GP structure isn’t filled in'), t('So the charts, the YWAM GP page and the board see the real picture.'), r7);
+  total+=r7.length;
 
   h+='<p class="sub" style="margin:10px 0">'+esc(total ? gpT('{n} loose ends at {campus}',{n:total, campus:campusName(C)}) : gpT('Nothing loose at {campus}',{campus:campusName(C)}))+'</p>';
   return h+out;
