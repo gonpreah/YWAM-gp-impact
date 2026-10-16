@@ -12,8 +12,9 @@
    answered from here; nor are Google Fonts (the page has fallbacks).
 
    Bump SHELL when the list changes; old caches are dropped on activate. */
-var SHELL = 'gp-shell-v6';   // v2: the portal is in the shell too; v3: the Library; v4: its Khmer; v5: the letterhead;
-                              // v6: the Library's Khmer is kept the first time it's read, not downloaded on install
+var SHELL = 'gp-shell-v7';   // v2: the portal is in the shell too; v3: the Library; v4: its Khmer; v5: the letterhead;
+                              // v6: the Library's Khmer is kept the first time it's read, not downloaded on install;
+                              // v7: the legal documents' Khmer (legal-km.js)
 var NET_WAIT_MS = 4000;
 /* A reload the page asked for to pick up a new version (pull to refresh adds
    ?fresh=) waits longer for the network — falling back to the old copy after 4s
@@ -24,7 +25,7 @@ var PRECACHE = [
   'jobfocus.js', 'personality.js', 'gpstrengths.js', 'kpiguide.js', 'sr-checkin-history.js',
   'icon-180.png', 'icon-512.png', 'ywam-logo.png', 'library.js',
   /* the YWAM GP Portal installs as its own app (portal-manifest.json) off the same worker */
-  'portal.html', 'portal-manifest.json', 'outreach-guide.js', 'letterhead.jpg'
+  'portal.html', 'portal-manifest.json', 'outreach-guide.js', 'letterhead.jpg', 'legal-km.js'
 ];
 
 self.addEventListener('install', function (e) {

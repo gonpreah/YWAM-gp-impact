@@ -10,6 +10,7 @@ import { chromium } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import vm from 'node:vm';
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json' };
 const server = http.createServer((req, res) => {
@@ -71,6 +72,8 @@ const TEAM_FORM = { key: 'team', title: { en: 'Short-term team application', km:
     { id: 'males', type: 'number', label: { en: 'How many males?', km: '' }, help: { en: '', km: '' }, required: true, options: [], audience: 'all' } ] } ] };
 const TEAM_DOCS = [{ id: 'passports', required: true }, { id: 'photo', required: true }, { id: 'flights', required: true }, { id: 'invitation', required: false, from: 'us' }, { id: 'evisa', required: false }];
 let TEAM_APP = null, NEW_TEAM_APP = null;
+const REAL_CONTRACT = (() => { const c = {}; vm.runInNewContext(fs.readFileSync(path.join(PUBLIC, '..', 'netlify', 'functions', 'legal-docs-default.js'), 'utf8').replace(/^export default .*$/m, '').replace('export const STAFF_CONTRACT', 'var STAFF_CONTRACT') + ';this.SC=STAFF_CONTRACT', c); return c.SC; })();
+let HR_BLOCKS = null;   // set: hrContractOpen answers with these blocks (the real contract) instead of the short stand-in
 /* e-visa info: what portalVisaInfo keeps per campus (fake details, a two-part supporting document) */
 let VISA = { campus: 'siemreap', info: { org: 'Example Org', address: 'Example Village, Example Commune', phone: '+855 00 000 000', email: 'visa@example.org', extra: '' }, docs: [{ id: 'vd1', name: 'Example certificate.pdf', mime: 'application/pdf', size: 3500000, parts: 2, added: '2026-10-01T00:00:00Z' }], isDefault: true };
 const VISA_PARTS = [];   // parts uploaded through portalVisaDocPart
@@ -244,7 +247,7 @@ async function open(viewport, query, seed) {
         docs: SIGN_DOCS.slice(0, 1) } : { ok: false, err: 'invalid' };
     } else if (b.fn === 'hrContractOpen') {
       out = u === 'uriah' && b.args[2] === 'st_1' ? { ok: true, staff: true, hrSign: true, isTeam: false, team: 'Andrew Lee', approver: 'Uriah Lyford', contacts: [], prefill: { role: 'Cafe' }, people: [{ key: 'me', name: 'Andrew Lee', done: HR_DONE }],
-        docs: [{ id: 'contract:c9', title: 'Volunteer Staff Contract', period: '2 years · From 11/2026 to 11/2028', blocks: [{ t: 'period' }, { t: 'field', id: 'focus1', label: 'Area 1' }, { t: 'check', id: 'agree', text: 'I, {name}, agree.' }], sign: { leader: true } }] } : { ok: false, err: 'not_authorized' };
+        docs: [{ id: 'contract:c9', title: 'Volunteer Staff Contract', period: '2 years · From 11/2026 to 11/2028', blocks: HR_BLOCKS || [{ t: 'period' }, { t: 'field', id: 'focus1', label: 'Area 1' }, { t: 'check', id: 'agree', text: 'I, {name}, agree.' }], sign: { leader: true } }] } : { ok: false, err: 'not_authorized' };
     } else if (b.fn === 'hrContractSign') {
       HR_DONE[b.args[4]] = true; out = { ok: true, done: HR_DONE };
     } else if (b.fn === 'staffSignSubmit') {
@@ -1236,6 +1239,24 @@ async function open(viewport, query, seed) {
   const ss = sent.filter(b => b.fn === 'hrContractSign').pop();
   ok('signing sends theirs and HR’s, for that person', ss && ss.args[0] === 'uriah' && ss.args[2] === 'st_1' && ss.args[3] === 'me' && ss.args[4] === 'contract:c9' && ss.args[5].fields.focus1 === 'Cafe' && /^\/9j\//.test(ss.args[5].sig) && ss.args[5].leaderName === 'Uriah Lyford' && /^\/9j\//.test(ss.args[5].leaderSig));
   ok('… then it is done, with the way back to HR', !!(await page.$('.signDone a[href="teams.html?view=hr&hr=st_1"]')));
+  await ctx.close();
+}
+/* the staff contract in Khmer: the portal in Khmer shows the contract's own words in Khmer (legal-km.js) */
+{
+  HR_BLOCKS = REAL_CONTRACT.blocks; Object.keys(HR_DONE).forEach(k => delete HR_DONE[k]);
+  const { ctx, page } = await open({ width: 390, height: 844 }, '?staff=1&hr=st_1&doc=contract%3Ac9', () => { localStorage.setItem('gp-staff', JSON.stringify({ user: 'uriah', pin: '1234' })); localStorage.setItem('gp-lang', 'km'); });
+  await page.waitForSelector('[data-signdoc]', { timeout: 8000 });
+  const doc = await page.$eval('.signDoc', e => e.innerText);
+  const latin = doc.replace(/YWAM Siem Reap|YWAM|UofN|Andrew|Lee|Uriah Lyford|\d+\/\d{4}/g, '').match(/[A-Za-z]{4,}/g) || [];
+  ok('in Khmer, the staff contract itself is Khmer: title, rules, conditions, the commitment and the agreement', /កិច្ចសន្យាបុគ្គលិកស្ម័គ្រចិត្ត/.test(await page.$eval('.signTitle', e => e.textContent)) && /វិធាននៃកិច្ចសន្យា/.test(doc) && /លក្ខខណ្ឌនៃកិច្ចសន្យា/.test(doc) && /ផ្នែកទី ១/.test(doc) && latin.length === 0, latin.slice(0, 8).join(' | '));
+  ok('… with their name in the agreement and the period in Khmer', /ខ្ញុំ Andrew Lee បានអានកិច្ចសន្យានេះ/.test(doc) && /2 ឆ្នាំ · ចាប់ពី 11\/2026 ដល់ 11\/2028/.test(await page.$eval('.signPeriod', e => e.innerText)));
+  await ctx.close();
+}
+{
+  const { ctx, page } = await open({ width: 390, height: 844 }, '?staff=1&hr=st_1&doc=contract%3Ac9', () => localStorage.setItem('gp-staff', JSON.stringify({ user: 'uriah', pin: '1234' })));
+  await page.waitForSelector('[data-signdoc]', { timeout: 8000 });
+  ok('in English it is the English contract, as before', /Rules of Contract/.test(await page.$eval('.signDoc', e => e.innerText)) && /I, Andrew Lee, have read through this contract/.test(await page.$eval('.signDoc', e => e.innerText)) && /2 years · From 11\/2026 to 11\/2028/.test(await page.$eval('.signPeriod', e => e.innerText)));
+  HR_BLOCKS = null;
   await ctx.close();
 }
 {
