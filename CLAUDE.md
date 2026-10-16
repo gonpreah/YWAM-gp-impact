@@ -1476,6 +1476,13 @@ leading at YWAM GP (culture, teams, hard conversations, vision, systems, executi
   body and men and women, and learning each other's language. Their
   fine print says they are not published books and describe tendencies, not rules. The
   shelf's colour is YWAM GP ink (#17150F), not laterite — the brown clashed with the black YWAM GP.
+- **Keeping Each Other Safe** (`keeping-each-other-safe`, Made at YWAM GP, Oct 2026): the
+  safeguarding guide — what safeguarding is, kinds of concern, how to raise one in the app
+  (Team → Advisory Board → Raise a concern, which emails only the safeguarding contacts),
+  emergency numbers in Cambodia (Police 117, Ambulance 119, Fire 118, Child Helpline 1280),
+  what to do when someone tells you, and everyday safe habits. It invents no YWAM GP policy:
+  it says the written policy comes from the leaders and the board. The concern card links
+  to it (`data-safeguide`).
 - **YWAM classics** (shelf `ywam`, 🌊, cobalt; shown right after Made at YWAM GP; Oct 2026):
   ten foundational YWAM books in the same ten-minute shape, in English and Khmer — Is That
   Really You, God?, Making Jesus Lord, Daring to Live on the Edge (Loren Cunningham),

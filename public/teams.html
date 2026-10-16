@@ -7099,7 +7099,8 @@ function orgBoardHtml_(){
      concern is about (Uriah, Oct 2026). */
   if(!S.board && safe.length) h+='<div class="card orgBoardNote orgConcern"><p><b>'+esc(t('Raising a serious concern'))+'</b></p><p>'+
     esc(gpT('If you ever need to raise something serious — about a leader, someone’s safety, abuse or misconduct — write to {names}. They are the board’s safeguarding contacts, and your message goes only to them.',{names:safe.map(function(b){ return b.name; }).join(' & ')}))+'</p>'+
-    '<a class="btn" id="orgConcern" href="mailto:'+safe.map(function(b){ return encodeURIComponent(b.email); }).join(',')+'?subject='+encodeURIComponent('A confidential concern')+'">🛡️ '+esc(t('Raise a concern'))+'</a></div>';
+    '<a class="btn" id="orgConcern" href="mailto:'+safe.map(function(b){ return encodeURIComponent(b.email); }).join(',')+'?subject='+encodeURIComponent('A confidential concern')+'">🛡️ '+esc(t('Raise a concern'))+'</a>'+
+    '<button class="linkbtn inline orgSafeGuide" data-safeguide style="width:auto;padding:0;margin-top:8px">📖 '+esc(t('Read Keeping Each Other Safe — what to do, and what happens next'))+'</button></div>';
   if(!S.board && emails.length) h+='<div class="card orgBoardNote"><p>'+esc(t('The advisory board stands alongside YWAM GP’s leaders, outside the campus structure.'))+'</p>'+
     '<a class="btn ghost" id="orgEmailBoard" href="mailto:'+emails.map(encodeURIComponent).join(',')+'?subject='+encodeURIComponent('To the YWAM GP Advisory Board')+'">✉️ '+esc(t('Email the whole board'))+'</a></div>';
   if(!B.length) h+='<div class="card"><p class="sub" style="margin:4px 0">'+esc(t('The board’s members will be listed here.'))+'</p></div>';
@@ -7167,6 +7168,10 @@ function orgCampusProfileHtml_(c){
   return h+'</div>';
 }
 function bindOrg_(){
+  /* the Library's safeguarding guide, from the concern card */
+  document.querySelectorAll('[data-safeguide]').forEach(function(b){
+    b.onclick=function(){ gpTap(); S.person=null; S.view='library'; S.libBook='keeping-each-other-safe'; S.libStep=null; libLoad_(); render(); window.scrollTo(0,0); };
+  });
   document.querySelectorAll('[data-orgperson]').forEach(function(b){
     b.onclick=function(){
       gpTap(); var id=b.getAttribute('data-orgperson');

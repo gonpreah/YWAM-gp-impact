@@ -3617,6 +3617,85 @@ var GP_LIBRARY = {
    }
   },
   {
+   "id": "keeping-each-other-safe",
+   "title": "Keeping Each Other Safe",
+   "author": "GP Library",
+   "year": 2026,
+   "shelf": "gp",
+   "mins": 14,
+   "original": true,
+   "vibe": "Safety is not one person's job. It is how a family of faith loves the people with the least power.",
+   "bigIdea": "At YWAM GP, children come to our community schools and youth programmes every week. DTS students live on our campuses, far from home. Outreach teams, volunteers and visitors come and go. Many of these people trust us with their lives. That trust is a gift, and it is also a responsibility.\n\nSafeguarding means keeping people safe from abuse, exploitation, bullying and misconduct. It includes children, students, staff, volunteers and visitors. It also means being honest that harm can come from inside a Christian community, even from a leader. Churches and missions all over the world have had to learn this, often in a painful way.\n\nThis guide explains what safeguarding is and the kinds of harm to watch for. It explains what to do if you are worried, or if someone tells you something. It shows you how to raise a concern in this app. It also describes simple daily habits that make our bases safer.\n\nThis guide is a place to start. It is not YWAM GP's full safeguarding policy. The details of that policy come from YWAM GP's leaders and the Advisory Board.",
+   "insights": [
+    {
+     "emoji": "🛡️",
+     "title": "What safeguarding means",
+     "body": "Safeguarding is a simple idea with a big meaning. It means we take care that no one in our community is harmed, and we act quickly when someone might be. It covers abuse, exploitation, bullying and misconduct. It covers children and adults. It covers what happens on our campuses, on outreach, in homes and online.\n\nSome people think safeguarding is only about strangers who come from outside. But most harm comes from someone the person already knows and trusts. That can be a family member, a teacher, a friend or a leader. So safeguarding is not about suspecting everyone. It is about building a place where harm is hard to hide and easy to report.\n\nAt YWAM GP this is everyday work, not a rare event. We teach children in community schools. We run youth work. We host DTS students and outreach teams from many countries. Some people here are young, some are new to Cambodia, and some do not speak the language. Some depend on us for food, housing or a visa. All of this means they have less power than we do.\n\nSafeguarding is everyone's job. You do not need to be a leader or an expert. You only need to notice, to care and to speak up."
+    },
+    {
+     "emoji": "🩹",
+     "title": "Kinds of harm",
+     "body": "It helps to have words for the kinds of harm, so you can notice them and talk about them. Here are the main ones.\n\nPhysical abuse is hurting someone's body on purpose: hitting, kicking, shaking, burning or using too much force. Emotional abuse is hurting someone with words or treatment again and again: shouting, shaming, threatening, mocking, or making someone feel worthless or afraid. Bullying is a kind of emotional or physical abuse, often by a group or by someone stronger. It can happen between children, students or staff. Sexual abuse is any sexual touch, words, images or acts forced on someone, or done with a child. A child can never agree to sexual activity. Neglect is failing to give someone what they need to be safe and well, such as food, care, medical help or supervision.\n\nThere are also unsafe situations, where no one has been harmed yet, but harm could easily happen. For example, a child left alone with an adult behind a closed door, a student sent alone at night to a place that is not safe, or a broken railing near a school.\n\nYou do not have to be sure which word fits. If something worries you, that is enough reason to speak."
+    },
+    {
+     "emoji": "⚖️",
+     "title": "When power is misused",
+     "body": "Some harm is not loud or violent. It happens when a person with power uses it for themselves instead of for others. We call this exploitation. It can be about money, work, relationships or faith.\n\nExploitation with money might look like asking a student or a family for money, taking part of someone's support, or making someone work long hours without fair pay. It can also be using photos and stories of poor children to raise money without the family's permission. Exploitation with power might look like a leader who threatens to send a student home, or to cancel a staff member's visa, if they do not obey or stay quiet.\n\nSpiritual pressure is a special danger in a Christian community. It is when someone uses God, the Bible or prayer to control people. For example: 'God told me you must do this,' or 'If you question me, you question God.' Godly leaders welcome questions. They do not use God to silence people.\n\nA leader can also misuse their position in other ways: by pressing someone they lead into a romantic or sexual relationship, by giving favours in return for loyalty, or by hiding their own wrongdoing. Leaders are not above safeguarding. Because they have more power, they need more accountability, not less."
+    },
+    {
+     "emoji": "🚩",
+     "title": "Warning signs of grooming",
+     "body": "Grooming is when someone slowly builds trust with a child or a vulnerable person, and with the people around them, so that they can abuse them later and not be caught. It usually takes time, and it often looks kind at first. That is why it is hard to see.\n\nHere are some general warning signs. An adult gives one child special attention, gifts, money or phone credit. They try to spend time alone with that child, or offer rides, sleepovers or private lessons. They send private messages, especially late at night, and ask the child to keep secrets. They slowly test limits with touch, jokes or talk about bodies and sex. They work hard to make the child's parents or other staff trust them completely, so that no one will question them. They may also tell the child that no one else understands them.\n\nOne sign alone does not prove anything. Many kind people give gifts. But when you see a pattern, especially secrecy and time alone, take it seriously.\n\nChildren may also show signs that something is wrong: sudden fear of a person or a place, a big change in behaviour, sexual knowledge beyond their age, or injuries no one can explain. Do not try to find out more yourself. Pass on what you have seen."
+    },
+    {
+     "emoji": "🚨",
+     "title": "If someone is in danger now",
+     "body": "Sometimes there is no time to wait. If a person is being hurt, or is in serious danger right now, act first. Get them to a safe place, if you can do that without putting yourself or others in danger. Stay with them, or make sure a safe adult stays with them.\n\nThen call for help. In Cambodia, call the Police on 117, an Ambulance on 119, or the Fire service on 118. If a child is at risk, you can also call Child Helpline Cambodia on 1280.\n\nSave these numbers in your phone today, so you do not have to search for them in a hard moment. If you do not speak Khmer well, ask a Khmer teammate to make the call with you, but do not let that slow you down.\n\nAfter the person is safe, tell the safeguarding contacts what happened as soon as you can. Use the app, or speak to them in person. They need to know, even if the police or a doctor are already involved.\n\nDo not let the fear of making a fuss stop you. It is much better to call and learn that things were less serious than you thought, than not to call and learn that someone was badly hurt. Safety comes first. Questions can come later."
+    },
+    {
+     "emoji": "👂",
+     "title": "When someone tells you",
+     "body": "If someone tells you that they, or another person, have been harmed, what you do in the first few minutes matters a lot. They may have waited a long time to find the courage. They chose you. That is an honour.\n\nListen. Stay calm, even if what you hear upsets you. Let them speak in their own way and at their own speed. You can ask simple, open questions like 'Can you tell me more?' But do not push for details, and do not suggest answers to them.\n\nBelieve them enough to act. You do not need to decide whether every detail is true. That is not your job. Your job is to take it seriously.\n\nDo not promise to keep it completely secret. Instead, explain that you will only tell the people who need to know, so that they can be kept safe. Do not investigate, and do not confront the person they told you about. That can warn that person and put others in danger.\n\nThank them for telling you, and tell them it is not their fault. Afterwards, write down what they said, in their own words as much as you can, with the date and time. Write what you saw and heard, not what you guess. Then pass it on to the safeguarding contacts quickly."
+    },
+    {
+     "emoji": "📱",
+     "title": "Raising a concern in the app",
+     "body": "This app has a simple way to raise a serious concern. Open Team, choose Advisory Board, and tap Raise a concern. In the Khmer app, these buttons say ក្រុម, ក្រុមប្រឹក្សាយោបល់ and លើកឡើងបញ្ហា.\n\nThe button opens a new email in your phone's email app. It is addressed only to the board's safeguarding contacts. Write what you saw or heard, when and where it happened, and who was involved. Use simple words. You do not need to write it perfectly. Then send it. The email comes from your own email address, so they can reply to you.\n\nWhy only the safeguarding contacts? YWAM GP's own leaders sit on the Advisory Board. If a concern is about a leader, it should not go to that same leader. So the safeguarding contacts were chosen on purpose. A concern can then be heard safely, by someone outside the situation.\n\nYou can also find the board and its contacts on the YWAM GP page in the menu. And you can always speak to a safeguarding contact in person, if that feels easier or safer for you.\n\nDo not share a serious concern in a group chat, a team meeting or a general email. Keep it to the safeguarding contacts. This protects the person who was harmed, and it is also fair to the person the concern is about."
+    },
+    {
+     "emoji": "🧭",
+     "title": "What happens next",
+     "body": "Many people do not speak up because they do not know what will happen next. Here is what you can expect, in general terms.\n\nThe safeguarding contacts will listen to you and take your concern seriously. They will keep it on a need-to-know basis. That means only the people who really need to know will be told. Their first concern is that everyone is safe, especially a child or anyone at risk. Then they will decide the next steps. Sometimes the next steps may include outside authorities, such as the police or child protection services.\n\nThis guide cannot tell you every step, and it does not try to. The details of YWAM GP's own written safeguarding policy come from its leaders and the Advisory Board. If you want to know more about the policy, ask them.\n\nYou may not hear every detail of what happens afterwards. That is to protect the people involved. It does not mean your concern was ignored.\n\nNo one is punished for raising a concern in good faith. Good faith means you honestly believed something might be wrong, even if it later turns out you were mistaken. You do not need to be sure. Raising a worry early is always better than waiting until you have proof. Small concerns, shared early, can stop great harm."
+    },
+    {
+     "emoji": "🏡",
+     "title": "Everyday safe habits",
+     "body": "Most safeguarding is not about emergencies. It is about small habits that make harm hard to hide. Here are some for life on a YWAM base in Cambodia.\n\nWith children, try to always have two adults present, or stay where others can see you. Keep doors open, and meet in open places. Try not to be alone with a child in a car, on a moto or in your room. Use safe, kind touch, like a high five or a hand on the shoulder, and let the child decide. We correct children with patience and words, never by hitting or shaming them.\n\nWatch your words too. No sexual jokes, no comments about other people's bodies, and no insults, even as a joke.\n\nOnline and on the phone, keep messages with students and children open. Use group chats when you can, and do not send private messages late at night. Never ask anyone to keep a secret from their parents or leaders.\n\nTake photos of children only with permission from the child and their family. Do not post their full names or where they live.\n\nLeaders need habits too. Two people count money together. Decisions are made in the open. And every leader has someone who can ask them hard questions."
+    },
+    {
+     "emoji": "🤲",
+     "title": "Care, prayer and action",
+     "body": "Hearing about harm is heavy. After someone tells you something, or after you raise a concern, you may feel shocked, sad, angry or unsure. You may not sleep well. This is normal. You do not have to carry it alone. You can talk with a safeguarding contact about how you feel. You can also talk with a counsellor or your mentor about your own feelings, while you keep the details private.\n\nCare for the person who told you too. Check that they are safe. Be kind, and treat them normally. Do not treat them as if they are broken, and do not tell others their story. Let the safeguarding contacts lead the next steps, and keep being a friend.\n\nPray. Pray for the person who was harmed, for wisdom for those who lead, and for justice and healing. God cares deeply about this, and he hears us.\n\nBut prayer never replaces action. We should not say 'I will just pray about it,' and then do nothing. In the Bible, faith and action belong together (James 2). Pray, and also speak up. Pray, and also make the call. Often the answer to our prayer is the very step God is asking us to take."
+    }
+   ],
+   "tryThis": [
+    "Save these numbers in your phone today: Police 117, Ambulance 119, Fire 118, and Child Helpline Cambodia 1280.",
+    "Open Team, choose Advisory Board, and find the Raise a concern button. Learn who the safeguarding contacts are.",
+    "Look at one place where you work with children or students. Ask your team: is there always a second adult, an open door and a clear way to speak up?"
+   ],
+   "forUs": "YWAM GP exists to make Jesus known and to bless Cambodia. That includes the most vulnerable people. Again and again in the Bible, God says that he defends the weak, the orphan and the foreigner. Jesus welcomed children when others sent them away (Mark 10:14). He also gave a very serious warning to anyone who causes a child to stumble (Matthew 18:6). Children and vulnerable people matter to God, so they must matter to us.\n\nWe are also called to live in the light. 1 John 1 says that God is light, and that we walk in the light together. Ephesians 5:11 tells us not to take part in deeds of darkness, but to bring them into the open. Hiding harm to protect the good name of a ministry is not faithful. It is darkness. A healthy community brings things into the light, gently and wisely.\n\nThis does not mean we live in fear or suspect each other. It means we love each other enough to build safe habits, to listen and to act. Khmer and international, staff and students, leaders and volunteers: we keep each other safe, together.",
+   "oneLine": "Notice, listen and speak up early: keeping each other safe is how we love.",
+   "cover": {
+    "bg": "teal",
+    "fg": "paper",
+    "a": "paper",
+    "b": "marigold",
+    "motif": "circlesafety",
+    "layout": "top",
+    "font": "sans"
+   }
+  },
+  {
    "id": "is-that-really-you-god",
    "title": "Is That Really You, God?",
    "author": "Loren Cunningham with Janice Rogers",

@@ -3419,6 +3419,14 @@ The last one heads the Main ministry list in Profile & settings for Campus Leade
 
 Shown in Profile & settings (the waiting note) and Admin → Approvals.
 
+### The safeguarding guide, from the concern card
+
+| English | Khmer (draft) |
+|---|---|
+| Read Keeping Each Other Safe — what to do, and what happens next | អាន «ការពារសុវត្ថិភាពគ្នាទៅវិញទៅមក» — អ្វីដែលត្រូវធ្វើ និងអ្វីដែលកើតឡើងបន្ទាប់ |
+
+The guide itself (Library → Made at YWAM GP → Keeping Each Other Safe) is in library-km.js; a Khmer speaker should read it, especially ការបញ្ឆោតទាក់ទាញ for grooming.
+
 ### Khmer review (☰ → Khmer review)
 
 | English | Khmer (draft) |
