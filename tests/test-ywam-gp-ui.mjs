@@ -96,6 +96,20 @@ const main = (page) => page.$eval('#main', e => e.innerText);
   /* org chart */
   await page.evaluate(() => { S.view = 'team'; S.teamMode = 'org'; render(); }); await page.waitForTimeout(500);
   const org = await main(page);
+  await page.click('[data-teamcampus="ywamgp"]'); await page.waitForTimeout(400);
+  const gp = await main(page);
+  ok('Structure → YWAM GP: the Advisory Board, the YWAM GP team with every place, and both campuses\' leadership teams',
+    /Advisory Board/.test(gp) && /Mary Board/.test(gp) && /President/.test(gp) && /YWAM GP Leadership Team/.test(gp) && /YWAM GP Director/.test(gp) &&
+    /Education Lead/.test(gp) && /Not filled yet/.test(gp) && /YWAM Poipet/.test(gp) && /YWAM Siem Reap/.test(gp) && /International Campus Director/.test(gp) && /National Campus Director/.test(gp));
+  ok('… someone with several roles is in each box: Uriah as board Advisor, YWAM GP Director and International Campus Director',
+    (gp.match(/Uriah Lyford/g) || []).length === 3);
+  await page.screenshot({ path: OUT + '/structure-ywamgp.png', fullPage: true });
+  await page.click('.orgOpenCampus[data-teamcampus="siemreap"]'); await page.waitForTimeout(400);
+  const org0 = await main(page);
+  ok('… and a campus box opens that campus\'s own chart', /Department directors/i.test(org0) && await page.evaluate(() => S.teamCampus === 'siemreap'));
+  await page.click('[data-teammode="dir"]'); await page.waitForTimeout(300);
+  ok('the Directory has no YWAM GP button — it is per campus', !(await page.$('[data-teamcampus="ywamgp"]')));
+  await page.click('[data-teammode="org"]'); await page.waitForTimeout(300);
   ok('the org chart names them too: Campus Directors, International / National, department directors', /Campus Directors/i.test(org) && /International Campus Director/.test(org) && /Department directors/i.test(org) && /Director of Community Service/.test(org) && !/Overseen by|overseers/i.test(org));
   await ctx.close();
 }

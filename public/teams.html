@@ -1824,6 +1824,14 @@ body.arranging .orgPerson[data-arrange] { touch-action:none; cursor:grab; border
 .orgBoxMeta { font-size:11.5px; color:var(--faint); font-weight:600; margin-left:auto; }
 .orgSub { font-size:11px; letter-spacing:1.2px; text-transform:uppercase; color:var(--faint); font-weight:700; margin-top:10px; }
 .orgConnector { width:2px; height:22px; background:var(--border2); margin:0 auto; }
+.orgConnector.dashed { background:none; border-left:2px dashed var(--border2); width:0; }
+.orgBoardBox { border-style:dashed; }
+.orgGpChart .orgPeople { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+.orgPerson.orgTitled > span { display:flex; flex-direction:column; }
+div.orgPerson { cursor:default; }
+.orgVacant { color:var(--muted); }
+.orgVacant .orgOpenDot { width:28px; height:28px; }
+.orgOpenCampus { display:block; margin-top:10px; }
 .orgGrid { display:grid; grid-template-columns:1fr; gap:10px; }
 @media (min-width:640px){ .orgGrid { grid-template-columns:1fr 1fr; } }
 .orgMins { margin-top:10px; display:flex; flex-direction:column; gap:6px; }
@@ -7036,6 +7044,47 @@ function orgBoardHtml_(){
   if(!B.length) h+='<div class="card"><p class="sub" style="margin:4px 0">'+esc(t('The board’s members will be listed here.'))+'</p></div>';
   B.forEach(function(b){ h+=orgBoardMemberHtml_(b); });
   return h;
+}
+/* Team → Structure → YWAM GP: the whole organisation as levels — the Advisory Board
+   (advising, so a dashed line), YWAM GP's leadership team with every place, then
+   both campuses with their leadership teams. Someone with several roles is in every
+   box they belong to, with that box's title. A campus box opens its own chart. */
+function ywamGpChartHtml_(){
+  var O=S.org;
+  if(!O){ orgLoad_(); return '<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>'; }
+  var chip=function(p, sub){
+    var tag=p.id && p.staffId!==null ? 'button' : 'div';
+    return '<'+tag+' class="orgPerson orgTitled"'+(tag==='button' ? ' data-person="'+esc(p.id)+'"' : '')+'>'+avatarHtml(p,'sm')+
+      '<span>'+esc(p.name)+(sub ? '<small class="orgChipTitle">'+esc(sub)+'</small>' : '')+'</span></'+tag+'>';
+  };
+  var h='<div class="orgChart orgGpChart">';
+  /* the board */
+  h+='<div class="orgLevelLabel">'+esc(t('YWAM GP Advisory Board'))+'</div><div class="orgBox orgBoardBox"><div class="orgBoxTitle">🛡️ '+esc(t('Advisory Board'))+
+    '<span class="orgBoxMeta">'+esc(t('advises YWAM GP'))+'</span></div>';
+  if(!O.board.length) h+='<div class="orgEmpty">'+esc(t('The board’s members will be listed here.'))+'</div>';
+  else h+='<div class="orgPeople">'+O.board.map(function(b){
+    return b.staffId ? chip({ id:b.staffId, name:b.name, photo:b.photo }, t(b.role)) : chip({ id:'', staffId:null, name:b.name, photo:b.photo }, t(b.role));
+  }).join('')+'</div>';
+  h+='</div><div class="orgConnector dashed"></div>';
+  /* YWAM GP's leadership team */
+  h+='<div class="orgLevelLabel">'+esc(t('YWAM GP leadership'))+'</div><div class="orgBox top"><div class="orgBoxTitle">🌏 '+esc(t('YWAM GP Leadership Team'))+'</div><div class="orgPeople">';
+  GP_ROLES.forEach(function(r){
+    var who=O.gp.filter(function(p){ return p.gpRole===r[0]; });
+    if(who.length) who.forEach(function(p){ h+=chip(p, gpRoleLabel_(r[0])); });
+    else h+='<div class="orgPerson orgTitled orgVacant"><span class="orgOpenDot"></span><span>'+esc(gpRoleLabel_(r[0]))+'<small class="orgChipTitle">'+esc(t('Not filled yet'))+'</small></span></div>';
+  });
+  h+='</div></div><div class="orgConnector"></div>';
+  /* the campuses */
+  h+='<div class="orgLevelLabel">'+esc(t('Campuses'))+' · '+CAMPUSES.length+'</div><div class="orgGrid">';
+  CAMPUSES.forEach(function(c){
+    var oc=orgCampus_(c.id);
+    h+='<div class="orgBox dept"><div class="orgBoxTitle">🏠 '+esc(t(c.name))+(oc ? '<span class="orgBoxMeta">'+esc(gpT('{n} staff',{n:oc.staff}))+'</span>' : '')+'</div>'+
+      '<div class="orgSub">'+esc(t('Campus Leadership Team'))+'</div>';
+    h+=(oc && oc.clt.length) ? '<div class="orgPeople">'+oc.clt.map(function(p){ return chip(p, orgTitleText_(p.title)); }).join('')+'</div>' : '<div class="orgEmpty">'+esc(t('Nobody here yet'))+'</div>';
+    h+='<button class="linkbtn inline orgOpenCampus" data-teamcampus="'+esc(c.id)+'">'+esc(gpT('Open {campus}’s chart',{campus:t(c.short)}))+' ›</button></div>';
+  });
+  h+='</div>';
+  return h+'<p class="hint" style="margin:12px 0 0;text-align:center">'+esc(t('Someone with more than one role is in each box they belong to.'))+'</p></div>';
 }
 /* A campus as the board sees it: its leadership, its departments with their directors,
    each ministry and who leads it, and how many staff — then the base's figures. */
@@ -15429,10 +15478,11 @@ function teamHtml(){
      used to stack both campuses stacked at once, which read as one long list
      rather than "which base am I looking at right now". Defaults to your own
      campus, since that's whose team you open this tab to see. */
-  var campus = S.teamCampus || (S.me && S.me.campus) || CAMPUSES[0].id;
+  var mode = S.teamMode==='org' ? 'org' : (S.teamMode==='str' && gsOK() ? 'str' : (S.teamMode==='pers' && pOK() ? 'pers' : 'dir'));
+  /* Structure also has the whole of YWAM GP (ywamGpChartHtml_); the other views are per campus. */
+  var campus = (S.teamCampus==='ywamgp' && mode!=='org' ? '' : S.teamCampus) || (S.me && S.me.campus) || CAMPUSES[0].id;
   var cInfo = CAMPUSES.filter(function(c){ return c.id===campus; })[0];
   var here = S.roster.filter(function(p){ return p.campus===campus; });
-  var mode = S.teamMode==='org' ? 'org' : (S.teamMode==='str' && gsOK() ? 'str' : (S.teamMode==='pers' && pOK() ? 'pers' : 'dir'));
 
   var h='<h2>'+esc(t('Team'))+' <small>· '+S.roster.length+' '+esc(t('staff'))+'</small></h2>'+
     mentorEntryHtml();
@@ -15446,10 +15496,11 @@ function teamHtml(){
     mode==='pers' ? t('The team’s mix of personality types, from the types people have shared.') :
     t('Tap anyone to see their ministry and this week’s goals.'))+'</p>';
 
-  h+='<div class="campusSeg">'+CAMPUSES.map(function(c){
+  h+='<div class="campusSeg">'+(mode==='org' ? '<button class="campusBtn'+(campus==='ywamgp'?' on':'')+'" data-teamcampus="ywamgp">🌏 '+esc(t('YWAM GP'))+'</button>' : '')+CAMPUSES.map(function(c){
     return '<button class="campusBtn'+(campus===c.id?' on':'')+'" data-teamcampus="'+esc(c.id)+'">'+esc(t(c.name))+'</button>';
   }).join('')+'</div>';
 
+  if(mode==='org' && campus==='ywamgp') return h+ywamGpChartHtml_();
   if(mode==='org') return h+orgStructureHtml_(campus);
   if(mode==='str') return h+teamStrengthsHtml_(campus);
   if(mode==='pers') return h+teamPersonalityHtml_(campus);

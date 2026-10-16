@@ -3383,3 +3383,13 @@ attraction), របាំងការពារ (guardrail), ចិត្តត�
 | Music Lead | អ្នកដឹកនាំផ្នែកតន្ត្រី |
 | Media Lead | អ្នកដឹកនាំផ្នែកប្រព័ន្ធផ្សព្វផ្សាយ |
 | Education Lead | អ្នកដឹកនាំផ្នែកអប់រំ |
+
+
+### Team → Structure → YWAM GP
+
+| English | Khmer (draft) |
+|---|---|
+| advises YWAM GP | ផ្ដល់យោបល់ដល់ YWAM GP |
+| YWAM GP Leadership Team | ក្រុមដឹកនាំ YWAM GP |
+| Open {campus}’s chart | បើកតារាងរចនាសម្ព័ន្ធ {campus} |
+| Someone with more than one role is in each box they belong to. | អ្នកដែលមានតួនាទីច្រើនជាងមួយ បង្ហាញនៅក្នុងប្រអប់នីមួយៗដែលគាត់ជាសមាជិក។ |

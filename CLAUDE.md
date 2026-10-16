@@ -404,12 +404,17 @@ Uriah: YWAM GP is YWAM Poipet, YWAM Siem Reap, **YWAM GP** (the organisation) an
   leadership teams, and the board with Email / Call for each and "Email the whole board",
   under a note that anything serious — about a leader, safety, abuse, misconduct — can
   go straight to them.
+- **Team → Structure → 🌏 YWAM GP** (`S.teamCampus='ywamgp'`, only in Structure, not the
+  Directory; `ywamGpChartHtml_`): the whole chart on one screen — the Advisory Board box
+  (dashed, "advises") over the YWAM GP Leadership Team (every `GP_ROLES` place, empty ones
+  "Not filled yet") over a box per campus (its leadership team + "Open <campus>'s chart").
+  Someone with several roles appears in each box. Same `org` data; nothing new on the server.
 - **A board member's sign-in** is a guest-mode variant (`S.board`, `S.guest` true, staff
   `S.auth` empty, `gp-board` in localStorage; index.html sends them here): tabs YWAM GP ·
   Campuses (each campus's leadership, departments with directors and ministry leaders,
   then the public base figures) · Library; nothing staff. The login screen tries
   `boardLogin` after a staff login fails with no other reason.
-- tests/test-ywam-gp.mjs (server, 24), tests/test-ywam-gp-ui.mjs (browser, 23).
+- tests/test-ywam-gp.mjs (server, 24), tests/test-ywam-gp-ui.mjs (browser, 29).
 
 ## Team → Structure (the org chart)
 The Team tab has a Directory / Structure toggle (`S.teamMode`). Structure (`orgChartHtml_`)
