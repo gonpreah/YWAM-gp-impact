@@ -1446,7 +1446,8 @@ leading at YWAM GP (culture, teams, hard conversations, vision, systems, executi
   Westerners (for Khmer staff) and Working Well with Cambodians (for Western staff), 11 key
   ideas and ~3,000 words each (`mins` 14) — and **FIGHT: Our Values** (`fight-our-values`,
   Oct 2026), a guide to YWAM GP's five values built on leadership's statements and behaviours
-  (cover motif `fight`) — the first two mirroring each other on money, conflict, the
+  (cover motif `fight`; `overview: 'fight'` puts the 1-on-1 check-in's FIGHT overview —
+  `fightOverviewHtml_`, built from `OO_FLOW` / `OO_VALUES` — on its first reader page, `#fightOv`) — the first two mirroring each other on money, conflict, the
   body and men and women, and learning each other's language. Their
   fine print says they are not published books and describe tendencies, not rules. The
   shelf's colour is YWAM GP ink (#17150F), not laterite — the brown clashed with the black YWAM GP.
