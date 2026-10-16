@@ -3438,6 +3438,40 @@ The guide itself (Library → Made at YWAM GP → Keeping Each Other Safe) is in
 | {n} places on the YWAM GP Leadership Team are not filled yet. | តួនាទី {n} ក្នុងក្រុមដឹកនាំ YWAM GP មិនទាន់មានអ្នកកាន់នៅឡើយទេ។ |
 | See what’s missing | មើលអ្វីដែលខ្វះ |
 
+### Prayer requests (☰ → Prayer)
+
+| English | Khmer (draft) |
+|---|---|
+| Prayer | ការអធិស្ឋាន |
+| yesterday | ម្សិលមិញ |
+| Carry each other’s burdens. Share a request, and pray for each other’s. | ចូរជួយទ្រាំបន្ទុកគ្នាទៅវិញទៅមក។ ចែករំលែកសំណូមពរ ហើយអធិស្ឋានឱ្យគ្នាទៅវិញទៅមក។ |
+| Ask for prayer | សុំការអធិស្ឋាន |
+| What can we pray for? | តើយើងអាចអធិស្ឋានសម្រាប់អ្វី? |
+| Who sees it | អ្នកណាឃើញវា |
+| My campus | សាខារបស់ខ្ញុំ |
+| All of YWAM GP | YWAM GP ទាំងមូល |
+| Only my mentor | តែអ្នកណែនាំរបស់ខ្ញុំ |
+| Answered | បានឆ្លើយតប |
+| Answered prayers will show here. | ការអធិស្ឋានដែលបានឆ្លើយតប នឹងបង្ហាញនៅទីនេះ។ |
+| Requests you share will show here. | សំណូមពរដែលអ្នកចែករំលែក នឹងបង្ហាញនៅទីនេះ។ |
+| No requests right now. Be the first to share one. | មិនទាន់មានសំណូមពរនៅពេលនេះទេ។ សូមធ្វើជាអ្នកដំបូងដែលចែករំលែក។ |
+| only their mentor | តែអ្នកណែនាំរបស់គាត់ |
+| all of YWAM GP | YWAM GP ទាំងមូល |
+| Answered {date} | បានឆ្លើយតប {date} |
+| I prayed | ខ្ញុំបានអធិស្ឋាន |
+| Pray | អធិស្ឋាន |
+| {n} praying | {n} នាក់កំពុងអធិស្ឋាន |
+| Not yet answered | មិនទាន់ឆ្លើយតប |
+| A line of thanks (optional) | ពាក្យអរគុណមួយឃ្លា (ស្រេចចិត្ត) |
+| Mark answered | សម្គាល់ថាបានឆ្លើយតប |
+| That is a lot for one day — try again tomorrow. | ច្រើនពេកសម្រាប់មួយថ្ងៃ — សូមសាកល្បងម្ដងទៀតនៅថ្ងៃស្អែក។ |
+| Write your request first | សូមសរសេរសំណូមពររបស់អ្នកជាមុនសិន |
+| Shared | បានចែករំលែក |
+| Praise God! | សរសើរតម្កើងព្រះ! |
+| Delete this request? | លុបសំណូមពរនេះ? |
+
+The opening line echoes Galatians 6:2 — use the wording Cambodian churches know.
+
 ### Support raising (My Home → Support raising)
 
 | English | Khmer (draft) |

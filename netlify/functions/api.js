@@ -3496,6 +3496,91 @@ async function backupStatus_() {
   };
 }
 
+/* ==================== Prayer requests (Oct 2026) ====================
+   ☰ → Prayer. A request is shared with your campus, all of YWAM GP, or only your
+   mentor (`scope` campus | all | mentor); anyone who can see it taps "I prayed" (a
+   count — who prayed is not listed); the person who asked marks it answered, with a
+   line of thanks if they like. One 'prayers' blob of rows { id, staffId, campus,
+   scope, text, created, prayed: [staffId], answered (date) , answerNote }.
+   Shown: open requests for PR_OPEN_DAYS, answered ones for PR_ANSWERED_DAYS after;
+   rows older than PR_KEEP_DAYS are dropped on the next write. The asker or an admin
+   can delete. Never part of the roster or any report. */
+const PR_SCOPES = ['campus', 'all', 'mentor'];
+const PR_MAX_TEXT = 600, PR_MAX_NOTE = 300, PR_PER_DAY = 5;
+const PR_OPEN_DAYS = 60, PR_ANSWERED_DAYS = 30, PR_KEEP_DAYS = 365;
+async function getPrayers_() { return readJSON('prayers', []); }
+function prDays_(iso) { return (Date.now() - new Date(iso).getTime()) / 86400000; }
+function prCanSee_(r, s, staff) {
+  if (r.staffId === s.id) return true;
+  if (r.scope === 'all') return true;
+  if (r.scope === 'campus') return r.campus === s.campus;
+  if (r.scope === 'mentor') { const a = staff.find(function (x) { return x.id === r.staffId; }); return !!(a && a.mentorId === s.id && a.mentorStatus === 'approved'); }
+  return false;
+}
+function prOut_(r, s, staff) {
+  const a = staff.find(function (x) { return x.id === r.staffId; });
+  return { id: r.id, mine: r.staffId === s.id, name: a ? a.name : '—', photo: a ? a.photo || '' : '', campus: r.campus, scope: r.scope,
+    text: r.text, created: r.created, prayedN: (r.prayed || []).length, iPrayed: (r.prayed || []).indexOf(s.id) > -1,
+    answered: r.answered || '', answerNote: r.answerNote || '' };
+}
+async function getPrayers(username, pin) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const staff = await getStaff_();
+  const list = (await getPrayers_()).filter(function (r) {
+    if (!prCanSee_(r, s, staff)) return false;
+    return r.answered ? prDays_(r.answered) <= PR_ANSWERED_DAYS || r.staffId === s.id : prDays_(r.created) <= PR_OPEN_DAYS || r.staffId === s.id;
+  }).sort(function (a, b) { return a.created < b.created ? 1 : -1; }).map(function (r) { return prOut_(r, s, staff); });
+  return { ok: true, prayers: list };
+}
+async function savePrayer(username, pin, req) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const text = String(str_(req && req.text, PR_MAX_TEXT) || '').trim();
+  if (!text) return { ok: false, err: 'empty' };
+  const scope = PR_SCOPES.indexOf(req && req.scope) > -1 ? req.scope : 'campus';
+  if (scope === 'mentor' && !(s.mentorId && s.mentorStatus === 'approved')) return { ok: false, err: 'no_mentor' };
+  const rows = (await getPrayers_()).filter(function (r) { return prDays_(r.created) <= PR_KEEP_DAYS; });
+  if (rows.filter(function (r) { return r.staffId === s.id && prDays_(r.created) < 1; }).length >= PR_PER_DAY) return { ok: false, err: 'too_many' };
+  rows.push({ id: 'pr' + crypto.randomBytes(6).toString('hex'), staffId: s.id, campus: s.campus, scope: scope, text: text,
+    created: new Date().toISOString(), prayed: [], answered: '', answerNote: '' });
+  await writeJSON('prayers', rows);
+  return getPrayers(username, pin);
+}
+async function prayedFor(username, pin, id, on) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const staff = await getStaff_();
+  const rows = await getPrayers_();
+  const r = rows.find(function (x) { return x.id === id; });
+  if (!r || !prCanSee_(r, s, staff)) return { ok: false, err: 'not_found' };
+  const list = (r.prayed || []).filter(function (x) { return x !== s.id; });
+  if (on) list.push(s.id);
+  r.prayed = list;
+  await writeJSON('prayers', rows);
+  return { ok: true, prayer: prOut_(r, s, staff) };
+}
+async function answerPrayer(username, pin, id, note, undo) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const rows = await getPrayers_();
+  const r = rows.find(function (x) { return x.id === id; });
+  if (!r || r.staffId !== s.id) return { ok: false, err: 'not_found' };
+  r.answered = undo ? '' : baseToday_();
+  r.answerNote = undo ? '' : String(str_(note, PR_MAX_NOTE) || '').trim();
+  await writeJSON('prayers', rows);
+  return getPrayers(username, pin);
+}
+async function deletePrayer(username, pin, id) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const rows = await getPrayers_();
+  const r = rows.find(function (x) { return x.id === id; });
+  if (!r || !(r.staffId === s.id || s.isAdmin)) return { ok: false, err: 'not_found' };
+  await writeJSON('prayers', rows.filter(function (x) { return x.id !== id; }));
+  return getPrayers(username, pin);
+}
+
 /* ==================== Support raising (Oct 2026) ====================
    Living by faith: each staff member's own list of ministry partners and the monthly
    support they are aiming for — private like staff debt. The person sees and edits
@@ -8697,6 +8782,11 @@ const HANDLERS = {
   getKmReview: function (a) { return getKmReview(a[0], a[1]); },
   savePushSub: function (a) { return savePushSub(a[0], a[1], a[2], a[3]); },
   getMySupport: function (a) { return getMySupport(a[0], a[1]); },
+  getPrayers: function (a) { return getPrayers(a[0], a[1]); },
+  savePrayer: function (a) { return savePrayer(a[0], a[1], a[2]); },
+  prayedFor: function (a) { return prayedFor(a[0], a[1], a[2], !!a[3]); },
+  answerPrayer: function (a) { return answerPrayer(a[0], a[1], a[2], a[3], !!a[4]); },
+  deletePrayer: function (a) { return deletePrayer(a[0], a[1], a[2]); },
   saveMySupport: function (a) { return saveMySupport(a[0], a[1], a[2]); },
   deletePushSub: function (a) { return deletePushSub(a[0], a[1], a[2]); },
   savePushPrefs: function (a) { return savePushPrefs(a[0], a[1], a[2]); },

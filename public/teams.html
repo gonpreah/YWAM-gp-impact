@@ -1819,6 +1819,15 @@ body.hxOn { overflow:hidden; }
 .f30Row.done { color:var(--muted); cursor:default; }
 .f30Tick { width:22px; height:22px; flex:none; border-radius:50%; border:2px solid var(--border2, var(--border)); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; }
 .f30Row.done .f30Tick { background:var(--goodSoft); border-color:var(--goodSoft); color:var(--good); }
+.prHead { display:flex; align-items:center; gap:10px; }
+.prWho small { display:block; color:var(--muted); font-size:12px; }
+.prText { margin:10px 0 0; font-size:15px; line-height:1.55; white-space:pre-wrap; overflow-wrap:anywhere; }
+.prAnswered { margin-top:10px; padding:8px 10px; border-radius:10px; background:var(--goodSoft); color:var(--good); font-size:13px; font-weight:700; }
+.prAnswered div { font-weight:400; color:var(--ink); margin-top:3px; }
+.prActs { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-top:10px; }
+.prActs .btn { width:auto; margin:0; }
+.prCount { font-size:13px; color:var(--muted); font-weight:700; }
+.prDel { color:var(--bad); }
 .supStats { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px; font-size:13px; color:var(--muted); }
 .supStats b { color:var(--ink); }
 .supStats .supDue b { color:var(--bad); }
@@ -3196,6 +3205,7 @@ function render(){
   else if(S.view==='kmreview') m.innerHTML=kmReviewHtml();
   else if(S.view==='report') m.innerHTML=boardReportHtml_();
   else if(S.view==='support') m.innerHTML=supportHtml_();
+  else if(S.view==='prayer') m.innerHTML=prayerHtml_();
   else if(S.view==='week') m.innerHTML=homeHtml();
   else if(S.view==='health') m.innerHTML=healthHtml();
   else if(S.view==='team') m.innerHTML=teamHtml();
@@ -3408,13 +3418,14 @@ function renderMenu(){
   IC.library='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7M9 11h5"/></svg>';
   IC.ywamgp='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.8 2.6 4 5.6 4 9s-1.2 6.4-4 9c-2.8-2.6-4-5.6-4-9s1.2-6.4 4-9Z"/></svg>';
   IC.boardlogout=IC.profile;
+  IC.prayer='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-1.2 2.5-1.8 5-1.8 7.5L7 15.5V20h4l1-2.5"/><path d="M12 3c1.2 2.5 1.8 5 1.8 7.5l3.2 5V20h-4L12 17.5"/></svg>';
   IC.kmreview='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h8M8 3v2M5.5 5c.8 3.2 3 5.6 6 7"/><path d="M10.5 5c-.7 3.6-3 6.4-6 8"/><path d="M12.5 21l4-9 4 9M14 18h5"/></svg>';
   var sections= S.board ? [
     { title:'', items:[it('ywamgp', t('YWAM GP')), it('library', t('Library')), it('boardlogout', t('Log out'))] }
   ] : S.guest ? [
     { title:'', items:[it('library', t('Library')), it('guestreg', t('Create my profile')), it('guestlogin', t('Log in'))] }
   ] : [
-    { title:'', items:[it('base', t('Base')), it('ywamgp', t('YWAM GP')), it('leave', t('Leave Request')), it('mycontract', t('My contract')), it('profile', t('Profile & settings'))] },
+    { title:'', items:[it('base', t('Base')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer')), it('leave', t('Leave Request')), it('mycontract', t('My contract')), it('profile', t('Profile & settings'))] },
     { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : []) },
     { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal'))] : [] },
     { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : []) },
@@ -3445,6 +3456,7 @@ function renderMenu(){
       else if(id==='library'){ S.view='library'; S.libBook=null; libLoad_(); render(); }
       else if(id==='guestreg' || id==='guestlogin'){ gpLeaveGuest_(id==='guestreg'); }
       else if(id==='ywamgp'){ S.view='ywamgp'; S.person=null; render(); window.scrollTo(0,0); }
+      else if(id==='prayer'){ S.view='prayer'; S.pr=null; render(); window.scrollTo(0,0); }
       else if(id==='kmreview'){ S.view='kmreview'; S.kmr=null; S.kmrErr=''; render(); window.scrollTo(0,0); }
       else if(id==='boardlogout'){ boardLeave_(false); }
       else if(id==='profile'){ S.view='profile'; render(); }
@@ -7365,6 +7377,78 @@ function bindF30_(){
   });
   var hd=document.getElementById('f30Hide');
   if(hd) hd.onclick=function(){ lsSet(F30_HIDE_KEY, S.me.id); render(); };
+}
+
+/* ==================== Prayer requests (☰ → Prayer) ====================
+   Share a request with your campus, all of YWAM GP, or only your mentor; tap
+   "I prayed" for someone's (a count, never a list of names); mark your own answered,
+   with a line of thanks. "Prayer requests" in api.js. */
+S.pr=null; S.prErr=''; S.prTab='open'; S.prAnswering=null; S.prBusy=false;
+var PR_SCOPE_LABEL={ campus:'My campus', all:'All of YWAM GP', mentor:'Only my mentor' };
+function prLoad_(){
+  if(S.prLoading) return; S.prLoading=true;
+  run('getPrayers',[S.auth.user,S.auth.pin],function(d){ S.prLoading=false; if(d && d.ok) S.pr=d.prayers||[]; else S.prErr=t('Could not load'); if(S.view==='prayer') render(); },
+    function(){ S.prLoading=false; S.prErr=t('Could not load'); if(S.view==='prayer') render(); });
+}
+function prAgo_(iso){
+  var d=Math.floor((Date.now()-new Date(iso).getTime())/86400000);
+  return d<=0 ? t('today') : d===1 ? t('yesterday') : gpT('{n} days ago',{n:d});
+}
+function prayerHtml_(){
+  var h='<h2>🙏 '+esc(t('Prayer'))+'</h2><p class="sub">'+esc(t('Carry each other’s burdens. Share a request, and pray for each other’s.'))+'</p>';
+  if(!S.pr){ prLoad_(); return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.prErr||t('Loading…'))+'</p></div>'; }
+  var canMentor=!!(S.me.mentorId && S.profile && S.profile.mentorStatus==='approved');
+  h+='<div class="card"><label class="f" for="prText">'+esc(t('Ask for prayer'))+'</label>'+
+    '<textarea id="prText" rows="3" maxlength="600" placeholder="'+esc(t('What can we pray for?'))+'"></textarea>'+
+    '<label class="f" for="prScope">'+esc(t('Who sees it'))+'</label><select id="prScope">'+
+      ['campus','all'].concat(canMentor?['mentor']:[]).map(function(k){ return '<option value="'+k+'">'+esc(t(PR_SCOPE_LABEL[k]))+'</option>'; }).join('')+'</select>'+
+    '<button class="btn" id="prSend"'+(S.prBusy?' disabled':'')+'>🙏 '+esc(t('Share'))+'</button></div>';
+  var open=S.pr.filter(function(p){ return !p.answered; }), answered=S.pr.filter(function(p){ return p.answered; }), mine=S.pr.filter(function(p){ return p.mine; });
+  var chip=function(id, label, n){ return '<button class="deptChip'+(S.prTab===id?' on':'')+'" data-prtab="'+id+'">'+esc(label)+' · '+n+'</button>'; };
+  h+='<div class="deptChips">'+chip('open', t('Praying'), open.length)+chip('answered', t('Answered'), answered.length)+chip('mine', t('Mine'), mine.length)+'</div>';
+  var list=S.prTab==='answered' ? answered : S.prTab==='mine' ? mine : open;
+  if(!list.length) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.prTab==='answered' ? t('Answered prayers will show here.') : S.prTab==='mine' ? t('Requests you share will show here.') : t('No requests right now. Be the first to share one.'))+'</p></div>';
+  list.forEach(function(p){
+    h+='<div class="card prCard'+(p.answered?' answered':'')+'"><div class="prHead">'+avatarHtml(p,'sm')+'<span class="prWho"><b>'+esc(p.mine ? t('You') : p.name)+'</b>'+
+      '<small>'+esc(prAgo_(p.created))+' · '+esc(p.scope==='mentor' ? t('only their mentor') : p.scope==='all' ? t('all of YWAM GP') : t(campusName(p.campus)))+'</small></span></div>'+
+      '<p class="prText">'+esc(p.text)+'</p>';
+    if(p.answered) h+='<div class="prAnswered">🎉 '+esc(gpT('Answered {date}',{date:teamDate_(p.answered)}))+(p.answerNote ? '<div>'+esc(p.answerNote)+'</div>' : '')+'</div>';
+    h+='<div class="prActs">';
+    if(!p.mine) h+='<button class="btn '+(p.iPrayed?'':'ghost ')+'small" data-prpray="'+esc(p.id)+'" data-on="'+(p.iPrayed?'0':'1')+'">🙏 '+esc(p.iPrayed ? t('I prayed') : t('Pray'))+(p.prayedN ? ' · '+p.prayedN : '')+'</button>';
+    else h+='<span class="prCount">🙏 '+esc(gpT('{n} praying',{n:p.prayedN}))+'</span>';
+    if(p.mine && !p.answered && S.prAnswering!==p.id) h+='<button class="btn ghost small" data-pranswer="'+esc(p.id)+'">🎉 '+esc(t('Answered'))+'</button>';
+    if(p.mine && p.answered) h+='<button class="linkbtn inline" data-prundo="'+esc(p.id)+'" style="width:auto;padding:0">'+esc(t('Not yet answered'))+'</button>';
+    if(p.mine || S.me.isAdmin) h+='<button class="linkbtn inline prDel" data-prdel="'+esc(p.id)+'" style="width:auto;padding:0">'+esc(t('Delete'))+'</button>';
+    h+='</div>';
+    if(S.prAnswering===p.id) h+='<label class="f" for="prNote">'+esc(t('A line of thanks (optional)'))+'</label><input id="prNote" maxlength="300">'+
+      '<div class="kmrActs"><button class="btn" id="prAnsSave">'+esc(t('Mark answered'))+'</button><button class="btn ghost" id="prAnsCancel">'+esc(t('Cancel'))+'</button></div>';
+    h+='</div>';
+  });
+  return h;
+}
+function bindPrayer_(){
+  if(S.view!=='prayer' || !S.pr) return;
+  var done=function(d){ S.prBusy=false; if(d && d.ok){ if(d.prayers) S.pr=d.prayers; render(); return true; } showMsg(d && d.err==='too_many' ? t('That is a lot for one day — try again tomorrow.') : t('Could not save')); render(); return false; };
+  var send=document.getElementById('prSend');
+  if(send) send.onclick=function(){
+    var v=(document.getElementById('prText').value||'').trim();
+    if(!v){ showMsg(t('Write your request first')); return; }
+    S.prBusy=true; send.disabled=true;
+    run('savePrayer',[S.auth.user,S.auth.pin,{ text:v, scope:document.getElementById('prScope').value }],function(d){ if(done(d)){ S.prTab='open'; showMsg(t('Shared')); render(); } });
+  };
+  document.querySelectorAll('[data-prtab]').forEach(function(b){ b.onclick=function(){ S.prTab=b.getAttribute('data-prtab'); S.prAnswering=null; render(); }; });
+  document.querySelectorAll('[data-prpray]').forEach(function(b){
+    b.onclick=function(){
+      gpTap(); var id=b.getAttribute('data-prpray'), on=b.getAttribute('data-on')==='1';
+      run('prayedFor',[S.auth.user,S.auth.pin,id,on],function(d){ if(d && d.ok){ S.pr=S.pr.map(function(p){ return p.id===id ? d.prayer : p; }); render(); } });
+    };
+  });
+  document.querySelectorAll('[data-pranswer]').forEach(function(b){ b.onclick=function(){ S.prAnswering=b.getAttribute('data-pranswer'); render(); }; });
+  var c=document.getElementById('prAnsCancel'); if(c) c.onclick=function(){ S.prAnswering=null; render(); };
+  var a=document.getElementById('prAnsSave');
+  if(a) a.onclick=function(){ var id=S.prAnswering; S.prAnswering=null; run('answerPrayer',[S.auth.user,S.auth.pin,id,(document.getElementById('prNote')||{}).value||''],function(d){ if(done(d)) showMsg(t('Praise God!')); }); };
+  document.querySelectorAll('[data-prundo]').forEach(function(b){ b.onclick=function(){ run('answerPrayer',[S.auth.user,S.auth.pin,b.getAttribute('data-prundo'),'',true],done); }; });
+  document.querySelectorAll('[data-prdel]').forEach(function(b){ b.onclick=function(){ if(!confirm(t('Delete this request?'))) return; run('deletePrayer',[S.auth.user,S.auth.pin,b.getAttribute('data-prdel')],done); }; });
 }
 
 /* ==================== Support raising (My Home → Support raising) ====================
@@ -17116,6 +17200,7 @@ function bindAway(){
   bindBoardReport_();
   bindF30_();
   bindSupport_();
+  bindPrayer_();
   bindHosp();
   if(S.view==='ministry') bindLead_();
   if(typeof dutyHtml==='function') bindSched_();

@@ -2106,6 +2106,15 @@ inferred from volunteer counts.
   are on screen now rather than sitting in English, which was Uriah's call, but nobody
   who speaks Khmer has read them yet. **Khmer review** (below) is how they get read.
 
+## Prayer requests (☰ → Prayer, Oct 2026)
+- Share a request with **my campus**, **all of YWAM GP**, or **only my mentor** (an accepted
+  one); `prCanSee_` decides, and the server only ever returns what you may see. "I prayed"
+  is a count (`prayedN`, `iPrayed`) — who prayed is never sent. The asker marks it answered
+  (with an optional line of thanks) or deletes it; an admin can delete too. Five a day each.
+- `prayers` blob; open requests show for 60 days, answered for 30 (your own always), rows
+  older than a year drop on the next new request. Not in the roster or any report.
+- tests/test-prayer-ui.mjs.
+
 ## Support raising (My Home → Support raising, Oct 2026)
 - Each staff member's ministry partners and monthly goal (US$), on their own staff record
   (`support`: { goal, partners[{ id, name, amount, freq month|year|once, status
