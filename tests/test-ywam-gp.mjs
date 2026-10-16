@@ -117,6 +117,17 @@ ok('an admin removes a board member', r.body.ok && r.body.board.length === 2);
 r = await call('getYwamGp', ['mary', '4321']);
 ok('… whose login then stops working', r.body.ok === false);
 
+/* ---------- Campus Leadership picks its own title (Profile & settings) ---------- */
+r = await call('updateProfile', ['vanna', '1234', { dept: 'Campus Leadership', ministry: 'Campus Director', cdKind: 'national' }]);
+let g = await call('getYwamGp', ['kanha', '1234']);
+ok('a Campus Leadership member makes themselves the National Campus Director', r.body.ok && g.body.titles.st_pp === 'National Campus Director');
+r = await call('updateProfile', ['vanna', '1234', { dept: 'Campus Leadership', ministry: 'Campus Director', cdKind: 'emperor' }]);
+g = await call('getYwamGp', ['kanha', '1234']);
+ok('… only International or National', r.body.ok && g.body.titles.st_pp === 'Campus Director');
+r = await call('updateProfile', ['vanna', '1234', { dept: 'Campus Leadership', ministry: 'Youth Education', cdKind: '' }]);
+g = await call('getYwamGp', ['kanha', '1234']);
+ok('… or Director of a department', r.body.ok && g.body.titles.st_pp === 'Director of Youth Education');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 fs.rmSync(TMP, { recursive: true, force: true });
 process.exit(fail ? 1 : 0);

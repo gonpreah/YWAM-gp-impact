@@ -1794,6 +1794,9 @@ body.hxOn { overflow:hidden; }
 /* Team → Structure: the org chart as nested cards. Leads wear the crown;
    children hang off a rule on the left, the way the Canva chart draws it. */
 .teamModeSeg { margin-bottom:8px; display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); max-width:none; width:100%; box-sizing:border-box; }
+.teamScopeSeg { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); max-width:none; width:100%; box-sizing:border-box; }
+.teamScopeSeg .campusBtn { padding:7px 4px; min-width:0; }
+@media (max-width:400px){ .teamScopeSeg { grid-template-columns:repeat(2, minmax(0,1fr)); } }
 .teamModeSeg .campusBtn { padding:7px 4px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 @media (max-width:400px){ .teamModeSeg { grid-template-columns:repeat(2, minmax(0,1fr)); } }
 .orgChart { margin-top:4px; }
@@ -5835,12 +5838,51 @@ function bindPersonality(){
   if(ch) ch.onclick=function(){ S.ptest={stage:'pick', answers:{}, page:0, sex:mySex()}; S.view='ptest'; render(); window.scrollTo(0,0); };
 }
 
+/* ---------- Team tab: YWAM GP and the Advisory Board as teams ----------
+   Next to the two campuses, the Team tab's views can show YWAM GP's leadership
+   team and the board (Uriah, Oct 2026). Their people come from the boot's `org`
+   (getYwamGp) matched against the roster, so a board member shows in Strengths
+   and Personalities only when they are also on staff — the board's own records
+   hold no type and no strengths. Nothing new is sent for any of it. */
+function teamOrgScope_(c){ return c==='ywamgp' || c==='board'; }
+function teamPeopleIn_(c){
+  if(!teamOrgScope_(c)) return S.roster.filter(function(p){ return p.campus===c; });
+  var O=S.org||{}, ids=c==='ywamgp' ? (O.gp||[]).map(function(p){ return p.id; }) : (O.board||[]).map(function(b){ return b.staffId; }).filter(Boolean);
+  return S.roster.filter(function(p){ return ids.indexOf(p.id)>-1; });
+}
+function teamOrgNoteHtml_(c){
+  if(c!=='board') return '';
+  return '<p class="hint" style="margin:0 0 12px">'+esc(t('Only board members who are also on staff show here.'))+'</p>';
+}
+/* Team → Directory → YWAM GP: every place on YWAM GP's leadership team and who holds it. */
+function teamGpDirectoryHtml_(){
+  var O=S.org, byId={};
+  S.roster.forEach(function(p){ byId[p.id]=p; });
+  var h='<h3>🌏 '+esc(t('YWAM GP Leadership Team'))+' <small>· '+O.gp.length+'</small></h3>';
+  GP_ROLES.forEach(function(r){
+    var who=O.gp.filter(function(p){ return p.gpRole===r[0]; });
+    h+='<div class="deptBlock"><div class="deptHead">'+esc(gpRoleLabel_(r[0]))+'<span class="deptN">'+who.length+'</span></div>';
+    if(!who.length){ h+='<div class="minLabel">'+esc(t('Not filled yet'))+'</div></div>'; return; }
+    h+='<div class="dir">';
+    who.forEach(function(g){
+      var p=byId[g.id]||g;
+      h+='<div class="dircard" data-person="'+esc(g.id)+'">'+avatarHtml(p)+
+         '<div class="pname">'+esc(p.name)+'</div>'+
+         '<div class="pmeta">'+esc(t(campusName(p.campus)))+'</div>'+(byId[g.id] ? ptChipHtml(p) : '')+'</div>';
+    });
+    h+='</div></div>';
+  });
+  return h;
+}
+
 /* ---------- the team map (Team tab → Strengths) ---------- */
 /* Adds up the GP Strengths Top 5 of everyone on this campus who shares it. */
 function teamStrengthsHtml_(campus){
   if(!gsOK()) return '<p class="sub">'+esc(t('Strengths could not load. Pull down to refresh.'))+'</p>';
-  var people=S.roster.filter(function(p){ return p.campus===campus && p.gstrengths && p.gstrengths.length; });
+  var people=teamPeopleIn_(campus).filter(function(p){ return p.gstrengths && p.gstrengths.length; });
+  var orgNote=teamOrgNoteHtml_(campus);
   if(!people.length){
+    if(teamOrgScope_(campus)) return '<div class="card"><p class="sub" style="margin:4px 0">'+esc(t('Nobody here has shared their strengths yet.'))+'</p></div>'+orgNote+gsFineHtml();
     return '<div class="card"><p class="sub" style="margin:4px 0">'+
       esc(t('Nobody here has found their strengths yet. Take the free test from My Home.'))+'</p></div>'+gsFineHtml();
   }
@@ -5860,7 +5902,7 @@ function teamStrengthsHtml_(campus){
     h+='<div class="pBar"><div class="pBarTop"><span style="color:'+g.ink+';font-weight:800">'+esc(t(g.name))+'</span><span><b>'+pct+'%</b></span></div>'+
       '<div class="pTrack"><div class="pFill" style="left:0;width:'+pct+'%;background:'+g.color+'"></div></div></div>';
   });
-  h+='<div class="hint">'+esc(t('Share of the team’s Top 5 strengths in each group.'))+'</div></div>';
+  h+='<div class="hint">'+esc(t('Share of the team’s Top 5 strengths in each group.'))+'</div></div>'+orgNote;
 
   GP_GSGROUPS.forEach(function(g){
     var ids=GP_GS_IDS.filter(function(id){ return gpGSById(id).group===g.id; })
@@ -7750,6 +7792,7 @@ var TP_LEAN_TEXT = {
 };
 var TP_MIXED = 'Evenly mixed — the team has both. Let each side lead where it is strongest.';
 function teamPScopePeople_(campus){
+  if(teamOrgScope_(campus)) return teamPeopleIn_(campus);
   var sc=S.teamPScope||'', here=S.roster.filter(function(p){ return p.campus===campus; });
   if(sc.indexOf('dept:')===0){ var d=sc.slice(5); return here.filter(function(p){ return p.dept===d; }); }
   if(sc.indexOf('min:')===0){ var k=sc.slice(4), i=k.indexOf('|'); return here.filter(function(p){ return p.dept===k.slice(0,i) && p.ministry===k.slice(i+1); }); }
@@ -7771,8 +7814,9 @@ function teamPScopeSelect_(campus){
 function teamPersonalityHtml_(campus){
   var all=teamPScopePeople_(campus);
   var people=all.filter(function(p){ return p.avatar && gpPIsType(p.avatar.type); });
-  var h='<div class="card">'+teamPScopeSelect_(campus)+
-    '<div class="pmeta" style="margin-top:8px">'+esc(gpT('{n} of {total} people have shared their type',{n:people.length, total:all.length}))+'</div></div>';
+  var h='<div class="card">'+(teamOrgScope_(campus) ? '' : teamPScopeSelect_(campus))+
+    '<div class="pmeta"'+(teamOrgScope_(campus) ? '' : ' style="margin-top:8px"')+'>'+esc(gpT('{n} of {total} people have shared their type',{n:people.length, total:all.length}))+'</div></div>'+
+    teamOrgNoteHtml_(campus);
   if(!people.length) return h+'<div class="card"><p class="sub" style="margin:4px 0">'+
     esc(t('Nobody here has shared a personality type yet. Take the test from My Home.'))+'</p></div>'+pFineHtml();
   var n=people.length;
@@ -15479,8 +15523,9 @@ function teamHtml(){
      rather than "which base am I looking at right now". Defaults to your own
      campus, since that's whose team you open this tab to see. */
   var mode = S.teamMode==='org' ? 'org' : (S.teamMode==='str' && gsOK() ? 'str' : (S.teamMode==='pers' && pOK() ? 'pers' : 'dir'));
-  /* Structure also has the whole of YWAM GP (ywamGpChartHtml_); the other views are per campus. */
-  var campus = (S.teamCampus==='ywamgp' && mode!=='org' ? '' : S.teamCampus) || (S.me && S.me.campus) || CAMPUSES[0].id;
+  /* Besides the two campuses, every view has YWAM GP's leadership team and the
+     Advisory Board (teamOrgScope_) — in Structure, YWAM GP is the whole chart. */
+  var campus = S.teamCampus || (S.me && S.me.campus) || CAMPUSES[0].id;
   var cInfo = CAMPUSES.filter(function(c){ return c.id===campus; })[0];
   var here = S.roster.filter(function(p){ return p.campus===campus; });
 
@@ -15496,11 +15541,17 @@ function teamHtml(){
     mode==='pers' ? t('The team’s mix of personality types, from the types people have shared.') :
     t('Tap anyone to see their ministry and this week’s goals.'))+'</p>';
 
-  h+='<div class="campusSeg">'+(mode==='org' ? '<button class="campusBtn'+(campus==='ywamgp'?' on':'')+'" data-teamcampus="ywamgp">🌏 '+esc(t('YWAM GP'))+'</button>' : '')+CAMPUSES.map(function(c){
-    return '<button class="campusBtn'+(campus===c.id?' on':'')+'" data-teamcampus="'+esc(c.id)+'">'+esc(t(c.name))+'</button>';
-  }).join('')+'</div>';
+  h+='<div class="campusSeg teamScopeSeg">'+
+    '<button class="campusBtn'+(campus==='ywamgp'?' on':'')+'" data-teamcampus="ywamgp">🌏 '+esc(t('YWAM GP'))+'</button>'+
+    '<button class="campusBtn'+(campus==='board'?' on':'')+'" data-teamcampus="board">🛡️ '+esc(t('Advisory Board'))+'</button>'+
+    CAMPUSES.map(function(c){
+      return '<button class="campusBtn'+(campus===c.id?' on':'')+'" data-teamcampus="'+esc(c.id)+'">'+esc(t(c.name))+'</button>';
+    }).join('')+'</div>';
 
+  if(teamOrgScope_(campus) && !S.org){ orgLoad_(); return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>'; }
+  if(campus==='board' && (mode==='org' || mode==='dir')) return h+orgBoardHtml_();
   if(mode==='org' && campus==='ywamgp') return h+ywamGpChartHtml_();
+  if(mode==='dir' && campus==='ywamgp') return h+teamGpDirectoryHtml_();
   if(mode==='org') return h+orgStructureHtml_(campus);
   if(mode==='str') return h+teamStrengthsHtml_(campus);
   if(mode==='pers') return h+teamPersonalityHtml_(campus);
@@ -15964,16 +16015,42 @@ function handleDashboardBg(file){
 /* ---------- bind ---------- */
 /* Ministry dropdowns depend on the chosen department, so repopulate them in
    place rather than re-rendering the whole form and losing typed input. */
-function fillMinistrySelect(selId, campusSelId, deptSelId, current){
+/* Campus Leadership picks a title, not a ministry (Uriah, Oct 2026): International or
+   National Campus Director, or Director of one of the departments. The option's value
+   is "<ministry>#<cdKind>" for a Campus Director (minSelValue_ splits it); a Campus
+   Director with no kind yet keeps a plain "Campus Director" until they choose. */
+function fillMinistrySelect(selId, campusSelId, deptSelId, current, curKind){
   var sel=document.getElementById(selId);
   if(!sel) return;
   var campus=(document.getElementById(campusSelId)||{}).value||(S.me?S.me.campus:'poipet');
   var dept=(document.getElementById(deptSelId)||{}).value||'';
   var list=ministriesFor(campus, dept);
   var keep=sel.value||current||'';
+  if(dept===BL_DEPT){
+    if(keep==='Campus Director' && curKind) keep='Campus Director#'+curKind;
+    var opts=[['Campus Director#international', t('International Campus Director')], ['Campus Director#national', t('National Campus Director')]];
+    if(keep==='Campus Director') opts.push(['Campus Director', t('Campus Director')]);
+    list.forEach(function(m){ if(m!=='Campus Director') opts.push([m, orgTitleText_('Director of '+m)]); });
+    sel.innerHTML='<option value="">'+esc(t('— choose your role —'))+'</option>'+opts.map(function(o){
+      return '<option value="'+esc(o[0])+'"'+(keep===o[0]?' selected':'')+'>'+esc(o[1])+'</option>';
+    }).join('');
+    return;
+  }
+  keep=keep.split('#')[0];
   sel.innerHTML='<option value="">— none yet —</option>'+list.map(function(m){
     return '<option value="'+esc(m)+'"'+(keep===m?' selected':'')+'>'+esc(t(m))+'</option>';
   }).join('');
+}
+function minSelValue_(id, deptId){
+  var v=(document.getElementById(id)||{}).value||'', i=v.indexOf('#');
+  var out={ ministry: i>-1 ? v.slice(0,i) : v };
+  if(((document.getElementById(deptId)||{}).value||'')===BL_DEPT) out.cdKind = i>-1 ? v.slice(i+1) : '';
+  return out;
+}
+/* this person's Campus Director kind, read off the title YWAM GP's org data gives them */
+function myCdKind_(){
+  var tl=S.me ? orgTitleOf_(S.me) : '';
+  return tl==='International Campus Director' ? 'international' : tl==='National Campus Director' ? 'national' : '';
 }
 function bindMinistrySelects(){
   if(document.getElementById('r_ministry')){
@@ -15984,7 +16061,7 @@ function bindMinistrySelects(){
     });
   }
   if(document.getElementById('p_ministry')){
-    fillMinistrySelect('p_ministry','p_campus','p_dept', S.me?S.me.ministry:'');
+    fillMinistrySelect('p_ministry','p_campus','p_dept', S.me?S.me.ministry:'', myCdKind_());
     ['p_campus','p_dept'].forEach(function(id){
       var el=document.getElementById(id);
       if(el) el.onchange=function(){
@@ -17459,7 +17536,8 @@ function bind(){
       pin:document.getElementById('r_pin').value.trim(),
       campus:document.getElementById('r_campus').value,
       dept:document.getElementById('r_dept').value,
-      ministry:(document.getElementById('r_ministry')||{}).value||'',
+      ministry:minSelValue_('r_ministry','r_dept').ministry,
+      cdKind:minSelValue_('r_ministry','r_dept').cdKind,
       role:document.getElementById('r_role').value.trim(),
       staffType:document.getElementById('r_type').value,
       country:countryValue('r_country'),
@@ -17513,7 +17591,7 @@ function bind(){
   document.querySelectorAll('[data-teammode]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.teamMode=b.getAttribute('data-teammode'); render(); };
   });
-  if(S.view==='team' && S.teamMode==='org' && !S.person && S.me){
+  if(S.view==='team' && S.teamMode==='org' && !S.person && S.me && !teamOrgScope_(S.teamCampus)){
     var sCampus=S.teamCampus || S.me.campus || CAMPUSES[0].id, sYear=structYear_(), sQ=structQ_(), sKey=structKey_(sCampus,sYear,sQ);
     // a quarter other than the current one is read from its snapshot, once
     if(!structIsLive_() && !S.structCache[sKey] && !S.structLoading[sKey] && !S.structError[sKey]){
@@ -17654,7 +17732,7 @@ function bind(){
       email:document.getElementById('p_email').value.trim(),
       campus:document.getElementById('p_campus').value,
       dept:document.getElementById('p_dept').value,
-      ministry:(document.getElementById('p_ministry')||{}).value||'',
+      ministry:minSelValue_('p_ministry','p_dept').ministry,
       ministries:[].map.call(document.querySelectorAll('[data-pmin]:checked'), function(c){ return c.getAttribute('data-pmin'); }),
       role:document.getElementById('p_role').value.trim(),
       staffType:document.getElementById('p_type').value,
@@ -17665,12 +17743,14 @@ function bind(){
       joined:document.getElementById('p_joined').value.trim(),
       debt:S.profile&&S.profile.debt?true:false
     };
+    var pk=minSelValue_('p_ministry','p_dept'); if(pk.cdKind!==undefined) payload.cdKind=pk.cdKind;
     sp.disabled=true; sp.textContent='Saving…';
     run('updateProfile',[S.auth.user,S.auth.pin,payload],function(d){
       if(d.ok){
         // merged, not replaced: updateProfile sends the public card, which has no
         // isAdmin / hr / portal flags — replacing S.me dropped the Admin menu until a reload
         S.me=Object.assign({}, S.me, d.staff); S.profile=d.profile; saveStaffCard(); showMsg('Profile saved');
+        orgLoad_();   // a new title (Campus Leadership) shows on the charts
         // Ministry may have changed, so re-pull the KPI set for the new one.
         run('getMyMinistry',[S.auth.user,S.auth.pin],function(mn){ if(mn.ok) S.ministry=mn; render(); });
         run('teamRoster',[S.auth.user,S.auth.pin],function(r){S.roster=Array.isArray(r)?r:[];render();});

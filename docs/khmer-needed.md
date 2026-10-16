@@ -3393,3 +3393,13 @@ attraction), របាំងការពារ (guardrail), ចិត្តត�
 | YWAM GP Leadership Team | ក្រុមដឹកនាំ YWAM GP |
 | Open {campus}’s chart | បើកតារាងរចនាសម្ព័ន្ធ {campus} |
 | Someone with more than one role is in each box they belong to. | អ្នកដែលមានតួនាទីច្រើនជាងមួយ បង្ហាញនៅក្នុងប្រអប់នីមួយៗដែលគាត់ជាសមាជិក។ |
+
+### Team → YWAM GP and Advisory Board in every view; Campus Leadership picks its title
+
+| English | Khmer (draft) |
+|---|---|
+| Only board members who are also on staff show here. | បង្ហាញនៅទីនេះ តែសមាជិកក្រុមប្រឹក្សាដែលជាបុគ្គលិកផងដែរ។ |
+| Nobody here has shared their strengths yet. | មិនទាន់មាននរណាម្នាក់នៅទីនេះចែករំលែកចំណុចខ្លាំងរបស់ខ្លួននៅឡើយទេ។ |
+| — choose your role — | — ជ្រើសរើសតួនាទីរបស់អ្នក — |
+
+The last one heads the Main ministry list in Profile & settings for Campus Leadership.

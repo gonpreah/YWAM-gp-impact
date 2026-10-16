@@ -707,6 +707,7 @@ async function staffRegister(payload) {
     phone: payload.phone || '', joined: payload.joined || '', debt: false, active: !pending,
     isAdmin: false, created: now, updated: now
   };
+  if (CD_KINDS.indexOf(payload.cdKind) > -1 && rec.dept === LEADERSHIP_DEPT && rec.ministry === 'Campus Director') rec.cdKind = payload.cdKind;
   rows.push(rec);
   await saveStaff_(rows);
   // No staff/profile in a pending response: this account has no session yet,
@@ -1107,6 +1108,8 @@ async function updateProfile(username, pin, payload) {
   if (payload.dept !== undefined) rec.dept = normDept_(payload.dept);
   if (payload.ministry !== undefined) rec.ministry = normMinistry_(rec.dept, payload.ministry);
   rec.dept = normDept_(rec.dept, rec.ministry);   // a ministry that moved department goes where it is now
+  // Campus Leadership picks its own title (Oct 2026): International or National Campus Director
+  if (payload.cdKind !== undefined) rec.cdKind = CD_KINDS.indexOf(payload.cdKind) > -1 ? payload.cdKind : '';
   if (payload.role !== undefined) rec.role = payload.role;
   if (payload.staffType !== undefined) rec.staffType = cleanStaffType_(payload.staffType);
   if (payload.country !== undefined) rec.country = cleanCountry_(payload.country);
