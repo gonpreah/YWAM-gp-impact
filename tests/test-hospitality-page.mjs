@@ -183,7 +183,7 @@ ok('… take one woman’s bed off and the women’s beds open again, the men’
 await page.click('[data-hbed="' + picked.filter(id => id[0] === 'f')[0] + '"]'); await page.waitForTimeout(100);
 await page.click('#hospWhoClose'); await page.waitForTimeout(100);
 const kinds = await page.$$eval('.hospKind', k => k.map(x => x.textContent.trim().replace(/^\S+ /, '') + (x.querySelector('input').checked ? '*' : '')));
-ok('beside the name, tick-boxes: Staff, Student, Team (ticked), Guest / speaker', kinds.join(' | ') === 'Staff | Student | Team* | Guest / speaker', kinds.join(' | '));
+ok('beside the name, tick-boxes: Staff, Student, Volunteer, Team (ticked), Guest / speaker', kinds.join(' | ') === 'Staff | Student | Volunteer | Team* | Guest / speaker', kinds.join(' | '));
 const menBed = picked.filter(id => id[0] === 'm')[0];
 ok('the picked beds ask "who?" — no separate Who sleeps where section', (await page.$$eval('.hospBed.sel small', ss => ss.map(x => x.textContent))).join() === 'who?,who?,who?,who?' && !(await page.$('.hospWhoRow')));
 await page.click('[data-hbed="' + menBed + '"]'); await page.waitForTimeout(150);
@@ -224,6 +224,8 @@ console.log('=== a new booking by hand ===');
 await page.click('[data-hosptab="book"]'); await page.waitForTimeout(200);
 ok('the bookings list shows here-and-coming', (await page.$$('[data-hospedit]')).length === 2);
 await page.click('#hospNewBtn'); await page.waitForTimeout(200);
+await page.click('[data-hfcat="volunteer"]'); await page.waitForTimeout(100);
+ok('ticking Volunteer makes it a volunteer booking (and offers Permanent)', await page.$eval('[data-hfcat="volunteer"]', i => i.checked) && !(await page.$eval('[data-hfcat="team"]', i => i.checked)) && !!(await page.$('[data-hfchk="permanent"]')));
 await page.click('[data-hfcat="staff"]'); await page.waitForTimeout(100);
 ok('ticking Staff makes it a staff booking (and offers Permanent)', await page.$eval('[data-hfcat="staff"]', i => i.checked) && !(await page.$eval('[data-hfcat="guest"]', i => i.checked)) && !!(await page.$('[data-hfchk="permanent"]')));
 await page.click('[data-hfcat="guest"]'); await page.waitForTimeout(100);
