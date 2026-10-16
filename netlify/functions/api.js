@@ -772,7 +772,7 @@ function adminStaffOut_(s) {
     ministry: s.ministry || '', role: s.role, active: s.active !== false, isAdmin: !!s.isAdmin, hr: !!s.hr,
     kind: s.kind || 'staff', portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin,
     staffType: s.staffType || '', country: s.country || '', email: s.email || '',
-    cdKind: s.cdKind || '', gpRole: s.gpRole || '',
+    cdKind: s.cdKind || '', gpRole: s.gpRole || '', cltRequest: cltRequestOut_(s),
     mentorId: s.mentorId || '', mentorStatus: s.mentorStatus || '',
     leads: leadsOf_(s), ministries: ministriesOf_(s),
     archived: archivedOf_(s),
@@ -860,6 +860,32 @@ async function adminListStaff(username, pin) {
   const rows = await getStaff_();
   // Applicants are portal accounts, not staff — they have their own screen.
   return { ok: true, staff: rows.filter(function (r) { return !isApplicant_(r); }).map(adminStaffOut_) };
+}
+
+/* A staff member's request to move into Campus Leadership (updateProfile), and an
+   admin's yes or no. Yes moves them, with the title they picked. */
+function cltRequestOut_(s) {
+  const q = s && s.cltRequest;
+  return q ? { ministry: q.ministry || '', cdKind: q.cdKind || '', at: q.at || '' } : null;
+}
+async function adminDecideCltRequest(username, pin, staffId, approve) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  return mutateStaff_(function (rows) {
+    const idx = rows.findIndex(function (r) { return r.id === staffId; });
+    if (idx === -1) return { abort: true, ok: false, err: 'not_found' };
+    const rec = rows[idx], q = rec.cltRequest;
+    if (!q) return { abort: true, ok: false, err: 'no_request' };
+    if (approve) {
+      rec.dept = LEADERSHIP_DEPT;
+      rec.ministry = normMinistry_(LEADERSHIP_DEPT, q.ministry || '');
+      rec.cdKind = rec.ministry === 'Campus Director' && CD_KINDS.indexOf(q.cdKind) > -1 ? q.cdKind : '';
+      if (rec.ministries) rec.ministries = cleanMinistries_(rec.ministries, rec);
+    }
+    delete rec.cltRequest;
+    rec.updated = new Date().toISOString();
+    return { ok: true, staff: adminStaffOut_(rec) };
+  });
 }
 
 /* One switch for both halves of account management: flipping a pending
@@ -1105,17 +1131,34 @@ async function updateProfile(username, pin, payload) {
   const rec = rows[idx];
   if (payload.name !== undefined) rec.name = payload.name;
   if (payload.campus !== undefined) rec.campus = payload.campus;
-  if (payload.dept !== undefined) rec.dept = normDept_(payload.dept);
-  if (payload.ministry !== undefined) rec.ministry = normMinistry_(rec.dept, payload.ministry);
-  rec.dept = normDept_(rec.dept, rec.ministry);   // a ministry that moved department goes where it is now
-  // Campus Leadership picks its own title (Oct 2026): International or National Campus Director
-  if (payload.cdKind !== undefined) rec.cdKind = CD_KINDS.indexOf(payload.cdKind) > -1 ? payload.cdKind : '';
+  /* Moving yourself INTO Campus Leadership waits for an admin (Oct 2026, Uriah) — the
+     same rule as a Campus Leadership sign-up, since the department carries the
+     leadership tools (the meeting board, other ministries' numbers, a title). The
+     rest of the profile saves; the move is kept as a request (cltRequest) that an
+     admin approves or declines in Admin → Approvals. Already in it, you move freely. */
+  let cltPending = false;
+  const wasLeadership = deptOf_(rec) === LEADERSHIP_DEPT;
+  const wantDept = payload.dept !== undefined ? normDept_(payload.dept, payload.ministry) : rec.dept;
+  if (!wasLeadership && wantDept === LEADERSHIP_DEPT) {
+    rec.cltRequest = { ministry: normMinistry_(LEADERSHIP_DEPT, str_(payload.ministry, 80) || ''),
+      cdKind: CD_KINDS.indexOf(payload.cdKind) > -1 ? payload.cdKind : '', at: new Date().toISOString() };
+    cltPending = true;
+  } else {
+    if (payload.dept !== undefined) rec.dept = normDept_(payload.dept);
+    if (payload.ministry !== undefined) rec.ministry = normMinistry_(rec.dept, payload.ministry);
+    rec.dept = normDept_(rec.dept, rec.ministry);   // a ministry that moved department goes where it is now
+    // Campus Leadership picks its own title (Oct 2026): International or National Campus Director
+    if (payload.cdKind !== undefined) rec.cdKind = CD_KINDS.indexOf(payload.cdKind) > -1 ? payload.cdKind : '';
+  }
+  if (payload.cancelCltRequest) delete rec.cltRequest;
   if (payload.role !== undefined) rec.role = payload.role;
   if (payload.staffType !== undefined) rec.staffType = cleanStaffType_(payload.staffType);
   if (payload.country !== undefined) rec.country = cleanCountry_(payload.country);
   if (payload.sex !== undefined) rec.sex = cleanSex_(payload.sex);
   if (payload.ministries !== undefined) rec.ministries = cleanMinistries_(payload.ministries, rec);
   else if (rec.ministries) rec.ministries = cleanMinistries_(rec.ministries, rec);   // a new main one drops out of the rest
+  // nor through the side door: nobody adds a Campus Leadership row as an extra ministry
+  if (deptOf_(rec) !== LEADERSHIP_DEPT && rec.ministries) rec.ministries = rec.ministries.filter(function (k) { return k.split('|')[0] !== LEADERSHIP_DEPT; });
   if (payload.mentorId !== undefined) {
     const newMentorId = payload.mentorId || '';
     // Picking a new/different mentor always resets to pending — the mentor
@@ -1143,12 +1186,12 @@ async function updateProfile(username, pin, payload) {
   rows[idx] = rec;
   await saveStaff_(rows);
   return {
-    ok: true, staff: publicStaff_(rec),
+    ok: true, staff: publicStaff_(rec), cltPending: cltPending,
     profile: {
       phone: rec.phone, joined: rec.joined, debt: rec.debt, mentorStatus: rec.mentorStatus || '',
       dashboardColor: rec.dashboardColor || '', dashboardBg: rec.dashboardBg || '', email: rec.email || '',
       sex: cleanSex_(rec.sex), personality: ownPersonality_(rec),
-      gstrengths: ownGStrengths_(rec)
+      gstrengths: ownGStrengths_(rec), cltRequest: cltRequestOut_(rec)
     }
   };
 }
@@ -3474,7 +3517,7 @@ async function getMyBoot(username, pin) {
       phone: s.phone, joined: s.joined, debt: s.debt, mentorStatus: s.mentorStatus || '',
       dashboardColor: s.dashboardColor || '', dashboardBg: s.dashboardBg || '', email: s.email || '',
       sex: cleanSex_(s.sex), personality: ownPersonality_(s),
-      gstrengths: ownGStrengths_(s)
+      gstrengths: ownGStrengths_(s), cltRequest: cltRequestOut_(s)
     },
     roster: (staffRows || []).filter(function (r) { return r.active && !isApplicant_(r); }).map(rosterStaff_),
     logs: (logs && logs.logs) || [],
@@ -8264,6 +8307,7 @@ const HANDLERS = {
   grantAdmin: function (a) { return grantAdmin(a[0], a[1], a[2]); },
   adminListStaff: function (a) { return adminListStaff(a[0], a[1]); },
   adminSetActive: function (a) { return adminSetActive(a[0], a[1], a[2], a[3]); },
+  adminDecideCltRequest: function (a) { return adminDecideCltRequest(a[0], a[1], a[2], !!a[3]); },
   adminSetMentor: function (a) { return adminSetMentor(a[0], a[1], a[2], a[3], a[4]); },
   adminResetPin: function (a) { return adminResetPin(a[0], a[1], a[2], a[3]); },
   adminDeleteStaff: function (a) { return adminDeleteStaff(a[0], a[1], a[2]); },

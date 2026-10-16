@@ -171,6 +171,29 @@ const main = (page) => page.$eval('#main', e => e.innerText);
   await ctx.close();
 }
 
+/* ---------- 1d. moving yourself into Campus Leadership waits for an admin ---------- */
+{
+  const { ctx, page } = await open('kanha');
+  await page.evaluate(() => { S.view = 'profile'; render(); }); await page.waitForTimeout(500);
+  await page.selectOption('#p_dept', 'Campus Leadership'); await page.waitForTimeout(200);
+  await page.selectOption('#p_ministry', 'Community Service');
+  await page.click('#saveProfBtn'); await page.waitForTimeout(900);
+  let k = mem.staff.find((r) => r.id === 'st4');
+  ok('a staff member choosing Campus Leadership is not moved yet', k.dept === 'Community Service' && k.cltRequest && k.cltRequest.ministry === 'Community Service');
+  await page.evaluate(() => { S.view = 'profile'; render(); }); await page.waitForTimeout(400);
+  ok('… their profile says it is waiting for an admin, as Director of Community Service', /waiting for an admin/.test(await main(page)) && /Director of Community Service/.test(await page.$eval('#cltWaiting', (e) => e.textContent)));
+  await ctx.close();
+  const a = await open('uriah');
+  await a.page.evaluate(() => { S.view = 'admin'; S.adminSub = 'approvals'; render(); }); await a.page.waitForTimeout(900);
+  ok('Admin → Approvals lists the move', /Moving into Campus Leadership/.test(await main(a.page)) && /Kanha Lim/.test(await main(a.page)));
+  await a.page.screenshot({ path: OUT + '/approvals.png', fullPage: true });
+  await a.page.click('[data-cltyes="st4"]'); await a.page.waitForTimeout(900);
+  k = mem.staff.find((r) => r.id === 'st4');
+  ok('… and approving moves them', k.dept === 'Campus Leadership' && k.ministry === 'Community Service' && !k.cltRequest);
+  await a.ctx.close();
+  await api.default({ method: 'POST', json: async () => ({ fn: 'adminUpdateStaff', args: ['uriah', '1234', 'st4', { dept: 'Community Service', ministry: 'Cafe' }] }), headers: new Map() }, {});
+}
+
 /* ---------- 2. the YWAM GP page: GP leadership, both campuses, the board and how to reach them ---------- */
 {
   const { ctx, page } = await open('kanha');

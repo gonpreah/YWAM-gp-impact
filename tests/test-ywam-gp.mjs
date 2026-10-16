@@ -128,6 +128,37 @@ r = await call('updateProfile', ['vanna', '1234', { dept: 'Campus Leadership', m
 g = await call('getYwamGp', ['kanha', '1234']);
 ok('… or Director of a department', r.body.ok && g.body.titles.st_pp === 'Director of Youth Education');
 
+/* ---------- moving yourself INTO Campus Leadership waits for an admin ---------- */
+r = await call('updateProfile', ['kanha', '1234', { dept: 'Campus Leadership', ministry: 'Campus Director', cdKind: 'national', phone: '012 999' }]);
+let kan = mem.staff.find((x) => x.id === 'st_cafe');
+ok('a staff member who picks Campus Leadership is not moved: it becomes a request', r.body.ok && r.body.cltPending === true && kan.dept === 'Community Service' && kan.ministry === 'Cafe' && !kan.cdKind);
+ok('… the rest of the profile still saves', kan.phone === '012 999');
+ok('… and they can see it waiting', r.body.profile.cltRequest && r.body.profile.cltRequest.ministry === 'Campus Director' && r.body.profile.cltRequest.cdKind === 'national');
+g = await call('getYwamGp', ['kanha', '1234']);
+ok('… with no title meanwhile', !g.body.titles.st_cafe);
+r = await call('updateProfile', ['kanha', '1234', { ministries: ['Campus Leadership|Youth Education', 'Community Service|Hospitality'] }]);
+kan = mem.staff.find((x) => x.id === 'st_cafe');
+ok('… nor through an extra ministry', !(kan.ministries || []).some((k) => /^Campus Leadership\|/.test(k)));
+r = await call('updateProfile', ['kanha', '1234', { dept: 'Community Service', ministry: 'Cafe', phone: '012 998' }]);
+kan = mem.staff.find((x) => x.id === 'st_cafe');
+ok('saving the profile again keeps the request', !!kan.cltRequest && kan.phone === '012 998');
+r = await call('adminDecideCltRequest', ['kanha', '1234', 'st_cafe', true]);
+ok('only an admin can approve it', r.body.ok === false && mem.staff.find((x) => x.id === 'st_cafe').dept === 'Community Service');
+r = await call('adminListStaff', ['uriah', '1234']);
+ok('the admin sees the request', r.body.staff.find((x) => x.id === 'st_cafe').cltRequest.cdKind === 'national');
+r = await call('adminDecideCltRequest', ['uriah', '1234', 'st_cafe', true]);
+kan = mem.staff.find((x) => x.id === 'st_cafe');
+g = await call('getYwamGp', ['kanha', '1234']);
+ok('the admin approves: moved, with the title they picked', r.body.ok && kan.dept === 'Campus Leadership' && kan.ministry === 'Campus Director' && kan.cdKind === 'national' && !kan.cltRequest && g.body.titles.st_cafe === 'National Campus Director');
+await call('adminUpdateStaff', ['uriah', '1234', 'st_cafe', { dept: 'Community Service', ministry: 'Cafe' }]);
+await call('updateProfile', ['kanha', '1234', { dept: 'Campus Leadership', ministry: 'Community Service' }]);
+r = await call('adminDecideCltRequest', ['uriah', '1234', 'st_cafe', false]);
+kan = mem.staff.find((x) => x.id === 'st_cafe');
+ok('… or declines: they stay where they are', r.body.ok && kan.dept === 'Community Service' && !kan.cltRequest);
+await call('updateProfile', ['kanha', '1234', { dept: 'Campus Leadership', ministry: 'Community Service' }]);
+r = await call('updateProfile', ['kanha', '1234', { cancelCltRequest: true }]);
+ok('and someone can cancel their own request', r.body.ok && !r.body.profile.cltRequest && !mem.staff.find((x) => x.id === 'st_cafe').cltRequest);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 fs.rmSync(TMP, { recursive: true, force: true });
 process.exit(fail ? 1 : 0);

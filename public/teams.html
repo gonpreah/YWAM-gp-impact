@@ -8988,7 +8988,7 @@ function okrTabHtml_(){
    and data- attribute, so the handlers in bindAdmin() are unchanged. */
 var ADMIN_SUBS = [
   { id:'accounts', label:'Accounts', emoji:'👤', blurb:'Find someone — edit their profile, reset a PIN, set their mentor or make them a ministry leader' },
-  { id:'approvals', label:'Approvals', emoji:'✅', blurb:'New leadership sign-ups waiting for a yes' },
+  { id:'approvals', label:'Approvals', emoji:'✅', blurb:'Leadership sign-ups and moves waiting for a yes' },
   { id:'mentors', label:'Mentors', emoji:'🤝', blurb:'Who is walking with whom — every mentor and their people, and who has nobody yet' },
   { id:'leave', label:'Leave', emoji:'🗓️', blurb:'Everyone’s leave requests, by campus — waiting, coming up, and days used this year' },
   { id:'portal', label:'Portal access', emoji:'🛂', blurb:'Who works in applications — grant or remove access to the YWAM GP Portal' },
@@ -9052,7 +9052,7 @@ function adminHtml(){
 }
 function adminHomeHtml_(){
   var list=S.adminStaff, loading=list===null;
-  var pendingN = loading ? null : list.filter(function(x){ return !x.active && !x.archived; }).length;   // archived ≠ waiting
+  var pendingN = loading ? null : list.filter(function(x){ return (!x.active && !x.archived) || (x.active && x.cltRequest); }).length;   // archived ≠ waiting
   var activeN = loading ? null : list.filter(function(x){ return x.active; }).length;
   var h=adminBackHtml_('week', t('My Home'));
   h+='<h2>'+esc(t('Admin'))+'</h2><p class="sub">'+esc(t('Approve new leadership accounts, and manage everyone’s.'))+'</p>';
@@ -9268,8 +9268,23 @@ function bindAdminGroups_(){
 function adminApprovalsHtml_(){
   if(S.adminStaff===null) return '<p class="sub">'+esc(t('Loading…'))+'</p>';
   var pending=S.adminStaff.filter(function(x){ return !x.active && !x.archived; });   // an archived person is not a sign-up
-  if(!pending.length) return '<div class="card"><p class="sub" style="margin:0">'+esc(t('Nobody is waiting — every account is active.'))+'</p></div>';
-  var h='<div class="card">';
+  var moves=S.adminStaff.filter(function(x){ return x.active && !x.archived && x.cltRequest; });
+  if(!pending.length && !moves.length) return '<div class="card"><p class="sub" style="margin:0">'+esc(t('Nobody is waiting — every account is active.'))+'</p></div>';
+  var h='';
+  /* staff asking to move into Campus Leadership from Profile & settings */
+  if(moves.length){
+    h+='<h3>🧭 '+esc(t('Moving into Campus Leadership'))+'</h3><div class="card">';
+    moves.forEach(function(x){
+      h+='<div class="row cltMove"><div><div class="rowName">'+esc(x.name)+'</div>'+
+        '<div class="rowSub">'+esc(campusShort(x.campus))+' · '+esc(t(x.dept))+(x.ministry?' · '+esc(t(x.ministry)):'')+' → <b>'+esc(cltRequestTitle_(x.cltRequest))+'</b></div></div>'+
+        '<span style="display:flex;gap:6px"><button class="btn" style="width:auto;margin:0;padding:9px 14px;font-size:14px" data-cltyes="'+esc(x.id)+'">'+esc(t('Approve'))+'</button>'+
+        '<button class="btn ghost" style="width:auto;margin:0;padding:9px 12px;font-size:14px" data-cltno="'+esc(x.id)+'">'+esc(t('Decline'))+'</button></span></div>';
+    });
+    h+='</div>';
+    if(!pending.length) return h;
+    h+='<h3>✅ '+esc(t('New sign-ups'))+'</h3>';
+  }
+  h+='<div class="card">';
   pending.forEach(function(x){
     h+='<div class="row"><div><div class="rowName">'+esc(x.name)+'</div>'+
       '<div class="rowSub">@'+esc(x.username)+' · '+esc(campusShort(x.campus))+' · '+esc(t(x.dept))+(x.ministry?' · '+esc(t(x.ministry)):'')+'</div></div>'+
@@ -10225,6 +10240,16 @@ function bindAdmin(){
     return;
   }
 
+  document.querySelectorAll('[data-cltyes],[data-cltno]').forEach(function(b){
+    b.onclick=function(){
+      var yes=b.hasAttribute('data-cltyes'), id=b.getAttribute(yes ? 'data-cltyes' : 'data-cltno');
+      b.disabled=true;
+      run('adminDecideCltRequest',[S.auth.user,S.auth.pin,id,yes],function(d){
+        if(d && d.ok){ showMsg(yes ? t('Moved into Campus Leadership') : t('Request declined')); adminRefresh_(); orgLoad_(); }
+        else { b.disabled=false; showMsg(t('Could not save')); }
+      });
+    };
+  });
   document.querySelectorAll('[data-adminapprove]').forEach(function(b){
     b.onclick=function(){
       run('adminSetActive',[S.auth.user,S.auth.pin,b.getAttribute('data-adminapprove'),true],function(d){
@@ -15917,6 +15942,7 @@ function profileHtml(){
     '<label class="f">Email</label><input type="email" id="p_email" value="'+esc(p.email||'')+'" placeholder="you@example.com">'+
     '<div class="hint">One profile per email — this is what stops a duplicate sign-up.</div>'+
     '<label class="f">Campus</label><select id="p_campus">'+CAMPUSES.map(function(c){return '<option value="'+c.id+'"'+(S.me.campus===c.id?' selected':'')+'>'+c.name+'</option>';}).join('')+'</select>'+
+    cltRequestBannerHtml_()+
     '<label class="f">'+esc(t('Main department'))+'</label><select id="p_dept">'+deptsFor(S.me.campus).map(function(d){return '<option value="'+esc(d)+'"'+(S.me.dept===d?' selected':'')+'>'+esc(t(d))+'</option>';}).join('')+'</select>'+
     '<label class="f">'+esc(t('Main ministry'))+'</label><select id="p_ministry"></select><div class="hint">'+esc(t('The one My Ministry opens on.'))+'</div>'+
     '<label class="f">'+esc(t('Other ministries I’m part of'))+'</label>'+
@@ -16040,6 +16066,18 @@ function fillMinistrySelect(selId, campusSelId, deptSelId, current, curKind){
   sel.innerHTML='<option value="">— none yet —</option>'+list.map(function(m){
     return '<option value="'+esc(m)+'"'+(keep===m?' selected':'')+'>'+esc(t(m))+'</option>';
   }).join('');
+}
+/* A move into Campus Leadership waits for an admin (updateProfile keeps it as cltRequest). */
+var CD_TITLE_={ international:'International Campus Director', national:'National Campus Director' };
+function cltRequestTitle_(q){
+  if(!q || !q.ministry) return t('Campus Leadership');
+  if(q.ministry==='Campus Director') return t(CD_TITLE_[q.cdKind] || 'Campus Director');
+  return orgTitleText_('Director of '+q.ministry);
+}
+function cltRequestBannerHtml_(){
+  var q=S.profile && S.profile.cltRequest; if(!q) return '';
+  return '<div class="banner" id="cltWaiting">⏳ '+esc(gpT('Your move to Campus Leadership, as {title}, is waiting for an admin to approve it.',{title:cltRequestTitle_(q)}))+
+    ' <button class="linkbtn inline" id="cltCancel" style="width:auto;padding:0">'+esc(t('Cancel the request'))+'</button></div>';
 }
 function minSelValue_(id, deptId){
   var v=(document.getElementById(id)||{}).value||'', i=v.indexOf('#');
@@ -17725,6 +17763,13 @@ function bind(){
   if(pb&&pi){ pb.onclick=function(){ pi.click(); }; pi.onchange=function(){ if(pi.files&&pi.files[0]) handlePhoto(pi.files[0]); }; }
   var dY=document.getElementById('debtY'), dN=document.getElementById('debtN');
   if(dY&&dN){ dY.onclick=function(){ S.profile=S.profile||{}; S.profile.debt=true; render(); }; dN.onclick=function(){ S.profile=S.profile||{}; S.profile.debt=false; render(); }; }
+  var cc=document.getElementById('cltCancel');
+  if(cc) cc.onclick=function(){
+    cc.disabled=true;
+    run('updateProfile',[S.auth.user,S.auth.pin,{cancelCltRequest:true}],function(d){
+      if(d && d.ok){ S.profile=d.profile; render(); } else { cc.disabled=false; showMsg(t('Could not save')); }
+    });
+  };
   var sp=document.getElementById('saveProfBtn');
   if(sp) sp.onclick=function(){
     var payload={
@@ -17749,7 +17794,8 @@ function bind(){
       if(d.ok){
         // merged, not replaced: updateProfile sends the public card, which has no
         // isAdmin / hr / portal flags — replacing S.me dropped the Admin menu until a reload
-        S.me=Object.assign({}, S.me, d.staff); S.profile=d.profile; saveStaffCard(); showMsg('Profile saved');
+        S.me=Object.assign({}, S.me, d.staff); S.profile=d.profile; saveStaffCard();
+        showMsg(d.cltPending ? t('Saved. Your move to Campus Leadership is waiting for an admin to approve it.') : 'Profile saved');
         orgLoad_();   // a new title (Campus Leadership) shows on the charts
         // Ministry may have changed, so re-pull the KPI set for the new one.
         run('getMyMinistry',[S.auth.user,S.auth.pin],function(mn){ if(mn.ok) S.ministry=mn; render(); });

@@ -420,12 +420,19 @@ Uriah: YWAM GP is YWAM Poipet, YWAM Siem Reap, **YWAM GP** (the organisation) an
   sign-up): International Campus Director, National Campus Director, or Director of
   <department>. The option value is `Campus Director#<cdKind>` (`minSelValue_`);
   `updateProfile` / `staffRegister` accept `cdKind` (CD_KINDS only). Admins can still set it.
+- **Moving yourself INTO Campus Leadership waits for an admin** (Uriah, Oct 2026), like a
+  Campus Leadership sign-up: `updateProfile` saves the rest of the profile but keeps the
+  move as `cltRequest` {ministry, cdKind, at} (`cltPending: true` in the answer; shown in
+  Profile & settings with "Cancel the request" → `cancelCltRequest`). Admin → Approvals
+  lists them under "Moving into Campus Leadership" → `adminDecideCltRequest(…, staffId,
+  yes)`. Nobody outside Campus Leadership can add a Campus Leadership row as an extra
+  ministry either. Moving within, or out of, Campus Leadership needs nobody.
 - **A board member's sign-in** is a guest-mode variant (`S.board`, `S.guest` true, staff
   `S.auth` empty, `gp-board` in localStorage; index.html sends them here): tabs YWAM GP ·
   Campuses (each campus's leadership, departments with directors and ministry leaders,
   then the public base figures) · Library; nothing staff. The login screen tries
   `boardLogin` after a staff login fails with no other reason.
-- tests/test-ywam-gp.mjs (server, 29), tests/test-ywam-gp-ui.mjs (browser, 43).
+- tests/test-ywam-gp.mjs (server, 40), tests/test-ywam-gp-ui.mjs (browser, 47).
 
 ## Team → Structure (the org chart)
 The Team tab has a Directory / Structure toggle (`S.teamMode`). Structure (`orgChartHtml_`)

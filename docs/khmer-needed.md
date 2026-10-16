@@ -3403,3 +3403,18 @@ attraction), របាំងការពារ (guardrail), ចិត្តត�
 | — choose your role — | — ជ្រើសរើសតួនាទីរបស់អ្នក — |
 
 The last one heads the Main ministry list in Profile & settings for Campus Leadership.
+
+### Moving into Campus Leadership waits for an admin
+
+| English | Khmer (draft) |
+|---|---|
+| Leadership sign-ups and moves waiting for a yes | ការចុះឈ្មោះ និងការផ្លាស់មកថ្នាក់ដឹកនាំ ដែលរង់ចាំការអនុម័ត |
+| Your move to Campus Leadership, as {title}, is waiting for an admin to approve it. | ការផ្លាស់របស់អ្នកមកថ្នាក់ដឹកនាំសាខា ជា {title} កំពុងរង់ចាំអ្នកគ្រប់គ្រងអនុម័ត។ |
+| Cancel the request | បោះបង់សំណើ |
+| Saved. Your move to Campus Leadership is waiting for an admin to approve it. | បានរក្សាទុក។ ការផ្លាស់របស់អ្នកមកថ្នាក់ដឹកនាំសាខា កំពុងរង់ចាំអ្នកគ្រប់គ្រងអនុម័ត។ |
+| Moving into Campus Leadership | ផ្លាស់មកថ្នាក់ដឹកនាំសាខា |
+| New sign-ups | ការចុះឈ្មោះថ្មី |
+| Moved into Campus Leadership | បានផ្លាស់មកថ្នាក់ដឹកនាំសាខា |
+| Request declined | សំណើត្រូវបានបដិសេធ |
+
+Shown in Profile & settings (the waiting note) and Admin → Approvals.
