@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT = PUBLIC;
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 
 let BLOCK = new Set();
 const server = http.createServer((req, res) => {

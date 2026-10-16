@@ -39,7 +39,7 @@ const BOOT = {
   base: DATA,
 };
 
-const TYPES = { '.html': 'text/html', '.js': 'application/javascript' };
+const TYPES = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css' };
 const srv = http.createServer((req, res) => {
   const f = path.join(ROOT, req.url.split('?')[0]);
   if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); res.end(); return; }

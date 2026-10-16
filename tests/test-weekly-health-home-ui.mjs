@@ -37,7 +37,7 @@ mem.staff = [
   mk({ id: 'a2', name: 'Last Week Only', username: 'alast', email: 'b@e.com' }),
   mk({ id: 'a3', name: 'Daily Only', username: 'adaily', email: 'c@e.com' })
 ];
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer(async (req, res) => {
   if (req.url.indexOf('/.netlify/functions/api') === 0) {
     let b = ''; for await (const c of req) b += c;

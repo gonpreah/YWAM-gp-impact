@@ -71,7 +71,7 @@ const ME = { id: 'st1', name: 'Sreilea Chan', username: 'sreilea', email: 's@exa
 blobs.__seed('staff', [{ ...ME, pinSalt: ME.id, pinHash: mkHash('1234', ME.id) }]);
 
 const IDS = HABITS.map(h => h.id);
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 let fail500 = 0, answers = [];
 const srv = http.createServer(async (req, res) => {
   if (req.url.indexOf('/.netlify/functions/api') === 0) {

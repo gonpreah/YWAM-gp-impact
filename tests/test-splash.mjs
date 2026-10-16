@@ -29,7 +29,7 @@ const BOOT = {
   base: { leader: false, entries: ENTRIES, okrs: [], survey: SURVEY },
 };
 
-const TYPES = { '.html': 'text/html', '.js': 'application/javascript', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.png': 'image/png' };
 let netDelay = 0;      // every static file
 let logoDelay = 0;     // logo.js on top of that
 const srv = http.createServer(async function (req, res) {

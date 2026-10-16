@@ -40,7 +40,7 @@ mem.staff = [
   mk({ id: 'st3', name: 'Sam Started', username: 'sam', email: 's@e.com', created: daysAgo(5), photo: 'data:image/png;base64,iVBORw0KGgo=', staffType: 'campus', country: 'Cambodia', mentorId: 'st1', mentorStatus: 'approved',
     gstrengths: { top: ['careful', 'coordinator', 'hardworker', 'fairminded', 'valuesdriven'] }, personality: { type: 'ISTJ' }, libRead: { 'fight-our-values': '2026-10-10' } })
 ];
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer(async (req, res) => {
   if (req.url.indexOf('/.netlify/functions/api') === 0) {
     let b = ''; for await (const c of req) b += c;

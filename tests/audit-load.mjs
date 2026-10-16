@@ -5,7 +5,7 @@ import { PUBLIC, CHROMIUM } from './env.mjs';
 import { chromium } from 'playwright';
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 const ROOT=PUBLIC;
-const T={'.html':'text/html','.js':'text/javascript','.json':'application/json','.png':'image/png'};
+const T={'.html':'text/html','.js':'text/javascript', '.css': 'text/css','.json':'application/json','.png':'image/png'};
 let httpHits=[];
 const srv=http.createServer((q,r)=>{let p=q.url.split('?')[0]; if(p==='/')p='/index.html';
   httpHits.push(p);

@@ -51,7 +51,7 @@ mem.survey = [srow('st1'), srow('st2'), srow('st3')];
 mem.entries = [{ campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', metric: 'Salvations', week: WK, year: YR, value: 5, updated: '' },
   { campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', metric: 'Salvations', week: Math.max(1, WK - 13), year: YR, value: 2, updated: '' }];
 mem.okrs = [{ id: 'o1', campus: 'siemreap', dept: 'Community Service', quarter: Math.min(3, Math.floor((WK - 1) / 13)) + 1, year: YR, objective: 'Open the second cafe', krs: [] }];
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer(async (req, res) => {
   if (req.url.indexOf('/.netlify/functions/api') === 0) {
     let b = ''; for await (const c of req) b += c;

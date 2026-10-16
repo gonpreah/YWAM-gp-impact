@@ -43,7 +43,7 @@ mem.numbersPeople = {
   'siemreap|Community Service|Cafe': { main: 'st1', backup: 'st4' },
   'siemreap|Community Service|Ponlork School': { main: 'st4', backup: '' }
 };
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer(async (req, res) => {
   if (req.url.indexOf('/.netlify/functions/api') === 0) {
     let b = ''; for await (const c of req) b += c;

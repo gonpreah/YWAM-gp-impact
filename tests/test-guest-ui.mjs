@@ -47,7 +47,7 @@ mem.reqDocs = [
 mem['reqfile:rf_cpp'] = { id: 'rf_cpp', docId: 'rd_cpp', name: 'cpp.pdf', mime: 'application/pdf', data: PDF64 };
 const CALLS = [];
 mem.entries = [{ campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', metric: 'Cups Sold', week: 40, year: 2026, value: 12 }];
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer(async (req, res) => {
   if (req.url.indexOf('/.netlify/functions/api') === 0) {
     let b = ''; for await (const c of req) b += c;

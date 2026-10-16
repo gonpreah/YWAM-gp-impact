@@ -9,7 +9,7 @@
    WCAG AA. It would have caught it. */
 /* Paths and the browser binary come from tests/env.mjs so this runs from a clone
    rather than from one machine's scratch directory. */
-import { PUBLIC, CHROMIUM } from './env.mjs';
+import { PUBLIC, CHROMIUM, pageSource } from './env.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -50,7 +50,7 @@ const BOOT = {
   base: { leader: false, entries: ENTRIES, okrs: OKRS, survey: SURVEY },
 };
 
-const TYPES = { '.html': 'text/html', '.js': 'application/javascript', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.png': 'image/png' };
 const srv = http.createServer(function (req, res) {
   const f = path.join(ROOT, req.url.split('?')[0]);
   if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); res.end(); return; }
@@ -321,7 +321,7 @@ for (const file of ['index.html', 'teams.html', 'help.html']) {
 /* ---------- 3. the block has not drifted between the three pages ---------- */
 {
   const grab = function (f) {
-    const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    const src = pageSource(f, ROOT);
     const m = src.match(/\/\* ==================== THEME TOKENS ====================[\s\S]*?--ease:linear; \} \}/);
     return m ? m[0] : null;
   };
@@ -334,7 +334,7 @@ for (const file of ['index.html', 'teams.html', 'help.html']) {
 /* ---------- 4. the theme is applied before anything paints ---------- */
 {
   for (const f of ['index.html', 'teams.html', 'help.html']) {
-    const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    const src = pageSource(f, ROOT);
     const boot = src.indexOf("localStorage.getItem('gp-theme')");
     const style = src.search(/^<style>\n\*\s*\{\s*box-sizing/m);
     ok(f + ': the theme is read before the stylesheet', boot > -1 && boot < style,
@@ -350,7 +350,7 @@ for (const file of ['index.html', 'teams.html', 'help.html']) {
 /* ---------- 5. no raw palette hex left in a themed property ---------- */
 {
   for (const f of ['index.html', 'teams.html', 'help.html']) {
-    const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    const src = pageSource(f, ROOT);
     /* #000 is exempt: it appears in mask gradients and rgba() shadows, where it is
        a stencil or an opacity rather than a colour anybody sees. */
     // (?<![-\w]) so the token DEFINITIONS themselves (--border:#E4DDD0) are not matches.

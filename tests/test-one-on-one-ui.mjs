@@ -40,7 +40,7 @@ mem.staff = [
 ];
 const YR = new Date().getFullYear();
 mem.smartGoals = [{ id: 'g1', staffId: 'st2', year: YR, category: 'Faith', title: 'Read the whole Bible this year', pct: 40, smart: {}, steps: [] }];
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer(async (req, res) => {
   if (req.url.indexOf('/.netlify/functions/api') === 0) {
     let b = ''; for await (const c of req) b += c;

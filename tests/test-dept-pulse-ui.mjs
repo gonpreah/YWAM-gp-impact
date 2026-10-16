@@ -40,7 +40,7 @@ mem.staff = [
   mk({ id: 'cs', name: 'Chea Leader', username: 'chea', email: 'c@e.com', dept: 'Campus Leadership', ministry: 'Community Service' }),
   mk({ id: 'cd', name: 'Dir Ector', username: 'director', email: 'x@e.com', dept: 'Campus Leadership', ministry: 'Campus Director' }),
   mk({ id: 'fi', name: 'Fin Ance', username: 'finance', email: 'f@e.com', dept: 'Skills Training', ministry: 'Finances' })
-];const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+];const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer(async (req, res) => {
   if (req.url.indexOf('/.netlify/functions/api') === 0) {
     let b = ''; for await (const c of req) b += c;

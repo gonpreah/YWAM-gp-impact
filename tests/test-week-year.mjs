@@ -21,7 +21,7 @@
    The one case still clamped — when next year's 1 January is a Monday (2023 into
    2024), the last seven days of December are a 53rd week that is nobody's week 1 —
    is checked too, so a change to it is a decision rather than an accident. */
-import { REPO, tmpDir } from './env.mjs';
+import { REPO, tmpDir, pageSource } from './env.mjs';
 import { weekOf, weekYearOf as clockWeekYearOf } from './clock.mjs';
 import fs from 'node:fs';
 import vm from 'node:vm';
@@ -63,7 +63,7 @@ function lift(src, names) {
     return src.slice(at, i + 1);
   }).join('\n');
 }
-const TEAMS = fs.readFileSync(REPO + '/public/teams.html', 'utf8');
+const TEAMS = pageSource('teams.html');
 const INDEX = fs.readFileSync(REPO + '/public/index.html', 'utf8');
 const API = fs.readFileSync(REPO + '/netlify/functions/api.js', 'utf8');
 const MONTHS = TEAMS.match(/var MONTH_ABBR=\[[^\]]*\];/)[0];

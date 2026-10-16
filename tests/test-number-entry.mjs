@@ -20,7 +20,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer((req, res) => {
   let u = req.url.split('?')[0]; if (u === '/') u = '/index.html';
   const f = path.join(PUBLIC, u);

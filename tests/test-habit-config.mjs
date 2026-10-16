@@ -16,13 +16,13 @@
 
    On a Cambodian mobile connection a dropped save is ordinary, which is why
    this reads as "sometimes". */
-import { PUBLIC, CHROMIUM } from './env.mjs';
+import { PUBLIC, CHROMIUM, pageSource } from './env.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png' };
 const srv = http.createServer(function (req, res) {
   const f = path.join(PUBLIC, req.url.split('?')[0]);
   if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); res.end(); return; }
@@ -159,7 +159,7 @@ console.log('\n=== THE PICKER, WHEN THE SAVE DOES NOT ===');
    the cap: the picker refuses a seventh, and so must the server. */
 console.log('\n=== THE TWO COPIES OF THE DEFAULT ===');
 {
-  const page = fs.readFileSync(path.join(PUBLIC, 'teams.html'), 'utf8');
+  const page = pageSource('teams.html');
   const api = fs.readFileSync(path.join(PUBLIC, '..', 'netlify', 'functions', 'api.js'), 'utf8');
   const ids = src => (src.match(/id: *'([a-zA-Z]+)'|id:'([a-zA-Z]+)'/g) || []);
   const pageDefault = (page.match(/function myHabits\(\)[\s\S]*?\n}/) || [''])[0];

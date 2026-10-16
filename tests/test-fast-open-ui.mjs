@@ -33,7 +33,7 @@ const H = (p, s) => crypto.createHash('sha256').update(s + ':' + String(p), 'utf
 const mk = o => Object.assign({ active: true, campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe',
   role: 'Staff', staffType: 'campus', country: 'Cambodia', surveyToken: 'tok_' + o.id }, o, { pinSalt: o.id, pinHash: H('1234', o.id) });
 mem.staff = [ mk({ id: 'st1', name: 'Sreilea Chan', username: 'sreilea', email: 's@e.com' }) ];
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 let BOOT_DELAY = 0; const arrivals = [];
 const srv = http.createServer(async (req, res) => {
   if (req.url.indexOf('/.netlify/functions/api') === 0) {

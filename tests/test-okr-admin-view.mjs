@@ -10,7 +10,7 @@ import { chromium } from 'playwright';
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 const ROOT = PUBLIC;
 const OUT = tmpDir('out') + '/';
-const T = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json' };
+const T = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
 const srv = http.createServer((q, r) => {
   let p = q.url.split('?')[0]; if (p === '/') p = '/index.html';
   const f = path.join(ROOT, p); if (!fs.existsSync(f)) { r.writeHead(404); r.end(); return; }

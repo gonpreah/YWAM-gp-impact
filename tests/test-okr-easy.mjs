@@ -11,7 +11,7 @@ import http from 'node:http'; import fs from 'node:fs'; import path from 'node:p
 
 const NOW = testNow('2026-08-12');
 const OUT = tmpDir('out') + '/';
-const T = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const T = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer((q, r) => { let p = q.url.split('?')[0]; if (p === '/') p = '/index.html';
   const f = path.join(PUBLIC, p); if (!fs.existsSync(f)) { r.writeHead(404); r.end(); return; }
   r.writeHead(200, { 'Content-Type': T[path.extname(f)] || 'application/octet-stream' }); r.end(fs.readFileSync(f)); });

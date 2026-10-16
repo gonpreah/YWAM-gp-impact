@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
 const server = http.createServer((req, res) => {
   let p = req.url.split('?')[0]; if (p === '/') p = '/index.html';
   const f = path.join(PUBLIC, p);

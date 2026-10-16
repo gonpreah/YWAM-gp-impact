@@ -10,7 +10,7 @@
    Khmer. Every screen is walked in Khmer looking for text escaping its box. */
 /* Paths and the browser binary come from tests/env.mjs so this runs from a clone
    rather than from one machine's scratch directory. */
-import { PUBLIC, CHROMIUM } from './env.mjs';
+import { PUBLIC, CHROMIUM, pageSource } from './env.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -48,7 +48,7 @@ const BOOT = {
   base: { leader: false, entries: ENTRIES, okrs: OKRS, survey: SURVEY },
 };
 
-const TYPES = { '.html': 'text/html', '.js': 'application/javascript', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.png': 'image/png' };
 const srv = http.createServer(function (req, res) {
   const f = path.join(ROOT, req.url.split('?')[0]);
   if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); res.end(); return; }
@@ -112,7 +112,7 @@ const KH = /[ក-៿]/;
   const have = sandbox.B;
   const missing = [];
   for (const f of ['index.html', 'teams.html', 'portal.html', 'rollup.js']) {
-    const code = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    const code = pageSource(f, ROOT);
     /* Every literal inside a t(...) call, not just one starting it — the first
        version of this missed t(cond ? 'a' : 'b') entirely and reported clean while
        two labels were still English on screen. */

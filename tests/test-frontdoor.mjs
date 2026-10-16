@@ -10,7 +10,7 @@ import path from 'node:path';
 
 const ROOT = PUBLIC;
 const OUT = tmpDir('out') + '/';
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 
 const P = 'poipet', S = 'siemreap';
 const e = { [P]: {}, [S]: {} };

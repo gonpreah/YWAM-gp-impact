@@ -38,7 +38,7 @@ mem.staff = [
   mk({ id: 'st1', name: 'Sreilea Chan', username: 'sreilea', email: 's@e.com', dept: 'Skills Training', ministry: 'Culinary' }),
   mk({ id: 'st2', name: 'Mealea Sok', username: 'mealea', email: 'm@e.com' })
 ];
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 let VERSION = 'v1', DOWN = false;
 const srv = http.createServer(async (req, res) => {
   if (DOWN) { req.socket.destroy(); return; }

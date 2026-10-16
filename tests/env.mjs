@@ -34,3 +34,17 @@ function findChromium() {
 }
 
 export const CHROMIUM = findChromium();
+
+/* A page as one document: the files it loads from teams/ (its styles and its code,
+   split out of teams.html in Oct 2026) put back inline where the page loads them. For
+   the tests that read a page's source — Khmer coverage, theme colours, the splash, the
+   week helpers — rather than drive it in a browser. `root` is for GP_ROOT runs. */
+export function pageSource(file, root) {
+  const dir = root || PUBLIC;
+  const src = fs.readFileSync(path.join(dir, file), 'utf8');
+  if (!file.endsWith('.html')) return src;
+  return src
+    .replace(/<link rel="stylesheet" href="(teams\/[^"]+\.css)">/g, function (m, f) { return '<style>\n' + fs.readFileSync(path.join(dir, f), 'utf8') + '</style>'; })
+    .replace(/<script src="(teams\/[^"]+\.js)"><\/script>/g, function (m, f) { return '<script>\n' + fs.readFileSync(path.join(dir, f), 'utf8') + '</script>'; });
+}
+

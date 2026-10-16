@@ -16,7 +16,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT = PUBLIC;
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer(function (req, res) {
   const f = path.join(ROOT, req.url.split('?')[0]);
   if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); res.end(); return; }

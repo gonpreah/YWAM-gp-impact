@@ -70,7 +70,7 @@ const day = r.body && r.body.logs && r.body.logs.filter(l => l.date === '2026-10
 ok('a tick on your own habit is kept; one on a habit you no longer track is not', day && day.habits.c_journal1 === true && day.habits.bible === true && day.habits.workout === undefined, JSON.stringify(day && day.habits));
 
 /* ---------- 2. the page ---------- */
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer(async (req, res) => {
   if (req.url.indexOf('/.netlify/functions/api') === 0) {
     let b = ''; for await (const c of req) b += c;

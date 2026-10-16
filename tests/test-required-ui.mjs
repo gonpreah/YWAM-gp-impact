@@ -45,7 +45,7 @@ mem.reqDocs = [
   { id: 'rd_man', title: 'Staff Manual', url: 'https://drive.example.org/manual', version: 1, updated: '2026-10-01T00:00:00Z', order: 1 }
 ];
 mem['reqfile:rf_cpp'] = { id: 'rf_cpp', docId: 'rd_cpp', name: 'cpp.pdf', mime: 'application/pdf', data: PDF64 };
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer(async (req, res) => {
   if (req.url.indexOf('/.netlify/functions/api') === 0) {
     let b = ''; for await (const c of req) b += c;

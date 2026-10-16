@@ -7,7 +7,7 @@
    moved every time iOS re-reported the insets. */
 /* Paths and the browser binary come from tests/env.mjs so this runs from a clone
    rather than from one machine's scratch directory. */
-import { PUBLIC, CHROMIUM } from './env.mjs';
+import { PUBLIC, CHROMIUM, pageSource } from './env.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -27,7 +27,7 @@ const BOOT = {
   base: { leader: false, entries: ENTRIES, okrs: [], survey: SURVEY },
 };
 
-const TYPES = { '.html': 'text/html', '.js': 'application/javascript', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.png': 'image/png' };
 let delayLogo = 0;
 const srv = http.createServer(async function (req, res) {
   const rel = req.url.split('?')[0];
@@ -155,7 +155,7 @@ delayLogo = 0;
 {
   const files = ['index.html', 'teams.html', 'help.html'];
   for (const f of files) {
-    const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    const src = pageSource(f, ROOT);
     const cover = /viewport-fit=cover/.test(src);
     const insets = (src.match(/env\(safe-area-inset/g) || []).length;
     ok(f + ': claims the full screen, so it pads for the insets',

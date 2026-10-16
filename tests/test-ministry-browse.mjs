@@ -110,7 +110,7 @@ fs.rmSync(TMP, { recursive: true, force: true });
 /* ---------- part 2: the picker in the browser ---------- */
 const ROOT = PUBLIC;
 const OUT = tmpDir('out') + '/';
-const T = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json' };
+const T = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
 const srv = http.createServer((q, res) => {
   let p = q.url.split('?')[0]; if (p === '/') p = '/index.html';
   const f = path.join(ROOT, p); if (!fs.existsSync(f)) { res.writeHead(404); res.end(); return; }

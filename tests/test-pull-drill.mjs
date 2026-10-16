@@ -44,7 +44,7 @@ const BOOT = {
   base: { leader: false, entries: E, okrs: [], survey: SURVEY },
 };
 
-const TYPES = { '.html': 'text/html', '.js': 'application/javascript', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.png': 'image/png' };
 const srv = http.createServer(function (req, res) {
   const f = path.join(ROOT, req.url.split('?')[0]);
   if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); res.end(); return; }

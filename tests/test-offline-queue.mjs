@@ -17,7 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT = PUBLIC;
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra) {
