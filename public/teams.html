@@ -7303,7 +7303,7 @@ function repFigures_(R, ids, q){
     repRow_(t('Community school students'), R.communityStudents(ids, q), p>=0 ? R.communityStudents(ids, p) : null, '', q);
 }
 function boardReportHtml_(){
-  var yr=new Date().getFullYear(), q=repQ_(), cur=qOf(thisWeek());
+  var yr=thisWeekYear(), q=repQ_(), cur=qOf(thisWeek());   // the week year: 28–31 Dec are 2027's Q1
   var h=(S.board ? '' : '<button class="linkbtn noPrint" id="repBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('YWAM GP'))+'</button>')+
     '<div class="repHead"><h2>📄 '+esc(gpT('YWAM GP · Q{q} {year} report',{q:q+1, year:yr}))+'</h2>'+
     '<p class="sub">'+esc(gpT('Each campus and YWAM GP as a whole, compared with Q{p}. Made {date}.',{p:q>0?q:4, date:teamDate_(todayStr())}))+'</p></div>';
