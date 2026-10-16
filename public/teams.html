@@ -9720,13 +9720,15 @@ function bindHr(){
   if(sc) sc.onclick=function(){ gpTap(); var cur=hrCurrent_(person), paper=cur && !(cur.digital && cur.digital.status==='signed');
     S.hrSendForm={ staffId:pid, from: paper ? cur.signed : todayStr().slice(0,7), years: paper ? cur.years : 2, redo: !!paper }; S.hrContractForm=null; render(); var el=document.getElementById('hrSendForm'); if(el) el.scrollIntoView({ behavior:'smooth', block:'center' }); };
   var sf=document.getElementById('hr_send_from'); if(sf) sf.onchange=sf.oninput=function(){ S.hrSendForm.from=sf.value; };
-  var sy=document.getElementById('hr_send_years'); if(sy) sy.onchange=function(){ S.hrSendForm.years=Number(sy.value); };
+  var sy=document.getElementById('hr_send_years'); if(sy) sy.onchange=sy.oninput=function(){ S.hrSendForm.years=sy.value; };   // any length, in quarters of a year
   var sx=document.getElementById('hrSendCancel'); if(sx) sx.onclick=function(){ S.hrSendForm=null; render(); };
   var ss2=document.getElementById('hrSendSave');
   if(ss2) ss2.onclick=function(){
     if(S.busy) return; var f=S.hrSendForm; if(!f.from){ showMsg(t('Choose the month it starts.')); return; }
+    var yrs=Number(f.years);
+    if(!(yrs>=0.25 && yrs<=30)){ showMsg(t('Enter how many years, from 0.25 to 30.')); return; }
     S.busy=true; render();
-    run('hrSendContract',[S.auth.user,S.auth.pin,pid,{ from:f.from, years:f.years }],function(d){
+    run('hrSendContract',[S.auth.user,S.auth.pin,pid,{ from:f.from, years:Math.round(yrs*4)/4 }],function(d){
       S.busy=false;
       if(d && d.ok){ S.hrStaff=S.hrStaff.map(function(x){ return x.id===pid ? d.staff : x; }); S.hrSendForm=null;
         location.href='portal.html?staff=1&hr='+encodeURIComponent(pid)+'&doc='+encodeURIComponent('contract:'+d.contractId); return; }
@@ -11813,7 +11815,7 @@ function hrSendFormHtml_(p){
     esc(gpT('Do it together on this phone: {name} reads the Volunteer Staff Contract, fills in their commitment and signs. Then you sign to approve it, and it becomes their contract.',{name:p.name}))+'</p>'+
     (f.redo ? '<p class="hint" style="margin:0 0 8px">'+esc(t('Redoing their paper contract? The month and years below are from it.'))+'</p>' : '')+
     '<div class="teamGrid2"><div><label class="f">'+esc(t('From (month)'))+'</label><input type="month" id="hr_send_from" value="'+esc(f.from||'')+'"></div>'+
-    '<div><label class="f">'+esc(t('Years'))+'</label><select id="hr_send_years">'+[1,2,3].concat([1,2,3].indexOf(Number(f.years))===-1 ? [Number(f.years)] : []).map(function(y){ return '<option value="'+y+'"'+(Number(f.years)===y?' selected':'')+'>'+y+'</option>'; }).join('')+'</select></div></div>'+
+    '<div><label class="f" for="hr_send_years">'+esc(t('Years'))+'</label><input type="number" id="hr_send_years" inputmode="decimal" min="0.25" max="30" step="0.25" value="'+esc(f.years==null?'':String(f.years))+'" placeholder="2"></div></div>'+
     '<button class="btn" id="hrSendSave"'+(S.busy?' disabled':'')+'>'+esc(gpT('Start — hand the phone to {name}',{name:(p.name||'').split(' ')[0]}))+'</button><button class="btn ghost" id="hrSendCancel">'+esc(t('Cancel'))+'</button></div>';
 }
 /* ==================== My contract (☰ menu, every staff member) ====================
