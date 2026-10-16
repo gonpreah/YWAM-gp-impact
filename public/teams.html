@@ -12327,10 +12327,8 @@ function hospFormHtml_(H){
    (a speaker ticks the same box as a guest). Volunteer shows only on a
    booking that is one already. */
 function hospKindOpts_(cur){
-  var o=[{ ids:['staff'], icon:'🏠', label:'Staff' }, { ids:['student'], icon:'🎓', label:'Student' }, { ids:['team'], icon:'👥', label:'Team' },
-    { ids: cur==='speaker' ? ['speaker','guest'] : ['guest','speaker'], icon:'🧳', label:'Guest / speaker' }];
-  if(cur==='volunteer') o.push({ ids:['volunteer'], icon:'🤝', label:'Volunteer' });
-  return o;
+  return [{ ids:['staff'], icon:'🏠', label:'Staff' }, { ids:['student'], icon:'🎓', label:'Student' }, { ids:['volunteer'], icon:'🤝', label:'Volunteer' },
+    { ids:['team'], icon:'👥', label:'Team' }, { ids: cur==='speaker' ? ['speaker','guest'] : ['guest','speaker'], icon:'🧳', label:'Guest / speaker' }];
 }
 /* The people a booking can name in its beds: a team's from its portal (with
    the team's request), anyone already named. */
