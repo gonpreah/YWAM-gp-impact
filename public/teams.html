@@ -1794,6 +1794,20 @@ body.hxOn { overflow:hidden; }
 /* Team → Structure: the org chart as nested cards. Leads wear the crown;
    children hang off a rule on the left, the way the Canva chart draws it. */
 .teamModeSeg { margin-bottom:8px; display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); max-width:none; width:100%; box-sizing:border-box; }
+.kmrSearch { width:100%; box-sizing:border-box; margin:0 0 10px; }
+.kmrCard .kmrPos { font-size:12px; color:var(--muted); font-weight:700; }
+.kmrCard .kmrWhere { font-size:12px; color:var(--muted); margin:4px 0 0; }
+.kmrLabel { font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:800; margin:12px 0 3px; }
+.kmrEn { font-size:15px; line-height:1.45; }
+.kmrKm { font-size:17px; line-height:1.7; }
+.kmrDone { margin:12px 0 0; padding:10px 12px; border-radius:10px; background:var(--surface2); font-size:13px; }
+.kmrDone.ok { color:var(--goodInk, inherit); }
+.kmrCard textarea { width:100%; box-sizing:border-box; font-size:17px; line-height:1.6; }
+.kmrActs { display:flex; gap:8px; margin-top:12px; }
+.kmrActs .btn { margin:0; flex:1; }
+.kmrNav { display:flex; justify-content:space-between; margin-top:10px; }
+.kmrNav .linkbtn { width:auto; padding:4px 0; }
+.kmrNav .linkbtn[disabled] { opacity:.35; }
 .teamScopeSeg { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); max-width:none; width:100%; box-sizing:border-box; }
 .teamScopeSeg .campusBtn { padding:7px 4px; min-width:0; }
 @media (max-width:400px){ .teamScopeSeg { grid-template-columns:repeat(2, minmax(0,1fr)); } }
@@ -2987,6 +3001,7 @@ function applyBoot(d, fromCache){
   S.tripRequests = d.tripRequests || [];
   if(d.ministry) S.ministry = d.ministry;
   if(d.org && d.org.ok) S.org = d.org;   // titles, YWAM GP roles, the advisory board
+  if(d.kmFixes) gpKmFixes_(d.kmFixes);    // a Khmer reviewer's corrections (Khmer review)
   S.personal = d.personal || null;
   S.hrDue = (d.hrDue===undefined) ? null : d.hrDue;
   S.backup = d.backup || null;   // admins only: the nightly backup's last run
@@ -3134,6 +3149,7 @@ function render(){
   else if(S.guest && (S.view==='team' || S.view==='health')) m.innerHTML=gpGuestLockHtml_(S.view);
   else if(S.view==='base') m.innerHTML=(S.guest ? gpGuestCampusHtml_() : '')+(S.board ? orgCampusProfileHtml_(S.me.campus) : '')+baseHtml();
   else if(S.view==='ywamgp') m.innerHTML=ywamGpHtml();
+  else if(S.view==='kmreview') m.innerHTML=kmReviewHtml();
   else if(S.view==='week') m.innerHTML=homeHtml();
   else if(S.view==='health') m.innerHTML=healthHtml();
   else if(S.view==='team') m.innerHTML=teamHtml();
@@ -3346,6 +3362,7 @@ function renderMenu(){
   IC.library='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7M9 11h5"/></svg>';
   IC.ywamgp='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.8 2.6 4 5.6 4 9s-1.2 6.4-4 9c-2.8-2.6-4-5.6-4-9s1.2-6.4 4-9Z"/></svg>';
   IC.boardlogout=IC.profile;
+  IC.kmreview='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h8M8 3v2M5.5 5c.8 3.2 3 5.6 6 7"/><path d="M10.5 5c-.7 3.6-3 6.4-6 8"/><path d="M12.5 21l4-9 4 9M14 18h5"/></svg>';
   var sections= S.board ? [
     { title:'', items:[it('ywamgp', t('YWAM GP')), it('library', t('Library')), it('boardlogout', t('Log out'))] }
   ] : S.guest ? [
@@ -3354,7 +3371,8 @@ function renderMenu(){
     { title:'', items:[it('base', t('Base')), it('ywamgp', t('YWAM GP')), it('leave', t('Leave Request')), it('mycontract', t('My contract')), it('profile', t('Profile & settings'))] },
     { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : []) },
     { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal'))] : [] },
-    { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : []) }
+    { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : []) },
+    { title:t('Language'), items:kmrCan_() ? [it('kmreview', t('Khmer review'))] : [] }
   ];
   root.innerHTML = '<div class="scrim" id="menuScrim"></div>'+
     '<div class="drawer">'+
@@ -3381,6 +3399,7 @@ function renderMenu(){
       else if(id==='library'){ S.view='library'; S.libBook=null; libLoad_(); render(); }
       else if(id==='guestreg' || id==='guestlogin'){ gpLeaveGuest_(id==='guestreg'); }
       else if(id==='ywamgp'){ S.view='ywamgp'; S.person=null; render(); window.scrollTo(0,0); }
+      else if(id==='kmreview'){ S.view='kmreview'; S.kmr=null; S.kmrErr=''; render(); window.scrollTo(0,0); }
       else if(id==='boardlogout'){ boardLeave_(false); }
       else if(id==='profile'){ S.view='profile'; render(); }
       else if(id==='admin'){ S.view='admin'; render(); }
@@ -7158,6 +7177,136 @@ function bindOrg_(){
   });
 }
 
+/* ==================== Khmer review (☰ → Khmer review) ====================
+   For the Khmer reviewers an admin chooses (`kmReviewer`) and admins. One draft at
+   a time from PENDING_KM (the drafts nobody has checked): the English, the draft
+   Khmer, where in the app it is (km-notes.js, built from docs/khmer-needed.md by
+   scripts/build-km-notes.mjs, loaded only here), and two answers — ✓ reads right,
+   or ✏️ write the fix. A fix shows in the app for everyone at once (gpKmFixes_, from
+   the boot); an admin's download is what scripts/apply-km-review.mjs builds into
+   REVIEWED_KM. Strings already in REVIEWED_KM are not shown — they are checked. */
+S.kmr=null; S.kmrErr=''; S.kmrFilter='todo'; S.kmrIdx=0; S.kmrQ=''; S.kmrEdit=false; S.kmrLoading=false;
+function gpKmFixes_(fixes){ Object.keys(fixes||{}).forEach(function(k){ if(typeof fixes[k]==='string' && fixes[k]) BUILTIN_KM[k]=fixes[k]; }); }
+function kmrCan_(){ return !!(S.me && !S.guest && !S.board && (S.me.isAdmin || S.me.kmReviewer)); }
+function kmrRows_(){ var m={}; ((S.kmr && S.kmr.rows)||[]).forEach(function(r){ m[r.key]=r; }); return m; }
+function kmrKeys_(){ return Object.keys(PENDING_KM).filter(function(k){ return !Object.prototype.hasOwnProperty.call(REVIEWED_KM, k); }); }
+function kmrSlots_(str){ return (String(str).match(/\{[a-zA-Z0-9_]+\}/g)||[]).sort().join('|'); }
+function kmrList_(){
+  var rows=kmrRows_(), q=S.kmrQ.trim(), ql=q.toLowerCase(), f=S.kmrFilter;
+  return kmrKeys_().filter(function(k){
+    var r=rows[k];
+    if(f==='todo' && r) return false;
+    if(f==='fix' && !(r && r.verdict==='fix')) return false;
+    if(f==='ok' && !(r && r.verdict==='ok')) return false;
+    if(q && k.toLowerCase().indexOf(ql)===-1 && String(PENDING_KM[k]).indexOf(q)===-1 && !(r && r.km && r.km.indexOf(q)>-1)) return false;
+    return true;
+  });
+}
+function kmrLoad_(){
+  if(S.kmrLoading) return; S.kmrLoading=true;
+  run('getKmReview',[S.auth.user,S.auth.pin],function(d){
+    S.kmrLoading=false;
+    if(d && d.ok) S.kmr={ rows:d.rows||[] }; else S.kmrErr=t('Could not load');
+    if(S.view==='kmreview') render();
+  }, function(){ S.kmrLoading=false; S.kmrErr=t('Could not load'); if(S.view==='kmreview') render(); });
+  if(typeof GP_KM_NOTES==='undefined' && !S.kmrNotesAsked){
+    S.kmrNotesAsked=true;
+    var sc=document.createElement('script'); sc.src='km-notes.js'; sc.setAttribute('data-optional','');
+    sc.onload=function(){ if(S.view==='kmreview') render(); }; sc.onerror=function(){ sc.remove(); };
+    document.head.appendChild(sc);
+  }
+}
+/* where a string is used, from the review document's section headings */
+function kmrWhere_(k){
+  if(typeof GP_KM_NOTES==='undefined') return '';
+  var h=5381; for(var i=0;i<k.length;i++) h=((h*33)^k.charCodeAt(i))>>>0;
+  var ix=GP_KM_NOTES.k[h.toString(36)];
+  return ix===undefined ? '' : GP_KM_NOTES.s[ix]||'';
+}
+function kmReviewHtml(){
+  var h='<h2>🇰🇭 '+esc(t('Khmer review'))+'</h2><p class="sub">'+esc(t('Read each draft Khmer phrase. If it reads right, say so. If not, write it the way it should be. A fix shows in the app straight away.'))+'</p>';
+  if(!kmrCan_()) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Khmer review is for the Khmer reviewers an admin has chosen.'))+'</p></div>';
+  if(!S.kmr){ kmrLoad_(); return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.kmrErr||t('Loading…'))+'</p></div>'; }
+  var all=kmrKeys_(), rows=kmrRows_(), nOk=0, nFix=0;
+  all.forEach(function(k){ var r=rows[k]; if(r && r.verdict==='ok') nOk++; else if(r && r.verdict==='fix') nFix++; });
+  var done=nOk+nFix, pct=all.length ? Math.round(done/all.length*100) : 100;
+  h+='<div class="card kmrProgress"><div class="pBar"><div class="pBarTop"><b>'+esc(gpT('{n} of {total} checked',{n:done, total:all.length}))+'</b><span>'+pct+'%</span></div>'+
+    '<div class="pTrack"><div class="pFill" style="left:0;width:'+pct+'%;background:var(--accent)"></div></div></div>'+
+    (S.me.isAdmin && done ? '<button class="btn ghost small" id="kmrExport" style="margin-top:10px">⬇️ '+esc(t('Download the checked phrases'))+'</button>' : '')+'</div>';
+  var chip=function(id, label, n){ return '<button class="deptChip'+(S.kmrFilter===id?' on':'')+'" data-kmrfilter="'+id+'">'+esc(label)+' · '+n+'</button>'; };
+  h+='<div class="deptChips">'+chip('todo', t('Not checked yet'), all.length-done)+chip('fix', t('Fixed'), nFix)+chip('ok', t('Reads right'), nOk)+chip('all', t('All'), all.length)+'</div>';
+  h+='<input type="search" id="kmrSearch" class="kmrSearch" placeholder="'+esc(t('Search English or Khmer'))+'" value="'+esc(S.kmrQ)+'">';
+  var list=kmrList_();
+  if(!list.length) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.kmrFilter==='todo' && !S.kmrQ ? t('Every draft has been checked. Thank you!') : t('Nothing here.'))+'</p></div>';
+  if(S.kmrIdx>=list.length) S.kmrIdx=list.length-1;
+  if(S.kmrIdx<0) S.kmrIdx=0;
+  var k=list[S.kmrIdx], r=rows[k], where=kmrWhere_(k);
+  h+='<div class="card kmrCard" data-kmrkey="'+esc(k)+'">'+
+    '<div class="kmrPos">'+esc(gpT('{i} of {n}',{i:S.kmrIdx+1, n:list.length}))+'</div>'+
+    (where ? '<div class="kmrWhere">📍 '+esc(where)+'</div>' : '')+
+    '<div class="kmrLabel">'+esc(t('English'))+'</div><div class="kmrEn">'+esc(k)+'</div>'+
+    '<div class="kmrLabel">'+esc(t('Draft Khmer'))+'</div><div class="kmrKm" lang="km">'+esc(PENDING_KM[k])+'</div>';
+  if(r) h+='<div class="kmrDone '+(r.verdict==='fix'?'fix':'ok')+'">'+(r.verdict==='fix'
+      ? '✏️ '+esc(gpT('Fixed by {name}',{name:r.byName||'—'}))+'<div class="kmrKm" lang="km">'+esc(r.km)+'</div>'
+      : '✓ '+esc(gpT('{name} says it reads right',{name:r.byName||'—'})))+
+    ' <button class="linkbtn inline" id="kmrClear" style="width:auto;padding:0">'+esc(t('Undo'))+'</button></div>';
+  if(S.kmrEdit){
+    h+='<label class="f" for="kmrText">'+esc(t('How it should read'))+'</label>'+
+      '<textarea id="kmrText" lang="km" rows="3">'+esc((r && r.km) || PENDING_KM[k])+'</textarea>'+
+      (kmrSlots_(k) ? '<p class="hint">'+esc(gpT('Keep {slots} exactly as they are — the app puts names and numbers there.',{slots:kmrSlots_(k).split('|').join(' ')}))+'</p>' : '')+
+      '<div class="kmrActs"><button class="btn" id="kmrSaveFix">'+esc(t('Save the fix'))+'</button><button class="btn ghost" id="kmrCancel">'+esc(t('Cancel'))+'</button></div>';
+  } else {
+    h+='<div class="kmrActs"><button class="btn" id="kmrOk">✓ '+esc(t('Reads right'))+'</button><button class="btn ghost" id="kmrFix">✏️ '+esc(t('Fix it'))+'</button></div>';
+  }
+  h+='<div class="kmrNav"><button class="linkbtn" id="kmrPrev"'+(S.kmrIdx>0?'':' disabled')+'>‹ '+esc(t('Back'))+'</button>'+
+    '<button class="linkbtn" id="kmrNext"'+(S.kmrIdx<list.length-1?'':' disabled')+'>'+esc(t('Skip'))+' ›</button></div></div>';
+  return h;
+}
+function kmrSave_(key, verdict, km){
+  run('saveKmReview',[S.auth.user,S.auth.pin,key,verdict,km||''],function(d){
+    if(!d || !d.ok){ showMsg(d && d.err==='placeholders' ? t('Keep the words in curly brackets exactly as they are.') : d && d.err==='not_khmer' ? t('Write the fix in Khmer.') : t('Could not save')); return; }
+    var rows=(S.kmr.rows||[]).filter(function(x){ return x.key!==key; });
+    if(d.row) rows.push(d.row);
+    S.kmr.rows=rows;
+    if(verdict==='fix') BUILTIN_KM[key]=km;
+    if(verdict==='clear') BUILTIN_KM[key]=PENDING_KM[key];
+    /* "Not checked yet" drops the answered one, so the next is already in place */
+    if(S.kmrFilter!=='todo' && verdict!=='clear') S.kmrIdx++;
+    S.kmrEdit=false; render();
+  });
+}
+function bindKmReview_(){
+  if(S.view!=='kmreview') return;
+  document.querySelectorAll('[data-kmrfilter]').forEach(function(b){
+    b.onclick=function(){ S.kmrFilter=b.getAttribute('data-kmrfilter'); S.kmrIdx=0; S.kmrEdit=false; render(); };
+  });
+  var sr=document.getElementById('kmrSearch');
+  if(sr) sr.onchange=function(){ S.kmrQ=sr.value; S.kmrIdx=0; S.kmrEdit=false; render(); };
+  var card=document.querySelector('.kmrCard'), key=card ? card.getAttribute('data-kmrkey') : '';
+  var on=function(id, fn){ var el=document.getElementById(id); if(el) el.onclick=fn; };
+  on('kmrOk', function(){ gpTap(); kmrSave_(key, 'ok'); });
+  on('kmrFix', function(){ S.kmrEdit=true; render(); var ta=document.getElementById('kmrText'); if(ta) ta.focus(); });
+  on('kmrCancel', function(){ S.kmrEdit=false; render(); });
+  on('kmrSaveFix', function(){
+    var v=(document.getElementById('kmrText')||{}).value||'';
+    v=v.trim();
+    if(!/[ក-៿]/.test(v)){ showMsg(t('Write the fix in Khmer.')); return; }
+    if(kmrSlots_(v)!==kmrSlots_(key)){ showMsg(t('Keep the words in curly brackets exactly as they are.')); return; }
+    if(v===PENDING_KM[key]){ kmrSave_(key, 'ok'); return; }   // unchanged is a "reads right"
+    kmrSave_(key, 'fix', v);
+  });
+  on('kmrClear', function(){ kmrSave_(key, 'clear'); });
+  on('kmrPrev', function(){ S.kmrIdx--; S.kmrEdit=false; render(); });
+  on('kmrNext', function(){ S.kmrIdx++; S.kmrEdit=false; render(); });
+  on('kmrExport', function(){
+    var out={ ok:{}, fix:{} };
+    (S.kmr.rows||[]).forEach(function(r){ if(r.verdict==='ok' && PENDING_KM[r.key]) out.ok[r.key]=PENDING_KM[r.key]; else if(r.verdict==='fix') out.fix[r.key]=r.km; });
+    var blob=new Blob([JSON.stringify(out, null, 1)], { type:'application/json' });
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='khmer-review-'+todayStr()+'.json';
+    document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  });
+}
+
 /* ---------- a board member's own sign-in (not staff) ---------- */
 var BOARD_KEY='gp-board';
 var BOARD_VIEWS=['ywamgp','base','library'];
@@ -9697,6 +9846,8 @@ function adminRowBodyHtml_(s){
       '<label class="f" style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:400;font-size:13px;margin-top:12px">'+
         '<input type="checkbox" id="adm_hr"'+((d.hr!==undefined?d.hr:!!s.hr)?' checked':'')+'> 🗂️ '+esc(t('HR access — staff contracts and archiving'))+'</label>'+
       '<label class="f" style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:400;font-size:13px;margin-top:8px">'+
+        '<input type="checkbox" id="adm_kmrev"'+((d.kmReviewer!==undefined?d.kmReviewer:!!s.kmReviewer)?' checked':'')+'> 🇰🇭 '+esc(t('Khmer reviewer — checks the draft Khmer'))+'</label>'+
+      '<label class="f" style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:400;font-size:13px;margin-top:8px">'+
         '<input type="checkbox" id="adm_portalstaff"'+((d.portalStaff!==undefined?d.portalStaff:!!s.portalStaff)?' checked':'')+'> 🛂 '+esc(t('Portal staff — sees and works every application'))+'</label>'+
       '<label class="f" style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:400;font-size:13px;margin-top:8px">'+
         '<input type="checkbox" id="adm_portaladmin"'+((d.portalAdmin!==undefined?d.portalAdmin:!!s.portalAdmin)?' checked':'')+'> 🛂 '+esc(t('Portal admin — can also grant portal staff'))+'</label>'+
@@ -10389,6 +10540,7 @@ function bindAdmin(){
         leads:[].map.call(document.querySelectorAll('[data-admlead]:checked'), function(c){ return c.getAttribute('data-admlead'); }),
         ministries:[].map.call(document.querySelectorAll('[data-admmin]:checked'), function(c){ return c.getAttribute('data-admmin'); }),
         hr:!!(document.getElementById('adm_hr')||{}).checked,
+        kmReviewer:!!(document.getElementById('adm_kmrev')||{}).checked,
         portalStaff:!!(document.getElementById('adm_portalstaff')||{}).checked,
         portalAdmin:!!(document.getElementById('adm_portaladmin')||{}).checked
       };
@@ -16529,6 +16681,7 @@ function bindAway(){
   if(S.view==='admin' && S.adminSub==='groups') bindAdminGroups_();
   if(S.view==='admin' && S.adminSub==='board') bindAdminBoard_();
   bindOrg_();
+  bindKmReview_();
   bindHosp();
   if(S.view==='ministry') bindLead_();
   if(typeof dutyHtml==='function') bindSched_();

@@ -3418,3 +3418,34 @@ The last one heads the Main ministry list in Profile & settings for Campus Leade
 | Request declined | សំណើត្រូវបានបដិសេធ |
 
 Shown in Profile & settings (the waiting note) and Admin → Approvals.
+
+### Khmer review (☰ → Khmer review)
+
+| English | Khmer (draft) |
+|---|---|
+| Khmer review | ពិនិត្យភាសាខ្មែរ |
+| Read each draft Khmer phrase. If it reads right, say so. If not, write it the way it should be. A fix shows in the app straight away. | អានឃ្លាខ្មែរព្រាងនីមួយៗ។ បើវាត្រឹមត្រូវ សូមប្រាប់។ បើមិនត្រឹមត្រូវទេ សូមសរសេរវាតាមរបៀបដែលគួរតែជា។ ការកែតម្រូវនឹងបង្ហាញក្នុងកម្មវិធីភ្លាមៗ។ |
+| Khmer review is for the Khmer reviewers an admin has chosen. | ការពិនិត្យភាសាខ្មែរ គឺសម្រាប់អ្នកពិនិត្យភាសាខ្មែរ ដែលអ្នកគ្រប់គ្រងបានជ្រើសរើស។ |
+| {n} of {total} checked | បានពិនិត្យ {n} ក្នុងចំណោម {total} |
+| Download the checked phrases | ទាញយកឃ្លាដែលបានពិនិត្យ |
+| Not checked yet | មិនទាន់ពិនិត្យ |
+| Fixed | បានកែ |
+| Reads right | ត្រឹមត្រូវ |
+| Search English or Khmer | ស្វែងរកជាភាសាអង់គ្លេស ឬខ្មែរ |
+| Every draft has been checked. Thank you! | ឃ្លាព្រាងទាំងអស់ត្រូវបានពិនិត្យហើយ។ សូមអរគុណ! |
+| Nothing here. | គ្មានអ្វីនៅទីនេះទេ។ |
+| {i} of {n} | {i} ក្នុងចំណោម {n} |
+| English | ភាសាអង់គ្លេស |
+| Draft Khmer | ខ្មែរព្រាង |
+| Fixed by {name} | កែដោយ {name} |
+| {name} says it reads right | {name} ថាវាត្រឹមត្រូវ |
+| How it should read | គួរអានយ៉ាងដូចម្ដេច |
+| Keep {slots} exactly as they are — the app puts names and numbers there. | ទុក {slots} ឱ្យនៅដដែល — កម្មវិធីដាក់ឈ្មោះ និងលេខនៅទីនោះ។ |
+| Save the fix | រក្សាទុកការកែ |
+| Fix it | កែវា |
+| Skip | រំលង |
+| Keep the words in curly brackets exactly as they are. | ទុកពាក្យនៅក្នុងវង់ក្រចក { } ឱ្យនៅដដែល។ |
+| Write the fix in Khmer. | សូមសរសេរការកែជាភាសាខ្មែរ។ |
+| Khmer reviewer — checks the draft Khmer | អ្នកពិនិត្យភាសាខ្មែរ — ពិនិត្យឃ្លាខ្មែរព្រាង |
+
+The screen the reviewers use themselves — worth checking first, since it is how everything else gets checked. "Reads right" and "Fix it" are buttons side by side on a phone (about 14 characters of room each).

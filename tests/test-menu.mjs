@@ -68,7 +68,7 @@ const EXPECT = {
   teamsLeader: 'base ywamgp leave mycontract profile # Operations sched # Applications portal',
   cafeLeader: 'base ywamgp leave mycontract profile # Operations sched',
   hr: 'base ywamgp leave mycontract profile # Operations sched # Admin hr',
-  admin: 'base ywamgp leave mycontract profile # Operations sched hosp # Applications portal # Admin hr admin',
+  admin: 'base ywamgp leave mycontract profile # Operations sched hosp # Applications portal # Admin hr admin # Language kmreview',
 };
 for (const k of Object.keys(EXPECT)) {
   const { out, errors } = await menuOf(WHO[k]);

@@ -772,7 +772,7 @@ function isAdminCode_(code) {
 function adminStaffOut_(s) {
   return {
     id: s.id, name: s.name, username: s.username, campus: s.campus, dept: s.dept,
-    ministry: s.ministry || '', role: s.role, active: s.active !== false, isAdmin: !!s.isAdmin, hr: !!s.hr,
+    ministry: s.ministry || '', role: s.role, active: s.active !== false, isAdmin: !!s.isAdmin, hr: !!s.hr, kmReviewer: !!s.kmReviewer,
     kind: s.kind || 'staff', portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin,
     staffType: s.staffType || '', country: s.country || '', email: s.email || '',
     cdKind: s.cdKind || '', gpRole: s.gpRole || '', cltRequest: cltRequestOut_(s),
@@ -1016,6 +1016,8 @@ async function adminUpdateStaff(username, pin, staffId, payload) {
     if (payload.leads !== undefined) rec.leads = cleanLeads_(payload.leads);
     // HR access — the Human Resources page (staff contracts, archiving). Admin-assigned.
     if (payload.hr !== undefined) rec.hr = !!payload.hr;
+    // Khmer reviewer — checks the draft Khmer from Khmer review (kmReview_ below). Admin-assigned.
+    if (payload.kmReviewer !== undefined) rec.kmReviewer = !!payload.kmReviewer;
     // Portal access — who works applications. Admin-assigned; never to an applicant account.
     if (payload.portalStaff !== undefined || payload.portalAdmin !== undefined) {
       if (isApplicant_(rec)) return { abort: true, ok: false, err: 'is_applicant' };
@@ -3493,6 +3495,55 @@ async function backupStatus_() {
   };
 }
 
+/* ---------- Khmer review (Oct 2026) ----------
+   About 4,000 of the app's Khmer strings are drafts nobody who speaks Khmer has read
+   (PENDING_KM in km.js); 266 are checked (REVIEWED_KM). A Khmer reviewer — an admin
+   ticks `kmReviewer` — goes through the drafts one by one in Khmer review (☰ → Khmer
+   review) and marks each "reads right" or writes the fix. One row per string in the
+   'kmReview' blob: { key (the English), verdict 'ok' | 'fix', km (the fix), by, byName, at }.
+   A fix shows in the app for everyone straight away (the boot's kmFixes); the checked
+   rows are later built into REVIEWED_KM with scripts/apply-km-review.mjs from an
+   admin's download, which is what makes them permanent. */
+const KMR_MAX_ROWS = 8000;
+const KMR_KEY_MAX = 2000;
+function isKmReviewer_(s) { return !!(s && s.active !== false && (s.isAdmin || s.kmReviewer)); }
+async function getKmReview_() { return readJSON('kmReview', []); }
+function kmFixesOf_(rows) {
+  const out = {};
+  (rows || []).forEach(function (r) { if (r && r.verdict === 'fix' && r.key && r.km) out[r.key] = r.km; });
+  return out;
+}
+/* the {placeholders} a string carries, sorted, so a fix can't drop or invent one */
+function kmSlots_(str) { return (String(str).match(/\{[a-zA-Z0-9_]+\}/g) || []).sort().join('|'); }
+async function getKmReview(username, pin) {
+  const s = await verifyStaff_(username, pin);
+  if (!isKmReviewer_(s)) return { ok: false, err: 'not_authorized' };
+  return { ok: true, rows: await getKmReview_() };
+}
+async function saveKmReview(username, pin, key, verdict, km) {
+  const s = await verifyStaff_(username, pin);
+  if (!isKmReviewer_(s)) return { ok: false, err: 'not_authorized' };
+  const k = typeof key === 'string' ? key : '';
+  if (!k || k.length > KMR_KEY_MAX) return { ok: false, err: 'bad_key' };
+  if (['ok', 'fix', 'clear'].indexOf(verdict) === -1) return { ok: false, err: 'bad_verdict' };
+  let text = '';
+  if (verdict === 'fix') {
+    text = String(km || '').trim().slice(0, KMR_KEY_MAX * 3);
+    if (!/[\u1780-\u17FF]/.test(text)) return { ok: false, err: 'not_khmer' };
+    if (kmSlots_(text) !== kmSlots_(k)) return { ok: false, err: 'placeholders' };
+  }
+  const rows = await getKmReview_();
+  const i = rows.findIndex(function (r) { return r.key === k; });
+  if (verdict === 'clear') { if (i > -1) rows.splice(i, 1); }
+  else {
+    const row = { key: k, verdict: verdict, km: text, by: s.id, byName: s.name || '', at: new Date().toISOString() };
+    if (i > -1) rows[i] = row;
+    else { if (rows.length >= KMR_MAX_ROWS) return { ok: false, err: 'full' }; rows.push(row); }
+  }
+  await writeJSON('kmReview', rows);
+  return { ok: true, row: verdict === 'clear' ? null : rows.find(function (r) { return r.key === k; }) };
+}
+
 /* ---------- one call for a page open ----------
    Opening the staff page used to fire ten separate function invocations —
    staffLogin, teamRoster, getMyLogs, getMyMentees, getMyMentorRequests,
@@ -3508,7 +3559,7 @@ async function backupStatus_() {
    It deliberately does NOT fail as a unit: each section is caught on its own, so
    a problem reading trips cannot stop the page from having the base's figures. */
 const BOOT_KEYS = ['entries', 'survey', 'okrs', 'dailyLogs', 'goals', 'holidays', 'smartGoals', 'broadcasts',
-  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board'];
+  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview'];
 async function getMyBoot(username, pin) {
   prefetch_(['staff', 'loginThrottle'].concat(BOOT_KEYS));   // before the PIN check, so they travel together
   const s = await verifyStaff_(username, pin);
@@ -3544,7 +3595,7 @@ async function getMyBoot(username, pin) {
 
   return {
     ok: true,
-    staff: Object.assign(publicStaff_(s), { isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), hospitality: canHosp_(s) }),
+    staff: Object.assign(publicStaff_(s), { isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s) }),
     profile: {
       phone: s.phone, joined: s.joined, debt: s.debt, mentorStatus: s.mentorStatus || '',
       dashboardColor: s.dashboardColor || '', dashboardBg: s.dashboardBg || '', email: s.email || '',
@@ -3578,6 +3629,7 @@ async function getMyBoot(username, pin) {
     required: (reqDocs && !isApplicant_(s)) ? requiredFor_(s, reqDocs) : null,
     // admins only: when the nightly backup last ran (netlify/functions/backup.js)
     org: await part(function () { return getYwamGp(username, pin); }),   // titles, YWAM GP roles, the advisory board
+    kmFixes: await part(async function () { return kmFixesOf_(await getKmReview_()); }),   // a Khmer reviewer's corrections, live for everyone
     backup: s.isAdmin ? await part(backupStatus_) : null,
     // the roster is already top-level above; no need to ship it twice in one response
     base: base ? Object.assign({}, base, { roster: undefined }) : null
@@ -8345,6 +8397,8 @@ const HANDLERS = {
   adminDeleteStaff: function (a) { return adminDeleteStaff(a[0], a[1], a[2]); },
   adminMergeStaff: function (a) { return adminMergeStaff(a[0], a[1], a[2], a[3]); },
   adminUpdateStaff: function (a) { return adminUpdateStaff(a[0], a[1], a[2], a[3]); },
+  getKmReview: function (a) { return getKmReview(a[0], a[1]); },
+  saveKmReview: function (a) { return saveKmReview(a[0], a[1], a[2], a[3], a[4]); },
   updateProfile: function (a) { return updateProfile(a[0], a[1], a[2]); },
   changePin: function (a) { return changePin(a[0], a[1], a[2]); },
   uploadPhoto: function (a) { return uploadPhoto(a[0], a[1], a[2], a[3]); },

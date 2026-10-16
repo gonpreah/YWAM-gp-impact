@@ -2083,9 +2083,29 @@ inferred from volunteer counts.
   days belonging to the *next* year's week 1 land on week 52 instead. The year field
   keeps those days in the right year now, so this is a mis-numbered week rather than
   lost history — much smaller than it was, still not right.
-- **~219 Khmer strings are translated but unreviewed** (`PENDING_KM` in `km.js`). They
+- **~4,000 Khmer strings are translated but unreviewed** (`PENDING_KM` in `km.js`). They
   are on screen now rather than sitting in English, which was Uriah's call, but nobody
-  who speaks Khmer has read them yet. `docs/khmer-needed.md` is the checklist.
+  who speaks Khmer has read them yet. **Khmer review** (below) is how they get read.
+
+## Khmer review (☰ → Language → Khmer review, Oct 2026)
+- For staff an admin ticks as **Khmer reviewer** (`kmReviewer`, Admin → staff) and admins
+  (`isKmReviewer_`). One draft at a time from PENDING_KM (minus anything already in
+  REVIEWED_KM): the English, the draft Khmer, where it is used, ✓ **Reads right** or
+  ✏️ **Fix it**; Back / Skip; filters Not checked yet · Fixed · Reads right · All; search.
+- Server: `getKmReview` / `saveKmReview(key, 'ok'|'fix'|'clear', km)`, one row per string
+  in the `kmReview` blob (`{ key, verdict, km, by, byName, at }`). A fix must contain Khmer
+  and keep exactly the English's `{placeholders}` (`kmSlots_`) — checked on both sides.
+- **A fix is live for everyone at once**: the boot's `kmFixes` → `gpKmFixes_` writes them
+  over BUILTIN_KM. That is a correction made by a person who reads Khmer, so it beats the
+  draft; it is still not in REVIEWED_KM until it is built in.
+- **Building in** (what makes it permanent, and the only bulk way into REVIEWED_KM): an
+  admin taps "Download the checked phrases" (khmer-review-<date>.json) and a developer runs
+  `node scripts/apply-km-review.mjs <file>` — "reads right" moves the draft as it is, a fix
+  moves the reviewer's Khmer; both leave PENDING_KM. Commit km.js after.
+- "Where it is used" comes from `public/km-notes.js`, built from docs/khmer-needed.md's
+  headings by `node scripts/build-km-notes.mjs` (a hash of the English → section). Run it
+  after adding a section to the doc. Loaded only on this screen.
+- tests/test-km-review-ui.mjs.
 - **The job-focus paragraphs are still English.** `public/jobfocus.js` (the KPI
   guide's one-line descriptions now have pending Khmer, in-app) carries 28 ministries' worth of prose — that is content rather
   than interface, it is long, and it reads as teaching material, so it wants a person
