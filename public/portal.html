@@ -508,6 +508,7 @@ body.guideOn { overflow:hidden; }
 <div class="msg" id="msg"></div>
 <script src="logo.js"></script>
 <script src="km.js"></script>
+<script src="legal-km.js"></script>
 <script src="taxonomy.js"></script>
 <script src="duty.js"></script>
 <script src="outreach-guide.js"></script>
@@ -849,18 +850,18 @@ function signHtml_(){
     return h+'</div>';
   }
   var doc=left[0], k=docs.indexOf(doc), sign=doc.sign||{}, F=S.form, nm=F.name!=null ? F.name : me.name;
-  h+='<div class="signProg">'+docs.map(function(x, i){ return '<span class="signDot'+(done[x.id]?' done':(x===doc?' on':''))+'" title="'+esc(x.title)+'">'+(done[x.id]?'✓':(i+1))+'</span>'; }).join('')+'</div>';
+  h+='<div class="signProg">'+docs.map(function(x, i){ return '<span class="signDot'+(done[x.id]?' done':(x===doc?' on':''))+'" title="'+esc(lk_(x.title))+'">'+(done[x.id]?'✓':(i+1))+'</span>'; }).join('')+'</div>';
   h+='<div class="card signDoc" data-signdoc="'+esc(doc.id)+'"><div class="eyebrow">'+esc(gpT('Document {n} of {total}',{n:k+1, total:docs.length}))+'</div>'+legalHeadHtml_(doc.title);
   (doc.blocks||[]).forEach(function(b){
-    if(b.t==='period') h+='<div class="signPeriod"><div class="kv"><b>'+esc(t('Volunteer name'))+'</b><span>'+esc(nm||'')+'</span></div><div class="kv"><b>'+esc(t('Period of contract'))+'</b><span>'+esc(doc.period||'')+'</span></div></div>';
+    if(b.t==='period') h+='<div class="signPeriod"><div class="kv"><b>'+esc(t('Volunteer name'))+'</b><span>'+esc(nm||'')+'</span></div><div class="kv"><b>'+esc(t('Period of contract'))+'</b><span>'+esc(lkPeriod_(doc.period))+'</span></div></div>';
     else if(b.t==='h') h+=legalHHtml_(b.text);
     else if(b.t==='list') h+=legalListHtml_(b.items);
-    else if(b.t==='choice') h+='<div class="signChoice'+(S.miss && S.miss[b.id]?' miss':'')+'" data-signchoicebox="'+esc(b.id)+'">'+(b.options||[]).map(function(o){ return '<label class="signCheck"><input type="radio" name="sc_'+esc(b.id)+'" data-signchoice="'+esc(b.id)+'" value="'+esc(o.id)+'"'+(F.choices && F.choices[b.id]===o.id?' checked':'')+'><span>'+esc(o.text)+'</span></label>'; }).join('')+'</div>';
+    else if(b.t==='choice') h+='<div class="signChoice'+(S.miss && S.miss[b.id]?' miss':'')+'" data-signchoicebox="'+esc(b.id)+'">'+(b.options||[]).map(function(o){ return '<label class="signCheck"><input type="radio" name="sc_'+esc(b.id)+'" data-signchoice="'+esc(b.id)+'" value="'+esc(o.id)+'"'+(F.choices && F.choices[b.id]===o.id?' checked':'')+'><span>'+esc(lk_(o.text))+'</span></label>'; }).join('')+'</div>';
     else if(b.t==='contacts') h+='<div class="signContacts">'+(d.contacts||[]).map(function(c){ return '<div class="kv"><b>'+esc(c.role)+'</b><span>'+esc([c.name, c.phone].filter(Boolean).join(' · ') || t('Your leader will tell you on arrival.'))+'</span></div>'; }).join('')+'</div>';
-    else if(b.t==='p') h+='<p class="signP'+(b.style?' '+esc(b.style):'')+'">'+esc(String(b.text||'').split('{name}').join(nm||'________'))+'</p>';
-    else if(b.t==='check') h+='<label class="signCheck'+(S.miss && S.miss[b.id]?' miss':'')+'"><input type="checkbox" data-signcheck="'+esc(b.id)+'"'+(F.checks && F.checks[b.id]?' checked':'')+'><span>'+esc(b.text)+'</span></label>';
-    else if(b.t==='group') h+='<div class="signGroup'+(S.miss && S.miss[b.id]?' miss':'')+'"><label class="signCheck"><input type="checkbox" data-signcheck="'+esc(b.id)+'"'+(F.checks && F.checks[b.id]?' checked':'')+'><b>'+esc(b.title)+'</b></label><ul>'+(b.items||[]).map(function(it){ return '<li>'+esc(it)+'</li>'; }).join('')+'</ul></div>';
-    else if(b.t==='field'){ var fv=F.fields && F.fields[b.id]!=null ? F.fields[b.id] : ((b.prefill && d.prefill && d.prefill[b.prefill])||''); h+='<label class="f">'+esc(b.label)+(b.optional?' <span class="hint">('+esc(t('optional'))+')</span>':'')+'</label><input type="text" data-signfield="'+esc(b.id)+'" maxlength="120" value="'+esc(fv)+'"'+(S.miss && S.miss[b.id]?' class="miss"':'')+'>'; }
+    else if(b.t==='p') h+='<p class="signP'+(b.style?' '+esc(b.style):'')+'">'+esc(String(lk_(b.text)||'').split('{name}').join(nm||'________'))+'</p>';
+    else if(b.t==='check') h+='<label class="signCheck'+(S.miss && S.miss[b.id]?' miss':'')+'"><input type="checkbox" data-signcheck="'+esc(b.id)+'"'+(F.checks && F.checks[b.id]?' checked':'')+'><span>'+esc(String(lk_(b.text)||'').split('{name}').join(nm||'________'))+'</span></label>';
+    else if(b.t==='group') h+='<div class="signGroup'+(S.miss && S.miss[b.id]?' miss':'')+'"><label class="signCheck"><input type="checkbox" data-signcheck="'+esc(b.id)+'"'+(F.checks && F.checks[b.id]?' checked':'')+'><b>'+esc(lk_(b.title))+'</b></label><ul>'+(b.items||[]).map(function(it){ return '<li>'+esc(lk_(it))+'</li>'; }).join('')+'</ul></div>';
+    else if(b.t==='field'){ var fv=F.fields && F.fields[b.id]!=null ? F.fields[b.id] : ((b.prefill && d.prefill && d.prefill[b.prefill])||''); h+='<label class="f">'+esc(lk_(b.label))+(b.optional?' <span class="hint">('+esc(t('optional'))+')</span>':'')+'</label><input type="text" data-signfield="'+esc(b.id)+'" maxlength="120" value="'+esc(fv)+'"'+(S.miss && S.miss[b.id]?' class="miss"':'')+'>'; }
     else if(b.t==='initial') h+=sigPadHtml_('init:'+b.id, b.label, true);
   });
   h+='<div class="signHere"><div class="eyebrow">'+esc(t('Sign here'))+'</div>'+
@@ -1038,21 +1039,29 @@ function legalAdminHtml_(){
 /* A legal document laid out like the paper: the YWAM Siem Reap letterhead and
    the title centred on top, Part headings, numbered sections (1., 2. …) a size
    down, bullets with a bold lead-in ("Physical harm: …"), and the quote set off. */
-function legalHeadHtml_(title){ return '<img class="signLetterhead" src="letterhead.jpg" alt="YWAM Siem Reap — Serve · Educate · Develop" width="800" height="190"><h3 class="signTitle">'+esc(title)+'</h3>'; }
-function legalHHtml_(text){ return '<h4 class="signH'+(/^\d+\.\s/.test(text||'')?' num':'')+'">'+esc(text)+'</h4>'; }
-function legalListHtml_(items){ return '<ul class="signList">'+(items||[]).map(function(it){ var m=/^([^:]{2,24}):\s(.*)$/.exec(it); return '<li>'+(m ? '<b>'+esc(m[1])+':</b> '+esc(m[2]) : esc(it))+'</li>'; }).join('')+'</ul>'; }
+/* A legal document's own words in Khmer when the portal is in Khmer (legal-km.js,
+   keyed by the English); anything without a Khmer line stays English. */
+function lk_(s){ return LANG==='km' && typeof LEGAL_KM==='object' && LEGAL_KM && s && LEGAL_KM[s] ? LEGAL_KM[s] : s; }
+/* the contract's period, made by the server in English: "2 years · From 11/2026 to 11/2028" */
+function lkPeriod_(p){
+  var m=/^([\d.]+) years? · From (\d{2}\/\d{4}) to (\d{2}\/\d{4})$/.exec(p||'');
+  return m && LANG==='km' ? gpT('{n} years · from {from} to {to}',{n:m[1], from:m[2], to:m[3]}) : (p||'');
+}
+function legalHeadHtml_(title){ return '<img class="signLetterhead" src="letterhead.jpg" alt="YWAM Siem Reap — Serve · Educate · Develop" width="800" height="190"><h3 class="signTitle">'+esc(lk_(title))+'</h3>'; }
+function legalHHtml_(text){ text=lk_(text); return '<h4 class="signH'+(/^\d+\.\s/.test(text||'')?' num':'')+'">'+esc(text)+'</h4>'; }
+function legalListHtml_(items){ return '<ul class="signList">'+(items||[]).map(lk_).map(function(it){ var m=/^([^:]{2,24}):\s(.*)$/.exec(it); return '<li>'+(m ? '<b>'+esc(m[1])+':</b> '+esc(m[2]) : esc(it))+'</li>'; }).join('')+'</ul>'; }
 /* read-only, for the admin's preview: what a signer sees, without the inputs */
 function legalReadHtml_(blocks, contacts){
   return (blocks||[]).map(function(b){
     if(b.t==='h') return legalHHtml_(b.text);
     if(b.t==='list') return legalListHtml_(b.items);
-    if(b.t==='p') return '<p class="signP'+(b.style?' '+esc(b.style):'')+'">'+esc(b.text)+'</p>';
-    if(b.t==='check') return '<p class="signP">☐ '+esc(b.text)+'</p>';
-    if(b.t==='group') return '<p class="signP">☐ <b>'+esc(b.title)+'</b></p>'+legalListHtml_(b.items);
-    if(b.t==='choice') return (b.options||[]).map(function(o){ return '<p class="signP">◯ '+esc(o.text)+'</p>'; }).join('');
+    if(b.t==='p') return '<p class="signP'+(b.style?' '+esc(b.style):'')+'">'+esc(lk_(b.text))+'</p>';
+    if(b.t==='check') return '<p class="signP">☐ '+esc(lk_(b.text))+'</p>';
+    if(b.t==='group') return '<p class="signP">☐ <b>'+esc(lk_(b.title))+'</b></p>'+legalListHtml_(b.items);
+    if(b.t==='choice') return (b.options||[]).map(function(o){ return '<p class="signP">◯ '+esc(lk_(o.text))+'</p>'; }).join('');
     if(b.t==='contacts') return '<div class="signContacts">'+(contacts||[]).map(function(c){ return '<div class="kv"><b>'+esc(c.role)+'</b><span>'+esc([c.name, c.phone].filter(Boolean).join(' · ') || '—')+'</span></div>'; }).join('')+'</div>';
-    if(b.t==='field') return '<p class="signP">'+esc(b.label)+': ________</p>';
-    if(b.t==='initial') return '<p class="signP">✍️ '+esc(b.label)+'</p>';
+    if(b.t==='field') return '<p class="signP">'+esc(lk_(b.label))+': ________</p>';
+    if(b.t==='initial') return '<p class="signP">✍️ '+esc(lk_(b.label))+'</p>';
     return '';
   }).join('');
 }

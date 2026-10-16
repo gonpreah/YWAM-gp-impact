@@ -292,10 +292,14 @@ console.log('\n=== signing: the legal documents and the staff contract ===');
   ok('PDF asks for that document of theirs', sent.some(x => x.fn === 'hrLegalPdf' && x.args[2] === 'st_dara' && x.args[3] === 'photo'));
   await page.click('#hrSendContract'); await page.waitForSelector('#hrSendForm');
   ok('Fill out staff contract opens with this month and two years when they have none', /Fill out staff contract/.test(await page.$eval('#hrSendForm', e => e.textContent)) && /^\d{4}-\d{2}$/.test(await page.$eval('#hr_send_from', i => i.value)) && await page.$eval('#hr_send_years', s => s.value) === '2');
-  await page.fill('#hr_send_from', '2026-11'); await page.selectOption('#hr_send_years', '3');
+  ok('years is a number box, not a 1-2-3 list', await page.$eval('#hr_send_years', i => i.tagName === 'INPUT' && i.type === 'number'));
+  await page.fill('#hr_send_from', '2026-11');
+  await page.fill('#hr_send_years', '0'); await page.click('#hrSendSave'); await page.waitForTimeout(200);
+  ok('0 years is refused before anything is sent', !sent.some(x => x.fn === 'hrSendContract') && /from 0\.25 to 30/.test(await page.$eval('body', e => e.textContent)));
+  await page.fill('#hr_send_years', '5.5');
   await Promise.all([page.waitForURL(/portal\.html/, { timeout: 5000 }).catch(() => {}), page.click('#hrSendSave')]);
   const sc = sent.filter(x => x.fn === 'hrSendContract').pop();
-  ok('it starts one with that period, then opens the signing page on this phone for that person', sc && sc.args[2] === 'st_dara' && sc.args[3].from === '2026-11' && sc.args[3].years === 3 && /portal\.html\?staff=1&hr=st_dara&doc=contract%3Acdig/.test(page.url()), page.url());
+  ok('any number of years (5.5): it starts one with that period, then opens the signing page on this phone for that person', sc && sc.args[2] === 'st_dara' && sc.args[3].from === '2026-11' && sc.args[3].years === 5.5 && /portal\.html\?staff=1&hr=st_dara&doc=contract%3Acdig/.test(page.url()), page.url());
   await ctx.close();
 }
 {
