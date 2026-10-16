@@ -1814,6 +1814,11 @@ body.hxOn { overflow:hidden; }
   body.repOn .repGrid { grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; }
   body.repOn .card { box-shadow:none !important; border:1px solid var(--border) !important; break-inside:avoid; }
 }
+.f30Row { display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:none; border:0; border-top:1px solid var(--border); padding:10px 0; font:inherit; color:var(--ink); cursor:pointer; }
+.f30Row > span:nth-child(2) { flex:1; }
+.f30Row.done { color:var(--muted); cursor:default; }
+.f30Tick { width:22px; height:22px; flex:none; border-radius:50%; border:2px solid var(--border2, var(--border)); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; }
+.f30Row.done .f30Tick { background:var(--goodSoft); border-color:var(--goodSoft); color:var(--goodInk); }
 label.f.remBox { display:flex; align-items:center; gap:8px; text-transform:none; letter-spacing:0; font-weight:400; font-size:14px; color:var(--ink); margin-top:10px; }
 .kmrSearch { width:100%; box-sizing:border-box; margin:0 0 10px; }
 .kmrCard .kmrPos { font-size:12px; color:var(--muted); font-weight:700; }
@@ -7288,6 +7293,62 @@ function bindBoardReport_(){
   var bk=document.getElementById('repBack'); if(bk) bk.onclick=function(){ S.view='ywamgp'; render(); };
 }
 
+/* ==================== Your first 30 days (My Home) ====================
+   For someone new (their account is under F30_DAYS old): the handful of things that
+   make a good start, ticked off by themselves as they happen — every item is read
+   from what the app already knows, nothing to tick by hand. Each row takes you to
+   where it is done. Gone when everything is done, after F30_DAYS, or when hidden
+   ("Hide this", this phone). */
+var F30_DAYS=45, F30_HIDE_KEY='gp-f30-hidden';
+function f30Items_(){
+  var me=S.me||{}, pr=S.profile||{}, read=libRead_();
+  if(S.push) pushCheck_();
+  var items=[
+    { id:'profile', done:!!(me.photo && me.staffType && me.country), label:t('Add your photo, what kind of staff you are, and where you are from'), go:'profile' },
+    { id:'mentor', done:pr.mentorStatus==='approved', label: me.mentorId && pr.mentorStatus!=='approved' ? t('Your mentor accepts — ask them to open the app') : t('Choose a mentor'), go:'profile' },
+    { id:'papers', done:!!(S.required && S.required.finished), label:t('Read and sign the papers every staff member signs'), go:'mycontract' },
+    { id:'checkin', done:(S.logs||[]).length>0, label:t('Your first daily check-in'), go:'sec-habits' },
+    { id:'oneonone', done:(S.oneOnOnes||[]).some(function(o){ return o.heldOn; }), label:t('Your first 1-on-1 with your mentor'), go:'sec-mentor' },
+    { id:'fight', done:!!read['fight-our-values'], label:t('Read FIGHT: Our Values'), go:'lib:fight-our-values' },
+    { id:'safe', done:!!read['keeping-each-other-safe'], label:t('Read Keeping Each Other Safe'), go:'lib:keeping-each-other-safe' }
+  ];
+  if(gsOK()) items.push({ id:'strengths', done:!!(pr.gstrengths && pr.gstrengths.top), label:t('Find your top 5 strengths'), go:'gtest' });
+  if(pOK()) items.push({ id:'type', done:!!(pr.personality && pr.personality.type), label:t('Find your personality type'), go:'ptest' });
+  if(S.push && pushSupported_() && !pushNeedsInstall_()) items.push({ id:'remind', done:!!S.pushSub, label:t('Turn on reminders'), go:'profile' });
+  return items;
+}
+function f30Show_(){
+  if(!S.me || S.guest || S.board || !S.me.created) return false;
+  var age=(Date.now()-new Date(S.me.created).getTime())/86400000;
+  if(!(age>=0 && age<=F30_DAYS) || lsGet(F30_HIDE_KEY)===S.me.id) return false;
+  return f30Items_().some(function(x){ return !x.done; });
+}
+function f30CardHtml_(){
+  if(!f30Show_()) return '';
+  var items=f30Items_(), done=items.filter(function(x){ return x.done; }).length;
+  var h='<h3 id="sec-first30">🌱 '+esc(t('Your first 30 days'))+'</h3><div class="card f30Card">'+
+    '<div class="pBar"><div class="pBarTop"><b>'+esc(gpT('{n} of {m} done',{n:done, m:items.length}))+'</b><span>'+Math.round(done/items.length*100)+'%</span></div>'+
+    '<div class="pTrack"><div class="pFill" style="left:0;width:'+Math.round(done/items.length*100)+'%;background:var(--accent)"></div></div></div>';
+  items.forEach(function(x){
+    h+='<button class="f30Row'+(x.done?' done':'')+'" data-f30go="'+esc(x.go)+'"'+(x.done?' disabled':'')+'><span class="f30Tick">'+(x.done?'✓':'')+'</span><span>'+esc(x.label)+'</span>'+(x.done?'':PCHEV)+'</button>';
+  });
+  return h+'<button class="linkbtn inline f30Hide" id="f30Hide" style="width:auto;padding:0;margin-top:8px">'+esc(t('Hide this'))+'</button></div>';
+}
+function bindF30_(){
+  document.querySelectorAll('[data-f30go]').forEach(function(b){
+    b.onclick=function(){
+      gpTap(); var g=b.getAttribute('data-f30go');
+      if(g.indexOf('lib:')===0){ S.view='library'; S.libBook=g.slice(4); S.libStep=null; libLoad_(); render(); window.scrollTo(0,0); return; }
+      if(g.indexOf('sec-')===0){ var el=document.getElementById(g); if(el) el.scrollIntoView({ behavior:'smooth', block:'start' }); return; }
+      if(g==='gtest'){ S.gtest=null; S.view='gtest'; render(); window.scrollTo(0,0); return; }
+      if(g==='ptest'){ S.ptest={stage:'intro', answers:{}, page:0, sex:mySex()}; S.view='ptest'; render(); window.scrollTo(0,0); return; }
+      S.view=g; render(); window.scrollTo(0,0);
+    };
+  });
+  var hd=document.getElementById('f30Hide');
+  if(hd) hd.onclick=function(){ lsSet(F30_HIDE_KEY, S.me.id); render(); };
+}
+
 /* ==================== Reminders (Profile & settings → Reminders) ====================
    Web push: one reminder a day at the hour you choose, only when there is something
    to do (see "Reminders: web push" in api.js and netlify/functions/reminders.js). This
@@ -8527,6 +8588,7 @@ function homeHtml(){
   var h=miniDashboardHtml();
   h+=gpQueueBannerHtml_();
   h+=phaseBanner(phase, wk);
+  h += f30CardHtml_();
   h += goalsCardHtml(goalsViewWeek());
   h += habitsCardHtml();
   h += annualGoalsHtml();
@@ -16920,6 +16982,7 @@ function bindAway(){
   bindOrg_();
   bindKmReview_();
   bindBoardReport_();
+  bindF30_();
   bindHosp();
   if(S.view==='ministry') bindLead_();
   if(typeof dutyHtml==='function') bindSched_();

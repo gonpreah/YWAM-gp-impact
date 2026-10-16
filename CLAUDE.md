@@ -2106,6 +2106,16 @@ inferred from volunteer counts.
   are on screen now rather than sitting in English, which was Uriah's call, but nobody
   who speaks Khmer has read them yet. **Khmer review** (below) is how they get read.
 
+## Your first 30 days (My Home, Oct 2026)
+- For someone whose account is under `F30_DAYS` (45) old (`created`, now in the boot's own
+  staff card — not the roster): a card above the goals with what makes a good start, every
+  item read from what the app already knows — profile (photo, kind of staff, country), a
+  mentor who accepted, the papers signed (`S.required.finished`), a first daily check-in, a
+  first 1-on-1 held, FIGHT and Keeping Each Other Safe read, strengths, personality type,
+  and reminders on (when the app has them and the phone can). Each row goes where it's done.
+  Gone when all done, after 45 days, or "Hide this" (this phone, `gp-f30-hidden`).
+- tests/test-first30-ui.mjs.
+
 ## Reminders — web push (Oct 2026)
 - **Off until an admin turns them on**: Admin → Reminders → "Turn on reminders for the app"
   (`adminSetUpPush`) makes a P-256 key pair once and keeps it in the `pushKeys` blob,

@@ -3438,6 +3438,22 @@ The guide itself (Library → Made at YWAM GP → Keeping Each Other Safe) is in
 | {n} places on the YWAM GP Leadership Team are not filled yet. | តួនាទី {n} ក្នុងក្រុមដឹកនាំ YWAM GP មិនទាន់មានអ្នកកាន់នៅឡើយទេ។ |
 | See what’s missing | មើលអ្វីដែលខ្វះ |
 
+### Your first 30 days (My Home, for someone new)
+
+| English | Khmer (draft) |
+|---|---|
+| Add your photo, what kind of staff you are, and where you are from | បន្ថែមរូបថតរបស់អ្នក ប្រភេទបុគ្គលិក និងប្រទេសដែលអ្នកមកពី |
+| Your mentor accepts — ask them to open the app | អ្នកណែនាំរបស់អ្នកទទួលយក — សូមប្រាប់គាត់ឱ្យបើកកម្មវិធី |
+| Choose a mentor | ជ្រើសរើសអ្នកណែនាំ |
+| Read and sign the papers every staff member signs | អាន និងចុះហត្ថលេខាលើឯកសារដែលបុគ្គលិកគ្រប់គ្នាចុះហត្ថលេខា |
+| Your first daily check-in | ការរាយការណ៍ប្រចាំថ្ងៃលើកដំបូងរបស់អ្នក |
+| Your first 1-on-1 with your mentor | ការជួបមួយទល់មួយលើកដំបូងជាមួយអ្នកណែនាំរបស់អ្នក |
+| Read FIGHT: Our Values | អាន FIGHT៖ គុណតម្លៃរបស់យើង |
+| Read Keeping Each Other Safe | អាន «ការពារសុវត្ថិភាពគ្នាទៅវិញទៅមក» |
+| Find your personality type | ស្វែងរកប្រភេទបុគ្គលិកលក្ខណៈរបស់អ្នក |
+| Your first 30 days | ៣០ ថ្ងៃដំបូងរបស់អ្នក |
+| Hide this | លាក់វា |
+
 ### The quarter report (the board's Report tab)
 
 | English | Khmer (draft) |
