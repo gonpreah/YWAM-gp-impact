@@ -1631,7 +1631,8 @@ function bindVisaAdmin_(){
   if(up) up.onchange=function(){ var files=[].slice.call(up.files||[]); up.value=''; if(files.length) uploadVisaDocs_(files); };
   document.querySelectorAll('[data-visadocadm]').forEach(function(b){ b.onclick=function(){ openVisaDoc_(campus, b.getAttribute('data-visadocadm'), b); }; });
   document.querySelectorAll('[data-visadocdel]').forEach(function(b){ b.onclick=function(){
-    if(!confirm(gpT('Remove “{name}”? Teams will no longer see it.',{name:b.getAttribute('data-docname')||''}))) return;
+    var nm=b.getAttribute('data-docname')||'';
+    if(!confirm(gpT('Remove “{name}”? Teams will no longer see it.',{name:nm}))) return;
     run('portalVisaDocDelete', [P.auth.user, P.auth.pin, campus, b.getAttribute('data-visadocdel')], function(r){
       if(r && r.ok){ P.visaInfo[campus]=r; showMsg(t('Removed')); } else showMsg(t('Could not remove it'));
       render();
