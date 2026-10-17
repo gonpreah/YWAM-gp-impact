@@ -1816,6 +1816,16 @@ also carries `menteeId`, the mentee's `prep`, and once it happened `heldOn`, `no
   on accepting (`ooAfterAccept_`) and the bell nudges until it is filled. It starts from
   their last answers, and the summary shows ▲▼ against last time. Only the mentee can
   write it (`saveOneOnOnePrep`), until it is held.
+- **Mentorship page (Oct 2026, Uriah: "one area for easy access")**: `S.view='mentor'` with no
+  mentee open is **Mentorship** (`mentorHtml`): 1-on-1 requests waiting on you, saying who asked
+  whom (`ooAskedYouText_`), away requests, mentor requests, 1-on-1s coming up, **People you
+  mentor** (`.mentorRow`, tap → their page; ☕ "Ask {name} for a 1-on-1" or "Open the 1-on-1"),
+  and **Your mentor** (`#myMentorCard`, ask button + your last 1-on-1s). The dashboard's Mentor
+  row, My Home's short Mentorship card (`#goMentorshipHome`) and Team's `#goMentor` all open it
+  (`[data-gomentorship]`). A mentee's page starts with **1-on-1 history** (`#ooHistory`,
+  `ooHistRowHtml_`: coming up, then held newest first with notes and follow-ups done; Show all
+  past 10) and "Ask {name} for a 1-on-1" / "Log one you already had" (`data-oolog`). The sheet
+  says who is who ("You mentor Sokha" / "Andrew is your mentor") and whose request it is.
 - **The sheet** (`S.view='oneonone'`, `oneOnOneHtml`, `ooGo_(id, withId)`): the
   check-in, the mentee's SMART goals for the year (the mentor's copy via
   getMenteeLogs), last time's follow-ups to tick (either of the pair), and for the
