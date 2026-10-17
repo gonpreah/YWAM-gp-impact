@@ -1089,6 +1089,13 @@ forms, documents and references follow.
   Notes, only the tabs a record has; the actions sit in `.panelFoot`. Only the open tab is drawn, so a test
   calls `ptab(page, id)` before reaching into one. Answers fold per form section (`.ansFold`, first
   open, answered/asked) with `#ansQ` Find in answers (`answersHtml_(…, {fold, q})`, `answerText_`).
+- **Rooms booked (teams, Oct 2026)**: a team step `rooms` (after the visa steps, who: us,
+  `side: true` — it can tick any time, so it is never the current step). Done when SR
+  Hospitality has a booking for the team's trip: every write of `hosp:<campus>` goes through
+  `saveHosp_`, which runs `syncTeamRooms_` → `cand.portal.rooms = {beds, from, to}` (null when
+  there is none); opening SR Hospitality (`getHospitality`) catches up teams booked before.
+  The portal shows "🛏 12 beds · dates" under the ticked step (`roomsLine_`), staff see the same
+  in Team steps. Students and other single applicants have no booking link yet.
 - **E-visa how-to and supporting documents (Oct 2026)**: once a team's letter of invitation is
   uploaded (or "Letter of invitation sent" is ticked — `visaOpen_` in api.js, `app.visaOpen`), a
   drop-down **How to apply for your e-visa online** (`visaHowHtml_`, `#visaHow`) opens under the
@@ -1860,6 +1867,16 @@ also carries `menteeId`, the mentee's `prep`, and once it happened `heldOn`, `no
   on accepting (`ooAfterAccept_`) and the bell nudges until it is filled. It starts from
   their last answers, and the summary shows ▲▼ against last time. Only the mentee can
   write it (`saveOneOnOnePrep`), until it is held.
+- **Mentorship page (Oct 2026, Uriah: "one area for easy access")**: `S.view='mentor'` with no
+  mentee open is **Mentorship** (`mentorHtml`): 1-on-1 requests waiting on you, saying who asked
+  whom (`ooAskedYouText_`), away requests, mentor requests, 1-on-1s coming up, **People you
+  mentor** (`.mentorRow`, tap → their page; ☕ "Ask {name} for a 1-on-1" or "Open the 1-on-1"),
+  and **Your mentor** (`#myMentorCard`, ask button + your last 1-on-1s). The dashboard's Mentor
+  row, My Home's short Mentorship card (`#goMentorshipHome`) and Team's `#goMentor` all open it
+  (`[data-gomentorship]`). A mentee's page starts with **1-on-1 history** (`#ooHistory`,
+  `ooHistRowHtml_`: coming up, then held newest first with notes and follow-ups done; Show all
+  past 10) and "Ask {name} for a 1-on-1" / "Log one you already had" (`data-oolog`). The sheet
+  says who is who ("You mentor Sokha" / "Andrew is your mentor") and whose request it is.
 - **The sheet** (`S.view='oneonone'`, `oneOnOneHtml`, `ooGo_(id, withId)`): the
   check-in, the mentee's SMART goals for the year (the mentor's copy via
   getMenteeLogs), last time's follow-ups to tick (either of the pair), and for the

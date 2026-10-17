@@ -367,21 +367,19 @@ function personHtml(){
   return h;
 }
 
-/* Mentor entry point lives at the top of Team rather than as its own tab. */
+/* Team's way into Mentorship — for anyone who mentors, has a mentor, or has
+   something waiting. */
 function mentorEntryHtml(){
-  var reqN=(S.mentorRequests?S.mentorRequests.length:0)+(S.tripRequests?S.tripRequests.length:0);
-  if(!S.mentees.length && !reqN) return '';
-  var label = reqN
-    ? reqN+' mentor request'+(reqN===1?'':'s')+' waiting'
-    : gpT('{n} mentees',{n:S.mentees.length});
-  return '<button class="btn'+(reqN?'':' ghost')+'" id="goMentor">🤝 '+esc(label)+'</button>';
+  var waiting=mentorWaitingN_();
+  if(!(S.mentees||[]).length && !S.me.mentorId && !waiting) return '';
+  return '<button class="btn'+(waiting?'':' ghost')+'" id="goMentor">🤝 '+esc(t('Mentorship'))+(waiting ? ' · '+esc(waiting===1 ? t('1 waiting') : gpT('{n} waiting',{n:waiting})) : '')+'</button>';
 }
 
 /* ---------- mentor ---------- */
 function mentorHtml(){
   if(S.mentee){
     var m=S.mentee, wl=S.menteeLogs;
-    var h='<button class="linkbtn" id="menteeBack" style="text-align:left;text-decoration:none">← All mentees</button>';
+    var h='<button class="linkbtn" id="menteeBack" style="text-align:left;text-decoration:none">← '+esc(t('Mentorship'))+'</button>';
     h+='<div class="card"><div class="pcard">'+avatarHtml(m,'lg')+'<div><div class="pname">'+esc(m.name)+'</div><div class="pmeta">'+esc(m.dept)+(m.role?' · '+esc(m.role):'')+'</div></div></div></div>';
     h+='<div class="banner">🔒 Shared with you as '+esc(m.name.split(' ')[0])+'\u2019s mentor. Hold it with care and prayer — this is trust, not surveillance.</div>';
     if(S.menteeProfile && S.menteeProfile.debt) h+='<div class="banner">💰 Currently carrying staff debt.</div>';
@@ -568,12 +566,27 @@ function mentorHtml(){
     }
     return h;
   }
-  var h='';
+  /* The Mentorship page (Oct 2026, Uriah): everything about mentoring in one
+     place — what is waiting on you, the people you mentor (tap one for their
+     page and every 1-on-1 you've had), your own mentor, and what's coming up. */
+  var h='<h2>🤝 '+esc(t('Mentorship'))+'</h2><p class="sub">'+esc(t('The people you mentor, your own mentor, and your 1-on-1s — all in one place.'))+'</p>';
+
+  /* 1-on-1 requests waiting for you, saying who asked whom */
+  var incoming=(S.oneOnOnes||[]).filter(function(o){ return !o.mine && o.status==='pending'; });
+  if(incoming.length){
+    h+='<h3>🔔 '+esc(t('Asking you for a 1-on-1'))+' <small>· '+incoming.length+'</small></h3><div class="card">';
+    incoming.forEach(function(o){
+      h+='<div class="row ooAsked"><span class="rowName">'+esc(ooAskedYouText_(o))+(o.note?'<div class="pmeta">“'+esc(o.note)+'”</div>':'')+'</span>'+
+        '<span class="chips" style="margin:0"><button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-121accept="'+esc(o.id)+'">'+esc(t('Accept'))+'</button>'+
+        '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px;color:var(--faint)" data-121decline="'+esc(o.id)+'">'+esc(t('Decline'))+'</button></span></div>';
+    });
+    h+='</div>';
+  }
 
   /* Trips waiting on you as mentor. Sits above mentee requests because it's
      time-sensitive — someone is asking about days that are coming up. */
   if(S.tripRequests && S.tripRequests.length){
-    h+='<h2>'+esc(t('Away requests'))+' <small>· '+S.tripRequests.length+'</small></h2>'+
+    h+='<h3>'+esc(t('Away requests'))+' <small>· '+S.tripRequests.length+'</small></h3>'+
        '<p class="sub">'+esc(t('People you mentor letting you know they’ll be off campus.'))+'</p>';
     S.tripRequests.forEach(function(r){
       h+='<div class="card"><div class="row" style="border:0;padding-top:0">'+
@@ -590,21 +603,47 @@ function mentorHtml(){
   }
 
   if(S.mentorRequests && S.mentorRequests.length){
-    h+='<h2>Mentor requests <small>· '+S.mentorRequests.length+'</small></h2>'+
-      '<p class="sub">These people chose you as their mentor. Accepting gives you access to their private check-ins — decline if that’s not a fit.</p><div class="dir">';
+    h+='<h3>'+esc(t('Asking you to be their mentor'))+' <small>· '+S.mentorRequests.length+'</small></h3>'+
+      '<p class="sub">'+esc(t('These people chose you as their mentor. Accepting gives you access to their private check-ins — decline if that’s not a fit.'))+'</p><div class="dir">';
     S.mentorRequests.forEach(function(p){
       h+='<div class="dircard" style="cursor:default">'+avatarHtml(p)+'<div class="pname">'+esc(p.name)+'</div><div class="pmeta">'+esc(t(p.dept))+'</div>'+
-        '<div style="display:flex;gap:6px;margin-top:10px"><button class="btn" style="margin:0;padding:8px 4px;font-size:13px" data-accept="'+esc(p.id)+'">Accept</button>'+
-        '<button class="btn ghost" style="margin:0;padding:8px 4px;font-size:13px" data-decline="'+esc(p.id)+'">Decline</button></div></div>';
+        '<div style="display:flex;gap:6px;margin-top:10px"><button class="btn" style="margin:0;padding:8px 4px;font-size:13px" data-accept="'+esc(p.id)+'">'+esc(t('Accept'))+'</button>'+
+        '<button class="btn ghost" style="margin:0;padding:8px 4px;font-size:13px" data-decline="'+esc(p.id)+'">'+esc(t('Decline'))+'</button></div></div>';
     });
     h+='</div>';
   }
-  h+='<h2>My mentees <small>· '+S.mentees.length+'</small></h2>'+
-    '<p class="sub">People who chose you as their mentor and you’ve accepted. You can see their private check-ins.</p><div class="dir">';
-  S.mentees.forEach(function(p){
-    h+='<div class="dircard" data-mentee="'+esc(p.id)+'">'+avatarHtml(p)+'<div class="pname">'+esc(p.name)+'</div><div class="pmeta">'+esc(p.dept)+'</div>'+ooMonthHtml_(p.id)+'</div>';
-  });
-  h+='</div>';
+
+  var coming=ooComingHtml_();
+  if(coming) h+='<div class="card" id="ooComing">'+coming+'</div>';
+
+  /* the people you mentor */
+  h+='<h3>'+esc(t('People you mentor'))+' <small>· '+(S.mentees||[]).length+'</small></h3>';
+  if((S.mentees||[]).length){
+    h+='<p class="sub">'+esc(t('Tap a name for their page and every 1-on-1 you’ve had. You can see their private check-ins — hold them with care.'))+'</p><div class="card mentorList">';
+    S.mentees.forEach(function(p){
+      var first=String(p.name||'').split(' ')[0], open=(S.oneOnOnes||[]).filter(function(o){ return o.otherId===p.id && ooOpen_(o); })[0];
+      h+='<div class="mentorRow"><button class="mentorRowMain" data-mentee="'+esc(p.id)+'">'+avatarHtml(p,'sm')+
+        '<span class="mentorRowTxt"><span class="mentorName">'+esc(p.name)+'</span><span class="mentorMeta">'+esc(t(p.ministry||p.dept||''))+'</span>'+ooMonthHtml_(p.id)+'</span><span class="ooChev">›</span></button>'+
+        (open ? '<button class="btn ghost small mentorAct" data-ooopen="'+esc(open.id)+'">☕ '+esc(t('Open the 1-on-1'))+'</button>'
+          : '<button class="btn ghost small mentorAct" data-request121="'+esc(p.id)+'">☕ '+esc(gpT('Ask {name} for a 1-on-1',{name:first}))+'</button>')+'</div>';
+    });
+    h+='</div>';
+  } else h+='<div class="card"><p class="sub" style="margin:0">'+esc(t('Nobody has chosen you as their mentor yet.'))+'</p></div>';
+
+  /* your own mentor */
+  h+='<h3>'+esc(t('Your mentor'))+'</h3>';
+  if(S.me.mentorId){
+    var mm=personOf(S.me.mentorId), mName=mm ? mm.name : nameOf(S.me.mentorId), mFirst=String(mName||'').split(' ')[0];
+    var myOpen=(S.oneOnOnes||[]).filter(function(o){ return o.otherId===S.me.mentorId && ooOpen_(o); })[0];
+    var mine=ooPairRows_(S.me.id).filter(function(o){ return o.status==='held'; });
+    h+='<div class="card" id="myMentorCard"><div class="mentorBlock" style="padding-bottom:6px">'+avatarHtml(mm||{name:mName},'sm')+
+      '<div style="flex:1"><div class="mentorName">'+esc(mName)+'</div><div class="mentorMeta">'+esc(t(mm?(mm.ministry||mm.dept||''):''))+'</div>'+ooMonthHtml_(S.me.id)+'</div></div>'+
+      (S.me.mentorStatus && S.me.mentorStatus!=='approved' ? '<p class="sub" style="margin:0 0 8px">⏳ '+esc(gpT('Waiting for {name} to accept being your mentor.',{name:mFirst}))+'</p>' : '')+
+      (myOpen ? '<button class="btn ghost" style="margin:4px 0 0" data-ooopen="'+esc(myOpen.id)+'">☕ '+esc(t('Open the 1-on-1'))+'</button>'
+        : '<button class="btn" style="margin:4px 0 0" data-request121="'+esc(S.me.mentorId)+'">☕ '+esc(gpT('Ask {name} for a 1-on-1',{name:mFirst}))+'</button>');
+    if(mine.length) h+='<div class="mentorLabel" style="margin-top:12px">'+esc(gpT('Your 1-on-1s with {name}',{name:mFirst}))+'</div>'+mine.slice(0,5).map(ooHistRowHtml_).join('');
+    h+='</div>';
+  } else h+='<div class="card"><p class="sub" style="margin:0 0 8px">'+esc(t('No mentor set yet. Choose one in your profile — they’ll see your private check-ins and meet with you.'))+'</p><button class="btn ghost" style="margin:0" id="mentorPickProfile">'+esc(t('Choose a mentor'))+'</button></div>';
   return h;
 }
 

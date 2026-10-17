@@ -86,8 +86,14 @@ const rows = () => mem.oneOnOnes || [];
 {
   const { ctx, page } = await open('sokha');
   ok('My Home shows the month: 0 of 2 1-on-1s', /0 of 2 1-on-1s this month/.test(await main(page)));
-  await page.click('[data-request121="st1"]'); await page.waitForTimeout(300);
+  ok('My Home keeps a short Mentorship card that opens the page', !!(await page.$('#goMentorshipHome')) && !(await page.$('#main [data-request121]')));
+  await page.click('.heroRow[data-gomentorship]'); await page.waitForTimeout(300);
   let txt = await main(page);
+  ok('tapping Mentor on the dashboard opens the Mentorship page: your mentor, people you mentor', /🤝 Mentorship/.test(txt) && /Your mentor/i.test(txt) && /People you mentor/i.test(txt) && /Nobody has chosen you as their mentor yet/.test(txt), txt.slice(0, 200));
+  ok('… with a plain button: Ask Andrew for a 1-on-1', /Ask Andrew for a 1-on-1/.test(await page.$eval('#myMentorCard [data-request121="st1"]', b => b.textContent)));
+  await page.click('#myMentorCard [data-request121="st1"]'); await page.waitForTimeout(300);
+  txt = await main(page);
+  ok('the sheet says who is asking whom', /You are asking Andrew, your mentor, for a 1-on-1/.test(txt) && /Andrew is your mentor/.test(txt) && /Send my request to Andrew/.test(await page.$eval('#ooSend', b => b.textContent)));
   ok('☕ opens the check-in: six areas and the five FIGHT values, 1-5',
     (await page.$$('[data-ooarea]')).length === 30 && (await page.$$('[data-ooval]')).length === 25 && /Fundraising & finances/.test(txt) && /Tenacious/.test(txt) && /Living our values — FIGHT/i.test(txt));
   await page.click('#ooSend'); await page.waitForTimeout(300);
@@ -103,7 +109,7 @@ const rows = () => mem.oneOnOnes || [];
   await page.click('#ooSend'); await page.waitForTimeout(500);
   const r0 = rows()[0] || {};
   ok('… then the request goes, carrying the check-in', rows().length === 1 && r0.prep && r0.prep.areas.money === 2 && r0.prep.areas.physical === 5 && r0.prep.values.tenacious === 2 && r0.prep.helpWith === 'Writing my support letters' && r0.prep.workingOn === 'Pass Khmer level 2', JSON.stringify(r0.prep));
-  ok('back on My Home it is "coming up", and the ☕ now opens it', /1-on-1s coming up/i.test(await main(page)) && !!(await page.$('[data-ooopen="' + r0.id + '"]')));
+  ok('back on Mentorship it is "coming up", waiting for Andrew, and the mentor card opens it', /1-on-1s coming up/i.test(await main(page)) && /Sent · waiting for Andrew/.test(await main(page)) && !!(await page.$('#myMentorCard [data-ooopen="' + r0.id + '"]')));
   await ctx.close();
 }
 
@@ -112,7 +118,10 @@ let firstId;
 {
   const { ctx, page } = await open('andrew');
   firstId = rows()[0].id;
-  await page.click('#main [data-ooopen="' + firstId + '"]'); await page.waitForTimeout(800);
+  ok('My Home tells the mentor something is waiting', /1 request waiting for you/.test(await main(page)));
+  await page.click('#goMentorshipHome'); await page.waitForTimeout(300);
+  ok('Mentorship says who is asking: Sokha, who you mentor', /Sokha Example, who you mentor, is asking you for a 1-on-1/.test(await main(page)) || /Sokha[^,]*, who you mentor, is asking you for a 1-on-1/.test(await main(page)), (await main(page)).slice(0, 300));
+  await page.click('#main .mentorRow [data-ooopen="' + firstId + '"]'); await page.waitForTimeout(800);
   let txt = await main(page);
   ok('the mentor sees the check-in: areas, FIGHT values, what they want help with',
     /Sokha’s check-in/.test(txt) && /Fundraising & finances[\s\S]*2\/5/.test(txt) && /Writing my support letters/.test(txt) && /Pass Khmer level 2/.test(txt) && (await page.$$('.ooVal')).length === 5);
@@ -133,8 +142,9 @@ let firstId;
   await page.evaluate(() => { S.view = 'mentor'; S.mentee = null; render(); }); await page.waitForTimeout(300);
   ok('the Mentor page shows the month on each mentee', /1 of 2 1-on-1s this month/.test(await main(page)));
   await page.click('#main [data-mentee="st2"]'); await page.waitForTimeout(900);
-  ok('a mentee\'s page lists their 1-on-1s', /1-on-1s/.test(await main(page)) && !!(await page.$('#main [data-ooopen="' + firstId + '"]')));
-  await page.click('#main [data-request121="st2"]'); await page.waitForTimeout(300);
+  ok('a mentee\'s page has their 1-on-1 history', /1-on-1 history/.test(await main(page)) && !!(await page.$('#ooHistory')) && !!(await page.$('#main [data-ooopen="' + firstId + '"]')) && /0 of 2 follow-ups done/.test(await main(page)));
+  ok('… with Ask Sokha for a 1-on-1, and Log one you already had', /Ask Sokha for a 1-on-1/.test(await main(page)) && !!(await page.$('#main [data-oolog="st2"]')) && /← Mentorship/.test(await main(page)));
+  await page.click('#main [data-oolog="st2"]'); await page.waitForTimeout(300);
   txt = await main(page);
   ok('a new one for a mentee: ask them, or log one that already happened — with last time\'s follow-ups', !!(await page.$('#ooAsk')) && !!(await page.$('#ooLog')) && /From last time/.test(txt) && /Send five letters/.test(txt));
   await page.fill('[data-oonote="notes"]', 'Coffee after church');
@@ -158,12 +168,24 @@ let firstId;
 /* ---------- 4. the mentor asks; the mentee accepts and lands on the check-in ---------- */
 {
   const a = await open('andrew');
+  await a.page.click('.heroRow[data-gomentorship]'); await a.page.waitForTimeout(300);
+  await a.page.click('#main [data-mentee="st2"]'); await a.page.waitForTimeout(900);
+  const hist = await a.page.$eval('#ooHistory + .card', e => e.innerText);
+  ok('the history shows both held 1-on-1s, newest first, with how the follow-ups went', (hist.match(/✓ Done/g) || []).length === 2 && !/\d{4}-\d{2}-\d{2}/.test(hist) && /1 of 2 follow-ups done/.test(hist) && /Coffee after church/.test(hist), hist);
+  await a.page.screenshot({ path: OUT + '/mentee-history.png', fullPage: true });
+  await a.page.click('.mentorBack, #menteeBack'); await a.page.waitForTimeout(300);
+  await a.page.screenshot({ path: OUT + '/mentorship.png', fullPage: true });
+  await a.page.click('#main [data-mentee="st2"]'); await a.page.waitForTimeout(900);
   await a.page.click('#main [data-request121="st2"]'); await a.page.waitForTimeout(300);
+  ok('the mentor\'s sheet says who is asking whom', /You are asking Sokha, who you mentor, to meet/.test(await main(a.page)) && /Send Sokha a 1-on-1 request/.test(await a.page.$eval('#ooAsk', b => b.textContent)));
   await a.page.click('#ooAsk'); await a.page.waitForTimeout(500);
   const askId = rows()[2] && rows()[2].id;
   ok('the mentor\'s request goes, with no check-in yet, and the sheet says it is waiting', rows().length === 3 && rows()[2].status === 'pending' && !rows()[2].prep && /Waiting for Sokha to fill in their check-in/.test(await main(a.page)));
   await a.ctx.close();
   const { ctx, page } = await open('sokha', { small: true });
+  await page.click('#goMentorshipHome'); await page.waitForTimeout(300);
+  ok('the mentee is told: Andrew, your mentor, is asking to meet you', /Andrew[^,]*, your mentor, is asking to meet you for a 1-on-1/.test(await main(page)));
+  ok('the Mentorship page fits a 320px phone', await page.evaluate(() => document.documentElement.scrollWidth <= 321));
   await page.click('#main [data-121accept="' + askId + '"]'); await page.waitForTimeout(600);
   ok('accepting takes the mentee straight to their check-in', !!(await page.$('#ooSavePrep')) && (await page.$$('[data-ooarea]')).length === 30);
   ok('… started from last time\'s answers', !!(await page.$('[data-ooarea="money|2"].on')) && !!(await page.$('[data-ooval="tenacious|2"].on')));
