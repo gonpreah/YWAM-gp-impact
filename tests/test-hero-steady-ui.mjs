@@ -2,7 +2,11 @@
    card on My Home is smaller and then gets big"). The base figures at its foot used to
    appear only once the boot landed, and every redraw counted the numbers up from 0
    again; now the strip is there from the start and a figure only animates when it
-   changes. */
+   changes. Then ("it still loads small and then gets bigger"): someone with a chore or
+   cooking this week got that line in the card only when a second request answered —
+   the week's schedules come with the boot now — and the fonts came from Google after
+   the page had drawn, so the headings grew when Koulen landed; they are the app's own
+   now (public/fonts/, preloaded, kept offline). */
 // Sign in (by hand, or remembered), then sample the My Home card's height every 100ms.
 import { PUBLIC, CHROMIUM } from './env.mjs';
 import { chromium } from 'playwright';
@@ -41,6 +45,39 @@ ok('… its base figures are there from the start, a dash until they land', awai
 /* a redraw with nothing new must not count the numbers up again */
 await p.evaluate(()=>render()); 
 ok('a redraw with the same figures leaves them still — no count-up, no pop', await p.evaluate(()=>[].every.call(document.querySelectorAll('.hero [data-count]'), function(el){ return el.style.animationName==='none' && el.textContent===String(Number(el.getAttribute('data-count')).toLocaleString()); })));
+
+/* someone with a chore this week, the fonts let through (they are the app's own now) */
+const fontReqs=[];
+const CHORES={ layout:'list', sections:[{ title:'Inside', rows:[{ place:'Kitchen floor', duty:'Sweep and mop', people:['Dara Pich','P1'] }] }] };
+const SCHED={ ok:true, week:'', now:{ chores:CHORES, kitchen:null }, next:{ chores:null, kitchen:null }, nextWeek:'', canEdit:{} };
+const ctx2=await b.newContext({ viewport:{ width:390, height:844 } }); const p2=await ctx2.newPage();
+p2.on('pageerror', e=>errs.push(String(e)));
+p2.on('request', r=>{ if(/fonts\.(googleapis|gstatic)|\/fonts\//.test(r.url())) fontReqs.push(r.url()); });
+let schedAsked=0;
+await p2.route('**/.netlify/functions/api', async r=>{ const q=JSON.parse(r.request().postData()||'{}'); let o={ok:true}, wait=0;
+  const d0=new Date(); d0.setHours(12,0,0,0); d0.setDate(d0.getDate()-d0.getDay());   // duty.js's dutyWeekOf: the Sunday
+  SCHED.week=d0.getFullYear()+'-'+('0'+(d0.getMonth()+1)).slice(-2)+'-'+('0'+d0.getDate()).slice(-2);
+  if(q.fn==='staffLogin'){ o={ ok:true, staff:ME, profile:{} }; wait=300; }
+  else if(q.fn==='getMyBoot'){ o=Object.assign({}, BOOT, { schedules:SCHED }); wait=1200; }
+  else if(q.fn==='getMySchedules'){ schedAsked++; o=SCHED; wait=900; }
+  else if(q.fn==='teamRoster') o=ROSTER;
+  else if(q.fn==='getData') o=BOOT.base;
+  await new Promise(x=>setTimeout(x,wait)); r.fulfill({ status:200, contentType:'application/json', body:JSON.stringify(o) }); });
+await p2.goto(BASE+'/teams.html');
+await p2.waitForSelector('#loginBtn'); await p2.fill('#li_user','dara'); await p2.fill('#li_pin','1234'); await p2.click('#loginBtn');
+await p2.waitForSelector('.hero', { timeout:10000 });
+const sample=async function(page){ const hs=[]; for(let i=0;i<30;i++){ hs.push(await page.evaluate(()=>{ const h=document.querySelector('.hero'); return h ? Math.round(h.offsetHeight)+(h.querySelector('.heroSched')?'s':'') : 0; })); await page.waitForTimeout(100); } return hs; };
+const hs2=await sample(p2);
+ok('with a chore this week, the card is drawn with it — one size from the first moment', new Set(hs2).size===1 && /s$/.test(hs2[0]), hs2.join(','));
+ok('… because the week\'s schedules come with the boot, not a second request', schedAsked===0, String(schedAsked));
+await p2.reload(); await p2.waitForSelector('.hero', { timeout:10000 });
+const hs3=await sample(p2);
+ok('… and again when the app opens on the kept copy', new Set(hs3).size===1 && /s$/.test(hs3[0]), hs3.join(','));
+ok('the fonts are the app\'s own — nothing asked of Google Fonts', fontReqs.length>0 && fontReqs.every(u=>/\/fonts\/[a-z-]+\.woff2$/.test(u)), fontReqs.slice(0,4).join(' | '));
+ok('… and they are in before the card is drawn', await p2.evaluate(()=>document.fonts.check('16px "Koulen"') && document.fonts.check('16px "Kantumruy Pro"')));
+const sw=fs.readFileSync(path.join(PUB,'sw.js'),'utf8');
+ok('… and kept by the service worker for offline', ['koulen-latin','koulen-khmer','kantumruy-latin','kantumruy-khmer'].every(f=>sw.indexOf('fonts/'+f+'.woff2')>-1));
+await ctx2.close();
 ok('no page errors', errs.length===0, errs.join(' | '));
 console.log('\n'+pass+' passed, '+fail+' failed');
 await b.close(); srv.close();

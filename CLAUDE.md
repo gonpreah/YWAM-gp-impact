@@ -1859,6 +1859,23 @@ copy of anything.
   answers) to this repo — if a future migration needs it again, write a throwaway
   handler, use it once, and delete it.
 
+## My Home's card stays one size while it loads (Oct 2026)
+Uriah, twice: "the card on My Home is smaller and then gets big". Four causes, each fixed
+and held by tests/test-hero-steady-ui.mjs:
+- the base figures at its foot used to arrive with the boot — the strip is drawn from the
+  start with a dash for each (`homeBaseHtml_`); a figure only counts up when it changes;
+- this week's chore / cooking line (`schedHomeHtml_`) came from a second request after the
+  card was drawn — **the boot carries `schedules`** (getMySchedules' answer, this week) and
+  `applyBoot` adopts it when its week is this phone's `dutyWeekOf()`; so the kept copy has
+  it too. Only without it does bindSched_ still ask;
+- just signed in, the card was drawn before the boot landed — `afterLogin` keeps the
+  "Impact Loading" coin up until it does (at most 3 s, then draws as before);
+- the fonts came from Google Fonts after the first paint and Koulen grew every heading —
+  **the fonts are the app's own**: `public/fonts/` (Koulen and Kantumruy Pro, Google's
+  subsets, SIL OFL), `@font-face` with their unicode-ranges in teams.html's head,
+  `font-display:block`, the Latin faces (and, for a Khmer reader, the Khmer body face)
+  preloaded, all five in sw.js's PRECACHE. help.html and the portal still use Google Fonts.
+
 ## Conventions / must-preserve
 - **Khmer-first.** Khmer is never smaller/lighter than English. All KPI/ministry/department
   NAMES come from the reviewed `BUILTIN_KM` dictionary in `public/km.js`.

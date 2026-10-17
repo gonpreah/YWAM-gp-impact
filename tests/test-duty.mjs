@@ -133,6 +133,8 @@ r = await call('getMySchedules', ['kim', '1234', W0]);
 ok('everyone on the campus sees this week’s on My Home', r.ok && r.now.kitchen && r.now.kitchen.cells['bf|mon'].join() === 'Kara,Sam O.' && r.now.chores === null && r.canEdit.kitchen === false && r.nextWeek === W1);
 ok('… and the ministry is told it may edit it', (await call('getMySchedules', [...K, W0])).canEdit.kitchen === true);
 ok('Poipet sees none of Siem Reap’s', (await call('getMySchedules', ['pat', '1234', W0])).now.kitchen === null);
+r = await call('getMyBoot', ['kim', '1234']);
+ok('the boot brings this week’s schedules along, so My Home’s card is drawn with its line', r.ok && r.schedules && r.schedules.week === W0 && r.schedules.now.kitchen && r.schedules.now.kitchen.cells['bf|mon'].join() === 'Kara,Sam O.');
 r = await call('getDuty', [...K, 'kitchen', W0]);
 r.sched.cells['bf|tue'] = ['Kara'];
 r = await call('saveDuty', [...K, 'kitchen', W0, r.sched, 'save']);

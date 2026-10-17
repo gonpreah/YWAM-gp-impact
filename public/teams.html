@@ -15,22 +15,28 @@
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='47' fill='%231F44FF'/%3E%3Ctext x='50' y='64' font-family='Arial' font-weight='bold' font-size='40' fill='%23FAF6F0' text-anchor='middle'%3EGP%3C/text%3E%3Cpath d='M76 12 L78.6 19.4 L86 22 L78.6 24.6 L76 32 L73.4 24.6 L66 22 L73.4 19.4 Z' fill='%23FFB323'/%3E%3C/svg%3E">
 <link rel="manifest" href="manifest.json">
-<!-- Fonts load OUT of the render path, on purpose.
-
-     As an @import inside <style> this was render-blocking, and a pending
-     stylesheet also blocks script execution — so on a slow or unreachable font
-     CDN the app's JavaScript did not run until the request resolved or timed
-     out. Measured at 8.1 seconds of dead app on a hanging font request, which
-     is exactly the connection this thing is built for.
-
-     media="print" makes the browser fetch it without blocking; onload promotes
-     it to all. Text renders immediately in the fallback face and swaps when the
-     webfont lands (the URL already carries display=swap). The <noscript> copy
-     keeps fonts working if scripts are off. -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Koulen&family=Kantumruy+Pro:wght@400;500;700&display=swap" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Koulen&family=Kantumruy+Pro:wght@400;500;700&display=swap"></noscript>
+<!-- Fonts never block the app (history: as a render-blocking @import of Google Fonts
+     a hanging font request once meant 8.1 seconds before any JavaScript ran; then it was
+     loaded out of the render path and swapped in late). Now @font-face points at the
+     app's own files, which no stylesheet request can hold up. -->
+<!-- The fonts are the app's own (public/fonts/, SIL Open Font License), preloaded and
+     kept by the service worker. They used to come from Google Fonts after the page had
+     drawn, and when Koulen landed every heading on My Home grew and the page jumped
+     (Oct 2026, Uriah: "the card on My Home still loads small and then gets bigger").
+     font-display:block — the files are on this phone, so text waits a moment for its
+     face rather than drawing in another and moving. Khmer readers preload the Khmer
+     body face too; everyone else gets it on demand by unicode-range. -->
+<link rel="preload" href="fonts/kantumruy-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/koulen-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/koulen-khmer.woff2" as="font" type="font/woff2" crossorigin>
+<script>try { if (localStorage.getItem('gp-lang') === 'km') document.write('<link rel="preload" href="fonts/kantumruy-khmer.woff2" as="font" type="font/woff2" crossorigin>'); } catch (e) {}</script>
+<style>
+@font-face { font-family:'Kantumruy Pro'; font-style:normal; font-weight:400 700; font-display:block; src:url(fonts/kantumruy-khmer.woff2) format('woff2'); unicode-range:U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC; }
+@font-face { font-family:'Kantumruy Pro'; font-style:normal; font-weight:400 700; font-display:block; src:url(fonts/kantumruy-latin-ext.woff2) format('woff2'); unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family:'Kantumruy Pro'; font-style:normal; font-weight:400 700; font-display:block; src:url(fonts/kantumruy-latin.woff2) format('woff2'); unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family:'Koulen'; font-style:normal; font-weight:400; font-display:block; src:url(fonts/koulen-khmer.woff2) format('woff2'); unicode-range:U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC; }
+@font-face { font-family:'Koulen'; font-style:normal; font-weight:400; font-display:block; src:url(fonts/koulen-latin.woff2) format('woff2'); unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+</style>
 <script>
 /* Apply a saved theme BEFORE anything paints. Same class of problem as the splash:
    read it late and the reader watches the app flash the wrong colours on every

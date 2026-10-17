@@ -665,13 +665,22 @@ function afterLogin(){
      login — each verifying the same PIN, each re-rendering when it landed, so the
      page rebuilt itself nine times while it loaded. Sections that fail come back
      null and simply stay empty; the rest of the page still works. */
+  /* Just signed in: the coin stays up until the boot lands (at most a few seconds),
+     so My Home's card is drawn whole — with this week's chore, if there is one —
+     rather than drawn early and growing a line when the boot arrives (Oct 2026, Uriah:
+     "the card on My Home still loads small and then gets bigger"). */
+  var waited = false, drawn = function(){ if(waited) return; waited = true; clearTimeout(S._bootWait); };
+  S._bootWait = setTimeout(function(){ drawn(); render(); }, 3000);
   run('getMyBoot', [S.auth.user, S.auth.pin], function(d){
+    drawn();
     if(!d || !d.ok){ showMsg(t('Couldn’t load your page — pull down to try again.')); render(); return; }
     if(d.staff) S.me = d.staff;
     if(d.profile) S.profile = Object.assign(S.profile||{}, d.profile);
     applyBoot(d);
-  });
-  render();
+  }, function(){ drawn(); showMsg(t('Connection problem — try again.')); render(); });
+  var m = document.getElementById('main');
+  if(m && typeof GP_LOGO === 'string') m.innerHTML = '<div class="loadingBox"><div class="loadCoin"><img class="loadLogo" src="'+GP_LOGO+'" alt=""></div><div class="loadText">Impact Loading<span class="ldots"></span></div></div>';
+  else render();
 }
 
 /* Everything a boot payload carries, in one place, because two entry points use
@@ -706,6 +715,9 @@ function applyBoot(d, fromCache){
   S.tasks = d.tasks || [];
   S.oneOnOnes = d.oneOnOnes || [];
   S.broadcasts = d.broadcasts || [];
+  /* this week's chores and cooking come with the boot, so My Home's card has its line from
+     the first frame (a kept copy from last week is no use — then it asks, as before) */
+  if(d.schedules && d.schedules.ok && typeof dutyWeekOf==='function' && d.schedules.week===dutyWeekOf()){ S.sched = d.schedules; S.schedError = ''; }
   if(d.base && d.base.entries) S.base = d.base;
   /* A boot payload is always the server's view, which for a week still
      queued offline is the OLD view — reapply the same overlay queueing

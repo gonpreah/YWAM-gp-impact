@@ -4307,7 +4307,7 @@ async function getMyBoot(username, pin) {
   const part = async function (fn) {
     try { return await fn(); } catch (e) { return null; }
   };
-  const [staffRows, logs, mentees, requests, weekly, trips, tripReqs, ministry, base, smart, oneOnOnes, broadcasts, personal, teamTrips, candRows, tasks] =
+  const [staffRows, logs, mentees, requests, weekly, trips, tripReqs, ministry, base, smart, oneOnOnes, broadcasts, personal, teamTrips, candRows, tasks, schedules] =
     await Promise.all([
       part(function () { return getStaff_(); }),
       part(function () { return getMyLogs(username, pin); }),
@@ -4326,7 +4326,10 @@ async function getMyBoot(username, pin) {
       // Outreach Teams staff open on their teams page — bring the teams along
       part(function () { return (s.dept === TEAM_DEPT && s.ministry === TEAM_MIN) ? getTeamTrips(username, pin, s.campus) : null; }),
       part(function () { return canHR_(s) ? getCandidates_() : null; }),
-      part(function () { return getMyTasks(username, pin); })
+      part(function () { return getMyTasks(username, pin); }),
+      // this week's chores and cooking, for the line on My Home's card — in the boot so the
+      // card is drawn with it, instead of growing when a second request answers (Oct 2026)
+      part(function () { return getMySchedules(username, pin); })
     ]);
   const reqDocs = await part(getReqDocs_);
 
@@ -4355,6 +4358,7 @@ async function getMyBoot(username, pin) {
     broadcasts: (broadcasts && broadcasts.broadcasts) || [],
     personal: personal || null,
     teamTrips: teamTrips || null,
+    schedules: schedules && schedules.ok ? schedules : null,
     // for the HR menu item's badge: contracts run out or running out within 90 days
     hrDue: canHR_(s) ? hrDueCount_(staffRows) : null,
     // whose numbers are due, and (for a department overseer) which ministries are in
