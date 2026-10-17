@@ -3948,12 +3948,26 @@ async function deletePrayer(username, pin, id) {
    person's own account. Leadership sees nothing. Kept on the staff record (`support`),
    never in the roster or anyone else's boot.
    Partner: { id, name, amount (USD), freq 'month'|'year'|'once', status
-   'giving'|'asked'|'toask'|'paused', last (date of last contact), note }. Monthly
-   pledged counts giving partners: a month as it is, a year / 12; once is not monthly. */
+   'giving'|'asked'|'toask'|'paused', last (date of last contact), note, channel (how
+   it reaches you — a church, a sending base) }. Monthly pledged counts giving
+   partners: a month as it is, a year / 12; once is not monthly.
+   We support (Oct 2026, Uriah: "make the support tab include who we're supporting
+   monthly"): `giving`, the people and ministries the person gives to — { id, name,
+   amount, freq, channel (e.g. via GP, via ABA), location, note }. As private as the
+   partners: only the person sees it; the mentor's totals are the partners' alone, and
+   what someone gives (and to whom) is in no summary anyone else gets. */
 const SUP_MAX_PARTNERS = 300;
 const SUP_FREQS = ['month', 'year', 'once'];
 const SUP_STATUS = ['giving', 'asked', 'toask', 'paused'];
 const SUP_FOLLOW_DAYS = 90;
+const SUP_MAX_GIVING = 300;
+function supId_(raw, seen, prefix) {
+  let id = String(str_(raw, 24) || '').replace(/[^a-z0-9]/gi, '');
+  if (!id || seen[id]) id = prefix + crypto.randomBytes(5).toString('hex');
+  seen[id] = 1;
+  return id;
+}
+function supAmt_(v) { const a = finiteNum_(v, 0, 1000000); return a == null ? 0 : Math.round(a * 100) / 100; }
 function cleanSupport_(v) {
   const o = v || {};
   const goal = finiteNum_(o.goal, 0, 1000000);
@@ -3967,9 +3981,20 @@ function cleanSupport_(v) {
     const amt = finiteNum_(p.amount, 0, 1000000);
     return { id: id, name: name, amount: amt == null ? 0 : Math.round(amt * 100) / 100,
       freq: SUP_FREQS.indexOf(p.freq) > -1 ? p.freq : 'month', status: SUP_STATUS.indexOf(p.status) > -1 ? p.status : 'toask',
-      last: isDate_(p.last) ? p.last : '', note: String(str_(p.note, 300) || '') };
+      last: isDate_(p.last) ? p.last : '', note: String(str_(p.note, 300) || ''), channel: String(str_(p.channel, 40) || '').trim() };
   }).filter(Boolean);
-  return { goal: goal == null ? 0 : Math.round(goal), partners: partners, mentorVisible: !!o.mentorVisible };
+  const gseen = {};
+  const giving = (Array.isArray(o.giving) ? o.giving : []).slice(0, SUP_MAX_GIVING).map(function (g) {
+    const name = String(str_(g && g.name, 80) || '').trim();
+    if (!name) return null;
+    return { id: supId_(g.id, gseen, 'g'), name: name, amount: supAmt_(g.amount), freq: SUP_FREQS.indexOf(g.freq) > -1 ? g.freq : 'month',
+      channel: String(str_(g.channel, 40) || '').trim(), location: String(str_(g.location, 40) || '').trim(), note: String(str_(g.note, 300) || '') };
+  }).filter(Boolean);
+  return { goal: goal == null ? 0 : Math.round(goal), partners: partners, giving: giving, mentorVisible: !!o.mentorVisible };
+}
+/* What the person gives out a month — their own page only. */
+function supGivenMonthly_(s) {
+  return Math.round(s.giving.reduce(function (a, g) { return a + (g.freq === 'month' ? g.amount : g.freq === 'year' ? g.amount / 12 : 0); }, 0) * 100) / 100;
 }
 function supMonthly_(p) { return p.status !== 'giving' ? 0 : p.freq === 'month' ? p.amount : p.freq === 'year' ? p.amount / 12 : 0; }
 function supportSummary_(v) {
@@ -3978,7 +4003,7 @@ function supportSummary_(v) {
   const count = function (st) { return s.partners.filter(function (p) { return p.status === st; }).length; };
   const follow = s.partners.filter(function (p) {
     if (p.status === 'paused') return false;
-    if (!p.last) return p.status !== 'toask';
+    if (!p.last) return p.status === 'asked';   // never in touch since asking; a partner brought in from a tracker has no date yet
     return (new Date(today) - new Date(p.last)) / 86400000 >= SUP_FOLLOW_DAYS;
   }).length;
   return { goal: s.goal, pledged: pledged, pct: s.goal ? Math.round(pledged / s.goal * 100) : null,
@@ -3988,7 +4013,7 @@ async function getMySupport(username, pin) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
   const sup = cleanSupport_(s.support);
-  return { ok: true, support: sup, summary: supportSummary_(sup), followDays: SUP_FOLLOW_DAYS };
+  return { ok: true, support: sup, summary: supportSummary_(sup), givenMonthly: supGivenMonthly_(sup), followDays: SUP_FOLLOW_DAYS };
 }
 async function saveMySupport(username, pin, support) {
   const s = await verifyStaff_(username, pin);
@@ -4001,7 +4026,7 @@ async function saveMySupport(username, pin, support) {
     return { ok: true };
   });
   if (!r.ok) return r;
-  return { ok: true, support: clean, summary: supportSummary_(clean), followDays: SUP_FOLLOW_DAYS };
+  return { ok: true, support: clean, summary: supportSummary_(clean), givenMonthly: supGivenMonthly_(clean), followDays: SUP_FOLLOW_DAYS };
 }
 
 /* ==================== Reminders: web push (Oct 2026) ====================

@@ -45,11 +45,11 @@ var GP_FIN = (function(){
   function rowsFromItems(items){
     var rows = [];
     items.filter(function(it){ return String(it.str || '').trim(); })
-      .sort(function(a, b){ return b.y - a.y || a.x - b.x; })
+      .sort(function(a, b){ return ((a.page || 1) - (b.page || 1)) || b.y - a.y || a.x - b.x; })
       .forEach(function(it){
-        var r = null;
-        for(var i = 0; i < rows.length; i++) if(Math.abs(rows[i].y - it.y) < 2.5){ r = rows[i]; break; }
-        if(!r){ r = { y: it.y, page: it.page || 1, cells: [] }; rows.push(r); }
+        var r = null, pg = it.page || 1;
+        for(var i = 0; i < rows.length; i++) if(rows[i].page === pg && Math.abs(rows[i].y - it.y) < 2.5){ r = rows[i]; break; }   // a line is on one page
+        if(!r){ r = { y: it.y, page: pg, cells: [] }; rows.push(r); }
         r.cells.push({ s: String(it.str).trim(), x: it.x, w: it.w || 0 });
       });
     rows.sort(function(a, b){ return (a.page - b.page) || (b.y - a.y); });
@@ -401,6 +401,63 @@ var GP_FIN = (function(){
     return { vals: vals, total: total, people: (rows || []).filter(function(r){ return Math.abs(Number(r.total) || 0) >= 0.005; }).length };
   }
 
+  /* ---------- a giving & support tracker (support raising) ----------
+     Oct 2026 (Uriah): "my giving and support — can you automatically put this into my
+     profile for support, and make the support tab include who we're supporting
+     monthly". A staff member's own spreadsheet (a Google Sheets PDF export, or rows
+     pasted from it) with two lists, each under its title:
+       "Monthly Support Received" — Channel · Donor / Church · Monthly $ · Notes
+       "Monthly Support Given"    — Channel · Recipient · Location · Monthly $
+     → { received: [{ channel, name, amount, note }], given: [{ channel, name, location,
+     amount, note }], reported: { received, given } (the sheet's TOTAL … / MONTH),
+     checks }. A list may run on to the next page without its headings; it ends at its
+     TOTAL line. The month-by-month trackers after them are left alone. Text columns
+     are left-aligned, so a cell belongs to the heading that starts at or before it;
+     an amount is whichever cell is a number. */
+  function parseSupportTracker(rows){
+    var out = { kind: 'support', received: [], given: [], reported: {}, checks: [] };
+    var mode = null, heads = null;
+    var headKey = function(t){ t = t.toLowerCase();
+      if(/^channel/.test(t)) return 'channel'; if(/donor|church|recipient|name/.test(t)) return 'name';
+      if(/location|place/.test(t)) return 'location'; if(/monthly|amount|\$/.test(t)) return 'amount'; if(/note/.test(t)) return 'note'; return null; };
+    rows.forEach(function(r){
+      var txt = rowText(r).trim(), p = split(r);
+      if(!p.nums.length && /^monthly\s+support\s+received\b/i.test(txt)){ mode = 'received'; heads = null; return; }
+      if(!p.nums.length && /^monthly\s+support\s+given\b/i.test(txt)){ mode = 'given'; heads = null; return; }
+      if(!p.nums.length && /tracker/i.test(txt)){ mode = null; return; }
+      if(!mode) return;
+      var tot = /^total\b/i.test(txt) || r.cells.some(function(c){ return /^total\b/i.test(c.s); });
+      if(tot){ if(p.nums.length) out.reported[mode] = p.nums[p.nums.length - 1].v; mode = null; return; }
+      var keys = r.cells.map(function(c){ return headKey(c.s); });
+      if(keys.indexOf('channel') > -1 && keys.indexOf('name') > -1 && !p.nums.length){
+        heads = r.cells.map(function(c, i){ return { x: c.x, key: keys[i] }; }).filter(function(h){ return h.key; });
+        return;
+      }
+      if(!heads) return;
+      var row = { channel: '', name: '', location: '', amount: null, note: '' };
+      r.cells.forEach(function(c){
+        var v = num(c.s);
+        if(v !== null){ if(row.amount === null) row.amount = v; return; }
+        var best = null;
+        heads.forEach(function(h){ if(h.x <= c.x + 6 && (!best || h.x > best.x)) best = h; });
+        // words where the amount goes ("irregular / partnership") are a note about it
+        var k = best ? (best.key === 'amount' ? 'note' : best.key) : 'name';
+        row[k] = row[k] ? row[k] + ' ' + c.s : c.s;
+      });
+      row.name = row.name.trim();
+      if(!row.name) return;
+      if(mode === 'received') out.received.push({ channel: row.channel.trim(), name: row.name, amount: row.amount, note: row.note.trim() });
+      else out.given.push({ channel: row.channel.trim(), name: row.name, location: row.location.trim(), amount: row.amount, note: row.note.trim() });
+    });
+    ['received', 'given'].forEach(function(k){
+      var sum = r2(out[k].reduce(function(a, x){ return a + (x.amount || 0); }, 0));
+      if(out.reported[k] !== undefined) out.checks.push({ what: k, ours: sum, theirs: out.reported[k], ok: Math.abs(sum - out.reported[k]) < 0.015 });
+    });
+    out.ok = out.received.length + out.given.length > 0;
+    if(!out.ok) out.err = 'no_rows';
+    return out;
+  }
+
   /* One call for the page: whatever the report, parsed and labelled. */
   function parse(rows, fileName, fallbackYear){
     var kind = detect(rows, fileName);
@@ -412,6 +469,6 @@ var GP_FIN = (function(){
 
   return { num: num, monthIdx: monthIdx, rowsFromItems: rowsFromItems, rowsFromTsv: rowsFromTsv, detect: detect,
     parse: parse, parsePL: parsePL, parseBurn: parseBurn, parseDebt: parseDebt, parseDate: parseDate,
-    plTotals: plTotals, plRollup: plRollup, burnSeries: burnSeries, debtTotals: debtTotals };
+    plTotals: plTotals, plRollup: plRollup, burnSeries: burnSeries, debtTotals: debtTotals, parseSupportTracker: parseSupportTracker };
 })();
 if(typeof module !== 'undefined' && module.exports) module.exports = GP_FIN;

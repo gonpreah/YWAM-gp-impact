@@ -3759,3 +3759,43 @@ The Finances office's page (My Ministry → Finances → Reports) and the Financ
 | How you know them, what you last talked about… | របៀបដែលអ្នកស្គាល់ពួកគេ អ្វីដែលអ្នកបាននិយាយគ្នាចុងក្រោយ… |
 
 The card for adding or editing a ministry partner (My Home → Support raising). "New partner" and "Edit {name}" are the card's heading; the example in the name box is a placeholder, so any short example of a church and a couple works.
+
+## 70. Support raising — who you support, and bringing in a tracker
+
+| English | Khmer (draft) |
+|---|---|
+| No channel | គ្មានផ្លូវ |
+| {money} a month | {money} ក្នុងមួយខែ |
+| Your ministry partners, who you support each month, and what you are trusting God for. Only you see these lists. | ដៃគូក្នុងកិច្ចការបម្រើរបស់អ្នក អ្នកដែលអ្នកគាំទ្ររៀងរាល់ខែ និងអ្វីដែលអ្នកទុកចិត្តលើព្រះជាម្ចាស់។ មានតែអ្នកទេដែលឃើញបញ្ជីទាំងនេះ។ |
+| Kept | នៅសល់ |
+| A month. Going out is who you support; kept is what is left for you. | ក្នុងមួយខែ។ ចំណាយ គឺអ្នកដែលអ្នកគាំទ្រ នៅសល់ គឺអ្វីដែលសល់សម្រាប់អ្នក។ |
+| Only your partners’ totals — never who you support, or how much. | តែចំនួនសរុបនៃដៃគូរបស់អ្នក — មិនដែលបង្ហាញអ្នកដែលអ្នកគាំទ្រ ឬចំនួនប៉ុន្មានឡើយ។ |
+| We support | យើងគាំទ្រ |
+| Add someone you support | បន្ថែមអ្នកដែលអ្នកគាំទ្រ |
+| The people and ministries you give to each month — a student’s fees, a family, a school. | មនុស្ស និងកិច្ចការបម្រើដែលអ្នកផ្ដល់ឱ្យរៀងរាល់ខែ — ថ្លៃសិក្សារបស់សិស្ស គ្រួសារមួយ សាលារៀនមួយ។ |
+| By place | តាមទីកន្លែង |
+| How it comes (optional) | មកតាមផ្លូវណា (ស្រេចចិត្ត) |
+| e.g. your sending church | ឧ. ព្រះវិហារដែលបញ្ជូនអ្នក |
+| Someone you support | អ្នកដែលអ្នកគាំទ្រ |
+| e.g. a student, a family, a school | ឧ. សិស្សម្នាក់ គ្រួសារមួយ សាលារៀនមួយ |
+| How it goes | ផ្ញើតាមផ្លូវណា |
+| e.g. via GP | ឧ. តាម GP |
+| e.g. Poipet | ឧ. ប៉ោយប៉ែត |
+| Stop supporting | ឈប់គាំទ្រ |
+| Bring in your giving & support tracker | នាំយកតារាងតាមដានការផ្ដល់ និងការគាំទ្ររបស់អ្នក |
+| Already keep a giving & support tracker? | មានតារាងតាមដានការផ្ដល់ និងការគាំទ្ររួចហើយឬ? |
+| Bring it in: the PDF of your sheet, or its rows copied and pasted. It reads who gives to you and who you support each month, and shows you before anything is saved. | នាំវាចូល៖ PDF នៃតារាងរបស់អ្នក ឬជួររបស់វាដែលបានចម្លង និងបិទភ្ជាប់។ វាអានអ្នកដែលផ្ដល់ឱ្យអ្នក និងអ្នកដែលអ្នកគាំទ្ររៀងរាល់ខែ ហើយបង្ហាញអ្នកមុនពេលរក្សាទុកអ្វីមួយ។ |
+| Choose the PDF | ជ្រើសរើស PDF |
+| Or paste the rows | ឬបិទភ្ជាប់ជួរ |
+| From your tracker | ពីតារាងតាមដានរបស់អ្នក |
+| Couldn’t find the two lists in this — "Monthly Support Received" and "Monthly Support Given", each with its headings. | រកមិនឃើញបញ្ជីទាំងពីរក្នុងនេះទេ — "Monthly Support Received" និង "Monthly Support Given" នីមួយៗមានចំណងជើងរបស់វា។ |
+| {n} partners | ដៃគូ {n} |
+| {n} you support | អ្នកដែលអ្នកគាំទ្រ {n} |
+| The totals don’t match the sheet’s own — look the lists over after. | ចំនួនសរុបមិនត្រូវគ្នានឹងតារាងទេ — សូមពិនិត្យបញ្ជីក្រោយមក។ |
+| Both totals match the sheet’s own. | ចំនួនសរុបទាំងពីរត្រូវគ្នានឹងតារាង។ |
+| {n} are already on your lists — their amounts will be updated. | {n} មាននៅក្នុងបញ្ជីរបស់អ្នករួចហើយ — ចំនួនទឹកប្រាក់របស់ពួកគេនឹងត្រូវបានធ្វើបច្ចុប្បន្នភាព។ |
+| Add to my lists | បន្ថែមទៅបញ្ជីរបស់ខ្ញុំ |
+| Added to your lists | បានបន្ថែមទៅបញ្ជីរបស់អ្នក |
+| Take them off the list of people you support? | ដកពួកគេចេញពីបញ្ជីអ្នកដែលអ្នកគាំទ្រ? |
+
+My Home → Support raising: the "We support" tab (the people and ministries a staff member gives to each month), the in / out / kept figures, and bringing in a giving & support tracker. "We support" and "Partners" are two tabs side by side (about 12 characters each). "Monthly Support Received" / "Monthly Support Given" in the not-found message are the headings in the sheet itself, so they stay in English. "Only your partners’ totals — never who you support, or how much." is a privacy promise; worth checking first.

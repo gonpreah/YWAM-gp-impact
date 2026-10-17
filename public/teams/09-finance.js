@@ -291,6 +291,18 @@ function finPdfLib_(cb, fail){
   s.onload=function(){ if(!window.pdfjsLib) return fail(); window.pdfjsLib.GlobalWorkerOptions.workerSrc='vendor/pdfjs/pdf.worker.min.js'; cb(window.pdfjsLib); };
   s.onerror=fail; document.head.appendChild(s);
 }
+/* A PDF's bytes → its text rows (GP_FIN.rowsFromItems), up to maxPages pages. Also used
+   by support raising to read a giving & support tracker. fail('lib') when pdf.js won't load. */
+function finPdfRows_(buf, maxPages, ok, fail){
+  finPdfLib_(function(lib){
+    lib.getDocument({ data:new Uint8Array(buf.slice(0)) }).promise.then(function(doc){
+      var items=[], n=Math.min(doc.numPages, maxPages), chain=Promise.resolve();
+      for(var p=1;p<=n;p++) (function(p){ chain=chain.then(function(){ return doc.getPage(p).then(function(pg){ return pg.getTextContent(); }).then(function(tc){
+        tc.items.forEach(function(it){ items.push({ str:it.str, x:it.transform[4], y:it.transform[5], w:it.width, page:p }); }); }); }); })(p);
+      return chain.then(function(){ return items; });
+    }).then(function(items){ ok(GP_FIN.rowsFromItems(items)); }).catch(function(){ fail('pdf'); });
+  }, function(){ fail('lib'); });
+}
 function finB64_(buf){ var b=new Uint8Array(buf), s='', CH=0x8000; for(var i=0;i<b.length;i+=CH) s+=String.fromCharCode.apply(null, b.subarray(i, i+CH)); return btoa(s); }
 /* A PDF picked → its text rows → a report, read and checked, waiting for a yes. */
 function finReadFile_(file){
@@ -301,17 +313,12 @@ function finReadFile_(file){
   var rd=new FileReader();
   rd.onload=function(){
     var buf=rd.result, b64=finB64_(buf);
-    finPdfLib_(function(lib){
-      lib.getDocument({ data:new Uint8Array(buf.slice(0)) }).promise.then(function(doc){
-        var items=[], n=Math.min(doc.numPages, 10), chain=Promise.resolve();
-        for(var p=1;p<=n;p++) (function(p){ chain=chain.then(function(){ return doc.getPage(p).then(function(pg){ return pg.getTextContent(); }).then(function(tc){
-          tc.items.forEach(function(it){ items.push({ str:it.str, x:it.transform[4], y:it.transform[5], w:it.width, page:p }); }); }); }); })(p);
-        return chain.then(function(){ return items; });
-      }).then(function(items){
-        var parsed=GP_FIN.parse(GP_FIN.rowsFromItems(items), file.name, new Date().getFullYear());
-        done(finPendingItem_(parsed, file.name, b64));
-      }).catch(function(){ done({ id:'p'+Date.now(), fileName:file.name, parsed:{ ok:false, err:'unreadable' } }); });
-    }, function(){ done(null); showMsg(t('Couldn’t open the PDF reader — check the connection and try again.')); });
+    finPdfRows_(buf, 10, function(rows){
+      done(finPendingItem_(GP_FIN.parse(rows, file.name, new Date().getFullYear()), file.name, b64));
+    }, function(why){
+      if(why==='lib'){ done(null); showMsg(t('Couldn’t open the PDF reader — check the connection and try again.')); }
+      else done({ id:'p'+Date.now(), fileName:file.name, parsed:{ ok:false, err:'unreadable' } });
+    });
   };
   rd.onerror=function(){ done(null); showMsg(t('Couldn’t read that file.')); };
   rd.readAsArrayBuffer(file);

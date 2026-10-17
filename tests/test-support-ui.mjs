@@ -9,6 +9,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { makePdf, supportTracker, SUP_OUT } from './fin-fixtures.mjs';
 
 const TMP = tmpDir('sup-ui');
 const OUT = tmpDir('sup-ui-out');
@@ -158,6 +159,62 @@ const call = async (fn, args) => {
   await page.waitForTimeout(400);
   const txt = await main(page);
   ok('the mentor\'s page shows the totals Kanha shares, and says the names are not shared', /\$700 of \$1,?200 a month/.test(txt) && /never the names/.test(txt) && !/Grace Church/.test(txt));
+  await ctx.close();
+}
+
+/* ---------- 3. who we support, and bringing in a tracker (Oct 2026) ---------- */
+{
+  let r = await call('saveMySupport', ['dara', '1234', { goal: 0, partners: [{ name: 'X Church', amount: 10, status: 'giving', channel: '  Home church  ' }],
+    giving: [{ name: 'Lina', amount: 40, freq: 'month', channel: 'via GP', location: 'Poipet' }, { name: '', amount: 5 }, { name: 'Yearly gift', amount: 120, freq: 'year' }, { name: 'Odd', amount: -3, freq: 'weekly' }] }]);
+  ok('who you support is kept: blank names dropped, amounts and frequencies checked', r.ok && r.support.giving.length === 3 && r.support.giving[2].amount === 0 && r.support.giving[2].freq === 'month' && r.support.partners[0].channel === 'Home church');
+  ok('… and what goes out a month adds up (a year as a twelfth)', r.givenMonthly === 50);
+  await call('saveMySupport', ['dara', '1234', Object.assign({}, r.support, { mentorVisible: true })]);
+  mem.staff.find((s) => s.id === 'st3').mentorId = 'st2'; mem.staff.find((s) => s.id === 'st3').mentorStatus = 'approved';
+  r = await call('getMenteeLogs', ['kanha', '1234', 'st3']);
+  ok('a mentor sees the partners’ totals — never who is supported, or how much goes out', r.ok && r.support && r.support.pledged === 10 && !/Lina|Yearly|givenMonthly|giving"\s*:\s*\[/.test(JSON.stringify(r.support)));
+  const boot = JSON.stringify(await call('getMyBoot', ['kanha', '1234']));
+  ok('… and nobody else’s boot carries it', !/Lina|Yearly gift/.test(boot));
+  mem.staff.find((s) => s.id === 'st3').mentorId = ''; mem.staff.find((s) => s.id === 'st3').mentorStatus = '';
+}
+{
+  const pdf = TMP + '/Giving-Support.pdf'; fs.writeFileSync(pdf, makePdf(supportTracker()));
+  const { ctx, page } = await open('kanha');
+  await page.evaluate(() => { S.view = 'support'; S.sup = null; render(); }); await page.waitForTimeout(800);
+  await page.setInputFiles('#supFile', pdf);
+  await page.waitForSelector('.supImport', { timeout: 20000 }).catch(() => {});
+  const pv = await page.$eval('.supImport', (e) => e.innerText).catch(() => '');
+  ok('a tracker PDF is read on the page, and shown before anything is saved', /7 partners/.test(pv) && /\$925 a month/.test(pv) && /6 you support/.test(pv) && /\$325 a month/.test(pv), pv.replace(/\n/g, ' | '));
+  ok('… with both totals checked against the sheet', /Both totals match/.test(pv));
+  await page.screenshot({ path: OUT + '/support-import.png', fullPage: true });
+  const before = mem.staff.find((s) => s.id === 'st2').support.partners.length;
+  await page.click('#supImpAdd'); await page.waitForTimeout(1000);
+  let k = mem.staff.find((s) => s.id === 'st2').support;
+  ok('"Add to my lists" adds the partners, giving, with their channels and notes', k.partners.length === before + 7 && k.partners.some((p) => p.name === 'The Barretts' && p.status === 'giving' && p.note === 'irregular / partnership' && p.channel === 'Hope Church'));
+  ok('… and who you support, with where', k.giving.length === SUP_OUT.length && k.giving.some((g) => g.name === 'dara' && g.location === 'Poipet' && g.amount === 100 && g.channel === 'via GP'));
+  let txt = await main(page);
+  ok('the page now shows coming in, going out and kept a month', /Coming in\s*\$1,625/.test(txt) && /Going out\s*\$325/.test(txt) && /Kept\s*\$1,300/.test(txt), (txt.match(/Coming in[\s\S]{0,60}/) || [''])[0].replace(/\n/g, ' '));
+  ok('… and the partners grouped by how they come, each with its month', /Hope Church · 3\s*\$350 a month/.test(txt) && /Northside · 2\s*\$425 a month/.test(txt));
+  await page.click('[data-suptab="out"]'); await page.waitForTimeout(400);
+  txt = await main(page);
+  ok('"We support": everyone, grouped by how it goes, with the places', /via GP · 3\s*\$175 a month/.test(txt) && /via Bank · 2/.test(txt) && /Poipet\s*\$125/.test(txt) && /Siem Reap\s*\$50/.test(txt));
+  await page.screenshot({ path: OUT + '/support-we-support.png', fullPage: true });
+  await page.click('#supGAdd'); await page.waitForTimeout(200);
+  await page.fill('#supName', 'Bopha'); await page.fill('#supAmt', '30'); await page.fill('#supChannel', 'via GP'); await page.fill('#supLoc', 'Siem Reap');
+  await page.click('#supGSave'); await page.waitForTimeout(900);
+  k = mem.staff.find((s) => s.id === 'st2').support;
+  ok('someone can be added by hand', k.giving.some((g) => g.name === 'Bopha' && g.amount === 30 && g.location === 'Siem Reap') && /via GP · 4\s*\$205 a month/.test(await main(page)));
+  const gid = k.giving.find((g) => g.name === 'Hill school').id;
+  await page.click('[data-supgedit="' + gid + '"]'); await page.waitForTimeout(200);
+  ok('… and edited in the same card above the list', /Edit Hill school/.test(await page.$eval('#supForm', (e) => e.innerText)));
+  await page.click('#supGDel'); await page.waitForTimeout(900);
+  ok('… or taken off', !mem.staff.find((s) => s.id === 'st2').support.giving.some((g) => g.name === 'Hill school'));
+  await page.setInputFiles('#supFile', pdf);
+  await page.waitForSelector('.supImport', { timeout: 20000 }).catch(() => {});
+  ok('bringing the same tracker in again says they are already there', /are already on your lists/.test(await page.$eval('.supImport', (e) => e.innerText).catch(() => '')));
+  await page.click('#supImpAdd'); await page.waitForTimeout(1000);
+  k = mem.staff.find((s) => s.id === 'st2').support;
+  ok('… and updates them rather than adding them twice', k.partners.filter((p) => p.name === 'Grace Fellowship').length === 1 && k.giving.filter((g) => g.name === 'dara').length === 1);
+  ok('the page fits a phone', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await ctx.close();
 }
 

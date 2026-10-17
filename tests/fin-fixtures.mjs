@@ -111,20 +111,62 @@ export function debtReport() {
 }
 export const DEBT_TOTAL = DEBT_PEOPLE.reduce((a, [, v]) => a + v.reduce((x, y) => x + y, 0), 0);
 
-/* the items as pdf.js gives them, for the parser test */
-export function items(list) { return list.map((it) => ({ str: it.str, x: it.x, y: it.y, w: textWidth(it.str, it.size || 8), page: 1 })); }
+/* A made-up giving & support tracker, laid out like a staff member's Google Sheets
+   export: a snapshot page, "Monthly Support Received" (Channel · Donor / Church ·
+   Monthly $ · Notes, with a note sitting where an amount would be), "Monthly Support
+   Given" (Channel · Recipient · Location · Monthly $) running on to the next page
+   without its headings, and a month-by-month tracker after them to be left alone. */
+export const SUP_IN = [
+  ['Hope Church', 'Grace Fellowship', 300, ''], ['Hope Church', 'Ann and Tom Field', 50, ''], ['Hope Church', 'The Barretts', null, 'irregular / partnership'],
+  ['Northside', 'Northside Church', 400, ''], ['Northside', 'Kim Lowe', 25, ''], ['Other', 'Pat Rivers', null, 'BOH'], ['Other', 'Mesa Chapel', 150, '']
+];
+export const SUP_OUT = [
+  ['via GP', 'dara', 'Poipet', 100], ['via GP', 'sophea', 'Siem Reap', 50], ['via GP', 'vanna', 'Poipet', 25],
+  ['via Bank', 'Rith family', '', 75], ['via Bank', 'Hill school', '', 50], ['Other', 'Sam', '', 25]
+];
+export function supportTracker() {
+  const out = [];
+  const P = (page, it) => { it.page = page; out.push(it); return it; };
+  P(1, L('Made-up Family', 68, 740, 14)); P(1, L('Giving & Support Tracker', 68, 722, 12));
+  P(1, L('Support received / month', 68, 680, 9)); P(1, R('$925', 300, 680, 9));
+  P(1, L('Received Tracker', 68, 640, 9)); P(1, L('Enter what actually came in each month.', 200, 640, 9));
+  P(2, L('Monthly Support Received', 68, 723, 14)); P(2, L('Churches and individuals who give, grouped by giving channel.', 68, 707, 9));
+  P(2, L('Channel', 68, 679)); P(2, L('Donor / Church', 163, 679)); P(2, L('Monthly $', 347, 679)); P(2, L('Notes', 467, 679));
+  let y = 664;
+  SUP_IN.forEach(([c, n, a, note]) => { P(2, L(c, 68, y)); P(2, L(n, 163, y)); if (a !== null) P(2, R('$' + a.toLocaleString('en-US'), 410, y)); if (note) P(2, L(note, 388, y)); y -= 15; });
+  P(2, L('TOTAL RECEIVED / MONTH', 220, y)); P(2, R('$925', 410, y));
+  P(3, L('Monthly Support Given', 68, 723, 14)); P(3, L('People supported each month.', 68, 707, 9));
+  P(3, L('Channel', 68, 679)); P(3, L('Recipient', 152, 679)); P(3, L('Location', 278, 679)); P(3, L('Monthly $', 379, 679));
+  y = 664;
+  SUP_OUT.forEach(([c, n, loc, a], i) => {
+    const pg = i < 4 ? 3 : 4; if (i === 4) y = 727;
+    P(pg, L(c, 68, y)); P(pg, L(n, 152, y)); if (loc) P(pg, L(loc, 278, y)); P(pg, R('$' + a, 441, y)); y -= 15;
+  });
+  P(4, L('TOTAL GIVEN / MONTH', 165, y)); P(4, R('$325', 441, y));
+  P(4, L('BY CHANNEL', 200, y - 30)); P(4, L('via GP', 200, y - 45)); P(4, R('$175', 441, y - 45));
+  P(5, L('Received Tracker — money in', 52, 730, 12));
+  P(5, L('Channel', 52, 706)); P(5, L('Donor / Church', 87, 706)); P(5, L('Expected/mo', 155, 706)); P(5, L('Jan', 194, 706));
+  P(5, L('Hope Church', 52, 697)); P(5, L('Grace Fellowship', 87, 697)); P(5, R('$300', 185, 697)); P(5, R('$3,600', 528, 697));
+  return out;
+}
 
-/* a one-page PDF with every item placed where it says, in Helvetica */
+/* the items as pdf.js gives them, for the parser test */
+export function items(list) { return list.map((it) => ({ str: it.str, x: it.x, y: it.y, w: textWidth(it.str, it.size || 8), page: it.page || 1 })); }
+
+/* a PDF with every item placed where it says (on its `page`, 1 if none), in Helvetica */
 export function makePdf(list) {
   const esc = (s) => String(s).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
-  const content = list.map((it) => `BT /F1 ${it.size || 8} Tf 1 0 0 1 ${it.x.toFixed(2)} ${it.y.toFixed(2)} Tm (${esc(it.str)}) Tj ET`).join('\n');
-  const objs = [
-    '<< /Type /Catalog /Pages 2 0 R >>',
-    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 792 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>',
-    `<< /Length ${Buffer.byteLength(content, 'latin1')} >>\nstream\n${content}\nendstream`,
-    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>'
-  ];
+  const pages = Math.max(1, ...list.map((it) => it.page || 1));
+  const content = (n) => list.filter((it) => (it.page || 1) === n).map((it) => `BT /F1 ${it.size || 8} Tf 1 0 0 1 ${it.x.toFixed(2)} ${it.y.toFixed(2)} Tm (${esc(it.str)}) Tj ET`).join('\n');
+  // 1 catalog, 2 pages, 3 font, then a page and its content for each page
+  const kids = Array.from({ length: pages }, (_, i) => `${4 + i * 2} 0 R`).join(' ');
+  const objs = ['<< /Type /Catalog /Pages 2 0 R >>', `<< /Type /Pages /Kids [${kids}] /Count ${pages} >>`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>'];
+  for (let n = 1; n <= pages; n++) {
+    const c = content(n);
+    objs.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 792 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${5 + (n - 1) * 2} 0 R >>`);
+    objs.push(`<< /Length ${Buffer.byteLength(c, 'latin1')} >>\nstream\n${c}\nendstream`);
+  }
   let pdf = '%PDF-1.4\n', offs = [];
   objs.forEach((o, i) => { offs.push(Buffer.byteLength(pdf, 'latin1')); pdf += `${i + 1} 0 obj\n${o}\nendobj\n`; });
   const xref = Buffer.byteLength(pdf, 'latin1');

@@ -7,7 +7,7 @@
 import vm from 'node:vm';
 import fs from 'node:fs';
 import { PUBLIC } from './env.mjs';
-import { plReport, burnReport, debtReport, items, PL_TOTALS, BURN_ROWS, DEBT_PEOPLE, DEBT_TOTAL } from './fin-fixtures.mjs';
+import { plReport, burnReport, debtReport, items, PL_TOTALS, BURN_ROWS, DEBT_PEOPLE, DEBT_TOTAL, supportTracker, SUP_IN, SUP_OUT } from './fin-fixtures.mjs';
 
 const ctx = { module: { exports: {} } }; vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(PUBLIC + '/finance.js', 'utf8'), ctx);
@@ -81,6 +81,21 @@ const gb = F.parse(F.rowsFromItems(items(glued)), 'Burn-Rate-2026.pdf');
 const sc = gb.sections[1].rows.find((r) => /^Staff contribution/.test(r.label));
 ok('pdf.js running a label into its first number is pulled apart', sc && sc.label === 'Staff contribution' && sc.vals[0] === 1000 && sc.vals[1] === 1100 && gb.checks.every((c) => c.ok), sc && sc.label + ' ' + JSON.stringify(sc.vals.slice(0, 3)));
 ok('… but "TOTAL 44000" stays a label', gb.sections[1].rows.some((r) => r.label === 'TOTAL 44000'));
+
+console.log('=== a giving & support tracker (support raising) ===');
+const st = F.parseSupportTracker(F.rowsFromItems(items(supportTracker())));
+ok('both lists, every row, and nothing from the snapshot or the month-by-month tracker', st.ok && st.received.length === SUP_IN.length && st.given.length === SUP_OUT.length, st.received.length + ' / ' + st.given.length);
+ok('… each with its channel, name and amount', st.received[0].channel === 'Hope Church' && st.received[0].name === 'Grace Fellowship' && st.received[0].amount === 300 && st.received[3].channel === 'Northside');
+ok('… words where the amount goes are its note, not part of the name', st.received[2].name === 'The Barretts' && st.received[2].amount === null && st.received[2].note === 'irregular / partnership' && st.received[5].note === 'BOH');
+ok('the given list runs on to the next page without its headings', st.given[4].name === 'Hill school' && st.given[4].channel === 'via Bank' && st.given[4].amount === 50);
+ok('… with where each one is', st.given[0].location === 'Poipet' && st.given[1].location === 'Siem Reap' && st.given[3].location === '');
+ok('… and both totals check against the sheet’s own', st.checks.length === 2 && st.checks.every((c) => c.ok) && st.reported.received === 925 && st.reported.given === 325);
+ok('the BY CHANNEL summary after a total isn’t read as people', !st.given.some((g) => /by channel/i.test(g.name)));
+const lines = [
+  'Monthly Support Received', 'Channel\tDonor / Church\tMonthly $\tNotes', 'Hope Church\tGrace Fellowship\t$300\t', 'Other\tPat Rivers\t\tBOH', '\tTOTAL RECEIVED / MONTH\t$300',
+  'Monthly Support Given', 'Channel\tRecipient\tLocation\tMonthly $', 'via GP\tdara\tPoipet\t$100', '\tTOTAL GIVEN / MONTH\t\t$100'];
+const sp = F.parseSupportTracker(F.rowsFromTsv(lines.join('\n')));
+ok('rows pasted from the sheet read the same way', sp.received.length === 2 && sp.received[1].note === 'BOH' && sp.given.length === 1 && sp.given[0].location === 'Poipet' && sp.checks.every((c) => c.ok));
 
 console.log('=== a misread is caught ===');
 const broken = plReport().filter((it) => it.str !== '50500 Food');   // a line lost: its amounts float off with no label

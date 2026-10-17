@@ -1911,9 +1911,11 @@ function bindPrayer_(){
 /* ==================== Support raising (My Home → Support raising) ====================
    Your ministry partners and the monthly support you are trusting God for — private,
    like staff debt: only you see the list; your mentor sees the totals, and only if you
-   tick it (getMySupport / saveMySupport, "Support raising" in api.js). The whole list is
-   saved at once on every change; it loads only on this page. */
-S.sup=null; S.supErr=''; S.supEdit=null; S.supFilter='all'; S.supBusy=false;
+   tick it (getMySupport / saveMySupport, "Support raising" in api.js). Since Oct 2026 also
+   who you support each month ("We support"), and a tracker you already keep can be
+   brought in. The whole thing is saved at once on every change; it loads only here. */
+S.sup=null; S.supErr=''; S.supEdit=null; S.supGEdit=null; S.supFilter='all'; S.supBusy=false; S.supImport=null; S.supReading=false;
+S.supTab=(lsGet('gp-sup-tab')==='out' ? 'out' : 'in');
 var SUP_STATUS_LABEL={ toask:'To ask', asked:'Asked', giving:'Giving', paused:'Paused' };   // in the order it goes
 var SUP_FREQ_LABEL={ month:'a month', year:'a year', once:'once' };
 function supLoad_(){
@@ -1925,48 +1927,97 @@ function supSave_(next, msg){
   S.supBusy=true;
   run('saveMySupport',[S.auth.user,S.auth.pin,next],function(d){
     S.supBusy=false;
-    if(d && d.ok){ S.sup=d; S.supSum=d.summary; S.supEdit=null; render(); if(msg) showMsg(msg); }
+    if(d && d.ok){ S.sup=d; S.supSum=d.summary; S.supEdit=null; S.supGEdit=null; render(); if(msg) showMsg(msg); }
     else { render(); showMsg(t('Could not save')); }
   });
 }
 function supDue_(p, days){
   if(p.status==='paused') return false;
-  if(!p.last) return p.status!=='toask';
+  if(!p.last) return p.status==='asked';   // as the server: never in touch since asking
   return (new Date(todayStr())-new Date(p.last))/86400000 >= days;
+}
+function supMonthly_(x){ return x.freq==='month' ? (Number(x.amount)||0) : x.freq==='year' ? (Number(x.amount)||0)/12 : 0; }
+function supMoney_(n){ return '$'+fmt(Math.round(n)); }
+/* A list in groups by channel (a sending church, a base, via GP …), each with what it comes to a
+   month; a list with no channels at all is just the list. */
+function supGroupsHtml_(list, rowFn, monthlyOf){
+  var chans={}, order=[];
+  list.forEach(function(x){ var c=x.channel||''; if(!chans[c]){ chans[c]=[]; order.push(c); } chans[c].push(x); });
+  if(order.length===1 && order[0]==='') return '<div class="card">'+list.map(rowFn).join('')+'</div>';
+  var sums={}; order.forEach(function(c){ sums[c]=chans[c].reduce(function(a,x){ return a+monthlyOf(x); }, 0); });
+  order.sort(function(a,b){ return a==='' ? 1 : b==='' ? -1 : (sums[b]-sums[a]) || a.localeCompare(b); });   // the biggest first
+  return order.map(function(c){
+    var rows=chans[c], sum=sums[c];
+    return '<div class="supGroup"><span>'+esc(c || t('No channel'))+' <small>· '+rows.length+'</small></span>'+(sum ? '<b>'+esc(gpT('{money} a month',{money:supMoney_(sum)}))+'</b>' : '')+'</div>'+
+      '<div class="card">'+rows.map(rowFn).join('')+'</div>';
+  }).join('');
+}
+function supDatalist_(id, values){
+  var seen={}; values.forEach(function(v){ if(v) seen[v]=1; });
+  return '<datalist id="'+id+'">'+Object.keys(seen).sort().map(function(v){ return '<option value="'+esc(v)+'">'; }).join('')+'</datalist>';
 }
 function supportHtml_(){
   var h='<button class="linkbtn" id="supBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('My Home'))+'</button>'+
-    '<h2>💰 '+esc(t('Support raising'))+'</h2><p class="sub">'+esc(t('Your ministry partners and what you are trusting God for each month. Only you see this list.'))+'</p>';
+    '<h2>💰 '+esc(t('Support raising'))+'</h2><p class="sub">'+esc(t('Your ministry partners, who you support each month, and what you are trusting God for. Only you see these lists.'))+'</p>';
   if(!S.sup){ supLoad_(); return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.supErr||t('Loading…'))+'</p></div>'; }
   var sup=S.sup.support, sm=S.sup.summary, days=S.sup.followDays||90, pct=sm.goal ? Math.min(100, sm.pct) : 0;
+  var giving=sup.giving||[], gm=S.sup.givenMonthly!=null ? S.sup.givenMonthly : giving.reduce(function(a,g){ return a+supMonthly_(g); }, 0);
   h+='<div class="card"><label class="f" for="supGoal">'+esc(t('My monthly goal (US$)'))+'</label>'+
     '<input type="number" id="supGoal" inputmode="numeric" min="0" value="'+(sup.goal||'')+'" placeholder="0">'+
     '<div class="pBar" style="margin-top:12px"><div class="pBarTop"><b>'+esc(gpT('${n} a month pledged',{n:fmt(sm.pledged)}))+'</b><span>'+(sm.goal ? sm.pct+'%' : '')+'</span></div>'+
     '<div class="pTrack"><div class="pFill" style="left:0;width:'+pct+'%;background:var(--accent)"></div></div></div>'+
+    (giving.length ? '<div class="supMoneyRow"><span><small>'+esc(t('Coming in'))+'</small><b>'+esc(supMoney_(sm.pledged))+'</b></span>'+
+      '<span><small>'+esc(t('Going out'))+'</small><b>'+esc(supMoney_(gm))+'</b></span>'+
+      '<span><small>'+esc(t('Kept'))+'</small><b class="'+(sm.pledged-gm<0?'finBad':'')+'">'+esc(supMoney_(sm.pledged-gm))+'</b></span></div>'+
+      '<p class="hint" style="margin:2px 0 0">'+esc(t('A month. Going out is who you support; kept is what is left for you.'))+'</p>' : '')+
     '<div class="supStats"><span><b>'+sm.giving+'</b> '+esc(t('giving'))+'</span><span><b>'+sm.asked+'</b> '+esc(t('asked'))+'</span><span><b>'+sm.toask+'</b> '+esc(t('to ask'))+'</span>'+
       (sm.followUp ? '<span class="supDue"><b>'+sm.followUp+'</b> '+esc(t('to thank or follow up'))+'</span>' : '')+'</div>'+
-    '<label class="f remBox"><input type="checkbox" id="supShare"'+(sup.mentorVisible?' checked':'')+'> '+esc(t('My mentor can see these totals — never the names'))+'</label></div>';
+    '<label class="f remBox"><input type="checkbox" id="supShare"'+(sup.mentorVisible?' checked':'')+'> '+esc(t('My mentor can see these totals — never the names'))+'</label>'+
+    (giving.length ? '<p class="hint" style="margin:4px 0 0">'+esc(t('Only your partners’ totals — never who you support, or how much.'))+'</p>' : '')+'</div>';
+  /* bring in a tracker you already keep */
+  if(S.supImport) h+=supImportHtml_();
+  else if(!sup.partners.length && !giving.length) h+=supImportCardHtml_(true);
+  h+='<div class="campusSeg supTabs" style="max-width:none">'+
+    '<button class="campusBtn'+(S.supTab==='in'?' on':'')+'" data-suptab="in">🤝 '+esc(t('Partners'))+' · '+sup.partners.length+'</button>'+
+    '<button class="campusBtn'+(S.supTab==='out'?' on':'')+'" data-suptab="out">💝 '+esc(t('We support'))+' · '+giving.length+'</button></div>';
+  h+= S.supTab==='out' ? supGivingTabHtml_(sup) : supPartnersTabHtml_(sup, sm, days);
+  if(!S.supImport && (sup.partners.length || giving.length)) h+=supImportCardHtml_(false);
+  return h+'<p class="hint">🔒 '+esc(gpT('Kept on your account and seen by nobody else. A partner shows under "to thank or follow up" when you have not been in touch for {n} days.',{n:days}))+'</p>';
+}
+function supPartnersTabHtml_(sup, sm, days){
   var chip=function(id, label, n){ return '<button class="deptChip'+(S.supFilter===id?' on':'')+'" data-supfilter="'+id+'">'+esc(label)+(n!==undefined?' · '+n:'')+'</button>'; };
   var list=sup.partners.filter(function(p){ return S.supFilter==='all' ? true : S.supFilter==='due' ? supDue_(p, days) : p.status===S.supFilter; })
     .sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); });
-  h+='<h3>🤝 '+esc(t('Partners'))+' <small>· '+sup.partners.length+'</small></h3>';
-  h+='<div class="deptChips">'+chip('all', t('All'))+chip('giving', t('Giving'), sm.giving)+chip('asked', t('Asked'), sm.asked)+chip('toask', t('To ask'), sm.toask)+
+  var h='<div class="deptChips">'+chip('all', t('All'))+chip('giving', t('Giving'), sm.giving)+chip('asked', t('Asked'), sm.asked)+chip('toask', t('To ask'), sm.toask)+
     (sm.followUp ? chip('due', t('To thank or follow up'), sm.followUp) : '')+'</div>';
   var editing=S.supEdit && S.supEdit!=='new' ? sup.partners.filter(function(p){ return p.id===S.supEdit; })[0] : null;
-  if(S.supEdit==='new') h+=supFormHtml_({ id:'', name:'', amount:'', freq:'month', status:'toask', last:'', note:'' }, true);
-  else if(editing) h+=supFormHtml_(editing, false);
+  if(S.supEdit==='new') h+=supFormHtml_({ id:'', name:'', amount:'', freq:'month', status:'toask', last:'', note:'', channel:'' }, true, sup);
+  else if(editing) h+=supFormHtml_(editing, false, sup);
   else h+='<button class="btn" id="supAdd"'+(S.supBusy?' disabled':'')+'>＋ '+esc(t('Add a partner'))+'</button>';
-  if(!sup.partners.length && S.supEdit!=='new') h+='<div class="card"><p class="sub" style="margin:0">'+esc(t('Add the people and churches who give to your ministry, or who you hope to ask.'))+'</p></div>';
-  else if(list.length){
-    h+='<div class="card">';
-    list.forEach(function(p){
-      h+='<button class="supRow'+(S.supEdit===p.id?' editing':'')+'" data-supedit="'+esc(p.id)+'"><span class="supName">'+esc(p.name)+
-        '<small>'+(p.amount ? '$'+esc(fmt(p.amount))+' '+esc(t(SUP_FREQ_LABEL[p.freq])) : '')+(p.last ? ' · '+esc(gpT('last in touch {date}',{date:teamDate_(p.last)})) : '')+'</small></span>'+
-        '<span class="supStatus '+p.status+'">'+esc(t(SUP_STATUS_LABEL[p.status]))+'</span>'+(supDue_(p, days)?'<span class="supDueDot" title="'+esc(t('To thank or follow up'))+'"></span>':'')+'</button>';
-    });
-    h+='</div>';
-  }
-  return h+'<p class="hint">🔒 '+esc(gpT('Kept on your account and seen by nobody else. A partner shows under "to thank or follow up" when you have not been in touch for {n} days.',{n:days}))+'</p>';
+  if(!sup.partners.length && S.supEdit!=='new') return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Add the people and churches who give to your ministry, or who you hope to ask.'))+'</p></div>';
+  if(!list.length) return h;
+  return h+supGroupsHtml_(list, function(p){
+    return '<button class="supRow'+(S.supEdit===p.id?' editing':'')+'" data-supedit="'+esc(p.id)+'"><span class="supName">'+esc(p.name)+
+      '<small>'+(p.amount ? '$'+esc(fmt(p.amount))+' '+esc(t(SUP_FREQ_LABEL[p.freq])) : '')+(p.note ? (p.amount?' · ':'')+esc(p.note) : '')+(p.last ? ' · '+esc(gpT('last in touch {date}',{date:teamDate_(p.last)})) : '')+'</small></span>'+
+      '<span class="supStatus '+p.status+'">'+esc(t(SUP_STATUS_LABEL[p.status]))+'</span>'+(supDue_(p, days)?'<span class="supDueDot" title="'+esc(t('To thank or follow up'))+'"></span>':'')+'</button>';
+  }, function(p){ return p.status==='giving' ? supMonthly_(p) : 0; });
+}
+/* Who you support each month — the people and ministries you give to. */
+function supGivingTabHtml_(sup){
+  var giving=sup.giving||[], h='';
+  var editing=S.supGEdit && S.supGEdit!=='new' ? giving.filter(function(g){ return g.id===S.supGEdit; })[0] : null;
+  if(S.supGEdit==='new') h+=supGiveFormHtml_({ id:'', name:'', amount:'', freq:'month', channel:'', location:'', note:'' }, true, sup);
+  else if(editing) h+=supGiveFormHtml_(editing, false, sup);
+  else h+='<button class="btn" id="supGAdd"'+(S.supBusy?' disabled':'')+'>＋ '+esc(t('Add someone you support'))+'</button>';
+  if(!giving.length) return h+(S.supGEdit==='new' ? '' : '<div class="card"><p class="sub" style="margin:0">'+esc(t('The people and ministries you give to each month — a student’s fees, a family, a school.'))+'</p></div>');
+  var locs={}; giving.forEach(function(g){ if(g.location) locs[g.location]=(locs[g.location]||0)+supMonthly_(g); });
+  var lk=Object.keys(locs).sort();
+  if(lk.length) h+='<div class="supLocs">'+esc(t('By place'))+': '+lk.map(function(l){ return '<b>'+esc(l)+'</b> '+esc(supMoney_(locs[l])); }).join(' · ')+'</div>';
+  var list=giving.slice().sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); });
+  return h+supGroupsHtml_(list, function(g){
+    return '<button class="supRow'+(S.supGEdit===g.id?' editing':'')+'" data-supgedit="'+esc(g.id)+'"><span class="supName">'+esc(g.name)+
+      '<small>'+(g.amount ? '$'+esc(fmt(g.amount))+' '+esc(t(SUP_FREQ_LABEL[g.freq])) : '')+(g.location ? ' · '+esc(g.location) : '')+(g.note ? ' · '+esc(g.note) : '')+'</small></span></button>';
+  }, supMonthly_);
 }
 /* Adding or editing a partner: one card above the list. Where things are and how often
    are a tap each (they are only a few choices); the amount has its $; "Today" sits
@@ -1977,53 +2028,127 @@ function supChoicesHtml_(name, map, cur){
     '</div><input type="hidden" id="sup'+(name==='status'?'Status':'Freq')+'" value="'+esc(cur)+'">';
 }
 function supAmtHint_(st){ return st==='toask' || st==='asked' ? t('What you hope they will give — leave it empty if you don’t know yet.') : t('What they give.'); }
-function supFormHtml_(p, isNew){
+function supMoneyHtml_(v){ return '<div class="supMoney"><span aria-hidden="true">$</span><input type="number" id="supAmt" inputmode="decimal" min="0" step="any" value="'+esc(v===''||!v?'':String(v))+'" placeholder="0"></div>'; }
+function supFormHtml_(p, isNew, sup){
   return '<div class="card supForm" id="supForm" data-supform="'+esc(p.id)+'">'+
     '<div class="supFormHead">'+esc(isNew ? t('New partner') : gpT('Edit {name}',{name:p.name}))+'</div>'+
     '<label class="f" for="supName">'+esc(t('Name'))+'</label><input type="text" id="supName" maxlength="80" autocomplete="off" value="'+esc(p.name)+'" placeholder="'+esc(t('e.g. Grace Church, or Tom & Ann'))+'">'+
     '<label class="f">'+esc(t('Where things are'))+'</label>'+supChoicesHtml_('status', SUP_STATUS_LABEL, p.status)+
-    '<label class="f" for="supAmt">'+esc(t('Amount (US$)'))+'</label>'+
-    '<div class="supMoney"><span aria-hidden="true">$</span><input type="number" id="supAmt" inputmode="decimal" min="0" step="any" value="'+esc(p.amount===''||!p.amount?'':String(p.amount))+'" placeholder="0"></div>'+
+    '<label class="f" for="supAmt">'+esc(t('Amount (US$)'))+'</label>'+supMoneyHtml_(p.amount)+
     supChoicesHtml_('freq', SUP_FREQ_LABEL, p.freq)+
     '<p class="hint supAmtHint" style="margin:6px 0 0">'+esc(supAmtHint_(p.status))+'</p>'+
+    '<label class="f" for="supChannel">'+esc(t('How it comes (optional)'))+'</label><input type="text" id="supChannel" list="supChannels" maxlength="40" autocomplete="off" value="'+esc(p.channel||'')+'" placeholder="'+esc(t('e.g. your sending church'))+'">'+
+      supDatalist_('supChannels', sup.partners.map(function(x){ return x.channel; }))+
     '<label class="f" for="supLast">'+esc(t('Last in touch'))+'</label>'+
     '<div class="supDate"><input type="date" id="supLast" value="'+esc(p.last)+'" max="'+todayStr()+'"><button type="button" class="linkbtn inline" id="supToday">'+esc(t('Today'))+'</button></div>'+
     '<label class="f" for="supNote">'+esc(t('Note'))+'</label><textarea id="supNote" rows="2" maxlength="300" placeholder="'+esc(t('How you know them, what you last talked about…'))+'">'+esc(p.note)+'</textarea>'+
     '<div class="kmrActs"><button class="btn" id="supSave">'+esc(isNew ? t('Add') : t('Save'))+'</button><button class="btn ghost" id="supCancel">'+esc(t('Cancel'))+'</button></div>'+
     (isNew ? '' : '<button type="button" class="supRemove" id="supDel">🗑 '+esc(t('Remove this partner'))+'</button>')+'</div>';
 }
+function supGiveFormHtml_(g, isNew, sup){
+  var all=sup.giving||[];
+  return '<div class="card supForm" id="supForm" data-supgform="'+esc(g.id)+'">'+
+    '<div class="supFormHead">'+esc(isNew ? t('Someone you support') : gpT('Edit {name}',{name:g.name}))+'</div>'+
+    '<label class="f" for="supName">'+esc(t('Name'))+'</label><input type="text" id="supName" maxlength="80" autocomplete="off" value="'+esc(g.name)+'" placeholder="'+esc(t('e.g. a student, a family, a school'))+'">'+
+    '<label class="f" for="supAmt">'+esc(t('Amount (US$)'))+'</label>'+supMoneyHtml_(g.amount)+
+    supChoicesHtml_('freq', SUP_FREQ_LABEL, g.freq)+
+    '<div class="supTwo"><span><label class="f" for="supChannel">'+esc(t('How it goes'))+'</label><input type="text" id="supChannel" list="supGChannels" maxlength="40" autocomplete="off" value="'+esc(g.channel||'')+'" placeholder="'+esc(t('e.g. via GP'))+'">'+
+      supDatalist_('supGChannels', all.map(function(x){ return x.channel; }))+'</span>'+
+    '<span><label class="f" for="supLoc">'+esc(t('Where'))+'</label><input type="text" id="supLoc" list="supGLocs" maxlength="40" autocomplete="off" value="'+esc(g.location||'')+'" placeholder="'+esc(t('e.g. Poipet'))+'">'+
+      supDatalist_('supGLocs', all.map(function(x){ return x.location; }).concat([t('Poipet'), t('Siem Reap')]))+'</span></div>'+
+    '<label class="f" for="supNote">'+esc(t('Note'))+'</label><textarea id="supNote" rows="2" maxlength="300">'+esc(g.note||'')+'</textarea>'+
+    '<div class="kmrActs"><button class="btn" id="supGSave">'+esc(isNew ? t('Add') : t('Save'))+'</button><button class="btn ghost" id="supCancel">'+esc(t('Cancel'))+'</button></div>'+
+    (isNew ? '' : '<button type="button" class="supRemove" id="supGDel">🗑 '+esc(t('Stop supporting'))+'</button>')+'</div>';
+}
+/* Bring in a giving & support tracker (a PDF of the sheet, or its rows pasted): it is
+   read here (GP_FIN.parseSupportTracker), shown, and only added when you say so —
+   a name already on a list (same channel) is updated, a new one added. */
+function supImportCardHtml_(big){
+  var inp='<input type="file" id="supFile" accept="application/pdf,.pdf" hidden>';
+  if(!big) return '<div class="supImportLink"><label class="linkbtn inline" style="cursor:pointer">📄 '+esc(t('Bring in your giving & support tracker'))+inp+'</label></div>';
+  return '<div class="card"><div class="goalCardTitle" style="margin-bottom:4px">📄 '+esc(t('Already keep a giving & support tracker?'))+'</div>'+
+    '<p class="sub" style="margin:0 0 10px">'+esc(t('Bring it in: the PDF of your sheet, or its rows copied and pasted. It reads who gives to you and who you support each month, and shows you before anything is saved.'))+'</p>'+
+    '<label class="btn finPickBtn" style="margin:0">📄 '+esc(S.supReading ? t('Reading…') : t('Choose the PDF'))+inp+'</label>'+
+    '<details class="pulseMore"><summary>'+esc(t('Or paste the rows'))+'</summary><textarea id="supPaste" rows="4" placeholder="'+esc(t('Paste the rows here'))+'"></textarea>'+
+    '<button class="btn ghost" id="supPasteRead" style="margin-top:6px">'+esc(t('Read these rows'))+'</button></details></div>';
+}
+function supImportHtml_(){
+  var I=S.supImport, P=I.parsed;
+  var h='<div class="card supImport"><div class="goalCardTitle" style="margin-bottom:2px">📄 '+esc(t('From your tracker'))+'</div><p class="hint" style="margin:0 0 8px;overflow-wrap:anywhere">'+esc(I.fileName)+'</p>';
+  if(!P.ok) return h+'<p class="sub" style="margin:0 0 8px">'+esc(t('Couldn’t find the two lists in this — "Monthly Support Received" and "Monthly Support Given", each with its headings.'))+'</p><button class="btn ghost" id="supImpDrop" style="margin:0">'+esc(t('Leave it'))+'</button></div>';
+  var sumIn=P.received.reduce(function(a,x){ return a+(x.amount||0); }, 0), sumOut=P.given.reduce(function(a,x){ return a+(x.amount||0); }, 0);
+  h+='<div class="supImpLine"><b>🤝 '+esc(gpT('{n} partners',{n:P.received.length}))+'</b> <span>'+esc(gpT('{money} a month',{money:supMoney_(sumIn)}))+'</span></div>'+
+    '<div class="supImpLine"><b>💝 '+esc(gpT('{n} you support',{n:P.given.length}))+'</b> <span>'+esc(gpT('{money} a month',{money:supMoney_(sumOut)}))+'</span></div>';
+  var bad=P.checks.filter(function(c){ return !c.ok; });
+  h+= !P.checks.length ? '' : bad.length ? '<div class="finCheck warn">⚠️ '+esc(t('The totals don’t match the sheet’s own — look the lists over after.'))+'</div>'
+    : '<div class="finCheck ok">✓ '+esc(t('Both totals match the sheet’s own.'))+'</div>';
+  var sup=S.sup.support, key=function(x){ return (String(x.channel||'')+'|'+String(x.name)).toLowerCase(); }, have={};
+  sup.partners.concat(sup.giving||[]).forEach(function(x){ have[key(x)]=1; });
+  var upd=P.received.concat(P.given).filter(function(x){ return have[key(x)]; }).length;
+  if(upd) h+='<p class="hint" style="margin:8px 0 0">'+esc(gpT('{n} are already on your lists — their amounts will be updated.',{n:upd}))+'</p>';
+  return h+'<div class="kmrActs"><button class="btn" id="supImpAdd">'+esc(t('Add to my lists'))+'</button><button class="btn ghost" id="supImpDrop">'+esc(t('Leave it'))+'</button></div></div>';
+}
+function supImportApply_(){
+  var P=S.supImport.parsed, c=JSON.parse(JSON.stringify(S.sup.support)); c.giving=c.giving||[];
+  var key=function(x){ return (String(x.channel||'')+'|'+String(x.name)).toLowerCase(); };
+  var merge=function(list, rows, make){
+    var at={}; list.forEach(function(x, i){ at[key(x)]=i; });
+    rows.forEach(function(r){ var k=key(r), m=make(r);
+      if(at[k]!==undefined){ var x=list[at[k]]; if(r.amount!=null) x.amount=r.amount; x.freq='month'; if(r.note && !x.note) x.note=r.note; if(m.location) x.location=m.location; }
+      else { at[k]=list.length; list.push(m); } });
+  };
+  merge(c.partners, P.received, function(r){ return { id:'', name:r.name, amount:r.amount||0, freq:'month', status:'giving', last:'', note:r.note||'', channel:r.channel||'' }; });
+  merge(c.giving, P.given, function(r){ return { id:'', name:r.name, amount:r.amount||0, freq:'month', channel:r.channel||'', location:r.location||'', note:r.note||'' }; });
+  S.supImport=null;
+  supSave_(c, t('Added to your lists'));
+}
+function supReadFile_(file){
+  if(!/\.pdf$/i.test(file.name) && file.type!=='application/pdf'){ showMsg(t('That isn’t a PDF.')); return; }
+  if(file.size>4*1024*1024){ showMsg(t('That file is too big — keep it under 4 MB.')); return; }
+  S.supReading=true; render();
+  var rd=new FileReader();
+  rd.onload=function(){
+    finPdfRows_(rd.result, 80, function(rows){ S.supReading=false; S.supImport={ fileName:file.name, parsed:GP_FIN.parseSupportTracker(rows) }; render(); },
+      function(why){ S.supReading=false; showMsg(why==='lib' ? t('Couldn’t open the PDF reader — check the connection and try again.') : t('Couldn’t read that file.')); render(); });
+  };
+  rd.onerror=function(){ S.supReading=false; showMsg(t('Couldn’t read that file.')); render(); };
+  rd.readAsArrayBuffer(file);
+}
 function bindSupport_(){
   var tile=document.getElementById('supTile');
-  if(tile) tile.onclick=function(){ gpTap(); S.sup=null; S.supErr=''; S.supEdit=null; S.view='support'; render(); window.scrollTo(0,0); };
+  if(tile) tile.onclick=function(){ gpTap(); S.sup=null; S.supErr=''; S.supEdit=null; S.supGEdit=null; S.view='support'; render(); window.scrollTo(0,0); };
   if(S.view!=='support' || !S.sup) { var bk0=document.getElementById('supBack'); if(bk0) bk0.onclick=function(){ S.view='week'; render(); }; return; }
   var sup=S.sup.support;
-  var copy=function(){ return JSON.parse(JSON.stringify(sup)); };
+  var copy=function(){ var c=JSON.parse(JSON.stringify(sup)); c.giving=c.giving||[]; return c; };
   var on=function(id, fn){ var el=document.getElementById(id); if(el) el.onclick=fn; };
+  var val=function(id){ var el=document.getElementById(id); return el ? el.value : ''; };
   on('supBack', function(){ S.view='week'; render(); });
   var g=document.getElementById('supGoal');
   if(g) g.onchange=function(){ var c=copy(); c.goal=Math.max(0, Math.round(Number(g.value)||0)); supSave_(c, t('Saved')); };
   var sh=document.getElementById('supShare');
   if(sh) sh.onchange=function(){ var c=copy(); c.mentorVisible=!!sh.checked; supSave_(c, t('Saved')); };
+  document.querySelectorAll('[data-suptab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.supTab=b.getAttribute('data-suptab'); lsSet('gp-sup-tab', S.supTab); S.supEdit=null; S.supGEdit=null; render(); }; });
   document.querySelectorAll('[data-supfilter]').forEach(function(b){ b.onclick=function(){ S.supFilter=b.getAttribute('data-supfilter'); render(); }; });
   var toForm=function(){ var f=document.getElementById('supForm'); if(f) f.scrollIntoView({ block:'start', behavior:'smooth' }); };
   document.querySelectorAll('[data-supedit]').forEach(function(b){ b.onclick=function(){ S.supEdit=b.getAttribute('data-supedit'); render(); toForm(); }; });
+  document.querySelectorAll('[data-supgedit]').forEach(function(b){ b.onclick=function(){ S.supGEdit=b.getAttribute('data-supgedit'); render(); toForm(); }; });
   on('supAdd', function(){ S.supEdit='new'; render(); var n=document.getElementById('supName'); if(n) n.focus(); });
+  on('supGAdd', function(){ S.supGEdit='new'; render(); var n=document.getElementById('supName'); if(n) n.focus(); });
   ['status','freq'].forEach(function(k){
     document.querySelectorAll('[data-sup'+k+']').forEach(function(b){ b.onclick=function(){
       var v=b.getAttribute('data-sup'+k);
-      document.querySelectorAll('[data-sup'+k+']').forEach(function(x){ var on=x===b; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); });
+      document.querySelectorAll('[data-sup'+k+']').forEach(function(x){ var on2=x===b; x.classList.toggle('on', on2); x.setAttribute('aria-checked', String(on2)); });
       document.getElementById(k==='status' ? 'supStatus' : 'supFreq').value=v;
       if(k==='status'){ var hn=document.querySelector('.supAmtHint'); if(hn) hn.textContent=supAmtHint_(v); }
     }; });
   });
-  on('supCancel', function(){ S.supEdit=null; render(); });
+  on('supCancel', function(){ S.supEdit=null; S.supGEdit=null; render(); });
   on('supToday', function(){ var l=document.getElementById('supLast'); if(l) l.value=todayStr(); });
   on('supSave', function(){
-    var name=(document.getElementById('supName').value||'').trim();
+    var name=val('supName').trim();
     if(!name){ showMsg(t('Add their name')); return; }
-    var p={ id:S.supEdit==='new' ? '' : S.supEdit, name:name, amount:Number(document.getElementById('supAmt').value)||0,
-      freq:document.getElementById('supFreq').value, status:document.getElementById('supStatus').value,
-      last:document.getElementById('supLast').value||'', note:document.getElementById('supNote').value||'' };
+    var p={ id:S.supEdit==='new' ? '' : S.supEdit, name:name, amount:Number(val('supAmt'))||0, freq:val('supFreq'), status:val('supStatus'),
+      last:val('supLast')||'', note:val('supNote')||'', channel:val('supChannel').trim() };
     var c=copy();
     if(S.supEdit==='new') c.partners.push(p);
     else c.partners=c.partners.map(function(x){ return x.id===S.supEdit ? p : x; });
@@ -2033,6 +2158,28 @@ function bindSupport_(){
     if(!confirm(t('Remove this partner?'))) return;
     var c=copy(); c.partners=c.partners.filter(function(x){ return x.id!==S.supEdit; }); supSave_(c, t('Removed'));
   });
+  on('supGSave', function(){
+    var name=val('supName').trim();
+    if(!name){ showMsg(t('Add their name')); return; }
+    var x={ id:S.supGEdit==='new' ? '' : S.supGEdit, name:name, amount:Number(val('supAmt'))||0, freq:val('supFreq'),
+      channel:val('supChannel').trim(), location:val('supLoc').trim(), note:val('supNote')||'' };
+    var c=copy();
+    if(S.supGEdit==='new') c.giving.push(x);
+    else c.giving=c.giving.map(function(y){ return y.id===S.supGEdit ? x : y; });
+    supSave_(c, t('Saved'));
+  });
+  on('supGDel', function(){
+    if(!confirm(t('Take them off the list of people you support?'))) return;
+    var c=copy(); c.giving=c.giving.filter(function(y){ return y.id!==S.supGEdit; }); supSave_(c, t('Removed'));
+  });
+  var f=document.getElementById('supFile'); if(f) f.onchange=function(){ if(f.files && f.files[0]) supReadFile_(f.files[0]); f.value=''; };
+  on('supPasteRead', function(){
+    var txt=val('supPaste');
+    if(!txt.trim()){ showMsg(t('Paste the rows first.')); return; }
+    S.supImport={ fileName:t('Pasted rows'), parsed:GP_FIN.parseSupportTracker(GP_FIN.rowsFromTsv(txt)) }; render();
+  });
+  on('supImpAdd', function(){ if(!S.supBusy) supImportApply_(); });
+  on('supImpDrop', function(){ S.supImport=null; render(); });
 }
 /* On a mentee's page: their totals, when they share them. Never the names. */
 function supMentorCardHtml_(ss, m){

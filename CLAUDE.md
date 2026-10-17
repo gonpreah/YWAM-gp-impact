@@ -2253,7 +2253,8 @@ inferred from volunteer counts.
 ## Support raising (My Home → Support raising, Oct 2026)
 - Each staff member's ministry partners and monthly goal (US$), on their own staff record
   (`support`: { goal, partners[{ id, name, amount, freq month|year|once, status
-  giving|asked|toask|paused, last, note }], mentorVisible }), `getMySupport` /
+  giving|asked|toask|paused, last, note, channel }], giving[{ id, name, amount, freq,
+  channel, location, note }], mentorVisible }), `getMySupport` /
   `saveMySupport` (whole list, via mutateStaff_; max 300). **Private like debt**: never in
   the roster, staffProfile, admin or HR lists, or anyone's boot but your own (your boot has
   only your totals, `supportSummary`, for the My Home tile).
@@ -2262,11 +2263,25 @@ inferred from volunteer counts.
   pledged a month, % of goal, counts giving / asked / to ask, and how many to thank or
   follow up. Partner names never leave the person's account. Leadership sees nothing.
 - Pledged a month = giving partners: monthly as is, yearly / 12, once not counted.
-  "To thank or follow up": not paused and not in touch for `SUP_FOLLOW_DAYS` (90), or asked /
-  giving with no contact date.
+  "To thank or follow up": not paused and not in touch for `SUP_FOLLOW_DAYS` (90), or asked
+  with no contact date (a giving partner without one — e.g. just brought in — isn't flagged).
+- **We support** (Oct 2026, Uriah: "make the support tab include who we're supporting
+  monthly"): the second tab, `giving` — the people and ministries the person gives to, by
+  channel (via GP, via ABA …) and place. The top card then shows coming in / going out /
+  kept a month (`givenMonthly`, own page only). **As private as the partners, and more**:
+  in no summary — the mentor's totals are the partners' alone.
+- **Bringing in a tracker** ("can you automatically put this into my profile"): the
+  person's own Giving & Support Tracker (a Google Sheets PDF export, or its rows pasted)
+  is read on the page — `GP_FIN.parseSupportTracker` in finance.js, pdf.js via
+  `finPdfRows_` — from its two lists, "Monthly Support Received" (Channel · Donor / Church ·
+  Monthly $ · Notes) and "Monthly Support Given" (Channel · Recipient · Location · Monthly
+  $), a list running on to the next page without headings, each ending at its TOTAL
+  (checked); the month-by-month trackers after them are ignored. Previewed, then "Add to
+  my lists": same channel + name updates, new ones are added (partners as giving, monthly).
+  Never commit anyone's tracker — tests/fin-fixtures.mjs `supportTracker()` is made up.
 - **Language** needed nothing new: the "Language study" habit tile streaks, the weekly
   check-in has language hours, and the 1-on-1 check-in rates language 1–5.
-- tests/test-support-ui.mjs.
+- tests/test-support-ui.mjs (and the tracker parser in test-finance-parse.mjs).
 
 ## Your first 30 days (My Home, Oct 2026)
 - For someone whose account is under `F30_DAYS` (45) old (`created`, now in the boot's own
