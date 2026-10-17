@@ -1045,6 +1045,13 @@ forms, documents and references follow.
   Notes, only the tabs a record has; the actions sit in `.panelFoot`. Only the open tab is drawn, so a test
   calls `ptab(page, id)` before reaching into one. Answers fold per form section (`.ansFold`, first
   open, answered/asked) with `#ansQ` Find in answers (`answersHtml_(…, {fold, q})`, `answerText_`).
+- **Rooms booked (teams, Oct 2026)**: a team step `rooms` (after the visa steps, who: us,
+  `side: true` — it can tick any time, so it is never the current step). Done when SR
+  Hospitality has a booking for the team's trip: every write of `hosp:<campus>` goes through
+  `saveHosp_`, which runs `syncTeamRooms_` → `cand.portal.rooms = {beds, from, to}` (null when
+  there is none); opening SR Hospitality (`getHospitality`) catches up teams booked before.
+  The portal shows "🛏 12 beds · dates" under the ticked step (`roomsLine_`), staff see the same
+  in Team steps. Students and other single applicants have no booking link yet.
 - **E-visa how-to and supporting documents (Oct 2026)**: once a team's letter of invitation is
   uploaded (or "Letter of invitation sent" is ticked — `visaOpen_` in api.js, `app.visaOpen`), a
   drop-down **How to apply for your e-visa online** (`visaHowHtml_`, `#visaHow`) opens under the

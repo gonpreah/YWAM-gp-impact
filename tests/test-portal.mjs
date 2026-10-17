@@ -1012,7 +1012,7 @@ for (const d of mem.candidates.find(c => c.id === teamRec.id).portal.docs.filter
 mem.candidates = mem.candidates.map(c => c.id === teamRec.id ? { ...c, stage: 'applied' } : c);
 r = await call('portalBoot', ['team.au', '2468']);
 const stepIds = (b) => b.application.steps.map(st => st.id).join(',');
-ok('a team from abroad: apply, 1st call, passports, photo, flights, letter of invitation, e-visa, 2nd call, getting ready, arrival', stepIds(r.body) === 'account,form,call1,passports,photo,flights,invitation,evisa,call2,practical,arrived', stepIds(r.body));
+ok('a team from abroad: apply, 1st call, passports, photo, flights, letter of invitation, e-visa, rooms booked, 2nd call, getting ready, arrival', stepIds(r.body) === 'account,form,call1,passports,photo,flights,invitation,evisa,rooms,call2,practical,arrived', stepIds(r.body));
 ok('no reference, no interview, no generic documents step', !r.body.application.steps.some(st => ['docs', 'reference', 'interview', 'accepted'].includes(st.id)));
 ok('the documents and the visa part are grouped', r.body.application.steps.filter(st => st.group === 'docs').map(st => st.id).join(',') === 'passports,photo,flights' && r.body.application.steps.filter(st => st.group === 'visa').map(st => st.id).join(',') === 'invitation,evisa');
 ok('the 1st call is the step they are on', r.body.application.steps.find(st => st.state === 'current').id === 'call1');
@@ -1052,7 +1052,7 @@ ok('unticking Arrived steps back to Getting ready', r.body.ok === true && r.body
 r = await call('portalBoot', ['sina', '1234']);
 ok('the staff side gets the team stages', JSON.stringify(r.body.teamStages) === '["new","applied","call1","docs","call2","practical","arrived"]');
 r = await call('portalViewAs', ['sina', '1234', { type: 'team', audience: 'khmer', stage: 'docs' }]);
-ok('a team from Cambodia has no letter or e-visa steps', r.body.ok === true && stepIds(r.body) === 'account,form,call1,passports,photo,flights,call2,practical,arrived', stepIds(r.body));
+ok('a team from Cambodia has no letter or e-visa steps', r.body.ok === true && stepIds(r.body) === 'account,form,call1,passports,photo,flights,rooms,call2,practical,arrived', stepIds(r.body));
 
 console.log('\n=== a team application is a team in the Teams Database ===');
 const linked = () => (mem.teamTrips || []).filter(t => t.candidateId === teamRec.id);
