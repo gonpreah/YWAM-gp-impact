@@ -71,28 +71,8 @@ async function visit(p,label,act){
   console.log('  '+(errs.length>before?'ERR  ':'ok   ')+label);
 }
 
-console.log('DASHBOARD (leader unlocked)');
-let p=await mk(()=>{
-  // signed in AND leader: the log form needs an account, the OKR editor needs the code
-  localStorage.setItem('gp-staff',JSON.stringify({user:'sokha',pin:'1234'}));
-  localStorage.setItem('gp-staff-card',JSON.stringify({name:'Sokha Chan',photo:'',ministry:'Outreach Teams',campus:'poipet'}));
-  sessionStorage.setItem('gp-skip-teams','1');
-  localStorage.setItem('gp-leadercode','gp2033');});
-await p.goto('http://localhost:4414/index.html'); await p.waitForSelector('.hero',{timeout:15000}); await p.waitForTimeout(800);
-await visit(p,'dashboard',async p=>{});
-await visit(p,'all campuses',async p=>{await p.click('[data-all]');await p.waitForTimeout(700);});
-await visit(p,'back to one campus',async p=>{await p.click('[data-campus="siemreap"]');await p.waitForTimeout(600);});
-await visit(p,'OKRs view',async p=>{await p.click('[data-view="okr"]');await p.waitForTimeout(700);});
-await visit(p,'OKR quarter switch',async p=>{const s=await p.$('#okrQSel'); if(s) await p.selectOption('#okrQSel','1');await p.waitForTimeout(600);});
-await visit(p,'Log Numbers',async p=>{await p.click('[data-view="log"]');await p.waitForTimeout(800);});
-await visit(p,'log: switch dept',async p=>{await p.selectOption('#deptSel','Youth Education');await p.waitForTimeout(700);});
-await visit(p,'log: switch ministry',async p=>{await p.selectOption('#minSel','GP Media');await p.waitForTimeout(700);});
-await visit(p,'log: Campus Leadership',async p=>{await p.selectOption('#deptSel','Campus Leadership');await p.waitForTimeout(700);});
-await visit(p,'log: switch week',async p=>{await p.selectOption('#weekSel','5');await p.waitForTimeout(700);});
-await visit(p,'drill-down open/close',async p=>{await p.click('[data-view="dashboard"]');await p.waitForTimeout(700);
-  await p.click('#main .heroSubRow');await p.waitForTimeout(500);await p.click('#ddClose');});
-await visit(p,'Khmer toggle',async p=>{await p.click('#langBtn');await p.waitForTimeout(800);await p.click('#langBtn');});
-await p.close();
+/* (The old dashboard — Log Numbers, OKRs, the leadership code — is gone, Oct 2026.) */
+let p;
 
 console.log('\nSTAFF PAGE (all tabs)');
 p=await mk(()=>localStorage.setItem('gp-staff',JSON.stringify({user:'sokha',pin:'1234'})));

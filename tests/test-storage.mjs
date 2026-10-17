@@ -94,14 +94,14 @@ function isKhmer(s) { return /[ក-៿]/.test(String(s || '')); }
 /* ---------- 1. Khmer survives a reload ---------- */
 {
   const { ctx, p, errs } = await open({ seed: "try{localStorage.setItem('gp-lang','km');}catch(e){}" });
-  await p.waitForSelector('#dashMain .hero', { timeout: 15000 });
+  await p.waitForSelector('#main .hero', { timeout: 15000 });
   await p.waitForTimeout(600);
   const lang = await p.evaluate('LANG');
   const btn = (await p.textContent('#langBtn').catch(function () { return ''; })) || '';
-  const heroLabel = (await p.textContent('#dashMain .heroLabel').catch(function () { return ''; })) || '';
+  const heroLabel = (await p.textContent('#main .heroLabel').catch(function () { return ''; })) || '';
   /* #main only, not the whole body: the toggle button is itself Khmer text, so a
      body-wide check passes even when every translated label has fallen back. */
-  const main = (await p.textContent('#dashMain')) || '';
+  const main = (await p.textContent('#main')) || '';
   ok('gp-lang=km is still km after the data load', lang === 'km', 'LANG=' + lang);
   ok('the toggle button and the page agree', btn.trim() === 'EN', 'button=' + JSON.stringify(btn.trim()));
   ok('the dashboard body renders Khmer script', isKhmer(main),
@@ -113,7 +113,7 @@ function isKhmer(s) { return /[ក-៿]/.test(String(s || '')); }
 /* ---------- 2. English stays English ---------- */
 {
   const { ctx, p, errs } = await open({ seed: "try{}catch(e){}" });
-  await p.waitForSelector('#dashMain .hero', { timeout: 15000 });
+  await p.waitForSelector('#main .hero', { timeout: 15000 });
   await p.waitForTimeout(400);
   ok('no saved choice means English', (await p.evaluate('LANG')) === 'en');
   ok('English page has no errors', errs.length === 0, errs.join(' | '));
@@ -140,11 +140,11 @@ function isKhmer(s) { return /[ក-៿]/.test(String(s || '')); }
   await p.waitForTimeout(300);
   ok('toggle switches to Khmer', (await p.evaluate('LANG')) === 'km');
   await p.reload({ waitUntil: 'commit' });
-  await p.waitForSelector('#dashMain .hero', { timeout: 15000 });
+  await p.waitForSelector('#main .hero', { timeout: 15000 });
   await p.waitForTimeout(600);
   ok('and Khmer is still there after a reload', (await p.evaluate('LANG')) === 'km',
     'LANG=' + (await p.evaluate('LANG')));
-  ok('Khmer script on the dashboard after the reload', isKhmer(await p.textContent('#dashMain')));
+  ok('Khmer script on the dashboard after the reload', isKhmer(await p.textContent('#main')));
   ok('no errors across the toggle and reload', errs.length === 0, errs.join(' | '));
   await ctx.close();
 }
@@ -184,7 +184,7 @@ function isKhmer(s) { return /[ក-៿]/.test(String(s || '')); }
 {
   const { ctx, p, errs } = await open({ seed: "try{localStorage.setItem('gp-staff','{oops');localStorage.setItem('gp-staff-card','not json');}catch(e){}" });
   let usable = false;
-  try { await p.waitForSelector('#dashMain .hero', { timeout: 15000 }); usable = true; } catch (e) { }
+  try { await p.waitForSelector('#main .hero', { timeout: 15000 }); usable = true; } catch (e) { }
   await p.waitForTimeout(400);
   ok('corrupt saved session: page still renders', usable);
   ok('corrupt saved session: no page errors', errs.length === 0, errs.join(' | '));

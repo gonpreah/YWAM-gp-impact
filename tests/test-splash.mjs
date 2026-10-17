@@ -271,18 +271,18 @@ for (const page of ['teams.html']) {
   await p.addInitScript(function () { try { sessionStorage.setItem('gp-guest', '1'); sessionStorage.setItem('gp-skip-teams', '1'); } catch (e) { } });
   await p.goto(BASE + '/index.html', { waitUntil: 'commit' });
   // Tolerant: report a missing dashboard as a failure rather than crashing the run.
-  await p.waitForSelector('#dashMain .hero', { timeout: 15000 }).catch(function () { });
+  await p.waitForSelector('#main .hero', { timeout: 15000 }).catch(function () { });
   await p.waitForTimeout(500);
   const st = await p.evaluate(`(function(){
     var s=document.getElementById('splash');
     return { splash: !s || s.className.indexOf('gone')>-1,
-             hero: !!document.querySelector('#dashMain .hero'),
+             hero: !!document.querySelector('#main .hero'),
              url: location.pathname };
   })()`);
-  /* One page (Oct 2026): the dashboard a guest asked for is a view of teams.html now. */
-  ok('a guest who asked for the dashboard gets it (as a view of the app)', /teams\.html/.test(st.url) && st.hero, st.url);
+  /* The old dashboard is gone (Oct 2026): a guest who asked for it gets Base. */
+  ok('a guest who asked for the old dashboard gets Base in the app', /teams\.html/.test(st.url) && st.hero, st.url);
   ok('the splash lifts for them too', st.splash);
-  ok('and the dashboard is there behind it', st.hero);
+  ok('and Base is there behind it', st.hero);
   await ctx.close();
 }
 

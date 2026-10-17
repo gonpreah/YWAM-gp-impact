@@ -173,9 +173,6 @@ for (const c of [
 
 /* ---------- 2. the contrast audit, every screen, both themes ---------- */
 const SCREENS = [
-  { file: 'index.html', wait: '.hero', name: 'dashboard', steps: [] },
-  { file: 'index.html', wait: '.hero', name: 'log form', steps: ['[data-view="log"]'] },
-  { file: 'index.html', wait: '.hero', name: 'OKRs', steps: ['[data-view="okr"]'] },
   { file: 'teams.html', wait: 'nav.bottom button', name: 'Base', steps: [] },
   // My week and Me merged into one "My Home" tab (still view id 'week') —
   // now the first nav button, swapped with Base.

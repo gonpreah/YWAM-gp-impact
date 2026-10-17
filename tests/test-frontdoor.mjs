@@ -1,6 +1,6 @@
 /* Drive the entry states end to end: the front door (index.html hands over to My
-   YWAM GP's own), a guest (the app's guest mode; on the dashboard view, locked
-   tabs), signed in (unlocked + own campus), and the Teams page's logo/loader. */
+   YWAM GP's own), a guest (the app's guest mode), the old dashboard's links (Base —
+   the dashboard is gone), signed in, and the Teams page's logo/loader. */
 /* Paths and the browser binary come from tests/env.mjs so this runs from a clone
    rather than from one machine's scratch directory. */
 import { PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
@@ -106,50 +106,32 @@ await page.goto(BASE + '/index.html', { waitUntil: 'commit' });
 await page.waitForURL(/teams\.html\?guest=1/, { timeout: 8000 });
 console.log('   … and so does one from before the move (gp-guest): ' + /teams\.html\?guest=1/.test(page.url()));
 await page.close();
-/* The dashboard, asked for on purpose (gp-skip-teams, or ?view=dashboard): a view of the
-   app now, which still gates its write tab for a guest */
+/* The old dashboard, asked for on purpose (gp-skip-teams from its old button, or
+   ?view=dashboard): it is gone (Oct 2026 — numbers are recorded on My Ministry), so
+   the link lands on Base, which shows the same figures. Not signed in: as a guest. */
 page = await newPage();
 await page.addInitScript(() => { sessionStorage.setItem('gp-skip-teams', '1'); });
 await page.goto(BASE + '/index.html', { waitUntil: 'commit' });
-await page.waitForURL(/view=dashboard/, { timeout: 8000 });
-await page.waitForSelector('#dashMain .hero', { timeout: 8000 });
-await page.waitForTimeout(900);
-console.log('\n2. GUEST ON THE DASHBOARD');
-console.log('   tabs: ' + (await page.$$eval('#dashNav button', b => b.map(x => x.textContent.trim()))).join(' | '));
-console.log('   hero label: ' + await page.$eval('#dashMain .heroLabel', x => x.textContent));
-console.log('   hero number: ' + await page.$eval('#dashMain .heroNum', x => x.textContent));
-console.log('   hero sub: ' + await page.$eval('#dashMain .heroSub', x => x.textContent.trim().replace(/\s+/g, ' ')));
+await page.waitForURL(/teams\.html\?view=base/, { timeout: 8000 });
+await page.waitForSelector('#main .hero', { timeout: 8000 });
+console.log('\n2. THE OLD DASHBOARD LINK');
+console.log('   lands on Base, as a guest: ' + await page.evaluate(() => S.view === 'base' && S.guest));
+console.log('   no Log Numbers tab anywhere: ' + await page.evaluate(() => !document.querySelector('[data-view="log"]')));
 await page.screenshot({ path: OUT + 'guest-dash.png', fullPage: true });
-await page.click('[data-view="log"]');
-await page.waitForTimeout(500);
-console.log('   log view gated: ' + await page.evaluate(() => !!document.querySelector('#dashMain .gate')));
-console.log('   log form present: ' + await page.evaluate(() => !!document.querySelector('#deptSel')));
-console.log('   gate heading: ' + await page.$eval('#dashMain .gate h3', x => x.textContent));
-await page.screenshot({ path: OUT + 'guest-gate.png', fullPage: true });
-console.log('   no Health tab on the dashboard: ' + await page.evaluate(() =>
-  !document.querySelector('[data-view="health"]')));
-await page.click('[data-view="okr"]');
-await page.waitForTimeout(500);
-console.log('   OKRs still readable for guests: ' + await page.evaluate(() => !document.querySelector('#dashMain .gate')));
 await page.close();
 
-/* ---- 3. signed in: tabs unlocked, campus defaults to mine (Siem Reap) ---- */
+/* ---- 3. signed in, the old dashboard link: Base, on their own campus ---- */
 page = await newPage();
 await page.addInitScript(() => {
   localStorage.setItem('gp-staff', JSON.stringify({ user: 'sokha', pin: '1234' }));
   localStorage.setItem('gp-staff-card', JSON.stringify({ name: 'Sokha Chan', photo: '', ministry: 'Outreach Teams', campus: 'siemreap' }));
 });
-await page.goto(BASE + '/teams.html?view=dashboard', { waitUntil: 'networkidle' });
-await page.waitForSelector('#dashMain .hero', { timeout: 8000 });
+await page.goto(BASE + '/index.html?view=dashboard', { waitUntil: 'networkidle' });
+await page.waitForSelector('#main .hero', { timeout: 8000 });
 await page.waitForTimeout(800);
 console.log('\n3. SIGNED IN');
-console.log('   tabs: ' + (await page.$$eval('#dashNav button', b => b.map(x => x.textContent.trim()))).join(' | '));
-console.log('   padlocks: ' + await page.evaluate(() => document.querySelectorAll('.navLock').length));
-console.log('   campus selected: ' + await page.$eval('#campusRow .cbtn.on', b => b.textContent.trim()));
-await page.click('[data-view="log"]');
-await page.waitForTimeout(600);
-console.log('   log form reachable: ' + await page.evaluate(() => !!document.querySelector('#deptSel')));
-console.log('   log form campus: ' + await page.$eval('#campusRow .cbtn.on', b => b.textContent.trim()));
+console.log('   the old dashboard link opens Base: ' + await page.evaluate(() => S.view === 'base' && !S.guest));
+console.log('   tabs: ' + (await page.$$eval('nav.bottom button', b => b.map(x => x.textContent.trim()))).join(' | '));
 await page.close();
 
 /* ---- 4. teams page: real logo, spinning boot coin ---- */

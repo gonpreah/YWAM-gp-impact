@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <script>
-/* One page (Oct 2026): the app is teams.html — My YWAM GP, with the leadership
-   dashboard as one of its views (teams/09-dashboard.js). This page is only the old
-   address: bookmarks, links and phones that installed the app from here still land
-   in the right place. It sends, at once, before anything paints:
+/* The old leadership dashboard that lived here is gone (Oct 2026): numbers are
+   recorded on My Ministry, and Base shows the figures — the app is teams.html. This
+   page is only the old address: bookmarks, links and phones that installed the app
+   from here still land in the right place. It sends, at once, before anything paints:
      - the dashboard, asked for by name (?view=dashboard, or gp-skip-teams from the old
-       "← Dashboard" button)            → teams.html?view=dashboard
+       "← Dashboard" button)            → Base: teams.html?view=base
      - a guest (gp-app-guest / gp-guest) → teams.html?guest=1
      - anyone else, with what they asked for → teams.html (+ the same ?query)
    teams.html's own front door does what this page's welcome screen used to: create a
@@ -19,7 +19,7 @@
   try { q = location.search || ''; } catch(e){}
   try { dash = /[?&]view=dashboard\b/.test(q) || !!sessionStorage.getItem('gp-skip-teams'); } catch(e){}
   try { guest = localStorage.getItem('gp-app-guest')==='1' || sessionStorage.getItem('gp-guest')==='1'; } catch(e){}
-  var to = dash ? 'teams.html?view=dashboard' : guest && !q ? 'teams.html?guest=1' : 'teams.html' + q;
+  var to = dash ? 'teams.html?view=base' : guest && !q ? 'teams.html?guest=1' : 'teams.html' + q;
   try { location.replace(to + (location.hash || '')); } catch(e){ location.href = to; }
 })();
 </script>

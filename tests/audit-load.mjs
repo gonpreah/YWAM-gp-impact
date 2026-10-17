@@ -75,12 +75,8 @@ async function audit(page_, label, seed){
   return {calls, errs, renders:renders.length};
 }
 
-await audit('index.html','dashboard, guest',()=>(sessionStorage.setItem('gp-guest','1'),sessionStorage.setItem('gp-skip-teams','1')));
 const staff = await audit('teams.html','staff page, signed in',
   ()=>localStorage.setItem('gp-staff',JSON.stringify({user:'sokha',pin:'1234'})));
-await audit('index.html','dashboard, signed in (skip-teams)',()=>{
-  localStorage.setItem('gp-staff',JSON.stringify({user:'sokha',pin:'1234'}));
-  sessionStorage.setItem('gp-skip-teams','1');});
 await audit('help.html','KPI guide');
 
 console.log('\n=== duplicate work on the staff page ===');

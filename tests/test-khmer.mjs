@@ -157,8 +157,6 @@ async function open(file, wait, km) {
 }
 
 const SCREENS = [
-  { file: 'index.html', wait: '.hero', name: 'dashboard', steps: [] },
-  { file: 'index.html', wait: '.hero', name: 'log form', steps: ['[data-view="log"]'] },
   { file: 'teams.html', wait: 'nav.bottom button', name: 'Base', steps: [] },
   // My week and Me merged into one "My Home" tab (still view id 'week') —
   // now the first nav button, swapped with Base.

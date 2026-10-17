@@ -8,7 +8,7 @@
    weekYear_ / yearForWeek_ on the server.
 
    Three layers:
-   1. The rule itself, run straight out of teams.html, index.html and api.js, at
+   1. The rule itself, run straight out of teams.html and api.js, at
       the dates that matter and across several time zones (one with daylight
       saving), and the three copies against each other for thirteen years.
    2. The pages' helpers with the clock pinned to 30 December 2026: this week is
@@ -64,17 +64,13 @@ function lift(src, names) {
   }).join('\n');
 }
 const TEAMS = pageSource('teams.html');
-/* the dashboard's own copy of the week rule — index.html's until it moved into the app (one page, Oct 2026) */
-const INDEX = fs.readFileSync(REPO + '/public/teams/09-dashboard.js', 'utf8');
 const API = fs.readFileSync(REPO + '/netlify/functions/api.js', 'utf8');
 const MONTHS = TEAMS.match(/var MONTH_ABBR=\[[^\]]*\];/)[0];
 const CLIENT_SRC = MONTHS + '\n' + lift(TEAMS, ['dayNoOf_', 'mondayOfW1No_', 'weekYearOf', 'isoWeekOf', 'thisWeek', 'thisWeekYear',
   'weekYearToday_', 'monthAnchorWeek_', 'quarterAnchorWeek_', 'mondayOfWeek_', 'weekRange_', 'weekRangeShort_', 'isoDateOf_', 'weekBounds_']);
-const INDEX_SRC = lift(INDEX, ['weekYearOf', 'currentWeekYear', 'mondayOfW1', 'weekRange', 'currentWeek']);
 const SERVER_SRC = 'const YEAR_MIN = 2020, YEAR_MAX = 2100;\n' + lift(API, ['finiteNum_', 'dayNo_', 'mondayOfWeek1No_', 'weekYear_', 'isoWeek_',
   'thisWeekYear_', 'yearForWeek_', 'baseToday_', 'addDays_']);
 function client(nowIso) { const c = vm.createContext({ Date: nowIso ? shiftedDate(nowIso) : RealDate, Math }); vm.runInContext(CLIENT_SRC, c); return c; }
-function index(nowIso) { const c = vm.createContext({ Date: nowIso ? shiftedDate(nowIso) : RealDate, Math }); vm.runInContext(INDEX_SRC, c); return c; }
 function server(nowIso) { const c = vm.createContext({ Date: nowIso ? shiftedDate(nowIso) : RealDate, Math, String, Number, isFinite, isNaN }); vm.runInContext(SERVER_SRC, c); return c; }
 
 /* ---------- 1. the rule, at the dates that matter ---------- */
@@ -95,13 +91,14 @@ CASES.push(['2024-01-01', 1, 2024, 'and 1 Jan 2024, a Monday, starts its own wee
 const ZONES = ['UTC', 'Asia/Phnom_Penh', 'America/New_York', 'Pacific/Auckland'];
 for (const tz of ZONES) {
   process.env.TZ = tz;
-  const C = client(), I = index(), S = server();
+  /* (index.html's copy went with the old dashboard, Oct 2026 — two copies now) */
+  const C = client(), S = server();
   let bad = [];
   for (const [iso, wk, yr, why] of CASES) {
     for (const at of ['T00:00:00', 'T12:00:00', 'T23:59:00']) {
       const d = new Date(iso + at);
-      const got = [C.isoWeekOf(d), C.weekYearOf(d), I.weekYearOf(d), S.isoWeek_(iso), S.weekYear_(iso)];
-      if (got[0] !== wk || got[1] !== yr || got[2] !== yr || got[3] !== wk || got[4] !== yr) bad.push(iso + at + ' (' + why + '): ' + got.join('/'));
+      const got = [C.isoWeekOf(d), C.weekYearOf(d), S.isoWeek_(iso), S.weekYear_(iso)];
+      if (got[0] !== wk || got[1] !== yr || got[2] !== wk || got[3] !== yr) bad.push(iso + at + ' (' + why + '): ' + got.join('/'));
     }
   }
   ok(tz + ': every case is the right week and week year on both pages and the server', !bad.length, bad.slice(0, 3).join(' | '));
@@ -113,7 +110,6 @@ for (const tz of ZONES) {
   }
   const mon = C.mondayOfWeek_(1, 2027);
   ok(tz + ': mondayOfWeek_(1, 2027) is Monday 28 December 2026', C.isoDateOf_(mon) === '2026-12-28', C.isoDateOf_(mon));
-  ok(tz + ': index.html\'s mondayOfW1(2027) agrees', C.isoDateOf_(I.mondayOfW1(2027)) === '2026-12-28', String(I.mondayOfW1(2027)));
   ok(tz + ': weekBounds_(52, 2026) is 21–27 December', JSON.stringify(C.weekBounds_(52, 2026)) === '{"from":"2026-12-21","to":"2026-12-27"}',
     JSON.stringify(C.weekBounds_(52, 2026)));
 
@@ -122,16 +118,16 @@ for (const tz of ZONES) {
   for (let t = Date.UTC(2020, 0, 1); t <= Date.UTC(2032, 11, 31); t += 86400000) {
     const iso = new RealDate(t).toISOString().slice(0, 10), d = new Date(iso + 'T09:00:00');
     const a = C.isoWeekOf(d) + '/' + C.weekYearOf(d), b = S.isoWeek_(iso) + '/' + S.weekYear_(iso),
-      c = weekOf(d) + '/' + clockWeekYearOf(d), e = I.weekYearOf(d);
-    if (a !== b || a !== c || C.weekYearOf(d) !== e) { diffs++; if (!first) first = iso + ' ' + a + ' ' + b + ' ' + c + ' ' + e; }
+      c = weekOf(d) + '/' + clockWeekYearOf(d);
+    if (a !== b || a !== c) { diffs++; if (!first) first = iso + ' ' + a + ' ' + b + ' ' + c; }
   }
-  ok(tz + ': teams.html, index.html, api.js and clock.mjs agree on every day 2020–2032', diffs === 0, first);
+  ok(tz + ': teams.html, api.js and clock.mjs agree on every day 2020–2032', diffs === 0, first);
 }
 
 /* ---------- 2. the pages' helpers on 30 December 2026 ---------- */
 process.env.TZ = 'Asia/Phnom_Penh';
 {
-  const C = client('2026-12-30T10:00:00+07:00'), I = index('2026-12-30T10:00:00+07:00');
+  const C = client('2026-12-30T10:00:00+07:00');
   ok('teams.html on 30 Dec 2026: this week is week 1 of 2027', C.thisWeek() === 1 && C.thisWeekYear() === 2027, C.thisWeek() + '/' + C.thisWeekYear());
   ok('and week 1 is 28 Dec 2026 – 3 Jan 2027, not last January',
     C.isoDateOf_(C.mondayOfWeek_(1)) === '2026-12-28' && C.weekBounds_(1).to === '2027-01-03', JSON.stringify(C.weekBounds_(1)));
@@ -139,7 +135,6 @@ process.env.TZ = 'Asia/Phnom_Penh';
   ok('the Weekly Goals header reads "Dec 28 – Jan 3", 2027', r.short === 'Dec 28 – Jan 3' && r.year === 2027, JSON.stringify(r));
   ok('the month and quarter anchors are week 1 too (January / Q1 of the week year)',
     C.monthAnchorWeek_() === 1 && C.quarterAnchorWeek_() === 1, C.monthAnchorWeek_() + ',' + C.quarterAnchorWeek_());
-  ok('index.html on 30 Dec 2026: currentWeek 1 of 2027', I.currentWeek() === 1 && I.currentWeekYear() === 2027, I.currentWeek() + '/' + I.currentWeekYear());
   const C2 = client('2026-12-27T10:00:00+07:00');
   ok('on 27 Dec 2026 it is still week 52 of 2026, 21–27 Dec', C2.thisWeek() === 52 && C2.thisWeekYear() === 2026 && C2.weekBounds_(52).from === '2026-12-21',
     C2.thisWeek() + '/' + C2.thisWeekYear());

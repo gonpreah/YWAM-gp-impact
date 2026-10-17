@@ -1,4 +1,4 @@
-/* My YWAM GP — teams.html, part 10 of 10: bind() — every screen's handlers — and starting the app.
+/* My YWAM GP — teams.html, part 9 of 9: bind() — every screen's handlers — and starting the app.
    Plain script, loaded in order by teams.html; the parts share one global
    scope, exactly as when this was one inline script. A function may call any
    function in any part. Code that RUNS while a part loads (not inside a
@@ -497,7 +497,6 @@ function bindAway(){
   if(S.view==='profile') bindReminders_();
   bindOrg_();
   bindKmReview_();
-  if(S.view==='dashboard' && window.gpDashboard) gpDashboard.mount();   // fills the frame render() drew
   bindBoardReport_();
   bindF30_();
   bindSupport_();
@@ -561,8 +560,6 @@ function bindHome(){
   if(gp) gp.onclick=function(){ S.view='profile'; render(); };
   var jg=document.getElementById('jumpGoals');
   if(jg) jg.onclick=function(){ S.view='week'; render(); };
-  var fd=document.getElementById('goFullDash');
-  if(fd) fd.onclick=function(){ gpGo('index'); };
 
   /* Quick-jump bar: scroll to a section already on this tab, or navigate
      straight to the screen for the one that lives elsewhere (Account). */
@@ -1049,8 +1046,6 @@ function bindHome(){
 function bind(){
   var lb=document.getElementById('langBtn');
   if(lb) lb.onclick=toggleLang;
-  var back=document.getElementById('backBtn');
-  if(back) back.onclick=function(){ gpGo('index'); };
   var menuBtn=document.getElementById('menuBtn');
   if(menuBtn) menuBtn.onclick=function(){ S.menuOpen=true; renderMenu(); };
   renderMenu();
@@ -1794,15 +1789,12 @@ function bind(){
   var lo=document.getElementById('logoutBtn'); if(lo) lo.onclick=logout;
 }
 
+/* The old dashboard (index.html) is gone (Oct 2026): numbers are recorded on My
+   Ministry, and Base shows the figures. What used to open it opens Base. */
 function gpGo(p){
   if(p==='teams'){ window.location.href='teams.html'; return; }
-  /* The dashboard is a view of this page now (teams/09-dashboard.js, Oct 2026) —
-     anyone may read it, as before, so someone not signed in looks around as a guest. */
-  gpOpenDashboard_();
-}
-function gpOpenDashboard_(){
   if(!S.me) gpEnterGuest_();
-  S.menuOpen=false; renderMenu(); S.view='dashboard'; render(); window.scrollTo(0,0);
+  S.menuOpen=false; renderMenu(); S.view='base'; render(); window.scrollTo(0,0);
 }
 
 /* Promise flavour of run() for the refresh gesture. Always resolves, even on a
@@ -1846,7 +1838,7 @@ function refreshAll(){
    ?fresh). If the page itself came from the offline copy (the worker leaves a
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
-var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-dashboard.js','teams/10-bind-boot.js','teams/dashboard.css','km.js','library.js'];
+var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-bind-boot.js','km.js','library.js'];
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){
   return Promise.all(GP_VER_FILES.map(function(f){
@@ -1887,8 +1879,7 @@ function gpReloadForUpdate_(){
 }
 function gpPullRefresh_(){
   return gpNewVersion_().then(function(newer){
-    if(newer) return gpReloadForUpdate_();
-    return (S.view==='dashboard' && window.gpDashboard) ? Promise.all([refreshAll(), gpDashboard.refresh()]) : refreshAll();
+    return newer ? gpReloadForUpdate_() : refreshAll();
   });
 }
 /* the ?fresh= a reload asked for has done its job — keep the address clean */

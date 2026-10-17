@@ -186,43 +186,11 @@ console.log('avatar present:   ' + await page.evaluate(() => !!document.querySel
 await page.click('#menuBtn'); await page.waitForTimeout(250); await page.click('[data-menu-item="base"]');   // Base is in the menu now
 await page.waitForTimeout(600);
 
-// 3. compare against the dashboard's own section list
-const dash = await newPage(() => { sessionStorage.setItem('gp-guest', '1'); sessionStorage.setItem('gp-skip-teams', '1'); });
-await dash.goto('http://localhost:4401/index.html', { waitUntil: 'load' });
-await dash.waitForSelector('.hero', { timeout: 15000 });
-await dash.waitForTimeout(1000);
-const dashSections = await dash.$$eval('#main h3', els => els.map(e => e.textContent.trim()));
-console.log('\n=== DASHBOARD sections (' + dashSections.length + ') ===\n  ' + dashSections.join('\n  '));
-/* Case-insensitive: the Base accordion (ported from the redesign mockup) title-
-   cases several of these ("Community schools" -> "Community Schools") where the
-   dashboard, untouched, still has its original casing. That's cosmetic, not
-   drift, so it must not trip this check — genuine wording differences still do. */
-const strip = s => s.replace(/^[^\w]*/, '').replace(/Q\d /, '').toLowerCase();
-/* OKRs are deliberately NOT on Base — they live on Me (your own) and on a
-   teammate's page (theirs), because an objective belongs to a person's job, not
-   to the base summary.
-
-   The other three are real renames, not drift: "Base health" is on Base too,
-   just as "Campus Leadership" — the accordion added a second, unrelated "Base
-   Health" row (everyone's own wellbeing check-in, not the department leaders'
-   KPIs), so the old name was freed up to avoid two rows reading the same on
-   screen. "Across every ministry" and "Department dashboards" are the same
-   sections as "Gospel Totals" and "Department Explorer", renamed to match the
-   mockup's own wording for those two. Everything else must match, so real
-   drift still fails. */
-const EXPECTED_OFF_BASE = ['OKRs', 'Base health', 'Across every ministry', 'Department dashboards'];
-/* Both sides go through strip() — it lowercases, so comparing raw names against
-   it excluded nothing and every allowed section counted as drift. */
-const allowed = EXPECTED_OFF_BASE.map(strip);
-const missing = dashSections.map(strip)
-  .filter(d => !sections.map(strip).includes(d))
-  .filter(d => !allowed.includes(d));
-console.log('\non the dashboard but NOT on Base (unexpected): ' + (missing.length ? missing.join(', ') : '(none)'));
-if (missing.length) { console.log('  ^ that is drift, not a decision'); process.exitCode = 1; }
+// 3. (Base used to be compared section for section with the old dashboard; the
+//    dashboard is gone, Oct 2026 — Base is where the figures are.)
 
 // 4. tile counts
 console.log('\nBase tiles:      ' + await page.$$eval('#main .stat', e => e.length));
-console.log('Dashboard tiles: ' + await dash.$$eval('#main .stat', e => e.length));
 console.log('Base drillable:  ' + await page.$$eval('#main [data-drill-metric]', e => e.length));
 console.log('Base quarter rows: ' + await page.$$eval('#main .qRow', e => e.length));
 
@@ -235,14 +203,6 @@ const mix = await page.evaluate(() => {
 });
 console.log('\nstaff by kind:   ' + mix.chips);
 console.log('staff by origin: ' + mix.line);
-const dashMix = await dash.evaluate(() => {
-  const line = document.querySelector('.hero [data-staffmix]');
-  return line ? line.innerText.trim() : '(none)';
-});
-console.log('same on dashboard: ' + dashMix);
-/* One base, one description of it — the two pages share gpStaffMixHtml, and this
-   is what catches them being handed different rosters. */
-if (mix.line !== dashMix) { console.log('  ^ the two pages describe the base differently'); process.exitCode = 1; }
 if (mix.chips === '(none)' || mix.line === '(none)') { console.log('  ^ the staff split did not render'); process.exitCode = 1; }
 
 // tapping that line lists the countries
@@ -286,11 +246,6 @@ await page.waitForTimeout(300);
 console.log('quarter chip title: ' + await page.$eval('.ddHead h3', e => e.textContent));
 await page.click('#ddClose');
 
-// 8. dashboard drill still works off the shared sheet
-await dash.click('#main .stat[data-drill-metric] , #main .heroSubRow');
-await dash.waitForSelector('.ddModal', { timeout: 6000 });
-await dash.waitForTimeout(300);
-console.log('\ndashboard drill still opens: ' + await dash.$eval('.ddHead h3', e => e.textContent));
 
 // 9. OKR block + full-page screenshot
 console.log('OKR block on Base: ' + await page.evaluate(() => document.body.innerText.includes('OKRs')));

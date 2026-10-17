@@ -154,35 +154,8 @@ await page.waitForTimeout(400);
     pct ? 'value "' + (await pct.inputValue()) + '" placeholder "' + (await pct.getAttribute('placeholder')) + '"' : 'no #sg_pct');
 }
 
-/* ---------- 4. and the dashboard shares the behaviour ---------- */
-/* It lives in rollup.js so the two pages cannot drift; a hand-typed OKR
-   percentage is the box the dashboard has. */
-{
-  await ctx.close();
-  const two = await open('/index.html');
-  await two.page.waitForTimeout(1200);
-  const has = await two.page.evaluate(() => typeof gpSelectNumberOnFocus === 'function' && !!window.__gpNumSel);
-  ok('the dashboard installs the same behaviour', has);
-  /* The hand-tracked percentage lives on the OKR view. */
-  /* The dashboard opens on Poipet; this objective is Siem Reap's. */
-  await two.page.waitForSelector('[data-campus="siemreap"]', { timeout: 10000 });
-  await two.page.click('[data-campus="siemreap"]');
-  await two.page.waitForTimeout(300);
-  await two.page.click('[data-view="okr"]');
-  await two.page.waitForTimeout(600);
-  const man = await two.page.$('.manualIn');
-  if (man) {
-    ok('a hand-tracked OKR percentage is empty, not 0', (await man.inputValue()) === '',
-      'value "' + (await man.inputValue()) + '"');
-    await man.click();
-    await two.page.waitForTimeout(120);
-    await two.page.keyboard.type('40');
-    ok('and typing into it works', (await man.inputValue()) === '40', 'got "' + (await man.inputValue()) + '"');
-  } else {
-    ok('a hand-tracked OKR percentage is on the dashboard', false, 'no .manualIn found');
-  }
-  await two.ctx.close();
-}
+/* (4. was the old dashboard's OKR box — the dashboard is gone, Oct 2026) */
+await ctx.close();
 
 ok('no console or page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
 

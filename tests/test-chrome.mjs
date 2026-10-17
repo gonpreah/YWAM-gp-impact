@@ -203,7 +203,7 @@ delayLogo = 0;
     } catch (e) { }
   });
   await p.goto(BASE + '/index.html', { waitUntil: 'commit' });
-  await p.waitForSelector('#dashMain .hero', { timeout: 15000 });
+  await p.waitForSelector('#main .hero', { timeout: 15000 });
   const box = await p.evaluate(`(function(){
     var h=getComputedStyle(document.querySelector('header'));
     var b=getComputedStyle(document.body);
@@ -212,7 +212,7 @@ delayLogo = 0;
   })()`);
   /* The dashboard is a view of the staff page now (one page, Oct 2026), so it sits
      in the staff page's frame: the same paddings as above. */
-  ok('dashboard (a view of the app now) header top padding still resolves', box.headTop === '16px', box.headTop);
+  ok('the old dashboard link (Base now): header top padding still resolves', box.headTop === '16px', box.headTop);
   ok('dashboard body bottom padding still resolves', box.bodyBottom === '76px', box.bodyBottom);
   ok('dashboard does not scroll sideways', box.de === box.cw, box.de + ' vs ' + box.cw);
   await ctx.close();

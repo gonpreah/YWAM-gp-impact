@@ -30,40 +30,33 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
 
 ## Files
 ### public/
-- **One page (Oct 2026): `index.html` is only the old address now.** It carries the theme
-  tokens and the splash (so the hand-off has no flash) and a head script that forwards at
-  once: the dashboard asked for (`?view=dashboard`, or `gp-skip-teams` from old buttons) →
-  `teams.html?view=dashboard`; a guest (`gp-app-guest` / `gp-guest`) → `teams.html?guest=1`;
-  anyone else → `teams.html` with the same query. The leadership dashboard described below
-  is **`teams/09-dashboard.js`** now — index.html's script moved in unchanged, inside its own
-  function scope (`window.gpDashboard`: `html()` the frame, `mount()` after render,
-  `refresh()` for pull to refresh), so its names (state, render, t, esc, R…) never meet the
-  app's. It is `S.view === 'dashboard'`: ☰ → Dashboard (admins and Campus Leadership), Base's
-  "See the full dashboard", the log-in screen's Dashboard button and `gpGo('index')` (both
-  look around as a guest when nobody is signed in — the dashboard was always public), and
-  `teams.html?view=dashboard`. Guests may open it (GUEST_VIEWS). Its styles are
-  `teams/dashboard.css`, every rule under `.dashView` and its keyframes renamed `dash…`;
-  its campus row and 📖 ↻ 🔒 buttons sit on a dark band (`.dashTop`) inside #main, its tabs
-  in `#dashNav`, its screens in `#dashMain`. It reads the app's language (LANG). The
-  error screen's second button clears this phone's kept copy and reloads (there is no
-  separate dashboard page to escape to any more). Tests: test-dashboard-view-ui.mjs; the
-  old front-door/dashboard tests now drive it through index.html's forwarding.
-- *(Was)* `index.html` — leadership dashboard (KPIs, OKRs), and the app's front door. Three tabs:
+- **`index.html` is only the old address now (Oct 2026).** The leadership dashboard that
+  lived there is **gone** — numbers are recorded on My Ministry (automatically from the
+  ministry tools, plus manual entry there), Base shows the figures, the board has its
+  Report. Uriah's call, Oct 2026: Base Finances ($) and Base Cash Reserve ($), which only
+  the dashboard's leadership code could enter or see, are dropped; a finance tool for the
+  accounting ministry will replace them (their stored values stay; Campus Leadership's
+  "money ahead" projection still starts from the last Base Finances ever entered). The
+  page keeps the theme tokens and the splash (no flash on the hand-off) and a head script
+  that forwards at once: the old dashboard asked for (`?view=dashboard`, or gp-skip-teams
+  from old buttons) → `teams.html?view=base` (Base; a guest if nobody is signed in — it
+  was public); a guest (gp-app-guest / gp-guest) → `teams.html?guest=1`; anyone else →
+  `teams.html` with the same query. `gpGo('index')` opens Base. The error screen's second
+  button clears this phone's kept copy and reloads.
+- *(Removed, Oct 2026 — kept as history)* `index.html` — leadership dashboard (KPIs, OKRs), and the app's front door. Three tabs:
   Dashboard, Log Numbers, OKRs — **Health moved to the staff page** (see below). Has weekly ▲/▼ trend badges, a spinning-logo "Impact Loading" state,
   click-through drill-down on dashboard totals, and the ✦ Teams / 📖 buttons (plain
   page nav now, not postMessage). Calls the backend via the `apiCall(fn, args)` helper.
 - **Where teams.html's code is (Oct 2026):** `teams.html` is now just the page — head, the
   inline theme tokens and splash (they must paint on the first frame, and tests compare
   them with index.html's), the markup and the script tags. Its styles are
-  `public/teams/teams.css` (plus `teams/dashboard.css`) — except the page edges and the
-  html/body backgrounds, which stay inline for the first frame — and its code ten plain
-  scripts loaded in order:
+  `public/teams/teams.css` — except the page edges and the html/body backgrounds, which
+  stay inline for the first frame — and its code nine plain scripts loaded in order:
   `teams/01-core.js` (state, render, helpers, Base) · `02-goals-okrs.js` · `03-library-org.js`
   (personality, Library, papers, guest, YWAM GP & the board, report, first 30 days, prayer,
   support raising, reminders, Khmer review) · `04-ministry-strengths.js` · `05-admin-hr.js` ·
-  `06-numbers-contract.js` · `07-health-leave.js` · `08-team-profile.js` · `09-dashboard.js`
-  (the leadership dashboard — see index.html below) · `10-bind-boot.js` (bind() and
-  starting the app). **One global scope**, exactly as when it was one inline
+  `06-numbers-contract.js` · `07-health-leave.js` · `08-team-profile.js` · `09-bind-boot.js`
+  (bind() and starting the app). **One global scope**, exactly as when it was one inline
   script: any function may call any other, but code that RUNS while a file loads (not
   inside a function) may only use what that file or an earlier one defines. Add new code to
   the file holding its section. A new file must go in teams.html's script tags, sw.js's
@@ -2138,8 +2131,7 @@ inferred from volunteer counts.
   The app's week 1 is the Monday–Sunday week holding 1 January (its own rule, not ISO
   8601), so 28–31 December 2026 are week 1 of **2027** — they used to compute as "week
   53" of 2026 and clamp onto the real week 52. `weekYearOf(d)` / `thisWeekYear()` in
-  teams.html, `weekYearOf` / `currentWeekYear()` in index.html and `weekYear_` /
-  `thisWeekYear_()` in api.js say which year a date's week is in; `isoWeekOf` still
+  teams.html and `weekYear_` / `thisWeekYear_()` in api.js say which year a date's week is in; `isoWeekOf` still
   returns just the number, and `mondayOfWeek_(week, year)` / `weekRange_` /
   `weekBounds_` take an optional year that defaults to this week year. Anything that
   pairs a year with a week uses the week year; dates (leave, birthdays, contracts,

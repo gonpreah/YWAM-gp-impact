@@ -101,7 +101,6 @@ const RELEASE = `(function(){
 })()`;
 
 for (const [file, wait, label, refreshFn] of [
-  ['index.html', '#dashMain .hero', 'dashboard', 'getData'],
   ['teams.html', 'nav.bottom button', 'staff page', 'getMyBoot'],
 ]) {
   // slow API on purpose: with an instant answer the whole spin is over in under
@@ -156,10 +155,11 @@ for (const [file, wait, label, refreshFn] of [
   await ctx.close();
 }
 
-/* ---------- the two pages offer the same breakdowns ---------- */
+/* ---------- Base's breakdowns ----------
+   (Base used to be compared figure for figure with the old dashboard; the dashboard
+   is gone, Oct 2026 — Base is where the figures are.) */
 const seen = {};
 for (const [file, wait, label] of [
-  ['index.html', '#dashMain .hero', 'dashboard'],
   ['teams.html', 'nav.bottom button', 'Base'],
 ]) {
   const { ctx, p } = await open(file, wait, false);
@@ -202,36 +202,25 @@ for (const [file, wait, label] of [
   await ctx.close();
 }
 {
-  const a = seen.dashboard, b = seen.Base;
-  ok('both pages open the same number of figures',
-    a.drillable.length === b.drillable.length,
-    a.drillable.length + ' vs ' + b.drillable.length);
-  const onlyDash = a.drillable.filter(function (x) { return b.drillable.indexOf(x) === -1; });
-  const onlyBase = b.drillable.filter(function (x) { return a.drillable.indexOf(x) === -1; });
-  ok('and the same figures', onlyDash.length === 0 && onlyBase.length === 0,
-    'dashboard only: ' + onlyDash.join(', ') + ' | Base only: ' + onlyBase.join(', '));
+  const b = seen.Base;
   /* The three group tiles that used to be closed for want of a filter. */
   for (const want of ['Students Enrolled', 'Students in Discipleship', 'Local Churches Partnered']) {
-    // the collected labels are normalised (spaces stripped), so compare like with like
     const key = want.replace(/\s+/g, '');
-    ok('"' + want + '" opens a breakdown on both',
-      a.drillable.some(function (x) { return x.indexOf(key) > -1; }) &&
-      b.drillable.some(function (x) { return x.indexOf(key) > -1; }),
-      'dashboard ' + a.drillable.filter(function (x) { return x.indexOf(key) > -1; }).length +
-      ', Base ' + b.drillable.filter(function (x) { return x.indexOf(key) > -1; }).length);
+    ok('"' + want + '" opens a breakdown', b.drillable.some(function (x) { return x.indexOf(key) > -1; }),
+      'Base ' + b.drillable.filter(function (x) { return x.indexOf(key) > -1; }).length);
   }
   /* And the ones left closed on purpose stay closed — a sheet under either would
      total something other than the number above it. */
   for (const shut of ['Schools', 'Total Volunteer Hours']) {
-    ok('"' + shut + '" stays closed, on purpose',
-      a.closed.some(function (x) { return x.indexOf(shut) > -1; }),
-      a.closed.join(' / ').slice(0, 70));
+    ok('"' + shut + '" stays closed, on purpose', b.closed.some(function (x) { return x.indexOf(shut) > -1; }), b.closed.join(' / ').slice(0, 70));
   }
 }
 
 /* ---------- a group breakdown actually adds up ---------- */
 {
-  const { ctx, p } = await open('index.html', '#dashMain .hero', false);
+  const { ctx, p } = await open('teams.html', 'nav.bottom button', false);
+  await p.evaluate(() => { S.view = 'base'; Object.keys(S.baseAcc).forEach(k => { S.baseAcc[k] = true; }); render(); });
+  await p.waitForTimeout(500);
   const r = await p.evaluate(`(function(){
     var tile=[].slice.call(document.querySelectorAll('.stat[data-drill-metric]')).filter(function(el){
       var l=el.querySelector('.statLabel');
