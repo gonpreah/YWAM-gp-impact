@@ -116,6 +116,8 @@ const tiles = page => page.$$eval('.pulseCard .pulseTile', ts => ts.map(t => t.i
 {
   const { ctx, page } = await open('finance');
   await toMinistry(page);
+  /* the Finances page opens on its reports (the finance tool); the typed box is under "The numbers" */
+  await page.click('[data-fintab="numbers"]'); await page.waitForTimeout(600);
   ok('Finance has a staff-debt card on its page', !!(await page.$('[data-debt="Community Service"]')));
   await page.fill('[data-debt="Community Service"]', '1200');
   await page.click('#debtSave'); await page.waitForTimeout(800);

@@ -1,4 +1,4 @@
-/* My YWAM GP — teams.html, part 4 of 9: ministry tools, Team → Personalities, GP Strengths, My Home.
+/* My YWAM GP — teams.html, part 4 of 10: ministry tools, Team → Personalities, GP Strengths, My Home.
    Plain script, loaded in order by teams.html; the parts share one global
    scope, exactly as when this was one inline script. A function may call any
    function in any part. Code that RUNS while a part loads (not inside a
@@ -19,7 +19,7 @@ var LW_KINDS=[['oneonone','🤝','One-on-one'],['partner','🙏','Partner connec
 var LW_NOTE={ oneonone:'What you talked about (optional)', partner:'What you talked about (optional)', church:'Which church?', base:'Which base?',
   gospel:'Where, and with whom? (optional)', teaching:'Topic', meeting:'Which meeting?', deptmeeting:'Which department?' };
 var PLANT_STAGES_UI=[['praying','Praying'],['exploring','Exploring'],['planning','Planning'],['preparing','Preparing'],['launched','Launched']];
-S.lw=null; S.lwWeek=null; S.lwLoading=false; S.lwForm=null; S.lwTab=(lsGet('gp-lw-tab')==='board' || lsGet('gp-lw-tab')==='base' ? lsGet('gp-lw-tab') : 'week'); S.lwErr='';
+S.lw=null; S.lwWeek=null; S.lwLoading=false; S.lwForm=null; S.lwTab=(lsGet('gp-lw-tab')==='board' || lsGet('gp-lw-tab')==='base' || lsGet('gp-lw-tab')==='money' ? lsGet('gp-lw-tab') : 'week'); S.lwErr='';
 function lwKind_(k){ return LW_KINDS.filter(function(x){ return x[0]===k; })[0] || [k,'•',k]; }
 function lwLoad_(wk){
   if(S.lwLoading) return; S.lwLoading=true; S.lwErr='';
@@ -353,8 +353,8 @@ function bindCafe_(){
    Oct 2026 (Uriah): what a Campus Director needs to stay on top of, on one
    page and not many — each department's pulse (numbers in, staff, health,
    OKRs), which ministries have a clear leader and which don't, who is
-   facilitating and translating on Tuesday, and — behind the leadership code,
-   like Base Finances everywhere else — the money ahead. A department
+   facilitating and translating on Tuesday, and the money ahead (its own
+   Finances tab since Oct 2026 — teams/09-finance.js). A department
    overseer sees the same for their own department. */
 function leadScopeDepts_(){
   var all=Object.keys(getDepartments(S.me.campus)).filter(function(d){ return d!==BL_DEPT; });
@@ -376,12 +376,12 @@ function leadBaseHtml_(pulse){
     var mins=numbersDeptMinistries_(d), lg=(P.numbers.logged||{})[P.week]||[]; ofN+=mins.length; inN+=mins.filter(function(m){ return lg.indexOf(m)>-1; }).length; });
   var next=leadTuesdays_(1)[0], tr=S.lead ? leadTuesFor_(next) : null;
   /* At a glance (the Director's whole base): four numbers, each opening onto its section below. */
-  var pj=lmProject_();
+  finLoad_(); var pj=finProject_(S.fin);
   if(many) h+='<div class="mmGrid lbGlance">'+
     '<a class="mmTile" href="#lbLeaders"><div class="mmTileName">👑 '+esc(t('Clear leaders'))+'</div><div class="mmTileNum">'+(rows.length-none.length)+' / '+rows.length+'</div></a>'+
     '<a class="mmTile" href="#lbPulse"><div class="mmTileName">📊 '+esc(t('Numbers in'))+'</div><div class="mmTileNum">'+(pulseIn && ofN ? inN+' / '+ofN : '…')+'</div></a>'+
     '<a class="mmTile" href="#lbTues"><div class="mmTileName">🎤 '+esc(gpT('Tuesday {date}',{date:hospDate_(next)}))+'</div><div class="mmTileNum lbTileWho">'+esc(leadTuesWho_(tr && tr.facilitator) || '—')+'</div></a>'+
-    (leadIsDirector_() ? '<a class="mmTile" href="#leadMoney"><div class="mmTileName">💵 '+esc(t('Money ahead'))+'</div><div class="mmTileNum lbTileWho'+(pj && pj.short?' lbNone':'')+'">'+esc(!pj ? '🔒' : pj.short ? gpT('short in {month}',{month:lmMonthName_(pj.short)}) : lmMoney_(pj.end))+'</div></a>' : '')+
+    '<button class="mmTile lbTileBtn" data-lwtab="money"><div class="mmTileName">💵 '+esc(t('Money ahead'))+'</div><div class="mmTileNum lbTileWho'+(pj && pj.short?' lbNone':'')+'">'+esc(!pj ? '…' : pj.short ? gpT('short in {month}',{month:lmMonthName_(pj.short)}) : lmMoney_(pj.end))+'</div></button>'+
     '</div>';
   /* Clear leaders: the ones without, a line per department; who leads what folded. */
   h+='<div class="card" id="lbLeaders"><div class="goalCardTitle" style="margin-bottom:6px">👑 '+esc(t('Clear leaders'))+'</div>'+
@@ -404,58 +404,14 @@ function leadBaseHtml_(pulse){
     h+='<button class="btn ghost" id="lbGoTues" style="margin-top:8px">'+esc(t('Plan the Tuesdays'))+'</button>';
   }
   h+='</div>';
-  if(leadIsDirector_()) h+=leadMoneyHtml_();
   /* Each department's pulse last: one open for an overseer, folded for the Director. */
   if(pulse && many) h+='<div id="lbPulse"><details class="card lbPulseFold"'+(S.lbPulseOpen?' open':'')+'><summary class="goalCardTitle">📊 '+esc(t('Departments this week'))+'</summary>'+pulse+'</details></div>';
   return h+'</div>';
 }
-/* The money ahead. The leadership code is the one the dashboard already asks
-   for (kept on this phone as gp-leadercode); the server checks it on every call. */
-function lmMonths_(n){ var d=new Date(), out=[]; d.setDate(1); for(var i=0;i<n;i++){ out.push(d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)); d.setMonth(d.getMonth()+1); } return out; }
+/* The money ahead lives on the Finances tab now (teams/09-finance.js), signed in and
+   starting from the cash the Finances office enters; these two still name its months. */
 function lmMonthName_(k){ return t(MONTH_SHORT[Number(k.slice(5,7))-1]||'')+' '+k.slice(2,4); }
 function lmMoney_(v){ var n=Math.round(Number(v)||0); return (n<0?'−':'')+'$'+Math.abs(n).toLocaleString('en-US'); }
-function lmLoad_(code){
-  if(S.lmLoading) return; S.lmLoading=true;
-  run('finProjGet',[code, S.me.campus],function(d){ S.lmLoading=false; S.lm=d||{ ok:false }; S.lmEdit=null; if(S.view==='ministry') render(); },
-    function(){ S.lmLoading=false; S.lm={ ok:false, err:'offline' }; if(S.view==='ministry') render(); });
-}
-/* Six months on from the latest Base Finances: where it ends, and the first month below zero. */
-function lmProject_(){
-  if(!S.lm || !S.lm.ok) return null;
-  var L=S.lm.latest||{}, bf=L['Base Finances ($)'], bal=bf ? Number(bf.value) : 0, short='', E=S.lmEdit||S.lm.months||{};
-  var rows=lmMonths_(6).map(function(k){ var m=E[k]||{}; bal+=(Number(m.inc)||0)-(Number(m.exp)||0); if(bal<0 && !short) short=k; return { k:k, bal:bal }; });
-  return { rows:rows, end:bal, short:short };
-}
-/* Balances follow the typing without a re-render, so the next box keeps the tap. */
-function lmRecalc_(){
-  var pj=lmProject_(); if(!pj) return;
-  var spans=document.querySelectorAll('.lmBal');
-  pj.rows.forEach(function(r, i){ if(spans[i]){ spans[i].textContent=lmMoney_(r.bal); spans[i].classList.toggle('bad', r.bal<0); } });
-  var sum=document.querySelector('.lmSum'); if(sum){ sum.textContent=pj.short ? gpT('At this rate the money runs short in {month}.',{month:lmMonthName_(pj.short)}) : gpT('In six months: {money}',{money:lmMoney_(pj.end)}); sum.classList.toggle('bad', !!pj.short); }
-}
-function leadMoneyHtml_(){
-  var code=lsGet('gp-leadercode')||'';
-  var h='<div class="card" id="leadMoney"><div class="goalCardTitle" style="margin-bottom:6px">💵 '+esc(t('Money ahead'))+'</div>';
-  if(!code || (S.lm && S.lm.err==='not_leader')) return h+'<p class="sub" style="margin:0 0 8px">'+esc(S.lm && S.lm.err==='not_leader' ? t('That leadership code didn’t work.') : t('Base finances need the leadership code.'))+'</p>'+
-    '<button class="btn ghost" id="lmUnlock">🔒 '+esc(t('Enter the leadership code'))+'</button></div>';
-  if(!S.lm){ lmLoad_(code); return h+'<p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>'; }
-  if(!S.lm.ok) return h+'<p class="sub" style="margin:0 0 8px">'+esc(t('Couldn’t load this — pull down to try again.'))+'</p><button class="btn ghost" id="lmRetry">'+esc(t('Try again'))+'</button></div>';
-  var L=S.lm.latest||{}, bf=L['Base Finances ($)'], cr=L['Base Cash Reserve ($)'], months=lmMonths_(6);
-  var E=S.lmEdit || (S.lmEdit=JSON.parse(JSON.stringify(S.lm.months||{})));
-  h+='<div class="mmGrid">'+[[t('Base finances'), bf], [t('Cash reserve'), cr]].map(function(x){
-      return '<div class="mmTile"><div class="mmTileName">'+esc(x[0])+'</div><div class="mmTileNum">'+(x[1] ? lmMoney_(x[1].value) : '—')+'</div>'+
-        '<div class="hint" style="margin:0">'+esc(x[1] ? gpT('week {n}',{n:x[1].week}) : t('not entered yet'))+'</div></div>'; }).join('')+'</div>';
-  var bal=bf ? Number(bf.value) : 0, short='';
-  h+='<div class="lmTable"><div class="lmRow lmHead"><span></span><span>'+esc(t('Coming in'))+'</span><span>'+esc(t('Going out'))+'</span><span>'+esc(t('Balance'))+'</span></div>'+months.map(function(k){
-      var m=E[k]||{}; bal+=(Number(m.inc)||0)-(Number(m.exp)||0); if(bal<0 && !short) short=k;
-      return '<div class="lmRow"><span>'+esc(lmMonthName_(k))+'</span>'+
-        '<input type="number" inputmode="numeric" min="0" step="1" data-lmm="'+k+'|inc" value="'+(m.inc!=null?esc(String(m.inc)):'')+'" aria-label="'+esc(t('Coming in'))+'">'+
-        '<input type="number" inputmode="numeric" min="0" step="1" data-lmm="'+k+'|exp" value="'+(m.exp!=null?esc(String(m.exp)):'')+'" aria-label="'+esc(t('Going out'))+'">'+
-        '<span class="lmBal'+(bal<0?' bad':'')+'">'+lmMoney_(bal)+'</span></div>'; }).join('')+'</div>';
-  h+='<p class="lmSum'+(short?' bad':'')+'">'+esc(short ? gpT('At this rate the money runs short in {month}.',{month:lmMonthName_(short)}) : gpT('In six months: {money}',{money:lmMoney_(bal)}))+'</p>';
-  h+='<p class="hint" style="margin:0 0 8px">'+esc(t('Type what you expect to come in and go out each month. It starts from the latest Base Finances.'))+'</p>';
-  return h+'<button class="btn" id="lmSave">'+esc(t('Save'))+'</button></div>';
-}
 /* The Tuesday morning meeting: the next eight Tuesdays, each with who
    facilitates, who translates and the topics to hit. */
 function leadTuesHtml_(){
@@ -488,12 +444,6 @@ function leadTueFormHtml_(date, r){
 }
 function bindLeadTools_(){
   var gt=document.getElementById('lbGoTues'); if(gt) gt.onclick=function(){ gpTap(); S.lwTab='board'; lsSet('gp-lw-tab','board'); S.leadTab='tues'; render(); window.scrollTo(0,0); };
-  var un=document.getElementById('lmUnlock'); if(un) un.onclick=function(){ var c=prompt(t('Enter leadership code')); if(!c) return; lsSet('gp-leadercode', c); S.lm=null; render(); };
-  var rt=document.getElementById('lmRetry'); if(rt) rt.onclick=function(){ S.lm=null; render(); };
-  document.querySelectorAll('[data-lmm]').forEach(function(inp){ inp.oninput=function(){ var v=inp.getAttribute('data-lmm').split('|'); S.lmEdit[v[0]]=S.lmEdit[v[0]]||{}; S.lmEdit[v[0]][v[1]] = inp.value==='' ? null : Number(inp.value); lmRecalc_(); }; });
-  var ls=document.getElementById('lmSave'); if(ls) ls.onclick=function(){ if(S.busy) return; S.busy=true;
-    run('finProjSave',[lsGet('gp-leadercode')||'', S.me.campus, S.lmEdit],function(d){ S.busy=false; if(d && d.ok){ S.lm=d; S.lmEdit=null; showMsg(t('Saved')); } else { if(d && d.err==='not_leader') S.lm=d; showMsg(t('Could not save')); } render(); },
-      function(){ S.busy=false; showMsg(t('No connection — try again when you are online.')); }); };
   document.querySelectorAll('[data-ltopen]').forEach(function(b){ b.onclick=function(){ gpTap(); var d=b.getAttribute('data-ltopen'); S.ltOpen = S.ltOpen===d ? null : d; S.ltDraft=null; render(); }; });
   var D=S.ltDraft; if(!D) return;
   document.querySelectorAll('[data-ltwho]').forEach(function(sel){ sel.onchange=function(){ var k=sel.getAttribute('data-ltwho'), v=sel.value;

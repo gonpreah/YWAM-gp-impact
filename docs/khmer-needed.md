@@ -3621,3 +3621,128 @@ Private money words — worth a careful read: ការរកការគាំ�
 | Khmer reviewer — checks the draft Khmer | អ្នកពិនិត្យភាសាខ្មែរ — ពិនិត្យឃ្លាខ្មែរព្រាង |
 
 The screen the reviewers use themselves — worth checking first, since it is how everything else gets checked. "Reads right" and "Fix it" are buttons side by side on a phone (about 14 characters of room each).
+
+## 68. The finance tool (Finances office and Campus Leadership)
+
+| English | Khmer (draft) |
+|---|---|
+| Fills itself in when the A/R ageing report is uploaded (Reports tab), or type it here. Department leaders see it on their page. | វាបំពេញដោយខ្លួនឯង ពេលផ្ទុករបាយការណ៍អាយុកាលបំណុលឡើង (ផ្ទាំងរបាយការណ៍) ឬវាយបញ្ចូលនៅទីនេះ។ អ្នកដឹកនាំផ្នែកមើលឃើញវានៅលើទំព័ររបស់ពួកគេ។ |
+| Only the Finances office can do that. | មានតែការិយាល័យហិរញ្ញវត្ថុទេ ដែលអាចធ្វើបាន។ |
+| The report needs its date. | របាយការណ៍ត្រូវការកាលបរិច្ឆេទរបស់វា។ |
+| Choose the year this burn rate is for. | ជ្រើសរើសឆ្នាំដែលអត្រាចំណាយនេះសម្រាប់។ |
+| planned | គម្រោង |
+| Show as a table | បង្ហាញជាតារាង |
+| Nothing in this month. | គ្មានអ្វីក្នុងខែនេះទេ។ |
+| Base finances are for Campus Leadership and the Finances office. | ហិរញ្ញវត្ថុមូលដ្ឋាន គឺសម្រាប់ថ្នាក់ដឹកនាំសាខា និងការិយាល័យហិរញ្ញវត្ថុ។ |
+| Nothing from the Finances office yet. Once they upload the month’s reports, the numbers show here. | មិនទាន់មានអ្វីពីការិយាល័យហិរញ្ញវត្ថុនៅឡើយទេ។ ពេលពួកគេផ្ទុករបាយការណ៍ប្រចាំខែឡើង លេខនឹងបង្ហាញនៅទីនេះ។ |
+| same as {month} | ដូច {month} |
+| Base finances · {month} | ហិរញ្ញវត្ថុមូលដ្ឋាន · {month} |
+| From the Finances office’s Profit and Loss · uploaded {date} | ពីរបាយការណ៍ចំណេញ និងខាតរបស់ការិយាល័យហិរញ្ញវត្ថុ · បានផ្ទុកឡើង {date} |
+| Open the P&L | បើករបាយការណ៍ចំណេញ និងខាត |
+| Came in | ចំណូល |
+| Went out | ចំណាយ |
+| Net for the month | សុទ្ធប្រចាំខែ |
+| spent more than came in | ចំណាយច្រើនជាងចំណូល |
+| more came in than went out | ចំណូលច្រើនជាងចំណាយ |
+| Cash in the bank | សាច់ប្រាក់នៅធនាគារ |
+| at the end of {month} | នៅចុង {month} |
+| not entered for this month | មិនទាន់បញ្ចូលសម្រាប់ខែនេះ |
+| from the burn rate | ពីអត្រាចំណាយ |
+| came in | ចំណូល |
+| went out | ចំណាយ |
+| net | សុទ្ធ |
+| {year} so far | ឆ្នាំ {year} រហូតមកដល់ពេលនេះ |
+| {n} months in: {inn} came in, {out} went out — {net} for the year. | {n} ខែកន្លងមក៖ ចំណូល {inn} ចំណាយ {out} — {net} សម្រាប់ឆ្នាំ។ |
+| Came in and went out, month by month, {year} | ចំណូល និងចំណាយ ប្រចាំខែ ឆ្នាំ {year} |
+| Months without a P&L here come from the burn rate’s whole-organisation totals. | ខែដែលគ្មានរបាយការណ៍ចំណេញ និងខាតនៅទីនេះ យកពីសរុបរបស់អង្គការទាំងមូលក្នុងអត្រាចំណាយ។ |
+| Where it went in {month} | ចំណាយទៅលើអ្វីខ្លះក្នុង {month} |
+| Where it came from in {month} | ចំណូលមកពីណាខ្លះក្នុង {month} |
+| The campus and new house | សាខា និងផ្ទះថ្មី |
+| From the burn rate, {year} | ពីអត្រាចំណាយ ឆ្នាំ {year} |
+| Open the burn rate | បើកអត្រាចំណាយ |
+| Cost to run, {month} | ថ្លៃដំណើរការ {month} |
+| Contributions, {month} | វិភាគទាន {month} |
+| of the cost was covered by contributions | នៃថ្លៃដើម ត្រូវបានគ្របដណ្ដប់ដោយវិភាគទាន |
+| {money} short | ខ្វះ {money} |
+| more than | ច្រើនជាង |
+| less than | តិចជាង |
+| ahead | លើស |
+| behind | ខ្វះ |
+| cost to run | ថ្លៃដំណើរការ |
+| contributions | វិភាគទាន |
+| Cost to run and contributions, month by month | ថ្លៃដំណើរការ និងវិភាគទាន ប្រចាំខែ |
+| Cost to run | ថ្លៃដំណើរការ |
+| Contributions | វិភាគទាន |
+| 3-month average | មធ្យម ៣ ខែ |
+| up | ឡើង |
+| down | ចុះ |
+| Where the contributions came from | វិភាគទានមកពីណាខ្លះ |
+| From the A/R ageing report, as of {date} | ពីរបាយការណ៍អាយុកាលបំណុល គិតត្រឹម {date} |
+| Owed by staff | បុគ្គលិកជំពាក់ |
+| Names | ឈ្មោះ |
+| a couple is one name | ប្ដីប្រពន្ធ គិតជាឈ្មោះមួយ |
+| How old it is | ជំពាក់យូរប៉ុណ្ណា |
+| By department | តាមផ្នែក |
+| Not matched to anyone on staff yet | មិនទាន់ផ្គូផ្គងនឹងបុគ្គលិកណាម្នាក់នៅឡើយ |
+| Names stay with the Finances office — leadership sees the totals. | ឈ្មោះនៅតែជាមួយការិយាល័យហិរញ្ញវត្ថុ — ថ្នាក់ដឹកនាំមើលឃើញតែចំនួនសរុប។ |
+| Starts from the cash in the bank at the end of {month}: {money}. | ចាប់ផ្ដើមពីសាច់ប្រាក់នៅធនាគារនៅចុង {month}៖ {money}។ |
+| The Finances office hasn’t entered the cash in the bank yet, so this starts from $0. | ការិយាល័យហិរញ្ញវត្ថុមិនទាន់បញ្ចូលសាច់ប្រាក់នៅធនាគារនៅឡើយ ដូច្នេះវាចាប់ផ្ដើមពី $0។ |
+| The grey numbers are the last {n} months’ average, from the P&L — type your own for each month. | លេខពណ៌ប្រផេះ គឺជាមធ្យមនៃ {n} ខែចុងក្រោយ ពីរបាយការណ៍ចំណេញ និងខាត — សូមវាយលេខរបស់អ្នកសម្រាប់ខែនីមួយៗ។ |
+| That isn’t a PDF. | នោះមិនមែនជា PDF ទេ។ |
+| Couldn’t open the PDF reader — check the connection and try again. | មិនអាចបើកកម្មវិធីអាន PDF បានទេ — សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្ដងទៀត។ |
+| Couldn’t read that file. | មិនអាចអានឯកសារនោះបានទេ។ |
+| This report has no totals to check against — look the numbers over before saving. | របាយការណ៍នេះគ្មានចំនួនសរុបសម្រាប់ផ្ទៀងផ្ទាត់ទេ — សូមពិនិត្យលេខមុនពេលរក្សាទុក។ |
+| Every total matches the report’s own. | ចំនួនសរុបទាំងអស់ត្រូវគ្នានឹងរបាយការណ៍។ |
+| Some totals don’t match the report — it may not have been read right: | ចំនួនសរុបខ្លះមិនត្រូវគ្នានឹងរបាយការណ៍ទេ — ប្រហែលជាអានមិនត្រឹមត្រូវ៖ |
+| These rows don’t add up across: {names} | ជួរទាំងនេះបូកមិនត្រូវ៖ {names} |
+| {what}: the report says {theirs}, the lines add up to {ours} | {what}៖ របាយការណ៍ថា {theirs} ប៉ុន្តែជួរបូកបាន {ours} |
+| {what}: the TOTAL row doesn’t match its rows in {months} | {what}៖ ជួរ TOTAL មិនត្រូវនឹងជួររបស់វាក្នុង {months} |
+| A PDF | ឯកសារ PDF |
+| This doesn’t look like one of the three reports — the Profit and Loss, the Burn Rate or the A/R Ageing Summary. | នេះមិនដូចរបាយការណ៍ទាំងបីទេ — របាយការណ៍ចំណេញ និងខាត អត្រាចំណាយ ឬរបាយការណ៍សង្ខេបអាយុកាលបំណុល។ |
+| This PDF couldn’t be read. Is it a scan? The reports need to be the PDFs QuickBooks or the spreadsheet make. | មិនអាចអាន PDF នេះបានទេ។ តើវាជារូបស្កេនឬ? របាយការណ៍ត្រូវតែជា PDF ដែល QuickBooks ឬតារាងបង្កើត។ |
+| Couldn’t find the numbers in this report. | រកមិនឃើញលេខក្នុងរបាយការណ៍នេះទេ។ |
+| replaces the one saved | ជំនួសអ្វីដែលបានរក្សាទុក |
+| Net | សុទ្ធ |
+| Cash in the bank at the end of {month} (optional) | សាច់ប្រាក់នៅធនាគារនៅចុង {month} (ស្រេចចិត្ត) |
+| See the {n} lines read | មើលជួរទាំង {n} ដែលបានអាន |
+| The year this is for | ឆ្នាំដែលនេះសម្រាប់ |
+| Replaces the {year} burn rate saved before. | ជំនួសអត្រាចំណាយឆ្នាំ {year} ដែលបានរក្សាទុកពីមុន។ |
+| {a} months in, {p} planned. | {a} ខែកន្លងមក {p} ខែគម្រោង។ |
+| A table | តារាងមួយ |
+| {n} rows | {n} ជួរ |
+| As of | គិតត្រឹម |
+| Owed | ជំពាក់ |
+| The date it is as of | កាលបរិច្ឆេទដែលវាគិតត្រឹម |
+| This is older than the one saved — it only fills in the history. | នេះចាស់ជាងអ្វីដែលបានរក្សាទុក — វាគ្រាន់តែបំពេញប្រវត្តិប៉ុណ្ណោះ។ |
+| Names are matched to staff when you save; you can fix any match after. | ឈ្មោះនឹងត្រូវផ្គូផ្គងនឹងបុគ្គលិកពេលអ្នករក្សាទុក អ្នកអាចកែការផ្គូផ្គងណាមួយក្រោយមក។ |
+| Leave it | ទុកវាចោល |
+| The month’s reports | របាយការណ៍ប្រចាំខែ |
+| Upload the PDFs you already make — the Profit and Loss, the Burn Rate and the A/R Ageing Summary. The numbers are read from them and checked against their own totals before anything is saved. Campus Leadership sees them on their Finances tab; staff-debt names stay with you. | ផ្ទុក PDF ដែលអ្នកធ្វើរួចហើយឡើង — របាយការណ៍ចំណេញ និងខាត អត្រាចំណាយ និងរបាយការណ៍សង្ខេបអាយុកាលបំណុល។ លេខត្រូវបានអានពីវា ហើយផ្ទៀងផ្ទាត់នឹងចំនួនសរុបរបស់វា មុនពេលរក្សាទុកអ្វីមួយ។ ថ្នាក់ដឹកនាំសាខាមើលវានៅលើផ្ទាំងហិរញ្ញវត្ថុរបស់ពួកគេ ឈ្មោះបំណុលបុគ្គលិកនៅតែជាមួយអ្នក។ |
+| Add the PDFs | បន្ថែម PDF |
+| Reading… | កំពុងអាន… |
+| No PDF? Paste from the spreadsheet | គ្មាន PDF? បិទភ្ជាប់ពីតារាង |
+| Copy the rows from Excel or Google Sheets, headings and all, and paste them here. | ចម្លងជួរពី Excel ឬ Google Sheets រួមទាំងចំណងជើង ហើយបិទភ្ជាប់នៅទីនេះ។ |
+| Paste the rows here | បិទភ្ជាប់ជួរនៅទីនេះ |
+| Read these rows | អានជួរទាំងនេះ |
+| Profit and Loss | ចំណេញ និងខាត |
+| None saved yet. | មិនទាន់រក្សាទុកអ្វីនៅឡើយ។ |
+| uploaded {date} | បានផ្ទុកឡើង {date} |
+| Cash at month end | សាច់ប្រាក់ចុងខែ |
+| Open the PDF | បើក PDF |
+| Burn rate | អត្រាចំណាយ |
+| {a} months in, {p} planned | {a} ខែកន្លងមក {p} ខែគម្រោង |
+| As of {date} | គិតត្រឹម {date} |
+| {n} names aren’t matched to anyone on staff — say who they are, and their department’s total follows: | {n} ឈ្មោះមិនទាន់ផ្គូផ្គងនឹងបុគ្គលិកណាម្នាក់ — សូមប្រាប់ថាជានរណា ហើយចំនួនសរុបរបស់ផ្នែកពួកគេនឹងតាមមក៖ |
+| Every name is matched to someone on staff. | ឈ្មោះទាំងអស់ត្រូវបានផ្គូផ្គងនឹងបុគ្គលិក។ |
+| Who is {name}? | {name} ជានរណា? |
+| — who is this? — | — នេះជានរណា? — |
+| Not on staff | មិនមែនជាបុគ្គលិក |
+| Paste the rows first. | សូមបិទភ្ជាប់ជួរជាមុនសិន។ |
+| Pasted rows | ជួរដែលបានបិទភ្ជាប់ |
+| Some totals don’t match the report. Save it anyway? | ចំនួនសរុបខ្លះមិនត្រូវគ្នានឹងរបាយការណ៍ទេ។ រក្សាទុកវាដដែលឬ? |
+| Take this report out? Its numbers and its PDF go, and leadership won’t see them. | ដករបាយការណ៍នេះចេញ? លេខ និង PDF របស់វានឹងបាត់ ហើយថ្នាក់ដឹកនាំនឹងមិនឃើញវាទៀតទេ។ |
+| Couldn’t open the PDF. | មិនអាចបើក PDF បានទេ។ |
+| Staff debt (A/R ageing) | បំណុលបុគ្គលិក (អាយុកាលបំណុល) |
+| Reports | របាយការណ៍ |
+
+The Finances office's page (My Ministry → Finances → Reports) and the Finances tab on each Campus Leadership row. "Came in" / "Went out" are tile labels about 14 characters wide on a phone; "Reports", "Dashboard" and "Finances" are tabs with about 9 characters each. "Profit and Loss", "Burn rate" and "A/R ageing" are the names of the office's own reports — keep whatever the office calls them. "Names stay with the Finances office — leadership sees the totals." is a privacy promise; worth checking first.

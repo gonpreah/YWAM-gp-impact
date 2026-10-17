@@ -34,9 +34,8 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   lived there is **gone** — numbers are recorded on My Ministry (automatically from the
   ministry tools, plus manual entry there), Base shows the figures, the board has its
   Report. Uriah's call, Oct 2026: Base Finances ($) and Base Cash Reserve ($), which only
-  the dashboard's leadership code could enter or see, are dropped; a finance tool for the
-  accounting ministry will replace them (their stored values stay; Campus Leadership's
-  "money ahead" projection still starts from the last Base Finances ever entered). The
+  the dashboard's leadership code could enter or see, are dropped — replaced by the
+  **finance tool** (see "Finances" below; their stored values stay, nothing reads them). The
   page keeps the theme tokens and the splash (no flash on the hand-off) and a head script
   that forwards at once: the old dashboard asked for (`?view=dashboard`, or gp-skip-teams
   from old buttons) → `teams.html?view=base` (Base; a guest if nobody is signed in — it
@@ -51,12 +50,13 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   inline theme tokens and splash (they must paint on the first frame, and tests compare
   them with index.html's), the markup and the script tags. Its styles are
   `public/teams/teams.css` — except the page edges and the html/body backgrounds, which
-  stay inline for the first frame — and its code nine plain scripts loaded in order:
+  stay inline for the first frame — and its code ten plain scripts loaded in order:
   `teams/01-core.js` (state, render, helpers, Base) · `02-goals-okrs.js` · `03-library-org.js`
   (personality, Library, papers, guest, YWAM GP & the board, report, first 30 days, prayer,
   support raising, reminders, Khmer review) · `04-ministry-strengths.js` · `05-admin-hr.js` ·
-  `06-numbers-contract.js` · `07-health-leave.js` · `08-team-profile.js` · `09-bind-boot.js`
-  (bind() and starting the app). **One global scope**, exactly as when it was one inline
+  `06-numbers-contract.js` · `07-health-leave.js` · `08-team-profile.js` · `09-finance.js`
+  (the finance tool) · `10-bind-boot.js` (bind() and starting the app). `finance.js` (public/,
+  shared like taxonomy.js) reads the reports; `vendor/pdfjs/` is pdf.js, loaded on demand. **One global scope**, exactly as when it was one inline
   script: any function may call any other, but code that RUNS while a file loads (not
   inside a function) may only use what that file or an earlier one defines. Add new code to
   the file holding its section. A new file must go in teams.html's script tags, sw.js's
@@ -641,11 +641,67 @@ for now. `test-menu.mjs` checks each role.
   Communications, Partner Relationships (1–10) and Base Plants in Planning, saved once
   a quarter to their own row at `quarterAnchorWeek_()`.
 - **Staff debt from the Finance office** (`staffDebtCardHtml_`, `getStaffDebt` /
-  `saveStaffDebt`): monthly, one box per department, on the Finances ministry page,
+  `saveStaffDebt`): monthly, one box per department, on the Finances ministry page (its
+  "The numbers" tab; since Oct 2026 an uploaded A/R ageing report fills it — see Finances),
   for Finances members/leaders and admins only (`canEnterStaffDebt_` — not the Skills
   Training overseer). Stored as it always was — `Staff Debt ($)` on each department's
   Campus Leadership row, with `by` — so everything reading it still does. Funds
   Raised is left alone (Uriah: don't worry about it).
+
+## Finances: the office's three reports, and leadership's dashboard (Oct 2026)
+Uriah: "Build the finance tool for the accounting ministry … build the finance page around
+[our three reports] and then give all the leadership a base financial dashboard in their
+ministry page." The three reports are the ones the Finances office (Skills Training →
+Finances) already makes each month, as PDFs: QuickBooks' **Profit and Loss** (cash basis, a
+column a month, "no RE and no KSS"), their **Burn Rate** spreadsheet (the campus and new
+house's costs — rent, utilities, kitchen, technical, hospitality — and contributions —
+teams, staff, students, rent from ministries — month by month, with the plan for the
+months ahead, and the whole organisation's real income and spending, which match the P&L),
+and QuickBooks' **A/R Ageing Summary** (staff debt by person and by 1/2/3/over-3 months).
+- **Reading them** (`public/finance.js`, `GP_FIN`): pdf.js (`vendor/pdfjs/`, the legacy
+  build, loaded the first time a PDF is picked, not precached) gives text with positions;
+  `rowsFromItems` makes rows; `detect` / `parsePL` / `parseBurn` / `parseDebt`. Numbers are
+  right-aligned but headings aren't, so the numbers' right edges are clustered into columns
+  first, then matched to the headings (in order, or "the heading that starts before the
+  column ends"). A P&L heading account's sub-accounts get `parent` from its "Total for …"
+  line. A label pdf.js ran into its first number is pulled apart. Every report is checked
+  against its own totals (`checks`), shown in the preview; a mismatch asks before saving.
+  A tab-separated spreadsheet paste (`rowsFromTsv`) reads the same way.
+- **The office's page** (My Ministry → Finances: **Reports** · Dashboard · The numbers,
+  `gp-fin-tab`): add the PDFs (several at once) → a preview each (what was read, the checks,
+  the cash in the bank at the month's end for a P&L, the year for a burn rate) → Save.
+  Below: what is saved (open the PDF, change a month's cash, take one out), and the staff-
+  debt names with "who is this?" for any not matched to staff.
+- **The leadership dashboard** (`finDashHtml_`, the **Finances** tab on every Campus
+  Leadership member's own row, and the office's Dashboard tab): a month picker; came in /
+  went out / net / cash in the bank (vs last month); the year so far as columns (P&L months,
+  or the burn rate's whole-organisation totals where there's no P&L — said so); where it
+  went and came from (P&L lines rolled up to their top account); the campus and new house
+  (cost to run vs contributions, % covered, the year's difference with the plan, each cost
+  this month vs its 3-month average, planned months lighter); staff debt as totals; the
+  money ahead. Charts are inline SVG on the `--viz*` tokens (validated with the dataviz
+  checker, light and dark), with a tooltip per month (hover, tap, focus) and a table twin.
+- **Store** (api.js): `finance:<campus>` = `{ pl: { 'YYYY-MM': { lines, cash, fileId, … } },
+  burn: { 'YYYY': { sections } }, debt, debtHist, nameMap }`, each PDF `finfile:<id>`
+  (replaced reports drop theirs). `getFinance`, `finSave` (kind pl/burn/debt, shapes checked,
+  ≤4 MB PDF), `finSetCash`, `finMatchName`, `finDelete`, `finFile`, `finAheadSave`.
+- **Who sees what.** Saving, fixing and deleting: the Finances office only
+  (`finCanEdit_` = `canEnterStaffDebt_`: admin, Finances member or leader). The dashboard:
+  them and everyone in Campus Leadership on that campus (`finCanView_`; an admin may pass
+  another campus). **Staff debt never reaches leadership as a name or a person's amount** —
+  `finDebtView_` sends totals, buckets, a count and per-department sums only; the rows, the
+  name map and the ageing PDF are the office's alone (`finFile` refuses a `debt` file to
+  anyone else). Debt stays between a person, their mentor and the office.
+- **Names → staff → departments.** On save, each ageing name is matched to active staff on
+  the campus (exact name; a couple, "A & B", counts to the first of them who is one person;
+  a single first name if only one has it). The office's pick (or "Not on staff") is kept in
+  `nameMap` by the spelling on the report, so next month needs nothing. The newest report
+  then writes each department's `Staff Debt ($)` exactly as `saveStaffDebt` did (pulse and
+  department pages keep working); an older report only fills `debtHist`.
+- **The repo is public**: tests use made-up reports (`tests/fin-fixtures.mjs` writes real
+  PDFs in the same layout); never commit the office's PDFs or their names.
+- Tests: tests/test-finance.mjs (server), test-finance-parse.mjs (the parser),
+  test-finance-ui.mjs (upload → preview → save → a Director's tab, no names on the page).
 
 ## Campus Leadership on My Ministry: OKRs and the Monday meeting board
 Campus Leadership doesn't log weekly numbers (hidden for now). Its own row in the picker
@@ -1631,20 +1687,21 @@ numbers fill themselves in from using it (like Teams and Hospitality). Two so fa
   Rota (the team fills shifts), Week (tiles, cups a day, best sellers), Set up (the cafe's
   leader or an admin: menu, checklists, shifts). `cafe:<campus>` holds settings, each day
   is `cafeDay:<campus>:<date>`. "The numbers" tab is the old page.
-- **Campus Leadership tabs:** My week · **Overview** · Board (`gp-lw-tab` remembers it; the
+- **Campus Leadership tabs:** My week · **Overview** · **Finances** · Board (`gp-lw-tab` remembers it; the
   Cafe's tool/numbers choice is `gp-cafe-view`). **Overview** (`leadBaseHtml_`): for the
   Director (or an admin) four glance tiles, then clear leaders (from each person's `leads`,
-  `ministryLeaders_`), next Tuesday, the money ahead, and every department's pulse folded;
+  `ministryLeaders_`), next Tuesday, the money ahead (a tile that opens Finances), and every department's pulse folded;
   a department overseer gets their pulse first, then their ministries' leaders. The bell's
   "See them" opens Overview. **Board** keeps the Director's quarter, OKRs, the Monday
   board, notes, and the **Tuesday** tab (`leadTuesHtml_`, api `saveLeadTuesday`): the next
   eight Tuesdays, each with facilitator, translator (a person on the campus by id, or a
   typed guest name) and topics — stored as `tues` on the leadership board doc.
-- **The money ahead** (`leadMoneyHtml_`; api `finProjGet`/`finProjSave`, blob `finProj:<campus>`)
-  is the leadership code's tier, like SENSITIVE: the latest Base Finances / Cash Reserve and a
-  six-month projection of money coming in and going out, with the month it runs short. The
-  phone keeps the code as `gp-leadercode` (the dashboard's own key); the server checks it on
-  every call and fails closed.
+- **The money ahead** (`finAheadHtml_` on the Finances tab; api `finAheadSave`, blob
+  `finProj:<campus>`): a six-month projection of money coming in and going out from the cash
+  in the bank the Finances office enters with the P&L, with the month it runs short; the
+  boxes show the last three months' P&L average as a placeholder. Oct 2026: no longer behind
+  the leadership code — Campus Leadership's, signed in (`finCanView_`). `finProjGet` /
+  `finProjSave` (the code, failing closed) still answer for anything old, on the same blob.
 - **HangPopok** (the cafe's real POS, a Cambodian cloud POS; no public API found): the leader
   picks "Our till" in Set up (`settings.till`). In HangPopok mode the Till tab asks for the
   day's sales, receipts and cups at closing (`cafePos` → `day.pos`), counted like in-app sales.

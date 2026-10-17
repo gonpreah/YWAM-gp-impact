@@ -112,6 +112,13 @@
   --shadow:rgba(31,68,255,.28);
   --shadowSoft:rgba(31,68,255,.12);
   --scrim:rgba(23,21,15,.45);
+  /* the finance charts (Oct 2026) — checked with the dataviz validator on these card
+     surfaces: income vs spending as two series, and how old staff debt is as one
+     ordered ramp (newest lightest; in dark, newest nearest the surface) */
+  --vizIn:#2a78d6;         /* money coming in */
+  --vizOut:#eb6834;        /* money going out */
+  --vizInSoft:#cde2fb;     /* the track behind a coming-in meter */
+  --vizAge1:#86b6ef; --vizAge2:#5598e7; --vizAge3:#2a78d6; --vizAge4:#1c5cab; --vizAge5:#0d366b;
   color-scheme:light;
 }
 /* Dark: warm greys rather than pure black, so the paper-and-ink feel survives.
@@ -155,6 +162,8 @@
     --shadow:rgba(108,134,255,.30);
     --shadowSoft:rgba(108,134,255,.14);
     --scrim:rgba(0,0,0,.62);
+    --vizIn:#3987e5; --vizOut:#d95926; --vizInSoft:#1c2f4d;
+    --vizAge1:#184f95; --vizAge2:#256abf; --vizAge3:#3987e5; --vizAge4:#6da7ec; --vizAge5:#b7d3f6;
     color-scheme:dark;
   }
 }
@@ -195,6 +204,8 @@
   --shadow:rgba(108,134,255,.30);
   --shadowSoft:rgba(108,134,255,.14);
   --scrim:rgba(0,0,0,.62);
+  --vizIn:#3987e5; --vizOut:#d95926; --vizInSoft:#1c2f4d;
+  --vizAge1:#184f95; --vizAge2:#256abf; --vizAge3:#3987e5; --vizAge4:#6da7ec; --vizAge5:#b7d3f6;
   color-scheme:dark;
 }
 /* Motion: one spring, used everywhere something appears or grows. The overshoot

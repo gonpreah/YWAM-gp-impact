@@ -1912,3 +1912,87 @@ footer { text-align:center; font-size:12px; color:var(--muted); margin-top:26px;
 .gsAllTrack .pFill { position:absolute; top:0; bottom:0; border-radius:6px; }
 .ptChip { display:inline-block; margin-top:4px; font-size:11px; font-weight:800; letter-spacing:.06em;
   padding:2px 7px; border-radius:999px; color:var(--pInk); }
+
+/* ---------- the finance tool (Oct 2026, teams/09-finance.js) ----------
+   Charts follow the app's dataviz rules: thin bars (≤9px) with a rounded data end,
+   hairline solid grid, axis text in muted ink (never the series colour), a legend for
+   two series, the tooltip on each month's band (hover, tap or focus), and a table twin
+   under every chart. Colours are the --viz tokens (both themes, validated). */
+.finPick { display:flex; align-items:center; gap:8px; margin:0 0 10px; }
+.finPick label { font-size:12.5px; font-weight:700; color:var(--muted); }
+.finPick select { width:auto; min-width:150px; }
+.finHead .goalCardTitle { overflow-wrap:anywhere; }
+.finTiles .mmTileNum { font-family:inherit; font-weight:800; font-size:21px; overflow-wrap:anywhere; }
+.mmTile.finNeg .mmTileNum { color:var(--bad); } .mmTile.finPos .mmTileNum { color:var(--good); }
+.finGood { color:var(--good); } .finBad { color:var(--bad); }
+.mmTileSub.finGood, .mmTileSub.finBad { font-weight:700; }
+.finChart { margin-top:6px; }
+.finSvg { display:block; width:100%; height:auto; overflow:visible; }
+.finGrid { stroke:var(--line); stroke-width:1; }
+.finAxis { fill:var(--muted); font-size:9.5px; font-variant-numeric:tabular-nums; }
+.finBar.in { fill:var(--vizIn); } .finBar.out { fill:var(--vizOut); }
+.finBar.planned { opacity:.4; }
+.finHit { fill:transparent; cursor:pointer; outline:none; }
+.finHit:hover, .finHit:focus { fill:var(--ink); fill-opacity:.05; }
+.finLegend { display:flex; flex-wrap:wrap; gap:4px 14px; font-size:12px; color:var(--muted); margin:2px 0 4px; }
+.finLegend span { display:inline-flex; align-items:center; gap:6px; }
+.finLegend b { color:var(--ink); font-weight:700; }
+.finKey { display:inline-block; width:10px; height:10px; border-radius:3px; }
+.finKey.in { background:var(--vizIn); } .finKey.out { background:var(--vizOut); } .finKey.planned { opacity:.4; }
+.finKey.age1, .finStack .age1 { background:var(--vizAge1); } .finKey.age2, .finStack .age2 { background:var(--vizAge2); }
+.finKey.age3, .finStack .age3 { background:var(--vizAge3); } .finKey.age4, .finStack .age4 { background:var(--vizAge4); }
+.finKey.age5, .finStack .age5 { background:var(--vizAge5); }
+.finTable { margin-top:6px; } .finTable summary { cursor:pointer; font-size:12.5px; font-weight:700; color:var(--accent); }
+.finTable table { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:6px; font-variant-numeric:tabular-nums; }
+.finTable th, .finTable td { padding:5px 4px; border-bottom:1px solid var(--line); text-align:right; }
+.finTable th:first-child { text-align:left; font-weight:600; color:var(--muted); }
+.finTable thead th { color:var(--muted); font-weight:700; }
+.finBars { display:flex; flex-direction:column; gap:8px; }
+.finBarName { font-size:12.5px; color:var(--ink); margin-bottom:3px; overflow-wrap:anywhere; }
+.finBarTrack { display:flex; align-items:center; gap:8px; }
+.finBarTrack i { display:block; height:9px; min-width:2px; border-radius:0 4px 4px 0; }
+.finBarTrack i.in { background:var(--vizIn); } .finBarTrack i.out { background:var(--vizOut); }
+.finBarTrack b { font-size:12.5px; font-weight:700; color:var(--ink); white-space:nowrap; font-variant-numeric:tabular-nums; }
+#finTip { position:fixed; z-index:60; display:none; pointer-events:none; background:var(--surface); color:var(--ink); border:1px solid var(--border);
+  border-radius:10px; padding:8px 10px; box-shadow:0 6px 18px var(--shadowSoft); font-size:12px; min-width:140px; max-width:240px; }
+.finTipHead { font-weight:700; color:var(--muted); margin-bottom:4px; }
+.finTipRow { display:flex; align-items:center; gap:6px; padding:1px 0; }
+.finTipRow b { font-weight:800; font-variant-numeric:tabular-nums; } .finTipRow span { color:var(--muted); }
+.finTipKey { display:inline-block; width:12px; height:2px; border-radius:1px; }
+.finTipKey.in { background:var(--vizIn); } .finTipKey.out { background:var(--vizOut); }
+.finMeterLabel { font-size:13px; margin:2px 0 6px; } .finMeterLabel b { font-size:15px; }
+.finMeter { height:10px; border-radius:5px; background:var(--vizInSoft); overflow:hidden; }
+.finMeter i { display:block; height:100%; background:var(--vizIn); border-radius:5px; }
+.finCats { margin-top:10px; font-size:13px; font-variant-numeric:tabular-nums; }
+.finCatHead, .finCatRow { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,1fr); gap:6px; padding:5px 0; border-bottom:1px solid var(--line); }
+.finCatHead { font-size:11.5px; font-weight:700; color:var(--muted); }
+.finCatHead span:not(:first-child), .finCatRow span:not(:first-child) { text-align:right; }
+.finCatRow em { font-style:normal; font-size:11px; font-weight:700; }
+.finStackLabel { font-size:12px; font-weight:700; color:var(--muted); margin:4px 0 6px; }
+.finStack { display:flex; gap:2px; height:14px; border-radius:4px; overflow:hidden; background:var(--line); }
+.finStack i { display:block; height:100%; }
+.finAgeLegend { margin-top:8px; }
+.finCheck { font-size:13px; border-radius:10px; padding:8px 10px; margin:10px 0 0; }
+.finCheck.ok { background:var(--goodSoft); color:var(--ink); }
+.finCheck.warn { background:var(--banner); color:var(--bannerInk); border:1px solid var(--bannerBorder); }
+.finCheck ul { margin:6px 0 0 18px; padding:0; }
+.finPrevMonth { padding:8px 0; border-bottom:1px solid var(--line); }
+.finPrevNums { display:flex; flex-wrap:wrap; gap:4px 14px; font-size:13px; color:var(--muted); margin:4px 0; }
+.finPrevNums b { color:var(--ink); }
+.finPickBtn { display:block; text-align:center; cursor:pointer; }
+.finSaved { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:8px 0; border-bottom:1px solid var(--line); }
+.finSaved:last-child { border-bottom:0; }
+.finSavedMain { flex:1 1 160px; min-width:0; font-size:13.5px; }
+.finCashIn { display:flex; flex-direction:column; width:118px; } .finCashIn input { padding:6px 8px; }
+.finSavedActs { display:flex; align-items:center; gap:6px; }
+.finMatch { display:flex; flex-direction:column; }
+.finMatchRow { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--line); }
+.finMatchRow > div { flex:1; min-width:0; } .finMatchRow select { width:48%; max-width:220px; }
+button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:pointer; }
+/* four tabs on a leader's own row: they share the width rather than run off a small phone */
+.campusSeg.lwSeg { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); width:100%; }
+.campusSeg.lwSeg .campusBtn { padding:7px 4px; white-space:normal; line-height:1.25; }
+.finTiles .mmTileName { white-space:normal; overflow:visible; }
+#leadMoney .lmRow { grid-template-columns:44px minmax(0,1fr) minmax(0,1fr) 72px; gap:5px; }
+#leadMoney .lmRow input { padding:7px 4px; font-size:14px; }
+#leadMoney .lmRow > span:first-child { white-space:nowrap; font-size:12.5px; }

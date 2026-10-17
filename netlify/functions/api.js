@@ -2419,6 +2419,303 @@ async function saveStaffDebt(username, pin, values) {
   return getStaffDebt(username, pin);
 }
 
+/* ==================== Finances: the office's three monthly reports ====================
+   Oct 2026 (Uriah): "Build the finance tool for the accounting ministry … build the
+   finance page around [our three reports] and then give all the leadership a base
+   financial dashboard in their ministry page." The Finances office (Skills Training →
+   Finances, the same people as canEnterStaffDebt_) uploads the PDFs it already makes —
+   the Profit and Loss, the Burn Rate and the A/R Ageing (staff debt). The page reads
+   the numbers out of them (public/finance.js) and sends them here with the PDF; this
+   checks their shape and keeps them, one document per campus:
+     finance:<campus> = {
+       pl:   { 'YYYY-MM': { lines: [{ sec, code, name, parent, amt }], cash, fileId, fileName, at, by } },
+       burn: { 'YYYY': { sections: [{ title, kind, rows: [{ label, kind, vals[12] }] }], fileId, fileName, at, by } },
+       debt: { asOf, cols, rows: [{ name, vals, total, staffId }], fileId, fileName, at, by },
+       debtHist: [{ asOf, cols, vals, total, people }],      // the totals of each report, for the trend
+       nameMap: { '<name as the report spells it>': staffId } // who a report's name is, once the office says
+     }
+   and each PDF as finfile:<id>.
+   WHO SEES WHAT. The office sees and changes everything. Campus Leadership — everyone in
+   the department, on that campus — sees the dashboard: the P&L and the burn rate in
+   full, and the staff debt ONLY as totals (how much, how many people, how old, by
+   department), never a name or a person's amount — debt is between a person, their
+   mentor and the office (see "Who sees what" in CLAUDE.md). The ageing PDF itself has
+   the names, so only the office can open it. An ageing report also fills in each
+   department's Staff Debt ($) the way the office used to type it (saveStaffDebt), from
+   whoever each name is on staff. */
+const FIN_SECS = ['inc', 'oth', 'exp', 'oexp'];
+const FIN_SECTION_KINDS = ['campusExp', 'campusInc', 'orgExp', 'orgInc', 'other'];
+const FIN_ROW_KINDS = ['item', 'total', 'diff', 'ref'];
+const FIN_MAX_LINES = 200, FIN_MAX_SECTIONS = 12, FIN_MAX_ROWS = 40, FIN_MAX_DEBT_ROWS = 400, FIN_MAX_HIST = 36;
+function finCanEdit_(s) { return canEnterStaffDebt_(s); }
+function finCanView_(s) { return !!(s && (finCanEdit_(s) || isLeadership_(s))); }
+function finCampus_(s, campus) { return s.isAdmin && HR_CAMPUSES.indexOf(campus) > -1 ? campus : s.campus; }
+function finKey_(c) { return 'finance:' + c; }
+async function getFinDoc_(c) {
+  const d = await readJSON(finKey_(c), {});
+  return { pl: d.pl && typeof d.pl === 'object' ? d.pl : {}, burn: d.burn && typeof d.burn === 'object' ? d.burn : {},
+    debt: d.debt && typeof d.debt === 'object' ? d.debt : null, debtHist: Array.isArray(d.debtHist) ? d.debtHist : [],
+    nameMap: d.nameMap && typeof d.nameMap === 'object' ? d.nameMap : {} };
+}
+function finAmt_(v) { if (v === null || v === undefined || v === '') return null; const n = finiteNum_(v, -1e9, 1e9); return n === null ? undefined : Math.round(n * 100) / 100; }
+const finYm_ = function (k) { return /^\d{4}-(0[1-9]|1[0-2])$/.test(String(k)) ? String(k) : ''; };
+/* The people a report's names can be: everyone on staff on the campus. */
+function finNorm_(n) { return String(n || '').toLowerCase().normalize('NFKD').replace(/[^a-zក-៿ ]/g, ' ').replace(/\s+/g, ' ').trim(); }
+function finMatch_(name, people) {
+  const full = finNorm_(name); if (!full) return null;
+  const exact = people.filter(function (p) { return finNorm_(p.name) === full; });
+  if (exact.length === 1) return exact[0];
+  // a couple ("Dara & Srey Pich"): the first of them who is one person on staff
+  const parts = String(name).split(/&|\band\b|\//i).map(finNorm_).filter(Boolean);
+  for (const part of parts) {
+    const hit = people.filter(function (p) { const n = finNorm_(p.name); return n === part || (part.indexOf(' ') === -1 ? n.split(' ')[0] === part : n.indexOf(part) === 0); });
+    if (hit.length === 1) return hit[0];
+  }
+  return null;
+}
+function finDebtView_(debt, rows, people) {
+  if (!debt) return null;
+  const byId = {}; people.forEach(function (p) { byId[p.id] = p; });
+  const n = (debt.cols || []).length, vals = []; for (let i = 0; i < n; i++) vals.push(0);
+  const depts = {}; let total = 0, unmatched = 0, peopleN = 0;
+  (debt.rows || []).forEach(function (r) {
+    const tt = Number(r.total) || 0; total += tt; if (Math.abs(tt) >= 0.005) peopleN++;
+    (r.vals || []).forEach(function (v, i) { if (i < n) vals[i] += Number(v) || 0; });
+    const p = r.staffId && byId[r.staffId];
+    const d = p ? deptOf_(p) : '';
+    if (d) depts[d] = (depts[d] || 0) + tt; else unmatched += tt;
+  });
+  const rnd = function (x) { return Math.round(x * 100) / 100; };
+  Object.keys(depts).forEach(function (d) { depts[d] = rnd(depts[d]); });
+  return { asOf: debt.asOf || '', cols: debt.cols || [], vals: vals.map(rnd), total: rnd(total), people: peopleN,
+    byDept: depts, unmatched: rnd(unmatched), at: debt.at || '', by: debt.by ? (personOut_(rows, debt.by) || {}).name || '' : '' };
+}
+async function finOut_(s, c, d) {
+  const rows = await getStaff_();
+  const people = rows.filter(function (p) { return p.active && p.campus === c && !isApplicant_(p); });
+  const nameOf = function (id) { const p = id ? personOut_(rows, id) : null; return p ? p.name : ''; };
+  const edit = finCanEdit_(s);
+  const pl = {}; Object.keys(d.pl).forEach(function (k) { const m = d.pl[k]; pl[k] = { lines: m.lines || [], cash: m.cash == null ? null : m.cash, fileId: m.fileId || '', fileName: m.fileName || '', at: m.at || '', by: nameOf(m.by) }; });
+  const burn = {}; Object.keys(d.burn).forEach(function (k) { const b = d.burn[k]; burn[k] = { sections: b.sections || [], fileId: b.fileId || '', fileName: b.fileName || '', at: b.at || '', by: nameOf(b.by) }; });
+  const p = await readJSON('finProj:' + c, {});
+  const out = { ok: true, campus: c, canEdit: edit, pl: pl, burn: burn,
+    debt: finDebtView_(d.debt, rows, people), debtHist: d.debtHist.slice(-FIN_MAX_HIST),
+    ahead: { months: (p && p.months) || {}, updated: (p && p.updated) || '' } };
+  if (edit && d.debt) {
+    out.debtRows = (d.debt.rows || []).map(function (r) { return { name: r.name, vals: r.vals, total: r.total, staffId: r.staffId || '', staffName: nameOf(r.staffId) }; });
+    out.debtFile = { fileId: d.debt.fileId || '', fileName: d.debt.fileName || '' };
+  }
+  if (edit) out.nameMap = d.nameMap;
+  return out;
+}
+async function getFinance(username, pin, campus) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!finCanView_(s)) return { ok: false, err: 'not_authorized' };
+  const c = finCampus_(s, campus);
+  return finOut_(s, c, await getFinDoc_(c));
+}
+/* The PDF a report came from, kept so anyone who sees the numbers can open the page
+   they came from. The ageing has names, so it is the office's alone. */
+async function finPutFile_(c, kind, file, by) {
+  if (!file || typeof file !== 'object') return { id: '', name: '' };
+  const b64 = file.base64;
+  if (typeof b64 !== 'string' || !/^[A-Za-z0-9+/=]+$/.test(b64) || b64.length < 40) return { err: 'bad_file' };
+  if (b64.length > HR_FILE_MAX_B64) return { err: 'too_large' };
+  const id = hrId_('ff'), name = str_(file.name, 160) || (kind + '.pdf');
+  await writeJSON('finfile:' + id, { id: id, campus: c, kind: kind, name: name, mime: 'application/pdf', data: b64, added: new Date().toISOString(), by: by });
+  return { id: id, name: name };
+}
+async function finDropFile_(d, id) {
+  if (!id) return;
+  const used = Object.keys(d.pl).some(function (k) { return d.pl[k].fileId === id; }) ||
+    Object.keys(d.burn).some(function (k) { return d.burn[k].fileId === id; }) || (d.debt && d.debt.fileId === id);
+  if (used) return;
+  try { const st = store(); if (typeof st.delete === 'function') await st.delete('finfile:' + id); } catch (e) { /* only the PDF; the numbers are gone already */ }
+}
+function finCleanLines_(list) {
+  if (!Array.isArray(list) || !list.length || list.length > FIN_MAX_LINES) return null;
+  const out = [];
+  for (const l of list) {
+    if (!l || FIN_SECS.indexOf(l.sec) === -1) return null;
+    const amt = finAmt_(l.amt); if (amt === undefined) return null;
+    out.push({ sec: l.sec, code: str_(l.code, 12), name: str_(l.name, 120) || str_(l.code, 12) || '—', parent: str_(l.parent, 120), amt: amt });
+  }
+  return out;
+}
+function finCleanSections_(list) {
+  if (!Array.isArray(list) || !list.length || list.length > FIN_MAX_SECTIONS) return null;
+  const out = [];
+  for (const sec of list) {
+    if (!sec || !Array.isArray(sec.rows) || sec.rows.length > FIN_MAX_ROWS) return null;
+    const rows = [];
+    for (const r of sec.rows) {
+      if (!r || !Array.isArray(r.vals) || r.vals.length !== 12) return null;
+      const vals = r.vals.map(finAmt_); if (vals.some(function (v) { return v === undefined; })) return null;
+      rows.push({ label: str_(r.label, 120) || '—', kind: FIN_ROW_KINDS.indexOf(r.kind) > -1 ? r.kind : 'item', vals: vals });
+    }
+    out.push({ title: str_(sec.title, 160), kind: FIN_SECTION_KINDS.indexOf(sec.kind) > -1 ? sec.kind : 'other', rows: rows });
+  }
+  return out;
+}
+/* Save one report. kind 'pl': data = { months: { 'YYYY-MM': { lines, cash } } } (a P&L
+   can have a column per month; each is kept as its own month). kind 'burn': data =
+   { year, sections }. kind 'debt': data = { asOf, cols, rows: [{ name, vals, total,
+   staffId? }] } — a staffId the office picked is remembered for that spelling of the
+   name next month; a row without one is matched to staff by name here. */
+async function finSave(username, pin, kind, data, file, campus) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!finCanEdit_(s)) return { ok: false, err: 'not_authorized' };
+  const c = finCampus_(s, campus), x = data && typeof data === 'object' ? data : {}, now = new Date().toISOString();
+  const d = await getFinDoc_(c);
+  if (kind === 'pl') {
+    const months = x.months && typeof x.months === 'object' ? x.months : {}, keys = Object.keys(months).filter(finYm_).slice(0, 12);
+    if (!keys.length) return { ok: false, err: 'bad_report' };
+    const clean = {};
+    for (const k of keys) {
+      const lines = finCleanLines_(months[k] && months[k].lines); if (!lines) return { ok: false, err: 'bad_report' };
+      const cash = finAmt_(months[k].cash); if (cash === undefined) return { ok: false, err: 'bad_amount' };
+      clean[k] = { lines: lines, cash: cash };
+    }
+    const f = await finPutFile_(c, 'pl', file, s.id); if (f.err) return { ok: false, err: f.err };
+    const old = [];
+    keys.forEach(function (k) {
+      const prev = d.pl[k];
+      if (prev && prev.fileId) old.push(prev.fileId);
+      d.pl[k] = { lines: clean[k].lines, cash: clean[k].cash != null ? clean[k].cash : (prev && prev.cash != null ? prev.cash : null), fileId: f.id || (prev ? prev.fileId || '' : ''), fileName: f.name || (prev ? prev.fileName || '' : ''), at: now, by: s.id };
+    });
+    await writeJSON(finKey_(c), d);
+    for (const id of old) await finDropFile_(d, id);
+  } else if (kind === 'burn') {
+    const yr = Number(x.year);
+    if (!(yr >= 2000 && yr <= 2100)) return { ok: false, err: 'bad_year' };
+    const sections = finCleanSections_(x.sections); if (!sections) return { ok: false, err: 'bad_report' };
+    const f = await finPutFile_(c, 'burn', file, s.id); if (f.err) return { ok: false, err: f.err };
+    const prev = d.burn[String(yr)];
+    d.burn[String(yr)] = { sections: sections, fileId: f.id || (prev ? prev.fileId || '' : ''), fileName: f.name || (prev ? prev.fileName || '' : ''), at: now, by: s.id };
+    await writeJSON(finKey_(c), d);
+    if (prev && prev.fileId && prev.fileId !== d.burn[String(yr)].fileId) await finDropFile_(d, prev.fileId);
+  } else if (kind === 'debt') {
+    const asOf = isoDate_(x.asOf); if (!asOf) return { ok: false, err: 'bad_date' };
+    const cols = (Array.isArray(x.cols) ? x.cols : []).map(function (t) { return str_(t, 40); }).filter(Boolean).slice(0, 8);
+    if (!cols.length || !Array.isArray(x.rows) || x.rows.length > FIN_MAX_DEBT_ROWS) return { ok: false, err: 'bad_report' };
+    const rows = await getStaff_();
+    const people = rows.filter(function (p) { return p.active && p.campus === c && !isApplicant_(p); }), ids = {};
+    people.forEach(function (p) { ids[p.id] = p; });
+    const out = [];
+    for (const r of x.rows) {
+      const name = str_(r && r.name, 80); if (!name) return { ok: false, err: 'bad_report' };
+      const vals = (Array.isArray(r.vals) ? r.vals : []).slice(0, cols.length).map(finAmt_);
+      while (vals.length < cols.length) vals.push(0);
+      if (vals.some(function (v) { return v === undefined; })) return { ok: false, err: 'bad_amount' };
+      const total = finAmt_(r.total); if (total === undefined || total === null) return { ok: false, err: 'bad_amount' };
+      let staffId = '';
+      if (r.staffId === '-') d.nameMap[name] = '-';                       // "not on staff" — stop guessing
+      else if (r.staffId && ids[r.staffId]) { staffId = r.staffId; d.nameMap[name] = staffId; }
+      else if (d.nameMap[name] && ids[d.nameMap[name]]) staffId = d.nameMap[name];
+      else if (d.nameMap[name] !== '-') { const m = finMatch_(name, people); staffId = m ? m.id : ''; }
+      out.push({ name: name, vals: vals.map(function (v) { return v || 0; }), total: total, staffId: staffId });
+    }
+    const f = await finPutFile_(c, 'debt', file, s.id); if (f.err) return { ok: false, err: f.err };
+    const prevFile = d.debt && d.debt.fileId;
+    const newer = !d.debt || !d.debt.asOf || asOf >= d.debt.asOf;
+    const rec = { asOf: asOf, cols: cols, rows: out, fileId: f.id || '', fileName: f.name || '', at: now, by: s.id };
+    if (newer) d.debt = rec;
+    // the totals go in the history whether or not it is the newest report (an older one fills a gap)
+    const view = finDebtView_(rec, rows, people);
+    d.debtHist = d.debtHist.filter(function (h) { return h.asOf !== asOf; });
+    d.debtHist.push({ asOf: asOf, cols: cols, vals: view.vals, total: view.total, people: view.people });
+    d.debtHist.sort(function (a, b) { return a.asOf < b.asOf ? -1 : 1; });
+    d.debtHist = d.debtHist.slice(-FIN_MAX_HIST);
+    await writeJSON(finKey_(c), d);
+    if (newer && prevFile && prevFile !== rec.fileId) await finDropFile_(d, prevFile);
+    if (!newer && f.id) await finDropFile_(d, f.id);
+    /* each department's Staff Debt ($), as the office used to type it */
+    if (newer) {
+      const wk = isoWeek_(baseToday_());
+      for (const dept of PULSE_DEPTS) {
+        await saveMinistryInternal_(c, 'Campus Leadership', dept, wk, [{ metric: 'Staff Debt ($)', value: Math.round(view.byDept[dept] || 0) }], s.id, thisWeekYear_());
+      }
+    }
+  } else return { ok: false, err: 'bad_kind' };
+  return finOut_(s, c, d);
+}
+/* The office's small fixes: the cash in the bank at a month's end, a staff-debt name
+   matched to the right person, or a report taken out again. */
+async function finSetCash(username, pin, ym, value, campus) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!finCanEdit_(s)) return { ok: false, err: 'not_authorized' };
+  const c = finCampus_(s, campus), d = await getFinDoc_(c), k = finYm_(ym);
+  if (!k || !d.pl[k]) return { ok: false, err: 'not_found' };
+  const v = finAmt_(value); if (v === undefined) return { ok: false, err: 'bad_amount' };
+  d.pl[k].cash = v;
+  await writeJSON(finKey_(c), d);
+  return finOut_(s, c, d);
+}
+async function finMatchName(username, pin, name, staffId, campus) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!finCanEdit_(s)) return { ok: false, err: 'not_authorized' };
+  const c = finCampus_(s, campus), d = await getFinDoc_(c), nm = str_(name, 80);
+  if (!d.debt || !nm) return { ok: false, err: 'not_found' };
+  const rows = await getStaff_();
+  const people = rows.filter(function (p) { return p.active && p.campus === c && !isApplicant_(p); });
+  const id = staffId === '-' ? '-' : (people.some(function (p) { return p.id === staffId; }) ? staffId : '');
+  if (staffId && !id) return { ok: false, err: 'bad_person' };
+  if (id) d.nameMap[nm] = id; else delete d.nameMap[nm];
+  // a person picked → them; "not on staff" → nobody; cleared → back to matching by name
+  const auto = (finMatch_(nm, people) || {}).id || '';
+  d.debt.rows.forEach(function (r) { if (r.name === nm) r.staffId = id === '-' ? '' : (id || auto); });
+  await writeJSON(finKey_(c), d);
+  const view = finDebtView_(d.debt, rows, people), wk = isoWeek_(baseToday_());
+  for (const dept of PULSE_DEPTS) await saveMinistryInternal_(c, 'Campus Leadership', dept, wk, [{ metric: 'Staff Debt ($)', value: Math.round(view.byDept[dept] || 0) }], s.id, thisWeekYear_());
+  return finOut_(s, c, d);
+}
+async function finDelete(username, pin, kind, key, campus) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!finCanEdit_(s)) return { ok: false, err: 'not_authorized' };
+  const c = finCampus_(s, campus), d = await getFinDoc_(c);
+  let fileId = '';
+  if (kind === 'pl' && d.pl[finYm_(key)]) { fileId = d.pl[key].fileId; delete d.pl[key]; }
+  else if (kind === 'burn' && d.burn[String(key)]) { fileId = d.burn[String(key)].fileId; delete d.burn[String(key)]; }
+  else if (kind === 'debt' && d.debt) { fileId = d.debt.fileId; d.debtHist = d.debtHist.filter(function (h) { return h.asOf !== d.debt.asOf; }); d.debt = null; }
+  else return { ok: false, err: 'not_found' };
+  await writeJSON(finKey_(c), d);
+  await finDropFile_(d, fileId);
+  return finOut_(s, c, d);
+}
+async function finFile(username, pin, fileId) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!finCanView_(s)) return { ok: false, err: 'not_authorized' };
+  const f = await readJSON('finfile:' + str_(fileId, 40), null);
+  if (!f || !f.data) return { ok: false, err: 'not_found' };
+  if (f.campus !== finCampus_(s, f.campus)) return { ok: false, err: 'not_authorized' };
+  if (f.kind === 'debt' && !finCanEdit_(s)) return { ok: false, err: 'not_authorized' };
+  return { ok: true, name: f.name, mime: f.mime, dataUrl: 'data:' + f.mime + ';base64,' + f.data };
+}
+/* The money ahead (it was behind the leadership code; now it is Campus Leadership's
+   and the office's, signed in, and starts from the cash the office enters). Same
+   store as before, so what was typed there is still there. */
+async function finAheadSave(username, pin, months, campus) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!finCanView_(s)) return { ok: false, err: 'not_authorized' };
+  const c = finCampus_(s, campus), m = months && typeof months === 'object' ? months : {}, out = {};
+  Object.keys(m).slice(0, 36).forEach(function (k) {
+    if (!finYm_(k)) return;
+    const v = m[k] || {}, blank = function (x) { return x === '' || x == null; };
+    const inc = blank(v.inc) ? null : finiteNum_(v.inc, 0, 1e8), exp = blank(v.exp) ? null : finiteNum_(v.exp, 0, 1e8);
+    if (inc == null && exp == null) return;
+    out[k] = { inc: inc == null ? null : Math.round(inc), exp: exp == null ? null : Math.round(exp) };
+  });
+  await writeJSON('finProj:' + c, { months: out, updated: new Date().toISOString() });
+  return finOut_(s, c, await getFinDoc_(c));
+}
+
 async function ministryDataFor_(s) {
   const d = await ministryDataFor2_(s.campus, s.dept, s.ministry);
   d.pins = Array.isArray(s.kpiPins) ? s.kpiPins : [];
@@ -8914,6 +9211,13 @@ const HANDLERS = {
   setNumbersPeople: function (a) { return setNumbersPeople(a[0], a[1], a[2], a[3], a[4]); },
   getDeptPulse: function (a) { return getDeptPulse(a[0], a[1], a[2]); },
   getStaffDebt: function (a) { return getStaffDebt(a[0], a[1]); },
+  getFinance: function (a) { return getFinance(a[0], a[1], a[2]); },
+  finSave: function (a) { return finSave(a[0], a[1], a[2], a[3], a[4], a[5]); },
+  finSetCash: function (a) { return finSetCash(a[0], a[1], a[2], a[3], a[4]); },
+  finMatchName: function (a) { return finMatchName(a[0], a[1], a[2], a[3], a[4]); },
+  finDelete: function (a) { return finDelete(a[0], a[1], a[2], a[3], a[4]); },
+  finFile: function (a) { return finFile(a[0], a[1], a[2]); },
+  finAheadSave: function (a) { return finAheadSave(a[0], a[1], a[2], a[3]); },
   saveStaffDebt: function (a) { return saveStaffDebt(a[0], a[1], a[2]); },
   adminLooseEnds: function (a) { return adminLooseEnds(a[0], a[1]); },
   markSeen: function (a) { return markSeen(a[0], a[1]); },

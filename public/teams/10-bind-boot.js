@@ -1,4 +1,4 @@
-/* My YWAM GP — teams.html, part 9 of 9: bind() — every screen's handlers — and starting the app.
+/* My YWAM GP — teams.html, part 10 of 10: bind() — every screen's handlers — and starting the app.
    Plain script, loaded in order by teams.html; the parts share one global
    scope, exactly as when this was one inline script. A function may call any
    function in any part. Code that RUNS while a part loads (not inside a
@@ -485,7 +485,7 @@ function bindAway(){
   });
   bindHr();
   if(S.view==='library') bindLibrary_();
-  if(S.view==='ministry'){ bindLw_(); bindCafe_(); bindLeadTools_(); }
+  if(S.view==='ministry'){ bindLw_(); bindCafe_(); bindLeadTools_(); bindFinance_(); }
   if(S.view==='required') bindReqSign_();
   if(S.guest) bindGuest_();
   if(S.view==='mycontract') bindMyContract_();
@@ -1843,7 +1843,7 @@ function refreshAll(){
    ?fresh). If the page itself came from the offline copy (the worker leaves a
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
-var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-bind-boot.js','km.js','library.js'];
+var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-bind-boot.js','finance.js','km.js','library.js'];
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){
   return Promise.all(GP_VER_FILES.map(function(f){

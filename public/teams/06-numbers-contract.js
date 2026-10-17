@@ -1,4 +1,4 @@
-/* My YWAM GP — teams.html, part 6 of 9: department pulse, numbers people, My Ministry, My contract.
+/* My YWAM GP — teams.html, part 6 of 10: department pulse, numbers people, My Ministry, My contract.
    Plain script, loaded in order by teams.html; the parts share one global
    scope, exactly as when this was one inline script. A function may call any
    function in any part. Code that RUNS while a part loads (not inside a
@@ -103,7 +103,7 @@ function staffDebtCardHtml_(){
   }
   var D=S.staffDebt, dr=S.debtDraft||{};
   var h='<div class="card"><div class="goalCardTitle" style="margin-bottom:4px">💵 '+esc(t('Staff debt by department'))+'</div>'+
-    '<p class="sub" style="margin:0 0 8px">'+esc(t('Once a month, from the Finance office. Department leaders see it on their page.'))+'</p>';
+    '<p class="sub" style="margin:0 0 8px">'+esc(t('Fills itself in when the A/R ageing report is uploaded (Reports tab), or type it here. Department leaders see it on their page.'))+'</p>';
   if(!D) return h+'<p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
   PULSE_DEPTS_.forEach(function(dept){
     var cur=D[dept], v = dr[dept]!==undefined ? dr[dept] : (cur ? cur.value : '');
@@ -846,13 +846,15 @@ function myMinistryHtml(){
     /* Your own leadership row: "My week" first — the numbers come from it — and
        the board, pulse and the Director's quarter a tab away. */
     if(mine && S.me.dept===BL_DEPT && S.me.ministry){
-      var lwt=S.lwTab==='board' || S.lwTab==='base' ? S.lwTab : 'week';
+      var lwt=S.lwTab==='board' || S.lwTab==='base' || S.lwTab==='money' ? S.lwTab : 'week';
       /* who you are on the team — International / National Campus Director, Director of … */
       var myTitle=orgTitleOf_(S.me);
       if(myTitle) h+='<div class="orgYou">🧭 '+esc(gpT('Your role: {title}',{title:orgTitleText_(myTitle)}))+'</div>';
-      h+='<div class="campusSeg" style="max-width:none">'+[['week','🗓️','My week'],['base','🧭','Overview'],['board','📋','Board']].map(function(x){
+      h+='<div class="campusSeg lwSeg" style="max-width:none">'+[['week','🗓️','My week'],['base','🧭','Overview'],['money','💵','Finances'],['board','📋','Board']].map(function(x){
         return '<button class="campusBtn'+(lwt===x[0]?' on':'')+'" data-lwtab="'+x[0]+'">'+x[1]+' '+esc(t(x[2]))+'</button>'; }).join('')+'</div>';
       if(lwt==='week') return h+lwHtml_();
+      /* the base's finances, from the Finances office's reports (teams/09-finance.js) */
+      if(lwt==='money') return h+finDashHtml_();
       if(lwt==='base') return h+orgCltCardHtml_(S.me.campus)+leadBaseHtml_(ph);
       return h+(mine ? directorQuarterHtml_() : '')+leadSectionHtml_();
     }
@@ -865,6 +867,14 @@ function myMinistryHtml(){
       '<button class="campusBtn'+(S.cafeView==='numbers'?' on':'')+'" data-cafeview="numbers">📊 '+esc(t('The numbers'))+'</button></div>';
     if(S.cafeView!=='numbers') return h+cafeHtml_();
     h+='<p class="hint">'+esc(t('When the cafe tool is used, these numbers fill themselves in from it.'))+'</p>';
+  }
+
+  /* The Finances office runs the month's reports here (teams/09-finance.js), sees
+     what leadership sees, and its usual numbers are the third tab. */
+  if(sel.dept==='Skills Training' && sel.min==='Finances' && finCanEditClient_()){
+    h+=finMinistryTabsHtml_();
+    if(S.finTab==='reports') return h+finReportsHtml_();
+    if(S.finTab==='dash') return h+finDashHtml_();
   }
 
   if(sel.dept==='Skills Training' && sel.min==='Hospitality' && canHospClient_()){

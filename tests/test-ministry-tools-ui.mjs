@@ -182,7 +182,7 @@ const txt = p => p.$eval('#main', e => e.innerText);
   const { ctx, page } = await open('cd', { lw: 'base' });
   ok('a Director’s Overview: the departments’ pulse and who leads what', !!(await page.$('#leadBase')) && (await page.$$('.pulseCard')).length >= 3 && /Clear leaders/.test(await txt(page)));
   ok('… with the ministries that have no leader yet', (await page.$$('.lbDeptLine')).length >= 3 && /\b1 \/ \d+/.test(await page.$eval('.lbBig', e => e.innerText)));
-  ok('… and the money behind the leadership code', !!(await page.$('#lmUnlock')) && !(await page.$('.lmTable')));
+  ok('… and the money ahead, a tile that opens the Finances tab (no leadership code any more)', !!(await page.$('.mmTile[data-lwtab="money"]')) && !(await page.$('#lmUnlock')) && !(await page.$('.lmTable')));
   await page.click('#lbGoTues'); await page.waitForTimeout(800);
   ok('"Plan the Tuesdays" opens the next eight on the board', (await page.$$('.leadTue')).length === 8 && await page.evaluate(() => S.lwTab === 'board' && S.leadTab === 'tues'));
   await page.click('.leadTue [data-ltopen]'); await page.waitForTimeout(300);
@@ -202,25 +202,21 @@ const txt = p => p.$eval('#main', e => e.innerText);
   await ctx.close();
 }
 {
-  mem.entries = (mem.entries || []).concat([{ campus: 'siemreap', dept: 'Campus Leadership', ministry: 'Campus Director', metric: 'Base Finances ($)', week: 1, year: new Date().getFullYear(), value: 5000, updated: '', by: 'x' }]);
-  const { ctx, page } = await open('cd', { lw: 'base', code: 'leadercode' });
-  ok('with the code: Base Finances and six months ahead', /\$5,000/.test(await page.$eval('#leadMoney', e => e.innerText)) && (await page.$$('.lmRow')).length === 7);
-  const ins = await page.$$('[data-lmm$="|exp"]');
+  /* the money ahead moved to the Finances tab (tests/test-finance-ui.mjs drives it); signed in, it saves */
+  const { ctx, page } = await open('cd', { lw: 'money' });
+  ok('a leader’s Finances tab: six months ahead, from $0 until the office enters the cash', /starts from \$0/.test(await page.$eval('#leadMoney', e => e.innerText)) && (await page.$$('#leadMoney .lmRow')).length === 7);
+  const ins = await page.$$('[data-finahead$="|exp"]');
   await ins[0].fill('3000'); await ins[1].fill('3000');
-  ok('typing what goes out moves the balance and warns when it runs short', /runs short/.test(await page.$eval('.lmSum', e => e.innerText)) && await page.$eval('.lmSum', e => e.classList.contains('bad')));
-  await page.click('#lmSave'); await page.waitForTimeout(1200);
-  ok('saved for the leadership code holders', !!mem['finProj:siemreap'] && Object.values(mem['finProj:siemreap'].months).some(m => m.exp === 3000));
+  ok('typing what goes out moves the balance and warns when it runs short', /runs short/.test(await page.$eval('#leadMoney .lmSum', e => e.innerText)) && await page.$eval('#leadMoney .lmSum', e => e.classList.contains('bad')));
+  await page.click('#finAheadSave'); await page.waitForTimeout(1200);
+  ok('saved for Campus Leadership', !!mem['finProj:siemreap'] && Object.values(mem['finProj:siemreap'].months).some(m => m.exp === 3000));
+  await page.click('[data-lwtab="base"]'); await page.waitForTimeout(800);
   await page.evaluate(() => window.scrollTo(0, 0)); await page.screenshot({ path: OUT + '/lead-overview.png', fullPage: true });
   ok('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await ctx.close();
 }
 {
-  const { ctx, page } = await open('cd', { lw: 'base', code: 'nope' });
-  ok('a wrong code shows nothing and says so', /didn’t work/.test(await page.$eval('#leadMoney', e => e.innerText)) && !(await page.$('.lmTable')));
-  await ctx.close();
-}
-{
-  const { ctx, page } = await open('cd', { lw: 'base', code: 'leadercode', small: true, km: true });
+  const { ctx, page } = await open('cd', { lw: 'base', small: true, km: true });
   ok('in Khmer at 320px the Overview fits', await page.evaluate(() => document.documentElement.scrollWidth <= 321));
   await page.click('[data-lwtab="board"]'); await page.waitForTimeout(500);
   await page.click('[data-leadtab="tues"]'); await page.waitForTimeout(500);

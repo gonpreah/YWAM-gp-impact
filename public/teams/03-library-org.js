@@ -1,4 +1,4 @@
-/* My YWAM GP — teams.html, part 3 of 9: personality, the Library, the papers everyone signs, guest mode, YWAM GP and the board, the quarter report, first 30 days, prayer, support raising, reminders, Khmer review.
+/* My YWAM GP — teams.html, part 3 of 10: personality, the Library, the papers everyone signs, guest mode, YWAM GP and the board, the quarter report, first 30 days, prayer, support raising, reminders, Khmer review.
    Plain script, loaded in order by teams.html; the parts share one global
    scope, exactly as when this was one inline script. A function may call any
    function in any part. Code that RUNS while a part loads (not inside a

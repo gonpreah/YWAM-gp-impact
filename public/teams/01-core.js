@@ -1,4 +1,4 @@
-/* My YWAM GP — teams.html, part 1 of 9: state, the page frame and render(), helpers, the Base tab.
+/* My YWAM GP — teams.html, part 1 of 10: state, the page frame and render(), helpers, the Base tab.
    Plain script, loaded in order by teams.html; the parts share one global
    scope, exactly as when this was one inline script. A function may call any
    function in any part. Code that RUNS while a part loads (not inside a

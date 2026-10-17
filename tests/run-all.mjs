@@ -19,6 +19,8 @@ const SERVER = [
   'test-library.mjs',   // the Library's books: every field, shelves, unique ids, valid ISBNs, no quotations
   'test-required.mjs',  // books read on your account; the papers everyone signs, who sees what, versions, the contract
   'test-ministry-tools.mjs', // Campus Leadership "My week" and the Cafe tool fill their weekly numbers; who may use them; server-side prices
+  'test-finance.mjs',        // the finance tool: only the Finances office saves; leadership sees debt as totals only; shape checks; names matched; dept staff debt follows
+  'test-finance-parse.mjs',  // finance.js reads the three reports (made-up PDFs' text): P&L lines and totals, the Burn Rate's tables, the ageing buckets, a spreadsheet paste
   'test-library-audio.mjs', // recording the Library by hand (scripts/record-library-audio.mjs, Azure stood in): each screen's words, only what changed, the key never printed, upload; audio.js / libAudioIndex read-only
   'test-firstrun.mjs',   // empty / junk / ragged store, malformed requests
   'test-boot.mjs',       // getMyBoot: one call per page open
@@ -69,6 +71,7 @@ const BROWSER = [
   'test-guest-ui.mjs',    // Look around without an account: the tour, the whole Library, Base (counts, no names), Team/Health locked, no credentials ever sent
   'test-required-ui.mjs', // books-read tally, "Finish your profile", read + sign with a drawn signature, admin view, HR → Required
   'test-ministry-tools-ui.mjs', // My week: log, partners, reflection, base plants; Cafe: open, till, counters, expenses, rota, close, set up; Khmer at 320px
+  'test-finance-ui.mjs',     // the office uploads three PDFs, previews checked, saved; a Director's Finances tab: tiles, charts, burn rate, debt with no names, money ahead
   'test-pull-drill.mjs',    // the pull gesture on both pages, and which figures open
   'test-touch-scroll.mjs',  // a swipe over a slider or the chip strip scrolls the page, and answers nothing
   'test-number-entry.mjs',  // typing into a number box replaces what is in it, and no box starts at a 0 nobody typed
