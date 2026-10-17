@@ -404,12 +404,35 @@ Uriah: YWAM GP is YWAM Poipet, YWAM Siem Reap, **YWAM GP** (the organisation) an
   leadership teams, and the board with Email / Call for each and "Email the whole board",
   under a note that anything serious — about a leader, safety, abuse, misconduct — can
   go straight to them.
+- **Team → Structure → 🌏 YWAM GP** (`S.teamCampus='ywamgp'`, only in Structure, not the
+  Directory; `ywamGpChartHtml_`): the whole chart on one screen — the Advisory Board box
+  (dashed, "advises") over the YWAM GP Leadership Team (every `GP_ROLES` place, empty ones
+  "Not filled yet") over a box per campus (its leadership team + "Open <campus>'s chart").
+  Someone with several roles appears in each box. Same `org` data; nothing new on the server.
+- **YWAM GP and Advisory Board in every Team view** (Directory · Structure · Strengths ·
+  Personalities; `teamOrgScope_` / `teamPeopleIn_`): the buttons 🌏 YWAM GP and 🛡️ Advisory
+  Board sit before the campuses. Directory → YWAM GP lists each place and who holds it;
+  Directory or Structure → Advisory Board is the board with contacts. Strengths and
+  Personalities match `org` against the roster, so a board member shows only when also on
+  staff (the board store holds no type or strengths). The button says "Advisory Board"
+  because "Board" is already the meeting board (ក្តារ) in Khmer.
+- **Campus Leadership picks its own title** (Profile & settings → Main ministry, and
+  sign-up): International Campus Director, National Campus Director, or Director of
+  <department>. The option value is `Campus Director#<cdKind>` (`minSelValue_`);
+  `updateProfile` / `staffRegister` accept `cdKind` (CD_KINDS only). Admins can still set it.
+- **Moving yourself INTO Campus Leadership waits for an admin** (Uriah, Oct 2026), like a
+  Campus Leadership sign-up: `updateProfile` saves the rest of the profile but keeps the
+  move as `cltRequest` {ministry, cdKind, at} (`cltPending: true` in the answer; shown in
+  Profile & settings with "Cancel the request" → `cancelCltRequest`). Admin → Approvals
+  lists them under "Moving into Campus Leadership" → `adminDecideCltRequest(…, staffId,
+  yes)`. Nobody outside Campus Leadership can add a Campus Leadership row as an extra
+  ministry either. Moving within, or out of, Campus Leadership needs nobody.
 - **A board member's sign-in** is a guest-mode variant (`S.board`, `S.guest` true, staff
   `S.auth` empty, `gp-board` in localStorage; index.html sends them here): tabs YWAM GP ·
   Campuses (each campus's leadership, departments with directors and ministry leaders,
   then the public base figures) · Library; nothing staff. The login screen tries
   `boardLogin` after a staff login fails with no other reason.
-- tests/test-ywam-gp.mjs (server, 24), tests/test-ywam-gp-ui.mjs (browser, 23).
+- tests/test-ywam-gp.mjs (server, 40), tests/test-ywam-gp-ui.mjs (browser, 47).
 
 ## Team → Structure (the org chart)
 The Team tab has a Directory / Structure toggle (`S.teamMode`). Structure (`orgChartHtml_`)

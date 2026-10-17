@@ -34,10 +34,12 @@ const H = (p, s) => crypto.createHash('sha256').update(s + ':' + String(p), 'utf
 const mk = o => Object.assign({ active: true, campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe',
   role: 'Staff', staffType: 'campus', country: 'Cambodia', surveyToken: 'tok_' + o.id }, o, { pinSalt: o.id, pinHash: H('1234', o.id) });
 mem.staff = [
-  mk({ id: 'st1', name: 'Uriah Lyford', username: 'uriah', email: 'u@e.com', dept: 'Campus Leadership', ministry: 'Campus Director', isAdmin: true, cdKind: 'international', gpRole: 'director' }),
+  mk({ id: 'st1', name: 'Uriah Lyford', username: 'uriah', email: 'u@e.com', dept: 'Campus Leadership', ministry: 'Campus Director', isAdmin: true, cdKind: 'international', gpRole: 'director',
+    gstrengths: { top: ['hardworker', 'coordinator', 'valuesdriven', 'fairminded', 'careful'] }, personality: { type: 'ENFJ' } }),
   mk({ id: 'st2', name: 'Sokha Chan', username: 'sokha', email: 's@e.com', dept: 'Campus Leadership', ministry: 'Campus Director', cdKind: 'national' }),
   mk({ id: 'st3', name: 'Dara Sok', username: 'dara', email: 'd@e.com', dept: 'Campus Leadership', ministry: 'Community Service' }),
-  mk({ id: 'st4', name: 'Kanha Lim', username: 'kanha', email: 'k@e.com', dept: 'Community Service', ministry: 'Cafe', leads: ['Community Service|Cafe'] })
+  mk({ id: 'st4', name: 'Kanha Lim', username: 'kanha', email: 'k@e.com', dept: 'Community Service', ministry: 'Cafe', leads: ['Community Service|Cafe'],
+    gstrengths: { top: ['careful', 'coordinator', 'hardworker', 'fairminded', 'valuesdriven'] }, personality: { type: 'ISTJ' } })
 ];
 mem.board = [{ id: 'bd1', name: 'Mary Board', role: 'President', email: 'mary@board.org', phone: '+855 12 345 678', bio: 'A pastor in Phnom Penh who has walked with YWAM for twenty years.', username: 'mary', pinSalt: 'bd1', pinHash: H('4321', 'bd1'), active: true, safeguarding: true },
   { id: 'bd2', name: '', role: 'Advisor', staffId: 'st1', active: true }];
@@ -96,8 +98,100 @@ const main = (page) => page.$eval('#main', e => e.innerText);
   /* org chart */
   await page.evaluate(() => { S.view = 'team'; S.teamMode = 'org'; render(); }); await page.waitForTimeout(500);
   const org = await main(page);
+  await page.click('[data-teamcampus="ywamgp"]'); await page.waitForTimeout(400);
+  const gp = await main(page);
+  ok('Structure → YWAM GP: the Advisory Board, the YWAM GP team with every place, and both campuses\' leadership teams',
+    /Advisory Board/.test(gp) && /Mary Board/.test(gp) && /President/.test(gp) && /YWAM GP Leadership Team/.test(gp) && /YWAM GP Director/.test(gp) &&
+    /Education Lead/.test(gp) && /Not filled yet/.test(gp) && /YWAM Poipet/.test(gp) && /YWAM Siem Reap/.test(gp) && /International Campus Director/.test(gp) && /National Campus Director/.test(gp));
+  ok('… someone with several roles is in each box: Uriah as board Advisor, YWAM GP Director and International Campus Director',
+    (gp.match(/Uriah Lyford/g) || []).length === 3);
+  await page.screenshot({ path: OUT + '/structure-ywamgp.png', fullPage: true });
+  await page.click('.orgOpenCampus[data-teamcampus="siemreap"]'); await page.waitForTimeout(400);
+  const org0 = await main(page);
+  ok('… and a campus box opens that campus\'s own chart', /Department directors/i.test(org0) && await page.evaluate(() => S.teamCampus === 'siemreap'));
   ok('the org chart names them too: Campus Directors, International / National, department directors', /Campus Directors/i.test(org) && /International Campus Director/.test(org) && /Department directors/i.test(org) && /Director of Community Service/.test(org) && !/Overseen by|overseers/i.test(org));
   await ctx.close();
+}
+
+/* ---------- 1b. YWAM GP and the board as teams: Directory, Strengths, Personalities ---------- */
+{
+  const { ctx, page } = await open('kanha', { small: true });
+  await page.evaluate(() => { S.view = 'team'; S.teamMode = 'dir'; S.teamCampus = null; render(); }); await page.waitForTimeout(500);
+  ok('every Team view has YWAM GP and Board next to the campuses', !!(await page.$('[data-teamcampus="ywamgp"]')) && !!(await page.$('[data-teamcampus="board"]')));
+  await page.click('[data-teamcampus="ywamgp"]'); await page.waitForTimeout(400);
+  let txt = await main(page);
+  ok('Directory → YWAM GP: each place on the leadership team and who holds it', /YWAM GP Leadership Team/.test(txt) && /YWAM GP Director/.test(txt) && /Uriah Lyford/.test(txt) && /Education Lead/.test(txt) && /Not filled yet/i.test(txt) && !/Kanha/.test(txt));
+  ok('… and the 4 buttons fit a 320px phone', await page.evaluate(() => document.documentElement.scrollWidth <= 321));
+  await page.screenshot({ path: OUT + '/directory-ywamgp.png', fullPage: true });
+  await page.click('[data-teamcampus="board"]'); await page.waitForTimeout(400);
+  txt = await main(page);
+  ok('Directory → Board: the board, how to reach them, and the safeguarding contacts', /Mary Board/.test(txt) && /President/i.test(txt) && !!(await page.$('#orgConcern')) && !/Kanha/.test(txt));
+  await page.click('[data-teammode="str"]'); await page.waitForTimeout(400);
+  txt = await main(page);
+  await page.screenshot({ path: OUT + '/strengths-board.png', fullPage: true });
+  ok('Strengths → Board: only board members on staff (Uriah), with a note why', /Uriah/.test(txt) && !/Kanha/.test(txt) && /also on staff/.test(txt));
+  await page.click('[data-teamcampus="ywamgp"]'); await page.waitForTimeout(400);
+  txt = await main(page);
+  ok('Strengths → YWAM GP: the leadership team\'s Top 5s', /1 people have shared their Top 5/.test(txt) && /Uriah/.test(txt) && !/Kanha/.test(txt));
+  await page.click('[data-teammode="pers"]'); await page.waitForTimeout(400);
+  txt = await main(page);
+  await page.screenshot({ path: OUT + '/personalities-ywamgp.png', fullPage: true });
+  ok('Personalities → YWAM GP: the team\'s types, with no campus team picker', /ENFJ/.test(txt) && !/ISTJ ·/.test(txt) && /1 of 1 people/.test(txt) && !(await page.$('#teamPScope')));
+  await page.click('[data-teamcampus="siemreap"]'); await page.waitForTimeout(400);
+  txt = await main(page);
+  ok('… and a campus is as before, with its picker', /ISTJ/.test(txt) && !!(await page.$('#teamPScope')));
+  await page.click('[data-teammode="org"]'); await page.click('[data-teamcampus="board"]'); await page.waitForTimeout(400);
+  ok('Structure → Board shows the board', /Mary Board/.test(await main(page)));
+  await ctx.close();
+}
+
+/* ---------- 1c. Campus Leadership picks its own title in the profile ---------- */
+{
+  const { ctx, page } = await open('dara');
+  await page.evaluate(() => { S.view = 'profile'; render(); }); await page.waitForTimeout(600);
+  const opts = await page.$$eval('#p_ministry option', (o) => o.map((x) => x.value + '=' + x.textContent));
+  ok('the Main ministry list for Campus Leadership is titles: International / National Campus Director, Director of each department',
+    opts.some((o) => o === 'Campus Director#international=International Campus Director') && opts.some((o) => o === 'Campus Director#national=National Campus Director') &&
+    opts.some((o) => o === 'Community Service=Director of Community Service') && !opts.some((o) => /=Campus Director$/.test(o)), opts.join(' | '));
+  ok('… with their own title chosen', await page.$eval('#p_ministry', (e) => e.value) === 'Community Service');
+  await page.selectOption('#p_ministry', 'Campus Director#national');
+  await page.click('#saveProfBtn'); await page.waitForTimeout(900);
+  const d = mem.staff.find((r) => r.id === 'st3');
+  ok('choosing National Campus Director saves it', d.ministry === 'Campus Director' && d.cdKind === 'national', d.ministry + '/' + d.cdKind);
+  await page.evaluate(() => { S.view = 'profile'; render(); }); await page.waitForTimeout(600);
+  ok('… and the profile shows it next time', await page.$eval('#p_ministry', (e) => e.value) === 'Campus Director#national');
+  await page.selectOption('#p_ministry', 'Community Service');
+  await page.click('#saveProfBtn'); await page.waitForTimeout(900);
+  const d2 = mem.staff.find((r) => r.id === 'st3');
+  ok('… and back to Director of Community Service', d2.ministry === 'Community Service' && !d2.cdKind, d2.ministry + '/' + d2.cdKind);
+  await page.evaluate(() => { S.view = 'profile'; render(); }); await page.waitForTimeout(400);
+  await page.selectOption('#p_dept', 'Community Service'); await page.waitForTimeout(200);
+  const other = await page.$$eval('#p_ministry option', (o) => o.map((x) => x.value));
+  ok('another department still lists its ministries', other.indexOf('Cafe') > -1 && !other.some((v) => v.indexOf('#') > -1));
+  await ctx.close();
+}
+
+/* ---------- 1d. moving yourself into Campus Leadership waits for an admin ---------- */
+{
+  const { ctx, page } = await open('kanha');
+  await page.evaluate(() => { S.view = 'profile'; render(); }); await page.waitForTimeout(500);
+  await page.selectOption('#p_dept', 'Campus Leadership'); await page.waitForTimeout(200);
+  await page.selectOption('#p_ministry', 'Community Service');
+  await page.click('#saveProfBtn'); await page.waitForTimeout(900);
+  let k = mem.staff.find((r) => r.id === 'st4');
+  ok('a staff member choosing Campus Leadership is not moved yet', k.dept === 'Community Service' && k.cltRequest && k.cltRequest.ministry === 'Community Service');
+  await page.evaluate(() => { S.view = 'profile'; render(); }); await page.waitForTimeout(400);
+  ok('… their profile says it is waiting for an admin, as Director of Community Service', /waiting for an admin/.test(await main(page)) && /Director of Community Service/.test(await page.$eval('#cltWaiting', (e) => e.textContent)));
+  await ctx.close();
+  const a = await open('uriah');
+  await a.page.evaluate(() => { S.view = 'admin'; S.adminSub = 'approvals'; render(); }); await a.page.waitForTimeout(900);
+  ok('Admin → Approvals lists the move', /Moving into Campus Leadership/.test(await main(a.page)) && /Kanha Lim/.test(await main(a.page)));
+  await a.page.screenshot({ path: OUT + '/approvals.png', fullPage: true });
+  await a.page.click('[data-cltyes="st4"]'); await a.page.waitForTimeout(900);
+  k = mem.staff.find((r) => r.id === 'st4');
+  ok('… and approving moves them', k.dept === 'Campus Leadership' && k.ministry === 'Community Service' && !k.cltRequest);
+  await a.ctx.close();
+  await api.default({ method: 'POST', json: async () => ({ fn: 'adminUpdateStaff', args: ['uriah', '1234', 'st4', { dept: 'Community Service', ministry: 'Cafe' }] }), headers: new Map() }, {});
 }
 
 /* ---------- 2. the YWAM GP page: GP leadership, both campuses, the board and how to reach them ---------- */

@@ -3383,3 +3383,38 @@ attraction), របាំងការពារ (guardrail), ចិត្តត�
 | Music Lead | អ្នកដឹកនាំផ្នែកតន្ត្រី |
 | Media Lead | អ្នកដឹកនាំផ្នែកប្រព័ន្ធផ្សព្វផ្សាយ |
 | Education Lead | អ្នកដឹកនាំផ្នែកអប់រំ |
+
+
+### Team → Structure → YWAM GP
+
+| English | Khmer (draft) |
+|---|---|
+| advises YWAM GP | ផ្ដល់យោបល់ដល់ YWAM GP |
+| YWAM GP Leadership Team | ក្រុមដឹកនាំ YWAM GP |
+| Open {campus}’s chart | បើកតារាងរចនាសម្ព័ន្ធ {campus} |
+| Someone with more than one role is in each box they belong to. | អ្នកដែលមានតួនាទីច្រើនជាងមួយ បង្ហាញនៅក្នុងប្រអប់នីមួយៗដែលគាត់ជាសមាជិក។ |
+
+### Team → YWAM GP and Advisory Board in every view; Campus Leadership picks its title
+
+| English | Khmer (draft) |
+|---|---|
+| Only board members who are also on staff show here. | បង្ហាញនៅទីនេះ តែសមាជិកក្រុមប្រឹក្សាដែលជាបុគ្គលិកផងដែរ។ |
+| Nobody here has shared their strengths yet. | មិនទាន់មាននរណាម្នាក់នៅទីនេះចែករំលែកចំណុចខ្លាំងរបស់ខ្លួននៅឡើយទេ។ |
+| — choose your role — | — ជ្រើសរើសតួនាទីរបស់អ្នក — |
+
+The last one heads the Main ministry list in Profile & settings for Campus Leadership.
+
+### Moving into Campus Leadership waits for an admin
+
+| English | Khmer (draft) |
+|---|---|
+| Leadership sign-ups and moves waiting for a yes | ការចុះឈ្មោះ និងការផ្លាស់មកថ្នាក់ដឹកនាំ ដែលរង់ចាំការអនុម័ត |
+| Your move to Campus Leadership, as {title}, is waiting for an admin to approve it. | ការផ្លាស់របស់អ្នកមកថ្នាក់ដឹកនាំសាខា ជា {title} កំពុងរង់ចាំអ្នកគ្រប់គ្រងអនុម័ត។ |
+| Cancel the request | បោះបង់សំណើ |
+| Saved. Your move to Campus Leadership is waiting for an admin to approve it. | បានរក្សាទុក។ ការផ្លាស់របស់អ្នកមកថ្នាក់ដឹកនាំសាខា កំពុងរង់ចាំអ្នកគ្រប់គ្រងអនុម័ត។ |
+| Moving into Campus Leadership | ផ្លាស់មកថ្នាក់ដឹកនាំសាខា |
+| New sign-ups | ការចុះឈ្មោះថ្មី |
+| Moved into Campus Leadership | បានផ្លាស់មកថ្នាក់ដឹកនាំសាខា |
+| Request declined | សំណើត្រូវបានបដិសេធ |
+
+Shown in Profile & settings (the waiting note) and Admin → Approvals.
