@@ -1566,7 +1566,24 @@ body.hxOn { overflow:hidden; }
 .supDueDot { width:8px; height:8px; border-radius:50%; background:var(--bad); flex:none; }
 .supTwo { display:flex; gap:10px; }
 .supTwo > span { flex:1; min-width:0; }
-.supForm { padding:10px 0; border-top:1px solid var(--border); }
+/* adding or editing a partner (one card above the list) */
+.supForm { margin-bottom:12px; }
+.supFormHead { font-size:16px; font-weight:800; margin-bottom:2px; overflow-wrap:anywhere; }
+.supForm label.f { margin-top:12px; }
+.supChoice { display:flex; flex-wrap:wrap; gap:6px; }
+.supPick { border:1.5px solid var(--border2); background:var(--bg); color:var(--ink); border-radius:999px; padding:8px 14px; font:inherit; font-size:13.5px; cursor:pointer; }
+.supPick.on { background:var(--accent); border-color:var(--accent); color:var(--accentInk); font-weight:700; }
+.supPick.on.giving { background:var(--good); border-color:var(--good); color:var(--goodInk); }
+.supMoney { display:flex; align-items:center; border:1.5px solid var(--ink); border-radius:10px; background:var(--surface); margin-bottom:8px; }
+.supMoney span { padding:0 2px 0 12px; font-size:16px; font-weight:700; color:var(--muted); }
+.supMoney input[type=number] { border:0; background:transparent; padding-left:4px; }
+.supMoney:focus-within { outline:2px solid var(--accent); outline-offset:1px; }
+.supDate { display:flex; align-items:center; gap:12px; }
+.supDate input[type=date] { flex:1; min-width:0; font-size:16px; border-color:var(--ink); background:var(--surface); }
+.supDate .linkbtn { margin:0; white-space:nowrap; font-weight:700; }
+.supForm textarea { font-size:16px; border-color:var(--ink); background:var(--surface); }
+.supRemove { display:block; width:100%; margin-top:10px; padding:10px; border:1.5px solid var(--border2); border-radius:10px; background:none; color:var(--bad); font:inherit; font-size:14px; font-weight:700; cursor:pointer; }
+.supRow.editing { opacity:.5; }
 label.f.remBox { display:flex; align-items:center; gap:8px; text-transform:none; letter-spacing:0; font-weight:400; font-size:14px; color:var(--ink); margin-top:10px; }
 .kmrSearch { width:100%; box-sizing:border-box; margin:0 0 10px; }
 .kmrCard .kmrPos { font-size:12px; color:var(--muted); font-weight:700; }

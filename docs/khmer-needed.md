@@ -3746,3 +3746,16 @@ The screen the reviewers use themselves — worth checking first, since it is ho
 | Reports | របាយការណ៍ |
 
 The Finances office's page (My Ministry → Finances → Reports) and the Finances tab on each Campus Leadership row. "Came in" / "Went out" are tile labels about 14 characters wide on a phone; "Reports", "Dashboard" and "Finances" are tabs with about 9 characters each. "Profit and Loss", "Burn rate" and "A/R ageing" are the names of the office's own reports — keep whatever the office calls them. "Names stay with the Finances office — leadership sees the totals." is a privacy promise; worth checking first.
+
+## 69. Support raising — adding a partner
+
+| English | Khmer (draft) |
+|---|---|
+| What you hope they will give — leave it empty if you don’t know yet. | ចំនួនដែលអ្នកសង្ឃឹមថាពួកគេនឹងផ្ដល់ — ទុកឱ្យនៅទទេ បើអ្នកមិនទាន់ដឹង។ |
+| What they give. | ចំនួនដែលពួកគេផ្ដល់។ |
+| New partner | ដៃគូថ្មី |
+| Edit {name} | កែ {name} |
+| e.g. Grace Church, or Tom & Ann | ឧ. ព្រះវិហារ Grace ឬ Tom និង Ann |
+| How you know them, what you last talked about… | របៀបដែលអ្នកស្គាល់ពួកគេ អ្វីដែលអ្នកបាននិយាយគ្នាចុងក្រោយ… |
+
+The card for adding or editing a ministry partner (My Home → Support raising). "New partner" and "Edit {name}" are the card's heading; the example in the name box is a placeholder, so any short example of a church and a couple works.

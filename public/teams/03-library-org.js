@@ -1914,7 +1914,7 @@ function bindPrayer_(){
    tick it (getMySupport / saveMySupport, "Support raising" in api.js). The whole list is
    saved at once on every change; it loads only on this page. */
 S.sup=null; S.supErr=''; S.supEdit=null; S.supFilter='all'; S.supBusy=false;
-var SUP_STATUS_LABEL={ giving:'Giving', asked:'Asked', toask:'To ask', paused:'Paused' };
+var SUP_STATUS_LABEL={ toask:'To ask', asked:'Asked', giving:'Giving', paused:'Paused' };   // in the order it goes
 var SUP_FREQ_LABEL={ month:'a month', year:'a year', once:'once' };
 function supLoad_(){
   if(S.supLoading) return; S.supLoading=true;
@@ -1952,14 +1952,15 @@ function supportHtml_(){
   h+='<h3>🤝 '+esc(t('Partners'))+' <small>· '+sup.partners.length+'</small></h3>';
   h+='<div class="deptChips">'+chip('all', t('All'))+chip('giving', t('Giving'), sm.giving)+chip('asked', t('Asked'), sm.asked)+chip('toask', t('To ask'), sm.toask)+
     (sm.followUp ? chip('due', t('To thank or follow up'), sm.followUp) : '')+'</div>';
+  var editing=S.supEdit && S.supEdit!=='new' ? sup.partners.filter(function(p){ return p.id===S.supEdit; })[0] : null;
   if(S.supEdit==='new') h+=supFormHtml_({ id:'', name:'', amount:'', freq:'month', status:'toask', last:'', note:'' }, true);
+  else if(editing) h+=supFormHtml_(editing, false);
   else h+='<button class="btn" id="supAdd"'+(S.supBusy?' disabled':'')+'>＋ '+esc(t('Add a partner'))+'</button>';
   if(!sup.partners.length && S.supEdit!=='new') h+='<div class="card"><p class="sub" style="margin:0">'+esc(t('Add the people and churches who give to your ministry, or who you hope to ask.'))+'</p></div>';
   else if(list.length){
     h+='<div class="card">';
     list.forEach(function(p){
-      if(S.supEdit===p.id){ h+=supFormHtml_(p, false); return; }
-      h+='<button class="supRow" data-supedit="'+esc(p.id)+'"><span class="supName">'+esc(p.name)+
+      h+='<button class="supRow'+(S.supEdit===p.id?' editing':'')+'" data-supedit="'+esc(p.id)+'"><span class="supName">'+esc(p.name)+
         '<small>'+(p.amount ? '$'+esc(fmt(p.amount))+' '+esc(t(SUP_FREQ_LABEL[p.freq])) : '')+(p.last ? ' · '+esc(gpT('last in touch {date}',{date:teamDate_(p.last)})) : '')+'</small></span>'+
         '<span class="supStatus '+p.status+'">'+esc(t(SUP_STATUS_LABEL[p.status]))+'</span>'+(supDue_(p, days)?'<span class="supDueDot" title="'+esc(t('To thank or follow up'))+'"></span>':'')+'</button>';
     });
@@ -1967,17 +1968,29 @@ function supportHtml_(){
   }
   return h+'<p class="hint">🔒 '+esc(gpT('Kept on your account and seen by nobody else. A partner shows under "to thank or follow up" when you have not been in touch for {n} days.',{n:days}))+'</p>';
 }
+/* Adding or editing a partner: one card above the list. Where things are and how often
+   are a tap each (they are only a few choices); the amount has its $; "Today" sits
+   by the date. The choices live in hidden inputs, so a tap changes no typing. */
+function supChoicesHtml_(name, map, cur){
+  return '<div class="supChoice" role="radiogroup">'+Object.keys(map).map(function(k){
+    return '<button type="button" role="radio" aria-checked="'+(k===cur)+'" class="supPick'+(k===cur?' on':'')+(name==='status'?' '+k:'')+'" data-sup'+name+'="'+k+'">'+esc(t(map[k]))+'</button>'; }).join('')+
+    '</div><input type="hidden" id="sup'+(name==='status'?'Status':'Freq')+'" value="'+esc(cur)+'">';
+}
+function supAmtHint_(st){ return st==='toask' || st==='asked' ? t('What you hope they will give — leave it empty if you don’t know yet.') : t('What they give.'); }
 function supFormHtml_(p, isNew){
-  var sel=function(id, map, cur){ return '<select id="'+id+'">'+Object.keys(map).map(function(k){ return '<option value="'+k+'"'+(k===cur?' selected':'')+'>'+esc(t(map[k]))+'</option>'; }).join('')+'</select>'; };
-  return '<div class="supForm'+(isNew?' card':'')+'" data-supform="'+esc(p.id)+'">'+
-    '<label class="f" for="supName">'+esc(t('Name'))+'</label><input id="supName" maxlength="80" value="'+esc(p.name)+'">'+
-    '<div class="supTwo"><span><label class="f" for="supAmt">'+esc(t('Amount (US$)'))+'</label><input type="number" id="supAmt" inputmode="decimal" min="0" value="'+esc(p.amount===''?'':String(p.amount))+'"></span>'+
-      '<span><label class="f" for="supFreq">'+esc(t('How often'))+'</label>'+sel('supFreq', SUP_FREQ_LABEL, p.freq)+'</span></div>'+
-    '<label class="f" for="supStatus">'+esc(t('Where things are'))+'</label>'+sel('supStatus', SUP_STATUS_LABEL, p.status)+
-    '<label class="f" for="supLast">'+esc(t('Last in touch'))+'</label><div class="supTwo"><span><input type="date" id="supLast" value="'+esc(p.last)+'"></span><span><button class="btn ghost" id="supToday" style="margin:0">'+esc(t('Today'))+'</button></span></div>'+
-    '<label class="f" for="supNote">'+esc(t('Note'))+'</label><textarea id="supNote" rows="2" maxlength="300">'+esc(p.note)+'</textarea>'+
-    '<div class="kmrActs"><button class="btn" id="supSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="supCancel">'+esc(t('Cancel'))+'</button></div>'+
-    (isNew ? '' : '<button class="linkbtn inline" id="supDel" style="width:auto;padding:0;margin-top:8px;color:var(--bad)">'+esc(t('Remove this partner'))+'</button>')+'</div>';
+  return '<div class="card supForm" id="supForm" data-supform="'+esc(p.id)+'">'+
+    '<div class="supFormHead">'+esc(isNew ? t('New partner') : gpT('Edit {name}',{name:p.name}))+'</div>'+
+    '<label class="f" for="supName">'+esc(t('Name'))+'</label><input type="text" id="supName" maxlength="80" autocomplete="off" value="'+esc(p.name)+'" placeholder="'+esc(t('e.g. Grace Church, or Tom & Ann'))+'">'+
+    '<label class="f">'+esc(t('Where things are'))+'</label>'+supChoicesHtml_('status', SUP_STATUS_LABEL, p.status)+
+    '<label class="f" for="supAmt">'+esc(t('Amount (US$)'))+'</label>'+
+    '<div class="supMoney"><span aria-hidden="true">$</span><input type="number" id="supAmt" inputmode="decimal" min="0" step="any" value="'+esc(p.amount===''||!p.amount?'':String(p.amount))+'" placeholder="0"></div>'+
+    supChoicesHtml_('freq', SUP_FREQ_LABEL, p.freq)+
+    '<p class="hint supAmtHint" style="margin:6px 0 0">'+esc(supAmtHint_(p.status))+'</p>'+
+    '<label class="f" for="supLast">'+esc(t('Last in touch'))+'</label>'+
+    '<div class="supDate"><input type="date" id="supLast" value="'+esc(p.last)+'" max="'+todayStr()+'"><button type="button" class="linkbtn inline" id="supToday">'+esc(t('Today'))+'</button></div>'+
+    '<label class="f" for="supNote">'+esc(t('Note'))+'</label><textarea id="supNote" rows="2" maxlength="300" placeholder="'+esc(t('How you know them, what you last talked about…'))+'">'+esc(p.note)+'</textarea>'+
+    '<div class="kmrActs"><button class="btn" id="supSave">'+esc(isNew ? t('Add') : t('Save'))+'</button><button class="btn ghost" id="supCancel">'+esc(t('Cancel'))+'</button></div>'+
+    (isNew ? '' : '<button type="button" class="supRemove" id="supDel">🗑 '+esc(t('Remove this partner'))+'</button>')+'</div>';
 }
 function bindSupport_(){
   var tile=document.getElementById('supTile');
@@ -1992,8 +2005,17 @@ function bindSupport_(){
   var sh=document.getElementById('supShare');
   if(sh) sh.onchange=function(){ var c=copy(); c.mentorVisible=!!sh.checked; supSave_(c, t('Saved')); };
   document.querySelectorAll('[data-supfilter]').forEach(function(b){ b.onclick=function(){ S.supFilter=b.getAttribute('data-supfilter'); render(); }; });
-  document.querySelectorAll('[data-supedit]').forEach(function(b){ b.onclick=function(){ S.supEdit=b.getAttribute('data-supedit'); render(); }; });
+  var toForm=function(){ var f=document.getElementById('supForm'); if(f) f.scrollIntoView({ block:'start', behavior:'smooth' }); };
+  document.querySelectorAll('[data-supedit]').forEach(function(b){ b.onclick=function(){ S.supEdit=b.getAttribute('data-supedit'); render(); toForm(); }; });
   on('supAdd', function(){ S.supEdit='new'; render(); var n=document.getElementById('supName'); if(n) n.focus(); });
+  ['status','freq'].forEach(function(k){
+    document.querySelectorAll('[data-sup'+k+']').forEach(function(b){ b.onclick=function(){
+      var v=b.getAttribute('data-sup'+k);
+      document.querySelectorAll('[data-sup'+k+']').forEach(function(x){ var on=x===b; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); });
+      document.getElementById(k==='status' ? 'supStatus' : 'supFreq').value=v;
+      if(k==='status'){ var hn=document.querySelector('.supAmtHint'); if(hn) hn.textContent=supAmtHint_(v); }
+    }; });
+  });
   on('supCancel', function(){ S.supEdit=null; render(); });
   on('supToday', function(){ var l=document.getElementById('supLast'); if(l) l.value=todayStr(); });
   on('supSave', function(){

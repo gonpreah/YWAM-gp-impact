@@ -123,7 +123,11 @@ const call = async (fn, args) => {
   ok('the page: goal, pledged, the partners', /\$600 a month pledged/.test(txt) && /Grace Church/.test(txt) && /Pastor Lee/.test(txt) && /50%/.test(txt));
   await page.screenshot({ path: OUT + '/support.png', fullPage: true });
   await page.click('#supAdd'); await page.waitForTimeout(200);
-  await page.fill('#supName', 'Phnom Penh Fellowship'); await page.fill('#supAmt', '100'); await page.selectOption('#supStatus', 'giving');
+  await page.screenshot({ path: OUT + '/support-add.png', fullPage: true });
+  ok('the new-partner form: a styled name box, a tap for where things are and how often', await page.$eval('#supName', (e) => e.type === 'text' && getComputedStyle(e).paddingLeft !== '0px') &&
+    (await page.$$('[data-supstatus]')).length === 4 && (await page.$$('[data-supfreq]')).length === 3 && !(await page.$('#supForm select')));
+  await page.fill('#supName', 'Phnom Penh Fellowship'); await page.fill('#supAmt', '100'); await page.click('[data-supstatus="giving"]');
+  ok('… a tap changes the choice and keeps what was typed', await page.$eval('#supStatus', (e) => e.value) === 'giving' && await page.$eval('#supName', (e) => e.value) === 'Phnom Penh Fellowship' && !!(await page.$('[data-supstatus="giving"].on')));
   await page.click('#supToday'); await page.click('#supSave'); await page.waitForTimeout(800);
   const k = mem.staff.find((s) => s.id === 'st2');
   ok('adding a partner saves the list', k.support.partners.some((p) => p.name === 'Phnom Penh Fellowship' && p.amount === 100 && p.status === 'giving' && p.last) && /\$700 a month pledged/.test(await main(page)));
@@ -133,6 +137,8 @@ const call = async (fn, args) => {
   await page.click('[data-supfilter="all"]'); await page.waitForTimeout(200);
   const pid = mem.staff.find((s) => s.id === 'st2').support.partners.find((p) => p.name === 'Pastor Lee').id;
   await page.click('[data-supedit="' + pid + '"]'); await page.waitForTimeout(200);
+  await page.screenshot({ path: OUT + '/support-edit.png', fullPage: true });
+  ok('editing opens the same card above the list, named for who it is', /Edit Pastor Lee/.test(await page.$eval('#supForm', (e) => e.innerText)) && !!(await page.$('[data-supstatus="toask"].on')));
   await page.click('#supDel'); await page.waitForTimeout(800);
   ok('a partner can be removed', !mem.staff.find((s) => s.id === 'st2').support.partners.some((p) => p.name === 'Pastor Lee'));
   await ctx.close();
