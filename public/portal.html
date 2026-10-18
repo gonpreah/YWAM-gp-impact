@@ -824,9 +824,11 @@ function signHtml_(){
   var h='<div class="center signPage"><div class="gateTitle"><h2>✍️ '+esc(S.hr ? t('Staff contract') : t('Legal documents'))+'</h2>';
   if(d===null) return h+'</div><div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div></div>';
   if(!d.ok) return h+'</div><div class="card"><p class="sub" style="margin:0">'+esc(d.err==='nostaff' || (S.staff && d.err==='invalid') ? t('Open this from the GP app, signed in.') : d.err==='closed' ? t('This team’s documents are closed.') : t('This link doesn’t work any more — ask YWAM Siem Reap for a new one.'))+'</p>'+(S.openFn ? '<a class="btn small" href="teams.html" style="margin-top:10px">'+esc(t('Open the GP app'))+'</a>' : '')+'</div>'+langRowHtml_()+'</div>';
-  h+='<p class="sub">'+esc(d.isTeam===false ? gpT('For {team}. Read each one and sign it here on your phone.',{team:d.team}) : gpT('For {team}. Everyone signs their own — pick your name to start.',{team:d.team}))+'</p>'+(S.inApp ? '<button type="button" class="linkbtn inline" id="signHome">← '+esc(t('Back to my application'))+'</button>' : '')+(S.staff ? '<a class="linkbtn inline" href="'+esc(S.back)+'">← '+esc(S.hr ? t('Back to HR') : t('Back to My contract'))+'</a>' : '')+'</div>';
   var docs=(d.docs||[]).filter(function(x){ return !S.only || x.id===S.only; });
   if(!S.who && (d.people||[]).length===1) S.who=d.people[0].key;
+  /* once it's all signed, the "All signed" card has the one way back — not a second link up here */
+  var finished=!!S.who && (S.done || !docs.filter(function(x){ return !signDocDone_(d, S.who)[x.id]; }).length);
+  h+='<p class="sub">'+esc(d.isTeam===false ? gpT('For {team}. Read each one and sign it here on your phone.',{team:d.team}) : gpT('For {team}. Everyone signs their own — pick your name to start.',{team:d.team}))+'</p>'+(S.inApp ? '<button type="button" class="linkbtn inline" id="signHome">← '+esc(t('Back to my application'))+'</button>' : '')+(S.staff && !finished ? '<a class="linkbtn inline" href="'+esc(S.back)+'">← '+esc(S.hr ? t('Back to HR') : t('Back to My contract'))+'</a>' : '')+'</div>';
   /* who are you */
   if(!S.who){
     h+='<div class="card"><h3 style="margin-top:0">'+esc(t('Who are you?'))+'</h3><div class="signWho">'+(d.people||[]).map(function(p){
