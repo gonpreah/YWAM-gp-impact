@@ -122,7 +122,17 @@ mem.goals.push({ staffId: 'me', week: WK - 1, year: YR, items: [{ text: 'Visit t
   ok('the bell lists them all', bell.length >= 3 && await page.evaluate(() => S.bellOpen === true), bell.length + ' in the bell');
   await page.evaluate(() => { S.bellOpen = false; renderNotifPanel(); });
   ok('Weekly Goals: no arrows on top, no Share my week', !(await page.$('#goalsPrevWeek, #goalsNextWeek, .weekNavRow, #shareWeek')));
-  ok('… a small Last week / This week switch under the goals', (await page.$$eval('.goalsWeekSwitch [data-goalswk]', bs => bs.map(b => b.innerText + (b.classList.contains('on') ? '*' : '')))).join() === 'Last week,This week*');
+  const canNext = await page.evaluate(() => thisWeek() <= 51);
+  ok('… a small Last week / This week / Next week switch under the goals', (await page.$$eval('.goalsWeekSwitch [data-goalswk]', bs => bs.map(b => b.innerText + (b.classList.contains('on') ? '*' : '')))).join() === (canNext ? 'Last week,This week*,Next week' : 'Last week,This week*'));
+  if (canNext) {
+    await page.click('[data-goalswk="next"]'); await page.waitForTimeout(300);
+    let nc = await page.$eval('#sec-goals + .card', e => e.innerText.replace(/\s+/g, ' '));
+    ok('Next week: plan ahead, with a box to add a goal and no progress sliders yet', /^Next week/.test(nc) && /Plan ahead/.test(nc) && !!(await page.$('#newGoalText')) && /next week/.test(await page.$eval('#newGoalText', i => i.placeholder)), nc.slice(0, 120));
+    await page.fill('#newGoalText', 'Prepare the DTS outreach briefing'); await page.click('#addGoalBtn'); await page.waitForTimeout(600);
+    const wkNext = await page.evaluate(() => thisWeek() + 1);
+    const saved = (mem.goals || []).find(r => r.staffId && Number(r.week) === wkNext);
+    ok('… a goal added there is saved for next week, not this one', saved && saved.items.some(i => i.text === 'Prepare the DTS outreach briefing') && /Prepare the DTS outreach briefing/.test(await page.$eval('#sec-goals + .card', e => e.innerText)) && !(await page.$('#sec-goals + .card .gSlide')) && !(await page.$('#sec-goals + .card [data-goalcomplete]')), JSON.stringify(saved));
+  }
   await page.click('[data-goalswk="last"]'); await page.waitForTimeout(300);
   let gc = await page.$eval('#sec-goals + .card', e => e.innerText.replace(/\s+/g, ' '));
   ok('Last week shows last week’s goals to mark how they went', /^Last week/.test(gc) && /Visit three families/.test(gc) && /How did last week go/.test(gc) && !(await page.$('#newGoalText')), gc.slice(0, 120));
