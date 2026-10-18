@@ -697,7 +697,7 @@ function profileHtml(){
     '<label class="f">My mentor <span class="lock">🔒 sees my private check-ins</span></label><select id="p_mentor"><option value="">— none —</option>'+opts+'</select>'+
     (p.mentorStatus==='pending' ? '<div class="hint">⏳ Waiting for them to accept</div>' : p.mentorStatus==='approved' ? '<div class="hint">✓ Accepted — they can see your private check-ins</div>' : '')+
     '<label class="f">Phone</label><input type="tel" id="p_phone" value="'+esc(p.phone||'')+'">'+
-    '<label class="f">Year joined</label><input type="number" id="p_joined" value="'+esc(p.joined||'')+'">'+
+    '<label class="f">'+esc(t('Year I started with YWAM GP'))+' <span class="hint" style="display:inline">'+esc(t('(not your DTS year)'))+'</span></label><input type="number" id="p_joined" value="'+esc(p.joined||'')+'">'+
     '<label class="f">Staff debt <span class="lock">🔒 private</span></label><div class="seg" style="max-width:220px">'+
       '<button id="debtY" class="'+(p.debt?'on bad':'')+'">Yes</button><button id="debtN" class="'+(!p.debt?'on':'')+'">No</button></div>'+
     '<button class="btn" id="saveProfBtn">Save profile</button></div>';

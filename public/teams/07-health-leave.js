@@ -911,7 +911,7 @@ function registerHtml(){
     countryFieldHtml('r_country','')+
     '<label class="f">My mentor <span class="lock">🔒 sees my private check-ins</span></label><select id="r_mentor"><option value="">— choose later —</option>'+opts+'</select>'+
     '<label class="f">Phone (optional)</label><input type="tel" id="r_phone" placeholder="">'+
-    '<label class="f">Year I joined (optional)</label><input type="number" id="r_joined" placeholder="2024">'+
+    '<label class="f">'+esc(t('Year I started with YWAM GP (optional)'))+'</label><input type="number" id="r_joined" placeholder="2024">'+
     '<button class="btn" id="regBtn">Create profile</button>'+
     '<button class="linkbtn" id="toLogin">I already have a profile</button></div>';
 }
