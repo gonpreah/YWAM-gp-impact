@@ -865,7 +865,7 @@ function signHtml_(){
     else if(b.t==='check') h+='<label class="signCheck'+(S.miss && S.miss[b.id]?' miss':'')+'"><input type="checkbox" data-signcheck="'+esc(b.id)+'"'+(F.checks && F.checks[b.id]?' checked':'')+'><span>'+esc(String(lk_(b.text)||'').split('{name}').join(nm||'________'))+'</span></label>';
     else if(b.t==='group') h+='<div class="signGroup'+(S.miss && S.miss[b.id]?' miss':'')+'"><label class="signCheck"><input type="checkbox" data-signcheck="'+esc(b.id)+'"'+(F.checks && F.checks[b.id]?' checked':'')+'><b>'+esc(lk_(b.title))+'</b></label><ul>'+(b.items||[]).map(function(it){ return '<li>'+esc(lk_(it))+'</li>'; }).join('')+'</ul></div>';
     else if(b.t==='field'){ var fv=F.fields && F.fields[b.id]!=null ? F.fields[b.id] : ((b.prefill && d.prefill && d.prefill[b.prefill])||''); h+='<label class="f">'+esc(lk_(b.label))+(b.optional?' <span class="hint">('+esc(t('optional'))+')</span>':'')+'</label><input type="text" data-signfield="'+esc(b.id)+'" maxlength="120" value="'+esc(fv)+'"'+(S.miss && S.miss[b.id]?' class="miss"':'')+'>'; }
-    else if(b.t==='initial') h+=sigPadHtml_('init:'+b.id, b.label, true);
+    else if(b.t==='initial') h+=sigPadHtml_('init:'+b.id, lk_(b.label), true);
   });
   h+='<div class="signHere"><div class="eyebrow">'+esc(t('Sign here'))+'</div>'+
     '<label class="f">'+esc(t('Full name'))+'</label><input type="text" id="sign_name" maxlength="120" value="'+esc(nm||'')+'">'+
