@@ -1129,7 +1129,7 @@ forms, documents and references follow.
 - **Legal documents, signed on a phone (Oct 2026)**: YWAM Siem Reap's five forms (Photo Release, Accident
   Waiver, Liability Release Waiver, Acceptance of Place, Child Protection Agreement) live in `netlify/functions/legal-docs-default.js`
   as blocks (p / check / group / field / initial) with `sign {age, witness, guardian}` — English, verbatim
-  from the paper forms (the Khmer halves are not in yet — except the Volunteer Staff Contract: `public/legal-km.js`, `LEGAL_KM` keyed by the English line, shown through `lk_` / `lkPeriod_` when the portal is in Khmer; the signed record and PDF keep the English; Claude's translation, not yet reviewed). Staff make a team's link on the record's ✍️ Legal
+  from the paper forms (every document's own words have Khmer — the five team documents and the Volunteer Staff Contract — in `public/legal-km.js`; tests/test-khmer.mjs fails if a line has none, `LEGAL_KM` keyed by the English line, shown through `lk_` / `lkPeriod_` when the portal is in Khmer; the signed record and PDF keep the English; Claude's translation, not yet reviewed). Staff make a team's link on the record's ✍️ Legal
   tab (`portalSignLink`, token hashed as `portal.signLink.hash`, a new one turns the old off); anyone opens
   `portal.html?sign=<token>` with no account (`P.view==='sign'`, `signHtml_` / `bindSign_`; a saved sign-in
   is not booted), picks their name (`teamPhotoPeople_`), says if under 18, and signs each document:
