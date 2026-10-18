@@ -952,9 +952,14 @@ Try again as My Ministry.
 - **A contract is for this base; time in YWAM is the person's**: `ywamSince` (a year,
   `ywamSinceOf_`, 1960..now) sits on the staff record, is set from the contract form through
   `hrSaveContract`'s payload (`ywamSince`; empty string clears, missing leaves it), and shows as
-  "In YWAM since 2003 — 23 years" beside "Serving in Siem Reap since …" on the HR person page
-  and as "N yrs in YWAM" in the list. Someone can be 23 years in YWAM on a 2-year Siem Reap
-  contract; the contract's `years` still drives the renewal date.
+  "Started in YWAM in 2003 · 23 years in YWAM (anywhere in the world — e.g. their DTS)" above
+  "With YWAM GP since Oct 2021 · 5 yr with YWAM GP" on the HR person page, and as "With YWAM GP
+  5 yr · Started in YWAM 2003" in the list (Oct 2026, Uriah: Naomie did her DTS in 2018 but started
+  with YWAM GP in Oct 2021). Time with YWAM GP counts from the **contracts**: a campus's start is
+  the month HR set, else its earliest contract signed — never the profile's year (`p.joined`,
+  labelled "Year I started with YWAM GP (not your DTS year)"), which people filled with their DTS.
+  No contract and no month set: the line asks for the first contract. Someone can be 23 years in YWAM
+  on a 2-year Siem Reap contract; the contract's `years` still drives the renewal date.
 - **Admin → Accounts and HR → Everyone group a campus's people by kind of staff** (`staffGroups_`, shared; `[data-admingroup]` / `[data-hrgroup]`): "{Campus}
   ministries" (`staffType==='ministry'`), then "YAP and Campus staff" (`yap` / `campus`), then
   "Kind of staff not set yet" for anyone unsorted — each a `[data-admingroup]` with a
