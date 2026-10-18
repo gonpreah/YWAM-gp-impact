@@ -971,11 +971,11 @@ function hrContractCampus_(p, c){ return (c && c.campus) || p.campus; }
 function hrStartOf_(p, campus){
   var set=(p.starts && p.starts[campus]) || (campus===p.campus && p.baseSince) || '';
   if(/^\d{4}-\d{2}$/.test(set)) return { month:set, set:true };
-  var first=(p.contracts||[]).filter(function(c){ return hrContractCampus_(p, c)===campus; })[0], c=[];
-  if(first) c.push({ m:first.signed, src:'contract' });
-  if(campus===p.campus && /^\d{4}$/.test(p.joined||'')) c.push({ m:p.joined+'-01', src:'joined' });
-  c.sort(function(a,b){ return a.m<b.m ? -1 : a.m>b.m ? 1 : 0; });
-  return c.length ? { month:c[0].m, set:false, src:c[0].src } : null;
+  /* Time with YWAM GP comes from the contracts (Oct 2026, Uriah): the earliest one signed
+     with this campus — not the year on their profile, which people fill in with their DTS. */
+  var first=(p.contracts||[]).filter(function(c){ return hrContractCampus_(p, c)===campus && /^\d{4}-\d{2}/.test(c.signed||''); })
+    .map(function(c){ return c.signed.slice(0,7); }).sort()[0];
+  return first ? { month:first, set:false, src:'contract' } : null;
 }
 /* each campus they have time on, oldest first, with where it ends */
 function hrPeriods_(p){
@@ -1018,7 +1018,7 @@ function hrRowHtml_(p){
   var st=hrStatus_(p), serving=hrServing_(p);
   return '<div data-hrrow="'+esc((p.name+' '+p.username).toLowerCase())+'"><button class="adminRow" data-hrperson="'+esc(p.id)+'">'+avatarHtml(p,'sm')+
     '<span class="adminRowText"><span class="rowName">'+esc(p.name)+'</span>'+
-    '<span class="rowSub">'+esc(t(p.dept))+(p.ministry?' · '+esc(t(p.ministry)):'')+(serving?' · '+esc(gpT('With YWAM GP {time}',{time:serving})):'')+(p.ywamSince?' · '+esc(gpT('In YWAM since {year}',{year:p.ywamSince})):'')+
+    '<span class="rowSub">'+esc(t(p.dept))+(p.ministry?' · '+esc(t(p.ministry)):'')+(serving?' · '+esc(gpT('With YWAM GP {time}',{time:serving})):'')+(p.ywamSince?' · '+esc(gpT('Started in YWAM {year}',{year:p.ywamSince})):'')+
       ((st.key==='due'||st.key==='expired')?' · '+esc(st.label):'')+
       (hrCurrent_(p) ? ' · '+(hrIsDigital_(hrCurrent_(p)) ? '✍️ '+esc(t('Digital')) : '📄 '+esc(t('Paper'))) : '')+'</span></span>'+
     hrStatusChip_(st)+'</button></div>';
@@ -1406,20 +1406,21 @@ function hrStartsHtml_(p, self){
   var box=function(input){ return '<div class="pmeta hrStartBox" id="hrStartBox">'+input+'<button class="btn small" id="hrStartSave">'+esc(t('Save'))+'</button><button class="linkbtn inline" id="hrStartCancel">'+esc(t('Cancel'))+'</button></div>'; };
   var monthBox=function(campus){ return box('📍 <label for="hr_start">'+esc(gpT('Started in {campus}',{campus:campusName(campus)}))+'</label> <input type="month" id="hr_start" value="'+esc(e.value)+'">'); };
   var h='';
-  if(e && e.key==='ywam') h+=box('🌍 <label for="hr_start">'+esc(t('Joined YWAM (the year — e.g. their DTS)'))+'</label> <input type="number" id="hr_start" inputmode="numeric" min="1960" max="'+new Date().getFullYear()+'" step="1" value="'+esc(e.value)+'" placeholder="'+esc(String(new Date().getFullYear()-2))+'">');
+  if(e && e.key==='ywam') h+=box('🌍 <label for="hr_start">'+esc(t('Started in YWAM (the year — e.g. their DTS)'))+'</label> <input type="number" id="hr_start" inputmode="numeric" min="1960" max="'+new Date().getFullYear()+'" step="1" value="'+esc(e.value)+'" placeholder="'+esc(String(new Date().getFullYear()-2))+'">');
   /* Two different things, said plainly (Oct 2026, Uriah — Naomie did her DTS in 2018 but
      started with YWAM GP in Oct 2021): when they joined YWAM anywhere, and when they
      started with YWAM GP. */
-  else h+='<div class="pmeta" id="hrYwamSince">🌍 '+(p.ywamSince ? '<b>'+esc(gpT('Joined YWAM in {year}',{year:p.ywamSince}))+'</b> · '+esc(gpT('{n} years in YWAM',{n:hrYwamYears_(p.ywamSince)}))+' <span class="hint" style="display:inline">('+esc(t('anywhere in the world — e.g. their DTS'))+')</span>' : '<span class="hint" style="display:inline">'+esc(t('Joined YWAM — add the year (e.g. their DTS)'))+'</span>')+' '+edit('ywam')+'</div>';
+  else h+='<div class="pmeta" id="hrYwamSince">🌍 '+(p.ywamSince ? '<b>'+esc(gpT('Started in YWAM in {year}',{year:p.ywamSince}))+'</b> · '+esc(gpT('{n} years in YWAM',{n:hrYwamYears_(p.ywamSince)}))+' <span class="hint" style="display:inline">('+esc(t('anywhere in the world — e.g. their DTS'))+')</span>' : '<span class="hint" style="display:inline">'+esc(t('Started in YWAM — add the year (e.g. their DTS)'))+'</span>')+' '+edit('ywam')+'</div>';
   var per=hrPeriods_(p), now=todayStr().slice(0,7);
   if(per.length) h+='<div class="pmeta" id="hrGpSince">🤝 <b>'+esc(gpT('With YWAM GP since {month}',{month:hrMonthLabel_(per[0].from)}))+'</b> · '+esc(gpT('{time} with YWAM GP',{time:hrMonthsLabel_(hrMonthsBetween_(per[0].from, now))}))+
-    (per[0].set ? '' : ' <span class="hint" style="display:inline">('+esc(per[0].src==='joined' ? t('a guess from the year on their profile — set the month they started below') : t('from the first contract — set the month they started below'))+')</span>')+'</div>';
+    (per[0].set ? '' : ' <span class="hint" style="display:inline">('+esc(t('from their first contract'))+')</span>')+'</div>';
+  else h+='<div class="pmeta" id="hrGpSince">🤝 <span class="hint" style="display:inline">'+esc(t('With YWAM GP — counts from their first contract; add it below, or set when they started'))+'</span></div>';
   h+='<div class="hrPeriods">';
   per.forEach(function(x){
     if(e && e.key==='start:'+x.campus){ h+=monthBox(x.campus); return; }
     h+='<div class="pmeta hrPeriod" data-hrperiod="'+esc(x.campus)+'">📍 '+esc(campusName(x.campus))+': '+
       esc(x.to ? hrMonthLabel_(x.from)+' – '+hrMonthLabel_(x.to) : gpT('since {month}',{month:hrMonthLabel_(x.from)}))+' · '+
-      esc(hrMonthsLabel_(hrMonthsBetween_(x.from, x.to || now)))+(x.set?'':' <span class="hint" style="display:inline">('+esc(x.src==='joined' ? t('a guess from their profile') : t('from the first contract'))+')</span>')+' '+edit('start:'+x.campus)+'</div>';
+      esc(hrMonthsLabel_(hrMonthsBetween_(x.from, x.to || now)))+(x.set?'':' <span class="hint" style="display:inline">('+esc(t('from the first contract'))+')</span>')+' '+edit('start:'+x.campus)+'</div>';
   });
   CAMPUSES.forEach(function(x){
     if(per.some(function(y){ return y.campus===x.id; })) return;
