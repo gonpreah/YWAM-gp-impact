@@ -40,7 +40,7 @@ let staff = [ADMIN,
 ];
 
 const browser = await chromium.launch({ executablePath: CHROMIUM });
-async function open(who) {
+async function open(who, query, waitFor) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 900 } });
   const page = await ctx.newPage();
   const errors = [], sent = [];
@@ -68,8 +68,8 @@ async function open(who) {
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(out) });
   });
   await page.addInitScript(u => localStorage.setItem('gp-staff', JSON.stringify({ user: u, pin: '1234' })), who.username);
-  await page.goto('http://localhost:4489/teams.html', { waitUntil: 'load' });
-  await page.waitForSelector('.hero', { timeout: 15000 });
+  await page.goto('http://localhost:4489/teams.html' + (query || ''), { waitUntil: 'load' });
+  await page.waitForSelector(waitFor || '.hero', { timeout: 15000 });
   await page.waitForTimeout(500);
   return { ctx, page, errors, sent };
 }
@@ -281,6 +281,12 @@ console.log('\n=== signing: the legal documents and the staff contract ===');
   ok('the ☰ menu has My contract for every staff member — and no HR for them', !!(await page.$('[data-menu-item="mycontract"]')) && !(await page.$('[data-menu-item="hr"]')));
   await page.click('[data-menu-item="mycontract"]'); await page.waitForSelector('#mycLegal');
   ok('it asks for their own profile', sent.some(x => x.fn === 'myContract' && x.args[0] === 'dara'));
+  {
+    /* back from signing on the portal, already signed in on this phone: My contract, not My Home */
+    const b = await open(who, '?view=mycontract', '#mycLegal');
+    ok('“Back to My contract” from the portal lands on My contract when the phone is already signed in', !!(await b.page.$('#mycLegal')) && !(await b.page.$('.hero')));
+    await b.ctx.close();
+  }
   const txt = await page.evaluate(() => document.body.textContent);
   ok('their profile like HR’s: name, time in YWAM, and each campus', /Dara Pen/.test(txt) && /Joined YWAM/.test(txt) && /Siem Reap/.test(txt) && /Add time in [^\n]*Poipet/.test(txt));
   ok('their contract is there; one HR has started but not signed with them is not, and there is nothing for them to sign', /On file with HR/.test(await page.$eval('[data-myc="cold"]', e => e.textContent)) && !(await page.$('[data-myc="cdig"]')) && !(await page.$('[data-mycsign]')) && !(await page.$('a[href*="contract%3A"]')));
@@ -313,6 +319,12 @@ console.log('\n=== signing: the legal documents and the staff contract ===');
   const sc = sent.filter(x => x.fn === 'hrSendContract').pop();
   ok('any number of years (5.5): it starts one with that period, then opens the signing page on this phone for that person', sc && sc.args[2] === 'st_dara' && sc.args[3].from === '2026-11' && sc.args[3].years === 5.5 && /portal\.html\?staff=1&hr=st_dara&doc=contract%3Acdig/.test(page.url()), page.url());
   await ctx.close();
+}
+{
+  /* "Back to HR" from the portal, already signed in: that person's HR profile */
+  const b = await open(ADMIN, '?view=hr&hr=st_dara', '[data-hrcontract="cdig"]');
+  ok('“Back to HR” from the portal lands on that person’s HR profile when the phone is already signed in', !!(await b.page.$('[data-hrcontract="cdig"]')) && !(await b.page.$('.hero')));
+  await b.ctx.close();
 }
 {
   const { ctx, page, errors } = await open(ADMIN);

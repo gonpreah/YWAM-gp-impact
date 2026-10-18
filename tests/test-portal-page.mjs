@@ -1241,6 +1241,7 @@ async function open(viewport, query, seed) {
   const ss = sent.filter(b => b.fn === 'hrContractSign').pop();
   ok('signing sends theirs and HR’s, for that person', ss && ss.args[0] === 'uriah' && ss.args[2] === 'st_1' && ss.args[3] === 'me' && ss.args[4] === 'contract:c9' && ss.args[5].fields.focus1 === 'Cafe' && /^\/9j\//.test(ss.args[5].sig) && ss.args[5].leaderName === 'Uriah Lyford' && /^\/9j\//.test(ss.args[5].leaderSig));
   ok('… then it is done, with the way back to HR', !!(await page.$('.signDone a[href="teams.html?view=hr&hr=st_1"]')));
+  ok('… and only once — no second “Back to HR” above it', (await page.$$eval('a', as => as.filter(x => /Back to HR/.test(x.textContent)).length)) === 1);
   await ctx.close();
 }
 /* the staff contract in Khmer: the portal in Khmer shows the contract's own words in Khmer (legal-km.js) */
@@ -1272,6 +1273,15 @@ async function open(viewport, query, seed) {
   const { ctx, page } = await open({ width: 390, height: 844 }, '?staff=1&doc=photo', () => localStorage.setItem('gp-staff', JSON.stringify({ user: 'andrew', pin: '1234' })));
   await page.waitForSelector('[data-signdoc]', { timeout: 8000 });
   ok('from My contract, one document opens on its own', /Photo Release Form/.test(await page.$eval('.signDoc', e => e.textContent)) && !/Volunteer Staff Contract/.test(await page.evaluate(() => document.querySelector('#main').textContent)));
+  await ctx.close();
+}
+{
+  STAFF_DONE.photo = true;   // signed: the "All signed" card
+  const { ctx, page } = await open({ width: 390, height: 844 }, '?staff=1&doc=photo', () => localStorage.setItem('gp-staff', JSON.stringify({ user: 'andrew', pin: '1234' })));
+  await page.waitForSelector('.signDone', { timeout: 8000 });
+  const backs = await page.$$eval('a', as => as.filter(x => /Back to My contract/.test(x.textContent)).map(x => x.getAttribute('href')));
+  ok('once signed, one “Back to My contract” — on the All signed card, to My contract', backs.length === 1 && backs[0] === 'teams.html?view=mycontract' && !!(await page.$('.signDone a[href="teams.html?view=mycontract"]')), JSON.stringify(backs));
+  delete STAFF_DONE.photo;
   await ctx.close();
 }
 {

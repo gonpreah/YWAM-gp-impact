@@ -748,9 +748,11 @@ streaks" inside the card), Annual goals (one card, `#goGoalsFromMe`, opens the G
 Mentorship ("You're mentoring" only for a mentor), About me (Personality and Strengths
 tiles) and Leave / Profile & settings tiles. **Health and My Ministry have no section
 below** — both are in the bottom bar (Uriah). OKRs are My Ministry's second tab.
-- **Weekly Goals:** one card titled This week (or Last week); a small **Last week / This
-  week** switch under the goals (`goalsWeekSwitchHtml_`, `data-goalswk`) — the only other
-  week anyone opens is last week, to mark how it went; no adding goals to a past week.
+- **Weekly Goals:** one card titled This week (or Last week / Next week); a small **Last week /
+  This week / Next week** switch under the goals (`goalsWeekSwitchHtml_`, `data-goalswk`) — last
+  week to mark how it went (no adding to a past week), next week to plan ahead (Oct 2026, Uriah:
+  add up to three, edit or remove, no sliders or Mark Complete until it starts). Next week is
+  offered up to week 51 (goals are kept per year as weeks 1–52).
   No week arrows, no "Share my week". An unlinked goal shows a quiet "Link to a KPI".
 - Gone: the quick-jump chip strip and its scroll guard. tests/test-home-layout-ui.mjs
   holds the order.
