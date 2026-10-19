@@ -2123,3 +2123,15 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 /* My Home: On campus now, under the base's figures */
 .homeWhos { margin-top:8px; }
 .homeWhos .homeBaseHead b { margin-left:4px; }
+
+/* Mentorship: each 1-on-1 with its person — who asked, and the day and time */
+.ooRel { padding:4px 0 2px 52px; }
+.ooLine { font-size:14px; margin:2px 0 6px; }
+.ooAskedLine { font-weight:600; }
+.ooWaiting { box-shadow:inset 3px 0 0 var(--amber); }
+.ooTime { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:0 0 6px; }
+.ooTime input { width:auto; flex:1 1 120px; min-width:0; margin:0; }
+.ooTime .btn.small { width:auto; margin:0; padding:8px 12px; }
+.ooActsRow { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.ooActsRow .btn.small { width:auto; margin:0; }
+@media (max-width:360px){ .ooRel { padding-left:0; } }

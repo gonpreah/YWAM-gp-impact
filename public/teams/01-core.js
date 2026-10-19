@@ -611,6 +611,7 @@ function gpViewFromUrl_(){
   try { var qv=new URLSearchParams(location.search||''), v=qv.get('view');
     if(v==='mycontract'){ S.view='mycontract'; S.myc=null; }
     else if(v==='base' || v==='dashboard') S.view='base';
+    else if(v==='mentor'){ S.view='mentor'; S.mentee=null; }   // a phone notification about a 1-on-1 opens Mentorship
     else if(v==='hr' && qv.get('hr')){ S.view='hr'; S.hrTab='staff'; S.hrSub='person'; S.hrPersonId=qv.get('hr'); S.hrStaff=null; }
   } catch(e){}
 }

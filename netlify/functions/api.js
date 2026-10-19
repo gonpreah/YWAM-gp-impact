@@ -1218,6 +1218,13 @@ async function adminMergeStaff(username, pin, keepId, mergeId) {
 async function updateProfile(username, pin, payload) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
+  const out = await updateProfile_(s, payload || {});
+  /* a new mentor hears of it on their phone, right away */
+  const mid = payload && payload.mentorId;
+  if (out && out.ok && mid && mid !== s.mentorId) await pushNow_(mid, 'mentorAsk', { name: s.name }, 'teams.html?view=mentor');
+  return out;
+}
+async function updateProfile_(s, payload) {
   // one write that re-reads the list (mutateStaff_), so a save at the same moment as an admin's edit can't undo it
   return mutateStaff_(function (rows) {
     const idx = rows.findIndex(function (r) { return r.id === s.id; });
@@ -3647,6 +3654,7 @@ async function saveTrip(username, pin, trip) {
   };
   rows.push(rec);
   await writeJSON('trips', rows);
+  if (mentored) await pushNow_(s.mentorId, 'leaveAsk', { name: s.name, range: rec.from + (rec.to !== rec.from ? ' → ' + rec.to : '') }, 'teams.html?view=mentor');
   return getMyTrips(username, pin);
 }
 
@@ -3685,6 +3693,9 @@ async function respondToTrip(username, pin, tripId, approve) {
   rows[idx].decidedAt = new Date().toISOString();
   rows[idx].updated = rows[idx].decidedAt;
   await writeJSON('trips', rows);
+  const tr = rows[idx];
+  await pushNow_(tr.staffId, 'leaveDone', function (lang) {
+    return { range: tr.from + (tr.to !== tr.from ? ' → ' + tr.to : ''), how: approve ? (lang === 'km' ? 'អនុម័ត' : 'approved') : (lang === 'km' ? 'បដិសេធ' : 'declined') }; }, 'teams.html');
   return getTripRequests(username, pin);
 }
 
@@ -3801,7 +3812,8 @@ async function getMyOneOnOnes(username, pin) {
       const out = {
         id: r.id, otherId: otherId, otherName: who ? who.name : '—', mine: mine,
         status: r.status, note: r.note || '', created: r.created, decidedAt: r.decidedAt || '',
-        menteeId: menteeId, iMentor: mentorId === s.id, heldOn: r.heldOn || ''
+        menteeId: menteeId, iMentor: mentorId === s.id, heldOn: r.heldOn || '',
+        when: r.when || '', whenAt: r.whenAt || '', whenByMe: !!r.when && r.whenBy === s.id
       };
       /* the pair's own words: the mentee always, the mentor while still theirs */
       if (menteeId === s.id || ooPairNow_(staff, s.id, menteeId)) {
@@ -3833,19 +3845,50 @@ async function requestOneOnOne(username, pin, otherId, note, prep) {
   if (isMentor) { const pp = ooPrep_(prep); if (pp) row.prep = pp; }
   rows.push(row);
   await writeJSON('oneOnOnes', rows);
+  await pushNow_(otherId, 'ooAsk', { name: s.name }, 'teams.html?view=mentor');
   return getMyOneOnOnes(username, pin);
 }
 
-async function respondToOneOnOne(username, pin, requestId, approve) {
+/* A 1-on-1's time, "YYYY-MM-DDTHH:MM" on Cambodia's clock: from yesterday to a year ahead. */
+function ooWhen_(v) {
+  const w = String(v || '');
+  const m = /^(\d{4}-\d{2}-\d{2})T([01]\d|2[0-3]):([0-5]\d)$/.exec(w);
+  if (!m || !isDate_(m[1])) return null;
+  const today = baseToday_(), from = addDays_(today, -1), to = addDays_(today, 366);
+  return m[1] >= from && m[1] <= to ? w : null;
+}
+/* The one asked accepts — with the date and time, which goes straight to the one who asked
+   (Oct 2026, Uriah: "when I set it, it will notify them") — or declines. */
+async function respondToOneOnOne(username, pin, requestId, approve, when) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
+  const at = approve && when ? ooWhen_(when) : '';
+  if (at === null) return { ok: false, err: 'bad_when' };
   const rows = await getOneOnOnes_();
   const idx = rows.findIndex(function (r) { return r.id === requestId && r.toId === s.id && r.status === 'pending'; });
   if (idx === -1) return { ok: false, err: 'not_found' };
-  rows[idx].status = approve ? 'accepted' : 'declined';
-  rows[idx].decidedAt = new Date().toISOString();
-  rows[idx].updated = rows[idx].decidedAt;
+  const r = rows[idx], now = new Date().toISOString();
+  r.status = approve ? 'accepted' : 'declined';
+  r.decidedAt = now; r.updated = now;
+  if (at) { r.when = at; r.whenBy = s.id; r.whenAt = now; }
   await writeJSON('oneOnOnes', rows);
+  if (!approve) await pushNow_(r.fromId, 'ooDeclined', { name: s.name }, 'teams.html?view=mentor');
+  else if (at) await pushNow_(r.fromId, 'ooSet', function (lang) { return { name: s.name, when: ooWhenText_(at, lang) }; }, 'teams.html?view=mentor');
+  return getMyOneOnOnes(username, pin);
+}
+/* Either of the pair sets or moves the time of one already on; the other hears of it. */
+async function setOneOnOneTime(username, pin, id, when) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const at = ooWhen_(when);
+  if (!at) return { ok: false, err: 'bad_when' };
+  const rows = await getOneOnOnes_();
+  const r = rows.find(function (x) { return x.id === id && (x.fromId === s.id || x.toId === s.id) && x.status === 'accepted'; });
+  if (!r) return { ok: false, err: 'not_found' };
+  const now = new Date().toISOString();
+  r.when = at; r.whenBy = s.id; r.whenAt = now; r.updated = now;
+  await writeJSON('oneOnOnes', rows);
+  await pushNow_(r.fromId === s.id ? r.toId : r.fromId, 'ooSet', function (lang) { return { name: s.name, when: ooWhenText_(at, lang) }; }, 'teams.html?view=mentor');
   return getMyOneOnOnes(username, pin);
 }
 
@@ -4685,6 +4728,12 @@ const PUSH_TEXT = {
   p360ask: { en: 'A 360 review is waiting for your feedback ({n}).', km: 'ការវាយតម្លៃ 360 កំពុងរង់ចាំមតិរបស់អ្នក ({n})។' },
   p360plan: { en: 'Your 360 action plan’s {q} review is due.', km: 'ដល់ពេលពិនិត្យផែនការសកម្មភាព 360 របស់អ្នកសម្រាប់ {q} ហើយ។' },
   hr: { en: '{n} contracts end soon.', km: 'កិច្ចសន្យា {n} នឹងផុតកំណត់ឆាប់ៗនេះ។' },
+  ooAsk: { en: '{name} asked you for a 1-on-1. Open Mentorship to set a time.', km: '{name} បានសុំជួបមួយទល់មួយជាមួយអ្នក។ បើកការណែនាំ ដើម្បីកំណត់ពេល។' },
+  ooSet: { en: '{name} set your 1-on-1 for {when}.', km: '{name} បានកំណត់ការជួបមួយទល់មួយរបស់អ្នកនៅ {when}។' },
+  ooDeclined: { en: '{name} can’t do the 1-on-1 you asked for.', km: '{name} មិនអាចជួបមួយទល់មួយដែលអ្នកបានសុំបានទេ។' },
+  mentorAsk: { en: '{name} asked you to be their mentor.', km: '{name} បានសុំឲ្យអ្នកធ្វើជាគ្រូណែនាំរបស់គាត់។' },
+  leaveAsk: { en: '{name} asked for leave: {range}.', km: '{name} បានស្នើសុំច្បាប់៖ {range}។' },
+  leaveDone: { en: 'Your leave ({range}) was {how}.', km: 'ការស្នើសុំច្បាប់របស់អ្នក ({range}) ត្រូវបាន{how}។' },
   test: { en: 'Reminders are on. You will hear from the app at the time you chose.', km: 'ការរំលឹកត្រូវបានបើក។ កម្មវិធីនឹងរំលឹកអ្នកនៅម៉ោងដែលអ្នកបានជ្រើសរើស។' }
 };
 function pushText_(key, lang, params) {
@@ -4751,7 +4800,38 @@ async function pushSend_(sub, message, keys) {
 function pushPrefsOf_(s) {
   const p = (s && s.push) || {};
   const h = finiteNum_(p.hour, PUSH_HOURS_MIN, PUSH_HOURS_MAX);
-  return { hour: h == null ? 19 : Math.round(h), daily: p.daily !== false, oneonone: p.oneonone !== false, admin: p.admin !== false, hr: p.hr !== false };
+  return { hour: h == null ? 19 : Math.round(h), daily: p.daily !== false, oneonone: p.oneonone !== false, admin: p.admin !== false, hr: p.hr !== false, alerts: p.alerts !== false };
+}
+/* Right away (Oct 2026, Uriah: "even when you're off the app"): what the bell says the moment it
+   happens — a 1-on-1 asked for or set, a mentor request, leave asked for or decided — to that
+   person's phones, if reminders are set up and they haven't turned these off ("alerts").
+   params(lang) gives the words' {placeholders} in the phone's language. Never throws. */
+async function pushNow_(staffId, key, params, url) {
+  try {
+    const keys = await pushKeys_(); if (!keys) return 0;
+    const subs = (await getPushSubs_()).filter(function (r) { return r.staffId === staffId; });
+    if (!subs.length) return 0;
+    const who = (await getStaff_()).find(function (r) { return r.id === staffId; });
+    if (!who || who.active === false || who.archived || !pushPrefsOf_(who).alerts) return 0;
+    let sent = 0; const gone = [];
+    for (const sub of subs) {
+      const p = typeof params === 'function' ? params(sub.lang) : (params || {});
+      const r = await pushSend_(sub, { title: pushText_('title', sub.lang), body: pushText_(key, sub.lang, p), tag: 'gp-' + key, url: url || 'teams.html' }, keys);
+      if (r === 'sent') sent++;
+      if (r === 'gone') gone.push(sub.endpoint);
+    }
+    if (gone.length) await writeJSON('pushSubs', (await getPushSubs_()).filter(function (r) { return gone.indexOf(r.endpoint) === -1; }));
+    return sent;
+  } catch (e) { return 0; }
+}
+/* "Tue 21 Oct, 3:00 pm" — a 1-on-1's time in words, for a phone in English or Khmer */
+function ooWhenText_(when, lang) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(String(when || ''));
+  if (!m) return String(when || '');
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])), h = +m[4], hh = (h % 12) || 12;
+  if (lang === 'km') return m[3] + '/' + m[2] + '/' + m[1] + ' ' + m[4] + ':' + m[5];
+  return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getUTCDay()] + ' ' + (+m[3]) + ' ' +
+    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+m[2] - 1] + ', ' + hh + ':' + m[5] + ' ' + (h < 12 ? 'am' : 'pm');
 }
 async function getPushSubs_() { return readJSON('pushSubs', []); }
 
@@ -4786,7 +4866,7 @@ async function savePushPrefs(username, pin, prefs) {
   return mutateStaff_(function (rows) {
     const i = rows.findIndex(function (r) { return r.id === s.id; });
     if (i === -1) return { abort: true, ok: false };
-    rows[i].push = { hour: h == null ? 19 : Math.round(h), daily: p.daily !== false, oneonone: p.oneonone !== false, admin: p.admin !== false, hr: p.hr !== false };
+    rows[i].push = { hour: h == null ? 19 : Math.round(h), daily: p.daily !== false, oneonone: p.oneonone !== false, admin: p.admin !== false, hr: p.hr !== false, alerts: p.alerts !== false };
     return { ok: true, prefs: pushPrefsOf_(rows[i]) };
   });
 }
@@ -10346,7 +10426,8 @@ const HANDLERS = {
   saveOneOnOneNotes: function (a) { return saveOneOnOneNotes(a[0], a[1], a[2], a[3], a[4], a[5]); },
   logOneOnOne: function (a) { return logOneOnOne(a[0], a[1], a[2], a[3], a[4], a[5]); },
   tickOneOnOneFollowUp: function (a) { return tickOneOnOneFollowUp(a[0], a[1], a[2], a[3], a[4]); },
-  respondToOneOnOne: function (a) { return respondToOneOnOne(a[0], a[1], a[2], a[3]); },
+  respondToOneOnOne: function (a) { return respondToOneOnOne(a[0], a[1], a[2], a[3], a[4]); },
+  setOneOnOneTime: function (a) { return setOneOnOneTime(a[0], a[1], a[2], a[3]); },
   saveMetricOverrides: function (a) { return saveMetricOverrides(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]); },
   renameCustomMetric: function (a) { return renameCustomMetric(a[0], a[1], a[2], a[3], a[4], a[5], a[6]); },
   getMyPersonal: function (a) { return getMyPersonal(a[0], a[1]); },
