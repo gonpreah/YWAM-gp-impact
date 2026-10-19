@@ -2110,3 +2110,7 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .adminStuHabit { display:flex; justify-content:space-between; gap:10px; padding:5px 0; flex-wrap:wrap; }
 .stuPreviewBar { position:sticky; top:0; z-index:5; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin:0 0 12px; padding:10px 12px; border-radius:12px; background:var(--surface2); border:1px solid var(--border2); font-size:14px; font-weight:600; }
 .stuPreviewBar .btn.small { width:auto; margin:0; padding:6px 12px; }
+
+/* Admin → 🎓 Students: one place for students */
+.adminStuH { margin:18px 0 4px; }
+.adminStuSchool .goalCardTitle { margin-bottom:4px; }

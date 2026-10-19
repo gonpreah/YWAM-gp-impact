@@ -2591,6 +2591,11 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - **Mentors are Leadership Development only** (`STU_LD_DEPT`), names and photos only. A request sits in
   `stuIndex`; the mentor sees it on their Mentorship page (🎓 Students) and accepts or declines
   (`respondStudentMentor`). 1-on-1 forms for students are not built yet.
+- **Admin → 🎓 Students is the one place for students** (admins only): who is staying now with Make
+  profile / Copy invite (`stuStayingHtml_`, shared with ☰ → Students for HR/Hospitality), then each school,
+  with **School finished? Archive these profiles** (`studentsArchive`: candidates archived, their GP app
+  closes, the portal account stays). The old Arrivals & departures is split into two plain Admin cards:
+  **Staff sign-up link** (`groups`) and **Archive several people** (`leaving`) — both staff only.
 - **Admin → 🎓 Students** (admins only): every student profile by school (`studentsAdmin`), one student's
   mentor, goals (last/this/next week), habits, strengths and Library (`studentAdminView`), and **See their
   app**: their real student app, read only (`S.stuPreview` — `run()` sends nothing, Library marks are

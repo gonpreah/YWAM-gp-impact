@@ -161,6 +161,7 @@ const STU = { user: joined.user, pin: joined.token };
   ok('Admin has a 🎓 Students card', !!(await page.$('[data-adminsub="students"]')));
   await page.click('[data-adminsub="students"]'); await page.waitForTimeout(800);
   const txt = await main(page);
+  ok('… one place: who is staying now (with their invite), then each school', /Staying with us now/.test(txt) && /Signed up/.test(txt) && !!(await page.$('#stuSchool')) && /By school/.test(txt) && txt.indexOf('Staying with us now') < txt.indexOf('By school'), txt.slice(0, 300));
   ok('… the profiles by school, with how each is doing', /DTS/.test(txt) && /Sokha Student/.test(txt) && /Mentor: Lina Leader/.test(txt) && /1 goals this week|goals this week/.test(txt), txt.slice(0, 300));
   await page.click('[data-adminstu]'); await page.waitForTimeout(800);
   const one = await main(page);
@@ -180,6 +181,18 @@ const STU = { user: joined.user, pin: joined.token };
   await page.waitForTimeout(1500);
   ok('Back to Admin: yourself again, on Sokha\'s profile', await page.evaluate(() => !S.student && !S.stuPreview && S.view === 'admin' && S.adminSub === 'stuone') && /Memorise Psalm 23/.test(await main(page)));
   await ctx.close();
+{
+  const { ctx, page } = await open('/teams.html', { fn: u => localStorage.setItem('gp-staff', JSON.stringify({ user: u, pin: '1234' })), arg: 'ada' });
+  await page.evaluate(() => { S.view = 'admin'; S.adminSub = 'home'; render(); }); await page.waitForTimeout(300);
+  await page.click('[data-adminsub="students"]'); await page.waitForTimeout(900);
+  await page.click('[data-stuarch="dts"]'); await page.waitForTimeout(300);
+  ok('School finished: it asks first', /Archive all 1 DTS profiles\?/.test(await main(page)) && !mem.candidates[0].archived);
+  await page.click('[data-stuarchyes="dts"]'); await page.waitForTimeout(900);
+  ok('… then archives the school\'s profiles, and they leave the list', !!mem.candidates[0].archived && mem.candidates[0].archived.reason === 'School finished' && !(await page.$('[data-adminstu]')));
+  const r = await call('studentCall', [STU.user, STU.pin, 'getMyBoot', []]);
+  ok('… and their GP app closes', r.ok === false);
+  await ctx.close();
+}
 }
 {
   const { ctx, page } = await open('/teams.html', { fn: u => localStorage.setItem('gp-staff', JSON.stringify({ user: u, pin: '1234' })), arg: 'hana' });

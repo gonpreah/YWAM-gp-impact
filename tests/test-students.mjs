@@ -128,5 +128,13 @@ ok('a missing profile: not found', r.ok === false && r.err === 'not_found');
 const notJoined = (await call('studentsAdmin', ['ada', '1234'])).schools.dts.find(x => !x.linked);
 if (notJoined) { r = await call('studentAdminView', ['ada', '1234', notJoined.candId]); ok('one who hasn\'t joined: the profile, no app yet', r.ok && r.boot === null && !r.student.linked); }
 
+console.log('=== Admin → Students: archive a school when it finishes ===');
+r = await call('studentsArchive', ['hana', '1234', [sok.candId]]);
+ok('only an admin can archive a school', r.ok === false && r.err === 'not_authorized' && !mem.candidates.find(c => c.id === sok.candId).archived);
+ok('… not a student either', (await call('studentsArchive', [...U, [sok.candId]])).ok === false);
+r = await call('studentsArchive', ['ada', '1234', [sok.candId, 'not-a-student-id']]);
+ok('an admin archives the school\'s profiles', r.ok && r.archived === 1 && mem.candidates.find(c => c.id === sok.candId).archived.reason === 'School finished' && !((r.schools.dts || []).some(x => x.candId === sok.candId)));
+ok('… and the student\'s GP app closes', (await call('studentCall', [...U, 'getMyBoot', []])).ok === false);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
