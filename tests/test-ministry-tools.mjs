@@ -178,9 +178,11 @@ r = await call('saveLeadTuesday', ['vanna', '1234', { date: tue, facilitator: { 
 ok('only Campus Leadership plans Tuesdays', !r.ok && r.err === 'not_authorized');
 r = await call('saveLeadTuesday', ['dl', '1234', { date: wed, facilitator: { id: 'st_cd' } }]);
 ok('… and only on a Tuesday', !r.ok && r.err === 'bad_date');
-r = await call('saveLeadTuesday', ['dl', '1234', { date: tue, facilitator: { id: 'st_barista' }, translator: { id: '', name: 'Pastor Sokha' }, topics: ['Outreach week', '', 'Prayer for the DTS'] }]);
+r = await call('saveLeadTuesday', ['dl', '1234', { date: tue, facilitator: { id: 'st_barista' }, topics: ['x'] }]);
+ok('someone off the leadership team isn\u2019t taken as facilitator', r.ok && r.tues.find((x) => x.date === tue).facilitator === null);
+r = await call('saveLeadTuesday', ['dl', '1234', { date: tue, facilitator: { id: 'st_cd' }, translator: { id: '', name: 'Pastor Sokha' }, topics: ['Outreach week', '', 'Prayer for the DTS'], announcements: ['Water off Thursday', ''] }]);
 const tr = r.ok && r.tues.find((x) => x.date === tue);
-ok('a facilitator from the base, a guest translator by name, the topics', tr && tr.facilitator.id === 'st_barista' && tr.translator.name === 'Pastor Sokha' && tr.topics.length === 2);
+ok('a facilitator from the leadership team, a guest translator by name, the topics and announcements', !!tr && tr.facilitator.id === 'st_cd' && tr.translator.name === 'Pastor Sokha' && tr.topics.length === 2 && tr.announcements.join() === 'Water off Thursday');
 r = await call('saveLeadTuesday', ['dl', '1234', { date: tue, facilitator: { id: 'st_pp' }, topics: ['x'] }]);
 ok('someone from another campus isn’t taken as a person', r.ok && r.tues.find((x) => x.date === tue).facilitator === null);
 r = await call('saveLeadCard', ['cd', '1234', { title: 'Budget for Q1', type: 'agenda' }]);
