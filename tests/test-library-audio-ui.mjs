@@ -84,7 +84,7 @@ async function open(user, opts) {
   await page.goto(BASE + '/teams.html', { waitUntil: 'load' });
   await page.waitForSelector('nav.bottom button', { timeout: 15000 });
   if (!opts.off) await page.evaluate(() => { LIB_AUDIO_ON = true; });   // off in the app for now; switched on here to keep the player tested
-  await page.click('nav.bottom [data-tab="library"]'); await page.waitForTimeout(900);
+  await page.click('#menuBtn'); await page.waitForTimeout(250); await page.click('[data-menu-item="library"]'); await page.waitForTimeout(900);
   return { ctx, page };
 }
 const C = {}; vm.createContext(C); vm.runInContext(fs.readFileSync(PUBLIC + '/library.js', 'utf8') + ';this.L=GP_LIBRARY;', C);

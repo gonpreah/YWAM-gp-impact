@@ -1358,6 +1358,7 @@ function miniDashboardHtml(){
       '<div class="heroTrend">'+esc(t('My Health'))+' <b class="heroFig">'+(score!==null?score.toFixed(1):'—')+'</b>/10 '+healthTrend+'</div></button>'+
     '<button class="heroRow" data-gomentorship="1">'+gpRingHtml(mentorPct,'sm',t('Mentor'))+
       '<div class="heroTrend">'+esc(t('Mentor'))+' <b class="heroFig">'+(mentorId?esc(mentorName):esc(t('Not set')))+'</b></div></button>'+
+    '<button class="heroHealthBtn" id="goMyHealth" data-gohealth="1">💚 '+esc(t('Go to My Health'))+' ›</button>'+
     '<div class="heroSub">'+
       '<div class="heroSubRow">'+
         '<span class="heroSubLabel">'+esc(t('PERSONAL DAYS OFF LEFT'))+'</span>'+
