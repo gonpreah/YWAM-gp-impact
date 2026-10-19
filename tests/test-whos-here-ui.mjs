@@ -61,7 +61,9 @@ mem.trips = [{ id: 't1', staffId: 'd2', campus: 'siemreap', from: day(-2), to: d
 mem.teamTrips = [{ id: 'tt1', candidateId: 'cdT', campus: 'siemreap', name: 'Grace Church Team', country: 'Australia', from: day(-1), to: day(5), size: 2, status: 'active', metrics: {} }];
 mem.candidates = [{ id: 'cdT', type: 'team', campus: 'siemreap', name: 'Pat Leader', stage: 'arrived', portal: { form: { answers: { teamName: 'Grace Church Team', leaderName: 'Pat Leader' } }, members: [{ id: 'm1', name: 'Mia Member', sex: 'f' }], docs: [] }, log: [] }];
 mem['tphotos:cdT'] = { photos: { leader: { data: 'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAADklEQVQI12P4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==', at: day(-3) } } };
-mem['hosp:siemreap'] = { buildings: [{ id: 'b1', name: 'House' }], rooms: [], bookings: [
+mem['hosp:siemreap'] = { buildings: [{ id: 'b1', name: 'House' }], rooms: [
+  { id: 'r1', buildingId: 'b1', name: 'Room 1', style: 'mixed', notes: '', beds: 'ABCDEFGHIJ'.split('').map((l, i) => ({ id: 'bd' + l, label: l, out: i >= 8 })) }   // 8 beds in use, 2 out
+], bookings: [
   { id: 'kT', category: 'team', name: 'Grace Church Team', from: day(-1), to: day(5), count: 2, males: 0, females: 2, bedIds: [], tripId: 'tt1' },
   { id: 'kS', category: 'student', name: 'DTS student', from: day(-10), to: '', permanent: true, count: 1, people: [{ name: 'Sokha Student', sex: 'm' }], bedIds: [] },
   { id: 'kV', category: 'volunteer', name: 'Volunteer Example', from: day(0), to: day(2), count: 2, bedIds: [] },
@@ -105,9 +107,10 @@ const call = async (fn, args) => { const r = await api.default({ method: 'POST',
   const { ctx, page } = await open('sreilea');
   await page.click('#menuBtn'); await page.waitForTimeout(250); await page.click('[data-menu-item="base"]'); await page.waitForTimeout(900);
   ok('Base shows how many are on campus now', /On campus now\s*8/.test(await page.$eval('#goWhosHere', e => e.innerText)), await page.$eval('#goWhosHere', e => e.innerText).catch(() => 'none'));
+  ok('… and how full the beds are tonight (6 of 8 beds booked)', /75% full/.test(await page.$eval('#goWhosHere', e => e.innerText)));
   await page.click('#goWhosHere'); await page.waitForTimeout(900);
   const txt = await page.$eval('#main', e => e.innerText);
-  ok('Who\'s here: tonight, 8 people, by kind', /Who’s here/.test(txt) && /8 people on campus/.test(txt) && /Staff\s*2/.test(txt) && /Teams\s*2/.test(txt) && /Students\s*1/.test(txt) && /Volunteers\s*2/.test(txt) && /Speakers\s*1/.test(txt), txt.slice(0, 300));
+  ok('Who\'s here: tonight, 8 people, by kind', /Who’s here/.test(txt) && /8 people on campus/.test(txt) && /6 of 8 beds filled \(75%\)/.test(txt) && /Staff\s*2/.test(txt) && /Teams\s*2/.test(txt) && /Students\s*1/.test(txt) && /Volunteers\s*2/.test(txt) && /Speakers\s*1/.test(txt), txt.slice(0, 300));
   const away = await page.$$eval('.whoTile.away', ts => ts.map(t => t.innerText.replace(/\s+/g, ' ')));
   ok('staff on leave are dimmed, with “Off campus right now” and why', away.length === 1 && /Dara Pen/.test(away[0]) && /Off campus right now/.test(away[0]) && /On break/.test(away[0]), JSON.stringify(away));
   ok('… and come after those who are here; no one from Poipet', (await page.$eval('.whoGrid', g => [...g.querySelectorAll('.whoName')].map(x => x.textContent))).pop() === 'Dara Pen' && !/Poipet Person/.test(txt));
@@ -122,6 +125,7 @@ const call = async (fn, args) => { const r = await api.default({ method: 'POST',
 {
   const { ctx, page } = await open('sreilea');
   await page.waitForTimeout(600);
+  ok('My Home shows the beds-filled % next to it', /75% full/.test(await page.$eval('#goWhosHereHome', e => e.innerText).catch(() => '')));
   ok('My Home shows how many are on campus now', await page.evaluate(() => S.view === 'week') && /On campus now\s*8/.test(await page.$eval('#goWhosHereHome', e => e.innerText).catch(() => 'none')), await page.$eval('#goWhosHereHome', e => e.innerText).catch(() => 'none'));
   await page.click('#goWhosHereHome'); await page.waitForTimeout(900);
   ok('… tap it: Who\'s here, with ← My Home', /8 people on campus/.test(await page.$eval('#main', e => e.innerText)) && /My Home/.test(await page.$eval('#whosBack', e => e.innerText)));

@@ -1350,7 +1350,8 @@ function whosHereHtml_(){
     '<h2 style="margin:4px 0 2px">🏠 '+esc(t('Who’s here'))+'</h2>';
   if(!W) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
   var G=W.groups||{}, nOf=function(k){ return (G[k]||[]).reduce(function(a,g){ return a+g.count; },0); };
-  h+='<p class="sub" style="margin:0 0 10px">'+esc(campusName(W.campus))+' · '+esc(gpT('tonight, {date}',{date:fmtDateNice_(W.date)}))+' · <b>'+esc(gpT('{n} people on campus',{n:W.count}))+'</b></p>';
+  h+='<p class="sub" style="margin:0 0 10px">'+esc(campusName(W.campus))+' · '+esc(gpT('tonight, {date}',{date:fmtDateNice_(W.date)}))+' · <b>'+esc(gpT('{n} people on campus',{n:W.count}))+'</b>'+
+    (W.beds ? ' · '+esc(gpT('{filled} of {total} beds filled ({n}%)',{filled:W.beds.filled, total:W.beds.total, n:W.capacity})) : '')+'</p>';
   h+='<div class="whoChips"><span>👥 '+esc(t('Staff'))+' <b>'+W.staffHere+'</b></span>'+Object.keys(WHOS_LABEL).filter(function(k){ return nOf(k); }).map(function(k){
     return '<span>'+WHOS_LABEL[k][0]+' '+esc(t(WHOS_LABEL[k][1]))+' <b>'+nOf(k)+'</b></span>'; }).join('')+'</div>';
   /* staff: here first, then away — dimmed */
@@ -1444,6 +1445,7 @@ function baseHtml(){
     var W=S.whosHere && S.whosFor===(S.me.campus||'') ? S.whosHere : null;
     h+='<button class="heroRow" id="goWhosHere">'+gpRingHtml(W && (W.staffHere+W.staffAway) ? Math.round(W.staffHere/(W.staffHere+W.staffAway)*100) : 0, 'sm', t('On campus now'))+
        '<div class="heroTrend">🏠 '+esc(t('On campus now'))+' <b class="heroFig">'+(W ? W.count : '—')+'</b>'+
+         (W && W.capacity!=null ? ' <span class="whoCap">· '+esc(gpT('{n}% full',{n:W.capacity}))+'</span>' : '')+
        '<span class="heroSubtext" style="display:block">'+esc(t('Tap to see who’s here'))+' ›</span></div></button>';
   }
   var cr=R.checkinRate(ids, wk);

@@ -1342,11 +1342,11 @@ function miniDashboardHtml(){
     '<button class="heroRow" data-jump="sec-habits">'+gpRingHtml(habitsPct,'sm',t('Habits Today'))+
       '<div class="heroTrend">'+esc(t('Habits Today'))+' <b class="heroFig">'+habitsDone+'</b>/'+list.length+
       (bestRun>0?'</div><div class="heroSubtext">🔥 '+esc(gpT('best {n}d streak',{n:bestRun}))+'</div>':'</div>')+'</button>'+
-    '<button class="heroRow" data-gohealth="1">'+gpRingHtml(healthPct,'sm',t('My Health'))+
-      '<div class="heroTrend">'+esc(t('My Health'))+' <b class="heroFig">'+(score!==null?score.toFixed(1):'—')+'</b>/10 '+healthTrend+'</div></button>'+
-    '<button class="heroRow" data-gomentorship="1">'+gpRingHtml(mentorPct,'sm',t('Mentor'))+
-      '<div class="heroTrend">'+esc(t('Mentor'))+' <b class="heroFig">'+(mentorId?esc(mentorName):esc(t('Not set')))+'</b></div></button>'+
-    '<button class="heroHealthBtn" id="goMyHealth" data-gohealth="1">💚 '+esc(t('Go to My Health'))+' ›</button>'+
+    /* a small › on the row itself opens the page (Uriah: no big button under them) */
+    '<button class="heroRow heroRowGo" id="goMyHealth" data-gohealth="1" aria-label="'+esc(t('Go to My Health'))+'">'+gpRingHtml(healthPct,'sm',t('My Health'))+
+      '<div class="heroTrend">'+esc(t('My Health'))+' <b class="heroFig">'+(score!==null?score.toFixed(1):'—')+'</b>/10 '+healthTrend+'</div><span class="heroGo" aria-hidden="true">›</span></button>'+
+    '<button class="heroRow heroRowGo" id="goMentorship" data-gomentorship="1" aria-label="'+esc(t('Mentorship'))+'">'+gpRingHtml(mentorPct,'sm',t('Mentor'))+
+      '<div class="heroTrend">'+esc(t('Mentor'))+' <b class="heroFig">'+(mentorId?esc(mentorName):esc(t('Not set')))+'</b></div><span class="heroGo" aria-hidden="true">›</span></button>'+
     '<div class="heroSub">'+
       '<div class="heroSubRow">'+
         '<span class="heroSubLabel">'+esc(t('PERSONAL DAYS OFF LEFT'))+'</span>'+
@@ -1383,7 +1383,8 @@ function homeBaseHtml_(){
     (S.guest || S.board || S.student ? '' : (function(){
       var W=S.whosHere && S.whosFor===(S.me.campus||'') ? S.whosHere : null;
       return '<button class="homeBase homeWhos" id="goWhosHereHome">'+
-        '<span class="homeBaseHead"><span>👥 '+esc(t('On campus now'))+' <b class="homeWhosN">'+(W ? W.count : '—')+'</b></span>'+
+        '<span class="homeBaseHead"><span>👥 '+esc(t('On campus now'))+' <b class="homeWhosN">'+(W ? W.count : '—')+'</b>'+
+          (W && W.capacity!=null ? ' <span class="whoCap">· '+esc(gpT('{n}% full',{n:W.capacity}))+'</span>' : '')+'</span>'+
         '<span class="homeBaseGo">'+esc(t('Who’s here'))+' →</span></span></button>';
     })());
 }
