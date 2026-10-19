@@ -727,8 +727,34 @@ function mmOptions_(){
   (S.me.leads||[]).forEach(function(k){ pushKey(k, 'leader'); });
   if(oversees) Object.keys(deps[oversees]||{}).forEach(function(m){ push(oversees, m, 'oversee'); });
   if(S.me.isAdmin) Object.keys(deps).forEach(function(d){ if(d===BL_DEPT) return; Object.keys(deps[d]).forEach(function(m){ push(d, m, 'admin'); }); });
-  if(S.me.ministry && isBL) push(S.me.dept, S.me.ministry, 'main');   // last, never the default
+  if(S.me.ministry && isBL) push(S.me.dept, blMyKey_(), 'main');   // last, never the default
+  // a Campus Director or an admin can open every leadership role's board (blRoleKeys_)
+  if(canBrowseBl_()) blRoleKeys_().forEach(function(k){ push(BL_DEPT, k, 'browse'); });
   return out;
+}
+/* ---------- Campus Leadership's roles, in the ministry picker ----------
+   Oct 2026 (Uriah): "I want to be able to click different ministry from the campus
+   leadership department then what leadership ministry from there." Under Campus
+   Leadership the picker lists each leadership role — the two Campus Director roles kept
+   apart ('@icd', '@ncd'), then a Director for each department (its name) — and picking
+   one opens that role's board as they see it (blViewOf_, LW_ROLES). Your own role is
+   yours as always (blMyKey_); "My week" is never anyone else's to open. Campus Directors
+   and admins only — the department pulse behind a board is theirs to see (canSeePulse_). */
+function canBrowseBl_(){ return !!(S.me && (S.me.isAdmin || (S.me.dept===BL_DEPT && S.me.ministry==='Campus Director'))); }
+function blRoleKeys_(){
+  var mins=Object.keys(getDepartments(S.me.campus)[BL_DEPT]||{});
+  return (mins.indexOf('Campus Director')>-1 ? ['@icd','@ncd'] : []).concat(mins.filter(function(m){ return m!=='Campus Director'; }));
+}
+function blMyKey_(){
+  if(S.me.ministry!=='Campus Director') return S.me.ministry;
+  var tt=orgTitleOf_(S.me);
+  return tt==='International Campus Director' ? '@icd' : tt==='National Campus Director' ? '@ncd' : 'Campus Director';
+}
+function blTitleOf_(key){ return key==='@icd' ? 'International Campus Director' : key==='@ncd' ? 'National Campus Director' : key==='Campus Director' ? 'Campus Director' : 'Director of '+key; }
+function blViewOf_(key){
+  if(!canBrowseBl_() || blRoleKeys_().indexOf(key)<0) return null;
+  var role=key==='@icd' ? 'icd' : key==='@ncd' ? 'ncd' : 'dept';
+  return { key:key, role:role, title:blTitleOf_(key), depts: role==='dept' ? [key] : PULSE_DEPTS_.slice() };
 }
 function mmSelected_(opts){
   if(!opts.length) return null;
@@ -743,7 +769,7 @@ function mmSelected_(opts){
   return own || opts.filter(function(o){ return !isTeamsMinistry_(o.dept, o.min); })[0] || opts[0];
 }
 function mmOptionLabel_(o){
-  if(o.dept===BL_DEPT) return '🧭 '+t('Campus Leadership');
+  if(o.dept===BL_DEPT) return '🧭 '+orgTitleText_(blTitleOf_(o.min))+(o.role==='main' ? ' · '+t('you') : '');
   return (MIN_EMOJI[o.min]?MIN_EMOJI[o.min]+' ':'')+t(o.min);
 }
 function mmPickerHtml_(opts, sel){
@@ -803,25 +829,34 @@ function myMinistryHtml(){
       '<button class="btn ghost" id="goProfile">'+esc(t('Choose my ministry'))+'</button></div>';
   }
   S.mmBrowseDept=sel.dept; S.mmBrowseMinistry=sel.min;
-  var mine = sel.dept===S.me.dept && sel.min===S.me.ministry;
+  var mine = sel.dept===S.me.dept && (sel.dept===BL_DEPT ? sel.min===blMyKey_() : sel.min===S.me.ministry);
   h+=mmPickerHtml_(opts, sel);
   h+=mmBannerHtml_(sel, mine);
   // Campus Leadership: its OKRs and the Monday meeting board, no weekly numbers (hidden for now)
   S.leadShown = sel.dept===BL_DEPT;
   if(S.leadShown){
-    var pd = mine ? pulseDeptsForMe_() : [];
+    var view = mine ? null : blViewOf_(sel.min);   // another leadership role's board, as they see it
+    S.lwView = view;
+    var pd = mine ? pulseDeptsForMe_() : view ? view.depts : [];
     var ph = pd.map(function(d){ return pulseCardHtml_(d, pd.length>1); }).join('');
     /* Your own leadership row: "My week" first — the numbers come from it — and
        the board, pulse and the Director's quarter a tab away. */
-    if(mine && S.me.dept===BL_DEPT && S.me.ministry){
+    if((mine && S.me.dept===BL_DEPT && S.me.ministry) || view){
       /* each role its own board — the tabs' order, what Overview leads with (LW_ROLES) */
-      var role=lwRole_(), R=LW_ROLES[role], lwt=lwTabNow_();
-      /* who you are on the team — International / National Campus Director, Director of … */
-      var myTitle=orgTitleOf_(S.me);
-      if(myTitle) h+='<div class="orgYou">🧭 '+esc(gpT('Your role: {title}',{title:orgTitleText_(myTitle)}))+'</div>';
+      var role=view ? view.role : lwRole_(), R=LW_ROLES[role];
+      var tabList=view ? R.tabs.filter(function(k){ return k!=='week'; }) : R.tabs;   // someone else's week is theirs
+      var lwt=view ? (tabList.indexOf(S.lwTab)>-1 ? S.lwTab : tabList[0]) : lwTabNow_();
+      if(view){
+        var holder=((orgCampus_(S.me.campus)||{}).clt||[]).filter(function(p){ return p.title===view.title; })[0];
+        h+='<div class="orgYou">👁️ '+esc(gpT('Viewing: {title}',{title:orgTitleText_(view.title)}))+' · '+esc(holder ? holder.name : t('Nobody yet'))+'</div>';
+      } else {
+        /* who you are on the team — International / National Campus Director, Director of … */
+        var myTitle=orgTitleOf_(S.me);
+        if(myTitle) h+='<div class="orgYou">🧭 '+esc(gpT('Your role: {title}',{title:orgTitleText_(myTitle)}))+'</div>';
+      }
       if(R.focus) h+='<p class="hint lwFocus">'+esc(t(R.focus))+'</p>';
-      var TABS={ week:['🗓️',t('My week')], base: role==='dept' ? ['🗂️',t('My department')] : ['🧭',t('Overview')], money:['💵',t('Finances')], board:['📋',t('Board')] };
-      h+='<div class="campusSeg lwSeg" style="max-width:none">'+R.tabs.map(function(k){
+      var TABS={ week:['🗓️',t('My week')], base: role==='dept' ? ['🗂️',view ? t(view.key) : t('My department')] : ['🧭',t('Overview')], money:['💵',t('Finances')], board:['📋',t('Board')] };
+      h+='<div class="campusSeg lwSeg" style="max-width:none">'+tabList.map(function(k){
         return '<button class="campusBtn'+(lwt===k?' on':'')+'" data-lwtab="'+k+'">'+TABS[k][0]+' '+esc(TABS[k][1])+'</button>'; }).join('')+'</div>';
       if(lwt==='week') return h+lwHtml_();
       /* the base's finances, from the Finances office's reports (teams/09-finance.js) */

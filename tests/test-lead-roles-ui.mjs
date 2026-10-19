@@ -39,6 +39,7 @@ mem.staff = [
   mk({ id: 'cd', name: 'Cam Director', username: 'cd', dept: 'Campus Leadership', ministry: 'Campus Director' }),
   mk({ id: 'dcs', name: 'Chea Leader', username: 'chea', dept: 'Campus Leadership', ministry: 'Community Service' }),
   mk({ id: 's1', name: 'Dara Sok', username: 'dara' }),
+  mk({ id: 'adm', name: 'Ada Min', username: 'ada', dept: 'Skills Training', ministry: 'Finances', isAdmin: true }),
   mk({ id: 's2', name: 'Vanna Chan', username: 'vanna', dept: 'Youth Education', ministry: 'Kids Club' })
 ];
 async function call(fn, args) {
@@ -143,6 +144,42 @@ const firstKinds = async (p) => { await p.click('[data-lwtab="week"]'); await p.
 {
   const { ctx, page } = await open('cd');
   ok('a Campus Director with no title: the whole base, as before', (await tabOn(page)) === 'base' && !(await focus(page)) && (await tiles(page)).length === 4 && /Clear leaders/.test((await tiles(page))[0]));
+  await ctx.close();
+}
+
+/* ---- a Campus Director opens another leadership role's board ---- */
+{
+  const { ctx, page } = await open('icd');
+  const picks = await page.$$eval('[data-mmpick^="Campus Leadership|"]', (b) => b.map((x) => x.textContent.trim()));
+  ok('Campus Leadership lists every leadership role, theirs marked', picks.length === 6 && /International Campus Director · you/.test(picks[0]) && picks.some((x) => /National Campus Director/.test(x)) && picks.some((x) => /Director of Youth Education/.test(x)), picks.join(' | '));
+  await page.click('[data-mmpick="Campus Leadership|@ncd"]'); await page.waitForTimeout(1500);
+  const you = await page.$eval('.orgYou', (e) => e.textContent);
+  ok('picking the National Campus Director opens their board, with who holds it', /Viewing: National Campus Director · Nary Director/.test(you), you);
+  const tl = await tiles(page);
+  ok('… their numbers on top: away, 1-on-1s, numbers in, Tuesday', /Away this week/.test(tl[0]) && /1-on-1s this month/.test(tl[1]), tl.join(' | '));
+  ok('… and their tabs, without their own week', (await tabs(page)).join() === 'base,board,money');
+  await page.screenshot({ path: OUT + '/5-viewing-national.png' });
+  await page.click('[data-mmpick="Campus Leadership|Youth Education"]'); await page.waitForTimeout(1500);
+  const lb = await page.$eval('#leadBase', (e) => e.innerText);
+  ok('picking a department’s Director opens that department', /Viewing: Director of Youth Education · Nobody yet/.test(await page.$eval('.orgYou', (e) => e.textContent)) && /Youth Education this week/.test(lb) && !/Community Service this week/.test(lb) && !(await page.$('.lbGlance')));
+  await page.click('[data-mmpick="Campus Leadership|@icd"]'); await page.waitForTimeout(1000);
+  ok('… and back to their own, with My week', /Your role: International Campus Director/.test(await page.$eval('.orgYou', (e) => e.textContent)) && (await tabs(page)).join() === 'base,week,board,money');
+  await ctx.close();
+}
+{
+  // an admin: the Department and Ministry drop-downs
+  const { ctx, page } = await open('ada');
+  await page.selectOption('#mmBrowseDeptSel', 'Campus Leadership'); await page.waitForTimeout(800);
+  const opts = await page.$$eval('#mmBrowseMinSel option', (o) => o.map((x) => x.value + '=' + x.textContent.trim()));
+  ok('an admin: Department → Campus Leadership, then the leadership role', opts.length === 6 && !(await page.$eval('#mmBrowseMinSel', (s) => s.disabled)) && opts[0].startsWith('@icd=') && /International Campus Director/.test(opts[0]), opts.join(' | '));
+  await page.selectOption('#mmBrowseMinSel', '@icd'); await page.waitForTimeout(1500);
+  ok('… and picking one opens that role’s board', /Viewing: International Campus Director · Ian Director/.test(await page.$eval('.orgYou', (e) => e.textContent)) && /Vision, partners/.test(await focus(page)) && (await tiles(page)).length === 4);
+  await page.screenshot({ path: OUT + '/6-admin-picks.png' });
+  await ctx.close();
+}
+{
+  const { ctx, page } = await open('chea');
+  ok('a department’s Director doesn’t get the other roles to open', !(await page.$('[data-mmpick="Campus Leadership|@icd"]')) && !(await page.$('#mmBrowseMinSel option[value="@icd"]')));
   await ctx.close();
 }
 

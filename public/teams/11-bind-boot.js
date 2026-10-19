@@ -440,7 +440,7 @@ function bindAway(){
     // The picked ministry, if it isn't your own, loads lazily the first time
     // it's picked — cached in S.oversee by ministry name until logout.
     var bDept=S.mmBrowseDept, bMin=S.mmBrowseMinistry;
-    if(bDept && bMin && !(bDept===S.me.dept && bMin===S.me.ministry) && !isTeamsMinistry_(bDept,bMin) &&
+    if(bDept && bMin && bDept!==BL_DEPT && !(bDept===S.me.dept && bMin===S.me.ministry) && !isTeamsMinistry_(bDept,bMin) &&
        !S.oversee[bMin] && !S.ovLoading[bMin] && !S.ovError[bMin]){
       S.ovLoading[bMin]=true; S.ovError[bMin]='';
       run('getMinistryFor',[S.auth.user,S.auth.pin,bDept,bMin],function(d){

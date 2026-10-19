@@ -1801,6 +1801,17 @@ numbers fill themselves in from using it (like Teams and Hospitality). Two so fa
   stays for that visit only (`gp-lw-tab` in sessionStorage — tests set it there). The
   leadership-team card sits at the foot of Overview, under the role's own numbers.
   tests/test-lead-roles-ui.mjs. The Cafe's tool/numbers choice is `gp-cafe-view`.
+- **Opening another leadership role's board** (Oct 2026, Uriah: "I want to be able to click
+  different ministry from the campus leadership department then what leadership ministry
+  from there"). Under Campus Leadership the ministry picker lists each leadership role —
+  International and National Campus Director (keys `@icd` / `@ncd`, since both are the
+  "Campus Director" row), then a Director for each department (its name) — for Campus
+  Directors and admins (`canBrowseBl_`; the pulse behind a board is theirs to see,
+  `canSeePulse_`). Your own role is marked "· you" (`blMyKey_`). Another role opens as they
+  see it (`blViewOf_` → `S.lwView`, read by `leadBaseHtml_`): "Viewing: <title> · <who holds
+  it>", that role's line, tabs and tiles — but never their "My week" (it's theirs), and the
+  partners tile becomes "Numbers in" (partners are each director's own). The lazy
+  `getMinistryFor` load skips Campus Leadership.
   **Overview** (`leadBaseHtml_`): for the
   Director (or an admin) four glance tiles, then clear leaders (from each person's `leads`,
   `ministryLeaders_`), next Tuesday, the money ahead (a tile that opens Finances), and every department's pulse folded;

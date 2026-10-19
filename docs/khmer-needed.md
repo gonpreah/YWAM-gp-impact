@@ -4024,3 +4024,11 @@ My Ministry → Finances → Reports, the QuickBooks card at the top (the Financ
 | My department | នាយកដ្ឋានរបស់ខ្ញុំ |
 
 My Ministry, on a Campus Leadership member’s own row: the line under “Your role” (one per role), and the four numbers at the top of Overview. The tiles are about 12 characters wide on a phone — “Partners to reach”, “Away this week” and “1-on-1s this month” should stay short.
+
+## 75. Opening another leadership role’s board
+
+| English | Khmer (draft) |
+|---|---|
+| Viewing: {title} | កំពុងមើល៖ {title} |
+
+My Ministry → Campus Leadership → a leadership role that isn’t yours (Campus Directors and admins): the line at the top saying whose board this is, e.g. “Viewing: National Campus Director · Nary”.

@@ -399,7 +399,8 @@ function leadTuesdays_(n){ var d=new Date(); d.setHours(12,0,0,0); d.setDate(d.g
 function leadTuesFor_(date){ return ((S.lead && S.lead.tues) || []).filter(function(x){ return x.date===date; })[0] || null; }
 function leadTuesWho_(p){ return p ? (p.id ? staffName_(p.id) : p.name) : ''; }
 function leadBaseHtml_(pulse){
-  var depts=getDepartments(S.me.campus), rows=[], scope=leadScopeDepts_(), many=scope.length>1;
+  var V=S.lwView;   // another leadership role's board (blViewOf_), or null for your own
+  var depts=getDepartments(S.me.campus), rows=[], scope=V ? V.depts : leadScopeDepts_(), many=scope.length>1;
   var h='<div id="leadBase">'+(!many && pulse ? pulse : '');
   scope.forEach(function(d){ Object.keys(depts[d]||{}).forEach(function(m){ rows.push({ dept:d, min:m, leaders:ministryLeaders_(S.me.campus, d, m) }); }); });
   var none=rows.filter(function(r){ return !r.leaders.length; });
@@ -413,7 +414,8 @@ function leadBaseHtml_(pulse){
   /* The four numbers at the top, each opening onto where it comes from — which four is the
      role's (LW_ROLES): partners and new bases for the International Director, the staff and
      the week for the National Director, the whole base for a Campus Director. */
-  var tiles=many ? LW_ROLES[lwRole_()].tiles : [];
+  var tiles=many ? LW_ROLES[V ? V.role : lwRole_()].tiles : [];
+  if(V) tiles=tiles.map(function(k){ return k==='partners' ? 'numbers' : k; });   // partners are each director's own
   if(tiles.indexOf('partners')>-1 || tiles.indexOf('plants')>-1){ if(!S.lw && !S.lwLoading && !S.lwErr) lwLoad_(S.lwWeek||thisWeek()); }
   var away={}, ones=0;
   scope.forEach(function(d){ var P=S.pulse && S.pulse[d]; if(P && P.ok){ ones+=P.oneOnOnes||0; (P.away||[]).forEach(function(a){ away[a.name]=1; }); } });
@@ -426,7 +428,7 @@ function leadBaseHtml_(pulse){
     tues:'<a class="mmTile" href="#lbTues"><div class="mmTileName">🎤 '+esc(gpT('Tuesday {date}',{date:hospDate_(next)}))+'</div><div class="mmTileNum lbTileWho">'+esc(leadTuesWho_(tr && tr.facilitator) || '—')+'</div></a>',
     money:'<button class="mmTile lbTileBtn" data-lwtab="money"><div class="mmTileName">💵 '+esc(t('Money ahead'))+'</div><div class="mmTileNum lbTileWho'+(pj && pj.short?' lbNone':'')+'">'+esc(!pj ? '…' : pj.short ? gpT('short in {month}',{month:lmMonthName_(pj.short)}) : lmMoney_(pj.end))+'</div></button>',
     partners:'<button class="mmTile lbTileBtn" data-lwtab="week"><div class="mmTileName">🙏 '+esc(t('Partners to reach'))+'</div><div class="mmTileNum'+(due?' lbNone':'')+'">'+(due===null ? '…' : L.partners.length ? due+' / '+L.partners.length : '—')+'</div></button>',
-    plants:'<button class="mmTile lbTileBtn" data-lwtab="week"><div class="mmTileName">🌱 '+esc(t('Base Plants in Planning'))+'</div><div class="mmTileNum">'+(plans===null ? '…' : plans)+'</div></button>',
+    plants:'<'+(V?'div':'button')+' class="mmTile lbTileBtn"'+(V?'':' data-lwtab="week"')+'><div class="mmTileName">🌱 '+esc(t('Base Plants in Planning'))+'</div><div class="mmTileNum">'+(plans===null ? (S.lwErr ? '—' : '…') : plans)+'</div></'+(V?'div':'button')+'>',
     away:'<a class="mmTile" href="#lbPulse"><div class="mmTileName">🏖️ '+esc(t('Away this week'))+'</div><div class="mmTileNum">'+(pulseIn ? Object.keys(away).length : '…')+'</div></a>',
     oneonones:'<a class="mmTile" href="#lbPulse"><div class="mmTileName">🤝 '+esc(t('1-on-1s this month'))+'</div><div class="mmTileNum">'+(pulseIn ? ones : '…')+'</div></a>'
   };
