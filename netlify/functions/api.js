@@ -4039,6 +4039,254 @@ async function saveMySupport(username, pin, support) {
   return { ok: true, support: clean, summary: supportSummary_(clean), givenMonthly: supGivenMonthly_(clean), followDays: SUP_FOLLOW_DAYS };
 }
 
+/* ==================== 360 reviews (Oct 2026) ====================
+   Uriah: "an anonymous 360 peer review option that we can send to a group of our peers or
+   leadership team and then store the results and create an action plan that comes from it
+   with quarterly reviews on progress."
+   - A staff member starts a review OF THEMSELVES and picks who to ask: anyone on staff
+     (any campus) or on the Advisory Board with a board login. They answer the same
+     questions about themselves (self).
+   - ANONYMOUS, by construction. An answer is stored with nothing that says whose it is —
+     no id, no time — at a random place in the list; who has answered is a separate,
+     sorted list used only so nobody answers twice, and is never sent to anyone (the
+     person sees "4 of 6 answered"). Results are only shown once the review is CLOSED
+     (live results would let someone match a change to the person who just answered) and
+     at least P360_MIN_N people answered; an area with fewer than that many ratings shows
+     no average. Comments are shown word for word, each question's shuffled on its own,
+     so one person's answers can't be read across. Not even an admin can see who said what.
+   - The results are the person's. They can share them (and their plan) with people they
+     choose — their mentor, a director — who see the same, read-only.
+   - The action plan comes from the results: actions { id, area (a question's key), what,
+     measure (how I'll know), by (YYYY-Qn) }, and each quarter a review of every action
+     { status notstarted|ontrack|stuck|done, note } with a reflection, under 'YYYY-Qn'.
+   Store: 'p360' — every review, one list (mutateKey_ makes a concurrent answer safe). */
+const P360_MIN_N = 3, P360_MAX_REVIEWERS = 30, P360_TEXT = 1000;
+const P360_QS = ['faith', 'vision', 'care', 'comms', 'team', 'reliable', 'humble', 'decide', 'culture'];
+const P360_TEXTS = ['keep', 'start', 'stop', 'other'];
+const P360_STATUS = ['notstarted', 'ontrack', 'stuck', 'done'];
+/* The staff list's careful write (mutateStaff_), for any key: read, change, write, read
+   back; someone else's write in between means try again. */
+async function mutateKey_(key, fallback, mutate) {
+  const s = store();
+  let lagOnly = true, last = null;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    if (attempt > 0) await new Promise(function (r) { setTimeout(r, Math.random() * 40); });
+    const raw = shaped_(await s.get(key, { type: 'json' }), fallback);
+    const data = copy_(raw);
+    const result = mutate(data);
+    if (result && result.abort) { const out = Object.assign({}, result); delete out.abort; return out; }
+    await s.setJSON(key, data);
+    const after = shaped_(await s.get(key, { type: 'json' }), fallback);
+    if (JSON.stringify(after) === JSON.stringify(data)) {
+      const mine = requestScope.getStore(); if (mine) mine.set(key, copy_(data));
+      return result;
+    }
+    if (JSON.stringify(after) !== JSON.stringify(raw)) lagOnly = false;
+    last = { data: data, result: result };
+  }
+  if (lagOnly && last) { const mine = requestScope.getStore(); if (mine) mine.set(key, copy_(last.data)); return last.result; }
+  return { ok: false, err: 'busy' };
+}
+function p360Quarter_(d) { const day = d || baseToday_(); return day.slice(0, 4) + '-Q' + (Math.floor((Number(day.slice(5, 7)) - 1) / 3) + 1); }
+function p360Id_() { return 'pr' + Date.now().toString(36) + crypto.randomBytes(4).toString('hex'); }
+function p360Text_(v) { return String(str_(v, P360_TEXT) || '').trim(); }
+function p360Ratings_(r) {
+  const o = {}; r = r && typeof r === 'object' ? r : {};
+  P360_QS.forEach(function (k) { const n = Number(r[k]); o[k] = (n >= 1 && n <= 5 && Math.round(n) === n) ? n : null; });
+  return o;
+}
+function p360Answer_(a) {
+  const o = { ratings: p360Ratings_(a && a.ratings) };
+  P360_TEXTS.forEach(function (k) { o[k] = p360Text_(a && a[k]); });
+  return o;
+}
+function p360Closed_(r) { return r.status === 'closed' || (r.due && r.due < baseToday_()); }
+function viewerId_(v) { return v.who.id; }
+/* Who can be asked: staff (active, not applicants) and board members with their own login. */
+async function p360People_() {
+  const staff = (await getStaff_()).filter(function (r) { return r.active !== false && !r.archived && !isApplicant_(r); });
+  const board = (await getBoard_()).filter(function (b) { return b.active !== false && !b.staffId && b.pinHash; });
+  const map = {};
+  staff.forEach(function (r) { map[r.id] = { id: r.id, name: r.name, photo: r.photo || '', kind: 'staff', campus: r.campus }; });
+  board.forEach(function (b) { map[b.id] = { id: b.id, name: b.name, photo: b.photo || '', kind: 'board', campus: '' }; });
+  return map;
+}
+function p360Results_(r) {
+  const n = r.answers.length;
+  if (n < P360_MIN_N) return null;
+  const areas = {};
+  P360_QS.forEach(function (k) {
+    const vals = r.answers.map(function (a) { return a.ratings[k]; }).filter(function (x) { return x != null; });
+    const dist = [0, 0, 0, 0, 0]; vals.forEach(function (x) { dist[x - 1]++; });
+    areas[k] = vals.length >= P360_MIN_N ? { n: vals.length, avg: Math.round(vals.reduce(function (a, b) { return a + b; }, 0) / vals.length * 10) / 10, dist: dist } : { n: vals.length, avg: null };
+  });
+  const shuffle = function (list) { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = crypto.randomInt(i + 1); const x = a[i]; a[i] = a[j]; a[j] = x; } return a; };
+  const comments = {};
+  P360_TEXTS.forEach(function (k) { comments[k] = shuffle(r.answers.map(function (a) { return a[k]; }).filter(Boolean)); });
+  return { n: n, areas: areas, comments: comments };
+}
+/* One review as `me` may see it: the person themselves, someone they shared it with, or
+   (only the ask) a reviewer. */
+function p360Out_(r, me, people) {
+  const closed = p360Closed_(r), isSubject = r.subjectId === me;
+  const subj = people[r.subjectId] || { name: '', photo: '' };
+  const out = { id: r.id, title: r.title, note: r.note || '', created: r.created, due: r.due || '', closed: closed, closedAt: r.closedAt || '',
+    subject: { id: r.subjectId, name: subj.name, photo: subj.photo }, asked: r.reviewers.length, answered: r.done.length,
+    minN: P360_MIN_N, mine: isSubject };
+  if (isSubject) {
+    out.reviewers = r.reviewers.map(function (id) { const p = people[id]; return p ? { id: id, name: p.name } : { id: id, name: '' }; })
+      .sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });   // who was asked — never who has answered
+    out.sharedWith = r.sharedWith.map(function (id) { const p = people[id]; return { id: id, name: p ? p.name : '' }; });
+  }
+  out.self = r.self || null;
+  out.results = closed ? p360Results_(r) : null;
+  out.plan = r.plan || { actions: [], reviews: {} };
+  return out;
+}
+async function p360Ctx_(username, pin) {
+  const v = await verifyViewer_(username, pin);
+  if (!v) return null;
+  return { v: v, me: viewerId_(v), people: await p360People_() };
+}
+async function p360List(username, pin) {
+  const c = await p360Ctx_(username, pin); if (!c) return { ok: false };
+  const rows = await readJSON('p360', []);
+  const q = p360Quarter_();
+  const mine = [], shared = [], asked = [];
+  rows.forEach(function (r) {
+    if (r.subjectId === c.me) mine.push(r);
+    else if (r.sharedWith.indexOf(c.me) > -1) shared.push(r);
+    if (r.reviewers.indexOf(c.me) > -1 && !p360Closed_(r) && r.done.indexOf(c.me) === -1 && (r.declined || []).indexOf(c.me) === -1) {
+      const s = c.people[r.subjectId] || {};
+      asked.push({ id: r.id, title: r.title, note: r.note || '', due: r.due || '', subject: { id: r.subjectId, name: s.name || '', photo: s.photo || '' } });
+    }
+  });
+  const sum = function (r) { const o = p360Out_(r, c.me, c.people); delete o.results; o.reviewDue = !!(o.plan.actions.length && !o.plan.reviews[q]); return o; };
+  return { ok: true, quarter: q, questions: P360_QS, texts: P360_TEXTS, minN: P360_MIN_N,
+    mine: mine.map(sum).sort(function (a, b) { return a.created < b.created ? 1 : -1; }), shared: shared.map(sum), asked: asked,
+    people: c.v.kind === 'staff' ? Object.keys(c.people).filter(function (id) { return c.people[id].kind === 'board'; }).map(function (id) { return c.people[id]; }) : [] };
+}
+async function p360Get(username, pin, id) {
+  const c = await p360Ctx_(username, pin); if (!c) return { ok: false };
+  const r = (await readJSON('p360', [])).find(function (x) { return x.id === id; });
+  if (!r || !(r.subjectId === c.me || r.sharedWith.indexOf(c.me) > -1)) return { ok: false, err: 'not_found' };
+  return { ok: true, quarter: p360Quarter_(), review: p360Out_(r, c.me, c.people) };
+}
+async function p360Create(username, pin, x) {
+  const c = await p360Ctx_(username, pin); if (!c) return { ok: false };
+  if (c.v.kind !== 'staff') return { ok: false, err: 'staff_only' };
+  x = x && typeof x === 'object' ? x : {};
+  const ids = []; (Array.isArray(x.reviewers) ? x.reviewers : []).forEach(function (id) { if (c.people[id] && id !== c.me && ids.indexOf(id) === -1) ids.push(id); });
+  if (ids.length < P360_MIN_N) return { ok: false, err: 'too_few' };
+  if (ids.length > P360_MAX_REVIEWERS) return { ok: false, err: 'too_many' };
+  const due = isoDate_(x.due);
+  if (due && due < baseToday_()) return { ok: false, err: 'bad_date' };
+  const rec = { id: p360Id_(), subjectId: c.me, title: ooText_(x.title, 80) || ('360 · ' + p360Quarter_()), note: ooText_(x.note, 400),
+    created: new Date().toISOString(), due: due, status: 'open', reviewers: ids, done: [], declined: [], answers: [], self: null,
+    sharedWith: [], plan: { actions: [], reviews: {} } };
+  const r = await mutateKey_('p360', [], function (rows) { rows.push(rec); return { ok: true }; });
+  if (!r.ok) return r;
+  return { ok: true, review: p360Out_(rec, c.me, c.people) };
+}
+/* A reviewer's answer: kept with no name, at a random place; they are added to the sorted
+   list of who has answered, so they can't answer twice. */
+async function p360Answer(username, pin, id, answer) {
+  const c = await p360Ctx_(username, pin); if (!c) return { ok: false };
+  const a = p360Answer_(answer);
+  if (!P360_QS.some(function (k) { return a.ratings[k] != null; }) && !P360_TEXTS.some(function (k) { return a[k]; })) return { ok: false, err: 'empty' };
+  return mutateKey_('p360', [], function (rows) {
+    const r = rows.find(function (x) { return x.id === id; });
+    if (!r || r.reviewers.indexOf(c.me) === -1) return { abort: true, ok: false, err: 'not_found' };
+    if (p360Closed_(r)) return { abort: true, ok: false, err: 'closed' };
+    if (r.done.indexOf(c.me) > -1) return { abort: true, ok: false, err: 'already' };
+    r.answers.splice(crypto.randomInt(r.answers.length + 1), 0, a);
+    r.done.push(c.me); r.done.sort();
+    r.declined = (r.declined || []).filter(function (x) { return x !== c.me; });
+    return { ok: true };
+  });
+}
+async function p360Decline(username, pin, id) {
+  const c = await p360Ctx_(username, pin); if (!c) return { ok: false };
+  return mutateKey_('p360', [], function (rows) {
+    const r = rows.find(function (x) { return x.id === id; });
+    if (!r || r.reviewers.indexOf(c.me) === -1 || r.done.indexOf(c.me) > -1) return { abort: true, ok: false, err: 'not_found' };
+    r.declined = (r.declined || []).filter(function (x) { return x !== c.me; }).concat([c.me]).sort();
+    return { ok: true };
+  });
+}
+/* Everything below is the person's own: their self-review, closing, sharing, the plan,
+   the quarterly reviews, and taking the whole review out. */
+async function p360Mine_(username, pin, id, fn) {
+  const c = await p360Ctx_(username, pin); if (!c) return { ok: false };
+  let out = null;
+  const res = await mutateKey_('p360', [], function (rows) {
+    const r = rows.find(function (x) { return x.id === id; });
+    if (!r || r.subjectId !== c.me) return { abort: true, ok: false, err: 'not_found' };
+    const e = fn(r, c, rows); if (e) return Object.assign({ abort: true, ok: false }, e);
+    out = r; return { ok: true };
+  });
+  if (!res.ok) return res;
+  return { ok: true, quarter: p360Quarter_(), review: out ? p360Out_(out, c.me, c.people) : null };
+}
+async function p360Self(username, pin, id, answer) {
+  return p360Mine_(username, pin, id, function (r) { if (p360Closed_(r)) return { err: 'closed' }; r.self = p360Answer_(answer); });
+}
+async function p360Close(username, pin, id) {
+  return p360Mine_(username, pin, id, function (r) { if (r.status !== 'closed') { r.status = 'closed'; r.closedAt = new Date().toISOString(); } });
+}
+async function p360Share(username, pin, id, ids) {
+  return p360Mine_(username, pin, id, function (r, c) {
+    const out = []; (Array.isArray(ids) ? ids : []).forEach(function (x) { if (c.people[x] && x !== c.me && out.indexOf(x) === -1) out.push(x); });
+    r.sharedWith = out.slice(0, 10);
+  });
+}
+async function p360SavePlan(username, pin, id, actions) {
+  return p360Mine_(username, pin, id, function (r) {
+    const seen = {}, out = [];
+    (Array.isArray(actions) ? actions : []).slice(0, 12).forEach(function (a) {
+      const what = ooText_(a && a.what, 300); if (!what) return;
+      let aid = String(str_(a.id, 24) || '').replace(/[^a-z0-9]/gi, ''); if (!aid || seen[aid]) aid = 'pa' + crypto.randomBytes(4).toString('hex'); seen[aid] = 1;
+      out.push({ id: aid, area: P360_QS.indexOf(a.area) > -1 ? a.area : '', what: what, measure: ooText_(a.measure, 300),
+        by: /^\d{4}-Q[1-4]$/.test(String(a.by || '')) ? a.by : '' });
+    });
+    r.plan = r.plan || { actions: [], reviews: {} };
+    r.plan.actions = out; r.plan.updated = new Date().toISOString();
+  });
+}
+async function p360Review(username, pin, id, quarter, items, reflection) {
+  return p360Mine_(username, pin, id, function (r) {
+    const q = String(quarter || '');
+    if (!/^\d{4}-Q[1-4]$/.test(q) || q > p360Quarter_()) return { err: 'bad_quarter' };
+    const ids = {}; (r.plan && r.plan.actions || []).forEach(function (a) { ids[a.id] = 1; });
+    if (!Object.keys(ids).length) return { err: 'no_plan' };
+    const out = {};
+    (Array.isArray(items) ? items : []).forEach(function (it) {
+      if (!it || !ids[it.actionId]) return;
+      out[it.actionId] = { status: P360_STATUS.indexOf(it.status) > -1 ? it.status : 'notstarted', note: ooText_(it.note, 400) };
+    });
+    r.plan.reviews = r.plan.reviews || {};
+    r.plan.reviews[q] = { at: new Date().toISOString(), items: out, reflection: ooText_(reflection, 800) };
+  });
+}
+async function p360Delete(username, pin, id) {
+  const c = await p360Ctx_(username, pin); if (!c) return { ok: false };
+  const res = await mutateKey_('p360', [], function (rows) {
+    const i = rows.findIndex(function (x) { return x.id === id && x.subjectId === c.me; });
+    if (i === -1) return { abort: true, ok: false, err: 'not_found' };
+    rows.splice(i, 1); return { ok: true };
+  });
+  return res.ok ? p360List(username, pin) : res;
+}
+/* For My Home: how many reviews are waiting for my answer, and whether a plan's review is due this quarter. */
+async function p360Glance_(s) {
+  const rows = await readJSON('p360', []), q = p360Quarter_();
+  const asked = rows.filter(function (r) { return r.reviewers.indexOf(s.id) > -1 && !p360Closed_(r) && r.done.indexOf(s.id) === -1 && (r.declined || []).indexOf(s.id) === -1; }).length;
+  const mine = rows.filter(function (r) { return r.subjectId === s.id; });
+  const due = mine.some(function (r) { return r.plan && r.plan.actions && r.plan.actions.length && !(r.plan.reviews || {})[q]; });
+  const open = mine.filter(function (r) { return !p360Closed_(r); }).length;
+  return { asked: asked, reviewDue: due, open: open, has: mine.length > 0, quarter: q };
+}
+
 /* ==================== Reminders: web push (Oct 2026) ====================
    One reminder a day at the hour a person chooses (Phnom Penh time), only when there
    is something to say, all in one notification:
@@ -4067,6 +4315,8 @@ const PUSH_TEXT = {
   daily: { en: 'Your check-in for today isn’t in yet.', km: 'ការរាយការណ៍ប្រចាំថ្ងៃរបស់អ្នកសម្រាប់ថ្ងៃនេះ មិនទាន់មាននៅឡើយទេ។' },
   oneonone: { en: '{n} of 2 1-on-1s with {name} this month.', km: 'ជួបមួយទល់មួយជាមួយ {name} បាន {n} ក្នុងចំណោម 2 ដងក្នុងខែនេះ។' },
   admin: { en: '{n} waiting for your approval in Admin.', km: '{n} កំពុងរង់ចាំការអនុម័តរបស់អ្នក ក្នុងផ្នែកអ្នកគ្រប់គ្រង។' },
+  p360ask: { en: 'A 360 review is waiting for your feedback ({n}).', km: 'ការវាយតម្លៃ 360 កំពុងរង់ចាំមតិរបស់អ្នក ({n})។' },
+  p360plan: { en: 'Your 360 action plan’s {q} review is due.', km: 'ដល់ពេលពិនិត្យផែនការសកម្មភាព 360 របស់អ្នកសម្រាប់ {q} ហើយ។' },
   hr: { en: '{n} contracts end soon.', km: 'កិច្ចសន្យា {n} នឹងផុតកំណត់ឆាប់ៗនេះ។' },
   test: { en: 'Reminders are on. You will hear from the app at the time you chose.', km: 'ការរំលឹកត្រូវបានបើក។ កម្មវិធីនឹងរំលឹកអ្នកនៅម៉ោងដែលអ្នកបានជ្រើសរើស។' }
 };
@@ -4218,6 +4468,12 @@ function reminderItems_(s, ctx) {
   }
   if (p.admin && s.isAdmin && ctx.waiting) out.push({ key: 'admin', params: { n: ctx.waiting } });
   if (p.hr && canHR_(s) && ctx.monday && ctx.hrDue) out.push({ key: 'hr', params: { n: ctx.hrDue } });
+  /* 360 reviews, with the daily reminder: one waiting for your feedback; on Mondays, your plan's quarterly review */
+  if (p.daily && ctx.p360) {
+    const asked = ctx.p360.filter(function (r) { return r.reviewers.indexOf(s.id) > -1 && !p360Closed_(r) && r.done.indexOf(s.id) === -1 && (r.declined || []).indexOf(s.id) === -1; }).length;
+    if (asked) out.push({ key: 'p360ask', params: { n: asked } });
+    if (ctx.monday && ctx.p360.some(function (r) { return r.subjectId === s.id && r.plan && r.plan.actions && r.plan.actions.length && !(r.plan.reviews || {})[ctx.quarter]; })) out.push({ key: 'p360plan', params: { q: ctx.quarter.replace('-Q', ' Q') } });
+  }
   return out;
 }
 /* netlify/functions/reminders.js, every hour: everyone whose hour it is gets one
@@ -4244,7 +4500,7 @@ async function runReminders(now) {
     });
     const ctx = { staff: staff, loggedToday: loggedToday, held: held, monday: local.getUTCDay() === 1, dayOfMonth: local.getUTCDate(),
       waiting: staff.filter(function (r) { return (!r.active && !r.archived) || (r.active && r.cltRequest); }).length,
-      hrDue: hrDueCount_(staff) };
+      hrDue: hrDueCount_(staff), p360: await readJSON('p360', []), quarter: p360Quarter_(today) };
     let sent = 0, people = 0, gone = [];
     for (const s of staff) {
       if (s.active === false || s.archived) continue;
@@ -4402,6 +4658,7 @@ async function getMyBoot(username, pin) {
     // the books they have marked read in the Library, and the papers every staff member signs
     libRead: cleanLibRead_(s.libRead),
     supportSummary: s.support ? supportSummary_(s.support) : null,   // support raising: your own totals, for My Home's tile
+    p360: await part(function () { return p360Glance_(s); }),   // 360 reviews: waiting for my answer, a plan's quarterly review due
     reqDocs: reqDocs ? reqDocsAnswer_(reqDocs) : [],
     required: (reqDocs && !isApplicant_(s)) ? requiredFor_(s, reqDocs) : null,
     // admins only: when the nightly backup last ran (netlify/functions/backup.js)
@@ -9279,6 +9536,17 @@ const HANDLERS = {
   setNumbersPeople: function (a) { return setNumbersPeople(a[0], a[1], a[2], a[3], a[4]); },
   getDeptPulse: function (a) { return getDeptPulse(a[0], a[1], a[2]); },
   getStaffDebt: function (a) { return getStaffDebt(a[0], a[1]); },
+  p360List: function (a) { return p360List(a[0], a[1]); },
+  p360Get: function (a) { return p360Get(a[0], a[1], a[2]); },
+  p360Create: function (a) { return p360Create(a[0], a[1], a[2]); },
+  p360Answer: function (a) { return p360Answer(a[0], a[1], a[2], a[3]); },
+  p360Decline: function (a) { return p360Decline(a[0], a[1], a[2]); },
+  p360Self: function (a) { return p360Self(a[0], a[1], a[2], a[3]); },
+  p360Close: function (a) { return p360Close(a[0], a[1], a[2]); },
+  p360Share: function (a) { return p360Share(a[0], a[1], a[2], a[3]); },
+  p360SavePlan: function (a) { return p360SavePlan(a[0], a[1], a[2], a[3]); },
+  p360Review: function (a) { return p360Review(a[0], a[1], a[2], a[3], a[4], a[5]); },
+  p360Delete: function (a) { return p360Delete(a[0], a[1], a[2]); },
   getFinance: function (a) { return getFinance(a[0], a[1], a[2]); },
   finSave: function (a) { return finSave(a[0], a[1], a[2], a[3], a[4], a[5]); },
   finSetCash: function (a) { return finSetCash(a[0], a[1], a[2], a[3], a[4]); },

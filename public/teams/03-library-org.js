@@ -1,4 +1,4 @@
-/* My YWAM GP — teams.html, part 3 of 10: personality, the Library, the papers everyone signs, guest mode, YWAM GP and the board, the quarter report, first 30 days, prayer, support raising, reminders, Khmer review.
+/* My YWAM GP — teams.html, part 3 of 11: personality, the Library, the papers everyone signs, guest mode, YWAM GP and the board, the quarter report, first 30 days, prayer, support raising, reminders, Khmer review.
    Plain script, loaded in order by teams.html; the parts share one global
    scope, exactly as when this was one inline script. A function may call any
    function in any part. Code that RUNS while a part loads (not inside a
@@ -75,6 +75,7 @@ function aboutMeHtml_(){
   }
   var ss=S.supSum;
   tiles += homeTile_('supTile', '💰', t('Support raising'), esc(ss && ss.goal ? gpT('${n} of ${goal} a month',{n:fmt(ss.pledged), goal:fmt(ss.goal)}) : t('Your partners and monthly goal')));
+  tiles += p3TileHtml_();
   var nb=libBooksRead_();
   tiles += homeTile_('libHomeTile', '📚', t('Library'), esc(nb ? gpT('{n} books read',{n:nb}) : t('Ten-minute reads')));
   return '<h3 id="sec-ptype">🧭 '+esc(t('About me'))+'</h3><div class="homeTiles" id="sec-strengths">'+tiles+'</div>';
@@ -2433,7 +2434,7 @@ function bindKmReview_(){
 
 /* ---------- a board member's own sign-in (not staff) ---------- */
 var BOARD_KEY='gp-board';
-var BOARD_VIEWS=['ywamgp','base','report','library'];
+var BOARD_VIEWS=['ywamgp','base','report','library','p360'];   // p360: a board member answers 360 reviews
 function boardEnter_(member, creds){
   lsSet(BOARD_KEY, JSON.stringify(creds));
   S.board=member; S.boardAuth=creds; S.guest=true;

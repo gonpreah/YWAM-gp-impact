@@ -1,4 +1,4 @@
-/* My YWAM GP — teams.html, part 1 of 10: state, the page frame and render(), helpers, the Base tab.
+/* My YWAM GP — teams.html, part 1 of 11: state, the page frame and render(), helpers, the Base tab.
    Plain script, loaded in order by teams.html; the parts share one global
    scope, exactly as when this was one inline script. A function may call any
    function in any part. Code that RUNS while a part loads (not inside a
@@ -709,6 +709,7 @@ function applyBoot(d, fromCache){
   S.reqDocs = d.reqDocs || [];
   S.required = d.required || null;      // what this profile still needs (the papers and the contract)
   S.supSum = d.supportSummary || null;   // support raising: your own totals (the full list loads on its page)
+  S.p3Glance = d.p360 || null;           // 360 reviews: waiting for my feedback, my plan's quarterly review due
   libAdoptServer_(d.libRead, fromCache);
   if(d.teamTrips && d.teamTrips.ok) S.teamTrips[d.teamTrips.campus] = { trips: d.teamTrips.trips || [], canEdit: !!d.teamTrips.canEdit };
   S.smartGoals = d.smartGoals || [];
@@ -857,6 +858,7 @@ function render(){
   else if(S.view==='report') m.innerHTML=boardReportHtml_();
   else if(S.view==='support') m.innerHTML=supportHtml_();
   else if(S.view==='prayer') m.innerHTML=prayerHtml_();
+  else if(S.view==='p360') m.innerHTML=p360Html_();
   else if(S.view==='week') m.innerHTML=homeHtml();
   else if(S.view==='health') m.innerHTML=healthHtml();
   else if(S.view==='team') m.innerHTML=teamHtml();
@@ -1070,13 +1072,14 @@ function renderMenu(){
   IC.ywamgp='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.8 2.6 4 5.6 4 9s-1.2 6.4-4 9c-2.8-2.6-4-5.6-4-9s1.2-6.4 4-9Z"/></svg>';
   IC.boardlogout=IC.profile;
   IC.prayer='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-1.2 2.5-1.8 5-1.8 7.5L7 15.5V20h4l1-2.5"/><path d="M12 3c1.2 2.5 1.8 5 1.8 7.5l3.2 5V20h-4L12 17.5"/></svg>';
+  IC.p360='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="4" r="1.6"/><circle cx="12" cy="20" r="1.6"/><circle cx="4.5" cy="8" r="1.6"/><circle cx="19.5" cy="8" r="1.6"/><circle cx="4.5" cy="16" r="1.6"/><circle cx="19.5" cy="16" r="1.6"/></svg>';
   IC.kmreview='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h8M8 3v2M5.5 5c.8 3.2 3 5.6 6 7"/><path d="M10.5 5c-.7 3.6-3 6.4-6 8"/><path d="M12.5 21l4-9 4 9M14 18h5"/></svg>';
   var sections= S.board ? [
-    { title:'', items:[it('ywamgp', t('YWAM GP')), it('library', t('Library')), it('boardlogout', t('Log out'))] }
+    { title:'', items:[it('ywamgp', t('YWAM GP')), it('p360', t('360 reviews')), it('library', t('Library')), it('boardlogout', t('Log out'))] }
   ] : S.guest ? [
     { title:'', items:[it('library', t('Library')), it('guestreg', t('Create my profile')), it('guestlogin', t('Log in'))] }
   ] : [
-    { title:'', items:[it('base', t('Base')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer')), it('leave', t('Leave Request')), it('mycontract', t('My contract')), it('profile', t('Profile & settings'))] },
+    { title:'', items:[it('base', t('Base')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer')), it('p360', t('360 reviews')), it('leave', t('Leave Request')), it('mycontract', t('My contract')), it('profile', t('Profile & settings'))] },
     { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : []) },
     { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal'))] : [] },
     { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : []) },
@@ -1108,6 +1111,7 @@ function renderMenu(){
       else if(id==='guestreg' || id==='guestlogin'){ gpLeaveGuest_(id==='guestreg'); }
       else if(id==='ywamgp'){ S.view='ywamgp'; S.person=null; render(); window.scrollTo(0,0); }
       else if(id==='prayer'){ S.view='prayer'; S.pr=null; render(); window.scrollTo(0,0); }
+      else if(id==='p360'){ S.view='p360'; S.p3Sub='home'; S.p3=null; render(); window.scrollTo(0,0); }
       else if(id==='kmreview'){ S.view='kmreview'; S.kmr=null; S.kmrErr=''; render(); window.scrollTo(0,0); }
       else if(id==='boardlogout'){ boardLeave_(false); }
       else if(id==='profile'){ S.view='profile'; render(); }

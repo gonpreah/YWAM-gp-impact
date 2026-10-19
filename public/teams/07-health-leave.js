@@ -1,4 +1,4 @@
-/* My YWAM GP — teams.html, part 7 of 10: weekly schedules, Campus Leadership on My Ministry, login, Health, leave.
+/* My YWAM GP — teams.html, part 7 of 11: weekly schedules, Campus Leadership on My Ministry, login, Health, leave.
    Plain script, loaded in order by teams.html; the parts share one global
    scope, exactly as when this was one inline script. A function may call any
    function in any part. Code that RUNS while a part loads (not inside a

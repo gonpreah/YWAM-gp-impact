@@ -50,12 +50,12 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   inline theme tokens and splash (they must paint on the first frame, and tests compare
   them with index.html's), the markup and the script tags. Its styles are
   `public/teams/teams.css` — except the page edges and the html/body backgrounds, which
-  stay inline for the first frame — and its code ten plain scripts loaded in order:
+  stay inline for the first frame — and its code eleven plain scripts loaded in order:
   `teams/01-core.js` (state, render, helpers, Base) · `02-goals-okrs.js` · `03-library-org.js`
   (personality, Library, papers, guest, YWAM GP & the board, report, first 30 days, prayer,
   support raising, reminders, Khmer review) · `04-ministry-strengths.js` · `05-admin-hr.js` ·
   `06-numbers-contract.js` · `07-health-leave.js` · `08-team-profile.js` · `09-finance.js`
-  (the finance tool) · `10-bind-boot.js` (bind() and starting the app). `finance.js` (public/,
+  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app). `finance.js` (public/,
   shared like taxonomy.js) reads the reports; `vendor/pdfjs/` is pdf.js, loaded on demand. **One global scope**, exactly as when it was one inline
   script: any function may call any other, but code that RUNS while a file loads (not
   inside a function) may only use what that file or an earlier one defines. Add new code to
@@ -1886,6 +1886,41 @@ and held by tests/test-hero-steady-ui.mjs:
   subsets, SIL OFL), `@font-face` with their unicode-ranges in teams.html's head,
   `font-display:block`, the Latin faces (and, for a Khmer reader, the Khmer body face)
   preloaded, all five in sw.js's PRECACHE. help.html and the portal still use Google Fonts.
+
+## 360 reviews (☰ → 360 reviews, Oct 2026)
+Uriah: "an anonymous 360 peer review option that we can send to a group of our peers or
+leadership team and then store the results and create an action plan that comes from it
+with quarterly reviews on progress." teams/10-review360.js; api.js "360 reviews" (`p360*`).
+- **A staff member reviews themselves**: picks at least `P360_MIN_N` (3) people — anyone on
+  staff on either campus, or an Advisory Board member with their own board login (board mode
+  has the view to answer; BOARD_VIEWS) — with quick picks (their campus's leadership team,
+  YWAM GP's, the board, their department, their mentor), a title, until when, a note. They
+  answer the same questions about themselves (`self`). Nine areas, 1 rarely – 5 always or
+  "don't know" (`P360_QS`: faith, vision, care, comms, team, reliable, humble, decide,
+  culture), and keep / start / stop / anything else in words.
+- **Anonymous by construction** (the server's, tests/test-p360.mjs): an answer is stored with
+  no id and no time, spliced in at a random place; who has answered is a separate sorted
+  `done` list (and `declined`), used only to stop a second answer and never sent to anyone —
+  the person sees "4 of 6 answered". **Results only once closed** (by the person, or past
+  its date — live results would let a change be matched to whoever just answered) **and from
+  3+ answers**; an area rated by fewer than 3 shows no average; comments are shuffled per
+  question on every read, so one person's answers can't be read across. Nobody in the app,
+  an admin included, can see who said what. Honest limit: someone with direct access to the
+  database and its nightly backups could compare snapshots in time — keep that access tight.
+- **Results** (`p3ResultsHtml_`): each area, others' average (bar, `--vizIn`) against your
+  own (mark, `--vizOut`), a table twin; strengths and to-grow-in (top / bottom 3); where you
+  see yourself differently (|self − others| ≥ 1); the comments.
+- **Action plan and quarterly reviews**: actions { area, what, measure (how I'll know), by
+  (YYYY-Qn) } (`p360SavePlan`, ≤12), each suggested from a growth area; every quarter a
+  review of every action — not started / on track / stuck / done, a note — and a reflection
+  (`p360Review`, `plan.reviews['YYYY-Qn']`). My Home's tile (`p3TileHtml_`, boot `p360` from
+  `p360Glance_`) says when feedback is waiting or a plan's review is due; the daily reminder
+  carries both (`p360ask`, and on Mondays `p360plan`).
+- **Sharing**: the person picks who else sees the results, their own answers and the plan
+  (`p360Share`, ≤10; their mentor first) — read-only, never who was asked. They can delete it.
+- Store: `p360` (one list), written with `mutateKey_` (mutateStaff_'s write-and-check, for
+  any key) so two answers at once can't lose one.
+- Tests: tests/test-p360.mjs (the server, anonymity), test-p360-ui.mjs (the whole journey).
 
 ## Conventions / must-preserve
 - **Khmer-first.** Khmer is never smaller/lighter than English. All KPI/ministry/department

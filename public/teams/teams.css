@@ -2035,3 +2035,36 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 /* Profile & settings: my positions */
 .myPos { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); font-size:14px; }
 .myPos:last-child { border-bottom:0; } .myPos small { display:block; color:var(--muted); font-size:12px; }
+/* ---------- 360 reviews (teams/10-review360.js) ---------- */
+.p3Note { font-style:italic; color:var(--muted); margin:6px 0 8px; font-size:14px; overflow-wrap:anywhere; }
+.p3Promise ul { margin:6px 0 0 18px; padding:0; font-size:13.5px; color:var(--muted); } .p3Promise li { margin:4px 0; }
+.p3Card { display:flex; align-items:center; gap:10px; width:100%; text-align:left; font:inherit; color:var(--ink); cursor:pointer; }
+.p3CardMain { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; } .p3CardMain b { font-size:15px; overflow-wrap:anywhere; }
+.p3CardMain small { font-size:12.5px; color:var(--muted); } .p3CardMain small.p3Due, b.p3TileDue { color:var(--accent); font-weight:700; }
+.p3Picked { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; }
+.p3Chip { border:0; background:var(--accentSoft); color:var(--ink); border-radius:999px; padding:6px 11px; font:inherit; font-size:13px; cursor:pointer; }
+.p3PeopleList { padding-top:4px; padding-bottom:4px; margin-top:8px; }
+.p3Person { display:flex; align-items:center; gap:10px; width:100%; background:none; border:0; border-bottom:1px solid var(--line); padding:8px 0; font:inherit; color:var(--ink); text-align:left; cursor:pointer; }
+.p3Person:last-child { border-bottom:0; } .p3Person span:nth-child(2) { flex:1; min-width:0; display:flex; flex-direction:column; } .p3Person small { color:var(--muted); font-size:12px; }
+.p3Plus { font-weight:800; color:var(--accent); font-size:18px; }
+.p3Q { padding:10px 0; border-bottom:1px solid var(--line); } .p3Q:last-of-type { border-bottom:0; }
+.p3QHead b { display:block; font-size:15px; } .p3QHead small { display:block; color:var(--muted); font-size:12.5px; margin:2px 0 8px; }
+.p3Scale .supPick { padding:7px 10px; font-size:12.5px; } .p3Scale .supPick b { font-weight:800; margin-right:2px; }
+.p3Scale .p3DK { color:var(--muted); }
+.p3Row { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1.6fr) 30px; gap:8px; align-items:center; padding:6px 0; }
+.p3RowName { font-size:13px; overflow-wrap:anywhere; }
+.p3Track { position:relative; height:12px; border-radius:6px; background:var(--line); }
+.p3Fill { position:absolute; left:0; top:2px; bottom:2px; border-radius:0 4px 4px 0; background:var(--vizIn); }
+.p3Self { position:absolute; top:-3px; width:4px; height:18px; margin-left:-2px; border-radius:2px; background:var(--vizOut); box-shadow:0 0 0 2px var(--surface); }
+.p3SelfKey { display:inline-block; width:4px; height:12px; border-radius:2px; background:var(--vizOut); }
+.p3Val { font-size:13px; text-align:right; font-variant-numeric:tabular-nums; }
+.p3Two .mmTile { min-height:0; } .p3Li { font-size:13px; padding:3px 0; display:flex; justify-content:space-between; gap:8px; } .p3Li b { font-variant-numeric:tabular-nums; }
+.p3Quotes { margin:4px 0 0 18px; padding:0; font-size:14px; } .p3Quotes li { margin:5px 0; overflow-wrap:anywhere; }
+.p3Action { display:flex; flex-direction:column; gap:3px; cursor:default; } .p3Action[role="button"] { cursor:pointer; }
+.p3Action b { font-size:15px; overflow-wrap:anywhere; } .p3Action small { font-size:12.5px; color:var(--muted); overflow-wrap:anywhere; }
+.p3ActTop { display:flex; justify-content:space-between; gap:8px; }
+.p3Area { font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); } .p3By { font-size:12px; color:var(--muted); }
+.p3St { font-weight:700; } .p3St.ontrack { color:var(--good); } .p3St.done { color:var(--good); } .p3St.stuck { color:var(--bad); }
+.p3RevItem { padding:8px 0; border-bottom:1px solid var(--line); } .p3RevItem:last-of-type { border-bottom:0; }
+.p3RevItem b { display:block; font-size:14px; margin-bottom:6px; } .p3RevItem input { margin-top:8px; } .p3RevItem small { display:block; font-size:13px; }
+.p3ShareList { max-height:260px; overflow:auto; }

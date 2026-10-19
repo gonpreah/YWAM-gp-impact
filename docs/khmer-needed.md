@@ -3816,3 +3816,154 @@ My Home → Support raising: the "We support" tab (the people and ministries a s
 | Your campus role you change below. YWAM GP places and the Advisory Board are set by an admin, on your account. | តួនាទីនៅសាខារបស់អ្នក អ្នកអាចប្ដូរខាងក្រោម។ តួនាទីក្នុង YWAM GP និងក្រុមប្រឹក្សាភិបាលទីប្រឹក្សា ត្រូវបានកំណត់ដោយអ្នកគ្រប់គ្រង នៅលើគណនីរបស់អ្នក។ |
 
 Admin → a person's account → Positions (their YWAM GP places and their Advisory Board seat, together), and Profile & settings → My positions. "Advisory Board" should read the same as the YWAM GP page's word for it (not ក្តារ, which is the meeting board).
+
+## 72. 360 reviews
+
+| English | Khmer (draft) |
+|---|---|
+| 360 reviews | ការវាយតម្លៃ 360 |
+| Something else | អ្វីផ្សេងទៀត |
+| Honest, anonymous feedback from the people you serve with — and a plan to grow from it, looked at again every quarter. | មតិស្មោះត្រង់ និងអនាមិក ពីអ្នកដែលអ្នកបម្រើជាមួយ — និងផែនការដើម្បីរីកចម្រើនពីវា ដែលត្រូវពិនិត្យឡើងវិញរៀងរាល់ត្រីមាស។ |
+| Asked for your feedback | បានសុំមតិរបស់អ្នក |
+| {name} asked for your feedback | {name} បានសុំមតិរបស់អ្នក |
+| until {date} | រហូតដល់ {date} |
+| Give feedback | ផ្ដល់មតិ |
+| Not this time | មិនមែនលើកនេះទេ |
+| Your reviews | ការវាយតម្លៃរបស់អ្នក |
+| Ask the people you lead and serve with how you are doing — your team, your peers, your leaders. You see what they say together, never who said it. | សួរអ្នកដែលអ្នកដឹកនាំ និងបម្រើជាមួយ ថាអ្នកកំពុងធ្វើបានយ៉ាងណា — ក្រុមរបស់អ្នក មិត្តរួមការងារ អ្នកដឹកនាំរបស់អ្នក។ អ្នកឃើញអ្វីដែលពួកគេនិយាយរួមគ្នា មិនដែលឃើញថាអ្នកណានិយាយទេ។ |
+| Start a 360 review | ចាប់ផ្ដើមការវាយតម្លៃ 360 |
+| Shared with you | បានចែករំលែកជាមួយអ្នក |
+| How it stays anonymous | របៀបដែលវានៅតែអនាមិក |
+| Answers are kept with nothing that says whose they are. Nobody — not the person, not an admin — can see who said what. | ចម្លើយត្រូវបានរក្សាទុកដោយគ្មានអ្វីប្រាប់ថាជារបស់អ្នកណាទេ។ គ្មាននរណាម្នាក់ — មិនមែនម្ចាស់ មិនមែនអ្នកគ្រប់គ្រង — អាចឃើញថាអ្នកណានិយាយអ្វីទេ។ |
+| The person sees how many have answered, never who. The results open only once the review is closed, and only if {n} or more answered. | ម្ចាស់ឃើញថាមានប៉ុន្មាននាក់បានឆ្លើយ មិនដែលឃើញថាអ្នកណាទេ។ លទ្ធផលបើកតែពេលការវាយតម្លៃបានបិទ ហើយលុះត្រាតែមាន {n} នាក់ ឬច្រើនជាងនេះបានឆ្លើយ។ |
+| Written answers are shown word for word, in a different order each time — write them the way you would say them kindly to their face. | ចម្លើយជាអក្សរត្រូវបានបង្ហាញពាក្យដោយពាក្យ តាមលំដាប់ខុសៗគ្នារាល់ពេល — សូមសរសេរដូចដែលអ្នកនឹងនិយាយទៅកាន់ពួកគេដោយសុភាព។ |
+| {a} of {n} answered | បានឆ្លើយ {a} ក្នុងចំណោម {n} |
+| Closed · results ready | បានបិទ · លទ្ធផលរួចរាល់ |
+| Closed · too few answers to show | បានបិទ · ចម្លើយតិចពេកដើម្បីបង្ហាញ |
+| {n} actions | សកម្មភាព {n} |
+| {q} review due | ដល់ពេលពិនិត្យ {q} |
+| My department — {dept} | ផ្នែករបស់ខ្ញុំ — {dept} |
+| My mentor | អ្នកណែនាំរបស់ខ្ញុំ |
+| What to call it | ដាក់ឈ្មោះវា |
+| Answers until | ទទួលចម្លើយរហូតដល់ |
+| A note to the people you ask (optional) | កំណត់ចំណាំទៅកាន់អ្នកដែលអ្នកសួរ (ស្រេចចិត្ត) |
+| e.g. I want to grow as a leader this year — please be honest. | ឧ. ខ្ញុំចង់រីកចម្រើនជាអ្នកដឹកនាំនៅឆ្នាំនេះ — សូមស្មោះត្រង់។ |
+| Who to ask | សួរអ្នកណា |
+| Pick at least {n} — the more, the more anonymous. Peers, the people you lead, and your leaders. | ជ្រើសរើសយ៉ាងហោចណាស់ {n} នាក់ — កាន់តែច្រើន កាន់តែអនាមិក។ មិត្តរួមការងារ អ្នកដែលអ្នកដឹកនាំ និងអ្នកដឹកនាំរបស់អ្នក។ |
+| Search for someone | ស្វែងរកនរណាម្នាក់ |
+| Nobody else matches. | គ្មាននរណាម្នាក់ផ្សេងទៀតត្រូវគ្នាទេ។ |
+| Pick {n} more | ជ្រើសរើស {n} នាក់ទៀត |
+| Ask these {n} | សួរអ្នកទាំង {n} នាក់នេះ |
+| About yourself | អំពីខ្លួនអ្នក |
+| Feedback for {name} | មតិសម្រាប់ {name} |
+| Anonymous: {name} will see what everyone said together, never who said it — and only once enough people have answered. Written answers are shown word for word. | អនាមិក៖ {name} នឹងឃើញអ្វីដែលគ្រប់គ្នានិយាយរួមគ្នា មិនដែលឃើញថាអ្នកណានិយាយទេ — ហើយលុះត្រាតែមានមនុស្សគ្រប់គ្រាន់បានឆ្លើយ។ ចម្លើយជាអក្សរត្រូវបានបង្ហាញពាក្យដោយពាក្យ។ |
+| The same questions, about yourself — so you can see where others see you the same, and where they don’t. Only you (and whoever you share it with) see these. | សំណួរដដែល អំពីខ្លួនអ្នក — ដើម្បីឱ្យអ្នកអាចឃើញកន្លែងដែលអ្នកដទៃមើលអ្នកដូចគ្នា និងកន្លែងដែលមិនដូចគ្នា។ មានតែអ្នក (និងអ្នកដែលអ្នកចែករំលែកជាមួយ) ទេដែលឃើញវា។ |
+| Don’t know | មិនដឹង |
+| Save my answers | រក្សាទុកចម្លើយរបស់ខ្ញុំ |
+| Send my feedback | ផ្ញើមតិរបស់ខ្ញុំ |
+| Once sent it can’t be changed — nothing links it to you any more. | ពេលផ្ញើហើយ មិនអាចប្ដូរបានទេ — គ្មានអ្វីភ្ជាប់វាទៅអ្នកទៀតទេ។ |
+| {name}’s review, shared with you — read-only. | ការវាយតម្លៃរបស់ {name} ដែលបានចែករំលែកជាមួយអ្នក — សម្រាប់អានតែប៉ុណ្ណោះ។ |
+| You’ll never see who has answered. The results open when you close it — {n} answers at least. | អ្នកនឹងមិនដែលឃើញថាអ្នកណាបានឆ្លើយទេ។ លទ្ធផលបើកពេលអ្នកបិទវា — យ៉ាងហោចណាស់ {n} ចម្លើយ។ |
+| Who you asked · {n} | អ្នកដែលអ្នកបានសួរ · {n} |
+| Your own answers | ចម្លើយផ្ទាល់ខ្លួនរបស់អ្នក |
+| Done — they show next to everyone else’s in the results. | រួចរាល់ — វាបង្ហាញក្បែរចម្លើយរបស់អ្នកដទៃក្នុងលទ្ធផល។ |
+| Answer the same questions about yourself, to set beside what others say. | ឆ្លើយសំណួរដដែលអំពីខ្លួនអ្នក ដើម្បីដាក់ក្បែរអ្វីដែលអ្នកដទៃនិយាយ។ |
+| Change my answers | ប្ដូរចម្លើយរបស់ខ្ញុំ |
+| Answer about myself | ឆ្លើយអំពីខ្លួនខ្ញុំ |
+| Close it and see the results | បិទវា ហើយមើលលទ្ធផល |
+| Closed with {a} answers. Fewer than {n} can’t be shown without people being able to work out who said what — start a new one and ask a few more people. | បានបិទដោយមាន {a} ចម្លើយ។ តិចជាង {n} មិនអាចបង្ហាញបានទេ ព្រោះមនុស្សអាចដឹងថាអ្នកណានិយាយអ្វី — សូមចាប់ផ្ដើមថ្មី ហើយសួរមនុស្សច្រើនទៀត។ |
+| Delete this review | លុបការវាយតម្លៃនេះ |
+| What they said | អ្វីដែលពួកគេនិយាយ |
+| From {n} people · 1 rarely – 5 always | ពីមនុស្ស {n} នាក់ · 1 កម្រ – 5 ជានិច្ច |
+| Others (average) | អ្នកដទៃ (មធ្យម) |
+| Others | អ្នកដទៃ |
+| Too few ratings | ការវាយតម្លៃតិចពេក |
+| Ratings | ការវាយតម្លៃ |
+| An area fewer than {n} people rated shows no average. | ផ្នែកដែលមនុស្សតិចជាង {n} នាក់បានវាយតម្លៃ មិនបង្ហាញមធ្យមទេ។ |
+| To grow in | ត្រូវរីកចម្រើន |
+| Where you see yourself differently | កន្លែងដែលអ្នកមើលខ្លួនឯងខុសពីគេ |
+| you {s}, others {o}: they see less than you do | អ្នក {s} អ្នកដទៃ {o}៖ ពួកគេឃើញតិចជាងអ្នក |
+| you {s}, others {o}: they see more than you do | អ្នក {s} អ្នកដទៃ {o}៖ ពួកគេឃើញច្រើនជាងអ្នក |
+| In their words | តាមពាក្យរបស់ពួកគេ |
+| Action plan | ផែនការសកម្មភាព |
+| Pick one to three things to grow in — the areas to grow in are a good place to start — and say how you’ll know it’s happening. | ជ្រើសរើសរឿងមួយទៅបីដើម្បីរីកចម្រើន — ផ្នែកដែលត្រូវរីកចម្រើន គឺជាកន្លែងល្អសម្រាប់ចាប់ផ្ដើម — ហើយប្រាប់ពីរបៀបដែលអ្នកនឹងដឹងថាវាកំពុងកើតឡើង។ |
+| No plan yet. | មិនទាន់មានផែនការនៅឡើយ។ |
+| by {q} | ត្រឹម {q} |
+| Add an action | បន្ថែមសកម្មភាព |
+| {q} review | ការពិនិត្យ {q} |
+| Once a quarter: how is each one going? Your mentor or whoever you share this with sees it too. | ម្ដងក្នុងមួយត្រីមាស៖ តើនីមួយៗដំណើរការយ៉ាងណា? អ្នកណែនាំរបស់អ្នក ឬអ្នកដែលអ្នកចែករំលែកជាមួយ ក៏ឃើញវាដែរ។ |
+| What happened? (optional) | តើមានអ្វីកើតឡើង? (ស្រេចចិត្ត) |
+| Looking back on the quarter | មើលត្រឡប់ទៅលើត្រីមាស |
+| Save the {q} review | រក្សាទុកការពិនិត្យ {q} |
+| Change this review | ប្ដូរការពិនិត្យនេះ |
+| Not looked at yet this quarter. | មិនទាន់បានពិនិត្យក្នុងត្រីមាសនេះនៅឡើយ។ |
+| Earlier reviews · {n} | ការពិនិត្យមុនៗ · {n} |
+| A new action | សកម្មភាពថ្មី |
+| Change this action | ប្ដូរសកម្មភាពនេះ |
+| Your areas to grow in: | ផ្នែកដែលអ្នកត្រូវរីកចម្រើន៖ |
+| Area | ផ្នែក |
+| What I’ll do | អ្វីដែលខ្ញុំនឹងធ្វើ |
+| e.g. Answer emails within two days | ឧ. ឆ្លើយអ៊ីមែលក្នុងរយៈពេលពីរថ្ងៃ |
+| How I’ll know | របៀបដែលខ្ញុំនឹងដឹង |
+| e.g. My inbox is under 20 every Friday | ឧ. ប្រអប់សំបុត្ររបស់ខ្ញុំមានក្រោម 20 រៀងរាល់ថ្ងៃសុក្រ |
+| Remove this action | ដកសកម្មភាពនេះចេញ |
+| Shared with | បានចែករំលែកជាមួយ |
+| Nobody yet — only you see it. | មិនទាន់មាននរណាម្នាក់ — មានតែអ្នកទេដែលឃើញវា។ |
+| Share the results and plan | ចែករំលែកលទ្ធផល និងផែនការ |
+| They see the results, your own answers and your plan with its reviews — not who you asked. | ពួកគេឃើញលទ្ធផល ចម្លើយផ្ទាល់ខ្លួនរបស់អ្នក និងផែនការរបស់អ្នកជាមួយការពិនិត្យ — មិនឃើញថាអ្នកបានសួរអ្នកណាទេ។ |
+| {name} (my mentor) | {name} (អ្នកណែនាំរបស់ខ្ញុំ) |
+| Feedback from the people you serve with | មតិពីអ្នកដែលអ្នកបម្រើជាមួយ |
+| 1 waiting for your feedback | មួយកំពុងរង់ចាំមតិរបស់អ្នក |
+| {n} waiting for your feedback | {n} កំពុងរង់ចាំមតិរបស់អ្នក |
+| Your plan’s {q} review is due | ដល់ពេលពិនិត្យផែនការរបស់អ្នកសម្រាប់ {q} ហើយ |
+| Answers coming in | ចម្លើយកំពុងចូលមក |
+| Let them know you won’t be giving feedback this time? | ប្រាប់ពួកគេថាអ្នកនឹងមិនផ្ដល់មតិលើកនេះទេ? |
+| Sent to {n} people | បានផ្ញើទៅមនុស្ស {n} នាក់ |
+| Pick at least three people. | សូមជ្រើសរើសយ៉ាងហោចណាស់បីនាក់។ |
+| Pick a date from today on. | សូមជ្រើសរើសកាលបរិច្ឆេទចាប់ពីថ្ងៃនេះតទៅ។ |
+| Answer at least one question first. | សូមឆ្លើយយ៉ាងហោចណាស់សំណួរមួយជាមុនសិន។ |
+| Send your feedback? Once sent it can’t be changed. | ផ្ញើមតិរបស់អ្នក? ពេលផ្ញើហើយ មិនអាចប្ដូរបានទេ។ |
+| Thank you — sent anonymously | សូមអរគុណ — បានផ្ញើដោយអនាមិក |
+| That review has closed. | ការវាយតម្លៃនោះបានបិទហើយ។ |
+| You’ve already answered this one. | អ្នកបានឆ្លើយការវាយតម្លៃនេះរួចហើយ។ |
+| Only {a} have answered — with fewer than {n} the results can’t be shown. Close it anyway? | មានតែ {a} នាក់ប៉ុណ្ណោះបានឆ្លើយ — តិចជាង {n} លទ្ធផលមិនអាចបង្ហាញបានទេ។ បិទវាដដែលឬ? |
+| Close it now? Nobody else can answer after this. | បិទវាឥឡូវនេះ? គ្មាននរណាម្នាក់ទៀតអាចឆ្លើយបានក្រោយពីនេះទេ។ |
+| Delete this review, its results and its plan? This can’t be undone. | លុបការវាយតម្លៃនេះ លទ្ធផល និងផែនការរបស់វា? មិនអាចត្រឡប់វិញបានទេ។ |
+| Say what you’ll do | សូមប្រាប់ពីអ្វីដែលអ្នកនឹងធ្វើ |
+| Remove this action? | ដកសកម្មភាពនេះចេញ? |
+| Walks with God | ដើរជាមួយព្រះ |
+| Lives what they teach; prayer and the Word shape how they lead. | រស់នៅតាមអ្វីដែលខ្លួនបង្រៀន ការអធិស្ឋាន និងព្រះបន្ទូលកំណត់របៀបដែលខ្លួនដឹកនាំ។ |
+| Vision | ចក្ខុវិស័យ |
+| Shows where we are going and why, and brings people along. | បង្ហាញថាយើងកំពុងទៅណា និងហេតុអ្វី ហើយនាំមនុស្សទៅជាមួយ។ |
+| Cares for people | យកចិត្តទុកដាក់ចំពោះមនុស្ស |
+| Notices people, cares for them and helps them grow. | សង្កេតមើលមនុស្ស យកចិត្តទុកដាក់ចំពោះពួកគេ និងជួយឱ្យពួកគេរីកចម្រើន។ |
+| Communication | ការប្រាស្រ័យទាក់ទង |
+| Listens well; clear, honest and kind. | ស្ដាប់បានល្អ ច្បាស់លាស់ ស្មោះត្រង់ និងសុភាព។ |
+| Teamwork | ការងារជាក្រុម |
+| Works well with others and is easy to work with. | ធ្វើការបានល្អជាមួយអ្នកដទៃ ហើយងាយស្រួលធ្វើការជាមួយ។ |
+| Follows through | ធ្វើតាមដល់ទីបញ្ចប់ |
+| Does what they say they will. | ធ្វើអ្វីដែលខ្លួនបាននិយាយថានឹងធ្វើ។ |
+| Humble and teachable | សុភាពរាបសា និងអាចបង្រៀនបាន |
+| Receives feedback, owns mistakes, keeps learning. | ទទួលមតិ ទទួលស្គាល់កំហុស បន្តរៀនសូត្រ។ |
+| Decisions | ការសម្រេចចិត្ត |
+| Makes timely, wise decisions and stands by them. | ធ្វើការសម្រេចចិត្តទាន់ពេល និងប្រកបដោយប្រាជ្ញា ហើយឈរលើការសម្រេចនោះ។ |
+| Across cultures | ឆ្លងវប្បធម៌ |
+| Honours Khmer culture and builds bridges between cultures. | គោរពវប្បធម៌ខ្មែរ និងកសាងស្ពានរវាងវប្បធម៌។ |
+| Rarely | កម្រ |
+| Sometimes | ពេលខ្លះ |
+| Often | ញឹកញាប់ |
+| Usually | ជាធម្មតា |
+| Always | ជានិច្ច |
+| What should they keep doing? | តើពួកគេគួរបន្តធ្វើអ្វី? |
+| What should I keep doing? | តើខ្ញុំគួរបន្តធ្វើអ្វី? |
+| What could they start doing? | តើពួកគេអាចចាប់ផ្ដើមធ្វើអ្វី? |
+| What could I start doing? | តើខ្ញុំអាចចាប់ផ្ដើមធ្វើអ្វី? |
+| What could they stop doing? | តើពួកគេអាចឈប់ធ្វើអ្វី? |
+| What could I stop doing? | តើខ្ញុំអាចឈប់ធ្វើអ្វី? |
+| Anything else? | មានអ្វីផ្សេងទៀតទេ? |
+| Not started | មិនទាន់ចាប់ផ្ដើម |
+| On track | កំពុងដំណើរការល្អ |
+| Stuck | ជាប់គាំង |
+| 360 review · {month} | ការវាយតម្លៃ 360 · {month} |
+
+☰ → 360 reviews, and its tile on My Home: starting a review of yourself, giving someone your feedback, the results, the action plan and each quarter's review of it. The nine areas (Walks with God … Across cultures) are the questions everyone answers — worth reading carefully, so they mean the same in Khmer. The scale buttons (Rarely … Always) sit side by side, about 10 characters each. "How it stays anonymous" and its three lines, and "Anonymous: {name} will see …", are promises to the people answering — check these first.

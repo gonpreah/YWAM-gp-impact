@@ -1,4 +1,4 @@
-/* My YWAM GP — teams.html, part 9 of 10: the finance tool.
+/* My YWAM GP — teams.html, part 9 of 11: the finance tool.
    Oct 2026 (Uriah): "Build the finance tool for the accounting ministry … build the
    finance page around [our three reports] and then give all the leadership a base
    financial dashboard in their ministry page."

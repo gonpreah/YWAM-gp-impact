@@ -1,4 +1,4 @@
-/* My YWAM GP — teams.html, part 4 of 10: ministry tools, Team → Personalities, GP Strengths, My Home.
+/* My YWAM GP — teams.html, part 4 of 11: ministry tools, Team → Personalities, GP Strengths, My Home.
    Plain script, loaded in order by teams.html; the parts share one global
    scope, exactly as when this was one inline script. A function may call any
    function in any part. Code that RUNS while a part loads (not inside a
