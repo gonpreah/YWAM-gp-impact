@@ -2069,6 +2069,24 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .p3RevItem b { display:block; font-size:14px; margin-bottom:6px; } .p3RevItem input { margin-top:8px; } .p3RevItem small { display:block; font-size:13px; }
 .p3ShareList { max-height:260px; overflow:auto; }
 
+/* Who's here (Oct 2026) */
+.whoChips { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 6px; }
+.whoChips span { background:var(--surface2); border-radius:999px; padding:4px 10px; font-size:13px; }
+.whoGrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(84px, 1fr)); gap:10px; margin:4px 0 14px; }
+.whoGrid.small { margin-bottom:2px; }
+.whoTile { text-align:center; min-width:0; }
+.whoTile .avatar { margin:0 auto 4px; }
+.whoName { font-size:12.5px; font-weight:700; line-height:1.2; overflow-wrap:anywhere; }
+.whoMeta { font-size:11px; color:var(--muted); line-height:1.2; overflow-wrap:anywhere; }
+.whoTile.away .avatar { opacity:.38; filter:grayscale(1); }
+.whoTile.away .whoName { color:var(--muted); }
+.whoAway { font-size:10.5px; color:var(--faint); line-height:1.25; }
+.whoTeam { padding-bottom:6px; }
+.whoRow { padding:8px 0; border-bottom:1px solid var(--line); } .whoRow:last-child { border-bottom:0; }
+.whoChipsNames { display:flex; flex-wrap:wrap; gap:6px 10px; }
+.whoPerson { display:inline-flex; align-items:center; gap:6px; font-size:14px; font-weight:600; }
+.whoPerson .avatar { width:26px; height:26px; font-size:11px; }
+.avatar.md { width:56px; height:56px; } .avatar.md.ph { font-size:18px; color:var(--muted); }
 /* Profile & settings: My contract lives here (Oct 2026) */
 .profMyc { display:flex; align-items:center; gap:12px; width:100%; text-align:left; font:inherit; color:var(--ink); cursor:pointer; }
 .profMycIc { font-size:24px; } .profMycTxt { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; } .profMycGo { color:var(--muted); font-size:20px; }

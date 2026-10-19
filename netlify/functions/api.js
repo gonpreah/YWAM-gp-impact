@@ -5739,6 +5739,64 @@ async function syncTeamRooms_(campus, bookings) {
   });
   if (changed) await writeJSON('candidates', rows);
 }
+/* ==================== Who's here (Oct 2026, Uriah) ====================
+   Everyone on a campus tonight, for Base's "On campus now" and its page:
+   - staff on the campus, each marked away when an approved (or noted) trip or
+     leave covers today — the page dims them with "Off campus right now";
+   - from SR Hospitality's bookings that cover tonight: teams (their people from
+     the portal — the leader, co-leaders and members the leader listed), students,
+     volunteers, guests and speakers.
+   Staff come back as ids (the page has their names and photos already); team
+   photos are a separate call per team (whosHereTeamPhotos), as they are heavy. */
+const WHOS_KINDS = ['team', 'student', 'volunteer', 'guest', 'speaker'];
+function whoNames_(k) {
+  const names = [];
+  (k.people || []).forEach(function (p) { const n = dutyText_(p && p.name, 120); if (n && names.indexOf(n) === -1) names.push(n); });
+  Object.keys(k.bedNames || {}).forEach(function (b) { const n = dutyText_(k.bedNames[b], 120); if (n && names.indexOf(n) === -1) names.push(n); });
+  return names;
+}
+async function getWhosHere(username, pin, campus) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false, err: 'auth' };
+  campus = CAMPUS_IDS_.indexOf(campus) > -1 ? campus : s.campus;
+  const today = baseToday_();
+  const away = {};
+  (await getTrips_()).forEach(function (t) {
+    if (t && (t.status === 'approved' || t.status === 'noted') && t.from <= today && today <= t.to) away[t.staffId] = { type: leaveTypeOf_(t), to: t.to };
+  });
+  const staff = (await getStaff_()).filter(function (r) { return r && r.active !== false && !r.archived && !isApplicant_(r) && r.campus === campus; })
+    .map(function (r) { return { id: r.id, away: away[r.id] || null }; });
+  const groups = { team: [], student: [], volunteer: [], guest: [], speaker: [] };
+  if (campus === 'siemreap' || (await readJSON(hospKey_(campus), null))) {
+    const d = await getHosp_(campus), trips = await getTeamTrips_(), cands = await getCandidates_();
+    d.bookings.forEach(function (k) {
+      if (!k || WHOS_KINDS.indexOf(k.category) === -1) return;
+      if (!(k.from && k.from <= today && (k.permanent || (k.to && k.to > today)))) return;
+      const n = Math.max(Number(k.count) || 0, (k.bedIds || []).length);
+      if (k.category === 'team') {
+        const trip = k.tripId ? trips.find(function (t) { return t.id === k.tripId; }) : null;
+        const cand = trip && trip.candidateId ? cands.find(function (c) { return c && c.id === trip.candidateId; }) : null;
+        const people = cand ? teamPhotoPeople_(cand).map(function (p) { return { key: p.key, name: p.name, role: p.role }; }) : whoNames_(k).map(function (nm) { return { key: '', name: nm, role: '' }; });
+        groups.team.push({ name: (trip && trip.name) || k.name, from: k.from, to: k.to || '', count: Math.max(n, people.length), people: people, candidateId: cand ? cand.id : '' });
+        return;
+      }
+      const names = whoNames_(k);
+      groups[k.category].push({ name: k.name, from: k.from, to: k.to || '', permanent: !!k.permanent, count: Math.max(n, names.length, 1), names: names });
+    });
+  }
+  const others = WHOS_KINDS.reduce(function (sum, kind) { return sum + groups[kind].reduce(function (a, g) { return a + g.count; }, 0); }, 0);
+  const staffHere = staff.filter(function (x) { return !x.away; }).length;
+  return { ok: true, campus: campus, date: today, staff: staff, groups: groups, count: staffHere + others, staffHere: staffHere, staffAway: staff.length - staffHere };
+}
+async function whosHereTeamPhotos(username, pin, candidateId) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false, err: 'auth' };
+  const cand = (await getCandidates_()).find(function (c) { return c && c.id === str_(candidateId, 60) && c.type === 'team'; });
+  if (!cand || (cand.campus && cand.campus !== s.campus && !s.isAdmin)) return { ok: false, err: 'not_found' };
+  const store = await getTeamPhotos_(cand), out = {};
+  teamPhotoPeople_(cand).forEach(function (p) { const ph = store.photos && store.photos[p.key]; if (ph && ph.data) out[p.key] = ph.data; });
+  return { ok: true, photos: out };
+}
 async function hospAuth_(username, pin) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { out: { ok: false } };
@@ -10374,6 +10432,8 @@ const HANDLERS = {
   portalJoinInfo: function (a) { return portalJoinInfo(a[0]); },
   portalJoin: function (a) { return portalJoin(a[0], a[1]); },
   getHospitality: function (a) { return getHospitality(a[0], a[1]); },
+  getWhosHere: function (a) { return getWhosHere(a[0], a[1], a[2]); },
+  whosHereTeamPhotos: function (a) { return whosHereTeamPhotos(a[0], a[1], a[2]); },
   hospSave: function (a) { return hospSave(a[0], a[1], a[2], a[3]); },
   hospDelete: function (a) { return hospDelete(a[0], a[1], a[2], a[3]); },
   hospStayStatus: function (a) { return hospStayStatus(a[0], a[1], a[2], a[3]); },

@@ -943,6 +943,7 @@ function render(){
   else if(S.view==='p360') m.innerHTML=p360Html_();
   else if(S.view==='week') m.innerHTML=S.student ? studentHomeHtml_() : homeHtml();
   else if(S.view==='health') m.innerHTML=healthHtml();
+  else if(S.view==='whoshere') m.innerHTML=whosHereHtml_();
   else if(S.view==='students') m.innerHTML=studentsPageHtml_();
   else if(S.view==='team') m.innerHTML=teamHtml();
   else if(S.view==='mentor') m.innerHTML=mentorHtml();
@@ -1330,6 +1331,79 @@ function deptMinistriesHtml_(dept, R, ids){
   return b;
 }
 
+/* ==================== Who's here (Oct 2026, Uriah) ====================
+   Everyone on campus tonight (getWhosHere): staff — dimmed, with "Off campus
+   right now", when on leave or a trip today — then teams (their people as the
+   leader listed them in the portal, photos loaded per team), students,
+   volunteers, guests and speakers staying with SR Hospitality. */
+var WHOS_LABEL={ team:['👥','Teams'], student:['🎓','Students'], volunteer:['🤝','Volunteers'], guest:['🧳','Guests'], speaker:['🎤','Speakers'] };
+function whosAwayLabel_(a){ return a.type==='personal' ? t('On break') : a.type==='outside' ? t('Serving off campus') : t('Away'); }
+function whosDates_(g){ return g.permanent ? t('Staying long-term') : g.to ? gpT('Until {date}',{date:fmtDateNice_(g.to)}) : ''; }
+function fmtDateNice_(iso){ var d=new Date(String(iso).slice(0,10)+'T00:00:00'); return isNaN(d) ? String(iso||'') : d.toLocaleDateString(LANG==='km'?'km-KH':'en-GB', { day:'numeric', month:'short' }); }
+function whosHereHtml_(){
+  var W=S.whosHere;
+  var h='<button class="linkbtn" id="whosBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('Base'))+'</button>'+
+    '<h2 style="margin:4px 0 2px">🏠 '+esc(t('Who’s here'))+'</h2>';
+  if(!W) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
+  var G=W.groups||{}, nOf=function(k){ return (G[k]||[]).reduce(function(a,g){ return a+g.count; },0); };
+  h+='<p class="sub" style="margin:0 0 10px">'+esc(campusName(W.campus))+' · '+esc(gpT('tonight, {date}',{date:fmtDateNice_(W.date)}))+' · <b>'+esc(gpT('{n} people on campus',{n:W.count}))+'</b></p>';
+  h+='<div class="whoChips"><span>👥 '+esc(t('Staff'))+' <b>'+W.staffHere+'</b></span>'+Object.keys(WHOS_LABEL).filter(function(k){ return nOf(k); }).map(function(k){
+    return '<span>'+WHOS_LABEL[k][0]+' '+esc(t(WHOS_LABEL[k][1]))+' <b>'+nOf(k)+'</b></span>'; }).join('')+'</div>';
+  /* staff: here first, then away — dimmed */
+  var people=(W.staff||[]).map(function(x){ var p=personOf(x.id); return p ? { p:p, away:x.away } : null; }).filter(Boolean)
+    .sort(function(a,b){ return (a.away?1:0)-(b.away?1:0) || (a.p.name<b.p.name?-1:1); });
+  h+='<h3>👥 '+esc(t('Staff'))+' <small>· '+esc(gpT('{n} here',{n:W.staffHere}))+(W.staffAway?' · '+esc(gpT('{n} off campus',{n:W.staffAway})):'')+'</small></h3>'+
+    '<div class="whoGrid">'+people.map(function(x){
+      return '<div class="whoTile'+(x.away?' away':'')+'">'+avatarHtml(x.p,'md')+'<div class="whoName">'+esc(x.p.name)+'</div>'+
+        (x.away ? '<div class="whoAway">'+esc(t('Off campus right now'))+'<br>'+esc(whosAwayLabel_(x.away))+'</div>' : '<div class="whoMeta">'+esc(t(x.p.ministry||x.p.dept||''))+'</div>')+'</div>';
+    }).join('')+'</div>';
+  /* teams */
+  (G.team||[]).forEach(function(g, i){
+    if(!i) h+='<h3>👥 '+esc(t('Teams'))+' <small>· '+nOf('team')+'</small></h3>';
+    var ph=(S.whosPhotos||{})[g.candidateId]||{};
+    h+='<div class="card whoTeam"><div class="rowName"><b>'+esc(g.name)+'</b> <span class="pmeta">· '+esc(gpT('{n} people',{n:g.count}))+(whosDates_(g)?' · '+esc(whosDates_(g)):'')+'</span></div>'+
+      '<div class="whoGrid small">'+g.people.map(function(p){
+        return '<div class="whoTile">'+avatarHtml({ name:p.name, photo: ph[p.key] ? 'data:image/jpeg;base64,'+ph[p.key] : '' },'md')+'<div class="whoName">'+esc(p.name)+'</div>'+
+          (p.role==='leader' ? '<div class="whoMeta">'+esc(t('Leader'))+'</div>' : p.role==='co' ? '<div class="whoMeta">'+esc(t('Co-leader'))+'</div>' : '')+'</div>';
+      }).join('')+(g.people.length<g.count ? '<div class="whoTile more"><div class="avatar md ph">+'+(g.count-g.people.length)+'</div><div class="whoName">'+esc(t('not named yet'))+'</div></div>' : '')+'</div></div>';
+  });
+  /* students, volunteers, guests, speakers */
+  ['student','volunteer','guest','speaker'].forEach(function(k){
+    var list=G[k]||[]; if(!list.length) return;
+    h+='<h3>'+WHOS_LABEL[k][0]+' '+esc(t(WHOS_LABEL[k][1]))+' <small>· '+nOf(k)+'</small></h3><div class="card">';
+    list.forEach(function(g){
+      var names=g.names.length ? g.names : [g.name];
+      h+='<div class="whoRow"><div class="whoChipsNames">'+names.map(function(n){ return '<span class="whoPerson">'+avatarHtml({name:n},'sm')+esc(n)+'</span>'; }).join('')+
+        (g.count>names.length ? '<span class="whoPerson more">+'+(g.count-names.length)+'</span>' : '')+'</div>'+
+        '<div class="pmeta">'+(g.names.length && g.name && names.indexOf(g.name)===-1 ? esc(g.name)+' · ' : '')+esc(whosDates_(g))+'</div></div>';
+    });
+    h+='</div>';
+  });
+  if(!nOf('team') && !nOf('student') && !nOf('volunteer') && !nOf('guest') && !nOf('speaker'))
+    h+='<p class="hint">'+esc(t('Nobody is booked with SR Hospitality tonight.'))+'</p>';
+  return h;
+}
+function whosHereLoad_(force){
+  /* kept per the campus asked for (S.whosFor), not the campus answered: someone with no campus
+     set is answered for the default one, and comparing with that would ask — and re-render — forever */
+  var c=S.me.campus||'';
+  if(S.whosLoading || (!force && S.whosHere && S.whosFor===c && Date.now()-(S.whosAt||0)<5*60*1000)) return;
+  S.whosLoading=true;
+  run('getWhosHere',[S.auth.user,S.auth.pin,S.me.campus],function(d){
+    S.whosLoading=false; S.whosFor=c; S.whosAt=Date.now();
+    if(d && d.ok){ S.whosHere=d; if(S.view==='base' || S.view==='whoshere') render(); }
+  },function(){ S.whosLoading=false; S.whosFor=c; S.whosAt=Date.now(); });
+}
+/* team photos: one call per team, once */
+function whosTeamPhotosLoad_(){
+  var W=S.whosHere; if(!W) return;
+  S.whosPhotos=S.whosPhotos||{};
+  ((W.groups||{}).team||[]).forEach(function(g){
+    if(!g.candidateId || S.whosPhotos[g.candidateId]) return;
+    S.whosPhotos[g.candidateId]={};
+    run('whosHereTeamPhotos',[S.auth.user,S.auth.pin,g.candidateId],function(d){ if(d && d.ok){ S.whosPhotos[g.candidateId]=d.photos||{}; if(S.view==='whoshere') render(); } });
+  });
+}
 function baseHtml(){
   var wk=thisWeek();
   var ids=[S.me.campus];
@@ -1361,6 +1435,13 @@ function baseHtml(){
      of staff they are and where they are from — one function, shared with the
      dashboard, so the base is never described two ways. */
   h+=gpStaffMixHtml(R.staffBreakdown(ids));
+  /* Who's on campus right now — staff here plus everyone SR Hospitality has staying tonight */
+  if(!S.guest && !S.board){
+    var W=S.whosHere && S.whosFor===(S.me.campus||'') ? S.whosHere : null;
+    h+='<button class="heroRow" id="goWhosHere">'+gpRingHtml(W && (W.staffHere+W.staffAway) ? Math.round(W.staffHere/(W.staffHere+W.staffAway)*100) : 0, 'sm', t('On campus now'))+
+       '<div class="heroTrend">🏠 '+esc(t('On campus now'))+' <b class="heroFig">'+(W ? W.count : '—')+'</b>'+
+       '<span class="heroSubtext" style="display:block">'+esc(t('Tap to see who’s here'))+' ›</span></div></button>';
+  }
   var cr=R.checkinRate(ids, wk);
   if(cr.total && cr.total>0){
     var crp = gpCheckinPct(cr.n, cr.total);
