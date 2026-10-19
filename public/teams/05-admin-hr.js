@@ -30,6 +30,7 @@
 var ADMIN_SUBS = [
   { id:'accounts', label:'Accounts', emoji:'👤', blurb:'Find someone — edit their profile, reset a PIN, set their mentor or make them a ministry leader' },
   { id:'approvals', label:'Approvals', emoji:'✅', blurb:'Leadership sign-ups and moves waiting for a yes' },
+  { id:'students', label:'Students', emoji:'🎓', blurb:'Every student profile, by school — what each one has put in, and their app as they see it' },
   { id:'mentors', label:'Mentors', emoji:'🤝', blurb:'Who is walking with whom — every mentor and their people, and who has nobody yet' },
   { id:'leave', label:'Leave', emoji:'🗓️', blurb:'Everyone’s leave requests, by campus — waiting, coming up, and days used this year' },
   { id:'portal', label:'Portal access', emoji:'🛂', blurb:'Who works in applications — grant or remove access to the YWAM GP Portal' },
@@ -73,16 +74,19 @@ function adminHtml(){
   if(sub==='person'){
     var who=(S.adminStaff||[]).filter(function(x){ return x.id===S.adminPersonId; })[0];
     if(S.adminStaff!==null && !who) sub='accounts';
-  } else if(!ADMIN_SUBS.some(function(x){ return x.id===sub; })) sub='home';
+  } else if(sub==='stuone'){ if(!S.adminStuId) sub='students'; }
+  else if(!ADMIN_SUBS.some(function(x){ return x.id===sub; })) sub='home';
   S.adminSub=sub;
   if(sub==='home') return adminHomeHtml_();
   if(sub==='person') return adminPersonHtml_();
+  if(sub==='stuone') return adminStudentHtml_();
   var meta=ADMIN_SUBS.filter(function(x){ return x.id===sub; })[0];
   var h=adminBackHtml_('home', t('Admin'));
   h+='<h2>'+meta.emoji+' '+esc(t(meta.label))+'</h2><p class="sub">'+esc(t(meta.blurb))+'</p>';
   if(sub==='broadcast') return h+adminBroadcastHtml_();
   if(sub==='kpis') return h+adminKpisHtml_();
   if(sub==='approvals') return h+adminApprovalsHtml_();
+  if(sub==='students') return h+adminStudentsHtml_();
   if(sub==='mentors') return h+adminMentorsHtml_();
   if(sub==='leave') return h+adminLeaveHtml_();
   if(sub==='portal') return h+adminPortalHtml_();
@@ -92,6 +96,90 @@ function adminHtml(){
   if(sub==='board') return h+adminBoardHtml_();
   if(sub==='reminders') return h+adminRemindersHtml_();
   return h+adminAccountsHtml_();
+}
+/* Admin → 🎓 Students (Oct 2026): every student profile, by school — the ones
+   made from SR Hospitality and the ones who applied through the portal. Tap one
+   for what they have put in (mentor, weekly goals, habits, strengths, Library),
+   and "See their app" opens their GP app exactly as they see it, read only
+   (S.stuPreview: nothing is sent, nothing saved; leaving reloads the page as
+   yourself, back on their profile). Admins only. */
+S.adminStu=null; S.adminStuId=null; S.adminStuView=null;
+function adminStuStatus_(r){
+  return r.linked ? (r.updated ? gpT('Last active {date}',{date:shortDay_(new Date(r.updated))}) : t('Signed up'))
+    : r.invite ? t('Invite sent — not joined yet') : t('No account yet');
+}
+function adminStudentsHtml_(){
+  var L=S.adminStu;
+  if(!L) return '<p class="sub">'+esc(t('Loading…'))+'</p>';
+  if(!L.ok) return '<p class="sub">'+esc(t('Couldn’t load the students — pull down to try again.'))+'</p>';
+  var keys=(L.order||[]).filter(function(k){ return (L.schools[k]||[]).length; });
+  if(!keys.length) return '<div class="card"><p class="sub" style="margin:0">'+esc(t('No student profiles yet. Make them from ☰ → Students, or they come as students apply through the portal.'))+'</p></div>';
+  return keys.map(function(k){
+    var rows=L.schools[k];
+    return '<h3>'+esc(k==='other' ? t('No school set') : k.toUpperCase())+' <small>· '+rows.length+'</small></h3><div class="card">'+rows.map(function(r){
+      var bits=[adminStuStatus_(r)];
+      if(r.mentor) bits.push(gpT('Mentor: {name}',{name:r.mentor})+(r.mentorStatus==='pending' ? ' ('+t('asked')+')' : ''));
+      if(r.linked) bits.push(gpT('{n} goals this week',{n:r.goalsThisWeek}));
+      return '<button type="button" class="adminStuRow" data-adminstu="'+esc(r.candId)+'">'+avatarHtml({ name:r.name }, 'sm')+
+        '<span class="stuRowTxt"><b>'+esc(r.name)+'</b><span class="rowSub">'+esc(bits.join(' · '))+'</span></span>'+
+        '<span class="accChevron" style="transform:rotate(-90deg)">'+ACC_CHEVRON+'</span></button>';
+    }).join('')+'</div>';
+  }).join('');
+}
+function adminStudentHtml_(){
+  var h=adminBackHtml_('students', t('Students'));
+  var V=S.adminStuView;
+  if(!V || V.id!==S.adminStuId) return h+'<p class="sub">'+esc(t('Loading…'))+'</p>';
+  if(!V.ok) return h+'<p class="sub">'+esc(t('Couldn’t load this student.'))+'</p>';
+  var r=V.student, b=V.boot;
+  h+='<h2>🎓 '+esc(r.name)+'</h2><p class="sub">'+esc([r.school ? r.school.toUpperCase() : '', r.email, adminStuStatus_(r)].filter(Boolean).join(' · '))+'</p>';
+  if(!b) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('They haven’t joined yet, so there is nothing to see. Send them their invite from ☰ → Students.'))+'</p></div>';
+  h+='<button type="button" class="btn" id="adminStuPreview" style="margin:0 0 14px">👁 '+esc(gpT('See {name}’s app',{name:firstName_(r.name)}))+'</button>';
+  var card=function(title, body){ return '<div class="card adminStuCard"><div class="goalCardTitle">'+title+'</div>'+body+'</div>'; };
+  var line=function(txt){ return '<p class="sub" style="margin:0">'+esc(txt)+'</p>'; };
+  h+=card('🤝 '+esc(t('Mentor')), line(r.mentor ? (r.mentorStatus==='pending' ? gpT('Asked {name} — waiting for them to accept',{name:r.mentor}) : r.mentor) : t('Not chosen yet')));
+  /* weekly goals: last week, this week, next week */
+  var wk=thisWeek(), yr=thisWeekYear();
+  var goals=[[wk-1, t('Last week')], [wk, t('This week')], [wk+1, t('Next week')]].filter(function(x){ return x[0]>=1 && x[0]<=52; }).map(function(x){
+    var g=(b.goals||[]).filter(function(r2){ return Number(r2.week)===x[0] && (!r2.year || Number(r2.year)===yr); })[0], items=(g && g.items)||[];
+    return '<div class="adminStuWeek"><b>'+esc(x[1])+'</b>'+(items.length ? '<ul>'+items.map(function(it){
+      return '<li>'+(it.done ? '✅ ' : '')+esc(it.text)+(it.done || !it.pct ? '' : ' <span class="rowSub">· '+Math.round(it.pct)+'%</span>')+'</li>'; }).join('')+'</ul>'
+      : '<span class="rowSub">'+esc(t('No goals'))+'</span>')+'</div>';
+  }).join('');
+  h+=card('🎯 '+esc(t('Weekly Goals')), goals);
+  /* habits: how many of the last 7 days */
+  var days=[]; for(var i=0;i<7;i++){ var d=new Date(); d.setDate(d.getDate()-i); days.push(d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)); }
+  var habits=(b.habits||[]).map(function(hb){
+    var m=habitMeta(hb), n=(b.logs||[]).filter(function(l){ return days.indexOf(l.date)>-1 && didHabit(l, hb.id); }).length;
+    return '<div class="adminStuHabit"><span>'+esc(m.icon)+' '+esc(t(m.label))+'</span><span class="rowSub">'+esc(gpT('{n} of the last 7 days',{n:n}))+'</span></div>';
+  }).join('');
+  h+=card('✅ '+esc(t('Habits')), habits || line(t('No habits yet')));
+  /* strengths */
+  var P=b.profile||{}, pt=P.personality, gs=P.gstrengths, pn=pt && typeof GP_PTYPES!=='undefined' && GP_PTYPES[pt.type];
+  h+=card('🧭 '+esc(t('Strengths')),
+    line(t('Personality')+': '+(pt ? (pn ? t(pn.name)+' ('+pt.type+')' : pt.type) : t('Not taken yet')))+
+    '<p class="sub" style="margin:6px 0 0">'+esc(t('Top strengths')+': '+(gs && gs.top && gs.top.length ? gs.top.map(function(id){ var x=gpGSById(id); return x ? t(x.name) : id; }).join(', ') : t('Not taken yet')))+'</p>');
+  h+=card('📚 '+esc(t('Library')), line(gpT('{n} marked read',{n:r.libRead||0})));
+  return h;
+}
+function stuPreviewEnter_(){
+  var V=S.adminStuView; if(!V || !V.boot) return;
+  var b=V.boot;
+  try { sessionStorage.setItem('gp-stu-back', V.student.candId); } catch(e){}
+  S.stuPreview={ name:V.student.name, candId:V.student.candId, libRead:b.libRead||{} };
+  S.student=true; S.bellOpen=false; S.menuOpen=false;
+  try { document.body.classList.add('studentMode'); } catch(e){}
+  S.me=b.staff; S.profile=b.profile||{};
+  S.roster=b.roster||[]; S.logs=b.logs||[]; S.habits=b.habits||[]; S.goals=b.goals||[];
+  S.checkins=[]; S.mentees=[]; S.mentorRequests=[]; S.stuMentor=null; S.smartGoals=[]; S.tasks=[]; S.oneOnOnes=[]; S.broadcasts=[];
+  S.reqDocs=[]; S.required=null; S.supSum=null; S.p3Glance=null;
+  S.sched=(b.schedules && b.schedules.ok) ? b.schedules : null;
+  S.view='week'; render(); window.scrollTo(0,0);
+}
+function stuPreviewExit_(){ location.reload(); }
+function stuPreviewBarHtml_(){
+  return '<div class="stuPreviewBar"><span>👁 '+esc(gpT('Viewing {name}’s app — read only',{name:S.stuPreview.name}))+'</span>'+
+    '<button type="button" class="btn small" id="stuPreviewExit">'+esc(t('Back to Admin'))+'</button></div>';
 }
 function adminHomeHtml_(){
   var list=S.adminStaff, loading=list===null;
@@ -1181,8 +1269,24 @@ function bindAdmin(){
   });
 
   document.querySelectorAll('[data-adminsub]').forEach(function(b){
-    b.onclick=function(){ gpTap(); S.adminSub=b.getAttribute('data-adminsub'); if(S.adminSub==='loose') S.adminLoose=null; render(); };
+    b.onclick=function(){ gpTap(); S.adminSub=b.getAttribute('data-adminsub'); if(S.adminSub==='loose') S.adminLoose=null; if(S.adminSub==='students') S.adminStu=null; render(); };
   });
+  // --- students ---
+  if(S.adminSub==='students' && !S.adminStu && !S.adminStuLoading){
+    S.adminStuLoading=true;
+    run('studentsAdmin',[S.auth.user,S.auth.pin],function(d){ S.adminStuLoading=false; S.adminStu=d||{ ok:false }; render(); },
+      function(){ S.adminStuLoading=false; S.adminStu={ ok:false }; render(); });
+  }
+  document.querySelectorAll('[data-adminstu]').forEach(function(b){
+    b.onclick=function(){ gpTap(); S.adminStuId=b.getAttribute('data-adminstu'); S.adminStuView=null; S.adminSub='stuone'; render(); window.scrollTo(0,0); };
+  });
+  if(S.adminSub==='stuone' && S.adminStuId && !(S.adminStuView && S.adminStuView.id===S.adminStuId) && S.adminStuLoading!==S.adminStuId){
+    var sid=S.adminStuId; S.adminStuLoading=sid;
+    run('studentAdminView',[S.auth.user,S.auth.pin,sid],function(d){ S.adminStuLoading=false; S.adminStuView=Object.assign({ id:sid }, d||{ ok:false }); render(); },
+      function(){ S.adminStuLoading=false; S.adminStuView={ id:sid, ok:false }; render(); });
+  }
+  var asp=document.getElementById('adminStuPreview');
+  if(asp) asp.onclick=function(){ gpTap(); stuPreviewEnter_(); };
 
   document.querySelectorAll('[data-admincampustab]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.adminCampusTab=b.getAttribute('data-admincampustab'); render(); };

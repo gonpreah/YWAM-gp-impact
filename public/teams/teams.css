@@ -2073,3 +2073,44 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .ltLine { display:flex; align-items:center; gap:8px; margin:0 0 6px; }
 .ltLine input { flex:1; min-width:0; margin:0; }
 .lbListH { font-size:13px; font-weight:700; color:var(--muted); margin:10px 0 2px; }
+/* Who's here (Oct 2026) */
+.whoChips { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 6px; }
+.whoChips span { background:var(--surface2); border-radius:999px; padding:4px 10px; font-size:13px; }
+.whoGrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(84px, 1fr)); gap:10px; margin:4px 0 14px; }
+.whoGrid.small { margin-bottom:2px; }
+.whoTile { text-align:center; min-width:0; }
+.whoTile .avatar { margin:0 auto 4px; }
+.whoName { font-size:12.5px; font-weight:700; line-height:1.2; overflow-wrap:anywhere; }
+.whoMeta { font-size:11px; color:var(--muted); line-height:1.2; overflow-wrap:anywhere; }
+.whoTile.away .avatar { opacity:.38; filter:grayscale(1); }
+.whoTile.away .whoName { color:var(--muted); }
+.whoAway { font-size:10.5px; color:var(--faint); line-height:1.25; }
+.whoTeam { padding-bottom:6px; }
+.whoRow { padding:8px 0; border-bottom:1px solid var(--line); } .whoRow:last-child { border-bottom:0; }
+.whoChipsNames { display:flex; flex-wrap:wrap; gap:6px 10px; }
+.whoPerson { display:inline-flex; align-items:center; gap:6px; font-size:14px; font-weight:600; }
+.whoPerson .avatar { width:26px; height:26px; font-size:11px; }
+.avatar.md { width:56px; height:56px; } .avatar.md.ph { font-size:18px; color:var(--muted); }
+/* Profile & settings: My contract lives here (Oct 2026) */
+.profMyc { display:flex; align-items:center; gap:12px; width:100%; text-align:left; font:inherit; color:var(--ink); cursor:pointer; }
+.profMycIc { font-size:24px; } .profMycTxt { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; } .profMycGo { color:var(--muted); font-size:20px; }
+/* My Home: a plain way to My Health */
+.heroHealthBtn { display:block; width:100%; margin:10px 0 2px; padding:11px 14px; border-radius:12px; border:1.5px solid var(--border2); background:var(--surface); color:var(--ink); font:inherit; font-weight:700; font-size:15px; cursor:pointer; text-align:center; }
+
+/* student mode (Oct 2026) */
+.stuHello { font-family:'Koulen',sans-serif; font-size:34px; line-height:1.1; margin-top:6px; }
+.stuRow { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); flex-wrap:wrap; } .stuRow:last-child { border-bottom:0; }
+.stuRowTxt { flex:1 1 140px; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.stuRow .btn.small { width:auto; margin:0; padding:7px 12px; font-size:13.5px; } .stuActs { display:inline-flex; gap:6px; }
+
+/* Admin → 🎓 Students */
+.adminStuRow { display:flex; align-items:center; gap:10px; width:100%; padding:10px 0; border:0; border-bottom:1px solid var(--line); background:none; color:var(--ink); font:inherit; text-align:left; cursor:pointer; }
+.adminStuRow:last-child { border-bottom:0; }
+.adminStuRow .accChevron { flex:0 0 auto; color:var(--muted); }
+.adminStuCard .goalCardTitle { margin-bottom:6px; }
+.adminStuWeek { padding:6px 0; border-bottom:1px solid var(--line); } .adminStuWeek:last-child { border-bottom:0; }
+.adminStuWeek > b { display:block; }
+.adminStuWeek ul { margin:4px 0 0; padding-left:20px; } .adminStuWeek li { margin:2px 0; }
+.adminStuHabit { display:flex; justify-content:space-between; gap:10px; padding:5px 0; flex-wrap:wrap; }
+.stuPreviewBar { position:sticky; top:0; z-index:5; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin:0 0 12px; padding:10px 12px; border-radius:12px; background:var(--surface2); border:1px solid var(--border2); font-size:14px; font-weight:600; }
+.stuPreviewBar .btn.small { width:auto; margin:0; padding:6px 12px; }

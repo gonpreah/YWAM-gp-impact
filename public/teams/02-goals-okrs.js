@@ -806,7 +806,7 @@ function oneOnOneBtnHtml(personId){
    about mentoring and 1-on-1s lives (Oct 2026, Uriah: "one area for easy access"). */
 function mentorWaitingN_(){
   var oo=(S.oneOnOnes||[]).filter(function(o){ return !o.mine && o.status==='pending'; }).length;
-  return oo+(S.mentorRequests||[]).length+(S.tripRequests||[]).length;
+  return oo+(S.mentorRequests||[]).length+(S.tripRequests||[]).length+((S.stuMentor && S.stuMentor.requests)||[]).length;
 }
 function mentorshipCardHtml(){
   var h='<h3 id="sec-mentor">'+esc(t('Mentorship'))+'</h3><div class="card mentorSum">';
@@ -1358,6 +1358,7 @@ function miniDashboardHtml(){
       '<div class="heroTrend">'+esc(t('My Health'))+' <b class="heroFig">'+(score!==null?score.toFixed(1):'—')+'</b>/10 '+healthTrend+'</div></button>'+
     '<button class="heroRow" data-gomentorship="1">'+gpRingHtml(mentorPct,'sm',t('Mentor'))+
       '<div class="heroTrend">'+esc(t('Mentor'))+' <b class="heroFig">'+(mentorId?esc(mentorName):esc(t('Not set')))+'</b></div></button>'+
+    '<button class="heroHealthBtn" id="goMyHealth" data-gohealth="1">💚 '+esc(t('Go to My Health'))+' ›</button>'+
     '<div class="heroSub">'+
       '<div class="heroSubRow">'+
         '<span class="heroSubLabel">'+esc(t('PERSONAL DAYS OFF LEFT'))+'</span>'+
