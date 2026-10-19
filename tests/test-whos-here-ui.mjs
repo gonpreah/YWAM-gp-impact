@@ -118,6 +118,17 @@ const call = async (fn, args) => { const r = await api.default({ method: 'POST',
   ok('← goes back to Base', await page.evaluate(() => S.view === 'base'));
   await ctx.close();
 }
+/* ---------- My Home → Who's here ---------- */
+{
+  const { ctx, page } = await open('sreilea');
+  await page.waitForTimeout(600);
+  ok('My Home shows how many are on campus now', await page.evaluate(() => S.view === 'week') && /On campus now\s*8/.test(await page.$eval('#goWhosHereHome', e => e.innerText).catch(() => 'none')), await page.$eval('#goWhosHereHome', e => e.innerText).catch(() => 'none'));
+  await page.click('#goWhosHereHome'); await page.waitForTimeout(900);
+  ok('… tap it: Who\'s here, with ← My Home', /8 people on campus/.test(await page.$eval('#main', e => e.innerText)) && /My Home/.test(await page.$eval('#whosBack', e => e.innerText)));
+  await page.click('#whosBack'); await page.waitForTimeout(400);
+  ok('… and back goes to My Home', await page.evaluate(() => S.view === 'week'));
+  await ctx.close();
+}
 {
   const { ctx, page } = await open('sreilea', { small: true });
   await page.evaluate(() => { S.view = 'whoshere'; render(); whosHereLoad_(true); }); await page.waitForTimeout(900);
@@ -131,7 +142,7 @@ const call = async (fn, args) => { const r = await api.default({ method: 'POST',
   page.on('request', r => { if ((r.postData() || '').indexOf('getWhosHere') > -1) asks++; });
   await page.click('#menuBtn'); await page.waitForTimeout(250); await page.click('[data-menu-item="base"]');
   await page.waitForTimeout(2500);
-  ok('no campus set: Base asks once and settles (no redraw loop)', asks === 1 && !!(await page.$('#goWhosHere')), 'asked ' + asks + ' times');
+  ok('no campus set: Base asks at most once and settles (no redraw loop)', asks <= 1 && await page.evaluate(() => !!S.whosHere) && !!(await page.$('#goWhosHere')), 'asked ' + asks + ' times');
   await ctx.close();
 }
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));

@@ -2118,3 +2118,7 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 /* Admin → 🎓 Students: one place for students */
 .adminStuH { margin:18px 0 4px; }
 .adminStuSchool .goalCardTitle { margin-bottom:4px; }
+
+/* My Home: On campus now, under the base's figures */
+.homeWhos { margin-top:8px; }
+.homeWhos .homeBaseHead b { margin-left:4px; }

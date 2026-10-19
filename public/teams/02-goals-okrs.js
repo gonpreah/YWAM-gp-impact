@@ -1390,7 +1390,14 @@ function homeBaseHtml_(){
         '<span><b>'+(hs===null?'—':hs.toFixed(1))+'</b>'+esc(t('Base health'))+'</span>'+
         '<span><b>'+(salv===null?'—':fmt(salv))+'</b>'+esc(t('Salvations'))+'</span>'+
       '</span>'+
-    '</button>';
+    '</button>'+
+    /* who is on campus right now (Who's here), the same count as Base's */
+    (S.guest || S.board || S.student ? '' : (function(){
+      var W=S.whosHere && S.whosFor===(S.me.campus||'') ? S.whosHere : null;
+      return '<button class="homeBase homeWhos" id="goWhosHereHome">'+
+        '<span class="homeBaseHead"><span>👥 '+esc(t('On campus now'))+' <b class="homeWhosN">'+(W ? W.count : '—')+'</b></span>'+
+        '<span class="homeBaseGo">'+esc(t('Who’s here'))+' →</span></span></button>';
+    })());
 }
 /* Recent updates for the personal dashboard — leave decisions on my own
    requests, a mentee's leave request waiting on me, and 1-on-1 activity.
