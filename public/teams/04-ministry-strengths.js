@@ -828,6 +828,41 @@ function contractNoticeHtml_(){
   if(!msg) return '';
   return '<button class="card contractNotice" id="goMyContract"><span class="signDueIcon">📄</span><span><b>'+esc(t('My contract'))+'</b><span class="rowSub">'+esc(msg)+'</span></span><span class="signDueGo">→</span></button>';
 }
+/* A student's My Home (student mode, Oct 2026): the same cards staff have — this
+   week's chores and cooking, weekly goals, habits — then their mentor (chosen
+   from Leadership Development) and About me (personality, strengths, Library).
+   No ministry, base, health check-in or anything about other staff. */
+function studentHomeHtml_(){
+  var first=String((S.me && S.me.name)||'').split(' ')[0];
+  var h='<div class="hero stuHero" id="stuHero"><div class="heroLabel">'+esc(t('STUDENT'))+(S.me && S.me.school ? ' · '+esc(String(S.me.school).toUpperCase()) : '')+' · '+esc(t('WEEK'))+' '+thisWeek()+'</div>'+
+    '<div class="stuHello">'+esc(gpT('Hi {name}!',{name:first}))+'</div>'+
+    '<p class="sub" style="margin:4px 0 0">'+esc(t('Your week at YWAM GP: your chores, goals and habits, your mentor, and more.'))+'</p>'+
+    (typeof dutyHtml==='function' ? schedHomeHtml_() : '')+'</div>';
+  h+=goalsCardHtml(goalsViewWeek());
+  h+=habitsCardHtml();
+  h+=studentMentorCardHtml_();
+  h+=aboutMeHtml_();
+  return h;
+}
+/* A student's mentor: chosen from Leadership Development (the only staff a
+   student sees), who then accepts — like a staff member's mentor. */
+function studentMentorCardHtml_(){
+  var h='<h3 id="sec-mentor">🤝 '+esc(t('Mentorship'))+'</h3><div class="card" id="stuMentorCard">';
+  var m=S.me.mentorId ? personOf(S.me.mentorId) : null;
+  if(m && !S.stuMentorPick){
+    h+='<div class="mentorBlock" style="padding-bottom:6px">'+avatarHtml(m,'sm')+'<div style="flex:1"><div class="mentorName">'+esc(m.name)+'</div>'+
+      '<div class="mentorMeta">'+esc(t(m.ministry||m.dept||''))+'</div></div></div>'+
+      '<p class="sub" style="margin:0 0 8px">'+esc(S.me.mentorStatus==='approved' ? gpT('{name} is your mentor.',{name:m.name.split(' ')[0]}) : gpT('Waiting for {name} to accept being your mentor.',{name:m.name.split(' ')[0]}))+'</p>'+
+      '<button class="linkbtn inline" id="stuMentorChange">'+esc(t('Choose someone else'))+'</button>';
+    return h+'</div>';
+  }
+  var opts=(S.roster||[]).slice().sort(function(a,b){ return a.name<b.name?-1:1; }).map(function(x){ return '<option value="'+esc(x.id)+'">'+esc(x.name)+(x.ministry?' · '+esc(t(x.ministry)):'')+'</option>'; }).join('');
+  h+='<p class="sub" style="margin:0 0 8px">'+esc(t('Choose a mentor from our Leadership Development staff — someone to meet with and pray with while you are here.'))+'</p>'+
+    (opts ? '<select id="stuMentorSel"><option value="">'+esc(t('— choose a mentor —'))+'</option>'+opts+'</select>'+
+      '<button class="btn" id="stuMentorAsk" style="margin-top:10px">'+esc(t('Ask them to be my mentor'))+'</button>' : '<p class="hint">'+esc(t('No mentors to choose from yet.'))+'</p>')+
+    (S.stuMentorPick ? '<button class="linkbtn inline" id="stuMentorCancel">'+esc(t('Cancel'))+'</button>' : '');
+  return h+'</div>';
+}
 function homeHtml(){
   var wk=thisWeek();
   var phase=weekPhase();

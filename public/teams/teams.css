@@ -2074,3 +2074,9 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .profMycIc { font-size:24px; } .profMycTxt { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; } .profMycGo { color:var(--muted); font-size:20px; }
 /* My Home: a plain way to My Health */
 .heroHealthBtn { display:block; width:100%; margin:10px 0 2px; padding:11px 14px; border-radius:12px; border:1.5px solid var(--border2); background:var(--surface); color:var(--ink); font:inherit; font-weight:700; font-size:15px; cursor:pointer; text-align:center; }
+
+/* student mode (Oct 2026) */
+.stuHello { font-family:'Koulen',sans-serif; font-size:34px; line-height:1.1; margin-top:6px; }
+.stuRow { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); flex-wrap:wrap; } .stuRow:last-child { border-bottom:0; }
+.stuRowTxt { flex:1 1 140px; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.stuRow .btn.small { width:auto; margin:0; padding:7px 12px; font-size:13.5px; } .stuActs { display:inline-flex; gap:6px; }

@@ -74,8 +74,8 @@ function aboutMeHtml_(){
       : homeTile_('gsStart', '💪', t('Strengths'), esc(t('Find your top 5 strengths')));
   }
   var ss=S.supSum;
-  tiles += homeTile_('supTile', '💰', t('Support raising'), esc(ss && ss.goal ? gpT('${n} of ${goal} a month',{n:fmt(ss.pledged), goal:fmt(ss.goal)}) : t('Your partners and monthly goal')));
-  tiles += p3TileHtml_();
+  if(!S.student) tiles += homeTile_('supTile', '💰', t('Support raising'), esc(ss && ss.goal ? gpT('${n} of ${goal} a month',{n:fmt(ss.pledged), goal:fmt(ss.goal)}) : t('Your partners and monthly goal')));
+  if(!S.student) tiles += p3TileHtml_();
   var nb=libBooksRead_();
   tiles += homeTile_('libHomeTile', '📚', t('Library'), esc(nb ? gpT('{n} books read',{n:nb}) : t('Ten-minute reads')));
   return '<h3 id="sec-ptype">🧭 '+esc(t('About me'))+'</h3><div class="homeTiles" id="sec-strengths">'+tiles+'</div>';

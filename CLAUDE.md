@@ -2558,3 +2558,23 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - **A 'people' question** (form type `people`: a list of `{name, email, phone}`, add as many; optional `addLabel`): the team form's `coLeaders` ("Co-leaders", "+ Add a co-leader"), right after the team leader. Server `cleanPeople_` keeps rows with a name (up to 20, trimmed and cut); required means at least one. Page `peopleInputHtml_` / `bindPeople_` write through `ansStore_` like the trip, so it works in the applicant's form and in staff answer editing.
 - **Structure is its own arrangement, separate from profiles** (`place` in each `structurePlans` row: `{staffId: {dept, ministry}}`): an admin taps "✏️ Arrange Q4 2026" on the current or next quarter, then drags a person (pointer events — mouse or finger; chips get `touch-action:none` while arranging) onto a ministry (`[data-drop="Dept|Ministry"]`), the Campus Director box or a department's Overseer spot, or taps them for the Move picker (`structMoveHtml_`). Each move saves at once via `saveStructurePlan(…, students, place)` — pass `null` for the part you are not changing; moving someone back to their profile's place drops them from the map; "Back to profiles" clears it. Profiles are never written. A quarter with no plan starts from the latest earlier arrangement (`planFor_` → `inherited`, `from`); students never carry over. The chart (`orgChartHtml_(campus, roster, students, place, arranging)`) and `saveStructure` both apply the arrangement; changing it updates a snapshot already saved. Leads (crowns) still come from profiles.
 - **A mentor looks back at any week** (`mentorHtml`, `S.menteeWeek`): a ‹ Week N › picker on the mentee page (opens on their newest check-in week; "Back to the latest check-in"; the list of weeks is tappable). The check-in (against the one before it), habits (that week's days against the week before), weekly goals and daily logs all follow the picked week; a week without one says so. The server already sent the whole year (`getMenteeLogs`).
+
+## Students in the GP app (Oct 2026)
+- **Profiles from SR Hospitality.** ☰ → Operations → 🎓 Students (`canStudents_`: admin, HR, Hospitality,
+  portal staff) lists who is booked as `category:'student'` now (`studentsList`). **Make profile**
+  (`studentMakeProfile`) makes a student candidate (stage arrived, `source:'hospitality'`) with
+  `portal.invite.token`; **Copy invite** copies `portal.html?join=<token>`. On that page the student signs
+  in with Google (`portalJoin`) → an applicant account linked to the profile; the invite is spent.
+- **The portal** shows their application as usual plus **📱 Go to GP app** (student-type only), which
+  saves `gp-student` and opens `teams.html?student=1`.
+- **Student mode is the real app**, same look, fewer parts: tabs My Home / Schedules / Library; My Home =
+  hello + this week's schedule, weekly goals, habits, mentor, About me (strengths). No bell, no health,
+  ministry, base, check-ins or support raising.
+- **Their data never touches staff data.** Every call goes through one door, `studentCall(u,pin,fn,args)`,
+  with an allowlist (`STUDENT_FNS`, mirrored client-side as `STUDENT_FNS_C`; anything else answers
+  `{ok:false,err:'student'}` without a request). Writes go to the blob `stu:<accountId>` only. Schedules
+  are read-only and published weeks only. Staff handlers still refuse applicants.
+- **Mentors are Leadership Development only** (`STU_LD_DEPT`), names and photos only. A request sits in
+  `stuIndex`; the mentor sees it on their Mentorship page (🎓 Students) and accepts or declines
+  (`respondStudentMentor`). 1-on-1 forms for students are not built yet.
+- Tests: `tests/test-students.mjs` (server, the door and the access checks), `tests/test-student-app-ui.mjs`.

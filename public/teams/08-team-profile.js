@@ -371,7 +371,7 @@ function personHtml(){
    something waiting. */
 function mentorEntryHtml(){
   var waiting=mentorWaitingN_();
-  if(!(S.mentees||[]).length && !S.me.mentorId && !waiting) return '';
+  if(!(S.mentees||[]).length && !S.me.mentorId && !waiting && !(S.stuMentor && S.stuMentor.students.length)) return '';
   return '<button class="btn'+(waiting?'':' ghost')+'" id="goMentor">🤝 '+esc(t('Mentorship'))+(waiting ? ' · '+esc(waiting===1 ? t('1 waiting') : gpT('{n} waiting',{n:waiting})) : '')+'</button>';
 }
 
@@ -615,6 +615,19 @@ function mentorHtml(){
 
   var coming=ooComingHtml_();
   if(coming) h+='<div class="card" id="ooComing">'+coming+'</div>';
+
+  /* students who chose them (Leadership Development, Oct 2026): accept or decline; then their names */
+  var SM=S.stuMentor;
+  if(SM && (SM.requests.length || SM.students.length)){
+    h+='<h3>🎓 '+esc(t('Students'))+' <small>· '+SM.students.length+'</small></h3><div class="card" id="stuMentorStaff">';
+    SM.requests.forEach(function(x){
+      h+='<div class="row"><span class="rowName">'+esc(gpT('{name}, a student, asked you to be their mentor',{name:x.name}))+'</span>'+
+        '<span class="chips" style="margin:0"><button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-stuaccept="'+esc(x.id)+'">'+esc(t('Accept'))+'</button>'+
+        '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px;color:var(--faint)" data-studecline="'+esc(x.id)+'">'+esc(t('Decline'))+'</button></span></div>';
+    });
+    SM.students.forEach(function(x){ h+='<div class="mentorBlock" style="padding:6px 0">'+avatarHtml({name:x.name},'sm')+'<div style="flex:1"><div class="mentorName">'+esc(x.name)+'</div><div class="mentorMeta">'+esc(t('Student'))+'</div></div></div>'; });
+    h+='</div>';
+  }
 
   /* the people you mentor */
   h+='<h3>'+esc(t('People you mentor'))+' <small>· '+(S.mentees||[]).length+'</small></h3>';
