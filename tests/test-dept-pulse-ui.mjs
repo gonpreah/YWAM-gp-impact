@@ -139,17 +139,9 @@ const tiles = page => page.$$eval('.pulseCard .pulseTile', ts => ts.map(t => t.i
   await toMinistry(page);
   ok('the Campus Director sees every department', (await page.$$('.pulseCard')).length === 4);
   ok('each with its ministries folded away', (await page.$$('.pulseCard details.pulseMore')).length >= 3);
-  await page.click('[data-lwtab="board"]'); await page.waitForTimeout(500);   // the quarter's check-in sits with the board, the pulse on Overview
-  ok('and the quarter\'s own check-in, a tab away', !!(await page.$('#dirQSave')));
-  await page.fill('[data-dirq="Base Vision (1-10)"]', '70');
-  await page.click('#dirQSave'); await page.waitForTimeout(300);
-  ok('a 70 for a 1–10 score is caught', /goes from 1 to 10/.test(await page.$eval('#msg', e => e.textContent)) &&
-    !mem.entries.some(e => e.metric === 'Base Vision (1-10)'));
-  await page.fill('[data-dirq="Base Vision (1-10)"]', '7');
-  await page.fill('[data-dirq="Base Plants in Planning"]', '1');
-  await page.click('#dirQSave'); await page.waitForTimeout(800);
-  const qa = await page.evaluate(() => quarterAnchorWeek_());
-  ok('a 7 saves, once for the quarter', mem.entries.some(e => e.ministry === 'Campus Director' && e.metric === 'Base Vision (1-10)' && e.value === 7 && Number(e.week) === qa));
+  await page.click('[data-lwtab="board"]'); await page.waitForTimeout(500);
+  // Oct 2026 (Uriah): the quarter's check-in is gone — "Not necessary"
+  ok('the Board tab has no quarterly check-in', !/check-in/i.test(await page.$eval('#main', e => e.innerText)) && !(await page.$('[data-dirq]')));
   await ctx.close();
 }
 
