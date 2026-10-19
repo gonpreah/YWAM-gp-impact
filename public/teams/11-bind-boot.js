@@ -491,7 +491,8 @@ function bindAway(){
   if(S.view==='mycontract') bindMyContract_();
   bindReqRows_();
   ['libHomeTile','personBooks','profBooks'].forEach(function(id){ var b=document.getElementById(id); if(b) b.onclick=function(){ gpTap(); libOpen_(); }; });
-  if(S.view==='admin' && S.adminSub==='groups') bindAdminGroups_();
+  var pmc=document.getElementById('profMyContract'); if(pmc) pmc.onclick=function(){ gpTap(); openMyContract_(); };
+  if(S.view==='admin' && (S.adminSub==='groups' || S.adminSub==='leaving')) bindAdminGroups_();
   if(S.view==='admin' && S.adminSub==='board') bindAdminBoard_();
   if(S.view==='admin' && S.adminSub==='reminders') bindAdminReminders_();
   if(S.view==='profile') bindReminders_();
@@ -1045,6 +1046,47 @@ function bindHome(){
 }
 
 function bind(){
+  /* Who's here: Base's "On campus now" loads the count; the page loads team photos */
+  if((S.view==='base' || S.view==='week') && !S.guest && !S.board && !S.student && S.me) whosHereLoad_();   // Base and My Home show the count
+  [['goWhosHere','base'],['goWhosHereHome','week']].forEach(function(x){ var b=document.getElementById(x[0]); if(b) b.onclick=function(){ gpTap(); S.whosFrom=x[1]; S.view='whoshere'; render(); window.scrollTo(0,0); whosHereLoad_(true); }; });
+  if(S.view==='whoshere'){ whosTeamPhotosLoad_(); var wb=document.getElementById('whosBack'); if(wb) wb.onclick=function(){ gpTap(); S.view=S.whosFrom==='week' ? 'week' : 'base'; render(); window.scrollTo(0,0); }; }
+  /* a Leadership Development mentor answers a student */
+  document.querySelectorAll('[data-stuaccept],[data-studecline]').forEach(function(b){ b.onclick=function(){
+    var acc=b.hasAttribute('data-stuaccept'), id=b.getAttribute(acc?'data-stuaccept':'data-studecline'); b.disabled=true;
+    run('respondStudentMentor',[S.auth.user,S.auth.pin,id,acc],function(d){ if(d && d.ok){ S.stuMentor={ requests:d.requests, students:d.students }; showMsg(acc?t('Accepted'):t('Declined')); } else showMsg(t('Could not save')); render(); });
+  }; });
+  /* 🎓 Students (staff): the students staying with us, their profiles and invite links */
+  if(S.view==='students' || (S.view==='admin' && S.adminSub==='students')){
+    if(S.view==='students' && !S.stuList && !S.stuListLoading){ S.stuListLoading=true; run('studentsList',[S.auth.user,S.auth.pin],function(d){ S.stuListLoading=false; S.stuList=d||{ ok:false }; render(); }); }
+    document.querySelectorAll('[data-stumake]').forEach(function(b){ b.onclick=function(){
+      b.disabled=true;
+      run('studentMakeProfile',[S.auth.user,S.auth.pin,b.getAttribute('data-stumake'),(document.getElementById('stuSchool')||{}).value||'dts'],function(d){
+        if(d && d.ok){ S.stuList=d; S.adminStu=null; showMsg(t('Profile made — send them the invite link')); } else showMsg(d && d.err==='exists' ? t('They have a profile already') : t('Could not save'));
+        render();
+      });
+    }; });
+    document.querySelectorAll('[data-stucopy]').forEach(function(b){ b.onclick=function(){
+      var link=location.origin+'/portal.html?join='+b.getAttribute('data-stucopy'), nm=b.getAttribute('data-stuname')||'';
+      var msg=gpT('Hi {name}! Here is your link to the YWAM GP portal and the GP app — open it and sign in with Google: {link}',{name:nm.split(' ')[0], link:link});
+      if(navigator.share && b.getAttribute('data-stushare')){ navigator.share({ text:msg }).catch(function(){}); return; }
+      try { navigator.clipboard.writeText(msg).then(function(){ showMsg(t('Invite copied — paste it in a message')); }, function(){ window.prompt(t('Copy this invite'), msg); }); } catch(e){ window.prompt(t('Copy this invite'), msg); }
+    }; });
+    var sbk=document.getElementById('stuBack'); if(sbk) sbk.onclick=function(){ S.view='week'; render(); window.scrollTo(0,0); };
+  }
+  /* an admin looking at a student's app: back to Admin, as yourself */
+  var spx=document.getElementById('stuPreviewExit'); if(spx) spx.onclick=function(){ gpTap(); stuPreviewExit_(); };
+  /* student mode: choosing a mentor */
+  var smc=document.getElementById('stuMentorChange'); if(smc) smc.onclick=function(){ S.stuMentorPick=true; render(); };
+  var smx=document.getElementById('stuMentorCancel'); if(smx) smx.onclick=function(){ S.stuMentorPick=false; render(); };
+  var sma=document.getElementById('stuMentorAsk'); if(sma) sma.onclick=function(){
+    var id=(document.getElementById('stuMentorSel')||{}).value||''; if(!id){ showMsg(t('Choose a mentor first')); return; }
+    sma.disabled=true;
+    run('studentSetMentor',[S.auth.user,S.auth.pin,id],function(d){
+      if(d && d.ok){ S.me=d.staff; S.stuMentorPick=false; showMsg(t('Asked — they’ll see it in their Mentorship page')); }
+      else showMsg(t('Could not save'));
+      render();
+    });
+  };
   var lb=document.getElementById('langBtn');
   if(lb) lb.onclick=toggleLang;
   var menuBtn=document.getElementById('menuBtn');
@@ -1807,6 +1849,7 @@ function gpGo(p){
    failed request — otherwise a dropped connection would leave the spinner
    turning forever. */
 function runP(fn, args){
+  if(S.student){ return new Promise(function(res){ run(fn, args, function(d){ res(d||null); }, function(){ res(null); }); }); }
   return fetch('/.netlify/functions/api', {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ fn:fn, args:args })
@@ -1818,6 +1861,7 @@ function refreshAll(){
   if(S.board){ S.orgLoading=false; orgLoad_(); return gpGuestLoadBase_(); }
   if(S.guest) return gpGuestLoadBase_();
   var u=S.auth.user, k=S.auth.pin;
+  if(S.student) return runP('getMyBoot',[u,k]).then(function(d){ if(d && d.ok && d.student){ S.me=d.staff; S.profile=d.profile||{}; applyBoot(d); } });
   return Promise.all([
     runP('teamRoster',[S.auth.user,S.auth.pin]).then(function(r){ if(Array.isArray(r)) S.roster=r; }),
     runP('getMyLogs',[u,k]).then(function(d){

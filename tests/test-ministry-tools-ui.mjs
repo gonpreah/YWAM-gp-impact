@@ -35,6 +35,8 @@ mem.staff = [
   mk({ id: 'st1', name: 'Uriah Lyford', username: 'cd', email: 'u@e.com', dept: 'Campus Leadership', ministry: 'Campus Director' }),
   mk({ id: 'st2', name: 'Dara Sok', username: 'dara', email: 'd@e.com' }),
   mk({ id: 'st3', name: 'Vanna Chea', username: 'vanna', email: 'v@e.com', dept: 'Community Service', ministry: 'Cafe' }),
+  mk({ id: 'st5', name: 'Sophea Meas', username: 'sophea', email: 'so@e.com', dept: 'Campus Leadership', ministry: 'Campus Director' }),
+  mk({ id: 'st6', name: 'Poipet Leader', username: 'ppl', email: 'pl@e.com', dept: 'Campus Leadership', ministry: 'Campus Director', campus: 'poipet' }),
   mk({ id: 'st4', name: 'Kanha Lim', username: 'kanha', email: 'k@e.com', dept: 'Community Service', ministry: 'Cafe', leads: ['Community Service|Cafe'] })
 ];
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
@@ -186,18 +188,33 @@ const txt = p => p.$eval('#main', e => e.innerText);
   await page.click('#lbGoTues'); await page.waitForTimeout(800);
   ok('"Plan the Tuesdays" opens the next eight on the board', (await page.$$('.leadTue')).length === 8 && await page.evaluate(() => S.lwTab === 'board' && S.leadTab === 'tues'));
   await page.click('.leadTue [data-ltopen]'); await page.waitForTimeout(300);
-  await page.selectOption('[data-ltwho="facilitator"]', 'st2'); await page.waitForTimeout(200);
+  await page.waitForFunction(() => !!S.lead && !S.leadLoading, null, { timeout: 5000 }).catch(() => {}); await page.waitForTimeout(500);
+  const facOpts = await page.$$eval('[data-ltwho="facilitator"] option', o => o.map(x => x.textContent));
+  ok('facilitator and translator: this campus\'s leadership team only (and Someone else…)', JSON.stringify(facOpts) === JSON.stringify(['—', 'Sophea Meas', 'Uriah Lyford', 'Someone else…']), JSON.stringify(facOpts));
+  await page.selectOption('[data-ltwho="facilitator"]', 'st5'); await page.waitForTimeout(200);
   await page.selectOption('[data-ltwho="translator"]', '__other'); await page.waitForTimeout(200);
   await page.fill('[data-ltname="translator"]', 'Pastor Sokha');
-  await page.fill('#ltTopic', 'Outreach week'); await page.press('#ltTopic', 'Enter'); await page.waitForTimeout(200);
-  await page.fill('#ltTopic', 'Prayer for the DTS');
+  await page.fill('[data-tuesnew="topics"]', 'Outreach week'); await page.press('[data-tuesnew="topics"]', 'Enter'); await page.waitForTimeout(200);
+  await page.fill('[data-tuesnew="topics"]', 'Prayer for the DTS');
+  await page.fill('[data-tuesnew="announcements"]', 'Water off Thursday morning');
   await page.click('#ltSave'); await page.waitForTimeout(1200);
   const first = await page.$eval('.leadTue', e => e.innerText);
-  ok('a facilitator, a guest translator and the topics, saved', /Dara Sok/.test(first) && /Pastor Sokha/.test(first) && /Outreach week/.test(first) && /Prayer for the DTS/.test(first), first.replace(/\n/g, ' | '));
-  ok('… on the board for the whole leadership team', (mem['leadBoard:siemreap'].tues || []).length === 1);
+  ok('a facilitator, a guest translator, the topics and an announcement, saved', /Sophea Meas/.test(first) && /Pastor Sokha/.test(first) && /Outreach week/.test(first) && /Prayer for the DTS/.test(first) && /Water off Thursday morning/.test(first), first.replace(/\n/g, ' | '));
+  ok('… on this campus\'s board for the whole leadership team', (mem['leadBoard:siemreap'].tues || []).length === 1 && mem['leadBoard:siemreap'].tues[0].announcements[0] === 'Water off Thursday morning' && !mem['leadBoard:poipet']);
+  await page.click('.leadTue [data-ltopen]'); await page.waitForTimeout(300);
+  await page.fill('[data-tuesline="topics"][data-i="0"]', 'Outreach week — who is going');
+  await page.click('[data-tueslinedel="topics"][data-i="1"]'); await page.waitForTimeout(200);
+  await page.click('#ltSave'); await page.waitForTimeout(1200);
+  ok('a topic can be edited in place, and removed', JSON.stringify(mem['leadBoard:siemreap'].tues[0].topics) === JSON.stringify(['Outreach week — who is going']));
+  const api = (fn, args) => page.evaluate(([fn, args]) => new Promise(r => run(fn, args, r, () => r(null))), [fn, args]);
+  const tue2 = await page.evaluate(() => leadTuesdays_(2)[1]);
+  const r = await api('saveLeadTuesday', ['cd', '1234', { date: tue2, facilitator: { id: 'st2' }, translator: { id: 'st6' }, topics: ['x'] }]);
+  const r2 = r && r.tues.find(x => x.date === tue2);
+  ok('the server won\'t take someone off the leadership team, or from another campus', r && r.ok && r2 && !r2.facilitator && !r2.translator, JSON.stringify(r && r.tues));
+  await page.evaluate(() => { S.lead = null; render(); }); await page.waitForTimeout(800);
   await page.evaluate(() => window.scrollTo(0, 0)); await page.screenshot({ path: OUT + '/lead-tues.png', fullPage: true });
   await page.click('[data-lwtab="base"]'); await page.waitForTimeout(600);
-  ok('the Overview shows who is facilitating and translating', /Facilitating\s*Dara Sok/.test(await txt(page)) && /Translating\s*Pastor Sokha/.test(await txt(page)));
+  ok('the Overview shows who is facilitating and translating', /Facilitating\s*Sophea Meas/.test(await txt(page)) && /Translating\s*Pastor Sokha/.test(await txt(page)) && /Water off Thursday morning/.test(await txt(page)));
   ok('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await ctx.close();
 }

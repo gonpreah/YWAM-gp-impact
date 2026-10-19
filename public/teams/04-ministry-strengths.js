@@ -448,7 +448,7 @@ function leadBaseHtml_(pulse){
   else {
     h+='<div class="lbWho"><span>'+esc(t('Facilitating'))+'</span><b>'+esc(leadTuesWho_(tr && tr.facilitator) || t('Nobody yet'))+'</b></div>'+
       '<div class="lbWho"><span>'+esc(t('Translating'))+'</span><b>'+esc(leadTuesWho_(tr && tr.translator) || t('Nobody yet'))+'</b></div>';
-    if(tr && tr.topics.length) h+='<ul class="lbTopics">'+tr.topics.map(function(x){ return '<li>'+esc(x)+'</li>'; }).join('')+'</ul>';
+    h+=leadTueListsHtml_(tr);
     h+='<button class="btn ghost" id="lbGoTues" style="margin-top:8px">'+esc(t('Plan the Tuesdays'))+'</button>';
   }
   h+='</div>';
@@ -461,33 +461,52 @@ function leadBaseHtml_(pulse){
 function lmMonthName_(k){ return t(MONTH_SHORT[Number(k.slice(5,7))-1]||'')+' '+k.slice(2,4); }
 function lmMoney_(v){ var n=Math.round(Number(v)||0); return (n<0?'−':'')+'$'+Math.abs(n).toLocaleString('en-US'); }
 /* The Tuesday morning meeting: the next eight Tuesdays, each with who
-   facilitates, who translates and the topics to hit. */
+   facilitates and who translates (the leadership team), the topics to hit
+   and the announcements. */
+function leadTueListsHtml_(r){
+  if(!r) return '';
+  var tp=r.topics||[], an=r.announcements||[], h='';
+  if(tp.length) h+='<div class="lbListH">📌 '+esc(t('Topics to hit'))+'</div><ul class="lbTopics">'+tp.map(function(x){ return '<li>'+esc(x)+'</li>'; }).join('')+'</ul>';
+  if(an.length) h+='<div class="lbListH">📣 '+esc(t('Announcements'))+'</div><ul class="lbTopics">'+an.map(function(x){ return '<li>'+esc(x)+'</li>'; }).join('')+'</ul>';
+  return h;
+}
 function leadTuesHtml_(){
   var h='<div id="leadTues">';
   if(!S.lead) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.leadErr || t('Loading…'))+'</p></div></div>';
-  h+='<p class="sub">'+esc(t('The Tuesday morning meeting: who facilitates, who translates, and the topics to hit.'))+'</p>';
+  h+='<p class="sub">'+esc(t('The Tuesday morning meeting: who facilitates, who translates, the topics to hit and the announcements.'))+'</p>';
   leadTuesdays_(8).forEach(function(date, i){
     var r=leadTuesFor_(date), open=S.ltOpen===date, fac=leadTuesWho_(r && r.facilitator), tr=leadTuesWho_(r && r.translator);
     h+='<div class="card leadTue'+(i===0?' next':'')+'"><button class="leadTueHead" data-ltopen="'+date+'" aria-expanded="'+open+'">'+
       '<span class="leadTueDate">'+esc(gpT('Tuesday {date}',{date:hospDate_(date)}))+(i===0?' <span class="leadTueNext">'+esc(t('next'))+'</span>':'')+'</span>'+
-      '<span class="leadTueWho">🎤 '+esc(fac || '—')+' · 🗣️ '+esc(tr || '—')+(r && r.topics.length ? ' · 📌 '+r.topics.length : '')+'</span></button>';
+      '<span class="leadTueWho">🎤 '+esc(fac || '—')+' · 🗣️ '+esc(tr || '—')+(r && r.topics.length ? ' · 📌 '+r.topics.length : '')+(r && (r.announcements||[]).length ? ' · 📣 '+r.announcements.length : '')+'</span></button>';
     if(open) h+=leadTueFormHtml_(date, r);
-    else if(r && r.topics.length) h+='<ul class="lbTopics">'+r.topics.map(function(x){ return '<li>'+esc(x)+'</li>'; }).join('')+'</ul>';
+    else h+=leadTueListsHtml_(r);
     h+='</div>';
   });
   return h+'</div>';
 }
 function leadTueFormHtml_(date, r){
   var D=S.ltDraft;
-  if(!D || D.date!==date) D=S.ltDraft={ date:date, facilitator:r && r.facilitator ? Object.assign({}, r.facilitator) : null, translator:r && r.translator ? Object.assign({}, r.translator) : null, topics:r ? r.topics.slice() : [] };
-  var people=(S.roster||[]).filter(function(p){ return p.campus===S.me.campus; }).slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
+  if(!D || D.date!==date) D=S.ltDraft={ date:date, facilitator:r && r.facilitator ? Object.assign({}, r.facilitator) : null, translator:r && r.translator ? Object.assign({}, r.translator) : null,
+    topics:r ? r.topics.slice() : [], announcements:r && r.announcements ? r.announcements.slice() : [] };
+  /* the leadership team only — plus whoever is already set, if they have since moved on */
+  var people=(S.roster||[]).filter(function(p){ return p.campus===S.me.campus && p.dept===BL_DEPT; });
+  ['facilitator','translator'].forEach(function(k){ var p=D[k]; if(p && p.id && !people.some(function(x){ return x.id===p.id; })) people.push({ id:p.id, name:staffName_(p.id) }); });
+  people=people.slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
   var pick=function(key, label){ var p=D[key], v=p ? (p.id || '__other') : '';
     return '<label class="f">'+esc(label)+'</label><select data-ltwho="'+key+'"><option value="">—</option>'+people.map(function(x){ return '<option value="'+esc(x.id)+'"'+(v===x.id?' selected':'')+'>'+esc(x.name)+'</option>'; }).join('')+
       '<option value="__other"'+(v==='__other'?' selected':'')+'>'+esc(t('Someone else…'))+'</option></select>'+
       (v==='__other' ? '<input type="text" data-ltname="'+key+'" maxlength="60" value="'+esc(p.name||'')+'" placeholder="'+esc(t('Their name'))+'">' : ''); };
+  /* a list you can add to, and edit or remove any line of */
+  var list=function(key, emoji, label, max, ph){
+    return '<label class="f">'+esc(label)+'</label>'+D[key].map(function(x, i){
+      return '<div class="ltLine"><span aria-hidden="true">'+emoji+'</span><input type="text" data-tuesline="'+key+'" data-i="'+i+'" maxlength="'+max+'" value="'+esc(x)+'" aria-label="'+esc(label)+' '+(i+1)+'">'+
+        '<button class="lwDel" data-tueslinedel="'+key+'" data-i="'+i+'" aria-label="'+esc(t('Remove'))+'">×</button></div>'; }).join('')+
+      '<div class="numIn"><input type="text" data-tuesnew="'+key+'" maxlength="'+max+'" placeholder="'+esc(ph)+'"><button class="btn ghost" data-tuesadd="'+key+'" style="margin:0;width:auto;padding:9px 14px">'+esc(t('Add'))+'</button></div>';
+  };
   return '<div class="leadTueForm">'+pick('facilitator', t('Facilitator'))+pick('translator', t('Translator'))+
-    '<label class="f">'+esc(t('Topics to hit'))+'</label>'+D.topics.map(function(x, i){ return '<div class="cafeLine"><span>📌 '+esc(x)+'</span><button class="lwDel" data-lttopdel="'+i+'" aria-label="'+esc(t('Remove'))+'">×</button></div>'; }).join('')+
-    '<div class="numIn"><input type="text" id="ltTopic" maxlength="160" placeholder="'+esc(t('e.g. Outreach week, prayer for the DTS'))+'"><button class="btn ghost" id="ltTopicAdd" style="margin:0;width:auto;padding:9px 14px">'+esc(t('Add'))+'</button></div>'+
+    list('topics', '📌', t('Topics to hit'), 160, t('e.g. Outreach week, prayer for the DTS'))+
+    list('announcements', '📣', t('Announcements'), 200, t('e.g. Water off on Thursday morning'))+
     '<div class="btnRow"><button class="btn" id="ltSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="ltCancel">'+esc(t('Cancel'))+'</button></div></div>';
 }
 function bindLeadTools_(){
@@ -497,15 +516,21 @@ function bindLeadTools_(){
   document.querySelectorAll('[data-ltwho]').forEach(function(sel){ sel.onchange=function(){ var k=sel.getAttribute('data-ltwho'), v=sel.value;
     D[k] = !v ? null : v==='__other' ? { id:'', name:'' } : { id:v, name:'' }; render(); }; });
   document.querySelectorAll('[data-ltname]').forEach(function(inp){ inp.oninput=function(){ D[inp.getAttribute('data-ltname')].name=inp.value; }; });
-  var addTopic=function(){ var el=document.getElementById('ltTopic'), v=(el.value||'').trim(); if(!v) return; if(D.topics.length>=15){ showMsg(t('That’s plenty for one meeting.')); return; } D.topics.push(v); render(); var n=document.getElementById('ltTopic'); if(n) n.focus(); };
-  var ta=document.getElementById('ltTopicAdd'); if(ta) ta.onclick=addTopic;
-  var ti=document.getElementById('ltTopic'); if(ti) ti.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); addTopic(); } };
-  document.querySelectorAll('[data-lttopdel]').forEach(function(b){ b.onclick=function(){ D.topics.splice(Number(b.getAttribute('data-lttopdel')),1); render(); }; });
+  /* topics and announcements: type in any line to change it; add; remove */
+  document.querySelectorAll('[data-tuesline]').forEach(function(inp){ inp.oninput=function(){ D[inp.getAttribute('data-tuesline')][Number(inp.getAttribute('data-i'))]=inp.value; }; });
+  document.querySelectorAll('[data-tueslinedel]').forEach(function(b){ b.onclick=function(){ D[b.getAttribute('data-tueslinedel')].splice(Number(b.getAttribute('data-i')),1); render(); }; });
+  var addLine=function(key){ var el=document.querySelector('[data-tuesnew="'+key+'"]'), v=((el && el.value)||'').trim(); if(!v) return;
+    if(D[key].length>=15){ showMsg(t('That’s plenty for one meeting.')); return; }
+    D[key].push(v); render(); var n=document.querySelector('[data-tuesnew="'+key+'"]'); if(n) n.focus(); };
+  document.querySelectorAll('[data-tuesadd]').forEach(function(b){ b.onclick=function(){ addLine(b.getAttribute('data-tuesadd')); }; });
+  document.querySelectorAll('[data-tuesnew]').forEach(function(inp){ inp.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); addLine(inp.getAttribute('data-tuesnew')); } }; });
   var cc=document.getElementById('ltCancel'); if(cc) cc.onclick=function(){ S.ltOpen=null; S.ltDraft=null; render(); };
   var sv=document.getElementById('ltSave'); if(sv) sv.onclick=function(){ if(S.busy) return;
-    var pend=(document.getElementById('ltTopic')||{}).value; if(pend && pend.trim() && D.topics.length<15) D.topics.push(pend.trim());
+    ['topics','announcements'].forEach(function(k){   // a line typed but not added still counts
+      var el=document.querySelector('[data-tuesnew="'+k+'"]'), v=((el && el.value)||'').trim(); if(v && D[k].length<15) D[k].push(v); });
+    var clean=function(a){ return a.map(function(x){ return String(x||'').trim(); }).filter(Boolean); };
     S.busy=true;
-    run('saveLeadTuesday',[S.auth.user,S.auth.pin,{ date:D.date, facilitator:D.facilitator, translator:D.translator, topics:D.topics }],function(d){ S.busy=false;
+    run('saveLeadTuesday',[S.auth.user,S.auth.pin,{ date:D.date, facilitator:D.facilitator, translator:D.translator, topics:clean(D.topics), announcements:clean(D.announcements) }],function(d){ S.busy=false;
       if(d && d.ok){ S.lead=d; S.ltOpen=null; S.ltDraft=null; showMsg(t('Saved')); } else showMsg(t('Could not save')); render(); },
       function(){ S.busy=false; showMsg(t('No connection — try again when you are online.')); }); };
 }
@@ -876,6 +901,41 @@ function contractNoticeHtml_(){
   if(!msg) return '';
   return '<button class="card contractNotice" id="goMyContract"><span class="signDueIcon">📄</span><span><b>'+esc(t('My contract'))+'</b><span class="rowSub">'+esc(msg)+'</span></span><span class="signDueGo">→</span></button>';
 }
+/* A student's My Home (student mode, Oct 2026): the same cards staff have — this
+   week's chores and cooking, weekly goals, habits — then their mentor (chosen
+   from Leadership Development) and About me (personality, strengths, Library).
+   No ministry, base, health check-in or anything about other staff. */
+function studentHomeHtml_(){
+  var first=String((S.me && S.me.name)||'').split(' ')[0];
+  var h='<div class="hero stuHero" id="stuHero"><div class="heroLabel">'+esc(t('STUDENT'))+(S.me && S.me.school ? ' · '+esc(String(S.me.school).toUpperCase()) : '')+' · '+esc(t('WEEK'))+' '+thisWeek()+'</div>'+
+    '<div class="stuHello">'+esc(gpT('Hi {name}!',{name:first}))+'</div>'+
+    '<p class="sub" style="margin:4px 0 0">'+esc(t('Your week at YWAM GP: your chores, goals and habits, your mentor, and more.'))+'</p>'+
+    (typeof dutyHtml==='function' ? schedHomeHtml_() : '')+'</div>';
+  h+=goalsCardHtml(goalsViewWeek());
+  h+=habitsCardHtml();
+  h+=studentMentorCardHtml_();
+  h+=aboutMeHtml_();
+  return h;
+}
+/* A student's mentor: chosen from Leadership Development (the only staff a
+   student sees), who then accepts — like a staff member's mentor. */
+function studentMentorCardHtml_(){
+  var h='<h3 id="sec-mentor">🤝 '+esc(t('Mentorship'))+'</h3><div class="card" id="stuMentorCard">';
+  var m=S.me.mentorId ? personOf(S.me.mentorId) : null;
+  if(m && !S.stuMentorPick){
+    h+='<div class="mentorBlock" style="padding-bottom:6px">'+avatarHtml(m,'sm')+'<div style="flex:1"><div class="mentorName">'+esc(m.name)+'</div>'+
+      '<div class="mentorMeta">'+esc(t(m.ministry||m.dept||''))+'</div></div></div>'+
+      '<p class="sub" style="margin:0 0 8px">'+esc(S.me.mentorStatus==='approved' ? gpT('{name} is your mentor.',{name:m.name.split(' ')[0]}) : gpT('Waiting for {name} to accept being your mentor.',{name:m.name.split(' ')[0]}))+'</p>'+
+      '<button class="linkbtn inline" id="stuMentorChange">'+esc(t('Choose someone else'))+'</button>';
+    return h+'</div>';
+  }
+  var opts=(S.roster||[]).slice().sort(function(a,b){ return a.name<b.name?-1:1; }).map(function(x){ return '<option value="'+esc(x.id)+'">'+esc(x.name)+(x.ministry?' · '+esc(t(x.ministry)):'')+'</option>'; }).join('');
+  h+='<p class="sub" style="margin:0 0 8px">'+esc(t('Choose a mentor from our Leadership Development staff — someone to meet with and pray with while you are here.'))+'</p>'+
+    (opts ? '<select id="stuMentorSel"><option value="">'+esc(t('— choose a mentor —'))+'</option>'+opts+'</select>'+
+      '<button class="btn" id="stuMentorAsk" style="margin-top:10px">'+esc(t('Ask them to be my mentor'))+'</button>' : '<p class="hint">'+esc(t('No mentors to choose from yet.'))+'</p>')+
+    (S.stuMentorPick ? '<button class="linkbtn inline" id="stuMentorCancel">'+esc(t('Cancel'))+'</button>' : '');
+  return h+'</div>';
+}
 function homeHtml(){
   var wk=thisWeek();
   var phase=weekPhase();
@@ -1167,10 +1227,11 @@ function goalsCardHtml(wk){
             ? '<div class="wgTop"><input type="text" class="addGoalInput" id="editGoalText" maxlength="200" value="'+esc(g.text)+'" style="flex:1"></div>'
             : '<div class="wgTop"><span class="wgText">'+esc(g.text)+'</span>'+
               '<span class="wgPct" style="color:'+pctColor(gp)+'">'+gp+'% · '+esc(pctWord(gp))+'</span></div>')+
+          (S.student ? '' :   // students have no ministry KPIs
           '<label class="goalLink'+(g.metricKey?'':' unlinked')+'" style="display:flex;align-items:center;gap:4px">📊 '+
             '<select class="goalLinkSel" data-goallink="'+i+'" style="border:0;background:none;color:inherit;font:inherit;padding:0">'+
             okrMetricOptions(g.metricKey, g.metricKey ? 'Not linked to a KPI' : 'Link to a KPI')+
-            '</select></label>'+
+            '</select></label>')+
           (isNext ? '' : '<input type="range" class="gSlide" min="0" max="100" step="5" value="'+gp+'" data-goalpct="'+i+'"'+
             ' style="'+ringVars(gp)+'"'+
             ' aria-label="'+esc(t('Progress'))+': '+esc(g.text)+'">')+

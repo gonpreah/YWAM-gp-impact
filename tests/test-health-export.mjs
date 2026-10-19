@@ -147,7 +147,7 @@ async function open(campus) {
   await page.waitForTimeout(300);
   const bbtn = await page.$('#main [data-healthexport="base"]');
   ok('Base → Base Health row has the button too', !!bbtn);
-  await bbtn.click();
+  await page.click('#main [data-healthexport="base"]');   // by selector: Base re-renders when its On campus count lands
   await page.waitForSelector('#hxRoot .hxOverlay');
   ok('it opens the same deck for this week', /Staff Health Score/.test(await page.$eval('#hxRoot .hxFrame.on', e => e.textContent)));
   await page.click('#hxClose');
