@@ -30,14 +30,15 @@
 var ADMIN_SUBS = [
   { id:'accounts', label:'Accounts', emoji:'👤', blurb:'Find someone — edit their profile, reset a PIN, set their mentor or make them a ministry leader' },
   { id:'approvals', label:'Approvals', emoji:'✅', blurb:'Leadership sign-ups and moves waiting for a yes' },
-  { id:'students', label:'Students', emoji:'🎓', blurb:'Every student profile, by school — what each one has put in, and their app as they see it' },
+  { id:'students', label:'Students', emoji:'🎓', blurb:'Everything for students: who is staying now and their invites, each school, what each one has put in, their app, and archiving a school when it finishes' },
   { id:'mentors', label:'Mentors', emoji:'🤝', blurb:'Who is walking with whom — every mentor and their people, and who has nobody yet' },
   { id:'leave', label:'Leave', emoji:'🗓️', blurb:'Everyone’s leave requests, by campus — waiting, coming up, and days used this year' },
   { id:'portal', label:'Portal access', emoji:'🛂', blurb:'Who works in applications — grant or remove access to the YWAM GP Portal' },
   { id:'kpis', label:'Ministry KPIs', emoji:'🗂️', blurb:'What each ministry tracks — add, rename, remove, re-time' },
   { id:'broadcast', label:'Announcements', emoji:'📣', blurb:'A message to everyone’s notification bell' },
   { id:'merge', label:'Merge duplicates', emoji:'🔀', blurb:'Two profiles that are really one person' },
-  { id:'groups', label:'Arrivals & departures', emoji:'👥', blurb:'A sign-up link for a new school or team, and archiving several people at once' },
+  { id:'groups', label:'Staff sign-up link', emoji:'🔗', blurb:'One link a new group of staff opens to make their own profiles (students: 🎓 Students)' },
+  { id:'leaving', label:'Archive several people', emoji:'🚪', blurb:'When a group of staff leaves: archive them in one go' },
   { id:'loose', label:'Loose ends', emoji:'🧵', blurb:'Small gaps that quietly make the totals wrong — and who to nudge' },
   { id:'board', label:'Advisory Board', emoji:'🛡️', blurb:'The YWAM GP Advisory Board — who is on it, their roles, how staff reach them, and their sign-in' },
   { id:'reminders', label:'Reminders', emoji:'🔔', blurb:'Turn on phone reminders for the app, and see how many people have them' }
@@ -92,7 +93,8 @@ function adminHtml(){
   if(sub==='portal') return h+adminPortalHtml_();
   if(sub==='merge') return h+adminMergeHtml_();
   if(sub==='loose') return h+adminLooseHtml_();
-  if(sub==='groups') return h+adminGroupsHtml_();
+  if(sub==='groups') return h+adminGroupsHtml_('link');
+  if(sub==='leaving') return h+adminGroupsHtml_('leave');
   if(sub==='board') return h+adminBoardHtml_();
   if(sub==='reminders') return h+adminRemindersHtml_();
   return h+adminAccountsHtml_();
@@ -109,21 +111,29 @@ function adminStuStatus_(r){
     : r.invite ? t('Invite sent — not joined yet') : t('No account yet');
 }
 function adminStudentsHtml_(){
+  var h='<h3 class="adminStuH">🛏️ '+esc(t('Staying with us now'))+'</h3>'+
+    '<p class="looseWhy">'+esc(t('From SR Hospitality’s student bookings. Make each a profile, then send the invite — they sign in with Google and have their own GP app.'))+'</p>'+
+    stuStayingHtml_(S.stuList, false);
+  h+='<h3 class="adminStuH">🏫 '+esc(t('By school'))+'</h3>';
   var L=S.adminStu;
-  if(!L) return '<p class="sub">'+esc(t('Loading…'))+'</p>';
-  if(!L.ok) return '<p class="sub">'+esc(t('Couldn’t load the students — pull down to try again.'))+'</p>';
+  if(!L) return h+'<p class="sub">'+esc(t('Loading…'))+'</p>';
+  if(!L.ok) return h+'<p class="sub">'+esc(t('Couldn’t load the students — pull down to try again.'))+'</p>';
   var keys=(L.order||[]).filter(function(k){ return (L.schools[k]||[]).length; });
-  if(!keys.length) return '<div class="card"><p class="sub" style="margin:0">'+esc(t('No student profiles yet. Make them from ☰ → Students, or they come as students apply through the portal.'))+'</p></div>';
-  return keys.map(function(k){
-    var rows=L.schools[k];
-    return '<h3>'+esc(k==='other' ? t('No school set') : k.toUpperCase())+' <small>· '+rows.length+'</small></h3><div class="card">'+rows.map(function(r){
+  if(!keys.length) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('No student profiles yet. Make them above, or they come as students apply through the portal.'))+'</p></div>';
+  return h+'<p class="looseWhy">'+esc(t('Tap a student for what they have put in and to see their app.'))+'</p>'+keys.map(function(k){
+    var rows=L.schools[k], name=k==='other' ? t('No school set') : k.toUpperCase();
+    var arch = S.stuArchSchool===k
+      ? '<div class="banner" style="margin:8px 0 0">'+esc(gpT('Archive all {n} {school} profiles? Their GP app closes; their portal account stays. HR can bring a profile back.',{n:rows.length, school:name}))+'</div>'+
+        '<div class="btnRow"><button class="btn" data-stuarchyes="'+esc(k)+'" style="background:var(--bad);border-color:var(--bad)">'+esc(gpT('Yes, archive {n}',{n:rows.length}))+'</button><button class="btn ghost" id="stuArchNo">'+esc(t('Cancel'))+'</button></div>'
+      : '<button class="linkbtn" data-stuarch="'+esc(k)+'" style="width:auto;margin:6px 0 0;padding:4px 0;color:var(--bad)">'+esc(t('School finished? Archive these profiles'))+'</button>';
+    return '<div class="card adminStuSchool"><div class="goalCardTitle">'+esc(name)+' <small>· '+rows.length+'</small></div>'+rows.map(function(r){
       var bits=[adminStuStatus_(r)];
       if(r.mentor) bits.push(gpT('Mentor: {name}',{name:r.mentor})+(r.mentorStatus==='pending' ? ' ('+t('asked')+')' : ''));
       if(r.linked) bits.push(gpT('{n} goals this week',{n:r.goalsThisWeek}));
       return '<button type="button" class="adminStuRow" data-adminstu="'+esc(r.candId)+'">'+avatarHtml({ name:r.name }, 'sm')+
         '<span class="stuRowTxt"><b>'+esc(r.name)+'</b><span class="rowSub">'+esc(bits.join(' · '))+'</span></span>'+
         '<span class="accChevron" style="transform:rotate(-90deg)">'+ACC_CHEVRON+'</span></button>';
-    }).join('')+'</div>';
+    }).join('')+arch+'</div>';
   }).join('');
 }
 function adminStudentHtml_(){
@@ -329,13 +339,14 @@ function adminLooseHtml_(){
    shown") and archive them in one go (hrArchiveMany), with the date and why, same
    as HR's archive; HR can bring anyone back one at a time. */
 S.grp={ campus:'', dept:'', ministry:'', q:'', pick:{}, at:'', reason:'', confirm:false, busy:false };
-function adminGroupsHtml_(){
+function adminGroupsHtml_(part){
   var G=S.grp;
   if(!G.campus) G.campus=S.me.campus;
   var depts=deptsFor(G.campus); if(G.dept && depts.indexOf(G.dept)===-1) G.dept='';
   var mins=G.dept ? ministriesFor(G.campus, G.dept) : []; if(G.ministry && mins.indexOf(G.ministry)===-1) G.ministry='';
   var link=gpInviteLink_(G.campus, G.dept, G.ministry);
-  var h='<div class="card"><div class="goalCardTitle">👋 '+esc(t('Invite a new group'))+'</div>'+
+  var h='';
+  if(part==='link') h+='<div class="card"><div class="goalCardTitle">👋 '+esc(t('Invite a new group'))+'</div>'+
     '<p class="looseWhy">'+esc(t('Everyone opens the link on their own phone and makes their own profile and PIN — with where they are joining already chosen.'))+'</p>'+
     '<label class="f">'+esc(t('Campus'))+'</label><select id="grpCampus">'+CAMPUSES.map(function(c){ return '<option value="'+c.id+'"'+(c.id===G.campus?' selected':'')+'>'+esc(c.name)+'</option>'; }).join('')+'</select>'+
     '<label class="f">'+esc(t('Department'))+'</label><select id="grpDept"><option value="">'+esc(t('— they choose —'))+'</option>'+depts.map(function(d){ return '<option value="'+esc(d)+'"'+(d===G.dept?' selected':'')+'>'+esc(t(d))+'</option>'; }).join('')+'</select>'+
@@ -345,6 +356,7 @@ function adminGroupsHtml_(){
     (navigator.share ? '<button class="btn ghost" id="grpShare">'+esc(t('Share'))+'</button>' : '')+'</div>'+
     (G.dept===BL_DEPT ? '<p class="hint">'+esc(t('Campus Leadership sign-ups still wait for an admin to approve them.'))+'</p>' : '')+
     '</div>';
+  if(part==='link') return h+'<p class="hint">'+esc(t('Students don’t use this link — make their profiles on 🎓 Students, and they join with Google.'))+'</p>';
 
   // archive several
   if(S.adminStaff===null) return h+'<p class="sub">'+esc(t('Loading…'))+'</p>';
@@ -1269,9 +1281,21 @@ function bindAdmin(){
   });
 
   document.querySelectorAll('[data-adminsub]').forEach(function(b){
-    b.onclick=function(){ gpTap(); S.adminSub=b.getAttribute('data-adminsub'); if(S.adminSub==='loose') S.adminLoose=null; if(S.adminSub==='students') S.adminStu=null; render(); };
+    b.onclick=function(){ gpTap(); S.adminSub=b.getAttribute('data-adminsub'); if(S.adminSub==='loose') S.adminLoose=null; if(S.adminSub==='students'){ S.adminStu=null; S.stuList=null; S.stuArchSchool=null; } render(); };
   });
   // --- students ---
+  if(S.adminSub==='students' && !S.stuList && !S.stuListLoading){ S.stuListLoading=true; run('studentsList',[S.auth.user,S.auth.pin],function(d){ S.stuListLoading=false; S.stuList=d||{ ok:false }; render(); }); }
+  document.querySelectorAll('[data-stuarch]').forEach(function(b){ b.onclick=function(){ gpTap(); S.stuArchSchool=b.getAttribute('data-stuarch'); render(); }; });
+  var san=document.getElementById('stuArchNo'); if(san) san.onclick=function(){ S.stuArchSchool=null; render(); };
+  document.querySelectorAll('[data-stuarchyes]').forEach(function(b){ b.onclick=function(){
+    var k=b.getAttribute('data-stuarchyes'), ids=((S.adminStu && S.adminStu.schools[k])||[]).map(function(r){ return r.candId; });
+    b.disabled=true;
+    run('studentsArchive',[S.auth.user,S.auth.pin,ids,'School finished'],function(d){
+      S.stuArchSchool=null;
+      if(d && d.ok){ S.adminStu=d; S.stuList=null; showMsg(gpT('{n} archived',{n:d.archived})); } else showMsg(t('Could not save'));
+      render();
+    });
+  }; });
   if(S.adminSub==='students' && !S.adminStu && !S.adminStuLoading){
     S.adminStuLoading=true;
     run('studentsAdmin',[S.auth.user,S.auth.pin],function(d){ S.adminStuLoading=false; S.adminStu=d||{ ok:false }; render(); },

@@ -492,7 +492,7 @@ function bindAway(){
   bindReqRows_();
   ['libHomeTile','personBooks','profBooks'].forEach(function(id){ var b=document.getElementById(id); if(b) b.onclick=function(){ gpTap(); libOpen_(); }; });
   var pmc=document.getElementById('profMyContract'); if(pmc) pmc.onclick=function(){ gpTap(); openMyContract_(); };
-  if(S.view==='admin' && S.adminSub==='groups') bindAdminGroups_();
+  if(S.view==='admin' && (S.adminSub==='groups' || S.adminSub==='leaving')) bindAdminGroups_();
   if(S.view==='admin' && S.adminSub==='board') bindAdminBoard_();
   if(S.view==='admin' && S.adminSub==='reminders') bindAdminReminders_();
   if(S.view==='profile') bindReminders_();
@@ -1056,12 +1056,12 @@ function bind(){
     run('respondStudentMentor',[S.auth.user,S.auth.pin,id,acc],function(d){ if(d && d.ok){ S.stuMentor={ requests:d.requests, students:d.students }; showMsg(acc?t('Accepted'):t('Declined')); } else showMsg(t('Could not save')); render(); });
   }; });
   /* 🎓 Students (staff): the students staying with us, their profiles and invite links */
-  if(S.view==='students'){
-    if(!S.stuList && !S.stuListLoading){ S.stuListLoading=true; run('studentsList',[S.auth.user,S.auth.pin],function(d){ S.stuListLoading=false; S.stuList=d||{ ok:false }; render(); }); }
+  if(S.view==='students' || (S.view==='admin' && S.adminSub==='students')){
+    if(S.view==='students' && !S.stuList && !S.stuListLoading){ S.stuListLoading=true; run('studentsList',[S.auth.user,S.auth.pin],function(d){ S.stuListLoading=false; S.stuList=d||{ ok:false }; render(); }); }
     document.querySelectorAll('[data-stumake]').forEach(function(b){ b.onclick=function(){
       b.disabled=true;
       run('studentMakeProfile',[S.auth.user,S.auth.pin,b.getAttribute('data-stumake'),(document.getElementById('stuSchool')||{}).value||'dts'],function(d){
-        if(d && d.ok){ S.stuList=d; showMsg(t('Profile made — send them the invite link')); } else showMsg(d && d.err==='exists' ? t('They have a profile already') : t('Could not save'));
+        if(d && d.ok){ S.stuList=d; S.adminStu=null; showMsg(t('Profile made — send them the invite link')); } else showMsg(d && d.err==='exists' ? t('They have a profile already') : t('Could not save'));
         render();
       });
     }; });
