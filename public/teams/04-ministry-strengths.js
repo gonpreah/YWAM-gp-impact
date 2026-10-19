@@ -1098,14 +1098,15 @@ function goalsCardHtml(wk){
 
   var h='<h3 id="sec-goals">🎯 '+esc(t('Weekly Goals'))+'</h3>';
 
-  /* One card for the week being looked at; the only other week anyone opens is
-     last week, to mark how it went — so a small This week / Last week switch
-     sits under the goals (goalsWeekSwitchHtml_) instead of arrows on top. */
-  var cur=thisWeek(), isLast = Number(wk)===cur-1;
+  /* One card for the week being looked at, with a small Last week / This week /
+     Next week switch under the goals (goalsWeekSwitchHtml_): last week to mark
+     how it went, next week to plan it ahead (Oct 2026, Uriah). */
+  var cur=thisWeek(), isLast = Number(wk)===cur-1, isNext = Number(wk)===cur+1;
   h+='<div class="card">'+
-    '<div class="goalCardHead"><span class="goalCardTitle">'+esc(isCur ? gpT('Week {n}',{n:wk}) : isLast ? t('Last week') : gpT('Week {n}',{n:wk}))+'</span>'+
+    '<div class="goalCardHead"><span class="goalCardTitle">'+esc(isCur ? gpT('Week {n}',{n:wk}) : isLast ? t('Last week') : isNext ? t('Next week') : gpT('Week {n}',{n:wk}))+'</span>'+
     '<span class="goalCardDate">'+esc(weekRangeShort_(wk))+'</span></div>'+
-    (isLast ? '<p class="hint" style="margin:0 0 8px">'+esc(t('How did last week go? Move each slider to where it ended.'))+'</p>' : '');
+    (isLast ? '<p class="hint" style="margin:0 0 8px">'+esc(t('How did last week go? Move each slider to where it ended.'))+'</p>' : '')+
+    (isNext ? '<p class="hint" style="margin:0 0 8px">'+esc(t('Plan ahead: write next week’s goals now, and they’ll be waiting on Monday.'))+'</p>' : '');
 
   if(written.length){
     written.forEach(function(g,i){
@@ -1122,14 +1123,14 @@ function goalsCardHtml(wk){
             '<select class="goalLinkSel" data-goallink="'+i+'" style="border:0;background:none;color:inherit;font:inherit;padding:0">'+
             okrMetricOptions(g.metricKey, g.metricKey ? 'Not linked to a KPI' : 'Link to a KPI')+
             '</select></label>'+
-          '<input type="range" class="gSlide" min="0" max="100" step="5" value="'+gp+'" data-goalpct="'+i+'"'+
+          (isNext ? '' : '<input type="range" class="gSlide" min="0" max="100" step="5" value="'+gp+'" data-goalpct="'+i+'"'+
             ' style="'+ringVars(gp)+'"'+
-            ' aria-label="'+esc(t('Progress'))+': '+esc(g.text)+'">'+
+            ' aria-label="'+esc(t('Progress'))+': '+esc(g.text)+'">')+
           '<div class="wgActions">'+
             (editing
               ? '<button class="linkbtn inline" data-goaleditsave="'+i+'">'+esc(t('Save'))+'</button>'+
                 '<button class="linkbtn inline" data-goaleditcancel="'+i+'">'+esc(t('Cancel'))+'</button>'
-              : (gp<100?'<button class="completePill" data-goalcomplete="'+i+'">'+esc(t('Mark Complete'))+'</button>':'')+
+              : (gp<100 && !isNext?'<button class="completePill" data-goalcomplete="'+i+'">'+esc(t('Mark Complete'))+'</button>':'')+
                 '<button class="removeX" data-goaledit="'+i+'" aria-label="'+esc(t('Edit goal text'))+'">'+
                   '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
                 '<button class="removeX" data-goalremove="'+i+'" aria-label="'+esc(t('Remove goal'))+'">'+
@@ -1139,12 +1140,12 @@ function goalsCardHtml(wk){
     });
   } else {
     h+='<p class="sub" style="margin:4px 0 10px">'+
-       esc(isCur ? t('No goals set for this week yet. Three is the whole point — pick the three that matter.') : t('You didn’t set goals that week.'))+'</p>';
+       esc(isCur ? t('No goals set for this week yet. Three is the whole point — pick the three that matter.') : isNext ? t('No goals for next week yet. Pick the three that matter, and Monday starts clear.') : t('You didn’t set goals that week.'))+'</p>';
   }
 
-  if(written.length<3 && isCur){
+  if(written.length<3 && (isCur || isNext)){
     h+='<div class="addGoalRow">'+
-      '<input type="text" class="addGoalInput" id="newGoalText" maxlength="200" placeholder="'+esc(t('Add a goal for this week…'))+'">'+
+      '<input type="text" class="addGoalInput" id="newGoalText" maxlength="200" placeholder="'+esc(isNext ? t('Add a goal for next week…') : t('Add a goal for this week…'))+'">'+
       '<button class="addGoalBtn" id="addGoalBtn" aria-label="'+esc(t('Add goal'))+'">'+
         '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>'+
     '</div>';
@@ -1155,16 +1156,19 @@ function goalsCardHtml(wk){
   return h;
 }
 
-/* This week / Last week, small, under the goals. Another week (a link from the
-   bell, say) shows its own name and a way back to this one. */
+/* Last week / This week / Next week, small, under the goals. Another week (a
+   link from the bell, say) shows its own name and a way back to this one. Next
+   week is offered up to week 51: weeks are kept per year as 1–52, so the year's
+   last week plans the new year's first on the Monday it starts. */
 function goalsWeekSwitchHtml_(wk){
-  var cur=thisWeek();
-  if(Number(wk)!==cur && Number(wk)!==cur-1)
+  var cur=thisWeek(), canLast=cur>1, canNext=cur<=51;
+  if(Number(wk)!==cur && !(canLast && Number(wk)===cur-1) && !(canNext && Number(wk)===cur+1))
     return '<button class="linkbtn" style="margin:6px 0 0" id="goalsJumpCurrent">'+esc(t('Jump back to this week'))+'</button>';
-  if(cur<=1) return '';
+  if(!canLast && !canNext) return '';
   return '<div class="goalsWeekSwitch">'+
-    '<button data-goalswk="last" class="'+(Number(wk)===cur-1?'on':'')+'">'+esc(t('Last week'))+'</button>'+
-    '<button data-goalswk="this" class="'+(Number(wk)===cur?'on':'')+'">'+esc(t('This week'))+'</button></div>';
+    (canLast ? '<button data-goalswk="last" class="'+(Number(wk)===cur-1?'on':'')+'">'+esc(t('Last week'))+'</button>' : '')+
+    '<button data-goalswk="this" class="'+(Number(wk)===cur?'on':'')+'">'+esc(t('This week'))+'</button>'+
+    (canNext ? '<button data-goalswk="next" class="'+(Number(wk)===cur+1?'on':'')+'">'+esc(t('Next week'))+'</button>' : '')+'</div>';
 }
 
 /* --- your ministry's KPIs, editable without leaving this page --- */

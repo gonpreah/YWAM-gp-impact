@@ -706,7 +706,7 @@ function bindHome(){
   };
   // --- goals ---
   document.querySelectorAll('[data-goalswk]').forEach(function(b){
-    b.onclick=function(){ gpTap(); S.goalsWeek = b.getAttribute('data-goalswk')==='last' ? thisWeek()-1 : null; S.goalEditIdx=null; render(); };
+    b.onclick=function(){ gpTap(); var w=b.getAttribute('data-goalswk'); S.goalsWeek = w==='last' ? thisWeek()-1 : w==='next' ? thisWeek()+1 : null; S.goalEditIdx=null; render(); };
   });
   var gjc=document.getElementById('goalsJumpCurrent');
   if(gjc) gjc.onclick=function(){ gpTap(); S.goalsWeek=null; S.goalEditIdx=null; render(); };

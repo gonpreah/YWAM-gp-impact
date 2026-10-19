@@ -759,9 +759,11 @@ streaks" inside the card), Annual goals (one card, `#goGoalsFromMe`, opens the G
 Mentorship ("You're mentoring" only for a mentor), About me (Personality and Strengths
 tiles) and Leave / Profile & settings tiles. **Health and My Ministry have no section
 below** — both are in the bottom bar (Uriah). OKRs are My Ministry's second tab.
-- **Weekly Goals:** one card titled This week (or Last week); a small **Last week / This
-  week** switch under the goals (`goalsWeekSwitchHtml_`, `data-goalswk`) — the only other
-  week anyone opens is last week, to mark how it went; no adding goals to a past week.
+- **Weekly Goals:** one card titled This week (or Last week / Next week); a small **Last week /
+  This week / Next week** switch under the goals (`goalsWeekSwitchHtml_`, `data-goalswk`) — last
+  week to mark how it went (no adding to a past week), next week to plan ahead (Oct 2026, Uriah:
+  add up to three, edit or remove, no sliders or Mark Complete until it starts). Next week is
+  offered up to week 51 (goals are kept per year as weeks 1–52).
   No week arrows, no "Share my week". An unlinked goal shows a quiet "Link to a KPI".
 - Gone: the quick-jump chip strip and its scroll guard. tests/test-home-layout-ui.mjs
   holds the order.
@@ -961,9 +963,14 @@ Try again as My Ministry.
 - **A contract is for this base; time in YWAM is the person's**: `ywamSince` (a year,
   `ywamSinceOf_`, 1960..now) sits on the staff record, is set from the contract form through
   `hrSaveContract`'s payload (`ywamSince`; empty string clears, missing leaves it), and shows as
-  "In YWAM since 2003 — 23 years" beside "Serving in Siem Reap since …" on the HR person page
-  and as "N yrs in YWAM" in the list. Someone can be 23 years in YWAM on a 2-year Siem Reap
-  contract; the contract's `years` still drives the renewal date.
+  "Started in YWAM in 2003 · 23 years in YWAM (anywhere in the world — e.g. their DTS)" above
+  "With YWAM GP since Oct 2021 · 5 yr with YWAM GP" on the HR person page, and as "With YWAM GP
+  5 yr · Started in YWAM 2003" in the list (Oct 2026, Uriah: Naomie did her DTS in 2018 but started
+  with YWAM GP in Oct 2021). Time with YWAM GP counts from the **contracts**: a campus's start is
+  the month HR set, else its earliest contract signed — never the profile's year (`p.joined`,
+  labelled "Year I started with YWAM GP (not your DTS year)"), which people filled with their DTS.
+  No contract and no month set: the line asks for the first contract. Someone can be 23 years in YWAM
+  on a 2-year Siem Reap contract; the contract's `years` still drives the renewal date.
 - **Admin → Accounts and HR → Everyone group a campus's people by kind of staff** (`staffGroups_`, shared; `[data-admingroup]` / `[data-hrgroup]`): "{Campus}
   ministries" (`staffType==='ministry'`), then "YAP and Campus staff" (`yap` / `campus`), then
   "Kind of staff not set yet" for anyone unsorted — each a `[data-admingroup]` with a
@@ -1133,7 +1140,7 @@ forms, documents and references follow.
 - **Legal documents, signed on a phone (Oct 2026)**: YWAM Siem Reap's five forms (Photo Release, Accident
   Waiver, Liability Release Waiver, Acceptance of Place, Child Protection Agreement) live in `netlify/functions/legal-docs-default.js`
   as blocks (p / check / group / field / initial) with `sign {age, witness, guardian}` — English, verbatim
-  from the paper forms (the Khmer halves are not in yet — except the Volunteer Staff Contract: `public/legal-km.js`, `LEGAL_KM` keyed by the English line, shown through `lk_` / `lkPeriod_` when the portal is in Khmer; the signed record and PDF keep the English; Claude's translation, not yet reviewed). Staff make a team's link on the record's ✍️ Legal
+  from the paper forms (every document's own words have Khmer — the five team documents and the Volunteer Staff Contract — in `public/legal-km.js`; tests/test-khmer.mjs fails if a line has none, `LEGAL_KM` keyed by the English line, shown through `lk_` / `lkPeriod_` when the portal is in Khmer; the signed record and PDF keep the English; Claude's translation, not yet reviewed). Staff make a team's link on the record's ✍️ Legal
   tab (`portalSignLink`, token hashed as `portal.signLink.hash`, a new one turns the old off); anyone opens
   `portal.html?sign=<token>` with no account (`P.view==='sign'`, `signHtml_` / `bindSign_`; a saved sign-in
   is not booted), picks their name (`teamPhotoPeople_`), says if under 18, and signs each document:

@@ -219,6 +219,21 @@ for (const sc of SCREENS) {
   await ctx.close();
 }
 
+/* ---------- the legal documents' own words: every line has its Khmer ---------- */
+{
+  const { default: docs, STAFF_CONTRACT } = await import(path.join(ROOT, '..', 'netlify', 'functions', 'legal-docs-default.js'));
+  const ctx = {}; (await import('node:vm')).runInNewContext(fs.readFileSync(path.join(ROOT, 'legal-km.js'), 'utf8') + ';this.L=LEGAL_KM', ctx);
+  const missing = [];
+  for (const d of docs.concat([STAFF_CONTRACT])) {
+    const lines = [d.title];
+    for (const b of d.blocks) { ['text', 'title', 'label'].forEach(k => b[k] && lines.push(b[k])); (b.items || []).forEach(x => lines.push(x)); (b.options || []).forEach(o => lines.push(o.text)); }
+    lines.forEach(l => { if (!ctx.L[l]) missing.push(d.id + ': ' + l.slice(0, 60)); });
+  }
+  ok('every line of every legal document has its Khmer in legal-km.js (change the English, add the Khmer)', missing.length === 0, missing.length + ' missing: ' + missing.slice(0, 3).join(' | '));
+  const nameOff = Object.entries(ctx.L).filter(([k, v]) => k.includes('{name}') !== v.includes('{name}'));
+  ok('… and a line with {name} keeps {name} in Khmer', nameOff.length === 0, nameOff.map(x => x[0].slice(0, 40)).join(' | '));
+}
+
 await browser.close();
 srv.close();
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

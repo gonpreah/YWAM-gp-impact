@@ -584,6 +584,18 @@ function gpInviteLink_(c, d, m){
   return base+'?reg=1&campus='+encodeURIComponent(c)+(d?'&dept='+encodeURIComponent(d):'')+(m?'&ministry='+encodeURIComponent(m):'');
 }
 /* Back from pulling in a new version (gpReloadForUpdate_): the same tab as before. */
+/* A link that names the screen to open — ?view=mycontract (back from signing
+   on the portal), ?view=hr&hr=<id> (back from filling out a contract with
+   someone: their HR profile, fresh), ?view=base. Read on every way in: typing
+   the PIN (afterLogin) and a remembered session (boot), which used to skip it
+   and land on My Home. */
+function gpViewFromUrl_(){
+  try { var qv=new URLSearchParams(location.search||''), v=qv.get('view');
+    if(v==='mycontract'){ S.view='mycontract'; S.myc=null; }
+    else if(v==='base' || v==='dashboard') S.view='base';
+    else if(v==='hr' && qv.get('hr')){ S.view='hr'; S.hrTab='staff'; S.hrSub='person'; S.hrPersonId=qv.get('hr'); S.hrStaff=null; }
+  } catch(e){}
+}
 function gpResumeView_(){
   try { var rv=sessionStorage.getItem('gp-resume');
     if(rv){ sessionStorage.removeItem('gp-resume'); if(['week','base','team','health','library','ministry','mentor','goals','leave','admin'].indexOf(rv)>-1) S.view=rv; } } catch(e){}
@@ -609,7 +621,7 @@ function boot(){
        because there the answer to "is this PIN right" is the whole point. */
     S.auth = saved;
     gpResumeView_();
-    if(wantDash) S.view='base';
+    gpViewFromUrl_();
     var kept = gpBootCacheLoad_(saved.user);
     if(kept){ S.bootStale = true; S.me = kept.d.staff; S.profile = kept.d.profile; applyBoot(kept.d, true); }
     run('getMyBoot', [saved.user, saved.pin], function(d){
@@ -654,13 +666,8 @@ function afterLogin(){
   lsSet('gp-staff', JSON.stringify(S.auth));
   saveStaffCard();
   S.view='week';
-  /* back from signing on the portal: straight to My contract */
-  try { var qv=new URLSearchParams(location.search||'');
-    if(qv.get('view')==='mycontract'){ S.view='mycontract'; S.myc=null; }
-    if(qv.get('view')==='base' || qv.get('view')==='dashboard') S.view='base';
-    /* back from filling out a contract with someone: their HR profile, fresh */
-    if(qv.get('view')==='hr' && qv.get('hr')){ S.view='hr'; S.hrTab='staff'; S.hrSub='person'; S.hrPersonId=qv.get('hr'); S.hrStaff=null; } } catch(e){}
   gpResumeView_();
+  gpViewFromUrl_();
   /* ONE request for everything this page needs. It used to be nine on top of the
      login — each verifying the same PIN, each re-rendering when it landed, so the
      page rebuilt itself nine times while it loaded. Sections that fail come back
