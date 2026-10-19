@@ -15,17 +15,22 @@
      dashboard — the month, the year so far, the campus and new house's burn rate,
      staff debt as totals only, and the money ahead. The office sees the same
      dashboard as a tab of its own, so it knows what leadership is looking at.
-   Staff debt never shows a name to leadership — the server never sends one. */
-S.fin=null; S.finLoading=false; S.finErr=''; S.finPending=[]; S.finMonth=null; S.finAheadEdit=null; S.finReading=0;
+   Staff debt never shows a name to leadership — the server never sends one.
+   QuickBooks (Oct 2026): once the office connects their QuickBooks company (the card at the
+   top of Reports), the Profit and Loss and the A/R Ageing come in by themselves every night —
+   see "QuickBooks" in api.js. The Burn Rate is their own spreadsheet, so it's still uploaded. */
+S.fin=null; S.qboWaiting=false; S.finLoading=false; S.finErr=''; S.finPending=[]; S.finMonth=null; S.finAheadEdit=null; S.finReading=0;
 S.finTab=(lsGet('gp-fin-tab')==='dash' || lsGet('gp-fin-tab')==='numbers' ? lsGet('gp-fin-tab') : 'reports');
 function finCanEditClient_(){ return typeof canEnterStaffDebtClient_==='function' && canEnterStaffDebtClient_(); }
 function finLoad_(force){
   if(S.finLoading || (S.fin && !force)) return;
   S.finLoading=true;
-  run('getFinance',[S.auth.user,S.auth.pin],function(d){ S.finLoading=false; if(d && d.ok){ S.fin=d; S.finErr=''; } else S.finErr=(d && d.err) || 'error'; if(S.view==='ministry') render(); },
+  run('getFinance',[S.auth.user,S.auth.pin],function(d){ S.finLoading=false; if(d && d.ok){ S.fin=d; S.finErr=''; if(d.qbo && d.qbo.connected) S.qboWaiting=false; } else S.finErr=(d && d.err) || 'error'; if(S.view==='ministry') render(); },
     function(){ S.finLoading=false; S.finErr='offline'; if(S.view==='ministry') render(); });
 }
 function finPut_(d){ if(d && d.ok){ S.fin=d; return true; } return false; }
+/* Back from signing in to QuickBooks in the other window: look again. */
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible' && S.qboWaiting && S.auth) finLoad_(true); });
 function finFail_(d){
   var e=d && d.err;
   return e==='too_large' ? t('That file is too big — keep it under 4 MB.') : e==='not_authorized' ? t('Only the Finances office can do that.') :
@@ -135,7 +140,7 @@ function finDashHtml_(){
   var burnYears=Object.keys(F.burn||{}).sort(), hasDebt=!!F.debt;
   if(!latest && !burnYears.length && !hasDebt){
     h+='<div class="card"><div class="goalCardTitle" style="margin-bottom:4px">💵 '+esc(t('Base finances'))+'</div><p class="sub" style="margin:0">'+
-      esc(t('Nothing from the Finances office yet. Once they upload the month’s reports, the numbers show here.'))+'</p></div>';
+      esc(t('Nothing from the Finances office yet. Once they upload the month’s reports or connect QuickBooks, the numbers show here.'))+'</p></div>';
     return h+finAheadHtml_(F)+'</div>';
   }
   var ym=(S.finMonth && F.pl[S.finMonth]) ? S.finMonth : latest;
@@ -147,7 +152,7 @@ function finDashHtml_(){
       var good=upGood ? dd>0 : dd<0;
       return '<div class="mmTileSub '+(good?'finGood':'finBad')+'">'+(dd>0?'▲ ':'▼ ')+esc(gpT('{money} vs {month}',{money:finMoney_(Math.abs(dd)), month:finMonthName_(prevK)}))+'</div>'; };
     h+='<div class="card finHead"><div class="goalCardTitle" style="margin-bottom:2px">💵 '+esc(gpT('Base finances · {month}',{month:finMonthName_(ym)}))+'</div>'+
-      '<p class="hint" style="margin:0">'+esc(gpT('From the Finances office’s Profit and Loss · uploaded {date}',{date:finDate_(M.at)}))+(M.by?' · '+esc(M.by):'')+'</p>'+
+      '<p class="hint" style="margin:0">'+(M.src==='qbo' ? esc(gpT('From QuickBooks · brought in {date}',{date:finDate_(M.at)})) : esc(gpT('From the Finances office’s Profit and Loss · uploaded {date}',{date:finDate_(M.at)}))+(M.by?' · '+esc(M.by):''))+'</p>'+
       (M.fileId ? '<button class="linkbtn inline" data-finfile="'+esc(M.fileId)+'" style="margin:6px 0 0">📄 '+esc(t('Open the P&L'))+'</button>' : '')+'</div>';
     h+='<div class="mmGrid finTiles">'+
       '<div class="mmTile"><div class="mmTileName">'+esc(t('Came in'))+'</div><div class="mmTileNum">'+esc(finMoney_(tt.income))+'</div>'+delta(tt.income, pt && pt.income, true)+'</div>'+
@@ -372,11 +377,53 @@ function finPendingHtml_(it){
   h+=finChecksHtml_(P);
   return h+'<div class="btnRow"><button class="btn" data-finsave="'+esc(it.id)+'">'+esc(t('Save'))+'</button><button class="btn ghost" data-findrop="'+esc(it.id)+'">'+esc(t('Leave it'))+'</button></div></div>';
 }
+/* ---------- QuickBooks ---------- */
+function finQboErr_(e){
+  return e==='reconnect' ? t('QuickBooks has ended the connection — connect it again.') :
+    e==='offline' ? t('Couldn’t reach QuickBooks — it will try again tonight.') :
+    e==='busy' ? t('QuickBooks was busy — it will try again tonight.') :
+    e==='quickbooks' ? t('QuickBooks didn’t answer properly — it will try again tonight.') :
+    e==='token' ? t('QuickBooks didn’t accept the app’s keys — ask an admin to check them.') :
+    e==='too_big' ? t('The report was too big to bring in — ask an admin.') :
+    e==='not_connected' ? t('QuickBooks isn’t connected.') :
+    e==='not_configured' ? t('QuickBooks isn’t set up for this app yet — an admin needs to add its keys.') : t('Couldn’t bring the numbers in — try again.');
+}
+function finQboHtml_(F){
+  var Q=F && F.qbo; if(!Q) return '';
+  var h='<div class="card finQbo"><div class="goalCardTitle" style="margin-bottom:4px">🔗 QuickBooks</div>';
+  if(!Q.connected){
+    if(!Q.configured) return h+'<p class="sub" style="margin:0">'+esc(t('The Profit and Loss and the staff debt can come straight from QuickBooks every night, once an admin has added the app’s QuickBooks keys.'))+'</p></div>';
+    return h+'<p class="sub" style="margin:0 0 10px">'+esc(t('Connect your QuickBooks company and the Profit and Loss and the A/R Ageing (staff debt) come in by themselves every night — no more uploading those two. The Burn Rate isn’t in QuickBooks, so it’s still uploaded.'))+'</p>'+
+      '<button class="btn" id="finQboConnect" style="margin:0">'+esc(t('Connect QuickBooks'))+'</button>'+
+      (S.qboWaiting ? '<p class="hint" style="margin:8px 0 0">'+esc(t('Finish signing in to QuickBooks in the window that opened, then come back here.'))+'</p>' : '')+'</div>';
+  }
+  h+='<p class="sub" style="margin:0">'+esc(Q.company ? gpT('Connected to {company}',{company:Q.company}) : t('Connected to QuickBooks'))+(Q.sandbox ? ' · '+esc(t('a test company')) : '')+'</p>'+
+    '<p class="hint" style="margin:2px 0 0">'+(Q.lastSync ? esc(gpT('Last brought in {date}: {n} months of the Profit and Loss, {p} names owing.',{date:finDate_(Q.lastSync), n:Q.months||0, p:Q.people||0})) : esc(t('Nothing brought in yet.')))+'</p>';
+  if(Q.lastErr) h+='<div class="finCheck warn">⚠️ '+esc(finQboErr_(Q.lastErr))+'</div>';
+  if(Q.warn && Q.warn.length){
+    var wm=[]; Q.warn.forEach(function(w){ if(wm.indexOf(w.month)<0) wm.push(w.month); });
+    h+='<div class="finCheck warn">⚠️ '+esc(gpT('Some of QuickBooks’ totals don’t match their lines in {months} — look those months over.',{months:wm.map(finMonthName_).join(', ')}))+'</div>';
+  }
+  var L=Q.lists||{}, dep=L.department||[], cls=L['class']||[], cur=Q.filter ? Q.filter.type+'|'+Q.filter.id : '';
+  if(dep.length || cls.length || Q.filter){
+    var opt=function(type, x){ var v=type+'|'+x.id; return '<option value="'+esc(v)+'"'+(v===cur?' selected':'')+'>'+esc(x.name)+'</option>'; };
+    h+='<label class="f" for="finQboFilter">'+esc(t('Whose numbers are these?'))+'</label><select id="finQboFilter"><option value="">'+esc(t('The whole company'))+'</option>'+
+      (dep.length ? '<optgroup label="'+esc(t('Locations'))+'">'+dep.map(function(x){ return opt('department', x); }).join('')+'</optgroup>' : '')+
+      (cls.length ? '<optgroup label="'+esc(t('Classes'))+'">'+cls.map(function(x){ return opt('class', x); }).join('')+'</optgroup>' : '')+
+      (Q.filter && !(Q.filter.type==='class' ? cls : dep).some(function(x){ return x.id===Q.filter.id; }) ? '<option value="'+esc(cur)+'" selected>'+esc(Q.filter.name)+'</option>' : '')+'</select>'+
+      '<p class="hint" style="margin:4px 0 0">'+esc(t('If both campuses keep their books in one QuickBooks company, choose this campus’s Location or Class, and the Profit and Loss is this campus’s alone.'))+'</p>';
+  }
+  return h+(Q.broken ? '<button class="btn" id="finQboConnect" style="margin:12px 0 0">'+esc(t('Connect again'))+'</button>' : '<button class="btn" id="finQboSync" style="margin:12px 0 0">'+esc(t('Bring the numbers in now'))+'</button>')+
+    '<p class="hint" style="margin:8px 0 0">'+esc(t('They come in every night at about 4am, for the twelve finished months. The Burn Rate isn’t in QuickBooks, so it’s still uploaded below.'))+'</p>'+
+    '<button class="linkbtn" id="finQboOff" style="margin-top:6px">'+esc(t('Disconnect'))+'</button></div>';
+}
 function finReportsHtml_(){
   finLoad_();
-  var F=S.fin, h='<div id="finReports">';
+  var F=S.fin, h='<div id="finReports">', Q=F && F.qbo;
+  h+=finQboHtml_(F);
   h+='<div class="card"><div class="goalCardTitle" style="margin-bottom:4px">🧾 '+esc(t('The month’s reports'))+'</div>'+
-    '<p class="sub" style="margin:0 0 10px">'+esc(t('Upload the PDFs you already make — the Profit and Loss, the Burn Rate and the A/R Ageing Summary. The numbers are read from them and checked against their own totals before anything is saved. Campus Leadership sees them on their Finances tab; staff-debt names stay with you.'))+'</p>'+
+    '<p class="sub" style="margin:0 0 10px">'+esc(Q && Q.connected ? t('QuickBooks brings in the Profit and Loss and the staff debt. Upload the Burn Rate here — and any report you’d rather add by hand; it’s read and checked against its own totals before anything is saved.') :
+      t('Upload the PDFs you already make — the Profit and Loss, the Burn Rate and the A/R Ageing Summary. The numbers are read from them and checked against their own totals before anything is saved. Campus Leadership sees them on their Finances tab; staff-debt names stay with you.'))+'</p>'+
     '<label class="btn finPickBtn" style="margin:0">📄 '+esc(t('Add the PDFs'))+'<input type="file" id="finFiles" accept="application/pdf,.pdf" multiple hidden></label>'+
     (S.finReading ? '<p class="sub" style="margin:8px 0 0">'+esc(t('Reading…'))+'</p>' : '')+
     '<details class="pulseMore"><summary>'+esc(t('No PDF? Paste from the spreadsheet'))+'</summary><p class="hint" style="margin:6px 0">'+esc(t('Copy the rows from Excel or Google Sheets, headings and all, and paste them here.'))+'</p>'+
@@ -390,7 +437,7 @@ function finReportsHtml_(){
   months.forEach(function(k){
     var M=F.pl[k], tt=GP_FIN.plTotals(M.lines, k);
     h+='<div class="finSaved"><div class="finSavedMain"><b>'+esc(finMonthName_(k))+'</b> <span class="'+(tt.net<0?'finBad':'finGood')+'">'+esc(finMoney_(tt.net))+'</span>'+
-      '<div class="hint" style="margin:0">'+esc(gpT('uploaded {date}',{date:finDate_(M.at)}))+(M.by?' · '+esc(M.by):'')+'</div></div>'+
+      '<div class="hint" style="margin:0">'+(M.src==='qbo' ? esc(gpT('from QuickBooks {date}',{date:finDate_(M.at)})) : esc(gpT('uploaded {date}',{date:finDate_(M.at)}))+(M.by?' · '+esc(M.by):''))+'</div></div>'+
       '<div class="finCashIn"><label class="hint" style="margin:0" for="fc'+k+'">'+esc(t('Cash at month end'))+'</label><input id="fc'+k+'" type="number" inputmode="decimal" step="0.01" data-fincashsaved="'+k+'" value="'+(M.cash!=null?esc(String(M.cash)):'')+'" placeholder="$"></div>'+
       '<div class="finSavedActs">'+(M.fileId?'<button class="linkbtn inline" data-finfile="'+esc(M.fileId)+'" aria-label="'+esc(t('Open the PDF'))+'">📄</button>':'')+
       '<button class="lwDel" data-findel="pl|'+k+'" aria-label="'+esc(t('Remove'))+'">×</button></div></div>';
@@ -411,7 +458,7 @@ function finReportsHtml_(){
   else {
     var D=F.debt;
     h+='<div class="finSaved"><div class="finSavedMain"><b>'+esc(gpT('As of {date}',{date:finDate_(D.asOf)}))+'</b> '+esc(finMoney_(D.total, true))+
-      '<div class="hint" style="margin:0">'+esc(gpT('uploaded {date}',{date:finDate_(D.at)}))+(D.by?' · '+esc(D.by):'')+'</div></div><div class="finSavedActs">'+
+      '<div class="hint" style="margin:0">'+(D.src==='qbo' ? esc(gpT('from QuickBooks {date}',{date:finDate_(D.at)})) : esc(gpT('uploaded {date}',{date:finDate_(D.at)}))+(D.by?' · '+esc(D.by):''))+'</div></div><div class="finSavedActs">'+
       (F.debtFile && F.debtFile.fileId?'<button class="linkbtn inline" data-finfile="'+esc(F.debtFile.fileId)+'" aria-label="'+esc(t('Open the PDF'))+'">📄</button>':'')+'<button class="lwDel" data-findel="debt|x" aria-label="'+esc(t('Remove'))+'">×</button></div></div>';
     var people=(S.roster||[]).filter(function(p){ return p.campus===S.fin.campus; }).slice().sort(function(a, b){ return a.name.localeCompare(b.name); });
     var rows=(F.debtRows||[]).slice().sort(function(a, b){ return (a.staffId?1:0)-(b.staffId?1:0) || a.name.localeCompare(b.name); });
@@ -434,6 +481,30 @@ function finMinistryTabsHtml_(){
 }
 
 function bindFinance_(){
+  var qc=document.getElementById('finQboConnect'); if(qc) qc.onclick=function(){
+    if(S.busy) return; gpTap();
+    // the window opens on the tap itself (a phone blocks one opened later), and is sent to Intuit once the app has its link
+    var w=null; try{ w=window.open('', '_blank'); }catch(e){ w=null; }
+    S.busy=true;
+    run('qboConnect',[S.auth.user,S.auth.pin],function(d){
+      S.busy=false;
+      if(d && d.ok){ S.qboWaiting=true; if(w && !w.closed) w.location.href=d.url; else location.href=d.url; render(); }
+      else { if(w) try{ w.close(); }catch(e){} showMsg(d && d.err==='not_authorized' ? t('Only the Finances office can do that.') : finQboErr_(d && d.err)); }
+    }, function(){ S.busy=false; if(w) try{ w.close(); }catch(e){} showMsg(t('No connection — try again when you are online.')); }); };
+  var qs=document.getElementById('finQboSync'); if(qs) qs.onclick=function(){
+    if(S.busy) return; S.busy=true; qs.disabled=true; qs.textContent=t('Bringing them in…');
+    run('qboSyncNow',[S.auth.user,S.auth.pin],function(d){ S.busy=false; if(finPut_(d)) showMsg(d.synced ? t('Brought in from QuickBooks') : finQboErr_(d.syncErr)); else showMsg(finQboErr_(d && d.err)); render(); },
+      function(){ S.busy=false; showMsg(t('No connection — try again when you are online.')); render(); }); };
+  var qf=document.getElementById('finQboFilter'); if(qf) qf.onchange=function(){
+    if(S.busy) return; S.busy=true; qf.disabled=true;
+    var v=qf.value.split('|');
+    run('qboSetFilter',[S.auth.user,S.auth.pin,v[0]||'',v[1]||''],function(d){ S.busy=false; if(finPut_(d)) showMsg(d.synced ? t('Brought in from QuickBooks') : finQboErr_(d.syncErr)); else showMsg(finQboErr_(d && d.err)); render(); },
+      function(){ S.busy=false; showMsg(t('No connection — try again when you are online.')); render(); }); };
+  var qo=document.getElementById('finQboOff'); if(qo) qo.onclick=function(){
+    if(S.busy || !confirm(t('Disconnect QuickBooks? What it already brought in stays; nothing new comes in until it’s connected again.'))) return;
+    S.busy=true;
+    run('qboDisconnect',[S.auth.user,S.auth.pin],function(d){ S.busy=false; if(finPut_(d)) showMsg(t('Disconnected')); else showMsg(finFail_(d)); render(); },
+      function(){ S.busy=false; showMsg(t('No connection — try again when you are online.')); }); };
   document.querySelectorAll('[data-fintab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.finTab=b.getAttribute('data-fintab'); lsSet('gp-fin-tab', S.finTab); render(); }; });
   var fs=document.getElementById('finFiles'); if(fs) fs.onchange=function(){ Array.prototype.forEach.call(fs.files||[], finReadFile_); fs.value=''; };
   var pr=document.getElementById('finPasteRead'); if(pr) pr.onclick=function(){

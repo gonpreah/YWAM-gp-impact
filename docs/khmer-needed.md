@@ -3967,3 +3967,46 @@ Admin → a person's account → Positions (their YWAM GP places and their Advis
 | 360 review · {month} | ការវាយតម្លៃ 360 · {month} |
 
 ☰ → 360 reviews, and its tile on My Home: starting a review of yourself, giving someone your feedback, the results, the action plan and each quarter's review of it. The nine areas (Walks with God … Across cultures) are the questions everyone answers — worth reading carefully, so they mean the same in Khmer. The scale buttons (Rarely … Always) sit side by side, about 10 characters each. "How it stays anonymous" and its three lines, and "Anonymous: {name} will see …", are promises to the people answering — check these first.
+
+## 73. QuickBooks
+
+| English | Khmer (draft) |
+|---|---|
+| Nothing from the Finances office yet. Once they upload the month’s reports or connect QuickBooks, the numbers show here. | មិនទាន់មានអ្វីពីការិយាល័យហិរញ្ញវត្ថុនៅឡើយទេ។ នៅពេលពួកគេផ្ទុករបាយការណ៍ប្រចាំខែឡើង ឬភ្ជាប់ QuickBooks លេខនឹងបង្ហាញនៅទីនេះ។ |
+| From QuickBooks · brought in {date} | ពី QuickBooks · នាំចូល {date} |
+| QuickBooks has ended the connection — connect it again. | QuickBooks បានបញ្ចប់ការភ្ជាប់ — សូមភ្ជាប់វាម្ដងទៀត។ |
+| Couldn’t reach QuickBooks — it will try again tonight. | មិនអាចទាក់ទង QuickBooks បានទេ — វានឹងព្យាយាមម្ដងទៀតនៅយប់នេះ។ |
+| QuickBooks was busy — it will try again tonight. | QuickBooks រវល់ — វានឹងព្យាយាមម្ដងទៀតនៅយប់នេះ។ |
+| QuickBooks didn’t answer properly — it will try again tonight. | QuickBooks មិនបានឆ្លើយតបត្រឹមត្រូវទេ — វានឹងព្យាយាមម្ដងទៀតនៅយប់នេះ។ |
+| QuickBooks didn’t accept the app’s keys — ask an admin to check them. | QuickBooks មិនទទួលយកកូនសោរបស់កម្មវិធីទេ — សូមស្នើឱ្យអ្នកគ្រប់គ្រងពិនិត្យវា។ |
+| The report was too big to bring in — ask an admin. | របាយការណ៍ធំពេកមិនអាចនាំចូលបានទេ — សូមសួរអ្នកគ្រប់គ្រង។ |
+| QuickBooks isn’t connected. | QuickBooks មិនទាន់បានភ្ជាប់ទេ។ |
+| QuickBooks isn’t set up for this app yet — an admin needs to add its keys. | QuickBooks មិនទាន់បានរៀបចំសម្រាប់កម្មវិធីនេះនៅឡើយទេ — អ្នកគ្រប់គ្រងត្រូវបន្ថែមកូនសោរបស់វា។ |
+| Couldn’t bring the numbers in — try again. | មិនអាចនាំលេខចូលបានទេ — សូមព្យាយាមម្ដងទៀត។ |
+| The Profit and Loss and the staff debt can come straight from QuickBooks every night, once an admin has added the app’s QuickBooks keys. | របាយការណ៍ចំណេញ និងខាត និងបំណុលបុគ្គលិក អាចចូលមកដោយផ្ទាល់ពី QuickBooks រៀងរាល់យប់ នៅពេលអ្នកគ្រប់គ្រងបានបន្ថែមកូនសោ QuickBooks របស់កម្មវិធី។ |
+| Connect your QuickBooks company and the Profit and Loss and the A/R Ageing (staff debt) come in by themselves every night — no more uploading those two. The Burn Rate isn’t in QuickBooks, so it’s still uploaded. | ភ្ជាប់ក្រុមហ៊ុន QuickBooks របស់អ្នក ហើយរបាយការណ៍ចំណេញ និងខាត និង A/R Ageing (បំណុលបុគ្គលិក) នឹងចូលមកដោយខ្លួនឯងរៀងរាល់យប់ — មិនចាំបាច់ផ្ទុកពីរនេះឡើងទៀតទេ។ Burn Rate មិនមាននៅក្នុង QuickBooks ទេ ដូច្នេះនៅតែត្រូវផ្ទុកឡើង។ |
+| Connect QuickBooks | ភ្ជាប់ QuickBooks |
+| Finish signing in to QuickBooks in the window that opened, then come back here. | សូមបញ្ចប់ការចូល QuickBooks នៅក្នុងផ្ទាំងដែលបានបើក រួចត្រឡប់មកទីនេះវិញ។ |
+| Connected to {company} | បានភ្ជាប់ទៅ {company} |
+| Connected to QuickBooks | បានភ្ជាប់ទៅ QuickBooks |
+| a test company | ក្រុមហ៊ុនសាកល្បង |
+| Last brought in {date}: {n} months of the Profit and Loss, {p} names owing. | នាំចូលចុងក្រោយ {date}៖ របាយការណ៍ចំណេញ និងខាត {n} ខែ, ឈ្មោះជំពាក់ {p}។ |
+| Nothing brought in yet. | មិនទាន់បាននាំអ្វីចូលនៅឡើយទេ។ |
+| Some of QuickBooks’ totals don’t match their lines in {months} — look those months over. | សរុបខ្លះរបស់ QuickBooks មិនត្រូវគ្នានឹងបន្ទាត់របស់វានៅក្នុង {months} — សូមពិនិត្យខែទាំងនោះឡើងវិញ។ |
+| Whose numbers are these? | តើលេខទាំងនេះជារបស់អ្នកណា? |
+| The whole company | ក្រុមហ៊ុនទាំងមូល |
+| Locations | ទីតាំង |
+| Classes | ថ្នាក់ (Classes) |
+| If both campuses keep their books in one QuickBooks company, choose this campus’s Location or Class, and the Profit and Loss is this campus’s alone. | ប្រសិនបើសាខាទាំងពីរកត់ត្រាបញ្ជីនៅក្នុងក្រុមហ៊ុន QuickBooks តែមួយ សូមជ្រើសរើសទីតាំង ឬ Class របស់សាខានេះ ហើយរបាយការណ៍ចំណេញ និងខាតនឹងជារបស់សាខានេះតែប៉ុណ្ណោះ។ |
+| Connect again | ភ្ជាប់ម្ដងទៀត |
+| Bring the numbers in now | នាំលេខចូលឥឡូវនេះ |
+| Disconnect | ផ្ដាច់ |
+| They come in every night at about 4am, for the twelve finished months. The Burn Rate isn’t in QuickBooks, so it’s still uploaded below. | វាចូលមករៀងរាល់យប់ប្រហែលម៉ោង ៤ ព្រឹក សម្រាប់ដប់ពីរខែដែលបានបញ្ចប់។ Burn Rate មិនមាននៅក្នុង QuickBooks ទេ ដូច្នេះនៅតែត្រូវផ្ទុកឡើងខាងក្រោម។ |
+| QuickBooks brings in the Profit and Loss and the staff debt. Upload the Burn Rate here — and any report you’d rather add by hand; it’s read and checked against its own totals before anything is saved. | QuickBooks នាំចូលរបាយការណ៍ចំណេញ និងខាត និងបំណុលបុគ្គលិក។ សូមផ្ទុក Burn Rate ឡើងនៅទីនេះ — និងរបាយការណ៍ណាដែលអ្នកចង់បន្ថែមដោយដៃ វានឹងត្រូវអាន និងពិនិត្យជាមួយសរុបរបស់វាផ្ទាល់ មុនពេលរក្សាទុកអ្វីមួយ។ |
+| from QuickBooks {date} | ពី QuickBooks {date} |
+| Bringing them in… | កំពុងនាំចូល… |
+| Brought in from QuickBooks | បាននាំចូលពី QuickBooks |
+| Disconnect QuickBooks? What it already brought in stays; nothing new comes in until it’s connected again. | ផ្ដាច់ QuickBooks? អ្វីដែលវាបាននាំចូលរួចហើយនៅដដែល មិនមានអ្វីថ្មីចូលមកទេ រហូតដល់វាត្រូវបានភ្ជាប់ម្ដងទៀត។ |
+| Disconnected | បានផ្ដាច់ |
+
+My Ministry → Finances → Reports, the QuickBooks card at the top (the Finances office only), and the line under the leadership dashboard's month. "QuickBooks", "Burn Rate", "A/R Ageing" and "Class" are QuickBooks' own words and are left in English on purpose. The page Intuit sends people back to after signing in (netlify/functions/quickbooks.js) has its own six short messages in English and Khmer side by side — worth a look too.

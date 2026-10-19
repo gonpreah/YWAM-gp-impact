@@ -2505,12 +2505,13 @@ async function finOut_(s, c, d) {
   const people = rows.filter(function (p) { return p.active && p.campus === c && !isApplicant_(p); });
   const nameOf = function (id) { const p = id ? personOut_(rows, id) : null; return p ? p.name : ''; };
   const edit = finCanEdit_(s);
-  const pl = {}; Object.keys(d.pl).forEach(function (k) { const m = d.pl[k]; pl[k] = { lines: m.lines || [], cash: m.cash == null ? null : m.cash, fileId: m.fileId || '', fileName: m.fileName || '', at: m.at || '', by: nameOf(m.by) }; });
+  const pl = {}; Object.keys(d.pl).forEach(function (k) { const m = d.pl[k]; pl[k] = { lines: m.lines || [], cash: m.cash == null ? null : m.cash, fileId: m.fileId || '', fileName: m.fileName || '', at: m.at || '', by: nameOf(m.by), src: m.src || '' }; });
   const burn = {}; Object.keys(d.burn).forEach(function (k) { const b = d.burn[k]; burn[k] = { sections: b.sections || [], fileId: b.fileId || '', fileName: b.fileName || '', at: b.at || '', by: nameOf(b.by) }; });
   const p = await readJSON('finProj:' + c, {});
   const out = { ok: true, campus: c, canEdit: edit, pl: pl, burn: burn,
     debt: finDebtView_(d.debt, rows, people), debtHist: d.debtHist.slice(-FIN_MAX_HIST),
-    ahead: { months: (p && p.months) || {}, updated: (p && p.updated) || '' } };
+    ahead: { months: (p && p.months) || {}, updated: (p && p.updated) || '' }, qbo: await qboOut_(c, edit) };
+  if (out.debt && d.debt) out.debt.src = d.debt.src || '';
   if (edit && d.debt) {
     out.debtRows = (d.debt.rows || []).map(function (r) { return { name: r.name, vals: r.vals, total: r.total, staffId: r.staffId || '', staffName: nameOf(r.staffId) }; });
     out.debtFile = { fileId: d.debt.fileId || '', fileName: d.debt.fileName || '' };
@@ -2568,6 +2569,66 @@ function finCleanSections_(list) {
   }
   return out;
 }
+/* A month's P&L into the finance document (an upload's, or QuickBooks'): each month
+   replaces the saved one, keeping the cash typed for it. Gives back the PDFs no longer
+   needed, for the caller to drop once the document is written. */
+function finApplyPl_(d, clean, f, by, now, src) {
+  const old = [];
+  Object.keys(clean).forEach(function (k) {
+    const prev = d.pl[k];
+    if (prev && prev.fileId && prev.fileId !== f.id) old.push(prev.fileId);
+    const keepFile = !src && !f.id && prev;
+    d.pl[k] = { lines: clean[k].lines, cash: clean[k].cash != null ? clean[k].cash : (prev && prev.cash != null ? prev.cash : null),
+      fileId: f.id || (keepFile ? prev.fileId || '' : ''), fileName: f.name || (keepFile ? prev.fileName || '' : ''), at: now, by: by, src: src || '' };
+  });
+  return old.filter(function (id) { return !Object.keys(d.pl).some(function (k) { return d.pl[k].fileId === id; }); });
+}
+/* An A/R ageing into the finance document (an upload's, or QuickBooks'): its names
+   matched to staff, the newest one kept whole, the totals of every one in the history,
+   and each department's Staff Debt ($) as the office used to type it. Writes it. */
+async function finApplyDebt_(c, d, asOf, cols, list, file, by, src) {
+  const rows = await getStaff_();
+  const people = rows.filter(function (p) { return p.active && p.campus === c && !isApplicant_(p); }), ids = {};
+  people.forEach(function (p) { ids[p.id] = p; });
+  const out = [];
+  for (const r of list) {
+    const name = str_(r && r.name, 80); if (!name) return { ok: false, err: 'bad_report' };
+    const vals = (Array.isArray(r.vals) ? r.vals : []).slice(0, cols.length).map(finAmt_);
+    while (vals.length < cols.length) vals.push(0);
+    if (vals.some(function (v) { return v === undefined; })) return { ok: false, err: 'bad_amount' };
+    const total = finAmt_(r.total); if (total === undefined || total === null) return { ok: false, err: 'bad_amount' };
+    let staffId = '';
+    if (r.staffId === '-') d.nameMap[name] = '-';                       // "not on staff" — stop guessing
+    else if (r.staffId && ids[r.staffId]) { staffId = r.staffId; d.nameMap[name] = staffId; }
+    else if (d.nameMap[name] && ids[d.nameMap[name]]) staffId = d.nameMap[name];
+    else if (d.nameMap[name] !== '-') { const m = finMatch_(name, people); staffId = m ? m.id : ''; }
+    out.push({ name: name, vals: vals.map(function (v) { return v || 0; }), total: total, staffId: staffId });
+  }
+  const f = await finPutFile_(c, 'debt', file, by); if (f.err) return { ok: false, err: f.err };
+  const now = new Date().toISOString();
+  const prevFile = d.debt && d.debt.fileId;
+  const newer = !d.debt || !d.debt.asOf || asOf >= d.debt.asOf;
+  const rec = { asOf: asOf, cols: cols, rows: out, fileId: f.id || '', fileName: f.name || '', at: now, by: by, src: src || '' };
+  if (newer) d.debt = rec;
+  // the totals go in the history whether or not it is the newest report (an older one fills a gap)
+  const view = finDebtView_(rec, rows, people);
+  // (QuickBooks brings a new one every night: its history keeps the latest of each month)
+  d.debtHist = d.debtHist.filter(function (h) { return h.asOf !== asOf && !(src && h.src === src && h.asOf.slice(0, 7) === asOf.slice(0, 7)); });
+  d.debtHist.push({ asOf: asOf, cols: cols, vals: view.vals, total: view.total, people: view.people, src: src || '' });
+  d.debtHist.sort(function (a, b) { return a.asOf < b.asOf ? -1 : 1; });
+  d.debtHist = d.debtHist.slice(-FIN_MAX_HIST);
+  await writeJSON(finKey_(c), d);
+  if (newer && prevFile && prevFile !== rec.fileId) await finDropFile_(d, prevFile);
+  if (!newer && f.id) await finDropFile_(d, f.id);
+  /* each department's Staff Debt ($), as the office used to type it */
+  if (newer) {
+    const wk = isoWeek_(baseToday_());
+    for (const dept of PULSE_DEPTS) {
+      await saveMinistryInternal_(c, 'Campus Leadership', dept, wk, [{ metric: 'Staff Debt ($)', value: Math.round(view.byDept[dept] || 0) }], by, thisWeekYear_());
+    }
+  }
+  return { ok: true };
+}
 /* Save one report. kind 'pl': data = { months: { 'YYYY-MM': { lines, cash } } } (a P&L
    can have a column per month; each is kept as its own month). kind 'burn': data =
    { year, sections }. kind 'debt': data = { asOf, cols, rows: [{ name, vals, total,
@@ -2589,12 +2650,7 @@ async function finSave(username, pin, kind, data, file, campus) {
       clean[k] = { lines: lines, cash: cash };
     }
     const f = await finPutFile_(c, 'pl', file, s.id); if (f.err) return { ok: false, err: f.err };
-    const old = [];
-    keys.forEach(function (k) {
-      const prev = d.pl[k];
-      if (prev && prev.fileId) old.push(prev.fileId);
-      d.pl[k] = { lines: clean[k].lines, cash: clean[k].cash != null ? clean[k].cash : (prev && prev.cash != null ? prev.cash : null), fileId: f.id || (prev ? prev.fileId || '' : ''), fileName: f.name || (prev ? prev.fileName || '' : ''), at: now, by: s.id };
-    });
+    const old = finApplyPl_(d, clean, f, s.id, now, '');
     await writeJSON(finKey_(c), d);
     for (const id of old) await finDropFile_(d, id);
   } else if (kind === 'burn') {
@@ -2610,44 +2666,8 @@ async function finSave(username, pin, kind, data, file, campus) {
     const asOf = isoDate_(x.asOf); if (!asOf) return { ok: false, err: 'bad_date' };
     const cols = (Array.isArray(x.cols) ? x.cols : []).map(function (t) { return str_(t, 40); }).filter(Boolean).slice(0, 8);
     if (!cols.length || !Array.isArray(x.rows) || x.rows.length > FIN_MAX_DEBT_ROWS) return { ok: false, err: 'bad_report' };
-    const rows = await getStaff_();
-    const people = rows.filter(function (p) { return p.active && p.campus === c && !isApplicant_(p); }), ids = {};
-    people.forEach(function (p) { ids[p.id] = p; });
-    const out = [];
-    for (const r of x.rows) {
-      const name = str_(r && r.name, 80); if (!name) return { ok: false, err: 'bad_report' };
-      const vals = (Array.isArray(r.vals) ? r.vals : []).slice(0, cols.length).map(finAmt_);
-      while (vals.length < cols.length) vals.push(0);
-      if (vals.some(function (v) { return v === undefined; })) return { ok: false, err: 'bad_amount' };
-      const total = finAmt_(r.total); if (total === undefined || total === null) return { ok: false, err: 'bad_amount' };
-      let staffId = '';
-      if (r.staffId === '-') d.nameMap[name] = '-';                       // "not on staff" — stop guessing
-      else if (r.staffId && ids[r.staffId]) { staffId = r.staffId; d.nameMap[name] = staffId; }
-      else if (d.nameMap[name] && ids[d.nameMap[name]]) staffId = d.nameMap[name];
-      else if (d.nameMap[name] !== '-') { const m = finMatch_(name, people); staffId = m ? m.id : ''; }
-      out.push({ name: name, vals: vals.map(function (v) { return v || 0; }), total: total, staffId: staffId });
-    }
-    const f = await finPutFile_(c, 'debt', file, s.id); if (f.err) return { ok: false, err: f.err };
-    const prevFile = d.debt && d.debt.fileId;
-    const newer = !d.debt || !d.debt.asOf || asOf >= d.debt.asOf;
-    const rec = { asOf: asOf, cols: cols, rows: out, fileId: f.id || '', fileName: f.name || '', at: now, by: s.id };
-    if (newer) d.debt = rec;
-    // the totals go in the history whether or not it is the newest report (an older one fills a gap)
-    const view = finDebtView_(rec, rows, people);
-    d.debtHist = d.debtHist.filter(function (h) { return h.asOf !== asOf; });
-    d.debtHist.push({ asOf: asOf, cols: cols, vals: view.vals, total: view.total, people: view.people });
-    d.debtHist.sort(function (a, b) { return a.asOf < b.asOf ? -1 : 1; });
-    d.debtHist = d.debtHist.slice(-FIN_MAX_HIST);
-    await writeJSON(finKey_(c), d);
-    if (newer && prevFile && prevFile !== rec.fileId) await finDropFile_(d, prevFile);
-    if (!newer && f.id) await finDropFile_(d, f.id);
-    /* each department's Staff Debt ($), as the office used to type it */
-    if (newer) {
-      const wk = isoWeek_(baseToday_());
-      for (const dept of PULSE_DEPTS) {
-        await saveMinistryInternal_(c, 'Campus Leadership', dept, wk, [{ metric: 'Staff Debt ($)', value: Math.round(view.byDept[dept] || 0) }], s.id, thisWeekYear_());
-      }
-    }
+    const r = await finApplyDebt_(c, d, asOf, cols, x.rows, file, s.id, '');
+    if (!r.ok) return r;
   } else return { ok: false, err: 'bad_kind' };
   return finOut_(s, c, d);
 }
@@ -2724,6 +2744,353 @@ async function finAheadSave(username, pin, months, campus) {
   });
   await writeJSON('finProj:' + c, { months: out, updated: new Date().toISOString() });
   return finOut_(s, c, await getFinDoc_(c));
+}
+
+/* ==================== QuickBooks: the reports straight from the books ====================
+   Oct 2026 (Uriah): "Can you build in interfaces where … this app can automatically connect
+   to QuickBooks and pull numbers from QuickBooks directly into the finance teams … without
+   having to put them in manually?"
+   Two of the office's three reports come out of QuickBooks Online — the Profit and Loss and
+   the A/R Ageing Summary — so once the Finances office connects their QuickBooks company
+   (Intuit's own sign-in, OAuth 2.0), those two come in by themselves: every night
+   (qbo-sync.js) and whenever the office presses "Bring the numbers in now". They land in the
+   same finance:<campus> document an upload does, through the same code (finApplyPl_,
+   finApplyDebt_), so the dashboard neither knows nor cares where they came from. The Burn
+   Rate is the office's own spreadsheet, not QuickBooks', so it is still uploaded.
+   - P&L: one report, a column a month, for the twelve finished months up to the end of last
+     month, cash basis like theirs. Each month replaces the saved one (the cash in the bank
+     typed for it stays); a month QuickBooks has nothing for is left alone. Its lines are
+     checked against QuickBooks' own section totals the way a PDF's are; a mismatch is kept
+     and shown to the office.
+   - A/R Ageing: as of today, its names matched to staff exactly as an upload's are. Its
+     history keeps one point a month (the latest), not one a night.
+   - One campus, one connection. If both campuses keep their books in one QuickBooks company
+     with a Location or a Class each, the office picks theirs and the P&L is that campus's
+     alone. (The ageing report can't be split that way; the other campus's names just don't
+     match anyone here, and the office can mark them "Not on staff".)
+   SECRETS. The app's QuickBooks keys are QBO_CLIENT_ID and QBO_CLIENT_SECRET in Netlify's
+   environment, never in source (the repo is public). QBO_ENV=sandbox points at Intuit's test
+   companies. The tokens Intuit hands back live in a store of their own, 'gp-qbo' — not
+   'gp-data', so the nightly backup never copies them — and never leave the server.
+   Disconnecting revokes them at Intuit. Connecting is the office's alone (finCanEdit_): the
+   state that comes back from Intuit is random, single-use, fifteen minutes long and tied
+   to the person who asked, and they must still be in the office when it comes back. */
+const QBO_AUTH = 'https://appcenter.intuit.com/connect/oauth2';
+const QBO_TOKEN = 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer';
+const QBO_REVOKE = 'https://developer.api.intuit.com/v2/oauth2/tokens/revoke';
+const QBO_SCOPE = 'com.intuit.quickbooks.accounting';
+const QBO_MINOR = '75';
+const QBO_PL_MONTHS = 12, QBO_STATE_MS = 15 * 60 * 1000, QBO_MAX_LIST = 200;
+const QBO_SECS = { Income: 'inc', OtherIncome: 'oth', COGS: 'exp', Expenses: 'exp', OtherExpenses: 'oexp' };
+const QBO_MON = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+function qboStore_() { return getStore({ name: 'gp-qbo', consistency: 'strong' }); }
+function qboConfigured_() { return !!(process.env.QBO_CLIENT_ID && process.env.QBO_CLIENT_SECRET); }
+function qboApiBase_() { return process.env.QBO_ENV === 'sandbox' ? 'https://sandbox-quickbooks.api.intuit.com' : 'https://quickbooks.api.intuit.com'; }
+/* Where Intuit sends the browser back: quickbooks.js. It has to be listed, exactly, on the
+   Intuit app's Redirect URIs. */
+function qboRedirect_() { return process.env.QBO_REDIRECT_URI || (String(process.env.URL || '').replace(/\/+$/, '') + '/.netlify/functions/quickbooks'); }
+async function qboConn_(c) { const v = await qboStore_().get('conn:' + c, { type: 'json' }); return v && typeof v === 'object' && v.realmId ? v : null; }
+async function qboPutConn_(c, v) { await qboStore_().setJSON('conn:' + c, v); }
+function qboBasic_() { return 'Basic ' + Buffer.from(process.env.QBO_CLIENT_ID + ':' + process.env.QBO_CLIENT_SECRET).toString('base64'); }
+
+async function qboToken_(params) {
+  let r, j = null;
+  try {
+    r = await fetch(QBO_TOKEN, { method: 'POST', headers: { Authorization: qboBasic_(), Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(params).toString() });
+    try { j = await r.json(); } catch (e) { j = null; }
+  } catch (e) { return { err: 'offline' }; }
+  if (!r.ok || !j || !j.access_token || !j.refresh_token) return { err: (j && j.error === 'invalid_grant') ? 'reconnect' : 'token' };
+  const now = Date.now();
+  return { access: j.access_token, accessExp: now + (Number(j.expires_in) || 3600) * 1000,
+    refresh: j.refresh_token, refreshExp: now + (Number(j.x_refresh_token_expires_in) || 100 * 86400) * 1000 };
+}
+async function qboRevoke_(token) {
+  if (!token) return;
+  try { await fetch(QBO_REVOKE, { method: 'POST', headers: { Authorization: qboBasic_(), Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ token: token }) }); }
+  catch (e) { /* gone from here either way; Intuit lets it lapse */ }
+}
+/* A good access token, refreshing it (and keeping the new refresh token straight away —
+   Intuit may hand back a new one each time) when it is within two minutes of running out. */
+async function qboAccess_(c, conn) {
+  if (conn.access && conn.accessExp > Date.now() + 120000) return '';
+  const tk = await qboToken_({ grant_type: 'refresh_token', refresh_token: conn.refresh });
+  if (tk.err) { if (tk.err === 'reconnect') conn.broken = true; return tk.err; }
+  Object.assign(conn, tk, { broken: false });
+  await qboPutConn_(c, conn);
+  return '';
+}
+async function qboGet_(c, conn, path, params) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const e = await qboAccess_(c, conn); if (e) return { err: e };
+    const u = new URL(qboApiBase_() + '/v3/company/' + encodeURIComponent(conn.realmId) + path);
+    Object.keys(params || {}).forEach(function (k) { u.searchParams.set(k, params[k]); });
+    u.searchParams.set('minorversion', QBO_MINOR);
+    let r, j = null;
+    try { r = await fetch(u.toString(), { headers: { Authorization: 'Bearer ' + conn.access, Accept: 'application/json' } }); try { j = await r.json(); } catch (x) { j = null; } }
+    catch (x) { return { err: 'offline' }; }
+    if (r.status === 401 && attempt === 0) { conn.accessExp = 0; continue; }   // revoked early — refresh once
+    if (!r.ok || !j) return { err: r.status === 401 ? 'reconnect' : r.status === 429 ? 'busy' : 'quickbooks' };
+    return { data: j };
+  }
+  return { err: 'reconnect' };
+}
+
+/* ---- reading QuickBooks' report JSON ---- */
+function qboNum_(v) { if (v === '' || v == null) return null; const n = Number(String(v).replace(/,/g, '')); return isFinite(n) ? Math.round(n * 100) / 100 : null; }
+/* Which of a report's columns are months ('YYYY-MM'), from their StartDate/EndDate, or
+   their title ("Jan 2026") when there is none; '' for the account and Total columns. */
+function qboMonthCols_(rep) {
+  return ((rep && rep.Columns && rep.Columns.Column) || []).map(function (col) {
+    const meta = {}; (col && col.MetaData || []).forEach(function (m) { if (m) meta[m.Name] = m.Value; });
+    const sd = isoDate_(meta.StartDate), ed = isoDate_(meta.EndDate);
+    if (sd && ed) return sd.slice(0, 7) === ed.slice(0, 7) && sd.slice(8) === '01' ? sd.slice(0, 7) : '';
+    const m = /^([A-Za-z]{3,9})\.?\s+(\d{4})$/.exec(String((col && col.ColTitle) || '').trim());
+    const mi = m ? QBO_MON.indexOf(m[1].slice(0, 3).toLowerCase()) : -1;
+    return mi > -1 ? m[2] + '-' + ('0' + (mi + 1)).slice(-2) : '';
+  });
+}
+/* The P&L by month → { months, lines: [{ sec, code, name, parent, amt: { ym: n } }], checks }
+   — the shape finance.js reads out of a PDF. A heading account (a Section with a Header) is
+   a line of its own, its sub-accounts carry it as parent; its own amount, when QuickBooks
+   gives it as a row of the same name inside, is its. */
+function qboPlFromReport_(rep) {
+  const ym = qboMonthCols_(rep), reported = {}, lines = [];
+  const amts = function (cd) { const a = {}; (cd || []).forEach(function (x, i) { if (ym[i]) { const n = qboNum_(x && x.value); if (n !== null) a[ym[i]] = n; } }); return a; };
+  const label = function (cd) { return String((cd && cd[0] && cd[0].value) || '').trim().slice(0, 120); };
+  const line = function (sec, lab, amt, head) {
+    const mc = /^(\d{3,6})\s+(.+)$/.exec(lab);
+    const l = { sec: sec, code: mc ? mc[1] : '', name: mc ? mc[2] : lab, parent: head ? (head.code || head.name) : '', amt: amt, lab: lab };
+    lines.push(l); return l;
+  };
+  const walk = function (rows, sec, head, depth) {
+    if (depth > 8) return;
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r || typeof r !== 'object') return;
+      if (r.Header || r.Rows) {
+        const lab = label(r.Header && r.Header.ColData);
+        if (!lab) { walk(r.Rows && r.Rows.Row, sec, head, depth + 1); return; }
+        walk(r.Rows && r.Rows.Row, sec, line(sec, lab, amts(r.Header.ColData), head), depth + 1);
+        return;
+      }
+      const lab = label(r.ColData); if (!lab) return;
+      const a = amts(r.ColData);
+      if (head && lab === head.lab) { Object.keys(a).forEach(function (k) { head.amt[k] = Math.round(((head.amt[k] || 0) + a[k]) * 100) / 100; }); return; }
+      line(sec, lab, a, head);
+    });
+  };
+  ((rep && rep.Rows && rep.Rows.Row) || []).forEach(function (top) {
+    const sec = top && QBO_SECS[top.group]; if (!sec) return;
+    walk(top.Rows && top.Rows.Row, sec, null, 0);
+    const t = amts(top.Summary && top.Summary.ColData);
+    reported[sec] = reported[sec] || {};
+    Object.keys(t).forEach(function (k) { reported[sec][k] = Math.round(((reported[sec][k] || 0) + t[k]) * 100) / 100; });
+  });
+  lines.forEach(function (l) { delete l.lab; });
+  // a month counts once QuickBooks has anything in it
+  const months = ym.filter(function (k, i) { return k && ym.indexOf(k) === i && lines.some(function (l) { return l.amt[k]; }); });
+  const checks = [];
+  months.forEach(function (k) {
+    Object.keys(reported).forEach(function (sec) {
+      const ours = Math.round(lines.reduce(function (s, l) { return s + (l.sec === sec && l.amt[k] ? l.amt[k] : 0); }, 0) * 100) / 100;
+      const theirs = reported[sec][k] == null ? 0 : reported[sec][k];
+      checks.push({ month: k, sec: sec, ours: ours, theirs: theirs, ok: Math.abs(ours - theirs) < 0.015 });
+    });
+  });
+  return { months: months, lines: lines, checks: checks };
+}
+/* The A/R Ageing Summary → { cols, rows: [{ name, vals, total }] }: every customer row (a
+   sub-customer's too), the ageing columns as QuickBooks titles them, without Total. */
+function qboDebtFromReport_(rep) {
+  const titles = ((rep && rep.Columns && rep.Columns.Column) || []).map(function (c) { return String((c && c.ColTitle) || '').trim(); });
+  const totalAt = titles.findIndex(function (t, i) { return i > 0 && /^total$/i.test(t); });
+  const idx = []; for (let i = 1; i < titles.length; i++) if (i !== totalAt) idx.push(i);
+  const rows = [];
+  const walk = function (list, depth) {
+    if (depth > 6) return;
+    (Array.isArray(list) ? list : []).forEach(function (r) {
+      if (!r || typeof r !== 'object') return;
+      if (r.Rows) { walk(r.Rows.Row, depth + 1); return; }
+      if (!Array.isArray(r.ColData)) return;
+      const name = String((r.ColData[0] && r.ColData[0].value) || '').trim();
+      if (!name || /^total\b/i.test(name)) return;
+      const vals = idx.map(function (i) { return qboNum_(r.ColData[i] && r.ColData[i].value) || 0; });
+      const sum = Math.round(vals.reduce(function (a, b) { return a + b; }, 0) * 100) / 100;
+      const total = totalAt > -1 ? qboNum_(r.ColData[totalAt] && r.ColData[totalAt].value) : sum;
+      if (!total && !vals.some(Boolean)) return;
+      rows.push({ name: name.slice(0, 80), vals: vals, total: total == null ? sum : total });
+    });
+  };
+  walk(rep && rep.Rows && rep.Rows.Row, 0);
+  return { cols: idx.map(function (i) { return titles[i].slice(0, 40) || '—'; }).slice(0, 8), rows: rows };
+}
+function qboList_(data, kind) {
+  const list = (data && data.QueryResponse && data.QueryResponse[kind]) || [];
+  return (Array.isArray(list) ? list : []).slice(0, QBO_MAX_LIST).map(function (x) {
+    return { id: String((x && x.Id) || '').slice(0, 30), name: String((x && (x.FullyQualifiedName || x.Name)) || '').slice(0, 120) };
+  }).filter(function (x) { return x.id && x.name; });
+}
+
+/* ---- bringing the numbers in ---- */
+function qboMonthBack_(ym, n) { let y = Number(ym.slice(0, 4)), m = Number(ym.slice(5, 7)) - n; while (m < 1) { m += 12; y--; } return y + '-' + ('0' + m).slice(-2); }
+async function qboSyncInner_(c, conn, by) {
+  const today = baseToday_(), last = qboMonthBack_(today.slice(0, 7), 1), first = qboMonthBack_(today.slice(0, 7), QBO_PL_MONTHS);
+  const lastDay = new Date(Date.UTC(Number(last.slice(0, 4)), Number(last.slice(5, 7)), 0)).toISOString().slice(0, 10);
+  const plq = { start_date: first + '-01', end_date: lastDay, summarize_column_by: 'Month', accounting_method: 'Cash' };
+  if (conn.filter && conn.filter.id) plq[conn.filter.type === 'class' ? 'class' : 'department'] = conn.filter.id;
+  const pl = await qboGet_(c, conn, '/reports/ProfitAndLoss', plq); if (pl.err) return { ok: false, err: pl.err };
+  const ar = await qboGet_(c, conn, '/reports/AgedReceivables', { report_date: today }); if (ar.err) return { ok: false, err: ar.err };
+  // the Locations and Classes, for the office to say which is theirs (not needed for the numbers)
+  const lc = await qboGet_(c, conn, '/query', { query: 'select * from Department where Active = true maxresults ' + QBO_MAX_LIST });
+  const cl = await qboGet_(c, conn, '/query', { query: 'select * from Class where Active = true maxresults ' + QBO_MAX_LIST });
+  conn.lists = { department: lc.data ? qboList_(lc.data, 'Department') : ((conn.lists && conn.lists.department) || []),
+    'class': cl.data ? qboList_(cl.data, 'Class') : ((conn.lists && conn.lists['class']) || []) };
+
+  const P = qboPlFromReport_(pl.data), D = qboDebtFromReport_(ar.data);
+  const d = await getFinDoc_(c), now = new Date().toISOString(), clean = {};
+  for (const k of P.months) {
+    const lines = finCleanLines_(P.lines.map(function (l) { return { sec: l.sec, code: l.code, name: l.name, parent: l.parent, amt: l.amt[k] == null ? null : l.amt[k] }; }));
+    if (!lines) return { ok: false, err: 'too_big' };
+    clean[k] = { lines: lines, cash: null };
+  }
+  const old = finApplyPl_(d, clean, { id: '', name: '' }, by, now, 'qbo');
+  await writeJSON(finKey_(c), d);
+  for (const id of old) await finDropFile_(d, id);
+  if (D.cols.length && D.rows.length <= FIN_MAX_DEBT_ROWS) {
+    const r = await finApplyDebt_(c, d, today, D.cols, D.rows, null, by, 'qbo');
+    if (!r.ok) return r;
+  } else if (D.cols.length) return { ok: false, err: 'too_big' };
+  return { ok: true, months: P.months.length, people: D.rows.length,
+    warn: P.checks.filter(function (x) { return !x.ok; }).slice(0, 12) };
+}
+async function qboSync_(c, by) {
+  if (!qboConfigured_()) return { ok: false, err: 'not_configured' };
+  const conn = await qboConn_(c);
+  if (!conn) return { ok: false, err: 'not_connected' };
+  let r;
+  try { r = await qboSyncInner_(c, conn, by || conn.by); } catch (e) { r = { ok: false, err: 'quickbooks' }; }
+  conn.lastTry = new Date().toISOString();
+  if (r.ok) { conn.lastSync = conn.lastTry; conn.lastErr = ''; conn.warn = r.warn; conn.months = r.months; conn.people = r.people; }
+  else conn.lastErr = r.err;
+  await qboPutConn_(c, conn);
+  return r;
+}
+/* What the page is told. The office: the whole picture, never a token. Leadership: only
+   that the numbers come from QuickBooks, and when they last did. */
+async function qboOut_(c, edit) {
+  const conn = await qboConn_(c);
+  if (!edit) return conn ? { connected: true, lastSync: conn.lastSync || '' } : null;
+  const out = { configured: qboConfigured_(), connected: !!conn, sandbox: process.env.QBO_ENV === 'sandbox' };
+  if (!conn) return out;
+  const rows = await getStaff_();
+  return Object.assign(out, { company: conn.company || '', at: conn.at || '', by: (personOut_(rows, conn.by) || {}).name || '',
+    lastSync: conn.lastSync || '', lastTry: conn.lastTry || '', lastErr: conn.lastErr || '', broken: !!conn.broken,
+    months: conn.months || 0, people: conn.people || 0, warn: Array.isArray(conn.warn) ? conn.warn : [],
+    filter: conn.filter || null, lists: conn.lists || { department: [], 'class': [] } });
+}
+
+/* The office asks to connect: a fresh state, and the Intuit sign-in page to send them to. */
+async function qboConnect(username, pin, campus) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!finCanEdit_(s)) return { ok: false, err: 'not_authorized' };
+  if (!qboConfigured_()) return { ok: false, err: 'not_configured' };
+  const c = finCampus_(s, campus), state = crypto.randomBytes(24).toString('hex'), st = qboStore_(), now = Date.now();
+  const states = (await st.get('states', { type: 'json' })) || {};
+  Object.keys(states).forEach(function (k) { if (!(states[k] && states[k].exp > now)) delete states[k]; });
+  states[state] = { staffId: s.id, campus: c, exp: now + QBO_STATE_MS };
+  await st.setJSON('states', states);
+  const u = new URL(QBO_AUTH);
+  u.searchParams.set('client_id', process.env.QBO_CLIENT_ID);
+  u.searchParams.set('response_type', 'code');
+  u.searchParams.set('scope', QBO_SCOPE);
+  u.searchParams.set('redirect_uri', qboRedirect_());
+  u.searchParams.set('state', state);
+  return { ok: true, url: u.toString() };
+}
+/* Intuit sends the browser back here (quickbooks.js) with ?code&state&realmId — or ?error
+   when they said no. The state must be one we gave out, unused and in time, and its person
+   still in the office. Then the code becomes tokens, the company's name is fetched, and the
+   numbers come in straight away. */
+async function qboCallback(q) {
+  q = q || {};
+  if (!qboConfigured_()) return { ok: false, err: 'not_configured' };
+  const st = qboStore_(), now = Date.now(), key = String(q.state || '');
+  const states = (await st.get('states', { type: 'json' })) || {};
+  const rec = /^[0-9a-f]{48}$/.test(key) && Object.prototype.hasOwnProperty.call(states, key) ? states[key] : null;
+  if (rec) delete states[key];
+  Object.keys(states).forEach(function (k) { if (!(states[k] && states[k].exp > now)) delete states[k]; });
+  await st.setJSON('states', states);
+  if (!rec || !(rec.exp > now)) return { ok: false, err: 'expired' };
+  if (q.error) return { ok: false, err: q.error === 'access_denied' ? 'denied' : 'intuit' };
+  const realmId = /^\d{1,30}$/.test(String(q.realmId || '')) ? String(q.realmId) : '';
+  const code = str_(q.code, 4000);
+  if (!realmId || !code) return { ok: false, err: 'bad_request' };
+  const rows = await getStaff_();
+  const s = rows.filter(function (p) { return p.id === rec.staffId && p.active && !isApplicant_(p); })[0];
+  if (!s || !finCanEdit_(s) || HR_CAMPUSES.indexOf(rec.campus) === -1) return { ok: false, err: 'not_authorized' };
+  const tk = await qboToken_({ grant_type: 'authorization_code', code: code, redirect_uri: qboRedirect_() });
+  if (tk.err) return { ok: false, err: 'token' };
+  const old = await qboConn_(rec.campus);
+  if (old && old.refresh && old.refresh !== tk.refresh) await qboRevoke_(old.refresh);
+  const conn = Object.assign({ realmId: realmId, company: '', by: s.id, at: new Date().toISOString(),
+    filter: old && old.realmId === realmId ? old.filter || null : null, lists: null, broken: false }, tk);
+  const info = await qboGet_(rec.campus, conn, '/companyinfo/' + realmId, {});
+  if (info.data && info.data.CompanyInfo) conn.company = String(info.data.CompanyInfo.CompanyName || '').slice(0, 120);
+  await qboPutConn_(rec.campus, conn);
+  const r = await qboSync_(rec.campus, s.id);
+  return { ok: true, company: conn.company, synced: !!r.ok, syncErr: r.err || '' };
+}
+async function qboOffice_(username, pin, campus) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { err: { ok: false } };
+  if (!finCanEdit_(s)) return { err: { ok: false, err: 'not_authorized' } };
+  return { s: s, c: finCampus_(s, campus) };
+}
+async function qboSyncNow(username, pin, campus) {
+  const o = await qboOffice_(username, pin, campus); if (o.err) return o.err;
+  const r = await qboSync_(o.c, o.s.id);
+  const out = await finOut_(o.s, o.c, await getFinDoc_(o.c));
+  out.synced = !!r.ok; out.syncErr = r.err || '';
+  return out;
+}
+/* Which Location or Class is this campus's ('' type = the whole company). The numbers come
+   in again at once, so the dashboard follows. */
+async function qboSetFilter(username, pin, type, id, campus) {
+  const o = await qboOffice_(username, pin, campus); if (o.err) return o.err;
+  const conn = await qboConn_(o.c);
+  if (!conn) return { ok: false, err: 'not_connected' };
+  if (!type) conn.filter = null;
+  else {
+    const hit = (type === 'department' || type === 'class') ? ((conn.lists && conn.lists[type]) || []).filter(function (x) { return x.id === String(id); })[0] : null;
+    if (!hit) return { ok: false, err: 'not_found' };
+    conn.filter = { type: type, id: hit.id, name: hit.name };
+  }
+  await qboPutConn_(o.c, conn);
+  return qboSyncNow(username, pin, campus);
+}
+/* Stop: Intuit is told, the tokens go. What already came in stays — it is the office's
+   numbers now, like an upload's. */
+async function qboDisconnect(username, pin, campus) {
+  const o = await qboOffice_(username, pin, campus); if (o.err) return o.err;
+  const conn = await qboConn_(o.c);
+  if (conn) {
+    await qboRevoke_(conn.refresh);
+    const st = qboStore_();
+    if (typeof st.delete === 'function') await st.delete('conn:' + o.c); else await st.setJSON('conn:' + o.c, {});
+  }
+  return finOut_(o.s, o.c, await getFinDoc_(o.c));
+}
+/* Every night (qbo-sync.js): each campus that is connected. */
+async function runQboSync() {
+  const out = {};
+  if (!qboConfigured_()) return { skipped: 'not_configured' };
+  for (const c of HR_CAMPUSES) {
+    if (!(await qboConn_(c))) continue;
+    const r = await qboSync_(c, '');
+    out[c] = r.ok ? { ok: true, months: r.months, people: r.people, warn: (r.warn || []).length } : { ok: false, err: r.err };
+  }
+  return out;
 }
 
 async function ministryDataFor_(s) {
@@ -4522,6 +4889,7 @@ async function runReminders(now) {
   });
 }
 export { runReminders, pushEncrypt_, vapidJwt_ };
+export { qboCallback, runQboSync, qboPlFromReport_, qboDebtFromReport_ };
 
 /* ---------- Khmer review (Oct 2026) ----------
    About 4,000 of the app's Khmer strings are drafts nobody who speaks Khmer has read
@@ -9724,7 +10092,11 @@ const HANDLERS = {
   cafeVoid: function (a) { return cafeVoid(a[0], a[1], a[2], a[3]); },
   cafeCount: function (a) { return cafeCount(a[0], a[1], a[2], a[3], a[4]); },
   cafeExpense: function (a) { return cafeExpense(a[0], a[1], a[2], a[3], a[4], a[5]); },
-  cafeSaveSettings: function (a) { return cafeSaveSettings(a[0], a[1], a[2], a[3]); }
+  cafeSaveSettings: function (a) { return cafeSaveSettings(a[0], a[1], a[2], a[3]); },
+  qboConnect: function (a) { return qboConnect(a[0], a[1], a[2]); },
+  qboSyncNow: function (a) { return qboSyncNow(a[0], a[1], a[2]); },
+  qboSetFilter: function (a) { return qboSetFilter(a[0], a[1], a[2], a[3], a[4]); },
+  qboDisconnect: function (a) { return qboDisconnect(a[0], a[1], a[2]); }
 };
 
 export default async (req) => {

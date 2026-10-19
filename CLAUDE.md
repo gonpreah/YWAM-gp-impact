@@ -714,6 +714,68 @@ and QuickBooks' **A/R Ageing Summary** (staff debt by person and by 1/2/3/over-3
 - Tests: tests/test-finance.mjs (server), test-finance-parse.mjs (the parser),
   test-finance-ui.mjs (upload → preview → save → a Director's tab, no names on the page).
 
+## QuickBooks: the P&L and the staff debt straight from the books (Oct 2026)
+Uriah: "Can you build in interfaces where … this app can automatically connect to QuickBooks
+and pull numbers from QuickBooks directly into the finance teams … without having to put them
+in manually?" Two of the office's three reports come out of **QuickBooks Online** — the Profit
+and Loss and the A/R Ageing Summary — so once connected those come in by themselves. The Burn
+Rate is their own spreadsheet, not QuickBooks', so it's still uploaded. (QuickBooks Desktop
+has no such connection; this is Online only.)
+- **Setting it up (once, by an admin).** At developer.intuit.com: sign in with the Intuit
+  account that owns the company, create an app (QuickBooks Online and Payments, scope
+  **Accounting**), and under its Production settings add the Redirect URI
+  `https://<the site>/.netlify/functions/quickbooks` exactly (and the app's EULA and privacy
+  links, its host domain and launch/disconnect URL `https://<the site>/teams.html`; Intuit
+  asks for these before it gives production keys). Then in Netlify → Site configuration →
+  Environment variables: `QBO_CLIENT_ID` and `QBO_CLIENT_SECRET` (the production keys), and
+  redeploy. Optional: `QBO_ENV=sandbox` with the Development keys to try it on Intuit's test
+  company first; `QBO_REDIRECT_URI` if the site's address isn't Netlify's `URL`. **The keys
+  never go in the repo, the chat or a commit.** Until they're set, the card says an admin
+  must add them and nothing is called.
+- **Connecting** (Finances → Reports, the QuickBooks card; the office only, `finCanEdit_`):
+  `qboConnect` gives a random 48-hex `state` (in `gp-qbo` 'states', 15 minutes, single use,
+  tied to the person and campus) and Intuit's sign-in URL; the page opens it in a window of
+  its own (opened on the tap, so a phone doesn't block it). Intuit sends that window to
+  `netlify/functions/quickbooks.js` → `qboCallback`: the state must be ours, unused and in
+  time, its person still active and in the office; the code becomes tokens (the app's keys in
+  a Basic header), the company's name is fetched, and the numbers come in at once. That page
+  says how it went in English and Khmer (the app's own Khmer font), never echoing the request,
+  with a way back. The app looks again when it's shown (`visibilitychange`, `S.qboWaiting`).
+- **What comes in** (`qboSync_`; every night by `qbo-sync.js` at 04:15 Phnom Penh, after the
+  backup, as the person who connected; and "Bring the numbers in now", `qboSyncNow`):
+  - **P&L**: one report, `summarize_column_by=Month`, cash basis (like theirs), the twelve
+    finished months to the end of last month. `qboPlFromReport_` gives the same lines an
+    upload does: `sec` from the section's group (Income → inc, Other Income → oth, Expenses and
+    Cost of Goods Sold → exp, Other Expenses → oexp), the account number split off the name, a
+    heading account a line of its own with its sub-accounts' `parent`, and its own amount
+    when QuickBooks gives it as a row of its own name. Each month goes through `finApplyPl_`
+    (the upload's code): it replaces the saved month (an uploaded PDF for it is dropped), the
+    cash typed for it stays; a month with nothing in it is left alone. `src: 'qbo'`.
+    Each section is checked against QuickBooks' own total; a mismatch is kept (`warn`) and
+    shown on the card.
+  - **A/R Ageing**: as of today, QuickBooks' own buckets (Current, 1 - 30 …), every customer
+    row (sub-customers too) that owes anything, through `finApplyDebt_` (the upload's code):
+    names matched to staff and `nameMap`, each department's `Staff Debt ($)`. `debtHist` keeps
+    one QuickBooks point a month (the latest), not one a night.
+  - The **Locations and Classes** (two queries), for "Whose numbers are these?": if both
+    campuses keep their books in one company, each office picks its own and the P&L is asked
+    for with `department=` / `class=` (`qboSetFilter`, which brings the numbers in again).
+    The ageing report can't be split that way; the other campus's names simply don't match.
+- **Tokens.** Access tokens last an hour and are refreshed two minutes before; Intuit may hand
+  back a new refresh token each time and it's kept at once. A 401 refreshes once and tries
+  again. A refresh Intuit refuses (`invalid_grant` — disconnected from QuickBooks' side, or
+  ~100 days unused) marks it `broken`: the card says to connect again, and the numbers
+  already in stay. **Tokens live only in the `gp-qbo` store** (`conn:<campus>` = realmId,
+  company, tokens, by, at, lastSync/lastTry/lastErr, warn, filter, lists) — not `gp-data`, so
+  the nightly backup never copies them — and `qboOut_` never sends a token or the realm id:
+  the office gets the company, when, who, the counts, any error, the filter and the lists;
+  leadership only `{ connected, lastSync }` (their dashboard says "From QuickBooks · brought in
+  …"). `qboDisconnect` revokes the refresh token at Intuit and deletes the connection; the
+  numbers already brought in stay.
+- **Tests**: tests/test-qbo.mjs (server) and tests/test-qbo-ui.mjs (the card), both against a
+  stand-in Intuit (`tests/qbo-fixtures.mjs`: tokens, revoke, the P&L and ageing JSON, the
+  queries) for one made-up company.
+
 ## Campus Leadership on My Ministry: OKRs and the Monday meeting board
 Campus Leadership doesn't log weekly numbers (hidden for now). Its own row in the picker
 ("🧭 Campus Leadership", where My Ministry opens for anyone in Campus Leadership —
