@@ -649,9 +649,11 @@ for now. `test-menu.mjs` checks each role.
   what"), 1-on-1s accepted this month, OKR progress this quarter (client, `baseR`), and
   staff debt — with the ministries' done / not done list under it. The Campus
   Director gets one per department (lists folded). Their weekly typed numbers stay off.
-- **The Campus Director's quarter** (`directorQuarterHtml_`): Base Vision,
-  Communications, Partner Relationships (1–10) and Base Plants in Planning, saved once
-  a quarter to their own row at `quarterAnchorWeek_()`.
+- **The Campus Director's quarterly check-in is gone** (Oct 2026, Uriah: "Please remove q4
+  check in. Not necessary"). It asked for Base Vision, Communications, Partner
+  Relationships (1–10) and Base Plants in Planning once a quarter on the Board tab.
+  Scores already saved stay in `entries`; Base Plants in Planning still counts itself
+  from the plants list.
 - **Staff debt from the Finance office** (`staffDebtCardHtml_`, `getStaffDebt` /
   `saveStaffDebt`): monthly, one box per department, on the Finances ministry page (its
   "The numbers" tab; since Oct 2026 an uploaded A/R ageing report fills it — see Finances),
