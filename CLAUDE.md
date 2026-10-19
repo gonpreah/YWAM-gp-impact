@@ -1769,8 +1769,24 @@ numbers fill themselves in from using it (like Teams and Hospitality). Two so fa
   Rota (the team fills shifts), Week (tiles, cups a day, best sellers), Set up (the cafe's
   leader or an admin: menu, checklists, shifts). `cafe:<campus>` holds settings, each day
   is `cafeDay:<campus>:<date>`. "The numbers" tab is the old page.
-- **Campus Leadership tabs:** My week · **Overview** · **Finances** · Board (`gp-lw-tab` remembers it; the
-  Cafe's tool/numbers choice is `gp-cafe-view`). **Overview** (`leadBaseHtml_`): for the
+- **Campus Leadership tabs — each role its own board** (Oct 2026, Uriah: "for all the campus
+  leadership, each person should have a slightly different My Ministry board. Not everyone
+  has the same thing"). `LW_ROLES` in teams/04-ministry-strengths.js, keyed by the title
+  (`lwRole_` from `orgTitleOf_`): the tab order, a line under "Your role", the four glance
+  tiles at the top of Overview, and which kinds come first under "Log something".
+  International Campus Director — "Vision, partners and new bases": Overview · My week ·
+  Board · Finances; partners to reach (none in 30 days), Base Plants in Planning, money
+  ahead, clear leaders; partner/church/base first. National Campus Director — "The staff
+  and the week's rhythm": Overview · Board · My week · Finances; away this week, 1-on-1s
+  this month (both summed from the departments' pulse), numbers in, Tuesday; 1-on-1s and
+  meetings first. Director of a department — "Your department …": My department · Board ·
+  My week · Finances; their pulse first, no whole-base tiles; department meetings first.
+  An untitled Campus Director keeps the old four (clear leaders, numbers in, Tuesday, money
+  ahead). **Every role opens on its first tab** each time the app is opened; a tab chosen
+  stays for that visit only (`gp-lw-tab` in sessionStorage — tests set it there). The
+  leadership-team card sits at the foot of Overview, under the role's own numbers.
+  tests/test-lead-roles-ui.mjs. The Cafe's tool/numbers choice is `gp-cafe-view`.
+  **Overview** (`leadBaseHtml_`): for the
   Director (or an admin) four glance tiles, then clear leaders (from each person's `leads`,
   `ministryLeaders_`), next Tuesday, the money ahead (a tile that opens Finances), and every department's pulse folded;
   a department overseer gets their pulse first, then their ministries' leaders. The bell's

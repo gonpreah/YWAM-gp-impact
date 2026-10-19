@@ -77,7 +77,7 @@ async function open(who, viewport) {
     else if (/^getMy/.test(b.fn)) out = { ok: true, logs: [], goals: [], checkins: [], mentees: [], requests: [] };
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(out) });
   });
-  await page.addInitScript(u => (localStorage.setItem('gp-lw-tab', 'board'), localStorage.setItem('gp-staff', JSON.stringify({ user: u, pin: '1234' }))), who.username);
+  await page.addInitScript(u => (sessionStorage.setItem('gp-lw-tab', 'board'), localStorage.setItem('gp-staff', JSON.stringify({ user: u, pin: '1234' }))), who.username);
   await page.goto('http://localhost:4490/teams.html', { waitUntil: 'load' });
   await page.waitForSelector('.hero', { timeout: 15000 });
   await page.waitForTimeout(500);

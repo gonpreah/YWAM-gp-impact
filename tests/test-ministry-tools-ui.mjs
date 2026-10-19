@@ -70,7 +70,7 @@ async function open(user, opts) {
   page.on('dialog', d => d.accept());
   await page.route('**fonts.g**', r => r.abort());
   await page.addInitScript(a => { localStorage.setItem('gp-staff', JSON.stringify({ user: a.u, pin: '1234' })); if (a.km) localStorage.setItem('gp-lang', 'km');
-    if (a.lw) localStorage.setItem('gp-lw-tab', a.lw); if (a.code) localStorage.setItem('gp-leadercode', a.code); }, { u: user, km: !!opts.km, lw: opts.lw || '', code: opts.code || '' });
+    if (a.lw) sessionStorage.setItem('gp-lw-tab', a.lw); if (a.code) localStorage.setItem('gp-leadercode', a.code); }, { u: user, km: !!opts.km, lw: opts.lw || '', code: opts.code || '' });
   await page.goto(BASE + '/teams.html', { waitUntil: 'load' });
   await page.waitForSelector('nav.bottom button', { timeout: 15000 });
   await page.waitForTimeout(400);
@@ -82,8 +82,8 @@ const ent = (min, metric) => (mem.entries || []).find(r => r.ministry === min &&
 const txt = p => p.$eval('#main', e => e.innerText);
 
 {
-  const { ctx, page } = await open('cd');
-  ok('a leader’s My Ministry opens on "My week"', !!(await page.$('[data-lwtab="week"].on')) && (await page.$$('.lwKind')).length === 8 && (await page.$$('.lwTotal')).length === 8);
+  const { ctx, page } = await open('cd', { lw: 'week' });   // each role opens on its Overview now (test-lead-roles-ui.mjs); My week is a tab away
+  ok('a leader’s "My week" has every kind to log, and its totals', !!(await page.$('[data-lwtab="week"].on')) && (await page.$$('.lwKind')).length === 8 && (await page.$$('.lwTotal')).length === 8);
   await page.click('[data-lwkind="oneonone"]'); await page.waitForTimeout(200);
   await page.selectOption('#lwWho', 'st2'); await page.fill('#lwNote', 'Cafe and family'); await page.click('#lwSave'); await page.waitForTimeout(1200);
   ok('logging a one-on-one shows it this week, with who', /One-on-one · Dara Sok/.test(await txt(page)));

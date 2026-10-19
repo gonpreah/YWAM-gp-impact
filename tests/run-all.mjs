@@ -75,6 +75,7 @@ const BROWSER = [
   'test-ministry-tools-ui.mjs', // My week: log, partners, reflection, base plants; Cafe: open, till, counters, expenses, rota, close, set up; Khmer at 320px
   'test-p360-ui.mjs',        // 360 reviews on the page: start with quick picks, answer (a board login too), close, results, plan from a growth area, the quarter's review, share
   'test-qbo-ui.mjs',         // the QuickBooks card: connect in a window of its own, back from Intuit, numbers in, a Location, leadership sees "from QuickBooks", disconnect
+  'test-lead-roles-ui.mjs',  // each Campus Leadership role its own My Ministry: International, National, a department's Director, untitled; opens on Overview each time
   'test-finance-ui.mjs',     // the office uploads three PDFs, previews checked, saved; a Director's Finances tab: tiles, charts, burn rate, debt with no names, money ahead
   'test-pull-drill.mjs',    // the pull gesture on both pages, and which figures open
   'test-touch-scroll.mjs',  // a swipe over a slider or the chip strip scrolls the page, and answers nothing

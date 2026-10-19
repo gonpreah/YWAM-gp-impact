@@ -19,7 +19,39 @@ var LW_KINDS=[['oneonone','🤝','One-on-one'],['partner','🙏','Partner connec
 var LW_NOTE={ oneonone:'What you talked about (optional)', partner:'What you talked about (optional)', church:'Which church?', base:'Which base?',
   gospel:'Where, and with whom? (optional)', teaching:'Topic', meeting:'Which meeting?', deptmeeting:'Which department?' };
 var PLANT_STAGES_UI=[['praying','Praying'],['exploring','Exploring'],['planning','Planning'],['preparing','Preparing'],['launched','Launched']];
-S.lw=null; S.lwWeek=null; S.lwLoading=false; S.lwForm=null; S.lwTab=(lsGet('gp-lw-tab')==='board' || lsGet('gp-lw-tab')==='base' || lsGet('gp-lw-tab')==='money' ? lsGet('gp-lw-tab') : 'week'); S.lwErr='';
+S.lw=null; S.lwWeek=null; S.lwLoading=false; S.lwForm=null; S.lwTab=lwTabKept_(); S.lwErr='';
+/* ---------- each leader's own board ----------
+   Oct 2026 (Uriah): "for all the campus leadership, each person should have a slightly
+   different My Ministry board. Not everyone has the same thing." Their title (orgTitleOf_)
+   decides the order of the tabs, the line under it saying what the role is about, the four
+   numbers at the top of Overview, and which kinds come first under "Log something":
+   - International Campus Director: vision, partners and new bases.
+   - National Campus Director: the staff and the week's rhythm.
+   - Director of <department>: their own department — the Overview tab is "My department".
+   - A Campus Director with no title yet: the whole base, as before.
+   Every role opens on Overview each time the app is opened; a tab chosen stays only for
+   that visit (sessionStorage), so the page always starts where the role's work is. */
+var LW_ROLES={
+  icd:{ tabs:['base','week','board','money'], focus:'Vision, partners and new bases', tiles:['partners','plants','money','leaders'],
+    kinds:['partner','church','base','oneonone','teaching','gospel','meeting','deptmeeting'] },
+  ncd:{ tabs:['base','board','week','money'], focus:'The staff and the week’s rhythm', tiles:['away','oneonones','numbers','tues'],
+    kinds:['oneonone','meeting','deptmeeting','church','gospel','teaching','partner','base'] },
+  dept:{ tabs:['base','board','week','money'], focus:'Your department: its ministries, leaders and numbers', tiles:[],
+    kinds:['deptmeeting','oneonone','meeting','teaching','gospel','partner','church','base'] },
+  cd:{ tabs:['base','week','board','money'], focus:'', tiles:['leaders','numbers','tues','money'], kinds:[] }
+};
+function lwRole_(){
+  var tt=typeof orgTitleOf_==='function' ? orgTitleOf_(S.me) : '';
+  return tt==='International Campus Director' ? 'icd' : tt==='National Campus Director' ? 'ncd' : /^Director of /.test(tt) ? 'dept' : 'cd';
+}
+function lwTabKept_(){ try{ var v=sessionStorage.getItem('gp-lw-tab'); return ['base','week','board','money'].indexOf(v)>-1 ? v : null; }catch(e){ return null; } }
+function lwTabKeep_(v){ try{ sessionStorage.setItem('gp-lw-tab', v); }catch(e){} }
+/* The tab to show: the one chosen this visit, else the role's first. */
+function lwTabNow_(){ var R=LW_ROLES[lwRole_()]; return R.tabs.indexOf(S.lwTab)>-1 ? S.lwTab : R.tabs[0]; }
+function lwKindsFor_(){
+  var order=LW_ROLES[lwRole_()].kinds;
+  return order.length ? order.map(lwKind_).concat(LW_KINDS.filter(function(k){ return order.indexOf(k[0])<0; })) : LW_KINDS;
+}
 function lwKind_(k){ return LW_KINDS.filter(function(x){ return x[0]===k; })[0] || [k,'•',k]; }
 function lwLoad_(wk){
   if(S.lwLoading) return; S.lwLoading=true; S.lwErr='';
@@ -39,11 +71,12 @@ function lwHtml_(){
     '<button class="weekArrow" id="lwNext"'+(wk>=now?' disabled':'')+' aria-label="'+esc(t('Next week'))+'">›</button></div>';
   // the week's numbers, counted from what is logged below
   var count=function(k){ return L.log.filter(function(r){ return r.kind===k; }).reduce(function(a,r){ return a+(Number(r.qty)||1); },0); };
-  h+='<div class="lwTotals">'+LW_KINDS.map(function(k){ var n=count(k[0]);
+  var kinds=lwKindsFor_();
+  h+='<div class="lwTotals">'+kinds.map(function(k){ var n=count(k[0]);
     return '<div class="lwTotal'+(n?' on':'')+'"><span>'+k[1]+'</span><b>'+(k[0]==='gospel'?(Math.round(n*10)/10)+'h':n)+'</b><small>'+esc(t(k[2]))+'</small></div>'; }).join('')+'</div>';
   h+='<p class="hint" style="margin:-2px 0 12px">'+esc(t('These are your leadership numbers for the week — counted from what you log here.'))+'</p>';
   // quick log
-  h+='<h3>➕ '+esc(t('Log something'))+'</h3><div class="lwKinds">'+LW_KINDS.map(function(k){
+  h+='<h3>➕ '+esc(t('Log something'))+'</h3><div class="lwKinds">'+kinds.map(function(k){
     return '<button class="lwKind'+(S.lwForm&&S.lwForm.kind===k[0]?' on':'')+'" data-lwkind="'+k[0]+'"><span>'+k[1]+'</span>'+esc(t(k[2]))+'</button>'; }).join('')+'</div>';
   if(S.lwForm){
     var f=S.lwForm, kk=lwKind_(f.kind);
@@ -162,7 +195,7 @@ function bindLw_(){
   document.querySelectorAll('[data-lwplantdel]').forEach(function(b){ b.onclick=function(){ if(!confirm(t('Remove this from the list?'))) return; call('basePlantSave',[{ id:b.getAttribute('data-lwplantdel'), remove:true }, S.lwWeek]); }; });
   var ba=document.getElementById('lwBAdd'); if(ba) ba.onclick=function(){ var n=document.getElementById('lwBName'), pl=document.getElementById('lwBPlace');
     if(!String(n.value).trim()){ showMsg(t('Type a name.')); return; } call('basePlantSave',[{ name:n.value, place:pl.value, stage:'praying' }, S.lwWeek]); };
-  document.querySelectorAll('[data-lwtab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.lwTab=b.getAttribute('data-lwtab'); lsSet('gp-lw-tab', S.lwTab); render(); }; });
+  document.querySelectorAll('[data-lwtab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.lwTab=b.getAttribute('data-lwtab'); lwTabKeep_(S.lwTab); render(); }; });
 }
 
 /* ---------- the Cafe ---------- */
@@ -377,12 +410,27 @@ function leadBaseHtml_(pulse){
   var next=leadTuesdays_(1)[0], tr=S.lead ? leadTuesFor_(next) : null;
   /* At a glance (the Director's whole base): four numbers, each opening onto its section below. */
   finLoad_(); var pj=finProject_(S.fin);
-  if(many) h+='<div class="mmGrid lbGlance">'+
-    '<a class="mmTile" href="#lbLeaders"><div class="mmTileName">👑 '+esc(t('Clear leaders'))+'</div><div class="mmTileNum">'+(rows.length-none.length)+' / '+rows.length+'</div></a>'+
-    '<a class="mmTile" href="#lbPulse"><div class="mmTileName">📊 '+esc(t('Numbers in'))+'</div><div class="mmTileNum">'+(pulseIn && ofN ? inN+' / '+ofN : '…')+'</div></a>'+
-    '<a class="mmTile" href="#lbTues"><div class="mmTileName">🎤 '+esc(gpT('Tuesday {date}',{date:hospDate_(next)}))+'</div><div class="mmTileNum lbTileWho">'+esc(leadTuesWho_(tr && tr.facilitator) || '—')+'</div></a>'+
-    '<button class="mmTile lbTileBtn" data-lwtab="money"><div class="mmTileName">💵 '+esc(t('Money ahead'))+'</div><div class="mmTileNum lbTileWho'+(pj && pj.short?' lbNone':'')+'">'+esc(!pj ? '…' : pj.short ? gpT('short in {month}',{month:lmMonthName_(pj.short)}) : lmMoney_(pj.end))+'</div></button>'+
-    '</div>';
+  /* The four numbers at the top, each opening onto where it comes from — which four is the
+     role's (LW_ROLES): partners and new bases for the International Director, the staff and
+     the week for the National Director, the whole base for a Campus Director. */
+  var tiles=many ? LW_ROLES[lwRole_()].tiles : [];
+  if(tiles.indexOf('partners')>-1 || tiles.indexOf('plants')>-1){ if(!S.lw && !S.lwLoading && !S.lwErr) lwLoad_(S.lwWeek||thisWeek()); }
+  var away={}, ones=0;
+  scope.forEach(function(d){ var P=S.pulse && S.pulse[d]; if(P && P.ok){ ones+=P.oneOnOnes||0; (P.away||[]).forEach(function(a){ away[a.name]=1; }); } });
+  var L=S.lw, today=new Date(todayStr()+'T00:00:00');
+  var due=L ? L.partners.filter(function(p){ return !p.last || (today-new Date(p.last+'T00:00:00'))/86400000>30; }).length : null;
+  var plans=L ? L.plants.filter(function(p){ return p.stage!=='launched'; }).length : null;
+  var TILE={
+    leaders:'<a class="mmTile" href="#lbLeaders"><div class="mmTileName">👑 '+esc(t('Clear leaders'))+'</div><div class="mmTileNum">'+(rows.length-none.length)+' / '+rows.length+'</div></a>',
+    numbers:'<a class="mmTile" href="#lbPulse"><div class="mmTileName">📊 '+esc(t('Numbers in'))+'</div><div class="mmTileNum">'+(pulseIn && ofN ? inN+' / '+ofN : '…')+'</div></a>',
+    tues:'<a class="mmTile" href="#lbTues"><div class="mmTileName">🎤 '+esc(gpT('Tuesday {date}',{date:hospDate_(next)}))+'</div><div class="mmTileNum lbTileWho">'+esc(leadTuesWho_(tr && tr.facilitator) || '—')+'</div></a>',
+    money:'<button class="mmTile lbTileBtn" data-lwtab="money"><div class="mmTileName">💵 '+esc(t('Money ahead'))+'</div><div class="mmTileNum lbTileWho'+(pj && pj.short?' lbNone':'')+'">'+esc(!pj ? '…' : pj.short ? gpT('short in {month}',{month:lmMonthName_(pj.short)}) : lmMoney_(pj.end))+'</div></button>',
+    partners:'<button class="mmTile lbTileBtn" data-lwtab="week"><div class="mmTileName">🙏 '+esc(t('Partners to reach'))+'</div><div class="mmTileNum'+(due?' lbNone':'')+'">'+(due===null ? '…' : L.partners.length ? due+' / '+L.partners.length : '—')+'</div></button>',
+    plants:'<button class="mmTile lbTileBtn" data-lwtab="week"><div class="mmTileName">🌱 '+esc(t('Base Plants in Planning'))+'</div><div class="mmTileNum">'+(plans===null ? '…' : plans)+'</div></button>',
+    away:'<a class="mmTile" href="#lbPulse"><div class="mmTileName">🏖️ '+esc(t('Away this week'))+'</div><div class="mmTileNum">'+(pulseIn ? Object.keys(away).length : '…')+'</div></a>',
+    oneonones:'<a class="mmTile" href="#lbPulse"><div class="mmTileName">🤝 '+esc(t('1-on-1s this month'))+'</div><div class="mmTileNum">'+(pulseIn ? ones : '…')+'</div></a>'
+  };
+  if(tiles.length) h+='<div class="mmGrid lbGlance">'+tiles.map(function(k){ return TILE[k]; }).join('')+'</div>';
   /* Clear leaders: the ones without, a line per department; who leads what folded. */
   h+='<div class="card" id="lbLeaders"><div class="goalCardTitle" style="margin-bottom:6px">👑 '+esc(t('Clear leaders'))+'</div>'+
     '<p class="lbBig"><b>'+(rows.length-none.length)+' / '+rows.length+'</b> '+esc(t('ministries have a clear leader'))+'</p>';
@@ -443,7 +491,7 @@ function leadTueFormHtml_(date, r){
     '<div class="btnRow"><button class="btn" id="ltSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="ltCancel">'+esc(t('Cancel'))+'</button></div></div>';
 }
 function bindLeadTools_(){
-  var gt=document.getElementById('lbGoTues'); if(gt) gt.onclick=function(){ gpTap(); S.lwTab='board'; lsSet('gp-lw-tab','board'); S.leadTab='tues'; render(); window.scrollTo(0,0); };
+  var gt=document.getElementById('lbGoTues'); if(gt) gt.onclick=function(){ gpTap(); S.lwTab='board'; lwTabKeep_('board'); S.leadTab='tues'; render(); window.scrollTo(0,0); };
   document.querySelectorAll('[data-ltopen]').forEach(function(b){ b.onclick=function(){ gpTap(); var d=b.getAttribute('data-ltopen'); S.ltOpen = S.ltOpen===d ? null : d; S.ltDraft=null; render(); }; });
   var D=S.ltDraft; if(!D) return;
   document.querySelectorAll('[data-ltwho]').forEach(function(sel){ sel.onchange=function(){ var k=sel.getAttribute('data-ltwho'), v=sel.value;

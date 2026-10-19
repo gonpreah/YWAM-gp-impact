@@ -86,7 +86,7 @@ async function open(user, opts) {
   await ctx.route('**fonts.g**', (r) => r.abort());
   // Intuit's sign-in page: a stand-in that just shows where it was sent
   await ctx.route('https://appcenter.intuit.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>Intuit</title><p>Sign in to QuickBooks</p>' }));
-  await page.addInitScript((a) => { localStorage.setItem('gp-staff', JSON.stringify({ user: a.u, pin: '1234' })); if (a.lw) localStorage.setItem('gp-lw-tab', a.lw); if (a.km) localStorage.setItem('gp-lang', 'km'); localStorage.setItem('gp-fin-tab', a.tab || 'reports'); },
+  await page.addInitScript((a) => { localStorage.setItem('gp-staff', JSON.stringify({ user: a.u, pin: '1234' })); if (a.lw) sessionStorage.setItem('gp-lw-tab', a.lw); if (a.km) localStorage.setItem('gp-lang', 'km'); localStorage.setItem('gp-fin-tab', a.tab || 'reports'); },
     { u: user, lw: opts.lw || '', km: !!opts.km, tab: opts.tab || '' });
   await page.goto(BASE + '/teams.html', { waitUntil: 'load' });
   await page.waitForSelector('nav.bottom button', { timeout: 15000 });

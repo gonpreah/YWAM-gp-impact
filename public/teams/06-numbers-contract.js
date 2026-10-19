@@ -814,16 +814,20 @@ function myMinistryHtml(){
     /* Your own leadership row: "My week" first — the numbers come from it — and
        the board, pulse and the Director's quarter a tab away. */
     if(mine && S.me.dept===BL_DEPT && S.me.ministry){
-      var lwt=S.lwTab==='board' || S.lwTab==='base' || S.lwTab==='money' ? S.lwTab : 'week';
+      /* each role its own board — the tabs' order, what Overview leads with (LW_ROLES) */
+      var role=lwRole_(), R=LW_ROLES[role], lwt=lwTabNow_();
       /* who you are on the team — International / National Campus Director, Director of … */
       var myTitle=orgTitleOf_(S.me);
       if(myTitle) h+='<div class="orgYou">🧭 '+esc(gpT('Your role: {title}',{title:orgTitleText_(myTitle)}))+'</div>';
-      h+='<div class="campusSeg lwSeg" style="max-width:none">'+[['week','🗓️','My week'],['base','🧭','Overview'],['money','💵','Finances'],['board','📋','Board']].map(function(x){
-        return '<button class="campusBtn'+(lwt===x[0]?' on':'')+'" data-lwtab="'+x[0]+'">'+x[1]+' '+esc(t(x[2]))+'</button>'; }).join('')+'</div>';
+      if(R.focus) h+='<p class="hint lwFocus">'+esc(t(R.focus))+'</p>';
+      var TABS={ week:['🗓️',t('My week')], base: role==='dept' ? ['🗂️',t('My department')] : ['🧭',t('Overview')], money:['💵',t('Finances')], board:['📋',t('Board')] };
+      h+='<div class="campusSeg lwSeg" style="max-width:none">'+R.tabs.map(function(k){
+        return '<button class="campusBtn'+(lwt===k?' on':'')+'" data-lwtab="'+k+'">'+TABS[k][0]+' '+esc(TABS[k][1])+'</button>'; }).join('')+'</div>';
       if(lwt==='week') return h+lwHtml_();
       /* the base's finances, from the Finances office's reports (teams/09-finance.js) */
       if(lwt==='money') return h+finDashHtml_();
-      if(lwt==='base') return h+orgCltCardHtml_(S.me.campus)+leadBaseHtml_(ph);
+      // the role's own numbers first; who is on the leadership team at the foot
+      if(lwt==='base') return h+leadBaseHtml_(ph)+orgCltCardHtml_(S.me.campus);
       return h+leadSectionHtml_();
     }
     return h+ph+orgCltCardHtml_(S.me.campus)+leadSectionHtml_();

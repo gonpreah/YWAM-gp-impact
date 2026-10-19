@@ -75,7 +75,7 @@ async function open(user, opts) {
   page.on('console', (m) => { if (m.type() === 'error' && !/net::|ERR_/.test(m.text())) errors.push('CONSOLE ' + m.text()); });
   page.on('dialog', (d) => d.accept());
   await page.route('**fonts.g**', (r) => r.abort());
-  await page.addInitScript((a) => { localStorage.setItem('gp-staff', JSON.stringify({ user: a.u, pin: '1234' })); if (a.lw) localStorage.setItem('gp-lw-tab', a.lw); if (a.km) localStorage.setItem('gp-lang', 'km'); },
+  await page.addInitScript((a) => { localStorage.setItem('gp-staff', JSON.stringify({ user: a.u, pin: '1234' })); if (a.lw) sessionStorage.setItem('gp-lw-tab', a.lw); if (a.km) localStorage.setItem('gp-lang', 'km'); },
     { u: user, lw: opts.lw || '', km: !!opts.km });
   await page.goto(BASE + '/teams.html', { waitUntil: 'load' });
   await page.waitForSelector('nav.bottom button', { timeout: 15000 });

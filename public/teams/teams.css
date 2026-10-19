@@ -2068,3 +2068,4 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .p3RevItem { padding:8px 0; border-bottom:1px solid var(--line); } .p3RevItem:last-of-type { border-bottom:0; }
 .p3RevItem b { display:block; font-size:14px; margin-bottom:6px; } .p3RevItem input { margin-top:8px; } .p3RevItem small { display:block; font-size:13px; }
 .p3ShareList { max-height:260px; overflow:auto; }
+.lwFocus { margin:-4px 0 10px; }

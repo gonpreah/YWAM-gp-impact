@@ -4010,3 +4010,17 @@ Admin → a person's account → Positions (their YWAM GP places and their Advis
 | Disconnected | បានផ្ដាច់ |
 
 My Ministry → Finances → Reports, the QuickBooks card at the top (the Finances office only), and the line under the leadership dashboard's month. "QuickBooks", "Burn Rate", "A/R Ageing" and "Class" are QuickBooks' own words and are left in English on purpose. The page Intuit sends people back to after signing in (netlify/functions/quickbooks.js) has its own six short messages in English and Khmer side by side — worth a look too.
+
+## 74. Each leader’s own board
+
+| English | Khmer (draft) |
+|---|---|
+| Vision, partners and new bases | ចក្ខុវិស័យ ដៃគូ និងមូលដ្ឋានថ្មីៗ |
+| The staff and the week’s rhythm | បុគ្គលិក និងចង្វាក់ការងារប្រចាំសប្ដាហ៍ |
+| Your department: its ministries, leaders and numbers | នាយកដ្ឋានរបស់អ្នក៖ កិច្ចការបម្រើ អ្នកដឹកនាំ និងលេខរបស់វា |
+| Partners to reach | ដៃគូដែលត្រូវទាក់ទង |
+| Away this week | អវត្តមានសប្ដាហ៍នេះ |
+| 1-on-1s this month | ការជួបមួយទល់មួយខែនេះ |
+| My department | នាយកដ្ឋានរបស់ខ្ញុំ |
+
+My Ministry, on a Campus Leadership member’s own row: the line under “Your role” (one per role), and the four numbers at the top of Overview. The tiles are about 12 characters wide on a phone — “Partners to reach”, “Away this week” and “1-on-1s this month” should stay short.
