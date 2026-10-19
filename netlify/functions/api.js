@@ -9577,9 +9577,10 @@ function cafePos(username, pin, date, totals) {
 }
 
 /* ---- Campus Leadership: the Tuesday morning meeting ----
-   Who facilitates, who translates and the topics to hit, one entry per
-   Tuesday, on the leadership board's own doc (so the same people see it).
-   A person is someone on this campus by id, or a typed name for a guest. */
+   Who facilitates, who translates, the topics to hit and the announcements,
+   one entry per Tuesday, on the leadership board's own doc (so the same people
+   see it). A person is someone on the leadership team by id, or a typed name
+   for a guest. */
 function tuesPerson_(p, ids) {
   const id = str_(p && p.id, 60) || '';
   if (id) return ids[id] ? { id: id, name: '' } : null;
@@ -9591,13 +9592,18 @@ async function saveLeadTuesday(username, pin, m) {
   const x = m && typeof m === 'object' ? m : {};
   const date = isoDate_(x.date);
   if (!date || new Date(date + 'T12:00:00Z').getUTCDay() !== 2) return { ok: false, err: 'bad_date' };
-  const ids = {}; (await getStaff_()).forEach(function (p) { if (p.campus === a.campus && p.active !== false) ids[p.id] = 1; });
+  /* who can be picked: the leadership team (Campus Leadership on this campus) — and whoever
+     was already set for this Tuesday, so editing the topics never drops an earlier pick */
+  const ids = {}; (await getStaff_()).forEach(function (p) { if (p.campus === a.campus && p.active !== false && !isApplicant_(p) && deptOf_(p) === LEADERSHIP_DEPT) ids[p.id] = 1; });
   const d = await getLeadDoc_(a.campus);
+  const prev = d.tues.filter(function (t) { return t.date === date; })[0];
+  if (prev) ['facilitator', 'translator'].forEach(function (k) { if (prev[k] && prev[k].id) ids[prev[k].id] = 1; });
+  const lines = function (v, max) { return (Array.isArray(v) ? v : []).map(function (t) { return str_(t, max); }).filter(Boolean).slice(0, 15); };
   const rec = { date: date, facilitator: tuesPerson_(x.facilitator, ids), translator: tuesPerson_(x.translator, ids),
-    topics: (Array.isArray(x.topics) ? x.topics : []).map(function (t) { return str_(t, 160); }).filter(Boolean).slice(0, 15),
+    topics: lines(x.topics, 160), announcements: lines(x.announcements, 200),
     updated: new Date().toISOString(), by: a.s.id };
   d.tues = d.tues.filter(function (t) { return t.date !== date; });
-  if (rec.facilitator || rec.translator || rec.topics.length) d.tues.push(rec);
+  if (rec.facilitator || rec.translator || rec.topics.length || rec.announcements.length) d.tues.push(rec);
   const cutoff = new Date(Date.now() - 182 * 86400000).toISOString().slice(0, 10);   // half a year back is plenty
   d.tues = d.tues.filter(function (t) { return t.date >= cutoff; }).sort(function (p, q) { return p.date < q.date ? -1 : 1; }).slice(-80);
   await writeJSON(leadKey_(a.campus), d);
