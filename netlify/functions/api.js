@@ -7989,6 +7989,16 @@ async function stuIndexSet_(studentId, entry) {
   if (entry) ix[studentId] = entry; else delete ix[studentId];
   await writeJSON('stuIndex', ix);
 }
+/* what a student's app opens with — also what an admin's "see their app" shows */
+function stuRec_(d) { return { habits: d.habits, bibleDay: d.bibleDay, personality: d.personality, gstrengths: d.gstrengths, sex: d.sex, libRead: d.libRead }; }
+async function stuBootOut_(s, cand, d) {
+  const mentors = await stuMentors_(), me = stuMe_(s, cand, d);
+  return { ok: true, student: true, staff: me,
+    profile: { email: s.email || '', mentorStatus: d.mentorStatus || '', sex: cleanSex_(d.sex), personality: ownPersonality_(stuRec_(d)), gstrengths: ownGStrengths_(stuRec_(d)) },
+    roster: mentors, logs: logsFor_(d.logs || [], s.id), habits: habitsOf_(stuRec_(d)), bibleDay: d.bibleDay || 0,
+    goals: goalsFor_(d.goals || [], s.id), checkins: [], mentees: [], mentorRequests: [], smartGoals: [], tasks: [], oneOnOnes: [], broadcasts: [],
+    libRead: cleanLibRead_(d.libRead), schedules: await stuSchedules_(cand.campus || s.campus), reqDocs: [], required: null };
+}
 async function studentCall(username, pin, fn, args) {
   if (!Object.prototype.hasOwnProperty.call(STUDENT_FNS, fn)) return { ok: false, err: 'student' };
   const a = await studentAuth_(username, pin); if (a.out) return a.out;
@@ -7997,14 +8007,7 @@ async function studentCall(username, pin, fn, args) {
   const d = await getStu_(s.id);
   const save = async function () { d.updated = new Date().toISOString(); await writeJSON(stuKey_(s.id), d); };
   const rec = function () { return { habits: d.habits, bibleDay: d.bibleDay, personality: d.personality, gstrengths: d.gstrengths, sex: d.sex, libRead: d.libRead }; };
-  if (fn === 'getMyBoot') {
-    const mentors = await stuMentors_(), me = stuMe_(s, cand, d);
-    return { ok: true, student: true, staff: me,
-      profile: { email: s.email || '', mentorStatus: d.mentorStatus || '', sex: cleanSex_(d.sex), personality: ownPersonality_(rec()), gstrengths: ownGStrengths_(rec()) },
-      roster: mentors, logs: logsFor_(d.logs || [], s.id), habits: habitsOf_(rec()), bibleDay: d.bibleDay || 0,
-      goals: goalsFor_(d.goals || [], s.id), checkins: [], mentees: [], mentorRequests: [], smartGoals: [], tasks: [], oneOnOnes: [], broadcasts: [],
-      libRead: cleanLibRead_(d.libRead), schedules: await stuSchedules_(campus), reqDocs: [], required: null };
-  }
+  if (fn === 'getMyBoot') return stuBootOut_(s, cand, d);
   if (fn === 'getMySchedules') return stuSchedules_(campus);
   if (fn === 'getDuty') {   // a published week, to read — never the editor
     const kind = args[0], week = args[1];
@@ -8171,6 +8174,44 @@ async function studentMakeProfile(username, pin, name, school) {
   rows.push(cand);
   await writeJSON('candidates', rows);
   return Object.assign({ made: cand.id }, await studentsList(username, pin));
+}
+/* ---- Admin → 🎓 Students: every student profile by school, what each one has
+   put in, and their app as they see it (read only). Admins only — a student's
+   goals and habits are theirs, so this is not opened to HR or Hospitality. */
+function stuAdminRow_(c, acct, d, staffById) {
+  const wk = isoWeek_(baseToday_()), yr = weekYear_(baseToday_());
+  const g = (d.goals || []).find(function (r) { return Number(r.week) === wk && yearOf_(r) === yr; });
+  const m = d.mentorId && staffById[d.mentorId];
+  return { candId: c.id, name: c.name, school: c.school || '', campus: c.campus || '', stage: c.stage || '', source: c.source || '',
+    linked: !!(c.staffId && acct), email: acct ? (acct.email || '') : '', invite: (c.portal && c.portal.invite && c.portal.invite.token) || '',
+    updated: acct ? (d.updated || '') : '', goalsThisWeek: g ? (g.items || []).length : 0, habits: acct ? habitsOf_(stuRec_(d)).length : 0,
+    mentor: m ? m.name : '', mentorStatus: d.mentorStatus || '', ptype: (d.personality && d.personality.type) || '',
+    libRead: Object.keys(cleanLibRead_(d.libRead) || {}).length };
+}
+async function studentsAdmin(username, pin) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!s.isAdmin) return { ok: false, err: 'not_authorized' };
+  const staff = await getStaff_(), byId = {}; staff.forEach(function (r) { if (r && r.id) byId[r.id] = r; });
+  const cands = (await getCandidates_()).filter(function (c) { return c && c.type === 'student' && !c.archived; });
+  const rows = await Promise.all(cands.map(async function (c) {
+    const acct = c.staffId ? byId[c.staffId] : null;
+    return stuAdminRow_(c, acct, acct ? await getStu_(acct.id) : {}, byId);
+  }));
+  const schools = {};
+  rows.forEach(function (r) { const k = r.school || 'other'; (schools[k] = schools[k] || []).push(r); });
+  Object.keys(schools).forEach(function (k) { schools[k].sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); }); });
+  return { ok: true, schools: schools, order: PORTAL_SCHOOLS.concat(['other']) };
+}
+async function studentAdminView(username, pin, candId) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!s.isAdmin) return { ok: false, err: 'not_authorized' };
+  const c = (await getCandidates_()).find(function (x) { return x && x.id === candId && x.type === 'student' && !x.archived; });
+  if (!c) return { ok: false, err: 'not_found' };
+  const staff = await getStaff_(), byId = {}; staff.forEach(function (r) { if (r && r.id) byId[r.id] = r; });
+  const acct = c.staffId ? byId[c.staffId] : null, d = acct ? await getStu_(acct.id) : {};
+  return { ok: true, student: stuAdminRow_(c, acct, d, byId), boot: acct ? await stuBootOut_(acct, c, d) : null };
 }
 /* the invite a student opens in the portal: ?join=<token> */
 async function portalJoinInfo(token) {
@@ -10311,6 +10352,8 @@ const HANDLERS = {
   respondStudentMentor: function (a) { return respondStudentMentor(a[0], a[1], a[2], a[3]); },
   studentsList: function (a) { return studentsList(a[0], a[1]); },
   studentMakeProfile: function (a) { return studentMakeProfile(a[0], a[1], a[2], a[3]); },
+  studentsAdmin: function (a) { return studentsAdmin(a[0], a[1]); },
+  studentAdminView: function (a) { return studentAdminView(a[0], a[1], a[2]); },
   portalJoinInfo: function (a) { return portalJoinInfo(a[0]); },
   portalJoin: function (a) { return portalJoin(a[0], a[1]); },
   getHospitality: function (a) { return getHospitality(a[0], a[1]); },

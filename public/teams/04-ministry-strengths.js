@@ -1154,10 +1154,11 @@ function goalsCardHtml(wk){
             ? '<div class="wgTop"><input type="text" class="addGoalInput" id="editGoalText" maxlength="200" value="'+esc(g.text)+'" style="flex:1"></div>'
             : '<div class="wgTop"><span class="wgText">'+esc(g.text)+'</span>'+
               '<span class="wgPct" style="color:'+pctColor(gp)+'">'+gp+'% · '+esc(pctWord(gp))+'</span></div>')+
+          (S.student ? '' :   // students have no ministry KPIs
           '<label class="goalLink'+(g.metricKey?'':' unlinked')+'" style="display:flex;align-items:center;gap:4px">📊 '+
             '<select class="goalLinkSel" data-goallink="'+i+'" style="border:0;background:none;color:inherit;font:inherit;padding:0">'+
             okrMetricOptions(g.metricKey, g.metricKey ? 'Not linked to a KPI' : 'Link to a KPI')+
-            '</select></label>'+
+            '</select></label>')+
           (isNext ? '' : '<input type="range" class="gSlide" min="0" max="100" step="5" value="'+gp+'" data-goalpct="'+i+'"'+
             ' style="'+ringVars(gp)+'"'+
             ' aria-label="'+esc(t('Progress'))+': '+esc(g.text)+'">')+

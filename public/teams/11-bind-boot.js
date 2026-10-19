@@ -1069,6 +1069,8 @@ function bind(){
     }; });
     var sbk=document.getElementById('stuBack'); if(sbk) sbk.onclick=function(){ S.view='week'; render(); window.scrollTo(0,0); };
   }
+  /* an admin looking at a student's app: back to Admin, as yourself */
+  var spx=document.getElementById('stuPreviewExit'); if(spx) spx.onclick=function(){ gpTap(); stuPreviewExit_(); };
   /* student mode: choosing a mentor */
   var smc=document.getElementById('stuMentorChange'); if(smc) smc.onclick=function(){ S.stuMentorPick=true; render(); };
   var smx=document.getElementById('stuMentorCancel'); if(smx) smx.onclick=function(){ S.stuMentorPick=false; render(); };

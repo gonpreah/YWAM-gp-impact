@@ -2577,4 +2577,8 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - **Mentors are Leadership Development only** (`STU_LD_DEPT`), names and photos only. A request sits in
   `stuIndex`; the mentor sees it on their Mentorship page (🎓 Students) and accepts or declines
   (`respondStudentMentor`). 1-on-1 forms for students are not built yet.
+- **Admin → 🎓 Students** (admins only): every student profile by school (`studentsAdmin`), one student's
+  mentor, goals (last/this/next week), habits, strengths and Library (`studentAdminView`), and **See their
+  app**: their real student app, read only (`S.stuPreview` — `run()` sends nothing, Library marks are
+  theirs and in memory; Back to Admin reloads as yourself, back on their profile via `gp-stu-back`).
 - Tests: `tests/test-students.mjs` (server, the door and the access checks), `tests/test-student-app-ui.mjs`.

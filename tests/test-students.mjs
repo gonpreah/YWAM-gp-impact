@@ -29,6 +29,7 @@ const mk = o => Object.assign({ active: true, campus: 'siemreap', dept: 'Communi
 mem.staff = [
   mk({ id: 'hosp', name: 'Hana Host', username: 'hana', dept: 'Skills Training', ministry: 'Hospitality' }),
   mk({ id: 'plain', name: 'Pat Plain', username: 'pat' }),
+  mk({ id: 'adm', name: 'Ada Admin', username: 'ada', isAdmin: true }),
   mk({ id: 'ld1', name: 'Lina Leader', username: 'lina', dept: 'Leadership Development', ministry: 'GPDTS' }),
   mk({ id: 'ld2', name: 'Leo Leader', username: 'leo', dept: 'Leadership Development', ministry: 'DBS', campus: 'poipet' })
 ];
@@ -109,6 +110,23 @@ ok('Lina accepts: the student is hers', r.ok && r.students.map(x => x.name).join
 r = await call('studentCall', [...U, 'getMyBoot', []]);
 ok('… and the student sees Lina as their mentor', r.staff.mentorId === 'ld1' && r.staff.mentorStatus === 'approved');
 ok('staff data was never touched: no staff record changed for the student\'s doings', !mem.staff.some(s => s.mentorId) && !(mem.goals || []).length && !(mem.dailyLogs || []).length);
+
+console.log('=== Admin → Students: by school, each one, read only ===');
+r = await call('studentsAdmin', ['hana', '1234']);
+ok('Hospitality can make profiles but not open what students put in', r.ok === false && r.err === 'not_authorized');
+ok('… nor can a student', (await call('studentsAdmin', U)).ok === false && (await call('studentAdminView', [...U, mem.candidates[0].id])).ok === false);
+r = await call('studentsAdmin', ['ada', '1234']);
+const dts = (r.schools || {}).dts || [];
+const sok = dts.find(x => x.name === 'Sokha Student');
+ok('an admin sees the profiles by school', r.ok && sok && r.order[0] === 'dts', JSON.stringify(r).slice(0, 200));
+ok('… with how each is doing: joined, mentor, this week\'s goals', sok.linked && sok.mentor === 'Lina Leader' && sok.mentorStatus === 'approved' && sok.email === 'sokha@example.org');
+r = await call('studentAdminView', ['ada', '1234', sok.candId]);
+ok('opening one: their app as they see it — goals, habits, strengths, Library', r.ok && r.boot && r.boot.student && r.boot.logs.length === 1 && r.boot.profile.personality.type === 'INFP' && r.boot.libRead['atomic-habits'] && r.student.name === 'Sokha Student');
+ok('… LD-only mentors in it, like theirs', r.boot.roster.every(x => x.dept === 'Leadership Development'));
+r = await call('studentAdminView', ['ada', '1234', 'nope']);
+ok('a missing profile: not found', r.ok === false && r.err === 'not_found');
+const notJoined = (await call('studentsAdmin', ['ada', '1234'])).schools.dts.find(x => !x.linked);
+if (notJoined) { r = await call('studentAdminView', ['ada', '1234', notJoined.candId]); ok('one who hasn\'t joined: the profile, no app yet', r.ok && r.boot === null && !r.student.linked); }
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

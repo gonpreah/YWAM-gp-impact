@@ -527,8 +527,10 @@ function libLoad_(){
   sc.onerror=function(){ S.libLoading=false; S.libError=true; sc.remove(); if(S.view==='library') render(); };
   document.head.appendChild(sc);
 }
-function libStore_(key){ try { return JSON.parse(localStorage.getItem(key)||'{}')||{}; } catch(e){ return {}; } }
-function libSave_(key, v){ try { localStorage.setItem(key, JSON.stringify(v)); } catch(e){} }
+function libStore_(key){
+  if(S.stuPreview) return key===LIB_READ_KEY ? Object.assign({}, S.stuPreview.libRead) : {};   // an admin seeing a student's app: their reads, not yours
+  try { return JSON.parse(localStorage.getItem(key)||'{}')||{}; } catch(e){ return {}; } }
+function libSave_(key, v){ if(S.stuPreview) return; try { localStorage.setItem(key, JSON.stringify(v)); } catch(e){} }
 function libRead_(){ return libStore_(LIB_READ_KEY); }
 function libSetRead_(id, on){
   var r=libRead_(); if(on) r[id]=todayStr(); else delete r[id]; libSave_(LIB_READ_KEY, r);

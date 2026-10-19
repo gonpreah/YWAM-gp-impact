@@ -282,6 +282,11 @@ var STUDENT_FNS_C={ getMyBoot:1, saveGoals:1, saveDaily:1, saveMyHabits:1, saveM
 var STUDENT_VIEWS=['week','sched','library','ptest','ptype','gtest','gstr'];
 function gpStudentArgs_(fn, args){ args=args||[]; return [args[0], args[1], fn, args.slice(2)]; }
 function run(fn, args, onOk, onErr){
+  if(S.stuPreview){   // an admin looking at a student's app: nothing goes out, nothing is saved
+    if(/^(save|lib|studentSetMentor)/.test(fn)) showMsg(t('Just a preview — nothing is saved.'));
+    if(onOk) setTimeout(function(){ onOk({ ok:false, err:'preview' }); }, 0);
+    return;
+  }
   if(S.student && fn!=='studentCall'){
     if(STUDENT_FNS_C[fn]) return run('studentCall', gpStudentArgs_(fn, args), onOk, onErr);
     if(onOk) setTimeout(function(){ onOk({ ok:false, err:'student' }); }, 0);
@@ -610,6 +615,9 @@ function gpViewFromUrl_(){
   } catch(e){}
 }
 function gpResumeView_(){
+  /* back from looking at a student's app (Admin → Students): their profile again */
+  try { var sb=sessionStorage.getItem('gp-stu-back');
+    if(sb){ sessionStorage.removeItem('gp-stu-back'); S.view='admin'; S.adminSub='stuone'; S.adminStuId=sb; S.adminStuView=null; return; } } catch(e){}
   try { var rv=sessionStorage.getItem('gp-resume');
     if(rv){ sessionStorage.removeItem('gp-resume'); if(['week','base','team','health','library','ministry','mentor','goals','leave','admin'].indexOf(rv)>-1) S.view=rv; } } catch(e){}
 }
@@ -954,6 +962,7 @@ function render(){
   else m.innerHTML=profileHtml();
   if(S.offlineSince) m.insertAdjacentHTML('afterbegin', gpOfflineBannerHtml_());
   if(S.bootStale) m.insertAdjacentHTML('afterbegin', gpStaleBarHtml_());
+  if(S.stuPreview) m.insertAdjacentHTML('afterbegin', stuPreviewBarHtml_());
   /* Switching screens should open at the top of the new one, not wherever the
      old screen happened to be scrolled to — without this, tapping into Leave
      Request from partway down My Home lands on whatever the leave screen
@@ -1141,11 +1150,14 @@ function renderMenu(){
   IC.ywamgp='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.8 2.6 4 5.6 4 9s-1.2 6.4-4 9c-2.8-2.6-4-5.6-4-9s1.2-6.4 4-9Z"/></svg>';
   IC.boardlogout=IC.profile;
   IC.stuportal=IC.mycontract || IC.profile;
+  IC.stuexit=IC.admin || IC.stuportal;
   IC.students='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c2 1.5 4 2 6 2s4-.5 6-2v-5"/></svg>';
   IC.prayer='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-1.2 2.5-1.8 5-1.8 7.5L7 15.5V20h4l1-2.5"/><path d="M12 3c1.2 2.5 1.8 5 1.8 7.5l3.2 5V20h-4L12 17.5"/></svg>';
   IC.p360='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="4" r="1.6"/><circle cx="12" cy="20" r="1.6"/><circle cx="4.5" cy="8" r="1.6"/><circle cx="19.5" cy="8" r="1.6"/><circle cx="4.5" cy="16" r="1.6"/><circle cx="19.5" cy="16" r="1.6"/></svg>';
   IC.kmreview='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h8M8 3v2M5.5 5c.8 3.2 3 5.6 6 7"/><path d="M10.5 5c-.7 3.6-3 6.4-6 8"/><path d="M12.5 21l4-9 4 9M14 18h5"/></svg>';
-  var sections= S.student ? [
+  var sections= S.stuPreview ? [
+    { title:'', items:[it('library', t('Library')), it('stuexit', t('Back to Admin'))] }
+  ] : S.student ? [
     { title:'', items:[it('library', t('Library')), it('stuportal', t('My application (portal)')), it('boardlogout', t('Log out'))] }
   ] : S.board ? [
     { title:'', items:[it('ywamgp', t('YWAM GP')), it('p360', t('360 reviews')), it('library', t('Library')), it('boardlogout', t('Log out'))] }
@@ -1188,6 +1200,7 @@ function renderMenu(){
       else if(id==='kmreview'){ S.view='kmreview'; S.kmr=null; S.kmrErr=''; render(); window.scrollTo(0,0); }
       else if(id==='boardlogout'){ if(S.student) gpStudentLeave_(false); else boardLeave_(false); }
       else if(id==='stuportal'){ gpStudentLeave_(true); }
+      else if(id==='stuexit'){ stuPreviewExit_(); }
       else if(id==='students'){ S.view='students'; S.stuList=null; render(); window.scrollTo(0,0); }
       else if(id==='profile'){ S.view='profile'; render(); }
       else if(id==='admin'){ S.view='admin'; render(); }

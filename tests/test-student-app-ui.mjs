@@ -30,7 +30,8 @@ const mk = o => Object.assign({ active: true, campus: 'siemreap', dept: 'Communi
 mem.staff = [
   mk({ id: 'hosp', name: 'Hana Host', username: 'hana', email: 'h@e.com', dept: 'Skills Training', ministry: 'Hospitality' }),
   mk({ id: 'ld1', name: 'Lina Leader', username: 'lina', email: 'l@e.com', dept: 'Leadership Development', ministry: 'GPDTS' }),
-  mk({ id: 'cafe', name: 'Cafe Person', username: 'cafe', email: 'c@e.com' })
+  mk({ id: 'cafe', name: 'Cafe Person', username: 'cafe', email: 'c@e.com' }),
+  mk({ id: 'adm', name: 'Ada Admin', username: 'ada', email: 'a@e.com', isAdmin: true })
 ];
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer(async (req, res) => {
@@ -131,6 +132,7 @@ const STU = { user: joined.user, pin: joined.token };
   await page.fill('#newGoalText', 'Memorise Psalm 23'); await page.click('#addGoalBtn'); await page.waitForTimeout(700);
   const sid = mem.staff.find(s => s.email === 'sokha@example.org').id;
   ok('a weekly goal saves to the student\'s own place, not staff goals', (mem['stu:' + sid].goals || []).length === 1 && !(mem.goals || []).length && /Memorise Psalm 23/.test(await main(page)));
+  ok('… their goal has no ministry KPI link', !!(await page.$('.wgRow')) && !(await page.$('.goalLinkSel')));
   await page.selectOption('#stuMentorSel', 'ld1'); await page.click('#stuMentorAsk'); await page.waitForTimeout(700);
   ok('asking Lina to be their mentor: waiting for her', /Waiting for Lina to accept/.test(await page.$eval('#stuMentorCard', e => e.innerText)));
   await page.click('nav.bottom [data-tab="sched"]'); await page.waitForTimeout(700);
@@ -150,6 +152,39 @@ const STU = { user: joined.user, pin: joined.token };
   ok('Lina\'s Mentorship page shows the student asking', /Sokha Student, a student, asked you to be their mentor/.test(await main(page)));
   await page.click('[data-stuaccept]'); await page.waitForTimeout(600);
   ok('accepting makes Sokha her student', /Sokha Student/.test(await page.$eval('#stuMentorStaff', e => e.innerText)) && !(await page.$('[data-stuaccept]')));
+  await ctx.close();
+}
+/* ---------- an admin: Admin → Students, by school → Sokha → their app, read only ---------- */
+{
+  const { ctx, page } = await open('/teams.html', { fn: u => localStorage.setItem('gp-staff', JSON.stringify({ user: u, pin: '1234' })), arg: 'ada' });
+  await page.evaluate(() => { S.view = 'admin'; S.adminSub = 'home'; render(); }); await page.waitForTimeout(300);
+  ok('Admin has a 🎓 Students card', !!(await page.$('[data-adminsub="students"]')));
+  await page.click('[data-adminsub="students"]'); await page.waitForTimeout(800);
+  const txt = await main(page);
+  ok('… the profiles by school, with how each is doing', /DTS/.test(txt) && /Sokha Student/.test(txt) && /Mentor: Lina Leader/.test(txt) && /1 goals this week|goals this week/.test(txt), txt.slice(0, 300));
+  await page.click('[data-adminstu]'); await page.waitForTimeout(800);
+  const one = await main(page);
+  ok('one student: their mentor, weekly goals, habits, strengths and Library', /Sokha Student/.test(one) && /Lina Leader/.test(one) && /Memorise Psalm 23/.test(one) && /of the last 7 days/.test(one) && /Library/.test(one), one.slice(0, 300));
+  const before = JSON.stringify(mem['stu:' + mem.staff.find(s => s.email === 'sokha@example.org').id]);
+  const myLib = await page.evaluate(() => localStorage.getItem('gp-lib-read'));
+  await page.click('#adminStuPreview'); await page.waitForTimeout(600);
+  ok('See their app: their My Home, as they see it, under a read-only bar', await page.evaluate(() => S.student && !!S.stuPreview && S.view === 'week') && /Hi Sokha/.test(await main(page)) && /Memorise Psalm 23/.test(await main(page)) && !!(await page.$('.stuPreviewBar')) && !(await page.$('#bellBtn')));
+  ok('… the same bar as theirs: My Home, Schedules, Library', (await page.$$eval('nav.bottom [data-tab]', b => b.map(x => x.dataset.tab).join())) === 'week,sched,library');
+  await page.fill('#newGoalText', 'Admin typed this'); await page.click('#addGoalBtn'); await page.waitForTimeout(600);
+  ok('… nothing an admin does there is saved to the student', JSON.stringify(mem['stu:' + mem.staff.find(s => s.email === 'sokha@example.org').id]) === before);
+  await page.click('nav.bottom [data-tab="library"]'); await page.waitForTimeout(500);
+  ok('… and the admin\'s own Library marks are left alone', (await page.evaluate(() => localStorage.getItem('gp-lib-read'))) === myLib);
+  await page.click('#menuBtn'); await page.waitForTimeout(250);
+  ok('the menu in the preview: Library and Back to Admin', (await page.$$eval('[data-menu-item]', b => b.map(x => x.dataset.menuItem).join())) === 'library,stuexit');
+  await Promise.all([page.waitForNavigation({ timeout: 8000 }).catch(() => {}), page.click('[data-menu-item="stuexit"]')]);
+  await page.waitForTimeout(1500);
+  ok('Back to Admin: yourself again, on Sokha\'s profile', await page.evaluate(() => !S.student && !S.stuPreview && S.view === 'admin' && S.adminSub === 'stuone') && /Memorise Psalm 23/.test(await main(page)));
+  await ctx.close();
+}
+{
+  const { ctx, page } = await open('/teams.html', { fn: u => localStorage.setItem('gp-staff', JSON.stringify({ user: u, pin: '1234' })), arg: 'hana' });
+  await page.evaluate(() => { S.view = 'admin'; S.adminSub = 'students'; render(); }); await page.waitForTimeout(500);
+  ok('not an admin: no Admin → Students', !(await page.$('[data-adminstu]')));
   await ctx.close();
 }
 ok('staff data untouched by the student', !(mem.goals || []).length && !(mem.dailyLogs || []).length && !mem.staff.some(s => s.mentorId));
