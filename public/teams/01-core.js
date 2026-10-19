@@ -1342,7 +1342,7 @@ function whosDates_(g){ return g.permanent ? t('Staying long-term') : g.to ? gpT
 function fmtDateNice_(iso){ var d=new Date(String(iso).slice(0,10)+'T00:00:00'); return isNaN(d) ? String(iso||'') : d.toLocaleDateString(LANG==='km'?'km-KH':'en-GB', { day:'numeric', month:'short' }); }
 function whosHereHtml_(){
   var W=S.whosHere;
-  var h='<button class="linkbtn" id="whosBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('Base'))+'</button>'+
+  var h='<button class="linkbtn" id="whosBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(S.whosFrom==='week' ? t('My Home') : t('Base'))+'</button>'+
     '<h2 style="margin:4px 0 2px">🏠 '+esc(t('Who’s here'))+'</h2>';
   if(!W) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
   var G=W.groups||{}, nOf=function(k){ return (G[k]||[]).reduce(function(a,g){ return a+g.count; },0); };
@@ -1391,7 +1391,7 @@ function whosHereLoad_(force){
   S.whosLoading=true;
   run('getWhosHere',[S.auth.user,S.auth.pin,S.me.campus],function(d){
     S.whosLoading=false; S.whosFor=c; S.whosAt=Date.now();
-    if(d && d.ok){ S.whosHere=d; if(S.view==='base' || S.view==='whoshere') render(); }
+    if(d && d.ok){ S.whosHere=d; if(S.view==='base' || S.view==='whoshere' || S.view==='week') render(); }
   },function(){ S.whosLoading=false; S.whosFor=c; S.whosAt=Date.now(); });
 }
 /* team photos: one call per team, once */
