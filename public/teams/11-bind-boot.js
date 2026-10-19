@@ -1046,6 +1046,10 @@ function bindHome(){
 }
 
 function bind(){
+  /* Who's here: Base's "On campus now" loads the count; the page loads team photos */
+  if(S.view==='base' && !S.guest && !S.board && S.me) whosHereLoad_();
+  var gwh=document.getElementById('goWhosHere'); if(gwh) gwh.onclick=function(){ gpTap(); S.view='whoshere'; render(); window.scrollTo(0,0); whosHereLoad_(true); };
+  if(S.view==='whoshere'){ whosTeamPhotosLoad_(); var wb=document.getElementById('whosBack'); if(wb) wb.onclick=function(){ gpTap(); S.view='base'; render(); window.scrollTo(0,0); }; }
   /* a Leadership Development mentor answers a student */
   document.querySelectorAll('[data-stuaccept],[data-studecline]').forEach(function(b){ b.onclick=function(){
     var acc=b.hasAttribute('data-stuaccept'), id=b.getAttribute(acc?'data-stuaccept':'data-studecline'); b.disabled=true;
