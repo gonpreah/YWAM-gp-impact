@@ -91,7 +91,7 @@ let link = '';
 {
   const { ctx, page } = await open('uriah');
   await toGroups(page);
-  ok('Admin has Arrivals & departures', !!(await page.$('#grpLink')));
+  ok('Admin has Staff sign-up link: the link, and nothing about archiving', !!(await page.$('#grpLink')) && !(await page.$('#grpSearch')));
   await page.selectOption('#grpCampus', 'siemreap'); await page.waitForTimeout(150);
   await page.selectOption('#grpDept', 'Leadership Development'); await page.waitForTimeout(150);
   await page.selectOption('#grpMin', 'GPDTS'); await page.waitForTimeout(150);
@@ -99,7 +99,10 @@ let link = '';
   ok('the link carries where they are joining', /teams\.html\?reg=1&campus=siemreap&dept=Leadership%20Development&ministry=GPDTS$/.test(link), link);
   await page.screenshot({ path: OUT + '/groups-invite.png' });
 
-  // archive several
+  // archive several: its own Admin card now
+  await page.evaluate(() => { S.adminSub = 'home'; render(); }); await page.waitForTimeout(300);
+  await page.click('[data-adminsub="leaving"]'); await page.waitForTimeout(500);
+  ok('Archive several people is its own card', !!(await page.$('#grpSearch')) && !(await page.$('#grpLink')));
   await page.fill('#grpSearch', 'dts'); await page.waitForTimeout(300);
   const names = await page.$$eval('#grpList .grpRow b', bs => bs.map(b => b.textContent));
   ok('search finds them by ministry or role', names.join() === 'Anna DTS,Ben DTS', names.join());

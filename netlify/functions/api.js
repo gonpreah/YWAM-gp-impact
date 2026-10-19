@@ -8203,6 +8203,22 @@ async function studentsAdmin(username, pin) {
   Object.keys(schools).forEach(function (k) { schools[k].sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); }); });
   return { ok: true, schools: schools, order: PORTAL_SCHOOLS.concat(['other']) };
 }
+/* a school has finished: archive its student profiles in one go (their GP app closes;
+   the portal account stays, and HR → Candidates can bring a profile back) */
+async function studentsArchive(username, pin, candIds, reason) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!s.isAdmin) return { ok: false, err: 'not_authorized' };
+  const ids = {}; (Array.isArray(candIds) ? candIds : []).slice(0, 300).forEach(function (id) { if (typeof id === 'string') ids[id] = 1; });
+  const rows = await getCandidates_(), at = baseToday_();
+  let n = 0;
+  rows.forEach(function (c) {
+    if (!c || !ids[c.id] || c.type !== 'student' || c.archived) return;
+    c.archived = { at: at, reason: str_(reason, 300) || 'School finished', by: s.id }; c.updated = new Date().toISOString(); c.updatedBy = s.id; n++;
+  });
+  if (n) await writeJSON('candidates', rows);
+  return Object.assign({ archived: n }, await studentsAdmin(username, pin));
+}
 async function studentAdminView(username, pin, candId) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
@@ -10354,6 +10370,7 @@ const HANDLERS = {
   studentMakeProfile: function (a) { return studentMakeProfile(a[0], a[1], a[2], a[3]); },
   studentsAdmin: function (a) { return studentsAdmin(a[0], a[1]); },
   studentAdminView: function (a) { return studentAdminView(a[0], a[1], a[2]); },
+  studentsArchive: function (a) { return studentsArchive(a[0], a[1], a[2], a[3]); },
   portalJoinInfo: function (a) { return portalJoinInfo(a[0]); },
   portalJoin: function (a) { return portalJoin(a[0], a[1]); },
   getHospitality: function (a) { return getHospitality(a[0], a[1]); },

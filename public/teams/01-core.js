@@ -786,8 +786,14 @@ function studentsPageHtml_(){
   var L=S.stuList;
   var h='<button class="linkbtn" id="stuBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('My Home'))+'</button>'+
     '<h2 style="margin:4px 0 2px">🎓 '+esc(t('Students'))+'</h2><p class="sub">'+esc(t('The students staying with us. Make each a profile, then send them the invite: they open it, sign in with Google, and have their application in the portal and their own GP app — schedules, goals, habits, mentorship, strengths and the Library. Nothing they do touches staff data.'))+'</p>';
-  if(!L) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
-  if(!L.ok) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Could not load — try again.'))+'</p></div>';
+  return h+stuStayingHtml_(L, true);
+}
+/* who is staying with SR Hospitality as a student now: make profile, copy invite —
+   here and on Admin → 🎓 Students (withOthers: also the profiles not staying now) */
+function stuStayingHtml_(L, withOthers){
+  var h='';
+  if(!L) return '<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
+  if(!L.ok) return '<div class="card"><p class="sub" style="margin:0">'+esc(t('Could not load — try again.'))+'</p></div>';
   h+='<label class="f" for="stuSchool">'+esc(t('School for new profiles'))+'</label><select id="stuSchool"><option value="dts">DTS</option><option value="dbs">DBS</option><option value="bcs">BCS</option><option value="sms">SMS</option></select>';
   var row=function(name, p, sub){
     var r='<div class="stuRow"><div class="stuRowTxt"><b>'+esc(name)+'</b>'+(sub?'<span class="pmeta">'+esc(sub)+'</span>':'')+'</div>';
@@ -798,7 +804,7 @@ function studentsPageHtml_(){
   };
   h+='<h3>'+esc(t('Staying with us now'))+' <small>· '+L.staying.length+'</small></h3><div class="card">'+
     (L.staying.length ? L.staying.map(function(x){ return row(x.name, x.profile, x.permanent ? t('Staying long-term') : (x.to ? gpT('Until {date}',{date:x.to}) : '')); }).join('') : '<p class="sub" style="margin:0">'+esc(t('No students are booked with SR Hospitality tonight.'))+'</p>')+'</div>';
-  if(L.others.length) h+='<h3>'+esc(t('Other student profiles'))+' <small>· '+L.others.length+'</small></h3><div class="card">'+L.others.map(function(p){ return row(p.name, p, (p.school||'').toUpperCase()); }).join('')+'</div>';
+  if(withOthers && L.others.length) h+='<h3>'+esc(t('Other student profiles'))+' <small>· '+L.others.length+'</small></h3><div class="card">'+L.others.map(function(p){ return row(p.name, p, (p.school||'').toUpperCase()); }).join('')+'</div>';
   return h;
 }
 function gpStudentBoot_(stu){
