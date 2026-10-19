@@ -1347,6 +1347,7 @@ function miniDashboardHtml(){
       '<div class="heroTrend">'+esc(t('My Health'))+' <b class="heroFig">'+(score!==null?score.toFixed(1):'—')+'</b>/10 '+healthTrend+'</div><span class="heroGo" aria-hidden="true">›</span></button>'+
     '<button class="heroRow heroRowGo" id="goMentorship" data-gomentorship="1" aria-label="'+esc(t('Mentorship'))+'">'+gpRingHtml(mentorPct,'sm',t('Mentor'))+
       '<div class="heroTrend">'+esc(t('Mentor'))+' <b class="heroFig">'+(mentorId?esc(mentorName):esc(t('Not set')))+'</b></div><span class="heroGo" aria-hidden="true">›</span></button>'+
+    gptHomeRowHtml_()+
     '<div class="heroSub">'+
       '<div class="heroSubRow">'+
         '<span class="heroSubLabel">'+esc(t('PERSONAL DAYS OFF LEFT'))+'</span>'+
@@ -1433,6 +1434,7 @@ function notifItems_(){
         actions: '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-ooopen="'+esc(o.id)+'">'+esc(t('Open'))+'</button>' });
     }
   });
+  items=items.concat(gptNotifItems_());   // GP Tasks: given a task, asked for help, turned down
   (S.trips && S.trips.trips || []).forEach(function(r){
     var range=r.from+(r.to!==r.from?' → '+r.to:'');
     if(r.status==='approved'){

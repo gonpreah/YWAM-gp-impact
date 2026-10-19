@@ -1206,7 +1206,7 @@ function goalsCardHtml(wk){
   var items = (rec && rec.items && rec.items.length) ? rec.items : [];
   var written = items.filter(function(i){ return i && i.text; });
 
-  var h='<h3 id="sec-goals">🎯 '+esc(t('Weekly Goals'))+'</h3>';
+  var h='<h3 id="sec-goals" class="secWithBtn">🎯 '+esc(t('Weekly Goals'))+(S.student ? '' : '<button class="secBtn" id="goGpTasksGoals">✅ '+esc(t('GP Tasks'))+' ›</button>')+'</h3>';
 
   /* One card for the week being looked at, with a small Last week / This week /
      Next week switch under the goals (goalsWeekSwitchHtml_): last week to mark
