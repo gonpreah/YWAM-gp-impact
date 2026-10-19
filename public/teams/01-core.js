@@ -1297,12 +1297,15 @@ function whosHereHtml_(){
   return h;
 }
 function whosHereLoad_(force){
-  if(S.whosLoading || (!force && S.whosHere && S.whosHere.campus===S.me.campus && Date.now()-(S.whosAt||0)<5*60*1000)) return;
+  /* kept per the campus asked for (S.whosFor), not the campus answered: someone with no campus
+     set is answered for the default one, and comparing with that would ask — and re-render — forever */
+  var c=S.me.campus||'';
+  if(S.whosLoading || (!force && S.whosHere && S.whosFor===c && Date.now()-(S.whosAt||0)<5*60*1000)) return;
   S.whosLoading=true;
   run('getWhosHere',[S.auth.user,S.auth.pin,S.me.campus],function(d){
-    S.whosLoading=false;
-    if(d && d.ok){ S.whosHere=d; S.whosAt=Date.now(); if(S.view==='base' || S.view==='whoshere') render(); }
-  },function(){ S.whosLoading=false; });
+    S.whosLoading=false; S.whosFor=c; S.whosAt=Date.now();
+    if(d && d.ok){ S.whosHere=d; if(S.view==='base' || S.view==='whoshere') render(); }
+  },function(){ S.whosLoading=false; S.whosFor=c; S.whosAt=Date.now(); });
 }
 /* team photos: one call per team, once */
 function whosTeamPhotosLoad_(){
@@ -1347,7 +1350,7 @@ function baseHtml(){
   h+=gpStaffMixHtml(R.staffBreakdown(ids));
   /* Who's on campus right now — staff here plus everyone SR Hospitality has staying tonight */
   if(!S.guest && !S.board){
-    var W=S.whosHere && S.whosHere.campus===S.me.campus ? S.whosHere : null;
+    var W=S.whosHere && S.whosFor===(S.me.campus||'') ? S.whosHere : null;
     h+='<button class="heroRow" id="goWhosHere">'+gpRingHtml(W && (W.staffHere+W.staffAway) ? Math.round(W.staffHere/(W.staffHere+W.staffAway)*100) : 0, 'sm', t('On campus now'))+
        '<div class="heroTrend">🏠 '+esc(t('On campus now'))+' <b class="heroFig">'+(W ? W.count : '—')+'</b>'+
        '<span class="heroSubtext" style="display:block">'+esc(t('Tap to see who’s here'))+' ›</span></div></button>';

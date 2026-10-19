@@ -31,6 +31,7 @@ mem.staff = [
   mk({ id: 'me', name: 'Sreilea Chan', username: 'sreilea', email: 's@e.com' }),
   mk({ id: 'mt', name: 'Mealea Sok', username: 'mealea', email: 'm@e.com', dept: 'Campus Leadership', ministry: 'Community Service' }),
   mk({ id: 'd2', name: 'Dara Pen', username: 'dara', email: 'd@e.com' }),
+  mk({ id: 'nc', name: 'No Campus', username: 'nocampus', email: 'n@e.com', campus: '' }),
   mk({ id: 'pp', name: 'Poipet Person', username: 'pp', email: 'p@e.com', campus: 'poipet' }),
   mk({ id: 'ap', name: 'Applicant Example', username: 'ap@e.com', email: 'ap@e.com', kind: 'applicant', dept: '', ministry: '' })
 ];
@@ -121,6 +122,16 @@ const call = async (fn, args) => { const r = await api.default({ method: 'POST',
   const { ctx, page } = await open('sreilea', { small: true });
   await page.evaluate(() => { S.view = 'whoshere'; render(); whosHereLoad_(true); }); await page.waitForTimeout(900);
   ok('Who\'s here fits a 320px phone', await page.evaluate(() => document.documentElement.scrollWidth <= 321) && !!(await page.$('.whoTile')));
+  await ctx.close();
+}
+/* someone with no campus set is answered for the default campus — Base must not keep asking and redrawing */
+{
+  const { ctx, page } = await open('nocampus');
+  let asks = 0;
+  page.on('request', r => { if ((r.postData() || '').indexOf('getWhosHere') > -1) asks++; });
+  await page.click('#menuBtn'); await page.waitForTimeout(250); await page.click('[data-menu-item="base"]');
+  await page.waitForTimeout(2500);
+  ok('no campus set: Base asks once and settles (no redraw loop)', asks === 1 && !!(await page.$('#goWhosHere')), 'asked ' + asks + ' times');
   await ctx.close();
 }
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
