@@ -90,7 +90,7 @@ async function open(user, opts) {
 const tabs = (p) => p.$$eval('[data-lwtab]', (b) => b.filter((x) => x.closest('.lwSeg')).map((x) => x.getAttribute('data-lwtab')));
 const tabOn = (p) => p.$eval('.lwSeg .campusBtn.on', (b) => b.getAttribute('data-lwtab')).catch(() => '');
 const focus = (p) => p.$eval('.lwFocus', (e) => e.textContent).catch(() => '');
-const tiles = (p) => p.$$eval('.lbGlance .mmTileName', (e) => e.map((x) => x.textContent.replace(/^[^A-Za-z0-9\u1780-\u17FF]+/, '').trim()));
+const tiles = (p) => p.$$eval('.lbGlance .mmTile:not(.lbNav) .mmTileName', (e) => e.map((x) => x.textContent.replace(/^[^A-Za-z0-9\u1780-\u17FF]+/, '').trim()));
 const firstKinds = async (p) => { await p.click('[data-lwtab="week"]'); await p.waitForSelector('[data-lwkind]', { timeout: 10000 }); return p.$$eval('[data-lwkind]', (b) => b.slice(0, 3).map((x) => x.getAttribute('data-lwkind'))); };
 
 /* ---- International Campus Director ---- */
@@ -98,11 +98,18 @@ const firstKinds = async (p) => { await p.click('[data-lwtab="week"]'); await p.
   const { ctx, page } = await open('icd');
   ok('International Campus Director: opens on Overview', (await tabOn(page)) === 'base');
   ok('… “Vision, partners and new bases”', /Vision, partners and new bases/.test(await focus(page)));
-  ok('… Overview, My week, Board, Finances', (await tabs(page)).join() === 'base,week,board,money', (await tabs(page)).join());
+  ok('… Overview, My week, Board, Finances', (await tabs(page)).join() === 'base,okrs,week,board,money', (await tabs(page)).join());
   const tl = await tiles(page);
   ok('… partners to reach, base plants, money ahead, clear leaders', tl.length === 4 && /Partners to reach/.test(tl[0]) && /Base Plants in Planning/.test(tl[1]) && /Money ahead/.test(tl[2]) && /Clear leaders/.test(tl[3]), tl.join(' | '));
-  const nums = await page.$$eval('.lbGlance .mmTileNum', (e) => e.map((x) => x.textContent));
+  const nums = await page.$$eval('.lbGlance .mmTile:not(.lbNav) .mmTileNum', (e) => e.map((x) => x.textContent));
   ok('… counted from their own partners and plants', nums[0] === '2 / 2' && nums[1] === '1', nums.join(' | '));
+  ok('the dashboard leads with this quarter’s OKR progress and the board', !!(await page.$('.lbGlance #lbOkrTile')) && !!(await page.$('.lbGlance #lbBoardTile')));
+  ok('no Numbers / OKRs switch on top of a leadership row', !(await page.$('[data-mmtab]')));
+  await page.click('#lbOkrTile'); await page.waitForTimeout(400);
+  ok('tapping OKRs opens the OKRs tab — the OKRs page itself', (await tabOn(page)) === 'okrs' && /OKRs/.test(await page.$eval('#main', (e) => e.innerText)));
+  await page.click('[data-lwtab="board"]'); await page.waitForTimeout(400);
+  ok('the Board tab: Board, Tuesday, Notes — OKRs aren’t in it twice', (await page.$$eval('[data-leadtab]', (b) => b.map((x) => x.getAttribute('data-leadtab')).join())) === 'board,tues,notes');
+  await page.click('[data-lwtab="base"]'); await page.waitForTimeout(400);
   await page.screenshot({ path: OUT + '/1-international.png' });
   ok('… and partners first when logging', (await firstKinds(page)).join() === 'partner,church,base');
   // a tab chosen stays for the visit …
@@ -121,7 +128,7 @@ const firstKinds = async (p) => { await p.click('[data-lwtab="week"]'); await p.
   const { ctx, page } = await open('ncd');
   ok('National Campus Director: opens on Overview', (await tabOn(page)) === 'base');
   ok('… “The staff and the week’s rhythm”', /The staff and the week’s rhythm/.test(await focus(page)));
-  ok('… Overview, Board, My week, Finances', (await tabs(page)).join() === 'base,board,week,money', (await tabs(page)).join());
+  ok('… Overview, Board, My week, Finances', (await tabs(page)).join() === 'base,okrs,board,week,money', (await tabs(page)).join());
   const tl = await tiles(page);
   ok('… away this week, 1-on-1s, numbers in, Tuesday', tl.length === 4 && /Away this week/.test(tl[0]) && /1-on-1s this month/.test(tl[1]) && /Numbers in/.test(tl[2]) && /Tuesday/.test(tl[3]), tl.join(' | '));
   await page.screenshot({ path: OUT + '/2-national.png' });
@@ -134,7 +141,7 @@ const firstKinds = async (p) => { await p.click('[data-lwtab="week"]'); await p.
   const { ctx, page } = await open('chea');
   ok('Director of Community Service: opens on their department', (await tabOn(page)) === 'base' && /My department/.test(await page.$eval('.lwSeg .campusBtn.on', (b) => b.textContent)));
   ok('… “Your department: its ministries, leaders and numbers”', /Your department/.test(await focus(page)));
-  ok('… their department’s week at the top, no whole-base numbers', !(await page.$('.lbGlance')) && /Community Service this week/.test(await page.$eval('#leadBase', (e) => e.innerText)) && !/Youth Education this week/.test(await page.$eval('#leadBase', (e) => e.innerText)));
+  ok('… their department’s week at the top, no whole-base numbers (only the OKR and Board tiles)', (await tiles(page)).length === 0 && !!(await page.$('#lbOkrTile')) && /Community Service this week/.test(await page.$eval('#leadBase', (e) => e.innerText)) && !/Youth Education this week/.test(await page.$eval('#leadBase', (e) => e.innerText)));
   await page.screenshot({ path: OUT + '/3-department.png' });
   ok('… and department meetings first when logging', (await firstKinds(page)).join() === 'deptmeeting,oneonone,meeting');
   await ctx.close();
@@ -157,13 +164,13 @@ const firstKinds = async (p) => { await p.click('[data-lwtab="week"]'); await p.
   ok('picking the National Campus Director opens their board, with who holds it', /Viewing: National Campus Director · Nary Director/.test(you), you);
   const tl = await tiles(page);
   ok('… their numbers on top: away, 1-on-1s, numbers in, Tuesday', /Away this week/.test(tl[0]) && /1-on-1s this month/.test(tl[1]), tl.join(' | '));
-  ok('… and their tabs, without their own week', (await tabs(page)).join() === 'base,board,money');
+  ok('… and their tabs, without their own week', (await tabs(page)).join() === 'base,okrs,board,money');
   await page.screenshot({ path: OUT + '/5-viewing-national.png' });
   await page.click('[data-mmpick="Campus Leadership|Youth Education"]'); await page.waitForTimeout(1500);
   const lb = await page.$eval('#leadBase', (e) => e.innerText);
-  ok('picking a department’s Director opens that department', /Viewing: Director of Youth Education · Nobody yet/.test(await page.$eval('.orgYou', (e) => e.textContent)) && /Youth Education this week/.test(lb) && !/Community Service this week/.test(lb) && !(await page.$('.lbGlance')));
+  ok('picking a department’s Director opens that department', /Viewing: Director of Youth Education · Nobody yet/.test(await page.$eval('.orgYou', (e) => e.textContent)) && /Youth Education this week/.test(lb) && !/Community Service this week/.test(lb) && (await tiles(page)).length === 0);
   await page.click('[data-mmpick="Campus Leadership|@icd"]'); await page.waitForTimeout(1000);
-  ok('… and back to their own, with My week', /Your role: International Campus Director/.test(await page.$eval('.orgYou', (e) => e.textContent)) && (await tabs(page)).join() === 'base,week,board,money');
+  ok('… and back to their own, with My week', /Your role: International Campus Director/.test(await page.$eval('.orgYou', (e) => e.textContent)) && (await tabs(page)).join() === 'base,okrs,week,board,money');
   await ctx.close();
 }
 {

@@ -803,6 +803,15 @@ week strip / input: two tabs.
   phone they scroll across in their own row.
 - `test-lead-board.mjs` (server) and `test-lead-board-page.mjs` (browser) cover it.
 
+- **Tabs (Oct 2026, Uriah: "board shows twice, OKRs on top and in the tab")**: a leadership row with
+  its own tabs (yours, or another role's you can view) has **no Numbers / OKRs switch on top**; OKRs are
+  a tab beside the rest — `LW_ROLES[...].tabs` = Overview/My department, **OKRs** (`okrs` →
+  `okrTabHtml_`, the OKRs page itself), My week, Board, Finances. The Board tab keeps Board / Tuesday
+  / Notes (`leadSectionHtml_`; the OKR dashboard is no longer one of its tabs). Someone who sees the
+  leadership row without tabs (no ministry set) still gets the switch and `leadOkrDashHtml_`.
+- **The Overview is the dashboard**: its tiles lead with **🎯 Q OKRs %** (mean `objProgress` of
+  leadership's objectives this quarter, with a bar; opens the OKRs tab) and **📋 Board · open cards**
+  (opens the Board) — `.lbNav`, `#lbOkrTile`, `#lbBoardTile` — then the role's own tiles.
 ## Who's here (Oct 2026, Uriah)
 Base's hero has **🏠 On campus now · N** (`#goWhosHere`, loaded by `whosHereLoad_` when Base
 opens, kept 5 min) → the **Who's here** page (`S.view='whoshere'`, `whosHereHtml_`). Server:

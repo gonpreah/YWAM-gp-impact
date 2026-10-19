@@ -347,13 +347,14 @@ function leadOkrs_(){
 }
 function leadNextMonday_(){ var d=new Date(); d.setHours(12,0,0,0); var add=(8-d.getDay())%7; d.setDate(d.getDate()+add); return calIso_(d); }
 function leadSectionHtml_(){
-  var tab=S.leadTab==='board' || S.leadTab==='notes' || S.leadTab==='tues' ? S.leadTab : 'okrs';
+  /* OKRs are their own tab now (beside My department, Board, My week, Finances) — the board
+     keeps the meeting board, Tuesday and the notes */
+  var tab=S.leadTab==='notes' || S.leadTab==='tues' ? S.leadTab : 'board';
   var h='<div class="leadFilters leadTabs" role="tablist">'+
-    '<button class="leadSeg'+(tab==='okrs'?' on':'')+'" role="tab" data-leadtab="okrs" title="'+esc(t('Leadership OKRs'))+'">🎯 '+esc(t('OKRs'))+'</button>'+
     '<button class="leadSeg'+(tab==='board'?' on':'')+'" role="tab" data-leadtab="board" title="'+esc(t('Monday meetings'))+'">🗂️ '+esc(t('Board'))+'</button>'+
     '<button class="leadSeg'+(tab==='tues'?' on':'')+'" role="tab" data-leadtab="tues" title="'+esc(t('Tuesday morning meeting'))+'">🎤 '+esc(t('Tuesday'))+'</button>'+
     '<button class="leadSeg'+(tab==='notes'?' on':'')+'" role="tab" data-leadtab="notes" title="'+esc(t('Meeting notes'))+'">📝 '+esc(t('Notes'))+'</button></div>';
-  return h+(tab==='board' ? leadBoardHtml_() : tab==='notes' ? leadNotesHtml_() : tab==='tues' ? leadTuesHtml_() : leadOkrDashHtml_());
+  return h+(tab==='notes' ? leadNotesHtml_() : tab==='tues' ? leadTuesHtml_() : leadBoardHtml_());
 }
 function leadCardsFor_(okrId){ return ((S.lead && S.lead.cards) || []).filter(function(c){ return c.okrId===okrId; }); }
 function leadOkrDashHtml_(){
@@ -648,7 +649,7 @@ function leadDrag_(onTap, onDrop){
 }
 function bindLead_(){
   document.querySelectorAll('[data-leadtab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.leadTab=b.getAttribute('data-leadtab'); render(); }; });
-  document.querySelectorAll('#leadGoOkr').forEach(function(b){ b.onclick=function(){ gpTap(); S.mmTab='okr'; render(); }; });
+  document.querySelectorAll('#leadGoOkr').forEach(function(b){ b.onclick=function(){ gpTap(); S.mmTab='okr'; S.lwTab='okrs'; lwTabKeep_('okrs'); render(); window.scrollTo(0,0); }; });
   document.querySelectorAll('[data-leadobjcards]').forEach(function(b){ b.onclick=function(){ gpTap(); S.leadTab='board'; S.leadFilter='all'; render(); }; });
   if((document.getElementById('leadBoard') || document.getElementById('leadOkrs') || document.getElementById('leadNotes') || document.getElementById('leadTues') || document.getElementById('leadBase')) && !S.lead && !S.leadLoading && !S.leadErr){
     S.leadLoading=true;
