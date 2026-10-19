@@ -800,6 +800,18 @@ week strip / input: two tabs.
   phone they scroll across in their own row.
 - `test-lead-board.mjs` (server) and `test-lead-board-page.mjs` (browser) cover it.
 
+## Who's here (Oct 2026, Uriah)
+Base's hero has **🏠 On campus now · N** (`#goWhosHere`, loaded by `whosHereLoad_` when Base
+opens, kept 5 min) → the **Who's here** page (`S.view='whoshere'`, `whosHereHtml_`). Server:
+`getWhosHere(user, pin, campus)` (staff only — not applicants, not guests): the campus's active
+staff as ids, each `away:{type,to}` when an approved/noted trip or leave covers today (the page
+dims them: "Off campus right now · On break / Serving off campus / Away"); and from
+`hosp:<campus>` the bookings covering tonight (`from <= today < to`, or permanent) by kind —
+teams (people from the portal: `teamPhotoPeople_` — leader, co-leaders, members), students,
+volunteers, guests, speakers (names from `people` / `bedNames`, else the booking's name ×count).
+`count` = staff here + everyone booked. Team photos load per team (`whosHereTeamPhotos`).
+tests/test-whos-here-ui.mjs.
+
 ## The bottom bar (Oct 2026)
 My Home · **My Ministry** · Team · Health · **Library** (`data-tab`; My Ministry opens on its
 Numbers view, Library tapped while reading goes back to the shelves). **Base is in the ☰ menu**,

@@ -124,6 +124,7 @@ const BROWSER = [
   'test-km-review-ui.mjs',  // Khmer review: reviewers only, reads right / fix, a fix shows for everyone, the download builds into REVIEWED_KM
   'test-goals-page.mjs',   // Goals & Tasks: annual SMART goals with quarterly and monthly steps, and the task list
   'test-habit-schedule.mjs', // habits with a schedule (which days), and the streak that follows it
+  'test-whos-here-ui.mjs',    // Base's On campus now and Who's here: staff (away dimmed), teams with portal people, students, guests
   'test-home-layout-ui.mjs',  // My Home: sections in order, said once; Updates capped; annual goals folded; tiles; 320px Khmer
   'test-team-personality-ui.mjs',  // Team → Personalities: the team's mix from shared types only, by campus / department / ministry
   'test-weekly-health-home-ui.mjs',  // My Home health is the weekly check-in only; no daily inputs; habits stay
