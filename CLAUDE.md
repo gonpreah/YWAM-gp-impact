@@ -629,9 +629,10 @@ quietest bucket named), Requests, Calendar, Bookings, Rooms.
 
 ## The hamburger menu, by role
 `renderMenu` draws sections, and leaves out a section with nothing in it:
-- everyone: **Base** (first — it left the bottom bar, Oct 2026), **Leave Request**, My contract,
-  Profile & settings (My Ministry and the Library are in the bottom bar, not here; a guest's
-  menu keeps Library / Create my profile / Log in);
+- everyone: **Base** (first — it left the bottom bar, Oct 2026), YWAM GP, Prayer, 360 reviews,
+  **Leave Request**, **Library** (moved here from the bottom bar, Oct 2026; Profile & settings —
+  with My contract inside it, `#profMyContract` — took its place in the bar); a guest's menu
+  keeps Library / Create my profile / Log in;
 - **Operations**: Weekly schedules (everyone), SR Hospitality (`canHospClient_`: the Hospitality
   ministry — members, leaders, the Skills Training overseer — and admins);
 - **Applications**: YWAM GP Portal (admins, portal staff / portal admins, the Outreach Teams
@@ -803,8 +804,10 @@ week strip / input: two tabs.
 - `test-lead-board.mjs` (server) and `test-lead-board-page.mjs` (browser) cover it.
 
 ## The bottom bar (Oct 2026)
-My Home · **My Ministry** · Team · Health · **Library** (`data-tab`; My Ministry opens on its
-Numbers view, Library tapped while reading goes back to the shelves). **Base is in the ☰ menu**,
+My Home · **My Ministry** · Team · Health · **Profile** (`data-tab`; My Ministry opens on its
+Numbers view; Profile is Profile & settings, which holds **My contract** — its ← goes back to
+Profile). **Base and the Library are in the ☰ menu** (Uriah, Oct 2026); My Home's card has a
+plain **💚 Go to My Health** button (`#goMyHealth`) under its rows.
 and its key figures sit at the foot of My Home's card. A guest's bar is Look around · Base ·
 Team · Health · Library. Five tabs stay on one line down to 320px; where the full Khmer is
 too long for a tab, `navLabel_` uses a short one kept as 'Tab: <English>' in km.js

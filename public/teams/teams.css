@@ -2068,3 +2068,9 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .p3RevItem { padding:8px 0; border-bottom:1px solid var(--line); } .p3RevItem:last-of-type { border-bottom:0; }
 .p3RevItem b { display:block; font-size:14px; margin-bottom:6px; } .p3RevItem input { margin-top:8px; } .p3RevItem small { display:block; font-size:13px; }
 .p3ShareList { max-height:260px; overflow:auto; }
+
+/* Profile & settings: My contract lives here (Oct 2026) */
+.profMyc { display:flex; align-items:center; gap:12px; width:100%; text-align:left; font:inherit; color:var(--ink); cursor:pointer; }
+.profMycIc { font-size:24px; } .profMycTxt { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; } .profMycGo { color:var(--muted); font-size:20px; }
+/* My Home: a plain way to My Health */
+.heroHealthBtn { display:block; width:100%; margin:10px 0 2px; padding:11px 14px; border-radius:12px; border:1.5px solid var(--border2); background:var(--surface); color:var(--ink); font:inherit; font-weight:700; font-size:15px; cursor:pointer; text-align:center; }

@@ -491,6 +491,7 @@ function bindAway(){
   if(S.view==='mycontract') bindMyContract_();
   bindReqRows_();
   ['libHomeTile','personBooks','profBooks'].forEach(function(id){ var b=document.getElementById(id); if(b) b.onclick=function(){ gpTap(); libOpen_(); }; });
+  var pmc=document.getElementById('profMyContract'); if(pmc) pmc.onclick=function(){ gpTap(); openMyContract_(); };
   if(S.view==='admin' && S.adminSub==='groups') bindAdminGroups_();
   if(S.view==='admin' && S.adminSub==='board') bindAdminBoard_();
   if(S.view==='admin' && S.adminSub==='reminders') bindAdminReminders_();

@@ -1270,7 +1270,7 @@ function hrSendFormHtml_(p){
    — each signed here (or already in the portal) with its PDF. */
 function openMyContract_(){ S.view='mycontract'; S.myc=null; S.hrStartEdit=null; render(); window.scrollTo(0,0); }
 function myContractHtml(){
-  var back='<button class="linkbtn" id="mycBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('My Home'))+'</button>';
+  var back='<button class="linkbtn" id="mycBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('Profile & settings'))+'</button>';
   var d=S.myc;
   if(!d) return back+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
   if(!d.ok) return back+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Could not load — try again.'))+'</p></div>';
@@ -1302,7 +1302,7 @@ function myContractHtml(){
   return h+'</div>';
 }
 function bindMyContract_(){
-  var bk=document.getElementById('mycBack'); if(bk) bk.onclick=function(){ gpTap(); S.view='week'; render(); window.scrollTo(0,0); };
+  var bk=document.getElementById('mycBack'); if(bk) bk.onclick=function(){ gpTap(); S.view='profile'; render(); window.scrollTo(0,0); };
   if(!S.myc){
     if(S.mycLoading) return; S.mycLoading=true;
     run('myContract',[S.auth.user,S.auth.pin],function(d){ S.mycLoading=false; S.myc=d||{ ok:false }; if(d && d.required) S.required=d.required; render(); }, function(){ S.mycLoading=false; S.myc={ ok:false }; render(); });

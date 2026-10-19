@@ -842,11 +842,13 @@ function render(){
     health: NAV_SVG_OPEN+'<path d="M12 20.5s-7.5-4.6-9.8-9.6C.6 7.3 2.4 4 5.7 4c2 0 3.5 1.1 4.3 2.5C10.8 5.1 12.3 4 14.3 4c3.3 0 5.1 3.3 3.5 6.9C15.5 15.9 12 20.5 12 20.5Z"/></svg>',
     ywamgp: NAV_SVG_OPEN+'<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.8 2.6 4 5.6 4 9s-1.2 6.4-4 9c-2.8-2.6-4-5.6-4-9s1.2-6.4 4-9Z"/></svg>',
     ministry: NAV_SVG_OPEN+'<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M21 20H3"/></svg>',
-    library: NAV_SVG_OPEN+'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>'
+    library: NAV_SVG_OPEN+'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>',
+    profile: NAV_SVG_OPEN+'<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6.5 8-6.5s7.2 2.5 8 6.5"/></svg>'
   };
-  /* Oct 2026 (Uriah): My Ministry takes Base's place and the Library joins the
-     bar; Base moves to the menu, and its key numbers sit on My Home's card. */
-  var tabs=[['week','My Home'],['ministry','My Ministry'],['team','Team'+(reqN?' ('+reqN+')':'')],['health','Health'],['library','Library']];
+  /* Oct 2026 (Uriah): My Ministry takes Base's place; Base moves to the menu, and its
+     key numbers sit on My Home's card. Later in Oct: Profile (with My contract inside)
+     takes the Library's place in the bar, and the Library moves to the ☰ menu. */
+  var tabs=[['week','My Home'],['ministry','My Ministry'],['team','Team'+(reqN?' ('+reqN+')':'')],['health','Health'],['profile','Profile']];
   if(S.board) tabs=[['ywamgp','YWAM GP'],['base','Campuses'],['report','Report'],['library','Library']];
   else if(S.guest) tabs=[['week','Look around'],['base','Base'],['team','Team'],['health','Health'],['library','Library']];
   nav.classList.remove('hidden');
@@ -1086,7 +1088,7 @@ function renderMenu(){
   ] : S.guest ? [
     { title:'', items:[it('library', t('Library')), it('guestreg', t('Create my profile')), it('guestlogin', t('Log in'))] }
   ] : [
-    { title:'', items:[it('base', t('Base')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer')), it('p360', t('360 reviews')), it('leave', t('Leave Request')), it('mycontract', t('My contract')), it('profile', t('Profile & settings'))] },
+    { title:'', items:[it('base', t('Base')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer')), it('p360', t('360 reviews')), it('leave', t('Leave Request')), it('library', t('Library'))] },
     { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : []) },
     { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal'))] : [] },
     { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : []) },
