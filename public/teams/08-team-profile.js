@@ -371,7 +371,7 @@ function personHtml(){
    something waiting. */
 function mentorEntryHtml(){
   var waiting=mentorWaitingN_();
-  if(!(S.mentees||[]).length && !S.me.mentorId && !waiting) return '';
+  if(!(S.mentees||[]).length && !S.me.mentorId && !waiting && !(S.stuMentor && S.stuMentor.students.length)) return '';
   return '<button class="btn'+(waiting?'':' ghost')+'" id="goMentor">🤝 '+esc(t('Mentorship'))+(waiting ? ' · '+esc(waiting===1 ? t('1 waiting') : gpT('{n} waiting',{n:waiting})) : '')+'</button>';
 }
 
@@ -616,6 +616,19 @@ function mentorHtml(){
   var coming=ooComingHtml_();
   if(coming) h+='<div class="card" id="ooComing">'+coming+'</div>';
 
+  /* students who chose them (Leadership Development, Oct 2026): accept or decline; then their names */
+  var SM=S.stuMentor;
+  if(SM && (SM.requests.length || SM.students.length)){
+    h+='<h3>🎓 '+esc(t('Students'))+' <small>· '+SM.students.length+'</small></h3><div class="card" id="stuMentorStaff">';
+    SM.requests.forEach(function(x){
+      h+='<div class="row"><span class="rowName">'+esc(gpT('{name}, a student, asked you to be their mentor',{name:x.name}))+'</span>'+
+        '<span class="chips" style="margin:0"><button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-stuaccept="'+esc(x.id)+'">'+esc(t('Accept'))+'</button>'+
+        '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px;color:var(--faint)" data-studecline="'+esc(x.id)+'">'+esc(t('Decline'))+'</button></span></div>';
+    });
+    SM.students.forEach(function(x){ h+='<div class="mentorBlock" style="padding:6px 0">'+avatarHtml({name:x.name},'sm')+'<div style="flex:1"><div class="mentorName">'+esc(x.name)+'</div><div class="mentorMeta">'+esc(t('Student'))+'</div></div></div>'; });
+    h+='</div>';
+  }
+
   /* the people you mentor */
   h+='<h3>'+esc(t('People you mentor'))+' <small>· '+(S.mentees||[]).length+'</small></h3>';
   if((S.mentees||[]).length){
@@ -683,7 +696,10 @@ function profileHtml(){
   var opts=S.roster.filter(function(x){return x.id!==S.me.id;}).map(function(x){
     return '<option value="'+esc(x.id)+'"'+(S.me.mentorId===x.id?' selected':'')+'>'+esc(x.name)+' · '+esc(x.dept)+'</option>';
   }).join('');
-  var h='<h2>My profile</h2>';
+  var h='<h2>'+esc(t('Profile & settings'))+'</h2>';
+  /* My contract lives here now (Oct 2026, Uriah) — the contract, start dates and the papers to sign */
+  h+='<button class="card profMyc" id="profMyContract"><span class="profMycIc">📄</span><span class="profMycTxt"><b>'+esc(t('My contract'))+'</b>'+
+    '<span class="pmeta">'+esc(t('Your contract, when you started, and the papers every staff member signs'))+'</span></span><span class="profMycGo">›</span></button>';
   h+='<div class="card"><div class="pcard">'+avatarHtml(S.me,'lg')+
      '<div><button class="btn ghost" id="photoBtn" style="width:auto;margin:0;padding:9px 14px">'+(S.me.photo?'Change photo':'Add photo')+'</button>'+
      '<input type="file" accept="image/*" id="photoInput" style="display:none"></div></div>'+

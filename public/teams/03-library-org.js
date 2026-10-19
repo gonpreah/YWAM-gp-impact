@@ -74,8 +74,8 @@ function aboutMeHtml_(){
       : homeTile_('gsStart', '💪', t('Strengths'), esc(t('Find your top 5 strengths')));
   }
   var ss=S.supSum;
-  tiles += homeTile_('supTile', '💰', t('Support raising'), esc(ss && ss.goal ? gpT('${n} of ${goal} a month',{n:fmt(ss.pledged), goal:fmt(ss.goal)}) : t('Your partners and monthly goal')));
-  tiles += p3TileHtml_();
+  if(!S.student) tiles += homeTile_('supTile', '💰', t('Support raising'), esc(ss && ss.goal ? gpT('${n} of ${goal} a month',{n:fmt(ss.pledged), goal:fmt(ss.goal)}) : t('Your partners and monthly goal')));
+  if(!S.student) tiles += p3TileHtml_();
   var nb=libBooksRead_();
   tiles += homeTile_('libHomeTile', '📚', t('Library'), esc(nb ? gpT('{n} books read',{n:nb}) : t('Ten-minute reads')));
   return '<h3 id="sec-ptype">🧭 '+esc(t('About me'))+'</h3><div class="homeTiles" id="sec-strengths">'+tiles+'</div>';
@@ -527,8 +527,10 @@ function libLoad_(){
   sc.onerror=function(){ S.libLoading=false; S.libError=true; sc.remove(); if(S.view==='library') render(); };
   document.head.appendChild(sc);
 }
-function libStore_(key){ try { return JSON.parse(localStorage.getItem(key)||'{}')||{}; } catch(e){ return {}; } }
-function libSave_(key, v){ try { localStorage.setItem(key, JSON.stringify(v)); } catch(e){} }
+function libStore_(key){
+  if(S.stuPreview) return key===LIB_READ_KEY ? Object.assign({}, S.stuPreview.libRead) : {};   // an admin seeing a student's app: their reads, not yours
+  try { return JSON.parse(localStorage.getItem(key)||'{}')||{}; } catch(e){ return {}; } }
+function libSave_(key, v){ if(S.stuPreview) return; try { localStorage.setItem(key, JSON.stringify(v)); } catch(e){} }
 function libRead_(){ return libStore_(LIB_READ_KEY); }
 function libSetRead_(id, on){
   var r=libRead_(); if(on) r[id]=todayStr(); else delete r[id]; libSave_(LIB_READ_KEY, r);

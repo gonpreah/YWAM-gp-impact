@@ -644,9 +644,11 @@ var P = { aview:'status', meet:null, teamEdit:null, menuOpen:false, access:null,
   if(qs.sign){ P.view='sign'; P.sign={ token:String(qs.sign), data:null, who:null, under18:null, idx:0, form:{}, pads:{}, done:false }; }
   if(qs.open) P.openCand=String(qs.open);   // portal.html?open=<candidateId> — the GP app's Teams Database links here
   /* portal.html?stay=<campus>: a guest or speaker asks for a room — no account (SR Hospitality sends the link) */
+  /* portal.html?join=<token>: a student staying with us opens their invite and signs up with Google */
+  if(qs.join){ P.view='join'; P.join={ token:String(qs.join).replace(/[^a-f0-9]/g,''), info:null }; run('portalJoinInfo', [P.join.token], function(d){ P.join.info=d||{ ok:false }; render(); }, function(){ P.join.info={ ok:false, err:'net' }; render(); }); }
   if(qs.stay && CAMPUS_SCHOOLS[qs.stay]){ P.view='stay'; P.stay={ campus:String(qs.stay), f:{ category:'guest' }, busy:false, done:false, miss:{} }; }
   var saved=null; try { saved=JSON.parse(lsGet('gp-portal')||'null'); } catch(e){}
-  if(saved && saved.user && saved.pin && !P.sign && !P.stay){ P.auth=saved; P.view='booting'; boot_(); }
+  if(saved && saved.user && saved.pin && !P.sign && !P.stay && !P.join){ P.auth=saved; P.view='booting'; boot_(); }
 })();
 /* Is Google sign-in on? (GP_GOOGLE_CLIENT_ID on the server.) Asked once; the
    sign-in redraws when the answer lands. */
@@ -720,7 +722,7 @@ function render(){
   document.body.classList.toggle('wideStaff', !!(staffView && v==='crm'));   // the list and a record side by side want the room
   try { m.innerHTML = (staffView ? staffNavHtml_(v) : applicantTabs ? applicantNavHtml_() : '') + (v==='booting' ? '<p class="sub" style="text-align:center;padding:40px 0">'+esc(t('Loading…'))+'</p>'
     : v==='register' ? registerHtml_() : v==='choose' ? chooseHtml_() : v==='me' ? meTabHtml_() : v==='crm' ? crmHtml_() : v==='form' ? formHtml_() : v==='forms' ? formsHtml_() : v==='resources' ? resourcesAdminHtml_() : v==='team' ? teamAdminHtml_() : v==='access' ? accessHtml_() : v==='accounts' ? accountsHtml_() : v==='preview' ? previewHtml_()
-    : v==='noaccess' ? noAccessHtml_() : v==='ref' ? refHtml_() : v==='stay' ? stayHtml_() : v==='sign' ? signHtml_() : v==='legal' ? legalAdminHtml_() : v==='visa' ? visaAdminHtml_() : loginHtml_())
+    : v==='noaccess' ? noAccessHtml_() : v==='ref' ? refHtml_() : v==='stay' ? stayHtml_() : v==='join' ? joinHtml_() : v==='sign' ? signHtml_() : v==='legal' ? legalAdminHtml_() : v==='visa' ? visaAdminHtml_() : loginHtml_())
     + (P.guideOpen && P.boot && typeof outreachGuideHtml==='function' ? guideOverlayHtml_() : '')
     + (staffView && P.docGallery ? docGalleryHtml_() : '');
   document.body.classList.toggle('guideOn', !!(P.guideOpen && P.boot));
@@ -1284,6 +1286,7 @@ function googleGo_(){
 function onGoogleCred_(resp){
   var tok=resp && (resp.access_token || resp.credential); P.gBusy=false; if(!tok){ render(); return; }
   P.busy=true; render();
+  if(P.view==='join'){ joinWithGoogle_(tok); return; }
   run('portalLoginGoogle', [tok], function(d){
     P.busy=false;
     if(d && d.ok){ P.auth={ user:d.user, pin:d.token }; lsSet('gp-portal', JSON.stringify(P.auth)); P.boot=d; P.answers=(d.application && d.application.answers)||{}; P.gtoken=''; P.view='me'; render(); return; }
@@ -1295,6 +1298,37 @@ function onGoogleCred_(resp){
     showMsg(d && d.err==='staff' ? t('That is a staff email — staff sign in with their username and PIN.') : t('Google sign-in didn’t work — try again.'));
     render();
   });
+}
+/* ---- a student's invite: ?join=<token> (Oct 2026) ----
+   Staff made them a profile from SR Hospitality and sent this link; signing in
+   with Google makes their account, linked to that profile, and opens the portal
+   — with its "Go to GP app" button. */
+function joinHtml_(){
+  var J=P.join||{}, I=J.info;
+  var h='<div class="center"><div class="gateTitle"><h2>🎓 '+esc(t('Welcome to YWAM GP'))+'</h2></div>';
+  if(!I) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div></div>';
+  if(!I.ok) return h+'<div class="card"><p class="sub" style="margin:0 0 10px">'+esc(I.err==='used' ? t('This invite has been used already — sign in with Google to open your portal.') : t('This invite link doesn’t work — ask YWAM Siem Reap for a new one.'))+'</p>'+
+    '<a class="btn small" href="portal.html">'+esc(t('Go to sign in'))+'</a></div></div>';
+  h+='<div class="card"><h3 style="margin-top:0">'+esc(gpT('Hi {name}!',{name:String(I.name||'').split(' ')[0]}))+'</h3>'+
+    '<p class="sub">'+esc(gpT('{campus} made you a profile as a student staying with us. Sign in with Google to see your application and open the GP app — your weekly schedules, goals, habits, mentorship, strengths and the Library.',{campus:campusName_(I.campus)}))+'</p>';
+  h+=(P.authCfg && P.authCfg.google) ? googleBtnHtml_() : '<p class="hint">'+esc(t('Loading…'))+'</p>';
+  return h+'</div></div>';
+}
+function joinWithGoogle_(tok){
+  run('portalJoin', [P.join.token, tok], function(d){
+    P.busy=false;
+    if(d && d.ok){ P.auth={ user:d.user, pin:d.token }; lsSet('gp-portal', JSON.stringify(P.auth)); P.boot=d; P.answers=(d.application && d.application.answers)||{}; P.join=null; P.view='me';
+      try { history.replaceState(null, '', 'portal.html'); } catch(e){}
+      showMsg(t('Welcome! Your account is ready.')); render(); return; }
+    showMsg(d && d.err==='email_taken' ? t('That Google account already has a portal account — sign in with it instead.') : d && d.err==='used' ? t('This invite has been used already.') : t('Google sign-in didn’t work — try again.'));
+    render();
+  }, function(){ P.busy=false; render(); });
+}
+/* a student's portal has a way into the GP app — the real app, in its student mode */
+function gpAppBtnHtml_(app){
+  if(!app || app.type!=='student' || app.status==='closed') return '';
+  return '<button type="button" class="btn gpAppBtn" id="goGpApp" style="margin:12px 0 0">📱 '+esc(t('Go to GP app'))+'</button>'+
+    '<p class="hint" style="margin:6px 0 0">'+esc(t('Your weekly schedules, goals, habits, mentorship, strengths and the Library.'))+'</p>';
 }
 function registerHtml_(){
   var a=applyByKey_(P.apply), r=P.reg;
@@ -1740,7 +1774,7 @@ function meHtml_(){
   h+='<div class="card hero"><div class="eyebrow">'+esc(t('Your application'))+'</div>'+
     '<h1 style="font-size:26px">'+esc(me.name)+'</h1><p class="sub" style="margin:2px 0 12px">'+esc(t('Applying for'))+': <b style="color:var(--ink)">'+esc(applyLabel_(app.type, app.school))+'</b>'+(app.campus?' · '+esc(campusName_(app.campus)):'')+'</p>'+
     '<span class="pill big '+esc(app.status)+'" id="statusPill">'+esc(t(STATUS_LABEL[app.status]||app.status))+'</span>'+
-    '<p class="sub" style="margin:12px 0 0">'+esc(gpT(statusNote_(app), {app:appName, campus:campusName_(app.campus||DEFAULT_CAMPUS)}))+'</p>'+
+    '<p class="sub" style="margin:12px 0 0">'+esc(gpT(statusNote_(app), {app:appName, campus:campusName_(app.campus||DEFAULT_CAMPUS)}))+'</p>'+gpAppBtnHtml_(app)+
     (!app.submittedAt && app.status!=='closed' ? '<div class="banner" id="applyNext" style="margin:12px 0 0"><b>'+esc(t('Next: send in your application'))+'</b><br>'+esc(t('Your account is made, but we only see your application once you submit it.'))+
       '<button class="btn small" id="openFormTop" style="margin-top:8px">'+esc(t('Fill out my application'))+'</button></div>' : '')+'</div>';
   var isTeam=app.type==='team', LBL=isTeam?TEAM_STEP_LABEL:STEP_LABEL, NOTE=isTeam?TEAM_STEP_NOTE:STEP_NOTE;
@@ -3516,6 +3550,7 @@ function bind_(){
   var lpw=document.getElementById('l_pw'); if(lpw) lpw.onkeydown=function(e){ if(e.key==='Enter') login_(); };
   var lem=document.getElementById('l_email'); if(lem) lem.oninput=function(){ P.reg.email=lem.value; };
   on_('googleBtn', googleGo_);
+  on_('goGpApp', function(){ if(P.view==='preview') return; lsSet('gp-student', JSON.stringify(P.auth)); location.href='teams.html?student=1'; });
   on_('installBtn', function(){ var ev=P.installEvt; if(!ev) return; P.installEvt=null; try { ev.prompt(); } catch(e){} render(); });
   on_('installLater', function(){ lsSet('gp-portal-a2hs','1'); P.a2hsOff=true; render(); });
   on_('changePw', function(){ P.changePw=true; render(); });

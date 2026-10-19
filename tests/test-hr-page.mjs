@@ -281,8 +281,11 @@ console.log('\n=== signing: the legal documents and the staff contract ===');
   const who = { ...DARA, myc: { ok: true, me, legalDocs: [{ id: 'liability', title: 'Release of Liability' }, { id: 'child', title: 'Child Protection Agreement — YWAM Siem Reap' }] } };
   const { ctx, page, errors, sent } = await open(who);
   await page.click('#menuBtn'); await page.waitForTimeout(350);
-  ok('the ☰ menu has My contract for every staff member — and no HR for them', !!(await page.$('[data-menu-item="mycontract"]')) && !(await page.$('[data-menu-item="hr"]')));
-  await page.click('[data-menu-item="mycontract"]'); await page.waitForSelector('#mycLegal');
+  ok('the ☰ menu has no HR for them', !(await page.$('[data-menu-item="hr"]')));
+  await page.keyboard.press('Escape'); await page.evaluate(() => { S.menuOpen = false; renderMenu(); });
+  await page.click('nav.bottom [data-tab="profile"]'); await page.waitForSelector('#profMyContract');
+  ok('My contract is in Profile & settings for every staff member', /My contract/.test(await page.$eval('#profMyContract', e => e.textContent)));
+  await page.click('#profMyContract'); await page.waitForSelector('#mycLegal');
   ok('it asks for their own profile', sent.some(x => x.fn === 'myContract' && x.args[0] === 'dara'));
   {
     /* back from signing on the portal, already signed in on this phone: My contract, not My Home */

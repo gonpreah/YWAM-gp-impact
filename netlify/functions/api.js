@@ -5025,6 +5025,7 @@ async function getMyBoot(username, pin) {
     hrFollowUps: canHR_(s) ? candFollowUpsCount_(candRows || []) : null,
     // the books they have marked read in the Library, and the papers every staff member signs
     libRead: cleanLibRead_(s.libRead),
+    stuMentor: deptOf_(s) === STU_LD_DEPT ? await part(function () { return stuMentorFor_(s.id); }) : null,   // students who chose them as mentor
     supportSummary: s.support ? supportSummary_(s.support) : null,   // support raising: your own totals, for My Home's tile
     p360: await part(function () { return p360Glance_(s); }),   // 360 reviews: waiting for my answer, a plan's quarterly review due
     reqDocs: reqDocs ? reqDocsAnswer_(reqDocs) : [],
@@ -8001,6 +8002,313 @@ async function createApplicant_(payload, by) {
   await writeJSON('candidates', fresh);
   return { ok: true, rec: rec, cand: cand, token: token };
 }
+/* ==================== Students in the GP app (Oct 2026, Uriah) ====================
+   A student signs in to the portal (their application) and has a "Go to GP app"
+   button: the real GP app, in a student mode — weekly goals, habits, mentorship,
+   strengths, the weekly schedules and the Library. Everything a student saves
+   lives in their own blob 'stu:<accountId>' and nowhere else, so nothing they do
+   touches staff data or the base's figures. The page sends every call through
+   studentCall, which knows only STUDENT_FNS; the staff handlers refuse an
+   applicant anyway (verifyStaff_ without allowApplicant). A mentor is chosen
+   from Leadership Development only, and that is the only staff a student sees.
+
+   Students already living with us come from SR Hospitality's student bookings:
+   staff make a profile (a student candidate, stage arrived) and send its invite
+   link; opening it in the portal and signing in with Google makes the account,
+   linked to that profile (portalJoin). */
+const STU_LD_DEPT = 'Leadership Development';
+const STUDENT_FNS = { getMyBoot: 1, saveGoals: 1, saveDaily: 1, saveMyHabits: 1, saveMyPersonality: 1, saveMyGStrengths: 1, libSaveReads: 1, getMySchedules: 1, getDuty: 1, studentSetMentor: 1 };
+async function studentAuth_(username, pin) {
+  const s = await verifyStaff_(username, pin, true);
+  if (!s) return { out: { ok: false, err: 'auth' } };
+  if (!isApplicant_(s)) return { out: { ok: false, err: 'not_student' } };
+  const cand = await candidateFor_(await getCandidates_(), s);
+  if (!cand || cand.type !== 'student' || cand.archived) return { out: { ok: false, err: 'not_student' } };
+  return { s: s, cand: cand };
+}
+function stuKey_(id) { return 'stu:' + id; }
+async function getStu_(id) { const d = await readJSON(stuKey_(id), null); return d && typeof d === 'object' ? d : {}; }
+/* the only staff a student sees: Leadership Development, names and faces */
+async function stuMentors_() {
+  return (await getStaff_()).filter(function (r) { return r && r.active !== false && !r.archived && !isApplicant_(r) && deptOf_(r) === STU_LD_DEPT; })
+    .map(function (r) { return { id: r.id, name: r.name, photo: r.photo || '', dept: r.dept, ministry: r.ministry || '', campus: r.campus, role: r.role || '' }; });
+}
+function stuMe_(s, cand, d) {
+  return { id: s.id, name: s.name, username: s.username, campus: cand.campus || s.campus, dept: '', ministry: '', role: 'Student', photo: '',
+    mentorId: d.mentorId || '', mentorStatus: d.mentorStatus || '', student: true, school: cand.school || '', isAdmin: false };
+}
+async function stuSchedules_(campus) {
+  const week = dutyThisWeek_(), next = addDays_(week, 7);
+  return { ok: true, week: week, now: await dutyPublished_(campus, week), next: await dutyPublished_(campus, next), nextWeek: next, canEdit: {} };
+}
+/* who chose whom: one small index, so a mentor's boot can find their students without opening every student's blob */
+async function stuIndexSet_(studentId, entry) {
+  const ix = await readJSON('stuIndex', {});
+  if (entry) ix[studentId] = entry; else delete ix[studentId];
+  await writeJSON('stuIndex', ix);
+}
+/* what a student's app opens with — also what an admin's "see their app" shows */
+function stuRec_(d) { return { habits: d.habits, bibleDay: d.bibleDay, personality: d.personality, gstrengths: d.gstrengths, sex: d.sex, libRead: d.libRead }; }
+async function stuBootOut_(s, cand, d) {
+  const mentors = await stuMentors_(), me = stuMe_(s, cand, d);
+  return { ok: true, student: true, staff: me,
+    profile: { email: s.email || '', mentorStatus: d.mentorStatus || '', sex: cleanSex_(d.sex), personality: ownPersonality_(stuRec_(d)), gstrengths: ownGStrengths_(stuRec_(d)) },
+    roster: mentors, logs: logsFor_(d.logs || [], s.id), habits: habitsOf_(stuRec_(d)), bibleDay: d.bibleDay || 0,
+    goals: goalsFor_(d.goals || [], s.id), checkins: [], mentees: [], mentorRequests: [], smartGoals: [], tasks: [], oneOnOnes: [], broadcasts: [],
+    libRead: cleanLibRead_(d.libRead), schedules: await stuSchedules_(cand.campus || s.campus), reqDocs: [], required: null };
+}
+async function studentCall(username, pin, fn, args) {
+  if (!Object.prototype.hasOwnProperty.call(STUDENT_FNS, fn)) return { ok: false, err: 'student' };
+  const a = await studentAuth_(username, pin); if (a.out) return a.out;
+  const s = a.s, cand = a.cand, campus = cand.campus || s.campus;
+  args = Array.isArray(args) ? args : [];
+  const d = await getStu_(s.id);
+  const save = async function () { d.updated = new Date().toISOString(); await writeJSON(stuKey_(s.id), d); };
+  const rec = function () { return { habits: d.habits, bibleDay: d.bibleDay, personality: d.personality, gstrengths: d.gstrengths, sex: d.sex, libRead: d.libRead }; };
+  if (fn === 'getMyBoot') return stuBootOut_(s, cand, d);
+  if (fn === 'getMySchedules') return stuSchedules_(campus);
+  if (fn === 'getDuty') {   // a published week, to read — never the editor
+    const kind = args[0], week = args[1];
+    if (!Object.prototype.hasOwnProperty.call(DUTY_KINDS, kind) || !isSunday_(week)) return { ok: false, err: 'bad_week' };
+    const rec = (await getDutyDoc_(campus))[kind].weeks[week] || null;
+    return { ok: true, kind: kind, week: week, canEdit: false, sched: rec && rec.published ? dutyOut_(rec, week, kind) : null };
+  }
+  if (fn === 'saveGoals') {
+    const wk = finiteNum_(args[0], 1, 52);
+    if (wk == null) return { ok: false, err: 'bad_week' };
+    const clean = (Array.isArray(args[1]) ? args[1].slice(0, MAX_GOALS) : []).map(function (i) {
+      return { text: str_(i && i.text, 200) || '', pct: goalItemPct_(i), done: goalItemPct_(i) >= 100, metricKey: '' };
+    });
+    const yr = yearForWeek_(wk), rows = Array.isArray(d.goals) ? d.goals : [];
+    const idx = rows.findIndex(function (r) { return Number(r.week) === wk && yearOf_(r) === yr; });
+    const g = { staffId: s.id, week: wk, year: yr, items: clean, updated: new Date().toISOString() };
+    if (idx > -1) rows[idx] = g; else rows.push(g);
+    d.goals = rows.slice(-120); await save();
+    return { ok: true, goals: goalsFor_(d.goals, s.id) };
+  }
+  if (fn === 'saveMyHabits') {
+    const day = finiteNum_(args[1], 0, 365);
+    if (args[0] !== undefined) d.habits = cleanHabitConfig_(args[0]);
+    if (day !== null) d.bibleDay = day;
+    await save();
+    return { ok: true, habits: habitsOf_(rec()), bibleDay: d.bibleDay || 0 };
+  }
+  if (fn === 'saveDaily') {
+    const dateStr = isoDate_(args[0]), p = args[1] || {};
+    if (!dateStr) return { ok: false, err: 'bad_date' };
+    const rows = Array.isArray(d.logs) ? d.logs : [];
+    const b = function (v) { return !!v; };
+    const row = { staffId: s.id, date: dateStr, week: isoWeek_(dateStr), year: weekYear_(dateStr) || undefined,
+      workout: b(p.workout), bible: b(p.bible), quietTime: b(p.quietTime), habits: cleanHabitMap_(p.habits, habitsOf_(rec())), updated: new Date().toISOString() };
+    const idx = rows.findIndex(function (r) { return r.date === dateStr; });
+    if (idx > -1) rows[idx] = row; else rows.push(row);
+    d.logs = rows.slice(-400); await save();
+    return { ok: true, logs: logsFor_(d.logs, s.id), profile: {}, habits: habitsOf_(rec()), bibleDay: d.bibleDay || 0, week: null };
+  }
+  if (fn === 'saveMyPersonality') {
+    const p = args[0] || {};
+    if (p.type !== undefined && PTYPE_CODES.indexOf(p.type) === -1) return { ok: false, err: 'bad_type' };
+    if (p.season !== undefined && PSEASON_IDS.indexOf(p.season) === -1) return { ok: false, err: 'bad_season' };
+    const source = p.source === 'self' ? 'self' : 'test';
+    let scores = null;
+    if (p.type !== undefined && source === 'test') { scores = cleanPScores_(p.scores, p.type); if (!scores) return { ok: false, err: 'bad_scores' }; }
+    if (p.sex !== undefined) d.sex = cleanSex_(p.sex);
+    if (p.clear) delete d.personality;
+    else {
+      const cur = Object.assign({}, d.personality || {});
+      if (p.type !== undefined) { cur.type = p.type; cur.scores = scores; cur.source = source; cur.takenAt = new Date().toISOString(); }
+      if (p.share !== undefined) cur.share = !!p.share;
+      if (p.season !== undefined) cur.season = p.season;
+      if (cur.type) d.personality = cur;
+    }
+    await save();
+    return { ok: true, staff: stuMe_(s, cand, d), sex: cleanSex_(d.sex), personality: ownPersonality_(rec()) };
+  }
+  if (fn === 'saveMyGStrengths') {
+    const p = args[0] || {};
+    let result = null;
+    if (p.answers !== undefined) { result = gpStrengthsScore_(p.answers); if (!result) return { ok: false, err: 'incomplete' }; }
+    if (p.clear) delete d.gstrengths;
+    else {
+      if (!result && !d.gstrengths) return { ok: false, err: 'no_result' };
+      const cur = Object.assign({}, d.gstrengths || {});
+      if (result) { cur.answers = result.answers; cur.scores = result.scores; cur.top = result.top; cur.takenAt = new Date().toISOString(); }
+      if (p.share !== undefined) cur.share = !!p.share;
+      d.gstrengths = cur;
+    }
+    await save();
+    return { ok: true, staff: stuMe_(s, cand, d), gstrengths: ownGStrengths_(rec()) };
+  }
+  if (fn === 'libSaveReads') {
+    const changes = args[0];
+    if (!changes || typeof changes !== 'object' || Array.isArray(changes)) return { ok: false, err: 'bad_changes' };
+    const cur = cleanLibRead_(d.libRead);
+    Object.keys(changes).filter(function (k) { return /^[a-z0-9-]{1,80}$/.test(k); }).slice(0, LIB_MAX).forEach(function (k) {
+      if (changes[k] === null || changes[k] === false) delete cur[k];
+      else if (!cur[k]) cur[k] = isoDate_(changes[k]) || new Date().toISOString().slice(0, 10);
+    });
+    d.libRead = cur; await save();
+    return { ok: true, libRead: cur };
+  }
+  if (fn === 'studentSetMentor') {
+    const id = str_(args[0], 60) || '';
+    if (id && !(await stuMentors_()).some(function (m) { return m.id === id; })) return { ok: false, err: 'not_a_mentor' };
+    d.mentorId = id; d.mentorStatus = id ? 'pending' : ''; await save();
+    await stuIndexSet_(s.id, id ? { mentorId: id, status: 'pending', name: s.name, campus: campus } : null);
+    return { ok: true, staff: stuMe_(s, cand, d), mentorStatus: d.mentorStatus };
+  }
+  return { ok: false, err: 'student' };
+}
+/* the mentor's side: students who asked them, and the ones they accepted — names only */
+async function stuMentorFor_(staffId) {
+  const ix = await readJSON('stuIndex', {}), out = { requests: [], students: [] };
+  Object.keys(ix).forEach(function (id) {
+    const e = ix[id]; if (!e || e.mentorId !== staffId) return;
+    (e.status === 'approved' ? out.students : out.requests).push({ id: id, name: e.name || '' });
+  });
+  return out;
+}
+async function respondStudentMentor(username, pin, studentId, accept) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  studentId = str_(studentId, 60) || '';
+  const ix = await readJSON('stuIndex', {}), e = ix[studentId];
+  if (!e || e.mentorId !== s.id) return { ok: false, err: 'not_found' };
+  const d = await getStu_(studentId);
+  if (accept) { e.status = 'approved'; d.mentorStatus = 'approved'; }
+  else { delete ix[studentId]; d.mentorId = ''; d.mentorStatus = ''; }
+  await writeJSON('stuIndex', ix);
+  d.updated = new Date().toISOString(); await writeJSON(stuKey_(studentId), d);
+  return Object.assign({ ok: true }, await stuMentorFor_(s.id));
+}
+
+/* ---- the students staying with us, and their profiles (staff side) ---- */
+function stuBookingNames_(k) {
+  const names = [];
+  (k.people || []).forEach(function (p) { const n = dutyText_(p && p.name, 120); if (n && names.indexOf(n) === -1) names.push(n); });
+  Object.keys(k.bedNames || {}).forEach(function (b) { const n = dutyText_(k.bedNames[b], 120); if (n && names.indexOf(n) === -1) names.push(n); });
+  return names;
+}
+function canStudents_(s) { return !!(s && (s.isAdmin || canHR_(s) || canHosp_(s) || canPortal_(s))); }
+function stuNameKey_(n) { return String(n || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+function stuInviteToken_() { return crypto.randomBytes(18).toString('hex'); }
+async function studentsList(username, pin) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!canStudents_(s)) return { ok: false, err: 'not_authorized' };
+  const campus = s.campus, today = baseToday_();
+  const cands = (await getCandidates_()).filter(function (c) { return c && c.type === 'student' && (c.campus || campus) === campus && !c.archived; });
+  const byName = {}; cands.forEach(function (c) { byName[stuNameKey_(c.name)] = c; });
+  const staying = [], seen = {};
+  (await getHosp_(campus)).bookings.forEach(function (k) {
+    if (!k || k.category !== 'student') return;
+    if (!(k.from && k.from <= today && (k.permanent || (k.to && k.to > today)))) return;
+    const nm = stuBookingNames_(k);
+    nm.concat(nm.length ? [] : [k.name]).forEach(function (n) {
+      const key = stuNameKey_(n); if (!key || seen[key]) return; seen[key] = 1;
+      staying.push({ name: n, from: k.from, to: k.to || '', permanent: !!k.permanent });
+    });
+  });
+  const out = function (c) { return { candId: c.id, name: c.name, school: c.school || '', linked: !!c.staffId, email: c.staffId ? (c.email || '') : '', invite: (c.portal && c.portal.invite && c.portal.invite.token) || '', source: c.source || '' }; };
+  return { ok: true, campus: campus,
+    staying: staying.map(function (x) { const c = byName[stuNameKey_(x.name)]; return Object.assign(x, { profile: c ? out(c) : null }); }),
+    others: cands.filter(function (c) { return !seen[stuNameKey_(c.name)]; }).map(out) };
+}
+async function studentMakeProfile(username, pin, name, school) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!canStudents_(s)) return { ok: false, err: 'not_authorized' };
+  name = str_(name, 120); if (!name) return { ok: false, err: 'name_required' };
+  school = PORTAL_SCHOOLS.indexOf(school) > -1 ? school : 'dts';
+  const rows = await getCandidates_();
+  if (rows.some(function (c) { return c && c.type === 'student' && !c.archived && (c.campus || s.campus) === s.campus && stuNameKey_(c.name) === stuNameKey_(name); })) return { ok: false, err: 'exists' };
+  if (rows.length >= CAND_MAX) return { ok: false, err: 'too_many' };
+  const now = new Date().toISOString();
+  const cand = { id: hrId_('cd'), campus: s.campus, name: name, type: 'student', stage: 'arrived', subtype: school.toUpperCase(), school: school,
+    email: '', phone: '', messenger: '', country: '', source: 'hospitality', assignedTo: '', nextStep: '', nextDate: '', expected: '', notes: '', staffId: '',
+    portal: { createdAt: now, submittedAt: null, form: null, docs: [], references: [], draft: null, draftAt: null, invite: { token: stuInviteToken_(), at: now, by: s.id } },
+    log: [{ at: now, by: s.id, kind: 'note', text: 'Profile made from SR Hospitality — staying with us as a student' }], archived: null,
+    created: now, createdBy: s.id, updated: now, updatedBy: s.id };
+  rows.push(cand);
+  await writeJSON('candidates', rows);
+  return Object.assign({ made: cand.id }, await studentsList(username, pin));
+}
+/* ---- Admin → 🎓 Students: every student profile by school, what each one has
+   put in, and their app as they see it (read only). Admins only — a student's
+   goals and habits are theirs, so this is not opened to HR or Hospitality. */
+function stuAdminRow_(c, acct, d, staffById) {
+  const wk = isoWeek_(baseToday_()), yr = weekYear_(baseToday_());
+  const g = (d.goals || []).find(function (r) { return Number(r.week) === wk && yearOf_(r) === yr; });
+  const m = d.mentorId && staffById[d.mentorId];
+  return { candId: c.id, name: c.name, school: c.school || '', campus: c.campus || '', stage: c.stage || '', source: c.source || '',
+    linked: !!(c.staffId && acct), email: acct ? (acct.email || '') : '', invite: (c.portal && c.portal.invite && c.portal.invite.token) || '',
+    updated: acct ? (d.updated || '') : '', goalsThisWeek: g ? (g.items || []).length : 0, habits: acct ? habitsOf_(stuRec_(d)).length : 0,
+    mentor: m ? m.name : '', mentorStatus: d.mentorStatus || '', ptype: (d.personality && d.personality.type) || '',
+    libRead: Object.keys(cleanLibRead_(d.libRead) || {}).length };
+}
+async function studentsAdmin(username, pin) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!s.isAdmin) return { ok: false, err: 'not_authorized' };
+  const staff = await getStaff_(), byId = {}; staff.forEach(function (r) { if (r && r.id) byId[r.id] = r; });
+  const cands = (await getCandidates_()).filter(function (c) { return c && c.type === 'student' && !c.archived; });
+  const rows = await Promise.all(cands.map(async function (c) {
+    const acct = c.staffId ? byId[c.staffId] : null;
+    return stuAdminRow_(c, acct, acct ? await getStu_(acct.id) : {}, byId);
+  }));
+  const schools = {};
+  rows.forEach(function (r) { const k = r.school || 'other'; (schools[k] = schools[k] || []).push(r); });
+  Object.keys(schools).forEach(function (k) { schools[k].sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); }); });
+  return { ok: true, schools: schools, order: PORTAL_SCHOOLS.concat(['other']) };
+}
+async function studentAdminView(username, pin, candId) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!s.isAdmin) return { ok: false, err: 'not_authorized' };
+  const c = (await getCandidates_()).find(function (x) { return x && x.id === candId && x.type === 'student' && !x.archived; });
+  if (!c) return { ok: false, err: 'not_found' };
+  const staff = await getStaff_(), byId = {}; staff.forEach(function (r) { if (r && r.id) byId[r.id] = r; });
+  const acct = c.staffId ? byId[c.staffId] : null, d = acct ? await getStu_(acct.id) : {};
+  return { ok: true, student: stuAdminRow_(c, acct, d, byId), boot: acct ? await stuBootOut_(acct, c, d) : null };
+}
+/* the invite a student opens in the portal: ?join=<token> */
+async function portalJoinInfo(token) {
+  token = String(token || '').replace(/[^a-f0-9]/g, '').slice(0, 64);
+  if (token.length < 20) return { ok: false, err: 'invalid' };
+  const c = (await getCandidates_()).find(function (x) { return x && x.portal && x.portal.invite && x.portal.invite.token === token; });
+  if (!c || c.staffId) return { ok: false, err: c ? 'used' : 'invalid' };
+  return { ok: true, name: c.name, campus: c.campus || PORTAL_DEFAULT_CAMPUS, school: c.school || '' };
+}
+async function portalJoin(token, googleToken) {
+  const info = await portalJoinInfo(token); if (!info.ok) return info;
+  const g = await verifyGoogleToken_(googleToken);
+  if (!g) return { ok: false, err: 'google' };
+  const email = g.email, now = new Date().toISOString();
+  let cand = null;
+  const rec = { id: newStaffId_(), username: email, name: info.name, email: email, kind: 'applicant', campus: info.campus, dept: '', ministry: '', role: '', photo: '',
+    phone: '', messenger: '', country: '', applicant: { type: 'student', school: info.school, candidateId: '' }, active: true, isAdmin: false, created: now, updated: now,
+    google: { sub: g.sub, lastAt: now } };
+  const tok = addDeviceToken_(rec);
+  const made = await mutateStaff_(function (all) {
+    if (all.some(function (r) { return (r.email && r.email === email) || r.username === email; })) return { abort: true, ok: false, err: 'email_taken' };
+    all.push(rec); return { ok: true };
+  });
+  if (!made || !made.ok) return made || { ok: false };
+  const rows = await getCandidates_();
+  cand = rows.find(function (x) { return x && x.portal && x.portal.invite && x.portal.invite.token === String(token).replace(/[^a-f0-9]/g, ''); });
+  if (cand) {
+    cand.staffId = rec.id; cand.email = email; delete cand.portal.invite;
+    cand.log = (cand.log || []).concat([{ at: now, by: rec.id, kind: 'note', text: 'Joined with Google from the invite link' }]);
+    cand.updated = now; cand.updatedBy = rec.id;
+    await writeJSON('candidates', rows);
+    await mutateStaff_(function (all) { const r = all.find(function (x) { return x.id === rec.id; }); if (r) r.applicant.candidateId = cand.id; return { ok: true }; });
+    rec.applicant.candidateId = cand.id;
+  }
+  const boot = await portalBoot(rec.username, tok);
+  if (!boot.ok) return boot;
+  return Object.assign(boot, { user: rec.username, token: tok });
+}
+
 async function portalRegister(payload) {
   const made = await createApplicant_(payload, null);
   if (!made.ok) return made;
@@ -10098,6 +10406,14 @@ const HANDLERS = {
   portalListAccounts: function (a) { return portalListAccounts(a[0], a[1]); },
   portalCreateApplicant: function (a) { return portalCreateApplicant(a[0], a[1], a[2]); },
   portalUpdateAccount: function (a) { return portalUpdateAccount(a[0], a[1], a[2], a[3]); },
+  studentCall: function (a) { return studentCall(a[0], a[1], a[2], a[3]); },
+  respondStudentMentor: function (a) { return respondStudentMentor(a[0], a[1], a[2], a[3]); },
+  studentsList: function (a) { return studentsList(a[0], a[1]); },
+  studentMakeProfile: function (a) { return studentMakeProfile(a[0], a[1], a[2], a[3]); },
+  studentsAdmin: function (a) { return studentsAdmin(a[0], a[1]); },
+  studentAdminView: function (a) { return studentAdminView(a[0], a[1], a[2]); },
+  portalJoinInfo: function (a) { return portalJoinInfo(a[0]); },
+  portalJoin: function (a) { return portalJoin(a[0], a[1]); },
   getHospitality: function (a) { return getHospitality(a[0], a[1]); },
   getWhosHere: function (a) { return getWhosHere(a[0], a[1], a[2]); },
   whosHereTeamPhotos: function (a) { return whosHereTeamPhotos(a[0], a[1], a[2]); },

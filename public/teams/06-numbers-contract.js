@@ -74,21 +74,6 @@ function pulseCardHtml_(dept, compact){
   return h+'</div>';
 }
 
-/* The Campus Director's own quarter: three scores and the base plants, once a quarter. */
-var DIRECTOR_QUARTERLY_ = ['Base Vision (1-10)','Communications (1-10)','Partner Relationships (1-10)','Base Plants in Planning'];
-function directorQuarterHtml_(){
-  if(!S.me || S.me.dept!==BL_DEPT || S.me.ministry!=='Campus Director') return '';
-  var wk=quarterAnchorWeek_(), entries=(S.ministry&&S.ministry.entries)||{}, d=S.dirDraft||{};
-  var h='<div class="card"><div class="goalCardTitle" style="margin-bottom:4px">🧭 '+esc(gpT('Q{q} check-in',{q:leadQNow_()}))+'</div>'+
-    '<p class="sub" style="margin:0 0 8px">'+esc(t('Once a quarter: how the base is doing, in your own honest view.'))+'</p>';
-  DIRECTOR_QUARTERLY_.forEach(function(m){
-    var cur = d[m]!==undefined ? d[m] : ((entries[m]||{})[String(wk)]!==undefined ? entries[m][String(wk)] : '');
-    h+='<div class="row"><div>'+(typeof kpiNameHtml_==='function' ? kpiNameHtml_(m, 'Campus Director') : '<div class="rowName">'+esc(t(m))+'</div>')+'</div>'+
-      '<input type="number" inputmode="decimal" class="kpiIn"'+(m.indexOf('(1-10)')>-1?' min="1" max="10" step="1"':' min="0"')+' data-dirq="'+esc(m)+'" value="'+esc(String(cur))+'"></div>';
-  });
-  return h+'<button class="btn" id="dirQSave">'+esc(gpT('Save Q{q}',{q:leadQNow_()}))+'</button></div>';
-}
-
 /* Finances: the staff debt for each department, monthly. */
 function canEnterStaffDebtClient_(){
   var m=S.me; if(!m) return false;
@@ -116,28 +101,11 @@ function staffDebtCardHtml_(){
 
 document.addEventListener('input', function(e){
   var el=e.target; if(!el || !el.getAttribute) return;
-  if(el.hasAttribute('data-dirq')){ S.dirDraft=S.dirDraft||{}; S.dirDraft[el.getAttribute('data-dirq')]=el.value; }
   if(el.hasAttribute('data-debt')){ S.debtDraft=S.debtDraft||{}; S.debtDraft[el.getAttribute('data-debt')]=el.value; }
 });
 document.addEventListener('click', function(e){
-  var el=e.target && e.target.closest ? e.target.closest('#dirQSave,#debtSave') : null;
+  var el=e.target && e.target.closest ? e.target.closest('#debtSave') : null;
   if(!el || S.busy) return;
-  if(el.id==='dirQSave'){
-    var updates=[];
-    document.querySelectorAll('[data-dirq]').forEach(function(inp){
-      updates.push({ metric:inp.getAttribute('data-dirq'), value: inp.value==='' ? null : Number(inp.value) });
-    });
-    for(var i=0;i<updates.length;i++){
-      var u=updates[i];
-      if(u.value!==null && u.metric.indexOf('(1-10)')>-1 && (u.value<1 || u.value>10)){ showMsg(gpT('{metric} goes from {min} to {max} — check the number you typed.',{metric:t(u.metric),min:1,max:10})); return; }
-    }
-    S.busy=true; el.disabled=true; el.textContent=t('Saving…');
-    run('saveMyMinistry',[S.auth.user,S.auth.pin,quarterAnchorWeek_(),updates],function(d){
-      S.busy=false;
-      if(d && d.ok){ S.ministry=d; S.dirDraft={}; showMsg(t('Saved')); } else showMsg(t('Could not save'));
-      render();
-    });
-  }
   if(el.id==='debtSave'){
     var vals={};
     document.querySelectorAll('[data-debt]').forEach(function(inp){ if(inp.value!=='') vals[inp.getAttribute('data-debt')]=Number(inp.value); });
@@ -856,9 +824,9 @@ function myMinistryHtml(){
       /* the base's finances, from the Finances office's reports (teams/09-finance.js) */
       if(lwt==='money') return h+finDashHtml_();
       if(lwt==='base') return h+orgCltCardHtml_(S.me.campus)+leadBaseHtml_(ph);
-      return h+(mine ? directorQuarterHtml_() : '')+leadSectionHtml_();
+      return h+leadSectionHtml_();
     }
-    return h+ph+orgCltCardHtml_(S.me.campus)+(mine ? directorQuarterHtml_() : '')+leadSectionHtml_();
+    return h+ph+orgCltCardHtml_(S.me.campus)+leadSectionHtml_();
   }
   /* The Cafe runs its day here — open, sell, close, the rota — and its numbers
      fill themselves in; the usual numbers are a tab away. */
@@ -1302,7 +1270,7 @@ function hrSendFormHtml_(p){
    — each signed here (or already in the portal) with its PDF. */
 function openMyContract_(){ S.view='mycontract'; S.myc=null; S.hrStartEdit=null; render(); window.scrollTo(0,0); }
 function myContractHtml(){
-  var back='<button class="linkbtn" id="mycBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('My Home'))+'</button>';
+  var back='<button class="linkbtn" id="mycBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('Profile & settings'))+'</button>';
   var d=S.myc;
   if(!d) return back+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
   if(!d.ok) return back+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Could not load — try again.'))+'</p></div>';
@@ -1334,7 +1302,7 @@ function myContractHtml(){
   return h+'</div>';
 }
 function bindMyContract_(){
-  var bk=document.getElementById('mycBack'); if(bk) bk.onclick=function(){ gpTap(); S.view='week'; render(); window.scrollTo(0,0); };
+  var bk=document.getElementById('mycBack'); if(bk) bk.onclick=function(){ gpTap(); S.view='profile'; render(); window.scrollTo(0,0); };
   if(!S.myc){
     if(S.mycLoading) return; S.mycLoading=true;
     run('myContract',[S.auth.user,S.auth.pin],function(d){ S.mycLoading=false; S.myc=d||{ ok:false }; if(d && d.required) S.required=d.required; render(); }, function(){ S.mycLoading=false; S.myc={ ok:false }; render(); });

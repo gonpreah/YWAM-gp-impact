@@ -629,9 +629,10 @@ quietest bucket named), Requests, Calendar, Bookings, Rooms.
 
 ## The hamburger menu, by role
 `renderMenu` draws sections, and leaves out a section with nothing in it:
-- everyone: **Base** (first — it left the bottom bar, Oct 2026), **Leave Request**, My contract,
-  Profile & settings (My Ministry and the Library are in the bottom bar, not here; a guest's
-  menu keeps Library / Create my profile / Log in);
+- everyone: **Base** (first — it left the bottom bar, Oct 2026), YWAM GP, Prayer, 360 reviews,
+  **Leave Request**, **Library** (moved here from the bottom bar, Oct 2026; Profile & settings —
+  with My contract inside it, `#profMyContract` — took its place in the bar); a guest's menu
+  keeps Library / Create my profile / Log in;
 - **Operations**: Weekly schedules (everyone), SR Hospitality (`canHospClient_`: the Hospitality
   ministry — members, leaders, the Skills Training overseer — and admins);
 - **Applications**: YWAM GP Portal (admins, portal staff / portal admins, the Outreach Teams
@@ -648,9 +649,11 @@ for now. `test-menu.mjs` checks each role.
   what"), 1-on-1s accepted this month, OKR progress this quarter (client, `baseR`), and
   staff debt — with the ministries' done / not done list under it. The Campus
   Director gets one per department (lists folded). Their weekly typed numbers stay off.
-- **The Campus Director's quarter** (`directorQuarterHtml_`): Base Vision,
-  Communications, Partner Relationships (1–10) and Base Plants in Planning, saved once
-  a quarter to their own row at `quarterAnchorWeek_()`.
+- **The Campus Director's quarterly check-in is gone** (Oct 2026, Uriah: "Please remove q4
+  check in. Not necessary"). It asked for Base Vision, Communications, Partner
+  Relationships (1–10) and Base Plants in Planning once a quarter on the Board tab.
+  Scores already saved stay in `entries`; Base Plants in Planning still counts itself
+  from the plants list.
 - **Staff debt from the Finance office** (`staffDebtCardHtml_`, `getStaffDebt` /
   `saveStaffDebt`): monthly, one box per department, on the Finances ministry page (its
   "The numbers" tab; since Oct 2026 an uploaded A/R ageing report fills it — see Finances),
@@ -813,8 +816,10 @@ volunteers, guests, speakers (names from `people` / `bedNames`, else the booking
 tests/test-whos-here-ui.mjs.
 
 ## The bottom bar (Oct 2026)
-My Home · **My Ministry** · Team · Health · **Library** (`data-tab`; My Ministry opens on its
-Numbers view, Library tapped while reading goes back to the shelves). **Base is in the ☰ menu**,
+My Home · **My Ministry** · Team · Health · **Profile** (`data-tab`; My Ministry opens on its
+Numbers view; Profile is Profile & settings, which holds **My contract** — its ← goes back to
+Profile). **Base and the Library are in the ☰ menu** (Uriah, Oct 2026); My Home's card has a
+plain **💚 Go to My Health** button (`#goMyHealth`) under its rows.
 and its key figures sit at the foot of My Home's card. A guest's bar is Look around · Base ·
 Team · Health · Library. Five tabs stay on one line down to 320px; where the full Khmer is
 too long for a tab, `navLabel_` uses a short one kept as 'Tab: <English>' in km.js
@@ -2567,3 +2572,27 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - **A 'people' question** (form type `people`: a list of `{name, email, phone}`, add as many; optional `addLabel`): the team form's `coLeaders` ("Co-leaders", "+ Add a co-leader"), right after the team leader. Server `cleanPeople_` keeps rows with a name (up to 20, trimmed and cut); required means at least one. Page `peopleInputHtml_` / `bindPeople_` write through `ansStore_` like the trip, so it works in the applicant's form and in staff answer editing.
 - **Structure is its own arrangement, separate from profiles** (`place` in each `structurePlans` row: `{staffId: {dept, ministry}}`): an admin taps "✏️ Arrange Q4 2026" on the current or next quarter, then drags a person (pointer events — mouse or finger; chips get `touch-action:none` while arranging) onto a ministry (`[data-drop="Dept|Ministry"]`), the Campus Director box or a department's Overseer spot, or taps them for the Move picker (`structMoveHtml_`). Each move saves at once via `saveStructurePlan(…, students, place)` — pass `null` for the part you are not changing; moving someone back to their profile's place drops them from the map; "Back to profiles" clears it. Profiles are never written. A quarter with no plan starts from the latest earlier arrangement (`planFor_` → `inherited`, `from`); students never carry over. The chart (`orgChartHtml_(campus, roster, students, place, arranging)`) and `saveStructure` both apply the arrangement; changing it updates a snapshot already saved. Leads (crowns) still come from profiles.
 - **A mentor looks back at any week** (`mentorHtml`, `S.menteeWeek`): a ‹ Week N › picker on the mentee page (opens on their newest check-in week; "Back to the latest check-in"; the list of weeks is tappable). The check-in (against the one before it), habits (that week's days against the week before), weekly goals and daily logs all follow the picked week; a week without one says so. The server already sent the whole year (`getMenteeLogs`).
+
+## Students in the GP app (Oct 2026)
+- **Profiles from SR Hospitality.** ☰ → Operations → 🎓 Students (`canStudents_`: admin, HR, Hospitality,
+  portal staff) lists who is booked as `category:'student'` now (`studentsList`). **Make profile**
+  (`studentMakeProfile`) makes a student candidate (stage arrived, `source:'hospitality'`) with
+  `portal.invite.token`; **Copy invite** copies `portal.html?join=<token>`. On that page the student signs
+  in with Google (`portalJoin`) → an applicant account linked to the profile; the invite is spent.
+- **The portal** shows their application as usual plus **📱 Go to GP app** (student-type only), which
+  saves `gp-student` and opens `teams.html?student=1`.
+- **Student mode is the real app**, same look, fewer parts: tabs My Home / Schedules / Library; My Home =
+  hello + this week's schedule, weekly goals, habits, mentor, About me (strengths). No bell, no health,
+  ministry, base, check-ins or support raising.
+- **Their data never touches staff data.** Every call goes through one door, `studentCall(u,pin,fn,args)`,
+  with an allowlist (`STUDENT_FNS`, mirrored client-side as `STUDENT_FNS_C`; anything else answers
+  `{ok:false,err:'student'}` without a request). Writes go to the blob `stu:<accountId>` only. Schedules
+  are read-only and published weeks only. Staff handlers still refuse applicants.
+- **Mentors are Leadership Development only** (`STU_LD_DEPT`), names and photos only. A request sits in
+  `stuIndex`; the mentor sees it on their Mentorship page (🎓 Students) and accepts or declines
+  (`respondStudentMentor`). 1-on-1 forms for students are not built yet.
+- **Admin → 🎓 Students** (admins only): every student profile by school (`studentsAdmin`), one student's
+  mentor, goals (last/this/next week), habits, strengths and Library (`studentAdminView`), and **See their
+  app**: their real student app, read only (`S.stuPreview` — `run()` sends nothing, Library marks are
+  theirs and in memory; Back to Admin reloads as yourself, back on their profile via `gp-stu-back`).
+- Tests: `tests/test-students.mjs` (server, the door and the access checks), `tests/test-student-app-ui.mjs`.
