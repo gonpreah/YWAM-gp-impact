@@ -2069,6 +2069,10 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .p3RevItem b { display:block; font-size:14px; margin-bottom:6px; } .p3RevItem input { margin-top:8px; } .p3RevItem small { display:block; font-size:13px; }
 .p3ShareList { max-height:260px; overflow:auto; }
 
+/* Tuesday meeting: topics and announcements, each line editable */
+.ltLine { display:flex; align-items:center; gap:8px; margin:0 0 6px; }
+.ltLine input { flex:1; min-width:0; margin:0; }
+.lbListH { font-size:13px; font-weight:700; color:var(--muted); margin:10px 0 2px; }
 /* Who's here (Oct 2026) */
 .whoChips { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 6px; }
 .whoChips span { background:var(--surface2); border-radius:999px; padding:4px 10px; font-size:13px; }
