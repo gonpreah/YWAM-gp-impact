@@ -2028,3 +2028,10 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .supImportLink { margin:12px 2px 4px; font-size:14px; }
 .supImpLine { display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px solid var(--line); font-size:14px; }
 .supImpLine span { color:var(--muted); font-weight:700; }
+/* Admin → a person's account: every position they hold, together */
+.admPositions { border:1.5px solid var(--border2); border-radius:12px; padding:10px 12px 12px; margin:14px 0 6px; background:var(--bg); }
+.admPosHead { font-size:14px; font-weight:800; margin-bottom:4px; }
+.admGpPick { margin-bottom:4px; }
+/* Profile & settings: my positions */
+.myPos { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); font-size:14px; }
+.myPos:last-child { border-bottom:0; } .myPos small { display:block; color:var(--muted); font-size:12px; }

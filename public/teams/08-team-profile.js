@@ -320,7 +320,7 @@ function personHtml(){
   h+='<div class="card"><div class="pcard">'+avatarHtml(p,'lg')+
     '<div><div class="pname">'+esc(p.name)+'</div>'+
     (orgTitleOf_(p) ? '<div class="pmeta orgPersonTitle">🧭 '+esc(orgTitleText_(orgTitleOf_(p)))+'</div>' : '')+
-    (function(){ var g=((S.org&&S.org.gp)||[]).filter(function(x){ return x.id===p.id; })[0]; return g ? '<div class="pmeta orgPersonTitle">🌏 '+esc(gpRoleLabel_(g.gpRole))+'</div>' : ''; })()+
+    ((S.org&&S.org.gp)||[]).filter(function(x){ return x.id===p.id; }).map(function(g){ return '<div class="pmeta orgPersonTitle">🌏 '+esc(gpRoleLabel_(g.gpRole))+'</div>'; }).join('')+   // every YWAM GP place they hold
     (function(){ var b=((S.org&&S.org.board)||[]).filter(function(x){ return x.staffId===p.id; })[0]; return b ? '<div class="pmeta orgPersonTitle">🛡️ '+esc(t(b.role))+' · '+esc(t('YWAM GP Advisory Board'))+'</div>' : ''; })()+
     (p.role?'<div class="pmeta">'+esc(t(p.role))+'</div>':'')+
     '<div class="pmeta">'+esc(t(p.dept))+(p.ministry?' · '+esc(t(p.ministry)):'')+'</div>'+
@@ -664,6 +664,20 @@ function applyTheme(v){
   }
 }
 
+/* Every position you hold, together: your campus role, the ministries you lead, your
+   YWAM GP places and your seat on the Advisory Board. The campus role is yours to change
+   below; the YWAM GP and board places an admin sets, on your account (Admin → Positions). */
+function myPositionsHtml_(){
+  var me=S.me, O=S.org||{}, rows=[];
+  var title=orgTitleOf_(me);
+  rows.push(['🧭', title ? orgTitleText_(title) : (t(me.ministry||me.dept||'')), t(campusName(me.campus))]);
+  (me.leads||[]).forEach(function(k){ var x=k.split('|'); rows.push(['👑', gpT('Leads {ministry}',{ministry:t(x[1]||'')}), t(x[0]||'')]); });
+  (O.gp||[]).filter(function(g){ return g.id===me.id; }).forEach(function(g){ rows.push(['🌏', gpRoleLabel_(g.gpRole), t('YWAM GP leadership team')]); });
+  (O.board||[]).filter(function(b){ return b.staffId===me.id; }).forEach(function(b){ rows.push(['🛡️', t(b.role), t('YWAM GP Advisory Board')]); });
+  return '<div class="card"><div class="goalCardTitle" style="margin-bottom:4px">'+esc(t('My positions'))+'</div>'+
+    rows.map(function(r){ return '<div class="myPos"><span>'+r[0]+'</span><span><b>'+esc(r[1])+'</b><small>'+esc(r[2])+'</small></span></div>'; }).join('')+
+    '<p class="hint" style="margin:6px 0 0">'+esc(t('Your campus role you change below. YWAM GP places and the Advisory Board are set by an admin, on your account.'))+'</p></div>';
+}
 function profileHtml(){
   var p=S.profile||{};
   var opts=S.roster.filter(function(x){return x.id!==S.me.id;}).map(function(x){
@@ -675,6 +689,7 @@ function profileHtml(){
      '<input type="file" accept="image/*" id="photoInput" style="display:none"></div></div>'+
      '<button class="libTally" id="profBooks">📚 '+esc(gpT('{n} books read',{n:libBooksRead_()}))+' · '+esc(t('Library'))+' →</button></div>';
   h+=reqProfileCardHtml_();
+  h+=myPositionsHtml_();
   h+='<div class="card">'+
     '<label class="f">Full name</label><input type="text" id="p_name" value="'+esc(S.me.name)+'">'+
     '<label class="f">Email</label><input type="email" id="p_email" value="'+esc(p.email||'')+'" placeholder="you@example.com">'+

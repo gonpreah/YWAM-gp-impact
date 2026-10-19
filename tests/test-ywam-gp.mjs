@@ -159,6 +159,27 @@ await call('updateProfile', ['kanha', '1234', { dept: 'Campus Leadership', minis
 r = await call('updateProfile', ['kanha', '1234', { cancelCltRequest: true }]);
 ok('and someone can cancel their own request', r.body.ok && !r.body.profile.cltRequest && !mem.staff.find((x) => x.id === 'st_cafe').cltRequest);
 
+/* ---------- several positions for one person (Oct 2026) ---------- */
+r = await call('adminUpdateStaff', ['uriah', '1234', 'st_nat', { gpRoles: ['campuses', 'leaders', 'campuses', 'wizard'], board: { on: true, role: 'Secretary' } }]);
+ok('one person can hold several YWAM GP places (the same one once, only real ones)', r.body.ok && r.body.staff.gpRoles.join() === 'campuses,leaders' && r.body.staff.gpRole === 'campuses');
+let seat = JSON.parse(JSON.stringify(mem.board)).find((b) => b.staffId === 'st_nat');
+ok('… and a seat on the Advisory Board, made and linked to them from their account', seat && seat.role === 'Secretary' && seat.active === true && !seat.username);
+r = await call('getYwamGp', ['kanha', '1234']);
+ok('YWAM GP shows them in each place they hold, and on the board', r.body.gp.filter((p) => p.id === 'st_nat').map((p) => p.gpRole).join() === 'campuses,leaders' && r.body.board.some((b) => b.staffId === 'st_nat' && b.role === 'Secretary'));
+r = await call('adminListStaff', ['uriah', '1234']);
+const nat = r.body.staff.find((x) => x.id === 'st_nat');
+ok('the admin list shows all their positions together', nat.gpRoles.join() === 'campuses,leaders' && nat.board && nat.board.role === 'Secretary' && nat.cdKind === 'national');
+r = await call('adminUpdateStaff', ['uriah', '1234', 'st_admin', { gpRole: 'music' }]);
+ok('setting one place the old way still works', r.body.ok && r.body.staff.gpRoles.join() === 'music');
+r = await call('adminUpdateStaff', ['uriah', '1234', 'st_nat', { board: { on: true, role: 'Treasurer' } }]);
+ok('changing their board role keeps the one seat', JSON.parse(JSON.stringify(mem.board)).filter((b) => b.staffId === 'st_nat').length === 1 && JSON.parse(JSON.stringify(mem.board)).find((b) => b.staffId === 'st_nat').role === 'Treasurer');
+r = await call('adminUpdateStaff', ['uriah', '1234', 'st_nat', { board: { on: false } }]);
+seat = JSON.parse(JSON.stringify(mem.board)).find((b) => b.staffId === 'st_nat');
+ok('taking them off the board keeps the record (bio, photo) but not the seat', seat && seat.active === false && !(await call('getYwamGp', ['kanha', '1234'])).body.board.some((b) => b.staffId === 'st_nat'));
+r = await call('adminUpdateStaff', ['sokha', '1234', 'st_nat', { gpRoles: ['director'], board: { on: true } }]);
+ok('… and only an admin sets any of it', r.body.ok === false && mem.staff.find((x) => x.id === 'st_nat').gpRoles.join() === 'campuses,leaders' && JSON.parse(JSON.stringify(mem.board)).find((b) => b.staffId === 'st_nat').active === false);
+ok('the roster still gains nothing', (await call('teamRoster', ['kanha', '1234'])).body.every((p) => !('gpRoles' in p) && !('board' in p)));
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 fs.rmSync(TMP, { recursive: true, force: true });
 process.exit(fail ? 1 : 0);

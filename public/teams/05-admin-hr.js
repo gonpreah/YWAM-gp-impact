@@ -226,8 +226,8 @@ function adminLooseHtml_(){
   var r7=staff.filter(function(x){ return x.dept===BL_DEPT && x.ministry==='Campus Director' && !x.cdKind; })
     .map(function(x){ return loosePersonBtn_(x, t('Campus Director — International or National not chosen yet')); });
   GP_ROLES.forEach(function(r){
-    var held=(S.adminStaff||[]).some(function(x){ return x.active && !x.archived && x.gpRole===r[0]; });
-    if(!held) r7.push(esc(gpRoleLabel_(r[0]))+'<div class="rowSub">'+esc(t('nobody yet — set it on their account under YWAM GP role'))+'</div>');
+    var held=(S.adminStaff||[]).some(function(x){ return x.active && !x.archived && (x.gpRoles||[x.gpRole]).indexOf(r[0])>-1; });
+    if(!held) r7.push(esc(gpRoleLabel_(r[0]))+'<div class="rowSub">'+esc(t('nobody yet — tick it on their account under Positions'))+'</div>');
   });
   out+=looseSection_('🌏', t('The YWAM GP structure isn’t filled in'), t('So the charts, the YWAM GP page and the board see the real picture.'), r7);
   total+=r7.length;
@@ -740,9 +740,7 @@ function adminRowBodyHtml_(s){
       (function(){ var ck=d.cdKind!==undefined?d.cdKind:(s.cdKind||'');
         return '<label class="f">🧭 '+esc(t('If Campus Director: which one'))+'</label><select id="adm_cdkind">'+
           [['',t('—')],['international',t('International Campus Director')],['national',t('National Campus Director')]].map(function(o){ return '<option value="'+o[0]+'"'+(ck===o[0]?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('')+'</select>'; })()+
-      (function(){ var gr=d.gpRole!==undefined?d.gpRole:(s.gpRole||'');
-        return '<label class="f">🌏 '+esc(t('YWAM GP leadership team (optional)'))+'</label><select id="adm_gprole"><option value="">'+esc(t('—'))+'</option>'+
-          GP_ROLES.map(function(r){ return '<option value="'+r[0]+'"'+(gr===r[0]?' selected':'')+'>'+esc(t(r[1]))+'</option>'; }).join('')+'</select>'; })()+
+      admPositionsHtml_(s, d)+
       countryFieldHtml('adm_country', d.country!==undefined?d.country:(s.country||''))+
       '<label class="f">👑 '+esc(t('Ministry leader of'))+'</label>'+
       '<p class="hint" style="margin:0 0 6px">'+esc(t('A leader can add, rename, remove and re-time the metrics their ministry tracks. Anyone can still log the numbers.'))+'</p>'+
@@ -788,6 +786,33 @@ function adminRowBodyHtml_(s){
   return b+'</div>';
 }
 
+/* Everything one person holds, in one place on their account (Oct 2026, Uriah: "select
+   multiple positions … for me I'm on the board, YWAM GP & Siem Reap Leadership"): their
+   campus role is the department and ministry above it; here, as many YWAM GP places as
+   they hold, and their seat on the Advisory Board (made and linked to them on Save —
+   its bio, photo and contact stay in Admin → Advisory Board). */
+function admPositionsHtml_(s, d){
+  var gps = d.gpRoles!==undefined ? d.gpRoles : (s.gpRoles || (s.gpRole ? [s.gpRole] : []));
+  var seat = d.board!==undefined ? d.board : (s.board ? { on:true, role:s.board.role } : { on:false, role:'Advisor' });
+  var roles=['President','Secretary','Treasurer','Advisor'];
+  if(seat.role && roles.indexOf(seat.role)===-1) roles.push(seat.role);
+  return '<div class="admPositions"><div class="admPosHead">🧭 '+esc(t('Positions'))+'</div>'+
+    '<p class="hint" style="margin:0 0 6px">'+esc(t('One person can hold several: their campus role (the department and ministry above), YWAM GP places, and a seat on the Advisory Board.'))+'</p>'+
+    '<label class="f">🌏 '+esc(t('YWAM GP leadership team'))+'</label><div class="leadsPick admGpPick">'+GP_ROLES.map(function(r){
+      return '<label class="leadOpt"><input type="checkbox" data-admgp="'+r[0]+'"'+(gps.indexOf(r[0])>-1?' checked':'')+'> '+esc(t(r[1]))+'</label>'; }).join('')+'</div>'+
+    '<label class="f remBox" style="margin-top:10px"><input type="checkbox" id="adm_board"'+(seat.on?' checked':'')+'> 🛡️ '+esc(t('On the YWAM GP Advisory Board'))+'</label>'+
+    '<div class="admBoardRole"'+(seat.on?'':' hidden')+'><label class="f" for="adm_boardrole">'+esc(t('Their role on the board'))+'</label><select id="adm_boardrole">'+
+      roles.map(function(r){ return '<option value="'+esc(r)+'"'+(seat.role===r?' selected':'')+'>'+esc(t(r))+'</option>'; }).join('')+'</select>'+
+      '<p class="hint" style="margin:4px 0 0">'+esc(t('Their bio, photo and how to reach them for the board are in Admin → Advisory Board.'))+'</p></div></div>';
+}
+function bindAdmPositions_(admD){
+  var gpBoxes=document.querySelectorAll('[data-admgp]');
+  gpBoxes.forEach(function(c){ c.onchange=function(){ admD.gpRoles=[].filter.call(gpBoxes, function(x){ return x.checked; }).map(function(x){ return x.getAttribute('data-admgp'); }); }; });
+  var bd=document.getElementById('adm_board'), br=document.getElementById('adm_boardrole');
+  var keep=function(){ admD.board={ on:!!(bd && bd.checked), role:(br && br.value) || 'Advisor' }; };
+  if(bd) bd.onchange=function(){ keep(); var w=document.querySelector('.admBoardRole'); if(w) w.hidden=!bd.checked; };
+  if(br) br.onchange=keep;
+}
 function bindAdmLeads_(admD){
   [['data-admlead','leads'],['data-admmin','ministries']].forEach(function(pair){
     document.querySelectorAll('['+pair[0]+']').forEach(function(c){
@@ -1371,7 +1396,8 @@ function bindAdmin(){
       var s=(S.adminStaff||[]).find(function(x){ return x.id===id; })||{};
       S.adminEditId=id;
       S.adminEditDraft={ name:s.name||'', username:s.username||'', campus:s.campus||'', dept:s.dept||'', ministry:s.ministry||'',
-        role:s.role||'', staffType:s.staffType||'', country:s.country||'', leads:(s.leads||[]).slice(), ministries:(s.ministries||[]).slice() };
+        role:s.role||'', staffType:s.staffType||'', country:s.country||'', leads:(s.leads||[]).slice(), ministries:(s.ministries||[]).slice(),
+        gpRoles:(s.gpRoles || (s.gpRole ? [s.gpRole] : [])).slice(), board: s.board ? { on:true, role:s.board.role } : { on:false, role:'Advisor' } };
       render();
     };
   });
@@ -1381,6 +1407,7 @@ function bindAdmin(){
   if(S.adminEditId && document.getElementById('adm_campus')){
     var admD = S.adminEditDraft || {};
     fillMinistrySelect('adm_ministry','adm_campus','adm_dept', admD.ministry||'');
+    bindAdmPositions_(admD);
     // Typing/picking updates the draft directly rather than calling render() —
     // same reason broadcastDraft doesn't re-render on every keystroke. That
     // keeps whatever's typed alive if anything else on the page re-renders,
@@ -1439,7 +1466,8 @@ function bindAdmin(){
         role:document.getElementById('adm_role').value.trim(),
         staffType:document.getElementById('adm_type').value,
         cdKind:(document.getElementById('adm_cdkind')||{}).value||'',
-        gpRole:(document.getElementById('adm_gprole')||{}).value||'',
+        gpRoles:[].map.call(document.querySelectorAll('[data-admgp]:checked'), function(c){ return c.getAttribute('data-admgp'); }),
+        board:{ on:!!(document.getElementById('adm_board')||{}).checked, role:(document.getElementById('adm_boardrole')||{}).value||'Advisor' },
         country:countryValue('adm_country'),
         leads:[].map.call(document.querySelectorAll('[data-admlead]:checked'), function(c){ return c.getAttribute('data-admlead'); }),
         ministries:[].map.call(document.querySelectorAll('[data-admmin]:checked'), function(c){ return c.getAttribute('data-admmin'); }),

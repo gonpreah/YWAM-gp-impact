@@ -302,6 +302,31 @@ const main = (page) => page.$eval('#main', e => e.innerText);
   await ctx.close();
 }
 
+/* ---------- several positions for one person: set together, seen together (Oct 2026) ---------- */
+{
+  const { ctx, page } = await open('uriah');
+  await page.evaluate(() => { S.view = 'admin'; S.adminSub = 'person'; S.adminPersonId = 'st1'; S.adminStaff = null; render(); }); await page.waitForTimeout(1200);
+  await page.click('[data-adminedit="st1"]'); await page.waitForTimeout(400);
+  ok('a person\'s account has one Positions box: YWAM GP places to tick, and the Advisory Board', !!(await page.$('.admPositions')) && (await page.$$('[data-admgp]')).length === 6 &&
+    await page.$eval('[data-admgp="director"]', (e) => e.checked) && await page.$eval('#adm_board', (e) => e.checked) && await page.$eval('#adm_boardrole', (e) => e.value) === 'Advisor');
+  await page.check('[data-admgp="campuses"]'); await page.selectOption('#adm_boardrole', 'President');
+  await page.evaluate(() => render()); await page.waitForTimeout(300);
+  ok('… ticks survive a redraw while editing', await page.$eval('[data-admgp="campuses"]', (e) => e.checked) && await page.$eval('#adm_boardrole', (e) => e.value) === 'President');
+  await (await page.$('.admPositions')).screenshot({ path: OUT + '/positions-admin.png' });
+  await page.click('[data-adminsave="st1"]'); await page.waitForTimeout(1200);
+  const me = mem.staff.find((x) => x.id === 'st1');
+  ok('saved: two YWAM GP places and the board seat, on the one account', (me.gpRoles || []).join() === 'director,campuses' && mem.board.filter((b) => b.staffId === 'st1').length === 1 && mem.board.find((b) => b.staffId === 'st1').role === 'President');
+  await page.evaluate(() => new Promise((res) => run('getYwamGp', [S.auth.user, S.auth.pin], (d) => { S.org = d; res(); })));
+  await page.evaluate(() => { S.view = 'profile'; render(); }); await page.waitForTimeout(500);
+  const pos = await page.$eval('.myPos', (e) => e.parentElement.innerText).catch(() => '');
+  ok('Profile & settings → My positions lists every one', /International Campus Director/.test(pos) && /YWAM GP Director/.test(pos) && /Campuses Lead/.test(pos) && /President/.test(pos) && /Advisory Board/.test(pos), pos.replace(/\n/g, ' | '));
+  await (await page.$('.myPos')).evaluateHandle((e) => e.parentElement).then((h) => h.asElement().screenshot({ path: OUT + '/positions-profile.png' }));
+  await page.evaluate(() => { S.view = 'ywamgp'; render(); }); await page.waitForTimeout(500);
+  const gpt = await main(page);
+  ok('the YWAM GP page has them in each place they hold', (gpt.match(/Uriah Lyford/g) || []).length >= 3);
+  await ctx.close();
+}
+
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 await browser.close(); srv.close();

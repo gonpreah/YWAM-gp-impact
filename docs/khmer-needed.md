@@ -3799,3 +3799,20 @@ The card for adding or editing a ministry partner (My Home → Support raising).
 | Take them off the list of people you support? | ដកពួកគេចេញពីបញ្ជីអ្នកដែលអ្នកគាំទ្រ? |
 
 My Home → Support raising: the "We support" tab (the people and ministries a staff member gives to each month), the in / out / kept figures, and bringing in a giving & support tracker. "We support" and "Partners" are two tabs side by side (about 12 characters each). "Monthly Support Received" / "Monthly Support Given" in the not-found message are the headings in the sheet itself, so they stay in English. "Only your partners’ totals — never who you support, or how much." is a privacy promise; worth checking first.
+
+## 71. Several positions for one person
+
+| English | Khmer (draft) |
+|---|---|
+| nobody yet — tick it on their account under Positions | មិនទាន់មាននរណាម្នាក់ — សូមគូសវានៅលើគណនីរបស់ពួកគេ ក្រោម តួនាទី |
+| Positions | តួនាទី |
+| One person can hold several: their campus role (the department and ministry above), YWAM GP places, and a seat on the Advisory Board. | មនុស្សម្នាក់អាចមានតួនាទីច្រើន៖ តួនាទីនៅសាខា (ផ្នែក និងកិច្ចការបម្រើខាងលើ) តួនាទីក្នុង YWAM GP និងកៅអីនៅក្រុមប្រឹក្សាភិបាលទីប្រឹក្សា។ |
+| YWAM GP leadership team | ក្រុមដឹកនាំ YWAM GP |
+| On the YWAM GP Advisory Board | នៅក្នុងក្រុមប្រឹក្សាភិបាលទីប្រឹក្សា YWAM GP |
+| Their role on the board | តួនាទីរបស់ពួកគេនៅក្រុមប្រឹក្សា |
+| Their bio, photo and how to reach them for the board are in Admin → Advisory Board. | ប្រវត្តិរូប រូបថត និងរបៀបទាក់ទងពួកគេសម្រាប់ក្រុមប្រឹក្សា មាននៅក្នុង អ្នកគ្រប់គ្រង → ក្រុមប្រឹក្សាភិបាលទីប្រឹក្សា។ |
+| Leads {ministry} | ដឹកនាំ {ministry} |
+| My positions | តួនាទីរបស់ខ្ញុំ |
+| Your campus role you change below. YWAM GP places and the Advisory Board are set by an admin, on your account. | តួនាទីនៅសាខារបស់អ្នក អ្នកអាចប្ដូរខាងក្រោម។ តួនាទីក្នុង YWAM GP និងក្រុមប្រឹក្សាភិបាលទីប្រឹក្សា ត្រូវបានកំណត់ដោយអ្នកគ្រប់គ្រង នៅលើគណនីរបស់អ្នក។ |
+
+Admin → a person's account → Positions (their YWAM GP places and their Advisory Board seat, together), and Profile & settings → My positions. "Advisory Board" should read the same as the YWAM GP page's word for it (not ក្តារ, which is the meeting board).

@@ -416,6 +416,17 @@ Uriah: YWAM GP is YWAM Poipet, YWAM Siem Reap, **YWAM GP** (the organisation) an
   Music, Media, Education**. On top of a person's campus role; the YWAM GP page shows
   every place, an empty one as "Not filled yet". One person can hold all three kinds of
   role at once — a campus title, a YWAM GP place and a linked board seat — with one login.
+- **Several positions, set together** (Oct 2026, Uriah: "select multiple positions … for me
+  I'm on the board, YWAM GP & Siem Reap Leadership"): `gpRoles` (a list — `cleanGpRoles_`,
+  `gpRolesOf_`; `gpRole` is kept as the first, and a lone `gpRole` still saves) and the
+  board seat both sit in **Admin → a person's account → Positions** (`admPositionsHtml_`):
+  tick the YWAM GP places, tick "On the YWAM GP Advisory Board" and pick the role.
+  `adminUpdateStaff`'s `board: { on, role }` → `setStaffBoardSeat_`: makes or brings back
+  their linked board member, or takes it off (kept inactive — bio and photo stay; Admin →
+  Advisory Board edits those). `adminListStaff` carries each person's `board` seat.
+  `getYwamGp` lists a person once per place they hold; their page shows every place; Profile
+  & settings → **My positions** lists campus title, ministries led, YWAM GP places, board.
+  tests/test-ywam-gp.mjs, test-ywam-gp-ui.mjs.
 - **Safeguarding contacts** (`safeguarding` on a board member, admin-set): a serious
   concern ("Raise a concern") goes ONLY to them, because YWAM GP's own leaders sit on the
   board (Uriah is President and Naomi Secretary) — ideally people not on staff, and Admin

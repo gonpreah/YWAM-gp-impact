@@ -839,7 +839,7 @@ function adminStaffOut_(s) {
     ministry: s.ministry || '', role: s.role, active: s.active !== false, isAdmin: !!s.isAdmin, hr: !!s.hr, kmReviewer: !!s.kmReviewer,
     kind: s.kind || 'staff', portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin,
     staffType: s.staffType || '', country: s.country || '', email: s.email || '',
-    cdKind: s.cdKind || '', gpRole: s.gpRole || '', cltRequest: cltRequestOut_(s),
+    cdKind: s.cdKind || '', gpRole: gpRolesOf_(s)[0] || '', gpRoles: gpRolesOf_(s), cltRequest: cltRequestOut_(s),
     mentorId: s.mentorId || '', mentorStatus: s.mentorStatus || '',
     leads: leadsOf_(s), ministries: ministriesOf_(s),
     archived: archivedOf_(s),
@@ -939,7 +939,10 @@ async function adminListStaff(username, pin) {
   if (!admin) return { ok: false };
   const rows = await getStaff_();
   // Applicants are portal accounts, not staff — they have their own screen.
-  return { ok: true, staff: rows.filter(function (r) { return !isApplicant_(r); }).map(adminStaffOut_) };
+  // each person's Advisory Board seat, when it is linked to them, so one screen shows every position
+  const seats = {};
+  (await getBoard_()).forEach(function (b) { if (b.staffId && b.active !== false) seats[b.staffId] = { id: b.id, role: b.role || 'Advisor' }; });
+  return { ok: true, staff: rows.filter(function (r) { return !isApplicant_(r); }).map(function (r) { return Object.assign(adminStaffOut_(r), { board: seats[r.id] || null }); }) };
 }
 
 /* A staff member's request to move into Campus Leadership (updateProfile), and an
@@ -1039,7 +1042,7 @@ async function adminUpdateStaff(username, pin, staffId, payload) {
   if (payload && payload.username !== undefined && (await getBoard_()).some(function (b) { return b.username === normUser_(payload.username); })) {
     return { ok: false, err: 'username_taken' };
   }
-  return mutateStaff_(function (rows) {
+  const r = await mutateStaff_(function (rows) {
     const idx = rows.findIndex(function (r) { return r.id === staffId; });
     if (idx === -1) return { abort: true, ok: false, err: 'not_found' };
     const rec = rows[idx];
@@ -1053,7 +1056,11 @@ async function adminUpdateStaff(username, pin, staffId, payload) {
     if (payload.country !== undefined) rec.country = cleanCountry_(payload.country);
     // YWAM GP: which Campus Director (international / national), and an organisation-wide role
     if (payload.cdKind !== undefined) rec.cdKind = CD_KINDS.indexOf(payload.cdKind) > -1 ? payload.cdKind : '';
-    if (payload.gpRole !== undefined) rec.gpRole = GP_ROLE_IDS.indexOf(payload.gpRole) > -1 ? payload.gpRole : '';
+    // several YWAM GP places may be one person's (gpRoles); a single gpRole still works
+    if (payload.gpRoles !== undefined || payload.gpRole !== undefined) {
+      rec.gpRoles = cleanGpRoles_(payload.gpRoles !== undefined ? payload.gpRoles : [payload.gpRole]);
+      rec.gpRole = rec.gpRoles[0] || '';
+    }
     if (payload.username !== undefined) {
       // Same shape sign-up already enforces (staffRegister above) — a username
       // is also how someone logs in, so it can't collide with anyone else's.
@@ -1092,6 +1099,9 @@ async function adminUpdateStaff(username, pin, staffId, payload) {
     rows[idx] = rec;
     return { ok: true, staff: adminStaffOut_(rec) };
   });
+  // their seat on the Advisory Board, set with their other positions (setStaffBoardSeat_)
+  if (r.ok && payload && payload.board !== undefined && r.staff && r.staff.kind !== 'applicant') await setStaffBoardSeat_(staffId, payload.board);
+  return r;
 }
 
 /* For the real mess this exists to clean up — a duplicate sign-up, a test
@@ -9043,6 +9053,35 @@ function orgTitle_(s) {
   return s.ministry ? 'Director of ' + s.ministry : '';
 }
 async function getBoard_() { return readJSON('board', []); }
+/* The YWAM GP places someone holds — several are allowed (Oct 2026, Uriah: "select multiple
+   positions … for me I'm on the board, YWAM GP & Siem Reap Leadership"). Kept as gpRoles;
+   gpRole is the first of them, for anything that still reads one. */
+function cleanGpRoles_(list) {
+  const out = [];
+  (Array.isArray(list) ? list : []).forEach(function (g) { if (GP_ROLE_IDS.indexOf(g) > -1 && out.indexOf(g) === -1) out.push(g); });
+  return out;
+}
+function gpRolesOf_(s) {
+  if (!s) return [];
+  if (Array.isArray(s.gpRoles)) return cleanGpRoles_(s.gpRoles);
+  return GP_ROLE_IDS.indexOf(s.gpRole) > -1 ? [s.gpRole] : [];
+}
+/* A staff member's seat on the Advisory Board, set from their own account in Admin with
+   their other positions: on → their linked board member (made if there isn't one, brought
+   back if it was taken off) with this role; off → taken off the board (kept, inactive, so
+   a bio and photo aren't lost). Admin → Advisory Board still edits the rest of it. */
+async function setStaffBoardSeat_(staffId, seat) {
+  const rows = await getBoard_();
+  const i = rows.findIndex(function (b) { return b.staffId === staffId; });
+  const role = ooText_(seat && seat.role, 40) || 'Advisor';
+  if (seat && seat.on) {
+    if (i > -1) Object.assign(rows[i], { role: role, active: true, updated: new Date().toISOString() });
+    else rows.push({ id: 'bd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), created: new Date().toISOString(),
+      name: '', role: role, email: '', phone: '', bio: '', photo: '', staffId: staffId, order: 0, active: true, safeguarding: false, updated: new Date().toISOString() });
+  } else if (i > -1 && rows[i].active !== false) Object.assign(rows[i], { active: false, updated: new Date().toISOString() });
+  else return;
+  await writeJSON('board', rows);
+}
 function boardOut_(b, staff) {
   const st = b.staffId ? (staff || []).find(function (x) { return x.id === b.staffId && x.active !== false; }) : null;
   return { id: b.id, name: b.name || (st ? st.name : ''), role: b.role || 'Advisor', photo: b.photo || (st ? st.photo || '' : ''),
@@ -9098,7 +9137,7 @@ async function getYwamGp(username, pin) {
   const titles = {}, gp = [];
   staff.forEach(function (r) {
     const tl = orgTitle_(r); if (tl) titles[r.id] = tl;
-    if (GP_ROLE_IDS.indexOf(r.gpRole) > -1) gp.push(Object.assign(person(r), { gpRole: r.gpRole }));
+    gpRolesOf_(r).forEach(function (g) { gp.push(Object.assign(person(r), { gpRole: g })); });   // a row for each place they hold
   });
   const campuses = CAMPUS_IDS_.map(function (c) {
     const here = staff.filter(function (r) { return r.campus === c; });
