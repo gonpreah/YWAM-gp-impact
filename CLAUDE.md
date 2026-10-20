@@ -2667,9 +2667,19 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 ## GP Tasks (Oct 2026, Uriah: "much simpler, very much like Google Tasks")
 - **Oct 2026, second pass** (Uriah: "more fluid, like Google Tasks"): no "For me" tab — everyone has
   **My Tasks**, a personal list the server makes on first `getGpTasks` (`gptMain_()` = your oldest
-  personal list); it shows your own tasks plus every task given to you from any other list, each with
-  the list it came from (`gptChipName_`: "Cafe jobs", "Cora's list"), and what you asked other
-  ministries for. **A personal list is its owner's alone** (Uriah: "it's only to assign tasks, not
+  personal list). **It holds only its own tasks** (Uriah: "keep it personal, not what's given to
+  you"): what you are given shows under the list it is in — your ministry's, the Leadership team's —
+  and a list you can't otherwise see comes along as an `onlyAssigned` tab (`.gtTab.given`, named by
+  `gptChipName_`: "Cafe", "Cora's list") holding just what you were given and what you asked it for.
+  **Subtasks** (`subs: [{id,text,done}]`, `gptSubs_`, max 20): added in the sheet (Enter adds), shown
+  under the row, tickable there. **Drag and drop** (`gptDrag_`, mouse or finger): a task by its grip
+  up or down — `orderGpTasks(listId, ids)` sets the list's `order` ("My order" sort, `gptSort_`) — or
+  onto another list's tab (`saveGpTask {listId}`); a tab after a short hold — `saveGpListOrder(ids)`
+  → `staff.taskListOrder`, each person's own, returned as `listOrder`. The leadership row has no
+  Ministry Tasks tab any more — the Board is the place, and its tasks reach GP Tasks.
+  **A mentorship 1:1 with its time set is a task in both people's My Tasks** (`gptFromOneOnOne_` on
+  `respondToOneOnOne` with a time, `setOneOnOneTime`, `saveOneOnOneNotes` when held; `ooId`/`ooFor`
+  on the task; "1:1 with Sokha", the day and time; done when held, gone when declined). **A personal list is its owner's alone** (Uriah: "it's only to assign tasks, not
   lists" — after Vannak's shared list showed up in his): no share option anywhere, `gptSees_` ignores
   the old `shared` flag, `saveGpTaskList` no longer sets it. What reaches someone else is a task
   assigned to them, in their My Tasks with the list it came from. ＋ adds into the open list (no list chooser); **＋ New list** is a small sheet (name,

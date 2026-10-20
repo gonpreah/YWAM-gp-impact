@@ -1,15 +1,16 @@
 /* ==================== GP Tasks (Oct 2026, Uriah) ====================
    "Much simpler and easy to use, very much like Google Tasks": lists with a title, tasks
-   under them with a day and a time — and, for a campus that works as one team, lists for a
-   ministry or a department, people a task is given to, and asking another ministry for help
-   (it shows in their list as a request they accept or decline). Campus Leadership and admins
-   see every list, narrowed by a filter they keep as their default. Opened from My Home's card
-   and the Weekly Goals heading (S.view='tasks'), from the Calendar, and folded under the
-   ministry on My Ministry, where it shows only that ministry's lists.
-   Everyone starts with one list, My Tasks (the server makes it): their own tasks, and every
-   task given to them from any other list — so a leader can give someone work from the
-   ministry's list or from their own, and it lands in that person's My Tasks either way, with
-   the list it came from on it. The server's rules are in api.js (GP Tasks). */
+   under them with a day and a time, subtasks, drag to reorder — and, for a campus that works
+   as one team, each ministry's own list, people a task is given to, and asking another
+   ministry for help (it shows in their list as a request they accept or decline). Campus
+   Leadership and admins see every ministry's list, narrowed by a filter they keep as their
+   default. Opened from My Home's card and the Weekly Goals heading (S.view='tasks'), from
+   the Calendar, and folded under the ministry on My Ministry, where it shows only that
+   ministry's list.
+   Everyone starts with My Tasks (the server makes it): their own, private — as are any lists
+   they add. What is given to you from another list shows under that list: your ministry's,
+   the Leadership team's, or, from a list you can't otherwise see, a tab with just what you
+   were given (and what you asked that ministry for). The server's rules are in api.js. */
 S.gpt=null; S.gptLoading=false; S.gptErr=''; S.gptList=null; S.gptOpen=null; S.gptDraft=null; S.gptScope=null;
 S.gptNewList=null; S.gptAsk=null; S.gptFilterOpen=false; S.gptFilterDraft=null; S.gptListMenu=false; S.gptDoneOpen=false; S.gptFrom='week';
 /* plain line icons, the app's own kind (Uriah: "simple, modern — not the green tick emoji");
@@ -25,6 +26,8 @@ var GPT_SVG=(function(){
     team:    o+'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 19c1-3.5 3.5-5.5 6.5-5.5s5.5 2 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 13.5c2.6 0 4.6 1.6 5.5 4.5"/></svg>',
     lock:    o+'<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
     search:  o+'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>',
+    sub:     o+'<path d="M7 4v9a3 3 0 0 0 3 3h8"/><path d="M14 12l4 4-4 4"/></svg>',
+    grip:    '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
     calendar:o+'<rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>'
   };
 })();
@@ -54,19 +57,23 @@ function gptKindIc_(L){ return gptIc_(L.scope==='personal' ? 'lock' : 'team', 'g
 function gptChipName_(L){ return L.scope==='personal' && L.ownerId!==S.me.id ? gpT('{name}’s list',{name:firstName_(gptPerson_(L.ownerId).name)}) : gptTitle_(L); }
 /* the lists to show: a ministry's own (My Ministry's fold — only that ministry's, nothing personal),
    or all you see — Campus Leadership's narrowed by their saved filter (your own ministries' and your
-   personal lists always show), My Tasks first */
+   personal lists always show), My Tasks first, then in the order you dragged them into */
 function gptLists_(scope){
   var G=S.gpt; if(!G) return [];
-  /* never someone else's personal list (Uriah: "why is Vannak's list in my GP Tasks?") — what they give you is in My Tasks */
-  var lists=G.lists.filter(function(L){ return !L.onlyAssigned && !(L.scope==='personal' && L.ownerId!==S.me.id); });
-  if(scope) return lists.filter(function(L){ return L.dept===scope.dept && (scope.min ? L.scope==='ministry' && L.ministry===scope.min : L.scope==='dept'); });
+  /* never someone else's personal list (Uriah: "why is Vannak's list in my GP Tasks?") — unless they gave you something from it, which is all you see of it */
+  var lists=G.lists.filter(function(L){ return L.onlyAssigned || !(L.scope==='personal' && L.ownerId!==S.me.id); });
+  if(scope) return lists.filter(function(L){ return !L.onlyAssigned && L.dept===scope.dept && (scope.min ? L.scope==='ministry' && L.ministry===scope.min : L.scope==='dept'); });
   var f=G.filter && G.filter.keys;
-  if(G.canAll && f) lists=lists.filter(function(L){ return L.scope==='personal' || L.mine || f.indexOf(gptKeyOf_(L))>-1; });
-  var main=gptMain_();
-  var rank=function(L){ return main && L.id===main.id ? 0 : L.scope==='personal' ? (L.ownerId===S.me.id ? 2 : 4) : L.mine ? 1 : 3; };
-  return lists.slice().sort(function(a,b){ return rank(a)-rank(b) || String(a.dept+a.ministry+a.title).localeCompare(String(b.dept+b.ministry+b.title)); });
+  if(G.canAll && f) lists=lists.filter(function(L){ return L.onlyAssigned || L.scope==='personal' || L.mine || f.indexOf(gptKeyOf_(L))>-1; });
+  var main=gptMain_(), ord=G.listOrder||[];
+  var rank=function(L){ return main && L.id===main.id ? 0 : L.onlyAssigned ? 5 : L.scope==='personal' ? 2 : L.mine ? 1 : 3; };
+  return lists.slice().sort(function(a,b){
+    var ia=ord.indexOf(a.id), ib=ord.indexOf(b.id);
+    if(ia>-1 && ib>-1) return ia-ib; if(ia>-1 || ib>-1) return ia>-1 ? -1 : 1;
+    return rank(a)-rank(b) || String(a.dept+a.ministry+a.title).localeCompare(String(b.dept+b.ministry+b.title)); });
 }
 function gptListLabel_(L){
+  if(L.onlyAssigned) return t('What you were given from this list, and what you asked it for');
   if(L.scope==='personal') return L.ownerId===S.me.id ? t('Personal · only you') : gpT('{name}’s list',{name:firstName_(gptPerson_(L.ownerId).name)});
   return (L.scope==='dept' ? gpT('{dept} · whole department',{dept:t(L.dept)}) : t(L.ministry)+' · '+t(L.dept))+' — '+t('the ministry’s list: add tasks and give them to its people');
 }
@@ -79,11 +86,13 @@ function gptWhen_(x){
   return s;
 }
 function gptOverdue_(x){ return !x.done && x.due && x.due<todayStr(); }
-function gptSort_(a,b){ var ad=a.due||'9999', bd=b.due||'9999'; return ad<bd ? -1 : ad>bd ? 1 : ((a.time||'99')<(b.time||'99') ? -1 : (a.time||'99')>(b.time||'99') ? 1 : String(a.created).localeCompare(String(b.created))); }
+/* "My order", like Google Tasks: where you dragged it; new ones at the end */
+function gptSort_(a,b){ return (a.order||0)-(b.order||0) || String(a.created).localeCompare(String(b.created)); }
 /* ---- the page, like Google Tasks (Uriah, Oct 2026: "simple, like Google Tasks — the only thing is you
    can assign people"): list tabs across the top (My Tasks first) with ⋮ for the list's options; rows
-   with a circle to tick, the title, and small chips for the day and the person; a round ＋ that opens
-   "New task" with details, date/time and assign as one tap each; a task opens in a sheet to change it;
+   with a circle to tick, the title, small chips for the day and the person, subtasks under it, and a
+   grip to drag it up or down or onto another list's tab; a round ＋ that opens "New task" with
+   details, date/time and assign as one tap each; a task opens in a sheet to change it;
    "＋ New list" opens a small sheet for the name — lists are added as you go. ---- */
 S.gtNew=null; S.gtMenu=false;
 function gptPageHtml_(scope, embedded){
@@ -95,9 +104,9 @@ function gptPageHtml_(scope, embedded){
   var G=S.gpt, lists=gptLists_(scope);
   var ids=lists.map(function(L){ return L.id; });
   if(ids.indexOf(S.gptList)===-1) S.gptList=ids[0] || null;
-  /* the tabs */
+  /* the tabs — hold one and drag it to change their order */
   h+='<div class="gtBar"><div class="gtTabs" role="tablist">'+
-    lists.map(function(L){ return '<button class="gtTab'+(S.gptList===L.id?' on':'')+'" data-gptlist="'+esc(L.id)+'" role="tab">'+gptKindIc_(L)+esc(gptTitle_(L))+'</button>'; }).join('')+
+    lists.map(function(L){ return '<button class="gtTab'+(S.gptList===L.id?' on':'')+(L.onlyAssigned?' given':'')+'" data-gptlist="'+esc(L.id)+'" role="tab">'+gptKindIc_(L)+esc(gptChipName_(L))+'</button>'; }).join('')+
     (scope ? '' : '<button class="gtTab gtNewList" id="gptNewListBtn">＋ '+esc(t('New list'))+'</button>')+'</div>'+
     '<button class="gtMenuBtn" id="gtMenuBtn" aria-label="'+esc(t('List options'))+'">⋮</button></div>';
   if(S.gtMenu) h+=gtMenuHtml_(scope);
@@ -112,7 +121,7 @@ function gptPageHtml_(scope, embedded){
   var L=gptListById_(S.gptList);
   h+=gtListHtml_(L);
   /* add: the round ＋ on the page; inside My Ministry, a plain row */
-  var canAdd=!L || L.canEdit || L.scope!=='personal';
+  var canAdd=!L.onlyAssigned && (L.canEdit || L.scope!=='personal');
   if(canAdd) h+= embedded ? '<button class="gtAddRow" id="gtAdd">＋ '+esc(L && !L.canEdit ? gpT('Ask {name} for help',{name:t(L.ministry||L.dept)}) : t('Add a task'))+'</button>'
     : '<button class="gtFab" id="gtAdd" aria-label="'+esc(t('Add a task'))+'">'+GPT_SVG.plus+'</button>';
   if(S.gtNew) h+=gtNewHtml_();
@@ -130,42 +139,39 @@ function gtMenuHtml_(scope){
     (L && L.canEdit && !isMain ? it('gptListDelete', '🗑 '+esc(t('Delete the list'))) : '')+'</div>';
 }
 function gtListHtml_(L){
-  var G=S.gpt, main=gptMain_(), isMain=!!(L && main && L.id===main.id), all, sub;
-  if(isMain){   // yours, and everything given to you — wherever its list is
-    all=G.tasks.filter(function(x){ return x.status!=='declined' && (x.listId===L.id || x.assignees.indexOf(S.me.id)>-1); });
-    sub=t('Yours, and what’s given to you');
-  } else { all=G.tasks.filter(function(x){ return x.listId===L.id && x.status!=='declined'; }); sub=gptListLabel_(L); }
+  var G=S.gpt;
+  var all=G.tasks.filter(function(x){ return x.listId===L.id && x.status!=='declined' || (L.onlyAssigned && x.listId===L.id); });
   var open=all.filter(function(x){ return !x.done; }).sort(function(a,b){ return (a.status==='request')-(b.status==='request') || gptSort_(a,b); });
   var done=all.filter(function(x){ return x.done; });
-  var h='<div class="gtList"><div class="gtListHead"><b>'+gptKindIc_(L)+esc(gptTitle_(L))+'</b><span>'+esc(sub)+'</span></div>';
-  if(!open.length) h+='<div class="gtEmpty small"><div class="gtEmptyIc">'+GPT_SVG.tasks+'</div><p>'+esc(isMain ? t('Nothing waiting on you.') : t('No tasks yet.'))+'</p></div>';
-  h+=open.map(function(x){ return gtRowHtml_(x, isMain && x.listId!==L.id); }).join('');
+  var h='<div class="gtList"><div class="gtListHead"><b>'+gptKindIc_(L)+esc(gptChipName_(L))+'</b><span>'+esc(gptListLabel_(L))+'</span></div>';
+  if(!open.length) h+='<div class="gtEmpty small"><div class="gtEmptyIc">'+GPT_SVG.tasks+'</div><p>'+esc(t('No tasks yet.'))+'</p></div>';
+  h+='<div class="gtOpen" data-gptorder="'+esc(L.id)+'">'+open.map(function(x){ return gtItemHtml_(x, L); }).join('')+'</div>';
   if(done.length) h+='<button class="gtDoneHead" id="gptDoneToggle" aria-expanded="'+(S.gptDoneOpen?'true':'false')+'">'+esc(gpT('Completed ({n})',{n:done.length}))+' <span>'+(S.gptDoneOpen?'⌃':'⌄')+'</span></button>'+
-    (S.gptDoneOpen ? done.map(function(x){ return gtRowHtml_(x, isMain && x.listId!==L.id); }).join('')+(L.canEdit ? '<button class="linkbtn inline" id="gptClearDone">'+esc(t('Clear completed'))+'</button>' : '') : '');
-  h+='</div>';
-  if(isMain){
-    var asked=G.tasks.filter(function(x){ return x.by===S.me.id && x.listId!==L.id && (x.status==='request' || x.status==='declined'); });
-    if(asked.length) h+='<div class="gtList"><div class="gtListHead"><b>'+esc(t('You asked other ministries'))+'</b></div>'+asked.map(function(x){ return gtRowHtml_(x, true); }).join('')+'</div>';
-  }
-  return h;
+    (S.gptDoneOpen ? '<div class="gtDone">'+done.map(function(x){ return gtItemHtml_(x, L); }).join('')+'</div>'+(L.canEdit ? '<button class="linkbtn inline" id="gptClearDone">'+esc(t('Clear completed'))+'</button>' : '') : '');
+  return h+'</div>';
 }
-function gtRowHtml_(x, showList){
-  var L=gptListById_(x.listId), req=x.status==='request', dec=x.status==='declined';
+/* one task: its row, its subtasks under it, and a request's answer buttons */
+function gtItemHtml_(x, L){
+  var req=x.status==='request', dec=x.status==='declined', canDrag=L && L.canEdit && !req && !x.done;
   var chips=[];
   if(x.due) chips.push('<span class="gtChip'+(gptOverdue_(x)?' late':'')+'">'+GPT_SVG.clock+esc(gptWhen_(x))+'</span>');
   x.assignees.forEach(function(id){ chips.push('<span class="gtChip who">'+GPT_SVG.person+esc(firstName_(gptPerson_(id).name))+'</span>'); });
   if(x.from && x.from.label) chips.push('<span class="gtChip from">'+esc(gpT('from {who}',{who:t(x.from.label)}))+'</span>');
-  if(showList && L) chips.push('<span class="gtChip list">'+esc(gptChipName_(L))+'</span>');
   if(req) chips.push('<span class="gtChip req">'+esc(x.by===S.me.id ? gpT('Asked — waiting for {name}',{name:t((L&&(L.ministry||L.dept))||'')}) : t('Request'))+'</span>');
   if(dec) chips.push('<span class="gtChip late">'+esc(t('They can’t take it on'))+'</span>');
+  var subs=x.subs||[], subsDone=subs.filter(function(s){ return s.done; }).length;
+  if(subs.length && x.done) chips.push('<span class="gtChip">'+GPT_SVG.sub+subsDone+'/'+subs.length+'</span>');
   var answer = req && L && x.by!==S.me.id && (L.mine || x.assignees.indexOf(S.me.id)>-1 || (S.gpt.canAll && !L.onlyAssigned));
-  return '<div class="gtRow'+(x.done?' done':'')+(req?' req':'')+'" data-gptrow="'+esc(x.id)+'">'+
+  return '<div class="gtItem" data-gptitem="'+esc(x.id)+'">'+
+    '<div class="gtRow'+(x.done?' done':'')+(req?' req':'')+'" data-gptrow="'+esc(x.id)+'">'+
     '<button class="gtCheck'+(x.done?' on':'')+'" data-gptdone="'+esc(x.id)+'"'+(req||dec?' disabled':'')+' aria-label="'+esc(x.done ? t('Mark not done') : t('Mark done'))+'">'+(x.done?'✓':'')+'</button>'+
     '<button class="gtMain" data-gptopen="'+esc(x.id)+'"><span class="gtT">'+esc(x.title)+'</span>'+
       (x.notes ? '<span class="gtNotes">'+esc(String(x.notes).split('\n')[0].slice(0,80))+'</span>' : '')+
-      (chips.length ? '<span class="gtChips">'+chips.join('')+'</span>' : '')+'</button></div>'+
+      (chips.length ? '<span class="gtChips">'+chips.join('')+'</span>' : '')+'</button>'+
+    (canDrag ? '<span class="gtGrip" data-gptgrip="'+esc(x.id)+'" aria-label="'+esc(t('Drag to move'))+'">'+GPT_SVG.grip+'</span>' : '')+'</div>'+
+    (subs.length && !x.done ? '<div class="gtSubs">'+subs.map(function(s){ return '<div class="gtSub'+(s.done?' done':'')+'"><button class="gtCheck small'+(s.done?' on':'')+'" data-gptsubtick="'+esc(x.id)+'|'+esc(s.id)+'" aria-label="'+esc(s.done ? t('Mark not done') : t('Mark done'))+'">'+(s.done?'✓':'')+'</button><span>'+esc(s.text)+'</span></div>'; }).join('')+'</div>' : '')+
     (answer ? '<div class="gtReq">'+esc(gpT('{name} is asking for help.',{name:firstName_(gptPerson_(x.by).name)}))+
-      ' <button class="btn small" data-gptaccept="'+esc(x.id)+'">'+esc(t('We’ll do it'))+'</button><button class="btn small ghost" data-gptdecline="'+esc(x.id)+'">'+esc(t('Can’t'))+'</button></div>' : '');
+      ' <button class="btn small" data-gptaccept="'+esc(x.id)+'">'+esc(t('We’ll do it'))+'</button><button class="btn small ghost" data-gptdecline="'+esc(x.id)+'">'+esc(t('Can’t'))+'</button></div>' : '')+'</div>';
 }
 /* New task — the sheet from the round ＋, into the list that is open */
 function gtNewHtml_(){
@@ -183,11 +189,11 @@ function gtNewHtml_(){
       '<label class="gtTool gtWho'+(N.who?' on':'')+'">'+GPT_SVG.person+(whoName ? ' '+esc(whoName) : '')+'<select id="gptAddWho" aria-label="'+esc(t('Assign to'))+'"><option value="">'+esc(t('Nobody'))+'</option>'+gptPeopleOptions_(L, [])+'</select></label>'+
       '<span style="flex:1"></span><button class="gtSave" id="gptAddBtn">'+esc(t('Save'))+'</button></div></div>';
 }
-/* a task, opened */
+/* a task, opened — with its subtasks */
 function gtDetailHtml_(){
   var x=(S.gpt.tasks||[]).filter(function(y){ return y.id===S.gptOpen; })[0]; if(!x) return '';
   var L=gptListById_(x.listId);
-  var D=S.gptDraft && S.gptDraft.id===x.id ? S.gptDraft : (S.gptDraft={ id:x.id, title:x.title, notes:x.notes, due:x.due, time:x.time, assignees:x.assignees.slice() });
+  var D=S.gptDraft && S.gptDraft.id===x.id ? S.gptDraft : (S.gptDraft={ id:x.id, title:x.title, notes:x.notes, due:x.due, time:x.time, assignees:x.assignees.slice(), subs:(x.subs||[]).map(function(s){ return { id:s.id, text:s.text, done:!!s.done }; }), subNew:'' });
   var canAll=L && L.canEdit, canEdit=canAll || x.by===S.me.id || x.assignees.indexOf(S.me.id)>-1, canAssign=canAll || x.by===S.me.id;
   var ro=canEdit ? '' : ' readonly';
   return '<div class="scrim" id="gtDetScrim"></div><div class="gtSheet gtDetail" id="gtDetail" role="dialog" aria-label="'+esc(x.title)+'">'+
@@ -198,6 +204,10 @@ function gtDetailHtml_(){
     '<div class="gtLine">'+gptIc_('clock')+'<span class="gtWhen"><input type="date" data-gptd="due" value="'+esc(D.due||'')+'" aria-label="'+esc(t('Set date'))+'"'+(canEdit?'':' disabled')+'><input type="time" data-gptd="time" value="'+esc(D.time||'')+'" step="900" aria-label="'+esc(t('Set time'))+'"'+(D.due && canEdit ? '' : ' disabled')+'></span>'+(D.due ? '' : '<span class="gtHint">'+esc(t('Set date and time'))+'</span>')+'</div>'+
     '<div class="gtLine">'+gptIc_('person')+'<span class="gtPeople">'+D.assignees.map(function(id){ return '<span class="gtChip who">'+esc(gptPerson_(id).name)+(canAssign ? ' <button class="gptX" data-gptunassign="'+esc(id)+'" aria-label="'+esc(t('Remove'))+'">×</button>' : '')+'</span>'; }).join('')+
       (canAssign ? '<select id="gptAssignSel"><option value="">'+esc(D.assignees.length ? t('＋ Add someone') : t('Assign to…'))+'</option>'+gptPeopleOptions_(L, D.assignees)+'</select>' : (D.assignees.length ? '' : '<span class="gtHint">'+esc(t('nobody yet'))+'</span>'))+'</span></div>'+
+    '<div class="gtLine gtSubLine">'+gptIc_('sub')+'<div class="gtSubEdit">'+
+      D.subs.map(function(s, i){ return '<div class="gtSub'+(s.done?' done':'')+'"><button class="gtCheck small'+(s.done?' on':'')+'" data-gptdsub="'+i+'" aria-label="'+esc(t('Mark done'))+'">'+(s.done?'✓':'')+'</button>'+
+        (canEdit ? '<input type="text" data-gptdsubtext="'+i+'" maxlength="200" value="'+esc(s.text)+'"><button class="gptX" data-gptdsubdel="'+i+'" aria-label="'+esc(t('Remove'))+'">×</button>' : '<span>'+esc(s.text)+'</span>')+'</div>'; }).join('')+
+      (canEdit ? '<input type="text" id="gptSubNew" maxlength="200" placeholder="'+esc(D.subs.length ? t('Add a subtask') : t('Add a subtask — a small step inside this task'))+'" value="'+esc(D.subNew||'')+'">' : (D.subs.length ? '' : '<span class="gtHint">'+esc(t('no subtasks'))+'</span>'))+'</div></div>'+
     (x.from && x.from.label ? '<p class="gtHint" style="margin:6px 0 0 30px">'+esc(gpT('from {who}',{who:t(x.from.label)}))+'</p>' : '')+
     (x.status==='request' ? '' : '<button class="btn gtDoneBtn" data-gptdone="'+esc(x.id)+'">'+esc(x.done ? t('Mark not done') : t('Mark completed'))+'</button>')+
     (canEdit ? '<button class="btn ghost" id="gptSave">'+esc(t('Save'))+'</button>' : '')+'</div>';
@@ -222,8 +232,7 @@ function gptAskHtml_(){
     if(!any) h+='<p class="sub" style="margin:6px 0">'+esc(t('No ministry by that name.'))+'</p>';
     h+='</div>';
   }
-  return h+
-    '<label class="f">'+esc(t('What do you need?'))+'</label><input type="text" id="gptAskTitle" maxlength="200" value="'+esc(A.title||'')+'" placeholder="'+esc(t('e.g. Coffee for the team arriving Friday'))+'">'+
+  return h+'<label class="f">'+esc(t('What do you need?'))+'</label><input type="text" id="gptAskTitle" maxlength="200" value="'+esc(A.title||'')+'" placeholder="'+esc(t('e.g. Coffee for the team arriving Friday'))+'">'+
     '<label class="f">'+esc(t('By when (optional)'))+'</label><input type="date" id="gptAskDue" value="'+esc(A.due||'')+'">'+
     '<div class="btnRow"><button class="btn" id="gptAskSend">'+esc(t('Send the request'))+'</button><button class="btn ghost" id="gptAskCancel">'+esc(t('Cancel'))+'</button></div></div>';
 }
@@ -269,6 +278,46 @@ function gptSaveTask_(payload, msg, after){
     render();
   }, function(){ showMsg(t('No connection — try again when you are online.')); });
 }
+/* ---- drag and drop: a task by its grip (at once), a tab after a short hold on touch — mouse or finger.
+   The thing moves live among its siblings; letting go gives back their order, or the tab it was dropped on. ---- */
+S.gtDragEnd=0;
+function gptDrag_(handles, o){
+  handles.forEach(function(hd){
+    var start=function(ev, touch){
+      var p=touch ? ev.touches[0] : ev, item=hd.closest(o.itemSel); if(!item || !p) return;
+      var st={ on:false, x:p.clientX, y:p.clientY, target:null }, timer=null;
+      var begin=function(){ st.on=true; item.classList.add('gtDragging'); document.body.classList.add('gtDragOn'); };
+      if(!o.hold) begin(); else if(touch) timer=setTimeout(begin, o.hold);
+      var mv=touch?'touchmove':'mousemove', up=touch?'touchend':'mouseup';
+      var move=function(e){
+        var q=e.touches ? e.touches[0] : e; if(!q) return;
+        if(!st.on){ if(Math.abs(q.clientX-st.x)+Math.abs(q.clientY-st.y)<8) return; if(timer){ clearTimeout(timer); timer=null; if(touch){ stop(); return; } } begin(); }
+        if(e.cancelable) e.preventDefault();
+        var el=document.elementFromPoint(q.clientX, q.clientY); if(!el) return;
+        document.querySelectorAll('.gtDrop').forEach(function(x){ x.classList.remove('gtDrop'); }); st.target=null;
+        var d=o.dropSel ? el.closest(o.dropSel) : null;
+        if(d && d.getAttribute(o.dropAttr)!==o.self){ d.classList.add('gtDrop'); st.target=d.getAttribute(o.dropAttr); return; }
+        var over=el.closest(o.itemSel);
+        if(over && over!==item && over.parentNode===item.parentNode){
+          var r=over.getBoundingClientRect(), after = o.axis==='x' ? q.clientX > r.left+r.width/2 : q.clientY > r.top+r.height/2;
+          over.parentNode.insertBefore(item, after ? over.nextSibling : over);
+        }
+      };
+      var stop=function(){
+        if(timer) clearTimeout(timer);
+        document.removeEventListener(mv, move); document.removeEventListener(up, stop);
+        document.querySelectorAll('.gtDrop').forEach(function(x){ x.classList.remove('gtDrop'); });
+        if(!st.on) return;
+        item.classList.remove('gtDragging'); document.body.classList.remove('gtDragOn'); S.gtDragEnd=Date.now();
+        o.onEnd([].map.call(item.parentNode.querySelectorAll(o.itemSel), function(x){ return x.getAttribute(o.idAttr); }), st.target);
+      };
+      document.addEventListener(mv, move, { passive:false }); document.addEventListener(up, stop);
+      if(!touch) ev.preventDefault();
+    };
+    hd.addEventListener('mousedown', function(e){ if(e.button===0) start(e, false); });
+    hd.addEventListener('touchstart', function(e){ start(e, true); }, { passive:true });
+  });
+}
 function bindGpTasks_(){
   var mt=document.getElementById('mtToggle');
   if(mt) mt.onclick=function(){ gpTap(); var o=!mtOpen_(); try{ lsSet('gp-mt-open', o ? '1' : '0'); }catch(e){} if(o && !S.gpt) gptLoad_(); render(); };
@@ -276,7 +325,7 @@ function bindGpTasks_(){
   var on=function(id, fn){ var el=document.getElementById(id); if(el) el.onclick=fn; return el; };
   var scope=S.gptScope;
   on('gptBack', function(){ gpTap(); S.view=S.gptFrom==='ministry' ? 'ministry' : S.gptFrom==='calendar' ? 'calendar' : 'week'; render(); window.scrollTo(0,0); });
-  document.querySelectorAll('[data-gptlist]').forEach(function(b){ b.onclick=function(){ gpTap(); S.gptList=b.getAttribute('data-gptlist'); S.gptOpen=null; S.gptDraft=null; S.gtMenu=false; S.gptDoneOpen=false; render(); }; });
+  document.querySelectorAll('[data-gptlist]').forEach(function(b){ b.onclick=function(){ if(Date.now()-S.gtDragEnd<400) return; gpTap(); S.gptList=b.getAttribute('data-gptlist'); S.gptOpen=null; S.gptDraft=null; S.gtMenu=false; S.gptDoneOpen=false; render(); }; });
   /* ⋮ */
   on('gtMenuBtn', function(){ gpTap(); S.gtMenu=!S.gtMenu; render(); });
   on('gtMenuScrim', function(){ S.gtMenu=false; render(); });
@@ -306,7 +355,8 @@ function bindGpTasks_(){
   on('gptAskCancel', function(){ S.gptAsk=null; render(); });
   on('gptAskSend', function(){
     var A=S.gptAsk; if(!A.min){ showMsg(t('Choose the ministry first')); return; } if(!(A.title||'').trim()){ showMsg(t('Give it a title first')); return; }
-    gptSaveTask_({ askMin:A.min, title:A.title.trim(), due:A.due||'' }, gpT('Asked — {name} will see it in their list',{name:t(A.min.split('|')[1])}), function(){ S.gptAsk=null; var m=gptMain_(); S.gptList=m ? m.id : null; });
+    gptSaveTask_({ askMin:A.min, title:A.title.trim(), due:A.due||'' }, gpT('Asked — {name} will see it in their list',{name:t(A.min.split('|')[1])}),
+      function(d){ S.gptAsk=null; var tk=(d.tasks||[]).filter(function(y){ return y.id===d.saved; })[0]; if(tk) S.gptList=tk.listId; });   // → the tab where it now waits
   });
   /* a new list is your own; a ministry's designated list is made by the server (the button below is
      for a ministry that has none yet — someone from before the designated lists) */
@@ -317,11 +367,16 @@ function bindGpTasks_(){
   var nt=document.getElementById('gptNewTitle'); if(nt){ nt.oninput=function(){ S.gptNewList.title=nt.value; }; nt.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); var b=document.getElementById('gptNewSave'); if(b) b.click(); } }; }
   on('gptNewCancel', function(){ S.gptNewList=null; render(); });
   on('gptNewSave', function(){ madeList({ title:(S.gptNewList.title||'').trim() || t('Tasks'), scope:'personal' }); });
-  /* ticking off — in a row or in the open task */
+  /* ticking off — in a row or in the open task; a subtask in a row saves at once */
   document.querySelectorAll('[data-gptdone]').forEach(function(b){ b.onclick=function(){
     var id=b.getAttribute('data-gptdone'), x=(S.gpt.tasks||[]).filter(function(y){ return y.id===id; })[0]; if(!x) return; gpTap();
     x.done=!x.done; if(S.gptOpen===id){ S.gptOpen=null; S.gptDraft=null; } render();   // at once; the server's answer follows
     gptSaveTask_({ id:id, done:x.done }, x.done ? t('Completed') : '');
+  }; });
+  document.querySelectorAll('[data-gptsubtick]').forEach(function(b){ b.onclick=function(){
+    var k=b.getAttribute('data-gptsubtick').split('|'), x=(S.gpt.tasks||[]).filter(function(y){ return y.id===k[0]; })[0]; if(!x) return; gpTap();
+    var subs=(x.subs||[]).map(function(s){ return s.id===k[1] ? { id:s.id, text:s.text, done:!s.done } : s; }); x.subs=subs; render();
+    gptSaveTask_({ id:x.id, subs:subs }, '');
   }; });
   on('gptDoneToggle', function(){ S.gptDoneOpen=!S.gptDoneOpen; render(); });
   on('gptClearDone', function(){ run('clearDoneGpTasks',[S.auth.user,S.auth.pin,S.gptList],function(d){ if(d && d.ok){ gptTake_(d); showMsg(t('Cleared')); } render(); }); });
@@ -329,6 +384,26 @@ function bindGpTasks_(){
     var acc=b.hasAttribute('data-gptaccept'), id=b.getAttribute(acc?'data-gptaccept':'data-gptdecline'); b.disabled=true;
     run('respondGpTask',[S.auth.user,S.auth.pin,id,acc],function(d){ if(d && d.ok){ gptTake_(d); showMsg(acc ? t('Added to your list') : t('Declined')); } else showMsg(t('Could not save')); render(); });
   }; });
+  /* drag: a task up or down its list, or onto another list's tab; a tab along the row */
+  var openBox=document.querySelector('[data-gptorder]');
+  if(openBox) gptDrag_([].slice.call(document.querySelectorAll('[data-gptgrip]')), { itemSel:'.gtItem', idAttr:'data-gptitem', axis:'y', hold:0,
+    dropSel:'.gtTab[data-gptlist]', dropAttr:'data-gptlist', self:S.gptList,
+    onEnd:function(ids, target){
+      var dragged=document.querySelector('.gtItem.gtDragging, .gtItem') && null;
+      if(target){   // dropped on a tab: into that list
+        var moving=ids.filter(function(id){ var x=(S.gpt.tasks||[]).filter(function(y){ return y.id===id; })[0]; return x && x.listId!==S.gptList; });
+        var id=S.gtDragId; S.gtDragId=null; if(!id) return;
+        var to=gptListById_(target); if(!to || !to.canEdit){ showMsg(t('You can’t add to that list')); render(); return; }
+        var x=(S.gpt.tasks||[]).filter(function(y){ return y.id===id; })[0]; if(x) x.listId=target; render();
+        gptSaveTask_({ id:id, listId:target }, gpT('Moved to {list}',{list:gptChipName_(to)}));
+        return;
+      }
+      ids.forEach(function(id, i){ var x=(S.gpt.tasks||[]).filter(function(y){ return y.id===id; })[0]; if(x) x.order=i; }); render();
+      run('orderGpTasks',[S.auth.user,S.auth.pin,S.gptList,ids],function(d){ if(d && d.ok) gptTake_(d); });
+    } });
+  document.querySelectorAll('[data-gptgrip]').forEach(function(g){ g.addEventListener('mousedown', function(){ S.gtDragId=g.getAttribute('data-gptgrip'); }); g.addEventListener('touchstart', function(){ S.gtDragId=g.getAttribute('data-gptgrip'); }, { passive:true }); });
+  if(!scope) gptDrag_([].slice.call(document.querySelectorAll('.gtTab[data-gptlist]')), { itemSel:'.gtTab[data-gptlist]', idAttr:'data-gptlist', axis:'x', hold:350,
+    onEnd:function(ids){ S.gpt.listOrder=ids; render(); run('saveGpListOrder',[S.auth.user,S.auth.pin,ids],function(d){ if(d && d.ok) gptTake_(d); }); } });
   /* New task: the round ＋, into the open list */
   on('gtAdd', function(){
     gpTap();
@@ -354,10 +429,18 @@ function bindGpTasks_(){
     document.querySelectorAll('[data-gptd]').forEach(function(inp){ var k=inp.getAttribute('data-gptd'); inp.oninput=inp.onchange=function(){ D[k]=inp.value; if(k==='due'){ if(!inp.value) D.time=''; render(); } }; });
     var as=document.getElementById('gptAssignSel'); if(as) as.onchange=function(){ if(as.value && D.assignees.indexOf(as.value)===-1) D.assignees.push(as.value); render(); };
     document.querySelectorAll('[data-gptunassign]').forEach(function(b){ b.onclick=function(){ var id=b.getAttribute('data-gptunassign'); D.assignees=D.assignees.filter(function(x){ return x!==id; }); render(); }; });
+    /* subtasks in the sheet: tick, reword, remove, add (Enter adds and keeps typing) */
+    document.querySelectorAll('[data-gptdsub]').forEach(function(b){ b.onclick=function(){ var i=+b.getAttribute('data-gptdsub'); if(D.subs[i]) D.subs[i].done=!D.subs[i].done; render(); }; });
+    document.querySelectorAll('[data-gptdsubtext]').forEach(function(inp){ inp.oninput=function(){ var i=+inp.getAttribute('data-gptdsubtext'); if(D.subs[i]) D.subs[i].text=inp.value; }; });
+    document.querySelectorAll('[data-gptdsubdel]').forEach(function(b){ b.onclick=function(){ var i=+b.getAttribute('data-gptdsubdel'); D.subs.splice(i,1); render(); }; });
+    var sn=document.getElementById('gptSubNew'); if(sn){ sn.oninput=function(){ D.subNew=sn.value; };
+      sn.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); var v=(D.subNew||'').trim(); if(!v) return; D.subs.push({ id:'', text:v, done:false }); D.subNew=''; render(); var x=document.getElementById('gptSubNew'); if(x) x.focus(); } }; }
     var x0=(S.gpt.tasks||[]).filter(function(y){ return y.id===D.id; })[0];
-    var changed=function(){ return x0 && (D.title!==x0.title || (D.notes||'')!==(x0.notes||'') || (D.due||'')!==(x0.due||'') || (D.time||'')!==(x0.time||'') || D.assignees.join()!==x0.assignees.join()); };
-    var saveOpen=function(close){ if(!changed()){ if(close){ S.gptOpen=null; S.gptDraft=null; render(); } return; }
-      gptSaveTask_({ id:D.id, title:D.title, notes:D.notes, due:D.due||'', time:D.due ? (D.time||'') : '', assignees:D.assignees }, t('Saved'), function(){ if(close){ S.gptOpen=null; S.gptDraft=null; } }); };
+    var subsOf=function(list){ return JSON.stringify((list||[]).map(function(s){ return [s.text, !!s.done]; })); };
+    var pendingSub=function(){ var v=(D.subNew||'').trim(); if(v){ D.subs.push({ id:'', text:v, done:false }); D.subNew=''; } };
+    var changed=function(){ return x0 && (D.title!==x0.title || (D.notes||'')!==(x0.notes||'') || (D.due||'')!==(x0.due||'') || (D.time||'')!==(x0.time||'') || D.assignees.join()!==x0.assignees.join() || subsOf(D.subs)!==subsOf(x0.subs)); };
+    var saveOpen=function(close){ pendingSub(); if(!changed()){ if(close){ S.gptOpen=null; S.gptDraft=null; render(); } return; }
+      gptSaveTask_({ id:D.id, title:D.title, notes:D.notes, due:D.due||'', time:D.due ? (D.time||'') : '', assignees:D.assignees, subs:D.subs }, t('Saved'), function(){ if(close){ S.gptOpen=null; S.gptDraft=null; } }); };
     on('gptSave', function(){ saveOpen(true); });
     on('gptClose', function(){ saveOpen(true); });   // ← keeps what you changed, like Google Tasks
     on('gtDetScrim', function(){ saveOpen(true); });
@@ -375,7 +458,7 @@ function gtSaveNew_(){
     function(){ S.gtNew=null; });
 }
 /* My Ministry: Ministry Tasks, folded under the department and ministry (Uriah, Oct 2026: easy to
-   find, not much on the screen); open, it is that ministry's lists only. Open or shut is remembered. */
+   find, not much on the screen); open, it is that ministry's list only. Open or shut is remembered. */
 function mtOpen_(){ try{ return lsGet('gp-mt-open')==='1'; }catch(e){ return false; } }
 function mtFoldHtml_(sel){
   var open=mtOpen_(), n=null;

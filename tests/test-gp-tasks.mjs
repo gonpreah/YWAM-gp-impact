@@ -137,6 +137,32 @@ await call('deleteLeadTask', [...as('uriah'), card.id, ltk.id]);
 r = await call('getGpTasks', as('uriah'));
 ok('taken off the board: gone from GP Tasks', !task(r, 'Find 5 fun activities for the offsite'));
 
+console.log('=== subtasks, and the order of things ===');
+r = await call('saveGpTask', [...as('cora'), { id: t1.id, subs: [{ text: 'Call the dairy' }, { text: 'Pay the invoice', done: true }, { text: '' }] }]);
+let st = task(r, t1.title);
+ok('subtasks save with the task: text and done, blanks dropped, ids given', st.subs.length === 2 && st.subs[0].text === 'Call the dairy' && !st.subs[0].done && st.subs[1].done === true && st.subs.every(x => x.id));
+r = await call('saveGpTask', [...as('cora'), { id: t1.id, subs: [{ id: st.subs[1].id, text: 'Pay the invoice', done: false }] }]);
+ok('… and change: one left, unticked, same id', task(r, t1.title).subs.length === 1 && task(r, t1.title).subs[0].id === st.subs[1].id && !task(r, t1.title).subs[0].done);
+const cafeIds = r.tasks.filter(t => t.listId === cafe.id && !t.done).map(t => t.id).reverse();
+r = await call('orderGpTasks', [...as('cora'), cafe.id, cafeIds]);
+ok('the Cafe reorders its list', r.ok && cafeIds.every((id, i) => r.tasks.find(t => t.id === id).order === i));
+r = await call('orderGpTasks', [...as('hana'), cafe.id, cafeIds]);
+ok('… but not someone outside it', r.ok === false);
+r = await call('saveGpListOrder', [...as('cora'), [cafe.id, 'tl_other']]);
+ok('each person keeps their own order of the tabs', r.ok && r.listOrder.join() === cafe.id + ',tl_other' && mem.staff.find(s => s.id === 'c1').taskListOrder.length === 2);
+
+console.log('=== a mentorship 1:1 with its time set ===');
+mem.oneOnOnes = [{ id: 'oo9', fromId: 'c1', toId: 'c2', status: 'pending', created: new Date().toISOString() }];
+r = await call('respondToOneOnOne', [...as('kanha'), 'oo9', true, day(3) + 'T10:00']);
+r = await call('getGpTasks', as('cora'));
+let oo = task(r, '1:1 with Kanha');
+ok('accepted with a time: "1:1 with Kanha" in Cora\'s My Tasks, that day and time', !!oo && oo.due === day(3) && oo.time === '10:00' && oo.ooId === 'oo9' && r.lists.find(l => l.id === oo.listId).scope === 'personal');
+r = await call('getGpTasks', as('kanha'));
+ok('… and "1:1 with Cora" in Kanha\'s', !!task(r, '1:1 with Cora') && task(r, '1:1 with Cora').due === day(3));
+await call('setOneOnOneTime', [...as('cora'), 'oo9', day(4) + 'T11:30']);
+r = await call('getGpTasks', as('kanha'));
+ok('moving the time moves both tasks', task(r, '1:1 with Cora').due === day(4) && task(r, '1:1 with Cora').time === '11:30' && r.tasks.filter(t => t.ooId === 'oo9').length === 1);
+
 console.log('=== personal lists ===');
 r = await call('saveGpTaskList', [...as('kanha'), { scope: 'personal', title: 'Mine' }]);
 const pl = r.lists.find(l => l.title === 'Mine');

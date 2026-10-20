@@ -2295,6 +2295,23 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .gptRing svg { width:22px; height:22px; }
 .gtLine > .gtIc { font-size:20px; color:var(--muted); margin-top:9px; }
 .gtSheetHead b { font-size:17px; }
+/* subtasks under a row, and in the sheet */
+.gtSubs { padding:0 12px 8px 46px; display:flex; flex-direction:column; gap:6px; }
+.gtSub { display:flex; align-items:center; gap:8px; font-size:14px; }
+.gtSub.done > span, .gtSub.done input { text-decoration:line-through; color:var(--muted); }
+.gtCheck.small { width:18px; height:18px; flex:0 0 18px; font-size:11px; margin:0; }
+.gtSubLine .gtSubEdit { flex:1; display:flex; flex-direction:column; gap:6px; font-size:15px; }
+.gtSubEdit input { margin:0; padding:6px 8px; font-size:15px; }
+.gtSubEdit .gtSub input { flex:1; min-width:0; }
+.gtSubEdit #gptSubNew { border-style:dashed; }
+/* drag: the grip on a row; the thing being dragged; the tab it is over */
+.gtGrip { flex:0 0 22px; width:22px; height:22px; margin-top:1px; color:var(--faint); cursor:grab; touch-action:none; display:inline-flex; align-items:center; justify-content:center; }
+.gtGrip svg { width:18px; height:18px; }
+.gtItem.gtDragging, .gtTab.gtDragging { opacity:.55; }
+.gtItem.gtDragging .gtRow { background:var(--surface2); border-radius:12px; }
+.gtTab.gtDrop { background:var(--accentSoft); border-radius:10px 10px 0 0; }
+body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
+.gtTab.given { font-weight:500; font-style:italic; }
 .gtKind { margin-right:6px; opacity:.75; } .gtTab .gtKind { font-size:13px; } .gtListHead .gtKind { font-size:17px; vertical-align:-2px; }
 /* asking another ministry: find it by department, or search */
 .gtFind { display:flex; align-items:center; gap:8px; margin:0 0 6px; color:var(--muted); } .gtFind input { flex:1; margin:0; }
