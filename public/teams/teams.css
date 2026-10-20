@@ -2260,7 +2260,7 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .gtEmpty.small { padding:16px 12px 10px; }
 .gtEmptyIc { font-size:34px; }
 .gtEmpty .btn { width:auto; display:inline-block; }
-.gtFab { position:fixed; z-index:40; right:18px; bottom:calc(86px + env(safe-area-inset-bottom)); width:58px; height:58px; border-radius:18px; border:0; background:var(--accent); color:#fff; font-size:30px; line-height:1; box-shadow:var(--shadow); cursor:pointer; }
+.gtFab { position:fixed; z-index:40; right:18px; bottom:calc(86px + env(safe-area-inset-bottom)); width:58px; height:58px; border-radius:18px; border:0; background:var(--accent); color:var(--accentInk); font-size:30px; line-height:1; box-shadow:var(--shadow); cursor:pointer; }
 .gtAddRow { display:block; width:100%; text-align:left; background:var(--surface); border:1.5px dashed var(--border2); border-radius:12px; padding:12px; font:inherit; font-weight:600; color:var(--accent); cursor:pointer; margin:0 0 10px; }
 .gtSheet { position:fixed; z-index:61; left:0; right:0; bottom:0; max-width:640px; margin:0 auto; background:var(--surface); border-radius:18px 18px 0 0; box-shadow:var(--shadow); padding:16px 16px calc(16px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:10px; max-height:88vh; overflow-y:auto; }
 .gtNewTitle { border:0 !important; background:none !important; font-size:18px !important; padding:6px 2px !important; margin:0; }
