@@ -10053,6 +10053,150 @@ function cafePos(username, pin, date, totals) {
   });
 }
 
+/* ---------- Google Calendar (Oct 2026, Uriah: "our Google Calendar for birthdays, events, teams
+   coming, guests, volunteers, speakers — integrate it into the app") ----------
+   Read-only. An admin pastes each calendar's "Secret address in iCal format" once (Google
+   Calendar → Settings → the calendar → Integrate calendar), under a name. The address is a
+   password to the calendar: it stays in the 'gcal' blob, server-side, and is never sent to a
+   page — admins see the name, when it was last read and whether it worked. Only
+   https://calendar.google.com/calendar/ical/…/….ics is accepted, so the server can't be pointed
+   anywhere else. Each calendar is read at most every 30 minutes ('gcalCache'), its events
+   (and repeats: yearly birthdays, weekly meetings) laid out on Cambodia's clock. */
+const GCAL_MAX = 6, GCAL_TTL_MS = 30 * 60 * 1000, GCAL_COLORS = ['blue', 'green', 'amber', 'pink', 'purple', 'teal'];
+function gcalUrlOk_(u) { return /^https:\/\/calendar\.google\.com\/calendar\/ical\/[^/?#\s]+\/[^/?#\s]+\/[^/?#\s]+\.ics$/.test(String(u || '')); }
+async function getGcal_() { const d = await readJSON('gcal', null); return Array.isArray(d && d.cals) ? d.cals : []; }
+function gcalAdminOut_(c) { return { id: c.id, name: c.name, color: c.color, at: c.at || '', lastOk: c.lastOk || '', lastErr: c.lastErr || '', events: c.events || 0 }; }
+async function adminGcal(username, pin, change) {
+  const s = await adminGate_(username, pin);
+  if (!s) return { ok: false, err: 'not_authorized' };
+  let cals = await getGcal_();
+  const x = change && typeof change === 'object' ? change : null;
+  if (x && x.remove) cals = cals.filter(function (c) { return c.id !== x.remove; });
+  else if (x && x.url !== undefined) {
+    const url = String(x.url || '').trim();
+    if (!gcalUrlOk_(url)) return { ok: false, err: 'bad_url' };
+    if (cals.length >= GCAL_MAX) return { ok: false, err: 'too_many' };
+    cals.push({ id: 'gc' + Date.now().toString(36), name: str_(x.name, 60) || 'Calendar', url: url, color: GCAL_COLORS[cals.length % GCAL_COLORS.length], at: new Date().toISOString(), by: s.id });
+  } else if (x && x.id && x.name !== undefined) {
+    const c = cals.find(function (y) { return y.id === x.id; }); if (c) c.name = str_(x.name, 60) || c.name;
+  }
+  if (x) { await writeJSON('gcal', { cals: cals }); await writeJSON('gcalCache', {}); }
+  return { ok: true, cals: cals.map(gcalAdminOut_) };
+}
+/* ---- reading iCal (RFC 5545), only as much as Google's export needs ---- */
+function icsLines_(text) {
+  const raw = String(text || '').replace(/\r\n/g, '\n').split('\n'), out = [];
+  raw.forEach(function (l) { if (/^[ \t]/.test(l) && out.length) out[out.length - 1] += l.slice(1); else out.push(l); });
+  return out;
+}
+function icsText_(v) { return String(v || '').replace(/\\n/gi, '\n').replace(/\\([,;\\])/g, '$1'); }
+/* a DTSTART/DTEND value → { date, time } on Cambodia's clock (UTC+7, no summer time) */
+function icsWhen_(params, v) {
+  const m = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z?))?$/.exec(String(v || '').trim());
+  if (!m) return null;
+  if (!m[4]) return { date: m[1] + '-' + m[2] + '-' + m[3], time: '', allDay: true };
+  if (m[7] === 'Z') {
+    const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) + 7 * 3600e3);
+    return { date: d.toISOString().slice(0, 10), time: d.toISOString().slice(11, 16), allDay: false };
+  }
+  return { date: m[1] + '-' + m[2] + '-' + m[3], time: m[4] + ':' + m[5], allDay: false };   // TZID=…: Google writes the calendar's own clock
+}
+function icsEvents_(text) {
+  const evs = []; let cur = null;
+  icsLines_(text).forEach(function (line) {
+    if (line === 'BEGIN:VEVENT') { cur = { exdates: [] }; return; }
+    if (line === 'END:VEVENT') { if (cur && cur.start && cur.title !== undefined) evs.push(cur); cur = null; return; }
+    if (!cur) return;
+    const i = line.indexOf(':'); if (i < 0) return;
+    const head = line.slice(0, i), val = line.slice(i + 1), name = head.split(';')[0].toUpperCase();
+    if (name === 'SUMMARY') cur.title = icsText_(val).slice(0, 200);
+    else if (name === 'LOCATION') cur.where = icsText_(val).slice(0, 200);
+    else if (name === 'DESCRIPTION') cur.notes = icsText_(val).slice(0, 600);
+    else if (name === 'DTSTART') cur.start = icsWhen_(head, val);
+    else if (name === 'DTEND') cur.end = icsWhen_(head, val);
+    else if (name === 'RRULE') cur.rrule = val;
+    else if (name === 'EXDATE') val.split(',').forEach(function (v) { const w = icsWhen_(head, v); if (w) cur.exdates.push(w.date); });
+    else if (name === 'UID') cur.uid = val;
+    else if (name === 'RECURRENCE-ID') cur.recurrenceId = icsWhen_(head, val);
+    else if (name === 'STATUS') cur.status = val;
+  });
+  return evs.filter(function (e) { return e.status !== 'CANCELLED' || e.recurrenceId; });
+}
+function icsDay_(iso, n) { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+function icsDaysBetween_(a, b) { return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 864e5); }
+/* the dates an event falls on between from and to (inclusive): one, or its repeats */
+function icsOccurrences_(e, from, to) {
+  const start = e.start.date, out = [];
+  if (!e.rrule) { if (start <= to && (e.end && e.end.date > start ? icsDay_(e.end.date, e.end.allDay ? -1 : 0) : start) >= from) out.push(start); return out; }
+  const R = {}; e.rrule.split(';').forEach(function (p) { const kv = p.split('='); R[kv[0].toUpperCase()] = kv[1] || ''; });
+  const step = Math.max(1, parseInt(R.INTERVAL, 10) || 1), count = parseInt(R.COUNT, 10) || 0;
+  const until = R.UNTIL ? (icsWhen_('', R.UNTIL) || {}).date : '';
+  const DAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'], byday = R.BYDAY ? R.BYDAY.split(',').map(function (x) { return DAYS.indexOf(x.replace(/^[-+]?\d+/, '')); }).filter(function (x) { return x > -1; }) : [];
+  let n = 0;
+  const take = function (d) { n++; if (count && n > count) return false; if (until && d > until) return false; if (d > to) return false; if (d >= from && e.exdates.indexOf(d) === -1) out.push(d); return true; };
+  if (R.FREQ === 'DAILY') { for (let d = start, i = 0; i < 5000; i++, d = icsDay_(d, step)) if (!take(d)) break; }
+  else if (R.FREQ === 'WEEKLY') {
+    const days = byday.length ? byday : [new Date(start + 'T00:00:00Z').getUTCDay()];
+    const wk0 = icsDay_(start, -new Date(start + 'T00:00:00Z').getUTCDay());
+    outer: for (let w = 0; w < 1500; w += step) {
+      for (const dow of days.slice().sort()) { const d = icsDay_(wk0, w * 7 + dow); if (d < start) continue; if (!take(d)) break outer; }
+    }
+  } else if (R.FREQ === 'MONTHLY') {
+    const y0 = +start.slice(0, 4), m0 = +start.slice(5, 7) - 1, dd = start.slice(8, 10);
+    for (let k = 0; k < 600; k += step) { const y = y0 + Math.floor((m0 + k) / 12), m = (m0 + k) % 12; const d = y + '-' + String(m + 1).padStart(2, '0') + '-' + dd; if (!isDate_(d) || new Date(d + 'T00:00:00Z').getUTCDate() !== +dd) { n++; continue; } if (!take(d)) break; }
+  } else if (R.FREQ === 'YEARLY') {
+    const y0 = +start.slice(0, 4), md = start.slice(4);
+    for (let k = 0; k < 200; k += step) { const d = (y0 + k) + md; if (md === '-02-29' && new Date(d + 'T00:00:00Z').getUTCMonth() !== 1) { n++; continue; } if (!take(d)) break; }
+  } else if (start >= from && start <= to) out.push(start);
+  return out;
+}
+async function gcalFetch_(c) {
+  const cache = await readJSON('gcalCache', {}), hit = cache[c.id];
+  if (hit && Date.now() - hit.t < GCAL_TTL_MS && Array.isArray(hit.events)) return hit;
+  let events = null, err = '';
+  try {
+    if (!gcalUrlOk_(c.url)) throw new Error('bad_url');
+    const r = await fetch(c.url, { redirect: 'error' });
+    if (!r.ok) throw new Error('http_' + r.status);
+    const text = await r.text();
+    if (text.length > 6e6 || !/BEGIN:VCALENDAR/.test(text)) throw new Error('not_ical');
+    events = icsEvents_(text).slice(0, 4000);
+  } catch (e) { err = String(e && e.message || e).slice(0, 80); }
+  const rec = events ? { t: Date.now(), events: events } : (hit ? Object.assign({}, hit, { stale: true }) : { t: Date.now(), events: [], err: err });
+  cache[c.id] = rec;
+  await writeJSON('gcalCache', cache);
+  /* the admin sees whether it worked */
+  const cals = await getGcal_(), me = cals.find(function (y) { return y.id === c.id; });
+  if (me) { if (events) { me.lastOk = new Date().toISOString(); me.lastErr = ''; me.events = events.length; } else me.lastErr = err; await writeJSON('gcal', { cals: cals }); }
+  return rec;
+}
+/* the events from `from` for `days` days (up to 120), every calendar together, each with its calendar's name and colour */
+async function getCalendar(username, pin, from, days) {
+  const s = await verifyStaff_(username, pin);
+  if (!s || isApplicant_(s)) return { ok: false };
+  const cals = await getGcal_();
+  if (!cals.length) return { ok: true, connected: false, events: [] };
+  from = isDate_(from) ? from : baseToday_();
+  const to = icsDay_(from, Math.max(1, Math.min(120, parseInt(days, 10) || 31)) - 1);
+  const out = [];
+  for (const c of cals) {
+    const rec = await gcalFetch_(c);
+    const moved = {};   // one repeat changed on its own (RECURRENCE-ID) replaces that day of the series
+    rec.events.forEach(function (e) { if (e.recurrenceId && e.uid) moved[e.uid + '|' + e.recurrenceId.date] = 1; });
+    rec.events.forEach(function (e) {
+      if (e.status === 'CANCELLED') return;
+      icsOccurrences_(e, from, to).forEach(function (d) {
+        if (!e.recurrenceId && e.uid && moved[e.uid + '|' + d]) return;
+        const span = e.end && e.end.date > e.start.date ? icsDaysBetween_(e.start.date, e.end.date) - (e.end.allDay ? 1 : 0) : 0;
+        out.push({ cal: c.id, calName: c.name, color: c.color, title: e.title || '', where: e.where || '', notes: e.notes || '',
+          date: d, time: e.start.time || '', endTime: e.end && !e.end.allDay ? e.end.time : '', allDay: !!e.start.allDay, endDate: span > 0 ? icsDay_(d, span) : '' });
+      });
+    });
+  }
+  out.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.allDay !== b.allDay ? (a.allDay ? -1 : 1) : (a.time < b.time ? -1 : a.time > b.time ? 1 : 0)); });
+  return { ok: true, connected: true, from: from, to: to, events: out.slice(0, 1500), cals: cals.map(function (c) { return { id: c.id, name: c.name, color: c.color }; }) };
+}
+
 /* ---------- GP Tasks (Oct 2026, Uriah) ----------
    Like Google Tasks: lists with a title, tasks under them with a day and a time —
    and, for a campus that works as one team, lists that belong to a ministry or a
@@ -10669,6 +10813,8 @@ const HANDLERS = {
   respondToOneOnOne: function (a) { return respondToOneOnOne(a[0], a[1], a[2], a[3], a[4]); },
   setOneOnOneTime: function (a) { return setOneOnOneTime(a[0], a[1], a[2], a[3]); },
   getGpTasks: function (a) { return getGpTasks(a[0], a[1]); },
+  getCalendar: function (a) { return getCalendar(a[0], a[1], a[2], a[3]); },
+  adminGcal: function (a) { return adminGcal(a[0], a[1], a[2]); },
   saveGpTaskList: function (a) { return saveGpTaskList(a[0], a[1], a[2]); },
   saveGpTask: function (a) { return saveGpTask(a[0], a[1], a[2]); },
   respondGpTask: function (a) { return respondGpTask(a[0], a[1], a[2], a[3]); },

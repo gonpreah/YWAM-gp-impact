@@ -1,0 +1,122 @@
+/* The Calendar in the browser (Oct 2026): ☰ → Calendar, an admin connecting the campus's Google Calendar (the secret address never shown), My Home's Coming up, the day-by-day list. Real api.js, fake store, Google stood in. */
+import { REPO, PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
+import { chromium, devices } from 'playwright';
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+
+const TMP = tmpDir('gcal-ui');
+fs.mkdirSync(TMP + '/node_modules/@netlify/blobs', { recursive: true });
+fs.writeFileSync(TMP + '/node_modules/@netlify/blobs/index.js', `
+const mem={};
+export function getStore(){ return {
+  get: async (k)=> (k in mem)?JSON.parse(JSON.stringify(mem[k])):null,
+  setJSON: async (k,v)=>{ mem[k]=JSON.parse(JSON.stringify(v)); },
+};}
+export const __mem=mem;`);
+fs.writeFileSync(TMP + '/node_modules/@netlify/blobs/package.json',
+  JSON.stringify({ name: '@netlify/blobs', version: '0.0.0', type: 'module', main: 'index.js' }));
+fs.writeFileSync(TMP + '/package.json', JSON.stringify({ type: 'module' }));
+for (const f of fs.readdirSync(REPO + '/netlify/functions')) {
+  if (f.endsWith('.js')) fs.copyFileSync(REPO + '/netlify/functions/' + f, TMP + '/' + f);
+}
+const blobs = await import(TMP + '/node_modules/@netlify/blobs/index.js');
+const api = await import(TMP + '/api.js');
+const mem = blobs.__mem;
+const H = (p, s) => crypto.createHash('sha256').update(s + ':' + String(p), 'utf8').digest('hex');
+const mk = o => Object.assign({ active: true, campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe',
+  role: 'Staff', staffType: 'campus', country: 'Cambodia', surveyToken: 'tok_' + o.id }, o, { pinSalt: o.id, pinHash: H('1234', o.id) });
+mem.staff = [
+  mk({ id: 'ad', name: 'Ada Admin', username: 'ada', email: 'a@e.com', isAdmin: true }),
+  mk({ id: 'c1', name: 'Cora Cafe', username: 'cora', email: 'c@e.com' })
+];
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
+const srv = http.createServer(async (req, res) => {
+  if (req.url.indexOf('/.netlify/functions/api') === 0) {
+    let b = ''; for await (const c of req) b += c;
+    const r = await api.default({ method: 'POST', json: async () => JSON.parse(b || '{}'), headers: new Map() }, {});
+    const t = await r.text(); res.writeHead(r.status || 200, { 'Content-Type': 'application/json' }); res.end(t); return;
+  }
+  let u = req.url.split('?')[0]; if (u === '/') u = '/index.html';
+  const f = path.join(PUBLIC, u);
+  if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); res.end(); return; }
+  res.writeHead(200, { 'Content-Type': TYPES[path.extname(f)] || 'text/plain' }); res.end(fs.readFileSync(f));
+});
+await new Promise(r => srv.listen(0, r));
+const BASE = 'http://127.0.0.1:' + srv.address().port;
+
+let pass = 0, fail = 0;
+function ok(name, cond, extra) {
+  if (cond) { pass++; console.log('ok   ' + name + (extra ? '  → ' + extra : '')); }
+  else { fail++; console.log('FAIL ' + name + (extra ? '  → ' + extra : '')); }
+}
+
+
+
+const day = n => new Date(Date.now() + 7 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+const ymd = s => s.replace(/-/g, '');
+const URL1 = 'https://calendar.google.com/calendar/ical/ywamsr%40example.org/private-abc123/basic.ics';
+const ICS = ['BEGIN:VCALENDAR', 'VERSION:2.0',
+  'BEGIN:VEVENT', 'UID:b1', 'DTSTART;VALUE=DATE:' + ymd(day(1)).replace(/^\d{4}/, '2010'), 'RRULE:FREQ=YEARLY', 'SUMMARY:Sokha\'s birthday', 'END:VEVENT',
+  'BEGIN:VEVENT', 'UID:t1', 'DTSTART;VALUE=DATE:' + ymd(day(2)), 'DTEND;VALUE=DATE:' + ymd(day(5)), 'SUMMARY:Grace Church team staying', 'DESCRIPTION:12 people', 'END:VEVENT',
+  'BEGIN:VEVENT', 'UID:m1', 'DTSTART;TZID=Asia/Phnom_Penh:' + ymd(day(0)) + 'T150000', 'DTEND;TZID=Asia/Phnom_Penh:' + ymd(day(0)) + 'T160000', 'SUMMARY:Worship night', 'LOCATION:Main hall', 'END:VEVENT',
+  'END:VCALENDAR'].join('\r\n');
+globalThis.fetch = async (url) => url === URL1 ? { ok: true, status: 200, text: async () => ICS } : { ok: false, status: 404, text: async () => '' };
+const browser = await chromium.launch({ executablePath: CHROMIUM });
+const errors = [];
+async function open(user) {
+  const ctx = await browser.newContext({ ...devices['iPhone 13'], timezoneId: 'Asia/Phnom_Penh' });
+  const page = await ctx.newPage();
+  page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
+  page.on('console', m => { if (m.type() === 'error' && !/net::|ERR_/.test(m.text())) errors.push('CONSOLE ' + m.text()); });
+  page.on('dialog', d => d.accept());
+  await page.route('**fonts.g**', r => r.abort());
+  await page.addInitScript(a => { localStorage.setItem('gp-staff', JSON.stringify({ user: a.u, pin: '1234' })); }, { u: user });
+  await page.goto(BASE + '/teams.html', { waitUntil: 'load' });
+  await page.waitForSelector('nav.bottom button', { timeout: 15000 });
+  await page.waitForTimeout(800);
+  return { ctx, page };
+}
+const main = p => p.$eval('#main', e => e.innerText);
+{
+  const { ctx, page } = await open('cora');
+  ok('no calendar connected: My Home shows nothing for it', !(await page.$('#sec-cal')));
+  await page.click('#menuBtn'); await page.waitForTimeout(250);
+  ok('☰ has 📅 Calendar', !!(await page.$('[data-menu-item="calendar"]')));
+  await page.click('[data-menu-item="calendar"]'); await page.waitForTimeout(700);
+  ok('… which says none is connected yet (and offers no Admin button to non-admins)', /No calendar is connected yet/.test(await main(page)) && !(await page.$('[data-adminsubgo="gcal"]')));
+  await ctx.close();
+}
+{
+  const { ctx, page } = await open('ada');
+  await page.evaluate(() => { S.view = 'admin'; S.adminSub = 'home'; render(); }); await page.waitForTimeout(300);
+  await page.click('[data-adminsub="gcal"]'); await page.waitForTimeout(700);
+  ok('Admin → Google Calendar: how to find the secret address, and where to paste it', /Secret address in iCal format/.test(await main(page)) && !!(await page.$('#gcalUrl')));
+  await page.fill('#gcalName', 'Siem Reap events'); await page.fill('#gcalUrl', 'https://example.com/x.ics');
+  await page.click('#gcalAdd'); await page.waitForTimeout(600);
+  ok('a wrong address is refused', !mem.gcal || !mem.gcal.cals.length);
+  await page.fill('#gcalUrl', URL1); await page.click('#gcalAdd'); await page.waitForTimeout(800);
+  ok('connected — the name shows, the address never does', mem.gcal.cals.length === 1 && /Siem Reap events/.test(await main(page)) && !(await page.content()).replace(/<input[^>]*id="gcalUrl"[^>]*>/, '').includes('private-abc123'));
+  await ctx.close();
+}
+{
+  const { ctx, page } = await open('cora');
+  await page.waitForSelector('#sec-cal', { timeout: 5000 }).catch(() => {});
+  const home = await page.$eval('#sec-cal + .card', e => e.innerText).catch(() => '');
+  ok('My Home: 📅 Coming up, the next days', /Worship night/.test(home) && /Sokha's birthday|Sokha’s birthday/.test(home) && /today/i.test(home), home.slice(0, 200));
+  await page.click('#goCalendar'); await page.waitForTimeout(800);
+  const txt = await main(page);
+  ok('the Calendar: day by day — times, all day, a stay with its last day', /Worship night/.test(txt) && /3:00/.test(txt) && /All day/.test(txt) && /Grace Church team staying/.test(txt) && /until/.test(txt), txt.slice(0, 400));
+  ok('… and never the secret address', !(await page.content()).includes('private-abc123'));
+  await page.click('.calEv:has-text("Grace Church")'); await page.waitForTimeout(300);
+  ok('tapping an event shows its details', /12 people/.test(await main(page)));
+  await page.click('#calNext'); await page.waitForTimeout(800);
+  ok('Later: the next month, and Back to today', !!(await page.$('#calToday')));
+  ok('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+  await ctx.close();
+}
+ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
+console.log('\n' + pass + ' passed, ' + fail + ' failed');
+await browser.close(); srv.close();
+process.exit(fail ? 1 : 0);

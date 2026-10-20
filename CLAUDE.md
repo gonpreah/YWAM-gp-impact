@@ -2692,3 +2692,22 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   still adds); blank, they say "📅 Set date and time", and so does a task with no day in the list. The Goals & Tasks page's own ✅ Tasks (steps toward your annual
   goals) is separate and unchanged.
 - tests/test-gp-tasks.mjs (server: the rules), tests/test-gp-tasks-ui.mjs.
+
+## Calendar — the campus's Google Calendar, read-only (Oct 2026, Uriah)
+- **Admin → 📅 Google Calendar** (`adminGcal`): paste each calendar's "Secret address in iCal format"
+  (Google Calendar → Settings → the calendar → Integrate calendar) under a name; up to 6. Only
+  `https://calendar.google.com/calendar/ical/…/….ics` is taken (`gcalUrlOk_`), so the server can't be
+  pointed elsewhere. **The address is a password**: it lives in the `gcal` blob and is never sent to a
+  page — admins see the name, colour, last read and whether it worked (`lastErr`).
+- **Reading** (`getCalendar(from, days ≤ 120)`, any staff, not applicants): each calendar fetched at
+  most every 30 minutes (`gcalCache`); a failed read keeps the last good events. `icsEvents_` unfolds
+  lines, unescapes text, reads SUMMARY/LOCATION/DESCRIPTION/DTSTART/DTEND/RRULE/EXDATE/RECURRENCE-ID/
+  STATUS; times in UTC (`Z`) move to Cambodia's clock (+7), TZID times are taken as written (Google
+  writes the calendar's own clock). `icsOccurrences_` lays out repeats — DAILY, WEEKLY (BYDAY),
+  MONTHLY, YEARLY (birthdays; 29 Feb only in leap years) with INTERVAL/COUNT/UNTIL — skipping EXDATEs
+  and a repeat moved on its own (RECURRENCE-ID); cancelled ones drop out; a several-day event has its
+  `endDate` (an all-day DTEND is the day after).
+- **teams/13-calendar.js**: ☰ → **📅 Calendar** (`S.view='calendar'`, a month at a time, day by day,
+  colour per calendar, tap for details, Earlier / Later / Back to today) and **📅 Coming up** on My Home
+  (the next seven days, five at most, `calHomeCardHtml_`) — nothing at all until a calendar is connected.
+- tests/test-gcal.mjs, tests/test-gcal-ui.mjs.

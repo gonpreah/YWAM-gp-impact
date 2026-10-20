@@ -41,6 +41,7 @@ var ADMIN_SUBS = [
   { id:'leaving', label:'Archive several people', emoji:'🚪', blurb:'When a group of staff leaves: archive them in one go' },
   { id:'loose', label:'Loose ends', emoji:'🧵', blurb:'Small gaps that quietly make the totals wrong — and who to nudge' },
   { id:'board', label:'Advisory Board', emoji:'🛡️', blurb:'The YWAM GP Advisory Board — who is on it, their roles, how staff reach them, and their sign-in' },
+  { id:'gcal', label:'Google Calendar', emoji:'📅', blurb:'Connect the campus’s Google Calendar — birthdays, events, teams, guests and speakers show in the app' },
   { id:'reminders', label:'Reminders', emoji:'🔔', blurb:'Turn on phone reminders for the app, and see how many people have them' }
 ];
 function adminBackHtml_(to, label){
@@ -97,6 +98,7 @@ function adminHtml(){
   if(sub==='leaving') return h+adminGroupsHtml_('leave');
   if(sub==='board') return h+adminBoardHtml_();
   if(sub==='reminders') return h+adminRemindersHtml_();
+  if(sub==='gcal') return h+adminGcalHtml_();
   return h+adminAccountsHtml_();
 }
 /* Admin → 🎓 Students (Oct 2026): every student profile, by school — the ones
