@@ -143,7 +143,11 @@ function gptListHtml_(L){
   /* add: straight in for its people; from outside, a request it accepts */
   var asks=!L.canEdit && L.scope!=='personal';
   if(L.canEdit || asks) h+='<div class="gptAddRow"><span class="gptCircle" aria-hidden="true">＋</span><input type="text" id="gptAddInput" maxlength="200" placeholder="'+
-    esc(asks ? gpT('Ask {name} for help with…',{name:t(L.ministry||L.dept)}) : t('Add a task'))+'"></div>';
+    esc(asks ? gpT('Ask {name} for help with…',{name:t(L.ministry||L.dept)}) : t('Add a task'))+'"></div>'+
+    /* a day and a time as it is made (Uriah, Oct 2026), said in words while they are blank */
+    '<div class="gptAddWhen"><span class="gptWhenLbl">📅 '+esc(t('Set date and time'))+'</span>'+
+      '<input type="date" id="gptAddDue" aria-label="'+esc(t('Set date'))+'"><input type="time" id="gptAddTime" step="900" aria-label="'+esc(t('Set time'))+'">'+
+      '<button class="btn small" id="gptAddBtn">'+esc(t('Add'))+'</button></div>';
   if(!open.length) h+='<p class="sub gptEmpty">'+esc(t('No tasks yet.'))+'</p>';
   h+=open.map(function(x){ return gptRowHtml_(x, false); }).join('');
   h+=gptDoneHtml_(done, L)+'</div>';
@@ -159,6 +163,7 @@ function gptRowHtml_(x, showList){
   var who=x.assignees.map(function(id){ return avatarHtml(gptPerson_(id),'xs'); }).join('');
   var meta=[];
   if(x.due) meta.push('<span class="'+(gptOverdue_(x)?'gptLate':'')+'">📅 '+esc(gptWhen_(x))+'</span>');
+  else if(!x.done && !dec) meta.push('<span class="gptNoWhen">📅 '+esc(t('Set date and time'))+'</span>');
   if(x.from && x.from.label) meta.push('<span class="gptFrom">'+esc(gpT('from {who}',{who:t(x.from.label)}))+'</span>');
   if(showList && L) meta.push('<span>'+esc(L.title)+'</span>');
   if(x.assignees.length) meta.push('<span>'+esc(x.assignees.map(function(id){ return firstName_(gptPerson_(id).name); }).join(', '))+'</span>');
@@ -186,7 +191,7 @@ function gptEditHtml_(x, L){
   return '<div class="gptEdit">'+
     '<input type="text" data-gptd="title" maxlength="200" value="'+esc(D.title)+'" aria-label="'+esc(t('Title'))+'">'+
     '<textarea data-gptd="notes" rows="2" maxlength="2000" placeholder="'+esc(t('Details'))+'">'+esc(D.notes||'')+'</textarea>'+
-    '<div class="gptDT"><input type="date" data-gptd="due" value="'+esc(D.due||'')+'" aria-label="'+esc(t('Day'))+'"><input type="time" data-gptd="time" value="'+esc(D.time||'')+'" step="900" aria-label="'+esc(t('Time'))+'"'+(D.due?'':' disabled')+'></div>'+
+    '<div class="gptDT"><span class="gptWhenLbl">📅 '+esc(D.due ? t('Date and time') : t('Set date and time'))+'</span><input type="date" data-gptd="due" value="'+esc(D.due||'')+'" aria-label="'+esc(t('Set date'))+'"><input type="time" data-gptd="time" value="'+esc(D.time||'')+'" step="900" aria-label="'+esc(t('Set time'))+'"'+(D.due?'':' disabled')+'></div>'+
     '<div class="gptAssign"><span class="pmeta">'+esc(t('Given to'))+'</span> '+D.assignees.map(function(id){ return '<span class="gptPerson">'+esc(gptPerson_(id).name)+(canAssign ? ' <button class="gptX" data-gptunassign="'+esc(id)+'" aria-label="'+esc(t('Remove'))+'">×</button>' : '')+'</span>'; }).join('')+
       (canAssign ? '<select id="gptAssignSel"><option value="">'+esc(t('＋ Add someone'))+'</option>'+people.map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.name)+(inList(p) ? '' : ' · '+esc(t(p.ministry||p.dept||'')))+'</option>'; }).join('')+'</select>' : (D.assignees.length ? '' : '<span class="pmeta">'+esc(t('nobody yet'))+'</span>'))+'</div>'+
     '<div class="btnRow"><button class="btn small" id="gptSave">'+esc(t('Save'))+'</button>'+
@@ -201,6 +206,8 @@ function gptSaveTask_(payload, msg, after){
   }, function(){ showMsg(t('No connection — try again when you are online.')); });
 }
 function bindGpTasks_(){
+  var mt=document.getElementById('mtToggle');
+  if(mt) mt.onclick=function(){ gpTap(); var o=!mtOpen_(); try{ lsSet('gp-mt-open', o ? '1' : '0'); }catch(e){} if(o && !S.gpt) gptLoad_(); render(); };
   if(!document.querySelector('.gptBar, #gptBack, [data-gptmakefor]')) return;
   var on=function(id, fn){ var el=document.getElementById(id); if(el) el.onclick=fn; return el; };
   on('gptBack', function(){ gpTap(); S.view=S.gptFrom==='ministry' ? 'ministry' : 'week'; render(); window.scrollTo(0,0); });
@@ -247,9 +254,12 @@ function bindGpTasks_(){
     run('saveGpTaskList',[S.auth.user,S.auth.pin,{ id:L.id, remove:true }],function(d){ if(d && d.ok){ gptTake_(d); S.gptList=null; S.gptListMenu=false; showMsg(t('List deleted')); } else showMsg(t('Could not save')); render(); });
   });
   var ai=document.getElementById('gptAddInput');
-  if(ai) ai.onkeydown=function(e){ if(e.key!=='Enter') return; e.preventDefault(); var v=(ai.value||'').trim(); if(!v) return;
+  var addIt=function(){ var v=((ai && ai.value)||'').trim(); if(!v){ showMsg(t('Give it a title first')); return; }
     var L=gptListById_(S.gptList), asks=L && !L.canEdit;
-    gptSaveTask_({ listId:S.gptList, title:v }, asks ? gpT('Asked — {name} will see it in their list',{name:t(L.ministry||L.dept)}) : '', function(){ setTimeout(function(){ var m=document.getElementById('gptAddInput'); if(m) m.focus(); }, 0); }); };
+    var due=(document.getElementById('gptAddDue')||{}).value||'', tm=(document.getElementById('gptAddTime')||{}).value||'';
+    gptSaveTask_({ listId:S.gptList, title:v, due:due, time:due ? tm : '' }, asks ? gpT('Asked — {name} will see it in their list',{name:t(L.ministry||L.dept)}) : '', function(){ setTimeout(function(){ var m=document.getElementById('gptAddInput'); if(m) m.focus(); }, 0); }); };
+  if(ai) ai.onkeydown=function(e){ if(e.key!=='Enter') return; e.preventDefault(); addIt(); };
+  on('gptAddBtn', addIt);
   document.querySelectorAll('[data-gptdone]').forEach(function(b){ b.onclick=function(){
     var id=b.getAttribute('data-gptdone'), x=(S.gpt.tasks||[]).filter(function(y){ return y.id===id; })[0]; if(!x) return; gpTap();
     x.done=!x.done; render();   // at once; the server's answer follows
@@ -272,6 +282,19 @@ function bindGpTasks_(){
     on('gptDelete', function(){ if(!window.confirm(t('Delete this task?'))) return;
       run('deleteGpTask',[S.auth.user,S.auth.pin,D.id],function(d){ if(d && d.ok){ gptTake_(d); S.gptOpen=null; S.gptDraft=null; showMsg(t('Deleted')); } else showMsg(t('Could not save')); render(); }); });
   }
+}
+/* My Ministry: ✅ Ministry Tasks, folded under the department and ministry (Uriah, Oct 2026: easy to
+   find, not much on the screen); open, it is that ministry's lists. Open or shut is remembered. */
+function mtOpen_(){ try{ return lsGet('gp-mt-open')==='1'; }catch(e){ return false; } }
+function mtFoldHtml_(sel){
+  var open=mtOpen_(), n=null;
+  if(S.gpt){ var ids=gptLists_({ dept:sel.dept, min:sel.min }).map(function(L){ return L.id; });
+    n=S.gpt.tasks.filter(function(x){ return ids.indexOf(x.listId)>-1 && !x.done && x.status!=='declined'; }).length; }
+  else if(open && !S.gptLoading && !S.gptErr) setTimeout(gptLoad_, 0);
+  S.gptFrom='ministry';
+  return '<div class="card mtFold'+(open?' open':'')+'" id="mtFold"><button class="mtHead" id="mtToggle" aria-expanded="'+(open?'true':'false')+'">'+
+    '<span>✅ '+esc(t('Ministry Tasks'))+(n ? ' <span class="adminBadge">'+n+'</span>' : '')+'</span><span class="accChevron"'+(open?'':' style="transform:rotate(-90deg)"')+'>'+ACC_CHEVRON+'</span></button>'+
+    (open ? '<div class="mtBody">'+gptPageHtml_({ dept:sel.dept, min:sel.min }, true)+'</div>' : '')+'</div>';
 }
 /* My Home: the line on the card, and the small button by Weekly Goals */
 function gptHomeRowHtml_(){

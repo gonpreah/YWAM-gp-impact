@@ -261,7 +261,7 @@ console.log('\n=== the department’s overseer: the teams page among the ministr
   // the server answers canEdit — here it says no, so the page must be read-only whatever the role
   const { ctx, page, errors, sent } = await open(OVERSEER, { stayOnMinistry: true });
   await page.waitForTimeout(800);
-  ok('the overseer’s My Ministry opens on Campus Leadership (its OKRs and meeting board)', !!(await page.$('#leadOkrs')));
+  ok('the overseer’s My Ministry opens on Campus Leadership (its OKRs and meeting board)', !!(await page.$('.lwSeg, #leadOkrs')));
   await page.click('[data-mmpick="Community Service|Cafe"]'); await page.waitForTimeout(800);
   let s = await state(page);
   const chips = await page.evaluate(() => [].map.call(document.querySelectorAll('[data-mmpick]'), b => b.getAttribute('data-mmpick')));

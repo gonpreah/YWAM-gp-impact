@@ -100,7 +100,13 @@ const T = () => (mem.gpTasks || { tasks: [] }).tasks;
   const t1b = T().find(t => t.id === t1.id);
   ok('Save: the day, the time, the details and Kanha', t1b.due === day(1) && t1b.time === '09:30' && t1b.notes === 'Two crates' && t1b.assignees.join() === 'c2', JSON.stringify(t1b));
   ok('… and the row says when and who', /Tomorrow, 9:30/.test(await main(page)) && /Kanha/.test(await main(page)), (await main(page)).slice(0, 500) + ' LIST=' + await page.evaluate(() => S.gptList));
+  ok('adding a task offers the date and time there and then, saying so while blank', /Set date and time/.test(await page.$eval('.gptAddWhen', e => e.innerText)) && !!(await page.$('#gptAddDue')) && !!(await page.$('#gptAddTime')));
+  await page.fill('#gptAddInput', 'Staff lunch'); await page.fill('#gptAddDue', day(3)); await page.fill('#gptAddTime', '12:00');
+  await page.click('#gptAddBtn'); await page.waitForTimeout(700);
+  const t3 = T().find(t => t.title === 'Staff lunch');
+  ok('… Add: made with its day and time', t3 && t3.due === day(3) && t3.time === '12:00', JSON.stringify(t3));
   await page.fill('#gptAddInput', 'Wipe the tables'); await page.press('#gptAddInput', 'Enter'); await page.waitForTimeout(600);
+  ok('a task with no day says “Set date and time”', /Set date and time/.test(await page.$eval('[data-gptrow="' + T().find(t => t.title === 'Wipe the tables').id + '"]', e => e.innerText)));
   const t2 = T().find(t => t.title === 'Wipe the tables');
   await page.click('[data-gptdone="' + t2.id + '"]'); await page.waitForTimeout(700);
   ok('ticking it off: done, and folded under Completed', T().find(t => t.id === t2.id).done === true && /Completed \(1\)/.test(await main(page)));
@@ -147,8 +153,11 @@ const T = () => (mem.gpTasks || { tasks: [] }).tasks;
 {
   const { ctx, page } = await open('kanha');
   await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(600);
-  await page.click('[data-mmtab="tasks"]'); await page.waitForTimeout(900);
-  ok('My Ministry has a ✅ Tasks tab with the Cafe\'s list', /Cafe jobs/.test(await main(page)) && /Order milk/.test(await main(page)) && !(await page.$('#gptBack')));
+  ok('My Ministry: no Numbers / Tasks switch on top; Ministry Tasks folded under the ministry', !(await page.$('[data-mmtab="ministry"], [data-mmtab="tasks"]')) && !!(await page.$('#mmBanner + #mtFold, #mmBanner ~ #mtFold')) && !(await page.$('#mtFold .gptBar')));
+  ok('… and the ministry\'s own page still shows below (the Cafe: its tool and numbers)', !!(await page.$('[data-cafeview], .wkStrip, #kpiInputBtn, .mmTile')));
+  await page.click('#mtToggle'); await page.waitForTimeout(900);
+  ok('opened: the Cafe\'s list', /Cafe jobs/.test(await page.$eval('#mtFold', e => e.innerText)) && /Order milk/.test(await page.$eval('#mtFold', e => e.innerText)) && !(await page.$('#gptBack')));
+  await page.click('#mtToggle'); await page.waitForTimeout(300);
   await ctx.close();
 }
 /* ---------- Uriah: everything, the filter, and a board card for the Cafe ---------- */

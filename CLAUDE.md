@@ -2681,9 +2681,15 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   becomes that ministry's task (its first list, made if none), given to them, from Campus Leadership
   (`gptFromCard_`); done on the board → done in the list; unlinked → the task goes.
 - **Where it opens**: My Home's card (✅ GP Tasks · N open, `#goGpTasks`), a button on the Weekly Goals
-  heading (`#goGpTasksGoals`), the bell, `teams.html?view=tasks`; on My Ministry the **✅ Tasks** tab
-  (that ministry's lists, `gptPageHtml_({dept,min}, true)`), and for Campus Leadership a **Tasks** LW
-  tab (every list, with the ⚙️ filter). The Goals & Tasks page's own ✅ Tasks (steps toward your annual
+  heading (`#goGpTasksGoals`), the bell, `teams.html?view=tasks`; on My Ministry **✅ Ministry Tasks**,
+  folded under the department and ministry (`mtFoldHtml_`, open/shut kept in `gp-mt-open`; that
+  ministry's lists, `gptPageHtml_({dept,min}, true)`), and for Campus Leadership a **Ministry Tasks** LW
+  tab (every list, with the ⚙️ filter).
+- **My Ministry has no Numbers / OKRs / Tasks switch on top** (Uriah: "the numbers already show below"):
+  the numbers simply show; **🎯 OKRs ›** is a small button by the title (`data-mmtab="okr"`), and the OKRs
+  page has "← Back to the numbers".
+- **A new task can have its day and time as it is made** (the add row's date + time and Add; Enter
+  still adds); blank, they say "📅 Set date and time", and so does a task with no day in the list. The Goals & Tasks page's own ✅ Tasks (steps toward your annual
   goals) is separate and unchanged.
 - tests/test-gp-tasks.mjs (server: the rules), tests/test-gp-tasks-ui.mjs.
 
