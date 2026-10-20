@@ -1013,9 +1013,9 @@ function ooFollowUpsHtml_(o, canTick){
 }
 function ooStatusHtml_(o){
   if(o.status==='held') return '<span class="pill approved">'+esc(gpT('Done · {date}',{date:fmtDateShort_(o.heldOn)}))+'</span>';
-  if(o.status==='accepted') return '<span class="pill approved">'+esc(t('Accepted'))+'</span>';
+  if(o.status==='accepted') return '<span class="pill approved">'+esc(o.when ? '📅 '+ooWhenNice_(o.when) : t('Accepted'))+'</span>';
   if(o.status==='declined') return '<span class="pill denied">'+esc(t('Declined'))+'</span>';
-  return '<span class="pill pending">'+esc(o.mine ? gpT('Sent · waiting for {name}',{name:String(o.otherName||'').split(' ')[0]}) : t('Waiting for you to accept'))+'</span>';
+  return '<span class="pill pending">'+esc(o.mine ? gpT('Sent · waiting for {name}',{name:String(o.otherName||'').split(' ')[0]}) : t('Waiting for you to set a time'))+'</span>';
 }
 function ooGoalsHtml_(goals){
   var yr=new Date().getFullYear();
@@ -1128,18 +1128,6 @@ function ooMenteeSectionHtml_(m){
   } else if(!open.length) h+='<p class="sub" style="margin:10px 0 0">'+esc(gpT('No 1-on-1s with {name} yet.',{name:first}))+'</p>';
   return h+'<div class="ooActs"><button class="btn" style="margin:10px 0 0" data-request121="'+esc(m.id)+'">☕ '+esc(gpT('Ask {name} for a 1-on-1',{name:first}))+'</button>'+
     '<button class="btn ghost" style="margin:8px 0 0" data-oolog="'+esc(m.id)+'">✍️ '+esc(t('Log one you already had'))+'</button></div></div>';
-}
-/* The 1-on-1s still to happen, on the Mentorship page. */
-function ooComingHtml_(){
-  var open=(S.oneOnOnes||[]).filter(function(o){ return ooOpen_(o) && !(o.status==='pending' && !o.mine); });
-  if(!open.length) return '';
-  var h='<div class="mentorLabel">'+esc(t('1-on-1s coming up'))+'</div>';
-  open.forEach(function(o){
-    var todo=!o.iMentor && !o.prep;
-    h+='<button class="ooRow" data-ooopen="'+esc(o.id)+'"><span class="rowName">☕ '+esc(o.otherName)+' '+ooStatusHtml_(o)+
-      (todo ? '<div class="ooTodo">'+esc(t('Fill in your check-in'))+' ›</div>' : '')+'</span><span class="ooChev">›</span></button>';
-  });
-  return h;
 }
 function ooAfterAccept_(id){
   var o=ooById_(id);
@@ -1354,11 +1342,11 @@ function miniDashboardHtml(){
     '<button class="heroRow" data-jump="sec-habits">'+gpRingHtml(habitsPct,'sm',t('Habits Today'))+
       '<div class="heroTrend">'+esc(t('Habits Today'))+' <b class="heroFig">'+habitsDone+'</b>/'+list.length+
       (bestRun>0?'</div><div class="heroSubtext">🔥 '+esc(gpT('best {n}d streak',{n:bestRun}))+'</div>':'</div>')+'</button>'+
-    '<button class="heroRow" data-gohealth="1">'+gpRingHtml(healthPct,'sm',t('My Health'))+
-      '<div class="heroTrend">'+esc(t('My Health'))+' <b class="heroFig">'+(score!==null?score.toFixed(1):'—')+'</b>/10 '+healthTrend+'</div></button>'+
-    '<button class="heroRow" data-gomentorship="1">'+gpRingHtml(mentorPct,'sm',t('Mentor'))+
-      '<div class="heroTrend">'+esc(t('Mentor'))+' <b class="heroFig">'+(mentorId?esc(mentorName):esc(t('Not set')))+'</b></div></button>'+
-    '<button class="heroHealthBtn" id="goMyHealth" data-gohealth="1">💚 '+esc(t('Go to My Health'))+' ›</button>'+
+    /* a small › on the row itself opens the page (Uriah: no big button under them) */
+    '<button class="heroRow heroRowGo" id="goMyHealth" data-gohealth="1" aria-label="'+esc(t('Go to My Health'))+'">'+gpRingHtml(healthPct,'sm',t('My Health'))+
+      '<div class="heroTrend">'+esc(t('My Health'))+' <b class="heroFig">'+(score!==null?score.toFixed(1):'—')+'</b>/10 '+healthTrend+'</div><span class="heroGo" aria-hidden="true">›</span></button>'+
+    '<button class="heroRow heroRowGo" id="goMentorship" data-gomentorship="1" aria-label="'+esc(t('Mentorship'))+'">'+gpRingHtml(mentorPct,'sm',t('Mentor'))+
+      '<div class="heroTrend">'+esc(t('Mentor'))+' <b class="heroFig">'+(mentorId?esc(mentorName):esc(t('Not set')))+'</b></div><span class="heroGo" aria-hidden="true">›</span></button>'+
     '<div class="heroSub">'+
       '<div class="heroSubRow">'+
         '<span class="heroSubLabel">'+esc(t('PERSONAL DAYS OFF LEFT'))+'</span>'+
@@ -1395,7 +1383,8 @@ function homeBaseHtml_(){
     (S.guest || S.board || S.student ? '' : (function(){
       var W=S.whosHere && S.whosFor===(S.me.campus||'') ? S.whosHere : null;
       return '<button class="homeBase homeWhos" id="goWhosHereHome">'+
-        '<span class="homeBaseHead"><span>👥 '+esc(t('On campus now'))+' <b class="homeWhosN">'+(W ? W.count : '—')+'</b></span>'+
+        '<span class="homeBaseHead"><span>👥 '+esc(t('On campus now'))+' <b class="homeWhosN">'+(W ? W.count : '—')+'</b>'+
+          (W && W.capacity!=null ? ' <span class="whoCap">· '+esc(gpT('{n}% full',{n:W.capacity}))+'</span>' : '')+'</span>'+
         '<span class="homeBaseGo">'+esc(t('Who’s here'))+' →</span></span></button>';
     })());
 }
@@ -1427,8 +1416,12 @@ function notifItems_(){
   });
   (S.oneOnOnes||[]).forEach(function(o){
     if(!o.mine && o.status==='pending'){
-      items.push({ when:o.created, text: gpT('{name} requested a 1-on-1', {name:o.otherName}),
-        actions: notifActionBtnsHtml_('121accept', o.id, '121decline', o.id, t('Accept'), t('Decline')) });
+      items.push({ when:o.created, text: o.iMentor ? gpT('{name} (you mentor them) asked you for a 1-on-1', {name:o.otherName}) : gpT('{name}, your mentor, asked you for a 1-on-1', {name:o.otherName}),
+        actions: '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-gomentorship="1">'+esc(t('Set a time'))+'</button>'+
+          '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px;color:var(--faint)" data-121decline="'+esc(o.id)+'">'+esc(t('Decline'))+'</button>' });
+    } else if(o.status==='accepted' && o.when && !o.whenByMe){
+      items.push({ when:o.whenAt||o.decidedAt||o.created, text: gpT('{name} set your 1-on-1 for {when}', {name:o.otherName, when:ooWhenNice_(o.when)}),
+        actions: '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-ooopen="'+esc(o.id)+'">'+esc(t('Open'))+'</button>' });
     } else if(o.mine && o.status==='accepted'){
       items.push({ when:o.decidedAt||o.created, text: gpT('{name} accepted your 1-on-1 request', {name:o.otherName}) });
     } else if(o.mine && o.status==='declined'){

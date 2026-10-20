@@ -1765,6 +1765,19 @@ function bind(){
       });
     };
   });
+  /* the one asked sets the day and time (that is the yes); either of the pair can move it later */
+  document.querySelectorAll('[data-ooset]').forEach(function(b){
+    b.onclick=function(){
+      var id=b.getAttribute('data-ooset'), d=(document.querySelector('[data-oodate="'+id+'"]')||{}).value||'', tm=(document.querySelector('[data-ootime="'+id+'"]')||{}).value||'';
+      if(!d || !tm){ showMsg(t('Pick a day and a time')); return; }
+      var accept=b.hasAttribute('data-ooaccept'); b.disabled=true;
+      run(accept ? 'respondToOneOnOne' : 'setOneOnOneTime', accept ? [S.auth.user,S.auth.pin,id,true,d+'T'+tm] : [S.auth.user,S.auth.pin,id,d+'T'+tm],function(r){
+        if(r && r.ok){ S.oneOnOnes=r.oneOnOnes; S.ooTimeEdit=null; var o=ooById_(id); showMsg(gpT('Set — {name} will get a notification',{name:String((o&&o.otherName)||'').split(' ')[0]})); if(accept) ooAfterAccept_(id); else render(); }
+        else { b.disabled=false; showMsg(r && r.err==='bad_when' ? t('Pick a day from today on') : t('Could not save')); }
+      });
+    };
+  });
+  document.querySelectorAll('[data-oochange]').forEach(function(b){ b.onclick=function(){ S.ooTimeEdit=b.getAttribute('data-oochange'); render(); }; });
   document.querySelectorAll('[data-121decline]').forEach(function(b){
     b.onclick=function(){
       var id=b.getAttribute('data-121decline');

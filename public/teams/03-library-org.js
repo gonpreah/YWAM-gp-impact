@@ -2230,6 +2230,7 @@ function remindersCardHtml_(){
   var mentor=(S.mentees||[]).length>0;
   h+='<p class="hint" style="margin:0 0 8px">✓ '+esc(t('Reminders are on for this phone.'))+'</p>'+
     '<label class="f" for="remHour">'+esc(t('Remind me at'))+'</label><select id="remHour">'+opts+'</select>'+
+    box('remAlerts', pr.alerts!==false, t('Right away: 1-on-1 requests and times, mentor requests, leave'))+
     box('remDaily', pr.daily!==false, t('When today’s check-in isn’t in'))+
     (mentor ? box('remOne', pr.oneonone!==false, t('When my 1-on-1s with a mentee are behind (Mondays)')) : '')+
     (S.me.isAdmin ? box('remAdmin', pr.admin!==false, t('When sign-ups are waiting for approval')) : '')+
@@ -2242,7 +2243,7 @@ function remSavePrefs_(){
   var pr=Object.assign({}, (S.push && S.push.prefs)||{});
   pr.hour=Number((document.getElementById('remHour')||{}).value)||pr.hour||19;
   pr.daily=g('remDaily', pr.daily!==false); pr.oneonone=g('remOne', pr.oneonone!==false);
-  pr.admin=g('remAdmin', pr.admin!==false); pr.hr=g('remHr', pr.hr!==false);
+  pr.admin=g('remAdmin', pr.admin!==false); pr.hr=g('remHr', pr.hr!==false); pr.alerts=g('remAlerts', pr.alerts!==false);
   S.push.prefs=pr;
   run('savePushPrefs',[S.auth.user,S.auth.pin,pr],function(d){ if(d && d.ok){ S.push.prefs=d.prefs; showMsg(t('Saved')); } else showMsg(t('Could not save')); });
 }
@@ -2265,7 +2266,7 @@ function bindReminders_(){
       });
     }).catch(function(){ fail(); });
   };
-  ['remHour','remDaily','remOne','remAdmin','remHr'].forEach(function(id){ var el=document.getElementById(id); if(el) el.onchange=remSavePrefs_; });
+  ['remHour','remAlerts','remDaily','remOne','remAdmin','remHr'].forEach(function(id){ var el=document.getElementById(id); if(el) el.onchange=remSavePrefs_; });
   var tst=document.getElementById('remTest');
   if(tst) tst.onclick=function(){
     tst.disabled=true;

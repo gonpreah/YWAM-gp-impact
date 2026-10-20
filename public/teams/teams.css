@@ -2096,7 +2096,6 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .profMyc { display:flex; align-items:center; gap:12px; width:100%; text-align:left; font:inherit; color:var(--ink); cursor:pointer; }
 .profMycIc { font-size:24px; } .profMycTxt { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; } .profMycGo { color:var(--muted); font-size:20px; }
 /* My Home: a plain way to My Health */
-.heroHealthBtn { display:block; width:100%; margin:10px 0 2px; padding:11px 14px; border-radius:12px; border:1.5px solid var(--border2); background:var(--surface); color:var(--ink); font:inherit; font-weight:700; font-size:15px; cursor:pointer; text-align:center; }
 
 /* student mode (Oct 2026) */
 .stuHello { font-family:'Koulen',sans-serif; font-size:34px; line-height:1.1; margin-top:6px; }
@@ -2123,3 +2122,19 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 /* My Home: On campus now, under the base's figures */
 .homeWhos { margin-top:8px; }
 .homeWhos .homeBaseHead b { margin-left:4px; }
+
+/* Mentorship: each 1-on-1 with its person — who asked, and the day and time */
+.ooRel { padding:4px 0 2px 52px; }
+.ooLine { font-size:14px; margin:2px 0 6px; }
+.ooAskedLine { font-weight:600; }
+.ooWaiting { box-shadow:inset 3px 0 0 var(--amber); }
+.ooTime { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:0 0 6px; }
+.ooTime input { width:auto; flex:1 1 120px; min-width:0; margin:0; }
+.ooTime .btn.small { width:auto; margin:0; padding:8px 12px; }
+.ooActsRow { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.ooActsRow .btn.small { width:auto; margin:0; }
+@media (max-width:360px){ .ooRel { padding-left:0; } }
+/* My Home card: a small › on My Health and Mentor; the campus's beds-filled % */
+.heroRowGo { position:relative; padding-right:34px; }
+.heroGo { position:absolute; right:6px; top:50%; transform:translateY(-50%); width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; line-height:1; background:rgba(255,255,255,.14); color:inherit; }
+.whoCap { font-size:12.5px; font-weight:600; opacity:.8; white-space:nowrap; }

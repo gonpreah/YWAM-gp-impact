@@ -824,6 +824,11 @@ volunteers, guests, speakers (names from `people` / `bedNames`, else the booking
 `count` = staff here + everyone booked. Team photos load per team (`whosHereTeamPhotos`).
 tests/test-whos-here-ui.mjs.
 
+- **Capacity** (`beds`, `capacity` in getWhosHere): SR Hospitality's beds booked tonight (every booking,
+  `max(count, bedIds)`) over its beds not marked out — "· 72% full" next to On campus now on Base and
+  My Home, and "46 of 64 beds filled" on Who's here. No rooms set up → nothing shown.
+- **My Home's card** has no big "Go to My Health" button: the My Health and Mentor rows carry a small ›
+  (`.heroGo`) and open their pages; On campus now sits under the base's figures (`#goWhosHereHome`).
 ## The bottom bar (Oct 2026)
 My Home · **My Ministry** · Team · Health · **Profile** (`data-tab`; My Ministry opens on its
 Numbers view; Profile is Profile & settings, which holds **My contract** — its ← goes back to
@@ -2110,8 +2115,7 @@ also carries `menteeId`, the mentee's `prep`, and once it happened `heldOn`, `no
   their last answers, and the summary shows ▲▼ against last time. Only the mentee can
   write it (`saveOneOnOnePrep`), until it is held.
 - **Mentorship page (Oct 2026, Uriah: "one area for easy access")**: `S.view='mentor'` with no
-  mentee open is **Mentorship** (`mentorHtml`): 1-on-1 requests waiting on you, saying who asked
-  whom (`ooAskedYouText_`), away requests, mentor requests, 1-on-1s coming up, **People you
+  mentee open is **Mentorship** (`mentorHtml`): away requests, mentor requests, **You
   mentor** (`.mentorRow`, tap → their page; ☕ "Ask {name} for a 1-on-1" or "Open the 1-on-1"),
   and **Your mentor** (`#myMentorCard`, ask button + your last 1-on-1s). The dashboard's Mentor
   row, My Home's short Mentorship card (`#goMentorshipHome`) and Team's `#goMentor` all open it
@@ -2119,6 +2123,23 @@ also carries `menteeId`, the mentee's `prep`, and once it happened `heldOn`, `no
   `ooHistRowHtml_`: coming up, then held newest first with notes and follow-ups done; Show all
   past 10) and "Ask {name} for a 1-on-1" / "Log one you already had" (`data-oolog`). The sheet
   says who is who ("You mentor Sokha" / "Andrew is your mentor") and whose request it is.
+- **Each 1-on-1 sits with its relationship (Oct 2026, Uriah: "I'm mentoring Uriah and he's mentoring
+  me — I don't know who asked whom")**: no separate "coming up" list. Under **👥 You mentor** each
+  mentee's row, and under **🧭 Your mentor** the card, carry that pair's open 1-on-1 (`ooRelRow_` —
+  matched by `menteeId`, so two people who mentor each other see two separate ones), in words
+  (`ooRelHtml_`): "You asked X — waiting for them to set a time", "X asked you — pick a day and time"
+  (date + time + **Set the time**), "📅 Tue 21 Oct, 3:00 pm · X set it" with Change the time.
+  **The one asked sets the day and time — that is the yes**: `respondToOneOnOne(…, true, when)`;
+  either of the pair moves it with `setOneOnOneTime` (only once accepted). `when` is
+  `YYYY-MM-DDTHH:MM`, Cambodia's clock, yesterday to a year ahead (`ooWhen_`); rows carry `when`,
+  `whenBy`, `whenAt` (`whenByMe` to the client). The bell says "X (you mentor them) asked you…" /
+  "X, your mentor, asked you…" with **Set a time** (opens Mentorship), and "X set your 1-on-1 for …".
+- **Right away on the phone** (`pushNow_(staffId, key, params, url)`): a 1-on-1 asked for, its time set
+  or moved, declined; a mentor request; leave asked for and decided — sent the moment it happens to
+  that person's phones (the same subscriptions as Reminders), unless they turn off "Right away"
+  (`push.alerts`, Profile → Reminders). Texts in `PUSH_TEXT` (ooAsk, ooSet, ooDeclined, mentorAsk,
+  leaveAsk, leaveDone). A notification opens `teams.html?view=mentor`. Never throws; no keys or no
+  phones → nothing. tests/test-reminders.mjs §6 decrypts them as a phone would.
 - **The sheet** (`S.view='oneonone'`, `oneOnOneHtml`, `ooGo_(id, withId)`): the
   check-in, the mentee's SMART goals for the year (the mentor's copy via
   getMenteeLogs), last time's follow-ups to tick (either of the pair), and for the
