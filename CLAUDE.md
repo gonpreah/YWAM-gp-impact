@@ -2750,7 +2750,10 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   a department's — the department; personal — the owner only; **Campus
   Leadership and admins every list on the campus** (`gptAll_` = `canLead_`), narrowed by their saved
   filter (`staff.taskFilter = {keys:['Dept|Ministry', 'Dept|']}`, `saveGpTaskFilter`, a view only — your
-  own ministries' and personal lists always show). A task given to you, or one you asked for, shows
+  own ministries' and personal lists always show). **Since Oct 2026 the default is only your own**
+  (Andrew: "why are there random ministries I'm not part of on my list?"): with no saved filter (or
+  `keys: []`) leadership's page shows just their lists; other ministries appear once ticked in ⋮ →
+  Which lists to show ("Show everything" saves every key, "Only mine" saves none). A task given to you, or one you asked for, shows
   wherever its list is (its list comes along as `onlyAssigned`).
 - **Asking another ministry** (`askMin` on saveGpTask, or adding to a list you only see): a request
   (`status:'request'`, `from.label` = your ministry) its people accept or decline (`respondGpTask`);

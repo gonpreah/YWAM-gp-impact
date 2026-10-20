@@ -76,8 +76,10 @@ function gptLists_(scope){
   /* never someone else's personal list (Uriah: "why is Vannak's list in my GP Tasks?") — what they give you is in your Inbox */
   var lists=G.lists.filter(function(L){ return !L.onlyAssigned && !(L.scope==='personal' && L.ownerId!==S.me.id); });
   if(scope) return lists.filter(function(L){ return L.dept===scope.dept && (scope.min ? L.scope==='ministry' && L.ministry===scope.min : L.scope==='dept'); });
-  var f=G.filter && G.filter.keys;
-  if(G.canAll && f) lists=lists.filter(function(L){ return L.scope==='personal' || L.mine || f.indexOf(gptKeyOf_(L))>-1; });
+  /* Campus Leadership and admins: only your own by default (Andrew, Oct 2026: "why are there random
+     ministries I'm not part of on my list?") — other ministries' lists only once ticked in ⋮ */
+  var f=(G.filter && G.filter.keys) || [];
+  if(G.canAll) lists=lists.filter(function(L){ return L.scope==='personal' || L.mine || f.indexOf(gptKeyOf_(L))>-1; });
   var main=gptMain_(), ord=G.listOrder||[];
   var rank=function(L){ return main && L.id===main.id ? 0 : L.scope==='personal' ? 2 : L.mine ? 1 : 3; };
   return lists.slice().sort(function(a,b){
@@ -259,13 +261,13 @@ function gptFilterHtml_(){
   G.lists.forEach(function(L){ if(L.scope!=='personal' && !L.onlyAssigned) keys[gptKeyOf_(L)]=1; });
   var byDept={}; Object.keys(keys).sort().forEach(function(k){ var p=k.split('|'); (byDept[p[0]]=byDept[p[0]]||[]).push(k); });
   var h='<div class="card gptFilter"><div class="goalCardTitle">⚙️ '+esc(t('Which lists to show'))+'</div>'+
-    '<p class="hint" style="margin:0 0 8px">'+esc(t('Your own ministry’s lists and your personal ones always show. Save it as your default — change it any time.'))+'</p>';
+    '<p class="hint" style="margin:0 0 8px">'+esc(t('Your own lists always show. Tick the other ministries you want here too — saved as your default, change it any time.'))+'</p>';
   if(!Object.keys(byDept).length) h+='<p class="sub" style="margin:0">'+esc(t('No ministry has a list yet.'))+'</p>';
   Object.keys(byDept).forEach(function(d){
     h+='<div class="gptFDept"><b>'+esc(t(d))+'</b>'+byDept[d].map(function(k){ var m=k.split('|')[1];
-      return '<label class="remBox"><input type="checkbox" data-gptf="'+esc(k)+'"'+(!D || D.indexOf(k)>-1 ? ' checked' : '')+'> '+esc(m ? t(m) : t('Whole department'))+'</label>'; }).join('')+'</div>';
+      return '<label class="remBox"><input type="checkbox" data-gptf="'+esc(k)+'"'+((D||[]).indexOf(k)>-1 ? ' checked' : '')+'> '+esc(m ? t(m) : t('Whole department'))+'</label>'; }).join('')+'</div>';
   });
-  return h+'<div class="btnRow"><button class="btn" id="gptFilterSave">'+esc(t('Save as my default'))+'</button><button class="btn ghost" id="gptFilterAll">'+esc(t('Show everything'))+'</button></div></div>';
+  return h+'<div class="btnRow"><button class="btn" id="gptFilterSave">'+esc(t('Save as my default'))+'</button><button class="btn ghost" id="gptFilterAll">'+esc(t('Show everything'))+'</button><button class="btn ghost" id="gptFilterNone">'+esc(t('Only mine'))+'</button></div></div>';
 }
 /* New list — a small sheet for the name. A new list is always your own (Uriah: "each person can add
    as many lists as they want in their own GP Tasks"); a ministry has the one list the server makes. */
@@ -353,16 +355,15 @@ function bindGpTasks_(){
   on('gptListDelete', function(){ S.gtMenu=false; if(!window.confirm(gpT('Delete “{title}” and all its tasks?',{title:L0.title}))){ render(); return; }
     saveList({ id:L0.id, remove:true }, t('List deleted'), function(){ S.gptList=null; }); });
   on('gptAskBtn', function(){ gpTap(); S.gtMenu=false; S.gptAsk={ min:'', title:'', due:'', find:'' }; render(); });
-  on('gptFilterBtn', function(){ S.gtMenu=false; S.gptFilterOpen=true; S.gptFilterDraft=S.gpt.filter ? S.gpt.filter.keys.slice() : null; render(); });
+  on('gptFilterBtn', function(){ S.gtMenu=false; S.gptFilterOpen=true; S.gptFilterDraft=S.gpt.filter ? S.gpt.filter.keys.slice() : []; render(); });
   /* the filter (Campus Leadership) */
   document.querySelectorAll('[data-gptf]').forEach(function(c){ c.onchange=function(){
-    var all=[].map.call(document.querySelectorAll('[data-gptf]'), function(x){ return x.getAttribute('data-gptf'); });
     S.gptFilterDraft=[].filter.call(document.querySelectorAll('[data-gptf]'), function(x){ return x.checked; }).map(function(x){ return x.getAttribute('data-gptf'); });
-    if(S.gptFilterDraft.length===all.length) S.gptFilterDraft=null;
   }; });
   var saveFilter=function(keys){ run('saveGpTaskFilter',[S.auth.user,S.auth.pin,keys],function(d){ if(d && d.ok){ gptTake_(d); S.gptFilterOpen=false; S.gptFilterDraft=null; showMsg(t('Saved as your default')); } else showMsg(t('Could not save')); render(); }); };
-  on('gptFilterSave', function(){ saveFilter(S.gptFilterDraft); });
-  on('gptFilterAll', function(){ saveFilter(null); });
+  on('gptFilterSave', function(){ saveFilter(S.gptFilterDraft||[]); });
+  on('gptFilterAll', function(){ saveFilter([].map.call(document.querySelectorAll('[data-gptf]'), function(x){ return x.getAttribute('data-gptf'); })); });
+  on('gptFilterNone', function(){ saveFilter([]); });
   /* asking another ministry */
   var af=document.getElementById('gptAskFind'); if(af){ af.oninput=function(){ S.gptAsk.find=af.value; var box=document.querySelector('.gtPick'); if(box){ var tmp=document.createElement('div'); tmp.innerHTML=gptAskHtml_(); var nb=tmp.querySelector('.gtPick'); if(nb) box.innerHTML=nb.innerHTML; bindAskPick(); } }; }
   var bindAskPick=function(){ document.querySelectorAll('[data-gptaskmin]').forEach(function(b){ b.onclick=function(){ gpTap(); S.gptAsk.min=b.getAttribute('data-gptaskmin'); S.gptAsk.find=''; render(); var ti=document.getElementById('gptAskTitle'); if(ti) ti.focus(); }; }); };
