@@ -1720,7 +1720,7 @@ input[type=color]::-webkit-color-swatch { border:none; border-radius:50%; }
 .field { margin-bottom:14px; }
 .fieldLabel { display:block; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:6px; }
 .dateRow { display:flex; gap:10px; }
-input[type=date], input[type=month], textarea { width:100%; font:inherit; font-size:14.5px; padding:11px; border-radius:10px; border:1.5px solid var(--border2); background:var(--bg); color:var(--ink); }
+input[type=date], input[type=month], input[type=time], textarea { width:100%; font:inherit; font-size:14.5px; padding:11px; border-radius:10px; border:1.5px solid var(--border2); background:var(--bg); color:var(--ink); }
 textarea { resize:vertical; min-height:64px; }
 .typeChips { display:flex; flex-direction:column; gap:8px; }
 .typeChip { display:flex; align-items:center; gap:10px; border:1.5px solid var(--border2); border-radius:12px; padding:11px 13px; cursor:pointer; text-align:left; background:var(--bg); font-family:inherit; width:100%; }
