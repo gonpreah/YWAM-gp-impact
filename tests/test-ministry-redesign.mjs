@@ -84,7 +84,7 @@ console.log('=== the leader’s page ===');
     personal: document.querySelectorAll('[data-personal]').length,
     overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
   }));
-  ok('no Numbers tab on top (the numbers just show) — a small OKRs button by the title', JSON.stringify(s.tabs) === '["okr"]' && !!document && true, JSON.stringify(s.tabs));
+  ok('no Numbers tab on top (the numbers just show) — a small OKRs button by the title', JSON.stringify(s.tabs) === '["okr"]', JSON.stringify(s.tabs));
   ok('the dashboard shows the ministry’s own metrics as tiles', s.tiles === 6, s.tiles);
   /* This week is in the current quarter by definition, so a count logged
      this week must show a real quarter total — "—" here meant the quarter
