@@ -4926,6 +4926,7 @@ const PUSH_TEXT = {
   taskRequest: { en: '{name} is asking your ministry for help: {title}', km: '{name} កំពុងសុំជំនួយពីក្រសួងរបស់អ្នក៖ {title}' },
   taskDeclined: { en: '{name} can’t take on: {title}', km: '{name} មិនអាចទទួលយក៖ {title}' },
   ooAsk: { en: '{name} asked you for a 1-on-1. Open Mentorship to set a time.', km: '{name} បានសុំជួបមួយទល់មួយជាមួយអ្នក។ បើកការណែនាំ ដើម្បីកំណត់ពេល។' },
+  contractSigned: { en: '{name} signed their staff contract — open their HR profile to approve it.', km: '{name} បានចុះហត្ថលេខាលើកិច្ចសន្យាបុគ្គលិករបស់ពួកគេ — បើកប្រវត្តិរូប HR របស់ពួកគេដើម្បីអនុម័ត។' },
   ooSet: { en: '{name} set your 1-on-1 for {when}.', km: '{name} បានកំណត់ការជួបមួយទល់មួយរបស់អ្នកនៅ {when}។' },
   ooDeclined: { en: '{name} can’t do the 1-on-1 you asked for.', km: '{name} មិនអាចជួបមួយទល់មួយដែលអ្នកបានសុំបានទេ។' },
   mentorAsk: { en: '{name} asked you to be their mentor.', km: '{name} បានសុំឲ្យអ្នកធ្វើជាគ្រូណែនាំរបស់គាត់។' },
@@ -7039,7 +7040,7 @@ const DIGITAL_STATUS = ['awaiting_staff', 'awaiting_leader', 'signed'];
 function cleanDigital_(d) {
   if (!d || typeof d !== 'object' || DIGITAL_STATUS.indexOf(d.status) === -1) return undefined;
   const o = { status: d.status };
-  ['sentAt', 'sentBy', 'staffSignedAt', 'staffName', 'leaderSignedAt', 'leaderName', 'leaderId', 'approvedBy'].forEach(function (k) { if (d[k]) o[k] = str_(d[k], 120); });
+  ['sentAt', 'sentBy', 'staffSignedAt', 'staffName', 'leaderSignedAt', 'leaderName', 'leaderId', 'approvedBy', 'linkToken', 'linkAt', 'linkUsedAt'].forEach(function (k) { if (d[k]) o[k] = str_(d[k], 120); });
   return o;
 }
 /* a contract counts — for "current" and the due count — once it is signed (paper ones always are) */
@@ -9495,26 +9496,30 @@ async function hrSendContract(username, pin, staffId, period) {
   let cid = '';
   const out = await hrMutate_(username, pin, staffId, function (rec, me) {
     const list = contractsOf_(rec), wait = list.filter(function (c) { return c.digital && c.digital.status === 'awaiting_staff'; })[0];
-    if (wait) { wait.signed = from; wait.years = Math.round(years * 4) / 4; wait.digital = Object.assign({}, wait.digital, { sentAt: new Date().toISOString(), sentBy: me.id }); rec.contracts = list; cid = wait.id; return; }
+    const now = new Date().toISOString();
+    if (wait) { wait.signed = from; wait.years = Math.round(years * 4) / 4; wait.digital = Object.assign({}, wait.digital, { sentAt: now, sentBy: me.id, linkToken: wait.digital.linkToken || contractToken_(), linkAt: wait.digital.linkAt || now }); rec.contracts = list; cid = wait.id; return; }
     if (list.length >= HR_MAX_CONTRACTS) return { abort: true, ok: false, err: 'too_many' };
     cid = hrId_('ct');
     rec.contracts = list.concat([{ id: cid, signed: from, years: Math.round(years * 4) / 4, notes: '', campus: HR_CAMPUSES.indexOf(rec.campus) > -1 ? rec.campus : '', files: [],
-      added: new Date().toISOString(), addedBy: me.id, digital: { status: 'awaiting_staff', sentAt: new Date().toISOString(), sentBy: me.id } }]);
+      added: now, addedBy: me.id, digital: { status: 'awaiting_staff', sentAt: now, sentBy: me.id, linkToken: contractToken_(), linkAt: now } }]);
   });
   return out && out.ok ? Object.assign(out, { contractId: cid }) : out;
 }
+function contractToken_() { return crypto.randomBytes(16).toString('hex'); }
 async function hrContractGate_(username, pin, staffId) {
   const me = await verifyStaff_(username, pin);
   if (!me) return { out: { ok: false, err: 'invalid' } };
   if (!canHR_(me)) return { out: { ok: false, err: 'not_authorized' } };
   const r = (await getStaff_()).find(function (x) { return x.id === str_(staffId, 60); });
   if (!r) return { out: { ok: false, err: 'not_found' } };
-  return { me: me, r: r, wait: contractsOf_(r).filter(function (c) { return c.digital && c.digital.status === 'awaiting_staff'; }) };
+  return { me: me, r: r, wait: contractsOf_(r).filter(function (c) { return c.digital && (c.digital.status === 'awaiting_staff' || c.digital.status === 'awaiting_leader'); }) };
 }
-/* the signing page, on HR's phone: the person signs, then HR approves */
+/* the signing page, on HR's phone: the person signs, then HR approves — or, for one the person
+   already signed through their link, only HR's approval is left (approveOnly) */
 async function hrContractOpen(username, pin, staffId) {
   const g = await hrContractGate_(username, pin, staffId); if (g.out) return g.out;
-  const docs = g.wait.map(function (c) { const d = contractDoc_(c); return { id: d.id, title: d.title, blocks: d.blocks, sign: d.sign, period: contractPeriod_(c) }; });
+  const docs = g.wait.map(function (c) { const d = contractDoc_(c), signed = c.digital.status === 'awaiting_leader';
+    return { id: d.id, title: d.title, blocks: d.blocks, sign: d.sign, period: contractPeriod_(c), approveOnly: signed, staffName: signed ? c.digital.staffName : '', staffSignedAt: signed ? c.digital.staffSignedAt : '' }; });
   return { ok: true, isTeam: false, staff: true, hrSign: true, team: g.r.name, approver: g.me.name, contacts: [],
     prefill: { role: [g.r.role, g.r.ministry].filter(Boolean).join(' — ') || 'Staff', dates: '' },
     people: [{ key: 'me', name: g.r.name, done: {} }], docs: docs };
@@ -9523,15 +9528,70 @@ async function hrContractSign(username, pin, staffId, key, docId, p) {
   const g = await hrContractGate_(username, pin, staffId); if (g.out) return g.out;
   const c = g.wait.find(function (x) { return 'contract:' + x.id === str_(docId, 80); });
   if (!c) return { ok: false, err: 'bad_doc' };
-  const v = await signRecord_(contractDoc_(c), p, 'me'); if (v.err) return Object.assign({ ok: false }, v);
-  v.rec.period = contractPeriod_(c);
-  await writeJSON('scontract:' + c.id, { staff: v.rec });
+  const now = new Date().toISOString();
+  let rec;
+  if (c.digital.status === 'awaiting_leader') {   // signed through the link: HR's name and signature finish it
+    p = p && typeof p === 'object' ? p : {};
+    const leaderName = dutyText_(p.leaderName, 120), leaderSig = p.leaderSig;
+    if (!leaderName || !isJpeg_(leaderSig) || leaderSig.length > SIG_MAX_B64) return { ok: false, err: 'leader_required' };
+    const blob = await readJSON('scontract:' + c.id, {}); rec = blob.staff;
+    if (!rec) return { ok: false, err: 'not_signed' };
+    rec.leaderName = leaderName; rec.leaderSig = leaderSig; rec.leaderAt = now;
+    await writeJSON('scontract:' + c.id, { staff: rec });
+  } else {
+    const v = await signRecord_(contractDoc_(c), p, 'me'); if (v.err) return Object.assign({ ok: false }, v);
+    rec = v.rec; rec.period = contractPeriod_(c);
+    await writeJSON('scontract:' + c.id, { staff: rec });
+  }
   return mutateStaff_(function (rows) {
     const r = rows.find(function (x) { return x.id === g.r.id; }); if (!r) return { abort: true, ok: false, err: 'not_found' };
-    r.contracts = contractsOf_(r).map(function (x) { if (x.id !== c.id) return x; x.digital = Object.assign({}, x.digital, { status: 'signed', staffSignedAt: v.rec.at, staffName: v.rec.name, leaderSignedAt: v.rec.at, leaderName: v.rec.leaderName, approvedBy: g.me.id }); return x; });
-    r.updated = new Date().toISOString();
+    r.contracts = contractsOf_(r).map(function (x) { if (x.id !== c.id) return x;
+      x.digital = Object.assign({}, x.digital, { status: 'signed', staffSignedAt: x.digital.staffSignedAt || rec.at, staffName: x.digital.staffName || rec.name, leaderSignedAt: now, leaderName: rec.leaderName, leaderId: g.me.id, approvedBy: g.me.id });
+      return x; });
+    r.updated = now;
     return { ok: true, done: { [docId]: true }, staff: hrStaffOut_(r) };
   });
+}
+/* The one-time link (Oct 2026, Uriah: "instead of giving them our phone, send them a link"): HR
+   copies portal.html?contract=<token> from the person's HR profile; the person opens it on their own
+   phone — no sign-in — reads, fills in and signs; it lands on their profile as awaiting_leader, the
+   link is spent, and HR signs to approve from the profile (hrContractSign, approveOnly). */
+async function contractLink_(token) {
+  token = String(token || '').replace(/[^a-f0-9]/g, '').slice(0, 64);
+  if (token.length < 20) return { out: { ok: false, err: 'invalid' } };
+  const rows = await getStaff_();
+  for (const r of rows) {
+    if (!r || isApplicant_(r) || r.active === false || r.archived) continue;
+    const c = contractsOf_(r).find(function (x) { return x.digital && x.digital.linkToken === token; });
+    if (c) return c.digital.status === 'awaiting_staff' ? { r: r, c: c } : { out: { ok: false, err: 'used' } };
+  }
+  return { out: { ok: false, err: 'invalid' } };
+}
+function contractLinkDoc_(c) { const d = contractDoc_(c); return Object.assign({}, d, { sign: Object.assign({}, d.sign, { leader: false }) }); }   // they sign alone; HR approves after
+async function contractLinkOpen(token) {
+  const g = await contractLink_(token); if (g.out) return g.out;
+  const d = contractLinkDoc_(g.c);
+  return { ok: true, isTeam: false, staff: true, hrSign: false, link: true, team: g.r.name, contacts: [],
+    prefill: { role: [g.r.role, g.r.ministry].filter(Boolean).join(' — ') || 'Staff', dates: '' },
+    people: [{ key: 'me', name: g.r.name, done: {} }], docs: [{ id: d.id, title: d.title, blocks: d.blocks, sign: d.sign, period: contractPeriod_(g.c) }] };
+}
+async function contractLinkSign(token, key, docId, p) {
+  const g = await contractLink_(token); if (g.out) return g.out;
+  if ('contract:' + g.c.id !== str_(docId, 80)) return { ok: false, err: 'bad_doc' };
+  const v = await signRecord_(contractLinkDoc_(g.c), p, 'me'); if (v.err) return Object.assign({ ok: false }, v);
+  v.rec.period = contractPeriod_(g.c);
+  await writeJSON('scontract:' + g.c.id, { staff: v.rec });
+  const now = new Date().toISOString();
+  const out = await mutateStaff_(function (rows) {
+    const r = rows.find(function (x) { return x.id === g.r.id; }); if (!r) return { abort: true, ok: false, err: 'not_found' };
+    r.contracts = contractsOf_(r).map(function (x) { if (x.id !== g.c.id) return x;
+      x.digital = Object.assign({}, x.digital, { status: 'awaiting_leader', staffSignedAt: v.rec.at, staffName: v.rec.name, linkUsedAt: now }); return x; });   // the token stays, so the link can say it has been used
+    r.updated = now;
+    return { ok: true };
+  });
+  if (!out || !out.ok) return out || { ok: false };
+  for (const h of (await getStaff_()).filter(function (x) { return canHR_(x) && x.id !== g.r.id; }).slice(0, 12)) await pushNow_(h.id, 'contractSigned', { name: g.r.name }, 'teams.html?view=hr&hr=' + g.r.id);
+  return { ok: true, done: { [docId]: true } };
 }
 /* My contract (the ☰ menu, every staff member): their profile as HR sees it —
    time in YWAM, on each campus — their contracts and when to renew, and the
@@ -11275,6 +11335,8 @@ const HANDLERS = {
   mySaveStart: function (a) { return mySaveStart(a[0], a[1], a[2]); },
   hrLegalPdf: function (a) { return hrLegalPdf(a[0], a[1], a[2], a[3]); },
   hrContractPdf: function (a) { return hrContractPdf(a[0], a[1], a[2], a[3]); },
+  contractLinkOpen: function (a) { return contractLinkOpen(a[0]); },
+  contractLinkSign: function (a) { return contractLinkSign(a[0], a[1], a[2], a[3]); },
   portalLegalDocs: function (a) { return portalLegalDocs(a[0], a[1]); },
   portalSaveLegalDocs: function (a) { return portalSaveLegalDocs(a[0], a[1], a[2], a[3]); },
   portalSetVisaFlags: function (a) { return portalSetVisaFlags(a[0], a[1], a[2], a[3]); },

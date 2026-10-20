@@ -1281,8 +1281,17 @@ function hrContractCardHtml_(p, c, isCurrent){
     '<button class="linkbtn inline" data-hredit="'+esc(c.id)+'">'+esc(t('Edit'))+'</button></div>';
   if(c.digital){
     var dg=c.digital;
-    if(dg.status!=='signed') h+='<div class="hrDigital waiting">✍️ '+esc(gpT('Not signed yet — fill it out with {name}: they sign, then you sign to approve',{name:p.name}))+'</div>'+
-      '<a class="btn small" href="portal.html?staff=1&hr='+encodeURIComponent(p.id)+'&doc='+encodeURIComponent('contract:'+c.id)+'" data-hrfillout="'+esc(c.id)+'">✍️ '+esc(t('Fill out and sign now'))+'</a>';
+    var signUrl='portal.html?staff=1&hr='+encodeURIComponent(p.id)+'&doc='+encodeURIComponent('contract:'+c.id);
+    if(dg.status==='awaiting_leader') h+='<div class="hrDigital waiting">✍️ '+esc(gpT('{name} signed it on {date} through the link — your approval makes it their contract',{name:dg.staffName||p.name, date:fmtDateShort_(dg.staffSignedAt||'')}))+'</div>'+
+      '<a class="btn small" href="'+signUrl+'" data-hrapprove="'+esc(c.id)+'">✅ '+esc(t('Approve and sign'))+'</a>';
+    else if(dg.status!=='signed'){
+      /* the one-time link (Uriah, Oct 2026): send it, and they fill it out and sign on their own phone */
+      var link=dg.linkToken ? location.href.replace(/[^\/]*(\?.*)?$/, '')+'portal.html?contract='+dg.linkToken : '';
+      h+='<div class="hrDigital waiting">✍️ '+esc(gpT('Not signed yet — send {name} this link to fill out and sign on their own phone, or fill it out together on yours',{name:p.name}))+'</div>'+
+        (link ? '<div class="hrLinkRow"><input type="text" id="hrContractLink" readonly value="'+esc(link)+'" aria-label="'+esc(t('Link'))+'"><button class="btn small" data-hrcopylink="'+esc(link)+'">'+esc(t('Copy'))+'</button>'+
+          (navigator.share ? '<button class="btn small ghost" data-hrsharelink="'+esc(link)+'">'+esc(t('Share'))+'</button>' : '')+'</div>' : '')+
+        '<a class="btn ghost small" href="'+signUrl+'" data-hrfillout="'+esc(c.id)+'">✍️ '+esc(t('Fill out and sign now'))+'</a>';
+    }
     else h+='<div class="hrDigital done">✅ '+esc(gpT('Signed by {name} · approved by {leader}',{name:dg.staffName||p.name, leader:dg.leaderName||''}))+'</div>'+
       '<button class="btn ghost small" data-hrcontractpdf="'+esc(c.id)+'">📄 '+esc(t('Signed contract (PDF)'))+'</button>';
     return h+'</div>';

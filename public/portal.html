@@ -642,6 +642,8 @@ var P = { aview:'status', meet:null, teamEdit:null, menuOpen:false, access:null,
       back:hrId ? 'teams.html?view=hr&hr='+encodeURIComponent(hrId) : 'teams.html?view=mycontract', data:gp ? null : { ok:false, err:'nostaff' }, who:null, under18:null, idx:0, form:{}, pads:{}, done:false }; }
   }
   if(qs.sign){ P.view='sign'; P.sign={ token:String(qs.sign), data:null, who:null, under18:null, idx:0, form:{}, pads:{}, done:false }; }
+  /* portal.html?contract=<token>: the one-time link HR sends — the staff contract, filled out and signed on the person's own phone, no sign-in */
+  if(qs.contract){ var ctk=String(qs.contract).replace(/[^a-f0-9]/g,''); P.view='sign'; P.sign={ only:'', staff:null, hr:'', link:ctk, token:null, openFn:'contractLinkOpen', openArgs:[ctk], submitFn:'contractLinkSign', back:'', data:null, who:null, under18:null, idx:0, form:{}, pads:{}, done:false }; }
   if(qs.open) P.openCand=String(qs.open);   // portal.html?open=<candidateId> — the GP app's Teams Database links here
   /* portal.html?stay=<campus>: a guest or speaker asks for a room — no account (SR Hospitality sends the link) */
   /* portal.html?join=<token>: a student staying with us opens their invite and signs up with Google */
@@ -823,9 +825,9 @@ function sigPadHtml_(id, label, small){
 }
 function signHtml_(){
   var S=P.sign, d=S.data;
-  var h='<div class="center signPage"><div class="gateTitle"><h2>✍️ '+esc(S.hr ? t('Staff contract') : t('Legal documents'))+'</h2>';
+  var h='<div class="center signPage"><div class="gateTitle"><h2>✍️ '+esc(S.hr || S.link ? t('Staff contract') : t('Legal documents'))+'</h2>';
   if(d===null) return h+'</div><div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div></div>';
-  if(!d.ok) return h+'</div><div class="card"><p class="sub" style="margin:0">'+esc(d.err==='nostaff' || (S.staff && d.err==='invalid') ? t('Open this from the GP app, signed in.') : d.err==='closed' ? t('This team’s documents are closed.') : t('This link doesn’t work any more — ask YWAM Siem Reap for a new one.'))+'</p>'+(S.openFn ? '<a class="btn small" href="teams.html" style="margin-top:10px">'+esc(t('Open the GP app'))+'</a>' : '')+'</div>'+langRowHtml_()+'</div>';
+  if(!d.ok) return h+'</div><div class="card"><p class="sub" style="margin:0">'+esc(d.err==='nostaff' || (S.staff && d.err==='invalid') ? t('Open this from the GP app, signed in.') : d.err==='closed' ? t('This team’s documents are closed.') : d.err==='used' ? t('This link has already been used — the contract is signed. Ask HR if you need anything changed.') : t('This link doesn’t work any more — ask YWAM Siem Reap for a new one.'))+'</p>'+(S.openFn ? '<a class="btn small" href="teams.html" style="margin-top:10px">'+esc(t('Open the GP app'))+'</a>' : '')+'</div>'+langRowHtml_()+'</div>';
   var docs=(d.docs||[]).filter(function(x){ return !S.only || x.id===S.only; });
   if(!S.who && (d.people||[]).length===1) S.who=d.people[0].key;
   /* once it's all signed, the "All signed" card has the one way back — not a second link up here */
@@ -849,12 +851,21 @@ function signHtml_(){
   var done=signDocDone_(d, S.who), left=docs.filter(function(x){ return !done[x.id]; });
   d.shown=docs;
   if(!left.length || S.done){
-    h+='<div class="card signDone"><div class="signBig">🎉</div><h3 style="margin:4px 0">'+esc(gpT('All signed — thank you, {name}!',{name:(me.name||'').split(' ')[0]}))+'</h3><p class="sub">'+esc(t('YWAM Siem Reap has your signed forms. Nothing more to do.'))+'</p>'+
+    h+='<div class="card signDone"><div class="signBig">🎉</div><h3 style="margin:4px 0">'+esc(gpT('All signed — thank you, {name}!',{name:(me.name||'').split(' ')[0]}))+'</h3><p class="sub">'+esc(S.link ? t('YWAM Siem Reap has your signed contract. HR will add their approval and it becomes your contract — you can close this page.') : t('YWAM Siem Reap has your signed forms. Nothing more to do.'))+'</p>'+
       (S.staff ? '<a class="btn" href="'+esc(S.back)+'">'+esc(S.hr ? t('Back to HR') : t('Back to My contract'))+'</a>' : '')+
       ((d.people||[]).length>1 ? '<button type="button" class="btn" id="signNext">'+esc(t('Someone else on the team? Pick your name'))+'</button>' : '')+(S.inApp ? '<button type="button" class="btn ghost" id="signHome" style="margin-left:6px">'+esc(t('Back to my application'))+'</button>' : '')+'</div>';
     return h+'</div>';
   }
   var doc=left[0], k=docs.indexOf(doc), sign=doc.sign||{}, F=S.form, nm=F.name!=null ? F.name : me.name;
+  if(doc.approveOnly){   // signed through their link already: only HR's approval is left
+    h+='<div class="card signDoc" data-signdoc="'+esc(doc.id)+'" data-approveonly="1">'+legalHeadHtml_(doc.title)+
+      '<div class="signPeriod"><div class="kv"><b>'+esc(t('Volunteer name'))+'</b><span>'+esc(doc.staffName||me.name||'')+'</span></div><div class="kv"><b>'+esc(t('Period of contract'))+'</b><span>'+esc(lkPeriod_(doc.period))+'</span></div></div>'+
+      '<p class="sub">✓ '+esc(gpT('{name} read, filled in and signed it on {date} through the link you sent.',{name:doc.staffName||me.name, date:fmtDate_(doc.staffSignedAt||new Date().toISOString())}))+'</p>'+
+      '<div class="signHere"><div class="signGuard signLeader"><div class="eyebrow">'+esc(t('Approved by'))+'</div>'+
+      '<label class="f">'+esc(t('Your full name'))+'</label><input type="text" id="sign_lname" maxlength="120" value="'+esc(F.leaderName!=null ? F.leaderName : (d.approver||''))+'"'+(S.miss && S.miss.leaderName?' class="miss"':'')+'>'+sigPadHtml_('leaderSig', t('Your signature'))+'</div></div>'+
+      '<button type="button" class="btn" id="signSubmit"'+(S.busy?' disabled':'')+' style="margin-top:14px;width:100%">'+esc(S.busy ? t('Saving…') : t('Sign to approve'))+'</button></div>';
+    return h+'</div>';
+  }
   h+='<div class="signProg">'+docs.map(function(x, i){ return '<span class="signDot'+(done[x.id]?' done':(x===doc?' on':''))+'" title="'+esc(lk_(x.title))+'">'+(done[x.id]?'✓':(i+1))+'</span>'; }).join('')+'</div>';
   h+='<div class="card signDoc" data-signdoc="'+esc(doc.id)+'"><div class="eyebrow">'+esc(gpT('Document {n} of {total}',{n:k+1, total:docs.length}))+'</div>'+legalHeadHtml_(doc.title);
   (doc.blocks||[]).forEach(function(b){
@@ -942,6 +953,18 @@ function bindSign_(){
     keepSignForm_();
     var d=S.data, done=signDocDone_(d, S.who), doc=(d.shown||d.docs||[]).filter(function(x){ return !done[x.id]; })[0]; if(!doc) return;
     var F=S.form, sign=doc.sign||{}, miss={}, n=0;
+    if(doc.approveOnly){   // HR: name and signature, nothing else
+      if(F.leaderName==null && d.approver) F.leaderName=d.approver;
+      if(!String(F.leaderName||'').trim()) miss.leaderName=1; if(!S.pads.leaderSig) miss.leaderSig=1;
+      if(miss.leaderName || miss.leaderSig){ S.miss=miss; render(); showMsg(t('You need to add your name and sign to approve it.')); return; }
+      S.busy=true; render();
+      run(S.submitFn||'portalSignSubmit', (S.openArgs||[S.token]).concat([S.who, doc.id, { leaderName:String(F.leaderName).trim(), leaderSig:S.pads.leaderSig, approveOnly:true }]), function(r){
+        S.busy=false;
+        if(r && r.ok){ (d.people||[]).forEach(function(p){ if(p.key===S.who) p.done=r.done; }); S.miss=null; S.pads={}; if(typeof portalConfetti_==='function') portalConfetti_(); showMsg(t('Approved')); render(); window.scrollTo(0,0); return; }
+        showMsg(r && r.err==='leader_required' ? t('You need to add your name and sign to approve it.') : t('Could not save — try again.')); render();
+      }, function(){ S.busy=false; showMsg(t('Connection problem — try again.')); render(); });
+      return;
+    }
     (doc.blocks||[]).forEach(function(b){
       if((b.t==='check'||b.t==='group') && !(F.checks && F.checks[b.id])){ miss[b.id]=1; n++; }
       if(b.t==='field' && !b.optional && !String((F.fields||{})[b.id]||'').trim()){ miss[b.id]=1; n++; }
