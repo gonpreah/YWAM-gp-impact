@@ -2669,7 +2669,8 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   **My Tasks**, a personal list the server makes on first `getGpTasks` (`gptMain_()` = your oldest
   personal list); it shows your own tasks plus every task given to you from any other list, each with
   the list it came from (`gptChipName_`: "Cafe jobs", "Cora's list"), and what you asked other
-  ministries for. ＋ adds into the open list (no list chooser); **＋ New list** is a small sheet (name,
+  ministries for. Other people's personal lists never show as tabs (the server's `shared` flag is
+  left alone, the ⋮ item to set it is gone — Uriah: "why is Vannak's list in my GP Tasks?"). ＋ adds into the open list (no list chooser); **＋ New list** is a small sheet (name,
   and whose it is — inside My Ministry's fold it is that ministry's, no choice). The fold shows only
   that ministry's lists (`gptLists_(scope)`: ministry lists for a ministry, dept lists for a dept —
   never personal). Icons are line SVGs (`GPT_SVG`, `gptIc_()`), not the ✅ emoji — also on My Home's

@@ -52,7 +52,8 @@ function gptChipName_(L){ return L.scope==='personal' && L.ownerId!==S.me.id ? g
    personal lists always show), My Tasks first */
 function gptLists_(scope){
   var G=S.gpt; if(!G) return [];
-  var lists=G.lists.filter(function(L){ return !L.onlyAssigned; });
+  /* never someone else's personal list (Uriah: "why is Vannak's list in my GP Tasks?") — what they give you is in My Tasks */
+  var lists=G.lists.filter(function(L){ return !L.onlyAssigned && !(L.scope==='personal' && L.ownerId!==S.me.id); });
   if(scope) return lists.filter(function(L){ return L.dept===scope.dept && (scope.min ? L.scope==='ministry' && L.ministry===scope.min : L.scope==='dept'); });
   var f=G.filter && G.filter.keys;
   if(G.canAll && f) lists=lists.filter(function(L){ return L.scope==='personal' || L.mine || f.indexOf(gptKeyOf_(L))>-1; });
@@ -119,7 +120,6 @@ function gtMenuHtml_(scope){
   var main=gptMain_(), isMain=!!(L && main && L.id===main.id);
   return '<div class="scrim" id="gtMenuScrim"></div><div class="gtMenu" role="menu">'+
     (L && L.canEdit ? it('gtRename', '✏️ '+esc(t('Rename list'))) : '')+
-    (L && L.canEdit && L.scope==='personal' ? it('gtShare', (L.shared ? '🔒 '+esc(t('Only me')) : '👥 '+esc(t('Let others on the campus see it')))) : '')+
     (!scope ? it('gptAskBtn', '🤝 '+esc(t('Ask another ministry for help'))) : '')+
     (G.canAll && !scope ? it('gptFilterBtn', '⚙️ '+esc(t('Which lists to show'))) : '')+
     (L && L.canEdit && !isMain ? it('gptListDelete', '🗑 '+esc(t('Delete the list'))) : '')+'</div>';
@@ -276,7 +276,6 @@ function bindGpTasks_(){
   var L0=S.gptList ? gptListById_(S.gptList) : null;
   var saveList=function(payload, msg, after){ run('saveGpTaskList',[S.auth.user,S.auth.pin,payload],function(d){ if(d && d.ok){ gptTake_(d); if(after) after(d); if(msg) showMsg(msg); } else showMsg(t('Could not save')); render(); }); };
   on('gtRename', function(){ S.gtMenu=false; var v=window.prompt(t('Rename list'), L0.title); if(v && v.trim()) saveList({ id:L0.id, title:v.trim() }, t('Saved')); else render(); });
-  on('gtShare', function(){ S.gtMenu=false; saveList({ id:L0.id, shared:!L0.shared }, L0.shared ? t('Only you can see it now') : t('Others on the campus can see it now')); });
   on('gptListDelete', function(){ S.gtMenu=false; if(!window.confirm(gpT('Delete “{title}” and all its tasks?',{title:L0.title}))){ render(); return; }
     saveList({ id:L0.id, remove:true }, t('List deleted'), function(){ S.gptList=null; }); });
   on('gptAskBtn', function(){ gpTap(); S.gtMenu=false; S.gptAsk={ min:'', title:'', due:'' }; render(); });

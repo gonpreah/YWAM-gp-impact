@@ -9,6 +9,17 @@
    added in Google Calendar shows here within the half hour. It is one way — nothing here
    writes to Google. */
 S.cal=null; S.calLoading=false; S.calMonth=null; S.calSel=null; S.calOpen=null; S.calHome=null; S.calHomeLoading=false; S.gcalAdmin=null;
+/* which to show — each connected calendar and GP Tasks, ticked on or off like Google Calendar's list on
+   the left (Uriah: "different views of different things"); what's off is remembered on this phone */
+function calHidden_(){ try { var v=JSON.parse(lsGet('gp-cal-hide')||'[]'); return Array.isArray(v) ? v : []; } catch(e){ return []; } }
+function calShown_(e){ return calHidden_().indexOf(e.cal)===-1; }
+function calLayersHtml_(C, ev){
+  var hid=calHidden_(), rows=(C.cals||[]).map(function(c){ return { id:c.id, name:c.name, color:c.color }; });
+  if(!S.student) rows.push({ id:'task', name:t('GP Tasks'), color:'task' });
+  if(rows.length<2 && !ev.some(function(e){ return e.task; })) return '';
+  return '<div class="gcLayers">'+rows.map(function(r){ var on=hid.indexOf(r.id)===-1;
+    return '<button class="gcLayer cal-'+esc(r.color)+(on?' on':'')+'" data-callayer="'+esc(r.id)+'" aria-pressed="'+(on?'true':'false')+'"><span class="gcBox">'+(on?'✓':'')+'</span>'+esc(r.name)+'</button>'; }).join('')+'</div>';
+}
 var CAL_LOC=function(){ return LANG==='km' ? 'km-KH' : 'en-GB'; };
 function calYmd_(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
 function calAddDays_(iso, n){ var d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return calYmd_(d); }
@@ -90,20 +101,18 @@ function calendarHtml_(){
   if(!C){ if(!S.calLoading) setTimeout(calLoad_, 0); return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>'; }
   if(!C.ok) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Couldn’t load the calendar — pull down to try again.'))+'</p></div>';
   if(!S.gpt && !S.gptLoading && !S.gptErr && !S.student) setTimeout(gptLoad_, 0);   // the tasks come along once loaded
-  var from=calGridStart_(ym), to=calAddDays_(from, 41), ev=calAllEvents_(C, from, to);
+  var from=calGridStart_(ym), to=calAddDays_(from, 41), all=calAllEvents_(C, from, to), ev=all.filter(calShown_);
   var sel=S.calSel || (ym===today.slice(0,7) ? today : ym+'-01');
   var monthName=new Date(ym+'-01T00:00:00').toLocaleDateString(CAL_LOC(), { month:'long', year:'numeric' });
   h+='<div class="gcNav"><button class="weekArrow" id="calPrev" aria-label="'+esc(t('Earlier'))+'">‹</button><div class="gcTitle">'+esc(monthName)+'</div>'+
     '<button class="weekArrow" id="calNext" aria-label="'+esc(t('Later'))+'">›</button>'+
     (ym!==today.slice(0,7) ? '<button class="linkbtn inline" id="calToday">'+esc(t('Today'))+'</button>' : '')+'</div>';
+  h+=calLayersHtml_(C, all);
   h+=calGridHtml_(ym, ev, sel);
   if(!C.connected) h+='<p class="hint" style="margin:0 0 8px">'+esc(t('No calendar is connected yet.'))+
     (S.me.isAdmin ? ' <button class="linkbtn inline" data-adminsubgo="gcal">'+esc(t('Connect it in Admin'))+'</button>' : '')+'</p>';
-  var legend=(C.cals||[]).map(function(c){ return '<span class="calDot cal-'+esc(c.color)+'"></span>'+esc(c.name); });
-  if(ev.some(function(e){ return e.task; })) legend.push('<span class="calDot cal-task"></span>'+esc(t('GP Tasks')));
-  if(legend.length) h+='<p class="sub calLegend">'+legend.join(' &nbsp; ')+'</p>';
   var list=ev.filter(function(e){ return e.date>=sel || (e.endDate && e.endDate>=sel && e.date<sel); });
-  if(!list.length) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Nothing on the calendar from this day on.'))+'</p></div>';
+  if(!list.length) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(all.length && !ev.length ? t('Everything is switched off — tick a calendar above.') : t('Nothing on the calendar from this day on.'))+'</p></div>';
   return h+'<div class="card calList">'+calListHtml_(list)+'</div>';
 }
 /* My Home: the next seven days, a few at a time — events, and tasks with a day */
@@ -134,6 +143,12 @@ function bindCalendar_(){
   on('calPrev', function(){ shift(-1); });
   on('calNext', function(){ shift(1); });
   on('calToday', function(){ S.calMonth=null; S.calSel=null; S.cal=null; render(); });
+  document.querySelectorAll('[data-callayer]').forEach(function(b){ b.onclick=function(){
+    var id=b.getAttribute('data-callayer'), hid=calHidden_(), i=hid.indexOf(id); gpTap();
+    if(i>-1) hid.splice(i,1); else hid.push(id);
+    try { lsSet('gp-cal-hide', JSON.stringify(hid)); } catch(e){}
+    render();
+  }; });
   document.querySelectorAll('[data-calday]').forEach(function(b){ b.onclick=function(){
     var d=b.getAttribute('data-calday'); S.calSel=d;
     if(d.slice(0,7)!==calMonthNow_()){ S.calMonth=d.slice(0,7); S.cal=null; }
