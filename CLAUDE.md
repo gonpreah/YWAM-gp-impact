@@ -2636,8 +2636,9 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   (`studentMakeProfile`) makes a student candidate (stage arrived, `source:'hospitality'`) with
   `portal.invite.token`; **Copy invite** copies `portal.html?join=<token>`. On that page the student signs
   in with Google (`portalJoin`) → an applicant account linked to the profile; the invite is spent.
-- **The portal** shows their application as usual plus **📱 Go to GP app** (student-type only), which
-  saves `gp-student` and opens `teams.html?student=1`.
+- **The portal** for a student is only their application and **📱 Go to GP app**, which saves
+  `gp-student` and opens `teams.html?student=1` — no tabs (`studentPortal_()` hides `#applicantNav` and
+  keeps the view on status; their team, strengths, schedules and resources are in the GP app).
 - **Student mode is the real app**, same look, fewer parts: tabs My Home / Schedules / Library; My Home =
   hello + this week's schedule, weekly goals, habits, mentor, About me (strengths). No bell, no health,
   ministry, base, check-ins or support raising.
@@ -2657,6 +2658,10 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   mentor, goals (last/this/next week), habits, strengths and Library (`studentAdminView`), and **See their
   app**: their real student app, read only (`S.stuPreview` — `run()` sends nothing, Library marks are
   theirs and in memory; Back to Admin reloads as yourself, back on their profile via `gp-stu-back`).
+  **👁 Preview the student app** at the top of Admin → Students opens the same read-only preview for a
+  made-up Sample Student (`stuSampleView_()`: LD mentors from the roster, default habits, the schedules
+  you already have; `gp-stu-back='sample'` brings you back to Students). In any preview, `getDuty`
+  answers from the boot's published weeks, so Schedules show what the student would see.
 - Tests: `tests/test-students.mjs` (server, the door and the access checks), `tests/test-student-app-ui.mjs`.
 
 ## GP Tasks (Oct 2026, Uriah: "much simpler, very much like Google Tasks")

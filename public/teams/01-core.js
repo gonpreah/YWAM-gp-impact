@@ -284,7 +284,12 @@ function gpStudentArgs_(fn, args){ args=args||[]; return [args[0], args[1], fn, 
 function run(fn, args, onOk, onErr){
   if(S.stuPreview){   // an admin looking at a student's app: nothing goes out, nothing is saved
     if(/^(save|lib|studentSetMentor)/.test(fn)) showMsg(t('Just a preview — nothing is saved.'));
-    if(onOk) setTimeout(function(){ onOk({ ok:false, err:'preview' }); }, 0);
+    var pv={ ok:false, err:'preview' }, sc=S.sched;
+    if(fn==='getDuty'){   // a week's schedule: the published ones that came with the student's boot
+      var wk=args[3], side=sc && sc.ok ? (wk===sc.week ? sc.now : wk===sc.nextWeek ? sc.next : null) : null;
+      pv={ ok:true, kind:args[2], week:wk, canEdit:false, sched:(side && side[args[2]]) || null };
+    }
+    if(onOk) setTimeout(function(){ onOk(pv); }, 0);
     return;
   }
   if(S.student && fn!=='studentCall'){
@@ -619,7 +624,7 @@ function gpViewFromUrl_(){
 function gpResumeView_(){
   /* back from looking at a student's app (Admin → Students): their profile again */
   try { var sb=sessionStorage.getItem('gp-stu-back');
-    if(sb){ sessionStorage.removeItem('gp-stu-back'); S.view='admin'; S.adminSub='stuone'; S.adminStuId=sb; S.adminStuView=null; return; } } catch(e){}
+    if(sb){ sessionStorage.removeItem('gp-stu-back'); S.view='admin'; S.adminSub=sb==='sample' ? 'students' : 'stuone'; S.adminStuId=sb==='sample' ? null : sb; S.adminStuView=null; S.adminStu=null; return; } } catch(e){}
   try { var rv=sessionStorage.getItem('gp-resume');
     if(rv){ sessionStorage.removeItem('gp-resume'); if(['week','base','team','health','library','ministry','mentor','goals','leave','admin'].indexOf(rv)>-1) S.view=rv; } } catch(e){}
 }
