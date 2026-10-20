@@ -55,7 +55,8 @@ function schedLoad_(kind, week, edit){
   var key=kind+'|'+week+'|'+(edit?'e':'v');
   if(S.schedData && S.schedData.key===key) return;
   if(S.schedLoading===key) return;
-  S.schedLoading=key; S.schedErr='';
+  if(S.schedErr && S.schedErrKey===key) return;   // it failed: wait for Try again, not a redraw loop
+  S.schedLoading=key; S.schedErr=''; S.schedErrKey=key;
   run('getDuty',[S.auth.user,S.auth.pin,kind,week],function(d){
     if(S.schedLoading!==key) return;
     S.schedLoading=null;

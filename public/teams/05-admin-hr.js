@@ -113,7 +113,9 @@ function adminStuStatus_(r){
     : r.invite ? t('Invite sent — not joined yet') : t('No account yet');
 }
 function adminStudentsHtml_(){
-  var h='<h3 class="adminStuH">🛏️ '+esc(t('Staying with us now'))+'</h3>'+
+  var h='<button type="button" class="btn ghost" id="adminStuSample" style="margin:0 0 6px">👁 '+esc(t('Preview the student app'))+'</button>'+
+    '<p class="hint" style="margin:0 0 10px">'+esc(t('A sample student, read only — what a student sees once they join.'))+'</p>'+
+    '<h3 class="adminStuH">🛏️ '+esc(t('Staying with us now'))+'</h3>'+
     '<p class="looseWhy">'+esc(t('From SR Hospitality’s student bookings. Make each a profile, then send the invite — they sign in with Google and have their own GP app.'))+'</p>'+
     stuStayingHtml_(S.stuList, false);
   h+='<h3 class="adminStuH">🏫 '+esc(t('By school'))+'</h3>';
@@ -174,8 +176,8 @@ function adminStudentHtml_(){
   h+=card('📚 '+esc(t('Library')), line(gpT('{n} marked read',{n:r.libRead||0})));
   return h;
 }
-function stuPreviewEnter_(){
-  var V=S.adminStuView; if(!V || !V.boot) return;
+function stuPreviewEnter_(sample){
+  var V=sample ? stuSampleView_() : S.adminStuView; if(!V || !V.boot) return;
   var b=V.boot;
   try { sessionStorage.setItem('gp-stu-back', V.student.candId); } catch(e){}
   S.stuPreview={ name:V.student.name, candId:V.student.candId, libRead:b.libRead||{} };
@@ -189,6 +191,19 @@ function stuPreviewEnter_(){
   S.view='week'; render(); window.scrollTo(0,0);
 }
 function stuPreviewExit_(){ location.reload(); }
+/* A made-up student (Oct 2026, Uriah: "see the student app before any student has joined"): the
+   student app with nothing in it yet — the mentors they would choose from (Leadership Development
+   here), this week's schedules, the Library — read only, exactly like looking at a real one. */
+function stuSampleView_(){
+  var LD='Leadership Development';
+  var mentors=(S.roster||[]).filter(function(p){ return p.dept===LD && !p.applicant; })
+    .map(function(p){ return { id:p.id, name:p.name, photo:p.photo||'', dept:p.dept, ministry:p.ministry||'', campus:p.campus, role:p.role||'' }; });
+  return { student:{ name:t('Sample Student'), candId:'sample' }, boot:{ ok:true, student:true,
+    staff:{ id:'sample-student', name:t('Sample Student'), username:'', campus:S.me.campus, dept:'', ministry:'', role:'Student', photo:'', mentorId:'', mentorStatus:'', student:true, school:'dts', isAdmin:false },
+    profile:{ email:'', mentorStatus:'', sex:'', personality:null, gstrengths:null }, roster:mentors, logs:[],
+    habits:[{ id:'bible', mentorVisible:true },{ id:'quietTime', mentorVisible:true },{ id:'workout', mentorVisible:true }], goals:[],
+    schedules:S.sched && S.sched.ok ? S.sched : null, libRead:{} } };
+}
 function stuPreviewBarHtml_(){
   return '<div class="stuPreviewBar"><span>👁 '+esc(gpT('Viewing {name}’s app — read only',{name:S.stuPreview.name}))+'</span>'+
     '<button type="button" class="btn small" id="stuPreviewExit">'+esc(t('Back to Admin'))+'</button></div>';
@@ -1311,6 +1326,8 @@ function bindAdmin(){
     run('studentAdminView',[S.auth.user,S.auth.pin,sid],function(d){ S.adminStuLoading=false; S.adminStuView=Object.assign({ id:sid }, d||{ ok:false }); render(); },
       function(){ S.adminStuLoading=false; S.adminStuView={ id:sid, ok:false }; render(); });
   }
+  var ass=document.getElementById('adminStuSample');
+  if(ass) ass.onclick=function(){ gpTap(); stuPreviewEnter_(true); };
   var asp=document.getElementById('adminStuPreview');
   if(asp) asp.onclick=function(){ gpTap(); stuPreviewEnter_(); };
 

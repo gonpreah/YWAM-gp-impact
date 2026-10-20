@@ -1379,7 +1379,11 @@ var TEAM_TYPE='team';
       everyone on the team, side by side.
    📚 Resources — the guides, emergency numbers and places to know. */
 var AVIEWS=[['status','📋','Application'],['team','👥','Our team'],['strengths','🧭','Strengths'],['metrics','📊','Metrics'],['schedule','📅','Schedule'],['resources','📚','Resources']];
+/* A student's portal is just where their application stands and the way into the GP app — no
+   tabs (Uriah, Oct 2026): their team, strengths, schedules and resources are in the GP app. */
+function studentPortal_(){ var app=P.boot && P.boot.application; return !!(app && app.type==='student'); }
 function applicantNavHtml_(attr){
+  if(studentPortal_()) return '';
   attr=attr||'data-aview';
   var cur=P.aview||'status', app=P.boot && P.boot.application, team=app && app.type==='team';
   var tabs=AVIEWS.filter(function(x){ return x[0]!=='metrics' || team; });
@@ -1387,7 +1391,7 @@ function applicantNavHtml_(attr){
     return '<button class="staffNavBtn'+(cur===x[0]?' on':'')+'" '+attr+'="'+x[0]+'"><span class="aIcon">'+x[1]+'</span><span class="aLabel">'+esc(t(x[2]))+'</span></button>'; }).join('')+'</nav>';
 }
 function meTabHtml_(){
-  var v=P.aview||'status';
+  var v=studentPortal_() ? 'status' : (P.aview||'status');
   return v==='team' ? meetTeamHtml_() : v==='strengths' ? strengthsHtml_() : v==='resources' ? resourcesHtml_() : v==='metrics' ? metricsTabHtml_() : v==='schedule' ? scheduleTabHtml_() : meHtml_();
 }
 /* ---- 📊 Team metrics: the team's outreach numbers, straight into the Teams Database ---- */
