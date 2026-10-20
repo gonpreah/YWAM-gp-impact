@@ -151,6 +151,22 @@ ok('… but not someone outside it', r.ok === false);
 r = await call('saveGpListOrder', [...as('cora'), [cafe.id, 'tl_other']]);
 ok('each person keeps their own order of the tabs', r.ok && r.listOrder.join() === cafe.id + ',tl_other' && mem.staff.find(s => s.id === 'c1').taskListOrder.length === 2);
 
+console.log('=== the board\'s tasks from before the link, brought in once ===');
+{
+  const lead = mem['leadBoard:siemreap'], c0 = lead.cards.find(c => c.id === card.id);
+  c0.tasks = (c0.tasks || []).concat([{ id: 'lt_old1', text: 'Book the offsite venue', owner: 'l1', due: day(9), done: false, created: '2026-09-01T00:00:00.000Z', createdBy: 'l1' },
+    { id: 'lt_old2', text: 'Old one, already done', owner: '', done: true, doneAt: '2026-09-02T00:00:00.000Z', doneBy: 'l1' }]);
+  delete mem.gpTasks.leadSynced;
+  r = await call('getGpTasks', as('uriah'));
+  const old1 = task(r, 'Book the offsite venue'), old2 = task(r, 'Old one, already done');
+  ok('existing board tasks come into the Leadership team list on the next load — owner, day, done state kept', !!old1 && old1.listId === leadL.id && old1.assignees.join() === 'l1' && old1.due === day(9) && old1.leadId === 'lt_old1' && !!old2 && old2.done === true && !old2.assignees.length);
+  ok('… once per campus (stamped), not on every load', !!mem.gpTasks.leadSynced.siemreap);
+  c0.tasks.push({ id: 'lt_old3', text: 'Slipped in after the stamp', owner: 'l1', done: false });
+  r = await call('getGpTasks', as('uriah'));
+  ok('… so a task put on the board some other way than saveLeadTask is not swept up again', !task(r, 'Slipped in after the stamp'));
+  c0.tasks = c0.tasks.filter(t => t.id !== 'lt_old3');
+}
+
 console.log('=== a mentorship 1:1 with its time set ===');
 mem.oneOnOnes = [{ id: 'oo9', fromId: 'c1', toId: 'c2', status: 'pending', created: new Date().toISOString() }];
 r = await call('respondToOneOnOne', [...as('kanha'), 'oo9', true, day(3) + 'T10:00']);

@@ -10239,7 +10239,7 @@ function gptSubs_(v, prev) {
   });
   return out;
 }
-async function getGpt_() { const d = await readJSON('gpTasks', null); return { lists: (d && Array.isArray(d.lists)) ? d.lists : [], tasks: (d && Array.isArray(d.tasks)) ? d.tasks : [] }; }
+async function getGpt_() { const d = await readJSON('gpTasks', null); return { lists: (d && Array.isArray(d.lists)) ? d.lists : [], tasks: (d && Array.isArray(d.tasks)) ? d.tasks : [], leadSynced: (d && d.leadSynced && typeof d.leadSynced === 'object') ? d.leadSynced : {} }; }
 function gptId_(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function gptAll_(s) { return canLead_(s); }   // Campus Leadership and admins see every list on the campus
 function gptIn_(s, L) {   // one of the list's own people
@@ -10266,7 +10266,9 @@ function gptFilterOf_(s) { const f = s.taskFilter; return f && typeof f === 'obj
 async function getGpTasks(username, pin) {
   const s = await gptAuth_(username, pin); if (!s) return { ok: false };
   const d = await getGpt_();
-  if (gptEnsureLists_(d, s)) await writeJSON('gpTasks', d);
+  let dirty = gptEnsureLists_(d, s);
+  if (await gptSyncLeadBoard_(d, s)) dirty = true;
+  if (dirty) await writeJSON('gpTasks', d);
   const lists = d.lists.filter(function (L) { return gptSees_(s, L); });
   const seen = {}; lists.forEach(function (L) { seen[L.id] = 1; });
   const tasks = d.tasks.filter(function (t) { return seen[t.listId] || (t.assignees || []).indexOf(s.id) > -1 || t.by === s.id; });
@@ -10375,21 +10377,37 @@ function gptEnsureLists_(d, s) {
    Leadership team's list, so whoever owns one sees it in My Tasks with its day (Uriah: "the task
    for Andrew, to find 5 fun activities for the staff offsite, will show up for me"). The board is
    the source for the words, the owner and the day; done goes both ways. */
+function gptLeadUpsert_(d, campus, card, rec, byId, now) {   // one board task → its GP task (in memory); says whether its owner is new to it
+  const L = gptMinList_(d, campus, LEADERSHIP_DEPT, '', byId).list; if (!L) return false;
+  let t = d.tasks.find(function (y) { return y.leadId === rec.id; });
+  const fresh = !!rec.owner && (!t || (t.assignees || []).indexOf(rec.owner) === -1) && rec.owner !== byId;
+  if (!t) { t = { id: gptId_('tk'), listId: L.id, created: rec.created || now, by: rec.createdBy || byId, done: false, doneAt: '', doneBy: '', time: '', assignedAt: {}, order: 0, status: 'open', from: null }; d.tasks.push(t); }
+  t.listId = L.id; t.leadId = rec.id; t.cardId = ''; t.title = rec.text; t.due = rec.due || ''; t.notes = card.title ? 'Board: ' + card.title : '';
+  t.assignees = rec.owner ? [rec.owner] : [];
+  t.assignedAt = rec.owner ? { [rec.owner]: (t.assignedAt && t.assignedAt[rec.owner]) || now } : {};
+  if (!!rec.done !== !!t.done) { t.done = !!rec.done; t.doneAt = t.done ? (rec.doneAt || now) : ''; t.doneBy = t.done ? (rec.doneBy || byId) : ''; }
+  t.updated = now;
+  return fresh;
+}
 async function gptFromLeadTask_(s, campus, card, rec) {
   try {
     const d = await getGpt_(), now = new Date().toISOString();
-    const L = gptMinList_(d, campus, LEADERSHIP_DEPT, '', s.id).list; if (!L) return;
-    let t = d.tasks.find(function (y) { return y.leadId === rec.id; });
-    const fresh = rec.owner && (!t || (t.assignees || []).indexOf(rec.owner) === -1) && rec.owner !== s.id;
-    if (!t) { t = { id: gptId_('tk'), listId: L.id, created: now, by: rec.createdBy || s.id, done: false, doneAt: '', doneBy: '', time: '', assignedAt: {}, order: 0, status: 'open', from: null }; d.tasks.push(t); }
-    t.listId = L.id; t.leadId = rec.id; t.cardId = ''; t.title = rec.text; t.due = rec.due || ''; t.notes = card.title ? 'Board: ' + card.title : '';
-    t.assignees = rec.owner ? [rec.owner] : [];
-    t.assignedAt = rec.owner ? { [rec.owner]: (t.assignedAt && t.assignedAt[rec.owner]) || now } : {};
-    if (!!rec.done !== !!t.done) { t.done = !!rec.done; t.doneAt = t.done ? now : ''; t.doneBy = t.done ? s.id : ''; }
-    t.updated = now;
+    const fresh = gptLeadUpsert_(d, campus, card, rec, s.id, now);
     await writeJSON('gpTasks', d);
-    if (fresh) await pushNow_(rec.owner, 'taskAssigned', { name: s.name, title: t.title }, 'teams.html?view=tasks');
+    if (fresh) await pushNow_(rec.owner, 'taskAssigned', { name: s.name, title: t_(rec) }, 'teams.html?view=tasks');
   } catch (e) { /* the board saves regardless */ }
+  function t_(r) { return r.text; }
+}
+/* The board's tasks from before this link (Uriah, Oct 2026: "add in the existing tasks from the
+   leadership board to the people they're assigned to"): once per campus, the first time GP Tasks
+   loads, every task on every card is brought in — quietly, no phone pushes for old news. */
+async function gptSyncLeadBoard_(d, s) {
+  d.leadSynced = d.leadSynced && typeof d.leadSynced === 'object' ? d.leadSynced : {};
+  if (d.leadSynced[s.campus]) return false;
+  const lead = await getLeadDoc_(s.campus), now = new Date().toISOString();
+  (lead.cards || []).forEach(function (card) { (card.tasks || []).forEach(function (rec) { if (rec && rec.id && rec.text) gptLeadUpsert_(d, s.campus, card, rec, rec.createdBy || s.id, now); }); });
+  d.leadSynced[s.campus] = now;
+  return true;
 }
 async function gptDropLeadTasks_(ids) {
   try {

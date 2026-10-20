@@ -2699,7 +2699,9 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - **The leadership board's little tasks are GP Tasks** (`gptFromLeadTask_` on `saveLeadTask`, in the
   Leadership team list, `leadId` on the task; the board is the source for text, owner and day; done
   goes both ways — `gptLeadDone_`; `deleteLeadTask`/`deleteLeadCard` drop them, `deleteGpTask` on one
-  drops it off the board — `leadDropTask_`). So the owner sees it in My Tasks with its day.
+  drops it off the board — `leadDropTask_`). The tasks already on the board before this link are
+  brought in once per campus on the next `getGpTasks` (`gptSyncLeadBoard_`, stamped in
+  `gpTasks.leadSynced[campus]`, no pushes). So the owner sees it in My Tasks with its day.
 - **teams/12-tasks.js** (loaded before 11-bind-boot.js; in sw.js's shell) and **GP Tasks** in api.js;
   one blob `gpTasks` = `{ lists, tasks }`. A list is a ministry's (`scope:'ministry'`, dept + ministry),
   a department's (`'dept'`), or personal (`ownerId`; `shared` is an old flag, no longer honoured). A task:
