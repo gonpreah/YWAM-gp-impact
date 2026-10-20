@@ -182,6 +182,7 @@ function finDashHtml_(){
   }
   h+=finBurnHtml_(F, ym);
   h+=finDebtDashHtml_(F);
+  h+=finQrHtml_(F, false);
   h+=finAheadHtml_(F);
   return h+'</div>';
 }
@@ -429,10 +430,138 @@ function finQboHtml_(F){
     '<p class="hint" style="margin:8px 0 0">'+esc(t('They come in every night at about 4am, for the twelve finished months. The Burn Rate isn’t in QuickBooks, so it’s still uploaded below.'))+'</p>'+
     '<button class="linkbtn" id="finQboOff" style="margin-top:6px">'+esc(t('Disconnect'))+'</button></div>';
 }
+/* ---------- the office's own reports from QuickBooks ----------
+   Oct 2026: the Finances office picks reports of its own (api.js QBO_CUSTOM) — which, the
+   period, the columns, cash or accrual, this campus only, and whether leadership may open
+   them — and they come in every night with the rest. Each opens here as a table, with a CSV
+   to take into a spreadsheet. Leadership sees the shared ones on their Finances tab. */
+S.qrForm=null; S.qrOpen=null; S.qrData={};
+var FIN_QR_TYPES=[['ProfitAndLoss','Profit and Loss'],['BalanceSheet','Balance Sheet'],['CashFlow','Statement of Cash Flows'],['TrialBalance','Trial Balance'],
+  ['VendorExpenses','Expenses by Supplier'],['CustomerIncome','Income by Customer'],['AgedPayables','A/P Ageing (bills we owe)'],['AgedReceivables','A/R Ageing (everyone who owes us)']];
+var FIN_QR_SPEC={ ProfitAndLoss:{ cols:['Total','Month','Quarter','Classes','Departments'], basis:1, filter:1 }, BalanceSheet:{ cols:['Total','Month','Quarter'], basis:1, filter:1 },
+  CashFlow:{ cols:['Total','Month','Quarter'], filter:1 }, TrialBalance:{ basis:1 }, VendorExpenses:{ cols:['Total','Month','Quarter'], basis:1 },
+  CustomerIncome:{ cols:['Total','Month','Quarter'], basis:1 }, AgedPayables:{ asOf:1 }, AgedReceivables:{ asOf:1 } };
+var FIN_QR_PERIODS=[['last_month','Last month'],['this_month','This month so far'],['this_quarter','This quarter so far'],['last_quarter','Last quarter'],
+  ['this_year','This year so far'],['last_year','Last year'],['last_12','The last 12 finished months']];
+var FIN_QR_COLS={ Total:'One total', Month:'A column a month', Quarter:'A column a quarter', Classes:'A column per Class', Departments:'A column per Location' };
+function finQrLabel_(list, k){ var x=list.filter(function(p){ return p[0]===k; })[0]; return x ? t(x[1]) : ''; }
+function finQrWhat_(r){
+  var sp=FIN_QR_SPEC[r.type]||{};
+  return [finQrLabel_(FIN_QR_TYPES, r.type), sp.asOf ? t('as of each night') : finQrLabel_(FIN_QR_PERIODS, r.period),
+    r.cols && r.cols!=='Total' ? t(FIN_QR_COLS[r.cols]||'') : '', r.basis ? t(r.basis==='Accrual' ? 'accrual' : 'cash basis') : ''].filter(Boolean).join(' · ');
+}
+function finQrCell_(v){
+  var s=String(v==null?'':v);
+  if(/^-?\d+(\.\d+)?$/.test(s)){ var n=Number(s); return (n<0?'−':'')+Math.abs(n).toLocaleString('en-US',{ minimumFractionDigits:2, maximumFractionDigits:2 }); }
+  return s;
+}
+function finQrTableHtml_(R){
+  var T=R.table;
+  if(!T) return '<p class="sub" style="margin:0">'+esc(t('Nothing brought in yet — it comes in tonight, or press “Bring it in now”.'))+'</p>';
+  var n=T.cols.length||1;
+  var h='<div class="qrWrap"><table class="qrTable"><thead><tr>'+T.cols.map(function(c, i){ return '<th'+(i?' class="num"':'')+'>'+esc(c)+'</th>'; }).join('')+'</tr></thead><tbody>'+
+    T.rows.map(function(r){
+      return '<tr class="qr'+r.k+'">'+r.c.slice(0, n).map(function(v, i){
+        return i ? '<td class="num">'+esc(finQrCell_(v))+'</td>' : '<td style="padding-left:'+(6+Math.min(6, r.d)*12)+'px">'+esc(v)+'</td>'; }).join('')+'</tr>'; }).join('')+
+    '</tbody></table></div>';
+  var when=[T.start && T.end ? finDate_(T.start)+' – '+finDate_(T.end) : T.end ? gpT('As of {date}',{date:finDate_(T.end)}) : '',
+    T.basis ? t(T.basis==='Accrual' ? 'accrual' : 'cash basis') : '', T.campusOnly ? T.campusOnly : '', gpT('brought in {date}',{date:finDate_(T.at)})].filter(Boolean).join(' · ');
+  h+='<p class="hint" style="margin:6px 0 0">'+esc(when)+(T.cut ? ' · '+esc(t('only the first 800 rows')) : '')+'</p>';
+  return h+'<button class="btn ghost" data-qrcsv="'+esc(R.id)+'" style="margin-top:8px">⬇️ '+esc(t('Download as a spreadsheet (CSV)'))+'</button>';
+}
+function finQrFormHtml_(F){
+  var f=S.qrForm, sp=FIN_QR_SPEC[f.type]||{}, Q=F.qbo||{};
+  var opt=function(list, cur){ return list.map(function(x){ return '<option value="'+esc(x[0])+'"'+(x[0]===cur?' selected':'')+'>'+esc(t(x[1]))+'</option>'; }).join(''); };
+  var h='<div class="card qrForm"><div class="goalCardTitle" style="margin-bottom:6px">'+esc(f.id ? t('Change this report') : t('Add a report'))+'</div>'+
+    '<label class="f" for="qrType">'+esc(t('Which report'))+'</label><select id="qrType">'+opt(FIN_QR_TYPES, f.type)+'</select>';
+  if(!sp.asOf) h+='<label class="f" for="qrPeriod">'+esc(t('For'))+'</label><select id="qrPeriod">'+opt(FIN_QR_PERIODS, f.period)+'</select>';
+  else h+='<p class="hint" style="margin:6px 0 0">'+esc(t('An ageing report is as of the day it comes in.'))+'</p>';
+  if(sp.cols) h+='<label class="f" for="qrCols">'+esc(t('Columns'))+'</label><select id="qrCols">'+opt(sp.cols.map(function(c){ return [c, FIN_QR_COLS[c]]; }), f.cols)+'</select>';
+  if(sp.basis) h+='<label class="f" for="qrBasis">'+esc(t('Basis'))+'</label><select id="qrBasis">'+opt([['Cash','Cash basis'],['Accrual','Accrual']], f.basis)+'</select>';
+  if(sp.filter && Q.filter) h+='<label class="chk"><input type="checkbox" id="qrCampus"'+(f.campusOnly?' checked':'')+'> '+esc(gpT('Just {name} (this campus’s Location or Class)',{name:Q.filter.name}))+'</label>';
+  h+='<label class="chk"><input type="checkbox" id="qrShare"'+(f.share?' checked':'')+'> '+esc(t('Campus Leadership can open it on their Finances tab'))+'</label>'+
+    '<label class="f" for="qrName">'+esc(t('Name it (optional)'))+'</label><input type="text" id="qrName" maxlength="80" value="'+esc(f.name||'')+'" placeholder="'+esc(finQrLabel_(FIN_QR_TYPES, f.type))+'">'+
+    '<div class="btnRow"><button class="btn" id="qrSave">'+esc(f.id ? t('Save') : t('Add and bring it in'))+'</button><button class="btn ghost" id="qrCancel">'+esc(t('Cancel'))+'</button></div></div>';
+  return h;
+}
+/* The list: the office's every report (with its controls) on Reports; the shared ones on a dashboard. */
+function finQrHtml_(F, office){
+  var Q=F && F.qbo, list=((F && F.qboReports)||[]).filter(function(r){ return office || !F.canEdit || r.share; });
+  if(office && !(Q && Q.connected)) return '';
+  if(!office && !list.length) return '';
+  var h='<div class="card" id="finQr"><div class="goalCardTitle" style="margin-bottom:4px">📑 '+esc(office ? t('Your own reports from QuickBooks') : t('Reports from QuickBooks'))+'</div>';
+  if(office) h+='<p class="sub" style="margin:0 0 8px">'+esc(t('Pick any of QuickBooks’ standard reports, the period and how it’s split; it comes in every night with the rest. (Reports you’ve customised inside QuickBooks can’t be reached by apps — build the same one here.)'))+'</p>';
+  if(!list.length && office) h+='<p class="hint" style="margin:0 0 8px">'+esc(t('None yet.'))+'</p>';
+  h+=list.map(function(r){
+    var open=S.qrOpen===r.id;
+    var st=r.lastErr ? '<span class="finBad">⚠️ '+esc(finQboErr_(r.lastErr))+'</span>' : r.lastRun ? esc(gpT('brought in {date}',{date:finDate_(r.lastRun)})) : esc(t('Not brought in yet'));
+    var row='<div class="qrRow"><button class="qrOpen" data-qropen="'+esc(r.id)+'" aria-expanded="'+(open?'true':'false')+'"><span class="rowName">'+esc(r.name || finQrLabel_(FIN_QR_TYPES, r.type))+'</span>'+
+      '<span class="rowSub">'+esc(finQrWhat_(r))+'</span><span class="rowSub">'+st+(office && r.share ? ' · 👥 '+esc(t('leadership sees it')) : '')+'</span></button>';
+    if(office) row+='<span class="qrActs"><button class="linkbtn inline" data-qrrun="'+esc(r.id)+'" aria-label="'+esc(t('Bring it in now'))+'" title="'+esc(t('Bring it in now'))+'">↻</button>'+
+      '<button class="linkbtn inline" data-qredit="'+esc(r.id)+'" aria-label="'+esc(t('Change'))+'" title="'+esc(t('Change'))+'">✎</button>'+
+      '<button class="lwDel" data-qrdel="'+esc(r.id)+'" aria-label="'+esc(t('Remove'))+'">×</button></span>';
+    row+='</div>';
+    if(open){ var D=S.qrData[r.id]; row+='<div class="qrView">'+(!D ? '<p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p>' : D.err ? '<p class="sub" style="margin:0">'+esc(t('Couldn’t open this report.'))+'</p>' : finQrTableHtml_(D))+'</div>'; }
+    return row;
+  }).join('');
+  if(office){
+    if(S.qrForm) h+=finQrFormHtml_(F);
+    else if(list.length<8) h+='<button class="btn ghost" id="qrAdd" style="margin-top:8px">➕ '+esc(t('Add a report'))+'</button>';
+    else h+='<p class="hint" style="margin:8px 0 0">'+esc(t('Eight is the most — take one out to add another.'))+'</p>';
+  }
+  return h+'</div>';
+}
+function finQrCsv_(R){
+  var T=R.table; if(!T) return;
+  var q=function(v){ v=String(v==null?'':v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+  var lines=[T.cols.map(q).join(',')].concat(T.rows.map(function(r){ return r.c.map(function(v, i){ return q(i ? v : new Array(r.d+1).join('  ')+v); }).join(','); }));
+  var blob=new Blob(['﻿'+lines.join('\r\n')], { type:'text/csv;charset=utf-8' });
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(R.name || R.type || 'report').replace(/[^\w\- ]+/g,'').trim()+'.csv';
+  document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function bindFinQr_(){
+  var F=S.fin; if(!F) return;
+  var keepForm=function(){ var f=S.qrForm; if(!f) return;
+    var g=function(id){ return document.getElementById(id); };
+    if(g('qrType')) f.type=g('qrType').value; if(g('qrPeriod')) f.period=g('qrPeriod').value; if(g('qrCols')) f.cols=g('qrCols').value;
+    if(g('qrBasis')) f.basis=g('qrBasis').value; if(g('qrCampus')) f.campusOnly=g('qrCampus').checked; if(g('qrShare')) f.share=g('qrShare').checked; if(g('qrName')) f.name=g('qrName').value; };
+  var add=document.getElementById('qrAdd'); if(add) add.onclick=function(){ gpTap(); S.qrForm={ type:'ProfitAndLoss', period:'last_month', cols:'Total', basis:'Cash', campusOnly:false, share:false, name:'' }; render(); };
+  var ty=document.getElementById('qrType'); if(ty) ty.onchange=function(){ keepForm(); var sp=FIN_QR_SPEC[S.qrForm.type]||{}; if(!sp.cols || sp.cols.indexOf(S.qrForm.cols)<0) S.qrForm.cols='Total'; render(); };
+  ['qrPeriod','qrCols','qrBasis','qrCampus','qrShare','qrName'].forEach(function(id){ var el=document.getElementById(id); if(el) el.onchange=el.oninput=keepForm; });
+  var cc=document.getElementById('qrCancel'); if(cc) cc.onclick=function(){ S.qrForm=null; render(); };
+  var sv=document.getElementById('qrSave'); if(sv) sv.onclick=function(){
+    if(S.busy) return; keepForm(); var f=S.qrForm, sp=FIN_QR_SPEC[f.type]||{};
+    var def={ type:f.type, name:f.name, period:sp.asOf ? '' : f.period, cols:sp.cols ? f.cols : '', basis:sp.basis ? f.basis : '', campusOnly:!!(sp.filter && f.campusOnly), share:!!f.share };
+    S.busy=true; sv.disabled=true; sv.textContent=t('Bringing it in…');
+    var done=function(d){ S.busy=false; if(finPut_(d)){ if(f.id) delete S.qrData[f.id]; S.qrForm=null; showMsg(f.id ? t('Saved') : (d.ran ? t('Added and brought in') : t('Added — it comes in tonight'))); }
+      else showMsg(d && d.err==='too_many' ? t('Eight is the most — take one out to add another.') : finFail_(d)); render(); };
+    var fail=function(){ S.busy=false; showMsg(t('No connection — try again when you are online.')); render(); };
+    if(f.id) run('qboReportSave',[S.auth.user,S.auth.pin,f.id,def],done,fail); else run('qboReportAdd',[S.auth.user,S.auth.pin,def],done,fail);
+  };
+  document.querySelectorAll('[data-qropen]').forEach(function(b){ b.onclick=function(){
+    gpTap(); var id=b.getAttribute('data-qropen');
+    if(S.qrOpen===id){ S.qrOpen=null; render(); return; }
+    S.qrOpen=id;
+    if(!S.qrData[id]) run('qboReportGet',[S.auth.user,S.auth.pin,id],function(d){ S.qrData[id]= d && d.ok ? d : { err:1 }; render(); }, function(){ S.qrData[id]={ err:1 }; render(); });
+    render(); }; });
+  document.querySelectorAll('[data-qrcsv]').forEach(function(b){ b.onclick=function(){ var D=S.qrData[b.getAttribute('data-qrcsv')]; if(D && D.table) finQrCsv_(D); }; });
+  document.querySelectorAll('[data-qrrun]').forEach(function(b){ b.onclick=function(){
+    if(S.busy) return; S.busy=true; b.disabled=true; var id=b.getAttribute('data-qrrun');
+    run('qboReportRun',[S.auth.user,S.auth.pin,id],function(d){ S.busy=false; if(finPut_(d)){ delete S.qrData[id]; if(S.qrOpen===id) S.qrOpen=null; showMsg(d.ran ? t('Brought in from QuickBooks') : finQboErr_(d.runErr || ((d.qboReports||[]).filter(function(x){ return x.id===id; })[0]||{}).lastErr)); } else showMsg(finQboErr_(d && d.err)); render(); },
+      function(){ S.busy=false; showMsg(t('No connection — try again when you are online.')); render(); }); }; });
+  document.querySelectorAll('[data-qredit]').forEach(function(b){ b.onclick=function(){
+    var r=(F.qboReports||[]).filter(function(x){ return x.id===b.getAttribute('data-qredit'); })[0]; if(!r) return;
+    gpTap(); S.qrForm={ id:r.id, type:r.type, period:r.period||'last_month', cols:r.cols||'Total', basis:r.basis||'Cash', campusOnly:!!r.campusOnly, share:!!r.share, name:r.name||'' }; render(); }; });
+  document.querySelectorAll('[data-qrdel]').forEach(function(b){ b.onclick=function(){
+    if(S.busy || !confirm(t('Take this report out? It stops coming in, and leadership won’t see it.'))) return;
+    S.busy=true; var id=b.getAttribute('data-qrdel');
+    run('qboReportRemove',[S.auth.user,S.auth.pin,id],function(d){ S.busy=false; if(finPut_(d)){ delete S.qrData[id]; if(S.qrOpen===id) S.qrOpen=null; showMsg(t('Removed')); } else showMsg(finFail_(d)); render(); },
+      function(){ S.busy=false; showMsg(t('No connection — try again when you are online.')); }); }; });
+}
 function finReportsHtml_(){
   finLoad_();
   var F=S.fin, h='<div id="finReports">', Q=F && F.qbo;
-  h+=finQboHtml_(F);
+  h+=finQboHtml_(F)+finQrHtml_(F, true);
   h+='<div class="card"><div class="goalCardTitle" style="margin-bottom:4px">🧾 '+esc(t('The month’s reports'))+'</div>'+
     '<p class="sub" style="margin:0 0 10px">'+esc(Q && Q.connected ? t('QuickBooks brings in the Profit and Loss and the staff debt. Upload the Burn Rate here — and any report you’d rather add by hand; it’s read and checked against its own totals before anything is saved.') :
       t('Upload the PDFs you already make — the Profit and Loss, the Burn Rate and the A/R Ageing Summary. The numbers are read from them and checked against their own totals before anything is saved. Campus Leadership sees them on their Finances tab; staff-debt names stay with you.'))+'</p>'+
@@ -493,6 +622,7 @@ function finMinistryTabsHtml_(){
 }
 
 function bindFinance_(){
+  bindFinQr_();
   var qc=document.getElementById('finQboConnect'); if(qc) qc.onclick=function(){
     if(S.busy) return; gpTap();
     // the window opens on the tap itself (a phone blocks one opened later), and is sent to Intuit once the app has its link
