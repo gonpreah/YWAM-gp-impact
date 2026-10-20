@@ -3,7 +3,8 @@
 
    Only the Finances office (Skills Training → Finances, or an admin) saves reports.
    Campus Leadership sees the dashboard: the P&L and the burn rate in full, the staff
-   debt only as totals — no name, no person's amount, and not the ageing PDF. Anyone
+   debt as totals and, since Oct 2026, who owes and how much — but not the office's matching
+   or the ageing PDF. Anyone
    else sees nothing. Reports are checked for shape; a P&L can carry several months; a
    newer report replaces the month and drops the old PDF; an older ageing report only
    fills the history. Names on an ageing report are matched to staff (a couple counts
@@ -146,7 +147,13 @@ const debtFile = r.debtFile.fileId;
 r = await call('getFinance', ['sophea', '1234']);
 const leaderJson = JSON.stringify(r);
 ok('Campus Leadership sees the totals', r.ok && r.debt.total === 170 && r.debt.byDept['Youth Education'] === 100);
-ok('… and no names, no rows, no person’s amount', !/Dara|Vanna|Pich|Someone Gone/.test(leaderJson) && !r.debtRows && !r.nameMap && !r.debtFile);
+// Oct 2026 (Uriah): "allow the leadership to see the names of the people who owe money and how much"
+const owes = (n) => (r.debtPeople || []).find((x) => x.name === n);
+ok('… and who owes how much, biggest first, with their department', r.debtPeople.length === 3 && r.debtPeople[0].name === 'Vanna & Srey Pich' && r.debtPeople[0].total === 100 &&
+  owes('Dara Sok').total === 30 && owes('Dara Sok').dept === 'Community Service' && owes('Someone Gone').dept === '', JSON.stringify(r.debtPeople));
+ok('… but not the office’s matching or the PDF', !r.debtRows && !r.nameMap && !r.debtFile && !/staffId/.test(leaderJson));
+r = await call('getFinance', ['dara', '1234']);
+ok('ordinary staff still see none of it', !r.ok && r.err === 'not_authorized');
 r = await call('finFile', ['sophea', '1234', debtFile]);
 ok('… and can’t open the ageing PDF', !r.ok && r.err === 'not_authorized');
 r = await call('finFile', ['sophea', '1234', burnFile]);

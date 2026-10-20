@@ -7,7 +7,7 @@
    tokens never leave the server or land in the backed-up store; the P&L's months and its
    sub-accounts come in the shape an upload has, checked against QuickBooks' own totals; a
    month's cash survives, an uploaded PDF for the month is replaced; the ageing's names
-   match staff and each department's Staff Debt ($) follows; leadership sees totals only; a
+   match staff and each department's Staff Debt ($) follows; leadership sees who owes, not the matching; a
    token running out is refreshed (and the new one kept), a revoked one says "reconnect"; a
    Location narrows the P&L; disconnecting revokes it and keeps the numbers; the nightly
    run; and the page Intuit sends people back to. All names and figures are made up. */
@@ -141,7 +141,7 @@ const row = (n) => d.debt.rows.find((x) => x.name === n);
 ok('each matched to staff (a sub-customer row too)', row('Dara Sok').staffId === 'st_dara' && row('Vanna Chan').staffId === 'st_vanna' && row('Vanna Chan').total === 100 && !row('Someone Gone').staffId);
 ok('each department’s Staff Debt ($) follows', Number(debtEntry('Community Service').value) === 30 && Number(debtEntry('Youth Education').value) === 100);
 r = await call('getFinance', ['mark', '1234']);
-ok('leadership: totals only, and that it’s from QuickBooks', r.ok && r.debt.total === 160 && !r.debtRows && !/Dara|Vanna|Someone/.test(JSON.stringify(r)) && r.qbo.connected && r.qbo.lastSync && !r.qbo.company && !r.qbo.lists);
+ok('leadership: who owes how much, not the office’s matching, and that it’s from QuickBooks', r.ok && r.debt.total === 160 && !r.debtRows && r.debtPeople.length === 3 && r.debtPeople[0].name === 'Vanna Chan' && r.qbo.connected && r.qbo.lastSync && !r.qbo.company && !r.qbo.lists);
 
 console.log('=== bringing it in again ===');
 await call('finSetCash', ['bopha', '1234', LAST, 5000]);
@@ -202,6 +202,56 @@ let out = await api.runQboSync();
 ok('the nightly run brings in each connected campus, and only those', out.poipet && out.poipet.ok && out.poipet.months === 2 && !out.siemreap && intuitCalls().length > n0, JSON.stringify(out));
 ok('… as the person who connected it', doc().pl[LAST].by === 'st_fin');
 ok('qbo-sync.js runs at 04:15 Phnom Penh time', nightly.config.schedule === '15 21 * * *');
+
+console.log('=== the office’s own reports ===');
+r = await call('qboReportAdd', ['mark', '1234', { type: 'BalanceSheet' }]);
+ok('only the office adds a report', !r.ok && r.err === 'not_authorized');
+r = await call('qboReportAdd', ['bopha', '1234', { type: 'GeneralLedger' }]);
+ok('a report that isn’t on the list is refused', !r.ok && r.err === 'bad_report');
+r = await call('qboReportAdd', ['bopha', '1234', { type: 'BalanceSheet', name: 'Balance sheet by month', period: 'this_year', cols: 'Month', basis: 'Accrual', share: true }]);
+const bs = r.ok && r.qboReports.find((x) => x.name === 'Balance sheet by month');
+ok('the office adds a Balance Sheet, and it comes in at once', r.ok && r.ran && bs && bs.lastRun && bs.rowsN === 4 && !bs.lastErr, JSON.stringify(bs));
+let g = await call('qboReportGet', ['bopha', '1234', bs.id]);
+const asked = g.table && g.table.rows.find((x) => x.k === 'r' && /start_date/.test(x.c[0]));
+ok('… asked for the way it was chosen: this year to date, by month, accrual', asked && asked.c[0].includes('start_date=' + today.slice(0, 4) + '-01-01') && asked.c[0].includes('end_date=' + today) && asked.c[0].includes('summarize_column_by=Month') && asked.c[0].includes('accounting_method=Accrual'), asked && asked.c[0]);
+ok('… kept as a table: heading, rows, total', g.table.cols.join() === ',Total' && g.table.rows.map((x) => x.k).join('') === 'hrrt' && g.table.rows[1].c[1] === '1200.00' && g.table.title === 'BalanceSheet');
+r = await call('qboReportAdd', ['bopha', '1234', { type: 'ProfitAndLoss', name: 'Our P&L by class', period: 'last_quarter', cols: 'Classes', campusOnly: true }]);
+const pq = r.qboReports.find((x) => x.name === 'Our P&L by class');
+ok('the office’s other report: not shared, and its choices kept', pq && !pq.share && pq.cols === 'Classes' && pq.basis === 'Cash' && pq.period === 'last_quarter' && pq.campusOnly === true);
+r = await call('qboReportAdd', ['bopha', '1234', { type: 'AgedPayables', name: 'What we owe', share: false }]);
+g = await call('qboReportGet', ['bopha', '1234', r.qboReports.find((x) => x.name === 'What we owe').id]);
+ok('an ageing report is as of today, with no period', g.table && g.table.rows.some((x) => x.c[0] === 'report_date=' + today));
+
+r = await call('getFinance', ['mark', '1234']);
+ok('leadership is told of the shared one only, without the office’s settings', r.qboReports.length === 1 && r.qboReports[0].name === 'Balance sheet by month' && r.qboReports[0].share === undefined && r.qboReports[0].lastErr === undefined);
+g = await call('qboReportGet', ['mark', '1234', bs.id]);
+ok('… and can open it', g.ok && g.table && g.table.rows.length === 4);
+g = await call('qboReportGet', ['mark', '1234', pq.id]);
+ok('… but not one the office kept to itself', !g.ok && g.err === 'not_found');
+g = await call('qboReportGet', ['dara', '1234', bs.id]);
+ok('ordinary staff open none', !g.ok && g.err === 'not_authorized');
+
+r = await call('qboReportSave', ['bopha', '1234', pq.id, { type: 'ProfitAndLoss', name: 'Our P&L by class', period: 'last_quarter', cols: 'Classes', campusOnly: true, share: true }]);
+ok('the office can share one later', r.ok && r.qboReports.find((x) => x.id === pq.id).share === true);
+I.reportDown = 'BalanceSheet';
+r = await call('qboReportRun', ['bopha', '1234', bs.id]);
+ok('a report QuickBooks fails on says so, and its last table stays', r.ok && !r.ran && r.qboReports.find((x) => x.id === bs.id).lastErr === 'quickbooks' && (await call('qboReportGet', ['bopha', '1234', bs.id])).table.rows.length === 4);
+I.reportDown = '';
+const nightFrom = intuitCalls().length;
+out = await api.runQboSync();
+ok('every night they come in too', out.poipet.ok && out.poipet.reports === 3 && !(r = await call('getFinance', ['bopha', '1234'])).qboReports.some((x) => x.lastErr), JSON.stringify(out));
+ok('… each its own call to QuickBooks', intuitCalls().slice(nightFrom).filter((x) => /reports\/(BalanceSheet|ProfitAndLoss|AgedPayables)$/.test(x.url.pathname)).length >= 4);
+for (let i = 0; i < 5; i++) await call('qboReportAdd', ['bopha', '1234', { type: 'TrialBalance', name: 'TB ' + i }]);
+r = await call('qboReportAdd', ['bopha', '1234', { type: 'TrialBalance', name: 'one too many' }]);
+ok('eight at most', !r.ok && r.err === 'too_many');
+for (const x of (await call('getFinance', ['bopha', '1234'])).qboReports.filter((x) => /^TB /.test(x.name))) await call('qboReportRemove', ['bopha', '1234', x.id]);
+r = await call('qboReportRemove', ['bopha', '1234', pq.id]);
+ok('the office can take one out, and its table goes with it', r.ok && !r.qboReports.some((x) => x.id === pq.id) && !mem.has('qborep:poipet:' + pq.id));
+
+console.log('=== the periods ===');
+const P = api.qboPeriod_;
+ok('last month, this quarter, last quarter across a new year', P('last_month', '2027-01-15').join() === '2026-12-01,2026-12-31' && P('this_quarter', '2026-11-05').join() === '2026-10-01,2026-11-05' && P('last_quarter', '2027-02-10').join() === '2026-10-01,2026-12-31');
+ok('the last twelve finished months, this year and last year', P('last_12', '2026-10-20').join() === '2025-10-01,2026-09-30' && P('this_year', '2026-10-20').join() === '2026-01-01,2026-10-20' && P('last_year', '2026-10-20').join() === '2025-01-01,2025-12-31');
 
 console.log('=== the one who connected it leaves the office ===');
 r = await call('qboConnect', ['lina', '1234']);

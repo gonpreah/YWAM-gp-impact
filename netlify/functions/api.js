@@ -2517,8 +2517,20 @@ async function finOut_(s, c, d) {
   const p = await readJSON('finProj:' + c, {});
   const out = { ok: true, campus: c, canEdit: edit, pl: pl, burn: burn,
     debt: finDebtView_(d.debt, rows, people), debtHist: d.debtHist.slice(-FIN_MAX_HIST),
-    ahead: { months: (p && p.months) || {}, updated: (p && p.updated) || '' }, qbo: await qboOut_(c, edit) };
+    ahead: { months: (p && p.months) || {}, updated: (p && p.updated) || '' }, qbo: await qboOut_(c, edit), qboReports: await qboReportsOut_(c, edit) };
   if (out.debt && d.debt) out.debt.src = d.debt.src || '';
+  /* Who owes and how much, for everyone who sees the dashboard (Oct 2026, Uriah: "With the
+     staff debt, allow the leadership to see the names of the people who owe money and how
+     much"). The name as the books have it, the department of whoever it's matched to, the
+     ageing buckets and the total; biggest first. The matching itself (staffId, nameMap) and
+     the ageing PDF stay the office's. */
+  if (d.debt) {
+    const byId = {}; rows.forEach(function (r) { byId[r.id] = r; });
+    out.debtPeople = (d.debt.rows || []).filter(function (r) { return Math.abs(Number(r.total) || 0) >= 0.005; }).map(function (r) {
+      const p = r.staffId && byId[r.staffId];
+      return { name: r.name, dept: p ? deptOf_(p) : '', vals: r.vals || [], total: r.total };
+    }).sort(function (a, b) { return b.total - a.total || (a.name < b.name ? -1 : 1); });
+  }
   if (edit && d.debt) {
     out.debtRows = (d.debt.rows || []).map(function (r) { return { name: r.name, vals: r.vals, total: r.total, staffId: r.staffId || '', staffName: nameOf(r.staffId) }; });
     out.debtFile = { fileId: d.debt.fileId || '', fileName: d.debt.fileName || '' };
@@ -3088,7 +3100,184 @@ async function qboDisconnect(username, pin, campus) {
   }
   return finOut_(o.s, o.c, await getFinDoc_(o.c));
 }
-/* Every night (qbo-sync.js): each campus that is connected. */
+/* ---- the office's own reports from QuickBooks ----
+   Oct 2026 (Uriah): "give … the finance leader access to hook up the QuickBooks and pick
+   custom reports to automatically sync every night." The Finances office (finCanEdit_ —
+   its members, its leaders, admins) adds reports of its own on top of the two the
+   dashboard reads: which one, the period, how the columns are split, cash or accrual,
+   this campus's Location/Class only or the whole company, and whether Campus Leadership
+   may open it. Each comes in every night with the rest (runQboSync), when it is added, and
+   on "Bring it in now"; each opens as a table (and a CSV) in the app.
+   QuickBooks' API serves its standard reports, not the ones saved or customised inside
+   QuickBooks — so these are built from the standard ones (QBO_CUSTOM below), with the
+   same choices QuickBooks' own report screen offers for them.
+   Store: qboreports:<campus> = [{ id, type, name, period, cols, basis, campusOnly, share,
+   at, by, lastRun, lastErr, rowsN }] (at most QBO_MAX_CUSTOM), and each one's latest
+   table as qborep:<campus>:<id> = { at, title, period, basis, cols, rows: [{ k, d, c }] }
+   — k 'h' a section heading, 'r' a row, 't' a total; d how deep; c the cells as
+   QuickBooks wrote them. */
+const QBO_MAX_CUSTOM = 8, QBO_MAX_TABLE_ROWS = 800, QBO_MAX_TABLE_COLS = 24;
+const QBO_CUSTOM = {
+  ProfitAndLoss: { cols: ['Total', 'Month', 'Quarter', 'Classes', 'Departments'], basis: true, filter: true },
+  BalanceSheet: { cols: ['Total', 'Month', 'Quarter'], basis: true, filter: true },
+  CashFlow: { cols: ['Total', 'Month', 'Quarter'], filter: true },
+  TrialBalance: { basis: true },
+  VendorExpenses: { cols: ['Total', 'Month', 'Quarter'], basis: true },
+  CustomerIncome: { cols: ['Total', 'Month', 'Quarter'], basis: true },
+  AgedPayables: { asOf: true },
+  AgedReceivables: { asOf: true }
+};
+const QBO_PERIODS = ['last_month', 'this_month', 'this_quarter', 'last_quarter', 'this_year', 'last_year', 'last_12'];
+/* A period's first and last day, on the base's calendar; months that are over, or "to date". */
+function qboPeriod_(p, today) {
+  const y = Number(today.slice(0, 4)), m = Number(today.slice(5, 7));
+  const ymd = function (yy, mm, dd) { return new Date(Date.UTC(yy, mm - 1, dd)).toISOString().slice(0, 10); };
+  const end = function (yy, mm) { return new Date(Date.UTC(yy, mm, 0)).toISOString().slice(0, 10); };
+  const q0 = Math.floor((m - 1) / 3) * 3 + 1;
+  if (p === 'this_month') return [ymd(y, m, 1), today];
+  if (p === 'this_quarter') return [ymd(y, q0, 1), today];
+  if (p === 'last_quarter') { const s = new Date(Date.UTC(y, q0 - 4, 1)); return [s.toISOString().slice(0, 10), end(y, q0 - 1)]; }
+  if (p === 'this_year') return [ymd(y, 1, 1), today];
+  if (p === 'last_year') return [ymd(y - 1, 1, 1), ymd(y - 1, 12, 31)];
+  if (p === 'last_12') { const s = new Date(Date.UTC(y, m - 13, 1)); return [s.toISOString().slice(0, 10), end(y, m - 1)]; }
+  const s = new Date(Date.UTC(y, m - 2, 1)); return [s.toISOString().slice(0, 10), end(y, m - 1)];   // last_month
+}
+/* Any QuickBooks report → the table the app shows: headings, rows and totals, nested. */
+function qboTable_(rep) {
+  const cols = ((rep && rep.Columns && rep.Columns.Column) || []).slice(0, QBO_MAX_TABLE_COLS).map(function (c) { return String((c && c.ColTitle) || '').trim().slice(0, 60); });
+  const rows = [], n = Math.max(1, cols.length);
+  const cells = function (cd) { const out = []; for (let i = 0; i < n; i++) out.push(String((cd && cd[i] && cd[i].value) || '').slice(0, 120)); return out; };
+  const walk = function (list, depth) {
+    (Array.isArray(list) ? list : []).forEach(function (r) {
+      if (!r || typeof r !== 'object' || rows.length >= QBO_MAX_TABLE_ROWS || depth > 8) return;
+      if (r.Header || r.Rows || r.Summary) {
+        if (r.Header && Array.isArray(r.Header.ColData)) rows.push({ k: 'h', d: depth, c: cells(r.Header.ColData) });
+        if (r.Rows) walk(r.Rows.Row, depth + 1);
+        if (r.Summary && Array.isArray(r.Summary.ColData)) rows.push({ k: 't', d: depth, c: cells(r.Summary.ColData) });
+      } else if (Array.isArray(r.ColData)) rows.push({ k: 'r', d: depth, c: cells(r.ColData) });
+    });
+  };
+  walk(rep && rep.Rows && rep.Rows.Row, 0);
+  const H = (rep && rep.Header) || {};
+  return { title: String(H.ReportName || '').slice(0, 80), start: isoDate_(H.StartPeriod), end: isoDate_(H.EndPeriod), basis: String(H.ReportBasis || '').slice(0, 20),
+    cols: cols, rows: rows, cut: rows.length >= QBO_MAX_TABLE_ROWS };
+}
+function qboRepKey_(c) { return 'qboreports:' + c; }
+function qboRepTableKey_(c, id) { return 'qborep:' + c + ':' + id; }
+function qboCleanDef_(x) {
+  x = x && typeof x === 'object' ? x : {};
+  const spec = Object.prototype.hasOwnProperty.call(QBO_CUSTOM, x.type) ? QBO_CUSTOM[x.type] : null;
+  if (!spec) return null;
+  return { type: x.type, name: str_(x.name, 80) || '',
+    period: spec.asOf ? '' : (QBO_PERIODS.indexOf(x.period) > -1 ? x.period : 'last_month'),
+    cols: spec.cols && spec.cols.indexOf(x.cols) > -1 ? x.cols : (spec.cols ? 'Total' : ''),
+    basis: spec.basis ? (x.basis === 'Accrual' ? 'Accrual' : 'Cash') : '',
+    campusOnly: !!(spec.filter && x.campusOnly), share: !!x.share };
+}
+/* Bring one report in, keep its table, note how it went on its definition. */
+async function qboRunReport_(c, conn, def) {
+  const spec = QBO_CUSTOM[def.type], q = {}, today = baseToday_();
+  if (spec.asOf) q.report_date = today;
+  else { const pr = qboPeriod_(def.period, today); q.start_date = pr[0]; q.end_date = pr[1]; }
+  if (def.cols && def.cols !== 'Total') q.summarize_column_by = def.cols;
+  if (def.basis) q.accounting_method = def.basis;
+  if (def.campusOnly && conn.filter && conn.filter.id) q[conn.filter.type === 'class' ? 'class' : 'department'] = conn.filter.id;
+  let r;
+  try { r = await qboGet_(c, conn, '/reports/' + def.type, q); } catch (e) { r = { err: 'quickbooks' }; }
+  if (r.err) return { err: r.err };
+  const tb = qboTable_(r.data);
+  tb.at = new Date().toISOString(); tb.campusOnly = def.campusOnly && conn.filter ? conn.filter.name : '';
+  await writeJSON(qboRepTableKey_(c, def.id), tb);
+  return { ok: true, rowsN: tb.rows.length };
+}
+async function qboRunReports_(c, conn, onlyId) {
+  const list = await readJSON(qboRepKey_(c), []);
+  const todo = list.filter(function (d) { return !onlyId || d.id === onlyId; });
+  if (!todo.length) return { ok: true, ran: 0 };
+  if (await qboAccess_(c, conn)) return { ok: false, err: conn.broken ? 'reconnect' : 'token' };   // one refresh, before they run side by side
+  const res = await Promise.all(todo.map(function (d) { return qboRunReport_(c, conn, d); }));
+  const now = new Date().toISOString(), byId = {};
+  todo.forEach(function (d, i) { byId[d.id] = res[i]; });
+  await mutateKey_(qboRepKey_(c), [], function (rows) {
+    rows.forEach(function (d) { const x = byId[d.id]; if (!x) return; d.lastTry = now; if (x.ok) { d.lastRun = now; d.lastErr = ''; d.rowsN = x.rowsN; } else d.lastErr = x.err; });
+    return { ok: true };
+  });
+  await qboPutConn_(c, conn);
+  return { ok: true, ran: todo.length, failed: res.filter(function (x) { return !x.ok; }).length };
+}
+/* What the page is told: the office, every one; leadership, the ones shared with them. */
+async function qboReportsOut_(c, edit) {
+  const list = await readJSON(qboRepKey_(c), []);
+  return list.filter(function (d) { return edit || d.share; }).map(function (d) {
+    const o = { id: d.id, type: d.type, name: d.name, period: d.period, cols: d.cols, basis: d.basis, lastRun: d.lastRun || '', rowsN: d.rowsN || 0 };
+    if (edit) { o.campusOnly = d.campusOnly; o.share = d.share; o.lastErr = d.lastErr || ''; }
+    return o;
+  });
+}
+async function qboReportAdd(username, pin, def, campus) {
+  const o = await qboOffice_(username, pin, campus); if (o.err) return o.err;
+  const clean = qboCleanDef_(def); if (!clean) return { ok: false, err: 'bad_report' };
+  const id = 'qr' + Date.now().toString(36) + crypto.randomBytes(3).toString('hex');
+  const r = await mutateKey_(qboRepKey_(o.c), [], function (rows) {
+    if (rows.length >= QBO_MAX_CUSTOM) return { abort: true, ok: false, err: 'too_many' };
+    rows.push(Object.assign({ id: id, at: new Date().toISOString(), by: o.s.id }, clean));
+    return { ok: true };
+  });
+  if (!r.ok) return r;
+  const conn = await qboConn_(o.c);
+  let ran = null;
+  if (conn && qboConfigured_()) ran = await qboRunReports_(o.c, conn, id);
+  const out = await finOut_(o.s, o.c, await getFinDoc_(o.c));
+  out.ran = ran ? !!(ran.ok && !ran.failed) : false;
+  return out;
+}
+/* Change one: its name, its choices, whether leadership sees it. Brought in again. */
+async function qboReportSave(username, pin, id, def, campus) {
+  const o = await qboOffice_(username, pin, campus); if (o.err) return o.err;
+  const clean = qboCleanDef_(def); if (!clean) return { ok: false, err: 'bad_report' };
+  const r = await mutateKey_(qboRepKey_(o.c), [], function (rows) {
+    const d = rows.filter(function (x) { return x.id === String(id); })[0];
+    if (!d) return { abort: true, ok: false, err: 'not_found' };
+    Object.assign(d, clean);
+    return { ok: true };
+  });
+  if (!r.ok) return r;
+  const conn = await qboConn_(o.c);
+  if (conn && qboConfigured_()) await qboRunReports_(o.c, conn, String(id));
+  return finOut_(o.s, o.c, await getFinDoc_(o.c));
+}
+async function qboReportRun(username, pin, id, campus) {
+  const o = await qboOffice_(username, pin, campus); if (o.err) return o.err;
+  const conn = await qboConn_(o.c);
+  if (!conn || !qboConfigured_()) return { ok: false, err: 'not_connected' };
+  const r = await qboRunReports_(o.c, conn, String(id));
+  const out = await finOut_(o.s, o.c, await getFinDoc_(o.c));
+  out.ran = !!(r.ok && r.ran && !r.failed); out.runErr = r.err || '';
+  return out;
+}
+async function qboReportRemove(username, pin, id, campus) {
+  const o = await qboOffice_(username, pin, campus); if (o.err) return o.err;
+  await mutateKey_(qboRepKey_(o.c), [], function (rows) {
+    const i = rows.findIndex(function (x) { return x.id === String(id); });
+    if (i > -1) rows.splice(i, 1);
+    return { ok: true };
+  });
+  try { const st = store(); if (typeof st.delete === 'function') await st.delete(qboRepTableKey_(o.c, String(id))); } catch (e) { /* the list is what counts */ }
+  return finOut_(o.s, o.c, await getFinDoc_(o.c));
+}
+/* Open one: the office any of theirs, Campus Leadership the ones shared with them. */
+async function qboReportGet(username, pin, id, campus) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!finCanView_(s)) return { ok: false, err: 'not_authorized' };
+  const c = finCampus_(s, campus), list = await readJSON(qboRepKey_(c), []);
+  const d = list.filter(function (x) { return x.id === String(id); })[0];
+  if (!d || !(finCanEdit_(s) || d.share)) return { ok: false, err: 'not_found' };
+  const tb = await readJSON(qboRepTableKey_(c, d.id), null);
+  return { ok: true, id: d.id, name: d.name, type: d.type, period: d.period, cols: d.cols, basis: d.basis, table: tb && tb.rows ? tb : null };
+}
+
+/* Every night (qbo-sync.js): each campus that is connected — the two the dashboard reads, then the office's own. */
 async function runQboSync() {
   const out = {};
   if (!qboConfigured_()) return { skipped: 'not_configured' };
@@ -3096,6 +3285,8 @@ async function runQboSync() {
     if (!(await qboConn_(c))) continue;
     const r = await qboSync_(c, '');
     out[c] = r.ok ? { ok: true, months: r.months, people: r.people, warn: (r.warn || []).length } : { ok: false, err: r.err };
+    const conn = await qboConn_(c);
+    if (conn && !conn.broken) { const cr = await qboRunReports_(c, conn); if (cr.ran) out[c].reports = cr.ok ? cr.ran - cr.failed : 0; }
   }
   return out;
 }
@@ -4975,7 +5166,7 @@ async function runReminders(now) {
   });
 }
 export { runReminders, pushEncrypt_, vapidJwt_ };
-export { qboCallback, runQboSync, qboPlFromReport_, qboDebtFromReport_ };
+export { qboCallback, runQboSync, qboPlFromReport_, qboDebtFromReport_, qboTable_, qboPeriod_ };
 
 /* ---------- Khmer review (Oct 2026) ----------
    About 4,000 of the app's Khmer strings are drafts nobody who speaks Khmer has read
@@ -11160,7 +11351,12 @@ const HANDLERS = {
   qboConnect: function (a) { return qboConnect(a[0], a[1], a[2]); },
   qboSyncNow: function (a) { return qboSyncNow(a[0], a[1], a[2]); },
   qboSetFilter: function (a) { return qboSetFilter(a[0], a[1], a[2], a[3], a[4]); },
-  qboDisconnect: function (a) { return qboDisconnect(a[0], a[1], a[2]); }
+  qboDisconnect: function (a) { return qboDisconnect(a[0], a[1], a[2]); },
+  qboReportAdd: function (a) { return qboReportAdd(a[0], a[1], a[2], a[3]); },
+  qboReportSave: function (a) { return qboReportSave(a[0], a[1], a[2], a[3], a[4]); },
+  qboReportRun: function (a) { return qboReportRun(a[0], a[1], a[2], a[3]); },
+  qboReportRemove: function (a) { return qboReportRemove(a[0], a[1], a[2], a[3]); },
+  qboReportGet: function (a) { return qboReportGet(a[0], a[1], a[2], a[3]); }
 };
 
 export default async (req) => {

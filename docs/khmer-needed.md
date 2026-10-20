@@ -4032,3 +4032,71 @@ My Ministry, on a Campus Leadership member’s own row: the line under “Your r
 | Viewing: {title} | កំពុងមើល៖ {title} |
 
 My Ministry → Campus Leadership → a leadership role that isn’t yours (Campus Directors and admins): the line at the top saying whose board this is, e.g. “Viewing: National Campus Director · Nary”.
+
+## 76. Staff debt: who owes
+
+| English | Khmer (draft) |
+|---|---|
+| Who owes · {n} | អ្នកដែលជំពាក់ · {n} |
+| oldest: {age} | ចាស់បំផុត៖ {age} |
+| {n} more | {n} ទៀត |
+
+The Finances tab of Campus Leadership (and the Finances office’s Dashboard): under staff debt by department, the list of names and amounts. “oldest” is followed by the report’s own column name (e.g. “Over 3 Months”, or QuickBooks’ “91 and over”).
+
+## 77. Reports of the office’s own from QuickBooks
+
+| English | Khmer (draft) |
+|---|---|
+| as of each night | គិតត្រឹមយប់នីមួយៗ |
+| Accrual | មូលដ្ឋានបង្គរ |
+| accrual | មូលដ្ឋានបង្គរ |
+| cash basis | មូលដ្ឋានសាច់ប្រាក់ |
+| Cash basis | មូលដ្ឋានសាច់ប្រាក់ |
+| Nothing brought in yet — it comes in tonight, or press “Bring it in now”. | មិនទាន់នាំចូលនៅឡើយទេ — វានឹងចូលមកនៅយប់នេះ ឬចុច “នាំចូលឥឡូវនេះ”។ |
+| brought in {date} | នាំចូល {date} |
+| only the first 800 rows | តែ ៨០០ ជួរដំបូងប៉ុណ្ណោះ |
+| Download as a spreadsheet (CSV) | ទាញយកជាសៀវភៅបញ្ជី (CSV) |
+| Change this report | កែប្រែរបាយការណ៍នេះ |
+| Add a report | បន្ថែមរបាយការណ៍ |
+| Which report | របាយការណ៍មួយណា |
+| For | សម្រាប់ |
+| An ageing report is as of the day it comes in. | របាយការណ៍អាយុកាលបំណុល គិតត្រឹមថ្ងៃដែលវាចូលមក។ |
+| Basis | មូលដ្ឋាន |
+| Just {name} (this campus’s Location or Class) | តែ {name} (ទីតាំង ឬ Class របស់សាខានេះ) |
+| Campus Leadership can open it on their Finances tab | ថ្នាក់ដឹកនាំសាខាអាចបើកវានៅលើផ្ទាំងហិរញ្ញវត្ថុរបស់ពួកគេ |
+| Name it (optional) | ដាក់ឈ្មោះ (ស្រេចចិត្ត) |
+| Add and bring it in | បន្ថែម ហើយនាំចូល |
+| Your own reports from QuickBooks | របាយការណ៍ផ្ទាល់ខ្លួនរបស់អ្នកពី QuickBooks |
+| Reports from QuickBooks | របាយការណ៍ពី QuickBooks |
+| Pick any of QuickBooks’ standard reports, the period and how it’s split; it comes in every night with the rest. (Reports you’ve customised inside QuickBooks can’t be reached by apps — build the same one here.) | ជ្រើសរើសរបាយការណ៍ស្តង់ដារណាមួយរបស់ QuickBooks រយៈពេល និងរបៀបបែងចែក វានឹងចូលមករៀងរាល់យប់ជាមួយរបាយការណ៍ផ្សេងទៀត។ (កម្មវិធីមិនអាចចូលដល់របាយការណ៍ដែលអ្នកបានកែតម្រូវនៅក្នុង QuickBooks បានទេ — សូមបង្កើតរបាយការណ៍ដូចគ្នានៅទីនេះ។) |
+| None yet. | មិនទាន់មាននៅឡើយទេ។ |
+| Not brought in yet | មិនទាន់នាំចូលនៅឡើយទេ |
+| leadership sees it | ថ្នាក់ដឹកនាំមើលឃើញ |
+| Bring it in now | នាំចូលឥឡូវនេះ |
+| Couldn’t open this report. | មិនអាចបើករបាយការណ៍នេះបានទេ។ |
+| Eight is the most — take one out to add another. | ច្រើនបំផុតគឺប្រាំបី — សូមដកមួយចេញ ដើម្បីបន្ថែមមួយទៀត។ |
+| Bringing it in… | កំពុងនាំចូល… |
+| Added and brought in | បានបន្ថែម និងនាំចូល |
+| Added — it comes in tonight | បានបន្ថែម — វានឹងចូលមកនៅយប់នេះ |
+| Take this report out? It stops coming in, and leadership won’t see it. | ដករបាយការណ៍នេះចេញ? វានឹងឈប់ចូលមក ហើយថ្នាក់ដឹកនាំនឹងមិនឃើញវាទៀតទេ។ |
+| Balance Sheet | តារាងតុល្យការ |
+| Statement of Cash Flows | របាយការណ៍លំហូរសាច់ប្រាក់ |
+| Trial Balance | តារាងតុល្យភាពសាកល្បង |
+| Expenses by Supplier | ការចំណាយតាមអ្នកផ្គត់ផ្គង់ |
+| Income by Customer | ចំណូលតាមអតិថិជន |
+| A/P Ageing (bills we owe) | A/P Ageing (វិក្កយបត្រដែលយើងជំពាក់) |
+| A/R Ageing (everyone who owes us) | A/R Ageing (អ្នកទាំងអស់ដែលជំពាក់យើង) |
+| Last month | ខែមុន |
+| This month so far | ខែនេះរហូតមកដល់ពេលនេះ |
+| This quarter so far | ត្រីមាសនេះរហូតមកដល់ពេលនេះ |
+| Last quarter | ត្រីមាសមុន |
+| This year so far | ឆ្នាំនេះរហូតមកដល់ពេលនេះ |
+| Last year | ឆ្នាំមុន |
+| The last 12 finished months | ១២ ខែចុងក្រោយដែលបានបញ្ចប់ |
+| One total | សរុបតែមួយ |
+| A column a month | មួយជួរឈរក្នុងមួយខែ |
+| A column a quarter | មួយជួរឈរក្នុងមួយត្រីមាស |
+| A column per Class | មួយជួរឈរក្នុងមួយ Class |
+| A column per Location | មួយជួរឈរក្នុងមួយទីតាំង |
+
+Finances → Reports, the card under QuickBooks (the Finances office), and “Reports from QuickBooks” on Campus Leadership’s Finances tab. The report names (Balance Sheet, Trial Balance …) are QuickBooks’ own; if the office knows them by their English names, keeping those may be clearer. “Class” is a QuickBooks word and is left in English.
