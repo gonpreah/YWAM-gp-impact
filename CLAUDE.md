@@ -2692,8 +2692,9 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 ## GP Tasks (Oct 2026, Uriah: "much simpler, very much like Google Tasks")
 - **Oct 2026, second pass** (Uriah: "more fluid, like Google Tasks"): no "For me" tab — everyone has
   **My Tasks**, a personal list the server makes on first `getGpTasks` (`gptMain_()` = your oldest
-  personal list — titled **Inbox** since Oct 2026, Uriah: "like an inbox"; an old "My Tasks" is
-  renamed on the next load). **The Inbox is your own quick tasks plus everything given to you** from
+  personal list — titled **Inbox** since Oct 2026, Uriah: "like an inbox"; whatever it was called
+  before — "My Tasks", or one someone made, "Personal" — it is renamed once on the next load,
+  `inboxKept` marking that, and the client always labels the main list Inbox; no Rename for it). **The Inbox is your own quick tasks plus everything given to you** from
   any list (and what you asked other ministries for), each with where it came from (`gptChipName_`
   chip); the task stays in its own list. **Filing**: drag a given task onto one of your own lists and
   it sits there for you alone — `fileGpTask(id, listId)` → `task.filed[you] = { list, order }`

@@ -199,6 +199,15 @@ ok('… nor rename it (not even leadership)', r.ok === false);
 await call('saveGpTask', [...as('kanha'), { listId: pl.id, title: 'Count the cups', assignees: ['c1'] }]);
 r = await call('getGpTasks', as('cora'));
 ok('what reaches someone else is a task given to them — in their Inbox, with the list it came from', !!task(r, 'Count the cups') && r.lists.some(l => l.id === pl.id && l.onlyAssigned) && !r.lists.some(l => l.id === pl.id && !l.onlyAssigned));
+{
+  const hl = mem.gpTasks.lists.find(l => l.scope === 'personal' && l.ownerId === 'h1');
+  hl.title = 'Personal'; delete hl.inboxKept;
+  r = await call('getGpTasks', as('hana'));
+  ok('a first personal list from before the Inbox, whatever it was called, becomes the Inbox once', r.lists.find(l => l.id === hl.id).title === 'Inbox' && mem.gpTasks.lists.find(l => l.id === hl.id).inboxKept === true);
+  await call('saveGpTaskList', [...as('hana'), { id: hl.id, title: 'Groceries' }]);
+  r = await call('getGpTasks', as('hana'));
+  ok('… and is not renamed again after that', r.lists.find(l => l.id === hl.id).title === 'Groceries');
+}
 console.log('=== filing what you were given ===');
 r = await call('saveGpTaskList', [...as('cora'), { scope: 'personal', title: 'Reading' }]);
 const reading = r.lists.find(l => l.title === 'Reading'), cups = task(r, 'Count the cups');
