@@ -1,4 +1,4 @@
-/* GP Tasks (Oct 2026): lists for a ministry, a department or yourself (shared or not), tasks
+/* GP Tasks (Oct 2026): lists for a ministry, a department or yourself (yours alone), tasks
    with a day and a time, people assigned, asking another ministry for help (a request it
    accepts or declines), Campus Leadership's tasks landing straight in a ministry's list, the
    saved filter, and a board card linked to a ministry and a person. Who sees and who changes
@@ -124,15 +124,19 @@ const pl = r.lists.find(l => l.title === 'Mine');
 await call('saveGpTask', [...as('kanha'), { listId: pl.id, title: 'Call home' }]);
 r = await call('getGpTasks', as('cora'));
 ok('a personal list is yours alone', !r.lists.some(l => l.id === pl.id) && !task(r, 'Call home'));
-await call('saveGpTaskList', [...as('kanha'), { id: pl.id, shared: true }]);
+r = await call('saveGpTaskList', [...as('kanha'), { id: pl.id, shared: true }]);
+ok('there is no sharing a personal list any more (the old flag is ignored)', r.ok && !mem.gpTasks.lists.find(l => l.id === pl.id).shared);
 r = await call('getGpTasks', as('cora'));
-ok('shared: others on the campus see it…', r.lists.some(l => l.id === pl.id && !l.canEdit) && !!task(r, 'Call home'));
+ok('… so nobody else sees it, not even on the same campus', !r.lists.some(l => l.id === pl.id) && !task(r, 'Call home'));
+r = await call('getGpTasks', as('uriah'));
+ok('… not even Campus Leadership', !r.lists.some(l => l.id === pl.id));
 r = await call('saveGpTask', [...as('cora'), { listId: pl.id, title: 'Sneaky' }]);
-ok('… but can\'t add to it', r.ok === false);
+ok('… and nobody else can add to it', r.ok === false);
 r = await call('saveGpTaskList', [...as('uriah'), { id: pl.id, title: 'Renamed' }]);
 ok('… nor rename it (not even leadership)', r.ok === false);
-r = await call('getGpTasks', as('pp'));
-ok('… and another campus doesn\'t see it', !r.lists.some(l => l.id === pl.id));
+await call('saveGpTask', [...as('kanha'), { listId: pl.id, title: 'Count the cups', assignees: ['c1'] }]);
+r = await call('getGpTasks', as('cora'));
+ok('what reaches someone else is a task given to them — in My Tasks, with the list it came from', !!task(r, 'Count the cups') && r.lists.some(l => l.id === pl.id && l.onlyAssigned) && !r.lists.some(l => l.id === pl.id && !l.onlyAssigned));
 r = await call('saveGpTaskList', [...as('kanha'), { id: pl.id, remove: true }]);
 ok('deleting a list takes its tasks with it', !r.lists.some(l => l.id === pl.id) && !mem.gpTasks.tasks.some(t => t.listId === pl.id));
 

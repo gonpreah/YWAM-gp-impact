@@ -2669,8 +2669,10 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   **My Tasks**, a personal list the server makes on first `getGpTasks` (`gptMain_()` = your oldest
   personal list); it shows your own tasks plus every task given to you from any other list, each with
   the list it came from (`gptChipName_`: "Cafe jobs", "Cora's list"), and what you asked other
-  ministries for. Other people's personal lists never show as tabs (the server's `shared` flag is
-  left alone, the ⋮ item to set it is gone — Uriah: "why is Vannak's list in my GP Tasks?"). ＋ adds into the open list (no list chooser); **＋ New list** is a small sheet (name,
+  ministries for. **A personal list is its owner's alone** (Uriah: "it's only to assign tasks, not
+  lists" — after Vannak's shared list showed up in his): no share option anywhere, `gptSees_` ignores
+  the old `shared` flag, `saveGpTaskList` no longer sets it. What reaches someone else is a task
+  assigned to them, in their My Tasks with the list it came from. ＋ adds into the open list (no list chooser); **＋ New list** is a small sheet (name,
   and whose it is — inside My Ministry's fold it is that ministry's, no choice). The fold shows only
   that ministry's lists (`gptLists_(scope)`: ministry lists for a ministry, dept lists for a dept —
   never personal). Icons are line SVGs (`GPT_SVG`, `gptIc_()`), not the ✅ emoji — also on My Home's
@@ -2678,11 +2680,11 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   a short page reaching the bottom bar (the dark page edge used to show above it).
 - **teams/12-tasks.js** (loaded before 11-bind-boot.js; in sw.js's shell) and **GP Tasks** in api.js;
   one blob `gpTasks` = `{ lists, tasks }`. A list is a ministry's (`scope:'ministry'`, dept + ministry),
-  a department's (`'dept'`), or personal (`ownerId`, `shared` = others on the campus see it). A task:
+  a department's (`'dept'`), or personal (`ownerId`; `shared` is an old flag, no longer honoured). A task:
   title, notes, `due` + `time` (a time needs a day), `assignees` (`assignedAt` per person), `status`
   open | request | declined, `from {id,label}` when it came from outside the list, `cardId`.
 - **Who sees what** (`gptSees_`): a ministry's list — its people and leaders (`memberOf_`, `leads`);
-  a department's — the department; personal — the owner, and the campus once shared; **Campus
+  a department's — the department; personal — the owner only; **Campus
   Leadership and admins every list on the campus** (`gptAll_` = `canLead_`), narrowed by their saved
   filter (`staff.taskFilter = {keys:['Dept|Ministry', 'Dept|']}`, `saveGpTaskFilter`, a view only — your
   own ministries' and personal lists always show). A task given to you, or one you asked for, shows

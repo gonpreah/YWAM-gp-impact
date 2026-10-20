@@ -62,7 +62,7 @@ function gptLists_(scope){
   return lists.slice().sort(function(a,b){ return rank(a)-rank(b) || String(a.dept+a.ministry+a.title).localeCompare(String(b.dept+b.ministry+b.title)); });
 }
 function gptListLabel_(L){
-  if(L.scope==='personal') return L.ownerId===S.me.id ? (L.shared ? t('Personal · others can see it') : t('Personal · only you')) : gpT('{name}’s list',{name:firstName_(gptPerson_(L.ownerId).name)});
+  if(L.scope==='personal') return L.ownerId===S.me.id ? t('Personal · only you') : gpT('{name}’s list',{name:firstName_(gptPerson_(L.ownerId).name)});
   return L.scope==='dept' ? gpT('{dept} · whole department',{dept:t(L.dept)}) : t(L.ministry)+' · '+t(L.dept);
 }
 function gptWhen_(x){
@@ -224,7 +224,7 @@ function gptFilterHtml_(){
 /* where a new list can go: just you (or shared), each ministry you're in, your department —
    and, for Campus Leadership and admins, any ministry on the campus */
 function gptListHomes_(){
-  var out=[['personal','',t('Just me')],['shared','',t('Me — others can see it')]], seen={};
+  var out=[['personal','',t('Just me')]], seen={};
   var add=function(d, m){ var k=d+'|'+m; if(seen[k] || !d) return; seen[k]=1; out.push([m ? 'ministry' : 'dept', k, m ? t(m)+' · '+t(d) : gpT('{dept} · whole department',{dept:t(d)})]); };
   add(S.me.dept, S.me.ministry||''); (S.me.ministries||[]).forEach(function(k){ var p=k.split('|'); add(p[0], p[1]); });
   (S.me.leads||[]).forEach(function(k){ var p=k.split('|'); add(p[0], p[1]); });
@@ -308,7 +308,7 @@ function bindGpTasks_(){
   on('gptNewSave', function(){
     var N=S.gptNewList, hp=String(N.home||'personal#').split('#'), kind=hp[0], key=(hp[1]||'').split('|');
     var before=((S.gpt&&S.gpt.lists)||[]).map(function(x){ return x.id; });
-    saveList({ title:(N.title||'').trim() || t('Tasks'), scope: kind==='shared' ? 'personal' : kind, shared: kind==='shared', dept:key[0]||'', ministry:key[1]||'' }, t('List made'),
+    saveList({ title:(N.title||'').trim() || t('Tasks'), scope:kind, dept:key[0]||'', ministry:key[1]||'' }, t('List made'),
       function(d){ var made=d.lists.filter(function(x){ return before.indexOf(x.id)===-1; })[0]; if(made) S.gptList=made.id; S.gptNewList=null; });
   });
   /* ticking off — in a row or in the open task */

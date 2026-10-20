@@ -10203,14 +10203,15 @@ async function getCalendar(username, pin, from, days) {
    department, people a task is assigned to, and asking another ministry for help.
    One blob, 'gpTasks' = { lists, tasks }.
    - A list: { id, campus, scope: 'ministry' | 'dept' | 'personal', dept, ministry (scope
-     ministry), ownerId (personal), shared (personal: others on the campus may see it), title,
+     ministry), ownerId (personal), shared (an old flag, no longer honoured — Uriah, Oct 2026:
+     "it's only to assign tasks, not lists"; a personal list is its owner's alone), title,
      order, created, by }.
    - A task: { id, listId, title, notes, due 'YYYY-MM-DD', time 'HH:MM', done, doneAt, doneBy,
      assignees [staff ids], assignedAt { id: iso }, status 'open' | 'request' | 'declined',
      from { id, label } (who asked, when it came from outside the list — "Campus Leadership",
      "Finance"), cardId (a Campus Leadership board card it came from), created, by, updated }.
    Who sees what: a ministry's list — its people and leaders; a department's — everyone in the
-   department; a personal list — its owner, and everyone on the campus once shared; Campus
+   department; a personal list — its owner only (what they give others is assigned task by task); Campus
    Leadership and admins — every list on the campus (narrowed by their saved filter, which is
    only a view). A task assigned to you is yours to see wherever its list is.
    Who adds: anyone who sees a ministry or department list adds to it; someone outside it adds
@@ -10231,7 +10232,7 @@ function gptIn_(s, L) {   // one of the list's own people
 }
 function gptSees_(s, L) {
   if (!L) return false;
-  if (L.scope === 'personal') return L.ownerId === s.id || (L.shared && L.campus === s.campus);
+  if (L.scope === 'personal') return L.ownerId === s.id;
   return gptIn_(s, L) || (gptAll_(s) && (L.campus === s.campus || s.isAdmin));
 }
 function gptEdits_(s, L) { return !!L && (L.scope === 'personal' ? L.ownerId === s.id : (gptIn_(s, L) || (gptAll_(s) && (L.campus === s.campus || s.isAdmin)))); }
@@ -10282,12 +10283,12 @@ async function saveGpTaskList(username, pin, list) {
     if (!L) return { ok: false, err: 'not_found' };
     if (!gptEdits_(s, L) || (L.scope === 'personal' && L.ownerId !== s.id)) return { ok: false, err: 'not_authorized' };
     if (x.remove) { d.lists = d.lists.filter(function (l) { return l.id !== L.id; }); d.tasks = d.tasks.filter(function (t) { return t.listId !== L.id; }); }
-    else { if (x.title !== undefined) L.title = str_(x.title, 80) || L.title; if (x.shared !== undefined && L.scope === 'personal') L.shared = !!x.shared; }
+    else if (x.title !== undefined) L.title = str_(x.title, 80) || L.title;
   } else {
     if (d.lists.length >= GPT_MAX.lists) return { ok: false, err: 'too_many' };
     const scope = ['ministry', 'dept', 'personal'].indexOf(x.scope) > -1 ? x.scope : 'personal';
     const L = { id: gptId_('tl'), campus: s.campus, scope: scope, dept: '', ministry: '', ownerId: '', shared: false, title: str_(x.title, 80) || 'Tasks', order: d.lists.length, created: new Date().toISOString(), by: s.id };
-    if (scope === 'personal') { L.ownerId = s.id; L.shared = !!x.shared; }
+    if (scope === 'personal') L.ownerId = s.id;
     else {
       const key = normKey_(str_(x.dept, 80) + '|' + (scope === 'ministry' ? str_(x.ministry, 80) : ''), 2), parts = key.split('|');
       L.dept = parts[0]; L.ministry = scope === 'ministry' ? parts[1] : '';
