@@ -2222,3 +2222,73 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .finOwes:last-child { border-bottom:0; }
 .finOwes > div { min-width:0; } .finOwes .rowName { overflow-wrap:anywhere; } .finOwes b { flex:0 0 auto; }
 .finOwes .rowName { font-weight:600; font-size:15px; } .finOwes .rowSub { font-size:12.5px; color:var(--muted); margin-top:1px; }
+
+/* GP Tasks: who it's for, as a task is made */
+.gptAddWhen select { width:auto; flex:1 1 100%; margin:0; }
+
+/* GP Tasks, like Google Tasks (Oct 2026): tabs, plain rows, chips, a round ＋, sheets */
+.gtTitle { margin:4px 0 6px; }
+.gtBar { display:flex; align-items:center; gap:4px; border-bottom:1px solid var(--line); margin:0 0 6px; }
+.gtTabs { display:flex; gap:2px; overflow-x:auto; flex:1; min-width:0; scrollbar-width:none; }
+.gtTabs::-webkit-scrollbar { display:none; }
+.gtTab { flex:0 0 auto; background:none; border:0; border-bottom:3px solid transparent; padding:10px 12px 9px; font:inherit; font-size:14.5px; font-weight:600; color:var(--muted); cursor:pointer; white-space:nowrap; }
+.gtTab.on { color:var(--accent); border-bottom-color:var(--accent); }
+.gtTab.gtNewList { color:var(--muted); font-weight:500; }
+.gtMenuBtn { flex:0 0 auto; width:38px; height:38px; border:0; background:none; font-size:22px; line-height:1; color:var(--ink); cursor:pointer; border-radius:50%; }
+.gtMenu { position:fixed; z-index:60; right:12px; top:120px; min-width:230px; background:var(--surface); border-radius:12px; box-shadow:var(--shadow); padding:6px 0; display:flex; flex-direction:column; }
+.gtMenuIt { background:none; border:0; text-align:left; padding:12px 16px; font:inherit; font-size:15px; color:var(--ink); cursor:pointer; }
+.gtMenuIt:hover { background:var(--surface2); }
+.gtList { background:var(--surface); border-radius:16px; padding:6px 4px 8px; margin:0 0 12px; }
+.gtListHead { display:flex; flex-direction:column; padding:8px 12px 6px; }
+.gtListHead b { font-size:20px; }
+.gtListHead span { font-size:12.5px; color:var(--muted); }
+.gtRow { display:flex; align-items:flex-start; gap:12px; padding:10px 12px; }
+.gtRow + .gtRow { border-top:1px solid var(--line); }
+.gtCheck { width:22px; height:22px; flex:0 0 22px; margin-top:1px; border-radius:50%; border:2px solid var(--muted); background:none; color:var(--bg); font-size:13px; font-weight:800; line-height:1; cursor:pointer; padding:0; }
+.gtCheck.on { background:var(--accent); border-color:var(--accent); }
+.gtCheck:disabled { opacity:.35; cursor:default; }
+.gtMain { flex:1; min-width:0; text-align:left; background:none; border:0; padding:0; font:inherit; color:var(--ink); cursor:pointer; display:flex; flex-direction:column; gap:3px; }
+.gtT { font-size:15.5px; word-break:break-word; }
+.gtRow.done .gtT { text-decoration:line-through; color:var(--muted); }
+.gtNotes { font-size:13px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.gtChips { display:flex; flex-wrap:wrap; gap:6px; margin-top:2px; }
+.gtChip { font-size:12.5px; padding:3px 9px; border-radius:999px; border:1px solid var(--border2); color:var(--ink); background:var(--bg); }
+.gtChip.late { color:var(--bad); border-color:var(--bad); }
+.gtChip.who { border-color:var(--accent); color:var(--accent); }
+.gtChip.from, .gtChip.list { color:var(--muted); }
+.gtChip.req { color:var(--amber); border-color:var(--amber); }
+.gtRow.req { box-shadow:inset 3px 0 0 var(--amber); }
+.gtReq { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:0 12px 10px 46px; font-size:13.5px; }
+.gtReq .btn.small { width:auto; margin:0; padding:6px 12px; }
+.gtDoneHead { display:flex; justify-content:space-between; width:100%; background:none; border:0; border-top:1px solid var(--line); padding:12px; font:inherit; font-weight:700; color:var(--ink); cursor:pointer; }
+.gtEmpty { text-align:center; padding:26px 12px; color:var(--muted); }
+.gtEmpty.small { padding:16px 12px 10px; }
+.gtEmptyIc { font-size:34px; }
+.gtEmpty .btn { width:auto; display:inline-block; }
+.gtFab { position:fixed; z-index:40; right:18px; bottom:calc(86px + env(safe-area-inset-bottom)); width:58px; height:58px; border-radius:18px; border:0; background:var(--accent); color:var(--accentInk); font-size:30px; line-height:1; box-shadow:var(--shadow); cursor:pointer; }
+.gtAddRow { display:block; width:100%; text-align:left; background:var(--surface); border:1.5px dashed var(--border2); border-radius:12px; padding:12px; font:inherit; font-weight:600; color:var(--accent); cursor:pointer; margin:0 0 10px; }
+.gtSheet { position:fixed; z-index:61; left:0; right:0; bottom:0; max-width:640px; margin:0 auto; background:var(--surface); border-radius:18px 18px 0 0; box-shadow:var(--shadow); padding:16px 16px calc(16px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:10px; max-height:88vh; overflow-y:auto; }
+.gtNewTitle { border:0 !important; background:none !important; font-size:18px !important; padding:6px 2px !important; margin:0; }
+.gtSheet textarea { margin:0; }
+.gtWhen { display:flex; gap:8px; flex-wrap:wrap; flex:1; }
+.gtWhen input { flex:1 1 130px; width:auto; min-width:0; margin:0; }
+.gtIn { font-size:13px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+.gtIn select { width:auto; margin:0; }
+.gtTools { display:flex; align-items:center; gap:6px; }
+.gtTool { position:relative; min-width:40px; height:40px; padding:0 10px; border-radius:20px; border:0; background:none; font:inherit; font-size:18px; color:var(--ink); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:4px; }
+.gtTool.on { background:var(--surface2); color:var(--accent); }
+.gtWho { font-size:15px; font-weight:600; overflow:hidden; }
+.gtWho select { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; margin:0; }
+.gtSave { background:none; border:0; font:inherit; font-weight:800; font-size:16px; color:var(--accent); cursor:pointer; padding:8px 6px; }
+.gtAsks { margin:0; }
+.gtDetail { top:6vh; border-radius:18px 18px 0 0; }
+.gtDetTop { display:flex; align-items:center; gap:8px; }
+.gtDetList { flex:1; font-size:13px; color:var(--muted); text-align:center; }
+.gtDetTitle { font-size:20px !important; font-weight:600; border:0 !important; background:none !important; padding:4px 2px !important; resize:none; }
+.gtLine { display:flex; align-items:flex-start; gap:10px; font-size:18px; }
+.gtLine textarea, .gtLine .gtWhen { font-size:15px; }
+.gtPeople { display:flex; flex-wrap:wrap; gap:6px; align-items:center; flex:1; font-size:15px; }
+.gtPeople select { width:auto; flex:1 1 150px; margin:0; }
+.gtHint { font-size:13px; color:var(--faint); align-self:center; }
+.gtDoneBtn { margin:6px 0 0; }
+.gtDetail .btn { width:100%; }

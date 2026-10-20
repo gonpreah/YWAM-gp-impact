@@ -2694,6 +2694,15 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - **My Ministry has no Numbers / OKRs / Tasks switch on top** (Uriah: "the numbers already show below"):
   the numbers simply show; **🎯 OKRs ›** is a small button by the title (`data-mmtab="okr"`), and the OKRs
   page has "← Back to the numbers".
+- **Looks like Google Tasks (Oct 2026, Uriah: "simple, like Google Tasks — the only thing is you can assign
+  people")**: list tabs (`.gtTab`: ⭐ For me, each list, ＋ New list) with **⋮** (`gtMenuHtml_`: rename,
+  share, ask another ministry, which lists to show, delete); rows (`gtRowHtml_`: a circle, the title, the
+  first line of details, chips for the day and the person); a round **＋** (`.gtFab`; inside My Ministry a
+  plain "＋ Add a task" row) opening **New task** (`gtNewHtml_`: title, ≡ details, 🕒 date/time, 👤 assign —
+  a real select behind the chip, one tap — and Save; Enter saves; on ⭐ For me it asks which list); a task
+  opens in a sheet (`gtDetailHtml_`; ← keeps the changes, 🗑, Mark completed). ☰ has **GP Tasks** second.
+- **Assigning** (`gptPeopleOptions_`): the add row has **👤 Assign to…** and a task's editor **＋ Add someone** —
+  both list the list's own people first, under the ministry's (or department's) name, then "Everyone else".
 - **A new task can have its day and time as it is made** (the add row's date + time and Add; Enter
   still adds); blank, they say "📅 Set date and time", and so does a task with no day in the list. The Goals & Tasks page's own ✅ Tasks (steps toward your annual
   goals) is separate and unchanged.
