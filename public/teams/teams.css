@@ -1720,7 +1720,7 @@ input[type=color]::-webkit-color-swatch { border:none; border-radius:50%; }
 .field { margin-bottom:14px; }
 .fieldLabel { display:block; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:6px; }
 .dateRow { display:flex; gap:10px; }
-input[type=date], input[type=month], textarea { width:100%; font:inherit; font-size:14.5px; padding:11px; border-radius:10px; border:1.5px solid var(--border2); background:var(--bg); color:var(--ink); }
+input[type=date], input[type=month], input[type=time], textarea { width:100%; font:inherit; font-size:14.5px; padding:11px; border-radius:10px; border:1.5px solid var(--border2); background:var(--bg); color:var(--ink); }
 textarea { resize:vertical; min-height:64px; }
 .typeChips { display:flex; flex-direction:column; gap:8px; }
 .typeChip { display:flex; align-items:center; gap:10px; border:1.5px solid var(--border2); border-radius:12px; padding:11px 13px; cursor:pointer; text-align:left; background:var(--bg); font-family:inherit; width:100%; }
@@ -2007,7 +2007,7 @@ footer { text-align:center; font-size:12px; color:var(--muted); margin-top:26px;
 .finMatchRow > div { flex:1; min-width:0; } .finMatchRow select { width:48%; max-width:220px; }
 button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:pointer; }
 /* four tabs on a leader's own row: they share the width rather than run off a small phone */
-.campusSeg.lwSeg { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); width:100%; }
+.campusSeg.lwSeg { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); width:100%; }   /* six tabs: two rows of three */
 .campusSeg.lwSeg .campusBtn { padding:7px 4px; white-space:normal; line-height:1.25; }
 .finTiles .mmTileName { white-space:normal; overflow:visible; }
 #leadMoney .lmRow { grid-template-columns:44px minmax(0,1fr) minmax(0,1fr) 72px; gap:5px; }
@@ -2138,3 +2138,66 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .heroRowGo { position:relative; padding-right:34px; }
 .heroGo { position:absolute; right:6px; top:50%; transform:translateY(-50%); width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; line-height:1; background:rgba(255,255,255,.14); color:inherit; }
 .whoCap { font-size:12.5px; font-weight:600; opacity:.8; white-space:nowrap; }
+
+/* GP Tasks (12-tasks.js): Google-Tasks-like lists */
+.secWithBtn { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+.secBtn { font:inherit; font-size:13px; font-weight:700; letter-spacing:0; text-transform:none; padding:6px 12px; border-radius:999px; border:1.5px solid var(--border2); background:var(--surface); color:var(--ink); cursor:pointer; }
+.gptRing { width:40px; height:40px; flex:0 0 40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; background:rgba(255,255,255,.1); }
+.gptBar { display:flex; align-items:center; gap:8px; margin:6px 0 12px; }
+.gptChips { display:flex; gap:6px; overflow-x:auto; flex:1; min-width:0; padding-bottom:2px; scrollbar-width:none; }
+.gptChips::-webkit-scrollbar { display:none; }
+.gptChip { flex:0 0 auto; font:inherit; font-size:14px; font-weight:600; padding:7px 13px; border-radius:999px; border:1.5px solid var(--border2); background:var(--surface); color:var(--ink); cursor:pointer; white-space:nowrap; }
+.gptChip.on { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.gptChip small { opacity:.7; font-weight:700; margin-left:2px; }
+.gptChip.gptAdd { border-style:dashed; color:var(--muted); }
+.gptFilterBtn { flex:0 0 auto; width:38px; height:38px; border-radius:50%; border:1.5px solid var(--border2); background:var(--surface); cursor:pointer; font-size:16px; }
+.gptFilterBtn.on { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset; }
+.gptFDept { padding:6px 0; border-bottom:1px solid var(--line); } .gptFDept:last-of-type { border-bottom:0; }
+.gptFDept b { display:block; font-size:13px; margin-bottom:2px; }
+.gptList { padding-top:10px; }
+.gptListHead { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px; }
+.gptListMenu { padding:6px 0 10px; border-bottom:1px solid var(--line); margin-bottom:6px; }
+.gptAddRow { display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--line); }
+.gptAddRow input { margin:0; border:0; background:none; padding:8px 0; flex:1; min-width:0; }
+.gptCircle { width:22px; height:22px; flex:0 0 22px; display:flex; align-items:center; justify-content:center; color:var(--accent); font-weight:700; }
+.gptEmpty { margin:10px 0 4px; }
+.gptRow { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); }
+.gptCheck { width:22px; height:22px; flex:0 0 22px; margin-top:2px; border-radius:50%; border:2px solid var(--muted); background:none; color:var(--bg); font-size:13px; font-weight:800; line-height:1; cursor:pointer; padding:0; }
+.gptCheck.on { background:var(--accent); border-color:var(--accent); }
+.gptCheck:disabled { opacity:.35; cursor:default; }
+.gptMain { flex:1; min-width:0; text-align:left; background:none; border:0; padding:0; font:inherit; color:var(--ink); cursor:pointer; display:flex; flex-direction:column; gap:2px; }
+.gptTitle { font-size:15px; word-break:break-word; }
+.gptRow.done .gptTitle { text-decoration:line-through; color:var(--muted); }
+.gptMeta { font-size:12.5px; color:var(--muted); }
+.gptLate { color:var(--bad); font-weight:600; }
+.gptFrom { font-weight:600; }
+.gptBadge { align-self:flex-start; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--surface2); color:var(--amber); }
+.gptBadge.no { color:var(--bad); }
+.gptRow.req { box-shadow:inset 3px 0 0 var(--amber); padding-left:8px; }
+.gptWho { display:flex; gap:2px; flex:0 0 auto; }
+.avatar.xs { width:24px; height:24px; font-size:10px; border-width:1px; }
+.gptReqActs { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:4px 0 10px 32px; font-size:13.5px; border-bottom:1px solid var(--line); }
+.gptReqActs .btn.small { width:auto; margin:0; padding:6px 12px; }
+.gptEdit { padding:8px 0 12px 32px; border-bottom:1px solid var(--line); display:flex; flex-direction:column; gap:8px; }
+.gptEdit input, .gptEdit textarea, .gptEdit select { margin:0; }
+.gptDT { display:flex; gap:8px; flex-wrap:wrap; } .gptDT input { flex:1 1 130px; width:auto; min-width:0; }
+.gptAssign { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.gptAssign select { width:auto; flex:1 1 160px; }
+.gptPerson { font-size:13px; padding:3px 8px; border-radius:999px; background:var(--surface2); }
+.gptX { border:0; background:none; color:var(--muted); cursor:pointer; font-size:14px; padding:0 0 0 2px; }
+.gptEdit .btnRow .btn.small { width:auto; margin:0; }
+.gptDoneHead { display:block; width:100%; text-align:left; background:none; border:0; padding:10px 0 4px; font:inherit; font-weight:700; color:var(--muted); cursor:pointer; }
+@media (max-width:360px){ .gptEdit, .gptReqActs { padding-left:0; } }
+.gptAskBtn { display:block; margin:-4px 0 10px; }
+
+/* Ministry Tasks folded under the ministry; a day and a time as a task is made */
+.mtFold { padding:0; overflow:hidden; }
+.mtHead { display:flex; width:100%; justify-content:space-between; align-items:center; gap:8px; padding:14px 16px; background:none; border:0; font:inherit; font-weight:700; font-size:16px; color:var(--ink); cursor:pointer; }
+.mtBody { padding:0 12px 6px; }
+.mtBody .gptList { box-shadow:none; border:1px solid var(--line); }
+.gptAddWhen { display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:6px 0 8px 32px; border-bottom:1px solid var(--line); }
+.gptAddWhen input { width:auto; flex:1 1 120px; min-width:0; margin:0; }
+.gptAddWhen .btn.small { width:auto; margin:0; padding:7px 14px; }
+.gptWhenLbl { flex:1 0 100%; font-size:13px; font-weight:600; color:var(--muted); }
+.gptNoWhen { color:var(--faint); font-style:italic; }
+@media (max-width:360px){ .gptAddWhen { padding-left:0; } }

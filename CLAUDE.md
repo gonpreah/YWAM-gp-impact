@@ -2658,3 +2658,37 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   app**: their real student app, read only (`S.stuPreview` — `run()` sends nothing, Library marks are
   theirs and in memory; Back to Admin reloads as yourself, back on their profile via `gp-stu-back`).
 - Tests: `tests/test-students.mjs` (server, the door and the access checks), `tests/test-student-app-ui.mjs`.
+
+## GP Tasks (Oct 2026, Uriah: "much simpler, very much like Google Tasks")
+- **teams/12-tasks.js** (loaded before 11-bind-boot.js; in sw.js's shell) and **GP Tasks** in api.js;
+  one blob `gpTasks` = `{ lists, tasks }`. A list is a ministry's (`scope:'ministry'`, dept + ministry),
+  a department's (`'dept'`), or personal (`ownerId`, `shared` = others on the campus see it). A task:
+  title, notes, `due` + `time` (a time needs a day), `assignees` (`assignedAt` per person), `status`
+  open | request | declined, `from {id,label}` when it came from outside the list, `cardId`.
+- **Who sees what** (`gptSees_`): a ministry's list — its people and leaders (`memberOf_`, `leads`);
+  a department's — the department; personal — the owner, and the campus once shared; **Campus
+  Leadership and admins every list on the campus** (`gptAll_` = `canLead_`), narrowed by their saved
+  filter (`staff.taskFilter = {keys:['Dept|Ministry', 'Dept|']}`, `saveGpTaskFilter`, a view only — your
+  own ministries' and personal lists always show). A task given to you, or one you asked for, shows
+  wherever its list is (its list comes along as `onlyAssigned`).
+- **Asking another ministry** (`askMin` on saveGpTask, or adding to a list you only see): a request
+  (`status:'request'`, `from.label` = your ministry) its people accept or decline (`respondGpTask`);
+  **Campus Leadership's tasks land straight in the list** — no request (Uriah). Its people, whoever is
+  given a task, and the asker on a decline hear of it: the bell (`gpTaskInfo` in the boot —
+  `{open, due, notices}`, `gptNotifItems_`) and the phone (`pushNow_`: taskAssigned, taskRequest,
+  taskDeclined).
+- **A Campus Leadership board card** with "A task for which ministry?" (`card.taskMin`) and a person
+  becomes that ministry's task (its first list, made if none), given to them, from Campus Leadership
+  (`gptFromCard_`); done on the board → done in the list; unlinked → the task goes.
+- **Where it opens**: My Home's card (✅ GP Tasks · N open, `#goGpTasks`), a button on the Weekly Goals
+  heading (`#goGpTasksGoals`), the bell, `teams.html?view=tasks`; on My Ministry **✅ Ministry Tasks**,
+  folded under the department and ministry (`mtFoldHtml_`, open/shut kept in `gp-mt-open`; that
+  ministry's lists, `gptPageHtml_({dept,min}, true)`), and for Campus Leadership a **Ministry Tasks** LW
+  tab (every list, with the ⚙️ filter).
+- **My Ministry has no Numbers / OKRs / Tasks switch on top** (Uriah: "the numbers already show below"):
+  the numbers simply show; **🎯 OKRs ›** is a small button by the title (`data-mmtab="okr"`), and the OKRs
+  page has "← Back to the numbers".
+- **A new task can have its day and time as it is made** (the add row's date + time and Add; Enter
+  still adds); blank, they say "📅 Set date and time", and so does a task with no day in the list. The Goals & Tasks page's own ✅ Tasks (steps toward your annual
+  goals) is separate and unchanged.
+- tests/test-gp-tasks.mjs (server: the rules), tests/test-gp-tasks-ui.mjs.

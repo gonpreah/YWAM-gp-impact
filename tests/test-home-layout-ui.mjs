@@ -100,7 +100,7 @@ mem.goals.push({ staffId: 'me', week: WK - 1, year: YR, items: [{ text: 'Visit t
 {
   const { ctx, page } = await open('sreilea');
   await page.waitForTimeout(800);
-  const heads = await page.$$eval('#main h3', hs => hs.map(h => h.innerText.trim()));
+  const heads = await page.$$eval('#main h3', hs => hs.map(h => (h.firstChild && h.firstChild.nodeType === 3 && h.querySelector('.secBtn') ? h.firstChild.textContent : h.innerText).trim()));   // the heading's own words, not its GP Tasks button
   ok('the sections, in order — no Health or My Ministry below the summary card', JSON.stringify(heads) === JSON.stringify(['🎯 Weekly Goals', '✅ Habits', 'Annual Goals · SMART', 'Mentorship', '🧭 About me']), heads.join(' | '));
   const card = await page.$eval('.myHero', e => e.innerText.replace(/\s+/g, ' '));
   ok('the large summary card: goals and their list, streak, habits, health, mentor, time off, and the base at a glance (Health and My Ministry are in the bar now)',

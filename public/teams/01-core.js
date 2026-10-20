@@ -611,6 +611,7 @@ function gpViewFromUrl_(){
   try { var qv=new URLSearchParams(location.search||''), v=qv.get('view');
     if(v==='mycontract'){ S.view='mycontract'; S.myc=null; }
     else if(v==='base' || v==='dashboard') S.view='base';
+    else if(v==='tasks'){ S.view='tasks'; S.gptFrom='week'; }   // a phone notification about a task opens GP Tasks
     else if(v==='mentor'){ S.view='mentor'; S.mentee=null; }   // a phone notification about a 1-on-1 opens Mentorship
     else if(v==='hr' && qv.get('hr')){ S.view='hr'; S.hrTab='staff'; S.hrSub='person'; S.hrPersonId=qv.get('hr'); S.hrStaff=null; }
   } catch(e){}
@@ -727,7 +728,8 @@ function applyBoot(d, fromCache){
   adoptHabits(d.habits);
   S.mentees = d.mentees || [];
   S.mentorRequests = d.mentorRequests || [];
-  S.stuMentor = d.stuMentor || null;        // Leadership Development: students who chose them as mentor
+  S.stuMentor = d.stuMentor || null;
+  S.gpTaskInfo = d.gpTaskInfo || null;      // GP Tasks: open, due, and what the bell says        // Leadership Development: students who chose them as mentor
   S.goals = d.goals || [];
   S.checkins = d.checkins || [];
   if(d.trips) S.trips = d.trips;
@@ -944,6 +946,7 @@ function render(){
   else if(S.view==='p360') m.innerHTML=p360Html_();
   else if(S.view==='week') m.innerHTML=S.student ? studentHomeHtml_() : homeHtml();
   else if(S.view==='health') m.innerHTML=healthHtml();
+  else if(S.view==='tasks') m.innerHTML=gptPageHtml_(null);
   else if(S.view==='whoshere') m.innerHTML=whosHereHtml_();
   else if(S.view==='students') m.innerHTML=studentsPageHtml_();
   else if(S.view==='team') m.innerHTML=teamHtml();

@@ -1073,6 +1073,10 @@ function bind(){
     }; });
     var sbk=document.getElementById('stuBack'); if(sbk) sbk.onclick=function(){ S.view='week'; render(); window.scrollTo(0,0); };
   }
+  /* GP Tasks: the page and its buttons */
+  bindGpTasks_();
+  [['goGpTasks','week'],['goGpTasksGoals','week']].forEach(function(x){ var b=document.getElementById(x[0]); if(b) b.onclick=function(){ gpTap(); gptOpenPage_(x[1]); }; });
+  document.querySelectorAll('[data-gogptasks]').forEach(function(b){ b.onclick=function(){ gpTap(); S.bellOpen=false; gptOpenPage_('week'); }; });
   /* an admin looking at a student's app: back to Admin, as yourself */
   var spx=document.getElementById('stuPreviewExit'); if(spx) spx.onclick=function(){ gpTap(); stuPreviewExit_(); };
   /* student mode: choosing a mentor */

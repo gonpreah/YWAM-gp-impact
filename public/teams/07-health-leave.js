@@ -386,6 +386,12 @@ function leadOkrDashHtml_(){
   h+='<button class="btn ghost" id="leadGoOkr">🎯 '+esc(t('Update progress or change the OKRs'))+'</button>';
   return h+'</div>';
 }
+/* a ministry's people first, then everyone else on the campus */
+function leadTaskOwners_(key){
+  var p=String(key).split('|'), d=p[0], m=p[1]||'';
+  var inIt=function(x){ return m ? ((x.dept===d && x.ministry===m) || (x.ministries||[]).indexOf(d+'|'+m)>-1 || (x.leads||[]).indexOf(d+'|'+m)>-1) : x.dept===d; };
+  return (S.roster||[]).filter(function(x){ return x.campus===S.me.campus; }).sort(function(a,b){ return (inIt(b)-inIt(a)) || String(a.name).localeCompare(String(b.name)); });
+}
 function leadOwnerOptions_(){
   var list=(S.roster||[]).filter(function(p){ return p.campus===S.me.campus && p.dept==='Campus Leadership'; });
   if(!list.some(function(p){ return p.id===S.me.id; })) list.push(S.me);
@@ -568,8 +574,16 @@ function leadFormHtml_(objs){
   h+='<div class="chips hospChips">'+[['agenda','💬','Agenda item'],['project','🔨','Project']].map(function(x){
     return '<button class="hospChip'+(f.type===x[0]?' on':'')+'" data-lftype="'+x[0]+'">'+x[1]+' '+esc(t(x[2]))+'</button>'; }).join('')+'</div>';
   h+='<label class="f">'+esc(t('Title'))+'</label><input type="text" data-lf="title" maxlength="160" value="'+esc(f.title||'')+'" placeholder="'+esc(t('e.g. Staff retreat plan'))+'">';
-  h+='<div class="teamGrid2"><div><label class="f">'+esc(t('Who owns it'))+'</label><select data-lf="owner"><option value="">'+esc(t('— nobody yet —'))+'</option>'+
-    leadOwnerOptions_().map(function(p){ return '<option value="'+esc(p.id)+'"'+(f.owner===p.id?' selected':'')+'>'+esc(p.name)+'</option>'; }).join('')+'</select></div>'+
+  /* GP Tasks (Oct 2026, Uriah): for a ministry and a person, the card is also a task in that
+     ministry's list, given to them, from Campus Leadership — and they hear of it */
+  var deps=getDepartments(S.me.campus), mins=[];
+  Object.keys(deps).filter(function(d){ return d!==BL_DEPT; }).forEach(function(d){ mins.push([d+'|', gpT('{dept} · whole department',{dept:t(d)})]); Object.keys(deps[d]||{}).forEach(function(m){ mins.push([d+'|'+m, t(m)+' · '+t(d)]); }); });
+  h+='<label class="f">'+esc(t('A task for which ministry?'))+'</label><select data-lf="taskMin" data-lfre="1"><option value="">'+esc(t('— none: just on the board —'))+'</option>'+
+    mins.map(function(x){ return '<option value="'+esc(x[0])+'"'+(f.taskMin===x[0]?' selected':'')+'>'+esc(x[1])+'</option>'; }).join('')+'</select>'+
+    (f.taskMin ? '<p class="hint" style="margin:4px 0 0">'+esc(t('It shows in that ministry’s GP Tasks list, given to the person below, from Campus Leadership.'))+'</p>' : '');
+  var owners=f.taskMin ? leadTaskOwners_(f.taskMin) : leadOwnerOptions_();
+  h+='<div class="teamGrid2"><div><label class="f">'+esc(f.taskMin ? t('Given to') : t('Who owns it'))+'</label><select data-lf="owner"><option value="">'+esc(t('— nobody yet —'))+'</option>'+
+    owners.map(function(p){ return '<option value="'+esc(p.id)+'"'+(f.owner===p.id?' selected':'')+'>'+esc(p.name)+'</option>'; }).join('')+'</select></div>'+
     '<div><label class="f">'+esc(t('Due'))+'</label><input type="date" data-lf="due" value="'+esc(f.due||'')+'"></div></div>';
   h+='<label class="f">'+esc(t('Column'))+'</label><div class="leadFilters leadColPick">'+leadCols_().map(function(c){ return '<button class="leadSeg'+(f.col===c.id?' on':'')+'" data-lfcol="'+esc(c.id)+'">'+esc(c.title)+'</button>'; }).join('')+'</div>';
   h+='<div class="teamGrid2"><div><label class="f">'+esc(t('Focus area'))+'</label><select data-lf="area"><option value="">'+esc(t('— none —'))+'</option>'+(S.lead.areas||[]).map(function(a){ return '<option value="'+esc(a.id)+'"'+(f.area===a.id?' selected':'')+'>'+esc(a.title)+'</option>'; }).join('')+'</select></div>';
@@ -721,7 +735,7 @@ function bindLead_(){
     };
   }
   if(f){
-    document.querySelectorAll('[data-lf]').forEach(function(inp){ var k=inp.getAttribute('data-lf'); inp.oninput=inp.onchange=function(){ f[k]=inp.value; }; });
+    document.querySelectorAll('[data-lf]').forEach(function(inp){ var k=inp.getAttribute('data-lf'); inp.oninput=inp.onchange=function(){ f[k]=inp.value; if(inp.hasAttribute('data-lfre')) render(); }; });
     document.querySelectorAll('[data-lftype]').forEach(function(b){ b.onclick=function(){ f.type=b.getAttribute('data-lftype'); render(); }; });
     var cn=document.getElementById('leadCancel'); if(cn) cn.onclick=function(){ S.leadForm=null; render(); };
     ['leadClose','leadScrim'].forEach(function(id){ var x=document.getElementById(id); if(x) x.onclick=function(){ S.leadForm=null; render(); }; });
