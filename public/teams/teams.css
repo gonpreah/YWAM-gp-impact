@@ -2292,6 +2292,67 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .gtHint { font-size:13px; color:var(--faint); align-self:center; }
 .gtDoneBtn { margin:6px 0 0; }
 .gtDetail .btn { width:100%; }
+/* the line icons (GPT_SVG): the text's size and colour */
+.gtIc { display:inline-flex; vertical-align:-.15em; } .gtIc svg { width:1em; height:1em; }
+.gtTool svg, .gtFab svg { width:22px; height:22px; } .gtFab svg { width:28px; height:28px; stroke-width:2.4; }
+.gtChip svg { width:13px; height:13px; vertical-align:-2px; margin-right:4px; }
+.gtEmptyIc svg { width:40px; height:40px; color:var(--faint); }
+.gptRing svg { width:22px; height:22px; }
+.gtLine > .gtIc { font-size:20px; color:var(--muted); margin-top:9px; }
+.gtSheetHead b { font-size:17px; }
+/* subtasks under a row, and in the sheet */
+.gtSubs { padding:0 12px 8px 46px; display:flex; flex-direction:column; gap:6px; }
+.gtSub { display:flex; align-items:center; gap:8px; font-size:14px; }
+.gtSub.done > span, .gtSub.done input { text-decoration:line-through; color:var(--muted); }
+.gtCheck.small { width:18px; height:18px; flex:0 0 18px; font-size:11px; margin:0; }
+.gtSubLine .gtSubEdit { flex:1; display:flex; flex-direction:column; gap:6px; font-size:15px; }
+.gtSubEdit input { margin:0; padding:6px 8px; font-size:15px; }
+.gtSubEdit .gtSub input { flex:1; min-width:0; }
+.gtSubEdit #gptSubNew { border-style:dashed; }
+/* drag: the grip on a row; the thing being dragged; the tab it is over */
+.gtGrip { flex:0 0 22px; width:22px; height:22px; margin-top:1px; color:var(--faint); cursor:grab; touch-action:none; display:inline-flex; align-items:center; justify-content:center; }
+.gtGrip svg { width:18px; height:18px; }
+.gtItem.gtDragging, .gtTab.gtDragging { opacity:.55; }
+.gtItem.gtDragging .gtRow { background:var(--surface2); border-radius:12px; }
+.gtTab.gtDrop { background:var(--accentSoft); border-radius:10px 10px 0 0; }
+body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
+.gtBadge { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding:0 6px; border-radius:999px; background:var(--bad); color:var(--surface); font-size:12px; font-weight:800; line-height:1; margin-left:6px; vertical-align:1px; }
+.mtFold .mtHead .heroGo { font-size:22px; color:var(--muted); }
+.gtKind { margin-right:6px; opacity:.75; } .gtTab .gtKind { font-size:13px; } .gtListHead .gtKind { font-size:17px; vertical-align:-2px; }
+/* asking another ministry: find it by department, or search */
+.gtFind { display:flex; align-items:center; gap:8px; margin:0 0 6px; color:var(--muted); } .gtFind input { flex:1; margin:0; }
+.gtPick { max-height:260px; overflow-y:auto; border:1px solid var(--line); border-radius:12px; padding:4px 0; margin:0 0 6px; }
+.gtPickDept { font-size:11.5px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; color:var(--muted); padding:8px 12px 2px; }
+.gtPickIt { display:block; width:100%; text-align:left; background:none; border:0; padding:9px 12px 9px 20px; font:inherit; font-size:15px; color:var(--ink); cursor:pointer; }
+.gtPickIt:hover { background:var(--surface2); }
+.gtPicked { display:flex; align-items:center; gap:8px; width:100%; text-align:left; background:var(--surface2); border:0; border-radius:12px; padding:10px 12px; font:inherit; color:var(--ink); cursor:pointer; margin:0 0 6px; }
+.gtPicked span { color:var(--muted); font-size:13px; } .gtPicked .gtPickedChange { margin-left:auto; color:var(--accent); font-weight:700; }
+.calMeta svg, .calCal svg { width:12px; height:12px; vertical-align:-2px; }
+/* the Calendar's month, like Google Calendar's: Sunday to Saturday, a dot per thing */
+.gcNav { display:flex; align-items:center; gap:6px; margin:2px 0 8px; }
+.gcTitle { flex:1; text-align:center; font-weight:800; font-size:17px; }
+.gcNav .linkbtn.inline { width:auto; margin:0; padding:6px 10px; }
+.gcGrid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:2px; background:var(--surface); border-radius:16px; padding:8px 6px 6px; margin:0 0 10px; }
+.gcHead { text-align:center; font-size:11px; font-weight:700; color:var(--muted); padding:2px 0 6px; }
+.gcCell { display:flex; flex-direction:column; align-items:center; gap:3px; min-height:46px; padding:4px 0 3px; background:none; border:0; border-radius:10px; font:inherit; color:var(--ink); cursor:pointer; min-width:0; }
+.gcCell.out { color:var(--faint); }
+.gcCell.sel { background:var(--surface2); }
+.gcNum { width:26px; height:26px; line-height:26px; border-radius:50%; font-size:14px; font-weight:600; text-align:center; }
+.gcCell.today .gcNum { background:var(--accent); color:var(--accentInk); }
+.gcDots { display:flex; gap:3px; min-height:6px; align-items:center; }
+.gcDot { width:6px; height:6px; border-radius:50%; background:var(--calc); }
+.gcMore { font-size:9px; color:var(--muted); line-height:6px; }
+.cal-task { --calc:var(--accent); }
+/* which calendars show: Google Calendar's ticked list, as chips */
+.gcLayers { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; }
+.gcLayer { display:inline-flex; align-items:center; gap:7px; padding:6px 12px 6px 7px; border-radius:999px; border:1px solid var(--border2); background:var(--surface); font:inherit; font-size:13.5px; font-weight:600; color:var(--muted); cursor:pointer; }
+.gcLayer.on { color:var(--ink); border-color:var(--calc); }
+.gcBox { width:18px; height:18px; border-radius:5px; border:2px solid var(--calc); display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:var(--accentInk); background:none; }
+.gcLayer.on .gcBox { background:var(--calc); }
+.calTaskRow { align-items:flex-start; cursor:default; gap:8px; }
+.calTaskRow .gtCheck { margin-top:2px; }
+.calTaskOpen { flex:1; display:flex; gap:10px; min-width:0; background:none; border:0; padding:0; font:inherit; color:var(--ink); text-align:left; cursor:pointer; }
+.calTaskOpen .calWhen { flex-basis:56px; }
 /* The office's own reports from QuickBooks (Oct 2026) */
 .qrRow { display:flex; align-items:flex-start; gap:8px; padding:8px 0; border-bottom:1px solid var(--line); }
 .qrOpen { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; text-align:left; background:none; border:0; padding:0; font:inherit; color:var(--ink); cursor:pointer; }

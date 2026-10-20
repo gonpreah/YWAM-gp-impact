@@ -107,12 +107,23 @@ const main = p => p.$eval('#main', e => e.innerText);
   ok('My Home: 📅 Coming up, the next days', /Worship night/.test(home) && /Sokha's birthday|Sokha’s birthday/.test(home) && /today/i.test(home), home.slice(0, 200));
   await page.click('#goCalendar'); await page.waitForTimeout(800);
   const txt = await main(page);
-  ok('the Calendar: day by day — times, all day, a stay with its last day', /Worship night/.test(txt) && /3:00/.test(txt) && /All day/.test(txt) && /Grace Church team staying/.test(txt) && /until/.test(txt), txt.slice(0, 400));
+  ok('the Calendar: a month grid with dots, today marked, then the days from today on — times, all day, a stay with its last day', !!(await page.$('.gcGrid')) && (await page.$$eval('.gcCell', c => c.length)) === 42 && !!(await page.$('.gcCell.today.sel .gcNum')) && (await page.$$eval('.gcDot', d => d.length)) >= 3 && /Worship night/.test(txt) && /3:00/.test(txt) && /All day/.test(txt) && /Grace Church team staying/.test(txt) && /until/.test(txt), txt.slice(0, 400));
+  await page.click('.gcCell[data-calday="' + day(2) + '"]'); await page.waitForTimeout(300);
+  ok('tapping a day lists from that day: the team\'s stay, not the worship night before it', /Grace Church/.test(await main(page)) && !/Worship night/.test(await main(page)) && !!(await page.$('.gcCell.sel[data-calday="' + day(2) + '"]')));
   ok('… and never the secret address', !(await page.content()).includes('private-abc123'));
   await page.click('.calEv:has-text("Grace Church")'); await page.waitForTimeout(300);
   ok('tapping an event shows its details', /12 people/.test(await main(page)));
+  /* the ticked list of what shows, like Google Calendar's */
+  ok('chips to tick each calendar on or off: Siem Reap events', !!(await page.$('.gcLayer.on[data-callayer]')) && /Siem Reap events/.test(await page.$eval('.gcLayers', e => e.innerText)));
+  await page.click('.gcLayer:has-text("Siem Reap events")'); await page.waitForTimeout(300);
+  ok('off: its events leave the grid and the list', !/Grace Church/.test(await main(page)) && !(await page.$('.gcDot.cal-blue')) && /Everything is switched off|Nothing on the calendar/.test(await main(page)));
+  await page.reload({ waitUntil: 'load' }); await page.waitForSelector('nav.bottom button', { timeout: 15000 }); await page.waitForTimeout(600);
+  await page.evaluate(() => { S.view = 'calendar'; S.cal = null; render(); }); await page.waitForTimeout(900);
+  ok('… and that is remembered on this phone', !(await page.$('.gcLayer.on[data-callayer]:has-text("Siem Reap events")')));
+  await page.click('.gcLayer:has-text("Siem Reap events")'); await page.waitForTimeout(400);
+  ok('on again: back', /Grace Church/.test(await main(page)));
   await page.click('#calNext'); await page.waitForTimeout(800);
-  ok('Later: the next month, and Back to today', !!(await page.$('#calToday')));
+  ok('›: the next month, and Today to come back', !!(await page.$('#calToday')) && !(await page.$('.gcCell.today')));
   ok('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await ctx.close();
 }

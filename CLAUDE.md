@@ -2690,13 +2690,63 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - Tests: `tests/test-students.mjs` (server, the door and the access checks), `tests/test-student-app-ui.mjs`.
 
 ## GP Tasks (Oct 2026, Uriah: "much simpler, very much like Google Tasks")
+- **Oct 2026, second pass** (Uriah: "more fluid, like Google Tasks"): no "For me" tab — everyone has
+  **My Tasks**, a personal list the server makes on first `getGpTasks` (`gptMain_()` = your oldest
+  personal list — titled **Inbox** since Oct 2026, Uriah: "like an inbox"; an old "My Tasks" is
+  renamed on the next load). **The Inbox is your own quick tasks plus everything given to you** from
+  any list (and what you asked other ministries for), each with where it came from (`gptChipName_`
+  chip); the task stays in its own list. **Filing**: drag a given task onto one of your own lists and
+  it sits there for you alone — `fileGpTask(id, listId)` → `task.filed[you] = { list, order }`
+  (`gptFiledIn_`, `gptGiven_`); `orderGpTasks` on your own list keeps given tasks' places in
+  `filed` too. Lists you can't otherwise see are never tabs (`onlyAssigned` lists only carry names).
+  **The red number** (`.gtBadge`) on the Inbox tab and My Home's GP Tasks row = `gptInboxCount_()` /
+  `gpTaskInfo.inbox`: the Inbox's own open tasks plus what you were given and haven't filed elsewhere.
+- **A ministry's GP Tasks is the same page** (Oct 2026, Uriah: "like the personal GP Tasks, just that
+  ministry's tasks — for all of the ministries"): My Ministry's "Ministry Tasks (n) ›" row
+  (`mtFoldHtml_`, `#mtToggle`) opens `S.view='tasks'` with `S.gptPageScope={dept,min}` (01-core
+  renders `gptPageHtml_(S.gptPageScope)`), titled "GP Tasks · Cafe", only that ministry's list, the
+  round ＋, ← My Ministry. `gptOpenPage_` clears the scope.
+  **Subtasks** (`subs: [{id,text,done}]`, `gptSubs_`, max 20): added in the sheet (Enter adds), shown
+  under the row, tickable there. **Drag and drop** (`gptDrag_`, mouse or finger): a task by its grip
+  up or down — `orderGpTasks(listId, ids)` sets the list's `order` ("My order" sort, `gptSort_`) — or
+  onto another list's tab (`saveGpTask {listId}`); a tab after a short hold — `saveGpListOrder(ids)`
+  → `staff.taskListOrder`, each person's own, returned as `listOrder`. The leadership row has no
+  Ministry Tasks tab any more — the Board is the place, and its tasks reach GP Tasks.
+  **A mentorship 1:1 with its time set is a task in both people's My Tasks** (`gptFromOneOnOne_` on
+  `respondToOneOnOne` with a time, `setOneOnOneTime`, `saveOneOnOneNotes` when held; `ooId`/`ooFor`
+  on the task; "1:1 with Sokha", the day and time; done when held, gone when declined). **A personal list is its owner's alone** (Uriah: "it's only to assign tasks, not
+  lists" — after Vannak's shared list showed up in his): no share option anywhere, `gptSees_` ignores
+  the old `shared` flag, `saveGpTaskList` no longer sets it. What reaches someone else is a task
+  assigned to them, in their My Tasks with the list it came from. ＋ adds into the open list (no list chooser); **＋ New list** is a small sheet (name,
+  and whose it is — inside My Ministry's fold it is that ministry's, no choice). The fold shows only
+  that ministry's lists (`gptLists_(scope)`: ministry lists for a ministry, dept lists for a dept —
+  never personal). Icons are line SVGs (`GPT_SVG`, `gptIc_()`), not the ✅ emoji — also on My Home's
+  row, the Weekly Goals button and the leadership tab. `body { min-height:100dvh }` in teams.html keeps
+  a short page reaching the bottom bar (the dark page edge used to show above it).
+- **Designated lists (Oct 2026, Uriah: "each ministry has its own designated task list")**:
+  `gptEnsureLists_` on `getGpTasks` makes My Tasks and, for each ministry the person is in or leads,
+  that ministry's one list named after it (`gptMinList_`); Campus Leadership's is one department list,
+  **Leadership team** (`GPT_LEAD_LIST`). The client offers ＋ New list for personal lists only; a
+  ministry has its one list (no New list inside My Ministry's fold). Tabs and list heads carry a kind
+  icon (lock = personal, people = ministry) and the ministry's head says "the ministry's list: add
+  tasks and give them to its people". **Ask another ministry** picks the ministry from a list by
+  department with a search box (`data-gptaskmin`), not a select.
+- **A board card is for a department, not a ministry** (Oct 2026, Uriah): `taskMin` is `'Dept|'`,
+  the card's task lands in the department's list (`gptMinList_`, named after it) given to the person;
+  the department's director hands it on to a ministry leader in GP Tasks (it lands in their Inbox).
+- **The leadership board's little tasks are GP Tasks** (`gptFromLeadTask_` on `saveLeadTask`, in the
+  Leadership team list, `leadId` on the task; the board is the source for text, owner and day; done
+  goes both ways — `gptLeadDone_`; `deleteLeadTask`/`deleteLeadCard` drop them, `deleteGpTask` on one
+  drops it off the board — `leadDropTask_`). The tasks already on the board before this link are
+  brought in once per campus on the next `getGpTasks` (`gptSyncLeadBoard_`, stamped in
+  `gpTasks.leadSynced[campus]`, no pushes). So the owner sees it in My Tasks with its day.
 - **teams/12-tasks.js** (loaded before 11-bind-boot.js; in sw.js's shell) and **GP Tasks** in api.js;
   one blob `gpTasks` = `{ lists, tasks }`. A list is a ministry's (`scope:'ministry'`, dept + ministry),
-  a department's (`'dept'`), or personal (`ownerId`, `shared` = others on the campus see it). A task:
+  a department's (`'dept'`), or personal (`ownerId`; `shared` is an old flag, no longer honoured). A task:
   title, notes, `due` + `time` (a time needs a day), `assignees` (`assignedAt` per person), `status`
   open | request | declined, `from {id,label}` when it came from outside the list, `cardId`.
 - **Who sees what** (`gptSees_`): a ministry's list — its people and leaders (`memberOf_`, `leads`);
-  a department's — the department; personal — the owner, and the campus once shared; **Campus
+  a department's — the department; personal — the owner only; **Campus
   Leadership and admins every list on the campus** (`gptAll_` = `canLead_`), narrowed by their saved
   filter (`staff.taskFilter = {keys:['Dept|Ministry', 'Dept|']}`, `saveGpTaskFilter`, a view only — your
   own ministries' and personal lists always show). A task given to you, or one you asked for, shows
@@ -2749,4 +2799,11 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - **teams/13-calendar.js**: ☰ → **📅 Calendar** (`S.view='calendar'`, a month at a time, day by day,
   colour per calendar, tap for details, Earlier / Later / Back to today) and **📅 Coming up** on My Home
   (the next seven days, five at most, `calHomeCardHtml_`) — nothing at all until a calendar is connected.
-- tests/test-gcal.mjs, tests/test-gcal-ui.mjs.
+- tests/test-gcal.mjs, tests/test-gcal-ui.mjs.- **Month view like Google Calendar (Oct 2026):** `S.calMonth` ('YYYY-MM'), a 6-week grid from the
+  Sunday on or before the 1st (`calGridStart_`, fetched as 42 days), a dot per thing per day (3, then
+  "+n"), today ringed, the tapped day (`S.calSel`) highlighted and the list under the grid runs from that
+  day on. **GP Tasks with a day are on it** (`calTaskEvents_` from `S.gpt`, colour `cal-task`): a tick
+  circle marks them done, tapping opens them in GP Tasks (← Calendar). The My Home "Coming up" card
+  shows them too when the tasks are already loaded. The iCal feed is one way, re-read every 30 min
+  (`GCAL_TTL_MS`): what is added in Google Calendar shows within the half hour; the app never writes.
+

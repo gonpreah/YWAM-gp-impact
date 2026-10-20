@@ -12,7 +12,7 @@
    answered from here; nor are Google Fonts (the page has fallbacks).
 
    Bump SHELL when the list changes; old caches are dropped on activate. */
-var SHELL = 'gp-shell-v16';   // v16: student preview + student portal; v15: the Calendar (teams/13-calendar.js); v14: GP Tasks (teams/12-tasks.js); v2: the portal is in the shell too; v3: the Library; v4: its Khmer; v5: the letterhead;
+var SHELL = 'gp-shell-v17';   // v17: GP Tasks and the Calendar redone; v16: student preview + student portal; v15: the Calendar (teams/13-calendar.js); v14: GP Tasks (teams/12-tasks.js); v2: the portal is in the shell too; v3: the Library; v4: its Khmer; v5: the letterhead;
                               // v6: the Library's Khmer is kept the first time it's read, not downloaded on install;
                               // v7: the legal documents' Khmer (legal-km.js); v8: teams.html's code in teams/; v9: the dashboard joins it; v10: and goes (numbers are My Ministry's); v11: the finance tool (finance.js, teams/09-finance.js); v12: the app's own fonts (fonts/); v13: 360 reviews (teams/10-review360.js)
 var NET_WAIT_MS = 4000;
