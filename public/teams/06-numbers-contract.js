@@ -816,13 +816,19 @@ function mmBannerHtml_(sel, mine){
 function myMinistryHtml(){
   var h='<button class="linkbtn" id="ministryBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('My Home'))+'</button>';
   h+='<h2>'+esc(t('My Ministry'))+'</h2>';
-  var tab = S.mmTab==='okr' ? 'okr' : 'ministry';
-  h+='<div class="campusSeg" style="max-width:none">'+
+  var opts=mmOptions_(), sel=mmSelected_(opts);
+  /* Campus Leadership's own row has no Numbers / OKRs switch on top (Uriah, Oct 2026): its OKRs
+     are a tab beside My department, Board, My week and Finances (LW tabs). */
+  var selMine = !!sel && sel.dept===S.me.dept && (sel.dept===BL_DEPT ? sel.min===blMyKey_() : sel.min===S.me.ministry);
+  var leadRow = !!(sel && sel.dept===BL_DEPT && ((selMine && S.me.ministry) || (!selMine && blViewOf_(sel.min))));   // the rows with LW tabs
+  /* anything that asks for "the OKRs tab" (S.mmTab='okr') lands on a leadership row's own OKRs tab */
+  if(leadRow && S.mmTab==='okr'){ S.lwTab='okrs'; S.mmTab='ministry'; }
+  var tab = S.mmTab==='okr' && !leadRow ? 'okr' : 'ministry';
+  if(!leadRow) h+='<div class="campusSeg" style="max-width:none">'+
     '<button class="campusBtn'+(tab==='ministry'?' on':'')+'" data-mmtab="ministry">📊 '+esc(t('Numbers'))+'</button>'+
     '<button class="campusBtn'+(tab==='okr'?' on':'')+'" data-mmtab="okr">🎯 '+esc(t('OKRs'))+'</button></div>';
   if(tab==='okr') return h+okrTabHtml_();
 
-  var opts=mmOptions_(), sel=mmSelected_(opts);
   if(!sel){
     return h+'<div class="card"><p class="sub" style="margin:4px 0 10px">'+
       esc(t('Set your ministry on the Profile tab and your team’s KPIs will show up here, ready to log.'))+'</p>'+
@@ -855,17 +861,19 @@ function myMinistryHtml(){
         if(myTitle) h+='<div class="orgYou">🧭 '+esc(gpT('Your role: {title}',{title:orgTitleText_(myTitle)}))+'</div>';
       }
       if(R.focus) h+='<p class="hint lwFocus">'+esc(t(R.focus))+'</p>';
-      var TABS={ week:['🗓️',t('My week')], base: role==='dept' ? ['🗂️',view ? t(view.key) : t('My department')] : ['🧭',t('Overview')], money:['💵',t('Finances')], board:['📋',t('Board')] };
+      var TABS={ week:['🗓️',t('My week')], base: role==='dept' ? ['🗂️',view ? t(view.key) : t('My department')] : ['🧭',t('Overview')], money:['💵',t('Finances')], board:['📋',t('Board')], okrs:['🎯',t('OKRs')] };
       h+='<div class="campusSeg lwSeg" style="max-width:none">'+tabList.map(function(k){
         return '<button class="campusBtn'+(lwt===k?' on':'')+'" data-lwtab="'+k+'">'+TABS[k][0]+' '+esc(TABS[k][1])+'</button>'; }).join('')+'</div>';
       if(lwt==='week') return h+lwHtml_();
       /* the base's finances, from the Finances office's reports (teams/09-finance.js) */
       if(lwt==='money') return h+finDashHtml_();
+      /* the OKRs page itself — yours, leadership's, and (admins) every department's */
+      if(lwt==='okrs') return h+okrTabHtml_();
       // the role's own numbers first; who is on the leadership team at the foot
       if(lwt==='base') return h+leadBaseHtml_(ph)+orgCltCardHtml_(S.me.campus);
       return h+leadSectionHtml_();
     }
-    return h+ph+orgCltCardHtml_(S.me.campus)+leadSectionHtml_();
+    return h+ph+orgCltCardHtml_(S.me.campus)+leadOkrDashHtml_()+leadSectionHtml_();
   }
   /* The Cafe runs its day here — open, sell, close, the rota — and its numbers
      fill themselves in; the usual numbers are a tab away. */

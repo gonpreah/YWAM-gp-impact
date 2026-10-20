@@ -32,19 +32,19 @@ S.lw=null; S.lwWeek=null; S.lwLoading=false; S.lwForm=null; S.lwTab=lwTabKept_()
    Every role opens on Overview each time the app is opened; a tab chosen stays only for
    that visit (sessionStorage), so the page always starts where the role's work is. */
 var LW_ROLES={
-  icd:{ tabs:['base','week','board','money'], focus:'Vision, partners and new bases', tiles:['partners','plants','money','leaders'],
+  icd:{ tabs:['base','okrs','week','board','money'], focus:'Vision, partners and new bases', tiles:['partners','plants','money','leaders'],
     kinds:['partner','church','base','oneonone','teaching','gospel','meeting','deptmeeting'] },
-  ncd:{ tabs:['base','board','week','money'], focus:'The staff and the week’s rhythm', tiles:['away','oneonones','numbers','tues'],
+  ncd:{ tabs:['base','okrs','board','week','money'], focus:'The staff and the week’s rhythm', tiles:['away','oneonones','numbers','tues'],
     kinds:['oneonone','meeting','deptmeeting','church','gospel','teaching','partner','base'] },
-  dept:{ tabs:['base','board','week','money'], focus:'Your department: its ministries, leaders and numbers', tiles:[],
+  dept:{ tabs:['base','okrs','board','week','money'], focus:'Your department: its ministries, leaders and numbers', tiles:[],
     kinds:['deptmeeting','oneonone','meeting','teaching','gospel','partner','church','base'] },
-  cd:{ tabs:['base','week','board','money'], focus:'', tiles:['leaders','numbers','tues','money'], kinds:[] }
+  cd:{ tabs:['base','okrs','week','board','money'], focus:'', tiles:['leaders','numbers','tues','money'], kinds:[] }
 };
 function lwRole_(){
   var tt=typeof orgTitleOf_==='function' ? orgTitleOf_(S.me) : '';
   return tt==='International Campus Director' ? 'icd' : tt==='National Campus Director' ? 'ncd' : /^Director of /.test(tt) ? 'dept' : 'cd';
 }
-function lwTabKept_(){ try{ var v=sessionStorage.getItem('gp-lw-tab'); return ['base','week','board','money'].indexOf(v)>-1 ? v : null; }catch(e){ return null; } }
+function lwTabKept_(){ try{ var v=sessionStorage.getItem('gp-lw-tab'); return ['base','okrs','week','board','money'].indexOf(v)>-1 ? v : null; }catch(e){ return null; } }
 function lwTabKeep_(v){ try{ sessionStorage.setItem('gp-lw-tab', v); }catch(e){} }
 /* The tab to show: the one chosen this visit, else the role's first. */
 function lwTabNow_(){ var R=LW_ROLES[lwRole_()]; return R.tabs.indexOf(S.lwTab)>-1 ? S.lwTab : R.tabs[0]; }
@@ -414,7 +414,9 @@ function leadBaseHtml_(pulse){
   /* The four numbers at the top, each opening onto where it comes from — which four is the
      role's (LW_ROLES): partners and new bases for the International Director, the staff and
      the week for the National Director, the whole base for a Campus Director. */
-  var tiles=many ? LW_ROLES[V ? V.role : lwRole_()].tiles : [];
+  /* The dashboard (Uriah, Oct 2026): this quarter's OKR progress and the board lead for
+     every role, each opening its tab; then the role's own (LW_ROLES). */
+  var tiles=['okr','board'].concat(many ? LW_ROLES[V ? V.role : lwRole_()].tiles : []);
   if(V) tiles=tiles.map(function(k){ return k==='partners' ? 'numbers' : k; });   // partners are each director's own
   if(tiles.indexOf('partners')>-1 || tiles.indexOf('plants')>-1){ if(!S.lw && !S.lwLoading && !S.lwErr) lwLoad_(S.lwWeek||thisWeek()); }
   var away={}, ones=0;
@@ -422,7 +424,12 @@ function leadBaseHtml_(pulse){
   var L=S.lw, today=new Date(todayStr()+'T00:00:00');
   var due=L ? L.partners.filter(function(p){ return !p.last || (today-new Date(p.last+'T00:00:00'))/86400000>30; }).length : null;
   var plans=L ? L.plants.filter(function(p){ return p.stage!=='launched'; }).length : null;
+  var lo=leadOkrs_(), lR=baseR(), okrPct=lo.length ? Math.round(lo.reduce(function(a,o){ return a+lR.objProgress(o); },0)/lo.length) : null;
+  var openCards=S.lead && S.lead.cards ? S.lead.cards.filter(function(c){ return c.col!==leadDoneId_(); }).length : null;
   var TILE={
+    okr:'<button class="mmTile lbTileBtn lbNav" data-lwtab="okrs" id="lbOkrTile"><div class="mmTileName">🎯 '+esc(gpT('Q{q} OKRs',{q:leadQNow_()}))+'</div><div class="mmTileNum">'+(okrPct===null ? '—' : okrPct+'%')+'</div>'+
+      (okrPct===null ? '<div class="mmTileSub">'+esc(t('None set yet'))+'</div>' : '<div class="leadBar"><div style="width:'+okrPct+'%;background:'+gpRingColor(okrPct)+'"></div></div>')+'</button>',
+    board:'<button class="mmTile lbTileBtn lbNav" data-lwtab="board" id="lbBoardTile"><div class="mmTileName">📋 '+esc(t('Board'))+'</div><div class="mmTileNum">'+(openCards===null ? '…' : openCards)+'</div><div class="mmTileSub">'+esc(t('open cards'))+'</div></button>',
     leaders:'<a class="mmTile" href="#lbLeaders"><div class="mmTileName">👑 '+esc(t('Clear leaders'))+'</div><div class="mmTileNum">'+(rows.length-none.length)+' / '+rows.length+'</div></a>',
     numbers:'<a class="mmTile" href="#lbPulse"><div class="mmTileName">📊 '+esc(t('Numbers in'))+'</div><div class="mmTileNum">'+(pulseIn && ofN ? inN+' / '+ofN : '…')+'</div></a>',
     tues:'<a class="mmTile" href="#lbTues"><div class="mmTileName">🎤 '+esc(gpT('Tuesday {date}',{date:hospDate_(next)}))+'</div><div class="mmTileNum lbTileWho">'+esc(leadTuesWho_(tr && tr.facilitator) || '—')+'</div></a>',

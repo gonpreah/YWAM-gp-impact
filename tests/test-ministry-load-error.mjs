@@ -58,7 +58,7 @@ async function open(who, failFn) {
   await page.click('nav.bottom [data-tab="ministry"]');
   await page.waitForTimeout(800);
   // Campus Leadership opens on its own OKRs and meeting board — this file is about another ministry's numbers, so go to one
-  if (await page.$('#leadOkrs')) { await page.evaluate(() => { S.mmBrowseDept = 'Community Service'; S.mmBrowseMinistry = 'Cafe'; render(); }); await page.waitForTimeout(800); }
+  if (await page.$('.lwSeg, #leadOkrs')) { await page.evaluate(() => { S.mmBrowseDept = 'Community Service'; S.mmBrowseMinistry = 'Cafe'; render(); }); await page.waitForTimeout(800); }
   return { ctx, page, errors, sent, recover: () => { failing = false; } };
 }
 
