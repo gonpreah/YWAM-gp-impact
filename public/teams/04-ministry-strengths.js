@@ -32,19 +32,19 @@ S.lw=null; S.lwWeek=null; S.lwLoading=false; S.lwForm=null; S.lwTab=lwTabKept_()
    Every role opens on Overview each time the app is opened; a tab chosen stays only for
    that visit (sessionStorage), so the page always starts where the role's work is. */
 var LW_ROLES={
-  icd:{ tabs:['base','okrs','week','board','money'], focus:'Vision, partners and new bases', tiles:['partners','plants','money','leaders'],
+  icd:{ tabs:['base','okrs','week','board','tasks','money'], focus:'Vision, partners and new bases', tiles:['partners','plants','money','leaders'],
     kinds:['partner','church','base','oneonone','teaching','gospel','meeting','deptmeeting'] },
-  ncd:{ tabs:['base','okrs','board','week','money'], focus:'The staff and the week’s rhythm', tiles:['away','oneonones','numbers','tues'],
+  ncd:{ tabs:['base','okrs','board','tasks','week','money'], focus:'The staff and the week’s rhythm', tiles:['away','oneonones','numbers','tues'],
     kinds:['oneonone','meeting','deptmeeting','church','gospel','teaching','partner','base'] },
-  dept:{ tabs:['base','okrs','board','week','money'], focus:'Your department: its ministries, leaders and numbers', tiles:[],
+  dept:{ tabs:['base','okrs','board','tasks','week','money'], focus:'Your department: its ministries, leaders and numbers', tiles:[],
     kinds:['deptmeeting','oneonone','meeting','teaching','gospel','partner','church','base'] },
-  cd:{ tabs:['base','okrs','week','board','money'], focus:'', tiles:['leaders','numbers','tues','money'], kinds:[] }
+  cd:{ tabs:['base','okrs','week','board','tasks','money'], focus:'', tiles:['leaders','numbers','tues','money'], kinds:[] }
 };
 function lwRole_(){
   var tt=typeof orgTitleOf_==='function' ? orgTitleOf_(S.me) : '';
   return tt==='International Campus Director' ? 'icd' : tt==='National Campus Director' ? 'ncd' : /^Director of /.test(tt) ? 'dept' : 'cd';
 }
-function lwTabKept_(){ try{ var v=sessionStorage.getItem('gp-lw-tab'); return ['base','okrs','week','board','money'].indexOf(v)>-1 ? v : null; }catch(e){ return null; } }
+function lwTabKept_(){ try{ var v=sessionStorage.getItem('gp-lw-tab'); return ['base','okrs','week','board','tasks','money'].indexOf(v)>-1 ? v : null; }catch(e){ return null; } }
 function lwTabKeep_(v){ try{ sessionStorage.setItem('gp-lw-tab', v); }catch(e){} }
 /* The tab to show: the one chosen this visit, else the role's first. */
 function lwTabNow_(){ var R=LW_ROLES[lwRole_()]; return R.tabs.indexOf(S.lwTab)>-1 ? S.lwTab : R.tabs[0]; }

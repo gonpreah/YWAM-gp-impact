@@ -10160,6 +10160,15 @@ async function saveGpTask(username, pin, task) {
   staff.forEach(function (r) { if (r.active !== false && !r.archived && !isApplicant_(r)) onCampus[r.id] = r; });
   let t = x.id ? d.tasks.find(function (y) { return y.id === x.id; }) : null;
   if (x.id && !t) return { ok: false, err: 'not_found' };
+  /* "Ask another ministry": by its name, into its first list (made if it has none yet) */
+  if (!t && !x.listId && x.askMin) {
+    const p = String(x.askMin).split('|'), key = p.length === 2 && p[0] ? normKey_(str_(p[0], 80) + '|' + str_(p[1], 80), 2) : '';
+    if (!key) return { ok: false, err: 'bad_ministry' };
+    const kp = key.split('|'), scope = kp[1] ? 'ministry' : 'dept';
+    let to = d.lists.find(function (l) { return l.campus === s.campus && l.scope === scope && l.dept === kp[0] && (l.ministry || '') === kp[1]; });
+    if (!to) { to = { id: gptId_('tl'), campus: s.campus, scope: scope, dept: kp[0], ministry: kp[1], ownerId: '', shared: false, title: 'Tasks', order: d.lists.length, created: now, by: s.id }; d.lists.push(to); }
+    x.listId = to.id;
+  }
   const L = d.lists.find(function (l) { return l.id === (t ? t.listId : x.listId); });
   if (!L) return { ok: false, err: 'no_list' };
   const edits = gptEdits_(s, L), assigned = t && (t.assignees || []).indexOf(s.id) > -1;

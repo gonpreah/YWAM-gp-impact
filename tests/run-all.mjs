@@ -127,6 +127,8 @@ const BROWSER = [
   'test-habit-schedule.mjs', // habits with a schedule (which days), and the streak that follows it
   'test-whos-here-ui.mjs',    // Base's On campus now and Who's here: staff (away dimmed), teams with portal people, students, guests
   'test-home-layout-ui.mjs',  // My Home: sections in order, said once; Updates capped; annual goals folded; tiles; 320px Khmer
+  'test-gp-tasks.mjs',  // GP Tasks: ministry/department/personal lists, who sees and changes what, requests, Campus Leadership, the filter, board cards
+  'test-gp-tasks-ui.mjs',  // GP Tasks in the browser: lists, Enter to add, day/time/person, the bell, asking another ministry, My Ministry's tab, the board card
   'test-students.mjs',  // students: profiles from SR Hospitality, invite + Google join, the student door (own data only), LD-only mentors
   'test-student-app-ui.mjs',  // the student GP app: staff Students page + invite, portal Go to GP app, student mode tabs/home/menu, mentor accept
   'test-team-personality-ui.mjs',  // Team → Personalities: the team's mix from shared types only, by campus / department / ministry

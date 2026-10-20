@@ -77,6 +77,9 @@ r = await call('respondGpTask', [...as('cora'), rq2.id, false]);
 ok('… or declines', task(r, 'Cater a wedding').status === 'declined');
 r = await call('getMyBoot', as('hana'));
 ok('… and the one who asked is told', r.gpTaskInfo.notices.some(n => n.kind === 'declined' && n.title === 'Cater a wedding'));
+r = await call('saveGpTask', [...as('hana'), { askMin: 'Community Service|Intercession', title: 'Pray for the outreach' }]);
+const ask = task(r, 'Pray for the outreach');
+ok('“Ask another ministry” by name: a request in its list, made if it had none', ask && ask.status === 'request' && mem.gpTasks.lists.some(l => l.id === ask.listId && l.ministry === 'Intercession' && l.campus === 'siemreap'));
 r = await call('saveGpTask', [...as('pp'), { listId: cafe.id, title: 'From Poipet' }]);
 ok('another campus can\'t ask', r.ok === false);
 

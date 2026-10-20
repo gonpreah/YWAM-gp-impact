@@ -7,7 +7,7 @@
    and the Weekly Goals heading (S.view='tasks'), and as the ✅ Tasks tab on My Ministry, where
    it shows that ministry's lists. The server's rules are in api.js (GP Tasks). */
 S.gpt=null; S.gptLoading=false; S.gptErr=''; S.gptList=null; S.gptOpen=null; S.gptDraft=null;
-S.gptNewList=null; S.gptFilterOpen=false; S.gptFilterDraft=null; S.gptListMenu=false; S.gptDoneOpen=false; S.gptFrom='week';
+S.gptNewList=null; S.gptAsk=null; S.gptFilterOpen=false; S.gptFilterDraft=null; S.gptListMenu=false; S.gptDoneOpen=false; S.gptFrom='week';
 function gptLoad_(){
   if(S.gptLoading) return; S.gptLoading=true; S.gptErr='';
   run('getGpTasks',[S.auth.user,S.auth.pin],function(d){ S.gptLoading=false; if(d && d.ok) gptTake_(d); else S.gptErr=(d && d.err) || 'error'; render(); },
@@ -36,15 +36,15 @@ function gptListLabel_(L){
   if(L.scope==='personal') return L.ownerId===S.me.id ? (L.shared ? t('Personal · others can see it') : t('Personal · only you')) : gpT('{name}’s list',{name:firstName_(gptPerson_(L.ownerId).name)});
   return L.scope==='dept' ? gpT('{dept} · whole department',{dept:t(L.dept)}) : t(L.ministry)+' · '+t(L.dept);
 }
-function gptWhen_(t){
-  if(!t.due) return '';
-  var d=new Date(t.due+'T'+(t.time||'12:00')), today=todayStr(), s;
+function gptWhen_(x){
+  if(!x.due) return '';
+  var d=new Date(x.due+'T'+(x.time||'12:00')), today=todayStr(), s;
   var tm=new Date(); tm.setDate(tm.getDate()+1); var tomorrow=tm.getFullYear()+'-'+('0'+(tm.getMonth()+1)).slice(-2)+'-'+('0'+tm.getDate()).slice(-2);
-  s = t.due===today ? t('Today') : t.due===tomorrow ? t('Tomorrow') : d.toLocaleDateString(LANG==='km'?'km-KH':'en-GB', { weekday:'short', day:'numeric', month:'short' });
-  if(t.time) s+=', '+d.toLocaleTimeString(LANG==='km'?'km-KH':'en-US', { hour:'numeric', minute:'2-digit' });
+  s = x.due===today ? t('Today') : x.due===tomorrow ? t('Tomorrow') : d.toLocaleDateString(LANG==='km'?'km-KH':'en-GB', { weekday:'short', day:'numeric', month:'short' });
+  if(x.time) s+=', '+d.toLocaleTimeString(LANG==='km'?'km-KH':'en-US', { hour:'numeric', minute:'2-digit' });
   return s;
 }
-function gptOverdue_(t){ return !t.done && t.due && t.due<todayStr(); }
+function gptOverdue_(x){ return !x.done && x.due && x.due<todayStr(); }
 function gptSort_(a,b){ var ad=a.due||'9999', bd=b.due||'9999'; return ad<bd ? -1 : ad>bd ? 1 : ((a.time||'99')<(b.time||'99') ? -1 : (a.time||'99')>(b.time||'99') ? 1 : String(a.created).localeCompare(String(b.created))); }
 /* the page: the lists across the top, the one open below — like Google Tasks on a phone */
 function gptPageHtml_(scope, embedded){
@@ -64,11 +64,24 @@ function gptPageHtml_(scope, embedded){
     }).join('')+
     '<button class="gptChip gptAdd" id="gptNewListBtn">＋ '+esc(t('New list'))+'</button></div>'+
     (G.canAll && !scope ? '<button class="gptFilterBtn'+(G.filter ? ' on' : '')+'" id="gptFilterBtn" aria-label="'+esc(t('Filter'))+'">⚙️</button>' : '')+'</div>';
+  if(!scope && !embedded) h+='<button class="linkbtn inline gptAskBtn" id="gptAskBtn">🤝 '+esc(t('Ask another ministry for help'))+'</button>';
+  if(S.gptAsk) h+=gptAskHtml_();
   if(S.gptFilterOpen && G.canAll && !scope) h+=gptFilterHtml_();
   if(S.gptNewList) h+=gptNewListHtml_(scope);
   if(!S.gptList) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(scope ? gpT('{ministry} has no task list yet — make one, and everyone in it shares it.',{ministry:t(scope.min)}) : t('No lists yet.'))+'</p>'+
     (scope ? '<button class="btn" style="margin:10px 0 0" data-gptmakefor="'+esc(scope.dept+'|'+scope.min)+'">＋ '+esc(gpT('Make a list for {ministry}',{ministry:t(scope.min)}))+'</button>' : '')+'</div>';
   return h+(S.gptList==='mine' ? gptMineHtml_() : gptListHtml_(gptListById_(S.gptList)));
+}
+/* asking another ministry: it lands in their list as a request they accept or decline */
+function gptAskHtml_(){
+  var A=S.gptAsk, deps=getDepartments(S.me.campus), opts=[];
+  Object.keys(deps).forEach(function(d){ Object.keys(deps[d]||{}).forEach(function(m){ if(!(d===S.me.dept && m===S.me.ministry)) opts.push([d+'|'+m, t(m)+' · '+t(d)]); }); });
+  return '<div class="card gptNewList"><div class="goalCardTitle">🤝 '+esc(t('Ask another ministry for help'))+'</div>'+
+    '<p class="hint" style="margin:0 0 6px">'+esc(t('It shows in their list as a request; they say whether they can take it on.'))+'</p>'+
+    '<label class="f">'+esc(t('Which ministry'))+'</label><select id="gptAskMin"><option value="">—</option>'+opts.map(function(x){ return '<option value="'+esc(x[0])+'"'+(A.min===x[0]?' selected':'')+'>'+esc(x[1])+'</option>'; }).join('')+'</select>'+
+    '<label class="f">'+esc(t('What do you need?'))+'</label><input type="text" id="gptAskTitle" maxlength="200" value="'+esc(A.title||'')+'" placeholder="'+esc(t('e.g. Coffee for the team arriving Friday'))+'">'+
+    '<label class="f">'+esc(t('By when (optional)'))+'</label><input type="date" id="gptAskDue" value="'+esc(A.due||'')+'">'+
+    '<div class="btnRow"><button class="btn" id="gptAskSend">'+esc(t('Send the request'))+'</button><button class="btn ghost" id="gptAskCancel">'+esc(t('Cancel'))+'</button></div></div>';
 }
 function gptFilterHtml_(){
   var G=S.gpt, D=S.gptFilterDraft, keys={};
@@ -201,6 +214,15 @@ function bindGpTasks_(){
   var saveFilter=function(keys){ run('saveGpTaskFilter',[S.auth.user,S.auth.pin,keys],function(d){ if(d && d.ok){ gptTake_(d); S.gptFilterOpen=false; S.gptFilterDraft=null; showMsg(t('Saved as your default')); } else showMsg(t('Could not save')); render(); }); };
   on('gptFilterSave', function(){ saveFilter(S.gptFilterDraft); });
   on('gptFilterAll', function(){ saveFilter(null); });
+  on('gptAskBtn', function(){ gpTap(); S.gptAsk=S.gptAsk ? null : { min:'', title:'', due:'' }; render(); });
+  var am=document.getElementById('gptAskMin'); if(am) am.onchange=function(){ S.gptAsk.min=am.value; };
+  var at=document.getElementById('gptAskTitle'); if(at) at.oninput=function(){ S.gptAsk.title=at.value; };
+  var ad=document.getElementById('gptAskDue'); if(ad) ad.onchange=function(){ S.gptAsk.due=ad.value; };
+  on('gptAskCancel', function(){ S.gptAsk=null; render(); });
+  on('gptAskSend', function(){
+    var A=S.gptAsk; if(!A.min){ showMsg(t('Choose the ministry first')); return; } if(!(A.title||'').trim()){ showMsg(t('Give it a title first')); return; }
+    gptSaveTask_({ askMin:A.min, title:A.title.trim(), due:A.due||'' }, gpT('Asked — {name} will see it in their list',{name:t(A.min.split('|')[1])}), function(){ S.gptAsk=null; S.gptList='mine'; });
+  });
   on('gptNewListBtn', function(){ gpTap(); S.gptNewList={ title:'', home:'personal#' }; render(); var el=document.getElementById('gptNewTitle'); if(el) el.focus(); });
   document.querySelectorAll('[data-gptmakefor]').forEach(function(b){ b.onclick=function(){ S.gptNewList={ title:t('Tasks'), home:'ministry#'+b.getAttribute('data-gptmakefor') }; render(); }; });
   var nt=document.getElementById('gptNewTitle'); if(nt) nt.oninput=function(){ S.gptNewList.title=nt.value; };

@@ -821,11 +821,14 @@ function myMinistryHtml(){
      are a tab beside My department, Board, My week and Finances (LW tabs). */
   var selMine = !!sel && sel.dept===S.me.dept && (sel.dept===BL_DEPT ? sel.min===blMyKey_() : sel.min===S.me.ministry);
   var leadRow = !!(sel && sel.dept===BL_DEPT && ((selMine && S.me.ministry) || (!selMine && blViewOf_(sel.min))));   // the rows with LW tabs
-  var tab = S.mmTab==='okr' && !leadRow ? 'okr' : 'ministry';
+  var tab = (S.mmTab==='okr' || S.mmTab==='tasks') && !leadRow ? S.mmTab : 'ministry';
   if(!leadRow) h+='<div class="campusSeg" style="max-width:none">'+
     '<button class="campusBtn'+(tab==='ministry'?' on':'')+'" data-mmtab="ministry">📊 '+esc(t('Numbers'))+'</button>'+
-    '<button class="campusBtn'+(tab==='okr'?' on':'')+'" data-mmtab="okr">🎯 '+esc(t('OKRs'))+'</button></div>';
+    '<button class="campusBtn'+(tab==='okr'?' on':'')+'" data-mmtab="okr">🎯 '+esc(t('OKRs'))+'</button>'+
+    '<button class="campusBtn'+(tab==='tasks'?' on':'')+'" data-mmtab="tasks">✅ '+esc(t('Tasks'))+'</button></div>';
   if(tab==='okr') return h+okrTabHtml_();
+  /* GP Tasks: this ministry's lists (and its department's), picked with the same picker */
+  if(tab==='tasks' && sel){ S.gptFrom='ministry'; return h+mmPickerHtml_(opts, sel)+gptPageHtml_({ dept:sel.dept, min:sel.min }, true); }
 
   if(!sel){
     return h+'<div class="card"><p class="sub" style="margin:4px 0 10px">'+
@@ -859,7 +862,7 @@ function myMinistryHtml(){
         if(myTitle) h+='<div class="orgYou">🧭 '+esc(gpT('Your role: {title}',{title:orgTitleText_(myTitle)}))+'</div>';
       }
       if(R.focus) h+='<p class="hint lwFocus">'+esc(t(R.focus))+'</p>';
-      var TABS={ week:['🗓️',t('My week')], base: role==='dept' ? ['🗂️',view ? t(view.key) : t('My department')] : ['🧭',t('Overview')], money:['💵',t('Finances')], board:['📋',t('Board')], okrs:['🎯',t('OKRs')] };
+      var TABS={ tasks:['✅',t('Tasks')], week:['🗓️',t('My week')], base: role==='dept' ? ['🗂️',view ? t(view.key) : t('My department')] : ['🧭',t('Overview')], money:['💵',t('Finances')], board:['📋',t('Board')], okrs:['🎯',t('OKRs')] };
       h+='<div class="campusSeg lwSeg" style="max-width:none">'+tabList.map(function(k){
         return '<button class="campusBtn'+(lwt===k?' on':'')+'" data-lwtab="'+k+'">'+TABS[k][0]+' '+esc(TABS[k][1])+'</button>'; }).join('')+'</div>';
       if(lwt==='week') return h+lwHtml_();
@@ -867,6 +870,8 @@ function myMinistryHtml(){
       if(lwt==='money') return h+finDashHtml_();
       /* the OKRs page itself — yours, leadership's, and (admins) every department's */
       if(lwt==='okrs') return h+okrTabHtml_();
+      /* GP Tasks: every list on the campus, narrowed by the filter they keep (12-tasks.js) */
+      if(lwt==='tasks'){ S.gptFrom='ministry'; return h+gptPageHtml_(null, true); }
       // the role's own numbers first; who is on the leadership team at the foot
       if(lwt==='base') return h+leadBaseHtml_(ph)+orgCltCardHtml_(S.me.campus);
       return h+leadSectionHtml_();
