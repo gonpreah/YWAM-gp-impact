@@ -2688,6 +2688,8 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - **My Ministry has no Numbers / OKRs / Tasks switch on top** (Uriah: "the numbers already show below"):
   the numbers simply show; **🎯 OKRs ›** is a small button by the title (`data-mmtab="okr"`), and the OKRs
   page has "← Back to the numbers".
+- **Assigning** (`gptPeopleOptions_`): the add row has **👤 Assign to…** and a task's editor **＋ Add someone** —
+  both list the list's own people first, under the ministry's (or department's) name, then "Everyone else".
 - **A new task can have its day and time as it is made** (the add row's date + time and Add; Enter
   still adds); blank, they say "📅 Set date and time", and so does a task with no day in the list. The Goals & Tasks page's own ✅ Tasks (steps toward your annual
   goals) is separate and unchanged.

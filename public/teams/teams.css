@@ -2217,3 +2217,6 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .gptWhenLbl { flex:1 0 100%; font-size:13px; font-weight:600; color:var(--muted); }
 .gptNoWhen { color:var(--faint); font-style:italic; }
 @media (max-width:360px){ .gptAddWhen { padding-left:0; } }
+
+/* GP Tasks: who it's for, as a task is made */
+.gptAddWhen select { width:auto; flex:1 1 100%; margin:0; }
