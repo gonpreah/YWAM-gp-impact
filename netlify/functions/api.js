@@ -10536,7 +10536,9 @@ function gptMinList_(d, campus, dept, ministry, by) {
 }
 function gptMyList_(d, s) {   // the person's Inbox (their oldest personal list), made if they have none
   const mine = d.lists.filter(function (L) { return L.scope === 'personal' && L.ownerId === s.id; }).sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
-  if (mine.length) { const was = mine[0].title === 'My Tasks'; if (was) mine[0].title = 'Inbox'; return { list: mine[0], made: was }; }   // Oct 2026: My Tasks became the Inbox
+  /* Oct 2026: the first personal list is the Inbox, whatever it was called before the Inbox existed
+     ("My Tasks", or one someone made themselves — "Personal", "Tasks"…); renamed once */
+  if (mine.length) { const was = mine[0].title !== 'Inbox' && !mine[0].inboxKept; if (was) { mine[0].title = 'Inbox'; mine[0].inboxKept = true; } return { list: mine[0], made: was }; }
   if (d.lists.length >= GPT_MAX.lists) return { list: null, made: false };
   const L = { id: gptId_('tl'), campus: s.campus, scope: 'personal', dept: '', ministry: '', ownerId: s.id, shared: false, title: 'Inbox', order: d.lists.length, created: new Date().toISOString(), by: s.id };
   d.lists.push(L);

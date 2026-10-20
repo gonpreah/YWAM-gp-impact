@@ -60,8 +60,8 @@ function gptMain_(){
   return G.lists.filter(function(L){ return L.scope==='personal' && L.ownerId===S.me.id; }).sort(function(a,b){ return (a.order||0)-(b.order||0); })[0] || null;
 }
 /* a designated list is named after its ministry (or "Leadership team"), so it reads in Khmer too */
-function gptTitle_(L){ return (L.title==='My Tasks' || L.title==='Inbox') ? t('Inbox') : L.title==='Leadership team' ? t('Leadership team') : (L.scope!=='personal' && L.title===(L.ministry||L.dept)) ? t(L.title) : L.title; }
 function gptIsMain_(L){ var m=gptMain_(); return !!(m && L && L.id===m.id); }
+function gptTitle_(L){ return (gptIsMain_(L) || L.title==='My Tasks' || L.title==='Inbox') ? t('Inbox') : L.title==='Leadership team' ? t('Leadership team') : (L.scope!=='personal' && L.title===(L.ministry||L.dept)) ? t(L.title) : L.title; }
 function gptKindIc_(L){ return gptIc_(gptIsMain_(L) ? 'inbox' : L.scope==='personal' ? 'lock' : 'team', 'gtKind'); }
 /* where a task given to you sits among your lists: where you filed it, else your Inbox */
 function gptFiledIn_(x){ var f=x.filed && x.filed[S.me.id]; var L=f && gptListById_(f.list); return L && L.scope==='personal' && L.ownerId===S.me.id ? L.id : (gptMain_()||{}).id; }
@@ -148,7 +148,7 @@ function gtMenuHtml_(scope){
   var G=S.gpt, L=S.gptList ? gptListById_(S.gptList) : null, it=function(id, label){ return '<button class="gtMenuIt" id="'+id+'">'+label+'</button>'; };
   var main=gptMain_(), isMain=!!(L && main && L.id===main.id);
   return '<div class="scrim" id="gtMenuScrim"></div><div class="gtMenu" role="menu">'+
-    (L && L.canEdit ? it('gtRename', '✏️ '+esc(t('Rename list'))) : '')+
+    (L && L.canEdit && !isMain ? it('gtRename', '✏️ '+esc(t('Rename list'))) : '')+
     (!scope ? it('gptAskBtn', '🤝 '+esc(t('Ask another ministry for help'))) : '')+
     (G.canAll && !scope ? it('gptFilterBtn', '⚙️ '+esc(t('Which lists to show'))) : '')+
     (L && L.canEdit && !isMain ? it('gptListDelete', '🗑 '+esc(t('Delete the list'))) : '')+'</div>';
