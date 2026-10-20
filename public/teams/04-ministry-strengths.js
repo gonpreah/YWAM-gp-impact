@@ -425,7 +425,7 @@ function leadBaseHtml_(pulse){
   var due=L ? L.partners.filter(function(p){ return !p.last || (today-new Date(p.last+'T00:00:00'))/86400000>30; }).length : null;
   var plans=L ? L.plants.filter(function(p){ return p.stage!=='launched'; }).length : null;
   var lo=leadOkrs_(), lR=baseR(), okrPct=lo.length ? Math.round(lo.reduce(function(a,o){ return a+lR.objProgress(o); },0)/lo.length) : null;
-  var openCards=S.lead ? S.lead.cards.filter(function(c){ return c.col!==leadDoneId_(); }).length : null;
+  var openCards=S.lead && S.lead.cards ? S.lead.cards.filter(function(c){ return c.col!==leadDoneId_(); }).length : null;
   var TILE={
     okr:'<button class="mmTile lbTileBtn lbNav" data-lwtab="okrs" id="lbOkrTile"><div class="mmTileName">🎯 '+esc(gpT('Q{q} OKRs',{q:leadQNow_()}))+'</div><div class="mmTileNum">'+(okrPct===null ? '—' : okrPct+'%')+'</div>'+
       (okrPct===null ? '<div class="mmTileSub">'+esc(t('None set yet'))+'</div>' : '<div class="leadBar"><div style="width:'+okrPct+'%;background:'+gpRingColor(okrPct)+'"></div></div>')+'</button>',

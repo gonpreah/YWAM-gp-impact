@@ -821,6 +821,8 @@ function myMinistryHtml(){
      are a tab beside My department, Board, My week and Finances (LW tabs). */
   var selMine = !!sel && sel.dept===S.me.dept && (sel.dept===BL_DEPT ? sel.min===blMyKey_() : sel.min===S.me.ministry);
   var leadRow = !!(sel && sel.dept===BL_DEPT && ((selMine && S.me.ministry) || (!selMine && blViewOf_(sel.min))));   // the rows with LW tabs
+  /* anything that asks for "the OKRs tab" (S.mmTab='okr') lands on a leadership row's own OKRs tab */
+  if(leadRow && S.mmTab==='okr'){ S.lwTab='okrs'; S.mmTab='ministry'; }
   var tab = S.mmTab==='okr' && !leadRow ? 'okr' : 'ministry';
   if(!leadRow) h+='<div class="campusSeg" style="max-width:none">'+
     '<button class="campusBtn'+(tab==='ministry'?' on':'')+'" data-mmtab="ministry">📊 '+esc(t('Numbers'))+'</button>'+

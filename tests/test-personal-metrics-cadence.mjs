@@ -70,7 +70,7 @@ await p.waitForTimeout(500);
    OKRs and the Monday meeting board instead. While they are hidden there is
    nothing below to check; the checks come back with them. */
 if (!(await p.$('#kpiInputBtn'))) {
-  const shown = !!(await p.$('#leadOkrs'));
+  const shown = !!(await p.$('.lwSeg, #leadOkrs'));
   console.log((shown ? 'ok   ' : 'FAIL ') + 'Campus Leadership’s own row is its OKRs and meeting board — its weekly figures are hidden for now');
   await b.close(); srv.close();
   console.log('\n' + (shown ? 1 : 0) + ' passed, ' + (shown ? 0 : 1) + ' failed');

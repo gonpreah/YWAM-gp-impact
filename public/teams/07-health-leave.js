@@ -434,6 +434,7 @@ function leadCardHtml_(c, R, objs){
 function leadBoardHtml_(){
   var h='<div id="leadBoard">';
   if(!S.lead){ return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.leadErr || t('Loading…'))+'</p></div></div>'; }
+  ['cols','areas','standing','cards'].forEach(function(k){ if(!Array.isArray(S.lead[k])) S.lead[k]=[]; });   // a board with nothing in it yet
   var R=baseR(), objs=leadOkrs_(), filter=S.leadFilter||'all', today=todayStr();
   var nm=leadNextMonday_();
   h+='<div class="leadHead"><div class="leadNext"><span class="leadNextLabel">'+esc(t('Next meeting'))+'</span> <b>'+esc(gpT('Monday {date}',{date:hospDate_(nm)}))+'</b></div>'+
