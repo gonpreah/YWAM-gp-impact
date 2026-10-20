@@ -2189,3 +2189,20 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .gptDoneHead { display:block; width:100%; text-align:left; background:none; border:0; padding:10px 0 4px; font:inherit; font-weight:700; color:var(--muted); cursor:pointer; }
 @media (max-width:360px){ .gptEdit, .gptReqActs { padding-left:0; } }
 .gptAskBtn { display:block; margin:-4px 0 10px; }
+
+/* Calendar (13-calendar.js): the campus's Google Calendar, day by day */
+.cal-blue { --calc:#2D6CB0; } .cal-green { --calc:#1F8A6F; } .cal-amber { --calc:#C9800F; } .cal-pink { --calc:#C2417A; } .cal-purple { --calc:#7B4FA0; } .cal-teal { --calc:#16808A; }
+.calDot { display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--calc); margin-right:5px; vertical-align:middle; }
+.calLegend { margin:0 0 8px; }
+.calNav { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 0 8px; font-weight:600; font-size:14px; }
+.calNav .btn.small { width:auto; margin:0; padding:7px 12px; }
+.calDay { padding:4px 0 8px; } .calDay + .calDay { border-top:1px solid var(--line); }
+.calDayHead { font-size:13px; font-weight:800; letter-spacing:.3px; color:var(--muted); text-transform:uppercase; padding:8px 0 4px; }
+.calDayHead.today { color:var(--accent); }
+.calEv { display:flex; gap:10px; width:100%; text-align:left; background:none; border:0; border-left:4px solid var(--calc); padding:6px 0 6px 10px; margin:4px 0; font:inherit; color:var(--ink); cursor:pointer; border-radius:2px; }
+.calWhen { flex:0 0 74px; font-size:13px; font-weight:700; color:var(--muted); padding-top:1px; }
+.calBody { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.calBody b { font-size:15px; word-break:break-word; }
+.calMeta, .calCal { font-size:12.5px; color:var(--muted); }
+.calNotes { font-size:13.5px; white-space:pre-wrap; margin-top:2px; }
+.gcalSteps { margin:0 0 6px; padding-left:20px; font-size:14px; } .gcalSteps li { margin:3px 0; }

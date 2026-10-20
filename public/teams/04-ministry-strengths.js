@@ -965,6 +965,7 @@ function homeHtml(){
   h += goalsCardHtml(goalsViewWeek());
   h += habitsCardHtml();
   h += annualGoalsHtml();
+  h += calHomeCardHtml_();   // 📅 Coming up: the campus's Google Calendar, the next seven days
   h += mentorshipCardHtml();
   h += aboutMeHtml_();
   return h;

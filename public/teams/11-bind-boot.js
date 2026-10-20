@@ -1073,6 +1073,8 @@ function bind(){
     }; });
     var sbk=document.getElementById('stuBack'); if(sbk) sbk.onclick=function(){ S.view='week'; render(); window.scrollTo(0,0); };
   }
+  bindCalendar_();
+  if(S.view==='admin' && S.adminSub==='gcal') bindAdminGcal_();
   /* GP Tasks: the page and its buttons */
   bindGpTasks_();
   [['goGpTasks','week'],['goGpTasksGoals','week']].forEach(function(x){ var b=document.getElementById(x[0]); if(b) b.onclick=function(){ gpTap(); gptOpenPage_(x[1]); }; });
