@@ -5847,8 +5847,14 @@ async function getWhosHere(username, pin, campus) {
   const staff = (await getStaff_()).filter(function (r) { return r && r.active !== false && !r.archived && !isApplicant_(r) && r.campus === campus; })
     .map(function (r) { return { id: r.id, away: away[r.id] || null }; });
   const groups = { team: [], student: [], volunteer: [], guest: [], speaker: [] };
+  let beds = null;   // SR Hospitality tonight: { total, filled } — every booking, whoever it is for
   if (campus === 'siemreap' || (await readJSON(hospKey_(campus), null))) {
     const d = await getHosp_(campus), trips = await getTeamTrips_(), cands = await getCandidates_();
+    const total = d.rooms.reduce(function (a, r) { return a + (r.beds || []).filter(function (b) { return b && !b.out; }).length; }, 0);
+    const filled = d.bookings.reduce(function (a, k) {
+      return a + (k && k.from && k.from <= today && (k.permanent || (k.to && k.to > today)) ? Math.max(Number(k.count) || 0, (k.bedIds || []).length) : 0);
+    }, 0);
+    if (total) beds = { total: total, filled: Math.min(filled, total) };
     d.bookings.forEach(function (k) {
       if (!k || WHOS_KINDS.indexOf(k.category) === -1) return;
       if (!(k.from && k.from <= today && (k.permanent || (k.to && k.to > today)))) return;
@@ -5866,7 +5872,8 @@ async function getWhosHere(username, pin, campus) {
   }
   const others = WHOS_KINDS.reduce(function (sum, kind) { return sum + groups[kind].reduce(function (a, g) { return a + g.count; }, 0); }, 0);
   const staffHere = staff.filter(function (x) { return !x.away; }).length;
-  return { ok: true, campus: campus, date: today, staff: staff, groups: groups, count: staffHere + others, staffHere: staffHere, staffAway: staff.length - staffHere };
+  return { ok: true, campus: campus, date: today, staff: staff, groups: groups, count: staffHere + others, staffHere: staffHere, staffAway: staff.length - staffHere,
+    beds: beds, capacity: beds ? Math.round(beds.filled / beds.total * 100) : null };
 }
 async function whosHereTeamPhotos(username, pin, candidateId) {
   const s = await verifyStaff_(username, pin);

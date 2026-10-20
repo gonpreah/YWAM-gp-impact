@@ -147,9 +147,13 @@ mem.goals.push({ staffId: 'me', week: WK - 1, year: YR, items: [{ text: 'Visit t
   ok('“You’re mentoring” is not shown to someone who mentors nobody', !/YOU'RE MENTORING|You're not mentoring/i.test(await page.$eval('#sec-mentor + .card', e => e.innerText)));
   ok('About me: personality and strengths side by side', !!(await page.$('.homeTiles #pSeeMine')) && !!(await page.$('.homeTiles #gsStart')));
   ok('no Leave / Profile tiles at the bottom — they are in the menu', !(await page.$('.homeTiles #goLeaveFromMe')) && !(await page.$('#goProfileFromMe')));
-  ok('My Home has a plain “Go to My Health” button', /Go to My Health/.test(await page.$eval('#goMyHealth', e => e.textContent)));
+  ok('no big “Go to My Health” button: a small › on the My Health and Mentor rows', !(await page.$('.heroHealthBtn')) && !!(await page.$('#goMyHealth .heroGo')) && !!(await page.$('#goMentorship .heroGo')));
   await page.click('#goMyHealth'); await page.waitForTimeout(400);
-  ok('… which opens My Health', await page.evaluate(() => S.view === 'health'));
+  ok('… My Health’s opens My Health', await page.evaluate(() => S.view === 'health'));
+  await page.click('nav.bottom [data-tab="week"]'); await page.waitForTimeout(400);
+  await page.click('#goMentorship'); await page.waitForTimeout(400);
+  ok('… and Mentor’s opens Mentorship', await page.evaluate(() => S.view === 'mentor'));
+  await page.click('nav.bottom [data-tab="week"]'); await page.waitForTimeout(400);
   ok('the bottom bar: My Home, My Ministry, Team, Health, Profile — the Library is in the menu now', (await page.$$eval('nav.bottom [data-tab]', bs => bs.map(b => b.dataset.tab).join())) === 'week,ministry,team,health,profile');
   await page.click('#menuBtn'); await page.waitForTimeout(300);
   ok('the menu has Leave Request and the Library — Profile and My contract are not in it', !!(await page.$('[data-menu-item="leave"]')) && !!(await page.$('[data-menu-item="library"]')) && !(await page.$('[data-menu-item="profile"]')) && !(await page.$('[data-menu-item="mycontract"]')));

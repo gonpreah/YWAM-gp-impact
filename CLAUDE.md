@@ -815,6 +815,11 @@ volunteers, guests, speakers (names from `people` / `bedNames`, else the booking
 `count` = staff here + everyone booked. Team photos load per team (`whosHereTeamPhotos`).
 tests/test-whos-here-ui.mjs.
 
+- **Capacity** (`beds`, `capacity` in getWhosHere): SR Hospitality's beds booked tonight (every booking,
+  `max(count, bedIds)`) over its beds not marked out — "· 72% full" next to On campus now on Base and
+  My Home, and "46 of 64 beds filled" on Who's here. No rooms set up → nothing shown.
+- **My Home's card** has no big "Go to My Health" button: the My Health and Mentor rows carry a small ›
+  (`.heroGo`) and open their pages; On campus now sits under the base's figures (`#goWhosHereHome`).
 ## The bottom bar (Oct 2026)
 My Home · **My Ministry** · Team · Health · **Profile** (`data-tab`; My Ministry opens on its
 Numbers view; Profile is Profile & settings, which holds **My contract** — its ← goes back to
