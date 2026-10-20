@@ -2678,6 +2678,18 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   never personal). Icons are line SVGs (`GPT_SVG`, `gptIc_()`), not the ✅ emoji — also on My Home's
   row, the Weekly Goals button and the leadership tab. `body { min-height:100dvh }` in teams.html keeps
   a short page reaching the bottom bar (the dark page edge used to show above it).
+- **Designated lists (Oct 2026, Uriah: "each ministry has its own designated task list")**:
+  `gptEnsureLists_` on `getGpTasks` makes My Tasks and, for each ministry the person is in or leads,
+  that ministry's one list named after it (`gptMinList_`); Campus Leadership's is one department list,
+  **Leadership team** (`GPT_LEAD_LIST`). The client offers ＋ New list for personal lists only; a
+  ministry has its one list (no New list inside My Ministry's fold). Tabs and list heads carry a kind
+  icon (lock = personal, people = ministry) and the ministry's head says "the ministry's list: add
+  tasks and give them to its people". **Ask another ministry** picks the ministry from a list by
+  department with a search box (`data-gptaskmin`), not a select.
+- **The leadership board's little tasks are GP Tasks** (`gptFromLeadTask_` on `saveLeadTask`, in the
+  Leadership team list, `leadId` on the task; the board is the source for text, owner and day; done
+  goes both ways — `gptLeadDone_`; `deleteLeadTask`/`deleteLeadCard` drop them, `deleteGpTask` on one
+  drops it off the board — `leadDropTask_`). So the owner sees it in My Tasks with its day.
 - **teams/12-tasks.js** (loaded before 11-bind-boot.js; in sw.js's shell) and **GP Tasks** in api.js;
   one blob `gpTasks` = `{ lists, tasks }`. A list is a ministry's (`scope:'ministry'`, dept + ministry),
   a department's (`'dept'`), or personal (`ownerId`; `shared` is an old flag, no longer honoured). A task:

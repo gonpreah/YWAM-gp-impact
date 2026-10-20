@@ -76,8 +76,13 @@ const OUT_SHOT = process.env.SHOTS || TMP;
 const main = p => p.$eval('#main', e => e.innerText);
 const T = () => (mem.gpTasks || { tasks: [] }).tasks;
 
-/* ---------- Cora: a list for the Cafe, then tasks the Google Tasks way ---------- */
+const call = (fn, args) => api.default({ method: 'POST', json: async () => ({ fn, args }), headers: new Map() }, {}).then(r => r.json());
+/* ---------- Cora: the Cafe's own list (made for it), then tasks the Google Tasks way ---------- */
 {
+  let g = await call('getGpTasks', ['cora', '1234']);
+  const cafeL = g.lists.find(l => l.scope === 'ministry' && l.ministry === 'Cafe');
+  ok('the Cafe has its designated list, named after it, the first time one of its people opens GP Tasks', !!cafeL && cafeL.title === 'Cafe' && cafeL.canEdit);
+  await call('saveGpTaskList', ['cora', '1234', { id: cafeL.id, title: 'Cafe jobs' }]);
   const { ctx, page } = await open('cora');
   ok('My Home\'s card has a GP Tasks row, and Weekly Goals a GP Tasks button', !!(await page.$('#goGpTasks')) && !!(await page.$('#goGpTasksGoals')));
   await page.click('#menuBtn'); await page.waitForTimeout(250);
@@ -88,12 +93,15 @@ const T = () => (mem.gpTasks || { tasks: [] }).tasks;
   ok('My Tasks is made for you on the server', !!myList && myList.title === 'My Tasks');
   ok('the icons are the app\'s line icons, not the ✅ emoji', !!(await page.$('.gtTitle svg')) && !/✅/.test(await main(page)));
   ok('no gap: the page reaches the bottom bar', await page.evaluate(() => document.body.getBoundingClientRect().height >= window.innerHeight - 1));
+  ok('the tabs say which is which: a lock on My Tasks, people on the Cafe\'s', !!(await page.$('.gtTab[data-gptlist="' + myList.id + '"] .gtKind')) && !!(await page.$('.gtTab[data-gptlist="' + cafeL.id + '"] .gtKind')));
   await page.click('#gptNewListBtn'); await page.waitForTimeout(200);
-  await page.fill('#gptNewTitle', 'Cafe jobs');
-  await page.selectOption('#gptNewHome', 'ministry#Community Service|Cafe');
-  await page.click('#gptNewSave'); await page.waitForTimeout(700);
-  const L = (mem.gpTasks.lists || []).find(l => l.title === 'Cafe jobs');
-  ok('a list for the Cafe, its tab open', L && L.scope === 'ministry' && L.ministry === 'Cafe' && !!(await page.$('.gtTab.on[data-gptlist="' + L.id + '"]')));
+  ok('＋ New list: a name only — it is always your own, no choosing a ministry', !!(await page.$('#gptNewTitle')) && !(await page.$('#gptNewHome')) && /only you see it/.test(await page.$eval('#gptNewListSheet', e => e.innerText)));
+  await page.fill('#gptNewTitle', 'Reading'); await page.click('#gptNewSave'); await page.waitForTimeout(700);
+  const rd = (mem.gpTasks.lists || []).find(l => l.title === 'Reading');
+  ok('… made as a personal list, its tab open', rd && rd.scope === 'personal' && rd.ownerId === 'c1' && !!(await page.$('.gtTab.on[data-gptlist="' + rd.id + '"]')));
+  await page.click('.gtTab[data-gptlist="' + cafeL.id + '"]'); await page.waitForTimeout(300);
+  const L = cafeL;
+  ok('the Cafe\'s list, open: it says it is the ministry\'s', !!(await page.$('.gtTab.on[data-gptlist="' + L.id + '"]')) && /the ministry’s list/.test(await page.$eval('.gtListHead', e => e.innerText)));
   /* ＋ → New task: title, then 🕒 and 👤 one tap each */
   await page.click('.gtFab'); await page.waitForTimeout(300);
   ok('＋ opens New task: a title, details ≡, date/time 🕒, assign 👤, Save', !!(await page.$('#gtNew #gptAddInput')) && !!(await page.$('#gtNewNotesBtn')) && !!(await page.$('#gtNewWhenBtn')) && !!(await page.$('#gptAddWho')) && !!(await page.$('#gptAddBtn')));
@@ -168,7 +176,11 @@ const T = () => (mem.gpTasks || { tasks: [] }).tasks;
   ok('Hana doesn\'t see the Cafe\'s list', !/Cafe jobs/.test(await main(page)));
   await page.click('#gtMenuBtn'); await page.waitForTimeout(200);
   await page.click('#gptAskBtn'); await page.waitForTimeout(200);
-  await page.selectOption('#gptAskMin', 'Community Service|Cafe');
+  ok('which ministry: by department, or search', !!(await page.$('#gptAskFind')) && (await page.$$eval('.gtPickDept', d => d.length)) >= 2 && !!(await page.$('[data-gptaskmin="Community Service|Cafe"]')));
+  await page.fill('#gptAskFind', 'caf'); await page.waitForTimeout(200);
+  ok('… typing narrows it to the Cafe', (await page.$$eval('[data-gptaskmin]', b => b.map(x => x.dataset.gptaskmin))).join() === 'Community Service|Cafe');
+  await page.click('[data-gptaskmin="Community Service|Cafe"]'); await page.waitForTimeout(300);
+  ok('… chosen, with Change', /Cafe/.test(await page.$eval('#gptAskChange', e => e.innerText)));
   await page.fill('#gptAskTitle', 'Coffee for the team arriving Friday');
   await page.fill('#gptAskDue', day(4));
   await page.click('#gptAskSend'); await page.waitForTimeout(700);
@@ -197,9 +209,7 @@ const T = () => (mem.gpTasks || { tasks: [] }).tasks;
   await page.click('#mtToggle'); await page.waitForTimeout(900);
   const fold = await page.$eval('#mtFold', e => e.innerText);
   ok('opened: the Cafe\'s list only — not My Tasks or any other', /Cafe jobs/.test(fold) && /Order milk/.test(fold) && !/My Tasks/.test(fold) && !(await page.$('#gptBack')));
-  await page.click('#mtFold #gptNewListBtn'); await page.waitForTimeout(200);
-  ok('＋ New list inside the ministry: just a name — it is the Cafe\'s', !!(await page.$('#gptNewTitle')) && !(await page.$('#gptNewHome')) && /For Cafe/.test(await page.$eval('#gptNewListSheet', e => e.innerText)));
-  await page.click('#gptNewCancel'); await page.waitForTimeout(200);
+  ok('… and no ＋ New list there: a ministry has its one designated list', !(await page.$('#mtFold #gptNewListBtn')));
   await page.click('#mtToggle'); await page.waitForTimeout(300);
   await ctx.close();
 }
@@ -214,7 +224,7 @@ const T = () => (mem.gpTasks || { tasks: [] }).tasks;
   await page.click('#gptFilterBtn'); await page.waitForTimeout(300);
   await page.uncheck('[data-gptf="Community Service|Cafe"]');
   await page.click('#gptFilterSave'); await page.waitForTimeout(700);
-  ok('unticking the Cafe and saving: kept as the default, and the Cafe\'s list is hidden', JSON.stringify(mem.staff.find(s => s.id === 'l1').taskFilter) === JSON.stringify({ keys: [] }) && !(await page.$('.gtTab:has-text("Cafe jobs")')));
+  ok('unticking the Cafe and saving: kept as the default, and the Cafe\'s list is hidden', (mem.staff.find(s => s.id === 'l1').taskFilter || { keys: ['x'] }).keys.indexOf('Community Service|Cafe') === -1 && (mem.staff.find(s => s.id === 'l1').taskFilter.keys.indexOf('Campus Leadership|') > -1) && !(await page.$('.gtTab:has-text("Cafe jobs")')));
   await page.click('#gtMenuBtn'); await page.waitForTimeout(200);
   await page.click('#gptFilterBtn'); await page.waitForTimeout(300);
   await page.click('#gptFilterAll'); await page.waitForTimeout(700);
@@ -228,6 +238,13 @@ const T = () => (mem.gpTasks || { tasks: [] }).tasks;
   await page.click('#leadSave'); await page.waitForTimeout(900);
   const ct = T().find(t => t.title === 'Fix the cafe sign');
   ok('saved: it is a task in the Cafe\'s list, given to Kanha, from Campus Leadership', ct && ct.assignees.join() === 'c2' && ct.from.label === 'Campus Leadership' && !!ct.cardId);
+  /* a task inside a board card → the Leadership team's GP Tasks list, and the owner's My Tasks */
+  await call('saveLeadTask', ['uriah', '1234', ct.cardId, { text: 'Find 5 fun activities for the staff offsite', owner: 'l1', due: day(6) }]);
+  await page.evaluate(() => gptOpenPage_('week')); await page.waitForTimeout(900);
+  const lead = (mem.gpTasks.lists || []).find(l => l.title === 'Leadership team');
+  ok('GP Tasks has a Leadership team list', !!lead && lead.scope === 'dept' && lead.dept === 'Campus Leadership' && !!(await page.$('.gtTab[data-gptlist="' + lead.id + '"]')));
+  const myT = await page.$eval('.gtList', e => e.innerText);
+  ok('… and the board task is in Uriah\'s My Tasks with its day and where it is from', /Find 5 fun activities/.test(myT) && /Leadership team/.test(myT) && new RegExp(new Date(day(6) + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric' })).test(myT), myT.slice(0, 300));
   await ctx.close();
 }
 {

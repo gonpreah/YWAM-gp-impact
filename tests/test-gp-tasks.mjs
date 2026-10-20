@@ -118,6 +118,25 @@ await call('saveLeadCard', [...as('uriah'), Object.assign({}, card, { taskMin: '
 r = await call('getGpTasks', as('kanha'));
 ok('unlinked: the task goes', !(r.tasks || []).some(t => t.cardId === card.id));
 
+console.log('=== the board\'s little tasks, in the Leadership team\'s list ===');
+r = await call('saveLeadTask', [...as('uriah'), card.id, { text: 'Find 5 fun activities for the staff offsite', owner: 'l1', due: day(6) }]);
+const ltk = r.saved;
+r = await call('getGpTasks', as('uriah'));
+const leadL = r.lists.find(l => l.title === 'Leadership team');
+let mt = task(r, 'Find 5 fun activities for the staff offsite');
+ok('a task on a card is a GP task in the Leadership team\'s list, given to its owner, with its day', !!leadL && leadL.scope === 'dept' && leadL.dept === 'Campus Leadership' && mt && mt.listId === leadL.id && mt.assignees.join() === 'l1' && mt.due === day(6) && mt.leadId === ltk.id && /Fix the cafe sign/.test(mt.notes));
+r = await call('saveLeadTask', [...as('uriah'), card.id, Object.assign({}, ltk, { text: 'Find 5 fun activities for the offsite', due: day(7) })]);
+r = await call('getGpTasks', as('uriah'));
+mt = task(r, 'Find 5 fun activities for the offsite');
+ok('changing it on the board changes it here', !!mt && mt.due === day(7) && !task(r, 'Find 5 fun activities for the staff offsite'));
+r = await call('saveGpTask', [...as('uriah'), { id: mt.id, done: true }]);
+ok('done in GP Tasks: done on the board too', task(r, 'Find 5 fun activities for the offsite').done === true && mem['leadBoard:siemreap'].cards.find(c => c.id === card.id).tasks.find(t => t.id === ltk.id).done === true);
+r = await call('getGpTasks', as('cora'));
+ok('the Cafe doesn\'t see the Leadership team\'s list', !r.lists.some(l => l.id === leadL.id));
+await call('deleteLeadTask', [...as('uriah'), card.id, ltk.id]);
+r = await call('getGpTasks', as('uriah'));
+ok('taken off the board: gone from GP Tasks', !task(r, 'Find 5 fun activities for the offsite'));
+
 console.log('=== personal lists ===');
 r = await call('saveGpTaskList', [...as('kanha'), { scope: 'personal', title: 'Mine' }]);
 const pl = r.lists.find(l => l.title === 'Mine');

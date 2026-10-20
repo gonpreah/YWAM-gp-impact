@@ -6687,8 +6687,10 @@ async function deleteLeadCard(username, pin, id) {
   const d = await getLeadDoc_(a.campus);
   const idx = d.cards.findIndex(function (c) { return c.id === str_(id, 60); });
   if (idx === -1) return { ok: false, err: 'not_found' };
+  const gone = (d.cards[idx].tasks || []).map(function (tk) { return tk.id; });
   d.cards.splice(idx, 1);
   await writeJSON(leadKey_(a.campus), d);
+  if (gone.length) await gptDropLeadTasks_(gone);
   return leadOut_(a.campus, d);
 }
 /* One task on a card: add it (no id), change it (tick it off, rename it,
@@ -6710,6 +6712,7 @@ async function saveLeadTask(username, pin, cardId, task) {
   if (idx === -1) { rec.created = now; rec.createdBy = a.s.id; tasks.push(rec); } else tasks[idx] = rec;
   card.tasks = tasks; card.updated = now; card.updatedBy = a.s.id;
   await writeJSON(leadKey_(a.campus), d);
+  await gptFromLeadTask_(a.s, a.campus, card, rec);   // and in the Leadership team's GP Tasks
   return leadOut_(a.campus, d, { saved: rec, card: card.id });
 }
 async function deleteLeadTask(username, pin, cardId, taskId) {
@@ -6718,8 +6721,10 @@ async function deleteLeadTask(username, pin, cardId, taskId) {
   const card = d.cards.find(function (c) { return c.id === str_(cardId, 60); });
   const idx = card && Array.isArray(card.tasks) ? card.tasks.findIndex(function (t) { return t.id === str_(taskId, 60); }) : -1;
   if (idx === -1) return { ok: false, err: 'not_found' };
+  const gone = card.tasks[idx].id;
   card.tasks.splice(idx, 1);
   await writeJSON(leadKey_(a.campus), d);
+  await gptDropLeadTasks_([gone]);
   return leadOut_(a.campus, d);
 }
 /* A Monday's notes. Empty notes take the day away. If someone else saved
@@ -10240,18 +10245,14 @@ function gptLabel_(s) { return gptAll_(s) && deptOf_(s) === LEADERSHIP_DEPT ? LE
 function gptListOut_(L, s) { return { id: L.id, campus: L.campus, scope: L.scope, dept: L.dept || '', ministry: L.ministry || '', ownerId: L.ownerId || '', shared: !!L.shared, title: L.title, order: L.order || 0, mine: gptIn_(s, L), canEdit: gptEdits_(s, L) }; }
 function gptTaskOut_(t) {
   return { id: t.id, listId: t.listId, title: t.title, notes: t.notes || '', due: t.due || '', time: t.time || '', done: !!t.done, doneAt: t.doneAt || '', doneBy: t.doneBy || '',
-    assignees: t.assignees || [], assignedAt: t.assignedAt || {}, status: t.status || 'open', from: t.from || null, cardId: t.cardId || '', created: t.created, by: t.by, order: t.order || 0 };
+    assignees: t.assignees || [], assignedAt: t.assignedAt || {}, status: t.status || 'open', from: t.from || null, cardId: t.cardId || '', leadId: t.leadId || '', created: t.created, by: t.by, order: t.order || 0 };
 }
 async function gptAuth_(username, pin) { const s = await verifyStaff_(username, pin); return s && !isApplicant_(s) ? s : null; }
 function gptFilterOf_(s) { const f = s.taskFilter; return f && typeof f === 'object' && Array.isArray(f.keys) ? { keys: f.keys.slice(0, 200) } : null; }
 async function getGpTasks(username, pin) {
   const s = await gptAuth_(username, pin); if (!s) return { ok: false };
   const d = await getGpt_();
-  /* everyone starts with My Tasks — their own, and whatever is given to them from any other list */
-  if (!d.lists.some(function (L) { return L.scope === 'personal' && L.ownerId === s.id; }) && d.lists.length < GPT_MAX.lists) {
-    d.lists.push({ id: gptId_('tl'), campus: s.campus, scope: 'personal', dept: '', ministry: '', ownerId: s.id, shared: false, title: 'My Tasks', order: d.lists.length, created: new Date().toISOString(), by: s.id });
-    await writeJSON('gpTasks', d);
-  }
+  if (gptEnsureLists_(d, s)) await writeJSON('gpTasks', d);
   const lists = d.lists.filter(function (L) { return gptSees_(s, L); });
   const seen = {}; lists.forEach(function (L) { seen[L.id] = 1; });
   const tasks = d.tasks.filter(function (t) { return seen[t.listId] || (t.assignees || []).indexOf(s.id) > -1 || t.by === s.id; });
@@ -10300,6 +10301,76 @@ async function saveGpTaskList(username, pin, list) {
   await writeJSON('gpTasks', d);
   return getGpTasks(username, pin);
 }
+/* Oct 2026 (Uriah): "each ministry has its own designated task list" — one per ministry, named after
+   it, made the first time one of its people opens GP Tasks; the Campus Leadership team's is one list
+   for the whole department, "Leadership team". And everyone starts with My Tasks. Returns true when
+   something was made. */
+const GPT_LEAD_LIST = 'Leadership team';
+function gptMinList_(d, campus, dept, ministry, by) {
+  const scope = ministry ? 'ministry' : 'dept';
+  let L = d.lists.find(function (l) { return l.campus === campus && l.scope === scope && l.dept === dept && (l.ministry || '') === (ministry || ''); });
+  if (!L && d.lists.length < GPT_MAX.lists) {
+    L = { id: gptId_('tl'), campus: campus, scope: scope, dept: dept, ministry: ministry || '', ownerId: '', shared: false,
+      title: dept === LEADERSHIP_DEPT ? GPT_LEAD_LIST : (ministry || dept), order: d.lists.length, created: new Date().toISOString(), by: by || '' };
+    d.lists.push(L);
+    return { list: L, made: true };
+  }
+  return { list: L || null, made: false };
+}
+function gptEnsureLists_(d, s) {
+  let made = false;
+  if (!d.lists.some(function (L) { return L.scope === 'personal' && L.ownerId === s.id; }) && d.lists.length < GPT_MAX.lists) {
+    d.lists.push({ id: gptId_('tl'), campus: s.campus, scope: 'personal', dept: '', ministry: '', ownerId: s.id, shared: false, title: 'My Tasks', order: d.lists.length, created: new Date().toISOString(), by: s.id });
+    made = true;
+  }
+  const keys = {}, dept = deptOf_(s);
+  if (dept) keys[dept + '|' + (dept === LEADERSHIP_DEPT ? '' : (s.ministry || ''))] = 1;
+  ministriesOf_(s).concat(leadsOf_(s)).forEach(function (k) { const p = String(k).split('|'); if (p[0]) keys[p[0] + '|' + (p[0] === LEADERSHIP_DEPT ? '' : (p[1] || ''))] = 1; });
+  Object.keys(keys).forEach(function (k) { const p = k.split('|'); if (gptMinList_(d, s.campus, p[0], p[1], s.id).made) made = true; });
+  return made;
+}
+/* The leadership board's little tasks (inside a card: text, owner, due) are also GP Tasks in the
+   Leadership team's list, so whoever owns one sees it in My Tasks with its day (Uriah: "the task
+   for Andrew, to find 5 fun activities for the staff offsite, will show up for me"). The board is
+   the source for the words, the owner and the day; done goes both ways. */
+async function gptFromLeadTask_(s, campus, card, rec) {
+  try {
+    const d = await getGpt_(), now = new Date().toISOString();
+    const L = gptMinList_(d, campus, LEADERSHIP_DEPT, '', s.id).list; if (!L) return;
+    let t = d.tasks.find(function (y) { return y.leadId === rec.id; });
+    const fresh = rec.owner && (!t || (t.assignees || []).indexOf(rec.owner) === -1) && rec.owner !== s.id;
+    if (!t) { t = { id: gptId_('tk'), listId: L.id, created: now, by: rec.createdBy || s.id, done: false, doneAt: '', doneBy: '', time: '', assignedAt: {}, order: 0, status: 'open', from: null }; d.tasks.push(t); }
+    t.listId = L.id; t.leadId = rec.id; t.cardId = ''; t.title = rec.text; t.due = rec.due || ''; t.notes = card.title ? 'Board: ' + card.title : '';
+    t.assignees = rec.owner ? [rec.owner] : [];
+    t.assignedAt = rec.owner ? { [rec.owner]: (t.assignedAt && t.assignedAt[rec.owner]) || now } : {};
+    if (!!rec.done !== !!t.done) { t.done = !!rec.done; t.doneAt = t.done ? now : ''; t.doneBy = t.done ? s.id : ''; }
+    t.updated = now;
+    await writeJSON('gpTasks', d);
+    if (fresh) await pushNow_(rec.owner, 'taskAssigned', { name: s.name, title: t.title }, 'teams.html?view=tasks');
+  } catch (e) { /* the board saves regardless */ }
+}
+async function gptDropLeadTasks_(ids) {
+  try {
+    const d = await getGpt_(), before = d.tasks.length;
+    d.tasks = d.tasks.filter(function (y) { return !y.leadId || ids.indexOf(y.leadId) === -1; });
+    if (d.tasks.length !== before) await writeJSON('gpTasks', d);
+  } catch (e) { /* nothing to drop */ }
+}
+async function leadDropTask_(campus, leadId) {
+  try {
+    const d = await getLeadDoc_(campus); let hit = false;
+    d.cards.forEach(function (c) { if (!Array.isArray(c.tasks)) return; const n = c.tasks.length; c.tasks = c.tasks.filter(function (tk) { return tk.id !== leadId; }); if (c.tasks.length !== n) hit = true; });
+    if (hit) await writeJSON(leadKey_(campus), d);
+  } catch (e) { /* the task is gone here regardless */ }
+}
+/* done on the GP side goes back to the board */
+async function gptLeadDone_(campus, leadId, done, by) {
+  try {
+    const d = await getLeadDoc_(campus); let hit = false;
+    d.cards.forEach(function (c) { (c.tasks || []).forEach(function (tk) { if (tk.id === leadId && !!tk.done !== !!done) { tk.done = !!done; if (done) { tk.doneAt = new Date().toISOString(); tk.doneBy = by; } else { delete tk.doneAt; delete tk.doneBy; } hit = true; } }); });
+    if (hit) await writeJSON(leadKey_(campus), d);
+  } catch (e) { /* the task is saved regardless */ }
+}
 function gptDue_(v) { return isDate_(v) ? v : ''; }
 function gptTime_(v) { return /^([01]\d|2[0-3]):[0-5]\d$/.test(String(v || '')) ? v : ''; }
 async function saveGpTask(username, pin, task) {
@@ -10339,7 +10410,7 @@ async function saveGpTask(username, pin, task) {
   if (x.notes !== undefined) t.notes = str_(x.notes, GPT_MAX.notes) || '';
   if (x.due !== undefined) t.due = gptDue_(x.due);
   if (x.time !== undefined) t.time = t.due ? gptTime_(x.time) : '';
-  if (x.done !== undefined && t.status !== 'request') { t.done = !!x.done; t.doneAt = t.done ? now : ''; t.doneBy = t.done ? s.id : ''; }
+  if (x.done !== undefined && t.status !== 'request') { t.done = !!x.done; t.doneAt = t.done ? now : ''; t.doneBy = t.done ? s.id : ''; if (t.leadId) await gptLeadDone_(L.campus, t.leadId, t.done, s.id); }
   if (x.listId && x.listId !== t.listId && edits) { const to = d.lists.find(function (l) { return l.id === x.listId; }); if (to && gptEdits_(s, to)) t.listId = to.id; }
   if (Array.isArray(x.assignees) && (edits || t.by === s.id)) {
     const next = []; x.assignees.forEach(function (id) { if (onCampus[id] && onCampus[id].campus === L.campus && next.indexOf(id) === -1 && next.length < GPT_MAX.assignees) next.push(id); });
@@ -10378,6 +10449,7 @@ async function deleteGpTask(username, pin, id) {
   if (!(gptEdits_(s, L) || t.by === s.id)) return { ok: false, err: 'not_authorized' };
   d.tasks = d.tasks.filter(function (y) { return y.id !== id; });
   await writeJSON('gpTasks', d);
+  if (t.leadId) await leadDropTask_(L.campus, t.leadId);   // a board task: off the board too
   return getGpTasks(username, pin);
 }
 async function clearDoneGpTasks(username, pin, listId) {

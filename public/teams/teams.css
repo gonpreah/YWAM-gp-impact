@@ -2295,6 +2295,15 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .gptRing svg { width:22px; height:22px; }
 .gtLine > .gtIc { font-size:20px; color:var(--muted); margin-top:9px; }
 .gtSheetHead b { font-size:17px; }
+.gtKind { margin-right:6px; opacity:.75; } .gtTab .gtKind { font-size:13px; } .gtListHead .gtKind { font-size:17px; vertical-align:-2px; }
+/* asking another ministry: find it by department, or search */
+.gtFind { display:flex; align-items:center; gap:8px; margin:0 0 6px; color:var(--muted); } .gtFind input { flex:1; margin:0; }
+.gtPick { max-height:260px; overflow-y:auto; border:1px solid var(--line); border-radius:12px; padding:4px 0; margin:0 0 6px; }
+.gtPickDept { font-size:11.5px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; color:var(--muted); padding:8px 12px 2px; }
+.gtPickIt { display:block; width:100%; text-align:left; background:none; border:0; padding:9px 12px 9px 20px; font:inherit; font-size:15px; color:var(--ink); cursor:pointer; }
+.gtPickIt:hover { background:var(--surface2); }
+.gtPicked { display:flex; align-items:center; gap:8px; width:100%; text-align:left; background:var(--surface2); border:0; border-radius:12px; padding:10px 12px; font:inherit; color:var(--ink); cursor:pointer; margin:0 0 6px; }
+.gtPicked span { color:var(--muted); font-size:13px; } .gtPicked .gtPickedChange { margin-left:auto; color:var(--accent); font-weight:700; }
 .calMeta svg, .calCal svg { width:12px; height:12px; vertical-align:-2px; }
 /* the Calendar's month, like Google Calendar's: Sunday to Saturday, a dot per thing */
 .gcNav { display:flex; align-items:center; gap:6px; margin:2px 0 8px; }
