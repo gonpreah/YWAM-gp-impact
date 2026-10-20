@@ -951,7 +951,7 @@ function render(){
   else if(S.view==='p360') m.innerHTML=p360Html_();
   else if(S.view==='week') m.innerHTML=S.student ? studentHomeHtml_() : homeHtml();
   else if(S.view==='health') m.innerHTML=healthHtml();
-  else if(S.view==='tasks') m.innerHTML=gptPageHtml_(null);
+  else if(S.view==='tasks') m.innerHTML=gptPageHtml_(S.gptPageScope||null);
   else if(S.view==='calendar') m.innerHTML=calendarHtml_();
   else if(S.view==='whoshere') m.innerHTML=whosHereHtml_();
   else if(S.view==='students') m.innerHTML=studentsPageHtml_();

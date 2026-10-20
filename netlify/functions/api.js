@@ -6659,7 +6659,7 @@ function cleanLeadCard_(c, prev, d) {
     owner: str_(c.owner, 60) || '', due: isoDate_(c.due) || '',
     okrId: str_(c.okrId, 60) || '', meeting: isoDate_(c.meeting) || '',
     /* for a ministry (or a whole department, 'Dept|'): the card is also a task in its GP Tasks list */
-    taskMin: c.taskMin ? (function (k) { const p = String(k).split('|'); return p.length === 2 && p[0] ? normKey_(str_(p[0], 80) + '|' + str_(p[1], 80), 2) : ''; })(c.taskMin) : '',
+    taskMin: c.taskMin ? (function (k) { const p = String(k).split('|'); return p.length === 2 && p[0] ? normKey_((str_(p[0], 80) || '') + '|' + (str_(p[1], 80) || ''), 2) : ''; })(c.taskMin) : '',
     fromNotes: !!(c.fromNotes || (prev && prev.fromNotes))
   });
 }
@@ -10259,7 +10259,7 @@ function gptLabel_(s) { return gptAll_(s) && deptOf_(s) === LEADERSHIP_DEPT ? LE
 function gptListOut_(L, s) { return { id: L.id, campus: L.campus, scope: L.scope, dept: L.dept || '', ministry: L.ministry || '', ownerId: L.ownerId || '', shared: !!L.shared, title: L.title, order: L.order || 0, mine: gptIn_(s, L), canEdit: gptEdits_(s, L) }; }
 function gptTaskOut_(t) {
   return { id: t.id, listId: t.listId, title: t.title, notes: t.notes || '', due: t.due || '', time: t.time || '', done: !!t.done, doneAt: t.doneAt || '', doneBy: t.doneBy || '',
-    assignees: t.assignees || [], assignedAt: t.assignedAt || {}, status: t.status || 'open', from: t.from || null, cardId: t.cardId || '', leadId: t.leadId || '', ooId: t.ooId || '', subs: t.subs || [], created: t.created, by: t.by, order: t.order || 0 };
+    assignees: t.assignees || [], assignedAt: t.assignedAt || {}, status: t.status || 'open', from: t.from || null, cardId: t.cardId || '', leadId: t.leadId || '', ooId: t.ooId || '', subs: t.subs || [], filed: t.filed || {}, created: t.created, by: t.by, order: t.order || 0 };
 }
 async function gptAuth_(username, pin) { const s = await verifyStaff_(username, pin); return s && !isApplicant_(s) ? s : null; }
 function gptFilterOf_(s) { const f = s.taskFilter; return f && typeof f === 'object' && Array.isArray(f.keys) ? { keys: f.keys.slice(0, 200) } : null; }
@@ -10282,6 +10282,16 @@ async function gpTaskInfo_(s) {
   const d = await getGpt_(), since = new Date(Date.now() - 14 * 864e5).toISOString();
   const byId = {}; d.lists.forEach(function (L) { byId[L.id] = L; });
   const mine = d.tasks.filter(function (t) { return !t.done && t.status !== 'declined' && (t.assignees || []).indexOf(s.id) > -1; });
+  /* what is in their Inbox: its own open tasks, and what they were given and haven't filed elsewhere (the red number) */
+  const inboxL = d.lists.filter(function (L) { return L.scope === 'personal' && L.ownerId === s.id; }).sort(function (a, b) { return (a.order || 0) - (b.order || 0); })[0];
+  const ownLists = {}; d.lists.forEach(function (L) { if (L.scope === 'personal' && L.ownerId === s.id) ownLists[L.id] = 1; });
+  const inbox = inboxL ? d.tasks.filter(function (t) {
+    if (t.done || t.status === 'declined') return false;
+    if (t.listId === inboxL.id) return true;
+    const given = (t.assignees || []).indexOf(s.id) > -1 || (t.by === s.id && t.status === 'request');
+    if (!given || ownLists[t.listId]) return false;
+    const f = t.filed && t.filed[s.id]; return !(f && ownLists[f.list] && f.list !== inboxL.id);
+  }).length : 0;
   const notices = [];
   mine.forEach(function (t) { const at = (t.assignedAt || {})[s.id]; if (at && at > since && t.by !== s.id) notices.push({ kind: 'assigned', id: t.id, title: t.title, at: at, by: (t.from && t.from.id) || t.by, from: t.from ? t.from.label : '', list: byId[t.listId] ? byId[t.listId].title : '' }); });
   d.tasks.forEach(function (t) {
@@ -10289,7 +10299,7 @@ async function gpTaskInfo_(s) {
     if (t.status === 'request' && L && L.scope !== 'personal' && gptIn_(s, L) && t.created > since) notices.push({ kind: 'request', id: t.id, title: t.title, at: t.created, by: t.by, from: t.from ? t.from.label : '', list: L.title });
     if (t.status === 'declined' && t.by === s.id && (t.updated || '') > since) notices.push({ kind: 'declined', id: t.id, title: t.title, at: t.updated, by: t.decidedBy || '', list: L ? L.title : '' });
   });
-  return { open: mine.length, due: mine.filter(function (t) { return t.due && t.due <= baseToday_(); }).length, notices: notices.slice(-30) };
+  return { open: mine.length, inbox: inbox, due: mine.filter(function (t) { return t.due && t.due <= baseToday_(); }).length, notices: notices.slice(-30) };
 }
 async function saveGpTaskList(username, pin, list) {
   const s = await gptAuth_(username, pin); if (!s) return { ok: false };
@@ -10333,11 +10343,11 @@ function gptMinList_(d, campus, dept, ministry, by) {
   }
   return { list: L || null, made: false };
 }
-function gptMyList_(d, s) {   // the person's My Tasks (their oldest personal list), made if they have none
+function gptMyList_(d, s) {   // the person's Inbox (their oldest personal list), made if they have none
   const mine = d.lists.filter(function (L) { return L.scope === 'personal' && L.ownerId === s.id; }).sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
-  if (mine.length) return { list: mine[0], made: false };
+  if (mine.length) { const was = mine[0].title === 'My Tasks'; if (was) mine[0].title = 'Inbox'; return { list: mine[0], made: was }; }   // Oct 2026: My Tasks became the Inbox
   if (d.lists.length >= GPT_MAX.lists) return { list: null, made: false };
-  const L = { id: gptId_('tl'), campus: s.campus, scope: 'personal', dept: '', ministry: '', ownerId: s.id, shared: false, title: 'My Tasks', order: d.lists.length, created: new Date().toISOString(), by: s.id };
+  const L = { id: gptId_('tl'), campus: s.campus, scope: 'personal', dept: '', ministry: '', ownerId: s.id, shared: false, title: 'Inbox', order: d.lists.length, created: new Date().toISOString(), by: s.id };
   d.lists.push(L);
   return { list: L, made: true };
 }
@@ -10443,7 +10453,7 @@ async function saveGpTask(username, pin, task) {
   if (x.id && !t) return { ok: false, err: 'not_found' };
   /* "Ask another ministry": by its name, into its first list (made if it has none yet) */
   if (!t && !x.listId && x.askMin) {
-    const p = String(x.askMin).split('|'), key = p.length === 2 && p[0] ? normKey_(str_(p[0], 80) + '|' + str_(p[1], 80), 2) : '';
+    const p = String(x.askMin).split('|'), key = p.length === 2 && p[0] ? normKey_((str_(p[0], 80) || '') + '|' + (str_(p[1], 80) || ''), 2) : '';
     if (!key) return { ok: false, err: 'bad_ministry' };
     const kp = key.split('|'), scope = kp[1] ? 'ministry' : 'dept';
     let to = d.lists.find(function (l) { return l.campus === s.campus && l.scope === scope && l.dept === kp[0] && (l.ministry || '') === kp[1]; });
@@ -10531,8 +10541,25 @@ async function orderGpTasks(username, pin, listId, ids) {
   if (!L) return { ok: false, err: 'no_list' };
   if (!gptEdits_(s, L)) return { ok: false, err: 'not_authorized' };
   const pos = {}; (Array.isArray(ids) ? ids : []).forEach(function (id, i) { pos[String(id)] = i; });
-  const now = new Date().toISOString();
-  d.tasks.filter(function (t) { return t.listId === L.id && pos[t.id] !== undefined; }).forEach(function (t) { t.order = pos[t.id]; t.updated = now; });
+  const now = new Date().toISOString(), mine = L.scope === 'personal' && L.ownerId === s.id;
+  d.tasks.filter(function (t) { return pos[t.id] !== undefined; }).forEach(function (t) {
+    if (t.listId === L.id) { t.order = pos[t.id]; t.updated = now; }
+    else if (mine && (t.assignees || []).indexOf(s.id) > -1) { t.filed = t.filed || {}; t.filed[s.id] = { list: L.id, order: pos[t.id] }; }   // a task given to you, in the order you keep it here
+  });
+  await writeJSON('gpTasks', d);
+  return getGpTasks(username, pin);
+}
+/* A task given to you lands in your Inbox and stays in its own list; filing it (dragging it onto one of
+   your lists) only changes where *you* see it — `filed[you] = { list, order }` (Uriah, Oct 2026). */
+async function fileGpTask(username, pin, id, listId) {
+  const s = await gptAuth_(username, pin); if (!s) return { ok: false };
+  const d = await getGpt_(), t = d.tasks.find(function (y) { return y.id === id; });
+  if (!t) return { ok: false, err: 'not_found' };
+  if ((t.assignees || []).indexOf(s.id) === -1 && t.by !== s.id) return { ok: false, err: 'not_authorized' };
+  const to = listId ? d.lists.find(function (l) { return l.id === listId; }) : null;
+  if (listId && !(to && to.scope === 'personal' && to.ownerId === s.id)) return { ok: false, err: 'not_yours' };
+  t.filed = t.filed || {};
+  if (to) t.filed[s.id] = { list: to.id, order: d.tasks.filter(function (y) { return y.listId === to.id; }).length }; else delete t.filed[s.id];
   await writeJSON('gpTasks', d);
   return getGpTasks(username, pin);
 }
@@ -10569,9 +10596,7 @@ async function gptFromCard_(s, card) {
       if (t) { d.tasks = d.tasks.filter(function (y) { return y !== t; }); await writeJSON('gpTasks', d); }
       return;
     }
-    const scope = parts[1] ? 'ministry' : 'dept';
-    let L = d.lists.find(function (l) { return l.campus === s.campus && l.scope === scope && l.dept === parts[0] && (l.ministry || '') === parts[1]; });
-    if (!L) { L = { id: gptId_('tl'), campus: s.campus, scope: scope, dept: parts[0], ministry: parts[1], ownerId: '', shared: false, title: 'Tasks', order: d.lists.length, created: now, by: s.id }; d.lists.push(L); }
+    const L = gptMinList_(d, s.campus, parts[0], parts[1], s.id).list; if (!L) return;
     const fresh = card.owner && (!t || (t.assignees || []).indexOf(card.owner) === -1) && card.owner !== s.id;
     if (!t) { t = { id: gptId_('tk'), listId: L.id, created: now, by: s.id, notes: '', done: false, doneAt: '', doneBy: '', time: '', assignedAt: {}, order: 0 }; d.tasks.push(t); }
     t.listId = L.id; t.title = card.title; t.due = card.due || ''; t.status = 'open'; t.cardId = card.id;
@@ -10985,6 +11010,7 @@ const HANDLERS = {
   clearDoneGpTasks: function (a) { return clearDoneGpTasks(a[0], a[1], a[2]); },
   saveGpTaskFilter: function (a) { return saveGpTaskFilter(a[0], a[1], a[2]); },
   orderGpTasks: function (a) { return orderGpTasks(a[0], a[1], a[2], a[3]); },
+  fileGpTask: function (a) { return fileGpTask(a[0], a[1], a[2], a[3]); },
   saveGpListOrder: function (a) { return saveGpListOrder(a[0], a[1], a[2]); },
   saveMetricOverrides: function (a) { return saveMetricOverrides(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]); },
   renameCustomMetric: function (a) { return renameCustomMetric(a[0], a[1], a[2], a[3], a[4], a[5], a[6]); },

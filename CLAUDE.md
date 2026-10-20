@@ -2667,10 +2667,20 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 ## GP Tasks (Oct 2026, Uriah: "much simpler, very much like Google Tasks")
 - **Oct 2026, second pass** (Uriah: "more fluid, like Google Tasks"): no "For me" tab — everyone has
   **My Tasks**, a personal list the server makes on first `getGpTasks` (`gptMain_()` = your oldest
-  personal list). **It holds only its own tasks** (Uriah: "keep it personal, not what's given to
-  you"): what you are given shows under the list it is in — your ministry's, the Leadership team's —
-  and a list you can't otherwise see comes along as an `onlyAssigned` tab (`.gtTab.given`, named by
-  `gptChipName_`: "Cafe", "Cora's list") holding just what you were given and what you asked it for.
+  personal list — titled **Inbox** since Oct 2026, Uriah: "like an inbox"; an old "My Tasks" is
+  renamed on the next load). **The Inbox is your own quick tasks plus everything given to you** from
+  any list (and what you asked other ministries for), each with where it came from (`gptChipName_`
+  chip); the task stays in its own list. **Filing**: drag a given task onto one of your own lists and
+  it sits there for you alone — `fileGpTask(id, listId)` → `task.filed[you] = { list, order }`
+  (`gptFiledIn_`, `gptGiven_`); `orderGpTasks` on your own list keeps given tasks' places in
+  `filed` too. Lists you can't otherwise see are never tabs (`onlyAssigned` lists only carry names).
+  **The red number** (`.gtBadge`) on the Inbox tab and My Home's GP Tasks row = `gptInboxCount_()` /
+  `gpTaskInfo.inbox`: the Inbox's own open tasks plus what you were given and haven't filed elsewhere.
+- **A ministry's GP Tasks is the same page** (Oct 2026, Uriah: "like the personal GP Tasks, just that
+  ministry's tasks — for all of the ministries"): My Ministry's "Ministry Tasks (n) ›" row
+  (`mtFoldHtml_`, `#mtToggle`) opens `S.view='tasks'` with `S.gptPageScope={dept,min}` (01-core
+  renders `gptPageHtml_(S.gptPageScope)`), titled "GP Tasks · Cafe", only that ministry's list, the
+  round ＋, ← My Ministry. `gptOpenPage_` clears the scope.
   **Subtasks** (`subs: [{id,text,done}]`, `gptSubs_`, max 20): added in the sheet (Enter adds), shown
   under the row, tickable there. **Drag and drop** (`gptDrag_`, mouse or finger): a task by its grip
   up or down — `orderGpTasks(listId, ids)` sets the list's `order` ("My order" sort, `gptSort_`) — or
@@ -2696,6 +2706,9 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   icon (lock = personal, people = ministry) and the ministry's head says "the ministry's list: add
   tasks and give them to its people". **Ask another ministry** picks the ministry from a list by
   department with a search box (`data-gptaskmin`), not a select.
+- **A board card is for a department, not a ministry** (Oct 2026, Uriah): `taskMin` is `'Dept|'`,
+  the card's task lands in the department's list (`gptMinList_`, named after it) given to the person;
+  the department's director hands it on to a ministry leader in GP Tasks (it lands in their Inbox).
 - **The leadership board's little tasks are GP Tasks** (`gptFromLeadTask_` on `saveLeadTask`, in the
   Leadership team list, `leadId` on the task; the board is the source for text, owner and day; done
   goes both ways — `gptLeadDone_`; `deleteLeadTask`/`deleteLeadCard` drop them, `deleteGpTask` on one

@@ -7,11 +7,12 @@
    default. Opened from My Home's card and the Weekly Goals heading (S.view='tasks'), from
    the Calendar, and folded under the ministry on My Ministry, where it shows only that
    ministry's list.
-   Everyone starts with My Tasks (the server makes it): their own, private — as are any lists
-   they add. What is given to you from another list shows under that list: your ministry's,
-   the Leadership team's, or, from a list you can't otherwise see, a tab with just what you
-   were given (and what you asked that ministry for). The server's rules are in api.js. */
-S.gpt=null; S.gptLoading=false; S.gptErr=''; S.gptList=null; S.gptOpen=null; S.gptDraft=null; S.gptScope=null;
+   Everyone starts with an Inbox (the server makes it): their own quick tasks, and everything
+   given to them from any other list — a ministry's, the Leadership team's, someone's own — each
+   with where it came from, and what they asked other ministries for. A task given to you stays in
+   its list; dragging it onto one of your own lists files it there for you alone (`filed`). The
+   lists you add are private. The server's rules are in api.js. */
+S.gpt=null; S.gptLoading=false; S.gptErr=''; S.gptList=null; S.gptOpen=null; S.gptDraft=null; S.gptScope=null; S.gptPageScope=null;
 S.gptNewList=null; S.gptAsk=null; S.gptFilterOpen=false; S.gptFilterDraft=null; S.gptListMenu=false; S.gptDoneOpen=false; S.gptFrom='week';
 /* plain line icons, the app's own kind (Uriah: "simple, modern — not the green tick emoji");
    they take the text's size and colour, so they sit in a heading, a chip or a button alike */
@@ -25,6 +26,7 @@ var GPT_SVG=(function(){
     plus:    o+'<path d="M12 5v14M5 12h14"/></svg>',
     team:    o+'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 19c1-3.5 3.5-5.5 6.5-5.5s5.5 2 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 13.5c2.6 0 4.6 1.6 5.5 4.5"/></svg>',
     lock:    o+'<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+    inbox:   o+'<path d="M3 13l2.5-8h13L21 13"/><path d="M3 13v6h18v-6"/><path d="M3 13h5l1.5 3h5L16 13h5"/></svg>',
     search:  o+'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>',
     sub:     o+'<path d="M7 4v9a3 3 0 0 0 3 3h8"/><path d="M14 12l4 4-4 4"/></svg>',
     grip:    '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
@@ -38,21 +40,32 @@ function gptLoad_(){
     function(){ S.gptLoading=false; S.gptErr='offline'; render(); });
 }
 function gptTake_(d){
+  d.lists=Array.isArray(d.lists) ? d.lists : []; d.tasks=Array.isArray(d.tasks) ? d.tasks : [];
   S.gpt=d;
   var mine=(d.tasks||[]).filter(function(t){ return !t.done && t.status!=='declined' && t.assignees.indexOf(S.me.id)>-1; });
-  if(S.gpTaskInfo) S.gpTaskInfo.open=mine.length;
+  if(S.gpTaskInfo){ S.gpTaskInfo.open=mine.length; S.gpTaskInfo.inbox=gptInboxCount_(); }
 }
+/* the red number: what is in your Inbox — its own open tasks, and what you were given and haven't filed elsewhere */
+function gptInboxCount_(){
+  var G=S.gpt, m=gptMain_(); if(!G || !m) return (S.gpTaskInfo && S.gpTaskInfo.inbox) || 0;
+  return G.tasks.filter(function(x){ return !x.done && x.status!=='declined' && (x.listId===m.id || (gptGiven_(x) && gptFiledIn_(x)===m.id)); }).length;
+}
+function gptBadge_(n){ return n ? '<span class="gtBadge">'+n+'</span>' : ''; }
 function gptKeyOf_(L){ return L.dept+'|'+(L.scope==='ministry' ? L.ministry : ''); }
 function gptListById_(id){ return ((S.gpt && S.gpt.lists)||[]).filter(function(L){ return L.id===id; })[0] || null; }
 function gptPerson_(id){ var p=personOf(id); return p || { id:id, name:nameOf(id) }; }
-/* My Tasks: your first personal list — the server makes one for everyone */
+/* your Inbox: your first personal list — the server makes one for everyone */
 function gptMain_(){
   var G=S.gpt; if(!G) return null;
   return G.lists.filter(function(L){ return L.scope==='personal' && L.ownerId===S.me.id; }).sort(function(a,b){ return (a.order||0)-(b.order||0); })[0] || null;
 }
 /* a designated list is named after its ministry (or "Leadership team"), so it reads in Khmer too */
-function gptTitle_(L){ return L.title==='My Tasks' ? t('My Tasks') : L.title==='Leadership team' ? t('Leadership team') : (L.scope!=='personal' && L.title===(L.ministry||L.dept)) ? t(L.title) : L.title; }
-function gptKindIc_(L){ return gptIc_(L.scope==='personal' ? 'lock' : 'team', 'gtKind'); }
+function gptTitle_(L){ return (L.title==='My Tasks' || L.title==='Inbox') ? t('Inbox') : L.title==='Leadership team' ? t('Leadership team') : (L.scope!=='personal' && L.title===(L.ministry||L.dept)) ? t(L.title) : L.title; }
+function gptIsMain_(L){ var m=gptMain_(); return !!(m && L && L.id===m.id); }
+function gptKindIc_(L){ return gptIc_(gptIsMain_(L) ? 'inbox' : L.scope==='personal' ? 'lock' : 'team', 'gtKind'); }
+/* where a task given to you sits among your lists: where you filed it, else your Inbox */
+function gptFiledIn_(x){ var f=x.filed && x.filed[S.me.id]; var L=f && gptListById_(f.list); return L && L.scope==='personal' && L.ownerId===S.me.id ? L.id : (gptMain_()||{}).id; }
+function gptGiven_(x){ return x.listId!==(gptMain_()||{}).id && (x.assignees.indexOf(S.me.id)>-1 || (x.by===S.me.id && (x.status==='request' || x.status==='declined'))); }
 /* the name a task carries when it shows away from its list */
 function gptChipName_(L){ return L.scope==='personal' && L.ownerId!==S.me.id ? gpT('{name}’s list',{name:firstName_(gptPerson_(L.ownerId).name)}) : gptTitle_(L); }
 /* the lists to show: a ministry's own (My Ministry's fold — only that ministry's, nothing personal),
@@ -60,20 +73,20 @@ function gptChipName_(L){ return L.scope==='personal' && L.ownerId!==S.me.id ? g
    personal lists always show), My Tasks first, then in the order you dragged them into */
 function gptLists_(scope){
   var G=S.gpt; if(!G) return [];
-  /* never someone else's personal list (Uriah: "why is Vannak's list in my GP Tasks?") — unless they gave you something from it, which is all you see of it */
-  var lists=G.lists.filter(function(L){ return L.onlyAssigned || !(L.scope==='personal' && L.ownerId!==S.me.id); });
-  if(scope) return lists.filter(function(L){ return !L.onlyAssigned && L.dept===scope.dept && (scope.min ? L.scope==='ministry' && L.ministry===scope.min : L.scope==='dept'); });
+  /* never someone else's personal list (Uriah: "why is Vannak's list in my GP Tasks?") — what they give you is in your Inbox */
+  var lists=G.lists.filter(function(L){ return !L.onlyAssigned && !(L.scope==='personal' && L.ownerId!==S.me.id); });
+  if(scope) return lists.filter(function(L){ return L.dept===scope.dept && (scope.min ? L.scope==='ministry' && L.ministry===scope.min : L.scope==='dept'); });
   var f=G.filter && G.filter.keys;
-  if(G.canAll && f) lists=lists.filter(function(L){ return L.onlyAssigned || L.scope==='personal' || L.mine || f.indexOf(gptKeyOf_(L))>-1; });
+  if(G.canAll && f) lists=lists.filter(function(L){ return L.scope==='personal' || L.mine || f.indexOf(gptKeyOf_(L))>-1; });
   var main=gptMain_(), ord=G.listOrder||[];
-  var rank=function(L){ return main && L.id===main.id ? 0 : L.onlyAssigned ? 5 : L.scope==='personal' ? 2 : L.mine ? 1 : 3; };
+  var rank=function(L){ return main && L.id===main.id ? 0 : L.scope==='personal' ? 2 : L.mine ? 1 : 3; };
   return lists.slice().sort(function(a,b){
     var ia=ord.indexOf(a.id), ib=ord.indexOf(b.id);
     if(ia>-1 && ib>-1) return ia-ib; if(ia>-1 || ib>-1) return ia>-1 ? -1 : 1;
     return rank(a)-rank(b) || String(a.dept+a.ministry+a.title).localeCompare(String(b.dept+b.ministry+b.title)); });
 }
 function gptListLabel_(L){
-  if(L.onlyAssigned) return t('What you were given from this list, and what you asked it for');
+  if(gptIsMain_(L)) return t('Yours, and what’s given to you — drag a task onto one of your lists to file it');
   if(L.scope==='personal') return L.ownerId===S.me.id ? t('Personal · only you') : gpT('{name}’s list',{name:firstName_(gptPerson_(L.ownerId).name)});
   return (L.scope==='dept' ? gpT('{dept} · whole department',{dept:t(L.dept)}) : t(L.ministry)+' · '+t(L.dept))+' — '+t('the ministry’s list: add tasks and give them to its people');
 }
@@ -86,8 +99,10 @@ function gptWhen_(x){
   return s;
 }
 function gptOverdue_(x){ return !x.done && x.due && x.due<todayStr(); }
-/* "My order", like Google Tasks: where you dragged it; new ones at the end */
-function gptSort_(a,b){ return (a.order||0)-(b.order||0) || String(a.created).localeCompare(String(b.created)); }
+/* "My order", like Google Tasks: where you dragged it; new ones at the end. In one of your own lists a
+   task given to you sits where you filed it. */
+function gptOrderIn_(x, L){ if(x.listId===L.id) return x.order||0; var f=x.filed && x.filed[S.me.id]; return f && f.list===L.id && f.order!=null ? f.order : 1e9; }
+function gptSortIn_(L){ return function(a,b){ return gptOrderIn_(a,L)-gptOrderIn_(b,L) || String(a.created).localeCompare(String(b.created)); }; }
 /* ---- the page, like Google Tasks (Uriah, Oct 2026: "simple, like Google Tasks — the only thing is you
    can assign people"): list tabs across the top (My Tasks first) with ⋮ for the list's options; rows
    with a circle to tick, the title, small chips for the day and the person, subtasks under it, and a
@@ -98,15 +113,16 @@ S.gtNew=null; S.gtMenu=false;
 function gptPageHtml_(scope, embedded){
   var h='';
   S.gptScope=scope||null;
-  if(!scope && !embedded) h+='<button class="linkbtn" id="gptBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(S.gptFrom==='ministry' ? t('My Ministry') : S.gptFrom==='calendar' ? t('Calendar') : t('My Home'))+'</button>'+
-    '<h2 class="gtTitle">'+gptIc_('tasks')+' '+esc(t('GP Tasks'))+'</h2>';
+  /* the ministry's page (Uriah, Oct 2026: "like the personal GP Tasks, just that ministry's tasks") is the same page, with its list */
+  if(!embedded) h+='<button class="linkbtn" id="gptBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(S.gptFrom==='ministry' ? t('My Ministry') : S.gptFrom==='calendar' ? t('Calendar') : t('My Home'))+'</button>'+
+    '<h2 class="gtTitle">'+gptIc_('tasks')+' '+esc(t('GP Tasks'))+(scope ? ' · '+esc(t(scope.min||scope.dept)) : '')+'</h2>';
   if(!S.gpt){ if(!S.gptLoading && !S.gptErr) setTimeout(gptLoad_, 0); return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.gptErr ? t('Couldn’t load the tasks — pull down to try again.') : t('Loading…'))+'</p></div>'; }
   var G=S.gpt, lists=gptLists_(scope);
   var ids=lists.map(function(L){ return L.id; });
   if(ids.indexOf(S.gptList)===-1) S.gptList=ids[0] || null;
   /* the tabs — hold one and drag it to change their order */
   h+='<div class="gtBar"><div class="gtTabs" role="tablist">'+
-    lists.map(function(L){ return '<button class="gtTab'+(S.gptList===L.id?' on':'')+(L.onlyAssigned?' given':'')+'" data-gptlist="'+esc(L.id)+'" role="tab">'+gptKindIc_(L)+esc(gptChipName_(L))+'</button>'; }).join('')+
+    lists.map(function(L){ return '<button class="gtTab'+(S.gptList===L.id?' on':'')+'" data-gptlist="'+esc(L.id)+'" role="tab">'+gptKindIc_(L)+esc(gptChipName_(L))+(gptIsMain_(L) ? gptBadge_(gptInboxCount_()) : '')+'</button>'; }).join('')+
     (scope ? '' : '<button class="gtTab gtNewList" id="gptNewListBtn">＋ '+esc(t('New list'))+'</button>')+'</div>'+
     '<button class="gtMenuBtn" id="gtMenuBtn" aria-label="'+esc(t('List options'))+'">⋮</button></div>';
   if(S.gtMenu) h+=gtMenuHtml_(scope);
@@ -121,9 +137,8 @@ function gptPageHtml_(scope, embedded){
   var L=gptListById_(S.gptList);
   h+=gtListHtml_(L);
   /* add: the round ＋ on the page; inside My Ministry, a plain row */
-  var canAdd=!L.onlyAssigned && (L.canEdit || L.scope!=='personal');
-  if(canAdd) h+= embedded ? '<button class="gtAddRow" id="gtAdd">＋ '+esc(L && !L.canEdit ? gpT('Ask {name} for help',{name:t(L.ministry||L.dept)}) : t('Add a task'))+'</button>'
-    : '<button class="gtFab" id="gtAdd" aria-label="'+esc(t('Add a task'))+'">'+GPT_SVG.plus+'</button>';
+  var canAdd=L.canEdit || L.scope!=='personal';
+  if(canAdd) h+='<button class="gtFab" id="gtAdd" aria-label="'+esc(L && !L.canEdit ? gpT('Ask {name} for help',{name:t(L.ministry||L.dept)}) : t('Add a task'))+'">'+GPT_SVG.plus+'</button>';
   if(S.gtNew) h+=gtNewHtml_();
   if(S.gptOpen) h+=gtDetailHtml_();
   return h;
@@ -139,9 +154,10 @@ function gtMenuHtml_(scope){
     (L && L.canEdit && !isMain ? it('gptListDelete', '🗑 '+esc(t('Delete the list'))) : '')+'</div>';
 }
 function gtListHtml_(L){
-  var G=S.gpt;
-  var all=G.tasks.filter(function(x){ return x.listId===L.id && x.status!=='declined' || (L.onlyAssigned && x.listId===L.id); });
-  var open=all.filter(function(x){ return !x.done; }).sort(function(a,b){ return (a.status==='request')-(b.status==='request') || gptSort_(a,b); });
+  var G=S.gpt, mine=L.scope==='personal' && L.ownerId===S.me.id;
+  /* one of your own lists: its tasks, and the tasks given to you that you keep here (unfiled ones in the Inbox) */
+  var all=G.tasks.filter(function(x){ return x.listId===L.id ? x.status!=='declined' : (mine && gptGiven_(x) && gptFiledIn_(x)===L.id); });
+  var open=all.filter(function(x){ return !x.done; }).sort(function(a,b){ return (a.status==='request')-(b.status==='request') || gptSortIn_(L)(a,b); });
   var done=all.filter(function(x){ return x.done; });
   var h='<div class="gtList"><div class="gtListHead"><b>'+gptKindIc_(L)+esc(gptChipName_(L))+'</b><span>'+esc(gptListLabel_(L))+'</span></div>';
   if(!open.length) h+='<div class="gtEmpty small"><div class="gtEmptyIc">'+GPT_SVG.tasks+'</div><p>'+esc(t('No tasks yet.'))+'</p></div>';
@@ -152,12 +168,14 @@ function gtListHtml_(L){
 }
 /* one task: its row, its subtasks under it, and a request's answer buttons */
 function gtItemHtml_(x, L){
-  var req=x.status==='request', dec=x.status==='declined', canDrag=L && L.canEdit && !req && !x.done;
+  var req=x.status==='request', dec=x.status==='declined', canDrag=L && L.canEdit && !req && !dec && !x.done;
+  var showList=x.listId!==L.id, SL=showList ? gptListById_(x.listId) : L;   // the list it is really in
   var chips=[];
   if(x.due) chips.push('<span class="gtChip'+(gptOverdue_(x)?' late':'')+'">'+GPT_SVG.clock+esc(gptWhen_(x))+'</span>');
   x.assignees.forEach(function(id){ chips.push('<span class="gtChip who">'+GPT_SVG.person+esc(firstName_(gptPerson_(id).name))+'</span>'); });
-  if(x.from && x.from.label) chips.push('<span class="gtChip from">'+esc(gpT('from {who}',{who:t(x.from.label)}))+'</span>');
-  if(req) chips.push('<span class="gtChip req">'+esc(x.by===S.me.id ? gpT('Asked — waiting for {name}',{name:t((L&&(L.ministry||L.dept))||'')}) : t('Request'))+'</span>');
+  if(x.from && x.from.label && x.by!==S.me.id) chips.push('<span class="gtChip from">'+esc(gpT('from {who}',{who:t(x.from.label)}))+'</span>');
+  if(showList && SL) chips.push('<span class="gtChip list">'+gptIc_(SL.scope==='personal' ? 'person' : 'team')+esc(gptChipName_(SL))+'</span>');
+  if(req) chips.push('<span class="gtChip req">'+esc(x.by===S.me.id ? gpT('Asked — waiting for {name}',{name:t((SL&&(SL.ministry||SL.dept))||'')}) : t('Request'))+'</span>');
   if(dec) chips.push('<span class="gtChip late">'+esc(t('They can’t take it on'))+'</span>');
   var subs=x.subs||[], subsDone=subs.filter(function(s){ return s.done; }).length;
   if(subs.length && x.done) chips.push('<span class="gtChip">'+GPT_SVG.sub+subsDone+'/'+subs.length+'</span>');
@@ -320,7 +338,7 @@ function gptDrag_(handles, o){
 }
 function bindGpTasks_(){
   var mt=document.getElementById('mtToggle');
-  if(mt) mt.onclick=function(){ gpTap(); var o=!mtOpen_(); try{ lsSet('gp-mt-open', o ? '1' : '0'); }catch(e){} if(o && !S.gpt) gptLoad_(); render(); };
+  if(mt) mt.onclick=function(){ gpTap(); gptOpenMinistry_(mt.getAttribute('data-mtdept'), mt.getAttribute('data-mtmin')); };
   if(!document.querySelector('.gtBar, #gptBack, [data-gptmakefor]')) return;
   var on=function(id, fn){ var el=document.getElementById(id); if(el) el.onclick=fn; return el; };
   var scope=S.gptScope;
@@ -356,7 +374,7 @@ function bindGpTasks_(){
   on('gptAskSend', function(){
     var A=S.gptAsk; if(!A.min){ showMsg(t('Choose the ministry first')); return; } if(!(A.title||'').trim()){ showMsg(t('Give it a title first')); return; }
     gptSaveTask_({ askMin:A.min, title:A.title.trim(), due:A.due||'' }, gpT('Asked — {name} will see it in their list',{name:t(A.min.split('|')[1])}),
-      function(d){ S.gptAsk=null; var tk=(d.tasks||[]).filter(function(y){ return y.id===d.saved; })[0]; if(tk) S.gptList=tk.listId; });   // → the tab where it now waits
+      function(){ S.gptAsk=null; var m=gptMain_(); S.gptList=m ? m.id : null; });   // → your Inbox, where it waits
   });
   /* a new list is your own; a ministry's designated list is made by the server (the button below is
      for a ministry that has none yet — someone from before the designated lists) */
@@ -390,15 +408,21 @@ function bindGpTasks_(){
     dropSel:'.gtTab[data-gptlist]', dropAttr:'data-gptlist', self:S.gptList,
     onEnd:function(ids, target){
       var dragged=document.querySelector('.gtItem.gtDragging, .gtItem') && null;
-      if(target){   // dropped on a tab: into that list
-        var moving=ids.filter(function(id){ var x=(S.gpt.tasks||[]).filter(function(y){ return y.id===id; })[0]; return x && x.listId!==S.gptList; });
+      if(target){   // dropped on a tab: into that list — or, for a task given to you, filed under one of yours
         var id=S.gtDragId; S.gtDragId=null; if(!id) return;
-        var to=gptListById_(target); if(!to || !to.canEdit){ showMsg(t('You can’t add to that list')); render(); return; }
-        var x=(S.gpt.tasks||[]).filter(function(y){ return y.id===id; })[0]; if(x) x.listId=target; render();
+        var to=gptListById_(target), x=(S.gpt.tasks||[]).filter(function(y){ return y.id===id; })[0]; if(!x || !to) return;
+        if(x.listId!==S.gptList){   // shown here because it was given to you: file it, it stays in its own list
+          if(!(to.scope==='personal' && to.ownerId===S.me.id)){ showMsg(t('Only into one of your own lists')); render(); return; }
+          x.filed=x.filed||{}; x.filed[S.me.id]={ list:to.id, order:1e8 }; render();
+          run('fileGpTask',[S.auth.user,S.auth.pin,id,to.id],function(d){ if(d && d.ok){ gptTake_(d); showMsg(gpT('Filed under {list}',{list:gptChipName_(to)})); } else showMsg(t('Could not save')); render(); });
+          return;
+        }
+        if(!to.canEdit){ showMsg(t('You can’t add to that list')); render(); return; }
+        x.listId=target; render();
         gptSaveTask_({ id:id, listId:target }, gpT('Moved to {list}',{list:gptChipName_(to)}));
         return;
       }
-      ids.forEach(function(id, i){ var x=(S.gpt.tasks||[]).filter(function(y){ return y.id===id; })[0]; if(x) x.order=i; }); render();
+      ids.forEach(function(id, i){ var x=(S.gpt.tasks||[]).filter(function(y){ return y.id===id; })[0]; if(!x) return; if(x.listId===S.gptList) x.order=i; else { x.filed=x.filed||{}; x.filed[S.me.id]={ list:S.gptList, order:i }; } }); render();
       run('orderGpTasks',[S.auth.user,S.auth.pin,S.gptList,ids],function(d){ if(d && d.ok) gptTake_(d); });
     } });
   document.querySelectorAll('[data-gptgrip]').forEach(function(g){ g.addEventListener('mousedown', function(){ S.gtDragId=g.getAttribute('data-gptgrip'); }); g.addEventListener('touchstart', function(){ S.gtDragId=g.getAttribute('data-gptgrip'); }, { passive:true }); });
@@ -457,26 +481,27 @@ function gtSaveNew_(){
     asks ? gpT('Asked — {name} will see it in their list',{name:t(L.ministry||L.dept)}) : (N.who ? gpT('Added — {name} will be told',{name:firstName_(gptPerson_(N.who).name)}) : t('Added')),
     function(){ S.gtNew=null; });
 }
-/* My Ministry: Ministry Tasks, folded under the department and ministry (Uriah, Oct 2026: easy to
-   find, not much on the screen); open, it is that ministry's list only. Open or shut is remembered. */
-function mtOpen_(){ try{ return lsGet('gp-mt-open')==='1'; }catch(e){ return false; } }
+/* My Ministry: one row under the department and ministry, Ministry Tasks (n) ›, that opens the
+   ministry's own GP Tasks page — the same page as your own, with just that ministry's list (Uriah,
+   Oct 2026: "like the personal GP Tasks, just showing the tasks for that ministry — for all of the
+   ministries"). */
+function mtOpen_(){ return false; }
 function mtFoldHtml_(sel){
-  var open=mtOpen_(), n=null;
+  var n=null;
   if(S.gpt){ var ids=gptLists_({ dept:sel.dept, min:sel.min }).map(function(L){ return L.id; });
     n=S.gpt.tasks.filter(function(x){ return ids.indexOf(x.listId)>-1 && !x.done && x.status!=='declined'; }).length; }
-  else if(open && !S.gptLoading && !S.gptErr) setTimeout(gptLoad_, 0);
-  S.gptFrom='ministry';
-  return '<div class="card mtFold'+(open?' open':'')+'" id="mtFold"><button class="mtHead" id="mtToggle" aria-expanded="'+(open?'true':'false')+'">'+
-    '<span>'+gptIc_('tasks')+' '+esc(t('Ministry Tasks'))+(n ? ' <span class="adminBadge">'+n+'</span>' : '')+'</span><span class="accChevron"'+(open?'':' style="transform:rotate(-90deg)"')+'>'+ACC_CHEVRON+'</span></button>'+
-    (open ? '<div class="mtBody">'+gptPageHtml_({ dept:sel.dept, min:sel.min }, true)+'</div>' : '')+'</div>';
+  else if(!S.gptLoading && !S.gptErr) setTimeout(gptLoad_, 0);
+  return '<div class="card mtFold" id="mtFold"><button class="mtHead" id="mtToggle" data-mtdept="'+esc(sel.dept)+'" data-mtmin="'+esc(sel.min||'')+'">'+
+    '<span>'+gptIc_('tasks')+' '+esc(t('Ministry Tasks'))+(n ? ' <span class="adminBadge">'+n+'</span>' : '')+'</span><span class="heroGo" aria-hidden="true">›</span></button></div>';
 }
+function gptOpenMinistry_(dept, min){ S.gptPageScope={ dept:dept, min:min||'' }; S.gptFrom='ministry'; S.view='tasks'; S.gptList=null; S.gptOpen=null; S.gptDraft=null; render(); window.scrollTo(0,0); }
 /* My Home: the line on the card, and the small button by Weekly Goals */
 function gptHomeRowHtml_(){
   var I=S.gpTaskInfo; if(!I || S.student || S.guest || S.board) return '';
   return '<button class="heroRow heroRowGo" id="goGpTasks" aria-label="'+esc(t('GP Tasks'))+'"><span class="gptRing">'+GPT_SVG.tasks+'</span>'+
-    '<div class="heroTrend">'+esc(t('GP Tasks'))+' <b class="heroFig">'+I.open+'</b>'+(I.due ? ' <span class="whoCap">· '+esc(gpT('{n} due',{n:I.due}))+'</span>' : '')+'</div><span class="heroGo" aria-hidden="true">›</span></button>';
+    '<div class="heroTrend">'+esc(t('GP Tasks'))+' '+(I.inbox ? '<span class="gtBadge">'+I.inbox+'</span> <span class="whoCap">'+esc(t('in your Inbox'))+'</span>' : '<b class="heroFig">'+I.open+'</b>')+(I.due ? ' <span class="whoCap">· '+esc(gpT('{n} due',{n:I.due}))+'</span>' : '')+'</div><span class="heroGo" aria-hidden="true">›</span></button>';
 }
-function gptOpenPage_(from){ S.gptFrom=from||'week'; S.view='tasks'; S.gpt=null; S.gptOpen=null; S.gptDraft=null; render(); window.scrollTo(0,0); }
+function gptOpenPage_(from){ S.gptFrom=from||'week'; S.gptPageScope=null; S.view='tasks'; S.gpt=null; S.gptOpen=null; S.gptDraft=null; render(); window.scrollTo(0,0); }
 /* the bell: given a task, asked for help, a request turned down */
 function gptNotifItems_(){
   var I=S.gpTaskInfo, out=[]; if(!I) return out;

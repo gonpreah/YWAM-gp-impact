@@ -2311,7 +2311,8 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .gtItem.gtDragging .gtRow { background:var(--surface2); border-radius:12px; }
 .gtTab.gtDrop { background:var(--accentSoft); border-radius:10px 10px 0 0; }
 body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
-.gtTab.given { font-weight:500; font-style:italic; }
+.gtBadge { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding:0 6px; border-radius:999px; background:var(--bad); color:var(--surface); font-size:12px; font-weight:800; line-height:1; margin-left:6px; vertical-align:1px; }
+.mtFold .mtHead .heroGo { font-size:22px; color:var(--muted); }
 .gtKind { margin-right:6px; opacity:.75; } .gtTab .gtKind { font-size:13px; } .gtListHead .gtKind { font-size:17px; vertical-align:-2px; }
 /* asking another ministry: find it by department, or search */
 .gtFind { display:flex; align-items:center; gap:8px; margin:0 0 6px; color:var(--muted); } .gtFind input { flex:1; margin:0; }

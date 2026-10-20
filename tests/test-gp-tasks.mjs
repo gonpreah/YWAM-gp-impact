@@ -103,13 +103,14 @@ r = await call('saveGpTaskFilter', [...as('uriah'), null]);
 ok('… and cleared', r.ok && r.filter === null);
 
 console.log('=== a board card for a ministry and a person ===');
-r = await call('saveLeadCard', [...as('uriah'), { title: 'Fix the cafe sign', type: 'project', owner: 'c2', due: day(5), taskMin: 'Community Service|Cafe' }]);
+r = await call('saveLeadCard', [...as('uriah'), { title: 'Fix the cafe sign', type: 'project', owner: 'c2', due: day(5), taskMin: 'Community Service|' }]);
 const card = r.saved;
 r = await call('getGpTasks', as('kanha'));
 let ct = (r.tasks || []).find(t => t.cardId === card.id);
-ok('it shows up in the Cafe\'s list, given to Kanha, from Campus Leadership', ct && ct.title === 'Fix the cafe sign' && ct.assignees.join() === 'c2' && ct.from.label === 'Campus Leadership' && ct.due === day(5));
+ok('it shows up in the department\'s list (made, named after it), given to Kanha, from Campus Leadership', ct && ct.title === 'Fix the cafe sign' && ct.assignees.join() === 'c2' && ct.from.label === 'Campus Leadership' && ct.due === day(5) && r.lists.find(l => l.id === ct.listId).scope === 'dept' && r.lists.find(l => l.id === ct.listId).title === 'Community Service');
 r = await call('getMyBoot', as('kanha'));
 ok('… and her bell says so', r.gpTaskInfo.notices.some(n => n.kind === 'assigned' && n.title === 'Fix the cafe sign'));
+ok('… and her boot counts her Inbox (the red number): given to her, not filed elsewhere', r.gpTaskInfo.inbox >= 1 && r.gpTaskInfo.inbox === mem.gpTasks.tasks.filter(t => !t.done && t.status !== 'declined' && (t.assignees || []).indexOf('c2') > -1 && !(t.filed && t.filed.c2)).length + mem.gpTasks.tasks.filter(t => !t.done && t.listId === mem.gpTasks.lists.find(l => l.scope === 'personal' && l.ownerId === 'c2').id).length);
 const done = (await call('getLeadBoard', as('uriah'))).cols.find(c => c.done).id;
 await call('saveLeadCard', [...as('uriah'), Object.assign({}, card, { col: done })]);
 r = await call('getGpTasks', as('kanha'));
@@ -197,7 +198,20 @@ r = await call('saveGpTaskList', [...as('uriah'), { id: pl.id, title: 'Renamed' 
 ok('… nor rename it (not even leadership)', r.ok === false);
 await call('saveGpTask', [...as('kanha'), { listId: pl.id, title: 'Count the cups', assignees: ['c1'] }]);
 r = await call('getGpTasks', as('cora'));
-ok('what reaches someone else is a task given to them — in My Tasks, with the list it came from', !!task(r, 'Count the cups') && r.lists.some(l => l.id === pl.id && l.onlyAssigned) && !r.lists.some(l => l.id === pl.id && !l.onlyAssigned));
+ok('what reaches someone else is a task given to them — in their Inbox, with the list it came from', !!task(r, 'Count the cups') && r.lists.some(l => l.id === pl.id && l.onlyAssigned) && !r.lists.some(l => l.id === pl.id && !l.onlyAssigned));
+console.log('=== filing what you were given ===');
+r = await call('saveGpTaskList', [...as('cora'), { scope: 'personal', title: 'Reading' }]);
+const reading = r.lists.find(l => l.title === 'Reading'), cups = task(r, 'Count the cups');
+r = await call('fileGpTask', [...as('cora'), cups.id, reading.id]);
+ok('Cora files it under her own list: filed for her, still in Kanha\'s list', r.ok && task(r, 'Count the cups').filed.c1.list === reading.id && task(r, 'Count the cups').listId === pl.id);
+r = await call('fileGpTask', [...as('cora'), cups.id, cafe.id]);
+ok('… not into a ministry\'s list', r.ok === false && r.err === 'not_yours');
+r = await call('fileGpTask', [...as('hana'), cups.id, reading.id]);
+ok('… and not by someone it wasn\'t given to', r.ok === false);
+r = await call('orderGpTasks', [...as('cora'), reading.id, [cups.id]]);
+ok('its place in that list is kept for her too', r.ok && task(r, 'Count the cups').filed.c1.order === 0);
+r = await call('fileGpTask', [...as('cora'), cups.id, '']);
+ok('unfiled: back to the Inbox', r.ok && !task(r, 'Count the cups').filed.c1);
 r = await call('saveGpTaskList', [...as('kanha'), { id: pl.id, remove: true }]);
 ok('deleting a list takes its tasks with it', !r.lists.some(l => l.id === pl.id) && !mem.gpTasks.tasks.some(t => t.listId === pl.id));
 

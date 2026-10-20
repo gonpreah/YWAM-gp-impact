@@ -575,13 +575,14 @@ function leadFormHtml_(objs){
   h+='<div class="chips hospChips">'+[['agenda','💬','Agenda item'],['project','🔨','Project']].map(function(x){
     return '<button class="hospChip'+(f.type===x[0]?' on':'')+'" data-lftype="'+x[0]+'">'+x[1]+' '+esc(t(x[2]))+'</button>'; }).join('')+'</div>';
   h+='<label class="f">'+esc(t('Title'))+'</label><input type="text" data-lf="title" maxlength="160" value="'+esc(f.title||'')+'" placeholder="'+esc(t('e.g. Staff retreat plan'))+'">';
-  /* GP Tasks (Oct 2026, Uriah): for a ministry and a person, the card is also a task in that
-     ministry's list, given to them, from Campus Leadership — and they hear of it */
+  /* GP Tasks (Oct 2026, Uriah): for a department and a person, the card is also a task in that
+     department's list, given to them, from Campus Leadership — and they hear of it. A department,
+     not a ministry: its director hands it on to a ministry leader in GP Tasks. */
   var deps=getDepartments(S.me.campus), mins=[];
-  Object.keys(deps).filter(function(d){ return d!==BL_DEPT; }).forEach(function(d){ mins.push([d+'|', gpT('{dept} · whole department',{dept:t(d)})]); Object.keys(deps[d]||{}).forEach(function(m){ mins.push([d+'|'+m, t(m)+' · '+t(d)]); }); });
-  h+='<label class="f">'+esc(t('A task for which ministry?'))+'</label><select data-lf="taskMin" data-lfre="1"><option value="">'+esc(t('— none: just on the board —'))+'</option>'+
+  Object.keys(deps).filter(function(d){ return d!==BL_DEPT; }).forEach(function(d){ mins.push([d+'|', t(d)]); });
+  h+='<label class="f">'+esc(t('A task for which department?'))+'</label><select data-lf="taskMin" data-lfre="1"><option value="">'+esc(t('— none: just on the board —'))+'</option>'+
     mins.map(function(x){ return '<option value="'+esc(x[0])+'"'+(f.taskMin===x[0]?' selected':'')+'>'+esc(x[1])+'</option>'; }).join('')+'</select>'+
-    (f.taskMin ? '<p class="hint" style="margin:4px 0 0">'+esc(t('It shows in that ministry’s GP Tasks list, given to the person below, from Campus Leadership.'))+'</p>' : '');
+    (f.taskMin ? '<p class="hint" style="margin:4px 0 0">'+esc(t('It shows in that department’s GP Tasks list, given to the person below, from Campus Leadership — and in their Inbox.'))+'</p>' : '');
   var owners=f.taskMin ? leadTaskOwners_(f.taskMin) : leadOwnerOptions_();
   h+='<div class="teamGrid2"><div><label class="f">'+esc(f.taskMin ? t('Given to') : t('Who owns it'))+'</label><select data-lf="owner"><option value="">'+esc(t('— nobody yet —'))+'</option>'+
     owners.map(function(p){ return '<option value="'+esc(p.id)+'"'+(f.owner===p.id?' selected':'')+'>'+esc(p.name)+'</option>'; }).join('')+'</select></div>'+
