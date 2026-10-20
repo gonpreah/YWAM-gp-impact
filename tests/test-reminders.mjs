@@ -154,6 +154,46 @@ ok('Turn off removes this phone', r.ok && !mem.pushSubs.some((x) => x.endpoint =
 r = await call('adminPushStatus', ['uriah', '1234']);
 ok('Admin → Reminders: on, how many people and phones, the last run', r.ok && r.ready && r.people === 1 && r.phones === 1 && r.last.slot);
 
+/* ---------- 6. right away: what the bell says, on the phone (Oct 2026) ---------- */
+answer = 201;
+const k2 = phone(), u2 = phone();
+await call('savePushSub', ['kanha', '1234', k2.sub, 'en']); await call('savePushSub', ['uriah', '1234', u2.sub, 'en']);
+const to = (ph) => sent.filter((x) => x.url === ph.sub.endpoint).map((x) => decrypt(ph, x.opts.body).body);
+const ahead = (n) => new Date(Date.now() + 7 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+sent = [];
+r = await call('requestOneOnOne', ['kanha', '1234', 'st1', 'Can we talk?']);
+ok('Kanha asks her mentor for a 1-on-1: his phone hears of it at once', r.ok && to(u2).length === 1 && /Kanha Lim asked you for a 1-on-1/.test(to(u2)[0]), JSON.stringify(to(u2)));
+const oid = r.oneOnOnes.find((o) => o.status === 'pending').id;
+r = await call('respondToOneOnOne', ['uriah', '1234', oid, true, '2020-01-01T10:00']);
+ok('a time in the past is refused', r.ok === false && r.err === 'bad_when');
+r = await call('respondToOneOnOne', ['kanha', '1234', oid, true, ahead(2) + 'T15:00']);
+ok('only the one asked can answer', r.ok === false);
+sent = [];
+r = await call('respondToOneOnOne', ['uriah', '1234', oid, true, ahead(2) + 'T15:00']);
+const ro = r.ok && r.oneOnOnes.find((o) => o.id === oid);
+ok('Uriah sets the day and time: it is on, with the time, set by him', ro && ro.status === 'accepted' && ro.when === ahead(2) + 'T15:00' && ro.whenByMe === true);
+ok('… and Kanha\'s phone says so, with the day and time', to(k2).length === 1 && /Uriah Lyford set your 1-on-1 for .+, 3:00 pm\./.test(to(k2)[0]), JSON.stringify(to(k2)));
+sent = [];
+r = await call('setOneOnOneTime', ['kanha', '1234', oid, ahead(3) + 'T09:30']);
+ok('either of the pair can move it; the other hears', r.ok && r.oneOnOnes.find((o) => o.id === oid).when === ahead(3) + 'T09:30' && /Kanha Lim set your 1-on-1 for .+, 9:30 am/.test(to(u2)[0] || ''));
+r = await call('setOneOnOneTime', ['dara', '1234', oid, ahead(3) + 'T09:30']);
+ok('… nobody else can', r.ok === false);
+await call('savePushPrefs', ['kanha', '1234', { hour: 10, alerts: false }]);
+sent = [];
+await call('setOneOnOneTime', ['uriah', '1234', oid, ahead(4) + 'T08:00']);
+ok('“Right away” switched off: nothing to that phone', to(k2).length === 0);
+await call('savePushPrefs', ['kanha', '1234', { hour: 10, alerts: true }]);
+sent = [];
+await call('updateProfile', ['dara', '1234', { mentorId: 'st1' }]);
+ok('choosing a mentor: their phone hears of it', /Dara Sok asked you to be their mentor/.test(to(u2)[0] || ''));
+sent = [];
+r = await call('saveTrip', ['kanha', '1234', { from: ahead(10), to: ahead(11), type: 'personal', reason: 'Visit family' }]);
+ok('asking for leave: the mentor\'s phone hears of it', /Kanha Lim asked for leave/.test(to(u2)[0] || ''));
+const tid = mem.trips.find((x) => x.staffId === 'st2' && x.status === 'pending').id;
+sent = [];
+await call('respondToTrip', ['uriah', '1234', tid, true]);
+ok('… and the answer reaches hers', /was approved/.test(to(k2)[0] || ''));
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 fs.rmSync(TMP, { recursive: true, force: true });
 process.exit(fail ? 1 : 0);

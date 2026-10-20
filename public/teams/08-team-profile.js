@@ -369,6 +369,49 @@ function personHtml(){
 
 /* Team's way into Mentorship — for anyone who mentors, has a mentor, or has
    something waiting. */
+/* ---------- one relationship's 1-on-1 (Oct 2026, Uriah) ----------
+   Each 1-on-1 belongs to one relationship — which of the two is the mentee says which —
+   so when two people mentor each other, "You mentor Uriah" and "Your mentor: Uriah" each
+   show their own. The line says, in words, who asked and what happens next; the one asked
+   sets the day and time (that is the yes), and the other hears of it. */
+function ooRelRow_(otherId, menteeId){
+  return (S.oneOnOnes||[]).filter(function(o){ return o.otherId===otherId && o.menteeId===menteeId && ooOpen_(o); })[0] || null;
+}
+function ooPlaced_(o){
+  if(o.menteeId===S.me.id) return o.otherId===S.me.mentorId && S.me.mentorStatus==='approved';
+  return (S.mentees||[]).some(function(p){ return p.id===o.otherId && o.menteeId===p.id; });
+}
+function ooWhenNice_(w){
+  var m=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(String(w||'')); if(!m) return '';
+  var d=new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5]);
+  return d.toLocaleDateString(LANG==='km'?'km-KH':'en-GB', { weekday:'short', day:'numeric', month:'short' })+', '+
+    d.toLocaleTimeString(LANG==='km'?'km-KH':'en-US', { hour:'numeric', minute:'2-digit' });
+}
+function ooTimePickHtml_(id, accept, cur){
+  var d=cur ? cur.slice(0,10) : '', tm=cur ? cur.slice(11,16) : '';
+  return '<div class="ooTime"><input type="date" data-oodate="'+esc(id)+'" value="'+esc(d)+'" min="'+esc(todayStr())+'" aria-label="'+esc(t('Day'))+'">'+
+    '<input type="time" data-ootime="'+esc(id)+'" value="'+esc(tm)+'" step="900" aria-label="'+esc(t('Time'))+'">'+
+    '<button class="btn small" data-ooset="'+esc(id)+'"'+(accept?' data-ooaccept="1"':'')+'>'+esc(accept ? t('Set the time') : t('Save the time'))+'</button></div>';
+}
+function ooRelHtml_(o, otherId, name){
+  var first=String(name||'').split(' ')[0], h='<div class="ooRel">';
+  if(!o) return h+'<button class="btn ghost small mentorAct" data-request121="'+esc(otherId)+'">☕ '+esc(gpT('Ask {name} for a 1-on-1',{name:first}))+'</button></div>';
+  if(o.status==='pending' && o.mine)
+    return h+'<div class="ooLine">⏳ '+esc(gpT('You asked {name} for a 1-on-1 — waiting for them to set a time.',{name:first}))+'</div>'+
+      '<button class="linkbtn inline" data-ooopen="'+esc(o.id)+'">'+esc(t('Open the 1-on-1'))+' ›</button></div>';
+  if(o.status==='pending')
+    return h+'<div class="ooLine ooAskedLine">🔔 '+esc(gpT('{name} asked you for a 1-on-1. Pick a day and time:',{name:first}))+(o.note ? '<div class="pmeta">“'+esc(o.note)+'”</div>' : '')+'</div>'+
+      ooTimePickHtml_(o.id, true, '')+
+      '<div class="ooActsRow"><button class="linkbtn inline" data-ooopen="'+esc(o.id)+'">'+esc(o.iMentor ? t('Read their check-in first') : t('Open the 1-on-1'))+' ›</button>'+
+      '<button class="linkbtn inline" style="color:var(--faint)" data-121decline="'+esc(o.id)+'">'+esc(t('Can’t right now — decline'))+'</button></div></div>';
+  /* accepted: the time, or a picker until there is one */
+  if(o.when && S.ooTimeEdit!==o.id)
+    return h+'<div class="ooLine ooWhen">📅 <b>'+esc(ooWhenNice_(o.when))+'</b> <span class="pmeta">· '+esc(o.whenByMe ? t('you set it') : gpT('{name} set it',{name:first}))+'</span></div>'+
+      '<div class="ooActsRow"><button class="btn ghost small" data-ooopen="'+esc(o.id)+'">☕ '+esc(t('Open the 1-on-1'))+'</button>'+
+      '<button class="linkbtn inline" data-oochange="'+esc(o.id)+'">'+esc(t('Change the time'))+'</button></div></div>';
+  return h+'<div class="ooLine">'+esc(o.when ? t('Pick a new day and time:') : gpT('You and {name} agreed to meet — no time yet:',{name:first}))+'</div>'+ooTimePickHtml_(o.id, false, o.when)+
+    '<button class="linkbtn inline" data-ooopen="'+esc(o.id)+'">'+esc(t('Open the 1-on-1'))+' ›</button></div>';
+}
 function mentorEntryHtml(){
   var waiting=mentorWaitingN_();
   if(!(S.mentees||[]).length && !S.me.mentorId && !waiting && !(S.stuMentor && S.stuMentor.students.length)) return '';
@@ -569,10 +612,12 @@ function mentorHtml(){
   /* The Mentorship page (Oct 2026, Uriah): everything about mentoring in one
      place — what is waiting on you, the people you mentor (tap one for their
      page and every 1-on-1 you've had), your own mentor, and what's coming up. */
-  var h='<h2>🤝 '+esc(t('Mentorship'))+'</h2><p class="sub">'+esc(t('The people you mentor, your own mentor, and your 1-on-1s — all in one place.'))+'</p>';
+  var h='<h2>🤝 '+esc(t('Mentorship'))+'</h2><p class="sub">'+esc(t('Who you mentor and who mentors you. Each 1-on-1 sits with the person it’s with — whoever asked, the one asked sets the day and time.'))+'</p>';
 
-  /* 1-on-1 requests waiting for you, saying who asked whom */
-  var incoming=(S.oneOnOnes||[]).filter(function(o){ return !o.mine && o.status==='pending'; });
+  /* 1-on-1 requests sit with their person below (Oct 2026, Uriah: "I'm mentoring Uriah and he's
+     mentoring me — I don't know who asked whom"). Only one that has no place there any more
+     (the pair has since changed) is listed here. */
+  var incoming=(S.oneOnOnes||[]).filter(function(o){ return !o.mine && o.status==='pending' && !ooPlaced_(o); });
   if(incoming.length){
     h+='<h3>🔔 '+esc(t('Asking you for a 1-on-1'))+' <small>· '+incoming.length+'</small></h3><div class="card">';
     incoming.forEach(function(o){
@@ -613,8 +658,6 @@ function mentorHtml(){
     h+='</div>';
   }
 
-  var coming=ooComingHtml_();
-  if(coming) h+='<div class="card" id="ooComing">'+coming+'</div>';
 
   /* students who chose them (Leadership Development, Oct 2026): accept or decline; then their names */
   var SM=S.stuMentor;
@@ -629,31 +672,29 @@ function mentorHtml(){
     h+='</div>';
   }
 
-  /* the people you mentor */
-  h+='<h3>'+esc(t('People you mentor'))+' <small>· '+(S.mentees||[]).length+'</small></h3>';
+  /* the people you mentor — each with their 1-on-1, whoever asked */
+  h+='<h3>👥 '+esc(t('You mentor'))+' <small>· '+(S.mentees||[]).length+'</small></h3>';
   if((S.mentees||[]).length){
     h+='<p class="sub">'+esc(t('Tap a name for their page and every 1-on-1 you’ve had. You can see their private check-ins — hold them with care.'))+'</p><div class="card mentorList">';
     S.mentees.forEach(function(p){
-      var first=String(p.name||'').split(' ')[0], open=(S.oneOnOnes||[]).filter(function(o){ return o.otherId===p.id && ooOpen_(o); })[0];
-      h+='<div class="mentorRow"><button class="mentorRowMain" data-mentee="'+esc(p.id)+'">'+avatarHtml(p,'sm')+
+      var o=ooRelRow_(p.id, p.id);
+      h+='<div class="mentorRow'+(o && o.status==='pending' && !o.mine ? ' ooWaiting' : '')+'" id="mentee-'+esc(p.id)+'"><button class="mentorRowMain" data-mentee="'+esc(p.id)+'">'+avatarHtml(p,'sm')+
         '<span class="mentorRowTxt"><span class="mentorName">'+esc(p.name)+'</span><span class="mentorMeta">'+esc(t(p.ministry||p.dept||''))+'</span>'+ooMonthHtml_(p.id)+'</span><span class="ooChev">›</span></button>'+
-        (open ? '<button class="btn ghost small mentorAct" data-ooopen="'+esc(open.id)+'">☕ '+esc(t('Open the 1-on-1'))+'</button>'
-          : '<button class="btn ghost small mentorAct" data-request121="'+esc(p.id)+'">☕ '+esc(gpT('Ask {name} for a 1-on-1',{name:first}))+'</button>')+'</div>';
+        ooRelHtml_(o, p.id, p.name)+'</div>';
     });
     h+='</div>';
   } else h+='<div class="card"><p class="sub" style="margin:0">'+esc(t('Nobody has chosen you as their mentor yet.'))+'</p></div>';
 
   /* your own mentor */
-  h+='<h3>'+esc(t('Your mentor'))+'</h3>';
+  h+='<h3>🧭 '+esc(t('Your mentor'))+'</h3>';
   if(S.me.mentorId){
     var mm=personOf(S.me.mentorId), mName=mm ? mm.name : nameOf(S.me.mentorId), mFirst=String(mName||'').split(' ')[0];
-    var myOpen=(S.oneOnOnes||[]).filter(function(o){ return o.otherId===S.me.mentorId && ooOpen_(o); })[0];
     var mine=ooPairRows_(S.me.id).filter(function(o){ return o.status==='held'; });
-    h+='<div class="card" id="myMentorCard"><div class="mentorBlock" style="padding-bottom:6px">'+avatarHtml(mm||{name:mName},'sm')+
+    var myO=ooRelRow_(S.me.mentorId, S.me.id);
+    h+='<div class="card'+(myO && myO.status==='pending' && !myO.mine ? ' ooWaiting' : '')+'" id="myMentorCard"><div class="mentorBlock" style="padding-bottom:6px">'+avatarHtml(mm||{name:mName},'sm')+
       '<div style="flex:1"><div class="mentorName">'+esc(mName)+'</div><div class="mentorMeta">'+esc(t(mm?(mm.ministry||mm.dept||''):''))+'</div>'+ooMonthHtml_(S.me.id)+'</div></div>'+
-      (S.me.mentorStatus && S.me.mentorStatus!=='approved' ? '<p class="sub" style="margin:0 0 8px">⏳ '+esc(gpT('Waiting for {name} to accept being your mentor.',{name:mFirst}))+'</p>' : '')+
-      (myOpen ? '<button class="btn ghost" style="margin:4px 0 0" data-ooopen="'+esc(myOpen.id)+'">☕ '+esc(t('Open the 1-on-1'))+'</button>'
-        : '<button class="btn" style="margin:4px 0 0" data-request121="'+esc(S.me.mentorId)+'">☕ '+esc(gpT('Ask {name} for a 1-on-1',{name:mFirst}))+'</button>');
+      (S.me.mentorStatus && S.me.mentorStatus!=='approved' ? '<p class="sub" style="margin:0 0 8px">⏳ '+esc(gpT('Waiting for {name} to accept being your mentor.',{name:mFirst}))+'</p>'
+        : ooRelHtml_(myO, S.me.mentorId, mName));
     if(mine.length) h+='<div class="mentorLabel" style="margin-top:12px">'+esc(gpT('Your 1-on-1s with {name}',{name:mFirst}))+'</div>'+mine.slice(0,5).map(ooHistRowHtml_).join('');
     h+='</div>';
   } else h+='<div class="card"><p class="sub" style="margin:0 0 8px">'+esc(t('No mentor set yet. Choose one in your profile — they’ll see your private check-ins and meet with you.'))+'</p><button class="btn ghost" style="margin:0" id="mentorPickProfile">'+esc(t('Choose a mentor'))+'</button></div>';
