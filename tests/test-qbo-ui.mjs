@@ -45,6 +45,7 @@ const mk = (o) => Object.assign({ active: true, campus: 'poipet', role: 'Staff',
 mem.staff = [
   mk({ id: 'st_fin', name: 'Bopha Keo', username: 'bopha', dept: 'Skills Training', ministry: 'Finances' }),
   mk({ id: 'st_cd', name: 'Mark Hill', username: 'mark', dept: 'Campus Leadership', ministry: 'Campus Director' }),
+  mk({ id: 'st_adm', name: 'Ada Min', username: 'ada', dept: 'Campus Leadership', ministry: 'Campus Director', cdKind: 'international', isAdmin: true }),
   mk({ id: 'st_dara', name: 'Dara Sok', username: 'dara', dept: 'Community Service', ministry: 'Cafe' }),
   mk({ id: 'st_vanna', name: 'Vanna Chan', username: 'vanna', dept: 'Youth Education', ministry: 'Kids Club' })
 ];
@@ -99,6 +100,13 @@ const card = (p) => p.$eval('.finQbo', (e) => e.innerText).catch(() => '');
 const noSideways = (p) => p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
 
 /* ---- before the keys ---- */
+{
+  // an admin who is a Campus Director finds it on their own Finances tab, not only the office's page
+  const { ctx, page } = await open('ada', { lw: 'money' });
+  ok('an admin’s Campus Leadership Finances tab has the QuickBooks card too', /QuickBooks/.test(await card(page)) && /once an admin has added/.test(await card(page)));
+  ok('… and an admin who is a Campus Director opens My Ministry on their own board', (await page.evaluate(() => S.mmBrowseDept + '|' + S.mmBrowseMinistry)) === 'Campus Leadership|@icd');
+  await ctx.close();
+}
 {
   const { ctx, page } = await open('bopha');
   const c = await card(page);

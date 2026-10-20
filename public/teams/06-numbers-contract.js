@@ -764,7 +764,7 @@ function mmSelected_(opts){
   var inDept=opts.filter(function(o){ return o.dept===S.mmBrowseDept; });
   if(inDept.length) return inDept.filter(function(o){ return !isTeamsMinistry_(o.dept, o.min); })[0] || inDept[0];
   // your own first — for Campus Leadership that is its OKRs and meeting board
-  var own = opts.filter(function(o){ return o.dept===S.me.dept && o.min===S.me.ministry; })[0];
+  var own = opts.filter(function(o){ return o.dept===S.me.dept && o.min===(o.dept===BL_DEPT ? blMyKey_() : S.me.ministry); })[0];
   // otherwise the first weekly ministry — Outreach Teams is its own page
   return own || opts.filter(function(o){ return !isTeamsMinistry_(o.dept, o.min); })[0] || opts[0];
 }
@@ -868,7 +868,9 @@ function myMinistryHtml(){
         return '<button class="campusBtn'+(lwt===k?' on':'')+'" data-lwtab="'+k+'">'+TABS[k][0]+' '+esc(TABS[k][1])+'</button>'; }).join('')+'</div>';
       if(lwt==='week') return h+lwHtml_();
       /* the base's finances, from the Finances office's reports (teams/09-finance.js) */
-      if(lwt==='money') return h+finDashHtml_();
+      /* the QuickBooks card too, for whoever may connect it (an admin, the Finances office) —
+         on Campus Leadership's Finances tab, where they look for it, not only the office's page */
+      if(lwt==='money') return h+(S.fin && S.fin.canEdit ? finQboHtml_(S.fin) : '')+finDashHtml_();
       /* the OKRs page itself — yours, leadership's, and (admins) every department's */
       if(lwt==='okrs') return h+okrTabHtml_();
       /* GP Tasks: every list on the campus, narrowed by the filter they keep (12-tasks.js) */
