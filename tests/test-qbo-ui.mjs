@@ -4,7 +4,7 @@
    tests/qbo-fixtures.mjs); coming back through quickbooks.js says it's connected, and the
    app, shown again, finds the numbers in: the company, when they came in, the Locations
    to choose from; the P&L and the ageing listed as from QuickBooks. A Campus Director's
-   dashboard says the month is from QuickBooks and still has no name on it. Disconnecting
+   dashboard says the month is from QuickBooks and lists who owes. Disconnecting
    asks first. On a small phone nothing scrolls sideways; Khmer and dark render. */
 import { REPO, PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
 import { chromium, devices } from 'playwright';
@@ -141,13 +141,44 @@ process.env.QBO_CLIENT_ID = 'cid-test'; process.env.QBO_CLIENT_SECRET = 'csecret
   await ctx.close();
 }
 
+/* ---- the office's own reports ---- */
+{
+  const { ctx, page } = await open('bopha');
+  ok('the office’s own reports: none yet, and a way to add one', /Your own reports from QuickBooks/.test(await page.$eval('#finQr', (e) => e.innerText)) && !!(await page.$('#qrAdd')));
+  await page.click('#qrAdd'); await page.waitForTimeout(300);
+  await page.selectOption('#qrType', 'BalanceSheet'); await page.waitForTimeout(300);
+  ok('… choosing a Balance Sheet offers its own choices', (await page.$$eval('#qrCols option', (o) => o.map((x) => x.value))).join() === 'Total,Month,Quarter' && !!(await page.$('#qrBasis')) && !!(await page.$('#qrCampus')));
+  await page.selectOption('#qrPeriod', 'this_year'); await page.selectOption('#qrCols', 'Month');
+  await page.check('#qrShare'); await page.fill('#qrName', 'Balance sheet, this year');
+  await page.screenshot({ path: OUT + '/6-add-report.png', fullPage: false });
+  await (await page.$('#qrForm, .qrForm')).screenshot({ path: OUT + '/6b-add-report-form.png' });
+  await page.click('#qrSave'); await page.waitForTimeout(1800);
+  const list = await page.$eval('#finQr', (e) => e.innerText);
+  ok('… added and brought in at once', /Balance sheet, this year/.test(list) && /Balance Sheet · This year so far · A column a month · cash basis/.test(list) && /brought in/.test(list) && /leadership sees it/.test(list), list.split('\n').slice(0, 6).join(' / '));
+  await page.click('[data-qropen]'); await page.waitForTimeout(1500);
+  const rows = await page.$$eval('.qrTable tbody tr', (r) => r.map((x) => x.className + ':' + x.innerText.replace(/\s+/g, ' ')));
+  ok('it opens as a table: heading, rows, total', rows.length === 4 && /^qrh:Assets/.test(rows[0]) && /1,200\.00/.test(rows[1]) && /^qrt:Total Assets/.test(rows[3]), rows.join(' | '));
+  await page.screenshot({ path: OUT + '/7-report-open.png', fullPage: false });
+  await (await page.$('#finQr')).screenshot({ path: OUT + '/7b-report-card.png' });
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('[data-qrcsv]')]);
+  const csv = fs.readFileSync(await dl.path(), 'utf8');
+  ok('… and downloads as a spreadsheet', /\.csv$/.test(dl.suggestedFilename()) && /Total Assets,1200\.00/.test(csv), dl.suggestedFilename());
+  await page.click('[data-qredit]'); await page.waitForTimeout(300);
+  ok('it can be changed later', (await page.$eval('#qrName', (e) => e.value)) === 'Balance sheet, this year' && (await page.$eval('#qrCols', (e) => e.value)) === 'Month');
+  await page.click('#qrCancel');
+  await ctx.close();
+}
+
 /* ---- leadership ---- */
 {
   const { ctx, page } = await open('mark', { lw: 'money' });
   await page.waitForTimeout(800);
   const d = await page.$eval('#finDash', (e) => e.innerText).catch(() => '');
   ok('a Campus Director’s dashboard says it’s from QuickBooks', /From QuickBooks · brought in/.test(d), d.split('\n').slice(0, 3).join(' / '));
-  ok('… with no QuickBooks card and no name on the page', !(await page.$('.finQbo')) && !/Dara Sok|Vanna Chan|Someone Gone/.test(await page.evaluate(() => document.body.innerText)));
+  ok('a shared report is on their Finances tab, and opens', /Balance sheet, this year/.test(await page.$eval('#finQr', (e) => e.innerText)) && !(await page.$('[data-qrdel]')));
+  await page.click('[data-qropen]'); await page.waitForTimeout(1500);
+  ok('… as the same table', (await page.$$('.qrTable tbody tr')).length === 4);
+  ok('… with no QuickBooks card, and who owes', !(await page.$('.finQbo')) && /Vanna Chan/.test(await page.$eval('#finDebt', (e) => e.innerText)));
   await page.screenshot({ path: OUT + '/4-leadership.png', fullPage: true });
   await ctx.close();
 }

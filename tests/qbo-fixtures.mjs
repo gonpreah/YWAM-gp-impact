@@ -10,7 +10,7 @@ export const back = (n) => { let y = Number(today.slice(0, 4)), m = Number(today
 export const LAST = back(1), PREV = back(2);
 
 /* ---- a stand-in Intuit ---- */
-export const I = { calls: [], code: 'auth-code-1', n: 0, refreshBad: false, fail401: 0, plMismatch: false, revoked: [] };
+export const I = { reportDown: '', calls: [], code: 'auth-code-1', n: 0, refreshBad: false, fail401: 0, plMismatch: false, revoked: [] };
 const tok = () => { I.n++; return { access_token: 'AT-secret-' + I.n, refresh_token: 'RT-secret-' + I.n, expires_in: 3600, x_refresh_token_expires_in: 8640000, token_type: 'bearer' }; };
 const col = (ym) => { const [y, m] = ym.split('-').map(Number); const end = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
   return { ColTitle: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m - 1] + ' ' + y, ColType: 'Money', MetaData: [{ Name: 'StartDate', Value: ym + '-01' }, { Name: 'EndDate', Value: end }] }; };
@@ -42,6 +42,22 @@ function plReport(q) {
       ] }, Summary: sum('Total Expenses', A(1500, 1450)) },
       { Header: { ColData: [{ value: 'Other Income' }] }, type: 'Section', group: 'OtherIncome', Rows: { Row: [row('49000 Interest income', A(2.5, 3))] }, Summary: sum('Total Other Income', A(2.5, 3)) },
       { Summary: sum('Net Income', A(-47.5, 193)), type: 'Section', group: 'NetIncome' }
+    ] }
+  };
+}
+/* Any other standard report, shaped as QuickBooks does: a heading, rows, a total — and what it
+   was asked for, so a test can see the choices reached QuickBooks. */
+export function otherReport(name, q) {
+  const asked = [...q.entries()].filter(([k]) => k !== 'minorversion').map(([k, v]) => k + '=' + v).join('&');
+  const big = q.get('department') === '7' ? 50 : 100;
+  return {
+    Header: { ReportName: name, StartPeriod: q.get('start_date') || '', EndPeriod: q.get('end_date') || q.get('report_date') || '', ReportBasis: q.get('accounting_method') || '', Option: [{ Name: 'asked', Value: asked }] },
+    Columns: { Column: [{ ColTitle: '', ColType: 'Account' }, { ColTitle: 'Total', ColType: 'Money' }] },
+    Rows: { Row: [
+      { Header: { ColData: [{ value: 'Assets' }, { value: '' }] }, type: 'Section', Rows: { Row: [
+        { ColData: [{ value: '10100 Bank (made up)' }, { value: (big * 12).toFixed(2) }], type: 'Data' },
+        { ColData: [{ value: asked }, { value: '' }], type: 'Data' }
+      ] }, Summary: { ColData: [{ value: 'Total Assets' }, { value: (big * 12).toFixed(2) }] } }
     ] }
   };
 }
@@ -81,6 +97,8 @@ export function fakeIntuit() {
     if (m[2] === 'companyinfo/4620816365') return res(200, { CompanyInfo: { CompanyName: 'Made-up Mission Org' } });
     if (m[2] === 'reports/ProfitAndLoss') return res(200, plReport(u.searchParams));
     if (m[2] === 'reports/AgedReceivables') return res(200, arReport());
+    if (I.reportDown && m[2] === 'reports/' + I.reportDown) return res(500, {});
+    if (/^reports\/(BalanceSheet|CashFlow|TrialBalance|VendorExpenses|CustomerIncome|AgedPayables)$/.test(m[2])) return res(200, otherReport(m[2].slice(8), u.searchParams));
     if (m[2] === 'query') {
       const q = u.searchParams.get('query');
       if (/from Department/i.test(q)) return res(200, { QueryResponse: { Department: [{ Id: '7', Name: 'Poipet', FullyQualifiedName: 'Poipet' }, { Id: '8', Name: 'Siem Reap', FullyQualifiedName: 'Siem Reap' }] } });

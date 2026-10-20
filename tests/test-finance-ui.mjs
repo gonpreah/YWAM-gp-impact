@@ -3,7 +3,7 @@
    pdf.js; each is previewed with its totals checked before it is saved; the cash at the
    month's end goes in with the P&L; an unmatched staff-debt name is matched to someone.
    Then a Campus Director's Finances tab: the month, the year chart (with its tooltip and
-   its table), the campus burn rate, staff debt as totals with no name anywhere on the
+   its table), the campus burn rate, staff debt with who owes and how much, biggest first, on the
    page, and the money ahead starting from the cash entered. On a small phone nothing
    scrolls sideways, and both themes render. */
 import { REPO, PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
@@ -141,7 +141,9 @@ const txt = (p) => p.$eval('#main', (e) => e.innerText);
   ok('the campus and new house: cost, contributions, how much covered', /\$4,475/.test(t) && /\$3,500/.test(t) && /78%/.test(t), (t.match(/The campus and new house[\s\S]{0,300}/) || [''])[0].replace(/\n/g, ' / '));
   ok('… the plan months drawn lighter', (await page.$$('#finBurnChart .finBar.planned')).length === 18);
   ok('staff debt: the total and how old', /Owed by staff/.test(t) && new RegExp('\\$' + Math.round(DEBT_PEOPLE.reduce((a, [, v]) => a + v.reduce((x, y) => x + y, 0), 0))).test(t) && (await page.$$('#finDebt .finStack i')).length === 4);
-  ok('… by department, with no name anywhere on the page', /Youth Education/.test(t) && !DEBT_PEOPLE.some(([n]) => t.indexOf(n.split(' & ')[0]) > -1) && !(await page.content()).includes('Someone Gone'));
+  const owes = await page.$$eval('#finDebt .finOwes', (r) => r.map((x) => x.innerText.replace(/\n/g, ' / ')));
+  ok('… by department, and who owes how much, biggest first', /Youth Education/.test(t) && owes.length === DEBT_PEOPLE.length && /^Vanna & Srey Pich/.test(owes[0]) && /\$125\.00/.test(owes[0]) && owes.some((x) => /Dara Sok/.test(x) && /Community Service/.test(x) && /\$30\.00/.test(x)), owes.join(' | '));
+  ok('… and how old the oldest of it is', owes.some((x) => /Sopheak Long/.test(x) && /oldest: Over 3 Months/.test(x)));
   ok('the money ahead starts from the cash in the bank', /Starts from the cash in the bank at the end of Mar 2026: \$15,251/.test(t));
   const ahead = await page.$$('[data-finahead$="|exp"]');
   await ahead[0].fill('20000'); await page.waitForTimeout(200);
@@ -150,6 +152,7 @@ const txt = (p) => p.$eval('#main', (e) => e.innerText);
   ok('… saved for Campus Leadership', Object.values((mem['finProj:poipet'] || {}).months || {}).some((m) => m.exp === 20000));
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: OUT + '/leader-finances.png', fullPage: true });
+  await (await page.$('#finDebt')).screenshot({ path: OUT + '/leader-debt.png' });
   await page.click('[data-lwtab="base"]'); await page.waitForTimeout(1000);
   ok('the Overview’s money-ahead tile opens the Finances tab', /short in/.test(await page.$eval('[data-lwtab="money"].mmTile', (e) => e.innerText)));
   await page.click('.mmTile[data-lwtab="money"]'); await page.waitForTimeout(600);

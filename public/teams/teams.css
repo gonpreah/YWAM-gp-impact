@@ -2217,6 +2217,11 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .gptWhenLbl { flex:1 0 100%; font-size:13px; font-weight:600; color:var(--muted); }
 .gptNoWhen { color:var(--faint); font-style:italic; }
 @media (max-width:360px){ .gptAddWhen { padding-left:0; } }
+/* Staff debt: who owes and how much (Oct 2026) */
+.finOwes { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid var(--line); }
+.finOwes:last-child { border-bottom:0; }
+.finOwes > div { min-width:0; } .finOwes .rowName { overflow-wrap:anywhere; } .finOwes b { flex:0 0 auto; }
+.finOwes .rowName { font-weight:600; font-size:15px; } .finOwes .rowSub { font-size:12.5px; color:var(--muted); margin-top:1px; }
 
 /* GP Tasks: who it's for, as a task is made */
 .gptAddWhen select { width:auto; flex:1 1 100%; margin:0; }
@@ -2287,3 +2292,19 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .gtHint { font-size:13px; color:var(--faint); align-self:center; }
 .gtDoneBtn { margin:6px 0 0; }
 .gtDetail .btn { width:100%; }
+/* The office's own reports from QuickBooks (Oct 2026) */
+.qrRow { display:flex; align-items:flex-start; gap:8px; padding:8px 0; border-bottom:1px solid var(--line); }
+.qrOpen { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; text-align:left; background:none; border:0; padding:0; font:inherit; color:var(--ink); cursor:pointer; }
+.qrOpen .rowName { font-weight:600; } .qrOpen .rowSub { font-size:12.5px; color:var(--muted); }
+.qrActs { display:inline-flex; align-items:center; gap:4px; flex:0 0 auto; } .qrActs .linkbtn { font-size:18px; padding:4px 6px; }
+.qrView { padding:8px 0 12px; border-bottom:1px solid var(--line); }
+.qrWrap { overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--line); border-radius:10px; max-height:70vh; }
+.qrTable { border-collapse:collapse; width:100%; font-size:13px; }
+.qrTable th, .qrTable td { padding:5px 8px; white-space:nowrap; text-align:left; }
+.qrTable th { position:sticky; top:0; background:var(--surface2, var(--surface)); font-weight:700; border-bottom:1px solid var(--line); }
+.qrTable .num { text-align:right; font-variant-numeric:tabular-nums; }
+.qrTable tr.qrh td { font-weight:700; padding-top:9px; } .qrTable tr.qrt td { font-weight:700; border-top:1px solid var(--line); }
+.qrForm { margin-top:10px; background:var(--surface2, var(--surface)); }
+.qrForm label.chk { display:flex; gap:8px; align-items:flex-start; margin:10px 0 0; font-size:14px; }
+.qrForm label.chk input { width:auto; margin:2px 0 0; flex:0 0 auto; }
+.qrTable th:first-child, .qrTable td:first-child { white-space:normal; overflow-wrap:anywhere; min-width:140px; }
