@@ -2189,3 +2189,15 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .gptDoneHead { display:block; width:100%; text-align:left; background:none; border:0; padding:10px 0 4px; font:inherit; font-weight:700; color:var(--muted); cursor:pointer; }
 @media (max-width:360px){ .gptEdit, .gptReqActs { padding-left:0; } }
 .gptAskBtn { display:block; margin:-4px 0 10px; }
+
+/* Ministry Tasks folded under the ministry; a day and a time as a task is made */
+.mtFold { padding:0; overflow:hidden; }
+.mtHead { display:flex; width:100%; justify-content:space-between; align-items:center; gap:8px; padding:14px 16px; background:none; border:0; font:inherit; font-weight:700; font-size:16px; color:var(--ink); cursor:pointer; }
+.mtBody { padding:0 12px 6px; }
+.mtBody .gptList { box-shadow:none; border:1px solid var(--line); }
+.gptAddWhen { display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:6px 0 8px 32px; border-bottom:1px solid var(--line); }
+.gptAddWhen input { width:auto; flex:1 1 120px; min-width:0; margin:0; }
+.gptAddWhen .btn.small { width:auto; margin:0; padding:7px 14px; }
+.gptWhenLbl { flex:1 0 100%; font-size:13px; font-weight:600; color:var(--muted); }
+.gptNoWhen { color:var(--faint); font-style:italic; }
+@media (max-width:360px){ .gptAddWhen { padding-left:0; } }

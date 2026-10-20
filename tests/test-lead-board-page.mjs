@@ -86,17 +86,16 @@ async function open(who, viewport) {
 }
 const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
 
-console.log('=== the OKRs are the dashboard ===');
+console.log('=== the OKRs: a tile on the dashboard, a tab of their own (Oct 2026) ===');
 const { ctx, page, errors, sent, board } = await open(DEE);
-ok('My Ministry opens on Campus Leadership', /Campus Leadership/.test(await page.$eval('#mmBanner', e => e.textContent)) && !!(await page.$('#leadOkrs')));
+ok('My Ministry opens on Campus Leadership, on the Board tab kept from last time', /Campus Leadership/.test(await page.$eval('#mmBanner', e => e.textContent)) && !!(await page.$('.lwSeg [data-lwtab="board"].on')));
 ok('no weekly numbers: no week strip, no number boxes', !(await page.$('#mmWeekCard')) && !(await page.$('#kpiInputBtn')) && !(await page.$('.wkStrip')));
-const tiles = await page.$$eval('.leadTiles .mmTileNum', t => t.map(x => x.textContent));
-ok('the tiles: quarter progress, objectives, key results on pace, open cards', tiles[0] === '25%' && tiles[1] === '2' && tiles[3] === '2', tiles.join());
-ok('only Campus Leadership’s objectives, with their progress', (await page.$$('[data-leadobj]')).length === 2 && /50%/.test(await page.$eval('[data-leadobj="o1"]', e => e.textContent)));
-ok('an objective says how many of its meeting cards are done', /1 of 2 meeting cards done/.test(await page.$eval('[data-leadobj="o1"]', e => e.textContent)));
-await page.click('#leadGoOkr'); await page.waitForTimeout(300);
-ok('“Update progress” goes to the OKRs tab', await page.$eval('[data-mmtab="okr"]', b => b.classList.contains('on')));
-await page.click('[data-mmtab="ministry"]'); await page.waitForTimeout(300);
+ok('the Board tab is Board, Tuesday and Notes — the OKRs aren\'t in it twice', (await page.$$eval('[data-leadtab]', b => b.map(x => x.getAttribute('data-leadtab')).join())) === 'board,tues,notes');
+await page.click('.lwSeg [data-lwtab="base"]'); await page.waitForTimeout(500);
+ok('the dashboard\'s OKR tile: this quarter\'s progress, 25%', /25%/.test(await page.$eval('#lbOkrTile', e => e.textContent)));
+await page.click('#lbOkrTile'); await page.waitForTimeout(500);
+ok('… tapping it opens the OKRs tab: Campus Leadership\'s objectives', !!(await page.$('.lwSeg [data-lwtab="okrs"].on')) && /OKRs/.test(await page.$eval('#main', e => e.innerText)));
+await page.click('.lwSeg [data-lwtab="board"]'); await page.waitForTimeout(500);
 
 console.log('=== the Monday meeting board ===');
 await page.click('[data-leadtab="board"]'); await page.waitForTimeout(300);
@@ -255,7 +254,7 @@ console.log('=== a phone: hold, then drag ===');
 console.log('=== desktop ===');
 {
   const { ctx, page, errors } = await open(OLI, { width: 1280, height: 900 });
-  ok('an overseer also opens on Campus Leadership', !!(await page.$('#leadOkrs')));
+  ok('an overseer also opens on Campus Leadership', !!(await page.$('.lwSeg, #leadOkrs')));
   await page.click('[data-leadtab="board"]'); await page.waitForTimeout(300);
   ok('desktop: wide, the columns side by side', await page.$eval('main', m => m.classList.contains('wide')) && (await page.$$eval('.leadCol', c => c.map(x => Math.round(x.getBoundingClientRect().top)))).every((t, i, a) => t === a[0]) && !(await overflow(page)));
   await page.dragAndDrop('[data-leadcard="c3"]', '[data-leadcol="done"]'); await page.waitForTimeout(300);
