@@ -2519,6 +2519,18 @@ async function finOut_(s, c, d) {
     debt: finDebtView_(d.debt, rows, people), debtHist: d.debtHist.slice(-FIN_MAX_HIST),
     ahead: { months: (p && p.months) || {}, updated: (p && p.updated) || '' }, qbo: await qboOut_(c, edit) };
   if (out.debt && d.debt) out.debt.src = d.debt.src || '';
+  /* Who owes and how much, for everyone who sees the dashboard (Oct 2026, Uriah: "With the
+     staff debt, allow the leadership to see the names of the people who owe money and how
+     much"). The name as the books have it, the department of whoever it's matched to, the
+     ageing buckets and the total; biggest first. The matching itself (staffId, nameMap) and
+     the ageing PDF stay the office's. */
+  if (d.debt) {
+    const byId = {}; rows.forEach(function (r) { byId[r.id] = r; });
+    out.debtPeople = (d.debt.rows || []).filter(function (r) { return Math.abs(Number(r.total) || 0) >= 0.005; }).map(function (r) {
+      const p = r.staffId && byId[r.staffId];
+      return { name: r.name, dept: p ? deptOf_(p) : '', vals: r.vals || [], total: r.total };
+    }).sort(function (a, b) { return b.total - a.total || (a.name < b.name ? -1 : 1); });
+  }
   if (edit && d.debt) {
     out.debtRows = (d.debt.rows || []).map(function (r) { return { name: r.name, vals: r.vals, total: r.total, staffId: r.staffId || '', staffName: nameOf(r.staffId) }; });
     out.debtFile = { fileId: d.debt.fileId || '', fileName: d.debt.fileName || '' };

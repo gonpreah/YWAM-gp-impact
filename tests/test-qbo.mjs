@@ -7,7 +7,7 @@
    tokens never leave the server or land in the backed-up store; the P&L's months and its
    sub-accounts come in the shape an upload has, checked against QuickBooks' own totals; a
    month's cash survives, an uploaded PDF for the month is replaced; the ageing's names
-   match staff and each department's Staff Debt ($) follows; leadership sees totals only; a
+   match staff and each department's Staff Debt ($) follows; leadership sees who owes, not the matching; a
    token running out is refreshed (and the new one kept), a revoked one says "reconnect"; a
    Location narrows the P&L; disconnecting revokes it and keeps the numbers; the nightly
    run; and the page Intuit sends people back to. All names and figures are made up. */
@@ -141,7 +141,7 @@ const row = (n) => d.debt.rows.find((x) => x.name === n);
 ok('each matched to staff (a sub-customer row too)', row('Dara Sok').staffId === 'st_dara' && row('Vanna Chan').staffId === 'st_vanna' && row('Vanna Chan').total === 100 && !row('Someone Gone').staffId);
 ok('each department’s Staff Debt ($) follows', Number(debtEntry('Community Service').value) === 30 && Number(debtEntry('Youth Education').value) === 100);
 r = await call('getFinance', ['mark', '1234']);
-ok('leadership: totals only, and that it’s from QuickBooks', r.ok && r.debt.total === 160 && !r.debtRows && !/Dara|Vanna|Someone/.test(JSON.stringify(r)) && r.qbo.connected && r.qbo.lastSync && !r.qbo.company && !r.qbo.lists);
+ok('leadership: who owes how much, not the office’s matching, and that it’s from QuickBooks', r.ok && r.debt.total === 160 && !r.debtRows && r.debtPeople.length === 3 && r.debtPeople[0].name === 'Vanna Chan' && r.qbo.connected && r.qbo.lastSync && !r.qbo.company && !r.qbo.lists);
 
 console.log('=== bringing it in again ===');
 await call('finSetCash', ['bopha', '1234', LAST, 5000]);

@@ -692,7 +692,7 @@ and QuickBooks' **A/R Ageing Summary** (staff debt by person and by 1/2/3/over-3
   or the burn rate's whole-organisation totals where there's no P&L — said so); where it
   went and came from (P&L lines rolled up to their top account); the campus and new house
   (cost to run vs contributions, % covered, the year's difference with the plan, each cost
-  this month vs its 3-month average, planned months lighter); staff debt as totals; the
+  this month vs its 3-month average, planned months lighter); staff debt (totals and who owes); the
   money ahead. Charts are inline SVG on the `--viz*` tokens (validated with the dataviz
   checker, light and dark), with a tooltip per month (hover, tap, focus) and a table twin.
 - **Store** (api.js): `finance:<campus>` = `{ pl: { 'YYYY-MM': { lines, cash, fileId, … } },
@@ -702,10 +702,16 @@ and QuickBooks' **A/R Ageing Summary** (staff debt by person and by 1/2/3/over-3
 - **Who sees what.** Saving, fixing and deleting: the Finances office only
   (`finCanEdit_` = `canEnterStaffDebt_`: admin, Finances member or leader). The dashboard:
   them and everyone in Campus Leadership on that campus (`finCanView_`; an admin may pass
-  another campus). **Staff debt never reaches leadership as a name or a person's amount** —
-  `finDebtView_` sends totals, buckets, a count and per-department sums only; the rows, the
-  name map and the ageing PDF are the office's alone (`finFile` refuses a `debt` file to
-  anyone else). Debt stays between a person, their mentor and the office.
+  another campus). **Staff debt: leadership sees who owes and how much** (changed Oct 2026 —
+  Uriah: "With the staff debt, allow the leadership to see the names of the people who owe
+  money and how much"; until then it was totals only). `finDebtView_` sends the totals,
+  buckets, count and per-department sums, and `finOut_` adds `debtPeople` — each name as the
+  report has it, the department of whoever it's matched to, the buckets and the total,
+  biggest first — shown as "Who owes" under the department totals (`finDebtDashHtml_`,
+  eight then "N more"). Still the office's alone: the matching (`debtRows` with `staffId`,
+  `nameMap`) and the ageing PDF (`finFile` refuses a `debt` file to anyone else). Ordinary
+  staff see none of it. (The weekly health check-in's own debt question is separate and
+  stays private — see "Who sees what".)
 - **Names → staff → departments.** On save, each ageing name is matched to active staff on
   the campus (exact name; a couple, "A & B", counts to the first of them who is one person;
   a single first name if only one has it). The office's pick (or "Not on staff") is kept in

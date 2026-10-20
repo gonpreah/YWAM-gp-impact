@@ -4032,3 +4032,13 @@ My Ministry, on a Campus Leadership member’s own row: the line under “Your r
 | Viewing: {title} | កំពុងមើល៖ {title} |
 
 My Ministry → Campus Leadership → a leadership role that isn’t yours (Campus Directors and admins): the line at the top saying whose board this is, e.g. “Viewing: National Campus Director · Nary”.
+
+## 76. Staff debt: who owes
+
+| English | Khmer (draft) |
+|---|---|
+| Who owes · {n} | អ្នកដែលជំពាក់ · {n} |
+| oldest: {age} | ចាស់បំផុត៖ {age} |
+| {n} more | {n} ទៀត |
+
+The Finances tab of Campus Leadership (and the Finances office’s Dashboard): under staff debt by department, the list of names and amounts. “oldest” is followed by the report’s own column name (e.g. “Over 3 Months”, or QuickBooks’ “91 and over”).

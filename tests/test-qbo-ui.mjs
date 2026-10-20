@@ -4,7 +4,7 @@
    tests/qbo-fixtures.mjs); coming back through quickbooks.js says it's connected, and the
    app, shown again, finds the numbers in: the company, when they came in, the Locations
    to choose from; the P&L and the ageing listed as from QuickBooks. A Campus Director's
-   dashboard says the month is from QuickBooks and still has no name on it. Disconnecting
+   dashboard says the month is from QuickBooks and lists who owes. Disconnecting
    asks first. On a small phone nothing scrolls sideways; Khmer and dark render. */
 import { REPO, PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
 import { chromium, devices } from 'playwright';
@@ -147,7 +147,7 @@ process.env.QBO_CLIENT_ID = 'cid-test'; process.env.QBO_CLIENT_SECRET = 'csecret
   await page.waitForTimeout(800);
   const d = await page.$eval('#finDash', (e) => e.innerText).catch(() => '');
   ok('a Campus Director’s dashboard says it’s from QuickBooks', /From QuickBooks · brought in/.test(d), d.split('\n').slice(0, 3).join(' / '));
-  ok('… with no QuickBooks card and no name on the page', !(await page.$('.finQbo')) && !/Dara Sok|Vanna Chan|Someone Gone/.test(await page.evaluate(() => document.body.innerText)));
+  ok('… with no QuickBooks card, and who owes', !(await page.$('.finQbo')) && /Vanna Chan/.test(await page.$eval('#finDebt', (e) => e.innerText)));
   await page.screenshot({ path: OUT + '/4-leadership.png', fullPage: true });
   await ctx.close();
 }

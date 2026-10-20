@@ -13,9 +13,10 @@
      from it). Staff-debt names are matched to staff here, by the office alone.
    - Campus Leadership (every one of them, a "Finances" tab on their own row): the
      dashboard — the month, the year so far, the campus and new house's burn rate,
-     staff debt as totals only, and the money ahead. The office sees the same
+     staff debt (totals, and since Oct 2026 who owes and how much), and the money ahead. The office sees the same
      dashboard as a tab of its own, so it knows what leadership is looking at.
-   Staff debt never shows a name to leadership — the server never sends one.
+   Staff debt: leadership sees who owes and how much (Oct 2026); matching names to staff and
+   the ageing PDF stay the office's.
    QuickBooks (Oct 2026): once the office connects their QuickBooks company (the card at the
    top of Reports), the Profit and Loss and the A/R Ageing come in by themselves every night —
    see "QuickBooks" in api.js. The Burn Rate is their own spreadsheet, so it's still uploaded. */
@@ -250,7 +251,18 @@ function finDebtDashHtml_(F){
     h+='<div class="finStackLabel" style="margin-top:10px">'+esc(t('By department'))+'</div>'+depts.map(function(d){ return '<div class="cafeLine"><span>'+esc(t(d))+'</span><b>'+esc(finMoney_(D.byDept[d]))+'</b></div>'; }).join('')+
       (D.unmatched ? '<div class="cafeLine"><span class="hint" style="margin:0">'+esc(t('Not matched to anyone on staff yet'))+'</span><b>'+esc(finMoney_(D.unmatched))+'</b></div>' : '');
   }
-  return h+'<p class="hint" style="margin:8px 0 0">🔒 '+esc(t('Names stay with the Finances office — leadership sees the totals.'))+'</p></div>';
+  /* who owes and how much — every name on the report, biggest first, with how old the oldest of it is */
+  var P=F.debtPeople||[];
+  if(P.length){
+    var row=function(r){
+      var old=-1; (r.vals||[]).forEach(function(v, i){ if(v>0.004) old=i; });
+      var sub=[r.dept ? t(r.dept) : t('Not matched to anyone on staff yet')].concat(old>-1 && D.cols[old] ? [gpT('oldest: {age}',{age:D.cols[old]})] : []).join(' · ');
+      return '<div class="finOwes"><div><div class="rowName">'+esc(r.name)+'</div><div class="rowSub">'+esc(sub)+'</div></div><b class="'+(r.total<0?'finGood':'')+'">'+esc(finMoney_(r.total, true))+'</b></div>';
+    };
+    h+='<div class="finStackLabel" style="margin-top:12px">'+esc(gpT('Who owes · {n}',{n:P.length}))+'</div><div class="finOwesList">'+P.slice(0, 8).map(row).join('')+'</div>';
+    if(P.length>8) h+='<details class="pulseMore"><summary>'+esc(gpT('{n} more',{n:P.length-8}))+'</summary><div class="finOwesList">'+P.slice(8).map(row).join('')+'</div></details>';
+  }
+  return h+'</div>';
 }
 /* The money ahead: from the cash in the bank, month by month, with what's expected
    in and out. It used to sit behind the leadership code; it is Campus Leadership's
