@@ -2665,6 +2665,16 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - Tests: `tests/test-students.mjs` (server, the door and the access checks), `tests/test-student-app-ui.mjs`.
 
 ## GP Tasks (Oct 2026, Uriah: "much simpler, very much like Google Tasks")
+- **Oct 2026, second pass** (Uriah: "more fluid, like Google Tasks"): no "For me" tab — everyone has
+  **My Tasks**, a personal list the server makes on first `getGpTasks` (`gptMain_()` = your oldest
+  personal list); it shows your own tasks plus every task given to you from any other list, each with
+  the list it came from (`gptChipName_`: "Cafe jobs", "Cora's list"), and what you asked other
+  ministries for. ＋ adds into the open list (no list chooser); **＋ New list** is a small sheet (name,
+  and whose it is — inside My Ministry's fold it is that ministry's, no choice). The fold shows only
+  that ministry's lists (`gptLists_(scope)`: ministry lists for a ministry, dept lists for a dept —
+  never personal). Icons are line SVGs (`GPT_SVG`, `gptIc_()`), not the ✅ emoji — also on My Home's
+  row, the Weekly Goals button and the leadership tab. `body { min-height:100dvh }` in teams.html keeps
+  a short page reaching the bottom bar (the dark page edge used to show above it).
 - **teams/12-tasks.js** (loaded before 11-bind-boot.js; in sw.js's shell) and **GP Tasks** in api.js;
   one blob `gpTasks` = `{ lists, tasks }`. A list is a ministry's (`scope:'ministry'`, dept + ministry),
   a department's (`'dept'`), or personal (`ownerId`, `shared` = others on the campus see it). A task:
@@ -2724,4 +2734,11 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - **teams/13-calendar.js**: ☰ → **📅 Calendar** (`S.view='calendar'`, a month at a time, day by day,
   colour per calendar, tap for details, Earlier / Later / Back to today) and **📅 Coming up** on My Home
   (the next seven days, five at most, `calHomeCardHtml_`) — nothing at all until a calendar is connected.
-- tests/test-gcal.mjs, tests/test-gcal-ui.mjs.
+- tests/test-gcal.mjs, tests/test-gcal-ui.mjs.- **Month view like Google Calendar (Oct 2026):** `S.calMonth` ('YYYY-MM'), a 6-week grid from the
+  Sunday on or before the 1st (`calGridStart_`, fetched as 42 days), a dot per thing per day (3, then
+  "+n"), today ringed, the tapped day (`S.calSel`) highlighted and the list under the grid runs from that
+  day on. **GP Tasks with a day are on it** (`calTaskEvents_` from `S.gpt`, colour `cal-task`): a tick
+  circle marks them done, tapping opens them in GP Tasks (← Calendar). The My Home "Coming up" card
+  shows them too when the tasks are already loaded. The iCal feed is one way, re-read every 30 min
+  (`GCAL_TTL_MS`): what is added in Google Calendar shows within the half hour; the app never writes.
+

@@ -2287,3 +2287,31 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .gtHint { font-size:13px; color:var(--faint); align-self:center; }
 .gtDoneBtn { margin:6px 0 0; }
 .gtDetail .btn { width:100%; }
+/* the line icons (GPT_SVG): the text's size and colour */
+.gtIc { display:inline-flex; vertical-align:-.15em; } .gtIc svg { width:1em; height:1em; }
+.gtTool svg, .gtFab svg { width:22px; height:22px; } .gtFab svg { width:28px; height:28px; stroke-width:2.4; }
+.gtChip svg { width:13px; height:13px; vertical-align:-2px; margin-right:4px; }
+.gtEmptyIc svg { width:40px; height:40px; color:var(--faint); }
+.gptRing svg { width:22px; height:22px; }
+.gtLine > .gtIc { font-size:20px; color:var(--muted); margin-top:9px; }
+.gtSheetHead b { font-size:17px; }
+.calMeta svg, .calCal svg { width:12px; height:12px; vertical-align:-2px; }
+/* the Calendar's month, like Google Calendar's: Sunday to Saturday, a dot per thing */
+.gcNav { display:flex; align-items:center; gap:6px; margin:2px 0 8px; }
+.gcTitle { flex:1; text-align:center; font-weight:800; font-size:17px; }
+.gcNav .linkbtn.inline { width:auto; margin:0; padding:6px 10px; }
+.gcGrid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:2px; background:var(--surface); border-radius:16px; padding:8px 6px 6px; margin:0 0 10px; }
+.gcHead { text-align:center; font-size:11px; font-weight:700; color:var(--muted); padding:2px 0 6px; }
+.gcCell { display:flex; flex-direction:column; align-items:center; gap:3px; min-height:46px; padding:4px 0 3px; background:none; border:0; border-radius:10px; font:inherit; color:var(--ink); cursor:pointer; min-width:0; }
+.gcCell.out { color:var(--faint); }
+.gcCell.sel { background:var(--surface2); }
+.gcNum { width:26px; height:26px; line-height:26px; border-radius:50%; font-size:14px; font-weight:600; text-align:center; }
+.gcCell.today .gcNum { background:var(--accent); color:var(--accentInk); }
+.gcDots { display:flex; gap:3px; min-height:6px; align-items:center; }
+.gcDot { width:6px; height:6px; border-radius:50%; background:var(--calc); }
+.gcMore { font-size:9px; color:var(--muted); line-height:6px; }
+.cal-task { --calc:var(--accent); }
+.calTaskRow { align-items:flex-start; cursor:default; gap:8px; }
+.calTaskRow .gtCheck { margin-top:2px; }
+.calTaskOpen { flex:1; display:flex; gap:10px; min-width:0; background:none; border:0; padding:0; font:inherit; color:var(--ink); text-align:left; cursor:pointer; }
+.calTaskOpen .calWhen { flex-basis:56px; }

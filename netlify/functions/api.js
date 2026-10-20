@@ -10246,6 +10246,11 @@ function gptFilterOf_(s) { const f = s.taskFilter; return f && typeof f === 'obj
 async function getGpTasks(username, pin) {
   const s = await gptAuth_(username, pin); if (!s) return { ok: false };
   const d = await getGpt_();
+  /* everyone starts with My Tasks — their own, and whatever is given to them from any other list */
+  if (!d.lists.some(function (L) { return L.scope === 'personal' && L.ownerId === s.id; }) && d.lists.length < GPT_MAX.lists) {
+    d.lists.push({ id: gptId_('tl'), campus: s.campus, scope: 'personal', dept: '', ministry: '', ownerId: s.id, shared: false, title: 'My Tasks', order: d.lists.length, created: new Date().toISOString(), by: s.id });
+    await writeJSON('gpTasks', d);
+  }
   const lists = d.lists.filter(function (L) { return gptSees_(s, L); });
   const seen = {}; lists.forEach(function (L) { seen[L.id] = 1; });
   const tasks = d.tasks.filter(function (t) { return seen[t.listId] || (t.assignees || []).indexOf(s.id) > -1 || t.by === s.id; });

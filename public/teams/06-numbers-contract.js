@@ -863,7 +863,7 @@ function myMinistryHtml(){
         if(myTitle) h+='<div class="orgYou">🧭 '+esc(gpT('Your role: {title}',{title:orgTitleText_(myTitle)}))+'</div>';
       }
       if(R.focus) h+='<p class="hint lwFocus">'+esc(t(R.focus))+'</p>';
-      var TABS={ tasks:['✅',t('Ministry Tasks')], week:['🗓️',t('My week')], base: role==='dept' ? ['🗂️',view ? t(view.key) : t('My department')] : ['🧭',t('Overview')], money:['💵',t('Finances')], board:['📋',t('Board')], okrs:['🎯',t('OKRs')] };
+      var TABS={ tasks:[gptIc_('tasks'),t('Ministry Tasks')], week:['🗓️',t('My week')], base: role==='dept' ? ['🗂️',view ? t(view.key) : t('My department')] : ['🧭',t('Overview')], money:['💵',t('Finances')], board:['📋',t('Board')], okrs:['🎯',t('OKRs')] };
       h+='<div class="campusSeg lwSeg" style="max-width:none">'+tabList.map(function(k){
         return '<button class="campusBtn'+(lwt===k?' on':'')+'" data-lwtab="'+k+'">'+TABS[k][0]+' '+esc(TABS[k][1])+'</button>'; }).join('')+'</div>';
       if(lwt==='week') return h+lwHtml_();
