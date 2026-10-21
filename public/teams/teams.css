@@ -2223,7 +2223,14 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .cal-red { --calc:#C0392B; } .cal-orange { --calc:#D9671C; } .cal-indigo { --calc:#4A4FB5; } .cal-brown { --calc:#8A5A3C; } .cal-grey { --calc:#6B7280; } .cal-lime { --calc:#6B9A1B; }
 .cal-lavender { --calc:#9B7FD1; } .cal-sky { --calc:#4A9BD9; } .cal-mint { --calc:#3FA98A; } .cal-rose { --calc:#D9748F; }   /* the lighter four (Andrew: "teams can be light purple") */
 .calDot.gtDot { width:8px; height:8px; border-radius:50%; margin:0 0 0 6px; vertical-align:1px; }
-.gcKinds { margin-top:-2px; }
+.gcLayerSplit { display:inline-flex; align-items:stretch; }
+.gcLayer.split { border-radius:999px 0 0 999px; border-right:0; }
+.gcKindsBtn { border-radius:0 999px 999px 0; padding:6px 10px 6px 8px; font-size:12.5px; color:var(--muted); }
+.gcKindsBtn.on { color:var(--ink); border-color:var(--calc); }
+.gcKindsBtn.open { background:var(--surface2); }
+.gcKindPick { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:8px 10px 2px; margin:-4px 0 10px; }
+.gcKindPick .gcLayers { margin-bottom:8px; }
+.gcKindHead { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; margin:0 0 8px; } .gcKindHead .linkbtn { width:auto; margin:0; padding:0; }
 .gcKind { padding:8px 0 2px; border-top:1px solid var(--line); } .gcKind:first-of-type { border-top:0; }
 .gcKindRow { display:flex; align-items:center; gap:8px; } .gcKindRow input { flex:1; min-width:0; margin:0; }
 .gcKind input[data-kindkeys] { margin:6px 0 0; font-size:14px; }

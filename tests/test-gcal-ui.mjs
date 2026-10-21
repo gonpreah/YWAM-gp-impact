@@ -138,12 +138,17 @@ const main = p => p.$eval('#main', e => e.innerText);
   ok('… and never the secret address', !(await page.content()).includes('private-abc123'));
   await page.click('.calEv:has-text("Grace Church")'); await page.waitForTimeout(300);
   ok('tapping an event shows its details', /12 people/.test(await main(page)));
-  /* the kinds, to tick on or off */
-  ok('chips for the kinds: Events, Birthdays & anniversaries, Schools, Teams, Guests & speakers', (await page.$$eval('.gcKinds [data-calkind]', b => b.map(x => x.dataset.calkind))).join() === 'event,bday,school,team,guest');
-  await page.click('.gcKinds [data-calkind="team"]'); await page.waitForTimeout(400);
-  ok('Teams off: the stay leaves the grid, the birthday stays', !(await page.$('.gcBar[title="Grace Church team staying"]')) && !!(await page.$('.gcBar[title="Sokha\'s birthday"]')));
-  await page.click('.gcKinds [data-calkind="team"]'); await page.waitForTimeout(400);
-  ok('… on again: back, and the row says what kind it is', !!(await page.$('.gcBar[title="Grace Church team staying"]')) && /Siem Reap events · Teams/.test(await main(page)));
+  /* the kinds: a filter inside the calendar's chip, not a row of its own */
+  const calId = mem.gcal.cals[0].id;
+  ok('the calendar\'s chip has a ▾ for its kinds — no separate row of chips', !!(await page.$('[data-calkindsfor="' + calId + '"]')) && !(await page.$('.gcKinds')) && !(await page.$('[data-calkind]')));
+  await page.click('[data-calkindsfor="' + calId + '"]'); await page.waitForTimeout(300);
+  ok('▾ opens its kinds: Events, Birthdays & anniversaries, Schools, Teams, Guests & speakers, all ticked', (await page.$$eval('.gcKindPick [data-calkind]', b => b.map(x => x.dataset.calkind))).join() === [ 'event', 'bday', 'school', 'team', 'guest' ].map(k => calId + '|' + k).join() && (await page.$$eval('.gcKindPick .gcLayer.on', b => b.length)) === 5 && /What to show from Siem Reap events/.test(await main(page)));
+  await page.click('.gcKindPick [data-calkind="' + calId + '|team"]'); await page.waitForTimeout(400);
+  ok('Teams off: the stay leaves the grid, the birthday stays; the ▾ says 4/5', !(await page.$('.gcBar[title="Grace Church team staying"]')) && !!(await page.$('.gcBar[title="Sokha\'s birthday"]')) && /4\/5/.test(await page.$eval('[data-calkindsfor="' + calId + '"]', e => e.textContent)) && !!(await page.$('.gcKindPick')));
+  await page.click('[data-calkindall="' + calId + '"]'); await page.waitForTimeout(400);
+  ok('All kinds: back, and the row says what kind it is', !!(await page.$('.gcBar[title="Grace Church team staying"]')) && /Siem Reap events · Teams/.test(await main(page)) && !(await page.$('[data-calkindall]')));
+  await page.click('[data-calkindsfor="' + calId + '"]'); await page.waitForTimeout(300);
+  ok('▾ again closes it', !(await page.$('.gcKindPick')));
   /* the ticked list of what shows, like Google Calendar's */
   ok('chips to tick each calendar on or off: Siem Reap events', !!(await page.$('.gcLayer.on[data-callayer]')) && /Siem Reap events/.test(await page.$eval('.gcLayers', e => e.innerText)));
   await page.click('.gcLayer:has-text("Siem Reap events")'); await page.waitForTimeout(300);

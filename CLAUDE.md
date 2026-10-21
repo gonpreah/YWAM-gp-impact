@@ -2882,8 +2882,11 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   Google Calendar (`adminGcal { kind:{id?, name, color, keywords} }`, `{ kindRemove }`; the first kind
   can't be removed, max 12; a kind with no colour takes the calendar's, so Events in a second
   calendar keep that calendar's colour). `getCalendar` returns each event's `kind` and its resolved
-  `color`, plus `kinds` for the chips: a second row under the calendar chips (`calKindsHtml_`,
-  `[data-calkind]`, hidden ones in `gp-cal-hidekind` on the phone). An event's row names its kind
+  `color`, plus `kinds` for the filter. The filter lives inside each calendar's chip (Andrew: "not a
+  row of checks — within the campus calendar"): the chip is split, its ▾ (`[data-calkindsfor]`,
+  `S.calKindsFor`, showing "4/5" when some are off) opens `calKindsHtml_` under the row — one chip
+  per kind (`[data-calkind="calId|kindId"]`), "All kinds"; hidden ones per calendar in
+  `gp-cal-hidekind` (`{calId: [kindIds]}`) on the phone. An event's row names its kind
   after the calendar ("Siem Reap events · Teams") unless it is a plain Event.
 - **GP Calendar/Tasks is one place**: ☰ has one entry (`caltasks`) that opens the calendar; both
   pages carry the Calendar | Tasks toggle on top (`ctSegHtml_`, `bindCtSeg_`, the Inbox's red number
