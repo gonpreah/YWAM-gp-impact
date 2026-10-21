@@ -130,7 +130,7 @@ ok('ticking a task saves just that task', tsv && tsv.args[2] === 'c1' && tsv.arg
 await page.fill('[data-ltnew="c1"]', 'Send the budget to the board'); await page.press('[data-ltnew="c1"]', 'Enter'); await page.waitForTimeout(300);
 tsv = sent.filter(b => b.fn === 'saveLeadTask').pop();
 ok('a task can be added (Enter)', tsv.args[2] === 'c1' && tsv.args[3].text === 'Send the budget to the board' && !tsv.args[3].id && (await page.$$('#leadFormTasks .leadTask')).length === 3);
-await page.selectOption('[data-ltowner="c1|t1"]', 'st_o'); await page.waitForTimeout(300);
+await page.fill('[data-ppickq="lt:c1:t1"]', 'o'); await page.waitForTimeout(200); await page.click('[data-ppickit="lt:c1:t1|st_o"]'); await page.waitForTimeout(300);
 tsv = sent.filter(b => b.fn === 'saveLeadTask').pop();
 ok('giving a task an owner saves it at once', tsv.args[3].id === 't1' && tsv.args[3].owner === 'st_o');
 await page.click('[data-ltdel="c1|t1"]'); await page.waitForTimeout(300);
@@ -147,7 +147,7 @@ await page.fill('[data-ltnew=""]', 'Check the permit'); await page.press('[data-
 ok('a new card can be given tasks before it is added', (await page.$$('#leadFormTasks .leadTask')).length === 2 && sent.filter(b => b.fn === 'saveLeadTask').length === 3);
 await page.selectOption('[data-lf="area"]', 'construction');
 await page.fill('[data-lf="title"]', 'Roof quote');
-await page.selectOption('[data-lf="owner"]', 'st_d');
+await page.fill('[data-ppickq="lead"]', 'd'); await page.waitForTimeout(200); await page.click('[data-ppickit="lead|st_d"]'); await page.waitForTimeout(300);
 await page.selectOption('[data-lf="okrId"]', 'o2');
 await page.click('#leadSave'); await page.waitForTimeout(300);
 let sv = sent.filter(b => b.fn === 'saveLeadCard').pop();

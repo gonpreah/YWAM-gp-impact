@@ -406,7 +406,9 @@ function leadTaskRowHtml_(cid, tk, full){
   var late=tk.due && !tk.done && tk.due<todayStr(), key=esc(cid)+'|'+esc(tk.id);
   var h='<div class="leadTask'+(tk.done?' done':'')+'"><label class="leadTaskTick"><input type="checkbox" data-ltick="'+key+'"'+(tk.done?' checked':'')+'> <span>'+esc(tk.text)+'</span></label>';
   if(full){
-    h+='<div class="leadTaskMeta"><select data-ltowner="'+key+'" aria-label="'+esc(t('Who owns it'))+'"><option value="">'+esc(t('— nobody yet —'))+'</option>'+
+    h+='<div class="leadTaskMeta">'+ppickHtml_({ key:'lt:'+cid+':'+tk.id, people:leadOwnerOptions_().map(function(p){ return { id:p.id, name:p.name, sub:'', first:true, group:'' }; }), chosen:tk.owner ? [tk.owner] : [], multi:false, open:true, placeholder:t('Who owns it — type a name'),
+        onPick:function(id){ if(window.gpLeadChangeTask_) gpLeadChangeTask_(key, { owner:id }); }, onRemove:function(){ if(window.gpLeadChangeTask_) gpLeadChangeTask_(key, { owner:'' }); } })+
+      '<select data-ltowner="'+key+'" hidden aria-hidden="true"><option value="">'+esc(t('— nobody yet —'))+'</option>'+
       leadOwnerOptions_().map(function(p){ return '<option value="'+esc(p.id)+'"'+(tk.owner===p.id?' selected':'')+'>'+esc(p.name)+'</option>'; }).join('')+'</select>'+
       '<input type="date" data-ltdue="'+key+'" value="'+esc(tk.due||'')+'" aria-label="'+esc(t('Due'))+'">'+
       '<button class="linkbtn inline teamDelete" data-ltdel="'+key+'" aria-label="'+esc(t('Remove'))+'">✕</button></div>';
@@ -584,7 +586,10 @@ function leadFormHtml_(objs){
     mins.map(function(x){ return '<option value="'+esc(x[0])+'"'+(f.taskMin===x[0]?' selected':'')+'>'+esc(x[1])+'</option>'; }).join('')+'</select>'+
     (f.taskMin ? '<p class="hint" style="margin:4px 0 0">'+esc(t('It shows in that department’s GP Tasks list, given to the person below, from Campus Leadership — and in their Inbox.'))+'</p>' : '');
   var owners=f.taskMin ? leadTaskOwners_(f.taskMin) : leadOwnerOptions_();
-  h+='<div class="teamGrid2"><div><label class="f">'+esc(f.taskMin ? t('Given to') : t('Who owns it'))+'</label><select data-lf="owner"><option value="">'+esc(t('— nobody yet —'))+'</option>'+
+  h+='<div class="teamGrid2"><div><label class="f">'+esc(f.taskMin ? t('Given to') : t('Who owns it'))+'</label>'+
+    ppickHtml_({ key:'lead', people:owners.map(function(p){ return { id:p.id, name:p.name, sub:t(p.ministry||p.dept||''), first:true, group:'' }; }), chosen:f.owner ? [f.owner] : [], multi:false, open:true, placeholder:t('Type a name…'),
+      onPick:function(id){ S.leadForm.owner=id; render(); }, onRemove:function(){ S.leadForm.owner=''; render(); } })+
+    '<select data-lf="owner" hidden aria-hidden="true"><option value="">'+esc(t('— nobody yet —'))+'</option>'+
     owners.map(function(p){ return '<option value="'+esc(p.id)+'"'+(f.owner===p.id?' selected':'')+'>'+esc(p.name)+'</option>'; }).join('')+'</select></div>'+
     '<div><label class="f">'+esc(t('Due'))+'</label><input type="date" data-lf="due" value="'+esc(f.due||'')+'"></div></div>';
   h+='<label class="f">'+esc(t('Column'))+'</label><div class="leadFilters leadColPick">'+leadCols_().map(function(c){ return '<button class="leadSeg'+(f.col===c.id?' on':'')+'" data-lfcol="'+esc(c.id)+'">'+esc(c.title)+'</button>'; }).join('')+'</div>';
@@ -692,6 +697,7 @@ function bindLead_(){
     if(!x.cid){ Object.assign(x.task, patch); render(); return; }
     saveTask(x.cid, Object.assign({}, x.task, patch));
   };
+  window.gpLeadChangeTask_=changeTask;   // the owner pickers in the rows (ppickHtml_) reach it here
   document.querySelectorAll('[data-ltick]').forEach(function(b){ b.onchange=function(){ gpTap(); changeTask(b.getAttribute('data-ltick'), { done:b.checked }); }; });
   document.querySelectorAll('[data-ltowner]').forEach(function(b){ b.onchange=function(){ changeTask(b.getAttribute('data-ltowner'), { owner:b.value }); }; });
   document.querySelectorAll('[data-ltdue]').forEach(function(b){ b.onchange=function(){ changeTask(b.getAttribute('data-ltdue'), { due:b.value }); }; });

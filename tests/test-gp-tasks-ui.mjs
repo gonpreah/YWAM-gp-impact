@@ -77,6 +77,7 @@ const main = p => p.$eval('#main', e => e.innerText);
 const T = () => (mem.gpTasks || { tasks: [] }).tasks;
 
 const call = (fn, args) => api.default({ method: 'POST', json: async () => ({ fn, args }), headers: new Map() }, {}).then(r => r.json());
+const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'personal' && l.ownerId === 'c2' && l.title === 'Inbox') || {}).id;
 /* ---------- Cora: the Cafe's own list (made for it), then tasks the Google Tasks way ---------- */
 {
   let g = await call('getGpTasks', ['cora', '1234']);
@@ -100,21 +101,34 @@ const call = (fn, args) => api.default({ method: 'POST', json: async () => ({ fn
   await page.fill('#gptNewTitle', 'Reading'); await page.click('#gptNewSave'); await page.waitForTimeout(700);
   const rd = (mem.gpTasks.lists || []).find(l => l.title === 'Reading');
   ok('… made as a personal list, its tab open', rd && rd.scope === 'personal' && rd.ownerId === 'c1' && !!(await page.$('.gtTab.on[data-gptlist="' + rd.id + '"]')));
+  /* sharing the whole list: ⋮ → Share list with someone… → a people search; Kanha gets it as a tab */
+  await page.click('#gtMenuBtn'); await page.waitForTimeout(200);
+  ok('⋮ on your own list: Share list with someone…', !!(await page.$('#gtShareList')));
+  await page.click('#gtShareList'); await page.waitForTimeout(300);
+  await page.fill('[data-ppickq="share"]', 'kan'); await page.waitForTimeout(200);
+  await page.click('[data-ppickit="share|c2"]'); await page.waitForTimeout(700);
+  ok('adding Kanha shares it with her — a chip with ×, and the server knows', (mem.gpTasks.lists.find(l => l.id === rd.id).members || []).join() === 'c2' && !!(await page.$('[data-ppickrm="share|c2"]')));
+  await page.click('#gtShareScrim'); await page.waitForTimeout(200);
+  ok('… and the list says who it is shared with', /Shared with Kanha/.test(await page.$eval('.gtListHead', e => e.innerText)));
   await page.click('.gtTab[data-gptlist="' + cafeL.id + '"]'); await page.waitForTimeout(300);
   const L = cafeL;
   ok('the Cafe\'s list, open: it says it is the ministry\'s', !!(await page.$('.gtTab.on[data-gptlist="' + L.id + '"]')) && /the ministry’s list/.test(await page.$eval('.gtListHead', e => e.innerText)));
   /* ＋ → New task: title, then 🕒 and 👤 one tap each */
   await page.click('.gtFab'); await page.waitForTimeout(300);
-  ok('＋ opens New task: a title, details ≡, date/time 🕒, assign 👤, Save', !!(await page.$('#gtNew #gptAddInput')) && !!(await page.$('#gtNewNotesBtn')) && !!(await page.$('#gtNewWhenBtn')) && !!(await page.$('#gptAddWho')) && !!(await page.$('#gptAddBtn')));
-  const groups = await page.$$eval('#gptAddWho optgroup', g => g.map(x => x.label + ':' + [...x.querySelectorAll('option')].map(o => o.value).join('+')));
-  ok('👤 lists the Cafe\'s people first, then everyone else', groups.length === 2 && /^Cafe:/.test(groups[0]) && groups[0].includes('c2') && groups[1].startsWith('Everyone else') && groups[1].includes('h1') && !groups[0].includes('h1'), JSON.stringify(groups));
+  ok('＋ opens New task: a title, details ≡, date/time 🕒, assign 👤, Save', !!(await page.$('#gtNew #gptAddInput')) && !!(await page.$('#gtNewNotesBtn')) && !!(await page.$('#gtNewWhenBtn')) && !!(await page.$('#gtNewWhoBtn')) && !!(await page.$('#gptAddBtn')));
+  await page.click('#gtNewWhoBtn'); await page.waitForTimeout(200);
+  const firstList = await page.$$eval('[data-ppicklist="new"] [data-ppickit]', b => b.map(x => x.dataset.ppickit));
+  ok('👤 opens a people search: the Cafe\'s own people offered first, nobody else until you type', !!(await page.$('[data-ppickq="new"]')) && firstList.includes('new|c2') && !firstList.includes('new|h1') && /Cafe/.test(await page.$eval('[data-ppicklist="new"] .gtPickDept', e => e.textContent)), JSON.stringify(firstList));
+  await page.fill('[data-ppickq="new"]', 'han'); await page.waitForTimeout(200);
+  ok('… typing a name finds anyone on the campus', (await page.$$eval('[data-ppicklist="new"] [data-ppickit]', b => b.map(x => x.dataset.ppickit))).join() === 'new|h1');
+  await page.fill('[data-ppickq="new"]', ''); await page.waitForTimeout(200);
   await page.fill('#gptAddInput', 'Order milk');
   await page.click('#gtNewWhenBtn'); await page.waitForTimeout(200);
   await page.fill('#gptAddDue', day(1)); await page.fill('#gptAddTime', '09:30');
   await page.click('#gtNewNotesBtn'); await page.waitForTimeout(200);
   await page.fill('#gtNewNotes', 'Two crates');
-  await page.selectOption('#gptAddWho', 'c2'); await page.waitForTimeout(200);
-  ok('… choosing someone shows their name on 👤', /Kanha/.test(await page.$eval('.gtWho', e => e.innerText)));
+  await page.click('[data-ppickit="new|c2"]'); await page.waitForTimeout(300);
+  ok('… tapping someone shows their name on 👤, as a chip with ×', /Kanha/.test(await page.$eval('.gtWho', e => e.innerText)) && !!(await page.$('[data-ppickrm="new|c2"]')));
   await page.click('#gptAddBtn'); await page.waitForTimeout(700);
   const t1 = T().find(t => t.title === 'Order milk');
   ok('Save: the day, the time, the details and Kanha, in one go', t1 && t1.due === day(1) && t1.time === '09:30' && t1.notes === 'Two crates' && t1.assignees.join() === 'c2' && !(await page.$('#gtNew')), JSON.stringify(t1));
@@ -146,9 +160,10 @@ const call = (fn, args) => api.default({ method: 'POST', json: async () => ({ fn
   ok('dragging a tab changes their order, kept for you', (await page.$$eval('.gtTab[data-gptlist]', b => b.map(x => x.dataset.gptlist))).slice(0, 2).join() === L.id + ',' + myList.id && (mem.staff.find(s => s.id === 'c1').taskListOrder || [])[0] === L.id);
   /* tap a task: change it in the sheet; ← keeps it */
   await page.click('[data-gptopen="' + t2.id + '"]'); await page.waitForTimeout(300);
-  ok('a task opens in a sheet: title, ≡ details, 🕒 “Set date and time”, 👤 Assign to…', !!(await page.$('#gtDetail')) && /Set date and time/.test(await page.$eval('#gtDetail', e => e.innerText)) && !!(await page.$('#gtDetail #gptAssignSel')));
+  ok('a task opens in a sheet: title, ≡ details, 🕒 “Set date and time”, 👤 a people search', !!(await page.$('#gtDetail')) && /Set date and time/.test(await page.$eval('#gtDetail', e => e.innerText)) && !!(await page.$('#gtDetail [data-ppickq="det"]')));
   await page.fill('#gtDetail [data-gptd="due"]', day(2)); await page.waitForTimeout(300);
-  await page.selectOption('#gtDetail #gptAssignSel', 'c1'); await page.waitForTimeout(200);
+  await page.fill('#gtDetail [data-ppickq="det"]', 'cor'); await page.waitForTimeout(200);
+  await page.click('#gtDetail [data-ppickit="det|c1"]'); await page.waitForTimeout(300);
   await page.click('#gptClose'); await page.waitForTimeout(700);
   const t2b = T().find(t => t.id === t2.id);
   ok('← keeps what was changed: the day and the person', t2b.due === day(2) && t2b.assignees.join() === 'c1' && !(await page.$('#gtDetail')), JSON.stringify(t2b));
@@ -163,7 +178,7 @@ const call = (fn, args) => api.default({ method: 'POST', json: async () => ({ fn
   await page.click('.gtTab[data-gptlist="' + myList.id + '"]'); await page.waitForTimeout(300);
   await page.click('.gtFab'); await page.waitForTimeout(200);
   ok('＋ on the Inbox: straight into it, no list to choose', !(await page.$('#gtNewList')) && !!(await page.$('#gptAddInput')));
-  await page.fill('#gptAddInput', 'Restock cups'); await page.selectOption('#gptAddWho', 'c2');
+  await page.fill('#gptAddInput', 'Restock cups'); await page.click('#gtNewWhoBtn'); await page.waitForTimeout(200); await page.fill('[data-ppickq="new"]', 'kanha'); await page.waitForTimeout(200); await page.click('[data-ppickit="new|c2"]'); await page.waitForTimeout(300);
   await page.click('#gptAddBtn'); await page.waitForTimeout(700);
   const cups = T().find(t => t.title === 'Restock cups');
   ok('… and from your own list it\'s made and given to Kanha in one go', !!cups && cups.listId === myList.id && cups.assignees + '' === 'c2');
@@ -182,6 +197,14 @@ const call = (fn, args) => api.default({ method: 'POST', json: async () => ({ fn
   await page.click('#goGpTasksGoals'); await page.waitForTimeout(800);
   const mt = await page.$eval('.gtList', e => e.innerText);
   ok('Kanha\'s Inbox: what she was given, each with where it is from', /Inbox/.test(mt) && /Order milk/.test(mt) && /Restock cups/.test(mt) && /Cafe jobs/.test(mt) && /drag a task onto one of your lists/.test(mt), mt.slice(0, 300));
+  const shared = (mem.gpTasks.lists || []).find(l => l.title === 'Reading');
+  ok('Cora\'s shared list is a tab for Kanha', !!(await page.$('.gtTab[data-gptlist="' + shared.id + '"]')));
+  await page.click('.gtTab[data-gptlist="' + shared.id + '"]'); await page.waitForTimeout(400);
+  ok('… "Shared by Cora", and she can add to it', /Shared by Cora/.test(await page.$eval('.gtListHead', e => e.innerText)) && !!(await page.$('.gtFab')));
+  await page.click('#gtMenuBtn'); await page.waitForTimeout(200);
+  ok('… ⋮ for a list shared with you: no Rename, no Delete, no Share', !(await page.$('#gtRename')) && !(await page.$('#gptListDelete')) && !(await page.$('#gtShareList')));
+  await page.click('#gtMenuScrim'); await page.waitForTimeout(200);
+  await page.click('.gtTab[data-gptlist="' + kInboxId(mem) + '"]').catch(() => {}); await page.waitForTimeout(300);
   ok('… with a red number on the Inbox tab, and on My Home\'s row', (await page.$eval('.gtTab.on .gtBadge', e => e.innerText)) === '2' && await page.evaluate(() => S.gpTaskInfo.inbox === 2));
   /* filing: a list of her own, then Order milk dragged onto it — it leaves the Inbox, stays in the Cafe's list */
   await page.click('#gptNewListBtn'); await page.waitForTimeout(200);
@@ -284,8 +307,10 @@ const call = (fn, args) => api.default({ method: 'POST', json: async () => ({ fn
   await page.fill('#leadForm [data-lf="title"]', 'Fix the cafe sign');
   ok('a card is for a department, not a ministry', (await page.$$eval('#leadForm [data-lf="taskMin"] option', o => o.map(x => x.value))).every(v => !v || /\|$/.test(v)) && /A task for which department/.test(await page.$eval('#leadForm', e => e.textContent)));
   await page.selectOption('#leadForm [data-lf="taskMin"]', 'Community Service|'); await page.waitForTimeout(300);
-  ok('… the department\'s people offered first to give it to', (await page.$$eval('#leadForm [data-lf="owner"] option', o => o.map(x => x.value))).slice(1, 3).sort().join() === 'c1,c2');
-  await page.selectOption('#leadForm [data-lf="owner"]', 'c2');
+  ok('… the department\'s people offered first to give it to, in a people search', (await page.$$eval('#leadForm [data-ppicklist="lead"] [data-ppickit]', b => b.map(x => x.dataset.ppickit.split('|')[1]))).slice(0, 2).sort().join() === 'c1,c2' && !!(await page.$('#leadForm [data-ppickq="lead"]')));
+  await page.fill('#leadForm [data-ppickq="lead"]', 'kan'); await page.waitForTimeout(200);
+  await page.click('#leadForm [data-ppickit="lead|c2"]'); await page.waitForTimeout(300);
+  ok('… chosen: a chip with ×', !!(await page.$('#leadForm [data-ppickrm="lead|c2"]')));
   await page.click('#leadSave'); await page.waitForTimeout(900);
   const ct = T().find(t => t.title === 'Fix the cafe sign');
   const ctL = ct && (mem.gpTasks.lists || []).find(l => l.id === ct.listId);

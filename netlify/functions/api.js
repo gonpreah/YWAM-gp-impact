@@ -4922,6 +4922,7 @@ const PUSH_TEXT = {
   p360ask: { en: 'A 360 review is waiting for your feedback ({n}).', km: 'ការវាយតម្លៃ 360 កំពុងរង់ចាំមតិរបស់អ្នក ({n})។' },
   p360plan: { en: 'Your 360 action plan’s {q} review is due.', km: 'ដល់ពេលពិនិត្យផែនការសកម្មភាព 360 របស់អ្នកសម្រាប់ {q} ហើយ។' },
   hr: { en: '{n} contracts end soon.', km: 'កិច្ចសន្យា {n} នឹងផុតកំណត់ឆាប់ៗនេះ។' },
+  listShared: { en: '{name} shared a task list with you: {title}', km: '{name} បានចែករំលែកបញ្ជីកិច្ចការជាមួយអ្នក៖ {title}' },
   taskAssigned: { en: '{name} gave you a task: {title}', km: '{name} បានផ្តល់ភារកិច្ចមួយដល់អ្នក៖ {title}' },
   taskRequest: { en: '{name} is asking your ministry for help: {title}', km: '{name} កំពុងសុំជំនួយពីក្រសួងរបស់អ្នក៖ {title}' },
   taskDeclined: { en: '{name} can’t take on: {title}', km: '{name} មិនអាចទទួលយក៖ {title}' },
@@ -10494,21 +10495,22 @@ function gptSubs_(v, prev) {
 async function getGpt_() { const d = await readJSON('gpTasks', null); return { lists: (d && Array.isArray(d.lists)) ? d.lists : [], tasks: (d && Array.isArray(d.tasks)) ? d.tasks : [], leadSynced: (d && d.leadSynced && typeof d.leadSynced === 'object') ? d.leadSynced : {} }; }
 function gptId_(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function gptAll_(s) { return canLead_(s); }   // Campus Leadership and admins see every list on the campus
+function gptMember_(s, L) { return !!L && L.scope === 'personal' && (L.ownerId === s.id || (Array.isArray(L.members) && L.members.indexOf(s.id) > -1)); }   // the owner, or someone the list is shared with (Oct 2026)
 function gptIn_(s, L) {   // one of the list's own people
   if (!L) return false;
-  if (L.scope === 'personal') return L.ownerId === s.id;
+  if (L.scope === 'personal') return gptMember_(s, L);
   if (L.campus !== s.campus) return false;
   if (L.scope === 'dept') return deptOf_(s) === L.dept || ministriesOf_(s).some(function (k) { return k.split('|')[0] === L.dept; }) || leadsOf_(s).some(function (k) { return k.split('|')[0] === L.dept; });
   return memberOf_(s, L.dept, L.ministry) || leadsOf_(s).indexOf(L.dept + '|' + L.ministry) > -1;
 }
 function gptSees_(s, L) {
   if (!L) return false;
-  if (L.scope === 'personal') return L.ownerId === s.id;
+  if (L.scope === 'personal') return gptMember_(s, L);
   return gptIn_(s, L) || (gptAll_(s) && (L.campus === s.campus || s.isAdmin));
 }
-function gptEdits_(s, L) { return !!L && (L.scope === 'personal' ? L.ownerId === s.id : (gptIn_(s, L) || (gptAll_(s) && (L.campus === s.campus || s.isAdmin)))); }
+function gptEdits_(s, L) { return !!L && (L.scope === 'personal' ? gptMember_(s, L) : (gptIn_(s, L) || (gptAll_(s) && (L.campus === s.campus || s.isAdmin)))); }
 function gptLabel_(s) { return gptAll_(s) && deptOf_(s) === LEADERSHIP_DEPT ? LEADERSHIP_DEPT : (s.ministry || deptOf_(s) || ''); }
-function gptListOut_(L, s) { return { id: L.id, campus: L.campus, scope: L.scope, dept: L.dept || '', ministry: L.ministry || '', ownerId: L.ownerId || '', shared: !!L.shared, title: L.title, color: L.color || '', order: L.order || 0, mine: gptIn_(s, L), canEdit: gptEdits_(s, L) }; }
+function gptListOut_(L, s) { return { id: L.id, campus: L.campus, scope: L.scope, dept: L.dept || '', ministry: L.ministry || '', ownerId: L.ownerId || '', shared: !!L.shared, members: Array.isArray(L.members) ? L.members.slice() : [], title: L.title, color: L.color || '', order: L.order || 0, mine: gptIn_(s, L), canEdit: gptEdits_(s, L) }; }
 function gptTaskOut_(t) {
   return { id: t.id, listId: t.listId, title: t.title, notes: t.notes || '', due: t.due || '', time: t.time || '', done: !!t.done, doneAt: t.doneAt || '', doneBy: t.doneBy || '',
     assignees: t.assignees || [], assignedAt: t.assignedAt || {}, status: t.status || 'open', from: t.from || null, cardId: t.cardId || '', leadId: t.leadId || '', ooId: t.ooId || '', subs: t.subs || [], filed: t.filed || {}, created: t.created, by: t.by, order: t.order || 0 };
@@ -10815,6 +10817,24 @@ async function fileGpTask(username, pin, id, listId) {
   t.filed = t.filed || {};
   if (to) t.filed[s.id] = { list: to.id, order: d.tasks.filter(function (y) { return y.listId === to.id; }).length }; else delete t.filed[s.id];
   await writeJSON('gpTasks', d);
+  return getGpTasks(username, pin);
+}
+/* Sharing a whole list (Oct 2026, Uriah: "share the whole list, so we can both be using it together"):
+   the owner names the people; they see it as a tab, add, tick off and give out tasks in it like the
+   owner. Only the owner shares, renames, colours or deletes it. */
+const GPT_MAX_MEMBERS = 20;
+async function shareGpTaskList(username, pin, id, members) {
+  const s = await gptAuth_(username, pin); if (!s) return { ok: false };
+  const d = await getGpt_(), L = d.lists.find(function (l) { return l.id === id; });
+  if (!L) return { ok: false, err: 'not_found' };
+  if (L.scope !== 'personal' || L.ownerId !== s.id) return { ok: false, err: 'not_authorized' };
+  const staff = await getStaff_(), ok = {};
+  staff.forEach(function (r) { if (r && r.active !== false && !r.archived && !isApplicant_(r) && r.campus === L.campus && r.id !== s.id) ok[r.id] = r; });
+  const next = []; (Array.isArray(members) ? members : []).forEach(function (x) { const id = str_(x, 60); if (ok[id] && next.indexOf(id) === -1 && next.length < GPT_MAX_MEMBERS) next.push(id); });
+  const fresh = next.filter(function (id) { return (L.members || []).indexOf(id) === -1; });
+  L.members = next;
+  await writeJSON('gpTasks', d);
+  for (const id of fresh) await pushNow_(id, 'listShared', { name: s.name, title: L.title }, 'teams.html?view=tasks');
   return getGpTasks(username, pin);
 }
 async function saveGpListOrder(username, pin, ids) {
@@ -11265,6 +11285,7 @@ const HANDLERS = {
   saveGpTaskFilter: function (a) { return saveGpTaskFilter(a[0], a[1], a[2]); },
   orderGpTasks: function (a) { return orderGpTasks(a[0], a[1], a[2], a[3]); },
   fileGpTask: function (a) { return fileGpTask(a[0], a[1], a[2], a[3]); },
+  shareGpTaskList: function (a) { return shareGpTaskList(a[0], a[1], a[2], a[3]); },
   saveGpListOrder: function (a) { return saveGpListOrder(a[0], a[1], a[2]); },
   saveMetricOverrides: function (a) { return saveMetricOverrides(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]); },
   renameCustomMetric: function (a) { return renameCustomMetric(a[0], a[1], a[2], a[3], a[4], a[5], a[6]); },
