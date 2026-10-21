@@ -208,6 +208,17 @@ ok('what reaches someone else is a task given to them — in their Inbox, with t
   r = await call('getGpTasks', as('hana'));
   ok('… and is not renamed again after that', r.lists.find(l => l.id === hl.id).title === 'Groceries');
 }
+console.log('=== a ministry list from before, called "Tasks" ===');
+{
+  const d = mem.gpTasks;
+  d.lists.push({ id: 'tl_old', campus: 'siemreap', scope: 'ministry', dept: 'Skills Training', ministry: 'Media', ownerId: '', shared: false, title: 'Tasks', order: 99, created: '2026-09-01T00:00:00.000Z', by: 'c1' });
+  r = await call('getGpTasks', as('uriah'));
+  ok('it gets its ministry\'s name on the next load', mem.gpTasks.lists.find(l => l.id === 'tl_old').title === 'Media' && !mem.gpTasks.lists.some(l => l.scope !== 'personal' && l.title === 'Tasks'));
+  r = await call('saveGpTask', [...as('cora'), { askMin: 'Skills Training|Worship', title: 'Lead a song at the cafe night' }]);
+  const wl = mem.gpTasks.lists.find(l => l.scope === 'ministry' && l.ministry === 'Worship');
+  ok('asking a ministry with no list yet makes its designated list, named after it — not "Tasks"', r.ok && wl && wl.title === 'Worship' && task(r, 'Lead a song at the cafe night').listId === wl.id);
+}
+
 console.log('=== sharing a whole list ===');
 r = await call('saveGpTaskList', [...as('kanha'), { scope: 'personal', title: 'Christmas' }]);
 const xl = r.lists.find(l => l.title === 'Christmas');

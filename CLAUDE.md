@@ -2738,6 +2738,10 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   (`'cand'`). The old selects stay in the DOM hidden (`data-lf="owner"`, `data-ltowner`, `data-cf`) so
   the forms' field readers still work. Rows: `[data-ppickit="key|id"]`, chips `[data-ppickrm="key|id"]`,
   the box `[data-ppickq="key"]`; until you type, only the `first` group shows (or the first few).
+  **No list is ever called "Tasks"** (Andrew, Oct 2026: "why 3 lists named Tasks?"): "Ask another
+  ministry" into a ministry with no list makes its designated list through `gptMinList_` (named after
+  it; it used to make one called "Tasks"), `gptEnsureLists_` renames any ministry or department list
+  still called "Tasks" to its own name once, and "＋ New list" refuses an empty name.
   **Day dividers** (Andrew, Oct 2026, "like Google Tasks"): `gptDayGroups_` splits a list's open tasks
   into Requests, Overdue, Today, Tomorrow, each later day ("Thu, 23 Oct"), then No date (`.gtDay`,
   `data-gptday`); a list with no dates at all stays plain. Within a day it is still your order. Dragging

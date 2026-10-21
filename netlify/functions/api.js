@@ -10670,6 +10670,8 @@ function gptEnsureLists_(d, s) {
   if (dept) keys[dept + '|' + (dept === LEADERSHIP_DEPT ? '' : (s.ministry || ''))] = 1;
   ministriesOf_(s).concat(leadsOf_(s)).forEach(function (k) { const p = String(k).split('|'); if (p[0]) keys[p[0] + '|' + (p[0] === LEADERSHIP_DEPT ? '' : (p[1] || ''))] = 1; });
   Object.keys(keys).forEach(function (k) { const p = k.split('|'); if (gptMinList_(d, s.campus, p[0], p[1], s.id).made) made = true; });
+  /* a ministry's or department's list from before, still called "Tasks": its own name (once) */
+  d.lists.forEach(function (L) { if (L.scope !== 'personal' && L.title === 'Tasks') { L.title = L.dept === LEADERSHIP_DEPT ? GPT_LEAD_LIST : (L.ministry || L.dept || L.title); made = true; } });
   return made;
 }
 /* The leadership board's little tasks (inside a card: text, owner, due) are also GP Tasks in the
@@ -10745,8 +10747,8 @@ async function saveGpTask(username, pin, task) {
     const p = String(x.askMin).split('|'), key = p.length === 2 && p[0] ? normKey_((str_(p[0], 80) || '') + '|' + (str_(p[1], 80) || ''), 2) : '';
     if (!key) return { ok: false, err: 'bad_ministry' };
     const kp = key.split('|'), scope = kp[1] ? 'ministry' : 'dept';
-    let to = d.lists.find(function (l) { return l.campus === s.campus && l.scope === scope && l.dept === kp[0] && (l.ministry || '') === kp[1]; });
-    if (!to) { to = { id: gptId_('tl'), campus: s.campus, scope: scope, dept: kp[0], ministry: kp[1], ownerId: '', shared: false, title: 'Tasks', order: d.lists.length, created: now, by: s.id }; d.lists.push(to); }
+    const to = gptMinList_(d, s.campus, kp[0], kp[1], s.id).list;   // its designated list, named after it (this used to make one called "Tasks" — Andrew: "why 3 lists named Tasks?")
+    if (!to) return { ok: false, err: 'no_list' };
     x.listId = to.id;
   }
   const L = d.lists.find(function (l) { return l.id === (t ? t.listId : x.listId); });

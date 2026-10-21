@@ -528,7 +528,7 @@ function bindGpTasks_(){
   document.querySelectorAll('[data-gptmakefor]').forEach(function(b){ b.onclick=function(){ var k=b.getAttribute('data-gptmakefor').split('|'); madeList({ title:k[1]||k[0], scope:k[1] ? 'ministry' : 'dept', dept:k[0], ministry:k[1]||'' }); }; });
   var nt=document.getElementById('gptNewTitle'); if(nt){ nt.oninput=function(){ S.gptNewList.title=nt.value; }; nt.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); var b=document.getElementById('gptNewSave'); if(b) b.click(); } }; }
   on('gptNewCancel', function(){ S.gptNewList=null; render(); });
-  on('gptNewSave', function(){ madeList({ title:(S.gptNewList.title||'').trim() || t('Tasks'), scope:'personal' }); });
+  on('gptNewSave', function(){ var title=(S.gptNewList.title||'').trim(); if(!title){ showMsg(t('Give it a name first')); var el=document.getElementById('gptNewTitle'); if(el) el.focus(); return; } madeList({ title:title, scope:'personal' }); });
   /* ticking off — in a row or in the open task; a subtask in a row saves at once */
   document.querySelectorAll('[data-gptdone]').forEach(function(b){ b.onclick=function(){
     var id=b.getAttribute('data-gptdone'), x=(S.gpt.tasks||[]).filter(function(y){ return y.id===id; })[0]; if(!x) return; gpTap();
