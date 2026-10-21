@@ -255,7 +255,7 @@ async function open(viewport, query, seed) {
       HR_DONE[b.args[4]] = true; out = { ok: true, done: HR_DONE };
     } else if (b.fn === 'contractLinkOpen') {
       out = b.args[0] === 'abc123def4567890abc123def4567890' ? { ok: true, staff: true, hrSign: false, link: true, isTeam: false, team: 'Dara Pen', contacts: [], prefill: { role: 'Cafe' }, people: [{ key: 'me', name: 'Dara Pen', done: LINK_DONE }],
-        docs: [{ id: 'contract:c8', title: 'Volunteer Staff Contract', period: '1 year · From 11/2026 to 11/2027', blocks: [{ t: 'period' }, { t: 'field', id: 'focus1', label: 'Area 1' }, { t: 'check', id: 'agree', text: 'I, {name}, agree.' }], sign: { leader: false } }] } : { ok: false, err: b.args[0] === 'used0000used0000used0000used0000' ? 'used' : 'invalid' };
+        docs: [{ id: 'contract:c8', title: 'Volunteer Staff Contract', period: '1 year · From 11/2026 to 11/2027', blocks: [{ t: 'period' }, { t: 'field', id: 'focus1', label: 'Area 1' }, { t: 'check', id: 'agree', text: 'I, {name}, agree.' }], sign: { leader: false } }] } : { ok: false, err: b.args[0] === 'abcd0000abcd0000abcd0000abcd0000' ? 'used' : 'invalid' };
     } else if (b.fn === 'contractLinkSign') {
       LINK_DONE[b.args[2]] = true; out = { ok: true, done: LINK_DONE };
     } else if (b.fn === 'staffSignSubmit') {
@@ -1106,7 +1106,8 @@ async function open(viewport, query, seed) {
   CANDS = JSON.parse(JSON.stringify(CANDS0));
   const base = CANDS.find(c => c.id === 'cd_team');
   const mk = (id, name, from, to, updated) => { const c = JSON.parse(JSON.stringify(base)); c.id = id; c.updated = updated; c.portal.form.answers = { ...c.portal.form.answers, teamName: name, itinerary: from ? [{ place: 'YWAM Siem Reap', from, to, base: true }] : [] }; return c; };
-  CANDS.push(mk('cd_tsoon', 'Soon Team', '2026-11-01', '2026-11-10', '2026-09-01T10:00:00Z'), mk('cd_tnow', 'Here Now Team', '2026-10-01', '2026-10-20', '2026-09-02T10:00:00Z'), mk('cd_tgone', 'Gone Team', '2026-08-01', '2026-08-10', '2026-09-30T10:00:00Z'), mk('cd_tnodate', 'No Dates Team', '', '', '2026-09-29T10:00:00Z'));
+  const rel = n => new Date(Date.now() + 7 * 3600e3 + n * 864e5).toISOString().slice(0, 10);   // from today, so these teams never age out of 'here now'
+  CANDS.push(mk('cd_tsoon', 'Soon Team', rel(11), rel(20), '2026-09-01T10:00:00Z'), mk('cd_tnow', 'Here Now Team', rel(-5), rel(5), '2026-09-02T10:00:00Z'), mk('cd_tgone', 'Gone Team', '2026-08-01', '2026-08-10', '2026-09-30T10:00:00Z'), mk('cd_tnodate', 'No Dates Team', '', '', '2026-09-29T10:00:00Z'));
   const { ctx, page } = await open({ width: 1280, height: 900 }, '', () => localStorage.setItem('gp-portal', JSON.stringify({ user: 'dara', pin: '1234' })));
   await page.waitForSelector('.trow');
   await page.click('[data-whatfilter="team"]'); await page.waitForTimeout(200);
@@ -1269,7 +1270,7 @@ async function open(viewport, query, seed) {
   await ctx.close();
 }
 {
-  const { ctx, page } = await open({ width: 390, height: 844 }, '?contract=used0000used0000used0000used0000');
+  const { ctx, page } = await open({ width: 390, height: 844 }, '?contract=abcd0000abcd0000abcd0000abcd0000');
   await page.waitForTimeout(800);
   ok('a link already used says so', /already been used/.test(await page.$eval('.signPage', e => e.textContent)));
   await ctx.close();
