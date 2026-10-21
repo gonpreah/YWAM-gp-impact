@@ -2748,7 +2748,11 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   into view after every render (the row used to jump back to the start, hiding the highlight).
   **⋮ is a wheel** (`#gtWheel`, `gtWheelLayout_`, `bindGtWheel_`): the items sit on a half-circle arc along
   the right edge, the middle one grown, like the macOS dock; spin it with a finger or the mouse wheel
-  (on the wheel or the scrim), a resting mouse grows the item under it. Item ids are unchanged
+  (on the wheel or the scrim), a resting mouse grows the item under it. The items are placed by
+  transform alone (`translate3d … scale`, never top/right — a layout per frame lagged); while a finger
+  or the wheel moves it (`gtWheelSpin_`, one layout per animation frame, `.spinning`) there is no eased
+  transition and the backdrop blur is paused (six moving blurs stuttered on phones); the snap at the
+  end (`.snap`) eases and brings the glass back. Item ids are unchanged
   (`#gtRename`, `#gtShareList`, `#gptListDelete`, …) and all items are on screen when it opens. In tests,
   close it with `page.click('#gtMenuScrim', { position: { x: 16, y: 60 } })` — the middle of the screen
   is covered by the grown item. The round ＋ is left out while the wheel is open.

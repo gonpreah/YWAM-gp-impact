@@ -222,25 +222,38 @@ function gtWheelLayout_(){
   var span=R*Math.sin(Math.min(1.2, step*(n-1)/2))+40, cy=H<2*span+70 ? H/2-30 : Math.min(Math.max(bt+150, span), H-span-70);
   if(S.gtWheel.focus==null) S.gtWheel.focus=Math.round((n-1)/2);
   var f=S.gtWheel.focus=Math.max(0, Math.min(n-1, S.gtWheel.focus));
+  /* transforms only (no top/right, no layout per frame): the item's right edge at x, its middle at y */
   its.forEach(function(el, i){
     var d=(i-f)*step, k=Math.abs(i-f), sc=0.9+0.22*Math.max(0, 1-k/1.6);   // low key: a gentle grow
-    el.style.right=(W-(cx-R*Math.cos(d)))+'px'; el.style.top=(cy+R*Math.sin(d))+'px';
-    el.style.transform='translateY(-50%) scale('+sc.toFixed(3)+')'; el.style.opacity=(1-Math.min(0.3, k*0.08)).toFixed(2); el.style.zIndex=String(100-Math.round(k*10));
+    var x=cx-R*Math.cos(d), y=cy+R*Math.sin(d);
+    el.style.transform='translate3d('+(x-W).toFixed(1)+'px, calc('+y.toFixed(1)+'px - 50%), 0) scale('+sc.toFixed(3)+')';
+    el.style.opacity=(1-Math.min(0.3, k*0.08)).toFixed(2); el.style.zIndex=String(100-Math.round(k*10));
     el.classList.toggle('on', Math.round(f)===i);
   });
+}
+/* the spin: no eased transition while a finger or the wheel moves it (it would lag behind), the frosted
+   glass paused meanwhile (a backdrop blur on each moving pill is what made it stutter), one layout per
+   frame; the snap at the end eases, with the glass back */
+function gtWheelSpin_(f, settle){
+  var w=document.getElementById('gtWheel'); if(!w) return;
+  S.gtWheel.focus=f;
+  if(settle){ w.classList.remove('spinning'); w.classList.add('snap'); gtWheelLayout_(); return; }
+  w.classList.remove('snap'); w.classList.add('spinning');
+  if(S.gtWheelRaf) return; S.gtWheelRaf=requestAnimationFrame(function(){ S.gtWheelRaf=0; gtWheelLayout_(); });
 }
 function bindGtWheel_(){
   var w=document.getElementById('gtWheel'); if(!w) return;
   var its=[].slice.call(w.querySelectorAll('.gtMenuIt')), n=its.length, clamp=function(v){ return Math.max(0, Math.min(n-1, v)); };
-  gtWheelLayout_();
+  gtWheelLayout_(); void w.offsetWidth; w.classList.add('snap'); gtWheelLayout_();   // the first layout, then ease in from the edge
   /* a mouse resting over an item grows it, like the dock — real movement only, not the tap that opened it */
-  its.forEach(function(el, i){ el.addEventListener('mousemove', function(){ if(Date.now()-(S.gtWheelOpened||0)<400 || S.gtWheel.focus===i) return; S.gtWheel.focus=i; gtWheelLayout_(); }); });
-  var y0=0, f0=0, moved=false;
+  its.forEach(function(el, i){ el.addEventListener('mousemove', function(){ if(Date.now()-(S.gtWheelOpened||0)<400 || S.gtWheel.focus===i) return; gtWheelSpin_(i, true); }); });
+  var y0=0, f0=0, moved=false, settleT=null;
   [w, document.getElementById('gtMenuScrim')].forEach(function(el){ if(!el) return;
-    el.addEventListener('wheel', function(e){ e.preventDefault(); S.gtWheel.focus=clamp(S.gtWheel.focus+e.deltaY/90); gtWheelLayout_(); }, { passive:false });
+    el.addEventListener('wheel', function(e){ e.preventDefault(); gtWheelSpin_(clamp(S.gtWheel.focus+e.deltaY/90));
+      if(settleT) clearTimeout(settleT); settleT=setTimeout(function(){ gtWheelSpin_(clamp(Math.round(S.gtWheel.focus)), true); }, 140); }, { passive:false });
     el.addEventListener('touchstart', function(e){ var p=e.touches[0]; if(!p) return; y0=p.clientY; f0=S.gtWheel.focus; moved=false; }, { passive:true });
-    el.addEventListener('touchmove', function(e){ var p=e.touches[0]; if(!p) return; var dy=p.clientY-y0; if(Math.abs(dy)>6) moved=true; if(!moved) return; if(e.cancelable) e.preventDefault(); S.gtWheel.focus=clamp(f0-dy/80); gtWheelLayout_(); }, { passive:false });
-    el.addEventListener('touchend', function(){ if(!moved) return; S.gtWheel.focus=clamp(Math.round(S.gtWheel.focus)); gtWheelLayout_(); S.gtWheelDragEnd=Date.now(); }, { passive:true });
+    el.addEventListener('touchmove', function(e){ var p=e.touches[0]; if(!p) return; var dy=p.clientY-y0; if(Math.abs(dy)>6) moved=true; if(!moved) return; if(e.cancelable) e.preventDefault(); gtWheelSpin_(clamp(f0-dy/80)); }, { passive:false });
+    el.addEventListener('touchend', function(){ if(!moved) return; gtWheelSpin_(clamp(Math.round(S.gtWheel.focus)), true); S.gtWheelDragEnd=Date.now(); }, { passive:true });
     el.addEventListener('click', function(e){ if(Date.now()-(S.gtWheelDragEnd||0)<350){ e.stopPropagation(); e.preventDefault(); } }, true);   // a spin is not a tap
   });
   if(!S.gtWheelResize){ S.gtWheelResize=true; window.addEventListener('resize', function(){ gtWheelLayout_(); }); }

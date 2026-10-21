@@ -103,10 +103,13 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   ok('… made as a personal list, its tab open', rd && rd.scope === 'personal' && rd.ownerId === 'c1' && !!(await page.$('.gtTab.on[data-gptlist="' + rd.id + '"]')));
   /* ⋮ is a half-circle wheel: the items on an arc along the right edge, the middle one grown; spin it */
   await page.click('#gtMenuBtn'); await page.waitForTimeout(400);
-  const wheelIts = await page.$$eval('#gtWheel .gtMenuIt', b => b.map(x => ({ id: x.id, top: x.style.top, on: x.classList.contains('on'), sc: x.style.transform })));
-  ok('⋮ opens as a wheel: every item placed on the arc, one grown in the middle', !!(await page.$('#gtWheel')) && wheelIts.length >= 4 && wheelIts.every(x => /px/.test(x.top)) && wheelIts.filter(x => x.on).length === 1 && /scale\(1\.1/.test(wheelIts.find(x => x.on).sc), JSON.stringify(wheelIts));
+  const wheelIts = await page.$$eval('#gtWheel .gtMenuIt', b => b.map(x => ({ id: x.id, on: x.classList.contains('on'), sc: x.style.transform, y: x.getBoundingClientRect().top })));
+  ok('⋮ opens as a wheel: every item placed on the arc by a transform alone, one grown in the middle', !!(await page.$('#gtWheel.snap')) && wheelIts.length >= 4 && wheelIts.every(x => /translate3d\(/.test(x.sc) && x.y > 0 && x.y < 700) && wheelIts.filter(x => x.on).length === 1 && /scale\(1\.1/.test(wheelIts.find(x => x.on).sc), JSON.stringify(wheelIts));
   const onBefore = wheelIts.find(x => x.on).id;
-  await page.mouse.move(120, 500); await page.mouse.wheel(0, 200); await page.waitForTimeout(300);
+  await page.mouse.move(120, 500); await page.mouse.wheel(0, 200); await page.waitForTimeout(60);
+  ok('… while it spins there is no eased lag and the glass is paused', !!(await page.$('#gtWheel.spinning')) && !(await page.$('#gtWheel.snap')));
+  await page.waitForTimeout(400);
+  ok('… and it settles with the glass back', !!(await page.$('#gtWheel.snap')) && !(await page.$('#gtWheel.spinning')));
   const onAfter = await page.$eval('#gtWheel .gtMenuIt.on', e => e.id);
   ok('… spinning it moves which one is grown', onAfter !== onBefore, onBefore + ' → ' + onAfter);
   /* Arrange lists: arrows, for those who won't know they can drag a tab */
