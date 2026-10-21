@@ -2382,6 +2382,9 @@ body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
 .gtPickIt { display:block; width:100%; text-align:left; background:none; border:0; padding:9px 12px 9px 20px; font:inherit; font-size:15px; color:var(--ink); cursor:pointer; }
 .gtPickIt:hover { background:var(--surface2); }
 .gtPicked { display:flex; align-items:center; gap:8px; width:100%; text-align:left; background:var(--surface2); border:0; border-radius:12px; padding:10px 12px; font:inherit; color:var(--ink); cursor:pointer; margin:0 0 6px; }
+.ppick { flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; }
+.ppick .gtFind { margin:0; } .ppick .gtPick { max-height:220px; margin:0; }
+.ppick .gtPeople { margin:0 0 2px; }
 .gtPicked span { color:var(--muted); font-size:13px; } .gtPicked .gtPickedChange { margin-left:auto; color:var(--accent); font-weight:700; }
 .calMeta svg, .calCal svg { width:12px; height:12px; vertical-align:-2px; }
 /* the month's header line (‹ month ›, Today) */

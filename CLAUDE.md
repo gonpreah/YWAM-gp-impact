@@ -2725,6 +2725,19 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   it sits there for you alone — `fileGpTask(id, listId)` → `task.filed[you] = { list, order }`
   (`gptFiledIn_`, `gptGiven_`); `orderGpTasks` on your own list keeps given tasks' places in
   `filed` too. Lists you can't otherwise see are never tabs (`onlyAssigned` lists only carry names).
+  **Sharing a whole list** (Oct 2026, Uriah: "so we can both be using it together"): the owner of a
+  personal list names people in ⋮ → "Share list with someone…" (`#gtShareList`, a sheet with the people
+  picker; `shareGpTaskList(id, members)`, owner only, campus people only, max 20, pushed `listShared`);
+  `list.members` — they see it as a tab ("Shared by Cora"), add, tick off and give out tasks in it
+  (`gptMember_` in `gptIn_`/`gptSees_`/`gptEdits_`), but cannot rename, recolour, share on or delete it.
+  **The people picker with a search box** (`ppickHtml_`, `bindPeoplePick_`, `PPICK` by key, `S.ppick[key].q`;
+  `ppickPeopleFor_(L)` = the campus, the list's own people `first` and grouped) replaces every staff
+  `<select>` the app had for picking a person: GP Tasks assign (new task `key:'new'`, open task `'det'`),
+  the share sheet (`'share'`), the leadership board's card owner (`'lead'`) and task owners
+  (`'lt:<card>:<task>'`, via `window.gpLeadChangeTask_`), the Teams DB "who is walking with them"
+  (`'cand'`). The old selects stay in the DOM hidden (`data-lf="owner"`, `data-ltowner`, `data-cf`) so
+  the forms' field readers still work. Rows: `[data-ppickit="key|id"]`, chips `[data-ppickrm="key|id"]`,
+  the box `[data-ppickq="key"]`; until you type, only the `first` group shows (or the first few).
   **The red number** (`.gtBadge`) on the Inbox tab and My Home's GP Tasks row = `gptInboxCount_()` /
   `gpTaskInfo.inbox`: the Inbox's own open tasks plus what you were given and haven't filed elsewhere.
 - **A ministry's GP Tasks is the same page** (Oct 2026, Uriah: "like the personal GP Tasks, just that

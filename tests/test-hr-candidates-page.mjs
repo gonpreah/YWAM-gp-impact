@@ -110,7 +110,7 @@ await page.fill('[data-cf="name"]', ' Mia Novak ');
 await page.selectOption('[data-cf="type"]', 'staff');
 await page.fill('[data-cf="email"]', 'mia@x.org');
 await page.fill('[data-cf="country"]', 'Slovenia');
-await page.selectOption('[data-cf="assignedTo"]', 'st_sina');
+await page.fill('[data-ppickq="cand"]', 'sina'); await page.waitForTimeout(200); await page.click('[data-ppickit="cand|st_sina"]'); await page.waitForTimeout(300);
 await page.fill('[data-cf="nextStep"]', 'Send the application');
 await page.fill('[data-cf="nextDate"]', day(3));
 await page.click('#candSave');

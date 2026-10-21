@@ -1200,7 +1200,10 @@ function candFormHtml_(){
   h+='<div class="teamGrid2">'+inp('subtype', t('Khmer / International'), 'text', ' maxlength="60" placeholder="'+esc(t('e.g. International'))+'"')+inp('school', t('School (students)'), 'text', ' maxlength="80" placeholder="DTS, DBS…"')+'</div>';
   h+='<div class="teamGrid2">'+inp('email', t('Email'), 'email', ' maxlength="120"')+inp('phone', t('Phone / WhatsApp'), 'tel', ' maxlength="60"')+'</div>';
   h+='<div class="teamGrid2">'+inp('country', t('Country'), 'text', ' maxlength="60"')+inp('source', t('How they found us'), 'text', ' maxlength="120" placeholder="'+esc(t('e.g. DTS outreach, website, a friend'))+'"')+'</div>';
-  h+='<label class="f">'+esc(t('Who is walking with them'))+'</label><select data-cf="assignedTo"><option value="">'+esc(t('— nobody yet —'))+'</option>'+
+  h+='<label class="f">'+esc(t('Who is walking with them'))+'</label>'+
+    ppickHtml_({ key:'cand', people:S.roster.slice().sort(function(a,b){ return a.name<b.name?-1:1; }).map(function(p){ return { id:p.id, name:p.name, sub:t(p.ministry||p.dept||''), first:true, group:'' }; }), chosen:f.assignedTo ? [f.assignedTo] : [], multi:false, open:true, placeholder:t('Type a name…'),
+      onPick:function(id){ S.candForm=S.candForm||f; S.candForm.assignedTo=id; render(); }, onRemove:function(){ S.candForm=S.candForm||f; S.candForm.assignedTo=''; render(); } })+
+    '<select data-cf="assignedTo" hidden aria-hidden="true"><option value="">'+esc(t('— nobody yet —'))+'</option>'+
     S.roster.slice().sort(function(a,b){ return a.name<b.name?-1:1; }).map(function(p){ return '<option value="'+esc(p.id)+'"'+(f.assignedTo===p.id?' selected':'')+'>'+esc(p.name)+'</option>'; }).join('')+'</select>';
   h+='<div class="teamGrid2">'+inp('expected', t('Expected arrival'), 'month')+'<div></div></div>';
   h+='<h4 style="margin:14px 0 4px">'+esc(t('Next step'))+'</h4>';

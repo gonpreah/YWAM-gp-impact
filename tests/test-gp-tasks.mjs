@@ -208,6 +208,25 @@ ok('what reaches someone else is a task given to them — in their Inbox, with t
   r = await call('getGpTasks', as('hana'));
   ok('… and is not renamed again after that', r.lists.find(l => l.id === hl.id).title === 'Groceries');
 }
+console.log('=== sharing a whole list ===');
+r = await call('saveGpTaskList', [...as('kanha'), { scope: 'personal', title: 'Christmas' }]);
+const xl = r.lists.find(l => l.title === 'Christmas');
+r = await call('shareGpTaskList', [...as('cora'), xl.id, ['c1']]);
+ok('only the owner shares a list', r.ok === false);
+r = await call('shareGpTaskList', [...as('kanha'), xl.id, ['c1', 'nobody', 'c2', 'pp1']]);
+ok('Kanha shares it with Cora: her, not herself, not someone off the campus or unknown', r.ok && r.lists.find(l => l.id === xl.id).members.join() === 'c1');
+r = await call('getGpTasks', as('cora'));
+ok('Cora sees it, as a list she can add to', r.lists.some(l => l.id === xl.id && l.canEdit && !l.onlyAssigned));
+r = await call('saveGpTask', [...as('cora'), { listId: xl.id, title: 'Buy the tree', assignees: ['c2'] }]);
+ok('… adds a task and gives it to Kanha', r.ok && task(r, 'Buy the tree').assignees.join() === 'c2');
+r = await call('saveGpTaskList', [...as('cora'), { id: xl.id, title: 'Mine now' }]);
+ok('… but cannot rename it', r.ok === false);
+r = await call('getGpTasks', as('hana'));
+ok('nobody else sees it', !r.lists.some(l => l.id === xl.id));
+r = await call('shareGpTaskList', [...as('kanha'), xl.id, []]);
+r = await call('getGpTasks', as('cora'));
+ok('taken off the list: gone for Cora', !r.lists.some(l => l.id === xl.id && !l.onlyAssigned));
+
 console.log('=== filing what you were given ===');
 r = await call('saveGpTaskList', [...as('cora'), { scope: 'personal', title: 'Reading' }]);
 const reading = r.lists.find(l => l.title === 'Reading'), cups = task(r, 'Count the cups');
