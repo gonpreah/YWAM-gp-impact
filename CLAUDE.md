@@ -2743,7 +2743,8 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   `data-gptday`); a list with no dates at all stays plain. Within a day it is still your order. Dragging
   a task under another day's divider gives it that day (`Now due …`; under No date it loses its date) —
   the order is saved first, then the day, one after the other, so neither save loses the other.
-  **Swipe** sideways on the list (`.gtList` touch, ≥70px, mostly horizontal, not from a grip) for the next
+  **Swipe** sideways anywhere on the tasks page (bound once on the box around `.gtBar`, ≥70px, mostly
+  horizontal; not from the tabs row, a grip, a sheet, the wheel or a field; the lists read at swipe time) for the next
   or previous tab (`gptGoList_(id, 'L'|'R')`, a short `.gtSlideL/R` animation). The open tab is scrolled
   into view after every render (the row used to jump back to the start, hiding the highlight).
   **⋮ is a wheel** (`#gtWheel`, `gtWheelLayout_`, `bindGtWheel_`): the items sit on a half-circle arc along

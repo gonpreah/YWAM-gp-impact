@@ -467,12 +467,14 @@ function bindGpTasks_(){
   if(onTab && tabsBox){ var tl=onTab.offsetLeft, tr=tl+onTab.offsetWidth; if(tl<tabsBox.scrollLeft+8 || tr>tabsBox.scrollLeft+tabsBox.clientWidth-8) tabsBox.scrollLeft=Math.max(0, tl-28); }
   S.gtSlide=null;
   /* slide sideways on the list for the next or the previous one */
-  var swipeBox=document.querySelector('.gtList'), swLists=gptLists_(scope);
-  if(swipeBox && swLists.length>1){ var sx=0, sy=0, sOn=false;
-    swipeBox.addEventListener('touchstart', function(e){ var p=e.touches[0]; sOn=!!p && !(e.target.closest && e.target.closest('[data-gptgrip]')); if(p){ sx=p.clientX; sy=p.clientY; } }, { passive:true });
+  /* anywhere on the page, not just the card (Andrew, Oct 2026) — but not from the row of tabs (it scrolls
+     sideways itself), a grip, a sheet, the wheel or a field */
+  var gtBar=document.querySelector('.gtBar'), swipeBox=gtBar && gtBar.parentNode;
+  if(swipeBox && !swipeBox.gtSwipeBound){ swipeBox.gtSwipeBound=true; var sx=0, sy=0, sOn=false;   // the box outlives renders (#main), so bound once; the lists are read at the time
+    swipeBox.addEventListener('touchstart', function(e){ var p=e.touches[0]; sOn=!!p && !!document.querySelector('.gtBar') && !document.querySelector('.gtSheet, #gtWheel') && !(e.target.closest && e.target.closest('.gtTabs, [data-gptgrip], .gtSheet, .gtWheel, input, textarea, select')); if(p){ sx=p.clientX; sy=p.clientY; } }, { passive:true });
     swipeBox.addEventListener('touchend', function(e){ var p=e.changedTouches && e.changedTouches[0]; if(!sOn || !p) return; var dx=p.clientX-sx, dy=p.clientY-sy;
       if(Math.abs(dx)<70 || Math.abs(dy)>Math.abs(dx)*0.6 || document.body.classList.contains('gtDragOn') || Date.now()-S.gtDragEnd<400) return;
-      var ids=swLists.map(function(L){ return L.id; }), i=ids.indexOf(S.gptList)+(dx<0 ? 1 : -1); if(i<0 || i>=ids.length) return; gpTap(); gptGoList_(ids[i], dx<0 ? 'L' : 'R'); }, { passive:true });
+      var ids=gptLists_(S.gptScope).map(function(L){ return L.id; }), at=ids.indexOf(S.gptList); if(at<0 || ids.length<2) return; var i=at+(dx<0 ? 1 : -1); if(i<0 || i>=ids.length) return; gpTap(); gptGoList_(ids[i], dx<0 ? 'L' : 'R'); }, { passive:true });
   }
   /* ⋮ — the wheel */
   on('gtMenuBtn', function(){ gpTap(); S.gtMenu=!S.gtMenu; S.gtWheel.focus=null; S.gtWheelOpened=Date.now(); render(); });

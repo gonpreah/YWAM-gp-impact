@@ -123,13 +123,18 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   await page.click('#gtArrangeDone'); await page.waitForTimeout(300);
   ok('Done closes it, the list still open', !(await page.$('#gtArrangeSheet')) && !!(await page.$('.gtTab.on[data-gptlist="' + rd.id + '"]')));
   /* slide sideways on the list for the next one */
-  const swipe = async (dx) => page.evaluate((dx) => { const el = document.querySelector('.gtList'); const mk = (x) => new Touch({ identifier: 1, target: el, clientX: x, clientY: 420 });
+  const swipe = async (dx, sel) => page.evaluate(([dx, sel]) => { const el = document.querySelector(sel || '.gtList'); const mk = (x) => new Touch({ identifier: 1, target: el, clientX: x, clientY: 420 });
     el.dispatchEvent(new TouchEvent('touchstart', { touches: [mk(200)], changedTouches: [mk(200)], bubbles: true }));
-    el.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [mk(200 + dx)], bubbles: true })); }, dx);
+    el.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [mk(200 + dx)], bubbles: true })); }, [dx, sel]);
   await swipe(-160); await page.waitForTimeout(400);
   ok('sliding left on the list opens the next list', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === tabsAfter[tabsAfter.indexOf(rd.id) + 1] && !!(await page.$('.gtList.gtSlideL')));
   await swipe(160); await page.waitForTimeout(400);
   ok('… and sliding right comes back', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === rd.id);
+  await swipe(-160, '#main'); await page.waitForTimeout(400);
+  ok('sliding anywhere on the page works too, not just on the card', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === tabsAfter[tabsAfter.indexOf(rd.id) + 1]);
+  await swipe(160, '.gtTabs'); await page.waitForTimeout(400);
+  ok('… but not from the row of tabs, which scrolls sideways itself', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === tabsAfter[tabsAfter.indexOf(rd.id) + 1]);
+  await swipe(160, '#main'); await page.waitForTimeout(400);
   /* sharing the whole list: ⋮ → Share list with someone… → a people search; Kanha gets it as a tab */
   await page.click('#gtMenuBtn'); await page.waitForTimeout(200);
   ok('⋮ on your own list: Share list with someone…', !!(await page.$('#gtShareList')));
