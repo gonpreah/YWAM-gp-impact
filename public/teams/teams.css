@@ -1157,6 +1157,7 @@ body.libReading nav.bottom { display:none; } body.libReading { overflow:hidden; 
 .hrBanner.expired { border-color:var(--bad); }
 .hrDigital { margin:8px 0 6px; padding:8px 10px; border-radius:10px; font-size:13.5px; background:var(--surface2); border:1px solid var(--border); }
 .hrDigital.waiting { border-color:var(--amber); } .hrDigital.done { border-color:var(--good); }
+.hrLinkRow { display:flex; gap:6px; align-items:center; margin:8px 0; } .hrLinkRow input { flex:1; min-width:0; margin:0; font-size:13px; } .hrLinkRow .btn.small { width:auto; margin:0; padding:8px 12px; }
 .hrContractBtns { display:flex; gap:8px; flex-wrap:wrap; } .hrContractBtns .btn { flex:1 1 200px; }
 .hrLegalRow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:7px 0; border-top:1px solid var(--border); font-size:14px; }
 .hrLegalRow:first-of-type { border-top:0; } .hrLegalName { flex:1 1 200px; min-width:0; }

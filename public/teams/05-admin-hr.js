@@ -1038,8 +1038,8 @@ function bindHr(){
     S.busy=true; render();
     run('hrSendContract',[S.auth.user,S.auth.pin,pid,{ from:f.from, years:Math.round(yrs*4)/4 }],function(d){
       S.busy=false;
-      if(d && d.ok){ S.hrStaff=S.hrStaff.map(function(x){ return x.id===pid ? d.staff : x; }); S.hrSendForm=null;
-        location.href='portal.html?staff=1&hr='+encodeURIComponent(pid)+'&doc='+encodeURIComponent('contract:'+d.contractId); return; }
+      if(d && d.ok){ S.hrStaff=S.hrStaff.map(function(x){ return x.id===pid ? d.staff : x; }); S.hrSendForm=null; showMsg(t('Ready — send them the link, or fill it out now')); render();
+        var card=document.querySelector('[data-hrcontract="'+d.contractId+'"]'); if(card && card.scrollIntoView) card.scrollIntoView({ behavior:'smooth', block:'center' }); return; }
       showMsg(hrFail_(d));
       render();
     }, function(){ S.busy=false; showMsg(t('Connection problem — try again.')); render(); });
@@ -1047,6 +1047,12 @@ function bindHr(){
   var openPdf_=function(b, fn, args){ b.disabled=true; run(fn, [S.auth.user,S.auth.pin].concat(args), function(d){ b.disabled=false; if(d && d.ok) hrOpenDataUrl_(d.dataUrl, d.name); else showMsg(hrFail_(d)); }, function(){ b.disabled=false; showMsg(t('Connection problem — try again.')); }); };
   document.querySelectorAll('[data-hrlegalpdf]').forEach(function(b){ b.onclick=function(){ openPdf_(b, 'hrLegalPdf', [pid, b.getAttribute('data-hrlegalpdf')]); }; });
   document.querySelectorAll('[data-hrcontractpdf]').forEach(function(b){ b.onclick=function(){ openPdf_(b, 'hrContractPdf', [pid, b.getAttribute('data-hrcontractpdf')]); }; });
+  /* the contract link: copy it, or share it straight into a message */
+  document.querySelectorAll('[data-hrcopylink]').forEach(function(b){ b.onclick=function(){ gpTap(); var url=b.getAttribute('data-hrcopylink');
+    var done=function(){ showMsg(t('Link copied — send it to them')); };
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function(){ var i=document.getElementById('hrContractLink'); if(i){ i.select(); try{ document.execCommand('copy'); }catch(e){} } done(); });
+    else { var i=document.getElementById('hrContractLink'); if(i){ i.select(); try{ document.execCommand('copy'); }catch(e){} } done(); } }; });
+  document.querySelectorAll('[data-hrsharelink]').forEach(function(b){ b.onclick=function(){ gpTap(); try { navigator.share({ title:t('Staff contract'), text:t('Please read, fill out and sign your YWAM staff contract:'), url:b.getAttribute('data-hrsharelink') }); } catch(e){} }; });
   var ac=document.getElementById('hrAddContract');
   if(ac) ac.onclick=function(){ gpTap(); S.hrContractForm={ staffId:pid, id:'', signed:'', years:'', notes:'', campus:person.campus }; render(); var el=document.getElementById('hrContractForm'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); };
   document.querySelectorAll('[data-hredit]').forEach(function(b){

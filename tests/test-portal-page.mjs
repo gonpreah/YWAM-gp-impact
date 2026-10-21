@@ -105,7 +105,7 @@ const SIGN_DOCS = [
     { t: 'field', id: 'role', label: 'Role or team', prefill: 'role' }, { t: 'field', id: 'interpreter', label: 'Interpreter name if used', optional: true }], sign: { age: true, guardian: true } }];
 const SIGN_EXTRA = { contacts: [{ role: 'Ministry leader or director', name: 'Dara Pen', phone: '+855 12 000 000' }, { role: 'Alternative senior leader', name: '', phone: '' }], prefill: { role: 'Short-term team — Grace Church Team', dates: '' } };
 let SIGN_DONE = {};
-let STAFF_DONE = {}, HR_DONE = {};      // key -> { docId: true }, as the server keeps it
+let STAFF_DONE = {}, HR_DONE = {}, LINK_DONE = {};      // key -> { docId: true }, as the server keeps it
 let SIGN_STATUS_DOCS = [{ id: 'photo', title: 'Photo Release Form' }, { id: 'acceptance', title: 'Acceptance of Place' }];
 let LEGAL_ON = { photo: true, acceptance: true };
 let ACCESS_STAFF = [{ id: 'st_sina', name: 'Sina Sok', campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', portalStaff: false, portalAdmin: true, isAdmin: false, leadsTeams: false },
@@ -245,11 +245,19 @@ async function open(viewport, query, seed) {
     } else if (b.fn === 'staffSignOpen') {
       out = u === 'andrew' ? { ok: true, staff: true, isTeam: false, team: 'Andrew Lee', ...SIGN_EXTRA, people: [{ key: 'me', name: 'Andrew Lee', done: STAFF_DONE }],
         docs: SIGN_DOCS.slice(0, 1) } : { ok: false, err: 'invalid' };
+    } else if (b.fn === 'hrContractOpen' && b.args[2] === 'st_2') {
+      out = { ok: true, staff: true, hrSign: true, isTeam: false, team: 'Dara Pen', approver: 'Uriah Lyford', contacts: [], prefill: {}, people: [{ key: 'me', name: 'Dara Pen', done: HR_DONE }],
+        docs: [{ id: 'contract:c8', title: 'Volunteer Staff Contract', period: '1 year · From 11/2026 to 11/2027', approveOnly: true, staffName: 'Dara Pen', staffSignedAt: '2026-10-21T03:00:00Z', blocks: [{ t: 'period' }, { t: 'field', id: 'focus1', label: 'Area 1' }], sign: { leader: true } }] };
     } else if (b.fn === 'hrContractOpen') {
       out = u === 'uriah' && b.args[2] === 'st_1' ? { ok: true, staff: true, hrSign: true, isTeam: false, team: 'Andrew Lee', approver: 'Uriah Lyford', contacts: [], prefill: { role: 'Cafe' }, people: [{ key: 'me', name: 'Andrew Lee', done: HR_DONE }],
         docs: [{ id: 'contract:c9', title: 'Volunteer Staff Contract', period: '2 years · From 11/2026 to 11/2028', blocks: HR_BLOCKS || [{ t: 'period' }, { t: 'field', id: 'focus1', label: 'Area 1' }, { t: 'check', id: 'agree', text: 'I, {name}, agree.' }], sign: { leader: true } }] } : { ok: false, err: 'not_authorized' };
     } else if (b.fn === 'hrContractSign') {
       HR_DONE[b.args[4]] = true; out = { ok: true, done: HR_DONE };
+    } else if (b.fn === 'contractLinkOpen') {
+      out = b.args[0] === 'abc123def4567890abc123def4567890' ? { ok: true, staff: true, hrSign: false, link: true, isTeam: false, team: 'Dara Pen', contacts: [], prefill: { role: 'Cafe' }, people: [{ key: 'me', name: 'Dara Pen', done: LINK_DONE }],
+        docs: [{ id: 'contract:c8', title: 'Volunteer Staff Contract', period: '1 year · From 11/2026 to 11/2027', blocks: [{ t: 'period' }, { t: 'field', id: 'focus1', label: 'Area 1' }, { t: 'check', id: 'agree', text: 'I, {name}, agree.' }], sign: { leader: false } }] } : { ok: false, err: b.args[0] === 'abcd0000abcd0000abcd0000abcd0000' ? 'used' : 'invalid' };
+    } else if (b.fn === 'contractLinkSign') {
+      LINK_DONE[b.args[2]] = true; out = { ok: true, done: LINK_DONE };
     } else if (b.fn === 'staffSignSubmit') {
       STAFF_DONE[b.args[3]] = true; out = { ok: true, done: STAFF_DONE };
     } else if (b.fn === 'portalSignSubmit') {
@@ -1098,7 +1106,8 @@ async function open(viewport, query, seed) {
   CANDS = JSON.parse(JSON.stringify(CANDS0));
   const base = CANDS.find(c => c.id === 'cd_team');
   const mk = (id, name, from, to, updated) => { const c = JSON.parse(JSON.stringify(base)); c.id = id; c.updated = updated; c.portal.form.answers = { ...c.portal.form.answers, teamName: name, itinerary: from ? [{ place: 'YWAM Siem Reap', from, to, base: true }] : [] }; return c; };
-  CANDS.push(mk('cd_tsoon', 'Soon Team', '2026-11-01', '2026-11-10', '2026-09-01T10:00:00Z'), mk('cd_tnow', 'Here Now Team', '2026-10-01', '2026-10-20', '2026-09-02T10:00:00Z'), mk('cd_tgone', 'Gone Team', '2026-08-01', '2026-08-10', '2026-09-30T10:00:00Z'), mk('cd_tnodate', 'No Dates Team', '', '', '2026-09-29T10:00:00Z'));
+  const rel = n => new Date(Date.now() + 7 * 3600e3 + n * 864e5).toISOString().slice(0, 10);   // from today, so these teams never age out of 'here now'
+  CANDS.push(mk('cd_tsoon', 'Soon Team', rel(11), rel(20), '2026-09-01T10:00:00Z'), mk('cd_tnow', 'Here Now Team', rel(-5), rel(5), '2026-09-02T10:00:00Z'), mk('cd_tgone', 'Gone Team', '2026-08-01', '2026-08-10', '2026-09-30T10:00:00Z'), mk('cd_tnodate', 'No Dates Team', '', '', '2026-09-29T10:00:00Z'));
   const { ctx, page } = await open({ width: 1280, height: 900 }, '', () => localStorage.setItem('gp-portal', JSON.stringify({ user: 'dara', pin: '1234' })));
   await page.waitForSelector('.trow');
   await page.click('[data-whatfilter="team"]'); await page.waitForTimeout(200);
@@ -1242,6 +1251,42 @@ async function open(viewport, query, seed) {
   ok('signing sends theirs and HR’s, for that person', ss && ss.args[0] === 'uriah' && ss.args[2] === 'st_1' && ss.args[3] === 'me' && ss.args[4] === 'contract:c9' && ss.args[5].fields.focus1 === 'Cafe' && /^\/9j\//.test(ss.args[5].sig) && ss.args[5].leaderName === 'Uriah Lyford' && /^\/9j\//.test(ss.args[5].leaderSig));
   ok('… then it is done, with the way back to HR', !!(await page.$('.signDone a[href="teams.html?view=hr&hr=st_1"]')));
   ok('… and only once — no second “Back to HR” above it', (await page.$$eval('a', as => as.filter(x => /Back to HR/.test(x.textContent)).length)) === 1);
+  await ctx.close();
+}
+/* the one-time link: the staff contract on the person's own phone, no sign-in — they sign alone; then HR approves from the profile */
+{
+  const draw = async (page, pad) => { const r = await page.$eval('[data-sigpad="' + pad + '"]', c => { c.scrollIntoView({ block: 'center' }); const b = c.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height }; });
+    await page.mouse.move(r.x + 20, r.y + 60); await page.mouse.down(); for (let i = 1; i <= 10; i++) await page.mouse.move(r.x + 20 + i * 25, r.y + (i % 2 ? 30 : 90)); await page.mouse.up(); };
+  const { ctx, page } = await open({ width: 390, height: 844 }, '?contract=abc123def4567890abc123def4567890');
+  await page.waitForSelector('[data-signdoc]', { timeout: 8000 });
+  const lo = sent.filter(b => b.fn === 'contractLinkOpen').pop();
+  ok('the link opens the contract with no sign-in: Staff contract, their name, the period — and no Approved by block', lo && lo.args[0] === 'abc123def4567890abc123def4567890' && /Staff contract/.test(await page.$eval('.gateTitle h2', e => e.textContent)) && /Dara Pen/.test(await page.$eval('.signPeriod', e => e.textContent)) && !(await page.$('.signLeader')));
+  await page.fill('[data-signfield="focus1"]', 'Cafe'); await page.check('[data-signcheck="agree"]');
+  await draw(page, 'sig');
+  await page.click('#signSubmit'); await page.waitForTimeout(500);
+  const ls = sent.filter(b => b.fn === 'contractLinkSign').pop();
+  ok('signing sends it through the link', ls && ls.args[0] === 'abc123def4567890abc123def4567890' && ls.args[1] === 'me' && ls.args[2] === 'contract:c8' && ls.args[3].fields.focus1 === 'Cafe' && /^\/9j\//.test(ls.args[3].sig) && ls.args[3].leaderSig === undefined);
+  ok('… done: thanks, HR will approve — nothing to go back to', /HR will add their approval/.test(await page.$eval('.signDone', e => e.textContent)) && !(await page.$('.signDone a')));
+  await ctx.close();
+}
+{
+  const { ctx, page } = await open({ width: 390, height: 844 }, '?contract=abcd0000abcd0000abcd0000abcd0000');
+  await page.waitForTimeout(800);
+  ok('a link already used says so', /already been used/.test(await page.$eval('.signPage', e => e.textContent)));
+  await ctx.close();
+}
+{
+  const draw = async (page, pad) => { const r = await page.$eval('[data-sigpad="' + pad + '"]', c => { c.scrollIntoView({ block: 'center' }); const b = c.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height }; });
+    await page.mouse.move(r.x + 20, r.y + 60); await page.mouse.down(); for (let i = 1; i <= 10; i++) await page.mouse.move(r.x + 20 + i * 25, r.y + (i % 2 ? 30 : 90)); await page.mouse.up(); };
+  const { ctx, page } = await open({ width: 390, height: 844 }, '?staff=1&hr=st_2&doc=contract%3Ac8', () => localStorage.setItem('gp-staff', JSON.stringify({ user: 'uriah', pin: '1234' })));
+  await page.waitForSelector('[data-approveonly]', { timeout: 8000 });
+  ok('HR opens one signed through the link: only Approved by is left — who signed and when, HR\'s name already in, no fields to fill', /Dara Pen read, filled in and signed it/.test(await page.$eval('[data-approveonly]', e => e.textContent)) && await page.$eval('#sign_lname', i => i.value) === 'Uriah Lyford' && !(await page.$('[data-signfield]')) && !(await page.$('[data-sigpad="sig"]')));
+  await page.click('#signSubmit'); await page.waitForTimeout(300);
+  ok('not without HR\'s signature', !sent.some(b => b.fn === 'hrContractSign' && b.args[2] === 'st_2'));
+  await draw(page, 'leaderSig');
+  await page.click('#signSubmit'); await page.waitForTimeout(500);
+  const ap = sent.filter(b => b.fn === 'hrContractSign' && b.args[2] === 'st_2').pop();
+  ok('Sign to approve sends just HR\'s name and signature', ap && ap.args[4] === 'contract:c8' && ap.args[5].approveOnly === true && ap.args[5].leaderName === 'Uriah Lyford' && /^\/9j\//.test(ap.args[5].leaderSig) && !!(await page.$('.signDone')));
   await ctx.close();
 }
 /* the staff contract in Khmer: the portal in Khmer shows the contract's own words in Khmer (legal-km.js) */
