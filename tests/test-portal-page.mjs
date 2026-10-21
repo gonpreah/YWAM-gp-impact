@@ -1113,7 +1113,8 @@ async function open(viewport, query, seed) {
   await page.click('[data-whatfilter="team"]'); await page.waitForTimeout(200);
   const order = await page.$$eval('.trow .who', ws => ws.map(w => w.textContent).join('|'));
   ok('Teams come in the order they arrive: here now, then soonest first, then no dates yet, then already gone — not by last change', order === 'Here Now Team|Soon Team|Grace Church Team|No Dates Team|Gone Team', order);
-  ok('each team row shows its dates in Cambodia, not when it applied', /In Cambodia 1 Nov 2026 – 10 Nov 2026/.test(await page.$eval('.trow[data-open="cd_tsoon"]', e => e.textContent)) && /Dates in Cambodia not set yet/.test(await page.$eval('.trow[data-open="cd_tnodate"]', e => e.textContent)) && !/\b1 Sept 2026\b/.test(await page.$eval('.trow[data-open="cd_tsoon"]', e => e.textContent)));
+  const dmy = iso => new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });   // the fixture is relative to today, so the expected text is too
+  ok('each team row shows its dates in Cambodia, not when it applied', new RegExp('In Cambodia ' + dmy(rel(11)) + ' – ' + dmy(rel(20))).test(await page.$eval('.trow[data-open="cd_tsoon"]', e => e.textContent)) && /Dates in Cambodia not set yet/.test(await page.$eval('.trow[data-open="cd_tnodate"]', e => e.textContent)) && !/\b1 Sept 2026\b/.test(await page.$eval('.trow[data-open="cd_tsoon"]', e => e.textContent)));
   await page.click('[data-whatfilter=""]'); await page.waitForTimeout(200);
   ok('the All tab keeps the latest change first', (await page.$eval('.trow .who', w => w.textContent)) === 'Gone Team');
   await ctx.close();
