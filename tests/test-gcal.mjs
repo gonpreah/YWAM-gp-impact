@@ -82,5 +82,32 @@ ok('… and the admin sees it didn\'t work', /http_500/.test(r.cals[0].lastErr))
 r = await call('adminGcal', [...as('ada'), { remove: r.cals[0].id }]);
 ok('removed', r.ok && r.cals.length === 0);
 
+console.log('=== kinds of events: a colour and the words that mark each ===');
+answer = 200; mem.gcalCache = {};
+r = await call('adminGcal', [...as('ada'), { name: 'YWAM Siem Reap', url: URL1 }]);
+ok('the kinds come with the calendars: Events first (the catch-all), then birthdays, schools, teams, guests', r.ok && r.kinds.map(k => k.id).join() === 'event,bday,school,team,guest' && r.kinds[0].color === '' && r.kinds[1].color === 'green' && r.kinds[3].color === 'lavender');
+r = await call('getCalendar', [...as('cora'), '2026-10-19', 31]);
+const kindOf = (t) => (r.events.find(e => e.title.indexOf(t) === 0) || {});
+ok('a birthday is green, a team lavender, a guest speaker teal — a staff meeting plain, in the calendar\'s colour', kindOf('Sokha').kind === 'bday' && kindOf('Sokha').color === 'green' && kindOf('Grace Church').kind === 'team' && kindOf('Grace Church').color === 'lavender' && kindOf('Guest speaker').kind === 'guest' && kindOf('Guest speaker').color === 'teal' && kindOf('Staff meeting').kind === 'event' && kindOf('Staff meeting').color === r.cals[0].color, JSON.stringify(r.events.map(e => [e.title.slice(0, 12), e.kind, e.color])));
+ok('… and everyone gets the kinds, for the chips', r.kinds.length === 5);
+r = await call('adminGcal', [...as('cora'), { kind: { id: 'team', color: 'sky' } }]);
+ok('only an admin changes them', r.ok === false);
+r = await call('adminGcal', [...as('ada'), { kind: { id: 'team', color: 'sky', keywords: 'team, church' } }]);
+ok('the admin: Teams in sky, marked by "team" or "church"', r.ok && r.kinds[3].color === 'sky' && r.kinds[3].keywords.join() === 'team,church');
+mem.gcalCache = {}; r = await call('getCalendar', [...as('cora'), '2026-10-19', 31]);
+r = await call('adminGcal', as('ada'));
+ok('… and reading the calendar again keeps them (the fetch bookkeeping used to drop them)', r.ok && r.kinds[3].color === 'sky' && r.kinds[3].keywords.join() === 'team,church');
+r = await call('adminGcal', [...as('ada'), { kind: { id: 'team', color: 'neon' } }]);
+ok('a colour off the palette means none', r.ok && r.kinds[3].color === '');
+r = await call('adminGcal', [...as('ada'), { kind: { name: 'Worship', color: 'rose', keywords: ['worship'] } }]);
+ok('a new kind', r.ok && r.kinds.length === 6 && r.kinds[5].name === 'Worship' && r.kinds[5].color === 'rose' && /^k/.test(r.kinds[5].id));
+r = await call('adminGcal', [...as('ada'), { kindRemove: 'event' }]);
+ok('the catch-all stays', r.ok === false && r.err === 'keep_first');
+r = await call('adminGcal', [...as('ada'), { kindRemove: 'guest' }]);
+ok('a kind removed', r.ok && !r.kinds.some(k => k.id === 'guest'));
+r = await call('getCalendar', [...as('cora'), '2026-10-19', 31]);
+ok('… its events are plain Events now, in the calendar\'s colour', kindOf('Guest speaker').kind === 'event' && kindOf('Guest speaker').color === r.cals[0].color);
+r = await call('adminGcal', [...as('ada'), { remove: r.cals[0].id }]);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

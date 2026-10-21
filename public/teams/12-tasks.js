@@ -35,7 +35,7 @@ var GPT_SVG=(function(){
 })();
 function gptIc_(k, cls){ return '<span class="gtIc'+(cls?' '+cls:'')+'" aria-hidden="true">'+GPT_SVG[k]+'</span>'; }
 /* GP Calendar/Tasks is one place (Uriah, Oct 2026): the calendar opens first, with a Tasks tab on top */
-var CAL_PALETTE=['blue','green','amber','pink','purple','teal','red','orange','indigo','brown','grey','lime'];
+var CAL_PALETTE=['blue','green','amber','pink','purple','teal','red','orange','indigo','brown','grey','lime','lavender','sky','mint','rose'];
 function ctSegHtml_(on){
   return '<div class="ctSeg" role="tablist"><button class="ctTab'+(on==='calendar'?' on':'')+'" data-cttab="calendar" role="tab">'+gptIc_('calendar')+' '+esc(t('Calendar'))+'</button>'+
     '<button class="ctTab'+(on==='tasks'?' on':'')+'" data-cttab="tasks" role="tab">'+gptIc_('tasks')+' '+esc(t('Tasks'))+gptBadge_(S.gpTaskInfo ? S.gpTaskInfo.inbox : 0)+'</button></div>';
@@ -77,6 +77,8 @@ function gptMain_(){
 /* a designated list is named after its ministry (or "Leadership team"), so it reads in Khmer too */
 function gptIsMain_(L){ var m=gptMain_(); return !!(m && L && L.id===m.id); }
 function gptTitle_(L){ return (gptIsMain_(L) || L.title==='My Tasks' || L.title==='Inbox') ? t('Inbox') : L.title==='Leadership team' ? t('Leadership team') : (L.scope!=='personal' && L.title===(L.ministry||L.dept)) ? t(L.title) : L.title; }
+/* a small dot in the list's colour by its name, once one is chosen (Andrew, Oct 2026) */
+function gptColorDot_(L){ return L && L.color ? '<span class="calDot gtDot cal-'+esc(L.color)+'"></span>' : ''; }
 function gptKindIc_(L){ return gptIc_(gptIsMain_(L) ? 'inbox' : L.scope==='personal' ? ((L.members||[]).length ? 'team' : 'lock') : 'team', 'gtKind'); }
 /* where a task given to you sits among your lists: where you filed it, else your Inbox */
 function gptFiledIn_(x){ var f=x.filed && x.filed[S.me.id]; var L=f && gptListById_(f.list); return L && L.scope==='personal' && L.ownerId===S.me.id ? L.id : (gptMain_()||{}).id; }
@@ -158,7 +160,7 @@ function gptPageHtml_(scope, embedded){
   if(ids.indexOf(S.gptList)===-1) S.gptList=ids[0] || null;
   /* the tabs — hold one and drag it to change their order */
   h+='<div class="gtBar"><div class="gtTabs" role="tablist">'+
-    lists.map(function(L){ return '<button class="gtTab'+(S.gptList===L.id?' on':'')+'" data-gptlist="'+esc(L.id)+'" role="tab">'+gptKindIc_(L)+esc(gptChipName_(L))+(gptIsMain_(L) ? gptBadge_(gptInboxCount_()) : '')+'</button>'; }).join('')+
+    lists.map(function(L){ return '<button class="gtTab'+(S.gptList===L.id?' on':'')+'" data-gptlist="'+esc(L.id)+'" role="tab">'+gptKindIc_(L)+esc(gptChipName_(L))+gptColorDot_(L)+(gptIsMain_(L) ? gptBadge_(gptInboxCount_()) : '')+'</button>'; }).join('')+
     (scope ? '' : '<button class="gtTab gtNewList" id="gptNewListBtn">＋ '+esc(t('New list'))+'</button>')+'</div>'+
     '<button class="gtMenuBtn" id="gtMenuBtn" aria-label="'+esc(t('List options'))+'">⋮</button></div>';
   if(S.gtMenu) h+=gtMenuHtml_(scope);
@@ -192,7 +194,7 @@ function gtMenuHtml_(scope){
   var main=gptMain_(), isMain=!!(L && main && L.id===main.id);
   /* a half-circle wheel along the right edge (Andrew, Oct 2026: "like the dock on a MacBook") — spin it
      with a finger or the mouse wheel, the one in the middle grows; gtWheelLayout_ places the items */
-  return '<div class="scrim" id="gtMenuScrim"></div><div class="gtWheel" id="gtWheel" role="menu" aria-label="'+esc(t('List options'))+'">'+
+  return '<div class="scrim gtWheelScrim" id="gtMenuScrim"></div><div class="gtWheel" id="gtWheel" role="menu" aria-label="'+esc(t('List options'))+'">'+
     (!scope && gptLists_(null).length>1 ? it('gtArrange', '↕️ '+esc(t('Arrange lists…'))) : '')+
     (L && L.scope==='personal' && L.ownerId===S.me.id && !isMain ? it('gtShareList', '👥 '+esc((L.members||[]).length ? t('Who this list is shared with…') : t('Share list with someone…'))) : '')+
     (L && L.canEdit && !isMain && !(L.scope==='personal' && L.ownerId!==S.me.id) ? it('gtRename', '✏️ '+esc(t('Rename list'))) : '')+
@@ -221,9 +223,9 @@ function gtWheelLayout_(){
   if(S.gtWheel.focus==null) S.gtWheel.focus=Math.round((n-1)/2);
   var f=S.gtWheel.focus=Math.max(0, Math.min(n-1, S.gtWheel.focus));
   its.forEach(function(el, i){
-    var d=(i-f)*step, k=Math.abs(i-f), sc=0.86+0.42*Math.max(0, 1-k/1.6);
+    var d=(i-f)*step, k=Math.abs(i-f), sc=0.9+0.22*Math.max(0, 1-k/1.6);   // low key: a gentle grow
     el.style.right=(W-(cx-R*Math.cos(d)))+'px'; el.style.top=(cy+R*Math.sin(d))+'px';
-    el.style.transform='translateY(-50%) scale('+sc.toFixed(3)+')'; el.style.opacity=(1-Math.min(0.5, k*0.12)).toFixed(2); el.style.zIndex=String(100-Math.round(k*10));
+    el.style.transform='translateY(-50%) scale('+sc.toFixed(3)+')'; el.style.opacity=(1-Math.min(0.3, k*0.08)).toFixed(2); el.style.zIndex=String(100-Math.round(k*10));
     el.classList.toggle('on', Math.round(f)===i);
   });
 }
@@ -249,7 +251,7 @@ function gtListHtml_(L){
   var all=G.tasks.filter(function(x){ return x.listId===L.id ? x.status!=='declined' : (mine && gptGiven_(x) && gptFiledIn_(x)===L.id); });
   var open=all.filter(function(x){ return !x.done; }).sort(gptSortIn_(L));
   var done=all.filter(function(x){ return x.done; });
-  var h='<div class="gtList'+(S.gtSlide ? ' gtSlide'+S.gtSlide : '')+'"><div class="gtListHead"><b>'+gptKindIc_(L)+esc(gptChipName_(L))+'</b><span>'+esc(gptListLabel_(L))+'</span></div>';
+  var h='<div class="gtList'+(S.gtSlide ? ' gtSlide'+S.gtSlide : '')+'"><div class="gtListHead"><b>'+gptKindIc_(L)+esc(gptChipName_(L))+gptColorDot_(L)+'</b><span>'+esc(gptListLabel_(L))+'</span></div>';
   if(!open.length) h+='<div class="gtEmpty small"><div class="gtEmptyIc">'+GPT_SVG.tasks+'</div><p>'+esc(t('No tasks yet.'))+'</p></div>';
   /* small dividers by day (Andrew, Oct 2026: "like today, tomorrow, and then the date and day, like in
      Google Tasks") — a list with no dates at all stays plain */

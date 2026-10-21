@@ -22,7 +22,16 @@ function calIsoWeek_(iso){ var d=new Date(iso+'T00:00:00'); d.setDate(d.getDate(
 /* which to show — each connected calendar and GP Tasks, ticked on or off like Google Calendar's list on
    the left (Uriah: "different views of different things"); what's off is remembered on this phone */
 function calHidden_(){ try { var v=JSON.parse(lsGet('gp-cal-hide')||'[]'); return Array.isArray(v) ? v : []; } catch(e){ return []; } }
-function calShown_(e){ return calHidden_().indexOf(e.cal)===-1; }
+function calHiddenKinds_(){ try { var v=JSON.parse(lsGet('gp-cal-hidekind')||'[]'); return Array.isArray(v) ? v : []; } catch(e){ return []; } }
+function calShown_(e){ return calHidden_().indexOf(e.cal)===-1 && (!e.kind || calHiddenKinds_().indexOf(e.kind)===-1); }
+function calKindName_(id){ var k=((S.cal && S.cal.kinds)||[]).filter(function(x){ return x.id===id; })[0]; return k ? t(k.name) : ''; }
+/* the kinds of events (events, birthdays, schools, teams, guests…), each in its colour, to tick on or off */
+function calKindsHtml_(C){
+  var kinds=(C && C.kinds)||[]; if(!C || !C.connected || kinds.length<2) return '';
+  var hid=calHiddenKinds_(), c0=(C.cals||[])[0];
+  return '<div class="gcLayers gcKinds">'+kinds.map(function(k){ var on=hid.indexOf(k.id)===-1;
+    return '<button class="gcLayer cal-'+esc(k.color || (c0 && c0.color) || 'grey')+(on?' on':'')+'" data-calkind="'+esc(k.id)+'" aria-pressed="'+(on?'true':'false')+'"><span class="gcBox">'+(on?'✓':'')+'</span>'+esc(t(k.name))+'</button>'; }).join('')+'</div>';
+}
 function calLayersHtml_(C, ev){
   var hid=calHidden_(), rows=(C.cals||[]).map(function(c){ return { id:c.id, name:c.name, color:c.color }; });
   if(!S.student) rows.push({ id:'task', name:t('GP Tasks'), color:'task' });
@@ -76,7 +85,7 @@ function calEventHtml_(e){
     '<span class="calWhen">'+esc(when)+'</span><span class="calBody"><b>'+esc(e.title || t('(no title)'))+'</b>'+
     ((e.where || e.endDate) ? '<span class="calMeta">'+esc([e.where, e.endDate ? gpT('until {date}',{date:calDayLabel_(e.endDate)}) : ''].filter(Boolean).join(' · '))+'</span>' : '')+
     (open && e.notes ? '<span class="calNotes">'+esc(e.notes)+'</span>' : '')+
-    '<span class="calCal">'+esc(e.calName)+'</span></span></button>';
+    '<span class="calCal">'+esc(e.calName)+(e.kind && S.cal && S.cal.kinds && S.cal.kinds[0] && e.kind!==S.cal.kinds[0].id ? ' · '+esc(calKindName_(e.kind)) : '')+'</span></span></button>';
 }
 function calListHtml_(events){
   var by={}, days=[];
@@ -137,7 +146,7 @@ function calendarHtml_(){
   h+='<div class="gcNav"><button class="weekArrow" id="calPrev" aria-label="'+esc(t('Earlier'))+'">‹</button><div class="gcTitle">'+esc(monthName)+'</div>'+
     '<button class="weekArrow" id="calNext" aria-label="'+esc(t('Later'))+'">›</button>'+
     (ym!==today.slice(0,7) ? '<button class="linkbtn inline" id="calToday">'+esc(t('Today'))+'</button>' : '')+'</div>';
-  h+=calLayersHtml_(C, all);
+  h+=calLayersHtml_(C, all)+calKindsHtml_(C);
   h+='<div class="card" style="padding:4px 6px 6px 0">'+calGridHtml_(ym, ev, sel)+'</div>';
   if(!C.connected) h+='<p class="hint" style="margin:0 0 8px">'+esc(t('No calendar is connected yet.'))+
     (S.me.isAdmin ? ' <button class="linkbtn inline" data-adminsubgo="gcal">'+esc(t('Connect it in Admin'))+'</button>' : '')+'</p>';
@@ -186,6 +195,12 @@ function bindCalendar_(){
     var k=b.getAttribute('data-calbar'), d=k.split('|')[1]; gpTap(); S.calSel=d; S.calOpen=k; render();
     var row=document.querySelector('.calEv.open, [data-calev="'+k.replace(/"/g,'')+'"]'); if(row && row.scrollIntoView) row.scrollIntoView({ block:'center' });
   }; });
+  document.querySelectorAll('[data-calkind]').forEach(function(b){ b.onclick=function(){
+    var id=b.getAttribute('data-calkind'), hid=calHiddenKinds_(), i=hid.indexOf(id); gpTap();
+    if(i>-1) hid.splice(i,1); else hid.push(id);
+    try { lsSet('gp-cal-hidekind', JSON.stringify(hid)); } catch(e){}
+    render();
+  }; });
   document.querySelectorAll('[data-callayer]').forEach(function(b){ b.onclick=function(){
     var id=b.getAttribute('data-callayer'), hid=calHidden_(), i=hid.indexOf(id); gpTap();
     if(i>-1) hid.splice(i,1); else hid.push(id);
@@ -206,6 +221,15 @@ function adminGcalHtml_(){
       '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px;color:var(--bad)" data-gcalrm="'+esc(c.id)+'">'+esc(t('Remove'))+'</button>'+
       '<div style="flex-basis:100%">'+calSwatchesHtml_('data-gcalcolor="'+esc(c.id)+'" data-color', c.color)+'</div></div>';
   }).join('')+'</div>';
+  /* the kinds of events and their colours — the words in a title that mark each kind */
+  var kinds=G.kinds||[];
+  h+='<div class="card"><div class="goalCardTitle">🎨 '+esc(t('Kinds of events'))+'</div>'+
+    '<p class="hint" style="margin:0 0 6px">'+esc(t('Each kind has a colour and the words that mark it, matched in the event’s title. Everything else is an Event, in the calendar’s own colour. People can tick each kind on or off on the calendar.'))+'</p>'+
+    kinds.map(function(k, i){ return '<div class="gcKind"><div class="gcKindRow"><span class="calDot cal-'+esc(k.color||'grey')+'"></span><input type="text" data-kindname="'+esc(k.id)+'" value="'+esc(k.name)+'" maxlength="40" aria-label="'+esc(t('Name'))+'">'+
+      (i ? '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px;color:var(--bad)" data-kindrm="'+esc(k.id)+'">'+esc(t('Remove'))+'</button>' : '')+'</div>'+
+      (i ? '<input type="text" data-kindkeys="'+esc(k.id)+'" value="'+esc((k.keywords||[]).join(', '))+'" maxlength="400" placeholder="'+esc(t('Words that mark it, separated by commas'))+'">' : '<p class="hint" style="margin:4px 0 0">'+esc(t('Everything that is none of the others.'))+'</p>')+
+      calSwatchesHtml_('data-kindcolor="'+esc(k.id)+'" data-color', k.color||'')+(i ? '' : '<button class="linkbtn inline" data-kindcolor="'+esc(k.id)+'" data-color="">'+esc(t('Use the calendar’s colour'))+'</button>')+'</div>'; }).join('')+
+    '<button class="btn ghost" id="gcKindAdd" style="margin-top:10px">＋ '+esc(t('Add a kind'))+'</button></div>';
   h+='<div class="card"><div class="goalCardTitle">＋ '+esc(t('Connect a calendar'))+'</div>'+
     '<ol class="gcalSteps"><li>'+esc(t('In Google Calendar on a computer, open Settings (⚙️) → choose the calendar on the left.'))+'</li>'+
     '<li>'+esc(t('Under “Integrate calendar”, copy the “Secret address in iCal format”.'))+'</li>'+
@@ -229,6 +253,15 @@ function bindAdminGcal_(){
   };
   document.querySelectorAll('[data-gcalcolor]').forEach(function(b){ b.onclick=function(){
     gpTap(); run('adminGcal',[S.auth.user,S.auth.pin,{ id:b.getAttribute('data-gcalcolor'), color:b.getAttribute('data-color') }],function(d){ if(d && d.ok){ S.gcalAdmin=d; S.cal=null; S.calHome=null; } render(); });
+  }; });
+  var saveKind=function(kind, msg){ run('adminGcal',[S.auth.user,S.auth.pin,{ kind:kind }],function(d){ if(d && d.ok){ S.gcalAdmin=d; S.cal=null; S.calHome=null; if(msg) showMsg(msg); } else showMsg(t('Could not save')); render(); }); };
+  document.querySelectorAll('[data-kindcolor]').forEach(function(b){ b.onclick=function(){ gpTap(); saveKind({ id:b.getAttribute('data-kindcolor'), color:b.getAttribute('data-color')||'' }); }; });
+  document.querySelectorAll('[data-kindname]').forEach(function(inp){ inp.onchange=function(){ saveKind({ id:inp.getAttribute('data-kindname'), name:inp.value }, t('Saved')); }; });
+  document.querySelectorAll('[data-kindkeys]').forEach(function(inp){ inp.onchange=function(){ saveKind({ id:inp.getAttribute('data-kindkeys'), keywords:inp.value }, t('Saved')); }; });
+  var ka=document.getElementById('gcKindAdd'); if(ka) ka.onclick=function(){ gpTap(); saveKind({ name:t('New kind'), color:'grey', keywords:[] }); };
+  document.querySelectorAll('[data-kindrm]').forEach(function(b){ b.onclick=function(){
+    if(!window.confirm(t('Remove this kind? Its events become plain Events.'))) return;
+    run('adminGcal',[S.auth.user,S.auth.pin,{ kindRemove:b.getAttribute('data-kindrm') }],function(d){ if(d && d.ok){ S.gcalAdmin=d; S.cal=null; S.calHome=null; showMsg(t('Removed')); } render(); });
   }; });
   document.querySelectorAll('[data-gcalrm]').forEach(function(b){ b.onclick=function(){
     if(!window.confirm(t('Remove this calendar from the app?'))) return;

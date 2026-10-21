@@ -2867,7 +2867,19 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   runs from that day on. **Colours**: the palette `CAL_PALETTE` / `GCAL_COLORS` (12, `.cal-*`
   tokens); an admin picks each calendar's in Admin → Google Calendar (`adminGcal {id,color}`,
   `calSwatchesHtml_`); a task list's colour is picked in its ⋮ (`saveGpTaskList {color}`), and its
-  tasks show in it (`calTaskEvents_`), else the accent.
+  tasks show in it (`calTaskEvents_`), else the accent. The palette is 16 since Oct 2026 (lavender,
+  sky, mint, rose added — "teams can be light purple"); a list with a colour shows a small dot in it
+  by its name (`gptColorDot_`, `.calDot.gtDot`) on its tab and its head.
+- **Kinds of events (Andrew, Oct 2026)**: the campus calendar's events are sorted into kinds — Events
+  (the catch-all, first), Birthdays & anniversaries, Schools, Teams, Guests & speakers
+  (`GCAL_KINDS_DEFAULT`) — each with a colour and the words that mark it, matched anywhere in the
+  title, any case (`gcalKindOf_`). Kept as `kinds` in the `gcal` blob; admins change them in Admin →
+  Google Calendar (`adminGcal { kind:{id?, name, color, keywords} }`, `{ kindRemove }`; the first kind
+  can't be removed, max 12; a kind with no colour takes the calendar's, so Events in a second
+  calendar keep that calendar's colour). `getCalendar` returns each event's `kind` and its resolved
+  `color`, plus `kinds` for the chips: a second row under the calendar chips (`calKindsHtml_`,
+  `[data-calkind]`, hidden ones in `gp-cal-hidekind` on the phone). An event's row names its kind
+  after the calendar ("Siem Reap events · Teams") unless it is a plain Event.
 - **GP Calendar/Tasks is one place**: ☰ has one entry (`caltasks`) that opens the calendar; both
   pages carry the Calendar | Tasks toggle on top (`ctSegHtml_`, `bindCtSeg_`, the Inbox's red number
   on the Tasks tab). A ministry's scoped tasks page keeps its own title instead. **GP Tasks with a day are on it** (`calTaskEvents_` from `S.gpt`, colour `cal-task`): a tick
