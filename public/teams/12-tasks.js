@@ -342,9 +342,19 @@ function gtDetailHtml_(){
       D.subs.map(function(s, i){ return '<div class="gtSub'+(s.done?' done':'')+'"><button class="gtCheck small'+(s.done?' on':'')+'" data-gptdsub="'+i+'" aria-label="'+esc(t('Mark done'))+'">'+(s.done?'✓':'')+'</button>'+
         (canEdit ? '<input type="text" data-gptdsubtext="'+i+'" maxlength="200" value="'+esc(s.text)+'"><button class="gptX" data-gptdsubdel="'+i+'" aria-label="'+esc(t('Remove'))+'">×</button>' : '<span>'+esc(s.text)+'</span>')+'</div>'; }).join('')+
       (canEdit ? '<input type="text" id="gptSubNew" maxlength="200" placeholder="'+esc(D.subs.length ? t('Add a subtask') : t('Add a subtask — a small step inside this task'))+'" value="'+esc(D.subNew||'')+'">' : (D.subs.length ? '' : '<span class="gtHint">'+esc(t('no subtasks'))+'</span>'))+'</div></div>'+
-    (x.from && x.from.label ? '<p class="gtHint" style="margin:6px 0 0 30px">'+esc(gpT('from {who}',{who:t(x.from.label)}))+'</p>' : '')+
+    '<p class="gtHint gtOrigin" style="margin:6px 0 0 30px">'+esc(gptOriginText_(x))+'</p>'+
     (x.status==='request' ? '' : '<button class="btn gtDoneBtn" data-gptdone="'+esc(x.id)+'">'+esc(x.done ? t('Mark not done') : t('Mark completed'))+'</button>')+
     (canEdit ? '<button class="btn ghost" id="gptSave">'+esc(t('Save'))+'</button>' : '')+'</div>';
+}
+/* where a task came from — who added it, when, and whether it is from the Leadership board, a mentor 1:1
+   or another ministry (Andrew, Oct 2026: "I didn't add that — who put that in?") */
+function gptOriginText_(x){
+  var who = x.by===S.me.id ? t('you') : firstName_(gptPerson_(x.by).name), when = x.created ? fmtDateShort_(x.created) : '';
+  var s = gpT('Added by {name}',{name:who}) + (when ? ' · '+when : '');
+  if(x.leadId || x.cardId) s += ' · ' + t('from a card on the Leadership board');
+  else if(x.ooId) s += ' · ' + t('from a mentor 1:1');
+  else if(x.from && x.from.label) s += ' · ' + gpT('from {who}',{who:t(x.from.label)});
+  return s;
 }
 /* asking another ministry: it lands in their list as a request they accept or decline */
 function gptAskHtml_(){
@@ -481,11 +491,21 @@ function bindGpTasks_(){
   /* anywhere on the page, not just the card (Andrew, Oct 2026) — but not from the row of tabs (it scrolls
      sideways itself), a grip, a sheet, the wheel or a field */
   var gtBar=document.querySelector('.gtBar'), swipeBox=gtBar && gtBar.parentNode;
-  if(swipeBox && !swipeBox.gtSwipeBound){ swipeBox.gtSwipeBound=true; var sx=0, sy=0, sOn=false;   // the box outlives renders (#main), so bound once; the lists are read at the time
-    swipeBox.addEventListener('touchstart', function(e){ var p=e.touches[0]; sOn=!!p && !!document.querySelector('.gtBar') && !document.querySelector('.gtSheet, #gtWheel') && !(e.target.closest && e.target.closest('.gtTabs, [data-gptgrip], .gtSheet, .gtWheel, input, textarea, select')); if(p){ sx=p.clientX; sy=p.clientY; } }, { passive:true });
-    swipeBox.addEventListener('touchend', function(e){ var p=e.changedTouches && e.changedTouches[0]; if(!sOn || !p) return; var dx=p.clientX-sx, dy=p.clientY-sy;
-      if(Math.abs(dx)<70 || Math.abs(dy)>Math.abs(dx)*0.6 || document.body.classList.contains('gtDragOn') || Date.now()-S.gtDragEnd<400) return;
-      var ids=gptLists_(S.gptScope).map(function(L){ return L.id; }), at=ids.indexOf(S.gptList); if(at<0 || ids.length<2) return; var i=at+(dx<0 ? 1 : -1); if(i<0 || i>=ids.length) return; gpTap(); gptGoList_(ids[i], dx<0 ? 'L' : 'R'); }, { passive:true });
+  if(swipeBox && !swipeBox.gtSwipeBound){ swipeBox.gtSwipeBound=true; var sx=0, sy=0, lx=0, sOn=false, lock='';   // the box outlives renders (#main), so bound once; the lists are read at the time
+    /* which way the finger is going is decided within the first few pixels; once it is sideways the browser is
+       kept from scrolling the page (it used to take the gesture over and cancel the touch — "sometimes it
+       doesn't work"), and a touch the browser cancels still counts */
+    var go=function(dx){
+      if(Math.abs(dx)<50 || document.body.classList.contains('gtDragOn') || Date.now()-S.gtDragEnd<400) return;
+      var ids=gptLists_(S.gptScope).map(function(L){ return L.id; }), at=ids.indexOf(S.gptList); if(at<0 || ids.length<2) return; var i=at+(dx<0 ? 1 : -1); if(i<0 || i>=ids.length) return; gpTap(); gptGoList_(ids[i], dx<0 ? 'L' : 'R'); };
+    swipeBox.addEventListener('touchstart', function(e){ var p=e.touches[0]; lock=''; sOn=!!p && e.touches.length===1 && !!document.querySelector('.gtBar') && !document.querySelector('.gtSheet, #gtWheel') && !(e.target.closest && e.target.closest('.gtTabs, [data-gptgrip], .gtSheet, .gtWheel, input, textarea, select')); if(p){ sx=lx=p.clientX; sy=p.clientY; } }, { passive:true });
+    swipeBox.addEventListener('touchmove', function(e){ var p=e.touches[0]; if(!sOn || !p) return; lx=p.clientX; var dx=p.clientX-sx, dy=p.clientY-sy;
+      if(!lock && (Math.abs(dx)>10 || Math.abs(dy)>10)) lock = Math.abs(dx)>Math.abs(dy)*1.2 ? 'h' : 'v';
+      if(lock==='h' && e.cancelable) e.preventDefault(); }, { passive:false });
+    var end=function(e){ if(!sOn) return; sOn=false; var p=e.changedTouches && e.changedTouches[0], x=p ? p.clientX : lx, dx=x-sx, dy=p ? p.clientY-sy : 0;
+      if(lock==='v') return; if(!lock && Math.abs(dy)>Math.abs(dx)*0.6) return; go(dx); };
+    swipeBox.addEventListener('touchend', end, { passive:true });
+    swipeBox.addEventListener('touchcancel', end, { passive:true });
   }
   /* ⋮ — the wheel */
   on('gtMenuBtn', function(){ gpTap(); S.gtMenu=!S.gtMenu; S.gtWheel.focus=null; S.gtWheelOpened=Date.now(); render(); });

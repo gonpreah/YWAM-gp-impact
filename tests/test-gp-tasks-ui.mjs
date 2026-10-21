@@ -143,6 +143,17 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   await swipe(160, '.gtTabs'); await page.waitForTimeout(400);
   ok('… but not from the row of tabs, which scrolls sideways itself', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === tabsAfter[tabsAfter.indexOf(rd.id) + 1]);
   await swipe(160, '#main'); await page.waitForTimeout(400);
+  const swipeMoves = async (dx, dy, cancel) => page.evaluate(([dx, dy, cancel]) => { const el = document.querySelector('.gtList'); const mk = (x, y) => new Touch({ identifier: 1, target: el, clientX: x, clientY: y });
+    el.dispatchEvent(new TouchEvent('touchstart', { touches: [mk(200, 420)], changedTouches: [mk(200, 420)], bubbles: true }));
+    el.dispatchEvent(new TouchEvent('touchmove', { touches: [mk(200 + dx / 4, 420 + dy / 4)], changedTouches: [mk(200 + dx / 4, 420 + dy / 4)], bubbles: true, cancelable: true }));
+    el.dispatchEvent(new TouchEvent('touchmove', { touches: [mk(200 + dx, 420 + dy)], changedTouches: [mk(200 + dx, 420 + dy)], bubbles: true, cancelable: true }));
+    el.dispatchEvent(new TouchEvent(cancel ? 'touchcancel' : 'touchend', { touches: [], changedTouches: cancel ? [] : [mk(200 + dx, 420 + dy)], bubbles: true })); }, [dx, dy, cancel]);
+  await swipeMoves(-120, 60, false); await page.waitForTimeout(400);
+  ok('a slightly slanted slide still counts (the direction is read from the first few pixels)', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === tabsAfter[tabsAfter.indexOf(rd.id) + 1]);
+  await swipeMoves(140, 0, true); await page.waitForTimeout(400);
+  ok('… and a slide the browser cancels still finishes', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === rd.id);
+  await swipeMoves(40, 130, false); await page.waitForTimeout(400);
+  ok('… but a mostly up-or-down finger is a scroll, not a slide', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === rd.id);
   /* sharing the whole list: ⋮ → Share list with someone… → a people search; Kanha gets it as a tab */
   await page.click('#gtMenuBtn'); await page.waitForTimeout(200);
   ok('⋮ on your own list: Share list with someone…', !!(await page.$('#gtShareList')));
@@ -206,6 +217,7 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   /* tap a task: change it in the sheet; ← keeps it */
   await page.click('[data-gptopen="' + t2.id + '"]'); await page.waitForTimeout(300);
   ok('a task opens in a sheet: title, ≡ details, 🕒 its day (tomorrow, from the drag), 👤 a people search', !!(await page.$('#gtDetail')) && (await page.$eval('#gtDetail [data-gptd="due"]', e => e.value)) === day(1) && !!(await page.$('#gtDetail [data-ppickq="det"]')));
+  ok('… and says who added it, and when', /Added by you · /.test(await page.$eval('#gtDetail .gtOrigin', e => e.textContent)), await page.$eval('#gtDetail .gtOrigin', e => e.textContent));
   await page.fill('#gtDetail [data-gptd="due"]', day(2)); await page.waitForTimeout(300);
   await page.fill('#gtDetail [data-ppickq="det"]', 'cor'); await page.waitForTimeout(200);
   await page.click('#gtDetail [data-ppickit="det|c1"]'); await page.waitForTimeout(300);
@@ -388,6 +400,9 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   ok('the Cafe\'s tasks page shows the board\'s task given to Kanha, from the department\'s list, marked with where it is from', /Fix the cafe sign/.test(cafePage) && /Community Service/.test(cafePage) && /Order milk/.test(cafePage), cafePage.slice(0, 200));
   const signT = T().find(t => t.title === 'Fix the cafe sign');
   ok('… without a grip: it is ordered in its own list', !(await page.$('[data-gptgrip="' + signT.id + '"]')) && !!(await page.$('[data-gptgrip]')));
+  await page.click('[data-gptopen="' + signT.id + '"]'); await page.waitForTimeout(400);
+  ok('opening it says who added it and that it is from a card on the Leadership board', /Added by Uriah · .*from a card on the Leadership board/.test(await page.$eval('#gtDetail .gtOrigin', e => e.textContent)), await page.$eval('#gtDetail .gtOrigin', e => e.textContent));
+  await page.click('#gptClose'); await page.waitForTimeout(300);
   await ctx.close();
 }
 {
