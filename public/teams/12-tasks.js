@@ -466,8 +466,16 @@ function bindGpTasks_(){
   document.querySelectorAll('[data-gptlist]').forEach(function(b){ b.onclick=function(){ if(Date.now()-S.gtDragEnd<400) return; gpTap(); gptGoList_(b.getAttribute('data-gptlist'), ''); }; });
   /* the open tab stays in view — the row used to scroll back to the start on every render, so the
      highlight slid out of sight (Andrew: "it goes back to where it says Inbox") */
-  var onTab=document.querySelector('.gtTabs .gtTab.on'), tabsBox=onTab && onTab.parentNode;
-  if(onTab && tabsBox){ var tl=onTab.offsetLeft, tr=tl+onTab.offsetWidth; if(tl<tabsBox.scrollLeft+8 || tr>tabsBox.scrollLeft+tabsBox.clientWidth-8) tabsBox.scrollLeft=Math.max(0, tl-28); }
+  var tabsBox=document.querySelector('.gtTabs'), onTab=tabsBox && tabsBox.querySelector('.gtTab.on');
+  if(tabsBox){
+    /* the row stays where it was (Andrew: "when you click on a list the slider doesn't move") — its scroll is
+       kept across renders; only a tab that is off the edge is nudged just into view, at that edge */
+    tabsBox.scrollLeft=S.gtTabsScroll||0;
+    if(onTab){ var tl=onTab.offsetLeft, tr=tl+onTab.offsetWidth, sl=tabsBox.scrollLeft, cw=tabsBox.clientWidth;
+      if(tl<sl) tabsBox.scrollLeft=Math.max(0, tl-12); else if(tr>sl+cw) tabsBox.scrollLeft=tr-cw+12; }
+    S.gtTabsScroll=tabsBox.scrollLeft;
+    tabsBox.addEventListener('scroll', function(){ S.gtTabsScroll=tabsBox.scrollLeft; }, { passive:true });
+  }
   S.gtSlide=null;
   /* slide sideways on the list for the next or the previous one */
   /* anywhere on the page, not just the card (Andrew, Oct 2026) — but not from the row of tabs (it scrolls

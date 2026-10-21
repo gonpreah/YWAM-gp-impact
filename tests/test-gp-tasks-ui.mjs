@@ -101,6 +101,14 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   await page.fill('#gptNewTitle', 'Reading'); await page.click('#gptNewSave'); await page.waitForTimeout(700);
   const rd = (mem.gpTasks.lists || []).find(l => l.title === 'Reading');
   ok('… made as a personal list, its tab open', rd && rd.scope === 'personal' && rd.ownerId === 'c1' && !!(await page.$('.gtTab.on[data-gptlist="' + rd.id + '"]')));
+  /* the row of tabs stays put when you tap one (it used to jump back to the start, or to the front) */
+  await page.evaluate(() => { const b = document.querySelector('.gtTabs'); b.scrollLeft = 30; b.dispatchEvent(new Event('scroll')); }); await page.waitForTimeout(100);
+  const sl0 = await page.$eval('.gtTabs', e => e.scrollLeft);
+  await page.click('.gtTab[data-gptlist="' + rd.id + '"]'); await page.waitForTimeout(400);
+  ok('tapping a list that is in view leaves the row where it was', sl0 > 0 && (await page.$eval('.gtTabs', e => e.scrollLeft)) === sl0, sl0 + ' → ' + (await page.$eval('.gtTabs', e => e.scrollLeft)));
+  await page.click('.gtTab[data-gptlist="' + myList.id + '"]'); await page.waitForTimeout(400);
+  ok('… a tab half off the edge is nudged just into view, no further', (await page.$eval('.gtTabs', e => e.scrollLeft)) < sl0 && (await page.$eval('.gtTab.on', e => e.offsetLeft >= e.parentNode.scrollLeft)));
+  await page.click('.gtTab[data-gptlist="' + rd.id + '"]'); await page.waitForTimeout(400);
   /* ⋮ is a half-circle wheel: the items on an arc along the right edge, the middle one grown; spin it */
   await page.click('#gtMenuBtn'); await page.waitForTimeout(400);
   const wheelIts = await page.$$eval('#gtWheel .gtMenuIt', b => b.map(x => ({ id: x.id, on: x.classList.contains('on'), sc: x.style.transform, y: x.getBoundingClientRect().top })));

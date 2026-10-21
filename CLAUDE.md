@@ -2753,8 +2753,9 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   the order is saved first, then the day, one after the other, so neither save loses the other.
   **Swipe** sideways anywhere on the tasks page (bound once on the box around `.gtBar`, ≥70px, mostly
   horizontal; not from the tabs row, a grip, a sheet, the wheel or a field; the lists read at swipe time) for the next
-  or previous tab (`gptGoList_(id, 'L'|'R')`, a short `.gtSlideL/R` animation). The open tab is scrolled
-  into view after every render (the row used to jump back to the start, hiding the highlight).
+  or previous tab (`gptGoList_(id, 'L'|'R')`, a short `.gtSlideL/R` animation). The row of tabs keeps its
+  scroll across renders (`S.gtTabsScroll`, from its scroll events — it used to jump back to the start,
+  hiding the highlight, and then to the front); only a tab off an edge is nudged just into view at that edge.
   **⋮ is a wheel** (`#gtWheel`, `gtWheelLayout_`, `bindGtWheel_`): the items sit on a half-circle arc along
   the right edge, the middle one grown, like the macOS dock; spin it with a finger or the mouse wheel
   (on the wheel or the scrim), a resting mouse grows the item under it. The items are placed by
