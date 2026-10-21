@@ -261,7 +261,10 @@ function bindGtWheel_(){
 function gtListHtml_(L){
   var G=S.gpt, mine=L.scope==='personal' && L.ownerId===S.me.id;
   /* one of your own lists: its tasks, and the tasks given to you that you keep here (unfiled ones in the Inbox) */
-  var all=G.tasks.filter(function(x){ return x.listId===L.id ? x.status!=='declined' : (mine && gptGiven_(x) && gptFiledIn_(x)===L.id); });
+  /* a ministry's own page (Andrew, Oct 2026: "it only shows a few"): also what its people were given
+     elsewhere — the department's list (board cards land there), another ministry's — each with where it is from */
+  var team = S.gptScope && L.scope!=='personal' ? (S.roster||[]).filter(function(p){ return gptInList_(L, p); }).map(function(p){ return p.id; }) : null;
+  var all=G.tasks.filter(function(x){ return x.listId===L.id ? x.status!=='declined' : (mine && gptGiven_(x) && gptFiledIn_(x)===L.id) || (team && x.status!=='declined' && x.assignees.some(function(id){ return team.indexOf(id)>-1; })); });
   var open=all.filter(function(x){ return !x.done; }).sort(gptSortIn_(L));
   var done=all.filter(function(x){ return x.done; });
   var h='<div class="gtList'+(S.gtSlide ? ' gtSlide'+S.gtSlide : '')+'"><div class="gtListHead"><b>'+gptKindIc_(L)+esc(gptChipName_(L))+gptColorDot_(L)+'</b><span>'+esc(gptListLabel_(L))+'</span></div>';
@@ -277,7 +280,7 @@ function gtListHtml_(L){
 }
 /* one task: its row, its subtasks under it, and a request's answer buttons */
 function gtItemHtml_(x, L){
-  var req=x.status==='request', dec=x.status==='declined', canDrag=L && L.canEdit && !req && !dec && !x.done;
+  var req=x.status==='request', dec=x.status==='declined', canDrag=L && L.canEdit && !req && !dec && !x.done && (x.listId===L.id || L.scope==='personal');
   var showList=x.listId!==L.id, SL=showList ? gptListById_(x.listId) : L;   // the list it is really in
   var chips=[];
   if(x.due) chips.push('<span class="gtChip'+(gptOverdue_(x)?' late':'')+'">'+GPT_SVG.clock+esc(gptWhen_(x))+'</span>');

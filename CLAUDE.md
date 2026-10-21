@@ -2738,6 +2738,10 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   (`'cand'`). The old selects stay in the DOM hidden (`data-lf="owner"`, `data-ltowner`, `data-cf`) so
   the forms' field readers still work. Rows: `[data-ppickit="key|id"]`, chips `[data-ppickrm="key|id"]`,
   the box `[data-ppickq="key"]`; until you type, only the `first` group shows (or the first few).
+  **A ministry's own tasks page shows everything its people are on** (Andrew, Oct 2026: "it only shows
+  a few"): the list's tasks, plus tasks in other lists given to any of its people (`team` in
+  `gtListHtml_` when `S.gptScope` is set — the department's list where board cards land, another
+  ministry's), each with a chip saying where it is from and no grip (they are ordered in their own list).
   **No list is ever called "Tasks"** (Andrew, Oct 2026: "why 3 lists named Tasks?"): "Ask another
   ministry" into a ministry with no list makes its designated list through `gptMinList_` (named after
   it; it used to make one called "Tasks"), `gptEnsureLists_` renames any ministry or department list

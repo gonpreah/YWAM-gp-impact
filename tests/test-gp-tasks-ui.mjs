@@ -374,6 +374,12 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   ok('Kanha\'s bell: Campus Leadership gave you a task', /Campus Leadership gave you a task: Fix the cafe sign/.test(bell), bell);
   await page.evaluate(() => gptOpenPage_('week')); await page.waitForTimeout(800);
   ok('GP Tasks fits a 320px phone', await page.evaluate(() => document.documentElement.scrollWidth <= 321));
+  /* the Cafe's own tasks page: its list, and what its people were given elsewhere, with where it is from */
+  await page.evaluate(() => gptOpenMinistry_('Community Service', 'Cafe')); await page.waitForTimeout(900);
+  const cafePage = await page.$eval('.gtList', e => e.innerText);
+  ok('the Cafe\'s tasks page shows the board\'s task given to Kanha, from the department\'s list, marked with where it is from', /Fix the cafe sign/.test(cafePage) && /Community Service/.test(cafePage) && /Order milk/.test(cafePage), cafePage.slice(0, 200));
+  const signT = T().find(t => t.title === 'Fix the cafe sign');
+  ok('… without a grip: it is ordered in its own list', !(await page.$('[data-gptgrip="' + signT.id + '"]')) && !!(await page.$('[data-gptgrip]')));
   await ctx.close();
 }
 {
