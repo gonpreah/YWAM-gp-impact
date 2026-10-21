@@ -10322,16 +10322,48 @@ function cafePos(username, pin, date, totals) {
    https://calendar.google.com/calendar/ical/…/….ics is accepted, so the server can't be pointed
    anywhere else. Each calendar is read at most every 30 minutes ('gcalCache'), its events
    (and repeats: yearly birthdays, weekly meetings) laid out on Cambodia's clock. */
-const GCAL_MAX = 6, GCAL_TTL_MS = 30 * 60 * 1000, GCAL_COLORS = ['blue', 'green', 'amber', 'pink', 'purple', 'teal', 'red', 'orange', 'indigo', 'brown', 'grey', 'lime'];   // the palette (teams.css .cal-*), for calendars and task lists alike
+const GCAL_MAX = 6, GCAL_TTL_MS = 30 * 60 * 1000, GCAL_COLORS = ['blue', 'green', 'amber', 'pink', 'purple', 'teal', 'red', 'orange', 'indigo', 'brown', 'grey', 'lime', 'lavender', 'sky', 'mint', 'rose'];   // the palette (teams.css .cal-*), for calendars and task lists alike
 function gcalUrlOk_(u) { return /^https:\/\/calendar\.google\.com\/calendar\/ical\/[^/?#\s]+\/[^/?#\s]+\/[^/?#\s]+\.ics$/.test(String(u || '')); }
 async function getGcal_() { const d = await readJSON('gcal', null); return Array.isArray(d && d.cals) ? d.cals : []; }
+/* Kinds of events (Andrew, Oct 2026: "teams light purple, birthdays green — colour code things based on
+   what they are, and a filter for events, birthdays/anniversaries, schools, teams, guests/speakers"):
+   each kind has a colour and the words that mark an event as that kind (matched in its title, any case).
+   The first kind is the catch-all for everything else; a kind with no colour of its own takes the
+   calendar's. Kept with the calendars in the 'gcal' blob as `kinds`; admins change them. */
+const GCAL_KINDS_DEFAULT = [
+  { id: 'event', name: 'Events', color: '', keywords: [] },
+  { id: 'bday', name: 'Birthdays & anniversaries', color: 'green', keywords: ['birthday', 'bday', 'anniversary', '🎂'] },
+  { id: 'school', name: 'Schools', color: 'amber', keywords: ['DTS', 'school', 'SBS', 'lecture', 'graduation', 'seminar'] },
+  { id: 'team', name: 'Teams', color: 'lavender', keywords: ['team'] },
+  { id: 'guest', name: 'Guests & speakers', color: 'teal', keywords: ['guest', 'speaker', 'visitor', 'visiting'] }
+];
+const GCAL_KINDS_MAX = 12;
+async function getGcalKinds_() { const d = await readJSON('gcal', null); return Array.isArray(d && d.kinds) && d.kinds.length ? d.kinds : GCAL_KINDS_DEFAULT.map(function (k) { return Object.assign({}, k, { keywords: k.keywords.slice() }); }); }
+function gcalKindOut_(k) { return { id: k.id, name: k.name, color: k.color || '', keywords: (k.keywords || []).slice() }; }
+function gcalKindOf_(kinds, title) {
+  const tl = String(title || '').toLowerCase();
+  for (let i = 1; i < kinds.length; i++) { if ((kinds[i].keywords || []).some(function (w) { return w && tl.indexOf(String(w).toLowerCase()) > -1; })) return kinds[i]; }
+  return kinds[0];
+}
 function gcalAdminOut_(c) { return { id: c.id, name: c.name, color: c.color, at: c.at || '', lastOk: c.lastOk || '', lastErr: c.lastErr || '', events: c.events || 0 }; }
 async function adminGcal(username, pin, change) {
   const s = await adminGate_(username, pin);
   if (!s) return { ok: false, err: 'not_authorized' };
-  let cals = await getGcal_();
+  let cals = await getGcal_(), kinds = await getGcalKinds_();
   const x = change && typeof change === 'object' ? change : null;
-  if (x && x.remove) cals = cals.filter(function (c) { return c.id !== x.remove; });
+  if (x && x.kind && typeof x.kind === 'object') {   // a kind of event: name, colour, the words that mark it (new when it has no id)
+    const k = x.kind, id = str_(k.id, 40), cur = id ? kinds.find(function (y) { return y.id === id; }) : null;
+    if (id && !cur) return { ok: false, err: 'no_such_kind' };
+    if (!cur && kinds.length >= GCAL_KINDS_MAX) return { ok: false, err: 'too_many' };
+    const rec = cur || { id: 'k' + Date.now().toString(36), name: '', color: '', keywords: [] };
+    if (k.name !== undefined) rec.name = str_(k.name, 40) || rec.name || 'Kind';
+    if (k.color !== undefined) rec.color = GCAL_COLORS.indexOf(k.color) > -1 ? k.color : '';
+    if (k.keywords !== undefined) rec.keywords = (Array.isArray(k.keywords) ? k.keywords : String(k.keywords || '').split(',')).map(function (w) { return str_(w, 40) || ''; }).filter(Boolean).slice(0, 20);
+    if (!cur) { if (!rec.name) rec.name = 'Kind'; kinds.push(rec); }
+  } else if (x && x.kindRemove) {
+    if (x.kindRemove === kinds[0].id) return { ok: false, err: 'keep_first' };   // the catch-all stays
+    kinds = kinds.filter(function (k) { return k.id !== x.kindRemove; });
+  } else if (x && x.remove) cals = cals.filter(function (c) { return c.id !== x.remove; });
   else if (x && x.url !== undefined) {
     const url = String(x.url || '').trim();
     if (!gcalUrlOk_(url)) return { ok: false, err: 'bad_url' };
@@ -10341,8 +10373,8 @@ async function adminGcal(username, pin, change) {
     const c = cals.find(function (y) { return y.id === x.id; });
     if (c) { if (x.name !== undefined) c.name = str_(x.name, 60) || c.name; if (x.color !== undefined && GCAL_COLORS.indexOf(x.color) > -1) c.color = x.color; }
   }
-  if (x) { await writeJSON('gcal', { cals: cals }); await writeJSON('gcalCache', {}); }
-  return { ok: true, cals: cals.map(gcalAdminOut_) };
+  if (x) { await writeJSON('gcal', { cals: cals, kinds: kinds }); await writeJSON('gcalCache', {}); }
+  return { ok: true, cals: cals.map(gcalAdminOut_), kinds: kinds.map(gcalKindOut_) };
 }
 /* ---- reading iCal (RFC 5545), only as much as Google's export needs ---- */
 function icsLines_(text) {
@@ -10427,15 +10459,15 @@ async function gcalFetch_(c) {
   cache[c.id] = rec;
   await writeJSON('gcalCache', cache);
   /* the admin sees whether it worked */
-  const cals = await getGcal_(), me = cals.find(function (y) { return y.id === c.id; });
-  if (me) { if (events) { me.lastOk = new Date().toISOString(); me.lastErr = ''; me.events = events.length; } else me.lastErr = err; await writeJSON('gcal', { cals: cals }); }
+  const store = (await readJSON('gcal', null)) || {}, cals = Array.isArray(store.cals) ? store.cals : [], me = cals.find(function (y) { return y.id === c.id; });
+  if (me) { if (events) { me.lastOk = new Date().toISOString(); me.lastErr = ''; me.events = events.length; } else me.lastErr = err; await writeJSON('gcal', Object.assign({}, store, { cals: cals })); }   // keeps the kinds
   return rec;
 }
 /* the events from `from` for `days` days (up to 120), every calendar together, each with its calendar's name and colour */
 async function getCalendar(username, pin, from, days) {
   const s = await verifyStaff_(username, pin);
   if (!s || isApplicant_(s)) return { ok: false };
-  const cals = await getGcal_();
+  const cals = await getGcal_(), kinds = await getGcalKinds_();
   if (!cals.length) return { ok: true, connected: false, events: [] };
   from = isDate_(from) ? from : baseToday_();
   const to = icsDay_(from, Math.max(1, Math.min(120, parseInt(days, 10) || 31)) - 1);
@@ -10449,13 +10481,14 @@ async function getCalendar(username, pin, from, days) {
       icsOccurrences_(e, from, to).forEach(function (d) {
         if (!e.recurrenceId && e.uid && moved[e.uid + '|' + d]) return;
         const span = e.end && e.end.date > e.start.date ? icsDaysBetween_(e.start.date, e.end.date) - (e.end.allDay ? 1 : 0) : 0;
-        out.push({ cal: c.id, calName: c.name, color: c.color, title: e.title || '', where: e.where || '', notes: e.notes || '',
+        const k = gcalKindOf_(kinds, e.title);   // its kind decides its colour (the calendar's, when the kind has none)
+        out.push({ cal: c.id, calName: c.name, color: k.color || c.color, kind: k.id, title: e.title || '', where: e.where || '', notes: e.notes || '',
           date: d, time: e.start.time || '', endTime: e.end && !e.end.allDay ? e.end.time : '', allDay: !!e.start.allDay, endDate: span > 0 ? icsDay_(d, span) : '' });
       });
     });
   }
   out.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.allDay !== b.allDay ? (a.allDay ? -1 : 1) : (a.time < b.time ? -1 : a.time > b.time ? 1 : 0)); });
-  return { ok: true, connected: true, from: from, to: to, events: out.slice(0, 1500), cals: cals.map(function (c) { return { id: c.id, name: c.name, color: c.color }; }) };
+  return { ok: true, connected: true, from: from, to: to, events: out.slice(0, 1500), cals: cals.map(function (c) { return { id: c.id, name: c.name, color: c.color }; }), kinds: kinds.map(gcalKindOut_) };
 }
 
 /* ---------- GP Tasks (Oct 2026, Uriah) ----------

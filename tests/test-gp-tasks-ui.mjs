@@ -104,7 +104,7 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   /* ⋮ is a half-circle wheel: the items on an arc along the right edge, the middle one grown; spin it */
   await page.click('#gtMenuBtn'); await page.waitForTimeout(400);
   const wheelIts = await page.$$eval('#gtWheel .gtMenuIt', b => b.map(x => ({ id: x.id, top: x.style.top, on: x.classList.contains('on'), sc: x.style.transform })));
-  ok('⋮ opens as a wheel: every item placed on the arc, one grown in the middle', !!(await page.$('#gtWheel')) && wheelIts.length >= 4 && wheelIts.every(x => /px/.test(x.top)) && wheelIts.filter(x => x.on).length === 1 && /scale\(1\.2/.test(wheelIts.find(x => x.on).sc), JSON.stringify(wheelIts));
+  ok('⋮ opens as a wheel: every item placed on the arc, one grown in the middle', !!(await page.$('#gtWheel')) && wheelIts.length >= 4 && wheelIts.every(x => /px/.test(x.top)) && wheelIts.filter(x => x.on).length === 1 && /scale\(1\.1/.test(wheelIts.find(x => x.on).sc), JSON.stringify(wheelIts));
   const onBefore = wheelIts.find(x => x.on).id;
   await page.mouse.move(120, 500); await page.mouse.wheel(0, 200); await page.waitForTimeout(300);
   const onAfter = await page.$eval('#gtWheel .gtMenuIt.on', e => e.id);
@@ -203,6 +203,7 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   ok('⋮ holds the rest: rename, colour, ask another ministry, delete the list', !!(await page.$('#gtRename')) && !!(await page.$('#gtColor')) && !!(await page.$('#gptAskBtn')) && !!(await page.$('#gptListDelete')));
   await page.click('#gtColor'); await page.waitForTimeout(200);
   await page.click('[data-gtcolor="pink"]'); await page.waitForTimeout(600);
+  ok('… a small dot in that colour by the list\'s name, on its tab and its head', !!(await page.$('.gtTab.on .calDot.cal-pink')) && !!(await page.$('.gtListHead .calDot.cal-pink')));
   ok('the list\'s colour on the calendar, picked from the palette', (mem.gpTasks.lists || []).find(l => l.id === L.id).color === 'pink');
   await page.click('.gtTab[data-gptlist="' + myList.id + '"]'); await page.waitForTimeout(300);
   await page.click('.gtFab'); await page.waitForTimeout(200);

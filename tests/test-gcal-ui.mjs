@@ -105,6 +105,17 @@ const main = p => p.$eval('#main', e => e.innerText);
   ok('connected — the name shows, the address never does', mem.gcal.cals.length === 1 && /Siem Reap events/.test(await main(page)) && !(await page.content()).replace(/<input[^>]*id="gcalUrl"[^>]*>/, '').includes('private-abc123'));
   await page.click('[data-gcalcolor="' + mem.gcal.cals[0].id + '"][data-color="pink"]'); await page.waitForTimeout(600);
   ok('the admin picks its colour from the palette', mem.gcal.cals[0].color === 'pink' && !!(await page.$('.calSwatch.on.cal-pink')));
+  /* kinds of events: each with a colour and the words that mark it */
+  const kindNames = await page.$$eval('[data-kindname]', i => i.map(x => x.value));
+  ok('Kinds of events: Events, Birthdays & anniversaries, Schools, Teams, Guests & speakers — each with its words and a palette', kindNames.join('|') === 'Events|Birthdays & anniversaries|Schools|Teams|Guests & speakers' && (await page.$eval('[data-kindkeys="team"]', e => e.value)) === 'team' && !!(await page.$('[data-kindcolor="team"][data-color="lavender"].on')), kindNames.join('|'));
+  await page.click('[data-kindcolor="team"][data-color="sky"]'); await page.waitForTimeout(600);
+  ok('… the admin picks Teams a colour (sky)', (mem.gcal.kinds || []).find(k => k.id === 'team').color === 'sky' && !!(await page.$('[data-kindcolor="team"][data-color="sky"].on')));
+  await page.fill('[data-kindkeys="team"]', 'team, church'); await page.press('[data-kindkeys="team"]', 'Tab'); await page.waitForTimeout(600);
+  ok('… and the words that mark it', (mem.gcal.kinds || []).find(k => k.id === 'team').keywords.join() === 'team,church');
+  await page.click('#gcKindAdd'); await page.waitForTimeout(600);
+  ok('＋ Add a kind adds one to name', (mem.gcal.kinds || []).length === 6 && (await page.$$eval('[data-kindname]', i => i.length)) === 6);
+  await page.click('[data-kindrm="' + mem.gcal.kinds[5].id + '"]'); await page.waitForTimeout(600);
+  ok('… and Remove takes it away again (the first, Events, has no Remove)', (mem.gcal.kinds || []).length === 5 && !(await page.$('[data-kindrm="event"]')));
   await ctx.close();
 }
 {
@@ -115,7 +126,7 @@ const main = p => p.$eval('#main', e => e.innerText);
   await page.click('#goCalendar'); await page.waitForTimeout(800);
   const txt = await main(page);
   ok('the Calendar like Google\'s: month chips, week rows with their number, title bars across the days, today marked — then the days from today on', !!(await page.$('.gcGrid')) && !!(await page.$('.gcMonth.on')) && (await page.$$eval('.gcWk', w => w.length)) === 6 && (await page.$$eval('.gcCell', c => c.length)) === 42 && !!(await page.$('.gcCell.today.sel .gcNum')) && (await page.$$eval('.gcBar', d => d.length)) >= 3 && /Worship night/.test(txt) && /3:00/.test(txt) && /All day/.test(txt) && /Grace Church team staying/.test(txt) && /until/.test(txt), txt.slice(0, 400));
-  ok('… the stay spans its days as one bar, in the calendar\'s colour', !!(await page.$('.gcBar.cal-pink[title="Grace Church team staying"]')) && (await page.$$eval('.gcBar[title="Grace Church team staying"]', b => b.length)) === 1 && /Grace Church/.test(await page.$eval('.gcBar.cal-pink[title="Grace Church team staying"]', e => e.style.width)) === false);
+  ok('… the stay spans its days as one bar, in its kind\'s colour (Teams: sky), the birthday in green, the worship night in the calendar\'s pink', !!(await page.$('.gcBar.cal-sky[title="Grace Church team staying"]')) && !!(await page.$('.gcBar.cal-green[title="Sokha\'s birthday"]')) && !!(await page.$('.gcBar.cal-pink[title="Worship night"]')) && (await page.$$eval('.gcBar[title="Grace Church team staying"]', b => b.length)) === 1 && /Grace Church/.test(await page.$eval('.gcBar.cal-sky[title="Grace Church team staying"]', e => e.style.width)) === false);
   await page.click('.gcBar[title="Worship night"]'); await page.waitForTimeout(300);
   ok('tapping a bar opens that thing under the month', /Main hall/.test(await main(page)) && !!(await page.$('.calEv.open')));
   await page.click('.gcMonth:not(.on)'); await page.waitForTimeout(700);
@@ -127,6 +138,12 @@ const main = p => p.$eval('#main', e => e.innerText);
   ok('… and never the secret address', !(await page.content()).includes('private-abc123'));
   await page.click('.calEv:has-text("Grace Church")'); await page.waitForTimeout(300);
   ok('tapping an event shows its details', /12 people/.test(await main(page)));
+  /* the kinds, to tick on or off */
+  ok('chips for the kinds: Events, Birthdays & anniversaries, Schools, Teams, Guests & speakers', (await page.$$eval('.gcKinds [data-calkind]', b => b.map(x => x.dataset.calkind))).join() === 'event,bday,school,team,guest');
+  await page.click('.gcKinds [data-calkind="team"]'); await page.waitForTimeout(400);
+  ok('Teams off: the stay leaves the grid, the birthday stays', !(await page.$('.gcBar[title="Grace Church team staying"]')) && !!(await page.$('.gcBar[title="Sokha\'s birthday"]')));
+  await page.click('.gcKinds [data-calkind="team"]'); await page.waitForTimeout(400);
+  ok('… on again: back, and the row says what kind it is', !!(await page.$('.gcBar[title="Grace Church team staying"]')) && /Siem Reap events · Teams/.test(await main(page)));
   /* the ticked list of what shows, like Google Calendar's */
   ok('chips to tick each calendar on or off: Siem Reap events', !!(await page.$('.gcLayer.on[data-callayer]')) && /Siem Reap events/.test(await page.$eval('.gcLayers', e => e.innerText)));
   await page.click('.gcLayer:has-text("Siem Reap events")'); await page.waitForTimeout(300);
