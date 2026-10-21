@@ -267,7 +267,10 @@ function gtListHtml_(L){
   var all=G.tasks.filter(function(x){ return x.listId===L.id ? x.status!=='declined' : (mine && gptGiven_(x) && gptFiledIn_(x)===L.id) || (team && x.status!=='declined' && x.assignees.some(function(id){ return team.indexOf(id)>-1; })); });
   var open=all.filter(function(x){ return !x.done; }).sort(gptSortIn_(L));
   var done=all.filter(function(x){ return x.done; });
-  var h='<div class="gtList'+(S.gtSlide ? ' gtSlide'+S.gtSlide : '')+'"><div class="gtListHead"><b>'+gptKindIc_(L)+esc(gptChipName_(L))+gptColorDot_(L)+'</b><span>'+esc(gptListLabel_(L))+'</span></div>';
+  /* ‹ › on the head step through the lists (Andrew, Oct 2026: "the slide isn't working the best — small arrows?") */
+  var ids=gptLists_(S.gptScope).map(function(x){ return x.id; }), at=ids.indexOf(L.id);
+  var nav = ids.length>1 ? '<span class="gtListNav"><button class="weekArrow" id="gtPrevList"'+(at>0?'':' disabled')+' aria-label="'+esc(t('Previous list'))+'">‹</button><button class="weekArrow" id="gtNextList"'+(at<ids.length-1?'':' disabled')+' aria-label="'+esc(t('Next list'))+'">›</button></span>' : '';
+  var h='<div class="gtList'+(S.gtSlide ? ' gtSlide'+S.gtSlide : '')+'"><div class="gtListHead"><div class="gtListHeadTxt"><b>'+gptKindIc_(L)+esc(gptChipName_(L))+gptColorDot_(L)+'</b><span>'+esc(gptListLabel_(L))+'</span></div>'+nav+'</div>';
   if(!open.length) h+='<div class="gtEmpty small"><div class="gtEmptyIc">'+GPT_SVG.tasks+'</div><p>'+esc(t('No tasks yet.'))+'</p></div>';
   /* small dividers by day (Andrew, Oct 2026: "like today, tomorrow, and then the date and day, like in
      Google Tasks") — a list with no dates at all stays plain */
@@ -507,6 +510,8 @@ function bindGpTasks_(){
     swipeBox.addEventListener('touchend', end, { passive:true });
     swipeBox.addEventListener('touchcancel', end, { passive:true });
   }
+  var stepList=function(dir){ var ids=gptLists_(S.gptScope).map(function(L){ return L.id; }), i=ids.indexOf(S.gptList)+dir; if(i<0 || i>=ids.length) return; gpTap(); gptGoList_(ids[i], dir>0 ? 'L' : 'R'); };
+  on('gtPrevList', function(){ stepList(-1); }); on('gtNextList', function(){ stepList(1); });
   /* ⋮ — the wheel */
   on('gtMenuBtn', function(){ gpTap(); S.gtMenu=!S.gtMenu; S.gtWheel.focus=null; S.gtWheelOpened=Date.now(); render(); });
   on('gtMenuScrim', function(){ S.gtMenu=false; render(); });

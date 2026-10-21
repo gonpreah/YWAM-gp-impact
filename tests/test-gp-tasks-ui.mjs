@@ -154,6 +154,12 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   ok('… and a slide the browser cancels still finishes', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === rd.id);
   await swipeMoves(40, 130, false); await page.waitForTimeout(400);
   ok('… but a mostly up-or-down finger is a scroll, not a slide', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === rd.id);
+  /* small ‹ › on the list's head do the same */
+  await page.click('#gtNextList'); await page.waitForTimeout(400);
+  ok('› on the list\'s head opens the next list', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === tabsAfter[tabsAfter.indexOf(rd.id) + 1]);
+  await page.click('#gtPrevList'); await page.waitForTimeout(400);
+  ok('‹ comes back', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === rd.id);
+  ok('… the arrows grey out at the ends', (await page.$eval('#gtPrevList', e => e.disabled)) === (tabsAfter.indexOf(rd.id) === 0) && !(await page.$eval('#gtNextList', e => e.disabled)));
   /* sharing the whole list: ⋮ → Share list with someone… → a people search; Kanha gets it as a tab */
   await page.click('#gtMenuBtn'); await page.waitForTimeout(200);
   ok('⋮ on your own list: Share list with someone…', !!(await page.$('#gtShareList')));

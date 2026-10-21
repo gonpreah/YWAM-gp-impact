@@ -2742,6 +2742,8 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   a few"): the list's tasks, plus tasks in other lists given to any of its people (`team` in
   `gtListHtml_` when `S.gptScope` is set — the department's list where board cards land, another
   ministry's), each with a chip saying where it is from and no grip (they are ordered in their own list).
+  **‹ › on the list's head** (`#gtPrevList`/`#gtNextList`, `.gtListNav`, greyed at the ends) step through
+  the lists like the swipe (Andrew, Oct 2026: "the slide isn't working the best — small arrows?").
   **An open task says where it came from** (`gptOriginText_`, `.gtOrigin`; Andrew, Oct 2026: "I didn't
   add that — who put that in?"): "Added by {name} · {date}", then "from a card on the Leadership board"
   (`leadId`/`cardId`), "from a mentor 1:1" (`ooId`) or "from {ministry}" (`from.label`).

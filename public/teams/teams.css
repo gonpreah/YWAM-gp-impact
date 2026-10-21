@@ -2323,9 +2323,12 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 @keyframes gtSlideR { from { transform:translateX(-36px); opacity:.3; } to { transform:none; opacity:1; } }
 .gtList.gtSlideL { animation:gtSlideL .22s ease-out; } .gtList.gtSlideR { animation:gtSlideR .22s ease-out; }
 .gtList { background:var(--surface); border-radius:16px; padding:6px 4px 8px; margin:0 0 150px; }   /* room to scroll the last rows up from under the round ＋ */
-.gtListHead { display:flex; flex-direction:column; padding:8px 12px 6px; }
+.gtListHead { display:flex; align-items:flex-start; gap:8px; padding:8px 12px 6px; }
+.gtListHeadTxt { display:flex; flex-direction:column; flex:1; min-width:0; }
 .gtListHead b { font-size:20px; }
-.gtListHead span { font-size:12.5px; color:var(--muted); }
+.gtListHeadTxt span { font-size:12.5px; color:var(--muted); }
+.gtListNav { display:inline-flex; gap:6px; flex:0 0 auto; margin-top:2px; }
+.gtListNav .weekArrow { width:30px; height:30px; font-size:18px; line-height:1; }
 .gtRow { display:flex; align-items:flex-start; gap:12px; padding:10px 12px; }
 .gtRow + .gtRow { border-top:1px solid var(--line); }
 .gtCheck { width:22px; height:22px; flex:0 0 22px; margin-top:1px; border-radius:50%; border:2px solid var(--muted); background:none; color:var(--bg); font-size:13px; font-weight:800; line-height:1; cursor:pointer; padding:0; }
