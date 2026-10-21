@@ -88,7 +88,7 @@ async function open(user, opts) {
   return { ctx, page };
 }
 const tabs = (p) => p.$$eval('[data-lwtab]', (b) => b.filter((x) => x.closest('.lwSeg')).map((x) => x.getAttribute('data-lwtab')));
-const tabOn = (p) => p.$eval('.lwSeg .campusBtn.on', (b) => b.getAttribute('data-lwtab')).catch(() => '');
+const tabOn = (p) => p.$eval('.lwSeg .gtTab.on', (b) => b.getAttribute('data-lwtab')).catch(() => '');
 const focus = (p) => p.$eval('.lwFocus', (e) => e.textContent).catch(() => '');
 const tiles = (p) => p.$$eval('.lbGlance .mmTile:not(.lbNav) .mmTileName', (e) => e.map((x) => x.textContent.replace(/^[^A-Za-z0-9\u1780-\u17FF]+/, '').trim()));
 const firstKinds = async (p) => { await p.click('[data-lwtab="week"]'); await p.waitForSelector('[data-lwkind]', { timeout: 10000 }); return p.$$eval('[data-lwkind]', (b) => b.slice(0, 3).map((x) => x.getAttribute('data-lwkind'))); };
@@ -139,7 +139,7 @@ const firstKinds = async (p) => { await p.click('[data-lwtab="week"]'); await p.
 /* ---- Director of a department ---- */
 {
   const { ctx, page } = await open('chea');
-  ok('Director of Community Service: opens on their department', (await tabOn(page)) === 'base' && /My department/.test(await page.$eval('.lwSeg .campusBtn.on', (b) => b.textContent)));
+  ok('Director of Community Service: opens on their department', (await tabOn(page)) === 'base' && /My department/.test(await page.$eval('.lwSeg .gtTab.on', (b) => b.textContent)));
   ok('… “Your department: its ministries, leaders and numbers”', /Your department/.test(await focus(page)));
   ok('… their department’s week at the top, no whole-base numbers (only the OKR and Board tiles)', (await tiles(page)).length === 0 && !!(await page.$('#lbOkrTile')) && /Community Service this week/.test(await page.$eval('#leadBase', (e) => e.innerText)) && !/Youth Education this week/.test(await page.$eval('#leadBase', (e) => e.innerText)));
   await page.screenshot({ path: OUT + '/3-department.png' });
@@ -157,36 +157,38 @@ const firstKinds = async (p) => { await p.click('[data-lwtab="week"]'); await p.
 /* ---- a Campus Director opens another leadership role's board ---- */
 {
   const { ctx, page } = await open('icd');
+  await page.click('#mmSwitch'); await page.waitForTimeout(250);
   const picks = await page.$$eval('[data-mmpick^="Campus Leadership|"]', (b) => b.map((x) => x.textContent.trim()));
   ok('Campus Leadership lists every leadership role, theirs marked', picks.length === 6 && /International Campus Director · you/.test(picks[0]) && picks.some((x) => /National Campus Director/.test(x)) && picks.some((x) => /Director of Youth Education/.test(x)), picks.join(' | '));
-  await page.click('[data-mmpick="Campus Leadership|@ncd"]'); await page.waitForTimeout(1500);
+  await page.click('#mmSwitch', { timeout: 1500 }).catch(() => {}); await page.waitForTimeout(250); await page.click('[data-mmpick="Campus Leadership|@ncd"]'); await page.waitForTimeout(1500);
   const you = await page.$eval('.orgYou', (e) => e.textContent);
   ok('picking the National Campus Director opens their board, with who holds it', /Viewing: National Campus Director · Nary Director/.test(you), you);
   const tl = await tiles(page);
   ok('… their numbers on top: away, 1-on-1s, numbers in, Tuesday', /Away this week/.test(tl[0]) && /1-on-1s this month/.test(tl[1]), tl.join(' | '));
   ok('… and their tabs, without their own week', (await tabs(page)).join() === 'base,okrs,board,money');
   await page.screenshot({ path: OUT + '/5-viewing-national.png' });
-  await page.click('[data-mmpick="Campus Leadership|Youth Education"]'); await page.waitForTimeout(1500);
+  await page.click('#mmSwitch', { timeout: 1500 }).catch(() => {}); await page.waitForTimeout(250); await page.click('[data-mmpick="Campus Leadership|Youth Education"]'); await page.waitForTimeout(1500);
   const lb = await page.$eval('#leadBase', (e) => e.innerText);
   ok('picking a department’s Director opens that department', /Viewing: Director of Youth Education · Nobody yet/.test(await page.$eval('.orgYou', (e) => e.textContent)) && /Youth Education this week/.test(lb) && !/Community Service this week/.test(lb) && (await tiles(page)).length === 0);
-  await page.click('[data-mmpick="Campus Leadership|@icd"]'); await page.waitForTimeout(1000);
+  await page.click('#mmSwitch', { timeout: 1500 }).catch(() => {}); await page.waitForTimeout(250); await page.click('[data-mmpick="Campus Leadership|@icd"]'); await page.waitForTimeout(1000);
   ok('… and back to their own, with My week', /Your role: International Campus Director/.test(await page.$eval('.orgYou', (e) => e.textContent)) && (await tabs(page)).join() === 'base,okrs,week,board,money');
   await ctx.close();
 }
 {
-  // an admin: the Department and Ministry drop-downs
+  // an admin: Switch ▾ lists the leadership roles under Campus Leadership
   const { ctx, page } = await open('ada');
-  await page.selectOption('#mmBrowseDeptSel', 'Campus Leadership'); await page.waitForTimeout(800);
-  const opts = await page.$$eval('#mmBrowseMinSel option', (o) => o.map((x) => x.value + '=' + x.textContent.trim()));
-  ok('an admin: Department → Campus Leadership, then the leadership role', opts.length === 6 && !(await page.$eval('#mmBrowseMinSel', (s) => s.disabled)) && opts[0].startsWith('@icd=') && /International Campus Director/.test(opts[0]), opts.join(' | '));
-  await page.selectOption('#mmBrowseMinSel', '@icd'); await page.waitForTimeout(1500);
+  await page.click('#mmSwitch'); await page.waitForTimeout(300);
+  const opts = await page.$$eval('[data-mmpick^="Campus Leadership|"]', (o) => o.map((x) => x.getAttribute('data-mmpick').split('|')[1] + '=' + x.textContent.trim()));
+  ok('an admin: under Campus Leadership, each leadership role', opts.length === 6 && opts[0].startsWith('@icd=') && /International Campus Director/.test(opts[0]), opts.join(' | '));
+  await page.click('#mmSwitch', { timeout: 1500 }).catch(() => {}); await page.waitForTimeout(250); await page.click('[data-mmpick="Campus Leadership|@icd"]'); await page.waitForTimeout(1500);
   ok('… and picking one opens that role’s board', /Viewing: International Campus Director · Ian Director/.test(await page.$eval('.orgYou', (e) => e.textContent)) && /Vision, partners/.test(await focus(page)) && (await tiles(page)).length === 4);
   await page.screenshot({ path: OUT + '/6-admin-picks.png' });
   await ctx.close();
 }
 {
   const { ctx, page } = await open('chea');
-  ok('a department’s Director doesn’t get the other roles to open', !(await page.$('[data-mmpick="Campus Leadership|@icd"]')) && !(await page.$('#mmBrowseMinSel option[value="@icd"]')));
+  await page.click('#mmSwitch').catch(() => {}); await page.waitForTimeout(300);
+  ok('a department’s Director doesn’t get the other roles to open', !(await page.$('[data-mmpick="Campus Leadership|@icd"]')));
   await ctx.close();
 }
 

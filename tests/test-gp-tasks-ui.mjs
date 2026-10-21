@@ -246,14 +246,12 @@ const call = (fn, args) => api.default({ method: 'POST', json: async () => ({ fn
 {
   const { ctx, page } = await open('kanha');
   await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(600);
-  ok('My Ministry: no Numbers / Tasks switch on top; Ministry Tasks folded under the ministry', !(await page.$('[data-mmtab="ministry"], [data-mmtab="tasks"]')) && !!(await page.$('#mmBanner + #mtFold, #mmBanner ~ #mtFold')) && !(await page.$('#mtFold .gptBar')));
-  ok('… and the ministry\'s own page still shows below (the Cafe: its tool and numbers)', !!(await page.$('[data-cafeview], .wkStrip, #kpiInputBtn, .mmTile')));
-  await page.click('#mtToggle'); await page.waitForTimeout(900);
+  ok('My Ministry: one row of tabs with Tasks among them; the Cafe opens on its tool', !!(await page.$('.mmTabs [data-mmtab="tasks"]')) && !!(await page.$('.mmTabs .gtTab.on[data-cafetab="today"]')) && !(await page.$('#mtFold')));
+  await page.click('.mmTabs [data-mmtab="tasks"]'); await page.waitForTimeout(900);
   const mp = await main(page);
-  ok('Ministry Tasks opens the ministry\'s own GP Tasks page — the same page as your own, with just the Cafe\'s list', await page.evaluate(() => S.view === 'tasks' && S.gptPageScope && S.gptPageScope.min === 'Cafe') && /GP Tasks · Cafe/.test(mp) && /Cafe jobs/.test(mp) && /Order milk/.test(mp) && !/Inbox/.test(mp) && !!(await page.$('.gtFab')) && !!(await page.$('#gtMenuBtn')), mp.slice(0, 200));
-  ok('… no ＋ New list there (a ministry has its one list), and ← My Ministry', !(await page.$('#gptNewListBtn')) && /My Ministry/.test(await page.$eval('#gptBack', e => e.innerText)));
-  await page.click('#gptBack'); await page.waitForTimeout(500);
-  ok('… back on My Ministry', await page.evaluate(() => S.view === 'ministry'));
+  ok('the Tasks tab: the Cafe\'s list, right there under the tabs — no Inbox, no New list', await page.evaluate(() => S.view === 'ministry') && /Cafe jobs/.test(mp) && /Order milk/.test(mp) && !/Inbox/.test(mp) && !(await page.$('#gptNewListBtn')) && !!(await page.$('.gtFab')), mp.slice(0, 200));
+  await page.click('.mmTabs [data-cafetab="today"]'); await page.waitForTimeout(500);
+  ok('… and back to the tool', !!(await page.$('#cafeOpenBtn')));
   await ctx.close();
 }
 /* ---------- Uriah: everything, the filter, and a board card for the Cafe ---------- */

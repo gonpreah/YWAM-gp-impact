@@ -647,7 +647,7 @@ function bindFinance_(){
     S.busy=true;
     run('qboDisconnect',[S.auth.user,S.auth.pin],function(d){ S.busy=false; if(finPut_(d)) showMsg(t('Disconnected')); else showMsg(finFail_(d)); render(); },
       function(){ S.busy=false; showMsg(t('No connection — try again when you are online.')); }); };
-  document.querySelectorAll('[data-fintab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.finTab=b.getAttribute('data-fintab'); lsSet('gp-fin-tab', S.finTab); render(); }; });
+  document.querySelectorAll('[data-fintab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.finTab=b.getAttribute('data-fintab'); S.mmTab='ministry'; S.mmTabTouched=true; if(b.closest('.mmTabs')) mmTabKeep_(S.finTab); lsSet('gp-fin-tab', S.finTab); render(); }; });
   var fs=document.getElementById('finFiles'); if(fs) fs.onchange=function(){ Array.prototype.forEach.call(fs.files||[], finReadFile_); fs.value=''; };
   var pr=document.getElementById('finPasteRead'); if(pr) pr.onclick=function(){
     var txt=(document.getElementById('finPaste')||{}).value||'';

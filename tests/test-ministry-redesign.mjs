@@ -84,7 +84,7 @@ console.log('=== the leader’s page ===');
     personal: document.querySelectorAll('[data-personal]').length,
     overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
   }));
-  ok('no Numbers tab on top (the numbers just show) — a small OKRs button by the title', JSON.stringify(s.tabs) === '["okr"]', JSON.stringify(s.tabs));
+  ok('one row of tabs for the ministry — Numbers, Tasks, OKRs among them — and it opens where it was left (the numbers)', JSON.stringify(s.tabs) === '["numbers","tasks","okr"]' && !!(await page.$('.mmTabs .gtTab.on[data-mmtab="numbers"]')), JSON.stringify(s.tabs));
   ok('the dashboard shows the ministry’s own metrics as tiles', s.tiles === 6, s.tiles);
   /* This week is in the current quarter by definition, so a count logged
      this week must show a real quarter total — "—" here meant the quarter
@@ -153,7 +153,7 @@ console.log('\n=== an ordinary member ===');
   await page.waitForTimeout(400);
   await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(400); await page.click('[data-mmtab="okr"]');   // OKRs: My Ministry's second tab
   await page.waitForTimeout(500);
-  ok('the OKRs card on My Home opens My Ministry on its OKRs, with a way back to the numbers', await page.evaluate(() => S.view === 'ministry' && S.mmTab === 'okr' && !!document.querySelector('[data-mmtab="ministry"]')));
+  ok('the OKRs card on My Home opens My Ministry on its OKRs tab, the Numbers tab a tap away', await page.evaluate(() => S.view === 'ministry' && S.mmTab === 'okr' && !!document.querySelector('.mmTabs .gtTab.on[data-mmtab="okr"]') && !!document.querySelector('.mmTabs [data-mmtab="numbers"]')));
   ok('no console/page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
   await ctx.close();
 }
