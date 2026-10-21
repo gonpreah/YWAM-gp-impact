@@ -2749,6 +2749,11 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   ministry" into a ministry with no list makes its designated list through `gptMinList_` (named after
   it; it used to make one called "Tasks"), `gptEnsureLists_` renames any ministry or department list
   still called "Tasks" to its own name once, and "＋ New list" refuses an empty name.
+  **Sheets and the phone keyboard** (Andrew, Oct 2026: "the keyboard covers the name"): the keyboard
+  watcher in 11-bind-boot.js (`gpKeyboardWatch`, visualViewport) sets `--kb` on `<html>` to what the
+  keyboard covers (innerHeight − vv.height − vv.offsetTop, 0 when it is down); `.gtSheet` and
+  `.schedSheet` sit at `bottom:var(--kb)` and cap their height to fit above it, and a box focused inside
+  a sheet is scrolled into the sheet's view once the keyboard is up. Tests set `--kb` by hand.
   **Day dividers** (Andrew, Oct 2026, "like Google Tasks"): `gptDayGroups_` splits a list's open tasks
   into Requests, Overdue, Today, Tomorrow, each later day ("Thu, 23 Oct"), then No date (`.gtDay`,
   `data-gptday`); a list with no dates at all stays plain. Within a day it is still your order. Dragging

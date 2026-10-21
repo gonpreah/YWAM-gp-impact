@@ -168,6 +168,11 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   ok('the Cafe\'s list, open: it says it is the ministry\'s', !!(await page.$('.gtTab.on[data-gptlist="' + L.id + '"]')) && /the ministry’s list/.test(await page.$eval('.gtListHead', e => e.innerText)));
   /* ＋ → New task: title, then 🕒 and 👤 one tap each */
   await page.click('.gtFab'); await page.waitForTimeout(300);
+  /* the keyboard: the sheet sits above it (the watcher sets --kb to what the keyboard covers) */
+  await page.evaluate(() => document.documentElement.style.setProperty('--kb', '300px')); await page.waitForTimeout(100);
+  const sheetBox = await page.$eval('#gtNew', e => { const r = e.getBoundingClientRect(); return { bottom: Math.round(window.innerHeight - r.bottom), h: r.height }; });
+  ok('a sheet lifts above the keyboard by what it covers, and shrinks to fit', sheetBox.bottom === 300 && sheetBox.h <= 664 - 300 - 24, JSON.stringify(sheetBox));
+  await page.evaluate(() => document.documentElement.style.setProperty('--kb', '0px')); await page.waitForTimeout(100);
   ok('＋ opens New task: a title, details ≡, date/time 🕒, assign 👤, Save', !!(await page.$('#gtNew #gptAddInput')) && !!(await page.$('#gtNewNotesBtn')) && !!(await page.$('#gtNewWhenBtn')) && !!(await page.$('#gtNewWhoBtn')) && !!(await page.$('#gptAddBtn')));
   await page.click('#gtNewWhoBtn'); await page.waitForTimeout(200);
   const firstList = await page.$$eval('[data-ppicklist="new"] [data-ppickit]', b => b.map(x => x.dataset.ppickit));

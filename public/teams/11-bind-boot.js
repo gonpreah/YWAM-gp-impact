@@ -1996,11 +1996,19 @@ gpPullToRefresh(function(){ return gpPullRefresh_(); }, { blocked: function(){ r
     return tag === 'INPUT' && !NO_KB[(el.type || 'text').toLowerCase()];
   }
   function settle(){ window.scrollTo(window.pageXOffset, window.pageYOffset); }
+  /* how much of the page the keyboard covers, as --kb on <html>: the bottom sheets (.gtSheet, .schedSheet)
+     sit that much higher and shrink to fit above it (Andrew, Oct 2026: "the keyboard covers the name"
+     — a fixed sheet at bottom:0 stays put under the keyboard, since the page itself does not shrink) */
+  function kbVar(up){
+    var kb = up ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
+    document.documentElement.style.setProperty('--kb', kb + 'px');
+  }
   var full = vv.height, width = vv.width, settleNext = false;
   function update(){
     if(Math.abs(vv.width - width) > 1){ width = vv.width; full = vv.height; }   // the phone was turned
     if(vv.height > full) full = vv.height;
     var up = bringsKeyboard(document.activeElement) && vv.height < full - KB_MIN;
+    kbVar(up);
     var was = document.body.classList.contains('kbOpen');
     if(up && !was) document.body.classList.add('kbOpen');
     else if(!up && was){
@@ -2012,7 +2020,11 @@ gpPullToRefresh(function(){ return gpPullRefresh_(); }, { blocked: function(){ r
     } else if(settleNext && !up){ settleNext = false; settle(); }
   }
   vv.addEventListener('resize', update);
-  document.addEventListener('focusin', function(){ setTimeout(update, 0); });
+  vv.addEventListener('scroll', function(){ if(document.body.classList.contains('kbOpen')) kbVar(true); });   // the page slid under the keyboard
+  document.addEventListener('focusin', function(e){ setTimeout(update, 0);
+    /* a box inside a sheet: once the keyboard is up, bring it into the sheet's view */
+    var el = e.target; if(el && el.closest && el.closest('.gtSheet, .schedSheet')) setTimeout(function(){ if(document.activeElement === el && document.body.classList.contains('kbOpen')) { try { el.scrollIntoView({ block:'nearest' }); } catch(x){} } }, 350);
+  });
   /* focus moving to the next box is a focusout then a focusin: wait a beat so
      the bar does not flash up between two fields */
   document.addEventListener('focusout', function(){ setTimeout(update, 60); });

@@ -980,7 +980,7 @@ body.libReading nav.bottom { display:none; } body.libReading { overflow:hidden; 
 .schedTools .btn.small, .schedRowBtns .btn.small, #schedRows .btn.small, .schedAdd .btn.small, .schedSheetHead .btn.small { width:auto; margin:0; padding:8px 12px; font-size:14px; }
 .schedActions { position:sticky; bottom:calc(64px + env(safe-area-inset-bottom)); background:var(--bg); padding:6px 0 4px; z-index:3; }
 .schedActions .btn { margin-top:8px; }
-.schedSheet { position:fixed; left:0; right:0; bottom:0; max-height:78vh; overflow-y:auto; background:var(--surface); z-index:45; border-radius:18px 18px 0 0; padding:14px 16px calc(18px + env(safe-area-inset-bottom)); box-shadow:0 -8px 24px var(--shadowSoft); }
+.schedSheet { position:fixed; left:0; right:0; bottom:var(--kb, 0px); max-height:min(78vh, calc(100vh - var(--kb, 0px) - 40px)); overflow-y:auto; background:var(--surface); z-index:45; border-radius:18px 18px 0 0; padding:14px 16px calc(18px + env(safe-area-inset-bottom)); box-shadow:0 -8px 24px var(--shadowSoft); }
 @media (min-width:720px){ .schedSheet { left:50%; right:auto; width:600px; transform:translateX(-50%); } }
 .schedSheetHead { display:flex; justify-content:space-between; align-items:center; gap:10px; position:sticky; top:-14px; background:var(--surface); padding:4px 0 8px; }
 .schedAdd { display:flex; gap:8px; align-items:center; margin:6px 0 4px; }
@@ -2351,7 +2351,7 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .gtEmpty .btn { width:auto; display:inline-block; }
 .gtFab { position:fixed; z-index:40; right:18px; bottom:calc(86px + env(safe-area-inset-bottom)); width:58px; height:58px; border-radius:18px; border:0; background:var(--accent); color:var(--accentInk); font-size:30px; line-height:1; box-shadow:var(--shadow); cursor:pointer; }
 .gtAddRow { display:block; width:100%; text-align:left; background:var(--surface); border:1.5px dashed var(--border2); border-radius:12px; padding:12px; font:inherit; font-weight:600; color:var(--accent); cursor:pointer; margin:0 0 10px; }
-.gtSheet { position:fixed; z-index:61; left:0; right:0; bottom:0; max-width:640px; margin:0 auto; background:var(--surface); border-radius:18px 18px 0 0; box-shadow:var(--shadow); padding:16px 16px calc(16px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:10px; max-height:88vh; overflow-y:auto; }
+.gtSheet { position:fixed; z-index:61; left:0; right:0; bottom:var(--kb, 0px); max-width:640px; margin:0 auto; background:var(--surface); border-radius:18px 18px 0 0; box-shadow:var(--shadow); padding:16px 16px calc(16px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:10px; max-height:min(88vh, calc(100vh - var(--kb, 0px) - 24px)); overflow-y:auto; }
 .gtNewTitle { border:0 !important; background:none !important; font-size:18px !important; padding:6px 2px !important; margin:0; }
 .gtSheet textarea { margin:0; }
 .gtWhen { display:flex; gap:8px; flex-wrap:wrap; flex:1; }
