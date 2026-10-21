@@ -101,6 +101,32 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   await page.fill('#gptNewTitle', 'Reading'); await page.click('#gptNewSave'); await page.waitForTimeout(700);
   const rd = (mem.gpTasks.lists || []).find(l => l.title === 'Reading');
   ok('… made as a personal list, its tab open', rd && rd.scope === 'personal' && rd.ownerId === 'c1' && !!(await page.$('.gtTab.on[data-gptlist="' + rd.id + '"]')));
+  /* ⋮ is a half-circle wheel: the items on an arc along the right edge, the middle one grown; spin it */
+  await page.click('#gtMenuBtn'); await page.waitForTimeout(400);
+  const wheelIts = await page.$$eval('#gtWheel .gtMenuIt', b => b.map(x => ({ id: x.id, top: x.style.top, on: x.classList.contains('on'), sc: x.style.transform })));
+  ok('⋮ opens as a wheel: every item placed on the arc, one grown in the middle', !!(await page.$('#gtWheel')) && wheelIts.length >= 4 && wheelIts.every(x => /px/.test(x.top)) && wheelIts.filter(x => x.on).length === 1 && /scale\(1\.2/.test(wheelIts.find(x => x.on).sc), JSON.stringify(wheelIts));
+  const onBefore = wheelIts.find(x => x.on).id;
+  await page.mouse.move(120, 500); await page.mouse.wheel(0, 200); await page.waitForTimeout(300);
+  const onAfter = await page.$eval('#gtWheel .gtMenuIt.on', e => e.id);
+  ok('… spinning it moves which one is grown', onAfter !== onBefore, onBefore + ' → ' + onAfter);
+  /* Arrange lists: arrows, for those who won't know they can drag a tab */
+  ok('… and it has Arrange lists', !!(await page.$('#gtArrange')));
+  await page.click('#gtArrange'); await page.waitForTimeout(300);
+  const tabsBefore = await page.$$eval('.gtTab[data-gptlist]', b => b.map(x => x.dataset.gptlist));
+  ok('Arrange lists: a sheet with every list and ▲ ▼', (await page.$$eval('#gtArrangeSheet .gtArrRow', r => r.length)) === tabsBefore.length);
+  await page.click('[data-gtarr="' + rd.id + '|-1"]'); await page.waitForTimeout(600);
+  const tabsAfter = await page.$$eval('.gtTab[data-gptlist]', b => b.map(x => x.dataset.gptlist));
+  ok('▲ moves the list one place along the row, saved as your order', tabsAfter.indexOf(rd.id) === tabsBefore.indexOf(rd.id) - 1 && (mem.staff.find(s => s.id === 'c1').taskListOrder || []).join() === tabsAfter.join(), tabsBefore.join() + ' → ' + tabsAfter.join());
+  await page.click('#gtArrangeDone'); await page.waitForTimeout(300);
+  ok('Done closes it, the list still open', !(await page.$('#gtArrangeSheet')) && !!(await page.$('.gtTab.on[data-gptlist="' + rd.id + '"]')));
+  /* slide sideways on the list for the next one */
+  const swipe = async (dx) => page.evaluate((dx) => { const el = document.querySelector('.gtList'); const mk = (x) => new Touch({ identifier: 1, target: el, clientX: x, clientY: 420 });
+    el.dispatchEvent(new TouchEvent('touchstart', { touches: [mk(200)], changedTouches: [mk(200)], bubbles: true }));
+    el.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [mk(200 + dx)], bubbles: true })); }, dx);
+  await swipe(-160); await page.waitForTimeout(400);
+  ok('sliding left on the list opens the next list', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === tabsAfter[tabsAfter.indexOf(rd.id) + 1] && !!(await page.$('.gtList.gtSlideL')));
+  await swipe(160); await page.waitForTimeout(400);
+  ok('… and sliding right comes back', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === rd.id);
   /* sharing the whole list: ⋮ → Share list with someone… → a people search; Kanha gets it as a tab */
   await page.click('#gtMenuBtn'); await page.waitForTimeout(200);
   ok('⋮ on your own list: Share list with someone…', !!(await page.$('#gtShareList')));
@@ -138,6 +164,7 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   await page.fill('#gptAddInput', 'Wipe the tables'); await page.press('#gptAddInput', 'Enter'); await page.waitForTimeout(600);
   const t2 = T().find(t => t.title === 'Wipe the tables');
   ok('Enter saves it too', !!t2 && !t2.due && !(await page.$('#gtNew')));
+  ok('small dividers by day, like Google Tasks: Tomorrow, then No date', (await page.$$eval('.gtDay', d => d.map(x => x.textContent))).join('|') === 'Tomorrow|No date');
   /* subtasks: in the sheet, Enter adds one; they show under the row and tick there */
   await page.click('[data-gptopen="' + t1.id + '"]'); await page.waitForTimeout(300);
   await page.fill('#gptSubNew', 'Call the dairy'); await page.press('#gptSubNew', 'Enter'); await page.waitForTimeout(200);
@@ -153,14 +180,16 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   const drag = async (from, to, dx, dy) => { const a = await (await page.$(from)).boundingBox(), b = await (await page.$(to)).boundingBox();
     await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2); await page.mouse.down(); await page.mouse.move(a.x + a.width / 2 + 2, a.y + a.height / 2 + 2);
     await page.mouse.move(b.x + b.width / 2 + (dx || 0), b.y + b.height / 2 + (dy || 0), { steps: 8 }); await page.mouse.up(); await page.waitForTimeout(700); };
+  await page.evaluate(() => window.scrollBy(0, 200)); await page.waitForTimeout(200);   // the last row up from under the round ＋
   await drag('[data-gptgrip="' + t2.id + '"]', '[data-gptitem="' + t1.id + '"]', 0, -10);
+  ok('… let go under “Tomorrow”, it takes that day', T().find(t => t.id === t2.id).due === day(1) && (await page.$$eval('.gtDay', d => d.map(x => x.textContent))).join('|') === 'Tomorrow');
   ok('dragging a task by its grip puts it where you let go — and the list keeps that order', (await page.$$eval('[data-gptorder] .gtItem', i => i.map(x => x.dataset.gptitem))).join() === t2.id + ',' + t1.id && T().find(t => t.id === t2.id).order < T().find(t => t.id === t1.id).order);
   /* drag a tab: Cafe jobs before My Tasks — your own order of the lists */
   await drag('.gtTab[data-gptlist="' + L.id + '"]', '.gtTab[data-gptlist="' + myList.id + '"]', -20, 0);
   ok('dragging a tab changes their order, kept for you', (await page.$$eval('.gtTab[data-gptlist]', b => b.map(x => x.dataset.gptlist))).slice(0, 2).join() === L.id + ',' + myList.id && (mem.staff.find(s => s.id === 'c1').taskListOrder || [])[0] === L.id);
   /* tap a task: change it in the sheet; ← keeps it */
   await page.click('[data-gptopen="' + t2.id + '"]'); await page.waitForTimeout(300);
-  ok('a task opens in a sheet: title, ≡ details, 🕒 “Set date and time”, 👤 a people search', !!(await page.$('#gtDetail')) && /Set date and time/.test(await page.$eval('#gtDetail', e => e.innerText)) && !!(await page.$('#gtDetail [data-ppickq="det"]')));
+  ok('a task opens in a sheet: title, ≡ details, 🕒 its day (tomorrow, from the drag), 👤 a people search', !!(await page.$('#gtDetail')) && (await page.$eval('#gtDetail [data-gptd="due"]', e => e.value)) === day(1) && !!(await page.$('#gtDetail [data-ppickq="det"]')));
   await page.fill('#gtDetail [data-gptd="due"]', day(2)); await page.waitForTimeout(300);
   await page.fill('#gtDetail [data-ppickq="det"]', 'cor'); await page.waitForTimeout(200);
   await page.click('#gtDetail [data-ppickit="det|c1"]'); await page.waitForTimeout(300);
@@ -203,7 +232,7 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   ok('… "Shared by Cora", and she can add to it', /Shared by Cora/.test(await page.$eval('.gtListHead', e => e.innerText)) && !!(await page.$('.gtFab')));
   await page.click('#gtMenuBtn'); await page.waitForTimeout(200);
   ok('… ⋮ for a list shared with you: no Rename, no Delete, no Share', !(await page.$('#gtRename')) && !(await page.$('#gptListDelete')) && !(await page.$('#gtShareList')));
-  await page.click('#gtMenuScrim'); await page.waitForTimeout(200);
+  await page.click('#gtMenuScrim', { position: { x: 16, y: 60 } }); await page.waitForTimeout(200);
   await page.click('.gtTab[data-gptlist="' + kInboxId(mem) + '"]').catch(() => {}); await page.waitForTimeout(300);
   ok('… with a red number on the Inbox tab, and on My Home\'s row', (await page.$eval('.gtTab.on .gtBadge', e => e.innerText)) === '2' && await page.evaluate(() => S.gpTaskInfo.inbox === 2));
   /* filing: a list of her own, then Order milk dragged onto it — it leaves the Inbox, stays in the Cafe's list */

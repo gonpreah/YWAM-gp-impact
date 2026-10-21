@@ -2738,6 +2738,22 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   (`'cand'`). The old selects stay in the DOM hidden (`data-lf="owner"`, `data-ltowner`, `data-cf`) so
   the forms' field readers still work. Rows: `[data-ppickit="key|id"]`, chips `[data-ppickrm="key|id"]`,
   the box `[data-ppickq="key"]`; until you type, only the `first` group shows (or the first few).
+  **Day dividers** (Andrew, Oct 2026, "like Google Tasks"): `gptDayGroups_` splits a list's open tasks
+  into Requests, Overdue, Today, Tomorrow, each later day ("Thu, 23 Oct"), then No date (`.gtDay`,
+  `data-gptday`); a list with no dates at all stays plain. Within a day it is still your order. Dragging
+  a task under another day's divider gives it that day (`Now due …`; under No date it loses its date) —
+  the order is saved first, then the day, one after the other, so neither save loses the other.
+  **Swipe** sideways on the list (`.gtList` touch, ≥70px, mostly horizontal, not from a grip) for the next
+  or previous tab (`gptGoList_(id, 'L'|'R')`, a short `.gtSlideL/R` animation). The open tab is scrolled
+  into view after every render (the row used to jump back to the start, hiding the highlight).
+  **⋮ is a wheel** (`#gtWheel`, `gtWheelLayout_`, `bindGtWheel_`): the items sit on a half-circle arc along
+  the right edge, the middle one grown, like the macOS dock; spin it with a finger or the mouse wheel
+  (on the wheel or the scrim), a resting mouse grows the item under it. Item ids are unchanged
+  (`#gtRename`, `#gtShareList`, `#gptListDelete`, …) and all items are on screen when it opens. In tests,
+  close it with `page.click('#gtMenuScrim', { position: { x: 16, y: 60 } })` — the middle of the screen
+  is covered by the grown item. The round ＋ is left out while the wheel is open.
+  **Arrange lists…** (`#gtArrange` → `#gtArrangeSheet`, `data-gtarr="id|±1"`): ▲ ▼ per list, saved through
+  `saveGpListOrder` like dragging a tab — for the many who won't know a tab can be held and dragged.
   **The red number** (`.gtBadge`) on the Inbox tab and My Home's GP Tasks row = `gptInboxCount_()` /
   `gpTaskInfo.inbox`: the Inbox's own open tasks plus what you were given and haven't filed elsewhere.
 - **A ministry's GP Tasks is the same page** (Oct 2026, Uriah: "like the personal GP Tasks, just that
