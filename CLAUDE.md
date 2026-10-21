@@ -2742,6 +2742,9 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   a few"): the list's tasks, plus tasks in other lists given to any of its people (`team` in
   `gtListHtml_` when `S.gptScope` is set — the department's list where board cards land, another
   ministry's), each with a chip saying where it is from and no grip (they are ordered in their own list).
+  **An open task says where it came from** (`gptOriginText_`, `.gtOrigin`; Andrew, Oct 2026: "I didn't
+  add that — who put that in?"): "Added by {name} · {date}", then "from a card on the Leadership board"
+  (`leadId`/`cardId`), "from a mentor 1:1" (`ooId`) or "from {ministry}" (`from.label`).
   **No list is ever called "Tasks"** (Andrew, Oct 2026: "why 3 lists named Tasks?"): "Ask another
   ministry" into a ministry with no list makes its designated list through `gptMinList_` (named after
   it; it used to make one called "Tasks"), `gptEnsureLists_` renames any ministry or department list
@@ -2756,8 +2759,10 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   `data-gptday`); a list with no dates at all stays plain. Within a day it is still your order. Dragging
   a task under another day's divider gives it that day (`Now due …`; under No date it loses its date) —
   the order is saved first, then the day, one after the other, so neither save loses the other.
-  **Swipe** sideways anywhere on the tasks page (bound once on the box around `.gtBar`, ≥70px, mostly
-  horizontal; not from the tabs row, a grip, a sheet, the wheel or a field; the lists read at swipe time) for the next
+  **Swipe** sideways anywhere on the tasks page (bound once on the box around `.gtBar`; the direction is
+  locked within the first 10px — sideways keeps the browser from scrolling (`touchmove` non-passive,
+  preventDefault) so it can't take the gesture and cancel the touch, and `touchcancel` still finishes;
+  ≥50px; not from the tabs row, a grip, a sheet, the wheel or a field; the lists read at swipe time) for the next
   or previous tab (`gptGoList_(id, 'L'|'R')`, a short `.gtSlideL/R` animation). The row of tabs keeps its
   scroll across renders (`S.gtTabsScroll`, from its scroll events — it used to jump back to the start,
   hiding the highlight, and then to the front); only a tab off an edge is nudged just into view at that edge.
