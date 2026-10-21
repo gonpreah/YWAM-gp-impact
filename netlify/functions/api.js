@@ -10321,7 +10321,7 @@ function cafePos(username, pin, date, totals) {
    https://calendar.google.com/calendar/ical/…/….ics is accepted, so the server can't be pointed
    anywhere else. Each calendar is read at most every 30 minutes ('gcalCache'), its events
    (and repeats: yearly birthdays, weekly meetings) laid out on Cambodia's clock. */
-const GCAL_MAX = 6, GCAL_TTL_MS = 30 * 60 * 1000, GCAL_COLORS = ['blue', 'green', 'amber', 'pink', 'purple', 'teal'];
+const GCAL_MAX = 6, GCAL_TTL_MS = 30 * 60 * 1000, GCAL_COLORS = ['blue', 'green', 'amber', 'pink', 'purple', 'teal', 'red', 'orange', 'indigo', 'brown', 'grey', 'lime'];   // the palette (teams.css .cal-*), for calendars and task lists alike
 function gcalUrlOk_(u) { return /^https:\/\/calendar\.google\.com\/calendar\/ical\/[^/?#\s]+\/[^/?#\s]+\/[^/?#\s]+\.ics$/.test(String(u || '')); }
 async function getGcal_() { const d = await readJSON('gcal', null); return Array.isArray(d && d.cals) ? d.cals : []; }
 function gcalAdminOut_(c) { return { id: c.id, name: c.name, color: c.color, at: c.at || '', lastOk: c.lastOk || '', lastErr: c.lastErr || '', events: c.events || 0 }; }
@@ -10336,8 +10336,9 @@ async function adminGcal(username, pin, change) {
     if (!gcalUrlOk_(url)) return { ok: false, err: 'bad_url' };
     if (cals.length >= GCAL_MAX) return { ok: false, err: 'too_many' };
     cals.push({ id: 'gc' + Date.now().toString(36), name: str_(x.name, 60) || 'Calendar', url: url, color: GCAL_COLORS[cals.length % GCAL_COLORS.length], at: new Date().toISOString(), by: s.id });
-  } else if (x && x.id && x.name !== undefined) {
-    const c = cals.find(function (y) { return y.id === x.id; }); if (c) c.name = str_(x.name, 60) || c.name;
+  } else if (x && x.id && (x.name !== undefined || x.color !== undefined)) {   // rename, or pick its colour (Oct 2026, Uriah: "option to custom colors")
+    const c = cals.find(function (y) { return y.id === x.id; });
+    if (c) { if (x.name !== undefined) c.name = str_(x.name, 60) || c.name; if (x.color !== undefined && GCAL_COLORS.indexOf(x.color) > -1) c.color = x.color; }
   }
   if (x) { await writeJSON('gcal', { cals: cals }); await writeJSON('gcalCache', {}); }
   return { ok: true, cals: cals.map(gcalAdminOut_) };
@@ -10507,7 +10508,7 @@ function gptSees_(s, L) {
 }
 function gptEdits_(s, L) { return !!L && (L.scope === 'personal' ? L.ownerId === s.id : (gptIn_(s, L) || (gptAll_(s) && (L.campus === s.campus || s.isAdmin)))); }
 function gptLabel_(s) { return gptAll_(s) && deptOf_(s) === LEADERSHIP_DEPT ? LEADERSHIP_DEPT : (s.ministry || deptOf_(s) || ''); }
-function gptListOut_(L, s) { return { id: L.id, campus: L.campus, scope: L.scope, dept: L.dept || '', ministry: L.ministry || '', ownerId: L.ownerId || '', shared: !!L.shared, title: L.title, order: L.order || 0, mine: gptIn_(s, L), canEdit: gptEdits_(s, L) }; }
+function gptListOut_(L, s) { return { id: L.id, campus: L.campus, scope: L.scope, dept: L.dept || '', ministry: L.ministry || '', ownerId: L.ownerId || '', shared: !!L.shared, title: L.title, color: L.color || '', order: L.order || 0, mine: gptIn_(s, L), canEdit: gptEdits_(s, L) }; }
 function gptTaskOut_(t) {
   return { id: t.id, listId: t.listId, title: t.title, notes: t.notes || '', due: t.due || '', time: t.time || '', done: !!t.done, doneAt: t.doneAt || '', doneBy: t.doneBy || '',
     assignees: t.assignees || [], assignedAt: t.assignedAt || {}, status: t.status || 'open', from: t.from || null, cardId: t.cardId || '', leadId: t.leadId || '', ooId: t.ooId || '', subs: t.subs || [], filed: t.filed || {}, created: t.created, by: t.by, order: t.order || 0 };
@@ -10561,7 +10562,7 @@ async function saveGpTaskList(username, pin, list) {
     if (!L) return { ok: false, err: 'not_found' };
     if (!gptEdits_(s, L) || (L.scope === 'personal' && L.ownerId !== s.id)) return { ok: false, err: 'not_authorized' };
     if (x.remove) { d.lists = d.lists.filter(function (l) { return l.id !== L.id; }); d.tasks = d.tasks.filter(function (t) { return t.listId !== L.id; }); }
-    else if (x.title !== undefined) L.title = str_(x.title, 80) || L.title;
+    else { if (x.title !== undefined) L.title = str_(x.title, 80) || L.title; if (x.color !== undefined) L.color = GCAL_COLORS.indexOf(x.color) > -1 ? x.color : ''; }   // its colour on the calendar
   } else {
     if (d.lists.length >= GPT_MAX.lists) return { ok: false, err: 'too_many' };
     const scope = ['ministry', 'dept', 'personal'].indexOf(x.scope) > -1 ? x.scope : 'personal';

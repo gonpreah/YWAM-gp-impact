@@ -2193,6 +2193,34 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 
 /* Calendar (13-calendar.js): the campus's Google Calendar, day by day */
 .cal-blue { --calc:#2D6CB0; } .cal-green { --calc:#1F8A6F; } .cal-amber { --calc:#C9800F; } .cal-pink { --calc:#C2417A; } .cal-purple { --calc:#7B4FA0; } .cal-teal { --calc:#16808A; }
+.cal-red { --calc:#C0392B; } .cal-orange { --calc:#D9671C; } .cal-indigo { --calc:#4A4FB5; } .cal-brown { --calc:#8A5A3C; } .cal-grey { --calc:#6B7280; } .cal-lime { --calc:#6B9A1B; }
+/* the palette to pick from (a calendar's colour in Admin, a list's in ⋮) */
+.calSwatches { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 4px; }
+.calSwatch { width:30px; height:30px; border-radius:50%; border:3px solid transparent; background:var(--calc); cursor:pointer; padding:0; }
+.calSwatch.on { border-color:var(--ink); box-shadow:0 0 0 2px var(--surface) inset; }
+/* GP Calendar/Tasks: the two tabs on top */
+.ctSeg { display:flex; gap:4px; background:var(--surface2); border-radius:14px; padding:4px; margin:6px 0 10px; }
+.ctTab { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:9px 8px; border:0; border-radius:11px; background:none; font:inherit; font-size:15px; font-weight:700; color:var(--muted); cursor:pointer; }
+.ctTab.on { background:var(--surface); color:var(--ink); box-shadow:var(--shadow); }
+/* the month like Google Calendar's: week rows, title bars across the days they span, week numbers */
+.gcMonths { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; padding:2px 0 8px; }
+.gcMonths::-webkit-scrollbar { display:none; }
+.gcMonth { flex:0 0 auto; padding:7px 13px; border-radius:999px; border:1px solid var(--border2); background:var(--surface); font:inherit; font-size:14px; font-weight:600; color:var(--ink); cursor:pointer; }
+.gcMonth.on { background:var(--accentSoft); border-color:var(--accentSoft); color:var(--accent); }
+.gcYear { flex:0 0 auto; align-self:center; font-size:14px; font-weight:800; color:var(--muted); padding:0 4px; }
+.gcGrid { display:block; padding:6px 4px 4px 0; }
+.gcHeadRow { display:grid; grid-template-columns:26px repeat(7,minmax(0,1fr)); }
+.gcWeek { display:grid; grid-template-columns:26px 1fr; border-top:1px solid var(--line); }
+.gcWk { font-size:11px; color:var(--faint); padding:6px 0 0; text-align:center; }
+.gcDays { position:relative; display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); min-height:52px; }
+.gcCell { display:flex; flex-direction:column; align-items:center; padding:4px 0 2px; background:none; border:0; border-left:1px solid var(--line); font:inherit; color:var(--ink); cursor:pointer; min-width:0; }
+.gcCell:first-child { border-left:0; }
+.gcBars { position:absolute; left:0; right:0; top:30px; pointer-events:none; }
+.gcBar { position:absolute; height:18px; line-height:18px; border-radius:4px; background:var(--calc); color:var(--surface); font-size:11px; font-weight:700; padding:0 5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border:0; text-align:left; cursor:pointer; pointer-events:auto; box-sizing:border-box; margin:0; font-family:inherit; }
+.gcBar.timed { background:none; color:var(--ink); font-weight:600; padding-left:14px; }
+.gcBar.timed::before { content:''; position:absolute; left:3px; top:5px; width:8px; height:8px; border-radius:50%; background:var(--calc); }
+.gcBar.done { text-decoration:line-through; opacity:.6; }
+.gcMore { position:absolute; height:16px; font-size:10px; color:var(--muted); padding:0 4px; pointer-events:none; }
 .calDot { display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--calc); margin-right:5px; vertical-align:middle; }
 .calLegend { margin:0 0 8px; }
 .calNav { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 0 8px; font-weight:600; font-size:14px; }
@@ -2329,20 +2357,15 @@ body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
 .gtPicked { display:flex; align-items:center; gap:8px; width:100%; text-align:left; background:var(--surface2); border:0; border-radius:12px; padding:10px 12px; font:inherit; color:var(--ink); cursor:pointer; margin:0 0 6px; }
 .gtPicked span { color:var(--muted); font-size:13px; } .gtPicked .gtPickedChange { margin-left:auto; color:var(--accent); font-weight:700; }
 .calMeta svg, .calCal svg { width:12px; height:12px; vertical-align:-2px; }
-/* the Calendar's month, like Google Calendar's: Sunday to Saturday, a dot per thing */
+/* the month's header line (‹ month ›, Today) */
 .gcNav { display:flex; align-items:center; gap:6px; margin:2px 0 8px; }
 .gcTitle { flex:1; text-align:center; font-weight:800; font-size:17px; }
 .gcNav .linkbtn.inline { width:auto; margin:0; padding:6px 10px; }
-.gcGrid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:2px; background:var(--surface); border-radius:16px; padding:8px 6px 6px; margin:0 0 10px; }
 .gcHead { text-align:center; font-size:11px; font-weight:700; color:var(--muted); padding:2px 0 6px; }
-.gcCell { display:flex; flex-direction:column; align-items:center; gap:3px; min-height:46px; padding:4px 0 3px; background:none; border:0; border-radius:10px; font:inherit; color:var(--ink); cursor:pointer; min-width:0; }
-.gcCell.out { color:var(--faint); }
+.gcCell.out .gcNum { color:var(--faint); }
 .gcCell.sel { background:var(--surface2); }
-.gcNum { width:26px; height:26px; line-height:26px; border-radius:50%; font-size:14px; font-weight:600; text-align:center; }
+.gcNum { width:24px; height:24px; line-height:24px; border-radius:50%; font-size:13px; font-weight:600; text-align:center; }
 .gcCell.today .gcNum { background:var(--accent); color:var(--accentInk); }
-.gcDots { display:flex; gap:3px; min-height:6px; align-items:center; }
-.gcDot { width:6px; height:6px; border-radius:50%; background:var(--calc); }
-.gcMore { font-size:9px; color:var(--muted); line-height:6px; }
 .cal-task { --calc:var(--accent); }
 /* which calendars show: Google Calendar's ticked list, as chips */
 .gcLayers { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; }
