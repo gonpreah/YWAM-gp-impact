@@ -84,6 +84,8 @@ const main = p => p.$eval('#main', e => e.innerText);
   ok('no calendar connected: My Home shows nothing for it', !(await page.$('#sec-cal')));
   await page.click('#menuBtn'); await page.waitForTimeout(250);
   ok('☰ has GP Calendar/Tasks — one entry for both', !!(await page.$('[data-menu-item="caltasks"]')) && !(await page.$('[data-menu-item="calendar"]')) && !(await page.$('[data-menu-item="tasks"]')));
+  const noIcon = await page.$$eval('[data-menu-item]', b => b.filter(x => !/<svg/.test(x.innerHTML) || /undefined/.test(x.textContent)).map(x => x.dataset.menuItem));
+  ok('… with its own icon, a calendar with a tick — every ☰ entry has an icon, none says "undefined"', /<svg/.test(await page.$eval('[data-menu-item="caltasks"]', e => e.innerHTML)) && noIcon.length === 0, noIcon.join());
   await page.click('[data-menu-item="caltasks"]'); await page.waitForTimeout(700);
   ok('… it opens the Calendar, with a Tasks tab on top', await page.evaluate(() => S.view === 'calendar') && !!(await page.$('.ctTab.on[data-cttab="calendar"]')) && !!(await page.$('[data-cttab="tasks"]')));
   await page.click('[data-cttab="tasks"]'); await page.waitForTimeout(600);
