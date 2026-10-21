@@ -360,6 +360,11 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   ok('GP Tasks has a Leadership team list', !!lead && lead.scope === 'dept' && lead.dept === 'Campus Leadership' && !!(await page.$('.gtTab[data-gptlist="' + lead.id + '"]')));
   await page.click('.gtTab[data-gptlist="' + lead.id + '"]'); await page.waitForTimeout(400);
   const myT = await page.$eval('.gtList', e => e.innerText);
+  /* the calendar: his own tasks and his team's, never another ministry's, though he can see every list */
+  await page.click('[data-cttab="calendar"]'); await page.waitForTimeout(900);
+  const uCal = await main(page);
+  ok('Uriah\'s calendar: his board task (the Leadership team\'s list) — not the Cafe\'s "Order milk", another ministry\'s task', /Find 5 fun activities/.test(uCal) && !/Order milk/.test(uCal) && !/Wipe the tables/.test(uCal), uCal.slice(0, 200));
+  await page.click('[data-cttab="tasks"]'); await page.waitForTimeout(600);
   ok('… the board task is there, given to Uriah, with its day', /Find 5 fun activities/.test(myT) && /Uriah/.test(myT) && new RegExp(new Date(day(6) + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric' })).test(myT), myT.slice(0, 300));
   await ctx.close();
 }

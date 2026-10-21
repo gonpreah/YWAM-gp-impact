@@ -60,9 +60,18 @@ function calHomeLoad_(){
     function(){ S.calHomeLoading=false; S.calHome={ ok:false }; });
 }
 /* GP Tasks with a day on them, as things on the calendar, in their list's colour */
+/* which tasks are on your calendar (Andrew, Oct 2026: "not other people's or every ministry's — your own,
+   and the ministry you're in; the campus calendar is what everyone shares"): a task given to you, one in
+   a list of yours (your own, or shared with you), or one in a list of the ministry or department you're
+   in — never another ministry's, even for Campus Leadership and admins who can see every list */
+function calTaskMine_(x){
+  if(x.assignees.indexOf(S.me.id)>-1) return true;
+  var L=gptListById_(x.listId); if(!L || L.onlyAssigned) return false;
+  return L.scope==='personal' ? (L.ownerId===S.me.id || (L.members||[]).indexOf(S.me.id)>-1) : !!L.mine;
+}
 function calTaskEvents_(from, to){
   var G=S.gpt; if(!G || S.student) return [];
-  return G.tasks.filter(function(x){ return x.due && !x.done && x.status!=='declined' && x.due>=from && x.due<=to; }).map(function(x){
+  return G.tasks.filter(function(x){ return x.due && !x.done && x.status!=='declined' && x.due>=from && x.due<=to && calTaskMine_(x); }).map(function(x){
     var L=gptListById_(x.listId);
     return { task:x, cal:'task', calName:L ? gptChipName_(L) : t('GP Tasks'), color:(L && L.color) || 'task', title:x.title, where:'', notes:x.notes||'',
       date:x.due, time:x.time||'', endTime:'', allDay:!x.time, endDate:'' };

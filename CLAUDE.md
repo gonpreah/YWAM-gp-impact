@@ -2890,7 +2890,10 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   after the calendar ("Siem Reap events · Teams") unless it is a plain Event.
 - **GP Calendar/Tasks is one place**: ☰ has one entry (`caltasks`) that opens the calendar; both
   pages carry the Calendar | Tasks toggle on top (`ctSegHtml_`, `bindCtSeg_`, the Inbox's red number
-  on the Tasks tab). A ministry's scoped tasks page keeps its own title instead. **GP Tasks with a day are on it** (`calTaskEvents_` from `S.gpt`, colour `cal-task`): a tick
+  on the Tasks tab). A ministry's scoped tasks page keeps its own title instead. **GP Tasks with a day are on it** (`calTaskEvents_` from `S.gpt`, colour `cal-task`) — only yours
+  (`calTaskMine_`: given to you, in a list of yours or shared with you, or in a list of the ministry or
+  department you're in; never another ministry's, even for leadership and admins who can see every list —
+  Andrew, Oct 2026: "what shows for everyone is the campus calendar"): a tick
   circle marks them done, tapping opens them in GP Tasks (← Calendar). The My Home "Coming up" card
   shows them too when the tasks are already loaded. The iCal feed is one way, re-read every 30 min
   (`GCAL_TTL_MS`): what is added in Google Calendar shows within the half hour; the app never writes.
