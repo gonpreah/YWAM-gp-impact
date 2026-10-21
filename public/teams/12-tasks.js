@@ -34,6 +34,21 @@ var GPT_SVG=(function(){
   };
 })();
 function gptIc_(k, cls){ return '<span class="gtIc'+(cls?' '+cls:'')+'" aria-hidden="true">'+GPT_SVG[k]+'</span>'; }
+/* GP Calendar/Tasks is one place (Uriah, Oct 2026): the calendar opens first, with a Tasks tab on top */
+var CAL_PALETTE=['blue','green','amber','pink','purple','teal','red','orange','indigo','brown','grey','lime'];
+function ctSegHtml_(on){
+  return '<div class="ctSeg" role="tablist"><button class="ctTab'+(on==='calendar'?' on':'')+'" data-cttab="calendar" role="tab">'+gptIc_('calendar')+' '+esc(t('Calendar'))+'</button>'+
+    '<button class="ctTab'+(on==='tasks'?' on':'')+'" data-cttab="tasks" role="tab">'+gptIc_('tasks')+' '+esc(t('Tasks'))+gptBadge_(S.gpTaskInfo ? S.gpTaskInfo.inbox : 0)+'</button></div>';
+}
+function bindCtSeg_(){
+  document.querySelectorAll('[data-cttab]').forEach(function(b){ b.onclick=function(){
+    var to=b.getAttribute('data-cttab'); if(to===S.view) return; gpTap();
+    if(to==='tasks'){ S.gptPageScope=null; S.gptFrom=S.gptFrom==='ministry' ? 'week' : S.gptFrom; S.view='tasks'; }
+    else { S.view='calendar'; if(!S.cal) S.calMonth=null; }
+    render(); window.scrollTo(0,0);
+  }; });
+}
+function calSwatchesHtml_(attr, cur){ return '<div class="calSwatches">'+CAL_PALETTE.map(function(c){ return '<button class="calSwatch cal-'+c+(cur===c?' on':'')+'" '+attr+'="'+esc(c)+'" aria-label="'+esc(c)+'"></button>'; }).join('')+'</div>'; }
 function gptLoad_(){
   if(S.gptLoading) return; S.gptLoading=true; S.gptErr='';
   run('getGpTasks',[S.auth.user,S.auth.pin],function(d){ S.gptLoading=false; if(d && d.ok) gptTake_(d); else S.gptErr=(d && d.err) || 'error'; render(); },
@@ -111,13 +126,13 @@ function gptSortIn_(L){ return function(a,b){ return gptOrderIn_(a,L)-gptOrderIn
    grip to drag it up or down or onto another list's tab; a round ＋ that opens "New task" with
    details, date/time and assign as one tap each; a task opens in a sheet to change it;
    "＋ New list" opens a small sheet for the name — lists are added as you go. ---- */
-S.gtNew=null; S.gtMenu=false;
+S.gtNew=null; S.gtMenu=false; S.gtColorFor=null;
 function gptPageHtml_(scope, embedded){
   var h='';
   S.gptScope=scope||null;
   /* the ministry's page (Uriah, Oct 2026: "like the personal GP Tasks, just that ministry's tasks") is the same page, with its list */
-  if(!embedded) h+='<button class="linkbtn" id="gptBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(S.gptFrom==='ministry' ? t('My Ministry') : S.gptFrom==='calendar' ? t('Calendar') : t('My Home'))+'</button>'+
-    '<h2 class="gtTitle">'+gptIc_('tasks')+' '+esc(t('GP Tasks'))+(scope ? ' · '+esc(t(scope.min||scope.dept)) : '')+'</h2>';
+  if(!embedded) h+='<button class="linkbtn" id="gptBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(S.gptFrom==='ministry' ? t('My Ministry') : t('My Home'))+'</button>'+
+    (scope ? '<h2 class="gtTitle">'+gptIc_('tasks')+' '+esc(t('GP Tasks'))+' · '+esc(t(scope.min||scope.dept))+'</h2>' : ctSegHtml_('tasks'));
   if(!S.gpt){ if(!S.gptLoading && !S.gptErr) setTimeout(gptLoad_, 0); return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.gptErr ? t('Couldn’t load the tasks — pull down to try again.') : t('Loading…'))+'</p></div>'; }
   var G=S.gpt, lists=gptLists_(scope);
   var ids=lists.map(function(L){ return L.id; });
@@ -128,6 +143,8 @@ function gptPageHtml_(scope, embedded){
     (scope ? '' : '<button class="gtTab gtNewList" id="gptNewListBtn">＋ '+esc(t('New list'))+'</button>')+'</div>'+
     '<button class="gtMenuBtn" id="gtMenuBtn" aria-label="'+esc(t('List options'))+'">⋮</button></div>';
   if(S.gtMenu) h+=gtMenuHtml_(scope);
+  if(S.gtColorFor) h+='<div class="scrim" id="gtColorScrim"></div><div class="gtSheet" id="gtColorSheet" role="dialog"><div class="gtSheetHead"><b>'+esc(t('Colour on the calendar'))+'</b></div>'+
+    '<p class="hint" style="margin:0">'+esc(t('This list’s tasks show in this colour.'))+'</p>'+calSwatchesHtml_('data-gtcolor', (gptListById_(S.gtColorFor)||{}).color||'')+'</div>';
   if(S.gptNewList) h+=gptNewListHtml_();
   if(S.gptAsk) h+=gptAskHtml_();
   if(S.gptFilterOpen && G.canAll && !scope) h+=gptFilterHtml_();
@@ -151,6 +168,7 @@ function gtMenuHtml_(scope){
   var main=gptMain_(), isMain=!!(L && main && L.id===main.id);
   return '<div class="scrim" id="gtMenuScrim"></div><div class="gtMenu" role="menu">'+
     (L && L.canEdit && !isMain ? it('gtRename', '✏️ '+esc(t('Rename list'))) : '')+
+    (L && L.canEdit ? it('gtColor', '<span class="calDot cal-'+esc(L.color||'task')+'"></span>'+esc(t('Colour on the calendar'))) : '')+
     (!scope ? it('gptAskBtn', '🤝 '+esc(t('Ask another ministry for help'))) : '')+
     (G.canAll && !scope ? it('gptFilterBtn', '⚙️ '+esc(t('Which lists to show'))) : '')+
     (L && L.canEdit && !isMain ? it('gptListDelete', '🗑 '+esc(t('Delete the list'))) : '')+'</div>';
@@ -341,10 +359,10 @@ function gptDrag_(handles, o){
 function bindGpTasks_(){
   var mt=document.getElementById('mtToggle');
   if(mt) mt.onclick=function(){ gpTap(); gptOpenMinistry_(mt.getAttribute('data-mtdept'), mt.getAttribute('data-mtmin')); };
-  if(!document.querySelector('.gtBar, #gptBack, [data-gptmakefor]')) return;
+  if(!document.querySelector('.gtBar, #gptBack, [data-gptmakefor], [data-cttab]')){ return; }
   var on=function(id, fn){ var el=document.getElementById(id); if(el) el.onclick=fn; return el; };
   var scope=S.gptScope;
-  on('gptBack', function(){ gpTap(); S.view=S.gptFrom==='ministry' ? 'ministry' : S.gptFrom==='calendar' ? 'calendar' : 'week'; render(); window.scrollTo(0,0); });
+  on('gptBack', function(){ gpTap(); S.view=S.gptFrom==='ministry' ? 'ministry' : 'week'; render(); window.scrollTo(0,0); });
   document.querySelectorAll('[data-gptlist]').forEach(function(b){ b.onclick=function(){ if(Date.now()-S.gtDragEnd<400) return; gpTap(); S.gptList=b.getAttribute('data-gptlist'); S.gptOpen=null; S.gptDraft=null; S.gtMenu=false; S.gptDoneOpen=false; render(); }; });
   /* ⋮ */
   on('gtMenuBtn', function(){ gpTap(); S.gtMenu=!S.gtMenu; render(); });
@@ -352,6 +370,10 @@ function bindGpTasks_(){
   var L0=S.gptList ? gptListById_(S.gptList) : null;
   var saveList=function(payload, msg, after){ run('saveGpTaskList',[S.auth.user,S.auth.pin,payload],function(d){ if(d && d.ok){ gptTake_(d); if(after) after(d); if(msg) showMsg(msg); } else showMsg(t('Could not save')); render(); }); };
   on('gtRename', function(){ S.gtMenu=false; var v=window.prompt(t('Rename list'), L0.title); if(v && v.trim()) saveList({ id:L0.id, title:v.trim() }, t('Saved')); else render(); });
+  on('gtColor', function(){ S.gtMenu=false; S.gtColorFor=L0.id; render(); });
+  on('gtColorScrim', function(){ S.gtColorFor=null; render(); });
+  document.querySelectorAll('[data-gtcolor]').forEach(function(b){ b.onclick=function(){ gpTap(); var id=S.gtColorFor; S.gtColorFor=null; saveList({ id:id, color:b.getAttribute('data-gtcolor') }, t('Saved')); }; });
+  bindCtSeg_();
   on('gptListDelete', function(){ S.gtMenu=false; if(!window.confirm(gpT('Delete “{title}” and all its tasks?',{title:L0.title}))){ render(); return; }
     saveList({ id:L0.id, remove:true }, t('List deleted'), function(){ S.gptList=null; }); });
   on('gptAskBtn', function(){ gpTap(); S.gtMenu=false; S.gptAsk={ min:'', title:'', due:'', find:'' }; render(); });

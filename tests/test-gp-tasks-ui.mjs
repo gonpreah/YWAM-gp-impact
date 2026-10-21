@@ -86,12 +86,13 @@ const call = (fn, args) => api.default({ method: 'POST', json: async () => ({ fn
   const { ctx, page } = await open('cora');
   ok('My Home\'s card has a GP Tasks row, and Weekly Goals a GP Tasks button', !!(await page.$('#goGpTasks')) && !!(await page.$('#goGpTasksGoals')));
   await page.click('#menuBtn'); await page.waitForTimeout(250);
-  ok('… and ☰ has GP Tasks near the top', (await page.$$eval('[data-menu-item]', b => b.map(x => x.dataset.menuItem))).indexOf('tasks') === 1);
-  await page.click('[data-menu-item="tasks"]'); await page.waitForTimeout(800);
+  ok('… and ☰ has GP Calendar/Tasks near the top', (await page.$$eval('[data-menu-item]', b => b.map(x => x.dataset.menuItem))).indexOf('caltasks') === 1);
+  await page.click('[data-menu-item="caltasks"]'); await page.waitForTimeout(800);
+  await page.click('[data-cttab="tasks"]'); await page.waitForTimeout(800);
   ok('it opens GP Tasks like Google Tasks: the Inbox open, + New list, ⋮, and the round ＋ — no For me', await page.evaluate(() => S.view === 'tasks') && /Inbox/.test(await page.$eval('.gtTab.on', e => e.innerText)) && !(await page.$('[data-gptlist="mine"]')) && !!(await page.$('#gptNewListBtn')) && !!(await page.$('#gtMenuBtn')) && !!(await page.$('.gtFab')));
   const myList = (mem.gpTasks.lists || []).find(l => l.scope === 'personal' && l.ownerId === 'c1');
   ok('the Inbox is made for you on the server', !!myList && myList.title === 'Inbox');
-  ok('the icons are the app\'s line icons, not the ✅ emoji', !!(await page.$('.gtTitle svg')) && !/✅/.test(await main(page)));
+  ok('the icons are the app\'s line icons, not the ✅ emoji', !!(await page.$('.ctTab.on svg')) && !/✅/.test(await main(page)));
   ok('no gap: the page reaches the bottom bar', await page.evaluate(() => document.body.getBoundingClientRect().height >= window.innerHeight - 1));
   ok('the tabs say which is which: a tray on the Inbox, people on the Cafe\'s', !!(await page.$('.gtTab[data-gptlist="' + myList.id + '"] .gtKind')) && !!(await page.$('.gtTab[data-gptlist="' + cafeL.id + '"] .gtKind')));
   await page.click('#gptNewListBtn'); await page.waitForTimeout(200);
@@ -155,8 +156,10 @@ const call = (fn, args) => api.default({ method: 'POST', json: async () => ({ fn
   ok('the circle ticks it off: done, under Completed (1)', T().find(t => t.id === t2.id).done === true && /Completed \(1\)/.test(await main(page)));
   /* ⋮ */
   await page.click('#gtMenuBtn'); await page.waitForTimeout(200);
-  ok('⋮ holds the rest: rename, ask another ministry, delete the list', !!(await page.$('#gtRename')) && !!(await page.$('#gptAskBtn')) && !!(await page.$('#gptListDelete')));
-  await page.click('#gtMenuScrim'); await page.waitForTimeout(200);
+  ok('⋮ holds the rest: rename, colour, ask another ministry, delete the list', !!(await page.$('#gtRename')) && !!(await page.$('#gtColor')) && !!(await page.$('#gptAskBtn')) && !!(await page.$('#gptListDelete')));
+  await page.click('#gtColor'); await page.waitForTimeout(200);
+  await page.click('[data-gtcolor="pink"]'); await page.waitForTimeout(600);
+  ok('the list\'s colour on the calendar, picked from the palette', (mem.gpTasks.lists || []).find(l => l.id === L.id).color === 'pink');
   await page.click('.gtTab[data-gptlist="' + myList.id + '"]'); await page.waitForTimeout(300);
   await page.click('.gtFab'); await page.waitForTimeout(200);
   ok('＋ on the Inbox: straight into it, no list to choose', !(await page.$('#gtNewList')) && !!(await page.$('#gptAddInput')));
@@ -198,14 +201,14 @@ const call = (fn, args) => api.default({ method: 'POST', json: async () => ({ fn
   ok('… and This week shows it, with where it is from', /Order milk/.test(await page.$eval('.gtList', e => e.innerText)) && /Cafe jobs/.test(await page.$eval('.gtList', e => e.innerText)));
   /* the Calendar: a task with a day is on it, without any Google Calendar */
   await page.click('#menuBtn'); await page.waitForTimeout(250);
-  await page.click('[data-menu-item="calendar"]'); await page.waitForTimeout(900);
+  await page.click('[data-menu-item="caltasks"]'); await page.waitForTimeout(900);
   const cal = await main(page);
-  ok('the Calendar is a month like Google Calendar\'s, with the task on it', !!(await page.$('.gcGrid')) && !!(await page.$('.gcCell.today')) && /Order milk/.test(cal) && /No calendar is connected yet/.test(cal) && !!(await page.$('.gcDot.cal-task')) && !!(await page.$('.gcLayer.on[data-callayer="task"]')), cal.slice(0, 300));
+  ok('the Calendar is a month like Google Calendar\'s, with the task on it as a bar in its list\'s colour', !!(await page.$('.gcGrid')) && !!(await page.$('.gcCell.today')) && /Order milk/.test(cal) && /No calendar is connected yet/.test(cal) && !!(await page.$('.gcBar.cal-pink[title="Order milk"]')) && !!(await page.$('.gcLayer.on[data-callayer="task"]')), cal.slice(0, 300));
   await page.click('.gcLayer[data-callayer="task"]'); await page.waitForTimeout(300);
   ok('GP Tasks can be ticked off the calendar', !/Order milk/.test(await main(page)));
   await page.click('.gcLayer[data-callayer="task"]'); await page.waitForTimeout(300);
   await page.click('[data-caltaskopen]'); await page.waitForTimeout(400);
-  ok('tapping it opens the task in GP Tasks, with ← Calendar', await page.evaluate(() => S.view === 'tasks' && !!S.gptOpen) && /Calendar/.test(await page.$eval('#gptBack', e => e.innerText)));
+  ok('tapping it opens the task in GP Tasks — the Calendar a tab away', await page.evaluate(() => S.view === 'tasks' && !!S.gptOpen) && !!(await page.$('[data-cttab="calendar"]')));
   await ctx.close();
 }
 /* ---------- Hana: asks the Cafe for help; the Cafe takes it on ---------- */

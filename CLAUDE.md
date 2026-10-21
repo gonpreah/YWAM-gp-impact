@@ -2803,10 +2803,20 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - **teams/13-calendar.js**: ☰ → **📅 Calendar** (`S.view='calendar'`, a month at a time, day by day,
   colour per calendar, tap for details, Earlier / Later / Back to today) and **📅 Coming up** on My Home
   (the next seven days, five at most, `calHomeCardHtml_`) — nothing at all until a calendar is connected.
-- tests/test-gcal.mjs, tests/test-gcal-ui.mjs.- **Month view like Google Calendar (Oct 2026):** `S.calMonth` ('YYYY-MM'), a 6-week grid from the
-  Sunday on or before the 1st (`calGridStart_`, fetched as 42 days), a dot per thing per day (3, then
-  "+n"), today ringed, the tapped day (`S.calSel`) highlighted and the list under the grid runs from that
-  day on. **GP Tasks with a day are on it** (`calTaskEvents_` from `S.gpt`, colour `cal-task`): a tick
+- tests/test-gcal.mjs, tests/test-gcal-ui.mjs.- **Month view like Google Calendar (Oct 2026, redone later that month to match Google's own):**
+  `S.calMonth` ('YYYY-MM'), six week rows from the Monday on or before the 1st (`calGridStart_`,
+  fetched as 42 days), the ISO week number on the left (`calIsoWeek_`), **each thing a title bar
+  across the days it spans** (`calGridHtml_`: segments per week, greedy lanes, `CAL_LANES`=4 then
+  "+n"; timed things a dot + text, `.gcBar.timed`), tapping a bar selects its day and opens it under
+  the month (`e.key`, `S.calOpen`); month chips along the top (`calMonthsHtml_`, `data-calmonth`)
+  and ‹ › / Today. Today ringed, the tapped day (`S.calSel`) highlighted, the list under the grid
+  runs from that day on. **Colours**: the palette `CAL_PALETTE` / `GCAL_COLORS` (12, `.cal-*`
+  tokens); an admin picks each calendar's in Admin → Google Calendar (`adminGcal {id,color}`,
+  `calSwatchesHtml_`); a task list's colour is picked in its ⋮ (`saveGpTaskList {color}`), and its
+  tasks show in it (`calTaskEvents_`), else the accent.
+- **GP Calendar/Tasks is one place**: ☰ has one entry (`caltasks`) that opens the calendar; both
+  pages carry the Calendar | Tasks toggle on top (`ctSegHtml_`, `bindCtSeg_`, the Inbox's red number
+  on the Tasks tab). A ministry's scoped tasks page keeps its own title instead. **GP Tasks with a day are on it** (`calTaskEvents_` from `S.gpt`, colour `cal-task`): a tick
   circle marks them done, tapping opens them in GP Tasks (← Calendar). The My Home "Coming up" card
   shows them too when the tasks are already loaded. The iCal feed is one way, re-read every 30 min
   (`GCAL_TTL_MS`): what is added in Google Calendar shows within the half hour; the app never writes.
