@@ -2738,17 +2738,31 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   (`'cand'`). The old selects stay in the DOM hidden (`data-lf="owner"`, `data-ltowner`, `data-cf`) so
   the forms' field readers still work. Rows: `[data-ppickit="key|id"]`, chips `[data-ppickrm="key|id"]`,
   the box `[data-ppickq="key"]`; until you type, only the `first` group shows (or the first few).
+  **A ministry's own tasks page shows everything its people are on** (Andrew, Oct 2026: "it only shows
+  a few"): the list's tasks, plus tasks in other lists given to any of its people (`team` in
+  `gtListHtml_` when `S.gptScope` is set — the department's list where board cards land, another
+  ministry's), each with a chip saying where it is from and no grip (they are ordered in their own list).
+  **No list is ever called "Tasks"** (Andrew, Oct 2026: "why 3 lists named Tasks?"): "Ask another
+  ministry" into a ministry with no list makes its designated list through `gptMinList_` (named after
+  it; it used to make one called "Tasks"), `gptEnsureLists_` renames any ministry or department list
+  still called "Tasks" to its own name once, and "＋ New list" refuses an empty name.
   **Day dividers** (Andrew, Oct 2026, "like Google Tasks"): `gptDayGroups_` splits a list's open tasks
   into Requests, Overdue, Today, Tomorrow, each later day ("Thu, 23 Oct"), then No date (`.gtDay`,
   `data-gptday`); a list with no dates at all stays plain. Within a day it is still your order. Dragging
   a task under another day's divider gives it that day (`Now due …`; under No date it loses its date) —
   the order is saved first, then the day, one after the other, so neither save loses the other.
-  **Swipe** sideways on the list (`.gtList` touch, ≥70px, mostly horizontal, not from a grip) for the next
-  or previous tab (`gptGoList_(id, 'L'|'R')`, a short `.gtSlideL/R` animation). The open tab is scrolled
-  into view after every render (the row used to jump back to the start, hiding the highlight).
+  **Swipe** sideways anywhere on the tasks page (bound once on the box around `.gtBar`, ≥70px, mostly
+  horizontal; not from the tabs row, a grip, a sheet, the wheel or a field; the lists read at swipe time) for the next
+  or previous tab (`gptGoList_(id, 'L'|'R')`, a short `.gtSlideL/R` animation). The row of tabs keeps its
+  scroll across renders (`S.gtTabsScroll`, from its scroll events — it used to jump back to the start,
+  hiding the highlight, and then to the front); only a tab off an edge is nudged just into view at that edge.
   **⋮ is a wheel** (`#gtWheel`, `gtWheelLayout_`, `bindGtWheel_`): the items sit on a half-circle arc along
   the right edge, the middle one grown, like the macOS dock; spin it with a finger or the mouse wheel
-  (on the wheel or the scrim), a resting mouse grows the item under it. Item ids are unchanged
+  (on the wheel or the scrim), a resting mouse grows the item under it. The items are placed by
+  transform alone (`translate3d … scale`, never top/right — a layout per frame lagged); while a finger
+  or the wheel moves it (`gtWheelSpin_`, one layout per animation frame, `.spinning`) there is no eased
+  transition and the backdrop blur is paused (six moving blurs stuttered on phones); the snap at the
+  end (`.snap`) eases and brings the glass back. Item ids are unchanged
   (`#gtRename`, `#gtShareList`, `#gptListDelete`, …) and all items are on screen when it opens. In tests,
   close it with `page.click('#gtMenuScrim', { position: { x: 16, y: 60 } })` — the middle of the screen
   is covered by the grown item. The round ＋ is left out while the wheel is open.
@@ -2877,12 +2891,18 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   Google Calendar (`adminGcal { kind:{id?, name, color, keywords} }`, `{ kindRemove }`; the first kind
   can't be removed, max 12; a kind with no colour takes the calendar's, so Events in a second
   calendar keep that calendar's colour). `getCalendar` returns each event's `kind` and its resolved
-  `color`, plus `kinds` for the chips: a second row under the calendar chips (`calKindsHtml_`,
-  `[data-calkind]`, hidden ones in `gp-cal-hidekind` on the phone). An event's row names its kind
+  `color`, plus `kinds` for the filter. The filter lives inside each calendar's chip (Andrew: "not a
+  row of checks — within the campus calendar"): the chip is split, its ▾ (`[data-calkindsfor]`,
+  `S.calKindsFor`, showing "4/5" when some are off) opens `calKindsHtml_` under the row — one chip
+  per kind (`[data-calkind="calId|kindId"]`), "All kinds"; hidden ones per calendar in
+  `gp-cal-hidekind` (`{calId: [kindIds]}`) on the phone. An event's row names its kind
   after the calendar ("Siem Reap events · Teams") unless it is a plain Event.
 - **GP Calendar/Tasks is one place**: ☰ has one entry (`caltasks`) that opens the calendar; both
   pages carry the Calendar | Tasks toggle on top (`ctSegHtml_`, `bindCtSeg_`, the Inbox's red number
-  on the Tasks tab). A ministry's scoped tasks page keeps its own title instead. **GP Tasks with a day are on it** (`calTaskEvents_` from `S.gpt`, colour `cal-task`): a tick
+  on the Tasks tab). A ministry's scoped tasks page keeps its own title instead. **GP Tasks with a day are on it** (`calTaskEvents_` from `S.gpt`, colour `cal-task`) — only yours
+  (`calTaskMine_`: given to you, in a list of yours or shared with you, or in a list of the ministry or
+  department you're in; never another ministry's, even for leadership and admins who can see every list —
+  Andrew, Oct 2026: "what shows for everyone is the campus calendar"): a tick
   circle marks them done, tapping opens them in GP Tasks (← Calendar). The My Home "Coming up" card
   shows them too when the tasks are already loaded. The iCal feed is one way, re-read every 30 min
   (`GCAL_TTL_MS`): what is added in Google Calendar shows within the half hour; the app never writes.

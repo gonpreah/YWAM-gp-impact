@@ -10,7 +10,7 @@
    never reaches a page. Google publishes that address as a live feed: the server reads it again at
    most every 30 minutes, so what is added in Google Calendar shows here within the half hour. It
    is one way — nothing here writes to Google. */
-S.cal=null; S.calLoading=false; S.calMonth=null; S.calSel=null; S.calOpen=null; S.calHome=null; S.calHomeLoading=false; S.gcalAdmin=null;
+S.cal=null; S.calLoading=false; S.calMonth=null; S.calSel=null; S.calOpen=null; S.calKindsFor=null; S.calHome=null; S.calHomeLoading=false; S.gcalAdmin=null;
 var CAL_LOC=function(){ return LANG==='km' ? 'km-KH' : 'en-GB'; };
 function calYmd_(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
 function calAddDays_(iso, n){ var d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return calYmd_(d); }
@@ -22,22 +22,31 @@ function calIsoWeek_(iso){ var d=new Date(iso+'T00:00:00'); d.setDate(d.getDate(
 /* which to show — each connected calendar and GP Tasks, ticked on or off like Google Calendar's list on
    the left (Uriah: "different views of different things"); what's off is remembered on this phone */
 function calHidden_(){ try { var v=JSON.parse(lsGet('gp-cal-hide')||'[]'); return Array.isArray(v) ? v : []; } catch(e){ return []; } }
-function calHiddenKinds_(){ try { var v=JSON.parse(lsGet('gp-cal-hidekind')||'[]'); return Array.isArray(v) ? v : []; } catch(e){ return []; } }
-function calShown_(e){ return calHidden_().indexOf(e.cal)===-1 && (!e.kind || calHiddenKinds_().indexOf(e.kind)===-1); }
+/* the kinds hidden per calendar — { calId: [kindIds] } on this phone */
+function calHiddenKinds_(){ try { var v=JSON.parse(lsGet('gp-cal-hidekind')||'{}'); return v && typeof v==='object' && !Array.isArray(v) ? v : {}; } catch(e){ return {}; } }
+function calHiddenKindsFor_(calId){ var v=calHiddenKinds_()[calId]; return Array.isArray(v) ? v : []; }
+function calShown_(e){ return calHidden_().indexOf(e.cal)===-1 && (!e.kind || calHiddenKindsFor_(e.cal).indexOf(e.kind)===-1); }
 function calKindName_(id){ var k=((S.cal && S.cal.kinds)||[]).filter(function(x){ return x.id===id; })[0]; return k ? t(k.name) : ''; }
 /* the kinds of events (events, birthdays, schools, teams, guests…), each in its colour, to tick on or off */
-function calKindsHtml_(C){
-  var kinds=(C && C.kinds)||[]; if(!C || !C.connected || kinds.length<2) return '';
-  var hid=calHiddenKinds_(), c0=(C.cals||[])[0];
-  return '<div class="gcLayers gcKinds">'+kinds.map(function(k){ var on=hid.indexOf(k.id)===-1;
-    return '<button class="gcLayer cal-'+esc(k.color || (c0 && c0.color) || 'grey')+(on?' on':'')+'" data-calkind="'+esc(k.id)+'" aria-pressed="'+(on?'true':'false')+'"><span class="gcBox">'+(on?'✓':'')+'</span>'+esc(t(k.name))+'</button>'; }).join('')+'</div>';
+/* a filter inside a calendar's chip (Andrew, Oct 2026: "not a row of checks for the categories — just
+   within the campus calendar, a filter"): ▾ on the chip opens its kinds, each to tick on or off */
+function calKindsHtml_(C, calId){
+  var kinds=(C && C.kinds)||[], c=(C.cals||[]).filter(function(x){ return x.id===calId; })[0]; if(!c || kinds.length<2) return '';
+  var hid=calHiddenKindsFor_(calId);
+  return '<div class="gcKindPick" data-calkindpick="'+esc(calId)+'"><div class="gcKindHead"><b>'+esc(gpT('What to show from {name}',{name:c.name}))+'</b>'+
+    (hid.length ? '<button class="linkbtn inline" data-calkindall="'+esc(calId)+'">'+esc(t('All kinds'))+'</button>' : '')+'</div><div class="gcLayers">'+
+    kinds.map(function(k){ var on=hid.indexOf(k.id)===-1;
+      return '<button class="gcLayer cal-'+esc(k.color || c.color || 'grey')+(on?' on':'')+'" data-calkind="'+esc(calId)+'|'+esc(k.id)+'" aria-pressed="'+(on?'true':'false')+'"><span class="gcBox">'+(on?'✓':'')+'</span>'+esc(t(k.name))+'</button>'; }).join('')+'</div></div>';
 }
 function calLayersHtml_(C, ev){
   var hid=calHidden_(), rows=(C.cals||[]).map(function(c){ return { id:c.id, name:c.name, color:c.color }; });
   if(!S.student) rows.push({ id:'task', name:t('GP Tasks'), color:'task' });
   if(rows.length<2 && !ev.some(function(e){ return e.task; })) return '';
-  return '<div class="gcLayers">'+rows.map(function(r){ var on=hid.indexOf(r.id)===-1;
-    return '<button class="gcLayer cal-'+esc(r.color)+(on?' on':'')+'" data-callayer="'+esc(r.id)+'" aria-pressed="'+(on?'true':'false')+'"><span class="gcBox">'+(on?'✓':'')+'</span>'+esc(r.name)+'</button>'; }).join('')+'</div>';
+  var kinds=(C.kinds||[]), nk=kinds.length;
+  return '<div class="gcLayers">'+rows.map(function(r){ var on=hid.indexOf(r.id)===-1, isCal=r.id!=='task' && nk>1, hk=isCal ? calHiddenKindsFor_(r.id).length : 0;
+    return '<span class="gcLayerSplit cal-'+esc(r.color)+'"><button class="gcLayer cal-'+esc(r.color)+(on?' on':'')+(isCal?' split':'')+'" data-callayer="'+esc(r.id)+'" aria-pressed="'+(on?'true':'false')+'"><span class="gcBox">'+(on?'✓':'')+'</span>'+esc(r.name)+'</button>'+
+      (isCal ? '<button class="gcLayer gcKindsBtn'+(hk?' on':'')+(S.calKindsFor===r.id?' open':'')+'" data-calkindsfor="'+esc(r.id)+'" aria-label="'+esc(gpT('What to show from {name}',{name:r.name}))+'" aria-expanded="'+(S.calKindsFor===r.id?'true':'false')+'">'+(hk ? (nk-hk)+'/'+nk+' ' : '')+'▾</button>' : '')+'</span>'; }).join('')+'</div>'+
+    (S.calKindsFor ? calKindsHtml_(C, S.calKindsFor) : '');
 }
 function calLoad_(){
   if(S.calLoading) return; S.calLoading=true;
@@ -51,9 +60,18 @@ function calHomeLoad_(){
     function(){ S.calHomeLoading=false; S.calHome={ ok:false }; });
 }
 /* GP Tasks with a day on them, as things on the calendar, in their list's colour */
+/* which tasks are on your calendar (Andrew, Oct 2026: "not other people's or every ministry's — your own,
+   and the ministry you're in; the campus calendar is what everyone shares"): a task given to you, one in
+   a list of yours (your own, or shared with you), or one in a list of the ministry or department you're
+   in — never another ministry's, even for Campus Leadership and admins who can see every list */
+function calTaskMine_(x){
+  if(x.assignees.indexOf(S.me.id)>-1) return true;
+  var L=gptListById_(x.listId); if(!L || L.onlyAssigned) return false;
+  return L.scope==='personal' ? (L.ownerId===S.me.id || (L.members||[]).indexOf(S.me.id)>-1) : !!L.mine;
+}
 function calTaskEvents_(from, to){
   var G=S.gpt; if(!G || S.student) return [];
-  return G.tasks.filter(function(x){ return x.due && !x.done && x.status!=='declined' && x.due>=from && x.due<=to; }).map(function(x){
+  return G.tasks.filter(function(x){ return x.due && !x.done && x.status!=='declined' && x.due>=from && x.due<=to && calTaskMine_(x); }).map(function(x){
     var L=gptListById_(x.listId);
     return { task:x, cal:'task', calName:L ? gptChipName_(L) : t('GP Tasks'), color:(L && L.color) || 'task', title:x.title, where:'', notes:x.notes||'',
       date:x.due, time:x.time||'', endTime:'', allDay:!x.time, endDate:'' };
@@ -146,7 +164,7 @@ function calendarHtml_(){
   h+='<div class="gcNav"><button class="weekArrow" id="calPrev" aria-label="'+esc(t('Earlier'))+'">‹</button><div class="gcTitle">'+esc(monthName)+'</div>'+
     '<button class="weekArrow" id="calNext" aria-label="'+esc(t('Later'))+'">›</button>'+
     (ym!==today.slice(0,7) ? '<button class="linkbtn inline" id="calToday">'+esc(t('Today'))+'</button>' : '')+'</div>';
-  h+=calLayersHtml_(C, all)+calKindsHtml_(C);
+  h+=calLayersHtml_(C, all);
   h+='<div class="card" style="padding:4px 6px 6px 0">'+calGridHtml_(ym, ev, sel)+'</div>';
   if(!C.connected) h+='<p class="hint" style="margin:0 0 8px">'+esc(t('No calendar is connected yet.'))+
     (S.me.isAdmin ? ' <button class="linkbtn inline" data-adminsubgo="gcal">'+esc(t('Connect it in Admin'))+'</button>' : '')+'</p>';
@@ -195,12 +213,14 @@ function bindCalendar_(){
     var k=b.getAttribute('data-calbar'), d=k.split('|')[1]; gpTap(); S.calSel=d; S.calOpen=k; render();
     var row=document.querySelector('.calEv.open, [data-calev="'+k.replace(/"/g,'')+'"]'); if(row && row.scrollIntoView) row.scrollIntoView({ block:'center' });
   }; });
+  document.querySelectorAll('[data-calkindsfor]').forEach(function(b){ b.onclick=function(){ gpTap(); var id=b.getAttribute('data-calkindsfor'); S.calKindsFor=S.calKindsFor===id ? null : id; render(); }; });
   document.querySelectorAll('[data-calkind]').forEach(function(b){ b.onclick=function(){
-    var id=b.getAttribute('data-calkind'), hid=calHiddenKinds_(), i=hid.indexOf(id); gpTap();
-    if(i>-1) hid.splice(i,1); else hid.push(id);
-    try { lsSet('gp-cal-hidekind', JSON.stringify(hid)); } catch(e){}
+    var k=b.getAttribute('data-calkind').split('|'), all=calHiddenKinds_(), hid=Array.isArray(all[k[0]]) ? all[k[0]] : [], i=hid.indexOf(k[1]); gpTap();
+    if(i>-1) hid.splice(i,1); else hid.push(k[1]); all[k[0]]=hid;
+    try { lsSet('gp-cal-hidekind', JSON.stringify(all)); } catch(e){}
     render();
   }; });
+  document.querySelectorAll('[data-calkindall]').forEach(function(b){ b.onclick=function(){ gpTap(); var all=calHiddenKinds_(); delete all[b.getAttribute('data-calkindall')]; try { lsSet('gp-cal-hidekind', JSON.stringify(all)); } catch(e){} render(); }; });
   document.querySelectorAll('[data-callayer]').forEach(function(b){ b.onclick=function(){
     var id=b.getAttribute('data-callayer'), hid=calHidden_(), i=hid.indexOf(id); gpTap();
     if(i>-1) hid.splice(i,1); else hid.push(id);

@@ -222,25 +222,38 @@ function gtWheelLayout_(){
   var span=R*Math.sin(Math.min(1.2, step*(n-1)/2))+40, cy=H<2*span+70 ? H/2-30 : Math.min(Math.max(bt+150, span), H-span-70);
   if(S.gtWheel.focus==null) S.gtWheel.focus=Math.round((n-1)/2);
   var f=S.gtWheel.focus=Math.max(0, Math.min(n-1, S.gtWheel.focus));
+  /* transforms only (no top/right, no layout per frame): the item's right edge at x, its middle at y */
   its.forEach(function(el, i){
     var d=(i-f)*step, k=Math.abs(i-f), sc=0.9+0.22*Math.max(0, 1-k/1.6);   // low key: a gentle grow
-    el.style.right=(W-(cx-R*Math.cos(d)))+'px'; el.style.top=(cy+R*Math.sin(d))+'px';
-    el.style.transform='translateY(-50%) scale('+sc.toFixed(3)+')'; el.style.opacity=(1-Math.min(0.3, k*0.08)).toFixed(2); el.style.zIndex=String(100-Math.round(k*10));
+    var x=cx-R*Math.cos(d), y=cy+R*Math.sin(d);
+    el.style.transform='translate3d('+(x-W).toFixed(1)+'px, calc('+y.toFixed(1)+'px - 50%), 0) scale('+sc.toFixed(3)+')';
+    el.style.opacity=(1-Math.min(0.3, k*0.08)).toFixed(2); el.style.zIndex=String(100-Math.round(k*10));
     el.classList.toggle('on', Math.round(f)===i);
   });
+}
+/* the spin: no eased transition while a finger or the wheel moves it (it would lag behind), the frosted
+   glass paused meanwhile (a backdrop blur on each moving pill is what made it stutter), one layout per
+   frame; the snap at the end eases, with the glass back */
+function gtWheelSpin_(f, settle){
+  var w=document.getElementById('gtWheel'); if(!w) return;
+  S.gtWheel.focus=f;
+  if(settle){ w.classList.remove('spinning'); w.classList.add('snap'); gtWheelLayout_(); return; }
+  w.classList.remove('snap'); w.classList.add('spinning');
+  if(S.gtWheelRaf) return; S.gtWheelRaf=requestAnimationFrame(function(){ S.gtWheelRaf=0; gtWheelLayout_(); });
 }
 function bindGtWheel_(){
   var w=document.getElementById('gtWheel'); if(!w) return;
   var its=[].slice.call(w.querySelectorAll('.gtMenuIt')), n=its.length, clamp=function(v){ return Math.max(0, Math.min(n-1, v)); };
-  gtWheelLayout_();
+  gtWheelLayout_(); void w.offsetWidth; w.classList.add('snap'); gtWheelLayout_();   // the first layout, then ease in from the edge
   /* a mouse resting over an item grows it, like the dock — real movement only, not the tap that opened it */
-  its.forEach(function(el, i){ el.addEventListener('mousemove', function(){ if(Date.now()-(S.gtWheelOpened||0)<400 || S.gtWheel.focus===i) return; S.gtWheel.focus=i; gtWheelLayout_(); }); });
-  var y0=0, f0=0, moved=false;
+  its.forEach(function(el, i){ el.addEventListener('mousemove', function(){ if(Date.now()-(S.gtWheelOpened||0)<400 || S.gtWheel.focus===i) return; gtWheelSpin_(i, true); }); });
+  var y0=0, f0=0, moved=false, settleT=null;
   [w, document.getElementById('gtMenuScrim')].forEach(function(el){ if(!el) return;
-    el.addEventListener('wheel', function(e){ e.preventDefault(); S.gtWheel.focus=clamp(S.gtWheel.focus+e.deltaY/90); gtWheelLayout_(); }, { passive:false });
+    el.addEventListener('wheel', function(e){ e.preventDefault(); gtWheelSpin_(clamp(S.gtWheel.focus+e.deltaY/90));
+      if(settleT) clearTimeout(settleT); settleT=setTimeout(function(){ gtWheelSpin_(clamp(Math.round(S.gtWheel.focus)), true); }, 140); }, { passive:false });
     el.addEventListener('touchstart', function(e){ var p=e.touches[0]; if(!p) return; y0=p.clientY; f0=S.gtWheel.focus; moved=false; }, { passive:true });
-    el.addEventListener('touchmove', function(e){ var p=e.touches[0]; if(!p) return; var dy=p.clientY-y0; if(Math.abs(dy)>6) moved=true; if(!moved) return; if(e.cancelable) e.preventDefault(); S.gtWheel.focus=clamp(f0-dy/80); gtWheelLayout_(); }, { passive:false });
-    el.addEventListener('touchend', function(){ if(!moved) return; S.gtWheel.focus=clamp(Math.round(S.gtWheel.focus)); gtWheelLayout_(); S.gtWheelDragEnd=Date.now(); }, { passive:true });
+    el.addEventListener('touchmove', function(e){ var p=e.touches[0]; if(!p) return; var dy=p.clientY-y0; if(Math.abs(dy)>6) moved=true; if(!moved) return; if(e.cancelable) e.preventDefault(); gtWheelSpin_(clamp(f0-dy/80)); }, { passive:false });
+    el.addEventListener('touchend', function(){ if(!moved) return; gtWheelSpin_(clamp(Math.round(S.gtWheel.focus)), true); S.gtWheelDragEnd=Date.now(); }, { passive:true });
     el.addEventListener('click', function(e){ if(Date.now()-(S.gtWheelDragEnd||0)<350){ e.stopPropagation(); e.preventDefault(); } }, true);   // a spin is not a tap
   });
   if(!S.gtWheelResize){ S.gtWheelResize=true; window.addEventListener('resize', function(){ gtWheelLayout_(); }); }
@@ -248,7 +261,10 @@ function bindGtWheel_(){
 function gtListHtml_(L){
   var G=S.gpt, mine=L.scope==='personal' && L.ownerId===S.me.id;
   /* one of your own lists: its tasks, and the tasks given to you that you keep here (unfiled ones in the Inbox) */
-  var all=G.tasks.filter(function(x){ return x.listId===L.id ? x.status!=='declined' : (mine && gptGiven_(x) && gptFiledIn_(x)===L.id); });
+  /* a ministry's own page (Andrew, Oct 2026: "it only shows a few"): also what its people were given
+     elsewhere — the department's list (board cards land there), another ministry's — each with where it is from */
+  var team = S.gptScope && L.scope!=='personal' ? (S.roster||[]).filter(function(p){ return gptInList_(L, p); }).map(function(p){ return p.id; }) : null;
+  var all=G.tasks.filter(function(x){ return x.listId===L.id ? x.status!=='declined' : (mine && gptGiven_(x) && gptFiledIn_(x)===L.id) || (team && x.status!=='declined' && x.assignees.some(function(id){ return team.indexOf(id)>-1; })); });
   var open=all.filter(function(x){ return !x.done; }).sort(gptSortIn_(L));
   var done=all.filter(function(x){ return x.done; });
   var h='<div class="gtList'+(S.gtSlide ? ' gtSlide'+S.gtSlide : '')+'"><div class="gtListHead"><b>'+gptKindIc_(L)+esc(gptChipName_(L))+gptColorDot_(L)+'</b><span>'+esc(gptListLabel_(L))+'</span></div>';
@@ -264,7 +280,7 @@ function gtListHtml_(L){
 }
 /* one task: its row, its subtasks under it, and a request's answer buttons */
 function gtItemHtml_(x, L){
-  var req=x.status==='request', dec=x.status==='declined', canDrag=L && L.canEdit && !req && !dec && !x.done;
+  var req=x.status==='request', dec=x.status==='declined', canDrag=L && L.canEdit && !req && !dec && !x.done && (x.listId===L.id || L.scope==='personal');
   var showList=x.listId!==L.id, SL=showList ? gptListById_(x.listId) : L;   // the list it is really in
   var chips=[];
   if(x.due) chips.push('<span class="gtChip'+(gptOverdue_(x)?' late':'')+'">'+GPT_SVG.clock+esc(gptWhen_(x))+'</span>');
@@ -450,16 +466,26 @@ function bindGpTasks_(){
   document.querySelectorAll('[data-gptlist]').forEach(function(b){ b.onclick=function(){ if(Date.now()-S.gtDragEnd<400) return; gpTap(); gptGoList_(b.getAttribute('data-gptlist'), ''); }; });
   /* the open tab stays in view — the row used to scroll back to the start on every render, so the
      highlight slid out of sight (Andrew: "it goes back to where it says Inbox") */
-  var onTab=document.querySelector('.gtTabs .gtTab.on'), tabsBox=onTab && onTab.parentNode;
-  if(onTab && tabsBox){ var tl=onTab.offsetLeft, tr=tl+onTab.offsetWidth; if(tl<tabsBox.scrollLeft+8 || tr>tabsBox.scrollLeft+tabsBox.clientWidth-8) tabsBox.scrollLeft=Math.max(0, tl-28); }
+  var tabsBox=document.querySelector('.gtTabs'), onTab=tabsBox && tabsBox.querySelector('.gtTab.on');
+  if(tabsBox){
+    /* the row stays where it was (Andrew: "when you click on a list the slider doesn't move") — its scroll is
+       kept across renders; only a tab that is off the edge is nudged just into view, at that edge */
+    tabsBox.scrollLeft=S.gtTabsScroll||0;
+    if(onTab){ var tl=onTab.offsetLeft, tr=tl+onTab.offsetWidth, sl=tabsBox.scrollLeft, cw=tabsBox.clientWidth;
+      if(tl<sl) tabsBox.scrollLeft=Math.max(0, tl-12); else if(tr>sl+cw) tabsBox.scrollLeft=tr-cw+12; }
+    S.gtTabsScroll=tabsBox.scrollLeft;
+    tabsBox.addEventListener('scroll', function(){ S.gtTabsScroll=tabsBox.scrollLeft; }, { passive:true });
+  }
   S.gtSlide=null;
   /* slide sideways on the list for the next or the previous one */
-  var swipeBox=document.querySelector('.gtList'), swLists=gptLists_(scope);
-  if(swipeBox && swLists.length>1){ var sx=0, sy=0, sOn=false;
-    swipeBox.addEventListener('touchstart', function(e){ var p=e.touches[0]; sOn=!!p && !(e.target.closest && e.target.closest('[data-gptgrip]')); if(p){ sx=p.clientX; sy=p.clientY; } }, { passive:true });
+  /* anywhere on the page, not just the card (Andrew, Oct 2026) — but not from the row of tabs (it scrolls
+     sideways itself), a grip, a sheet, the wheel or a field */
+  var gtBar=document.querySelector('.gtBar'), swipeBox=gtBar && gtBar.parentNode;
+  if(swipeBox && !swipeBox.gtSwipeBound){ swipeBox.gtSwipeBound=true; var sx=0, sy=0, sOn=false;   // the box outlives renders (#main), so bound once; the lists are read at the time
+    swipeBox.addEventListener('touchstart', function(e){ var p=e.touches[0]; sOn=!!p && !!document.querySelector('.gtBar') && !document.querySelector('.gtSheet, #gtWheel') && !(e.target.closest && e.target.closest('.gtTabs, [data-gptgrip], .gtSheet, .gtWheel, input, textarea, select')); if(p){ sx=p.clientX; sy=p.clientY; } }, { passive:true });
     swipeBox.addEventListener('touchend', function(e){ var p=e.changedTouches && e.changedTouches[0]; if(!sOn || !p) return; var dx=p.clientX-sx, dy=p.clientY-sy;
       if(Math.abs(dx)<70 || Math.abs(dy)>Math.abs(dx)*0.6 || document.body.classList.contains('gtDragOn') || Date.now()-S.gtDragEnd<400) return;
-      var ids=swLists.map(function(L){ return L.id; }), i=ids.indexOf(S.gptList)+(dx<0 ? 1 : -1); if(i<0 || i>=ids.length) return; gpTap(); gptGoList_(ids[i], dx<0 ? 'L' : 'R'); }, { passive:true });
+      var ids=gptLists_(S.gptScope).map(function(L){ return L.id; }), at=ids.indexOf(S.gptList); if(at<0 || ids.length<2) return; var i=at+(dx<0 ? 1 : -1); if(i<0 || i>=ids.length) return; gpTap(); gptGoList_(ids[i], dx<0 ? 'L' : 'R'); }, { passive:true });
   }
   /* ⋮ — the wheel */
   on('gtMenuBtn', function(){ gpTap(); S.gtMenu=!S.gtMenu; S.gtWheel.focus=null; S.gtWheelOpened=Date.now(); render(); });
@@ -513,7 +539,7 @@ function bindGpTasks_(){
   document.querySelectorAll('[data-gptmakefor]').forEach(function(b){ b.onclick=function(){ var k=b.getAttribute('data-gptmakefor').split('|'); madeList({ title:k[1]||k[0], scope:k[1] ? 'ministry' : 'dept', dept:k[0], ministry:k[1]||'' }); }; });
   var nt=document.getElementById('gptNewTitle'); if(nt){ nt.oninput=function(){ S.gptNewList.title=nt.value; }; nt.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); var b=document.getElementById('gptNewSave'); if(b) b.click(); } }; }
   on('gptNewCancel', function(){ S.gptNewList=null; render(); });
-  on('gptNewSave', function(){ madeList({ title:(S.gptNewList.title||'').trim() || t('Tasks'), scope:'personal' }); });
+  on('gptNewSave', function(){ var title=(S.gptNewList.title||'').trim(); if(!title){ showMsg(t('Give it a name first')); var el=document.getElementById('gptNewTitle'); if(el) el.focus(); return; } madeList({ title:title, scope:'personal' }); });
   /* ticking off — in a row or in the open task; a subtask in a row saves at once */
   document.querySelectorAll('[data-gptdone]').forEach(function(b){ b.onclick=function(){
     var id=b.getAttribute('data-gptdone'), x=(S.gpt.tasks||[]).filter(function(y){ return y.id===id; })[0]; if(!x) return; gpTap();

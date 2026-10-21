@@ -2223,7 +2223,14 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .cal-red { --calc:#C0392B; } .cal-orange { --calc:#D9671C; } .cal-indigo { --calc:#4A4FB5; } .cal-brown { --calc:#8A5A3C; } .cal-grey { --calc:#6B7280; } .cal-lime { --calc:#6B9A1B; }
 .cal-lavender { --calc:#9B7FD1; } .cal-sky { --calc:#4A9BD9; } .cal-mint { --calc:#3FA98A; } .cal-rose { --calc:#D9748F; }   /* the lighter four (Andrew: "teams can be light purple") */
 .calDot.gtDot { width:8px; height:8px; border-radius:50%; margin:0 0 0 6px; vertical-align:1px; }
-.gcKinds { margin-top:-2px; }
+.gcLayerSplit { display:inline-flex; align-items:stretch; }
+.gcLayer.split { border-radius:999px 0 0 999px; border-right:0; }
+.gcKindsBtn { border-radius:0 999px 999px 0; padding:6px 10px 6px 8px; font-size:12.5px; color:var(--muted); }
+.gcKindsBtn.on { color:var(--ink); border-color:var(--calc); }
+.gcKindsBtn.open { background:var(--surface2); }
+.gcKindPick { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:8px 10px 2px; margin:-4px 0 10px; }
+.gcKindPick .gcLayers { margin-bottom:8px; }
+.gcKindHead { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; margin:0 0 8px; } .gcKindHead .linkbtn { width:auto; margin:0; padding:0; }
 .gcKind { padding:8px 0 2px; border-top:1px solid var(--line); } .gcKind:first-of-type { border-top:0; }
 .gcKindRow { display:flex; align-items:center; gap:8px; } .gcKindRow input { flex:1; min-width:0; margin:0; }
 .gcKind input[data-kindkeys] { margin:6px 0 0; font-size:14px; }
@@ -2301,7 +2308,9 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
    low key, like liquid glass: frosted, a thin light edge, the page showing through (Andrew, Oct 2026) */
 .gtWheel { position:fixed; inset:0; z-index:60; pointer-events:none; touch-action:none; }
 .gtWheelScrim { background:color-mix(in srgb, var(--bg) 28%, transparent); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); }
-.gtMenuIt { pointer-events:auto; position:fixed; right:-320px; top:50%; max-width:min(240px, 68vw); background:color-mix(in srgb, var(--surface) 58%, transparent); backdrop-filter:blur(22px) saturate(1.5); -webkit-backdrop-filter:blur(22px) saturate(1.5); border:1px solid color-mix(in srgb, var(--surface) 70%, transparent); box-shadow:inset 0 1px 0 color-mix(in srgb, var(--surface) 85%, transparent), 0 6px 20px color-mix(in srgb, var(--ink) 9%, transparent); border-radius:999px; text-align:left; padding:10px 18px; font:inherit; font-size:15px; font-weight:500; color:var(--ink); cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transform-origin:right center; transition:right .18s ease, top .18s ease, transform .18s ease, opacity .18s ease, background .18s ease; }
+.gtMenuIt { pointer-events:auto; position:fixed; right:0; top:0; max-width:min(240px, 68vw); transform:translate3d(320px, 40vh, 0); will-change:transform, opacity; background:color-mix(in srgb, var(--surface) 58%, transparent); backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5); border:1px solid color-mix(in srgb, var(--surface) 70%, transparent); box-shadow:inset 0 1px 0 color-mix(in srgb, var(--surface) 85%, transparent), 0 6px 20px color-mix(in srgb, var(--ink) 9%, transparent); border-radius:999px; text-align:left; padding:10px 18px; font:inherit; font-size:15px; font-weight:500; color:var(--ink); cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transform-origin:right center; }
+.gtWheel.snap .gtMenuIt { transition:transform .24s cubic-bezier(.2,.8,.2,1), opacity .2s ease, background .18s ease; }   /* only when it settles — never under a finger */
+.gtWheel.spinning .gtMenuIt { backdrop-filter:none; -webkit-backdrop-filter:none; background:color-mix(in srgb, var(--surface) 90%, transparent); }   /* the glass pauses while it spins */
 .gtMenuIt.on { color:var(--accent); font-weight:600; background:color-mix(in srgb, var(--surface) 76%, transparent); }
 .gtMenuIt:hover { background:color-mix(in srgb, var(--surface) 84%, transparent); }
 .gtDay { font-size:12.5px; font-weight:700; color:var(--muted); padding:12px 12px 2px; letter-spacing:.01em; }

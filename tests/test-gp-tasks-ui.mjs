@@ -101,12 +101,23 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   await page.fill('#gptNewTitle', 'Reading'); await page.click('#gptNewSave'); await page.waitForTimeout(700);
   const rd = (mem.gpTasks.lists || []).find(l => l.title === 'Reading');
   ok('… made as a personal list, its tab open', rd && rd.scope === 'personal' && rd.ownerId === 'c1' && !!(await page.$('.gtTab.on[data-gptlist="' + rd.id + '"]')));
+  /* the row of tabs stays put when you tap one (it used to jump back to the start, or to the front) */
+  await page.evaluate(() => { const b = document.querySelector('.gtTabs'); b.scrollLeft = 30; b.dispatchEvent(new Event('scroll')); }); await page.waitForTimeout(100);
+  const sl0 = await page.$eval('.gtTabs', e => e.scrollLeft);
+  await page.click('.gtTab[data-gptlist="' + rd.id + '"]'); await page.waitForTimeout(400);
+  ok('tapping a list that is in view leaves the row where it was', sl0 > 0 && (await page.$eval('.gtTabs', e => e.scrollLeft)) === sl0, sl0 + ' → ' + (await page.$eval('.gtTabs', e => e.scrollLeft)));
+  await page.click('.gtTab[data-gptlist="' + myList.id + '"]'); await page.waitForTimeout(400);
+  ok('… a tab half off the edge is nudged just into view, no further', (await page.$eval('.gtTabs', e => e.scrollLeft)) < sl0 && (await page.$eval('.gtTab.on', e => e.offsetLeft >= e.parentNode.scrollLeft)));
+  await page.click('.gtTab[data-gptlist="' + rd.id + '"]'); await page.waitForTimeout(400);
   /* ⋮ is a half-circle wheel: the items on an arc along the right edge, the middle one grown; spin it */
   await page.click('#gtMenuBtn'); await page.waitForTimeout(400);
-  const wheelIts = await page.$$eval('#gtWheel .gtMenuIt', b => b.map(x => ({ id: x.id, top: x.style.top, on: x.classList.contains('on'), sc: x.style.transform })));
-  ok('⋮ opens as a wheel: every item placed on the arc, one grown in the middle', !!(await page.$('#gtWheel')) && wheelIts.length >= 4 && wheelIts.every(x => /px/.test(x.top)) && wheelIts.filter(x => x.on).length === 1 && /scale\(1\.1/.test(wheelIts.find(x => x.on).sc), JSON.stringify(wheelIts));
+  const wheelIts = await page.$$eval('#gtWheel .gtMenuIt', b => b.map(x => ({ id: x.id, on: x.classList.contains('on'), sc: x.style.transform, y: x.getBoundingClientRect().top })));
+  ok('⋮ opens as a wheel: every item placed on the arc by a transform alone, one grown in the middle', !!(await page.$('#gtWheel.snap')) && wheelIts.length >= 4 && wheelIts.every(x => /translate3d\(/.test(x.sc) && x.y > 0 && x.y < 700) && wheelIts.filter(x => x.on).length === 1 && /scale\(1\.1/.test(wheelIts.find(x => x.on).sc), JSON.stringify(wheelIts));
   const onBefore = wheelIts.find(x => x.on).id;
-  await page.mouse.move(120, 500); await page.mouse.wheel(0, 200); await page.waitForTimeout(300);
+  await page.mouse.move(120, 500); await page.mouse.wheel(0, 200); await page.waitForTimeout(60);
+  ok('… while it spins there is no eased lag and the glass is paused', !!(await page.$('#gtWheel.spinning')) && !(await page.$('#gtWheel.snap')));
+  await page.waitForTimeout(400);
+  ok('… and it settles with the glass back', !!(await page.$('#gtWheel.snap')) && !(await page.$('#gtWheel.spinning')));
   const onAfter = await page.$eval('#gtWheel .gtMenuIt.on', e => e.id);
   ok('… spinning it moves which one is grown', onAfter !== onBefore, onBefore + ' → ' + onAfter);
   /* Arrange lists: arrows, for those who won't know they can drag a tab */
@@ -120,13 +131,18 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   await page.click('#gtArrangeDone'); await page.waitForTimeout(300);
   ok('Done closes it, the list still open', !(await page.$('#gtArrangeSheet')) && !!(await page.$('.gtTab.on[data-gptlist="' + rd.id + '"]')));
   /* slide sideways on the list for the next one */
-  const swipe = async (dx) => page.evaluate((dx) => { const el = document.querySelector('.gtList'); const mk = (x) => new Touch({ identifier: 1, target: el, clientX: x, clientY: 420 });
+  const swipe = async (dx, sel) => page.evaluate(([dx, sel]) => { const el = document.querySelector(sel || '.gtList'); const mk = (x) => new Touch({ identifier: 1, target: el, clientX: x, clientY: 420 });
     el.dispatchEvent(new TouchEvent('touchstart', { touches: [mk(200)], changedTouches: [mk(200)], bubbles: true }));
-    el.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [mk(200 + dx)], bubbles: true })); }, dx);
+    el.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [mk(200 + dx)], bubbles: true })); }, [dx, sel]);
   await swipe(-160); await page.waitForTimeout(400);
   ok('sliding left on the list opens the next list', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === tabsAfter[tabsAfter.indexOf(rd.id) + 1] && !!(await page.$('.gtList.gtSlideL')));
   await swipe(160); await page.waitForTimeout(400);
   ok('… and sliding right comes back', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === rd.id);
+  await swipe(-160, '#main'); await page.waitForTimeout(400);
+  ok('sliding anywhere on the page works too, not just on the card', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === tabsAfter[tabsAfter.indexOf(rd.id) + 1]);
+  await swipe(160, '.gtTabs'); await page.waitForTimeout(400);
+  ok('… but not from the row of tabs, which scrolls sideways itself', (await page.$eval('.gtTab.on', e => e.dataset.gptlist)) === tabsAfter[tabsAfter.indexOf(rd.id) + 1]);
+  await swipe(160, '#main'); await page.waitForTimeout(400);
   /* sharing the whole list: ⋮ → Share list with someone… → a people search; Kanha gets it as a tab */
   await page.click('#gtMenuBtn'); await page.waitForTimeout(200);
   ok('⋮ on your own list: Share list with someone…', !!(await page.$('#gtShareList')));
@@ -352,6 +368,11 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   ok('GP Tasks has a Leadership team list', !!lead && lead.scope === 'dept' && lead.dept === 'Campus Leadership' && !!(await page.$('.gtTab[data-gptlist="' + lead.id + '"]')));
   await page.click('.gtTab[data-gptlist="' + lead.id + '"]'); await page.waitForTimeout(400);
   const myT = await page.$eval('.gtList', e => e.innerText);
+  /* the calendar: his own tasks and his team's, never another ministry's, though he can see every list */
+  await page.click('[data-cttab="calendar"]'); await page.waitForTimeout(900);
+  const uCal = await main(page);
+  ok('Uriah\'s calendar: his board task (the Leadership team\'s list) — not the Cafe\'s "Order milk", another ministry\'s task', /Find 5 fun activities/.test(uCal) && !/Order milk/.test(uCal) && !/Wipe the tables/.test(uCal), uCal.slice(0, 200));
+  await page.click('[data-cttab="tasks"]'); await page.waitForTimeout(600);
   ok('… the board task is there, given to Uriah, with its day', /Find 5 fun activities/.test(myT) && /Uriah/.test(myT) && new RegExp(new Date(day(6) + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric' })).test(myT), myT.slice(0, 300));
   await ctx.close();
 }
@@ -361,6 +382,12 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   ok('Kanha\'s bell: Campus Leadership gave you a task', /Campus Leadership gave you a task: Fix the cafe sign/.test(bell), bell);
   await page.evaluate(() => gptOpenPage_('week')); await page.waitForTimeout(800);
   ok('GP Tasks fits a 320px phone', await page.evaluate(() => document.documentElement.scrollWidth <= 321));
+  /* the Cafe's own tasks page: its list, and what its people were given elsewhere, with where it is from */
+  await page.evaluate(() => gptOpenMinistry_('Community Service', 'Cafe')); await page.waitForTimeout(900);
+  const cafePage = await page.$eval('.gtList', e => e.innerText);
+  ok('the Cafe\'s tasks page shows the board\'s task given to Kanha, from the department\'s list, marked with where it is from', /Fix the cafe sign/.test(cafePage) && /Community Service/.test(cafePage) && /Order milk/.test(cafePage), cafePage.slice(0, 200));
+  const signT = T().find(t => t.title === 'Fix the cafe sign');
+  ok('… without a grip: it is ordered in its own list', !(await page.$('[data-gptgrip="' + signT.id + '"]')) && !!(await page.$('[data-gptgrip]')));
   await ctx.close();
 }
 {
