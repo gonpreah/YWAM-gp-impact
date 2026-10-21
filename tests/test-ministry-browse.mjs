@@ -155,11 +155,13 @@ await p.waitForTimeout(600);
 await p.click('nav.bottom [data-tab="ministry"]');
 await p.waitForTimeout(700);
 
+await p.click('#mmSwitch'); await p.waitForTimeout(300);
+await p.click('#mmSwitch', { timeout: 1500 }).catch(() => {}); await p.waitForTimeout(250);
 const chips = await p.$$eval('[data-mmpick]', b => b.map(x => x.getAttribute('data-mmpick')));
-ok('the picker holds only my ministries: the main one and Cafe', JSON.stringify(chips) === '["Youth Education|Sports","Community Service|Cafe"]', JSON.stringify(chips));
-ok('it opens on the main one, and says so', /Your main ministry/.test(await p.$eval('#mmBanner', e => e.textContent)));
+ok('Switch ▾ lists only my ministries: the main one and Cafe', JSON.stringify(chips) === '["Youth Education|Sports","Community Service|Cafe"]', JSON.stringify(chips));
+ok('it opens on the main one, and says so', /Your main ministry/.test(await p.$eval('#mmBanner', e => e.textContent)) && !!(await p.$('.gtPickIt.on[data-mmpick="Youth Education|Sports"]')));
 
-await p.click('[data-mmpick="Community Service|Cafe"]');
+await p.click('#mmSwitch', { timeout: 1500 }).catch(() => {}); await p.waitForTimeout(250); await p.click('[data-mmpick="Community Service|Cafe"]');
 await p.waitForTimeout(600);
 ok('another of my ministries says it is one of mine', /One of your ministries/.test(await p.$eval('#mmBanner', e => e.textContent)));
 // the browsed ministry gets the same status card as your own: its strip, and one button that unfolds its weekly rows
@@ -196,6 +198,7 @@ await p.waitForTimeout(600);
 ok('saving sends the ticked ministries', profileSaves.length === 1 && JSON.stringify(profileSaves[0].ministries.sort()) === '["Community Service|Cafe","Community Service|Outreach Teams"]', JSON.stringify(profileSaves));
 await p.evaluate(() => { S.view = 'ministry'; S.mmBrowseDept = null; S.mmBrowseMinistry = null; render(); });
 await p.waitForTimeout(300);
+await p.click('#mmSwitch', { timeout: 1500 }).catch(() => {}); await p.waitForTimeout(250);
 ok('the new ministry shows in My Ministry straight away', (await p.$$eval('[data-mmpick]', b => b.map(x => x.getAttribute('data-mmpick')))).includes('Community Service|Outreach Teams'));
 ok('no console/page errors', errs.length === 0, errs.slice(0, 3).join(' | '));
 
@@ -207,19 +210,19 @@ await p.goto('http://localhost:4416/teams.html'); await p.waitForSelector('nav.b
 await p.waitForTimeout(700);
 await p.click('nav.bottom [data-tab="week"]'); await p.waitForTimeout(500);
 await p.click('nav.bottom [data-tab="ministry"]'); await p.waitForTimeout(600);
+ok('an admin opens on their own ministry', await p.evaluate(() => S.mmBrowseDept === 'Youth Education' && S.mmBrowseMinistry === 'Sports'));
+await p.click('#mmSwitch'); await p.waitForTimeout(300);
 const adm = await p.evaluate(() => ({
-  chips: document.querySelectorAll('[data-mmpick]').length,
-  depts: [].map.call(document.querySelectorAll('#mmBrowseDeptSel option'), o => o.value),
+  depts: [].map.call(document.querySelectorAll('.mmPickList .gtPickDept'), d => d.textContent),
   want: Object.keys(getDepartments('poipet')).filter(d => d !== 'Campus Leadership'),
-  dept: (document.querySelector('#mmBrowseDeptSel') || {}).value, min: (document.querySelector('#mmBrowseMinSel') || {}).value,
+  search: !!document.querySelector('#mmPickFind'),
 }));
-ok('an admin gets dropdowns, not chips', adm.chips === 0 && adm.depts.length > 0, JSON.stringify(adm.depts));
-ok('… with every department on the campus', adm.want.every(d => adm.depts.includes(d)), JSON.stringify(adm.want.filter(d => !adm.depts.includes(d))));
-ok('… opening on their own ministry', adm.dept === 'Youth Education' && adm.min === 'Sports', adm.dept + '|' + adm.min);
-await p.selectOption('#mmBrowseDeptSel', 'Community Service'); await p.waitForTimeout(300);
-const mins = await p.$$eval('#mmBrowseMinSel option', os => os.map(o => o.value));
-ok('picking a department lists all its ministries', mins.includes('Cafe') && mins.includes('Outreach Teams'), JSON.stringify(mins));
-await p.selectOption('#mmBrowseMinSel', 'Cafe'); await p.waitForTimeout(600);
+ok('an admin\'s Switch ▾ sheet: every department on the campus, grouped, with a search', adm.search && adm.want.every(d => adm.depts.includes(d)), JSON.stringify(adm.want.filter(d => !adm.depts.includes(d))));
+await p.fill('#mmPickFind', 'caf'); await p.waitForTimeout(250);
+await p.click('#mmSwitch', { timeout: 1500 }).catch(() => {}); await p.waitForTimeout(250);
+const mins = await p.$$eval('[data-mmpick]', b => b.map(x => x.getAttribute('data-mmpick')));
+ok('typing narrows it to the Cafe', JSON.stringify(mins) === '["Community Service|Cafe"]', JSON.stringify(mins));
+await p.click('#mmSwitch', { timeout: 1500 }).catch(() => {}); await p.waitForTimeout(250); await p.click('[data-mmpick="Community Service|Cafe"]'); await p.waitForTimeout(600);
 ok('the banner says an admin can enter it', /As an admin you can see and enter/.test(await p.$eval('#mmBanner', e => e.textContent)));
 ok('and its numbers load', await p.evaluate(() => document.querySelector('#main').innerText.includes('Days Open') || !!document.querySelector('#mmWeekCard')));
 await p.evaluate(() => { S.view = 'profile'; render(); }); await p.waitForTimeout(300);

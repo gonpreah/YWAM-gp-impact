@@ -346,6 +346,31 @@ it everywhere `normRows_`/`normKey_` run (rows, OKR `metricKey`s, `leads`, `mini
 Education (Oct 2026). Move a ministry in taxonomy.js AND add it to `MINISTRY_MOVES`, or its
 history is orphaned (`test-numbers-people.mjs` §5 covers the move).
 
+## My Ministry — the shell (Oct 2026, Uriah: "so cluttered, a lot of boxes")
+- **One flat header** (`mmHeadHtml_`, `#mmBanner`, `.mmHead`): eyebrow "My Ministry", the ministry's
+  emoji and name, "dept · campus · 👑 Led by …", a one-line note on whose numbers these are
+  (`.mmBannerNote`), and **Switch ▾** (`#mmSwitch`, only with 2+ options) opening a sheet
+  (`mmPickerHtml_`, `S.mmPickOpen`, `#mmPickScrim`, `.mmPickList`, grouped by department, a search
+  `#mmPickFind` when there are more than 8, `data-mmpick="dept|min"` rows, the current one `.on`).
+  No chips, no Department/Ministry selects any more.
+- **One row of tabs per ministry** (`mmTabsHtml_` → `.gtBar.mmTabsBar .gtTabs.mmTabs .gtTab`,
+  `mmTabsFor_`): most ministries Numbers · (Schedule) · Tasks · OKRs; the Cafe Today · Till · Rota ·
+  Week (· Set up) · Numbers · Tasks · OKRs — its own keys keep `data-cafetab` so `cafeHtml_(true)`
+  (no inner tabs) and its handlers work; the Finances office Reports · Dashboard (`data-fintab`) ·
+  Numbers · Tasks · OKRs; Outreach Teams: Teams · Tasks · OKRs; Hospitality adds an "SR Hospitality"
+  tab that is a way in (`#goHosp`). Campus Leadership rows use the same look with `data-lwtab` and
+  keep `.lwSeg`. `mmCurTab_` picks the tab: `S.mmTab` when it is a shell key (`MM_SHELL_KEYS`), else
+  the tool's own (`S.cafeTab` / `S.finTab`), else the first; **the last tab is remembered per
+  ministry** on the phone (`gp-mm-tab` JSON by `dept|min`, `mmTabKeep_`/`mmTabKept_`; the Cafe's old
+  `gp-cafe-view=numbers` still counts). `S.mmTab='okr'` from elsewhere still lands on OKRs; the
+  Tasks tab embeds `gptPageHtml_({dept,min}, true)`; the old Ministry Tasks fold is gone.
+- **Flat sections, not boxes**: the tab's content sits in `.mmPane`; its top-level `.card`s lose
+  frame and background and become sections under hairlines; `.mmGrid` stat tiles become a
+  horizontal strip (`.mmPane .mmTile`, no borders, dividers). Nested cards inside tools keep
+  their look. Tests: `test-ministry-redesign`, `-tools-ui`, `-browse`, `test-lead-roles-ui`,
+  `test-outreach-teams`, `test-gp-tasks-ui`, `test-finance-ui`, `test-dept-pulse-ui` open Switch ▾
+  before tapping `[data-mmpick]`.
+
 ## My Ministry — one ministry at a time
 One page (`myMinistryHtml`), two tabs — **Numbers** and **OKRs** (`S.mmTab`). Numbers is
 built around ONE ministry, picked at the top and named in a banner (`#mmBanner`) so there

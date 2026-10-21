@@ -205,14 +205,14 @@ function cafeLoad_(date){
   run('cafeGet',[S.auth.user,S.auth.pin,date],function(d){ S.cafeLoading=false; if(d && d.ok && d.date===date) S.cafe=d; else S.cafeErr=(d&&d.err)||'error'; if(S.view==='ministry') render(); },
     function(e){ S.cafeLoading=false; S.cafeErr=String((e&&e.message)||'offline'); if(S.view==='ministry') render(); });
 }
-function cafeHtml_(){
+function cafeHtml_(noTabs){
   var date=S.cafeDate||todayStr(); S.cafeDate=date;
   if(!S.cafe || S.cafe.date!==date){
     if(S.cafeErr) return '<div class="card"><p class="sub" style="margin:0 0 8px">⚠️ '+esc(S.cafeErr==='not_authorized' ? t('The cafe tool is for the cafe team.') : t('Couldn’t load the cafe.'))+'</p><button class="btn ghost" id="cafeRetry">'+esc(t('Try again'))+'</button></div>';
     cafeLoad_(date); return '<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
   }
   var C=S.cafe, tabs=[['today','☀️','Today'],['till','🧾','Till'],['rota','👥','Rota'],['week','📈','Week']].concat(C.canSetup?[['setup','⚙️','Set up']]:[]);
-  var h='<div class="cafeTabs">'+tabs.map(function(x){ return '<button class="'+(S.cafeTab===x[0]?'on':'')+'" data-cafetab="'+x[0]+'">'+x[1]+' '+esc(t(x[2]))+'</button>'; }).join('')+'</div>';
+  var h=noTabs ? '' : '<div class="cafeTabs">'+tabs.map(function(x){ return '<button class="'+(S.cafeTab===x[0]?'on':'')+'" data-cafetab="'+x[0]+'">'+x[1]+' '+esc(t(x[2]))+'</button>'; }).join('')+'</div>';
   if(S.cafeTab==='till') return h+cafeTillHtml_(C);
   if(S.cafeTab==='rota') return h+cafeRotaHtml_(C);
   if(S.cafeTab==='week') return h+cafeWeekHtml_(C);
@@ -340,7 +340,7 @@ function bindCafe_(){
   var call=function(fn,args,then){ if(S.cafeBusy) return; S.cafeBusy=true; run(fn,[S.auth.user,S.auth.pin].concat(args),function(d){ done(d); if(then && d && d.ok) then(d); },function(){ S.cafeBusy=false; showMsg(t('No connection — try again when you are online.')); render(); }); };
   var rt=document.getElementById('cafeRetry'); if(rt) rt.onclick=function(){ S.cafeErr=''; render(); };
   document.querySelectorAll('[data-cafeview]').forEach(function(b){ b.onclick=function(){ gpTap(); S.cafeView=b.getAttribute('data-cafeview'); lsSet('gp-cafe-view', S.cafeView); render(); }; });
-  document.querySelectorAll('[data-cafetab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.cafeTab=b.getAttribute('data-cafetab'); S.cafeEdit=null; render(); }; });
+  document.querySelectorAll('[data-cafetab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.cafeTab=b.getAttribute('data-cafetab'); S.mmTab='ministry'; S.mmTabTouched=true; if(b.closest('.mmTabs')) mmTabKeep_(S.cafeTab); S.cafeEdit=null; render(); }; });
   var shift=function(n){ var d=new Date((S.cafeDate||todayStr())+'T00:00:00'); d.setDate(d.getDate()+n); var s=isoDateOf_(d); if(s>todayStr()) return; S.cafeDate=s; S.cafeTicks={open:{},close:{}}; render(); };
   var pd=document.getElementById('cafePrevDay'), nd=document.getElementById('cafeNextDay');
   if(pd) pd.onclick=function(){ shift(-1); }; if(nd) nd.onclick=function(){ shift(1); };

@@ -257,7 +257,7 @@ function bindAway(){
   if(dth) dth.onclick=function(){ gpTap(); S.view='health'; render(); };
 
   document.querySelectorAll('[data-mmtab]').forEach(function(b){
-    b.onclick=function(){ gpTap(); S.mmTab=b.getAttribute('data-mmtab'); render(); };
+    b.onclick=function(){ gpTap(); S.mmTab=b.getAttribute('data-mmtab'); S.mmTabTouched=true; if(b.closest('.mmTabs') && typeof mmTabKeep_==='function') mmTabKeep_(S.mmTab); render(); };
   });
   /* The metric form is folded away until asked for — the page opens on the
      dashboard and the week's status, and this one button is how you get to
@@ -455,8 +455,14 @@ function bindAway(){
     }
     var ovr=document.getElementById('ovRetry');
     if(ovr) ovr.onclick=function(){ var m=ovr.getAttribute('data-ministry'); S.ovError[m]=''; S.ovLoading[m]=false; render(); };
-    document.querySelectorAll('[data-mmpick]').forEach(function(b){
-      b.onclick=function(){ var v=b.getAttribute('data-mmpick'), i=v.lastIndexOf('|'); gpTap(); S.mmBrowseDept=v.slice(0,i); S.mmBrowseMinistry=v.slice(i+1); render(); };
+    var msw=document.getElementById('mmSwitch'); if(msw) msw.onclick=function(){ gpTap(); S.mmPickOpen=true; S.mmPickQ=''; render(); var f=document.getElementById('mmPickFind'); if(f) f.focus(); };
+    var mps=document.getElementById('mmPickScrim'); if(mps) mps.onclick=function(){ S.mmPickOpen=false; render(); };
+    var mpf=document.getElementById('mmPickFind'); if(mpf) mpf.oninput=function(){ S.mmPickQ=mpf.value; var box=document.querySelector('.mmPickList'); if(!box) return;
+      var tmp=document.createElement('div'); tmp.innerHTML=mmPickerHtml_(mmOptions_(), mmSelected_(mmOptions_())); var nb=tmp.querySelector('.mmPickList'); if(nb){ box.innerHTML=nb.innerHTML; bindMmPick(); } };
+    var bindMmPick=function(){ document.querySelectorAll('[data-mmpick]').forEach(function(b){
+      b.onclick=function(){ var v=b.getAttribute('data-mmpick'), i=v.lastIndexOf('|'); gpTap(); S.mmBrowseDept=v.slice(0,i); S.mmBrowseMinistry=v.slice(i+1); S.mmPickOpen=false; S.mmPickQ=''; S.mmTab='ministry'; S.mmTabTouched=false; render(); window.scrollTo(0,0); }; }); };
+    bindMmPick();
+    document.querySelectorAll('[data-mmpick-none]').forEach(function(b){
     });
     var mbd=document.getElementById('mmBrowseDeptSel');
     if(mbd) mbd.onchange=function(){ S.mmBrowseDept=mbd.value; S.mmBrowseMinistry=''; render(); };

@@ -119,7 +119,7 @@ const txt = (p) => p.$eval('#main', (e) => e.innerText);
   await page.screenshot({ path: OUT + '/office-saved.png', fullPage: true });
   await page.click('[data-fintab="dash"]'); await page.waitForTimeout(800);
   ok('the office sees what leadership sees, a tab away', !!(await page.$('#finDash .finTiles')) && !!(await page.$('#finYearChart svg')));
-  await page.click('[data-fintab="numbers"]'); await page.waitForTimeout(800);
+  await page.click('.mmTabs [data-mmtab="numbers"]'); await page.waitForTimeout(800);
   ok('… and its usual numbers are the third tab', !(await page.$('#finDash')) && !(await page.$('#finReports')));
   await page.click('[data-fintab="reports"]'); await page.waitForTimeout(400);
   await ctx.close();
