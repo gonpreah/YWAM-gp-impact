@@ -793,6 +793,10 @@ async function open(viewport, query, seed) {
   await page.fill('#ansQ', ''); await page.waitForTimeout(80);
   await ptab(page, 'docs'); pan = await page.$eval('#panel', e => e.textContent);
   ok('and the visa ticks for an international applicant', (await page.$$eval('[data-visaflag]', c => c.map(x => x.getAttribute('data-visaflag')).join(','))) === 'flightsConfirmed,invitationSent');
+  await page.click('#seeVisa'); await page.waitForTimeout(150);
+  ok('"See their e-visa guide as they see it" shows the applicant’s visa card, as it is for them right now', !!(await page.$('.asSeen')) && /As they see it/.test(await page.$eval('.asSeen', e => e.textContent)) && /(Your e-visa, step by step|You will need a visa for Cambodia)/.test(await page.$eval('.asSeen', e => e.textContent)), await page.$eval('.asSeen', e => e.textContent.slice(0, 120)));
+  await page.click('#seeVisa'); await page.waitForTimeout(100);
+  ok('… and Hide takes it away', !(await page.$('.asSeen')));
   ok('and a Leader reference block with "No link made yet" and a button to make one', /Leader reference/.test(pan) && /No link made yet/.test(pan) && !!(await page.$('#refLinkStaff')));
   await page.click('#refLinkStaff');
   await page.waitForSelector('#refLinkBox');
@@ -1462,6 +1466,13 @@ async function open(viewport, query, seed) {
   ok('the record shows the team’s steps with what is next', /Next: 1st call — getting to know each other · on us/.test(await page.$eval('#teamNext', e => e.textContent)));
   ok('staff tick the steps done outside the portal; the ones the portal sees tick themselves', (await page.$$eval('[data-teamstep]', c => c.map(x => x.getAttribute('data-teamstep')).join(','))) === 'call1,call2,arrived' && /ticks when they upload it/.test(await page.$eval('.flowList', e => e.textContent)));
   ok('no separate visa ticks for a team', !(await page.$('[data-visaflag]')));
+  ok('every team step has 👁', (await page.$$eval('[data-seestep]', b => b.length)) === (await page.$$eval('.flowList li', b => b.length)) && /Tap 👁 on a step/.test(await page.$eval('.flowList + .hint', e => e.textContent)));
+  await page.click('[data-seestep="evisa"]'); await page.waitForTimeout(150);
+  ok('👁 on the e-visa step shows it exactly as the team sees it: the step, its note about the letter of invitation', !!(await page.$('.asSeen .step[data-step="evisa"]')) && /As the team sees it/.test(await page.$eval('.asSeen', e => e.textContent)) && /E-visas approved/.test(await page.$eval('.asSeen', e => e.textContent)) && /How to apply for your e-visa online/.test(await page.$eval('.asSeen', e => e.textContent)), await page.$eval('.asSeen', e => e.textContent.slice(0, 160)));
+  await page.click('[data-seestep="call1"]'); await page.waitForTimeout(150);
+  ok('👁 on another step swaps to that one', !(await page.$('.asSeen .step[data-step="evisa"]')) && !!(await page.$('.asSeen .step[data-step="call1"]')) && /video call/.test(await page.$eval('.asSeen', e => e.textContent)));
+  await page.click('[data-seestep="call1"]'); await page.waitForTimeout(100);
+  ok('… and again closes it', !(await page.$('.asSeen')));
   await ptab(page, 'numbers');
   ok('a team not in the Teams Database yet says so, and offers to add it', /Not in the Teams Database yet/.test(await page.$eval('#teamDbState', e => e.textContent)) && !!(await page.$('#syncTeamBtn')));
   await page.click('#syncTeamBtn');
