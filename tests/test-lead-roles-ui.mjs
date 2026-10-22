@@ -111,6 +111,18 @@ const firstKinds = async (p) => { await p.click('[data-lwtab="week"]'); await p.
   ok('the Board tab: Board, Tuesday, Notes — OKRs aren’t in it twice', (await page.$$eval('[data-leadtab]', (b) => b.map((x) => x.getAttribute('data-leadtab')).join())) === 'board,tues,notes');
   await page.click('[data-lwtab="base"]'); await page.waitForTimeout(400);
   await page.screenshot({ path: OUT + '/1-international.png' });
+  /* Who leads what: ＋ by a ministry opens a people search; a pick makes them its leader */
+  await page.click('#lbLeadsFold summary'); await page.waitForTimeout(200);
+  const leadKey = await page.$eval('[data-lbleadpick]', e => e.dataset.lbleadpick);
+  await page.click('[data-lbleadpick="' + leadKey + '"]'); await page.waitForTimeout(300);
+  ok('Who leads what: ＋ by a ministry opens a people search', !!(await page.$('.lbLeadPick [data-ppickq]')), leadKey);
+  await page.fill('.lbLeadPick [data-ppickq]', 'dara'); await page.waitForTimeout(200);
+  await page.click('.lbLeadPick [data-ppickit$="|s1"]'); await page.waitForTimeout(700);
+  const leadLine = () => page.$eval('[data-lbleadpick="' + leadKey + '"]', b => b.parentNode.textContent);
+  ok('… picking Dara makes him its leader — on his profile, and on the line', (mem.staff.find(s => s.id === 's1').leads || []).indexOf(leadKey) > -1 && /Dara Sok/.test(await leadLine()) && !!(await page.$('.lbLeadPick [data-ppickrm$="|s1"]')), await leadLine());
+  await page.click('.lbLeadPick [data-ppickrm$="|s1"]'); await page.waitForTimeout(700);
+  ok('… and × takes it off again', (mem.staff.find(s => s.id === 's1').leads || []).indexOf(leadKey) === -1 && /—/.test(await leadLine()) && !/Dara Sok/.test(await leadLine()), await leadLine());
+  await page.click('[data-lbleadpick="' + leadKey + '"]'); await page.waitForTimeout(200);
   ok('… and partners first when logging', (await firstKinds(page)).join() === 'partner,church,base');
   // a tab chosen stays for the visit …
   await page.reload({ waitUntil: 'load' }); await page.waitForSelector('nav.bottom button'); await page.waitForTimeout(300);

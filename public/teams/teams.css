@@ -2314,6 +2314,14 @@ button.mmTile.lbTileBtn { font:inherit; color:inherit; text-align:left; cursor:p
 .gtMenuIt.on { color:var(--accent); font-weight:600; background:color-mix(in srgb, var(--surface) 76%, transparent); }
 .gtMenuIt:hover { background:color-mix(in srgb, var(--surface) 84%, transparent); }
 .gtDay { font-size:12.5px; font-weight:700; color:var(--muted); padding:12px 12px 2px; letter-spacing:.01em; }
+.gtTeams { padding:0 0 6px; border-bottom:1px solid var(--line); margin-bottom:2px; }
+.lbLeadRow span:last-child { display:inline-flex; align-items:center; gap:6px; }
+.lbLeadAdd { width:24px; height:24px; border-radius:50%; border:1px solid var(--border2); background:var(--bg); color:var(--accent); font-size:15px; line-height:1; padding:0; cursor:pointer; }
+.lbLeadAdd.on { background:var(--surface2); color:var(--ink); }
+.lbLeadPick { padding:2px 0 10px; }
+.gtTeam { display:flex; align-items:center; gap:10px; width:100%; background:none; border:0; padding:8px 12px; font:inherit; text-align:left; color:var(--ink); cursor:pointer; }
+.gtTeam .calDot { margin:0; flex:0 0 auto; }
+.gtTeamTxt { flex:1; min-width:0; display:flex; flex-direction:column; } .gtTeamTxt b { font-size:15px; } .gtTeamTxt span { font-size:12.5px; color:var(--muted); }
 .gtDay.late { color:var(--bad); }
 .gtDay + .gtItem .gtRow { border-top:0; }
 .gtArrRow { display:flex; align-items:center; gap:8px; padding:4px 0; border-top:1px solid var(--line); }
