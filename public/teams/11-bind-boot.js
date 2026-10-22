@@ -1084,7 +1084,8 @@ function bind(){
   /* GP Tasks: the page and its buttons */
   bindGpTasks_();
   bindPeoplePick_();   // every people picker with a search box on the page (12-tasks.js)
-  [['goGpTasks','week'],['goGpTasksGoals','week']].forEach(function(x){ var b=document.getElementById(x[0]); if(b) b.onclick=function(){ gpTap(); gptOpenPage_(x[1]); }; });
+  bindKhmer_();   // Learn Khmer (15-khmer.js)
+  [['goGpTasks','week']].forEach(function(x){ var b=document.getElementById(x[0]); if(b) b.onclick=function(){ gpTap(); gptOpenPage_(x[1]); }; });
   document.querySelectorAll('[data-gogptasks]').forEach(function(b){ b.onclick=function(){ gpTap(); S.bellOpen=false; gptOpenPage_('week'); }; });
   /* an admin looking at a student's app: back to Admin, as yourself */
   var spx=document.getElementById('stuPreviewExit'); if(spx) spx.onclick=function(){ gpTap(); stuPreviewExit_(); };
