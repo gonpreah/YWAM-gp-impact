@@ -2867,6 +2867,22 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   goals) is separate and unchanged.
 - tests/test-gp-tasks.mjs (server: the rules), tests/test-gp-tasks-ui.mjs.
 
+## Learn Khmer — the KBC vocabulary book as flashcards (Oct 2026, Andrew)
+- **☰ → Language → Learn Khmer** (`khOpen_`, view `khmer`, `teams/15-khmer.js`, `bindKhmer_`). The
+  words are `public/khmer-vocab.js` (`GP_KHMER_VOCAB`: `levels` and `cats`, a word is `[en, km, note?]`),
+  transcribed from "KBC Vocabulary" by Phy Chum and Andrew Potter — 3 levels (the book's sections:
+  Essentials, Daily life, Deeper talk), 42 lists, ~1,100 words — and loaded on demand like the
+  Library's (`khLoad_`; cached by sw.js, SHELL v18). The PDF's text layer scrambles Khmer, so the
+  words came from the page images: fix a word in that file, in the book's order.
+- **Three ways to learn a list**, like Quizlet: Flashcards (tap to flip, Got it / Still learning),
+  Quiz (four choices, wrong ones from the same list or level), Match (six pairs against the clock, best
+  time per list in `gp-kh-best`). "English first / Khmer first" (`S.kh.front`, `gp-kh-front`) decides
+  which side a card and a quiz ask with.
+- **What you know is on the phone**: `gp-kh-progress` = `{ "catId|en": { b: box 0–3, t } }`; a word is
+  known at box 2 (`khKnown_`); the Daily mix (`khDue_`) is up to 20 words seen before, below box 3, old
+  enough for their box (0, 1, 3 days). Confetti on a clean run or a finished Match (`gpConfetti`).
+- tests/test-khmer-learn-ui.mjs — the data's integrity and the page end to end.
+
 ## Calendar — the campus's Google Calendar, read-only (Oct 2026, Uriah)
 - **Who leads what** (Campus Leadership overview, `leadBaseHtml_`, `#lbLeadsFold`): ＋ by a ministry
   (`[data-lbleadpick]`, `S.lbLeadPick`) opens the people picker (`lbLeadPeople_`, the ministry's own
