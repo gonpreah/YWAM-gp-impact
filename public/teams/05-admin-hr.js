@@ -1038,7 +1038,7 @@ function bindHr(){
     S.busy=true; render();
     run('hrSendContract',[S.auth.user,S.auth.pin,pid,{ from:f.from, years:Math.round(yrs*4)/4 }],function(d){
       S.busy=false;
-      if(d && d.ok){ S.hrStaff=S.hrStaff.map(function(x){ return x.id===pid ? d.staff : x; }); S.hrSendForm=null; showMsg(t('Ready — send them the link, or fill it out now')); render();
+      if(d && d.ok){ S.hrStaff=S.hrStaff.map(function(x){ return x.id===pid ? d.staff : x; }); S.hrSendForm=null; showMsg(t('Ready — copy or share the link and send it to them')); render();
         var card=document.querySelector('[data-hrcontract="'+d.contractId+'"]'); if(card && card.scrollIntoView) card.scrollIntoView({ behavior:'smooth', block:'center' }); return; }
       showMsg(hrFail_(d));
       render();

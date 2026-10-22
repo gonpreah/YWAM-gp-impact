@@ -315,7 +315,7 @@ console.log('\n=== signing: the legal documents and the staff contract ===');
   await page.click('[data-hrlegalpdf="photo"]'); await page.waitForTimeout(300);
   ok('PDF asks for that document of theirs', sent.some(x => x.fn === 'hrLegalPdf' && x.args[2] === 'st_dara' && x.args[3] === 'photo'));
   await page.click('#hrSendContract'); await page.waitForSelector('#hrSendForm');
-  ok('Fill out staff contract opens with this month and two years when they have none', /Fill out staff contract/.test(await page.$eval('#hrSendForm', e => e.textContent)) && /^\d{4}-\d{2}$/.test(await page.$eval('#hr_send_from', i => i.value)) && await page.$eval('#hr_send_years', s => s.value) === '2');
+  ok('Send staff contract opens with this month and two years when they have none — a one-time link, not handing the phone over', /Send staff contract/.test(await page.$eval('#hrSendForm', e => e.textContent)) && /one-time link/.test(await page.$eval('#hrSendForm', e => e.textContent)) && !/hand the phone/.test(await page.$eval('#hrSendForm', e => e.textContent)) && /Make the link for/.test(await page.$eval('#hrSendSave', e => e.textContent)) && /^\d{4}-\d{2}$/.test(await page.$eval('#hr_send_from', i => i.value)) && await page.$eval('#hr_send_years', s => s.value) === '2');
   ok('years is a number box, not a 1-2-3 list', await page.$eval('#hr_send_years', i => i.tagName === 'INPUT' && i.type === 'number'));
   await page.fill('#hr_send_from', '2026-11');
   await page.fill('#hr_send_years', '0'); await page.click('#hrSendSave'); await page.waitForTimeout(200);
