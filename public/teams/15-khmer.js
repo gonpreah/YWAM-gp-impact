@@ -16,7 +16,21 @@ function khLoad_(){
   document.head.appendChild(sc);
 }
 function khOpen_(){ S.view='khmer'; S.kh.level=null; S.kh.cat=null; S.kh.mode=null; khLoad_(); render(); window.scrollTo(0,0); }
-function khCats_(level){ return GP_KHMER_VOCAB.cats.filter(function(c){ return !level || c.level===level; }); }
+function khCats_(level){ return GP_KHMER_VOCAB.cats.filter(function(c){ return level==null || c.level===level; }); }
+/* learning Khmer (cards ask in English, answer in Khmer) or English (the other way round — Andrew, Oct
+   2026: "let's use it for learning English" too). The script's lists always show the letter first. */
+function khLearningEn_(){ return S.kh.front==='km'; }
+function khFrontFor_(c){ return c && c.script ? 'km' : S.kh.front; }
+function khTitle_(){ return khLearningEn_() ? t('Learn English') : t('Learn Khmer'); }
+/* 🔊 — the phone's own voice (the Library's helpers: libSpeechOk_, libVoice_). iPhones have no Khmer
+   voice yet; Android phones with Google's voices do. English voices are everywhere. */
+function khSpeak_(text, km){
+  if(!(typeof libSpeechOk_==='function' && libSpeechOk_())){ showMsg(t('This phone cannot read aloud.')); return; }
+  var v=typeof libVoice_==='function' ? libVoice_(km) : null;
+  if(!v){ if(!S.khNoVoiceSaid){ S.khNoVoiceSaid=true; showMsg(km ? t('No Khmer voice on this phone — Android phones with Google’s voices have one; iPhones don’t yet.') : t('No English voice on this phone.')); } return; }
+  try { window.speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(String(text).split(' / ')[0].replace(/◌/g,'').replace(/\s*\(.*\)$/,'').trim()); u.voice=v; u.lang=v.lang; u.rate=0.85; window.speechSynthesis.speak(u); } catch(e){}
+}
+function khSayBtn_(text, km, cls){ return '<button class="khSay'+(cls?' '+cls:'')+'" data-khsay="'+(km?'km':'en')+'|'+esc(text)+'" aria-label="'+esc(t('Listen'))+'">🔊</button>'; }
 function khCat_(id){ return GP_KHMER_VOCAB.cats.filter(function(c){ return c.id===id; })[0] || null; }
 function khKey_(c, w){ return c.id+'|'+w[0]; }
 /* what you know: { key: { b: box 0–3, t: when } } */
@@ -35,6 +49,14 @@ function khDue_(){
   GP_KHMER_VOCAB.cats.forEach(function(c){ c.words.forEach(function(w){ var p=P[khKey_(c, w)]; if(!p || p.b>=3) return; var days=[0, 1, 3][p.b]||0; if(now-(p.t||0) >= days*864e5) out.push({ c:c, w:w }); }); });
   return khShuffle_(out).slice(0, 20);
 }
+/* the fun (Andrew: "make it fun with confetti"): a burst on every right answer, a streak that heats up,
+   a shower at the end of any set — bigger for a clean run or a list learned through */
+function khBurst_(el){ if(el && typeof gpConfetti==='function') gpConfetti(el); }
+function khShower_(n){
+  var W=window.innerWidth, H=window.innerHeight, spots=[[0.2,0.3],[0.5,0.22],[0.8,0.3],[0.35,0.5],[0.65,0.5]];
+  for(var i=0;i<Math.min(n, spots.length);i++) (function(i){ setTimeout(function(){ var d=document.createElement('div'); d.style.cssText='position:fixed;left:'+(W*spots[i][0])+'px;top:'+(H*spots[i][1])+'px;width:1px;height:1px;pointer-events:none'; document.body.appendChild(d); khBurst_(d); setTimeout(function(){ d.remove(); }, 1500); }, i*160); })(i);
+}
+function khCheer_(pct){ return pct===100 ? t('Perfect! 🎉') : pct>=80 ? t('Great work! 🌟') : pct>=50 ? t('Nice one 👍') : t('Keep going 💪'); }
 function khShuffle_(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)), x=a[i]; a[i]=a[j]; a[j]=x; } return a; }
 function khPct_(k, n){ return n ? Math.round(k/n*100) : 0; }
 function khBar_(k, n){ return '<div class="khBar"><div style="width:'+khPct_(k, n)+'%"></div></div>'; }
@@ -44,23 +66,24 @@ function khWordHtml_(w, front){   // one side of a card: the word, and its note 
 }
 /* ---- the pages ---- */
 function khmerHtml_(){
-  var h='<button class="linkbtn" id="khBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(S.kh.mode ? t('Back') : S.kh.cat ? t('Lists') : S.kh.level ? t('Learn Khmer') : t('My Home'))+'</button>';
-  if(typeof GP_KHMER_VOCAB==='undefined'){ if(!S.khLoading && !S.khError) setTimeout(khLoad_, 0); return h+'<h2>'+esc(t('Learn Khmer'))+'</h2><div class="card"><p class="sub" style="margin:0">'+esc(S.khError ? t('The words could not load. Check your connection and try again.') : t('Loading…'))+'</p></div>'; }
+  var h='<button class="linkbtn" id="khBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(S.kh.mode ? t('Back') : S.kh.cat ? t('Lists') : S.kh.level!=null ? khTitle_() : t('My Home'))+'</button>';
+  if(typeof GP_KHMER_VOCAB==='undefined'){ if(!S.khLoading && !S.khError) setTimeout(khLoad_, 0); return h+'<h2>'+esc(khTitle_())+'</h2><div class="card"><p class="sub" style="margin:0">'+esc(S.khError ? t('The words could not load. Check your connection and try again.') : t('Loading…'))+'</p></div>'; }
   if(S.kh.mode) return h+khModeHtml_();
   if(S.kh.cat) return h+khCatHtml_(khCat_(S.kh.cat));
-  if(S.kh.level) return h+khLevelHtml_(S.kh.level);
+  if(S.kh.level!=null) return h+khLevelHtml_(S.kh.level);
   var T=khTotals_(null), due=khDue_();
-  h+='<h2>'+esc(t('Learn Khmer'))+'</h2><p class="sub" style="margin:-4px 0 10px">'+esc(t('The words of the KBC vocabulary book, by Phy Chum and Andrew Potter — a few minutes a day.'))+'</p>';
+  h+='<h2>'+esc(khTitle_())+'</h2><p class="sub" style="margin:-4px 0 10px">'+esc(t('The words of the KBC vocabulary book, by Phy Chum and Andrew Potter — a few minutes a day.'))+'</p>';
+  h+='<div class="khWhich"><span>'+esc(t('I’m learning'))+'</span><button class="gtTab'+(khLearningEn_()?'':' on')+'" data-khlearn="km">'+esc(t('Khmer'))+'</button><button class="gtTab'+(khLearningEn_()?' on':'')+'" data-khlearn="en">'+esc(t('English'))+'</button></div>';
   h+='<div class="card khHero"><div class="khRing" style="--p:'+khPct_(T.known, T.total)+'"><b>'+khPct_(T.known, T.total)+'%</b></div><div><b>'+esc(gpT('{n} of {total} words known',{n:T.known, total:T.total}))+'</b><div class="hint">'+esc(t('A word counts as known once you have got it right twice.'))+'</div></div></div>';
   h+='<div class="card khDue"><div><b>'+esc(t('Daily mix'))+'</b><div class="hint">'+esc(due.length ? gpT('{n} words due for a look today',{n:due.length}) : T.known ? t('Nothing due — learn a new list, or come back tomorrow.') : t('Start a list below and your daily mix fills itself.'))+'</div></div>'+
     (due.length ? '<button class="btn small" id="khDaily" style="width:auto;margin:0">'+esc(t('Practise'))+'</button>' : '')+'</div>';
   GP_KHMER_VOCAB.levels.forEach(function(L){ var tl=khTotals_(L.id);
-    h+='<button class="card khLevel" data-khlevel="'+L.id+'"><div class="khLevelTop"><b>'+esc(gpT('Level {n}',{n:L.id}))+' · '+esc(t(L.name))+'</b><span>'+tl.known+' / '+tl.total+'</span></div><div class="hint">'+esc(t(L.blurb))+'</div>'+khBar_(tl.known, tl.total)+'<div class="hint">'+esc(gpT('{n} lists',{n:khCats_(L.id).length}))+'</div></button>'; });
+    h+='<button class="card khLevel" data-khlevel="'+L.id+'"><div class="khLevelTop"><b>'+(L.id ? esc(gpT('Level {n}',{n:L.id}))+' · ' : '')+esc(t(L.name))+'</b><span>'+tl.known+' / '+tl.total+'</span></div><div class="hint">'+esc(t(L.blurb))+'</div>'+khBar_(tl.known, tl.total)+'<div class="hint">'+esc(gpT('{n} lists',{n:khCats_(L.id).length}))+'</div></button>'; });
   return h;
 }
 function khLevelHtml_(level){
   var L=GP_KHMER_VOCAB.levels.filter(function(x){ return x.id===level; })[0], tl=khTotals_(level);
-  var h='<h2>'+esc(gpT('Level {n}',{n:level}))+' · '+esc(t(L.name))+'</h2><p class="sub" style="margin:-4px 0 10px">'+esc(t(L.blurb))+'</p>'+khBar_(tl.known, tl.total);
+  var h='<h2>'+(level ? esc(gpT('Level {n}',{n:level}))+' · ' : '')+esc(t(L.name))+'</h2><p class="sub" style="margin:-4px 0 10px">'+esc(t(L.blurb))+'</p>'+khBar_(tl.known, tl.total);
   h+='<div class="khCats">'+khCats_(level).map(function(c){ var k=khKnown_(c);
     return '<button class="card khCatCard" data-khcat="'+esc(c.id)+'"><b>'+esc(t(c.name))+'</b><span class="hint">'+esc(gpT('{n} words',{n:c.words.length}))+(k ? ' · '+esc(gpT('{n} known',{n:k})) : '')+'</span>'+khBar_(k, c.words.length)+'</button>'; }).join('')+'</div>';
   return h;
@@ -73,12 +96,12 @@ function khCatHtml_(c){
     '<button class="card khMode" data-khmode="quiz"><span class="khModeIc">❓</span><b>'+esc(t('Quiz'))+'</b><span class="hint">'+esc(t('Pick the right one of four'))+'</span></button>'+
     '<button class="card khMode" data-khmode="match"><span class="khModeIc">⚡</span><b>'+esc(t('Match'))+'</b><span class="hint">'+esc(t('Pair them up against the clock'))+'</span></button></div>';
   h+='<div class="card"><div class="khListHead"><b>'+esc(t('All the words'))+'</b><button class="linkbtn inline" id="khFront">'+esc(S.kh.front==='km' ? t('Khmer first') : t('English first'))+' ⇄</button></div>'+
-    c.words.map(function(w){ var b=khBox_(c, w); return '<div class="khRow'+(b>=2?' known':'')+'"><span class="khEn">'+esc(w[0])+(w[2] ? ' <span class="khNote">'+esc(w[2])+'</span>' : '')+'</span><span class="khKm">'+esc(w[1])+'</span></div>'; }).join('')+'</div>';
+    c.words.map(function(w){ var b=khBox_(c, w); return '<div class="khRow'+(b>=2?' known':'')+'"><span class="khEn">'+esc(w[0])+(w[2] ? ' <span class="khNote">'+esc(w[2])+'</span>' : '')+'</span><span class="khKm">'+esc(w[1])+'</span>'+khSayBtn_(khLearningEn_() && !c.script ? w[0] : w[1], !(khLearningEn_() && !c.script))+'</div>'; }).join('')+'</div>';
   return h;
 }
 /* ---- the three ways to learn ---- */
 function khStart_(mode, items){   // items: [{c, w}] — a list's words, or the daily mix
-  var K=S.kh; K.mode=mode; K.items=khShuffle_(items); K.i=0; K.flipped=false; K.right=0; K.wrong=0; K.done=false; K.picked=null;
+  var K=S.kh; K.mode=mode; K.items=khShuffle_(items); K.i=0; K.flipped=false; K.right=0; K.wrong=0; K.done=false; K.picked=null; K.streak=0; K.bestStreak=0; K.mastered=false;
   if(mode==='quiz') K.items=K.items.slice(0, 12);
   if(mode==='match'){ var six=K.items.slice(0, 6); K.pairs=six; K.tiles=khShuffle_(six.map(function(x, i){ return { id:i, side:'en', text:x.w[0] }; }).concat(six.map(function(x, i){ return { id:i, side:'km', text:x.w[1] }; }))); K.sel=null; K.matched={}; K.start=Date.now(); K.wrongTile=null; }
   if(mode==='quiz') khQuizNext_();
@@ -86,7 +109,7 @@ function khStart_(mode, items){   // items: [{c, w}] — a list's words, or the 
 }
 function khQuizNext_(){
   var K=S.kh, it=K.items[K.i]; if(!it) return;
-  var ask = K.front==='km' ? 'km' : 'en', pool=khShuffle_(it.c.words.filter(function(w){ return w!==it.w && w[1]!==it.w[1]; })).slice(0, 3);
+  var ask = khFrontFor_(it.c), pool=khShuffle_(it.c.words.filter(function(w){ return w!==it.w && w[1]!==it.w[1]; })).slice(0, 3);
   if(pool.length<3){ var more=khShuffle_(GP_KHMER_VOCAB.cats.filter(function(c){ return c.level===it.c.level; }).reduce(function(a, c){ return a.concat(c.words); }, []).filter(function(w){ return w!==it.w && w[1]!==it.w[1] && pool.indexOf(w)===-1; })); pool=pool.concat(more.slice(0, 3-pool.length)); }
   K.q={ ask:ask, w:it.w, options:khShuffle_(pool.concat([it.w])) }; K.picked=null;
 }
@@ -94,21 +117,23 @@ function khModeHtml_(){
   var K=S.kh, n=K.items.length, h='';
   if(K.done){
     var pct=khPct_(K.right, K.right+K.wrong);
-    h+='<div class="card khSummary"><div class="khBig">'+(K.mode==='match' ? esc(gpT('{s} seconds',{s:K.secs})) : pct+'%')+'</div>';
+    h+='<div class="card khSummary"><div class="khCheer">'+esc(K.mode==='match' ? t('Done! ⚡') : khCheer_(pct))+'</div><div class="khBig">'+(K.mode==='match' ? esc(gpT('{s} seconds',{s:K.secs})) : pct+'%')+'</div>';
     if(K.mode==='match') h+='<p class="sub" style="margin:0">'+esc(K.best && K.best<K.secs ? gpT('Your best is {s} seconds',{s:K.best}) : t('A new best time!'))+'</p>';
-    else h+='<p class="sub" style="margin:0">'+esc(gpT('{right} right, {wrong} still learning',{right:K.right, wrong:K.wrong}))+'</p>';
+    else h+='<p class="sub" style="margin:0">'+esc(gpT('{right} right, {wrong} still learning',{right:K.right, wrong:K.wrong}))+(K.bestStreak>=3 ? ' · 🔥 '+esc(gpT('{n} in a row',{n:K.bestStreak})) : '')+'</p>';
+    if(K.mastered) h+='<p class="khMastered">🏆 '+esc(t('You know this whole list!'))+'</p>';
     h+='<div class="btnRow" style="margin-top:12px"><button class="btn" id="khAgain">'+esc(t('Again'))+'</button><button class="btn ghost" id="khDone">'+esc(t('Done'))+'</button></div></div>';
     return h;
   }
   if(K.mode==='cards'){
-    var it=K.items[K.i], side = K.flipped ? (K.front==='km' ? 'en' : 'km') : K.front;
-    h+='<div class="khCount">'+(K.i+1)+' / '+n+'</div>'+khBar_(K.i, n);
+    var it=K.items[K.i], fr=khFrontFor_(it.c), side = K.flipped ? (fr==='km' ? 'en' : 'km') : fr;
+    h+='<div class="khCount">'+(K.i+1)+' / '+n+(K.streak>=3 ? ' · <span class="khStreak">🔥 '+esc(gpT('{n} in a row',{n:K.streak}))+'</span>' : '')+'</div>'+khBar_(K.i, n);
     h+='<button class="khCard'+(K.flipped?' flipped':'')+'" id="khFlip" aria-label="'+esc(t('Flip'))+'">'+khWordHtml_(it.w, side)+'<span class="khFlipHint">'+esc(K.flipped ? t('Did you get it?') : t('Tap to flip'))+'</span></button>';
+    h+='<div class="khSayRow">'+khSayBtn_(side==='km' ? it.w[1] : it.w[0], side==='km', 'big')+'</div>';
     h+='<div class="khAnswer'+(K.flipped?'':' hide')+'"><button class="btn ghost" id="khNo">✗ '+esc(t('Still learning'))+'</button><button class="btn" id="khYes">✓ '+esc(t('Got it'))+'</button></div>';
     h+='<p class="hint" style="text-align:center">'+esc(t(it.c.name))+'</p>';
   } else if(K.mode==='quiz'){
-    var q=K.q; h+='<div class="khCount">'+(K.i+1)+' / '+n+'</div>'+khBar_(K.i, n);
-    h+='<div class="card khAsk">'+khWordHtml_(q.w, q.ask)+'</div><div class="khOptions">'+q.options.map(function(w, i){
+    var q=K.q; h+='<div class="khCount">'+(K.i+1)+' / '+n+(K.streak>=3 ? ' · <span class="khStreak">🔥 '+esc(gpT('{n} in a row',{n:K.streak}))+'</span>' : '')+'</div>'+khBar_(K.i, n);
+    h+='<div class="card khAsk">'+khWordHtml_(q.w, q.ask)+khSayBtn_(q.ask==='km' ? q.w[1] : q.w[0], q.ask==='km')+'</div><div class="khOptions">'+q.options.map(function(w, i){
       var cls='khOpt'; if(K.picked!==null){ if(w===q.w) cls+=' right'; else if(i===K.picked) cls+=' wrong'; }
       return '<button class="'+cls+'" data-khopt="'+i+'"'+(K.picked!==null?' disabled':'')+'>'+khWordHtml_(w, q.ask==='km' ? 'en' : 'km')+'</button>'; }).join('')+'</div>';
   } else if(K.mode==='match'){
@@ -122,27 +147,32 @@ function khModeHtml_(){
 function khFinish_(){
   var K=S.kh; K.done=true;
   if(K.mode==='match'){ K.secs=Math.round((Date.now()-K.start)/10)/100; var B={}; try { B=JSON.parse(lsGet('gp-kh-best')||'{}'); } catch(e){} var id=K.pairs[0].c.id; K.best=B[id]||0; if(!K.best || K.secs<K.best){ B[id]=K.secs; lsSet('gp-kh-best', JSON.stringify(B)); } }
+  /* a list learned through, just now? */
+  var c=K.cat ? khCat_(K.cat) : null; K.mastered=!!(c && khKnown_(c)===c.words.length && K.items.length>=c.words.length);
   render(); window.scrollTo(0,0);
-  if(K.mode==='match' || (K.right && !K.wrong)){ var el=document.querySelector('.khSummary'); if(el && typeof gpConfetti==='function') gpConfetti(el); }
+  var clean = K.mode==='match' || (K.right && !K.wrong);
+  khShower_(K.mastered ? 5 : clean ? 4 : 2);
 }
 function bindKhmer_(){
   if(S.view!=='khmer') return;
   var K=S.kh, on=function(id, fn){ var el=document.getElementById(id); if(el) el.onclick=fn; return el; };
-  on('khBack', function(){ gpTap(); if(K.mode){ K.mode=null; } else if(K.cat){ K.cat=null; } else if(K.level){ K.level=null; } else { S.view='week'; } render(); window.scrollTo(0,0); });
+  on('khBack', function(){ gpTap(); if(K.mode){ K.mode=null; } else if(K.cat){ K.cat=null; } else if(K.level!=null){ K.level=null; } else { S.view='week'; } render(); window.scrollTo(0,0); });
+  document.querySelectorAll('[data-khlearn]').forEach(function(b){ b.onclick=function(){ gpTap(); K.front = b.getAttribute('data-khlearn')==='en' ? 'km' : 'en'; lsSet('gp-kh-front', K.front); render(); }; });
+  document.querySelectorAll('[data-khsay]').forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); gpTap(); var v=b.getAttribute('data-khsay'); khSpeak_(v.slice(3), v.slice(0,2)==='km'); }; });
   document.querySelectorAll('[data-khlevel]').forEach(function(b){ b.onclick=function(){ gpTap(); K.level=+b.getAttribute('data-khlevel'); render(); window.scrollTo(0,0); }; });
   document.querySelectorAll('[data-khcat]').forEach(function(b){ b.onclick=function(){ gpTap(); K.cat=b.getAttribute('data-khcat'); render(); window.scrollTo(0,0); }; });
   document.querySelectorAll('[data-khmode]').forEach(function(b){ b.onclick=function(){ gpTap(); var c=khCat_(K.cat); khStart_(b.getAttribute('data-khmode'), c.words.map(function(w){ return { c:c, w:w }; })); }; });
   on('khDaily', function(){ gpTap(); khStart_('cards', khDue_()); });
   on('khFront', function(){ gpTap(); K.front = K.front==='km' ? 'en' : 'km'; lsSet('gp-kh-front', K.front); render(); });
   on('khFlip', function(){ gpTap(); K.flipped=!K.flipped; render(); });
-  var answer=function(right){ var it=K.items[K.i]; khMark_(it.c, it.w, right); if(right) K.right++; else K.wrong++; K.i++; K.flipped=false; if(K.i>=K.items.length){ khFinish_(); return; } if(K.mode==='quiz') khQuizNext_(); render(); window.scrollTo(0,0); };
+  var answer=function(right, from){ var it=K.items[K.i]; khMark_(it.c, it.w, right); if(right){ K.right++; K.streak++; if(K.streak>K.bestStreak) K.bestStreak=K.streak; if(from!==null) khBurst_(from || document.getElementById('khFlip')); if(K.streak===5 || K.streak===10) showMsg(K.streak===10 ? t('Unstoppable! 🔥🔥') : t('On fire! 🔥')); } else { K.wrong++; K.streak=0; } K.i++; K.flipped=false; if(K.i>=K.items.length){ khFinish_(); return; } if(K.mode==='quiz') khQuizNext_(); render(); window.scrollTo(0,0); };
   on('khYes', function(){ gpTap(); answer(true); }); on('khNo', function(){ gpTap(); answer(false); });
-  document.querySelectorAll('[data-khopt]').forEach(function(b){ b.onclick=function(){ if(K.picked!==null) return; gpTap(); var i=+b.getAttribute('data-khopt'), right=K.q.options[i]===K.q.w; K.picked=i; render(); setTimeout(function(){ answer(right); }, right ? 500 : 1100); }; });
+  document.querySelectorAll('[data-khopt]').forEach(function(b){ b.onclick=function(){ if(K.picked!==null) return; gpTap(); var i=+b.getAttribute('data-khopt'), right=K.q.options[i]===K.q.w; K.picked=i; render(); if(right) khBurst_(document.querySelector('.khOpt.right')); setTimeout(function(){ answer(right, null); }, right ? 500 : 1100); }; });
   document.querySelectorAll('[data-khtile]').forEach(function(b){ b.onclick=function(){
     var i=+b.getAttribute('data-khtile'), tile=K.tiles[i]; if(K.matched[tile.id]) return; gpTap();
     if(K.sel===null || K.sel===i){ K.sel = K.sel===i ? null : i; K.wrongTile=null; render(); return; }
     var other=K.tiles[K.sel];
-    if(other.id===tile.id && other.side!==tile.side){ K.matched[tile.id]=1; K.sel=null; khMark_(K.pairs[tile.id].c, K.pairs[tile.id].w, true); if(Object.keys(K.matched).length===K.pairs.length){ khFinish_(); return; } }
+    if(other.id===tile.id && other.side!==tile.side){ K.matched[tile.id]=1; K.sel=null; khMark_(K.pairs[tile.id].c, K.pairs[tile.id].w, true); khBurst_(b); if(Object.keys(K.matched).length===K.pairs.length){ khFinish_(); return; } }
     else { K.wrongTile=i; K.sel=null; khMark_(K.pairs[tile.id].c, K.pairs[tile.id].w, false); }
     render();
   }; });

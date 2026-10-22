@@ -2496,3 +2496,11 @@ body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
 .khTile.shake { animation:khShake .3s; border-color:var(--bad); }
 @keyframes khShake { 25% { transform:translateX(-5px); } 75% { transform:translateX(5px); } }
 .khSummary { text-align:center; padding:26px 16px; } .khBig { font-size:44px; font-weight:800; color:var(--accent); line-height:1.1; margin-bottom:6px; }
+.khWhich { display:flex; align-items:center; gap:4px; margin:0 0 12px; font-size:13.5px; color:var(--muted); } .khWhich span { margin-right:6px; } .khWhich .gtTab { padding:6px 10px; }
+.khSay { background:var(--surface2); border:0; border-radius:50%; width:34px; height:34px; font-size:16px; cursor:pointer; flex:0 0 auto; } .khSay.big { width:48px; height:48px; font-size:22px; }
+.khSayRow { display:flex; justify-content:center; margin:-4px 0 10px; }
+.khAsk .khSay { margin-top:8px; }
+.khRow .khSay { margin-left:4px; }
+.khCheer { font-size:22px; font-weight:800; margin-bottom:4px; animation:gpCheer .5s ease-out; }
+.khStreak { color:var(--amber); }
+.khMastered { margin:10px 0 0; font-weight:700; color:var(--good); }

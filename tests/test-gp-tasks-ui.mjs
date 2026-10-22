@@ -85,7 +85,7 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   ok('the Cafe has its designated list, named after it, the first time one of its people opens GP Tasks', !!cafeL && cafeL.title === 'Cafe' && cafeL.canEdit);
   await call('saveGpTaskList', ['cora', '1234', { id: cafeL.id, title: 'Cafe jobs' }]);
   const { ctx, page } = await open('cora');
-  ok('My Home\'s card has a GP Tasks row, and Weekly Goals a GP Tasks button', !!(await page.$('#goGpTasks')) && !!(await page.$('#goGpTasksGoals')));
+  ok('My Home\'s card has a GP Tasks row — and Weekly Goals no button of its own any more', !!(await page.$('#goGpTasks')) && !(await page.$('#goGpTasksGoals')));
   await page.click('#menuBtn'); await page.waitForTimeout(250);
   ok('… and ☰ has GP Calendar/Tasks near the top', (await page.$$eval('[data-menu-item]', b => b.map(x => x.dataset.menuItem))).indexOf('caltasks') === 1);
   await page.click('[data-menu-item="caltasks"]'); await page.waitForTimeout(800);
@@ -265,7 +265,7 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   const bell = await page.evaluate(() => notifItems_().map(i => i.text).join(' | '));
   ok('Kanha\'s bell: Cora gave you a task', /Cora gave you a task: Order milk/.test(bell), bell);
   ok('… and My Home says 2 open (milk and cups)', /GP Tasks\s*2/.test(await page.$eval('#goGpTasks', e => e.innerText)));
-  await page.click('#goGpTasksGoals'); await page.waitForTimeout(800);
+  await page.click('#goGpTasks'); await page.waitForTimeout(800);
   const mt = await page.$eval('.gtList', e => e.innerText);
   ok('Kanha\'s Inbox: what she was given, each with where it is from', /Inbox/.test(mt) && /Order milk/.test(mt) && /Restock cups/.test(mt) && /Cafe jobs/.test(mt) && /drag a task onto one of your lists/.test(mt), mt.slice(0, 300));
   const shared = (mem.gpTasks.lists || []).find(l => l.title === 'Reading');

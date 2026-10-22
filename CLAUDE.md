@@ -2846,7 +2846,7 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   becomes that ministry's task (its first list, made if none), given to them, from Campus Leadership
   (`gptFromCard_`); done on the board → done in the list; unlinked → the task goes.
 - **Where it opens**: My Home's card (✅ GP Tasks · N open, `#goGpTasks`), a button on the Weekly Goals
-  heading (`#goGpTasksGoals`), the bell, `teams.html?view=tasks`; on My Ministry **✅ Ministry Tasks**,
+  heading (gone, Oct 2026 — Andrew), the bell, `teams.html?view=tasks`; on My Ministry **✅ Ministry Tasks**,
   folded under the department and ministry (`mtFoldHtml_`, open/shut kept in `gp-mt-open`; that
   ministry's lists, `gptPageHtml_({dept,min}, true)`), and for Campus Leadership a **Ministry Tasks** LW
   tab (every list, with the ⚙️ filter).
@@ -2868,12 +2868,25 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - tests/test-gp-tasks.mjs (server: the rules), tests/test-gp-tasks-ui.mjs.
 
 ## Learn Khmer — the KBC vocabulary book as flashcards (Oct 2026, Andrew)
-- **☰ → Language → Learn Khmer** (`khOpen_`, view `khmer`, `teams/15-khmer.js`, `bindKhmer_`). The
-  words are `public/khmer-vocab.js` (`GP_KHMER_VOCAB`: `levels` and `cats`, a word is `[en, km, note?]`),
+- **☰ → Language → Learn Khmer / English** (`khOpen_`, view `khmer`, `teams/15-khmer.js`,
+  `bindKhmer_`; the Language group is just this — Khmer review moved under Admin). The words are
+  `public/khmer-vocab.js` (`GP_KHMER_VOCAB`: `levels` and `cats`, a word is `[en, km, note?]`),
   transcribed from "KBC Vocabulary" by Phy Chum and Andrew Potter — 3 levels (the book's sections:
-  Essentials, Daily life, Deeper talk), 42 lists, ~1,100 words — and loaded on demand like the
-  Library's (`khLoad_`; cached by sw.js, SHELL v18). The PDF's text layer scrambles Khmer, so the
-  words came from the page images: fix a word in that file, in the book's order.
+  Essentials, Daily life, Deeper talk), 42 lists, ~1,100 words — plus level 0, **The script**
+  (`script: true` lists: 33 consonants with their series, the vowel signs shown on ◌, the independent
+  vowels; a card shows the letter first, the sound is the answer). Loaded on demand like the Library's
+  (`khLoad_`; cached by sw.js, SHELL v18). The PDF's text layer scrambles Khmer, so the words came from
+  the page images: fix a word in that file, in the book's order.
+- **Learning Khmer or English** (`[data-khlearn]`, `S.kh.front` = 'en' learning Khmer, 'km' learning
+  English, kept in `gp-kh-front`; `khLearningEn_`, `khTitle_`): the switch on the home decides which side
+  a card and a quiz ask with and which language 🔊 reads; the page is titled Learn English then.
+- **🔊** (`khSpeak_`, `[data-khsay="km|text"]`): the phone's own voice through the Library's
+  `libSpeechOk_`/`libVoice_` (only the first alternative before " / " is read, ◌ stripped). iPhones have
+  no Khmer voice yet — it says so once; Android phones with Google's voices do; English voices are
+  everywhere. Recorded audio would come the Library's way (scripts/record-library-audio.mjs).
+- **The fun** (Andrew: "make it fun with confetti"): a burst on every right answer (`khBurst_`), a 🔥
+  streak from 3 with toasts at 5 and 10, a shower at the end of any set (`khShower_`, bigger for a
+  clean run), a cheer by score (`khCheer_`), 🏆 when a list is known through (`K.mastered`).
 - **Three ways to learn a list**, like Quizlet: Flashcards (tap to flip, Got it / Still learning),
   Quiz (four choices, wrong ones from the same list or level), Match (six pairs against the clock, best
   time per list in `gp-kh-best`). "English first / Khmer first" (`S.kh.front`, `gp-kh-front`) decides

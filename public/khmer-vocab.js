@@ -4,11 +4,31 @@
    or [english, khmer, note]. Keep the book's order inside a list. */
 var GP_KHMER_VOCAB = {
   levels: [
+    { id: 0, name: 'The script', blurb: 'The 33 consonants in their two series, the vowels and the independent vowels — the letters before the words.' },
     { id: 1, name: 'Essentials', blurb: 'Numbers, time, family, the verbs you use every day — the words everything else is built on.' },
     { id: 2, name: 'Daily life', blurb: 'Home, the market, the city, YWAM life, the restaurant, the hospital.' },
     { id: 3, name: 'Deeper talk', blurb: 'Small talk that goes somewhere — work, weather, faith, history — and the words of the Bible.' }
   ],
   cats: [
+    /* the script (script: true — a card shows the letter first; the sound is the answer). A consonant's
+       sound is given with its series: first-series consonants carry an "a" sound, second-series an "o". */
+    { id: 'consonants', level: 0, script: true, name: 'Consonants', tip: 'Each consonant belongs to one of two series, and the series decides how the vowel after it sounds: first series (a), second series (o).', words: [
+      ['kâ · first series', 'ក'], ['khâ · first series', 'ខ'], ['kô · second series', 'គ'], ['khô · second series', 'ឃ'], ['ngô · second series', 'ង'],
+      ['châ · first series', 'ច'], ['chhâ · first series', 'ឆ'], ['chô · second series', 'ជ'], ['chhô · second series', 'ឈ'], ['nhô · second series', 'ញ'],
+      ['dâ · first series', 'ដ'], ['thâ · first series', 'ឋ'], ['dô · second series', 'ឌ'], ['thô · second series', 'ឍ'], ['nâ · first series', 'ណ'],
+      ['tâ · first series', 'ត'], ['thâ · first series (t)', 'ថ'], ['tô · second series', 'ទ'], ['thô · second series (t)', 'ធ'], ['nô · second series', 'ន'],
+      ['bâ · first series', 'ប'], ['phâ · first series', 'ផ'], ['pô · second series', 'ព'], ['phô · second series', 'ភ'], ['mô · second series', 'ម'],
+      ['yô · second series', 'យ'], ['rô · second series', 'រ'], ['lô · second series', 'ល'], ['vô · second series', 'វ'],
+      ['sâ · first series', 'ស'], ['hâ · first series', 'ហ'], ['lâ · first series', 'ឡ'], ['’â · first series', 'អ']
+    ] },
+    { id: 'vowels', level: 0, script: true, name: 'Vowels', tip: 'A vowel sign attaches to a consonant and sounds one way after a first-series consonant, another after a second-series one: first / second.', words: [
+      ['a / ie', '◌ា'], ['e / i', '◌ិ'], ['ei / i', '◌ី'], ['œ / œ', '◌ឹ'], ['œ / œu', '◌ឺ'], ['o / u', '◌ុ'], ['ou / u', '◌ូ'], ['uo / uo', '◌ួ'], ['aeu / eu', '◌ើ'], ['eua / eua', '◌ឿ'], ['ie / ie', '◌ៀ'],
+      ['ei / e', '◌េ'], ['ae / ê', '◌ែ'], ['ai / ey', '◌ៃ'], ['ao / ou', '◌ោ'], ['au / ov', '◌ៅ'], ['om / um', '◌ុំ'], ['am / um', '◌ំ'], ['am / oam', '◌ាំ'], ['ah / eah', '◌ះ'],
+      ['eh / ih', '◌ិះ'], ['oh / uh', '◌ុះ'], ['eh / ih (e)', '◌េះ'], ['aoh / uoh', '◌ោះ']
+    ] },
+    { id: 'indvowels', level: 0, script: true, name: 'Independent vowels', tip: 'These stand on their own, without a consonant.', words: [
+      ['e', 'ឥ'], ['ei', 'ឦ'], ['o', 'ឧ'], ['ou', 'ឩ'], ['au', 'ឪ'], ['rœ', 'ឫ'], ['rœu', 'ឬ'], ['lœ', 'ឭ'], ['lœu', 'ឮ'], ['ae', 'ឯ'], ['ai', 'ឰ'], ['ao', 'ឱ'], ['ao (ឲ)', 'ឲ'], ['au (ឳ)', 'ឳ']
+    ] },
     { id: 'numbers', level: 1, name: 'Numbers', words: [
       ['1', 'មួយ', '១'], ['2', 'ពីរ', '២'], ['3', 'បី', '៣'], ['4', 'បួន', '៤'], ['5', 'ប្រាំ', '៥'], ['6', 'ប្រាំមួយ', '៦'], ['7', 'ប្រាំពីរ', '៧'], ['8', 'ប្រាំបី', '៨'], ['9', 'ប្រាំបួន', '៩'], ['10', 'ដប់', '១០'],
       ['20', 'ម្ភៃ', '២០'], ['30', 'សាមសិប', '៣០'], ['40', 'សែសិប', '៤០'], ['50', 'ហាសិប', '៥០'], ['60', 'ហុកសិប', '៦០'], ['70', 'ចិតសិប', '៧០'], ['80', 'ប៉ែតសិប', '៨០'], ['90', 'កៅសិប', '៩០'],
