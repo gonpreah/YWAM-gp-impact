@@ -2742,6 +2742,11 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   a few"): the list's tasks, plus tasks in other lists given to any of its people (`team` in
   `gtListHtml_` when `S.gptScope` is set — the department's list where board cards land, another
   ministry's), each with a chip saying where it is from and no grip (they are ordered in their own list).
+  **The Outreach Teams list opens with "Teams arriving"** (`gtTeamsHtml_`, `S.calTeams` from
+  `getCalendar(today, 120)` loaded on demand, `calTeamsLoad_`; Andrew, Oct 2026): the campus
+  calendar's events of the Teams kind — name, "arrives {day}", "{n} days"; tapping one opens the
+  calendar on that day (`[data-gtteamday]`). Only on that ministry's list (`isTeamsMinistry_`).
+  **The year shows on a day outside this year** (`gptDateFmt_`): task chips, day dividers, calendar labels.
   **‹ › on the list's head** (`#gtPrevList`/`#gtNextList`, `.gtListNav`, greyed at the ends) step through
   the lists like the swipe (Andrew, Oct 2026: "the slide isn't working the best — small arrows?").
   **An open task says where it came from** (`gptOriginText_`, `.gtOrigin`; Andrew, Oct 2026: "I didn't
@@ -2867,6 +2872,11 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - tests/test-gp-tasks.mjs (server: the rules), tests/test-gp-tasks-ui.mjs.
 
 ## Calendar — the campus's Google Calendar, read-only (Oct 2026, Uriah)
+- **Who leads what** (Campus Leadership overview, `leadBaseHtml_`, `#lbLeadsFold`): ＋ by a ministry
+  (`[data-lbleadpick]`, `S.lbLeadPick`) opens the people picker (`lbLeadPeople_`, the ministry's own
+  first); a pick calls `setMinistryLeader(dept, ministry, staffId, on)` — Campus Leadership and admins
+  (`leadAuth_`), the same `leads` key as Admin sets on the profile, via `mutateStaff_`; × takes it off
+  (Andrew, Oct 2026: "make it easy to add the name of who leads what").
 - **Admin → 📅 Google Calendar** (`adminGcal`): paste each calendar's "Secret address in iCal format"
   (Google Calendar → Settings → the calendar → Integrate calendar) under a name; up to 6. Only
   `https://calendar.google.com/calendar/ical/…/….ics` is taken (`gcalUrlOk_`), so the server can't be
