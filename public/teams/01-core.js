@@ -948,6 +948,7 @@ function render(){
   else if(S.view==='report') m.innerHTML=boardReportHtml_();
   else if(S.view==='support') m.innerHTML=supportHtml_();
   else if(S.view==='prayer') m.innerHTML=prayerHtml_();
+  else if(S.view==='khmer') m.innerHTML=khmerHtml_();
   else if(S.view==='p360') m.innerHTML=p360Html_();
   else if(S.view==='week') m.innerHTML=S.student ? studentHomeHtml_() : homeHtml();
   else if(S.view==='health') m.innerHTML=healthHtml();
@@ -1167,6 +1168,7 @@ function renderMenu(){
   IC.tasks='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.8"/></svg>';
   /* GP Calendar/Tasks: a calendar with a tick in it (this used to copy IC.calendar before it was set — "undefined" in the menu) */
   IC.caltasks='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><path d="M8.5 15l2.5 2.5 4.5-5"/></svg>';
+  IC.khmer='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>';
   IC.calendar='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><path d="M7.5 13.5h2M11 13.5h2M14.5 13.5h2M7.5 17h2M11 17h2"/></svg>';
   IC.ywamgp='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.8 2.6 4 5.6 4 9s-1.2 6.4-4 9c-2.8-2.6-4-5.6-4-9s1.2-6.4 4-9Z"/></svg>';
   IC.boardlogout=IC.profile;
@@ -1188,8 +1190,8 @@ function renderMenu(){
     { title:'', items:[it('base', t('Base')), it('caltasks', t('GP Calendar/Tasks')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer')), it('p360', t('360 reviews')), it('leave', t('Leave Request')), it('library', t('Library'))] },
     { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : [], canStudentsClient_() ? [it('students', t('Students'))] : []) },
     { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal'))] : [] },
-    { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : []) },
-    { title:t('Language'), items:kmrCan_() ? [it('kmreview', t('Khmer review'))] : [] }
+    { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : [], kmrCan_() ? [it('kmreview', t('Khmer review'))] : []) },
+    { title:t('Language'), items:[it('khmer', t('Learn Khmer / English'))] }
   ];
   root.innerHTML = '<div class="scrim" id="menuScrim"></div>'+
     '<div class="drawer">'+
@@ -1219,6 +1221,7 @@ function renderMenu(){
       else if(id==='tasks'){ gptOpenPage_('week'); }
       else if(id==='calendar' || id==='caltasks'){ S.view='calendar'; S.cal=null; S.calFrom=null; render(); window.scrollTo(0,0); }
       else if(id==='prayer'){ S.view='prayer'; S.pr=null; render(); window.scrollTo(0,0); }
+      else if(id==='khmer'){ khOpen_(); }
       else if(id==='p360'){ S.view='p360'; S.p3Sub='home'; S.p3=null; render(); window.scrollTo(0,0); }
       else if(id==='kmreview'){ S.view='kmreview'; S.kmr=null; S.kmrErr=''; render(); window.scrollTo(0,0); }
       else if(id==='boardlogout'){ if(S.student) gpStudentLeave_(false); else boardLeave_(false); }
