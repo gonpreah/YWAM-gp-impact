@@ -2463,6 +2463,10 @@ body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
 .khKm { font-size:1.35em; line-height:1.5; }
 .khEn { font-size:1em; }
 .khNote { display:block; font-size:12.5px; color:var(--muted); margin-top:2px; }
+.khTl { display:block; font-size:13px; color:var(--accent); font-style:italic; margin-top:1px; letter-spacing:.01em; }
+.khKmCol { display:flex; flex-direction:column; align-items:flex-end; text-align:right; min-width:0; } .khKmCol .khTl { font-size:12px; }
+.khTile .khTl { font-size:11px; margin-top:2px; }
+.khCard .khTl { font-size:17px; margin-top:4px; } .khAsk .khTl { font-size:16px; }
 .khBar { height:6px; border-radius:3px; background:var(--surface2); overflow:hidden; margin:8px 0; } .khBar div { height:100%; background:var(--accent); border-radius:3px; transition:width .3s; }
 .khHero { display:flex; align-items:center; gap:14px; }
 .khRing { width:64px; height:64px; flex:0 0 64px; border-radius:50%; background:conic-gradient(var(--accent) calc(var(--p) * 1%), var(--surface2) 0); display:grid; place-items:center; }

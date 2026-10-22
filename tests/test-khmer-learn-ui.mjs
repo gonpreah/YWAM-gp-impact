@@ -25,9 +25,13 @@ console.log('=== the book ===');
 const ctx0 = {}; vm.runInNewContext(fs.readFileSync(REPO + '/public/khmer-vocab.js', 'utf8'), ctx0);
 const V = ctx0.GP_KHMER_VOCAB;
 const all = V.cats.reduce((a, c) => a.concat(c.words.map(w => ({ c, w }))), []);
-ok('the script and three levels, forty-odd lists, a thousand-odd words', V.levels.length === 4 && V.levels[0].id === 0 && V.cats.length >= 43 && all.length >= 1000, V.cats.length + ' lists, ' + all.length + ' words');
+ok('the script and three levels, forty-odd lists, a thousand-odd words', V.levels.length === 4 && V.levels[0].id === 0 && V.cats.length >= 47 && all.length >= 1200, V.cats.length + ' lists, ' + all.length + ' words');
 ok('the script: 33 consonants, the vowels, the independent vowels — letter first', V.cats.filter(c => c.level === 0).every(c => c.script) && V.cats.find(c => c.id === 'consonants').words.length === 33 && V.cats.find(c => c.id === 'vowels').words.length >= 20 && V.cats.find(c => c.id === 'consonants').words[0][1] === 'ក');
 ok('every word has English and Khmer script', all.every(x => x.w[0] && /[ក-៿]/.test(x.w[1])));
+const tlOk = x => x.w[3] && /^[a-z0-9âêôŏŭəɨɑ' -]+$/i.test(x.w[3].replace(/\s*\/.*$/, '').replace(/[?!.,…]/g, ''));
+ok('every Khmer word has a reading in Latin letters, for those who cannot read the script yet', all.filter(x => !x.c.script).every(tlOk), JSON.stringify(all.filter(x => !x.c.script && !tlOk(x)).slice(0, 3).map(x => x.w)));
+ok('… I is khnhom, white is poa sor, how many ponman', all.some(x => x.w[1] === 'ខ្ញុំ' && x.w[3] === 'khnhom') && all.some(x => x.w[1] === 'ពណ៌ស' && x.w[3] === 'poa sor') && all.some(x => /^ប៉ុន្មាន/.test(x.w[1]) && /^ponman/.test(x.w[3])));
+ok('the ABCs: 26 big letters and 26 small, each said in Khmer, for those learning English', V.cats.filter(c => c.en).length === 2 && V.cats.find(c => c.id === 'abc').words.length === 26 && V.cats.find(c => c.id === 'abc').words[0][0] === 'A' && /[ក-៿]/.test(V.cats.find(c => c.id === 'abc').words[0][1]) && V.cats.find(c => c.id === 'abclower').words.map(w => w[0]).join('') === 'abcdefghijklmnopqrstuvwxyz');
 ok('every list has a level, a name and at least four words; no list repeats an English word', V.cats.every(c => [0, 1, 2, 3].includes(c.level) && c.name && c.words.length >= 4 && new Set(c.words.map(w => w[0])).size === c.words.length));
 ok('the book\'s order: numbers first after the script, Christian words last; Numbers has 1 to 10 and 0', V.cats.find(c => !c.script).id === 'numbers' && V.cats[V.cats.length - 1].id === 'christian' && V.cats.find(c => c.id === 'numbers').words[0][1] === 'មួយ' && V.cats.find(c => c.id === 'numbers').words.some(w => w[0] === '0' && w[1] === 'សូន្យ'));
 
@@ -41,7 +45,7 @@ async function open(km) {
   const ctx = await browser.newContext({ ...devices['iPhone 13'] });
   const page = await ctx.newPage();
   page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
-  page.on('console', m => { if (m.type() === 'error' && !/net::|ERR_/.test(m.text())) errors.push('CONSOLE ' + m.text()); });
+  page.on('console', m => { if (m.type() === 'error' && !/net::|ERR_/.test(m.text()) && !/functions\/audio/.test((m.location() || {}).url || '')) errors.push('CONSOLE ' + m.text()); });
   await page.route('**fonts.g**', r => r.abort());
   await page.route('**/api', r => { const b = r.request().postDataJSON() || {}; let out = { ok: true };
     if (b.fn === 'getMyBoot') out = BOOT; else if (b.fn === 'getData') out = BOOT.base; else if (b.fn === 'getMyMinistry') out = BOOT.ministry; else if (b.fn === 'getMySmartGoals') out = { ok: true, smartGoals: [] };
@@ -80,6 +84,10 @@ console.log('=== the page ===');
   ok('Level 1: its lists, each with its word count — Numbers, Time, Important verbs …', /Numbers/.test(lvl) && /Important verbs/.test(lvl) && /\d+ words/.test(lvl) && (await page.$$eval('[data-khcat]', b => b.length)) === V.cats.filter(c => c.level === 1).length);
   await page.click('[data-khcat="colors"]'); await page.waitForTimeout(300);
   const cat = await main(page);
+  ok('… the Khmer words carry their reading in Latin letters, and "Hide readings" takes them away', (await page.$$eval('.khRow .khTl', r => r.length)) === 11 && /poa sor/.test(cat) && (await page.$eval('#khTl', e => e.textContent)) === 'Hide readings');
+  await page.click('#khTl'); await page.waitForTimeout(250);
+  ok('… hidden: no readings, "Show readings", remembered on the phone', (await page.$$eval('.khRow .khTl', r => r.length)) === 0 && (await page.$eval('#khTl', e => e.textContent)) === 'Show readings' && await page.evaluate(() => localStorage.getItem('gp-kh-notl') === '1'));
+  await page.click('#khTl'); await page.waitForTimeout(250);
   ok('a list: Flashcards, Quiz, Match, and all its words in both languages, each with 🔊', /Flashcards/.test(cat) && /Quiz/.test(cat) && /Match/.test(cat) && /White/.test(cat) && /ពណ៌ស/.test(cat) && (await page.$$eval('.khRow', r => r.length)) === 11 && (await page.$$eval('.khRow .khSay', b => b.length)) === 11);
   await page.click('.khRow .khSay'); await page.waitForTimeout(100);
   ok('… 🔊 on a row says the Khmer', (await page.evaluate(() => window.__spoken.slice(-1)[0])).join() === 'ពណ៌ស,km-KH');
@@ -87,7 +95,7 @@ console.log('=== the page ===');
   await page.click('[data-khmode="cards"]'); await page.waitForTimeout(300);
   ok('Flashcards: English up, 1 / 11, the answers hidden until you flip', /1 \/ 11/.test(await main(page)) && !!(await page.$('#khFlip .khEn')) && !!(await page.$('.khAnswer.hide')));
   await page.click('#khFlip'); await page.waitForTimeout(300);
-  ok('… tap: the Khmer, and Got it / Still learning', !!(await page.$('#khFlip.flipped .khKm')) && !(await page.$('.khAnswer.hide')));
+  ok('… tap: the Khmer with its reading, and Got it / Still learning', !!(await page.$('#khFlip.flipped .khKm')) && !!(await page.$('#khFlip.flipped .khTl')) && !(await page.$('.khAnswer.hide')));
   const first = await page.$eval('#khFlip .khKm', e => e.textContent);
   await page.click('#khYes'); await page.waitForTimeout(60);
   ok('Got it: confetti from the card', !!(await page.$('.confettiWrap')));
@@ -115,7 +123,7 @@ console.log('=== the page ===');
   await page.click('#khBack'); await page.waitForTimeout(300);
   /* match */
   await page.click('[data-khmode="match"]'); await page.waitForTimeout(300);
-  ok('Match: twelve tiles, six pairs, a clock', (await page.$$eval('[data-khtile]', b => b.length)) === 12 && /6 pairs left/.test(await main(page)) && !!(await page.$('#khClock')));
+  ok('Match: twelve tiles, six pairs, a clock; the Khmer tiles with their reading', (await page.$$eval('[data-khtile]', b => b.length)) === 12 && /6 pairs left/.test(await main(page)) && !!(await page.$('#khClock')) && (await page.$$eval('.khTile .khTl', r => r.length)) === 6);
   const tiles = await page.evaluate(() => S.kh.tiles.map(t => t.id + t.side));
   const a = tiles.indexOf('0en'), b = tiles.indexOf('0km'), c = tiles.findIndex(t => t[0] === '1');
   await page.click('[data-khtile="' + a + '"]'); await page.waitForTimeout(100);
@@ -158,6 +166,40 @@ console.log('=== the page ===');
   ok('… the English side, read aloud with the English voice', !!(await page.$('#khFlip .khEn')) && (await page.$eval('.khSay.big', e => e.dataset.khsay)).indexOf('en|') === 0);
   await page.click('.khSay.big'); await page.waitForTimeout(100);
   ok('… 🔊 says the English', (await page.evaluate(() => window.__spoken.slice(-1)[0]))[1] === 'en-US');
+  await ctx.close();
+}
+{
+  /* recorded audio: the site's own MP3 of a word plays first; where there is none, the phone's voice */
+  const { ctx, page } = await open();
+  const asked = [];
+  await page.route('**/.netlify/functions/audio**', r => { const u = new URL(r.request().url()); asked.push(u.searchParams.get('lang') + '|' + u.searchParams.get('say'));
+    if (u.searchParams.get('say') === 'ពណ៌ស') r.fulfill({ status: 200, contentType: 'audio/mpeg', body: Buffer.alloc(400) }); else r.fulfill({ status: 404, body: 'Not found' }); });
+  await page.evaluate(() => { S.khAudio.test = true; khOpen_(); }); await page.waitForTimeout(1000);
+  await page.click('[data-khlevel="1"]'); await page.waitForTimeout(300); await page.click('[data-khcat="colors"]'); await page.waitForTimeout(300);
+  await page.click('.khRow .khSay'); await page.waitForTimeout(400);
+  ok('🔊 asks the site for the word\'s recording and plays it, not the phone\'s voice', asked[0] === 'km|ពណ៌ស' && await page.evaluate(() => S.khLastAudio && S.khLastAudio.indexOf('say=') > 0 && window.__spoken.length === 0), asked.join());
+  await page.$$eval('.khRow .khSay', b => b[1].click()); await page.waitForTimeout(400);
+  ok('… a word with no recording falls back to the phone\'s Khmer voice', asked.length === 2 && (await page.evaluate(() => window.__spoken.length === 1 && window.__spoken[0][1] === 'km-KH')));
+  await page.$$eval('.khRow .khSay', b => b[1].click()); await page.waitForTimeout(300);
+  ok('… and is not asked for again', asked.length === 2 && (await page.evaluate(() => window.__spoken.length === 2)));
+  await ctx.close();
+}
+{
+  /* learning English: the ABCs in the place of the Khmer script */
+  const { ctx, page } = await open();
+  await page.evaluate(() => khOpen_()); await page.waitForTimeout(1000);
+  ok('learning Khmer: the script lists, no ABCs', (await page.$$eval('[data-khlevel="0"]', b => b.map(x => x.innerText).join())).indexOf('The script') > -1 && !/ABC/.test(await main(page)));
+  await page.click('[data-khlearn="en"]'); await page.waitForTimeout(300);
+  ok('learning English: level 0 is The ABCs', (await page.$$eval('[data-khlevel="0"]', b => b.map(x => x.innerText).join())).indexOf('The ABCs') > -1);
+  await page.click('[data-khlevel="0"]'); await page.waitForTimeout(300);
+  const abc = await main(page);
+  ok('… The ABCs and Small letters, and not the Khmer consonants', /The ABCs/.test(abc) && /Small letters/.test(abc) && !/Consonants/.test(abc) && (await page.$$eval('[data-khcat]', b => b.length)) === 2);
+  await page.click('[data-khcat="abc"]'); await page.waitForTimeout(300);
+  ok('… 26 letters, each with its Khmer saying and 🔊 in English', (await page.$$eval('.khRow', r => r.length)) === 26 && (await page.$eval('.khRow .khSay', e => e.dataset.khsay)) === 'en|A');
+  await page.click('[data-khmode="cards"]'); await page.waitForTimeout(300);
+  ok('… a card shows a letter first, 1 / 26', !!(await page.$('#khFlip .khEn')) && /1 \/ 26/.test(await main(page)) && /^[A-Z]$/.test(await page.$eval('#khFlip .khEn', e => e.textContent)));
+  await page.click('.khSay.big'); await page.waitForTimeout(100);
+  ok('… 🔊 says the letter in English', /^[A-Z],en-US$/.test((await page.evaluate(() => window.__spoken.slice(-1)[0])).join()));
   await ctx.close();
 }
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
