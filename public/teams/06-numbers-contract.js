@@ -1290,10 +1290,10 @@ function hrContractCardHtml_(p, c, isCurrent){
     else if(dg.status!=='signed'){
       /* the one-time link (Uriah, Oct 2026): send it, and they fill it out and sign on their own phone */
       var link=dg.linkToken ? location.href.replace(/[^\/]*(\?.*)?$/, '')+'portal.html?contract='+dg.linkToken : '';
-      h+='<div class="hrDigital waiting">✍️ '+esc(gpT('Not signed yet — send {name} this link to fill out and sign on their own phone, or fill it out together on yours',{name:p.name}))+'</div>'+
+      h+='<div class="hrDigital waiting">✍️ '+esc(gpT('Not signed yet — send {name} this link. They read it, fill it in and sign on their own phone; you approve it here.',{name:p.name}))+'</div>'+
         (link ? '<div class="hrLinkRow"><input type="text" id="hrContractLink" readonly value="'+esc(link)+'" aria-label="'+esc(t('Link'))+'"><button class="btn small" data-hrcopylink="'+esc(link)+'">'+esc(t('Copy'))+'</button>'+
           (navigator.share ? '<button class="btn small ghost" data-hrsharelink="'+esc(link)+'">'+esc(t('Share'))+'</button>' : '')+'</div>' : '')+
-        '<a class="btn ghost small" href="'+signUrl+'" data-hrfillout="'+esc(c.id)+'">✍️ '+esc(t('Fill out and sign now'))+'</a>';
+        '<p class="hint" style="margin:6px 0 0">'+esc(t('No phone of their own at hand?'))+' <a class="linkbtn inline" href="'+signUrl+'" data-hrfillout="'+esc(c.id)+'">'+esc(t('Fill it out together on this one'))+'</a></p>';
     }
     else h+='<div class="hrDigital done">✅ '+esc(gpT('Signed by {name} · approved by {leader}',{name:dg.staffName||p.name, leader:dg.leaderName||''}))+'</div>'+
       '<button class="btn ghost small" data-hrcontractpdf="'+esc(c.id)+'">📄 '+esc(t('Signed contract (PDF)'))+'</button>';
@@ -1312,17 +1312,18 @@ function hrContractCardHtml_(p, c, isCurrent){
     '<input type="file" accept="application/pdf,image/*" data-hrattach="'+esc(c.id)+'" style="display:none"></label>';
   return h+'</div>';
 }
-/* Fill out the Volunteer Staff Contract with them, in person, on this phone:
-   its first month and length (a paper one being redone keeps its own), then
-   the signing page — they sign, HR signs to approve. */
+/* Send the Volunteer Staff Contract (Andrew, Oct 2026: "move it toward the link where they read it
+   and sign"): its first month and length (a paper one being redone keeps its own), then the one-time
+   link — they read, fill in and sign on their own phone; HR approves here. Filling it out together on
+   this phone stays as the second way, on the contract's card. */
 function hrSendFormHtml_(p){
-  var f=S.hrSendForm;
-  return '<div class="card" id="hrSendForm"><h3 style="margin-top:0">✍️ '+esc(t('Fill out staff contract'))+'</h3><p class="sub" style="margin:0 0 8px">'+
-    esc(gpT('Do it together on this phone: {name} reads the Volunteer Staff Contract, fills in their commitment and signs. Then you sign to approve it, and it becomes their contract.',{name:p.name}))+'</p>'+
+  var f=S.hrSendForm, first=(p.name||'').split(' ')[0];
+  return '<div class="card" id="hrSendForm"><h3 style="margin-top:0">✍️ '+esc(t('Send staff contract'))+'</h3><p class="sub" style="margin:0 0 8px">'+
+    esc(gpT('{name} gets a one-time link: on their own phone they read the Volunteer Staff Contract, fill in their commitment and sign. You then approve it here, and it becomes their contract.',{name:p.name}))+'</p>'+
     (f.redo ? '<p class="hint" style="margin:0 0 8px">'+esc(t('Redoing their paper contract? The month and years below are from it.'))+'</p>' : '')+
     '<div class="teamGrid2"><div><label class="f">'+esc(t('From (month)'))+'</label><input type="month" id="hr_send_from" value="'+esc(f.from||'')+'"></div>'+
     '<div><label class="f" for="hr_send_years">'+esc(t('Years'))+'</label><input type="number" id="hr_send_years" inputmode="decimal" min="0.25" max="30" step="0.25" value="'+esc(f.years==null?'':String(f.years))+'" placeholder="2"></div></div>'+
-    '<button class="btn" id="hrSendSave"'+(S.busy?' disabled':'')+'>'+esc(gpT('Start — hand the phone to {name}',{name:(p.name||'').split(' ')[0]}))+'</button><button class="btn ghost" id="hrSendCancel">'+esc(t('Cancel'))+'</button></div>';
+    '<button class="btn" id="hrSendSave"'+(S.busy?' disabled':'')+'>'+esc(gpT('Make the link for {name}',{name:first}))+'</button><button class="btn ghost" id="hrSendCancel">'+esc(t('Cancel'))+'</button></div>';
 }
 /* ==================== My contract (☰ menu, every staff member) ====================
    Their own HR profile, read-only apart from their start dates: time in YWAM
@@ -1482,7 +1483,7 @@ function hrPersonHtml_(p){
   list.forEach(function(c){ h+=hrContractCardHtml_(p, c, cur && c.id===cur.id); });
   if(S.hrContractForm && S.hrContractForm.staffId===p.id) h+=hrContractFormHtml_(p);
   else if(S.hrSendForm && S.hrSendForm.staffId===p.id) h+=hrSendFormHtml_(p);
-  else if(!p.archived) h+='<div class="hrContractBtns"><button class="btn" id="hrSendContract" style="margin-top:0">✍️ '+esc(t('Fill out staff contract'))+'</button>'+
+  else if(!p.archived) h+='<div class="hrContractBtns"><button class="btn" id="hrSendContract" style="margin-top:0">✍️ '+esc(t('Send staff contract'))+'</button>'+
     '<button class="btn ghost" id="hrAddContract" style="margin-top:0">＋ '+esc(list.length ? t('Add a paper renewal') : t('Add a paper contract'))+'</button></div>';
   h+=hrLegalHtml_(p);
 

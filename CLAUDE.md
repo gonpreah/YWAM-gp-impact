@@ -1264,7 +1264,7 @@ forms, documents and references follow.
   item `legal:child`). The "Finish your profile" card (papers HR asks everyone to sign) is at the top of My
   contract (`reqMyContractCardHtml_`), not on My Home; a paper's page goes back to My contract.
 - **Staff contract, filled out in person (Oct 2026, Uriah)**: only HR/admin opens the Volunteer Staff Contract
-  (`STAFF_CONTRACT`, `sign.leader`). On someone's HR profile, **Fill out staff contract** — any time, also to
+  (`STAFF_CONTRACT`, `sign.leader`). On someone's HR profile, **Send staff contract** (Andrew, Oct 2026: the one-time link first, no more "hand the phone over" — "Make the link for {name}", then Copy / Share on the card; filling it out together on HR's phone stays as the small second way there, `[data-hrfillout]`) — any time, also to
   redo a paper contract (it starts from that contract's month and years) — picks the period and calls
   `hrSendContract` (one waits at a time, `digital.status` awaiting_staff; starting again changes its period;
   returns `contractId`), then opens `portal.html?staff=1&hr=<staffId>&doc=contract:<id>` on HR's own phone
