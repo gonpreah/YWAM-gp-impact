@@ -260,24 +260,6 @@ function bindGtWheel_(){
   });
   if(!S.gtWheelResize){ S.gtWheelResize=true; window.addEventListener('resize', function(){ gtWheelLayout_(); }); }
 }
-/* the Outreach Teams list: the teams arriving, from the campus calendar (Andrew, Oct 2026: "add in the date
-   that each team arrives from the calendar") — the calendar's events of the Teams kind, next 120 days */
-S.calTeams=null; S.calTeamsLoading=false;
-function calTeamsLoad_(){
-  if(S.calTeams || S.calTeamsLoading) return; S.calTeamsLoading=true;
-  run('getCalendar',[S.auth.user,S.auth.pin,todayStr(),120],function(d){ S.calTeamsLoading=false; S.calTeams=(d && d.ok) ? d : { ok:false }; if(S.view==='tasks' || S.view==='ministry') render(); },
-    function(){ S.calTeamsLoading=false; S.calTeams={ ok:false }; });
-}
-function gtTeamsHtml_(L){
-  if(!(L && L.scope==='ministry' && typeof isTeamsMinistry_==='function' && isTeamsMinistry_(L.dept, L.ministry))) return '';
-  var C=S.calTeams; if(!C){ setTimeout(calTeamsLoad_, 0); return ''; }
-  if(!C.ok || !C.connected) return '';
-  var seen={}, rows=(C.events||[]).filter(function(e){ var k=e.title+'|'+e.date; if(e.kind!=='team' || seen[k]) return false; seen[k]=1; return true; }).slice(0, 8);
-  var h='<div class="gtTeams"><div class="gtDay">'+esc(t('Teams arriving'))+' <span class="gtHint">· '+esc(t('from the calendar'))+'</span></div>';
-  if(!rows.length) return h+'<p class="sub" style="margin:2px 12px 8px">'+esc(t('No teams on the calendar yet.'))+'</p></div>';
-  return h+rows.map(function(e){ var days=e.endDate ? calDaysBetween_(e.date, e.endDate)+1 : 0;
-    return '<button class="gtTeam" data-gtteamday="'+esc(e.date)+'"><span class="calDot cal-'+esc(e.color||'lavender')+'"></span><span class="gtTeamTxt"><b>'+esc(e.title)+'</b><span>'+esc(gpT('arrives {date}',{date:calDayLabel_(e.date)}))+(days>1 ? ' · '+esc(gpT('{n} days',{n:days})) : '')+'</span></span><span class="heroGo" aria-hidden="true">›</span></button>'; }).join('')+'</div>';
-}
 function gtListHtml_(L){
   var G=S.gpt, mine=L.scope==='personal' && L.ownerId===S.me.id;
   /* one of your own lists: its tasks, and the tasks given to you that you keep here (unfiled ones in the Inbox) */
@@ -291,7 +273,6 @@ function gtListHtml_(L){
   var ids=gptLists_(S.gptScope).map(function(x){ return x.id; }), at=ids.indexOf(L.id);
   var nav = ids.length>1 ? '<span class="gtListNav"><button class="weekArrow" id="gtPrevList"'+(at>0?'':' disabled')+' aria-label="'+esc(t('Previous list'))+'">‹</button><button class="weekArrow" id="gtNextList"'+(at<ids.length-1?'':' disabled')+' aria-label="'+esc(t('Next list'))+'">›</button></span>' : '';
   var h='<div class="gtList'+(S.gtSlide ? ' gtSlide'+S.gtSlide : '')+'"><div class="gtListHead"><div class="gtListHeadTxt"><b>'+gptKindIc_(L)+esc(gptChipName_(L))+gptColorDot_(L)+'</b><span>'+esc(gptListLabel_(L))+'</span></div>'+nav+'</div>';
-  h+=gtTeamsHtml_(L);
   if(!open.length) h+='<div class="gtEmpty small"><div class="gtEmptyIc">'+GPT_SVG.tasks+'</div><p>'+esc(t('No tasks yet.'))+'</p></div>';
   /* small dividers by day (Andrew, Oct 2026: "like today, tomorrow, and then the date and day, like in
      Google Tasks") — a list with no dates at all stays plain */
@@ -531,7 +512,6 @@ function bindGpTasks_(){
     swipeBox.addEventListener('touchend', end, { passive:true });
     swipeBox.addEventListener('touchcancel', end, { passive:true });
   }
-  document.querySelectorAll('[data-gtteamday]').forEach(function(b){ b.onclick=function(){ gpTap(); var d=b.getAttribute('data-gtteamday'); S.calMonth=d.slice(0,7); S.calSel=d; S.cal=null; S.gptFrom='week'; S.view='calendar'; render(); window.scrollTo(0,0); }; });
   var stepList=function(dir){ var ids=gptLists_(S.gptScope).map(function(L){ return L.id; }), i=ids.indexOf(S.gptList)+dir; if(i<0 || i>=ids.length) return; gpTap(); gptGoList_(ids[i], dir>0 ? 'L' : 'R'); };
   on('gtPrevList', function(){ stepList(-1); }); on('gtNextList', function(){ stepList(1); });
   /* ⋮ — the wheel */

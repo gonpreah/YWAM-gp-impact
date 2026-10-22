@@ -2742,10 +2742,6 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   a few"): the list's tasks, plus tasks in other lists given to any of its people (`team` in
   `gtListHtml_` when `S.gptScope` is set — the department's list where board cards land, another
   ministry's), each with a chip saying where it is from and no grip (they are ordered in their own list).
-  **The Outreach Teams list opens with "Teams arriving"** (`gtTeamsHtml_`, `S.calTeams` from
-  `getCalendar(today, 120)` loaded on demand, `calTeamsLoad_`; Andrew, Oct 2026): the campus
-  calendar's events of the Teams kind — name, "arrives {day}", "{n} days"; tapping one opens the
-  calendar on that day (`[data-gtteamday]`). Only on that ministry's list (`isTeamsMinistry_`).
   **The year shows on a day outside this year** (`gptDateFmt_`): task chips, day dividers, calendar labels.
   **‹ › on the list's head** (`#gtPrevList`/`#gtNextList`, `.gtListNav`, greyed at the ends) step through
   the lists like the swipe (Andrew, Oct 2026: "the slide isn't working the best — small arrows?").
