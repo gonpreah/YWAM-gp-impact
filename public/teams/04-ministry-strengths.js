@@ -448,9 +448,16 @@ function leadBaseHtml_(pulse){
     scope.forEach(function(d){ var list=none.filter(function(r){ return r.dept===d; }); if(!list.length) return;
       h+='<div class="lbDeptLine">'+(scope.length>1?'<b>'+esc(t(d))+'</b> ':'')+esc(list.map(function(r){ return t(r.min); }).join(', '))+'</div>'; });
   } else h+='<p class="sub" style="margin:4px 0 0">✓ '+esc(t('Every ministry has a leader.'))+'</p>';
-  h+='<details class="pulseMore"><summary>'+esc(t('Who leads what'))+'</summary>'+rows.map(function(r){
-      return '<div class="cafeLine"><span>'+esc(t(r.min))+'</span><span class="'+(r.leaders.length?'':'lbNone')+'">'+esc(r.leaders.length ? r.leaders.map(function(p){ return p.name; }).join(', ') : '—')+'</span></div>'; }).join('')+
-    '<p class="hint" style="margin:6px 0 0">'+esc(t('A leader is set on each person’s profile by an admin.'))+'</p></details></div>';
+  /* Who leads what: ＋ on a line opens a people search to name its leader (Andrew, Oct 2026) — your own
+     board only; the leaders are the `leads` keys on their profiles, and × takes one off */
+  var canSet=!V && (S.me.isAdmin || S.me.dept==='Campus Leadership');
+  h+='<details class="pulseMore" id="lbLeadsFold"'+((S.lbLeadsOpen || S.lbLeadPick) ? ' open' : '')+'><summary>'+esc(t('Who leads what'))+'</summary>'+rows.map(function(r, i){
+      var key=r.dept+'|'+r.min, picking=canSet && S.lbLeadPick===key;
+      return '<div class="cafeLine lbLeadRow"><span>'+esc(t(r.min))+'</span><span class="'+(r.leaders.length?'':'lbNone')+'">'+esc(r.leaders.length ? r.leaders.map(function(p){ return p.name; }).join(', ') : '—')+
+        (canSet ? ' <button class="lbLeadAdd'+(picking?' on':'')+'" data-lbleadpick="'+esc(key)+'" aria-label="'+esc(t('Set the leader'))+'" aria-expanded="'+(picking?'true':'false')+'">'+(picking?'×':'＋')+'</button>' : '')+'</span></div>'+
+        (picking ? '<div class="lbLeadPick">'+ppickHtml_({ key:'ml'+i, people:lbLeadPeople_(r.dept, r.min), chosen:r.leaders.map(function(p){ return p.id; }), multi:true, placeholder:t('Type a name to make them a leader'),
+          onPick:function(id){ lbSetLeader_(r.dept, r.min, id, true); }, onRemove:function(id){ lbSetLeader_(r.dept, r.min, id, false); } })+'</div>' : ''); }).join('')+
+    '<p class="hint" style="margin:6px 0 0">'+esc(canSet ? t('Tap ＋ by a ministry to name its leader. It is the same leader as on their profile in Admin.') : t('A leader is set on each person’s profile by an admin.'))+'</p></details></div>';
   /* Tuesday morning. */
   h+='<div class="card" id="lbTues"><div class="goalCardTitle" style="margin-bottom:6px">🎤 '+esc(gpT('Tuesday {date}',{date:hospDate_(next)}))+'</div>';
   if(!S.lead) h+='<p class="sub" style="margin:0">'+esc(S.leadErr || t('Loading…'))+'</p>';
@@ -518,7 +525,24 @@ function leadTueFormHtml_(date, r){
     list('announcements', '📣', t('Announcements'), 200, t('e.g. Water off on Thursday morning'))+
     '<div class="btnRow"><button class="btn" id="ltSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="ltCancel">'+esc(t('Cancel'))+'</button></div></div>';
 }
+/* the people to pick a ministry's leader from: its own people first, then everyone on the campus */
+function lbLeadPeople_(dept, min){
+  return (S.roster||[]).filter(function(p){ return p.campus===S.me.campus && p.name; }).sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); })
+    .map(function(p){ var f=p.dept===dept && p.ministry===min; return { id:p.id, name:p.name, sub:t(p.ministry||p.dept||''), first:f, group: f ? t(min) : t('Everyone else') }; });
+}
+function lbSetLeader_(dept, min, id, on){
+  var key=dept+'|'+min, p=(S.roster||[]).filter(function(x){ return x.id===id; })[0];
+  if(p){ p.leads=(p.leads||[]).filter(function(k){ return k!==key; }); if(on) p.leads.push(key); }   // at once; the server's answer follows
+  render();
+  run('setMinistryLeader',[S.auth.user,S.auth.pin,dept,min,id,on],function(d){
+    if(d && d.ok){ if(p) p.leads=d.leads.slice(); showMsg(on ? gpT('{name} now leads {min}',{name:firstName_(p ? p.name : ''), min:t(min)}) : t('Removed')); }
+    else { if(p){ p.leads=(p.leads||[]).filter(function(k){ return k!==key; }); if(!on) p.leads.push(key); } showMsg(t('Could not save')); }
+    render();
+  });
+}
 function bindLeadTools_(){
+  var lf=document.getElementById('lbLeadsFold'); if(lf) lf.ontoggle=function(){ S.lbLeadsOpen=lf.open; if(!lf.open) S.lbLeadPick=null; };
+  document.querySelectorAll('[data-lbleadpick]').forEach(function(b){ b.onclick=function(){ gpTap(); var k=b.getAttribute('data-lbleadpick'); S.lbLeadPick = S.lbLeadPick===k ? null : k; S.lbLeadsOpen=true; render(); var x=document.querySelector('.lbLeadPick [data-ppickq]'); if(x) x.focus(); }; });
   var gt=document.getElementById('lbGoTues'); if(gt) gt.onclick=function(){ gpTap(); S.lwTab='board'; lwTabKeep_('board'); S.leadTab='tues'; render(); window.scrollTo(0,0); };
   document.querySelectorAll('[data-ltopen]').forEach(function(b){ b.onclick=function(){ gpTap(); var d=b.getAttribute('data-ltopen'); S.ltOpen = S.ltOpen===d ? null : d; S.ltDraft=null; render(); }; });
   var D=S.ltDraft; if(!D) return;

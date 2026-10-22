@@ -85,7 +85,7 @@ function calAllEvents_(C, from, to){
 }
 function calDayLabel_(iso){
   var d=new Date(iso+'T00:00:00'), today=todayStr(), tomorrow=calAddDays_(today, 1);
-  var nice=d.toLocaleDateString(CAL_LOC(), { weekday:'short', day:'numeric', month:'short' });
+  var nice=d.toLocaleDateString(CAL_LOC(), gptDateFmt_(iso));   // with the year when it is not this year
   return iso===today ? t('Today')+' · '+nice : iso===tomorrow ? t('Tomorrow')+' · '+nice : nice;
 }
 function calTime_(hm){ var p=String(hm||'').split(':'); if(p.length<2) return ''; var d=new Date(2026,0,1,+p[0],+p[1]); return d.toLocaleTimeString(LANG==='km'?'km-KH':'en-US', { hour:'numeric', minute:'2-digit' }); }
@@ -267,24 +267,24 @@ function bindAdminGcal_(){
     add.disabled=true;
     run('adminGcal',[S.auth.user,S.auth.pin,{ name:name, url:url.trim() }],function(d){
       add.disabled=false;
-      if(d && d.ok){ S.gcalAdmin=d; S.cal=null; S.calHome=null; showMsg(t('Connected')); render(); }
+      if(d && d.ok){ S.gcalAdmin=d; S.cal=null; S.calHome=null; S.calTeams=null; showMsg(t('Connected')); render(); }
       else showMsg(d && d.err==='bad_url' ? t('That isn’t a Google Calendar iCal address — copy the “Secret address in iCal format”.') : t('Could not save'));
     });
   };
   document.querySelectorAll('[data-gcalcolor]').forEach(function(b){ b.onclick=function(){
-    gpTap(); run('adminGcal',[S.auth.user,S.auth.pin,{ id:b.getAttribute('data-gcalcolor'), color:b.getAttribute('data-color') }],function(d){ if(d && d.ok){ S.gcalAdmin=d; S.cal=null; S.calHome=null; } render(); });
+    gpTap(); run('adminGcal',[S.auth.user,S.auth.pin,{ id:b.getAttribute('data-gcalcolor'), color:b.getAttribute('data-color') }],function(d){ if(d && d.ok){ S.gcalAdmin=d; S.cal=null; S.calHome=null; S.calTeams=null; } render(); });
   }; });
-  var saveKind=function(kind, msg){ run('adminGcal',[S.auth.user,S.auth.pin,{ kind:kind }],function(d){ if(d && d.ok){ S.gcalAdmin=d; S.cal=null; S.calHome=null; if(msg) showMsg(msg); } else showMsg(t('Could not save')); render(); }); };
+  var saveKind=function(kind, msg){ run('adminGcal',[S.auth.user,S.auth.pin,{ kind:kind }],function(d){ if(d && d.ok){ S.gcalAdmin=d; S.cal=null; S.calHome=null; S.calTeams=null; if(msg) showMsg(msg); } else showMsg(t('Could not save')); render(); }); };
   document.querySelectorAll('[data-kindcolor]').forEach(function(b){ b.onclick=function(){ gpTap(); saveKind({ id:b.getAttribute('data-kindcolor'), color:b.getAttribute('data-color')||'' }); }; });
   document.querySelectorAll('[data-kindname]').forEach(function(inp){ inp.onchange=function(){ saveKind({ id:inp.getAttribute('data-kindname'), name:inp.value }, t('Saved')); }; });
   document.querySelectorAll('[data-kindkeys]').forEach(function(inp){ inp.onchange=function(){ saveKind({ id:inp.getAttribute('data-kindkeys'), keywords:inp.value }, t('Saved')); }; });
   var ka=document.getElementById('gcKindAdd'); if(ka) ka.onclick=function(){ gpTap(); saveKind({ name:t('New kind'), color:'grey', keywords:[] }); };
   document.querySelectorAll('[data-kindrm]').forEach(function(b){ b.onclick=function(){
     if(!window.confirm(t('Remove this kind? Its events become plain Events.'))) return;
-    run('adminGcal',[S.auth.user,S.auth.pin,{ kindRemove:b.getAttribute('data-kindrm') }],function(d){ if(d && d.ok){ S.gcalAdmin=d; S.cal=null; S.calHome=null; showMsg(t('Removed')); } render(); });
+    run('adminGcal',[S.auth.user,S.auth.pin,{ kindRemove:b.getAttribute('data-kindrm') }],function(d){ if(d && d.ok){ S.gcalAdmin=d; S.cal=null; S.calHome=null; S.calTeams=null; showMsg(t('Removed')); } render(); });
   }; });
   document.querySelectorAll('[data-gcalrm]').forEach(function(b){ b.onclick=function(){
     if(!window.confirm(t('Remove this calendar from the app?'))) return;
-    run('adminGcal',[S.auth.user,S.auth.pin,{ remove:b.getAttribute('data-gcalrm') }],function(d){ if(d && d.ok){ S.gcalAdmin=d; S.cal=null; S.calHome=null; showMsg(t('Removed')); } render(); });
+    run('adminGcal',[S.auth.user,S.auth.pin,{ remove:b.getAttribute('data-gcalrm') }],function(d){ if(d && d.ok){ S.gcalAdmin=d; S.cal=null; S.calHome=null; S.calTeams=null; showMsg(t('Removed')); } render(); });
   }; });
 }

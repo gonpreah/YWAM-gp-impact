@@ -6857,6 +6857,22 @@ function cleanLeadCard_(c, prev, d) {
   });
 }
 /* Add or change a card (including moving it to another column). */
+/* Who leads what (Andrew, Oct 2026: "make it easy to add the name of who leads what"): Campus Leadership and
+   admins name a ministry's leader from the overview — the same `leads` key an admin sets on the profile */
+async function setMinistryLeader(username, pin, dept, ministry, staffId, on) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  const key = normKey_((str_(dept, 80) || '') + '|' + (str_(ministry, 80) || ''), 2), kp = key.split('|');
+  if (kp.length !== 2 || !kp[0] || !kp[1]) return { ok: false, err: 'bad_ministry' };
+  const id = str_(staffId, 40); if (!id) return { ok: false, err: 'bad_staff' };
+  return mutateStaff_(function (rows) {
+    const r = rows.find(function (x) { return x.id === id; });
+    if (!r || isApplicant_(r) || r.active === false || r.archived || r.campus !== a.campus) return { abort: true, ok: false, err: 'not_found' };
+    const leads = leadsOf_(r).filter(function (k) { return k !== key; });
+    if (on) leads.push(key);
+    r.leads = cleanLeads_(leads);
+    return { ok: true, id: r.id, leads: r.leads.slice() };
+  });
+}
 async function saveLeadCard(username, pin, card) {
   const a = await leadAuth_(username, pin); if (a.out) return a.out;
   const d = await getLeadDoc_(a.campus), cards = d.cards;
@@ -11321,6 +11337,7 @@ const HANDLERS = {
   orderGpTasks: function (a) { return orderGpTasks(a[0], a[1], a[2], a[3]); },
   fileGpTask: function (a) { return fileGpTask(a[0], a[1], a[2], a[3]); },
   shareGpTaskList: function (a) { return shareGpTaskList(a[0], a[1], a[2], a[3]); },
+  setMinistryLeader: function (a) { return setMinistryLeader(a[0], a[1], a[2], a[3], a[4], a[5]); },
   saveGpListOrder: function (a) { return saveGpListOrder(a[0], a[1], a[2]); },
   saveMetricOverrides: function (a) { return saveMetricOverrides(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]); },
   renameCustomMetric: function (a) { return renameCustomMetric(a[0], a[1], a[2], a[3], a[4], a[5], a[6]); },

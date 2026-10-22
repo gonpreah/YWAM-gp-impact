@@ -29,7 +29,8 @@ const mk = o => Object.assign({ active: true, campus: 'siemreap', dept: 'Communi
   role: 'Staff', staffType: 'campus', country: 'Cambodia', surveyToken: 'tok_' + o.id }, o, { pinSalt: o.id, pinHash: H('1234', o.id) });
 mem.staff = [
   mk({ id: 'ad', name: 'Ada Admin', username: 'ada', email: 'a@e.com', isAdmin: true }),
-  mk({ id: 'c1', name: 'Cora Cafe', username: 'cora', email: 'c@e.com' })
+  mk({ id: 'c1', name: 'Cora Cafe', username: 'cora', email: 'c@e.com' }),
+  mk({ id: 'o1', name: 'Ollie Outreach', username: 'ollie', email: 'o@e.com', ministry: 'Outreach Teams' })
 ];
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer(async (req, res) => {
@@ -163,6 +164,25 @@ const main = p => p.$eval('#main', e => e.innerText);
   await page.click('#calNext'); await page.waitForTimeout(800);
   ok('›: the next month, and Today to come back', !!(await page.$('#calToday')) && !(await page.$('.gcCell.today')));
   ok('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+  await ctx.close();
+}
+/* the Outreach Teams list in GP Tasks: the teams arriving, from the calendar */
+{
+  const { ctx, page } = await open('ollie');
+  await page.evaluate(() => gptOpenPage_('week')); await page.waitForTimeout(900);
+  const teamsL = (mem.gpTasks.lists || []).find(l => l.scope === 'ministry' && l.ministry === 'Outreach Teams');
+  ok('Ollie has the Outreach Teams list', !!teamsL && !!(await page.$('.gtTab[data-gptlist="' + teamsL.id + '"]')));
+  await page.click('.gtTab[data-gptlist="' + teamsL.id + '"]'); await page.waitForTimeout(1200);
+  const strip = await page.$eval('.gtTeams', e => e.innerText).catch(() => '');
+  ok('… with the teams arriving from the calendar at the top: the Grace Church team, when it arrives, how long it stays', /Teams arriving/.test(strip) && /Grace Church team staying/.test(strip) && /arrives/.test(strip) && /3 days/.test(strip), strip.slice(0, 200));
+  await page.click('[data-gtteamday="' + day(2) + '"]'); await page.waitForTimeout(900);
+  ok('tapping a team opens the calendar on its day', await page.evaluate(() => S.view === 'calendar') && !!(await page.$('.gcCell.sel[data-calday="' + day(2) + '"]')));
+  await ctx.close();
+}
+{
+  const { ctx, page } = await open('cora');
+  await page.evaluate(() => gptOpenPage_('week')); await page.waitForTimeout(900);
+  ok('the Cafe\'s list has no such strip', !(await page.$('.gtTeams')));
   await ctx.close();
 }
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));

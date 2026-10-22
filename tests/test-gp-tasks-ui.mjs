@@ -202,6 +202,8 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   await page.fill('#gptAddInput', 'Wipe the tables'); await page.press('#gptAddInput', 'Enter'); await page.waitForTimeout(600);
   const t2 = T().find(t => t.title === 'Wipe the tables');
   ok('Enter saves it too', !!t2 && !t2.due && !(await page.$('#gtNew')));
+  const nextYear = String(new Date().getFullYear() + 1), ylabels = await page.evaluate((y) => [gptWhen_({ due: y + '-03-05' }), gptDayLabel_(y + '-03-05'), calDayLabel_(y + '-03-05'), gptDayLabel_(new Date().getFullYear() + '-12-30')], nextYear);
+  ok('a day next year or beyond shows its year — a chip, a divider, the calendar; this year does not', ylabels.slice(0, 3).every(s => s.indexOf(nextYear) > -1) && ylabels[3].indexOf(String(new Date().getFullYear())) === -1, JSON.stringify(ylabels));
   ok('small dividers by day, like Google Tasks: Tomorrow, then No date', (await page.$$eval('.gtDay', d => d.map(x => x.textContent))).join('|') === 'Tomorrow|No date');
   /* subtasks: in the sheet, Enter adds one; they show under the row and tick there */
   await page.click('[data-gptopen="' + t1.id + '"]'); await page.waitForTimeout(300);
