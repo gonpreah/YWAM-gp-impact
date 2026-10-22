@@ -36,7 +36,9 @@ for (const f of fs.readdirSync(REPO + '/netlify/functions')) fs.copyFileSync(REP
 fs.mkdirSync(TMP + '/scripts', { recursive: true }); fs.mkdirSync(TMP + '/netlify/functions', { recursive: true }); fs.mkdirSync(TMP + '/public', { recursive: true });
 fs.copyFileSync(REPO + '/scripts/record-library-audio.mjs', TMP + '/scripts/record-library-audio.mjs');
 fs.copyFileSync(REPO + '/netlify/functions/library-audio-lib.js', TMP + '/netlify/functions/library-audio-lib.js');
-for (const f of ['km.js', 'library.js', 'library-km.js']) fs.copyFileSync(REPO + '/public/' + f, TMP + '/public/' + f);
+for (const f of ['km.js', 'library.js', 'library-km.js', 'khmer-vocab.js']) fs.copyFileSync(REPO + '/public/' + f, TMP + '/public/' + f);
+fs.copyFileSync(REPO + '/netlify/functions/audio.js', TMP + '/netlify/functions/audio.js');
+fs.copyFileSync(REPO + '/scripts/record-khmer-vocab.mjs', TMP + '/scripts/record-khmer-vocab.mjs');
 
 /* Azure and our own background function, stood in */
 const azure = [];
@@ -129,5 +131,33 @@ res = await get('lang=en&book=nope&step=1'); ok('a book with no recording is not
 res = await get('lang=xx&book=start-with-why&step=1'); ok('a made-up language is refused', res.status === 400);
 res = await audio.default({ method: 'POST', url: 'http://localhost/.netlify/functions/audio?index=1' }); ok('audio.js only reads', res.status === 405);
 ok('nothing about audio is in the public dashboard', !JSON.stringify(await call('getData', [''])).includes('gp-audio'));
+
+console.log('\n=== Learn Khmer words (?say=) ===');
+const words = audio.vocabWords(TMP + '/public/khmer-vocab.js');
+ok('audio.js knows every word of the book, Khmer and English', words.size > 2000 && words.has('km\nក') && words.has('en\nA') && words.has('km\nអេ'), String(words.size));
+azure.length = 0;
+res = await get('lang=km&say=' + encodeURIComponent('ក'));
+ok('a word of the book is recorded on the spot and played', res.status === 200 && res.headers.get('Content-Type') === 'audio/mpeg' && (await res.arrayBuffer()).byteLength === 400 && azure.length === 1);
+ok('… in Azure’s Khmer voice, and kept in gp-audio under vocab/', /km-KH-SreymomNeural/.test(azure[0].body) && st.has(audio.vocabKey('km', 'ក')) && audio.vocabKey('km', 'ក').startsWith('vocab/km/'));
+res = await get('lang=km&say=' + encodeURIComponent('ក'));
+ok('… the next time it comes from the store, not Azure', res.status === 200 && azure.length === 1);
+res = await get('lang=en&say=A');
+ok('an English letter is said in the English voice', res.status === 200 && azure.length === 2 && /en-US-AvaMultilingualNeural/.test(azure[1].body));
+res = await get('lang=km&say=' + encodeURIComponent('កខគឃង'));
+ok('a Khmer word not in the book is not made', res.status === 404 && azure.length === 2);
+res = await get('lang=en&say=' + encodeURIComponent('<script>alert(1)</script>'));
+ok('odd characters are refused', res.status === 400 && azure.length === 2);
+res = await get('lang=km&say=' + encodeURIComponent('A'));
+ok('Latin text is not a Khmer word', res.status === 400);
+delete process.env.AZURE_SPEECH_KEY; delete process.env.AZURE_SPEECH_REGION;
+res = await get('lang=km&say=' + encodeURIComponent('ខ'));
+ok('without the key a word never recorded is 404 (the app uses the phone’s voice)', res.status === 404 && azure.length === 2);
+res = await get('lang=km&say=' + encodeURIComponent('ក'));
+ok('… but recorded words still play', res.status === 200);
+const { execFileSync } = await import('node:child_process');
+let out = execFileSync(process.execPath, [TMP + '/scripts/record-khmer-vocab.mjs', '--dry-run'], { encoding: 'utf8', env: { PATH: process.env.PATH } });
+ok('record-khmer-vocab --dry-run counts the words and calls nothing', /km: \d{3,} words, en: \d{3,} words/.test(out) && azure.length === 2, out.trim());
+out = ''; try { execFileSync(process.execPath, [TMP + '/scripts/record-khmer-vocab.mjs'], { encoding: 'utf8', env: { PATH: process.env.PATH }, stdio: 'pipe' }); } catch (e) { out = String(e.stderr); }
+ok('… and without the key it stops and says so', /AZURE_SPEECH_KEY/.test(out));
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

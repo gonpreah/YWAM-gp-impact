@@ -10,248 +10,444 @@ var GP_KHMER_VOCAB = {
     { id: 3, name: 'Deeper talk', blurb: 'Small talk that goes somewhere — work, weather, faith, history — and the words of the Bible.' }
   ],
   cats: [
-    /* the script (script: true — a card shows the letter first; the sound is the answer). A consonant's
-       sound is given with its series: first-series consonants carry an "a" sound, second-series an "o". */
     { id: 'consonants', level: 0, script: true, name: 'Consonants', tip: 'Each consonant belongs to one of two series, and the series decides how the vowel after it sounds: first series (a), second series (o).', words: [
-      ['kâ · first series', 'ក'], ['khâ · first series', 'ខ'], ['kô · second series', 'គ'], ['khô · second series', 'ឃ'], ['ngô · second series', 'ង'],
-      ['châ · first series', 'ច'], ['chhâ · first series', 'ឆ'], ['chô · second series', 'ជ'], ['chhô · second series', 'ឈ'], ['nhô · second series', 'ញ'],
-      ['dâ · first series', 'ដ'], ['thâ · first series', 'ឋ'], ['dô · second series', 'ឌ'], ['thô · second series', 'ឍ'], ['nâ · first series', 'ណ'],
-      ['tâ · first series', 'ត'], ['thâ · first series (t)', 'ថ'], ['tô · second series', 'ទ'], ['thô · second series (t)', 'ធ'], ['nô · second series', 'ន'],
-      ['bâ · first series', 'ប'], ['phâ · first series', 'ផ'], ['pô · second series', 'ព'], ['phô · second series', 'ភ'], ['mô · second series', 'ម'],
-      ['yô · second series', 'យ'], ['rô · second series', 'រ'], ['lô · second series', 'ល'], ['vô · second series', 'វ'],
-      ['sâ · first series', 'ស'], ['hâ · first series', 'ហ'], ['lâ · first series', 'ឡ'], ['’â · first series', 'អ']
+      ['kâ · first series', 'ក', '', 'kâ'], ['khâ · first series', 'ខ', '', 'khâ'], ['kô · second series', 'គ', '', 'kô'], ['khô · second series', 'ឃ', '', 'khô'],
+      ['ngô · second series', 'ង', '', 'ngô'], ['châ · first series', 'ច', '', 'châ'], ['chhâ · first series', 'ឆ', '', 'chhâ'], ['chô · second series', 'ជ', '', 'chô'],
+      ['chhô · second series', 'ឈ', '', 'chhô'], ['nhô · second series', 'ញ', '', 'nhô'], ['dâ · first series', 'ដ', '', 'dâ'], ['thâ · first series', 'ឋ', '', 'thâ'],
+      ['dô · second series', 'ឌ', '', 'dô'], ['thô · second series', 'ឍ', '', 'thô'], ['nâ · first series', 'ណ', '', 'nâ'], ['tâ · first series', 'ត', '', 'tâ'],
+      ['thâ · first series (t)', 'ថ', '', 'thâ'], ['tô · second series', 'ទ', '', 'tô'], ['thô · second series (t)', 'ធ', '', 'thô'], ['nô · second series', 'ន', '', 'nô'],
+      ['bâ · first series', 'ប', '', 'bâ'], ['phâ · first series', 'ផ', '', 'phâ'], ['pô · second series', 'ព', '', 'pô'], ['phô · second series', 'ភ', '', 'phô'],
+      ['mô · second series', 'ម', '', 'mô'], ['yô · second series', 'យ', '', 'yô'], ['rô · second series', 'រ', '', 'rô'], ['lô · second series', 'ល', '', 'lô'],
+      ['vô · second series', 'វ', '', 'vô'], ['sâ · first series', 'ស', '', 'sâ'], ['hâ · first series', 'ហ', '', 'hâ'], ['lâ · first series', 'ឡ', '', 'lâ'],
+      ['’â · first series', 'អ', '', '’â']
     ] },
     { id: 'vowels', level: 0, script: true, name: 'Vowels', tip: 'A vowel sign attaches to a consonant and sounds one way after a first-series consonant, another after a second-series one: first / second.', words: [
-      ['a / ie', '◌ា'], ['e / i', '◌ិ'], ['ei / i', '◌ី'], ['œ / œ', '◌ឹ'], ['œ / œu', '◌ឺ'], ['o / u', '◌ុ'], ['ou / u', '◌ូ'], ['uo / uo', '◌ួ'], ['aeu / eu', '◌ើ'], ['eua / eua', '◌ឿ'], ['ie / ie', '◌ៀ'],
-      ['ei / e', '◌េ'], ['ae / ê', '◌ែ'], ['ai / ey', '◌ៃ'], ['ao / ou', '◌ោ'], ['au / ov', '◌ៅ'], ['om / um', '◌ុំ'], ['am / um', '◌ំ'], ['am / oam', '◌ាំ'], ['ah / eah', '◌ះ'],
-      ['eh / ih', '◌ិះ'], ['oh / uh', '◌ុះ'], ['eh / ih (e)', '◌េះ'], ['aoh / uoh', '◌ោះ']
+      ['a / ie', '◌ា', '', 'a / ie'], ['e / i', '◌ិ', '', 'e / i'], ['ei / i', '◌ី', '', 'ei / i'], ['œ / œ', '◌ឹ', '', 'œ / œ'], ['œ / œu', '◌ឺ', '', 'œ / œu'],
+      ['o / u', '◌ុ', '', 'o / u'], ['ou / u', '◌ូ', '', 'ou / u'], ['uo / uo', '◌ួ', '', 'uo / uo'], ['aeu / eu', '◌ើ', '', 'aeu / eu'], ['eua / eua', '◌ឿ', '', 'eua / eua'],
+      ['ie / ie', '◌ៀ', '', 'ie / ie'], ['ei / e', '◌េ', '', 'ei / e'], ['ae / ê', '◌ែ', '', 'ae / ê'], ['ai / ey', '◌ៃ', '', 'ai / ey'], ['ao / ou', '◌ោ', '', 'ao / ou'],
+      ['au / ov', '◌ៅ', '', 'au / ov'], ['om / um', '◌ុំ', '', 'om / um'], ['am / um', '◌ំ', '', 'am / um'], ['am / oam', '◌ាំ', '', 'am / oam'],
+      ['ah / eah', '◌ះ', '', 'ah / eah'], ['eh / ih', '◌ិះ', '', 'eh / ih'], ['oh / uh', '◌ុះ', '', 'oh / uh'], ['eh / ih (e)', '◌េះ', '', 'eh / ih (e)'],
+      ['aoh / uoh', '◌ោះ', '', 'aoh / uoh']
     ] },
     { id: 'indvowels', level: 0, script: true, name: 'Independent vowels', tip: 'These stand on their own, without a consonant.', words: [
-      ['e', 'ឥ'], ['ei', 'ឦ'], ['o', 'ឧ'], ['ou', 'ឩ'], ['au', 'ឪ'], ['rœ', 'ឫ'], ['rœu', 'ឬ'], ['lœ', 'ឭ'], ['lœu', 'ឮ'], ['ae', 'ឯ'], ['ai', 'ឰ'], ['ao', 'ឱ'], ['ao (ឲ)', 'ឲ'], ['au (ឳ)', 'ឳ']
+      ['e', 'ឥ', '', 'e'], ['ei', 'ឦ', '', 'ei'], ['o', 'ឧ', '', 'o'], ['ou', 'ឩ', '', 'ou'], ['au', 'ឪ', '', 'au'], ['rœ', 'ឫ', '', 'rœ'], ['rœu', 'ឬ', '', 'rœu'],
+      ['lœ', 'ឭ', '', 'lœ'], ['lœu', 'ឮ', '', 'lœu'], ['ae', 'ឯ', '', 'ae'], ['ai', 'ឰ', '', 'ai'], ['ao', 'ឱ', '', 'ao'], ['ao (ឲ)', 'ឲ', '', 'ao (ឲ)'],
+      ['au (ឳ)', 'ឳ', '', 'au (ឳ)']
+    ] },
+    { id: 'abc', level: 0, script: true, en: true, name: 'The ABCs', tip: 'The 26 letters of the English alphabet, with how each is said.', words: [
+      ['A', 'អេ', '', ''], ['B', 'ប៊ី', '', ''], ['C', 'ស៊ី', '', ''], ['D', 'ឌី', '', ''], ['E', 'អ៊ី', '', ''], ['F', 'អេហ្វ', '', ''], ['G', 'ជី', '', ''], ['H', 'អេច', '', ''],
+      ['I', 'អាយ', '', ''], ['J', 'ជេ', '', ''], ['K', 'ខេ', '', ''], ['L', 'អែល', '', ''], ['M', 'អិម', '', ''], ['N', 'អិន', '', ''], ['O', 'អូ', '', ''], ['P', 'ភី', '', ''],
+      ['Q', 'ឃ្យូ', '', ''], ['R', 'អា', '', ''], ['S', 'អេស', '', ''], ['T', 'ធី', '', ''], ['U', 'យូ', '', ''], ['V', 'វី', '', ''], ['W', 'ដាប់ប៊ែលយូ', '', ''],
+      ['X', 'អិចស៍', '', ''], ['Y', 'វ៉ាយ', '', ''], ['Z', 'ហ្ស៊ី', '', '']
+    ] },
+    { id: 'abclower', level: 0, script: true, en: true, name: 'Small letters', tip: 'The same 26 letters, as they look most of the time.', words: [
+      ['a', 'អេ', '', ''], ['b', 'ប៊ី', '', ''], ['c', 'ស៊ី', '', ''], ['d', 'ឌី', '', ''], ['e', 'អ៊ី', '', ''], ['f', 'អេហ្វ', '', ''], ['g', 'ជី', '', ''], ['h', 'អេច', '', ''],
+      ['i', 'អាយ', '', ''], ['j', 'ជេ', '', ''], ['k', 'ខេ', '', ''], ['l', 'អែល', '', ''], ['m', 'អិម', '', ''], ['n', 'អិន', '', ''], ['o', 'អូ', '', ''], ['p', 'ភី', '', ''],
+      ['q', 'ឃ្យូ', '', ''], ['r', 'អា', '', ''], ['s', 'អេស', '', ''], ['t', 'ធី', '', ''], ['u', 'យូ', '', ''], ['v', 'វី', '', ''], ['w', 'ដាប់ប៊ែលយូ', '', ''],
+      ['x', 'អិចស៍', '', ''], ['y', 'វ៉ាយ', '', ''], ['z', 'ហ្ស៊ី', '', '']
     ] },
     { id: 'numbers', level: 1, name: 'Numbers', words: [
-      ['1', 'មួយ', '១'], ['2', 'ពីរ', '២'], ['3', 'បី', '៣'], ['4', 'បួន', '៤'], ['5', 'ប្រាំ', '៥'], ['6', 'ប្រាំមួយ', '៦'], ['7', 'ប្រាំពីរ', '៧'], ['8', 'ប្រាំបី', '៨'], ['9', 'ប្រាំបួន', '៩'], ['10', 'ដប់', '១០'],
-      ['20', 'ម្ភៃ', '២០'], ['30', 'សាមសិប', '៣០'], ['40', 'សែសិប', '៤០'], ['50', 'ហាសិប', '៥០'], ['60', 'ហុកសិប', '៦០'], ['70', 'ចិតសិប', '៧០'], ['80', 'ប៉ែតសិប', '៨០'], ['90', 'កៅសិប', '៩០'],
-      ['100', 'មួយរយ', '១០០'], ['1,000', 'មួយពាន់', '១០០០'], ['10,000', 'មួយម៉ឺន'], ['100,000', 'មួយសែន'], ['1,000,000', 'មួយលាន'], ['0', 'សូន្យ', '០']
+      ['1', 'មួយ', '១', 'muoy'], ['2', 'ពីរ', '២', 'pi'], ['3', 'បី', '៣', 'bei'], ['4', 'បួន', '៤', 'buon'], ['5', 'ប្រាំ', '៥', 'pram'], ['6', 'ប្រាំមួយ', '៦', 'pram muoy'],
+      ['7', 'ប្រាំពីរ', '៧', 'pram pi'], ['8', 'ប្រាំបី', '៨', 'pram bei'], ['9', 'ប្រាំបួន', '៩', 'pram buon'], ['10', 'ដប់', '១០', 'dap'], ['20', 'ម្ភៃ', '២០', 'mphey'],
+      ['30', 'សាមសិប', '៣០', 'sam seb'], ['40', 'សែសិប', '៤០', 'sae seb'], ['50', 'ហាសិប', '៥០', 'ha seb'], ['60', 'ហុកសិប', '៦០', 'hok seb'], ['70', 'ចិតសិប', '៧០', 'chet seb'],
+      ['80', 'ប៉ែតសិប', '៨០', 'paet seb'], ['90', 'កៅសិប', '៩០', 'kav seb'], ['100', 'មួយរយ', '១០០', 'muoy roy'], ['1,000', 'មួយពាន់', '១០០០', 'muoy poan'],
+      ['10,000', 'មួយម៉ឺន', '', 'muoy meun'], ['100,000', 'មួយសែន', '', 'muoy saen'], ['1,000,000', 'មួយលាន', '', 'muoy lean'], ['0', 'សូន្យ', '០', 'soun']
     ] },
     { id: 'prepositions', level: 1, name: 'Prepositions', words: [
-      ['At / side', 'នៅ / ខាង'], ['In', 'ក្នុង'], ['Out', 'ក្រៅ'], ['On / above', 'ខាងលើ'], ['Forward', 'ទៅមុខ'], ['Left', 'ខាងឆ្វេង'], ['Right', 'ខាងស្តាំ'],
-      ['Front', 'ខាងមុខ'], ['Behind', 'ខាងក្រោយ'], ['Below', 'ខាងក្រោម'], ['Near', 'នៅជិត'], ['Beside', 'នៅក្បែរ'], ['Close', 'នៅក្បែរ'],
-      ['Around', 'ជុំវិញ'], ['Among', 'ក្នុងចំណោម'], ['This', 'នេះ'], ['That', 'នោះ'], ['Here', 'នៅទីនេះ'], ['There', 'នៅទីនោះ']
+      ['At / side', 'នៅ / ខាង', '', 'nov / khang'], ['In', 'ក្នុង', '', 'knong'], ['Out', 'ក្រៅ', '', 'krau'], ['On / above', 'ខាងលើ', '', 'khang-leu'],
+      ['Forward', 'ទៅមុខ', '', 'tov-muk'], ['Left', 'ខាងឆ្វេង', '', 'khang-chhveing'], ['Right', 'ខាងស្តាំ', '', 'khang-stam'], ['Front', 'ខាងមុខ', '', 'khang-muk'],
+      ['Behind', 'ខាងក្រោយ', '', 'khang-kraoy'], ['Below', 'ខាងក្រោម', '', 'khang-kraom'], ['Near', 'នៅជិត', '', 'nov-chit'], ['Beside', 'នៅក្បែរ', '', 'nov-kbae'],
+      ['Close', 'នៅក្បែរ', '', 'nov-kbae'], ['Around', 'ជុំវិញ', '', 'chum-vinh'], ['Among', 'ក្នុងចំណោម', '', 'knong-cham-naom'], ['This', 'នេះ', '', 'nih'],
+      ['That', 'នោះ', '', 'nuoh'], ['Here', 'នៅទីនេះ', '', 'nov-ti-nih'], ['There', 'នៅទីនោះ', '', 'nov-ti-nuoh']
     ] },
     { id: 'colors', level: 1, name: 'Colours', words: [
-      ['White', 'ពណ៌ស'], ['Black', 'ពណ៌ខ្មៅ'], ['Green', 'ពណ៌បៃតង'], ['Brown', 'ពណ៌ត្នោត'], ['Red', 'ពណ៌ក្រហម'], ['Blue', 'ពណ៌ខៀវ'], ['Yellow', 'ពណ៌លឿង'], ['Gray', 'ពណ៌ប្រផេះ'],
-      ['Purple', 'ពណ៌ស្វាយ'], ['Orange', 'ពណ៌ទឹកក្រូច'], ['Pink', 'ពណ៌ផ្កាឈូក']
+      ['White', 'ពណ៌ស', '', 'poa sor'], ['Black', 'ពណ៌ខ្មៅ', '', 'poa khmav'], ['Green', 'ពណ៌បៃតង', '', 'poa baitang'], ['Brown', 'ពណ៌ត្នោត', '', 'poa tnaot'],
+      ['Red', 'ពណ៌ក្រហម', '', 'poa krohom'], ['Blue', 'ពណ៌ខៀវ', '', 'poa khiev'], ['Yellow', 'ពណ៌លឿង', '', 'poa lueng'], ['Gray', 'ពណ៌ប្រផេះ', '', 'poa propheh'],
+      ['Purple', 'ពណ៌ស្វាយ', '', 'poa svay'], ['Orange', 'ពណ៌ទឹកក្រូច', '', 'poa tuk krouch'], ['Pink', 'ពណ៌ផ្កាឈូក', '', 'poa phka chhouk']
     ] },
     { id: 'time', level: 1, name: 'Time', words: [
-      ['Time', 'ពេលវេលា'], ['Before', 'ពីមុន'], ['Now', 'ឥឡូវនេះ'], ['Later', 'ពេលក្រោយ'], ['Yesterday', 'ម្សិលមិញ'], ['Today', 'ថ្ងៃនេះ'], ['Tomorrow', 'ថ្ងៃស្អែក'],
-      ['Past', 'អតីតកាល'], ['Present', 'បច្ចុប្បន្ន'], ['Future', 'អនាគត'], ['Second', 'វិនាទី'], ['Minute', 'នាទី'], ['Hour', 'ម៉ោង'], ['Day', 'ថ្ងៃ'], ['Week', 'សប្តាហ៍ / អាទិត្យ'], ['Weekend', 'ចុងសប្តាហ៍'], ['Month', 'ខែ'], ['Year', 'ឆ្នាំ'],
-      ['Monday', 'ថ្ងៃច័ន្ទ'], ['Tuesday', 'ថ្ងៃអង្គារ'], ['Wednesday', 'ថ្ងៃពុធ'], ['Thursday', 'ថ្ងៃព្រហស្បតិ៍'], ['Friday', 'ថ្ងៃសុក្រ'], ['Saturday', 'ថ្ងៃសៅរ៍'], ['Sunday', 'ថ្ងៃអាទិត្យ'],
-      ['January', 'ខែមករា', 'ខែ១'], ['February', 'ខែកុម្ភៈ', 'ខែ២'], ['March', 'ខែមីនា', 'ខែ៣'], ['April', 'ខែមេសា', 'ខែ៤'], ['May', 'ខែឧសភា', 'ខែ៥'], ['June', 'ខែមិថុនា', 'ខែ៦'],
-      ['July', 'ខែកក្កដា', 'ខែ៧'], ['August', 'ខែសីហា', 'ខែ៨'], ['September', 'ខែកញ្ញា', 'ខែ៩'], ['October', 'ខែតុលា', 'ខែ១០'], ['November', 'ខែវិច្ឆិកា', 'ខែ១១'], ['December', 'ខែធ្នូ', 'ខែ១២'],
-      ['Mostly', 'ភាគច្រើន'], ['Will (future)', 'នឹង'], ['Was (past)', 'បាន'], ['Is (continuous)', 'កំពុង'], ['In general', 'ជាទូទៅ'], ['A moment', 'មួយភ្លែត'], ['First', 'ដំបូង'],
-      ['Sometimes', 'ពេលខ្លះ'], ['Always', 'តែងតែ'], ['Never', 'មិនដែល'], ['Constantly', 'រហូត'], ['Normally', 'ជាធម្មតា'], ['Once in a while', 'ម្តងម្កាល'], ['Eternally', 'អស់កល្បជានិច្ច'], ['Frequently', 'ញឹកញាប់'],
-      ['Morning', 'ព្រឹក'], ['Afternoon', 'រសៀល'], ['Evening', 'ល្ងាច'], ['Night', 'យប់'], ['Breakfast', 'អាហារពេលព្រឹក'], ['Lunch', 'អាហារថ្ងៃត្រង់'], ['Dinner', 'អាហារពេលល្ងាច'],
-      ['How many?', 'ប៉ុន្មាន?'], ['What time is it?', 'តើម៉ោងប៉ុន្មាន?'], ['While', 'ខណៈពេលដែល'], ['Duration', 'រយៈពេល']
+      ['Time', 'ពេលវេលា', '', 'pel-ve-lie'], ['Before', 'ពីមុន', '', 'pi-mun'], ['Now', 'ឥឡូវនេះ', '', 'eylov nih'], ['Later', 'ពេលក្រោយ', '', 'pel-kraoy'],
+      ['Yesterday', 'ម្សិលមិញ', '', 'msel menh'], ['Today', 'ថ្ងៃនេះ', '', 'thngai nih'], ['Tomorrow', 'ថ្ងៃស្អែក', '', 'thngai sa-aek'], ['Past', 'អតីតកាល', '', 'a-teyt-kal'],
+      ['Present', 'បច្ចុប្បន្ន', '', 'bach-chop-nno'], ['Future', 'អនាគត', '', 'a-niek-ta'], ['Second', 'វិនាទី', '', 'vi-nie-ti'], ['Minute', 'នាទី', '', 'nie-ti'],
+      ['Hour', 'ម៉ោង', '', 'maong'], ['Day', 'ថ្ងៃ', '', 'thngai'], ['Week', 'សប្តាហ៍ / អាទិត្យ', '', 'sap-ta / a-tit'], ['Weekend', 'ចុងសប្តាហ៍', '', 'chong-sap-ta'],
+      ['Month', 'ខែ', '', 'khae'], ['Year', 'ឆ្នាំ', '', 'chhnam'], ['Monday', 'ថ្ងៃច័ន្ទ', '', 'thngai-chan'], ['Tuesday', 'ថ្ងៃអង្គារ', '', 'thngai-ang-kie'],
+      ['Wednesday', 'ថ្ងៃពុធ', '', 'thngai-put'], ['Thursday', 'ថ្ងៃព្រហស្បតិ៍', '', 'thngai-proh-sba-te'], ['Friday', 'ថ្ងៃសុក្រ', '', 'thngai-sok'],
+      ['Saturday', 'ថ្ងៃសៅរ៍', '', 'thngai-sau'], ['Sunday', 'ថ្ងៃអាទិត្យ', '', 'thngai-a-tit'], ['January', 'ខែមករា', 'ខែ១', 'khae-mok-rie'],
+      ['February', 'ខែកុម្ភៈ', 'ខែ២', 'khae-kom-pheak'], ['March', 'ខែមីនា', 'ខែ៣', 'khae-mi-nie'], ['April', 'ខែមេសា', 'ខែ៤', 'khae-me-sa'],
+      ['May', 'ខែឧសភា', 'ខែ៥', 'khae-o-sa-phie'], ['June', 'ខែមិថុនា', 'ខែ៦', 'khae-mi-tho-nie'], ['July', 'ខែកក្កដា', 'ខែ៧', 'khaek-kka-da'],
+      ['August', 'ខែសីហា', 'ខែ៨', 'khae-sey-ha'], ['September', 'ខែកញ្ញា', 'ខែ៩', 'khaek-nhnhie'], ['October', 'ខែតុលា', 'ខែ១០', 'khae-to-lie'],
+      ['November', 'ខែវិច្ឆិកា', 'ខែ១១', 'khae-vich-chhe-ka'], ['December', 'ខែធ្នូ', 'ខែ១២', 'khae-thnu'], ['Mostly', 'ភាគច្រើន', '', 'phiek-chraeun'],
+      ['Will (future)', 'នឹង', '', 'nueng'], ['Was (past)', 'បាន', '', 'ban'], ['Is (continuous)', 'កំពុង', '', 'kam-pung'], ['In general', 'ជាទូទៅ', '', 'chie-tu-tov'],
+      ['A moment', 'មួយភ្លែត', '', 'muoy-phlaet'], ['First', 'ដំបូង', '', 'dam-boung'], ['Sometimes', 'ពេលខ្លះ', '', 'pel-khlah'], ['Always', 'តែងតែ', '', 'taeng-tae'],
+      ['Never', 'មិនដែល', '', 'min-dael'], ['Constantly', 'រហូត', '', 'ro-hout'], ['Normally', 'ជាធម្មតា', '', 'chiet-mmo-ta'], ['Once in a while', 'ម្តងម្កាល', '', 'mtang-mkal'],
+      ['Eternally', 'អស់កល្បជានិច្ច', '', 'ah-kal-chie-nich'], ['Frequently', 'ញឹកញាប់', '', 'nhuek-nhiep'], ['Morning', 'ព្រឹក', '', 'pruek'],
+      ['Afternoon', 'រសៀល', '', 'ro-siel'], ['Evening', 'ល្ងាច', '', 'lngiech'], ['Night', 'យប់', '', 'yop'], ['Breakfast', 'អាហារពេលព្រឹក', '', 'a-ha-pel-pruek'],
+      ['Lunch', 'អាហារថ្ងៃត្រង់', '', 'a-ha-thngai-trang'], ['Dinner', 'អាហារពេលល្ងាច', '', 'a-ha-pel-lngiech'], ['How many?', 'ប៉ុន្មាន?', '', 'ponman?'],
+      ['What time is it?', 'តើម៉ោងប៉ុន្មាន?', '', 'taeu-maong-ponman?'], ['While', 'ខណៈពេលដែល', '', 'kha-nak-pel-dael'], ['Duration', 'រយៈពេល', '', 'ro-yeak-pel']
     ] },
     { id: 'family', level: 1, name: 'Honour titles & family', words: [
-      ['Younger brother / sister', 'ប្អូនប្រុស / ប្អូនស្រី', 'younger than you'], ['Older brother / sister', 'បងប្រុស / បងស្រី', 'older than you'],
-      ['Younger uncle', 'ពូ', 'much older than you, younger than your parents'], ['Younger aunt', 'មីង', 'much older than you, younger than your parents'],
-      ['Older uncle / aunt', 'អ៊ុំប្រុស / អ៊ុំស្រី', 'older than your parents'], ['Grandpa', 'លោកតា'], ['Grandma', 'លោកយាយ'], ['Mother', 'ម្តាយ'], ['Father', 'ឪពុក'],
-      ['Siblings', 'បងប្អូន'], ['Child', 'កូន'], ['Friend', 'មិត្តភក្តិ'], ['Husband', 'ប្តី'], ['Wife', 'ប្រពន្ធ'], ['Parents', 'ឪពុកម្តាយ'],
-      ['Teacher', 'គ្រូបង្រៀន'], ['Male teacher', 'លោកគ្រូ'], ['Female teacher', 'អ្នកគ្រូ']
+      ['Younger brother / sister', 'ប្អូនប្រុស / ប្អូនស្រី', 'younger than you', 'poun-proh / poun-srey'],
+      ['Older brother / sister', 'បងប្រុស / បងស្រី', 'older than you', 'bang-proh / bang-srey'], ['Younger uncle', 'ពូ', 'much older than you, younger than your parents', 'pu'],
+      ['Younger aunt', 'មីង', 'much older than you, younger than your parents', 'ming'],
+      ['Older uncle / aunt', 'អ៊ុំប្រុស / អ៊ុំស្រី', 'older than your parents', 'um-proh / um-srey'], ['Grandpa', 'លោកតា', '', 'louk-ta'], ['Grandma', 'លោកយាយ', '', 'louk-yiey'],
+      ['Mother', 'ម្តាយ', '', 'mdai'], ['Father', 'ឪពុក', '', 'ovpuk'], ['Siblings', 'បងប្អូន', '', 'bang-poun'], ['Child', 'កូន', '', 'koun'],
+      ['Friend', 'មិត្តភក្តិ', '', 'mit pheak'], ['Husband', 'ប្តី', '', 'pdey'], ['Wife', 'ប្រពន្ធ', '', 'prapun'], ['Parents', 'ឪពុកម្តាយ', '', 'ovpuk-mdai'],
+      ['Teacher', 'គ្រូបង្រៀន', '', 'krou-bang-rien'], ['Male teacher', 'លោកគ្រូ', '', 'louk-krou'], ['Female teacher', 'អ្នកគ្រូ', '', 'neak-krou']
     ] },
     { id: 'pronouns', level: 1, name: 'Pronouns', words: [
-      ['You', 'អ្នក'], ['Me', 'ខ្ញុំ'], ['It', 'វា'], ['They', 'ពួកគេ'], ['He / she', 'គាត់'], ['She', 'នាង'], ['We', 'ពួកយើង'], ['Everyone', 'ទាំងអស់គ្នា'],
-      ['Myself', 'ខ្លួនឯង'], ['Yourself', 'បងឯង'], ['Mine', 'របស់ខ្ញុំ'], ['Yours', 'របស់អ្នក'], ['Theirs', 'របស់គេ'], ['Ours', 'របស់យើង'],
-      ['Everyone (in church)', 'បងប្អូនទាំងអស់គ្នា', 'brothers and sisters, all of you']
+      ['You', 'អ្នក', '', 'neak'], ['Me', 'ខ្ញុំ', '', 'khnhom'], ['It', 'វា', '', 'vie'], ['They', 'ពួកគេ', '', 'puok ke'], ['He / she', 'គាត់', '', 'koat'],
+      ['She', 'នាង', '', 'neang'], ['We', 'ពួកយើង', '', 'puok yeung'], ['Everyone', 'ទាំងអស់គ្នា', '', 'teang os knie'], ['Myself', 'ខ្លួនឯង', '', 'khluon aeng'],
+      ['Yourself', 'បងឯង', '', 'bang-ae-ngo'], ['Mine', 'របស់ខ្ញុំ', '', 'robos khnhom'], ['Yours', 'របស់អ្នក', '', 'robos neak'], ['Theirs', 'របស់គេ', '', 'rop-sa-ke'],
+      ['Ours', 'របស់យើង', '', 'rop-sa-yeung'], ['Everyone (in church)', 'បងប្អូនទាំងអស់គ្នា', 'brothers and sisters, all of you', 'bang-poun-teang os knie']
     ] },
     { id: 'verbs', level: 1, name: 'Important verbs', words: [
-      ['Walk around / hang out', 'ដើរលេង'], ['To like', 'ចូលចិត្ត'], ['To love', 'ស្រឡាញ់'], ['To do', 'ធ្វើ'], ['To feel', 'មានអារម្មណ៍'], ['To think', 'គិត'], ['Go', 'ទៅ'], ['Try', 'ព្យាយាម'],
-      ['Practice', 'អនុវត្ត'], ['Grow', 'រីកចម្រើន'], ['Learn', 'រៀន'], ['Come', 'មក'], ['Enter', 'ចូល'], ['Leave', 'ចាកចេញ'], ['Have', 'មាន'], ['Bring', 'នាំមក'], ['Can', 'អាច'], ['Put', 'ដាក់'],
-      ['Take', 'យក'], ['Clean', 'សម្អាត'], ['Start', 'ចាប់ផ្តើម'], ['Give', 'ផ្តល់ឱ្យ'], ['Want (to do)', 'ចង់'], ['Want (a thing)', 'ចង់បាន'], ['Want (someone to)', 'ចង់ឱ្យ'],
-      ['Know (how to)', 'ចេះ'], ['Know (a fact)', 'ដឹង'], ['Know (a person or place)', 'ស្គាល់'], ['Rest', 'សម្រាក'], ['Help', 'ជួយ'], ['Use', 'ប្រើ'], ['Eat', 'ហូប'], ['Sleep', 'គេង'],
-      ['Study', 'សិក្សា'], ['To be', 'គឺជា / ជា / គឺ'], ['See', 'ឃើញ'], ['Look', 'មើល'], ['Hear', 'ឮ'], ['Listen', 'ស្តាប់'], ['Laugh', 'សើច'], ['Need', 'ត្រូវការ'], ['Wait', 'រង់ចាំ'], ['Remind', 'រំលឹក'],
-      ['Either', 'មួយណាក៏បាន'], ['Work', 'ធ្វើការ'], ['Receive', 'ទទួល'], ['Say', 'និយាយ'], ['Read', 'អាន'], ['Make', 'ធ្វើ'], ['Close / turn off', 'បិទ'], ['Open / turn on', 'បើក'], ['Cry', 'យំ'],
-      ['Search', 'ស្វែងរក'], ['Remember', 'ចងចាំ'], ['Have to', 'ត្រូវតែ'], ['Both', 'ទាំងពីរ'], ['Walk', 'ដើរ'], ['Run', 'រត់'], ['Sit', 'អង្គុយ'], ['Stand', 'ឈរ'], ['Jump', 'លោត'], ['Dance', 'រាំ'],
-      ['Bite', 'ខាំ'], ['Tell', 'ប្រាប់'], ['Forget', 'ភ្លេច'], ['Explain', 'ពន្យល់'], ['Describe', 'ពិពណ៌នា']
+      ['Walk around / hang out', 'ដើរលេង', '', 'daeu-leng'], ['To like', 'ចូលចិត្ត', '', 'choul chet'], ['To love', 'ស្រឡាញ់', '', 'srolanh'], ['To do', 'ធ្វើ', '', 'thveu'],
+      ['To feel', 'មានអារម្មណ៍', '', 'mien-arom'], ['To think', 'គិត', '', 'kit'], ['Go', 'ទៅ', '', 'tov'], ['Try', 'ព្យាយាម', '', 'pyie-yiem'],
+      ['Practice', 'អនុវត្ត', '', 'a-nuv-tta'], ['Grow', 'រីកចម្រើន', '', 'rik-cham-reun'], ['Learn', 'រៀន', '', 'rien'], ['Come', 'មក', '', 'mok'], ['Enter', 'ចូល', '', 'choul'],
+      ['Leave', 'ចាកចេញ', '', 'chak-cheinh'], ['Have', 'មាន', '', 'mien'], ['Bring', 'នាំមក', '', 'noam-mok'], ['Can', 'អាច', '', 'ach'], ['Put', 'ដាក់', '', 'dak'],
+      ['Take', 'យក', '', 'yok'], ['Clean', 'សម្អាត', '', 'sam-at'], ['Start', 'ចាប់ផ្តើម', '', 'chap-phtaeum'], ['Give', 'ផ្តល់ឱ្យ', '', 'phtal-ao-yo'],
+      ['Want (to do)', 'ចង់', '', 'chang'], ['Want (a thing)', 'ចង់បាន', '', 'chang-ban'], ['Want (someone to)', 'ចង់ឱ្យ', '', 'chang-ao-yo'], ['Know (how to)', 'ចេះ', '', 'cheh'],
+      ['Know (a fact)', 'ដឹង', '', 'deng'], ['Know (a person or place)', 'ស្គាល់', '', 'skoal'], ['Rest', 'សម្រាក', '', 'sam-riek'], ['Help', 'ជួយ', '', 'chuoy'],
+      ['Use', 'ប្រើ', '', 'praeu'], ['Eat', 'ហូប', '', 'houp'], ['Sleep', 'គេង', '', 'keng'], ['Study', 'សិក្សា', '', 'sek-sa'],
+      ['To be', 'គឺជា / ជា / គឺ', '', 'kue-chie / chie / kue'], ['See', 'ឃើញ', '', 'kheunh'], ['Look', 'មើល', '', 'meul'], ['Hear', 'ឮ', '', 'lue'],
+      ['Listen', 'ស្តាប់', '', 'sdap'], ['Laugh', 'សើច', '', 'saeuch'], ['Need', 'ត្រូវការ', '', 'trouv-ka'], ['Wait', 'រង់ចាំ', '', 'rong-cham'],
+      ['Remind', 'រំលឹក', '', 'rum-luek'], ['Either', 'មួយណាក៏បាន', '', 'muoy-na-kor-ban'], ['Work', 'ធ្វើការ', '', 'thveu-ka'], ['Receive', 'ទទួល', '', 'to-tuol'],
+      ['Say', 'និយាយ', '', 'niyeay'], ['Read', 'អាន', '', 'an'], ['Make', 'ធ្វើ', '', 'thveu'], ['Close / turn off', 'បិទ', '', 'bet'], ['Open / turn on', 'បើក', '', 'baeuk'],
+      ['Cry', 'យំ', '', 'yum'], ['Search', 'ស្វែងរក', '', 'svaeng-rok'], ['Remember', 'ចងចាំ', '', 'chang-cham'], ['Have to', 'ត្រូវតែ', '', 'trouv-tae'],
+      ['Both', 'ទាំងពីរ', '', 'toamng-pi'], ['Walk', 'ដើរ', '', 'daeu'], ['Run', 'រត់', '', 'rot'], ['Sit', 'អង្គុយ', '', 'angkuy'], ['Stand', 'ឈរ', '', 'chho'],
+      ['Jump', 'លោត', '', 'lout'], ['Dance', 'រាំ', '', 'roam'], ['Bite', 'ខាំ', '', 'kham'], ['Tell', 'ប្រាប់', '', 'prap'], ['Forget', 'ភ្លេច', '', 'phlech'],
+      ['Explain', 'ពន្យល់', '', 'pon-lo'], ['Describe', 'ពិពណ៌នា', '', 'pip-na-nie']
     ] },
     { id: 'connectives', level: 1, name: 'Connective words', words: [
-      ['If', 'ប្រសិនបើ / ប្រសិនជា / បើ'], ['So', 'ដូច្នេះ'], ['That / which', 'ដែល'], ['When', 'ពេល'], ['Because', 'ពីព្រោះ / ព្រោះ / ដោយសារ'], ['For', 'សម្រាប់'], ['About', 'អំពី'],
-      ['And', 'ហើយនិង / ហើយ / និង'], ['Until', 'រហូតដល់'], ['With', 'ជាមួយ'], ['After', 'បន្ទាប់ពី'], ['Then', 'បន្ទាប់មក'], ['Since', 'ចាប់តាំងពី'], ['Should', 'គួរ'], ['Ever', 'ធ្លាប់'],
-      ['In order to', 'ដើម្បី'], ['But', 'ប៉ុន្តែ'], ['Even though', 'ទោះបីជា'], ['Like (similar to)', 'ដូចជា'], ['Maybe', 'ប្រហែល'], ['For example', 'ឧទាហរណ៍'], ['Especially', 'ជាពិសេស'],
-      ['Too / also', 'ផងដែរ'], ['Similar', 'ស្រដៀងគ្នា'], ['Different', 'ខុសគ្នា'], ['Same', 'ដូចគ្នា'], ['More (comparative)', 'ជាង'], ['Second', 'ទីពីរ'], ['Finally', 'ទីបំផុត'], ['For (towards)', 'ចំពោះ']
+      ['If', 'ប្រសិនបើ / ប្រសិនជា / បើ', '', 'pra-sen-baeu / pra-sen-chie / baeu'], ['So', 'ដូច្នេះ', '', 'doch-neh'], ['That / which', 'ដែល', '', 'dael'],
+      ['When', 'ពេល', '', 'pel'], ['Because', 'ពីព្រោះ / ព្រោះ / ដោយសារ', '', 'pi-pruoh / pruoh / daoy-sa'], ['For', 'សម្រាប់', '', 'sam-riep'], ['About', 'អំពី', '', 'am-pi'],
+      ['And', 'ហើយនិង / ហើយ / និង', '', 'haeuy-ning / haeuy / ning'], ['Until', 'រហូតដល់', '', 'ro-hout-dal'], ['With', 'ជាមួយ', '', 'chie-muoy'],
+      ['After', 'បន្ទាប់ពី', '', 'ban-tiep-pi'], ['Then', 'បន្ទាប់មក', '', 'ban-tiep-mok'], ['Since', 'ចាប់តាំងពី', '', 'chap-tamng-pi'], ['Should', 'គួរ', '', 'kuo'],
+      ['Ever', 'ធ្លាប់', '', 'thliep'], ['In order to', 'ដើម្បី', '', 'daeum-bey'], ['But', 'ប៉ុន្តែ', '', 'pon-tae'], ['Even though', 'ទោះបីជា', '', 'tuoh-bei-chie'],
+      ['Like (similar to)', 'ដូចជា', '', 'douch-chie'], ['Maybe', 'ប្រហែល', '', 'pra-hael'], ['For example', 'ឧទាហរណ៍', '', 'o-tieh-ro'],
+      ['Especially', 'ជាពិសេស', '', 'chie-pi-seih'], ['Too / also', 'ផងដែរ', '', 'phang-dae'], ['Similar', 'ស្រដៀងគ្នា', '', 'sra-dieng-knie'],
+      ['Different', 'ខុសគ្នា', '', 'khoh-knie'], ['Same', 'ដូចគ្នា', '', 'douch-knie'], ['More (comparative)', 'ជាង', '', 'chieng'], ['Second', 'ទីពីរ', '', 'ti-pi'],
+      ['Finally', 'ទីបំផុត', '', 'ti-bam-phot'], ['For (towards)', 'ចំពោះ', '', 'cham-puoh']
     ] },
     { id: 'questions', level: 1, name: 'Question words', tip: 'A yes/no question: put តើ at the start and អត់ or ទេ at the end. តើបងចូលចិត្តកន្លែងនេះអត់? — Do you like this place?', words: [
-      ['Why?', 'ហេតុអ្វី? / ហេតុអ្វីបានជា?'], ['What?', 'អីគេ? / អ្វី?'], ['Where?', 'នៅណា? / កន្លែងណា? / នៅឯណា?'], ['When?', 'ពេលណា?'], ['Who?', 'អ្នកណា? / ណាគេ? / នរណា?'], ['Which?', 'មួយណា?'],
-      ['How many?', 'ប៉ុន្មាន?'], ['How? (how do you do that)', 'ដោយរបៀបណា?'], ['How was it?', 'ម៉េចដែរ?'], ['How is it going?', 'ទៅជាយ៉ាងណា?'], ['What? (open question)', 'អ្វីខ្លះ?'],
-      ['Can…?', 'អាច…បានអត់ / ទេ?'], ['Can you help me?', 'តើបងអាចជួយខ្ញុំបានអត់?'], ['Do you like this place?', 'តើបងចូលចិត្តកន្លែងនេះអត់?'], ['What time is it?', 'តើម៉ោងប៉ុន្មាន?'],
-      ['What year?', 'ឆ្នាំណា?'], ['What month?', 'ខែណា?'], ['What day?', 'ថ្ងៃណា?'], ['How? (which way)', 'របៀបណា?']
+      ['Why?', 'ហេតុអ្វី? / ហេតុអ្វីបានជា?', '', 'haet avei? / haet avei-ban-chie?'], ['What?', 'អីគេ? / អ្វី?', '', 'ey-ke? / avei?'],
+      ['Where?', 'នៅណា? / កន្លែងណា? / នៅឯណា?', '', 'nov-na? / kan-laeng-na? / nov-ae-na?'], ['When?', 'ពេលណា?', '', 'pel-na?'],
+      ['Who?', 'អ្នកណា? / ណាគេ? / នរណា?', '', 'neak na? / na-ke? / no-na?'], ['Which?', 'មួយណា?', '', 'muoy-na?'], ['How many?', 'ប៉ុន្មាន?', '', 'ponman?'],
+      ['How? (how do you do that)', 'ដោយរបៀបណា?', '', 'daoy-ro-biep-na?'], ['How was it?', 'ម៉េចដែរ?', '', 'meich-dae?'],
+      ['How is it going?', 'ទៅជាយ៉ាងណា?', '', 'tov-chie-yang-na?'], ['What? (open question)', 'អ្វីខ្លះ?', '', 'avei-khlah?'],
+      ['Can…?', 'អាច…បានអត់ / ទេ?', '', 'ach-…-ban-at / te?'], ['Can you help me?', 'តើបងអាចជួយខ្ញុំបានអត់?', '', 'taeup-ngo-ach-chuoy-khnhom-ban-at?'],
+      ['Do you like this place?', 'តើបងចូលចិត្តកន្លែងនេះអត់?', '', 'taeup-ngo-choul-chet-kan-laeng-nih-ta?'], ['What time is it?', 'តើម៉ោងប៉ុន្មាន?', '', 'taeu-maong-ponman?'],
+      ['What year?', 'ឆ្នាំណា?', '', 'chhnam-na?'], ['What month?', 'ខែណា?', '', 'khae-na?'], ['What day?', 'ថ្ងៃណា?', '', 'thngai na?'],
+      ['How? (which way)', 'របៀបណា?', '', 'ro-biep-na?']
     ] },
     { id: 'intro', level: 2, name: 'Self-introduction', words: [
-      ['Name', 'ឈ្មោះ'], ['Country', 'ប្រទេស'], ['Age', 'អាយុ'], ['Have', 'មាន'], ['Nationality', 'ជនជាតិ'], ['Hometown', 'ស្រុកកំណើត'], ['Introduce', 'ការណែនាំ'],
-      ['Number of people', 'នាក់'], ['Reason', 'ហេតុផល'], ['From', 'មកពី'], ['Siblings', 'បងប្អូន']
+      ['Name', 'ឈ្មោះ', '', 'chhmuoh'], ['Country', 'ប្រទេស', '', 'pra-teh'], ['Age', 'អាយុ', '', 'a-yu'], ['Have', 'មាន', '', 'mien'],
+      ['Nationality', 'ជនជាតិ', '', 'chon-chie-te'], ['Hometown', 'ស្រុកកំណើត', '', 'srok-kam-naeut'], ['Introduce', 'ការណែនាំ', '', 'ka-nae-noam'],
+      ['Number of people', 'នាក់', '', 'niek'], ['Reason', 'ហេតុផល', '', 'hei-top-lo'], ['From', 'មកពី', '', 'mok-pi'], ['Siblings', 'បងប្អូន', '', 'bang-poun']
     ] },
     { id: 'home', level: 2, name: 'Home nouns', words: [
-      ['Bathroom', 'បន្ទប់ទឹក'], ['Stairs', 'ជណ្តើរ'], ['Door', 'ទ្វារ'], ['Table', 'តុ'], ['The roof', 'ដំបូល'], ['Spoon', 'ស្លាបព្រា'], ['Garden', 'សួន'], ['Kitchen', 'ផ្ទះបាយ'], ['Living room', 'បន្ទប់ទទួលភ្ញៀវ'],
-      ['Napkin', 'ក្រដាសជូតមាត់'], ['Bedroom', 'បន្ទប់គេង'], ['Chair', 'កៅអី'], ['Shower', 'ងូតទឹក'], ['Toothbrush', 'ច្រាសដុសធ្មេញ'], ['House', 'ផ្ទះ'], ['Couch', 'សាឡុង'], ['Comb', 'ក្រាស់'], ['Fork', 'សម'],
-      ['Soap', 'សាប៊ូ'], ['Toilet', 'បង្គន់'], ['Toilet paper', 'ក្រដាសជូតគូទ'], ['Plate', 'ចាន'], ['Mirror', 'កញ្ចក់'], ['Refrigerator', 'ទូរទឹកកក'], ['Bed', 'គ្រែ'], ['Blanket', 'ភួយ'], ['Building', 'អាគារ'],
-      ['Cup', 'កែវ'], ['Curtains', 'វាំងនន'], ['Knife', 'កាំបិត'], ['Light', 'អំពូលភ្លើង'], ['Mattress', 'ពូក'], ['Pillow', 'ខ្នើយ'], ['Stove', 'ចង្ក្រាន'], ['Towel', 'កន្សែងពោះគោ'], ['TV', 'ទូរទស្សន៍'],
-      ['Pot', 'ឆ្នាំង'], ['Shampoo', 'សាប៊ូកក់សក់'], ['Wall', 'ជញ្ជាំង'], ['Detergent', 'សាប៊ូបោកខោអាវ'], ['Window', 'បង្អួច'], ['Lightbulb', 'អំពូល']
+      ['Bathroom', 'បន្ទប់ទឹក', '', 'ban-ba-tuk'], ['Stairs', 'ជណ្តើរ', '', 'chon-taeu'], ['Door', 'ទ្វារ', '', 'tvie'], ['Table', 'តុ', '', 'to'],
+      ['The roof', 'ដំបូល', '', 'dam-boul'], ['Spoon', 'ស្លាបព្រា', '', 'slap-prie'], ['Garden', 'សួន', '', 'suon'], ['Kitchen', 'ផ្ទះបាយ', '', 'phteah-bai'],
+      ['Living room', 'បន្ទប់ទទួលភ្ញៀវ', '', 'ban-bat-tuol-phnhiev'], ['Napkin', 'ក្រដាសជូតមាត់', '', 'kra-dah-chut-miet'], ['Bedroom', 'បន្ទប់គេង', '', 'ban-ba-keng'],
+      ['Chair', 'កៅអី', '', 'kau-ey'], ['Shower', 'ងូតទឹក', '', 'ngut-tuk'], ['Toothbrush', 'ច្រាសដុសធ្មេញ', '', 'chrah-doh-thmenh'], ['House', 'ផ្ទះ', '', 'phteah'],
+      ['Couch', 'សាឡុង', '', 'sa-long'], ['Comb', 'ក្រាស់', '', 'krah'], ['Fork', 'សម', '', 'sam'], ['Soap', 'សាប៊ូ', '', 'sa-bu'], ['Toilet', 'បង្គន់', '', 'bang-no'],
+      ['Toilet paper', 'ក្រដាសជូតគូទ', '', 'kra-dah-chut-kut'], ['Plate', 'ចាន', '', 'chan'], ['Mirror', 'កញ្ចក់', '', 'kanh-ka'], ['Refrigerator', 'ទូរទឹកកក', '', 'tu-tuk-kak'],
+      ['Bed', 'គ្រែ', '', 'krae'], ['Blanket', 'ភួយ', '', 'phuoy'], ['Building', 'អាគារ', '', 'a-kie'], ['Cup', 'កែវ', '', 'kaev'], ['Curtains', 'វាំងនន', '', 'veang non'],
+      ['Knife', 'កាំបិត', '', 'kam-bet'], ['Light', 'អំពូលភ្លើង', '', 'am-pul-phleung'], ['Mattress', 'ពូក', '', 'puk'], ['Pillow', 'ខ្នើយ', '', 'khnaeuy'],
+      ['Stove', 'ចង្ក្រាន', '', 'chang-kran'], ['Towel', 'កន្សែងពោះគោ', '', 'kan-saeng-puoh-ko'], ['TV', 'ទូរទស្សន៍', '', 'tu-toh-no'], ['Pot', 'ឆ្នាំង', '', 'chhnamng'],
+      ['Shampoo', 'សាប៊ូកក់សក់', '', 'sa-buk-kah-ka'], ['Wall', 'ជញ្ជាំង', '', 'chonh-choamng'], ['Detergent', 'សាប៊ូបោកខោអាវ', '', 'sa-bu-baok-khao-av'],
+      ['Window', 'បង្អួច', '', 'bang-uoch'], ['Lightbulb', 'អំពូល', '', 'am-pul']
     ] },
     { id: 'homeacts', level: 2, name: 'Home activities', words: [
-      ['To cook', 'ធ្វើម្ហូប'], ['To clean', 'សំអាត'], ['Use the bathroom', 'ចូលបន្ទប់ទឹក'], ['Take a shower', 'ងូតទឹក'], ['Wash face', 'លុបមុខ'], ['Comb hair', 'សិតសក់'], ['Wash dishes', 'លាងចាន'],
-      ['Wash hands', 'លាងដៃ'], ['Put makeup on', 'ផាត់មុខ'], ['Eat dinner', 'ញ៉ាំបាយ'], ['Watch movies', 'មើលរឿង'], ['Read a book', 'អានសៀវភៅ'], ['Play games', 'លេងហ្គេម'], ['Do the hair', 'ធ្វើសក់'],
-      ['Wash hair', 'សំអាតសក់'], ['Have guests', 'មានភ្ញៀវ'], ['Welcome', 'សូមស្វាគមន៍'], ['Get out of bed', 'ក្រោកពីដេក'], ['Sleep', 'ដេក'], ['Hang out', 'អង្គុយលេង'], ['Wash clothes', 'បោកខោអាវ'], ['Hang clothes', 'ហាលខោអាវ']
+      ['To cook', 'ធ្វើម្ហូប', '', 'thveu-mhoup'], ['To clean', 'សំអាត', '', 'sam-at'], ['Use the bathroom', 'ចូលបន្ទប់ទឹក', '', 'choul-ban-ba-tuk'],
+      ['Take a shower', 'ងូតទឹក', '', 'ngut-tuk'], ['Wash face', 'លុបមុខ', '', 'lup-muk'], ['Comb hair', 'សិតសក់', '', 'set-sak'], ['Wash dishes', 'លាងចាន', '', 'lieng-chan'],
+      ['Wash hands', 'លាងដៃ', '', 'lieng-dai'], ['Put makeup on', 'ផាត់មុខ', '', 'phat-muk'], ['Eat dinner', 'ញ៉ាំបាយ', '', 'nham-bai'],
+      ['Watch movies', 'មើលរឿង', '', 'meul-reuang'], ['Read a book', 'អានសៀវភៅ', '', 'an-siev-phov'], ['Play games', 'លេងហ្គេម', '', 'leng-hkem'],
+      ['Do the hair', 'ធ្វើសក់', '', 'thveu-sak'], ['Wash hair', 'សំអាតសក់', '', 'sam-at-sak'], ['Have guests', 'មានភ្ញៀវ', '', 'mien-phnhiev'],
+      ['Welcome', 'សូមស្វាគមន៍', '', 'soum-sva-kom-no'], ['Get out of bed', 'ក្រោកពីដេក', '', 'kraok-pi-deik'], ['Sleep', 'ដេក', '', 'deik'],
+      ['Hang out', 'អង្គុយលេង', '', 'angkuy-leng'], ['Wash clothes', 'បោកខោអាវ', '', 'baok-khao-av'], ['Hang clothes', 'ហាលខោអាវ', '', 'hal-khao-av']
     ] },
     { id: 'market', level: 2, name: 'Market', words: [
-      ['Market', 'ផ្សារ'], ['Buy', 'ទិញ'], ['Sell', 'លក់'], ['Seller', 'អ្នកលក់'], ['Buyer', 'អ្នកទិញ'], ['How much?', 'ថ្លៃប៉ុន្មាន?'], ['Expensive', 'ថ្លៃ'], ['Cheap', 'ថោក'], ['Rip off!', 'ហែក'], ['Discount', 'បញ្ចុះតម្លៃ'],
-      ['Salt', 'អំបិល'], ['Sugar', 'ស្ករ'], ['MSG', 'ប៊ីចេង'], ['Oil', 'ប្រេងឆា'], ['Pepper', 'ម្រេច'], ['Fruit', 'ផ្លែឈើ'], ['Mango', 'ស្វាយ'], ['Watermelon', 'ឪឡឹក'], ['Apple', 'ផ្លែប៉ោម'], ['Orange', 'ផ្លែក្រូច'],
-      ['Grapes', 'ផ្លែទំពាំងបាយជូរ'], ['Banana', 'ចេក'], ['Coconut', 'ដូង'], ['Papaya', 'ល្ហុង'], ['Pineapple', 'ម្នាស់'], ['Passion fruit', 'ផ្លែជាស់ស៊ិន'], ['Lime', 'ក្រូចឆ្មា'], ['Dragon fruit', 'ផ្លែស្រកានាគ'], ['Jackfruit', 'ផ្លែខ្នុរ'], ['Avocado', 'ផ្លែបឺរ'],
-      ['Vegetable', 'បន្លែ'], ['Corn', 'ពោត'], ['Potato', 'ដំឡូងបារាំង'], ['Tomato', 'ប៉េងប៉ោះ'], ['Garlic', 'ខ្ទឹម'], ['Chili pepper', 'ម្ទេសប្លោក'], ['Onion', 'ខ្ទឹមបារាំង'], ['Lettuce', 'សាឡាត់'], ['Ginger', 'ខ្ញី'],
-      ['Meat', 'សាច់'], ['Chicken', 'សាច់មាន់'], ['Pork', 'សាច់ជ្រូក'], ['Beef', 'សាច់គោ'], ['Fish', 'ត្រី'], ['Lamb', 'សាច់ចៀម']
+      ['Market', 'ផ្សារ', '', 'phsa'], ['Buy', 'ទិញ', '', 'tinh'], ['Sell', 'លក់', '', 'luk'], ['Seller', 'អ្នកលក់', '', 'neak-luk'], ['Buyer', 'អ្នកទិញ', '', 'neak-tinh'],
+      ['How much?', 'ថ្លៃប៉ុន្មាន?', '', 'thlai-ponman?'], ['Expensive', 'ថ្លៃ', '', 'thlai'], ['Cheap', 'ថោក', '', 'thaok'], ['Rip off!', 'ហែក', '', 'haek'],
+      ['Discount', 'បញ្ចុះតម្លៃ', '', 'banh-choht-mley'], ['Salt', 'អំបិល', '', 'am-bel'], ['Sugar', 'ស្ករ', '', 'ska'], ['MSG', 'ប៊ីចេង', '', 'bi-cheing'],
+      ['Oil', 'ប្រេងឆា', '', 'preing-chha'], ['Pepper', 'ម្រេច', '', 'mrech'], ['Fruit', 'ផ្លែឈើ', '', 'phlae-chheu'], ['Mango', 'ស្វាយ', '', 'svay'],
+      ['Watermelon', 'ឪឡឹក', '', 'au-loek'], ['Apple', 'ផ្លែប៉ោម', '', 'phlae-paom'], ['Orange', 'ផ្លែក្រូច', '', 'phlae-krouch'],
+      ['Grapes', 'ផ្លែទំពាំងបាយជូរ', '', 'phlae-tum-poamng-bai-chu'], ['Banana', 'ចេក', '', 'chek'], ['Coconut', 'ដូង', '', 'doung'], ['Papaya', 'ល្ហុង', '', 'lhong'],
+      ['Pineapple', 'ម្នាស់', '', 'mnieh'], ['Passion fruit', 'ផ្លែជាស់ស៊ិន', '', 'phlae-chieh-sin'], ['Lime', 'ក្រូចឆ្មា', '', 'krouch-chhma'],
+      ['Dragon fruit', 'ផ្លែស្រកានាគ', '', 'phlaeh-ka-niek'], ['Jackfruit', 'ផ្លែខ្នុរ', '', 'phlae-khno'], ['Avocado', 'ផ្លែបឺរ', '', 'phlae-boe'],
+      ['Vegetable', 'បន្លែ', '', 'ban-lae'], ['Corn', 'ពោត', '', 'pout'], ['Potato', 'ដំឡូងបារាំង', '', 'dam-loung-ba-roamng'], ['Tomato', 'ប៉េងប៉ោះ', '', 'peing-paoh'],
+      ['Garlic', 'ខ្ទឹម', '', 'khtuem'], ['Chili pepper', 'ម្ទេសប្លោក', '', 'mteh-plaok'], ['Onion', 'ខ្ទឹមបារាំង', '', 'khtuem-ba-roamng'], ['Lettuce', 'សាឡាត់', '', 'sa-lat'],
+      ['Ginger', 'ខ្ញី', '', 'khnhey'], ['Meat', 'សាច់', '', 'sach'], ['Chicken', 'សាច់មាន់', '', 'sach-moan'], ['Pork', 'សាច់ជ្រូក', '', 'sach-chrouk'],
+      ['Beef', 'សាច់គោ', '', 'sach-ko'], ['Fish', 'ត្រី', '', 'trey'], ['Lamb', 'សាច់ចៀម', '', 'sach-chiem']
     ] },
     { id: 'morning', level: 2, name: 'Morning routine', words: [
-      ['Exercise', 'ហាត់ប្រាណ'], ['Spend time with God', 'ចំណាយពេលជាមួយព្រះ'], ['Read the Bible', 'អានគម្ពីរ'], ['Drink water', 'ផឹកទឹក'], ['Go for a walk', 'ចេញដើរលេង'], ['Go for a run', 'ទៅរត់'],
-      ['Look at the phone', 'មើលទូរសព្ទ'], ['Plan the day', 'រៀបគម្រោង'], ['Ride a bike', 'ជិះកង់'], ['Write in a journal', 'សរសេរកំណត់ហេតុ'], ['Make your bed', 'រៀបចំគ្រែ']
+      ['Exercise', 'ហាត់ប្រាណ', '', 'hat-pran'], ['Spend time with God', 'ចំណាយពេលជាមួយព្រះ', '', 'cham-nay-pel-chie-muoy-preah'], ['Read the Bible', 'អានគម្ពីរ', '', 'an-kom-pi'],
+      ['Drink water', 'ផឹកទឹក', '', 'phoek-tuk'], ['Go for a walk', 'ចេញដើរលេង', '', 'cheinh-daeu-leng'], ['Go for a run', 'ទៅរត់', '', 'tov-rot'],
+      ['Look at the phone', 'មើលទូរសព្ទ', '', 'meul-tu-sap'], ['Plan the day', 'រៀបគម្រោង', '', 'riep-kom-roung'], ['Ride a bike', 'ជិះកង់', '', 'chih-kang'],
+      ['Write in a journal', 'សរសេរកំណត់ហេតុ', '', 'sa-sei-kamn-ta-hei-to'], ['Make your bed', 'រៀបចំគ្រែ', '', 'riep-cham-krae']
     ] },
     { id: 'relnouns', level: 2, name: 'Relationships — people', words: [
-      ['Girlfriend / boyfriend', 'សង្សារ'], ['Human', 'មនុស្ស'], ['Roommate', 'មិត្តរួមបន្ទប់'], ['Fiancé(e)', 'គូដណ្តឹង']
+      ['Girlfriend / boyfriend', 'សង្សារ', '', 'sang-sa'], ['Human', 'មនុស្ស', '', 'monuh'], ['Roommate', 'មិត្តរួមបន្ទប់', '', 'mit-ruom-ban-ba'],
+      ['Fiancé(e)', 'គូដណ្តឹង', '', 'kut-ntoeng']
     ] },
     { id: 'relverbs', level: 2, name: 'Relationships — verbs', words: [
-      ['Marry', 'រៀបការ'], ['Become engaged', 'ភ្ជាប់ពាក្យ'], ['Encourage', 'លើកទឹកចិត្ត'], ['Kiss', 'ថើប'], ['Have a crush', 'លួចស្រឡាញ់'], ['To like', 'ចូលចិត្ត'], ['Hug', 'អោប'], ['Break up', 'បែកគ្នា'], ['To love', 'ស្រឡាញ់']
+      ['Marry', 'រៀបការ', '', 'riep-ka'], ['Become engaged', 'ភ្ជាប់ពាក្យ', '', 'phchiep-piek'], ['Encourage', 'លើកទឹកចិត្ត', '', 'leuk-tuk-chet'], ['Kiss', 'ថើប', '', 'thaeup'],
+      ['Have a crush', 'លួចស្រឡាញ់', '', 'luoch-srolanh'], ['To like', 'ចូលចិត្ត', '', 'choul chet'], ['Hug', 'អោប', '', 'aop'], ['Break up', 'បែកគ្នា', '', 'baek-knie'],
+      ['To love', 'ស្រឡាញ់', '', 'srolanh']
     ] },
     { id: 'physical', level: 2, name: 'Describing looks', words: [
-      ['Muscular', 'មានសាច់ដុំ'], ['Handsome', 'សង្ហា'], ['Beautiful', 'ស្អាត'], ['Sexy', 'សិចស៊ី'], ['Tall', 'ខ្ពស់'], ['Blue eyes', 'ភ្នែកខៀវ'], ['Short', 'ទាប'], ['Fat', 'ធាត់'], ['Skinny', 'ស្គម'],
-      ['White skin', 'ស្បែកស'], ['Dark skin', 'ស្បែកខ្មៅ'], ['Brown eyes', 'ភ្នែកខ្មៅ'], ['Long hair', 'សក់វែង'], ['Short hair', 'សក់ខ្លី'], ['Bald', 'ក្បាលត្រងោល'], ['Curly hair', 'សក់រួញ'], ['Straight hair', 'សក់ត្រង់'], ['Chubby', 'ធាត់ៗ']
+      ['Muscular', 'មានសាច់ដុំ', '', 'mien-sach-dom'], ['Handsome', 'សង្ហា', '', 'sang-ha'], ['Beautiful', 'ស្អាត', '', 'sa-at'], ['Sexy', 'សិចស៊ី', '', 'sech-si'],
+      ['Tall', 'ខ្ពស់', '', 'khpoh'], ['Blue eyes', 'ភ្នែកខៀវ', '', 'phnek-khiev'], ['Short', 'ទាប', '', 'tiep'], ['Fat', 'ធាត់', '', 'thiet'], ['Skinny', 'ស្គម', '', 'skom'],
+      ['White skin', 'ស្បែកស', '', 'sbaek-sa'], ['Dark skin', 'ស្បែកខ្មៅ', '', 'sbaek-khmau'], ['Brown eyes', 'ភ្នែកខ្មៅ', '', 'phnek-khmau'],
+      ['Long hair', 'សក់វែង', '', 'sak-vaeng'], ['Short hair', 'សក់ខ្លី', '', 'sak-khley'], ['Bald', 'ក្បាលត្រងោល', '', 'kbal-tra-ngoul'],
+      ['Curly hair', 'សក់រួញ', '', 'sak-ruonh'], ['Straight hair', 'សក់ត្រង់', '', 'sak-trang'], ['Chubby', 'ធាត់ៗ', '', 'thiet']
     ] },
     { id: 'character', level: 2, name: 'Describing character', words: [
-      ['Kind', 'ចិត្តល្អ'], ['Smart', 'ឆ្លាត'], ['Funny', 'កំប្លែង'], ['Interesting', 'គួរឱ្យចាប់អារម្មណ៍'], ['Gentle', 'សុភាព'], ['Happy', 'សប្បាយ'], ['Rude', 'ឈ្លើយ'], ['Poor', 'ក្រ'], ['Shy', 'អៀន'],
-      ['Amazing', 'អស្ចារ្យ'], ['Humble', 'បន្ទាបខ្លួន'], ['Brave', 'ក្លាហាន'], ['Honest / faithful', 'ស្មោះត្រង់'], ['Prideful', 'ក្រអឺតក្រទម'], ['Angry', 'ខឹង'], ['Talented / good at', 'ពូកែ'], ['Calm', 'ស្ងប់ចិត្ត'], ['Wise', 'មានប្រាជ្ញា'],
-      ['Selfish', 'អាត្មានិយម'], ['Generous', 'សប្បុរស'], ['Creative', 'ច្នៃប្រឌិត'], ['Lazy', 'ខ្ជិល'], ['Cute', 'គួរឱ្យស្រឡាញ់'], ['Frustrated', 'ម៉ូម៉ៅ'], ['Rich', 'មាន'], ['Lonely', 'ឯកកោ']
+      ['Kind', 'ចិត្តល្អ', '', 'chet-la-or'], ['Smart', 'ឆ្លាត', '', 'chhlat'], ['Funny', 'កំប្លែង', '', 'kam-plaeng'],
+      ['Interesting', 'គួរឱ្យចាប់អារម្មណ៍', '', 'kuo-ao-yo-chap-arom'], ['Gentle', 'សុភាព', '', 'so-phiep'], ['Happy', 'សប្បាយ', '', 'sabbay'], ['Rude', 'ឈ្លើយ', '', 'chhleuy'],
+      ['Poor', 'ក្រ', '', 'kra'], ['Shy', 'អៀន', '', 'ien'], ['Amazing', 'អស្ចារ្យ', '', 'ah-cha'], ['Humble', 'បន្ទាបខ្លួន', '', 'ban-tiep-khluon'],
+      ['Brave', 'ក្លាហាន', '', 'kla-han'], ['Honest / faithful', 'ស្មោះត្រង់', '', 'smaoht-ngo'], ['Prideful', 'ក្រអឺតក្រទម', '', 'kra-oet-krat-mo'],
+      ['Angry', 'ខឹង', '', 'khoeng'], ['Talented / good at', 'ពូកែ', '', 'pu-kae'], ['Calm', 'ស្ងប់ចិត្ត', '', 'sngap-chet'], ['Wise', 'មានប្រាជ្ញា', '', 'mien-prach-nhie'],
+      ['Selfish', 'អាត្មានិយម', '', 'a-tma-niy-mo'], ['Generous', 'សប្បុរស', '', 'sap-bo-sa'], ['Creative', 'ច្នៃប្រឌិត', '', 'chnaip-dit'], ['Lazy', 'ខ្ជិល', '', 'khchil'],
+      ['Cute', 'គួរឱ្យស្រឡាញ់', '', 'kuo-ao-yo-srolanh'], ['Frustrated', 'ម៉ូម៉ៅ', '', 'mou-mau'], ['Rich', 'មាន', '', 'mien'], ['Lonely', 'ឯកកោ', '', 'ae-ka-kao']
     ] },
     { id: 'city', level: 2, name: 'In the city', words: [
-      ['Road', 'ផ្លូវ'], ['Moto', 'ម៉ូតូ'], ['Ride', 'ជិះ'], ['Follow the road', 'ទៅតាមផ្លូវ'], ['Go straight', 'ទៅត្រង់'], ['Bike mechanic', 'ជាងកង់'], ['Park', 'សួន'], ['Place', 'ទីកន្លែង'], ['Problem', 'បញ្ហា'], ['Broken', 'ខូច'],
-      ['City', 'ទីក្រុង'], ['Bicycle', 'កង់'], ['Bus', 'ឡានក្រុង'], ['Turn left', 'បត់ឆ្វេង'], ['Stop', 'ឈប់'], ['Car mechanic', 'ជាងឡាន'], ['Hospital', 'មន្ទីរពេទ្យ'], ['Fix', 'ជួសជុល'], ['Gas', 'សាំង'], ['Coffee shop', 'ហាងកាហ្វេ'],
-      ['Car', 'ឡាន'], ['Drive', 'បើក'], ['Supermarket', 'ផ្សារទំនើប'], ['Turn right', 'បត់ស្តាំ'], ['Moto mechanic', 'ជាងម៉ូតូ'], ['Restaurant', 'ហាងបាយ'], ['Farm', 'ចម្ការ'], ['Gas station', 'កន្លែងចាក់សាំង'], ['Fill it up', 'ចាក់ឱ្យពេញ']
+      ['Road', 'ផ្លូវ', '', 'phlov'], ['Moto', 'ម៉ូតូ', '', 'moto'], ['Ride', 'ជិះ', '', 'chih'], ['Follow the road', 'ទៅតាមផ្លូវ', '', 'tov-tam-phlov'],
+      ['Go straight', 'ទៅត្រង់', '', 'tov-trang'], ['Bike mechanic', 'ជាងកង់', '', 'chieng-kang'], ['Park', 'សួន', '', 'suon'], ['Place', 'ទីកន្លែង', '', 'tik-nlaeng'],
+      ['Problem', 'បញ្ហា', '', 'banh-ha'], ['Broken', 'ខូច', '', 'khouch'], ['City', 'ទីក្រុង', '', 'ti krong'], ['Bicycle', 'កង់', '', 'kang'],
+      ['Bus', 'ឡានក្រុង', '', 'lan-krong'], ['Turn left', 'បត់ឆ្វេង', '', 'bat-chhveing'], ['Stop', 'ឈប់', '', 'chhop'], ['Car mechanic', 'ជាងឡាន', '', 'chieng-lan'],
+      ['Hospital', 'មន្ទីរពេទ្យ', '', 'muntipet'], ['Fix', 'ជួសជុល', '', 'chuoh-chul'], ['Gas', 'សាំង', '', 'samng'], ['Coffee shop', 'ហាងកាហ្វេ', '', 'hang-kafe'],
+      ['Car', 'ឡាន', '', 'lan'], ['Drive', 'បើក', '', 'baeuk'], ['Supermarket', 'ផ្សារទំនើប', '', 'phsa-tum-neup'], ['Turn right', 'បត់ស្តាំ', '', 'bat-stam'],
+      ['Moto mechanic', 'ជាងម៉ូតូ', '', 'chieng-moto'], ['Restaurant', 'ហាងបាយ', '', 'hang bai'], ['Farm', 'ចម្ការ', '', 'cham-ka'],
+      ['Gas station', 'កន្លែងចាក់សាំង', '', 'kan-laeng-chak-samng'], ['Fill it up', 'ចាក់ឱ្យពេញ', '', 'chak-ao-yo-penh']
     ] },
     { id: 'ywam', level: 2, name: 'YWAM life', words: [
-      ['Staff', 'បុគ្គលិក'], ['Meeting', 'ប្រជុំ'], ['Class', 'ថ្នាក់រៀន'], ['Bible', 'ព្រះគម្ពីរ'], ['Campus', 'ទីស្នាក់ការ'], ['Church planting', 'ដាំដុះក្រុមជំនុំ'], ['Church (the building)', 'ព្រះវិហារ'], ['Church (the people)', 'ក្រុមជំនុំ'],
-      ['Community night', 'រាត្រីសហគមន៍'], ['Base', 'មូលដ្ឋាន'], ['Ministry', 'ព័ន្ធកិច្ច'], ['Mercy ministry', 'ព័ន្ធកិច្ចមេត្តាករុណា'], ['School', 'សាលារៀន'], ['Director', 'នាយកសាលា'], ['Department', 'នាយកដ្ឋាន'],
-      ['Director team', 'ក្រុមនាយក'], ['Elder team', 'ក្រុមចាស់ទុំ'], ['Leader', 'អ្នកដឹកនាំ'], ['Worship', 'ថ្វាយបង្គំ'], ['Intercession', 'អធិស្ឋានទូលអង្វរ'], ['Work duties', 'ការងារប្រចាំថ្ងៃ'], ['Jesus', 'ព្រះយេស៊ូវ'], ['God', 'ព្រះអង្គ'], ['Holy Spirit', 'ព្រះវិញ្ញាណបរិសុទ្ធ'],
-      ['Lead', 'ដឹកនាំ'], ['Discuss', 'ពិភាក្សា'], ['Announcements', 'សេចក្តីប្រកាស'], ['Classroom', 'ថ្នាក់រៀន'], ['Map', 'ផែនទី'], ['Pioneer', 'ការត្រួសត្រាយ'], ['Student', 'សិស្ស'], ['Are you ready?', 'ត្រៀមខ្លួននៅ?'], ['On time', 'ទាន់ពេល'],
-      ['Certificate', 'សញ្ញាប័ត្រ'], ['Graduation', 'ទទួលសញ្ញាប័ត្រ'], ['DTS', 'សាលាបណ្តុះបណ្តាលភាពជាសាវ័ក'], ['SBS', 'សាលាសិក្សាព្រះគម្ពីរ'], ['SOMD', 'សាលាបណ្តុះបណ្តាលខ្លួនសម្រាប់ព័ន្ធកិច្ច'], ['Titus', 'សាលាបង្រៀនព្រះគម្ពីរ'],
-      ['Small group', 'ក្រុមតូច'], ['One on one', 'មួយទល់មួយ'], ['Morning chores', 'ការងារពេលព្រឹក'], ['Continue on', 'បន្តទៀត'], ['Grow', 'លូតលាស់'], ['Meet', 'ជួប'], ['Snack', 'អាហារសំរន់'], ['Rest', 'សម្រាក'], ['Program', 'កម្មវិធី'],
-      ['Join in', 'ចូលរួម'], ['Unity', 'ការរួបរួម'], ['Prayer room', 'បន្ទប់អធិស្ឋាន'], ['Believe', 'ជឿ'], ['Faith', 'សេចក្តីជំនឿ'], ['Society', 'សង្គម'], ['Cafeteria', 'កន្លែងញ៉ាំបាយ'], ['Hut', 'ខ្ទម'], ['Soccer field', 'កន្លែងលេងបាល់'],
-      ['Finish', 'ចប់'], ['Stage', 'ឆាក'], ['Media', 'ប្រព័ន្ធផ្សព្វផ្សាយ'], ['New sound', 'សំលេងថ្មី'], ['Party', 'ជប់លៀង'], ['Interrupt', 'រំខាន'], ['Family circle', 'រង្វង់គ្រួសារ'], ['Home circle', 'រង្វង់គ្រួសារ'], ['Office', 'ការិយាល័យ'],
-      ['Gateway circle', 'ច្រកចេញចូល'], ['Community life', 'ជីវិតសហគមន៍'], ['Community', 'សហគមន៍'], ['Security', 'សន្តិសុខ'], ['Influence', 'ជះឥទ្ធិពល'], ['Outreach', 'បេសកកម្ម'], ['Missionary', 'បេសកជន'], ['Evangelism', 'ផ្សាយដំណឹងល្អ'],
-      ['Bring (people)', 'នាំ'], ['Conference', 'សន្និសីទ'], ['International', 'អន្តរជាតិ'], ['Global', 'សកល'], ['Foreigner', 'ជនបរទេស'], ['Out of something', 'អស់'], ['Out of money', 'អស់លុយហើយ'], ['Finances', 'ថវិកា'], ['Culture', 'វប្បធម៌'],
-      ['Fundraising', 'រៃអង្គាសថវិកា'], ['Volunteer', 'អ្នកស្ម័គ្រចិត្ត'], ['Religion', 'សាសនា'], ['Try it out', 'សាកល្បង'], ['Christian', 'គ្រីស្ទាន'], ['Topic', 'ប្រធានបទ'], ['Explain', 'ពន្យល់'], ['Story', 'រឿង'], ['Achieve', 'សម្រេច'],
-      ['Process', 'ដំណើរការ'], ['Through', 'តាមរយៈ'], ['Busy', 'រវល់'], ['Problem', 'បញ្ហា'], ['Tired', 'អស់កម្លាំង'], ['Times (how many times)', 'ដង'], ['Really?', 'មែន?'], ['Last night', 'យប់មិញ'], ['This morning', 'ព្រឹកមិញ'],
-      ['Enter', 'ចូល'], ['Exit', 'ចេញ'], ['What did you do?', 'ធ្វើអ្វី?']
+      ['Staff', 'បុគ្គលិក', '', 'bokkolik'], ['Meeting', 'ប្រជុំ', '', 'pro-chum'], ['Class', 'ថ្នាក់រៀន', '', 'thnak rien'], ['Bible', 'ព្រះគម្ពីរ', '', 'preah kompi'],
+      ['Campus', 'ទីស្នាក់ការ', '', 'ti-snak-ka'], ['Church planting', 'ដាំដុះក្រុមជំនុំ', '', 'dam-doh-krom chumnum'], ['Church (the building)', 'ព្រះវិហារ', '', 'preah vihie'],
+      ['Church (the people)', 'ក្រុមជំនុំ', '', 'krom chumnum'], ['Community night', 'រាត្រីសហគមន៍', '', 'rie-trey-sah-kom-no'], ['Base', 'មូលដ្ឋាន', '', 'mul-dthan'],
+      ['Ministry', 'ព័ន្ធកិច្ច', '', 'poan kech'], ['Mercy ministry', 'ព័ន្ធកិច្ចមេត្តាករុណា', '', 'poan kech-met-tak-ru-na'], ['School', 'សាលារៀន', '', 'sala rien'],
+      ['Director', 'នាយកសាលា', '', 'niey-ka-sa-lie'], ['Department', 'នាយកដ្ឋាន', '', 'niey-kat-than'], ['Director team', 'ក្រុមនាយក', '', 'krom-niey-ka'],
+      ['Elder team', 'ក្រុមចាស់ទុំ', '', 'krom-chah-tum'], ['Leader', 'អ្នកដឹកនាំ', '', 'neak doek noam'], ['Worship', 'ថ្វាយបង្គំ', '', 'thvay bangkum'],
+      ['Intercession', 'អធិស្ឋានទូលអង្វរ', '', 'athisthan-tul-ang-ro'], ['Work duties', 'ការងារប្រចាំថ្ងៃ', '', 'ka ngie-pra-cham-thngai'],
+      ['Jesus', 'ព្រះយេស៊ូវ', '', 'preah yesu'], ['God', 'ព្រះអង្គ', '', 'preah ang'], ['Holy Spirit', 'ព្រះវិញ្ញាណបរិសុទ្ធ', '', 'preah vinhnhean borisot'],
+      ['Lead', 'ដឹកនាំ', '', 'doek-noam'], ['Discuss', 'ពិភាក្សា', '', 'pi-phiek-sa'], ['Announcements', 'សេចក្តីប្រកាស', '', 'seich-kteyp-kah'],
+      ['Classroom', 'ថ្នាក់រៀន', '', 'thnak rien'], ['Map', 'ផែនទី', '', 'phaen-ti'], ['Pioneer', 'ការត្រួសត្រាយ', '', 'ka-truoh-tray'], ['Student', 'សិស្ស', '', 'seh'],
+      ['Are you ready?', 'ត្រៀមខ្លួននៅ?', '', 'triem-khluon-nov?'], ['On time', 'ទាន់ពេល', '', 'tien-pel'], ['Certificate', 'សញ្ញាប័ត្រ', '', 'sanhnhabat'],
+      ['Graduation', 'ទទួលសញ្ញាប័ត្រ', '', 'to-tuol-sanhnhabat'], ['DTS', 'សាលាបណ្តុះបណ្តាលភាពជាសាវ័ក', '', 'sa-liep-ntohp-ntal-phiep-chie-sa-voak'],
+      ['SBS', 'សាលាសិក្សាព្រះគម្ពីរ', '', 'sa-lie-sek-sa-preah kompi'], ['SOMD', 'សាលាបណ្តុះបណ្តាលខ្លួនសម្រាប់ព័ន្ធកិច្ច', '', 'sa-liep-ntohp-ntal-khluon-sam-riep-poan kech'],
+      ['Titus', 'សាលាបង្រៀនព្រះគម្ពីរ', '', 'sa-liep-ngrien-preah kompi'], ['Small group', 'ក្រុមតូច', '', 'krom-touch'], ['One on one', 'មួយទល់មួយ', '', 'muoy-tol-muoy'],
+      ['Morning chores', 'ការងារពេលព្រឹក', '', 'ka ngie-pel-pruek'], ['Continue on', 'បន្តទៀត', '', 'ban-tiet'], ['Grow', 'លូតលាស់', '', 'lut-lieh'], ['Meet', 'ជួប', '', 'chuop'],
+      ['Snack', 'អាហារសំរន់', '', 'a-ha-sam-no'], ['Rest', 'សម្រាក', '', 'sam-riek'], ['Program', 'កម្មវិធី', '', 'kam-vi-thi'], ['Join in', 'ចូលរួម', '', 'choul-ruom'],
+      ['Unity', 'ការរួបរួម', '', 'ka-ruop-ruom'], ['Prayer room', 'បន្ទប់អធិស្ឋាន', '', 'ban-ba-athisthan'], ['Believe', 'ជឿ', '', 'chuea'],
+      ['Faith', 'សេចក្តីជំនឿ', '', 'sechkdei chumnuea'], ['Society', 'សង្គម', '', 'sangkum'], ['Cafeteria', 'កន្លែងញ៉ាំបាយ', '', 'kan-laeng-nham-bai'],
+      ['Hut', 'ខ្ទម', '', 'khtom'], ['Soccer field', 'កន្លែងលេងបាល់', '', 'kan-laeng-leng-bal'], ['Finish', 'ចប់', '', 'chap'], ['Stage', 'ឆាក', '', 'chhak'],
+      ['Media', 'ប្រព័ន្ធផ្សព្វផ្សាយ', '', 'pra-poan-phsap-phsay'], ['New sound', 'សំលេងថ្មី', '', 'sam-leng-thmey'], ['Party', 'ជប់លៀង', '', 'chop-lieng'],
+      ['Interrupt', 'រំខាន', '', 'rum-khan'], ['Family circle', 'រង្វង់គ្រួសារ', '', 'rong-ngok-ruo-sa'], ['Home circle', 'រង្វង់គ្រួសារ', '', 'rong-ngok-ruo-sa'],
+      ['Office', 'ការិយាល័យ', '', 'ka-ri-yie-loay'], ['Gateway circle', 'ច្រកចេញចូល', '', 'chrak-cheinh-choul'], ['Community life', 'ជីវិតសហគមន៍', '', 'chi-vit-sah-kom-no'],
+      ['Community', 'សហគមន៍', '', 'sah-kom-no'], ['Security', 'សន្តិសុខ', '', 'san-te-sok'], ['Influence', 'ជះឥទ្ធិពល', '', 'cheah-e-tthip-lo'],
+      ['Outreach', 'បេសកកម្ម', '', 'beih-kak-mmo'], ['Missionary', 'បេសកជន', '', 'beih-kach-no'], ['Evangelism', 'ផ្សាយដំណឹងល្អ', '', 'phsay-dam-noeng-la-or'],
+      ['Bring (people)', 'នាំ', '', 'noam'], ['Conference', 'សន្និសីទ', '', 'san-ni-seyt'], ['International', 'អន្តរជាតិ', '', 'an-ro-chie-te'], ['Global', 'សកល', '', 'sak-lo'],
+      ['Foreigner', 'ជនបរទេស', '', 'chon-ba-teh'], ['Out of something', 'អស់', '', 'ah'], ['Out of money', 'អស់លុយហើយ', '', 'ah-luy-haeuy'], ['Finances', 'ថវិកា', '', 'tha-vi-ka'],
+      ['Culture', 'វប្បធម៌', '', 'vop-thom'], ['Fundraising', 'រៃអង្គាសថវិកា', '', 'rey-ngkieh-tha-vi-ka'], ['Volunteer', 'អ្នកស្ម័គ្រចិត្ត', '', 'neak-smak-chet'],
+      ['Religion', 'សាសនា', '', 'sah-nie'], ['Try it out', 'សាកល្បង', '', 'sak-lbang'], ['Christian', 'គ្រីស្ទាន', '', 'kri-stien'], ['Topic', 'ប្រធានបទ', '', 'pra-thien-bat'],
+      ['Explain', 'ពន្យល់', '', 'pon-lo'], ['Story', 'រឿង', '', 'reuang'], ['Achieve', 'សម្រេច', '', 'sam-rech'], ['Process', 'ដំណើរការ', '', 'dam-naeu-ka'],
+      ['Through', 'តាមរយៈ', '', 'tam-ro-yeak'], ['Busy', 'រវល់', '', 'rov-lo'], ['Problem', 'បញ្ហា', '', 'banh-ha'], ['Tired', 'អស់កម្លាំង', '', 'ah-kam-loamng'],
+      ['Times (how many times)', 'ដង', '', 'dang'], ['Really?', 'មែន?', '', 'maen?'], ['Last night', 'យប់មិញ', '', 'yop-minh'], ['This morning', 'ព្រឹកមិញ', '', 'pruek-minh'],
+      ['Enter', 'ចូល', '', 'choul'], ['Exit', 'ចេញ', '', 'cheinh'], ['What did you do?', 'ធ្វើអ្វី?', '', 'thveu-avei?']
     ] },
     { id: 'classroom', level: 2, name: 'In the classroom', words: [
-      ['Chair', 'កៅអី'], ['Table', 'តុ'], ['Marker', 'ហ្វឺត'], ['Whiteboard', 'ក្តារខៀន'], ['Book', 'សៀវភៅ'], ['Mop (the thing)', 'ប្រដាប់ជូតផ្ទះ'], ['Teacher', 'គ្រូបង្រៀន'], ['Remember?', 'ចាំ?'], ['Forget', 'ភ្លេច'],
-      ['Plants', 'រុក្ខជាតិ'], ['Water the plants', 'ស្រោចផ្កា'], ['Point', 'ចង្អុល'], ['Broom', 'អំបោស'], ['Teach', 'បង្រៀន'], ['Make coffee', 'ឆុងកាហ្វេ'], ['Pen', 'ប៊ិច'], ['Pencil', 'ខ្មៅដៃ'], ['Bag', 'កាបូប'], ['Sweep', 'បោស'],
-      ['Mop (the action)', 'ជូត'], ['Garbage', 'សំរាម']
+      ['Chair', 'កៅអី', '', 'kau-ey'], ['Table', 'តុ', '', 'to'], ['Marker', 'ហ្វឺត', '', 'hvoet'], ['Whiteboard', 'ក្តារខៀន', '', 'kta-khien'], ['Book', 'សៀវភៅ', '', 'siev-phov'],
+      ['Mop (the thing)', 'ប្រដាប់ជូតផ្ទះ', '', 'pra-dap-chut-phteah'], ['Teacher', 'គ្រូបង្រៀន', '', 'krou-bang-rien'], ['Remember?', 'ចាំ?', '', 'cham?'],
+      ['Forget', 'ភ្លេច', '', 'phlech'], ['Plants', 'រុក្ខជាតិ', '', 'ruk-chie-te'], ['Water the plants', 'ស្រោចផ្កា', '', 'sraoch-phka'], ['Point', 'ចង្អុល', '', 'chang-ol'],
+      ['Broom', 'អំបោស', '', 'am-baoh'], ['Teach', 'បង្រៀន', '', 'bang-rien'], ['Make coffee', 'ឆុងកាហ្វេ', '', 'chhong-kafe'], ['Pen', 'ប៊ិច', '', 'bich'],
+      ['Pencil', 'ខ្មៅដៃ', '', 'khmau-dai'], ['Bag', 'កាបូប', '', 'ka-boup'], ['Sweep', 'បោស', '', 'baoh'], ['Mop (the action)', 'ជូត', '', 'chut'],
+      ['Garbage', 'សំរាម', '', 'sam-riem']
     ] },
     { id: 'adjectives', level: 2, name: 'Helpful adjectives', words: [
-      ['Big', 'ធំ'], ['Small', 'តូច'], ['Heavy', 'ធ្ងន់'], ['Light', 'ស្រាល'], ['Slippery', 'រអិល'], ['Itchy', 'រមាស់'], ['Scared', 'ខ្លាច'], ['Busy', 'រវល់'], ['Old', 'ចាស់'], ['A little', 'តិច'], ['A lot', 'ច្រើន'],
-      ['Soft', 'ទន់'], ['Hard', 'រឹង'], ['Ticklish', 'រសើប'], ['Hot', 'ក្តៅ'], ['Nervous', 'ភ័យ'], ['Excited', 'សប្បាយ'], ['New', 'ថ្មី'], ['Difficult', 'ពិបាក'], ['Easy', 'ស្រួល'], ['Fast', 'លឿន'], ['Slow', 'យឺត'],
-      ['Boring', 'ធុញ'], ['Cold', 'ត្រជាក់'], ['Sleepy', 'ងុយដេក'], ['Tired', 'ហត់'], ['Young', 'ក្មេង'], ['Cool', 'ឡូយ'], ['Good', 'ល្អ'], ['Bad', 'អាក្រក់'], ['Positive', 'វិជ្ជមាន'], ['Negative', 'អវិជ្ជមាន'], ['Bored', 'អផ្សុក']
+      ['Big', 'ធំ', '', 'thum'], ['Small', 'តូច', '', 'touch'], ['Heavy', 'ធ្ងន់', '', 'thngon'], ['Light', 'ស្រាល', '', 'sral'], ['Slippery', 'រអិល', '', 'ro-el'],
+      ['Itchy', 'រមាស់', '', 'ro-mieh'], ['Scared', 'ខ្លាច', '', 'khlach'], ['Busy', 'រវល់', '', 'rov-lo'], ['Old', 'ចាស់', '', 'chah'], ['A little', 'តិច', '', 'tech'],
+      ['A lot', 'ច្រើន', '', 'chraeun'], ['Soft', 'ទន់', '', 'ton'], ['Hard', 'រឹង', '', 'rueng'], ['Ticklish', 'រសើប', '', 'ro-saeup'], ['Hot', 'ក្តៅ', '', 'kdav'],
+      ['Nervous', 'ភ័យ', '', 'phoay'], ['Excited', 'សប្បាយ', '', 'sabbay'], ['New', 'ថ្មី', '', 'thmey'], ['Difficult', 'ពិបាក', '', 'pi-bak'], ['Easy', 'ស្រួល', '', 'sruol'],
+      ['Fast', 'លឿន', '', 'leuan'], ['Slow', 'យឺត', '', 'yuet'], ['Boring', 'ធុញ', '', 'thunh'], ['Cold', 'ត្រជាក់', '', 'trocheak'], ['Sleepy', 'ងុយដេក', '', 'nguy-deik'],
+      ['Tired', 'ហត់', '', 'hat'], ['Young', 'ក្មេង', '', 'kmeing'], ['Cool', 'ឡូយ', '', 'louy'], ['Good', 'ល្អ', '', 'la-or'], ['Bad', 'អាក្រក់', '', 'ak-ka'],
+      ['Positive', 'វិជ្ជមាន', '', 'vich-mien'], ['Negative', 'អវិជ្ជមាន', '', 'a-vich-mien'], ['Bored', 'អផ្សុក', '', 'ap-sok']
     ] },
     { id: 'restaurant', level: 2, name: 'At a restaurant', words: [
-      ['Waiter', 'អ្នករត់តុ'], ['Order', 'កម្មង់'], ['Split the bill', 'បង់លុយផ្សេងគ្នា'], ['Pay', 'បង់លុយ'], ['Sorry', 'សុំទោស'], ['Please', 'សូម'], ['Taxes', 'ពន្ធ'], ['Restaurant', 'ហាងបាយ'], ['Tip', 'ឱ្យលុយក្រៅ'],
-      ['Alcohol', 'ស្រា'], ['Wine', 'ស្រាក្រហម'], ['Butter', 'ប៊ឺ'], ['Chef', 'ចុងភៅ'], ['Ingredients', 'គ្រឿង'], ['Money', 'លុយ'], ['Menu', 'បញ្ជីឈ្មោះម្ហូប / ម៉ឺនុយ'], ['Drinks', 'ភេសជ្ជៈ'], ['Hungry', 'ឃ្លាន'], ['Drink', 'ផឹក'],
-      ['Bubble tea', 'តែគុជ'], ['Pack the food (to go)', 'រៀបចំម្ហូប'], ['Coffee', 'កាហ្វេ'], ['Special', 'ពិសេស'], ['Cake', 'នំខេក'], ['Bitter', 'ល្វីង'], ['Beer', 'ស្រាបៀរ'], ['Sauce', 'ទឹកជ្រលក់'], ['French fries', 'ដំឡូងបំពង'], ['Water', 'ទឹក'],
-      ['Meal', 'អាហារ'], ['Check, please', 'គិតលុយ'], ['Thirsty', 'ស្រេកទឹក'], ['Full', 'ឆ្អែត'], ['Dessert', 'បង្អែម'], ['Flavour', 'រសជាតិ'], ['Spicy', 'ហឹរ'], ['Salty', 'ប្រៃ'], ['Sweet', 'ផ្អែម'], ['Sour', 'ជូរ'],
-      ['Bread', 'នំប៉័ង'], ['Grilled meat', 'សាច់អាំង'], ['Ice', 'ទឹកកក'], ['Soup', 'សម្ល']
+      ['Waiter', 'អ្នករត់តុ', '', 'neak-rot-to'], ['Order', 'កម្មង់', '', 'kam-ngo'], ['Split the bill', 'បង់លុយផ្សេងគ្នា', '', 'bang-luy-phseing-knie'],
+      ['Pay', 'បង់លុយ', '', 'bang-luy'], ['Sorry', 'សុំទោស', '', 'som toh'], ['Please', 'សូម', '', 'soum'], ['Taxes', 'ពន្ធ', '', 'pon'], ['Restaurant', 'ហាងបាយ', '', 'hang bai'],
+      ['Tip', 'ឱ្យលុយក្រៅ', '', 'ao-yo-luy-krau'], ['Alcohol', 'ស្រា', '', 'sra'], ['Wine', 'ស្រាក្រហម', '', 'sra-krah-mo'], ['Butter', 'ប៊ឺ', '', 'bue'],
+      ['Chef', 'ចុងភៅ', '', 'chong-phov'], ['Ingredients', 'គ្រឿង', '', 'kreuang'], ['Money', 'លុយ', '', 'luy'],
+      ['Menu', 'បញ្ជីឈ្មោះម្ហូប / ម៉ឺនុយ', '', 'banh-chi-chhmuoh-mhoup / moe-nuy'], ['Drinks', 'ភេសជ្ជៈ', '', 'pheh-chcheak'], ['Hungry', 'ឃ្លាន', '', 'khlien'],
+      ['Drink', 'ផឹក', '', 'phoek'], ['Bubble tea', 'តែគុជ', '', 'tae-kuch'], ['Pack the food (to go)', 'រៀបចំម្ហូប', '', 'riep-cham-mhoup'], ['Coffee', 'កាហ្វេ', '', 'kafe'],
+      ['Special', 'ពិសេស', '', 'pi-seih'], ['Cake', 'នំខេក', '', 'num-kheik'], ['Bitter', 'ល្វីង', '', 'lving'], ['Beer', 'ស្រាបៀរ', '', 'sra-bie'],
+      ['Sauce', 'ទឹកជ្រលក់', '', 'tuk-chro-luk'], ['French fries', 'ដំឡូងបំពង', '', 'dam-loung-bamp-ngo'], ['Water', 'ទឹក', '', 'tuk'], ['Meal', 'អាហារ', '', 'a-ha'],
+      ['Check, please', 'គិតលុយ', '', 'kit-luy'], ['Thirsty', 'ស្រេកទឹក', '', 'sreik-tuk'], ['Full', 'ឆ្អែត', '', 'chh-aet'], ['Dessert', 'បង្អែម', '', 'bang-aem'],
+      ['Flavour', 'រសជាតិ', '', 'roh-chie-te'], ['Spicy', 'ហឹរ', '', 'hel'], ['Salty', 'ប្រៃ', '', 'prai'], ['Sweet', 'ផ្អែម', '', 'ph-aem'], ['Sour', 'ជូរ', '', 'chu'],
+      ['Bread', 'នំប៉័ង', '', 'num pang'], ['Grilled meat', 'សាច់អាំង', '', 'sach-amng'], ['Ice', 'ទឹកកក', '', 'tuk-kak'], ['Soup', 'សម្ល', '', 'samlo']
     ] },
     { id: 'problems', level: 2, name: 'House & moto problems', words: [
-      ['Rent', 'ជួល'], ['Problem', 'បញ្ហា'], ['Water leak', 'លេចទឹក'], ['Headlights', 'ភ្លើង'], ['Brakes', 'ហ្វ្រាំង'], ["Doesn't work", 'អត់ដំណើរការ'], ['Landlord', 'ម្ចាស់ផ្ទះ'], ["Won't start (moto)", 'ដេរអត់ឆេះ']
+      ['Rent', 'ជួល', '', 'chuol'], ['Problem', 'បញ្ហា', '', 'banh-ha'], ['Water leak', 'លេចទឹក', '', 'lech-tuk'], ['Headlights', 'ភ្លើង', '', 'phleung'],
+      ['Brakes', 'ហ្វ្រាំង', '', 'hvroamng'], ['Doesn\'t work', 'អត់ដំណើរការ', '', 'at-dam-naeu-ka'], ['Landlord', 'ម្ចាស់ផ្ទះ', '', 'mchah-phteah'],
+      ['Won\'t start (moto)', 'ដេរអត់ឆេះ', '', 'dei-at-chheh']
     ] },
     { id: 'hospital', level: 2, name: 'At the hospital', words: [
-      ['Pain', 'ឈឺ'], ['Cut', 'កាត់'], ['Headache', 'ឈឺក្បាល'], ['Symptom', 'អាការៈ'], ['Head', 'ក្បាល'], ['Face', 'មុខ'], ['Ears', 'ត្រចៀក'], ['Eyes', 'ភ្នែក'], ['Blood', 'ឈាម'], ['Diabetes', 'ជំងឺទឹកនោមផ្អែម'], ['Health', 'សុខភាព'],
-      ['Doctor', 'គ្រូពេទ្យ'], ['Nurse', 'ពេទ្យ'], ['Bone', 'ឆ្អឹង'], ['Body', 'ខ្លួន'], ['Arms', 'ដៃ'], ['Legs', 'ជើង'], ['Emergency', 'បន្ទាន់'], ['Ambulance', 'ឡានសង្គ្រោះបន្ទាន់'], ['Brain', 'ខួរក្បាល'], ['Disease', 'មេរោគ / ជំងឺ'], ['Teeth', 'ធ្មេញ'],
-      ['Broken bone', 'បាក់ឆ្អឹង'], ['Fever', 'គ្រុនក្តៅ'], ['Common cold', 'ផ្តាសាយធម្មតា'], ['Throw up', 'ក្អួត'], ['Cancer', 'មហារីក'], ['Allergy', 'ប្រតិកម្ម'], ['Medicine', 'ថ្នាំពេទ្យ'], ['Take medicine', 'លេបថ្នាំ'], ['Bruise', 'ជាំ'], ['Get a vaccine', 'ចាក់វ៉ាក់សាំង'], ['Broken tooth', 'បាក់ធ្មេញ']
+      ['Pain', 'ឈឺ', '', 'chheu'], ['Cut', 'កាត់', '', 'kat'], ['Headache', 'ឈឺក្បាល', '', 'chheu-kbal'], ['Symptom', 'អាការៈ', '', 'a-ka-reak'], ['Head', 'ក្បាល', '', 'kbal'],
+      ['Face', 'មុខ', '', 'muk'], ['Ears', 'ត្រចៀក', '', 'tra-chiek'], ['Eyes', 'ភ្នែក', '', 'phnek'], ['Blood', 'ឈាម', '', 'chhiem'],
+      ['Diabetes', 'ជំងឺទឹកនោមផ្អែម', '', 'chum-ngue-tuk-noum-ph-aem'], ['Health', 'សុខភាព', '', 'sokhapheap'], ['Doctor', 'គ្រូពេទ្យ', '', 'kru pet'],
+      ['Nurse', 'ពេទ្យ', '', 'pet'], ['Bone', 'ឆ្អឹង', '', 'chhoeng'], ['Body', 'ខ្លួន', '', 'khluon'], ['Arms', 'ដៃ', '', 'dai'], ['Legs', 'ជើង', '', 'cheung'],
+      ['Emergency', 'បន្ទាន់', '', 'ban-tien'], ['Ambulance', 'ឡានសង្គ្រោះបន្ទាន់', '', 'lan-sang-kruohp-ntien'], ['Brain', 'ខួរក្បាល', '', 'khuo-kbal'],
+      ['Disease', 'មេរោគ / ជំងឺ', '', 'me-rouk / chum-ngue'], ['Teeth', 'ធ្មេញ', '', 'thmenh'], ['Broken bone', 'បាក់ឆ្អឹង', '', 'bak-chhoeng'],
+      ['Fever', 'គ្រុនក្តៅ', '', 'krun-kdav'], ['Common cold', 'ផ្តាសាយធម្មតា', '', 'phta-say-thom-ta'], ['Throw up', 'ក្អួត', '', 'kuot'], ['Cancer', 'មហារីក', '', 'mo-ha-rik'],
+      ['Allergy', 'ប្រតិកម្ម', '', 'pra-tek-mmo'], ['Medicine', 'ថ្នាំពេទ្យ', '', 'thnam-pet'], ['Take medicine', 'លេបថ្នាំ', '', 'lep-thnam'], ['Bruise', 'ជាំ', '', 'choam'],
+      ['Get a vaccine', 'ចាក់វ៉ាក់សាំង', '', 'chak-vak-samng'], ['Broken tooth', 'បាក់ធ្មេញ', '', 'bak-thmenh']
     ] },
     { id: 'animals', level: 2, name: 'Animals', words: [
-      ['Dog', 'ឆ្កែ'], ['Buffalo', 'ក្របី'], ['Duck', 'ទា'], ['Fish', 'ត្រី'], ['Tiger', 'ខ្លា'], ['Lizard', 'តុកកែ'], ['Snake', 'ពស់'], ['Bug', 'សត្វល្អិត'], ['Frog', 'កង្កែប'], ['Cat', 'ឆ្មា'], ['Bird', 'ចាប'], ['Chicken', 'មាន់'], ['Elephant', 'ដំរី'],
-      ['Monkey', 'ស្វា'], ['Alligator', 'ក្រពើ'], ['Bear', 'ខ្លាឃ្មុំ'], ['Butterfly', 'មេអំបៅ'], ['Toad', 'គីង្គក់'], ['Horse', 'សេះ'], ['Cow', 'គោ'], ['Pig', 'ជ្រូក'], ['Lion', 'តោ'], ['Sheep', 'ចៀម'], ['Crocodile', 'ក្រពើ'], ['Mouse / rat', 'កណ្តុរ'], ['Worm', 'ដង្កូវ']
+      ['Dog', 'ឆ្កែ', '', 'chkae'], ['Buffalo', 'ក្របី', '', 'kra-bei'], ['Duck', 'ទា', '', 'tie'], ['Fish', 'ត្រី', '', 'trey'], ['Tiger', 'ខ្លា', '', 'khla'],
+      ['Lizard', 'តុកកែ', '', 'tok-kae'], ['Snake', 'ពស់', '', 'poh'], ['Bug', 'សត្វល្អិត', '', 'sat-let'], ['Frog', 'កង្កែប', '', 'kang-kaep'], ['Cat', 'ឆ្មា', '', 'chhma'],
+      ['Bird', 'ចាប', '', 'chap'], ['Chicken', 'មាន់', '', 'moan'], ['Elephant', 'ដំរី', '', 'damrey'], ['Monkey', 'ស្វា', '', 'sva'], ['Alligator', 'ក្រពើ', '', 'kra-peu'],
+      ['Bear', 'ខ្លាឃ្មុំ', '', 'khla-khmum'], ['Butterfly', 'មេអំបៅ', '', 'me-am-bau'], ['Toad', 'គីង្គក់', '', 'king-ka'], ['Horse', 'សេះ', '', 'seh'], ['Cow', 'គោ', '', 'ko'],
+      ['Pig', 'ជ្រូក', '', 'chrouk'], ['Lion', 'តោ', '', 'tao'], ['Sheep', 'ចៀម', '', 'chiem'], ['Crocodile', 'ក្រពើ', '', 'kra-peu'], ['Mouse / rat', 'កណ្តុរ', '', 'kan-to'],
+      ['Worm', 'ដង្កូវ', '', 'dang-kouv']
     ] },
     { id: 'landscapes', level: 2, name: 'Landscapes', words: [
-      ['Nature', 'ធម្មជាតិ'], ['Ocean', 'សមុទ្រ'], ['Lake', 'បឹង'], ['Plains', 'វាលទំនាប'], ['Rice field', 'វាលស្រែ'], ['Island', 'កោះ'], ['Mountain', 'ភ្នំ'], ['River', 'ទន្លេ'], ['Stream', 'ស្ទឹង'], ['Wet', 'សើម'], ['Land', 'ដី'], ['Waterfall', 'ទឹកធ្លាក់'],
-      ['Forest', 'ព្រៃ'], ['Desert', 'ទីរហោស្ថាន'], ['Landscape', 'ទេសភាព'], ['Dry', 'ស្ងួត'], ['Beach', 'ឆ្នេរសមុទ្រ'], ['Shade', 'ម្លប់']
+      ['Nature', 'ធម្មជាតិ', '', 'thom-chie-te'], ['Ocean', 'សមុទ្រ', '', 'samot'], ['Lake', 'បឹង', '', 'boeng'], ['Plains', 'វាលទំនាប', '', 'vie-lo-tum-niep'],
+      ['Rice field', 'វាលស្រែ', '', 'vie-loh-rae'], ['Island', 'កោះ', '', 'kaoh'], ['Mountain', 'ភ្នំ', '', 'phnum'], ['River', 'ទន្លេ', '', 'tonle'],
+      ['Stream', 'ស្ទឹង', '', 'stueng'], ['Wet', 'សើម', '', 'saeum'], ['Land', 'ដី', '', 'dey'], ['Waterfall', 'ទឹកធ្លាក់', '', 'tuk-thliek'], ['Forest', 'ព្រៃ', '', 'prey'],
+      ['Desert', 'ទីរហោស្ថាន', '', 'ti-hao-sthan'], ['Landscape', 'ទេសភាព', '', 'te-sa-phiep'], ['Dry', 'ស្ងួត', '', 'snguot'], ['Beach', 'ឆ្នេរសមុទ្រ', '', 'chhnei-samot'],
+      ['Shade', 'ម្លប់', '', 'mlop']
     ] },
     { id: 'body', level: 2, name: 'Bodily functions', words: [
-      ['Itchy', 'រមាស់'], ['Sleepy', 'ងុយដេក'], ['Ticklish', 'រសើប'], ['Laughter', 'សើច'], ['Blinking', 'ព្រិចភ្នែក'], ['Pooping', 'បន្ទោបង់'], ['Peeing', 'នោម'], ['Swallow', 'លេប'], ['Fart', 'ផោម'], ['Sweating', 'បែកញើស'], ['Runny nose', 'ហៀរសំបោរ'],
-      ['Chewing', 'ទំពា'], ['Biting', 'ខាំ'], ['Cough', 'ក្អក'], ['Sneeze', 'កណ្តាស់'], ['Burp', 'ភើ'], ['Yawn', 'ស្ងាប']
+      ['Itchy', 'រមាស់', '', 'ro-mieh'], ['Sleepy', 'ងុយដេក', '', 'nguy-deik'], ['Ticklish', 'រសើប', '', 'ro-saeup'], ['Laughter', 'សើច', '', 'saeuch'],
+      ['Blinking', 'ព្រិចភ្នែក', '', 'prich-phnek'], ['Pooping', 'បន្ទោបង់', '', 'ban-toup-ngo'], ['Peeing', 'នោម', '', 'noum'], ['Swallow', 'លេប', '', 'lep'],
+      ['Fart', 'ផោម', '', 'phaom'], ['Sweating', 'បែកញើស', '', 'baek-nheuh'], ['Runny nose', 'ហៀរសំបោរ', '', 'hie-sam-bao'], ['Chewing', 'ទំពា', '', 'tum-pie'],
+      ['Biting', 'ខាំ', '', 'kham'], ['Cough', 'ក្អក', '', 'kak'], ['Sneeze', 'កណ្តាស់', '', 'kan-tah'], ['Burp', 'ភើ', '', 'pheu'], ['Yawn', 'ស្ងាប', '', 'sngap']
     ] },
     { id: 'shapes', level: 2, name: 'Shapes', words: [
-      ['Circle', 'រង្វង់'], ['Square', 'ការ៉េ'], ['Triangle', 'ត្រីកោណ'], ['Octagon', 'អដ្ឋកោណ'], ['Rectangle', 'ចតុកោណកែង'], ['Shape', 'រូបរាង']
+      ['Circle', 'រង្វង់', '', 'rong-ngo'], ['Square', 'ការ៉េ', '', 'ka-rei'], ['Triangle', 'ត្រីកោណ', '', 'trey-kaon'], ['Octagon', 'អដ្ឋកោណ', '', 'at-kaon'],
+      ['Rectangle', 'ចតុកោណកែង', '', 'cha-to-kaon-kaeng'], ['Shape', 'រូបរាង', '', 'rup-rieng']
     ] },
     { id: 'classifiers', level: 2, name: 'Classifiers', tip: 'The word that follows a number: two people is ពីរនាក់, three bottles is បីដប.', words: [
-      ['People', 'នាក់'], ['Eggs / seeds / tablets', 'គ្រាប់'], ['Plates / dishes', 'ចាន'], ['Bottles', 'ដប'], ['Books', 'ក្បាល'], ['Machines', 'គ្រឿង'], ['Monks / gods', 'អង្គ'], ['Images / statues', 'រូប'], ['Barrels', 'ធុង'], ['Boxes', 'ប្រអប់'],
-      ['Glasses', 'កែវ'], ['Packets', 'កញ្ចប់'], ['Skewers', 'ចង្កាក់'], ['Bunches / clusters', 'ចង្កោម'], ['Sheaves / bundles', 'បាច់'], ['Lines', 'ជួរ'], ['Groups', 'ក្រុម'], ['Pairs', 'គូ'], ['Scoops', 'វែក'], ['Sets', 'ឈុត'],
-      ['Words', 'ម៉ាត់'], ['Bunches of bananas', 'ស្និត'], ['Sheets / leaves (paper)', 'សន្លឹក'], ['Leaves', 'ស្លឹក'], ['Trees / plants', 'ដើម'], ['Cans', 'កំប៉ុង'], ['Dozens', 'ឡូ'], ['Sentences', 'ឃ្លា'], ['Pieces', 'ដុំ']
+      ['People', 'នាក់', '', 'niek'], ['Eggs / seeds / tablets', 'គ្រាប់', '', 'kriep'], ['Plates / dishes', 'ចាន', '', 'chan'], ['Bottles', 'ដប', '', 'dap'],
+      ['Books', 'ក្បាល', '', 'kbal'], ['Machines', 'គ្រឿង', '', 'kreuang'], ['Monks / gods', 'អង្គ', '', 'ang'], ['Images / statues', 'រូប', '', 'rup'],
+      ['Barrels', 'ធុង', '', 'thung'], ['Boxes', 'ប្រអប់', '', 'pra-ba'], ['Glasses', 'កែវ', '', 'kaev'], ['Packets', 'កញ្ចប់', '', 'kanh-ba'],
+      ['Skewers', 'ចង្កាក់', '', 'chang-kak'], ['Bunches / clusters', 'ចង្កោម', '', 'chang-kaom'], ['Sheaves / bundles', 'បាច់', '', 'bach'], ['Lines', 'ជួរ', '', 'chuo'],
+      ['Groups', 'ក្រុម', '', 'krom'], ['Pairs', 'គូ', '', 'ku'], ['Scoops', 'វែក', '', 'vaek'], ['Sets', 'ឈុត', '', 'chhut'], ['Words', 'ម៉ាត់', '', 'mat'],
+      ['Bunches of bananas', 'ស្និត', '', 'snet'], ['Sheets / leaves (paper)', 'សន្លឹក', '', 'san-luek'], ['Leaves', 'ស្លឹក', '', 'sloek'], ['Trees / plants', 'ដើម', '', 'daeum'],
+      ['Cans', 'កំប៉ុង', '', 'kam-pong'], ['Dozens', 'ឡូ', '', 'lou'], ['Sentences', 'ឃ្លា', '', 'khlie'], ['Pieces', 'ដុំ', '', 'dom']
     ] },
     { id: 'work', level: 3, name: 'Small talk — work', words: [
-      ['Work', 'ការងារ'], ['Teacher', 'គ្រូ'], ['Farmer', 'អ្នកស្រែ'], ['Doctor', 'គ្រូពេទ្យ'], ['Construction worker', 'ជាងសំណង់'], ['Mechanic', 'ជាង'], ['Farm', 'ចម្ការ'], ['Cook', 'ធ្វើម្ហូប'], ['Technology', 'បច្ចេកវិទ្យា'],
-      ['Missionary', 'បេសកជន'], ['Accountant', 'គណនេយ្យករ'], ['Electrician', 'ជាងអគ្គិសនី'], ['Plumber', 'ជាងទឹក'], ['Engineer', 'វិស្វករ'], ['Architect', 'អ្នកគូសប្លង់'], ['Hospital', 'មន្ទីរពេទ្យ'], ['Work in the field', 'ធ្វើការនៅស្រែ'], ['Art', 'សិល្បៈ'],
-      ['Agriculture', 'កសិកម្ម'], ['Education', 'ការអប់រំ'], ['Government', 'រដ្ឋាភិបាល'], ['Healthcare', 'ការថែទាំសុខភាព'], ['Salary', 'ប្រាក់ខែ'], ['Chef', 'ចុងភៅ'], ['School', 'សាលារៀន'], ['Business', 'ជំនួញ'], ['Place of work', 'កន្លែងធ្វើការ']
+      ['Work', 'ការងារ', '', 'ka ngie'], ['Teacher', 'គ្រូ', '', 'krou'], ['Farmer', 'អ្នកស្រែ', '', 'neak-srae'], ['Doctor', 'គ្រូពេទ្យ', '', 'kru pet'],
+      ['Construction worker', 'ជាងសំណង់', '', 'chieng-samn-ngo'], ['Mechanic', 'ជាង', '', 'chieng'], ['Farm', 'ចម្ការ', '', 'cham-ka'], ['Cook', 'ធ្វើម្ហូប', '', 'thveu-mhoup'],
+      ['Technology', 'បច្ចេកវិទ្យា', '', 'bach-cheik-vit-yie'], ['Missionary', 'បេសកជន', '', 'beih-kach-no'], ['Accountant', 'គណនេយ្យករ', '', 'kon-ney-ka'],
+      ['Electrician', 'ជាងអគ្គិសនី', '', 'chieng-ak-kih-ni'], ['Plumber', 'ជាងទឹក', '', 'chieng-tuk'], ['Engineer', 'វិស្វករ', '', 'vih-ka'],
+      ['Architect', 'អ្នកគូសប្លង់', '', 'neak-kuh-plang'], ['Hospital', 'មន្ទីរពេទ្យ', '', 'muntipet'], ['Work in the field', 'ធ្វើការនៅស្រែ', '', 'thveu-ka-nov-srae'],
+      ['Art', 'សិល្បៈ', '', 'sel-bak'], ['Agriculture', 'កសិកម្ម', '', 'ka-sek-mmo'], ['Education', 'ការអប់រំ', '', 'ka-ap-rum'],
+      ['Government', 'រដ្ឋាភិបាល', '', 'rot-tha-phi-bal'], ['Healthcare', 'ការថែទាំសុខភាព', '', 'ka-thae-toam-sokhapheap'], ['Salary', 'ប្រាក់ខែ', '', 'prak-khae'],
+      ['Chef', 'ចុងភៅ', '', 'chong-phov'], ['School', 'សាលារៀន', '', 'sala rien'], ['Business', 'ជំនួញ', '', 'chum-nuonh'],
+      ['Place of work', 'កន្លែងធ្វើការ', '', 'kan-laeng-thveu-ka']
     ] },
     { id: 'hobbies', level: 3, name: 'Small talk — hobbies', words: [
-      ['Sports', 'កីឡា'], ['Basketball', 'បាល់បោះ'], ['Soccer', 'បាល់ទាត់'], ['Volleyball', 'បាល់ទះ'], ['Swimming', 'ហែលទឹក'], ['Exercise', 'ហាត់ប្រាណ'], ['Art', 'សិល្បៈ'], ['Dancing', 'រាំ'], ['Photography', 'ថតរូប'], ['Gardening', 'ដាំដំណាំ'],
-      ['Sewing', 'ដេរខោអាវ'], ['Reading', 'អានសៀវភៅ'], ['Watching movies', 'មើលរឿង'], ['Listening to music', 'ស្តាប់ចម្រៀង'], ['Fighting', 'ច្របាច់គ្នា'], ['Riding a bike', 'ជិះកង់'], ['Hiking', 'ឡើងភ្នំ'], ['Camping', 'បោះតង់'], ['Fishing', 'ស្ទូចត្រី'],
-      ['Playing games', 'លេងហ្គេម'], ['Playing an instrument', 'លេងភ្លេង'], ['Woodworking', 'ធ្វើឈើ'], ['Language learning', 'រៀនភាសា'], ['Volunteering', 'ការងារស្ម័គ្រចិត្ត']
+      ['Sports', 'កីឡា', '', 'key-la'], ['Basketball', 'បាល់បោះ', '', 'bal-baoh'], ['Soccer', 'បាល់ទាត់', '', 'bal-tiet'], ['Volleyball', 'បាល់ទះ', '', 'bal-teah'],
+      ['Swimming', 'ហែលទឹក', '', 'hael-tuk'], ['Exercise', 'ហាត់ប្រាណ', '', 'hat-pran'], ['Art', 'សិល្បៈ', '', 'sel-bak'], ['Dancing', 'រាំ', '', 'roam'],
+      ['Photography', 'ថតរូប', '', 'that-rup'], ['Gardening', 'ដាំដំណាំ', '', 'dam-dam-nam'], ['Sewing', 'ដេរខោអាវ', '', 'dei-khao-av'],
+      ['Reading', 'អានសៀវភៅ', '', 'an-siev-phov'], ['Watching movies', 'មើលរឿង', '', 'meul-reuang'], ['Listening to music', 'ស្តាប់ចម្រៀង', '', 'sdap-cham-rieng'],
+      ['Fighting', 'ច្របាច់គ្នា', '', 'chra-bach-knie'], ['Riding a bike', 'ជិះកង់', '', 'chih-kang'], ['Hiking', 'ឡើងភ្នំ', '', 'laeung-phnum'],
+      ['Camping', 'បោះតង់', '', 'baoht-ngo'], ['Fishing', 'ស្ទូចត្រី', '', 'stuch-trey'], ['Playing games', 'លេងហ្គេម', '', 'leng-hkem'],
+      ['Playing an instrument', 'លេងភ្លេង', '', 'leng-phleng'], ['Woodworking', 'ធ្វើឈើ', '', 'thveu-chheu'], ['Language learning', 'រៀនភាសា', '', 'rien-phie-sa'],
+      ['Volunteering', 'ការងារស្ម័គ្រចិត្ត', '', 'ka ngie-smak-chet']
     ] },
     { id: 'weather', level: 3, name: 'Small talk — weather', words: [
-      ['Cold', 'ត្រជាក់'], ['Hot', 'ក្តៅ'], ['Warm', 'ក្តៅអ៊ុនៗ'], ['Wind', 'ខ្យល់'], ['Rain', 'ភ្លៀង'], ['Storm', 'ព្យុះ'], ['Snow', 'ព្រិល'], ['Cloud', 'ពពក'], ['Thunder', 'ផ្គរលាន់'], ['Lightning', 'ផ្លេកបន្ទោរ'], ['Fog', 'ចុះអាប់'], ['Smoke', 'ផ្សែង'],
-      ['Humidity', 'ក្តៅសើម'], ['Temperature', 'សីតុណ្ហភាព'], ['Flood', 'ទឹកជំនន់'], ['Rainbow', 'ឥន្ទធនូ'], ['Weather', 'អាកាសធាតុ'], ['Fire', 'ភ្លើង']
+      ['Cold', 'ត្រជាក់', '', 'trocheak'], ['Hot', 'ក្តៅ', '', 'kdav'], ['Warm', 'ក្តៅអ៊ុនៗ', '', 'kdav-un'], ['Wind', 'ខ្យល់', '', 'khyal'], ['Rain', 'ភ្លៀង', '', 'phlieng'],
+      ['Storm', 'ព្យុះ', '', 'pyuh'], ['Snow', 'ព្រិល', '', 'pril'], ['Cloud', 'ពពក', '', 'pop-ka'], ['Thunder', 'ផ្គរលាន់', '', 'phko-lien'],
+      ['Lightning', 'ផ្លេកបន្ទោរ', '', 'phleik-ban-tou'], ['Fog', 'ចុះអាប់', '', 'choh-ap'], ['Smoke', 'ផ្សែង', '', 'phsaeng'], ['Humidity', 'ក្តៅសើម', '', 'kdav-saeum'],
+      ['Temperature', 'សីតុណ្ហភាព', '', 'sey-ton-phiep'], ['Flood', 'ទឹកជំនន់', '', 'tuk-chumn-no'], ['Rainbow', 'ឥន្ទធនូ', '', 'e-ntot-nu'],
+      ['Weather', 'អាកាសធាតុ', '', 'a-kah-thie-to'], ['Fire', 'ភ្លើង', '', 'phleung']
     ] },
     { id: 'travel', level: 3, name: 'Small talk — travel', words: [
-      ['Travel', 'ធ្វើដំណើរ'], ['Airplane', 'យន្តហោះ'], ['Country', 'ប្រទេស'], ['Tourism', 'ទេសចរណ៍'], ['District', 'ស្រុក'], ['Province', 'ខេត្ត'], ['Continent', 'ទ្វីប'], ['State', 'រដ្ឋ'], ['Train', 'រថភ្លើង']
+      ['Travel', 'ធ្វើដំណើរ', '', 'thveu-dam-naeu'], ['Airplane', 'យន្តហោះ', '', 'yon-haoh'], ['Country', 'ប្រទេស', '', 'pra-teh'], ['Tourism', 'ទេសចរណ៍', '', 'te-sach-ro'],
+      ['District', 'ស្រុក', '', 'srok'], ['Province', 'ខេត្ត', '', 'kheit'], ['Continent', 'ទ្វីប', '', 'tvip'], ['State', 'រដ្ឋ', '', 'rot'],
+      ['Train', 'រថភ្លើង', '', 'rot-phleung']
     ] },
     { id: 'politics', level: 3, name: 'Small talk — politics', words: [
-      ['Politics', 'នយោបាយ'], ['News', 'ព័ត៌មាន'], ['Economics', 'សេដ្ឋកិច្ច'], ['Public', 'សាធារណៈ'], ['Private', 'ឯកជន'], ['President', 'ប្រធានាធិបតី'], ['Mayor', 'អភិបាលក្រុង'], ['Corruption', 'អំពើពុករលួយ'], ['System', 'ប្រព័ន្ធ'],
-      ['Prime minister', 'នាយករដ្ឋមន្ត្រី'], ['Governor', 'អភិបាល'], ['Government', 'រដ្ឋាភិបាល'], ['Capital city', 'រាជធានី']
+      ['Politics', 'នយោបាយ', '', 'no-you-bai'], ['News', 'ព័ត៌មាន', '', 'poat-mien'], ['Economics', 'សេដ្ឋកិច្ច', '', 'seit-kech'], ['Public', 'សាធារណៈ', '', 'sa-thie-nak'],
+      ['Private', 'ឯកជន', '', 'ae-kach-no'], ['President', 'ប្រធានាធិបតី', '', 'pra-thie-nie-thip-tey'], ['Mayor', 'អភិបាលក្រុង', '', 'a-phi-bal-krong'],
+      ['Corruption', 'អំពើពុករលួយ', '', 'am-peu-puk-ro-luoy'], ['System', 'ប្រព័ន្ធ', '', 'pra-poan'], ['Prime minister', 'នាយករដ្ឋមន្ត្រី', '', 'niey-ka-dtham-ntri'],
+      ['Governor', 'អភិបាល', '', 'a-phi-bal'], ['Government', 'រដ្ឋាភិបាល', '', 'rot-tha-phi-bal'], ['Capital city', 'រាជធានី', '', 'riech-thie-ni']
     ] },
     { id: 'agriculture', level: 3, name: 'Small talk — agriculture', words: [
-      ['Farm', 'ចម្ការ'], ['Farmer', 'អ្នកចម្ការ'], ['Tree', 'ដើមឈើ'], ['Planting a tree', 'ដាំដើមឈើ'], ['Watering', 'ស្រោចទឹក'], ['Fruits', 'ផ្លែឈើ'], ['Plants', 'ដំណាំ'], ['Seeds', 'គ្រាប់'], ['Rice field', 'វាលស្រែ'], ['Raw rice', 'អង្ករ'],
-      ['Storing', 'ជង្រុក'], ['Tractor', 'ត្រាក់ទ័រ'], ['Harvest', 'ប្រមូលផល'], ['Roots', 'ឫស'], ['Weeds', 'ស្មៅ'], ['Grass', 'ស្មៅ'], ['Growth', 'ដុះ'], ['Pruning', 'ការកាត់ចេញ']
+      ['Farm', 'ចម្ការ', '', 'cham-ka'], ['Farmer', 'អ្នកចម្ការ', '', 'neak-cham-ka'], ['Tree', 'ដើមឈើ', '', 'daeum-chheu'], ['Planting a tree', 'ដាំដើមឈើ', '', 'dam-daeum-chheu'],
+      ['Watering', 'ស្រោចទឹក', '', 'sraoch-tuk'], ['Fruits', 'ផ្លែឈើ', '', 'phlae-chheu'], ['Plants', 'ដំណាំ', '', 'dam-nam'], ['Seeds', 'គ្រាប់', '', 'kriep'],
+      ['Rice field', 'វាលស្រែ', '', 'vie-loh-rae'], ['Raw rice', 'អង្ករ', '', 'ang-ro'], ['Storing', 'ជង្រុក', '', 'chong-ruk'], ['Tractor', 'ត្រាក់ទ័រ', '', 'trak-toa'],
+      ['Harvest', 'ប្រមូលផល', '', 'pra-mul-phal'], ['Roots', 'ឫស', '', 'roe-sa'], ['Weeds', 'ស្មៅ', '', 'smau'], ['Grass', 'ស្មៅ', '', 'smau'], ['Growth', 'ដុះ', '', 'doh'],
+      ['Pruning', 'ការកាត់ចេញ', '', 'ka-kat-cheinh']
     ] },
     { id: 'religion', level: 3, name: 'Small talk — religion', words: [
-      ['Religion', 'សាសនា'], ['Temple', 'វត្ត'], ['Faith', 'ជំនឿ'], ['Self-reliance', 'ខ្លួនទីពឹងខ្លួន'], ['Buddhism', 'ព្រះពុទ្ធសាសនា'], ['Christianity', 'គ្រិស្តសាសនា'], ['Believe', 'ជឿ'], ['Earning merit', 'ធ្វើបុណ្យ'],
-      ['Monks', 'លោកសង្ឃ'], ['Hinduism', 'ព្រហ្មញ្ញសាសនា'], ['Buddha', 'ព្រះពុទ្ធ'], ['Holy book', 'សៀវភៅធម៌']
+      ['Religion', 'សាសនា', '', 'sah-nie'], ['Temple', 'វត្ត', '', 'vot'], ['Faith', 'ជំនឿ', '', 'chum-neua'], ['Self-reliance', 'ខ្លួនទីពឹងខ្លួន', '', 'khluon-ti-pueng-khluon'],
+      ['Buddhism', 'ព្រះពុទ្ធសាសនា', '', 'preah-put-sah-nie'], ['Christianity', 'គ្រិស្តសាសនា', '', 'krih-sah-nie'], ['Believe', 'ជឿ', '', 'chuea'],
+      ['Earning merit', 'ធ្វើបុណ្យ', '', 'thveu-bon'], ['Monks', 'លោកសង្ឃ', '', 'louk-sang'], ['Hinduism', 'ព្រហ្មញ្ញសាសនា', '', 'proh-nhnho-sah-nie'],
+      ['Buddha', 'ព្រះពុទ្ធ', '', 'preah-put'], ['Holy book', 'សៀវភៅធម៌', '', 'siev-phovt-mo']
     ] },
     { id: 'history', level: 3, name: 'Small talk — history', words: [
-      ['History', 'ប្រវត្តិសាស្ត្រ'], ['Past', 'អតីតកាល'], ['Khmer Rouge', 'សម័យពលពត'], ['Independence', 'ឯករាជ្យ'], ['Education', 'ការអប់រំ'], ['Swords', 'ដាវ'], ['Tanks', 'រថក្រោះ'], ['Border', 'ព្រំដែន'], ['King', 'ស្តេច'], ['Century', 'សតវត្ស'],
-      ['War', 'សង្គ្រាម'], ['Ancestors', 'ដូនតា'], ['Empire', 'អាណាចក្រ'], ['Guns', 'កាំភ្លើង'], ['Refugees', 'ជនភៀសខ្លួន'], ['Flee the country', 'រត់ភៀសខ្លួន'], ['Emperor', 'អធិរាជ'], ['Era', 'សម័យ'], ['Division', 'ការបែងចែក'],
-      ['Genealogy', 'ពូជពង្ស'], ['Battle', 'សង្គ្រាម'], ['Bombs', 'គ្រាប់បែក'], ['Refugee camp', 'ជំរំជនភៀសខ្លួន'], ['Fighting', 'វ៉ៃគ្នា']
+      ['History', 'ប្រវត្តិសាស្ត្រ', '', 'prav-tte-sa-stro'], ['Past', 'អតីតកាល', '', 'a-teyt-kal'], ['Khmer Rouge', 'សម័យពលពត', '', 'sa-moay-pol-pot'],
+      ['Independence', 'ឯករាជ្យ', '', 'ae-ka-riech'], ['Education', 'ការអប់រំ', '', 'ka-ap-rum'], ['Swords', 'ដាវ', '', 'dav'], ['Tanks', 'រថក្រោះ', '', 'rot-kraoh'],
+      ['Border', 'ព្រំដែន', '', 'prum-daen'], ['King', 'ស្តេច', '', 'steich'], ['Century', 'សតវត្ស', '', 'sat-vot'], ['War', 'សង្គ្រាម', '', 'sang-kriem'],
+      ['Ancestors', 'ដូនតា', '', 'doun-ta'], ['Empire', 'អាណាចក្រ', '', 'a-nach-kra'], ['Guns', 'កាំភ្លើង', '', 'kam-phleung'], ['Refugees', 'ជនភៀសខ្លួន', '', 'chon-phieh-khluon'],
+      ['Flee the country', 'រត់ភៀសខ្លួន', '', 'rot-phieh-khluon'], ['Emperor', 'អធិរាជ', '', 'a-thi-riech'], ['Era', 'សម័យ', '', 'sa-moay'],
+      ['Division', 'ការបែងចែក', '', 'ka-baeng-chaek'], ['Genealogy', 'ពូជពង្ស', '', 'puch-pong'], ['Battle', 'សង្គ្រាម', '', 'sang-kriem'],
+      ['Bombs', 'គ្រាប់បែក', '', 'kriep-baek'], ['Refugee camp', 'ជំរំជនភៀសខ្លួន', '', 'chum-rumch-no-phieh-khluon'], ['Fighting', 'វ៉ៃគ្នា', '', 'vai-knie']
     ] },
     { id: 'education', level: 3, name: 'Small talk — education', words: [
-      ['Education', 'ការអប់រំ'], ['High school', 'វិទ្យាល័យ'], ['University', 'សកលវិទ្យាល័យ'], ['Pre-school', 'សាលាមត្តេយ្យ'], ['Pass the test', 'ប្រឡងជាប់'], ['Points on a test', 'ពិន្ទុ'], ["Master's degree", 'ថ្នាក់អនុបណ្ឌិត'],
-      ['Math', 'គណិតវិទ្យា'], ['Science', 'វិទ្យាសាស្ត្រ'], ['Study', 'រៀន'], ['Improve', 'កែលម្អ'], ['Fail the test', 'ប្រឡងធ្លាក់'], ['Graduate', 'ទទួលសញ្ញាប័ត្រ'], ['Doctorate', 'បណ្ឌិត'], ['Subject', 'មុខវិជ្ជា'], ['Principal', 'នាយកសាលា'],
-      ['Discipline', 'វិន័យ'], ['Exam / test', 'ប្រឡង'], ['Level', 'កម្រិត'], ["Bachelor's degree", 'បរិញ្ញាបត្រ'], ['Develop', 'អភិវឌ្ឍ']
+      ['Education', 'ការអប់រំ', '', 'ka-ap-rum'], ['High school', 'វិទ្យាល័យ', '', 'vit-yie-loay'], ['University', 'សកលវិទ្យាល័យ', '', 'sak-lo-vit-yie-loay'],
+      ['Pre-school', 'សាលាមត្តេយ្យ', '', 'sa-liem-tteiy'], ['Pass the test', 'ប្រឡងជាប់', '', 'pral-ngo-chiep'], ['Points on a test', 'ពិន្ទុ', '', 'pin-tu'],
+      ['Master\'s degree', 'ថ្នាក់អនុបណ្ឌិត', '', 'thnak-a-nup-ndit'], ['Math', 'គណិតវិទ្យា', '', 'ko-net-vit-yie'], ['Science', 'វិទ្យាសាស្ត្រ', '', 'vit-yie-sa-stro'],
+      ['Study', 'រៀន', '', 'rien'], ['Improve', 'កែលម្អ', '', 'kael-ma'], ['Fail the test', 'ប្រឡងធ្លាក់', '', 'pral-ngot-liek'],
+      ['Graduate', 'ទទួលសញ្ញាប័ត្រ', '', 'to-tuol-sanhnhabat'], ['Doctorate', 'បណ្ឌិត', '', 'ban-dit'], ['Subject', 'មុខវិជ្ជា', '', 'muk-vich-chie'],
+      ['Principal', 'នាយកសាលា', '', 'niey-ka-sa-lie'], ['Discipline', 'វិន័យ', '', 'vi-noay'], ['Exam / test', 'ប្រឡង', '', 'pral-ngo'], ['Level', 'កម្រិត', '', 'kam-rit'],
+      ['Bachelor\'s degree', 'បរិញ្ញាបត្រ', '', 'ba-rinh-nhiep-tra'], ['Develop', 'អភិវឌ្ឍ', '', 'a-phiv-dtho']
     ] },
     { id: 'spheres', level: 3, name: 'Seven spheres of society', words: [
-      ['Seven spheres of society', 'វិស័យប្រាំពីរនៃសង្គម'], ['Government', 'រដ្ឋាភិបាល'], ['Media', 'ប្រព័ន្ធផ្សព្វផ្សាយ'], ['Family', 'គ្រួសារ'], ['Religion', 'សាសនា'], ['Celebration', 'ធ្វើកម្មវិធី'], ['Economics', 'សេដ្ឋកិច្ច'], ['Education', 'ការអប់រំ'], ['Society', 'សង្គម']
+      ['Seven spheres of society', 'វិស័យប្រាំពីរនៃសង្គម', '', 'vi-say-pram pi-ney-sangkum'], ['Government', 'រដ្ឋាភិបាល', '', 'rot-tha-phi-bal'],
+      ['Media', 'ប្រព័ន្ធផ្សព្វផ្សាយ', '', 'pra-poan-phsap-phsay'], ['Family', 'គ្រួសារ', '', 'kruo-sa'], ['Religion', 'សាសនា', '', 'sah-nie'],
+      ['Celebration', 'ធ្វើកម្មវិធី', '', 'thveu-kam-vi-thi'], ['Economics', 'សេដ្ឋកិច្ច', '', 'seit-kech'], ['Education', 'ការអប់រំ', '', 'ka-ap-rum'],
+      ['Society', 'សង្គម', '', 'sangkum']
     ] },
     { id: 'deeper', level: 3, name: 'Deeper problems', words: [
-      ['Smoking', 'ជក់បារី'], ['Drug addiction', 'ញៀនថ្នាំ'], ['Abuse', 'រំលោភបំពាន'], ['Rape', 'រំលោភ'], ['Not good enough', 'មិនល្អ'], ['Beating', 'វាយ'], ['Yelling', 'ស្រែក'], ['Addiction', 'ញៀន'], ['Partying', 'ជប់លៀង'],
-      ['Violence', 'ឈ្លោះគ្នា'], ['Divorce', 'លែងគ្នា'], ['Hurt', 'ឈឺចាប់'], ['Gambling', 'លេងល្បែង'], ['Counselling', 'ការប្រឹក្សាយោបល់'], ['Drunk', 'ស្រវឹង'], ['Porn', 'អាសអាភាស'], ['Hitting', 'វ៉ៃគ្នា'], ['Shooting', 'បាញ់'],
-      ['Hurt someone', 'ធ្វើបាបគេ'], ['Suicide', 'សម្លាប់ខ្លួន']
+      ['Smoking', 'ជក់បារី', '', 'chok-ba-ri'], ['Drug addiction', 'ញៀនថ្នាំ', '', 'nhien-thnam'], ['Abuse', 'រំលោភបំពាន', '', 'rum-loup-bam-pien'],
+      ['Rape', 'រំលោភ', '', 'rum-loup'], ['Not good enough', 'មិនល្អ', '', 'min-la-or'], ['Beating', 'វាយ', '', 'viey'], ['Yelling', 'ស្រែក', '', 'sraek'],
+      ['Addiction', 'ញៀន', '', 'nhien'], ['Partying', 'ជប់លៀង', '', 'chop-lieng'], ['Violence', 'ឈ្លោះគ្នា', '', 'chhluoh-knie'], ['Divorce', 'លែងគ្នា', '', 'laeng-knie'],
+      ['Hurt', 'ឈឺចាប់', '', 'chheu-chap'], ['Gambling', 'លេងល្បែង', '', 'leng-lbaeng'], ['Counselling', 'ការប្រឹក្សាយោបល់', '', 'ka-proek-sa-youp-lo'],
+      ['Drunk', 'ស្រវឹង', '', 'sra-vueng'], ['Porn', 'អាសអាភាស', '', 'ah-a-phieh'], ['Hitting', 'វ៉ៃគ្នា', '', 'vai-knie'], ['Shooting', 'បាញ់', '', 'banh'],
+      ['Hurt someone', 'ធ្វើបាបគេ', '', 'thveu-bap-ke'], ['Suicide', 'សម្លាប់ខ្លួន', '', 'sam-liep-khluon']
     ] },
     { id: 'christian', level: 3, name: 'Christian words', words: [
-      ['Prayer', 'អធិស្ឋាន'], ['Resurrection', 'រស់ឡើងវិញ'], ['Jesus', 'ព្រះយេស៊ូវ'], ['Intercession', 'អធិស្ឋានទូលអង្វរ'], ['Cross', 'ឈើឆ្កាង'], ['God', 'ព្រះអង្គ'], ['Baptism', 'ជ្រមុជទឹក'], ['Die on the cross', 'សុគតលើឈើឆ្កាង'], ['Holy Spirit', 'ព្រះវិញ្ញាណបរិសុទ្ធ'],
-      ['God the Father', 'ព្រះវរបិតា'], ['God the Son', 'ព្រះរាជបុត្រា'], ['God the Holy Spirit', 'ព្រះវិញ្ញាណបរិសុទ្ធ'], ['The Trinity', 'ព្រះត្រីឯក'], ['Apostle', 'សាវ័ក'], ['Disciple', 'សិស្ស'], ['Born again', 'កើតជាថ្មី'], ['New life', 'ជីវិតថ្មី'], ['Salvation', 'សេចក្តីសង្គ្រោះ'],
-      ['Denomination', 'និកាយ'], ['Sin', 'អំពើបាប'], ['Confess', 'សារភាព'], ['Repent', 'លន់តួ'], ['Anger', 'ខឹង'], ['Mercy', 'មេត្តា'], ['Forgiveness', 'អត់ទោស'], ['Soul', 'ព្រលឹង'], ['Joy', 'អំណរ'], ['Love', 'សេចក្តីស្រឡាញ់'], ['Peace', 'សន្តិភាព'],
-      ['Patience', 'អត់ធ្មត់'], ['Kindness', 'ចិត្តល្អ'], ['Goodness', 'ចិត្តល្អ'], ['Heal', 'ព្យាបាល'], ['Will / heart of God', 'ព្រះទ័យព្រះ'], ['Goal', 'គោលដៅ'], ['Evil', 'ចិត្តអាក្រក់'], ['The enemy', 'សត្រូវ'], ['LORD', 'ព្រះអម្ចាស់'], ['Angel', 'ទេវតា'],
-      ['Death (of people)', 'សេចក្តីស្លាប់'], ['Death (of a king)', 'ការសុគត'], ['Church', 'ព្រះវិហារ'], ['Heaven', 'ឋានសួគ៌'], ['Hell', 'ឋាននរក'], ['Gospel', 'ដំណឹងល្អ'], ['Evangelism', 'ផ្សាយដំណឹងល្អ'], ['Glory', 'សិរីល្អ'], ['Eternal life', 'ជីវិតអស់កល្ប'],
-      ['Grace', 'ព្រះគុណ'], ['Respect', 'គោរព'], ['Focus', 'ផ្តោត'], ['Quality', 'គុណភាព'], ['Perfect', 'ល្អឥតខ្ចោះ'], ['Chapter', 'ជំពូក'], ['New Testament', 'សញ្ញាថ្មី'], ['Old Testament', 'សញ្ញាចាស់'], ['Verse', 'ខ'], ['Second coming', 'យាងមកលើកទី២'],
-      ['Gentile', 'សាសន៍ដទៃ'], ['Jew', 'សាសន៍យូដា'], ['Jerusalem', 'ក្រុងយេរូសាឡិម'], ['Israel', 'អ៊ីស្រាអែល'], ['Circumcision', 'ការកាត់ស្បែក'], ['Change', 'ផ្លាស់ប្តូរ'], ['Tradition', 'ប្រពៃណី'], ['Prophet', 'ហោរា'], ['Fasting', 'តម'],
-      ['Preach', 'អធិប្បាយ'], ['Worship', 'ថ្វាយបង្គំ'], ['Honour', 'កិត្តិយស'], ['Bible', 'ព្រះគម្ពីរ'], ['The lost', 'អ្នកបាត់បង់'], ['Holy', 'បរិសុទ្ធ'], ['Bless', 'ប្រទានពរ'], ['The best', 'ល្អបំផុត'], ['Congregation', 'ក្រុមជំនុំ'],
-      ['Pastor', 'គ្រូគង្វាល'], ['Kneel', 'ក្រាប'], ['Counselling', 'ប្រឹក្សាយោបល់'], ['More / the most', 'ជាង / ជាងគេ'], ['Small group', 'ក្រុមតូច']
+      ['Prayer', 'អធិស្ឋាន', '', 'athisthan'], ['Resurrection', 'រស់ឡើងវិញ', '', 'roh-laeung-vinh'], ['Jesus', 'ព្រះយេស៊ូវ', '', 'preah yesu'],
+      ['Intercession', 'អធិស្ឋានទូលអង្វរ', '', 'athisthan-tul-ang-ro'], ['Cross', 'ឈើឆ្កាង', '', 'chheu-chhkang'], ['God', 'ព្រះអង្គ', '', 'preah ang'],
+      ['Baptism', 'ជ្រមុជទឹក', '', 'chro-much-tuk'], ['Die on the cross', 'សុគតលើឈើឆ្កាង', '', 'sok-ta-leu-chheu-chhkang'],
+      ['Holy Spirit', 'ព្រះវិញ្ញាណបរិសុទ្ធ', '', 'preah vinhnhean borisot'], ['God the Father', 'ព្រះវរបិតា', '', 'preah-vo-be-ta'],
+      ['God the Son', 'ព្រះរាជបុត្រា', '', 'preah-riech-bo-tra'], ['God the Holy Spirit', 'ព្រះវិញ្ញាណបរិសុទ្ធ', '', 'preah vinhnhean borisot'],
+      ['The Trinity', 'ព្រះត្រីឯក', '', 'preah-trey-ae-ka'], ['Apostle', 'សាវ័ក', '', 'sa-voak'], ['Disciple', 'សិស្ស', '', 'seh'],
+      ['Born again', 'កើតជាថ្មី', '', 'kaeut-chie-thmey'], ['New life', 'ជីវិតថ្មី', '', 'chi-vit-thmey'], ['Salvation', 'សេចក្តីសង្គ្រោះ', '', 'seich-kteyh-ngkruoh'],
+      ['Denomination', 'និកាយ', '', 'ni-kay'], ['Sin', 'អំពើបាប', '', 'am-peu-bap'], ['Confess', 'សារភាព', '', 'sa-phiep'], ['Repent', 'លន់តួ', '', 'lon-tuo'],
+      ['Anger', 'ខឹង', '', 'khoeng'], ['Mercy', 'មេត្តា', '', 'met-ta'], ['Forgiveness', 'អត់ទោស', '', 'at-touh'], ['Soul', 'ព្រលឹង', '', 'pro-lueng'],
+      ['Joy', 'អំណរ', '', 'amn-ro'], ['Love', 'សេចក្តីស្រឡាញ់', '', 'seich-ktey-srolanh'], ['Peace', 'សន្តិភាព', '', 'san-te-phiep'], ['Patience', 'អត់ធ្មត់', '', 'at-thmot'],
+      ['Kindness', 'ចិត្តល្អ', '', 'chet-la-or'], ['Goodness', 'ចិត្តល្អ', '', 'chet-la-or'], ['Heal', 'ព្យាបាល', '', 'pyie-bal'],
+      ['Will / heart of God', 'ព្រះទ័យព្រះ', '', 'preah-toay-preah'], ['Goal', 'គោលដៅ', '', 'ko-lo-dau'], ['Evil', 'ចិត្តអាក្រក់', '', 'chet-ak-ka'],
+      ['The enemy', 'សត្រូវ', '', 'sat-ruv'], ['LORD', 'ព្រះអម្ចាស់', '', 'preah-am-chah'], ['Angel', 'ទេវតា', '', 'te-vo-ta'],
+      ['Death (of people)', 'សេចក្តីស្លាប់', '', 'seich-ktey-slap'], ['Death (of a king)', 'ការសុគត', '', 'ka-sok-ta'], ['Church', 'ព្រះវិហារ', '', 'preah vihie'],
+      ['Heaven', 'ឋានសួគ៌', '', 'than-suok'], ['Hell', 'ឋាននរក', '', 'than-no-ka'], ['Gospel', 'ដំណឹងល្អ', '', 'dam-noeng-la-or'],
+      ['Evangelism', 'ផ្សាយដំណឹងល្អ', '', 'phsay-dam-noeng-la-or'], ['Glory', 'សិរីល្អ', '', 'se-ri-la-or'], ['Eternal life', 'ជីវិតអស់កល្ប', '', 'chi-vit-ah-kal'],
+      ['Grace', 'ព្រះគុណ', '', 'preah-kun'], ['Respect', 'គោរព', '', 'ko-rop'], ['Focus', 'ផ្តោត', '', 'phtaot'], ['Quality', 'គុណភាព', '', 'kun-phiep'],
+      ['Perfect', 'ល្អឥតខ្ចោះ', '', 'la-or-e-tak-chaoh'], ['Chapter', 'ជំពូក', '', 'chum-puk'], ['New Testament', 'សញ្ញាថ្មី', '', 'sanh-nhie-thmey'],
+      ['Old Testament', 'សញ្ញាចាស់', '', 'sanh-nhie-chah'], ['Verse', 'ខ', '', 'kha'], ['Second coming', 'យាងមកលើកទី២', '', 'yieng-mok-leuk-ti-2'],
+      ['Gentile', 'សាសន៍ដទៃ', '', 'sah-not-tey'], ['Jew', 'សាសន៍យូដា', '', 'sah-no-yu-da'], ['Jerusalem', 'ក្រុងយេរូសាឡិម', '', 'krong-ye-ru-sa-lem'],
+      ['Israel', 'អ៊ីស្រាអែល', '', 'i-sra-ael'], ['Circumcision', 'ការកាត់ស្បែក', '', 'ka-kat-sbaek'], ['Change', 'ផ្លាស់ប្តូរ', '', 'phlah-ptou'],
+      ['Tradition', 'ប្រពៃណី', '', 'pra-pey-ney'], ['Prophet', 'ហោរា', '', 'hao-rie'], ['Fasting', 'តម', '', 'tam'], ['Preach', 'អធិប្បាយ', '', 'a-thip-bay'],
+      ['Worship', 'ថ្វាយបង្គំ', '', 'thvay bangkum'], ['Honour', 'កិត្តិយស', '', 'ket-tey-sa'], ['Bible', 'ព្រះគម្ពីរ', '', 'preah kompi'],
+      ['The lost', 'អ្នកបាត់បង់', '', 'neak-bat-bang'], ['Holy', 'បរិសុទ្ធ', '', 'ba-ri-sot'], ['Bless', 'ប្រទានពរ', '', 'pra-tien-po'],
+      ['The best', 'ល្អបំផុត', '', 'la-or-bam-phot'], ['Congregation', 'ក្រុមជំនុំ', '', 'krom chumnum'], ['Pastor', 'គ្រូគង្វាល', '', 'krou-kong-viel'],
+      ['Kneel', 'ក្រាប', '', 'krap'], ['Counselling', 'ប្រឹក្សាយោបល់', '', 'proek-sa-youp-lo'], ['More / the most', 'ជាង / ជាងគេ', '', 'chieng / chieng-ke'],
+      ['Small group', 'ក្រុមតូច', '', 'krom-touch']
     ] }
   ]
 };

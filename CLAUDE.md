@@ -1721,7 +1721,8 @@ leading at YWAM GP (culture, teams, hard conversations, vision, systems, executi
   into the blob store `gp-audio` — NOT `gp-data`, so the nightly backup doesn't copy it. One
   MP3 per reader screen, saying exactly what that screen shows; a second run records only
   screens whose text or voice changed. AZURE_SPEECH_KEY / AZURE_SPEECH_REGION live only in
-  the runner's environment. `audio.js` (files, read-only, public) and api `libAudioIndex`
+  the runner's environment. `audio.js` (files, read-only for the books — its one exception is
+  Learn Khmer's single words, recorded on the spot when the site has the key, see Learn Khmer) and api `libAudioIndex`
   (which books are recorded) serve it; turn `LIB_AUDIO_ON` on and the reader plays a book's
   recording (fetched whole for iPhones, next screen fetched ahead, page turned on its end,
   Media Session lock-screen controls), the phone's voice only where there is none.
@@ -2870,7 +2871,7 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 ## Learn Khmer — the KBC vocabulary book as flashcards (Oct 2026, Andrew)
 - **☰ → Language → Learn Khmer / English** (`khOpen_`, view `khmer`, `teams/15-khmer.js`,
   `bindKhmer_`; the Language group is just this — Khmer review moved under Admin). The words are
-  `public/khmer-vocab.js` (`GP_KHMER_VOCAB`: `levels` and `cats`, a word is `[en, km, note?]`),
+  `public/khmer-vocab.js` (`GP_KHMER_VOCAB`: `levels` and `cats`, a word is `[en, km, note?, tl?]`),
   transcribed from "KBC Vocabulary" by Phy Chum and Andrew Potter — 3 levels (the book's sections:
   Essentials, Daily life, Deeper talk), 42 lists, ~1,100 words — plus level 0, **The script**
   (`script: true` lists: 33 consonants with their series, the vowel signs shown on ◌, the independent
@@ -2880,10 +2881,28 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - **Learning Khmer or English** (`[data-khlearn]`, `S.kh.front` = 'en' learning Khmer, 'km' learning
   English, kept in `gp-kh-front`; `khLearningEn_`, `khTitle_`): the switch on the home decides which side
   a card and a quiz ask with and which language 🔊 reads; the page is titled Learn English then.
-- **🔊** (`khSpeak_`, `[data-khsay="km|text"]`): the phone's own voice through the Library's
-  `libSpeechOk_`/`libVoice_` (only the first alternative before " / " is read, ◌ stripped). iPhones have
-  no Khmer voice yet — it says so once; Android phones with Google's voices do; English voices are
-  everywhere. Recorded audio would come the Library's way (scripts/record-library-audio.mjs).
+- **Readings** (Andrew, Oct 2026: "for those who don't know how to read, transliterate the word"): every
+  word's 4th place is a "sounds like" in Latin letters (ponman, khnhom, poa sor), made by
+  `scripts/khmer-translit.mjs` — rule-based (series, finals, ្ clusters, two-sign vowels, where a word
+  splits into syllables) with hand readings in its `OVERRIDES`; run it after changing a word (it
+  rewrites the data file; tests/test-khmer-translit.mjs checks the file is what it makes). Shown under
+  the Khmer on cards, in the list, on Match tiles (`.khTl`, `khTl_`); "Hide / Show readings" (`#khTl`,
+  `S.kh.noTl`, `gp-kh-notl`). The script's own lists carry none.
+- **The ABCs** for those learning English (`en: true` lists `abc` and `abclower`, level 0, each letter
+  with how it is said in Khmer): `khCats_` shows them only when learning English, and the Khmer script's
+  lists only when learning Khmer (`khLevelName_` names level 0 accordingly); a letter is always up first
+  (`khFrontFor_`).
+- **🔊** (`khSpeak_`, `[data-khsay="km|text"]`): the site's own recording first —
+  `/.netlify/functions/audio?lang=km&say=<word>` (`vocab/<lang>/<hash>` in the 'gp-audio' store; one
+  `<audio>` element unlocked on the first tap, `S.khAudio`; a 404 is remembered for the session and the
+  phone's own voice speaks instead through the Library's `libSpeechOk_`/`libVoice_` — only the first
+  alternative before " / " is read, ◌ stripped). iPhones have no Khmer voice yet — it says so once;
+  Android phones with Google's voices do; English voices are everywhere. **Making the recordings**: with
+  `AZURE_SPEECH_KEY` / `AZURE_SPEECH_REGION` in the site's environment, audio.js records a word the first
+  time anyone taps it (Sreymom for Khmer, Ava for English; only words of khmer-vocab.js, which rides along
+  through netlify.toml `included_files`, never typed text); or record them all at once with
+  `scripts/record-khmer-vocab.mjs` (Azure + `NETLIFY_SITE_ID`/`NETLIFY_AUTH_TOKEN`; `--dry-run` counts).
+  Browser tests skip the fetch (`navigator.webdriver`) unless `S.khAudio.test` is set.
 - **The fun** (Andrew: "make it fun with confetti"): a burst on every right answer (`khBurst_`), a 🔥
   streak from 3 with toasts at 5 and 10, a shower at the end of any set (`khShower_`, bigger for a
   clean run), a cheer by score (`khCheer_`), 🏆 when a list is known through (`K.mastered`).
@@ -2894,7 +2913,9 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - **What you know is on the phone**: `gp-kh-progress` = `{ "catId|en": { b: box 0–3, t } }`; a word is
   known at box 2 (`khKnown_`); the Daily mix (`khDue_`) is up to 20 words seen before, below box 3, old
   enough for their box (0, 1, 3 days). Confetti on a clean run or a finished Match (`gpConfetti`).
-- tests/test-khmer-learn-ui.mjs — the data's integrity and the page end to end.
+- tests/test-khmer-learn-ui.mjs — the data's integrity and the page end to end (readings, the ABCs,
+  recorded audio first); tests/test-khmer-translit.mjs — the readings; tests/test-library-audio.mjs —
+  audio.js `?say=` (records on the spot with the key, 404 without, only the book's words).
 
 ## Calendar — the campus's Google Calendar, read-only (Oct 2026, Uriah)
 - **Who leads what** (Campus Leadership overview, `leadBaseHtml_`, `#lbLeadsFold`): ＋ by a ministry
