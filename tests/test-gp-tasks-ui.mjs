@@ -34,11 +34,16 @@ mem.staff = [
   mk({ id: 'l1', name: 'Uriah Lead', username: 'uriah', email: 'u@e.com', dept: 'Campus Leadership', ministry: 'Campus Director' })
 ];
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
+const NET = { slow: 0, lose: 0 };
 const srv = http.createServer(async (req, res) => {
   if (req.url.indexOf('/.netlify/functions/api') === 0) {
     let b = ''; for await (const c of req) b += c;
-    const r = await api.default({ method: 'POST', json: async () => JSON.parse(b || '{}'), headers: new Map() }, {});
-    const t = await r.text(); res.writeHead(r.status || 200, { 'Content-Type': 'application/json' }); res.end(t); return;
+    const body = JSON.parse(b || '{}');
+    if (body.fn === 'saveGpTask' && NET.slow) await new Promise((w) => setTimeout(w, NET.slow));   // a slow connection
+    const r = await api.default({ method: 'POST', json: async () => body, headers: new Map() }, {});
+    const t = await r.text();
+    if (body.fn === 'saveGpTask' && NET.lose > 0) { NET.lose--; res.writeHead(502); res.end('lost'); return; }   // saved, but the answer never reaches the phone
+    res.writeHead(r.status || 200, { 'Content-Type': 'application/json' }); res.end(t); return;
   }
   let u = req.url.split('?')[0]; if (u === '/') u = '/index.html';
   const f = path.join(PUBLIC, u);
@@ -423,7 +428,29 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   ok('a phone notification\'s link opens GP Tasks', await page.evaluate(() => S.view === 'tasks'));
   await ctx.close();
 }
-ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
+{
+  /* made once, however many times Save is pressed or sent */
+  const { ctx, page } = await open('cora', { q: '?view=tasks' });
+  await page.waitForTimeout(500);
+  // Oct 2026 (Uriah): "GP Tasks sometimes produces multiple tasks when creating a task"
+  NET.slow = 1500;
+  await page.click('.gtFab'); await page.waitForTimeout(200);
+  await page.fill('#gptAddInput', 'Fill the water filter');
+  await page.click('#gptAddBtn'); await page.waitForTimeout(120);
+  ok('a slow save: the button says it’s saving and can’t be pressed again', await page.$eval('#gptAddBtn', (b) => b.disabled && /Saving/.test(b.textContent)));
+  await page.press('#gptAddInput', 'Enter'); await page.click('#gptAddBtn', { force: true }).catch(() => {}); await page.press('#gptAddInput', 'Enter');
+  await page.waitForTimeout(2200);
+  ok('… tapping Save and Enter again meanwhile still makes it once', T().filter(t => t.title === 'Fill the water filter').length === 1 && !(await page.$('#gtNew')), String(T().filter(t => t.title === 'Fill the water filter').length));
+  NET.slow = 0; NET.lose = 1;
+  await page.click('.gtFab'); await page.waitForTimeout(200);
+  await page.fill('#gptAddInput', 'Buy gas for the stove');
+  await page.click('#gptAddBtn'); await page.waitForTimeout(800);
+  ok('an answer lost on the way: the app says so and keeps the task open', !!(await page.$('#gtNew')) && (await page.$eval('#gptAddInput', (e) => e.value)) === 'Buy gas for the stove' && T().filter(t => t.title === 'Buy gas for the stove').length === 1);
+  await page.click('#gptAddBtn'); await page.waitForTimeout(800);
+  ok('… trying again gets the one already made, not a second', T().filter(t => t.title === 'Buy gas for the stove').length === 1 && !(await page.$('#gtNew')) && (await page.$$('[data-gptrow]')).length > 0, String(T().filter(t => t.title === 'Buy gas for the stove').length));
+  await ctx.close();
+}
+ok('no page errors', errors.filter(e => !/status of 502/.test(e)).length === 0, errors.filter(e => !/status of 502/.test(e)).slice(0, 3).join(' | '));
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 await browser.close(); srv.close();
 process.exit(fail ? 1 : 0);
