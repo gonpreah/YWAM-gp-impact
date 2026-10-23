@@ -4,7 +4,12 @@
    of word lists. Three ways to learn a list, like Quizlet's: Flashcards (tap to flip, "Got it" /
    "Still learning"), Quiz (four choices), Match (six pairs against the clock). What you know is
    kept on this phone (`gp-kh-progress`: per word a box 0–3 — 2 and up counts as known — and when
-   you last saw it); the Daily mix picks the words that are due. Best Match times in `gp-kh-best`. */
+   you last saw it); the Daily mix picks the words that are due. Best Match times in `gp-kh-best`.
+   The game (Uriah, Oct 2026: "more animated, more gamified — like the popular language apps"):
+   XP for every right answer with a combo from five in a row, a daily goal with its ring and a day
+   streak, ranks by XP (Seed → Angkor), crowns on each list, badges, Kiri the elephant who reacts,
+   little sounds (off with 🔈), floating "+10"s, and a 60-second Lightning round. All of it on this
+   phone in `gp-kh-game`. */
 S.kh={ level:null, cat:null, mode:null, front:'en' };
 S.khLoading=false; S.khError=false;
 function khLoad_(){
@@ -84,6 +89,77 @@ function khWordHtml_(w, front){   // one side of a card: the word, its reading, 
 }
 function khLevelName_(L){ return L.id===0 && khLearningEn_() ? t('The ABCs') : t(L.name); }
 function khLevelBlurb_(L){ return L.id===0 && khLearningEn_() ? t('The 26 letters, big and small, and how each is said.') : t(L.blurb); }
+/* ---- the game: XP, daily goal, day streak, ranks, crowns, badges, Kiri, sounds ---- */
+var KH_GOAL=30, KH_LIGHT_MS=60000;
+var KH_RANKS=[[0,'Seed','🌱'],[100,'Sprout','🌿'],[300,'Leaf','🍃'],[700,'Tree','🌳'],[1500,'Bamboo','🎋'],[3000,'Lotus','🪷'],[6000,'Elephant','🐘'],[12000,'Angkor','🏛️']];
+var KH_BADGES=[
+  ['first','🥇','First steps','Finish your first set'],
+  ['list','👑','List master','Know a whole list'],
+  ['words50','📚','50 words','Know 50 words'],
+  ['words200','📖','200 words','Know 200 words'],
+  ['words500','🎓','500 words','Know 500 words'],
+  ['perfect','💯','Perfect quiz','A quiz with every answer right'],
+  ['combo10','🔥','On fire','Ten right in a row'],
+  ['fast','⏱️','Quick match','Match in under 25 seconds'],
+  ['light15','⚡','Lightning','15 right in one Lightning round'],
+  ['streak3','📅','3-day streak','Reach your goal three days running'],
+  ['streak7','🗓️','7-day streak','Reach your goal seven days running'],
+  ['xp1000','⭐','1,000 XP','Earn 1,000 XP']
+];
+function khGame_(){ if(S.khG) return S.khG; var G={}; try { G=JSON.parse(lsGet('gp-kh-game')||'{}')||{}; } catch(e){} G.xp=G.xp||0; G.days=G.days||{}; G.badges=G.badges||{}; G.goal=G.goal||KH_GOAL; if(G.sound==null) G.sound=true; S.khG=G; return G; }
+function khGameSave_(){ try { lsSet('gp-kh-game', JSON.stringify(khGame_())); } catch(e){} }
+function khToday_(){ return typeof todayStr==='function' ? todayStr() : fmtD(new Date()); }
+function khTodayXp_(){ return khGame_().days[khToday_()]||0; }
+function khRank_(xp){ var r=KH_RANKS[0], next=null; for(var i=0;i<KH_RANKS.length;i++){ if(xp>=KH_RANKS[i][0]) r=KH_RANKS[i]; else { next=KH_RANKS[i]; break; } } return { name:r[1], icon:r[2], from:r[0], next:next ? next[0] : null, nextName:next ? next[1] : null }; }
+/* days in a row the goal was reached — today counts once it is, and does not break the run before it is */
+function khDayStreak_(){ var G=khGame_(), d=new Date(), n=0; if((G.days[fmtD(d)]||0)<G.goal) d.setDate(d.getDate()-1); while(n<10000 && (G.days[fmtD(d)]||0)>=G.goal){ n++; d.setDate(d.getDate()-1); } return n; }
+function khWeekDots_(){ var G=khGame_(), out=[], d=new Date(); d.setDate(d.getDate()-6); for(var i=0;i<7;i++){ var k=fmtD(d); out.push({ day:['S','M','T','W','T','F','S'][d.getDay()], hit:(G.days[k]||0)>=G.goal, some:(G.days[k]||0)>0, today:k===khToday_() }); d.setDate(d.getDate()+1); } return out; }
+/* +XP: counted for today, popped out of the tile, and the goal / rank / badges checked */
+function khAddXp_(n, el){
+  if(!n) return; var G=khGame_(), day=khToday_(), before=G.days[day]||0, rank0=khRank_(G.xp).name;
+  G.xp+=n; G.days[day]=before+n; khGameSave_();
+  khXpPop_(n, el);
+  if(before<G.goal && G.days[day]>=G.goal){ khSound_('win'); setTimeout(function(){ showMsg(t('Daily goal reached! 🎯')); khShower_(3); }, 250); }
+  if(khRank_(G.xp).name!==rank0){ var R=khRank_(G.xp); khSound_('levelup'); setTimeout(function(){ showMsg(R.icon+' '+esc(gpT('You’re now a {rank}!',{rank:t(R.name)}))); khShower_(4); }, 700); }
+  khBadgeCheck_();
+}
+function khXpPop_(n, el){
+  try {
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var r=el && el.getBoundingClientRect ? el.getBoundingClientRect() : { left:window.innerWidth/2, top:window.innerHeight/2, width:0, height:0 };
+    var p=document.createElement('div'); p.className='khXpPop'; p.textContent='+'+n+' XP'; p.style.left=(r.left+r.width/2)+'px'; p.style.top=(r.top+r.height/3)+'px';
+    document.body.appendChild(p); setTimeout(function(){ p.remove(); }, 1000);
+  } catch(e){}
+}
+function khBadgeCheck_(){
+  var G=khGame_(), T=khTotals_(null), K=S.kh, streak=khDayStreak_();
+  var mastered=GP_KHMER_VOCAB.cats.some(function(c){ return khKnown_(c)===c.words.length; });
+  var has={ first:!!K.everDone, list:mastered, words50:T.known>=50, words200:T.known>=200, words500:T.known>=500, perfect:!!K.gotPerfect, combo10:!!K.gotCombo10, fast:!!K.gotFast, light15:!!K.gotLight15, streak3:streak>=3, streak7:streak>=7, xp1000:G.xp>=1000 };
+  KH_BADGES.forEach(function(b){ if(has[b[0]] && !G.badges[b[0]]){ G.badges[b[0]]=Date.now(); khGameSave_(); setTimeout(function(){ showMsg(b[1]+' '+t('Badge earned: {name}').replace('{name}', t(b[2]))); khShower_(2); khSound_('badge'); }, 1100); } });
+}
+function khCrowns_(c){ var k=khKnown_(c), n=c.words.length; return !k ? 0 : k===n ? 3 : k*3>=n*2 ? 2 : k*3>=n ? 1 : 0; }
+function khCrownsHtml_(n){ var h='<span class="khCrowns" aria-label="'+n+'/3">'; for(var i=0;i<3;i++) h+='<span'+(i<n?' class="on"':'')+'>♛</span>'; return h+'</span>'; }
+/* Kiri the elephant: a word for where you are, and a bounce or a wobble on an answer */
+function khKiriSays_(T, due){
+  var G=khGame_(), today=khTodayXp_(), streak=khDayStreak_();
+  if(!T.known && !G.xp) return t('Hi, I’m Kiri! Pick a list and let’s learn a few words.');
+  if(today>=G.goal) return streak>=2 ? gpT('Goal done — {n} days running! 🔥',{n:streak}) : t('Goal done for today! Anything more is a bonus.');
+  if(today>0) return gpT('{n} XP to go for today’s goal. Nearly there!',{n:G.goal-today});
+  if(due.length) return gpT('{n} words are waiting for a look. Shall we?',{n:due.length});
+  return t('A few minutes a day is all it takes. Ready?');
+}
+function khKiri_(mood){ var el=document.querySelector('.khKiri'); if(!el) return; el.classList.remove('happy','sad'); void el.offsetWidth; el.classList.add(mood); }
+/* tiny sounds, made on the spot (no files): a ding, a buzz, a flip, a little fanfare */
+function khSound_(kind){
+  var G=khGame_(); if(!G.sound) return;
+  try {
+    var AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    if(!S.khAC) S.khAC=new AC(); var ac=S.khAC; if(ac.state==='suspended') ac.resume();
+    var notes={ right:[[880,0,.08],[1175,.08,.12]], wrong:[[220,0,.18]], flip:[[660,0,.05]], win:[[523,0,.1],[659,.1,.1],[784,.2,.1],[1047,.3,.25]], levelup:[[659,0,.1],[784,.1,.1],[988,.2,.1],[1319,.3,.3]], badge:[[784,0,.08],[1047,.1,.2]], tick:[[1000,0,.03]] }[kind]||[];
+    notes.forEach(function(n){ var o=ac.createOscillator(), g=ac.createGain(); o.type=kind==='wrong' ? 'sawtooth' : 'sine'; o.frequency.value=n[0]; g.gain.setValueAtTime(0.0001, ac.currentTime+n[1]); g.gain.exponentialRampToValueAtTime(kind==='wrong' ? 0.08 : 0.12, ac.currentTime+n[1]+0.01); g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime+n[1]+n[2]); o.connect(g); g.connect(ac.destination); o.start(ac.currentTime+n[1]); o.stop(ac.currentTime+n[1]+n[2]+0.02); });
+  } catch(e){}
+}
+function khCountUp_(id, to, suffix){ var el=document.getElementById(id); if(!el) return; var start=Date.now(), dur=700; (function step(){ var p=Math.min(1,(Date.now()-start)/dur), v=Math.round(to*(1-Math.pow(1-p,3))); el.textContent=v+(suffix||''); if(p<1 && document.getElementById(id)===el) requestAnimationFrame(step); })(); }
 /* ---- the pages ---- */
 function khmerHtml_(){
   var h='<button class="linkbtn" id="khBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(S.kh.mode ? t('Back') : S.kh.cat ? t('Lists') : S.kh.level!=null ? khTitle_() : t('My Home'))+'</button>';
@@ -91,30 +167,42 @@ function khmerHtml_(){
   if(S.kh.mode) return h+khModeHtml_();
   if(S.kh.cat) return h+khCatHtml_(khCat_(S.kh.cat));
   if(S.kh.level!=null) return h+khLevelHtml_(S.kh.level);
-  var T=khTotals_(null), due=khDue_();
-  h+='<h2>'+esc(khTitle_())+'</h2><p class="sub" style="margin:-4px 0 10px">'+esc(t('The words of the KBC vocabulary book, by Phy Chum and Andrew Potter — a few minutes a day.'))+'</p>';
+  var T=khTotals_(null), due=khDue_(), G=khGame_(), R=khRank_(G.xp), today=khTodayXp_(), streak=khDayStreak_();
+  h+='<div class="khHead"><h2>'+esc(khTitle_())+'</h2><button class="khSoundBtn" id="khSound" aria-label="'+esc(G.sound ? t('Sounds on') : t('Sounds off'))+'">'+(G.sound ? '🔈' : '🔇')+'</button></div><p class="sub" style="margin:-4px 0 10px">'+esc(t('The words of the KBC vocabulary book, by Phy Chum and Andrew Potter — a few minutes a day.'))+'</p>';
   h+='<div class="khWhich"><span>'+esc(t('I’m learning'))+'</span><button class="gtTab'+(khLearningEn_()?'':' on')+'" data-khlearn="km">'+esc(t('Khmer'))+'</button><button class="gtTab'+(khLearningEn_()?' on':'')+'" data-khlearn="en">'+esc(t('English'))+'</button></div>';
+  /* Kiri, and the day: streak, XP and rank, the daily goal ring */
+  h+='<div class="card khKiriCard"><span class="khKiri" aria-hidden="true">🐘</span><div class="khBubble">'+esc(khKiriSays_(T, due))+'</div></div>';
+  h+='<div class="khStats">'+
+    '<div class="card khStat"><b class="khStatN'+(streak?' hot':'')+'">🔥 '+streak+'</b><span>'+esc(streak===1 ? t('day streak') : t('day streak'))+'</span></div>'+
+    '<div class="card khStat"><b class="khStatN">'+R.icon+' '+G.xp+'</b><span>'+esc(t('XP'))+' · '+esc(t(R.name))+'</span></div>'+
+    '<div class="card khStat khGoal"><div class="khRing small" style="--p:'+Math.min(100, khPct_(today, G.goal))+'"><b>'+(today>=G.goal ? '✓' : today)+'</b></div><span>'+esc(gpT('{n} / {goal} XP today',{n:today, goal:G.goal}))+'</span></div></div>';
+  h+='<div class="khWeek">'+khWeekDots_().map(function(d){ return '<span class="khDot'+(d.hit?' hit':d.some?' some':'')+(d.today?' today':'')+'"><i>'+(d.hit?'✓':'')+'</i>'+d.day+'</span>'; }).join('')+'</div>';
+  if(R.next!=null) h+='<div class="khRankBar"><span>'+esc(gpT('{n} XP to {rank}',{n:R.next-G.xp, rank:t(R.nextName)}))+'</span>'+khBar_(G.xp-R.from, R.next-R.from)+'</div>';
   h+='<div class="card khHero"><div class="khRing" style="--p:'+khPct_(T.known, T.total)+'"><b>'+khPct_(T.known, T.total)+'%</b></div><div><b>'+esc(gpT('{n} of {total} words known',{n:T.known, total:T.total}))+'</b><div class="hint">'+esc(t('A word counts as known once you have got it right twice.'))+'</div></div></div>';
   h+='<div class="card khDue"><div><b>'+esc(t('Daily mix'))+'</b><div class="hint">'+esc(due.length ? gpT('{n} words due for a look today',{n:due.length}) : T.known ? t('Nothing due — learn a new list, or come back tomorrow.') : t('Start a list below and your daily mix fills itself.'))+'</div></div>'+
     (due.length ? '<button class="btn small" id="khDaily" style="width:auto;margin:0">'+esc(t('Practise'))+'</button>' : '')+'</div>';
-  GP_KHMER_VOCAB.levels.forEach(function(L){ var tl=khTotals_(L.id);
-    h+='<button class="card khLevel" data-khlevel="'+L.id+'"><div class="khLevelTop"><b>'+(L.id ? esc(gpT('Level {n}',{n:L.id}))+' · ' : '')+esc(khLevelName_(L))+'</b><span>'+tl.known+' / '+tl.total+'</span></div><div class="hint">'+esc(khLevelBlurb_(L))+'</div>'+khBar_(tl.known, tl.total)+'<div class="hint">'+esc(gpT('{n} lists',{n:khCats_(L.id).length}))+'</div></button>'; });
+  if(T.known>=8) h+='<div class="card khDue khLightCard"><div><b>⚡ '+esc(t('Lightning round'))+'</b><div class="hint">'+esc(t('60 seconds, the words you know — how many can you get?'))+'</div></div><button class="btn small" id="khLightning" style="width:auto;margin:0">'+esc(t('Go'))+'</button></div>';
+  GP_KHMER_VOCAB.levels.forEach(function(L){ var tl=khTotals_(L.id), cats=khCats_(L.id), crowns=cats.reduce(function(a, c){ return a+khCrowns_(c); }, 0);
+    h+='<button class="card khLevel" data-khlevel="'+L.id+'"><div class="khLevelTop"><b>'+(L.id ? esc(gpT('Level {n}',{n:L.id}))+' · ' : '')+esc(khLevelName_(L))+'</b><span>'+tl.known+' / '+tl.total+'</span></div><div class="hint">'+esc(khLevelBlurb_(L))+'</div>'+khBar_(tl.known, tl.total)+'<div class="hint khLevelFoot"><span>'+esc(gpT('{n} lists',{n:cats.length}))+'</span><span class="khCrownCount">♛ '+crowns+' / '+(cats.length*3)+'</span></div></button>'; });
+  /* badges: earned in colour, the rest waiting */
+  h+='<div class="stepsHead" style="margin-top:14px">'+esc(t('Badges'))+' · '+Object.keys(G.badges).length+' / '+KH_BADGES.length+'</div><div class="khBadges">'+KH_BADGES.map(function(b){ var on=!!G.badges[b[0]]; return '<button class="khBadge'+(on?' on':'')+'" data-khbadge="'+b[0]+'" aria-label="'+esc(t(b[2]))+'"><span class="khBadgeIc">'+(on ? b[1] : '🔒')+'</span><span>'+esc(t(b[2]))+'</span></button>'; }).join('')+'</div>';
   return h;
 }
 function khLevelHtml_(level){
   var L=GP_KHMER_VOCAB.levels.filter(function(x){ return x.id===level; })[0], tl=khTotals_(level);
   var h='<h2>'+(level ? esc(gpT('Level {n}',{n:level}))+' · ' : '')+esc(khLevelName_(L))+'</h2><p class="sub" style="margin:-4px 0 10px">'+esc(khLevelBlurb_(L))+'</p>'+khBar_(tl.known, tl.total);
   h+='<div class="khCats">'+khCats_(level).map(function(c){ var k=khKnown_(c);
-    return '<button class="card khCatCard" data-khcat="'+esc(c.id)+'"><b>'+esc(t(c.name))+'</b><span class="hint">'+esc(gpT('{n} words',{n:c.words.length}))+(k ? ' · '+esc(gpT('{n} known',{n:k})) : '')+'</span>'+khBar_(k, c.words.length)+'</button>'; }).join('')+'</div>';
+    return '<button class="card khCatCard" data-khcat="'+esc(c.id)+'">'+khCrownsHtml_(khCrowns_(c))+'<b>'+esc(t(c.name))+'</b><span class="hint">'+esc(gpT('{n} words',{n:c.words.length}))+(k ? ' · '+esc(gpT('{n} known',{n:k})) : '')+'</span>'+khBar_(k, c.words.length)+'</button>'; }).join('')+'</div>';
   return h;
 }
 function khCatHtml_(c){
   var k=khKnown_(c);
-  var h='<h2>'+esc(t(c.name))+'</h2><p class="sub" style="margin:-4px 0 6px">'+esc(gpT('{n} words',{n:c.words.length}))+' · '+esc(gpT('{n} known',{n:k}))+'</p>'+khBar_(k, c.words.length);
+  var h='<h2>'+esc(t(c.name))+' '+khCrownsHtml_(khCrowns_(c))+'</h2><p class="sub" style="margin:-4px 0 6px">'+esc(gpT('{n} words',{n:c.words.length}))+' · '+esc(gpT('{n} known',{n:k}))+'</p>'+khBar_(k, c.words.length);
   if(c.tip) h+='<p class="hint khTip">💡 '+esc(c.tip)+'</p>';
   h+='<div class="khModes"><button class="card khMode" data-khmode="cards"><span class="khModeIc">🗂️</span><b>'+esc(t('Flashcards'))+'</b><span class="hint">'+esc(t('Tap to flip, then say if you got it'))+'</span></button>'+
     '<button class="card khMode" data-khmode="quiz"><span class="khModeIc">❓</span><b>'+esc(t('Quiz'))+'</b><span class="hint">'+esc(t('Pick the right one of four'))+'</span></button>'+
-    '<button class="card khMode" data-khmode="match"><span class="khModeIc">⚡</span><b>'+esc(t('Match'))+'</b><span class="hint">'+esc(t('Pair them up against the clock'))+'</span></button></div>';
+    '<button class="card khMode" data-khmode="match"><span class="khModeIc">🧩</span><b>'+esc(t('Match'))+'</b><span class="hint">'+esc(t('Pair them up against the clock'))+'</span></button>'+
+    '<button class="card khMode" data-khmode="lightning"><span class="khModeIc">⚡</span><b>'+esc(t('Lightning'))+'</b><span class="hint">'+esc(t('60 seconds, as many as you can'))+'</span></button></div>';
   h+='<div class="card"><div class="khListHead"><b>'+esc(t('All the words'))+'</b><span><button class="linkbtn inline" id="khTl">'+esc(S.kh.noTl ? t('Show readings') : t('Hide readings'))+'</button> · <button class="linkbtn inline" id="khFront">'+esc(S.kh.front==='km' ? t('Khmer first') : t('English first'))+' ⇄</button></span></div>'+
     c.words.map(function(w){ var b=khBox_(c, w), tl=c.script && !c.en ? '' : khTl_(w); return '<div class="khRow'+(b>=2?' known':'')+'"><span class="khEn">'+esc(w[0])+(w[2] ? ' <span class="khNote">'+esc(w[2])+'</span>' : '')+'</span><span class="khKmCol"><span class="khKm">'+esc(w[1])+'</span>'+(tl ? '<span class="khTl">'+esc(tl)+'</span>' : '')+'</span>'+khSayBtn_(khLearningEn_() && !c.script ? w[0] : (c.en ? w[0] : w[1]), !(khLearningEn_() && !c.script) && !c.en)+'</div>'; }).join('')+'</div>';
   return h;
@@ -122,13 +210,22 @@ function khCatHtml_(c){
 /* ---- the three ways to learn ---- */
 function khStart_(mode, items){   // items: [{c, w}] — a list's words, or the daily mix
   var K=S.kh; K.mode=mode; K.items=khShuffle_(items); K.i=0; K.flipped=false; K.right=0; K.wrong=0; K.done=false; K.picked=null; K.streak=0; K.bestStreak=0; K.mastered=false;
+  K.xp=0; K.combo=0;
   if(mode==='quiz') K.items=K.items.slice(0, 12);
+  if(mode==='lightning'){ K.start=Date.now(); K.limit=S.khLightMs||KH_LIGHT_MS; K.pool=K.items; K.items=K.pool.slice(); }
   if(mode==='match'){ var six=K.items.slice(0, 6); K.pairs=six; K.tiles=khShuffle_(six.map(function(x, i){ return { id:i, side:'en', text:x.w[0] }; }).concat(six.map(function(x, i){ return { id:i, side:'km', text:x.w[1] }; }))); K.sel=null; K.matched={}; K.start=Date.now(); K.wrongTile=null; }
-  if(mode==='quiz') khQuizNext_();
+  if(mode==='quiz' || mode==='lightning') khQuizNext_();
   render(); window.scrollTo(0,0);
 }
+function khLightTick_(){
+  var K=S.kh; if(K.mode!=='lightning' || K.done){ clearInterval(S.khClock); S.khClock=null; return; }
+  var left=Math.max(0, K.limit-(Date.now()-K.start)), el=document.getElementById('khLightLeft'), bar=document.getElementById('khLightBar');
+  if(el) el.textContent=Math.ceil(left/1000); if(bar) bar.style.width=(left/K.limit*100)+'%';
+  if(left<=0) khFinish_();
+}
 function khQuizNext_(){
-  var K=S.kh, it=K.items[K.i]; if(!it) return;
+  var K=S.kh; if(K.mode==='lightning' && K.i>=K.items.length){ K.items=K.items.concat(khShuffle_(K.pool)); }   // round and round till the clock runs out
+  var it=K.items[K.i]; if(!it) return;
   var ask = khFrontFor_(it.c), pool=khShuffle_(it.c.words.filter(function(w){ return w!==it.w && w[1]!==it.w[1]; })).slice(0, 3);
   if(pool.length<3){ var more=khShuffle_(GP_KHMER_VOCAB.cats.filter(function(c){ return c.level===it.c.level; }).reduce(function(a, c){ return a.concat(c.words); }, []).filter(function(w){ return w!==it.w && w[1]!==it.w[1] && pool.indexOf(w)===-1; })); pool=pool.concat(more.slice(0, 3-pool.length)); }
   K.q={ ask:ask, w:it.w, options:khShuffle_(pool.concat([it.w])) }; K.picked=null;
@@ -136,9 +233,12 @@ function khQuizNext_(){
 function khModeHtml_(){
   var K=S.kh, n=K.items.length, h='';
   if(K.done){
-    var pct=khPct_(K.right, K.right+K.wrong);
-    h+='<div class="card khSummary"><div class="khCheer">'+esc(K.mode==='match' ? t('Done! ⚡') : khCheer_(pct))+'</div><div class="khBig">'+(K.mode==='match' ? esc(gpT('{s} seconds',{s:K.secs})) : pct+'%')+'</div>';
+    var pct=khPct_(K.right, K.right+K.wrong), G=khGame_(), today=khTodayXp_();
+    h+='<div class="card khSummary"><div class="khTrophy">'+(K.mastered ? '🏆' : K.mode==='lightning' ? '⚡' : pct===100 ? '🌟' : pct>=50 ? '🎉' : '💪')+'</div><div class="khCheer">'+esc(K.mode==='match' ? t('Done! 🧩') : K.mode==='lightning' ? t('Time! ⚡') : khCheer_(pct))+'</div><div class="khBig">'+(K.mode==='match' ? esc(gpT('{s} seconds',{s:K.secs})) : K.mode==='lightning' ? esc(gpT('{n} right',{n:K.right})) : pct+'%')+'</div>';
+    h+='<div class="khXpLine">+<span id="khXpUp">0</span> XP'+(K.bonus ? ' <span class="hint">('+esc(K.bonus)+')</span>' : '')+'</div>';
+    h+='<div class="khGoalLine"><div class="khRing small" style="--p:'+Math.min(100, khPct_(today, G.goal))+'"><b>'+(today>=G.goal ? '✓' : today)+'</b></div><span>'+esc(today>=G.goal ? t('Daily goal reached 🎯') : gpT('{n} / {goal} XP today',{n:today, goal:G.goal}))+'</span></div>';
     if(K.mode==='match') h+='<p class="sub" style="margin:0">'+esc(K.best && K.best<K.secs ? gpT('Your best is {s} seconds',{s:K.best}) : t('A new best time!'))+'</p>';
+    else if(K.mode==='lightning') h+='<p class="sub" style="margin:0">'+esc(gpT('{wrong} missed',{wrong:K.wrong}))+(K.bestStreak>=3 ? ' · 🔥 '+esc(gpT('{n} in a row',{n:K.bestStreak})) : '')+'</p>';
     else h+='<p class="sub" style="margin:0">'+esc(gpT('{right} right, {wrong} still learning',{right:K.right, wrong:K.wrong}))+(K.bestStreak>=3 ? ' · 🔥 '+esc(gpT('{n} in a row',{n:K.bestStreak})) : '')+'</p>';
     if(K.mastered) h+='<p class="khMastered">🏆 '+esc(t('You know this whole list!'))+'</p>';
     h+='<div class="btnRow" style="margin-top:12px"><button class="btn" id="khAgain">'+esc(t('Again'))+'</button><button class="btn ghost" id="khDone">'+esc(t('Done'))+'</button></div></div>';
@@ -146,13 +246,15 @@ function khModeHtml_(){
   }
   if(K.mode==='cards'){
     var it=K.items[K.i], fr=khFrontFor_(it.c), side = K.flipped ? (fr==='km' ? 'en' : 'km') : fr;
-    h+='<div class="khCount">'+(K.i+1)+' / '+n+(K.streak>=3 ? ' · <span class="khStreak">🔥 '+esc(gpT('{n} in a row',{n:K.streak}))+'</span>' : '')+'</div>'+khBar_(K.i, n);
+    h+='<div class="khCount"><span class="khKiri small" aria-hidden="true">🐘</span>'+(K.i+1)+' / '+n+(K.streak>=3 ? ' · <span class="khStreak">🔥 '+esc(gpT('{n} in a row',{n:K.streak}))+'</span>' : '')+(K.streak>=5 ? ' <span class="khCombo">×2</span>' : '')+'</div>'+khBar_(K.i, n);
     h+='<button class="khCard'+(K.flipped?' flipped':'')+'" id="khFlip" aria-label="'+esc(t('Flip'))+'">'+khWordHtml_(it.w, side)+'<span class="khFlipHint">'+esc(K.flipped ? t('Did you get it?') : t('Tap to flip'))+'</span></button>';
     h+='<div class="khSayRow">'+khSayBtn_(side==='km' ? it.w[1] : it.w[0], side==='km', 'big')+'</div>';
     h+='<div class="khAnswer'+(K.flipped?'':' hide')+'"><button class="btn ghost" id="khNo">✗ '+esc(t('Still learning'))+'</button><button class="btn" id="khYes">✓ '+esc(t('Got it'))+'</button></div>';
     h+='<p class="hint" style="text-align:center">'+esc(t(it.c.name))+'</p>';
-  } else if(K.mode==='quiz'){
-    var q=K.q; h+='<div class="khCount">'+(K.i+1)+' / '+n+(K.streak>=3 ? ' · <span class="khStreak">🔥 '+esc(gpT('{n} in a row',{n:K.streak}))+'</span>' : '')+'</div>'+khBar_(K.i, n);
+  } else if(K.mode==='quiz' || K.mode==='lightning'){
+    var q=K.q;
+    if(K.mode==='lightning'){ var left=Math.max(0, K.limit-(Date.now()-K.start)); h+='<div class="khCount khLightHead"><span class="khKiri small" aria-hidden="true">🐘</span><span>⚡ '+esc(gpT('{n} right',{n:K.right}))+'</span>'+(K.streak>=3 ? '<span class="khStreak">🔥 '+K.streak+'</span>' : '')+'<span><b id="khLightLeft">'+Math.ceil(left/1000)+'</b>s</span></div><div class="khBar khLight"><div id="khLightBar" style="width:'+(left/K.limit*100)+'%"></div></div>'; }
+    else h+='<div class="khCount"><span class="khKiri small" aria-hidden="true">🐘</span>'+(K.i+1)+' / '+n+(K.streak>=3 ? ' · <span class="khStreak">🔥 '+esc(gpT('{n} in a row',{n:K.streak}))+'</span>' : '')+(K.streak>=5 ? ' <span class="khCombo">×2</span>' : '')+'</div>'+khBar_(K.i, n);
     h+='<div class="card khAsk">'+khWordHtml_(q.w, q.ask)+khSayBtn_(q.ask==='km' ? q.w[1] : q.w[0], q.ask==='km')+'</div><div class="khOptions">'+q.options.map(function(w, i){
       var cls='khOpt'; if(K.picked!==null){ if(w===q.w) cls+=' right'; else if(i===K.picked) cls+=' wrong'; }
       return '<button class="'+cls+'" data-khopt="'+i+'"'+(K.picked!==null?' disabled':'')+'>'+khWordHtml_(w, q.ask==='km' ? 'en' : 'km')+'</button>'; }).join('')+'</div>';
@@ -166,12 +268,19 @@ function khModeHtml_(){
   return h;
 }
 function khFinish_(){
-  var K=S.kh; K.done=true;
-  if(K.mode==='match'){ K.secs=Math.round((Date.now()-K.start)/10)/100; var B={}; try { B=JSON.parse(lsGet('gp-kh-best')||'{}'); } catch(e){} var id=K.pairs[0].c.id; K.best=B[id]||0; if(!K.best || K.secs<K.best){ B[id]=K.secs; lsSet('gp-kh-best', JSON.stringify(B)); } }
+  var K=S.kh; K.done=true; if(S.khClock){ clearInterval(S.khClock); S.khClock=null; }
+  if(K.mode==='match'){ K.secs=Math.round((Date.now()-K.start)/10)/100; var B={}; try { B=JSON.parse(lsGet('gp-kh-best')||'{}'); } catch(e){} var id=K.pairs[0].c.id; K.best=B[id]||0; if(!K.best || K.secs<K.best){ B[id]=K.secs; lsSet('gp-kh-best', JSON.stringify(B)); } if(K.secs<25) K.gotFast=true; }
   /* a list learned through, just now? */
   var c=K.cat ? khCat_(K.cat) : null; K.mastered=!!(c && khKnown_(c)===c.words.length && K.items.length>=c.words.length);
-  render(); window.scrollTo(0,0);
   var clean = K.mode==='match' || (K.right && !K.wrong);
+  /* the finish bonus on top of what the answers earned: a set done, a clean run, a list mastered */
+  var bonus=10, why=[t('set finished')]; if(clean && K.mode!=='match'){ bonus+=20; why.push(t('perfect')); } if(K.mastered){ bonus+=50; why.push(t('list mastered')); }
+  if(K.mode==='quiz' && clean && K.items.length>=8) K.gotPerfect=true; if(K.mode==='lightning' && K.right>=15) K.gotLight15=true; K.everDone=true;
+  K.bonus=why.join(' · ');
+  khAddXp_(bonus, null); K.xp+=bonus;
+  render(); window.scrollTo(0,0);
+  khCountUp_('khXpUp', K.xp);
+  khSound_(clean || K.mastered ? 'win' : 'right');
   khShower_(K.mastered ? 5 : clean ? 4 : 2);
 }
 function bindKhmer_(){
@@ -184,22 +293,31 @@ function bindKhmer_(){
   document.querySelectorAll('[data-khcat]').forEach(function(b){ b.onclick=function(){ gpTap(); K.cat=b.getAttribute('data-khcat'); render(); window.scrollTo(0,0); }; });
   document.querySelectorAll('[data-khmode]').forEach(function(b){ b.onclick=function(){ gpTap(); var c=khCat_(K.cat); khStart_(b.getAttribute('data-khmode'), c.words.map(function(w){ return { c:c, w:w }; })); }; });
   on('khDaily', function(){ gpTap(); khStart_('cards', khDue_()); });
+  on('khSound', function(){ gpTap(); var G=khGame_(); G.sound=!G.sound; khGameSave_(); if(G.sound) khSound_('right'); render(); });
+  on('khLightning', function(){ gpTap(); var P=khProg_(), pool=[]; GP_KHMER_VOCAB.cats.forEach(function(c){ if(c.script) return; c.words.forEach(function(w){ var p=P[khKey_(c, w)]; if(p && p.b>=1) pool.push({ c:c, w:w }); }); }); K.cat=null; khStart_('lightning', pool.length>=4 ? pool : GP_KHMER_VOCAB.cats.filter(function(c){ return !c.script; })[0].words.map(function(w){ return { c:khCats_(1)[0], w:w }; })); });
+  document.querySelectorAll('[data-khbadge]').forEach(function(b){ b.onclick=function(){ gpTap(); var id=b.getAttribute('data-khbadge'), B=KH_BADGES.filter(function(x){ return x[0]===id; })[0], G=khGame_(); showMsg(B[1]+' '+t(B[2])+' — '+t(B[3])+(G.badges[id] ? ' ✓' : '')); }; });
   on('khFront', function(){ gpTap(); K.front = K.front==='km' ? 'en' : 'km'; lsSet('gp-kh-front', K.front); render(); });
   on('khTl', function(){ gpTap(); K.noTl=!K.noTl; lsSet('gp-kh-notl', K.noTl ? '1' : ''); render(); });
-  on('khFlip', function(){ gpTap(); K.flipped=!K.flipped; render(); });
-  var answer=function(right, from){ var it=K.items[K.i]; khMark_(it.c, it.w, right); if(right){ K.right++; K.streak++; if(K.streak>K.bestStreak) K.bestStreak=K.streak; if(from!==null) khBurst_(from || document.getElementById('khFlip')); if(K.streak===5 || K.streak===10) showMsg(K.streak===10 ? t('Unstoppable! 🔥🔥') : t('On fire! 🔥')); } else { K.wrong++; K.streak=0; } K.i++; K.flipped=false; if(K.i>=K.items.length){ khFinish_(); return; } if(K.mode==='quiz') khQuizNext_(); render(); window.scrollTo(0,0); };
+  on('khFlip', function(){ gpTap(); khSound_('flip'); K.flipped=!K.flipped; render(); });
+  var answer=function(right, from){ var it=K.items[K.i]; khMark_(it.c, it.w, right);
+    if(right){ K.right++; K.streak++; if(K.streak>K.bestStreak) K.bestStreak=K.streak; if(K.streak>=10) K.gotCombo10=true; if(from!==null) khBurst_(from || document.getElementById('khFlip')); khSound_('right');
+      var xp=(K.mode==='cards' ? 5 : K.mode==='lightning' ? 5 : 10)*(K.streak>=5 ? 2 : 1); K.xp+=xp; khAddXp_(xp, from || document.getElementById('khFlip') || document.querySelector('.khOpt.right'));
+      if(K.streak===5 || K.streak===10) showMsg(K.streak===10 ? t('Unstoppable! 🔥🔥') : t('On fire! Double XP 🔥')); }
+    else { K.wrong++; K.streak=0; khSound_('wrong'); } K.i++; K.flipped=false; K.mood=right ? 'happy' : 'sad'; if(K.mode!=='lightning' && K.i>=K.items.length){ khFinish_(); return; } if(K.mode==='quiz' || K.mode==='lightning') khQuizNext_(); render(); if(K.mode!=='lightning') window.scrollTo(0,0); };
   on('khYes', function(){ gpTap(); answer(true); }); on('khNo', function(){ gpTap(); answer(false); });
-  document.querySelectorAll('[data-khopt]').forEach(function(b){ b.onclick=function(){ if(K.picked!==null) return; gpTap(); var i=+b.getAttribute('data-khopt'), right=K.q.options[i]===K.q.w; K.picked=i; render(); if(right) khBurst_(document.querySelector('.khOpt.right')); setTimeout(function(){ answer(right, null); }, right ? 500 : 1100); }; });
+  document.querySelectorAll('[data-khopt]').forEach(function(b){ b.onclick=function(){ if(K.picked!==null) return; gpTap(); var i=+b.getAttribute('data-khopt'), right=K.q.options[i]===K.q.w; K.picked=i; render(); if(right) khBurst_(document.querySelector('.khOpt.right')); setTimeout(function(){ if(S.kh.done) return; answer(right, null); }, K.mode==='lightning' ? (right ? 350 : 800) : (right ? 500 : 1100)); }; });
   document.querySelectorAll('[data-khtile]').forEach(function(b){ b.onclick=function(){
     var i=+b.getAttribute('data-khtile'), tile=K.tiles[i]; if(K.matched[tile.id]) return; gpTap();
     if(K.sel===null || K.sel===i){ K.sel = K.sel===i ? null : i; K.wrongTile=null; render(); return; }
     var other=K.tiles[K.sel];
-    if(other.id===tile.id && other.side!==tile.side){ K.matched[tile.id]=1; K.sel=null; khMark_(K.pairs[tile.id].c, K.pairs[tile.id].w, true); khBurst_(b); if(Object.keys(K.matched).length===K.pairs.length){ khFinish_(); return; } }
-    else { K.wrongTile=i; K.sel=null; khMark_(K.pairs[tile.id].c, K.pairs[tile.id].w, false); }
+    if(other.id===tile.id && other.side!==tile.side){ K.matched[tile.id]=1; K.sel=null; khMark_(K.pairs[tile.id].c, K.pairs[tile.id].w, true); khBurst_(b); khSound_('right'); K.right++; K.xp+=5; khAddXp_(5, b); if(Object.keys(K.matched).length===K.pairs.length){ khFinish_(); return; } }
+    else { K.wrongTile=i; K.sel=null; khMark_(K.pairs[tile.id].c, K.pairs[tile.id].w, false); khSound_('wrong'); }
     render();
   }; });
+  if(K.mode==='lightning' && !K.done && !S.khClock){ S.khClock=setInterval(khLightTick_, 250); }
   if(K.mode==='match' && !K.done){ if(S.khClock) clearInterval(S.khClock); S.khClock=setInterval(function(){ var el=document.getElementById('khClock'); if(!el || S.kh.mode!=='match' || S.kh.done){ clearInterval(S.khClock); S.khClock=null; return; } el.textContent=Math.round((Date.now()-S.kh.start)/1000); }, 500); }
-  on('khAgain', function(){ gpTap(); var items=K.items.length && K.cat ? khCat_(K.cat).words.map(function(w){ return { c:khCat_(K.cat), w:w }; }) : khDue_(); khStart_(K.mode, items.length ? items : K.items); });
+  on('khAgain', function(){ gpTap(); var items=K.mode==='lightning' ? K.pool : K.items.length && K.cat ? khCat_(K.cat).words.map(function(w){ return { c:khCat_(K.cat), w:w }; }) : khDue_(); khStart_(K.mode, items.length ? items : K.items); });
   on('khDone', function(){ gpTap(); K.mode=null; render(); window.scrollTo(0,0); });
+  if(K.mood){ khKiri_(K.mood); K.mood=null; }
 }
 try { S.kh.front = lsGet('gp-kh-front')==='km' ? 'km' : 'en'; S.kh.noTl = lsGet('gp-kh-notl')==='1'; } catch(e){}

@@ -2923,6 +2923,25 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - **The fun** (Andrew: "make it fun with confetti"): a burst on every right answer (`khBurst_`), a 🔥
   streak from 3 with toasts at 5 and 10, a shower at the end of any set (`khShower_`, bigger for a
   clean run), a cheer by score (`khCheer_`), 🏆 when a list is known through (`K.mastered`).
+- **The game** (Uriah, Oct 2026: "more animated, more gamified — like the popular language apps"),
+  all on the phone in `gp-kh-game` (`khGame_` = `{xp, days:{date:xp}, badges:{id:t}, goal:30, sound}`):
+  **XP** per right answer (cards 5, quiz 10, match pair 5, lightning 5; ×2 from five in a row, the
+  `.khCombo` tag) plus a finish bonus (10, +20 clean, +50 list mastered; `K.bonus` names it) —
+  `khAddXp_` counts it for today, pops "+n XP" out of the tile (`khXpPop_`), and checks the **daily
+  goal** (30 XP; toast + shower the moment it is reached), the **rank** (`KH_RANKS` Seed → Sprout →
+  Leaf → Tree → Bamboo → Lotus → Elephant → Angkor by XP; a toast on rank-up) and the **badges**
+  (`KH_BADGES`, `khBadgeCheck_`; a toast each, locked ones shown 🔒, tap for its description). The
+  home shows **Kiri the elephant** 🐘 with a word for where you are (`khKiriSays_`; bounces on a right
+  answer and wobbles on a miss in a set — `khKiri_`, `K.mood` applied after render), the **day streak**
+  (`khDayStreak_`: days running the goal was reached; today counts once it is), the goal ring and the
+  week's dots (`khWeekDots_`), a bar to the next rank, and **crowns** per list (`khCrowns_`: ⅓ / ⅔ /
+  all known → ♛ 1–3, counted on each level). **Sounds** are made on the spot with WebAudio
+  (`khSound_`: right, wrong, flip, win, levelup, badge; 🔈/🔇 `#khSound`, `G.sound`). **Lightning**
+  (`mode 'lightning'`, `#khLightning` on the home once 8 words are known, or a list's fourth mode):
+  60 s (`S.khLightMs` for tests) of four-choice questions round and round (`K.pool`), the clock and a
+  draining bar (`khLightTick_`), "n right" at the end. The summary counts the XP up (`khCountUp_`) under
+  a bouncing trophy and shows the goal ring. Animations: card slide-in and flip, staggered options, a
+  pulse on the right one, Kiri's idle sway — all off under prefers-reduced-motion.
 - **Three ways to learn a list**, like Quizlet: Flashcards (tap to flip, Got it / Still learning),
   Quiz (four choices, wrong ones from the same list or level), Match (six pairs against the clock, best
   time per list in `gp-kh-best`). "English first / Khmer first" (`S.kh.front`, `gp-kh-front`) decides
@@ -2931,7 +2950,8 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   known at box 2 (`khKnown_`); the Daily mix (`khDue_`) is up to 20 words seen before, below box 3, old
   enough for their box (0, 1, 3 days). Confetti on a clean run or a finished Match (`gpConfetti`).
 - tests/test-khmer-learn-ui.mjs — the data's integrity and the page end to end (readings, the ABCs,
-  recorded audio first); tests/test-khmer-translit.mjs — the readings; tests/test-library-audio.mjs —
+  recorded audio first, the game: XP, combo, goal, streak, ranks, crowns, badges, Kiri, sounds, Lightning);
+  tests/test-khmer-translit.mjs — the readings; tests/test-library-audio.mjs —
   audio.js `?say=` (records on the spot with the key, 404 without, only the book's words).
 
 ## Calendar — the campus's Google Calendar, read-only (Oct 2026, Uriah)
