@@ -70,6 +70,9 @@ console.log('=== the page ===');
   const home = await main(page);
   ok('it opens: the book named, 0% known, a daily mix that fills itself, the script and three levels with their lists counted', /KBC vocabulary book/.test(home) && /0 of \d+ words known/.test(home) && /Daily mix/.test(home) && (await page.$$eval('[data-khlevel]', b => b.length)) === 4 && /The script/.test(home) && /Level 1 · Essentials/.test(home) && /Level 3 · Deeper talk/.test(home), home.slice(0, 300));
   ok('… and "I\'m learning Khmer / English", Khmer on', !!(await page.$('[data-khlearn="km"].on')));
+  ok('the game: Kiri says hi, 0 day streak, 0 XP as a Seed, the daily goal ring at 0 / 30, the week’s dots, badges all locked', /Hi, I’m Kiri!/.test(home) && /🔥 0/.test(home) && /🌱 0/.test(home) && /Seed/.test(home) && /0 \/ 30 XP today/.test(home) && (await page.$$eval('.khDot', d => d.length)) === 7 && (await page.$$eval('.khBadge', b => b.length)) === 12 && (await page.$$eval('.khBadge.on', b => b.length)) === 0 && /Badges · 0 \/ 12/i.test(home), [/Hi, I’m Kiri!/, /🔥 0/, /🌱 0/, /Seed/, /0 \/ 30 XP today/, /Badges · 0 \/ 12/].map(r => r.test(home)).join() + ' ' + home.slice(0, 400).replace(/\n/g, '|'));
+  ok('… sounds on, and the switch turns them off and remembers', (await page.$eval('#khSound', e => e.textContent)) === '🔈' && (await page.click('#khSound'), await page.waitForTimeout(200), (await page.$eval('#khSound', e => e.textContent)) === '🔇' && await page.evaluate(() => JSON.parse(localStorage.getItem('gp-kh-game')).sound === false)));
+  await page.click('#khSound'); await page.waitForTimeout(200);
   /* the script: letter first, the sound the answer */
   await page.click('[data-khlevel="0"]'); await page.waitForTimeout(300);
   await page.click('[data-khcat="consonants"]'); await page.waitForTimeout(300);
@@ -99,12 +102,22 @@ console.log('=== the page ===');
   const first = await page.$eval('#khFlip .khKm', e => e.textContent);
   await page.click('#khYes'); await page.waitForTimeout(60);
   ok('Got it: confetti from the card', !!(await page.$('.confettiWrap')));
+  ok('… +5 XP pops out of it and is kept for today', !!(await page.$('.khXpPop')) && /\+5 XP/.test(await page.$eval('.khXpPop', e => e.textContent)) && await page.evaluate(() => { const G = JSON.parse(localStorage.getItem('gp-kh-game')); return G.xp === 5 && Object.values(G.days)[0] === 5; }));
+  ok('… and Kiri bounces', !!(await page.$('.khKiri.happy')));
   await page.waitForTimeout(300);
   ok('… moves on and is remembered on this phone', /2 \/ 11/.test(await main(page)) && await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('gp-kh-progress'))).some(p => p.b === 1)));
   for (let i = 0; i < 2; i++) { await page.click('#khFlip'); await page.waitForTimeout(80); await page.click('#khYes'); await page.waitForTimeout(150); }
   ok('three right in a row: 🔥 3 in a row', /🔥 3 in a row/.test(await main(page)), (await main(page)).slice(0, 80));
-  for (let i = 0; i < 8; i++) { await page.click('#khFlip'); await page.waitForTimeout(80); await page.click(i % 2 ? '#khNo' : '#khYes'); await page.waitForTimeout(120); }
+  for (let i = 0; i < 2; i++) { await page.click('#khFlip'); await page.waitForTimeout(80); await page.click('#khYes'); await page.waitForTimeout(150); }
+  ok('five in a row: ×2 — double XP from here', /×2/.test(await main(page)) && /\+10 XP/.test(await page.$$eval('.khXpPop', p => p[p.length - 1].textContent)));
+  await page.click('#khFlip'); await page.waitForTimeout(80); await page.click('#khNo'); await page.waitForTimeout(150);
+  ok('a miss: Kiri wobbles, the combo is gone', !!(await page.$('.khKiri.sad')) && !/×2/.test(await main(page)));
+  for (let i = 0; i < 5; i++) { await page.click('#khFlip'); await page.waitForTimeout(80); await page.click(i % 2 ? '#khNo' : '#khYes'); await page.waitForTimeout(120); }
   const sum = await main(page);
+  ok('at the end: a trophy, the XP earned counting up with its bonus, the goal ring', !!(await page.$('.khTrophy')) && /\+\d+ XP/.test(sum) && /set finished/.test(sum) && !!(await page.$('.khSummary .khRing')) && (await page.waitForTimeout(800), /\+5[05] XP/.test(await main(page))), (await main(page)).slice(0, 200));
+  ok('… the daily goal reached, said so, and First steps earned', /Daily goal reached/.test(await main(page)) && await page.evaluate(() => { const G = JSON.parse(localStorage.getItem('gp-kh-game')); return Object.values(G.days)[0] >= 30 && !!G.badges.first; }));
+  if (false) {
+  }
   ok('at the end: a cheer, a score, the best streak, Again and Done', /Nice one|Great work|Keep going|Perfect/.test(sum) && /\d+%/.test(sum) && /right, \d+ still learning/.test(sum) && /🔥 \d+ in a row/.test(sum) && !!(await page.$('#khAgain')) && !!(await page.$('#khDone')), sum.slice(0, 160));
   ok('… and a shower of confetti whatever the score', !!(await page.$('.confettiWrap')));
   await page.click('#khDone'); await page.waitForTimeout(300);
@@ -134,7 +147,7 @@ console.log('=== the page ===');
   ok('a right pair goes', /5 pairs left/.test(await main(page)) && (await page.$$eval('.khTile.gone', b => b.length)) === 2);
   for (let id = 1; id < 6; id++) { await page.click('[data-khtile="' + tiles.indexOf(id + 'en') + '"]'); await page.waitForTimeout(60); await page.click('[data-khtile="' + tiles.indexOf(id + 'km') + '"]'); await page.waitForTimeout(120); }
   await page.waitForTimeout(400);
-  ok('all six: Done! ⚡, the time, kept as your best', /Done! ⚡/.test(await main(page)) && /seconds/.test(await main(page)) && await page.evaluate(() => JSON.parse(localStorage.getItem('gp-kh-best') || '{}').colors > 0));
+  ok('all six: Done! 🧩, the time, kept as your best', /Done! 🧩/.test(await main(page)) && /seconds/.test(await main(page)) && await page.evaluate(() => JSON.parse(localStorage.getItem('gp-kh-best') || '{}').colors > 0));
   await page.click('#khDone'); await page.waitForTimeout(300);
   await page.click('#khBack'); await page.waitForTimeout(200); await page.click('#khBack'); await page.waitForTimeout(300);
   await page.click('[data-khlevel="2"]'); await page.waitForTimeout(300);
@@ -143,10 +156,21 @@ console.log('=== the page ===');
   const perfect = await main(page);
   ok('Shapes twice through without a miss: Perfect!, 🏆 the whole list known', /Perfect! 🎉/.test(perfect) && /You know this whole list/.test(perfect) && /🔥 6 in a row/.test(perfect), perfect.slice(0, 160));
   await page.click('#khDone'); await page.waitForTimeout(300);
-  ok('… the list says every word is known', /6 words · 6 known/.test(await main(page)) && (await page.$$eval('.khRow.known', r => r.length)) === 6);
+  ok('… the list says every word is known, with three crowns', /6 words · 6 known/.test(await main(page)) && (await page.$$eval('.khRow.known', r => r.length)) === 6 && (await page.$$eval('h2 .khCrowns span.on', c => c.length)) === 3);
+  ok('… List master earned, and the list-mastered bonus', await page.evaluate(() => !!JSON.parse(localStorage.getItem('gp-kh-game')).badges.list));
   await page.click('#khBack'); await page.waitForTimeout(200); await page.click('#khBack'); await page.waitForTimeout(400);
   const home2 = await main(page);
   ok('back home: what you know counted, and a daily mix to practise', /[1-9]\d* of \d+ words known/.test(home2) && !!(await page.$('#khDaily')), home2.slice(0, 200));
+  ok('… the day streak is 1 with today’s dot ticked, a rank bar towards Sprout, crowns counted on the level, badges earned in colour', /🔥 1/.test(home2) && !!(await page.$('.khDot.today.hit')) && /XP to (Sprout|Leaf|Tree)/.test(home2) && /♛ [1-9]/.test(home2) && (await page.$$eval('.khBadge.on', b => b.length)) >= 2 && /Goal done for today/.test(home2), home2.slice(0, 400));
+  ok('… and a Lightning round once you know some words', !!(await page.$('#khLightning')));
+  /* Lightning: 60 seconds (shortened here) of quiz over the words you know, round and round */
+  await page.evaluate(() => { S.khLightMs = 2500; }); await page.click('#khLightning'); await page.waitForTimeout(300);
+  ok('Lightning: a question, the clock counting down, 0 right', !!(await page.$('.khAsk')) && !!(await page.$('#khLightLeft')) && /⚡ 0 right/.test(await main(page)));
+  for (let i = 0; i < 3; i++) { const ri = await page.evaluate(() => S.kh.q.options.indexOf(S.kh.q.w)); await page.click('[data-khopt="' + ri + '"]'); await page.waitForTimeout(450); }
+  ok('… three right, straight on to the next', /⚡ 3 right/.test(await main(page)), (await main(page)).slice(0, 60));
+  await page.waitForTimeout(2200);
+  ok('… Time! with the score and its XP', /Time! ⚡/.test(await main(page)) && /3 right/.test(await main(page)) && !!(await page.$('#khXpUp')));
+  await page.click('#khDone'); await page.waitForTimeout(300);
   await page.click('#khDaily'); await page.waitForTimeout(300);
   ok('the daily mix is flashcards of the words due', !!(await page.$('#khFlip')) && /1 \/ \d+/.test(await main(page)));
   await page.screenshot({ path: process.env.SHOT_KH || '/dev/null' }).catch(() => {});
