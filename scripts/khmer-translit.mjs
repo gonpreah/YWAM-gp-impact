@@ -38,6 +38,16 @@ const DIGITS = { '០': '0', '១': '1', '២': '2', '៣': '3', '៤': '4', '�
 const COENG = '្', TREISAP = '៊', MUSIKATOAN = '៉', BANTOC = '់', TOANDAKHIAT = '៍', ROBAT = '៌', LEK_TOO = 'ៗ';
 /* hand readings where the rules fall short (by the Khmer spelling) */
 export const OVERRIDES = {
+  /* the Faith lists (Oct 2026): church life, God & the Bible, the books of the Bible */
+  'ទីបន្ទាល់': 'ti-bon-toal', 'សេចក្ដីអធិប្បាយ': 'seich-kdey-a-thip-bay', 'ការប្រកបគ្នា': 'ka-pra-kop-knea', 'បេសកកម្ម': 'be-sak-kam',
+  'អធិស្ឋានឲ្យ': 'athisthan-aoy', 'ប្រគល់ជីវិតឲ្យព្រះយេស៊ូវ': 'pra-kol-chi-vit-aoy-preah yesu', 'ស្ដាប់បង្គាប់': 'sdap-bang-koap',
+  'បុណ្យទី៥០': 'bon-ti-ha-sep', 'ក្រុមយុវជន': 'krom-yu-veak-chon', 'ព្រះជាម្ចាស់': 'preah-chie-mchah', 'ព្រះគ្រីស្ទ': 'preah-krist',
+  'ស្ដេចលើអស់ទាំងស្ដេច': 'sdach-leu-ah-teang-sdach', 'ព្រះអាទិករ': 'preah-a-ti-ko', 'ការបង្កើតពិភពលោក': 'ka-bang-kaeut-pi-phop-louk',
+  'នគរព្រះ': 'no-ko-preah', 'សេចក្ដីសញ្ញា': 'seich-kdey-sanh-nya', 'អារក្ស': 'a-rak', 'ការជំនុំជម្រះ': 'ka-chum-num-chum-reah',
+  'សេចក្ដីសង្ឃឹម': 'seich-kdey-sang-khoem', 'ភាពស្មោះត្រង់': 'phiep-smaoh-trang', 'និយាយភាសាដទៃ': 'niyeay-phie-sa-da-tey',
+  'អាសនៈ': 'a-sa-nak', 'បញ្ញត្តិ': 'banh-nhat', 'ក្រឹត្យវិន័យ': 'kret-vi-ney', 'លោកុប្បត្តិ': 'lou-kop-bat', 'និក្ខមនំ': 'nik-kha-ma-nom',
+  'ចោទិយកថា': 'chao-ti-yak-ka-tha', 'ពង្សាវតារក្សត្រ': 'pong-sa-va-da-ksat', 'របាក្សត្រ': 'ro-bak-sat', 'អែសរ៉ា': 'ae-sa-ra',
+  'វិវរណៈ': 'vi-vo-ra-nak', 'កិច្ចការ': 'kech-cha-ka',
   'ខ្ញុំ': 'khnhom', 'ទេ': 'te', 'បាទ': 'bat', 'ចាស': 'chah', 'អរគុណ': 'orkun', 'សួស្តី': 'suostei', 'ព្រះ': 'preah', 'ព្រះយេស៊ូវ': 'preah yesu',
   'ព្រះអង្គ': 'preah ang', 'ព្រះគម្ពីរ': 'preah kompi', 'ព្រះវិហារ': 'preah vihie', 'ក្រុមជំនុំ': 'krom chumnum', 'អធិស្ឋាន': 'athisthan',
   'ថ្វាយបង្គំ': 'thvay bangkum', 'ម្ហូប': 'mhoup', 'ផ្ទះ': 'phteah', 'ទឹក': 'tuk', 'បាយ': 'bai', 'ញ៉ាំ': 'nham', 'ហូប': 'houp', 'ស្អាត': 'sa-at',

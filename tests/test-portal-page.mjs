@@ -1622,6 +1622,11 @@ async function open(viewport, query, seed) {
   ok('Resources shows the list applicants get', /Outreach Leader’s Guide/.test(await page.$eval('#pvFrame', e => e.textContent)));
   await page.click('[data-pvaview="status"]'); await page.waitForTimeout(200);
   ok('… and back to their application', /Sample Team/.test(await page.$eval('#pvFrame', e => e.textContent)) && !!(await page.$('#pvFrame #timeline')));
+  /* the frame is inert, so what a tap would open is drawn open: a team past its 2nd call has the
+     e-visa how-to, and staff read it here (Andrew, Oct 2026: "I still can't click on the instructions") */
+  await page.click('[data-pvstage="practical"]'); await page.waitForTimeout(400);
+  ok('at Practical the e-visa step shows "How to apply" already open in the read-only frame, steps and all', !!(await page.$('#pvFrame #visaHow')) && (await page.$eval('#pvFrame #visaHow', e => e.open)) && /How to apply for your e-visa online/.test(await page.$eval('#pvFrame #visaHow', e => e.textContent)) && /evisa\.gov\.kh|e-visa/i.test(await page.$eval('#pvFrame #visaHow', e => e.textContent)) && (await page.$eval('#pvFrame', e => e.hasAttribute('inert'))));
+  ok('… and the staff member’s own folds are untouched by the preview', await page.evaluate(() => !(window.P && P.fold && P.fold.visaHow)));
   ok('for a team there is a Their guide tab', !!(await page.$('[data-pvscreen="guide"]')));
   await page.click('[data-pvscreen="guide"]'); await page.waitForTimeout(250);
   const pg = await page.$eval('#pvGuide', e => e.textContent);

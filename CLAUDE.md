@@ -2908,6 +2908,14 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   vowels; a card shows the letter first, the sound is the answer). Loaded on demand like the Library's
   (`khLoad_`; cached by sw.js, SHELL v18). The PDF's text layer scrambles Khmer, so the words came from
   the page images: fix a word in that file, in the book's order.
+- **The Faith lists** (Oct 2026, Andrew: "more Christian words … a faith section … all the books of the
+  Bible"): the last four lists of Deeper talk, named "Faith — …" so they read as one group like the
+  book's "Small talk — …": the book's own **Christian words** (81, unchanged, renamed), then **church
+  life** (38), **God & the Bible** (44) and **books of the Bible** (66, in order, each with a note Old
+  Testament / New Testament; names as the Khmer Standard Version has them). The three new lists are not
+  from the KBC book — written for YWAM GP, Khmer and readings unreviewed (docs/khmer-needed.md §78);
+  their hand readings sit in `OVERRIDES` in scripts/khmer-translit.mjs. The Learn Khmer test holds the
+  order and the 39 + 27.
 - **Learning Khmer or English** (`[data-khlearn]`, `S.kh.front` = 'en' learning Khmer, 'km' learning
   English, kept in `gp-kh-front`; `khLearningEn_`, `khTitle_`): the switch on the home decides which side
   a card and a quiz ask with and which language 🔊 reads; the page is titled Learn English then.

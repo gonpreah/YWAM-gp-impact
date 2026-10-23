@@ -2271,10 +2271,14 @@ function previewHtml_(){
   var saved={ boot:P.boot, answers:P.answers, formSec:P.formSec, formMissing:P.formMissing, showAnswers:P.showAnswers, editContact:P.editContact, refLink:P.refLink, editMine:P.editMine, aview:P.aview, strengths:P.strengths, ptest:P.ptest, pview:P.pview, ppickFor:P.ppickFor, members:P.members, tphotos:P.tphotos };
   P.boot=b; P.answers=(b.application && b.application.answers)||{}; P.formSec=pv.sec; P.formMissing=null; P.showAnswers=false; P.editContact=false; P.refLink=null; P.editMine=false;
   P.aview=pv.aview||'status'; P.strengths=b.strengths||{ people:[], results:{} }; P.ptest=null; P.pview=null; P.ppickFor=null; P.members=null; P.tphotos={ people:(b.strengths && b.strengths.people)||[], photos:{} };
+  /* nothing in the frame can be tapped (it is inert), so folds that would open on a tap are drawn
+     open — above all "How to apply for your e-visa online", which staff view this screen to check
+     (Andrew, Oct 2026: "I still can't click on the instructions for the e visa") */
+  var savedFold=P.fold; P.fold=Object.assign({}, P.fold||{}, { visaHow:true });
   var inner='', nav='';
   try { nav = pv.screen==='me' ? applicantNavHtml_('data-pvaview') : ''; inner = pv.screen==='form' ? formHtml_() : meTabHtml_(); } catch(e){ inner='<p class="sub">'+esc(String(e && e.message || e))+'</p>'; }
   P.boot=saved.boot; P.answers=saved.answers; P.formSec=saved.formSec; P.formMissing=saved.formMissing; P.showAnswers=saved.showAnswers; P.editContact=saved.editContact; P.refLink=saved.refLink; P.editMine=saved.editMine;
-  P.aview=saved.aview; P.strengths=saved.strengths; P.ptest=saved.ptest; P.pview=saved.pview; P.ppickFor=saved.ppickFor; P.members=saved.members; P.tphotos=saved.tphotos;
+  P.aview=saved.aview; P.strengths=saved.strengths; P.ptest=saved.ptest; P.pview=saved.pview; P.ppickFor=saved.ppickFor; P.members=saved.members; P.tphotos=saved.tphotos; P.fold=savedFold;
   if(pv.screen==='guide') return h+'<div class="guideBody pvGuide" id="pvGuide"><div class="guideBar pvGuideBar"><span></span><button class="hbtn" id="guidePrint">🖨 '+esc(t('Print or save as PDF'))+'</button></div>'+outreachGuideHtml(esc)+'</div>';
   h+=nav+'<div class="pvFrame" id="pvFrame" inert>'+inner+'</div>';
   return h;
