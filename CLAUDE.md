@@ -2033,8 +2033,10 @@ copy of anything.
   branch protection. A green CI is not permission to skip running the suite locally:
   a merge here is a production deploy.
 - **Netlify:** push to `main` → auto-deploy (GitHub integration on the `transcendent-crostata-c9b7f4`
-  site). `netlify.toml` sets `publish = "public"` and `functions = "netlify/functions"`.
-  Nothing else to run by hand.
+  project, live at impact.gonpreah.org, on the gonpreah team). `netlify.toml` sets `publish = "public"`
+  and `functions = "netlify/functions"`. Nothing else to run by hand.
+- **The repo lives in the gonpreah organisation** (`gonpreah/YWAM-gp-impact`, moved from
+  `uriahlyford` in Oct 2026; GitHub redirects the old address). Start Claude sessions on that one.
 - **Leadership gate:** `isLeader_` in `api.js` checks the caller's code against
   `process.env.GP_LEADER_CODE` and fails closed — no hardcoded fallback, since this
   repo is public and a literal in source would be a permanently known password. Gates
