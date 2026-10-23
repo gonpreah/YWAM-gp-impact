@@ -24,6 +24,8 @@ const ok = (n, c, x) => { if (c) { pass++; console.log('ok   ' + n); } else { fa
 console.log('=== the book ===');
 const ctx0 = {}; vm.runInNewContext(fs.readFileSync(REPO + '/public/khmer-vocab.js', 'utf8'), ctx0);
 const V = ctx0.GP_KHMER_VOCAB;
+const ctxK = {}; vm.runInNewContext(fs.readFileSync(REPO + '/public/km.js', 'utf8'), ctxK);
+const KM = Object.assign({}, ctxK.PENDING_KM || {}, ctxK.REVIEWED_KM || {});
 const all = V.cats.reduce((a, c) => a.concat(c.words.map(w => ({ c, w }))), []);
 ok('the script and three levels, forty-odd lists, a thousand-odd words', V.levels.length === 4 && V.levels[0].id === 0 && V.cats.length >= 47 && all.length >= 1200, V.cats.length + ' lists, ' + all.length + ' words');
 ok('the script: 33 consonants, the vowels, the independent vowels — letter first', V.cats.filter(c => c.level === 0).every(c => c.script) && V.cats.find(c => c.id === 'consonants').words.length === 33 && V.cats.find(c => c.id === 'vowels').words.length >= 20 && V.cats.find(c => c.id === 'consonants').words[0][1] === 'ក');
@@ -33,7 +35,11 @@ ok('every Khmer word has a reading in Latin letters, for those who cannot read t
 ok('… I is khnhom, white is poa sor, how many ponman', all.some(x => x.w[1] === 'ខ្ញុំ' && x.w[3] === 'khnhom') && all.some(x => x.w[1] === 'ពណ៌ស' && x.w[3] === 'poa sor') && all.some(x => /^ប៉ុន្មាន/.test(x.w[1]) && /^ponman/.test(x.w[3])));
 ok('the ABCs: 26 big letters and 26 small, each said in Khmer, for those learning English', V.cats.filter(c => c.en).length === 2 && V.cats.find(c => c.id === 'abc').words.length === 26 && V.cats.find(c => c.id === 'abc').words[0][0] === 'A' && /[ក-៿]/.test(V.cats.find(c => c.id === 'abc').words[0][1]) && V.cats.find(c => c.id === 'abclower').words.map(w => w[0]).join('') === 'abcdefghijklmnopqrstuvwxyz');
 ok('every list has a level, a name and at least four words; no list repeats an English word', V.cats.every(c => [0, 1, 2, 3].includes(c.level) && c.name && c.words.length >= 4 && new Set(c.words.map(w => w[0])).size === c.words.length));
-ok('the book\'s order: numbers first after the script, Christian words last; Numbers has 1 to 10 and 0', V.cats.find(c => !c.script).id === 'numbers' && V.cats[V.cats.length - 1].id === 'christian' && V.cats.find(c => c.id === 'numbers').words[0][1] === 'មួយ' && V.cats.find(c => c.id === 'numbers').words.some(w => w[0] === '0' && w[1] === 'សូន្យ'));
+ok('the book\'s order: numbers first after the script, the Faith lists last; Numbers has 1 to 10 and 0', V.cats.find(c => !c.script).id === 'numbers' && V.cats[V.cats.length - 1].id === 'bible' && V.cats.find(c => c.id === 'numbers').words[0][1] === 'មួយ' && V.cats.find(c => c.id === 'numbers').words.some(w => w[0] === '0' && w[1] === 'សូន្យ'));
+{ const F = V.cats.filter(c => /^Faith — /.test(c.name)), B = V.cats.find(c => c.id === 'bible');
+  ok('Faith (Oct 2026): four lists under Deeper talk — the book\'s Christian words, church life, God & the Bible, the books of the Bible', F.length === 4 && F.every(c => c.level === 3) && F.map(c => c.id).join(',') === 'christian,church,godbible,bible' && F.find(c => c.id === 'christian').words.length === 81, F.map(c => c.id + ':' + c.words.length).join(' '));
+  ok('all 66 books in order — 39 Old Testament then 27 New, Genesis first, Revelation last, each Khmer', B.words.length === 66 && B.words.slice(0, 39).every(w => w[2] === 'Old Testament') && B.words.slice(39).every(w => w[2] === 'New Testament') && B.words[0][0] === 'Genesis' && B.words[38][0] === 'Malachi' && B.words[39][0] === 'Matthew' && B.words[65][0] === 'Revelation' && B.words.every(w => /[ក-៿]/.test(w[1]) && w[3]));
+  ok('every Faith list name and tip has Khmer', F.every(c => /[ក-៿]/.test(KM[c.name] || '') && (!c.tip || /[ក-៿]/.test(KM[c.tip] || '')))); }
 
 const ME = { id: 'st1', name: 'Sreilea Chan', username: 'sreilea', campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', role: 'Staff', photo: '', mentorId: '', staffType: 'ministry', country: 'Cambodia' };
 const BOOT = { ok: true, staff: ME, profile: { phone: '', joined: '', debt: false, mentorStatus: '' }, roster: [ME], logs: [], habits: null, mentees: [], mentorRequests: [], goals: [], checkins: [],

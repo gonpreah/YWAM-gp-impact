@@ -4100,3 +4100,17 @@ The Finances tab of Campus Leadership (and the Finances office’s Dashboard): u
 | A column per Location | មួយជួរឈរក្នុងមួយទីតាំង |
 
 Finances → Reports, the card under QuickBooks (the Finances office), and “Reports from QuickBooks” on Campus Leadership’s Finances tab. The report names (Balance Sheet, Trial Balance …) are QuickBooks’ own; if the office knows them by their English names, keeping those may be clearer. “Class” is a QuickBooks word and is left in English.
+
+## 78. Learn Khmer — the Faith lists
+
+| English | Khmer (draft) |
+|---|---|
+| Faith — Christian words | ជំនឿ — ពាក្យគ្រីស្ទាន |
+| Faith — church life | ជំនឿ — ជីវិតក្រុមជំនុំ |
+| Faith — God & the Bible | ជំនឿ — ព្រះ និងព្រះគម្ពីរ |
+| Faith — books of the Bible | ជំនឿ — កណ្ឌគម្ពីរ |
+| Old Testament | សញ្ញាចាស់ |
+| New Testament | សញ្ញាថ្មី |
+
+Learn Khmer → Deeper talk: the names of the four Faith lists (the tiles and each list's heading) and the two notes beside every book of the Bible. The words themselves — about 150, in public/khmer-vocab.js — were written for YWAM GP, not from the KBC book: church life (Amen, testimony, offering, tithe, communion …), God & the Bible (Saviour, covenant, parable, the fruit of the Spirit …) and all 66 books of the Bible with the names the Khmer Standard Version uses. Both the Khmer and the "sounds like" readings want a native reader; the Bible names above all, since church people will know at once if one is off.
+
