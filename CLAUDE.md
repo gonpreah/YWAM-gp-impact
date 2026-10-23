@@ -2031,7 +2031,9 @@ copy of anything.
   checks — `server tests` (seconds, no install) and `browser tests` (Playwright +
   Chromium) — on every PR and every push to `main`. Both are the ones to require in
   branch protection. A green CI is not permission to skip running the suite locally:
-  a merge here is a production deploy.
+  a merge here is a production deploy. The browser job has a 60-minute limit (Oct 2026:
+  the suite passed 25 minutes and every run was cut off as "cancelled" — raise the limit
+  again before the suite reaches it, a cancelled job is not a failed test).
 - **Netlify:** push to `main` → auto-deploy (GitHub integration on the `transcendent-crostata-c9b7f4`
   project, live at impact.gonpreah.org, on the gonpreah team). `netlify.toml` sets `publish = "public"`
   and `functions = "netlify/functions"`. Nothing else to run by hand.
