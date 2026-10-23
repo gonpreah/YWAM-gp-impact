@@ -205,6 +205,13 @@ for (const f of files) {
   console.log((bad ? 'FAIL ' : 'ok   ') + f.padEnd(24) + last.slice(0, 90));
   if (bad) {
     for (const l of lines) if (/\bFAIL\b|\bERR\b/.test(l)) console.log('        ' + l.trim().slice(0, 140));
+    /* A test that crashed (an uncaught error, a timeout, a lost page) prints a stack trace and
+       no FAIL line, so the lines above show nothing and the one-line summary ends in
+       "Node.js v22…" — which is all CI ever showed. The tail of its output is the error. */
+    if (r.status !== 0) {
+      console.log('        --- last lines of ' + f + ' (exit ' + r.status + ') ---');
+      for (const l of lines.slice(-25)) console.log('        ' + l.slice(0, 200));
+    }
   }
 }
 
