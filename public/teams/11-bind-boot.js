@@ -672,10 +672,22 @@ function bindHome(){
       var list=myHabits().map(function(hb){
         if(hb.id!==parts[0]) return hb;
         var o=Object.assign({}, hb);
+        if(parts[1]==='perweek'){ delete o.days; o.perWeek=o.perWeek||3; return o; }
+        delete o.perWeek;
         if(parts[1]==='daily') delete o.days;
         else if(parts[1]==='weekdays') o.days=[1,2,3,4,5];
         else o.days=(o.days && o.days.length && o.days.join()!=='1,2,3,4,5') ? o.days : [1,3,5];
         return o;
+      });
+      S.habits=list; render();
+    };
+  });
+  document.querySelectorAll('[data-hpweek]').forEach(function(b){
+    b.onclick=function(){
+      var parts=b.getAttribute('data-hpweek').split('|'), step=Number(parts[1]);
+      var list=myHabits().map(function(hb){
+        if(hb.id!==parts[0]) return hb;
+        var o=Object.assign({}, hb); o.perWeek=Math.max(1, Math.min(6, (o.perWeek||3)+step)); return o;
       });
       S.habits=list; render();
     };

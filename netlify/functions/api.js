@@ -1421,7 +1421,10 @@ const MAX_HABITS = 8;
 /* Oct 2026 (Uriah): a habit can be your own ("c_" + a slug, with its label and
    emoji), and each one has a schedule — `days` is the weekdays it is due
    (0 Sunday … 6 Saturday); absent means every day. The page only asks about
-   a habit on its days, and its streak counts those days alone. */
+   a habit on its days, and its streak counts those days alone. Or `perWeek`
+   (Uriah, Oct 2026: "sometimes with a busy schedule we do it on other days"):
+   so many days a week, 1–6, marked as you go on whichever days they happen;
+   then no `days`. */
 const CUSTOM_HABIT_ID = /^c_[a-z0-9]{1,24}$/;
 function cleanHabitDays_(v) {
   if (!Array.isArray(v)) return null;
@@ -1440,8 +1443,9 @@ function cleanHabitConfig_(list) {
   }).slice(0, MAX_HABITS).map(function (h) {
     const out = { id: h.id, mentorVisible: !!h.mentorVisible };
     if (HABIT_IDS.indexOf(h.id) === -1) { out.label = str_(h.label, 40); out.icon = str_(h.icon, 8) || '⭐'; }
-    const days = cleanHabitDays_(h.days);
-    if (days) out.days = days;
+    const perWeek = Number(h.perWeek);
+    if (Number.isInteger(perWeek) && perWeek >= 1 && perWeek <= 6) out.perWeek = perWeek;
+    else { const days = cleanHabitDays_(h.days); if (days) out.days = days; }
     return out;
   });
 }

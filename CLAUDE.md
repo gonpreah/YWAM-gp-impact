@@ -938,8 +938,15 @@ its `label` (40 chars) and `icon` (emoji, ⭐ by default) — `cleanHabitConfig_
 `MAX_HABITS` 8 in both copies. The card (`habitsCardHtml`) asks only about what is due today
 (`habitDue`, `myHabitsToday`), lists the rest under "n more on other days", and the hero
 counts today's. Streaks walk the due days alone (`habitStreak`, `habitBest`) — a Mon/Wed/Fri
-habit is not broken by a Tuesday. The picker has Every day / Weekdays / Pick days per habit
-and an "Add your own" row. Ticking a tile pops confetti (`gpConfetti`, skipped under
+habit is not broken by a Tuesday. The picker has Every day / Weekdays / Pick days / Times a week
+per habit and an "Add your own" row. **Times a week** (Uriah, Oct 2026: "sometimes with a busy
+schedule we do it on other days"): `perWeek` 1–6 (then no `days`; the server drops `days` when
+it is set), the tile is on the card every day to mark as you go, shows "n of N this week" and
+✓ once reached (`habitWeekCount`, `habitWeekMet`, Monday-to-Sunday week `habitWeekOf_`), counts
+as done for the day from then on (`habitDoneToday` — the card's a/b and the hero's Habits Today
+both use it), and its streak is weeks in a row that reached the number (`habitWeekStreak_`;
+"🔥 n wk" on the tile, "best n weeks" in Streaks; the hero's best-streak days ignore it).
+Stepper `[data-hpweek="id|±1"]`, preset `[data-hpdays="id|perweek"]` starts at 3. Ticking a tile pops confetti (`gpConfetti`, skipped under
 prefers-reduced-motion). `habitMeta(hb)` takes the row (or an id) so custom labels show.
 tests/test-habit-schedule.mjs covers the server rules and the page.
 

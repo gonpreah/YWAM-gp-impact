@@ -1011,17 +1011,32 @@ function homeHealth_(){
    pick (hb.days, 0 Sunday … 6 Saturday) — and can be one of your own (a label
    and an emoji). The card asks only about what is due today; a streak counts
    the due days alone, so a Monday-Wednesday-Friday habit is not broken by a
-   Tuesday. */
+   Tuesday. Or so many days a week (hb.perWeek, Uriah: "sometimes with a busy
+   schedule we do it on other days"): the tile is there every day to mark as
+   you go, counts as done for the day once the week's number is reached, and
+   its streak is weeks in a row that reached it. */
 var DAY_LETTERS=['S','M','T','W','T','F','S'];
 var DAY_SHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 function habitDue(hb, d){
-  if(!hb || !hb.days || !hb.days.length) return true;
+  if(!hb || hb.perWeek || !hb.days || !hb.days.length) return true;
   var dow = (d instanceof Date) ? d.getDay() : new Date(d+'T00:00:00').getDay();
   return hb.days.indexOf(dow)>-1;
 }
 function myHabitsToday(){ return myHabits().filter(function(hb){ return habitDue(hb, new Date()); }); }
+/* a "times a week" habit: the Monday-to-Sunday week a day is in, how many of its days are ticked */
+function habitWeekOf_(d){ var m=new Date(d.getFullYear(), d.getMonth(), d.getDate()); m.setDate(m.getDate()-((m.getDay()+6)%7)); return m; }
+function habitWeekCount(hb, d){
+  var from=habitWeekOf_(d||new Date()), to=new Date(from); to.setDate(to.getDate()+6);
+  var a=fmtD(from), b=fmtD(to), pred=habitPred(hb.id), n=0, seen={};
+  S.logs.forEach(function(l){ if(l.date>=a && l.date<=b && !seen[l.date] && pred(l)){ seen[l.date]=1; n++; } });
+  return n;
+}
+function habitWeekMet(hb, d){ return !!hb.perWeek && habitWeekCount(hb, d)>=hb.perWeek; }
+/* done for the day: ticked today, or (times a week) the week's number already reached */
+function habitDoneToday(hb, log){ return !!(log && didHabit(log, hb.id)) || habitWeekMet(hb, new Date()); }
 function habitScheduleLabel(hb){
   var days=hb.days||[];
+  if(hb.perWeek) return hb.perWeek===1 ? t('Once a week') : gpT('{n} times a week',{n:hb.perWeek});
   if(!days.length) return t('Every day');
   if(days.join()==='1,2,3,4,5') return t('Weekdays');
   if(days.join()==='0,6') return t('Weekends');
@@ -1031,6 +1046,7 @@ function habitScheduleLabel(hb){
 /* The current run over this habit's due days — one missed day forgiven, as
    graceStreak always has; a day it is not due neither counts nor breaks. */
 function habitStreak(hb){
+  if(hb.perWeek) return habitWeekStreak_(hb).now;
   var pred=habitPred(hb.id);
   var have={}; S.logs.forEach(function(l){ if(pred(l)) have[l.date]=1; });
   var d=new Date();
@@ -1046,6 +1062,7 @@ function habitStreak(hb){
   return n;
 }
 function habitBest(hb){
+  if(hb.perWeek) return habitWeekStreak_(hb).best;
   var pred=habitPred(hb.id);
   var have={}, first=null;
   S.logs.forEach(function(l){ if(pred(l)){ have[l.date]=1; if(!first || l.date<first) first=l.date; } });
@@ -1056,6 +1073,19 @@ function habitBest(hb){
     d.setDate(d.getDate()+1);
   }
   return best;
+}
+/* weeks in a row that reached the number — this week counts once it has, and does not break the
+   run before it has; best is over all the weeks since the first tick */
+function habitWeekStreak_(hb){
+  var pred=habitPred(hb.id), first=null;
+  S.logs.forEach(function(l){ if(pred(l) && (!first || l.date<first)) first=l.date; });
+  if(!first) return { now:0, best:0 };
+  var thisWk=habitWeekOf_(new Date()), w=new Date(thisWk), now=0, guard=0;
+  if(!habitWeekMet(hb, w)) w.setDate(w.getDate()-7);
+  while(guard++<600 && habitWeekMet(hb, w)){ now++; w.setDate(w.getDate()-7); }
+  var best=0, run=0; w=habitWeekOf_(new Date(first+'T00:00:00')); guard=0;
+  while(w<=thisWk && guard++<600){ run = habitWeekMet(hb, w) ? run+1 : 0; if(run>best) best=run; w.setDate(w.getDate()+7); }
+  return { now:now, best:best };
 }
 
 /* A little burst of confetti out of the tile you just ticked. Pure CSS
@@ -1092,7 +1122,7 @@ function habitsCardHtml(){
   var all=myHabits();
   var list=all.filter(function(hb){ return habitDue(hb, new Date()); });
   var rest=all.filter(function(hb){ return !habitDue(hb, new Date()); });
-  var doneN=list.filter(function(hb){ return log && didHabit(log,hb.id); }).length;
+  var doneN=list.filter(function(hb){ return habitDoneToday(hb, log); }).length;
 
   var h='<h3 id="sec-habits">✅ '+esc(t('Habits'))+'</h3>'+
     '<div class="card"><div class="goalCardHead"><span class="goalCardTitle">'+esc(t('Habit Tracker'))+'</span>'+
@@ -1108,11 +1138,14 @@ function habitsCardHtml(){
   list.forEach(function(hb){
     var meta=habitMeta(hb);
     var on=log && didHabit(log,hb.id);
-    var run=habitStreak(hb);
-    h+='<button class="habitBtn'+(on?' on':'')+'" data-habit="'+esc(hb.id)+'">'+
+    var run=habitStreak(hb), sub;
+    if(hb.perWeek){   // marked as you go: this week's count, ✓ once the number is reached
+      var n=habitWeekCount(hb, new Date()), met=n>=hb.perWeek;
+      sub='<span class="hRun'+(met?' met':'')+'">'+(met?'✓ ':'')+esc(gpT('{n} of {total} this week',{n:n,total:hb.perWeek}))+(run>1?' · 🔥 '+esc(gpT('{n} wk',{n:run})):'')+'</span>';
+    } else sub='<span class="hRun">'+(run>0?'🔥 '+run:'&nbsp;')+'</span>';
+    h+='<button class="habitBtn'+(on?' on':'')+(!on && habitWeekMet(hb, new Date())?' met':'')+'" data-habit="'+esc(hb.id)+'">'+
       '<span class="hIcon">'+esc(meta.icon)+'</span>'+
-      '<span class="hLabel">'+esc(t(meta.label))+'</span>'+
-      '<span class="hRun">'+(run>0?'🔥 '+run:'&nbsp;')+'</span></button>';
+      '<span class="hLabel">'+esc(t(meta.label))+'</span>'+sub+'</button>';
   });
   h+='</div>';
   if(rest.length){
@@ -1137,16 +1170,23 @@ function habitsCardHtml(){
 }
 
 /* Choosing habits: tick the ones from the list or add your own, and for each
-   say when it is due — every day, weekdays, or the days you pick. */
+   say when it is due — every day, weekdays, the days you pick, or so many
+   times a week marked as you go. */
 function habitDaysHtml_(hb){
   var days=hb.days||[];
-  var preset = !days.length ? 'daily' : days.join()==='1,2,3,4,5' ? 'weekdays' : 'custom';
+  var preset = hb.perWeek ? 'perweek' : !days.length ? 'daily' : days.join()==='1,2,3,4,5' ? 'weekdays' : 'custom';
   var h='<div class="hpWhen">'+
     '<div class="hpPresets">'+
       '<button class="catChip'+(preset==='daily'?' on':'')+'" data-hpdays="'+esc(hb.id)+'|daily">'+esc(t('Every day'))+'</button>'+
       '<button class="catChip'+(preset==='weekdays'?' on':'')+'" data-hpdays="'+esc(hb.id)+'|weekdays">'+esc(t('Weekdays'))+'</button>'+
       '<button class="catChip'+(preset==='custom'?' on':'')+'" data-hpdays="'+esc(hb.id)+'|custom">'+esc(t('Pick days'))+'</button>'+
+      '<button class="catChip'+(preset==='perweek'?' on':'')+'" data-hpdays="'+esc(hb.id)+'|perweek">'+esc(t('Times a week'))+'</button>'+
     '</div>';
+  if(preset==='perweek'){
+    h+='<div class="hpPerWeek"><button class="hpStep" data-hpweek="'+esc(hb.id)+'|-1" aria-label="'+esc(t('Fewer'))+'"'+(hb.perWeek<=1?' disabled':'')+'>−</button>'+
+      '<b>'+hb.perWeek+'</b><button class="hpStep" data-hpweek="'+esc(hb.id)+'|1" aria-label="'+esc(t('More'))+'"'+(hb.perWeek>=6?' disabled':'')+'>+</button>'+
+      '<span class="pmeta">'+esc(t('days a week — mark them as you go, whichever days they happen'))+'</span></div>';
+  }
   if(preset==='custom'){
     h+='<div class="hpDays">'+[1,2,3,4,5,6,0].map(function(d){
       return '<button class="hpDay'+(days.indexOf(d)>-1?' on':'')+'" data-hpday="'+esc(hb.id)+'|'+d+'" aria-label="'+esc(t(DAY_SHORT[d]))+'" aria-pressed="'+(days.indexOf(d)>-1?'true':'false')+'">'+DAY_LETTERS[d]+'</button>';
@@ -1188,14 +1228,14 @@ function habitPickerHtml_(list){
 function streaksHtml(){
   var runs=myHabits().map(function(hb){
     var meta=habitMeta(hb);
-    return { label:meta.label, icon:meta.icon, now:habitStreak(hb), best:habitBest(hb) };
+    return { label:meta.label, icon:meta.icon, now:habitStreak(hb), best:habitBest(hb), weeks:!!hb.perWeek };
   }).filter(function(r){ return r.now>0 || r.best>0; });
   if(!runs.length) return '';
   var h='<div class="card"><div class="goalCardTitle" style="margin-bottom:8px">🔥 '+esc(t('Streaks'))+'</div>';
   runs.forEach(function(r){
     h+='<div class="row"><span class="rowName">'+r.icon+' '+esc(t(r.label))+
-      '<div class="pmeta">'+esc(gpT('best {n} days',{n:r.best}))+'</div></span>'+
-      '<span class="pctSm">'+r.now+'d</span></div>';
+      '<div class="pmeta">'+esc(r.weeks ? gpT('best {n} weeks',{n:r.best}) : gpT('best {n} days',{n:r.best}))+'</div></span>'+
+      '<span class="pctSm">'+r.now+(r.weeks?'w':'d')+'</span></div>';
   });
   return h+'</div>';
 }
