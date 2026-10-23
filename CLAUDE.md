@@ -1344,9 +1344,19 @@ forms, documents and references follow.
   `hrCandidateCall(user, pin, candId, {id?, date, with, text} | {id, remove:true})` (HR / portal
   reach as for notes; edit and delete by the writer or a portal admin). `hrSaveCandidate` keeps
   `calls` from the stored record, and `portalAppOut_` never sends them to the applicant.
+- **As they see it (Oct 2026, Uriah: "click on the e-visa steps to see exactly how they see it")**:
+  on a team record's Overview every step in Team steps has 👁 (`[data-seestep]`, `P.seeStep =
+  {id, step}`); tapping it draws that step under the row exactly as the team's dashboard does
+  (`stepLiHtml_` — the one function both sides use for a "Where you are" step — on `asApplicant_(c)`,
+  the staff record shaped like `portalAppOut_`, with `visaOpen` worked out the same way), boxed as
+  `.asSeen`; the e-visa step comes with "How to apply for your e-visa online" open (`P.fold.visaHow`),
+  its documents opening for that record's campus (`[data-ascampus]`). On other applicants, the Visa
+  ticks under Documents have "See their e-visa guide as they see it" (`#seeVisa`, `P.seeVisa`) showing
+  `visaCardHtml_` as it is for them at their stage.
 - **Staff side bar and menu (Oct 2026)**: above the bar, a small text link "← Go back to GP Home"
   (`#toGpApp`, `.gpHomeLink` — Uriah kept tapping the old ‹ button by mistake); the bar is one ☰ button
-  that says where you are (`staffNavHtml_`, `P.menuOpen`, `#navMenu`, `.menuHere`); the portal opens on
+  that says where you are and nothing else — the three lines and the page's name (`staffNavHtml_`,
+  `P.menuOpen`, `#navMenu`, `.menuHere`; the "Menu ▾" hint went, Uriah Oct 2026); the portal opens on
   Applications, which is the first item in the menu (`#navCrm`). The menu is a drawer that
   slides in from the right over a backdrop (`#staffMenu` fixed, `#menuScrim`, `body.menuOn`; ✕, the
   backdrop or Esc close it — a test that opens it must close it before clicking the page) with Applications, then two groups — Staff
