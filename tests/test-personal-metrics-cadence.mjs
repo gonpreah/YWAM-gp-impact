@@ -64,7 +64,7 @@ await p.waitForTimeout(600);
 await p.click('nav.bottom [data-tab="ministry"]');
 await p.waitForTimeout(700);
 // the overseer's own leadership figures are the LAST pick, never the default — pick them
-await p.click('[data-mmpick="Campus Leadership|Community Service"]');
+await p.click('#mmSwitch', { timeout: 1500 }).catch(() => {}); await p.waitForTimeout(250); await p.click('[data-mmpick="Campus Leadership|Community Service"]');
 await p.waitForTimeout(500);
 /* Campus Leadership's weekly figures are hidden for now: its own row is its
    OKRs and the Monday meeting board instead. While they are hidden there is

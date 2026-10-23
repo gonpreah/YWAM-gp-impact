@@ -772,74 +772,91 @@ function mmOptionLabel_(o){
   if(o.dept===BL_DEPT) return '🧭 '+orgTitleText_(blTitleOf_(o.min))+(o.role==='main' ? ' · '+t('you') : '');
   return (MIN_EMOJI[o.min]?MIN_EMOJI[o.min]+' ':'')+t(o.min);
 }
-function mmPickerHtml_(opts, sel){
-  if(opts.length<2) return '';
-  var depts=[]; opts.forEach(function(o){ if(depts.indexOf(o.dept)===-1) depts.push(o.dept); });
-  var h='<div class="mmPick"><div class="weekNavLabel">'+esc(t('Which ministry'))+'</div>';
-  if(opts.length<=8 && !S.me.isAdmin){
-    h+='<div class="deptChips">'+opts.map(function(o){
-      var on=o.dept===sel.dept && o.min===sel.min;
-      return '<button class="deptChip'+(on?' on':'')+'" data-mmpick="'+esc(o.dept)+'|'+esc(o.min)+'">'+esc(mmOptionLabel_(o))+'</button>'; }).join('')+'</div>';
-    return h+'</div>';
-  }
-  var mins=opts.filter(function(o){ return o.dept===sel.dept; });
-  h+='<div class="pickerRow" style="margin-top:4px">'+
-    '<label class="pick"><span>'+esc(t('Department'))+'</span><select id="mmBrowseDeptSel"'+(depts.length<2?' disabled':'')+'>'+
-      depts.map(function(d){ return '<option value="'+esc(d)+'"'+(sel.dept===d?' selected':'')+'>'+esc(t(d))+'</option>'; }).join('')+
-    '</select></label>'+
-    '<label class="pick"><span>'+esc(t('Ministry'))+'</span><select id="mmBrowseMinSel"'+(mins.length<2?' disabled':'')+'>'+
-      mins.map(function(o){ return '<option value="'+esc(o.min)+'"'+(sel.min===o.min?' selected':'')+'>'+esc(mmOptionLabel_(o))+'</option>'; }).join('')+
-    '</select></label></div>';
-  return h+'</div>';
+/* ---------- My Ministry's shell (Oct 2026, Uriah: "so cluttered, a lot of boxes") ----------
+   One flat header — the ministry's name, where it sits, Switch ▾ to pick another (a sheet,
+   grouped by department, with a search for admins) — then ONE row of tabs for that ministry
+   (the Cafe: Today · Till · Rota · Week · Numbers · Tasks · OKRs; most: Numbers · Schedule ·
+   Tasks · OKRs; Campus Leadership: its own tabs), and the tab's content as flat sections under
+   hairlines, not cards in cards. Stats are a strip, not a grid of boxes. */
+function mmPickerHtml_(opts, sel){   // the Switch ▾ sheet
+  if(!S.mmPickOpen || opts.length<2) return '';
+  var q=String(S.mmPickQ||'').trim().toLowerCase(), depts=[];
+  opts.forEach(function(o){ if(depts.indexOf(o.dept)===-1) depts.push(o.dept); });
+  var h='<div class="scrim" id="mmPickScrim"></div><div class="gtSheet mmSheet" id="mmPickSheet" role="dialog" aria-label="'+esc(t('Which ministry'))+'">'+
+    '<div class="gtSheetHead"><b>'+esc(t('Which ministry'))+'</b></div>'+
+    (opts.length>8 ? '<label class="gtFind">'+gptIc_('search')+'<input type="search" id="mmPickFind" value="'+esc(S.mmPickQ||'')+'" placeholder="'+esc(t('Search a ministry'))+'" autocomplete="off"></label>' : '')+
+    '<div class="gtPick mmPickList">';
+  var any=false;
+  depts.forEach(function(d){
+    var ms=opts.filter(function(o){ return o.dept===d && (!q || (mmOptionLabel_(o)+' '+o.min+' '+t(d)+' '+d).toLowerCase().indexOf(q)>-1); });
+    if(!ms.length) return; any=true;
+    h+='<div class="gtPickDept">'+esc(t(d))+'</div>'+ms.map(function(o){ var on=o.dept===sel.dept && o.min===sel.min;
+      return '<button class="gtPickIt'+(on?' on':'')+'" data-mmpick="'+esc(o.dept)+'|'+esc(o.min)+'">'+mmOptionLabel_(o)+(on ? ' <span class="hint">✓</span>' : '')+'</button>'; }).join('');
+  });
+  if(!any) h+='<p class="sub" style="margin:6px 0">'+esc(t('No ministry by that name.'))+'</p>';
+  return h+'</div></div>';
 }
-function mmBannerHtml_(sel, mine){
+function mmHeadHtml_(opts, sel, mine){
   var isBL = sel.dept===BL_DEPT;
   var name = isBL ? t('Campus Leadership') : t(sel.min);
   var emoji = isBL ? '🧭' : (MIN_EMOJI[sel.min]||'📊');
-  /* Campus Leadership's is one slim line — its page is the OKRs and the board */
-  if(isBL) return '<div class="card mmBanner slim leadBanner" id="mmBanner"><div class="mmBannerEmoji">'+emoji+'</div><div style="min-width:0">'+
-    '<div class="mmBannerName">'+esc(name)+'</div><div class="rowSub">'+esc(campusName(S.me.campus))+'</div></div></div>';
-  var h='<div class="card mmBanner" id="mmBanner"><div class="mmBannerEmoji">'+emoji+'</div><div style="min-width:0">'+
-    '<div class="mmBannerName">'+esc(name)+'</div>'+
-    '<div class="rowSub">'+esc(isBL ? t('OKRs and the Monday leadership meeting') : t(sel.dept))+' · '+esc(campusName(S.me.campus))+'</div>';
   var leaders = isBL ? [] : ministryLeaders_(S.me.campus, sel.dept, sel.min);
-  if(leaders.length) h+='<div class="rowSub">👑 '+esc(t('Led by'))+' '+leaders.map(function(p){ return esc(p.name); }).join(', ')+'</div>';
-  var note = isBL ? 'Campus Leadership tracks its OKRs here, not weekly numbers.'
-    : mine ? 'Your main ministry — you are entering its numbers.'
-    : sel.role==='member' ? 'One of your ministries — you are entering its numbers.'
-    : sel.role==='leader' ? 'You lead this ministry — you are entering its numbers.'
-    : sel.role==='admin' ? 'As an admin you can see and enter this ministry’s numbers.'
-    : 'You are entering numbers for this ministry.';
-  h+='<div class="mmBannerNote">'+esc(t(note))+'</div>';
-  return h+'</div></div>';
+  var sub=[isBL ? '' : t(sel.dept), campusName(S.me.campus)].filter(Boolean).join(' · ');
+  if(leaders.length) sub+=' · 👑 '+esc(t('Led by'))+' '+leaders.map(function(p){ return esc(p.name); }).join(', ');
+  var note = isBL ? '' : mine ? t('Your main ministry — you are entering its numbers') : sel.role==='member' ? t('One of your ministries — you are entering its numbers') : sel.role==='leader' ? t('You lead this ministry — you are entering its numbers') : sel.role==='admin' ? t('As an admin you can see and enter its numbers') : sel.role==='oversee' ? t('Viewing as its director') : '';
+  return '<div class="mmHead'+(isBL?' leadBanner':'')+'" id="mmBanner"><div class="eyebrow">'+esc(t('My Ministry'))+'</div>'+
+    '<div class="mmHeadRow"><span class="mmBannerEmoji">'+emoji+'</span><div class="mmHeadText"><div class="mmBannerName">'+esc(name)+'</div><div class="rowSub">'+sub+(note ? ' · <span class="mmBannerNote">'+esc(note)+'</span>' : '')+'</div></div>'+
+    (opts.length>1 ? '<button class="mmSwitch" id="mmSwitch" aria-haspopup="dialog">'+esc(t('Switch'))+' ▾</button>' : '')+'</div></div>';
+}
+/* the one row of tabs: [key, label, attr] — most keys are data-mmtab; a tool's own keys keep their
+   own attribute (data-cafetab, data-fintab) so the tool's handlers work as before */
+function mmTabsHtml_(tabs, cur, extraClass){
+  return '<div class="gtBar mmTabsBar"><div class="gtTabs mmTabs'+(extraClass?' '+extraClass:'')+'" role="tablist">'+tabs.map(function(x){
+    return '<button class="gtTab'+(cur===x[0]?' on':'')+'" '+(x[2]||'data-mmtab')+'="'+esc(x[0])+'" role="tab">'+esc(x[1])+'</button>'; }).join('')+'</div></div>';
+}
+var MM_SHELL_KEYS=['numbers','sched','tasks','okr','teams'];
+function mmTabsFor_(sel, mine, schedH){
+  var out=[];
+  if(sel.dept==='Community Service' && sel.min==='Cafe'){
+    out=[['today',t('Today'),'data-cafetab'],['till',t('Till'),'data-cafetab'],['rota',t('Rota'),'data-cafetab'],['week',t('Week'),'data-cafetab']].concat(S.cafe && S.cafe.canSetup ? [['setup',t('Set up'),'data-cafetab']] : []);
+    out.push(['numbers',t('Numbers')]);
+  } else if(sel.dept==='Skills Training' && sel.min==='Finances' && finCanEditClient_()){
+    out=[['reports',t('Reports'),'data-fintab'],['dash',t('Dashboard'),'data-fintab'],['numbers',t('Numbers')]];
+  } else if(isTeamsMinistry_(sel.dept, sel.min)){
+    out=[['teams',t('Teams')]];
+  } else out=[['numbers',t('Numbers')]];
+  if(schedH && !isTeamsMinistry_(sel.dept, sel.min)) out.push(['sched',t('Schedule')]);
+  if(sel.dept==='Skills Training' && sel.min==='Hospitality' && canHospClient_()) out.push(['goHosp',t('SR Hospitality'),'id']);   // a way in, not a tab (#goHosp opens it)
+  out.push(['tasks',t('Tasks')]); out.push(['okr',t('OKRs')]);
+  return out;
+}
+/* the tab you were on last time, per ministry, kept on this phone (the Cafe's old "tool or numbers" choice counts too) */
+function mmTabKey_(){ return (S.mmBrowseDept||'')+'|'+(S.mmBrowseMinistry||''); }
+function mmTabKeep_(k){ try { var m=JSON.parse(lsGet('gp-mm-tab')||'{}'); m[mmTabKey_()]=k; lsSet('gp-mm-tab', JSON.stringify(m)); } catch(e){} }
+function mmTabKept_(){ try { var m=JSON.parse(lsGet('gp-mm-tab')||'{}'); return m[mmTabKey_()] || (lsGet('gp-cafe-view')==='numbers' ? 'numbers' : ''); } catch(e){ return ''; } }
+function mmCurTab_(sel, tabs){
+  var keys=tabs.map(function(x){ return x[0]; });
+  if(MM_SHELL_KEYS.indexOf(S.mmTab)>-1 && keys.indexOf(S.mmTab)>-1) return S.mmTab;
+  if(S.mmTab==='ministry' && !S.mmTabTouched){ var kept=mmTabKept_(); if(kept && keys.indexOf(kept)>-1){ if(MM_SHELL_KEYS.indexOf(kept)>-1) S.mmTab=kept; else if(sel.min==='Cafe') S.cafeTab=kept; else S.finTab=kept; S.mmTabTouched=true; return kept; } }
+  if(sel.dept==='Community Service' && sel.min==='Cafe') return keys.indexOf(S.cafeTab)>-1 ? S.cafeTab : 'today';
+  if(sel.dept==='Skills Training' && sel.min==='Finances' && finCanEditClient_()) return S.finTab==='numbers' ? 'numbers' : (keys.indexOf(S.finTab)>-1 ? S.finTab : 'reports');
+  return keys[0];
 }
 function myMinistryHtml(){
   var h='<button class="linkbtn" id="ministryBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('My Home'))+'</button>';
-  h+='<h2>'+esc(t('My Ministry'))+'</h2>';
   var opts=mmOptions_(), sel=mmSelected_(opts);
-  /* Campus Leadership's own row has no Numbers / OKRs switch on top (Uriah, Oct 2026): its OKRs
-     are a tab beside My department, Board, My week and Finances (LW tabs). */
-  var selMine = !!sel && sel.dept===S.me.dept && (sel.dept===BL_DEPT ? sel.min===blMyKey_() : sel.min===S.me.ministry);
-  var leadRow = !!(sel && sel.dept===BL_DEPT && ((selMine && S.me.ministry) || (!selMine && blViewOf_(sel.min))));   // the rows with LW tabs
-  /* anything that asks for "the OKRs tab" (S.mmTab='okr') lands on a leadership row's own OKRs tab */
-  if(leadRow && S.mmTab==='okr'){ S.lwTab='okrs'; S.mmTab='ministry'; }
-  /* No Numbers / OKRs / Tasks switch on top (Uriah, Oct 2026: "the numbers already show below"):
-     the numbers simply show, the OKRs are a small button by the title, and Ministry Tasks sits
-     under the department and ministry (mtFoldHtml_). */
-  var tab = S.mmTab==='okr' && !leadRow ? 'okr' : 'ministry';
-  if(tab==='okr') return h+'<button class="linkbtn" data-mmtab="ministry" style="text-align:left;text-decoration:none;padding-left:0;margin-top:-6px">← '+esc(t('Back to the numbers'))+'</button>'+okrTabHtml_();
-  if(!leadRow) h=h.replace('<h2>'+esc(t('My Ministry'))+'</h2>', '<h2 class="secWithBtn">'+esc(t('My Ministry'))+'<button class="secBtn" data-mmtab="okr">🎯 '+esc(t('OKRs'))+' ›</button></h2>');
-
   if(!sel){
-    return h+'<div class="card"><p class="sub" style="margin:4px 0 10px">'+
+    return h+'<h2>'+esc(t('My Ministry'))+'</h2><div class="card"><p class="sub" style="margin:4px 0 10px">'+
       esc(t('Set your ministry on the Profile tab and your team’s KPIs will show up here, ready to log.'))+'</p>'+
       '<button class="btn ghost" id="goProfile">'+esc(t('Choose my ministry'))+'</button></div>';
   }
+  var selMine = sel.dept===S.me.dept && (sel.dept===BL_DEPT ? sel.min===blMyKey_() : sel.min===S.me.ministry);
+  var leadRow = !!(sel.dept===BL_DEPT && ((selMine && S.me.ministry) || (!selMine && blViewOf_(sel.min))));   // the rows with LW tabs
+  /* anything that asks for "the OKRs tab" (S.mmTab='okr') lands on a leadership row's own OKRs tab */
+  if(leadRow && S.mmTab==='okr'){ S.lwTab='okrs'; S.mmTab='ministry'; }
   S.mmBrowseDept=sel.dept; S.mmBrowseMinistry=sel.min;
-  var mine = sel.dept===S.me.dept && (sel.dept===BL_DEPT ? sel.min===blMyKey_() : sel.min===S.me.ministry);
-  h+=mmPickerHtml_(opts, sel);
-  h+=mmBannerHtml_(sel, mine);
-  if(!leadRow && sel.dept!==BL_DEPT) h+=mtFoldHtml_(sel);   // ✅ Ministry Tasks, folded, under the ministry
+  var mine = selMine;
+  h+='<div class="mmPage">'+mmHeadHtml_(opts, sel, mine)+mmPickerHtml_(opts, sel);
   // Campus Leadership: its OKRs and the Monday meeting board, no weekly numbers (hidden for now)
   S.leadShown = sel.dept===BL_DEPT;
   if(S.leadShown){
@@ -862,96 +879,78 @@ function myMinistryHtml(){
         var myTitle=orgTitleOf_(S.me);
         if(myTitle) h+='<div class="orgYou">🧭 '+esc(gpT('Your role: {title}',{title:orgTitleText_(myTitle)}))+'</div>';
       }
+      var TABS={ week:t('My week'), base: role==='dept' ? (view ? t(view.key) : t('My department')) : t('Overview'), money:t('Finances'), board:t('Board'), okrs:t('OKRs') };
+      h+=mmTabsHtml_(tabList.map(function(k){ return [k, TABS[k], 'data-lwtab']; }), lwt, 'lwSeg');
       if(R.focus) h+='<p class="hint lwFocus">'+esc(t(R.focus))+'</p>';
-      var TABS={ tasks:['✅',t('Ministry Tasks')], week:['🗓️',t('My week')], base: role==='dept' ? ['🗂️',view ? t(view.key) : t('My department')] : ['🧭',t('Overview')], money:['💵',t('Finances')], board:['📋',t('Board')], okrs:['🎯',t('OKRs')] };
-      h+='<div class="campusSeg lwSeg" style="max-width:none">'+tabList.map(function(k){
-        return '<button class="campusBtn'+(lwt===k?' on':'')+'" data-lwtab="'+k+'">'+TABS[k][0]+' '+esc(TABS[k][1])+'</button>'; }).join('')+'</div>';
-      if(lwt==='week') return h+lwHtml_();
-      /* the base's finances, from the Finances office's reports (teams/09-finance.js) */
-      /* the QuickBooks card too, for whoever may connect it (an admin, the Finances office) —
-         on Campus Leadership's Finances tab, where they look for it, not only the office's page */
-      if(lwt==='money') return h+(S.fin && S.fin.canEdit ? finQboHtml_(S.fin) : '')+finDashHtml_();
-      /* the OKRs page itself — yours, leadership's, and (admins) every department's */
-      if(lwt==='okrs') return h+okrTabHtml_();
-      /* GP Tasks: every list on the campus, narrowed by the filter they keep (12-tasks.js) */
-      if(lwt==='tasks'){ S.gptFrom='ministry'; return h+gptPageHtml_(null, true); }
-      // the role's own numbers first; who is on the leadership team at the foot
-      if(lwt==='base') return h+leadBaseHtml_(ph)+orgCltCardHtml_(S.me.campus);
-      return h+leadSectionHtml_();
+      var pane;
+      if(lwt==='week') pane=lwHtml_();
+      // the base's finances, from the Finances office's reports (teams/09-finance.js) — with the
+      // QuickBooks card on top for whoever may connect it (an admin, the Finances office)
+      else if(lwt==='money') pane=(S.fin && S.fin.canEdit ? finQboHtml_(S.fin) : '')+finDashHtml_();
+      else if(lwt==='okrs') pane=okrTabHtml_();   // the OKRs page itself — yours, leadership's, and (admins) every department's
+      else if(lwt==='base') pane=leadBaseHtml_(ph)+orgCltCardHtml_(S.me.campus);   // the role's own numbers first; who is on the leadership team at the foot
+      else pane=leadSectionHtml_();
+      return h+'<div class="mmPane">'+pane+'</div></div>';
     }
-    return h+ph+orgCltCardHtml_(S.me.campus)+leadOkrDashHtml_()+leadSectionHtml_();
+    return h+'<div class="mmPane">'+ph+orgCltCardHtml_(S.me.campus)+leadOkrDashHtml_()+leadSectionHtml_()+'</div></div>';
   }
-  /* The Cafe runs its day here — open, sell, close, the rota — and its numbers
-     fill themselves in; the usual numbers are a tab away. */
-  if(sel.dept==='Community Service' && sel.min==='Cafe'){
-    h+='<div class="campusSeg" style="max-width:none"><button class="campusBtn'+(S.cafeView!=='numbers'?' on':'')+'" data-cafeview="tool">☕ '+esc(t('Cafe tool'))+'</button>'+
-      '<button class="campusBtn'+(S.cafeView==='numbers'?' on':'')+'" data-cafeview="numbers">📊 '+esc(t('The numbers'))+'</button></div>';
-    if(S.cafeView!=='numbers') return h+cafeHtml_();
-    h+='<p class="hint">'+esc(t('When the cafe tool is used, these numbers fill themselves in from it.'))+'</p>';
-  }
-
-  /* The Finances office runs the month's reports here (teams/09-finance.js), sees
-     what leadership sees, and its usual numbers are the third tab. */
-  if(sel.dept==='Skills Training' && sel.min==='Finances' && finCanEditClient_()){
-    h+=finMinistryTabsHtml_();
-    if(S.finTab==='reports') return h+finReportsHtml_();
-    if(S.finTab==='dash') return h+finDashHtml_();
-  }
-
-  if(sel.dept==='Skills Training' && sel.min==='Hospitality' && canHospClient_()){
-    h+='<div class="card"><p class="sub" style="margin:0 0 10px">'+esc(t('Rooms, beds and bookings for guests, speakers, teams, students and volunteers — and team requests from the portal.'))+'</p>'+
-      '<button class="btn" id="goHosp" style="margin-top:0">🌺 '+esc(t('Open SR Hospitality'))+'</button></div>';
-  }
-  /* The week's numbers come first — status, who is responsible, and the boxes
-     themselves, already open when the week has nothing in yet — and the
-     schedules and the at-a-glance charts after them: they are for reading,
-     the numbers are what this page is for. */
   var schedH = (typeof dutyHtml==='function') ? schedMinistryHtml_(sel.dept, sel.min) : '';
-  if(isTeamsMinistry_(sel.dept, sel.min)){
-    h+=schedH;
-    h+='<div class="card"><p class="sub" style="margin:0 0 10px">'+
+  var tabs=mmTabsFor_(sel, mine, schedH), cur=mmCurTab_(sel, tabs);
+  if(sel.dept==='Community Service' && sel.min==='Cafe' && cur!=='numbers' && MM_SHELL_KEYS.indexOf(cur)===-1) S.cafeTab=cur;
+  h+=mmTabsHtml_(tabs, cur);
+  var pane='';
+  if(cur==='okr') pane=okrTabHtml_();
+  else if(cur==='tasks'){ S.gptFrom='ministry'; pane=gptPageHtml_({ dept:sel.dept, min:sel.min }, true); }
+  else if(cur==='sched') pane=schedH;
+  else if(cur==='teams'){
+    pane=schedH+'<div class="card"><p class="sub" style="margin:0 0 10px">'+
       esc(t('Teams are entered one at a time, once their visit is over — not week by week. Each team counts in the week it leaves, and the Base dashboard picks it up from there.'))+'</p>'+
       '<button class="btn" id="goTeamsDb" style="margin-top:0">🗂️ '+esc(t('Open the Teams Database'))+'</button></div>';
-  } else if(mine){
-    var wk=kpiViewWeek(), akey=sel.dept+'|'+sel.min+'|'+wk;
-    if(S.ministry && S.kpiAutoKey!==akey){
-      S.kpiAutoKey=akey;
-      S.kpiInputOpen=!ministryWeekLogged_(S.ministry, wk);
-      if(S.kpiInputOpen){ S.dbAcc.kpiDay=true; S.dbAcc.kpiWeek=true; S.dbAcc.kpiMonth=true; S.dbAcc.kpiQuarter=true; }
-    }
-    h+=ministryWeekStatusHtml_(S.ministry, wk, null);
-    if(S.kpiInputOpen) h+=kpiCardHtml(wk);
-    if(sel.dept==='Skills Training' && sel.min==='Finances') h+=staffDebtCardHtml_();
-    h+=schedH;
-    h+=ministryDashboardHtml_(S.me.campus, sel.dept, sel.min, S.ministry);
-  } else {
-    var data=S.oversee[sel.min];
-    if(!data && S.ovError[sel.min]){
-      h+='<div class="card"><p class="sub" style="margin:0 0 8px">⚠️ '+esc(gpT('Couldn’t load {ministry}’s numbers.',{ministry:t(sel.min)}))+'</p>'+
-        '<p class="hint" style="margin:0 0 8px;overflow-wrap:anywhere">'+esc(S.ovError[sel.min])+'</p>'+
-        '<button class="btn ghost" id="ovRetry" data-ministry="'+esc(sel.min)+'" style="margin-top:0">'+esc(t('Try again'))+'</button></div>';
-    }
-    else if(!data) h+='<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
-    else {
-      var owk=ovWeekFor_(sel.min), okey=sel.dept+'|'+sel.min+'|'+owk;
-      S.ovAutoKey=S.ovAutoKey||{};
-      if(S.ovAutoKey[sel.min]!==okey){ S.ovAutoKey[sel.min]=okey; S.ovInputOpen[sel.min]=!ministryWeekLogged_(data, owk); }
-      h+=ministryWeekStatusHtml_(data, owk, sel.min);
-      if(S.ovInputOpen[sel.min]) h+=ovWeekRowsHtml_(sel.dept, sel.min, data, owk);
-      if(sel.dept==='Skills Training' && sel.min==='Finances') h+=staffDebtCardHtml_();
-      h+=schedH;
-      h+=ministryDashboardHtml_(S.me.campus, sel.dept, sel.min, data);
-    }
-    if(!data) h+=schedH;
   }
-
-  if(canEditMetricsClient_(S.me.campus, sel.dept, sel.min)){
-    S.metricEditTarget = { campus:S.me.campus, dept:sel.dept, ministry:sel.min };
-    h+='<div class="accCard">'+accRowHtml('dbAcc', 'kpiMetrics', '⚙️ '+esc(t('Edit what we track')),
-      esc(t('Add, rename or remove metrics; move a count to monthly or quarterly')),
-      function(){ return metricEditorHtml_(S.me.campus, sel.dept, sel.min); })+'</div>';
+  else if(cur==='reports') pane=finReportsHtml_();
+  else if(cur==='dash') pane=finDashHtml_();
+  else if(cur!=='numbers') pane=cafeHtml_(true);   // the Cafe runs its day here — open, sell, close, the rota — and its numbers fill themselves in
+  else {
+    /* The week's numbers — status, who is responsible, and the boxes themselves, already open when
+       the week has nothing in yet — then the at-a-glance figures. */
+    if(sel.dept==='Community Service' && sel.min==='Cafe') pane+='<p class="hint">'+esc(t('When the cafe tool is used, these numbers fill themselves in from it.'))+'</p>';
+    if(mine){
+      var wk=kpiViewWeek(), akey=sel.dept+'|'+sel.min+'|'+wk;
+      if(S.ministry && S.kpiAutoKey!==akey){
+        S.kpiAutoKey=akey;
+        S.kpiInputOpen=!ministryWeekLogged_(S.ministry, wk);
+        if(S.kpiInputOpen){ S.dbAcc.kpiDay=true; S.dbAcc.kpiWeek=true; S.dbAcc.kpiMonth=true; S.dbAcc.kpiQuarter=true; }
+      }
+      pane+=ministryWeekStatusHtml_(S.ministry, wk, null);
+      if(S.kpiInputOpen) pane+=kpiCardHtml(wk);
+      if(sel.dept==='Skills Training' && sel.min==='Finances') pane+=staffDebtCardHtml_();
+      pane+=ministryDashboardHtml_(S.me.campus, sel.dept, sel.min, S.ministry);
+    } else {
+      var data=S.oversee[sel.min];
+      if(!data && S.ovError[sel.min]){
+        pane+='<div class="card"><p class="sub" style="margin:0 0 8px">⚠️ '+esc(gpT('Couldn’t load {ministry}’s numbers.',{ministry:t(sel.min)}))+'</p>'+
+          '<p class="hint" style="margin:0 0 8px;overflow-wrap:anywhere">'+esc(S.ovError[sel.min])+'</p>'+
+          '<button class="btn ghost" id="ovRetry" data-ministry="'+esc(sel.min)+'" style="margin-top:0">'+esc(t('Try again'))+'</button></div>';
+      }
+      else if(!data) pane+='<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
+      else {
+        var owk=ovWeekFor_(sel.min), okey=sel.dept+'|'+sel.min+'|'+owk;
+        S.ovAutoKey=S.ovAutoKey||{};
+        if(S.ovAutoKey[sel.min]!==okey){ S.ovAutoKey[sel.min]=okey; S.ovInputOpen[sel.min]=!ministryWeekLogged_(data, owk); }
+        pane+=ministryWeekStatusHtml_(data, owk, sel.min);
+        if(S.ovInputOpen[sel.min]) pane+=ovWeekRowsHtml_(sel.dept, sel.min, data, owk);
+        if(sel.dept==='Skills Training' && sel.min==='Finances') pane+=staffDebtCardHtml_();
+        pane+=ministryDashboardHtml_(S.me.campus, sel.dept, sel.min, data);
+      }
+    }
+    if(canEditMetricsClient_(S.me.campus, sel.dept, sel.min)){
+      S.metricEditTarget = { campus:S.me.campus, dept:sel.dept, ministry:sel.min };
+      pane+='<div class="accCard">'+accRowHtml('dbAcc', 'kpiMetrics', '⚙️ '+esc(t('Edit what we track')),
+        esc(t('Add, rename or remove metrics; move a count to monthly or quarterly')),
+        function(){ return metricEditorHtml_(S.me.campus, sel.dept, sel.min); })+'</div>';
+    }
   }
-  return h;
+  return h+'<div class="mmPane">'+pane+'</div></div>';
 }
 
 /* ---------- Human Resources ----------
@@ -1203,7 +1202,10 @@ function candFormHtml_(){
   h+='<div class="teamGrid2">'+inp('subtype', t('Khmer / International'), 'text', ' maxlength="60" placeholder="'+esc(t('e.g. International'))+'"')+inp('school', t('School (students)'), 'text', ' maxlength="80" placeholder="DTS, DBS…"')+'</div>';
   h+='<div class="teamGrid2">'+inp('email', t('Email'), 'email', ' maxlength="120"')+inp('phone', t('Phone / WhatsApp'), 'tel', ' maxlength="60"')+'</div>';
   h+='<div class="teamGrid2">'+inp('country', t('Country'), 'text', ' maxlength="60"')+inp('source', t('How they found us'), 'text', ' maxlength="120" placeholder="'+esc(t('e.g. DTS outreach, website, a friend'))+'"')+'</div>';
-  h+='<label class="f">'+esc(t('Who is walking with them'))+'</label><select data-cf="assignedTo"><option value="">'+esc(t('— nobody yet —'))+'</option>'+
+  h+='<label class="f">'+esc(t('Who is walking with them'))+'</label>'+
+    ppickHtml_({ key:'cand', people:S.roster.slice().sort(function(a,b){ return a.name<b.name?-1:1; }).map(function(p){ return { id:p.id, name:p.name, sub:t(p.ministry||p.dept||''), first:true, group:'' }; }), chosen:f.assignedTo ? [f.assignedTo] : [], multi:false, open:true, placeholder:t('Type a name…'),
+      onPick:function(id){ S.candForm=S.candForm||f; S.candForm.assignedTo=id; render(); }, onRemove:function(){ S.candForm=S.candForm||f; S.candForm.assignedTo=''; render(); } })+
+    '<select data-cf="assignedTo" hidden aria-hidden="true"><option value="">'+esc(t('— nobody yet —'))+'</option>'+
     S.roster.slice().sort(function(a,b){ return a.name<b.name?-1:1; }).map(function(p){ return '<option value="'+esc(p.id)+'"'+(f.assignedTo===p.id?' selected':'')+'>'+esc(p.name)+'</option>'; }).join('')+'</select>';
   h+='<div class="teamGrid2">'+inp('expected', t('Expected arrival'), 'month')+'<div></div></div>';
   h+='<h4 style="margin:14px 0 4px">'+esc(t('Next step'))+'</h4>';
@@ -1284,8 +1286,17 @@ function hrContractCardHtml_(p, c, isCurrent){
     '<button class="linkbtn inline" data-hredit="'+esc(c.id)+'">'+esc(t('Edit'))+'</button></div>';
   if(c.digital){
     var dg=c.digital;
-    if(dg.status!=='signed') h+='<div class="hrDigital waiting">✍️ '+esc(gpT('Not signed yet — fill it out with {name}: they sign, then you sign to approve',{name:p.name}))+'</div>'+
-      '<a class="btn small" href="portal.html?staff=1&hr='+encodeURIComponent(p.id)+'&doc='+encodeURIComponent('contract:'+c.id)+'" data-hrfillout="'+esc(c.id)+'">✍️ '+esc(t('Fill out and sign now'))+'</a>';
+    var signUrl='portal.html?staff=1&hr='+encodeURIComponent(p.id)+'&doc='+encodeURIComponent('contract:'+c.id);
+    if(dg.status==='awaiting_leader') h+='<div class="hrDigital waiting">✍️ '+esc(gpT('{name} signed it on {date} through the link — your approval makes it their contract',{name:dg.staffName||p.name, date:fmtDateShort_(dg.staffSignedAt||'')}))+'</div>'+
+      '<a class="btn small" href="'+signUrl+'" data-hrapprove="'+esc(c.id)+'">✅ '+esc(t('Approve and sign'))+'</a>';
+    else if(dg.status!=='signed'){
+      /* the one-time link (Uriah, Oct 2026): send it, and they fill it out and sign on their own phone */
+      var link=dg.linkToken ? location.href.replace(/[^\/]*(\?.*)?$/, '')+'portal.html?contract='+dg.linkToken : '';
+      h+='<div class="hrDigital waiting">✍️ '+esc(gpT('Not signed yet — send {name} this link. They read it, fill it in and sign on their own phone; you approve it here.',{name:p.name}))+'</div>'+
+        (link ? '<div class="hrLinkRow"><input type="text" id="hrContractLink" readonly value="'+esc(link)+'" aria-label="'+esc(t('Link'))+'"><button class="btn small" data-hrcopylink="'+esc(link)+'">'+esc(t('Copy'))+'</button>'+
+          (navigator.share ? '<button class="btn small ghost" data-hrsharelink="'+esc(link)+'">'+esc(t('Share'))+'</button>' : '')+'</div>' : '')+
+        '<p class="hint" style="margin:6px 0 0">'+esc(t('No phone of their own at hand?'))+' <a class="linkbtn inline" href="'+signUrl+'" data-hrfillout="'+esc(c.id)+'">'+esc(t('Fill it out together on this one'))+'</a></p>';
+    }
     else h+='<div class="hrDigital done">✅ '+esc(gpT('Signed by {name} · approved by {leader}',{name:dg.staffName||p.name, leader:dg.leaderName||''}))+'</div>'+
       '<button class="btn ghost small" data-hrcontractpdf="'+esc(c.id)+'">📄 '+esc(t('Signed contract (PDF)'))+'</button>';
     return h+'</div>';
@@ -1303,17 +1314,18 @@ function hrContractCardHtml_(p, c, isCurrent){
     '<input type="file" accept="application/pdf,image/*" data-hrattach="'+esc(c.id)+'" style="display:none"></label>';
   return h+'</div>';
 }
-/* Fill out the Volunteer Staff Contract with them, in person, on this phone:
-   its first month and length (a paper one being redone keeps its own), then
-   the signing page — they sign, HR signs to approve. */
+/* Send the Volunteer Staff Contract (Andrew, Oct 2026: "move it toward the link where they read it
+   and sign"): its first month and length (a paper one being redone keeps its own), then the one-time
+   link — they read, fill in and sign on their own phone; HR approves here. Filling it out together on
+   this phone stays as the second way, on the contract's card. */
 function hrSendFormHtml_(p){
-  var f=S.hrSendForm;
-  return '<div class="card" id="hrSendForm"><h3 style="margin-top:0">✍️ '+esc(t('Fill out staff contract'))+'</h3><p class="sub" style="margin:0 0 8px">'+
-    esc(gpT('Do it together on this phone: {name} reads the Volunteer Staff Contract, fills in their commitment and signs. Then you sign to approve it, and it becomes their contract.',{name:p.name}))+'</p>'+
+  var f=S.hrSendForm, first=(p.name||'').split(' ')[0];
+  return '<div class="card" id="hrSendForm"><h3 style="margin-top:0">✍️ '+esc(t('Send staff contract'))+'</h3><p class="sub" style="margin:0 0 8px">'+
+    esc(gpT('{name} gets a one-time link: on their own phone they read the Volunteer Staff Contract, fill in their commitment and sign. You then approve it here, and it becomes their contract.',{name:p.name}))+'</p>'+
     (f.redo ? '<p class="hint" style="margin:0 0 8px">'+esc(t('Redoing their paper contract? The month and years below are from it.'))+'</p>' : '')+
     '<div class="teamGrid2"><div><label class="f">'+esc(t('From (month)'))+'</label><input type="month" id="hr_send_from" value="'+esc(f.from||'')+'"></div>'+
     '<div><label class="f" for="hr_send_years">'+esc(t('Years'))+'</label><input type="number" id="hr_send_years" inputmode="decimal" min="0.25" max="30" step="0.25" value="'+esc(f.years==null?'':String(f.years))+'" placeholder="2"></div></div>'+
-    '<button class="btn" id="hrSendSave"'+(S.busy?' disabled':'')+'>'+esc(gpT('Start — hand the phone to {name}',{name:(p.name||'').split(' ')[0]}))+'</button><button class="btn ghost" id="hrSendCancel">'+esc(t('Cancel'))+'</button></div>';
+    '<button class="btn" id="hrSendSave"'+(S.busy?' disabled':'')+'>'+esc(gpT('Make the link for {name}',{name:first}))+'</button><button class="btn ghost" id="hrSendCancel">'+esc(t('Cancel'))+'</button></div>';
 }
 /* ==================== My contract (☰ menu, every staff member) ====================
    Their own HR profile, read-only apart from their start dates: time in YWAM
@@ -1473,7 +1485,7 @@ function hrPersonHtml_(p){
   list.forEach(function(c){ h+=hrContractCardHtml_(p, c, cur && c.id===cur.id); });
   if(S.hrContractForm && S.hrContractForm.staffId===p.id) h+=hrContractFormHtml_(p);
   else if(S.hrSendForm && S.hrSendForm.staffId===p.id) h+=hrSendFormHtml_(p);
-  else if(!p.archived) h+='<div class="hrContractBtns"><button class="btn" id="hrSendContract" style="margin-top:0">✍️ '+esc(t('Fill out staff contract'))+'</button>'+
+  else if(!p.archived) h+='<div class="hrContractBtns"><button class="btn" id="hrSendContract" style="margin-top:0">✍️ '+esc(t('Send staff contract'))+'</button>'+
     '<button class="btn ghost" id="hrAddContract" style="margin-top:0">＋ '+esc(list.length ? t('Add a paper renewal') : t('Add a paper contract'))+'</button></div>';
   h+=hrLegalHtml_(p);
 

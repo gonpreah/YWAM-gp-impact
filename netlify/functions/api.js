@@ -1421,7 +1421,10 @@ const MAX_HABITS = 8;
 /* Oct 2026 (Uriah): a habit can be your own ("c_" + a slug, with its label and
    emoji), and each one has a schedule — `days` is the weekdays it is due
    (0 Sunday … 6 Saturday); absent means every day. The page only asks about
-   a habit on its days, and its streak counts those days alone. */
+   a habit on its days, and its streak counts those days alone. Or `perWeek`
+   (Uriah, Oct 2026: "sometimes with a busy schedule we do it on other days"):
+   so many days a week, 1–6, marked as you go on whichever days they happen;
+   then no `days`. */
 const CUSTOM_HABIT_ID = /^c_[a-z0-9]{1,24}$/;
 function cleanHabitDays_(v) {
   if (!Array.isArray(v)) return null;
@@ -1440,8 +1443,9 @@ function cleanHabitConfig_(list) {
   }).slice(0, MAX_HABITS).map(function (h) {
     const out = { id: h.id, mentorVisible: !!h.mentorVisible };
     if (HABIT_IDS.indexOf(h.id) === -1) { out.label = str_(h.label, 40); out.icon = str_(h.icon, 8) || '⭐'; }
-    const days = cleanHabitDays_(h.days);
-    if (days) out.days = days;
+    const perWeek = Number(h.perWeek);
+    if (Number.isInteger(perWeek) && perWeek >= 1 && perWeek <= 6) out.perWeek = perWeek;
+    else { const days = cleanHabitDays_(h.days); if (days) out.days = days; }
     return out;
   });
 }
@@ -4063,6 +4067,7 @@ async function respondToOneOnOne(username, pin, requestId, approve, when) {
   r.decidedAt = now; r.updated = now;
   if (at) { r.when = at; r.whenBy = s.id; r.whenAt = now; }
   await writeJSON('oneOnOnes', rows);
+  if (at || !approve) await gptFromOneOnOne_(r);   // in both people's My Tasks, with its day and time
   if (!approve) await pushNow_(r.fromId, 'ooDeclined', { name: s.name }, 'teams.html?view=mentor');
   else if (at) await pushNow_(r.fromId, 'ooSet', function (lang) { return { name: s.name, when: ooWhenText_(at, lang) }; }, 'teams.html?view=mentor');
   return getMyOneOnOnes(username, pin);
@@ -4079,6 +4084,7 @@ async function setOneOnOneTime(username, pin, id, when) {
   const now = new Date().toISOString();
   r.when = at; r.whenBy = s.id; r.whenAt = now; r.updated = now;
   await writeJSON('oneOnOnes', rows);
+  await gptFromOneOnOne_(r);
   await pushNow_(r.fromId === s.id ? r.toId : r.fromId, 'ooSet', function (lang) { return { name: s.name, when: ooWhenText_(at, lang) }; }, 'teams.html?view=mentor');
   return getMyOneOnOnes(username, pin);
 }
@@ -4127,6 +4133,7 @@ async function saveOneOnOneNotes(username, pin, id, notes, followUps, heldOn) {
   r.followUps = ooFollowUps_(followUps);
   r.menteeId = menteeId; r.updated = new Date().toISOString();
   await writeJSON('oneOnOnes', rows);
+  if (r.when) await gptFromOneOnOne_(r);   // held → done in both people's My Tasks
   return getMyOneOnOnes(username, pin);
 }
 
@@ -4919,10 +4926,12 @@ const PUSH_TEXT = {
   p360ask: { en: 'A 360 review is waiting for your feedback ({n}).', km: 'ការវាយតម្លៃ 360 កំពុងរង់ចាំមតិរបស់អ្នក ({n})។' },
   p360plan: { en: 'Your 360 action plan’s {q} review is due.', km: 'ដល់ពេលពិនិត្យផែនការសកម្មភាព 360 របស់អ្នកសម្រាប់ {q} ហើយ។' },
   hr: { en: '{n} contracts end soon.', km: 'កិច្ចសន្យា {n} នឹងផុតកំណត់ឆាប់ៗនេះ។' },
+  listShared: { en: '{name} shared a task list with you: {title}', km: '{name} បានចែករំលែកបញ្ជីកិច្ចការជាមួយអ្នក៖ {title}' },
   taskAssigned: { en: '{name} gave you a task: {title}', km: '{name} បានផ្តល់ភារកិច្ចមួយដល់អ្នក៖ {title}' },
   taskRequest: { en: '{name} is asking your ministry for help: {title}', km: '{name} កំពុងសុំជំនួយពីក្រសួងរបស់អ្នក៖ {title}' },
   taskDeclined: { en: '{name} can’t take on: {title}', km: '{name} មិនអាចទទួលយក៖ {title}' },
   ooAsk: { en: '{name} asked you for a 1-on-1. Open Mentorship to set a time.', km: '{name} បានសុំជួបមួយទល់មួយជាមួយអ្នក។ បើកការណែនាំ ដើម្បីកំណត់ពេល។' },
+  contractSigned: { en: '{name} signed their staff contract — open their HR profile to approve it.', km: '{name} បានចុះហត្ថលេខាលើកិច្ចសន្យាបុគ្គលិករបស់ពួកគេ — បើកប្រវត្តិរូប HR របស់ពួកគេដើម្បីអនុម័ត។' },
   ooSet: { en: '{name} set your 1-on-1 for {when}.', km: '{name} បានកំណត់ការជួបមួយទល់មួយរបស់អ្នកនៅ {when}។' },
   ooDeclined: { en: '{name} can’t do the 1-on-1 you asked for.', km: '{name} មិនអាចជួបមួយទល់មួយដែលអ្នកបានសុំបានទេ។' },
   mentorAsk: { en: '{name} asked you to be their mentor.', km: '{name} បានសុំឲ្យអ្នកធ្វើជាគ្រូណែនាំរបស់គាត់។' },
@@ -6847,11 +6856,27 @@ function cleanLeadCard_(c, prev, d) {
     owner: str_(c.owner, 60) || '', due: isoDate_(c.due) || '',
     okrId: str_(c.okrId, 60) || '', meeting: isoDate_(c.meeting) || '',
     /* for a ministry (or a whole department, 'Dept|'): the card is also a task in its GP Tasks list */
-    taskMin: c.taskMin ? (function (k) { const p = String(k).split('|'); return p.length === 2 && p[0] ? normKey_(str_(p[0], 80) + '|' + str_(p[1], 80), 2) : ''; })(c.taskMin) : '',
+    taskMin: c.taskMin ? (function (k) { const p = String(k).split('|'); return p.length === 2 && p[0] ? normKey_((str_(p[0], 80) || '') + '|' + (str_(p[1], 80) || ''), 2) : ''; })(c.taskMin) : '',
     fromNotes: !!(c.fromNotes || (prev && prev.fromNotes))
   });
 }
 /* Add or change a card (including moving it to another column). */
+/* Who leads what (Andrew, Oct 2026: "make it easy to add the name of who leads what"): Campus Leadership and
+   admins name a ministry's leader from the overview — the same `leads` key an admin sets on the profile */
+async function setMinistryLeader(username, pin, dept, ministry, staffId, on) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  const key = normKey_((str_(dept, 80) || '') + '|' + (str_(ministry, 80) || ''), 2), kp = key.split('|');
+  if (kp.length !== 2 || !kp[0] || !kp[1]) return { ok: false, err: 'bad_ministry' };
+  const id = str_(staffId, 40); if (!id) return { ok: false, err: 'bad_staff' };
+  return mutateStaff_(function (rows) {
+    const r = rows.find(function (x) { return x.id === id; });
+    if (!r || isApplicant_(r) || r.active === false || r.archived || r.campus !== a.campus) return { abort: true, ok: false, err: 'not_found' };
+    const leads = leadsOf_(r).filter(function (k) { return k !== key; });
+    if (on) leads.push(key);
+    r.leads = cleanLeads_(leads);
+    return { ok: true, id: r.id, leads: r.leads.slice() };
+  });
+}
 async function saveLeadCard(username, pin, card) {
   const a = await leadAuth_(username, pin); if (a.out) return a.out;
   const d = await getLeadDoc_(a.campus), cards = d.cards;
@@ -6878,8 +6903,10 @@ async function deleteLeadCard(username, pin, id) {
   const d = await getLeadDoc_(a.campus);
   const idx = d.cards.findIndex(function (c) { return c.id === str_(id, 60); });
   if (idx === -1) return { ok: false, err: 'not_found' };
+  const gone = (d.cards[idx].tasks || []).map(function (tk) { return tk.id; });
   d.cards.splice(idx, 1);
   await writeJSON(leadKey_(a.campus), d);
+  if (gone.length) await gptDropLeadTasks_(gone);
   return leadOut_(a.campus, d);
 }
 /* One task on a card: add it (no id), change it (tick it off, rename it,
@@ -6901,6 +6928,7 @@ async function saveLeadTask(username, pin, cardId, task) {
   if (idx === -1) { rec.created = now; rec.createdBy = a.s.id; tasks.push(rec); } else tasks[idx] = rec;
   card.tasks = tasks; card.updated = now; card.updatedBy = a.s.id;
   await writeJSON(leadKey_(a.campus), d);
+  await gptFromLeadTask_(a.s, a.campus, card, rec);   // and in the Leadership team's GP Tasks
   return leadOut_(a.campus, d, { saved: rec, card: card.id });
 }
 async function deleteLeadTask(username, pin, cardId, taskId) {
@@ -6909,8 +6937,10 @@ async function deleteLeadTask(username, pin, cardId, taskId) {
   const card = d.cards.find(function (c) { return c.id === str_(cardId, 60); });
   const idx = card && Array.isArray(card.tasks) ? card.tasks.findIndex(function (t) { return t.id === str_(taskId, 60); }) : -1;
   if (idx === -1) return { ok: false, err: 'not_found' };
+  const gone = card.tasks[idx].id;
   card.tasks.splice(idx, 1);
   await writeJSON(leadKey_(a.campus), d);
+  await gptDropLeadTasks_([gone]);
   return leadOut_(a.campus, d);
 }
 /* A Monday's notes. Empty notes take the day away. If someone else saved
@@ -7031,7 +7061,7 @@ const DIGITAL_STATUS = ['awaiting_staff', 'awaiting_leader', 'signed'];
 function cleanDigital_(d) {
   if (!d || typeof d !== 'object' || DIGITAL_STATUS.indexOf(d.status) === -1) return undefined;
   const o = { status: d.status };
-  ['sentAt', 'sentBy', 'staffSignedAt', 'staffName', 'leaderSignedAt', 'leaderName', 'leaderId', 'approvedBy'].forEach(function (k) { if (d[k]) o[k] = str_(d[k], 120); });
+  ['sentAt', 'sentBy', 'staffSignedAt', 'staffName', 'leaderSignedAt', 'leaderName', 'leaderId', 'approvedBy', 'linkToken', 'linkAt', 'linkUsedAt'].forEach(function (k) { if (d[k]) o[k] = str_(d[k], 120); });
   return o;
 }
 /* a contract counts — for "current" and the due count — once it is signed (paper ones always are) */
@@ -9487,26 +9517,30 @@ async function hrSendContract(username, pin, staffId, period) {
   let cid = '';
   const out = await hrMutate_(username, pin, staffId, function (rec, me) {
     const list = contractsOf_(rec), wait = list.filter(function (c) { return c.digital && c.digital.status === 'awaiting_staff'; })[0];
-    if (wait) { wait.signed = from; wait.years = Math.round(years * 4) / 4; wait.digital = Object.assign({}, wait.digital, { sentAt: new Date().toISOString(), sentBy: me.id }); rec.contracts = list; cid = wait.id; return; }
+    const now = new Date().toISOString();
+    if (wait) { wait.signed = from; wait.years = Math.round(years * 4) / 4; wait.digital = Object.assign({}, wait.digital, { sentAt: now, sentBy: me.id, linkToken: wait.digital.linkToken || contractToken_(), linkAt: wait.digital.linkAt || now }); rec.contracts = list; cid = wait.id; return; }
     if (list.length >= HR_MAX_CONTRACTS) return { abort: true, ok: false, err: 'too_many' };
     cid = hrId_('ct');
     rec.contracts = list.concat([{ id: cid, signed: from, years: Math.round(years * 4) / 4, notes: '', campus: HR_CAMPUSES.indexOf(rec.campus) > -1 ? rec.campus : '', files: [],
-      added: new Date().toISOString(), addedBy: me.id, digital: { status: 'awaiting_staff', sentAt: new Date().toISOString(), sentBy: me.id } }]);
+      added: now, addedBy: me.id, digital: { status: 'awaiting_staff', sentAt: now, sentBy: me.id, linkToken: contractToken_(), linkAt: now } }]);
   });
   return out && out.ok ? Object.assign(out, { contractId: cid }) : out;
 }
+function contractToken_() { return crypto.randomBytes(16).toString('hex'); }
 async function hrContractGate_(username, pin, staffId) {
   const me = await verifyStaff_(username, pin);
   if (!me) return { out: { ok: false, err: 'invalid' } };
   if (!canHR_(me)) return { out: { ok: false, err: 'not_authorized' } };
   const r = (await getStaff_()).find(function (x) { return x.id === str_(staffId, 60); });
   if (!r) return { out: { ok: false, err: 'not_found' } };
-  return { me: me, r: r, wait: contractsOf_(r).filter(function (c) { return c.digital && c.digital.status === 'awaiting_staff'; }) };
+  return { me: me, r: r, wait: contractsOf_(r).filter(function (c) { return c.digital && (c.digital.status === 'awaiting_staff' || c.digital.status === 'awaiting_leader'); }) };
 }
-/* the signing page, on HR's phone: the person signs, then HR approves */
+/* the signing page, on HR's phone: the person signs, then HR approves — or, for one the person
+   already signed through their link, only HR's approval is left (approveOnly) */
 async function hrContractOpen(username, pin, staffId) {
   const g = await hrContractGate_(username, pin, staffId); if (g.out) return g.out;
-  const docs = g.wait.map(function (c) { const d = contractDoc_(c); return { id: d.id, title: d.title, blocks: d.blocks, sign: d.sign, period: contractPeriod_(c) }; });
+  const docs = g.wait.map(function (c) { const d = contractDoc_(c), signed = c.digital.status === 'awaiting_leader';
+    return { id: d.id, title: d.title, blocks: d.blocks, sign: d.sign, period: contractPeriod_(c), approveOnly: signed, staffName: signed ? c.digital.staffName : '', staffSignedAt: signed ? c.digital.staffSignedAt : '' }; });
   return { ok: true, isTeam: false, staff: true, hrSign: true, team: g.r.name, approver: g.me.name, contacts: [],
     prefill: { role: [g.r.role, g.r.ministry].filter(Boolean).join(' — ') || 'Staff', dates: '' },
     people: [{ key: 'me', name: g.r.name, done: {} }], docs: docs };
@@ -9515,15 +9549,70 @@ async function hrContractSign(username, pin, staffId, key, docId, p) {
   const g = await hrContractGate_(username, pin, staffId); if (g.out) return g.out;
   const c = g.wait.find(function (x) { return 'contract:' + x.id === str_(docId, 80); });
   if (!c) return { ok: false, err: 'bad_doc' };
-  const v = await signRecord_(contractDoc_(c), p, 'me'); if (v.err) return Object.assign({ ok: false }, v);
-  v.rec.period = contractPeriod_(c);
-  await writeJSON('scontract:' + c.id, { staff: v.rec });
+  const now = new Date().toISOString();
+  let rec;
+  if (c.digital.status === 'awaiting_leader') {   // signed through the link: HR's name and signature finish it
+    p = p && typeof p === 'object' ? p : {};
+    const leaderName = dutyText_(p.leaderName, 120), leaderSig = p.leaderSig;
+    if (!leaderName || !isJpeg_(leaderSig) || leaderSig.length > SIG_MAX_B64) return { ok: false, err: 'leader_required' };
+    const blob = await readJSON('scontract:' + c.id, {}); rec = blob.staff;
+    if (!rec) return { ok: false, err: 'not_signed' };
+    rec.leaderName = leaderName; rec.leaderSig = leaderSig; rec.leaderAt = now;
+    await writeJSON('scontract:' + c.id, { staff: rec });
+  } else {
+    const v = await signRecord_(contractDoc_(c), p, 'me'); if (v.err) return Object.assign({ ok: false }, v);
+    rec = v.rec; rec.period = contractPeriod_(c);
+    await writeJSON('scontract:' + c.id, { staff: rec });
+  }
   return mutateStaff_(function (rows) {
     const r = rows.find(function (x) { return x.id === g.r.id; }); if (!r) return { abort: true, ok: false, err: 'not_found' };
-    r.contracts = contractsOf_(r).map(function (x) { if (x.id !== c.id) return x; x.digital = Object.assign({}, x.digital, { status: 'signed', staffSignedAt: v.rec.at, staffName: v.rec.name, leaderSignedAt: v.rec.at, leaderName: v.rec.leaderName, approvedBy: g.me.id }); return x; });
-    r.updated = new Date().toISOString();
+    r.contracts = contractsOf_(r).map(function (x) { if (x.id !== c.id) return x;
+      x.digital = Object.assign({}, x.digital, { status: 'signed', staffSignedAt: x.digital.staffSignedAt || rec.at, staffName: x.digital.staffName || rec.name, leaderSignedAt: now, leaderName: rec.leaderName, leaderId: g.me.id, approvedBy: g.me.id });
+      return x; });
+    r.updated = now;
     return { ok: true, done: { [docId]: true }, staff: hrStaffOut_(r) };
   });
+}
+/* The one-time link (Oct 2026, Uriah: "instead of giving them our phone, send them a link"): HR
+   copies portal.html?contract=<token> from the person's HR profile; the person opens it on their own
+   phone — no sign-in — reads, fills in and signs; it lands on their profile as awaiting_leader, the
+   link is spent, and HR signs to approve from the profile (hrContractSign, approveOnly). */
+async function contractLink_(token) {
+  token = String(token || '').replace(/[^a-f0-9]/g, '').slice(0, 64);
+  if (token.length < 20) return { out: { ok: false, err: 'invalid' } };
+  const rows = await getStaff_();
+  for (const r of rows) {
+    if (!r || isApplicant_(r) || r.active === false || r.archived) continue;
+    const c = contractsOf_(r).find(function (x) { return x.digital && x.digital.linkToken === token; });
+    if (c) return c.digital.status === 'awaiting_staff' ? { r: r, c: c } : { out: { ok: false, err: 'used' } };
+  }
+  return { out: { ok: false, err: 'invalid' } };
+}
+function contractLinkDoc_(c) { const d = contractDoc_(c); return Object.assign({}, d, { sign: Object.assign({}, d.sign, { leader: false }) }); }   // they sign alone; HR approves after
+async function contractLinkOpen(token) {
+  const g = await contractLink_(token); if (g.out) return g.out;
+  const d = contractLinkDoc_(g.c);
+  return { ok: true, isTeam: false, staff: true, hrSign: false, link: true, team: g.r.name, contacts: [],
+    prefill: { role: [g.r.role, g.r.ministry].filter(Boolean).join(' — ') || 'Staff', dates: '' },
+    people: [{ key: 'me', name: g.r.name, done: {} }], docs: [{ id: d.id, title: d.title, blocks: d.blocks, sign: d.sign, period: contractPeriod_(g.c) }] };
+}
+async function contractLinkSign(token, key, docId, p) {
+  const g = await contractLink_(token); if (g.out) return g.out;
+  if ('contract:' + g.c.id !== str_(docId, 80)) return { ok: false, err: 'bad_doc' };
+  const v = await signRecord_(contractLinkDoc_(g.c), p, 'me'); if (v.err) return Object.assign({ ok: false }, v);
+  v.rec.period = contractPeriod_(g.c);
+  await writeJSON('scontract:' + g.c.id, { staff: v.rec });
+  const now = new Date().toISOString();
+  const out = await mutateStaff_(function (rows) {
+    const r = rows.find(function (x) { return x.id === g.r.id; }); if (!r) return { abort: true, ok: false, err: 'not_found' };
+    r.contracts = contractsOf_(r).map(function (x) { if (x.id !== g.c.id) return x;
+      x.digital = Object.assign({}, x.digital, { status: 'awaiting_leader', staffSignedAt: v.rec.at, staffName: v.rec.name, linkUsedAt: now }); return x; });   // the token stays, so the link can say it has been used
+    r.updated = now;
+    return { ok: true };
+  });
+  if (!out || !out.ok) return out || { ok: false };
+  for (const h of (await getStaff_()).filter(function (x) { return canHR_(x) && x.id !== g.r.id; }).slice(0, 12)) await pushNow_(h.id, 'contractSigned', { name: g.r.name }, 'teams.html?view=hr&hr=' + g.r.id);
+  return { ok: true, done: { [docId]: true } };
 }
 /* My contract (the ☰ menu, every staff member): their profile as HR sees it —
    time in YWAM, on each campus — their contracts and when to renew, and the
@@ -10253,26 +10342,59 @@ function cafePos(username, pin, date, totals) {
    https://calendar.google.com/calendar/ical/…/….ics is accepted, so the server can't be pointed
    anywhere else. Each calendar is read at most every 30 minutes ('gcalCache'), its events
    (and repeats: yearly birthdays, weekly meetings) laid out on Cambodia's clock. */
-const GCAL_MAX = 6, GCAL_TTL_MS = 30 * 60 * 1000, GCAL_COLORS = ['blue', 'green', 'amber', 'pink', 'purple', 'teal'];
+const GCAL_MAX = 6, GCAL_TTL_MS = 30 * 60 * 1000, GCAL_COLORS = ['blue', 'green', 'amber', 'pink', 'purple', 'teal', 'red', 'orange', 'indigo', 'brown', 'grey', 'lime', 'lavender', 'sky', 'mint', 'rose'];   // the palette (teams.css .cal-*), for calendars and task lists alike
 function gcalUrlOk_(u) { return /^https:\/\/calendar\.google\.com\/calendar\/ical\/[^/?#\s]+\/[^/?#\s]+\/[^/?#\s]+\.ics$/.test(String(u || '')); }
 async function getGcal_() { const d = await readJSON('gcal', null); return Array.isArray(d && d.cals) ? d.cals : []; }
+/* Kinds of events (Andrew, Oct 2026: "teams light purple, birthdays green — colour code things based on
+   what they are, and a filter for events, birthdays/anniversaries, schools, teams, guests/speakers"):
+   each kind has a colour and the words that mark an event as that kind (matched in its title, any case).
+   The first kind is the catch-all for everything else; a kind with no colour of its own takes the
+   calendar's. Kept with the calendars in the 'gcal' blob as `kinds`; admins change them. */
+const GCAL_KINDS_DEFAULT = [
+  { id: 'event', name: 'Events', color: '', keywords: [] },
+  { id: 'bday', name: 'Birthdays & anniversaries', color: 'green', keywords: ['birthday', 'bday', 'anniversary', '🎂'] },
+  { id: 'school', name: 'Schools', color: 'amber', keywords: ['DTS', 'school', 'SBS', 'lecture', 'graduation', 'seminar'] },
+  { id: 'team', name: 'Teams', color: 'lavender', keywords: ['team'] },
+  { id: 'guest', name: 'Guests & speakers', color: 'teal', keywords: ['guest', 'speaker', 'visitor', 'visiting'] }
+];
+const GCAL_KINDS_MAX = 12;
+async function getGcalKinds_() { const d = await readJSON('gcal', null); return Array.isArray(d && d.kinds) && d.kinds.length ? d.kinds : GCAL_KINDS_DEFAULT.map(function (k) { return Object.assign({}, k, { keywords: k.keywords.slice() }); }); }
+function gcalKindOut_(k) { return { id: k.id, name: k.name, color: k.color || '', keywords: (k.keywords || []).slice() }; }
+function gcalKindOf_(kinds, title) {
+  const tl = String(title || '').toLowerCase();
+  for (let i = 1; i < kinds.length; i++) { if ((kinds[i].keywords || []).some(function (w) { return w && tl.indexOf(String(w).toLowerCase()) > -1; })) return kinds[i]; }
+  return kinds[0];
+}
 function gcalAdminOut_(c) { return { id: c.id, name: c.name, color: c.color, at: c.at || '', lastOk: c.lastOk || '', lastErr: c.lastErr || '', events: c.events || 0 }; }
 async function adminGcal(username, pin, change) {
   const s = await adminGate_(username, pin);
   if (!s) return { ok: false, err: 'not_authorized' };
-  let cals = await getGcal_();
+  let cals = await getGcal_(), kinds = await getGcalKinds_();
   const x = change && typeof change === 'object' ? change : null;
-  if (x && x.remove) cals = cals.filter(function (c) { return c.id !== x.remove; });
+  if (x && x.kind && typeof x.kind === 'object') {   // a kind of event: name, colour, the words that mark it (new when it has no id)
+    const k = x.kind, id = str_(k.id, 40), cur = id ? kinds.find(function (y) { return y.id === id; }) : null;
+    if (id && !cur) return { ok: false, err: 'no_such_kind' };
+    if (!cur && kinds.length >= GCAL_KINDS_MAX) return { ok: false, err: 'too_many' };
+    const rec = cur || { id: 'k' + Date.now().toString(36), name: '', color: '', keywords: [] };
+    if (k.name !== undefined) rec.name = str_(k.name, 40) || rec.name || 'Kind';
+    if (k.color !== undefined) rec.color = GCAL_COLORS.indexOf(k.color) > -1 ? k.color : '';
+    if (k.keywords !== undefined) rec.keywords = (Array.isArray(k.keywords) ? k.keywords : String(k.keywords || '').split(',')).map(function (w) { return str_(w, 40) || ''; }).filter(Boolean).slice(0, 20);
+    if (!cur) { if (!rec.name) rec.name = 'Kind'; kinds.push(rec); }
+  } else if (x && x.kindRemove) {
+    if (x.kindRemove === kinds[0].id) return { ok: false, err: 'keep_first' };   // the catch-all stays
+    kinds = kinds.filter(function (k) { return k.id !== x.kindRemove; });
+  } else if (x && x.remove) cals = cals.filter(function (c) { return c.id !== x.remove; });
   else if (x && x.url !== undefined) {
     const url = String(x.url || '').trim();
     if (!gcalUrlOk_(url)) return { ok: false, err: 'bad_url' };
     if (cals.length >= GCAL_MAX) return { ok: false, err: 'too_many' };
     cals.push({ id: 'gc' + Date.now().toString(36), name: str_(x.name, 60) || 'Calendar', url: url, color: GCAL_COLORS[cals.length % GCAL_COLORS.length], at: new Date().toISOString(), by: s.id });
-  } else if (x && x.id && x.name !== undefined) {
-    const c = cals.find(function (y) { return y.id === x.id; }); if (c) c.name = str_(x.name, 60) || c.name;
+  } else if (x && x.id && (x.name !== undefined || x.color !== undefined)) {   // rename, or pick its colour (Oct 2026, Uriah: "option to custom colors")
+    const c = cals.find(function (y) { return y.id === x.id; });
+    if (c) { if (x.name !== undefined) c.name = str_(x.name, 60) || c.name; if (x.color !== undefined && GCAL_COLORS.indexOf(x.color) > -1) c.color = x.color; }
   }
-  if (x) { await writeJSON('gcal', { cals: cals }); await writeJSON('gcalCache', {}); }
-  return { ok: true, cals: cals.map(gcalAdminOut_) };
+  if (x) { await writeJSON('gcal', { cals: cals, kinds: kinds }); await writeJSON('gcalCache', {}); }
+  return { ok: true, cals: cals.map(gcalAdminOut_), kinds: kinds.map(gcalKindOut_) };
 }
 /* ---- reading iCal (RFC 5545), only as much as Google's export needs ---- */
 function icsLines_(text) {
@@ -10357,15 +10479,15 @@ async function gcalFetch_(c) {
   cache[c.id] = rec;
   await writeJSON('gcalCache', cache);
   /* the admin sees whether it worked */
-  const cals = await getGcal_(), me = cals.find(function (y) { return y.id === c.id; });
-  if (me) { if (events) { me.lastOk = new Date().toISOString(); me.lastErr = ''; me.events = events.length; } else me.lastErr = err; await writeJSON('gcal', { cals: cals }); }
+  const store = (await readJSON('gcal', null)) || {}, cals = Array.isArray(store.cals) ? store.cals : [], me = cals.find(function (y) { return y.id === c.id; });
+  if (me) { if (events) { me.lastOk = new Date().toISOString(); me.lastErr = ''; me.events = events.length; } else me.lastErr = err; await writeJSON('gcal', Object.assign({}, store, { cals: cals })); }   // keeps the kinds
   return rec;
 }
 /* the events from `from` for `days` days (up to 120), every calendar together, each with its calendar's name and colour */
 async function getCalendar(username, pin, from, days) {
   const s = await verifyStaff_(username, pin);
   if (!s || isApplicant_(s)) return { ok: false };
-  const cals = await getGcal_();
+  const cals = await getGcal_(), kinds = await getGcalKinds_();
   if (!cals.length) return { ok: true, connected: false, events: [] };
   from = isDate_(from) ? from : baseToday_();
   const to = icsDay_(from, Math.max(1, Math.min(120, parseInt(days, 10) || 31)) - 1);
@@ -10379,13 +10501,14 @@ async function getCalendar(username, pin, from, days) {
       icsOccurrences_(e, from, to).forEach(function (d) {
         if (!e.recurrenceId && e.uid && moved[e.uid + '|' + d]) return;
         const span = e.end && e.end.date > e.start.date ? icsDaysBetween_(e.start.date, e.end.date) - (e.end.allDay ? 1 : 0) : 0;
-        out.push({ cal: c.id, calName: c.name, color: c.color, title: e.title || '', where: e.where || '', notes: e.notes || '',
+        const k = gcalKindOf_(kinds, e.title);   // its kind decides its colour (the calendar's, when the kind has none)
+        out.push({ cal: c.id, calName: c.name, color: k.color || c.color, kind: k.id, title: e.title || '', where: e.where || '', notes: e.notes || '',
           date: d, time: e.start.time || '', endTime: e.end && !e.end.allDay ? e.end.time : '', allDay: !!e.start.allDay, endDate: span > 0 ? icsDay_(d, span) : '' });
       });
     });
   }
   out.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.allDay !== b.allDay ? (a.allDay ? -1 : 1) : (a.time < b.time ? -1 : a.time > b.time ? 1 : 0)); });
-  return { ok: true, connected: true, from: from, to: to, events: out.slice(0, 1500), cals: cals.map(function (c) { return { id: c.id, name: c.name, color: c.color }; }) };
+  return { ok: true, connected: true, from: from, to: to, events: out.slice(0, 1500), cals: cals.map(function (c) { return { id: c.id, name: c.name, color: c.color }; }), kinds: kinds.map(gcalKindOut_) };
 }
 
 /* ---------- GP Tasks (Oct 2026, Uriah) ----------
@@ -10394,14 +10517,15 @@ async function getCalendar(username, pin, from, days) {
    department, people a task is assigned to, and asking another ministry for help.
    One blob, 'gpTasks' = { lists, tasks }.
    - A list: { id, campus, scope: 'ministry' | 'dept' | 'personal', dept, ministry (scope
-     ministry), ownerId (personal), shared (personal: others on the campus may see it), title,
+     ministry), ownerId (personal), shared (an old flag, no longer honoured — Uriah, Oct 2026:
+     "it's only to assign tasks, not lists"; a personal list is its owner's alone), title,
      order, created, by }.
    - A task: { id, listId, title, notes, due 'YYYY-MM-DD', time 'HH:MM', done, doneAt, doneBy,
      assignees [staff ids], assignedAt { id: iso }, status 'open' | 'request' | 'declined',
      from { id, label } (who asked, when it came from outside the list — "Campus Leadership",
      "Finance"), cardId (a Campus Leadership board card it came from), created, by, updated }.
    Who sees what: a ministry's list — its people and leaders; a department's — everyone in the
-   department; a personal list — its owner, and everyone on the campus once shared; Campus
+   department; a personal list — its owner only (what they give others is assigned task by task); Campus
    Leadership and admins — every list on the campus (narrowed by their saved filter, which is
    only a view). A task assigned to you is yours to see wherever its list is.
    Who adds: anyone who sees a ministry or department list adds to it; someone outside it adds
@@ -10409,47 +10533,72 @@ async function getCalendar(username, pin, from, days) {
    and admins, whose tasks simply land in the list (Uriah: "no separate thing showing there's a
    request — it shows up in the ministry list and the name it's assigned to"). Whoever is
    assigned hears of it in the bell and on their phone. */
-const GPT_MAX = { lists: 600, tasks: 8000, title: 200, notes: 2000, assignees: 12 };
-async function getGpt_() { const d = await readJSON('gpTasks', null); return { lists: (d && Array.isArray(d.lists)) ? d.lists : [], tasks: (d && Array.isArray(d.tasks)) ? d.tasks : [] }; }
+const GPT_MAX = { lists: 600, tasks: 8000, title: 200, notes: 2000, assignees: 12, subs: 20 };
+/* subtasks (Oct 2026, Uriah): small steps inside a task — text and done, nothing more */
+function gptSubs_(v, prev) {
+  const old = {}; (prev || []).forEach(function (x) { old[x.id] = x; });
+  const out = [];
+  (Array.isArray(v) ? v : []).forEach(function (x) {
+    const text = str_(x && x.text, 200); if (!text || out.length >= GPT_MAX.subs) return;
+    const id = str_(x && x.id, 40) && old[str_(x.id, 40)] ? str_(x.id, 40) : gptId_('st');
+    out.push({ id: id, text: text, done: !!(x && x.done) });
+  });
+  return out;
+}
+async function getGpt_() { const d = await readJSON('gpTasks', null); return { lists: (d && Array.isArray(d.lists)) ? d.lists : [], tasks: (d && Array.isArray(d.tasks)) ? d.tasks : [], leadSynced: (d && d.leadSynced && typeof d.leadSynced === 'object') ? d.leadSynced : {} }; }
 function gptId_(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function gptAll_(s) { return canLead_(s); }   // Campus Leadership and admins see every list on the campus
+function gptMember_(s, L) { return !!L && L.scope === 'personal' && (L.ownerId === s.id || (Array.isArray(L.members) && L.members.indexOf(s.id) > -1)); }   // the owner, or someone the list is shared with (Oct 2026)
 function gptIn_(s, L) {   // one of the list's own people
   if (!L) return false;
-  if (L.scope === 'personal') return L.ownerId === s.id;
+  if (L.scope === 'personal') return gptMember_(s, L);
   if (L.campus !== s.campus) return false;
   if (L.scope === 'dept') return deptOf_(s) === L.dept || ministriesOf_(s).some(function (k) { return k.split('|')[0] === L.dept; }) || leadsOf_(s).some(function (k) { return k.split('|')[0] === L.dept; });
   return memberOf_(s, L.dept, L.ministry) || leadsOf_(s).indexOf(L.dept + '|' + L.ministry) > -1;
 }
 function gptSees_(s, L) {
   if (!L) return false;
-  if (L.scope === 'personal') return L.ownerId === s.id || (L.shared && L.campus === s.campus);
+  if (L.scope === 'personal') return gptMember_(s, L);
   return gptIn_(s, L) || (gptAll_(s) && (L.campus === s.campus || s.isAdmin));
 }
-function gptEdits_(s, L) { return !!L && (L.scope === 'personal' ? L.ownerId === s.id : (gptIn_(s, L) || (gptAll_(s) && (L.campus === s.campus || s.isAdmin)))); }
+function gptEdits_(s, L) { return !!L && (L.scope === 'personal' ? gptMember_(s, L) : (gptIn_(s, L) || (gptAll_(s) && (L.campus === s.campus || s.isAdmin)))); }
 function gptLabel_(s) { return gptAll_(s) && deptOf_(s) === LEADERSHIP_DEPT ? LEADERSHIP_DEPT : (s.ministry || deptOf_(s) || ''); }
-function gptListOut_(L, s) { return { id: L.id, campus: L.campus, scope: L.scope, dept: L.dept || '', ministry: L.ministry || '', ownerId: L.ownerId || '', shared: !!L.shared, title: L.title, order: L.order || 0, mine: gptIn_(s, L), canEdit: gptEdits_(s, L) }; }
+function gptListOut_(L, s) { return { id: L.id, campus: L.campus, scope: L.scope, dept: L.dept || '', ministry: L.ministry || '', ownerId: L.ownerId || '', shared: !!L.shared, members: Array.isArray(L.members) ? L.members.slice() : [], title: L.title, color: L.color || '', order: L.order || 0, mine: gptIn_(s, L), canEdit: gptEdits_(s, L) }; }
 function gptTaskOut_(t) {
   return { id: t.id, listId: t.listId, title: t.title, notes: t.notes || '', due: t.due || '', time: t.time || '', done: !!t.done, doneAt: t.doneAt || '', doneBy: t.doneBy || '',
-    assignees: t.assignees || [], assignedAt: t.assignedAt || {}, status: t.status || 'open', from: t.from || null, cardId: t.cardId || '', created: t.created, by: t.by, order: t.order || 0 };
+    assignees: t.assignees || [], assignedAt: t.assignedAt || {}, status: t.status || 'open', from: t.from || null, cardId: t.cardId || '', leadId: t.leadId || '', ooId: t.ooId || '', subs: t.subs || [], filed: t.filed || {}, created: t.created, by: t.by, order: t.order || 0 };
 }
 async function gptAuth_(username, pin) { const s = await verifyStaff_(username, pin); return s && !isApplicant_(s) ? s : null; }
 function gptFilterOf_(s) { const f = s.taskFilter; return f && typeof f === 'object' && Array.isArray(f.keys) ? { keys: f.keys.slice(0, 200) } : null; }
 async function getGpTasks(username, pin) {
   const s = await gptAuth_(username, pin); if (!s) return { ok: false };
   const d = await getGpt_();
+  let dirty = gptEnsureLists_(d, s);
+  if (await gptSyncLeadBoard_(d, s)) dirty = true;
+  if (dirty) await writeJSON('gpTasks', d);
   const lists = d.lists.filter(function (L) { return gptSees_(s, L); });
   const seen = {}; lists.forEach(function (L) { seen[L.id] = 1; });
   const tasks = d.tasks.filter(function (t) { return seen[t.listId] || (t.assignees || []).indexOf(s.id) > -1 || t.by === s.id; });
   /* a task assigned to you (or one you asked another ministry for) from a list you don't see brings its list's name along */
   tasks.forEach(function (t) { if (!seen[t.listId]) { const L = d.lists.find(function (x) { return x.id === t.listId; }); if (L) { lists.push(Object.assign(gptListOut_(L, s), { onlyAssigned: true })); seen[L.id] = 1; } } });
   return { ok: true, lists: lists.map(function (L) { return L.onlyAssigned ? L : gptListOut_(L, s); }), tasks: tasks.map(gptTaskOut_),
-    canAll: gptAll_(s), filter: gptFilterOf_(s), me: s.id, campus: s.campus };
+    canAll: gptAll_(s), filter: gptFilterOf_(s), listOrder: Array.isArray(s.taskListOrder) ? s.taskListOrder.slice(0, GPT_MAX.lists) : [], me: s.id, campus: s.campus };
 }
 /* what the bell and My Home need, without loading every list */
 async function gpTaskInfo_(s) {
   const d = await getGpt_(), since = new Date(Date.now() - 14 * 864e5).toISOString();
   const byId = {}; d.lists.forEach(function (L) { byId[L.id] = L; });
   const mine = d.tasks.filter(function (t) { return !t.done && t.status !== 'declined' && (t.assignees || []).indexOf(s.id) > -1; });
+  /* what is in their Inbox: its own open tasks, and what they were given and haven't filed elsewhere (the red number) */
+  const inboxL = d.lists.filter(function (L) { return L.scope === 'personal' && L.ownerId === s.id; }).sort(function (a, b) { return (a.order || 0) - (b.order || 0); })[0];
+  const ownLists = {}; d.lists.forEach(function (L) { if (L.scope === 'personal' && L.ownerId === s.id) ownLists[L.id] = 1; });
+  const inbox = inboxL ? d.tasks.filter(function (t) {
+    if (t.done || t.status === 'declined') return false;
+    if (t.listId === inboxL.id) return true;
+    const given = (t.assignees || []).indexOf(s.id) > -1 || (t.by === s.id && t.status === 'request');
+    if (!given || ownLists[t.listId]) return false;
+    const f = t.filed && t.filed[s.id]; return !(f && ownLists[f.list] && f.list !== inboxL.id);
+  }).length : 0;
   const notices = [];
   mine.forEach(function (t) { const at = (t.assignedAt || {})[s.id]; if (at && at > since && t.by !== s.id) notices.push({ kind: 'assigned', id: t.id, title: t.title, at: at, by: (t.from && t.from.id) || t.by, from: t.from ? t.from.label : '', list: byId[t.listId] ? byId[t.listId].title : '' }); });
   d.tasks.forEach(function (t) {
@@ -10457,7 +10606,7 @@ async function gpTaskInfo_(s) {
     if (t.status === 'request' && L && L.scope !== 'personal' && gptIn_(s, L) && t.created > since) notices.push({ kind: 'request', id: t.id, title: t.title, at: t.created, by: t.by, from: t.from ? t.from.label : '', list: L.title });
     if (t.status === 'declined' && t.by === s.id && (t.updated || '') > since) notices.push({ kind: 'declined', id: t.id, title: t.title, at: t.updated, by: t.decidedBy || '', list: L ? L.title : '' });
   });
-  return { open: mine.length, due: mine.filter(function (t) { return t.due && t.due <= baseToday_(); }).length, notices: notices.slice(-30) };
+  return { open: mine.length, inbox: inbox, due: mine.filter(function (t) { return t.due && t.due <= baseToday_(); }).length, notices: notices.slice(-30) };
 }
 async function saveGpTaskList(username, pin, list) {
   const s = await gptAuth_(username, pin); if (!s) return { ok: false };
@@ -10468,12 +10617,12 @@ async function saveGpTaskList(username, pin, list) {
     if (!L) return { ok: false, err: 'not_found' };
     if (!gptEdits_(s, L) || (L.scope === 'personal' && L.ownerId !== s.id)) return { ok: false, err: 'not_authorized' };
     if (x.remove) { d.lists = d.lists.filter(function (l) { return l.id !== L.id; }); d.tasks = d.tasks.filter(function (t) { return t.listId !== L.id; }); }
-    else { if (x.title !== undefined) L.title = str_(x.title, 80) || L.title; if (x.shared !== undefined && L.scope === 'personal') L.shared = !!x.shared; }
+    else { if (x.title !== undefined) L.title = str_(x.title, 80) || L.title; if (x.color !== undefined) L.color = GCAL_COLORS.indexOf(x.color) > -1 ? x.color : ''; }   // its colour on the calendar
   } else {
     if (d.lists.length >= GPT_MAX.lists) return { ok: false, err: 'too_many' };
     const scope = ['ministry', 'dept', 'personal'].indexOf(x.scope) > -1 ? x.scope : 'personal';
     const L = { id: gptId_('tl'), campus: s.campus, scope: scope, dept: '', ministry: '', ownerId: '', shared: false, title: str_(x.title, 80) || 'Tasks', order: d.lists.length, created: new Date().toISOString(), by: s.id };
-    if (scope === 'personal') { L.ownerId = s.id; L.shared = !!x.shared; }
+    if (scope === 'personal') L.ownerId = s.id;
     else {
       const key = normKey_(str_(x.dept, 80) + '|' + (scope === 'ministry' ? str_(x.ministry, 80) : ''), 2), parts = key.split('|');
       L.dept = parts[0]; L.ministry = scope === 'ministry' ? parts[1] : '';
@@ -10484,6 +10633,124 @@ async function saveGpTaskList(username, pin, list) {
   }
   await writeJSON('gpTasks', d);
   return getGpTasks(username, pin);
+}
+/* Oct 2026 (Uriah): "each ministry has its own designated task list" — one per ministry, named after
+   it, made the first time one of its people opens GP Tasks; the Campus Leadership team's is one list
+   for the whole department, "Leadership team". And everyone starts with My Tasks. Returns true when
+   something was made. */
+const GPT_LEAD_LIST = 'Leadership team';
+function gptMinList_(d, campus, dept, ministry, by) {
+  const scope = ministry ? 'ministry' : 'dept';
+  let L = d.lists.find(function (l) { return l.campus === campus && l.scope === scope && l.dept === dept && (l.ministry || '') === (ministry || ''); });
+  if (!L && d.lists.length < GPT_MAX.lists) {
+    L = { id: gptId_('tl'), campus: campus, scope: scope, dept: dept, ministry: ministry || '', ownerId: '', shared: false,
+      title: dept === LEADERSHIP_DEPT ? GPT_LEAD_LIST : (ministry || dept), order: d.lists.length, created: new Date().toISOString(), by: by || '' };
+    d.lists.push(L);
+    return { list: L, made: true };
+  }
+  return { list: L || null, made: false };
+}
+function gptMyList_(d, s) {   // the person's Inbox (their oldest personal list), made if they have none
+  const mine = d.lists.filter(function (L) { return L.scope === 'personal' && L.ownerId === s.id; }).sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+  /* Oct 2026: the first personal list is the Inbox, whatever it was called before the Inbox existed
+     ("My Tasks", or one someone made themselves — "Personal", "Tasks"…); renamed once */
+  if (mine.length) { const was = mine[0].title !== 'Inbox' && !mine[0].inboxKept; if (was) { mine[0].title = 'Inbox'; mine[0].inboxKept = true; } return { list: mine[0], made: was }; }
+  if (d.lists.length >= GPT_MAX.lists) return { list: null, made: false };
+  const L = { id: gptId_('tl'), campus: s.campus, scope: 'personal', dept: '', ministry: '', ownerId: s.id, shared: false, title: 'Inbox', order: d.lists.length, created: new Date().toISOString(), by: s.id };
+  d.lists.push(L);
+  return { list: L, made: true };
+}
+/* A mentorship 1:1 with its date and time set is a task in both people's My Tasks (Uriah, Oct
+   2026: "it will show up in our personal tasks list when the date and time is set"): "1:1 with
+   Sokha", the day and the time, `ooId` on it; moved when the time moves, done when it is held,
+   gone when it is declined. */
+async function gptFromOneOnOne_(r) {
+  try {
+    const d = await getGpt_(), staff = await getStaff_(), now = new Date().toISOString();
+    const pair = [r.fromId, r.toId].map(function (id) { return staff.find(function (x) { return x && x.id === id; }); });
+    let changed = false;
+    const gone = r.status === 'declined' || !r.when;
+    pair.forEach(function (me, i) {
+      const other = pair[1 - i];
+      let t = d.tasks.find(function (y) { return y.ooId === r.id && y.ooFor === (me && me.id); });
+      if (gone || !me || !other) { if (t) { d.tasks = d.tasks.filter(function (y) { return y !== t; }); changed = true; } return; }
+      const L = gptMyList_(d, me).list; if (!L) return;
+      if (!t) { t = { id: gptId_('tk'), listId: L.id, created: now, by: me.id, notes: '', done: false, doneAt: '', doneBy: '', assignees: [], assignedAt: {}, status: 'open', from: null, order: d.tasks.filter(function (y) { return y.listId === L.id; }).length, ooId: r.id, ooFor: me.id }; d.tasks.push(t); }
+      t.listId = L.id; t.title = '1:1 with ' + String(other.name || '').split(' ')[0]; t.due = r.when.slice(0, 10); t.time = r.when.slice(11, 16);
+      const held = r.status === 'held';
+      if (held !== !!t.done) { t.done = held; t.doneAt = held ? now : ''; t.doneBy = held ? me.id : ''; }
+      t.updated = now; changed = true;
+    });
+    if (changed) await writeJSON('gpTasks', d);
+  } catch (e) { /* the 1:1 is saved regardless */ }
+}
+function gptEnsureLists_(d, s) {
+  let made = gptMyList_(d, s).made;
+  const keys = {}, dept = deptOf_(s);
+  if (dept) keys[dept + '|' + (dept === LEADERSHIP_DEPT ? '' : (s.ministry || ''))] = 1;
+  ministriesOf_(s).concat(leadsOf_(s)).forEach(function (k) { const p = String(k).split('|'); if (p[0]) keys[p[0] + '|' + (p[0] === LEADERSHIP_DEPT ? '' : (p[1] || ''))] = 1; });
+  Object.keys(keys).forEach(function (k) { const p = k.split('|'); if (gptMinList_(d, s.campus, p[0], p[1], s.id).made) made = true; });
+  /* a ministry's or department's list from before, still called "Tasks": its own name (once) */
+  d.lists.forEach(function (L) { if (L.scope !== 'personal' && L.title === 'Tasks') { L.title = L.dept === LEADERSHIP_DEPT ? GPT_LEAD_LIST : (L.ministry || L.dept || L.title); made = true; } });
+  return made;
+}
+/* The leadership board's little tasks (inside a card: text, owner, due) are also GP Tasks in the
+   Leadership team's list, so whoever owns one sees it in My Tasks with its day (Uriah: "the task
+   for Andrew, to find 5 fun activities for the staff offsite, will show up for me"). The board is
+   the source for the words, the owner and the day; done goes both ways. */
+function gptLeadUpsert_(d, campus, card, rec, byId, now) {   // one board task → its GP task (in memory); says whether its owner is new to it
+  const L = gptMinList_(d, campus, LEADERSHIP_DEPT, '', byId).list; if (!L) return false;
+  let t = d.tasks.find(function (y) { return y.leadId === rec.id; });
+  const fresh = !!rec.owner && (!t || (t.assignees || []).indexOf(rec.owner) === -1) && rec.owner !== byId;
+  if (!t) { t = { id: gptId_('tk'), listId: L.id, created: rec.created || now, by: rec.createdBy || byId, done: false, doneAt: '', doneBy: '', time: '', assignedAt: {}, order: 0, status: 'open', from: null }; d.tasks.push(t); }
+  t.listId = L.id; t.leadId = rec.id; t.cardId = ''; t.title = rec.text; t.due = rec.due || ''; t.notes = card.title ? 'Board: ' + card.title : '';
+  t.assignees = rec.owner ? [rec.owner] : [];
+  t.assignedAt = rec.owner ? { [rec.owner]: (t.assignedAt && t.assignedAt[rec.owner]) || now } : {};
+  if (!!rec.done !== !!t.done) { t.done = !!rec.done; t.doneAt = t.done ? (rec.doneAt || now) : ''; t.doneBy = t.done ? (rec.doneBy || byId) : ''; }
+  t.updated = now;
+  return fresh;
+}
+async function gptFromLeadTask_(s, campus, card, rec) {
+  try {
+    const d = await getGpt_(), now = new Date().toISOString();
+    const fresh = gptLeadUpsert_(d, campus, card, rec, s.id, now);
+    await writeJSON('gpTasks', d);
+    if (fresh) await pushNow_(rec.owner, 'taskAssigned', { name: s.name, title: t_(rec) }, 'teams.html?view=tasks');
+  } catch (e) { /* the board saves regardless */ }
+  function t_(r) { return r.text; }
+}
+/* The board's tasks from before this link (Uriah, Oct 2026: "add in the existing tasks from the
+   leadership board to the people they're assigned to"): once per campus, the first time GP Tasks
+   loads, every task on every card is brought in — quietly, no phone pushes for old news. */
+async function gptSyncLeadBoard_(d, s) {
+  d.leadSynced = d.leadSynced && typeof d.leadSynced === 'object' ? d.leadSynced : {};
+  if (d.leadSynced[s.campus]) return false;
+  const lead = await getLeadDoc_(s.campus), now = new Date().toISOString();
+  (lead.cards || []).forEach(function (card) { (card.tasks || []).forEach(function (rec) { if (rec && rec.id && rec.text) gptLeadUpsert_(d, s.campus, card, rec, rec.createdBy || s.id, now); }); });
+  d.leadSynced[s.campus] = now;
+  return true;
+}
+async function gptDropLeadTasks_(ids) {
+  try {
+    const d = await getGpt_(), before = d.tasks.length;
+    d.tasks = d.tasks.filter(function (y) { return !y.leadId || ids.indexOf(y.leadId) === -1; });
+    if (d.tasks.length !== before) await writeJSON('gpTasks', d);
+  } catch (e) { /* nothing to drop */ }
+}
+async function leadDropTask_(campus, leadId) {
+  try {
+    const d = await getLeadDoc_(campus); let hit = false;
+    d.cards.forEach(function (c) { if (!Array.isArray(c.tasks)) return; const n = c.tasks.length; c.tasks = c.tasks.filter(function (tk) { return tk.id !== leadId; }); if (c.tasks.length !== n) hit = true; });
+    if (hit) await writeJSON(leadKey_(campus), d);
+  } catch (e) { /* the task is gone here regardless */ }
+}
+/* done on the GP side goes back to the board */
+async function gptLeadDone_(campus, leadId, done, by) {
+  try {
+    const d = await getLeadDoc_(campus); let hit = false;
+    d.cards.forEach(function (c) { (c.tasks || []).forEach(function (tk) { if (tk.id === leadId && !!tk.done !== !!done) { tk.done = !!done; if (done) { tk.doneAt = new Date().toISOString(); tk.doneBy = by; } else { delete tk.doneAt; delete tk.doneBy; } hit = true; } }); });
+    if (hit) await writeJSON(leadKey_(campus), d);
+  } catch (e) { /* the task is saved regardless */ }
 }
 function gptDue_(v) { return isDate_(v) ? v : ''; }
 function gptTime_(v) { return /^([01]\d|2[0-3]):[0-5]\d$/.test(String(v || '')) ? v : ''; }
@@ -10497,11 +10764,11 @@ async function saveGpTask(username, pin, task) {
   if (x.id && !t) return { ok: false, err: 'not_found' };
   /* "Ask another ministry": by its name, into its first list (made if it has none yet) */
   if (!t && !x.listId && x.askMin) {
-    const p = String(x.askMin).split('|'), key = p.length === 2 && p[0] ? normKey_(str_(p[0], 80) + '|' + str_(p[1], 80), 2) : '';
+    const p = String(x.askMin).split('|'), key = p.length === 2 && p[0] ? normKey_((str_(p[0], 80) || '') + '|' + (str_(p[1], 80) || ''), 2) : '';
     if (!key) return { ok: false, err: 'bad_ministry' };
     const kp = key.split('|'), scope = kp[1] ? 'ministry' : 'dept';
-    let to = d.lists.find(function (l) { return l.campus === s.campus && l.scope === scope && l.dept === kp[0] && (l.ministry || '') === kp[1]; });
-    if (!to) { to = { id: gptId_('tl'), campus: s.campus, scope: scope, dept: kp[0], ministry: kp[1], ownerId: '', shared: false, title: 'Tasks', order: d.lists.length, created: now, by: s.id }; d.lists.push(to); }
+    const to = gptMinList_(d, s.campus, kp[0], kp[1], s.id).list;   // its designated list, named after it (this used to make one called "Tasks" — Andrew: "why 3 lists named Tasks?")
+    if (!to) return { ok: false, err: 'no_list' };
     x.listId = to.id;
   }
   const L = d.lists.find(function (l) { return l.id === (t ? t.listId : x.listId); });
@@ -10522,9 +10789,10 @@ async function saveGpTask(username, pin, task) {
      a request is only the asker's to word until the ministry takes it */
   if (x.title !== undefined) t.title = str_(x.title, GPT_MAX.title) || t.title;
   if (x.notes !== undefined) t.notes = str_(x.notes, GPT_MAX.notes) || '';
+  if (x.subs !== undefined) t.subs = gptSubs_(x.subs, t.subs);
   if (x.due !== undefined) t.due = gptDue_(x.due);
   if (x.time !== undefined) t.time = t.due ? gptTime_(x.time) : '';
-  if (x.done !== undefined && t.status !== 'request') { t.done = !!x.done; t.doneAt = t.done ? now : ''; t.doneBy = t.done ? s.id : ''; }
+  if (x.done !== undefined && t.status !== 'request') { t.done = !!x.done; t.doneAt = t.done ? now : ''; t.doneBy = t.done ? s.id : ''; if (t.leadId) await gptLeadDone_(L.campus, t.leadId, t.done, s.id); }
   if (x.listId && x.listId !== t.listId && edits) { const to = d.lists.find(function (l) { return l.id === x.listId; }); if (to && gptEdits_(s, to)) t.listId = to.id; }
   if (Array.isArray(x.assignees) && (edits || t.by === s.id)) {
     const next = []; x.assignees.forEach(function (id) { if (onCampus[id] && onCampus[id].campus === L.campus && next.indexOf(id) === -1 && next.length < GPT_MAX.assignees) next.push(id); });
@@ -10563,6 +10831,7 @@ async function deleteGpTask(username, pin, id) {
   if (!(gptEdits_(s, L) || t.by === s.id)) return { ok: false, err: 'not_authorized' };
   d.tasks = d.tasks.filter(function (y) { return y.id !== id; });
   await writeJSON('gpTasks', d);
+  if (t.leadId) await leadDropTask_(L.campus, t.leadId);   // a board task: off the board too
   return getGpTasks(username, pin);
 }
 async function clearDoneGpTasks(username, pin, listId) {
@@ -10575,6 +10844,65 @@ async function clearDoneGpTasks(username, pin, listId) {
   return getGpTasks(username, pin);
 }
 /* Campus Leadership's and admins' "what I want to see" — kept on them, a view only */
+/* drag and drop (Oct 2026, Uriah): the order of a list's tasks is the list's (everyone who shares it
+   sees it); the order of the tabs is each person's own */
+async function orderGpTasks(username, pin, listId, ids) {
+  const s = await gptAuth_(username, pin); if (!s) return { ok: false };
+  const d = await getGpt_(), L = d.lists.find(function (l) { return l.id === listId; });
+  if (!L) return { ok: false, err: 'no_list' };
+  if (!gptEdits_(s, L)) return { ok: false, err: 'not_authorized' };
+  const pos = {}; (Array.isArray(ids) ? ids : []).forEach(function (id, i) { pos[String(id)] = i; });
+  const now = new Date().toISOString(), mine = L.scope === 'personal' && L.ownerId === s.id;
+  d.tasks.filter(function (t) { return pos[t.id] !== undefined; }).forEach(function (t) {
+    if (t.listId === L.id) { t.order = pos[t.id]; t.updated = now; }
+    else if (mine && (t.assignees || []).indexOf(s.id) > -1) { t.filed = t.filed || {}; t.filed[s.id] = { list: L.id, order: pos[t.id] }; }   // a task given to you, in the order you keep it here
+  });
+  await writeJSON('gpTasks', d);
+  return getGpTasks(username, pin);
+}
+/* A task given to you lands in your Inbox and stays in its own list; filing it (dragging it onto one of
+   your lists) only changes where *you* see it — `filed[you] = { list, order }` (Uriah, Oct 2026). */
+async function fileGpTask(username, pin, id, listId) {
+  const s = await gptAuth_(username, pin); if (!s) return { ok: false };
+  const d = await getGpt_(), t = d.tasks.find(function (y) { return y.id === id; });
+  if (!t) return { ok: false, err: 'not_found' };
+  if ((t.assignees || []).indexOf(s.id) === -1 && t.by !== s.id) return { ok: false, err: 'not_authorized' };
+  const to = listId ? d.lists.find(function (l) { return l.id === listId; }) : null;
+  if (listId && !(to && to.scope === 'personal' && to.ownerId === s.id)) return { ok: false, err: 'not_yours' };
+  t.filed = t.filed || {};
+  if (to) t.filed[s.id] = { list: to.id, order: d.tasks.filter(function (y) { return y.listId === to.id; }).length }; else delete t.filed[s.id];
+  await writeJSON('gpTasks', d);
+  return getGpTasks(username, pin);
+}
+/* Sharing a whole list (Oct 2026, Uriah: "share the whole list, so we can both be using it together"):
+   the owner names the people; they see it as a tab, add, tick off and give out tasks in it like the
+   owner. Only the owner shares, renames, colours or deletes it. */
+const GPT_MAX_MEMBERS = 20;
+async function shareGpTaskList(username, pin, id, members) {
+  const s = await gptAuth_(username, pin); if (!s) return { ok: false };
+  const d = await getGpt_(), L = d.lists.find(function (l) { return l.id === id; });
+  if (!L) return { ok: false, err: 'not_found' };
+  if (L.scope !== 'personal' || L.ownerId !== s.id) return { ok: false, err: 'not_authorized' };
+  const staff = await getStaff_(), ok = {};
+  staff.forEach(function (r) { if (r && r.active !== false && !r.archived && !isApplicant_(r) && r.campus === L.campus && r.id !== s.id) ok[r.id] = r; });
+  const next = []; (Array.isArray(members) ? members : []).forEach(function (x) { const id = str_(x, 60); if (ok[id] && next.indexOf(id) === -1 && next.length < GPT_MAX_MEMBERS) next.push(id); });
+  const fresh = next.filter(function (id) { return (L.members || []).indexOf(id) === -1; });
+  L.members = next;
+  await writeJSON('gpTasks', d);
+  for (const id of fresh) await pushNow_(id, 'listShared', { name: s.name, title: L.title }, 'teams.html?view=tasks');
+  return getGpTasks(username, pin);
+}
+async function saveGpListOrder(username, pin, ids) {
+  const s = await gptAuth_(username, pin); if (!s) return { ok: false };
+  const clean = (Array.isArray(ids) ? ids : []).map(function (x) { return str_(x, 60); }).filter(Boolean).slice(0, GPT_MAX.lists);
+  const r = await mutateStaff_(function (rows) {
+    const rec = rows.find(function (x) { return x.id === s.id; }); if (!rec) return { abort: true, ok: false };
+    if (clean.length) rec.taskListOrder = clean; else delete rec.taskListOrder;
+    return { ok: true };
+  });
+  if (!r || !r.ok) return { ok: false };
+  return getGpTasks(username, pin);
+}
 async function saveGpTaskFilter(username, pin, keys) {
   const s = await gptAuth_(username, pin); if (!s) return { ok: false };
   const clean = Array.isArray(keys) ? keys.map(function (k) { return str_(k, 170); }).filter(Boolean).slice(0, 200) : null;
@@ -10597,9 +10925,7 @@ async function gptFromCard_(s, card) {
       if (t) { d.tasks = d.tasks.filter(function (y) { return y !== t; }); await writeJSON('gpTasks', d); }
       return;
     }
-    const scope = parts[1] ? 'ministry' : 'dept';
-    let L = d.lists.find(function (l) { return l.campus === s.campus && l.scope === scope && l.dept === parts[0] && (l.ministry || '') === parts[1]; });
-    if (!L) { L = { id: gptId_('tl'), campus: s.campus, scope: scope, dept: parts[0], ministry: parts[1], ownerId: '', shared: false, title: 'Tasks', order: d.lists.length, created: now, by: s.id }; d.lists.push(L); }
+    const L = gptMinList_(d, s.campus, parts[0], parts[1], s.id).list; if (!L) return;
     const fresh = card.owner && (!t || (t.assignees || []).indexOf(card.owner) === -1) && card.owner !== s.id;
     if (!t) { t = { id: gptId_('tk'), listId: L.id, created: now, by: s.id, notes: '', done: false, doneAt: '', doneBy: '', time: '', assignedAt: {}, order: 0 }; d.tasks.push(t); }
     t.listId = L.id; t.title = card.title; t.due = card.due || ''; t.status = 'open'; t.cardId = card.id;
@@ -11012,6 +11338,11 @@ const HANDLERS = {
   deleteGpTask: function (a) { return deleteGpTask(a[0], a[1], a[2]); },
   clearDoneGpTasks: function (a) { return clearDoneGpTasks(a[0], a[1], a[2]); },
   saveGpTaskFilter: function (a) { return saveGpTaskFilter(a[0], a[1], a[2]); },
+  orderGpTasks: function (a) { return orderGpTasks(a[0], a[1], a[2], a[3]); },
+  fileGpTask: function (a) { return fileGpTask(a[0], a[1], a[2], a[3]); },
+  shareGpTaskList: function (a) { return shareGpTaskList(a[0], a[1], a[2], a[3]); },
+  setMinistryLeader: function (a) { return setMinistryLeader(a[0], a[1], a[2], a[3], a[4], a[5]); },
+  saveGpListOrder: function (a) { return saveGpListOrder(a[0], a[1], a[2]); },
   saveMetricOverrides: function (a) { return saveMetricOverrides(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]); },
   renameCustomMetric: function (a) { return renameCustomMetric(a[0], a[1], a[2], a[3], a[4], a[5], a[6]); },
   getMyPersonal: function (a) { return getMyPersonal(a[0], a[1]); },
@@ -11082,6 +11413,8 @@ const HANDLERS = {
   mySaveStart: function (a) { return mySaveStart(a[0], a[1], a[2]); },
   hrLegalPdf: function (a) { return hrLegalPdf(a[0], a[1], a[2], a[3]); },
   hrContractPdf: function (a) { return hrContractPdf(a[0], a[1], a[2], a[3]); },
+  contractLinkOpen: function (a) { return contractLinkOpen(a[0]); },
+  contractLinkSign: function (a) { return contractLinkSign(a[0], a[1], a[2], a[3]); },
   portalLegalDocs: function (a) { return portalLegalDocs(a[0], a[1]); },
   portalSaveLegalDocs: function (a) { return portalSaveLegalDocs(a[0], a[1], a[2], a[3]); },
   portalSetVisaFlags: function (a) { return portalSetVisaFlags(a[0], a[1], a[2], a[3]); },

@@ -257,7 +257,7 @@ function bindAway(){
   if(dth) dth.onclick=function(){ gpTap(); S.view='health'; render(); };
 
   document.querySelectorAll('[data-mmtab]').forEach(function(b){
-    b.onclick=function(){ gpTap(); S.mmTab=b.getAttribute('data-mmtab'); render(); };
+    b.onclick=function(){ gpTap(); S.mmTab=b.getAttribute('data-mmtab'); S.mmTabTouched=true; if(b.closest('.mmTabs') && typeof mmTabKeep_==='function') mmTabKeep_(S.mmTab); render(); };
   });
   /* The metric form is folded away until asked for — the page opens on the
      dashboard and the week's status, and this one button is how you get to
@@ -455,8 +455,14 @@ function bindAway(){
     }
     var ovr=document.getElementById('ovRetry');
     if(ovr) ovr.onclick=function(){ var m=ovr.getAttribute('data-ministry'); S.ovError[m]=''; S.ovLoading[m]=false; render(); };
-    document.querySelectorAll('[data-mmpick]').forEach(function(b){
-      b.onclick=function(){ var v=b.getAttribute('data-mmpick'), i=v.lastIndexOf('|'); gpTap(); S.mmBrowseDept=v.slice(0,i); S.mmBrowseMinistry=v.slice(i+1); render(); };
+    var msw=document.getElementById('mmSwitch'); if(msw) msw.onclick=function(){ gpTap(); S.mmPickOpen=true; S.mmPickQ=''; render(); var f=document.getElementById('mmPickFind'); if(f) f.focus(); };
+    var mps=document.getElementById('mmPickScrim'); if(mps) mps.onclick=function(){ S.mmPickOpen=false; render(); };
+    var mpf=document.getElementById('mmPickFind'); if(mpf) mpf.oninput=function(){ S.mmPickQ=mpf.value; var box=document.querySelector('.mmPickList'); if(!box) return;
+      var tmp=document.createElement('div'); tmp.innerHTML=mmPickerHtml_(mmOptions_(), mmSelected_(mmOptions_())); var nb=tmp.querySelector('.mmPickList'); if(nb){ box.innerHTML=nb.innerHTML; bindMmPick(); } };
+    var bindMmPick=function(){ document.querySelectorAll('[data-mmpick]').forEach(function(b){
+      b.onclick=function(){ var v=b.getAttribute('data-mmpick'), i=v.lastIndexOf('|'); gpTap(); S.mmBrowseDept=v.slice(0,i); S.mmBrowseMinistry=v.slice(i+1); S.mmPickOpen=false; S.mmPickQ=''; S.mmTab='ministry'; S.mmTabTouched=false; render(); window.scrollTo(0,0); }; }); };
+    bindMmPick();
+    document.querySelectorAll('[data-mmpick-none]').forEach(function(b){
     });
     var mbd=document.getElementById('mmBrowseDeptSel');
     if(mbd) mbd.onchange=function(){ S.mmBrowseDept=mbd.value; S.mmBrowseMinistry=''; render(); };
@@ -666,10 +672,22 @@ function bindHome(){
       var list=myHabits().map(function(hb){
         if(hb.id!==parts[0]) return hb;
         var o=Object.assign({}, hb);
+        if(parts[1]==='perweek'){ delete o.days; o.perWeek=o.perWeek||3; return o; }
+        delete o.perWeek;
         if(parts[1]==='daily') delete o.days;
         else if(parts[1]==='weekdays') o.days=[1,2,3,4,5];
         else o.days=(o.days && o.days.length && o.days.join()!=='1,2,3,4,5') ? o.days : [1,3,5];
         return o;
+      });
+      S.habits=list; render();
+    };
+  });
+  document.querySelectorAll('[data-hpweek]').forEach(function(b){
+    b.onclick=function(){
+      var parts=b.getAttribute('data-hpweek').split('|'), step=Number(parts[1]);
+      var list=myHabits().map(function(hb){
+        if(hb.id!==parts[0]) return hb;
+        var o=Object.assign({}, hb); o.perWeek=Math.max(1, Math.min(6, (o.perWeek||3)+step)); return o;
       });
       S.habits=list; render();
     };
@@ -1077,7 +1095,9 @@ function bind(){
   if(S.view==='admin' && S.adminSub==='gcal') bindAdminGcal_();
   /* GP Tasks: the page and its buttons */
   bindGpTasks_();
-  [['goGpTasks','week'],['goGpTasksGoals','week']].forEach(function(x){ var b=document.getElementById(x[0]); if(b) b.onclick=function(){ gpTap(); gptOpenPage_(x[1]); }; });
+  bindPeoplePick_();   // every people picker with a search box on the page (12-tasks.js)
+  bindKhmer_();   // Learn Khmer (15-khmer.js)
+  [['goGpTasks','week']].forEach(function(x){ var b=document.getElementById(x[0]); if(b) b.onclick=function(){ gpTap(); gptOpenPage_(x[1]); }; });
   document.querySelectorAll('[data-gogptasks]').forEach(function(b){ b.onclick=function(){ gpTap(); S.bellOpen=false; gptOpenPage_('week'); }; });
   /* an admin looking at a student's app: back to Admin, as yourself */
   var spx=document.getElementById('stuPreviewExit'); if(spx) spx.onclick=function(){ gpTap(); stuPreviewExit_(); };
@@ -1989,11 +2009,19 @@ gpPullToRefresh(function(){ return gpPullRefresh_(); }, { blocked: function(){ r
     return tag === 'INPUT' && !NO_KB[(el.type || 'text').toLowerCase()];
   }
   function settle(){ window.scrollTo(window.pageXOffset, window.pageYOffset); }
+  /* how much of the page the keyboard covers, as --kb on <html>: the bottom sheets (.gtSheet, .schedSheet)
+     sit that much higher and shrink to fit above it (Andrew, Oct 2026: "the keyboard covers the name"
+     — a fixed sheet at bottom:0 stays put under the keyboard, since the page itself does not shrink) */
+  function kbVar(up){
+    var kb = up ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
+    document.documentElement.style.setProperty('--kb', kb + 'px');
+  }
   var full = vv.height, width = vv.width, settleNext = false;
   function update(){
     if(Math.abs(vv.width - width) > 1){ width = vv.width; full = vv.height; }   // the phone was turned
     if(vv.height > full) full = vv.height;
     var up = bringsKeyboard(document.activeElement) && vv.height < full - KB_MIN;
+    kbVar(up);
     var was = document.body.classList.contains('kbOpen');
     if(up && !was) document.body.classList.add('kbOpen');
     else if(!up && was){
@@ -2005,7 +2033,11 @@ gpPullToRefresh(function(){ return gpPullRefresh_(); }, { blocked: function(){ r
     } else if(settleNext && !up){ settleNext = false; settle(); }
   }
   vv.addEventListener('resize', update);
-  document.addEventListener('focusin', function(){ setTimeout(update, 0); });
+  vv.addEventListener('scroll', function(){ if(document.body.classList.contains('kbOpen')) kbVar(true); });   // the page slid under the keyboard
+  document.addEventListener('focusin', function(e){ setTimeout(update, 0);
+    /* a box inside a sheet: once the keyboard is up, bring it into the sheet's view */
+    var el = e.target; if(el && el.closest && el.closest('.gtSheet, .schedSheet')) setTimeout(function(){ if(document.activeElement === el && document.body.classList.contains('kbOpen')) { try { el.scrollIntoView({ block:'nearest' }); } catch(x){} } }, 350);
+  });
   /* focus moving to the next box is a focusout then a focusin: wait a beat so
      the bar does not flash up between two fields */
   document.addEventListener('focusout', function(){ setTimeout(update, 60); });

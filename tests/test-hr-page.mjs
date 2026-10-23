@@ -54,7 +54,7 @@ async function open(who, query, waitFor) {
       trips: { ok: true, trips: [], totals: {}, reasons: { work: [], personal: [] }, hasMentor: false }, tripRequests: [], base: { leader: false, entries: {}, okrs: [], survey: [], metricOverrides: [] }, hrDue: who.isAdmin ? 2 : null, required: who.required || null };
     else if (b.fn === 'getData') out = { entries: {}, okrs: [], survey: [] };
     else if (b.fn === 'hrList') out = { ok: true, staff, legalDocs: [{ id: 'photo', title: 'Photo Release Form' }, { id: 'child', title: 'Child Protection Agreement — YWAM Siem Reap' }] };
-    else if (b.fn === 'hrSendContract') { const p = find(b.args[2]); p.contracts = p.contracts.filter(c => c.id !== 'cdig').concat([{ id: 'cdig', signed: b.args[3].from, years: b.args[3].years, files: [], digital: { status: 'awaiting_staff', sentAt: '2026-10-09T01:00:00Z' } }]); out = { ok: true, staff: p, contractId: 'cdig' }; }
+    else if (b.fn === 'hrSendContract') { const p = find(b.args[2]); p.contracts = p.contracts.filter(c => c.id !== 'cdig').concat([{ id: 'cdig', signed: b.args[3].from, years: b.args[3].years, files: [], digital: { status: 'awaiting_staff', sentAt: '2026-10-09T01:00:00Z', linkToken: 'abc123def4567890abc123def4567890' } }]); out = { ok: true, staff: p, contractId: 'cdig' }; }
     else if (b.fn === 'myContract') out = who.myc || { ok: false };
     else if (b.fn === 'mySaveStart') out = { ok: true, staff: { ...who.myc.me, ywamSince: b.args[2].ywamSince } };
     else if (b.fn === 'hrLegalPdf' || b.fn === 'hrContractPdf') out = { ok: true, name: 'signed.pdf', mime: 'application/pdf', dataUrl: 'data:application/pdf;base64,JVBERi0xLjQ=' };
@@ -315,15 +315,15 @@ console.log('\n=== signing: the legal documents and the staff contract ===');
   await page.click('[data-hrlegalpdf="photo"]'); await page.waitForTimeout(300);
   ok('PDF asks for that document of theirs', sent.some(x => x.fn === 'hrLegalPdf' && x.args[2] === 'st_dara' && x.args[3] === 'photo'));
   await page.click('#hrSendContract'); await page.waitForSelector('#hrSendForm');
-  ok('Fill out staff contract opens with this month and two years when they have none', /Fill out staff contract/.test(await page.$eval('#hrSendForm', e => e.textContent)) && /^\d{4}-\d{2}$/.test(await page.$eval('#hr_send_from', i => i.value)) && await page.$eval('#hr_send_years', s => s.value) === '2');
+  ok('Send staff contract opens with this month and two years when they have none — a one-time link, not handing the phone over', /Send staff contract/.test(await page.$eval('#hrSendForm', e => e.textContent)) && /one-time link/.test(await page.$eval('#hrSendForm', e => e.textContent)) && !/hand the phone/.test(await page.$eval('#hrSendForm', e => e.textContent)) && /Make the link for/.test(await page.$eval('#hrSendSave', e => e.textContent)) && /^\d{4}-\d{2}$/.test(await page.$eval('#hr_send_from', i => i.value)) && await page.$eval('#hr_send_years', s => s.value) === '2');
   ok('years is a number box, not a 1-2-3 list', await page.$eval('#hr_send_years', i => i.tagName === 'INPUT' && i.type === 'number'));
   await page.fill('#hr_send_from', '2026-11');
   await page.fill('#hr_send_years', '0'); await page.click('#hrSendSave'); await page.waitForTimeout(200);
   ok('0 years is refused before anything is sent', !sent.some(x => x.fn === 'hrSendContract') && /from 0\.25 to 30/.test(await page.$eval('body', e => e.textContent)));
   await page.fill('#hr_send_years', '5.5');
-  await Promise.all([page.waitForURL(/portal\.html/, { timeout: 5000 }).catch(() => {}), page.click('#hrSendSave')]);
+  await page.click('#hrSendSave'); await page.waitForTimeout(600);
   const sc = sent.filter(x => x.fn === 'hrSendContract').pop();
-  ok('any number of years (5.5): it starts one with that period, then opens the signing page on this phone for that person', sc && sc.args[2] === 'st_dara' && sc.args[3].from === '2026-11' && sc.args[3].years === 5.5 && /portal\.html\?staff=1&hr=st_dara&doc=contract%3Acdig/.test(page.url()), page.url());
+  ok('any number of years (5.5): it starts one with that period — and stays here, with the one-time link to send them, Copy, and Fill out and sign now', sc && sc.args[2] === 'st_dara' && sc.args[3].from === '2026-11' && sc.args[3].years === 5.5 && /portal\.html\?contract=abc123def4567890abc123def4567890$/.test(await page.$eval('#hrContractLink', i => i.value)) && !!(await page.$('[data-hrcopylink]')) && /portal\.html\?staff=1&hr=st_dara&doc=contract%3Acdig/.test(await page.$eval('[data-hrfillout="cdig"]', a => a.getAttribute('href'))) && /portal\.html/.test(page.url()) === false);
   await ctx.close();
 }
 {
@@ -336,7 +336,7 @@ console.log('\n=== signing: the legal documents and the staff contract ===');
   const { ctx, page, errors } = await open(ADMIN);
   await page.click('#menuBtn'); await page.waitForTimeout(300); await page.click('[data-menu-item="hr"]'); await page.waitForTimeout(800);
   await page.click('[data-hrperson="st_dara"]'); await page.waitForSelector('[data-hrcontract="cdig"]');
-  ok('until it is signed, HR sees it waiting, with a way back into the signing page — and it does not count yet', /Not signed yet — fill it out with Dara Pen/.test(await page.$eval('[data-hrcontract="cdig"]', e => e.textContent)) && (await page.$eval('[data-hrfillout="cdig"]', a => a.getAttribute('href'))) === 'portal.html?staff=1&hr=st_dara&doc=' + encodeURIComponent('contract:cdig') && /No contract on file/.test(await page.$eval('.hrBanner', e => e.textContent)));
+  ok('until it is signed, HR sees it waiting, with a way back into the signing page — and it does not count yet', /Not signed yet — send Dara Pen this link/.test(await page.$eval('[data-hrcontract="cdig"]', e => e.textContent)) && (await page.$eval('[data-hrfillout="cdig"]', a => a.getAttribute('href'))) === 'portal.html?staff=1&hr=st_dara&doc=' + encodeURIComponent('contract:cdig') && /No contract on file/.test(await page.$eval('.hrBanner', e => e.textContent)));
   await page.click('[data-hrback]').catch(() => {}); await page.waitForTimeout(300);
   await page.click('[data-hrperson="st_1"]'); await page.waitForSelector('#hrSendContract');
   await page.click('#hrSendContract'); await page.waitForSelector('#hrSendForm');

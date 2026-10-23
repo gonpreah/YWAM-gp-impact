@@ -117,6 +117,7 @@ const STU = { user: joined.user, pin: joined.token };
   const { ctx, page } = await open('/portal.html', { fn: a => localStorage.setItem('gp-portal', JSON.stringify(a)), arg: STU });
   await page.waitForSelector('#goGpApp', { timeout: 8000 }).catch(() => {});
   ok('in the portal a student has their application and a Go to GP app button', !!(await page.$('#goGpApp')) && !!(await page.$('#statusPill')));
+  ok('… and nothing else: no Our team, Strengths, Schedule or Resources tabs', !(await page.$('#applicantNav')) && !(await page.$('[data-aview]')));
   await Promise.all([page.waitForURL(/teams\.html\?student=1/, { timeout: 8000 }).catch(() => {}), page.click('#goGpApp')]);
   await page.waitForTimeout(1200);
   ok('it opens the GP app in student mode', /teams\.html\?student=1/.test(page.url()) && await page.evaluate(() => !!S.student && S.view === 'week'));
@@ -181,6 +182,27 @@ const STU = { user: joined.user, pin: joined.token };
   await page.waitForTimeout(1500);
   ok('Back to Admin: yourself again, on Sokha\'s profile', await page.evaluate(() => !S.student && !S.stuPreview && S.view === 'admin' && S.adminSub === 'stuone') && /Memorise Psalm 23/.test(await main(page)));
   await ctx.close();
+/* ---------- a sample student: the student app before anyone has joined, read only ---------- */
+{
+  const { ctx, page } = await open('/teams.html', { fn: u => localStorage.setItem('gp-staff', JSON.stringify({ user: u, pin: '1234' })), arg: 'ada' });
+  await page.evaluate(() => { S.view = 'admin'; S.adminSub = 'students'; render(); }); await page.waitForTimeout(800);
+  ok('Admin → Students has Preview the student app', !!(await page.$('#adminStuSample')));
+  const before = JSON.stringify(mem);
+  await page.click('#adminStuSample'); await page.waitForTimeout(600);
+  const txt = await main(page);
+  ok('the sample: a student\'s My Home under the read-only bar', await page.evaluate(() => S.student && !!S.stuPreview && S.view === 'week') && /Hi Sample/.test(txt) && !!(await page.$('.stuPreviewBar')) && !!(await page.$('#sec-goals')) && !!(await page.$('#stuMentorCard')) && !(await page.$('#bellBtn')), txt.slice(0, 200));
+  const opts = await page.$$eval('#stuMentorSel option', o => o.map(x => x.textContent));
+  ok('… mentors to choose from are Leadership Development only', opts.length === 2 && /Lina Leader/.test(opts[1]), JSON.stringify(opts));
+  ok('… the same bar as a student\'s: My Home, Schedules, Library', (await page.$$eval('nav.bottom [data-tab]', b => b.map(x => x.dataset.tab).join())) === 'week,sched,library');
+  await page.fill('#newGoalText', 'Sample typed this'); await page.click('#addGoalBtn'); await page.waitForTimeout(600);
+  await page.click('nav.bottom [data-tab="sched"]'); await page.waitForTimeout(600);
+  ok('… nothing done in the sample is saved anywhere', JSON.stringify(mem) === before);
+  await page.click('#menuBtn'); await page.waitForTimeout(250);
+  await Promise.all([page.waitForNavigation({ timeout: 8000 }).catch(() => {}), page.click('[data-menu-item="stuexit"]')]);
+  await page.waitForTimeout(1500);
+  ok('Back to Admin: yourself again, on Students', await page.evaluate(() => !S.student && !S.stuPreview && S.view === 'admin' && S.adminSub === 'students') && !!(await page.$('#adminStuSample')));
+  await ctx.close();
+}
 {
   const { ctx, page } = await open('/teams.html', { fn: u => localStorage.setItem('gp-staff', JSON.stringify({ user: u, pin: '1234' })), arg: 'ada' });
   await page.evaluate(() => { S.view = 'admin'; S.adminSub = 'home'; render(); }); await page.waitForTimeout(300);

@@ -32,19 +32,19 @@ S.lw=null; S.lwWeek=null; S.lwLoading=false; S.lwForm=null; S.lwTab=lwTabKept_()
    Every role opens on Overview each time the app is opened; a tab chosen stays only for
    that visit (sessionStorage), so the page always starts where the role's work is. */
 var LW_ROLES={
-  icd:{ tabs:['base','okrs','week','board','tasks','money'], focus:'Vision, partners and new bases', tiles:['partners','plants','money','leaders'],
+  icd:{ tabs:['base','okrs','week','board','money'], focus:'Vision, partners and new bases', tiles:['partners','plants','money','leaders'],
     kinds:['partner','church','base','oneonone','teaching','gospel','meeting','deptmeeting'] },
-  ncd:{ tabs:['base','okrs','board','tasks','week','money'], focus:'The staff and the week’s rhythm', tiles:['away','oneonones','numbers','tues'],
+  ncd:{ tabs:['base','okrs','board','week','money'], focus:'The staff and the week’s rhythm', tiles:['away','oneonones','numbers','tues'],
     kinds:['oneonone','meeting','deptmeeting','church','gospel','teaching','partner','base'] },
-  dept:{ tabs:['base','okrs','board','tasks','week','money'], focus:'Your department: its ministries, leaders and numbers', tiles:[],
+  dept:{ tabs:['base','okrs','board','week','money'], focus:'Your department: its ministries, leaders and numbers', tiles:[],
     kinds:['deptmeeting','oneonone','meeting','teaching','gospel','partner','church','base'] },
-  cd:{ tabs:['base','okrs','week','board','tasks','money'], focus:'', tiles:['leaders','numbers','tues','money'], kinds:[] }
+  cd:{ tabs:['base','okrs','week','board','money'], focus:'', tiles:['leaders','numbers','tues','money'], kinds:[] }
 };
 function lwRole_(){
   var tt=typeof orgTitleOf_==='function' ? orgTitleOf_(S.me) : '';
   return tt==='International Campus Director' ? 'icd' : tt==='National Campus Director' ? 'ncd' : /^Director of /.test(tt) ? 'dept' : 'cd';
 }
-function lwTabKept_(){ try{ var v=sessionStorage.getItem('gp-lw-tab'); return ['base','okrs','week','board','tasks','money'].indexOf(v)>-1 ? v : null; }catch(e){ return null; } }
+function lwTabKept_(){ try{ var v=sessionStorage.getItem('gp-lw-tab'); return ['base','okrs','week','board','money'].indexOf(v)>-1 ? v : null; }catch(e){ return null; } }
 function lwTabKeep_(v){ try{ sessionStorage.setItem('gp-lw-tab', v); }catch(e){} }
 /* The tab to show: the one chosen this visit, else the role's first. */
 function lwTabNow_(){ var R=LW_ROLES[lwRole_()]; return R.tabs.indexOf(S.lwTab)>-1 ? S.lwTab : R.tabs[0]; }
@@ -205,14 +205,14 @@ function cafeLoad_(date){
   run('cafeGet',[S.auth.user,S.auth.pin,date],function(d){ S.cafeLoading=false; if(d && d.ok && d.date===date) S.cafe=d; else S.cafeErr=(d&&d.err)||'error'; if(S.view==='ministry') render(); },
     function(e){ S.cafeLoading=false; S.cafeErr=String((e&&e.message)||'offline'); if(S.view==='ministry') render(); });
 }
-function cafeHtml_(){
+function cafeHtml_(noTabs){
   var date=S.cafeDate||todayStr(); S.cafeDate=date;
   if(!S.cafe || S.cafe.date!==date){
     if(S.cafeErr) return '<div class="card"><p class="sub" style="margin:0 0 8px">⚠️ '+esc(S.cafeErr==='not_authorized' ? t('The cafe tool is for the cafe team.') : t('Couldn’t load the cafe.'))+'</p><button class="btn ghost" id="cafeRetry">'+esc(t('Try again'))+'</button></div>';
     cafeLoad_(date); return '<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
   }
   var C=S.cafe, tabs=[['today','☀️','Today'],['till','🧾','Till'],['rota','👥','Rota'],['week','📈','Week']].concat(C.canSetup?[['setup','⚙️','Set up']]:[]);
-  var h='<div class="cafeTabs">'+tabs.map(function(x){ return '<button class="'+(S.cafeTab===x[0]?'on':'')+'" data-cafetab="'+x[0]+'">'+x[1]+' '+esc(t(x[2]))+'</button>'; }).join('')+'</div>';
+  var h=noTabs ? '' : '<div class="cafeTabs">'+tabs.map(function(x){ return '<button class="'+(S.cafeTab===x[0]?'on':'')+'" data-cafetab="'+x[0]+'">'+x[1]+' '+esc(t(x[2]))+'</button>'; }).join('')+'</div>';
   if(S.cafeTab==='till') return h+cafeTillHtml_(C);
   if(S.cafeTab==='rota') return h+cafeRotaHtml_(C);
   if(S.cafeTab==='week') return h+cafeWeekHtml_(C);
@@ -340,7 +340,7 @@ function bindCafe_(){
   var call=function(fn,args,then){ if(S.cafeBusy) return; S.cafeBusy=true; run(fn,[S.auth.user,S.auth.pin].concat(args),function(d){ done(d); if(then && d && d.ok) then(d); },function(){ S.cafeBusy=false; showMsg(t('No connection — try again when you are online.')); render(); }); };
   var rt=document.getElementById('cafeRetry'); if(rt) rt.onclick=function(){ S.cafeErr=''; render(); };
   document.querySelectorAll('[data-cafeview]').forEach(function(b){ b.onclick=function(){ gpTap(); S.cafeView=b.getAttribute('data-cafeview'); lsSet('gp-cafe-view', S.cafeView); render(); }; });
-  document.querySelectorAll('[data-cafetab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.cafeTab=b.getAttribute('data-cafetab'); S.cafeEdit=null; render(); }; });
+  document.querySelectorAll('[data-cafetab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.cafeTab=b.getAttribute('data-cafetab'); S.mmTab='ministry'; S.mmTabTouched=true; if(b.closest('.mmTabs')) mmTabKeep_(S.cafeTab); S.cafeEdit=null; render(); }; });
   var shift=function(n){ var d=new Date((S.cafeDate||todayStr())+'T00:00:00'); d.setDate(d.getDate()+n); var s=isoDateOf_(d); if(s>todayStr()) return; S.cafeDate=s; S.cafeTicks={open:{},close:{}}; render(); };
   var pd=document.getElementById('cafePrevDay'), nd=document.getElementById('cafeNextDay');
   if(pd) pd.onclick=function(){ shift(-1); }; if(nd) nd.onclick=function(){ shift(1); };
@@ -448,9 +448,16 @@ function leadBaseHtml_(pulse){
     scope.forEach(function(d){ var list=none.filter(function(r){ return r.dept===d; }); if(!list.length) return;
       h+='<div class="lbDeptLine">'+(scope.length>1?'<b>'+esc(t(d))+'</b> ':'')+esc(list.map(function(r){ return t(r.min); }).join(', '))+'</div>'; });
   } else h+='<p class="sub" style="margin:4px 0 0">✓ '+esc(t('Every ministry has a leader.'))+'</p>';
-  h+='<details class="pulseMore"><summary>'+esc(t('Who leads what'))+'</summary>'+rows.map(function(r){
-      return '<div class="cafeLine"><span>'+esc(t(r.min))+'</span><span class="'+(r.leaders.length?'':'lbNone')+'">'+esc(r.leaders.length ? r.leaders.map(function(p){ return p.name; }).join(', ') : '—')+'</span></div>'; }).join('')+
-    '<p class="hint" style="margin:6px 0 0">'+esc(t('A leader is set on each person’s profile by an admin.'))+'</p></details></div>';
+  /* Who leads what: ＋ on a line opens a people search to name its leader (Andrew, Oct 2026) — your own
+     board only; the leaders are the `leads` keys on their profiles, and × takes one off */
+  var canSet=!V && (S.me.isAdmin || S.me.dept==='Campus Leadership');
+  h+='<details class="pulseMore" id="lbLeadsFold"'+((S.lbLeadsOpen || S.lbLeadPick) ? ' open' : '')+'><summary>'+esc(t('Who leads what'))+'</summary>'+rows.map(function(r, i){
+      var key=r.dept+'|'+r.min, picking=canSet && S.lbLeadPick===key;
+      return '<div class="cafeLine lbLeadRow"><span>'+esc(t(r.min))+'</span><span class="'+(r.leaders.length?'':'lbNone')+'">'+esc(r.leaders.length ? r.leaders.map(function(p){ return p.name; }).join(', ') : '—')+
+        (canSet ? ' <button class="lbLeadAdd'+(picking?' on':'')+'" data-lbleadpick="'+esc(key)+'" aria-label="'+esc(t('Set the leader'))+'" aria-expanded="'+(picking?'true':'false')+'">'+(picking?'×':'＋')+'</button>' : '')+'</span></div>'+
+        (picking ? '<div class="lbLeadPick">'+ppickHtml_({ key:'ml'+i, people:lbLeadPeople_(r.dept, r.min), chosen:r.leaders.map(function(p){ return p.id; }), multi:true, placeholder:t('Type a name to make them a leader'),
+          onPick:function(id){ lbSetLeader_(r.dept, r.min, id, true); }, onRemove:function(id){ lbSetLeader_(r.dept, r.min, id, false); } })+'</div>' : ''); }).join('')+
+    '<p class="hint" style="margin:6px 0 0">'+esc(canSet ? t('Tap ＋ by a ministry to name its leader. It is the same leader as on their profile in Admin.') : t('A leader is set on each person’s profile by an admin.'))+'</p></details></div>';
   /* Tuesday morning. */
   h+='<div class="card" id="lbTues"><div class="goalCardTitle" style="margin-bottom:6px">🎤 '+esc(gpT('Tuesday {date}',{date:hospDate_(next)}))+'</div>';
   if(!S.lead) h+='<p class="sub" style="margin:0">'+esc(S.leadErr || t('Loading…'))+'</p>';
@@ -518,7 +525,24 @@ function leadTueFormHtml_(date, r){
     list('announcements', '📣', t('Announcements'), 200, t('e.g. Water off on Thursday morning'))+
     '<div class="btnRow"><button class="btn" id="ltSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="ltCancel">'+esc(t('Cancel'))+'</button></div></div>';
 }
+/* the people to pick a ministry's leader from: its own people first, then everyone on the campus */
+function lbLeadPeople_(dept, min){
+  return (S.roster||[]).filter(function(p){ return p.campus===S.me.campus && p.name; }).sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); })
+    .map(function(p){ var f=p.dept===dept && p.ministry===min; return { id:p.id, name:p.name, sub:t(p.ministry||p.dept||''), first:f, group: f ? t(min) : t('Everyone else') }; });
+}
+function lbSetLeader_(dept, min, id, on){
+  var key=dept+'|'+min, p=(S.roster||[]).filter(function(x){ return x.id===id; })[0];
+  if(p){ p.leads=(p.leads||[]).filter(function(k){ return k!==key; }); if(on) p.leads.push(key); }   // at once; the server's answer follows
+  render();
+  run('setMinistryLeader',[S.auth.user,S.auth.pin,dept,min,id,on],function(d){
+    if(d && d.ok){ if(p) p.leads=d.leads.slice(); showMsg(on ? gpT('{name} now leads {min}',{name:firstName_(p ? p.name : ''), min:t(min)}) : t('Removed')); }
+    else { if(p){ p.leads=(p.leads||[]).filter(function(k){ return k!==key; }); if(!on) p.leads.push(key); } showMsg(t('Could not save')); }
+    render();
+  });
+}
 function bindLeadTools_(){
+  var lf=document.getElementById('lbLeadsFold'); if(lf) lf.ontoggle=function(){ S.lbLeadsOpen=lf.open; if(!lf.open) S.lbLeadPick=null; };
+  document.querySelectorAll('[data-lbleadpick]').forEach(function(b){ b.onclick=function(){ gpTap(); var k=b.getAttribute('data-lbleadpick'); S.lbLeadPick = S.lbLeadPick===k ? null : k; S.lbLeadsOpen=true; render(); var x=document.querySelector('.lbLeadPick [data-ppickq]'); if(x) x.focus(); }; });
   var gt=document.getElementById('lbGoTues'); if(gt) gt.onclick=function(){ gpTap(); S.lwTab='board'; lwTabKeep_('board'); S.leadTab='tues'; render(); window.scrollTo(0,0); };
   document.querySelectorAll('[data-ltopen]').forEach(function(b){ b.onclick=function(){ gpTap(); var d=b.getAttribute('data-ltopen'); S.ltOpen = S.ltOpen===d ? null : d; S.ltDraft=null; render(); }; });
   var D=S.ltDraft; if(!D) return;
@@ -987,17 +1011,32 @@ function homeHealth_(){
    pick (hb.days, 0 Sunday … 6 Saturday) — and can be one of your own (a label
    and an emoji). The card asks only about what is due today; a streak counts
    the due days alone, so a Monday-Wednesday-Friday habit is not broken by a
-   Tuesday. */
+   Tuesday. Or so many days a week (hb.perWeek, Uriah: "sometimes with a busy
+   schedule we do it on other days"): the tile is there every day to mark as
+   you go, counts as done for the day once the week's number is reached, and
+   its streak is weeks in a row that reached it. */
 var DAY_LETTERS=['S','M','T','W','T','F','S'];
 var DAY_SHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 function habitDue(hb, d){
-  if(!hb || !hb.days || !hb.days.length) return true;
+  if(!hb || hb.perWeek || !hb.days || !hb.days.length) return true;
   var dow = (d instanceof Date) ? d.getDay() : new Date(d+'T00:00:00').getDay();
   return hb.days.indexOf(dow)>-1;
 }
 function myHabitsToday(){ return myHabits().filter(function(hb){ return habitDue(hb, new Date()); }); }
+/* a "times a week" habit: the Monday-to-Sunday week a day is in, how many of its days are ticked */
+function habitWeekOf_(d){ var m=new Date(d.getFullYear(), d.getMonth(), d.getDate()); m.setDate(m.getDate()-((m.getDay()+6)%7)); return m; }
+function habitWeekCount(hb, d){
+  var from=habitWeekOf_(d||new Date()), to=new Date(from); to.setDate(to.getDate()+6);
+  var a=fmtD(from), b=fmtD(to), pred=habitPred(hb.id), n=0, seen={};
+  S.logs.forEach(function(l){ if(l.date>=a && l.date<=b && !seen[l.date] && pred(l)){ seen[l.date]=1; n++; } });
+  return n;
+}
+function habitWeekMet(hb, d){ return !!hb.perWeek && habitWeekCount(hb, d)>=hb.perWeek; }
+/* done for the day: ticked today, or (times a week) the week's number already reached */
+function habitDoneToday(hb, log){ return !!(log && didHabit(log, hb.id)) || habitWeekMet(hb, new Date()); }
 function habitScheduleLabel(hb){
   var days=hb.days||[];
+  if(hb.perWeek) return hb.perWeek===1 ? t('Once a week') : gpT('{n} times a week',{n:hb.perWeek});
   if(!days.length) return t('Every day');
   if(days.join()==='1,2,3,4,5') return t('Weekdays');
   if(days.join()==='0,6') return t('Weekends');
@@ -1007,6 +1046,7 @@ function habitScheduleLabel(hb){
 /* The current run over this habit's due days — one missed day forgiven, as
    graceStreak always has; a day it is not due neither counts nor breaks. */
 function habitStreak(hb){
+  if(hb.perWeek) return habitWeekStreak_(hb).now;
   var pred=habitPred(hb.id);
   var have={}; S.logs.forEach(function(l){ if(pred(l)) have[l.date]=1; });
   var d=new Date();
@@ -1022,6 +1062,7 @@ function habitStreak(hb){
   return n;
 }
 function habitBest(hb){
+  if(hb.perWeek) return habitWeekStreak_(hb).best;
   var pred=habitPred(hb.id);
   var have={}, first=null;
   S.logs.forEach(function(l){ if(pred(l)){ have[l.date]=1; if(!first || l.date<first) first=l.date; } });
@@ -1032,6 +1073,19 @@ function habitBest(hb){
     d.setDate(d.getDate()+1);
   }
   return best;
+}
+/* weeks in a row that reached the number — this week counts once it has, and does not break the
+   run before it has; best is over all the weeks since the first tick */
+function habitWeekStreak_(hb){
+  var pred=habitPred(hb.id), first=null;
+  S.logs.forEach(function(l){ if(pred(l) && (!first || l.date<first)) first=l.date; });
+  if(!first) return { now:0, best:0 };
+  var thisWk=habitWeekOf_(new Date()), w=new Date(thisWk), now=0, guard=0;
+  if(!habitWeekMet(hb, w)) w.setDate(w.getDate()-7);
+  while(guard++<600 && habitWeekMet(hb, w)){ now++; w.setDate(w.getDate()-7); }
+  var best=0, run=0; w=habitWeekOf_(new Date(first+'T00:00:00')); guard=0;
+  while(w<=thisWk && guard++<600){ run = habitWeekMet(hb, w) ? run+1 : 0; if(run>best) best=run; w.setDate(w.getDate()+7); }
+  return { now:now, best:best };
 }
 
 /* A little burst of confetti out of the tile you just ticked. Pure CSS
@@ -1068,7 +1122,7 @@ function habitsCardHtml(){
   var all=myHabits();
   var list=all.filter(function(hb){ return habitDue(hb, new Date()); });
   var rest=all.filter(function(hb){ return !habitDue(hb, new Date()); });
-  var doneN=list.filter(function(hb){ return log && didHabit(log,hb.id); }).length;
+  var doneN=list.filter(function(hb){ return habitDoneToday(hb, log); }).length;
 
   var h='<h3 id="sec-habits">✅ '+esc(t('Habits'))+'</h3>'+
     '<div class="card"><div class="goalCardHead"><span class="goalCardTitle">'+esc(t('Habit Tracker'))+'</span>'+
@@ -1084,11 +1138,14 @@ function habitsCardHtml(){
   list.forEach(function(hb){
     var meta=habitMeta(hb);
     var on=log && didHabit(log,hb.id);
-    var run=habitStreak(hb);
-    h+='<button class="habitBtn'+(on?' on':'')+'" data-habit="'+esc(hb.id)+'">'+
+    var run=habitStreak(hb), sub;
+    if(hb.perWeek){   // marked as you go: this week's count, ✓ once the number is reached
+      var n=habitWeekCount(hb, new Date()), met=n>=hb.perWeek;
+      sub='<span class="hRun'+(met?' met':'')+'">'+(met?'✓ ':'')+esc(gpT('{n} of {total} this week',{n:n,total:hb.perWeek}))+(run>1?' · 🔥 '+esc(gpT('{n} wk',{n:run})):'')+'</span>';
+    } else sub='<span class="hRun">'+(run>0?'🔥 '+run:'&nbsp;')+'</span>';
+    h+='<button class="habitBtn'+(on?' on':'')+(!on && habitWeekMet(hb, new Date())?' met':'')+'" data-habit="'+esc(hb.id)+'">'+
       '<span class="hIcon">'+esc(meta.icon)+'</span>'+
-      '<span class="hLabel">'+esc(t(meta.label))+'</span>'+
-      '<span class="hRun">'+(run>0?'🔥 '+run:'&nbsp;')+'</span></button>';
+      '<span class="hLabel">'+esc(t(meta.label))+'</span>'+sub+'</button>';
   });
   h+='</div>';
   if(rest.length){
@@ -1113,16 +1170,23 @@ function habitsCardHtml(){
 }
 
 /* Choosing habits: tick the ones from the list or add your own, and for each
-   say when it is due — every day, weekdays, or the days you pick. */
+   say when it is due — every day, weekdays, the days you pick, or so many
+   times a week marked as you go. */
 function habitDaysHtml_(hb){
   var days=hb.days||[];
-  var preset = !days.length ? 'daily' : days.join()==='1,2,3,4,5' ? 'weekdays' : 'custom';
+  var preset = hb.perWeek ? 'perweek' : !days.length ? 'daily' : days.join()==='1,2,3,4,5' ? 'weekdays' : 'custom';
   var h='<div class="hpWhen">'+
     '<div class="hpPresets">'+
       '<button class="catChip'+(preset==='daily'?' on':'')+'" data-hpdays="'+esc(hb.id)+'|daily">'+esc(t('Every day'))+'</button>'+
       '<button class="catChip'+(preset==='weekdays'?' on':'')+'" data-hpdays="'+esc(hb.id)+'|weekdays">'+esc(t('Weekdays'))+'</button>'+
       '<button class="catChip'+(preset==='custom'?' on':'')+'" data-hpdays="'+esc(hb.id)+'|custom">'+esc(t('Pick days'))+'</button>'+
+      '<button class="catChip'+(preset==='perweek'?' on':'')+'" data-hpdays="'+esc(hb.id)+'|perweek">'+esc(t('Times a week'))+'</button>'+
     '</div>';
+  if(preset==='perweek'){
+    h+='<div class="hpPerWeek"><button class="hpStep" data-hpweek="'+esc(hb.id)+'|-1" aria-label="'+esc(t('Fewer'))+'"'+(hb.perWeek<=1?' disabled':'')+'>−</button>'+
+      '<b>'+hb.perWeek+'</b><button class="hpStep" data-hpweek="'+esc(hb.id)+'|1" aria-label="'+esc(t('More'))+'"'+(hb.perWeek>=6?' disabled':'')+'>+</button>'+
+      '<span class="pmeta">'+esc(t('days a week — mark them as you go, whichever days they happen'))+'</span></div>';
+  }
   if(preset==='custom'){
     h+='<div class="hpDays">'+[1,2,3,4,5,6,0].map(function(d){
       return '<button class="hpDay'+(days.indexOf(d)>-1?' on':'')+'" data-hpday="'+esc(hb.id)+'|'+d+'" aria-label="'+esc(t(DAY_SHORT[d]))+'" aria-pressed="'+(days.indexOf(d)>-1?'true':'false')+'">'+DAY_LETTERS[d]+'</button>';
@@ -1164,14 +1228,14 @@ function habitPickerHtml_(list){
 function streaksHtml(){
   var runs=myHabits().map(function(hb){
     var meta=habitMeta(hb);
-    return { label:meta.label, icon:meta.icon, now:habitStreak(hb), best:habitBest(hb) };
+    return { label:meta.label, icon:meta.icon, now:habitStreak(hb), best:habitBest(hb), weeks:!!hb.perWeek };
   }).filter(function(r){ return r.now>0 || r.best>0; });
   if(!runs.length) return '';
   var h='<div class="card"><div class="goalCardTitle" style="margin-bottom:8px">🔥 '+esc(t('Streaks'))+'</div>';
   runs.forEach(function(r){
     h+='<div class="row"><span class="rowName">'+r.icon+' '+esc(t(r.label))+
-      '<div class="pmeta">'+esc(gpT('best {n} days',{n:r.best}))+'</div></span>'+
-      '<span class="pctSm">'+r.now+'d</span></div>';
+      '<div class="pmeta">'+esc(r.weeks ? gpT('best {n} weeks',{n:r.best}) : gpT('best {n} days',{n:r.best}))+'</div></span>'+
+      '<span class="pctSm">'+r.now+(r.weeks?'w':'d')+'</span></div>';
   });
   return h+'</div>';
 }
@@ -1214,7 +1278,7 @@ function goalsCardHtml(wk){
   var items = (rec && rec.items && rec.items.length) ? rec.items : [];
   var written = items.filter(function(i){ return i && i.text; });
 
-  var h='<h3 id="sec-goals" class="secWithBtn">🎯 '+esc(t('Weekly Goals'))+(S.student ? '' : '<button class="secBtn" id="goGpTasksGoals">✅ '+esc(t('GP Tasks'))+' ›</button>')+'</h3>';
+  var h='<h3 id="sec-goals">🎯 '+esc(t('Weekly Goals'))+'</h3>';   // (the GP Tasks button that sat here went — Andrew, Oct 2026; the card's row is the way in)
 
   /* One card for the week being looked at, with a small Last week / This week /
      Next week switch under the goals (goalsWeekSwitchHtml_): last week to mark

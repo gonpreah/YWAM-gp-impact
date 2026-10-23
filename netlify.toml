@@ -1,3 +1,7 @@
 [build]
   publish = "public"
   functions = "netlify/functions"
+
+[functions]
+  # the Learn Khmer word list rides along with the functions: audio.js records only words from it
+  included_files = ["public/khmer-vocab.js"]

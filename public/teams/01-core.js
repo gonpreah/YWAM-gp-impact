@@ -284,7 +284,12 @@ function gpStudentArgs_(fn, args){ args=args||[]; return [args[0], args[1], fn, 
 function run(fn, args, onOk, onErr){
   if(S.stuPreview){   // an admin looking at a student's app: nothing goes out, nothing is saved
     if(/^(save|lib|studentSetMentor)/.test(fn)) showMsg(t('Just a preview — nothing is saved.'));
-    if(onOk) setTimeout(function(){ onOk({ ok:false, err:'preview' }); }, 0);
+    var pv={ ok:false, err:'preview' }, sc=S.sched;
+    if(fn==='getDuty'){   // a week's schedule: the published ones that came with the student's boot
+      var wk=args[3], side=sc && sc.ok ? (wk===sc.week ? sc.now : wk===sc.nextWeek ? sc.next : null) : null;
+      pv={ ok:true, kind:args[2], week:wk, canEdit:false, sched:(side && side[args[2]]) || null };
+    }
+    if(onOk) setTimeout(function(){ onOk(pv); }, 0);
     return;
   }
   if(S.student && fn!=='studentCall'){
@@ -619,7 +624,7 @@ function gpViewFromUrl_(){
 function gpResumeView_(){
   /* back from looking at a student's app (Admin → Students): their profile again */
   try { var sb=sessionStorage.getItem('gp-stu-back');
-    if(sb){ sessionStorage.removeItem('gp-stu-back'); S.view='admin'; S.adminSub='stuone'; S.adminStuId=sb; S.adminStuView=null; return; } } catch(e){}
+    if(sb){ sessionStorage.removeItem('gp-stu-back'); S.view='admin'; S.adminSub=sb==='sample' ? 'students' : 'stuone'; S.adminStuId=sb==='sample' ? null : sb; S.adminStuView=null; S.adminStu=null; return; } } catch(e){}
   try { var rv=sessionStorage.getItem('gp-resume');
     if(rv){ sessionStorage.removeItem('gp-resume'); if(['week','base','team','health','library','ministry','mentor','goals','leave','admin'].indexOf(rv)>-1) S.view=rv; } } catch(e){}
 }
@@ -827,7 +832,7 @@ function logout(){
   lsDel('gp-staff-card');
   S.me=null; S.auth={user:'',pin:''}; S.logs=[]; S.mentees=[];
   S.goals=[]; S.checkins=[]; S.ministry=null; S.goalsWeek=null; S.goalEditIdx=null; S.kpiWeek=null; S.leaveDraft=null; S.weekDraft={}; S.kpiDraft={}; S.kpiWeekDraft={};
-  S.personal=null; S.personalDraft={}; S.mmTab='ministry'; S.kpiInputOpen=false; S.mmDashAll=false; S.metricRename=null;
+  S.personal=null; S.personalDraft={}; S.mmTab='ministry'; S.mmPickOpen=false; S.mmPickQ=''; S.kpiInputOpen=false; S.mmDashAll=false; S.metricRename=null;
   S.mmPeriod='quarter'; S.teamTrips={}; S.teamLoading={}; S.teamError={}; S.teamForm=null;
   S.hosp=null; S.hospLoading=false; S.hospError=''; S.hospForm=null; S.hospBedPick=null; S.hospRoom=null; S.hospBld=null; S.hospMove=null;
   S.lead=null; S.leadErr=''; S.leadForm=null; S.leadLoading=false; S.leadEdit=null;
@@ -943,10 +948,11 @@ function render(){
   else if(S.view==='report') m.innerHTML=boardReportHtml_();
   else if(S.view==='support') m.innerHTML=supportHtml_();
   else if(S.view==='prayer') m.innerHTML=prayerHtml_();
+  else if(S.view==='khmer') m.innerHTML=khmerHtml_();
   else if(S.view==='p360') m.innerHTML=p360Html_();
   else if(S.view==='week') m.innerHTML=S.student ? studentHomeHtml_() : homeHtml();
   else if(S.view==='health') m.innerHTML=healthHtml();
-  else if(S.view==='tasks') m.innerHTML=gptPageHtml_(null);
+  else if(S.view==='tasks') m.innerHTML=gptPageHtml_(S.gptPageScope||null);
   else if(S.view==='calendar') m.innerHTML=calendarHtml_();
   else if(S.view==='whoshere') m.innerHTML=whosHereHtml_();
   else if(S.view==='students') m.innerHTML=studentsPageHtml_();
@@ -1160,6 +1166,9 @@ function renderMenu(){
   IC.base='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>';
   IC.library='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7M9 11h5"/></svg>';
   IC.tasks='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.8"/></svg>';
+  /* GP Calendar/Tasks: a calendar with a tick in it (this used to copy IC.calendar before it was set — "undefined" in the menu) */
+  IC.caltasks='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><path d="M8.5 15l2.5 2.5 4.5-5"/></svg>';
+  IC.khmer='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>';
   IC.calendar='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><path d="M7.5 13.5h2M11 13.5h2M14.5 13.5h2M7.5 17h2M11 17h2"/></svg>';
   IC.ywamgp='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.8 2.6 4 5.6 4 9s-1.2 6.4-4 9c-2.8-2.6-4-5.6-4-9s1.2-6.4 4-9Z"/></svg>';
   IC.boardlogout=IC.profile;
@@ -1178,11 +1187,11 @@ function renderMenu(){
   ] : S.guest ? [
     { title:'', items:[it('library', t('Library')), it('guestreg', t('Create my profile')), it('guestlogin', t('Log in'))] }
   ] : [
-    { title:'', items:[it('base', t('Base')), it('tasks', t('GP Tasks')), it('calendar', t('Calendar')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer')), it('p360', t('360 reviews')), it('leave', t('Leave Request')), it('library', t('Library'))] },
+    { title:'', items:[it('base', t('Base')), it('caltasks', t('GP Calendar/Tasks')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer')), it('p360', t('360 reviews')), it('leave', t('Leave Request')), it('library', t('Library'))] },
     { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : [], canStudentsClient_() ? [it('students', t('Students'))] : []) },
     { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal'))] : [] },
-    { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : []) },
-    { title:t('Language'), items:kmrCan_() ? [it('kmreview', t('Khmer review'))] : [] }
+    { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : [], kmrCan_() ? [it('kmreview', t('Khmer review'))] : []) },
+    { title:t('Language'), items:[it('khmer', t('Learn Khmer / English'))] }
   ];
   root.innerHTML = '<div class="scrim" id="menuScrim"></div>'+
     '<div class="drawer">'+
@@ -1210,8 +1219,9 @@ function renderMenu(){
       else if(id==='guestreg' || id==='guestlogin'){ gpLeaveGuest_(id==='guestreg'); }
       else if(id==='ywamgp'){ S.view='ywamgp'; S.person=null; render(); window.scrollTo(0,0); }
       else if(id==='tasks'){ gptOpenPage_('week'); }
-      else if(id==='calendar'){ S.view='calendar'; S.cal=null; S.calFrom=null; render(); window.scrollTo(0,0); }
+      else if(id==='calendar' || id==='caltasks'){ S.view='calendar'; S.cal=null; S.calFrom=null; render(); window.scrollTo(0,0); }
       else if(id==='prayer'){ S.view='prayer'; S.pr=null; render(); window.scrollTo(0,0); }
+      else if(id==='khmer'){ khOpen_(); }
       else if(id==='p360'){ S.view='p360'; S.p3Sub='home'; S.p3=null; render(); window.scrollTo(0,0); }
       else if(id==='kmreview'){ S.view='kmreview'; S.kmr=null; S.kmrErr=''; render(); window.scrollTo(0,0); }
       else if(id==='boardlogout'){ if(S.student) gpStudentLeave_(false); else boardLeave_(false); }

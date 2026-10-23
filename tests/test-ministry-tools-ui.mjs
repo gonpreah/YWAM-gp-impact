@@ -112,7 +112,7 @@ const txt = p => p.$eval('#main', e => e.innerText);
 }
 {
   const { ctx, page } = await open('vanna');
-  ok('the cafe’s My Ministry opens on the cafe tool, Today', !!(await page.$('[data-cafeview="tool"].on')) && !!(await page.$('#cafeOpenBtn')) && (await page.$$('.cafeTick')).length >= 4);
+  ok('the cafe’s My Ministry opens on the cafe tool, Today — one row of tabs: Today · Till · Rota · Week · Numbers · Tasks · OKRs', !!(await page.$('.mmTabs .gtTab.on[data-cafetab="today"]')) && (await page.$$eval('.mmTabs .gtTab', b => b.map(x => x.textContent))).join() === 'Today,Till,Rota,Week,Numbers,Tasks,OKRs' && !!(await page.$('#cafeOpenBtn')) && (await page.$$('.cafeTick')).length >= 4);
   ok('… and a barista gets no Set up tab', !(await page.$('[data-cafetab="setup"]')));
   const ticks = await page.$$('[data-cafetick^="open|"]'); await ticks[0].check(); await ticks[1].check();
   await page.screenshot({ path: OUT + '/cafe-open.png' });
@@ -142,9 +142,9 @@ const txt = p => p.$eval('#main', e => e.innerText);
   const ct = await page.$$('[data-cafetick^="close|"]'); await ct[0].check();
   await page.fill('#cafeCash', '25.5'); await page.click('#cafeCloseBtn'); await page.waitForTimeout(1200);
   ok('closing for the day keeps the cash', /Closed at .* cash \$25\.50/.test(await txt(page)));
-  await page.click('[data-cafeview="numbers"]'); await page.waitForTimeout(600);
+  await page.click('.mmTabs [data-mmtab="numbers"]'); await page.waitForTimeout(600);
   ok('"The numbers" is the usual page, saying the tool fills it', /fill themselves in/.test(await txt(page)));
-  ok('… and the phone remembers that choice for next time', await page.evaluate(() => localStorage.getItem('gp-cafe-view')) === 'numbers');
+  ok('… and the phone remembers that choice for next time', await page.evaluate(() => (JSON.parse(localStorage.getItem('gp-mm-tab') || '{}')['Community Service|Cafe'])) === 'numbers');
   ok('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await ctx.close();
 }

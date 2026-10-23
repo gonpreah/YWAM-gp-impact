@@ -346,6 +346,31 @@ it everywhere `normRows_`/`normKey_` run (rows, OKR `metricKey`s, `leads`, `mini
 Education (Oct 2026). Move a ministry in taxonomy.js AND add it to `MINISTRY_MOVES`, or its
 history is orphaned (`test-numbers-people.mjs` §5 covers the move).
 
+## My Ministry — the shell (Oct 2026, Uriah: "so cluttered, a lot of boxes")
+- **One flat header** (`mmHeadHtml_`, `#mmBanner`, `.mmHead`): eyebrow "My Ministry", the ministry's
+  emoji and name, "dept · campus · 👑 Led by …", a one-line note on whose numbers these are
+  (`.mmBannerNote`), and **Switch ▾** (`#mmSwitch`, only with 2+ options) opening a sheet
+  (`mmPickerHtml_`, `S.mmPickOpen`, `#mmPickScrim`, `.mmPickList`, grouped by department, a search
+  `#mmPickFind` when there are more than 8, `data-mmpick="dept|min"` rows, the current one `.on`).
+  No chips, no Department/Ministry selects any more.
+- **One row of tabs per ministry** (`mmTabsHtml_` → `.gtBar.mmTabsBar .gtTabs.mmTabs .gtTab`,
+  `mmTabsFor_`): most ministries Numbers · (Schedule) · Tasks · OKRs; the Cafe Today · Till · Rota ·
+  Week (· Set up) · Numbers · Tasks · OKRs — its own keys keep `data-cafetab` so `cafeHtml_(true)`
+  (no inner tabs) and its handlers work; the Finances office Reports · Dashboard (`data-fintab`) ·
+  Numbers · Tasks · OKRs; Outreach Teams: Teams · Tasks · OKRs; Hospitality adds an "SR Hospitality"
+  tab that is a way in (`#goHosp`). Campus Leadership rows use the same look with `data-lwtab` and
+  keep `.lwSeg`. `mmCurTab_` picks the tab: `S.mmTab` when it is a shell key (`MM_SHELL_KEYS`), else
+  the tool's own (`S.cafeTab` / `S.finTab`), else the first; **the last tab is remembered per
+  ministry** on the phone (`gp-mm-tab` JSON by `dept|min`, `mmTabKeep_`/`mmTabKept_`; the Cafe's old
+  `gp-cafe-view=numbers` still counts). `S.mmTab='okr'` from elsewhere still lands on OKRs; the
+  Tasks tab embeds `gptPageHtml_({dept,min}, true)`; the old Ministry Tasks fold is gone.
+- **Flat sections, not boxes**: the tab's content sits in `.mmPane`; its top-level `.card`s lose
+  frame and background and become sections under hairlines; `.mmGrid` stat tiles become a
+  horizontal strip (`.mmPane .mmTile`, no borders, dividers). Nested cards inside tools keep
+  their look. Tests: `test-ministry-redesign`, `-tools-ui`, `-browse`, `test-lead-roles-ui`,
+  `test-outreach-teams`, `test-gp-tasks-ui`, `test-finance-ui`, `test-dept-pulse-ui` open Switch ▾
+  before tapping `[data-mmpick]`.
+
 ## My Ministry — one ministry at a time
 One page (`myMinistryHtml`), two tabs — **Numbers** and **OKRs** (`S.mmTab`). Numbers is
 built around ONE ministry, picked at the top and named in a banner (`#mmBanner`) so there
@@ -913,8 +938,15 @@ its `label` (40 chars) and `icon` (emoji, ⭐ by default) — `cleanHabitConfig_
 `MAX_HABITS` 8 in both copies. The card (`habitsCardHtml`) asks only about what is due today
 (`habitDue`, `myHabitsToday`), lists the rest under "n more on other days", and the hero
 counts today's. Streaks walk the due days alone (`habitStreak`, `habitBest`) — a Mon/Wed/Fri
-habit is not broken by a Tuesday. The picker has Every day / Weekdays / Pick days per habit
-and an "Add your own" row. Ticking a tile pops confetti (`gpConfetti`, skipped under
+habit is not broken by a Tuesday. The picker has Every day / Weekdays / Pick days / Times a week
+per habit and an "Add your own" row. **Times a week** (Uriah, Oct 2026: "sometimes with a busy
+schedule we do it on other days"): `perWeek` 1–6 (then no `days`; the server drops `days` when
+it is set), the tile is on the card every day to mark as you go, shows "n of N this week" and
+✓ once reached (`habitWeekCount`, `habitWeekMet`, Monday-to-Sunday week `habitWeekOf_`), counts
+as done for the day from then on (`habitDoneToday` — the card's a/b and the hero's Habits Today
+both use it), and its streak is weeks in a row that reached the number (`habitWeekStreak_`;
+"🔥 n wk" on the tile, "best n weeks" in Streaks; the hero's best-streak days ignore it).
+Stepper `[data-hpweek="id|±1"]`, preset `[data-hpdays="id|perweek"]` starts at 3. Ticking a tile pops confetti (`gpConfetti`, skipped under
 prefers-reduced-motion). `habitMeta(hb)` takes the row (or an id) so custom labels show.
 tests/test-habit-schedule.mjs covers the server rules and the page.
 
@@ -1239,7 +1271,7 @@ forms, documents and references follow.
   item `legal:child`). The "Finish your profile" card (papers HR asks everyone to sign) is at the top of My
   contract (`reqMyContractCardHtml_`), not on My Home; a paper's page goes back to My contract.
 - **Staff contract, filled out in person (Oct 2026, Uriah)**: only HR/admin opens the Volunteer Staff Contract
-  (`STAFF_CONTRACT`, `sign.leader`). On someone's HR profile, **Fill out staff contract** — any time, also to
+  (`STAFF_CONTRACT`, `sign.leader`). On someone's HR profile, **Send staff contract** (Andrew, Oct 2026: the one-time link first, no more "hand the phone over" — "Make the link for {name}", then Copy / Share on the card; filling it out together on HR's phone stays as the small second way there, `[data-hrfillout]`) — any time, also to
   redo a paper contract (it starts from that contract's month and years) — picks the period and calls
   `hrSendContract` (one waits at a time, `digital.status` awaiting_staff; starting again changes its period;
   returns `contractId`), then opens `portal.html?staff=1&hr=<staffId>&doc=contract:<id>` on HR's own phone
@@ -1312,9 +1344,19 @@ forms, documents and references follow.
   `hrCandidateCall(user, pin, candId, {id?, date, with, text} | {id, remove:true})` (HR / portal
   reach as for notes; edit and delete by the writer or a portal admin). `hrSaveCandidate` keeps
   `calls` from the stored record, and `portalAppOut_` never sends them to the applicant.
+- **As they see it (Oct 2026, Uriah: "click on the e-visa steps to see exactly how they see it")**:
+  on a team record's Overview every step in Team steps has 👁 (`[data-seestep]`, `P.seeStep =
+  {id, step}`); tapping it draws that step under the row exactly as the team's dashboard does
+  (`stepLiHtml_` — the one function both sides use for a "Where you are" step — on `asApplicant_(c)`,
+  the staff record shaped like `portalAppOut_`, with `visaOpen` worked out the same way), boxed as
+  `.asSeen`; the e-visa step comes with "How to apply for your e-visa online" open (`P.fold.visaHow`),
+  its documents opening for that record's campus (`[data-ascampus]`). On other applicants, the Visa
+  ticks under Documents have "See their e-visa guide as they see it" (`#seeVisa`, `P.seeVisa`) showing
+  `visaCardHtml_` as it is for them at their stage.
 - **Staff side bar and menu (Oct 2026)**: above the bar, a small text link "← Go back to GP Home"
   (`#toGpApp`, `.gpHomeLink` — Uriah kept tapping the old ‹ button by mistake); the bar is one ☰ button
-  that says where you are (`staffNavHtml_`, `P.menuOpen`, `#navMenu`, `.menuHere`); the portal opens on
+  that says where you are and nothing else — the three lines and the page's name (`staffNavHtml_`,
+  `P.menuOpen`, `#navMenu`, `.menuHere`; the "Menu ▾" hint went, Uriah Oct 2026); the portal opens on
   Applications, which is the first item in the menu (`#navCrm`). The menu is a drawer that
   slides in from the right over a backdrop (`#staffMenu` fixed, `#menuScrim`, `body.menuOn`; ✕, the
   backdrop or Esc close it — a test that opens it must close it before clicking the page) with Applications, then two groups — Staff
@@ -1696,7 +1738,8 @@ leading at YWAM GP (culture, teams, hard conversations, vision, systems, executi
   into the blob store `gp-audio` — NOT `gp-data`, so the nightly backup doesn't copy it. One
   MP3 per reader screen, saying exactly what that screen shows; a second run records only
   screens whose text or voice changed. AZURE_SPEECH_KEY / AZURE_SPEECH_REGION live only in
-  the runner's environment. `audio.js` (files, read-only, public) and api `libAudioIndex`
+  the runner's environment. `audio.js` (files, read-only for the books — its one exception is
+  Learn Khmer's single words, recorded on the spot when the site has the key, see Learn Khmer) and api `libAudioIndex`
   (which books are recorded) serve it; turn `LIB_AUDIO_ON` on and the reader plays a book's
   recording (fetched whole for iPhones, next screen fetched ahead, page turned on its end,
   Media Session lock-screen controls), the phone's voice only where there is none.
@@ -2661,8 +2704,9 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   (`studentMakeProfile`) makes a student candidate (stage arrived, `source:'hospitality'`) with
   `portal.invite.token`; **Copy invite** copies `portal.html?join=<token>`. On that page the student signs
   in with Google (`portalJoin`) → an applicant account linked to the profile; the invite is spent.
-- **The portal** shows their application as usual plus **📱 Go to GP app** (student-type only), which
-  saves `gp-student` and opens `teams.html?student=1`.
+- **The portal** for a student is only their application and **📱 Go to GP app**, which saves
+  `gp-student` and opens `teams.html?student=1` — no tabs (`studentPortal_()` hides `#applicantNav` and
+  keeps the view on status; their team, strengths, schedules and resources are in the GP app).
 - **Student mode is the real app**, same look, fewer parts: tabs My Home / Schedules / Library; My Home =
   hello + this week's schedule, weekly goals, habits, mentor, About me (strengths). No bell, no health,
   ministry, base, check-ins or support raising.
@@ -2682,19 +2726,133 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   mentor, goals (last/this/next week), habits, strengths and Library (`studentAdminView`), and **See their
   app**: their real student app, read only (`S.stuPreview` — `run()` sends nothing, Library marks are
   theirs and in memory; Back to Admin reloads as yourself, back on their profile via `gp-stu-back`).
+  **👁 Preview the student app** at the top of Admin → Students opens the same read-only preview for a
+  made-up Sample Student (`stuSampleView_()`: LD mentors from the roster, default habits, the schedules
+  you already have; `gp-stu-back='sample'` brings you back to Students). In any preview, `getDuty`
+  answers from the boot's published weeks, so Schedules show what the student would see.
 - Tests: `tests/test-students.mjs` (server, the door and the access checks), `tests/test-student-app-ui.mjs`.
 
 ## GP Tasks (Oct 2026, Uriah: "much simpler, very much like Google Tasks")
+- **Oct 2026, second pass** (Uriah: "more fluid, like Google Tasks"): no "For me" tab — everyone has
+  **My Tasks**, a personal list the server makes on first `getGpTasks` (`gptMain_()` = your oldest
+  personal list — titled **Inbox** since Oct 2026, Uriah: "like an inbox"; whatever it was called
+  before — "My Tasks", or one someone made, "Personal" — it is renamed once on the next load,
+  `inboxKept` marking that, and the client always labels the main list Inbox; no Rename for it). **The Inbox is your own quick tasks plus everything given to you** from
+  any list (and what you asked other ministries for), each with where it came from (`gptChipName_`
+  chip); the task stays in its own list. **Filing**: drag a given task onto one of your own lists and
+  it sits there for you alone — `fileGpTask(id, listId)` → `task.filed[you] = { list, order }`
+  (`gptFiledIn_`, `gptGiven_`); `orderGpTasks` on your own list keeps given tasks' places in
+  `filed` too. Lists you can't otherwise see are never tabs (`onlyAssigned` lists only carry names).
+  **Sharing a whole list** (Oct 2026, Uriah: "so we can both be using it together"): the owner of a
+  personal list names people in ⋮ → "Share list with someone…" (`#gtShareList`, a sheet with the people
+  picker; `shareGpTaskList(id, members)`, owner only, campus people only, max 20, pushed `listShared`);
+  `list.members` — they see it as a tab ("Shared by Cora"), add, tick off and give out tasks in it
+  (`gptMember_` in `gptIn_`/`gptSees_`/`gptEdits_`), but cannot rename, recolour, share on or delete it.
+  **The people picker with a search box** (`ppickHtml_`, `bindPeoplePick_`, `PPICK` by key, `S.ppick[key].q`;
+  `ppickPeopleFor_(L)` = the campus, the list's own people `first` and grouped) replaces every staff
+  `<select>` the app had for picking a person: GP Tasks assign (new task `key:'new'`, open task `'det'`),
+  the share sheet (`'share'`), the leadership board's card owner (`'lead'`) and task owners
+  (`'lt:<card>:<task>'`, via `window.gpLeadChangeTask_`), the Teams DB "who is walking with them"
+  (`'cand'`). The old selects stay in the DOM hidden (`data-lf="owner"`, `data-ltowner`, `data-cf`) so
+  the forms' field readers still work. Rows: `[data-ppickit="key|id"]`, chips `[data-ppickrm="key|id"]`,
+  the box `[data-ppickq="key"]`; until you type, only the `first` group shows (or the first few).
+  **A ministry's own tasks page shows everything its people are on** (Andrew, Oct 2026: "it only shows
+  a few"): the list's tasks, plus tasks in other lists given to any of its people (`team` in
+  `gtListHtml_` when `S.gptScope` is set — the department's list where board cards land, another
+  ministry's), each with a chip saying where it is from and no grip (they are ordered in their own list).
+  **The year shows on a day outside this year** (`gptDateFmt_`): task chips, day dividers, calendar labels.
+  **‹ › on the list's head** (`#gtPrevList`/`#gtNextList`, `.gtListNav`, greyed at the ends) step through
+  the lists like the swipe (Andrew, Oct 2026: "the slide isn't working the best — small arrows?").
+  **An open task says where it came from** (`gptOriginText_`, `.gtOrigin`; Andrew, Oct 2026: "I didn't
+  add that — who put that in?"): "Added by {name} · {date}", then "from a card on the Leadership board"
+  (`leadId`/`cardId`), "from a mentor 1:1" (`ooId`) or "from {ministry}" (`from.label`).
+  **No list is ever called "Tasks"** (Andrew, Oct 2026: "why 3 lists named Tasks?"): "Ask another
+  ministry" into a ministry with no list makes its designated list through `gptMinList_` (named after
+  it; it used to make one called "Tasks"), `gptEnsureLists_` renames any ministry or department list
+  still called "Tasks" to its own name once, and "＋ New list" refuses an empty name.
+  **Sheets and the phone keyboard** (Andrew, Oct 2026: "the keyboard covers the name"): the keyboard
+  watcher in 11-bind-boot.js (`gpKeyboardWatch`, visualViewport) sets `--kb` on `<html>` to what the
+  keyboard covers (innerHeight − vv.height − vv.offsetTop, 0 when it is down); `.gtSheet` and
+  `.schedSheet` sit at `bottom:var(--kb)` and cap their height to fit above it, and a box focused inside
+  a sheet is scrolled into the sheet's view once the keyboard is up. Tests set `--kb` by hand.
+  **Day dividers** (Andrew, Oct 2026, "like Google Tasks"): `gptDayGroups_` splits a list's open tasks
+  into Requests, Overdue, Today, Tomorrow, each later day ("Thu, 23 Oct"), then No date (`.gtDay`,
+  `data-gptday`); a list with no dates at all stays plain. Within a day it is still your order. Dragging
+  a task under another day's divider gives it that day (`Now due …`; under No date it loses its date) —
+  the order is saved first, then the day, one after the other, so neither save loses the other.
+  **Swipe** sideways anywhere on the tasks page (bound once on the box around `.gtBar`; the direction is
+  locked within the first 10px — sideways keeps the browser from scrolling (`touchmove` non-passive,
+  preventDefault) so it can't take the gesture and cancel the touch, and `touchcancel` still finishes;
+  ≥50px; not from the tabs row, a grip, a sheet, the wheel or a field; the lists read at swipe time) for the next
+  or previous tab (`gptGoList_(id, 'L'|'R')`, a short `.gtSlideL/R` animation). The row of tabs keeps its
+  scroll across renders (`S.gtTabsScroll`, from its scroll events — it used to jump back to the start,
+  hiding the highlight, and then to the front); only a tab off an edge is nudged just into view at that edge.
+  **⋮ is a wheel** (`#gtWheel`, `gtWheelLayout_`, `bindGtWheel_`): the items sit on a half-circle arc along
+  the right edge, the middle one grown, like the macOS dock; spin it with a finger or the mouse wheel
+  (on the wheel or the scrim), a resting mouse grows the item under it. The items are placed by
+  transform alone (`translate3d … scale`, never top/right — a layout per frame lagged); while a finger
+  or the wheel moves it (`gtWheelSpin_`, one layout per animation frame, `.spinning`) there is no eased
+  transition and the backdrop blur is paused (six moving blurs stuttered on phones); the snap at the
+  end (`.snap`) eases and brings the glass back. Item ids are unchanged
+  (`#gtRename`, `#gtShareList`, `#gptListDelete`, …) and all items are on screen when it opens. In tests,
+  close it with `page.click('#gtMenuScrim', { position: { x: 16, y: 60 } })` — the middle of the screen
+  is covered by the grown item. The round ＋ is left out while the wheel is open.
+  **Arrange lists…** (`#gtArrange` → `#gtArrangeSheet`, `data-gtarr="id|±1"`): ▲ ▼ per list, saved through
+  `saveGpListOrder` like dragging a tab — for the many who won't know a tab can be held and dragged.
+  **The red number** (`.gtBadge`) on the Inbox tab and My Home's GP Tasks row = `gptInboxCount_()` /
+  `gpTaskInfo.inbox`: the Inbox's own open tasks plus what you were given and haven't filed elsewhere.
+- **A ministry's GP Tasks is the same page** (Oct 2026, Uriah: "like the personal GP Tasks, just that
+  ministry's tasks — for all of the ministries"): My Ministry's "Ministry Tasks (n) ›" row
+  (`mtFoldHtml_`, `#mtToggle`) opens `S.view='tasks'` with `S.gptPageScope={dept,min}` (01-core
+  renders `gptPageHtml_(S.gptPageScope)`), titled "GP Tasks · Cafe", only that ministry's list, the
+  round ＋, ← My Ministry. `gptOpenPage_` clears the scope.
+  **Subtasks** (`subs: [{id,text,done}]`, `gptSubs_`, max 20): added in the sheet (Enter adds), shown
+  under the row, tickable there. **Drag and drop** (`gptDrag_`, mouse or finger): a task by its grip
+  up or down — `orderGpTasks(listId, ids)` sets the list's `order` ("My order" sort, `gptSort_`) — or
+  onto another list's tab (`saveGpTask {listId}`); a tab after a short hold — `saveGpListOrder(ids)`
+  → `staff.taskListOrder`, each person's own, returned as `listOrder`. The leadership row has no
+  Ministry Tasks tab any more — the Board is the place, and its tasks reach GP Tasks.
+  **A mentorship 1:1 with its time set is a task in both people's My Tasks** (`gptFromOneOnOne_` on
+  `respondToOneOnOne` with a time, `setOneOnOneTime`, `saveOneOnOneNotes` when held; `ooId`/`ooFor`
+  on the task; "1:1 with Sokha", the day and time; done when held, gone when declined). **A personal list is its owner's alone** (Uriah: "it's only to assign tasks, not
+  lists" — after Vannak's shared list showed up in his): no share option anywhere, `gptSees_` ignores
+  the old `shared` flag, `saveGpTaskList` no longer sets it. What reaches someone else is a task
+  assigned to them, in their My Tasks with the list it came from. ＋ adds into the open list (no list chooser); **＋ New list** is a small sheet (name,
+  and whose it is — inside My Ministry's fold it is that ministry's, no choice). The fold shows only
+  that ministry's lists (`gptLists_(scope)`: ministry lists for a ministry, dept lists for a dept —
+  never personal). Icons are line SVGs (`GPT_SVG`, `gptIc_()`), not the ✅ emoji — also on My Home's
+  row, the Weekly Goals button and the leadership tab. `body { min-height:100dvh }` in teams.html keeps
+  a short page reaching the bottom bar (the dark page edge used to show above it).
+- **Designated lists (Oct 2026, Uriah: "each ministry has its own designated task list")**:
+  `gptEnsureLists_` on `getGpTasks` makes My Tasks and, for each ministry the person is in or leads,
+  that ministry's one list named after it (`gptMinList_`); Campus Leadership's is one department list,
+  **Leadership team** (`GPT_LEAD_LIST`). The client offers ＋ New list for personal lists only; a
+  ministry has its one list (no New list inside My Ministry's fold). Tabs and list heads carry a kind
+  icon (lock = personal, people = ministry) and the ministry's head says "the ministry's list: add
+  tasks and give them to its people". **Ask another ministry** picks the ministry from a list by
+  department with a search box (`data-gptaskmin`), not a select.
+- **A board card is for a department, not a ministry** (Oct 2026, Uriah): `taskMin` is `'Dept|'`,
+  the card's task lands in the department's list (`gptMinList_`, named after it) given to the person;
+  the department's director hands it on to a ministry leader in GP Tasks (it lands in their Inbox).
+- **The leadership board's little tasks are GP Tasks** (`gptFromLeadTask_` on `saveLeadTask`, in the
+  Leadership team list, `leadId` on the task; the board is the source for text, owner and day; done
+  goes both ways — `gptLeadDone_`; `deleteLeadTask`/`deleteLeadCard` drop them, `deleteGpTask` on one
+  drops it off the board — `leadDropTask_`). The tasks already on the board before this link are
+  brought in once per campus on the next `getGpTasks` (`gptSyncLeadBoard_`, stamped in
+  `gpTasks.leadSynced[campus]`, no pushes). So the owner sees it in My Tasks with its day.
 - **teams/12-tasks.js** (loaded before 11-bind-boot.js; in sw.js's shell) and **GP Tasks** in api.js;
   one blob `gpTasks` = `{ lists, tasks }`. A list is a ministry's (`scope:'ministry'`, dept + ministry),
-  a department's (`'dept'`), or personal (`ownerId`, `shared` = others on the campus see it). A task:
+  a department's (`'dept'`), or personal (`ownerId`; `shared` is an old flag, no longer honoured). A task:
   title, notes, `due` + `time` (a time needs a day), `assignees` (`assignedAt` per person), `status`
   open | request | declined, `from {id,label}` when it came from outside the list, `cardId`.
 - **Who sees what** (`gptSees_`): a ministry's list — its people and leaders (`memberOf_`, `leads`);
-  a department's — the department; personal — the owner, and the campus once shared; **Campus
+  a department's — the department; personal — the owner only; **Campus
   Leadership and admins every list on the campus** (`gptAll_` = `canLead_`), narrowed by their saved
   filter (`staff.taskFilter = {keys:['Dept|Ministry', 'Dept|']}`, `saveGpTaskFilter`, a view only — your
-  own ministries' and personal lists always show). A task given to you, or one you asked for, shows
+  own ministries' and personal lists always show). **Since Oct 2026 the default is only your own**
+  (Andrew: "why are there random ministries I'm not part of on my list?"): with no saved filter (or
+  `keys: []`) leadership's page shows just their lists; other ministries appear once ticked in ⋮ →
+  Which lists to show ("Show everything" saves every key, "Only mine" saves none). A task given to you, or one you asked for, shows
   wherever its list is (its list comes along as `onlyAssigned`).
 - **Asking another ministry** (`askMin` on saveGpTask, or adding to a list you only see): a request
   (`status:'request'`, `from.label` = your ministry) its people accept or decline (`respondGpTask`);
@@ -2706,7 +2864,7 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   becomes that ministry's task (its first list, made if none), given to them, from Campus Leadership
   (`gptFromCard_`); done on the board → done in the list; unlinked → the task goes.
 - **Where it opens**: My Home's card (✅ GP Tasks · N open, `#goGpTasks`), a button on the Weekly Goals
-  heading (`#goGpTasksGoals`), the bell, `teams.html?view=tasks`; on My Ministry **✅ Ministry Tasks**,
+  heading (gone, Oct 2026 — Andrew), the bell, `teams.html?view=tasks`; on My Ministry **✅ Ministry Tasks**,
   folded under the department and ministry (`mtFoldHtml_`, open/shut kept in `gp-mt-open`; that
   ministry's lists, `gptPageHtml_({dept,min}, true)`), and for Campus Leadership a **Ministry Tasks** LW
   tab (every list, with the ⚙️ filter).
@@ -2727,7 +2885,81 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   goals) is separate and unchanged.
 - tests/test-gp-tasks.mjs (server: the rules), tests/test-gp-tasks-ui.mjs.
 
+## Learn Khmer — the KBC vocabulary book as flashcards (Oct 2026, Andrew)
+- **☰ → Language → Learn Khmer / English** (`khOpen_`, view `khmer`, `teams/15-khmer.js`,
+  `bindKhmer_`; the Language group is just this — Khmer review moved under Admin). The words are
+  `public/khmer-vocab.js` (`GP_KHMER_VOCAB`: `levels` and `cats`, a word is `[en, km, note?, tl?]`),
+  transcribed from "KBC Vocabulary" by Phy Chum and Andrew Potter — 3 levels (the book's sections:
+  Essentials, Daily life, Deeper talk), 42 lists, ~1,100 words — plus level 0, **The script**
+  (`script: true` lists: 33 consonants with their series, the vowel signs shown on ◌, the independent
+  vowels; a card shows the letter first, the sound is the answer). Loaded on demand like the Library's
+  (`khLoad_`; cached by sw.js, SHELL v18). The PDF's text layer scrambles Khmer, so the words came from
+  the page images: fix a word in that file, in the book's order.
+- **Learning Khmer or English** (`[data-khlearn]`, `S.kh.front` = 'en' learning Khmer, 'km' learning
+  English, kept in `gp-kh-front`; `khLearningEn_`, `khTitle_`): the switch on the home decides which side
+  a card and a quiz ask with and which language 🔊 reads; the page is titled Learn English then.
+- **Readings** (Andrew, Oct 2026: "for those who don't know how to read, transliterate the word"): every
+  word's 4th place is a "sounds like" in Latin letters (ponman, khnhom, poa sor), made by
+  `scripts/khmer-translit.mjs` — rule-based (series, finals, ្ clusters, two-sign vowels, where a word
+  splits into syllables) with hand readings in its `OVERRIDES`; run it after changing a word (it
+  rewrites the data file; tests/test-khmer-translit.mjs checks the file is what it makes). Shown under
+  the Khmer on cards, in the list, on Match tiles (`.khTl`, `khTl_`); "Hide / Show readings" (`#khTl`,
+  `S.kh.noTl`, `gp-kh-notl`). The script's own lists carry none.
+- **The ABCs** for those learning English (`en: true` lists `abc` and `abclower`, level 0, each letter
+  with how it is said in Khmer): `khCats_` shows them only when learning English, and the Khmer script's
+  lists only when learning Khmer (`khLevelName_` names level 0 accordingly); a letter is always up first
+  (`khFrontFor_`).
+- **🔊** (`khSpeak_`, `[data-khsay="km|text"]`): the site's own recording first —
+  `/.netlify/functions/audio?lang=km&say=<word>` (`vocab/<lang>/<hash>` in the 'gp-audio' store; one
+  `<audio>` element unlocked on the first tap, `S.khAudio`; a 404 is remembered for the session and the
+  phone's own voice speaks instead through the Library's `libSpeechOk_`/`libVoice_` — only the first
+  alternative before " / " is read, ◌ stripped). iPhones have no Khmer voice yet — it says so once;
+  Android phones with Google's voices do; English voices are everywhere. **Making the recordings**: with
+  `AZURE_SPEECH_KEY` / `AZURE_SPEECH_REGION` in the site's environment, audio.js records a word the first
+  time anyone taps it (Sreymom for Khmer, Ava for English; only words of khmer-vocab.js, which rides along
+  through netlify.toml `included_files`, never typed text); or record them all at once with
+  `scripts/record-khmer-vocab.mjs` (Azure + `NETLIFY_SITE_ID`/`NETLIFY_AUTH_TOKEN`; `--dry-run` counts).
+  Browser tests skip the fetch (`navigator.webdriver`) unless `S.khAudio.test` is set.
+- **The fun** (Andrew: "make it fun with confetti"): a burst on every right answer (`khBurst_`), a 🔥
+  streak from 3 with toasts at 5 and 10, a shower at the end of any set (`khShower_`, bigger for a
+  clean run), a cheer by score (`khCheer_`), 🏆 when a list is known through (`K.mastered`).
+- **The game** (Uriah, Oct 2026: "more animated, more gamified — like the popular language apps"),
+  all on the phone in `gp-kh-game` (`khGame_` = `{xp, days:{date:xp}, badges:{id:t}, goal:30, sound}`):
+  **XP** per right answer (cards 5, quiz 10, match pair 5, lightning 5; ×2 from five in a row, the
+  `.khCombo` tag) plus a finish bonus (10, +20 clean, +50 list mastered; `K.bonus` names it) —
+  `khAddXp_` counts it for today, pops "+n XP" out of the tile (`khXpPop_`), and checks the **daily
+  goal** (30 XP; toast + shower the moment it is reached), the **rank** (`KH_RANKS` Seed → Sprout →
+  Leaf → Tree → Bamboo → Lotus → Elephant → Angkor by XP; a toast on rank-up) and the **badges**
+  (`KH_BADGES`, `khBadgeCheck_`; a toast each, locked ones shown 🔒, tap for its description). The
+  home shows **Kiri the elephant** 🐘 with a word for where you are (`khKiriSays_`; bounces on a right
+  answer and wobbles on a miss in a set — `khKiri_`, `K.mood` applied after render), the **day streak**
+  (`khDayStreak_`: days running the goal was reached; today counts once it is), the goal ring and the
+  week's dots (`khWeekDots_`), a bar to the next rank, and **crowns** per list (`khCrowns_`: ⅓ / ⅔ /
+  all known → ♛ 1–3, counted on each level). **Sounds** are made on the spot with WebAudio
+  (`khSound_`: right, wrong, flip, win, levelup, badge; 🔈/🔇 `#khSound`, `G.sound`). **Lightning**
+  (`mode 'lightning'`, `#khLightning` on the home once 8 words are known, or a list's fourth mode):
+  60 s (`S.khLightMs` for tests) of four-choice questions round and round (`K.pool`), the clock and a
+  draining bar (`khLightTick_`), "n right" at the end. The summary counts the XP up (`khCountUp_`) under
+  a bouncing trophy and shows the goal ring. Animations: card slide-in and flip, staggered options, a
+  pulse on the right one, Kiri's idle sway — all off under prefers-reduced-motion.
+- **Three ways to learn a list**, like Quizlet: Flashcards (tap to flip, Got it / Still learning),
+  Quiz (four choices, wrong ones from the same list or level), Match (six pairs against the clock, best
+  time per list in `gp-kh-best`). "English first / Khmer first" (`S.kh.front`, `gp-kh-front`) decides
+  which side a card and a quiz ask with.
+- **What you know is on the phone**: `gp-kh-progress` = `{ "catId|en": { b: box 0–3, t } }`; a word is
+  known at box 2 (`khKnown_`); the Daily mix (`khDue_`) is up to 20 words seen before, below box 3, old
+  enough for their box (0, 1, 3 days). Confetti on a clean run or a finished Match (`gpConfetti`).
+- tests/test-khmer-learn-ui.mjs — the data's integrity and the page end to end (readings, the ABCs,
+  recorded audio first, the game: XP, combo, goal, streak, ranks, crowns, badges, Kiri, sounds, Lightning);
+  tests/test-khmer-translit.mjs — the readings; tests/test-library-audio.mjs —
+  audio.js `?say=` (records on the spot with the key, 404 without, only the book's words).
+
 ## Calendar — the campus's Google Calendar, read-only (Oct 2026, Uriah)
+- **Who leads what** (Campus Leadership overview, `leadBaseHtml_`, `#lbLeadsFold`): ＋ by a ministry
+  (`[data-lbleadpick]`, `S.lbLeadPick`) opens the people picker (`lbLeadPeople_`, the ministry's own
+  first); a pick calls `setMinistryLeader(dept, ministry, staffId, on)` — Campus Leadership and admins
+  (`leadAuth_`), the same `leads` key as Admin sets on the profile, via `mutateStaff_`; × takes it off
+  (Andrew, Oct 2026: "make it easy to add the name of who leads what").
 - **Admin → 📅 Google Calendar** (`adminGcal`): paste each calendar's "Secret address in iCal format"
   (Google Calendar → Settings → the calendar → Integrate calendar) under a name; up to 6. Only
   `https://calendar.google.com/calendar/ical/…/….ics` is taken (`gcalUrlOk_`), so the server can't be
@@ -2744,4 +2976,39 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - **teams/13-calendar.js**: ☰ → **📅 Calendar** (`S.view='calendar'`, a month at a time, day by day,
   colour per calendar, tap for details, Earlier / Later / Back to today) and **📅 Coming up** on My Home
   (the next seven days, five at most, `calHomeCardHtml_`) — nothing at all until a calendar is connected.
-- tests/test-gcal.mjs, tests/test-gcal-ui.mjs.
+- tests/test-gcal.mjs, tests/test-gcal-ui.mjs.- **Month view like Google Calendar (Oct 2026, redone later that month to match Google's own):**
+  `S.calMonth` ('YYYY-MM'), six week rows from the Monday on or before the 1st (`calGridStart_`,
+  fetched as 42 days), the ISO week number on the left (`calIsoWeek_`), **each thing a title bar
+  across the days it spans** (`calGridHtml_`: segments per week, greedy lanes, `CAL_LANES`=4 then
+  "+n"; timed things a dot + text, `.gcBar.timed`), tapping a bar selects its day and opens it under
+  the month (`e.key`, `S.calOpen`); month chips along the top (`calMonthsHtml_`, `data-calmonth`)
+  and ‹ › / Today. Today ringed, the tapped day (`S.calSel`) highlighted, the list under the grid
+  runs from that day on. **Colours**: the palette `CAL_PALETTE` / `GCAL_COLORS` (12, `.cal-*`
+  tokens); an admin picks each calendar's in Admin → Google Calendar (`adminGcal {id,color}`,
+  `calSwatchesHtml_`); a task list's colour is picked in its ⋮ (`saveGpTaskList {color}`), and its
+  tasks show in it (`calTaskEvents_`), else the accent. The palette is 16 since Oct 2026 (lavender,
+  sky, mint, rose added — "teams can be light purple"); a list with a colour shows a small dot in it
+  by its name (`gptColorDot_`, `.calDot.gtDot`) on its tab and its head.
+- **Kinds of events (Andrew, Oct 2026)**: the campus calendar's events are sorted into kinds — Events
+  (the catch-all, first), Birthdays & anniversaries, Schools, Teams, Guests & speakers
+  (`GCAL_KINDS_DEFAULT`) — each with a colour and the words that mark it, matched anywhere in the
+  title, any case (`gcalKindOf_`). Kept as `kinds` in the `gcal` blob; admins change them in Admin →
+  Google Calendar (`adminGcal { kind:{id?, name, color, keywords} }`, `{ kindRemove }`; the first kind
+  can't be removed, max 12; a kind with no colour takes the calendar's, so Events in a second
+  calendar keep that calendar's colour). `getCalendar` returns each event's `kind` and its resolved
+  `color`, plus `kinds` for the filter. The filter lives inside each calendar's chip (Andrew: "not a
+  row of checks — within the campus calendar"): the chip is split, its ▾ (`[data-calkindsfor]`,
+  `S.calKindsFor`, showing "4/5" when some are off) opens `calKindsHtml_` under the row — one chip
+  per kind (`[data-calkind="calId|kindId"]`), "All kinds"; hidden ones per calendar in
+  `gp-cal-hidekind` (`{calId: [kindIds]}`) on the phone. An event's row names its kind
+  after the calendar ("Siem Reap events · Teams") unless it is a plain Event.
+- **GP Calendar/Tasks is one place**: ☰ has one entry (`caltasks`) that opens the calendar; both
+  pages carry the Calendar | Tasks toggle on top (`ctSegHtml_`, `bindCtSeg_`, the Inbox's red number
+  on the Tasks tab). A ministry's scoped tasks page keeps its own title instead. **GP Tasks with a day are on it** (`calTaskEvents_` from `S.gpt`, colour `cal-task`) — only yours
+  (`calTaskMine_`: given to you, in a list of yours or shared with you, or in a list of the ministry or
+  department you're in; never another ministry's, even for leadership and admins who can see every list —
+  Andrew, Oct 2026: "what shows for everyone is the campus calendar"): a tick
+  circle marks them done, tapping opens them in GP Tasks (← Calendar). The My Home "Coming up" card
+  shows them too when the tasks are already loaded. The iCal feed is one way, re-read every 30 min
+  (`GCAL_TTL_MS`): what is added in Google Calendar shows within the half hour; the app never writes.
+

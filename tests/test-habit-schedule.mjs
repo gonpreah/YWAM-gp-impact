@@ -1,5 +1,6 @@
-/* Habits with a schedule (Oct 2026): each habit is due every day, on weekdays
-   or on the days you pick; you can add your own with a label and an emoji;
+/* Habits with a schedule (Oct 2026): each habit is due every day, on weekdays,
+   on the days you pick, or so many times a week marked as you go (Uriah: "with a
+   busy schedule we do it on other days"); you can add your own with a label and an emoji;
    the card asks only about what is due today and a streak counts the due
    days alone; ticking a tile pops confetti. Server rules first, then the page
    on the real backend in a phone-sized window. */
@@ -49,6 +50,9 @@ let r = await call('saveMyHabits', ['sreilea', '1234', [
   { id: 'workout', mentorVisible: true, days: [0, 1, 2, 3, 4, 5, 6] },
   { id: 'quietTime', mentorVisible: false, days: 'daily' },
   { id: 'c_journal1', mentorVisible: true, label: 'Journal', icon: '📓', days: [2] },
+  { id: 'language', mentorVisible: true, perWeek: 3, days: [1, 2] },
+  { id: 'sabbath', mentorVisible: true, perWeek: 9 },
+  { id: 'oneOnOne', mentorVisible: true, perWeek: '2' },
   { id: 'c_noicon', mentorVisible: true, label: 'Call home' },
   { id: 'c_nolabel', mentorVisible: true },
   { id: 'c_BAD ID', mentorVisible: true, label: 'x' },
@@ -59,9 +63,12 @@ const by = id => cfg.filter(h => h.id === id)[0];
 ok('days are kept sorted, deduped and in range', by('bible') && JSON.stringify(by('bible').days) === '[1,3,5]', JSON.stringify(by('bible')));
 ok('all seven days means every day — no days stored', by('workout') && !('days' in by('workout')));
 ok('junk for days means every day too', by('quietTime') && !('days' in by('quietTime')) && by('quietTime').mentorVisible === false);
+ok('times a week is kept (1–6) and wins over days', by('language') && by('language').perWeek === 3 && !('days' in by('language')), JSON.stringify(by('language')));
+ok('… out of range means no schedule at all', by('sabbath') && !('perWeek' in by('sabbath')) && !('days' in by('sabbath')), JSON.stringify(by('sabbath')));
+ok('… a number as text is still a number', by('oneOnOne') && by('oneOnOne').perWeek === 2);
 ok('a habit of your own keeps its label, emoji and days', by('c_journal1') && by('c_journal1').label === 'Journal' && by('c_journal1').icon === '📓' && JSON.stringify(by('c_journal1').days) === '[2]');
 ok('… with a star when no emoji was given', by('c_noicon') && by('c_noicon').icon === '⭐');
-ok('one of your own needs a label; a bad id or an unknown library id is dropped', !by('c_nolabel') && !by('c_BAD ID') && !by('madeUp') && cfg.length === 5, cfg.map(h => h.id).join());
+ok('one of your own needs a label; a bad id or an unknown library id is dropped', !by('c_nolabel') && !by('c_BAD ID') && !by('madeUp') && cfg.length === 8, cfg.map(h => h.id).join());
 r = await call('saveMyHabits', ['sreilea', '1234', Array.from({ length: 12 }, (_, i) => ({ id: 'c_h' + i, label: 'H' + i }))]);
 ok('eight habits at most', r.body && r.body.habits.length === 8);
 await call('saveMyHabits', ['sreilea', '1234', [{ id: 'bible', mentorVisible: true }, { id: 'c_journal1', mentorVisible: true, label: 'Journal', icon: '📓', days: [2] }]]);
@@ -95,13 +102,22 @@ const DOW = new Date(NOW + 'T00:00:00Z').getUTCDay(), OTHER = (DOW + 3) % 7;
 mem.staff[0].habits = [
   { id: 'bible', mentorVisible: true },
   { id: 'workout', mentorVisible: true, days: [DOW] },
-  { id: 'language', mentorVisible: true, days: [OTHER] }
+  { id: 'language', mentorVisible: true, days: [OTHER] },
+  { id: 'quietTime', mentorVisible: true, perWeek: 2 }
 ];
+/* this week (Monday to Sunday, in Phnom Penh) for the times-a-week habit: one tick so far, on the day
+   before today if the week has one, else today's; and both of last week's and the week before */
+const MON = addDays(NOW, -((DOW + 6) % 7));
+const thisWk = MON === NOW ? NOW : addDays(NOW, -1);
 mem.dailyLogs = [
   { staffId: 'me', date: addDays(NOW, -7), week: 1, habits: { workout: true, bible: true } },
   { staffId: 'me', date: addDays(NOW, -14), week: 1, habits: { workout: true } },
-  { staffId: 'me', date: addDays(NOW, -1), week: 1, habits: { bible: true } }
+  { staffId: 'me', date: addDays(NOW, -1), week: 1, habits: { bible: true } },
+  { staffId: 'me', date: addDays(MON, -7), week: 1, habits: { quietTime: true } }, { staffId: 'me', date: addDays(MON, -5), week: 1, habits: { quietTime: true } },
+  { staffId: 'me', date: addDays(MON, -14), week: 1, habits: { quietTime: true } }, { staffId: 'me', date: addDays(MON, -12), week: 1, habits: { quietTime: true } }
 ];
+if (thisWk === addDays(NOW, -1)) mem.dailyLogs[2].habits.quietTime = true; else mem.dailyLogs.push({ staffId: 'me', date: NOW, week: 1, habits: { quietTime: true } });
+const TICKED_TODAY = thisWk === NOW;
 {
   const ctx = await browser.newContext({ ...devices['iPhone 13'], timezoneId: 'Asia/Phnom_Penh' });
   const page = await ctx.newPage();
@@ -114,11 +130,24 @@ mem.dailyLogs = [
   await page.click('nav.bottom button[data-tab="week"]'); await page.waitForTimeout(600);
 
   const tiles = await page.$$eval('[data-habit]', es => es.map(e => e.getAttribute('data-habit')));
-  ok('the card shows only what is due today — the daily one and today’s', tiles.join() === 'bible,workout', tiles.join());
+  ok('the card shows only what is due today — the daily one, today’s, and the times-a-week one every day', tiles.join() === 'bible,workout,quietTime', tiles.join());
+  const qt = await text(page, '[data-habit="quietTime"]');
+  ok('a times-a-week habit shows this week’s count, and the weeks in a row it was reached', /1 of 2 this week/.test(qt) && /🔥 2 wk/.test(qt), qt);
+  ok('… not done yet, so it counts against the day', (TICKED_TODAY ? /1 of 3 done/ : /Tap what you/).test(await text(page, '#sec-habits + .card')), await text(page, '#sec-habits + .card .rowName'));
+  if (!TICKED_TODAY) {
+    await page.click('[data-habit="quietTime"]'); await page.waitForTimeout(900);
+    const qt2 = await text(page, '[data-habit="quietTime"]');
+    ok('ticking it today reaches the number: ✓ 2 of 2 this week, 🔥 3 wk', /✓ 2 of 2 this week/.test(qt2) && /🔥 3 wk/.test(qt2), qt2);
+    ok('… and the day counts it done', /1 of 3 done/.test(await text(page, '#sec-habits + .card')));
+    await page.click('[data-habit="quietTime"]'); await page.waitForTimeout(900);
+    ok('… untick: back to 1 of 2', /1 of 2 this week/.test(await text(page, '[data-habit="quietTime"]')));
+  } else {
+    ok('(Monday) ticking it today would reach the number', true);
+  }
   ok('… and says how many more sit on other days', /1 more on other days/.test(await text(page, '#habitShowRest')));
   await page.click('#habitShowRest'); await page.waitForTimeout(200);
   ok('… which open with their schedule', /Language study/.test(await text(page, '.habitRestList')) && /Every (Sun|Mon|Tue|Wed|Thu|Fri|Sat)/.test(await text(page, '.habitRestList')), await text(page, '.habitRestList'));
-  ok('the summary card counts today’s habits only', /Habits Today 0\/2/.test(await text(page, '.myHero')));
+  ok('the summary card counts today’s habits only', (TICKED_TODAY ? /Habits Today 1\/3/ : /Habits Today 0\/3/).test(await text(page, '.myHero')), await text(page, '.myHero').then(x => x.match(/Habits Today \S+/)[0]));
   ok('a weekly habit’s streak counts its own days — two weeks running', /🔥 2/.test(await text(page, '[data-habit="workout"]')), await text(page, '[data-habit="workout"]'));
   ok('the daily one’s streak is as before — yesterday, then the gap', /🔥 1/.test(await text(page, '[data-habit="bible"]')), await text(page, '[data-habit="bible"]'));
   ok('the section is headed Habits', (await page.$$eval('#main h3', hs => hs.map(h => h.innerText.trim()))).indexOf('✅ Habits') > -1);
@@ -138,7 +167,18 @@ mem.dailyLogs = [
   await page.click('#editHabits'); await page.waitForTimeout(300);
   ok('Choose my habits: each chosen habit shows when it is due', /Every day/.test(await text(page, '.habitPick.on:has([data-hpick="bible"]) .hpSched')) &&
     /Every (Sun|Mon|Tue|Wed|Thu|Fri|Sat)/.test(await text(page, '.habitPick.on:has([data-hpick="workout"]) .hpSched')));
-  ok('… with Every day / Weekdays / Pick days under it', (await page.$$eval('[data-hpdays^="bible|"]', bs => bs.map(b => b.innerText))).join() === 'Every day,Weekdays,Pick days');
+  ok('… with Every day / Weekdays / Pick days / Times a week under it', (await page.$$eval('[data-hpdays^="bible|"]', bs => bs.map(b => b.innerText))).join() === 'Every day,Weekdays,Pick days,Times a week');
+  ok('the times-a-week one says 2 times a week, with − 2 +', /2 times a week/.test(await text(page, '.habitPick.on:has([data-hpick="quietTime"]) .hpSched')) && (await page.$$eval('[data-hpweek^="quietTime|"]', bs => bs.length)) === 2);
+  await page.click('[data-hpweek="quietTime|1"]'); await page.waitForTimeout(200);
+  ok('+ makes it 3', /3 times a week/.test(await text(page, '.habitPick.on:has([data-hpick="quietTime"]) .hpSched')));
+  for (let i = 0; i < 2; i++) { await page.click('[data-hpweek="quietTime|-1"]'); await page.waitForTimeout(120); }
+  ok('− stops at once a week', /Once a week/.test(await text(page, '.habitPick.on:has([data-hpick="quietTime"]) .hpSched')) && await page.$eval('[data-hpweek="quietTime|-1"]', b => b.disabled));
+  await page.click('[data-hpdays="workout|perweek"]'); await page.waitForTimeout(200);
+  ok('Times a week on a picked-days habit starts at 3 and drops the days', /3 times a week/.test(await text(page, '.habitPick.on:has([data-hpick="workout"]) .hpSched')) && await page.evaluate(() => myHabits()[1].perWeek === 3 && !myHabits()[1].days));
+  await page.click('[data-hpdays="workout|custom"]'); await page.waitForTimeout(200);
+  ok('… and Pick days takes it back, days again', await page.evaluate(() => !myHabits()[1].perWeek && myHabits()[1].days.length === 3));
+  await page.click('[data-hpday="workout|' + OTHER + '"]'); await page.waitForTimeout(100); await page.click('[data-hpday="workout|' + ((OTHER + 2) % 7) + '"]'); await page.waitForTimeout(100); await page.click('[data-hpday="workout|' + ((OTHER + 4) % 7) + '"]'); await page.waitForTimeout(100);
+  await page.evaluate(d => { S.habits = myHabits().map(h => h.id === 'workout' ? { id: 'workout', mentorVisible: true, days: [d] } : h); render(); }, DOW); await page.waitForTimeout(200);
   await page.click('[data-hpdays="bible|weekdays"]'); await page.waitForTimeout(200);
   ok('Weekdays sets Monday to Friday', /Weekdays/.test(await text(page, '.habitPick.on:has([data-hpick="bible"]) .hpSched')) && await page.evaluate(() => JSON.stringify(myHabits()[0].days) === '[1,2,3,4,5]'));
   ok('Pick days shows the seven days with the chosen ones lit', (await page.$$eval('[data-hpday^="workout|"]', bs => bs.length)) === 7 &&
@@ -155,7 +195,7 @@ mem.dailyLogs = [
   await page.click('#saveHabits'); await page.waitForTimeout(800);
   const saved = mem.staff[0].habits;
   ok('Done saves the schedules and the new habit to the server', JSON.stringify(saved.filter(h => h.id === 'bible')[0].days) === '[1,2,3,4,5]' &&
-    saved.some(h => h.label === 'Journal' && h.icon === '📓'), JSON.stringify(saved));
+    saved.some(h => h.label === 'Journal' && h.icon === '📓') && saved.filter(h => h.id === 'quietTime')[0].perWeek === 1, JSON.stringify(saved));
   ok('… and the new habit is on the card, due today', (await page.$$eval('[data-habit]', es => es.map(e => e.getAttribute('data-habit')))).some(id => /^c_/.test(id)) &&
     /📓 Journal/.test(await text(page, '.habitGrid')));
 

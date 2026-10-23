@@ -61,14 +61,15 @@ async function menuOf(who) {
   await ctx.close();
   return { out, errors };
 }
+/* Language is Learn Khmer / English for everyone (Oct 2026); Khmer review sits under Admin for its reviewers */
 const EXPECT = {
-  staff: 'base tasks calendar ywamgp prayer p360 leave library # Operations sched',
-  hosp: 'base tasks calendar ywamgp prayer p360 leave library # Operations sched hosp students',
-  hospLeader: 'base tasks calendar ywamgp prayer p360 leave library # Operations sched hosp students',
-  teamsLeader: 'base tasks calendar ywamgp prayer p360 leave library # Operations sched students # Applications portal',
-  cafeLeader: 'base tasks calendar ywamgp prayer p360 leave library # Operations sched',
-  hr: 'base tasks calendar ywamgp prayer p360 leave library # Operations sched students # Admin hr',
-  admin: 'base tasks calendar ywamgp prayer p360 leave library # Operations sched hosp students # Applications portal # Admin hr admin # Language kmreview',
+  staff: 'base caltasks ywamgp prayer p360 leave library # Operations sched # Language khmer',
+  hosp: 'base caltasks ywamgp prayer p360 leave library # Operations sched hosp students # Language khmer',
+  hospLeader: 'base caltasks ywamgp prayer p360 leave library # Operations sched hosp students # Language khmer',
+  teamsLeader: 'base caltasks ywamgp prayer p360 leave library # Operations sched students # Applications portal # Language khmer',
+  cafeLeader: 'base caltasks ywamgp prayer p360 leave library # Operations sched # Language khmer',
+  hr: 'base caltasks ywamgp prayer p360 leave library # Operations sched students # Admin hr # Language khmer',
+  admin: 'base caltasks ywamgp prayer p360 leave library # Operations sched hosp students # Applications portal # Admin hr admin kmreview # Language khmer',
 };
 for (const k of Object.keys(EXPECT)) {
   const { out, errors } = await menuOf(WHO[k]);

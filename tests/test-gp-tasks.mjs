@@ -1,4 +1,4 @@
-/* GP Tasks (Oct 2026): lists for a ministry, a department or yourself (shared or not), tasks
+/* GP Tasks (Oct 2026): lists for a ministry, a department or yourself (yours alone), tasks
    with a day and a time, people assigned, asking another ministry for help (a request it
    accepts or declines), Campus Leadership's tasks landing straight in a ministry's list, the
    saved filter, and a board card linked to a ministry and a person. Who sees and who changes
@@ -103,13 +103,14 @@ r = await call('saveGpTaskFilter', [...as('uriah'), null]);
 ok('… and cleared', r.ok && r.filter === null);
 
 console.log('=== a board card for a ministry and a person ===');
-r = await call('saveLeadCard', [...as('uriah'), { title: 'Fix the cafe sign', type: 'project', owner: 'c2', due: day(5), taskMin: 'Community Service|Cafe' }]);
+r = await call('saveLeadCard', [...as('uriah'), { title: 'Fix the cafe sign', type: 'project', owner: 'c2', due: day(5), taskMin: 'Community Service|' }]);
 const card = r.saved;
 r = await call('getGpTasks', as('kanha'));
 let ct = (r.tasks || []).find(t => t.cardId === card.id);
-ok('it shows up in the Cafe\'s list, given to Kanha, from Campus Leadership', ct && ct.title === 'Fix the cafe sign' && ct.assignees.join() === 'c2' && ct.from.label === 'Campus Leadership' && ct.due === day(5));
+ok('it shows up in the department\'s list (made, named after it), given to Kanha, from Campus Leadership', ct && ct.title === 'Fix the cafe sign' && ct.assignees.join() === 'c2' && ct.from.label === 'Campus Leadership' && ct.due === day(5) && r.lists.find(l => l.id === ct.listId).scope === 'dept' && r.lists.find(l => l.id === ct.listId).title === 'Community Service');
 r = await call('getMyBoot', as('kanha'));
 ok('… and her bell says so', r.gpTaskInfo.notices.some(n => n.kind === 'assigned' && n.title === 'Fix the cafe sign'));
+ok('… and her boot counts her Inbox (the red number): given to her, not filed elsewhere', r.gpTaskInfo.inbox >= 1 && r.gpTaskInfo.inbox === mem.gpTasks.tasks.filter(t => !t.done && t.status !== 'declined' && (t.assignees || []).indexOf('c2') > -1 && !(t.filed && t.filed.c2)).length + mem.gpTasks.tasks.filter(t => !t.done && t.listId === mem.gpTasks.lists.find(l => l.scope === 'personal' && l.ownerId === 'c2').id).length);
 const done = (await call('getLeadBoard', as('uriah'))).cols.find(c => c.done).id;
 await call('saveLeadCard', [...as('uriah'), Object.assign({}, card, { col: done })]);
 r = await call('getGpTasks', as('kanha'));
@@ -118,21 +119,138 @@ await call('saveLeadCard', [...as('uriah'), Object.assign({}, card, { taskMin: '
 r = await call('getGpTasks', as('kanha'));
 ok('unlinked: the task goes', !(r.tasks || []).some(t => t.cardId === card.id));
 
+console.log('=== the board\'s little tasks, in the Leadership team\'s list ===');
+r = await call('saveLeadTask', [...as('uriah'), card.id, { text: 'Find 5 fun activities for the staff offsite', owner: 'l1', due: day(6) }]);
+const ltk = r.saved;
+r = await call('getGpTasks', as('uriah'));
+const leadL = r.lists.find(l => l.title === 'Leadership team');
+let mt = task(r, 'Find 5 fun activities for the staff offsite');
+ok('a task on a card is a GP task in the Leadership team\'s list, given to its owner, with its day', !!leadL && leadL.scope === 'dept' && leadL.dept === 'Campus Leadership' && mt && mt.listId === leadL.id && mt.assignees.join() === 'l1' && mt.due === day(6) && mt.leadId === ltk.id && /Fix the cafe sign/.test(mt.notes));
+r = await call('saveLeadTask', [...as('uriah'), card.id, Object.assign({}, ltk, { text: 'Find 5 fun activities for the offsite', due: day(7) })]);
+r = await call('getGpTasks', as('uriah'));
+mt = task(r, 'Find 5 fun activities for the offsite');
+ok('changing it on the board changes it here', !!mt && mt.due === day(7) && !task(r, 'Find 5 fun activities for the staff offsite'));
+r = await call('saveGpTask', [...as('uriah'), { id: mt.id, done: true }]);
+ok('done in GP Tasks: done on the board too', task(r, 'Find 5 fun activities for the offsite').done === true && mem['leadBoard:siemreap'].cards.find(c => c.id === card.id).tasks.find(t => t.id === ltk.id).done === true);
+r = await call('getGpTasks', as('cora'));
+ok('the Cafe doesn\'t see the Leadership team\'s list', !r.lists.some(l => l.id === leadL.id));
+await call('deleteLeadTask', [...as('uriah'), card.id, ltk.id]);
+r = await call('getGpTasks', as('uriah'));
+ok('taken off the board: gone from GP Tasks', !task(r, 'Find 5 fun activities for the offsite'));
+
+console.log('=== subtasks, and the order of things ===');
+r = await call('saveGpTask', [...as('cora'), { id: t1.id, subs: [{ text: 'Call the dairy' }, { text: 'Pay the invoice', done: true }, { text: '' }] }]);
+let st = task(r, t1.title);
+ok('subtasks save with the task: text and done, blanks dropped, ids given', st.subs.length === 2 && st.subs[0].text === 'Call the dairy' && !st.subs[0].done && st.subs[1].done === true && st.subs.every(x => x.id));
+r = await call('saveGpTask', [...as('cora'), { id: t1.id, subs: [{ id: st.subs[1].id, text: 'Pay the invoice', done: false }] }]);
+ok('… and change: one left, unticked, same id', task(r, t1.title).subs.length === 1 && task(r, t1.title).subs[0].id === st.subs[1].id && !task(r, t1.title).subs[0].done);
+const cafeIds = r.tasks.filter(t => t.listId === cafe.id && !t.done).map(t => t.id).reverse();
+r = await call('orderGpTasks', [...as('cora'), cafe.id, cafeIds]);
+ok('the Cafe reorders its list', r.ok && cafeIds.every((id, i) => r.tasks.find(t => t.id === id).order === i));
+r = await call('orderGpTasks', [...as('hana'), cafe.id, cafeIds]);
+ok('… but not someone outside it', r.ok === false);
+r = await call('saveGpListOrder', [...as('cora'), [cafe.id, 'tl_other']]);
+ok('each person keeps their own order of the tabs', r.ok && r.listOrder.join() === cafe.id + ',tl_other' && mem.staff.find(s => s.id === 'c1').taskListOrder.length === 2);
+
+console.log('=== the board\'s tasks from before the link, brought in once ===');
+{
+  const lead = mem['leadBoard:siemreap'], c0 = lead.cards.find(c => c.id === card.id);
+  c0.tasks = (c0.tasks || []).concat([{ id: 'lt_old1', text: 'Book the offsite venue', owner: 'l1', due: day(9), done: false, created: '2026-09-01T00:00:00.000Z', createdBy: 'l1' },
+    { id: 'lt_old2', text: 'Old one, already done', owner: '', done: true, doneAt: '2026-09-02T00:00:00.000Z', doneBy: 'l1' }]);
+  delete mem.gpTasks.leadSynced;
+  r = await call('getGpTasks', as('uriah'));
+  const old1 = task(r, 'Book the offsite venue'), old2 = task(r, 'Old one, already done');
+  ok('existing board tasks come into the Leadership team list on the next load — owner, day, done state kept', !!old1 && old1.listId === leadL.id && old1.assignees.join() === 'l1' && old1.due === day(9) && old1.leadId === 'lt_old1' && !!old2 && old2.done === true && !old2.assignees.length);
+  ok('… once per campus (stamped), not on every load', !!mem.gpTasks.leadSynced.siemreap);
+  c0.tasks.push({ id: 'lt_old3', text: 'Slipped in after the stamp', owner: 'l1', done: false });
+  r = await call('getGpTasks', as('uriah'));
+  ok('… so a task put on the board some other way than saveLeadTask is not swept up again', !task(r, 'Slipped in after the stamp'));
+  c0.tasks = c0.tasks.filter(t => t.id !== 'lt_old3');
+}
+
+console.log('=== a mentorship 1:1 with its time set ===');
+mem.oneOnOnes = [{ id: 'oo9', fromId: 'c1', toId: 'c2', status: 'pending', created: new Date().toISOString() }];
+r = await call('respondToOneOnOne', [...as('kanha'), 'oo9', true, day(3) + 'T10:00']);
+r = await call('getGpTasks', as('cora'));
+let oo = task(r, '1:1 with Kanha');
+ok('accepted with a time: "1:1 with Kanha" in Cora\'s My Tasks, that day and time', !!oo && oo.due === day(3) && oo.time === '10:00' && oo.ooId === 'oo9' && r.lists.find(l => l.id === oo.listId).scope === 'personal');
+r = await call('getGpTasks', as('kanha'));
+ok('… and "1:1 with Cora" in Kanha\'s', !!task(r, '1:1 with Cora') && task(r, '1:1 with Cora').due === day(3));
+await call('setOneOnOneTime', [...as('cora'), 'oo9', day(4) + 'T11:30']);
+r = await call('getGpTasks', as('kanha'));
+ok('moving the time moves both tasks', task(r, '1:1 with Cora').due === day(4) && task(r, '1:1 with Cora').time === '11:30' && r.tasks.filter(t => t.ooId === 'oo9').length === 1);
+
 console.log('=== personal lists ===');
 r = await call('saveGpTaskList', [...as('kanha'), { scope: 'personal', title: 'Mine' }]);
 const pl = r.lists.find(l => l.title === 'Mine');
 await call('saveGpTask', [...as('kanha'), { listId: pl.id, title: 'Call home' }]);
 r = await call('getGpTasks', as('cora'));
 ok('a personal list is yours alone', !r.lists.some(l => l.id === pl.id) && !task(r, 'Call home'));
-await call('saveGpTaskList', [...as('kanha'), { id: pl.id, shared: true }]);
+r = await call('saveGpTaskList', [...as('kanha'), { id: pl.id, shared: true }]);
+ok('there is no sharing a personal list any more (the old flag is ignored)', r.ok && !mem.gpTasks.lists.find(l => l.id === pl.id).shared);
 r = await call('getGpTasks', as('cora'));
-ok('shared: others on the campus see it…', r.lists.some(l => l.id === pl.id && !l.canEdit) && !!task(r, 'Call home'));
+ok('… so nobody else sees it, not even on the same campus', !r.lists.some(l => l.id === pl.id) && !task(r, 'Call home'));
+r = await call('getGpTasks', as('uriah'));
+ok('… not even Campus Leadership', !r.lists.some(l => l.id === pl.id));
 r = await call('saveGpTask', [...as('cora'), { listId: pl.id, title: 'Sneaky' }]);
-ok('… but can\'t add to it', r.ok === false);
+ok('… and nobody else can add to it', r.ok === false);
 r = await call('saveGpTaskList', [...as('uriah'), { id: pl.id, title: 'Renamed' }]);
 ok('… nor rename it (not even leadership)', r.ok === false);
-r = await call('getGpTasks', as('pp'));
-ok('… and another campus doesn\'t see it', !r.lists.some(l => l.id === pl.id));
+await call('saveGpTask', [...as('kanha'), { listId: pl.id, title: 'Count the cups', assignees: ['c1'] }]);
+r = await call('getGpTasks', as('cora'));
+ok('what reaches someone else is a task given to them — in their Inbox, with the list it came from', !!task(r, 'Count the cups') && r.lists.some(l => l.id === pl.id && l.onlyAssigned) && !r.lists.some(l => l.id === pl.id && !l.onlyAssigned));
+{
+  const hl = mem.gpTasks.lists.find(l => l.scope === 'personal' && l.ownerId === 'h1');
+  hl.title = 'Personal'; delete hl.inboxKept;
+  r = await call('getGpTasks', as('hana'));
+  ok('a first personal list from before the Inbox, whatever it was called, becomes the Inbox once', r.lists.find(l => l.id === hl.id).title === 'Inbox' && mem.gpTasks.lists.find(l => l.id === hl.id).inboxKept === true);
+  await call('saveGpTaskList', [...as('hana'), { id: hl.id, title: 'Groceries' }]);
+  r = await call('getGpTasks', as('hana'));
+  ok('… and is not renamed again after that', r.lists.find(l => l.id === hl.id).title === 'Groceries');
+}
+console.log('=== a ministry list from before, called "Tasks" ===');
+{
+  const d = mem.gpTasks;
+  d.lists.push({ id: 'tl_old', campus: 'siemreap', scope: 'ministry', dept: 'Skills Training', ministry: 'Media', ownerId: '', shared: false, title: 'Tasks', order: 99, created: '2026-09-01T00:00:00.000Z', by: 'c1' });
+  r = await call('getGpTasks', as('uriah'));
+  ok('it gets its ministry\'s name on the next load', mem.gpTasks.lists.find(l => l.id === 'tl_old').title === 'Media' && !mem.gpTasks.lists.some(l => l.scope !== 'personal' && l.title === 'Tasks'));
+  r = await call('saveGpTask', [...as('cora'), { askMin: 'Skills Training|Worship', title: 'Lead a song at the cafe night' }]);
+  const wl = mem.gpTasks.lists.find(l => l.scope === 'ministry' && l.ministry === 'Worship');
+  ok('asking a ministry with no list yet makes its designated list, named after it — not "Tasks"', r.ok && wl && wl.title === 'Worship' && task(r, 'Lead a song at the cafe night').listId === wl.id);
+}
+
+console.log('=== sharing a whole list ===');
+r = await call('saveGpTaskList', [...as('kanha'), { scope: 'personal', title: 'Christmas' }]);
+const xl = r.lists.find(l => l.title === 'Christmas');
+r = await call('shareGpTaskList', [...as('cora'), xl.id, ['c1']]);
+ok('only the owner shares a list', r.ok === false);
+r = await call('shareGpTaskList', [...as('kanha'), xl.id, ['c1', 'nobody', 'c2', 'pp1']]);
+ok('Kanha shares it with Cora: her, not herself, not someone off the campus or unknown', r.ok && r.lists.find(l => l.id === xl.id).members.join() === 'c1');
+r = await call('getGpTasks', as('cora'));
+ok('Cora sees it, as a list she can add to', r.lists.some(l => l.id === xl.id && l.canEdit && !l.onlyAssigned));
+r = await call('saveGpTask', [...as('cora'), { listId: xl.id, title: 'Buy the tree', assignees: ['c2'] }]);
+ok('… adds a task and gives it to Kanha', r.ok && task(r, 'Buy the tree').assignees.join() === 'c2');
+r = await call('saveGpTaskList', [...as('cora'), { id: xl.id, title: 'Mine now' }]);
+ok('… but cannot rename it', r.ok === false);
+r = await call('getGpTasks', as('hana'));
+ok('nobody else sees it', !r.lists.some(l => l.id === xl.id));
+r = await call('shareGpTaskList', [...as('kanha'), xl.id, []]);
+r = await call('getGpTasks', as('cora'));
+ok('taken off the list: gone for Cora', !r.lists.some(l => l.id === xl.id && !l.onlyAssigned));
+
+console.log('=== filing what you were given ===');
+r = await call('saveGpTaskList', [...as('cora'), { scope: 'personal', title: 'Reading' }]);
+const reading = r.lists.find(l => l.title === 'Reading'), cups = task(r, 'Count the cups');
+r = await call('fileGpTask', [...as('cora'), cups.id, reading.id]);
+ok('Cora files it under her own list: filed for her, still in Kanha\'s list', r.ok && task(r, 'Count the cups').filed.c1.list === reading.id && task(r, 'Count the cups').listId === pl.id);
+r = await call('fileGpTask', [...as('cora'), cups.id, cafe.id]);
+ok('… not into a ministry\'s list', r.ok === false && r.err === 'not_yours');
+r = await call('fileGpTask', [...as('hana'), cups.id, reading.id]);
+ok('… and not by someone it wasn\'t given to', r.ok === false);
+r = await call('orderGpTasks', [...as('cora'), reading.id, [cups.id]]);
+ok('its place in that list is kept for her too', r.ok && task(r, 'Count the cups').filed.c1.order === 0);
+r = await call('fileGpTask', [...as('cora'), cups.id, '']);
+ok('unfiled: back to the Inbox', r.ok && !task(r, 'Count the cups').filed.c1);
 r = await call('saveGpTaskList', [...as('kanha'), { id: pl.id, remove: true }]);
 ok('deleting a list takes its tasks with it', !r.lists.some(l => l.id === pl.id) && !mem.gpTasks.tasks.some(t => t.listId === pl.id));
 

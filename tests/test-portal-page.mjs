@@ -105,7 +105,7 @@ const SIGN_DOCS = [
     { t: 'field', id: 'role', label: 'Role or team', prefill: 'role' }, { t: 'field', id: 'interpreter', label: 'Interpreter name if used', optional: true }], sign: { age: true, guardian: true } }];
 const SIGN_EXTRA = { contacts: [{ role: 'Ministry leader or director', name: 'Dara Pen', phone: '+855 12 000 000' }, { role: 'Alternative senior leader', name: '', phone: '' }], prefill: { role: 'Short-term team — Grace Church Team', dates: '' } };
 let SIGN_DONE = {};
-let STAFF_DONE = {}, HR_DONE = {};      // key -> { docId: true }, as the server keeps it
+let STAFF_DONE = {}, HR_DONE = {}, LINK_DONE = {};      // key -> { docId: true }, as the server keeps it
 let SIGN_STATUS_DOCS = [{ id: 'photo', title: 'Photo Release Form' }, { id: 'acceptance', title: 'Acceptance of Place' }];
 let LEGAL_ON = { photo: true, acceptance: true };
 let ACCESS_STAFF = [{ id: 'st_sina', name: 'Sina Sok', campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', portalStaff: false, portalAdmin: true, isAdmin: false, leadsTeams: false },
@@ -245,11 +245,19 @@ async function open(viewport, query, seed) {
     } else if (b.fn === 'staffSignOpen') {
       out = u === 'andrew' ? { ok: true, staff: true, isTeam: false, team: 'Andrew Lee', ...SIGN_EXTRA, people: [{ key: 'me', name: 'Andrew Lee', done: STAFF_DONE }],
         docs: SIGN_DOCS.slice(0, 1) } : { ok: false, err: 'invalid' };
+    } else if (b.fn === 'hrContractOpen' && b.args[2] === 'st_2') {
+      out = { ok: true, staff: true, hrSign: true, isTeam: false, team: 'Dara Pen', approver: 'Uriah Lyford', contacts: [], prefill: {}, people: [{ key: 'me', name: 'Dara Pen', done: HR_DONE }],
+        docs: [{ id: 'contract:c8', title: 'Volunteer Staff Contract', period: '1 year · From 11/2026 to 11/2027', approveOnly: true, staffName: 'Dara Pen', staffSignedAt: '2026-10-21T03:00:00Z', blocks: [{ t: 'period' }, { t: 'field', id: 'focus1', label: 'Area 1' }], sign: { leader: true } }] };
     } else if (b.fn === 'hrContractOpen') {
       out = u === 'uriah' && b.args[2] === 'st_1' ? { ok: true, staff: true, hrSign: true, isTeam: false, team: 'Andrew Lee', approver: 'Uriah Lyford', contacts: [], prefill: { role: 'Cafe' }, people: [{ key: 'me', name: 'Andrew Lee', done: HR_DONE }],
         docs: [{ id: 'contract:c9', title: 'Volunteer Staff Contract', period: '2 years · From 11/2026 to 11/2028', blocks: HR_BLOCKS || [{ t: 'period' }, { t: 'field', id: 'focus1', label: 'Area 1' }, { t: 'check', id: 'agree', text: 'I, {name}, agree.' }], sign: { leader: true } }] } : { ok: false, err: 'not_authorized' };
     } else if (b.fn === 'hrContractSign') {
       HR_DONE[b.args[4]] = true; out = { ok: true, done: HR_DONE };
+    } else if (b.fn === 'contractLinkOpen') {
+      out = b.args[0] === 'abc123def4567890abc123def4567890' ? { ok: true, staff: true, hrSign: false, link: true, isTeam: false, team: 'Dara Pen', contacts: [], prefill: { role: 'Cafe' }, people: [{ key: 'me', name: 'Dara Pen', done: LINK_DONE }],
+        docs: [{ id: 'contract:c8', title: 'Volunteer Staff Contract', period: '1 year · From 11/2026 to 11/2027', blocks: [{ t: 'period' }, { t: 'field', id: 'focus1', label: 'Area 1' }, { t: 'check', id: 'agree', text: 'I, {name}, agree.' }], sign: { leader: false } }] } : { ok: false, err: b.args[0] === 'abcd0000abcd0000abcd0000abcd0000' ? 'used' : 'invalid' };
+    } else if (b.fn === 'contractLinkSign') {
+      LINK_DONE[b.args[2]] = true; out = { ok: true, done: LINK_DONE };
     } else if (b.fn === 'staffSignSubmit') {
       STAFF_DONE[b.args[3]] = true; out = { ok: true, done: STAFF_DONE };
     } else if (b.fn === 'portalSignSubmit') {
@@ -785,6 +793,10 @@ async function open(viewport, query, seed) {
   await page.fill('#ansQ', ''); await page.waitForTimeout(80);
   await ptab(page, 'docs'); pan = await page.$eval('#panel', e => e.textContent);
   ok('and the visa ticks for an international applicant', (await page.$$eval('[data-visaflag]', c => c.map(x => x.getAttribute('data-visaflag')).join(','))) === 'flightsConfirmed,invitationSent');
+  await page.click('#seeVisa'); await page.waitForTimeout(150);
+  ok('"See their e-visa guide as they see it" shows the applicant’s visa card, as it is for them right now', !!(await page.$('.asSeen')) && /As they see it/.test(await page.$eval('.asSeen', e => e.textContent)) && /(Your e-visa, step by step|You will need a visa for Cambodia)/.test(await page.$eval('.asSeen', e => e.textContent)), await page.$eval('.asSeen', e => e.textContent.slice(0, 120)));
+  await page.click('#seeVisa'); await page.waitForTimeout(100);
+  ok('… and Hide takes it away', !(await page.$('.asSeen')));
   ok('and a Leader reference block with "No link made yet" and a button to make one', /Leader reference/.test(pan) && /No link made yet/.test(pan) && !!(await page.$('#refLinkStaff')));
   await page.click('#refLinkStaff');
   await page.waitForSelector('#refLinkBox');
@@ -1098,13 +1110,15 @@ async function open(viewport, query, seed) {
   CANDS = JSON.parse(JSON.stringify(CANDS0));
   const base = CANDS.find(c => c.id === 'cd_team');
   const mk = (id, name, from, to, updated) => { const c = JSON.parse(JSON.stringify(base)); c.id = id; c.updated = updated; c.portal.form.answers = { ...c.portal.form.answers, teamName: name, itinerary: from ? [{ place: 'YWAM Siem Reap', from, to, base: true }] : [] }; return c; };
-  CANDS.push(mk('cd_tsoon', 'Soon Team', '2026-11-01', '2026-11-10', '2026-09-01T10:00:00Z'), mk('cd_tnow', 'Here Now Team', '2026-10-01', '2026-10-20', '2026-09-02T10:00:00Z'), mk('cd_tgone', 'Gone Team', '2026-08-01', '2026-08-10', '2026-09-30T10:00:00Z'), mk('cd_tnodate', 'No Dates Team', '', '', '2026-09-29T10:00:00Z'));
+  const rel = n => new Date(Date.now() + 7 * 3600e3 + n * 864e5).toISOString().slice(0, 10);   // from today, so these teams never age out of 'here now'
+  CANDS.push(mk('cd_tsoon', 'Soon Team', rel(11), rel(20), '2026-09-01T10:00:00Z'), mk('cd_tnow', 'Here Now Team', rel(-5), rel(5), '2026-09-02T10:00:00Z'), mk('cd_tgone', 'Gone Team', '2026-08-01', '2026-08-10', '2026-09-30T10:00:00Z'), mk('cd_tnodate', 'No Dates Team', '', '', '2026-09-29T10:00:00Z'));
   const { ctx, page } = await open({ width: 1280, height: 900 }, '', () => localStorage.setItem('gp-portal', JSON.stringify({ user: 'dara', pin: '1234' })));
   await page.waitForSelector('.trow');
   await page.click('[data-whatfilter="team"]'); await page.waitForTimeout(200);
   const order = await page.$$eval('.trow .who', ws => ws.map(w => w.textContent).join('|'));
   ok('Teams come in the order they arrive: here now, then soonest first, then no dates yet, then already gone — not by last change', order === 'Here Now Team|Soon Team|Grace Church Team|No Dates Team|Gone Team', order);
-  ok('each team row shows its dates in Cambodia, not when it applied', /In Cambodia 1 Nov 2026 – 10 Nov 2026/.test(await page.$eval('.trow[data-open="cd_tsoon"]', e => e.textContent)) && /Dates in Cambodia not set yet/.test(await page.$eval('.trow[data-open="cd_tnodate"]', e => e.textContent)) && !/\b1 Sept 2026\b/.test(await page.$eval('.trow[data-open="cd_tsoon"]', e => e.textContent)));
+  const dmy = iso => new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });   // the fixture is relative to today, so the expected text is too
+  ok('each team row shows its dates in Cambodia, not when it applied', new RegExp('In Cambodia ' + dmy(rel(11)) + ' – ' + dmy(rel(20))).test(await page.$eval('.trow[data-open="cd_tsoon"]', e => e.textContent)) && /Dates in Cambodia not set yet/.test(await page.$eval('.trow[data-open="cd_tnodate"]', e => e.textContent)) && !/\b1 Sept 2026\b/.test(await page.$eval('.trow[data-open="cd_tsoon"]', e => e.textContent)));
   await page.click('[data-whatfilter=""]'); await page.waitForTimeout(200);
   ok('the All tab keeps the latest change first', (await page.$eval('.trow .who', w => w.textContent)) === 'Gone Team');
   await ctx.close();
@@ -1242,6 +1256,42 @@ async function open(viewport, query, seed) {
   ok('signing sends theirs and HR’s, for that person', ss && ss.args[0] === 'uriah' && ss.args[2] === 'st_1' && ss.args[3] === 'me' && ss.args[4] === 'contract:c9' && ss.args[5].fields.focus1 === 'Cafe' && /^\/9j\//.test(ss.args[5].sig) && ss.args[5].leaderName === 'Uriah Lyford' && /^\/9j\//.test(ss.args[5].leaderSig));
   ok('… then it is done, with the way back to HR', !!(await page.$('.signDone a[href="teams.html?view=hr&hr=st_1"]')));
   ok('… and only once — no second “Back to HR” above it', (await page.$$eval('a', as => as.filter(x => /Back to HR/.test(x.textContent)).length)) === 1);
+  await ctx.close();
+}
+/* the one-time link: the staff contract on the person's own phone, no sign-in — they sign alone; then HR approves from the profile */
+{
+  const draw = async (page, pad) => { const r = await page.$eval('[data-sigpad="' + pad + '"]', c => { c.scrollIntoView({ block: 'center' }); const b = c.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height }; });
+    await page.mouse.move(r.x + 20, r.y + 60); await page.mouse.down(); for (let i = 1; i <= 10; i++) await page.mouse.move(r.x + 20 + i * 25, r.y + (i % 2 ? 30 : 90)); await page.mouse.up(); };
+  const { ctx, page } = await open({ width: 390, height: 844 }, '?contract=abc123def4567890abc123def4567890');
+  await page.waitForSelector('[data-signdoc]', { timeout: 8000 });
+  const lo = sent.filter(b => b.fn === 'contractLinkOpen').pop();
+  ok('the link opens the contract with no sign-in: Staff contract, their name, the period — and no Approved by block', lo && lo.args[0] === 'abc123def4567890abc123def4567890' && /Staff contract/.test(await page.$eval('.gateTitle h2', e => e.textContent)) && /Dara Pen/.test(await page.$eval('.signPeriod', e => e.textContent)) && !(await page.$('.signLeader')));
+  await page.fill('[data-signfield="focus1"]', 'Cafe'); await page.check('[data-signcheck="agree"]');
+  await draw(page, 'sig');
+  await page.click('#signSubmit'); await page.waitForTimeout(500);
+  const ls = sent.filter(b => b.fn === 'contractLinkSign').pop();
+  ok('signing sends it through the link', ls && ls.args[0] === 'abc123def4567890abc123def4567890' && ls.args[1] === 'me' && ls.args[2] === 'contract:c8' && ls.args[3].fields.focus1 === 'Cafe' && /^\/9j\//.test(ls.args[3].sig) && ls.args[3].leaderSig === undefined);
+  ok('… done: thanks, HR will approve — nothing to go back to', /HR will add their approval/.test(await page.$eval('.signDone', e => e.textContent)) && !(await page.$('.signDone a')));
+  await ctx.close();
+}
+{
+  const { ctx, page } = await open({ width: 390, height: 844 }, '?contract=abcd0000abcd0000abcd0000abcd0000');
+  await page.waitForTimeout(800);
+  ok('a link already used says so', /already been used/.test(await page.$eval('.signPage', e => e.textContent)));
+  await ctx.close();
+}
+{
+  const draw = async (page, pad) => { const r = await page.$eval('[data-sigpad="' + pad + '"]', c => { c.scrollIntoView({ block: 'center' }); const b = c.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height }; });
+    await page.mouse.move(r.x + 20, r.y + 60); await page.mouse.down(); for (let i = 1; i <= 10; i++) await page.mouse.move(r.x + 20 + i * 25, r.y + (i % 2 ? 30 : 90)); await page.mouse.up(); };
+  const { ctx, page } = await open({ width: 390, height: 844 }, '?staff=1&hr=st_2&doc=contract%3Ac8', () => localStorage.setItem('gp-staff', JSON.stringify({ user: 'uriah', pin: '1234' })));
+  await page.waitForSelector('[data-approveonly]', { timeout: 8000 });
+  ok('HR opens one signed through the link: only Approved by is left — who signed and when, HR\'s name already in, no fields to fill', /Dara Pen read, filled in and signed it/.test(await page.$eval('[data-approveonly]', e => e.textContent)) && await page.$eval('#sign_lname', i => i.value) === 'Uriah Lyford' && !(await page.$('[data-signfield]')) && !(await page.$('[data-sigpad="sig"]')));
+  await page.click('#signSubmit'); await page.waitForTimeout(300);
+  ok('not without HR\'s signature', !sent.some(b => b.fn === 'hrContractSign' && b.args[2] === 'st_2'));
+  await draw(page, 'leaderSig');
+  await page.click('#signSubmit'); await page.waitForTimeout(500);
+  const ap = sent.filter(b => b.fn === 'hrContractSign' && b.args[2] === 'st_2').pop();
+  ok('Sign to approve sends just HR\'s name and signature', ap && ap.args[4] === 'contract:c8' && ap.args[5].approveOnly === true && ap.args[5].leaderName === 'Uriah Lyford' && /^\/9j\//.test(ap.args[5].leaderSig) && !!(await page.$('.signDone')));
   await ctx.close();
 }
 /* the staff contract in Khmer: the portal in Khmer shows the contract's own words in Khmer (legal-km.js) */
@@ -1416,6 +1466,13 @@ async function open(viewport, query, seed) {
   ok('the record shows the team’s steps with what is next', /Next: 1st call — getting to know each other · on us/.test(await page.$eval('#teamNext', e => e.textContent)));
   ok('staff tick the steps done outside the portal; the ones the portal sees tick themselves', (await page.$$eval('[data-teamstep]', c => c.map(x => x.getAttribute('data-teamstep')).join(','))) === 'call1,call2,arrived' && /ticks when they upload it/.test(await page.$eval('.flowList', e => e.textContent)));
   ok('no separate visa ticks for a team', !(await page.$('[data-visaflag]')));
+  ok('every team step has 👁', (await page.$$eval('[data-seestep]', b => b.length)) === (await page.$$eval('.flowList li', b => b.length)) && /Tap 👁 on a step/.test(await page.$eval('.flowList + .hint', e => e.textContent)));
+  await page.click('[data-seestep="evisa"]'); await page.waitForTimeout(150);
+  ok('👁 on the e-visa step shows it exactly as the team sees it: the step, its note about the letter of invitation', !!(await page.$('.asSeen .step[data-step="evisa"]')) && /As the team sees it/.test(await page.$eval('.asSeen', e => e.textContent)) && /E-visas approved/.test(await page.$eval('.asSeen', e => e.textContent)) && /How to apply for your e-visa online/.test(await page.$eval('.asSeen', e => e.textContent)), await page.$eval('.asSeen', e => e.textContent.slice(0, 160)));
+  await page.click('[data-seestep="call1"]'); await page.waitForTimeout(150);
+  ok('👁 on another step swaps to that one', !(await page.$('.asSeen .step[data-step="evisa"]')) && !!(await page.$('.asSeen .step[data-step="call1"]')) && /video call/.test(await page.$eval('.asSeen', e => e.textContent)));
+  await page.click('[data-seestep="call1"]'); await page.waitForTimeout(100);
+  ok('… and again closes it', !(await page.$('.asSeen')));
   await ptab(page, 'numbers');
   ok('a team not in the Teams Database yet says so, and offers to add it', /Not in the Teams Database yet/.test(await page.$eval('#teamDbState', e => e.textContent)) && !!(await page.$('#syncTeamBtn')));
   await page.click('#syncTeamBtn');

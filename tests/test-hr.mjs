@@ -276,6 +276,38 @@ console.log('=== staff sign the legal documents and their contract in the app ==
   r = await call('hrContractPdf', ['sina', '1234', 'st_andrew', ct.id]);
   const pdf = r.body.ok ? Buffer.from(r.body.dataUrl.split(',')[1], 'base64').toString('latin1') : '';
   ok('the signed contract is a PDF with the letterhead, both signatures and the commitment', r.body.ok && (pdf.match(/\/Subtype \/Image/g) || []).length === 3 && pdf.includes('Cafe') && pdf.includes('Sina Sok') && pdf.includes('Signature of UofN Leader'));
+
+/* the one-time link: HR sends it, the person signs on their own phone, HR approves from the profile */
+r = await call('hrSendContract', ['sina', '1234', 'st_dara', { from: '2026-11', years: 1 }]);
+const lkId = r.body.contractId, lkTok = r.body.staff.contracts.find(c => c.id === lkId).digital.linkToken;
+ok('starting a contract makes its one-time link (a token on it, HR sees it)', r.body.ok && /^[a-f0-9]{32}$/.test(lkTok || ''));
+r = await call('contractLinkOpen', ['0123456789abcdef0123456789abcdef']);
+ok('a wrong link opens nothing', r.body.ok === false && r.body.err === 'invalid');
+r = await call('contractLinkOpen', [lkTok]);
+const lkDoc = r.body.docs && r.body.docs[0];
+ok('the link opens the contract for that person, no sign-in — they sign alone (no approver on the page)', r.body.ok && r.body.link === true && r.body.hrSign === false && r.body.people[0].name === 'Dara Pen' && lkDoc && lkDoc.id === 'contract:' + lkId && lkDoc.sign.leader === false && /1 year/.test(lkDoc.period));
+r = await call('contractLinkSign', [lkTok, 'me', lkDoc.id, { name: 'Dara Pen', checks: { agree: true }, fields: { focus1: 'Cafe', future: 'bake' }, sig: SIG }]);
+ok('they sign through the link', r.body.ok && r.body.done[lkDoc.id] === true);
+r = await call('hrList', ['sina', '1234']);
+let dg2 = r.body.staff.find(x => x.id === 'st_dara').contracts.find(c => c.id === lkId).digital;
+ok('… it is on their HR profile, waiting for HR\'s approval, the link spent', dg2.status === 'awaiting_leader' && dg2.staffName === 'Dara Pen' && !!dg2.staffSignedAt && !!dg2.linkUsedAt);
+r = await call('contractLinkOpen', [lkTok]);
+ok('… and the link cannot be used again', r.body.ok === false && r.body.err === 'used');
+r = await call('myContract', ['dara', '1234']);
+ok('… and it does not count yet', !req(r.body).some(x => x.kind === 'contract' && x.ends === '2027-11-01' && x.state === 'current'));
+r = await call('hrContractOpen', ['sina', '1234', 'st_dara']);
+const apDoc = r.body.docs.find(d => d.id === 'contract:' + lkId);
+ok('HR opens it: only the approval is left', r.body.ok && apDoc && apDoc.approveOnly === true && apDoc.staffName === 'Dara Pen');
+r = await call('hrContractSign', ['sina', '1234', 'st_dara', 'me', apDoc.id, { leaderName: 'Sina Sok', approveOnly: true }]);
+ok('… not without HR\'s signature', r.body.ok === false && r.body.err === 'leader_required');
+r = await call('hrContractSign', ['sina', '1234', 'st_dara', 'me', apDoc.id, { leaderName: 'Sina Sok', leaderSig: SIG, approveOnly: true }]);
+ok('HR signs to approve: their contract', r.body.ok);
+r = await call('hrList', ['sina', '1234']);
+dg2 = r.body.staff.find(x => x.id === 'st_dara').contracts.find(c => c.id === lkId).digital;
+ok('… signed, both names, who approved', dg2.status === 'signed' && dg2.staffName === 'Dara Pen' && dg2.leaderName === 'Sina Sok' && dg2.approvedBy === 'st_hr');
+r = await call('hrContractPdf', ['sina', '1234', 'st_dara', lkId]);
+const pdf2 = r.body.ok ? Buffer.from(r.body.dataUrl.split(',')[1], 'base64').toString('latin1') : '';
+ok('… and its PDF has both signatures', r.body.ok && (pdf2.match(/\/Subtype \/Image/g) || []).length === 3 && pdf2.includes('Sina Sok'));
   r = await call('hrContractPdf', ['andrew', '1234', '', ct.id]);
   ok('they open their own signed contract', r.body.ok);
   r = await call('hrContractPdf', ['dara', '1234', '', ct.id]);

@@ -98,7 +98,7 @@ async function open(who, opts) {
   await page.waitForTimeout(500);
   await page.click('nav.bottom [data-tab="ministry"]');
   await page.waitForTimeout(600);
-  if (opts.pickTeams) { await page.click('[data-mmpick="Community Service|Outreach Teams"]'); await page.waitForTimeout(400); }
+  if (opts.pickTeams) { await page.click('#mmSwitch', { timeout: 1500 }).catch(() => {}); await page.waitForTimeout(250); await page.click('[data-mmpick="Community Service|Outreach Teams"]'); await page.waitForTimeout(400); }
   // Outreach Teams is entered on its own Teams Database page, one tap off My Ministry
   if (!opts.stayOnMinistry && await page.$('#goTeamsDb')) { await page.click('#goTeamsDb'); await page.waitForTimeout(600); }
   return { ctx, page, errors, sent };
@@ -250,7 +250,7 @@ console.log('\n=== a Cafe member: period toggle, folded personal card, teams rea
   await page.waitForTimeout(300);
   ok('Month reads “this month”', await page.evaluate(() => /this month/.test(document.querySelector('.mmTileSub').textContent)));
   ok('the personal numbers are off the page for now', !s.personalFold && s.personalOpen === 0);
-  ok('a single-ministry member gets no picker — just the banner', await page.evaluate(() => !document.querySelector('[data-mmpick]') && !document.querySelector('#mmBrowseMinSel') && !!document.querySelector('#mmBanner')));
+  ok('a single-ministry member gets no Switch ▾ — just the header', await page.evaluate(() => !document.querySelector('#mmSwitch') && !document.querySelector('[data-mmpick]') && !!document.querySelector('#mmBanner')));
 
   ok('no page errors', errors.length === 0, errors.join(' | '));
   await ctx.close();
@@ -262,14 +262,17 @@ console.log('\n=== the department’s overseer: the teams page among the ministr
   const { ctx, page, errors, sent } = await open(OVERSEER, { stayOnMinistry: true });
   await page.waitForTimeout(800);
   ok('the overseer’s My Ministry opens on Campus Leadership (its OKRs and meeting board)', !!(await page.$('.lwSeg, #leadOkrs')));
-  await page.click('[data-mmpick="Community Service|Cafe"]'); await page.waitForTimeout(800);
+  await page.click('#mmSwitch', { timeout: 1500 }).catch(() => {}); await page.waitForTimeout(250); await page.click('[data-mmpick="Community Service|Cafe"]'); await page.waitForTimeout(800);
   let s = await state(page);
+  await page.click('#mmSwitch'); await page.waitForTimeout(250);
   const chips = await page.evaluate(() => [].map.call(document.querySelectorAll('[data-mmpick]'), b => b.getAttribute('data-mmpick')));
+  const onPick = await page.evaluate(() => (document.querySelector('[data-mmpick].on') || { getAttribute: () => '' }).getAttribute('data-mmpick'));
+  await page.click('#mmPickScrim'); await page.waitForTimeout(250);
   ok('the overseer picks among the department’s ministries', chips.includes('Community Service|Cafe') && chips.includes('Community Service|Outreach Teams'), chips.join(' , '));
-  ok('a weekly ministry of theirs shows its week strip', s.strip && s.form && !s.teamsPage && await page.evaluate(() => document.querySelector('[data-mmpick].on').getAttribute('data-mmpick') !== 'Community Service|Outreach Teams'));
+  ok('a weekly ministry of theirs shows its week strip', s.strip && s.form && !s.teamsPage && onPick === 'Community Service|Cafe', onPick);
   ok('their own leadership figures are not the default, they sit last in the picker', chips[chips.length - 1] === 'Campus Leadership|Community Service');
   ok('no “Individual — your own numbers” paragraph any more', !(await page.evaluate(() => document.body.innerText.includes('Individual'))));
-  await page.click('[data-mmpick="Community Service|Outreach Teams"]');
+  await page.click('#mmSwitch', { timeout: 1500 }).catch(() => {}); await page.waitForTimeout(250); await page.click('[data-mmpick="Community Service|Outreach Teams"]');
   await page.waitForTimeout(400);
   await page.click('#goTeamsDb');
   await page.waitForTimeout(700);

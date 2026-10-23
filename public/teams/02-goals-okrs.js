@@ -1257,7 +1257,7 @@ function miniDashboardHtml(){
   var goalsPct=written.length ? Math.round(goalsDone/written.length*100) : 0;
   var list=myHabitsToday();
   var log=logForDate(todayStr());
-  var habitsDone=list.filter(function(hb){return log && didHabit(log,hb.id);}).length;
+  var habitsDone=list.filter(function(hb){return habitDoneToday(hb, log);}).length;
   var habitsPct=list.length ? Math.round(habitsDone/list.length*100) : 0;
   var year=String(new Date().getFullYear());
   var yt=(S.trips && S.trips.totals && S.trips.totals[year]) || {personal:0};
@@ -1272,7 +1272,7 @@ function miniDashboardHtml(){
   var mentorRec=mentorId?personOf(mentorId):null;
   var mentorName=mentorId?(mentorRec?mentorRec.name:nameOf(mentorId)):'';
   var mentorPct=mentorId?100:0;
-  var bestRun=myHabits().reduce(function(m,hb){ return Math.max(m, habitBest(hb)); }, 0);
+  var bestRun=myHabits().reduce(function(m,hb){ return hb.perWeek ? m : Math.max(m, habitBest(hb)); }, 0);   // days; a times-a-week habit's best is in weeks
 
   var p=S.profile||{};
   var color=p.dashboardColor||'';
