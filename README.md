@@ -4,12 +4,12 @@ A mobile-first, Khmer-first web app for the YWAM GonPreah bases in **Siem Reap a
 Poipet**. It tracks ministry KPIs, quarterly OKRs, a weekly staff health check-in,
 per-staff daily logging, and days away from campus.
 
-**Live:** https://transcendent-crostata-c9b7f4.netlify.app
+**Live:** https://impact.gonpreah.org · **Repo:** https://github.com/gonpreah/YWAM-gp-impact (moved from `uriahlyford` in Oct 2026; old links redirect)
 
 > **This is the repo the live site deploys from.** Two other repos have similar
 > names and are *not* this app — `uriahlyford/YWAM-GP-App` and
 > `uriahlyford/Ywam-Base-Tracker`. If you were sent here to work on the Siem
-> Reap / Poipet app, you are in the right place: `YWAM-gp-impact`, branch `main`.
+> Reap / Poipet app, you are in the right place: `gonpreah/YWAM-gp-impact`, branch `main`.
 
 ## Read these first
 
