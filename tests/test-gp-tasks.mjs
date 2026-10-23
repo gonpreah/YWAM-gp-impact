@@ -263,5 +263,24 @@ ok('… not for another department', !r.lists.some(l => l.id === dl.id));
 r = await call('clearDoneGpTasks', [...as('cora'), cafe.id]);
 ok('Clear completed takes the done ones off', r.ok && !r.tasks.some(t => t.listId === cafe.id && t.done));
 
+console.log('=== made once, however many times it is sent ===');
+// Oct 2026 (Uriah): "GP Tasks sometimes produces multiple tasks when creating a task"
+const count = (r, title) => (r.tasks || []).filter(t => t.title === title).length;
+r = await call('saveGpTask', [...as('cora'), { listId: cafe.id, title: 'Sweep the porch', rid: 'rabc123def' }]);
+const first = r.saved;
+r = await call('saveGpTask', [...as('cora'), { listId: cafe.id, title: 'Sweep the porch', rid: 'rabc123def' }]);
+ok('the same new task sent twice (one code) is made once', r.ok && count(r, 'Sweep the porch') === 1 && r.saved === first && r.again === true);
+r = await call('saveGpTask', [...as('cora'), { listId: cafe.id, title: 'Sweep the porch', rid: 'rzzz999yyy' }]);
+ok('… a new one with its own code is a new task', r.ok && count(r, 'Sweep the porch') === 2);
+r = await call('saveGpTask', [...as('kanha'), { listId: cafe.id, title: 'Sweep the porch', rid: 'rabc123def' }]);
+ok('… and someone else’s code is theirs, not a match', r.ok && count(r, 'Sweep the porch') === 3);
+r = await call('saveGpTask', [...as('cora'), { listId: cafe.id, title: 'No code at all' }]);
+r = await call('saveGpTask', [...as('cora'), { listId: cafe.id, title: 'No code at all' }]);
+ok('a task sent without a code (an older phone) still saves as before', count(r, 'No code at all') === 2);
+r = await call('saveGpTask', [...as('cora'), { listId: cafe.id, title: 'Junk code', rid: '<bad code>' }]);
+ok('a code that isn’t one is ignored', r.ok && !mem.gpTasks.tasks.some(t => t.rid === '<bad code>'));
+r = await call('getGpTasks', as('cora'));
+ok('the code never goes out to a phone', !JSON.stringify(r).includes('rabc123def'));
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

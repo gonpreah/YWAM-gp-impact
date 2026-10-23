@@ -2031,7 +2031,9 @@ copy of anything.
   checks — `server tests` (seconds, no install) and `browser tests` (Playwright +
   Chromium) — on every PR and every push to `main`. Both are the ones to require in
   branch protection. A green CI is not permission to skip running the suite locally:
-  a merge here is a production deploy.
+  a merge here is a production deploy. The browser job has a 60-minute limit (Oct 2026:
+  the suite passed 25 minutes and every run was cut off as "cancelled" — raise the limit
+  again before the suite reaches it, a cancelled job is not a failed test).
 - **Netlify:** push to `main` → auto-deploy (GitHub integration on the `transcendent-crostata-c9b7f4`
   project, live at impact.gonpreah.org, on the gonpreah team). `netlify.toml` sets `publish = "public"`
   and `functions = "netlify/functions"`. Nothing else to run by hand.
@@ -2735,6 +2737,15 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 - Tests: `tests/test-students.mjs` (server, the door and the access checks), `tests/test-student-app-ui.mjs`.
 
 ## GP Tasks (Oct 2026, Uriah: "much simpler, very much like Google Tasks")
+- **A new task is made once** (Oct 2026, Uriah: "GP Tasks sometimes produces multiple tasks when
+  creating a task"). Two ways it used to double: a second tap (or Enter, then Save) while the
+  first was still on its way, and trying again after an answer the phone had given up on (the
+  server had saved it). Now the form (`S.gtNew`, `S.gptAsk`) is marked `saving` until the
+  answer comes — the button says "Saving…" and further taps do nothing — and it carries a
+  one-time code `rid` for its life. `saveGpTask` keeps `rid` on the task it makes; the same
+  `rid` from the same person again returns that task (`again: true`) instead of a new one.
+  The code never goes out to a phone (`gptTaskOut_`). tests/test-gp-tasks.mjs and
+  tests/test-gp-tasks-ui.mjs (a slow server; an answer lost on the way).
 - **Oct 2026, second pass** (Uriah: "more fluid, like Google Tasks"): no "For me" tab — everyone has
   **My Tasks**, a personal list the server makes on first `getGpTasks` (`gptMain_()` = your oldest
   personal list — titled **Inbox** since Oct 2026, Uriah: "like an inbox"; whatever it was called

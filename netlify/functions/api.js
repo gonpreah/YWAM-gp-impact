@@ -10762,6 +10762,13 @@ async function saveGpTask(username, pin, task) {
   staff.forEach(function (r) { if (r.active !== false && !r.archived && !isApplicant_(r)) onCampus[r.id] = r; });
   let t = x.id ? d.tasks.find(function (y) { return y.id === x.id; }) : null;
   if (x.id && !t) return { ok: false, err: 'not_found' };
+  /* a new task's one-time code (rid, from its form): the same one again — a second tap, or a
+     retry after an answer the phone gave up on — is the task already made, not another */
+  const rid = !x.id && typeof x.rid === 'string' && /^[a-z0-9]{6,40}$/i.test(x.rid) ? x.rid : '';
+  if (rid) {
+    const again = d.tasks.find(function (y) { return y.rid === rid && y.by === s.id; });
+    if (again) return Object.assign(await getGpTasks(username, pin), { saved: again.id, again: true });
+  }
   /* "Ask another ministry": by its name, into its first list (made if it has none yet) */
   if (!t && !x.listId && x.askMin) {
     const p = String(x.askMin).split('|'), key = p.length === 2 && p[0] ? normKey_((str_(p[0], 80) || '') + '|' + (str_(p[1], 80) || ''), 2) : '';
@@ -10782,6 +10789,7 @@ async function saveGpTask(username, pin, task) {
     const title = str_(x.title, GPT_MAX.title); if (!title) return { ok: false, err: 'title_required' };
     t = { id: gptId_('tk'), listId: L.id, title: title, notes: '', due: '', time: '', done: false, doneAt: '', doneBy: '', assignees: [], assignedAt: {},
       status: asks ? 'request' : 'open', from: null, created: now, by: s.id, updated: now, order: d.tasks.filter(function (y) { return y.listId === L.id; }).length };
+    if (rid) t.rid = rid;
     if (asks || (L.scope !== 'personal' && !gptIn_(s, L))) t.from = { id: s.id, label: gptLabel_(s) };
     d.tasks.push(t);
   } else if (!edits && !assigned && t.by !== s.id) return { ok: false, err: 'not_authorized' };

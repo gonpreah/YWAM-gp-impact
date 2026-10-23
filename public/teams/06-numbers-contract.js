@@ -764,7 +764,7 @@ function mmSelected_(opts){
   var inDept=opts.filter(function(o){ return o.dept===S.mmBrowseDept; });
   if(inDept.length) return inDept.filter(function(o){ return !isTeamsMinistry_(o.dept, o.min); })[0] || inDept[0];
   // your own first — for Campus Leadership that is its OKRs and meeting board
-  var own = opts.filter(function(o){ return o.dept===S.me.dept && o.min===S.me.ministry; })[0];
+  var own = opts.filter(function(o){ return o.dept===S.me.dept && o.min===(o.dept===BL_DEPT ? blMyKey_() : S.me.ministry); })[0];
   // otherwise the first weekly ministry — Outreach Teams is its own page
   return own || opts.filter(function(o){ return !isTeamsMinistry_(o.dept, o.min); })[0] || opts[0];
 }
@@ -884,7 +884,9 @@ function myMinistryHtml(){
       if(R.focus) h+='<p class="hint lwFocus">'+esc(t(R.focus))+'</p>';
       var pane;
       if(lwt==='week') pane=lwHtml_();
-      else if(lwt==='money') pane=finDashHtml_();   // the base's finances, from the Finances office's reports (teams/09-finance.js)
+      // the base's finances, from the Finances office's reports (teams/09-finance.js) — with the
+      // QuickBooks card on top for whoever may connect it (an admin, the Finances office)
+      else if(lwt==='money') pane=(S.fin && S.fin.canEdit ? finQboHtml_(S.fin) : '')+finDashHtml_();
       else if(lwt==='okrs') pane=okrTabHtml_();   // the OKRs page itself — yours, leadership's, and (admins) every department's
       else if(lwt==='base') pane=leadBaseHtml_(ph)+orgCltCardHtml_(S.me.campus);   // the role's own numbers first; who is on the leadership team at the foot
       else pane=leadSectionHtml_();

@@ -30,8 +30,15 @@ function ok(name, cond, extra) {
 }
 /* the record is in tabs: open one before reaching into it */
 async function ptab(page, id) {
-  const b = await page.$('[data-ptab="' + id + '"]');
-  if (b) { await b.click(); await page.waitForSelector('[data-ptabbody="' + id + '"]', { timeout: 3000 }).catch(() => {}); }
+  const sel = '[data-ptab="' + id + '"]';
+  if (!(await page.$(sel))) return;
+  /* by selector, not a handle: the record re-renders once more after #panel appears, and a handle taken
+     before that is "not attached to the DOM" by the time it is clicked (CI's Chromium 156, Oct 2026) */
+  for (let i = 0; ; i++) {
+    try { await page.click(sel, { timeout: 3000 }); break; }
+    catch (e) { if (i >= 2) throw e; await page.waitForTimeout(200); }
+  }
+  await page.waitForSelector('[data-ptabbody="' + id + '"]', { timeout: 3000 }).catch(() => {});
 }
 const STEPS = (current) => {
   const ids = ['account', 'form', 'received', 'contact', 'docs', 'interview', 'accepted', 'practical', 'arrived'];

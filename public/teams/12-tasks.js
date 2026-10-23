@@ -325,7 +325,7 @@ function gtNewHtml_(){
       '<button class="gtTool'+(N.showNotes?' on':'')+'" id="gtNewNotesBtn" aria-label="'+esc(t('Add details'))+'">'+GPT_SVG.details+'</button>'+
       '<button class="gtTool'+(N.showWhen||N.due?' on':'')+'" id="gtNewWhenBtn" aria-label="'+esc(t('Set date and time'))+'">'+GPT_SVG.clock+'</button>'+
       '<button class="gtTool gtWho'+(N.whos.length||N.showWho?' on':'')+'" id="gtNewWhoBtn" aria-label="'+esc(t('Assign to'))+'">'+GPT_SVG.person+(whoName ? ' '+esc(whoName) : '')+'</button>'+
-      '<span style="flex:1"></span><button class="gtSave" id="gptAddBtn">'+esc(t('Save'))+'</button></div></div>';
+      '<span style="flex:1"></span><button class="gtSave" id="gptAddBtn"'+(N.saving?' disabled':'')+'>'+esc(N.saving ? t('Saving…') : t('Save'))+'</button></div></div>';
 }
 /* a task, opened — with its subtasks */
 function gtDetailHtml_(){
@@ -424,12 +424,25 @@ function gptShare_(id, members){
   var L=gptListById_(id); if(L) L.members=members.slice(); render();
   run('shareGpTaskList',[S.auth.user,S.auth.pin,id,members],function(d){ if(d && d.ok){ gptTake_(d); } else showMsg(t('Could not save')); render(); });
 }
-function gptSaveTask_(payload, msg, after){
+/* A new task comes from a form (`form` — S.gtNew, S.gptAsk), and saving it once must make it
+   once (Oct 2026, Uriah: "GP Tasks sometimes produces multiple tasks when creating a task").
+   Two ways it didn't: a second tap (or Enter, then the button) while the first was still on
+   its way, and trying again after a slow answer the phone had given up on — the server had
+   already saved it. So the form is marked as saving until the answer comes, and it carries a
+   one-time code (rid) for its life: sent again, the server hands back the task it made. */
+function gptSaveTask_(payload, msg, after, form){
+  if(form){
+    if(form.saving) return;
+    form.rid=form.rid || ('r'+Date.now().toString(36)+Math.random().toString(36).slice(2, 10));
+    payload.rid=form.rid; form.saving=true;
+    var b=document.getElementById(form===S.gptAsk ? 'gptAskSend' : 'gptAddBtn'); if(b){ b.disabled=true; b.textContent=t('Saving…'); }
+  }
   run('saveGpTask',[S.auth.user,S.auth.pin,payload],function(d){
+    if(form) form.saving=false;
     if(d && d.ok){ gptTake_(d); if(after) after(d); if(msg) showMsg(msg); }
     else showMsg(d && d.err==='title_required' ? t('Give it a title first') : t('Could not save'));
     render();
-  }, function(){ showMsg(t('No connection — try again when you are online.')); });
+  }, function(){ if(form) form.saving=false; showMsg(t('No connection — try again when you are online.')); render(); });
 }
 /* ---- drag and drop: a task by its grip (at once), a tab after a short hold on touch — mouse or finger.
    The thing moves live among its siblings; letting go gives back their order, or the tab it was dropped on. ---- */
@@ -556,7 +569,7 @@ function bindGpTasks_(){
   on('gptAskSend', function(){
     var A=S.gptAsk; if(!A.min){ showMsg(t('Choose the ministry first')); return; } if(!(A.title||'').trim()){ showMsg(t('Give it a title first')); return; }
     gptSaveTask_({ askMin:A.min, title:A.title.trim(), due:A.due||'' }, gpT('Asked — {name} will see it in their list',{name:t(A.min.split('|')[1])}),
-      function(){ S.gptAsk=null; var m=gptMain_(); S.gptList=m ? m.id : null; });   // → your Inbox, where it waits
+      function(){ S.gptAsk=null; var m=gptMain_(); S.gptList=m ? m.id : null; }, A);   // → your Inbox, where it waits
   });
   /* a new list is your own; a ministry's designated list is made by the server (the button below is
      for a ministry that has none yet — someone from before the designated lists) */
@@ -666,7 +679,7 @@ function gtSaveNew_(){
   var whos=N.whos||[];
   gptSaveTask_({ listId:L.id, title:v, notes:N.notes||'', due:N.due||'', time:N.due ? (N.time||'') : '', assignees: whos },
     asks ? gpT('Asked — {name} will see it in their list',{name:t(L.ministry||L.dept)}) : (whos.length ? gpT('Added — {name} will be told',{name:whos.map(function(id){ return firstName_(gptPerson_(id).name); }).join(', ')}) : t('Added')),
-    function(){ S.gtNew=null; });
+    function(){ S.gtNew=null; }, N);
 }
 /* My Ministry: one row under the department and ministry, Ministry Tasks (n) ›, that opens the
    ministry's own GP Tasks page — the same page as your own, with just that ministry's list (Uriah,
