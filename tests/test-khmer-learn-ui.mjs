@@ -41,6 +41,17 @@ ok('the book\'s order: numbers first after the script, the Faith lists last; Num
   ok('all 66 books in order — 39 Old Testament then 27 New, Genesis first, Revelation last, each Khmer', B.words.length === 66 && B.words.slice(0, 39).every(w => w[2] === 'Old Testament') && B.words.slice(39).every(w => w[2] === 'New Testament') && B.words[0][0] === 'Genesis' && B.words[38][0] === 'Malachi' && B.words[39][0] === 'Matthew' && B.words[65][0] === 'Revelation' && B.words.every(w => /[ក-៿]/.test(w[1]) && w[3]));
   ok('every Faith list name and tip has Khmer', F.every(c => /[ក-៿]/.test(KM[c.name] || '') && (!c.tip || /[ក-៿]/.test(KM[c.tip] || '')))); }
 
+/* the grammar lessons (Oct 2026, Andrew: "one for vocabulary, and one for grammar and sentence structure") */
+console.log('=== the grammar ===');
+const ctxG = {}; vm.runInNewContext(fs.readFileSync(REPO + '/public/khmer-grammar.js', 'utf8'), ctxG);
+const GL = ctxG.GP_KHMER_GRAMMAR.lessons, EX = GL.reduce((a, l) => a.concat(l.examples.map(e => ({ l, e }))), []);
+ok('ten lessons, from word order through now, the past, the future, no, questions, want/can/must, ever', GL.length === 10 && ['order', 'now', 'past', 'future', 'not', 'yesno', 'qwords', 'modal', 'ever'].every(id => GL.some(l => l.id === id)) && new Set(GL.map(l => l.id)).size === 10);
+ok('each has an icon, a title, its idea, how it works for both learners, both patterns, and three or more sentences', GL.every(l => l.icon && l.title && l.idea && l.rule && l.ruleEn && l.pattern && l.patternEn && l.examples.length >= 3));
+ok('every sentence: its English words make its English, its Khmer is words of Khmer, a reading for each word', EX.every(({ e }) => e.enT.join(' ') === e.en.replace(/[.?!]$/, '') && e.km.length >= 2 && e.km.every(w => /^[ក-៿]+$/.test(w)) && e.tl.length === e.km.length && e.tl.every(Boolean)), JSON.stringify(EX.filter(({ e }) => !(e.enT.join(' ') === e.en.replace(/[.?!]$/, '') && e.tl.length === e.km.length)).map(x => x.e.en)));
+ok('the word that does not belong is in none of its lesson\'s sentences, in either language', GL.every(l => l.examples.every(e => !(l.extra && e.km.includes(l.extra)) && !(l.extraEn && e.enT.includes(l.extraEn)))));
+ok('the words a lesson is about appear in its sentences (now: កំពុង, the past: បាន, the future: នឹង)', GL.every(l => l.key.every(k => l.examples.some(e => e.km.includes(k)))) && GL.find(l => l.id === 'now').key.includes('កំពុង') && GL.find(l => l.id === 'past').key.includes('បាន') && GL.find(l => l.id === 'future').key.includes('នឹង'));
+ok('every lesson\'s title, idea, how it works and pattern has Khmer', GL.every(l => ['title', 'idea', 'rule', 'ruleEn', 'pattern', 'patternEn'].every(k => /[ក-៿]/.test(KM[l[k]] || ''))), GL.flatMap(l => ['title', 'idea', 'rule', 'ruleEn', 'pattern', 'patternEn'].filter(k => !KM[l[k]]).map(k => l.id + '.' + k)).join());
+
 const ME = { id: 'st1', name: 'Sreilea Chan', username: 'sreilea', campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', role: 'Staff', photo: '', mentorId: '', staffType: 'ministry', country: 'Cambodia' };
 const BOOT = { ok: true, staff: ME, profile: { phone: '', joined: '', debt: false, mentorStatus: '' }, roster: [ME], logs: [], habits: null, mentees: [], mentorRequests: [], goals: [], checkins: [],
   trips: { ok: true, trips: [], totals: {}, reasons: { work: ['Trip'], personal: ['Family'] }, hasMentor: false }, tripRequests: [], ministry: { ok: true, campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', entries: [], daily: {}, prev: {}, pins: [] },
@@ -76,7 +87,7 @@ console.log('=== the page ===');
   const home = await main(page);
   ok('it opens: the book named, 0% known, a daily mix that fills itself, the script and three levels with their lists counted', /KBC vocabulary book/.test(home) && /0 of \d+ words known/.test(home) && /Daily mix/.test(home) && (await page.$$eval('[data-khlevel]', b => b.length)) === 4 && /The script/.test(home) && /Level 1 · Essentials/.test(home) && /Level 3 · Deeper talk/.test(home), home.slice(0, 300));
   ok('… and "I\'m learning Khmer / English", Khmer on', !!(await page.$('[data-khlearn="km"].on')));
-  ok('the game: Kiri says hi, 0 day streak, 0 XP as a Seed, the daily goal ring at 0 / 30, the week’s dots, badges all locked', /Hi, I’m Kiri!/.test(home) && /🔥 0/.test(home) && /🌱 0/.test(home) && /Seed/.test(home) && /0 \/ 30 XP today/.test(home) && (await page.$$eval('.khDot', d => d.length)) === 7 && (await page.$$eval('.khBadge', b => b.length)) === 12 && (await page.$$eval('.khBadge.on', b => b.length)) === 0 && /Badges · 0 \/ 12/i.test(home), [/Hi, I’m Kiri!/, /🔥 0/, /🌱 0/, /Seed/, /0 \/ 30 XP today/, /Badges · 0 \/ 12/].map(r => r.test(home)).join() + ' ' + home.slice(0, 400).replace(/\n/g, '|'));
+  ok('the game: Kiri says hi, 0 day streak, 0 XP as a Seed, the daily goal ring at 0 / 30, the week’s dots, badges all locked', /Hi, I’m Kiri!/.test(home) && /🔥 0/.test(home) && /🌱 0/.test(home) && /Seed/.test(home) && /0 \/ 30 XP today/.test(home) && (await page.$$eval('.khDot', d => d.length)) === 7 && (await page.$$eval('.khBadge', b => b.length)) === 13 && (await page.$$eval('.khBadge.on', b => b.length)) === 0 && /Badges · 0 \/ 13/i.test(home), [/Hi, I’m Kiri!/, /🔥 0/, /🌱 0/, /Seed/, /0 \/ 30 XP today/, /Badges · 0 \/ 13/].map(r => r.test(home)).join() + ' ' + home.slice(0, 400).replace(/\n/g, '|'));
   ok('… sounds on, and the switch turns them off and remembers', (await page.$eval('#khSound', e => e.textContent)) === '🔈' && (await page.click('#khSound'), await page.waitForTimeout(200), (await page.$eval('#khSound', e => e.textContent)) === '🔇' && await page.evaluate(() => JSON.parse(localStorage.getItem('gp-kh-game')).sound === false)));
   await page.click('#khSound'); await page.waitForTimeout(200);
   /* the script: letter first, the sound the answer */
@@ -230,6 +241,73 @@ console.log('=== the page ===');
   ok('… a card shows a letter first, 1 / 26', !!(await page.$('#khFlip .khEn')) && /1 \/ 26/.test(await main(page)) && /^[A-Z]$/.test(await page.$eval('#khFlip .khEn', e => e.textContent)));
   await page.click('.khSay.big'); await page.waitForTimeout(100);
   ok('… 🔊 says the letter in English', /^[A-Z],en-US$/.test((await page.evaluate(() => window.__spoken.slice(-1)[0])).join()));
+  await ctx.close();
+}
+{
+  /* the Grammar area: lessons, how each works, building the sentences */
+  const { ctx, page } = await open();
+  await page.evaluate(() => khOpen_()); await page.waitForTimeout(1000);
+  ok('Learn Khmer opens on Vocabulary, with a Grammar switch beside it', !!(await page.$('[data-kharea="vocab"].on')) && !!(await page.$('[data-kharea="grammar"]')) && !!(await page.$('[data-khlevel]')));
+  await page.click('[data-kharea="grammar"]'); await page.waitForTimeout(800);
+  let g = await main(page);
+  ok('Grammar: ten lessons, none done yet, no word lists', (await page.$$eval('[data-khgl]', b => b.length)) === 10 && /0\/10/.test(g) && /How Khmer sentences are put together/.test(g) && !(await page.$('[data-khlevel]')), g.slice(0, 300));
+  ok('… and it is remembered', (await page.evaluate(() => localStorage.getItem('gp-kh-area'))) === 'grammar');
+  await page.click('.khGLessonCard[data-khgl="past"]'); await page.waitForTimeout(300);
+  g = await main(page);
+  ok('a lesson: how it works for someone learning Khmer, the pattern, the sentences', /never changes the action for the past/.test(g) && /Person \+ បាន \+ action/.test(g) && /I ate rice\./.test(g) && (await page.$$eval('.khGEx', e => e.length)) === 4);
+  ok('… the words it is about marked, each Khmer word with its reading, 🔊 for each sentence', (await page.$$eval('.khGTok.key .khKm', e => e.map(x => x.textContent))).includes('បាន') && /khnhom/.test(g) && (await page.$$eval('.khGEx .khSay', b => b.length)) === 4 && (await page.$eval('.khGEx .khSay', b => b.dataset.khsay)) === 'km|ខ្ញុំបានញ៉ាំបាយ');
+  await page.click('#khGBuild'); await page.waitForTimeout(300);
+  const cur = () => page.evaluate(() => { const B = S.kh.gb, l = khGLesson_(B.l); return { want: khGTarget_(l, l.examples[B.order[B.i]], B.en), tiles: B.tiles.map(x => x.text), en: l.examples[B.order[B.i]].en }; });
+  const tapAll = async (words) => { for (const w of words) { const i = await page.evaluate(w => S.kh.gb.tiles.findIndex((x, k) => x.text === w && S.kh.gb.picked.indexOf(k) === -1), w); await page.click('[data-khgtile="' + i + '"]'); } };
+  let c = await cur();
+  ok('Build: the English to put in Khmer, its words shuffled as tiles with one more that does not belong', /Put it in Khmer/.test(await main(page)) && (await page.$eval('.khGPrompt', e => e.textContent)) === c.en && c.tiles.length === c.want.length + 1 && c.tiles.includes('នឹង') && !!(await page.$('#khGCheck[disabled]')));
+  const xp0 = await page.evaluate(() => khGame_().xp);
+  await tapAll(c.want);
+  ok('… the tapped words line up in order, and Check is ready', (await page.$$eval('.khGPick .khKm', e => e.map(x => x.textContent))).join() === c.want.join() && !(await page.$('#khGCheck[disabled]')) && !!(await page.$('.khGTile.used')));
+  await page.click('.khGPick'); await page.waitForTimeout(100);
+  ok('… tapping one takes it back', (await page.$$eval('.khGPick', e => e.length)) === c.want.length - 1);
+  await page.click('#khGClear'); await page.waitForTimeout(100);
+  ok('… Clear empties the sentence', (await page.$$eval('.khGPick', e => e.length)) === 0 && /Tap the words in order/.test(await main(page)));
+  await tapAll(c.want); await page.click('#khGCheck'); await page.waitForTimeout(400);
+  ok('right: said so, the sentence shown with 🔊, +10 XP, kept on this phone', !!(await page.$('.khGAns.right')) && /Right!/.test(await main(page)) && (await page.evaluate(() => khGame_().xp)) === xp0 + 10 && (await page.evaluate(() => (JSON.parse(localStorage.getItem('gp-kh-gram')).past.ok || []).length)) === 1);
+  await page.click('#khGNextQ'); await page.waitForTimeout(300);
+  c = await cur(); await tapAll(c.want.slice().reverse()); await page.click('#khGCheck'); await page.waitForTimeout(300);
+  ok('wrong order: "Not quite", the right sentence shown, no XP', !!(await page.$('.khGAns.wrong')) && /Not quite/.test(await main(page)) && (await page.evaluate(() => khGame_().xp)) === xp0 + 10);
+  await page.click('#khGNextQ'); await page.waitForTimeout(300);
+  await page.click('#khGShow'); await page.waitForTimeout(300);
+  ok('"Show me the answer" shows it and counts as one to learn', !!(await page.$('.khGAns.wrong')) && (await page.$$eval('.khGResult .khGTok', e => e.length)) >= 2);
+  await page.click('#khGNextQ'); await page.waitForTimeout(300);
+  c = await cur(); await tapAll(c.want); await page.click('#khGCheck'); await page.waitForTimeout(300); await page.click('#khGNextQ'); await page.waitForTimeout(600);
+  g = await main(page);
+  ok('the end: 2 of 4, the XP counted with the finish bonus, Again / Done', /2 of 4/.test(g) && /set finished/.test(g) && !!(await page.$('#khGAgain')) && (await page.evaluate(() => khGame_().xp)) === xp0 + 30);
+  await page.click('#khGAgain'); await page.waitForTimeout(300);
+  for (let k = 0; k < 4; k++) { c = await cur(); await tapAll(c.want); await page.click('#khGCheck'); await page.waitForTimeout(250); await page.click('#khGNextQ'); await page.waitForTimeout(250); }
+  await page.waitForTimeout(1500);
+  g = await main(page);
+  ok('all four right: the lesson is done, the perfect bonus, and the Sentence builder badge', /Lesson done: The past/.test(g) && /perfect/.test(g) && (await page.evaluate(() => !!khGame_().badges.grammar && JSON.parse(localStorage.getItem('gp-kh-gram')).past.done)));
+  await page.click('#khGDone'); await page.waitForTimeout(200); await page.click('#khBack'); await page.waitForTimeout(300);
+  ok('Done, then ← goes back to the lessons, the past ticked', !!(await page.$('.khGLessonCard.done[data-khgl="past"]')) && /1\/10/.test(await main(page)));
+  /* learning English: the same lessons the other way round */
+  await page.click('[data-khlearn="en"]'); await page.waitForTimeout(300);
+  ok('learning English: still Grammar, "How English sentences are put together"', /How English sentences are put together/.test(await main(page)) && (await page.$$eval('[data-khgl]', b => b.length)) >= 10);
+  await page.click('.khGLessonCard[data-khgl="order"]'); await page.waitForTimeout(300);
+  g = await main(page);
+  ok('… how it works explains English (eats), 🔊 reads the English', /the action changes with the person/.test(g) && (await page.$$eval('.khGTok.key .khEn', e => e.map(x => x.textContent))).includes('drinks') && (await page.$eval('.khGEx .khSay', b => b.dataset.khsay)).startsWith('en|'));
+  await page.click('#khGBuild'); await page.waitForTimeout(300);
+  c = await cur();
+  ok('… Build gives the Khmer to put in English, with English tiles', /Put it in English/.test(await main(page)) && /[ក-៿]/.test(await page.$eval('.khGPrompt', e => e.textContent)) && c.tiles.every(x => /^[A-Za-z']+$/.test(x)));
+  await tapAll(c.want); await page.click('#khGCheck'); await page.waitForTimeout(300);
+  ok('… and is checked the same way', !!(await page.$('.khGAns.right')));
+  await page.click('#khBack'); await page.waitForTimeout(200); await page.click('#khBack'); await page.waitForTimeout(200); await page.click('[data-kharea="vocab"]'); await page.waitForTimeout(300);
+  ok('Vocabulary again: the word lists are back', !!(await page.$('[data-khlevel]')) && !(await page.$('[data-khgl]')));
+  await ctx.close();
+}
+{
+  /* in Khmer: the lessons' words are Khmer */
+  const { ctx, page } = await open(true);
+  await page.evaluate(() => { localStorage.setItem('gp-kh-area', 'grammar'); S.kh.area = 'grammar'; khOpen_(); }); await page.waitForTimeout(1200);
+  const g = await main(page);
+  ok('in Khmer the Grammar area and its lessons are in Khmer', /វេយ្យាករណ៍/.test(g) && /អតីតកាល/.test(g) && /អនាគតកាល/.test(g), g.slice(0, 300));
   await ctx.close();
 }
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));

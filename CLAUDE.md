@@ -2916,6 +2916,23 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   from the KBC book — written for YWAM GP, Khmer and readings unreviewed (docs/khmer-needed.md §78);
   their hand readings sit in `OVERRIDES` in scripts/khmer-translit.mjs. The Learn Khmer test holds the
   order and the 39 + 27.
+- **Grammar** (Oct 2026, Andrew: "two separate areas, one for vocabulary, and one for grammar and sentence
+  structure like past present future and continuous"): a **Vocabulary | Grammar** switch under "I'm
+  learning" (`[data-kharea]`, `S.kh.area`, kept in `gp-kh-area`). The lessons are `public/khmer-grammar.js`
+  (`GP_KHMER_GRAMMAR.lessons`, loaded on demand by `khGLoad_`, in sw.js's PRECACHE, SHELL v19): ten — word
+  order, describing words, happening now (កំពុង), the past (បាន / ហើយ), the future (នឹង), saying no
+  (មិន…ទេ), yes/no questions, question words, want/can/must, ever/never. Each has `title`, `idea`, `rule`
+  (for someone learning Khmer) and `ruleEn` (learning English), `pattern` / `patternEn`, `key` / `keyEn`
+  (the words it is about, marked), `extra` / `extraEn` (one tile that does not belong) and examples
+  `{en, enT, km:[words], tl:[readings]}`. A lesson page (`khGLessonHtml_`) shows how it works, the pattern
+  and the sentences with readings and 🔊; **Build the sentences** (`S.kh.gb`, `khGBuildHtml_`) asks each one
+  in the language you know, the other's words as shuffled tiles (`[data-khgtile]`, take one back with
+  `[data-khgans]`), Check / Clear / Show me the answer; 10 XP a right sentence, the finish bonus, the
+  **Sentence builder** badge for a finished lesson. Built right is kept in `gp-kh-gram` ({id: {ok, done}}).
+  The `tl` arrays are written by scripts/khmer-translit.mjs (it rewrites both files; hand readings for the
+  grammar words are in its OVERRIDES); audio.js and scripts/record-khmer-vocab.mjs also record each whole
+  example sentence (`grammarSentences`; the file rides along in netlify.toml's `included_files`). Written for
+  YWAM GP, not from the KBC book; the Khmer is unreviewed (docs/khmer-needed.md §79).
 - **Learning Khmer or English** (`[data-khlearn]`, `S.kh.front` = 'en' learning Khmer, 'km' learning
   English, kept in `gp-kh-front`; `khLearningEn_`, `khTitle_`): the switch on the home decides which side
   a card and a quiz ask with and which language 🔊 reads; the page is titled Learn English then.

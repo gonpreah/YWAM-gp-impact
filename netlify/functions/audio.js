@@ -6,8 +6,9 @@
    → that word's MP3 from the same store (vocab/<lang>/<hash>). A word not yet recorded is made on the
    spot with Azure's Khmer or English voice when AZURE_SPEECH_KEY / AZURE_SPEECH_REGION are set in the
    site's environment, kept, and served from then on — so the first learner to tap 🔊 on a word records
-   it for everyone. Only the words of public/khmer-vocab.js are made (nothing anyone types in; the file
-   rides along with the function through netlify.toml's included_files); scripts/record-khmer-vocab.mjs
+   it for everyone. Only the words of public/khmer-vocab.js and the example sentences of public/khmer-grammar.js are
+   made (nothing anyone types in; both files ride along with the function through netlify.toml's
+   included_files); scripts/record-khmer-vocab.mjs
    records them all in one go. Without the key, a word never recorded is 404 and the app falls back to
    the phone's own voice.
 
@@ -32,11 +33,25 @@ export function vocabWords(file) {
         String(w[1] || '').split(' / ').forEach(function (k) { k = k.replace(/◌/g, '').replace(/\s*\(.*\)$/, '').trim(); if (k) set.add('km\n' + k); });
         String(w[0] || '').split(' / ').forEach(function (e) { e = e.replace(/\s*\(.*\)$/, '').replace(/\s*·.*$/, '').trim(); if (e) set.add('en\n' + e); });
       }); });
+      /* the Grammar area's example sentences (khmer-grammar.js, beside the words): each whole sentence */
+      try {
+        const g = {}; vm.runInNewContext(fs.readFileSync(path.join(path.dirname(f), 'khmer-grammar.js'), 'utf8'), g);
+        grammarSentences(g.GP_KHMER_GRAMMAR).forEach(function (x) { set.add(x.lang + '\n' + x.text); });
+      } catch (e) { /* no grammar file: the words alone */ }
       break;
     } catch (e) { /* try the next place */ }
   }
   if (!file) VOCAB_WORDS = set;
   return set;
+}
+/* every example sentence of the grammar lessons, as 🔊 says it: the Khmer words run together, the
+   English as written */
+export function grammarSentences(G) {
+  const out = [];
+  ((G && G.lessons) || []).forEach(function (l) { (l.examples || []).forEach(function (e) {
+    out.push({ lang: 'km', text: (e.km || []).join('') }, { lang: 'en', text: String(e.en || '') });
+  }); });
+  return out.filter(function (x) { return x.text; });
 }
 export const VOCAB_VOICE = { km: 'km-KH-SreymomNeural', en: 'en-US-AvaMultilingualNeural' };
 export function vocabKey(lang, text) { return 'vocab/' + lang + '/' + hashOf(VOCAB_VOICE[lang], text); }

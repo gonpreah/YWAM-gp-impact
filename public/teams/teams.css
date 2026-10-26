@@ -2570,6 +2570,39 @@ body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
 .khOpt.right { animation:khPulse .45s ease-out; } .khOpt.wrong { animation:khShake .3s; }
 @keyframes khPulse { 0% { transform:scale(1); } 40% { transform:scale(1.04); } 100% { transform:scale(1); } }
 .khTile:active { transform:scale(.95); }
+/* Learn Khmer — Grammar */
+.khArea { margin-top:-4px; } .khArea .gtTab { padding:7px 12px; font-weight:700; }
+.khGList { display:flex; flex-direction:column; gap:8px; }
+.khGLessonCard { display:flex; align-items:center; gap:12px; width:100%; margin:0; text-align:left; font:inherit; color:var(--ink); cursor:pointer; }
+.khGLessonCard .khBar { margin:6px 0 0; }
+.khGIc { font-size:26px; flex:0 0 auto; }
+.khGBody { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.khGState { flex:0 0 auto; font-size:13px; color:var(--muted); font-weight:700; }
+.khGLessonCard.done .khGState { color:var(--good); font-size:18px; }
+.khGRule p { line-height:1.55; }
+.khGPattern { background:var(--accentSoft); border:1px solid var(--accentSoftBorder); color:var(--ink); border-radius:10px; padding:8px 12px; font-weight:700; font-size:14.5px; line-height:1.5; }
+.khGEx { padding:10px 0; border-top:1px solid var(--line); }
+.khGEx.ok .khGFrom::before { content:'✓ '; color:var(--good); }
+.khGFrom { font-size:13.5px; color:var(--muted); margin-bottom:4px; }
+.khGTo { display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap; }
+.khGSent { display:flex; flex-wrap:wrap; gap:4px 6px; align-items:flex-start; }
+.khGTok { display:inline-flex; flex-direction:column; align-items:center; padding:1px 4px; border-radius:6px; }
+.khGTok .khKm { font-size:1.25em; } .khGTok .khEn { font-size:16px; font-weight:600; } .khGTok .khTl { font-size:11.5px; }
+.khGTok.key { background:var(--amber); color:var(--amberInk); } .khGTok.key .khTl { color:var(--amberInk); }
+.khGAsk .khGPrompt { margin:6px 0 2px; } .khGAsk .khEn.khGPrompt { font-size:1.3em; }
+.khGAns { min-height:62px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:10px; margin:10px 0; border:2px dashed var(--border2); border-radius:14px; background:var(--surface); }
+.khGAns.right { border-style:solid; border-color:var(--good); background:var(--goodSoft); }
+.khGAns.wrong { border-style:solid; border-color:var(--bad); background:var(--badSoft); }
+.khGPick, .khGTile { display:inline-flex; flex-direction:column; align-items:center; padding:8px 12px; border-radius:12px; border:1.5px solid var(--border2); background:var(--surface); font:inherit; color:var(--ink); cursor:pointer; min-height:44px; justify-content:center; }
+.khGPick { border-color:var(--accent); background:var(--accentSoft); animation:khOptIn .2s ease-out; }
+.khGPick .khKm, .khGTile .khKm { font-size:1.2em; } .khGPick .khTl, .khGTile .khTl { font-size:11px; }
+.khGTiles { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px; justify-content:center; }
+.khGTile.used { opacity:.25; cursor:default; }
+.khGResult { border-radius:12px; padding:10px 12px; margin:0 0 12px; }
+.khGResult.right { background:var(--goodSoft); color:var(--goodInk); }
+.khGResult.wrong { background:var(--badSoft); color:var(--ink); }
+.khGResult .khGTo { margin-top:6px; }
+@media (prefers-reduced-motion: reduce){ .khGPick { animation:none; } }
 @media (prefers-reduced-motion: reduce){ .khKiri, .khKiri.happy, .khKiri.sad, .khStatN.hot, .khCard, .khCard.flipped, .khOpt, .khOpt.right, .khTrophy, .khCombo, .khStreak, .khBadge.on .khBadgeIc { animation:none; } .khRing, .khBar div { transition:none; } }
 .khStreak { color:var(--amber); }
 .khMastered { margin:10px 0 0; font-weight:700; color:var(--good); }
