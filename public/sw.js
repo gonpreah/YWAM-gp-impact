@@ -12,7 +12,7 @@
    answered from here; nor are Google Fonts (the page has fallbacks).
 
    Bump SHELL when the list changes; old caches are dropped on activate. */
-var SHELL = 'gp-shell-v18';   // v18: Learn Khmer (teams/15-khmer.js, khmer-vocab.js); v17: GP Tasks and the Calendar redone; v16: student preview + student portal; v15: the Calendar (teams/13-calendar.js); v14: GP Tasks (teams/12-tasks.js); v2: the portal is in the shell too; v3: the Library; v4: its Khmer; v5: the letterhead;
+var SHELL = 'gp-shell-v19';   // v19: Learn Khmer's grammar (khmer-grammar.js); v18: Learn Khmer (teams/15-khmer.js, khmer-vocab.js); v17: GP Tasks and the Calendar redone; v16: student preview + student portal; v15: the Calendar (teams/13-calendar.js); v14: GP Tasks (teams/12-tasks.js); v2: the portal is in the shell too; v3: the Library; v4: its Khmer; v5: the letterhead;
                               // v6: the Library's Khmer is kept the first time it's read, not downloaded on install;
                               // v7: the legal documents' Khmer (legal-km.js); v8: teams.html's code in teams/; v9: the dashboard joins it; v10: and goes (numbers are My Ministry's); v11: the finance tool (finance.js, teams/09-finance.js); v12: the app's own fonts (fonts/); v13: 360 reviews (teams/10-review360.js)
 var NET_WAIT_MS = 4000;
@@ -24,7 +24,7 @@ var PRECACHE = [
   'teams.html', 'teams/teams.css', 'teams/01-core.js', 'teams/02-goals-okrs.js', 'teams/03-library-org.js', 'teams/04-ministry-strengths.js', 'teams/05-admin-hr.js', 'teams/06-numbers-contract.js', 'teams/07-health-leave.js', 'teams/08-team-profile.js', 'teams/09-finance.js', 'teams/10-review360.js', 'teams/12-tasks.js', 'teams/13-calendar.js', 'teams/15-khmer.js', 'teams/11-bind-boot.js',
   'manifest.json', 'km.js', 'taxonomy.js', 'rollup.js', 'finance.js', 'logo.js', 'duty.js',
   'jobfocus.js', 'personality.js', 'gpstrengths.js', 'kpiguide.js', 'sr-checkin-history.js',
-  'icon-180.png', 'icon-512.png', 'icon-maskable-512.png', 'ywam-logo.png', 'library.js', 'khmer-vocab.js',
+  'icon-180.png', 'icon-512.png', 'icon-maskable-512.png', 'ywam-logo.png', 'library.js', 'khmer-vocab.js', 'khmer-grammar.js',
   /* the app's own fonts (v12) */
   'fonts/kantumruy-latin.woff2', 'fonts/kantumruy-latin-ext.woff2', 'fonts/kantumruy-khmer.woff2', 'fonts/koulen-latin.woff2', 'fonts/koulen-khmer.woff2',
   /* the YWAM GP Portal installs as its own app (portal-manifest.json) off the same worker */

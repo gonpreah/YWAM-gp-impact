@@ -39,5 +39,11 @@ const ctx = {}; vm.runInNewContext(fs.readFileSync(ROOT + '/public/khmer-vocab.j
 const words = []; ctx.GP_KHMER_VOCAB.cats.forEach(c => { if (!c.script) c.words.forEach(w => words.push(w)); });
 ok('every word of the book has a reading, and it is what the script makes now (run it after changing a word)',
   words.every(w => w[3] && w[3] === translit(w[1])), JSON.stringify(words.filter(w => !(w[3] && w[3] === translit(w[1]))).slice(0, 3)));
+/* the grammar lessons' sentences: a reading for each Khmer word, made by the same script */
+const ctxG = {}; vm.runInNewContext(fs.readFileSync(ROOT + '/public/khmer-grammar.js', 'utf8'), ctxG);
+const ex = ctxG.GP_KHMER_GRAMMAR.lessons.flatMap(l => l.examples);
+ok('every grammar sentence\'s Khmer words have their readings, made by this script (run it after changing a sentence)',
+  ex.every(e => e.tl.length === e.km.length && e.km.every((w, i) => e.tl[i] === translit(w))), JSON.stringify(ex.filter(e => !e.km.every((w, i) => e.tl[i] === translit(w))).slice(0, 2)));
+is('ឲ្យ', 'aoy', 'a hand reading for the grammar words');
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

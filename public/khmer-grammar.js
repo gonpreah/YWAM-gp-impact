@@ -6,7 +6,7 @@
    `ruleEn` for someone learning English (the same sentences, the other language's grammar) — a
    pattern, and example sentences. An example is the English (`en`, as written; `enT` its words) and
    the Khmer as its words (`km`); `tl` is each Khmer word's reading, made by scripts/khmer-translit.mjs
-   (run it after changing a word — tests/test-khmer-translit.mjs checks). `key` / `keyEn` are the words
+   (run it after changing a sentence — tests/test-khmer-translit.mjs checks). `key` / `keyEn` are the words
    the lesson is about (shown marked); `extra` / `extraEn` is one word that does not belong, mixed into
    the tiles when you build the sentence.
 
@@ -23,7 +23,7 @@ var GP_KHMER_GRAMMAR = {
         { en: 'I eat rice.', enT: ["I","eat","rice"], km: ["ខ្ញុំ","ញ៉ាំ","បាយ"], tl: ["khnhom","nham","bai"] },
         { en: 'She drinks water.', enT: ["She","drinks","water"], km: ["គាត់","ផឹក","ទឹក"], tl: ["koat","phoek","tuk"] },
         { en: 'We read the Bible.', enT: ["We","read","the","Bible"], km: ["យើង","អាន","ព្រះគម្ពីរ"], tl: ["yeung","an","preah kompi"] },
-        { en: 'They play football.', enT: ["They","play","football"], km: ["ពួកគេ","លេង","បាល់ទាត់"], tl: ["puok-ke","leng","bal-toat"] }
+        { en: 'They play football.', enT: ["They","play","football"], km: ["ពួកគេ","លេង","បាល់ទាត់"], tl: ["puok ke","leng","bal-toat"] }
       ] },
     { id: 'describe', icon: '🎨', title: 'Describing words', idea: 'In Khmer the describing word comes after the thing.',
       rule: 'Say the thing first, then what it is like: ផ្ទះធំ is "house big". Put ណាស់ after a describing word for "very".',
@@ -31,10 +31,10 @@ var GP_KHMER_GRAMMAR = {
       pattern: 'Thing + describing word (+ ណាស់)', patternEn: '(very +) describing word + thing',
       key: ['ធំ','ឆ្ងាញ់','ស្អាត','ណាស់'], keyEn: ['big','delicious','beautiful','very'], extra: '', extraEn: '',
       examples: [
-        { en: 'A big house.', enT: ["A","big","house"], km: ["ផ្ទះ","ធំ"], tl: ["phteah","thom"] },
+        { en: 'A big house.', enT: ["A","big","house"], km: ["ផ្ទះ","ធំ"], tl: ["phteah","thum"] },
         { en: 'Delicious food.', enT: ["Delicious","food"], km: ["ម្ហូប","ឆ្ងាញ់"], tl: ["mhoup","chhnganh"] },
-        { en: 'A beautiful country.', enT: ["A","beautiful","country"], km: ["ប្រទេស","ស្អាត"], tl: ["pra-teih","sa-at"] },
-        { en: 'Very hot.', enT: ["Very","hot"], km: ["ក្តៅ","ណាស់"], tl: ["kdau","nah"] }
+        { en: 'A beautiful country.', enT: ["A","beautiful","country"], km: ["ប្រទេស","ស្អាត"], tl: ["pra-teh","sa-at"] },
+        { en: 'Very hot.', enT: ["Very","hot"], km: ["ក្តៅ","ណាស់"], tl: ["kdav","nah"] }
       ] },
     { id: 'now', icon: '⏳', title: 'Happening now', idea: 'កំពុង before the action means it is happening right now.',
       rule: 'Put កំពុង before the action for something going on right now, like English "-ing". Without it the sentence can mean now or usually.',
@@ -42,10 +42,10 @@ var GP_KHMER_GRAMMAR = {
       pattern: 'Person + កំពុង + action', patternEn: 'Person + am / is / are + action-ing',
       key: ['កំពុង'], keyEn: ['am','is','are','eating','studying','praying','raining'], extra: 'បាន', extraEn: 'was',
       examples: [
-        { en: 'I am eating rice.', enT: ["I","am","eating","rice"], km: ["ខ្ញុំ","កំពុង","ញ៉ាំ","បាយ"], tl: ["khnhom","kom-pung","nham","bai"] },
-        { en: 'He is studying Khmer.', enT: ["He","is","studying","Khmer"], km: ["គាត់","កំពុង","រៀន","ភាសាខ្មែរ"], tl: ["koat","kom-pung","rien","phiesa khmae"] },
-        { en: 'We are praying.', enT: ["We","are","praying"], km: ["យើង","កំពុង","អធិស្ឋាន"], tl: ["yeung","kom-pung","athisthan"] },
-        { en: 'It is raining.', enT: ["It","is","raining"], km: ["មេឃ","កំពុង","ភ្លៀង"], tl: ["mek","kom-pung","phlieng"] }
+        { en: 'I am eating rice.', enT: ["I","am","eating","rice"], km: ["ខ្ញុំ","កំពុង","ញ៉ាំ","បាយ"], tl: ["khnhom","kam-pung","nham","bai"] },
+        { en: 'He is studying Khmer.', enT: ["He","is","studying","Khmer"], km: ["គាត់","កំពុង","រៀន","ភាសាខ្មែរ"], tl: ["koat","kam-pung","rien","phie-sa-khmae"] },
+        { en: 'We are praying.', enT: ["We","are","praying"], km: ["យើង","កំពុង","អធិស្ឋាន"], tl: ["yeung","kam-pung","athisthan"] },
+        { en: 'It is raining.', enT: ["It","is","raining"], km: ["មេឃ","កំពុង","ភ្លៀង"], tl: ["mek","kam-pung","phlieng"] }
       ] },
     { id: 'past', icon: '⏪', title: 'The past', idea: 'The action stays the same — បាន, ហើយ or a time word says it is past.',
       rule: 'Khmer never changes the action for the past. Put បាន before it, or ហើយ ("already") at the end, or just say when: ម្សិលមិញ (yesterday).',
@@ -55,7 +55,7 @@ var GP_KHMER_GRAMMAR = {
       examples: [
         { en: 'I ate rice.', enT: ["I","ate","rice"], km: ["ខ្ញុំ","បាន","ញ៉ាំ","បាយ"], tl: ["khnhom","ban","nham","bai"] },
         { en: 'I already ate.', enT: ["I","already","ate"], km: ["ខ្ញុំ","ញ៉ាំ","ហើយ"], tl: ["khnhom","nham","haeuy"] },
-        { en: 'Yesterday I went to the market.', enT: ["Yesterday","I","went","to","the","market"], km: ["ម្សិលមិញ","ខ្ញុំ","បាន","ទៅ","ផ្សារ"], tl: ["msel menh","khnhom","ban","tov","phsar"] },
+        { en: 'Yesterday I went to the market.', enT: ["Yesterday","I","went","to","the","market"], km: ["ម្សិលមិញ","ខ្ញុំ","បាន","ទៅ","ផ្សារ"], tl: ["msel menh","khnhom","ban","tov","phsa"] },
         { en: 'She prayed for me.', enT: ["She","prayed","for","me"], km: ["គាត់","បាន","អធិស្ឋាន","ឲ្យ","ខ្ញុំ"], tl: ["koat","ban","athisthan","aoy","khnhom"] }
       ] },
     { id: 'future', icon: '⏩', title: 'The future', idea: 'នឹង before the action, or a time word, says it is still to come.',
@@ -66,7 +66,7 @@ var GP_KHMER_GRAMMAR = {
       examples: [
         { en: 'I will go home.', enT: ["I","will","go","home"], km: ["ខ្ញុំ","នឹង","ទៅ","ផ្ទះ"], tl: ["khnhom","noeng","tov","phteah"] },
         { en: 'Tomorrow we will study.', enT: ["Tomorrow","we","will","study"], km: ["ស្អែក","យើង","នឹង","រៀន"], tl: ["sa-aek","yeung","noeng","rien"] },
-        { en: 'He will come next week.', enT: ["He","will","come","next","week"], km: ["គាត់","នឹង","មក","សប្តាហ៍ក្រោយ"], tl: ["koat","noeng","mok","sap-dah-kraoy"] },
+        { en: 'He will come next week.', enT: ["He","will","come","next","week"], km: ["គាត់","នឹង","មក","សប្តាហ៍ក្រោយ"], tl: ["koat","noeng","mok","sap-da-kraoy"] },
         { en: 'I will pray for you.', enT: ["I","will","pray","for","you"], km: ["ខ្ញុំ","នឹង","អធិស្ឋាន","ឲ្យ","អ្នក"], tl: ["khnhom","noeng","athisthan","aoy","neak"] }
       ] },
     { id: 'not', icon: '🚫', title: 'Saying no', idea: 'មិន before the action and ទេ at the end.',
@@ -75,7 +75,7 @@ var GP_KHMER_GRAMMAR = {
       pattern: 'Person + មិន / អត់ + action + ទេ', patternEn: 'Person + am / is not … · Person + don\'t / doesn\'t + action',
       key: ['មិន','អត់','ទេ'], keyEn: ['not','don\'t','doesn\'t'], extra: 'ណាស់', extraEn: 'very',
       examples: [
-        { en: 'I am not hungry.', enT: ["I","am","not","hungry"], km: ["ខ្ញុំ","មិន","ឃ្លាន","ទេ"], tl: ["khnhom","min","khlean","te"] },
+        { en: 'I am not hungry.', enT: ["I","am","not","hungry"], km: ["ខ្ញុំ","មិន","ឃ្លាន","ទេ"], tl: ["khnhom","min","khlien","te"] },
         { en: 'It is not far.', enT: ["It","is","not","far"], km: ["មិន","ឆ្ងាយ","ទេ"], tl: ["min","chhngay","te"] },
         { en: 'I don\'t understand.', enT: ["I","don't","understand"], km: ["ខ្ញុំ","មិន","យល់","ទេ"], tl: ["khnhom","min","yol","te"] },
         { en: 'He doesn\'t eat meat.', enT: ["He","doesn't","eat","meat"], km: ["គាត់","អត់","ញ៉ាំ","សាច់","ទេ"], tl: ["koat","ot","nham","sach","te"] }
@@ -86,7 +86,7 @@ var GP_KHMER_GRAMMAR = {
       pattern: '… + ទេ?  ·  … + ហើយឬនៅ?', patternEn: 'Do / Are / Is / Have + person + …?',
       key: ['ទេ','ហើយ','ឬ','នៅ'], keyEn: ['Do','Are','Have','Is','yet'], extra: 'អ្វី', extraEn: 'What',
       examples: [
-        { en: 'Do you want to drink coffee?', enT: ["Do","you","want","to","drink","coffee"], km: ["អ្នក","ចង់","ផឹក","កាហ្វេ","ទេ"], tl: ["neak","chang","phoek","ka-hvei","te"] },
+        { en: 'Do you want to drink coffee?', enT: ["Do","you","want","to","drink","coffee"], km: ["អ្នក","ចង់","ផឹក","កាហ្វេ","ទេ"], tl: ["neak","chang","phoek","kafe","te"] },
         { en: 'Are you tired?', enT: ["Are","you","tired"], km: ["អ្នក","ហត់","ទេ"], tl: ["neak","hat","te"] },
         { en: 'Have you eaten yet?', enT: ["Have","you","eaten","yet"], km: ["ញ៉ាំ","បាយ","ហើយ","ឬ","នៅ"], tl: ["nham","bai","haeuy","rue","nov"] },
         { en: 'Is it far?', enT: ["Is","it","far"], km: ["ឆ្ងាយ","ទេ"], tl: ["chhngay","te"] }
@@ -108,10 +108,10 @@ var GP_KHMER_GRAMMAR = {
       pattern: 'Person + ចង់ / អាច / ត្រូវ + action', patternEn: 'Person + want to / can / must + action',
       key: ['ចង់','អាច','ត្រូវ','បាន'], keyEn: ['want','to','Can','can','must'], extra: 'នឹង', extraEn: 'will',
       examples: [
-        { en: 'I want to learn Khmer.', enT: ["I","want","to","learn","Khmer"], km: ["ខ្ញុំ","ចង់","រៀន","ភាសាខ្មែរ"], tl: ["khnhom","chang","rien","phiesa khmae"] },
+        { en: 'I want to learn Khmer.', enT: ["I","want","to","learn","Khmer"], km: ["ខ្ញុំ","ចង់","រៀន","ភាសាខ្មែរ"], tl: ["khnhom","chang","rien","phie-sa-khmae"] },
         { en: 'Can you help me?', enT: ["Can","you","help","me"], km: ["អ្នក","អាច","ជួយ","ខ្ញុំ","បាន","ទេ"], tl: ["neak","ach","chuoy","khnhom","ban","te"] },
-        { en: 'I can speak a little Khmer.', enT: ["I","can","speak","a","little","Khmer"], km: ["ខ្ញុំ","និយាយ","ខ្មែរ","បាន","បន្តិច"], tl: ["khnhom","niyeay","khmae","ban","bon-tech"] },
-        { en: 'We must go now.', enT: ["We","must","go","now"], km: ["យើង","ត្រូវ","ទៅ","ឥឡូវនេះ"], tl: ["yeung","trov","tov","eilov nih"] }
+        { en: 'I can speak a little Khmer.', enT: ["I","can","speak","a","little","Khmer"], km: ["ខ្ញុំ","និយាយ","ខ្មែរ","បាន","បន្តិច"], tl: ["khnhom","niyeay","khmae","ban","ban-tech"] },
+        { en: 'We must go now.', enT: ["We","must","go","now"], km: ["យើង","ត្រូវ","ទៅ","ឥឡូវនេះ"], tl: ["yeung","trov","tov","eylov nih"] }
       ] },
     { id: 'ever', icon: '🌏', title: 'Ever and never', idea: 'ធ្លាប់ before the action means you have done it before.',
       rule: 'ធ្លាប់ before the action means you have done it at some time. មិនដែល … ទេ means never. Ask with ធ្លាប់ … ទេ?',
@@ -119,9 +119,9 @@ var GP_KHMER_GRAMMAR = {
       pattern: 'Person + ធ្លាប់ + action  ·  មិនដែល … ទេ', patternEn: 'Person + have + done …  ·  Have you ever …?',
       key: ['ធ្លាប់','មិនដែល','ទេ'], keyEn: ['have','Have','ever','never','been','eaten'], extra: 'កំពុង', extraEn: 'am',
       examples: [
-        { en: 'I have been to Angkor Wat.', enT: ["I","have","been","to","Angkor","Wat"], km: ["ខ្ញុំ","ធ្លាប់","ទៅ","អង្គរវត្ត"], tl: ["khnhom","thloap","tov","ang-ko-voat"] },
-        { en: 'Have you ever eaten durian?', enT: ["Have","you","ever","eaten","durian"], km: ["អ្នក","ធ្លាប់","ញ៉ាំ","ធុរេន","ទេ"], tl: ["neak","thloap","nham","thu-rein","te"] },
-        { en: 'I have never been to Phnom Penh.', enT: ["I","have","never","been","to","Phnom","Penh"], km: ["ខ្ញុំ","មិនដែល","ទៅ","ភ្នំពេញ","ទេ"], tl: ["khnhom","min-dael","tov","phnom-penh","te"] }
+        { en: 'I have been to Angkor Wat.', enT: ["I","have","been","to","Angkor","Wat"], km: ["ខ្ញុំ","ធ្លាប់","ទៅ","អង្គរវត្ត"], tl: ["khnhom","thloap","tov","angkor voat"] },
+        { en: 'Have you ever eaten durian?', enT: ["Have","you","ever","eaten","durian"], km: ["អ្នក","ធ្លាប់","ញ៉ាំ","ធុរេន","ទេ"], tl: ["neak","thloap","nham","thu-ren","te"] },
+        { en: 'I have never been to Phnom Penh.', enT: ["I","have","never","been","to","Phnom","Penh"], km: ["ខ្ញុំ","មិនដែល","ទៅ","ភ្នំពេញ","ទេ"], tl: ["khnhom","min-dael","tov","phnum-penh","te"] }
       ] }
   ]
 };

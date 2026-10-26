@@ -4114,3 +4114,94 @@ Finances → Reports, the card under QuickBooks (the Finances office), and “Re
 
 Learn Khmer → Deeper talk: the names of the four Faith lists (the tiles and each list's heading) and the two notes beside every book of the Bible. The words themselves — about 150, in public/khmer-vocab.js — were written for YWAM GP, not from the KBC book: church life (Amen, testimony, offering, tithe, communion …), God & the Bible (Saviour, covenant, parable, the fruit of the Spirit …) and all 66 books of the Bible with the names the Khmer Standard Version uses. Both the Khmer and the "sounds like" readings want a native reader; the Bible names above all, since church people will know at once if one is off.
 
+
+
+## 79. Learn Khmer — Grammar
+
+| English | Khmer (draft) |
+|---|---|
+| Vocabulary | វាក្យសព្ទ |
+| Grammar | វេយ្យាករណ៍ |
+| The lessons could not load. Check your connection and try again. | មេរៀនមិនអាចផ្ទុកបានទេ។ សូមពិនិត្យការភ្ជាប់របស់អ្នក ហើយព្យាយាមម្តងទៀត។ |
+| How English sentences are put together | របៀបដែលប្រយោគភាសាអង់គ្លេសត្រូវបានរៀបចំ |
+| How Khmer sentences are put together | របៀបដែលប្រយោគភាសាខ្មែរត្រូវបានរៀបចំ |
+| One idea at a time — read how it works, then build the sentences yourself. | ម្តងមួយគំនិត — អានពីរបៀបដែលវាដំណើរការ រួចផ្គុំប្រយោគដោយខ្លួនឯង។ |
+| Lesson {n} | មេរៀនទី {n} |
+| How it works | របៀបដែលវាដំណើរការ |
+| Examples | ឧទាហរណ៍ |
+| Build them again | ផ្គុំម្តងទៀត |
+| Build the sentences | ផ្គុំប្រយោគ |
+| Next lesson | មេរៀនបន្ទាប់ |
+| Lesson done: {title} | បានបញ្ចប់មេរៀន៖ {title} |
+| Put it in English | ដាក់ជាភាសាអង់គ្លេស |
+| Put it in Khmer | ដាក់ជាភាសាខ្មែរ |
+| Tap the words in order | ចុចពាក្យតាមលំដាប់ |
+| Right! | ត្រូវហើយ! |
+| Not quite — it is: | មិនទាន់ត្រូវទេ — ចម្លើយគឺ៖ |
+| Finish | បញ្ចប់ |
+| Check | ពិនិត្យ |
+| Show me the answer | បង្ហាញចម្លើយ |
+| How sentences are put together: now, the past, the future, questions and more. | របៀបរៀបចំប្រយោគ៖ ពេលនេះ អតីតកាល អនាគតកាល សំណួរ និងច្រើនទៀត។ |
+| Sentence builder | អ្នកផ្គុំប្រយោគ |
+| Finish a grammar lesson | បញ្ចប់មេរៀនវេយ្យាករណ៍មួយ |
+| Word order | លំដាប់ពាក្យ |
+| Who, then the action, then what — the same as English. | អ្នកណា បន្ទាប់មកសកម្មភាព បន្ទាប់មកអ្វី — ដូចភាសាអង់គ្លេសដែរ។ |
+| Khmer puts the person first, then the action, then the thing, just like English. The action never changes: ញ៉ាំ is eat, eats and ate. | ភាសាខ្មែរដាក់មនុស្សមុន បន្ទាប់មកសកម្មភាព ហើយបន្ទាប់មករបស់ ដូចភាសាអង់គ្លេសដែរ។ សកម្មភាពមិនដែលប្តូរទេ៖ ញ៉ាំ គឺ eat, eats និង ate។ |
+| English also goes person, action, thing. But the action changes with the person: I eat, she eats. | ភាសាអង់គ្លេសក៏ដាក់ មនុស្ស សកម្មភាព របស់ ដែរ។ ប៉ុន្តែសកម្មភាពប្តូរទៅតាមមនុស្ស៖ I eat, she eats។ |
+| Person + action + thing | មនុស្ស + សកម្មភាព + របស់ |
+| Describing words | ពាក្យពិពណ៌នា |
+| In Khmer the describing word comes after the thing. | ក្នុងភាសាខ្មែរ ពាក្យពិពណ៌នានៅក្រោយរបស់។ |
+| Say the thing first, then what it is like: ផ្ទះធំ is "house big". Put ណាស់ after a describing word for "very". | និយាយរបស់មុន បន្ទាប់មកថាវាយ៉ាងម៉េច៖ ផ្ទះធំ គឺ "house big"។ ដាក់ ណាស់ នៅក្រោយពាក្យពិពណ៌នា សម្រាប់ "very"។ |
+| In English the describing word comes before the thing: a big house. "Very" goes before the describing word: very hot. | ក្នុងភាសាអង់គ្លេស ពាក្យពិពណ៌នានៅមុខរបស់៖ a big house។ "Very" (ណាស់) នៅមុខពាក្យពិពណ៌នា៖ very hot។ |
+| Thing + describing word (+ ណាស់) | របស់ + ពាក្យពិពណ៌នា (+ ណាស់) |
+| (very +) describing word + thing | (very +) ពាក្យពិពណ៌នា + របស់ |
+| Happening now | កំពុងកើតឡើងឥឡូវនេះ |
+| កំពុង before the action means it is happening right now. | កំពុង នៅមុខសកម្មភាព មានន័យថាវាកំពុងកើតឡើងឥឡូវនេះ។ |
+| Put កំពុង before the action for something going on right now, like English "-ing". Without it the sentence can mean now or usually. | ដាក់ កំពុង នៅមុខសកម្មភាព សម្រាប់អ្វីដែលកំពុងកើតឡើងឥឡូវនេះ ដូច "-ing" ក្នុងភាសាអង់គ្លេស។ បើគ្មានវាទេ ប្រយោគអាចមានន័យថា ឥឡូវនេះ ឬជាធម្មតា។ |
+| For something going on right now, English uses am / is / are and the action with -ing: I am eating. | សម្រាប់អ្វីដែលកំពុងកើតឡើងឥឡូវនេះ ភាសាអង់គ្លេសប្រើ am / is / are និងសកម្មភាពដែលមាន -ing៖ I am eating។ |
+| Person + កំពុង + action | មនុស្ស + កំពុង + សកម្មភាព |
+| Person + am / is / are + action-ing | មនុស្ស + am / is / are + សកម្មភាព-ing |
+| The past | អតីតកាល |
+| The action stays the same — បាន, ហើយ or a time word says it is past. | សកម្មភាពនៅដដែល — បាន ហើយ ឬពាក្យពេលវេលា ប្រាប់ថាវាជាអតីតកាល។ |
+| Khmer never changes the action for the past. Put បាន before it, or ហើយ ("already") at the end, or just say when: ម្សិលមិញ (yesterday). | ភាសាខ្មែរមិនដែលប្តូរសកម្មភាពសម្រាប់អតីតកាលទេ។ ដាក់ បាន នៅមុខវា ឬ ហើយ នៅចុងប្រយោគ ឬគ្រាន់តែប្រាប់ពេល៖ ម្សិលមិញ។ |
+| English changes the action for the past: eat → ate, go → went, pray → prayed. "Already" goes before the action or at the end. | ភាសាអង់គ្លេសប្តូរសកម្មភាពសម្រាប់អតីតកាល៖ eat → ate, go → went, pray → prayed។ "Already" (ហើយ) នៅមុខសកម្មភាព ឬនៅចុងប្រយោគ។ |
+| Person + បាន + action  ·  … + ហើយ | មនុស្ស + បាន + សកម្មភាព  ·  … + ហើយ |
+| Person + action in the past (ate, went, prayed) | មនុស្ស + សកម្មភាពជាអតីតកាល (ate, went, prayed) |
+| The future | អនាគតកាល |
+| នឹង before the action, or a time word, says it is still to come. | នឹង នៅមុខសកម្មភាព ឬពាក្យពេលវេលា ប្រាប់ថាវានឹងកើតឡើងនៅពេលក្រោយ។ |
+| Put នឹង before the action for the future, or just say when: ស្អែក (tomorrow), សប្តាហ៍ក្រោយ (next week). The action stays the same. | ដាក់ នឹង នៅមុខសកម្មភាព សម្រាប់អនាគតកាល ឬគ្រាន់តែប្រាប់ពេល៖ ស្អែក សប្តាហ៍ក្រោយ។ សកម្មភាពនៅដដែល។ |
+| English puts will before the action for the future: I will go. The action stays as it is after will. | ភាសាអង់គ្លេសដាក់ will (នឹង) នៅមុខសកម្មភាព សម្រាប់អនាគតកាល៖ I will go។ សកម្មភាពនៅដដែលបន្ទាប់ពី will។ |
+| Person + នឹង + action | មនុស្ស + នឹង + សកម្មភាព |
+| Person + will + action | មនុស្ស + will + សកម្មភាព |
+| Saying no | ការនិយាយបដិសេធ |
+| មិន before the action and ទេ at the end. | មិន នៅមុខសកម្មភាព និង ទេ នៅចុងប្រយោគ។ |
+| Put មិន before the action and ទេ at the end: ខ្ញុំមិនយល់ទេ. In everyday talk អត់ often takes the place of មិន. | ដាក់ មិន នៅមុខសកម្មភាព និង ទេ នៅចុង៖ ខ្ញុំមិនយល់ទេ។ ក្នុងការនិយាយប្រចាំថ្ងៃ គេច្រើនប្រើ អត់ ជំនួស មិន។ |
+| English puts not after am / is / are (I am not hungry), and don't or doesn't before other actions (I don't understand). | ភាសាអង់គ្លេសដាក់ not នៅក្រោយ am / is / are (I am not hungry) ហើយដាក់ don't ឬ doesn't នៅមុខសកម្មភាពផ្សេងទៀត (I don't understand)។ |
+| Person + មិន / អត់ + action + ទេ | មនុស្ស + មិន / អត់ + សកម្មភាព + ទេ |
+| Person + am / is not … · Person + don't / doesn't + action | មនុស្ស + am / is not …  ·  មនុស្ស + don't / doesn't + សកម្មភាព |
+| Yes or no questions | សំណួរ បាទ/ចាស ឬ ទេ |
+| Put ទេ at the end to ask — or ហើយឬនៅ for "yet?". | ដាក់ ទេ នៅចុងដើម្បីសួរ — ឬ ហើយឬនៅ សម្រាប់ "yet?"។ |
+| Add ទេ at the end to turn a sentence into a question. To ask "… yet?", end with ហើយឬនៅ — the everyday greeting is ញ៉ាំបាយហើយឬនៅ? Answer បាទ (a man) or ចាស (a woman). | បន្ថែម ទេ នៅចុង ដើម្បីប្តូរប្រយោគទៅជាសំណួរ។ ដើម្បីសួរ "… yet?" បញ្ចប់ដោយ ហើយឬនៅ — ការស្វាគមន៍ប្រចាំថ្ងៃគឺ ញ៉ាំបាយហើយឬនៅ? ឆ្លើយ បាទ (បុរស) ឬ ចាស (ស្ត្រី)។ |
+| English starts a yes or no question with Do, Are, Is or Have: Do you want …? Are you tired? "Yet" goes at the end. | ភាសាអង់គ្លេសចាប់ផ្តើមសំណួរ បាទ/ចាស ឬ ទេ ដោយ Do, Are, Is ឬ Have៖ Do you want …? Are you tired? "Yet" នៅចុងប្រយោគ។ |
+| … + ទេ?  ·  … + ហើយឬនៅ? | … + ទេ?  ·  … + ហើយឬនៅ? |
+| Do / Are / Is / Have + person + …? | Do / Are / Is / Have + មនុស្ស + …? |
+| Question words | ពាក្យសំណួរ |
+| What, where, how much — at the end in Khmer, at the front in English. | អ្វី ណា ប៉ុន្មាន — នៅចុងក្នុងភាសាខ្មែរ នៅមុខក្នុងភាសាអង់គ្លេស។ |
+| The question word usually goes where the answer would be, often at the end: អ្វី (what), ណា (where), ប៉ុន្មាន (how much), ពេលណា (when). | ពាក្យសំណួរជាធម្មតានៅកន្លែងដែលចម្លើយនឹងនៅ ច្រើនតែនៅចុង៖ អ្វី ណា ប៉ុន្មាន ពេលណា។ |
+| English puts the question word first: What, Where, How much, When — then is / are / will and the person. | ភាសាអង់គ្លេសដាក់ពាក្យសំណួរនៅមុខគេ៖ What (អ្វី), Where (ណា), How much (ប៉ុន្មាន), When (ពេលណា) — បន្ទាប់មក is / are / will និងមនុស្ស។ |
+| … + អ្វី / ណា / ប៉ុន្មាន / ពេលណា? | … + អ្វី / ណា / ប៉ុន្មាន / ពេលណា? |
+| What / Where / How much / When + is / are / will + …? | What / Where / How much / When + is / are / will + …? (ពាក្យសំណួរនៅមុខគេ) |
+| Want, can, must | ចង់ អាច ត្រូវ |
+| ចង់, អាច and ត្រូវ go before the action. | ចង់ អាច និង ត្រូវ នៅមុខសកម្មភាព។ |
+| Put ចង់ (want), អាច (can) or ត្រូវ (must, have to) before the action. "Can" is also said with បាន at the end: ខ្ញុំនិយាយខ្មែរបាន. | ដាក់ ចង់ អាច ឬ ត្រូវ នៅមុខសកម្មភាព។ "អាច" ក៏អាចនិយាយដោយដាក់ បាន នៅចុងដែរ៖ ខ្ញុំនិយាយខ្មែរបាន។ |
+| English puts want to, can or must before the action: I want to learn. I can speak. We must go. | ភាសាអង់គ្លេសដាក់ want to (ចង់), can (អាច) ឬ must (ត្រូវ) នៅមុខសកម្មភាព៖ I want to learn. I can speak. We must go។ |
+| Person + ចង់ / អាច / ត្រូវ + action | មនុស្ស + ចង់ / អាច / ត្រូវ + សកម្មភាព |
+| Person + want to / can / must + action | មនុស្ស + want to / can / must + សកម្មភាព |
+| Ever and never | ធ្លាប់ និង មិនដែល |
+| ធ្លាប់ before the action means you have done it before. | ធ្លាប់ នៅមុខសកម្មភាព មានន័យថាអ្នកបានធ្វើវាពីមុនមក។ |
+| ធ្លាប់ before the action means you have done it at some time. មិនដែល … ទេ means never. Ask with ធ្លាប់ … ទេ? | ធ្លាប់ នៅមុខសកម្មភាព មានន័យថាអ្នកបានធ្វើវាម្តងហើយ។ មិនដែល … ទេ មានន័យថាមិនដែលធ្វើ។ សួរដោយ ធ្លាប់ … ទេ? |
+| English says I have been / I have eaten for something done before, Have you ever …? to ask, and never for not ever. | ភាសាអង់គ្លេសនិយាយ I have been / I have eaten សម្រាប់អ្វីដែលធ្លាប់ធ្វើ, Have you ever …? ដើម្បីសួរ, និង never សម្រាប់ មិនដែល។ |
+| Person + ធ្លាប់ + action  ·  មិនដែល … ទេ | មនុស្ស + ធ្លាប់ + សកម្មភាព  ·  មិនដែល … ទេ |
+| Person + have + done …  ·  Have you ever …? | មនុស្ស + have + done …  ·  Have you ever …? |
+
+Learn Khmer → the Grammar area (the Vocabulary | Grammar switch on its home): the buttons and headings, and each of the ten lessons' title, one-line idea, "how it works" and pattern. Each lesson has two "how it works": one for someone learning Khmer (it explains Khmer) and one for someone learning English (it explains English, with the English words left in English). The example sentences themselves are in public/khmer-grammar.js — about forty short sentences (I ate rice, Have you eaten yet?, I will pray for you …), written for YWAM GP and not from the KBC book. Please check the sentences above all: a learner copies them exactly, word by word, so a wrong word order or an unnatural sentence teaches the mistake. Their "sounds like" readings are made by scripts/khmer-translit.mjs.

@@ -5,7 +5,8 @@
    (ស → h, រ → silent, ប → p …), ្ joins consonants into a cluster. Run to fill in the `tl` of every
    word in public/khmer-vocab.js:
 
-     node scripts/khmer-translit.mjs            (rewrites public/khmer-vocab.js with a tl per word)
+     node scripts/khmer-translit.mjs            (rewrites public/khmer-vocab.js with a tl per word, and
+                                                 the readings of public/khmer-grammar.js's sentences)
      node scripts/khmer-translit.mjs --show     (prints a sample instead)
 
    Exports translit(text) for tests. A word whose generated reading is wrong can be given a hand one
@@ -38,6 +39,9 @@ const DIGITS = { '០': '0', '១': '1', '២': '2', '៣': '3', '៤': '4', '�
 const COENG = '្', TREISAP = '៊', MUSIKATOAN = '៉', BANTOC = '់', TOANDAKHIAT = '៍', ROBAT = '៌', LEK_TOO = 'ៗ';
 /* hand readings where the rules fall short (by the Khmer spelling) */
 export const OVERRIDES = {
+  /* the Grammar lessons' words (Oct 2026) */
+  'ឲ្យ': 'aoy', 'ស្អែក': 'sa-aek', 'ធ្លាប់': 'thloap', 'អត់': 'ot', 'ត្រូវ': 'trov', 'អង្គរវត្ត': 'angkor voat', 'សប្តាហ៍': 'sap-da',
+  'បាល់ទាត់': 'bal-toat', 'នឹង': 'noeng',
   /* the Faith lists (Oct 2026): church life, God & the Bible, the books of the Bible */
   'ទីបន្ទាល់': 'ti-bon-toal', 'សេចក្ដីអធិប្បាយ': 'seich-kdey-a-thip-bay', 'ការប្រកបគ្នា': 'ka-pra-kop-knea', 'បេសកកម្ម': 'be-sak-kam',
   'អធិស្ឋានឲ្យ': 'athisthan-aoy', 'ប្រគល់ជីវិតឲ្យព្រះយេស៊ូវ': 'pra-kol-chi-vit-aoy-preah yesu', 'ស្ដាប់បង្គាប់': 'sdap-bang-koap',
@@ -184,6 +188,15 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   }).join(',\n') + '\n  ]\n};\n';
   out = out.replace(/,\n    \] \}/g, '\n    ] }');
   fs.writeFileSync(FILE, out);
+  /* the Grammar lessons: every example's `tl` is its Khmer words' readings, in place */
+  const GFILE = path.join(ROOT, 'public/khmer-grammar.js');
+  if (fs.existsSync(GFILE)) {
+    const g = fs.readFileSync(GFILE, 'utf8').replace(/km: (\[[^\]]*\]), tl: \[[^\]]*\]/g, function (all, km) {
+      return 'km: ' + km + ', tl: ' + JSON.stringify(JSON.parse(km).map(translit));
+    });
+    fs.writeFileSync(GFILE, g);
+    console.log('wrote', GFILE);
+  }
   const n = V0.cats.reduce(function (a, c) { return a + c.words.length; }, 0);
   console.log('wrote', FILE, n, 'words with a reading');
 }
