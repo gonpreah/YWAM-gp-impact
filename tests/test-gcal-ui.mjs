@@ -163,7 +163,7 @@ const main = p => p.$eval('#main', e => e.innerText);
   await page.click('.gcLayer:has-text("Siem Reap events")'); await page.waitForTimeout(400);
   ok('on again: back', /Grace Church/.test(await main(page)));
   await page.click('#calNext'); await page.waitForTimeout(800);
-  ok('›: the next month, and Today to come back', !!(await page.$('#calToday')) && !(await page.$('.gcCell.today')));
+  ok('›: the next month, and Today to come back', !!(await page.$('#calToday')) && !(await page.$('.gcCell.today:not(.out)')));
   ok('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await ctx.close();
 }
