@@ -24,6 +24,7 @@ const SERVER = [
   'test-qbo.mjs',            // QuickBooks: only the office connects; single-use state; tokens never leave the server or reach the backup; P&L + ageing come in as an upload's would; refresh, reconnect, Location, disconnect, nightly
   'test-finance-parse.mjs',  // finance.js reads the three reports (made-up PDFs' text): P&L lines and totals, the Burn Rate's tables, the ageing buckets, a spreadsheet paste
   'test-khmer-translit.mjs', // Khmer → Latin readings for Learn Khmer (scripts/khmer-translit.mjs): series, finals, clusters, where a word splits, hand readings; the data file carries what the script makes
+  'test-lang-test.mjs',     // the language level test: each person's own results (cleaned, ten kept, Khmer and English apart), only their campus's leadership, HR and admins see everyone's latest, nothing on the roster or a profile
   'test-library-audio.mjs', // recording the Library by hand (scripts/record-library-audio.mjs, Azure stood in): each screen's words, only what changed, the key never printed, upload; audio.js / libAudioIndex read-only
   'test-firstrun.mjs',   // empty / junk / ragged store, malformed requests
   'test-boot.mjs',       // getMyBoot: one call per page open

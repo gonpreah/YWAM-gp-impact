@@ -181,11 +181,11 @@ console.log('=== the page ===');
   ok('… the day streak is 1 with today’s dot ticked, a rank bar towards Sprout, crowns counted on the level, badges earned in colour', /🔥 1/.test(home2) && !!(await page.$('.khDot.today.hit')) && /XP to (Sprout|Leaf|Tree)/.test(home2) && /♛ [1-9]/.test(home2) && (await page.$$eval('.khBadge.on', b => b.length)) >= 2 && /Goal done for today/.test(home2), home2.slice(0, 400));
   ok('… and a Lightning round once you know some words', !!(await page.$('#khLightning')));
   /* Lightning: 60 seconds (shortened here) of quiz over the words you know, round and round */
-  await page.evaluate(() => { S.khLightMs = 2500; }); await page.click('#khLightning'); await page.waitForTimeout(300);
+  await page.evaluate(() => { S.khLightMs = 6000; }); await page.click('#khLightning'); await page.waitForTimeout(300);
   ok('Lightning: a question, the clock counting down, 0 right', !!(await page.$('.khAsk')) && !!(await page.$('#khLightLeft')) && /⚡ 0 right/.test(await main(page)));
   for (let i = 0; i < 3; i++) { const ri = await page.evaluate(() => S.kh.q.options.indexOf(S.kh.q.w)); await page.click('[data-khopt="' + ri + '"]'); await page.waitForTimeout(450); }
   ok('… three right, straight on to the next', /⚡ 3 right/.test(await main(page)), (await main(page)).slice(0, 60));
-  await page.waitForTimeout(2200);
+  await page.waitForFunction(() => S.kh.done, null, { timeout: 9000 }).catch(() => {}); await page.waitForTimeout(300);
   ok('… Time! with the score and its XP', /Time! ⚡/.test(await main(page)) && /3 right/.test(await main(page)) && !!(await page.$('#khXpUp')));
   await page.click('#khDone'); await page.waitForTimeout(300);
   await page.click('#khDaily'); await page.waitForTimeout(300);
@@ -308,7 +308,89 @@ console.log('=== the page ===');
   await page.evaluate(() => { localStorage.setItem('gp-kh-area', 'grammar'); S.kh.area = 'grammar'; khOpen_(); }); await page.waitForTimeout(1200);
   const g = await main(page);
   ok('in Khmer the Grammar area and its lessons are in Khmer', /វេយ្យាករណ៍/.test(g) && /អតីតកាល/.test(g) && /អនាគតកាល/.test(g), g.slice(0, 300));
+  await page.click('[data-kharea="test"]'); await page.waitForTimeout(500);
+  const lt = await main(page);
+  ok('… and the Level test', /តេស្តកម្រិត/.test(lt) && /ចាប់ផ្តើមតេស្ត/.test(lt), lt.slice(0, 300));
+  const missing = await page.evaluate(() => KH_LEVELS.reduce((a, L) => a.concat([L[2], L[3]]), []).concat(KH_CAN, Object.values(KH_SCRIPT_LV), Object.values(KH_SCRIPT_LV_EN)).filter(s => !/[ក-៿]/.test(BUILTIN_KM[s] || '')));
+  ok('every level, what it means, each "I can…" and each reading level has Khmer', missing.length === 0, missing.join(' | '));
   await ctx.close();
+}
+{
+  /* the Level test (Oct 2026, Andrew: "a language test … to check and gauge where we are all at",
+     reading and the letters optional) */
+  const saved = [];
+  let leader = false;
+  const { ctx, page } = await open();
+  await page.route('**/api', r => { const b = r.request().postDataJSON() || {}; let out = { ok: true };
+    if (b.fn === 'getMyBoot') out = Object.assign({}, BOOT, { staff: Object.assign({}, ME, { seeLangLevels: leader }) });
+    else if (b.fn === 'saveLangLevel') { saved.push(b.args); out = { ok: true, lang: { latest: { [b.args[2]]: Object.assign({ at: new Date().toISOString() }, b.args[3]) }, history: { km: [Object.assign({ at: new Date().toISOString() }, b.args[3])], en: [] } } }; }
+    else if (b.fn === 'getLangLevels') out = { ok: true, campus: 'siemreap', people: [{ id: 'a', name: 'Andrew', km: { level: 'elementary', at: '2026-10-01' }, en: { level: 'confident' } }, { id: 'b', name: 'Sokha', km: null, en: { level: 'beginner' } }] };
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(out) }); });
+  await page.reload({ waitUntil: 'load' }); await page.waitForSelector('nav.bottom button', { timeout: 15000 }); await page.waitForTimeout(500);
+  await page.evaluate(() => khOpen_()); await page.waitForTimeout(800);
+  await page.click('[data-kharea="test"]'); await page.waitForTimeout(800);
+  let g = await main(page);
+  ok('Level test is the third area: not taken yet, the four parts (reading optional), who sees the level', !!(await page.$('[data-kharea="test"].on')) && /Not taken yet/.test(g) && /Reading the script — optional/.test(g) && /shared with your campus leadership, HR and admins/.test(g) && !!(await page.$('#khTestGo')));
+  ok('… no "everyone\'s levels" for ordinary staff', !(await page.$('#khTestTeam')));
+  await page.click('#khTestGo'); await page.waitForTimeout(300);
+  ok('part 1: six "I can…" statements to tick', (await page.$$eval('[data-khcan]', b => b.length)) === 6 && /In Khmer, I can/.test(await main(page)));
+  await page.click('[data-khcan="0"]'); await page.click('[data-khcan="1"]'); await page.click('[data-khcan="2"]');
+  await page.click('#khTestNext'); await page.waitForTimeout(300);
+  const qs = await page.evaluate(() => S.kh.lt.qs.map(q => ({ part: q.part, opts: q.opts.length, rights: q.opts.filter(o => o.right).length })));
+  ok('then 15 words (5 from each level) and 8 sentences, each with one right answer among 4', qs.filter(q => q.part === 'words').length === 15 && qs.filter(q => q.part === 'sentences').length === 8 && qs.every(q => q.rights === 1 && q.opts >= 3) && qs.filter(q => q.part === 'words').every(q => q.opts === 4), JSON.stringify(qs.filter(q => q.rights !== 1 || q.opts < 3)));
+  ok('… a Khmer answer has its reading on top, so the script isn\'t needed', !!(await page.$('.khOpt .khTlTop')) && /How do you say this in Khmer/.test(await main(page)));
+  ok('… no nearly-right sentence is the same as the right one', await page.evaluate(() => S.kh.lt.qs.filter(q => q.part === 'sentences').every(q => new Set(q.opts.map(o => o.ws.join('|'))).size === q.opts.length)));
+  /* answer: words right, the first two sentences wrong, the rest "I don't know yet" */
+  let k = 0;
+  for (;;) {
+    const st = await page.evaluate(() => S.kh.lt && S.kh.lt.step); if (st !== 'q') break;
+    const q = await page.evaluate(() => { const T = S.kh.lt, q = T.qs[T.i]; return { part: q.part, right: q.opts.findIndex(o => o.right), n: q.opts.length }; });
+    if (q.part === 'words') await page.click('[data-khtopt="' + q.right + '"]');
+    else if (k++ < 2) await page.click('[data-khtopt="' + ((q.right + 1) % q.n) + '"]');
+    else await page.click('#khTestIdk');
+    await page.waitForTimeout(q.part === 'words' ? 600 : 1050);
+  }
+  g = await main(page);
+  ok('then the reading part is asked about — optional, and it doesn\'t change the level', /One more part: reading the Khmer script/.test(g) && /does not change your level/.test(g) && !!(await page.$('#khTestScriptNo')));
+  await page.click('#khTestScriptYes'); await page.waitForTimeout(300);
+  ok('… "Try it": letters and words in the script, with no reading under them', /How does this letter sound/.test(await main(page)) && !(await page.$('.khTestAsk .khTl')) && (await page.evaluate(() => S.kh.lt.qs.filter(q => q.part === 'script').length)) === 8);
+  for (;;) {
+    const st = await page.evaluate(() => S.kh.lt && S.kh.lt.step); if (st !== 'q') break;
+    const right = await page.evaluate(() => { const T = S.kh.lt; return T.qs[T.i].opts.findIndex(o => o.right); });
+    await page.click('[data-khtopt="' + right + '"]'); await page.waitForTimeout(600);
+  }
+  await page.waitForTimeout(800);
+  g = await main(page);
+  const sv = saved[0] && saved[0][3];
+  ok('the result: a level, each part\'s score, the script beside it', /Your Khmer level/.test(g) && /3 \/ 6/.test(g) && /15 \/ 15/.test(g) && /0 \/ 8/.test(g) && /Reads the script/.test(g), g.slice(0, 400));
+  ok('… saved to the person\'s own record: Khmer, the level worked out from the words, sentences and "I can"', saved.length === 1 && saved[0][2] === 'km' && sv.words.right === 15 && sv.sentences.right === 0 && sv.speak === 3 && sv.script.right === 8 && sv.scriptLevel === 'reads' && sv.level === 'elementary' && /Saved to your profile/.test(g), JSON.stringify(sv));
+  ok('… what to learn next: the grammar lessons missed', (await page.$$eval('[data-khtestlesson]', b => b.length)) >= 8 && (await page.$$eval('[data-khtestlevel]', b => b.length)) === 0);
+  await page.click('[data-khtestlesson]'); await page.waitForTimeout(300);
+  ok('… one opens that lesson', !!(await page.$('#khGBuild')) && (await page.evaluate(() => S.kh.area)) === 'grammar');
+  await page.click('[data-kharea="test"]').catch(() => {}); await page.click('#khBack'); await page.waitForTimeout(200); await page.click('[data-kharea="test"]'); await page.waitForTimeout(300);
+  g = await main(page);
+  ok('back on the Level test: the level is shown, and the button says take it again', /Getting around/.test(g) && /Take the test again/.test(g));
+  /* learning English */
+  await page.click('[data-khlearn="en"]'); await page.waitForTimeout(300);
+  ok('learning English: the English level, not taken yet, reading English optional', /Your English level/i.test(await main(page)) && /Not taken yet/.test(await main(page)) && /Reading English letters and words — optional/.test(await main(page)));
+  await page.click('#khTestGo'); await page.waitForTimeout(200); await page.click('#khTestNext'); await page.waitForTimeout(300);
+  ok('… the Khmer is asked, English answers', /What is this in English/.test(await main(page)) && /[ក-៿]/.test(await page.$eval('.khGPrompt', e => e.textContent)) && (await page.$$eval('.khOpt .khEn', e => e.length)) === 4);
+  await ctx.close();
+  /* leadership: everyone's levels */
+  leader = true;
+  const L = await open();
+  await L.page.route('**/api', r => { const b = r.request().postDataJSON() || {}; let out = { ok: true };
+    if (b.fn === 'getMyBoot') out = Object.assign({}, BOOT, { staff: Object.assign({}, ME, { seeLangLevels: true }) });
+    else if (b.fn === 'getLangLevels') out = { ok: true, campus: 'siemreap', people: [{ id: 'a', name: 'Andrew', km: { level: 'elementary', at: '2026-10-01' }, en: { level: 'confident' } }, { id: 'b', name: 'Sokha', km: null, en: { level: 'beginner' } }] };
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(out) }); });
+  await L.page.reload({ waitUntil: 'load' }); await L.page.waitForSelector('nav.bottom button', { timeout: 15000 }); await L.page.waitForTimeout(500);
+  await L.page.evaluate(() => { localStorage.setItem('gp-kh-area', 'test'); S.kh.area = 'test'; khOpen_(); }); await L.page.waitForTimeout(1000);
+  await L.page.click('#khTestTeam'); await L.page.waitForTimeout(500);
+  g = await main(L.page);
+  ok('leadership: "See everyone\'s levels" — how many at each level, Khmer and English, then each person', /Language levels/.test(g) && (await L.page.$$eval('.khTeamRow:not(.head)', r => r.length)) === 2 && /Andrew[\s\S]*Getting around[\s\S]*Confident/.test(g) && /Sokha[\s\S]*Not taken yet[\s\S]*Beginner/.test(g) && (await L.page.$$eval('.khTeamBars', b => b.length)) === 2);
+  await L.page.click('#khBack'); await L.page.waitForTimeout(200);
+  ok('… ← back to the Level test', !!(await L.page.$('#khTestGo')));
+  await L.ctx.close();
 }
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

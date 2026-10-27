@@ -2933,6 +2933,29 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   grammar words are in its OVERRIDES); audio.js and scripts/record-khmer-vocab.mjs also record each whole
   example sentence (`grammarSentences`; the file rides along in netlify.toml's `included_files`). Written for
   YWAM GP, not from the KBC book; the Khmer is unreviewed (docs/khmer-needed.md §79).
+- **Level test** (Oct 2026, Andrew: "a language test, to test the proficiency level of Khmer and/or
+  English … to check and gauge where we are all at", reading and the letters optional): the third area
+  (`[data-kharea="test"]`, `S.kh.lt`), in the language "I'm learning" is on. Part 1 — six "I can…"
+  statements to tick (`KH_CAN`, `[data-khcan]`; a phone can't hear speaking); part 2 — 15 words, five from
+  each level of the book (`khTestWordQs_`); part 3 — 8 sentences from the grammar lessons, each against
+  three nearly right (`khTestNear_`: the lesson's wrong word, two words swapped, a key word moved — never a
+  time word or "already", `KH_FLOAT`, since those can move and stay right; a short sentence is filled from
+  the lesson's others); then, optional, reading — letters and words in the script with no reading under
+  them (`khTestScriptQs_`; for English, letters and English words with no Khmer). Khmer answers show their
+  reading on top, so parts 2–3 need no script. Every question has "I don't know yet" (`#khTestIdk`).
+  `khTestScore_`: the words (1/2/3 points by level) and sentences (2–3) make 75%, the "I can"s 25% → one of
+  `KH_LEVELS` (Just starting · Beginner · Getting around · Conversational · Confident); reading is beside
+  the level as none / some / reads, never in it. The result names what to learn next (the levels whose
+  words were missed, the lessons whose sentence was — `[data-khtestlevel]` / `[data-khtestlesson]`).
+  **Server** (api.js "Language level test"): `saveLangLevel(user, pin, lang, result)` cleans it
+  (`cleanLangResult_`: a known level, numbers in range, nothing extra) onto the person's own record
+  (`langTests: {km:[…], en:[…]}`, ten kept); the boot's staff card carries their own `langLevel`
+  (`langMine_`: latest and history) and `seeLangLevels`. **`getLangLevels`** — each person's latest on the
+  campus, for its Campus Leadership, HR and admins only (`canSeeLangLevels_`; an admin may pass another
+  campus): "See everyone's levels" (`S.kh.team`, `khTestTeamHtml_`) — how many at each level, Khmer and
+  English, then each person. Nothing of it is on the roster or a profile. The test page says who sees the
+  level before it starts. Khmer unreviewed (docs/khmer-needed.md §80). tests/test-lang-test.mjs (server)
+  and the Level test part of tests/test-khmer-learn-ui.mjs.
 - **Learning Khmer or English** (`[data-khlearn]`, `S.kh.front` = 'en' learning Khmer, 'km' learning
   English, kept in `gp-kh-front`; `khLearningEn_`, `khTitle_`): the switch on the home decides which side
   a card and a quiz ask with and which language 🔊 reads; the page is titled Learn English then.
