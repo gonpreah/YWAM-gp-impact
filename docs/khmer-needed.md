@@ -4284,3 +4284,26 @@ Learn Khmer → the Grammar area (the Vocabulary | Grammar switch on its home): 
 | Reads English | អានភាសាអង់គ្លេសបាន |
 
 Learn Khmer → Level test (the third area beside Vocabulary and Grammar): the test's parts, its questions, the five levels and what each means, the six "I can …" statements someone ticks about their speaking, the reading-the-script summary, and the leaders' "Language levels" page. `{lang}` is ខ្មែរ or អង់គ្លេស. Check the five level names and the "I can" statements first — they are what a person reads about themselves, and what their leaders read about them. The privacy line ("Your level is shared with your campus leadership, HR and admins …") is a promise the app makes, so its Khmer must say exactly that.
+
+## 81. Portal — additional documents for the e-visa, and printing colour copies
+
+| English | Khmer (draft) |
+|---|---|
+| Additional documents for the e-visa | ឯកសារបន្ថែមសម្រាប់ e-visa |
+| Attach your additional documents too. | ភ្ជាប់ឯកសារបន្ថែមរបស់អ្នកផងដែរ។ |
+| Additional documents | ឯកសារបន្ថែម |
+| Your e-visa needs more documents than the letter of invitation. Upload them here, and attach them to your e-visa application too. | e-visa របស់អ្នកត្រូវការឯកសារច្រើនជាងលិខិតអញ្ជើញ។ សូមផ្ទុកវាឡើងនៅទីនេះ ហើយភ្ជាប់វាជាមួយពាក្យសុំ e-visa របស់អ្នកផងដែរ។ |
+| What we need from you | អ្វីដែលយើងត្រូវការពីអ្នក |
+| Staff only | សម្រាប់តែបុគ្គលិកប៉ុណ្ណោះ |
+| Send a copy of this team’s letter of invitation to the “UofN Invitation Letters” group chat on Telegram, so they know about the team — the government may call them to ask about it. | ផ្ញើច្បាប់ចម្លងលិខិតអញ្ជើញរបស់ក្រុមនេះ ទៅក្រុមជជែក “UofN Invitation Letters” នៅលើ Telegram ដើម្បីឱ្យពួកគេដឹងអំពីក្រុមនេះ — រដ្ឋាភិបាលអាចនឹងទូរស័ព្ទទៅពួកគេ ដើម្បីសួរអំពីក្រុមនេះ។ |
+| Send a copy of this person’s letter of invitation to the “UofN Invitation Letters” group chat on Telegram, so they know about them — the government may call them to ask about it. | ផ្ញើច្បាប់ចម្លងលិខិតអញ្ជើញរបស់បុគ្គលនេះ ទៅក្រុមជជែក “UofN Invitation Letters” នៅលើ Telegram ដើម្បីឱ្យពួកគេដឹងអំពីគាត់ — រដ្ឋាភិបាលអាចនឹងទូរស័ព្ទទៅពួកគេ ដើម្បីសួរអំពីរឿងនេះ។ |
+| Needs additional documents for the e-visa | ត្រូវការឯកសារបន្ថែមសម្រាប់ e-visa |
+| For nationalities that need more than the letter of invitation (India, for one). They then get a space to upload them in their e-visa steps. | សម្រាប់សញ្ជាតិដែលត្រូវការច្រើនជាងលិខិតអញ្ជើញ (ឧទាហរណ៍ ឥណ្ឌា)។ បន្ទាប់មក ពួកគេនឹងមានកន្លែងផ្ទុកឯកសារទាំងនោះឡើង នៅក្នុងជំហាន e-visa របស់ពួកគេ។ |
+| Turn off | បិទ |
+| They see a space to upload them in “How to apply for your e-visa online”, with this note. The files come in under Documents below. | ពួកគេឃើញកន្លែងផ្ទុកឯកសារទាំងនោះឡើង នៅក្នុង “របៀបដាក់ពាក្យសុំ e-visa តាមអនឡាញ” ជាមួយកំណត់ចំណាំនេះ។ ឯកសារនឹងចូលមកក្នុងផ្នែកឯកសារខាងក្រោម។ |
+| What they need — e.g. a bank statement for each person | អ្វីដែលពួកគេត្រូវការ — ឧ. របាយការណ៍ធនាគាររបស់ម្នាក់ៗ |
+| Save the note | រក្សាទុកកំណត់ចំណាំ |
+| They now see a space for additional documents | ឥឡូវនេះ ពួកគេឃើញកន្លែងសម្រាប់ឯកសារបន្ថែម |
+| Print colour copies of the letter of invitation (2 copies) and of all the supporting documents, and bring them with you. | បោះពុម្ពលិខិតអញ្ជើញជាពណ៌ (២ ច្បាប់) និងឯកសារគាំទ្រទាំងអស់ជាពណ៌ ហើយយកវាមកជាមួយ។ |
+
+The portal's e-visa steps. Staff press "Needs additional documents for the e-visa" on a record (for nationalities such as India) and the applicant gets an upload space in "How to apply for your e-visa online" with staff's note of what is needed. The two "Send a copy … UofN Invitation Letters …" lines are seen by staff only. The print line is in "Preparing to come".

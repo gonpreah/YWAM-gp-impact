@@ -292,6 +292,10 @@ details.visaHow > summary { padding:12px 14px; font-weight:800; font-size:15px; 
 .visaKv { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
 .visaKv > div { flex:1; min-width:0; } .visaKv small { display:block; color:var(--muted); font-size:12px; } .visaKv span { overflow-wrap:anywhere; font-weight:600; }
 .visaExtra { white-space:pre-wrap; margin:10px 0 0; font-size:14px; }
+.visaNeed { white-space:pre-wrap; margin:6px 0 8px; padding:9px 12px; border-left:3px solid var(--border2); background:var(--surface2); border-radius:var(--rSm); font-size:14px; }
+.visaNeed small { display:block; color:var(--muted); font-size:12px; white-space:normal; }
+.visaXStaff { margin:10px 0 14px; } .visaXStaff textarea { width:100%; margin:6px 0; }
+.staffOnly { border:1px dashed var(--border2); }
 .ansSec { margin-top:10px; } .kv.ans { flex-direction:column; align-items:flex-start; gap:2px; } .kv.ans span { text-align:left; color:var(--ink); white-space:pre-wrap; }
 /* the forms editor */
 .two2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
@@ -1849,7 +1853,7 @@ function meHtml_(){
   h+=membersCardHtml_(app);
   h+=visaCardHtml_(app);
   h+=foldCardHtml_('myDocs', '📎 '+t('Documents'), myDocsSummary_(app), myDocsOpen_(app),
-    ((app.docKinds||[]).filter(function(k){ return k.id!=='photo'; }).length ? docsBodyHtml_((app.docKinds||[]).filter(function(k){ return k.id!=='photo' && (app.type!=='team' || teamDocsIn_(app) || (k.id!=='invitation' && k.id!=='evisa')); }), app.docs||[], app.submittedAt ? 'me' : 'before', '')
+    ((app.docKinds||[]).filter(function(k){ return k.id!=='photo' && !k.visa; }).length ? docsBodyHtml_((app.docKinds||[]).filter(function(k){ return k.id!=='photo' && !k.visa && (app.type!=='team' || teamDocsIn_(app) || (k.id!=='invitation' && k.id!=='evisa')); }), app.docs||[], app.submittedAt ? 'me' : 'before', '')
       : '<p class="sub" style="margin:0">'+esc(t('After you apply, the things to attach for your kind of application are listed here, each one checked off as it arrives.'))+'</p>'));
   h+='<div class="card"><div class="panelHead"><h3 style="margin-top:0">📱 '+esc(t('How we reach you'))+'</h3>'+(P.editContact?'':'<button class="linkbtn inline" id="editContact">'+esc(t('Edit'))+'</button>')+'</div>';
   if(P.editContact){
@@ -2050,6 +2054,7 @@ function panelHtml_(c, byId){
   ov+='<label class="f">'+esc(t('Owner'))+'</label><select id="p_owner"><option value="">'+esc(t('— nobody yet —'))+'</option>'+P.boot.staff.map(function(s){ return '<option value="'+esc(s.id)+'"'+(c.assignedTo===s.id?' selected':'')+'>'+esc(s.name)+'</option>'; }).join('')+'</select>';
   ov+='<label class="f">'+esc(t('Next step'))+'</label><input type="text" id="p_next" value="'+esc(c.nextStep||'')+'"><label class="f">'+esc(t('By'))+'</label><input type="date" id="p_date" value="'+esc(c.nextDate||'')+'">';
   ov+='<button class="btn" id="saveCand"'+(P.busy?' disabled':'')+'>'+esc(P.busy?t('Saving…'):t('Save'))+'</button>';
+  if(c.needsVisa && c.portal && c.portal.visa && c.portal.visa.extraDocs) ov+=uofnNoteHtml_(c, 'uofnNote');
   ov+=panelTeamFlowHtml_(c);
   var docsN=((c.portal && c.portal.docs)||[]).length, ppl=(c.portal && c.portal.members)||[];
   var tabs=[
@@ -2881,15 +2886,35 @@ function visaHowBodyHtml_(app){
   if(!V) return h+'<p class="sub" data-visaload="'+esc(app.campus||DEFAULT_CAMPUS)+'">'+esc(t('Loading…'))+'</p>';
   h+='<div class="visaSec"><div class="eyebrow">2 · '+esc(t('Supporting documents'))+'</div>'+
     (V.docs.length ? V.docs.map(function(d){ return file('data-visadoc', d.id, d.name); }).join('') : '<p class="sub" style="margin:4px 0 0">'+esc(t('We send the supporting documents with your letter of invitation.'))+'</p>')+'</div>';
+  var n=3, extra=visaExtraOn_(app);
+  if(extra) h+=visaExtraHowHtml_(app, n++);
   var I=V.info||{}, rows=[['Organisation',I.org],['Address for the visa',I.address],['Contact number',I.phone],['Email',I.email]].filter(function(r){ return r[1]; });
-  if(rows.length) h+='<div class="visaSec"><div class="eyebrow">3 · '+esc(t('What the e-visa form asks about us'))+'</div>'+rows.map(function(r){
+  if(rows.length) h+='<div class="visaSec"><div class="eyebrow">'+(n++)+' · '+esc(t('What the e-visa form asks about us'))+'</div>'+rows.map(function(r){
     return '<div class="visaKv"><div><small>'+esc(t(r[0]))+'</small><span>'+esc(r[1])+'</span></div><button type="button" class="btn ghost small" data-copytext="'+esc(r[1])+'">'+esc(t('Copy'))+'</button></div>'; }).join('')+'</div>';
   if(I.extra) h+='<p class="visaExtra">'+esc(I.extra)+'</p>';
-  h+='<div class="visaSec"><div class="eyebrow">'+(rows.length?'4':'3')+' · '+esc(t('Steps'))+'</div><ol class="guide">'+VISA_HOW.map(function(x){ return '<li>'+esc(t(x))+'</li>'; }).join('')+
+  h+='<div class="visaSec"><div class="eyebrow">'+n+' · '+esc(t('Steps'))+'</div><ol class="guide">'+VISA_HOW.map(function(x){ return '<li>'+esc(t(x))+'</li>'+(extra && /^Attach the letter/.test(x) ? '<li>'+esc(t('Attach your additional documents too.'))+'</li>' : ''); }).join('')+
     '<li>'+esc(team ? t('Every team member needs their own e-visa. Upload each one under Documents when it comes.') : t('Send the e-visa PDF to your contact here.'))+'</li></ol>'+
     '<a class="btn small" href="https://www.evisa.gov.kh/" target="_blank" rel="noopener" style="margin-top:4px">evisa.gov.kh ↗</a></div>';
   h+='<div class="visaSec"><div class="eyebrow">'+esc(t('Preparing to come'))+'</div><ol class="guide">'+VISA_PREP.map(function(x){ return '<li>'+esc(t(x))+'</li>'; }).join('')+'</ol></div>';
   return h;
+}
+/* Additional documents (India and some other nationalities): staff switch it on for a record
+   (portal.visa.extraDocs), and the how-to gets a space to upload them, with staff's note of what
+   is needed. Listed while files are in it, even once switched off. */
+function visaExtraOn_(app){ return !!(app.visa && app.visa.extraDocs) || (app.docs||[]).some(function(d){ return d.kind==='visaextra'; }); }
+function visaExtraHowHtml_(app, n){
+  var note=(app.visa && app.visa.extraNote)||'';
+  return '<div class="visaSec" id="visaExtraHow"><div class="eyebrow">'+n+' · '+esc(t('Additional documents'))+'</div>'+
+    '<p class="sub" style="margin:4px 0 0">'+esc(t('Your e-visa needs more documents than the letter of invitation. Upload them here, and attach them to your e-visa application too.'))+'</p>'+
+    (note ? '<div class="visaNeed"><small>'+esc(t('What we need from you'))+'</small>'+esc(note)+'</div>' : '')+
+    docsBodyHtml_([{ id:'visaextra', required:false }], app.docs||[], app.submittedAt ? 'me' : 'before', '')+'</div>';
+}
+/* Staff only, never on the applicant's side: a record that needs additional documents is
+   one the UofN should hear about, since the government may call them about it. */
+function uofnNoteHtml_(c, id){
+  return '<div class="banner staffOnly"'+(id?' id="'+id+'"':'')+' data-uofnnote>🔒 <b>'+esc(t('Staff only'))+'</b> · '+
+    esc(c.type==='team' ? t('Send a copy of this team’s letter of invitation to the “UofN Invitation Letters” group chat on Telegram, so they know about the team — the government may call them to ask about it.')
+      : t('Send a copy of this person’s letter of invitation to the “UofN Invitation Letters” group chat on Telegram, so they know about them — the government may call them to ask about it.'))+'</div>';
 }
 /* A supporting document comes in parts (portalVisaDocGet); put it back together and open it. */
 function openVisaDoc_(campus, id, btn){
@@ -2945,7 +2970,8 @@ function myDocsOpen_(app){
    staff see the same list on the record, open files and can add one a team
    emailed them. Pictures are shrunk on the phone before they go up. */
 var DOC_LABEL = { passports:'Passport copies — one for each team member', photo:'Your team’s names and photos', flights:'Flight itineraries',
-  evisa:'E-visas — one for each team member', invitation:'Letter of invitation & supporting documents — from us' };
+  evisa:'E-visas — one for each team member', invitation:'Letter of invitation & supporting documents — from us',
+  visaextra:'Additional documents for the e-visa' };
 var DOC_HINT = { passports:'A clear photo or scan of the photo page of each passport. We need these as soon as possible for your letter of invitation.',
   evisa:'Apply at evisa.gov.kh with your letter of invitation, then upload each approved e-visa here.', invitation:'We add these here once your passports, team photo and flights are in. Open them to download.',
   flights:'Important — we need them to start your visa process. Not booked yet? Upload them once you have them.' };
@@ -3518,12 +3544,23 @@ function panelTeamFlowHtml_(c){
   return h;
 }
 function panelVisaHtml_(c){
-  if(!c.needsVisa || c.type==='team') return '';
+  if(!c.needsVisa) return '';
   var v=(c.portal && c.portal.visa)||{};
-  return '<h3>'+esc(t('Visa'))+'</h3><label class="portalTick" style="margin-bottom:6px"><input type="checkbox" data-visaflag="flightsConfirmed"'+(v.flightsConfirmed?' checked':'')+'> '+esc(t('Flights confirmed'))+'</label>'+
+  if(c.type==='team') return '<h3>'+esc(t('Visa'))+'</h3>'+visaExtraStaffHtml_(c, v);
+  return '<h3>'+esc(t('Visa'))+'</h3>'+visaExtraStaffHtml_(c, v)+'<label class="portalTick" style="margin-bottom:6px"><input type="checkbox" data-visaflag="flightsConfirmed"'+(v.flightsConfirmed?' checked':'')+'> '+esc(t('Flights confirmed'))+'</label>'+
     '<label class="portalTick"><input type="checkbox" data-visaflag="invitationSent"'+(v.invitationSent?' checked':'')+'> '+esc(t('Letter of invitation sent'))+'</label>'+
     '<p class="hint">'+esc(t('The applicant sees these two ticks on their e-visa guide.'))+' <button type="button" class="linkbtn inline" id="seeVisa">'+esc(P.seeVisa===c.id ? t('Hide') : t('See their e-visa guide as they see it'))+'</button></p>'+
     (P.seeVisa===c.id ? asSeenHtml_(c, visaCardHtml_(asApplicant_(c))) : '');
+}
+function visaExtraStaffHtml_(c, v){
+  if(!v.extraDocs) return '<div class="visaXStaff" id="visaXStaff"><button type="button" class="btn ghost small" id="visaExtraOn"'+(P.busy?' disabled':'')+'>＋ '+esc(t('Needs additional documents for the e-visa'))+'</button>'+
+    '<p class="hint">'+esc(t('For nationalities that need more than the letter of invitation (India, for one). They then get a space to upload them in their e-visa steps.'))+'</p></div>';
+  var draft = P.xNote && P.xNote.id===c.id ? P.xNote.text : (v.extraNote||'');
+  return '<div class="visaXStaff on" id="visaXStaff"><div class="panelHead"><b>📎 '+esc(t('Needs additional documents for the e-visa'))+'</b><button type="button" class="linkbtn inline" id="visaExtraOff"'+(P.busy?' disabled':'')+'>'+esc(t('Turn off'))+'</button></div>'+
+    '<p class="hint" style="margin:2px 0 0">'+esc(t('They see a space to upload them in “How to apply for your e-visa online”, with this note. The files come in under Documents below.'))+'</p>'+
+    '<textarea id="visaExtraNote" rows="3" maxlength="600" placeholder="'+esc(t('What they need — e.g. a bank statement for each person'))+'">'+esc(draft)+'</textarea>'+
+    '<button type="button" class="btn small" id="visaExtraSave"'+(P.busy?' disabled':'')+'>'+esc(t('Save the note'))+'</button>'+
+    uofnNoteHtml_(c, '')+'</div>';
 }
 function bindPanelExtras_(){
   var c=selected_(); if(!c) return;
@@ -3548,6 +3585,11 @@ function bindPanelExtras_(){
   });
   document.querySelectorAll('[data-teamstep]').forEach(function(cb){ cb.onchange=function(){ P.busy=true; cb.disabled=true;
     run('portalTeamStep', [P.auth.user, P.auth.pin, c.id, cb.getAttribute('data-teamstep'), cb.checked], function(d){ P.busy=false; if(putCand_(d)) showMsg(t('Saved')); else showMsg(t('Could not save — try again.')); render(); }); }; });
+  var setX=function(flags, done){ P.busy=true; render(); run('portalSetVisaFlags', [P.auth.user, P.auth.pin, c.id, flags], function(d){ P.busy=false; if(putCand_(d)){ P.xNote=null; showMsg(done); } else showMsg(t('Could not save — try again.')); render(); }, function(){ P.busy=false; showMsg(t('Connection problem — try again.')); render(); }); };
+  on_('visaExtraOn', function(){ setX({ extraDocs:true }, t('They now see a space for additional documents')); });
+  on_('visaExtraOff', function(){ setX({ extraDocs:false }, t('Saved')); });
+  on_('visaExtraSave', function(){ var ta=document.getElementById('visaExtraNote'); setX({ extraNote: ta ? ta.value : '' }, t('Saved')); });
+  var xta=document.getElementById('visaExtraNote'); if(xta) xta.oninput=function(){ P.xNote={ id:c.id, text:xta.value }; };
   document.querySelectorAll('[data-visaflag]').forEach(function(cb){ cb.onchange=function(){ var flags={}; flags[cb.getAttribute('data-visaflag')]=cb.checked; cb.disabled=true;
     run('portalSetVisaFlags', [P.auth.user, P.auth.pin, c.id, flags], function(d){ if(putCand_(d)) showMsg(t('Saved')); render(); }); }; });
   on_('showRef', function(){ P.showRef=!P.showRef; render(); });

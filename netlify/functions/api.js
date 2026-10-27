@@ -9063,7 +9063,18 @@ const PORTAL_DOC_KINDS = {
     { id: 'invitation', required: false, from: 'us' }, { id: 'evisa', required: false }]
 };
 const PORTAL_DOCS_MAX = 40;
-function docKindsFor_(c) { return PORTAL_DOC_KINDS[c && c.type] || []; }
+/* Some nationalities (India, for one) need more for the e-visa than the letter
+   and its supporting documents. Staff turn that on for a record (portal.visa
+   .extraDocs, portalSetVisaFlags) and the applicant gets an upload space for
+   them in "How to apply for your e-visa online". It stays listed while files
+   are in it, even once switched off, so nothing uploaded goes missing. */
+const VISA_EXTRA_KIND = { id: 'visaextra', required: false, visa: true };
+function docKindsFor_(c) {
+  const base = PORTAL_DOC_KINDS[c && c.type] || [];
+  const v = (c && c.portal && c.portal.visa) || {};
+  const extra = needsVisa_(c) && (v.extraDocs || docsOf_(c).some(function (d) { return d && d.kind === 'visaextra'; }));
+  return extra ? base.concat([VISA_EXTRA_KIND]) : base;
+}
 function docsOf_(c) { return (c && c.portal && Array.isArray(c.portal.docs)) ? c.portal.docs : []; }
 function docsRequiredIn_(c) {
   const kinds = docKindsFor_(c).filter(function (k) { return k.required; });
@@ -9817,6 +9828,12 @@ async function portalSetVisaFlags(username, pin, candidateId, flags) {
   const visa = Object.assign({}, a.cand.portal.visa || {});
   if (flags.flightsConfirmed !== undefined) visa.flightsConfirmed = !!flags.flightsConfirmed;
   if (flags.invitationSent !== undefined) visa.invitationSent = !!flags.invitationSent;
+  if (flags.extraDocs !== undefined) {
+    if (!needsVisa_(a.cand)) return { ok: false, err: 'no_visa' };
+    if (!!visa.extraDocs !== !!flags.extraDocs) a.cand.log = (Array.isArray(a.cand.log) ? a.cand.log : []).concat([{ at: new Date().toISOString(), by: a.s.id, kind: 'note', text: flags.extraDocs ? 'Needs additional documents for the e-visa' : 'No longer needs additional documents for the e-visa' }]).slice(-CAND_LOG_MAX);
+    visa.extraDocs = !!flags.extraDocs;
+  }
+  if (flags.extraNote !== undefined) visa.extraNote = String(flags.extraNote == null ? '' : flags.extraNote).trim().slice(0, 600);
   a.cand.portal.visa = visa;
   a.cand.updated = new Date().toISOString(); a.cand.updatedBy = a.s.id;
   await writeJSON('candidates', a.rows);
