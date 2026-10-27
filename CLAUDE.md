@@ -1320,7 +1320,7 @@ forms, documents and references follow.
   there is none); opening SR Hospitality (`getHospitality`) catches up teams booked before.
   The portal shows "🛏 12 beds · dates" under the ticked step (`roomsLine_`), staff see the same
   in Team steps. Students and other single applicants have no booking link yet.
-- **E-visa how-to and supporting documents (Oct 2026)**: once a team's letter of invitation is
+- **E-visa how-to and supporting documents (Oct 2026)**: Preparing to come (`VISA_PREP`) says to print colour copies of the letter of invitation (2) and of all the supporting documents and bring them (Andrew, Oct 2026). Once a team's letter of invitation is
   uploaded (or "Letter of invitation sent" is ticked — `visaOpen_` in api.js, `app.visaOpen`), a
   drop-down **How to apply for your e-visa online** (`visaHowHtml_`, `#visaHow`) opens under the
   e-visa step in Where you are: the letter (`data-docopen`), the supporting documents
@@ -1337,6 +1337,17 @@ forms, documents and references follow.
   button to Documents. **Your team members** and **Documents** are folding cards
   (`foldCardHtml_`, `P.fold`): members open only while empty, Documents only while something is
   missing.
+- **Additional documents for the e-visa (Oct 2026, Andrew: India and other nations need more)**: on a
+  record's Documents tab, the Visa part (teams too now) has **＋ Needs additional documents for the e-visa**
+  (`#visaExtraOn`, `visaExtraStaffHtml_`) → `portalSetVisaFlags(…, {extraDocs, extraNote})` (logged; refused
+  `no_visa` for someone from Cambodia; the note, ≤600, says what they need). `docKindsFor_` then adds kind
+  `visaextra` (`VISA_EXTRA_KIND`, `visa: true` — kept while files are in it, even once off), and "How to apply
+  for your e-visa online" gets a numbered **Additional documents** part (`visaExtraHowHtml_`, `#visaExtraHow`:
+  the note, the files, Upload) and the step "Attach your additional documents too."; the applicant's
+  Documents card leaves `visa` kinds out. **Staff only**: `uofnNoteHtml_` (`[data-uofnnote]`, also
+  `#uofnNote` on Overview) says to send a copy of the letter of invitation to the "UofN Invitation Letters"
+  Telegram group chat, since the government may call them. It is page text drawn only on the staff record,
+  never in `portalAppOut_` or the 👁 view. tests: test-portal.mjs, test-portal-page.mjs.
 - **Call notes (teams, Oct 2026)**: a 📞 Call notes tab on team records (`panelCallsHtml_`,
   `bindCalls_`, draft in `P.call`) for what was said on calls with the leaders: date, who was on
   the call (starts as the leader), notes (≤5000, line breaks kept), newest first. Stored as
