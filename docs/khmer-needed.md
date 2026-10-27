@@ -4205,3 +4205,82 @@ Learn Khmer → Deeper talk: the names of the four Faith lists (the tiles and ea
 | Person + have + done …  ·  Have you ever …? | មនុស្ស + have + done …  ·  Have you ever …? |
 
 Learn Khmer → the Grammar area (the Vocabulary | Grammar switch on its home): the buttons and headings, and each of the ten lessons' title, one-line idea, "how it works" and pattern. Each lesson has two "how it works": one for someone learning Khmer (it explains Khmer) and one for someone learning English (it explains English, with the English words left in English). The example sentences themselves are in public/khmer-grammar.js — about forty short sentences (I ate rice, Have you eaten yet?, I will pray for you …), written for YWAM GP and not from the KBC book. Please check the sentences above all: a learner copies them exactly, word by word, so a wrong word order or an unnatural sentence teaches the mistake. Their "sounds like" readings are made by scripts/khmer-translit.mjs.
+
+
+## 80. Learn Khmer — the level test
+
+| English | Khmer (draft) |
+|---|---|
+| Level test | តេស្តកម្រិត |
+| Find your level, and what to learn next. | ស្វែងរកកម្រិតរបស់អ្នក និងអ្វីដែលត្រូវរៀនបន្ទាប់។ |
+| Your {lang} level | កម្រិត{lang}របស់អ្នក |
+| Taken {date} | បានធ្វើនៅ {date} |
+| Not taken yet. Find out where your {lang} is, and what to learn next. | មិនទាន់ធ្វើនៅឡើយ។ ស្វែងយល់ថា{lang}របស់អ្នកនៅកម្រិតណា និងអ្វីដែលត្រូវរៀនបន្ទាប់។ |
+| The {lang} level test | តេស្តកម្រិត{lang} |
+| What you can say | អ្វីដែលអ្នកអាចនិយាយបាន |
+| Words — 15, from easy to harder | ពាក្យ — ១៥ ពីងាយទៅពិបាក |
+| Sentences — 8 | ប្រយោគ — ៨ |
+| Reading the script — optional, at the end | ការអានអក្សរ — ជាជម្រើស នៅចុងបញ្ចប់ |
+| Reading English letters and words — optional, at the end | ការអានអក្សរ និងពាក្យអង់គ្លេស — ជាជម្រើស នៅចុងបញ្ចប់ |
+| About 10 minutes. If you don't know, tap "I don't know yet" rather than guess, so the level is true. | ប្រហែល ១០ នាទី។ បើអ្នកមិនដឹង សូមចុច "ខ្ញុំមិនទាន់ដឹងទេ" ជាជាងទាយ ដើម្បីឲ្យកម្រិតត្រឹមត្រូវ។ |
+| Your level is shared with your campus leadership, HR and admins, so they can plan language help. Nobody else sees it. | កម្រិតរបស់អ្នកត្រូវបានចែករំលែកជាមួយថ្នាក់ដឹកនាំបរិវេណរបស់អ្នក ផ្នែកធនធានមនុស្ស និងអ្នកគ្រប់គ្រង ដើម្បីឲ្យពួកគេអាចរៀបចំជំនួយផ្នែកភាសា។ គ្មាននរណាផ្សេងទៀតឃើញវាទេ។ |
+| Take the test again | ធ្វើតេស្តម្តងទៀត |
+| Start the test | ចាប់ផ្តើមតេស្ត |
+| Over time | តាមពេលវេលា |
+| See everyone's levels | មើលកម្រិតរបស់អ្នករាល់គ្នា |
+| Part {n} of {total} | ផ្នែកទី {n} នៃ {total} |
+| In Khmer, I can… | ជាភាសាខ្មែរ ខ្ញុំអាច… |
+| In English, I can… | ជាភាសាអង់គ្លេស ខ្ញុំអាច… |
+| Tick each one you can do now, without help. | គូសចំណុចនីមួយៗដែលអ្នកអាចធ្វើបានឥឡូវនេះ ដោយគ្មានជំនួយ។ |
+| One more part: reading the Khmer script | ផ្នែកមួយទៀត៖ ការអានអក្សរខ្មែរ |
+| One more part: reading English letters and words | ផ្នែកមួយទៀត៖ ការអានអក្សរ និងពាក្យអង់គ្លេស |
+| Letters and words in Khmer script, with no reading under them. It is optional, and it does not change your level. | អក្សរ និងពាក្យជាអក្សរខ្មែរ ដោយគ្មានការអានខាងក្រោម។ វាជាជម្រើស ហើយវាមិនប្តូរកម្រិតរបស់អ្នកទេ។ |
+| English letters and words, with no Khmer under them. It is optional, and it does not change your level. | អក្សរ និងពាក្យអង់គ្លេស ដោយគ្មានភាសាខ្មែរខាងក្រោម។ វាជាជម្រើស ហើយវាមិនប្តូរកម្រិតរបស់អ្នកទេ។ |
+| Try it | សាកល្បង |
+| Skip — see my level | រំលង — មើលកម្រិតរបស់ខ្ញុំ |
+| Words | ពាក្យ |
+| Sentences | ប្រយោគ |
+| Reading the script | ការអានអក្សរ |
+| Reading English | ការអានភាសាអង់គ្លេស |
+| How do you say this in Khmer? | តើនិយាយពាក្យនេះជាភាសាខ្មែរដូចម្តេច? |
+| What is this in English? | តើនេះជាភាសាអង់គ្លេសថាអ្វី? |
+| Which is the right way to say it in Khmer? | តើមួយណាជារបៀបនិយាយត្រឹមត្រូវជាភាសាខ្មែរ? |
+| Which is the right way to say it in English? | តើមួយណាជារបៀបនិយាយត្រឹមត្រូវជាភាសាអង់គ្លេស? |
+| How does this letter sound? | តើអក្សរនេះអានដូចម្តេច? |
+| Which letter is this? | តើនេះជាអក្សរអ្វី? |
+| What does this word mean? | តើពាក្យនេះមានន័យថាអ្វី? |
+| I don't know yet | ខ្ញុំមិនទាន់ដឹងទេ |
+| Your Khmer level | កម្រិតភាសាខ្មែររបស់អ្នក |
+| Your English level | កម្រិតភាសាអង់គ្លេសរបស់អ្នក |
+| Can say | អាចនិយាយបាន |
+| Script | អក្សរ |
+| Reading | ការអាន |
+| Saved to your profile. | បានរក្សាទុកក្នុងប្រវត្តិរូបរបស់អ្នក។ |
+| Could not save — check your connection and take it again later. | មិនអាចរក្សាទុកបានទេ — សូមពិនិត្យការភ្ជាប់ ហើយធ្វើវាម្តងទៀតពេលក្រោយ។ |
+| Log in to keep your level. | ចូលគណនីដើម្បីរក្សាទុកកម្រិតរបស់អ្នក។ |
+| What to learn next | អ្វីដែលត្រូវរៀនបន្ទាប់ |
+| Language levels | កម្រិតភាសា |
+| Only campus leadership, HR and admins can see everyone's levels. | មានតែថ្នាក់ដឹកនាំបរិវេណ ផ្នែកធនធានមនុស្ស និងអ្នកគ្រប់គ្រងប៉ុណ្ណោះ ដែលអាចមើលកម្រិតរបស់អ្នករាល់គ្នា។ |
+| Could not load. Check your connection and try again. | មិនអាចផ្ទុកបានទេ។ សូមពិនិត្យការភ្ជាប់ ហើយព្យាយាមម្តងទៀត។ |
+| Just starting | ទើបចាប់ផ្តើម |
+| A few words so far. Start with Essentials and the first grammar lessons. | ស្គាល់ពាក្យខ្លះៗ។ ចាប់ផ្តើមពីពាក្យសំខាន់ៗ និងមេរៀនវេយ្យាករណ៍ដំបូងៗ។ |
+| Beginner | អ្នកចាប់ផ្តើម |
+| You know everyday words and simple phrases. | អ្នកស្គាល់ពាក្យប្រចាំថ្ងៃ និងឃ្លាសាមញ្ញៗ។ |
+| Getting around | អាចប្រើក្នុងជីវិតប្រចាំថ្ងៃ |
+| You can handle daily life: the market, directions, simple talk. | អ្នកអាចរស់នៅប្រចាំថ្ងៃបាន៖ ផ្សារ ការប្រាប់ផ្លូវ និងការនិយាយសាមញ្ញៗ។ |
+| Conversational | អាចសន្ទនាបាន |
+| You can talk about your week, your work and your faith. | អ្នកអាចនិយាយអំពីសប្តាហ៍ ការងារ និងជំនឿរបស់អ្នក។ |
+| You understand and use deeper words and full sentences. | អ្នកយល់ និងប្រើពាក្យជ្រៅៗ និងប្រយោគពេញលេញ។ |
+| Greet someone and say my name | សួរសុខទុក្ខនរណាម្នាក់ ហើយប្រាប់ឈ្មោះខ្ញុំ |
+| Count, and ask how much something costs | រាប់លេខ ហើយសួរថារបស់អ្វីមួយថ្លៃប៉ុន្មាន |
+| Buy food at the market and order at a restaurant | ទិញម្ហូបនៅផ្សារ ហើយកម្ម៉ង់នៅភោជនីយដ្ឋាន |
+| Talk about my day, my family and my work | និយាយអំពីថ្ងៃ គ្រួសារ និងការងាររបស់ខ្ញុំ |
+| Pray out loud or share my testimony | អធិស្ឋានឮៗ ឬចែកចាយទីបន្ទាល់របស់ខ្ញុំ |
+| Follow a sermon or a meeting, and take part | ស្តាប់យល់សេចក្តីអធិប្បាយ ឬការប្រជុំ ហើយចូលរួមបាន |
+| Not reading the script yet | មិនទាន់អានអក្សរបាននៅឡើយ |
+| Knows some letters and words | ស្គាល់អក្សរ និងពាក្យខ្លះៗ |
+| Reads the script | អានអក្សរបាន |
+| Not reading English yet | មិនទាន់អានភាសាអង់គ្លេសបាននៅឡើយ |
+| Reads English | អានភាសាអង់គ្លេសបាន |
+
+Learn Khmer → Level test (the third area beside Vocabulary and Grammar): the test's parts, its questions, the five levels and what each means, the six "I can …" statements someone ticks about their speaking, the reading-the-script summary, and the leaders' "Language levels" page. `{lang}` is ខ្មែរ or អង់គ្លេស. Check the five level names and the "I can" statements first — they are what a person reads about themselves, and what their leaders read about them. The privacy line ("Your level is shared with your campus leadership, HR and admins …") is a promise the app makes, so its Khmer must say exactly that.

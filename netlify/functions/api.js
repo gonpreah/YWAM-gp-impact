@@ -5278,7 +5278,7 @@ async function getMyBoot(username, pin) {
 
   return {
     ok: true,
-    staff: Object.assign(publicStaff_(s), { isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '' }),   // created: for My Home's first 30 days
+    staff: Object.assign(publicStaff_(s), { isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '', langLevel: langMine_(s), seeLangLevels: canSeeLangLevels_(s) }),   // created: for My Home's first 30 days
     profile: {
       phone: s.phone, joined: s.joined, debt: s.debt, mentorStatus: s.mentorStatus || '',
       dashboardColor: s.dashboardColor || '', dashboardBg: s.dashboardBg || '', email: s.email || '',
@@ -10922,6 +10922,67 @@ async function saveGpTaskFilter(username, pin, keys) {
   if (!r || !r.ok) return { ok: false };
   return getGpTasks(username, pin);
 }
+/* ---- Language level test (Oct 2026, Andrew: "a language test, to test the proficiency level of
+   Khmer and/or English … to check and gauge where we are all at", reading and the letters optional).
+   Learn Khmer → Level test makes the questions and scores them on the phone; this keeps each person's
+   results on their own staff record (`langTests: {km:[…], en:[…]}`, newest last, ten kept) and lets
+   their campus's leadership see everyone's latest. The level is a guide for planning language help,
+   not a grade: the page says leadership sees it before the test starts. */
+const LANG_LEVELS = ['start', 'beginner', 'elementary', 'intermediate', 'confident'];
+const LANG_SCRIPT = ['none', 'some', 'reads'];
+const LANG_KEEP = 10;
+function langPart_(p) {
+  if (!p || typeof p !== 'object') return null;
+  const of = Math.max(0, Math.min(40, Math.round(Number(p.of) || 0))), right = Math.max(0, Math.min(of, Math.round(Number(p.right) || 0)));
+  return of ? { right: right, of: of } : null;
+}
+function cleanLangResult_(r) {
+  if (!r || typeof r !== 'object' || LANG_LEVELS.indexOf(r.level) === -1) return null;
+  const out = {
+    level: r.level, pct: Math.max(0, Math.min(100, Math.round(Number(r.pct) || 0))),
+    speak: Math.max(0, Math.min(6, Math.round(Number(r.speak) || 0))),
+    words: langPart_(r.words), sentences: langPart_(r.sentences), at: new Date().toISOString()
+  };
+  const sc = langPart_(r.script);
+  if (sc && LANG_SCRIPT.indexOf(r.scriptLevel) > -1) { out.script = sc; out.scriptLevel = r.scriptLevel; }
+  return out;
+}
+function langLatest_(s) {
+  const t = s && s.langTests, out = {};
+  ['km', 'en'].forEach(function (l) { const a = t && Array.isArray(t[l]) ? t[l] : []; if (a.length) out[l] = a[a.length - 1]; });
+  return out;
+}
+function langMine_(s) {   // the person's own: latest of each, and how each went over time
+  const t = s && s.langTests, out = { latest: langLatest_(s), history: {} };
+  ['km', 'en'].forEach(function (l) { const a = t && Array.isArray(t[l]) ? t[l] : []; out.history[l] = a.map(function (x) { return { level: x.level, pct: x.pct, at: x.at }; }); });
+  return out;
+}
+function canSeeLangLevels_(s) { return !!(s && (canLead_(s) || canHR_(s))); }
+async function saveLangLevel(username, pin, lang, result) {
+  const s = await verifyStaff_(username, pin); if (!s) return { ok: false };
+  if (lang !== 'km' && lang !== 'en') return { ok: false, err: 'lang' };
+  const clean = cleanLangResult_(result); if (!clean) return { ok: false, err: 'result' };
+  let mine = null;
+  const r = await mutateStaff_(function (rows) {
+    const rec = rows.find(function (x) { return x.id === s.id; }); if (!rec) return { abort: true, ok: false };
+    const t = rec.langTests && typeof rec.langTests === 'object' ? rec.langTests : {};
+    t[lang] = (Array.isArray(t[lang]) ? t[lang] : []).concat([clean]).slice(-LANG_KEEP);
+    rec.langTests = t; mine = langMine_(rec);
+    return { ok: true };
+  });
+  if (!r || !r.ok) return { ok: false, err: 'busy' };
+  return { ok: true, lang: mine };
+}
+async function getLangLevels(username, pin, campus) {
+  const s = await verifyStaff_(username, pin); if (!s) return { ok: false };
+  if (!canSeeLangLevels_(s)) return { ok: false, err: 'not_authorized' };
+  campus = s.isAdmin && CAMPUS_IDS_.indexOf(campus) > -1 ? campus : s.campus;
+  const staff = await getStaff_();
+  const people = staff.filter(function (x) { return x.campus === campus && x.active !== false && !x.archived && !isApplicant_(x); })
+    .map(function (x) { const l = langLatest_(x); return { id: x.id, name: x.name || '', km: l.km || null, en: l.en || null }; })
+    .sort(function (a, b) { return a.name.localeCompare(b.name); });
+  return { ok: true, campus: campus, people: people };
+}
 /* A Campus Leadership board card for a ministry and a person becomes a task in that ministry's
    list, assigned to them, from Campus Leadership — the same task while the card lives. */
 async function gptFromCard_(s, card) {
@@ -11346,6 +11407,8 @@ const HANDLERS = {
   deleteGpTask: function (a) { return deleteGpTask(a[0], a[1], a[2]); },
   clearDoneGpTasks: function (a) { return clearDoneGpTasks(a[0], a[1], a[2]); },
   saveGpTaskFilter: function (a) { return saveGpTaskFilter(a[0], a[1], a[2]); },
+  saveLangLevel: function (a) { return saveLangLevel(a[0], a[1], a[2], a[3]); },
+  getLangLevels: function (a) { return getLangLevels(a[0], a[1], a[2]); },
   orderGpTasks: function (a) { return orderGpTasks(a[0], a[1], a[2], a[3]); },
   fileGpTask: function (a) { return fileGpTask(a[0], a[1], a[2], a[3]); },
   shareGpTaskList: function (a) { return shareGpTaskList(a[0], a[1], a[2], a[3]); },

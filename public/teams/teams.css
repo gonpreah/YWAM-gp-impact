@@ -2603,6 +2603,28 @@ body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
 .khGResult.wrong { background:var(--badSoft); color:var(--ink); }
 .khGResult .khGTo { margin-top:6px; }
 @media (prefers-reduced-motion: reduce){ .khGPick { animation:none; } }
+/* Learn Khmer — Level test */
+.khArea .gtTab { padding:7px 10px; }
+.khTestCard { text-align:center; }
+.khLvBig { font-size:30px; line-height:1.2; margin:6px 0 2px; } .khLvBig b { font-size:22px; }
+.khLvDots { display:inline-flex; gap:5px; margin-top:4px; } .khLvDots i { width:22px; height:6px; border-radius:3px; background:var(--surface2); } .khLvDots i.on { background:var(--accent); }
+.khTestList { margin:8px 0 10px; padding-left:0; list-style:none; } .khTestList li { padding:4px 0; }
+.khTestShare { background:var(--surface2); border-radius:10px; padding:8px 10px; }
+.khTestHist, .khTeamRow { display:flex; justify-content:space-between; gap:8px; padding:7px 0; border-top:1px solid var(--line); align-items:center; }
+.khCan { display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-top:1px solid var(--line); cursor:pointer; } .khCan input { width:20px; height:20px; margin:2px 0 0; flex:0 0 auto; }
+.khTestLetter { font-size:56px; line-height:1.2; font-weight:700; }
+.khTlTop { font-style:normal; font-weight:700; font-size:15px; margin:0 0 1px; }
+.khOpt .khGSent { gap:2px 8px; } .khOpt .khGTok { padding:0; }
+#khTestIdk { display:block; margin:12px auto 0; }
+.khTestParts { display:grid; grid-template-columns:repeat(auto-fit, minmax(70px, 1fr)); gap:8px; margin:12px 0 4px; }
+.khTestParts div { background:var(--surface2); border-radius:12px; padding:8px 4px; display:flex; flex-direction:column; } .khTestParts span { font-size:12px; color:var(--muted); }
+.khTestNextList { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.khLvBadge { display:inline-block; font-size:13px; padding:3px 8px; border-radius:999px; background:var(--surface2); white-space:nowrap; } .khLvBadge.small { font-size:12px; padding:2px 7px; } .khLvBadge.none { color:var(--muted); }
+.khLvBadge.lv3, .khLvBadge.lv4 { background:var(--goodSoft); color:var(--goodInk); }
+.khTeamRow span { flex:1; min-width:0; } .khTeamRow span:first-child { flex:1.3; } .khTeamRow.head { font-size:12.5px; color:var(--muted); border-top:0; }
+.khTeamBars { margin-top:8px; } .khTeamBar { display:grid; grid-template-columns:minmax(0,140px) 1fr 28px; gap:8px; align-items:center; padding:3px 0; font-size:13px; }
+.khTeamTrack { height:10px; background:var(--surface2); border-radius:5px; overflow:hidden; } .khTeamTrack i { display:block; height:100%; background:var(--accent); border-radius:5px; }
+.khTeamBar.muted { color:var(--muted); } .khTeamBar.muted .khTeamTrack i { background:var(--border2); } .khTeamBar b { text-align:right; }
 @media (prefers-reduced-motion: reduce){ .khKiri, .khKiri.happy, .khKiri.sad, .khStatN.hot, .khCard, .khCard.flipped, .khOpt, .khOpt.right, .khTrophy, .khCombo, .khStreak, .khBadge.on .khBadgeIc { animation:none; } .khRing, .khBar div { transition:none; } }
 .khStreak { color:var(--amber); }
 .khMastered { margin:10px 0 0; font-weight:700; color:var(--good); }
