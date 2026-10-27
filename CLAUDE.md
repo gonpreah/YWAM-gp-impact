@@ -1320,7 +1320,7 @@ forms, documents and references follow.
   there is none); opening SR Hospitality (`getHospitality`) catches up teams booked before.
   The portal shows "🛏 12 beds · dates" under the ticked step (`roomsLine_`), staff see the same
   in Team steps. Students and other single applicants have no booking link yet.
-- **E-visa how-to and supporting documents (Oct 2026)**: once a team's letter of invitation is
+- **E-visa how-to and supporting documents (Oct 2026)**: Preparing to come (`VISA_PREP`) says to print colour copies of the letter of invitation (2) and of all the supporting documents and bring them (Andrew, Oct 2026). Once a team's letter of invitation is
   uploaded (or "Letter of invitation sent" is ticked — `visaOpen_` in api.js, `app.visaOpen`), a
   drop-down **How to apply for your e-visa online** (`visaHowHtml_`, `#visaHow`) opens under the
   e-visa step in Where you are: the letter (`data-docopen`), the supporting documents

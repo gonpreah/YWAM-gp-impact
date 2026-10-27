@@ -519,6 +519,7 @@ async function open(viewport, query, seed) {
   const body = await page.$eval('#visaHow', e => e.textContent);
   ok('it loads the campus’s e-visa info', sent.some(b => b.fn === 'portalVisaInfo'));
   ok('inside: the letter of invitation and the supporting documents to open', !!(await page.$('#visaHow [data-docopen="pd_inv"]')) && !!(await page.$('#visaHow [data-visadoc="vd1"]')) && /Letter of invitation\.pdf/.test(body) && /Example certificate\.pdf/.test(body));
+  ok('Preparing to come says to print colour copies of the letter and all the supporting documents', /Print colour copies of the letter of invitation \(2 copies\) and of all the supporting documents/.test(body));
   ok('what the e-visa form asks about us, each with Copy', /Example Org/.test(body) && /Example Village/.test(body) && /\+855 00 000 000/.test(body) && /visa@example\.org/.test(body) && (await page.$$('#visaHow [data-copytext]')).length === 4);
   ok('the steps: evisa.gov.kh, Visa E, every member their own, and getting ready', /Visa E/.test(body) && /evisa\.gov\.kh/.test(body) && /Every team member needs their own e-visa/.test(body) && /e-Arrival/.test(body) && /white sticker/.test(body));
   await page.evaluate(() => { window.__opened = []; window.open = (u) => { window.__opened.push(u); return null; }; HTMLAnchorElement.prototype.click = function(){ window.__opened.push(this.href); }; });
