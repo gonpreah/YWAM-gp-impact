@@ -143,11 +143,11 @@ var _habitQ = { inFlight:false, pending:false, confirmed:null };
 /* Write a habit map into today's log — creating the log if this is the first
    thing logged today — including the legacy columns, so streaks and the mentor
    view stay consistent with pre-habits history. */
-function applyHabitsLocally(map){
-  var today=todayStr();
+function applyHabitsLocally(map, date){
+  var today=date||todayStr();
   var log=logForDate(today);
   if(!log){
-    log={date:today, week:thisWeek(), langHours:0, minHours:0,
+    log={date:today, week:date ? isoWeekOf(new Date(date+'T00:00:00')) : thisWeek(), langHours:0, minHours:0,
       workout:false, bible:false, quietTime:false, oneOnOne:false, sharedFaith:false, sabbath:false,
       clarity:null, growth:null, lonely:null, porn:false, habits:{}};
     S.logs=[log].concat(S.logs);
@@ -159,8 +159,8 @@ function applyHabitsLocally(map){
   return log;
 }
 
-function habitPayload(map){
-  var log=logForDate(todayStr())||{};
+function habitPayload(map, date){
+  var log=logForDate(date||todayStr())||{};
   var payload={
     langHours:log.langHours||0, minHours:log.minHours||0,
     workout:log.workout, bible:log.bible, quietTime:log.quietTime,
@@ -217,6 +217,7 @@ function flushHabits(){
       adoptHabits(d.habits);
       if(d.week) upsertCheckin(d.week);
       applyHabitsLocally(keep);
+      habitPastReapply_();
       _habitQ.confirmed = _habitQ.pending ? sending : null;
     }
     if(_habitQ.pending){ _habitQ.pending=false; render(); flushHabits(); return; }
@@ -235,6 +236,53 @@ function upsertCheckin(week){
   S.checkins=(S.checkins||[]).filter(function(c){ return Number(c.week)!==Number(week.week); });
   S.checkins.unshift(week);
 }
+/* An earlier day (Andrew, Oct 2026: "for those who forgot to click the button"): the card's
+   "Mark an earlier day" saves that day's row the same way, one day at a time. What has been tapped
+   but not yet answered for is kept in _habitPast.local and laid back over any answer, today's
+   included, so a tile never unticks itself while its save is on the way. */
+var _habitPast = { inFlight:false, queue:{}, local:{}, before:{} };
+function habitMapFor_(date){
+  var log=logForDate(date), map={};
+  myHabits().forEach(function(hb){ map[hb.id]= !!(log && didHabit(log,hb.id)); });
+  return map;
+}
+function habitPastReapply_(){ Object.keys(_habitPast.local).forEach(function(d){ applyHabitsLocally(_habitPast.local[d], d); }); }
+function togglePastHabit(date, id){
+  var map=habitMapFor_(date);
+  if(!(date in _habitPast.before)) _habitPast.before[date]=habitMapFor_(date);
+  map[id]=!map[id];
+  _habitPast.local[date]=map; _habitPast.queue[date]=map;
+  applyHabitsLocally(map, date);
+  render();
+  flushPastHabits_();
+}
+function flushPastHabits_(){
+  if(_habitPast.inFlight) return;
+  var dates=Object.keys(_habitPast.queue); if(!dates.length) return;
+  var date=dates[0], sending=_habitPast.queue[date];
+  delete _habitPast.queue[date];
+  _habitPast.inFlight=true;
+  var done=function(){ _habitPast.inFlight=false; flushPastHabits_(); };
+  run('saveDaily',[S.auth.user,S.auth.pin,date,habitPayload(sending, date)],function(d){
+    if(d && d.ok){
+      var hadToday=!!logForDate(todayStr()), todayKeep=todayHabitMap();
+      S.logs=d.logs;
+      adoptHabits(d.habits);
+      if(hadToday) applyHabitsLocally(todayKeep);
+      if(!(date in _habitPast.queue)){ delete _habitPast.local[date]; delete _habitPast.before[date]; }
+      habitPastReapply_();
+    } else {
+      if(!(date in _habitPast.queue)){ applyHabitsLocally(_habitPast.before[date]||{}, date); delete _habitPast.local[date]; delete _habitPast.before[date]; }
+      showMsg(t('Not saved — check your connection and tap again.'));
+    }
+    render(); done();
+  }, function(){
+    if(!(date in _habitPast.queue)){ applyHabitsLocally(_habitPast.before[date]||{}, date); delete _habitPast.local[date]; delete _habitPast.before[date]; }
+    showMsg(t('Not saved — check your connection and tap again.'));
+    render(); done();
+  });
+}
+
 function todayHabitMap(){
   var log=logForDate(todayStr());
   var map={};
@@ -642,6 +690,20 @@ function bindHome(){
       if(!b.classList.contains('on')) gpConfetti(b);   // ticking it, not unticking
       toggleHabit(id);
     };
+  });
+  document.querySelectorAll('[data-habitpast]').forEach(function(b){
+    b.onclick=function(){
+      gpTap();
+      if(!b.classList.contains('on')) gpConfetti(b);
+      togglePastHabit(S.habitPast, b.getAttribute('data-habitpast'));
+    };
+  });
+  var hpo=document.getElementById('habitPastOpen');
+  if(hpo) hpo.onclick=function(){ gpTap(); var d=new Date(); d.setDate(d.getDate()-1); S.habitPast=fmtD(d); render(); };
+  var hpc=document.getElementById('habitPastClose');
+  if(hpc) hpc.onclick=function(){ S.habitPast=null; render(); };
+  document.querySelectorAll('[data-habitday]').forEach(function(b){
+    b.onclick=function(){ gpTap(); S.habitPast=b.getAttribute('data-habitday'); render(); };
   });
   var eh=document.getElementById('editHabits');
   if(eh) eh.onclick=function(){ S.habitEdit=true; S.habitNew=null; render(); };

@@ -4307,3 +4307,15 @@ Learn Khmer → Level test (the third area beside Vocabulary and Grammar): the t
 | Print colour copies of the letter of invitation (2 copies) and of all the supporting documents, and bring them with you. | បោះពុម្ពលិខិតអញ្ជើញជាពណ៌ (២ ច្បាប់) និងឯកសារគាំទ្រទាំងអស់ជាពណ៌ ហើយយកវាមកជាមួយ។ |
 
 The portal's e-visa steps. Staff press "Needs additional documents for the e-visa" on a record (for nationalities such as India) and the applicant gets an upload space in "How to apply for your e-visa online" with staff's note of what is needed. The two "Send a copy … UofN Invitation Letters …" lines are seen by staff only. The print line is in "Preparing to come".
+
+## 82. Habits — marking an earlier day
+
+| English | Khmer (draft) |
+|---|---|
+| Forgot one? Mark an earlier day | ភ្លេចចុច? គូសសម្រាប់ថ្ងៃមុន |
+| Mark an earlier day | គូសសម្រាប់ថ្ងៃមុន |
+| Nothing was due that day. | ថ្ងៃនោះគ្មានអ្វីត្រូវធ្វើទេ។ |
+| {n} of {total} that week | {n} ក្នុង {total} សប្តាហ៍នោះ |
+| Tap what you did that day. It counts toward your streaks and that week’s total. | ចុចលើអ្វីដែលអ្នកបានធ្វើនៅថ្ងៃនោះ។ វារាប់បញ្ចូលក្នុងការធ្វើជាប់ៗគ្នា និងចំនួនសរុបនៃសប្តាហ៍នោះ។ |
+
+My Home → Habits: "Forgot one?" opens the last seven days, and the habits due on the chosen day can be ticked. The first line is a small link under the habit tiles, so keep it short.
