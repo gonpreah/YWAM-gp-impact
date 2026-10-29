@@ -76,6 +76,18 @@ r = await call('saveDaily', ['sreilea', '1234', '2026-10-06', { habits: { bible:
 const day = r.body && r.body.logs && r.body.logs.filter(l => l.date === '2026-10-06')[0];
 ok('a tick on your own habit is kept; one on a habit you no longer track is not', day && day.habits.c_journal1 === true && day.habits.bible === true && day.habits.workout === undefined, JSON.stringify(day && day.habits));
 
+{
+  const pp = new Date(Date.now() + 7 * 3600 * 1000), iso = d => d.toISOString().slice(0, 10);
+  const ago = n => { const d = new Date(pp); d.setUTCDate(d.getUTCDate() - n); return iso(d); };
+  let r2 = await call('saveDaily', ['sreilea', '1234', ago(3), { habits: { bible: true } }]);
+  ok('an earlier day can be marked (three days ago)', r2.body.ok === true && r2.body.logs.some(l => l.date === ago(3) && l.habits.bible === true));
+  r2 = await call('saveDaily', ['sreilea', '1234', ago(-5), { habits: { bible: true } }]);
+  ok('… a day still to come cannot', r2.body.ok === false && r2.body.err === 'bad_date');
+  r2 = await call('saveDaily', ['sreilea', '1234', 'yesterday', { habits: { bible: true } }]);
+  ok('… nor something that is not a date', r2.body.ok === false && r2.body.err === 'bad_date');
+  mem.dailyLogs = (mem.dailyLogs || []).filter(l => l.date !== ago(3));
+}
+
 /* ---------- 2. the page ---------- */
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer(async (req, res) => {
@@ -207,6 +219,47 @@ const TICKED_TODAY = thisWk === NOW;
   await page.click('#leaveBack'); await page.waitForTimeout(300);
   const goalsHead = await text(page, '#sec-goals + .card .goalCardHead');
   ok('Weekly Goals is headed by the week you are in, dates beside it', /^Week \d+ /.test(goalsHead), goalsHead);
+  await ctx.close();
+}
+
+/* ---------- 3. marking an earlier day (Andrew: "for those who forgot to click the button") ---------- */
+{
+  const ctx = await browser.newContext({ ...devices['iPhone 13'], timezoneId: 'Asia/Phnom_Penh' });
+  const page = await ctx.newPage();
+  page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
+  await page.route('**fonts.g**', r => r.abort());
+  await page.addInitScript(() => localStorage.setItem('gp-staff', JSON.stringify({ user: 'sreilea', pin: '1234' })));
+  await page.goto(BASE + '/teams.html', { waitUntil: 'load' });
+  await page.waitForSelector('nav.bottom button', { timeout: 15000 });
+  await page.click('nav.bottom button[data-tab="week"]'); await page.waitForTimeout(600);
+  ok('under the habits: “Forgot one? Mark an earlier day”', /Forgot one\? Mark an earlier day/.test(await text(page, '#habitPastOpen')));
+  await page.click('#habitPastOpen'); await page.waitForTimeout(300);
+  const chips = await page.$$eval('[data-habitday]', bs => bs.map(b => b.getAttribute('data-habitday')));
+  ok('it opens on yesterday, with the last seven days to pick from', chips.length === 7 && chips[0] === addDays(NOW, -1) && chips[6] === addDays(NOW, -7) &&
+    (await page.$eval('[data-habitday].on', b => b.getAttribute('data-habitday'))) === addDays(NOW, -1) && /Yesterday/.test(await text(page, '[data-habitday].on')), chips.join());
+  /* three days ago: nothing ticked then. The times-a-week habit is always there; the one-day habit only on its day */
+  const D3 = addDays(NOW, -3), D3DOW = new Date(D3 + 'T00:00:00Z').getUTCDay();
+  await page.click('[data-habitday="' + D3 + '"]'); await page.waitForTimeout(300);
+  const ptiles = await page.$$eval('[data-habitpast]', es => es.map(e => e.getAttribute('data-habitpast')));
+  ok('picking a day shows the habits due that day', ptiles.indexOf('bible') > -1 && ptiles.indexOf('quietTime') > -1 && (ptiles.indexOf('workout') > -1) === (D3DOW === DOW) && (ptiles.indexOf('language') > -1) === (D3DOW === OTHER), ptiles.join());
+  ok('… none ticked yet', (await page.$$('[data-habitpast].on')).length === 0);
+  const wk3 = await page.evaluate(d => habitWeekCount(myHabits().filter(h => h.id === 'quietTime')[0], new Date(d + 'T00:00:00')), D3);
+  await page.click('[data-habitpast="bible"]'); await page.waitForTimeout(900);
+  const sent = mem.dailyLogs.filter(l => l.staffId === 'me' && l.date === D3)[0];
+  ok('tapping one ticks it and saves it for that day', await page.$eval('[data-habitpast="bible"]', e => e.classList.contains('on')) && sent && sent.habits.bible === true, JSON.stringify(sent));
+  await page.click('[data-habitpast="quietTime"]'); await page.waitForTimeout(900);
+  ok('a times-a-week one counts toward that week', /\d of \d that week/.test(await text(page, '[data-habitpast="quietTime"]')) &&
+    await page.evaluate(([d, n]) => habitWeekCount(myHabits().filter(h => h.id === 'quietTime')[0], new Date(d + 'T00:00:00')) === n + 1, [D3, wk3]), await text(page, '[data-habitpast="quietTime"]') + ' / before ' + wk3 + ' / now ' + await page.evaluate(d => habitWeekCount(myHabits().filter(h => h.id === 'quietTime')[0], new Date(d + 'T00:00:00')), D3));
+  const saved = mem.dailyLogs.filter(l => l.staffId === 'me' && l.date === D3)[0];
+  ok('… both kept on that day, nothing else touched', saved.habits.bible === true && saved.habits.quietTime === true && !mem.dailyLogs.some(l => l.date === NOW && l.habits && l.habits.bible), JSON.stringify(saved.habits));
+  await page.click('[data-habitpast="bible"]'); await page.waitForTimeout(900);
+  ok('tapping again unticks it', !(await page.$eval('[data-habitpast="bible"]', e => e.classList.contains('on'))) && mem.dailyLogs.filter(l => l.date === D3)[0].habits.bible === false);
+  await page.click('[data-habitday="' + addDays(NOW, -1) + '"]'); await page.waitForTimeout(300);
+  ok('yesterday shows what was already ticked then', await page.$eval('[data-habitpast="bible"]', e => e.classList.contains('on')));
+  await page.click('#habitPastClose'); await page.waitForTimeout(300);
+  ok('Done closes it, back to today’s tiles', !(await page.$('#habitPast')) && !!(await page.$('#habitPastOpen')) && (await page.$$('[data-habit]')).length > 0);
+  ok('the chips scroll sideways without stopping the page scrolling', await page.evaluate(() => { S.habitPast = fmtD(new Date(Date.now() - 864e5)); render(); const t = getComputedStyle(document.querySelector('.habitPastDays')).touchAction; return /pan-x/.test(t) && /pan-y/.test(t); }));
+  ok('no sideways scroll on a phone', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await ctx.close();
 }
 

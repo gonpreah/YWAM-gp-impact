@@ -946,6 +946,13 @@ it is set), the tile is on the card every day to mark as you go, shows "n of N t
 as done for the day from then on (`habitDoneToday` — the card's a/b and the hero's Habits Today
 both use it), and its streak is weeks in a row that reached the number (`habitWeekStreak_`;
 "🔥 n wk" on the tile, "best n weeks" in Streaks; the hero's best-streak days ignore it).
+**Mark an earlier day** (Andrew, Oct 2026: "for those who forgot to click the button"): under the
+tiles, "📅 Forgot one? Mark an earlier day" (`#habitPastOpen`, `S.habitPast`, `habitPastHtml_`) opens the last
+`HABIT_PAST_DAYS` (7) days as chips (`[data-habitday]`, yesterday first) and that day's due habits as tiles
+(`[data-habitpast]`, times-a-week ones with "n of N that week"); a tap saves that day's row through
+`saveDaily` (`togglePastHabit` / `flushPastHabits_`, one day at a time, unanswered taps in `_habitPast.local`
+laid back over any answer). Streaks and week counts read it like any tick. `saveDaily` now refuses a
+malformed date or one after tomorrow on Cambodia's calendar (`habitDayOk_`, `bad_date`; students too).
 Stepper `[data-hpweek="id|±1"]`, preset `[data-hpdays="id|perweek"]` starts at 3. Ticking a tile pops confetti (`gpConfetti`, skipped under
 prefers-reduced-motion). `habitMeta(hb)` takes the row (or an id) so custom labels show.
 tests/test-habit-schedule.mjs covers the server rules and the page.

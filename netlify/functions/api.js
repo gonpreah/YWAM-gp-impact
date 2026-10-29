@@ -1508,9 +1508,21 @@ async function saveMyHabits(username, pin, habits, bibleDay) {
 
 async function getDaily_() { return readJSON('dailyLogs', []); }
 
+/* A day's habits can be marked for an earlier day (Andrew, Oct 2026: "for those who forgot to click
+   the button") — any real date up to tomorrow on Cambodia's calendar (a phone a little ahead); never
+   a day still to come. */
+function habitDayOk_(dateStr) {
+  const ds = isoDate_(dateStr);
+  if (!ds || isNaN(Date.parse(ds + 'T00:00:00Z'))) return '';
+  const ahead = (Date.parse(ds + 'T00:00:00Z') - Date.parse(baseToday_() + 'T00:00:00Z')) / 86400000;
+  return ahead <= 1 ? ds : '';
+}
 async function saveDaily(username, pin, dateStr, payload) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
+  dateStr = habitDayOk_(dateStr);
+  if (!dateStr) return { ok: false, err: 'bad_date' };
+  payload = payload && typeof payload === 'object' ? payload : {};
   const rows = await getDaily_();
   const idx = rows.findIndex(function (r) { return r.staffId === s.id && r.date === dateStr; });
   const b = function (v) { return !!v; };
@@ -8410,7 +8422,7 @@ async function studentCall(username, pin, fn, args) {
     return { ok: true, habits: habitsOf_(rec()), bibleDay: d.bibleDay || 0 };
   }
   if (fn === 'saveDaily') {
-    const dateStr = isoDate_(args[0]), p = args[1] || {};
+    const dateStr = habitDayOk_(args[0]), p = args[1] || {};
     if (!dateStr) return { ok: false, err: 'bad_date' };
     const rows = Array.isArray(d.logs) ? d.logs : [];
     const b = function (v) { return !!v; };

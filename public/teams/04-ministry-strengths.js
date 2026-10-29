@@ -1158,6 +1158,7 @@ function habitsCardHtml(){
     }
   }
 
+  h+= S.habitPast ? habitPastHtml_() : '<button class="linkbtn inline habitPastOpen" id="habitPastOpen">📅 '+esc(t('Forgot one? Mark an earlier day'))+'</button>';
   h+='<button class="linkbtn" id="editHabits" style="margin:8px 0 4px">'+esc(t('Choose my habits'))+'</button>';
 
   /* Streaks are a look-back, not something anyone needs open every visit —
@@ -1166,6 +1167,32 @@ function habitsCardHtml(){
   if(runs) h += '<button class="linkbtn" id="habitLoadMore" style="margin:0">'+esc(t(S.habitMore ? 'Hide streaks' : 'Show streaks'))+'</button>';
   h += '</div>';
   if(runs && S.habitMore) h += runs;
+  return h;
+}
+
+/* Mark an earlier day (Andrew, Oct 2026: "for those who forgot to click the button"): the last
+   seven days as chips, then that day's habits — the ones due that day, and every times-a-week one —
+   to tick or untick. It counts for that day's streak and that week's total like any other tick. */
+var HABIT_PAST_DAYS = 7;
+function habitPastHtml_(){
+  var date=S.habitPast, sel=new Date(date+'T00:00:00');
+  var days=[]; for(var i=1;i<=HABIT_PAST_DAYS;i++){ var d=new Date(); d.setDate(d.getDate()-i); days.push(d); }
+  var log=logForDate(date);
+  var h='<div class="habitPast" id="habitPast"><div class="panelHead"><b>📅 '+esc(t('Mark an earlier day'))+'</b>'+
+    '<button class="linkbtn inline" id="habitPastClose">'+esc(t('Done'))+'</button></div>'+
+    '<div class="habitPastDays">'+days.map(function(d, i){
+      var ds=fmtD(d);
+      return '<button class="catChip'+(ds===date?' on':'')+'" data-habitday="'+ds+'" aria-pressed="'+(ds===date?'true':'false')+'">'+
+        esc(i===0 ? t('Yesterday') : t(DAY_SHORT[d.getDay()])+' '+d.getDate())+'</button>';
+    }).join('')+'</div>';
+  var list=myHabits().filter(function(hb){ return habitDue(hb, sel); });
+  if(!list.length) return h+'<p class="pmeta" style="margin:8px 0 0">'+esc(t('Nothing was due that day.'))+'</p></div>';
+  h+='<div class="habitGrid">'+list.map(function(hb){
+    var meta=habitMeta(hb), on=!!(log && didHabit(log, hb.id));
+    var sub = hb.perWeek ? '<span class="hRun'+(habitWeekMet(hb, sel)?' met':'')+'">'+esc(gpT('{n} of {total} that week',{n:habitWeekCount(hb, sel), total:hb.perWeek}))+'</span>' : '<span class="hRun">&nbsp;</span>';
+    return '<button class="habitBtn'+(on?' on':'')+'" data-habitpast="'+esc(hb.id)+'">'+
+      '<span class="hIcon">'+esc(meta.icon)+'</span><span class="hLabel">'+esc(t(meta.label))+'</span>'+sub+'</button>';
+  }).join('')+'</div><p class="pmeta" style="margin:6px 0 0">'+esc(t('Tap what you did that day. It counts toward your streaks and that week’s total.'))+'</p></div>';
   return h;
 }
 
