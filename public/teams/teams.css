@@ -2634,3 +2634,8 @@ body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
 @media (prefers-reduced-motion: reduce){ .khKiri, .khKiri.happy, .khKiri.sad, .khStatN.hot, .khCard, .khCard.flipped, .khOpt, .khOpt.right, .khTrophy, .khCombo, .khStreak, .khBadge.on .khBadgeIc { animation:none; } .khRing, .khBar div { transition:none; } }
 .khStreak { color:var(--amber); }
 .khMastered { margin:10px 0 0; font-weight:700; color:var(--good); }
+/* The first screen rises into place as the splash fades off it (Nov 2026). Opacity and a
+   small lift only — no change of size, so nothing below it moves. */
+#main.gpEnter { animation:gpEnter .42s cubic-bezier(.2,.8,.2,1) backwards; }   /* never left applied: a transform on #main would make it the box that position:fixed screens (the Library reader, sheets) are placed in — the class goes when it ends (render) */
+@keyframes gpEnter { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce){ #main.gpEnter { animation:none; } }

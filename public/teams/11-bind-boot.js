@@ -2009,7 +2009,10 @@ function gpVerInit_(){
       });
     }).catch(function(){});
   } catch(e){}
-  setTimeout(function(){ gpVerSig_().then(function(sig){ if(!gpVerBase) gpVerBase=sig; }, function(){}); }, 1500);
+  /* not while the page is still loading: on a slow connection two dozen HEADs would queue beside the
+     fresh boot. A second after it has landed (S.bootStale over, the person known), or 6s at most. */
+  var waited=0, go=function(){ gpVerSig_().then(function(sig){ if(!gpVerBase) gpVerBase=sig; }, function(){}); };
+  (function wait(){ if((!S.bootStale && S.me) || waited>=6000) setTimeout(go, 1000); else { waited+=300; setTimeout(wait, 300); } })();
 }
 function gpNewVersion_(){
   var check=gpVerSig_().then(function(sig){

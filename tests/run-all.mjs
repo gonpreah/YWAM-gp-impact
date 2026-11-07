@@ -140,6 +140,7 @@ const BROWSER = [
   'test-groups-ui.mjs',  // Arrivals & departures: the invite link through to a sign-up, archiving several with a confirm
   'test-loose-ends-ui.mjs',  // Admin → Loose ends: each list, taps through, the other campus, before 30 days of counting
   'test-fast-open-ui.mjs',  // the kept copy draws at once, calls held until the fresh boot, a refused PIN
+  'test-load-fast-ui.mjs',   // files named by version (stamp-assets) and kept by sw.js: a reopen fetches none it has; a release only what changed; the card eases, no jump
   'test-offline-open-ui.mjs',  // opening with no connection: the kept page and boot, ministry numbers queued and merged
   'test-backup-real.mjs',  // the backup against the real @netlify/blobs (needs npm install; no browser)
   'test-backup-ui.mjs',  // Admin home's "Last backup", the bell when a night is missed

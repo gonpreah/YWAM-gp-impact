@@ -51,8 +51,39 @@ self.addEventListener('fetch', function (e) {
   var url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.indexOf('/.netlify/') === 0) return;
+  if (/^[0-9a-f]{12}$/.test(url.searchParams.get('v') || '') && /\.(js|css|woff2)$/.test(url.pathname)) { e.respondWith(versioned_(req, url)); return; }
   e.respondWith(networkFirst_(req, e));
 });
+
+/* A file named with its version (Nov 2026). At deploy, scripts/stamp-assets.mjs rewrites
+   teams.html so each script, the stylesheet and the fonts are asked for as
+   `file?v=<hash of its contents>` — a name that can never mean other contents. So the
+   first time a version is asked for it is fetched and kept, and from then on it is served
+   from here at once, with no network on the way in: an open waits on the network for the
+   page alone (still network first, above), not for twenty-odd files that hadn't changed.
+   A change to a file is a new hash in the new page, so the new page asks for it. Kept in
+   their own cache, GP_FILES, which a SHELL bump leaves alone (unchanged files aren't
+   downloaded again); keeping a new version of a file drops its older ones. With no
+   network and no copy of this version, any copy of the file will do. */
+var GP_FILES = 'gp-files';
+function versioned_(req, url) {
+  return caches.open(GP_FILES).then(function (c) {
+    return c.match(req).then(function (hit) {
+      if (hit) return hit;
+      return fetch(req).then(function (res) {
+        if (res && res.ok && res.type === 'basic') {
+          var copy = res.clone();
+          c.put(req, copy).then(function () { return c.keys(); }).then(function (keys) {
+            keys.forEach(function (k) { var u = new URL(k.url); if (u.pathname === url.pathname && u.search !== url.search) c.delete(k); });
+          }).catch(function () {});
+        }
+        return res;
+      }, function () {
+        return caches.match(req, { ignoreSearch: true }).then(function (old) { return old || Response.error(); });
+      });
+    });
+  });
+}
 
 function networkFirst_(req, e) {
   /* ignoreSearch: teams.html?reg=1 and teams.html are the same page offline */

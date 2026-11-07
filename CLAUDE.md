@@ -1978,9 +1978,24 @@ themselves). Long lists show five and fold the rest.
   worker serves a page from its kept copy it leaves `served-from-cache` in the
   `gp-meta` cache; that page's first pull that reaches the server reloads. No ETag or no
   network → no reload, the data still refreshes. tests/test-pull-update-ui.mjs.
-- **sw.js is network first, always.** A push to main is live at once, and a phone
-  running yesterday's page against today's server is worse than a slow load. Pages
-  and scripts come from the network; the kept copy is used only when the network
+- **The files a page loads are named by version, and kept** (Nov 2026, Uriah: "when the app
+  loads, it's getting a little slow"). At deploy, netlify.toml's build command runs
+  `scripts/stamp-assets.mjs`: in the deployed teams.html every `<script src>`, the
+  stylesheet and every `fonts/….woff2` (preload links and @font-face alike — one name each,
+  or a font loads twice) becomes `file?v=<first 12 hex of the sha256 of its contents>`. The
+  repository's teams.html stays plain (don't commit a stamped one; the script won't stamp
+  twice). sw.js's `versioned_` keeps a `?v=` file in its own cache, `gp-files` (a SHELL
+  bump leaves it), the first time it is asked for, then serves it with no network at all;
+  keeping a new version of a file drops its older ones; offline with no copy of that
+  version, any copy of the file will do. So an open waits on the network for the page
+  alone, and a release costs each phone only the files that changed. Nothing can be stale
+  — the version is the content, and the page that names it is still network first. The
+  script never fails a deploy: on any error teams.html is left as it was (the old, slower
+  way). tests/test-load-fast-ui.mjs. Files loaded later by code (library.js, khmer-vocab.js
+  …) are not stamped and stay network first.
+- **sw.js is network first for everything else.** A push to main is live at once, and a
+  phone running yesterday's page against today's server is worse than a slow load. Pages
+  and unversioned scripts come from the network; the kept copy is used only when the network
   fails or takes over 4 seconds (`NET_WAIT_MS`), and a late network answer still
   refreshes the copy. Only same-origin GETs: the API (a POST), `/.netlify/` and Google
   Fonts are never touched. Bump `SHELL` when `PRECACHE` changes — and add any new
@@ -2001,7 +2016,13 @@ themselves). Long lists show five and fold the rest.
   does not queue: its numbers add up, and replaying one twice would double it.
 - **The copy draws first on every open,** not only offline. With a remembered session
   and a copy for that user, `boot()` applies it at once with `S.bootStale` (a thin
-  "Updating…" bar) and the fresh boot replaces it (`gpBootFresh_`). While stale,
+  "Updating…" bar) and the fresh boot replaces it (`gpBootFresh_`). If that changes My Home's card's
+  height (a GP Tasks line, a chore, goals the copy didn't have), the card eases to its new
+  size (`gpEaseHeight_`; a redraw mid-way — the held calls answering — carries on from where
+  it had got to, `gpEaseResume_` from render) instead of jumping. The "is there a new
+  version" HEADs (`gpVerInit_`) wait until the fresh boot has landed (or 6s), so they don't
+  queue beside it on a slow connection. The first screen rises into place as the splash
+  fades off it (`#main.gpEnter`, opacity and a small lift — no size change). While stale,
   **`run()` holds every call but `getMyBoot`** (`_gpHeld`) and sends them in order once
   the fresh boot lands — so nothing is saved against the copy — or, if the boot fails,
   releases them into the offline handling; a refused PIN drops them unsent.

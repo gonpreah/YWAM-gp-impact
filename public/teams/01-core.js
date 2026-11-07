@@ -579,10 +579,46 @@ function gpReleaseHeld_(){
   held.forEach(function(c){ run(c[0], c[1], c[2], c[3]); });
 }
 function gpBootFresh_(d){
+  /* the copy on screen gives way to the fresh page without a jump (Nov 2026, Uriah: the card
+     "changes sizes a little bit … an awkward plop every time you open it"): whatever the fresh
+     data adds to or takes from My Home's card — a chore this week, a goal, a GP Tasks line —
+     the card eases to its new size instead of snapping */
+  var hero=document.querySelector('#main .hero'), from=hero ? hero.getBoundingClientRect().height : 0;
   S.bootStale=false; S.offlineSince=null;
   S.me = d.staff; S.profile = d.profile;
   applyBoot(d);
+  if(from) gpEaseHeight_(document.querySelector('#main .hero'), from);
   gpReleaseHeld_();
+}
+/* My Home's card, drawn anew at a different height: shown growing (or shrinking) from the old
+   one. The answers to calls held while the copy was up arrive right after and redraw the page,
+   card and all — so a redraw in the middle carries the ease on from where it had got to
+   (gpEaseResume_, from render), rather than snapping to the end. */
+var _gpEase=null;
+function gpEaseOut_(k){ return 1-Math.pow(1-Math.min(1, Math.max(0, k)), 3); }
+function gpEaseRun_(el, from, dur){
+  var to=el.getBoundingClientRect().height;
+  if(Math.abs(to-from)<2){ _gpEase=null; return; }
+  el.style.overflow='hidden';
+  _gpEase={ from:from, to:to, t0:performance.now(), dur:dur };
+  var a=el.animate([{ height:from+'px' }, { height:to+'px' }], { duration:dur, easing:'cubic-bezier(.33,1,.68,1)' });   // ≈ gpEaseOut_
+  a.onfinish=function(){ el.style.overflow=''; if(_gpEase && performance.now()-_gpEase.t0>=_gpEase.dur-20) _gpEase=null; };
+  a.oncancel=function(){ el.style.overflow=''; };
+}
+function gpEaseHeight_(el, from){
+  try {
+    if(!el || !el.animate || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    var to=el.getBoundingClientRect().height;
+    gpEaseRun_(el, from, Math.min(460, 240+Math.abs(to-from)*2));
+  } catch(e){}
+}
+function gpEaseResume_(){
+  try {
+    var e=_gpEase; if(!e) return;
+    var k=(performance.now()-e.t0)/e.dur; if(k>=1){ _gpEase=null; return; }
+    var el=document.querySelector('#main .hero'); if(!el || !el.animate){ _gpEase=null; return; }
+    gpEaseRun_(el, e.from+(e.to-e.from)*gpEaseOut_(k), Math.max(120, e.dur*(1-k)));
+  } catch(x){ _gpEase=null; }
 }
 function gpStaleBarHtml_(){ return S.bootStale ? '<div class="staleBar" id="staleBar"><span>'+esc(t('Updating…'))+'</span></div>' : ''; }
 
@@ -879,7 +915,12 @@ function render(){
      week — it is a real screen, so the splash has done its job. Lifting it here
      rather than on a timer is what makes the launch read as splash-then-profile
      instead of splash-then-pause-then-profile. */
-  if(window.gpSplashDone) window.gpSplashDone();
+  if(window.gpSplashDone && document.getElementById('splash')){
+    window.gpSplashDone();
+    /* the page rises into place as the splash fades off it — once, on the first screen */
+    var mn=document.getElementById('main');
+    if(mn){ mn.classList.add('gpEnter'); var off=function(){ mn.classList.remove('gpEnter'); }; mn.addEventListener('animationend', off, { once:true }); setTimeout(off, 700); }
+  }
   // Whatever just changed S.base — a fresh boot, a pull-to-refresh, an OKR
   // save that came back with the whole getData payload — this is the one
   // place every one of those paths ends up before anything renders, so it's
@@ -992,6 +1033,7 @@ function render(){
   m.classList.toggle('wide', S.view==='hosp' || (S.view==='ministry' && S.mmTab!=='okr' && !!S.leadShown));
   if(S.view!==lastRenderedView){ window.scrollTo(0,0); lastRenderedView=S.view; }
   bind();
+  gpEaseResume_();
 }
 
 function greeting(){
