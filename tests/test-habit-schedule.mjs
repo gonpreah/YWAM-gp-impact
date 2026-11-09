@@ -226,6 +226,10 @@ const TICKED_TODAY = thisWk === NOW;
 
 /* ---------- 3. marking an earlier day (Andrew: "for those who forgot to click the button") ---------- */
 {
+  /* Bible reading back to every day: the picker above set it to weekdays, and the
+     checks below expect it three days ago and yesterday — which are a weekend day
+     whenever today is Sunday to Wednesday. */
+  mem.staff[0].habits = mem.staff[0].habits.map(h => h.id === 'bible' ? { id: 'bible', mentorVisible: h.mentorVisible } : h);
   const ctx = await browser.newContext({ ...devices['iPhone 13'], timezoneId: 'Asia/Phnom_Penh' });
   const page = await ctx.newPage();
   page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
