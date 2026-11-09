@@ -946,6 +946,13 @@ it is set), the tile is on the card every day to mark as you go, shows "n of N t
 as done for the day from then on (`habitDoneToday` — the card's a/b and the hero's Habits Today
 both use it), and its streak is weeks in a row that reached the number (`habitWeekStreak_`;
 "🔥 n wk" on the tile, "best n weeks" in Streaks; the hero's best-streak days ignore it).
+**Mark an earlier day** (Andrew, Oct 2026: "for those who forgot to click the button"): under the
+tiles, "📅 Forgot one? Mark an earlier day" (`#habitPastOpen`, `S.habitPast`, `habitPastHtml_`) opens the last
+`HABIT_PAST_DAYS` (7) days as chips (`[data-habitday]`, yesterday first) and that day's due habits as tiles
+(`[data-habitpast]`, times-a-week ones with "n of N that week"); a tap saves that day's row through
+`saveDaily` (`togglePastHabit` / `flushPastHabits_`, one day at a time, unanswered taps in `_habitPast.local`
+laid back over any answer). Streaks and week counts read it like any tick. `saveDaily` now refuses a
+malformed date or one after tomorrow on Cambodia's calendar (`habitDayOk_`, `bad_date`; students too).
 Stepper `[data-hpweek="id|±1"]`, preset `[data-hpdays="id|perweek"]` starts at 3. Ticking a tile pops confetti (`gpConfetti`, skipped under
 prefers-reduced-motion). `habitMeta(hb)` takes the row (or an id) so custom labels show.
 tests/test-habit-schedule.mjs covers the server rules and the page.
@@ -1320,7 +1327,7 @@ forms, documents and references follow.
   there is none); opening SR Hospitality (`getHospitality`) catches up teams booked before.
   The portal shows "🛏 12 beds · dates" under the ticked step (`roomsLine_`), staff see the same
   in Team steps. Students and other single applicants have no booking link yet.
-- **E-visa how-to and supporting documents (Oct 2026)**: once a team's letter of invitation is
+- **E-visa how-to and supporting documents (Oct 2026)**: Preparing to come (`VISA_PREP`) says to print colour copies of the letter of invitation (2) and of all the supporting documents and bring them (Andrew, Oct 2026). Once a team's letter of invitation is
   uploaded (or "Letter of invitation sent" is ticked — `visaOpen_` in api.js, `app.visaOpen`), a
   drop-down **How to apply for your e-visa online** (`visaHowHtml_`, `#visaHow`) opens under the
   e-visa step in Where you are: the letter (`data-docopen`), the supporting documents
@@ -1337,6 +1344,17 @@ forms, documents and references follow.
   button to Documents. **Your team members** and **Documents** are folding cards
   (`foldCardHtml_`, `P.fold`): members open only while empty, Documents only while something is
   missing.
+- **Additional documents for the e-visa (Oct 2026, Andrew: India and other nations need more)**: on a
+  record's Documents tab, the Visa part (teams too now) has **＋ Needs additional documents for the e-visa**
+  (`#visaExtraOn`, `visaExtraStaffHtml_`) → `portalSetVisaFlags(…, {extraDocs, extraNote})` (logged; refused
+  `no_visa` for someone from Cambodia; the note, ≤600, says what they need). `docKindsFor_` then adds kind
+  `visaextra` (`VISA_EXTRA_KIND`, `visa: true` — kept while files are in it, even once off), and "How to apply
+  for your e-visa online" gets a numbered **Additional documents** part (`visaExtraHowHtml_`, `#visaExtraHow`:
+  the note, the files, Upload) and the step "Attach your additional documents too."; the applicant's
+  Documents card leaves `visa` kinds out. **Staff only**: `uofnNoteHtml_` (`[data-uofnnote]`, also
+  `#uofnNote` on Overview) says to send a copy of the letter of invitation to the "UofN Invitation Letters"
+  Telegram group chat, since the government may call them. It is page text drawn only on the staff record,
+  never in `portalAppOut_` or the 👁 view. tests: test-portal.mjs, test-portal-page.mjs.
 - **Call notes (teams, Oct 2026)**: a 📞 Call notes tab on team records (`panelCallsHtml_`,
   `bindCalls_`, draft in `P.call`) for what was said on calls with the leaders: date, who was on
   the call (starts as the leader), notes (≤5000, line breaks kept), newest first. Stored as
@@ -1960,9 +1978,24 @@ themselves). Long lists show five and fold the rest.
   worker serves a page from its kept copy it leaves `served-from-cache` in the
   `gp-meta` cache; that page's first pull that reaches the server reloads. No ETag or no
   network → no reload, the data still refreshes. tests/test-pull-update-ui.mjs.
-- **sw.js is network first, always.** A push to main is live at once, and a phone
-  running yesterday's page against today's server is worse than a slow load. Pages
-  and scripts come from the network; the kept copy is used only when the network
+- **The files a page loads are named by version, and kept** (Nov 2026, Uriah: "when the app
+  loads, it's getting a little slow"). At deploy, netlify.toml's build command runs
+  `scripts/stamp-assets.mjs`: in the deployed teams.html every `<script src>`, the
+  stylesheet and every `fonts/….woff2` (preload links and @font-face alike — one name each,
+  or a font loads twice) becomes `file?v=<first 12 hex of the sha256 of its contents>`. The
+  repository's teams.html stays plain (don't commit a stamped one; the script won't stamp
+  twice). sw.js's `versioned_` keeps a `?v=` file in its own cache, `gp-files` (a SHELL
+  bump leaves it), the first time it is asked for, then serves it with no network at all;
+  keeping a new version of a file drops its older ones; offline with no copy of that
+  version, any copy of the file will do. So an open waits on the network for the page
+  alone, and a release costs each phone only the files that changed. Nothing can be stale
+  — the version is the content, and the page that names it is still network first. The
+  script never fails a deploy: on any error teams.html is left as it was (the old, slower
+  way). tests/test-load-fast-ui.mjs. Files loaded later by code (library.js, khmer-vocab.js
+  …) are not stamped and stay network first.
+- **sw.js is network first for everything else.** A push to main is live at once, and a
+  phone running yesterday's page against today's server is worse than a slow load. Pages
+  and unversioned scripts come from the network; the kept copy is used only when the network
   fails or takes over 4 seconds (`NET_WAIT_MS`), and a late network answer still
   refreshes the copy. Only same-origin GETs: the API (a POST), `/.netlify/` and Google
   Fonts are never touched. Bump `SHELL` when `PRECACHE` changes — and add any new
@@ -1983,7 +2016,13 @@ themselves). Long lists show five and fold the rest.
   does not queue: its numbers add up, and replaying one twice would double it.
 - **The copy draws first on every open,** not only offline. With a remembered session
   and a copy for that user, `boot()` applies it at once with `S.bootStale` (a thin
-  "Updating…" bar) and the fresh boot replaces it (`gpBootFresh_`). While stale,
+  "Updating…" bar) and the fresh boot replaces it (`gpBootFresh_`). If that changes My Home's card's
+  height (a GP Tasks line, a chore, goals the copy didn't have), the card eases to its new
+  size (`gpEaseHeight_`; a redraw mid-way — the held calls answering — carries on from where
+  it had got to, `gpEaseResume_` from render) instead of jumping. The "is there a new
+  version" HEADs (`gpVerInit_`) wait until the fresh boot has landed (or 6s), so they don't
+  queue beside it on a slow connection. The first screen rises into place as the splash
+  fades off it (`#main.gpEnter`, opacity and a small lift — no size change). While stale,
   **`run()` holds every call but `getMyBoot`** (`_gpHeld`) and sends them in order once
   the fresh boot lands — so nothing is saved against the copy — or, if the boot fails,
   releases them into the offline handling; a refused PIN drops them unsent.
@@ -2916,6 +2955,46 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   from the KBC book — written for YWAM GP, Khmer and readings unreviewed (docs/khmer-needed.md §78);
   their hand readings sit in `OVERRIDES` in scripts/khmer-translit.mjs. The Learn Khmer test holds the
   order and the 39 + 27.
+- **Grammar** (Oct 2026, Andrew: "two separate areas, one for vocabulary, and one for grammar and sentence
+  structure like past present future and continuous"): a **Vocabulary | Grammar** switch under "I'm
+  learning" (`[data-kharea]`, `S.kh.area`, kept in `gp-kh-area`). The lessons are `public/khmer-grammar.js`
+  (`GP_KHMER_GRAMMAR.lessons`, loaded on demand by `khGLoad_`, in sw.js's PRECACHE, SHELL v19): ten — word
+  order, describing words, happening now (កំពុង), the past (បាន / ហើយ), the future (នឹង), saying no
+  (មិន…ទេ), yes/no questions, question words, want/can/must, ever/never. Each has `title`, `idea`, `rule`
+  (for someone learning Khmer) and `ruleEn` (learning English), `pattern` / `patternEn`, `key` / `keyEn`
+  (the words it is about, marked), `extra` / `extraEn` (one tile that does not belong) and examples
+  `{en, enT, km:[words], tl:[readings]}`. A lesson page (`khGLessonHtml_`) shows how it works, the pattern
+  and the sentences with readings and 🔊; **Build the sentences** (`S.kh.gb`, `khGBuildHtml_`) asks each one
+  in the language you know, the other's words as shuffled tiles (`[data-khgtile]`, take one back with
+  `[data-khgans]`), Check / Clear / Show me the answer; 10 XP a right sentence, the finish bonus, the
+  **Sentence builder** badge for a finished lesson. Built right is kept in `gp-kh-gram` ({id: {ok, done}}).
+  The `tl` arrays are written by scripts/khmer-translit.mjs (it rewrites both files; hand readings for the
+  grammar words are in its OVERRIDES); audio.js and scripts/record-khmer-vocab.mjs also record each whole
+  example sentence (`grammarSentences`; the file rides along in netlify.toml's `included_files`). Written for
+  YWAM GP, not from the KBC book; the Khmer is unreviewed (docs/khmer-needed.md §79).
+- **Level test** (Oct 2026, Andrew: "a language test, to test the proficiency level of Khmer and/or
+  English … to check and gauge where we are all at", reading and the letters optional): the third area
+  (`[data-kharea="test"]`, `S.kh.lt`), in the language "I'm learning" is on. Part 1 — six "I can…"
+  statements to tick (`KH_CAN`, `[data-khcan]`; a phone can't hear speaking); part 2 — 15 words, five from
+  each level of the book (`khTestWordQs_`); part 3 — 8 sentences from the grammar lessons, each against
+  three nearly right (`khTestNear_`: the lesson's wrong word, two words swapped, a key word moved — never a
+  time word or "already", `KH_FLOAT`, since those can move and stay right; a short sentence is filled from
+  the lesson's others); then, optional, reading — letters and words in the script with no reading under
+  them (`khTestScriptQs_`; for English, letters and English words with no Khmer). Khmer answers show their
+  reading on top, so parts 2–3 need no script. Every question has "I don't know yet" (`#khTestIdk`).
+  `khTestScore_`: the words (1/2/3 points by level) and sentences (2–3) make 75%, the "I can"s 25% → one of
+  `KH_LEVELS` (Just starting · Beginner · Getting around · Conversational · Confident); reading is beside
+  the level as none / some / reads, never in it. The result names what to learn next (the levels whose
+  words were missed, the lessons whose sentence was — `[data-khtestlevel]` / `[data-khtestlesson]`).
+  **Server** (api.js "Language level test"): `saveLangLevel(user, pin, lang, result)` cleans it
+  (`cleanLangResult_`: a known level, numbers in range, nothing extra) onto the person's own record
+  (`langTests: {km:[…], en:[…]}`, ten kept); the boot's staff card carries their own `langLevel`
+  (`langMine_`: latest and history) and `seeLangLevels`. **`getLangLevels`** — each person's latest on the
+  campus, for its Campus Leadership, HR and admins only (`canSeeLangLevels_`; an admin may pass another
+  campus): "See everyone's levels" (`S.kh.team`, `khTestTeamHtml_`) — how many at each level, Khmer and
+  English, then each person. Nothing of it is on the roster or a profile. The test page says who sees the
+  level before it starts. Khmer unreviewed (docs/khmer-needed.md §80). tests/test-lang-test.mjs (server)
+  and the Level test part of tests/test-khmer-learn-ui.mjs.
 - **Learning Khmer or English** (`[data-khlearn]`, `S.kh.front` = 'en' learning Khmer, 'km' learning
   English, kept in `gp-kh-front`; `khLearningEn_`, `khTitle_`): the switch on the home decides which side
   a card and a quiz ask with and which language 🔊 reads; the page is titled Learn English then.

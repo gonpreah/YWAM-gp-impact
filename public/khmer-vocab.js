@@ -69,7 +69,7 @@ var GP_KHMER_VOCAB = {
       ['Time', 'ពេលវេលា', '', 'pel-ve-lie'], ['Before', 'ពីមុន', '', 'pi-mun'], ['Now', 'ឥឡូវនេះ', '', 'eylov nih'], ['Later', 'ពេលក្រោយ', '', 'pel-kraoy'],
       ['Yesterday', 'ម្សិលមិញ', '', 'msel menh'], ['Today', 'ថ្ងៃនេះ', '', 'thngai nih'], ['Tomorrow', 'ថ្ងៃស្អែក', '', 'thngai sa-aek'], ['Past', 'អតីតកាល', '', 'a-teyt-kal'],
       ['Present', 'បច្ចុប្បន្ន', '', 'bach-chop-nno'], ['Future', 'អនាគត', '', 'a-niek-ta'], ['Second', 'វិនាទី', '', 'vi-nie-ti'], ['Minute', 'នាទី', '', 'nie-ti'],
-      ['Hour', 'ម៉ោង', '', 'maong'], ['Day', 'ថ្ងៃ', '', 'thngai'], ['Week', 'សប្តាហ៍ / អាទិត្យ', '', 'sap-ta / a-tit'], ['Weekend', 'ចុងសប្តាហ៍', '', 'chong-sap-ta'],
+      ['Hour', 'ម៉ោង', '', 'maong'], ['Day', 'ថ្ងៃ', '', 'thngai'], ['Week', 'សប្តាហ៍ / អាទិត្យ', '', 'sap-da / a-tit'], ['Weekend', 'ចុងសប្តាហ៍', '', 'chong-sap-da'],
       ['Month', 'ខែ', '', 'khae'], ['Year', 'ឆ្នាំ', '', 'chhnam'], ['Monday', 'ថ្ងៃច័ន្ទ', '', 'thngai-chan'], ['Tuesday', 'ថ្ងៃអង្គារ', '', 'thngai-ang-kie'],
       ['Wednesday', 'ថ្ងៃពុធ', '', 'thngai-put'], ['Thursday', 'ថ្ងៃព្រហស្បតិ៍', '', 'thngai-proh-sba-te'], ['Friday', 'ថ្ងៃសុក្រ', '', 'thngai-sok'],
       ['Saturday', 'ថ្ងៃសៅរ៍', '', 'thngai-sau'], ['Sunday', 'ថ្ងៃអាទិត្យ', '', 'thngai-a-tit'], ['January', 'ខែមករា', 'ខែ១', 'khae-mok-rie'],
@@ -77,7 +77,7 @@ var GP_KHMER_VOCAB = {
       ['May', 'ខែឧសភា', 'ខែ៥', 'khae-o-sa-phie'], ['June', 'ខែមិថុនា', 'ខែ៦', 'khae-mi-tho-nie'], ['July', 'ខែកក្កដា', 'ខែ៧', 'khaek-kka-da'],
       ['August', 'ខែសីហា', 'ខែ៨', 'khae-sey-ha'], ['September', 'ខែកញ្ញា', 'ខែ៩', 'khaek-nhnhie'], ['October', 'ខែតុលា', 'ខែ១០', 'khae-to-lie'],
       ['November', 'ខែវិច្ឆិកា', 'ខែ១១', 'khae-vich-chhe-ka'], ['December', 'ខែធ្នូ', 'ខែ១២', 'khae-thnu'], ['Mostly', 'ភាគច្រើន', '', 'phiek-chraeun'],
-      ['Will (future)', 'នឹង', '', 'nueng'], ['Was (past)', 'បាន', '', 'ban'], ['Is (continuous)', 'កំពុង', '', 'kam-pung'], ['In general', 'ជាទូទៅ', '', 'chie-tu-tov'],
+      ['Will (future)', 'នឹង', '', 'noeng'], ['Was (past)', 'បាន', '', 'ban'], ['Is (continuous)', 'កំពុង', '', 'kam-pung'], ['In general', 'ជាទូទៅ', '', 'chie-tu-tov'],
       ['A moment', 'មួយភ្លែត', '', 'muoy-phlaet'], ['First', 'ដំបូង', '', 'dam-boung'], ['Sometimes', 'ពេលខ្លះ', '', 'pel-khlah'], ['Always', 'តែងតែ', '', 'taeng-tae'],
       ['Never', 'មិនដែល', '', 'min-dael'], ['Constantly', 'រហូត', '', 'ro-hout'], ['Normally', 'ជាធម្មតា', '', 'chiet-mmo-ta'], ['Once in a while', 'ម្តងម្កាល', '', 'mtang-mkal'],
       ['Eternally', 'អស់កល្បជានិច្ច', '', 'ah-kal-chie-nich'], ['Frequently', 'ញឹកញាប់', '', 'nhuek-nhiep'], ['Morning', 'ព្រឹក', '', 'pruek'],
@@ -110,10 +110,10 @@ var GP_KHMER_VOCAB = {
       ['Know (a fact)', 'ដឹង', '', 'deng'], ['Know (a person or place)', 'ស្គាល់', '', 'skoal'], ['Rest', 'សម្រាក', '', 'sam-riek'], ['Help', 'ជួយ', '', 'chuoy'],
       ['Use', 'ប្រើ', '', 'praeu'], ['Eat', 'ហូប', '', 'houp'], ['Sleep', 'គេង', '', 'keng'], ['Study', 'សិក្សា', '', 'sek-sa'],
       ['To be', 'គឺជា / ជា / គឺ', '', 'kue-chie / chie / kue'], ['See', 'ឃើញ', '', 'kheunh'], ['Look', 'មើល', '', 'meul'], ['Hear', 'ឮ', '', 'lue'],
-      ['Listen', 'ស្តាប់', '', 'sdap'], ['Laugh', 'សើច', '', 'saeuch'], ['Need', 'ត្រូវការ', '', 'trouv-ka'], ['Wait', 'រង់ចាំ', '', 'rong-cham'],
+      ['Listen', 'ស្តាប់', '', 'sdap'], ['Laugh', 'សើច', '', 'saeuch'], ['Need', 'ត្រូវការ', '', 'trov-ka'], ['Wait', 'រង់ចាំ', '', 'rong-cham'],
       ['Remind', 'រំលឹក', '', 'rum-luek'], ['Either', 'មួយណាក៏បាន', '', 'muoy-na-kor-ban'], ['Work', 'ធ្វើការ', '', 'thveu-ka'], ['Receive', 'ទទួល', '', 'to-tuol'],
       ['Say', 'និយាយ', '', 'niyeay'], ['Read', 'អាន', '', 'an'], ['Make', 'ធ្វើ', '', 'thveu'], ['Close / turn off', 'បិទ', '', 'bet'], ['Open / turn on', 'បើក', '', 'baeuk'],
-      ['Cry', 'យំ', '', 'yum'], ['Search', 'ស្វែងរក', '', 'svaeng-rok'], ['Remember', 'ចងចាំ', '', 'chang-cham'], ['Have to', 'ត្រូវតែ', '', 'trouv-tae'],
+      ['Cry', 'យំ', '', 'yum'], ['Search', 'ស្វែងរក', '', 'svaeng-rok'], ['Remember', 'ចងចាំ', '', 'chang-cham'], ['Have to', 'ត្រូវតែ', '', 'trov-tae'],
       ['Both', 'ទាំងពីរ', '', 'toamng-pi'], ['Walk', 'ដើរ', '', 'daeu'], ['Run', 'រត់', '', 'rot'], ['Sit', 'អង្គុយ', '', 'angkuy'], ['Stand', 'ឈរ', '', 'chho'],
       ['Jump', 'លោត', '', 'lout'], ['Dance', 'រាំ', '', 'roam'], ['Bite', 'ខាំ', '', 'kham'], ['Tell', 'ប្រាប់', '', 'prap'], ['Forget', 'ភ្លេច', '', 'phlech'],
       ['Explain', 'ពន្យល់', '', 'pon-lo'], ['Describe', 'ពិពណ៌នា', '', 'pip-na-nie']
@@ -123,7 +123,7 @@ var GP_KHMER_VOCAB = {
       ['When', 'ពេល', '', 'pel'], ['Because', 'ពីព្រោះ / ព្រោះ / ដោយសារ', '', 'pi-pruoh / pruoh / daoy-sa'], ['For', 'សម្រាប់', '', 'sam-riep'], ['About', 'អំពី', '', 'am-pi'],
       ['And', 'ហើយនិង / ហើយ / និង', '', 'haeuy-ning / haeuy / ning'], ['Until', 'រហូតដល់', '', 'ro-hout-dal'], ['With', 'ជាមួយ', '', 'chie-muoy'],
       ['After', 'បន្ទាប់ពី', '', 'ban-tiep-pi'], ['Then', 'បន្ទាប់មក', '', 'ban-tiep-mok'], ['Since', 'ចាប់តាំងពី', '', 'chap-tamng-pi'], ['Should', 'គួរ', '', 'kuo'],
-      ['Ever', 'ធ្លាប់', '', 'thliep'], ['In order to', 'ដើម្បី', '', 'daeum-bey'], ['But', 'ប៉ុន្តែ', '', 'pon-tae'], ['Even though', 'ទោះបីជា', '', 'tuoh-bei-chie'],
+      ['Ever', 'ធ្លាប់', '', 'thloap'], ['In order to', 'ដើម្បី', '', 'daeum-bey'], ['But', 'ប៉ុន្តែ', '', 'pon-tae'], ['Even though', 'ទោះបីជា', '', 'tuoh-bei-chie'],
       ['Like (similar to)', 'ដូចជា', '', 'douch-chie'], ['Maybe', 'ប្រហែល', '', 'pra-hael'], ['For example', 'ឧទាហរណ៍', '', 'o-tieh-ro'],
       ['Especially', 'ជាពិសេស', '', 'chie-pi-seih'], ['Too / also', 'ផងដែរ', '', 'phang-dae'], ['Similar', 'ស្រដៀងគ្នា', '', 'sra-dieng-knie'],
       ['Different', 'ខុសគ្នា', '', 'khoh-knie'], ['Same', 'ដូចគ្នា', '', 'douch-knie'], ['More (comparative)', 'ជាង', '', 'chieng'], ['Second', 'ទីពីរ', '', 'ti-pi'],
@@ -135,8 +135,8 @@ var GP_KHMER_VOCAB = {
       ['Who?', 'អ្នកណា? / ណាគេ? / នរណា?', '', 'neak na? / na-ke? / no-na?'], ['Which?', 'មួយណា?', '', 'muoy-na?'], ['How many?', 'ប៉ុន្មាន?', '', 'ponman?'],
       ['How? (how do you do that)', 'ដោយរបៀបណា?', '', 'daoy-ro-biep-na?'], ['How was it?', 'ម៉េចដែរ?', '', 'meich-dae?'],
       ['How is it going?', 'ទៅជាយ៉ាងណា?', '', 'tov-chie-yang-na?'], ['What? (open question)', 'អ្វីខ្លះ?', '', 'avei-khlah?'],
-      ['Can…?', 'អាច…បានអត់ / ទេ?', '', 'ach-…-ban-at / te?'], ['Can you help me?', 'តើបងអាចជួយខ្ញុំបានអត់?', '', 'taeup-ngo-ach-chuoy-khnhom-ban-at?'],
-      ['Do you like this place?', 'តើបងចូលចិត្តកន្លែងនេះអត់?', '', 'taeup-ngo-choul-chet-kan-laeng-nih-ta?'], ['What time is it?', 'តើម៉ោងប៉ុន្មាន?', '', 'taeu-maong-ponman?'],
+      ['Can…?', 'អាច…បានអត់ / ទេ?', '', 'ach-…-ban-ot / te?'], ['Can you help me?', 'តើបងអាចជួយខ្ញុំបានអត់?', '', 'taeup-ngo-ach-chuoy-khnhom-ban-ot?'],
+      ['Do you like this place?', 'តើបងចូលចិត្តកន្លែងនេះអត់?', '', 'taeup-ngo-choul-chet-kan-laeng-nih-ot?'], ['What time is it?', 'តើម៉ោងប៉ុន្មាន?', '', 'taeu-maong-ponman?'],
       ['What year?', 'ឆ្នាំណា?', '', 'chhnam-na?'], ['What month?', 'ខែណា?', '', 'khae-na?'], ['What day?', 'ថ្ងៃណា?', '', 'thngai na?'],
       ['How? (which way)', 'របៀបណា?', '', 'ro-biep-na?']
     ] },
@@ -288,8 +288,8 @@ var GP_KHMER_VOCAB = {
     ] },
     { id: 'problems', level: 2, name: 'House & moto problems', words: [
       ['Rent', 'ជួល', '', 'chuol'], ['Problem', 'បញ្ហា', '', 'banh-ha'], ['Water leak', 'លេចទឹក', '', 'lech-tuk'], ['Headlights', 'ភ្លើង', '', 'phleung'],
-      ['Brakes', 'ហ្វ្រាំង', '', 'hvroamng'], ['Doesn\'t work', 'អត់ដំណើរការ', '', 'at-dam-naeu-ka'], ['Landlord', 'ម្ចាស់ផ្ទះ', '', 'mchah-phteah'],
-      ['Won\'t start (moto)', 'ដេរអត់ឆេះ', '', 'dei-at-chheh']
+      ['Brakes', 'ហ្វ្រាំង', '', 'hvroamng'], ['Doesn\'t work', 'អត់ដំណើរការ', '', 'ot-dam-naeu-ka'], ['Landlord', 'ម្ចាស់ផ្ទះ', '', 'mchah-phteah'],
+      ['Won\'t start (moto)', 'ដេរអត់ឆេះ', '', 'dei-ot-chheh']
     ] },
     { id: 'hospital', level: 2, name: 'At the hospital', words: [
       ['Pain', 'ឈឺ', '', 'chheu'], ['Cut', 'កាត់', '', 'kat'], ['Headache', 'ឈឺក្បាល', '', 'chheu-kbal'], ['Symptom', 'អាការៈ', '', 'a-ka-reak'], ['Head', 'ក្បាល', '', 'kbal'],
@@ -348,7 +348,7 @@ var GP_KHMER_VOCAB = {
       ['Place of work', 'កន្លែងធ្វើការ', '', 'kan-laeng-thveu-ka']
     ] },
     { id: 'hobbies', level: 3, name: 'Small talk — hobbies', words: [
-      ['Sports', 'កីឡា', '', 'key-la'], ['Basketball', 'បាល់បោះ', '', 'bal-baoh'], ['Soccer', 'បាល់ទាត់', '', 'bal-tiet'], ['Volleyball', 'បាល់ទះ', '', 'bal-teah'],
+      ['Sports', 'កីឡា', '', 'key-la'], ['Basketball', 'បាល់បោះ', '', 'bal-baoh'], ['Soccer', 'បាល់ទាត់', '', 'bal-toat'], ['Volleyball', 'បាល់ទះ', '', 'bal-teah'],
       ['Swimming', 'ហែលទឹក', '', 'hael-tuk'], ['Exercise', 'ហាត់ប្រាណ', '', 'hat-pran'], ['Art', 'សិល្បៈ', '', 'sel-bak'], ['Dancing', 'រាំ', '', 'roam'],
       ['Photography', 'ថតរូប', '', 'that-rup'], ['Gardening', 'ដាំដំណាំ', '', 'dam-dam-nam'], ['Sewing', 'ដេរខោអាវ', '', 'dei-khao-av'],
       ['Reading', 'អានសៀវភៅ', '', 'an-siev-phov'], ['Watching movies', 'មើលរឿង', '', 'meul-reuang'], ['Listening to music', 'ស្តាប់ចម្រៀង', '', 'sdap-cham-rieng'],
@@ -429,8 +429,8 @@ var GP_KHMER_VOCAB = {
       ['The Trinity', 'ព្រះត្រីឯក', '', 'preah-trey-ae-ka'], ['Apostle', 'សាវ័ក', '', 'sa-voak'], ['Disciple', 'សិស្ស', '', 'seh'],
       ['Born again', 'កើតជាថ្មី', '', 'kaeut-chie-thmey'], ['New life', 'ជីវិតថ្មី', '', 'chi-vit-thmey'], ['Salvation', 'សេចក្តីសង្គ្រោះ', '', 'seich-kteyh-ngkruoh'],
       ['Denomination', 'និកាយ', '', 'ni-kay'], ['Sin', 'អំពើបាប', '', 'am-peu-bap'], ['Confess', 'សារភាព', '', 'sa-phiep'], ['Repent', 'លន់តួ', '', 'lon-tuo'],
-      ['Anger', 'ខឹង', '', 'khoeng'], ['Mercy', 'មេត្តា', '', 'met-ta'], ['Forgiveness', 'អត់ទោស', '', 'at-touh'], ['Soul', 'ព្រលឹង', '', 'pro-lueng'],
-      ['Joy', 'អំណរ', '', 'amn-ro'], ['Love', 'សេចក្តីស្រឡាញ់', '', 'seich-ktey-srolanh'], ['Peace', 'សន្តិភាព', '', 'san-te-phiep'], ['Patience', 'អត់ធ្មត់', '', 'at-thmot'],
+      ['Anger', 'ខឹង', '', 'khoeng'], ['Mercy', 'មេត្តា', '', 'met-ta'], ['Forgiveness', 'អត់ទោស', '', 'ot-touh'], ['Soul', 'ព្រលឹង', '', 'pro-lueng'],
+      ['Joy', 'អំណរ', '', 'amn-ro'], ['Love', 'សេចក្តីស្រឡាញ់', '', 'seich-ktey-srolanh'], ['Peace', 'សន្តិភាព', '', 'san-te-phiep'], ['Patience', 'អត់ធ្មត់', '', 'ot-thmot'],
       ['Kindness', 'ចិត្តល្អ', '', 'chet-la-or'], ['Goodness', 'ចិត្តល្អ', '', 'chet-la-or'], ['Heal', 'ព្យាបាល', '', 'pyie-bal'],
       ['Will / heart of God', 'ព្រះទ័យព្រះ', '', 'preah-toay-preah'], ['Goal', 'គោលដៅ', '', 'ko-lo-dau'], ['Evil', 'ចិត្តអាក្រក់', '', 'chet-ak-ka'],
       ['The enemy', 'សត្រូវ', '', 'sat-ruv'], ['LORD', 'ព្រះអម្ចាស់', '', 'preah-am-chah'], ['Angel', 'ទេវតា', '', 'te-vo-ta'],

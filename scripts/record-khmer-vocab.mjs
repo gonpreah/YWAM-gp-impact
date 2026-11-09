@@ -1,4 +1,5 @@
-/* Records every word of Learn Khmer (public/khmer-vocab.js) with Azure's voices — Sreymom for the
+/* Records every word of Learn Khmer (public/khmer-vocab.js) and every grammar example sentence
+   (public/khmer-grammar.js) with Azure's voices — Sreymom for the
    Khmer, Ava for the English — into the site's 'gp-audio' store, where netlify/functions/audio.js
    serves them (?lang=km&say=<word>). Run by hand, once, and again after words change; a second run
    records only what is missing. Nothing in the app records anything.
@@ -16,7 +17,7 @@ import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { getStore } from '@netlify/blobs';
 import { synthesize, audioConfigured } from '../netlify/functions/library-audio-lib.js';
-import { VOCAB_VOICE, vocabKey, sayOk } from '../netlify/functions/audio.js';
+import { VOCAB_VOICE, vocabKey, sayOk, grammarSentences } from '../netlify/functions/audio.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), opt = (k) => { const i = args.indexOf(k); return i > -1 ? args[i + 1] : null; };
@@ -28,6 +29,8 @@ V.cats.forEach((c) => c.words.forEach((w) => {
   String(w[1]).split(' / ').forEach((k) => { k = k.replace(/◌/g, '').replace(/\s*\(.*\)$/, '').trim(); if (sayOk('km', k)) want.km.add(k); });
   String(w[0]).split(' / ').forEach((e) => { e = e.replace(/\s*\(.*\)$/, '').replace(/\s*·.*$/, '').trim(); if (sayOk('en', e)) want.en.add(e); });
 }));
+/* and the Grammar area's example sentences */
+try { const g = {}; vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'public/khmer-grammar.js'), 'utf8'), g); grammarSentences(g.GP_KHMER_GRAMMAR).forEach((x) => { if (sayOk(x.lang, x.text)) want[x.lang].add(x.text); }); } catch (e) { /* no grammar file */ }
 const langs = only ? [only] : ['km', 'en'];
 let chars = 0; langs.forEach((l) => want[l].forEach((t) => { chars += t.length; }));
 console.log(langs.map((l) => l + ': ' + want[l].size + ' words').join(', ') + ' · ' + chars + ' characters (about $' + (chars / 1e6 * 16).toFixed(2) + ' of Azure time)');

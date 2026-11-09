@@ -12,7 +12,7 @@
    answered from here; nor are Google Fonts (the page has fallbacks).
 
    Bump SHELL when the list changes; old caches are dropped on activate. */
-var SHELL = 'gp-shell-v18';   // v18: Learn Khmer (teams/15-khmer.js, khmer-vocab.js); v17: GP Tasks and the Calendar redone; v16: student preview + student portal; v15: the Calendar (teams/13-calendar.js); v14: GP Tasks (teams/12-tasks.js); v2: the portal is in the shell too; v3: the Library; v4: its Khmer; v5: the letterhead;
+var SHELL = 'gp-shell-v19';   // v19: Learn Khmer's grammar (khmer-grammar.js); v18: Learn Khmer (teams/15-khmer.js, khmer-vocab.js); v17: GP Tasks and the Calendar redone; v16: student preview + student portal; v15: the Calendar (teams/13-calendar.js); v14: GP Tasks (teams/12-tasks.js); v2: the portal is in the shell too; v3: the Library; v4: its Khmer; v5: the letterhead;
                               // v6: the Library's Khmer is kept the first time it's read, not downloaded on install;
                               // v7: the legal documents' Khmer (legal-km.js); v8: teams.html's code in teams/; v9: the dashboard joins it; v10: and goes (numbers are My Ministry's); v11: the finance tool (finance.js, teams/09-finance.js); v12: the app's own fonts (fonts/); v13: 360 reviews (teams/10-review360.js)
 var NET_WAIT_MS = 4000;
@@ -24,7 +24,7 @@ var PRECACHE = [
   'teams.html', 'teams/teams.css', 'teams/01-core.js', 'teams/02-goals-okrs.js', 'teams/03-library-org.js', 'teams/04-ministry-strengths.js', 'teams/05-admin-hr.js', 'teams/06-numbers-contract.js', 'teams/07-health-leave.js', 'teams/08-team-profile.js', 'teams/09-finance.js', 'teams/10-review360.js', 'teams/12-tasks.js', 'teams/13-calendar.js', 'teams/15-khmer.js', 'teams/11-bind-boot.js',
   'manifest.json', 'km.js', 'taxonomy.js', 'rollup.js', 'finance.js', 'logo.js', 'duty.js',
   'jobfocus.js', 'personality.js', 'gpstrengths.js', 'kpiguide.js', 'sr-checkin-history.js',
-  'icon-180.png', 'icon-512.png', 'icon-maskable-512.png', 'ywam-logo.png', 'library.js', 'khmer-vocab.js',
+  'icon-180.png', 'icon-512.png', 'icon-maskable-512.png', 'ywam-logo.png', 'library.js', 'khmer-vocab.js', 'khmer-grammar.js',
   /* the app's own fonts (v12) */
   'fonts/kantumruy-latin.woff2', 'fonts/kantumruy-latin-ext.woff2', 'fonts/kantumruy-khmer.woff2', 'fonts/koulen-latin.woff2', 'fonts/koulen-khmer.woff2',
   /* the YWAM GP Portal installs as its own app (portal-manifest.json) off the same worker */
@@ -51,8 +51,39 @@ self.addEventListener('fetch', function (e) {
   var url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.indexOf('/.netlify/') === 0) return;
+  if (/^[0-9a-f]{12}$/.test(url.searchParams.get('v') || '') && /\.(js|css|woff2)$/.test(url.pathname)) { e.respondWith(versioned_(req, url)); return; }
   e.respondWith(networkFirst_(req, e));
 });
+
+/* A file named with its version (Nov 2026). At deploy, scripts/stamp-assets.mjs rewrites
+   teams.html so each script, the stylesheet and the fonts are asked for as
+   `file?v=<hash of its contents>` — a name that can never mean other contents. So the
+   first time a version is asked for it is fetched and kept, and from then on it is served
+   from here at once, with no network on the way in: an open waits on the network for the
+   page alone (still network first, above), not for twenty-odd files that hadn't changed.
+   A change to a file is a new hash in the new page, so the new page asks for it. Kept in
+   their own cache, GP_FILES, which a SHELL bump leaves alone (unchanged files aren't
+   downloaded again); keeping a new version of a file drops its older ones. With no
+   network and no copy of this version, any copy of the file will do. */
+var GP_FILES = 'gp-files';
+function versioned_(req, url) {
+  return caches.open(GP_FILES).then(function (c) {
+    return c.match(req).then(function (hit) {
+      if (hit) return hit;
+      return fetch(req).then(function (res) {
+        if (res && res.ok && res.type === 'basic') {
+          var copy = res.clone();
+          c.put(req, copy).then(function () { return c.keys(); }).then(function (keys) {
+            keys.forEach(function (k) { var u = new URL(k.url); if (u.pathname === url.pathname && u.search !== url.search) c.delete(k); });
+          }).catch(function () {});
+        }
+        return res;
+      }, function () {
+        return caches.match(req, { ignoreSearch: true }).then(function (old) { return old || Response.error(); });
+      });
+    });
+  });
+}
 
 function networkFirst_(req, e) {
   /* ignoreSearch: teams.html?reg=1 and teams.html are the same page offline */

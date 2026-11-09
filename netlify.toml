@@ -1,7 +1,10 @@
 [build]
   publish = "public"
+  # names each file teams.html loads with its version (?v=<hash>), so sw.js can keep them and an
+  # open waits on the network for the page alone — see scripts/stamp-assets.mjs. Never fails the deploy.
+  command = "node scripts/stamp-assets.mjs"
   functions = "netlify/functions"
 
 [functions]
-  # the Learn Khmer word list rides along with the functions: audio.js records only words from it
-  included_files = ["public/khmer-vocab.js"]
+  # the Learn Khmer words and grammar sentences ride along with the functions: audio.js records only these
+  included_files = ["public/khmer-vocab.js", "public/khmer-grammar.js"]

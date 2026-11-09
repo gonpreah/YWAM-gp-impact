@@ -1260,6 +1260,12 @@ body.libReading nav.bottom { display:none; } body.libReading { overflow:hidden; 
 .hpAdd #habitNewIcon { flex:0 0 52px; width:52px; text-align:center; }
 .hpAdd #habitNewLabel { flex:1; min-width:0; }
 .habitRest { margin:0 0 4px; text-decoration:none; font-size:12.5px; color:var(--muted); }
+/* Mark an earlier day: the last seven days as chips, then that day's habits */
+.habitPastOpen { display:block; margin:2px 0 4px; text-decoration:none; font-size:13px; }
+.habitPast { margin:6px 0 8px; padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:var(--bg); }
+.habitPast .panelHead { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+.habitPastDays { display:flex; gap:6px; overflow-x:auto; touch-action:pan-x pan-y; padding-bottom:4px; margin-bottom:6px; }
+.habitPastDays .catChip { flex:0 0 auto; }
 .habitRestList { margin:2px 0 6px; }
 .habitRestRow { display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-top:1px solid var(--line); font-size:13px; color:var(--muted); }
 .confettiWrap { position:fixed; inset:0; pointer-events:none; z-index:9999; overflow:hidden; }
@@ -2570,6 +2576,66 @@ body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
 .khOpt.right { animation:khPulse .45s ease-out; } .khOpt.wrong { animation:khShake .3s; }
 @keyframes khPulse { 0% { transform:scale(1); } 40% { transform:scale(1.04); } 100% { transform:scale(1); } }
 .khTile:active { transform:scale(.95); }
+/* Learn Khmer — Grammar */
+.khArea { margin-top:-4px; } .khArea .gtTab { padding:7px 12px; font-weight:700; }
+.khGList { display:flex; flex-direction:column; gap:8px; }
+.khGLessonCard { display:flex; align-items:center; gap:12px; width:100%; margin:0; text-align:left; font:inherit; color:var(--ink); cursor:pointer; }
+.khGLessonCard .khBar { margin:6px 0 0; }
+.khGIc { font-size:26px; flex:0 0 auto; }
+.khGBody { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.khGState { flex:0 0 auto; font-size:13px; color:var(--muted); font-weight:700; }
+.khGLessonCard.done .khGState { color:var(--good); font-size:18px; }
+.khGRule p { line-height:1.55; }
+.khGPattern { background:var(--accentSoft); border:1px solid var(--accentSoftBorder); color:var(--ink); border-radius:10px; padding:8px 12px; font-weight:700; font-size:14.5px; line-height:1.5; }
+.khGEx { padding:10px 0; border-top:1px solid var(--line); }
+.khGEx.ok .khGFrom::before { content:'✓ '; color:var(--good); }
+.khGFrom { font-size:13.5px; color:var(--muted); margin-bottom:4px; }
+.khGTo { display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap; }
+.khGSent { display:flex; flex-wrap:wrap; gap:4px 6px; align-items:flex-start; }
+.khGTok { display:inline-flex; flex-direction:column; align-items:center; padding:1px 4px; border-radius:6px; }
+.khGTok .khKm { font-size:1.25em; } .khGTok .khEn { font-size:16px; font-weight:600; } .khGTok .khTl { font-size:11.5px; }
+.khGTok.key { background:var(--amber); color:var(--amberInk); } .khGTok.key .khTl { color:var(--amberInk); }
+.khGAsk .khGPrompt { margin:6px 0 2px; } .khGAsk .khEn.khGPrompt { font-size:1.3em; }
+.khGAns { min-height:62px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:10px; margin:10px 0; border:2px dashed var(--border2); border-radius:14px; background:var(--surface); }
+.khGAns.right { border-style:solid; border-color:var(--good); background:var(--goodSoft); }
+.khGAns.wrong { border-style:solid; border-color:var(--bad); background:var(--badSoft); }
+.khGPick, .khGTile { display:inline-flex; flex-direction:column; align-items:center; padding:8px 12px; border-radius:12px; border:1.5px solid var(--border2); background:var(--surface); font:inherit; color:var(--ink); cursor:pointer; min-height:44px; justify-content:center; }
+.khGPick { border-color:var(--accent); background:var(--accentSoft); animation:khOptIn .2s ease-out; }
+.khGPick .khKm, .khGTile .khKm { font-size:1.2em; } .khGPick .khTl, .khGTile .khTl { font-size:11px; }
+.khGTiles { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px; justify-content:center; }
+.khGTile.used { opacity:.25; cursor:default; }
+.khGResult { border-radius:12px; padding:10px 12px; margin:0 0 12px; }
+.khGResult.right { background:var(--goodSoft); color:var(--goodInk); }
+.khGResult.wrong { background:var(--badSoft); color:var(--ink); }
+.khGResult .khGTo { margin-top:6px; }
+@media (prefers-reduced-motion: reduce){ .khGPick { animation:none; } }
+/* Learn Khmer — Level test */
+.khArea .gtTab { padding:7px 10px; }
+.khTestCard { text-align:center; }
+.khLvBig { font-size:30px; line-height:1.2; margin:6px 0 2px; } .khLvBig b { font-size:22px; }
+.khLvDots { display:inline-flex; gap:5px; margin-top:4px; } .khLvDots i { width:22px; height:6px; border-radius:3px; background:var(--surface2); } .khLvDots i.on { background:var(--accent); }
+.khTestList { margin:8px 0 10px; padding-left:0; list-style:none; } .khTestList li { padding:4px 0; }
+.khTestShare { background:var(--surface2); border-radius:10px; padding:8px 10px; }
+.khTestHist, .khTeamRow { display:flex; justify-content:space-between; gap:8px; padding:7px 0; border-top:1px solid var(--line); align-items:center; }
+.khCan { display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-top:1px solid var(--line); cursor:pointer; } .khCan input { width:20px; height:20px; margin:2px 0 0; flex:0 0 auto; }
+.khTestLetter { font-size:56px; line-height:1.2; font-weight:700; }
+.khTlTop { font-style:normal; font-weight:700; font-size:15px; margin:0 0 1px; }
+.khOpt .khGSent { gap:2px 8px; } .khOpt .khGTok { padding:0; }
+#khTestIdk { display:block; margin:12px auto 0; }
+.khTestParts { display:grid; grid-template-columns:repeat(auto-fit, minmax(70px, 1fr)); gap:8px; margin:12px 0 4px; }
+.khTestParts div { background:var(--surface2); border-radius:12px; padding:8px 4px; display:flex; flex-direction:column; } .khTestParts span { font-size:12px; color:var(--muted); }
+.khTestNextList { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.khLvBadge { display:inline-block; font-size:13px; padding:3px 8px; border-radius:999px; background:var(--surface2); white-space:nowrap; } .khLvBadge.small { font-size:12px; padding:2px 7px; } .khLvBadge.none { color:var(--muted); }
+.khLvBadge.lv3, .khLvBadge.lv4 { background:var(--goodSoft); color:var(--goodInk); }
+.khTeamRow span { flex:1; min-width:0; } .khTeamRow span:first-child { flex:1.3; } .khTeamRow.head { font-size:12.5px; color:var(--muted); border-top:0; }
+.khTeamBars { margin-top:8px; } .khTeamBar { display:grid; grid-template-columns:minmax(0,140px) 1fr 28px; gap:8px; align-items:center; padding:3px 0; font-size:13px; }
+.khTeamTrack { height:10px; background:var(--surface2); border-radius:5px; overflow:hidden; } .khTeamTrack i { display:block; height:100%; background:var(--accent); border-radius:5px; }
+.khTeamBar.muted { color:var(--muted); } .khTeamBar.muted .khTeamTrack i { background:var(--border2); } .khTeamBar b { text-align:right; }
 @media (prefers-reduced-motion: reduce){ .khKiri, .khKiri.happy, .khKiri.sad, .khStatN.hot, .khCard, .khCard.flipped, .khOpt, .khOpt.right, .khTrophy, .khCombo, .khStreak, .khBadge.on .khBadgeIc { animation:none; } .khRing, .khBar div { transition:none; } }
 .khStreak { color:var(--amber); }
 .khMastered { margin:10px 0 0; font-weight:700; color:var(--good); }
+/* The first screen rises into place as the splash fades off it (Nov 2026). Opacity and a
+   small lift only — no change of size, so nothing below it moves. */
+#main.gpEnter { animation:gpEnter .42s cubic-bezier(.2,.8,.2,1) backwards; }   /* never left applied: a transform on #main would make it the box that position:fixed screens (the Library reader, sheets) are placed in — the class goes when it ends (render) */
+@keyframes gpEnter { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce){ #main.gpEnter { animation:none; } }

@@ -36,7 +36,7 @@ for (const f of fs.readdirSync(REPO + '/netlify/functions')) fs.copyFileSync(REP
 fs.mkdirSync(TMP + '/scripts', { recursive: true }); fs.mkdirSync(TMP + '/netlify/functions', { recursive: true }); fs.mkdirSync(TMP + '/public', { recursive: true });
 fs.copyFileSync(REPO + '/scripts/record-library-audio.mjs', TMP + '/scripts/record-library-audio.mjs');
 fs.copyFileSync(REPO + '/netlify/functions/library-audio-lib.js', TMP + '/netlify/functions/library-audio-lib.js');
-for (const f of ['km.js', 'library.js', 'library-km.js', 'khmer-vocab.js']) fs.copyFileSync(REPO + '/public/' + f, TMP + '/public/' + f);
+for (const f of ['km.js', 'library.js', 'library-km.js', 'khmer-vocab.js', 'khmer-grammar.js']) fs.copyFileSync(REPO + '/public/' + f, TMP + '/public/' + f);
 fs.copyFileSync(REPO + '/netlify/functions/audio.js', TMP + '/netlify/functions/audio.js');
 fs.copyFileSync(REPO + '/scripts/record-khmer-vocab.mjs', TMP + '/scripts/record-khmer-vocab.mjs');
 
@@ -135,6 +135,7 @@ ok('nothing about audio is in the public dashboard', !JSON.stringify(await call(
 console.log('\n=== Learn Khmer words (?say=) ===');
 const words = audio.vocabWords(TMP + '/public/khmer-vocab.js');
 ok('audio.js knows every word of the book, Khmer and English', words.size > 2000 && words.has('km\nក') && words.has('en\nA') && words.has('km\nអេ'), String(words.size));
+ok('… and the grammar lessons\' whole sentences, in both languages', words.has('km\nខ្ញុំបានញ៉ាំបាយ') && words.has('en\nI ate rice.') && words.has("en\nI don't understand."));
 azure.length = 0;
 res = await get('lang=km&say=' + encodeURIComponent('ក'));
 ok('a word of the book is recorded on the spot and played', res.status === 200 && res.headers.get('Content-Type') === 'audio/mpeg' && (await res.arrayBuffer()).byteLength === 400 && azure.length === 1);

@@ -1006,6 +1006,35 @@ ok('portal staff can’t remove a supporting document', r.body.ok === false && r
 r = await call('portalVisaDocDelete', ['sina', '1234', 'siemreap', vdId]);
 ok('a portal admin removes it, parts and all', r.body.ok === true && r.body.docs.length === 0 && !mem['vdoc:' + vdId + ':0'] && !mem['vdoc:' + vdId + ':1']);
 
+console.log('\n=== additional documents for the e-visa (India and others) ===');
+r = await call('portalBoot', ['team.au', '2468']);
+ok('off to start: no additional-documents kind for the team', !r.body.application.docKinds.some(k => k.id === 'visaextra') && !r.body.application.visa.extraDocs);
+r = await call('portalUploadDoc', ['team.au', '2468', 'visaextra', 'bank.pdf', 'application/pdf', 'JVBERi0x']);
+ok('… so the team can’t upload one', r.body.ok === false && r.body.err === 'bad_kind');
+r = await call('portalSetVisaFlags', ['team.au', '2468', teamRec.id, { extraDocs: true }]);
+ok('the team can’t switch it on itself', r.body.ok === false);
+r = await call('portalSetVisaFlags', ['rithy', '1234', teamRec.id, { extraDocs: true, extraNote: '  A bank statement for each person  ' }]);
+ok('staff switch it on, with a note of what is needed (trimmed), and it is logged', r.body.ok === true && r.body.candidate.portal.visa.extraDocs === true && r.body.candidate.portal.visa.extraNote === 'A bank statement for each person' && r.body.candidate.docKinds.some(k => k.id === 'visaextra') && r.body.candidate.log.some(l => /Needs additional documents/.test(l.text)));
+r = await call('portalSetVisaFlags', ['rithy', '1234', teamRec.id, { extraNote: 'y'.repeat(900) }]);
+ok('the note is cut to 600', r.body.ok === true && r.body.candidate.portal.visa.extraNote.length === 600);
+await call('portalSetVisaFlags', ['rithy', '1234', teamRec.id, { extraNote: 'A bank statement for each person' }]);
+r = await call('portalBoot', ['team.au', '2468']);
+ok('the team sees it on, the note, and the kind to upload', r.body.application.visa.extraDocs === true && r.body.application.visa.extraNote === 'A bank statement for each person' && r.body.application.docKinds.some(k => k.id === 'visaextra' && !k.required));
+r = await call('portalUploadDoc', ['team.au', '2468', 'visaextra', 'bank.pdf', 'application/pdf', 'JVBERi0x']);
+const xdoc = r.body.doc;
+ok('the team uploads an additional document', r.body.ok === true && xdoc.kind === 'visaextra');
+r = await call('portalUploadDoc', ['rithy', '1234', 'visaextra', 'more.pdf', 'application/pdf', 'JVBERi0x', teamRec.id]);
+ok('staff can add one too', r.body.ok === true && r.body.doc.kind === 'visaextra');
+await call('portalDeleteDoc', ['rithy', '1234', r.body.doc.id]);
+r = await call('portalSetVisaFlags', ['rithy', '1234', teamRec.id, { extraDocs: false }]);
+ok('switched off, the kind stays listed while a file is in it', r.body.ok === true && r.body.candidate.portal.visa.extraDocs === false && r.body.candidate.docKinds.some(k => k.id === 'visaextra'));
+r = await call('portalDeleteDoc', ['team.au', '2468', xdoc.id]);
+r = await call('portalBoot', ['team.au', '2468']);
+ok('… and goes once it is off and empty', !r.body.application.docKinds.some(k => k.id === 'visaextra'));
+const sreyCand = mem.candidates.find(c => c.staffId === srey.id);
+r = await call('portalSetVisaFlags', ['sina', '1234', sreyCand.id, { extraDocs: true }]);
+ok('it can’t be switched on for someone from Cambodia (no e-visa)', r.body.ok === false && r.body.err === 'no_visa');
+
 console.log('\n=== a team’s journey ===');
 await call('portalSetVisaFlags', ['dara', '1234', teamRec.id, { flightsConfirmed: false, invitationSent: false }]);
 for (const d of mem.candidates.find(c => c.id === teamRec.id).portal.docs.filter(d => d.kind === 'flights' || d.kind === 'photo')) await call('portalDeleteDoc', ['dara', '1234', d.id]);
