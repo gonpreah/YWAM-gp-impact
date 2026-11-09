@@ -2359,6 +2359,14 @@ inferred from volunteer counts.
   metrics (staff debt, expenses, loneliness, porn, students struggling) invert the color.
 - **Photos** are stored inline (data URI) in the Staff sheet — no Google Drive (that avoids
   the scope/auth error and keeps them small, ~300px).
+  **Lists carry a 160px copy** (Nov 2026): an upload sends `photoThumb` too (`photoThumbOf_` in
+  08-team-profile.js), and every list — the boot's roster, teamRoster, org, 360s, required
+  papers, students — sends `photoOf_(s)` = the small copy, else the full photo. The owner's own
+  record (`selfStaff_`, with `hasThumb`) and a person's page (`staffProfile`) keep the full one.
+  A photo saved before has no small copy until its owner's phone makes one after a good boot
+  (`gpThumbBackfill_` → `savePhotoThumb`). Why: the roster held everyone's full photo, so a
+  boot was ~1.5 MB, mostly photos — slow on a phone and too big to keep as the offline copy.
+  tests/test-photo-thumbs.mjs, test-photo-thumbs-ui.mjs.
 - **Sensitive Teams data** (loneliness, porn, debt) is returned by name only to the person and
   their ONE chosen mentor (server-enforced in getMenteeLogs); leadership sees aggregates only.
 - The dashboard intentionally omits "New Churches Planted" and "Base Plants in Planning"

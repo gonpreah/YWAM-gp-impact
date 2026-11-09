@@ -672,10 +672,22 @@ function ownPersonality_(s) {
    many campus / YAP / ministry staff, how many Khmer, how many international,
    how many countries. They are directory facts of the same kind as department
    and role; nothing about anyone's health, money or days away travels with them. */
+/* Photos in lists are the small copy (photoThumb, 160px, made on the phone that
+   uploaded it — Nov 2026). The full photo (300px) is up to ~40 KB and the roster
+   carries everyone's, so a boot was mostly photos: ~1.5 MB per open, too big for a
+   phone to keep as its offline copy. Avatars are drawn at 96px at most. A photo
+   saved before thumbnails falls back to the full one until its owner next opens
+   the app, which makes the small copy (savePhotoThumb). The owner's own record and
+   a person's page (staffProfile) still carry the full photo. */
+function photoOf_(s) { return (s && (s.photoThumb || s.photo)) || ''; }
+/* The owner's own record: the full photo, and whether a small copy exists yet. */
+function selfStaff_(s, extra) {
+  return Object.assign(publicStaff_(s), { photo: s.photo || '', hasThumb: !!s.photoThumb }, extra || {});
+}
 function publicStaff_(s) {
   return {
     id: s.id, name: s.name, username: s.username, campus: s.campus, dept: s.dept,
-    ministry: s.ministry || '', role: s.role, photo: s.photo || '', mentorId: s.mentorId || '',
+    ministry: s.ministry || '', role: s.role, photo: photoOf_(s), mentorId: s.mentorId || '',
     staffType: cleanStaffType_(s.staffType), country: s.country || '',
     leads: leadsOf_(s), ministries: ministriesOf_(s)
   };
@@ -781,7 +793,7 @@ async function staffRegister(payload) {
   // and returning one would let the client log it straight in anyway.
   if (pending) return { ok: true, pending: true };
   return {
-    ok: true, staff: publicStaff_(rec),
+    ok: true, staff: selfStaff_(rec),
     profile: { phone: rec.phone, joined: rec.joined, debt: false, mentorStatus: rec.mentorStatus, dashboardColor: '', dashboardBg: '', email: rec.email }
   };
 }
@@ -790,7 +802,7 @@ async function staffLogin(username, pin) {
   const s = await verifyStaff_(username, pin);
   if (s) {
     return {
-      ok: true, staff: Object.assign(publicStaff_(s), { isAdmin: !!s.isAdmin }),
+      ok: true, staff: selfStaff_(s, { isAdmin: !!s.isAdmin }),
       profile: {
         phone: s.phone, joined: s.joined, debt: s.debt, mentorStatus: s.mentorStatus || '',
         dashboardColor: s.dashboardColor || '', dashboardBg: s.dashboardBg || '', email: s.email || ''
@@ -1285,7 +1297,7 @@ async function updateProfile_(s, payload) {
     }
     rec.updated = new Date().toISOString();
     return {
-      ok: true, staff: publicStaff_(rec), cltPending: cltPending,
+      ok: true, staff: selfStaff_(rec), cltPending: cltPending,
       profile: {
         phone: rec.phone, joined: rec.joined, debt: rec.debt, mentorStatus: rec.mentorStatus || '',
         dashboardColor: rec.dashboardColor || '', dashboardBg: rec.dashboardBg || '', email: rec.email || '',
@@ -1355,17 +1367,40 @@ async function changePin(username, pin, newPin) {
 
 const PHOTO_MIME_ALLOWLIST = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-async function uploadPhoto(username, pin, base64, mime) {
+/* The small copy is a JPEG the phone made (160px); 40,000 characters is far more
+   than one needs, and keeps anything else out of the roster. */
+const THUMB_MAX = 40000;
+function cleanThumb_(b64) {
+  const s = String(b64 == null ? '' : b64);
+  return (s && s.length <= THUMB_MAX && /^[A-Za-z0-9+/=]+$/.test(s)) ? 'data:image/jpeg;base64,' + s : '';
+}
+async function uploadPhoto(username, pin, base64, mime, thumb) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
   if (mime && PHOTO_MIME_ALLOWLIST.indexOf(mime) === -1) return { ok: false, err: 'bad_type' };
   const dataUri = 'data:' + (mime || 'image/jpeg') + ';base64,' + base64;
   if (dataUri.length > 200000) return { ok: false, err: 'too_large' };
+  const small = cleanThumb_(thumb);
   return mutateStaff_(function (rows) {
     const idx = rows.findIndex(function (r) { return r.id === s.id; });
     if (idx === -1) return { abort: true, ok: false };
     rows[idx].photo = dataUri;
-    return { ok: true, photo: dataUri };
+    if (small) rows[idx].photoThumb = small; else delete rows[idx].photoThumb;   // never an old face in the lists
+    return { ok: true, photo: dataUri, hasThumb: !!small };
+  });
+}
+/* The small copy of a photo saved before there were small copies — made by the
+   owner's own phone from their own photo, the first time they open the app. */
+async function savePhotoThumb(username, pin, thumb) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const small = cleanThumb_(thumb);
+  if (!small) return { ok: false, err: 'bad_thumb' };
+  return mutateStaff_(function (rows) {
+    const idx = rows.findIndex(function (r) { return r.id === s.id; });
+    if (idx === -1 || !rows[idx].photo) return { abort: true, ok: false, err: 'no_photo' };
+    rows[idx].photoThumb = small;
+    return { ok: true };
   });
 }
 
@@ -4452,7 +4487,7 @@ async function staffProfile(username, pin, staffId) {
   const shared = sharedAvatar_(p);
   return {
     ok: true,
-    staff: rosterStaff_(p),
+    staff: Object.assign(rosterStaff_(p), { photo: p.photo || '' }),   // one person: the full photo
     personality: shared ? { type: p.personality.type, scores: p.personality.scores || null,
       source: p.personality.source || 'test' } : null,
     gstrengths: sharedGStrengths_(p),
@@ -4506,7 +4541,7 @@ function prCanSee_(r, s, staff) {
 }
 function prOut_(r, s, staff) {
   const a = staff.find(function (x) { return x.id === r.staffId; });
-  return { id: r.id, mine: r.staffId === s.id, name: a ? a.name : '—', photo: a ? a.photo || '' : '', campus: r.campus, scope: r.scope,
+  return { id: r.id, mine: r.staffId === s.id, name: a ? a.name : '—', photo: photoOf_(a), campus: r.campus, scope: r.scope,
     text: r.text, created: r.created, prayedN: (r.prayed || []).length, iPrayed: (r.prayed || []).indexOf(s.id) > -1,
     answered: r.answered || '', answerNote: r.answerNote || '' };
 }
@@ -4727,7 +4762,7 @@ async function p360People_() {
   const staff = (await getStaff_()).filter(function (r) { return r.active !== false && !r.archived && !isApplicant_(r); });
   const board = (await getBoard_()).filter(function (b) { return b.active !== false && !b.staffId && b.pinHash; });
   const map = {};
-  staff.forEach(function (r) { map[r.id] = { id: r.id, name: r.name, photo: r.photo || '', kind: 'staff', campus: r.campus }; });
+  staff.forEach(function (r) { map[r.id] = { id: r.id, name: r.name, photo: photoOf_(r), kind: 'staff', campus: r.campus }; });
   board.forEach(function (b) { map[b.id] = { id: b.id, name: b.name, photo: b.photo || '', kind: 'board', campus: '' }; });
   return map;
 }
@@ -5290,7 +5325,7 @@ async function getMyBoot(username, pin) {
 
   return {
     ok: true,
-    staff: Object.assign(publicStaff_(s), { isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '', langLevel: langMine_(s), seeLangLevels: canSeeLangLevels_(s) }),   // created: for My Home's first 30 days
+    staff: selfStaff_(s, { isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '', langLevel: langMine_(s), seeLangLevels: canSeeLangLevels_(s) }),   // created: for My Home's first 30 days
     profile: {
       phone: s.phone, joined: s.joined, debt: s.debt, mentorStatus: s.mentorStatus || '',
       dashboardColor: s.dashboardColor || '', dashboardBg: s.dashboardBg || '', email: s.email || '',
@@ -7476,7 +7511,7 @@ async function reqStatusAll(username, pin) {
   const docs = await getReqDocs_();
   const rows = (await getStaff_()).filter(function (r) { return r.active && !r.archived && !isApplicant_(r); });
   return { ok: true, docs: reqDocsAnswer_(docs), people: rows.map(function (r) {
-    return { id: r.id, name: r.name, campus: r.campus, dept: r.dept, ministry: r.ministry || '', photo: r.photo || '', required: requiredFor_(r, docs) };
+    return { id: r.id, name: r.name, campus: r.campus, dept: r.dept, ministry: r.ministry || '', photo: photoOf_(r), required: requiredFor_(r, docs) };
   }) };
 }
 
@@ -8359,7 +8394,7 @@ async function getStu_(id) { const d = await readJSON(stuKey_(id), null); return
 /* the only staff a student sees: Leadership Development, names and faces */
 async function stuMentors_() {
   return (await getStaff_()).filter(function (r) { return r && r.active !== false && !r.archived && !isApplicant_(r) && deptOf_(r) === STU_LD_DEPT; })
-    .map(function (r) { return { id: r.id, name: r.name, photo: r.photo || '', dept: r.dept, ministry: r.ministry || '', campus: r.campus, role: r.role || '' }; });
+    .map(function (r) { return { id: r.id, name: r.name, photo: photoOf_(r), dept: r.dept, ministry: r.ministry || '', campus: r.campus, role: r.role || '' }; });
 }
 function stuMe_(s, cand, d) {
   return { id: s.id, name: s.name, username: s.username, campus: cand.campus || s.campus, dept: '', ministry: '', role: 'Student', photo: '',
@@ -11176,7 +11211,7 @@ async function setStaffBoardSeat_(staffId, seat) {
 }
 function boardOut_(b, staff) {
   const st = b.staffId ? (staff || []).find(function (x) { return x.id === b.staffId && x.active !== false; }) : null;
-  return { id: b.id, name: b.name || (st ? st.name : ''), role: b.role || 'Advisor', photo: b.photo || (st ? st.photo || '' : ''),
+  return { id: b.id, name: b.name || (st ? st.name : ''), role: b.role || 'Advisor', photo: b.photo || (st ? photoOf_(st) : ''),
     bio: b.bio || '', email: b.email || (st ? st.email || '' : ''), phone: b.phone || '', staffId: b.staffId || '', order: Number(b.order) || 0,
     safeguarding: !!b.safeguarding };
 }
@@ -11225,7 +11260,7 @@ async function getYwamGp(username, pin) {
   const v = await verifyViewer_(username, pin);
   if (!v) return { ok: false };
   const staff = (await getStaff_()).filter(function (r) { return r.active && !r.archived && !isApplicant_(r); });
-  const person = function (r) { return { id: r.id, name: r.name, photo: r.photo || '', campus: r.campus }; };
+  const person = function (r) { return { id: r.id, name: r.name, photo: photoOf_(r), campus: r.campus }; };
   const titles = {}, gp = [];
   staff.forEach(function (r) {
     const tl = orgTitle_(r); if (tl) titles[r.id] = tl;
@@ -11355,7 +11390,8 @@ const HANDLERS = {
   saveKmReview: function (a) { return saveKmReview(a[0], a[1], a[2], a[3], a[4]); },
   updateProfile: function (a) { return updateProfile(a[0], a[1], a[2]); },
   changePin: function (a) { return changePin(a[0], a[1], a[2]); },
-  uploadPhoto: function (a) { return uploadPhoto(a[0], a[1], a[2], a[3]); },
+  uploadPhoto: function (a) { return uploadPhoto(a[0], a[1], a[2], a[3], a[4]); },
+  savePhotoThumb: function (a) { return savePhotoThumb(a[0], a[1], a[2]); },
   uploadDashboardBg: function (a) { return uploadDashboardBg(a[0], a[1], a[2], a[3]); },
   clearDashboardBg: function (a) { return clearDashboardBg(a[0], a[1]); },
   saveDaily: function (a) { return saveDaily(a[0], a[1], a[2], a[3]); },

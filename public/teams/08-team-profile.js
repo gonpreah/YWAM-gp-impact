@@ -816,14 +816,47 @@ function handlePhoto(file){
       cv.getContext('2d').drawImage(img,0,0,w,h);
       var data=cv.toDataURL('image/jpeg',0.7).split(',')[1];
       showMsg('Uploading photo…');
-      run('uploadPhoto',[S.auth.user,S.auth.pin,data,'image/jpeg'],function(d){
-        if(d.ok){ S.me.photo=d.photo; saveStaffCard(); showMsg('Photo updated'); render(); }
+      var small=photoThumbOf_(img);
+      run('uploadPhoto',[S.auth.user,S.auth.pin,data,'image/jpeg',small],function(d){
+        if(d.ok){
+          S.me.photo=d.photo; S.me.hasThumb=!!d.hasThumb; saveStaffCard();
+          /* my own row in the lists shows the new face now, not after the next open */
+          var inList = d.hasThumb ? 'data:image/jpeg;base64,'+small : d.photo;
+          (S.roster||[]).forEach(function(r){ if(r.id===S.me.id) r.photo=inList; });
+          showMsg('Photo updated'); render();
+        }
         else showMsg(d && d.err==='bad_type' ? 'That image type isn\u2019t supported' : (d && d.err==='too_large' ? 'Photo too large \u2014 try a smaller one' : 'Upload failed'));
       });
     };
     img.src=e.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+/* The small copy the lists carry (Nov 2026): 160px square from the middle of the
+   photo, JPEG. Avatars are drawn 96px at most, so this is sharp on a phone and a
+   fraction of the size — see photoOf_ in api.js. '' if the browser can't. */
+var PHOTO_THUMB_PX = 160;
+function photoThumbOf_(img){
+  try {
+    var k=Math.min(img.width, img.height); if(!k) return '';
+    var cv=document.createElement('canvas'); cv.width=PHOTO_THUMB_PX; cv.height=PHOTO_THUMB_PX;
+    cv.getContext('2d').drawImage(img, (img.width-k)/2, (img.height-k)/2, k, k, 0, 0, PHOTO_THUMB_PX, PHOTO_THUMB_PX);
+    return cv.toDataURL('image/jpeg', 0.8).split(',')[1] || '';
+  } catch(e){ return ''; }
+}
+/* A photo saved before small copies existed: this phone makes one from it, once,
+   after a good boot. Quietly — it changes nothing on screen. */
+var _gpThumbTried = false;
+function gpThumbBackfill_(){
+  if(_gpThumbTried || !S.me || !S.me.photo || S.me.hasThumb || S.guest || S.student || S.board || !S.auth || !S.auth.user) return;
+  _gpThumbTried = true;
+  var img=new Image();
+  img.onload=function(){
+    var small=photoThumbOf_(img); if(!small) return;
+    run('savePhotoThumb',[S.auth.user,S.auth.pin,small],function(d){ if(d && d.ok && S.me) S.me.hasThumb=true; }, function(){});
+  };
+  img.src=S.me.photo;
 }
 
 /* Same resize-then-upload shape as handlePhoto, just a wider frame since this
