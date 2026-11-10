@@ -110,6 +110,7 @@ textarea { min-height:80px; resize:vertical; }
   padding:10px 16px; border-radius:999px; font-size:13.5px; font-weight:500; opacity:0; transition:opacity .2s; pointer-events:none; z-index:80; max-width:92vw; text-align:center; }
 .msg.show { opacity:1; }
 .chips { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
+.sortRow { align-items:center; margin-top:-4px; } .sortLbl { font-size:12.5px; color:var(--muted); margin-right:2px; }
 .chip { border:1px solid var(--border2); background:transparent; border-radius:999px; padding:7px 13px; font-size:13px; cursor:pointer; color:var(--muted); }
 .chip:hover { border-color:var(--ink); color:var(--ink); }
 .chip.on { background:var(--ink); border-color:var(--ink); color:var(--accentInk); font-weight:600; }
@@ -1909,6 +1910,42 @@ function teamOrder_(a,b){
   if(ga[0]===0 || ga[0]===3) return ga[1]>gb[1] ? -1 : ga[1]<gb[1] ? 1 : 0;
   return (b.updated||'') < (a.updated||'') ? -1 : 1;
 }
+/* Sort by (Andrew, Nov 2026: "a toggle to order the lists by dates"): Teams can go by when they come
+   (above), the date they applied, or the latest change; every other tab by the date applied or the
+   latest change, newest or oldest first. Kept per kind of tab on this computer (gp-portal-sort). */
+var LIST_SORTS = { team:['come','applied','changed'], other:['changed','applied'] };
+function listSortKey_(){ return P.what==='team' ? 'team' : 'other'; }
+function listSortPrefs_(){
+  if(!P.sortBy){ try { P.sortBy = JSON.parse(lsGet('gp-portal-sort')||'{}') || {}; } catch(e){ P.sortBy={}; } }
+  return P.sortBy;
+}
+function listSort_(){ var k=listSortKey_(), v=listSortPrefs_()[k]; return LIST_SORTS[k].indexOf(v)>-1 ? v : LIST_SORTS[k][0]; }
+function listSortOld_(){ return listSortPrefs_()[listSortKey_()+'Dir']==='asc'; }
+function appliedOn_(c){ return (c.portal && c.portal.submittedAt) || ''; }
+function listOrder_(){
+  var mode=listSort_(), old=listSortOld_();
+  if(mode==='come') return teamOrder_;
+  var key = mode==='applied' ? appliedOn_ : function(c){ return c.updated||''; };
+  return function(a,b){
+    var x=key(a), y=key(b);
+    if(!x !== !y) return x ? -1 : 1;                 /* not sent in yet: at the end, whichever way */
+    if(!x) return (b.updated||'') < (a.updated||'') ? -1 : 1;
+    return old ? (x<y ? -1 : x>y ? 1 : 0) : (x>y ? -1 : x<y ? 1 : 0);
+  };
+}
+function listSortHtml_(){
+  var k=listSortKey_(), mode=listSort_(), lbl={ come:t('When they come'), applied:t('Date applied'), changed:t('Latest change') };
+  return '<div class="chips sortRow" id="sortRow"><span class="sortLbl">'+esc(t('Sort by'))+'</span>'+LIST_SORTS[k].map(function(v){
+      return '<button class="chip'+(mode===v?' on':'')+'" data-sortby="'+v+'" aria-pressed="'+(mode===v)+'">📅 '+esc(lbl[v])+'</button>'; }).join('')+
+    (mode==='come' ? '' : '<button class="chip" id="sortDir" title="'+esc(t('Change the order'))+'">'+(listSortOld_() ? '↑ '+esc(t('Oldest first')) : '↓ '+esc(t('Newest first')))+'</button>')+'</div>';
+}
+/* what a row says under its name follows the sort */
+function rowDateLine_(c){
+  var mode=listSort_();
+  var applied = appliedOn_(c) ? gpT('Applied {date}',{date:fmtDate_(appliedOn_(c))}) : t('Not sent in yet');
+  if(c.type==='team') return teamDatesLine_(c)+(mode==='applied' ? ' · '+applied : mode==='changed' ? ' · '+gpT('Updated {date}',{date:fmtDate_(c.updated)}) : '');
+  return mode==='applied' ? applied : fmtDate_(c.updated);
+}
 var QUARTER_MONTHS={ 1:'Jan–Mar', 2:'Apr–Jun', 3:'Jul–Sep', 4:'Oct–Dec' };
 function archDate_(c){ return (c.archived && (c.archived.left || c.archived.at)) || ''; }
 function crmHtml_(){
@@ -1947,19 +1984,20 @@ function crmHtml_(){
   h+='<div class="tools"><input type="text" id="q" placeholder="'+esc(t('Search by name, email or phone'))+'" value="'+esc(P.q)+'"></div>';
   h+='<div class="chips">'+[['',t('All')]].concat((P.what==='team' ? stagesOf_('team') : d.stages).map(function(s){ return [s, t(STAGE_LABEL[s]||s)]; })).concat([['archived', P.what==='team' ? '🗄 '+t('Archive') : t('Archived')]]).map(function(x){
     return '<button class="chip'+(P.filter===x[0]?' on':'')+'" data-filter="'+x[0]+'">'+esc(x[1])+'</button>'; }).join('')+'</div>';
+  if(!(P.what==='team' && P.filter==='archived')) h+=listSortHtml_();
   var q=P.q.trim().toLowerCase();
   var rows=list.filter(function(c){
     if(P.filter==='archived' ? !c.archived : (c.archived || (P.filter && c.stage!==P.filter))) return false;
     if(q && (candName_(c)+' '+c.name+' '+(c.email||'')+' '+(c.phone||'')).toLowerCase().indexOf(q)===-1) return false;
     return true;
-  }).sort(P.what==='team' ? teamOrder_ : function(a,b){ return (b.updated||'') < (a.updated||'') ? -1 : 1; });
+  }).sort(listOrder_());
   h+='<div class="tbl"><div class="thead"><span>'+esc(t('Name'))+'</span><span>'+esc(t('Applying for'))+'</span><span>'+esc(t('Stage'))+'</span><span>'+esc(t('Owner'))+'</span><span></span></div>';
   if(!rows.length) h+='<div class="empty">'+esc(t('Nobody here yet.'))+'</div>';
   var rowOf=function(c){ var h='';
     var owner=c.assignedTo && byId[c.assignedTo] ? byId[c.assignedTo].name : '—';
     var chat=chatHref_(c.messenger, c.phone);
     h+='<button class="trow'+(P.sel===c.id?' on':'')+'" data-open="'+esc(c.id)+'">'+
-      '<span><span class="who">'+esc(candName_(c))+'</span><span class="meta sm"> · '+esc(applyLabel_(c.type, c.school))+'</span><span class="meta" style="display:block">'+esc(c.type==='team' ? teamDatesLine_(c) : fmtDate_(c.updated))+(c.hasAccount?'':' · '+esc(t('no account')))+'</span>'+
+      '<span><span class="who">'+esc(candName_(c))+'</span><span class="meta sm"> · '+esc(applyLabel_(c.type, c.school))+'</span><span class="meta" style="display:block">'+esc(rowDateLine_(c))+(c.hasAccount?'':' · '+esc(t('no account')))+'</span>'+
         (c.type==='team' && c.archived && c.archived.left ? '<span class="meta" style="display:block">🗄 '+esc(gpT('Left {date}',{date:fmtDate_(c.archived.left)}))+'</span>' : '')+
         (c.type==='team' && teamNext_(c) && !c.archived ? '<span class="meta nextStep" style="display:block">→ '+esc(t(TEAM_STEP_LABEL[teamNext_(c).id]||''))+'</span>' : '')+'</span>'+
       '<span class="meta desk">'+esc(applyLabel_(c.type, c.school))+(c.type==='student' ? ' · '+esc(c.audience==='khmer'?t('Khmer'):t('International')) : '')+(c.type==='team' ? (function(){ var tr=tripOf_((c.portal && ((c.portal.form && c.portal.form.answers) || c.portal.draft)) || {}, campusName_(c.campus||DEFAULT_CAMPUS)); return (tr && tr.days ? ' · '+esc(gpT('{n} in Cambodia',{n:daysLabel_(tr.days)})) : ''); })() : '')+(P.campusFilter || campusChips.length<2 ?'':'<br>'+esc(campusShort_(c.campus)))+'</span>'+
@@ -3677,6 +3715,9 @@ function bind_(){
   // staff
   var q=document.getElementById('q'); if(q){ q.oninput=function(){ P.q=q.value; renderList_(); }; }
   document.querySelectorAll('[data-filter]').forEach(function(b){ b.onclick=function(){ P.filter=b.getAttribute('data-filter'); render(); }; });
+  var keepSort=function(){ lsSet('gp-portal-sort', JSON.stringify(listSortPrefs_())); render(); };
+  document.querySelectorAll('[data-sortby]').forEach(function(b){ b.onclick=function(){ listSortPrefs_()[listSortKey_()]=b.getAttribute('data-sortby'); keepSort(); }; });
+  on_('sortDir', function(){ var p=listSortPrefs_(), k=listSortKey_()+'Dir'; p[k] = p[k]==='asc' ? 'desc' : 'asc'; keepSort(); });
   document.querySelectorAll('[data-open]').forEach(function(b){ b.onclick=function(e){ if(e.target.closest('[data-chat]')) return; P.sel=b.getAttribute('data-open'); P.note=''; P.editAnswers=false; render(); var p=document.getElementById('panel'); if(p && window.innerWidth<900) p.scrollIntoView({ behavior:'smooth', block:'start' }); }; });
   on_('closePanel', function(){ P.sel=null; render(); });
   on_('saveCand', saveCand_);

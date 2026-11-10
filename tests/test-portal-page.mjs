@@ -1140,6 +1140,8 @@ async function open(viewport, query, seed) {
   const later = mk('cd_tlater', 'Later SR Team', rel(15), rel(25), '2026-09-03T10:00:00Z');
   later.portal.form.answers.itinerary.push({ place: 'Phnom Penh', from: rel(2), to: rel(14) });
   CANDS.push(later);
+  const SUB = { cd_tsoon: '2026-09-05T10:00:00Z', cd_tnow: '2026-09-01T10:00:00Z', cd_tgone: '2026-07-01T10:00:00Z', cd_tlater: '2026-09-10T10:00:00Z', cd_tnodate: null };
+  CANDS.forEach(c => { if (c.id in SUB) c.portal.submittedAt = SUB[c.id]; });
   const { ctx, page } = await open({ width: 1280, height: 900 }, '', () => localStorage.setItem('gp-portal', JSON.stringify({ user: 'dara', pin: '1234' })));
   await page.waitForSelector('.trow');
   await page.click('[data-whatfilter="team"]'); await page.waitForTimeout(200);
@@ -1148,7 +1150,26 @@ async function open(viewport, query, seed) {
   const dmy = iso => new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });   // the fixture is relative to today, so the expected text is too
   ok('a team row shows its Siem Reap dates, not its whole time in Cambodia', new RegExp('In Siem Reap ' + dmy(rel(15)) + ' – ' + dmy(rel(25))).test(await page.$eval('.trow[data-open="cd_tlater"]', e => e.textContent)) && !new RegExp(dmy(rel(2))).test(await page.$eval('.trow[data-open="cd_tlater"]', e => e.textContent)));
   ok('each team row shows its dates with us, not when it applied', new RegExp('In Siem Reap ' + dmy(rel(11)) + ' – ' + dmy(rel(20))).test(await page.$eval('.trow[data-open="cd_tsoon"]', e => e.textContent)) && /Dates in Cambodia not set yet/.test(await page.$eval('.trow[data-open="cd_tnodate"]', e => e.textContent)) && !/\b1 Sept 2026\b/.test(await page.$eval('.trow[data-open="cd_tsoon"]', e => e.textContent)));
+  /* Sort by (Andrew: "a toggle to order the lists by dates") */
+  const sortChips = () => page.$$eval('[data-sortby]', bs => bs.map(b => b.getAttribute('data-sortby') + (b.classList.contains('on') ? '*' : '')).join());
+  ok('Teams have a Sort by toggle: When they come (on), Date applied, Latest change', (await sortChips()) === 'come*,applied,changed' && !(await page.$('#sortDir')));
+  const pos = async () => { const ids = await page.$$eval('.trow', rs => rs.map(r => r.getAttribute('data-open'))); return id => ids.indexOf(id); };
+  const nrows = async () => (await page.$$('.trow')).length;
+  await page.click('[data-sortby="applied"]'); await page.waitForTimeout(200);
+  let at = await pos();
+  ok('Date applied: newest first, and those not sent in yet at the end', at('cd_tlater') < at('cd_tsoon') && at('cd_tsoon') < at('cd_tnow') && at('cd_tnow') < at('cd_tgone') && at('cd_tnodate') === (await nrows()) - 1 && /Newest first/.test(await page.$eval('#sortDir', b => b.textContent)));
+  ok('… each row says when it applied', /Applied/.test(await page.$eval('.trow[data-open="cd_tsoon"]', e => e.textContent)) && /Not sent in yet/.test(await page.$eval('.trow[data-open="cd_tnodate"]', e => e.textContent)));
+  await page.click('#sortDir'); await page.waitForTimeout(200);
+  at = await pos();
+  ok('Oldest first turns it round (still not-sent-in last)', at('cd_tgone') < at('cd_tnow') && at('cd_tnow') < at('cd_tsoon') && at('cd_tsoon') < at('cd_tlater') && at('cd_tnodate') === (await nrows()) - 1 && /Oldest first/.test(await page.$eval('#sortDir', b => b.textContent)));
+  await page.click('#sortDir'); await page.click('[data-sortby="changed"]'); await page.waitForTimeout(200);
+  at = await pos();
+  ok('Latest change orders by the last change', at('cd_tgone') < at('cd_tlater') && at('cd_tlater') < at('cd_tsoon'), JSON.stringify(await page.$$eval('.trow', rs => rs.map(r => r.getAttribute('data-open')))));
+  ok('… and the choice is kept on this computer', /"team":"changed"/.test(await page.evaluate(() => localStorage.getItem('gp-portal-sort'))));
+  await page.click('[data-sortby="come"]'); await page.waitForTimeout(200);
+  ok('When they come brings back the arrival order', (await page.$$eval('.trow .who', ws => ws.map(w => w.textContent).join('|'))) === 'Here Now Team|Soon Team|Later SR Team|Grace Church Team|No Dates Team|Gone Team');
   await page.click('[data-whatfilter=""]'); await page.waitForTimeout(200);
+  ok('other tabs sort by Latest change (on) or Date applied, no When they come', (await sortChips()) === 'changed*,applied');
   ok('the All tab keeps the latest change first', (await page.$eval('.trow .who', w => w.textContent)) === 'Gone Team');
   await ctx.close();
 }

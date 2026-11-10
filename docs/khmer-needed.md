@@ -4327,3 +4327,20 @@ My Home → Habits: "Forgot one?" opens the last seven days, and the habits due 
 | In {place} {from} – {to} | នៅ{place} {from} – {to} |
 
 The staff's Teams list: each team's dates at our base, e.g. "In Siem Reap 10 Jan – 20 Jan". {place} is the campus (Siem Reap / Poipet).
+
+## 84. Portal — sorting the applications lists
+
+| English | Khmer (draft) |
+|---|---|
+| When they come | ពេលពួកគេមកដល់ |
+| Date applied | ថ្ងៃដាក់ពាក្យ |
+| Latest change | ការផ្លាស់ប្តូរចុងក្រោយ |
+| Sort by | តម្រៀបតាម |
+| Change the order | ប្តូរលំដាប់ |
+| Oldest first | ចាស់បំផុតមុន |
+| Newest first | ថ្មីបំផុតមុន |
+| Applied {date} | បានដាក់ពាក្យ {date} |
+| Not sent in yet | មិនទាន់បានផ្ញើនៅឡើយ |
+| Updated {date} | បានកែប្រែ {date} |
+
+The staff's Applications list: "Sort by" chips (When they come — teams only — Date applied, Latest change) and a Newest / Oldest first button; the line under each name says when they applied or when it last changed.
