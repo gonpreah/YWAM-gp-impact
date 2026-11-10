@@ -1881,19 +1881,28 @@ function meHtml_(){
   return h;
 }
 /* ---- the staff side ---- */
-/* The Teams tab in the order they come: teams here now first, then the ones
-   still to come (soonest first), then teams with no dates yet (latest change
-   first), then teams already gone (most recent first). */
-/* a team's row says when it is in Cambodia, not when it last changed */
+/* The Teams tab in the order they come TO US — by the days they are at our base
+   (Siem Reap), not their whole time in Cambodia (Andrew, Oct 2026): teams here
+   now first, then the ones still to come (soonest first), then teams with no
+   dates yet (latest change first), then teams already gone (most recent first).
+   A team with no base dates yet goes by its Cambodia dates. */
+/* a team's row says when it is at our base, not when it last changed */
 function teamDatesLine_(c){
-  var tr=teamTrip_(c);
-  if(!tr || !tr.start) return t('Dates in Cambodia not set yet');
-  return gpT('In Cambodia {from} – {to}',{from:fmtDate_(tr.start), to:fmtDate_(tr.end||tr.start)});
+  var tr=teamTrip_(c), d=teamBaseDates_(tr);
+  if(!d.from) return t('Dates in Cambodia not set yet');
+  if(d.base) return gpT('In {place} {from} – {to}',{place:campusShort_(c.campus||DEFAULT_CAMPUS), from:fmtDate_(d.from), to:fmtDate_(d.to||d.from)});
+  return gpT('In Cambodia {from} – {to}',{from:fmtDate_(d.from), to:fmtDate_(d.to||d.from)});
 }
 function teamTrip_(c){ return tripOf_((c.portal && ((c.portal.form && c.portal.form.answers) || c.portal.draft)) || {}, campusName_(c.campus||DEFAULT_CAMPUS)); }
+/* the dates at our base when they are set, else the dates in Cambodia */
+function teamBaseDates_(tr){
+  if(!tr) return { from:'', to:'', base:false };
+  if(tr.baseFrom) return { from:tr.baseFrom, to:tr.baseTo||tr.baseFrom, base:true };
+  return { from:tr.start||'', to:tr.end||'', base:false };
+}
 function teamOrder_(a,b){
   var today=new Date().toISOString().slice(0,10);
-  var grp=function(c){ var tr=teamTrip_(c); if(!tr || !tr.start) return [2, '']; if(tr.end && tr.end<today) return [3, tr.start]; if(tr.start<=today) return [0, tr.start]; return [1, tr.start]; };
+  var grp=function(c){ var d=teamBaseDates_(teamTrip_(c)); if(!d.from) return [2, '']; if(d.to && d.to<today) return [3, d.from]; if(d.from<=today) return [0, d.from]; return [1, d.from]; };
   var ga=grp(a), gb=grp(b);
   if(ga[0]!==gb[0]) return ga[0]-gb[0];
   if(ga[0]===1) return ga[1]<gb[1] ? -1 : ga[1]>gb[1] ? 1 : 0;
@@ -3215,7 +3224,8 @@ function tripOf_(ans, base){
   dated.forEach(function(r){ if(!start || r.from<start) start=r.from; if(!end || r.to>end) end=r.to; });
   if(!Array.isArray(ans.itinerary) && ans.arrivalKh && ans.departureKh){ start=ans.arrivalKh; end=ans.departureKh; }
   var first=dated.slice().sort(function(a,b){ return a.from<b.from?-1:a.from>b.from?1:(a.base?-1:1); })[0]||null;
-  return { stays:stays, start:start, end:end, days:daysIncl_(start, end), first:first, note:note };
+  var bs=stays.filter(function(r){ return r.base && r.from; })[0];
+  return { stays:stays, start:start, end:end, days:daysIncl_(start, end), first:first, note:note, baseFrom:bs ? bs.from : '', baseTo:bs ? (bs.to||'') : '' };
 }
 function ansStore_(prefix){ return prefix==='s_' ? P.staffAnswers : prefix==='r_' ? P.refAnswers : P.answers; }
 function flushAnswers_(prefix){

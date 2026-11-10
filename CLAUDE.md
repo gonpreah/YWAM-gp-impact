@@ -1385,7 +1385,10 @@ forms, documents and references follow.
   checkboxes that call `portalSetAccess`; only a GP app admin can switch admin access
   (`canGrantAdmin`), and GP app admins / Outreach Teams leaders are marked as having it anyway.
   **Teams tab order** (`teamOrder_`, `teamTrip_`): here now, then soonest to come, then no dates
-  yet, then already gone; every other tab stays latest change first.
+  yet, then already gone; every other tab stays latest change first. Since Nov 2026 (Andrew) "here" and
+  "coming" go by the team's dates **at our base** — the itinerary's base row (`tripOf_`'s `baseFrom` /
+  `baseTo`, `teamBaseDates_`) — not its whole time in Cambodia, and each row says "In Siem Reap 10 Jan –
+  20 Jan" (`teamDatesLine_`); a team with no base dates yet goes by its Cambodia dates.
 - **A team's photos (Oct 2026)**: instead of one team photo with names, the leader takes a photo
   of each person in the portal — `teamPhotoPeople_(c)` is the leader (from the form), the
   co-leaders (`co|<n>`) and every member (members now carry an `id`, kept through a rename —

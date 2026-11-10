@@ -1136,13 +1136,18 @@ async function open(viewport, query, seed) {
   const mk = (id, name, from, to, updated) => { const c = JSON.parse(JSON.stringify(base)); c.id = id; c.updated = updated; c.portal.form.answers = { ...c.portal.form.answers, teamName: name, itinerary: from ? [{ place: 'YWAM Siem Reap', from, to, base: true }] : [] }; return c; };
   const rel = n => new Date(Date.now() + 7 * 3600e3 + n * 864e5).toISOString().slice(0, 10);   // from today, so these teams never age out of 'here now'
   CANDS.push(mk('cd_tsoon', 'Soon Team', rel(11), rel(20), '2026-09-01T10:00:00Z'), mk('cd_tnow', 'Here Now Team', rel(-5), rel(5), '2026-09-02T10:00:00Z'), mk('cd_tgone', 'Gone Team', '2026-08-01', '2026-08-10', '2026-09-30T10:00:00Z'), mk('cd_tnodate', 'No Dates Team', '', '', '2026-09-29T10:00:00Z'));
+  /* in Cambodia (Phnom Penh) before Soon Team arrives anywhere, but at our base after it */
+  const later = mk('cd_tlater', 'Later SR Team', rel(15), rel(25), '2026-09-03T10:00:00Z');
+  later.portal.form.answers.itinerary.push({ place: 'Phnom Penh', from: rel(2), to: rel(14) });
+  CANDS.push(later);
   const { ctx, page } = await open({ width: 1280, height: 900 }, '', () => localStorage.setItem('gp-portal', JSON.stringify({ user: 'dara', pin: '1234' })));
   await page.waitForSelector('.trow');
   await page.click('[data-whatfilter="team"]'); await page.waitForTimeout(200);
   const order = await page.$$eval('.trow .who', ws => ws.map(w => w.textContent).join('|'));
-  ok('Teams come in the order they arrive: here now, then soonest first, then no dates yet, then already gone — not by last change', order === 'Here Now Team|Soon Team|Grace Church Team|No Dates Team|Gone Team', order);
+  ok('Teams come in the order they arrive at our base (Siem Reap, not Cambodia): here now, then soonest first, then no dates yet, then already gone — not by last change', order === 'Here Now Team|Soon Team|Later SR Team|Grace Church Team|No Dates Team|Gone Team', order);
   const dmy = iso => new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });   // the fixture is relative to today, so the expected text is too
-  ok('each team row shows its dates in Cambodia, not when it applied', new RegExp('In Cambodia ' + dmy(rel(11)) + ' – ' + dmy(rel(20))).test(await page.$eval('.trow[data-open="cd_tsoon"]', e => e.textContent)) && /Dates in Cambodia not set yet/.test(await page.$eval('.trow[data-open="cd_tnodate"]', e => e.textContent)) && !/\b1 Sept 2026\b/.test(await page.$eval('.trow[data-open="cd_tsoon"]', e => e.textContent)));
+  ok('a team row shows its Siem Reap dates, not its whole time in Cambodia', new RegExp('In Siem Reap ' + dmy(rel(15)) + ' – ' + dmy(rel(25))).test(await page.$eval('.trow[data-open="cd_tlater"]', e => e.textContent)) && !new RegExp(dmy(rel(2))).test(await page.$eval('.trow[data-open="cd_tlater"]', e => e.textContent)));
+  ok('each team row shows its dates with us, not when it applied', new RegExp('In Siem Reap ' + dmy(rel(11)) + ' – ' + dmy(rel(20))).test(await page.$eval('.trow[data-open="cd_tsoon"]', e => e.textContent)) && /Dates in Cambodia not set yet/.test(await page.$eval('.trow[data-open="cd_tnodate"]', e => e.textContent)) && !/\b1 Sept 2026\b/.test(await page.$eval('.trow[data-open="cd_tsoon"]', e => e.textContent)));
   await page.click('[data-whatfilter=""]'); await page.waitForTimeout(200);
   ok('the All tab keeps the latest change first', (await page.$eval('.trow .who', w => w.textContent)) === 'Gone Team');
   await ctx.close();

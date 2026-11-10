@@ -4319,3 +4319,11 @@ The portal's e-visa steps. Staff press "Needs additional documents for the e-vis
 | Tap what you did that day. It counts toward your streaks and that week’s total. | ចុចលើអ្វីដែលអ្នកបានធ្វើនៅថ្ងៃនោះ។ វារាប់បញ្ចូលក្នុងការធ្វើជាប់ៗគ្នា និងចំនួនសរុបនៃសប្តាហ៍នោះ។ |
 
 My Home → Habits: "Forgot one?" opens the last seven days, and the habits due on the chosen day can be ticked. The first line is a small link under the habit tiles, so keep it short.
+
+## 83. Portal — a team's dates at our base
+
+| English | Khmer (draft) |
+|---|---|
+| In {place} {from} – {to} | នៅ{place} {from} – {to} |
+
+The staff's Teams list: each team's dates at our base, e.g. "In Siem Reap 10 Jan – 20 Jan". {place} is the campus (Siem Reap / Poipet).
