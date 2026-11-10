@@ -238,7 +238,8 @@ const TICKED_TODAY = thisWk === NOW;
   ok('it opens on yesterday, with the last seven days to pick from', chips.length === 7 && chips[0] === addDays(NOW, -1) && chips[6] === addDays(NOW, -7) &&
     (await page.$eval('[data-habitday].on', b => b.getAttribute('data-habitday'))) === addDays(NOW, -1) && /Yesterday/.test(await text(page, '[data-habitday].on')), chips.join());
   /* three days ago: nothing ticked then. The times-a-week habit is always there; the one-day habit only on its day */
-  const D3 = addDays(NOW, -3), D3DOW = new Date(D3 + 'T00:00:00Z').getUTCDay();
+  const dowOf = iso => new Date(iso + 'T00:00:00Z').getUTCDay();
+  const D3 = [2, 3, 4, 5, 6].map(n => addDays(NOW, -n)).filter(d => dowOf(d) >= 1 && dowOf(d) <= 5)[0], D3DOW = dowOf(D3);
   await page.click('[data-habitday="' + D3 + '"]'); await page.waitForTimeout(300);
   const ptiles = await page.$$eval('[data-habitpast]', es => es.map(e => e.getAttribute('data-habitpast')));
   ok('picking a day shows the habits due that day', ptiles.indexOf('bible') > -1 && ptiles.indexOf('quietTime') > -1 && (ptiles.indexOf('workout') > -1) === (D3DOW === DOW) && (ptiles.indexOf('language') > -1) === (D3DOW === OTHER), ptiles.join());
@@ -255,7 +256,8 @@ const TICKED_TODAY = thisWk === NOW;
   await page.click('[data-habitpast="bible"]'); await page.waitForTimeout(900);
   ok('tapping again unticks it', !(await page.$eval('[data-habitpast="bible"]', e => e.classList.contains('on'))) && mem.dailyLogs.filter(l => l.date === D3)[0].habits.bible === false);
   await page.click('[data-habitday="' + addDays(NOW, -1) + '"]'); await page.waitForTimeout(300);
-  ok('yesterday shows what was already ticked then', await page.$eval('[data-habitpast="bible"]', e => e.classList.contains('on')));
+  const Y = addDays(NOW, -1), yWeekday = dowOf(Y) >= 1 && dowOf(Y) <= 5;
+  ok('yesterday shows what was already ticked then (Bible reading is a weekdays habit by now)', yWeekday ? await page.$eval('[data-habitpast="bible"]', e => e.classList.contains('on')) : !(await page.$('[data-habitpast="bible"]')));
   await page.click('#habitPastClose'); await page.waitForTimeout(300);
   ok('Done closes it, back to today’s tiles', !(await page.$('#habitPast')) && !!(await page.$('#habitPastOpen')) && (await page.$$('[data-habit]')).length > 0);
   ok('the chips scroll sideways without stopping the page scrolling', await page.evaluate(() => { S.habitPast = fmtD(new Date(Date.now() - 864e5)); render(); const t = getComputedStyle(document.querySelector('.habitPastDays')).touchAction; return /pan-x/.test(t) && /pan-y/.test(t); }));
