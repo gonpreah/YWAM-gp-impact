@@ -744,9 +744,25 @@ async function teamRoster(username, pin) {
 function needsApproval_(dept) { return normDept_(String(dept || '')) === LEADERSHIP_DEPT; }
 
 async function staffRegister(payload) {
+  payload = payload && typeof payload === 'object' ? Object.assign({}, payload) : {};
+  /* Signing up with Google: the email and name are Google's, the username is made from the email, and
+     there is no PIN — the device token that comes back is the sign-in. */
+  let gg = null;
+  if (payload.googleToken) {
+    gg = await verifyGoogleToken_(payload.googleToken);
+    if (!gg) return { ok: false, err: 'google' };
+    payload.email = gg.email;
+    if (!payload.name) payload.name = gg.name || '';
+    const base = (gg.email.split('@')[0] || 'staff').toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 16) || 'staff';
+    const all = await getStaff_(), board = await getBoard_();
+    const taken = function (x) { return !!findStaff_(all, x) || board.some(function (b) { return b.username === x; }); };
+    let cand = base.length >= 2 ? base : base + '00', n = 1;
+    while (taken(cand) && n < 999) { n++; cand = base.slice(0, 16) + n; }
+    payload.username = cand;
+  }
   const u = normUser_(payload.username);
   if (!/^[a-z0-9._-]{2,20}$/.test(u)) return { ok: false, err: 'bad_username' };
-  if (!/^\d{4}$/.test(String(payload.pin))) return { ok: false, err: 'bad_pin' };
+  if (!gg && !/^\d{4}$/.test(String(payload.pin))) return { ok: false, err: 'bad_pin' };
   if ((await getBoard_()).some(function (b) { return b.username === u; })) return { ok: false, err: 'taken' };
   // One profile per email, going forward — a name can repeat (two staff can
   // share one), an inbox can't. Existing accounts made before this may still
@@ -754,20 +770,12 @@ async function staffRegister(payload) {
   const email = cleanEmail_(payload.email);
   if (email === null) return { ok: false, err: 'bad_email' };
   if (!email) return { ok: false, err: 'email_required' };
-  /* an invite from the staff pipeline (portalGpInvite): the campus is theirs, no approval needed, and
-     the portal login they already have with this email doesn't count as a second profile */
-  let inv = null;
-  if (payload.join) {
-    inv = await gpInviteFind_(payload.join);
-    if (inv.err) return { ok: false, err: 'invite_' + inv.err };
-    payload = Object.assign({}, payload, { campus: inv.c.campus || payload.campus });
-  }
   const salt = pinSalt_();
   const id = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const now = new Date().toISOString();
   const pending = needsApproval_(payload.dept);
   const rec = {
-    id: id, username: u, name: payload.name || u, email: email, pinHash: hashPin_(payload.pin, salt), pinSalt: salt,
+    id: id, username: u, name: payload.name || u, email: email,
     campus: payload.campus || '', dept: normDept_(payload.dept || '', payload.ministry || ''), ministry: normMinistry_(payload.dept || '', payload.ministry || ''),
     role: payload.role || '', photo: '',
     // Asked for at sign-up, changed from Profile & settings later.
@@ -777,38 +785,93 @@ async function staffRegister(payload) {
     isAdmin: false, created: now, updated: now
   };
   if (CD_KINDS.indexOf(payload.cdKind) > -1 && rec.dept === LEADERSHIP_DEPT && rec.ministry === 'Campus Director') rec.cdKind = payload.cdKind;
+  let gtok = '';
+  if (gg) { gtok = addDeviceToken_(rec); rec.google = { sub: gg.sub, lastAt: now }; }
+  else { rec.pinHash = hashPin_(payload.pin, salt); rec.pinSalt = salt; }
   // checked and added in one write, so two sign-ups at once can't both take a username or an email
   const added = await mutateStaff_(function (rows) {
     if (findStaff_(rows, u)) return { abort: true, ok: false, err: 'taken' };
-    if (rows.some(function (r) { return r.email && r.email === email && !(inv && isApplicant_(r) && r.id === inv.c.staffId); })) return { abort: true, ok: false, err: 'email_taken' };
-    if (inv) rec.fromCand = inv.c.id;
+    if (rows.some(function (r) { return r.email && r.email === email; })) return { abort: true, ok: false, err: 'email_taken' };
     rows.push(rec);
     return { ok: true };
   });
   if (!added.ok) return added;
-  if (inv) {
-    // the application is done: they are on staff
-    const c = inv.rows.find(function (r) { return r && r.id === inv.c.id; });
-    c.gpInvite.usedAt = now; c.hired = { staffId: id, at: now };
-    c.log = (Array.isArray(c.log) ? c.log : []).concat([{ at: now, by: id, kind: 'note', text: 'Joined the GP app as ' + rec.name + ' (' + u + ')' }]).slice(-CAND_LOG_MAX);
-    if (c.stage !== 'arrived') { c.stage = 'arrived'; c.log.push({ at: now, by: id, kind: 'stage', text: 'arrived' }); }
-    c.updated = now; c.updatedBy = id;
-    await writeJSON('candidates', inv.rows);
-  }
   // No staff/profile in a pending response: this account has no session yet,
   // and returning one would let the client log it straight in anyway.
   if (pending) return { ok: true, pending: true };
   return {
-    ok: true, staff: publicStaff_(rec),
+    ok: true, user: u, token: gtok || undefined, staff: publicStaff_(rec),
     profile: { phone: rec.phone, joined: rec.joined, debt: false, mentorStatus: rec.mentorStatus, dashboardColor: '', dashboardBg: '', email: rec.email }
   };
 }
 
+/* Staff sign in with Google too (Nov 2026, Andrew: "start moving everyone off the username and PIN, and
+   using the Google sign-in like the portal"). The Google email must be the email on their profile; a fresh
+   device token comes back, which the page keeps as its "pin" — every handler's (username, pin) is
+   unchanged, and credOk_ checks the token. An email with no profile gets 'new' (sign up with Google). */
+function staffLoginOut_(s, extra) {
+  return Object.assign({
+    ok: true, user: s.username, staff: Object.assign(publicStaff_(s), { isAdmin: !!s.isAdmin }),
+    profile: { phone: s.phone, joined: s.joined, debt: s.debt, mentorStatus: s.mentorStatus || '', dashboardColor: s.dashboardColor || '', dashboardBg: s.dashboardBg || '', email: s.email || '' }
+  }, extra || {});
+}
+function staffByEmail_(rows, email) {
+  email = String(email || '').trim().toLowerCase();
+  if (!email) return null;
+  return rows.find(function (r) { return r && !isApplicant_(r) && String(r.email || '').toLowerCase() === email; }) || null;
+}
+async function staffLoginGoogle(token) {
+  const gg = await verifyGoogleToken_(token);
+  if (!gg) return { ok: false, err: 'google' };
+  const rows = await getStaff_();
+  const rec = staffByEmail_(rows, gg.email);
+  if (!rec) {
+    const app = rows.find(function (r) { return r && isApplicant_(r) && (r.email === gg.email || r.username === gg.email); });
+    return app ? { ok: false, err: 'applicant' } : { ok: false, err: 'new', email: gg.email, name: gg.name };
+  }
+  if (rec.archived) return { ok: false, err: 'auth' };
+  if (rec.active === false) return { ok: false, err: 'pending' };
+  let tok = '';
+  const out = await mutateStaff_(function (all) {
+    const r = all.find(function (x) { return x.id === rec.id; });
+    if (!r) return { abort: true, ok: false };
+    tok = addDeviceToken_(r);
+    r.google = { sub: gg.sub, lastAt: new Date().toISOString() };
+    return { ok: true };
+  });
+  if (!out || !out.ok) return { ok: false };
+  await clearLoginThrottle_(rec.username);
+  return staffLoginOut_(rec, { token: tok });
+}
+/* Profile & settings → "Sign in with Google from now on": signed in (PIN or otherwise), they connect their
+   Google account. A Google email that isn't on their profile becomes it, unless someone else has it. */
+async function staffLinkGoogle(username, pin, token) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const gg = await verifyGoogleToken_(token);
+  if (!gg) return { ok: false, err: 'google' };
+  let tok = '';
+  const out = await mutateStaff_(function (all) {
+    if (all.some(function (r) { return r.id !== s.id && String(r.email || '').toLowerCase() === gg.email; })) return { abort: true, ok: false, err: 'email_taken' };
+    const r = all.find(function (x) { return x.id === s.id; });
+    if (!r) return { abort: true, ok: false };
+    r.email = gg.email;
+    tok = addDeviceToken_(r);
+    r.google = { sub: gg.sub, lastAt: new Date().toISOString() };
+    r.updated = new Date().toISOString();
+    return { ok: true };
+  });
+  if (!out || !out.ok) return out || { ok: false };
+  return { ok: true, token: tok, email: gg.email };
+}
+
 async function staffLogin(username, pin) {
+  // an email in the username box (a profile that signs in with Google or a password, made from the portal)
+  if (/@/.test(String(username || ''))) { const byMail = staffByEmail_(await getStaff_(), username); if (byMail) username = byMail.username; }
   const s = await verifyStaff_(username, pin);
   if (s) {
     return {
-      ok: true, staff: Object.assign(publicStaff_(s), { isAdmin: !!s.isAdmin }),
+      ok: true, user: s.username, staff: Object.assign(publicStaff_(s), { isAdmin: !!s.isAdmin }),
       profile: {
         phone: s.phone, joined: s.joined, debt: s.debt, mentorStatus: s.mentorStatus || '',
         dashboardColor: s.dashboardColor || '', dashboardBg: s.dashboardBg || '', email: s.email || ''
@@ -7613,8 +7676,7 @@ function cleanCandidate_(c, prev, me) {
     calls: prev && Array.isArray(prev.calls) ? prev.calls : undefined,   // call notes: only hrCandidateCall writes them
     dts: prev && prev.dts ? prev.dts : undefined,   // GPDTS's marks (graduated, potential staff): only dtsMark writes them
     fromDts: prev && prev.fromDts ? prev.fromDts : undefined,   // a staff application that came from a GPDTS graduate (dtsToStaff)
-    gpInvite: prev && prev.gpInvite ? prev.gpInvite : undefined,   // the GP app invite (portalGpInvite) — only those handlers write it
-    hired: prev && prev.hired ? prev.hired : undefined,             // {staffId, at}: joined the GP app from that invite
+    hired: prev && prev.hired ? prev.hired : undefined,             // {staffId, at, by}: added to the GP app (portalGpAdd)
     log: prev ? (Array.isArray(prev.log) ? prev.log : []) : [], archived: prev ? (prev.archived || null) : null, archiveOff: prev && prev.archiveOff ? true : undefined,
     created: prev ? prev.created : now, createdBy: prev ? prev.createdBy : me.id, updated: now, updatedBy: me.id
   };
@@ -7755,7 +7817,7 @@ const DTS_AUTO = ['Students Applied', 'Students Accepted', 'Students Enrolled', 
 /* the fruit: written on a lecture or an outreach report, counted in that day's week (Nov 2026, Andrew:
    "these metrics will be in the lecture and the outreach tabs … getting rid of the numbers tab") */
 const DTS_FRUIT = { gospel: 'People Heard the Gospel', healings: 'Healings', salvations: 'Salvations', baptisms: 'Baptisms' };
-const DTS_OUT_MAX = 100, DTS_REPORTS_MAX = 80, DTS_PAST_FROM = 2000, GP_INVITE_DAYS = 30;
+const DTS_OUT_MAX = 100, DTS_REPORTS_MAX = 80, DTS_PAST_FROM = 2000;
 function dtsFruit_(o) {
   const out = {};
   Object.keys(DTS_FRUIT).forEach(function (k) {
@@ -7904,7 +7966,7 @@ async function dtsBoardOut_(g) {
   allC.forEach(function (c) { if (c) byCand[c.id] = c; });
   school.forEach(function (x) {
     const sc = byCand[(dtsMarks_(byCand[x.id] || {}) || {}).staffCand];
-    if (sc) x.staffCand = { id: sc.id, stage: sc.stage, hired: !!sc.hired, archived: !!sc.archived, invited: gpInviteOpen_(sc) };
+    if (sc) x.staffCand = { id: sc.id, stage: sc.stage, hired: !!sc.hired, archived: !!sc.archived };
   });
   const lect = await readJSON('dtsLect:' + g.campus, { lectures: [] });
   const outr = await readJSON('dtsOut:' + g.campus, { outreaches: [] });
@@ -8103,56 +8165,51 @@ async function dtsToStaff(username, pin, ids) {
   }
   return Object.assign(await dtsBoardOut_(g), { moved: moves.length });
 }
-function gpInviteOpen_(c) {
-  const i = c && c.gpInvite;
-  return !!(i && i.hash && !i.usedAt && !(c.hired) && Date.parse(i.exp || '') > Date.now());
-}
-function gpInviteToken_(c, by) {
-  const token = crypto.randomBytes(24).toString('hex'), now = Date.now();
-  c.gpInvite = { hash: refHash_('gp:' + token), at: new Date(now).toISOString(), by: by || '', exp: new Date(now + GP_INVITE_DAYS * 86400000).toISOString() };
-  return token;
-}
-const GP_INVITE_STAGES = ['accepted', 'practical', 'arrived'];
-async function portalGpInvite(username, pin, candId) {
+/* "Add to the GP app" (Nov 2026, Andrew: "since it's already connected to the app, instead of having them
+   make a user and PIN, they will automatically be able to sign in to the impact app once invited"). The
+   person's portal account becomes their staff account — the same Google sign-in, or email and password,
+   now opens the GP app. Their campus is the application's; the department and ministry the inviter picks
+   (or they choose them in Profile & settings). No admin approval — but only an admin may put someone
+   into Campus Leadership, as always. Their applications stay, as history. */
+const GP_ADD_STAGES = ['accepted', 'practical', 'arrived'];
+async function portalGpAdd(username, pin, candId, opts) {
   const g = await hrGate_(username, pin); if (g.out) return g.out;
+  opts = opts && typeof opts === 'object' ? opts : {};
   const rows = await getCandidates_();
   const c = rows.find(function (r) { return r && r.id === str_(candId, 60); });
   if (!c) return { ok: false, err: 'not_found' };
   if (!canHR_(g.s) && !portalMaySee_(g.s, c)) return { ok: false, err: 'not_authorized' };
   if (c.type !== 'staff' && c.type !== 'volunteer') return { ok: false, err: 'not_staff' };
-  if (GP_INVITE_STAGES.indexOf(c.stage) === -1) return { ok: false, err: 'not_accepted' };
+  if (GP_ADD_STAGES.indexOf(c.stage) === -1) return { ok: false, err: 'not_accepted' };
   if (c.hired) return { ok: false, err: 'hired' };
-  const token = gpInviteToken_(c, g.s.id), now = new Date().toISOString();
-  c.log = (Array.isArray(c.log) ? c.log : []).concat([{ at: now, by: g.s.id, kind: 'note', text: 'Invited to the GP app' }]).slice(-CAND_LOG_MAX);
+  if (!c.staffId) return { ok: false, err: 'no_account' };
+  const dept = str_(opts.dept, 80) || '', ministry = str_(opts.ministry, 80) || '';
+  if (dept && needsApproval_(dept) && !g.s.isAdmin) return { ok: false, err: 'clt_admin' };
+  const now = new Date().toISOString();
+  let kind = '';
+  const done = await mutateStaff_(function (all) {
+    const r = all.find(function (x) { return x.id === c.staffId; });
+    if (!r) return { abort: true, ok: false, err: 'no_account' };
+    if (!isApplicant_(r)) return { abort: true, ok: false, err: 'already_staff' };
+    r.applicantHistory = (Array.isArray(r.applicantHistory) ? r.applicantHistory : []).concat([Object.assign({}, r.applicant || {}, { at: now })]).slice(-10);
+    delete r.applicant;
+    r.kind = 'staff';
+    r.campus = c.campus || r.campus || '';
+    if (dept) { r.dept = normDept_(dept, ministry); r.ministry = normMinistry_(dept, ministry); }
+    if (STAFF_TYPE_IDS.indexOf(opts.staffType) > -1) r.staffType = opts.staffType;
+    if (!r.country && c.country) r.country = cleanCountry_(c.country);
+    if (!r.phone && c.phone) r.phone = c.phone;
+    r.active = true; r.isAdmin = false; r.fromCand = c.id; r.updated = now;
+    kind = authKindOf_(r);
+    return { ok: true };
+  });
+  if (!done || !done.ok) return done || { ok: false };
+  c.hired = { staffId: c.staffId, at: now, by: g.s.id };
+  c.log = (Array.isArray(c.log) ? c.log : []).concat([{ at: now, by: g.s.id, kind: 'note', text: 'Added to the GP app' + (dept ? ' — ' + [ministry, dept].filter(Boolean).join(', ') : '') }]).slice(-CAND_LOG_MAX);
+  if (c.stage !== 'arrived') { c.stage = 'arrived'; c.log.push({ at: now, by: g.s.id, kind: 'stage', text: 'arrived' }); }
   c.updated = now; c.updatedBy = g.s.id;
   await writeJSON('candidates', rows);
-  return { ok: true, token: token, exp: c.gpInvite.exp };
-}
-/* the applicant's own way in: their dashboard's "Make my GP app account" (a fresh link each time) */
-async function portalMyGpJoin(username, pin) {
-  const a = await applicantCand_(username, pin); if (a.out) return a.out;
-  if (!gpInviteOpen_(a.cand)) return { ok: false, err: 'no_invite' };
-  const exp = a.cand.gpInvite.exp, by = a.cand.gpInvite.by;
-  const token = gpInviteToken_(a.cand, by);
-  a.cand.gpInvite.exp = exp;   // the invite's own time is kept, only the link is new
-  await writeJSON('candidates', a.rows);
-  return { ok: true, token: token };
-}
-async function gpInviteFind_(token) {
-  token = String(token || '').replace(/[^a-f0-9]/g, '');
-  if (token.length !== 48) return { err: 'bad' };
-  const h = refHash_('gp:' + token), rows = await getCandidates_();
-  const c = rows.find(function (r) { return r && r.gpInvite && r.gpInvite.hash === h; });
-  if (!c) return { err: 'bad' };
-  if (c.hired || c.gpInvite.usedAt) return { err: 'used' };
-  if (!(Date.parse(c.gpInvite.exp || '') > Date.now())) return { err: 'expired' };
-  return { c: c, rows: rows };
-}
-async function staffInviteInfo(token) {
-  const f = await gpInviteFind_(token);
-  if (f.err) return { ok: false, err: f.err };
-  const c = f.c;
-  return { ok: true, name: c.name || '', email: c.email || '', phone: c.phone || '', country: c.country || '', campus: c.campus || '', type: c.type };
+  return { ok: true, candidate: c, signIn: kind };
 }
 
 /* ==================== YWAM GP Portal ====================
@@ -8402,7 +8459,6 @@ function portalAppOut_(c) {
     members: c.type === 'team' ? ((c.portal && c.portal.members) || []) : undefined,
     photos: c.type === 'team' ? ((c.portal && c.portal.photos) || null) : undefined,
     reference: (function (r) { delete r.answers; delete r.leaderEmail; return r; })(refState_(c)), // the applicant never reads the reference
-    gpInvite: gpInviteOpen_(c) ? { at: c.gpInvite.at } : null,   // "make your GP app account" on their dashboard
     hired: c.hired ? { at: c.hired.at } : null,
     steps: portalSteps_(c)
   };
@@ -8420,7 +8476,6 @@ function portalCandOut_(c, byId) {
     reference: refState_(c),
     docKinds: docKindsFor_(c),
     steps: portalSteps_(c),
-    gpInvite: c.gpInvite ? { at: c.gpInvite.at, by: c.gpInvite.by || '', open: gpInviteOpen_(c) } : null,   // never the hash
     hasAccount: !!acct
   });
 }
@@ -8484,7 +8539,7 @@ async function portalLoginGoogle(idToken) {
   const rows = await getStaff_();
   const rec = rows.find(function (r) { return r.email === g.email || r.username === g.email; });
   if (!rec) return { ok: false, err: 'new', email: g.email, name: g.name };
-  if (!isApplicant_(rec)) return { ok: false, err: 'staff' };
+  if (!isApplicant_(rec)) return { ok: false, err: rec.fromCand ? 'staff_now' : 'staff' };
   if (rec.active === false) return { ok: false, err: 'auth' };
   let tok = '';
   const out = await mutateStaff_(function (all) {
@@ -9336,7 +9391,8 @@ async function portalBoot(username, pin) {
     } else out.schedules = await applicantSchedules_(cand, null);
     return out;
   }
-  if (!canPortal_(s)) return { ok: false, err: 'not_authorized' };
+  // added to the GP app from their application: the same sign-in opens the GP app now
+  if (!canPortal_(s)) return s.fromCand ? { ok: false, err: 'staff_now', name: s.name || '' } : { ok: false, err: 'not_authorized' };
   const rows = await getStaff_();
   const byId = {}; rows.forEach(function (r) { byId[r.id] = r; });
   const tripOf = {};
@@ -12013,9 +12069,9 @@ const HANDLERS = {
   dtsDeleteOutreach: function (a) { return dtsDeleteOutreach(a[0], a[1], a[2]); },
   dtsSavePast: function (a) { return dtsSavePast(a[0], a[1], a[2], a[3], a[4]); },
   dtsToStaff: function (a) { return dtsToStaff(a[0], a[1], a[2]); },
-  portalGpInvite: function (a) { return portalGpInvite(a[0], a[1], a[2]); },
-  portalMyGpJoin: function (a) { return portalMyGpJoin(a[0], a[1]); },
-  staffInviteInfo: function (a) { return staffInviteInfo(a[0]); },
+  portalGpAdd: function (a) { return portalGpAdd(a[0], a[1], a[2], a[3]); },
+  staffLoginGoogle: function (a) { return staffLoginGoogle(a[0]); },
+  staffLinkGoogle: function (a) { return staffLinkGoogle(a[0], a[1], a[2]); },
   dtsDeleteLecture: function (a) { return dtsDeleteLecture(a[0], a[1], a[2]); },
   getMyBroadcasts: function (a) { return getMyBroadcasts(a[0], a[1]); },
   sendBroadcast: function (a) { return sendBroadcast(a[0], a[1], a[2]); },
