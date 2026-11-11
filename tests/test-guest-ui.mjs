@@ -87,9 +87,10 @@ async function open(opts) {
 const credCalls = () => CALLS.filter(c => c.args.some(a => a === '1234' || a === 'dara'));
 
 {
-  const { ctx, page } = await open();
-  ok('the log-in screen offers "Look around without an account"', !!(await page.$('#lookAround')) && /Look around without an account/.test(await page.$eval('#lookAround', e => e.innerText)));
-  await page.click('#lookAround'); await page.waitForTimeout(900);
+  { const { ctx, page } = await open();
+    ok('the log-in screen has no "Look around without an account" (Nov 2026, Andrew)', !!(await page.$('#main h2')) && !(await page.$('#lookAround')) && !/Look around without an account/.test(await page.$eval('#main', e => e.innerText)));
+    await ctx.close(); }
+  const { ctx, page } = await open({ qs: '?guest=1' });
   ok('it opens the app as a guest: the tour, the Library and the Base cards', await page.evaluate(() => S.guest === true) && !!(await page.$('.guestHero')) && !!(await page.$('#guestLibrary')) && !!(await page.$('#guestBase')));
   ok('every tool is listed with what it does, and a lock', (await page.$$('.guestTool')).length >= 8 && (await page.$$('.guestTool .guestLock')).length === (await page.$$('.guestTool')).length);
   ok('the bottom bar has five tabs, the first "Look around", the Library last; no bell', (await page.$$('nav.bottom button')).length === 5 && !!(await page.$('nav.bottom [data-tab="library"]')) && /Look around/.test(await page.$eval('nav.bottom button', e => e.innerText)) && !(await page.$('#bellBtn')));
@@ -144,8 +145,7 @@ const credCalls = () => CALLS.filter(c => c.args.some(a => a === '1234' || a ===
   await ctx.close();
 }
 {
-  const { ctx, page } = await open({ small: true, km: true });
-  await page.click('#lookAround'); await page.waitForTimeout(900);
+  const { ctx, page } = await open({ small: true, km: true, qs: '?guest=1' });
   ok('in Khmer at 320px the tour is Khmer and fits', /[ក-៿]{4}/.test(await page.$eval('.guestHero h2', e => e.innerText)) && await page.evaluate(() => document.documentElement.scrollWidth <= 321));
   await ctx.close();
 }
