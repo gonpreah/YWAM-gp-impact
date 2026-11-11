@@ -203,5 +203,38 @@ ok('the office takes a year’s burn rate out, PDF and all', r.ok && !r.burn['20
 r = await call('finDelete', ['bopha', '1234', 'pl', '2026-08']);
 ok('… or a month', r.ok && !r.pl['2026-08'] && !!r.pl['2026-09']);
 
+console.log('=== balances: cash on hand, the bank, reconciled ===');
+const today = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+const dayBefore = (iso, n) => { const x = new Date(iso + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() - n); return x.toISOString().slice(0, 10); };
+r = await call('getFinance', ['mark', '1234']);
+ok('none entered yet: the dashboard says so (null)', r.ok && r.balances === null);
+r = await call('finBalancesSave', ['mark', '1234', { cash: 100, bank: 200, asOf: today }]);
+ok('Campus Leadership can’t enter them', !r.ok && r.err === 'not_authorized');
+r = await call('finBalancesSave', ['dara', '1234', { cash: 100, bank: 200, asOf: today }]);
+ok('ordinary staff can’t either', !r.ok);
+r = await call('finBalancesSave', ['bopha', '1234', { cash: 100, asOf: today }]);
+ok('both amounts are needed', !r.ok && r.err === 'bad_amount');
+r = await call('finBalancesSave', ['bopha', '1234', { cash: 'lots', bank: 5, asOf: today }]);
+ok('an amount must be a number', !r.ok && r.err === 'bad_amount');
+r = await call('finBalancesSave', ['bopha', '1234', { cash: 100, bank: 200, asOf: '2099-01-01' }]);
+ok('a day in the future is refused', !r.ok && r.err === 'bad_date');
+r = await call('finBalancesSave', ['bopha', '1234', { cash: 100, bank: 200, asOf: today, reconciled: 'soon' }]);
+ok('a reconciled date that isn’t a date is refused', !r.ok && r.err === 'bad_date');
+const d1 = dayBefore(today, 30), r1 = dayBefore(today, 40);
+r = await call('finBalancesSave', ['bopha', '1234', { cash: 412.5, bank: 18250.75, asOf: d1, reconciled: r1 }]);
+ok('the office enters them; the total is the liquid assets', r.ok && r.balances.cash === 412.5 && r.balances.bank === 18250.75 && r.balances.total === 18663.25 && r.balances.asOf === d1 && r.balances.reconciled === r1 && r.balances.by === 'Bopha Keo' && r.balances.prev === null);
+r = await call('finBalancesSave', ['lina', '1234', { cash: 300, bank: 17000, asOf: today, reconciled: d1 }]);
+ok('a Finances member from another ministry can too, and a new day keeps the last one', r.ok && r.balances.total === 17300 && r.balances.prev && r.balances.prev.total === 18663.25 && r.balances.prev.asOf === d1);
+r = await call('finBalancesSave', ['bopha', '1234', { cash: 350, bank: 17000, asOf: today, reconciled: '' }]);
+ok('a correction the same day replaces it (the last day stays the one before); reconciled can be cleared', r.ok && r.balances.total === 17350 && r.balances.reconciled === '' && r.balances.prev.asOf === d1 && doc().balHist.length === 1);
+r = await call('getFinance', ['sophea', '1234']);
+ok('a department director sees them', r.ok && r.balances && r.balances.total === 17350);
+r = await call('getFinance', ['dara', '1234']);
+ok('ordinary staff don’t', !r.ok);
+r = await call('getFinance', ['tom', '1234']);
+ok('another campus’s leadership sees its own campus, not this one', r.ok && r.balances === null);
+r = await call('finSetCash', ['bopha', '1234', '2026-09', 5000]);
+ok('another finance save keeps the balances', r.ok && r.balances && r.balances.total === 17350);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

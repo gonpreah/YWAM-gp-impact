@@ -743,6 +743,17 @@ and QuickBooks' **A/R Ageing Summary** (staff debt by person and by 1/2/3/over-3
   `nameMap` by the spelling on the report, so next month needs nothing. The newest report
   then writes each department's `Staff Debt ($)` exactly as `saveStaffDebt` did (pulse and
   department pages keep working); an older report only fills `debtHist`.
+- **Balances** (Nov 2026, Uriah: "on the very top … the balances from the bank account and the cash on
+  hand … a total … only the liquid … and then if it's reconciled or not"): the first card on the office's
+  Reports and Dashboard tabs and on leadership's Finances tab (`finBalancesHtml_`, `#finBal`): **Total liquid
+  assets** = cash on hand + the ABA bank account, each part, the day they're for, who entered them, the move
+  since the last day entered, and "✓ Reconciled {date}" — or ⚠️ when it is more than `FIN_REC_DAYS` (35) old
+  or never. The office's **Update balances** form (`S.finBalEdit`) → `finBalancesSave(user, pin, {cash, bank,
+  asOf, reconciled})` (finCanEdit_; both amounts needed; dates real and not in the future; reconciled may be
+  empty). Kept as `balances` on `finance:<campus>` (getFinDoc_ carries it, so every other finance save keeps
+  it); a new day moves the last into `balHist` (24), a correction the same day replaces it. Read by everyone
+  who sees the dashboard (`finBalancesOut_` in finOut_). Typed by hand for now — QuickBooks' Balance Sheet
+  could fill it later. Khmer: docs/khmer-needed.md §85.
 - **The repo is public**: tests use made-up reports (`tests/fin-fixtures.mjs` writes real
   PDFs in the same layout); never commit the office's PDFs or their names.
 - Tests: tests/test-finance.mjs (server), test-finance-parse.mjs (the parser),

@@ -2639,3 +2639,12 @@ body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
 #main.gpEnter { animation:gpEnter .42s cubic-bezier(.2,.8,.2,1) backwards; }   /* never left applied: a transform on #main would make it the box that position:fixed screens (the Library reader, sheets) are placed in — the class goes when it ends (render) */
 @keyframes gpEnter { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
 @media (prefers-reduced-motion: reduce){ #main.gpEnter { animation:none; } }
+
+/* ---- Balances (Nov 2026): the money on hand, at the top of Finances ---- */
+.finBalTotal { margin:4px 0 10px; }
+.finBalNum { font-weight:800; font-size:34px; line-height:1.1; color:var(--ink); overflow-wrap:anywhere; }
+.finBalParts { grid-template-columns:1fr 1fr; }
+.finBalRec { margin:10px 0 0; padding:8px 12px; border-radius:10px; font-size:13.5px; font-weight:700; }
+.finBalRec.ok { background:var(--goodSoft); color:var(--good); }
+.finBalRec.late { background:var(--banner); color:var(--bannerInk); border:1px solid var(--bannerBorder); }
+.finBalForm input[type=number], .finBalForm input[type=date] { width:100%; }

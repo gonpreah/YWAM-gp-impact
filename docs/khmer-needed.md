@@ -4344,3 +4344,31 @@ The staff's Teams list: each team's dates at our base, e.g. "In Siem Reap 10 Jan
 | Updated {date} | បានកែប្រែ {date} |
 
 The staff's Applications list: "Sort by" chips (When they come — teams only — Date applied, Latest change) and a Newest / Oldest first button; the line under each name says when they applied or when it last changed.
+
+## 85. Finances — balances (cash on hand, the bank, reconciled)
+
+| English | Khmer (draft) |
+|---|---|
+| Balances | សមតុល្យ |
+| What is in hand today: the cash box and the ABA bank account. Their total shows as the liquid assets. | អ្វីដែលមាននៅក្នុងដៃថ្ងៃនេះ៖ ប្រអប់សាច់ប្រាក់ និងគណនីធនាគារ ABA។ ចំនួនសរុបរបស់វាបង្ហាញជាទ្រព្យសកម្មរាវ។ |
+| Cash on hand | សាច់ប្រាក់នៅក្នុងដៃ |
+| ABA bank account | គណនីធនាគារ ABA |
+| Balances as of | សមតុល្យគិតត្រឹម |
+| Last reconciled with the bank | ផ្ទៀងផ្ទាត់ជាមួយធនាគារចុងក្រោយ |
+| Leave it empty if the books haven’t been reconciled yet. | ទុកឲ្យនៅទំនេរ ប្រសិនបើបញ្ជីមិនទាន់បានផ្ទៀងផ្ទាត់នៅឡើយ។ |
+| Enter today’s cash on hand and the ABA bank balance — leadership sees their total at the top of their Finances tab. | បញ្ចូលសាច់ប្រាក់នៅក្នុងដៃ និងសមតុល្យធនាគារ ABA ថ្ងៃនេះ — ថ្នាក់ដឹកនាំឃើញចំនួនសរុបនៅខាងលើផ្ទាំងហិរញ្ញវត្ថុរបស់ពួកគេ។ |
+| The Finances office hasn’t entered the balances yet. | ការិយាល័យហិរញ្ញវត្ថុមិនទាន់បានបញ្ចូលសមតុល្យនៅឡើយទេ។ |
+| Enter the balances | បញ្ចូលសមតុល្យ |
+| same as {date} | ដូច {date} |
+| {money} since {date} | {money} ចាប់តាំងពី {date} |
+| entered by {name} | បញ្ចូលដោយ {name} |
+| Total liquid assets | ទ្រព្យសកម្មរាវសរុប |
+| Last reconciled {date} — {n} days ago | ផ្ទៀងផ្ទាត់ចុងក្រោយ {date} — {n} ថ្ងៃមុន |
+| Reconciled {date} | បានផ្ទៀងផ្ទាត់ {date} |
+| Not reconciled yet | មិនទាន់បានផ្ទៀងផ្ទាត់ |
+| Update balances | កែប្រែសមតុល្យ |
+| Enter both the cash on hand and the bank balance. | សូមបញ្ចូលទាំងសាច់ប្រាក់នៅក្នុងដៃ និងសមតុល្យធនាគារ។ |
+| Choose the day these balances are for. | សូមជ្រើសរើសថ្ងៃដែលសមតុល្យទាំងនេះសំដៅលើ។ |
+| Those dates can’t be in the future. | កាលបរិច្ឆេទទាំងនោះមិនអាចជាថ្ងៃអនាគតបានទេ។ |
+
+The card at the top of Finances (the office's Reports and Dashboard tabs, and Campus Leadership's Finances tab). "Liquid assets" is drafted as ទ្រព្យសកម្មរាវ, the accounting term; "reconciled" (the books checked against the bank statement) as ផ្ទៀងផ្ទាត់ — please check both with the Finances office's own words.

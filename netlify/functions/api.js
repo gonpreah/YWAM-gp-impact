@@ -2488,7 +2488,8 @@ async function getFinDoc_(c) {
   const d = await readJSON(finKey_(c), {});
   return { pl: d.pl && typeof d.pl === 'object' ? d.pl : {}, burn: d.burn && typeof d.burn === 'object' ? d.burn : {},
     debt: d.debt && typeof d.debt === 'object' ? d.debt : null, debtHist: Array.isArray(d.debtHist) ? d.debtHist : [],
-    nameMap: d.nameMap && typeof d.nameMap === 'object' ? d.nameMap : {} };
+    nameMap: d.nameMap && typeof d.nameMap === 'object' ? d.nameMap : {},
+    balances: d.balances && typeof d.balances === 'object' ? d.balances : null, balHist: Array.isArray(d.balHist) ? d.balHist : [] };
 }
 function finAmt_(v) { if (v === null || v === undefined || v === '') return null; const n = finiteNum_(v, -1e9, 1e9); return n === null ? undefined : Math.round(n * 100) / 100; }
 const finYm_ = function (k) { return /^\d{4}-(0[1-9]|1[0-2])$/.test(String(k)) ? String(k) : ''; };
@@ -2552,7 +2553,49 @@ async function finOut_(s, c, d) {
     out.debtFile = { fileId: d.debt.fileId || '', fileName: d.debt.fileName || '' };
   }
   if (edit) out.nameMap = d.nameMap;
+  out.balances = finBalancesOut_(d, nameOf);
   return out;
+}
+/* ---------- Balances: the money on hand right now (Nov 2026) ----------
+   Uriah: "on the very top … the balances from the bank account and the cash on hand … a
+   total … only the liquid … and then if it's reconciled or not … put a date of when it was
+   last reconciled". The Finances office types the cash on hand and the ABA bank account's
+   balance, the day they are true for, and the day the books were last reconciled with the
+   bank; the dashboard leads with the total liquid assets. Everyone who sees the dashboard
+   sees it (finCanView_); only the office changes it (finCanEdit_). Each save keeps the one
+   before in balHist (FIN_BAL_HIST), so the card can say how the total moved. */
+const FIN_BAL_HIST = 24;
+function finDay_(v) {
+  const s = String(v == null ? '' : v);
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s + 'T00:00:00Z')) && s <= baseToday_() ? s : '';
+}
+function finBalancesOut_(d, nameOf) {
+  const b = d.balances;
+  if (!b) return null;
+  const total = Math.round(((Number(b.cash) || 0) + (Number(b.bank) || 0)) * 100) / 100;
+  const prev = d.balHist.length ? d.balHist[d.balHist.length - 1] : null;
+  return { cash: b.cash, bank: b.bank, total: total, asOf: b.asOf || '', reconciled: b.reconciled || '', at: b.at || '', by: nameOf(b.by),
+    prev: prev ? { total: Math.round(((Number(prev.cash) || 0) + (Number(prev.bank) || 0)) * 100) / 100, asOf: prev.asOf || '' } : null };
+}
+async function finBalancesSave(username, pin, p, campus) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!finCanEdit_(s)) return { ok: false, err: 'not_authorized' };
+  p = p && typeof p === 'object' ? p : {};
+  const cash = finAmt_(p.cash), bank = finAmt_(p.bank);
+  if (cash === undefined || bank === undefined || cash === null || bank === null) return { ok: false, err: 'bad_amount' };
+  const asOf = finDay_(p.asOf);
+  if (!asOf) return { ok: false, err: 'bad_date' };
+  const rec = p.reconciled === '' || p.reconciled == null ? '' : finDay_(p.reconciled);
+  if (rec === '' && p.reconciled) return { ok: false, err: 'bad_date' };
+  const c = finCampus_(s, campus), d = await getFinDoc_(c);
+  const next = { cash: cash, bank: bank, asOf: asOf, reconciled: rec, at: new Date().toISOString(), by: s.id };
+  const old = d.balances;
+  // a correction to the same day's figures replaces them; a new day keeps the last one as history
+  if (old && old.asOf !== asOf) d.balHist = d.balHist.concat([old]).slice(-FIN_BAL_HIST);
+  d.balances = next;
+  await writeJSON(finKey_(c), d);
+  return finOut_(s, c, d);
 }
 async function getFinance(username, pin, campus) {
   const s = await verifyStaff_(username, pin);
@@ -11385,6 +11428,7 @@ const HANDLERS = {
   getFinance: function (a) { return getFinance(a[0], a[1], a[2]); },
   finSave: function (a) { return finSave(a[0], a[1], a[2], a[3], a[4], a[5]); },
   finSetCash: function (a) { return finSetCash(a[0], a[1], a[2], a[3], a[4]); },
+  finBalancesSave: function (a) { return finBalancesSave(a[0], a[1], a[2], a[3]); },
   finMatchName: function (a) { return finMatchName(a[0], a[1], a[2], a[3], a[4]); },
   finDelete: function (a) { return finDelete(a[0], a[1], a[2], a[3], a[4]); },
   finFile: function (a) { return finFile(a[0], a[1], a[2]); },
