@@ -773,7 +773,10 @@ async function staffRegister(payload) {
   const salt = pinSalt_();
   const id = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const now = new Date().toISOString();
-  const pending = needsApproval_(payload.dept);
+  /* Every new account waits for an admin to accept or decline it (Nov 2026, Andrew: "when creating a new
+     account … admin will receive an approval whether they accept them or deny them"); it used to be only
+     Campus Leadership. The admins hear of it at once (pushNow_ 'signup') and it waits in Admin → Approvals. */
+  const pending = true;
   const rec = {
     id: id, username: u, name: payload.name || u, email: email,
     campus: payload.campus || '', dept: normDept_(payload.dept || '', payload.ministry || ''), ministry: normMinistry_(payload.dept || '', payload.ministry || ''),
@@ -798,7 +801,11 @@ async function staffRegister(payload) {
   if (!added.ok) return added;
   // No staff/profile in a pending response: this account has no session yet,
   // and returning one would let the client log it straight in anyway.
-  if (pending) return { ok: true, pending: true };
+  if (pending) {
+    const admins = (await getStaff_()).filter(function (r) { return r && r.isAdmin && r.active !== false && !r.archived && !isApplicant_(r); });
+    for (const a of admins) await pushNow_(a.id, 'signup', { name: rec.name }, 'teams.html?view=approvals');
+    return { ok: true, pending: true };
+  }
   return {
     ok: true, user: u, token: gtok || undefined, staff: publicStaff_(rec),
     profile: { phone: rec.phone, joined: rec.joined, debt: false, mentorStatus: rec.mentorStatus, dashboardColor: '', dashboardBg: '', email: rec.email }
@@ -5024,6 +5031,7 @@ const PUSH_TEXT = {
   title: { en: 'My YWAM GP', km: 'My YWAM GP' },
   daily: { en: 'Your check-in for today isn’t in yet.', km: 'ការរាយការណ៍ប្រចាំថ្ងៃរបស់អ្នកសម្រាប់ថ្ងៃនេះ មិនទាន់មាននៅឡើយទេ។' },
   oneonone: { en: '{n} of 2 1-on-1s with {name} this month.', km: 'ជួបមួយទល់មួយជាមួយ {name} បាន {n} ក្នុងចំណោម 2 ដងក្នុងខែនេះ។' },
+  signup: { en: '{name} made a GP app account — approve or decline it in Admin.', km: '{name} បានបង្កើតគណនីកម្មវិធី GP — សូមអនុម័ត ឬបដិសេធនៅក្នុងផ្នែកអ្នកគ្រប់គ្រង។' },
   admin: { en: '{n} waiting for your approval in Admin.', km: '{n} កំពុងរង់ចាំការអនុម័តរបស់អ្នក ក្នុងផ្នែកអ្នកគ្រប់គ្រង។' },
   p360ask: { en: 'A 360 review is waiting for your feedback ({n}).', km: 'ការវាយតម្លៃ 360 កំពុងរង់ចាំមតិរបស់អ្នក ({n})។' },
   p360plan: { en: 'Your 360 action plan’s {q} review is due.', km: 'ដល់ពេលពិនិត្យផែនការសកម្មភាព 360 របស់អ្នកសម្រាប់ {q} ហើយ។' },

@@ -1703,7 +1703,7 @@ function bind(){
         // Campus Leadership only — every other department signs in right away.
         // There is no session to start: a base leader has to approve first.
         rb.disabled=false; rb.textContent='Create profile'; S.regMode=false;
-        showMsg('Submitted — a base leader needs to approve a leadership account before you can log in.');
+        showMsg(t('Thanks! An admin will look at your account — you can sign in once it is approved.'));
         render();
       } else if(d.ok){ S.auth={user:d.user||payload.username.toLowerCase(),pin:d.token||payload.pin}; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; afterLogin(); showMsg('Profile created — add a photo!'); S.view='profile'; render(); }
       else {

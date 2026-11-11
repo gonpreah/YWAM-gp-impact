@@ -861,7 +861,7 @@ function kpiInputAttrs_(metric){
 var _ggl={ cfg:null, asked:false, loading:false, ready:false, client:null, busy:false, mode:'login', after:null };
 function gglCfg_(){
   if(_ggl.asked) return; _ggl.asked=true;
-  run('portalAuthConfig',[],function(d){ _ggl.cfg=(d && d.ok) ? d : { google:'' }; if(_ggl.cfg.google && (!S.auth || S.view==='profile')) render(); }, function(){ _ggl.cfg={ google:'' }; });
+  run('portalAuthConfig',[],function(d){ _ggl.cfg=(d && d.ok) ? d : { google:'' }; if(_ggl.cfg.google && (!S.me || S.view==='profile')) render(); }, function(){ _ggl.cfg={ google:'' }; });
 }
 function gglOn_(){ return !!(_ggl.cfg && _ggl.cfg.google); }
 function gglBtnHtml_(id, label){

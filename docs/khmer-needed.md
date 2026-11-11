@@ -4564,3 +4564,14 @@ GPDTS on My Ministry (the school by year, past years, Outreach reports, "What Go
 | Sign in with Google from now on — quicker, and nothing to remember. The Google account you connect becomes this profile’s. | ចាប់ពីពេលនេះ ចូលដោយ Google — លឿនជាង ហើយគ្មានអ្វីត្រូវចងចាំ។ គណនី Google ដែលអ្នកភ្ជាប់ នឹងក្លាយជារបស់ប្រវត្តិរូបនេះ។ |
 
 The page someone signed in with a username and PIN sees first (once each time the app is opened) until they connect Google, and its Profile & settings twin.
+
+## 90. Every new account waits for an admin
+
+| English | Khmer (draft) |
+|---|---|
+| Declined | បានបដិសេធ |
+| Decline {name}’s account? It will be removed. | បដិសេធគណនីរបស់ {name}? វានឹងត្រូវបានលុបចេញ។ |
+| Thanks! An admin will look at your account — you can sign in once it is approved. | សូមអរគុណ! អ្នកគ្រប់គ្រងនឹងពិនិត្យគណនីរបស់អ្នក — អ្នកអាចចូលបាននៅពេលវាត្រូវបានអនុម័ត។ |
+| New accounts and moves waiting for a yes | គណនីថ្មី និងការផ្លាស់ប្តូរ ដែលកំពុងរង់ចាំការយល់ព្រម |
+
+Admin → Approvals (Approve / Decline every new sign-up) and the message after signing up.
