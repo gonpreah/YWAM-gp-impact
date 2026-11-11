@@ -1668,7 +1668,6 @@ function bind(){
       }
     });
   };
-  var look=document.getElementById('lookAround'); if(look) look.onclick=function(){ gpTap(); gpEnterGuest_(); };
   var toReg=document.getElementById('toReg'); if(toReg) toReg.onclick=function(){ S.regMode=true; if(!S.roster.length){ run('teamRoster',[],function(r){S.roster=Array.isArray(r)?r:[];render();}); } else render(); };
   var toLogin=document.getElementById('toLogin'); if(toLogin) toLogin.onclick=function(){ S.regMode=false; S.regGoogle=null; render(); };
 

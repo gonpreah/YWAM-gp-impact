@@ -933,18 +933,14 @@ function loginHtml(){
   if(gglOn_() && !S.pinLogin) return '<h2>Welcome back</h2><p class="sub">'+esc(t('Sign in with your Google account.'))+'</p>'+
     '<div class="card">'+gglBtnHtml_('googleLogin', t('Continue with Google'))+
     '<button class="linkbtn" id="showPinLogin">'+esc(t('First time with Google? Sign in once with your username and PIN to connect it'))+'</button>'+
-    '<button class="linkbtn" id="toReg">New here? Create my profile</button></div>'+
-    '<button class="btn ghost guestEntry" id="lookAround">👀 '+esc(t('Look around without an account'))+'</button>'+
-    '<p class="hint" style="text-align:center">'+esc(t('Read the Library and see the app first — no username needed.'))+'</p>';
+    '<button class="linkbtn" id="toReg">New here? Create my profile</button></div>';
   return '<h2>Welcome back</h2><p class="sub">'+esc(gglOn_() ? t('Sign in once with your username and PIN — then connect your Google account.') : 'Log in with your username and 4-digit PIN.')+'</p>'+
     '<div class="card">'+
     (gglOn_() ? '<button class="linkbtn" id="hidePinLogin" style="margin-top:0">← '+esc(t('Continue with Google instead'))+'</button>' : '')+
     '<label class="f">'+esc(t('Username or email'))+'</label><input type="text" id="li_user" autocapitalize="none" placeholder="e.g. sokha">'+
     '<label class="f">'+esc(t('PIN or password'))+'</label><input type="password" id="li_pin" maxlength="200" placeholder="••••">'+
     '<button class="btn" id="loginBtn">Log in</button>'+
-    '<button class="linkbtn" id="toReg">New here? Create my profile</button></div>'+
-    '<button class="btn ghost guestEntry" id="lookAround">👀 '+esc(t('Look around without an account'))+'</button>'+
-    '<p class="hint" style="text-align:center">'+esc(t('Read the Library and see the app first — no username needed.'))+'</p>';
+    '<button class="linkbtn" id="toReg">New here? Create my profile</button></div>';
 }
 /*  Two facts the base counts people by: what kind of staff you are, and where you
     are from. Asked when a profile is created and changed from Profile & settings

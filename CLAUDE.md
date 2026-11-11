@@ -1962,7 +1962,7 @@ leading at YWAM GP (culture, teams, hard conversations, vision, systems, executi
   tests/test-library.mjs checks the shape.
 
 ## Looking around without an account (teams.html guest mode, Oct 2026)
-"Look around without an account" on the log-in screen, or `teams.html?guest=1`, sets
+`teams.html?guest=1` (the log-in screen's "Look around without an account" button was removed, Nov 2026, Andrew) sets
 `gp-app-guest` (localStorage — they stay a guest on reopen until Log in / Create my
 profile). `S.guest` with a stand-in `S.me` (`gpGuestMe_`, id 'guest') and EMPTY `S.auth`:
 - **Open:** My Home becomes a tour (`gpGuestHomeHtml_`: every tool, what it does, 🔒),
