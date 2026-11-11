@@ -1339,13 +1339,13 @@ function onGoogleCred_(resp){
   if(P.view==='join'){ joinWithGoogle_(tok); return; }
   run('portalLoginGoogle', [tok], function(d){
     P.busy=false;
-    if(d && d.ok){ P.auth={ user:d.user, pin:d.token }; lsSet('gp-portal', JSON.stringify(P.auth)); P.boot=d; P.answers=(d.application && d.application.answers)||{}; P.gtoken=''; P.view='me'; render(); return; }
+    if(d && d.ok){ P.auth={ user:d.user, pin:d.token }; lsSet('gp-portal', JSON.stringify(P.auth)); P.boot=d; P.answers=(d.application && d.application.answers)||{}; P.gtoken=''; P.view = d.role==='applicant' ? 'me' : 'crm'; if(d.role!=='applicant') openFromLink_(d); render(); return; }
     if(d && d.err==='new'){
       /* No account for that Google email yet: on to sign-up, name and email filled in, no password to make. */
       P.gtoken=tok; P.reg.email=d.email||''; if(d.name && !P.reg.name) P.reg.name=d.name;
       P.view = P.apply ? 'register' : 'choose'; showMsg(t('Welcome! Tell us what you are applying for.')); render(); return;
     }
-    if(d && (d.err==='staff' || d.err==='staff_now')){ showMsg(t('That is a staff account — opening the GP app, where you can continue with Google.')); setTimeout(function(){ location.href='teams.html'; }, 1200); render(); return; }
+    if(d && (d.err==='staff' || d.err==='staff_now')){ showMsg(t('That staff account has no portal access — opening the GP app, where you can continue with Google.')); setTimeout(function(){ location.href='teams.html'; }, 1200); render(); return; }
     showMsg(t('Google sign-in didn’t work — try again.'));
     render();
   });

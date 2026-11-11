@@ -4575,3 +4575,15 @@ The page someone signed in with a username and PIN sees first (once each time th
 | New accounts and moves waiting for a yes | គណនីថ្មី និងការផ្លាស់ប្តូរ ដែលកំពុងរង់ចាំការយល់ព្រម |
 
 Admin → Approvals (Approve / Decline every new sign-up) and the message after signing up.
+
+## 91. Google is the way in
+
+| English | Khmer (draft) |
+|---|---|
+| Sign in with your Google account. | ចូលដោយប្រើគណនី Google របស់អ្នក។ |
+| First time with Google? Sign in once with your username and PIN to connect it | លើកដំបូងជាមួយ Google? ចូលម្តងដោយឈ្មោះអ្នកប្រើ និង PIN របស់អ្នក ដើម្បីភ្ជាប់វា |
+| Sign in once with your username and PIN — then connect your Google account. | ចូលម្តងដោយឈ្មោះអ្នកប្រើ និង PIN របស់អ្នក — បន្ទាប់មកភ្ជាប់គណនី Google របស់អ្នក។ |
+| Continue with Google instead | បន្តដោយ Google វិញ |
+| That staff account has no portal access — opening the GP app, where you can continue with Google. | គណនីបុគ្គលិកនោះគ្មានសិទ្ធិចូល Portal ទេ — កំពុងបើកកម្មវិធី GP ដែលអ្នកអាចបន្តដោយ Google។ |
+
+The GP app's sign-in screen once Google is on (username and PIN only to connect Google the first time), the step's Log out, and the portal's message to staff without portal access.

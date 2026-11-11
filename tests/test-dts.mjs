@@ -302,6 +302,13 @@ console.log('\n=== staff sign in with Google ===');
   INFO = null;
   r = await call('staffLoginGoogle', ['a.b.c']);
   ok('a token Google doesn’t vouch for is refused', r.body.ok === false && r.body.err === 'google');
+  INFO = gInfo('other@gmail.com', 'g-cal');   // Cal's Google account, linked above
+  mem.staff = mem.staff.map(x => x.id === 'st_cafe' ? { ...x, portalScope: ['staff'] } : x);
+  r = await call('portalLoginGoogle', ['a.b.c']);
+  ok('portal staff sign in to the portal with Google too — onto the staff side', r.body.ok && r.body.role === 'portal-staff' && r.body.user === 'cal', JSON.stringify(r.body).slice(0, 100));
+  mem.staff = mem.staff.map(x => x.id === 'st_cafe' ? { ...x, portalScope: [] } : x);
+  r = await call('portalLoginGoogle', ['a.b.c']);
+  ok('staff without the portal are sent to the GP app', r.body.ok === false && r.body.err === 'staff');
   r = await call('staffLogin', ['arno@example.org', arnoTok]);
   ok('an email can go in the username box, and the answer names the username', r.body.ok && r.body.user === 'arno@example.org');
   globalThis.fetch = realFetch; delete process.env.GP_GOOGLE_CLIENT_ID;

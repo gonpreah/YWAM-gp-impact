@@ -1642,7 +1642,9 @@ function bind(){
   var ggs=document.getElementById('googleSignup'); if(ggs) ggs.onclick=function(){ gglGo_('login'); };
   var ggk=document.getElementById('linkGoogle'); if(ggk) ggk.onclick=function(){ gglGo_('link'); };
   var ggsg=document.getElementById('gglStepGo'); if(ggsg) ggsg.onclick=function(){ gglGo_('link'); };
-  var ggsl=document.getElementById('gglStepLater'); if(ggsl) ggsl.onclick=function(){ S.gglLater=true; render(); };
+  var ggso=document.getElementById('gglStepOut'); if(ggso) ggso.onclick=function(){ logout(); };
+  var spl=document.getElementById('showPinLogin'); if(spl) spl.onclick=function(){ S.pinLogin=true; render(); };
+  var hpl=document.getElementById('hidePinLogin'); if(hpl) hpl.onclick=function(){ S.pinLogin=false; render(); };
   if(lb) lb.onclick=function(){
     var u=document.getElementById('li_user').value.trim();
     var pin=document.getElementById('li_pin').value;

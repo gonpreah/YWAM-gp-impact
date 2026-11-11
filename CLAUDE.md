@@ -751,9 +751,20 @@ school's home.
   Google … from now on sign in using the Gmail"): signed in with a PIN and no Google linked, the app opens on
   `gglStepHtml_` (`#gglStep`, `gglStepWanted_`) — Connect my Google account (`staffLinkGoogle`, made while
   signed in so the Google account is tied to THAT profile by its id, whatever its Gmail; one Google
-  account → one profile) or Not now (until the app is next opened). Profile & settings → **How you sign
-  in** (`#signInCard`, `signIn`/`google` on the boot's staff card); Change PIN is hidden for password
-  accounts. PINs still work; turning them off is a later step.
+  account → one profile) or Log out; **no "Not now"** (Andrew: "let's just have everyone sign in using
+  Google") — nothing else opens until it is connected. With Google on, the sign-in screen is Continue with
+  Google alone; the username + PIN boxes are behind "First time with Google? Sign in once…"
+  (`#showPinLogin`, `S.pinLogin`). Profile & settings → **How you sign in** (`#signInCard`,
+  `signIn`/`google` on the boot's staff card); Change PIN is hidden for password accounts.
+- **The portal too** (Andrew: "for those accessing the portal, they can just log in using their Gmail"):
+  `portalLoginGoogle` signs staff with portal access onto the staff side (their linked Google account,
+  else their email); staff without it are sent to the GP app.
+- **The wall between applicants and staff** (Andrew: "make sure those who applied through the portal
+  cannot access any of what the staff and admin can access"): `verifyStaff_` refuses an applicant unless a
+  handler asks for them by name (ten do, each reading only their own record or the applicant pages).
+  tests/test-applicant-walls.mjs calls every handler in HANDLERS with an applicant's sign-in and fails if
+  one outside its APPLICANT_OK list opens, or any answer carries someone else's details — a new handler
+  is covered without editing the test.
 - **Every new account waits for an admin** (Andrew: "admin will receive an approval whether they accept
   them or deny them"): `staffRegister` makes every sign-up pending (it used to be Campus Leadership only),
   pushes each admin at once (`pushNow_` 'signup' → `teams.html?view=approvals`), and Admin → Approvals has

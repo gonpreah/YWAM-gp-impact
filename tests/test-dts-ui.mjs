@@ -237,7 +237,10 @@ await pp.close();
   });
   await pl.goto(`http://localhost:${PORT}/teams.html`);
   await pl.waitForSelector('#googleLogin', { timeout: 15000 });
-  ok('the sign-in screen has Continue with Google, then username or email and PIN or password', /Continue with Google/.test(await pl.$eval('#googleLogin', e => e.textContent)) && !!(await pl.$('#li_user')) && (await pl.getAttribute('#li_pin', 'maxlength')) === '200');
+  ok('with Google on, the sign-in screen is Continue with Google — no PIN boxes', /Continue with Google/.test(await pl.$eval('#googleLogin', e => e.textContent)) && !(await pl.$('#li_user')));
+  await pl.click('#showPinLogin'); await pl.waitForTimeout(250);
+  ok('the username and PIN are only behind “first time with Google”', !!(await pl.$('#li_user')) && (await pl.getAttribute('#li_pin', 'maxlength')) === '200' && !!(await pl.$('#hidePinLogin')));
+  await pl.click('#hidePinLogin'); await pl.waitForTimeout(250);
   await pl.click('#toReg'); await pl.waitForTimeout(300);
   ok('sign-up offers Sign up with Google', !!(await pl.$('#googleSignup')));
   await pl.close();
@@ -255,10 +258,11 @@ await pp.close();
   await pg.goto(`http://localhost:${PORT}/teams.html`);
   await pg.waitForSelector('#gglStep', { timeout: 15000 });
   ok('signed in with a PIN, the first thing is “From now on, sign in with Google”', /From now on, sign in with Google/.test(await pg.$eval('#gglStep', e => e.textContent)) && !!(await pg.$('#gglStepGo')) && /dee@example.org/.test(await pg.$eval('#gglStep', e => e.textContent)));
-  await pg.click('#gglStepLater'); await pg.waitForTimeout(300);
-  ok('Not now lets them in for this time', !(await pg.$('#gglStep')));
-  await pg.evaluate(() => { S.view = 'profile'; render(); }); await pg.waitForTimeout(300);
-  ok('Profile & settings says how they sign in, and offers Google', /username and PIN/.test(await pg.$eval('#signInCard', e => e.textContent)) && !!(await pg.$('#linkGoogle')));
+  ok('there is no “Not now” — only connect, or log out', !(await pg.$('#gglStepLater')) && !!(await pg.$('#gglStepOut')));
+  await pg.click('nav.bottom [data-tab="team"]').catch(() => {}); await pg.waitForTimeout(300);
+  ok('nothing else opens until Google is connected', !!(await pg.$('#gglStep')));
+  await pg.evaluate(() => { S.me.google = true; S.me.signIn = 'pin'; S.view = 'profile'; render(); }); await pg.waitForTimeout(300);
+  ok('once connected, Profile & settings says they sign in with Google', /With Google/.test(await pg.$eval('#signInCard', e => e.textContent)));
   await pg.close();
 }
 

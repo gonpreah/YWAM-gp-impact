@@ -913,24 +913,32 @@ function gglCred_(resp){
 }
 /* Moving everyone to Google (Nov 2026, Andrew: "have everyone sign in with their username and PIN and
    after that, it goes into the step of sign in with Google, and say from now on sign in using the
-   Gmail"): someone signed in with a PIN whose profile has no Google yet gets this page first, once per
-   time the app is opened. Connecting it (staffLinkGoogle) swaps the PIN session for a Google one. */
+   Gmail"; then "get rid of the not now option, let's just have everyone sign in using Google"): someone
+   signed in with a PIN whose profile has no Google yet gets this page and nothing else until they connect
+   it (staffLinkGoogle swaps the PIN session for a Google one) — or log out. */
 function gglStepWanted_(){
   return !!(gglOn_() && S.me && S.auth && !S.guest && !S.board && !S.student && !S.stuPreview && !S.bootStale && !S.offlineSince &&
-    /^\d{4}$/.test(String(S.auth.pin||'')) && !S.me.google && !S.gglLater);
+    /^\d{4}$/.test(String(S.auth.pin||'')) && !S.me.google);
 }
 function gglStepHtml_(){
   return '<div class="card gglStep" id="gglStep"><h2 style="margin-top:0">🔐 '+esc(t('From now on, sign in with Google'))+'</h2>'+
     '<p class="sub">'+esc(t('We are moving everyone off usernames and PINs. Connect your Google account once — next time, just tap Continue with Google.'))+'</p>'+
     ((S.profile && S.profile.email) ? '<p class="hint">'+esc(gpT('Use the Google account for {email} if you can.',{email:S.profile.email}))+'</p>' : '')+
     gglBtnHtml_('gglStepGo', t('Connect my Google account'))+
-    '<button class="linkbtn" id="gglStepLater">'+esc(t('Not now'))+'</button></div>';
+    '<button class="linkbtn" id="gglStepOut">'+esc(t('Log out'))+'</button></div>';
 }
 function loginHtml(){
   gglCfg_();
-  return '<h2>Welcome back</h2><p class="sub">'+esc(gglOn_() ? t('Continue with Google, or log in with your username and PIN.') : 'Log in with your username and 4-digit PIN.')+'</p>'+
+  /* with Google on, it is the way in: the username and PIN are only for connecting Google the first time */
+  if(gglOn_() && !S.pinLogin) return '<h2>Welcome back</h2><p class="sub">'+esc(t('Sign in with your Google account.'))+'</p>'+
+    '<div class="card">'+gglBtnHtml_('googleLogin', t('Continue with Google'))+
+    '<button class="linkbtn" id="showPinLogin">'+esc(t('First time with Google? Sign in once with your username and PIN to connect it'))+'</button>'+
+    '<button class="linkbtn" id="toReg">New here? Create my profile</button></div>'+
+    '<button class="btn ghost guestEntry" id="lookAround">👀 '+esc(t('Look around without an account'))+'</button>'+
+    '<p class="hint" style="text-align:center">'+esc(t('Read the Library and see the app first — no username needed.'))+'</p>';
+  return '<h2>Welcome back</h2><p class="sub">'+esc(gglOn_() ? t('Sign in once with your username and PIN — then connect your Google account.') : 'Log in with your username and 4-digit PIN.')+'</p>'+
     '<div class="card">'+
-    (gglOn_() ? gglBtnHtml_('googleLogin', t('Continue with Google'))+'<div class="orLine"><span>'+esc(t('or'))+'</span></div>' : '')+
+    (gglOn_() ? '<button class="linkbtn" id="hidePinLogin" style="margin-top:0">← '+esc(t('Continue with Google instead'))+'</button>' : '')+
     '<label class="f">'+esc(t('Username or email'))+'</label><input type="text" id="li_user" autocapitalize="none" placeholder="e.g. sokha">'+
     '<label class="f">'+esc(t('PIN or password'))+'</label><input type="password" id="li_pin" maxlength="200" placeholder="••••">'+
     '<button class="btn" id="loginBtn">Log in</button>'+

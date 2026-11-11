@@ -8547,9 +8547,13 @@ async function portalLoginGoogle(idToken) {
   const g = await verifyGoogleToken_(idToken);
   if (!g) return { ok: false, err: 'google' };
   const rows = await getStaff_();
-  const rec = rows.find(function (r) { return r.email === g.email || r.username === g.email; });
+  // a staff member's Google account (linked in the GP app, else their email), then an applicant's
+  const rec = rows.find(function (r) { return r && !isApplicant_(r) && r.google && r.google.sub && r.google.sub === g.sub; }) ||
+    rows.find(function (r) { return r.email === g.email || r.username === g.email; });
   if (!rec) return { ok: false, err: 'new', email: g.email, name: g.name };
-  if (!isApplicant_(rec)) return { ok: false, err: rec.fromCand ? 'staff_now' : 'staff' };
+  /* staff with the portal sign in with Google here too (Nov 2026, Andrew: "for those accessing the portal,
+     they can just log in using their Gmail"); staff without it are sent to the GP app */
+  if (!isApplicant_(rec) && !canPortal_(rec)) return { ok: false, err: rec.fromCand ? 'staff_now' : 'staff' };
   if (rec.active === false) return { ok: false, err: 'auth' };
   let tok = '';
   const out = await mutateStaff_(function (all) {

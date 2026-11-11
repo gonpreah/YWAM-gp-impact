@@ -50,6 +50,7 @@ const SERVER = [
   'test-staff-ids.mjs', // every staff record gets its own id on read: a missing one is minted, a duplicate re-minted for the later row, the repaired list written back once; repaired accounts work by their new id
   'test-hr.mjs', // Human Resources: only admin/hr may read or write; contracts (signed month + years, renewals as rows), attachments as their own blobs, old-CRM pre-fill, archive = deactivate, unarchive
   'test-hr-candidates.mjs', // HR → Candidates: the gate, a candidate is a name + type + stage, stage moves are logged, notes append, follow-ups due within a week count on boot, archive/unarchive
+  'test-applicant-walls.mjs', // every handler tried with an applicant's sign-in: none of staff's or admin's opens, nothing of anyone else leaks
   'test-dts.mjs',            // GPDTS: the board's gate and counts, the pipeline's weekly rows (tagged, never over a typed number), graduated / potential staff, lectures, contacts, a lead joined by sign-up, who sees what on the portal
   'test-portal.mjs',     // YWAM GP Portal: applicant sign-up, applicants closed out of every staff handler and roster, own application only, portal access flags, timeline follows the CRM stage
   'test-ministry-oversight.mjs', // department overseers can log for ministries they oversee, nobody else can
