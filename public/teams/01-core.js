@@ -654,6 +654,7 @@ function gpViewFromUrl_(){
     else if(v==='base' || v==='dashboard') S.view='base';
     else if(v==='tasks'){ S.view='tasks'; S.gptFrom='week'; }   // a phone notification about a task opens GP Tasks
     else if(v==='mentor'){ S.view='mentor'; S.mentee=null; }   // a phone notification about a 1-on-1 opens Mentorship
+    else if(v==='gpdts'){ S.view='ministry'; S.mmBrowseDept='Leadership Development'; S.mmBrowseMinistry='GPDTS'; S.mmTab='dtsdash'; S.mmTabTouched=true; }   // the portal's way back to GPDTS
     else if(v==='hr' && qv.get('hr')){ S.view='hr'; S.hrTab='staff'; S.hrSub='person'; S.hrPersonId=qv.get('hr'); S.hrStaff=null; }
   } catch(e){}
 }

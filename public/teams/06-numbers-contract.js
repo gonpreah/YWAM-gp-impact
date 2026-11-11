@@ -126,7 +126,7 @@ document.addEventListener('click', function(e){
    data.numbers.canSet). Outreach Teams and Campus Leadership's own rows have
    none (numbersExempt_). The reminders are in notifItems_; the department
    overseer's done / not done list is numbersDeptListHtml_, inside their department card (pulseCardHtml_). */
-function numbersExempt_(dept, min){ return isTeamsMinistry_(dept, min) || dept===BL_DEPT; }
+function numbersExempt_(dept, min){ return isTeamsMinistry_(dept, min) || dept===BL_DEPT || (dept==='Leadership Development' && min==='GPDTS'); }   // GPDTS counts itself
 function weekFriday_(wk){ var d=new Date(mondayOfWeek_(wk)); d.setDate(d.getDate()+4); return d; }
 function shortDay_(d){ return MONTH_ABBR[d.getMonth()]+' '+d.getDate(); }
 /* 'done' · 'upcoming' (before Friday) · 'today' (Friday) · 'late' */
@@ -826,7 +826,7 @@ function mmTabsFor_(sel, mine, schedH){
   } else if(isTeamsMinistry_(sel.dept, sel.min)){
     out=[['teams',t('Teams')]];
   } else if(isDtsMinistry_(sel.dept, sel.min)){
-    out=dtsTabs_().concat([['numbers',t('Numbers')]]);   // GPDTS: the school's home first (teams/16-dts.js)
+    out=dtsTabs_();   // GPDTS: the school's home — every number counts itself, so no Numbers tab (teams/16-dts.js)
   } else out=[['numbers',t('Numbers')]];
   if(schedH && !isTeamsMinistry_(sel.dept, sel.min)) out.push(['sched',t('Schedule')]);
   if(sel.dept==='Skills Training' && sel.min==='Hospitality' && canHospClient_()) out.push(['goHosp',t('SR Hospitality'),'id']);   // a way in, not a tab (#goHosp opens it)

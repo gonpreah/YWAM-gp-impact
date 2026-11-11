@@ -2688,3 +2688,35 @@ body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
 .dtsLect.ok .dtsLectState { color:var(--good); }
 .dtsPast summary { cursor:pointer; font-weight:700; font-size:13px; color:var(--muted); padding:10px 0 4px; }
 .dtsSoon { border-style:dashed; }
+
+/* ---- Continue with Google (07-health-leave.js) ---- */
+.googleBtn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:12px 16px; border-radius:12px;
+  border:1px solid var(--border); background:var(--surface); color:var(--ink); font:inherit; font-weight:700; font-size:15px; cursor:pointer; margin:4px 0; }
+.googleBtn:disabled { opacity:.6; }
+.orLine { display:flex; align-items:center; gap:10px; margin:12px 0 4px; color:var(--faint); font-size:12px; }
+.orLine::before, .orLine::after { content:''; flex:1; border-top:1px solid var(--border); }
+
+/* GPDTS, part 2 */
+.dtsGroupH { font-size:12px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); margin:12px 0 6px; }
+.dtsTiles { grid-template-columns:repeat(2, minmax(0,1fr)); }
+@media (min-width:640px){ .dtsTiles { grid-template-columns:repeat(4, minmax(0,1fr)); } }
+.dtsYearChips .chip { cursor:pointer; font-family:inherit; }
+.dtsYearChips .chip.on { background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
+.dtsYearsWrap { overflow-x:auto; margin-top:12px; }
+.dtsYears { border-collapse:collapse; font-size:13px; min-width:100%; }
+.dtsYears th, .dtsYears td { padding:6px 8px; border-top:1px solid var(--border); text-align:right; white-space:nowrap; }
+.dtsYears tbody th { text-align:left; font-weight:600; color:var(--ink); }
+.dtsYears thead th { color:var(--muted); }
+.dtsPastGrid, .dtsFruitIn { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; }
+@media (min-width:640px){ .dtsPastGrid { grid-template-columns:repeat(3, minmax(0,1fr)); } .dtsFruitIn { grid-template-columns:repeat(4, minmax(0,1fr)); } }
+.dtsPastBox { display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--muted); }
+.dtsPastBox input { width:100%; }
+.dtsPipe2 { flex:1 1 100%; font-size:12.5px; color:var(--muted); padding-left:28px; }
+.dtsStu { flex-wrap:wrap; }
+.dtsOut { display:flex; gap:10px; align-items:center; padding:10px 0; border-top:1px solid var(--border); }
+.dtsOut:first-of-type { border-top:0; }
+.dtsOutText { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; }
+.dtsOutBtns { display:flex; gap:6px; flex:0 0 auto; }
+.dtsOutBtns .btn { margin-top:0; width:auto; }
+.dtsRep { border:1px solid var(--border); border-radius:12px; padding:8px 10px; margin:6px 0; }
+.dtsRep input[type=text] { margin-top:6px; }

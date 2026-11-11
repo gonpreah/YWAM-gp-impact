@@ -854,11 +854,70 @@ function kpiInputAttrs_(metric){
 }
 
 /* ---------- login / register ---------- */
+/* ---- Sign in with Google (Nov 2026, Andrew: "start moving everyone off the username and PIN, and using
+   the Google sign-in like the portal") — the portal's own button and flow: Google's OAuth token client
+   (accounts.google.com/gsi/client, loaded on the first tap), the token to staffLoginGoogle, a device
+   token back that is kept as the "pin". Shown only when the site has a Google client (portalAuthConfig). */
+var _ggl={ cfg:null, asked:false, loading:false, ready:false, client:null, busy:false, mode:'login', after:null };
+function gglCfg_(){
+  if(_ggl.asked) return; _ggl.asked=true;
+  run('portalAuthConfig',[],function(d){ _ggl.cfg=(d && d.ok) ? d : { google:'' }; if(_ggl.cfg.google && (!S.auth || S.view==='profile')) render(); }, function(){ _ggl.cfg={ google:'' }; });
+}
+function gglOn_(){ return !!(_ggl.cfg && _ggl.cfg.google); }
+function gglBtnHtml_(id, label){
+  if(!gglOn_()) return '';
+  return '<button type="button" class="googleBtn" id="'+id+'"'+(_ggl.busy?' disabled':'')+'><svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.7 1.2 9.2 3.6l6.9-6.9C35.9 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.3l8 6.2C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.4-4.6 7.1l7.4 5.7c4.3-4 6.9-9.9 6.9-17.3z"/><path fill="#FBBC05" d="M10.6 28.6A14.5 14.5 0 0 1 9.8 24c0-1.6.3-3.1.8-4.5l-8-6.2A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2.1 1.4-4.8 2.3-8.5 2.3-6.2 0-11.5-4.1-13.4-9.8l-8 6.1C6.5 42.6 14.6 48 24 48z"/></svg><span>'+esc(_ggl.busy ? t('Opening Google…') : label)+'</span></button>';
+}
+function gglLoad_(after){
+  if(!gglOn_()) return;
+  if(_ggl.ready){ if(after) after(); return; }
+  _ggl.after = after || _ggl.after;
+  if(_ggl.loading) return;
+  _ggl.loading=true;
+  var sc=document.createElement('script'); sc.src='https://accounts.google.com/gsi/client'; sc.async=true; sc.defer=true;
+  sc.onload=function(){
+    try {
+      _ggl.client=google.accounts.oauth2.initTokenClient({ client_id:_ggl.cfg.google, scope:'openid email profile', callback:gglCred_, error_callback:function(){ _ggl.busy=false; render(); } });
+      _ggl.ready=true; _ggl.loading=false;
+      if(_ggl.after){ var f=_ggl.after; _ggl.after=null; f(); }
+    } catch(e){ _ggl.loading=false; gglFail_(); }
+  };
+  sc.onerror=function(){ _ggl.loading=false; gglFail_(); };
+  document.head.appendChild(sc);
+}
+function gglFail_(){ _ggl.busy=false; render(); showMsg(t('Google sign-in could not load — use your username and PIN, or try again later.')); }
+function gglGo_(mode){
+  if(_ggl.busy) return;
+  _ggl.mode=mode||'login'; _ggl.busy=true; render();
+  gglLoad_(function(){ try { _ggl.client.requestAccessToken({ prompt:'select_account' }); } catch(e){ gglFail_(); } });
+  setTimeout(function(){ if(_ggl.busy && !_ggl.ready){ _ggl.busy=false; render(); } }, 12000);
+}
+function gglCred_(resp){
+  var tok=resp && (resp.access_token || resp.credential); _ggl.busy=false;
+  if(!tok){ render(); return; }
+  if(_ggl.mode==='link'){
+    run('staffLinkGoogle',[S.auth.user,S.auth.pin,tok],function(d){
+      if(d && d.ok){ S.auth.pin=d.token; lsSet('gp-staff', JSON.stringify(S.auth)); if(S.profile) S.profile.email=d.email; if(S.me){ S.me.google=true; S.me.signIn='google'; } showMsg(t('Done — sign in with Google from now on.')); }
+      else showMsg(d && d.err==='email_taken' ? t('Another profile already has that Google email.') : t('Google sign-in didn’t work — try again.'));
+      render();
+    });
+    return;
+  }
+  run('staffLoginGoogle',[tok],function(d){
+    if(d && d.ok){ S.auth={ user:d.user, pin:d.token }; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; afterLogin(); return; }
+    if(d && d.err==='new'){ S.regMode=true; S.regGoogle={ token:tok, email:d.email||'', name:d.name||'' }; render(); showMsg(t('Welcome! Make your profile — no username or PIN needed.')); return; }
+    if(d && d.err==='applicant'){ showMsg(t('That is a portal account — opening the YWAM GP Portal.')); setTimeout(function(){ location.href='portal.html'; }, 900); return; }
+    showMsg(d && d.err==='pending' ? t('Your account is waiting on approval from a base leader.') : t('Google sign-in didn’t work — try again.'));
+    render();
+  });
+}
 function loginHtml(){
-  return '<h2>Welcome back</h2><p class="sub">Log in with your username and 4-digit PIN.</p>'+
+  gglCfg_();
+  return '<h2>Welcome back</h2><p class="sub">'+esc(gglOn_() ? t('Continue with Google, or log in with your username and PIN.') : 'Log in with your username and 4-digit PIN.')+'</p>'+
     '<div class="card">'+
-    '<label class="f">Username</label><input type="text" id="li_user" autocapitalize="none" placeholder="e.g. sokha">'+
-    '<label class="f">PIN</label><input type="password" id="li_pin" inputmode="numeric" maxlength="4" placeholder="••••">'+
+    (gglOn_() ? gglBtnHtml_('googleLogin', t('Continue with Google'))+'<div class="orLine"><span>'+esc(t('or'))+'</span></div>' : '')+
+    '<label class="f">'+esc(t('Username or email'))+'</label><input type="text" id="li_user" autocapitalize="none" placeholder="e.g. sokha">'+
+    '<label class="f">'+esc(t('PIN or password'))+'</label><input type="password" id="li_pin" maxlength="200" placeholder="••••">'+
     '<button class="btn" id="loginBtn">Log in</button>'+
     '<button class="linkbtn" id="toReg">New here? Create my profile</button></div>'+
     '<button class="btn ghost guestEntry" id="lookAround">👀 '+esc(t('Look around without an account'))+'</button>'+
@@ -917,16 +976,20 @@ function bindCountryOther(){
 }
 
 function registerHtml(){
-  var inv = S.regPrefill;
+  gglCfg_();
+  var inv = S.regPrefill, gg = S.regGoogle;
   var opts = S.roster.map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.name)+' · '+esc(p.dept)+'</option>'; }).join('');
   return '<h2>Create my profile</h2><p class="sub">Pick a username and a 4-digit PIN you\u2019ll remember. You can add a photo right after.</p>'+
     (inv ? '<div class="banner" id="inviteBanner">👋 '+esc(gpT('You’re joining {where}. Check it below, then make your profile.',{where:[inv.ministry?t(inv.ministry):'', inv.dept?t(inv.dept):'', campusName(inv.campus)].filter(Boolean).join(' · ')}))+'</div>' : '')+
     '<div class="card">'+
-    '<label class="f">Full name</label><input type="text" id="r_name" placeholder="Your name">'+
+    (gg ? '<div class="banner" id="regGoogle">'+esc(gpT('Signing up with Google as {email} — no username or PIN to remember.',{email:gg.email}))+'</div>'
+        : (gglOn_() ? gglBtnHtml_('googleSignup', t('Sign up with Google'))+'<div class="orLine"><span>'+esc(t('or'))+'</span></div>' : ''))+
+    '<label class="f">Full name</label><input type="text" id="r_name" placeholder="Your name" value="'+esc(gg ? gg.name : '')+'">'+
+    (gg ? '' :
     '<label class="f">Email</label><input type="email" id="r_email" autocapitalize="none" placeholder="you@example.com">'+
     '<div class="hint">One profile per email \u2014 this is what stops a duplicate sign-up.</div>'+
     '<label class="f">Username</label><input type="text" id="r_user" autocapitalize="none" placeholder="lowercase, no spaces"><div class="hint">Letters, numbers, . _ - (2\u201320 chars)</div>'+
-    '<label class="f">PIN (4 digits)</label><input type="password" id="r_pin" inputmode="numeric" maxlength="4" placeholder="••••">'+
+    '<label class="f">PIN (4 digits)</label><input type="password" id="r_pin" inputmode="numeric" maxlength="4" placeholder="••••">')+
     '<label class="f">Campus</label><select id="r_campus">'+CAMPUSES.map(function(c){return '<option value="'+c.id+'"'+(inv && inv.campus===c.id?' selected':'')+'>'+c.name+'</option>';}).join('')+'</select>'+
     '<label class="f">Department</label><select id="r_dept">'+deptsFor(inv ? inv.campus : 'poipet').map(function(d){return '<option value="'+esc(d)+'"'+(inv && inv.dept===d?' selected':'')+'>'+esc(t(d))+'</option>';}).join('')+'</select>'+
     '<label class="f">Ministry</label><select id="r_ministry"></select><div class="hint">This is what puts your team’s KPIs on your home page.</div>'+

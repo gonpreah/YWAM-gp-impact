@@ -1638,13 +1638,18 @@ function bind(){
 
   // login
   var lb=document.getElementById('loginBtn');
+  var ggl=document.getElementById('googleLogin'); if(ggl) ggl.onclick=function(){ gglGo_('login'); };
+  var ggs=document.getElementById('googleSignup'); if(ggs) ggs.onclick=function(){ gglGo_('login'); };
+  var ggk=document.getElementById('linkGoogle'); if(ggk) ggk.onclick=function(){ gglGo_('link'); };
   if(lb) lb.onclick=function(){
     var u=document.getElementById('li_user').value.trim();
-    var pin=document.getElementById('li_pin').value.trim();
-    if(!u||!/^\d{4}$/.test(pin)){ showMsg('Enter username + 4-digit PIN'); return; }
+    var pin=document.getElementById('li_pin').value;
+    // an email signs in with its password (a profile made from the portal); a username with its 4-digit PIN
+    if(!u || (u.indexOf('@')===-1 ? !/^\d{4}$/.test(pin.trim()) : !pin)){ showMsg(t('Enter your username and 4-digit PIN, or your email and password')); return; }
+    if(u.indexOf('@')===-1) pin=pin.trim();
     lb.disabled=true; lb.textContent='…';
     run('staffLogin',[u,pin],function(d){
-      if(d.ok){ S.auth={user:u,pin:pin}; S.me=d.staff; S.profile=d.profile; afterLogin(); }
+      if(d.ok){ S.auth={user:d.user||u,pin:pin}; S.me=d.staff; S.profile=d.profile; afterLogin(); }
       else if(!d.err){
         /* not staff — perhaps a member of the advisory board, with their own sign-in */
         run('boardLogin',[u,pin],function(b){
@@ -1661,16 +1666,18 @@ function bind(){
   };
   var look=document.getElementById('lookAround'); if(look) look.onclick=function(){ gpTap(); gpEnterGuest_(); };
   var toReg=document.getElementById('toReg'); if(toReg) toReg.onclick=function(){ S.regMode=true; if(!S.roster.length){ run('teamRoster',[],function(r){S.roster=Array.isArray(r)?r:[];render();}); } else render(); };
-  var toLogin=document.getElementById('toLogin'); if(toLogin) toLogin.onclick=function(){ S.regMode=false; render(); };
+  var toLogin=document.getElementById('toLogin'); if(toLogin) toLogin.onclick=function(){ S.regMode=false; S.regGoogle=null; render(); };
 
   // register
   var rb=document.getElementById('regBtn');
   if(rb) rb.onclick=function(){
+    var gg=S.regGoogle, val=function(id){ var el=document.getElementById(id); return el ? el.value.trim() : ''; };
     var payload={
-      name:document.getElementById('r_name').value.trim(),
-      email:document.getElementById('r_email').value.trim(),
-      username:document.getElementById('r_user').value.trim(),
-      pin:document.getElementById('r_pin').value.trim(),
+      name:val('r_name'),
+      email:gg ? gg.email : val('r_email'),
+      username:gg ? '' : val('r_user'),
+      pin:gg ? '' : val('r_pin'),
+      googleToken:gg ? gg.token : undefined,
       campus:document.getElementById('r_campus').value,
       dept:document.getElementById('r_dept').value,
       ministry:minSelValue_('r_ministry','r_dept').ministry,
@@ -1683,9 +1690,11 @@ function bind(){
       joined:document.getElementById('r_joined').value.trim()
     };
     if(!payload.name){ showMsg('Add your name'); return; }
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)){ showMsg('Add a real email address'); return; }
-    if(!/^[a-z0-9._-]{2,20}$/.test(payload.username.toLowerCase())){ showMsg('Username: lowercase letters/numbers, 2–20'); return; }
-    if(!/^\d{4}$/.test(payload.pin)){ showMsg('PIN must be 4 digits'); return; }
+    if(!gg){
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)){ showMsg('Add a real email address'); return; }
+      if(!/^[a-z0-9._-]{2,20}$/.test(payload.username.toLowerCase())){ showMsg('Username: lowercase letters/numbers, 2–20'); return; }
+      if(!/^\d{4}$/.test(payload.pin)){ showMsg('PIN must be 4 digits'); return; }
+    }
     rb.disabled=true; rb.textContent='…';
     run('staffRegister',[payload],function(d){
       if(d.ok && d.pending){
@@ -1694,12 +1703,13 @@ function bind(){
         rb.disabled=false; rb.textContent='Create profile'; S.regMode=false;
         showMsg('Submitted — a base leader needs to approve a leadership account before you can log in.');
         render();
-      } else if(d.ok){ S.auth={user:payload.username.toLowerCase(),pin:payload.pin}; S.me=d.staff; S.profile=d.profile; S.regMode=false; afterLogin(); showMsg('Profile created — add a photo!'); S.view='profile'; render(); }
+      } else if(d.ok){ S.auth={user:d.user||payload.username.toLowerCase(),pin:d.token||payload.pin}; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; afterLogin(); showMsg('Profile created — add a photo!'); S.view='profile'; render(); }
       else {
         rb.disabled=false; rb.textContent='Create profile';
         showMsg(d.err==='taken' ? 'That username is taken'
           : d.err==='email_taken' ? 'There’s already a profile with that email'
           : d.err==='bad_email' || d.err==='email_required' ? 'Add a real email address'
+          : d.err==='google' ? t('Google sign-in didn’t work — try again.')
           : 'Check your details');
       }
     });

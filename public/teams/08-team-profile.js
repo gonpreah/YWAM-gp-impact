@@ -773,7 +773,14 @@ function profileHtml(){
     '<label class="f">Staff debt <span class="lock">🔒 private</span></label><div class="seg" style="max-width:220px">'+
       '<button id="debtY" class="'+(p.debt?'on bad':'')+'">Yes</button><button id="debtN" class="'+(!p.debt?'on':'')+'">No</button></div>'+
     '<button class="btn" id="saveProfBtn">Save profile</button></div>';
-  h+='<div class="card"><label class="f">Change PIN</label><input type="password" id="p_newpin" inputmode="numeric" maxlength="4" placeholder="new 4-digit PIN">'+
+  gglCfg_();
+  var sk=S.me && S.me.signIn, gOn=!!(S.me && S.me.google);
+  h+='<div class="card" id="signInCard"><label class="f">'+esc(t('How you sign in'))+'</label>'+
+    (gOn ? '<p class="sub" style="margin:0">🔐 '+esc(gpT('With Google ({email}).',{email:(S.profile && S.profile.email) || ''}))+'</p>'
+      : '<p class="sub" style="margin:0 0 8px">'+esc(sk==='password' ? t('With your email and password.') : t('With your username and PIN.'))+'</p>'+
+        (gglOn_() ? '<p class="hint" style="margin:0 0 8px">'+esc(t('Sign in with Google from now on — quicker, and nothing to remember. Use the Google account with your email.'))+'</p>'+gglBtnHtml_('linkGoogle', t('Sign in with Google from now on')) : ''))+
+    '</div>';
+  if(sk!=='password') h+='<div class="card"><label class="f">Change PIN</label><input type="password" id="p_newpin" inputmode="numeric" maxlength="4" placeholder="new 4-digit PIN">'+
      '<button class="btn ghost" id="pinBtn">Update PIN</button></div>';
   h+=remindersCardHtml_();
   /* Three states, not a switch: "Auto" is the default and the one most people
