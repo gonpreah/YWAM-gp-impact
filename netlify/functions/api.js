@@ -754,6 +754,14 @@ async function staffRegister(payload) {
   const email = cleanEmail_(payload.email);
   if (email === null) return { ok: false, err: 'bad_email' };
   if (!email) return { ok: false, err: 'email_required' };
+  /* an invite from the staff pipeline (portalGpInvite): the campus is theirs, no approval needed, and
+     the portal login they already have with this email doesn't count as a second profile */
+  let inv = null;
+  if (payload.join) {
+    inv = await gpInviteFind_(payload.join);
+    if (inv.err) return { ok: false, err: 'invite_' + inv.err };
+    payload = Object.assign({}, payload, { campus: inv.c.campus || payload.campus });
+  }
   const salt = pinSalt_();
   const id = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const now = new Date().toISOString();
@@ -772,11 +780,21 @@ async function staffRegister(payload) {
   // checked and added in one write, so two sign-ups at once can't both take a username or an email
   const added = await mutateStaff_(function (rows) {
     if (findStaff_(rows, u)) return { abort: true, ok: false, err: 'taken' };
-    if (rows.some(function (r) { return r.email && r.email === email; })) return { abort: true, ok: false, err: 'email_taken' };
+    if (rows.some(function (r) { return r.email && r.email === email && !(inv && isApplicant_(r) && r.id === inv.c.staffId); })) return { abort: true, ok: false, err: 'email_taken' };
+    if (inv) rec.fromCand = inv.c.id;
     rows.push(rec);
     return { ok: true };
   });
   if (!added.ok) return added;
+  if (inv) {
+    // the application is done: they are on staff
+    const c = inv.rows.find(function (r) { return r && r.id === inv.c.id; });
+    c.gpInvite.usedAt = now; c.hired = { staffId: id, at: now };
+    c.log = (Array.isArray(c.log) ? c.log : []).concat([{ at: now, by: id, kind: 'note', text: 'Joined the GP app as ' + rec.name + ' (' + u + ')' }]).slice(-CAND_LOG_MAX);
+    if (c.stage !== 'arrived') { c.stage = 'arrived'; c.log.push({ at: now, by: id, kind: 'stage', text: 'arrived' }); }
+    c.updated = now; c.updatedBy = id;
+    await writeJSON('candidates', inv.rows);
+  }
   // No staff/profile in a pending response: this account has no session yet,
   // and returning one would let the client log it straight in anyway.
   if (pending) return { ok: true, pending: true };
@@ -7594,6 +7612,9 @@ function cleanCandidate_(c, prev, me) {
     portal: prev ? (prev.portal || null) : null,
     calls: prev && Array.isArray(prev.calls) ? prev.calls : undefined,   // call notes: only hrCandidateCall writes them
     dts: prev && prev.dts ? prev.dts : undefined,   // GPDTS's marks (graduated, potential staff): only dtsMark writes them
+    fromDts: prev && prev.fromDts ? prev.fromDts : undefined,   // a staff application that came from a GPDTS graduate (dtsToStaff)
+    gpInvite: prev && prev.gpInvite ? prev.gpInvite : undefined,   // the GP app invite (portalGpInvite) — only those handlers write it
+    hired: prev && prev.hired ? prev.hired : undefined,             // {staffId, at}: joined the GP app from that invite
     log: prev ? (Array.isArray(prev.log) ? prev.log : []) : [], archived: prev ? (prev.archived || null) : null, archiveOff: prev && prev.archiveOff ? true : undefined,
     created: prev ? prev.created : now, createdBy: prev ? prev.createdBy : me.id, updated: now, updatedBy: me.id
   };
@@ -7729,7 +7750,20 @@ async function hrArchiveCandidate(username, pin, id, info) {
    (dts-sync.js). Siem Reap's GPDTS for now (DTS_TOOL). */
 const DTS_DEPT = 'Leadership Development';
 const DTS_TOOL = { siemreap: 'GPDTS' };
-const DTS_AUTO = ['Students Applied', 'Students Accepted', 'Students Enrolled', 'Students Graduated', 'Potential Staff', 'Local Students Contacted', 'Intl Students Contacted'];
+const DTS_AUTO = ['Students Applied', 'Students Accepted', 'Students Enrolled', 'Students Graduated', 'Potential Staff', 'Local Students Contacted', 'Intl Students Contacted',
+  'People Heard the Gospel', 'Healings', 'Salvations', 'Baptisms'];
+/* the fruit: written on a lecture or an outreach report, counted in that day's week (Nov 2026, Andrew:
+   "these metrics will be in the lecture and the outreach tabs … getting rid of the numbers tab") */
+const DTS_FRUIT = { gospel: 'People Heard the Gospel', healings: 'Healings', salvations: 'Salvations', baptisms: 'Baptisms' };
+const DTS_OUT_MAX = 100, DTS_REPORTS_MAX = 80, DTS_PAST_FROM = 2000, GP_INVITE_DAYS = 30;
+function dtsFruit_(o) {
+  const out = {};
+  Object.keys(DTS_FRUIT).forEach(function (k) {
+    const n = Math.round(Number(o && o[k]));
+    if (isFinite(n) && n > 0) out[k] = Math.min(n, 100000);
+  });
+  return out;
+}
 const DTS_LEVELS = ['Students Enrolled', 'Potential Staff'];
 const DTS_TAG = 'tool:dts';
 const DTS_DUE_DAYS = 7, DTS_LECT_MAX = 300, DTS_MARK_MAX = 100, DTS_SCHOOL_DAYS = 180;
@@ -7775,6 +7809,13 @@ async function dtsSync_(campus) {
     add('Students Graduated', dtsMarks_(c).graduated);
     const ct = dtsContacted_(c);
     if (ct) add(audienceOf_(c) === 'khmer' ? 'Local Students Contacted' : 'Intl Students Contacted', ct);
+  });
+  const addFruit = function (f, day) {
+    Object.keys(DTS_FRUIT).forEach(function (k) { const n = Number(f && f[k]) || 0; if (n > 0 && day && weekYear_(day) === yr) { const w = isoWeek_(day); want[DTS_FRUIT[k]][w] = (want[DTS_FRUIT[k]][w] || 0) + n; } });
+  };
+  ((await readJSON('dtsLect:' + campus, { lectures: [] })).lectures || []).forEach(function (l) { if (l && l.date <= today) addFruit(l.fruit, l.date); });
+  ((await readJSON('dtsOut:' + campus, { outreaches: [] })).outreaches || []).forEach(function (o) {
+    (Array.isArray(o && o.reports) ? o.reports : []).forEach(function (r) { if (r && r.date <= today) addFruit(r.fruit, r.date); });
   });
   const level = {
     'Students Enrolled': function (c, end) {
@@ -7859,10 +7900,21 @@ async function dtsBoardOut_(g) {
   });
   due.sort(function (a, b) { return a.nextDate < b.nextDate ? -1 : a.nextDate > b.nextDate ? 1 : 0; });
   school.sort(function (a, b) { return a.name.localeCompare(b.name); });
+  const allC = await getCandidates_(), byCand = {};
+  allC.forEach(function (c) { if (c) byCand[c.id] = c; });
+  school.forEach(function (x) {
+    const sc = byCand[(dtsMarks_(byCand[x.id] || {}) || {}).staffCand];
+    if (sc) x.staffCand = { id: sc.id, stage: sc.stage, hired: !!sc.hired, archived: !!sc.archived, invited: gpInviteOpen_(sc) };
+  });
   const lect = await readJSON('dtsLect:' + g.campus, { lectures: [] });
+  const outr = await readJSON('dtsOut:' + g.campus, { outreaches: [] });
+  const past = await readJSON('dtsPast:' + g.campus, { years: {} });
   return {
     ok: true, campus: g.campus, ministry: g.min, today: today, counts: counts, due: due.slice(0, 40), dueMore: Math.max(0, due.length - 40),
     school: school, lectures: Array.isArray(lect.lectures) ? lect.lectures : [], portal: canPortal_(g.s),
+    outreaches: Array.isArray(outr.outreaches) ? outr.outreaches : [],
+    past: past.years && typeof past.years === 'object' && !Array.isArray(past.years) ? past.years : {},
+    year: thisWeekYear_(),
     data: await withNumbers_(await ministryDataFor2_(g.campus, DTS_DEPT, g.min), g.s)
   };
 }
@@ -7910,6 +7962,7 @@ function cleanLecture_(l, prev, me) {
     id: prev ? prev.id : hrId_('lc'), date: date, end: (isoDate_(l.end) && isoDate_(l.end) >= date) ? isoDate_(l.end) : '',
     topic: topic, speaker: speaker, from: str_(l.from, 160) || '', contact: str_(l.contact, 160) || '',
     confirmed: !!l.confirmed, notes: String(l.notes == null ? '' : l.notes).trim().slice(0, 2000),
+    fruit: dtsFruit_(l.fruit),
     by: prev ? prev.by : me.id, at: prev ? prev.at : now, updated: now, updatedBy: me.id
   };
 }
@@ -7924,6 +7977,7 @@ async function dtsSaveLecture(username, pin, lec) {
   if (at > -1) list[at] = rec; else { if (list.length >= DTS_LECT_MAX) return { ok: false, err: 'too_many' }; list.push(rec); }
   list.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
   await writeJSON(key, { lectures: list });
+  await dtsSyncSafe_(g.campus);   // the lecture's fruit is GPDTS's numbers
   return { ok: true, lectures: list, id: rec.id };
 }
 async function dtsDeleteLecture(username, pin, id) {
@@ -7931,7 +7985,174 @@ async function dtsDeleteLecture(username, pin, id) {
   const key = 'dtsLect:' + g.campus, doc = await readJSON(key, { lectures: [] });
   const list = (Array.isArray(doc.lectures) ? doc.lectures : []).filter(function (x) { return x && x.id !== str_(id, 60); });
   await writeJSON(key, { lectures: list });
+  await dtsSyncSafe_(g.campus);
   return { ok: true, lectures: list };
+}
+/* Outreach: each team the school sends — where, when, who leads — and its reports (a day and the fruit:
+   heard the gospel, healings, salvations, baptisms), each counted in its day's week. */
+function cleanOutreach_(o, prev, me) {
+  if (!o || typeof o !== 'object') return null;
+  const place = str_(o.place, 120) || '';
+  if (!place) return null;
+  const now = new Date().toISOString(), from = isoDate_(o.from), to = isoDate_(o.to);
+  const reports = (Array.isArray(o.reports) ? o.reports : []).map(function (r) {
+    if (!r || typeof r !== 'object' || !isoDate_(r.date)) return null;
+    const f = dtsFruit_(r.fruit), note = str_(r.note, 500) || '';
+    if (!Object.keys(f).length && !note) return null;
+    return { id: str_(r.id, 40) || hrId_('or'), date: isoDate_(r.date), fruit: f, note: note };
+  }).filter(Boolean).slice(0, DTS_REPORTS_MAX).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+  return {
+    id: prev ? prev.id : hrId_('ot'), place: place, from: from || '', to: (to && (!from || to >= from)) ? to : '',
+    leaders: str_(o.leaders, 200) || '', size: Math.max(0, Math.min(500, Math.round(Number(o.size) || 0))),
+    notes: String(o.notes == null ? '' : o.notes).trim().slice(0, 2000), reports: reports,
+    by: prev ? prev.by : me.id, at: prev ? prev.at : now, updated: now, updatedBy: me.id
+  };
+}
+async function dtsSaveOutreach(username, pin, o) {
+  const g = await dtsGate_(username, pin); if (g.out) return g.out;
+  const key = 'dtsOut:' + g.campus, doc = await readJSON(key, { outreaches: [] });
+  const list = Array.isArray(doc.outreaches) ? doc.outreaches : [];
+  const id = str_(o && o.id, 60), at = id ? list.findIndex(function (x) { return x && x.id === id; }) : -1;
+  if (id && at === -1) return { ok: false, err: 'not_found' };
+  const rec = cleanOutreach_(o, at > -1 ? list[at] : null, g.s);
+  if (!rec) return { ok: false, err: 'bad_outreach' };
+  if (at > -1) list[at] = rec; else { if (list.length >= DTS_OUT_MAX) return { ok: false, err: 'too_many' }; list.push(rec); }
+  list.sort(function (a, b) { return (b.from || '') < (a.from || '') ? -1 : (b.from || '') > (a.from || '') ? 1 : 0; });
+  await writeJSON(key, { outreaches: list });
+  await dtsSyncSafe_(g.campus);
+  return { ok: true, outreaches: list, id: rec.id };
+}
+async function dtsDeleteOutreach(username, pin, id) {
+  const g = await dtsGate_(username, pin); if (g.out) return g.out;
+  const key = 'dtsOut:' + g.campus, doc = await readJSON(key, { outreaches: [] });
+  const list = (Array.isArray(doc.outreaches) ? doc.outreaches : []).filter(function (x) { return x && x.id !== str_(id, 60); });
+  await writeJSON(key, { outreaches: list });
+  await dtsSyncSafe_(g.campus);
+  return { ok: true, outreaches: list };
+}
+/* Past schools (Nov 2026, Andrew: "let me input numbers from the past years we had the school"): one
+   set of totals per year, for the dashboard's year by year. Kept on its own — never written into the
+   weekly rows, so whatever was logged in those years is not counted twice. */
+async function dtsSavePast(username, pin, year, values, notes) {
+  const g = await dtsGate_(username, pin); if (g.out) return g.out;
+  const y = Math.round(Number(year));
+  if (!(y >= DTS_PAST_FROM && y < thisWeekYear_())) return { ok: false, err: 'bad_year' };
+  const key = 'dtsPast:' + g.campus, doc = await readJSON(key, { years: {} });
+  const years = doc.years && typeof doc.years === 'object' && !Array.isArray(doc.years) ? doc.years : {};
+  if (values === null) delete years[String(y)];
+  else {
+    const v = {};
+    DTS_AUTO.forEach(function (m) {
+      const raw = values && values[m];
+      if (raw === '' || raw === null || raw === undefined) return;
+      const n = Math.round(Number(raw));
+      if (isFinite(n) && n >= 0) v[m] = Math.min(n, 100000);
+    });
+    years[String(y)] = { values: v, notes: str_(notes, 1000) || '', by: g.s.id, at: new Date().toISOString() };
+  }
+  await writeJSON(key, { years: years });
+  return { ok: true, past: years };
+}
+
+/* ---- GPDTS → staff → the GP app (Part 2) ----
+   A graduate marked potential staff moves into the staff pipeline: a staff application made from their
+   DTS record (fromDts), and — when they have a portal login — that login now opens the staff application
+   (the DTS record stays, as their history). Once HR / the portal team accept them, "Invite to the GP
+   app" makes a one-time link: they pick their own username and PIN, the profile is linked to the
+   application, and no admin approval is needed (a Campus Leadership profile still waits, as always). */
+async function dtsToStaff(username, pin, ids) {
+  const g = await dtsGate_(username, pin); if (g.out) return g.out;
+  ids = (Array.isArray(ids) ? ids : [ids]).map(function (x) { return str_(x, 60); }).filter(Boolean).slice(0, DTS_MARK_MAX);
+  if (!ids.length) return { ok: false, err: 'none' };
+  const rows = await getCandidates_(), now = new Date().toISOString(), moves = [];
+  rows.slice().forEach(function (c) {
+    if (!c || ids.indexOf(c.id) === -1 || !isDtsCand_(c, g.campus)) return;
+    const m = dtsMarks_(c);
+    if (c.stage !== 'arrived' || !m.graduated || !m.potentialStaff || m.staffCand) return;
+    if (rows.length >= CAND_MAX) return;
+    const sc = {
+      id: hrId_('cd'), campus: c.campus, name: c.name, type: 'staff', stage: 'new', subtype: '', school: '',
+      email: c.email || '', phone: c.phone || '', country: c.country || '', source: 'GPDTS graduate',
+      assignedTo: '', nextStep: '', nextDate: '', expected: '', notes: '', staffId: c.staffId || '',
+      messenger: c.messenger || '', portal: c.staffId ? { createdAt: now } : null, fromDts: c.id,
+      log: [{ at: now, by: g.s.id, kind: 'note', text: 'From GPDTS: graduated ' + m.graduated + ', potential staff' }],
+      archived: null, created: now, createdBy: g.s.id, updated: now, updatedBy: g.s.id
+    };
+    rows.push(sc);
+    c.dts = Object.assign({}, m, { staffCand: sc.id });
+    c.log = (Array.isArray(c.log) ? c.log : []).concat([{ at: now, by: g.s.id, kind: 'note', text: 'Moved to the staff pipeline' }]).slice(-CAND_LOG_MAX);
+    c.updated = now; c.updatedBy = g.s.id;
+    moves.push({ dts: c.id, staffCand: sc.id, account: c.staffId || '' });
+  });
+  if (!moves.length) return Object.assign(await dtsBoardOut_(g), { moved: 0 });
+  await writeJSON('candidates', rows);
+  // their portal login now opens the staff application; the DTS one is kept as history
+  const withAcct = moves.filter(function (x) { return x.account; });
+  if (withAcct.length) {
+    await mutateStaff_(function (all) {
+      withAcct.forEach(function (x) {
+        const r = all.find(function (a) { return a.id === x.account && isApplicant_(a); });
+        if (!r) return;
+        const prev = r.applicant || {};
+        r.applicant = { type: 'staff', school: '', candidateId: x.staffCand,
+          history: (Array.isArray(prev.history) ? prev.history : []).concat([{ type: prev.type || 'student', school: prev.school || 'dts', candidateId: prev.candidateId || x.dts, at: now }]).slice(-10) };
+        r.updated = now;
+      });
+      return { ok: true };
+    });
+  }
+  return Object.assign(await dtsBoardOut_(g), { moved: moves.length });
+}
+function gpInviteOpen_(c) {
+  const i = c && c.gpInvite;
+  return !!(i && i.hash && !i.usedAt && !(c.hired) && Date.parse(i.exp || '') > Date.now());
+}
+function gpInviteToken_(c, by) {
+  const token = crypto.randomBytes(24).toString('hex'), now = Date.now();
+  c.gpInvite = { hash: refHash_('gp:' + token), at: new Date(now).toISOString(), by: by || '', exp: new Date(now + GP_INVITE_DAYS * 86400000).toISOString() };
+  return token;
+}
+const GP_INVITE_STAGES = ['accepted', 'practical', 'arrived'];
+async function portalGpInvite(username, pin, candId) {
+  const g = await hrGate_(username, pin); if (g.out) return g.out;
+  const rows = await getCandidates_();
+  const c = rows.find(function (r) { return r && r.id === str_(candId, 60); });
+  if (!c) return { ok: false, err: 'not_found' };
+  if (!canHR_(g.s) && !portalMaySee_(g.s, c)) return { ok: false, err: 'not_authorized' };
+  if (c.type !== 'staff' && c.type !== 'volunteer') return { ok: false, err: 'not_staff' };
+  if (GP_INVITE_STAGES.indexOf(c.stage) === -1) return { ok: false, err: 'not_accepted' };
+  if (c.hired) return { ok: false, err: 'hired' };
+  const token = gpInviteToken_(c, g.s.id), now = new Date().toISOString();
+  c.log = (Array.isArray(c.log) ? c.log : []).concat([{ at: now, by: g.s.id, kind: 'note', text: 'Invited to the GP app' }]).slice(-CAND_LOG_MAX);
+  c.updated = now; c.updatedBy = g.s.id;
+  await writeJSON('candidates', rows);
+  return { ok: true, token: token, exp: c.gpInvite.exp };
+}
+/* the applicant's own way in: their dashboard's "Make my GP app account" (a fresh link each time) */
+async function portalMyGpJoin(username, pin) {
+  const a = await applicantCand_(username, pin); if (a.out) return a.out;
+  if (!gpInviteOpen_(a.cand)) return { ok: false, err: 'no_invite' };
+  const exp = a.cand.gpInvite.exp, by = a.cand.gpInvite.by;
+  const token = gpInviteToken_(a.cand, by);
+  a.cand.gpInvite.exp = exp;   // the invite's own time is kept, only the link is new
+  await writeJSON('candidates', a.rows);
+  return { ok: true, token: token };
+}
+async function gpInviteFind_(token) {
+  token = String(token || '').replace(/[^a-f0-9]/g, '');
+  if (token.length !== 48) return { err: 'bad' };
+  const h = refHash_('gp:' + token), rows = await getCandidates_();
+  const c = rows.find(function (r) { return r && r.gpInvite && r.gpInvite.hash === h; });
+  if (!c) return { err: 'bad' };
+  if (c.hired || c.gpInvite.usedAt) return { err: 'used' };
+  if (!(Date.parse(c.gpInvite.exp || '') > Date.now())) return { err: 'expired' };
+  return { c: c, rows: rows };
+}
+async function staffInviteInfo(token) {
+  const f = await gpInviteFind_(token);
+  if (f.err) return { ok: false, err: f.err };
+  const c = f.c;
+  return { ok: true, name: c.name || '', email: c.email || '', phone: c.phone || '', country: c.country || '', campus: c.campus || '', type: c.type };
 }
 
 /* ==================== YWAM GP Portal ====================
@@ -8181,6 +8402,8 @@ function portalAppOut_(c) {
     members: c.type === 'team' ? ((c.portal && c.portal.members) || []) : undefined,
     photos: c.type === 'team' ? ((c.portal && c.portal.photos) || null) : undefined,
     reference: (function (r) { delete r.answers; delete r.leaderEmail; return r; })(refState_(c)), // the applicant never reads the reference
+    gpInvite: gpInviteOpen_(c) ? { at: c.gpInvite.at } : null,   // "make your GP app account" on their dashboard
+    hired: c.hired ? { at: c.hired.at } : null,
     steps: portalSteps_(c)
   };
 }
@@ -8197,12 +8420,15 @@ function portalCandOut_(c, byId) {
     reference: refState_(c),
     docKinds: docKindsFor_(c),
     steps: portalSteps_(c),
+    gpInvite: c.gpInvite ? { at: c.gpInvite.at, by: c.gpInvite.by || '', open: gpInviteOpen_(c) } : null,   // never the hash
     hasAccount: !!acct
   });
 }
 async function candidateFor_(rows, s) {
   const cid = s.applicant && s.applicant.candidateId;
-  return rows.find(function (r) { return r && (r.id === cid || r.staffId === s.id); }) || null;
+  /* the record the account points at first: a GPDTS graduate keeps their DTS record (with the same
+     staffId) after their login moves on to the staff application (dtsToStaff) */
+  return (cid && rows.find(function (r) { return r && r.id === cid; })) || rows.find(function (r) { return r && r.staffId === s.id; }) || null;
 }
 
 /* ---- Sign in with Google ----
@@ -9124,6 +9350,7 @@ async function portalBoot(username, pin) {
     }),
     metricOverrides: (await getMetricOverrides_()).filter(function (o) { return o.dept === TEAM_DEPT && o.ministry === TEAM_MIN; }),
     scope: portalTypes_(s),
+    gpdts: !!dtsMin_(s.campus) && (dtsTeam_(s) || canLogFor_(s, s.campus, DTS_DEPT, dtsMin_(s.campus))),   // "GPDTS on My Ministry" button
     staff: rows.filter(function (r) { return canPortal_(r); }).map(portalStaffOut_),
     stages: CAND_STAGES, teamStages: TEAM_STAGES, types: PORTAL_TYPES, schools: PORTAL_SCHOOLS, campuses: PORTAL_CAMPUSES,
     forms: await getForms_()
@@ -11782,6 +12009,13 @@ const HANDLERS = {
   dtsBoard: function (a) { return dtsBoard(a[0], a[1]); },
   dtsMark: function (a) { return dtsMark(a[0], a[1], a[2], a[3]); },
   dtsSaveLecture: function (a) { return dtsSaveLecture(a[0], a[1], a[2]); },
+  dtsSaveOutreach: function (a) { return dtsSaveOutreach(a[0], a[1], a[2]); },
+  dtsDeleteOutreach: function (a) { return dtsDeleteOutreach(a[0], a[1], a[2]); },
+  dtsSavePast: function (a) { return dtsSavePast(a[0], a[1], a[2], a[3], a[4]); },
+  dtsToStaff: function (a) { return dtsToStaff(a[0], a[1], a[2]); },
+  portalGpInvite: function (a) { return portalGpInvite(a[0], a[1], a[2]); },
+  portalMyGpJoin: function (a) { return portalMyGpJoin(a[0], a[1]); },
+  staffInviteInfo: function (a) { return staffInviteInfo(a[0]); },
   dtsDeleteLecture: function (a) { return dtsDeleteLecture(a[0], a[1], a[2]); },
   getMyBroadcasts: function (a) { return getMyBroadcasts(a[0], a[1]); },
   sendBroadcast: function (a) { return sendBroadcast(a[0], a[1], a[2]); },
