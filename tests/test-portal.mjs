@@ -657,7 +657,7 @@ r = await call('portalBoot', ['sokun', '1234']);
 ok('nor does leading it once the account is deactivated', r.body.ok === false);
 mem.staff = mem.staff.map(x => x.id === 'st_otlead' ? { ...x, active: true, portalStaff: true } : x);
 r = await call('portalBoot', ['sokun', '1234']);
-ok('ticked Portal staff as well, they see every kind', r.body.ok === true && r.body.scope == null && r.body.applicants.some(a => a.type === 'student'), JSON.stringify(r.body.scope));
+ok('ticked Portal staff as well, they still see their ministry’s — team applications (Nov 2026: an admin can widen it)', r.body.ok === true && JSON.stringify(r.body.scope) === '["team"]' && !r.body.applicants.some(a => a.type === 'student'), JSON.stringify(r.body.scope));
 mem.staff = mem.staff.filter(x => x.id !== 'st_otlead');
 mem.candidates = mem.candidates.filter(c => c.id !== teamCand.id);
 
@@ -687,7 +687,7 @@ r = await call('adminUpdateStaff', ['uriah', '1234', anna.id, { portalStaff: tru
 ok('but not on an applicant', r.body.ok === false && r.body.err === 'is_applicant');
 r = await call('portalAccessList', ['sina', '1234']);
 ok('Who has access: a portal admin lists every active staff member (no applicants) with the two flags and nothing private; not a GP app admin, so cannot grant admin',
-  r.body.ok === true && r.body.canGrantAdmin === false && r.body.staff.length === mem.staff.filter(x => x.active !== false && !x.archived && x.kind !== 'applicant').length && r.body.staff.some(x => x.id === 'st_pstaff' && x.portalStaff === true && x.portalAdmin === false) && Object.keys(r.body.staff[0]).sort().join() === 'campus,dept,id,isAdmin,leadsTeams,ministry,name,portalAdmin,portalStaff', JSON.stringify(r.body.staff && r.body.staff[0]));
+  r.body.ok === true && r.body.canGrantAdmin === false && r.body.staff.length === mem.staff.filter(x => x.active !== false && !x.archived && x.kind !== 'applicant').length && r.body.staff.some(x => x.id === 'st_pstaff' && x.portalStaff === true && x.portalAdmin === false) && Object.keys(r.body.staff[0]).sort().join() === 'campus,dept,id,isAdmin,leadsTeams,ministry,name,portal,portalAdmin,portalStaff,scopeSet,sees', JSON.stringify(r.body.staff && r.body.staff[0]));
 r = await call('portalAccessList', ['uriah', '1234']);
 ok('… a GP app admin can', r.body.ok === true && r.body.canGrantAdmin === true && r.body.staff.some(x => x.isAdmin === true));
 r = await call('portalAccessList', ['dara', '1234']);

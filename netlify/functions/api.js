@@ -838,6 +838,7 @@ function adminStaffOut_(s) {
     id: s.id, name: s.name, username: s.username, campus: s.campus, dept: s.dept,
     ministry: s.ministry || '', role: s.role, active: s.active !== false, isAdmin: !!s.isAdmin, hr: !!s.hr, kmReviewer: !!s.kmReviewer,
     kind: s.kind || 'staff', portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin,
+    portalScope: portalSetScope_(s), portal: !isApplicant_(s) && canPortal_(s), portalSees: canPortal_(s) ? portalTypes_(s) : [],
     staffType: s.staffType || '', country: s.country || '', email: s.email || '',
     cdKind: s.cdKind || '', gpRole: gpRolesOf_(s)[0] || '', gpRoles: gpRolesOf_(s), cltRequest: cltRequestOut_(s),
     mentorId: s.mentorId || '', mentorStatus: s.mentorStatus || '',
@@ -1094,6 +1095,12 @@ async function adminUpdateStaff(username, pin, staffId, payload) {
       if (isApplicant_(rec)) return { abort: true, ok: false, err: 'is_applicant' };
       if (payload.portalStaff !== undefined) rec.portalStaff = !!payload.portalStaff;
       if (payload.portalAdmin !== undefined) rec.portalAdmin = !!payload.portalAdmin;
+    }
+    // Which applicants they see: null = from their ministries; ['all']; or a list (PORTAL_SCOPES).
+    if (payload.portalScope !== undefined) {
+      if (isApplicant_(rec)) return { abort: true, ok: false, err: 'is_applicant' };
+      const sc = cleanPortalScope_(payload.portalScope);
+      if (sc) rec.portalScope = sc; else delete rec.portalScope;
     }
     rec.updated = new Date().toISOString();
     rows[idx] = rec;
@@ -2271,6 +2278,7 @@ async function numbersStatus_(s, rows) {
   weeks.forEach(function (w) { logged[w] = {}; });
   entries.forEach(function (r) {
     if (r.campus !== s.campus || yearOf_(r) !== yr || !logged[Number(r.week)]) return;
+    if (r.by === DTS_TAG) return;   // GPDTS's pipeline counts itself; its typed numbers are what is due
     logged[Number(r.week)][r.dept + '|' + r.ministry] = true;
   });
   const loggedFor = function (dept, ministry) {
@@ -5184,6 +5192,7 @@ async function runReminders(now) {
   });
 }
 export { runReminders, pushEncrypt_, vapidJwt_ };
+export { runDtsSync };
 export { qboCallback, runQboSync, qboPlFromReport_, qboDebtFromReport_, qboTable_, qboPeriod_ };
 
 /* ---------- Khmer review (Oct 2026) ----------
@@ -7545,6 +7554,8 @@ function stagesFor_(type) { return type === 'team' ? TEAM_STAGES : CAND_STAGES; 
 function teamStage_(stage) { return TEAM_STAGE_FROM[stage] || stage; }
 const CAND_FOLLOWUP_DAYS = 7, CAND_MAX = 2000, CAND_LOG_MAX = 300;
 const CAND_CALLS_MAX = 300, CAND_CALL_TEXT_MAX = 5000;
+/* how someone was reached, on a logged contact (any record, Nov 2026) */
+const CONTACT_METHODS = ['call', 'message', 'inperson', 'email', 'social'];
 /* A member listed before members carried ids (Oct 2026) gets one on read, made
    from the name so it is the same every time until the list is next saved —
    then the photos and the strengths know them too. */
@@ -7582,6 +7593,7 @@ function cleanCandidate_(c, prev, me) {
     messenger: PORTAL_MESSENGERS.indexOf(c.messenger) > -1 ? c.messenger : (prev ? (prev.messenger || '') : ''),
     portal: prev ? (prev.portal || null) : null,
     calls: prev && Array.isArray(prev.calls) ? prev.calls : undefined,   // call notes: only hrCandidateCall writes them
+    dts: prev && prev.dts ? prev.dts : undefined,   // GPDTS's marks (graduated, potential staff): only dtsMark writes them
     log: prev ? (Array.isArray(prev.log) ? prev.log : []) : [], archived: prev ? (prev.archived || null) : null, archiveOff: prev && prev.archiveOff ? true : undefined,
     created: prev ? prev.created : now, createdBy: prev ? prev.createdBy : me.id, updated: now, updatedBy: me.id
   };
@@ -7618,6 +7630,7 @@ async function hrSaveCandidate(username, pin, cand) {
   if (idx > -1) rows[idx] = rec; else rows.push(rec);
   await writeJSON('candidates', rows);
   if (rec.type === 'team') await syncTeamTrip_(rec, g.s.id);   // every team application is a team in the Teams Database
+  if (isDtsCand_(rec)) await dtsSyncSafe_(rec.campus);   // GPDTS's numbers come from its pipeline
   return { ok: true, candidate: rec };
 }
 async function hrCandidateNote(username, pin, id, text) {
@@ -7661,13 +7674,23 @@ async function hrCandidateCall(username, pin, id, call) {
     if (!raw) return { ok: false, err: 'empty' };
     if (raw.length > CAND_CALL_TEXT_MAX) return { ok: false, err: 'too_long' };
     const rec = { id: at > -1 ? calls[at].id : hrId_('cl'), date: isoDate_(call.date) || now.slice(0, 10), with: str_(call.with, 120) || '', text: raw,
+      method: CONTACT_METHODS.indexOf(call.method) > -1 ? call.method : '',
       by: at > -1 ? calls[at].by : g.s.id, at: at > -1 ? calls[at].at : now };
     if (at > -1) { rec.edited = now; rec.editedBy = g.s.id; calls[at] = rec; }
-    else { if (calls.length >= CAND_CALLS_MAX) return { ok: false, err: 'too_many' }; calls.push(rec); }
+    else {
+      if (calls.length >= CAND_CALLS_MAX) return { ok: false, err: 'too_many' };
+      calls.push(rec);
+      // a contact the team is reaching (no account yet) moves on from New the first time they're reached
+      if (c.type !== 'team' && c.stage === 'new' && !c.portal) {
+        c.stage = 'contacted';
+        c.log = (Array.isArray(c.log) ? c.log : []).concat([{ at: now, by: g.s.id, kind: 'stage', text: 'contacted' }]).slice(-CAND_LOG_MAX);
+      }
+    }
   }
   c.calls = calls;
   c.updated = now; c.updatedBy = g.s.id;
   await writeJSON('candidates', rows);
+  if (isDtsCand_(c)) await dtsSyncSafe_(c.campus);
   return { ok: true, candidate: c };
 }
 async function hrArchiveCandidate(username, pin, id, info) {
@@ -7682,7 +7705,233 @@ async function hrArchiveCandidate(username, pin, id, info) {
   rows[idx].updated = now; rows[idx].updatedBy = g.s.id;
   await writeJSON('candidates', rows);
   await syncTeamTrip_(rows[idx], g.s.id, info === null ? 'active' : 'cancelled');   // a closed team application is a cancelled team (one that left is archived by itself, not here)
+  if (isDtsCand_(rows[idx])) await dtsSyncSafe_(rows[idx].campus);
   return { ok: true, candidate: rows[idx] };
+}
+
+/* ==================== GPDTS: the school's page, and its numbers from the pipeline (Nov 2026, Andrew) ====================
+   "Instead of manually inputting numbers, I would like it to automatically track them." The DTS
+   pipeline is the candidates CRM itself — the portal's DTS applications and the people the team
+   adds by hand and follows up (Add a contact, logged contacts, next step) — worked day to day in
+   the portal. GPDTS on My Ministry is the school's home: a dashboard, the class that is here (marked
+   graduated and potential staff), the lectures, and the outreach (to come).
+   The numbers come from the records, week by week of this week year:
+     Students Applied            the day the application was sent in (or the record first reached Applied)
+     Students Accepted           the day it first reached Accepted
+     Students Graduated          the day marked graduated (dtsMark)
+     Local / Intl Students Contacted  the first contact logged with someone (or their first move to
+                                 Contacted / Interview) — new people reached, not every contact
+     Students Enrolled (level)   arrived, not yet graduated or archived, at the end of the week
+     Potential Staff (level)     marked potential staff this year, by the end of the week
+   written as 'tool:dts' rows (dtsSync_) — a number someone typed by hand is never overwritten, and a
+   tool row with nothing behind it any more is taken away. The rest (gospel, healings, salvations,
+   baptisms) are still typed on Numbers. Synced on every DTS write, when the page opens, and hourly
+   (dts-sync.js). Siem Reap's GPDTS for now (DTS_TOOL). */
+const DTS_DEPT = 'Leadership Development';
+const DTS_TOOL = { siemreap: 'GPDTS' };
+const DTS_AUTO = ['Students Applied', 'Students Accepted', 'Students Enrolled', 'Students Graduated', 'Potential Staff', 'Local Students Contacted', 'Intl Students Contacted'];
+const DTS_LEVELS = ['Students Enrolled', 'Potential Staff'];
+const DTS_TAG = 'tool:dts';
+const DTS_DUE_DAYS = 7, DTS_LECT_MAX = 300, DTS_MARK_MAX = 100, DTS_SCHOOL_DAYS = 180;
+function dtsMin_(campus) { return Object.prototype.hasOwnProperty.call(DTS_TOOL, campus) ? DTS_TOOL[campus] : ''; }
+function isDtsCand_(c, campus) { return !!(c && c.type === 'student' && String(c.school || '').toLowerCase() === 'dts' && (!campus || c.campus === campus)); }
+/* the DTS team: GPDTS's own people and leaders, and the Leadership Development director */
+function dtsTeam_(s) {
+  if (!s || isApplicant_(s) || s.active === false) return false;
+  const min = dtsMin_(s.campus);
+  if (!min) return false;
+  return memberOf_(s, DTS_DEPT, min) || isLeaderOf_(s, DTS_DEPT, min) || (deptOf_(s) === 'Campus Leadership' && s.ministry === DTS_DEPT);
+}
+function pnpDay_(ts) { const t = Date.parse(ts || ''); return isNaN(t) ? '' : new Date(t + 7 * 3600 * 1000).toISOString().slice(0, 10); }
+function dayOfNo_(n) { return new Date(n * 86400000).toISOString().slice(0, 10); }
+function weekEndDay_(year, week) { return dayOfNo_(mondayOfWeek1No_(year) + (week - 1) * 7 + 6); }
+/* the day a record first reached `stage` or beyond (its stage log), else — no log — the day it was made */
+function dtsReached_(c, stage) {
+  const want = CAND_STAGES.indexOf(stage);
+  const hit = (Array.isArray(c.log) ? c.log : []).filter(function (l) { return l && l.kind === 'stage' && CAND_STAGES.indexOf(l.text) >= want; })
+    .map(function (l) { return l.at; }).sort()[0];
+  if (hit) return pnpDay_(hit);
+  return CAND_STAGES.indexOf(c.stage) >= want ? pnpDay_(c.created || c.updated) : '';
+}
+function dtsApplied_(c) { return pnpDay_(c.portal && c.portal.submittedAt) || dtsReached_(c, 'applied'); }
+/* the first time the team reached them: a logged contact, or a move to Contacted / Interview */
+function dtsContacted_(c) {
+  const days = (Array.isArray(c.calls) ? c.calls : []).map(function (x) { return x && x.date; }).filter(Boolean);
+  (Array.isArray(c.log) ? c.log : []).forEach(function (l) { if (l && l.kind === 'stage' && (l.text === 'contacted' || l.text === 'interview')) days.push(pnpDay_(l.at)); });
+  if (!days.length && (c.stage === 'contacted' || c.stage === 'interview')) days.push(pnpDay_(c.created || c.updated));
+  return days.filter(Boolean).sort()[0] || '';
+}
+function dtsMarks_(c) { return c.dts && typeof c.dts === 'object' ? c.dts : {}; }
+async function dtsSync_(campus) {
+  const min = dtsMin_(campus);
+  if (!min) return false;
+  const yr = thisWeekYear_(), today = baseToday_(), curWk = isoWeek_(today);
+  const cands = (await getCandidates_()).filter(function (c) { return isDtsCand_(c, campus); });
+  const want = {}; DTS_AUTO.forEach(function (m) { want[m] = {}; });
+  const add = function (m, day) { if (day && weekYear_(day) === yr) { const w = isoWeek_(day); want[m][w] = (want[m][w] || 0) + 1; } };
+  cands.forEach(function (c) {
+    add('Students Applied', dtsApplied_(c));
+    add('Students Accepted', dtsReached_(c, 'accepted'));
+    add('Students Graduated', dtsMarks_(c).graduated);
+    const ct = dtsContacted_(c);
+    if (ct) add(audienceOf_(c) === 'khmer' ? 'Local Students Contacted' : 'Intl Students Contacted', ct);
+  });
+  const level = {
+    'Students Enrolled': function (c, end) {
+      const arr = dtsReached_(c, 'arrived'), g = dtsMarks_(c).graduated, gone = c.archived ? pnpDay_(c.archived.at) : '';
+      return !!arr && arr <= end && !(g && g <= end) && !(gone && gone <= end);
+    },
+    'Potential Staff': function (c, end) { const p = dtsMarks_(c).potentialStaff; return !!p && p <= end && weekYear_(p) === yr; }
+  };
+  DTS_LEVELS.forEach(function (m) {
+    let seen = false;
+    for (let w = 1; w <= curWk; w++) {
+      const end = weekEndDay_(yr, w), n = cands.filter(function (c) { return level[m](c, end); }).length;
+      if (n) seen = true;
+      if (seen) want[m][w] = n;
+    }
+  });
+  const rows = await getEntries_(), now = new Date().toISOString();
+  let changed = false;
+  const mine = function (r, m) { return r.campus === campus && r.dept === DTS_DEPT && r.ministry === min && r.metric === m && yearOf_(r) === yr; };
+  DTS_AUTO.forEach(function (m) {
+    const isLevel = DTS_LEVELS.indexOf(m) > -1, weeks = {};
+    Object.keys(want[m]).forEach(function (w) { weeks[w] = 1; });
+    rows.forEach(function (r) { if (mine(r, m)) weeks[r.week] = 1; });
+    Object.keys(weeks).map(Number).forEach(function (w) {
+      const idx = rows.findIndex(function (r) { return mine(r, m) && Number(r.week) === w; });
+      const r = idx > -1 ? rows[idx] : null;
+      if (r && r.by !== DTS_TAG) return;   // a number someone typed stays as it is
+      const v = want[m][w], has = v !== undefined && (isLevel || v > 0);
+      if (has) {
+        if (!r) { rows.push({ campus: campus, dept: DTS_DEPT, ministry: min, metric: m, week: w, year: yr, value: v, updated: now, by: DTS_TAG }); changed = true; }
+        else if (Number(r.value) !== v) { r.value = v; r.updated = now; changed = true; }
+      } else if (r) { rows.splice(idx, 1); changed = true; }
+    });
+  });
+  if (changed) await writeJSON('entries', rows);
+  return changed;
+}
+/* a sync never costs the save it follows */
+async function dtsSyncSafe_(campus) { try { return await dtsSync_(campus); } catch (e) { console.error('dts sync', e && e.message); return false; } }
+/* every hour (dts-sync.js): the levels move with the calendar, and a change made where no sync
+   runs (an applicant's own submit on another campus, a stage moved elsewhere) catches up */
+async function runDtsSync() {
+  return requestScope.run(new Map(), async function () {
+    const out = {};
+    for (const c of Object.keys(DTS_TOOL)) out[c] = await dtsSyncSafe_(c);
+    return out;
+  });
+}
+async function dtsGate_(username, pin) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { out: { ok: false } };
+  const min = dtsMin_(s.campus);
+  if (!min) return { out: { ok: false, err: 'no_dts' } };
+  if (!canLogFor_(s, s.campus, DTS_DEPT, min) && !dtsTeam_(s)) return { out: { ok: false, err: 'not_authorized' } };
+  return { s: s, campus: s.campus, min: min };
+}
+/* where a record is on the way, for the dashboard's counts */
+function dtsColumn_(c) {
+  if (dtsMarks_(c).graduated) return 'graduated';
+  const i = CAND_STAGES.indexOf(c.stage), submitted = !!(c.portal && c.portal.submittedAt);
+  if (c.stage === 'arrived') return 'arrived';
+  if (i >= CAND_STAGES.indexOf('accepted')) return 'accepted';
+  if (submitted || i >= CAND_STAGES.indexOf('applied')) return 'applied';
+  if (c.stage === 'contacted' || (Array.isArray(c.calls) && c.calls.length)) return 'contacted';
+  return 'lead';
+}
+async function dtsBoardOut_(g) {
+  await dtsSyncSafe_(g.campus);
+  const cands = (await getCandidates_()).filter(function (c) { return isDtsCand_(c, g.campus); });
+  const today = baseToday_(), yr = thisWeekYear_();
+  const cut = dayOfNo_(dayNo_(today) + DTS_DUE_DAYS), since = dayOfNo_(dayNo_(today) - DTS_SCHOOL_DAYS);
+  const cols = ['lead', 'contacted', 'applied', 'accepted', 'arrived', 'graduated'], counts = {};
+  cols.forEach(function (k) { counts[k] = { khmer: 0, international: 0 }; });
+  const due = [], school = [];
+  cands.forEach(function (c) {
+    const col = dtsColumn_(c), m = dtsMarks_(c), aud = audienceOf_(c);
+    const live = !c.archived || (col === 'graduated' && m.graduated >= since);
+    if (live && (col !== 'graduated' || weekYear_(m.graduated) === yr)) counts[col][aud]++;
+    if (!c.archived && c.nextDate && c.nextDate <= cut && col !== 'graduated') due.push({ id: c.id, name: c.name, audience: aud, nextStep: c.nextStep || '', nextDate: c.nextDate, column: col });
+    if (c.stage === 'arrived' && (!c.archived || (m.graduated && m.graduated >= since)) && (!m.graduated || m.graduated >= since))
+      school.push({ id: c.id, name: c.name, country: c.country || '', audience: aud, arrived: dtsReached_(c, 'arrived'), graduated: m.graduated || '', potentialStaff: m.potentialStaff || '', archived: !!c.archived });
+  });
+  due.sort(function (a, b) { return a.nextDate < b.nextDate ? -1 : a.nextDate > b.nextDate ? 1 : 0; });
+  school.sort(function (a, b) { return a.name.localeCompare(b.name); });
+  const lect = await readJSON('dtsLect:' + g.campus, { lectures: [] });
+  return {
+    ok: true, campus: g.campus, ministry: g.min, today: today, counts: counts, due: due.slice(0, 40), dueMore: Math.max(0, due.length - 40),
+    school: school, lectures: Array.isArray(lect.lectures) ? lect.lectures : [], portal: canPortal_(g.s),
+    data: await withNumbers_(await ministryDataFor2_(g.campus, DTS_DEPT, g.min), g.s)
+  };
+}
+async function dtsBoard(username, pin) {
+  const g = await dtsGate_(username, pin); if (g.out) return g.out;
+  return dtsBoardOut_(g);
+}
+/* the class that is here: graduated (with the day) and potential staff, one or many at once */
+async function dtsMark(username, pin, ids, marks) {
+  const g = await dtsGate_(username, pin); if (g.out) return g.out;
+  ids = (Array.isArray(ids) ? ids : [ids]).map(function (x) { return str_(x, 60); }).filter(Boolean).slice(0, DTS_MARK_MAX);
+  marks = marks && typeof marks === 'object' ? marks : {};
+  if (!ids.length) return { ok: false, err: 'none' };
+  const grad = marks.graduated === undefined ? undefined : (marks.graduated ? isoDate_(marks.graduated) : '');
+  if (marks.graduated && !grad) return { ok: false, err: 'bad_date' };
+  if (grad && grad > baseToday_()) return { ok: false, err: 'future' };
+  const rows = await getCandidates_(), now = new Date().toISOString(), today = baseToday_();
+  let n = 0;
+  rows.forEach(function (c) {
+    if (!c || ids.indexOf(c.id) === -1 || !isDtsCand_(c, g.campus)) return;
+    if (c.stage !== 'arrived') return;   // only someone who came graduates or is spotted as staff
+    const m = Object.assign({}, dtsMarks_(c)), notes = [];
+    if (grad !== undefined && (m.graduated || '') !== grad) { if (grad) m.graduated = grad; else delete m.graduated; notes.push(grad ? 'Graduated (' + grad + ')' : 'No longer marked graduated'); }
+    if (marks.potentialStaff !== undefined && !!m.potentialStaff !== !!marks.potentialStaff) {
+      if (marks.potentialStaff) m.potentialStaff = today; else delete m.potentialStaff;
+      notes.push(marks.potentialStaff ? 'Marked potential staff' : 'No longer marked potential staff');
+    }
+    if (!notes.length) return;
+    c.dts = m;
+    c.log = (Array.isArray(c.log) ? c.log : []).concat(notes.map(function (t) { return { at: now, by: g.s.id, kind: 'note', text: t }; })).slice(-CAND_LOG_MAX);
+    c.updated = now; c.updatedBy = g.s.id; n++;
+  });
+  if (n) await writeJSON('candidates', rows);
+  const out = await dtsBoardOut_(g);
+  out.changed = n;
+  return out;
+}
+/* the lectures: each week's topic and speaker */
+function cleanLecture_(l, prev, me) {
+  if (!l || typeof l !== 'object') return null;
+  const date = isoDate_(l.date), topic = str_(l.topic, 160) || '', speaker = str_(l.speaker, 120) || '';
+  if (!date || (!topic && !speaker)) return null;
+  const now = new Date().toISOString();
+  return {
+    id: prev ? prev.id : hrId_('lc'), date: date, end: (isoDate_(l.end) && isoDate_(l.end) >= date) ? isoDate_(l.end) : '',
+    topic: topic, speaker: speaker, from: str_(l.from, 160) || '', contact: str_(l.contact, 160) || '',
+    confirmed: !!l.confirmed, notes: String(l.notes == null ? '' : l.notes).trim().slice(0, 2000),
+    by: prev ? prev.by : me.id, at: prev ? prev.at : now, updated: now, updatedBy: me.id
+  };
+}
+async function dtsSaveLecture(username, pin, lec) {
+  const g = await dtsGate_(username, pin); if (g.out) return g.out;
+  const key = 'dtsLect:' + g.campus, doc = await readJSON(key, { lectures: [] });
+  const list = Array.isArray(doc.lectures) ? doc.lectures : [];
+  const id = str_(lec && lec.id, 60), at = id ? list.findIndex(function (x) { return x && x.id === id; }) : -1;
+  if (id && at === -1) return { ok: false, err: 'not_found' };
+  const rec = cleanLecture_(lec, at > -1 ? list[at] : null, g.s);
+  if (!rec) return { ok: false, err: 'bad_lecture' };
+  if (at > -1) list[at] = rec; else { if (list.length >= DTS_LECT_MAX) return { ok: false, err: 'too_many' }; list.push(rec); }
+  list.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+  await writeJSON(key, { lectures: list });
+  return { ok: true, lectures: list, id: rec.id };
+}
+async function dtsDeleteLecture(username, pin, id) {
+  const g = await dtsGate_(username, pin); if (g.out) return g.out;
+  const key = 'dtsLect:' + g.campus, doc = await readJSON(key, { lectures: [] });
+  const list = (Array.isArray(doc.lectures) ? doc.lectures : []).filter(function (x) { return x && x.id !== str_(id, 60); });
+  await writeJSON(key, { lectures: list });
+  return { ok: true, lectures: list };
 }
 
 /* ==================== YWAM GP Portal ====================
@@ -7704,7 +7953,8 @@ async function hrArchiveCandidate(username, pin, id, info) {
    Who may work the portal is a flag an admin sets by hand — portalStaff
    (see every applicant, move stages, notes, owner) and portalAdmin (that,
    plus grant / revoke portalStaff). An app admin has both and is the only
-   one who can make a portal admin. Nobody gets it by being staff. */
+   one who can make a portal admin. Since Nov 2026 a school's own staff (and the Outreach Teams
+   leader) have it for their own applicants without a tick — see "Who sees which applicants". */
 /* Where you apply to. Each campus runs its own schools: Poipet DTS and DBS,
    Siem Reap all four. DBS, BCS and SMS are secondary schools — a completed
    DTS is the prerequisite — which the forms ask about; here it only decides
@@ -7725,20 +7975,62 @@ function isApplicant_(s) { return !!(s && s.kind === 'applicant'); }
    applications on the portal without anyone ticking Portal access for them:
    the admin who makes someone that ministry's leader has already said so. */
 function leadsTeams_(s) { return isLeaderOf_(s, TEAM_DEPT, TEAM_MIN); }
-function canPortal_(s) { return !!(s && !isApplicant_(s) && s.active !== false && (s.isAdmin || s.portalAdmin || s.portalStaff || leadsTeams_(s))); }
+/* Who sees which applicants (Andrew, Nov 2026: "those who are only in the DTS or DBS or any of the
+   training school staff only see those applicants … for everyone, specific to what ministry they are
+   in … as admin, I can manually edit that"). A scope entry is a kind of application ('team', 'staff',
+   'volunteer') or a kind and a school ('student:dts'). A school's own staff and leaders get the portal
+   for their school's applicants without a tick (PORTAL_MIN_SCOPE), the Leadership Development director
+   for all four schools; Outreach Teams' people see team applications (its leader without a tick, as
+   before). An admin's setting on the person (`portalScope`: a list, or ['all']) wins over all of it and
+   is itself a grant; with none, their ministries decide, and someone ticked with no such ministry sees
+   everything. App admins always see everything. */
+const PORTAL_SCOPES = ['student:dts', 'student:dbs', 'student:bcs', 'student:sms', 'staff', 'volunteer', 'team'];
+const PORTAL_MIN_SCOPE = [['Leadership Development', 'GPDTS', 'student:dts'], ['Leadership Development', 'DTS', 'student:dts'],
+  ['Leadership Development', 'DBS', 'student:dbs'], ['Leadership Development', 'BCS', 'student:bcs'], ['Leadership Development', 'SMS', 'student:sms']];
+function cleanPortalScope_(v) {
+  if (v === null || v === undefined || v === '' || v === 'auto') return null;
+  if (v === 'all') return ['all'];
+  if (!Array.isArray(v)) return null;
+  if (v.indexOf('all') > -1) return ['all'];
+  return PORTAL_SCOPES.filter(function (k) { return v.indexOf(k) > -1; });
+}
+function portalSetScope_(s) { return Array.isArray(s && s.portalScope) ? s.portalScope : null; }
+/* what their ministries give them: the school(s) they are on or lead, the LD director all four */
+function schoolScope_(s) {
+  const ty = [];
+  PORTAL_MIN_SCOPE.forEach(function (m) {
+    if ((memberOf_(s, m[0], m[1]) || isLeaderOf_(s, m[0], m[1])) && ty.indexOf(m[2]) === -1) ty.push(m[2]);
+  });
+  if (deptOf_(s) === 'Campus Leadership' && s.ministry === 'Leadership Development') {
+    ['student:dts', 'student:dbs', 'student:bcs', 'student:sms'].forEach(function (k) { if (ty.indexOf(k) === -1) ty.push(k); });
+  }
+  return ty;
+}
+function canPortal_(s) {
+  if (!s || isApplicant_(s) || s.active === false) return false;
+  const set = portalSetScope_(s);
+  return !!(s.isAdmin || s.portalAdmin || s.portalStaff || leadsTeams_(s) || dtsTeam_(s) || schoolScope_(s).length || (set && set.length));
+}
 function isPortalAdmin_(s) { return !!(s && !isApplicant_(s) && s.active !== false && (s.isAdmin || s.portalAdmin)); }
 /* Which kinds of application a portal staff member works. Outreach Teams
    hosts the short-term teams, so someone on that ministry sees team
    applications and nothing else; everyone else with access sees them all.
    null means "all". Admins and portal admins always see all. */
 function portalTypes_(s) {
-  if (!s || isPortalAdmin_(s)) return null;
-  if (deptOf_(s) === TEAM_DEPT && s.ministry === TEAM_MIN) return ['team'];
-  // in only as the Outreach Teams leader: team applications, same as its staff
-  if (!s.portalStaff && leadsTeams_(s)) return ['team'];
-  return null;
+  if (!s || s.isAdmin) return null;
+  const set = portalSetScope_(s);
+  if (set) return set.indexOf('all') > -1 ? null : set;   // an admin said exactly what they see
+  if (s.portalAdmin) return null;
+  const ty = schoolScope_(s);
+  if (memberOf_(s, TEAM_DEPT, TEAM_MIN) || leadsTeams_(s)) ty.push('team');
+  return ty.length ? ty : null;
 }
-function portalMaySee_(s, c) { const ty = portalTypes_(s); return !ty || !c || ty.indexOf(c.type) > -1; }
+/* a scope entry is a kind of application ('team') or a kind and school ('student:dts') */
+function portalMaySee_(s, c) {
+  const ty = portalTypes_(s);
+  if (!ty || !c) return true;
+  return ty.indexOf(c.type) > -1 || ty.indexOf(c.type + ':' + String(c.school || '').toLowerCase()) > -1;
+}
 function portalRole_(s) {
   if (isApplicant_(s)) return 'applicant';
   if (isPortalAdmin_(s)) return 'portal-admin';
@@ -8293,8 +8585,15 @@ async function createApplicant_(payload, by) {
   if (findStaff_(rows, u)) return { ok: false, err: byEmail ? 'email_taken' : 'taken' };
   const cands = await getCandidates_();
   if (cands.length >= CAND_MAX) return { ok: false, err: 'too_many' };
+  /* Someone the team added by hand and has been following up (Nov 2026, Andrew): signing
+     up with the same email, for the same kind of application on the same campus, joins
+     that record — the contacts logged stay, and nothing is in the list twice. */
+  const lead = cands.find(function (c) {
+    return c && !c.archived && !c.portal && !c.staffId && c.email && String(c.email).toLowerCase() === email &&
+      c.type === type && c.campus === campus && (type !== 'student' || String(c.school || '').toLowerCase() === school);
+  }) || null;
   const salt = pinSalt_(), now = new Date().toISOString();
-  const id = newStaffId_(), candId = hrId_('cd');
+  const id = newStaffId_(), candId = lead ? lead.id : hrId_('cd');
   const rec = {
     id: id, username: u, name: name, email: email,
     kind: 'applicant', campus: campus, dept: '', ministry: '', role: '', photo: '',
@@ -8326,7 +8625,15 @@ async function createApplicant_(payload, by) {
   });
   if (!made || !made.ok) return made || { ok: false };
   const fresh = await getCandidates_();
-  fresh.push(cand);
+  const li = lead ? fresh.findIndex(function (c) { return c && c.id === lead.id && !c.staffId && !c.portal; }) : -1;
+  if (li > -1) {
+    const old = fresh[li];
+    cand.source = old.source || 'portal'; cand.assignedTo = old.assignedTo || ''; cand.nextStep = old.nextStep || ''; cand.nextDate = old.nextDate || '';
+    cand.notes = old.notes || ''; cand.calls = Array.isArray(old.calls) ? old.calls : undefined; cand.dts = old.dts || undefined;
+    cand.created = old.created || now; cand.createdBy = old.createdBy || cand.createdBy;
+    cand.log = (Array.isArray(old.log) ? old.log : []).concat([{ at: now, by: id, kind: 'note', text: 'Made a portal account — joined to this record' }]).concat(old.stage !== 'new' ? [{ at: now, by: id, kind: 'stage', text: 'new' }] : []).slice(-CAND_LOG_MAX);
+    fresh[li] = cand;
+  } else fresh.push(cand);
   await writeJSON('candidates', fresh);
   return { ok: true, rec: rec, cand: cand, token: token };
 }
@@ -8853,7 +9160,8 @@ async function portalAccessList(username, pin) {
   if (!isPortalAdmin_(me)) return { ok: false, err: 'not_authorized' };
   const rows = (await getStaff_()).filter(function (r) { return r && r.active !== false && !r.archived && !isApplicant_(r); })
     .sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); })
-    .map(function (r) { return { id: r.id, name: r.name, campus: r.campus || '', dept: deptOf_(r) || '', ministry: r.ministry || '', portalStaff: !!r.portalStaff, portalAdmin: !!r.portalAdmin, isAdmin: !!r.isAdmin, leadsTeams: leadsTeams_(r) }; });
+    .map(function (r) { return { id: r.id, name: r.name, campus: r.campus || '', dept: deptOf_(r) || '', ministry: r.ministry || '', portalStaff: !!r.portalStaff, portalAdmin: !!r.portalAdmin, isAdmin: !!r.isAdmin, leadsTeams: leadsTeams_(r),
+      portal: canPortal_(r), sees: canPortal_(r) ? portalTypes_(r) : [], scopeSet: !!portalSetScope_(r) }; });
   return { ok: true, canGrantAdmin: !!me.isAdmin, staff: rows };
 }
 /* The staff side's writes go through the CRM's own handlers (hrSaveCandidate,
@@ -9027,13 +9335,14 @@ async function portalSubmit(username, pin, answers) {
   const now = new Date().toISOString();
   cand.portal.form = { answers: merged, submittedAt: now, audience: audience, formKey: formKeyOf_(cand) };
   cand.portal.submittedAt = now; cand.portal.draft = null; cand.portal.draftAt = null;
-  if (cand.stage === 'new') {
+  if (cand.stage === 'new' || cand.stage === 'contacted') {   // someone the team was already in touch with (a lead who made an account)
     cand.stage = 'applied';
     cand.log = (Array.isArray(cand.log) ? cand.log : []).concat([{ at: now, by: a.s.id, kind: 'stage', text: 'applied' }]).slice(-CAND_LOG_MAX);
   }
   cand.updated = now; cand.updatedBy = a.s.id;
   await writeJSON('candidates', a.rows);
   await syncTeamTrip_(cand, a.s.id);   // a team shows up in the Teams Database the day it applies
+  if (isDtsCand_(cand)) await dtsSyncSafe_(cand.campus);   // Students Applied on GPDTS
   return portalBoot(username, pin);
 }
 /* After submitting, the applicant may still correct their answers — teams in
@@ -11470,6 +11779,10 @@ const HANDLERS = {
   hrCandidateNote: function (a) { return hrCandidateNote(a[0], a[1], a[2], a[3]); },
   hrCandidateCall: function (a) { return hrCandidateCall(a[0], a[1], a[2], a[3]); },
   hrArchiveCandidate: function (a) { return hrArchiveCandidate(a[0], a[1], a[2], a[3]); },
+  dtsBoard: function (a) { return dtsBoard(a[0], a[1]); },
+  dtsMark: function (a) { return dtsMark(a[0], a[1], a[2], a[3]); },
+  dtsSaveLecture: function (a) { return dtsSaveLecture(a[0], a[1], a[2]); },
+  dtsDeleteLecture: function (a) { return dtsDeleteLecture(a[0], a[1], a[2]); },
   getMyBroadcasts: function (a) { return getMyBroadcasts(a[0], a[1]); },
   sendBroadcast: function (a) { return sendBroadcast(a[0], a[1], a[2]); },
   portalRegister: function (a) { return portalRegister(a[0]); },

@@ -50,6 +50,7 @@ const SERVER = [
   'test-staff-ids.mjs', // every staff record gets its own id on read: a missing one is minted, a duplicate re-minted for the later row, the repaired list written back once; repaired accounts work by their new id
   'test-hr.mjs', // Human Resources: only admin/hr may read or write; contracts (signed month + years, renewals as rows), attachments as their own blobs, old-CRM pre-fill, archive = deactivate, unarchive
   'test-hr-candidates.mjs', // HR → Candidates: the gate, a candidate is a name + type + stage, stage moves are logged, notes append, follow-ups due within a week count on boot, archive/unarchive
+  'test-dts.mjs',            // GPDTS: the board's gate and counts, the pipeline's weekly rows (tagged, never over a typed number), graduated / potential staff, lectures, contacts, a lead joined by sign-up, who sees what on the portal
   'test-portal.mjs',     // YWAM GP Portal: applicant sign-up, applicants closed out of every staff handler and roster, own application only, portal access flags, timeline follows the CRM stage
   'test-ministry-oversight.mjs', // department overseers can log for ministries they oversee, nobody else can
   'test-ministry-metrics.mjs', // a ministry's own staff (or its overseer, or an admin) can edit what it tracks
@@ -131,6 +132,7 @@ const BROWSER = [
   'test-home-layout-ui.mjs',  // My Home: sections in order, said once; Updates capped; annual goals folded; tiles; 320px Khmer
   'test-gcal.mjs',  // Google Calendar: admins connect by the secret iCal address (never sent back), repeats/exceptions/stays, Cambodia's clock, 30-minute cache
   'test-gcal-ui.mjs',  // the Calendar in the browser: ☰ → Calendar, Admin → Google Calendar, My Home's Coming up
+  'test-dts-ui.mjs',   // GPDTS in the browser: its tabs, the pipeline and follow-ups due, This school (graduated together, potential staff), a lecture, Numbers without the self-counting boxes; the portal for DTS staff (only DTS, Add a contact, Follow-ups due, Contacts with how, a lead's link and details); Admin → Portal access's Sees
   'test-gp-tasks.mjs',  // GP Tasks: ministry/department/personal lists, who sees and changes what, requests, Campus Leadership, the filter, board cards
   'test-gp-tasks-ui.mjs',  // GP Tasks in the browser: lists, Enter to add, day/time/person, the bell, asking another ministry, My Ministry's tab, the board card
   'test-students.mjs',  // students: profiles from SR Hospitality, invite + Google join, the student door (own data only), LD-only mentors

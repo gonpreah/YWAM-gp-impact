@@ -488,7 +488,7 @@ function bindAway(){
     // The picked ministry, if it isn't your own, loads lazily the first time
     // it's picked — cached in S.oversee by ministry name until logout.
     var bDept=S.mmBrowseDept, bMin=S.mmBrowseMinistry;
-    if(bDept && bMin && bDept!==BL_DEPT && !(bDept===S.me.dept && bMin===S.me.ministry) && !isTeamsMinistry_(bDept,bMin) &&
+    if(bDept && bMin && bDept!==BL_DEPT && !(bDept===S.me.dept && bMin===S.me.ministry) && !isTeamsMinistry_(bDept,bMin) && !isDtsMinistry_(bDept,bMin) &&
        !S.oversee[bMin] && !S.ovLoading[bMin] && !S.ovError[bMin]){
       S.ovLoading[bMin]=true; S.ovError[bMin]='';
       run('getMinistryFor',[S.auth.user,S.auth.pin,bDept,bMin],function(d){
@@ -539,7 +539,7 @@ function bindAway(){
   });
   bindHr();
   if(S.view==='library') bindLibrary_();
-  if(S.view==='ministry'){ bindLw_(); bindCafe_(); bindLeadTools_(); bindFinance_(); }
+  if(S.view==='ministry'){ bindLw_(); bindCafe_(); bindLeadTools_(); bindFinance_(); bindDts_(); }
   if(S.view==='required') bindReqSign_();
   if(S.guest) bindGuest_();
   if(S.view==='mycontract') bindMyContract_();
@@ -1989,7 +1989,7 @@ function refreshAll(){
    ?fresh). If the page itself came from the offline copy (the worker leaves a
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
-var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
+var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){
   return Promise.all(GP_VER_FILES.map(function(f){

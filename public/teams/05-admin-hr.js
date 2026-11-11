@@ -474,22 +474,23 @@ function adminPortalHtml_(){
   /* The Outreach Teams leader works team applications without a tick (see
      leadsTeams_ in api.js) — said on their row so the list is the whole story. */
   var leadsTeams=function(x){ return (x.leads||[]).indexOf('Community Service|Outreach Teams')>-1; };
-  var tabs=CAMPUSES.map(function(c){ return { id:c.id, label:c.short, n:everyone.filter(function(x){ return x.campus===c.id && (x.portalStaff||x.portalAdmin||leadsTeams(x)); }).length }; });
+  var hasPortal=function(x){ return x.portal!==undefined ? !!x.portal : !!(x.portalStaff||x.portalAdmin||x.isAdmin||leadsTeams(x)); };
+  var tabs=CAMPUSES.map(function(c){ return { id:c.id, label:c.short, n:everyone.filter(function(x){ return x.campus===c.id && (x.isAdmin ? !!(x.portalStaff||x.portalAdmin) : hasPortal(x)); }).length }; });
   var activeTab = tabs.some(function(tb){ return tb.id===S.adminPortalCampus; }) ? S.adminPortalCampus
     : (tabs.some(function(tb){ return tb.id===S.me.campus; }) ? S.me.campus : tabs[0].id);
   S.adminPortalCampus=activeTab;
-  var h='<div class="banner">🛂 '+esc(t('The portal is where students, staff, volunteers and teams apply. Only the people ticked here can see applications.'))+
+  var h='<div class="banner">🛂 '+esc(t('The portal is where students, staff, volunteers and teams apply. Each school’s staff see their own school’s applicants, Outreach Teams the teams. Tick anyone else here, and change what anyone sees.'))+
     ' <a class="linkbtn inline" href="portal.html" target="_blank" rel="noopener" style="width:auto;padding:0">'+esc(t('Open the portal'))+' ↗</a></div>';
   h+='<div class="deptChips">'+tabs.map(function(tb){
     return '<button class="deptChip'+(activeTab===tb.id?' on':'')+'" data-adminportalcampus="'+esc(tb.id)+'">'+esc(tb.label)+' · '+tb.n+'</button>'; }).join('')+'</div>';
   var people=everyone.filter(function(x){ return x.campus===activeTab; }).sort(function(a,b){
-    var ra=(a.isAdmin?4:0)+(a.portalAdmin?2:0)+(a.portalStaff?1:0)+(leadsTeams(a)?0.5:0), rb=(b.isAdmin?4:0)+(b.portalAdmin?2:0)+(b.portalStaff?1:0)+(leadsTeams(b)?0.5:0);
+    var ra=(a.isAdmin?4:0)+(a.portalAdmin?2:0)+(a.portalStaff?1:0)+(hasPortal(a)?0.5:0), rb=(b.isAdmin?4:0)+(b.portalAdmin?2:0)+(b.portalStaff?1:0)+(hasPortal(b)?0.5:0);
     return rb-ra || (a.name<b.name?-1:1); });
-  var withN=people.filter(function(x){ return x.portalStaff||x.portalAdmin||x.isAdmin||leadsTeams(x); }).length;
+  var withN=people.filter(hasPortal).length;
   h+='<div class="mmGrid">'+[[t('Can see applications'), withN, false],[t('Portal admins'), people.filter(function(x){ return x.portalAdmin||x.isAdmin; }).length, false]]
     .map(function(x){ return '<div class="mmTile"><div class="mmTileName">'+esc(x[0])+'</div><div class="mmTileNum">'+esc(String(x[1]))+'</div></div>'; }).join('')+'</div>';
   if(!people.length) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('No accounts yet.'))+'</p></div>';
-  h+='<p class="sub" style="margin:0 0 6px">'+esc(t('Portal staff see every applicant and move them along. A portal admin can also grant portal staff. App admins always have both.'))+'</p>';
+  h+='<p class="sub" style="margin:0 0 6px">'+esc(t('Portal staff work the applicants they see and move them along. A portal admin can also grant portal staff. App admins always have both and see everything. “Sees” is which applicants — from their ministry unless you change it.'))+'</p>';
   h+='<div class="accCard adminList">'+people.map(function(x){
     var isAdm=!!x.isAdmin;
     return '<div class="adminRow portalRow" data-adminrow="'+esc((x.name+' '+x.username).toLowerCase())+'">'+
@@ -497,12 +498,35 @@ function adminPortalHtml_(){
         '<span class="adminRowText"><span class="rowName">'+esc(x.name)+(isAdm?' <span class="hrChip active">'+esc(t('Admin'))+'</span>':'')+'</span>'+
         '<span class="rowSub">'+esc(t(x.dept))+(x.ministry?' · '+esc(t(x.ministry)):'')+'</span>'+
         (leadsTeams(x) && !x.portalStaff && !x.portalAdmin && !isAdm ? '<span class="rowSub" data-teamsleader>🌍 '+esc(t('Team applications — leads Outreach Teams'))+'</span>' : '')+
-        '</span></button>'+
+        '</span></button>'+portalSeesHtml_(x, hasPortal(x))+
       '<label class="portalTick"><input type="checkbox" data-portalstaff="'+esc(x.id)+'"'+((x.portalStaff||isAdm)?' checked':'')+(isAdm?' disabled':'')+'> '+esc(t('Portal staff'))+'</label>'+
       '<label class="portalTick"><input type="checkbox" data-portaladmin="'+esc(x.id)+'"'+((x.portalAdmin||isAdm)?' checked':'')+(isAdm?' disabled':'')+'> '+esc(t('Portal admin'))+'</label>'+
     '</div>';
   }).join('')+'</div>';
   return h;
+}
+/* "Sees": which applicants someone works on the portal (portalTypes_ in api.js) — what their
+   ministry gives them, unless an admin changed it here (portalScope). */
+var PORTAL_SCOPE_KEYS=[['student:dts','DTS'],['student:dbs','DBS'],['student:bcs','BCS'],['student:sms','SMS'],['staff','Staff'],['volunteer','Volunteers'],['team','Teams']];
+function portalSeesText_(sees){
+  if(sees===null || sees===undefined) return t('Everything');
+  if(!sees.length) return t('Nothing');
+  return PORTAL_SCOPE_KEYS.filter(function(k){ return sees.indexOf(k[0])>-1; }).map(function(k){ return t(k[1]); }).join(', ');
+}
+function portalSeesHtml_(x, has){
+  var open=S.portalScopeOpen===x.id, set=x.portalScope;
+  if(!has && !open) return x.isAdmin ? '' : '<div class="portalSees"><button class="linkbtn inline" data-portalscopeopen="'+esc(x.id)+'">＋ '+esc(t('Choose what they see'))+'</button></div>';
+  var h='<div class="portalSees" data-portalsees="'+esc(x.id)+'"><span class="rowSub">👁 '+esc(t('Sees'))+': <b>'+esc(x.isAdmin ? t('Everything') : portalSeesText_(x.portalSees))+'</b>'+
+    (x.isAdmin ? '' : ' · '+esc(set ? t('set by an admin') : t('from their ministry')))+'</span>'+
+    (x.isAdmin ? '' : ' <button class="linkbtn inline" data-portalscopeopen="'+esc(x.id)+'">'+esc(open ? t('Done') : t('Change'))+'</button>');
+  if(open && !x.isAdmin){
+    var on=function(k){ return !!(set && set.indexOf(k)>-1); };
+    h+='<div class="chips portalScopeChips">'+
+      '<button class="chip'+(!set?' on':'')+'" data-portalscope="'+esc(x.id)+'|auto">'+esc(t('From their ministry'))+'</button>'+
+      '<button class="chip'+(on('all')?' on':'')+'" data-portalscope="'+esc(x.id)+'|all">'+esc(t('Everything'))+'</button>'+
+      PORTAL_SCOPE_KEYS.map(function(k){ return '<button class="chip'+(on(k[0])?' on':'')+'" data-portalscope="'+esc(x.id)+'|'+k[0]+'">'+esc(t(k[1]))+'</button>'; }).join('')+'</div>';
+  }
+  return h+'</div>';
 }
 function adminMergeHtml_(){
   if(S.adminStaff===null) return '<p class="sub">'+esc(t('Loading…'))+'</p>';
@@ -1361,6 +1385,27 @@ function bindAdmin(){
     });
   };
   portalFlag('data-portalstaff','portalStaff'); portalFlag('data-portaladmin','portalAdmin');
+  document.querySelectorAll('[data-portalscopeopen]').forEach(function(b){ b.onclick=function(){
+    var id=b.getAttribute('data-portalscopeopen'); S.portalScopeOpen = S.portalScopeOpen===id ? null : id; render(); }; });
+  document.querySelectorAll('[data-portalscope]').forEach(function(b){ b.onclick=function(){
+    var v=b.getAttribute('data-portalscope'), cut=v.lastIndexOf('|'), id=v.slice(0,cut), key=v.slice(cut+1);
+    var x=(S.adminStaff||[]).filter(function(p){ return p.id===id; })[0]; if(!x) return;
+    var val;
+    if(key==='auto') val=null;
+    else if(key==='all') val='all';
+    else {
+      var cur = Array.isArray(x.portalScope) && x.portalScope.indexOf('all')===-1 ? x.portalScope.slice()
+        : (!x.portalScope && Array.isArray(x.portalSees) ? x.portalSees.slice() : []);
+      var i=cur.indexOf(key); if(i>-1) cur.splice(i,1); else cur.push(key);
+      val=cur;
+    }
+    b.disabled=true;
+    run('adminUpdateStaff',[S.auth.user,S.auth.pin,id,{ portalScope:val }],function(d){
+      if(d && d.ok){ if(S.adminStaff && d.staff) S.adminStaff=S.adminStaff.map(function(p){ return p.id===id ? d.staff : p; }); showMsg(t('Saved')); }
+      else showMsg(t('Could not save'));
+      render();
+    });
+  }; });
   // --- leave, everyone's ---
   if(S.adminSub==='leave' && !S.adminLeave && !S.adminLeaveLoading && !S.adminLeaveError){
     S.adminLeaveLoading=true;
@@ -1831,9 +1876,9 @@ var PERSONAL_METRICS=['People I Shared My Faith With','People I Encouraged','One
    weekly figure, or any day that falls inside it. This is what "shows if a
    week hasn't been inputted" reads. */
 function ministryWeekLogged_(data, wk){
-  var entries=(data&&data.entries)||{}, daily=(data&&data.daily)||{};
+  var entries=(data&&data.entries)||{}, daily=(data&&data.daily)||{}, skip=S.mmSkip||[];
   var k=String(wk), m, d, date;
-  for(m in entries){ if(entries[m] && entries[m][k]!==undefined) return true; }
+  for(m in entries){ if(skip.indexOf(m)===-1 && entries[m] && entries[m][k]!==undefined) return true; }
   var b=weekBounds_(wk);
   for(d in daily){ for(date in daily[d]){ if(date>=b.from && date<=b.to) return true; } }
   return false;
