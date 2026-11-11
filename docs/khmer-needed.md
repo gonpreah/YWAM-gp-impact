@@ -4461,3 +4461,106 @@ GPDTS on My Ministry (Siem Reap): the Dashboard (where everyone is in the pipeli
 | International students reached for the first time this week — counted by the app from the contacts in the portal. | សិស្សអន្តរជាតិដែលបានទាក់ទងជាលើកដំបូងនៅសប្តាហ៍នេះ — រាប់ដោយកម្មវិធីពីការទំនាក់ទំនងនៅក្នុង Portal។ |
 
 The portal's staff side: "Add a contact" (someone the team reaches out to before they apply), the Contacts tab where each call / message / visit is logged, the Follow-ups due filter, the link to send a contact so they can apply, and Admin → Portal access's "Sees" (which applicants each person sees). Also the four new GPDTS metric names and their one-line descriptions in the KPI guide.
+
+## 87. The GP app — Continue with Google
+
+| English | Khmer (draft) |
+|---|---|
+| Google sign-in could not load — use your username and PIN, or try again later. | ការចូលដោយ Google មិនអាចផ្ទុកបានទេ — សូមប្រើឈ្មោះអ្នកប្រើ និង PIN របស់អ្នក ឬព្យាយាមម្តងទៀតពេលក្រោយ។ |
+| Done — sign in with Google from now on. | រួចរាល់ — ចាប់ពីពេលនេះតទៅ សូមចូលដោយ Google។ |
+| Another profile already has that Google email. | ប្រវត្តិរូបមួយផ្សេងទៀតមានអ៊ីមែល Google នោះរួចហើយ។ |
+| Welcome! Make your profile — no username or PIN needed. | សូមស្វាគមន៍! បង្កើតប្រវត្តិរូបរបស់អ្នក — មិនត្រូវការឈ្មោះអ្នកប្រើ ឬ PIN ទេ។ |
+| Your account is waiting on approval from a base leader. | គណនីរបស់អ្នកកំពុងរង់ចាំការអនុម័តពីអ្នកដឹកនាំមូលដ្ឋាន។ |
+| Continue with Google, or log in with your username and PIN. | បន្តដោយ Google ឬចូលដោយឈ្មោះអ្នកប្រើ និង PIN របស់អ្នក។ |
+| Username or email | ឈ្មោះអ្នកប្រើ ឬអ៊ីមែល |
+| PIN or password | PIN ឬពាក្យសម្ងាត់ |
+| Signing up with Google as {email} — no username or PIN to remember. | កំពុងចុះឈ្មោះដោយ Google ជា {email} — គ្មានឈ្មោះអ្នកប្រើ ឬ PIN ត្រូវចងចាំទេ។ |
+| Sign up with Google | ចុះឈ្មោះដោយ Google |
+| How you sign in | របៀបដែលអ្នកចូល |
+| With Google ({email}). | ដោយ Google ({email})។ |
+| With your email and password. | ដោយអ៊ីមែល និងពាក្យសម្ងាត់របស់អ្នក។ |
+| With your username and PIN. | ដោយឈ្មោះអ្នកប្រើ និង PIN របស់អ្នក។ |
+| Sign in with Google from now on — quicker, and nothing to remember. Use the Google account with your email. | ចាប់ពីពេលនេះ ចូលដោយ Google — លឿនជាង ហើយគ្មានអ្វីត្រូវចងចាំ។ សូមប្រើគណនី Google ដែលមានអ៊ីមែលរបស់អ្នក។ |
+| Sign in with Google from now on | ចូលដោយ Google ចាប់ពីពេលនេះ |
+| Enter your username and 4-digit PIN, or your email and password | បញ្ចូលឈ្មោះអ្នកប្រើ និង PIN ៤ ខ្ទង់ ឬអ៊ីមែល និងពាក្យសម្ងាត់របស់អ្នក |
+
+The GP app sign-in and sign-up screens and Profile & settings → How you sign in: staff can sign in with Google instead of a username and PIN.
+
+## 88. GPDTS part 2 — the school by year, outreach, the staff pipeline
+
+| English | Khmer (draft) |
+|---|---|
+| The school by year | សាលាតាមឆ្នាំ |
+| Add a past year | បន្ថែមឆ្នាំមុនៗ |
+| Typed in for a past school. | បានវាយបញ្ចូលសម្រាប់សាលាមុនៗ។ |
+| Edit these numbers | កែប្រែលេខទាំងនេះ |
+| What God did | អ្វីដែលព្រះបានធ្វើ |
+| Lectures {a} · Outreach {b} | មេរៀន {a} · ការចេញផ្សាយ {b} |
+| Students count themselves from the portal; what God did, from Lectures and Outreach. Enrolled and potential staff are the most at once. | ចំនួនសិស្សរាប់ដោយខ្លួនឯងពី Portal ហើយអ្វីដែលព្រះបានធ្វើ ពីមេរៀន និងការចេញផ្សាយ។ ការចុះឈ្មោះ និងបុគ្គលិកដែលមានសក្តានុពល គឺជាចំនួនច្រើនបំផុតក្នុងពេលតែមួយ។ |
+| The totals for a school before this app — leave a box empty if you don’t know it. | ចំនួនសរុបសម្រាប់សាលាមុនពេលមានកម្មវិធីនេះ — ទុកប្រអប់ឱ្យទទេ បើអ្នកមិនដឹង។ |
+| e.g. where outreach went that year | ឧ. កន្លែងដែលការចេញផ្សាយបានទៅនៅឆ្នាំនោះ |
+| Delete this year | លុបឆ្នាំនេះ |
+| On staff — in the GP app | ជាបុគ្គលិក — នៅក្នុងកម្មវិធី GP |
+| Staff application | ពាក្យសុំធ្វើជាបុគ្គលិក |
+| Start their staff application | ចាប់ផ្តើមពាក្យសុំធ្វើជាបុគ្គលិករបស់ពួកគេ |
+| What God did (after the week) | អ្វីដែលព្រះបានធ្វើ (ក្រោយសប្តាហ៍) |
+| Edit the outreach | កែប្រែការចេញផ្សាយ |
+| Add an outreach | បន្ថែមការចេញផ្សាយ |
+| e.g. Mondulkiri, Thailand | ឧ. មណ្ឌលគិរី ប្រទេសថៃ |
+| Who leads it | អ្នកដឹកនាំ |
+| People on the team | ចំនួនមនុស្សក្នុងក្រុម |
+| Reports — what God did | របាយការណ៍ — អ្វីដែលព្រះបានធ្វើ |
+| A line about it (optional) | មួយបន្ទាត់អំពីវា (មិនចាំបាច់) |
+| No reports yet. Add one for each week, or each time the team sends its numbers. | មិនទាន់មានរបាយការណ៍ទេ។ បន្ថែមមួយសម្រាប់សប្តាហ៍នីមួយៗ ឬរាល់ពេលដែលក្រុមផ្ញើលេខរបស់ខ្លួន។ |
+| No outreach yet. Add each team the school sends — where, when and who leads it — and the numbers as they come in. | មិនទាន់មានការចេញផ្សាយទេ។ បន្ថែមក្រុមនីមួយៗដែលសាលាបញ្ជូនទៅ — កន្លែង ពេលវេលា និងអ្នកដឹកនាំ — ហើយលេខនៅពេលវាមកដល់។ |
+| Led by {name} | ដឹកនាំដោយ {name} |
+| No numbers yet | មិនទាន់មានលេខ |
+| {n} reports | {n} របាយការណ៍ |
+| Outreach budget | ថវិកាការចេញផ្សាយ |
+| Coming soon: each outreach’s budget beside what was spent. | ឆាប់ៗនេះ៖ ថវិការបស់ការចេញផ្សាយនីមួយៗ ជាមួយអ្វីដែលបានចំណាយ។ |
+| Start {name}’s staff application? Their portal sign-in will open the staff application, and HR takes it from there. | ចាប់ផ្តើមពាក្យសុំធ្វើជាបុគ្គលិករបស់ {name}? ការចូល Portal របស់ពួកគេនឹងបើកពាក្យសុំធ្វើជាបុគ្គលិក ហើយ HR នឹងបន្តពីទីនោះ។ |
+| Their staff application has started 👔 | ពាក្យសុំធ្វើជាបុគ្គលិករបស់ពួកគេបានចាប់ផ្តើម 👔 |
+| Nothing to move — they need to be graduated and potential staff. | គ្មានអ្វីត្រូវផ្លាស់ទីទេ — ពួកគេត្រូវតែបញ្ចប់ការសិក្សា និងជាបុគ្គលិកដែលមានសក្តានុពល។ |
+| Pick a year before this one. | ជ្រើសរើសឆ្នាំមុនឆ្នាំនេះ។ |
+| Delete this year’s numbers? | លុបលេខរបស់ឆ្នាំនេះ? |
+| Say where the outreach is. | សូមប្រាប់ថាការចេញផ្សាយនៅឯណា។ |
+| Delete this outreach and its reports? | លុបការចេញផ្សាយនេះ និងរបាយការណ៍របស់វា? |
+| Welcome to the YWAM GP staff! | សូមស្វាគមន៍មកកាន់បុគ្គលិក YWAM GP! |
+| Your application is done — you are in the GP app now. Open it with the same sign-in you use here. | ពាក្យសុំរបស់អ្នករួចរាល់ហើយ — ឥឡូវអ្នកនៅក្នុងកម្មវិធី GP។ បើកវាដោយការចូលដូចគ្នាដែលអ្នកប្រើនៅទីនេះ។ |
+| That is a staff account — opening the GP app, where you can continue with Google. | នោះជាគណនីបុគ្គលិក — កំពុងបើកកម្មវិធី GP ដែលអ្នកអាចបន្តដោយ Google។ |
+| In the GP app since {date} | នៅក្នុងកម្មវិធី GP តាំងពី {date} |
+| To add them to the GP app, they need a portal account first — send them the staff application link. | ដើម្បីបន្ថែមពួកគេទៅកម្មវិធី GP ពួកគេត្រូវមានគណនី Portal ជាមុនសិន — ផ្ញើតំណពាក្យសុំធ្វើជាបុគ្គលិកទៅពួកគេ។ |
+| Add to the GP app | បន្ថែមទៅកម្មវិធី GP |
+| {name} signs in to the GP app the same way as here — no username or PIN. | {name} ចូលកម្មវិធី GP ដូចគ្នានឹងនៅទីនេះ — គ្មានឈ្មោះអ្នកប្រើ ឬ PIN ទេ។ |
+| — they choose it in the app — | — ពួកគេជ្រើសរើសនៅក្នុងកម្មវិធី — |
+| Kind of staff | ប្រភេទបុគ្គលិក |
+| Add {name} to the GP app | បន្ថែម {name} ទៅកម្មវិធី GP |
+| Add {name} to the GP app? Their portal sign-in will open the GP app from now on. | បន្ថែម {name} ទៅកម្មវិធី GP? ចាប់ពីពេលនេះ ការចូល Portal របស់ពួកគេនឹងបើកកម្មវិធី GP។ |
+| Added — they sign in to the GP app with their email and password. | បានបន្ថែម — ពួកគេចូលកម្មវិធី GP ដោយអ៊ីមែល និងពាក្យសម្ងាត់របស់ពួកគេ។ |
+| Added — they sign in to the GP app with Google. | បានបន្ថែម — ពួកគេចូលកម្មវិធី GP ដោយ Google។ |
+| Only an admin can add someone to Campus Leadership. | មានតែអ្នកគ្រប់គ្រងទេដែលអាចបន្ថែមនរណាម្នាក់ទៅក្នុងការដឹកនាំបរិវេណ។ |
+| They need a portal account first. | ពួកគេត្រូវមានគណនី Portal ជាមុនសិន។ |
+| Accept their application first. | សូមទទួលយកពាក្យសុំរបស់ពួកគេជាមុនសិន។ |
+| GPDTS on My Ministry | GPDTS នៅក្នុងកិច្ចការបម្រើរបស់ខ្ញុំ |
+| A GPDTS graduate, marked potential staff. | និស្សិតបញ្ចប់ការសិក្សា GPDTS ដែលត្រូវបានសម្គាល់ថាជាបុគ្គលិកដែលមានសក្តានុពល។ |
+| Their DTS record | កំណត់ត្រា DTS របស់ពួកគេ |
+| Contacted (local) | បានទាក់ទង (ក្នុងស្រុក) |
+| Contacted (international) | បានទាក់ទង (អន្តរជាតិ) |
+| Enrolled | បានចុះឈ្មោះ |
+| Heard the gospel | បានឮដំណឹងល្អ |
+
+GPDTS on My Ministry (the school by year, past years, Outreach reports, "What God did" on lectures, moving a graduate into the staff application) and the portal (Add to the GP app, the welcome screen for someone now on staff, the button back to GPDTS).
+
+## 89. The GP app — the step to Google
+
+| English | Khmer (draft) |
+|---|---|
+| From now on, sign in with Google | ចាប់ពីពេលនេះ សូមចូលដោយ Google |
+| We are moving everyone off usernames and PINs. Connect your Google account once — next time, just tap Continue with Google. | យើងកំពុងផ្លាស់ប្តូរមនុស្សគ្រប់គ្នាឱ្យឈប់ប្រើឈ្មោះអ្នកប្រើ និង PIN។ ភ្ជាប់គណនី Google របស់អ្នកម្តង — លើកក្រោយ គ្រាន់តែចុច បន្តដោយ Google។ |
+| Use the Google account for {email} if you can. | សូមប្រើគណនី Google សម្រាប់ {email} បើអាច។ |
+| Connect my Google account | ភ្ជាប់គណនី Google របស់ខ្ញុំ |
+| Not now | មិនមែនឥឡូវនេះទេ |
+| That Google account is already linked to another profile. | គណនី Google នោះបានភ្ជាប់ទៅប្រវត្តិរូបមួយផ្សេងទៀតរួចហើយ។ |
+| Sign in with Google from now on — quicker, and nothing to remember. The Google account you connect becomes this profile’s. | ចាប់ពីពេលនេះ ចូលដោយ Google — លឿនជាង ហើយគ្មានអ្វីត្រូវចងចាំ។ គណនី Google ដែលអ្នកភ្ជាប់ នឹងក្លាយជារបស់ប្រវត្តិរូបនេះ។ |
+
+The page someone signed in with a username and PIN sees first (once each time the app is opened) until they connect Google, and its Profile & settings twin.

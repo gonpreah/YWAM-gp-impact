@@ -897,8 +897,8 @@ function gglCred_(resp){
   if(!tok){ render(); return; }
   if(_ggl.mode==='link'){
     run('staffLinkGoogle',[S.auth.user,S.auth.pin,tok],function(d){
-      if(d && d.ok){ S.auth.pin=d.token; lsSet('gp-staff', JSON.stringify(S.auth)); if(S.profile) S.profile.email=d.email; if(S.me){ S.me.google=true; S.me.signIn='google'; } showMsg(t('Done — sign in with Google from now on.')); }
-      else showMsg(d && d.err==='email_taken' ? t('Another profile already has that Google email.') : t('Google sign-in didn’t work — try again.'));
+      if(d && d.ok){ S.auth.pin=d.token; lsSet('gp-staff', JSON.stringify(S.auth)); if(S.profile && !S.profile.email) S.profile.email=d.email; if(S.me){ S.me.google=true; S.me.signIn='google'; } showMsg(t('Done — sign in with Google from now on.')); }
+      else showMsg(d && d.err==='email_taken' ? t('That Google account is already linked to another profile.') : t('Google sign-in didn’t work — try again.'));
       render();
     });
     return;
@@ -910,6 +910,21 @@ function gglCred_(resp){
     showMsg(d && d.err==='pending' ? t('Your account is waiting on approval from a base leader.') : t('Google sign-in didn’t work — try again.'));
     render();
   });
+}
+/* Moving everyone to Google (Nov 2026, Andrew: "have everyone sign in with their username and PIN and
+   after that, it goes into the step of sign in with Google, and say from now on sign in using the
+   Gmail"): someone signed in with a PIN whose profile has no Google yet gets this page first, once per
+   time the app is opened. Connecting it (staffLinkGoogle) swaps the PIN session for a Google one. */
+function gglStepWanted_(){
+  return !!(gglOn_() && S.me && S.auth && !S.guest && !S.board && !S.student && !S.stuPreview && !S.bootStale && !S.offlineSince &&
+    /^\d{4}$/.test(String(S.auth.pin||'')) && !S.me.google && !S.gglLater);
+}
+function gglStepHtml_(){
+  return '<div class="card gglStep" id="gglStep"><h2 style="margin-top:0">🔐 '+esc(t('From now on, sign in with Google'))+'</h2>'+
+    '<p class="sub">'+esc(t('We are moving everyone off usernames and PINs. Connect your Google account once — next time, just tap Continue with Google.'))+'</p>'+
+    ((S.profile && S.profile.email) ? '<p class="hint">'+esc(gpT('Use the Google account for {email} if you can.',{email:S.profile.email}))+'</p>' : '')+
+    gglBtnHtml_('gglStepGo', t('Connect my Google account'))+
+    '<button class="linkbtn" id="gglStepLater">'+esc(t('Not now'))+'</button></div>';
 }
 function loginHtml(){
   gglCfg_();

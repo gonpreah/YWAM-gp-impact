@@ -764,6 +764,7 @@ function afterLogin(){
 /* Everything a boot payload carries, in one place, because two entry points use
    it: a remembered session and a fresh login. */
 function applyBoot(d, fromCache){
+  if(d && d.googleId!==undefined){ _ggl.cfg={ google:d.googleId||'' }; _ggl.asked=true; }   // the site's Google client, for Continue with Google
   if(!fromCache){ S.offlineSince = null; if(!S.student) gpBootCacheSave_(d); gpMarkSeen_(); }
   S.roster = d.roster || [];
   S.logs = d.logs || [];
@@ -982,7 +983,8 @@ function render(){
   document.body.classList.toggle('repOn', S.view==='report');
   document.body.classList.toggle('libReading', S.view==='library' && !!S.libBook && S.libStep!=null);   // not 'reading': that is the Bible-reading box's class, and its yellow, border and font leaked onto the whole page
   if(LIBA.on && !(S.view==='library' && S.libBook && S.libStep!=null)) libAudioStop_();
-  if(S.guest && S.view==='week') m.innerHTML=gpGuestHomeHtml_();
+  if(gglStepWanted_()) m.innerHTML=gglStepHtml_();   // moving everyone to Google: once, after a PIN sign-in (07-health-leave.js)
+  else if(S.guest && S.view==='week') m.innerHTML=gpGuestHomeHtml_();
   else if(S.guest && (S.view==='team' || S.view==='health')) m.innerHTML=gpGuestLockHtml_(S.view);
   else if(S.view==='base') m.innerHTML=(S.guest ? gpGuestCampusHtml_() : '')+(S.board ? orgCampusProfileHtml_(S.me.campus) : '')+baseHtml();
   else if(S.view==='ywamgp') m.innerHTML=ywamGpHtml();

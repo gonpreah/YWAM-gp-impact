@@ -824,7 +824,8 @@ async function staffLoginGoogle(token) {
   const gg = await verifyGoogleToken_(token);
   if (!gg) return { ok: false, err: 'google' };
   const rows = await getStaff_();
-  const rec = staffByEmail_(rows, gg.email);
+  // the Google account linked to a profile first (staffLinkGoogle, made while signed in with the PIN), then the email
+  const rec = rows.find(function (r) { return r && !isApplicant_(r) && r.google && r.google.sub && r.google.sub === gg.sub; }) || staffByEmail_(rows, gg.email);
   if (!rec) {
     const app = rows.find(function (r) { return r && isApplicant_(r) && (r.email === gg.email || r.username === gg.email); });
     return app ? { ok: false, err: 'applicant' } : { ok: false, err: 'new', email: gg.email, name: gg.name };
@@ -852,10 +853,10 @@ async function staffLinkGoogle(username, pin, token) {
   if (!gg) return { ok: false, err: 'google' };
   let tok = '';
   const out = await mutateStaff_(function (all) {
-    if (all.some(function (r) { return r.id !== s.id && String(r.email || '').toLowerCase() === gg.email; })) return { abort: true, ok: false, err: 'email_taken' };
+    if (all.some(function (r) { return r.id !== s.id && r.google && r.google.sub === gg.sub; })) return { abort: true, ok: false, err: 'email_taken' };   // that Google account is someone else's
     const r = all.find(function (x) { return x.id === s.id; });
     if (!r) return { abort: true, ok: false };
-    r.email = gg.email;
+    if (!r.email) r.email = gg.email;   // the Google account is tied to this profile by its id; an empty email takes Google's
     tok = addDeviceToken_(r);
     r.google = { sub: gg.sub, lastAt: new Date().toISOString() };
     r.updated = new Date().toISOString();
@@ -5380,6 +5381,7 @@ async function getMyBoot(username, pin) {
 
   return {
     ok: true,
+    googleId: googleClientId_(),   // Continue with Google / the move off PINs (07-health-leave.js)
     staff: Object.assign(publicStaff_(s), { isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), signIn: authKindOf_(s), google: !!s.google, hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '', langLevel: langMine_(s), seeLangLevels: canSeeLangLevels_(s) }),   // created: for My Home's first 30 days
     profile: {
       phone: s.phone, joined: s.joined, debt: s.debt, mentorStatus: s.mentorStatus || '',

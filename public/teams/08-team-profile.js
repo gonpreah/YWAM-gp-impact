@@ -778,7 +778,7 @@ function profileHtml(){
   h+='<div class="card" id="signInCard"><label class="f">'+esc(t('How you sign in'))+'</label>'+
     (gOn ? '<p class="sub" style="margin:0">🔐 '+esc(gpT('With Google ({email}).',{email:(S.profile && S.profile.email) || ''}))+'</p>'
       : '<p class="sub" style="margin:0 0 8px">'+esc(sk==='password' ? t('With your email and password.') : t('With your username and PIN.'))+'</p>'+
-        (gglOn_() ? '<p class="hint" style="margin:0 0 8px">'+esc(t('Sign in with Google from now on — quicker, and nothing to remember. Use the Google account with your email.'))+'</p>'+gglBtnHtml_('linkGoogle', t('Sign in with Google from now on')) : ''))+
+        (gglOn_() ? '<p class="hint" style="margin:0 0 8px">'+esc(t('Sign in with Google from now on — quicker, and nothing to remember. The Google account you connect becomes this profile’s.'))+'</p>'+gglBtnHtml_('linkGoogle', t('Sign in with Google from now on')) : ''))+
     '</div>';
   if(sk!=='password') h+='<div class="card"><label class="f">Change PIN</label><input type="password" id="p_newpin" inputmode="numeric" maxlength="4" placeholder="new 4-digit PIN">'+
      '<button class="btn ghost" id="pinBtn">Update PIN</button></div>';
