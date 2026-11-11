@@ -146,9 +146,12 @@ console.log('=== signing in with Google or an email and password (Oct 2026) ==='
   r = await call('portalLoginGoogle', ['ya29.expiredaccesstoken']);
   ok('an expired access token is refused', r.body && r.body.err === 'google');
   globalThis.fetch = async (url) => ({ ok: !!INFO, json: async () => INFO });
+  INFO = { aud: 'test-client.apps.googleusercontent.com', iss: 'https://accounts.google.com', email: 'b@x.org', email_verified: 'true', exp: soon, name: 'Bopha', sub: '78' };
+  r = await call('portalLoginGoogle', ['h.p.s']);
+  ok('a staff member without the portal is sent to the GP app, not signed in', r.body && r.body.ok === false && r.body.err === 'staff' && !mem.staff.find(x => x.username === 'bopha').tokens);
   INFO = { aud: 'test-client.apps.googleusercontent.com', iss: 'https://accounts.google.com', email: 'u@x.org', email_verified: 'true', exp: soon, name: 'Uriah', sub: '77' };
   r = await call('portalLoginGoogle', ['h.p.s']);
-  ok('a staff member’s email is sent to the staff door, not signed in', r.body && r.body.ok === false && r.body.err === 'staff' && !mem.staff.find(x => x.username === 'uriah').tokens);
+  ok('staff with the portal sign in with Google, onto the staff side (Nov 2026)', r.body && r.body.ok === true && r.body.role === 'portal-admin' && r.body.user === 'uriah', JSON.stringify(r.body).slice(0, 80));
   r = await call('getMyBoot', ['gus@example.org', gusTok1]);
   ok('an applicant’s token opens nothing on the staff side', r.body && r.body.ok === false);
   /* Accounts (portal admin) */

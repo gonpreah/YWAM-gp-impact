@@ -707,10 +707,69 @@ school's home.
   kind, campus and school) joins that record** (`createApplicant_` reuses its id, keeps calls / source /
   next step / owner, logs "Made a portal account — joined to this record"). Deep links `?what=dts`,
   `&filter=due`.
-- Tests: tests/test-dts.mjs (server), tests/test-dts-ui.mjs (GPDTS page, portal, Admin → Portal access).
-- Planned next (agreed with Andrew): a graduate marked potential staff → the staff pipeline (their
-  portal login switches to the staff application) → accepted → "Invite to the GP app" (prefilled link,
-  their own username + PIN, profile linked, no admin approval).
+- **No Numbers tab (Nov 2026, Andrew: "we only run DTS once a year, January to June")**: GPDTS's tabs are
+  Dashboard · This school · Lectures · Outreach · Tasks · OKRs. The four fruit metrics count themselves too
+  (`DTS_FRUIT`, in `DTS_AUTO`): a lecture's `fruit {gospel, healings, salvations, baptisms}` (its form's
+  "What God did", `[data-dlf]`) and each **Outreach** report (`dtsOut:<campus>` = {outreaches:[{id, place,
+  from, to, leaders, size, notes, reports:[{id, date, fruit, note}]}]}, `dtsSaveOutreach` /
+  `dtsDeleteOutreach`, `cleanOutreach_`) count in their day's week, once the day has come. GPDTS is
+  `numbersExempt_` (no "numbers due" reminders). An outreach budget placeholder stays.
+- **The school by year** (`dtsYearHtml_`, `#dtsYear`): year chips (this week year, then each past year),
+  student tiles (`DTS_STU_M`; enrolled and potential staff are the most at once) and What God did tiles
+  (`DTS_FRUIT_M`, this year with "Lectures n · Outreach m"), `[data-dtsm]`, and a year-by-year table
+  (`#dtsYears`). **＋ Add a past year** (`dtsSavePast(year, values, notes)`, `dtsPast:<campus>` =
+  {years:{'2025': {values, notes, by, at}}}; null deletes): typed totals for schools before the app, kept
+  apart — never written into `entries`, so nothing logged then counts twice.
+- **Part 2: graduate → staff → the GP app.** On This school, a graduate marked potential staff has ➡️ Start
+  their staff application (`dtsToStaff`): a staff candidate (`fromDts`, `source:'GPDTS graduate'`, same
+  account) and `dts.staffCand` on the DTS record; their applicant account's `applicant` becomes {type:
+  'staff', candidateId: new, history:[…]} so their portal login opens the staff application
+  (`candidateFor_` now prefers the account's `candidateId`). The row then says where it is
+  (`dtsPipeLine_`). HR works it in the portal; once accepted (accepted / practical / arrived), the record's
+  **📲 Add to the GP app** (`gpAddHtml_` → `portalGpAdd(…, {dept, ministry, staffType})`; HR or anyone who
+  sees the record; Campus Leadership only by an admin, `clt_admin`; needs a portal account,
+  `no_account`) turns their **portal account into their staff account** (`kind:'staff'`,
+  `applicantHistory`, campus from the application, `fromCand`, active) — no username or PIN: they sign in to
+  the GP app with the same Google account or email + password (Andrew: "since it's already connected …
+  they will automatically be able to sign in"). The candidate gets `hired {staffId, at, by}` and stage
+  arrived. Their portal then shows "Welcome to the YWAM GP staff!" (`staff_now` from `portalBoot` /
+  `portalLoginGoogle` for someone with `fromCand` and no portal access) with **Open the GP app**, which
+  carries the same sign-in over (`gp-staff`). The portal's staff header has **🔥 GPDTS on My Ministry**
+  (`#toGpdts` → `teams.html?view=gpdts`, shown when `portalBoot.gpdts`).
+- Tests: tests/test-dts.mjs (server), tests/test-dts-ui.mjs (GPDTS page, portal, Google, Admin).
+
+## Signing in to the GP app with Google; every new account approved (Nov 2026, Andrew)
+- **Continue with Google** (`07-health-leave.js`: `_ggl`, `gglBtnHtml_`, `gglGo_`, `gglCred_` — the portal's
+  own button and Google's OAuth token client, loaded on the first tap; on when `GP_GOOGLE_CLIENT_ID` is set,
+  which the boot carries as `googleId` and the login screen asks `portalAuthConfig` for).
+  `staffLoginGoogle(token)` finds the profile by its linked Google account (`google.sub`), else by email
+  (`staffByEmail_`), and answers like `staffLogin` plus a device token, kept as the "pin" (`credOk_` checks
+  tokens) — `new` (sign up), `pending`, `applicant`. **Sign up with Google** (`staffRegister {googleToken}`):
+  name and email from Google, a username made from the email, no PIN. The login box takes **username or
+  email** and **PIN or password** (`staffLogin` maps an email to its username and answers `user`).
+- **Moving everyone off PINs** (Andrew: "sign in with their username and PIN, then the step of sign in with
+  Google … from now on sign in using the Gmail"): signed in with a PIN and no Google linked, the app opens on
+  `gglStepHtml_` (`#gglStep`, `gglStepWanted_`) — Connect my Google account (`staffLinkGoogle`, made while
+  signed in so the Google account is tied to THAT profile by its id, whatever its Gmail; one Google
+  account → one profile) or Log out; **no "Not now"** (Andrew: "let's just have everyone sign in using
+  Google") — nothing else opens until it is connected. With Google on, the sign-in screen is Continue with
+  Google alone; the username + PIN boxes are behind "First time with Google? Sign in once…"
+  (`#showPinLogin`, `S.pinLogin`). Profile & settings → **How you sign in** (`#signInCard`,
+  `signIn`/`google` on the boot's staff card); Change PIN is hidden for password accounts.
+- **The portal too** (Andrew: "for those accessing the portal, they can just log in using their Gmail"):
+  `portalLoginGoogle` signs staff with portal access onto the staff side (their linked Google account,
+  else their email); staff without it are sent to the GP app.
+- **The wall between applicants and staff** (Andrew: "make sure those who applied through the portal
+  cannot access any of what the staff and admin can access"): `verifyStaff_` refuses an applicant unless a
+  handler asks for them by name (ten do, each reading only their own record or the applicant pages).
+  tests/test-applicant-walls.mjs calls every handler in HANDLERS with an applicant's sign-in and fails if
+  one outside its APPLICANT_OK list opens, or any answer carries someone else's details — a new handler
+  is covered without editing the test.
+- **Every new account waits for an admin** (Andrew: "admin will receive an approval whether they accept
+  them or deny them"): `staffRegister` makes every sign-up pending (it used to be Campus Leadership only),
+  pushes each admin at once (`pushNow_` 'signup' → `teams.html?view=approvals`), and Admin → Approvals has
+  **Approve** and **Decline** (`[data-admindecline]` → `adminDeleteStaff`). Add to the GP app from an
+  accepted application is HR's yes and does not wait.
 
 ## Campus Leadership: the department pulse, the Director's quarter, staff debt from Finance
 - **Department pulse** (`pulseCardHtml_` ← `getDeptPulse`): a department leader's own

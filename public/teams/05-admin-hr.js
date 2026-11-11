@@ -29,7 +29,7 @@
    and data- attribute, so the handlers in bindAdmin() are unchanged. */
 var ADMIN_SUBS = [
   { id:'accounts', label:'Accounts', emoji:'👤', blurb:'Find someone — edit their profile, reset a PIN, set their mentor or make them a ministry leader' },
-  { id:'approvals', label:'Approvals', emoji:'✅', blurb:'Leadership sign-ups and moves waiting for a yes' },
+  { id:'approvals', label:'Approvals', emoji:'✅', blurb:'New accounts and moves waiting for a yes' },
   { id:'students', label:'Students', emoji:'🎓', blurb:'Everything for students: who is staying now and their invites, each school, what each one has put in, their app, and archiving a school when it finishes' },
   { id:'mentors', label:'Mentors', emoji:'🤝', blurb:'Who is walking with whom — every mentor and their people, and who has nobody yet' },
   { id:'leave', label:'Leave', emoji:'🗓️', blurb:'Everyone’s leave requests, by campus — waiting, coming up, and days used this year' },
@@ -458,7 +458,8 @@ function adminApprovalsHtml_(){
   pending.forEach(function(x){
     h+='<div class="row"><div><div class="rowName">'+esc(x.name)+'</div>'+
       '<div class="rowSub">@'+esc(x.username)+' · '+esc(campusShort(x.campus))+' · '+esc(t(x.dept))+(x.ministry?' · '+esc(t(x.ministry)):'')+'</div></div>'+
-      '<button class="btn" style="width:auto;margin:0;padding:9px 14px" data-adminapprove="'+esc(x.id)+'">'+esc(t('Approve'))+'</button></div>';
+      '<span style="display:flex;gap:6px"><button class="btn" style="width:auto;margin:0;padding:9px 14px" data-adminapprove="'+esc(x.id)+'">'+esc(t('Approve'))+'</button>'+
+      '<button class="btn ghost" style="width:auto;margin:0;padding:9px 12px" data-admindecline="'+esc(x.id)+'">'+esc(t('Decline'))+'</button></span></div>';
   });
   return h+'</div>';
 }
@@ -1525,6 +1526,19 @@ function bindAdmin(){
       run('adminDecideCltRequest',[S.auth.user,S.auth.pin,id,yes],function(d){
         if(d && d.ok){ showMsg(yes ? t('Moved into Campus Leadership') : t('Request declined')); adminRefresh_(); orgLoad_(); }
         else { b.disabled=false; showMsg(t('Could not save')); }
+      });
+    };
+  });
+  /* Decline a new account: it never got in, so it is simply removed (adminDeleteStaff) */
+  document.querySelectorAll('[data-admindecline]').forEach(function(b){
+    b.onclick=function(){
+      var id=b.getAttribute('data-admindecline'), x=(S.adminStaff||[]).filter(function(p){ return p.id===id; })[0];
+      if(!x || !confirm(gpT('Decline {name}’s account? It will be removed.',{name:x.name}))) return;
+      b.disabled=true;
+      run('adminDeleteStaff',[S.auth.user,S.auth.pin,id],function(d){
+        if(d && d.ok){ S.adminStaff=S.adminStaff.filter(function(p){ return p.id!==id; }); showMsg(t('Declined')); }
+        else showMsg(t('Could not save'));
+        render();
       });
     };
   });

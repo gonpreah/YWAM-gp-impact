@@ -396,6 +396,8 @@ details.visaHow > summary { padding:12px 14px; font-weight:800; font-size:15px; 
 .ptab.on .n { background:rgba(255,255,255,.22); color:inherit; }
 .ptabBody > h3:first-child, .ptabBody > .panelHead:first-child { margin-top:0; }
 .leadCard { margin-bottom:14px; }
+.headBtns { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.headBtns .btn { margin-top:0; text-decoration:none; }
 .leadBox { margin-top:14px; padding:12px; border:1px solid var(--border); border-radius:12px; }
 .leadEdit { margin-top:8px; }
 .meta.nextStep.late { color:#ff8a7a; }
@@ -709,6 +711,7 @@ function boot_(){
     if(d && d.ok){ P.boot=d; if(d.role==='applicant') P.answers=(d.application && d.application.answers)||{}; P.view = d.role==='applicant' ? 'me' : 'crm'; openFromLink_(d); lsSet('gp-portal', JSON.stringify(P.auth)); render(); return; }
     if(d && d.err==='auth'){ lsDel('gp-portal'); P.auth=null; P.view='login'; showMsg(t('Your sign-in didn’t work — please sign in again.')); render(); return; }
     if(d && d.err==='not_authorized'){ P.view='noaccess'; render(); return; }
+    if(d && d.err==='staff_now'){ P.view='noaccess'; P.err='staff_now'; render(); return; }
     if(d && d.err==='no_application'){ P.view='noaccess'; P.err='no_application'; render(); return; }
     P.view='login'; P.err='boot'; render();
   }, function(e){ P.view='login'; P.err='boot'; render(); showMsg(t('Connection problem — try again.')); });
@@ -1254,6 +1257,11 @@ function bindRef_(){
   });
 }
 function noAccessHtml_(){
+  /* added to the GP app from their application (portalGpAdd): the same sign-in opens it now */
+  if(P.err==='staff_now') return '<div class="center"><div class="card" id="staffNow"><h2>🎉 '+esc(t('Welcome to the YWAM GP staff!'))+'</h2>'+
+    '<p class="sub">'+esc(t('Your application is done — you are in the GP app now. Open it with the same sign-in you use here.'))+'</p>'+
+    '<button class="btn" id="openGpApp">'+esc(t('Open the GP app'))+'</button>'+
+    '<button class="btn ghost" id="outBtn2">'+esc(t('Sign out'))+'</button></div></div>';
   var noApp = P.err==='no_application';
   return '<div class="center"><div class="card"><h2>'+esc(noApp ? t('No application found') : t('No portal access'))+'</h2>'+
     '<p class="sub">'+esc(noApp ? t('This account has no application attached. Message our team and we will sort it out.') : t('Your account is a staff account without portal access. Ask an admin to grant it on Admin → Portal access.'))+'</p>'+
@@ -1331,13 +1339,14 @@ function onGoogleCred_(resp){
   if(P.view==='join'){ joinWithGoogle_(tok); return; }
   run('portalLoginGoogle', [tok], function(d){
     P.busy=false;
-    if(d && d.ok){ P.auth={ user:d.user, pin:d.token }; lsSet('gp-portal', JSON.stringify(P.auth)); P.boot=d; P.answers=(d.application && d.application.answers)||{}; P.gtoken=''; P.view='me'; render(); return; }
+    if(d && d.ok){ P.auth={ user:d.user, pin:d.token }; lsSet('gp-portal', JSON.stringify(P.auth)); P.boot=d; P.answers=(d.application && d.application.answers)||{}; P.gtoken=''; P.view = d.role==='applicant' ? 'me' : 'crm'; if(d.role!=='applicant') openFromLink_(d); render(); return; }
     if(d && d.err==='new'){
       /* No account for that Google email yet: on to sign-up, name and email filled in, no password to make. */
       P.gtoken=tok; P.reg.email=d.email||''; if(d.name && !P.reg.name) P.reg.name=d.name;
       P.view = P.apply ? 'register' : 'choose'; showMsg(t('Welcome! Tell us what you are applying for.')); render(); return;
     }
-    showMsg(d && d.err==='staff' ? t('That is a staff email — staff sign in with their username and PIN.') : t('Google sign-in didn’t work — try again.'));
+    if(d && (d.err==='staff' || d.err==='staff_now')){ showMsg(t('That staff account has no portal access — opening the GP app, where you can continue with Google.')); setTimeout(function(){ location.href='teams.html'; }, 1200); render(); return; }
+    showMsg(t('Google sign-in didn’t work — try again.'));
     render();
   });
 }
@@ -2010,6 +2019,41 @@ function saveLead_(){
     render();
   }, function(){ P.busy=false; showMsg(t('Connection problem — try again.')); render(); });
 }
+/* Add to the GP app (Nov 2026, Andrew): once a staff or volunteer application is accepted, their portal
+   account becomes a GP app account — the same Google sign-in, or email and password. Pick where they
+   will serve (they can also choose it themselves in the app). portalGpAdd. */
+var GP_ADD_STAGES_C=['accepted','practical','arrived'];
+function gpAddHtml_(c){
+  if(c.hired) return '<div class="leadBox" id="gpAdded">✅ <b>'+esc(gpT('In the GP app since {date}',{date:fmtDate_(c.hired.at)}))+'</b></div>';
+  if(GP_ADD_STAGES_C.indexOf(c.stage)===-1) return '';
+  if(!c.hasAccount) return '<div class="leadBox" id="gpAddNoAcct">📲 '+esc(t('To add them to the GP app, they need a portal account first — send them the staff application link.'))+'</div>';
+  var f=P.gpAdd && P.gpAdd.for===c.id ? P.gpAdd : (P.gpAdd={ for:c.id, dept:'', ministry:'', staffType:'' });
+  var depts=(typeof getDepartments==='function') ? Object.keys(getDepartments(c.campus||DEFAULT_CAMPUS)) : [];
+  var mins=f.dept && typeof getDepartments==='function' ? Object.keys(getDepartments(c.campus||DEFAULT_CAMPUS)[f.dept]||{}) : [];
+  var types=(typeof STAFF_TYPES!=='undefined') ? STAFF_TYPES : [];
+  return '<div class="leadBox" id="gpAddBox"><b>📲 '+esc(t('Add to the GP app'))+'</b>'+
+    '<p class="sub" style="margin:4px 0 8px">'+esc(gpT('{name} signs in to the GP app the same way as here — no username or PIN.',{name:c.name}))+'</p>'+
+    '<label class="f" for="ga_dept">'+esc(t('Department'))+'</label><select id="ga_dept"><option value="">'+esc(t('— they choose it in the app —'))+'</option>'+depts.map(function(d){ return '<option value="'+esc(d)+'"'+(f.dept===d?' selected':'')+'>'+esc(t(d))+'</option>'; }).join('')+'</select>'+
+    (f.dept ? '<label class="f" for="ga_min">'+esc(t('Ministry'))+'</label><select id="ga_min"><option value="">—</option>'+mins.map(function(m){ return '<option value="'+esc(m)+'"'+(f.ministry===m?' selected':'')+'>'+esc(t(m))+'</option>'; }).join('')+'</select>' : '')+
+    (types.length ? '<label class="f" for="ga_type">'+esc(t('Kind of staff'))+'</label><select id="ga_type"><option value="">—</option>'+types.map(function(x){ return '<option value="'+esc(x.id)+'"'+(f.staffType===x.id?' selected':'')+'>'+esc(t(x.label))+'</option>'; }).join('')+'</select>' : '')+
+    '<div style="margin-top:10px"><button class="btn small" id="gpAddBtn"'+(P.busy?' disabled':'')+'>'+esc(gpT('Add {name} to the GP app',{name:c.name}))+'</button></div></div>';
+}
+function bindGpAdd_(){
+  var dd=document.getElementById('ga_dept'); if(dd) dd.onchange=function(){ P.gpAdd.dept=dd.value; P.gpAdd.ministry=''; render(); };
+  var mm=document.getElementById('ga_min'); if(mm) mm.onchange=function(){ P.gpAdd.ministry=mm.value; };
+  var ty=document.getElementById('ga_type'); if(ty) ty.onchange=function(){ P.gpAdd.staffType=ty.value; };
+  on_('gpAddBtn', function(){
+    var c=selected_(); if(!c || !P.gpAdd) return;
+    if(!confirm(gpT('Add {name} to the GP app? Their portal sign-in will open the GP app from now on.',{name:c.name}))) return;
+    P.busy=true; render();
+    run('portalGpAdd', [P.auth.user, P.auth.pin, c.id, { dept:P.gpAdd.dept, ministry:P.gpAdd.ministry, staffType:P.gpAdd.staffType }], function(d){
+      P.busy=false;
+      if(d && d.ok){ P.gpAdd=null; showMsg(d.signIn==='password' ? t('Added — they sign in to the GP app with their email and password.') : t('Added — they sign in to the GP app with Google.')); putCand_(d); boot_(); return; }
+      showMsg(d && d.err==='clt_admin' ? t('Only an admin can add someone to Campus Leadership.') : d && d.err==='no_account' ? t('They need a portal account first.') : d && d.err==='not_accepted' ? t('Accept their application first.') : t('Could not save'));
+      render();
+    }, function(){ P.busy=false; showMsg(t('Connection problem — try again.')); render(); });
+  });
+}
 /* A contact who has no account yet: the link to apply, and their details to correct. */
 function leadPanelHtml_(c){
   var key=c.type==='student' ? (c.school||'') : c.type, url=applyLinkUrl_(applyByKey_(key) ? key : '');
@@ -2079,7 +2123,8 @@ function crmHtml_(){
   var live=list.filter(function(c){ return !c.archived; });
   var counts={}; live.forEach(function(c){ counts[c.stage]=(counts[c.stage]||0)+1; });
   var h='<div class="panelHead"><div><h1 style="font-size:28px">'+esc(t('Applications'))+'</h1><p class="sub">'+esc(gpT('{n} open · signed in as {name} ({role})',{n:live.length, name:d.me.name, role:(d.role==='portal-admin' ? t('portal admin') : t('portal staff'))}))+(scope ? ' · '+esc(t('You see'))+': '+esc(seesText_(scope)) : '')+'</p></div>'+
-    (P.lead ? '' : '<button class="btn small" id="addLead">＋ '+esc(t('Add a contact'))+'</button>')+'</div>';
+    '<div class="headBtns">'+(d.gpdts ? '<a class="btn small ghost" id="toGpdts" href="teams.html?view=gpdts">🔥 '+esc(t('GPDTS on My Ministry'))+'</a>' : '')+
+    (P.lead ? '' : '<button class="btn small" id="addLead">＋ '+esc(t('Add a contact'))+'</button>')+'</div></div>';
   if(P.lead) h+=leadFormHtml_();
   if(campusChips.length>1) h+='<div class="chips" style="margin-bottom:12px">'+[['',t('All campuses')]].concat(campusChips.map(function(c){ return [c[0], t(c[1])]; })).map(function(x){
     var n=all.filter(function(c){ return !c.archived && (!x[0] || c.campus===x[0]); }).length;
@@ -2222,6 +2267,9 @@ function panelHtml_(c, byId){
   ov+='<label class="f">'+esc(t('Next step'))+'</label><input type="text" id="p_next" value="'+esc(c.nextStep||'')+'"><label class="f">'+esc(t('By'))+'</label><input type="date" id="p_date" value="'+esc(c.nextDate||'')+'">';
   ov+='<button class="btn" id="saveCand"'+(P.busy?' disabled':'')+'>'+esc(P.busy?t('Saving…'):t('Save'))+'</button>';
   if(!c.hasAccount && !c.portal && c.type!=='team') ov+=leadPanelHtml_(c);
+  if(c.fromDts) ov+='<p class="hint" id="fromDts" style="margin:10px 0 0">🎓 '+esc(t('A GPDTS graduate, marked potential staff.'))+
+    ((P.boot.applicants||[]).some(function(x){ return x.id===c.fromDts; }) ? ' <button class="linkbtn inline" data-open="'+esc(c.fromDts)+'">'+esc(t('Their DTS record'))+'</button>' : '')+'</p>';
+  if(c.type==='staff' || c.type==='volunteer') ov+=gpAddHtml_(c);
   if(c.source) ov+='<p class="hint" style="margin:10px 0 0">'+esc(t('Where you met them'))+': '+esc(c.source)+'</p>';
   if(c.needsVisa && c.portal && c.portal.visa && c.portal.visa.extraDocs) ov+=uofnNoteHtml_(c, 'uofnNote');
   ov+=panelTeamFlowHtml_(c);
@@ -3802,6 +3850,7 @@ function bind_(){
   on_('langBtn', flip); on_('langBtn2', flip);
   on_('toChoose', function(){ P.view='choose'; render(); });
   on_('outBtn', signOut_); on_('outBtn2', signOut_);
+  on_('openGpApp', function(){ if(P.auth) lsSet('gp-staff', JSON.stringify(P.auth)); lsDel('gp-portal'); location.href='teams.html'; });
   on_('toLanding', function(){ P.view='login'; render(); });
   on_('toLogin', function(){ P.view='login'; P.err=''; render(); });
   document.querySelectorAll('[data-apply]').forEach(function(b){ b.onclick=function(){ P.apply=b.getAttribute('data-apply'); P.view='register'; render(); }; });
@@ -3847,6 +3896,7 @@ function bind_(){
   on_('addNote', addNote_);
   bindCalls_();
   bindLead_();
+  bindGpAdd_();
   on_('archiveCand', archiveCand_);
   on_('deleteCand', deleteCand_);
   on_('viewAsCand', function(){ var c=selected_(); if(!c) return; P.pv.mode='record'; P.pv.candId=c.id; P.pv.boot=null; P.pv.screen='me'; P.pv.sec=0; P.view='preview'; render(); window.scrollTo(0,0); });
@@ -4030,6 +4080,7 @@ function signIn_(u, secret, wrongMsg){
     P.busy=false;
     if(d && d.ok){ P.boot=d; if(d.role==='applicant') P.answers=(d.application && d.application.answers)||{}; P.view = d.role==='applicant' ? 'me' : 'crm'; openFromLink_(d); lsSet('gp-portal', JSON.stringify(P.auth)); render(); return; }
     if(d && d.err==='not_authorized'){ P.view='noaccess'; render(); return; }
+    if(d && d.err==='staff_now'){ lsSet('gp-portal', JSON.stringify(P.auth)); P.view='noaccess'; P.err='staff_now'; render(); return; }
     if(d && d.err==='no_application'){ P.view='noaccess'; P.err='no_application'; render(); return; }
     P.auth=null; showMsg(wrongMsg); render();
   });

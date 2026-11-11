@@ -67,13 +67,14 @@ var DTS_METRICS = ['Students Enrolled','Students Graduated',
 
 /* Siem Reap's GPDTS keeps its own list (Andrew, Nov 2026): most of it counts itself
    from the school's pipeline — the portal's DTS applications and the contacts the team
-   works there (see "GPDTS" in api.js, DTS_AUTO). Those are never typed: the Numbers
-   tab leaves them out of the boxes (autoMetricsFor) and says where they come from. */
+   works there (see "GPDTS" in api.js, DTS_AUTO), and the fruit (gospel, healings, salvations,
+   baptisms) from its Lectures and Outreach tabs. None of it is typed; GPDTS has no Numbers tab. */
 var GPDTS_METRICS = ['Students Applied','Students Accepted','Students Enrolled','Students Graduated',
   'Potential Staff','People Heard the Gospel','Healings','Salvations','Baptisms',
   'Local Students Contacted','Intl Students Contacted'];
 var DTS_AUTO_METRICS = ['Students Applied','Students Accepted','Students Enrolled','Students Graduated',
-  'Potential Staff','Local Students Contacted','Intl Students Contacted'];
+  'Potential Staff','Local Students Contacted','Intl Students Contacted',
+  'People Heard the Gospel','Healings','Salvations','Baptisms'];
 function autoMetricsFor(campus, dept, ministry) {
   return campus === 'siemreap' && dept === 'Leadership Development' && ministry === 'GPDTS'
     ? DTS_AUTO_METRICS.slice() : [];

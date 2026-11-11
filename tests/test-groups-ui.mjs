@@ -139,7 +139,7 @@ let link = '';
   await page.fill('#r_user', 'dana'); await page.fill('#r_pin', '4321');
   await page.click('#regBtn'); await page.waitForTimeout(1500);
   const dana = mem.staff.find(x => x.username === 'dana');
-  ok('signing up makes their own account in that ministry, with their own PIN', dana && dana.campus === 'siemreap' && dana.dept === 'Leadership Development' && dana.ministry === 'GPDTS' && dana.active && !!dana.pinHash);
+  ok('signing up makes their own account in that ministry, with their own PIN — waiting for an admin to approve it (Nov 2026)', dana && dana.campus === 'siemreap' && dana.dept === 'Leadership Development' && dana.ministry === 'GPDTS' && dana.active === false && !!dana.pinHash);
   await ctx.close();
 }
 {
