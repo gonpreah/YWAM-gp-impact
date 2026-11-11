@@ -860,7 +860,7 @@ function kpiInputAttrs_(metric){
    token back that is kept as the "pin". Shown only when the site has a Google client (portalAuthConfig). */
 var _ggl={ cfg:null, asked:false, loading:false, ready:false, client:null, busy:false, mode:'login', after:null };
 function gglCfg_(){
-  if(_ggl.asked) return; _ggl.asked=true;
+  if(_ggl.asked || S.guest) return; _ggl.asked=true;   // looking around: no sign-in screen, nothing to ask
   run('portalAuthConfig',[],function(d){ _ggl.cfg=(d && d.ok) ? d : { google:'' }; if(_ggl.cfg.google && (!S.me || S.view==='profile')) render(); }, function(){ _ggl.cfg={ google:'' }; });
 }
 function gglOn_(){ return !!(_ggl.cfg && _ggl.cfg.google); }
