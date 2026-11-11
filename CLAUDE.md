@@ -666,6 +666,52 @@ quietest bucket named), Requests, Calendar, Bookings, Rooms.
 Weekly Check-in is not in the menu (the Health tab is its home) and the GP Dashboard is hidden
 for now. `test-menu.mjs` checks each role.
 
+## GPDTS on My Ministry — the school's numbers count themselves (Nov 2026, Andrew)
+"Instead of manually inputting numbers, I would like it to automatically track them … the portal for DTS
+applications linked to the GPDTS my ministry page." Siem Reap's GPDTS only for now (`DTS_TOOL` in api.js,
+`autoMetricsFor` in taxonomy.js). The portal is the day-to-day follow-up; GPDTS on My Ministry is the
+school's home.
+- **Metrics** (`GPDTS_METRICS`, taxonomy.js): Students Applied, Students Accepted, Students Enrolled,
+  Students Graduated, Potential Staff, People Heard the Gospel, Healings, Salvations, Baptisms, Local
+  Students Contacted, Intl Students Contacted. **Seven count themselves** (`DTS_AUTO` / `DTS_AUTO_METRICS`
+  — keep the two lists the same) from the DTS candidates: applied = the day the application was sent
+  (`portal.submittedAt`, else the first stage log at applied or beyond), accepted = first reached accepted,
+  graduated = `dts.graduated`, contacted = the first logged contact or move to Contacted / Interview (NEW
+  people, by audience: Khmer → Local), and two levels week by week — Enrolled (arrived, not graduated, not
+  archived) and Potential Staff (`dts.potentialStaff` this year). `dtsSync_` writes them into `entries`
+  for this week year as rows `by: 'tool:dts'`, **never over a typed row**, and removes its own rows that
+  no longer hold. It runs after every DTS change (hrSaveCandidate, hrCandidateCall, hrArchiveCandidate,
+  portalSubmit, dtsMark, dtsBoard) and hourly (`netlify/functions/dts-sync.js` → `runDtsSync`). The
+  numbers-due reminders ignore `tool:dts` rows (`numbersStatus_`), and the Numbers tab neither asks for
+  them (`kpiCardHtml`, `ovWeekRowsHtml_` filter `autoMetricsFor`) nor counts them as entered
+  (`numbersProgress_`, `ministryWeekLogged_` via `S.mmSkip`); `#dtsAutoHint` says so.
+- **The page** (`teams/16-dts.js`): tabs `dtsdash` Dashboard · `dtsclass` This school · `dtslect` Lectures ·
+  `dtsout` Outreach, then Numbers · Tasks · OKRs (`MM_SHELL_KEYS`, `mmTabsFor_`). One `dtsBoard` load per
+  open (`S.dts`; it also fills `S.oversee.GPDTS` for someone it isn't their main ministry). Dashboard:
+  where everyone is (`#dtsPipe`: Reaching out · Contacted · Applied · Accepted · Here now · Graduated this
+  year, each "k Khmer · i intl", `dtsColumn_`), Follow-ups due (`#dtsDue`, next step within 7 days, each
+  opening `portal.html?open=<id>`), "Open the DTS list in the portal" (`portal.html?what=dts`), this year's
+  numbers (`ministryDashboardHtml_`). This school: who arrived (graduated in the last 180 days stay),
+  Select all → 🎓 Graduated (n) with a day (`dtsMark(ids, {graduated})`, not in the future, Undo), ⭐
+  Potential staff. Lectures (`dtsLect:<campus>`: date, end, topic, speaker, from, contact, confirmed,
+  notes; `dtsSaveLecture` / `dtsDeleteLecture`) with a 💰 Finance & budget placeholder; Outreach a
+  placeholder (Andrew will say what goes in both). Who: `dtsGate_` — `canLogFor_` GPDTS or `dtsTeam_`
+  (its staff, leaders, the Leadership Development director), admins.
+- **The portal for it**: ＋ Add a contact (`leadFormHtml_` → `hrSaveCandidate` at New, `source` = where
+  you met them), then the record opens on **Contacts** — every record has it now (teams keep "Call
+  notes"): each call / message / in person / email / social media (`CONTACT_METHODS`, `method` on
+  `calls`); the first contact moves a lead with no account from New to Contacted (logged). ⏰
+  Follow-ups due (`[data-filter="due"]`, `isDue_`, next step within a week, sorted by date); the next
+  step under each name (`nextLine_`). A contact with no account has 📨 Send them the application (the
+  `?apply=<kind>` link) and Edit their details (`leadPanelHtml_`). **Sign-up with the same email (same
+  kind, campus and school) joins that record** (`createApplicant_` reuses its id, keeps calls / source /
+  next step / owner, logs "Made a portal account — joined to this record"). Deep links `?what=dts`,
+  `&filter=due`.
+- Tests: tests/test-dts.mjs (server), tests/test-dts-ui.mjs (GPDTS page, portal, Admin → Portal access).
+- Planned next (agreed with Andrew): a graduate marked potential staff → the staff pipeline (their
+  portal login switches to the staff application) → accepted → "Invite to the GP app" (prefilled link,
+  their own username + PIN, profile linked, no admin approval).
+
 ## Campus Leadership: the department pulse, the Director's quarter, staff debt from Finance
 - **Department pulse** (`pulseCardHtml_` ← `getDeptPulse`): a department leader's own
   page leads with six figures and nothing to type — numbers in on time (numbers
@@ -1443,12 +1489,23 @@ forms, documents and references follow.
   `hrCandidateNote`, `hrArchiveCandidate`) are the staff side's writes. Boot carries
   `staff.portalStaff` / `portalAdmin`, and the hamburger menu shows **YWAM GP Portal**
   (opens portal.html in a new tab) to anyone with access.
-- **Scope by ministry** (`portalTypes_` / `portalMaySee_`): an Outreach Teams portal staff
-  member sees team applications only — `portalBoot` filters and returns `scope:['team']`,
-  and `hrSaveCandidate` / `hrCandidateNote` / `hrArchiveCandidate` refuse anything outside
-  the scope for a non-HR caller (creating one included). Everyone else with access sees
-  all kinds. The staff list's tab row (`.whatTab[data-whatfilter]`, All · DTS · DBS · BCS ·
-  SMS · Staff · Volunteer · Teams with counts) shows only the tabs in scope.
+- **Scope by ministry** (`portalTypes_` / `portalMaySee_`; Nov 2026, Andrew: "those who are only in
+  the DTS or DBS or any of the training school staff only see those applicants … for everyone … as
+  admin, I can manually edit that"). A scope entry is a kind (`team`, `staff`, `volunteer`) or a kind
+  and school (`student:dts`). **A school's own staff and leaders get the portal without a tick**
+  (`schoolScope_`, `PORTAL_MIN_SCOPE`: GPDTS/DTS → dts, DBS, BCS, SMS), scoped to their school; the
+  Leadership Development director (Campus Leadership, ministry Leadership Development) all four;
+  Outreach Teams' people team applications (its leader without a tick, its members once ticked).
+  Ticked portal staff with none of those ministries, portal admins and HR see everything. **An admin
+  can set exactly what anyone sees** (`portalScope` on the staff record: a list, `['all']`, or none =
+  from their ministry; `adminUpdateStaff {portalScope}`, `cleanPortalScope_`) — that wins over all of it
+  and is itself a grant. App admins always see everything. Admin → Portal access shows "👁 Sees: DTS ·
+  from their ministry" per row with Change (`portalSeesHtml_`, chips From their ministry · Everything ·
+  DTS · DBS · BCS · SMS · Staff · Volunteers · Teams); `adminStaffOut_` carries `portal`, `portalSees`,
+  `portalScope`; the portal's Who has access says "Sees: …" (`sees`). `portalBoot` returns `scope`
+  (the header says "You see: DTS"), and `hrSaveCandidate` / `hrCandidateNote` / `hrArchiveCandidate` /
+  `hrCandidateCall` refuse anything outside it for a non-HR caller (creating one included). The tab row
+  (`.whatTab[data-whatfilter]`) shows only the tabs in scope (`inScope_`).
 - **The Outreach Teams leader gets in without a tick** (`leadsTeams_`). Anyone whose `leads`
   include `Community Service|Outreach Teams` passes `canPortal_`, and is scoped to team
   applications unless they are also ticked Portal staff. Making someone that ministry's leader

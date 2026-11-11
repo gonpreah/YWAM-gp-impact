@@ -4344,3 +4344,120 @@ The staff's Teams list: each team's dates at our base, e.g. "In Siem Reap 10 Jan
 | Updated {date} | បានកែប្រែ {date} |
 
 The staff's Applications list: "Sort by" chips (When they come — teams only — Date applied, Latest change) and a Newest / Oldest first button; the line under each name says when they applied or when it last changed.
+
+## 85. GPDTS on My Ministry — the school's page
+
+| English | Khmer (draft) |
+|---|---|
+| set by an admin | កំណត់ដោយអ្នកគ្រប់គ្រង |
+| This school | សាលានេះ |
+| Lectures | មេរៀន |
+| Couldn’t load the school. | មិនអាចផ្ទុកសាលាបានទេ។ |
+| Where everyone is | មនុស្សគ្រប់គ្នានៅដំណាក់កាលណា |
+| {k} Khmer · {i} intl | ខ្មែរ {k} · អន្តរជាតិ {i} |
+| Open the DTS list in the portal | បើកបញ្ជី DTS នៅក្នុង Portal |
+| Follow up | តាមដាន |
+| {n} more in the portal | {n} ទៀតនៅក្នុង Portal |
+| This year’s numbers | លេខឆ្នាំនេះ |
+| Here | នៅទីនេះ |
+| Graduated | បានបញ្ចប់ការសិក្សា |
+| Potential staff | បុគ្គលិកដែលមានសក្តានុពល |
+| Nobody is here yet. Students show here once they are marked Arrived in the portal. | មិនទាន់មាននរណានៅទីនេះទេ។ សិស្សនឹងបង្ហាញនៅទីនេះ នៅពេលពួកគេត្រូវបានសម្គាល់ថាបានមកដល់នៅក្នុង Portal។ |
+| Select all | ជ្រើសរើសទាំងអស់ |
+| Graduated ({n}) | បានបញ្ចប់ការសិក្សា ({n}) |
+| Tick students to mark them graduated together. | គូសធីកសិស្ស ដើម្បីសម្គាល់ថាពួកគេបានបញ្ចប់ការសិក្សាព្រមគ្នា។ |
+| Here since {date} | នៅទីនេះតាំងពី {date} |
+| Graduated {date} | បានបញ្ចប់ការសិក្សា {date} |
+| Edit the lecture | កែប្រែមេរៀន |
+| Add a lecture | បន្ថែមមេរៀន |
+| To (optional) | ដល់ (មិនចាំបាច់) |
+| e.g. The Father heart of God | ឧ. ព្រះហឫទ័យជាព្រះវរបិតារបស់ព្រះ |
+| Where they are from | ពួកគេមកពីណា |
+| e.g. YWAM Phnom Penh, a church in Battambang | ឧ. YWAM ភ្នំពេញ ព្រះវិហារមួយនៅបាត់ដំបង |
+| How to reach them | របៀបទាក់ទងពួកគេ |
+| Phone, email or Telegram | ទូរស័ព្ទ អ៊ីមែល ឬ Telegram |
+| Confirmed — they are coming | បានបញ្ជាក់ — ពួកគេនឹងមក |
+| Travel, where they stay, what they need… | ការធ្វើដំណើរ កន្លែងស្នាក់នៅ អ្វីដែលពួកគេត្រូវការ… |
+| Topic to come | ប្រធានបទនឹងមកដល់ |
+| Speaker to come | អ្នកនិយាយនឹងមកដល់ |
+| Confirmed | បានបញ្ជាក់ |
+| Not confirmed | មិនទាន់បញ្ជាក់ |
+| No lectures planned yet. | មិនទាន់មានមេរៀនគ្រោងទុកនៅឡើយទេ។ |
+| Earlier ({n}) | មុននេះ ({n}) |
+| Finance & budget | ហិរញ្ញវត្ថុ និងថវិកា |
+| Coming soon: the school’s budget — speakers’ gifts and travel, food, outreach — beside what has been spent. | ឆាប់ៗនេះ៖ ថវិការបស់សាលា — អំណោយ និងការធ្វើដំណើររបស់អ្នកនិយាយ អាហារ ការចេញផ្សាយដំណឹងល្អ — ជាមួយអ្វីដែលបានចំណាយ។ |
+| Coming soon: the outreach teams — where they go, when, who leads them, the budget, and what God did there. | ឆាប់ៗនេះ៖ ក្រុមចេញផ្សាយដំណឹងល្អ — ពួកគេទៅណា ពេលណា នរណាដឹកនាំ ថវិកា និងអ្វីដែលព្រះបានធ្វើនៅទីនោះ។ |
+| Only GPDTS’s team can open this. | មានតែក្រុម GPDTS ទេដែលអាចបើកនេះបាន។ |
+| The server answered without the school. | ម៉ាស៊ីនមេបានឆ្លើយតបដោយគ្មានសាលា។ |
+| That day hasn’t come yet. | ថ្ងៃនោះមិនទាន់មកដល់នៅឡើយទេ។ |
+| Marked graduated 🎓 | បានសម្គាល់ថាបានបញ្ចប់ការសិក្សា 🎓 |
+| {n} marked graduated 🎓 | {n} នាក់ត្រូវបានសម្គាល់ថាបានបញ្ចប់ការសិក្សា 🎓 |
+| Marked potential staff ⭐ | បានសម្គាល់ថាជាបុគ្គលិកដែលមានសក្តានុពល ⭐ |
+| Pick the day first. | សូមជ្រើសរើសថ្ងៃជាមុនសិន។ |
+| Add a topic or a speaker. | បន្ថែមប្រធានបទ ឬអ្នកនិយាយ។ |
+| Delete this lecture? | លុបមេរៀននេះ? |
+| Reaching out | កំពុងទាក់ទង |
+| Contacted | បានទាក់ទង |
+| Applied | បានដាក់ពាក្យ |
+| Accepted | បានទទួលយក |
+| Here now | នៅទីនេះឥឡូវ |
+| Graduated this year | បានបញ្ចប់ការសិក្សាឆ្នាំនេះ |
+| Follow-ups due | ការតាមដានដែលត្រូវធ្វើ |
+
+GPDTS on My Ministry (Siem Reap): the Dashboard (where everyone is in the pipeline, the follow-ups due, this year's numbers), This school (marking students graduated and potential staff), Lectures (topic, speaker, confirmed) with a Finance & budget placeholder, and an Outreach placeholder. "Here" = the students who are at the base now.
+
+## 86. Portal — contacts, follow-ups and who sees what
+
+| English | Khmer (draft) |
+|---|---|
+| The portal is where students, staff, volunteers and teams apply. Each school’s staff see their own school’s applicants, Outreach Teams the teams. Tick anyone else here, and change what anyone sees. | Portal គឺជាកន្លែងដែលសិស្ស បុគ្គលិក អ្នកស្ម័គ្រចិត្ត និងក្រុមដាក់ពាក្យ។ បុគ្គលិករបស់សាលានីមួយៗឃើញអ្នកដាក់ពាក្យនៃសាលារបស់ខ្លួន ហើយ Outreach Teams ឃើញក្រុម។ គូសធីកអ្នកផ្សេងទៀតនៅទីនេះ ហើយប្តូរអ្វីដែលនរណាម្នាក់ឃើញ។ |
+| Portal staff work the applicants they see and move them along. A portal admin can also grant portal staff. App admins always have both and see everything. “Sees” is which applicants — from their ministry unless you change it. | បុគ្គលិក Portal ធ្វើការជាមួយអ្នកដាក់ពាក្យដែលពួកគេឃើញ ហើយជួយពួកគេទៅមុខ។ អ្នកគ្រប់គ្រង Portal ក៏អាចផ្តល់សិទ្ធិជាបុគ្គលិក Portal ផងដែរ។ អ្នកគ្រប់គ្រងកម្មវិធីតែងតែមានទាំងពីរ ហើយឃើញទាំងអស់។ «ឃើញ» គឺអ្នកដាក់ពាក្យណាខ្លះ — តាមកិច្ចការបម្រើរបស់ពួកគេ លុះត្រាតែអ្នកប្តូរវា។ |
+| Everything | ទាំងអស់ |
+| Nothing | គ្មានអ្វីទេ |
+| Choose what they see | ជ្រើសរើសអ្វីដែលពួកគេឃើញ |
+| Sees | ឃើញ |
+| from their ministry | តាមកិច្ចការបម្រើរបស់ពួកគេ |
+| From their ministry | តាមកិច្ចការបម្រើរបស់ពួកគេ |
+| Applied, accepted, enrolled, graduated, potential staff and students contacted count themselves from the portal — see the Dashboard. Enter the rest here. | ចំនួនដាក់ពាក្យ ទទួលយក ចុះឈ្មោះ បញ្ចប់ការសិក្សា បុគ្គលិកដែលមានសក្តានុពល និងសិស្សដែលបានទាក់ទង រាប់ដោយខ្លួនឯងពី Portal — សូមមើលផ្ទាំងសង្ខេប។ បញ្ចូលលេខផ្សេងទៀតនៅទីនេះ។ |
+| From the portal: DTS applications, and the people you add there and reach out to. Applied, accepted, enrolled, graduated, potential staff and students contacted are counted from it — nobody types them. | ពី Portal៖ ពាក្យសុំ DTS និងមនុស្សដែលអ្នកបន្ថែមនៅទីនោះ ហើយទាក់ទងទៅ។ ចំនួនដាក់ពាក្យ ទទួលយក ចុះឈ្មោះ បញ្ចប់ការសិក្សា បុគ្គលិកដែលមានសក្តានុពល និងសិស្សដែលបានទាក់ទង ត្រូវរាប់ពីវា — គ្មាននរណាវាយបញ្ចូលទេ។ |
+| Add a contact | បន្ថែមអ្នកទំនាក់ទំនង |
+| Nothing due this week. Set a next step on each person in the portal and it shows here when it’s near. | សប្តាហ៍នេះគ្មានអ្វីត្រូវធ្វើទេ។ កំណត់ជំហានបន្ទាប់សម្រាប់មនុស្សម្នាក់ៗនៅក្នុង Portal ហើយវានឹងបង្ហាញនៅទីនេះនៅពេលជិតដល់។ |
+| Someone you are reaching out to who hasn’t applied yet. Log each time you reach them; when they make a portal account with the same email, it joins this record. | នរណាម្នាក់ដែលអ្នកកំពុងទាក់ទង ដែលមិនទាន់ដាក់ពាក្យ។ កត់ត្រារាល់ពេលដែលអ្នកទាក់ទងពួកគេ។ នៅពេលពួកគេបង្កើតគណនី Portal ដោយប្រើអ៊ីមែលដដែល វានឹងភ្ជាប់ទៅកំណត់ត្រានេះ។ |
+| Interested in | ចាប់អារម្មណ៍លើ |
+| Chats on | ជជែកតាម |
+| Where you met them | កន្លែងដែលអ្នកបានជួបពួកគេ |
+| e.g. a church in Battambang, Facebook, a friend | ឧ. ព្រះវិហារមួយនៅបាត់ដំបង Facebook មិត្តភក្តិ |
+| e.g. call after Sunday service | ឧ. ទូរស័ព្ទក្រោយការថ្វាយបង្គំថ្ងៃអាទិត្យ |
+| Add them | បន្ថែមពួកគេ |
+| Add their name first. | សូមបន្ថែមឈ្មោះរបស់ពួកគេជាមុនសិន។ |
+| Added — now log how you reached them. | បានបន្ថែម — ឥឡូវកត់ត្រារបៀបដែលអ្នកបានទាក់ទងពួកគេ។ |
+| That kind of application is outside what you see. | ប្រភេទពាក្យសុំនោះនៅក្រៅអ្វីដែលអ្នកឃើញ។ |
+| Send them the application | ផ្ញើពាក្យសុំទៅពួកគេ |
+| When they make an account with {email}, it joins this record — everything you logged stays. | នៅពេលពួកគេបង្កើតគណនីដោយប្រើ {email} វានឹងភ្ជាប់ទៅកំណត់ត្រានេះ — អ្វីៗដែលអ្នកបានកត់ត្រានៅដដែល។ |
+| Add their email below: when they make an account with it, it joins this record. | បន្ថែមអ៊ីមែលរបស់ពួកគេខាងក្រោម៖ នៅពេលពួកគេបង្កើតគណនីដោយប្រើវា វានឹងភ្ជាប់ទៅកំណត់ត្រានេះ។ |
+| Edit their details | កែប្រែព័ត៌មានរបស់ពួកគេ |
+| You see | អ្នកឃើញ |
+| Edit this contact | កែប្រែការទំនាក់ទំនងនេះ |
+| Log a contact | កត់ត្រាការទំនាក់ទំនង |
+| How | តាមរបៀបណា |
+| Who you talked with | អ្នកដែលអ្នកបាននិយាយជាមួយ |
+| What did you talk about? How are they doing, what are they deciding? | តើអ្នកបាននិយាយអំពីអ្វី? តើពួកគេសុខសប្បាយទេ ពួកគេកំពុងសម្រេចចិត្តអ្វី? |
+| Set the next step on Overview, so it shows under Follow-ups due. | កំណត់ជំហានបន្ទាប់នៅលើទិដ្ឋភាពទូទៅ ដើម្បីឱ្យវាបង្ហាញនៅក្រោមការតាមដានដែលត្រូវធ្វើ។ |
+| Nothing logged yet. Each time you reach out — a call, a message, a visit — log it here. | មិនទាន់មានអ្វីត្រូវបានកត់ត្រានៅឡើយទេ។ រាល់ពេលដែលអ្នកទាក់ទង — ការហៅទូរស័ព្ទ សារ ការទៅលេង — កត់ត្រាវានៅទីនេះ។ |
+| Delete this contact? | លុបការទំនាក់ទំនងនេះ? |
+| Contacts | ការទំនាក់ទំនង |
+| Call | ហៅទូរស័ព្ទ |
+| Message | សារ |
+| In person | ជួបផ្ទាល់ |
+| Social media | បណ្តាញសង្គម |
+| Volunteers | អ្នកស្ម័គ្រចិត្ត |
+| Students Applied | សិស្សដែលបានដាក់ពាក្យ |
+| Students Accepted | សិស្សដែលត្រូវបានទទួលយក |
+| Local Students Contacted | សិស្សក្នុងស្រុកដែលបានទាក់ទង |
+| Intl Students Contacted | សិស្សអន្តរជាតិដែលបានទាក់ទង |
+| Students who sent in a DTS application this week — counted by the app from the portal. | សិស្សដែលបានផ្ញើពាក្យសុំ DTS នៅសប្តាហ៍នេះ — រាប់ដោយកម្មវិធីពី Portal។ |
+| Students accepted into the school this week — counted by the app from the portal. | សិស្សដែលត្រូវបានទទួលចូលសាលានៅសប្តាហ៍នេះ — រាប់ដោយកម្មវិធីពី Portal។ |
+| Khmer students reached for the first time this week — counted by the app from the contacts in the portal. | សិស្សខ្មែរដែលបានទាក់ទងជាលើកដំបូងនៅសប្តាហ៍នេះ — រាប់ដោយកម្មវិធីពីការទំនាក់ទំនងនៅក្នុង Portal។ |
+| International students reached for the first time this week — counted by the app from the contacts in the portal. | សិស្សអន្តរជាតិដែលបានទាក់ទងជាលើកដំបូងនៅសប្តាហ៍នេះ — រាប់ដោយកម្មវិធីពីការទំនាក់ទំនងនៅក្នុង Portal។ |
+
+The portal's staff side: "Add a contact" (someone the team reaches out to before they apply), the Contacts tab where each call / message / visit is logged, the Follow-ups due filter, the link to send a contact so they can apply, and Admin → Portal access's "Sees" (which applicants each person sees). Also the four new GPDTS metric names and their one-line descriptions in the KPI guide.

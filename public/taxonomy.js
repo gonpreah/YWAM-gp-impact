@@ -65,6 +65,20 @@ var DTS_METRICS = ['Students Enrolled','Students Graduated',
   'Outreach Locations Reached','People Heard the Gospel','Healings',
   'Salvations','Baptisms'].concat(NEXT_SCHOOL);
 
+/* Siem Reap's GPDTS keeps its own list (Andrew, Nov 2026): most of it counts itself
+   from the school's pipeline — the portal's DTS applications and the contacts the team
+   works there (see "GPDTS" in api.js, DTS_AUTO). Those are never typed: the Numbers
+   tab leaves them out of the boxes (autoMetricsFor) and says where they come from. */
+var GPDTS_METRICS = ['Students Applied','Students Accepted','Students Enrolled','Students Graduated',
+  'Potential Staff','People Heard the Gospel','Healings','Salvations','Baptisms',
+  'Local Students Contacted','Intl Students Contacted'];
+var DTS_AUTO_METRICS = ['Students Applied','Students Accepted','Students Enrolled','Students Graduated',
+  'Potential Staff','Local Students Contacted','Intl Students Contacted'];
+function autoMetricsFor(campus, dept, ministry) {
+  return campus === 'siemreap' && dept === 'Leadership Development' && ministry === 'GPDTS'
+    ? DTS_AUTO_METRICS.slice() : [];
+}
+
 var BL_COMMON = ['One-on-Ones Held','Partner Connections','Spoke at Churches','Spoke at YWAM Bases',
   'Hours Sharing the Gospel','Department Meetings Held','Teachings Prepped','Meetings Led'];
 var BL_DEPT_EXTRA = ['Total Staff','Staff Debt ($)','Funds Raised ($)'];
@@ -124,7 +138,7 @@ function getBaselineDepartments(campusId){
   };
   var LD = d['Leadership Development'];
   if (campusId === 'siemreap') {
-    LD['GPDTS'] = DTS_METRICS.slice();
+    LD['GPDTS'] = GPDTS_METRICS.slice();
     LD['DBS'] = DTS_METRICS.slice();
     LD['SMS'] = ['Students Enrolled','Students Graduated',
       'New Pages Started','Follower Growth','Highest Viewed Video Views',
