@@ -2725,9 +2725,43 @@ body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
 #dtsDbYears .chip, #dtsDbSchools .chip, .dtsParts .chip, #dtsSpeakers .chips .chip { cursor:pointer; font-family:inherit; }
 #dtsDbYears .chip.on, #dtsDbSchools .chip.on, .dtsParts .chip.on, #dtsSpeakers .chips .chip.on { background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
 .dtsSchoolLine { font-size:14px; margin-top:4px; }
-.dtsSecs { display:flex; flex-wrap:wrap; margin:0 0 12px; }
-.dtsSecs button { flex:1 1 auto; white-space:nowrap; }
-.dtsParts { margin:0 0 10px; }
+/* the school on one line, its picker only when asked for */
+.dtsSchoolBar { border:1px solid var(--border); border-radius:14px; background:var(--surface); padding:10px 12px; margin:0 0 12px; }
+.dtsSchoolLine { display:flex; align-items:center; gap:10px; }
+.dtsSchoolIc { font-size:22px; line-height:1; }
+.dtsSchoolTxt { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; }
+.dtsSchoolTxt b { font-size:16px; }
+.dtsSchoolLine .btn { margin:0; width:auto; flex:0 0 auto; }
+.dtsPicker { border-top:1px solid var(--border); margin-top:10px; padding-top:10px; }
+.dtsPicker .chips { margin-bottom:6px; }
+/* the Database's home: one tile per part */
+.dtsHome { display:grid; grid-template-columns:minmax(0,1fr); gap:8px; }
+@media (min-width:640px){ .dtsHome { grid-template-columns:minmax(0,1fr) minmax(0,1fr); } }
+.dtsTile { display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:14px; font:inherit; color:var(--ink); cursor:pointer; min-height:64px; }
+.dtsTile:hover, .dtsTile:focus-visible { border-color:var(--accent); outline:none; }
+.dtsTileIc { font-size:24px; line-height:1; flex:0 0 auto; }
+.dtsTileTxt { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.dtsTileTxt b { font-size:15px; }
+.dtsTileLine { font-size:13px; color:var(--muted); overflow-wrap:anywhere; }
+.dtsTileLine.warn { color:var(--amberDeep); font-weight:700; }
+.dtsTileLine.ok { color:var(--good); }
+.dtsTileGo { font-size:22px; color:var(--faint); flex:0 0 auto; }
+/* a part's own page: back, its name, then a small add button */
+.dtsPageHead { display:flex; align-items:center; gap:10px; margin:0 0 10px; }
+.dtsBack { background:none; border:0; padding:6px 0; font:inherit; font-weight:700; color:var(--accent); cursor:pointer; flex:0 0 auto; }
+.dtsPageTitle { margin:0; font-size:18px; min-width:0; }
+.btn.dtsAdd { width:auto; margin:0 0 10px; }
+/* the team form folded: each outreach to one line, its weekly numbers to another */
+details.dtsPhase { border:1px solid var(--border); border-radius:12px; padding:0 12px; margin-top:12px; border-top-width:1px; }
+details.dtsPhase > summary { cursor:pointer; padding:12px 0; display:flex; flex-direction:column; gap:2px; list-style:none; }
+details.dtsPhase > summary::-webkit-details-marker { display:none; }
+details.dtsPhase > summary .dtsPhaseName { font-weight:800; font-size:15px; }
+details.dtsPhase > summary .dtsPhaseName::before { content:'▸ '; color:var(--muted); }
+details.dtsPhase[open] > summary .dtsPhaseName::before { content:'▾ '; }
+.dtsPhaseBody { padding-bottom:12px; }
+.dtsWeeksFold { margin-top:12px; }
+.dtsWeeksFold > summary { cursor:pointer; font-weight:700; font-size:14px; padding:6px 0; }
 .dtsTblWrap { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:6px 0 0; touch-action:pan-x pan-y; }
 .dtsTbl { border-collapse:collapse; font-size:13.5px; width:100%; }
 .dtsTbl th, .dtsTbl td { padding:8px; border-top:1px solid var(--border); text-align:left; vertical-align:top; }
@@ -2744,12 +2778,20 @@ body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
 .dtsKv .kv b { color:var(--muted); font-weight:600; }
 .dtsKv .kv span { overflow-wrap:anywhere; }
 .dtsOneOnOne { background:var(--goodSoft); border-radius:12px; padding:4px 12px 12px; margin:0 0 10px; }
+.dtsOoHead { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:4px 10px; padding-top:8px; }
+.dtsOoHead .f { margin:0; }
+.dtsOoNow { font-size:14px; }
+.dtsOoChips { margin:8px 0 6px; }
+.dtsOoChips .chip { cursor:pointer; font-family:inherit; }
+.dtsOoChips .chip.on { background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
+.dtsOoType { display:flex; gap:8px; align-items:center; }
+.dtsOoType input { flex:1 1 auto; min-width:0; }
+.dtsOoType .btn { margin:0; width:auto; flex:0 0 auto; }
 .dtsPick { border:1px solid var(--border); border-radius:10px; padding:0 10px; }
 .dtsPick summary { cursor:pointer; padding:9px 0; font-size:14px; overflow-wrap:anywhere; }
 .dtsPickList { max-height:260px; overflow-y:auto; padding-bottom:6px; }
 .dtsPickRow { display:flex; align-items:center; gap:8px; padding:6px 0; font-size:14px; }
 .dtsPickRow input { width:18px; height:18px; flex:0 0 auto; accent-color:var(--accent); }
-.dtsPhase { border-top:2px solid var(--border); margin-top:16px; padding-top:12px; }
 .dtsWeeks input { width:100%; min-width:44px; padding:6px 4px; text-align:center; }
 .dtsWeeks th, .dtsWeeks td { padding:6px 3px; }
 .dtsWeeks thead th { white-space:normal; font-size:11px; line-height:1.2; text-align:center; }

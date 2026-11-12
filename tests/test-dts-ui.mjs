@@ -40,6 +40,8 @@ let DB = { schools: [{ id: 'sc1', year: NEXTY, name: 'January DTS', from: NEXTY 
   policy: '1. Come to class every day and on time\n* You may not miss more than 2 days per week\n2. Be On Time\n* Arrive on time', policyIsDefault: true };
 const dbSaves = [], stuSaves = [];
 const TWO = { id: 'st_two', name: 'Tia Two', username: 'tia', campus: 'siemreap', dept: 'Leadership Development', ministry: 'GPDTS' };
+const CAFE = { id: 'st_cafe', name: 'Cal Fay', username: 'cal', campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe' };
+const HELPER = { id: 'st_help', name: 'Hana Helper', username: 'hana', campus: 'siemreap', dept: 'Skills Training', ministry: 'Hospitality', ministries: ['Leadership Development|GPDTS'] };
 const marks = [], lectSaves = [], outSaves = [], pastSaves = [], toStaff = [];
 const board = () => ({
   ok: true, campus: 'siemreap', ministry: 'GPDTS', today: TODAY, portal: true,
@@ -63,7 +65,7 @@ const p = await page();
 await p.route('**/.netlify/functions/api', r => {
   const q = JSON.parse(r.request().postData() || '{}');
   let o = { ok: true };
-  if (q.fn === 'getMyBoot') o = { ok: true, staff: ME, profile: { email: 'x@example.com' }, roster: [ME, TWO], logs: [], habits: null, mentees: [], mentorRequests: [], goals: [], checkins: [],
+  if (q.fn === 'getMyBoot') o = { ok: true, staff: ME, profile: { email: 'x@example.com' }, roster: [ME, TWO, CAFE, HELPER], logs: [], habits: null, mentees: [], mentorRequests: [], goals: [], checkins: [],
     ministry: { ok: true, campus: 'siemreap', dept: 'Leadership Development', ministry: 'GPDTS', entries: { 'Students Applied': { '1': 2 } }, prev: {}, daily: {} },
     trips: { ok: true, trips: [], totals: {}, ptoCap: 30 }, tripRequests: [], oneOnOnes: [], base: { leader: false, entries: { siemreap: {} }, okrs: [], survey: [], roster: [] } };
   else if (q.fn === 'dtsBoard') o = board();
@@ -74,7 +76,7 @@ await p.route('**/.netlify/functions/api', r => {
     else { const id = rec.id || kind + (DB[key].length + 1); DB = { ...DB, [key]: DB[key].filter(x => x.id !== id).concat([{ ...rec, id }]) }; o = { ok: true, id, db: DB }; }
   } else if (q.fn === 'dtsStudentSave') {
     const [id, pp] = q.args.slice(2); stuSaves.push([id, pp]);
-    const i = STUDS.findIndex(x => x.id === id); STUDS[i] = { ...STUDS[i], ...(pp.oneOnOne !== undefined ? { oneOnOne: pp.oneOnOne } : {}), ...(pp.schoolId ? { schoolId: pp.schoolId } : {}), ...(pp.profile ? { profile: pp.profile } : {}) };
+    const i = STUDS.findIndex(x => x.id === id); STUDS[i] = { ...STUDS[i], ...(pp.oneOnOne !== undefined ? { oneOnOne: pp.oneOnOne, oneOnOneName: '' } : {}), ...(pp.oneOnOneName !== undefined ? { oneOnOne: '', oneOnOneName: pp.oneOnOneName } : {}), ...(pp.schoolId ? { schoolId: pp.schoolId } : {}), ...(pp.profile ? { profile: pp.profile } : {}) };
     o = { ok: true, student: STUDS[i] };
   } else if (q.fn === 'dtsMark') {
     marks.push(q.args.slice(2));
@@ -110,11 +112,18 @@ ok('Add a past year: its totals are saved', pastSaves.length === 1 && pastSaves[
 ok('it opens on that year, with a chip for it', (await p.$eval('[data-dtsyear="' + LASTY + '"]', e => e.classList.contains('on'))) && (await p.$eval('[data-dtsm="Salvations"] .mmTileNum', e => e.textContent)) === '7');
 ok('and a year-by-year table', !!(await p.$('#dtsYears')) && (await p.$$eval('#dtsYears thead th', h => h.length)) === 3);
 
-/* ---- the Database: one school at a time ---- */
+/* ---- the Database: one school at a time, a page of tiles, one part open at a time ---- */
+/* back to the tiles (from a student: first to the list), then into a part */
+const goPart = async (sec) => { for (let i = 0; i < 3 && !(await p.$('#dtsHome0')); i++) { await p.click('#dtsHome'); await p.waitForTimeout(200); } await p.click('[data-dtssec="' + sec + '"]'); await p.waitForTimeout(250); };
 await p.click('[data-mmtab="dtsdb"]'); await p.waitForTimeout(300);
-ok('Database opens on the school coming up: its year and name', await p.$eval('[data-dtsdbyear="' + NEXTY + '"]', e => e.classList.contains('on')) && await p.$eval('[data-dtsschool="sc1"]', e => e.classList.contains('on')) && /January DTS/.test(await p.$eval('#dtsSchoolLine', e => e.textContent)));
-ok('four parts: Lectures, Outreach, Responsibilities, Resources', JSON.stringify(await p.$$eval('[data-dtssec]', b => b.map(x => x.getAttribute('data-dtssec')))) === '["lect","out","resp","res"]');
-ok('Lectures has the speaker schedule, students, events and the school policy', JSON.stringify(await p.$$eval('[data-dtslp]', b => b.map(x => x.getAttribute('data-dtslp')))) === '["speakers","students","events","policy"]' && !!(await p.$('#dtsSpeakers')));
+ok('Database opens on the school coming up, said on one line — the picker folded away', new RegExp(NEXTY + ' · January DTS').test(await p.$eval('#dtsSchoolLine', e => e.textContent)) && !(await p.$('#dtsDbSchools')));
+await p.click('#dtsSchoolChange'); await p.waitForTimeout(200);
+ok('Change opens the picker: the schools of that year, New school, Edit', await p.$eval('[data-dtsschool="sc1"]', e => e.classList.contains('on')) && !!(await p.$('#dtsSchoolAdd')) && !!(await p.$('#dtsSchoolEditBtn')));
+await p.click('#dtsSchoolChange'); await p.waitForTimeout(200);
+ok('then a page of tiles, one per part — no tabs inside tabs', JSON.stringify(await p.$$eval('[data-dtssec]', b => b.map(x => x.getAttribute('data-dtssec')))) === '["speakers","students","events","out","resp","res","policy"]' && !(await p.$('[data-dtslp]')));
+ok('each tile says where things stand', /No topics yet/.test(await p.$eval('[data-dtssec="speakers"]', e => e.textContent)) && /3 students · 2 here now/.test(await p.$eval('[data-dtssec="students"]', e => e.textContent)) && /2 rules/.test(await p.$eval('[data-dtssec="policy"]', e => e.textContent)), await p.$eval('[data-dtssec="students"]', e => e.textContent));
+await goPart('speakers');
+ok('a part opens on its own page, with Back and its name', !!(await p.$('#dtsHome')) && /Speaker schedule/.test(await p.$eval('.dtsPageTitle', e => e.textContent)) && !!(await p.$('#dtsSpeakers')));
 await p.click('#dtsLectAdd'); await p.waitForTimeout(200);
 await p.fill('#dl_topic', 'The Father heart of God'); await p.selectOption('#dl_finder', 'st_two');
 await p.click('#dtsLectSave'); await p.waitForTimeout(400);
@@ -126,8 +135,10 @@ await p.click('tr[data-dtslect="lc1"]'); await p.waitForTimeout(200);
 await p.fill('#dl_speaker', 'A Speaker'); await p.fill('#dl_translator', 'Tia Two'); await p.fill('#dl_mc', 'Dee Teesse'); await p.fill('#dl_date', INWEEK);
 await p.click('#dtsLectSave'); await p.waitForTimeout(400);
 ok('the speaker, translator, MC and dates are saved on it', lectSaves.length === 2 && lectSaves[1].speaker === 'A Speaker' && lectSaves[1].translator === 'Tia Two' && lectSaves[1].mc === 'Dee Teesse' && lectSaves[1].date === INWEEK);
+await p.click('#dtsHome'); await p.waitForTimeout(200);
+ok('back on the tiles, the speaker schedule says every topic has its speaker', /every one has a speaker/.test(await p.$eval('[data-dtssec="speakers"]', e => e.textContent)));
 
-await p.click('[data-dtslp="students"]'); await p.waitForTimeout(300);
+await goPart('students');
 ok('Students: everyone who applied for this school, by where they are — not one in no school', (await p.$$('#dtsStudents [data-dtsstu]')).length === 3 && /Here now/.test(await p.$eval('#dtsStudents', e => e.textContent)) && /Applied/.test(await p.$eval('#dtsStudents', e => e.textContent)));
 ok('and the one not in a school yet, with a way to put them in', /Not in a school yet \(1\)/.test(await p.$eval('#dtsLoose', e => e.textContent)) && !!(await p.$('[data-dtsplace="c_loose"]')));
 await p.check('#dtsSelAll'); await p.waitForTimeout(250);
@@ -142,46 +153,56 @@ ok('a graduate marked potential staff starts their staff application', toStaff.l
 await p.click('[data-dtsstuopen="c_ap"]'); await p.waitForTimeout(300);
 const prof = await p.$eval('#dtsStuCard', e => e.textContent);
 ok('a student’s profile: sex, phone, parent and pastor phone, email — from the portal', /Female/.test(prof) && /012 000 111/.test(prof) && /012 000 222/.test(prof) && /012 000 333/.test(prof) && /chenda@example.org/.test(prof));
-ok('their 1-on-1 at the top', !!(await p.$('#dtsStuOO #dtsStuOOSel')) && (await p.$eval('#dtsStuCard', e => [...e.children].findIndex(c => c.id === 'dtsStuOO'))) < (await p.$eval('#dtsStuCard', e => [...e.children].findIndex(c => c.classList.contains('dtsKv')))));
-await p.selectOption('#dtsStuOOSel', 'st_two'); await p.waitForTimeout(400);
-ok('picking their 1-on-1 saves it', stuSaves.length === 1 && stuSaves[0][0] === 'c_ap' && stuSaves[0][1].oneOnOne === 'st_two');
+ok('their 1-on-1 at the top', !!(await p.$('#dtsStuOO [data-dtsoo]')) && (await p.$eval('#dtsStuCard', e => [...e.children].findIndex(c => c.id === 'dtsStuOO'))) < (await p.$eval('#dtsStuCard', e => [...e.children].findIndex(c => c.classList.contains('dtsKv')))));
+ok('the 1-on-1 picker offers only GPDTS people — its staff and anyone with it as another ministry — not the rest of the campus', JSON.stringify(await p.$$eval('[data-dtsoo]', b => b.map(x => x.getAttribute('data-dtsoo')).sort())) === JSON.stringify(['st_dee', 'st_help', 'st_two']), JSON.stringify(await p.$$eval('[data-dtsoo]', b => b.map(x => x.textContent))));
+await p.fill('#dtsStuOOName', 'Pastor Visiting'); await p.click('#dtsStuOOSave'); await p.waitForTimeout(400);
+ok('a name can be typed in for someone else', stuSaves.length === 1 && stuSaves[0][1].oneOnOneName === 'Pastor Visiting' && /Pastor Visiting/.test(await p.$eval('#dtsStuOO', e => e.textContent)), JSON.stringify(stuSaves));
+await p.fill('#dtsStuOOName', 'cal fay'); await p.press('#dtsStuOOName', 'Enter'); await p.waitForTimeout(400);
+ok('a typed name that is someone in the app is saved as that person', stuSaves.length === 2 && stuSaves[1][1].oneOnOne === 'st_cafe', JSON.stringify(stuSaves[1]));
+await p.click('[data-dtsoo="st_two"]'); await p.waitForTimeout(400);
+ok('tapping a GPDTS person saves them as the 1-on-1', stuSaves.length === 3 && stuSaves[2][0] === 'c_ap' && stuSaves[2][1].oneOnOne === 'st_two' && await p.$eval('[data-dtsoo="st_two"]', e => e.classList.contains('on')));
 await p.click('#dtsStuEditBtn'); await p.waitForTimeout(200);
 await p.fill('[data-dsp="phone"]', '099 888 777'); await p.click('#dtsStuSave'); await p.waitForTimeout(400);
-ok('editing details keeps only what differs from the portal', stuSaves.length === 2 && JSON.stringify(stuSaves[1][1].profile) === '{"phone":"099 888 777"}', JSON.stringify(stuSaves[1]));
+ok('editing details keeps only what differs from the portal', stuSaves.length === 4 && JSON.stringify(stuSaves[3][1].profile) === '{"phone":"099 888 777"}', JSON.stringify(stuSaves[3]));
 ok('and the profile shows it', /099 888 777/.test(await p.$eval('#dtsStuCard', e => e.textContent)));
-await p.click('#dtsStuBack'); await p.waitForTimeout(200);
+await p.click('#dtsHome'); await p.waitForTimeout(200);
+ok('Back from a student goes to the list, not past it', !!(await p.$('#dtsStudents')));
 ok('the list says who their 1-on-1 is', /1-on-1: Tia Two/.test(await p.$eval('[data-dtsstu="c_ap"]', e => e.textContent)));
 
-await p.click('[data-dtslp="events"]'); await p.waitForTimeout(200);
+await goPart('events');
 await p.click('#dtsEvAdd'); await p.waitForTimeout(200);
 await p.fill('#de_title', 'Students arrive'); await p.fill('#de_date', INWEEK);
 await p.click('#dtsEvSave'); await p.waitForTimeout(400);
 ok('an event with its date, in this school', dbSaves.some(x => x[0] === 'event' && x[1].title === 'Students arrive' && x[1].date === INWEEK && x[1].schoolId === 'sc1') && /Students arrive/.test(await p.$eval('#dtsEvents', e => e.textContent)));
 
-await p.click('[data-dtslp="policy"]'); await p.waitForTimeout(200);
+await goPart('policy');
 ok('the school policy: numbered headings and their points', /1\. Come to class every day and on time/.test(await p.$eval('#dtsPolicy h4', e => e.textContent)) && (await p.$$('#dtsPolicy li')).length === 2);
 await p.click('#dtsPolEdit'); await p.waitForTimeout(200);
 await p.fill('#dtsPolText', '1. Be kind\n* Always'); await p.click('#dtsPolSave'); await p.waitForTimeout(400);
 ok('and it can be changed', dbSaves.some(x => x[0] === 'policy' && x[1].text === '1. Be kind\n* Always') && /Be kind/.test(await p.$eval('#dtsPolicy', e => e.textContent)));
 
-await p.click('[data-dtssec="out"]'); await p.waitForTimeout(300);
+await goPart('out');
 ok('Outreach: the students for the year, none on a team yet, and the budget to come', /Students for /.test(await p.$eval('#dtsOutStudents', e => e.textContent)) && /3 not on a team yet/.test(await p.$eval('#dtsOutStudents', e => e.textContent)) && !!(await p.$('#dtsOutBudget')));
 await p.click('#dtsTeamAdd'); await p.waitForTimeout(250);
 ok('a team has a short outreach of 2 weeks and a long one of 8', (await p.$$('#dtsWeeks_short tbody tr')).length === 2 && (await p.$$('#dtsWeeks_long tbody tr')).length === 8);
+ok('a new team opens on the short outreach; the long one and the weekly numbers are folded to a line', await p.$eval('#dtsPhase_short', d => d.open) && !(await p.$eval('#dtsPhase_long', d => d.open)) && !(await p.$eval('[data-dtfold="w_short"]', d => d.open)) && /2 weeks/.test(await p.$eval('#dtsPhase_short > summary', e => e.textContent)));
 ok('each week asks males, females, salvations, healings and heard the gospel', JSON.stringify(await p.$$eval('#dtsWeeks_short thead th', h => h.map(x => x.textContent))) === '["Week","Males reached","Females reached","Salvations","Healings","Heard the gospel"]');
 await p.fill('#dt_name', 'Team North'); await p.fill('[data-dtp="short|place"]', 'Kampot');
 ok('the students to pick are open, the leaders folded under their names', await p.$eval('#dtsPhase_short details.dtsPick:nth-of-type(2)', d => d.open) && !(await p.$eval('#dtsPhase_short details.dtsPick', d => d.open)));
 await p.check('[data-dtps="short"][value="c_ar"]'); await p.waitForTimeout(250);
 await p.click('#dtsPhase_short details.dtsPick summary'); await p.check('[data-dtpl="short"][value="st_two"]'); await p.waitForTimeout(250);
+ok('ticks keep the folds as they were', await p.$eval('#dtsPhase_short', d => d.open) && await p.$eval('[data-dtfold="pl_short"]', d => d.open));
+await p.click('[data-dtfold="w_short"] > summary'); await p.waitForTimeout(150);
 await p.fill('[data-dtpw="short|0|salvations"]', '2'); await p.fill('[data-dtpw="short|0|male"]', '7');
 ok('the totals add up as you type', (await p.$$eval('#dtsWeeks_short tfoot td', c => c.map(x => x.textContent)))[2] === '2');
+await p.click('#dtsPhase_long > summary'); await p.waitForTimeout(150);
 await p.click('#dtsCopyShort'); await p.waitForTimeout(250);
 await p.click('#dtsTeamSave'); await p.waitForTimeout(400);
 const ts = dbSaves.filter(x => x[0] === 'team').pop();
 ok('the team is saved: where, leaders, students and the week’s numbers — and the long outreach got the same people', ts && ts[1].name === 'Team North' && ts[1].short.place === 'Kampot' && JSON.stringify(ts[1].short.students) === '["c_ar"]' && JSON.stringify(ts[1].short.leaders) === '["st_two"]' && String(ts[1].short.weeks[0].salvations) === '2' && JSON.stringify(ts[1].long.students) === '["c_ar"]', JSON.stringify(ts && ts[1]));
 ok('the team card shows its numbers, and the student is on it', /Team North/.test(await p.$eval('#dtsTeams', e => e.textContent)) && /♂ 7/.test(await p.$eval('#dtsTeams', e => e.textContent)) && /2 not on a team yet/.test(await p.$eval('#dtsOutStudents', e => e.textContent)));
 
-await p.click('[data-dtssec="resp"]'); await p.waitForTimeout(250);
+await goPart('resp');
 ok('Responsibilities: before school and during school', !!(await p.$('#dtsResp_before')) && !!(await p.$('#dtsResp_school')));
 await p.click('#dtsRespAdd'); await p.waitForTimeout(200);
 await p.fill('#dr_title', 'Book the speakers’ rooms'); await p.fill('#dr_notes', 'With SR Hospitality');
@@ -190,7 +211,7 @@ await p.click('#dtsRespSave'); await p.waitForTimeout(400);
 const rs = dbSaves.filter(x => x[0] === 'resp').pop();
 ok('a responsibility before school, with its description, given to a staff member', rs && rs[1].when === 'before' && rs[1].title === 'Book the speakers’ rooms' && JSON.stringify(rs[1].staff) === '["st_two"]' && /Tia Two/.test(await p.$eval('#dtsResp_before', e => e.textContent)), JSON.stringify(rs));
 
-await p.click('[data-dtssec="res"]'); await p.waitForTimeout(250);
+await goPart('res');
 await p.click('#dtsResAdd'); await p.waitForTimeout(200);
 await p.fill('#dres_title', 'Curriculum'); await p.fill('#dres_url', 'https://example.org/c');
 await p.click('#dtsResSave'); await p.waitForTimeout(400);

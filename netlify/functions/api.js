@@ -8316,7 +8316,7 @@ function dtsStudentOut_(c, schools) {
     id: c.id, name: c.name, stage: c.stage, column: dtsColumn_(c), audience: audienceOf_(c), country: c.country || '',
     applied: dtsApplied_(c), arrived: c.stage === 'arrived' ? dtsReached_(c, 'arrived') : '',
     graduated: m.graduated || '', potentialStaff: m.potentialStaff || '', archived: !!c.archived,
-    schoolId: dtsSchoolOf_(c, schools), placed: !!m.schoolId, oneOnOne: m.oneOnOne || '', hasAccount: !!c.staffId,
+    schoolId: dtsSchoolOf_(c, schools), placed: !!m.schoolId, oneOnOne: m.oneOnOne || '', oneOnOneName: m.oneOnOneName || '', hasAccount: !!c.staffId,
     // what they wrote in the portal — only the contact details the school needs, never their health or story
     portal: { sex: s(a.gender), dob: s(a.dob), phone: s(a.phone || c.phone), email: s(a.email || c.email), guardianName: s(a.guardianName), guardianPhone: s(a.guardianPhone),
       pastorName: s(a.pastorName), pastorPhone: s(a.pastorPhone), church: s(a.church) },
@@ -8455,7 +8455,9 @@ async function dtsStudentSave(username, pin, candId, p) {
   if (!c || !isDtsCand_(c, g.campus)) return { ok: false, err: 'not_found' };
   const m = Object.assign({}, dtsMarks_(c)), now = new Date().toISOString(), notes = [];
   if (p.schoolId !== undefined) { if (p.schoolId) m.schoolId = str_(p.schoolId, 60); else delete m.schoolId; notes.push('Moved to another school'); }
-  if (p.oneOnOne !== undefined) { if (p.oneOnOne) m.oneOnOne = str_(p.oneOnOne, 60); else delete m.oneOnOne; notes.push('Their 1-on-1 changed'); }
+  /* their 1-on-1 is a staff member (an id) or, typed in, a name — someone outside GPDTS or not in the app; one replaces the other */
+  if (p.oneOnOne !== undefined) { if (p.oneOnOne) m.oneOnOne = str_(p.oneOnOne, 60); else delete m.oneOnOne; delete m.oneOnOneName; notes.push('Their 1-on-1 changed'); }
+  else if (p.oneOnOneName !== undefined) { const nm = str_(p.oneOnOneName, 120); delete m.oneOnOne; if (nm) m.oneOnOneName = nm; else delete m.oneOnOneName; notes.push('Their 1-on-1 changed'); }
   if (p.profile !== undefined) {
     const pr = {};
     DTS_PROFILE_FIELDS.forEach(function (k) { const v = String(p.profile && p.profile[k] != null ? p.profile[k] : '').trim().slice(0, k === 'notes' ? 2000 : 200); if (v) pr[k] = v; });

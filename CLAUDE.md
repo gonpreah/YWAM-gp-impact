@@ -716,16 +716,30 @@ school's home.
   `numbersExempt_` (no "numbers due" reminders). An outreach budget placeholder stays.
 - **Database (Nov 2026, Andrew: "simplify the amount of tabs")**: GPDTS's tabs are now **Dashboard · Database ·
   Tasks · OKRs** (`DTS_TABS` = dtsdash, dtsdb; "This school", "Lectures" and "Outreach" are gone as tabs).
-  The Database (`dtsDbHtml_`) is one **school** at a time — year chips, then that year's schools (`#dtsDbYears`,
-  `[data-dtsschool]`, `S.dtsSchool`; opens on the next school still to finish, `dtsCurSchool_`) — with four parts
-  (`[data-dtssec]` lect · out · resp · res):
-  - **Lectures** (`[data-dtslp]`): **Speaker schedule** (`#dtsSpeakTbl`: dates, topic, speaker, translator, MC; a
+  The Database (`dtsDbHtml_`) is one **school** at a time, said on one line (`.dtsSchoolBar`, `#dtsSchoolLine`;
+  opens on the next school still to finish, `dtsCurSchool_`) with **Change** (`#dtsSchoolChange`, `S.dtsPickOpen`)
+  opening the picker — year chips if more than one year (`#dtsDbYears`), that year's schools (`[data-dtsschool]`),
+  Edit and New school. **Simpler to use (Nov 2026, Uriah: "still a bit overwhelming and confusing")**: no tabs
+  inside tabs — the Database opens on a page of **tiles** (`dtsHomeHtml_`, `#dtsHome0`, `[data-dtssec]`: speakers ·
+  students · events · out · resp · res · policy, `DTS_SECS`), each with one line saying where it stands ("3 need a
+  speaker", "Next: Students arrive · 12 Jan", "2 not on a team yet" — amber when something waits). A tile opens its
+  part on a page of its own (`S.dtsSec`) headed **← Back** + its name (`.dtsPageHead`, `#dtsHome`): Back closes
+  whatever is open first (a student, a team, a form), then returns to the tiles — the only back button. Add
+  buttons are small (`.btn.dtsAdd`). A team's form folds each outreach to one line (`details.dtsPhase`, "Short
+  outreach · 2 weeks — Kampot · 12–26 Jan · 4 students"; a new team opens on the short one) and its weekly numbers
+  to another (`[data-dtfold="w_short"]` with the totals); which folds are open lives in `S.dtsTeamOpen`
+  (`dtsFoldOpen_`), so a tick or a date redraws without closing them. The parts:
+  - **Lectures**: **Speaker schedule** (`#dtsSpeakTbl`: dates, topic, speaker, translator, MC; a
     topic with no speaker says who is finding one — `finder`, a staff id — or that nobody is; "Speaker needed"
     filter); **Students** — every DTS application that has applied (`dtsIsStudent_`), in the school starting on
     or after the day they applied unless put in another (`dtsSchoolOf_`, `dts.schoolId`); grouped Here now /
     Accepted / Applied / Graduated, select everyone here → Graduated, ⭐ potential staff, the staff application
     (all moved here from This school); a student's profile (`dtsStuHtml_`): **their 1-on-1 at the top**
-    (`dts.oneOnOne`, campus staff), sex, date of birth, phone, email, parent / guardian and phone, pastor and
+    (`dtsOoPickHtml_`, Nov 2026: "only show the DTS staff and also be able to type in the name") — GPDTS's own
+    people as chips (`dtsTeamStaff_`: main ministry GPDTS, GPDTS among their other ministries, or leading it;
+    `[data-dtsoo]`) and a box to type anyone else (`#dtsStuOOName` / `#dtsStuOOSave`; a typed name matching
+    someone in the app saves as that person). Stored as `dts.oneOnOne` (a campus staff id) or
+    `dts.oneOnOneName` (typed); setting one clears the other (`dtsStudentSave {oneOnOne | oneOnOneName}`). Then sex, date of birth, phone, email, parent / guardian and phone, pastor and
     phone, church — from their portal answers (`portal`, only these fields, never health or testimony) unless
     the school changed one (`dts.profile`, only what differs is kept; the portal answers are never written);
     **Events** (title, date, end, notes); **School policy** — one per campus, `DTS_POLICY_DEFAULT` until edited,

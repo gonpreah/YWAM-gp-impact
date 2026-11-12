@@ -4762,3 +4762,33 @@ The staff side of the portal (☰ → Import applications): bringing in applicat
 | Delete this resource? | លុបធនធាននេះ? |
 
 My Ministry → GPDTS → Database. "1-on-1" is kept as written, as on the Mentorship page. The school policy itself is data the DTS team writes (English for now), not a string here.
+
+## 95. GPDTS → Database home (the tiles)
+
+| English | Khmer (draft) |
+|---|---|
+| Edit {school} | កែ {school} |
+| No topics yet | មិនទាន់មានប្រធានបទ |
+| {n} need a speaker | {n} ត្រូវការវាគ្មិន |
+| {n} topics · every one has a speaker | ប្រធានបទ {n} · ទាំងអស់មានវាគ្មិនហើយ |
+| No applications yet | មិនទាន់មានពាក្យសុំ |
+| {n} here now | {n} នៅទីនេះឥឡូវនេះ |
+| Next: {what} · {when} | បន្ទាប់៖ {what} · {when} |
+| Nothing coming up | មិនមានអ្វីខាងមុខទេ |
+| No teams yet | មិនទាន់មានក្រុម |
+| {n} still to do | {n} នៅត្រូវធ្វើ |
+| All done | រួចរាល់ទាំងអស់ |
+| {n} saved | បានរក្សាទុក {n} |
+| {n} rules | ច្បាប់ {n} |
+
+The one line under each tile on the Database's home page, and "Edit {school}" in the school picker. Short labels: keep them short.
+
+## 96. GPDTS → a student's 1-on-1 (GPDTS people, or a typed name)
+
+| English | Khmer (draft) |
+|---|---|
+| Nobody is on GPDTS in the app yet — type a name below. | មិនទាន់មាននរណាម្នាក់នៅ GPDTS ក្នុងកម្មវិធីនៅឡើយទេ — សូមវាយឈ្មោះខាងក្រោម។ |
+| Someone else? Type their name | អ្នកផ្សេង? វាយឈ្មោះរបស់ពួកគេ |
+| Type their name first. | សូមវាយឈ្មោះរបស់ពួកគេជាមុនសិន។ |
+
+On a student's profile in GPDTS → Database → Students: GPDTS's own people as chips, and a box to type anyone else's name.
