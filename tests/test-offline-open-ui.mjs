@@ -138,6 +138,31 @@ await page.reload({ waitUntil: 'load' }); await home();
 await page.evaluate(() => { sessionStorage.setItem('loggedOut', '1'); logout(); });
 ok('logging out deletes the copy', await page.evaluate(() => localStorage.getItem('gp-boot-cache') === null));
 
+/* ---------- 7. a phone with no room for the new copy keeps no old one ---------- */
+await page.evaluate(() => {
+  sessionStorage.removeItem('loggedOut');
+  localStorage.setItem('gp-staff', JSON.stringify({ user: 'sreilea', pin: '1234' }));
+  const old = { user: 'sreilea', at: '2026-10-12T08:27:00.000Z', d: { ok: true, staff: { id: 's1', name: 'Sreilea (old copy)' } } };
+  localStorage.setItem('gp-boot-cache', JSON.stringify(old));
+  sessionStorage.setItem('noRoom', '1');
+});
+await page.addInitScript(() => {
+  if (!sessionStorage.getItem('noRoom')) return;
+  const set = Storage.prototype.setItem;
+  Storage.prototype.setItem = function (k, v) {
+    if (k === 'gp-boot-cache') throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+    return set.call(this, k, v);
+  };
+});
+await page.reload({ waitUntil: 'load' }); await home(); await page.waitForTimeout(800);
+ok('online with no room, the fresh page still shows', /Sreilea/.test(await mainText()) && !(await page.$('#offlineBanner')));
+ok('… and the old copy is gone, not left to show later', await page.evaluate(() => localStorage.getItem('gp-boot-cache') === null));
+DOWN = true; await ctx.setOffline(true);
+await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1500);
+const offTxt = await page.$eval('body', e => e.innerText);
+ok('offline afterwards, no 12 October page is shown', !/old copy/.test(offTxt) && !(await page.$('#offlineBanner')), offTxt.slice(0, 120).replace(/\s+/g, ' '));
+DOWN = false; await ctx.setOffline(false);
+
 ok('no page errors', errors.length === 0, errors.join(' | '));
 await browser.close(); srv.close();
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

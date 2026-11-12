@@ -189,7 +189,9 @@ const TICKED_TODAY = thisWk === NOW;
   ok('Times a week on a picked-days habit starts at 3 and drops the days', /3 times a week/.test(await text(page, '.habitPick.on:has([data-hpick="workout"]) .hpSched')) && await page.evaluate(() => myHabits()[1].perWeek === 3 && !myHabits()[1].days));
   await page.click('[data-hpdays="workout|custom"]'); await page.waitForTimeout(200);
   ok('… and Pick days takes it back, days again', await page.evaluate(() => !myHabits()[1].perWeek && myHabits()[1].days.length === 3));
-  await page.click('[data-hpday="workout|' + OTHER + '"]'); await page.waitForTimeout(100); await page.click('[data-hpday="workout|' + ((OTHER + 2) % 7) + '"]'); await page.waitForTimeout(100); await page.click('[data-hpday="workout|' + ((OTHER + 4) % 7) + '"]'); await page.waitForTimeout(100);
+  /* Pick days starts at Mon, Wed, Fri; add Sat, Sun and Tue. Days that move with today could make
+     exactly Mon–Fri (on a Saturday they did), which the picker rightly shows as Weekdays, hiding the days. */
+  for (const d of [6, 0, 2]) { await page.click('[data-hpday="workout|' + d + '"]'); await page.waitForTimeout(100); }
   await page.evaluate(d => { S.habits = myHabits().map(h => h.id === 'workout' ? { id: 'workout', mentorVisible: true, days: [d] } : h); render(); }, DOW); await page.waitForTimeout(200);
   await page.click('[data-hpdays="bible|weekdays"]'); await page.waitForTimeout(200);
   ok('Weekdays sets Monday to Friday', /Weekdays/.test(await text(page, '.habitPick.on:has([data-hpick="bible"]) .hpSched')) && await page.evaluate(() => JSON.stringify(myHabits()[0].days) === '[1,2,3,4,5]'));
@@ -224,6 +226,10 @@ const TICKED_TODAY = thisWk === NOW;
 
 /* ---------- 3. marking an earlier day (Andrew: "for those who forgot to click the button") ---------- */
 {
+  /* Bible reading back to every day: the picker above set it to weekdays, and the
+     checks below expect it three days ago and yesterday — which are a weekend day
+     whenever today is Sunday to Wednesday. */
+  mem.staff[0].habits = mem.staff[0].habits.map(h => h.id === 'bible' ? { id: 'bible', mentorVisible: h.mentorVisible } : h);
   const ctx = await browser.newContext({ ...devices['iPhone 13'], timezoneId: 'Asia/Phnom_Penh' });
   const page = await ctx.newPage();
   page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));

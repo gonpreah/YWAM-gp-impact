@@ -519,12 +519,17 @@ function count(rows, f){ var n=0; rows.forEach(function(r){ if(f(r)) n++; }); re
    ministry numbers) still queue; the rest say they could not save. Back online,
    the page boots again by itself and the line goes. */
 var GP_BOOT_CACHE = 'gp-boot-cache', GP_BOOT_CACHE_MAX = 3000000;
+/* A copy that can't be replaced must not stay behind: a phone that ran out of
+   room went on showing an 11-day-old copy as "your page as it was" (Uriah, Oct
+   2026). So the old one goes first — that also frees its room for the new one —
+   and if the new one still won't fit, there is no copy rather than a stale one. */
 function gpBootCacheSave_(d){
+  lsDel(GP_BOOT_CACHE);
   try {
     var txt = JSON.stringify({ user:S.auth.user, at:new Date().toISOString(), d:d });
-    if(txt.length > GP_BOOT_CACHE_MAX) { lsDel(GP_BOOT_CACHE); return; }   // too big to keep: keep none rather than a stale one
-    lsSet(GP_BOOT_CACHE, txt);
-  } catch(e){}
+    if(txt.length > GP_BOOT_CACHE_MAX) return;   // too big to keep
+    localStorage.setItem(GP_BOOT_CACHE, txt);
+  } catch(e){ lsDel(GP_BOOT_CACHE); }
 }
 function gpBootCacheLoad_(user){
   try {
@@ -766,7 +771,7 @@ function afterLogin(){
    it: a remembered session and a fresh login. */
 function applyBoot(d, fromCache){
   if(d && d.googleId!==undefined){ _ggl.cfg={ google:d.googleId||'' }; _ggl.asked=true; }   // the site's Google client, for Continue with Google
-  if(!fromCache){ S.offlineSince = null; if(!S.student) gpBootCacheSave_(d); gpMarkSeen_(); }
+  if(!fromCache){ S.offlineSince = null; if(!S.student) gpBootCacheSave_(d); gpMarkSeen_(); setTimeout(function(){ if(typeof gpThumbBackfill_==='function') gpThumbBackfill_(); }, 1500); }
   S.roster = d.roster || [];
   S.logs = d.logs || [];
   adoptHabits(d.habits);
