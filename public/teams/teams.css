@@ -2778,6 +2778,15 @@ details.dtsPhase[open] > summary .dtsPhaseName::before { content:'▾ '; }
 .dtsKv .kv b { color:var(--muted); font-weight:600; }
 .dtsKv .kv span { overflow-wrap:anywhere; }
 .dtsOneOnOne { background:var(--goodSoft); border-radius:12px; padding:4px 12px 12px; margin:0 0 10px; }
+.dtsOoHead { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:4px 10px; padding-top:8px; }
+.dtsOoHead .f { margin:0; }
+.dtsOoNow { font-size:14px; }
+.dtsOoChips { margin:8px 0 6px; }
+.dtsOoChips .chip { cursor:pointer; font-family:inherit; }
+.dtsOoChips .chip.on { background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
+.dtsOoType { display:flex; gap:8px; align-items:center; }
+.dtsOoType input { flex:1 1 auto; min-width:0; }
+.dtsOoType .btn { margin:0; width:auto; flex:0 0 auto; }
 .dtsPick { border:1px solid var(--border); border-radius:10px; padding:0 10px; }
 .dtsPick summary { cursor:pointer; padding:9px 0; font-size:14px; overflow-wrap:anywhere; }
 .dtsPickList { max-height:260px; overflow-y:auto; padding-bottom:6px; }

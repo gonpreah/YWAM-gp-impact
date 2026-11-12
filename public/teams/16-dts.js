@@ -455,7 +455,7 @@ function dtsStudentsHtml_(d, sch){
   groups.forEach(function(g){
     var rows=list.filter(function(x){ return x.column===g[0]; }); if(!rows.length) return;
     h+='<div class="dtsGroupH">'+g[1]+' '+esc(t(DTS_COL_WORD[g[0]]))+' · '+rows.length+'</div>'+rows.map(function(x){
-      var p=dtsStuVal_(x), oo=x.oneOnOne ? dtsStaffName_(x.oneOnOne) : '';
+      var p=dtsStuVal_(x), oo=dtsOoName_(x);
       var tick=g[0]==='arrived' ? '<label class="dtsTick"><input type="checkbox" data-dtssel="'+esc(x.id)+'"'+(sel[x.id]?' checked':'')+' aria-label="'+esc(x.name)+'"></label>' : '';
       return '<div class="dtsStu'+(x.graduated?' grad':'')+'" data-dtsstu="'+esc(x.id)+'">'+tick+'<button class="dtsStuOpen" data-dtsstuopen="'+esc(x.id)+'"><b>'+esc(x.name)+'</b><span class="rowSub">'+
         esc([dtsSexWord_(p.sex), x.audience==='khmer' ? t('Khmer') : (x.country||t('International')), oo ? gpT('1-on-1: {name}',{name:oo}) : t('No 1-on-1 yet')].filter(Boolean).join(' · '))+'</span>'+
@@ -470,6 +470,25 @@ function dtsStudentsHtml_(d, sch){
       '<button class="btn small ghost" data-dtsplace="'+esc(x.id)+'">'+esc(gpT('Put in {school}',{school:dtsSchoolName_(sch)}))+'</button></div>'; }).join('')+'</details>';
   return h+'</div>';
 }
+/* a student's 1-on-1: GPDTS's own people to tap (its staff, anyone with it as another ministry, its
+   leaders — Nov 2026: "only show the DTS staff"), or any name typed in ("and also be able to type in the name") */
+function dtsTeamStaff_(){
+  var min=(S.dts && S.dts.ministry)||'GPDTS', key='Leadership Development|'+min;
+  return dtsStaff_().filter(function(r){
+    return (r.dept==='Leadership Development' && r.ministry===min) || (r.ministries||[]).indexOf(key)>-1 || (r.leads||[]).indexOf(key)>-1;
+  });
+}
+function dtsOoName_(x){ return x ? (x.oneOnOne ? dtsStaffName_(x.oneOnOne) : (x.oneOnOneName||'')) : ''; }
+function dtsOoPickHtml_(x){
+  var cur=dtsOoName_(x), team=dtsTeamStaff_();
+  var h='<div class="dtsOneOnOne" id="dtsStuOO"><div class="dtsOoHead"><span class="f">🤝 '+esc(t('Their 1-on-1'))+'</span>'+
+    (cur ? '<span class="dtsOoNow"><b>'+esc(cur)+'</b> <button class="linkbtn inline" id="dtsOoClear">'+esc(t('Remove'))+'</button></span>' : '<span class="hint">'+esc(t('No 1-on-1 yet'))+'</span>')+'</div>';
+  h+= team.length ? '<div class="chips dtsOoChips">'+team.map(function(r){ return '<button class="chip'+(x.oneOnOne===r.id?' on':'')+'" data-dtsoo="'+esc(r.id)+'">'+esc(r.name)+'</button>'; }).join('')+'</div>'
+    : '<p class="hint" style="margin:4px 0">'+esc(t('Nobody is on GPDTS in the app yet — type a name below.'))+'</p>';
+  h+='<div class="dtsOoType"><input type="text" id="dtsStuOOName" maxlength="120" placeholder="'+esc(t('Someone else? Type their name'))+'" value="'+esc(S.dtsOoType||'')+'">'+
+    '<button class="btn small" id="dtsStuOOSave"'+(S.dtsBusy?' disabled':'')+'>'+esc(t('Save'))+'</button></div></div>';
+  return h;
+}
 function dtsSexWord_(v){ v=String(v||'').toLowerCase(); return /female|ស្រី/.test(v) ? t('Female') : /male|ប្រុស/.test(v) ? t('Male') : ''; }
 /* what the school has for a student: what the team typed, else what they wrote in the portal */
 function dtsStuVal_(x){ var o={}, pr=(x && x.profile)||{}, po=(x && x.portal)||{}; ['sex','dob','phone','email','guardianName','guardianPhone','pastorName','pastorPhone','church','notes'].forEach(function(k){ o[k]=pr[k]||po[k]||''; }); return o; }
@@ -481,7 +500,7 @@ function dtsStuHtml_(x, sch){
   var v=dtsStuVal_(x), ed=S.dtsStuEdit;
   var h='<div class="card" id="dtsStuCard">'+back+'<h2 style="margin:8px 0 2px">'+esc(x.name)+'</h2><p class="sub" style="margin:0 0 10px">'+
     esc([t(DTS_COL_WORD[x.column]||x.column), x.applied ? gpT('Applied {date}',{date:fmtDayShort_(x.applied)}) : '', x.audience==='khmer' ? t('Khmer') : (x.country||'')].filter(Boolean).join(' · '))+'</p>'+
-    '<div class="dtsOneOnOne" id="dtsStuOO"><label class="f" for="dtsStuOOSel">🤝 '+esc(t('Their 1-on-1'))+'</label>'+dtsStaffSelectHtml_('dtsStuOOSel', x.oneOnOne, '')+'</div>';
+    dtsOoPickHtml_(x);
   if(ed){
     h+='<div id="dtsStuForm">'+DTS_STU_FIELDS.map(function(f){
       return '<label class="f" for="dsp_'+f[0]+'">'+esc(t(f[1]))+'</label><input type="'+(f[0]==='email'?'email':f[0]==='dob'?'text':'text')+'" id="dsp_'+f[0]+'" data-dsp="'+f[0]+'" maxlength="200" value="'+esc(ed[f[0]]||'')+'"'+(x.portal[f[0]] ? ' placeholder="'+esc(x.portal[f[0]])+'"' : '')+'>';
@@ -733,7 +752,15 @@ function bindDtsDb_(){
     /* only what differs from the portal is kept, so a later change there still shows */
     var pr={}; Object.keys(ed).forEach(function(k){ var v=String(ed[k]||'').trim(); if(v && v!==String((x.portal||{})[k]||'').trim()) pr[k]=v; });
     dtsStuSave_(x.id, { profile:pr }); });
-  var oo=document.getElementById('dtsStuOOSel'); if(oo) oo.onchange=function(){ dtsStuSave_(S.dtsStu, { oneOnOne:oo.value }, oo.value ? gpT('{name} is their 1-on-1',{name:dtsStaffName_(oo.value)}) : t('Saved')); };
+  all('[data-dtsoo]', function(b){ var id=b.getAttribute('data-dtsoo'); S.dtsOoType=''; dtsStuSave_(S.dtsStu, { oneOnOne:id }, gpT('{name} is their 1-on-1',{name:dtsStaffName_(id)})); });
+  on('dtsOoClear', function(){ S.dtsOoType=''; dtsStuSave_(S.dtsStu, { oneOnOne:'' }, t('Saved')); });
+  var ooIn=document.getElementById('dtsStuOOName');
+  var ooSave=function(){ var nm=String((ooIn && ooIn.value)||'').trim(); if(!nm){ showMsg(t('Type their name first.')); return; }
+    /* a typed name that is one of the app's people is saved as that person */
+    var hit=dtsStaff_().filter(function(r){ return String(r.name).trim().toLowerCase()===nm.toLowerCase(); })[0];
+    S.dtsOoType=''; dtsStuSave_(S.dtsStu, hit ? { oneOnOne:hit.id } : { oneOnOneName:nm }, gpT('{name} is their 1-on-1',{name:hit ? hit.name : nm})); };
+  if(ooIn){ ooIn.oninput=function(){ S.dtsOoType=ooIn.value; }; ooIn.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); ooSave(); } }; }
+  on('dtsStuOOSave', ooSave);
   var ss=document.getElementById('dtsStuSchool'); if(ss) ss.onchange=function(){ if(ss.value) dtsStuSave_(S.dtsStu, { schoolId:ss.value }); };
   all('[data-dtsplace]', function(b){ dtsStuSave_(b.getAttribute('data-dtsplace'), { schoolId:S.dtsSchool }); });
   // events

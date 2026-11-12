@@ -40,6 +40,8 @@ let DB = { schools: [{ id: 'sc1', year: NEXTY, name: 'January DTS', from: NEXTY 
   policy: '1. Come to class every day and on time\n* You may not miss more than 2 days per week\n2. Be On Time\n* Arrive on time', policyIsDefault: true };
 const dbSaves = [], stuSaves = [];
 const TWO = { id: 'st_two', name: 'Tia Two', username: 'tia', campus: 'siemreap', dept: 'Leadership Development', ministry: 'GPDTS' };
+const CAFE = { id: 'st_cafe', name: 'Cal Fay', username: 'cal', campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe' };
+const HELPER = { id: 'st_help', name: 'Hana Helper', username: 'hana', campus: 'siemreap', dept: 'Skills Training', ministry: 'Hospitality', ministries: ['Leadership Development|GPDTS'] };
 const marks = [], lectSaves = [], outSaves = [], pastSaves = [], toStaff = [];
 const board = () => ({
   ok: true, campus: 'siemreap', ministry: 'GPDTS', today: TODAY, portal: true,
@@ -63,7 +65,7 @@ const p = await page();
 await p.route('**/.netlify/functions/api', r => {
   const q = JSON.parse(r.request().postData() || '{}');
   let o = { ok: true };
-  if (q.fn === 'getMyBoot') o = { ok: true, staff: ME, profile: { email: 'x@example.com' }, roster: [ME, TWO], logs: [], habits: null, mentees: [], mentorRequests: [], goals: [], checkins: [],
+  if (q.fn === 'getMyBoot') o = { ok: true, staff: ME, profile: { email: 'x@example.com' }, roster: [ME, TWO, CAFE, HELPER], logs: [], habits: null, mentees: [], mentorRequests: [], goals: [], checkins: [],
     ministry: { ok: true, campus: 'siemreap', dept: 'Leadership Development', ministry: 'GPDTS', entries: { 'Students Applied': { '1': 2 } }, prev: {}, daily: {} },
     trips: { ok: true, trips: [], totals: {}, ptoCap: 30 }, tripRequests: [], oneOnOnes: [], base: { leader: false, entries: { siemreap: {} }, okrs: [], survey: [], roster: [] } };
   else if (q.fn === 'dtsBoard') o = board();
@@ -74,7 +76,7 @@ await p.route('**/.netlify/functions/api', r => {
     else { const id = rec.id || kind + (DB[key].length + 1); DB = { ...DB, [key]: DB[key].filter(x => x.id !== id).concat([{ ...rec, id }]) }; o = { ok: true, id, db: DB }; }
   } else if (q.fn === 'dtsStudentSave') {
     const [id, pp] = q.args.slice(2); stuSaves.push([id, pp]);
-    const i = STUDS.findIndex(x => x.id === id); STUDS[i] = { ...STUDS[i], ...(pp.oneOnOne !== undefined ? { oneOnOne: pp.oneOnOne } : {}), ...(pp.schoolId ? { schoolId: pp.schoolId } : {}), ...(pp.profile ? { profile: pp.profile } : {}) };
+    const i = STUDS.findIndex(x => x.id === id); STUDS[i] = { ...STUDS[i], ...(pp.oneOnOne !== undefined ? { oneOnOne: pp.oneOnOne, oneOnOneName: '' } : {}), ...(pp.oneOnOneName !== undefined ? { oneOnOne: '', oneOnOneName: pp.oneOnOneName } : {}), ...(pp.schoolId ? { schoolId: pp.schoolId } : {}), ...(pp.profile ? { profile: pp.profile } : {}) };
     o = { ok: true, student: STUDS[i] };
   } else if (q.fn === 'dtsMark') {
     marks.push(q.args.slice(2));
@@ -151,12 +153,17 @@ ok('a graduate marked potential staff starts their staff application', toStaff.l
 await p.click('[data-dtsstuopen="c_ap"]'); await p.waitForTimeout(300);
 const prof = await p.$eval('#dtsStuCard', e => e.textContent);
 ok('a student’s profile: sex, phone, parent and pastor phone, email — from the portal', /Female/.test(prof) && /012 000 111/.test(prof) && /012 000 222/.test(prof) && /012 000 333/.test(prof) && /chenda@example.org/.test(prof));
-ok('their 1-on-1 at the top', !!(await p.$('#dtsStuOO #dtsStuOOSel')) && (await p.$eval('#dtsStuCard', e => [...e.children].findIndex(c => c.id === 'dtsStuOO'))) < (await p.$eval('#dtsStuCard', e => [...e.children].findIndex(c => c.classList.contains('dtsKv')))));
-await p.selectOption('#dtsStuOOSel', 'st_two'); await p.waitForTimeout(400);
-ok('picking their 1-on-1 saves it', stuSaves.length === 1 && stuSaves[0][0] === 'c_ap' && stuSaves[0][1].oneOnOne === 'st_two');
+ok('their 1-on-1 at the top', !!(await p.$('#dtsStuOO [data-dtsoo]')) && (await p.$eval('#dtsStuCard', e => [...e.children].findIndex(c => c.id === 'dtsStuOO'))) < (await p.$eval('#dtsStuCard', e => [...e.children].findIndex(c => c.classList.contains('dtsKv')))));
+ok('the 1-on-1 picker offers only GPDTS people — its staff and anyone with it as another ministry — not the rest of the campus', JSON.stringify(await p.$$eval('[data-dtsoo]', b => b.map(x => x.getAttribute('data-dtsoo')).sort())) === JSON.stringify(['st_dee', 'st_help', 'st_two']), JSON.stringify(await p.$$eval('[data-dtsoo]', b => b.map(x => x.textContent))));
+await p.fill('#dtsStuOOName', 'Pastor Visiting'); await p.click('#dtsStuOOSave'); await p.waitForTimeout(400);
+ok('a name can be typed in for someone else', stuSaves.length === 1 && stuSaves[0][1].oneOnOneName === 'Pastor Visiting' && /Pastor Visiting/.test(await p.$eval('#dtsStuOO', e => e.textContent)), JSON.stringify(stuSaves));
+await p.fill('#dtsStuOOName', 'cal fay'); await p.press('#dtsStuOOName', 'Enter'); await p.waitForTimeout(400);
+ok('a typed name that is someone in the app is saved as that person', stuSaves.length === 2 && stuSaves[1][1].oneOnOne === 'st_cafe', JSON.stringify(stuSaves[1]));
+await p.click('[data-dtsoo="st_two"]'); await p.waitForTimeout(400);
+ok('tapping a GPDTS person saves them as the 1-on-1', stuSaves.length === 3 && stuSaves[2][0] === 'c_ap' && stuSaves[2][1].oneOnOne === 'st_two' && await p.$eval('[data-dtsoo="st_two"]', e => e.classList.contains('on')));
 await p.click('#dtsStuEditBtn'); await p.waitForTimeout(200);
 await p.fill('[data-dsp="phone"]', '099 888 777'); await p.click('#dtsStuSave'); await p.waitForTimeout(400);
-ok('editing details keeps only what differs from the portal', stuSaves.length === 2 && JSON.stringify(stuSaves[1][1].profile) === '{"phone":"099 888 777"}', JSON.stringify(stuSaves[1]));
+ok('editing details keeps only what differs from the portal', stuSaves.length === 4 && JSON.stringify(stuSaves[3][1].profile) === '{"phone":"099 888 777"}', JSON.stringify(stuSaves[3]));
 ok('and the profile shows it', /099 888 777/.test(await p.$eval('#dtsStuCard', e => e.textContent)));
 await p.click('#dtsHome'); await p.waitForTimeout(200);
 ok('Back from a student goes to the list, not past it', !!(await p.$('#dtsStudents')));

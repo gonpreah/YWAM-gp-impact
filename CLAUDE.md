@@ -735,7 +735,11 @@ school's home.
     or after the day they applied unless put in another (`dtsSchoolOf_`, `dts.schoolId`); grouped Here now /
     Accepted / Applied / Graduated, select everyone here → Graduated, ⭐ potential staff, the staff application
     (all moved here from This school); a student's profile (`dtsStuHtml_`): **their 1-on-1 at the top**
-    (`dts.oneOnOne`, campus staff), sex, date of birth, phone, email, parent / guardian and phone, pastor and
+    (`dtsOoPickHtml_`, Nov 2026: "only show the DTS staff and also be able to type in the name") — GPDTS's own
+    people as chips (`dtsTeamStaff_`: main ministry GPDTS, GPDTS among their other ministries, or leading it;
+    `[data-dtsoo]`) and a box to type anyone else (`#dtsStuOOName` / `#dtsStuOOSave`; a typed name matching
+    someone in the app saves as that person). Stored as `dts.oneOnOne` (a campus staff id) or
+    `dts.oneOnOneName` (typed); setting one clears the other (`dtsStudentSave {oneOnOne | oneOnOneName}`). Then sex, date of birth, phone, email, parent / guardian and phone, pastor and
     phone, church — from their portal answers (`portal`, only these fields, never health or testimony) unless
     the school changed one (`dts.profile`, only what differs is kept; the portal answers are never written);
     **Events** (title, date, end, notes); **School policy** — one per campus, `DTS_POLICY_DEFAULT` until edited,

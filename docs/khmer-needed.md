@@ -4782,3 +4782,13 @@ My Ministry → GPDTS → Database. "1-on-1" is kept as written, as on the Mento
 | {n} rules | ច្បាប់ {n} |
 
 The one line under each tile on the Database's home page, and "Edit {school}" in the school picker. Short labels: keep them short.
+
+## 96. GPDTS → a student's 1-on-1 (GPDTS people, or a typed name)
+
+| English | Khmer (draft) |
+|---|---|
+| Nobody is on GPDTS in the app yet — type a name below. | មិនទាន់មាននរណាម្នាក់នៅ GPDTS ក្នុងកម្មវិធីនៅឡើយទេ — សូមវាយឈ្មោះខាងក្រោម។ |
+| Someone else? Type their name | អ្នកផ្សេង? វាយឈ្មោះរបស់ពួកគេ |
+| Type their name first. | សូមវាយឈ្មោះរបស់ពួកគេជាមុនសិន។ |
+
+On a student's profile in GPDTS → Database → Students: GPDTS's own people as chips, and a box to type anyone else's name.
