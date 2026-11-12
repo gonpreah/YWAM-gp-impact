@@ -4615,3 +4615,150 @@ The GP app's sign-in screen once Google is on (username and PIN only to connect 
 | Those dates can’t be in the future. | កាលបរិច្ឆេទទាំងនោះមិនអាចជាថ្ងៃអនាគតបានទេ។ |
 
 The card at the top of Finances (the office's Reports and Dashboard tabs, and Campus Leadership's Finances tab). "Liquid assets" is drafted as ទ្រព្យសកម្មរាវ, the accounting term; "reconciled" (the books checked against the bank statement) as ផ្ទៀងផ្ទាត់ — please check both with the Finances office's own words.
+
+## 93. Portal — importing applications from a spreadsheet
+
+| English | Khmer (draft) |
+|---|---|
+| Import applications | នាំចូលពាក្យសុំ |
+| Bring in applications from a spreadsheet — the Google Form the base used before the portal. Each row becomes an application at “Applied”, dated when they sent it. | នាំចូលពាក្យសុំពីតារាង — ពី Google Form ដែលមូលដ្ឋានបានប្រើមុនមាន Portal។ ជួរនីមួយៗក្លាយជាពាក្យសុំមួយនៅដំណាក់កាល “បានដាក់ពាក្យ” ដោយមានកាលបរិច្ឆេទដែលពួកគេបានផ្ញើ។ |
+| Which school | សាលាមួយណា |
+| Where are they from | ពួកគេមកពីណា |
+| The sheet, as a CSV file | តារាង ជាឯកសារ CSV |
+| Google Sheets: File → Download → Comma-separated values (.csv). Numbers: File → Export To → CSV. | Google Sheets៖ File → Download → Comma-separated values (.csv)។ Numbers៖ File → Export To → CSV។ |
+| Match the columns | ផ្គូផ្គងជួរឈរ |
+| Each column of the sheet and the question it fills. A column with no question is kept on the record as a note, as it was written. | ជួរឈរនីមួយៗនៃតារាង និងសំណួរដែលវាបំពេញ។ ជួរឈរដែលគ្មានសំណួរ នឹងរក្សាទុកនៅលើកំណត់ត្រាជាកំណត់ចំណាំ ដូចដែលបានសរសេរ។ |
+| (no heading) | (គ្មានចំណងជើង) |
+| Leave out | មិនដាក់បញ្ចូល |
+| When they applied | ពេលដែលពួកគេដាក់ពាក្យ |
+| Keep as a note | រក្សាទុកជាកំណត់ចំណាំ |
+| Parent or guardian — how they are related | ឪពុកម្តាយ ឬអាណាព្យាបាល — ត្រូវជាអ្វីនឹងគេ |
+| {n} applications to add | ពាក្យសុំ {n} ដែលត្រូវបញ្ចូល |
+| no name — left out | គ្មានឈ្មោះ — មិនដាក់បញ្ចូល |
+| Row {n} | ជួរទី {n} |
+| {n} answers | ចម្លើយ {n} |
+| Anyone already in the portal for this school with the same email or phone is left out, and so is anything imported before. | អ្នកដែលមាននៅក្នុង Portal សម្រាប់សាលានេះរួចហើយ ដោយមានអ៉ីមែល ឬទូរស័ព្ទដូចគ្នា នឹងមិនត្រូវបានដាក់បញ្ចូលទេ ហើយអ្វីដែលបាននាំចូលពីមុនក៏ដូចគ្នាដែរ។ |
+| Importing… | កំពុងនាំចូល… |
+| Import {n} applications | នាំចូលពាក្យសុំ {n} |
+| {n} applications added | បានបញ្ចូលពាក្យសុំ {n} |
+| {n} not added | {n} មិនបានបញ្ចូល |
+| already imported | បាននាំចូលរួចហើយ |
+| same email or phone as {name}’s application | អ៉ីមែល ឬទូរស័ព្ទដូចពាក្យសុំរបស់ {name} |
+| no name | គ្មានឈ្មោះ |
+| could not add | មិនអាចបញ្ចូលបានទេ |
+| They have no portal account yet. If they sign up with the same email, their account takes over the application they already sent. | ពួកគេមិនទាន់មានគណនី Portal នៅឡើយទេ។ ប្រសិនបើពួកគេចុះឈ្មោះដោយអ៉ីមែលដូចគ្នា គណនីរបស់ពួកគេនឹងទទួលយកពាក្យសុំដែលពួកគេបានផ្ញើរួចហើយ។ |
+| Import another sheet | នាំចូលតារាងមួយទៀត |
+| Save the sheet as a CSV file first, then pick that. | សូមរក្សាទុកតារាងជាឯកសារ CSV ជាមុនសិន រួចជ្រើសរើសវា។ |
+| That file has no rows to import. | ឯកសារនោះគ្មានជួរដែលត្រូវនាំចូលទេ។ |
+| Could not read that file. | មិនអាចអានឯកសារនោះបានទេ។ |
+| You can’t add applications for this school. | អ្នកមិនអាចបញ្ចូលពាក្យសុំសម្រាប់សាលានេះបានទេ។ |
+| That is too many rows at once — split the sheet. | ជួរច្រើនពេកក្នុងពេលតែមួយ — សូមបំបែកតារាង។ |
+| Could not import — try again. | មិនអាចនាំចូលបានទេ — សូមព្យាយាមម្តងទៀត។ |
+| Also in the imported sheet | មានផងដែរនៅក្នុងតារាងដែលបាននាំចូល |
+| Imported from {file} on {when}. No portal account yet — if they sign up with the same email, their account takes over this application. | បាននាំចូលពី {file} នៅ {when}។ មិនទាន់មានគណនី Portal នៅឡើយ — ប្រសិនបើពួកគេចុះឈ្មោះដោយអ៉ីមែលដូចគ្នា គណនីរបស់ពួកគេនឹងទទួលយកពាក្យសុំនេះ។ |
+| a spreadsheet | តារាងមួយ |
+
+The staff side of the portal (☰ → Import applications): bringing in applications from the Google Form sheet the base used before the portal. Staff-only screen. "Import" is drafted as នាំចូល.
+
+## 94. GPDTS → Database (schools, speaker schedule, students, events, policy, outreach teams, responsibilities, resources)
+
+| English | Khmer (draft) |
+|---|---|
+| Database | មូលដ្ឋានទិន្នន័យ |
+| Add a topic | បន្ថែមប្រធានបទ |
+| Who is finding the speaker | អ្នកដែលកំពុងរកវាគ្មិន |
+| MC | អ្នកសម្របសម្រួល (MC) |
+| New school | សាលាថ្មី |
+| Start with the school: its year and name, like 2027 · January DTS. Its lectures, students, events, outreach, responsibilities and resources all sit under it. | ចាប់ផ្តើមដោយសាលា៖ ឆ្នាំ និងឈ្មោះរបស់វា ដូចជា 2027 · DTS ខែមករា។ មេរៀន សិស្ស ព្រឹត្តិការណ៍ ការចុះផ្សព្វផ្សាយ ការទទួលខុសត្រូវ និងធនធានរបស់វា ទាំងអស់ស្ថិតនៅក្រោមវា។ |
+| Add the school | បន្ថែមសាលា |
+| e.g. January DTS | ឧ. DTS ខែមករា |
+| Starts | ចាប់ផ្តើម |
+| Ends | បញ្ចប់ |
+| Students who applied before it starts are put in it by themselves — you can move anyone. | សិស្សដែលបានដាក់ពាក្យមុនពេលវាចាប់ផ្តើម ត្រូវបានដាក់ក្នុងវាដោយស្វ័យប្រវត្តិ — អ្នកអាចផ្លាស់ប្តូរនរណាម្នាក់បាន។ |
+| Speaker schedule | កាលវិភាគវាគ្មិន |
+| All ({n}) | ទាំងអស់ ({n}) |
+| Speaker needed ({n}) | ត្រូវការវាគ្មិន ({n}) |
+| Every topic has a speaker. | ប្រធានបទនីមួយៗមានវាគ្មិនហើយ។ |
+| No topics yet. Add each week’s topic — and who is finding its speaker, if there isn’t one yet. | មិនទាន់មានប្រធានបទទេ។ បន្ថែមប្រធានបទប្រចាំសប្តាហ៍នីមួយៗ — និងអ្នកដែលកំពុងរកវាគ្មិន បើមិនទាន់មាន។ |
+| Dates | កាលបរិច្ឆេទ |
+| Dates to come | កាលបរិច្ឆេទនឹងមកដល់ |
+| Speaker needed | ត្រូវការវាគ្មិន |
+| {name} is finding one | {name} កំពុងរកម្នាក់ |
+| Nobody is finding one yet | មិនទាន់មាននរណាម្នាក់កំពុងរកទេ |
+| Tap a row to change it. ✅ the speaker has said yes; ⏳ not yet. | ចុចលើជួរដើម្បីកែប្រែ។ ✅ វាគ្មិនបានយល់ព្រមហើយ; ⏳ មិនទាន់។ |
+| Students — {school} | សិស្ស — {school} |
+| From the portal’s DTS applications. Tap a student for their details and their 1-on-1. | ពីពាក្យសុំ DTS ក្នុង Portal។ ចុចលើសិស្សម្នាក់ ដើម្បីមើលព័ត៌មានលម្អិត និងអ្នកជួបផ្ទាល់ (1-on-1) របស់ពួកគេ។ |
+| No applications for this school yet. | មិនទាន់មានពាក្យសុំសម្រាប់សាលានេះទេ។ |
+| Select everyone here | ជ្រើសរើសអ្នកដែលនៅទីនេះទាំងអស់ |
+| 1-on-1: {name} | 1-on-1៖ {name} |
+| No 1-on-1 yet | មិនទាន់មាន 1-on-1 |
+| Not in a school yet ({n}) | មិនទាន់នៅក្នុងសាលាណាមួយ ({n}) |
+| Put in {school} | ដាក់ក្នុង {school} |
+| All students | សិស្សទាំងអស់ |
+| Their 1-on-1 | អ្នក 1-on-1 របស់ពួកគេ |
+| From what they wrote in the portal, unless the school changed it here. | ពីអ្វីដែលពួកគេបានសរសេរក្នុង Portal លើកលែងតែសាលាបានកែប្រែវានៅទីនេះ។ |
+| Open in the portal | បើកក្នុង Portal |
+| School | សាលា |
+| — not in a school yet — | — មិនទាន់នៅក្នុងសាលាណាមួយ — |
+| Add an event | បន្ថែមព្រឹត្តិការណ៍ |
+| Important dates | កាលបរិច្ឆេទសំខាន់ៗ |
+| No events coming up. Add the school’s important dates — arrival, graduation, outreach send-off. | មិនមានព្រឹត្តិការណ៍ខាងមុខទេ។ បន្ថែមកាលបរិច្ឆេទសំខាន់ៗរបស់សាលា — ការមកដល់ ការបញ្ចប់ការសិក្សា ការបញ្ជូនទៅចុះផ្សព្វផ្សាយ។ |
+| Edit the event | កែព្រឹត្តិការណ៍ |
+| e.g. Students arrive, Graduation | ឧ. សិស្សមកដល់ ការបញ្ចប់ការសិក្សា |
+| School policy | គោលការណ៍សាលា |
+| A number starts a heading (“3. Participation”); a line starting with * is a point under it. | លេខចាប់ផ្តើមចំណងជើង (“3. ការចូលរួម”); បន្ទាត់ដែលចាប់ផ្តើមដោយ * គឺជាចំណុចនៅក្រោមវា។ |
+| For every DTS on this campus. | សម្រាប់ DTS ទាំងអស់នៅមូលដ្ឋាននេះ។ |
+| Edit the policy | កែគោលការណ៍ |
+| Add an outreach team | បន្ថែមក្រុមចុះផ្សព្វផ្សាយ |
+| Outreach teams — {school} | ក្រុមចុះផ្សព្វផ្សាយ — {school} |
+| No teams yet. Add each team: where the short and the long outreach go, when, who leads, which students — then its numbers week by week. | មិនទាន់មានក្រុមទេ។ បន្ថែមក្រុមនីមួយៗ៖ ការចុះផ្សព្វផ្សាយខ្លី និងវែងទៅទីណា ពេលណា នរណាដឹកនាំ សិស្សណាខ្លះ — បន្ទាប់មកលេខរបស់វាប្រចាំសប្តាហ៍។ |
+| {n} students | សិស្ស {n} នាក់ |
+| not set yet | មិនទាន់កំណត់ |
+| Students for {year} | សិស្សសម្រាប់ឆ្នាំ {year} |
+| {n} not on a team yet | {n} នាក់មិនទាន់នៅក្នុងក្រុម |
+| Short | ខ្លី |
+| Long | វែង |
+| Not on a team yet | មិនទាន់នៅក្នុងក្រុម |
+| Earlier outreach records ({n}) | កំណត់ត្រាចុះផ្សព្វផ្សាយមុនៗ ({n}) |
+| {n} weeks | {n} សប្តាហ៍ |
+| e.g. Mondulkiri | ឧ. មណ្ឌលគិរី |
+| Leaders | អ្នកដឹកនាំ |
+| Pick the leaders | ជ្រើសរើសអ្នកដឹកនាំ |
+| Other leaders, not on staff (optional) | អ្នកដឹកនាំផ្សេងទៀត ដែលមិនមែនជាបុគ្គលិក (ស្រេចចិត្ត) |
+| Students ({n}) | សិស្ស ({n}) |
+| Pick the students | ជ្រើសរើសសិស្ស |
+| on {team} | នៅក្នុង {team} |
+| Same leaders and students as the short outreach | អ្នកដឹកនាំ និងសិស្សដូចការចុះផ្សព្វផ្សាយខ្លី |
+| Week by week | ប្រចាំសប្តាហ៍ |
+| Set the dates and these numbers count in GPDTS’s totals week by week. | កំណត់កាលបរិច្ឆេទ ហើយលេខទាំងនេះនឹងរាប់បញ្ចូលក្នុងសរុបរបស់ GPDTS ប្រចាំសប្តាហ៍។ |
+| All teams | ក្រុមទាំងអស់ |
+| e.g. Team Mondulkiri | ឧ. ក្រុមមណ្ឌលគិរី |
+| Add a responsibility | បន្ថែមការទទួលខុសត្រូវ |
+| Edit the responsibility | កែការទទួលខុសត្រូវ |
+| Before school | មុនពេលសាលាចាប់ផ្តើម |
+| During school | អំឡុងពេលសាលា |
+| e.g. Book the speakers’ rooms | ឧ. កក់បន្ទប់សម្រាប់វាគ្មិន |
+| A short description | ការពិពណ៌នាខ្លី |
+| Who it’s given to | ប្រគល់ឱ្យនរណា |
+| Pick the staff | ជ្រើសរើសបុគ្គលិក |
+| Add a resource | បន្ថែមធនធាន |
+| Nothing here yet. Add the school’s documents and links — the schedule, the curriculum, forms, a shared folder. | មិនទាន់មានអ្វីនៅទីនេះទេ។ បន្ថែមឯកសារ និងតំណភ្ជាប់របស់សាលា — កាលវិភាគ កម្មវិធីសិក្សា ទម្រង់បែបបទ ថតឯកសាររួម។ |
+| Edit the resource | កែធនធាន |
+| Link (optional) | តំណភ្ជាប់ (ស្រេចចិត្ត) |
+| A link starts with https:// | តំណភ្ជាប់ចាប់ផ្តើមដោយ https:// |
+| This school still has things in it — move or delete them first. | សាលានេះនៅតែមានអ្វីៗនៅក្នុងវា — សូមផ្លាស់ទី ឬលុបពួកវាជាមុនសិន។ |
+| January DTS | DTS ខែមករា |
+| Give the school a year and a name. | សូមដាក់ឆ្នាំ និងឈ្មោះឱ្យសាលា។ |
+| Delete {school}? | លុប {school}? |
+| {name} is their 1-on-1 | {name} គឺជាអ្នក 1-on-1 របស់ពួកគេ |
+| Give the event a name and a day. | សូមដាក់ឈ្មោះ និងថ្ងៃឱ្យព្រឹត្តិការណ៍។ |
+| Delete this event? | លុបព្រឹត្តិការណ៍នេះ? |
+| The policy can’t be empty. | គោលការណ៍មិនអាចទទេបានទេ។ |
+| Give the team a name. | សូមដាក់ឈ្មោះឱ្យក្រុម។ |
+| Delete this team and its numbers? | លុបក្រុមនេះ និងលេខរបស់វា? |
+| Say what the responsibility is. | សូមប្រាប់ថាការទទួលខុសត្រូវនោះជាអ្វី។ |
+| Delete this responsibility? | លុបការទទួលខុសត្រូវនេះ? |
+| Give it a name. | សូមដាក់ឈ្មោះឱ្យវា។ |
+| Delete this resource? | លុបធនធាននេះ? |
+
+My Ministry → GPDTS → Database. "1-on-1" is kept as written, as on the Mentorship page. The school policy itself is data the DTS team writes (English for now), not a string here.

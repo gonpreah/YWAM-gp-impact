@@ -404,6 +404,14 @@ details.visaHow > summary { padding:12px 14px; font-weight:800; font-size:15px; 
 #callHow .chip { cursor:pointer; }
 .panelFoot { display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:16px; padding-top:12px; border-top:1px solid var(--border); }
 .ansFold { border:1px solid var(--border); border-radius:var(--rSm); margin:0 0 8px; }
+.impMap { display:grid; grid-template-columns:minmax(0,1fr); gap:10px; }
+@media (min-width:900px){ .impMap { grid-template-columns:minmax(0,1fr) minmax(0,1fr); } }
+.impCol { border:1px solid var(--border); border-radius:var(--rSm); padding:10px 12px; min-width:0; }
+.impHead { display:flex; flex-direction:column; gap:2px; margin-bottom:6px; min-width:0; }
+.impHead b { font-size:13px; overflow-wrap:anywhere; }
+.impHead .hint { margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.impCol select { width:100%; }
+.impSkip { margin:6px 0 12px; padding-left:18px; }
 .ansFold > summary { cursor:pointer; padding:9px 12px; font-weight:600; font-size:14px; display:flex; align-items:center; gap:8px; }
 .ansFold > summary .n { margin-left:auto; color:var(--muted); font-weight:600; font-size:12px; }
 .ansFold > .ansSec { padding:0 12px 8px; }
@@ -739,12 +747,12 @@ function render(){
   var v=P.view;
   /* The gate — everything before you are signed in — is the portal's name
      and logo on top and one card underneath; signed in, the bar goes slim. */
-  document.body.classList.toggle('gate', v!=='me' && v!=='crm' && v!=='form' && v!=='forms' && v!=='accounts' && v!=='preview' && v!=='resources' && v!=='team' && v!=='access' && v!=='legal' && v!=='visa');
-  var staffView = P.auth && P.boot && P.boot.role!=='applicant' && (v==='crm'||v==='forms'||v==='accounts'||v==='preview'||v==='resources'||v==='team'||v==='access'||v==='legal'||v==='visa');
+  document.body.classList.toggle('gate', v!=='me' && v!=='crm' && v!=='form' && v!=='forms' && v!=='accounts' && v!=='preview' && v!=='resources' && v!=='team' && v!=='access' && v!=='legal' && v!=='visa' && v!=='import');
+  var staffView = P.auth && P.boot && P.boot.role!=='applicant' && (v==='crm'||v==='forms'||v==='accounts'||v==='preview'||v==='resources'||v==='team'||v==='access'||v==='legal'||v==='visa'||v==='import');
   var applicantTabs = P.auth && P.boot && P.boot.role==='applicant' && v==='me';
   document.body.classList.toggle('wideStaff', !!(staffView && v==='crm'));   // the list and a record side by side want the room
   try { m.innerHTML = (staffView ? staffNavHtml_(v) : applicantTabs ? applicantNavHtml_() : '') + (v==='booting' ? '<p class="sub" style="text-align:center;padding:40px 0">'+esc(t('Loading…'))+'</p>'
-    : v==='register' ? registerHtml_() : v==='choose' ? chooseHtml_() : v==='me' ? meTabHtml_() : v==='crm' ? crmHtml_() : v==='form' ? formHtml_() : v==='forms' ? formsHtml_() : v==='resources' ? resourcesAdminHtml_() : v==='team' ? teamAdminHtml_() : v==='access' ? accessHtml_() : v==='accounts' ? accountsHtml_() : v==='preview' ? previewHtml_()
+    : v==='register' ? registerHtml_() : v==='choose' ? chooseHtml_() : v==='me' ? meTabHtml_() : v==='crm' ? crmHtml_() : v==='form' ? formHtml_() : v==='forms' ? formsHtml_() : v==='resources' ? resourcesAdminHtml_() : v==='team' ? teamAdminHtml_() : v==='access' ? accessHtml_() : v==='accounts' ? accountsHtml_() : v==='import' ? importHtml_() : v==='preview' ? previewHtml_()
     : v==='noaccess' ? noAccessHtml_() : v==='ref' ? refHtml_() : v==='stay' ? stayHtml_() : v==='join' ? joinHtml_() : v==='sign' ? signHtml_() : v==='legal' ? legalAdminHtml_() : v==='visa' ? visaAdminHtml_() : loginHtml_())
     + (P.guideOpen && P.boot && typeof outreachGuideHtml==='function' ? guideOverlayHtml_() : '')
     + (staffView && P.docGallery ? docGalleryHtml_() : '');
@@ -768,7 +776,7 @@ function staffNavHtml_(v){
   var admin=P.boot.role==='portal-admin';
   /* The bar keeps the two everyone uses — home and Applications — and a ☰ menu
      for the rest, in two groups: what staff access has, what admin access adds. */
-  var staffItems=[['preview','toPreview','👁 '+t('View as applicant')],['link','toLink','🔗 '+t('Link for applicants')]];
+  var staffItems=[['preview','toPreview','👁 '+t('View as applicant')],['link','toLink','🔗 '+t('Link for applicants')],['import','toImport','📥 '+t('Import applications')]];
   var adminItems=[['forms','toForms','📝 '+t('Forms')],['accounts','toAccounts','👤 '+t('Accounts')],['team','toTeam','👥 '+t('Our team')],['resources','toResources','📚 '+t('Resources')],['legal','toLegal','✍️ '+t('Legal documents')],['visa','toVisaInfo','🛂 '+t('E-visa info')],['access','toAccess','🔑 '+t('Who has access')]];
   var crmItem=['crm','navCrm','📋 '+t('Applications')];
   var here=[crmItem].concat(staffItems, admin ? adminItems : []).filter(function(x){ return x[0]===v; })[0];
@@ -2267,6 +2275,7 @@ function panelHtml_(c, byId){
   ov+='<label class="f">'+esc(t('Next step'))+'</label><input type="text" id="p_next" value="'+esc(c.nextStep||'')+'"><label class="f">'+esc(t('By'))+'</label><input type="date" id="p_date" value="'+esc(c.nextDate||'')+'">';
   ov+='<button class="btn" id="saveCand"'+(P.busy?' disabled':'')+'>'+esc(P.busy?t('Saving…'):t('Save'))+'</button>';
   if(!c.hasAccount && !c.portal && c.type!=='team') ov+=leadPanelHtml_(c);
+  if(!c.hasAccount && c.portal && c.portal.imported) ov+='<p class="hint" id="impNote" style="margin:10px 0 0">📥 '+esc(gpT('Imported from {file} on {when}. No portal account yet — if they sign up with the same email, their account takes over this application.', {file:c.portal.imported.file||t('a spreadsheet'), when:fmtDate_(c.portal.imported.at)}))+'</p>';
   if(c.fromDts) ov+='<p class="hint" id="fromDts" style="margin:10px 0 0">🎓 '+esc(t('A GPDTS graduate, marked potential staff.'))+
     ((P.boot.applicants||[]).some(function(x){ return x.id===c.fromDts; }) ? ' <button class="linkbtn inline" data-open="'+esc(c.fromDts)+'">'+esc(t('Their DTS record'))+'</button>' : '')+'</p>';
   if(c.type==='staff' || c.type==='volunteer') ov+=gpAddHtml_(c);
@@ -2685,6 +2694,215 @@ function bindAccounts_(){
       showMsg(d && d.err==='not_authorized' ? t('Only a portal admin can delete') : t('Could not delete')); render();
     });
   });
+}
+/* ---- Import applications from a spreadsheet (Nov 2026) ----
+   Applications the base took in a Google Form before the portal (the GP DTS
+   Application sheet) come in here: a CSV of the sheet (Google Sheets: File →
+   Download → CSV; Numbers: File → Export To → CSV) is read on this phone, each
+   column matched to a question of that school's form (the page guesses; staff
+   can change any), a preview, then portalImportApplications. Nothing of the
+   sheet is kept anywhere but the records it makes. */
+function impCsv_(text){
+  text=String(text||'').replace(/^﻿/,'');
+  var rows=[], row=[], cell='', q=false, i=0, ch, sep=',';
+  var firstLine=text.split(/\r?\n/)[0]||''; if(firstLine.split('\t').length>firstLine.split(',').length) sep='\t';
+  for(;i<text.length;i++){
+    ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){ cell+='"'; i++; } else q=false; } else cell+=ch; continue; }
+    if(ch==='"' && cell===''){ q=true; continue; }
+    if(ch===sep){ row.push(cell); cell=''; continue; }
+    if(ch==='\r') continue;
+    if(ch==='\n'){ row.push(cell); rows.push(row); row=[]; cell=''; continue; }
+    cell+=ch;
+  }
+  if(cell!=='' || row.length){ row.push(cell); rows.push(row); }
+  return rows.filter(function(r){ return r.some(function(c){ return String(c).trim(); }); });
+}
+/* the English half of a bilingual heading or answer, as plain words */
+function impWords_(s){
+  return String(s||'').replace(/[ក-៿᧠-᧿​‌‍]/g,' ').toLowerCase()
+    .replace(/your answer/g,' ').replace(/[’'`]/g,' ').replace(/[^a-z0-9]+/g,' ').trim().split(' ').filter(Boolean);
+}
+/* words that say nothing on their own: "Friend's Name" and "Pastor's name" share only these */
+var IMP_WEAK={ s:1, name:1, phone:1, number:1, email:1, the:1, a:1, an:1, of:1, your:1, you:1, do:1, is:1, are:1, what:1, if:1, any:1, to:1, in:1, and:1, or:1, how:1, have:1, for:1, with:1, us:1, tell:1, about:1 };
+function impSim_(a, b){
+  if(!a.length || !b.length) return 0;
+  var A={}, B={}, n=0, strong=false, mine=false, u; a.forEach(function(w){ A[w]=1; if(!IMP_WEAK[w]) mine=true; }); b.forEach(function(w){ B[w]=1; });
+  Object.keys(A).forEach(function(w){ if(B[w]){ n++; if(!IMP_WEAK[w]) strong=true; } });
+  u=Object.keys(A).length+Object.keys(B).length-n;
+  return (mine && !strong ? 0.4 : 1)*n/u;
+}
+function impQuestions_(form){
+  var out=[];
+  /* a question is known by its label and by its id too ("friendName" — its label now says Leader) */
+  ((form&&form.sections)||[]).forEach(function(sec){ (sec.questions||[]).forEach(function(q){
+    if(q.type==='stays' || q.type==='people') return;
+    var w=impWords_(q.label && q.label.en), seen={};
+    w.concat(impWords_(String(q.id).replace(/([a-z])([A-Z])/g,'$1 $2'))).forEach(function(x){ seen[x]=1; });
+    out.push({ q:q, sec:sec.id, words:Object.keys(seen) });
+  }); });
+  return out;
+}
+/* each column's best question, left to right, each question taken once; a
+   question in the same part of the form as the column before gets a nudge
+   ("State" after "City", a second "Phone number" after the guardian's name) */
+function impGuess_(header, form){
+  var qs=impQuestions_(form), used={}, prevSec='', map=[];
+  header.forEach(function(h){
+    var w=impWords_(h);
+    if(!String(h||'').trim()){ map.push(''); return; }
+    if(w.length===1 && w[0]==='timestamp'){ map.push('@time'); return; }
+    var best=null, bs=0;
+    qs.forEach(function(x){
+      if(used[x.q.id]) return;
+      var s=impSim_(w, x.words)+(prevSec && x.sec===prevSec ? 0.3 : 0);
+      if(w.indexOf('khmer')>-1 && w.indexOf('only')>-1 && x.q.id==='khmerName') s=1;
+      if(s>bs){ bs=s; best=x; }
+    });
+    /* "What is their relationship to you?" straight after the parent or guardian is
+       about the guardian — the form has no question for that, so it is kept as a note */
+    if(best && best.q.id==='friendRelation' && prevSec==='guardian'){ map.push('@guardianRel'); return; }
+    if(best && bs>=0.5){ used[best.q.id]=1; prevSec=best.sec; map.push('q:'+best.q.id); return; }
+    map.push('@extra');
+  });
+  return map;
+}
+/* "2026/06/30 7:40:00 PM GMT+7", "6/30/2026 19:40:00" — Cambodia time when no zone is given */
+function impTime_(s){
+  s=String(s||'').trim(); if(!s) return '';
+  var m=s.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})(?:[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?\s*(?:GMT|UTC)?\s*([+-]\d{1,2})?/i), y, mo, d;
+  if(m){ y=+m[1]; mo=+m[2]; d=+m[3]; }
+  else { m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})(?:[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?\s*(?:GMT|UTC)?\s*([+-]\d{1,2})?/i); if(!m) return ''; mo=+m[1]; d=+m[2]; y=+m[3]; }
+  var hh=+(m[4]||0), mi=+(m[5]||0), ss=+(m[6]||0), ap=(m[7]||'').toUpperCase(), off=m[8]!==undefined ? +m[8] : 7;
+  if(ap==='PM' && hh<12) hh+=12; if(ap==='AM' && hh===12) hh=0;
+  if(mo<1||mo>12||d<1||d>31) return '';
+  return new Date(Date.UTC(y, mo-1, d, hh-off, mi, ss)).toISOString();
+}
+/* a Cambodian number that lost its leading 0 in the sheet (12345678 → 012345678) */
+function impPhone_(v){
+  var s=String(v||'').trim().replace(/\.0+$/,''); if(!s) return '';
+  var dg=s.replace(/\D/g,'');
+  if(/^[\d ]+$/.test(s) && dg.length>=8 && dg.length<=9 && dg[0]!=='0' && dg.indexOf('855')!==0) return '0'+dg;
+  return s;
+}
+/* "ប្រុស Male" → Male; "គ្មាន/No" → No — an answer that fits no option is kept as written */
+function impChoice_(q, v){
+  var raw=String(v||'').trim(); if(!raw) return '';
+  var words=impWords_(raw).join(' '), plain=raw.replace(/[​‌‍]/g,''), hit=null;
+  (q.options||[]).forEach(function(o){
+    if(hit) return;
+    var en=impWords_(o.en).join(' ');
+    if(en && (' '+words+' ').indexOf(' '+en+' ')>-1) hit=o;
+  });
+  if(!hit) (q.options||[]).forEach(function(o){ if(!hit && o.km && plain.indexOf(String(o.km).replace(/[​‌‍]/g,''))>-1) hit=o; });
+  return hit ? (hit.en||hit.km) : raw;
+}
+function impHeadLabel_(h){ return String(h||'').split(/\r?\n/).map(function(x){ return x.trim(); }).filter(function(x){ return x && !/^your answer$/i.test(x); }).join(' · '); }
+function impRows_(){
+  var I=P.imp, form=(P.boot.forms||{})[I.school], byId={};
+  impQuestions_(form).forEach(function(x){ byId[x.q.id]=x.q; });
+  return I.rows.map(function(r){
+    var out={ answers:{}, extra:[], submittedAt:'' };
+    I.map.forEach(function(tg, ci){
+      var v=r[ci]; v=v==null ? '' : String(v).trim(); if(!v || !tg) return;
+      if(tg==='@time'){ out.submittedAt=impTime_(v); if(!out.submittedAt) out.extra.push({ label:impHeadLabel_(I.header[ci]), value:v }); return; }
+      if(tg==='@extra'){ out.extra.push({ label:impHeadLabel_(I.header[ci]), value:v }); return; }
+      if(tg==='@guardianRel'){ out.extra.push({ label:t('Parent or guardian — how they are related'), value:v }); return; }
+      var q=byId[tg.slice(2)]; if(!q) return;
+      if(out.answers[q.id]) return;
+      out.answers[q.id]= q.type==='phone' ? impPhone_(v) : (q.type==='choice'||q.type==='yesno') ? impChoice_(q, v) : v;
+    });
+    var a=out.answers;
+    /* first and last name; someone who filled in only one of them has their whole name in the Latin-letters box */
+    out.name=(a.firstName && a.lastName ? a.firstName+' '+a.lastName : '') || a.khmerName || [a.firstName, a.lastName].filter(Boolean).join(' ') || a.name || '';
+    out.email=a.email||''; out.phone=a.phone||'';
+    return out;
+  });
+}
+function importHtml_(){
+  var I=P.imp=P.imp||{ campus:DEFAULT_CAMPUS, school:'dts', country:'Cambodia' };
+  var scope=Array.isArray(P.boot.scope) ? P.boot.scope : null;
+  var schools=APPLY.filter(function(a){ return a.type==='student' && inScope_(a, scope) && offeredAt_(a, I.campus); });
+  var h='<div class="panelHead"><div><h1 style="font-size:28px">'+esc(t('Import applications'))+'</h1><p class="sub">'+esc(t('Bring in applications from a spreadsheet — the Google Form the base used before the portal. Each row becomes an application at “Applied”, dated when they sent it.'))+'</p></div>'+
+    '<button class="btn ghost small" id="toCrm">← '+esc(t('Applications'))+'</button></div>';
+  if(I.result){
+    var R=I.result;
+    h+='<div class="panel" id="impResult"><h2 style="margin-top:0">'+esc(gpT('{n} applications added',{n:R.added.length}))+'</h2>'+
+      (R.added.length ? '<p class="sub">'+R.added.map(function(x){ return '<button class="linkbtn inline" data-impopen="'+esc(x.id)+'">'+esc(x.name)+'</button>'; }).join(' · ')+'</p>' : '')+
+      (R.skipped.length ? '<h3>'+esc(gpT('{n} not added',{n:R.skipped.length}))+'</h3><ul class="impSkip">'+R.skipped.map(function(s){
+        var why=s.why==='imported' ? t('already imported') : s.why==='exists' ? gpT('same email or phone as {name}’s application',{name:s.with||''}) : s.why==='no_name' ? t('no name') : t('could not add');
+        return '<li>'+esc(gpT('Row {n}',{n:s.row}))+(s.name?' · <b>'+esc(s.name)+'</b>':'')+' — '+esc(why)+'</li>'; }).join('')+'</ul>' : '')+
+      '<p class="hint">'+esc(t('They have no portal account yet. If they sign up with the same email, their account takes over the application they already sent.'))+'</p>'+
+      '<button class="btn small" id="impAgain">'+esc(t('Import another sheet'))+'</button></div>';
+    return h;
+  }
+  h+='<div class="panel">';
+  if(openCampuses_().length>1) h+='<label class="f">'+esc(t('Where'))+'</label>'+campusSegHtml_('data-impcampus', I.campus);
+  h+='<label class="f">'+esc(t('Which school'))+'</label><div class="chips" style="margin-bottom:0">'+schools.map(function(a){ return '<button class="chip'+(I.school===a.school?' on':'')+'" data-impschool="'+a.school+'">'+esc(a.label)+'</button>'; }).join('')+'</div>'+
+    '<label class="f">'+esc(t('Where are they from'))+'</label>'+countryFieldHtml_('imp_country', I.country||'Cambodia')+
+    '<label class="f">'+esc(t('The sheet, as a CSV file'))+'</label><input type="file" id="impFile" accept=".csv,.tsv,.txt,text/csv,text/plain">'+
+    '<p class="hint">'+esc(t('Google Sheets: File → Download → Comma-separated values (.csv). Numbers: File → Export To → CSV.'))+'</p>'+
+    (I.file ? '<p class="sub" id="impFileName">📄 '+esc(I.file)+' · '+esc(gpT('{n} rows',{n:I.rows.length}))+'</p>' : '')+'</div>';
+  if(!I.rows || !I.rows.length) return h;
+  var form=(P.boot.forms||{})[I.school], qs=impQuestions_(form);
+  var opt=function(v, label, cur){ return '<option value="'+esc(v)+'"'+(cur===v?' selected':'')+'>'+esc(label)+'</option>'; };
+  h+='<div class="panel"><h2 style="margin-top:0">'+esc(t('Match the columns'))+'</h2><p class="sub">'+esc(t('Each column of the sheet and the question it fills. A column with no question is kept on the record as a note, as it was written.'))+'</p><div class="impMap" id="impMap">';
+  I.header.forEach(function(hd, ci){
+    var cur=I.map[ci]||'', sample=''; for(var r=0;r<I.rows.length && !sample;r++){ sample=String(I.rows[r][ci]||'').trim(); }
+    h+='<div class="impCol"><div class="impHead"><b>'+esc(impHeadLabel_(hd)||t('(no heading)'))+'</b><span class="hint">'+esc(sample.slice(0,80))+'</span></div>'+
+      '<select data-impcol="'+ci+'">'+opt('', t('Leave out'), cur)+opt('@time', t('When they applied'), cur)+opt('@extra', t('Keep as a note'), cur)+opt('@guardianRel', t('Parent or guardian — how they are related'), cur)+
+      qs.map(function(x){ return opt('q:'+x.q.id, lt_(x.q.label), cur); }).join('')+'</select></div>';
+  });
+  h+='</div></div>';
+  var rows=impRows_(), named=rows.filter(function(r){ return r.name; });
+  h+='<div class="panel" id="impPreview"><h2 style="margin-top:0">'+esc(gpT('{n} applications to add',{n:named.length}))+'</h2>'+
+    '<div class="tbl">'+rows.map(function(r, i){
+      return '<div class="trow"><div class="who">'+(r.name ? esc(r.name) : '<i>'+esc(t('no name — left out'))+'</i>')+'</div><div class="meta">'+esc(gpT('Row {n}',{n:i+1}))+
+        (r.submittedAt ? ' · '+esc(fmtDate_(r.submittedAt)) : '')+(r.phone ? ' · '+esc(r.phone) : '')+(r.email ? ' · '+esc(r.email) : '')+' · '+esc(gpT('{n} answers',{n:Object.keys(r.answers).length}))+'</div></div>';
+    }).join('')+'</div>'+
+    '<p class="hint">'+esc(t('Anyone already in the portal for this school with the same email or phone is left out, and so is anything imported before.'))+'</p>'+
+    '<button class="btn" id="impGo"'+(P.busy||!named.length?' disabled':'')+'>'+esc(P.busy ? t('Importing…') : gpT('Import {n} applications',{n:named.length}))+'</button></div>';
+  return h;
+}
+function bindImport_(){
+  if(P.view!=='import') return;
+  var I=P.imp;
+  on_('toCrm', function(){ P.view='crm'; render(); });
+  var keepCountry=function(){ var c=document.getElementById('imp_country'); if(c && c.value) I.country=c.value; };
+  var cs=document.getElementById('imp_country'); if(cs) cs.onchange=function(){ if(cs.value) I.country=cs.value; };
+  document.querySelectorAll('[data-impcampus]').forEach(function(b){ b.onclick=function(){ keepCountry(); I.campus=b.getAttribute('data-impcampus'); render(); }; });
+  document.querySelectorAll('[data-impschool]').forEach(function(b){ b.onclick=function(){ keepCountry(); I.school=b.getAttribute('data-impschool'); if(I.header) I.map=impGuess_(I.header, (P.boot.forms||{})[I.school]); render(); }; });
+  document.querySelectorAll('[data-impcol]').forEach(function(s){ s.onchange=function(){ keepCountry(); I.map[+s.getAttribute('data-impcol')]=s.value; var y=window.scrollY; render(); window.scrollTo(0,y); }; });
+  var f=document.getElementById('impFile');
+  if(f) f.onchange=function(){
+    var file=f.files && f.files[0]; if(!file) return; keepCountry();
+    if(/\.(numbers|xlsx?|ods)$/i.test(file.name)){ showMsg(t('Save the sheet as a CSV file first, then pick that.')); f.value=''; return; }
+    var rd=new FileReader();
+    rd.onload=function(){
+      var all=impCsv_(rd.result);
+      if(all.length<2){ showMsg(t('That file has no rows to import.')); return; }
+      I.file=file.name; I.header=all[0]; I.rows=all.slice(1).map(function(r){ while(r.length<I.header.length) r.push(''); return r; });
+      I.map=impGuess_(I.header, (P.boot.forms||{})[I.school]); render();
+    };
+    rd.onerror=function(){ showMsg(t('Could not read that file.')); };
+    rd.readAsText(file);
+  };
+  on_('impGo', function(){
+    keepCountry();
+    var rows=impRows_().filter(function(r){ return r.name; }); if(!rows.length) return;
+    P.busy=true; render();
+    run('portalImportApplications', [P.auth.user, P.auth.pin, { campus:I.campus, school:I.school, country:I.country||'Cambodia', file:I.file||'' }, rows], function(d){
+      P.busy=false;
+      if(d && d.ok){
+        I.result={ added:d.added||[], skipped:d.skipped||[] };
+        run('portalBoot', [P.auth.user, P.auth.pin], function(b){ if(b && b.ok!==false && b.role) P.boot=b; render(); }, function(){ render(); });
+        render(); return;
+      }
+      showMsg(d && d.err==='not_authorized' ? t('You can’t add applications for this school.') : d && d.err==='too_many_rows' ? t('That is too many rows at once — split the sheet.') : t('Could not import — try again.')); render();
+    }, function(){ P.busy=false; showMsg(t('Could not import — try again.')); render(); });
+  });
+  on_('impAgain', function(){ P.imp={ campus:I.campus, school:I.school, country:I.country }; render(); });
+  document.querySelectorAll('[data-impopen]').forEach(function(b){ b.onclick=function(){ P.view='crm'; P.sel=b.getAttribute('data-impopen'); P.what=''; P.campusFilter=''; P.audFilter=''; P.filter=''; render(); }; });
 }
 /* Read-only answers, for the applicant after submitting and for staff. */
 /* opts.fold: each form section is a fold (staff record); opts.q: only the
@@ -3664,6 +3882,9 @@ function panelAnswersHtml_(c){
     h+='<input type="search" id="ansQ" placeholder="'+esc(t('Find in the application — a word, a name, a date'))+'" value="'+esc(P.ansQ||'')+'" style="margin:8px 0 6px">'+
       '<div id="ansBody">'+answersHtml_(form, answers, c.audience, { fold:true, q:P.ansQ })+'</div>';
   } else h+='<p class="sub" style="margin:0">'+esc(t('Nothing answered yet.'))+'</p>';
+  var extra=c.portal && c.portal.form && Array.isArray(c.portal.form.extra) ? c.portal.form.extra : [];
+  if(extra.length && !P.editAnswers) h+='<details class="ansFold" id="impExtra" open><summary>'+esc(t('Also in the imported sheet'))+'<span class="n">'+extra.length+'</span></summary><div class="ansSec">'+
+    extra.map(function(x){ return '<div class="kv ans"><b>'+esc(x.label)+'</b><span>'+esc(x.value)+'</span></div>'; }).join('')+'</div></details>';
   return h;
 }
 /* For a team: how long they are in Cambodia, each place with its dates,
@@ -3917,6 +4138,7 @@ function bind_(){
   on_('toResources', function(){ P.menuOpen=false; if(P.view==='resources') return; P.view='resources'; P.resDraft=null; render(); });
   on_('toTeam', function(){ P.menuOpen=false; if(P.view==='team') return; P.view='team'; P.teamEdit=null; render(); });
   on_('toLegal', function(){ P.menuOpen=false; if(P.view==='legal') return; P.view='legal'; P.legalDocs=null; P.legalPreview=null; render(); });
+  on_('toImport', function(){ P.menuOpen=false; if(P.view==='import') return; P.view='import'; P.imp=null; render(); });
   on_('toAccess', function(){ P.menuOpen=false; if(P.view==='access') return; P.view='access'; P.access=null; P.accessQ=''; render(); });
   bindAccess_();
   bindTeamAdmin_();
@@ -3928,7 +4150,7 @@ function bind_(){
   document.querySelectorAll('[data-linkkind]').forEach(function(b){ b.onclick=function(){ P.linkKind=b.getAttribute('data-linkkind'); render(); copyText_(applyLinkUrl_(P.linkKind)); }; });
   on_('toPreview', function(){ P.menuOpen=false; if(P.view==='preview') return; P.view='preview'; P.pv.boot=null; P.pv.screen='me'; P.pv.sec=0; render(); });
   on_('toAccounts', function(){ P.menuOpen=false; if(P.view==='accounts') return; P.view='accounts'; P.accSel=null; P.accNew=false; P.accounts=null; render(); });
-  bindForm_(); bindForms_(); bindAccounts_(); bindRef_(); bindStay_(); bindSign_(); bindLegalAdmin_(); bindPreview_(); bindStays_(); bindPeople_(); bindDocs_(); bindVisaHow_(); bindVisaAdmin_(); if(P.view==='crm') bindPanelExtras_();
+  bindForm_(); bindForms_(); bindAccounts_(); bindImport_(); bindRef_(); bindStay_(); bindSign_(); bindLegalAdmin_(); bindPreview_(); bindStays_(); bindPeople_(); bindDocs_(); bindVisaHow_(); bindVisaAdmin_(); if(P.view==='crm') bindPanelExtras_();
 }
 /* Typing in the search box re-draws only the list, so the box keeps focus. */
 function renderList_(){

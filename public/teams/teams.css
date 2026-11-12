@@ -2721,6 +2721,61 @@ body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
 .dtsRep { border:1px solid var(--border); border-radius:12px; padding:8px 10px; margin:6px 0; }
 .dtsRep input[type=text] { margin-top:6px; }
 
+/* GPDTS → Database (Nov 2026): the school picker, its four parts, the speaker schedule, students, teams */
+#dtsDbYears .chip, #dtsDbSchools .chip, .dtsParts .chip, #dtsSpeakers .chips .chip { cursor:pointer; font-family:inherit; }
+#dtsDbYears .chip.on, #dtsDbSchools .chip.on, .dtsParts .chip.on, #dtsSpeakers .chips .chip.on { background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
+.dtsSchoolLine { font-size:14px; margin-top:4px; }
+.dtsSecs { display:flex; flex-wrap:wrap; margin:0 0 12px; }
+.dtsSecs button { flex:1 1 auto; white-space:nowrap; }
+.dtsParts { margin:0 0 10px; }
+.dtsTblWrap { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:6px 0 0; touch-action:pan-x pan-y; }
+.dtsTbl { border-collapse:collapse; font-size:13.5px; width:100%; }
+.dtsTbl th, .dtsTbl td { padding:8px; border-top:1px solid var(--border); text-align:left; vertical-align:top; }
+.dtsTbl thead th { color:var(--muted); font-size:12px; font-weight:700; white-space:nowrap; }
+.dtsTbl tbody tr[data-dtslect] { cursor:pointer; }
+.dtsTbl tbody tr[data-dtslect]:hover, .dtsTbl tbody tr[data-dtslect]:focus { background:color-mix(in srgb, var(--accent) 8%, transparent); outline:none; }
+.dtsTbl tr.past { opacity:.6; }
+.dtsTbl .dtsWhen { white-space:nowrap; font-weight:700; color:var(--accent); }
+.dtsTbl .rowSub { display:block; }
+#dtsSpeakTbl { min-width:560px; }
+.dtsNeed { color:var(--bad); font-weight:700; }
+.dtsStuOpen { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; text-align:left; background:none; border:0; padding:0; font:inherit; color:var(--ink); cursor:pointer; }
+.dtsKv .kv { display:grid; grid-template-columns:minmax(0,40%) minmax(0,1fr); gap:8px; padding:7px 0; border-top:1px solid var(--border); font-size:14px; }
+.dtsKv .kv b { color:var(--muted); font-weight:600; }
+.dtsKv .kv span { overflow-wrap:anywhere; }
+.dtsOneOnOne { background:var(--goodSoft); border-radius:12px; padding:4px 12px 12px; margin:0 0 10px; }
+.dtsPick { border:1px solid var(--border); border-radius:10px; padding:0 10px; }
+.dtsPick summary { cursor:pointer; padding:9px 0; font-size:14px; overflow-wrap:anywhere; }
+.dtsPickList { max-height:260px; overflow-y:auto; padding-bottom:6px; }
+.dtsPickRow { display:flex; align-items:center; gap:8px; padding:6px 0; font-size:14px; }
+.dtsPickRow input { width:18px; height:18px; flex:0 0 auto; accent-color:var(--accent); }
+.dtsPhase { border-top:2px solid var(--border); margin-top:16px; padding-top:12px; }
+.dtsWeeks input { width:100%; min-width:44px; padding:6px 4px; text-align:center; }
+.dtsWeeks th, .dtsWeeks td { padding:6px 3px; }
+.dtsWeeks thead th { white-space:normal; font-size:11px; line-height:1.2; text-align:center; }
+@media (max-width:640px){
+  #dtsSpeakTbl { min-width:0; }
+  #dtsSpeakTbl thead { display:none; }
+  #dtsSpeakTbl, #dtsSpeakTbl tbody, #dtsSpeakTbl tr, #dtsSpeakTbl td { display:block; width:auto; }
+  #dtsSpeakTbl tr { border-top:1px solid var(--border); padding:8px 0; }
+  #dtsSpeakTbl td { border:0; padding:2px 0; display:grid; grid-template-columns:88px minmax(0,1fr); gap:8px; }
+  #dtsSpeakTbl td::before { content:attr(data-l); color:var(--muted); font-size:12px; font-weight:600; }
+}
+.dtsWeeks tbody th, .dtsWeeks tfoot th { white-space:nowrap; font-size:13px; }
+.dtsWeeks tfoot td, .dtsWeeks tfoot th { font-weight:800; }
+.dtsTeamCard { display:block; width:100%; text-align:left; background:none; border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin:8px 0 0; font:inherit; color:var(--ink); cursor:pointer; }
+.dtsTeamName { display:block; font-weight:800; font-size:15px; }
+.dtsPhaseLine { font-size:13.5px; margin-top:6px; overflow-wrap:anywhere; }
+.dtsStuMini { display:flex; flex-direction:column; padding:7px 0; border-top:1px solid var(--border); font-size:14px; }
+.dtsResRow { display:flex; flex-direction:column; gap:2px; padding:9px 0; border-top:1px solid var(--border); }
+.dtsResRow:first-of-type { border-top:0; }
+.dtsResRow a { color:var(--accent); overflow-wrap:anywhere; }
+.dtsResRow .linkbtn { align-self:flex-start; }
+.dtsPolicy h4 { margin:14px 0 4px; font-size:15px; }
+.dtsPolicy ul { margin:0; padding-left:20px; }
+.dtsPolicy li { margin:2px 0; }
+#dtsPolText { width:100%; font-family:inherit; }
+
 /* ---- Balances (Nov 2026): the money on hand, at the top of Finances ---- */
 .finBalTotal { margin:4px 0 10px; }
 .finBalNum { font-weight:800; font-size:34px; line-height:1.1; color:var(--ink); overflow-wrap:anywhere; }
