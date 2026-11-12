@@ -714,6 +714,36 @@ school's home.
   from, to, leaders, size, notes, reports:[{id, date, fruit, note}]}]}, `dtsSaveOutreach` /
   `dtsDeleteOutreach`, `cleanOutreach_`) count in their day's week, once the day has come. GPDTS is
   `numbersExempt_` (no "numbers due" reminders). An outreach budget placeholder stays.
+- **Database (Nov 2026, Andrew: "simplify the amount of tabs")**: GPDTS's tabs are now **Dashboard · Database ·
+  Tasks · OKRs** (`DTS_TABS` = dtsdash, dtsdb; "This school", "Lectures" and "Outreach" are gone as tabs).
+  The Database (`dtsDbHtml_`) is one **school** at a time — year chips, then that year's schools (`#dtsDbYears`,
+  `[data-dtsschool]`, `S.dtsSchool`; opens on the next school still to finish, `dtsCurSchool_`) — with four parts
+  (`[data-dtssec]` lect · out · resp · res):
+  - **Lectures** (`[data-dtslp]`): **Speaker schedule** (`#dtsSpeakTbl`: dates, topic, speaker, translator, MC; a
+    topic with no speaker says who is finding one — `finder`, a staff id — or that nobody is; "Speaker needed"
+    filter); **Students** — every DTS application that has applied (`dtsIsStudent_`), in the school starting on
+    or after the day they applied unless put in another (`dtsSchoolOf_`, `dts.schoolId`); grouped Here now /
+    Accepted / Applied / Graduated, select everyone here → Graduated, ⭐ potential staff, the staff application
+    (all moved here from This school); a student's profile (`dtsStuHtml_`): **their 1-on-1 at the top**
+    (`dts.oneOnOne`, campus staff), sex, date of birth, phone, email, parent / guardian and phone, pastor and
+    phone, church — from their portal answers (`portal`, only these fields, never health or testimony) unless
+    the school changed one (`dts.profile`, only what differs is kept; the portal answers are never written);
+    **Events** (title, date, end, notes); **School policy** — one per campus, `DTS_POLICY_DEFAULT` until edited,
+    plain text where "N. " starts a heading and "* " a point (`dtsPolicyBody_`).
+  - **Outreach**: teams (`dtsTeamFormHtml_`), each with a **short** (2 weeks) and a **long** (8 weeks) outreach —
+    place, from, to, leaders (staff, plus other names), students (the school's), and a week-by-week table of
+    males reached, females reached, salvations, healings, heard the gospel (`DTS_REACH`; the number of weeks
+    follows the dates). Salvations, healings and heard the gospel count in GPDTS's numbers in each week's own
+    week, from the outreach's first day, once that week has begun (`dtsSync_`). The year's students with the
+    team they're on; earlier outreach records (the old `dtsOut` blob) read-only; the budget still to come.
+  - **Responsibilities**: before school / during school, a title, a short description, given to staff, done.
+  - **Resources**: a name, an optional http(s) link, notes.
+  Store: `dtsDb:<campus>` = {schools, events, resp, resources, teams, policy?}, written with `mutateKey_` by
+  `dtsDbSave(user, pin, kind, rec)` / `dtsDbDelete(user, pin, kind, id)` (kinds school | event | resp | resource |
+  team | policy; a school with anything in it can't be deleted, `in_use`); lectures stay in `dtsLect:<campus>`
+  with `schoolId`, `translator`, `mc`, `finder` (a school's topic may have no date yet); `dtsStudentSave(user,
+  pin, candId, {schoolId?, oneOnOne?, profile?})`. `dtsBoard` carries `db` and `students`. Same gate as the rest
+  (`dtsGate_`). tests/test-dts-db.mjs (server), tests/test-dts-ui.mjs. Khmer: docs/khmer-needed.md §94.
 - **The school by year** (`dtsYearHtml_`, `#dtsYear`): year chips (this week year, then each past year),
   student tiles (`DTS_STU_M`; enrolled and potential staff are the most at once) and What God did tiles
   (`DTS_FRUIT_M`, this year with "Lectures n · Outreach m"), `[data-dtsm]`, and a year-by-year table

@@ -7967,6 +7967,19 @@ async function dtsSync_(campus) {
   ((await readJSON('dtsOut:' + campus, { outreaches: [] })).outreaches || []).forEach(function (o) {
     (Array.isArray(o && o.reports) ? o.reports : []).forEach(function (r) { if (r && r.date <= today) addFruit(r.fruit, r.date); });
   });
+  /* the Database's outreach teams: each week of the short and the long outreach counts in its own week,
+     from the outreach's first day — once that week has begun */
+  (dtsDbOut_(await readJSON('dtsDb:' + campus, DTS_DB_FALLBACK)).teams || []).forEach(function (t) {
+    ['short', 'long'].forEach(function (k) {
+      const ph = t && t[k]; if (!ph || !ph.from || !Array.isArray(ph.weeks)) return;
+      ph.weeks.forEach(function (w, i) {
+        const day = dayOfNo_(dayNo_(ph.from) + 7 * i);
+        if (day > today) return;
+        const f = {}; Object.keys(DTS_REACH_FRUIT).forEach(function (rk) { if (w && w[rk]) f[rk] = w[rk]; });
+        Object.keys(f).forEach(function (rk) { const m = DTS_REACH_FRUIT[rk], wk = weekYear_(day) === yr ? isoWeek_(day) : 0; if (wk) want[m][wk] = (want[m][wk] || 0) + f[rk]; });
+      });
+    });
+  });
   const level = {
     'Students Enrolled': function (c, end) {
       const arr = dtsReached_(c, 'arrived'), g = dtsMarks_(c).graduated, gone = c.archived ? pnpDay_(c.archived.at) : '';
@@ -8059,7 +8072,12 @@ async function dtsBoardOut_(g) {
   const lect = await readJSON('dtsLect:' + g.campus, { lectures: [] });
   const outr = await readJSON('dtsOut:' + g.campus, { outreaches: [] });
   const past = await readJSON('dtsPast:' + g.campus, { years: {} });
+  const db = dtsDbOut_(await readJSON('dtsDb:' + g.campus, DTS_DB_FALLBACK));
+  const schoolsSorted = dtsSortSchools_(db.schools.slice());
+  const students = cands.filter(dtsIsStudent_).map(function (c) { return dtsStudentOut_(c, schoolsSorted); })
+    .sort(function (a, b) { return a.name.localeCompare(b.name); });
   return {
+    db: db, students: students,
     ok: true, campus: g.campus, ministry: g.min, today: today, counts: counts, due: due.slice(0, 40), dueMore: Math.max(0, due.length - 40),
     school: school, lectures: Array.isArray(lect.lectures) ? lect.lectures : [], portal: canPortal_(g.s),
     outreaches: Array.isArray(outr.outreaches) ? outr.outreaches : [],
@@ -8105,14 +8123,16 @@ async function dtsMark(username, pin, ids, marks) {
 /* the lectures: each week's topic and speaker */
 function cleanLecture_(l, prev, me) {
   if (!l || typeof l !== 'object') return null;
-  const date = isoDate_(l.date), topic = str_(l.topic, 160) || '', speaker = str_(l.speaker, 120) || '';
-  if (!date || (!topic && !speaker)) return null;
+  const date = isoDate_(l.date) || '', topic = str_(l.topic, 160) || '', speaker = str_(l.speaker, 120) || '';
+  const schoolId = str_(l.schoolId, 60) || '';
+  if ((!date && !(schoolId && topic)) || (!topic && !speaker)) return null;   // a school's topic can wait for its dates
   const now = new Date().toISOString();
   return {
     id: prev ? prev.id : hrId_('lc'), date: date, end: (isoDate_(l.end) && isoDate_(l.end) >= date) ? isoDate_(l.end) : '',
     topic: topic, speaker: speaker, from: str_(l.from, 160) || '', contact: str_(l.contact, 160) || '',
     confirmed: !!l.confirmed, notes: String(l.notes == null ? '' : l.notes).trim().slice(0, 2000),
     fruit: dtsFruit_(l.fruit),
+    schoolId: schoolId, translator: str_(l.translator, 120) || '', mc: str_(l.mc, 120) || '', finder: str_(l.finder, 60) || '',
     by: prev ? prev.by : me.id, at: prev ? prev.at : now, updated: now, updatedBy: me.id
   };
 }
@@ -8124,8 +8144,9 @@ async function dtsSaveLecture(username, pin, lec) {
   if (id && at === -1) return { ok: false, err: 'not_found' };
   const rec = cleanLecture_(lec, at > -1 ? list[at] : null, g.s);
   if (!rec) return { ok: false, err: 'bad_lecture' };
+  if (rec.schoolId && !dtsDbOut_(await readJSON('dtsDb:' + g.campus, DTS_DB_FALLBACK)).schools.some(function (x) { return x.id === rec.schoolId; })) return { ok: false, err: 'bad_school' };
   if (at > -1) list[at] = rec; else { if (list.length >= DTS_LECT_MAX) return { ok: false, err: 'too_many' }; list.push(rec); }
-  list.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+  list.sort(function (a, b) { const x = a.date || '9999', y = b.date || '9999'; return x < y ? -1 : x > y ? 1 : 0; });   // no dates yet: last
   await writeJSON(key, { lectures: list });
   await dtsSyncSafe_(g.campus);   // the lecture's fruit is GPDTS's numbers
   return { ok: true, lectures: list, id: rec.id };
@@ -8202,6 +8223,249 @@ async function dtsSavePast(username, pin, year, values, notes) {
   }
   await writeJSON(key, { years: years });
   return { ok: true, past: years };
+}
+
+/* ==================== GPDTS → Database (Nov 2026, Andrew) ====================
+   "Simplify the tabs: Dashboard, Database (with Lectures, Outreach, Responsibilities and Resources in
+   that one), Tasks and OKRs." The Database is filtered by school — a school is a year and a name
+   ("2027 · January DTS") — and holds, for that school: the speaker schedule (the lectures, now with a
+   translator, an MC and who is finding the speaker), its students (drawn from the portal's DTS
+   applications, each with their details and their 1-on-1), its events, its outreach teams (each with
+   a short outreach of 2 weeks and a long one of 8: where, when, leaders, students and the numbers week
+   by week), its responsibilities (before school and in school, each given to staff) and its resources.
+   The school policy is one for the campus. One doc per campus, 'dtsDb:<campus>', written with
+   mutateKey_; lectures stay in 'dtsLect:<campus>'; a student's details sit on their candidate record
+   (c.dts.profile / oneOnOne / schoolId — their portal answers are never changed). */
+const DTS_DB_FALLBACK = { schools: [], events: [], resp: [], resources: [], teams: [] };
+const DTS_DB_MAX = { schools: 40, events: 300, resp: 300, resources: 300, teams: 60 };
+const DTS_DB_KINDS = ['school', 'event', 'resp', 'resource', 'team', 'policy'];
+const DTS_DB_LIST = { school: 'schools', event: 'events', resp: 'resp', resource: 'resources', team: 'teams' };
+const DTS_PHASES = { short: 2, long: 8 };   // weeks, unless the dates say otherwise
+const DTS_REACH = ['male', 'female', 'salvations', 'healings', 'gospel'];
+const DTS_REACH_FRUIT = { salvations: 'Salvations', healings: 'Healings', gospel: 'People Heard the Gospel' };
+const DTS_PROFILE_FIELDS = ['sex', 'dob', 'phone', 'email', 'guardianName', 'guardianPhone', 'pastorName', 'pastorPhone', 'church', 'notes'];
+const DTS_POLICY_DEFAULT = [
+  '1. Come to class every day and on time',
+  '* You may not miss more than 2 days per week',
+  '* If you are sick, inform a staff member or school leader in advance',
+  '2. Be On Time',
+  '* Arrive on time for all classes, activities, and meetings',
+  '* If you will be late, inform a staff member in advance',
+  '3. Participation',
+  '* Attend and participate in all scheduled school activities',
+  '4. Teaching & Correction',
+  '* Be willing to listen, learn, and receive guidance from staff',
+  '5. Curfew & Quiet Time',
+  '* Women must be home by 9:30 PM (for safety)',
+  '* Quiet time is 9:30 PM – 7:30 AM',
+  '* Stay close to the school and keep noise and lights low',
+  '6. Going Out',
+  '* Always inform a staff member if you leave town or miss any classes or activities',
+  '7. Phones',
+  '* Turn off or silence your phone during class',
+  '* Use phones only during breaks or free time',
+  '8. Dress Code',
+  '* Men must always wear a shirt',
+  '* Women should not wear shorts or short skirts',
+  '* Dress modestly and respectfully',
+  '9. Behavior',
+  '* The following are not allowed: Alcohol, smoking, drugs, gambling, or nightclubs (e.g., karaoke)',
+  '10. Church Attendance',
+  '* Attend church every Sunday',
+  '* You may choose which church to attend',
+  '11. Relationships',
+  '* Men and women must not be alone together in private or quiet places',
+  '* Focus on God and your training during DTS',
+  '12. Motorcycle Safety',
+  '* International students are not allowed to drive motorcycles',
+  '* Everyone must wear a helmet',
+  '13. Respect',
+  '* Respect one another',
+  '* Speak kindly and encourage each other',
+  '* Live as brothers and sisters in Jesus Christ'
+].join('\n');
+function dtsDbOut_(doc) {
+  const o = {};
+  Object.keys(DTS_DB_FALLBACK).forEach(function (k) { o[k] = Array.isArray(doc && doc[k]) ? doc[k] : []; });
+  o.policy = doc && typeof doc.policy === 'string' ? doc.policy : DTS_POLICY_DEFAULT;
+  o.policyIsDefault = !(doc && typeof doc.policy === 'string');
+  return o;
+}
+function dtsSchoolStart_(s) { return (s && (s.from || (s.year ? s.year + '-01-01' : ''))) || ''; }
+function dtsSortSchools_(list) { return list.sort(function (a, b) { const x = dtsSchoolStart_(a), y = dtsSchoolStart_(b); return x < y ? -1 : x > y ? 1 : 0; }); }
+/* which school a student is in: the one they were put in, else the first school starting on or after
+   the day they applied (an application sent in 2026 is for the January 2027 DTS) */
+function dtsSchoolOf_(c, schools) {
+  const m = dtsMarks_(c);
+  if (m.schoolId && schools.some(function (s) { return s.id === m.schoolId; })) return m.schoolId;
+  const day = dtsApplied_(c) || pnpDay_(c.created);
+  if (!day) return '';
+  const hit = schools.filter(function (s) { return dtsSchoolStart_(s) >= day; })[0];
+  return hit ? hit.id : '';
+}
+function dtsIsStudent_(c) {
+  if (!c) return false;
+  const col = dtsColumn_(c);
+  if (col === 'lead' || col === 'contacted') return false;
+  return !c.archived || !!dtsMarks_(c).graduated;
+}
+function dtsStudentOut_(c, schools) {
+  const a = (c.portal && ((c.portal.form && c.portal.form.answers) || c.portal.draft)) || {}, m = dtsMarks_(c);
+  const s = function (v) { return v == null ? '' : String(v).slice(0, 200); };
+  return {
+    id: c.id, name: c.name, stage: c.stage, column: dtsColumn_(c), audience: audienceOf_(c), country: c.country || '',
+    applied: dtsApplied_(c), arrived: c.stage === 'arrived' ? dtsReached_(c, 'arrived') : '',
+    graduated: m.graduated || '', potentialStaff: m.potentialStaff || '', archived: !!c.archived,
+    schoolId: dtsSchoolOf_(c, schools), placed: !!m.schoolId, oneOnOne: m.oneOnOne || '', hasAccount: !!c.staffId,
+    // what they wrote in the portal — only the contact details the school needs, never their health or story
+    portal: { sex: s(a.gender), dob: s(a.dob), phone: s(a.phone || c.phone), email: s(a.email || c.email), guardianName: s(a.guardianName), guardianPhone: s(a.guardianPhone),
+      pastorName: s(a.pastorName), pastorPhone: s(a.pastorPhone), church: s(a.church) },
+    profile: m.profile && typeof m.profile === 'object' ? m.profile : {}
+  };
+}
+async function dtsCampusStaff_(campus) {
+  const ids = {};
+  (await getStaff_()).forEach(function (r) { if (r && r.active !== false && !isApplicant_(r) && r.campus === campus) ids[r.id] = 1; });
+  return ids;
+}
+function dtsIds_(list, ok, max) {
+  const seen = {};
+  return (Array.isArray(list) ? list : []).map(function (x) { return str_(x, 60); }).filter(function (x) { if (!x || seen[x] || !ok[x]) return false; seen[x] = 1; return true; }).slice(0, max);
+}
+function dtsPhaseWeeks_(from, to, kind) {
+  if (from && to && to >= from) return Math.max(1, Math.min(12, Math.ceil((dayNo_(to) - dayNo_(from) + 1) / 7)));
+  return DTS_PHASES[kind];
+}
+function cleanDtsPhase_(p, kind, staffOk, candOk) {
+  p = p && typeof p === 'object' ? p : {};
+  const from = isoDate_(p.from) || '', to0 = isoDate_(p.to) || '', to = to0 && (!from || to0 >= from) ? to0 : '';
+  const n = dtsPhaseWeeks_(from, to, kind);
+  const weeks = [];
+  for (let i = 0; i < n; i++) {
+    const w = (Array.isArray(p.weeks) ? p.weeks[i] : null) || {}, row = {};
+    DTS_REACH.forEach(function (k) { const v = Math.round(Number(w[k])); if (isFinite(v) && v > 0) row[k] = Math.min(v, 100000); });
+    weeks.push(row);
+  }
+  return { place: str_(p.place, 120) || '', from: from, to: to, leaders: dtsIds_(p.leaders, staffOk, 10), others: str_(p.others, 200) || '',
+    students: dtsIds_(p.students, candOk, 80), weeks: weeks };
+}
+function cleanDtsRec_(kind, r, ctx) {
+  r = r && typeof r === 'object' ? r : {};
+  const schoolId = str_(r.schoolId, 60) || '';
+  const schoolOk = ctx.schools.some(function (s) { return s.id === schoolId; });
+  const notes = function (v, n) { return String(v == null ? '' : v).trim().slice(0, n || 2000); };
+  if (kind === 'school') {
+    const year = Math.round(Number(r.year)), name = str_(r.name, 80);
+    if (!(year >= 2000 && year <= 2100) || !name) return null;
+    const from = isoDate_(r.from) || '', to = isoDate_(r.to) || '';
+    return { year: year, name: name, from: from, to: to && (!from || to >= from) ? to : '', notes: notes(r.notes, 1000) };
+  }
+  if (!schoolOk && kind !== 'policy') return null;
+  if (kind === 'event') {
+    const title = str_(r.title, 160), date = isoDate_(r.date);
+    if (!title || !date) return null;
+    const end = isoDate_(r.end) || '';
+    return { schoolId: schoolId, title: title, date: date, end: end && end >= date ? end : '', notes: notes(r.notes, 1000) };
+  }
+  if (kind === 'resp') {
+    const title = str_(r.title, 160);
+    if (!title) return null;
+    return { schoolId: schoolId, when: r.when === 'before' ? 'before' : 'school', title: title, notes: notes(r.notes, 1000), staff: dtsIds_(r.staff, ctx.staffOk, 10), done: !!r.done };
+  }
+  if (kind === 'resource') {
+    const title = str_(r.title, 160), url = str_(r.url, 600) || '';
+    if (!title) return null;
+    if (url && !/^https?:\/\/[^\s]+$/i.test(url)) return null;
+    return { schoolId: schoolId, title: title, url: url, notes: notes(r.notes, 1000) };
+  }
+  if (kind === 'team') {
+    const name = str_(r.name, 80);
+    if (!name) return null;
+    return { schoolId: schoolId, name: name, short: cleanDtsPhase_(r.short, 'short', ctx.staffOk, ctx.candOk), long: cleanDtsPhase_(r.long, 'long', ctx.staffOk, ctx.candOk), notes: notes(r.notes, 1000) };
+  }
+  return null;
+}
+async function dtsDbSave(username, pin, kind, rec) {
+  const g = await dtsGate_(username, pin); if (g.out) return g.out;
+  if (DTS_DB_KINDS.indexOf(kind) === -1) return { ok: false, err: 'bad_kind' };
+  const key = 'dtsDb:' + g.campus;
+  if (kind === 'policy') {
+    const text = rec && rec.reset ? null : String(rec && rec.text != null ? rec.text : '').trim().slice(0, 8000);
+    if (text === '') return { ok: false, err: 'empty' };
+    const r = await mutateKey_(key, DTS_DB_FALLBACK, function (doc) { if (text === null) delete doc.policy; else doc.policy = text; return { ok: true }; });
+    if (!r || !r.ok) return r || { ok: false };
+    return { ok: true, db: dtsDbOut_(await readJSON(key, DTS_DB_FALLBACK)) };
+  }
+  const cur = dtsDbOut_(await readJSON(key, DTS_DB_FALLBACK));
+  const ctx = { schools: cur.schools, staffOk: await dtsCampusStaff_(g.campus), candOk: {} };
+  if (kind === 'team') (await getCandidates_()).forEach(function (c) { if (isDtsCand_(c, g.campus)) ctx.candOk[c.id] = 1; });
+  const clean = cleanDtsRec_(kind, rec, ctx);
+  if (!clean) return { ok: false, err: 'bad_' + kind };
+  const listKey = DTS_DB_LIST[kind], id = str_(rec && rec.id, 60), now = new Date().toISOString();
+  const r = await mutateKey_(key, DTS_DB_FALLBACK, function (doc) {
+    const list = Array.isArray(doc[listKey]) ? doc[listKey] : (doc[listKey] = []);
+    const at = id ? list.findIndex(function (x) { return x && x.id === id; }) : -1;
+    if (id && at === -1) return { abort: true, ok: false, err: 'not_found' };
+    if (at === -1 && list.length >= DTS_DB_MAX[listKey]) return { abort: true, ok: false, err: 'too_many' };
+    const prev = at > -1 ? list[at] : null;
+    const out = Object.assign({ id: prev ? prev.id : hrId_(kind.slice(0, 2)) }, clean, { by: prev ? prev.by : g.s.id, at: prev ? prev.at : now, updated: now, updatedBy: g.s.id });
+    if (at > -1) list[at] = out; else list.push(out);
+    if (kind === 'school') dtsSortSchools_(list);
+    if (kind === 'event') list.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    return { ok: true, id: out.id };
+  });
+  if (!r || !r.ok) return r || { ok: false };
+  if (kind === 'team') await dtsSyncSafe_(g.campus);   // an outreach week's numbers are GPDTS's numbers
+  return { ok: true, id: r.id, db: dtsDbOut_(await readJSON(key, DTS_DB_FALLBACK)) };
+}
+async function dtsDbDelete(username, pin, kind, id) {
+  const g = await dtsGate_(username, pin); if (g.out) return g.out;
+  const listKey = DTS_DB_LIST[kind];
+  if (!listKey) return { ok: false, err: 'bad_kind' };
+  id = str_(id, 60);
+  const key = 'dtsDb:' + g.campus;
+  /* a school with anything in it stays: its lectures, events, teams, responsibilities or resources would be left nowhere */
+  if (kind === 'school') {
+    const doc = dtsDbOut_(await readJSON(key, DTS_DB_FALLBACK)), lect = await readJSON('dtsLect:' + g.campus, { lectures: [] });
+    const used = ['events', 'resp', 'resources', 'teams'].some(function (k) { return doc[k].some(function (x) { return x && x.schoolId === id; }); }) ||
+      (Array.isArray(lect.lectures) ? lect.lectures : []).some(function (l) { return l && l.schoolId === id; });
+    if (used) return { ok: false, err: 'in_use' };
+  }
+  const r = await mutateKey_(key, DTS_DB_FALLBACK, function (doc) {
+    const list = Array.isArray(doc[listKey]) ? doc[listKey] : [];
+    const at = list.findIndex(function (x) { return x && x.id === id; });
+    if (at === -1) return { abort: true, ok: false, err: 'not_found' };
+    list.splice(at, 1); doc[listKey] = list;
+    return { ok: true };
+  });
+  if (!r || !r.ok) return r || { ok: false };
+  if (kind === 'team') await dtsSyncSafe_(g.campus);
+  return { ok: true, db: dtsDbOut_(await readJSON(key, DTS_DB_FALLBACK)) };
+}
+/* a student's details for the school, their 1-on-1, and which school they are in — on their DTS record,
+   apart from what they wrote in the portal */
+async function dtsStudentSave(username, pin, candId, p) {
+  const g = await dtsGate_(username, pin); if (g.out) return g.out;
+  p = p && typeof p === 'object' ? p : {};
+  const db = dtsDbOut_(await readJSON('dtsDb:' + g.campus, DTS_DB_FALLBACK));
+  if (p.schoolId !== undefined && p.schoolId !== '' && !db.schools.some(function (s) { return s.id === p.schoolId; })) return { ok: false, err: 'bad_school' };
+  if (p.oneOnOne !== undefined && p.oneOnOne !== '' && !(await dtsCampusStaff_(g.campus))[str_(p.oneOnOne, 60)]) return { ok: false, err: 'bad_staff' };
+  const rows = await getCandidates_(), id = str_(candId, 60);
+  const c = rows.find(function (x) { return x && x.id === id; });
+  if (!c || !isDtsCand_(c, g.campus)) return { ok: false, err: 'not_found' };
+  const m = Object.assign({}, dtsMarks_(c)), now = new Date().toISOString(), notes = [];
+  if (p.schoolId !== undefined) { if (p.schoolId) m.schoolId = str_(p.schoolId, 60); else delete m.schoolId; notes.push('Moved to another school'); }
+  if (p.oneOnOne !== undefined) { if (p.oneOnOne) m.oneOnOne = str_(p.oneOnOne, 60); else delete m.oneOnOne; notes.push('Their 1-on-1 changed'); }
+  if (p.profile !== undefined) {
+    const pr = {};
+    DTS_PROFILE_FIELDS.forEach(function (k) { const v = String(p.profile && p.profile[k] != null ? p.profile[k] : '').trim().slice(0, k === 'notes' ? 2000 : 200); if (v) pr[k] = v; });
+    m.profile = pr; notes.push('School details updated');
+  }
+  c.dts = m;
+  c.log = (Array.isArray(c.log) ? c.log : []).concat(notes.map(function (t) { return { at: now, by: g.s.id, kind: 'note', text: 'GPDTS: ' + t }; })).slice(-CAND_LOG_MAX);
+  c.updated = now; c.updatedBy = g.s.id;
+  await writeJSON('candidates', rows);
+  return { ok: true, student: dtsStudentOut_(c, dtsSortSchools_(db.schools.slice())) };
 }
 
 /* ---- GPDTS → staff → the GP app (Part 2) ----
@@ -12312,6 +12576,9 @@ const HANDLERS = {
   portalStaffSaveTeamNumbers: function (a) { return portalStaffSaveTeamNumbers(a[0], a[1], a[2], a[3], a[4]); },
   portalStaffSaveAnswers: function (a) { return portalStaffSaveAnswers(a[0], a[1], a[2], a[3]); },
   portalImportApplications: function (a) { return portalImportApplications(a[0], a[1], a[2], a[3]); },
+  dtsDbSave: function (a) { return dtsDbSave(a[0], a[1], a[2], a[3]); },
+  dtsDbDelete: function (a) { return dtsDbDelete(a[0], a[1], a[2], a[3]); },
+  dtsStudentSave: function (a) { return dtsStudentSave(a[0], a[1], a[2], a[3]); },
   portalListAccounts: function (a) { return portalListAccounts(a[0], a[1]); },
   portalCreateApplicant: function (a) { return portalCreateApplicant(a[0], a[1], a[2]); },
   portalUpdateAccount: function (a) { return portalUpdateAccount(a[0], a[1], a[2], a[3]); },
