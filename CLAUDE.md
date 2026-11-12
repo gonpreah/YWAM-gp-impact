@@ -1113,6 +1113,33 @@ carry `holidays` (last year to next) so the leave page lists them under the allo
 counts a new request the same way (`leaveWorkDays_`, with a "… not counted" hint).
 `test-holidays.mjs` and `test-holidays-page.mjs` cover it.
 
+## Importing applications from a spreadsheet (portal staff, Nov 2026)
+The base took DTS applications in a Google Form before the portal ("GP DTS Application 2027").
+Portal ☰ → **📥 Import applications** (`P.view='import'`, `importHtml_` / `bindImport_`; anyone who may make
+that school's records — `hrGate_` + `portalMaySee_`, so portal admins, HR, unscoped portal staff, that
+school's own staff): pick the school (and campus), where they're from (Cambodia), and the sheet **as a CSV**
+(Google Sheets: Download → CSV; Numbers: Export To → CSV — a .numbers / .xlsx is turned away). The page
+reads it (`impCsv_`, quotes, BOM, tabs), matches each column to a question of that school's form
+(`impGuess_`: the English half of a bilingual heading against each question's label and id; a match needs a
+meaningful word in common, `IMP_WEAK`; a nudge for the same form section as the column before, so a second
+"Phone number" after the guardian's name is the guardian's; "relationship" right after the guardian is
+`@guardianRel`, a note; Timestamp → `@time`; unknown headings → `@extra`, kept as notes; heading-less → left
+out) — every column has a picker to change it — then a preview and **Import**. Values: bilingual choices to
+the form's own option (`impChoice_`: "ប្រុស Male" → Male, "គ្មាន/No" → No; no match keeps the text), a
+Cambodian number that lost its 0 gets it back (`impPhone_`), dates kept as written, the timestamp read as
+Cambodia time (`impTime_`). Name = first + last, else the Latin-letters name.
+- **Server** `portalImportApplications(user, pin, {campus, school, country, file}, rows)` (≤300 rows): each
+  row a student candidate at **applied**, `portal.submittedAt` = its timestamp, `portal.form` {answers
+  (`cleanAnswers_`), extra:[{label, value}], formKey, audience}, `portal.imported` {at, by, key, file}, no
+  `staffId`, logged. Nothing twice (`importKey_`: campus, school, time, name, phone), and a row whose email or
+  phone (last 8 digits) is already on that school's applications on the campus is skipped and named
+  (`exists`). DTS runs `dtsSync_` (Students Applied counts them in the week they applied).
+- **They can take it over**: `createApplicant_`'s lead match also takes an imported record (`portal.imported`,
+  no account) with the same email, kind, campus and school — the account keeps the sent application,
+  answers and stage. The staff record says so (`#impNote`) and shows the leftovers (`#impExtra`).
+- **The sheet never goes in the repo** — it holds people's phones, guardians and health. Tests use made-up rows.
+  tests/test-portal-import.mjs (server), tests/test-portal-import-ui.mjs. Khmer: docs/khmer-needed.md §93.
+
 ## Documents: every file at once (portal staff, Oct 2026)
 On a record's Documents tab, a kind with more than one file (passports above all) has **👁 View all n**
 — one full-screen page (`P.docGallery`, `#docGallery`, `docGalleryHtml_`) with every picture shown and

@@ -8962,7 +8962,7 @@ async function createApplicant_(payload, by) {
      up with the same email, for the same kind of application on the same campus, joins
      that record — the contacts logged stay, and nothing is in the list twice. */
   const lead = cands.find(function (c) {
-    return c && !c.archived && !c.portal && !c.staffId && c.email && String(c.email).toLowerCase() === email &&
+    return c && !c.archived && (!c.portal || c.portal.imported) && !c.staffId && c.email && String(c.email).toLowerCase() === email &&
       c.type === type && c.campus === campus && (type !== 'student' || String(c.school || '').toLowerCase() === school);
   }) || null;
   const salt = pinSalt_(), now = new Date().toISOString();
@@ -8998,13 +8998,20 @@ async function createApplicant_(payload, by) {
   });
   if (!made || !made.ok) return made || { ok: false };
   const fresh = await getCandidates_();
-  const li = lead ? fresh.findIndex(function (c) { return c && c.id === lead.id && !c.staffId && !c.portal; }) : -1;
+  const li = lead ? fresh.findIndex(function (c) { return c && c.id === lead.id && !c.staffId && (!c.portal || c.portal.imported); }) : -1;
   if (li > -1) {
     const old = fresh[li];
+    /* an application imported from the old Google Form sheet: they have applied already, so the
+       account takes over that application — answers, date and stage — instead of a blank form */
+    const imported = !!(old.portal && old.portal.imported);
+    if (imported) {
+      cand.portal = Object.assign({}, old.portal, { draft: cand.portal.draft || null, draftAt: cand.portal.draftAt || null });
+      cand.stage = old.stage; cand.country = old.country || cand.country;
+    }
     cand.source = old.source || 'portal'; cand.assignedTo = old.assignedTo || ''; cand.nextStep = old.nextStep || ''; cand.nextDate = old.nextDate || '';
     cand.notes = old.notes || ''; cand.calls = Array.isArray(old.calls) ? old.calls : undefined; cand.dts = old.dts || undefined;
     cand.created = old.created || now; cand.createdBy = old.createdBy || cand.createdBy;
-    cand.log = (Array.isArray(old.log) ? old.log : []).concat([{ at: now, by: id, kind: 'note', text: 'Made a portal account — joined to this record' }]).concat(old.stage !== 'new' ? [{ at: now, by: id, kind: 'stage', text: 'new' }] : []).slice(-CAND_LOG_MAX);
+    cand.log = (Array.isArray(old.log) ? old.log : []).concat([{ at: now, by: id, kind: 'note', text: 'Made a portal account — joined to this record' }]).concat(old.stage !== 'new' && !imported ? [{ at: now, by: id, kind: 'stage', text: 'new' }] : []).slice(-CAND_LOG_MAX);
     fresh[li] = cand;
   } else fresh.push(cand);
   await writeJSON('candidates', fresh);
@@ -10581,6 +10588,90 @@ async function portalStaffSaveAnswers(username, pin, candidateId, answers) {
   await syncTeamTrip_(cand, a.s.id);
   const staffRows = await getStaff_(); const byId = {}; staffRows.forEach(function (r) { byId[r.id] = r; });
   return { ok: true, candidate: portalCandOut_(cand, byId) };
+}
+
+/* ---- Import applications from a spreadsheet (Nov 2026) ----
+   The base took applications in a Google Form before the portal (the GP DTS
+   Application 2027 sheet). A portal admin — or anyone who may make that kind of
+   record — uploads the sheet on the staff side; the page reads it, matches its
+   columns to the form's questions and sends the rows here. Each row becomes an
+   application at "applied", dated by its form timestamp, with no portal account
+   (the person can sign up later with the same email and their account joins
+   this record — createApplicant_). The sheet itself never reaches the code:
+   the repo is public and it holds people's phones, guardians and health.
+   opts = {campus, school, country}; rows = [{name, email, phone, submittedAt,
+   answers, extra:[{label, value}]}] — `extra` is what had no question on the
+   form, kept on the record as it was. Importing the same sheet twice adds
+   nothing twice (importKey), and a row whose email or phone is already on an
+   application for that school and campus is skipped and named. */
+const IMPORT_MAX_ROWS = 300, IMPORT_MAX_EXTRA = 40;
+function importKey_(campus, school, r) {
+  const phone = String(r.phone || '').replace(/\D/g, '').slice(-8);
+  return crypto.createHash('sha256').update([campus, school, r.submittedAt || '', String(r.name || '').trim().toLowerCase(), phone].join('|')).digest('hex').slice(0, 24);
+}
+function phoneTail_(v) { const d = String(v || '').replace(/\D/g, ''); return d.length >= 6 ? d.slice(-8) : ''; }
+async function portalImportApplications(username, pin, opts, rowsIn) {
+  const g = await hrGate_(username, pin); if (g.out) return g.out;
+  opts = opts && typeof opts === 'object' ? opts : {};
+  const campus = Object.prototype.hasOwnProperty.call(PORTAL_CAMPUSES, opts.campus) ? opts.campus : '';
+  if (!campus) return { ok: false, err: 'campus_required' };
+  const school = PORTAL_SCHOOLS.indexOf(opts.school) > -1 ? opts.school : '';
+  if (!school) return { ok: false, err: 'school_required' };
+  if (PORTAL_CAMPUSES[campus].indexOf(school) === -1) return { ok: false, err: 'school_not_at_campus' };
+  if (!canHR_(g.s) && !portalMaySee_(g.s, { type: 'student', school: school })) return { ok: false, err: 'not_authorized' };
+  if (!Array.isArray(rowsIn) || !rowsIn.length) return { ok: false, err: 'empty' };
+  if (rowsIn.length > IMPORT_MAX_ROWS) return { ok: false, err: 'too_many_rows' };
+  const country = cleanCountry_(opts.country) || 'Cambodia';
+  const form = (await getForms_())[school];
+  const rows = await getCandidates_();
+  const mine = rows.filter(function (c) { return c && c.type === 'student' && c.campus === campus && String(c.school || '').toLowerCase() === school; });
+  const keys = {}, emails = {}, phones = {};
+  mine.forEach(function (c) {
+    if (c.portal && c.portal.imported && c.portal.imported.key) keys[c.portal.imported.key] = c;
+    if (c.email) emails[String(c.email).toLowerCase()] = c;
+    const p = phoneTail_(c.phone); if (p) phones[p] = c;
+  });
+  const added = [], skipped = [], nowIso = new Date().toISOString();
+  rowsIn.forEach(function (r, i) {
+    r = r && typeof r === 'object' ? r : {};
+    const name = str_(r.name, 120);
+    if (!name) { skipped.push({ row: i + 1, why: 'no_name' }); return; }
+    const at = r.submittedAt && !isNaN(Date.parse(r.submittedAt)) ? new Date(r.submittedAt).toISOString() : nowIso;
+    const email = cleanEmail_(r.email) || '';
+    const phone = cleanPhone_(r.phone);
+    const key = importKey_(campus, school, { name: name, phone: phone, submittedAt: at });
+    if (keys[key]) { skipped.push({ row: i + 1, name: name, why: 'imported', id: keys[key].id }); return; }
+    const same = (email && emails[email]) || (phoneTail_(phone) && phones[phoneTail_(phone)]);
+    if (same) { skipped.push({ row: i + 1, name: name, why: 'exists', id: same.id, with: same.name }); return; }
+    if (rows.length >= CAND_MAX) { skipped.push({ row: i + 1, name: name, why: 'too_many' }); return; }
+    const answers = cleanAnswers_(r.answers, form, audienceOf_({ country: country }));
+    const extra = (Array.isArray(r.extra) ? r.extra : []).map(function (x) {
+      const label = str_(x && x.label, 200), value = String(x && x.value != null ? x.value : '').trim().slice(0, ANSWER_MAX);
+      return label && value ? { label: label, value: value } : null;
+    }).filter(Boolean).slice(0, IMPORT_MAX_EXTRA);
+    const cand = {
+      id: hrId_('cd'), campus: campus, name: name, type: 'student', stage: 'applied',
+      subtype: school.toUpperCase(), school: school, email: email, phone: phone, messenger: '', country: country,
+      source: str_(opts.source, 120) || 'Imported from a spreadsheet',
+      assignedTo: '', nextStep: '', nextDate: '', expected: '', notes: '', staffId: '',
+      portal: {
+        createdAt: at, submittedAt: at, docs: [], references: [], draft: null, draftAt: null,
+        form: { answers: answers, submittedAt: at, audience: audienceOf_({ country: country }), formKey: school, extra: extra.length ? extra : undefined },
+        imported: { at: nowIso, by: g.s.id, key: key, file: str_(opts.file, 160) || '' }
+      },
+      log: [{ at: at, by: g.s.id, kind: 'stage', text: 'applied' }, { at: nowIso, by: g.s.id, kind: 'note', text: 'Imported from ' + (str_(opts.file, 160) || 'a spreadsheet') }],
+      archived: null, created: nowIso, createdBy: g.s.id, updated: nowIso, updatedBy: g.s.id
+    };
+    rows.push(cand); keys[key] = cand;
+    if (email) emails[email] = cand;
+    if (phoneTail_(phone)) phones[phoneTail_(phone)] = cand;
+    added.push({ id: cand.id, name: name });
+  });
+  if (added.length) {
+    await writeJSON('candidates', rows);
+    if (school === 'dts') await dtsSyncSafe_(campus);   // Students Applied on GPDTS counts them in the week they applied
+  }
+  return { ok: true, added: added, skipped: skipped };
 }
 
 /* Delete an application and the applicant account behind it — a duplicate
@@ -12220,6 +12311,7 @@ const HANDLERS = {
   portalStaffSyncTeam: function (a) { return portalStaffSyncTeam(a[0], a[1], a[2]); },
   portalStaffSaveTeamNumbers: function (a) { return portalStaffSaveTeamNumbers(a[0], a[1], a[2], a[3], a[4]); },
   portalStaffSaveAnswers: function (a) { return portalStaffSaveAnswers(a[0], a[1], a[2], a[3]); },
+  portalImportApplications: function (a) { return portalImportApplications(a[0], a[1], a[2], a[3]); },
   portalListAccounts: function (a) { return portalListAccounts(a[0], a[1]); },
   portalCreateApplicant: function (a) { return portalCreateApplicant(a[0], a[1], a[2]); },
   portalUpdateAccount: function (a) { return portalUpdateAccount(a[0], a[1], a[2], a[3]); },

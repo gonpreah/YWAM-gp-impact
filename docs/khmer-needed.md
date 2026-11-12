@@ -4615,3 +4615,47 @@ The GP app's sign-in screen once Google is on (username and PIN only to connect 
 | Those dates can’t be in the future. | កាលបរិច្ឆេទទាំងនោះមិនអាចជាថ្ងៃអនាគតបានទេ។ |
 
 The card at the top of Finances (the office's Reports and Dashboard tabs, and Campus Leadership's Finances tab). "Liquid assets" is drafted as ទ្រព្យសកម្មរាវ, the accounting term; "reconciled" (the books checked against the bank statement) as ផ្ទៀងផ្ទាត់ — please check both with the Finances office's own words.
+
+## 93. Portal — importing applications from a spreadsheet
+
+| English | Khmer (draft) |
+|---|---|
+| Import applications | នាំចូលពាក្យសុំ |
+| Bring in applications from a spreadsheet — the Google Form the base used before the portal. Each row becomes an application at “Applied”, dated when they sent it. | នាំចូលពាក្យសុំពីតារាង — ពី Google Form ដែលមូលដ្ឋានបានប្រើមុនមាន Portal។ ជួរនីមួយៗក្លាយជាពាក្យសុំមួយនៅដំណាក់កាល “បានដាក់ពាក្យ” ដោយមានកាលបរិច្ឆេទដែលពួកគេបានផ្ញើ។ |
+| Which school | សាលាមួយណា |
+| Where are they from | ពួកគេមកពីណា |
+| The sheet, as a CSV file | តារាង ជាឯកសារ CSV |
+| Google Sheets: File → Download → Comma-separated values (.csv). Numbers: File → Export To → CSV. | Google Sheets៖ File → Download → Comma-separated values (.csv)។ Numbers៖ File → Export To → CSV។ |
+| Match the columns | ផ្គូផ្គងជួរឈរ |
+| Each column of the sheet and the question it fills. A column with no question is kept on the record as a note, as it was written. | ជួរឈរនីមួយៗនៃតារាង និងសំណួរដែលវាបំពេញ។ ជួរឈរដែលគ្មានសំណួរ នឹងរក្សាទុកនៅលើកំណត់ត្រាជាកំណត់ចំណាំ ដូចដែលបានសរសេរ។ |
+| (no heading) | (គ្មានចំណងជើង) |
+| Leave out | មិនដាក់បញ្ចូល |
+| When they applied | ពេលដែលពួកគេដាក់ពាក្យ |
+| Keep as a note | រក្សាទុកជាកំណត់ចំណាំ |
+| Parent or guardian — how they are related | ឪពុកម្តាយ ឬអាណាព្យាបាល — ត្រូវជាអ្វីនឹងគេ |
+| {n} applications to add | ពាក្យសុំ {n} ដែលត្រូវបញ្ចូល |
+| no name — left out | គ្មានឈ្មោះ — មិនដាក់បញ្ចូល |
+| Row {n} | ជួរទី {n} |
+| {n} answers | ចម្លើយ {n} |
+| Anyone already in the portal for this school with the same email or phone is left out, and so is anything imported before. | អ្នកដែលមាននៅក្នុង Portal សម្រាប់សាលានេះរួចហើយ ដោយមានអ៉ីមែល ឬទូរស័ព្ទដូចគ្នា នឹងមិនត្រូវបានដាក់បញ្ចូលទេ ហើយអ្វីដែលបាននាំចូលពីមុនក៏ដូចគ្នាដែរ។ |
+| Importing… | កំពុងនាំចូល… |
+| Import {n} applications | នាំចូលពាក្យសុំ {n} |
+| {n} applications added | បានបញ្ចូលពាក្យសុំ {n} |
+| {n} not added | {n} មិនបានបញ្ចូល |
+| already imported | បាននាំចូលរួចហើយ |
+| same email or phone as {name}’s application | អ៉ីមែល ឬទូរស័ព្ទដូចពាក្យសុំរបស់ {name} |
+| no name | គ្មានឈ្មោះ |
+| could not add | មិនអាចបញ្ចូលបានទេ |
+| They have no portal account yet. If they sign up with the same email, their account takes over the application they already sent. | ពួកគេមិនទាន់មានគណនី Portal នៅឡើយទេ។ ប្រសិនបើពួកគេចុះឈ្មោះដោយអ៉ីមែលដូចគ្នា គណនីរបស់ពួកគេនឹងទទួលយកពាក្យសុំដែលពួកគេបានផ្ញើរួចហើយ។ |
+| Import another sheet | នាំចូលតារាងមួយទៀត |
+| Save the sheet as a CSV file first, then pick that. | សូមរក្សាទុកតារាងជាឯកសារ CSV ជាមុនសិន រួចជ្រើសរើសវា។ |
+| That file has no rows to import. | ឯកសារនោះគ្មានជួរដែលត្រូវនាំចូលទេ។ |
+| Could not read that file. | មិនអាចអានឯកសារនោះបានទេ។ |
+| You can’t add applications for this school. | អ្នកមិនអាចបញ្ចូលពាក្យសុំសម្រាប់សាលានេះបានទេ។ |
+| That is too many rows at once — split the sheet. | ជួរច្រើនពេកក្នុងពេលតែមួយ — សូមបំបែកតារាង។ |
+| Could not import — try again. | មិនអាចនាំចូលបានទេ — សូមព្យាយាមម្តងទៀត។ |
+| Also in the imported sheet | មានផងដែរនៅក្នុងតារាងដែលបាននាំចូល |
+| Imported from {file} on {when}. No portal account yet — if they sign up with the same email, their account takes over this application. | បាននាំចូលពី {file} នៅ {when}។ មិនទាន់មានគណនី Portal នៅឡើយ — ប្រសិនបើពួកគេចុះឈ្មោះដោយអ៉ីមែលដូចគ្នា គណនីរបស់ពួកគេនឹងទទួលយកពាក្យសុំនេះ។ |
+| a spreadsheet | តារាងមួយ |
+
+The staff side of the portal (☰ → Import applications): bringing in applications from the Google Form sheet the base used before the portal. Staff-only screen. "Import" is drafted as នាំចូល.

@@ -53,6 +53,7 @@ const SERVER = [
   'test-applicant-walls.mjs', // every handler tried with an applicant's sign-in: none of staff's or admin's opens, nothing of anyone else leaks
   'test-dts.mjs',            // GPDTS: the board's gate and counts, the pipeline's weekly rows (tagged, never over a typed number), graduated / potential staff, lectures, contacts, a lead joined by sign-up, who sees what on the portal
   'test-portal.mjs',     // YWAM GP Portal: applicant sign-up, applicants closed out of every staff handler and roster, own application only, portal access flags, timeline follows the CRM stage
+  'test-portal-import.mjs', // importing applications from a spreadsheet: who may, applied on the form's day, answers cleaned and leftovers kept, nothing twice, the same email or phone skipped, a later sign-up takes it over
   'test-ministry-oversight.mjs', // department overseers can log for ministries they oversee, nobody else can
   'test-ministry-metrics.mjs', // a ministry's own staff (or its overseer, or an admin) can edit what it tracks
   'test-rollups.mjs',    // the roll-up maths
@@ -110,6 +111,7 @@ const BROWSER = [
   'test-health-export.mjs',  // Base health → Export as slides: the deck, its figures against the page, PNG, close
   'test-health-quarters.mjs', // Base health → Quarter by quarter: columns per quarter with ▲/▼, per-question minis, Siem Reap parity, the deck's By-quarter slides
   'test-portal-page.mjs',   // portal.html: front door + deep link, sign-up, the dashboard timeline, language toggle, desktop layout, the staff view and its gate
+  'test-portal-import-ui.mjs', // portal ☰ → Import applications: a Google Form CSV matched to the DTS form, bilingual answers to options, phones' lost 0, preview, import, the record's notes
   'test-admin-portal-access.mjs', // Admin → Portal access: the card, campus chips, the two ticks call adminUpdateStaff
   'test-ministry-load-error.mjs', // My Ministry / Teams Database when the on-demand load crashes: the error card with the server's words and Try again, one request not a storm
   'test-hr-page.mjs', // the HR page: menu item + badge, home tiles and renewals due, status chips, a person's contracts, add a renewal, attach a file, old-CRM pre-fill, archive
