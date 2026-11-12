@@ -4345,7 +4345,250 @@ The staff's Teams list: each team's dates at our base, e.g. "In Siem Reap 10 Jan
 
 The staff's Applications list: "Sort by" chips (When they come — teams only — Date applied, Latest change) and a Newest / Oldest first button; the line under each name says when they applied or when it last changed.
 
-## 85. Finances — balances (cash on hand, the bank, reconciled)
+## 85. GPDTS on My Ministry — the school's page
+
+| English | Khmer (draft) |
+|---|---|
+| set by an admin | កំណត់ដោយអ្នកគ្រប់គ្រង |
+| This school | សាលានេះ |
+| Lectures | មេរៀន |
+| Couldn’t load the school. | មិនអាចផ្ទុកសាលាបានទេ។ |
+| Where everyone is | មនុស្សគ្រប់គ្នានៅដំណាក់កាលណា |
+| {k} Khmer · {i} intl | ខ្មែរ {k} · អន្តរជាតិ {i} |
+| Open the DTS list in the portal | បើកបញ្ជី DTS នៅក្នុង Portal |
+| Follow up | តាមដាន |
+| {n} more in the portal | {n} ទៀតនៅក្នុង Portal |
+| This year’s numbers | លេខឆ្នាំនេះ |
+| Here | នៅទីនេះ |
+| Graduated | បានបញ្ចប់ការសិក្សា |
+| Potential staff | បុគ្គលិកដែលមានសក្តានុពល |
+| Nobody is here yet. Students show here once they are marked Arrived in the portal. | មិនទាន់មាននរណានៅទីនេះទេ។ សិស្សនឹងបង្ហាញនៅទីនេះ នៅពេលពួកគេត្រូវបានសម្គាល់ថាបានមកដល់នៅក្នុង Portal។ |
+| Select all | ជ្រើសរើសទាំងអស់ |
+| Graduated ({n}) | បានបញ្ចប់ការសិក្សា ({n}) |
+| Tick students to mark them graduated together. | គូសធីកសិស្ស ដើម្បីសម្គាល់ថាពួកគេបានបញ្ចប់ការសិក្សាព្រមគ្នា។ |
+| Here since {date} | នៅទីនេះតាំងពី {date} |
+| Graduated {date} | បានបញ្ចប់ការសិក្សា {date} |
+| Edit the lecture | កែប្រែមេរៀន |
+| Add a lecture | បន្ថែមមេរៀន |
+| To (optional) | ដល់ (មិនចាំបាច់) |
+| e.g. The Father heart of God | ឧ. ព្រះហឫទ័យជាព្រះវរបិតារបស់ព្រះ |
+| Where they are from | ពួកគេមកពីណា |
+| e.g. YWAM Phnom Penh, a church in Battambang | ឧ. YWAM ភ្នំពេញ ព្រះវិហារមួយនៅបាត់ដំបង |
+| How to reach them | របៀបទាក់ទងពួកគេ |
+| Phone, email or Telegram | ទូរស័ព្ទ អ៊ីមែល ឬ Telegram |
+| Confirmed — they are coming | បានបញ្ជាក់ — ពួកគេនឹងមក |
+| Travel, where they stay, what they need… | ការធ្វើដំណើរ កន្លែងស្នាក់នៅ អ្វីដែលពួកគេត្រូវការ… |
+| Topic to come | ប្រធានបទនឹងមកដល់ |
+| Speaker to come | អ្នកនិយាយនឹងមកដល់ |
+| Confirmed | បានបញ្ជាក់ |
+| Not confirmed | មិនទាន់បញ្ជាក់ |
+| No lectures planned yet. | មិនទាន់មានមេរៀនគ្រោងទុកនៅឡើយទេ។ |
+| Earlier ({n}) | មុននេះ ({n}) |
+| Finance & budget | ហិរញ្ញវត្ថុ និងថវិកា |
+| Coming soon: the school’s budget — speakers’ gifts and travel, food, outreach — beside what has been spent. | ឆាប់ៗនេះ៖ ថវិការបស់សាលា — អំណោយ និងការធ្វើដំណើររបស់អ្នកនិយាយ អាហារ ការចេញផ្សាយដំណឹងល្អ — ជាមួយអ្វីដែលបានចំណាយ។ |
+| Coming soon: the outreach teams — where they go, when, who leads them, the budget, and what God did there. | ឆាប់ៗនេះ៖ ក្រុមចេញផ្សាយដំណឹងល្អ — ពួកគេទៅណា ពេលណា នរណាដឹកនាំ ថវិកា និងអ្វីដែលព្រះបានធ្វើនៅទីនោះ។ |
+| Only GPDTS’s team can open this. | មានតែក្រុម GPDTS ទេដែលអាចបើកនេះបាន។ |
+| The server answered without the school. | ម៉ាស៊ីនមេបានឆ្លើយតបដោយគ្មានសាលា។ |
+| That day hasn’t come yet. | ថ្ងៃនោះមិនទាន់មកដល់នៅឡើយទេ។ |
+| Marked graduated 🎓 | បានសម្គាល់ថាបានបញ្ចប់ការសិក្សា 🎓 |
+| {n} marked graduated 🎓 | {n} នាក់ត្រូវបានសម្គាល់ថាបានបញ្ចប់ការសិក្សា 🎓 |
+| Marked potential staff ⭐ | បានសម្គាល់ថាជាបុគ្គលិកដែលមានសក្តានុពល ⭐ |
+| Pick the day first. | សូមជ្រើសរើសថ្ងៃជាមុនសិន។ |
+| Add a topic or a speaker. | បន្ថែមប្រធានបទ ឬអ្នកនិយាយ។ |
+| Delete this lecture? | លុបមេរៀននេះ? |
+| Reaching out | កំពុងទាក់ទង |
+| Contacted | បានទាក់ទង |
+| Applied | បានដាក់ពាក្យ |
+| Accepted | បានទទួលយក |
+| Here now | នៅទីនេះឥឡូវ |
+| Graduated this year | បានបញ្ចប់ការសិក្សាឆ្នាំនេះ |
+| Follow-ups due | ការតាមដានដែលត្រូវធ្វើ |
+
+GPDTS on My Ministry (Siem Reap): the Dashboard (where everyone is in the pipeline, the follow-ups due, this year's numbers), This school (marking students graduated and potential staff), Lectures (topic, speaker, confirmed) with a Finance & budget placeholder, and an Outreach placeholder. "Here" = the students who are at the base now.
+
+## 86. Portal — contacts, follow-ups and who sees what
+
+| English | Khmer (draft) |
+|---|---|
+| The portal is where students, staff, volunteers and teams apply. Each school’s staff see their own school’s applicants, Outreach Teams the teams. Tick anyone else here, and change what anyone sees. | Portal គឺជាកន្លែងដែលសិស្ស បុគ្គលិក អ្នកស្ម័គ្រចិត្ត និងក្រុមដាក់ពាក្យ។ បុគ្គលិករបស់សាលានីមួយៗឃើញអ្នកដាក់ពាក្យនៃសាលារបស់ខ្លួន ហើយ Outreach Teams ឃើញក្រុម។ គូសធីកអ្នកផ្សេងទៀតនៅទីនេះ ហើយប្តូរអ្វីដែលនរណាម្នាក់ឃើញ។ |
+| Portal staff work the applicants they see and move them along. A portal admin can also grant portal staff. App admins always have both and see everything. “Sees” is which applicants — from their ministry unless you change it. | បុគ្គលិក Portal ធ្វើការជាមួយអ្នកដាក់ពាក្យដែលពួកគេឃើញ ហើយជួយពួកគេទៅមុខ។ អ្នកគ្រប់គ្រង Portal ក៏អាចផ្តល់សិទ្ធិជាបុគ្គលិក Portal ផងដែរ។ អ្នកគ្រប់គ្រងកម្មវិធីតែងតែមានទាំងពីរ ហើយឃើញទាំងអស់។ «ឃើញ» គឺអ្នកដាក់ពាក្យណាខ្លះ — តាមកិច្ចការបម្រើរបស់ពួកគេ លុះត្រាតែអ្នកប្តូរវា។ |
+| Everything | ទាំងអស់ |
+| Nothing | គ្មានអ្វីទេ |
+| Choose what they see | ជ្រើសរើសអ្វីដែលពួកគេឃើញ |
+| Sees | ឃើញ |
+| from their ministry | តាមកិច្ចការបម្រើរបស់ពួកគេ |
+| From their ministry | តាមកិច្ចការបម្រើរបស់ពួកគេ |
+| Applied, accepted, enrolled, graduated, potential staff and students contacted count themselves from the portal — see the Dashboard. Enter the rest here. | ចំនួនដាក់ពាក្យ ទទួលយក ចុះឈ្មោះ បញ្ចប់ការសិក្សា បុគ្គលិកដែលមានសក្តានុពល និងសិស្សដែលបានទាក់ទង រាប់ដោយខ្លួនឯងពី Portal — សូមមើលផ្ទាំងសង្ខេប។ បញ្ចូលលេខផ្សេងទៀតនៅទីនេះ។ |
+| From the portal: DTS applications, and the people you add there and reach out to. Applied, accepted, enrolled, graduated, potential staff and students contacted are counted from it — nobody types them. | ពី Portal៖ ពាក្យសុំ DTS និងមនុស្សដែលអ្នកបន្ថែមនៅទីនោះ ហើយទាក់ទងទៅ។ ចំនួនដាក់ពាក្យ ទទួលយក ចុះឈ្មោះ បញ្ចប់ការសិក្សា បុគ្គលិកដែលមានសក្តានុពល និងសិស្សដែលបានទាក់ទង ត្រូវរាប់ពីវា — គ្មាននរណាវាយបញ្ចូលទេ។ |
+| Add a contact | បន្ថែមអ្នកទំនាក់ទំនង |
+| Nothing due this week. Set a next step on each person in the portal and it shows here when it’s near. | សប្តាហ៍នេះគ្មានអ្វីត្រូវធ្វើទេ។ កំណត់ជំហានបន្ទាប់សម្រាប់មនុស្សម្នាក់ៗនៅក្នុង Portal ហើយវានឹងបង្ហាញនៅទីនេះនៅពេលជិតដល់។ |
+| Someone you are reaching out to who hasn’t applied yet. Log each time you reach them; when they make a portal account with the same email, it joins this record. | នរណាម្នាក់ដែលអ្នកកំពុងទាក់ទង ដែលមិនទាន់ដាក់ពាក្យ។ កត់ត្រារាល់ពេលដែលអ្នកទាក់ទងពួកគេ។ នៅពេលពួកគេបង្កើតគណនី Portal ដោយប្រើអ៊ីមែលដដែល វានឹងភ្ជាប់ទៅកំណត់ត្រានេះ។ |
+| Interested in | ចាប់អារម្មណ៍លើ |
+| Chats on | ជជែកតាម |
+| Where you met them | កន្លែងដែលអ្នកបានជួបពួកគេ |
+| e.g. a church in Battambang, Facebook, a friend | ឧ. ព្រះវិហារមួយនៅបាត់ដំបង Facebook មិត្តភក្តិ |
+| e.g. call after Sunday service | ឧ. ទូរស័ព្ទក្រោយការថ្វាយបង្គំថ្ងៃអាទិត្យ |
+| Add them | បន្ថែមពួកគេ |
+| Add their name first. | សូមបន្ថែមឈ្មោះរបស់ពួកគេជាមុនសិន។ |
+| Added — now log how you reached them. | បានបន្ថែម — ឥឡូវកត់ត្រារបៀបដែលអ្នកបានទាក់ទងពួកគេ។ |
+| That kind of application is outside what you see. | ប្រភេទពាក្យសុំនោះនៅក្រៅអ្វីដែលអ្នកឃើញ។ |
+| Send them the application | ផ្ញើពាក្យសុំទៅពួកគេ |
+| When they make an account with {email}, it joins this record — everything you logged stays. | នៅពេលពួកគេបង្កើតគណនីដោយប្រើ {email} វានឹងភ្ជាប់ទៅកំណត់ត្រានេះ — អ្វីៗដែលអ្នកបានកត់ត្រានៅដដែល។ |
+| Add their email below: when they make an account with it, it joins this record. | បន្ថែមអ៊ីមែលរបស់ពួកគេខាងក្រោម៖ នៅពេលពួកគេបង្កើតគណនីដោយប្រើវា វានឹងភ្ជាប់ទៅកំណត់ត្រានេះ។ |
+| Edit their details | កែប្រែព័ត៌មានរបស់ពួកគេ |
+| You see | អ្នកឃើញ |
+| Edit this contact | កែប្រែការទំនាក់ទំនងនេះ |
+| Log a contact | កត់ត្រាការទំនាក់ទំនង |
+| How | តាមរបៀបណា |
+| Who you talked with | អ្នកដែលអ្នកបាននិយាយជាមួយ |
+| What did you talk about? How are they doing, what are they deciding? | តើអ្នកបាននិយាយអំពីអ្វី? តើពួកគេសុខសប្បាយទេ ពួកគេកំពុងសម្រេចចិត្តអ្វី? |
+| Set the next step on Overview, so it shows under Follow-ups due. | កំណត់ជំហានបន្ទាប់នៅលើទិដ្ឋភាពទូទៅ ដើម្បីឱ្យវាបង្ហាញនៅក្រោមការតាមដានដែលត្រូវធ្វើ។ |
+| Nothing logged yet. Each time you reach out — a call, a message, a visit — log it here. | មិនទាន់មានអ្វីត្រូវបានកត់ត្រានៅឡើយទេ។ រាល់ពេលដែលអ្នកទាក់ទង — ការហៅទូរស័ព្ទ សារ ការទៅលេង — កត់ត្រាវានៅទីនេះ។ |
+| Delete this contact? | លុបការទំនាក់ទំនងនេះ? |
+| Contacts | ការទំនាក់ទំនង |
+| Call | ហៅទូរស័ព្ទ |
+| Message | សារ |
+| In person | ជួបផ្ទាល់ |
+| Social media | បណ្តាញសង្គម |
+| Volunteers | អ្នកស្ម័គ្រចិត្ត |
+| Students Applied | សិស្សដែលបានដាក់ពាក្យ |
+| Students Accepted | សិស្សដែលត្រូវបានទទួលយក |
+| Local Students Contacted | សិស្សក្នុងស្រុកដែលបានទាក់ទង |
+| Intl Students Contacted | សិស្សអន្តរជាតិដែលបានទាក់ទង |
+| Students who sent in a DTS application this week — counted by the app from the portal. | សិស្សដែលបានផ្ញើពាក្យសុំ DTS នៅសប្តាហ៍នេះ — រាប់ដោយកម្មវិធីពី Portal។ |
+| Students accepted into the school this week — counted by the app from the portal. | សិស្សដែលត្រូវបានទទួលចូលសាលានៅសប្តាហ៍នេះ — រាប់ដោយកម្មវិធីពី Portal។ |
+| Khmer students reached for the first time this week — counted by the app from the contacts in the portal. | សិស្សខ្មែរដែលបានទាក់ទងជាលើកដំបូងនៅសប្តាហ៍នេះ — រាប់ដោយកម្មវិធីពីការទំនាក់ទំនងនៅក្នុង Portal។ |
+| International students reached for the first time this week — counted by the app from the contacts in the portal. | សិស្សអន្តរជាតិដែលបានទាក់ទងជាលើកដំបូងនៅសប្តាហ៍នេះ — រាប់ដោយកម្មវិធីពីការទំនាក់ទំនងនៅក្នុង Portal។ |
+
+The portal's staff side: "Add a contact" (someone the team reaches out to before they apply), the Contacts tab where each call / message / visit is logged, the Follow-ups due filter, the link to send a contact so they can apply, and Admin → Portal access's "Sees" (which applicants each person sees). Also the four new GPDTS metric names and their one-line descriptions in the KPI guide.
+
+## 87. The GP app — Continue with Google
+
+| English | Khmer (draft) |
+|---|---|
+| Google sign-in could not load — use your username and PIN, or try again later. | ការចូលដោយ Google មិនអាចផ្ទុកបានទេ — សូមប្រើឈ្មោះអ្នកប្រើ និង PIN របស់អ្នក ឬព្យាយាមម្តងទៀតពេលក្រោយ។ |
+| Done — sign in with Google from now on. | រួចរាល់ — ចាប់ពីពេលនេះតទៅ សូមចូលដោយ Google។ |
+| Another profile already has that Google email. | ប្រវត្តិរូបមួយផ្សេងទៀតមានអ៊ីមែល Google នោះរួចហើយ។ |
+| Welcome! Make your profile — no username or PIN needed. | សូមស្វាគមន៍! បង្កើតប្រវត្តិរូបរបស់អ្នក — មិនត្រូវការឈ្មោះអ្នកប្រើ ឬ PIN ទេ។ |
+| Your account is waiting on approval from a base leader. | គណនីរបស់អ្នកកំពុងរង់ចាំការអនុម័តពីអ្នកដឹកនាំមូលដ្ឋាន។ |
+| Continue with Google, or log in with your username and PIN. | បន្តដោយ Google ឬចូលដោយឈ្មោះអ្នកប្រើ និង PIN របស់អ្នក។ |
+| Username or email | ឈ្មោះអ្នកប្រើ ឬអ៊ីមែល |
+| PIN or password | PIN ឬពាក្យសម្ងាត់ |
+| Signing up with Google as {email} — no username or PIN to remember. | កំពុងចុះឈ្មោះដោយ Google ជា {email} — គ្មានឈ្មោះអ្នកប្រើ ឬ PIN ត្រូវចងចាំទេ។ |
+| Sign up with Google | ចុះឈ្មោះដោយ Google |
+| How you sign in | របៀបដែលអ្នកចូល |
+| With Google ({email}). | ដោយ Google ({email})។ |
+| With your email and password. | ដោយអ៊ីមែល និងពាក្យសម្ងាត់របស់អ្នក។ |
+| With your username and PIN. | ដោយឈ្មោះអ្នកប្រើ និង PIN របស់អ្នក។ |
+| Sign in with Google from now on — quicker, and nothing to remember. Use the Google account with your email. | ចាប់ពីពេលនេះ ចូលដោយ Google — លឿនជាង ហើយគ្មានអ្វីត្រូវចងចាំ។ សូមប្រើគណនី Google ដែលមានអ៊ីមែលរបស់អ្នក។ |
+| Sign in with Google from now on | ចូលដោយ Google ចាប់ពីពេលនេះ |
+| Enter your username and 4-digit PIN, or your email and password | បញ្ចូលឈ្មោះអ្នកប្រើ និង PIN ៤ ខ្ទង់ ឬអ៊ីមែល និងពាក្យសម្ងាត់របស់អ្នក |
+
+The GP app sign-in and sign-up screens and Profile & settings → How you sign in: staff can sign in with Google instead of a username and PIN.
+
+## 88. GPDTS part 2 — the school by year, outreach, the staff pipeline
+
+| English | Khmer (draft) |
+|---|---|
+| The school by year | សាលាតាមឆ្នាំ |
+| Add a past year | បន្ថែមឆ្នាំមុនៗ |
+| Typed in for a past school. | បានវាយបញ្ចូលសម្រាប់សាលាមុនៗ។ |
+| Edit these numbers | កែប្រែលេខទាំងនេះ |
+| What God did | អ្វីដែលព្រះបានធ្វើ |
+| Lectures {a} · Outreach {b} | មេរៀន {a} · ការចេញផ្សាយ {b} |
+| Students count themselves from the portal; what God did, from Lectures and Outreach. Enrolled and potential staff are the most at once. | ចំនួនសិស្សរាប់ដោយខ្លួនឯងពី Portal ហើយអ្វីដែលព្រះបានធ្វើ ពីមេរៀន និងការចេញផ្សាយ។ ការចុះឈ្មោះ និងបុគ្គលិកដែលមានសក្តានុពល គឺជាចំនួនច្រើនបំផុតក្នុងពេលតែមួយ។ |
+| The totals for a school before this app — leave a box empty if you don’t know it. | ចំនួនសរុបសម្រាប់សាលាមុនពេលមានកម្មវិធីនេះ — ទុកប្រអប់ឱ្យទទេ បើអ្នកមិនដឹង។ |
+| e.g. where outreach went that year | ឧ. កន្លែងដែលការចេញផ្សាយបានទៅនៅឆ្នាំនោះ |
+| Delete this year | លុបឆ្នាំនេះ |
+| On staff — in the GP app | ជាបុគ្គលិក — នៅក្នុងកម្មវិធី GP |
+| Staff application | ពាក្យសុំធ្វើជាបុគ្គលិក |
+| Start their staff application | ចាប់ផ្តើមពាក្យសុំធ្វើជាបុគ្គលិករបស់ពួកគេ |
+| What God did (after the week) | អ្វីដែលព្រះបានធ្វើ (ក្រោយសប្តាហ៍) |
+| Edit the outreach | កែប្រែការចេញផ្សាយ |
+| Add an outreach | បន្ថែមការចេញផ្សាយ |
+| e.g. Mondulkiri, Thailand | ឧ. មណ្ឌលគិរី ប្រទេសថៃ |
+| Who leads it | អ្នកដឹកនាំ |
+| People on the team | ចំនួនមនុស្សក្នុងក្រុម |
+| Reports — what God did | របាយការណ៍ — អ្វីដែលព្រះបានធ្វើ |
+| A line about it (optional) | មួយបន្ទាត់អំពីវា (មិនចាំបាច់) |
+| No reports yet. Add one for each week, or each time the team sends its numbers. | មិនទាន់មានរបាយការណ៍ទេ។ បន្ថែមមួយសម្រាប់សប្តាហ៍នីមួយៗ ឬរាល់ពេលដែលក្រុមផ្ញើលេខរបស់ខ្លួន។ |
+| No outreach yet. Add each team the school sends — where, when and who leads it — and the numbers as they come in. | មិនទាន់មានការចេញផ្សាយទេ។ បន្ថែមក្រុមនីមួយៗដែលសាលាបញ្ជូនទៅ — កន្លែង ពេលវេលា និងអ្នកដឹកនាំ — ហើយលេខនៅពេលវាមកដល់។ |
+| Led by {name} | ដឹកនាំដោយ {name} |
+| No numbers yet | មិនទាន់មានលេខ |
+| {n} reports | {n} របាយការណ៍ |
+| Outreach budget | ថវិកាការចេញផ្សាយ |
+| Coming soon: each outreach’s budget beside what was spent. | ឆាប់ៗនេះ៖ ថវិការបស់ការចេញផ្សាយនីមួយៗ ជាមួយអ្វីដែលបានចំណាយ។ |
+| Start {name}’s staff application? Their portal sign-in will open the staff application, and HR takes it from there. | ចាប់ផ្តើមពាក្យសុំធ្វើជាបុគ្គលិករបស់ {name}? ការចូល Portal របស់ពួកគេនឹងបើកពាក្យសុំធ្វើជាបុគ្គលិក ហើយ HR នឹងបន្តពីទីនោះ។ |
+| Their staff application has started 👔 | ពាក្យសុំធ្វើជាបុគ្គលិករបស់ពួកគេបានចាប់ផ្តើម 👔 |
+| Nothing to move — they need to be graduated and potential staff. | គ្មានអ្វីត្រូវផ្លាស់ទីទេ — ពួកគេត្រូវតែបញ្ចប់ការសិក្សា និងជាបុគ្គលិកដែលមានសក្តានុពល។ |
+| Pick a year before this one. | ជ្រើសរើសឆ្នាំមុនឆ្នាំនេះ។ |
+| Delete this year’s numbers? | លុបលេខរបស់ឆ្នាំនេះ? |
+| Say where the outreach is. | សូមប្រាប់ថាការចេញផ្សាយនៅឯណា។ |
+| Delete this outreach and its reports? | លុបការចេញផ្សាយនេះ និងរបាយការណ៍របស់វា? |
+| Welcome to the YWAM GP staff! | សូមស្វាគមន៍មកកាន់បុគ្គលិក YWAM GP! |
+| Your application is done — you are in the GP app now. Open it with the same sign-in you use here. | ពាក្យសុំរបស់អ្នករួចរាល់ហើយ — ឥឡូវអ្នកនៅក្នុងកម្មវិធី GP។ បើកវាដោយការចូលដូចគ្នាដែលអ្នកប្រើនៅទីនេះ។ |
+| That is a staff account — opening the GP app, where you can continue with Google. | នោះជាគណនីបុគ្គលិក — កំពុងបើកកម្មវិធី GP ដែលអ្នកអាចបន្តដោយ Google។ |
+| In the GP app since {date} | នៅក្នុងកម្មវិធី GP តាំងពី {date} |
+| To add them to the GP app, they need a portal account first — send them the staff application link. | ដើម្បីបន្ថែមពួកគេទៅកម្មវិធី GP ពួកគេត្រូវមានគណនី Portal ជាមុនសិន — ផ្ញើតំណពាក្យសុំធ្វើជាបុគ្គលិកទៅពួកគេ។ |
+| Add to the GP app | បន្ថែមទៅកម្មវិធី GP |
+| {name} signs in to the GP app the same way as here — no username or PIN. | {name} ចូលកម្មវិធី GP ដូចគ្នានឹងនៅទីនេះ — គ្មានឈ្មោះអ្នកប្រើ ឬ PIN ទេ។ |
+| — they choose it in the app — | — ពួកគេជ្រើសរើសនៅក្នុងកម្មវិធី — |
+| Kind of staff | ប្រភេទបុគ្គលិក |
+| Add {name} to the GP app | បន្ថែម {name} ទៅកម្មវិធី GP |
+| Add {name} to the GP app? Their portal sign-in will open the GP app from now on. | បន្ថែម {name} ទៅកម្មវិធី GP? ចាប់ពីពេលនេះ ការចូល Portal របស់ពួកគេនឹងបើកកម្មវិធី GP។ |
+| Added — they sign in to the GP app with their email and password. | បានបន្ថែម — ពួកគេចូលកម្មវិធី GP ដោយអ៊ីមែល និងពាក្យសម្ងាត់របស់ពួកគេ។ |
+| Added — they sign in to the GP app with Google. | បានបន្ថែម — ពួកគេចូលកម្មវិធី GP ដោយ Google។ |
+| Only an admin can add someone to Campus Leadership. | មានតែអ្នកគ្រប់គ្រងទេដែលអាចបន្ថែមនរណាម្នាក់ទៅក្នុងការដឹកនាំបរិវេណ។ |
+| They need a portal account first. | ពួកគេត្រូវមានគណនី Portal ជាមុនសិន។ |
+| Accept their application first. | សូមទទួលយកពាក្យសុំរបស់ពួកគេជាមុនសិន។ |
+| GPDTS on My Ministry | GPDTS នៅក្នុងកិច្ចការបម្រើរបស់ខ្ញុំ |
+| A GPDTS graduate, marked potential staff. | និស្សិតបញ្ចប់ការសិក្សា GPDTS ដែលត្រូវបានសម្គាល់ថាជាបុគ្គលិកដែលមានសក្តានុពល។ |
+| Their DTS record | កំណត់ត្រា DTS របស់ពួកគេ |
+| Contacted (local) | បានទាក់ទង (ក្នុងស្រុក) |
+| Contacted (international) | បានទាក់ទង (អន្តរជាតិ) |
+| Enrolled | បានចុះឈ្មោះ |
+| Heard the gospel | បានឮដំណឹងល្អ |
+
+GPDTS on My Ministry (the school by year, past years, Outreach reports, "What God did" on lectures, moving a graduate into the staff application) and the portal (Add to the GP app, the welcome screen for someone now on staff, the button back to GPDTS).
+
+## 89. The GP app — the step to Google
+
+| English | Khmer (draft) |
+|---|---|
+| From now on, sign in with Google | ចាប់ពីពេលនេះ សូមចូលដោយ Google |
+| We are moving everyone off usernames and PINs. Connect your Google account once — next time, just tap Continue with Google. | យើងកំពុងផ្លាស់ប្តូរមនុស្សគ្រប់គ្នាឱ្យឈប់ប្រើឈ្មោះអ្នកប្រើ និង PIN។ ភ្ជាប់គណនី Google របស់អ្នកម្តង — លើកក្រោយ គ្រាន់តែចុច បន្តដោយ Google។ |
+| Use the Google account for {email} if you can. | សូមប្រើគណនី Google សម្រាប់ {email} បើអាច។ |
+| Connect my Google account | ភ្ជាប់គណនី Google របស់ខ្ញុំ |
+| Not now | មិនមែនឥឡូវនេះទេ |
+| That Google account is already linked to another profile. | គណនី Google នោះបានភ្ជាប់ទៅប្រវត្តិរូបមួយផ្សេងទៀតរួចហើយ។ |
+| Sign in with Google from now on — quicker, and nothing to remember. The Google account you connect becomes this profile’s. | ចាប់ពីពេលនេះ ចូលដោយ Google — លឿនជាង ហើយគ្មានអ្វីត្រូវចងចាំ។ គណនី Google ដែលអ្នកភ្ជាប់ នឹងក្លាយជារបស់ប្រវត្តិរូបនេះ។ |
+
+The page someone signed in with a username and PIN sees first (once each time the app is opened) until they connect Google, and its Profile & settings twin.
+
+## 90. Every new account waits for an admin
+
+| English | Khmer (draft) |
+|---|---|
+| Declined | បានបដិសេធ |
+| Decline {name}’s account? It will be removed. | បដិសេធគណនីរបស់ {name}? វានឹងត្រូវបានលុបចេញ។ |
+| Thanks! An admin will look at your account — you can sign in once it is approved. | សូមអរគុណ! អ្នកគ្រប់គ្រងនឹងពិនិត្យគណនីរបស់អ្នក — អ្នកអាចចូលបាននៅពេលវាត្រូវបានអនុម័ត។ |
+| New accounts and moves waiting for a yes | គណនីថ្មី និងការផ្លាស់ប្តូរ ដែលកំពុងរង់ចាំការយល់ព្រម |
+
+Admin → Approvals (Approve / Decline every new sign-up) and the message after signing up.
+
+## 91. Google is the way in
+
+| English | Khmer (draft) |
+|---|---|
+| Sign in with your Google account. | ចូលដោយប្រើគណនី Google របស់អ្នក។ |
+| First time with Google? Sign in once with your username and PIN to connect it | លើកដំបូងជាមួយ Google? ចូលម្តងដោយឈ្មោះអ្នកប្រើ និង PIN របស់អ្នក ដើម្បីភ្ជាប់វា |
+| Sign in once with your username and PIN — then connect your Google account. | ចូលម្តងដោយឈ្មោះអ្នកប្រើ និង PIN របស់អ្នក — បន្ទាប់មកភ្ជាប់គណនី Google របស់អ្នក។ |
+| Continue with Google instead | បន្តដោយ Google វិញ |
+| That staff account has no portal access — opening the GP app, where you can continue with Google. | គណនីបុគ្គលិកនោះគ្មានសិទ្ធិចូល Portal ទេ — កំពុងបើកកម្មវិធី GP ដែលអ្នកអាចបន្តដោយ Google។ |
+
+The GP app's sign-in screen once Google is on (username and PIN only to connect Google the first time), the step's Log out, and the portal's message to staff without portal access.
+
+## 92. Finances — balances (cash on hand, the bank, reconciled)
 
 | English | Khmer (draft) |
 |---|---|

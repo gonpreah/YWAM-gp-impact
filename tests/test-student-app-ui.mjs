@@ -26,7 +26,8 @@ const api = await import(TMP + '/api.js');
 const mem = blobs.__mem;
 const H = (p, s) => crypto.createHash('sha256').update(s + ':' + String(p), 'utf8').digest('hex');
 const mk = o => Object.assign({ active: true, campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe',
-  role: 'Staff', staffType: 'campus', country: 'Cambodia', surveyToken: 'tok_' + o.id }, o, { pinSalt: o.id, pinHash: H('1234', o.id) });
+  role: 'Staff', staffType: 'campus', country: 'Cambodia', surveyToken: 'tok_' + o.id,
+  google: { sub: 'g_' + o.id } }, o, { pinSalt: o.id, pinHash: H('1234', o.id) });   // Google already connected (Nov 2026), so no "sign in with Google" step
 mem.staff = [
   mk({ id: 'hosp', name: 'Hana Host', username: 'hana', email: 'h@e.com', dept: 'Skills Training', ministry: 'Hospitality' }),
   mk({ id: 'ld1', name: 'Lina Leader', username: 'lina', email: 'l@e.com', dept: 'Leadership Development', ministry: 'GPDTS' }),

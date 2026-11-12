@@ -666,6 +666,111 @@ quietest bucket named), Requests, Calendar, Bookings, Rooms.
 Weekly Check-in is not in the menu (the Health tab is its home) and the GP Dashboard is hidden
 for now. `test-menu.mjs` checks each role.
 
+## GPDTS on My Ministry — the school's numbers count themselves (Nov 2026, Andrew)
+"Instead of manually inputting numbers, I would like it to automatically track them … the portal for DTS
+applications linked to the GPDTS my ministry page." Siem Reap's GPDTS only for now (`DTS_TOOL` in api.js,
+`autoMetricsFor` in taxonomy.js). The portal is the day-to-day follow-up; GPDTS on My Ministry is the
+school's home.
+- **Metrics** (`GPDTS_METRICS`, taxonomy.js): Students Applied, Students Accepted, Students Enrolled,
+  Students Graduated, Potential Staff, People Heard the Gospel, Healings, Salvations, Baptisms, Local
+  Students Contacted, Intl Students Contacted. **Seven count themselves** (`DTS_AUTO` / `DTS_AUTO_METRICS`
+  — keep the two lists the same) from the DTS candidates: applied = the day the application was sent
+  (`portal.submittedAt`, else the first stage log at applied or beyond), accepted = first reached accepted,
+  graduated = `dts.graduated`, contacted = the first logged contact or move to Contacted / Interview (NEW
+  people, by audience: Khmer → Local), and two levels week by week — Enrolled (arrived, not graduated, not
+  archived) and Potential Staff (`dts.potentialStaff` this year). `dtsSync_` writes them into `entries`
+  for this week year as rows `by: 'tool:dts'`, **never over a typed row**, and removes its own rows that
+  no longer hold. It runs after every DTS change (hrSaveCandidate, hrCandidateCall, hrArchiveCandidate,
+  portalSubmit, dtsMark, dtsBoard) and hourly (`netlify/functions/dts-sync.js` → `runDtsSync`). The
+  numbers-due reminders ignore `tool:dts` rows (`numbersStatus_`), and the Numbers tab neither asks for
+  them (`kpiCardHtml`, `ovWeekRowsHtml_` filter `autoMetricsFor`) nor counts them as entered
+  (`numbersProgress_`, `ministryWeekLogged_` via `S.mmSkip`); `#dtsAutoHint` says so.
+- **The page** (`teams/16-dts.js`): tabs `dtsdash` Dashboard · `dtsclass` This school · `dtslect` Lectures ·
+  `dtsout` Outreach, then Numbers · Tasks · OKRs (`MM_SHELL_KEYS`, `mmTabsFor_`). One `dtsBoard` load per
+  open (`S.dts`; it also fills `S.oversee.GPDTS` for someone it isn't their main ministry). Dashboard:
+  where everyone is (`#dtsPipe`: Reaching out · Contacted · Applied · Accepted · Here now · Graduated this
+  year, each "k Khmer · i intl", `dtsColumn_`), Follow-ups due (`#dtsDue`, next step within 7 days, each
+  opening `portal.html?open=<id>`), "Open the DTS list in the portal" (`portal.html?what=dts`), this year's
+  numbers (`ministryDashboardHtml_`). This school: who arrived (graduated in the last 180 days stay),
+  Select all → 🎓 Graduated (n) with a day (`dtsMark(ids, {graduated})`, not in the future, Undo), ⭐
+  Potential staff. Lectures (`dtsLect:<campus>`: date, end, topic, speaker, from, contact, confirmed,
+  notes; `dtsSaveLecture` / `dtsDeleteLecture`) with a 💰 Finance & budget placeholder; Outreach a
+  placeholder (Andrew will say what goes in both). Who: `dtsGate_` — `canLogFor_` GPDTS or `dtsTeam_`
+  (its staff, leaders, the Leadership Development director), admins.
+- **The portal for it**: ＋ Add a contact (`leadFormHtml_` → `hrSaveCandidate` at New, `source` = where
+  you met them), then the record opens on **Contacts** — every record has it now (teams keep "Call
+  notes"): each call / message / in person / email / social media (`CONTACT_METHODS`, `method` on
+  `calls`); the first contact moves a lead with no account from New to Contacted (logged). ⏰
+  Follow-ups due (`[data-filter="due"]`, `isDue_`, next step within a week, sorted by date); the next
+  step under each name (`nextLine_`). A contact with no account has 📨 Send them the application (the
+  `?apply=<kind>` link) and Edit their details (`leadPanelHtml_`). **Sign-up with the same email (same
+  kind, campus and school) joins that record** (`createApplicant_` reuses its id, keeps calls / source /
+  next step / owner, logs "Made a portal account — joined to this record"). Deep links `?what=dts`,
+  `&filter=due`.
+- **No Numbers tab (Nov 2026, Andrew: "we only run DTS once a year, January to June")**: GPDTS's tabs are
+  Dashboard · This school · Lectures · Outreach · Tasks · OKRs. The four fruit metrics count themselves too
+  (`DTS_FRUIT`, in `DTS_AUTO`): a lecture's `fruit {gospel, healings, salvations, baptisms}` (its form's
+  "What God did", `[data-dlf]`) and each **Outreach** report (`dtsOut:<campus>` = {outreaches:[{id, place,
+  from, to, leaders, size, notes, reports:[{id, date, fruit, note}]}]}, `dtsSaveOutreach` /
+  `dtsDeleteOutreach`, `cleanOutreach_`) count in their day's week, once the day has come. GPDTS is
+  `numbersExempt_` (no "numbers due" reminders). An outreach budget placeholder stays.
+- **The school by year** (`dtsYearHtml_`, `#dtsYear`): year chips (this week year, then each past year),
+  student tiles (`DTS_STU_M`; enrolled and potential staff are the most at once) and What God did tiles
+  (`DTS_FRUIT_M`, this year with "Lectures n · Outreach m"), `[data-dtsm]`, and a year-by-year table
+  (`#dtsYears`). **＋ Add a past year** (`dtsSavePast(year, values, notes)`, `dtsPast:<campus>` =
+  {years:{'2025': {values, notes, by, at}}}; null deletes): typed totals for schools before the app, kept
+  apart — never written into `entries`, so nothing logged then counts twice.
+- **Part 2: graduate → staff → the GP app.** On This school, a graduate marked potential staff has ➡️ Start
+  their staff application (`dtsToStaff`): a staff candidate (`fromDts`, `source:'GPDTS graduate'`, same
+  account) and `dts.staffCand` on the DTS record; their applicant account's `applicant` becomes {type:
+  'staff', candidateId: new, history:[…]} so their portal login opens the staff application
+  (`candidateFor_` now prefers the account's `candidateId`). The row then says where it is
+  (`dtsPipeLine_`). HR works it in the portal; once accepted (accepted / practical / arrived), the record's
+  **📲 Add to the GP app** (`gpAddHtml_` → `portalGpAdd(…, {dept, ministry, staffType})`; HR or anyone who
+  sees the record; Campus Leadership only by an admin, `clt_admin`; needs a portal account,
+  `no_account`) turns their **portal account into their staff account** (`kind:'staff'`,
+  `applicantHistory`, campus from the application, `fromCand`, active) — no username or PIN: they sign in to
+  the GP app with the same Google account or email + password (Andrew: "since it's already connected …
+  they will automatically be able to sign in"). The candidate gets `hired {staffId, at, by}` and stage
+  arrived. Their portal then shows "Welcome to the YWAM GP staff!" (`staff_now` from `portalBoot` /
+  `portalLoginGoogle` for someone with `fromCand` and no portal access) with **Open the GP app**, which
+  carries the same sign-in over (`gp-staff`). The portal's staff header has **🔥 GPDTS on My Ministry**
+  (`#toGpdts` → `teams.html?view=gpdts`, shown when `portalBoot.gpdts`).
+- Tests: tests/test-dts.mjs (server), tests/test-dts-ui.mjs (GPDTS page, portal, Google, Admin).
+
+## Signing in to the GP app with Google; every new account approved (Nov 2026, Andrew)
+- **Continue with Google** (`07-health-leave.js`: `_ggl`, `gglBtnHtml_`, `gglGo_`, `gglCred_` — the portal's
+  own button and Google's OAuth token client, loaded on the first tap; on when `GP_GOOGLE_CLIENT_ID` is set,
+  which the boot carries as `googleId` and the login screen asks `portalAuthConfig` for).
+  `staffLoginGoogle(token)` finds the profile by its linked Google account (`google.sub`), else by email
+  (`staffByEmail_`), and answers like `staffLogin` plus a device token, kept as the "pin" (`credOk_` checks
+  tokens) — `new` (sign up), `pending`, `applicant`. **Sign up with Google** (`staffRegister {googleToken}`):
+  name and email from Google, a username made from the email, no PIN. The login box takes **username or
+  email** and **PIN or password** (`staffLogin` maps an email to its username and answers `user`).
+- **Moving everyone off PINs** (Andrew: "sign in with their username and PIN, then the step of sign in with
+  Google … from now on sign in using the Gmail"): signed in with a PIN and no Google linked, the app opens on
+  `gglStepHtml_` (`#gglStep`, `gglStepWanted_`) — Connect my Google account (`staffLinkGoogle`, made while
+  signed in so the Google account is tied to THAT profile by its id, whatever its Gmail; one Google
+  account → one profile) or Log out; **no "Not now"** (Andrew: "let's just have everyone sign in using
+  Google") — nothing else opens until it is connected. With Google on, the sign-in screen is Continue with
+  Google alone; the username + PIN boxes are behind "First time with Google? Sign in once…"
+  (`#showPinLogin`, `S.pinLogin`). Profile & settings → **How you sign in** (`#signInCard`,
+  `signIn`/`google` on the boot's staff card); Change PIN is hidden for password accounts.
+- **The portal too** (Andrew: "for those accessing the portal, they can just log in using their Gmail"):
+  `portalLoginGoogle` signs staff with portal access onto the staff side (their linked Google account,
+  else their email); staff without it are sent to the GP app.
+- **The wall between applicants and staff** (Andrew: "make sure those who applied through the portal
+  cannot access any of what the staff and admin can access"): `verifyStaff_` refuses an applicant unless a
+  handler asks for them by name (ten do, each reading only their own record or the applicant pages).
+  tests/test-applicant-walls.mjs calls every handler in HANDLERS with an applicant's sign-in and fails if
+  one outside its APPLICANT_OK list opens, or any answer carries someone else's details — a new handler
+  is covered without editing the test.
+- **Every new account waits for an admin** (Andrew: "admin will receive an approval whether they accept
+  them or deny them"): `staffRegister` makes every sign-up pending (it used to be Campus Leadership only),
+  pushes each admin at once (`pushNow_` 'signup' → `teams.html?view=approvals`), and Admin → Approvals has
+  **Approve** and **Decline** (`[data-admindecline]` → `adminDeleteStaff`). Add to the GP app from an
+  accepted application is HR's yes and does not wait.
+
 ## Campus Leadership: the department pulse, the Director's quarter, staff debt from Finance
 - **Department pulse** (`pulseCardHtml_` ← `getDeptPulse`): a department leader's own
   page leads with six figures and nothing to type — numbers in on time (numbers
@@ -753,7 +858,7 @@ and QuickBooks' **A/R Ageing Summary** (staff debt by person and by 1/2/3/over-3
   empty). Kept as `balances` on `finance:<campus>` (getFinDoc_ carries it, so every other finance save keeps
   it); a new day moves the last into `balHist` (24), a correction the same day replaces it. Read by everyone
   who sees the dashboard (`finBalancesOut_` in finOut_). Typed by hand for now — QuickBooks' Balance Sheet
-  could fill it later. Khmer: docs/khmer-needed.md §85.
+  could fill it later. Khmer: docs/khmer-needed.md §92.
 - **The repo is public**: tests use made-up reports (`tests/fin-fixtures.mjs` writes real
   PDFs in the same layout); never commit the office's PDFs or their names.
 - Tests: tests/test-finance.mjs (server), test-finance-parse.mjs (the parser),
@@ -1454,12 +1559,23 @@ forms, documents and references follow.
   `hrCandidateNote`, `hrArchiveCandidate`) are the staff side's writes. Boot carries
   `staff.portalStaff` / `portalAdmin`, and the hamburger menu shows **YWAM GP Portal**
   (opens portal.html in a new tab) to anyone with access.
-- **Scope by ministry** (`portalTypes_` / `portalMaySee_`): an Outreach Teams portal staff
-  member sees team applications only — `portalBoot` filters and returns `scope:['team']`,
-  and `hrSaveCandidate` / `hrCandidateNote` / `hrArchiveCandidate` refuse anything outside
-  the scope for a non-HR caller (creating one included). Everyone else with access sees
-  all kinds. The staff list's tab row (`.whatTab[data-whatfilter]`, All · DTS · DBS · BCS ·
-  SMS · Staff · Volunteer · Teams with counts) shows only the tabs in scope.
+- **Scope by ministry** (`portalTypes_` / `portalMaySee_`; Nov 2026, Andrew: "those who are only in
+  the DTS or DBS or any of the training school staff only see those applicants … for everyone … as
+  admin, I can manually edit that"). A scope entry is a kind (`team`, `staff`, `volunteer`) or a kind
+  and school (`student:dts`). **A school's own staff and leaders get the portal without a tick**
+  (`schoolScope_`, `PORTAL_MIN_SCOPE`: GPDTS/DTS → dts, DBS, BCS, SMS), scoped to their school; the
+  Leadership Development director (Campus Leadership, ministry Leadership Development) all four;
+  Outreach Teams' people team applications (its leader without a tick, its members once ticked).
+  Ticked portal staff with none of those ministries, portal admins and HR see everything. **An admin
+  can set exactly what anyone sees** (`portalScope` on the staff record: a list, `['all']`, or none =
+  from their ministry; `adminUpdateStaff {portalScope}`, `cleanPortalScope_`) — that wins over all of it
+  and is itself a grant. App admins always see everything. Admin → Portal access shows "👁 Sees: DTS ·
+  from their ministry" per row with Change (`portalSeesHtml_`, chips From their ministry · Everything ·
+  DTS · DBS · BCS · SMS · Staff · Volunteers · Teams); `adminStaffOut_` carries `portal`, `portalSees`,
+  `portalScope`; the portal's Who has access says "Sees: …" (`sees`). `portalBoot` returns `scope`
+  (the header says "You see: DTS"), and `hrSaveCandidate` / `hrCandidateNote` / `hrArchiveCandidate` /
+  `hrCandidateCall` refuse anything outside it for a non-HR caller (creating one included). The tab row
+  (`.whatTab[data-whatfilter]`) shows only the tabs in scope (`inScope_`).
 - **The Outreach Teams leader gets in without a tick** (`leadsTeams_`). Anyone whose `leads`
   include `Community Service|Outreach Teams` passes `canPortal_`, and is scoped to team
   applications unless they are also ticked Portal staff. Making someone that ministry's leader
@@ -1857,7 +1973,7 @@ leading at YWAM GP (culture, teams, hard conversations, vision, systems, executi
   tests/test-library.mjs checks the shape.
 
 ## Looking around without an account (teams.html guest mode, Oct 2026)
-"Look around without an account" on the log-in screen, or `teams.html?guest=1`, sets
+`teams.html?guest=1` (the log-in screen's "Look around without an account" button was removed, Nov 2026, Andrew) sets
 `gp-app-guest` (localStorage — they stay a guest on reopen until Log in / Create my
 profile). `S.guest` with a stand-in `S.me` (`gpGuestMe_`, id 'guest') and EMPTY `S.auth`:
 - **Open:** My Home becomes a tour (`gpGuestHomeHtml_`: every tool, what it does, 🔒),

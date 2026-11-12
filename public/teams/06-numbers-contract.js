@@ -126,7 +126,7 @@ document.addEventListener('click', function(e){
    data.numbers.canSet). Outreach Teams and Campus Leadership's own rows have
    none (numbersExempt_). The reminders are in notifItems_; the department
    overseer's done / not done list is numbersDeptListHtml_, inside their department card (pulseCardHtml_). */
-function numbersExempt_(dept, min){ return isTeamsMinistry_(dept, min) || dept===BL_DEPT; }
+function numbersExempt_(dept, min){ return isTeamsMinistry_(dept, min) || dept===BL_DEPT || (dept==='Leadership Development' && min==='GPDTS'); }   // GPDTS counts itself
 function weekFriday_(wk){ var d=new Date(mondayOfWeek_(wk)); d.setDate(d.getDate()+4); return d; }
 function shortDay_(d){ return MONTH_ABBR[d.getMonth()]+' '+d.getDate(); }
 /* 'done' · 'upcoming' (before Friday) · 'today' (Friday) · 'late' */
@@ -136,7 +136,8 @@ function numbersDueState_(wk, logged){
   return today<fri ? 'upcoming' : (today===fri ? 'today' : 'late');
 }
 function numbersProgress_(campus, dept, min, data, wk){
-  var metrics=metricsFor(campus, dept, min), entries=(data&&data.entries)||{}, daily=(data&&data.daily)||{};
+  var auto=autoMetricsFor(campus, dept, min);   // GPDTS's pipeline counts those; only the rest are "entered"
+  var metrics=metricsFor(campus, dept, min).filter(function(m){ return auto.indexOf(m)===-1; }), entries=(data&&data.entries)||{}, daily=(data&&data.daily)||{};
   var b=weekBounds_(wk), n=0;
   metrics.forEach(function(m){
     if(entries[m] && entries[m][String(wk)]!==undefined){ n++; return; }
@@ -814,7 +815,7 @@ function mmTabsHtml_(tabs, cur, extraClass){
   return '<div class="gtBar mmTabsBar"><div class="gtTabs mmTabs'+(extraClass?' '+extraClass:'')+'" role="tablist">'+tabs.map(function(x){
     return '<button class="gtTab'+(cur===x[0]?' on':'')+'" '+(x[2]||'data-mmtab')+'="'+esc(x[0])+'" role="tab">'+esc(x[1])+'</button>'; }).join('')+'</div></div>';
 }
-var MM_SHELL_KEYS=['numbers','sched','tasks','okr','teams'];
+var MM_SHELL_KEYS=['numbers','sched','tasks','okr','teams','dtsdash','dtsclass','dtslect','dtsout'];
 function mmTabsFor_(sel, mine, schedH){
   var out=[];
   if(sel.dept==='Community Service' && sel.min==='Cafe'){
@@ -824,6 +825,8 @@ function mmTabsFor_(sel, mine, schedH){
     out=[['reports',t('Reports'),'data-fintab'],['dash',t('Dashboard'),'data-fintab'],['numbers',t('Numbers')]];
   } else if(isTeamsMinistry_(sel.dept, sel.min)){
     out=[['teams',t('Teams')]];
+  } else if(isDtsMinistry_(sel.dept, sel.min)){
+    out=dtsTabs_();   // GPDTS: the school's home — every number counts itself, so no Numbers tab (teams/16-dts.js)
   } else out=[['numbers',t('Numbers')]];
   if(schedH && !isTeamsMinistry_(sel.dept, sel.min)) out.push(['sched',t('Schedule')]);
   if(sel.dept==='Skills Training' && sel.min==='Hospitality' && canHospClient_()) out.push(['goHosp',t('SR Hospitality'),'id']);   // a way in, not a tab (#goHosp opens it)
@@ -899,7 +902,9 @@ function myMinistryHtml(){
   if(sel.dept==='Community Service' && sel.min==='Cafe' && cur!=='numbers' && MM_SHELL_KEYS.indexOf(cur)===-1) S.cafeTab=cur;
   h+=mmTabsHtml_(tabs, cur);
   var pane='';
-  if(cur==='okr') pane=okrTabHtml_();
+  S.mmSkip=autoMetricsFor(S.me.campus, sel.dept, sel.min);   // what counts itself (GPDTS) is not "logged" by hand
+  if(DTS_TABS.indexOf(cur)>-1) pane=dtsPaneHtml_(cur);
+  else if(cur==='okr') pane=okrTabHtml_();
   else if(cur==='tasks'){ S.gptFrom='ministry'; pane=gptPageHtml_({ dept:sel.dept, min:sel.min }, true); }
   else if(cur==='sched') pane=schedH;
   else if(cur==='teams'){
@@ -914,6 +919,7 @@ function myMinistryHtml(){
     /* The week's numbers — status, who is responsible, and the boxes themselves, already open when
        the week has nothing in yet — then the at-a-glance figures. */
     if(sel.dept==='Community Service' && sel.min==='Cafe') pane+='<p class="hint">'+esc(t('When the cafe tool is used, these numbers fill themselves in from it.'))+'</p>';
+    if(S.mmSkip.length) pane+='<p class="hint" id="dtsAutoHint">🔄 '+esc(t('Applied, accepted, enrolled, graduated, potential staff and students contacted count themselves from the portal — see the Dashboard. Enter the rest here.'))+'</p>';
     if(mine){
       var wk=kpiViewWeek(), akey=sel.dept+'|'+sel.min+'|'+wk;
       if(S.ministry && S.kpiAutoKey!==akey){

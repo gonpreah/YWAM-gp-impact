@@ -746,7 +746,7 @@ async function open(viewport, query, seed) {
   ok('a note goes through hrCandidateNote and shows in the log', note && note.args[3] === 'Spoke today, very keen' && /Spoke today, very keen/.test(await page.$eval('#panel .log', e => e.textContent)));
   ok('no PIN or hash anywhere on the page', !/2468|1234|pinHash/.test(await page.$eval('#main', e => e.textContent)));
   ok('portal staff are offered no delete', !(await page.$('#deleteCand')));
-  ok('a student has no Call notes tab', !(await page.$('[data-ptab="calls"]')));
+  ok('a student has a Contacts tab (Nov 2026: every record logs its contacts; teams call it Call notes)', /Contacts/.test(await page.$eval('[data-ptab="calls"]', b => b.textContent).catch(() => '')));
   {
     await page.click('[data-open="cd_team"]'); await page.waitForSelector('#panel');
     ok('a team has a Call notes tab', !!(await page.$('[data-ptab="calls"]')));
@@ -808,7 +808,7 @@ async function open(viewport, query, seed) {
   await ptab(page, 'answers');
   let pan = await page.$eval('#panel', e => e.textContent);
   ok('the record panel shows the submitted answers under their questions', /Application/.test(pan) && /Date of birth/.test(pan) && /1999-05-05/.test(pan) && /Long story/.test(pan) && /Music/.test(pan));
-  ok('the record is in tabs — a student has Overview, Documents, Legal, Answers and Notes, no trip or people', (await page.$$eval('[data-ptab]', b => b.map(x => x.getAttribute('data-ptab')).join())) === 'overview,docs,legal,answers,notes' && await page.$eval('[data-ptab="answers"]', b => b.classList.contains('on')));
+  ok('the record is in tabs — a student has Overview, Documents, Legal, Answers, Contacts and Notes, no trip or people', (await page.$$eval('[data-ptab]', b => b.map(x => x.getAttribute('data-ptab')).join())) === 'overview,docs,legal,answers,calls,notes' && await page.$eval('[data-ptab="answers"]', b => b.classList.contains('on')));
   ok('each form section of the answers is a fold, the first one open, with how many are answered', (await page.$$('.ansFold')).length >= 2 && await page.$eval('.ansFold', d => d.open) && /\d+\/\d+/.test(await page.$eval('.ansFold summary .n', e => e.textContent)));
   await page.fill('#ansQ', 'music'); await page.waitForTimeout(120);
   ok('Find in answers keeps only the questions that match, their sections open, and keeps the box', /Music/.test(await page.$eval('#ansBody', e => e.textContent)) && !/Date of birth/.test(await page.$eval('#ansBody', e => e.textContent)) && await page.$$eval('.ansFold', ds => ds.every(d => d.open)) && await page.evaluate(() => document.activeElement && document.activeElement.id === 'ansQ'));
