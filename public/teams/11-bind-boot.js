@@ -488,7 +488,7 @@ function bindAway(){
     // The picked ministry, if it isn't your own, loads lazily the first time
     // it's picked — cached in S.oversee by ministry name until logout.
     var bDept=S.mmBrowseDept, bMin=S.mmBrowseMinistry;
-    if(bDept && bMin && bDept!==BL_DEPT && !(bDept===S.me.dept && bMin===S.me.ministry) && !isTeamsMinistry_(bDept,bMin) &&
+    if(bDept && bMin && bDept!==BL_DEPT && !(bDept===S.me.dept && bMin===S.me.ministry) && !isTeamsMinistry_(bDept,bMin) && !isDtsMinistry_(bDept,bMin) &&
        !S.oversee[bMin] && !S.ovLoading[bMin] && !S.ovError[bMin]){
       S.ovLoading[bMin]=true; S.ovError[bMin]='';
       run('getMinistryFor',[S.auth.user,S.auth.pin,bDept,bMin],function(d){
@@ -539,7 +539,7 @@ function bindAway(){
   });
   bindHr();
   if(S.view==='library') bindLibrary_();
-  if(S.view==='ministry'){ bindLw_(); bindCafe_(); bindLeadTools_(); bindFinance_(); }
+  if(S.view==='ministry'){ bindLw_(); bindCafe_(); bindLeadTools_(); bindFinance_(); bindDts_(); }
   if(S.view==='required') bindReqSign_();
   if(S.guest) bindGuest_();
   if(S.view==='mycontract') bindMyContract_();
@@ -1638,13 +1638,22 @@ function bind(){
 
   // login
   var lb=document.getElementById('loginBtn');
+  var ggl=document.getElementById('googleLogin'); if(ggl) ggl.onclick=function(){ gglGo_('login'); };
+  var ggs=document.getElementById('googleSignup'); if(ggs) ggs.onclick=function(){ gglGo_('login'); };
+  var ggk=document.getElementById('linkGoogle'); if(ggk) ggk.onclick=function(){ gglGo_('link'); };
+  var ggsg=document.getElementById('gglStepGo'); if(ggsg) ggsg.onclick=function(){ gglGo_('link'); };
+  var ggso=document.getElementById('gglStepOut'); if(ggso) ggso.onclick=function(){ logout(); };
+  var spl=document.getElementById('showPinLogin'); if(spl) spl.onclick=function(){ S.pinLogin=true; render(); };
+  var hpl=document.getElementById('hidePinLogin'); if(hpl) hpl.onclick=function(){ S.pinLogin=false; render(); };
   if(lb) lb.onclick=function(){
     var u=document.getElementById('li_user').value.trim();
-    var pin=document.getElementById('li_pin').value.trim();
-    if(!u||!/^\d{4}$/.test(pin)){ showMsg('Enter username + 4-digit PIN'); return; }
+    var pin=document.getElementById('li_pin').value;
+    // an email signs in with its password (a profile made from the portal); a username with its 4-digit PIN
+    if(!u || (u.indexOf('@')===-1 ? !/^\d{4}$/.test(pin.trim()) : !pin)){ showMsg(t('Enter your username and 4-digit PIN, or your email and password')); return; }
+    if(u.indexOf('@')===-1) pin=pin.trim();
     lb.disabled=true; lb.textContent='…';
     run('staffLogin',[u,pin],function(d){
-      if(d.ok){ S.auth={user:u,pin:pin}; S.me=d.staff; S.profile=d.profile; afterLogin(); }
+      if(d.ok){ S.auth={user:d.user||u,pin:pin}; S.me=d.staff; S.profile=d.profile; afterLogin(); }
       else if(!d.err){
         /* not staff — perhaps a member of the advisory board, with their own sign-in */
         run('boardLogin',[u,pin],function(b){
@@ -1659,18 +1668,19 @@ function bind(){
       }
     });
   };
-  var look=document.getElementById('lookAround'); if(look) look.onclick=function(){ gpTap(); gpEnterGuest_(); };
   var toReg=document.getElementById('toReg'); if(toReg) toReg.onclick=function(){ S.regMode=true; if(!S.roster.length){ run('teamRoster',[],function(r){S.roster=Array.isArray(r)?r:[];render();}); } else render(); };
-  var toLogin=document.getElementById('toLogin'); if(toLogin) toLogin.onclick=function(){ S.regMode=false; render(); };
+  var toLogin=document.getElementById('toLogin'); if(toLogin) toLogin.onclick=function(){ S.regMode=false; S.regGoogle=null; render(); };
 
   // register
   var rb=document.getElementById('regBtn');
   if(rb) rb.onclick=function(){
+    var gg=S.regGoogle, val=function(id){ var el=document.getElementById(id); return el ? el.value.trim() : ''; };
     var payload={
-      name:document.getElementById('r_name').value.trim(),
-      email:document.getElementById('r_email').value.trim(),
-      username:document.getElementById('r_user').value.trim(),
-      pin:document.getElementById('r_pin').value.trim(),
+      name:val('r_name'),
+      email:gg ? gg.email : val('r_email'),
+      username:gg ? '' : val('r_user'),
+      pin:gg ? '' : val('r_pin'),
+      googleToken:gg ? gg.token : undefined,
       campus:document.getElementById('r_campus').value,
       dept:document.getElementById('r_dept').value,
       ministry:minSelValue_('r_ministry','r_dept').ministry,
@@ -1683,23 +1693,26 @@ function bind(){
       joined:document.getElementById('r_joined').value.trim()
     };
     if(!payload.name){ showMsg('Add your name'); return; }
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)){ showMsg('Add a real email address'); return; }
-    if(!/^[a-z0-9._-]{2,20}$/.test(payload.username.toLowerCase())){ showMsg('Username: lowercase letters/numbers, 2–20'); return; }
-    if(!/^\d{4}$/.test(payload.pin)){ showMsg('PIN must be 4 digits'); return; }
+    if(!gg){
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)){ showMsg('Add a real email address'); return; }
+      if(!/^[a-z0-9._-]{2,20}$/.test(payload.username.toLowerCase())){ showMsg('Username: lowercase letters/numbers, 2–20'); return; }
+      if(!/^\d{4}$/.test(payload.pin)){ showMsg('PIN must be 4 digits'); return; }
+    }
     rb.disabled=true; rb.textContent='…';
     run('staffRegister',[payload],function(d){
       if(d.ok && d.pending){
         // Campus Leadership only — every other department signs in right away.
         // There is no session to start: a base leader has to approve first.
         rb.disabled=false; rb.textContent='Create profile'; S.regMode=false;
-        showMsg('Submitted — a base leader needs to approve a leadership account before you can log in.');
+        showMsg(t('Thanks! An admin will look at your account — you can sign in once it is approved.'));
         render();
-      } else if(d.ok){ S.auth={user:payload.username.toLowerCase(),pin:payload.pin}; S.me=d.staff; S.profile=d.profile; S.regMode=false; afterLogin(); showMsg('Profile created — add a photo!'); S.view='profile'; render(); }
+      } else if(d.ok){ S.auth={user:d.user||payload.username.toLowerCase(),pin:d.token||payload.pin}; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; afterLogin(); showMsg('Profile created — add a photo!'); S.view='profile'; render(); }
       else {
         rb.disabled=false; rb.textContent='Create profile';
         showMsg(d.err==='taken' ? 'That username is taken'
           : d.err==='email_taken' ? 'There’s already a profile with that email'
           : d.err==='bad_email' || d.err==='email_required' ? 'Add a real email address'
+          : d.err==='google' ? t('Google sign-in didn’t work — try again.')
           : 'Check your details');
       }
     });
@@ -1989,7 +2002,7 @@ function refreshAll(){
    ?fresh). If the page itself came from the offline copy (the worker leaves a
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
-var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
+var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){
   return Promise.all(GP_VER_FILES.map(function(f){

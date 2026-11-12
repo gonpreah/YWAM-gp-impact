@@ -87,9 +87,10 @@ async function open(opts) {
 const credCalls = () => CALLS.filter(c => c.args.some(a => a === '1234' || a === 'dara'));
 
 {
-  const { ctx, page } = await open();
-  ok('the log-in screen offers "Look around without an account"', !!(await page.$('#lookAround')) && /Look around without an account/.test(await page.$eval('#lookAround', e => e.innerText)));
-  await page.click('#lookAround'); await page.waitForTimeout(900);
+  { const { ctx, page } = await open();
+    ok('the log-in screen has no "Look around without an account" (Nov 2026, Andrew)', !!(await page.$('#main h2')) && !(await page.$('#lookAround')) && !/Look around without an account/.test(await page.$eval('#main', e => e.innerText)));
+    await ctx.close(); }
+  const { ctx, page } = await open({ qs: '?guest=1' });
   ok('it opens the app as a guest: the tour, the Library and the Base cards', await page.evaluate(() => S.guest === true) && !!(await page.$('.guestHero')) && !!(await page.$('#guestLibrary')) && !!(await page.$('#guestBase')));
   ok('every tool is listed with what it does, and a lock', (await page.$$('.guestTool')).length >= 8 && (await page.$$('.guestTool .guestLock')).length === (await page.$$('.guestTool')).length);
   ok('the bottom bar has five tabs, the first "Look around", the Library last; no bell', (await page.$$('nav.bottom button')).length === 5 && !!(await page.$('nav.bottom [data-tab="library"]')) && /Look around/.test(await page.$eval('nav.bottom button', e => e.innerText)) && !(await page.$('#bellBtn')));
@@ -123,7 +124,7 @@ const credCalls = () => CALLS.filter(c => c.args.some(a => a === '1234' || a ===
   ok('the menu: Library, Create my profile, Log in — nothing else', (await page.$$eval('[data-menu-item]', bs => bs.map(b => b.getAttribute('data-menu-item')))).join() === 'library,guestreg,guestlogin');
   await page.click('[data-menu-item="library"]'); await page.waitForTimeout(500);
   ok('… and the Library is in it', await page.evaluate(() => S.view === 'library'));
-  ok('a guest never sends a username or PIN, and never boots — only the public calls (the dashboard, the nameless roster, which books have recordings)', CALLS.every(c => ['getData', 'teamRoster', 'libAudioIndex'].indexOf(c.fn) > -1) && credCalls().length === 0 && !CALLS.some(c => c.fn === 'getMyBoot'), [...new Set(CALLS.map(c => c.fn))].join(','));
+  ok('a guest never sends a username or PIN, and never boots — only the public calls (the dashboard, the nameless roster, which books have recordings, whether Google sign-in is on)', CALLS.every(c => ['getData', 'teamRoster', 'libAudioIndex', 'portalAuthConfig'].indexOf(c.fn) > -1) && credCalls().length === 0 && !CALLS.some(c => c.fn === 'getMyBoot'), [...new Set(CALLS.map(c => c.fn))].join(','));
   ok('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
 
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(900);
@@ -144,8 +145,7 @@ const credCalls = () => CALLS.filter(c => c.args.some(a => a === '1234' || a ===
   await ctx.close();
 }
 {
-  const { ctx, page } = await open({ small: true, km: true });
-  await page.click('#lookAround'); await page.waitForTimeout(900);
+  const { ctx, page } = await open({ small: true, km: true, qs: '?guest=1' });
   ok('in Khmer at 320px the tour is Khmer and fits', /[ក-៿]{4}/.test(await page.$eval('.guestHero h2', e => e.innerText)) && await page.evaluate(() => document.documentElement.scrollWidth <= 321));
   await ctx.close();
 }

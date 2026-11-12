@@ -110,6 +110,7 @@ textarea { min-height:80px; resize:vertical; }
   padding:10px 16px; border-radius:999px; font-size:13.5px; font-weight:500; opacity:0; transition:opacity .2s; pointer-events:none; z-index:80; max-width:92vw; text-align:center; }
 .msg.show { opacity:1; }
 .chips { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
+.sortRow { align-items:center; margin-top:-4px; } .sortLbl { font-size:12.5px; color:var(--muted); margin-right:2px; }
 .chip { border:1px solid var(--border2); background:transparent; border-radius:999px; padding:7px 13px; font-size:13px; cursor:pointer; color:var(--muted); }
 .chip:hover { border-color:var(--ink); color:var(--ink); }
 .chip.on { background:var(--ink); border-color:var(--ink); color:var(--accentInk); font-weight:600; }
@@ -394,6 +395,13 @@ details.visaHow > summary { padding:12px 14px; font-weight:800; font-size:15px; 
 .ptab .n { display:inline-block; min-width:18px; padding:0 5px; margin-left:3px; border-radius:9px; font-size:11px; line-height:17px; text-align:center; background:var(--surface2); color:var(--ink); }
 .ptab.on .n { background:rgba(255,255,255,.22); color:inherit; }
 .ptabBody > h3:first-child, .ptabBody > .panelHead:first-child { margin-top:0; }
+.leadCard { margin-bottom:14px; }
+.headBtns { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.headBtns .btn { margin-top:0; text-decoration:none; }
+.leadBox { margin-top:14px; padding:12px; border:1px solid var(--border); border-radius:12px; }
+.leadEdit { margin-top:8px; }
+.meta.nextStep.late { color:#ff8a7a; }
+#callHow .chip { cursor:pointer; }
 .panelFoot { display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:16px; padding-top:12px; border-top:1px solid var(--border); }
 .ansFold { border:1px solid var(--border); border-radius:var(--rSm); margin:0 0 8px; }
 .ansFold > summary { cursor:pointer; padding:9px 12px; font-weight:600; font-size:14px; display:flex; align-items:center; gap:8px; }
@@ -577,6 +585,10 @@ var APPLY = [
   { key:'team', type:'team', school:'', label:'Team', blurb:'Bring a short-term team' }
 ];
 function applyByKey_(k){ for(var i=0;i<APPLY.length;i++) if(APPLY[i].key===k) return APPLY[i]; return null; }
+/* a staff member's scope (portalTypes_ in api.js): kinds ('team') or a kind and school ('student:dts'); null = all */
+function inScope_(a, scope){ return !scope || scope.indexOf(a.type)>-1 || (!!a.school && scope.indexOf(a.type+':'+a.school)>-1); }
+var SCOPE_LABEL={ 'student:dts':'DTS', 'student:dbs':'DBS', 'student:bcs':'BCS', 'student:sms':'SMS', staff:'Staff', volunteer:'Volunteers', team:'Teams' };
+function seesText_(sees){ if(sees===null || sees===undefined) return t('Everything'); if(!sees.length) return t('Nothing'); return sees.map(function(k){ return t(SCOPE_LABEL[k]||k); }).join(', '); }
 function offeredAt_(a, campus){ return !a.school || (CAMPUS_SCHOOLS[campus]||[]).indexOf(a.school)>-1; }
 function applyLabel_(type, school){
   if(type==='student'){ var a=applyByKey_(school); return a ? a.label+' · '+t(a.blurb) : t('Student'); }
@@ -650,7 +662,9 @@ var P = { aview:'status', meet:null, teamEdit:null, menuOpen:false, access:null,
   if(qs.sign){ P.view='sign'; P.sign={ token:String(qs.sign), data:null, who:null, under18:null, idx:0, form:{}, pads:{}, done:false }; }
   /* portal.html?contract=<token>: the one-time link HR sends — the staff contract, filled out and signed on the person's own phone, no sign-in */
   if(qs.contract){ var ctk=String(qs.contract).replace(/[^a-f0-9]/g,''); P.view='sign'; P.sign={ only:'', staff:null, hr:'', link:ctk, token:null, openFn:'contractLinkOpen', openArgs:[ctk], submitFn:'contractLinkSign', back:'', data:null, who:null, under18:null, idx:0, form:{}, pads:{}, done:false }; }
-  if(qs.open) P.openCand=String(qs.open);   // portal.html?open=<candidateId> — the GP app's Teams Database links here
+  if(qs.open) P.openCand=String(qs.open);
+  if(qs.what && applyByKey_(String(qs.what))) P.what=String(qs.what);   // GPDTS's page links to its list: ?what=dts
+  if(qs.filter==='due') P.filter='due';   // portal.html?open=<candidateId> — the GP app's Teams Database links here
   /* portal.html?stay=<campus>: a guest or speaker asks for a room — no account (SR Hospitality sends the link) */
   /* portal.html?join=<token>: a student staying with us opens their invite and signs up with Google */
   if(qs.join){ P.view='join'; P.join={ token:String(qs.join).replace(/[^a-f0-9]/g,''), info:null }; run('portalJoinInfo', [P.join.token], function(d){ P.join.info=d||{ ok:false }; render(); }, function(){ P.join.info={ ok:false, err:'net' }; render(); }); }
@@ -697,6 +711,7 @@ function boot_(){
     if(d && d.ok){ P.boot=d; if(d.role==='applicant') P.answers=(d.application && d.application.answers)||{}; P.view = d.role==='applicant' ? 'me' : 'crm'; openFromLink_(d); lsSet('gp-portal', JSON.stringify(P.auth)); render(); return; }
     if(d && d.err==='auth'){ lsDel('gp-portal'); P.auth=null; P.view='login'; showMsg(t('Your sign-in didn’t work — please sign in again.')); render(); return; }
     if(d && d.err==='not_authorized'){ P.view='noaccess'; render(); return; }
+    if(d && d.err==='staff_now'){ P.view='noaccess'; P.err='staff_now'; render(); return; }
     if(d && d.err==='no_application'){ P.view='noaccess'; P.err='no_application'; render(); return; }
     P.view='login'; P.err='boot'; render();
   }, function(e){ P.view='login'; P.err='boot'; render(); showMsg(t('Connection problem — try again.')); });
@@ -781,7 +796,7 @@ function staffNavHtml_(v){
 function applyLinkUrl_(key){ return location.origin + location.pathname + (key ? '?apply='+encodeURIComponent(key) : ''); }
 function applyLinkHtml_(){
   var scope=Array.isArray(P.boot.scope) ? P.boot.scope : null;
-  var kinds=APPLY.filter(function(a){ return (!scope || scope.indexOf(a.type)>-1) && openCampuses_().some(function(c){ return offeredAt_(a, c[0]); }); });
+  var kinds=APPLY.filter(function(a){ return inScope_(a, scope) && openCampuses_().some(function(c){ return offeredAt_(a, c[0]); }); });
   var key=P.linkKind||'';
   if(key && !kinds.some(function(a){ return a.key===key; })) key='';
   return '<div class="card linkCard" id="applyLinkCard"><div class="panelHead"><b>🔗 '+esc(t('Send someone the portal'))+'</b><button class="hbtn" id="closeLink" aria-label="'+esc(t('Close'))+'">✕</button></div>'+
@@ -1242,6 +1257,11 @@ function bindRef_(){
   });
 }
 function noAccessHtml_(){
+  /* added to the GP app from their application (portalGpAdd): the same sign-in opens it now */
+  if(P.err==='staff_now') return '<div class="center"><div class="card" id="staffNow"><h2>🎉 '+esc(t('Welcome to the YWAM GP staff!'))+'</h2>'+
+    '<p class="sub">'+esc(t('Your application is done — you are in the GP app now. Open it with the same sign-in you use here.'))+'</p>'+
+    '<button class="btn" id="openGpApp">'+esc(t('Open the GP app'))+'</button>'+
+    '<button class="btn ghost" id="outBtn2">'+esc(t('Sign out'))+'</button></div></div>';
   var noApp = P.err==='no_application';
   return '<div class="center"><div class="card"><h2>'+esc(noApp ? t('No application found') : t('No portal access'))+'</h2>'+
     '<p class="sub">'+esc(noApp ? t('This account has no application attached. Message our team and we will sort it out.') : t('Your account is a staff account without portal access. Ask an admin to grant it on Admin → Portal access.'))+'</p>'+
@@ -1319,13 +1339,14 @@ function onGoogleCred_(resp){
   if(P.view==='join'){ joinWithGoogle_(tok); return; }
   run('portalLoginGoogle', [tok], function(d){
     P.busy=false;
-    if(d && d.ok){ P.auth={ user:d.user, pin:d.token }; lsSet('gp-portal', JSON.stringify(P.auth)); P.boot=d; P.answers=(d.application && d.application.answers)||{}; P.gtoken=''; P.view='me'; render(); return; }
+    if(d && d.ok){ P.auth={ user:d.user, pin:d.token }; lsSet('gp-portal', JSON.stringify(P.auth)); P.boot=d; P.answers=(d.application && d.application.answers)||{}; P.gtoken=''; P.view = d.role==='applicant' ? 'me' : 'crm'; if(d.role!=='applicant') openFromLink_(d); render(); return; }
     if(d && d.err==='new'){
       /* No account for that Google email yet: on to sign-up, name and email filled in, no password to make. */
       P.gtoken=tok; P.reg.email=d.email||''; if(d.name && !P.reg.name) P.reg.name=d.name;
       P.view = P.apply ? 'register' : 'choose'; showMsg(t('Welcome! Tell us what you are applying for.')); render(); return;
     }
-    showMsg(d && d.err==='staff' ? t('That is a staff email — staff sign in with their username and PIN.') : t('Google sign-in didn’t work — try again.'));
+    if(d && (d.err==='staff' || d.err==='staff_now')){ showMsg(t('That staff account has no portal access — opening the GP app, where you can continue with Google.')); setTimeout(function(){ location.href='teams.html'; }, 1200); render(); return; }
+    showMsg(t('Google sign-in didn’t work — try again.'));
     render();
   });
 }
@@ -1881,24 +1902,204 @@ function meHtml_(){
   return h;
 }
 /* ---- the staff side ---- */
-/* The Teams tab in the order they come: teams here now first, then the ones
-   still to come (soonest first), then teams with no dates yet (latest change
-   first), then teams already gone (most recent first). */
-/* a team's row says when it is in Cambodia, not when it last changed */
+/* The Teams tab in the order they come TO US — by the days they are at our base
+   (Siem Reap), not their whole time in Cambodia (Andrew, Oct 2026): teams here
+   now first, then the ones still to come (soonest first), then teams with no
+   dates yet (latest change first), then teams already gone (most recent first).
+   A team with no base dates yet goes by its Cambodia dates. */
+/* a team's row says when it is at our base, not when it last changed */
 function teamDatesLine_(c){
-  var tr=teamTrip_(c);
-  if(!tr || !tr.start) return t('Dates in Cambodia not set yet');
-  return gpT('In Cambodia {from} – {to}',{from:fmtDate_(tr.start), to:fmtDate_(tr.end||tr.start)});
+  var tr=teamTrip_(c), d=teamBaseDates_(tr);
+  if(!d.from) return t('Dates in Cambodia not set yet');
+  if(d.base) return gpT('In {place} {from} – {to}',{place:campusShort_(c.campus||DEFAULT_CAMPUS), from:fmtDate_(d.from), to:fmtDate_(d.to||d.from)});
+  return gpT('In Cambodia {from} – {to}',{from:fmtDate_(d.from), to:fmtDate_(d.to||d.from)});
 }
 function teamTrip_(c){ return tripOf_((c.portal && ((c.portal.form && c.portal.form.answers) || c.portal.draft)) || {}, campusName_(c.campus||DEFAULT_CAMPUS)); }
+/* the dates at our base when they are set, else the dates in Cambodia */
+function teamBaseDates_(tr){
+  if(!tr) return { from:'', to:'', base:false };
+  if(tr.baseFrom) return { from:tr.baseFrom, to:tr.baseTo||tr.baseFrom, base:true };
+  return { from:tr.start||'', to:tr.end||'', base:false };
+}
 function teamOrder_(a,b){
   var today=new Date().toISOString().slice(0,10);
-  var grp=function(c){ var tr=teamTrip_(c); if(!tr || !tr.start) return [2, '']; if(tr.end && tr.end<today) return [3, tr.start]; if(tr.start<=today) return [0, tr.start]; return [1, tr.start]; };
+  var grp=function(c){ var d=teamBaseDates_(teamTrip_(c)); if(!d.from) return [2, '']; if(d.to && d.to<today) return [3, d.from]; if(d.from<=today) return [0, d.from]; return [1, d.from]; };
   var ga=grp(a), gb=grp(b);
   if(ga[0]!==gb[0]) return ga[0]-gb[0];
   if(ga[0]===1) return ga[1]<gb[1] ? -1 : ga[1]>gb[1] ? 1 : 0;
   if(ga[0]===0 || ga[0]===3) return ga[1]>gb[1] ? -1 : ga[1]<gb[1] ? 1 : 0;
   return (b.updated||'') < (a.updated||'') ? -1 : 1;
+}
+/* Sort by (Andrew, Nov 2026: "a toggle to order the lists by dates"): Teams can go by when they come
+   (above), the date they applied, or the latest change; every other tab by the date applied or the
+   latest change, newest or oldest first. Kept per kind of tab on this computer (gp-portal-sort). */
+var LIST_SORTS = { team:['come','applied','changed'], other:['changed','applied'] };
+function listSortKey_(){ return P.what==='team' ? 'team' : 'other'; }
+function listSortPrefs_(){
+  if(!P.sortBy){ try { P.sortBy = JSON.parse(lsGet('gp-portal-sort')||'{}') || {}; } catch(e){ P.sortBy={}; } }
+  return P.sortBy;
+}
+function listSort_(){ var k=listSortKey_(), v=listSortPrefs_()[k]; return LIST_SORTS[k].indexOf(v)>-1 ? v : LIST_SORTS[k][0]; }
+function listSortOld_(){ return listSortPrefs_()[listSortKey_()+'Dir']==='asc'; }
+function appliedOn_(c){ return (c.portal && c.portal.submittedAt) || ''; }
+function listOrder_(){
+  var mode=listSort_(), old=listSortOld_();
+  if(mode==='come') return teamOrder_;
+  var key = mode==='applied' ? appliedOn_ : function(c){ return c.updated||''; };
+  return function(a,b){
+    var x=key(a), y=key(b);
+    if(!x !== !y) return x ? -1 : 1;                 /* not sent in yet: at the end, whichever way */
+    if(!x) return (b.updated||'') < (a.updated||'') ? -1 : 1;
+    return old ? (x<y ? -1 : x>y ? 1 : 0) : (x>y ? -1 : x<y ? 1 : 0);
+  };
+}
+function listSortHtml_(){
+  var k=listSortKey_(), mode=listSort_(), lbl={ come:t('When they come'), applied:t('Date applied'), changed:t('Latest change') };
+  return '<div class="chips sortRow" id="sortRow"><span class="sortLbl">'+esc(t('Sort by'))+'</span>'+LIST_SORTS[k].map(function(v){
+      return '<button class="chip'+(mode===v?' on':'')+'" data-sortby="'+v+'" aria-pressed="'+(mode===v)+'">📅 '+esc(lbl[v])+'</button>'; }).join('')+
+    (mode==='come' ? '' : '<button class="chip" id="sortDir" title="'+esc(t('Change the order'))+'">'+(listSortOld_() ? '↑ '+esc(t('Oldest first')) : '↓ '+esc(t('Newest first')))+'</button>')+'</div>';
+}
+/* what a row says under its name follows the sort */
+function rowDateLine_(c){
+  var mode=listSort_();
+  var applied = appliedOn_(c) ? gpT('Applied {date}',{date:fmtDate_(appliedOn_(c))}) : t('Not sent in yet');
+  if(c.type==='team') return teamDatesLine_(c)+(mode==='applied' ? ' · '+applied : mode==='changed' ? ' · '+gpT('Updated {date}',{date:fmtDate_(c.updated)}) : '');
+  return mode==='applied' ? applied : fmtDate_(c.updated);
+}
+/* A follow-up is due when its next step's date is within a week (or past). */
+function dueCut_(){ var d=new Date(); d.setDate(d.getDate()+7); return ymd_(d); }
+function isDue_(c){ return !c.archived && !!c.nextDate && c.nextDate<=dueCut_(); }
+function nextLine_(c){
+  if(c.archived || !(c.nextStep || c.nextDate)) return '';
+  var late=c.nextDate && c.nextDate<ymd_(new Date());
+  return '<span class="meta nextStep'+(late?' late':'')+'" style="display:block">'+(late?'⏰ ':'→ ')+esc(c.nextStep||t('Follow up'))+(c.nextDate?' · '+esc(fmtDate_(c.nextDate)):'')+'</span>';
+}
+/* ＋ Add a contact: someone the team is reaching out to, before they have an account (a lead).
+   They are a record like any other — logged contacts, a next step — and when they sign up with
+   the same email, their account joins this record (createApplicant_ in api.js). */
+function leadKinds_(){
+  var scope=Array.isArray(P.boot.scope) ? P.boot.scope : null;
+  return APPLY.filter(function(a){ return inScope_(a, scope); });
+}
+function leadFormHtml_(){
+  var f=P.lead, kinds=leadKinds_(), open=openCampuses_();
+  var h='<div class="card leadCard" id="leadCard"><div class="panelHead"><b>＋ '+esc(t('Add a contact'))+'</b><button class="hbtn" id="closeLead" aria-label="'+esc(t('Close'))+'">✕</button></div>'+
+    '<p class="sub" style="margin:4px 0 8px">'+esc(t('Someone you are reaching out to who hasn’t applied yet. Log each time you reach them; when they make a portal account with the same email, it joins this record.'))+'</p>'+
+    '<div class="two"><div><label class="f" for="ld_name">'+esc(t('Name'))+'</label><input type="text" id="ld_name" data-ld="name" maxlength="120" value="'+esc(f.name||'')+'"></div>'+
+    '<div><label class="f" for="ld_kind">'+esc(t('Interested in'))+'</label><select id="ld_kind" data-ld="kind">'+kinds.map(function(a){ return '<option value="'+esc(a.key)+'"'+(f.kind===a.key?' selected':'')+'>'+esc(a.key==='team' ? t('Teams') : t(a.label)+(a.school ? ' · '+t(a.blurb) : ''))+'</option>'; }).join('')+'</select></div></div>'+
+    (open.length>1 ? '<label class="f">'+esc(t('Campus'))+'</label><div class="chips">'+open.map(function(c){ return '<button class="chip'+(f.campus===c[0]?' on':'')+'" data-ldcampus="'+c[0]+'">'+esc(t(c[1]))+'</button>'; }).join('')+'</div>' : '')+
+    '<label class="f">'+esc(t('Country'))+'</label>'+countryFieldHtml_('ld_country', f.country||'')+
+    '<div class="two"><div><label class="f" for="ld_phone">'+esc(t('Phone'))+'</label><input type="tel" id="ld_phone" data-ld="phone" maxlength="40" value="'+esc(f.phone||'')+'"></div>'+
+    '<div><label class="f" for="ld_msgr">'+esc(t('Chats on'))+'</label><select id="ld_msgr" data-ld="messenger"><option value="">—</option>'+['whatsapp','telegram'].map(function(m){ return '<option value="'+m+'"'+(f.messenger===m?' selected':'')+'>'+esc(MESSENGER_LABEL[m])+'</option>'; }).join('')+'</select></div></div>'+
+    '<label class="f" for="ld_email">'+esc(t('Email'))+'</label><input type="email" id="ld_email" data-ld="email" maxlength="120" value="'+esc(f.email||'')+'">'+
+    '<label class="f" for="ld_source">'+esc(t('Where you met them'))+'</label><input type="text" id="ld_source" data-ld="source" maxlength="120" placeholder="'+esc(t('e.g. a church in Battambang, Facebook, a friend'))+'" value="'+esc(f.source||'')+'">'+
+    '<div class="two"><div><label class="f" for="ld_next">'+esc(t('Next step'))+'</label><input type="text" id="ld_next" data-ld="nextStep" maxlength="200" placeholder="'+esc(t('e.g. call after Sunday service'))+'" value="'+esc(f.nextStep||'')+'"></div>'+
+    '<div><label class="f" for="ld_date">'+esc(t('By'))+'</label><input type="date" id="ld_date" data-ld="nextDate" value="'+esc(f.nextDate||'')+'"></div></div>'+
+    '<label class="f" for="ld_notes">'+esc(t('Notes'))+'</label><textarea id="ld_notes" data-ld="notes" rows="3" maxlength="1000">'+esc(f.notes||'')+'</textarea>'+
+    '<div style="margin-top:10px"><button class="btn" id="saveLead"'+(P.busy?' disabled':'')+'>'+esc(P.busy ? t('Saving…') : t('Add them'))+'</button></div></div>';
+  return h;
+}
+function saveLead_(){
+  var f=P.lead; if(!f) return;
+  var sel=document.getElementById('ld_country'); if(sel) f.country=sel.value;
+  if(!String(f.name||'').trim()){ showMsg(t('Add their name first.')); return; }
+  var a=applyByKey_(f.kind)||leadKinds_()[0]; if(!a) return;
+  var rec={ name:String(f.name).trim(), type:a.type, school:a.school||'', campus:f.campus||DEFAULT_CAMPUS, country:f.country||'', phone:String(f.phone||'').trim(),
+    messenger:f.messenger||'', email:String(f.email||'').trim(), source:String(f.source||'').trim(), nextStep:String(f.nextStep||'').trim(), nextDate:f.nextDate||'',
+    notes:String(f.notes||'').trim(), stage:'new' };
+  P.busy=true; render();
+  run('hrSaveCandidate', [P.auth.user, P.auth.pin, rec], function(d){
+    P.busy=false;
+    if(d && d.ok && d.candidate){
+      P.lead=null; P.sel=d.candidate.id; P.ptabFor=d.candidate.id; P.ptab='calls'; P.filter=''; P.q='';
+      if(P.what) P.what=a.key;
+      showMsg(t('Added — now log how you reached them.')); putCand_(d); boot_(); return;
+    }
+    showMsg(d && d.err==='not_authorized' ? t('That kind of application is outside what you see.') : t('Could not save'));
+    render();
+  }, function(){ P.busy=false; showMsg(t('Connection problem — try again.')); render(); });
+}
+/* Add to the GP app (Nov 2026, Andrew): once a staff or volunteer application is accepted, their portal
+   account becomes a GP app account — the same Google sign-in, or email and password. Pick where they
+   will serve (they can also choose it themselves in the app). portalGpAdd. */
+var GP_ADD_STAGES_C=['accepted','practical','arrived'];
+function gpAddHtml_(c){
+  if(c.hired) return '<div class="leadBox" id="gpAdded">✅ <b>'+esc(gpT('In the GP app since {date}',{date:fmtDate_(c.hired.at)}))+'</b></div>';
+  if(GP_ADD_STAGES_C.indexOf(c.stage)===-1) return '';
+  if(!c.hasAccount) return '<div class="leadBox" id="gpAddNoAcct">📲 '+esc(t('To add them to the GP app, they need a portal account first — send them the staff application link.'))+'</div>';
+  var f=P.gpAdd && P.gpAdd.for===c.id ? P.gpAdd : (P.gpAdd={ for:c.id, dept:'', ministry:'', staffType:'' });
+  var depts=(typeof getDepartments==='function') ? Object.keys(getDepartments(c.campus||DEFAULT_CAMPUS)) : [];
+  var mins=f.dept && typeof getDepartments==='function' ? Object.keys(getDepartments(c.campus||DEFAULT_CAMPUS)[f.dept]||{}) : [];
+  var types=(typeof STAFF_TYPES!=='undefined') ? STAFF_TYPES : [];
+  return '<div class="leadBox" id="gpAddBox"><b>📲 '+esc(t('Add to the GP app'))+'</b>'+
+    '<p class="sub" style="margin:4px 0 8px">'+esc(gpT('{name} signs in to the GP app the same way as here — no username or PIN.',{name:c.name}))+'</p>'+
+    '<label class="f" for="ga_dept">'+esc(t('Department'))+'</label><select id="ga_dept"><option value="">'+esc(t('— they choose it in the app —'))+'</option>'+depts.map(function(d){ return '<option value="'+esc(d)+'"'+(f.dept===d?' selected':'')+'>'+esc(t(d))+'</option>'; }).join('')+'</select>'+
+    (f.dept ? '<label class="f" for="ga_min">'+esc(t('Ministry'))+'</label><select id="ga_min"><option value="">—</option>'+mins.map(function(m){ return '<option value="'+esc(m)+'"'+(f.ministry===m?' selected':'')+'>'+esc(t(m))+'</option>'; }).join('')+'</select>' : '')+
+    (types.length ? '<label class="f" for="ga_type">'+esc(t('Kind of staff'))+'</label><select id="ga_type"><option value="">—</option>'+types.map(function(x){ return '<option value="'+esc(x.id)+'"'+(f.staffType===x.id?' selected':'')+'>'+esc(t(x.label))+'</option>'; }).join('')+'</select>' : '')+
+    '<div style="margin-top:10px"><button class="btn small" id="gpAddBtn"'+(P.busy?' disabled':'')+'>'+esc(gpT('Add {name} to the GP app',{name:c.name}))+'</button></div></div>';
+}
+function bindGpAdd_(){
+  var dd=document.getElementById('ga_dept'); if(dd) dd.onchange=function(){ P.gpAdd.dept=dd.value; P.gpAdd.ministry=''; render(); };
+  var mm=document.getElementById('ga_min'); if(mm) mm.onchange=function(){ P.gpAdd.ministry=mm.value; };
+  var ty=document.getElementById('ga_type'); if(ty) ty.onchange=function(){ P.gpAdd.staffType=ty.value; };
+  on_('gpAddBtn', function(){
+    var c=selected_(); if(!c || !P.gpAdd) return;
+    if(!confirm(gpT('Add {name} to the GP app? Their portal sign-in will open the GP app from now on.',{name:c.name}))) return;
+    P.busy=true; render();
+    run('portalGpAdd', [P.auth.user, P.auth.pin, c.id, { dept:P.gpAdd.dept, ministry:P.gpAdd.ministry, staffType:P.gpAdd.staffType }], function(d){
+      P.busy=false;
+      if(d && d.ok){ P.gpAdd=null; showMsg(d.signIn==='password' ? t('Added — they sign in to the GP app with their email and password.') : t('Added — they sign in to the GP app with Google.')); putCand_(d); boot_(); return; }
+      showMsg(d && d.err==='clt_admin' ? t('Only an admin can add someone to Campus Leadership.') : d && d.err==='no_account' ? t('They need a portal account first.') : d && d.err==='not_accepted' ? t('Accept their application first.') : t('Could not save'));
+      render();
+    }, function(){ P.busy=false; showMsg(t('Connection problem — try again.')); render(); });
+  });
+}
+/* A contact who has no account yet: the link to apply, and their details to correct. */
+function leadPanelHtml_(c){
+  var key=c.type==='student' ? (c.school||'') : c.type, url=applyLinkUrl_(applyByKey_(key) ? key : '');
+  var h='<div class="leadBox" id="leadBox"><b>📨 '+esc(t('Send them the application'))+'</b>'+
+    '<p class="sub" style="margin:4px 0 8px">'+esc(c.email ? gpT('When they make an account with {email}, it joins this record — everything you logged stays.',{email:c.email}) : t('Add their email below: when they make an account with it, it joins this record.'))+'</p>'+
+    '<div class="linkRow"><input type="text" id="leadLinkBox" readonly value="'+esc(url)+'" onclick="this.select()"><button class="btn small" id="copyLeadLink">'+esc(t('Copy link'))+'</button></div>';
+  if(P.editLead===c.id){
+    var f=P.leadEdit||{};
+    h+='<div class="leadEdit"><label class="f" for="le_name">'+esc(t('Name'))+'</label><input type="text" id="le_name" data-le="name" maxlength="120" value="'+esc(f.name||'')+'">'+
+      '<div class="two"><div><label class="f" for="le_phone">'+esc(t('Phone'))+'</label><input type="tel" id="le_phone" data-le="phone" maxlength="40" value="'+esc(f.phone||'')+'"></div>'+
+      '<div><label class="f" for="le_msgr">'+esc(t('Chats on'))+'</label><select id="le_msgr" data-le="messenger"><option value="">—</option>'+['whatsapp','telegram'].map(function(m){ return '<option value="'+m+'"'+(f.messenger===m?' selected':'')+'>'+esc(MESSENGER_LABEL[m])+'</option>'; }).join('')+'</select></div></div>'+
+      '<label class="f" for="le_email">'+esc(t('Email'))+'</label><input type="email" id="le_email" data-le="email" maxlength="120" value="'+esc(f.email||'')+'">'+
+      '<label class="f">'+esc(t('Country'))+'</label>'+countryFieldHtml_('le_country', f.country||'')+
+      '<label class="f" for="le_source">'+esc(t('Where you met them'))+'</label><input type="text" id="le_source" data-le="source" maxlength="120" value="'+esc(f.source||'')+'">'+
+      '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn small" id="saveLeadEdit"'+(P.busy?' disabled':'')+'>'+esc(t('Save'))+'</button><button class="btn small ghost" id="cancelLeadEdit">'+esc(t('Cancel'))+'</button></div></div>';
+  } else h+='<button class="linkbtn" id="editLeadBtn" style="margin-top:6px">✏️ '+esc(t('Edit their details'))+'</button>';
+  return h+'</div>';
+}
+function saveLeadEdit_(){
+  var c=selected_(); if(!c || !P.leadEdit) return;
+  var sel=document.getElementById('le_country'); if(sel) P.leadEdit.country=sel.value;
+  if(!String(P.leadEdit.name||'').trim()){ showMsg(t('Add their name first.')); return; }
+  var rec=Object.assign({}, c, P.leadEdit);
+  P.busy=true; render();
+  run('hrSaveCandidate', [P.auth.user, P.auth.pin, rec], function(d){
+    P.busy=false;
+    if(putCand_(d)){ P.editLead=null; P.leadEdit=null; showMsg(t('Saved')); boot_(); return; }
+    render();
+  }, function(){ P.busy=false; showMsg(t('Connection problem — try again.')); render(); });
+}
+function bindLead_(){
+  on_('addLead', function(){
+    var kinds=leadKinds_(), def=kinds.filter(function(a){ return a.key===P.what; })[0] || kinds.filter(function(a){ return a.key==='dts'; })[0] || kinds[0];
+    P.lead={ kind:def ? def.key : 'dts', campus:P.campusFilter || (P.boot.me && P.boot.me.campus) || DEFAULT_CAMPUS };
+    if(!openCampuses_().some(function(c){ return c[0]===P.lead.campus; })) P.lead.campus=DEFAULT_CAMPUS;
+    render(); var n=document.getElementById('ld_name'); if(n) n.focus();
+  });
+  on_('closeLead', function(){ P.lead=null; render(); });
+  on_('saveLead', saveLead_);
+  document.querySelectorAll('[data-ld]').forEach(function(el){ el.oninput=el.onchange=function(){ if(P.lead) P.lead[el.getAttribute('data-ld')]=el.value; }; });
+  document.querySelectorAll('[data-ldcampus]').forEach(function(b){ b.onclick=function(){ var sel=document.getElementById('ld_country'); if(sel && P.lead) P.lead.country=sel.value; P.lead.campus=b.getAttribute('data-ldcampus'); render(); }; });
+  on_('copyLeadLink', function(){ var b=document.getElementById('leadLinkBox'); if(b) copyText_(b.value); });
+  on_('editLeadBtn', function(){ var c=selected_(); if(!c) return; P.editLead=c.id; P.leadEdit={ name:c.name||'', phone:c.phone||'', messenger:c.messenger||'', email:c.email||'', country:c.country||'', source:c.source||'' }; render(); });
+  on_('cancelLeadEdit', function(){ P.editLead=null; P.leadEdit=null; render(); });
+  on_('saveLeadEdit', saveLeadEdit_);
+  document.querySelectorAll('[data-le]').forEach(function(el){ el.oninput=el.onchange=function(){ if(P.leadEdit) P.leadEdit[el.getAttribute('data-le')]=el.value; }; });
 }
 var QUARTER_MONTHS={ 1:'Jan–Mar', 2:'Apr–Jun', 3:'Jul–Sep', 4:'Oct–Dec' };
 function archDate_(c){ return (c.archived && (c.archived.left || c.archived.at)) || ''; }
@@ -1915,13 +2116,16 @@ function crmHtml_(){
      schools, staff, volunteers, teams — as a tab row. A scoped staff member
      (Outreach Teams: teams only) gets just their tabs, opened on the first. */
   var scope=Array.isArray(d.scope) ? d.scope : null;
-  var whatKeys=APPLY.filter(function(a){ return !scope || scope.indexOf(a.type)>-1; }).map(function(a){ return a.key; });
+  var whatKeys=APPLY.filter(function(a){ return inScope_(a, scope); }).map(function(a){ return a.key; });
   if(P.what===null || (P.what && whatKeys.indexOf(P.what)===-1)) P.what = (scope && whatKeys.length===1) ? whatKeys[0] : '';
   var whatOf=function(c){ return c.type==='student' ? (c.school||'') : c.type; };
   var list=all.filter(function(c){ return (!P.campusFilter || c.campus===P.campusFilter) && (!P.what || whatOf(c)===P.what) && (!P.audFilter || c.audience===P.audFilter); });
   var live=list.filter(function(c){ return !c.archived; });
   var counts={}; live.forEach(function(c){ counts[c.stage]=(counts[c.stage]||0)+1; });
-  var h='<div class="panelHead"><div><h1 style="font-size:28px">'+esc(t('Applications'))+'</h1><p class="sub">'+esc(gpT('{n} open · signed in as {name} ({role})',{n:live.length, name:d.me.name, role:(d.role==='portal-admin' ? t('portal admin') : t('portal staff'))}))+'</p></div></div>';
+  var h='<div class="panelHead"><div><h1 style="font-size:28px">'+esc(t('Applications'))+'</h1><p class="sub">'+esc(gpT('{n} open · signed in as {name} ({role})',{n:live.length, name:d.me.name, role:(d.role==='portal-admin' ? t('portal admin') : t('portal staff'))}))+(scope ? ' · '+esc(t('You see'))+': '+esc(seesText_(scope)) : '')+'</p></div>'+
+    '<div class="headBtns">'+(d.gpdts ? '<a class="btn small ghost" id="toGpdts" href="teams.html?view=gpdts">🔥 '+esc(t('GPDTS on My Ministry'))+'</a>' : '')+
+    (P.lead ? '' : '<button class="btn small" id="addLead">＋ '+esc(t('Add a contact'))+'</button>')+'</div></div>';
+  if(P.lead) h+=leadFormHtml_();
   if(campusChips.length>1) h+='<div class="chips" style="margin-bottom:12px">'+[['',t('All campuses')]].concat(campusChips.map(function(c){ return [c[0], t(c[1])]; })).map(function(x){
     var n=all.filter(function(c){ return !c.archived && (!x[0] || c.campus===x[0]); }).length;
     return '<button class="chip'+(P.campusFilter===x[0]?' on':'')+'" data-campusfilter="'+x[0]+'">'+esc(x[1])+' · '+n+'</button>'; }).join('')+'</div>';
@@ -1936,23 +2140,26 @@ function crmHtml_(){
     return '<div class="tile"><div class="tileNum">'+(counts[x[0]]||0)+'</div><div class="tileLbl">'+esc(x[1])+'</div></div>'; }).join('')+'</div>';
   h+='<div class="crm'+(P.sel?' open':'')+'"><div>';
   h+='<div class="tools"><input type="text" id="q" placeholder="'+esc(t('Search by name, email or phone'))+'" value="'+esc(P.q)+'"></div>';
-  h+='<div class="chips">'+[['',t('All')]].concat((P.what==='team' ? stagesOf_('team') : d.stages).map(function(s){ return [s, t(STAGE_LABEL[s]||s)]; })).concat([['archived', P.what==='team' ? '🗄 '+t('Archive') : t('Archived')]]).map(function(x){
+  var dueN=list.filter(isDue_).length;
+  h+='<div class="chips">'+[['',t('All')]].concat((P.what==='team' ? stagesOf_('team') : d.stages).map(function(s){ return [s, t(STAGE_LABEL[s]||s)]; })).concat([['due', '⏰ '+t('Follow-ups due')+' · '+dueN], ['archived', P.what==='team' ? '🗄 '+t('Archive') : t('Archived')]]).map(function(x){
     return '<button class="chip'+(P.filter===x[0]?' on':'')+'" data-filter="'+x[0]+'">'+esc(x[1])+'</button>'; }).join('')+'</div>';
+  if(!(P.what==='team' && P.filter==='archived') && P.filter!=='due') h+=listSortHtml_();
   var q=P.q.trim().toLowerCase();
   var rows=list.filter(function(c){
-    if(P.filter==='archived' ? !c.archived : (c.archived || (P.filter && c.stage!==P.filter))) return false;
+    if(P.filter==='due' ? !isDue_(c) : P.filter==='archived' ? !c.archived : (c.archived || (P.filter && c.stage!==P.filter))) return false;
     if(q && (candName_(c)+' '+c.name+' '+(c.email||'')+' '+(c.phone||'')).toLowerCase().indexOf(q)===-1) return false;
     return true;
-  }).sort(P.what==='team' ? teamOrder_ : function(a,b){ return (b.updated||'') < (a.updated||'') ? -1 : 1; });
+  }).sort(P.filter==='due' ? function(a,b){ return (a.nextDate||'').localeCompare(b.nextDate||''); } : listOrder_());
   h+='<div class="tbl"><div class="thead"><span>'+esc(t('Name'))+'</span><span>'+esc(t('Applying for'))+'</span><span>'+esc(t('Stage'))+'</span><span>'+esc(t('Owner'))+'</span><span></span></div>';
   if(!rows.length) h+='<div class="empty">'+esc(t('Nobody here yet.'))+'</div>';
   var rowOf=function(c){ var h='';
     var owner=c.assignedTo && byId[c.assignedTo] ? byId[c.assignedTo].name : '—';
     var chat=chatHref_(c.messenger, c.phone);
     h+='<button class="trow'+(P.sel===c.id?' on':'')+'" data-open="'+esc(c.id)+'">'+
-      '<span><span class="who">'+esc(candName_(c))+'</span><span class="meta sm"> · '+esc(applyLabel_(c.type, c.school))+'</span><span class="meta" style="display:block">'+esc(c.type==='team' ? teamDatesLine_(c) : fmtDate_(c.updated))+(c.hasAccount?'':' · '+esc(t('no account')))+'</span>'+
+      '<span><span class="who">'+esc(candName_(c))+'</span><span class="meta sm"> · '+esc(applyLabel_(c.type, c.school))+'</span><span class="meta" style="display:block">'+esc(rowDateLine_(c))+(c.hasAccount?'':' · '+esc(t('no account')))+'</span>'+
         (c.type==='team' && c.archived && c.archived.left ? '<span class="meta" style="display:block">🗄 '+esc(gpT('Left {date}',{date:fmtDate_(c.archived.left)}))+'</span>' : '')+
-        (c.type==='team' && teamNext_(c) && !c.archived ? '<span class="meta nextStep" style="display:block">→ '+esc(t(TEAM_STEP_LABEL[teamNext_(c).id]||''))+'</span>' : '')+'</span>'+
+        (c.type==='team' && teamNext_(c) && !c.archived ? '<span class="meta nextStep" style="display:block">→ '+esc(t(TEAM_STEP_LABEL[teamNext_(c).id]||''))+'</span>' : '')+
+        (c.type!=='team' ? nextLine_(c) : '')+'</span>'+
       '<span class="meta desk">'+esc(applyLabel_(c.type, c.school))+(c.type==='student' ? ' · '+esc(c.audience==='khmer'?t('Khmer'):t('International')) : '')+(c.type==='team' ? (function(){ var tr=tripOf_((c.portal && ((c.portal.form && c.portal.form.answers) || c.portal.draft)) || {}, campusName_(c.campus||DEFAULT_CAMPUS)); return (tr && tr.days ? ' · '+esc(gpT('{n} in Cambodia',{n:daysLabel_(tr.days)})) : ''); })() : '')+(P.campusFilter || campusChips.length<2 ?'':'<br>'+esc(campusShort_(c.campus)))+'</span>'+
       '<span class="stage"><span class="pill '+esc(c.status)+'">'+esc(t(STAGE_LABEL[c.stage]||c.stage))+'</span></span>'+
       '<span class="meta desk">'+esc(owner)+'</span>'+
@@ -1981,26 +2188,30 @@ function crmHtml_(){
    the day, who was on it and the notes, newest first. P.call is the open form
    (a new note, or one being edited), kept as it is typed so a re-render loses
    nothing. Only the writer or a portal admin may edit or delete a note. */
+var CONTACT_HOW=[['call','📞','Call'],['message','💬','Message'],['inperson','🤝','In person'],['email','✉️','Email'],['social','📱','Social media']];
+function contactIcon_(m){ var x=CONTACT_HOW.filter(function(k){ return k[0]===m; })[0]; return x ? x[1] : '📞'; }
 function callDraft_(c){
-  if(!P.call || P.call.for!==c.id) P.call={ for:c.id, id:'', date:ymd_(new Date()), with:c.name||'', text:'' };
+  if(!P.call || P.call.for!==c.id) P.call={ for:c.id, id:'', date:ymd_(new Date()), with:c.name||'', text:'', method:c.type==='team' ? 'call' : 'message' };
   return P.call;
 }
 function panelCallsHtml_(c, byId){
-  var d=callDraft_(c), admin=P.boot.role==='portal-admin', me=P.boot.me && P.boot.me.id;
-  var h='<div class="callForm" id="callForm"><h3 style="margin-top:0">'+esc(d.id ? t('Edit call note') : t('Add a call note'))+'</h3>'+
-    '<div class="callRow"><div><label class="f" for="call_date">'+esc(t('Date of the call'))+'</label><input type="date" id="call_date" value="'+esc(d.date)+'"></div>'+
-    '<div><label class="f" for="call_with">'+esc(t('Who was on the call'))+'</label><input type="text" id="call_with" maxlength="120" value="'+esc(d.with)+'"></div></div>'+
-    '<label class="f" for="call_text">'+esc(t('Notes'))+'</label><textarea id="call_text" rows="7" maxlength="5000" placeholder="'+esc(t('What did you talk about? Questions, decisions, what to follow up…'))+'">'+esc(d.text)+'</textarea>'+
-    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn small" id="saveCall"'+(P.busy?' disabled':'')+'>'+esc(P.busy ? t('Saving…') : d.id ? t('Save changes') : t('Save call note'))+'</button>'+
+  var d=callDraft_(c), admin=P.boot.role==='portal-admin', me=P.boot.me && P.boot.me.id, team=c.type==='team';
+  var h='<div class="callForm" id="callForm"><h3 style="margin-top:0">'+esc(d.id ? (team ? t('Edit call note') : t('Edit this contact')) : (team ? t('Add a call note') : t('Log a contact')))+'</h3>'+
+    '<label class="f">'+esc(t('How'))+'</label><div class="chips" id="callHow">'+CONTACT_HOW.map(function(k){ return '<button type="button" class="chip'+(d.method===k[0]?' on':'')+'" data-callhow="'+k[0]+'">'+k[1]+' '+esc(t(k[2]))+'</button>'; }).join('')+'</div>'+
+    '<div class="callRow"><div><label class="f" for="call_date">'+esc(team ? t('Date of the call') : t('Date'))+'</label><input type="date" id="call_date" value="'+esc(d.date)+'"></div>'+
+    '<div><label class="f" for="call_with">'+esc(team ? t('Who was on the call') : t('Who you talked with'))+'</label><input type="text" id="call_with" maxlength="120" value="'+esc(d.with)+'"></div></div>'+
+    '<label class="f" for="call_text">'+esc(t('Notes'))+'</label><textarea id="call_text" rows="'+(team?7:4)+'" maxlength="5000" placeholder="'+esc(team ? t('What did you talk about? Questions, decisions, what to follow up…') : t('What did you talk about? How are they doing, what are they deciding?'))+'">'+esc(d.text)+'</textarea>'+
+    (team ? '' : '<p class="hint" style="margin:6px 0 0">'+esc(t('Set the next step on Overview, so it shows under Follow-ups due.'))+'</p>')+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn small" id="saveCall"'+(P.busy?' disabled':'')+'>'+esc(P.busy ? t('Saving…') : d.id ? t('Save changes') : team ? t('Save call note') : t('Save'))+'</button>'+
     (d.id ? '<button class="btn small ghost" id="cancelCall">'+esc(t('Cancel'))+'</button>' : '')+'</div></div>';
   var list=(c.calls||[]).slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||'') || (b.at||'').localeCompare(a.at||''); });
   h+='<div class="callList" id="callList">'+(list.length ? list.map(function(x){
     var who=byId[x.by] ? byId[x.by].name : '—', mine=admin || x.by===me;
-    return '<div class="callItem'+(d.id===x.id?' editing':'')+'" data-call="'+esc(x.id)+'"><div class="callHead"><b>📞 '+esc(fmtDate_(x.date))+'</b>'+(x.with?' <span class="callWith">'+esc(gpT('with {name}',{name:x.with}))+'</span>':'')+'</div>'+
+    return '<div class="callItem'+(d.id===x.id?' editing':'')+'" data-call="'+esc(x.id)+'"><div class="callHead"><b>'+contactIcon_(x.method)+' '+esc(fmtDate_(x.date))+'</b>'+(x.with?' <span class="callWith">'+esc(gpT('with {name}',{name:x.with}))+'</span>':'')+'</div>'+
       '<div class="callText">'+esc(x.text)+'</div>'+
       '<div class="callFoot"><span>'+esc(gpT('Written by {name}',{name:who}))+(x.edited?' · '+esc(t('edited')):'')+'</span>'+
       (mine ? '<span><button class="linkbtn" data-calledit="'+esc(x.id)+'">'+esc(t('Edit'))+'</button> <button class="linkbtn danger" data-calldel="'+esc(x.id)+'">'+esc(t('Delete'))+'</button></span>' : '')+'</div></div>';
-  }).join('') : '<p class="sub" style="margin:12px 0 0">'+esc(t('No call notes yet. After a call with the leaders, write down what you talked about here.'))+'</p>')+'</div>';
+  }).join('') : '<p class="sub" style="margin:12px 0 0">'+esc(team ? t('No call notes yet. After a call with the leaders, write down what you talked about here.') : t('Nothing logged yet. Each time you reach out — a call, a message, a visit — log it here.'))+'</p>')+'</div>';
   return h;
 }
 function saveCall_(){
@@ -2008,9 +2219,9 @@ function saveCall_(){
   var d=callDraft_(c);
   if(!String(d.text||'').trim()){ showMsg(t('Write the notes first.')); return; }
   P.busy=true; render();
-  run('hrCandidateCall', [P.auth.user, P.auth.pin, c.id, { id:d.id, date:d.date, with:d.with, text:d.text }], function(r){
+  run('hrCandidateCall', [P.auth.user, P.auth.pin, c.id, { id:d.id, date:d.date, with:d.with, text:d.text, method:d.method }], function(r){
     P.busy=false;
-    if(putCand_(r)){ P.call=null; showMsg(t('Call note saved')); }
+    if(putCand_(r)){ P.call=null; showMsg(c.type==='team' ? t('Call note saved') : t('Saved')); }
     render();
   });
 }
@@ -2019,15 +2230,16 @@ function bindCalls_(){
   var c=selected_(); if(!c) return;
   var d=callDraft_(c);
   [['call_date','date'],['call_with','with'],['call_text','text']].forEach(function(f){ var el=document.getElementById(f[0]); if(el) el.oninput=el.onchange=function(){ d[f[1]]=el.value; }; });
+  document.querySelectorAll('[data-callhow]').forEach(function(b){ b.onclick=function(){ d.method=b.getAttribute('data-callhow'); document.querySelectorAll('[data-callhow]').forEach(function(x){ x.classList.toggle('on', x===b); }); }; });
   on_('saveCall', saveCall_);
   on_('cancelCall', function(){ P.call=null; render(); });
   document.querySelectorAll('[data-calledit]').forEach(function(b){ b.onclick=function(){
     var x=(c.calls||[]).filter(function(k){ return k.id===b.getAttribute('data-calledit'); })[0]; if(!x) return;
-    P.call={ for:c.id, id:x.id, date:x.date||'', with:x.with||'', text:x.text||'' }; render();
+    P.call={ for:c.id, id:x.id, date:x.date||'', with:x.with||'', text:x.text||'', method:x.method||'' }; render();
     var f=document.getElementById('callForm'); if(f) f.scrollIntoView({ block:'start', behavior:'smooth' });
   }; });
   document.querySelectorAll('[data-calldel]').forEach(function(b){ b.onclick=function(){
-    if(!confirm(t('Delete this call note?'))) return;
+    if(!confirm(c.type==='team' ? t('Delete this call note?') : t('Delete this contact?'))) return;
     var id=b.getAttribute('data-calldel');
     P.busy=true; render();
     run('hrCandidateCall', [P.auth.user, P.auth.pin, c.id, { id:id, remove:true }], function(r){
@@ -2054,6 +2266,11 @@ function panelHtml_(c, byId){
   ov+='<label class="f">'+esc(t('Owner'))+'</label><select id="p_owner"><option value="">'+esc(t('— nobody yet —'))+'</option>'+P.boot.staff.map(function(s){ return '<option value="'+esc(s.id)+'"'+(c.assignedTo===s.id?' selected':'')+'>'+esc(s.name)+'</option>'; }).join('')+'</select>';
   ov+='<label class="f">'+esc(t('Next step'))+'</label><input type="text" id="p_next" value="'+esc(c.nextStep||'')+'"><label class="f">'+esc(t('By'))+'</label><input type="date" id="p_date" value="'+esc(c.nextDate||'')+'">';
   ov+='<button class="btn" id="saveCand"'+(P.busy?' disabled':'')+'>'+esc(P.busy?t('Saving…'):t('Save'))+'</button>';
+  if(!c.hasAccount && !c.portal && c.type!=='team') ov+=leadPanelHtml_(c);
+  if(c.fromDts) ov+='<p class="hint" id="fromDts" style="margin:10px 0 0">🎓 '+esc(t('A GPDTS graduate, marked potential staff.'))+
+    ((P.boot.applicants||[]).some(function(x){ return x.id===c.fromDts; }) ? ' <button class="linkbtn inline" data-open="'+esc(c.fromDts)+'">'+esc(t('Their DTS record'))+'</button>' : '')+'</p>';
+  if(c.type==='staff' || c.type==='volunteer') ov+=gpAddHtml_(c);
+  if(c.source) ov+='<p class="hint" style="margin:10px 0 0">'+esc(t('Where you met them'))+': '+esc(c.source)+'</p>';
   if(c.needsVisa && c.portal && c.portal.visa && c.portal.visa.extraDocs) ov+=uofnNoteHtml_(c, 'uofnNote');
   ov+=panelTeamFlowHtml_(c);
   var docsN=((c.portal && c.portal.docs)||[]).length, ppl=(c.portal && c.portal.members)||[];
@@ -2065,7 +2282,7 @@ function panelHtml_(c, byId){
     ['numbers','📊',t('Numbers'), panelTeamNumbersHtml_(c), ''],
     ['legal','✍️',t('Legal'), panelLegalHtml_(c), legalBadge_(c)],
     ['answers','📝',t('Application'), panelAnswersHtml_(c), ''],
-    ['calls','📞',t('Call notes'), c.type==='team' ? panelCallsHtml_(c, byId) : '', String((c.calls||[]).length||'')],
+    ['calls','📞',c.type==='team' ? t('Call notes') : t('Contacts'), panelCallsHtml_(c, byId), String((c.calls||[]).length||'')],
     ['notes','💬',t('Notes'), '', String((c.log||[]).filter(function(l){ return l.kind!=='stage'; }).length||'')]
   ].filter(function(x){ return x[0]==='notes' || x[3]; });
   if(!tabs.some(function(x){ return x[0]===P.ptab; })) P.ptab='overview';
@@ -2240,7 +2457,7 @@ function previewHtml_(){
   h+='<div class="whatTabs"><button class="whatTab'+(pv.mode==='sample'?' on':'')+'" data-pvmode="sample">'+esc(t('A sample applicant'))+'</button><button class="whatTab'+(pv.mode==='record'?' on':'')+'" data-pvmode="record">'+esc(t('One of our applicants'))+'</button></div>';
   if(pv.mode==='sample'){
     var scope=Array.isArray(d.scope) ? d.scope : null;
-    var kinds=APPLY.filter(function(a){ return !scope || scope.indexOf(a.type)>-1; });
+    var kinds=APPLY.filter(function(a){ return inScope_(a, scope); });
     if(!kinds.some(function(a){ return a.key===pv.key; })) pv.key=kinds[0].key;
     var isSchool=['dts','dbs','bcs','sms'].indexOf(pv.key)>-1;
     h+='<div class="card"><label class="f" style="margin-top:0">'+esc(t('Applying for'))+'</label><div class="chips" style="margin-bottom:0">'+kinds.map(function(a){ return '<button class="chip'+(pv.key===a.key?' on':'')+'" data-pvkey="'+a.key+'">'+esc(a.key==='team'?t('Team'):a.label)+'</button>'; }).join('')+'</div>'+
@@ -2325,6 +2542,7 @@ function accessHtml_(){
   h+='<p class="hint" style="margin:0 0 8px">'+esc(d.canGrantAdmin ? t('A GP app admin has admin access anyway; whoever leads Outreach Teams sees team applications anyway.') : t('Only a GP app admin can give or take admin access. A GP app admin has it anyway; whoever leads Outreach Teams sees team applications anyway.'))+'</p>';
   h+='<div class="card"><div class="accessRow head"><span>'+esc(t('Name'))+'</span><span>'+esc(t('Staff access'))+'</span><span>'+esc(t('Admin access'))+'</span></div>'+list.map(function(s){
     var auto = s.isAdmin ? t('GP app admin') : s.leadsTeams ? t('Leads Outreach Teams') : '';
+    if(s.portal && !s.isAdmin) auto=(auto ? auto+' · ' : '')+t('Sees')+': '+seesText_(s.sees);
     return '<div class="accessRow" data-accessrow="'+esc(s.id)+'"><div class="accessWho"><b>'+esc(s.name)+'</b><span class="hint">'+esc([s.ministry||s.dept, campusShort_(s.campus)].filter(Boolean).join(' · '))+(auto ? ' · '+esc(auto) : '')+'</span></div>'+
       '<label class="accessChk"><input type="checkbox" data-accstaff="'+esc(s.id)+'"'+(s.portalStaff?' checked':'')+' aria-label="'+esc(t('Staff access'))+'"></label>'+
       '<label class="accessChk"><input type="checkbox" data-accadmin="'+esc(s.id)+'"'+(s.portalAdmin?' checked':'')+(d.canGrantAdmin?'':' disabled')+' aria-label="'+esc(t('Admin access'))+'"></label></div>';
@@ -3215,7 +3433,8 @@ function tripOf_(ans, base){
   dated.forEach(function(r){ if(!start || r.from<start) start=r.from; if(!end || r.to>end) end=r.to; });
   if(!Array.isArray(ans.itinerary) && ans.arrivalKh && ans.departureKh){ start=ans.arrivalKh; end=ans.departureKh; }
   var first=dated.slice().sort(function(a,b){ return a.from<b.from?-1:a.from>b.from?1:(a.base?-1:1); })[0]||null;
-  return { stays:stays, start:start, end:end, days:daysIncl_(start, end), first:first, note:note };
+  var bs=stays.filter(function(r){ return r.base && r.from; })[0];
+  return { stays:stays, start:start, end:end, days:daysIncl_(start, end), first:first, note:note, baseFrom:bs ? bs.from : '', baseTo:bs ? (bs.to||'') : '' };
 }
 function ansStore_(prefix){ return prefix==='s_' ? P.staffAnswers : prefix==='r_' ? P.refAnswers : P.answers; }
 function flushAnswers_(prefix){
@@ -3631,6 +3850,7 @@ function bind_(){
   on_('langBtn', flip); on_('langBtn2', flip);
   on_('toChoose', function(){ P.view='choose'; render(); });
   on_('outBtn', signOut_); on_('outBtn2', signOut_);
+  on_('openGpApp', function(){ if(P.auth) lsSet('gp-staff', JSON.stringify(P.auth)); lsDel('gp-portal'); location.href='teams.html'; });
   on_('toLanding', function(){ P.view='login'; render(); });
   on_('toLogin', function(){ P.view='login'; P.err=''; render(); });
   document.querySelectorAll('[data-apply]').forEach(function(b){ b.onclick=function(){ P.apply=b.getAttribute('data-apply'); P.view='register'; render(); }; });
@@ -3667,11 +3887,16 @@ function bind_(){
   // staff
   var q=document.getElementById('q'); if(q){ q.oninput=function(){ P.q=q.value; renderList_(); }; }
   document.querySelectorAll('[data-filter]').forEach(function(b){ b.onclick=function(){ P.filter=b.getAttribute('data-filter'); render(); }; });
+  var keepSort=function(){ lsSet('gp-portal-sort', JSON.stringify(listSortPrefs_())); render(); };
+  document.querySelectorAll('[data-sortby]').forEach(function(b){ b.onclick=function(){ listSortPrefs_()[listSortKey_()]=b.getAttribute('data-sortby'); keepSort(); }; });
+  on_('sortDir', function(){ var p=listSortPrefs_(), k=listSortKey_()+'Dir'; p[k] = p[k]==='asc' ? 'desc' : 'asc'; keepSort(); });
   document.querySelectorAll('[data-open]').forEach(function(b){ b.onclick=function(e){ if(e.target.closest('[data-chat]')) return; P.sel=b.getAttribute('data-open'); P.note=''; P.editAnswers=false; render(); var p=document.getElementById('panel'); if(p && window.innerWidth<900) p.scrollIntoView({ behavior:'smooth', block:'start' }); }; });
   on_('closePanel', function(){ P.sel=null; render(); });
   on_('saveCand', saveCand_);
   on_('addNote', addNote_);
   bindCalls_();
+  bindLead_();
+  bindGpAdd_();
   on_('archiveCand', archiveCand_);
   on_('deleteCand', deleteCand_);
   on_('viewAsCand', function(){ var c=selected_(); if(!c) return; P.pv.mode='record'; P.pv.candId=c.id; P.pv.boot=null; P.pv.screen='me'; P.pv.sec=0; P.view='preview'; render(); window.scrollTo(0,0); });
@@ -3855,6 +4080,7 @@ function signIn_(u, secret, wrongMsg){
     P.busy=false;
     if(d && d.ok){ P.boot=d; if(d.role==='applicant') P.answers=(d.application && d.application.answers)||{}; P.view = d.role==='applicant' ? 'me' : 'crm'; openFromLink_(d); lsSet('gp-portal', JSON.stringify(P.auth)); render(); return; }
     if(d && d.err==='not_authorized'){ P.view='noaccess'; render(); return; }
+    if(d && d.err==='staff_now'){ lsSet('gp-portal', JSON.stringify(P.auth)); P.view='noaccess'; P.err='staff_now'; render(); return; }
     if(d && d.err==='no_application'){ P.view='noaccess'; P.err='no_application'; render(); return; }
     P.auth=null; showMsg(wrongMsg); render();
   });

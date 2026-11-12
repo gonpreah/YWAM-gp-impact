@@ -1518,7 +1518,8 @@ function kpiCardHtml(wk){
       'Set your ministry on the Profile tab and your team’s KPIs will show up here, ready to log.</p>'+
       '<button class="btn ghost" id="goProfile">Choose my ministry</button></div>';
   }
-  var metrics=metricsFor(S.me.campus, S.me.dept, S.me.ministry);
+  var auto=autoMetricsFor(S.me.campus, S.me.dept, S.me.ministry);   // counted from the pipeline, never typed (GPDTS)
+  var metrics=metricsFor(S.me.campus, S.me.dept, S.me.ministry).filter(function(m){ return auto.indexOf(m)===-1; });
   if(!metrics.length){
     return '<div class="card"><p class="sub" style="margin:4px 0">'+
       'No KPIs are defined for '+esc(S.me.ministry)+' yet.</p></div>';
@@ -1712,7 +1713,8 @@ function kpiCardHtml(wk){
    in the status card above this (ministryWeekStatusHtml_ with ovMin). */
 function ovWeekRowsHtml_(dept, ministry, data, wk){
   S.ovDeptOf[ministry] = dept;
-  var metrics = metricsFor(S.me.campus, dept, ministry);
+  var auto = autoMetricsFor(S.me.campus, dept, ministry);   // counted from the pipeline, never typed (GPDTS)
+  var metrics = metricsFor(S.me.campus, dept, ministry).filter(function(m){ return auto.indexOf(m)===-1; });
   if(!metrics.length){
     return '<div class="card"><p class="sub" style="margin:4px 0">'+
       esc(gpT('No KPIs are defined for {ministry} yet.',{ministry:t(ministry)}))+'</p></div>';

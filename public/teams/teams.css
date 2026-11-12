@@ -1371,6 +1371,11 @@ body.libReading nav.bottom { display:none; } body.libReading { overflow:hidden; 
 .portalWho { display:flex; align-items:center; gap:10px; flex:1 1 200px; min-width:0; background:none; border:0; padding:0; text-align:left; font-family:inherit; color:var(--ink); cursor:pointer; }
 .portalTick { display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--muted); white-space:nowrap; }
 .portalTick input { width:18px; height:18px; accent-color:var(--accent); }
+.portalSees { flex:1 1 100%; order:9; padding-left:2px; }
+.portalSees .rowSub b { color:var(--ink); font-weight:600; }
+.portalScopeChips { margin-top:6px; }
+.portalScopeChips .chip { cursor:pointer; font-family:inherit; }
+.portalScopeChips .chip.on { background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
 .hxOpenBtn { display:inline-flex; align-items:center; gap:6px; margin:0 0 10px; padding:8px 14px; border-radius:999px;
   border:1.5px solid var(--accent); background:transparent; color:var(--accent); font-family:'Koulen',sans-serif;
   font-size:14px; letter-spacing:.8px; cursor:pointer; }
@@ -2639,3 +2644,79 @@ body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
 #main.gpEnter { animation:gpEnter .42s cubic-bezier(.2,.8,.2,1) backwards; }   /* never left applied: a transform on #main would make it the box that position:fixed screens (the Library reader, sheets) are placed in — the class goes when it ends (render) */
 @keyframes gpEnter { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
 @media (prefers-reduced-motion: reduce){ #main.gpEnter { animation:none; } }
+
+/* ---- GPDTS (teams/16-dts.js) ---- */
+.dtsSteps { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; }
+@media (min-width:640px){ .dtsSteps { grid-template-columns:repeat(6, minmax(0,1fr)); } }
+.dtsStep { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:8px 10px; min-width:0; }
+.dtsStep.empty { opacity:.6; }
+.dtsStepTop { font-size:15px; }
+.dtsStepNum { font-family:'Koulen',sans-serif; font-size:26px; line-height:1; color:var(--ink); }
+.dtsStepName { font-size:12px; font-weight:700; color:var(--ink); margin-top:2px; }
+.dtsStepSplit { font-size:11px; color:var(--muted); }
+.dtsBtns { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center; }
+.dtsBtns .btn { margin-top:0; width:auto; text-decoration:none; }
+.dtsDueList { display:flex; flex-direction:column; }
+.dtsDue { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 10px; padding:9px 0; border-top:1px solid var(--border); color:var(--ink); text-decoration:none; }
+.dtsDue:first-child { border-top:0; }
+.dtsDueName { font-weight:700; }
+.dtsDueStep { grid-column:1; font-size:13px; color:var(--muted); }
+.dtsDueDate { grid-column:2; grid-row:1 / span 2; align-self:center; font-size:12.5px; font-weight:700; color:var(--muted); white-space:nowrap; }
+.dtsDueDate.late { color:var(--bad); }
+.dtsH { margin:18px 0 8px; }
+.dtsClassBar { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border); }
+.dtsAll { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700; }
+.dtsGradBox { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.dtsGradBox input { width:auto; }
+.dtsGradBox .btn { margin-top:0; width:auto; }
+.dtsStu { display:flex; align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--border); }
+.dtsStu:first-of-type { border-top:0; }
+.dtsTick input, .dtsAll input { width:18px; height:18px; accent-color:var(--accent); }
+.dtsStuText { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; }
+.dtsGradLine { color:var(--good); }
+.dtsStaff { flex:0 0 auto; border:1px solid var(--border); background:transparent; color:var(--muted); border-radius:999px; padding:5px 10px; font-size:12px; font-weight:700; font-family:inherit; cursor:pointer; }
+.dtsStaff.on { background:var(--amber); border-color:var(--amber); color:var(--amberInk); }
+@media (max-width:420px){ .dtsStaff span { display:none; } }
+.dtsTwo { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:0 10px; }
+.dtsConf { display:flex; align-items:center; gap:8px; margin:12px 0 0; font-size:14px; }
+.dtsConf input { width:18px; height:18px; accent-color:var(--accent); }
+.dtsLect { display:grid; grid-template-columns:auto minmax(0,1fr); gap:2px 12px; width:100%; text-align:left; background:none; border:0; border-top:1px solid var(--border); padding:10px 0; font-family:inherit; color:var(--ink); cursor:pointer; }
+.dtsLect:first-of-type { border-top:0; }
+.dtsLectWhen { grid-row:1 / span 2; font-weight:700; font-size:13px; color:var(--accent); white-space:nowrap; }
+.dtsLectText { display:flex; flex-direction:column; min-width:0; }
+.dtsLectState { grid-column:2; font-size:12px; color:var(--muted); }
+.dtsLect.ok .dtsLectState { color:var(--good); }
+.dtsPast summary { cursor:pointer; font-weight:700; font-size:13px; color:var(--muted); padding:10px 0 4px; }
+.dtsSoon { border-style:dashed; }
+
+/* ---- Continue with Google (07-health-leave.js) ---- */
+.googleBtn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:12px 16px; border-radius:12px;
+  border:1px solid var(--border); background:var(--surface); color:var(--ink); font:inherit; font-weight:700; font-size:15px; cursor:pointer; margin:4px 0; }
+.googleBtn:disabled { opacity:.6; }
+.orLine { display:flex; align-items:center; gap:10px; margin:12px 0 4px; color:var(--faint); font-size:12px; }
+.orLine::before, .orLine::after { content:''; flex:1; border-top:1px solid var(--border); }
+
+/* GPDTS, part 2 */
+.dtsGroupH { font-size:12px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); margin:12px 0 6px; }
+.dtsTiles { grid-template-columns:repeat(2, minmax(0,1fr)); }
+@media (min-width:640px){ .dtsTiles { grid-template-columns:repeat(4, minmax(0,1fr)); } }
+.dtsYearChips .chip { cursor:pointer; font-family:inherit; }
+.dtsYearChips .chip.on { background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
+.dtsYearsWrap { overflow-x:auto; margin-top:12px; }
+.dtsYears { border-collapse:collapse; font-size:13px; min-width:100%; }
+.dtsYears th, .dtsYears td { padding:6px 8px; border-top:1px solid var(--border); text-align:right; white-space:nowrap; }
+.dtsYears tbody th { text-align:left; font-weight:600; color:var(--ink); }
+.dtsYears thead th { color:var(--muted); }
+.dtsPastGrid, .dtsFruitIn { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; }
+@media (min-width:640px){ .dtsPastGrid { grid-template-columns:repeat(3, minmax(0,1fr)); } .dtsFruitIn { grid-template-columns:repeat(4, minmax(0,1fr)); } }
+.dtsPastBox { display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--muted); }
+.dtsPastBox input { width:100%; }
+.dtsPipe2 { flex:1 1 100%; font-size:12.5px; color:var(--muted); padding-left:28px; }
+.dtsStu { flex-wrap:wrap; }
+.dtsOut { display:flex; gap:10px; align-items:center; padding:10px 0; border-top:1px solid var(--border); }
+.dtsOut:first-of-type { border-top:0; }
+.dtsOutText { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; }
+.dtsOutBtns { display:flex; gap:6px; flex:0 0 auto; }
+.dtsOutBtns .btn { margin-top:0; width:auto; }
+.dtsRep { border:1px solid var(--border); border-radius:12px; padding:8px 10px; margin:6px 0; }
+.dtsRep input[type=text] { margin-top:6px; }

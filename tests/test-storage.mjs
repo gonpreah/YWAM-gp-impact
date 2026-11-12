@@ -157,11 +157,11 @@ function isKhmer(s) { return /[ក-៿]/.test(String(s || '')); }
      entry from there still works. sessionStorage is untouched, which is what
      the guest marker uses. */
   let gate = false;
-  try { await p.waitForSelector('#lookAround', { timeout: 15000 }); gate = true; } catch (e) { }
+  try { await p.waitForSelector('#toReg', { timeout: 15000 }); gate = true; } catch (e) { }
   ok('storage blocked: the front door still renders', gate);
   let usable = false;
   if (gate) {
-    await p.click('#lookAround');   // → the app's guest mode, which needs no storage
+    await p.goto(p.url().split('?')[0] + '?guest=1');   // → the app's guest mode, which needs no storage
     try { await p.waitForSelector('nav.bottom button', { timeout: 15000 }); usable = true; } catch (e) { }
   }
   await p.waitForTimeout(400);
