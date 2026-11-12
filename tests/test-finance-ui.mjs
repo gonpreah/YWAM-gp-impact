@@ -122,6 +122,26 @@ const txt = (p) => p.$eval('#main', (e) => e.innerText);
   await page.click('.mmTabs [data-mmtab="numbers"]'); await page.waitForTimeout(800);
   ok('… and its usual numbers are the third tab', !(await page.$('#finDash')) && !(await page.$('#finReports')));
   await page.click('[data-fintab="reports"]'); await page.waitForTimeout(400);
+  /* the balances: the office enters the cash on hand and the bank, and when it was reconciled */
+  ok('balances: the Reports tab leads with them, none entered yet', (await page.$eval('#finReports > :first-child', (e) => e.id)) === 'finBal' && /Enter today’s cash on hand/.test(await page.$eval('#finBal', (e) => e.innerText)));
+  await page.click('#finBalEdit'); await page.waitForTimeout(300);
+  ok('… the form opens on today', (await page.inputValue('#finBalAsOf')) === await page.evaluate(() => todayStr()));
+  await page.fill('#finBalCash', '412.50');
+  await page.click('#finBalSave'); await page.waitForTimeout(400);
+  ok('… both amounts are needed', !!(await page.$('#finBalForm, .finBalForm')) && !(mem['finance:poipet'] || {}).balances);
+  await page.fill('#finBalBank', '18250.75');
+  const recDay = await page.evaluate(() => { const d = new Date(); d.setDate(d.getDate() - 50); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); });
+  await page.fill('#finBalRec', recDay);
+  await page.click('#finBalSave'); await page.waitForTimeout(1200);
+  const bal = (mem['finance:poipet'] || {}).balances || {};
+  ok('… saved: cash, bank, the day and when it was reconciled', bal.cash === 412.5 && bal.bank === 18250.75 && bal.reconciled === recDay, JSON.stringify(bal));
+  ok('… the card shows the total liquid assets and its parts', (await page.$eval('#finBalTotal', (e) => e.innerText)) === '$18,663.25' && /\$412\.50/.test(await page.$eval('#finBal', (e) => e.innerText)) && /\$18,250\.75/.test(await page.$eval('#finBal', (e) => e.innerText)));
+  ok('… and an old reconciling is flagged', await page.$eval('#finBalRecLine', (e) => e.classList.contains('late') && /50 days ago/.test(e.innerText)));
+  await page.click('#finBalEdit'); await page.waitForTimeout(300);
+  await page.fill('#finBalRec', await page.evaluate(() => todayStr()));
+  await page.click('#finBalSave'); await page.waitForTimeout(1200);
+  ok('… reconciled today: a tick, no warning', await page.$eval('#finBalRecLine', (e) => e.classList.contains('ok') && /^✓ Reconciled/.test(e.innerText)));
+  await (await page.$('#finBal')).screenshot({ path: OUT + '/office-balances.png' });
   await ctx.close();
 }
 
@@ -129,6 +149,9 @@ const txt = (p) => p.$eval('#main', (e) => e.innerText);
 {
   const { ctx, page } = await open('mark', { lw: 'money' });
   ok('Campus Leadership has a Finances tab on their own row', !!(await page.$('[data-lwtab="money"].on')) && !!(await page.$('#finDash')));
+  ok('the Finances tab leads with the balances: total liquid assets, cash, bank, reconciled', (await page.$eval('#finDash > :first-child', (e) => e.id)) === 'finBal' &&
+    (await page.$eval('#finBalTotal', (e) => e.innerText)) === '$18,663.25' && await page.$eval('#finBalRecLine', (e) => /^✓ Reconciled/.test(e.innerText)));
+  ok('… read-only for leadership', !(await page.$('#finBalEdit')));
   const t = await txt(page);
   ok('the month: came in, went out, net, cash in the bank', /Base finances · Mar 2026/.test(t) && /\$8,630/.test(t) && /\$8,951/.test(t) && /−\$322/.test(t) && /\$15,251/.test(t), t.slice(0, 400).replace(/\n/g, ' / '));
   ok('the year chart: two series, a bar for every month in', (await page.$$('#finYearChart .finBar.in')).length === 3 && (await page.$$('#finYearChart .finBar.out')).length === 3 && (await page.$$('#finYearChart .finLegend span')).length === 2);

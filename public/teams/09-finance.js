@@ -20,7 +20,7 @@
    QuickBooks (Oct 2026): once the office connects their QuickBooks company (the card at the
    top of Reports), the Profit and Loss and the A/R Ageing come in by themselves every night —
    see "QuickBooks" in api.js. The Burn Rate is their own spreadsheet, so it's still uploaded. */
-S.fin=null; S.qboWaiting=false; S.finLoading=false; S.finErr=''; S.finPending=[]; S.finMonth=null; S.finAheadEdit=null; S.finReading=0;
+S.fin=null; S.finBalEdit=null; S.qboWaiting=false; S.finLoading=false; S.finErr=''; S.finPending=[]; S.finMonth=null; S.finAheadEdit=null; S.finReading=0;
 S.finTab=(lsGet('gp-fin-tab')==='dash' || lsGet('gp-fin-tab')==='numbers' ? lsGet('gp-fin-tab') : 'reports');
 function finCanEditClient_(){ return typeof canEnterStaffDebtClient_==='function' && canEnterStaffDebtClient_(); }
 function finLoad_(force){
@@ -137,6 +137,7 @@ function finDashHtml_(){
   finLoad_();
   var F=S.fin, h='<div id="finDash">';
   if(!F) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.finErr==='not_authorized' ? t('Base finances are for Campus Leadership and the Finances office.') : S.finErr ? t('Couldn’t load this — pull down to try again.') : t('Loading…'))+'</p></div></div>';
+  h+=finBalancesHtml_(F);
   var months=finMonthsOf_(F), latest=finLatestMonth_(F);
   var burnYears=Object.keys(F.burn||{}).sort(), hasDebt=!!F.debt;
   if(!latest && !burnYears.length && !hasDebt){
@@ -185,6 +186,49 @@ function finDashHtml_(){
   h+=finQrHtml_(F, false);
   h+=finAheadHtml_(F);
   return h+'</div>';
+}
+/* Balances (Nov 2026, Uriah): the money on hand right now — cash on hand and the ABA bank
+   account, their total as the liquid assets, the day they are true for, and the day the books
+   were last reconciled with the bank. The Finances office types them (Update balances, here and
+   on their Reports tab); leadership reads them at the top of their Finances tab. A reconciling
+   more than FIN_REC_DAYS old is flagged, so it's plain when the figures haven't been checked. */
+var FIN_REC_DAYS = 35;
+function finDaysAgo_(iso){ if(!iso) return null; var t0=Date.parse(iso+'T00:00:00Z'), now=Date.parse(todayStr()+'T00:00:00Z'); return isNaN(t0) ? null : Math.round((now-t0)/86400000); }
+function finBalancesHtml_(F){
+  var B=F && F.balances, edit=!!(F && F.canEdit), E=S.finBalEdit;
+  var h='<div class="card finBal" id="finBal"><div class="goalCardTitle" style="margin-bottom:2px">🏦 '+esc(t('Balances'))+'</div>';
+  if(E && edit){
+    h+='<p class="hint" style="margin:0 0 10px">'+esc(t('What is in hand today: the cash box and the ABA bank account. Their total shows as the liquid assets.'))+'</p>'+
+      '<div class="finBalForm">'+
+      '<label class="f" for="finBalCash">'+esc(t('Cash on hand'))+'</label><input type="number" inputmode="decimal" step="0.01" id="finBalCash" value="'+esc(E.cash==null?'':String(E.cash))+'" placeholder="$">'+
+      '<label class="f" for="finBalBank">'+esc(t('ABA bank account'))+'</label><input type="number" inputmode="decimal" step="0.01" id="finBalBank" value="'+esc(E.bank==null?'':String(E.bank))+'" placeholder="$">'+
+      '<label class="f" for="finBalAsOf">'+esc(t('Balances as of'))+'</label><input type="date" id="finBalAsOf" max="'+todayStr()+'" value="'+esc(E.asOf||'')+'">'+
+      '<label class="f" for="finBalRec">'+esc(t('Last reconciled with the bank'))+'</label><input type="date" id="finBalRec" max="'+todayStr()+'" value="'+esc(E.reconciled||'')+'">'+
+      '<p class="hint" style="margin:4px 0 0">'+esc(t('Leave it empty if the books haven’t been reconciled yet.'))+'</p>'+
+      '</div><div class="btnRow" style="margin-top:12px"><button class="btn" id="finBalSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="finBalCancel">'+esc(t('Cancel'))+'</button></div></div>';
+    return h;
+  }
+  if(!B){
+    h+='<p class="sub" style="margin:0">'+esc(edit ? t('Enter today’s cash on hand and the ABA bank balance — leadership sees their total at the top of their Finances tab.') : t('The Finances office hasn’t entered the balances yet.'))+'</p>'+
+      (edit ? '<button class="btn" id="finBalEdit" style="margin-top:10px">'+esc(t('Enter the balances'))+'</button>' : '')+'</div>';
+    return h;
+  }
+  var moved='';
+  if(B.prev){ var dd=B.total-B.prev.total;
+    moved = Math.abs(dd)<0.005 ? '<div class="mmTileSub">'+esc(gpT('same as {date}',{date:finDate_(B.prev.asOf)}))+'</div>'
+      : '<div class="mmTileSub '+(dd>0?'finGood':'finBad')+'">'+(dd>0?'▲ ':'▼ ')+esc(gpT('{money} since {date}',{money:finMoney_(Math.abs(dd), true), date:finDate_(B.prev.asOf)}))+'</div>'; }
+  var ago=finDaysAgo_(B.reconciled), late = ago==null || ago>FIN_REC_DAYS;
+  h+='<p class="hint" style="margin:0 0 8px">'+esc(gpT('As of {date}',{date:finDate_(B.asOf)}))+(B.by?' · '+esc(gpT('entered by {name}',{name:B.by})):'')+'</p>'+
+    '<div class="finBalTotal"><div class="mmTileName">'+esc(t('Total liquid assets'))+'</div><div class="finBalNum" id="finBalTotal">'+esc(finMoney_(B.total, true))+'</div>'+moved+'</div>'+
+    '<div class="mmGrid finTiles finBalParts">'+
+      '<div class="mmTile"><div class="mmTileName">'+esc(t('Cash on hand'))+'</div><div class="mmTileNum">'+esc(finMoney_(B.cash, true))+'</div></div>'+
+      '<div class="mmTile"><div class="mmTileName">'+esc(t('ABA bank account'))+'</div><div class="mmTileNum">'+esc(finMoney_(B.bank, true))+'</div></div>'+
+    '</div>'+
+    '<p class="finBalRec '+(late?'late':'ok')+'" id="finBalRecLine">'+(B.reconciled
+      ? (late ? '⚠️ '+esc(gpT('Last reconciled {date} — {n} days ago',{date:finDate_(B.reconciled), n:ago})) : '✓ '+esc(gpT('Reconciled {date}',{date:finDate_(B.reconciled)})))
+      : '⚠️ '+esc(t('Not reconciled yet')))+'</p>'+
+    (edit ? '<button class="btn ghost" id="finBalEdit" style="margin-top:10px">'+esc(t('Update balances'))+'</button>' : '')+'</div>';
+  return h;
 }
 /* The campus and new house: what it costs to run, what the teams, staff, students and
    ministries put in, and the plan for the months ahead. */
@@ -561,6 +605,7 @@ function bindFinQr_(){
 function finReportsHtml_(){
   finLoad_();
   var F=S.fin, h='<div id="finReports">', Q=F && F.qbo;
+  if(F) h+=finBalancesHtml_(F);
   h+=finQboHtml_(F)+finQrHtml_(F, true);
   h+='<div class="card"><div class="goalCardTitle" style="margin-bottom:4px">🧾 '+esc(t('The month’s reports'))+'</div>'+
     '<p class="sub" style="margin:0 0 10px">'+esc(Q && Q.connected ? t('QuickBooks brings in the Profit and Loss and the staff debt. Upload the Burn Rate here — and any report you’d rather add by hand; it’s read and checked against its own totals before anything is saved.') :
@@ -623,6 +668,24 @@ function finMinistryTabsHtml_(){
 
 function bindFinance_(){
   bindFinQr_();
+  var be=document.getElementById('finBalEdit'); if(be) be.onclick=function(){
+    var B=S.fin && S.fin.balances;
+    S.finBalEdit={ cash:B ? B.cash : null, bank:B ? B.bank : null, asOf:todayStr(), reconciled:B ? B.reconciled : '' }; render(); };
+  var bc=document.getElementById('finBalCancel'); if(bc) bc.onclick=function(){ S.finBalEdit=null; render(); };
+  var bs=document.getElementById('finBalSave'); if(bs) bs.onclick=function(){
+    if(S.busy) return;
+    var val=function(id){ return (document.getElementById(id)||{}).value||''; };
+    var cash=val('finBalCash'), bank=val('finBalBank'), asOf=val('finBalAsOf'), rec=val('finBalRec');
+    S.finBalEdit={ cash:cash===''?null:Number(cash), bank:bank===''?null:Number(bank), asOf:asOf, reconciled:rec };
+    if(cash==='' || bank===''){ showMsg(t('Enter both the cash on hand and the bank balance.')); return; }
+    if(!asOf){ showMsg(t('Choose the day these balances are for.')); return; }
+    S.busy=true; bs.disabled=true; bs.textContent=t('Saving…');
+    run('finBalancesSave',[S.auth.user,S.auth.pin,{ cash:Number(cash), bank:Number(bank), asOf:asOf, reconciled:rec }],function(d){
+      S.busy=false;
+      if(finPut_(d)){ S.finBalEdit=null; showMsg(t('Saved')); }
+      else showMsg(d && d.err==='bad_date' ? t('Those dates can’t be in the future.') : d && d.err==='bad_amount' ? t('Enter both the cash on hand and the bank balance.') : finFail_(d));
+      render();
+    }, function(){ S.busy=false; showMsg(t('No connection — try again when you are online.')); render(); }); };
   var qc=document.getElementById('finQboConnect'); if(qc) qc.onclick=function(){
     if(S.busy) return; gpTap();
     // the window opens on the tap itself (a phone blocks one opened later), and is sent to Intuit once the app has its link
