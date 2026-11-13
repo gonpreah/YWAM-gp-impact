@@ -780,6 +780,19 @@ school's home.
   `portalLoginGoogle` for someone with `fromCand` and no portal access) with **Open the GP app**, which
   carries the same sign-in over (`gp-staff`). The portal's staff header has **🔥 GPDTS on My Ministry**
   (`#toGpdts` → `teams.html?view=gpdts`, shown when `portalBoot.gpdts`).
+- **Lecture fees** (Nov 2026, Andrew: "for our finance team and the DTS team to get more clarity and
+  collaboration … the lecture phase is a fixed price, different by country A, B and C"): GPDTS → Database →
+  💰 Lecture fees (`dtsFeesHtml_`, `[data-dtssec="fees"]`) — the school's total from its students accepted
+  in the portal (columns accepted / arrived / graduated; archived without graduating is out), each at their
+  country's price, A $2,000 · B $1,500 · C $620 (`DTS_FEE_PRICE`), a table by category, "Country not known"
+  rows with a link to the record, and what it comes to if everyone still applying is accepted. The A/B/C list
+  is YWAM's, in ONE place — `DTS_FEE_LIST` in api.js, matched through `dtsFeeKey_` (accents, punctuation)
+  and `DTS_FEE_ALIAS` ("United States", "USA", "Turkey"…); a Khmer student with no country is Cambodia (C).
+  Each student on the board carries `feeCat`, the board `fees` (the prices). The same total is on the
+  Finances dashboard (`finDtsHtml_`, `#finDts`, from `getFinance`'s `dtsFees` = `dtsFeesForFinance_`:
+  schools ending within 60 days or later, names / country / category only) for the Finances office and
+  Campus Leadership. `COUNTRIES` (taxonomy.js) now holds every country on the list, so the portal's picker
+  offers them all. tests/test-dts-fees.mjs (server), test-dts-ui.mjs and test-finance-ui.mjs (the pages).
 - Tests: tests/test-dts.mjs (server), tests/test-dts-ui.mjs (GPDTS page, portal, Google, Admin).
 
 ## Signing in to the GP app with Google; every new account approved (Nov 2026, Andrew)

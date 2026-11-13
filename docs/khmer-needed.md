@@ -4792,3 +4792,28 @@ The one line under each tile on the Database's home page, and "Edit {school}" in
 | Type their name first. | សូមវាយឈ្មោះរបស់ពួកគេជាមុនសិន។ |
 
 On a student's profile in GPDTS → Database → Students: GPDTS's own people as chips, and a box to type anyone else's name.
+
+## 97. GPDTS → Lecture fees, and the Finances dashboard's GPDTS card
+
+| English | Khmer (draft) |
+|---|---|
+| Lecture fees | ថ្លៃវគ្គមេរៀន |
+| Nobody accepted yet | មិនទាន់មាននរណាត្រូវបានទទួលយកនៅឡើយទេ |
+| {money} · {n} accepted | {money} · ទទួលយក {n} នាក់ |
+| {n} country not known | {n} នាក់មិនដឹងប្រទេស |
+| Lecture phase — {school} | វគ្គមេរៀន — {school} |
+| {n} students accepted | សិស្ស {n} នាក់ត្រូវបានទទួលយក |
+| Category | ប្រភេទ |
+| Price each | តម្លៃម្នាក់ |
+| Country not known | មិនដឹងប្រទេស |
+| {n} more have applied and are waiting. If they are all accepted: {money}. | {n} នាក់ទៀតបានដាក់ពាក្យ ហើយកំពុងរង់ចាំ។ ប្រសិនបើពួកគេទាំងអស់ត្រូវបានទទួលយក៖ {money}។ |
+| Counted from the portal: every student accepted for this school — accepted, getting ready, here or graduated — at the price for the country they are from (A, B or C). It changes by itself as students are accepted. The Finances office sees the same on its dashboard. | រាប់ពី Portal៖ សិស្សគ្រប់រូបដែលត្រូវបានទទួលចូលសាលានេះ — បានទទួលយក កំពុងរៀបចំ នៅទីនេះ ឬបានបញ្ចប់ការសិក្សា — តាមតម្លៃសម្រាប់ប្រទេសដែលពួកគេមកពី (A B ឬ C)។ វាប្តូរដោយខ្លួនឯង នៅពេលសិស្សត្រូវបានទទួលយក។ ការិយាល័យហិរញ្ញវត្ថុឃើញដូចគ្នានៅលើផ្ទាំងគ្រប់គ្រងរបស់ខ្លួន។ |
+| These students’ country isn’t on the A/B/C list, so their fee isn’t counted yet. Fix the country on their record in the portal. | ប្រទេសរបស់សិស្សទាំងនេះមិនមាននៅក្នុងបញ្ជី A/B/C ទេ ដូច្នេះថ្លៃរបស់ពួកគេមិនទាន់ត្រូវបានរាប់នៅឡើយ។ សូមកែប្រទេសនៅលើកំណត់ត្រារបស់ពួកគេនៅក្នុង Portal។ |
+| No country given | មិនបានផ្តល់ប្រទេស |
+| Who is counted | អ្នកដែលត្រូវបានរាប់ |
+| Who is counted ({n}) | អ្នកដែលត្រូវបានរាប់ ({n}) |
+| GPDTS lecture phase | វគ្គមេរៀន GPDTS |
+| From the portal: the students accepted for each school, at the price for the country they are from — A {a}, B {b}, C {c}. | ពី Portal៖ សិស្សដែលត្រូវបានទទួលចូលសាលានីមួយៗ តាមតម្លៃសម្រាប់ប្រទេសដែលពួកគេមកពី — A {a}, B {b}, C {c}។ |
+| No school set up yet. The DTS team adds it on GPDTS → Database. | មិនទាន់មានសាលាត្រូវបានរៀបចំនៅឡើយទេ។ ក្រុម DTS បន្ថែមវានៅលើ GPDTS → មូលដ្ឋានទិន្នន័យ។ |
+
+GPDTS → Database → 💰 Lecture fees: the lecture phase's total from the students accepted for the school, by their country's category (A, B, C), with the price for each. The same total is on the Finances office's dashboard and Campus Leadership's Finances tab. "Category" is the A/B/C fee category, not a kind of ministry.

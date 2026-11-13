@@ -2826,3 +2826,22 @@ details.dtsPhase[open] > summary .dtsPhaseName::before { content:'▾ '; }
 .finBalRec.ok { background:var(--goodSoft); color:var(--good); }
 .finBalRec.late { background:var(--banner); color:var(--bannerInk); border:1px solid var(--bannerBorder); }
 .finBalForm input[type=number], .finBalForm input[type=date] { width:100%; }
+/* GPDTS → Database → Lecture fees, and the Finances dashboard's GPDTS card (Nov 2026) */
+.dtsFeeTotal { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:2px 0 6px; }
+.dtsFeeBig { font-size:30px; font-weight:800; letter-spacing:-.5px; font-variant-numeric:tabular-nums; }
+.dtsFeeTbl { border-collapse:collapse; font-size:14px; width:100%; font-variant-numeric:tabular-nums; }
+.dtsFeeTbl th, .dtsFeeTbl td { padding:8px; border-top:1px solid var(--border); text-align:right; }
+.dtsFeeTbl th:first-child, .dtsFeeTbl td:first-child { text-align:left; }
+.dtsFeeTbl thead th { color:var(--muted); font-size:12px; font-weight:700; white-space:nowrap; border-top:0; }
+.dtsFeeTbl tfoot td { font-weight:800; border-top:2px solid var(--ink); }
+.dtsFeeTbl tr.warn td { color:var(--muted); }
+.dtsCat { display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:24px; padding:0 6px; border-radius:7px; font-weight:800; font-size:13px; }
+.dtsCat.catA { background:var(--accent); color:var(--accentInk); }
+.dtsCat.catB { background:var(--amber); color:var(--amberInk); }
+.dtsCat.catC { background:var(--good); color:var(--goodInk); }
+.dtsFeeRow { display:flex; flex-direction:column; gap:1px; padding:8px 0; border-top:1px solid var(--border); color:inherit; text-decoration:none; }
+.dtsFeeRow:first-of-type { border-top:0; }
+.dtsFeeWarn { border-left:4px solid var(--amber); }
+.dtsFeeWarn .dtsFeeRow:first-of-type { border-top:1px solid var(--border); margin-top:8px; }
+.finDtsSchool + .finDtsSchool { margin-top:14px; padding-top:12px; border-top:1px solid var(--border); }
+.finDtsSchool .rowSub, .dtsFeeRow .rowSub { display:block; font-size:12.5px; color:var(--muted); font-weight:400; }

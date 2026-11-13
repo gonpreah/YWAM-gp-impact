@@ -2668,6 +2668,8 @@ async function finOut_(s, c, d) {
     debt: finDebtView_(d.debt, rows, people), debtHist: d.debtHist.slice(-FIN_MAX_HIST),
     ahead: { months: (p && p.months) || {}, updated: (p && p.updated) || '' }, qbo: await qboOut_(c, edit), qboReports: await qboReportsOut_(c, edit) };
   if (out.debt && d.debt) out.debt.src = d.debt.src || '';
+  /* GPDTS's lecture phase, counted from the portal's accepted students (Nov 2026, Andrew) */
+  try { const df = await dtsFeesForFinance_(c); if (df) out.dtsFees = df; } catch (e) { /* the rest of the page still stands */ }
   /* Who owes and how much, for everyone who sees the dashboard (Oct 2026, Uriah: "With the
      staff debt, allow the leadership to see the names of the people who owe money and how
      much"). The name as the books have it, the department of whoever it's matched to, the
@@ -8077,7 +8079,7 @@ async function dtsBoardOut_(g) {
   const students = cands.filter(dtsIsStudent_).map(function (c) { return dtsStudentOut_(c, schoolsSorted); })
     .sort(function (a, b) { return a.name.localeCompare(b.name); });
   return {
-    db: db, students: students,
+    db: db, students: students, fees: DTS_FEE_PRICE,
     ok: true, campus: g.campus, ministry: g.min, today: today, counts: counts, due: due.slice(0, 40), dueMore: Math.max(0, due.length - 40),
     school: school, lectures: Array.isArray(lect.lectures) ? lect.lectures : [], portal: canPortal_(g.s),
     outreaches: Array.isArray(outr.outreaches) ? outr.outreaches : [],
@@ -8313,7 +8315,7 @@ function dtsStudentOut_(c, schools) {
   const a = (c.portal && ((c.portal.form && c.portal.form.answers) || c.portal.draft)) || {}, m = dtsMarks_(c);
   const s = function (v) { return v == null ? '' : String(v).slice(0, 200); };
   return {
-    id: c.id, name: c.name, stage: c.stage, column: dtsColumn_(c), audience: audienceOf_(c), country: c.country || '',
+    id: c.id, name: c.name, stage: c.stage, column: dtsColumn_(c), audience: audienceOf_(c), country: c.country || '', feeCat: dtsFeeCat_(c.country, audienceOf_(c)),
     applied: dtsApplied_(c), arrived: c.stage === 'arrived' ? dtsReached_(c, 'arrived') : '',
     graduated: m.graduated || '', potentialStaff: m.potentialStaff || '', archived: !!c.archived,
     schoolId: dtsSchoolOf_(c, schools), placed: !!m.schoolId, oneOnOne: m.oneOnOne || '', oneOnOneName: m.oneOnOneName || '', hasAccount: !!c.staffId,
@@ -8322,6 +8324,81 @@ function dtsStudentOut_(c, schools) {
       pastorName: s(a.pastorName), pastorPhone: s(a.pastorPhone), church: s(a.church) },
     profile: m.profile && typeof m.profile === 'object' ? m.profile : {}
   };
+}
+/* ---- GPDTS lecture phase fees (Nov 2026, Andrew: "for our finance team and the DTS team to get more
+   clarity and collaboration in setting clear and accountable budget and finances. For the lecture phase,
+   its a fixed price. But it is different by country A, B and C.") The total is counted from the portal:
+   every student accepted for a school (accepted, getting ready, here or graduated), each at their
+   country's price. The list is YWAM's A/B/C list as Andrew gave it; a country not on it is "not known"
+   and costs nothing until someone fixes its spelling in the portal. One copy, here: the page gets each
+   student's `feeCat` and the prices. */
+const DTS_FEE_PRICE = { A: 2000, B: 1500, C: 620 };
+const DTS_FEE_LIST = {
+  A: 'Andorra|Aruba|Australia|Austria|Bahamas|Bahrain|Belgium|Bermuda|British Indian Ocean Territory|British Virgin Islands|Brunei|Canada|Cayman Islands|Channel Islands|Christmas Island|Cyprus|Czech Republic|Denmark|Estonia|Falkland Islands|Faroe Islands|Finland|France|French Guiana|French Polynesia|Germany|Gibraltar|Greece|Greenland|Guadeloupe|Guam|Hong Kong|Iceland|Ireland|Isle of Man|Israel|Italy|Japan|Kuwait|Latvia|Liechtenstein|Lithuania|Luxembourg|Macau|Malta|Martinique|Monaco|Netherlands|New Caledonia|New Zealand|Norfolk Island|Norway|Oman|Portugal|Puerto Rico|Qatar|Reunion|Saint Martin|Saint Pierre and Miquelon|San Marino|Saudi Arabia|Singapore|Slovakia|Slovenia|South Korea|Spain|Svalbard and Jan Mayen Islands|Sweden|Switzerland|Taiwan|Turks and Caicos Islands|United Arab Emirates|United Kingdom|United States of America|US Virgin Islands|Vatican City',
+  B: 'American Samoa|Anguilla|Antigua and Barbuda|Argentina|Barbados|Brazil|Bulgaria|Chile|China|Cook Islands|Costa Rica|Croatia|Cuba|Curaçao|Dominican Republic|Grenada|Guyana|Hungary|Kazakhstan|Malaysia|Maldives|Mauritius|Mayotte|Mexico|Montenegro|Montserrat|Nauru|Northern Cyprus|Northern Mariana Islands|Palau|Panama|Poland|Romania|Russia|Saint Kitts and Nevis|Serbia|Seychelles|Trinidad and Tobago|Turkiye|Turkmenistan|Uruguay',
+  C: 'Afghanistan|Albania|Algeria|Angola|Armenia|Azerbaijan|Bangladesh|Belarus|Belize|Benin|Bhutan|Bolivia|Bosnia-Herzegovina|Botswana|Bougainville|Burkina Faso|Burundi|Cambodia|Cameroon|Cape Verde|Central African Republic|Chad|Cocos (Keeling) Islands|Colombia|Comoros|Congo Brazzaville|Congo Kinshasa|Cote d’Ivoire|Djibouti|Dominica|East Timor|Ecuador|Egypt|El Salvador|Equatorial Guinea|Eritrea|Ethiopia|Fiji|Gabon|Gambia|Georgia|Ghana|Guatemala|Guinea|Guinea-Bissau|Haiti|Honduras|India|Indonesia|Iran|Iraq|Jamaica|Jordan|Kenya|Kiribati|Kosovo|Kyrgyzstan|Laos|Lebanon|Lesotho|Liberia|Libya|Macedonia|Madagascar|Malawi|Mali|Marshall Islands|Mauritania|Micronesia|Moldova|Mongolia|Morocco|Mozambique|Myanmar|Namibia|Nepal|Nicaragua|Niger|Nigeria|Niue Island|North Korea|Pakistan|Palestine|Papua New Guinea|Paraguay|Peru|Philippines|Pitcairn Islands|Rwanda|Saint Helena|Saint Lucia|Saint Vincent and the Grenadines|Samoa|Sao Tome and Principe|Senegal|Sierra Leone|Solomon Islands|Somalia|South Africa|South Sudan|Sri Lanka|Sudan|Suriname|Eswatini|Syria|Tajikistan|Tanzania|Thailand|Togo|Tokelau Islands|Tonga|Tunisia|Tuvalu|Uganda|Ukraine|Uzbekistan|Vanuatu|Venezuela|Vietnam|Wallis and Futuna Islands|Western Sahara|Yemen|Zambia|Zimbabwe'
+};
+/* the same country written another way (the portal's own list says "United States"; people type "USA") */
+const DTS_FEE_ALIAS = {
+  'united states': 'united states of america', 'usa': 'united states of america', 'us': 'united states of america', 'america': 'united states of america',
+  'uk': 'united kingdom', 'great britain': 'united kingdom', 'britain': 'united kingdom', 'england': 'united kingdom', 'scotland': 'united kingdom', 'wales': 'united kingdom', 'northern ireland': 'united kingdom',
+  'turkey': 'turkiye', 'korea': 'south korea', 'republic of korea': 'south korea', 'korea republic of': 'south korea', 'ivory coast': 'cote divoire',
+  'swaziland': 'eswatini', 'north macedonia': 'macedonia', 'czechia': 'czech republic', 'timor leste': 'east timor', 'burma': 'myanmar', 'viet nam': 'vietnam',
+  'holland': 'netherlands', 'the netherlands': 'netherlands', 'drc': 'congo kinshasa', 'dr congo': 'congo kinshasa', 'democratic republic of the congo': 'congo kinshasa',
+  'republic of the congo': 'congo brazzaville', 'congo': 'congo brazzaville', 'bosnia and herzegovina': 'bosnia herzegovina', 'bosnia': 'bosnia herzegovina',
+  'lao pdr': 'laos', 'russian federation': 'russia', 'uae': 'united arab emirates', 'png': 'papua new guinea', 'hk': 'hong kong', 'macao': 'macau',
+  'cabo verde': 'cape verde', 'the bahamas': 'bahamas', 'the gambia': 'gambia', 'micronesia federated states of': 'micronesia', 'vatican': 'vatican city',
+  'st kitts and nevis': 'saint kitts and nevis', 'st lucia': 'saint lucia', 'st vincent and the grenadines': 'saint vincent and the grenadines', 'st helena': 'saint helena', 'st martin': 'saint martin',
+  'palestinian territories': 'palestine', 'khmer': 'cambodia', 'kampuchea': 'cambodia'
+};
+function dtsFeeKey_(v) {
+  return String(v == null ? '' : v).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/&/g, ' and ').replace(/[’'`.()]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+const DTS_FEE_CAT = (function () {
+  const m = {};
+  Object.keys(DTS_FEE_LIST).forEach(function (cat) { DTS_FEE_LIST[cat].split('|').forEach(function (n) { m[dtsFeeKey_(n)] = cat; }); });
+  return m;
+})();
+/* a country's category, or '' when it isn't on the list; a Khmer student with no country is from Cambodia */
+function dtsFeeCat_(country, audience) {
+  let k = dtsFeeKey_(country);
+  if (!k && audience === 'khmer') k = 'cambodia';
+  if (!k) return '';
+  if (DTS_FEE_CAT[k]) return DTS_FEE_CAT[k];
+  const a = DTS_FEE_ALIAS[k] || DTS_FEE_ALIAS[k.replace(/^the /, '')];
+  return (a && DTS_FEE_CAT[a]) || DTS_FEE_CAT[k.replace(/^the /, '')] || '';
+}
+const DTS_FEE_COLS = ['accepted', 'arrived', 'graduated'];   // accepted for the school: accepted, getting ready, here or graduated
+/* one school's lecture phase: how many accepted in each category, what each costs, the total; and what it
+   would be if everyone still applying were accepted too */
+function dtsLectureFees_(students) {
+  const out = { A: 0, B: 0, C: 0, unknown: 0, total: 0, applying: 0, ifAll: 0 };
+  (students || []).forEach(function (x) {
+    const p = DTS_FEE_PRICE[x.feeCat] || 0;
+    if (DTS_FEE_COLS.indexOf(x.column) > -1) { if (x.feeCat) out[x.feeCat]++; else out.unknown++; out.total += p; out.ifAll += p; }
+    else if (x.column === 'applied' && !x.archived) { out.applying++; out.ifAll += p; }
+  });
+  return out;
+}
+/* for the Finances office and Campus Leadership's dashboard: each school still running or coming up (else
+   the latest), its total and who is in it — names, country and category only, nothing from the application */
+async function dtsFeesForFinance_(campus) {
+  if (!dtsMin_(campus)) return null;
+  const db = dtsDbOut_(await readJSON('dtsDb:' + campus, DTS_DB_FALLBACK));
+  const schools = dtsSortSchools_(db.schools.slice());
+  if (!schools.length) return { prices: DTS_FEE_PRICE, schools: [] };
+  const cands = (await getCandidates_()).filter(function (c) { return isDtsCand_(c, campus) && dtsIsStudent_(c); });
+  const studs = cands.map(function (c) { return dtsStudentOut_(c, schools); });
+  const since = dayOfNo_(dayNo_(baseToday_()) - 60);
+  let show = schools.filter(function (s) { return (s.to || dtsSchoolStart_(s)) >= since; });
+  if (!show.length) show = schools.slice(-1);
+  return { prices: DTS_FEE_PRICE, schools: show.slice(0, 4).map(function (s) {
+    const mine = studs.filter(function (x) { return x.schoolId === s.id; });
+    return { id: s.id, year: s.year, name: s.name, from: s.from || '', to: s.to || '', fees: dtsLectureFees_(mine),
+      students: mine.filter(function (x) { return DTS_FEE_COLS.indexOf(x.column) > -1; })
+        .map(function (x) { return { name: x.name, country: x.country || (x.audience === 'khmer' ? 'Cambodia' : ''), cat: x.feeCat, column: x.column }; }) };
+  }) };
 }
 async function dtsCampusStaff_(campus) {
   const ids = {};

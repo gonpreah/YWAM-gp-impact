@@ -305,7 +305,7 @@ function bindDts_(){
    Uriah: "make it easier to use — it's still a bit overwhelming"): one level of choosing, not tabs
    inside tabs. Andrew's grouping is kept in the order — the lecture parts first, then outreach,
    responsibilities and resources. */
-var DTS_SECS=[['speakers','🎤','Speaker schedule'],['students','🎓','Students'],['events','📅','Events'],['out','🌏','Outreach'],['resp','📋','Responsibilities'],['res','📚','Resources'],['policy','📜','School policy']];
+var DTS_SECS=[['speakers','🎤','Speaker schedule'],['students','🎓','Students'],['fees','💰','Lecture fees'],['events','📅','Events'],['out','🌏','Outreach'],['resp','📋','Responsibilities'],['res','📚','Resources'],['policy','📜','School policy']];
 var DTS_REACH=[['male','Males reached'],['female','Females reached'],['salvations','Salvations'],['healings','Healings'],['gospel','Heard the gospel']];
 var DTS_REACH_KEY={ salvations:'salvations', healings:'healings', gospel:'gospel' };
 var DTS_PHASE_WEEKS={ short:2, long:8 };
@@ -378,6 +378,7 @@ function dtsDbHtml_(d){
   if(sec==='res') return h+dtsResHtml_(sch);
   if(sec==='students') return h+(S.dtsStu ? dtsStuHtml_(dtsStudent_(S.dtsStu), sch) : dtsStudentsHtml_(d, sch));
   if(sec==='events') return h+dtsEventsHtml_(d, sch);
+  if(sec==='fees') return h+dtsFeesHtml_(d, sch);
   if(sec==='policy') return h+dtsPolicyHtml_();
   return h+dtsSpeakersHtml_(d, sch);
 }
@@ -395,6 +396,7 @@ function dtsHomeHtml_(d, sch){
   var line={
     speakers: !lects.length ? [t('No topics yet'), ''] : need ? [gpT('{n} need a speaker',{n:need}), 'warn'] : [gpT('{n} topics · every one has a speaker',{n:lects.length}), 'ok'],
     students: !studs.length ? [t('No applications yet'), ''] : [gpT('{n} students',{n:studs.length})+(here ? ' · '+gpT('{n} here now',{n:here}) : ''), ''],
+    fees: (function(){ var f=dtsFees_(studs), n=f.A+f.B+f.C+f.unknown; return !n ? [t('Nobody accepted yet'), ''] : [gpT('{money} · {n} accepted',{money:dtsMoney_(f.total), n:n})+(f.unknown ? ' · '+gpT('{n} country not known',{n:f.unknown}) : ''), f.unknown ? 'warn' : '']; })(),
     events: next ? [gpT('Next: {what} · {when}',{what:next.title, when:fmtDayShort_(next.date)}), ''] : [t('Nothing coming up'), ''],
     out: !teams.length ? [t('No teams yet'), ''] : [gpT('{n} teams',{n:teams.length})+(free && studs.length ? ' · '+gpT('{n} not on a team yet',{n:free}) : ''), free && studs.length ? 'warn' : ''],
     resp: !resp.length ? [t('Nothing here yet.'), ''] : open ? [gpT('{n} still to do',{n:open}), 'warn'] : [t('All done'), 'ok'],
@@ -436,7 +438,48 @@ function dtsSpeakersHtml_(d, sch){
       return '<tr class="'+(past?'past':'')+'" data-dtslect="'+esc(x.id)+'" tabindex="0"><td class="dtsWhen" data-l="'+esc(t('Dates'))+'">'+esc(when)+'</td><td data-l="'+esc(t('Topic'))+'"><b>'+esc(x.topic||'—')+'</b></td><td data-l="'+esc(t('Speaker'))+'">'+spk+'</td><td data-l="'+esc(t('Translator'))+'">'+esc(x.translator||'—')+'</td><td data-l="'+esc(t('MC'))+'">'+esc(x.mc||'—')+'</td></tr>';
     }).join('')+'</tbody></table></div><p class="hint" style="margin:6px 0 0">'+esc(t('Tap a row to change it. ✅ the speaker has said yes; ⏳ not yet.'))+'</p>';
   h+='</div>';
-  h+='<div class="card dtsSoon" id="dtsBudget"><h3 style="margin-top:0">💰 '+esc(t('Finance & budget'))+'</h3><p class="sub" style="margin:0">'+esc(t('Coming soon: the school’s budget — speakers’ gifts and travel, food, outreach — beside what has been spent.'))+'</p></div>';
+  return h;
+}
+/* ---- Lecture fees (Nov 2026, Andrew: "for our finance team and the DTS team to get more clarity and
+   collaboration in setting clear and accountable budget and finances"). The lecture phase is a fixed price
+   by the country a student is from — A, B or C (the server's list, DTS_FEE_LIST in api.js) — and the total
+   is every student accepted for this school, from the portal. Nothing to type; it moves as students are
+   accepted. The Finances office sees the same on its dashboard (finDtsHtml_). ---- */
+var DTS_FEE_COLS=['accepted','arrived','graduated'];
+function dtsMoney_(n){ return '$'+Math.round(Number(n)||0).toLocaleString('en-US'); }
+function dtsFeePrice_(cat){ var p=(S.dts && S.dts.fees) || {}; return Number(p[cat])||0; }
+function dtsFees_(list){
+  var f={ A:0, B:0, C:0, unknown:0, total:0, applying:0, ifAll:0 };
+  (list||[]).forEach(function(x){
+    var p=dtsFeePrice_(x.feeCat);
+    if(DTS_FEE_COLS.indexOf(x.column)>-1){ if(x.feeCat) f[x.feeCat]++; else f.unknown++; f.total+=p; f.ifAll+=p; }
+    else if(x.column==='applied' && !x.archived){ f.applying++; f.ifAll+=p; }
+  });
+  return f;
+}
+function dtsFeesHtml_(d, sch){
+  var list=dtsStudents_(), f=dtsFees_(list), acc=list.filter(function(x){ return DTS_FEE_COLS.indexOf(x.column)>-1; });
+  var n=f.A+f.B+f.C+f.unknown;
+  var h='<div class="card" id="dtsFees"><h3 style="margin-top:0">💰 '+esc(gpT('Lecture phase — {school}',{school:dtsSchoolName_(sch)}))+'</h3>'+
+    '<div class="dtsFeeTotal"><span class="dtsFeeBig" id="dtsFeeTotal">'+esc(dtsMoney_(f.total))+'</span><span class="sub">'+esc(gpT('{n} students accepted',{n:n}))+'</span></div>'+
+    '<div class="dtsTblWrap"><table class="dtsFeeTbl" id="dtsFeeTbl"><thead><tr><th>'+esc(t('Category'))+'</th><th>'+esc(t('Students'))+'</th><th>'+esc(t('Price each'))+'</th><th>'+esc(t('Total'))+'</th></tr></thead><tbody>'+
+    ['A','B','C'].map(function(c){ var p=dtsFeePrice_(c);
+      return '<tr data-dtsfeecat="'+c+'"><td><span class="dtsCat cat'+c+'">'+c+'</span></td><td>'+f[c]+'</td><td>'+esc(dtsMoney_(p))+'</td><td><b>'+esc(dtsMoney_(f[c]*p))+'</b></td></tr>'; }).join('')+
+    (f.unknown ? '<tr class="warn" data-dtsfeecat="unknown"><td>'+esc(t('Country not known'))+'</td><td>'+f.unknown+'</td><td>—</td><td>—</td></tr>' : '')+
+    '</tbody><tfoot><tr><td>'+esc(t('Total'))+'</td><td>'+n+'</td><td></td><td><b>'+esc(dtsMoney_(f.total))+'</b></td></tr></tfoot></table></div>'+
+    (f.applying ? '<p class="hint" style="margin:8px 0 0" id="dtsFeeIfAll">'+esc(gpT('{n} more have applied and are waiting. If they are all accepted: {money}.',{n:f.applying, money:dtsMoney_(f.ifAll)}))+'</p>' : '')+
+    '<p class="hint" style="margin:8px 0 0">'+esc(t('Counted from the portal: every student accepted for this school — accepted, getting ready, here or graduated — at the price for the country they are from (A, B or C). It changes by itself as students are accepted. The Finances office sees the same on its dashboard.'))+'</p></div>';
+  if(f.unknown) h+='<div class="card dtsFeeWarn" id="dtsFeeUnknown"><p class="sub" style="margin:0">⚠️ '+esc(t('These students’ country isn’t on the A/B/C list, so their fee isn’t counted yet. Fix the country on their record in the portal.'))+'</p>'+
+    acc.filter(function(x){ return !x.feeCat; }).map(function(x){
+      var row='<b>'+esc(x.name)+'</b><span class="rowSub">'+esc(x.country || t('No country given'))+'</span>';
+      return d.portal ? '<a class="dtsFeeRow" href="portal.html?open='+encodeURIComponent(x.id)+'" target="_blank" rel="noopener">'+row+'</a>' : '<div class="dtsFeeRow">'+row+'</div>';
+    }).join('')+'</div>';
+  if(acc.length) h+='<div class="card" id="dtsFeeWho"><h3 style="margin-top:0">🎓 '+esc(t('Who is counted'))+'</h3>'+
+    ['A','B','C'].filter(function(c){ return f[c]; }).map(function(c){
+      return '<div class="dtsGroupH"><span class="dtsCat cat'+c+'">'+c+'</span> '+esc(f[c]+' × '+dtsMoney_(dtsFeePrice_(c)))+'</div>'+
+        acc.filter(function(x){ return x.feeCat===c; }).map(function(x){
+          return '<div class="dtsFeeRow" data-dtsfeestu="'+esc(x.id)+'"><b>'+esc(x.name)+'</b><span class="rowSub">'+esc([x.country || (x.audience==='khmer' ? 'Cambodia' : ''), t(DTS_COL_WORD[x.column]||x.column)].filter(Boolean).join(' · '))+'</span></div>'; }).join('');
+    }).join('')+'</div>';
   return h;
 }
 /* the students: everyone who applied for this school, from the portal */

@@ -32,9 +32,9 @@ let SCHOOL = [{ id: 'c_ar', name: 'Arno Here', country: 'Germany', audience: 'in
 let LECTS = [], OUTS = [], PAST = {};
 const NEXTY = Number(TODAY.slice(0, 4)) + 1;
 const STUDS = [
-  { id: 'c_ar', name: 'Arno Here', column: 'arrived', audience: 'international', country: 'Germany', applied: YDAY, arrived: TODAY, graduated: '', potentialStaff: '', schoolId: 'sc1', oneOnOne: '', portal: { sex: 'Male', phone: '+49 1', email: 'arno@example.org' }, profile: {} },
-  { id: 'c_ar2', name: 'Bopha Here', column: 'arrived', audience: 'khmer', country: 'Cambodia', applied: YDAY, arrived: TODAY, graduated: '', potentialStaff: '', schoolId: 'sc1', oneOnOne: '', portal: { sex: 'Female' }, profile: {} },
-  { id: 'c_ap', name: 'Chenda Applied', column: 'applied', audience: 'khmer', country: 'Cambodia', applied: YDAY, arrived: '', graduated: '', potentialStaff: '', schoolId: 'sc1', oneOnOne: '', portal: { sex: 'ស្រី Female', phone: '012 000 111', guardianName: 'Mum Example', guardianPhone: '012 000 222', pastorPhone: '012 000 333', email: 'chenda@example.org' }, profile: {} },
+  { id: 'c_ar', name: 'Arno Here', column: 'arrived', audience: 'international', country: 'Germany', feeCat: 'A', applied: YDAY, arrived: TODAY, graduated: '', potentialStaff: '', schoolId: 'sc1', oneOnOne: '', portal: { sex: 'Male', phone: '+49 1', email: 'arno@example.org' }, profile: {} },
+  { id: 'c_ar2', name: 'Bopha Here', column: 'arrived', audience: 'khmer', country: 'Cambodia', feeCat: 'C', applied: YDAY, arrived: TODAY, graduated: '', potentialStaff: '', schoolId: 'sc1', oneOnOne: '', portal: { sex: 'Female' }, profile: {} },
+  { id: 'c_ap', name: 'Chenda Applied', column: 'applied', audience: 'khmer', country: 'Cambodia', feeCat: 'C', applied: YDAY, arrived: '', graduated: '', potentialStaff: '', schoolId: 'sc1', oneOnOne: '', portal: { sex: 'ស្រី Female', phone: '012 000 111', guardianName: 'Mum Example', guardianPhone: '012 000 222', pastorPhone: '012 000 333', email: 'chenda@example.org' }, profile: {} },
   { id: 'c_loose', name: 'Loose Person', column: 'applied', audience: 'khmer', country: 'Cambodia', applied: YDAY, schoolId: '', oneOnOne: '', portal: {}, profile: {} }];
 let DB = { schools: [{ id: 'sc1', year: NEXTY, name: 'January DTS', from: NEXTY + '-01-12', to: NEXTY + '-06-20' }], events: [], resp: [], resources: [], teams: [],
   policy: '1. Come to class every day and on time\n* You may not miss more than 2 days per week\n2. Be On Time\n* Arrive on time', policyIsDefault: true };
@@ -47,7 +47,7 @@ const board = () => ({
   ok: true, campus: 'siemreap', ministry: 'GPDTS', today: TODAY, portal: true,
   counts: { lead: { khmer: 2, international: 1 }, contacted: { khmer: 1, international: 0 }, applied: { khmer: 1, international: 0 }, accepted: { khmer: 0, international: 1 }, arrived: { khmer: 1, international: 1 }, graduated: { khmer: 0, international: 0 } },
   due: [{ id: 'c_kh', name: 'Sokha Khmer', audience: 'khmer', nextStep: 'Call her pastor', nextDate: YDAY, column: 'applied' }], dueMore: 0,
-  school: SCHOOL, lectures: LECTS, outreaches: OUTS, past: PAST, year: Number(TODAY.slice(0, 4)), db: DB, students: STUDS,
+  school: SCHOOL, lectures: LECTS, outreaches: OUTS, past: PAST, year: Number(TODAY.slice(0, 4)), db: DB, students: STUDS, fees: { A: 2000, B: 1500, C: 620 },
   data: { ok: true, campus: 'siemreap', dept: 'Leadership Development', ministry: 'GPDTS', entries: { 'Students Applied': { '1': 2, '2': 3 }, 'Students Enrolled': { '1': 4, '2': 6, '3': 5 }, 'Healings': { '1': 3 }, 'Salvations': { '2': 2 } }, prev: {}, daily: {} }
 });
 
@@ -120,8 +120,17 @@ ok('Database opens on the school coming up, said on one line — the picker fold
 await p.click('#dtsSchoolChange'); await p.waitForTimeout(200);
 ok('Change opens the picker: the schools of that year, New school, Edit', await p.$eval('[data-dtsschool="sc1"]', e => e.classList.contains('on')) && !!(await p.$('#dtsSchoolAdd')) && !!(await p.$('#dtsSchoolEditBtn')));
 await p.click('#dtsSchoolChange'); await p.waitForTimeout(200);
-ok('then a page of tiles, one per part — no tabs inside tabs', JSON.stringify(await p.$$eval('[data-dtssec]', b => b.map(x => x.getAttribute('data-dtssec')))) === '["speakers","students","events","out","resp","res","policy"]' && !(await p.$('[data-dtslp]')));
+ok('then a page of tiles, one per part — no tabs inside tabs', JSON.stringify(await p.$$eval('[data-dtssec]', b => b.map(x => x.getAttribute('data-dtssec')))) === '["speakers","students","fees","events","out","resp","res","policy"]' && !(await p.$('[data-dtslp]')));
 ok('each tile says where things stand', /No topics yet/.test(await p.$eval('[data-dtssec="speakers"]', e => e.textContent)) && /3 students · 2 here now/.test(await p.$eval('[data-dtssec="students"]', e => e.textContent)) && /2 rules/.test(await p.$eval('[data-dtssec="policy"]', e => e.textContent)), await p.$eval('[data-dtssec="students"]', e => e.textContent));
+ok('Lecture fees says the total and how many are accepted', /\$2,620 · 2 accepted/.test(await p.$eval('[data-dtssec="fees"]', e => e.textContent)), await p.$eval('[data-dtssec="fees"]', e => e.textContent));
+await goPart('fees');
+ok('Lecture fees: the accepted students at their country’s price — A $2,000 (Germany), C $620 (Cambodia)', (await p.$eval('#dtsFeeTotal', e => e.textContent)) === '$2,620' &&
+  /1\$2,000\$2,000/.test(await p.$eval('[data-dtsfeecat="A"]', e => e.textContent)) && /0\$1,500\$0/.test(await p.$eval('[data-dtsfeecat="B"]', e => e.textContent)) && /1\$620\$620/.test(await p.$eval('[data-dtsfeecat="C"]', e => e.textContent)),
+  await p.$eval('#dtsFeeTbl', e => e.textContent));
+ok('the one still applying is not counted — what it would be if they were', /1 more have applied/.test(await p.$eval('#dtsFeeIfAll', e => e.textContent)) && /\$3,240/.test(await p.$eval('#dtsFeeIfAll', e => e.textContent)));
+ok('and who is counted, by category', (await p.$$('#dtsFeeWho [data-dtsfeestu]')).length === 2 && /Arno Here/.test(await p.$eval('#dtsFeeWho', e => e.textContent)) && !/Chenda/.test(await p.$eval('#dtsFeeWho', e => e.textContent)));
+ok('the old “coming soon” budget card is gone', !(await p.$('#dtsBudget')));
+await p.click('#dtsHome'); await p.waitForTimeout(200);
 await goPart('speakers');
 ok('a part opens on its own page, with Back and its name', !!(await p.$('#dtsHome')) && /Speaker schedule/.test(await p.$eval('.dtsPageTitle', e => e.textContent)) && !!(await p.$('#dtsSpeakers')));
 await p.click('#dtsLectAdd'); await p.waitForTimeout(200);

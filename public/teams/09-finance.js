@@ -143,7 +143,7 @@ function finDashHtml_(){
   if(!latest && !burnYears.length && !hasDebt){
     h+='<div class="card"><div class="goalCardTitle" style="margin-bottom:4px">💵 '+esc(t('Base finances'))+'</div><p class="sub" style="margin:0">'+
       esc(t('Nothing from the Finances office yet. Once they upload the month’s reports or connect QuickBooks, the numbers show here.'))+'</p></div>';
-    return h+finAheadHtml_(F)+'</div>';
+    return h+finDtsHtml_(F)+finAheadHtml_(F)+'</div>';
   }
   var ym=(S.finMonth && F.pl[S.finMonth]) ? S.finMonth : latest;
   /* the month: one picker above everything it changes */
@@ -183,6 +183,7 @@ function finDashHtml_(){
   }
   h+=finBurnHtml_(F, ym);
   h+=finDebtDashHtml_(F);
+  h+=finDtsHtml_(F);
   h+=finQrHtml_(F, false);
   h+=finAheadHtml_(F);
   return h+'</div>';
@@ -278,6 +279,30 @@ function finBurnHtml_(F, ym){
   return h+'</div>';
 }
 /* Staff debt, as totals only: how much, how many, how old, which departments. */
+/* GPDTS's lecture phase (Nov 2026, Andrew): what the school's accepted students bring in, at the price for
+   their country's category — counted on the server from the portal (dtsFeesForFinance_), the same figures
+   the DTS team sees on GPDTS → Database → Lecture fees. Names, country and category only. */
+function finDtsHtml_(F){
+  var D=F.dtsFees; if(!D) return '';
+  var P=D.prices||{}, money=function(n){ return '$'+Math.round(Number(n)||0).toLocaleString('en-US'); };
+  var h='<div class="card" id="finDts"><div class="goalCardTitle" style="margin-bottom:2px">🔥 '+esc(t('GPDTS lecture phase'))+'</div>'+
+    '<p class="hint" style="margin:0 0 8px">'+esc(gpT('From the portal: the students accepted for each school, at the price for the country they are from — A {a}, B {b}, C {c}.',{a:money(P.A), b:money(P.B), c:money(P.C)}))+'</p>';
+  if(!(D.schools||[]).length) return h+'<p class="sub" style="margin:0">'+esc(t('No school set up yet. The DTS team adds it on GPDTS → Database.'))+'</p></div>';
+  h+=D.schools.map(function(s){
+    var f=s.fees||{}, n=(f.A||0)+(f.B||0)+(f.C||0)+(f.unknown||0);
+    var when=[s.from ? finDate_(s.from) : '', s.to ? finDate_(s.to) : ''].filter(Boolean).join(' – ');
+    return '<div class="finDtsSchool" data-findts="'+esc(s.id)+'"><div class="cafeLine"><span><b>'+esc(s.year+' · '+s.name)+'</b>'+(when ? '<span class="rowSub">'+esc(when)+'</span>' : '')+'</span><b class="dtsFeeBig" style="font-size:22px">'+esc(money(f.total))+'</b></div>'+
+      '<div class="dtsTblWrap"><table class="dtsFeeTbl"><thead><tr><th>'+esc(t('Category'))+'</th><th>'+esc(t('Students'))+'</th><th>'+esc(t('Price each'))+'</th><th>'+esc(t('Total'))+'</th></tr></thead><tbody>'+
+      ['A','B','C'].map(function(c){ return '<tr data-findtscat="'+c+'"><td><span class="dtsCat cat'+c+'">'+c+'</span></td><td>'+(f[c]||0)+'</td><td>'+esc(money(P[c]))+'</td><td><b>'+esc(money((f[c]||0)*(P[c]||0)))+'</b></td></tr>'; }).join('')+
+      (f.unknown ? '<tr class="warn"><td>'+esc(t('Country not known'))+'</td><td>'+f.unknown+'</td><td>—</td><td>—</td></tr>' : '')+
+      '</tbody><tfoot><tr><td>'+esc(t('Total'))+'</td><td>'+n+'</td><td></td><td><b>'+esc(money(f.total))+'</b></td></tr></tfoot></table></div>'+
+      (f.applying ? '<p class="hint" style="margin:6px 0 0">'+esc(gpT('{n} more have applied and are waiting. If they are all accepted: {money}.',{n:f.applying, money:money(f.ifAll)}))+'</p>' : '')+
+      ((s.students||[]).length ? '<details class="dtsPast"><summary>'+esc(gpT('Who is counted ({n})',{n:s.students.length}))+'</summary>'+s.students.map(function(x){
+        return '<div class="cafeLine"><span>'+esc(x.name)+'<span class="rowSub">'+esc(x.country || t('No country given'))+'</span></span>'+(x.cat ? '<span class="dtsCat cat'+x.cat+'">'+x.cat+'</span>' : '<span class="hint" style="margin:0">'+esc(t('Country not known'))+'</span>')+'</div>'; }).join('')+'</details>' : '')+
+      '</div>';
+  }).join('');
+  return h+'</div>';
+}
 function finDebtDashHtml_(F){
   var D=F.debt; if(!D) return '';
   var hist=F.debtHist||[], prev=null;
