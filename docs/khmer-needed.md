@@ -4900,3 +4900,33 @@ GPDTS → Database → 💰 Lecture fees: the lecture phase's total from the stu
 | Transport | ការធ្វើដំណើរ |
 
 GPDTS → Finances: income (cash, ABA, Subsplash — the last two are names, left as they are), for a student or the general DTS pool; the lecture phase's expenses with their category, memo, who made it and the two receipt ticks; each student's fee, what was paid and what they still owe; the Overview; and the short summary at the bottom of the Dashboard and on the Finances office's dashboard. “Honorarium” is the gift paid to a visiting speaker.
+
+## 99. GPDTS (accepted students, responsibilities that fold open, the long outreach's locations) and the portal (Cancelled / Rejected, editing a name)
+
+| English | Khmer (draft) |
+|---|---|
+| {n} accepted | ទទួលយក {n} នាក់ |
+| wk {n} | សប្តាហ៍ទី {n} |
+| wk {a}–{b} | សប្តាហ៍ទី {a}–{b} |
+| {a} of {b} weeks placed | បានដាក់ {a} ក្នុងចំណោម {b} សប្តាហ៍ |
+| Weeks {a}–{b} | សប្តាហ៍ទី {a}–{b} |
+| e.g. Kampot | ឧ. កំពត |
+| wks | សប្តាហ៍ |
+| more weeks than the outreach has | ច្រើនសប្តាហ៍ជាងការចេញផ្សាយមាន |
+| Moving around? Add each place and how many weeks there — e.g. 2 weeks in each of 4 places. | ផ្លាស់ទីទៅកន្លែងផ្សេងៗ? បន្ថែមកន្លែងនីមួយៗ និងចំនួនសប្តាហ៍នៅទីនោះ — ឧ. 2 សប្តាហ៍នៅកន្លែងនីមួយៗក្នុងចំណោម 4 កន្លែង។ |
+| Add a location | បន្ថែមទីតាំង |
+| {a} of {b} done | រួចរាល់ {a} ក្នុងចំណោម {b} |
+| No description yet. | មិនទាន់មានការពិពណ៌នានៅឡើយទេ។ |
+| Still to do | នៅត្រូវធ្វើ |
+| Write it as you would say it. Start a line with - for a list. | សរសេរវាដូចដែលអ្នកនិយាយ។ ចាប់ផ្តើមបន្ទាត់ដោយ - សម្រាប់បញ្ជី។ |
+| Leader’s name | ឈ្មោះអ្នកដឹកនាំ |
+| Edit the name | កែប្រែឈ្មោះ |
+| Closes it — to the archive | បិទវា — ទៅបណ្ណសារ |
+| {what} on {date} — in the archive. Reopen it below to bring it back. | {what} នៅថ្ងៃ {date} — នៅក្នុងបណ្ណសារ។ បើកវាឡើងវិញខាងក្រោម ដើម្បីនាំវាត្រឡប់មកវិញ។ |
+| Write the name first. | សូមសរសេរឈ្មោះជាមុនសិន។ |
+| Only a portal admin can change the name. | មានតែអ្នកគ្រប់គ្រង Portal ទេដែលអាចប្តូរឈ្មោះបាន។ |
+| Mark {name} as {what}? Their application goes to the archive — you can reopen it later. | សម្គាល់ {name} ថា {what}? ពាក្យសុំរបស់ពួកគេនឹងទៅបណ្ណសារ — អ្នកអាចបើកវាឡើងវិញពេលក្រោយ។ |
+| {what} — moved to the archive | {what} — បានផ្លាស់ទៅបណ្ណសារ |
+| Rejected | បានបដិសេធ |
+
+GPDTS → Database: the Students tile counts only those accepted; each responsibility folds open on its description; a team's long outreach can be split into locations, each so many weeks ("wk" is short for week, on the team card). Portal → a record: Cancelled and Rejected at the end of the stage list close the application into the archive; a portal admin can change the name ("Leader’s name" for a team).

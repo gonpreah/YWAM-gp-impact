@@ -196,6 +196,12 @@ async function open(viewport, query, seed) {
     } else if (b.fn === 'portalUpdateContact') {
       const p = b.args[2]; Object.assign(ME_APP, { phone: p.phone, messenger: p.messenger, country: p.country || ME_APP.country });
       out = { ok: true, role: 'applicant', me: ME_APP, application: ANNA };
+    } else if (b.fn === 'portalRenameCand') {
+      const c = CANDS.find(x => x.id === b.args[2]);
+      out = u === 'sina' ? { ok: true, candidate: { ...c, name: b.args[3].name } } : { ok: false, err: 'not_authorized' };
+    } else if (b.fn === 'hrArchiveCandidate') {
+      const c = CANDS.find(x => x.id === b.args[2]), info = b.args[3];
+      out = { ok: true, candidate: { ...c, archived: info ? { at: '2026-11-13', reason: info.outcome === 'rejected' ? 'Rejected' : (info.reason || ''), outcome: info.outcome || undefined } : null } };
     } else if (b.fn === 'hrSaveCandidate') {
       const c = b.args[2]; CANDS = CANDS.map(x => x.id === c.id ? { ...x, ...c, log: x.log.concat(x.stage !== c.stage ? [{ at: new Date().toISOString(), by: u === 'dara' ? 'st_dara' : 'x', kind: 'stage', text: c.stage }] : []) } : x);
       out = { ok: true, candidate: CANDS.find(x => x.id === c.id) };
@@ -746,6 +752,7 @@ async function open(viewport, query, seed) {
   ok('a note goes through hrCandidateNote and shows in the log', note && note.args[3] === 'Spoke today, very keen' && /Spoke today, very keen/.test(await page.$eval('#panel .log', e => e.textContent)));
   ok('no PIN or hash anywhere on the page', !/2468|1234|pinHash/.test(await page.$eval('#main', e => e.textContent)));
   ok('portal staff are offered no delete', !(await page.$('#deleteCand')));
+  ok('… nor a way to change the name', !(await page.$('#renameOpen')));
   ok('a student has a Contacts tab (Nov 2026: every record logs its contacts; teams call it Call notes)', /Contacts/.test(await page.$eval('[data-ptab="calls"]', b => b.textContent).catch(() => '')));
   {
     await page.click('[data-open="cd_team"]'); await page.waitForSelector('#panel');
@@ -912,6 +919,33 @@ async function open(viewport, query, seed) {
   const fs_ = sent.filter(b => b.fn === 'portalSaveForm').pop();
   ok('Save sends the whole form to portalSaveForm — relabel, the new paragraph question, the deleted one gone', fs_ && fs_.args[2] === 'dts' && fs_.args[3].sections[0].questions[0].label.en === 'Your date of birth' && fs_.args[3].sections[1].questions[2].label.en === 'Anything else you want to tell us?' && fs_.args[3].sections[1].questions[2].type === 'long' && !fs_.args[3].sections[0].questions.some(q => q.id === 'english'));
   ok('and the note now says when it was saved', /Last saved/.test(await page.$eval('#main', e => e.textContent)));
+  await ctx.close();
+}
+
+/* ---------- a portal admin changes a name; Cancelled and Rejected close an application (Nov 2026) ---------- */
+{
+  const { ctx, page } = await open({ width: 1280, height: 900 }, '', () => localStorage.setItem('gp-portal', JSON.stringify({ user: 'sina', pin: '1234' })));
+  await page.waitForSelector('.trow');
+  await page.click('[data-open="cd_tom"]'); await page.waitForSelector('#panel');
+  ok('a portal admin has ✏️ beside the name', !!(await page.$('#renameOpen')));
+  await page.click('#renameOpen'); await page.waitForTimeout(150);
+  ok('… which opens the name to edit (one box for a person)', (await page.$eval('#rn_name', i => i.value)) === 'Tom Volunteer' && !(await page.$('#rn_team')));
+  await page.fill('#rn_name', 'Tom Volunteers'); await page.click('#renameSave'); await page.waitForTimeout(400);
+  const rn = sent.filter(b => b.fn === 'portalRenameCand').pop();
+  ok('Save sends the new name for that record', rn && rn.args[2] === 'cd_tom' && rn.args[3].name === 'Tom Volunteers' && rn.args[3].teamName === undefined);
+  await page.click('[data-open="cd_team"]'); await page.waitForSelector('#panel'); await page.click('#renameOpen'); await page.waitForTimeout(150);
+  ok('a team has two: its team name and its leader’s name', (await page.$eval('#rn_team', i => i.value)) === 'Grace Church Team' && !!(await page.$('#rn_name')));
+  ok('the team’s stage list has no Cancelled or Rejected (closing a team cancels its trip)', !(await page.$$eval('#p_stage option', o => o.map(x => x.value))).some(v => /^__/.test(v)));
+  await page.click('#renameCancel'); await page.waitForTimeout(100);
+  await page.click('[data-open="cd_tom"]'); await page.waitForSelector('#panel');
+  ok('a person’s stage list ends with Cancelled and Rejected', JSON.stringify((await page.$$eval('#p_stage option', o => o.map(x => x.value))).slice(-2)) === '["__cancelled","__rejected"]');
+  page.once('dialog', d => d.dismiss());
+  await page.selectOption('#p_stage', '__rejected'); await page.waitForTimeout(250);
+  ok('changing your mind at the question leaves it as it was', !sent.some(b => b.fn === 'hrArchiveCandidate') && !/^__/.test(await page.$eval('#p_stage', s => s.value)));
+  page.once('dialog', d => d.accept());
+  await page.selectOption('#p_stage', '__rejected'); await page.waitForTimeout(400);
+  const ar = sent.filter(b => b.fn === 'hrArchiveCandidate').pop();
+  ok('Rejected closes it into the archive, saying rejected', ar && ar.args[2] === 'cd_tom' && ar.args[3].outcome === 'rejected' && /Rejected — moved to the archive/.test(await page.$eval('#msg', e => e.textContent)));
   await ctx.close();
 }
 

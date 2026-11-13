@@ -7866,6 +7866,7 @@ async function hrCandidateCall(username, pin, id, call) {
   if (isDtsCand_(c)) await dtsSyncSafe_(c.campus);
   return { ok: true, candidate: c };
 }
+const CAND_OUTCOMES = ['cancelled', 'rejected'], CAND_OUTCOME_WORD = { cancelled: 'Cancelled', rejected: 'Rejected' };
 async function hrArchiveCandidate(username, pin, id, info) {
   const g = await hrGate_(username, pin); if (g.out) return g.out;
   const rows = await getCandidates_();
@@ -7874,7 +7875,16 @@ async function hrArchiveCandidate(username, pin, id, info) {
   if (!canHR_(g.s) && !portalMaySee_(g.s, rows[idx])) return { ok: false, err: 'not_authorized' };
   const now = new Date().toISOString();
   if (info === null) { if (rows[idx].archived && rows[idx].archived.left) rows[idx].archiveOff = true; rows[idx].archived = null; }
-  else rows[idx].archived = { at: now.slice(0, 10), reason: str_(info && info.reason, 300), by: g.s.id };
+  else {
+    /* Cancelled or Rejected, picked in the portal's stage list (Nov 2026, Andrew: "when a student gets
+       cancelled or rejected, it will also send them to the archive") — the stage stays where it was */
+    const outcome = info && CAND_OUTCOMES.indexOf(info.outcome) > -1 ? info.outcome : '';
+    rows[idx].archived = { at: now.slice(0, 10), reason: str_(info && info.reason, 300) || (outcome ? CAND_OUTCOME_WORD[outcome] : null), by: g.s.id };
+    if (outcome) {
+      rows[idx].archived.outcome = outcome;
+      rows[idx].log = (Array.isArray(rows[idx].log) ? rows[idx].log : []).concat([{ at: now, by: g.s.id, kind: 'stage', text: CAND_OUTCOME_WORD[outcome] + ' — moved to the archive' }]);
+    }
+  }
   rows[idx].updated = now; rows[idx].updatedBy = g.s.id;
   await writeJSON('candidates', rows);
   await syncTeamTrip_(rows[idx], g.s.id, info === null ? 'active' : 'cancelled');   // a closed team application is a cancelled team (one that left is archived by itself, not here)
@@ -8424,8 +8434,17 @@ function cleanDtsPhase_(p, kind, staffOk, candOk) {
     DTS_REACH.forEach(function (k) { const v = Math.round(Number(w[k])); if (isFinite(v) && v > 0) row[k] = Math.min(v, 100000); });
     weeks.push(row);
   }
+  /* the locations, in order, each so many whole weeks; together never more than the phase has (Nov 2026, Andrew:
+     "be able to breakdown the weeks like 2 weeks in one location … in the 8 weeks, there will be 4 locations") */
+  const stops = []; let used = 0;
+  (Array.isArray(p.stops) ? p.stops : []).slice(0, 12).forEach(function (st) {
+    const place = str_(st && st.place, 120), w = Math.round(Number(st && st.weeks));
+    if (!place || !(w >= 1) || used >= n) return;
+    const take = Math.min(w, n - used); used += take;
+    stops.push({ place: place, weeks: take });
+  });
   return { place: str_(p.place, 120) || '', from: from, to: to, leaders: dtsIds_(p.leaders, staffOk, 10), others: str_(p.others, 200) || '',
-    students: dtsIds_(p.students, candOk, 80), weeks: weeks };
+    students: dtsIds_(p.students, candOk, 80), weeks: weeks, stops: stops };
 }
 function cleanDtsRec_(kind, r, ctx) {
   r = r && typeof r === 'object' ? r : {};
@@ -8448,7 +8467,7 @@ function cleanDtsRec_(kind, r, ctx) {
   if (kind === 'resp') {
     const title = str_(r.title, 160);
     if (!title) return null;
-    return { schoolId: schoolId, when: r.when === 'before' ? 'before' : 'school', title: title, notes: notes(r.notes, 1000), staff: dtsIds_(r.staff, ctx.staffOk, 10), done: !!r.done };
+    return { schoolId: schoolId, when: r.when === 'before' ? 'before' : 'school', title: title, notes: notes(r.notes, 2000), staff: dtsIds_(r.staff, ctx.staffOk, 10), done: !!r.done };
   }
   if (kind === 'resource') {
     const title = str_(r.title, 160), url = str_(r.url, 600) || '';
@@ -11017,6 +11036,37 @@ async function portalTeamStep(username, pin, candidateId, step, done) {
   const staffRows = await getStaff_(); const byId = {}; staffRows.forEach(function (r) { byId[r.id] = r; });
   return { ok: true, candidate: portalCandOut_(c, byId) };
 }
+/* A portal admin puts an application's name right (Nov 2026, Andrew: "for all of the applications, for admin, be
+   able to manually edit and change the name"): the person's name — and their applicant account's, so the two
+   don't drift — and for a team its team name (the application's own first answer, which the list shows). */
+async function portalRenameCand(username, pin, candidateId, names) {
+  const a = await portalStaffCand_(username, pin, candidateId); if (a.out) return a.out;
+  if (!isPortalAdmin_(a.s)) return { ok: false, err: 'not_authorized' };
+  names = names && typeof names === 'object' ? names : {};
+  const cand = a.cand, now = new Date().toISOString(), said = [];
+  const name = String(names.name == null ? '' : names.name).trim().replace(/\s+/g, ' ').slice(0, 120);
+  if (!name) return { ok: false, err: 'no_name' };
+  if (name !== cand.name) { said.push('Name changed from “' + cand.name + '” to “' + name + '”'); cand.name = name; }
+  if (cand.type === 'team' && names.teamName != null) {
+    const tn = String(names.teamName).trim().replace(/\s+/g, ' ').slice(0, 120);
+    if (!tn) return { ok: false, err: 'no_team_name' };
+    cand.portal = cand.portal || {};
+    const box = cand.portal.form && cand.portal.form.answers ? cand.portal.form.answers : (cand.portal.draft = cand.portal.draft || {});
+    if (box.teamName !== tn) { said.push('Team name changed from “' + (box.teamName || '') + '” to “' + tn + '”'); box.teamName = tn; }
+  }
+  if (!said.length) return { ok: true, candidate: portalCandOut_(cand, {}), same: true };
+  cand.log = (Array.isArray(cand.log) ? cand.log : []).concat(said.map(function (x) { return { at: now, by: a.s.id, kind: 'note', text: x }; })).slice(-CAND_LOG_MAX);
+  cand.updated = now; cand.updatedBy = a.s.id;
+  await writeJSON('candidates', a.rows);
+  if (cand.staffId) await mutateStaff_(function (all) {
+    const r = all.find(function (x) { return x && x.id === cand.staffId; });
+    if (!r || !isApplicant_(r) || r.name === name) return { abort: true, ok: true };   // a staff member's own name is theirs to change
+    r.name = name; r.updated = now; return { ok: true };
+  });
+  await syncTeamTrip_(cand, a.s.id);
+  const staffRows = await getStaff_(); const byId = {}; staffRows.forEach(function (r) { byId[r.id] = r; });
+  return { ok: true, candidate: portalCandOut_(cand, byId) };
+}
 async function portalStaffSaveAnswers(username, pin, candidateId, answers) {
   const a = await portalStaffCand_(username, pin, candidateId); if (a.out) return a.out;
   const cand = a.cand;
@@ -12758,6 +12808,7 @@ const HANDLERS = {
   portalImportApplications: function (a) { return portalImportApplications(a[0], a[1], a[2], a[3]); },
   dtsDbSave: function (a) { return dtsDbSave(a[0], a[1], a[2], a[3]); },
   dtsFinSave: function (a) { return dtsFinSave(a[0], a[1], a[2]); },
+  portalRenameCand: function (a) { return portalRenameCand(a[0], a[1], a[2], a[3]); },
   dtsFinDelete: function (a) { return dtsFinDelete(a[0], a[1], a[2]); },
   dtsDbDelete: function (a) { return dtsDbDelete(a[0], a[1], a[2], a[3]); },
   dtsStudentSave: function (a) { return dtsStudentSave(a[0], a[1], a[2], a[3]); },

@@ -128,7 +128,7 @@ await p.click('#dtsSchoolChange'); await p.waitForTimeout(200);
 ok('Change opens the picker: the schools of that year, New school, Edit', await p.$eval('[data-dtsschool="sc1"]', e => e.classList.contains('on')) && !!(await p.$('#dtsSchoolAdd')) && !!(await p.$('#dtsSchoolEditBtn')));
 await p.click('#dtsSchoolChange'); await p.waitForTimeout(200);
 ok('then a page of tiles, one per part — no tabs inside tabs', JSON.stringify(await p.$$eval('[data-dtssec]', b => b.map(x => x.getAttribute('data-dtssec')))) === '["speakers","students","fees","events","out","resp","res","policy"]' && !(await p.$('[data-dtslp]')));
-ok('each tile says where things stand', /No topics yet/.test(await p.$eval('[data-dtssec="speakers"]', e => e.textContent)) && /3 students · 2 here now/.test(await p.$eval('[data-dtssec="students"]', e => e.textContent)) && /2 rules/.test(await p.$eval('[data-dtssec="policy"]', e => e.textContent)), await p.$eval('[data-dtssec="students"]', e => e.textContent));
+ok('each tile says where things stand', /No topics yet/.test(await p.$eval('[data-dtssec="speakers"]', e => e.textContent)) && /^🎓Students2 accepted · 2 here now›$/.test(await p.$eval('[data-dtssec="students"]', e => e.textContent)) && /2 rules/.test(await p.$eval('[data-dtssec="policy"]', e => e.textContent)), await p.$eval('[data-dtssec="students"]', e => e.textContent));
 ok('Lecture fees says the total and how many are accepted', /\$2,620 · 2 accepted/.test(await p.$eval('[data-dtssec="fees"]', e => e.textContent)), await p.$eval('[data-dtssec="fees"]', e => e.textContent));
 await goPart('fees');
 ok('Lecture fees: the accepted students at their country’s price — A $2,000 (Germany), C $620 (Cambodia)', (await p.$eval('#dtsFeeTotal', e => e.textContent)) === '$2,620' &&
@@ -213,19 +213,40 @@ await p.fill('[data-dtpw="short|0|salvations"]', '2'); await p.fill('[data-dtpw=
 ok('the totals add up as you type', (await p.$$eval('#dtsWeeks_short tfoot td', c => c.map(x => x.textContent)))[2] === '2');
 await p.click('#dtsPhase_long > summary'); await p.waitForTimeout(150);
 await p.click('#dtsCopyShort'); await p.waitForTimeout(250);
+ok('the long outreach can be split into locations — none yet, 0 of 8 weeks placed', /0 of 8 weeks placed/.test(await p.$eval('#dtsStops_long', e => e.textContent)) && !!(await p.$('#dtsStopAdd')));
+await p.fill('[data-dtp="long|from"]', '2027-03-01'); await p.fill('[data-dtp="long|to"]', '2027-04-25');
+for (const place of ['Kampot', 'Kep', 'Takeo', 'Kratie']) { await p.click('#dtsStopAdd'); await p.waitForTimeout(150); const ins = await p.$$('[data-dtstop$="|place"]'); await ins[ins.length - 1].fill(place); }
+await p.click('#dt_name'); await p.waitForTimeout(150);
+const stopTxt = await p.$eval('#dtsStops_long', e => e.textContent);
+ok('4 locations of 2 weeks each fill the 8 weeks: weeks 1–2, 3–4, 5–6, 7–8 with their days', /8 of 8 weeks placed/.test(stopTxt) && /Weeks 1–2 · 1 Mar – 14 Mar/.test(stopTxt) && /Weeks 7–8 · 12 Apr – 25 Apr/.test(stopTxt) && !(await p.$('#dtsStopAdd')), stopTxt);
+await p.click('[data-dtfold="w_long"] > summary'); await p.waitForTimeout(150);
+ok('the week-by-week table says where each week is', /📍 Kampot/.test(await p.$eval('#dtsWeeks_long tbody tr:nth-child(2)', e => e.innerText)) && /📍 Kep/.test(await p.$eval('#dtsWeeks_long tbody tr:nth-child(3)', e => e.innerText)) && /📍 Kratie/.test(await p.$eval('#dtsWeeks_long tbody tr:nth-child(8)', e => e.innerText)), await p.$eval('#dtsWeeks_long tbody', e => e.textContent.slice(0, 300)));
+await p.fill('[data-dtstop="1|weeks"]', '3'); await p.dispatchEvent('[data-dtstop="1|weeks"]', 'change'); await p.waitForTimeout(200);
+ok('more weeks than the outreach has is said, in red', /more weeks than the outreach has/.test(await p.$eval('#dtsStops_long', e => e.textContent)));
+await p.fill('[data-dtstop="1|weeks"]', '2'); await p.dispatchEvent('[data-dtstop="1|weeks"]', 'change'); await p.waitForTimeout(200);
 await p.click('#dtsTeamSave'); await p.waitForTimeout(400);
 const ts = dbSaves.filter(x => x[0] === 'team').pop();
 ok('the team is saved: where, leaders, students and the week’s numbers — and the long outreach got the same people', ts && ts[1].name === 'Team North' && ts[1].short.place === 'Kampot' && JSON.stringify(ts[1].short.students) === '["c_ar"]' && JSON.stringify(ts[1].short.leaders) === '["st_two"]' && String(ts[1].short.weeks[0].salvations) === '2' && JSON.stringify(ts[1].long.students) === '["c_ar"]', JSON.stringify(ts && ts[1]));
+ok('the locations are saved in order, 2 weeks each', JSON.stringify((ts[1].long.stops || []).map(x => [x.place, Number(x.weeks)])) === '[["Kampot",2],["Kep",2],["Takeo",2],["Kratie",2]]', JSON.stringify(ts[1].long.stops));
+ok('the team card shows the route', /📍 Kampot \(wk 1–2\) → Kep \(wk 3–4\) → Takeo \(wk 5–6\) → Kratie \(wk 7–8\)/.test(await p.$eval('#dtsTeams', e => e.innerText)), await p.$eval('#dtsTeams', e => e.innerText.replace(/\n/g, ' / ')));
 ok('the team card shows its numbers, and the student is on it', /Team North/.test(await p.$eval('#dtsTeams', e => e.textContent)) && /♂ 7/.test(await p.$eval('#dtsTeams', e => e.textContent)) && /2 not on a team yet/.test(await p.$eval('#dtsOutStudents', e => e.textContent)));
 
 await goPart('resp');
 ok('Responsibilities: before school and during school', !!(await p.$('#dtsResp_before')) && !!(await p.$('#dtsResp_school')));
 await p.click('#dtsRespAdd'); await p.waitForTimeout(200);
-await p.fill('#dr_title', 'Book the speakers’ rooms'); await p.fill('#dr_notes', 'With SR Hospitality');
+await p.fill('#dr_title', 'Book the speakers’ rooms'); await p.fill('#dr_notes', 'With SR Hospitality.\nAsk for:\n- two rooms\n- towels\n\nPay at the office.');
 await p.click('#dtsRespForm details summary'); await p.check('[data-drstaff][value="st_two"]'); await p.waitForTimeout(250);
 await p.click('#dtsRespSave'); await p.waitForTimeout(400);
 const rs = dbSaves.filter(x => x[0] === 'resp').pop();
 ok('a responsibility before school, with its description, given to a staff member', rs && rs[1].when === 'before' && rs[1].title === 'Book the speakers’ rooms' && JSON.stringify(rs[1].staff) === '["st_two"]' && /Tia Two/.test(await p.$eval('#dtsResp_before', e => e.textContent)), JSON.stringify(rs));
+ok('folded, a responsibility shows its title, who has it and whether it’s done — not its description', !(await p.$eval('#dtsResp_before details.dtsRespItem', e => e.open)) &&
+  /Book the speakers’ rooms/.test(await p.$eval('#dtsResp_before summary', e => e.innerText)) && /Tia Two/.test(await p.$eval('#dtsResp_before summary', e => e.innerText)) && !(await p.isVisible('#dtsResp_before .dtsRespNotes')));
+await p.click('#dtsResp_before details.dtsRespItem summary'); await p.waitForTimeout(200);
+ok('tapped, it opens on the description laid out: paragraphs and a list', await p.isVisible('#dtsResp_before .dtsRespNotes') &&
+  (await p.$$eval('#dtsResp_before .dtsRespNotes p', x => x.length)) === 2 && JSON.stringify(await p.$$eval('#dtsResp_before .dtsRespNotes li', x => x.map(e => e.textContent))) === '["two rooms","towels"]' &&
+  !!(await p.$('#dtsResp_before .dtsRespBody [data-dtsresp]')));
+await p.click('#dtsRespAdd'); await p.waitForTimeout(150); await p.click('#dtsRespCancel'); await p.waitForTimeout(200);
+ok('and it stays open after the page redraws', await p.$eval('#dtsResp_before details.dtsRespItem', e => e.open));
 
 await goPart('res');
 await p.click('#dtsResAdd'); await p.waitForTimeout(200);

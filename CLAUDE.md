@@ -812,6 +812,22 @@ school's home.
   contact) and **Follow-ups due** (`dtsDueHtml_`) are on the **Database** tab. The Finances office's GPDTS
   card adds the school's lecture received / spent / left, receipts not yet in, and outreach received
   (`dtsFinSums_`).
+- **Database, Nov 2026 (Andrew)**: the Students tile counts only the students accepted (accepted / here /
+  graduated). **Responsibilities fold open** (`details.dtsRespItem`, `S.dtsRespOpen`): title, who and done on
+  the line; opened, the description laid out by `dtsNotesHtml_` (paragraphs; lines starting -, •, * or 1. as
+  lists), who it's given to, status and Edit; notes up to 2,000. **A team's long outreach has locations**
+  (`stops: [{place, weeks}]` on the phase, `cleanDtsPhase_` keeps them in order and never past the phase's
+  weeks; `dtsStops_`, `dtsStopsFormHtml_`, `#dtsStops_long`, `[data-dtstop="i|place|weeks"]`, `#dtsStopAdd`):
+  "Weeks 1–2 · 1 Mar – 14 Mar", "8 of 8 weeks placed", each week of the week-by-week table says where
+  (`[data-dtwp]`, renamed as you type without a redraw), and the team card shows the route
+  ("📍 Kampot (wk 1–2) → Kep (wk 3–4) …").
+- **Portal, Nov 2026 (Andrew)**: a person's stage list ends with **🚫 Cancelled** and **✖️ Rejected** (not for
+  a team — closing a team cancels its trip). Picking one asks, then `hrArchiveCandidate(…, {outcome})` closes it
+  into the archive: `archived.outcome` and its reason, the stage left as it was, a log line; reopening clears
+  it (`CAND_OUTCOMES`; `#outcomeBanner`, the archive list's tag). **A portal admin can change an application's
+  name** (✏️ `#renameOpen` by the name → `#renameBox`; `portalRenameCand(…, {name, teamName?})`,
+  `isPortalAdmin_`): the person's name and their applicant account's (never a staff member's), a team's team
+  name (its application's answer), logged, the Teams Database following. tests/test-portal-outcome.mjs.
 - Tests: tests/test-dts.mjs (server), tests/test-dts-ui.mjs (GPDTS page, portal, Google, Admin).
 
 ## Signing in to the GP app with Google; every new account approved (Nov 2026, Andrew)

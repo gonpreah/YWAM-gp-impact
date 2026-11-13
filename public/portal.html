@@ -479,6 +479,8 @@ body.menuOn { overflow:hidden; }
 .trow .stage { grid-column:2; grid-row:1 / span 2; align-self:center; }
 .panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:18px; }
 .panelHead { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+.renameBox { margin:10px 0 0; padding:10px 12px; background:var(--surface2); border:1px solid var(--border2); border-radius:12px; }
+#renameOpen { font-size:16px; vertical-align:middle; margin-left:4px; text-decoration:none; }
 .log { list-style:none; padding:0; margin:8px 0 0; font-size:13.5px; }
 .log li { padding:8px 0; border-bottom:1px solid var(--border); } .log li:last-child { border-bottom:0; }
 .log .when { color:var(--faint); font-size:11.5px; display:block; }
@@ -643,6 +645,9 @@ var TEAM_STATUS_NOTE = {
   practical:'Nearly there — get ready to travel. Add your team’s numbers below as you go.',
   completed:'Thank you for serving with us! Everything from your trip is kept safe with us. If you have not yet, add your final numbers under Metrics.'
 };
+/* Cancelled / Rejected: not stages — picking one closes the application into the archive (hrArchiveCandidate's outcome) */
+var OUTCOMES_=[['cancelled','🚫','Cancelled'],['rejected','✖️','Rejected']];
+function outcomeWord_(o){ var h=OUTCOMES_.filter(function(x){ return x[0]===o; })[0]; return h ? h[2] : ''; }
 var STAGE_LABEL = { call1:'1st call', docs:'Awaiting documents', call2:'2nd call — orientation', 'new':'New', contacted:'Contacted', applied:'Applied', interview:'Interview', accepted:'Accepted', practical:'Getting ready', arrived:'Arrived' };
 var MESSENGER_LABEL = { whatsapp:'WhatsApp', telegram:'Telegram' };
 function chatHref_(messenger, phone){
@@ -2166,6 +2171,7 @@ function crmHtml_(){
     h+='<button class="trow'+(P.sel===c.id?' on':'')+'" data-open="'+esc(c.id)+'">'+
       '<span><span class="who">'+esc(candName_(c))+'</span><span class="meta sm"> · '+esc(applyLabel_(c.type, c.school))+'</span><span class="meta" style="display:block">'+esc(rowDateLine_(c))+(c.hasAccount?'':' · '+esc(t('no account')))+'</span>'+
         (c.type==='team' && c.archived && c.archived.left ? '<span class="meta" style="display:block">🗄 '+esc(gpT('Left {date}',{date:fmtDate_(c.archived.left)}))+'</span>' : '')+
+        (c.archived && c.archived.outcome ? '<span class="meta outcomeTag" data-outcome="'+esc(c.archived.outcome)+'" style="display:block">🗄 '+esc(t(outcomeWord_(c.archived.outcome)))+'</span>' : '')+
         (c.type==='team' && teamNext_(c) && !c.archived ? '<span class="meta nextStep" style="display:block">→ '+esc(t(TEAM_STEP_LABEL[teamNext_(c).id]||''))+'</span>' : '')+
         (c.type!=='team' ? nextLine_(c) : '')+'</span>'+
       '<span class="meta desk">'+esc(applyLabel_(c.type, c.school))+(c.type==='student' ? ' · '+esc(c.audience==='khmer'?t('Khmer'):t('International')) : '')+(c.type==='team' ? (function(){ var tr=tripOf_((c.portal && ((c.portal.form && c.portal.form.answers) || c.portal.draft)) || {}, campusName_(c.campus||DEFAULT_CAMPUS)); return (tr && tr.days ? ' · '+esc(gpT('{n} in Cambodia',{n:daysLabel_(tr.days)})) : ''); })() : '')+(P.campusFilter || campusChips.length<2 ?'':'<br>'+esc(campusShort_(c.campus)))+'</span>'+
@@ -2259,8 +2265,12 @@ function bindCalls_(){
 }
 function panelHtml_(c, byId){
   var chat=chatHref_(c.messenger, c.phone);
-  var h='<div class="panel" id="panel"><div class="panelHead"><div><h2 style="margin:0">'+esc(candName_(c))+'</h2><p class="sub" style="margin:2px 0 0">'+(candName_(c)!==c.name ? esc(gpT('Leader: {name}',{name:c.name}))+' · ' : '')+esc(applyLabel_(c.type, c.school))+' · '+esc(campusName_(c.campus))+(c.country?' · '+esc(c.country):'')+'</p></div>'+
-    '<button class="hbtn" id="closePanel">✕</button></div>';
+  if(P.renameFor && P.renameFor!==c.id) P.renameFor=null;
+  var renameBox=P.renameFor===c.id ? '<div class="renameBox" id="renameBox">'+(c.type==='team' ? '<label class="f" for="rn_team">'+esc(t('Team name'))+'</label><input type="text" id="rn_team" maxlength="120" value="'+esc(candName_(c))+'">' : '')+
+      '<label class="f" for="rn_name">'+esc(c.type==='team' ? t('Leader’s name') : t('Name'))+'</label><input type="text" id="rn_name" maxlength="120" value="'+esc(c.name||'')+'">'+
+      '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn small" id="renameSave">'+esc(t('Save'))+'</button><button class="btn ghost small" id="renameCancel">'+esc(t('Cancel'))+'</button></div></div>' : '';
+  var h='<div class="panel" id="panel"><div class="panelHead"><div><h2 style="margin:0">'+esc(candName_(c))+(P.boot.role==='portal-admin' && !renameBox ? ' <button class="linkbtn inline" id="renameOpen" aria-label="'+esc(t('Edit the name'))+'" title="'+esc(t('Edit the name'))+'">✏️</button>' : '')+'</h2><p class="sub" style="margin:2px 0 0">'+(candName_(c)!==c.name ? esc(gpT('Leader: {name}',{name:c.name}))+' · ' : '')+esc(applyLabel_(c.type, c.school))+' · '+esc(campusName_(c.campus))+(c.country?' · '+esc(c.country):'')+'</p></div>'+
+    '<button class="hbtn" id="closePanel">✕</button></div>'+renameBox;
   if(c.type==='team' && c.archived && c.archived.left) h+='<div class="banner" id="archBanner" style="margin:10px 0 0">🗄 <b>'+esc(gpT('Archived — the team left on {date}.',{date:fmtDate_(c.archived.left)}))+'</b><br>'+esc(t('Everything is kept: passports, flights, e-visas and other documents, the names and photos, strengths and numbers.'))+'</div>';
   h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">'+(chat?'<a class="chatBtn" href="'+esc(chat)+'" target="_blank" rel="noopener" data-chat>💬 '+esc(gpT('Open {app} chat',{app:MESSENGER_LABEL[c.messenger]||t('chat')}))+'</a>':'')+
     (c.email?'<a class="chatBtn" href="mailto:'+esc(c.email)+'">✉️ '+esc(t('Email'))+'</a>':'')+'</div>';
@@ -2270,7 +2280,10 @@ function panelHtml_(c, byId){
   var ov='';
   h+='<div class="kv"><b>'+esc(t('Phone'))+'</b><span>'+esc(c.phone||'—')+'</span></div><div class="kv"><b>'+esc(t('Email'))+'</b><span>'+esc(c.email||'—')+'</span></div>'+
     '<div class="kv"><b>'+esc(t('Status shown to them'))+'</b><span>'+esc(t(STATUS_LABEL[c.status]||c.status))+'</span></div>';
-  ov+='<label class="f">'+esc(t('Stage'))+'</label><select id="p_stage">'+stagesOf_(c.type).map(function(s){ return '<option value="'+s+'"'+(c.stage===s?' selected':'')+'>'+esc(t(STAGE_LABEL[s]||s))+'</option>'; }).join('')+'</select>';
+  var outc=c.archived && c.archived.outcome;
+  ov+='<label class="f">'+esc(t('Stage'))+'</label><select id="p_stage">'+stagesOf_(c.type).map(function(s){ return '<option value="'+s+'"'+(c.stage===s && !outc?' selected':'')+'>'+esc(t(STAGE_LABEL[s]||s))+'</option>'; }).join('')+
+    (c.type!=='team' ? '<optgroup label="'+esc(t('Closes it — to the archive'))+'">'+OUTCOMES_.map(function(o){ return '<option value="__'+o[0]+'"'+(outc===o[0]?' selected':'')+'>'+o[1]+' '+esc(t(o[2]))+'</option>'; }).join('')+'</optgroup>' : '')+'</select>';
+  if(outc) ov+='<div class="banner" id="outcomeBanner" style="margin:8px 0 0">🗄 '+esc(gpT('{what} on {date} — in the archive. Reopen it below to bring it back.',{what:t(outcomeWord_(outc)), date:fmtDate_(c.archived.at)}))+'</div>';
   ov+='<label class="f">'+esc(t('Owner'))+'</label><select id="p_owner"><option value="">'+esc(t('— nobody yet —'))+'</option>'+P.boot.staff.map(function(s){ return '<option value="'+esc(s.id)+'"'+(c.assignedTo===s.id?' selected':'')+'>'+esc(s.name)+'</option>'; }).join('')+'</select>';
   ov+='<label class="f">'+esc(t('Next step'))+'</label><input type="text" id="p_next" value="'+esc(c.nextStep||'')+'"><label class="f">'+esc(t('By'))+'</label><input type="date" id="p_date" value="'+esc(c.nextDate||'')+'">';
   ov+='<button class="btn" id="saveCand"'+(P.busy?' disabled':'')+'>'+esc(P.busy?t('Saving…'):t('Save'))+'</button>';
@@ -4119,6 +4132,20 @@ function bind_(){
   bindLead_();
   bindGpAdd_();
   on_('archiveCand', archiveCand_);
+  on_('renameOpen', function(){ var c=selected_(); if(!c) return; P.renameFor=c.id; render(); var n=document.getElementById(c.type==='team' ? 'rn_team' : 'rn_name'); if(n) n.focus(); });
+  on_('renameCancel', function(){ P.renameFor=null; render(); });
+  on_('renameSave', function(){
+    var c=selected_(); if(!c) return;
+    var nm=String((document.getElementById('rn_name')||{}).value||'').trim(), tm=document.getElementById('rn_team');
+    if(!nm || (tm && !tm.value.trim())){ showMsg(t('Write the name first.')); return; }
+    P.busy=true; render();
+    run('portalRenameCand', [P.auth.user, P.auth.pin, c.id, tm ? { name:nm, teamName:tm.value.trim() } : { name:nm }], function(d){
+      P.busy=false;
+      if(putCand_(d)){ P.renameFor=null; showMsg(t('Saved')); boot_(); return; }
+      showMsg(d && d.err==='not_authorized' ? t('Only a portal admin can change the name.') : t('Could not save')); render();
+    }, function(){ P.busy=false; showMsg(t('Connection problem — try again.')); render(); });
+  });
+  var pst=document.getElementById('p_stage'); if(pst) pst.onchange=function(){ if(/^__/.test(pst.value)) outcomeCand_(pst); };
   on_('deleteCand', deleteCand_);
   on_('viewAsCand', function(){ var c=selected_(); if(!c) return; P.pv.mode='record'; P.pv.candId=c.id; P.pv.boot=null; P.pv.screen='me'; P.pv.sec=0; P.view='preview'; render(); window.scrollTo(0,0); });
   on_('openForm', openForm_);
@@ -4191,7 +4218,8 @@ function putCand_(d){
    moved, so the list is refreshed from the server. */
 function saveCand_(){
   var c=selected_(); if(!c) return;
-  var rec=Object.assign({}, c, { stage:document.getElementById('p_stage').value, assignedTo:document.getElementById('p_owner').value,
+  var stg=document.getElementById('p_stage').value; if(/^__/.test(stg)) stg=c.stage;
+  var rec=Object.assign({}, c, { stage:stg, assignedTo:document.getElementById('p_owner').value,
     nextStep:document.getElementById('p_next').value.trim(), nextDate:document.getElementById('p_date').value });
   P.busy=true; render();
   run('hrSaveCandidate', [P.auth.user, P.auth.pin, rec], function(d){
@@ -4226,6 +4254,20 @@ function deleteCand_(){
     showMsg(d && d.err==='not_authorized' ? t('Only a portal admin can delete') : t('Could not delete'));
     render();
   });
+}
+/* picking Cancelled or Rejected in the stage list: asked once, then it is closed into the archive */
+function outcomeCand_(sel){
+  var c=selected_(); if(!c) return;
+  var o=String(sel.value||'').replace(/^__/,''), word=outcomeWord_(o);
+  if(!word) return;
+  if(c.archived && c.archived.outcome===o) return;
+  if(!confirm(gpT('Mark {name} as {what}? Their application goes to the archive — you can reopen it later.',{name:candName_(c), what:t(word).toLowerCase()}))){ sel.value=c.archived && c.archived.outcome ? '__'+c.archived.outcome : c.stage; return; }
+  P.busy=true; render();
+  run('hrArchiveCandidate', [P.auth.user, P.auth.pin, c.id, { outcome:o, reason:'' }], function(d){
+    P.busy=false;
+    if(putCand_(d)){ showMsg(gpT('{what} — moved to the archive',{what:t(word)})); boot_(); return; }
+    showMsg(t('Could not save')); render();
+  }, function(){ P.busy=false; showMsg(t('Connection problem — try again.')); render(); });
 }
 function archiveCand_(){
   var c=selected_(); if(!c) return;

@@ -410,7 +410,9 @@ function dtsHomeHtml_(d, sch){
   var rules=String(db.policy||'').split(/\r?\n/).filter(function(l){ return /^\s*\d+[.)]\s/.test(l); }).length;
   var line={
     speakers: !lects.length ? [t('No topics yet'), ''] : need ? [gpT('{n} need a speaker',{n:need}), 'warn'] : [gpT('{n} topics · every one has a speaker',{n:lects.length}), 'ok'],
-    students: !studs.length ? [t('No applications yet'), ''] : [gpT('{n} students',{n:studs.length})+(here ? ' · '+gpT('{n} here now',{n:here}) : ''), ''],
+    /* only the students accepted (Nov 2026, Andrew: "only show the number of students that has been accepted") */
+    students: (function(){ var acc=studs.filter(function(x){ return ['accepted','arrived','graduated'].indexOf(x.column)>-1; }).length;
+      return !studs.length ? [t('No applications yet'), ''] : !acc ? [t('Nobody accepted yet'), ''] : [gpT('{n} accepted',{n:acc})+(here ? ' · '+gpT('{n} here now',{n:here}) : ''), '']; })(),
     fees: (function(){ var f=dtsFees_(studs), n=f.A+f.B+f.C+f.unknown; return !n ? [t('Nobody accepted yet'), ''] : [gpT('{money} · {n} accepted',{money:dtsMoney_(f.total), n:n})+(f.unknown ? ' · '+gpT('{n} country not known',{n:f.unknown}) : ''), f.unknown ? 'warn' : '']; })(),
     events: next ? [gpT('Next: {what} · {when}',{what:next.title, when:fmtDayShort_(next.date)}), ''] : [t('Nothing coming up'), ''],
     out: !teams.length ? [t('No teams yet'), ''] : [gpT('{n} teams',{n:teams.length})+(free && studs.length ? ' · '+gpT('{n} not on a team yet',{n:free}) : ''), free && studs.length ? 'warn' : ''],
@@ -630,6 +632,18 @@ function dtsPhaseWeeks_(ph, kind){
   if(ph && ph.from && ph.to && ph.to>=ph.from){ var n=Math.ceil((Date.parse(ph.to)-Date.parse(ph.from))/86400000/7+1/7); return Math.max(1, Math.min(12, n)); }
   return DTS_PHASE_WEEKS[kind];
 }
+/* the long outreach's locations laid on its weeks: weeks a–b, and their days when the phase has a start */
+function dtsStops_(ph, n){
+  var at=0;
+  return ((ph && ph.stops)||[]).filter(function(s){ return s; }).map(function(s){
+    var w=Math.max(0, Math.round(Number(s.weeks)||0)), a=at+1, b=at+w; at=b;
+    var from=ph.from && w ? dtsAddDays_(ph.from, 7*(a-1)) : '', to=ph.from && w ? dtsAddDays_(ph.from, 7*b-1) : '';
+    if(ph.to && to>ph.to) to=ph.to;
+    return { place:s.place||'', weeks:w, a:a, b:b, from:from, to:to, over:b>n };
+  });
+}
+function dtsStopOfWeek_(stops, i){ var hit=stops.filter(function(s){ return s.weeks && i+1>=s.a && i+1<=s.b; })[0]; return hit ? hit.place : ''; }
+function dtsStopsLine_(stops){ return stops.filter(function(s){ return s.place && s.weeks; }).map(function(s){ return s.place+' ('+(s.a===s.b ? gpT('wk {n}',{n:s.a}) : gpT('wk {a}–{b}',{a:s.a, b:s.b}))+')'; }).join(' → '); }
 function dtsReachSum_(ph){ var s={}; ((ph && ph.weeks)||[]).forEach(function(w){ DTS_REACH.forEach(function(r){ s[r[0]]=(s[r[0]]||0)+(Number(w && w[r[0]])||0); }); }); return s; }
 function dtsReachLine_(s){ return [['male','♂'],['female','♀'],['salvations','❤️'],['healings','✨'],['gospel','📣']].filter(function(x){ return s[x[0]]; }).map(function(x){ return x[1]+' '+s[x[0]]; }).join('  '); }
 function dtsOutSecHtml_(d, sch){
@@ -642,6 +656,7 @@ function dtsOutSecHtml_(d, sch){
   h+=teams.map(function(tm){
     var ph=function(k, label){ var p=tm[k]||{}, s=dtsReachSum_(p);
       return '<div class="dtsPhaseLine"><b>'+esc(t(label))+'</b> '+esc([p.place, [fmtDayShort_(p.from), fmtDayShort_(p.to)].filter(Boolean).join(' – '), (p.students||[]).length ? gpT('{n} students',{n:(p.students||[]).length}) : ''].filter(Boolean).join(' · ') || t('not set yet'))+
+        (dtsStopsLine_(dtsStops_(p, dtsPhaseWeeks_(p, k))) ? '<span class="rowSub dtsRoute">📍 '+esc(dtsStopsLine_(dtsStops_(p, dtsPhaseWeeks_(p, k))))+'</span>' : '')+
         (dtsReachLine_(s) ? '<span class="rowSub">'+esc(dtsReachLine_(s))+'</span>' : '')+'</div>'; };
     var leaders=((tm.short||{}).leaders||[]).concat((tm.long||{}).leaders||[]).filter(function(x, i, a){ return a.indexOf(x)===i; }).map(dtsStaffName_).filter(Boolean);
     return '<button class="dtsTeamCard" data-dtsteam="'+esc(tm.id)+'"><span class="dtsTeamName">'+esc(tm.name)+'</span>'+(leaders.length ? '<span class="rowSub">'+esc(gpT('Led by {name}',{name:leaders.join(', ')}))+'</span>' : '')+
@@ -669,6 +684,7 @@ function dtsTeamFormHtml_(f, sch){
     var h='<details class="dtsPhase" id="dtsPhase_'+k+'" data-dtfold="'+k+'"'+(dtsFoldOpen_(k)?' open':'')+'><summary><span class="dtsPhaseName">'+esc(t(label))+' <span class="hint">· '+esc(gpT('{n} weeks',{n:n}))+'</span></span><span class="rowSub">'+esc(sum)+'</span></summary><div class="dtsPhaseBody">'+
       '<label class="f">'+esc(t('Where'))+'</label><input type="text" data-dtp="'+k+'|place" maxlength="120" placeholder="'+esc(t('e.g. Mondulkiri'))+'" value="'+esc(p.place||'')+'">'+
       '<div class="dtsTwo"><div><label class="f">'+esc(t('From'))+'</label><input type="date" data-dtp="'+k+'|from" value="'+esc(p.from||'')+'"></div><div><label class="f">'+esc(t('To'))+'</label><input type="date" data-dtp="'+k+'|to" value="'+esc(p.to||'')+'"></div></div>'+
+      (k==='long' ? dtsStopsFormHtml_(p, n) : '')+
       '<label class="f">'+esc(t('Leaders'))+'</label>'+dtsPeopleChecks_('data-dtpl="'+k+'"', p.leaders, t('Pick the leaders'), 'pl_'+k)+
       '<input type="text" data-dtp="'+k+'|others" maxlength="200" placeholder="'+esc(t('Other leaders, not on staff (optional)'))+'" value="'+esc(p.others||'')+'" style="margin-top:6px">'+
       '<label class="f">'+esc(gpT('Students ({n})',{n:(p.students||[]).length}))+'</label>'+
@@ -680,7 +696,8 @@ function dtsTeamFormHtml_(f, sch){
       '<div class="dtsTblWrap"><table class="dtsTbl dtsWeeks" id="dtsWeeks_'+k+'"><thead><tr><th>'+esc(t('Week'))+'</th>'+DTS_REACH.map(function(r){ return '<th>'+esc(t(r[1]))+'</th>'; }).join('')+'</tr></thead><tbody>';
     for(var i=0;i<n;i++){
       var w=(p.weeks||[])[i]||{}, wd=p.from ? fmtDayShort_(dtsAddDays_(p.from, 7*i)) : '';
-      h+='<tr><th>'+esc(gpT('Week {n}',{n:i+1}))+(wd ? '<span class="rowSub">'+esc(wd)+'</span>' : '')+'</th>'+DTS_REACH.map(function(r){ return '<td><input type="number" min="0" inputmode="numeric" data-dtpw="'+k+'|'+i+'|'+r[0]+'" value="'+esc(w[r[0]] ? String(w[r[0]]) : '')+'" aria-label="'+esc(t(r[1])+' · '+gpT('Week {n}',{n:i+1}))+'"></td>'; }).join('')+'</tr>';
+      var wp=k==='long' ? dtsStopOfWeek_(dtsStops_(p, n), i) : '';
+      h+='<tr><th>'+esc(gpT('Week {n}',{n:i+1}))+(wd ? '<span class="rowSub">'+esc(wd)+'</span>' : '')+(k==='long' ? '<span class="rowSub dtsWeekPlace" data-dtwp="'+i+'">'+(wp ? '📍 '+esc(wp) : '')+'</span>' : '')+'</th>'+DTS_REACH.map(function(r){ return '<td><input type="number" min="0" inputmode="numeric" data-dtpw="'+k+'|'+i+'|'+r[0]+'" value="'+esc(w[r[0]] ? String(w[r[0]]) : '')+'" aria-label="'+esc(t(r[1])+' · '+gpT('Week {n}',{n:i+1}))+'"></td>'; }).join('')+'</tr>';
     }
     h+='</tbody><tfoot><tr><th>'+esc(t('Total'))+'</th>'+DTS_REACH.map(function(r){ return '<td>'+(tot[r[0]]||0)+'</td>'; }).join('')+'</tr></tfoot></table></div>'+
       (p.from ? '' : '<p class="hint" style="margin:4px 0 0">'+esc(t('Set the dates and these numbers count in GPDTS’s totals week by week.'))+'</p>')+'</details></div></details>';
@@ -694,18 +711,54 @@ function dtsTeamFormHtml_(f, sch){
 }
 /* which folds of the team form are open: kept in the page, so a redraw (a tick, a date) leaves them be */
 function dtsFoldOpen_(key, dflt){ var o=S.dtsTeamOpen||{}; return o[key]===undefined ? !!dflt : !!o[key]; }
-function dtsNewPhase_(){ return { place:'', from:'', to:'', leaders:[], others:'', students:[], weeks:[] }; }
+function dtsNewPhase_(){ return { place:'', from:'', to:'', leaders:[], others:'', students:[], weeks:[], stops:[] }; }
+function dtsStopsFormHtml_(p, n){
+  var stops=dtsStops_(p, n), used=stops.reduce(function(a, s){ return a+s.weeks; }, 0);
+  return '<div class="dtsStops" id="dtsStops_long"><label class="f">'+esc(t('Locations'))+' <span class="hint">· '+esc(gpT('{a} of {b} weeks placed',{a:used, b:n}))+'</span></label>'+
+    (stops.length ? stops.map(function(s, i){
+      var when=s.weeks ? (s.a===s.b ? gpT('Week {n}',{n:s.a}) : gpT('Weeks {a}–{b}',{a:s.a, b:s.b}))+(s.from ? ' · '+fmtDayShort_(s.from)+' – '+fmtDayShort_(s.to) : '') : '';
+      return '<div class="dtsStop'+(s.over?' over':'')+'" data-dtstoprow="'+i+'"><span class="dtsStopNum">'+(i+1)+'</span>'+
+        '<input type="text" data-dtstop="'+i+'|place" maxlength="120" placeholder="'+esc(t('e.g. Kampot'))+'" value="'+esc(s.place)+'" aria-label="'+esc(t('Where'))+'">'+
+        '<label class="dtsStopWeeks"><input type="number" min="1" max="'+n+'" inputmode="numeric" data-dtstop="'+i+'|weeks" value="'+esc(s.weeks ? String(s.weeks) : '')+'" aria-label="'+esc(t('Weeks'))+'"> '+esc(t('wks'))+'</label>'+
+        '<button type="button" class="hbtn dtsStopDel" data-dtstopdel="'+i+'" aria-label="'+esc(t('Remove'))+'">✕</button>'+
+        (when ? '<span class="rowSub dtsStopWhen">'+esc(when)+(s.over ? ' · '+esc(t('more weeks than the outreach has')) : '')+'</span>' : '')+'</div>';
+    }).join('') : '<p class="hint" style="margin:0 0 4px">'+esc(t('Moving around? Add each place and how many weeks there — e.g. 2 weeks in each of 4 places.'))+'</p>')+
+    (used<n ? '<button type="button" class="linkbtn inline" id="dtsStopAdd">＋ '+esc(t('Add a location'))+'</button>' : '')+'</div>';
+}
 /* ---- Responsibilities: before school and in school, each given to staff ---- */
+/* Responsibilities fold open (Nov 2026, Andrew: "a toggle dropdown to see the details … make the layout of that
+   description easy to read, it just seems clumped"): each one shows its title, whether it's done and who has it;
+   tapped, it opens on the description laid out as written — paragraphs, and lines starting "-", "•" or "1." as
+   lists — then who it's given to and Edit. What is open stays open across a re-render (S.dtsRespOpen). */
+function dtsNotesHtml_(text){
+  var lines=String(text||'').replace(/\r/g,'').split('\n'), out=[], para=[], list=null;
+  var flushP=function(){ if(para.length){ out.push('<p>'+para.map(esc).join('<br>')+'</p>'); para=[]; } };
+  var flushL=function(){ if(list){ out.push('<'+list.tag+'>'+list.items.map(function(x){ return '<li>'+esc(x)+'</li>'; }).join('')+'</'+list.tag+'>'); list=null; } };
+  lines.forEach(function(raw){
+    var l=raw.trim(), b=l.match(/^[-*•–]\s+(.*)$/), n=l.match(/^\d+[.)]\s+(.*)$/);
+    if(!l){ flushP(); flushL(); return; }
+    if(b || n){ flushP(); var tag=b ? 'ul' : 'ol'; if(list && list.tag!==tag) flushL(); if(!list) list={ tag:tag, items:[] }; list.items.push((b||n)[1]); return; }
+    flushL(); para.push(l);
+  });
+  flushP(); flushL();
+  return out.join('');
+}
 function dtsRespHtml_(sch){
-  var list=dtsIn_(dtsDb_().resp), h='';
+  var list=dtsIn_(dtsDb_().resp), h='', open=S.dtsRespOpen||(S.dtsRespOpen={});
   if(S.dtsResp) return dtsRespFormHtml_(S.dtsResp);
   h+='<button class="btn small dtsAdd" id="dtsRespAdd">＋ '+esc(t('Add a responsibility'))+'</button>';
   [['before','Before school','🧳'],['school','During school','🏫']].forEach(function(g){
-    var rows=list.filter(function(r){ return r.when===g[0]; });
-    h+='<div class="card" id="dtsResp_'+g[0]+'"><h3 style="margin-top:0">'+g[2]+' '+esc(t(g[1]))+' · '+rows.length+'</h3>'+
+    var rows=list.filter(function(r){ return r.when===g[0]; }), done=rows.filter(function(r){ return r.done; }).length;
+    h+='<div class="card" id="dtsResp_'+g[0]+'"><h3 style="margin-top:0">'+g[2]+' '+esc(t(g[1]))+' · '+(rows.length ? esc(gpT('{a} of {b} done',{a:done, b:rows.length})) : '0')+'</h3>'+
       (rows.length ? rows.map(function(r){ var who=(r.staff||[]).map(dtsStaffName_).filter(Boolean);
-        return '<button class="dtsLect" data-dtsresp="'+esc(r.id)+'"><span class="dtsLectText"><b>'+(r.done?'✅ ':'')+esc(r.title)+'</b>'+(r.notes ? '<span class="rowSub">'+esc(r.notes)+'</span>' : '')+
-          '<span class="rowSub">👤 '+esc(who.length ? who.join(', ') : t('Nobody yet'))+'</span></span></button>'; }).join('')
+        return '<details class="dtsRespItem'+(r.done?' done':'')+'" data-dtsrespitem="'+esc(r.id)+'"'+(open[r.id]?' open':'')+'>'+
+          '<summary><span class="dtsRespMark" aria-hidden="true">'+(r.done?'✅':'⬜')+'</span><span class="dtsRespHead"><b>'+esc(r.title)+'</b>'+
+            '<span class="rowSub">👤 '+esc(who.length ? who.join(', ') : t('Nobody yet'))+'</span></span><span class="dtsRespChev" aria-hidden="true">›</span></summary>'+
+          '<div class="dtsRespBody">'+
+            (r.notes ? '<div class="dtsRespNotes">'+dtsNotesHtml_(r.notes)+'</div>' : '<p class="hint" style="margin:0">'+esc(t('No description yet.'))+'</p>')+
+            '<dl class="dtsRespFacts"><dt>'+esc(t('Who it’s given to'))+'</dt><dd>'+esc(who.length ? who.join(', ') : t('Nobody yet'))+'</dd>'+
+            '<dt>'+esc(t('Status'))+'</dt><dd>'+esc(r.done ? t('Done') : t('Still to do'))+'</dd></dl>'+
+            '<button class="btn small ghost" data-dtsresp="'+esc(r.id)+'">✏️ '+esc(t('Edit'))+'</button></div></details>'; }).join('')
         : '<p class="sub" style="margin:0">'+esc(t('Nothing here yet.'))+'</p>')+'</div>';
   });
   return h;
@@ -714,7 +767,7 @@ function dtsRespFormHtml_(f){
   return '<div class="card" id="dtsRespForm"><h3 style="margin-top:0">'+esc(f.id ? t('Edit the responsibility') : t('Add a responsibility'))+'</h3>'+
     '<div class="seg"><button data-drwhen="before" class="'+(f.when==='before'?'on':'')+'">🧳 '+esc(t('Before school'))+'</button><button data-drwhen="school" class="'+(f.when!=='before'?'on':'')+'">🏫 '+esc(t('During school'))+'</button></div>'+
     '<label class="f" for="dr_title">'+esc(t('What'))+'</label><input type="text" id="dr_title" maxlength="160" placeholder="'+esc(t('e.g. Book the speakers’ rooms'))+'" value="'+esc(f.title||'')+'">'+
-    '<label class="f" for="dr_notes">'+esc(t('A short description'))+'</label><textarea id="dr_notes" rows="3" maxlength="1000">'+esc(f.notes||'')+'</textarea>'+
+    '<label class="f" for="dr_notes">'+esc(t('A short description'))+'</label><textarea id="dr_notes" rows="6" maxlength="2000" placeholder="'+esc(t('Write it as you would say it. Start a line with - for a list.'))+'">'+esc(f.notes||'')+'</textarea>'+
     '<label class="f">'+esc(t('Who it’s given to'))+'</label>'+dtsPeopleChecks_('data-drstaff', f.staff, t('Pick the staff'))+
     '<label class="dtsConf"><input type="checkbox" id="dr_done"'+(f.done?' checked':'')+'> '+esc(t('Done'))+'</label>'+
     dtsFormBtns_('dtsResp', f.id)+'</div>';
@@ -772,6 +825,7 @@ function dtsKeepTeam_(){
     var ls=document.querySelectorAll('[data-dtpl="'+k+'"]'); if(ls.length){ f[k].leaders=[]; ls.forEach(function(c){ if(c.checked) f[k].leaders.push(c.value); }); }
   });
   document.querySelectorAll('[data-dtpw]').forEach(function(el){ var k=el.getAttribute('data-dtpw').split('|'), ph=f[k[0]], i=Number(k[1]); ph.weeks=ph.weeks||[]; ph.weeks[i]=ph.weeks[i]||{}; ph.weeks[i][k[2]]=el.value; });
+  document.querySelectorAll('[data-dtstop]').forEach(function(el){ var k=el.getAttribute('data-dtstop').split('|'), st=(f.long.stops=f.long.stops||[]); st[Number(k[0])]=st[Number(k[0])]||{}; st[Number(k[0])][k[1]]=k[1]==='weeks' ? (Number(el.value)||'') : el.value; });
   ['short','long'].forEach(function(k){ var ss=document.querySelectorAll('[data-dtps="'+k+'"]'); if(ss.length){ f[k].students=[]; ss.forEach(function(c){ if(c.checked) f[k].students.push(c.value); }); } });
 }
 function bindDtsDb_(){
@@ -843,11 +897,19 @@ function bindDtsDb_(){
   document.querySelectorAll('[data-dtp$="|from"], [data-dtp$="|to"], [data-dtps], [data-dtpl]').forEach(function(el){ el.onchange=function(){ dtsKeepTeam_(); var y=window.scrollY; render(); window.scrollTo(0,y); }; });
   document.querySelectorAll('[data-dtpw]').forEach(function(el){ el.oninput=function(){ dtsKeepTeam_(); var k=el.getAttribute('data-dtpw').split('|')[0], ph=S.dtsTeam[k], n=dtsPhaseWeeks_(ph, k), tot=dtsReachSum_({ weeks:(ph.weeks||[]).slice(0,n) });
     var cells=document.querySelectorAll('#dtsWeeks_'+k+' tfoot td'); DTS_REACH.forEach(function(r, i){ if(cells[i]) cells[i].textContent=tot[r[0]]||0; }); }; });
+  on('dtsStopAdd', function(){ dtsKeepTeam_(); var ph=S.dtsTeam.long, n=dtsPhaseWeeks_(ph,'long'), st=(ph.stops=ph.stops||[]), used=st.reduce(function(a, s){ return a+(Number(s && s.weeks)||0); }, 0);
+    st.push({ place:'', weeks:Math.max(1, Math.min(2, n-used)) }); render(); var ins=document.querySelectorAll('[data-dtstop$="|place"]'); if(ins.length) ins[ins.length-1].focus(); });
+  all('[data-dtstopdel]', function(el){ dtsKeepTeam_(); (S.dtsTeam.long.stops||[]).splice(Number(el.getAttribute('data-dtstopdel')), 1); render(); });
+  /* weeks change the ranges, so they redraw; a place only renames — kept, and the week table's labels follow in place */
+  document.querySelectorAll('[data-dtstop$="|weeks"]').forEach(function(el){ el.onchange=function(){ dtsKeepTeam_(); render(); }; });
+  document.querySelectorAll('[data-dtstop$="|place"]').forEach(function(el){ el.oninput=function(){ dtsKeepTeam_(); var ph=S.dtsTeam.long, st=dtsStops_(ph, dtsPhaseWeeks_(ph,'long'));
+    document.querySelectorAll('[data-dtwp]').forEach(function(sp){ var w=dtsStopOfWeek_(st, Number(sp.getAttribute('data-dtwp'))); sp.textContent=w ? '📍 '+w : ''; }); }; });
   on('dtsCopyShort', function(){ dtsKeepTeam_(); var f=S.dtsTeam; f.long.leaders=(f.short.leaders||[]).slice(); f.long.others=f.short.others||''; f.long.students=(f.short.students||[]).slice(); render(); });
   on('dtsTeamSave', function(){ dtsKeepTeam_(); var f=S.dtsTeam; if(!String(f.name||'').trim()){ showMsg(t('Give the team a name.')); return; } dtsDbSave_('team', f, t('Saved'), function(){ S.dtsTeam=null; }); });
   on('dtsTeamDel', function(){ if(S.dtsTeam && confirm(t('Delete this team and its numbers?'))) dtsDbDel_('team', S.dtsTeam.id, function(){ S.dtsTeam=null; }); });
   // responsibilities
   on('dtsRespAdd', function(){ S.dtsResp={ when:'before', title:'', notes:'', staff:[], done:false, schoolId:S.dtsSchool }; render(); var n=document.getElementById('dr_title'); if(n) n.focus(); });
+  document.querySelectorAll('[data-dtsrespitem]').forEach(function(d){ d.ontoggle=function(){ (S.dtsRespOpen=S.dtsRespOpen||{})[d.getAttribute('data-dtsrespitem')]=d.open; }; });
   all('[data-dtsresp]', function(b){ var r=dtsIn_(dtsDb_().resp).filter(function(x){ return x.id===b.getAttribute('data-dtsresp'); })[0]; if(r){ S.dtsResp=JSON.parse(JSON.stringify(r)); render(); } });
   var keepResp=function(){ var f=S.dtsResp; if(!f) return; var g=function(id){ var el=document.getElementById(id); return el ? el.value : ''; }; f.title=g('dr_title'); f.notes=g('dr_notes'); var dn=document.getElementById('dr_done'); if(dn) f.done=dn.checked;
     var cs=document.querySelectorAll('[data-drstaff]'); if(cs.length){ f.staff=[]; cs.forEach(function(c){ if(c.checked) f.staff.push(c.value); }); } };
