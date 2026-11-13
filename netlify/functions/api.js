@@ -2668,6 +2668,8 @@ async function finOut_(s, c, d) {
     debt: finDebtView_(d.debt, rows, people), debtHist: d.debtHist.slice(-FIN_MAX_HIST),
     ahead: { months: (p && p.months) || {}, updated: (p && p.updated) || '' }, qbo: await qboOut_(c, edit), qboReports: await qboReportsOut_(c, edit) };
   if (out.debt && d.debt) out.debt.src = d.debt.src || '';
+  /* GPDTS's lecture phase, counted from the portal's accepted students (Nov 2026, Andrew) */
+  try { const df = await dtsFeesForFinance_(c); if (df) out.dtsFees = df; } catch (e) { /* the rest of the page still stands */ }
   /* Who owes and how much, for everyone who sees the dashboard (Oct 2026, Uriah: "With the
      staff debt, allow the leadership to see the names of the people who owe money and how
      much"). The name as the books have it, the department of whoever it's matched to, the
@@ -7864,6 +7866,7 @@ async function hrCandidateCall(username, pin, id, call) {
   if (isDtsCand_(c)) await dtsSyncSafe_(c.campus);
   return { ok: true, candidate: c };
 }
+const CAND_OUTCOMES = ['cancelled', 'rejected'], CAND_OUTCOME_WORD = { cancelled: 'Cancelled', rejected: 'Rejected' };
 async function hrArchiveCandidate(username, pin, id, info) {
   const g = await hrGate_(username, pin); if (g.out) return g.out;
   const rows = await getCandidates_();
@@ -7872,7 +7875,16 @@ async function hrArchiveCandidate(username, pin, id, info) {
   if (!canHR_(g.s) && !portalMaySee_(g.s, rows[idx])) return { ok: false, err: 'not_authorized' };
   const now = new Date().toISOString();
   if (info === null) { if (rows[idx].archived && rows[idx].archived.left) rows[idx].archiveOff = true; rows[idx].archived = null; }
-  else rows[idx].archived = { at: now.slice(0, 10), reason: str_(info && info.reason, 300), by: g.s.id };
+  else {
+    /* Cancelled or Rejected, picked in the portal's stage list (Nov 2026, Andrew: "when a student gets
+       cancelled or rejected, it will also send them to the archive") — the stage stays where it was */
+    const outcome = info && CAND_OUTCOMES.indexOf(info.outcome) > -1 ? info.outcome : '';
+    rows[idx].archived = { at: now.slice(0, 10), reason: str_(info && info.reason, 300) || (outcome ? CAND_OUTCOME_WORD[outcome] : null), by: g.s.id };
+    if (outcome) {
+      rows[idx].archived.outcome = outcome;
+      rows[idx].log = (Array.isArray(rows[idx].log) ? rows[idx].log : []).concat([{ at: now, by: g.s.id, kind: 'stage', text: CAND_OUTCOME_WORD[outcome] + ' — moved to the archive' }]);
+    }
+  }
   rows[idx].updated = now; rows[idx].updatedBy = g.s.id;
   await writeJSON('candidates', rows);
   await syncTeamTrip_(rows[idx], g.s.id, info === null ? 'active' : 'cancelled');   // a closed team application is a cancelled team (one that left is archived by itself, not here)
@@ -8077,7 +8089,7 @@ async function dtsBoardOut_(g) {
   const students = cands.filter(dtsIsStudent_).map(function (c) { return dtsStudentOut_(c, schoolsSorted); })
     .sort(function (a, b) { return a.name.localeCompare(b.name); });
   return {
-    db: db, students: students,
+    db: db, students: students, fees: DTS_FEE_PRICE, fin: await dtsFinList_(g.campus),
     ok: true, campus: g.campus, ministry: g.min, today: today, counts: counts, due: due.slice(0, 40), dueMore: Math.max(0, due.length - 40),
     school: school, lectures: Array.isArray(lect.lectures) ? lect.lectures : [], portal: canPortal_(g.s),
     outreaches: Array.isArray(outr.outreaches) ? outr.outreaches : [],
@@ -8313,7 +8325,7 @@ function dtsStudentOut_(c, schools) {
   const a = (c.portal && ((c.portal.form && c.portal.form.answers) || c.portal.draft)) || {}, m = dtsMarks_(c);
   const s = function (v) { return v == null ? '' : String(v).slice(0, 200); };
   return {
-    id: c.id, name: c.name, stage: c.stage, column: dtsColumn_(c), audience: audienceOf_(c), country: c.country || '',
+    id: c.id, name: c.name, stage: c.stage, column: dtsColumn_(c), audience: audienceOf_(c), country: c.country || '', feeCat: dtsFeeCat_(c.country, audienceOf_(c)),
     applied: dtsApplied_(c), arrived: c.stage === 'arrived' ? dtsReached_(c, 'arrived') : '',
     graduated: m.graduated || '', potentialStaff: m.potentialStaff || '', archived: !!c.archived,
     schoolId: dtsSchoolOf_(c, schools), placed: !!m.schoolId, oneOnOne: m.oneOnOne || '', oneOnOneName: m.oneOnOneName || '', hasAccount: !!c.staffId,
@@ -8322,6 +8334,82 @@ function dtsStudentOut_(c, schools) {
       pastorName: s(a.pastorName), pastorPhone: s(a.pastorPhone), church: s(a.church) },
     profile: m.profile && typeof m.profile === 'object' ? m.profile : {}
   };
+}
+/* ---- GPDTS lecture phase fees (Nov 2026, Andrew: "for our finance team and the DTS team to get more
+   clarity and collaboration in setting clear and accountable budget and finances. For the lecture phase,
+   its a fixed price. But it is different by country A, B and C.") The total is counted from the portal:
+   every student accepted for a school (accepted, getting ready, here or graduated), each at their
+   country's price. The list is YWAM's A/B/C list as Andrew gave it; a country not on it is "not known"
+   and costs nothing until someone fixes its spelling in the portal. One copy, here: the page gets each
+   student's `feeCat` and the prices. */
+const DTS_FEE_PRICE = { A: 2000, B: 1500, C: 620 };
+const DTS_FEE_LIST = {
+  A: 'Andorra|Aruba|Australia|Austria|Bahamas|Bahrain|Belgium|Bermuda|British Indian Ocean Territory|British Virgin Islands|Brunei|Canada|Cayman Islands|Channel Islands|Christmas Island|Cyprus|Czech Republic|Denmark|Estonia|Falkland Islands|Faroe Islands|Finland|France|French Guiana|French Polynesia|Germany|Gibraltar|Greece|Greenland|Guadeloupe|Guam|Hong Kong|Iceland|Ireland|Isle of Man|Israel|Italy|Japan|Kuwait|Latvia|Liechtenstein|Lithuania|Luxembourg|Macau|Malta|Martinique|Monaco|Netherlands|New Caledonia|New Zealand|Norfolk Island|Norway|Oman|Portugal|Puerto Rico|Qatar|Reunion|Saint Martin|Saint Pierre and Miquelon|San Marino|Saudi Arabia|Singapore|Slovakia|Slovenia|South Korea|Spain|Svalbard and Jan Mayen Islands|Sweden|Switzerland|Taiwan|Turks and Caicos Islands|United Arab Emirates|United Kingdom|United States of America|US Virgin Islands|Vatican City',
+  B: 'American Samoa|Anguilla|Antigua and Barbuda|Argentina|Barbados|Brazil|Bulgaria|Chile|China|Cook Islands|Costa Rica|Croatia|Cuba|Curaçao|Dominican Republic|Grenada|Guyana|Hungary|Kazakhstan|Malaysia|Maldives|Mauritius|Mayotte|Mexico|Montenegro|Montserrat|Nauru|Northern Cyprus|Northern Mariana Islands|Palau|Panama|Poland|Romania|Russia|Saint Kitts and Nevis|Serbia|Seychelles|Trinidad and Tobago|Turkiye|Turkmenistan|Uruguay',
+  C: 'Afghanistan|Albania|Algeria|Angola|Armenia|Azerbaijan|Bangladesh|Belarus|Belize|Benin|Bhutan|Bolivia|Bosnia-Herzegovina|Botswana|Bougainville|Burkina Faso|Burundi|Cambodia|Cameroon|Cape Verde|Central African Republic|Chad|Cocos (Keeling) Islands|Colombia|Comoros|Congo Brazzaville|Congo Kinshasa|Cote d’Ivoire|Djibouti|Dominica|East Timor|Ecuador|Egypt|El Salvador|Equatorial Guinea|Eritrea|Ethiopia|Fiji|Gabon|Gambia|Georgia|Ghana|Guatemala|Guinea|Guinea-Bissau|Haiti|Honduras|India|Indonesia|Iran|Iraq|Jamaica|Jordan|Kenya|Kiribati|Kosovo|Kyrgyzstan|Laos|Lebanon|Lesotho|Liberia|Libya|Macedonia|Madagascar|Malawi|Mali|Marshall Islands|Mauritania|Micronesia|Moldova|Mongolia|Morocco|Mozambique|Myanmar|Namibia|Nepal|Nicaragua|Niger|Nigeria|Niue Island|North Korea|Pakistan|Palestine|Papua New Guinea|Paraguay|Peru|Philippines|Pitcairn Islands|Rwanda|Saint Helena|Saint Lucia|Saint Vincent and the Grenadines|Samoa|Sao Tome and Principe|Senegal|Sierra Leone|Solomon Islands|Somalia|South Africa|South Sudan|Sri Lanka|Sudan|Suriname|Eswatini|Syria|Tajikistan|Tanzania|Thailand|Togo|Tokelau Islands|Tonga|Tunisia|Tuvalu|Uganda|Ukraine|Uzbekistan|Vanuatu|Venezuela|Vietnam|Wallis and Futuna Islands|Western Sahara|Yemen|Zambia|Zimbabwe'
+};
+/* the same country written another way (the portal's own list says "United States"; people type "USA") */
+const DTS_FEE_ALIAS = {
+  'united states': 'united states of america', 'usa': 'united states of america', 'us': 'united states of america', 'america': 'united states of america',
+  'uk': 'united kingdom', 'great britain': 'united kingdom', 'britain': 'united kingdom', 'england': 'united kingdom', 'scotland': 'united kingdom', 'wales': 'united kingdom', 'northern ireland': 'united kingdom',
+  'turkey': 'turkiye', 'korea': 'south korea', 'republic of korea': 'south korea', 'korea republic of': 'south korea', 'ivory coast': 'cote divoire',
+  'swaziland': 'eswatini', 'north macedonia': 'macedonia', 'czechia': 'czech republic', 'timor leste': 'east timor', 'burma': 'myanmar', 'viet nam': 'vietnam',
+  'holland': 'netherlands', 'the netherlands': 'netherlands', 'drc': 'congo kinshasa', 'dr congo': 'congo kinshasa', 'democratic republic of the congo': 'congo kinshasa',
+  'republic of the congo': 'congo brazzaville', 'congo': 'congo brazzaville', 'bosnia and herzegovina': 'bosnia herzegovina', 'bosnia': 'bosnia herzegovina',
+  'lao pdr': 'laos', 'russian federation': 'russia', 'uae': 'united arab emirates', 'png': 'papua new guinea', 'hk': 'hong kong', 'macao': 'macau',
+  'cabo verde': 'cape verde', 'the bahamas': 'bahamas', 'the gambia': 'gambia', 'micronesia federated states of': 'micronesia', 'vatican': 'vatican city',
+  'st kitts and nevis': 'saint kitts and nevis', 'st lucia': 'saint lucia', 'st vincent and the grenadines': 'saint vincent and the grenadines', 'st helena': 'saint helena', 'st martin': 'saint martin',
+  'palestinian territories': 'palestine', 'khmer': 'cambodia', 'kampuchea': 'cambodia'
+};
+function dtsFeeKey_(v) {
+  return String(v == null ? '' : v).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/&/g, ' and ').replace(/[’'`.()]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+const DTS_FEE_CAT = (function () {
+  const m = {};
+  Object.keys(DTS_FEE_LIST).forEach(function (cat) { DTS_FEE_LIST[cat].split('|').forEach(function (n) { m[dtsFeeKey_(n)] = cat; }); });
+  return m;
+})();
+/* a country's category, or '' when it isn't on the list; a Khmer student with no country is from Cambodia */
+function dtsFeeCat_(country, audience) {
+  let k = dtsFeeKey_(country);
+  if (!k && audience === 'khmer') k = 'cambodia';
+  if (!k) return '';
+  if (DTS_FEE_CAT[k]) return DTS_FEE_CAT[k];
+  const a = DTS_FEE_ALIAS[k] || DTS_FEE_ALIAS[k.replace(/^the /, '')];
+  return (a && DTS_FEE_CAT[a]) || DTS_FEE_CAT[k.replace(/^the /, '')] || '';
+}
+const DTS_FEE_COLS = ['accepted', 'arrived', 'graduated'];   // accepted for the school: accepted, getting ready, here or graduated
+/* one school's lecture phase: how many accepted in each category, what each costs, the total; and what it
+   would be if everyone still applying were accepted too */
+function dtsLectureFees_(students) {
+  const out = { A: 0, B: 0, C: 0, unknown: 0, total: 0, applying: 0, ifAll: 0 };
+  (students || []).forEach(function (x) {
+    const p = DTS_FEE_PRICE[x.feeCat] || 0;
+    if (DTS_FEE_COLS.indexOf(x.column) > -1) { if (x.feeCat) out[x.feeCat]++; else out.unknown++; out.total += p; out.ifAll += p; }
+    else if (x.column === 'applied' && !x.archived) { out.applying++; out.ifAll += p; }
+  });
+  return out;
+}
+/* for the Finances office and Campus Leadership's dashboard: each school still running or coming up (else
+   the latest), its total and who is in it — names, country and category only, nothing from the application */
+async function dtsFeesForFinance_(campus) {
+  if (!dtsMin_(campus)) return null;
+  const db = dtsDbOut_(await readJSON('dtsDb:' + campus, DTS_DB_FALLBACK));
+  const schools = dtsSortSchools_(db.schools.slice());
+  if (!schools.length) return { prices: DTS_FEE_PRICE, schools: [] };
+  const cands = (await getCandidates_()).filter(function (c) { return isDtsCand_(c, campus) && dtsIsStudent_(c); });
+  const studs = cands.map(function (c) { return dtsStudentOut_(c, schools); });
+  const since = dayOfNo_(dayNo_(baseToday_()) - 60);
+  let show = schools.filter(function (s) { return (s.to || dtsSchoolStart_(s)) >= since; });
+  if (!show.length) show = schools.slice(-1);
+  const money = await dtsFinList_(campus);
+  return { prices: DTS_FEE_PRICE, schools: show.slice(0, 4).map(function (s) {
+    const mine = studs.filter(function (x) { return x.schoolId === s.id; });
+    return { id: s.id, year: s.year, name: s.name, from: s.from || '', to: s.to || '', fees: dtsLectureFees_(mine), money: dtsFinSums_(money, s.id),
+      students: mine.filter(function (x) { return DTS_FEE_COLS.indexOf(x.column) > -1; })
+        .map(function (x) { return { name: x.name, country: x.country || (x.audience === 'khmer' ? 'Cambodia' : ''), cat: x.feeCat, column: x.column }; }) };
+  }) };
 }
 async function dtsCampusStaff_(campus) {
   const ids = {};
@@ -8346,8 +8434,17 @@ function cleanDtsPhase_(p, kind, staffOk, candOk) {
     DTS_REACH.forEach(function (k) { const v = Math.round(Number(w[k])); if (isFinite(v) && v > 0) row[k] = Math.min(v, 100000); });
     weeks.push(row);
   }
+  /* the locations, in order, each so many whole weeks; together never more than the phase has (Nov 2026, Andrew:
+     "be able to breakdown the weeks like 2 weeks in one location … in the 8 weeks, there will be 4 locations") */
+  const stops = []; let used = 0;
+  (Array.isArray(p.stops) ? p.stops : []).slice(0, 12).forEach(function (st) {
+    const place = str_(st && st.place, 120), w = Math.round(Number(st && st.weeks));
+    if (!place || !(w >= 1) || used >= n) return;
+    const take = Math.min(w, n - used); used += take;
+    stops.push({ place: place, weeks: take });
+  });
   return { place: str_(p.place, 120) || '', from: from, to: to, leaders: dtsIds_(p.leaders, staffOk, 10), others: str_(p.others, 200) || '',
-    students: dtsIds_(p.students, candOk, 80), weeks: weeks };
+    students: dtsIds_(p.students, candOk, 80), weeks: weeks, stops: stops };
 }
 function cleanDtsRec_(kind, r, ctx) {
   r = r && typeof r === 'object' ? r : {};
@@ -8370,7 +8467,7 @@ function cleanDtsRec_(kind, r, ctx) {
   if (kind === 'resp') {
     const title = str_(r.title, 160);
     if (!title) return null;
-    return { schoolId: schoolId, when: r.when === 'before' ? 'before' : 'school', title: title, notes: notes(r.notes, 1000), staff: dtsIds_(r.staff, ctx.staffOk, 10), done: !!r.done };
+    return { schoolId: schoolId, when: r.when === 'before' ? 'before' : 'school', title: title, notes: notes(r.notes, 2000), staff: dtsIds_(r.staff, ctx.staffOk, 10), done: !!r.done };
   }
   if (kind === 'resource') {
     const title = str_(r.title, 160), url = str_(r.url, 600) || '';
@@ -8384,6 +8481,105 @@ function cleanDtsRec_(kind, r, ctx) {
     return { schoolId: schoolId, name: name, short: cleanDtsPhase_(r.short, 'short', ctx.staffOk, ctx.candOk), long: cleanDtsPhase_(r.long, 'long', ctx.staffOk, ctx.candOk), notes: notes(r.notes, 1000) };
   }
   return null;
+}
+/* ---- GPDTS money: what really came in and went out (Nov 2026, Andrew: "for the lecture finances, we want
+   to track the real income and real expenses … so that the dts staff and leaders can see how much they have
+   left in their lecture budget"). One blob per campus, `dtsFin:<campus>` = { entries: [...] }, each entry a
+   school's, for one phase — lecture or outreach, "separate and tracked separately":
+     income   date, how it came in (cash / ABA / Subsplash), for a student (their candidate id — it lowers
+              what they still owe) or the general DTS pool (''), the amount in US$, a note
+     expense  (lecture) date, category, a memo saying what it was for, who made it (a staff id), the amount,
+              "has a receipt" and "receipt given to the office"
+   Written by the DTS team (dtsGate_); the Finances office sees the totals on its dashboard. */
+const DTS_FIN_PHASES = ['lecture', 'outreach'];
+const DTS_FIN_KINDS = { lecture: ['income', 'expense'], outreach: ['income'] };
+const DTS_FIN_METHODS = ['cash', 'aba', 'subsplash'];
+const DTS_FIN_CATS = ['honorarium', 'supplies', 'coffee', 'food', 'transport', 'other'];
+const DTS_FIN_MAX = 5000, DTS_FIN_MAX_AMOUNT = 100000;
+function dtsFinMoney_(v) {
+  const n = Math.round(Number(v) * 100) / 100;
+  return isFinite(n) && n > 0 && n <= DTS_FIN_MAX_AMOUNT ? n : 0;
+}
+function cleanDtsFin_(rec, ctx) {
+  const txt = function (v, n) { return String(v == null ? '' : v).trim().slice(0, n); };
+  rec = rec && typeof rec === 'object' ? rec : {};
+  const schoolId = txt(rec.schoolId, 60), phase = txt(rec.phase, 20), kind = txt(rec.kind, 20);
+  if (!ctx.schools.some(function (s) { return s.id === schoolId; })) return { err: 'no_school' };
+  if (DTS_FIN_PHASES.indexOf(phase) === -1 || DTS_FIN_KINDS[phase].indexOf(kind) === -1) return { err: 'bad_kind' };
+  const date = isoDate_(rec.date);
+  if (!date) return { err: 'bad_date' };
+  const amount = dtsFinMoney_(rec.amount);
+  if (!amount) return { err: 'bad_amount' };
+  const out = { schoolId: schoolId, phase: phase, kind: kind, date: date, amount: amount };
+  if (kind === 'income') {
+    const method = txt(rec.method, 20);
+    if (DTS_FIN_METHODS.indexOf(method) === -1) return { err: 'bad_method' };
+    const sid = txt(rec.studentId, 60);
+    if (sid && !ctx.candOk[sid]) return { err: 'bad_student' };
+    out.method = method; out.studentId = sid; out.note = txt(rec.note, 300);
+  } else {
+    const cat = txt(rec.category, 20);
+    if (DTS_FIN_CATS.indexOf(cat) === -1) return { err: 'bad_category' };
+    const memo = txt(rec.memo, 300).trim();
+    if (!memo) return { err: 'no_memo' };
+    const who = txt(rec.who, 60);
+    if (who && !ctx.staffOk[who]) return { err: 'bad_who' };
+    out.category = cat; out.memo = memo; out.who = who; out.whoName = who ? '' : txt(rec.whoName, 80).trim();
+    out.hasReceipt = !!rec.hasReceipt; out.toOffice = !!rec.toOffice;
+  }
+  return out;
+}
+async function dtsFinList_(campus) {
+  const doc = await readJSON('dtsFin:' + campus, { entries: [] });
+  return (Array.isArray(doc.entries) ? doc.entries : []).filter(function (e) { return e && e.id; })
+    .sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : (a.at < b.at ? 1 : -1); });
+}
+async function dtsFinSave(username, pin, rec) {
+  const g = await dtsGate_(username, pin); if (g.out) return g.out;
+  const db = dtsDbOut_(await readJSON('dtsDb:' + g.campus, DTS_DB_FALLBACK));
+  const ctx = { schools: db.schools, staffOk: await dtsCampusStaff_(g.campus), candOk: {} };
+  (await getCandidates_()).forEach(function (c) { if (isDtsCand_(c, g.campus)) ctx.candOk[c.id] = 1; });
+  const clean = cleanDtsFin_(rec, ctx);
+  if (clean.err) return { ok: false, err: clean.err };
+  const id = str_(rec && rec.id, 60), now = new Date().toISOString();
+  const r = await mutateKey_('dtsFin:' + g.campus, { entries: [] }, function (doc) {
+    const list = Array.isArray(doc.entries) ? doc.entries : (doc.entries = []);
+    const at = id ? list.findIndex(function (x) { return x && x.id === id; }) : -1;
+    if (id && at === -1) return { abort: true, ok: false, err: 'not_found' };
+    if (at === -1 && list.length >= DTS_FIN_MAX) return { abort: true, ok: false, err: 'too_many' };
+    const prev = at > -1 ? list[at] : null;
+    if (prev && (prev.phase !== clean.phase || prev.kind !== clean.kind)) return { abort: true, ok: false, err: 'bad_kind' };
+    const out = Object.assign({ id: prev ? prev.id : hrId_('df') }, clean, { by: prev ? prev.by : g.s.id, at: prev ? prev.at : now, updated: now, updatedBy: g.s.id });
+    if (at > -1) list[at] = out; else list.push(out);
+    return { ok: true };
+  });
+  if (!r || !r.ok) return r || { ok: false };
+  return { ok: true, fin: await dtsFinList_(g.campus) };
+}
+async function dtsFinDelete(username, pin, id) {
+  const g = await dtsGate_(username, pin); if (g.out) return g.out;
+  id = str_(id, 60);
+  const r = await mutateKey_('dtsFin:' + g.campus, { entries: [] }, function (doc) {
+    const list = Array.isArray(doc.entries) ? doc.entries : [];
+    const at = list.findIndex(function (x) { return x && x.id === id; });
+    if (at === -1) return { abort: true, ok: false, err: 'not_found' };
+    list.splice(at, 1); doc.entries = list;
+    return { ok: true };
+  });
+  if (!r || !r.ok) return r || { ok: false };
+  return { ok: true, fin: await dtsFinList_(g.campus) };
+}
+/* a school's money, for the Finances office's card: received and spent, lecture and outreach apart */
+function dtsFinSums_(entries, schoolId) {
+  const o = { lecture: { received: 0, spent: 0, receiptsOut: 0 }, outreach: { received: 0 } };
+  (entries || []).forEach(function (e) {
+    if (e.schoolId !== schoolId || !o[e.phase]) return;
+    if (e.kind === 'income') o[e.phase].received += e.amount;
+    else if (e.phase === 'lecture') { o.lecture.spent += e.amount; if (!e.toOffice) o.lecture.receiptsOut++; }
+  });
+  const r2 = function (n) { return Math.round(n * 100) / 100; };
+  o.lecture.received = r2(o.lecture.received); o.lecture.spent = r2(o.lecture.spent); o.outreach.received = r2(o.outreach.received);
+  return o;
 }
 async function dtsDbSave(username, pin, kind, rec) {
   const g = await dtsGate_(username, pin); if (g.out) return g.out;
@@ -8428,7 +8624,8 @@ async function dtsDbDelete(username, pin, kind, id) {
   if (kind === 'school') {
     const doc = dtsDbOut_(await readJSON(key, DTS_DB_FALLBACK)), lect = await readJSON('dtsLect:' + g.campus, { lectures: [] });
     const used = ['events', 'resp', 'resources', 'teams'].some(function (k) { return doc[k].some(function (x) { return x && x.schoolId === id; }); }) ||
-      (Array.isArray(lect.lectures) ? lect.lectures : []).some(function (l) { return l && l.schoolId === id; });
+      (Array.isArray(lect.lectures) ? lect.lectures : []).some(function (l) { return l && l.schoolId === id; }) ||
+      (await dtsFinList_(g.campus)).some(function (e) { return e.schoolId === id; });
     if (used) return { ok: false, err: 'in_use' };
   }
   const r = await mutateKey_(key, DTS_DB_FALLBACK, function (doc) {
@@ -10839,6 +11036,37 @@ async function portalTeamStep(username, pin, candidateId, step, done) {
   const staffRows = await getStaff_(); const byId = {}; staffRows.forEach(function (r) { byId[r.id] = r; });
   return { ok: true, candidate: portalCandOut_(c, byId) };
 }
+/* A portal admin puts an application's name right (Nov 2026, Andrew: "for all of the applications, for admin, be
+   able to manually edit and change the name"): the person's name — and their applicant account's, so the two
+   don't drift — and for a team its team name (the application's own first answer, which the list shows). */
+async function portalRenameCand(username, pin, candidateId, names) {
+  const a = await portalStaffCand_(username, pin, candidateId); if (a.out) return a.out;
+  if (!isPortalAdmin_(a.s)) return { ok: false, err: 'not_authorized' };
+  names = names && typeof names === 'object' ? names : {};
+  const cand = a.cand, now = new Date().toISOString(), said = [];
+  const name = String(names.name == null ? '' : names.name).trim().replace(/\s+/g, ' ').slice(0, 120);
+  if (!name) return { ok: false, err: 'no_name' };
+  if (name !== cand.name) { said.push('Name changed from “' + cand.name + '” to “' + name + '”'); cand.name = name; }
+  if (cand.type === 'team' && names.teamName != null) {
+    const tn = String(names.teamName).trim().replace(/\s+/g, ' ').slice(0, 120);
+    if (!tn) return { ok: false, err: 'no_team_name' };
+    cand.portal = cand.portal || {};
+    const box = cand.portal.form && cand.portal.form.answers ? cand.portal.form.answers : (cand.portal.draft = cand.portal.draft || {});
+    if (box.teamName !== tn) { said.push('Team name changed from “' + (box.teamName || '') + '” to “' + tn + '”'); box.teamName = tn; }
+  }
+  if (!said.length) return { ok: true, candidate: portalCandOut_(cand, {}), same: true };
+  cand.log = (Array.isArray(cand.log) ? cand.log : []).concat(said.map(function (x) { return { at: now, by: a.s.id, kind: 'note', text: x }; })).slice(-CAND_LOG_MAX);
+  cand.updated = now; cand.updatedBy = a.s.id;
+  await writeJSON('candidates', a.rows);
+  if (cand.staffId) await mutateStaff_(function (all) {
+    const r = all.find(function (x) { return x && x.id === cand.staffId; });
+    if (!r || !isApplicant_(r) || r.name === name) return { abort: true, ok: true };   // a staff member's own name is theirs to change
+    r.name = name; r.updated = now; return { ok: true };
+  });
+  await syncTeamTrip_(cand, a.s.id);
+  const staffRows = await getStaff_(); const byId = {}; staffRows.forEach(function (r) { byId[r.id] = r; });
+  return { ok: true, candidate: portalCandOut_(cand, byId) };
+}
 async function portalStaffSaveAnswers(username, pin, candidateId, answers) {
   const a = await portalStaffCand_(username, pin, candidateId); if (a.out) return a.out;
   const cand = a.cand;
@@ -12579,6 +12807,9 @@ const HANDLERS = {
   portalStaffSaveAnswers: function (a) { return portalStaffSaveAnswers(a[0], a[1], a[2], a[3]); },
   portalImportApplications: function (a) { return portalImportApplications(a[0], a[1], a[2], a[3]); },
   dtsDbSave: function (a) { return dtsDbSave(a[0], a[1], a[2], a[3]); },
+  dtsFinSave: function (a) { return dtsFinSave(a[0], a[1], a[2]); },
+  portalRenameCand: function (a) { return portalRenameCand(a[0], a[1], a[2], a[3]); },
+  dtsFinDelete: function (a) { return dtsFinDelete(a[0], a[1], a[2]); },
   dtsDbDelete: function (a) { return dtsDbDelete(a[0], a[1], a[2], a[3]); },
   dtsStudentSave: function (a) { return dtsStudentSave(a[0], a[1], a[2], a[3]); },
   portalListAccounts: function (a) { return portalListAccounts(a[0], a[1]); },

@@ -299,14 +299,44 @@ function staffTypeShort(id){
 
 /* The home country, for "how many Khmer, how many international, how many
    countries". Cambodia leads because most of the base is Khmer; the rest are
-   alphabetical. Not a complete list of the world — it is the countries a YWAM
-   base in Cambodia actually sends and receives people from, plus room for
-   anything else through "Other". Adding a name here is safe; renaming one
-   orphans the people already stored under the old spelling. */
+   alphabetical. Since Nov 2026 it holds every country on YWAM's A/B/C list for
+   DTS fees (DTS_FEE_LIST in api.js — the portal's country picker is this list,
+   and a student's country decides their lecture fee), with the older spellings
+   kept ("United States"). Adding a name here is safe; renaming one orphans the
+   people already stored under the old spelling. */
 var HOME_COUNTRY = 'Cambodia';
 var COUNTRIES = ['Cambodia',
-  'Australia','Austria','Brazil','Canada','China','Denmark','Fiji','Finland','France','Germany',
-  'Hong Kong','India','Indonesia','Ireland','Japan','Kenya','Laos','Malaysia','Mexico','Myanmar',
-  'Nepal','Netherlands','New Zealand','Nigeria','Norway','Papua New Guinea','Philippines','Singapore',
-  'South Africa','South Korea','Spain','Sweden','Switzerland','Taiwan','Thailand','Uganda',
-  'United Kingdom','United States','Vietnam'];
+  'Afghanistan','Albania','Algeria','American Samoa','Andorra','Angola','Anguilla',
+  'Antigua and Barbuda','Argentina','Armenia','Aruba','Australia','Austria','Azerbaijan','Bahamas',
+  'Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bermuda','Bhutan',
+  'Bolivia','Bosnia-Herzegovina','Botswana','Bougainville','Brazil',
+  'British Indian Ocean Territory','British Virgin Islands','Brunei','Bulgaria','Burkina Faso',
+  'Burundi','Cameroon','Canada','Cape Verde','Cayman Islands','Central African Republic','Chad',
+  'Channel Islands','Chile','China','Christmas Island','Cocos (Keeling) Islands','Colombia',
+  'Comoros','Congo Brazzaville','Congo Kinshasa','Cook Islands','Costa Rica','Cote d’Ivoire',
+  'Croatia','Cuba','Curaçao','Cyprus','Czech Republic','Denmark','Djibouti','Dominica',
+  'Dominican Republic','East Timor','Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea',
+  'Estonia','Eswatini','Ethiopia','Falkland Islands','Faroe Islands','Fiji','Finland','France',
+  'French Guiana','French Polynesia','Gabon','Gambia','Georgia','Germany','Ghana','Gibraltar',
+  'Greece','Greenland','Grenada','Guadeloupe','Guam','Guatemala','Guinea','Guinea-Bissau','Guyana',
+  'Haiti','Honduras','Hong Kong','Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland',
+  'Isle of Man','Israel','Italy','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati',
+  'Kosovo','Kuwait','Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya',
+  'Liechtenstein','Lithuania','Luxembourg','Macau','Macedonia','Madagascar','Malawi','Malaysia',
+  'Maldives','Mali','Malta','Marshall Islands','Martinique','Mauritania','Mauritius','Mayotte',
+  'Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Montserrat','Morocco',
+  'Mozambique','Myanmar','Namibia','Nauru','Nepal','Netherlands','New Caledonia','New Zealand',
+  'Nicaragua','Niger','Nigeria','Niue Island','Norfolk Island','North Korea','Northern Cyprus',
+  'Northern Mariana Islands','Norway','Oman','Pakistan','Palau','Palestine','Panama',
+  'Papua New Guinea','Paraguay','Peru','Philippines','Pitcairn Islands','Poland','Portugal',
+  'Puerto Rico','Qatar','Reunion','Romania','Russia','Rwanda','Saint Helena',
+  'Saint Kitts and Nevis','Saint Lucia','Saint Martin','Saint Pierre and Miquelon',
+  'Saint Vincent and the Grenadines','Samoa','San Marino','Sao Tome and Principe','Saudi Arabia',
+  'Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia',
+  'Solomon Islands','Somalia','South Africa','South Korea','South Sudan','Spain','Sri Lanka',
+  'Sudan','Suriname','Svalbard and Jan Mayen Islands','Sweden','Switzerland','Syria','Taiwan',
+  'Tajikistan','Tanzania','Thailand','Togo','Tokelau Islands','Tonga','Trinidad and Tobago',
+  'Tunisia','Turkiye','Turkmenistan','Turks and Caicos Islands','Tuvalu','Uganda','Ukraine',
+  'United Arab Emirates','United Kingdom','United States','Uruguay','US Virgin Islands',
+  'Uzbekistan','Vanuatu','Vatican City','Venezuela','Vietnam','Wallis and Futuna Islands',
+  'Western Sahara','Yemen','Zambia','Zimbabwe'];

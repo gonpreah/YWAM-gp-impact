@@ -32,9 +32,9 @@ let SCHOOL = [{ id: 'c_ar', name: 'Arno Here', country: 'Germany', audience: 'in
 let LECTS = [], OUTS = [], PAST = {};
 const NEXTY = Number(TODAY.slice(0, 4)) + 1;
 const STUDS = [
-  { id: 'c_ar', name: 'Arno Here', column: 'arrived', audience: 'international', country: 'Germany', applied: YDAY, arrived: TODAY, graduated: '', potentialStaff: '', schoolId: 'sc1', oneOnOne: '', portal: { sex: 'Male', phone: '+49 1', email: 'arno@example.org' }, profile: {} },
-  { id: 'c_ar2', name: 'Bopha Here', column: 'arrived', audience: 'khmer', country: 'Cambodia', applied: YDAY, arrived: TODAY, graduated: '', potentialStaff: '', schoolId: 'sc1', oneOnOne: '', portal: { sex: 'Female' }, profile: {} },
-  { id: 'c_ap', name: 'Chenda Applied', column: 'applied', audience: 'khmer', country: 'Cambodia', applied: YDAY, arrived: '', graduated: '', potentialStaff: '', schoolId: 'sc1', oneOnOne: '', portal: { sex: 'ស្រី Female', phone: '012 000 111', guardianName: 'Mum Example', guardianPhone: '012 000 222', pastorPhone: '012 000 333', email: 'chenda@example.org' }, profile: {} },
+  { id: 'c_ar', name: 'Arno Here', column: 'arrived', audience: 'international', country: 'Germany', feeCat: 'A', applied: YDAY, arrived: TODAY, graduated: '', potentialStaff: '', schoolId: 'sc1', oneOnOne: '', portal: { sex: 'Male', phone: '+49 1', email: 'arno@example.org' }, profile: {} },
+  { id: 'c_ar2', name: 'Bopha Here', column: 'arrived', audience: 'khmer', country: 'Cambodia', feeCat: 'C', applied: YDAY, arrived: TODAY, graduated: '', potentialStaff: '', schoolId: 'sc1', oneOnOne: '', portal: { sex: 'Female' }, profile: {} },
+  { id: 'c_ap', name: 'Chenda Applied', column: 'applied', audience: 'khmer', country: 'Cambodia', feeCat: 'C', applied: YDAY, arrived: '', graduated: '', potentialStaff: '', schoolId: 'sc1', oneOnOne: '', portal: { sex: 'ស្រី Female', phone: '012 000 111', guardianName: 'Mum Example', guardianPhone: '012 000 222', pastorPhone: '012 000 333', email: 'chenda@example.org' }, profile: {} },
   { id: 'c_loose', name: 'Loose Person', column: 'applied', audience: 'khmer', country: 'Cambodia', applied: YDAY, schoolId: '', oneOnOne: '', portal: {}, profile: {} }];
 let DB = { schools: [{ id: 'sc1', year: NEXTY, name: 'January DTS', from: NEXTY + '-01-12', to: NEXTY + '-06-20' }], events: [], resp: [], resources: [], teams: [],
   policy: '1. Come to class every day and on time\n* You may not miss more than 2 days per week\n2. Be On Time\n* Arrive on time', policyIsDefault: true };
@@ -42,12 +42,13 @@ const dbSaves = [], stuSaves = [];
 const TWO = { id: 'st_two', name: 'Tia Two', username: 'tia', campus: 'siemreap', dept: 'Leadership Development', ministry: 'GPDTS' };
 const CAFE = { id: 'st_cafe', name: 'Cal Fay', username: 'cal', campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe' };
 const HELPER = { id: 'st_help', name: 'Hana Helper', username: 'hana', campus: 'siemreap', dept: 'Skills Training', ministry: 'Hospitality', ministries: ['Leadership Development|GPDTS'] };
-const marks = [], lectSaves = [], outSaves = [], pastSaves = [], toStaff = [];
+const marks = [], lectSaves = [], outSaves = [], pastSaves = [], toStaff = [], finSaves = [];
+let FIN = [];
 const board = () => ({
   ok: true, campus: 'siemreap', ministry: 'GPDTS', today: TODAY, portal: true,
   counts: { lead: { khmer: 2, international: 1 }, contacted: { khmer: 1, international: 0 }, applied: { khmer: 1, international: 0 }, accepted: { khmer: 0, international: 1 }, arrived: { khmer: 1, international: 1 }, graduated: { khmer: 0, international: 0 } },
   due: [{ id: 'c_kh', name: 'Sokha Khmer', audience: 'khmer', nextStep: 'Call her pastor', nextDate: YDAY, column: 'applied' }], dueMore: 0,
-  school: SCHOOL, lectures: LECTS, outreaches: OUTS, past: PAST, year: Number(TODAY.slice(0, 4)), db: DB, students: STUDS,
+  school: SCHOOL, lectures: LECTS, outreaches: OUTS, past: PAST, year: Number(TODAY.slice(0, 4)), db: DB, students: STUDS, fees: { A: 2000, B: 1500, C: 620 }, fin: FIN,
   data: { ok: true, campus: 'siemreap', dept: 'Leadership Development', ministry: 'GPDTS', entries: { 'Students Applied': { '1': 2, '2': 3 }, 'Students Enrolled': { '1': 4, '2': 6, '3': 5 }, 'Healings': { '1': 3 }, 'Salvations': { '2': 2 } }, prev: {}, daily: {} }
 });
 
@@ -88,6 +89,8 @@ await p.route('**/.netlify/functions/api', r => {
   else if (q.fn === 'dtsSaveOutreach') { outSaves.push(q.args[2]); OUTS = [{ ...q.args[2], id: 'ot1' }]; o = { ok: true, outreaches: OUTS, id: 'ot1' }; }
   else if (q.fn === 'dtsSavePast') { pastSaves.push(q.args.slice(2)); PAST = { [q.args[2]]: { values: q.args[3], notes: q.args[4] } }; o = { ok: true, past: PAST }; }
   else if (q.fn === 'dtsSaveLecture') { lectSaves.push(q.args[2]); LECTS = [{ ...q.args[2], id: q.args[2].id || 'lc1' }]; o = { ok: true, lectures: LECTS, id: 'lc1' }; }
+  else if (q.fn === 'dtsFinSave') { const rec = q.args[2]; finSaves.push(rec); const id = rec.id || 'df' + (FIN.length + 1); FIN = FIN.filter(x => x.id !== id).concat([{ ...rec, id }]).sort((a, b) => a.date < b.date ? 1 : -1); o = { ok: true, fin: FIN }; }
+  else if (q.fn === 'dtsFinDelete') { FIN = FIN.filter(x => x.id !== q.args[2]); o = { ok: true, fin: FIN }; }
   else if (q.fn === 'teamRoster') o = [ME];
   else if (/^getMy/.test(q.fn)) o = { ok: true, logs: [], goals: [], checkins: [], mentees: [], requests: [] };
   r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(o) });
@@ -97,11 +100,12 @@ await p.goto(`http://localhost:${PORT}/teams.html`); await p.waitForSelector('na
 await p.waitForTimeout(600);
 await p.click('nav.bottom [data-tab="ministry"]'); await p.waitForTimeout(800);
 const tabs = await p.$$eval('.mmTabs .gtTab', b => b.map(x => x.getAttribute('data-mmtab')));
-ok('GPDTS has four tabs: Dashboard, Database, Tasks, OKRs — no Numbers tab', JSON.stringify(tabs) === '["dtsdash","dtsdb","tasks","okr"]', JSON.stringify(tabs));
+ok('GPDTS has five tabs: Dashboard, Database, Finances, Tasks, OKRs — no Numbers tab', JSON.stringify(tabs) === '["dtsdash","dtsdb","dtsfin","tasks","okr"]', JSON.stringify(tabs));
+ok('the Dashboard ends with the school’s finances: lecture budget, received, spent, left; outreach received', (await p.$eval('#dtsPane, #main', e => e.querySelector('.card:last-of-type') ? 1 : 1)) && !!(await p.$('#dtsFinDash')) &&
+  /Budget\s*\$2,620/.test(await p.$eval('#dtsFinDash', e => e.innerText)) && /Left in the budget\s*\$2,620/.test(await p.$eval('#dtsFinDash', e => e.innerText)), await p.$eval('#dtsFinDash', e => e.innerText.replace(/\n/g, ' / ')));
 ok('it opens on the Dashboard: where everyone is', !!(await p.$('#dtsPipe')) && /Reaching out/.test(await p.$eval('#dtsPipe', e => e.textContent)));
 ok('each step says Khmer and international', (await p.$eval('[data-dtscol="lead"]', e => e.textContent)).includes('2 Khmer · 1 intl'));
-ok('the follow-up due opens that record in the portal', (await p.getAttribute('[data-dtsdue="c_kh"]', 'href')) === 'portal.html?open=c_kh' && /Call her pastor/.test(await p.$eval('#dtsDue', e => e.textContent)));
-ok('a way into the DTS list in the portal', (await p.getAttribute('#dtsOpenPortal', 'href')) === 'portal.html?what=dts');
+ok('the Dashboard has only the numbers — no portal buttons or follow-ups', !(await p.$('#dtsOpenPortal')) && !(await p.$('#dtsDue')));
 ok('the school by year: student tiles (applied summed, enrolled the most at once)', (await p.$eval('[data-dtsm="Students Applied"] .mmTileNum', e => e.textContent)) === '5' && (await p.$eval('[data-dtsm="Students Enrolled"] .mmTileNum', e => e.textContent)) === '6');
 ok('and what God did beside them, with where it came from', (await p.$eval('[data-dtsm="Healings"] .mmTileNum', e => e.textContent)) === '3' && /Lectures 0 · Outreach 0/.test(await p.$eval('[data-dtsm="Healings"]', e => e.textContent)));
 await p.click('#dtsPastAdd'); await p.waitForTimeout(200);
@@ -116,12 +120,24 @@ ok('and a year-by-year table', !!(await p.$('#dtsYears')) && (await p.$$eval('#d
 /* back to the tiles (from a student: first to the list), then into a part */
 const goPart = async (sec) => { for (let i = 0; i < 3 && !(await p.$('#dtsHome0')); i++) { await p.click('#dtsHome'); await p.waitForTimeout(200); } await p.click('[data-dtssec="' + sec + '"]'); await p.waitForTimeout(250); };
 await p.click('[data-mmtab="dtsdb"]'); await p.waitForTimeout(300);
+ok('the follow-up due opens that record in the portal', (await p.getAttribute('[data-dtsdue="c_kh"]', 'href')) === 'portal.html?open=c_kh' && /Call her pastor/.test(await p.$eval('#dtsDue', e => e.textContent)));
+ok('a way into the DTS list in the portal', (await p.getAttribute('#dtsOpenPortal', 'href')) === 'portal.html?what=dts');
+ok('the portal’s DTS list and ＋ Add a contact sit at the top of Database', (await p.$eval('#dtsPortalBar', e => e.innerText)).includes('Add a contact'));
 ok('Database opens on the school coming up, said on one line — the picker folded away', new RegExp(NEXTY + ' · January DTS').test(await p.$eval('#dtsSchoolLine', e => e.textContent)) && !(await p.$('#dtsDbSchools')));
 await p.click('#dtsSchoolChange'); await p.waitForTimeout(200);
 ok('Change opens the picker: the schools of that year, New school, Edit', await p.$eval('[data-dtsschool="sc1"]', e => e.classList.contains('on')) && !!(await p.$('#dtsSchoolAdd')) && !!(await p.$('#dtsSchoolEditBtn')));
 await p.click('#dtsSchoolChange'); await p.waitForTimeout(200);
-ok('then a page of tiles, one per part — no tabs inside tabs', JSON.stringify(await p.$$eval('[data-dtssec]', b => b.map(x => x.getAttribute('data-dtssec')))) === '["speakers","students","events","out","resp","res","policy"]' && !(await p.$('[data-dtslp]')));
-ok('each tile says where things stand', /No topics yet/.test(await p.$eval('[data-dtssec="speakers"]', e => e.textContent)) && /3 students · 2 here now/.test(await p.$eval('[data-dtssec="students"]', e => e.textContent)) && /2 rules/.test(await p.$eval('[data-dtssec="policy"]', e => e.textContent)), await p.$eval('[data-dtssec="students"]', e => e.textContent));
+ok('then a page of tiles, one per part — no tabs inside tabs', JSON.stringify(await p.$$eval('[data-dtssec]', b => b.map(x => x.getAttribute('data-dtssec')))) === '["speakers","students","fees","events","out","resp","res","policy"]' && !(await p.$('[data-dtslp]')));
+ok('each tile says where things stand', /No topics yet/.test(await p.$eval('[data-dtssec="speakers"]', e => e.textContent)) && /^🎓Students2 accepted · 2 here now›$/.test(await p.$eval('[data-dtssec="students"]', e => e.textContent)) && /2 rules/.test(await p.$eval('[data-dtssec="policy"]', e => e.textContent)), await p.$eval('[data-dtssec="students"]', e => e.textContent));
+ok('Lecture fees says the total and how many are accepted', /\$2,620 · 2 accepted/.test(await p.$eval('[data-dtssec="fees"]', e => e.textContent)), await p.$eval('[data-dtssec="fees"]', e => e.textContent));
+await goPart('fees');
+ok('Lecture fees: the accepted students at their country’s price — A $2,000 (Germany), C $620 (Cambodia)', (await p.$eval('#dtsFeeTotal', e => e.textContent)) === '$2,620' &&
+  /1\$2,000\$2,000/.test(await p.$eval('[data-dtsfeecat="A"]', e => e.textContent)) && /0\$1,500\$0/.test(await p.$eval('[data-dtsfeecat="B"]', e => e.textContent)) && /1\$620\$620/.test(await p.$eval('[data-dtsfeecat="C"]', e => e.textContent)),
+  await p.$eval('#dtsFeeTbl', e => e.textContent));
+ok('the one still applying is not counted — what it would be if they were', /1 more have applied/.test(await p.$eval('#dtsFeeIfAll', e => e.textContent)) && /\$3,240/.test(await p.$eval('#dtsFeeIfAll', e => e.textContent)));
+ok('and who is counted, by category', (await p.$$('#dtsFeeWho [data-dtsfeestu]')).length === 2 && /Arno Here/.test(await p.$eval('#dtsFeeWho', e => e.textContent)) && !/Chenda/.test(await p.$eval('#dtsFeeWho', e => e.textContent)));
+ok('the old “coming soon” budget card is gone', !(await p.$('#dtsBudget')));
+await p.click('#dtsHome'); await p.waitForTimeout(200);
 await goPart('speakers');
 ok('a part opens on its own page, with Back and its name', !!(await p.$('#dtsHome')) && /Speaker schedule/.test(await p.$eval('.dtsPageTitle', e => e.textContent)) && !!(await p.$('#dtsSpeakers')));
 await p.click('#dtsLectAdd'); await p.waitForTimeout(200);
@@ -141,6 +157,9 @@ ok('back on the tiles, the speaker schedule says every topic has its speaker', /
 await goPart('students');
 ok('Students: everyone who applied for this school, by where they are — not one in no school', (await p.$$('#dtsStudents [data-dtsstu]')).length === 3 && /Here now/.test(await p.$eval('#dtsStudents', e => e.textContent)) && /Applied/.test(await p.$eval('#dtsStudents', e => e.textContent)));
 ok('and the one not in a school yet, with a way to put them in', /Not in a school yet \(1\)/.test(await p.$eval('#dtsLoose', e => e.textContent)) && !!(await p.$('[data-dtsplace="c_loose"]')));
+ok('with everyone here, no “how to graduate” note', !(await p.$('#dtsGradHow')));
+ok('with nobody here yet, it says how: mark them Arrived in the portal first', await p.evaluate(() => { const keep = S.dts.students; S.dts.students = keep.map(x => x.column === 'arrived' ? { ...x, column: 'accepted', arrived: '' } : x);
+  const h = dtsStudentsHtml_(S.dts, dtsCurSchool_()); S.dts.students = keep; return /mark each one Arrived in the portal \(2 accepted/.test(h) && !/dtsSelAll/.test(h); }));
 await p.check('#dtsSelAll'); await p.waitForTimeout(250);
 ok('select everyone here → one Graduated button for both', /Graduated \(2\)/.test(await p.$eval('#dtsMarkGrad', e => e.textContent)));
 await p.click('#dtsMarkGrad'); await p.waitForTimeout(500);
@@ -197,25 +216,99 @@ await p.fill('[data-dtpw="short|0|salvations"]', '2'); await p.fill('[data-dtpw=
 ok('the totals add up as you type', (await p.$$eval('#dtsWeeks_short tfoot td', c => c.map(x => x.textContent)))[2] === '2');
 await p.click('#dtsPhase_long > summary'); await p.waitForTimeout(150);
 await p.click('#dtsCopyShort'); await p.waitForTimeout(250);
+ok('the long outreach can be split into locations — none yet, 0 of 8 weeks placed', /0 of 8 weeks placed/.test(await p.$eval('#dtsStops_long', e => e.textContent)) && !!(await p.$('#dtsStopAdd')));
+await p.fill('[data-dtp="long|from"]', '2027-03-01'); await p.fill('[data-dtp="long|to"]', '2027-04-25');
+for (const place of ['Kampot', 'Kep', 'Takeo', 'Kratie']) { await p.click('#dtsStopAdd'); await p.waitForTimeout(150); const ins = await p.$$('[data-dtstop$="|place"]'); await ins[ins.length - 1].fill(place); }
+await p.click('#dt_name'); await p.waitForTimeout(150);
+const stopTxt = await p.$eval('#dtsStops_long', e => e.textContent);
+ok('4 locations of 2 weeks each fill the 8 weeks: weeks 1–2, 3–4, 5–6, 7–8 with their days', /8 of 8 weeks placed/.test(stopTxt) && /Weeks 1–2 · 1 Mar – 14 Mar/.test(stopTxt) && /Weeks 7–8 · 12 Apr – 25 Apr/.test(stopTxt) && !(await p.$('#dtsStopAdd')), stopTxt);
+await p.click('[data-dtfold="w_long"] > summary'); await p.waitForTimeout(150);
+ok('the week-by-week table says where each week is', /📍 Kampot/.test(await p.$eval('#dtsWeeks_long tbody tr:nth-child(2)', e => e.innerText)) && /📍 Kep/.test(await p.$eval('#dtsWeeks_long tbody tr:nth-child(3)', e => e.innerText)) && /📍 Kratie/.test(await p.$eval('#dtsWeeks_long tbody tr:nth-child(8)', e => e.innerText)), await p.$eval('#dtsWeeks_long tbody', e => e.textContent.slice(0, 300)));
+await p.fill('[data-dtstop="1|weeks"]', '3'); await p.dispatchEvent('[data-dtstop="1|weeks"]', 'change'); await p.waitForTimeout(200);
+ok('more weeks than the outreach has is said, in red', /more weeks than the outreach has/.test(await p.$eval('#dtsStops_long', e => e.textContent)));
+await p.fill('[data-dtstop="1|weeks"]', '2'); await p.dispatchEvent('[data-dtstop="1|weeks"]', 'change'); await p.waitForTimeout(200);
 await p.click('#dtsTeamSave'); await p.waitForTimeout(400);
 const ts = dbSaves.filter(x => x[0] === 'team').pop();
 ok('the team is saved: where, leaders, students and the week’s numbers — and the long outreach got the same people', ts && ts[1].name === 'Team North' && ts[1].short.place === 'Kampot' && JSON.stringify(ts[1].short.students) === '["c_ar"]' && JSON.stringify(ts[1].short.leaders) === '["st_two"]' && String(ts[1].short.weeks[0].salvations) === '2' && JSON.stringify(ts[1].long.students) === '["c_ar"]', JSON.stringify(ts && ts[1]));
+ok('the locations are saved in order, 2 weeks each', JSON.stringify((ts[1].long.stops || []).map(x => [x.place, Number(x.weeks)])) === '[["Kampot",2],["Kep",2],["Takeo",2],["Kratie",2]]', JSON.stringify(ts[1].long.stops));
+ok('the team card shows the route', /📍 Kampot \(wk 1–2\) → Kep \(wk 3–4\) → Takeo \(wk 5–6\) → Kratie \(wk 7–8\)/.test(await p.$eval('#dtsTeams', e => e.innerText)), await p.$eval('#dtsTeams', e => e.innerText.replace(/\n/g, ' / ')));
 ok('the team card shows its numbers, and the student is on it', /Team North/.test(await p.$eval('#dtsTeams', e => e.textContent)) && /♂ 7/.test(await p.$eval('#dtsTeams', e => e.textContent)) && /2 not on a team yet/.test(await p.$eval('#dtsOutStudents', e => e.textContent)));
 
 await goPart('resp');
 ok('Responsibilities: before school and during school', !!(await p.$('#dtsResp_before')) && !!(await p.$('#dtsResp_school')));
 await p.click('#dtsRespAdd'); await p.waitForTimeout(200);
-await p.fill('#dr_title', 'Book the speakers’ rooms'); await p.fill('#dr_notes', 'With SR Hospitality');
+await p.fill('#dr_title', 'Book the speakers’ rooms'); await p.fill('#dr_notes', 'With SR Hospitality.\nAsk for:\n- two rooms\n- towels\n\nPay at the office.');
 await p.click('#dtsRespForm details summary'); await p.check('[data-drstaff][value="st_two"]'); await p.waitForTimeout(250);
 await p.click('#dtsRespSave'); await p.waitForTimeout(400);
 const rs = dbSaves.filter(x => x[0] === 'resp').pop();
 ok('a responsibility before school, with its description, given to a staff member', rs && rs[1].when === 'before' && rs[1].title === 'Book the speakers’ rooms' && JSON.stringify(rs[1].staff) === '["st_two"]' && /Tia Two/.test(await p.$eval('#dtsResp_before', e => e.textContent)), JSON.stringify(rs));
+ok('folded, a responsibility shows its title, who has it and whether it’s done — not its description', !(await p.$eval('#dtsResp_before details.dtsRespItem', e => e.open)) &&
+  /Book the speakers’ rooms/.test(await p.$eval('#dtsResp_before summary', e => e.innerText)) && /Tia Two/.test(await p.$eval('#dtsResp_before summary', e => e.innerText)) && !(await p.isVisible('#dtsResp_before .dtsRespNotes')));
+await p.click('#dtsResp_before details.dtsRespItem summary'); await p.waitForTimeout(200);
+ok('tapped, it opens on the description laid out: paragraphs and a list', await p.isVisible('#dtsResp_before .dtsRespNotes') &&
+  (await p.$$eval('#dtsResp_before .dtsRespNotes p', x => x.length)) === 2 && JSON.stringify(await p.$$eval('#dtsResp_before .dtsRespNotes li', x => x.map(e => e.textContent))) === '["two rooms","towels"]' &&
+  !!(await p.$('#dtsResp_before .dtsRespBody [data-dtsresp]')));
+await p.click('#dtsRespAdd'); await p.waitForTimeout(150); await p.click('#dtsRespCancel'); await p.waitForTimeout(200);
+ok('and it stays open after the page redraws', await p.$eval('#dtsResp_before details.dtsRespItem', e => e.open));
 
 await goPart('res');
 await p.click('#dtsResAdd'); await p.waitForTimeout(200);
 await p.fill('#dres_title', 'Curriculum'); await p.fill('#dres_url', 'https://example.org/c');
 await p.click('#dtsResSave'); await p.waitForTimeout(400);
 ok('a resource with its link', dbSaves.some(x => x[0] === 'resource' && x[1].url === 'https://example.org/c') && (await p.getAttribute('#dtsResources a', 'href')) === 'https://example.org/c');
+/* ---- Finances: income and expenses, lecture and outreach apart ---- */
+await p.evaluate(() => window.scrollTo(0, 0));
+await p.click('.mmTabs [data-mmtab="dtsfin"]'); await p.waitForTimeout(300);
+ok('Finances opens on the lecture phase: budget, received, spent, left', /Budget\s*\$2,620/.test(await p.$eval('#dtsFinTiles', e => e.innerText)) && (await p.$eval('[data-dtsfinphase="lecture"]', e => e.classList.contains('on'))) &&
+  JSON.stringify(await p.$$eval('#dtsFinSecs [data-dtsfinsec]', b => b.map(x => x.getAttribute('data-dtsfinsec')))) === '["overview","income","expenses","students"]');
+ok('… on its Overview: the budget, where money came from and went, who owes', !!(await p.$('#dtsFinSpentMeter')) && !!(await p.$('#dtsFinFrom')) && !!(await p.$('#dtsFinWent')) && /Still owe\s*2/.test(await p.$eval('#dtsFinOwing', e => e.innerText)));
+await p.click('[data-dtsfinsec="income"]'); await p.waitForTimeout(200);
+await p.click('#dtsFinAddInc'); await p.waitForTimeout(200);
+await p.fill('#dfi_amount', '1500'); await p.click('#dtsFinSave'); await p.waitForTimeout(250);
+ok('income asks how it came in before it saves', finSaves.length === 0);
+await p.click('[data-dfimethod="aba"]'); await p.waitForTimeout(150);
+await p.selectOption('#dfi_student', 'c_ar'); await p.fill('#dfi_note', 'His church');
+await p.click('#dtsFinSave'); await p.waitForTimeout(400);
+ok('income for one student: the day, ABA, Arno, $1,500', finSaves.length === 1 && finSaves[0].kind === 'income' && finSaves[0].phase === 'lecture' && finSaves[0].method === 'aba' && finSaves[0].studentId === 'c_ar' && finSaves[0].amount === 1500 && finSaves[0].schoolId === 'sc1' && finSaves[0].date === TODAY, JSON.stringify(finSaves[0]));
+await p.click('#dtsFinAddInc'); await p.waitForTimeout(200);
+await p.click('[data-dfimethod="cash"]'); await p.fill('#dfi_amount', '200'); await p.click('#dtsFinSave'); await p.waitForTimeout(400);
+ok('income to the general DTS pool', finSaves.length === 2 && finSaves[1].studentId === '' && finSaves[1].method === 'cash');
+ok('the income list: who it was for and how it came in', /Arno Here/.test(await p.$eval('#dtsFinIncome', e => e.innerText)) && /General DTS pool/.test(await p.$eval('#dtsFinIncome', e => e.innerText)) && /Cash \$200 · ABA \$1,500/.test(await p.$eval('#dtsFinIncome', e => e.innerText)), await p.$eval('#dtsFinIncome', e => e.innerText.replace(/\n/g, ' / ')));
+ok('received counts both', /Received\s*\$1,700/.test(await p.$eval('#dtsFinTiles', e => e.innerText)));
+await p.click('[data-dtsfinsec="expenses"]'); await p.waitForTimeout(250);
+await p.click('#dtsFinAddExp'); await p.waitForTimeout(200);
+await p.click('[data-dfecat="honorarium"]'); await p.waitForTimeout(150);
+await p.fill('#dfe_amount', '120'); await p.fill('#dfe_memo', 'Week 1 speaker'); await p.selectOption('#dfe_who', 'st_two'); await p.check('#dfe_receipt');
+await p.click('#dtsFinSave'); await p.waitForTimeout(400);
+ok('an expense: day, Honorarium, what for, who made it, has a receipt', finSaves.length === 3 && finSaves[2].kind === 'expense' && finSaves[2].category === 'honorarium' && finSaves[2].memo === 'Week 1 speaker' && finSaves[2].who === 'st_two' && finSaves[2].hasReceipt === true && finSaves[2].amount === 120, JSON.stringify(finSaves[2]));
+ok('in the list, two ticks: has receipt (ticked) and given to the office (not yet)', (await p.$eval('[data-dtsfintick$="|hasReceipt"]', e => e.checked)) && !(await p.$eval('[data-dtsfintick$="|toOffice"]', e => e.checked)) && /1 receipts not given to the office yet/.test(await p.$eval('#dtsFinReceiptsOut', e => e.innerText)));
+await p.check('[data-dtsfintick$="|toOffice"]'); await p.waitForTimeout(400);
+ok('ticking “receipt given to the office” saves that expense with it', finSaves.length === 4 && finSaves[3].toOffice === true && finSaves[3].id === 'df3' && !(await p.$('#dtsFinReceiptsOut')));
+ok('spent and left in the budget follow: $2,620 − $120 = $2,500', /Spent\s*\$120/.test(await p.$eval('#dtsFinTiles', e => e.innerText)) && /Left in the budget\s*\$2,500/.test(await p.$eval('#dtsFinTiles', e => e.innerText)) && /\$1,580 in hand/.test(await p.$eval('#dtsFinTiles', e => e.innerText)));
+await p.click('[data-dtsfinsec="overview"]'); await p.waitForTimeout(250);
+ok('the Overview: spent $120 of $2,620, collected $1,700', /\$120 of \$2,620 · 5%/.test(await p.$eval('#dtsFinSpentMeter', e => e.innerText)) && /\$1,700 of \$2,620 · 65%/.test(await p.$eval('#dtsFinGotMeter', e => e.innerText)));
+ok('… where it came from (Cash, ABA, Subsplash; students and pool) and where it went (Honorarium)', /\$1,500/.test(await p.$eval('[data-dtsfinmethod="aba"]', e => e.innerText)) && /\$200/.test(await p.$eval('[data-dtsfinfor="pool"]', e => e.innerText)) &&
+  /Honorarium/.test(await p.$eval('[data-dtsfincat="honorarium"]', e => e.innerText)) && /1 of 1 have a receipt · 1 given to the office/.test(await p.$eval('#dtsFinReceipts', e => e.innerText)));
+await p.click('#dtsFinSecs [data-dtsfinsec="students"]'); await p.waitForTimeout(250);
+const arno = await p.$eval('[data-dtsfinstu="c_ar"]', e => e.innerText.replace(/\s+/g, ' '));
+const bopha = await p.$eval('[data-dtsfinstu="c_ar2"]', e => e.innerText.replace(/\s+/g, ' '));
+ok('Students: what each owes — Arno $2,000 less $1,500 = $500, Bopha $620', /\$2,000 \$1,500 \$500/.test(arno) && /\$620 \$0 \$620/.test(bopha), arno + ' | ' + bopha);
+ok('the general pool is said apart', /General DTS pool: \$200/.test(await p.$eval('#dtsFinPool', e => e.innerText)));
+await p.click('[data-dtsfinphase="outreach"]'); await p.waitForTimeout(250);
+ok('Outreach is kept apart: nothing yet, overview, income and students', /Received\s*\$0/.test(await p.$eval('#dtsFinTiles', e => e.innerText)) && JSON.stringify(await p.$$eval('#dtsFinSecs [data-dtsfinsec]', b => b.map(x => x.getAttribute('data-dtsfinsec')))) === '["overview","income","students"]');
+await p.click('[data-dtsfinsec="income"]'); await p.waitForTimeout(200);
+await p.click('#dtsFinAddInc'); await p.waitForTimeout(200);
+await p.click('[data-dfimethod="subsplash"]'); await p.fill('#dfi_amount', '300'); await p.selectOption('#dfi_student', 'c_ar2'); await p.click('#dtsFinSave'); await p.waitForTimeout(400);
+ok('outreach income in the same layout, kept as outreach', finSaves.length === 5 && finSaves[4].phase === 'outreach' && finSaves[4].method === 'subsplash' && finSaves[4].studentId === 'c_ar2');
+await p.click('[data-dtsfinphase="lecture"]'); await p.waitForTimeout(250);
+ok('… and the lecture phase’s received stays $1,700', /Received\s*\$1,700/.test(await p.$eval('#dtsFinTiles', e => e.innerText)));
+await p.click('[data-dtsfinsec="expenses"]'); await p.waitForTimeout(250);
+ok('on a phone the expense list fits, its ticks with their words', await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1) &&
+  /Receipt given to the office/.test(await p.$eval('#dtsFinExpTbl td:nth-child(5) .dtsFinTick', e => getComputedStyle(e, '::after').content)));
+await p.click('[data-dtsfinedit="df3"]'); await p.waitForTimeout(200);
+p.once('dialog', dlg => dlg.accept());
+await p.click('#dtsFinDel'); await p.waitForTimeout(400);
+ok('an expense can be opened and deleted', !FIN.some(x => x.id === 'df3') && /Spent\s*\$0/.test(await p.$eval('#dtsFinTiles', e => e.innerText)));
 ok('nothing slides sideways on a phone', await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
 ok('no page errors in the GP app', errs.length === 0, errs.slice(0, 3).join(' | '));
 await p.close();

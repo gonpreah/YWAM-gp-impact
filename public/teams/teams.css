@@ -2826,3 +2826,102 @@ details.dtsPhase[open] > summary .dtsPhaseName::before { content:'▾ '; }
 .finBalRec.ok { background:var(--goodSoft); color:var(--good); }
 .finBalRec.late { background:var(--banner); color:var(--bannerInk); border:1px solid var(--bannerBorder); }
 .finBalForm input[type=number], .finBalForm input[type=date] { width:100%; }
+/* GPDTS → Database → Lecture fees, and the Finances dashboard's GPDTS card (Nov 2026) */
+.dtsFeeTotal { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:2px 0 6px; }
+.dtsFeeBig { font-size:30px; font-weight:800; letter-spacing:-.5px; font-variant-numeric:tabular-nums; }
+.dtsFeeTbl { border-collapse:collapse; font-size:14px; width:100%; font-variant-numeric:tabular-nums; }
+.dtsFeeTbl th, .dtsFeeTbl td { padding:8px; border-top:1px solid var(--border); text-align:right; }
+.dtsFeeTbl th:first-child, .dtsFeeTbl td:first-child { text-align:left; }
+.dtsFeeTbl thead th { color:var(--muted); font-size:12px; font-weight:700; white-space:nowrap; border-top:0; }
+.dtsFeeTbl tfoot td { font-weight:800; border-top:2px solid var(--ink); }
+.dtsFeeTbl tr.warn td { color:var(--muted); }
+.dtsCat { display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:24px; padding:0 6px; border-radius:7px; font-weight:800; font-size:13px; }
+.dtsCat.catA { background:var(--accent); color:var(--accentInk); }
+.dtsCat.catB { background:var(--amber); color:var(--amberInk); }
+.dtsCat.catC { background:var(--good); color:var(--goodInk); }
+.dtsFeeRow { display:flex; flex-direction:column; gap:1px; padding:8px 0; border-top:1px solid var(--border); color:inherit; text-decoration:none; }
+.dtsFeeRow:first-of-type { border-top:0; }
+.dtsFeeWarn { border-left:4px solid var(--amber); }
+.dtsFeeWarn .dtsFeeRow:first-of-type { border-top:1px solid var(--border); margin-top:8px; }
+.finDtsSchool + .finDtsSchool { margin-top:14px; padding-top:12px; border-top:1px solid var(--border); }
+.finDtsSchool .rowSub, .dtsFeeRow .rowSub { display:block; font-size:12.5px; color:var(--muted); font-weight:400; }
+/* GPDTS → Finances (Nov 2026): lecture and outreach money, one school at a time */
+.dtsFinPhase { margin:10px 0; }
+.dtsFinLabel { font-size:12px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); margin:10px 0 4px; }
+.mmTile.dtsFinNeg .mmTileNum { color:var(--bad); }
+#dtsFinSecs { margin:12px 0 8px; }
+.dtsFinRow { display:flex; align-items:center; gap:10px; width:100%; padding:10px 0; border:0; border-top:1px solid var(--border); background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; }
+.dtsFinRow:first-of-type { border-top:0; }
+.dtsFinWhen { flex:0 0 auto; min-width:64px; font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.dtsFinTxt { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; }
+.dtsFinTxt .rowSub, .dtsFinOpen .rowSub { display:block; font-size:12.5px; color:var(--muted); }
+.dtsFinAmt { font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; text-align:right; }
+.dtsFinCats { display:flex; flex-wrap:wrap; gap:4px 14px; font-size:13px; color:var(--muted); }
+.dtsFinCats b { color:var(--ink); }
+.dtsFinOpen { display:flex; flex-direction:column; align-items:flex-start; gap:1px; border:0; background:none; padding:0; color:inherit; font:inherit; text-align:left; cursor:pointer; }
+.dtsFinTick { display:inline-flex; align-items:center; justify-content:center; min-width:44px; min-height:36px; cursor:pointer; }
+.dtsFinTick input { width:20px; height:20px; accent-color:var(--good); }
+.dtsFinTbl th:nth-child(4), .dtsFinTbl th:nth-child(5), .dtsFinTbl td:nth-child(4), .dtsFinTbl td:nth-child(5) { text-align:center; }
+/* on a phone each expense is a small card: its date and what, the amount, then the two ticks with their words */
+@media (max-width:640px){
+  #dtsFinExpTbl thead { display:none; }
+  #dtsFinExpTbl, #dtsFinExpTbl tbody, #dtsFinExpTbl tr { display:block; width:auto; }
+  #dtsFinExpTbl tr { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 10px; border-top:1px solid var(--border); padding:10px 0; }
+  #dtsFinExpTbl td { border:0; padding:0; display:block; text-align:left !important; }
+  #dtsFinExpTbl td.dtsWhen { grid-column:1 / -1; font-size:12.5px; color:var(--muted); }
+  #dtsFinExpTbl td.dtsFinAmt { text-align:right !important; }
+  #dtsFinExpTbl td:nth-child(4), #dtsFinExpTbl td:nth-child(5) { grid-column:1 / -1; }
+  #dtsFinExpTbl td:nth-child(4) .dtsFinTick, #dtsFinExpTbl td:nth-child(5) .dtsFinTick { justify-content:flex-start; min-height:32px; gap:8px; }
+  #dtsFinExpTbl td:nth-child(4) .dtsFinTick::after, #dtsFinExpTbl td:nth-child(5) .dtsFinTick::after { content:attr(data-l); font-size:13px; color:var(--ink); }
+}
+.finDtsMoney { margin-top:8px; }
+.dtsPortalBar { margin:0 0 10px; }
+/* GPDTS → Finances → Overview: meters and bars */
+.dtsMeterRow { margin:6px 0 10px; }
+.dtsMeterTop { display:flex; justify-content:space-between; gap:10px; font-size:13.5px; margin-bottom:4px; }
+.dtsMeterTop b { font-variant-numeric:tabular-nums; text-align:right; }
+.dtsMeter { height:10px; border-radius:6px; background:var(--surface2); overflow:hidden; }
+.dtsMeter i { display:block; height:100%; border-radius:6px; background:var(--accent); }
+.dtsMeter.over i { background:var(--bad); }
+.dtsBarRow { display:grid; grid-template-columns:minmax(0,7fr) minmax(0,8fr) auto; align-items:center; gap:8px; padding:5px 0; font-size:13.5px; }
+.dtsBarName { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dtsBar { height:8px; border-radius:5px; background:var(--surface2); overflow:hidden; }
+.dtsBar i { display:block; height:100%; border-radius:5px; background:var(--accent); }
+.dtsBarRow b { font-variant-numeric:tabular-nums; text-align:right; }
+.dtsFinSplit { margin-top:8px; padding-top:6px; border-top:1px solid var(--border); }
+.dtsFinSplit .dtsBar i { background:var(--good); }
+.dtsNegTxt { color:var(--bad); }
+#dtsFinSecs .chip.on, #dtsFinSchools .chip.on, #dfi_method .chip.on, #dfe_cat .chip.on { background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
+#dtsFinSecs .chip, #dfi_method .chip, #dfe_cat .chip { cursor:pointer; }
+/* GPDTS → Database → Responsibilities: each one folds open on its description (Nov 2026) */
+.dtsRespItem { border-top:1px solid var(--border); }
+.dtsRespItem:first-of-type { border-top:0; }
+.dtsRespItem > summary { list-style:none; display:flex; align-items:center; gap:10px; padding:12px 0; cursor:pointer; }
+.dtsRespItem > summary::-webkit-details-marker { display:none; }
+.dtsRespMark { flex:0 0 auto; font-size:16px; }
+.dtsRespHead { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.dtsRespHead .rowSub { display:block; font-size:12.5px; color:var(--muted); }
+.dtsRespItem.done .dtsRespHead b { color:var(--muted); }
+.dtsRespChev { flex:0 0 auto; color:var(--muted); font-size:20px; transition:transform .15s; }
+.dtsRespItem[open] .dtsRespChev { transform:rotate(90deg); }
+.dtsRespBody { padding:0 0 14px 30px; }
+.dtsRespNotes { font-size:14.5px; line-height:1.6; color:var(--ink); background:var(--surface2); border-radius:10px; padding:10px 14px; }
+.dtsRespNotes p { margin:0 0 8px; }
+.dtsRespNotes p:last-child, .dtsRespNotes ul:last-child, .dtsRespNotes ol:last-child { margin-bottom:0; }
+.dtsRespNotes ul, .dtsRespNotes ol { margin:0 0 8px; padding-left:20px; }
+.dtsRespNotes li { margin:2px 0; }
+.dtsRespFacts { display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 12px; margin:10px 0; font-size:13.5px; }
+.dtsRespFacts dt { color:var(--muted); }
+.dtsRespFacts dd { margin:0; }
+@media (prefers-reduced-motion: reduce){ .dtsRespChev { transition:none; } }
+/* GPDTS → Outreach → a team's long outreach: its locations, each so many weeks (Nov 2026) */
+.dtsStops { margin:4px 0 6px; }
+.dtsStop { display:grid; grid-template-columns:24px minmax(0,1fr) auto auto; align-items:center; gap:6px 8px; padding:6px 0; border-top:1px solid var(--border); }
+.dtsStop:first-of-type { border-top:0; }
+.dtsStopNum { width:24px; height:24px; border-radius:50%; background:var(--accent); color:var(--accentInk); font-size:12px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; }
+.dtsStopWeeks { display:inline-flex; align-items:center; gap:4px; font-size:13px; color:var(--muted); white-space:nowrap; }
+.dtsStopWeeks input { width:56px; }
+.dtsStopDel { width:34px; height:34px; }
+.dtsStopWhen { grid-column:2 / -1; display:block; font-size:12.5px; color:var(--muted); margin-top:-2px; }
+.dtsStop.over .dtsStopWhen { color:var(--bad); }
+.dtsWeekPlace, .dtsRoute { display:block; font-size:12px; color:var(--muted); font-weight:400; }

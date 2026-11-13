@@ -180,6 +180,21 @@ const txt = (p) => p.$eval('#main', (e) => e.innerText);
   ok('the Overview’s money-ahead tile opens the Finances tab', /short in/.test(await page.$eval('[data-lwtab="money"].mmTile', (e) => e.innerText)));
   await page.click('.mmTile[data-lwtab="money"]'); await page.waitForTimeout(600);
   ok('… like that', !!(await page.$('#finDash')));
+  ok('no GPDTS card where the campus runs no GPDTS (Poipet)', !(await page.$('#finDts')));
+  /* Siem Reap's dashboard carries the GPDTS lecture phase (dtsFees from the server, tests/test-dts-fees.mjs);
+     here, the card as drawn from it */
+  const dtsCard = await page.evaluate(() => { const d = document.createElement('div'); document.body.appendChild(d);
+    d.innerHTML = finDtsHtml_({ dtsFees: { prices: { A: 2000, B: 1500, C: 620 }, schools: [{ id: 'sc1', year: 2027, name: 'January DTS', from: '2027-01-12', to: '2027-06-20',
+      fees: { A: 1, B: 0, C: 2, unknown: 1, total: 3240, applying: 1, ifAll: 4740 },
+      money: { lecture: { received: 1800, spent: 640, receiptsOut: 2 }, outreach: { received: 500 } },
+      students: [{ name: 'Una States', country: 'United States', cat: 'A', column: 'accepted' }, { name: 'Sokha Khmer', country: 'Cambodia', cat: 'C', column: 'arrived' },
+        { name: 'Ama Coast', country: 'Ghana', cat: 'C', column: 'accepted' }, { name: 'Nora Nowhere', country: 'Atlantis', cat: '', column: 'accepted' }] }] } });
+    d.querySelectorAll('details').forEach((x) => { x.open = true; });
+    const out = d.innerText; d.remove(); return out; });
+  ok('the GPDTS card: each school’s total, A/B/C at their prices, the ones not known, and what all the applicants would come to',
+    /GPDTS lecture phase/.test(dtsCard) && /2027 · January DTS/.test(dtsCard) && /\$3,240/.test(dtsCard) && /A\s+1\s+\$2,000\s+\$2,000/.test(dtsCard) && /C\s+2\s+\$620\s+\$1,240/.test(dtsCard) &&
+    /Country not known\s+1/.test(dtsCard) && /If they are all accepted: \$4,740/.test(dtsCard) && /Nora Nowhere/.test(dtsCard) &&
+    /Lecture: received\s*\$1,800/.test(dtsCard) && /Lecture: spent\s*\$640/.test(dtsCard) && /Left in the lecture budget\s*\$2,600/.test(dtsCard) && /Outreach: received\s*\$500/.test(dtsCard) && /2 receipts not given to the office yet/.test(dtsCard), dtsCard.replace(/\n/g, ' / ').slice(0, 400));
   await ctx.close();
 }
 /* a small phone, and dark */

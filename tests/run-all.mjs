@@ -52,6 +52,8 @@ const SERVER = [
   'test-hr-candidates.mjs', // HR → Candidates: the gate, a candidate is a name + type + stage, stage moves are logged, notes append, follow-ups due within a week count on boot, archive/unarchive
   'test-applicant-walls.mjs', // every handler tried with an applicant's sign-in: none of staff's or admin's opens, nothing of anyone else leaks
   'test-dts.mjs',            // GPDTS: the board's gate and counts, the pipeline's weekly rows (tagged, never over a typed number), graduated / potential staff, lectures, contacts, a lead joined by sign-up, who sees what on the portal
+  'test-dts-fees.mjs',       // GPDTS lecture fees: each student's A/B/C category from their country (any spelling), the school's total from the accepted students, the same on the Finances dashboard for the office and Campus Leadership only, nothing from the application
+  'test-portal-outcome.mjs',  // the portal: Cancelled / Rejected from the stage list close an application into the archive (stage kept, logged, reopenable); a portal admin renames an application, its account and a team's name
   'test-dts-db.mjs', // GPDTS → Database: schools and what is filed under each, the policy, lectures' translator / MC / who finds the speaker, students from the portal with their 1-on-1, outreach teams' weeks counted
   'test-portal.mjs',     // YWAM GP Portal: applicant sign-up, applicants closed out of every staff handler and roster, own application only, portal access flags, timeline follows the CRM stage
   'test-portal-import.mjs', // importing applications from a spreadsheet: who may, applied on the form's day, answers cleaned and leftovers kept, nothing twice, the same email or phone skipped, a later sign-up takes it over

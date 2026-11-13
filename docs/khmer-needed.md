@@ -4792,3 +4792,150 @@ The one line under each tile on the Database's home page, and "Edit {school}" in
 | Type their name first. | សូមវាយឈ្មោះរបស់ពួកគេជាមុនសិន។ |
 
 On a student's profile in GPDTS → Database → Students: GPDTS's own people as chips, and a box to type anyone else's name.
+
+## 97. GPDTS → Lecture fees, and the Finances dashboard's GPDTS card
+
+| English | Khmer (draft) |
+|---|---|
+| Lecture fees | ថ្លៃវគ្គមេរៀន |
+| Nobody accepted yet | មិនទាន់មាននរណាត្រូវបានទទួលយកនៅឡើយទេ |
+| {money} · {n} accepted | {money} · ទទួលយក {n} នាក់ |
+| {n} country not known | {n} នាក់មិនដឹងប្រទេស |
+| Lecture phase — {school} | វគ្គមេរៀន — {school} |
+| {n} students accepted | សិស្ស {n} នាក់ត្រូវបានទទួលយក |
+| Category | ប្រភេទ |
+| Price each | តម្លៃម្នាក់ |
+| Country not known | មិនដឹងប្រទេស |
+| {n} more have applied and are waiting. If they are all accepted: {money}. | {n} នាក់ទៀតបានដាក់ពាក្យ ហើយកំពុងរង់ចាំ។ ប្រសិនបើពួកគេទាំងអស់ត្រូវបានទទួលយក៖ {money}។ |
+| Counted from the portal: every student accepted for this school — accepted, getting ready, here or graduated — at the price for the country they are from (A, B or C). It changes by itself as students are accepted. The Finances office sees the same on its dashboard. | រាប់ពី Portal៖ សិស្សគ្រប់រូបដែលត្រូវបានទទួលចូលសាលានេះ — បានទទួលយក កំពុងរៀបចំ នៅទីនេះ ឬបានបញ្ចប់ការសិក្សា — តាមតម្លៃសម្រាប់ប្រទេសដែលពួកគេមកពី (A B ឬ C)។ វាប្តូរដោយខ្លួនឯង នៅពេលសិស្សត្រូវបានទទួលយក។ ការិយាល័យហិរញ្ញវត្ថុឃើញដូចគ្នានៅលើផ្ទាំងគ្រប់គ្រងរបស់ខ្លួន។ |
+| These students’ country isn’t on the A/B/C list, so their fee isn’t counted yet. Fix the country on their record in the portal. | ប្រទេសរបស់សិស្សទាំងនេះមិនមាននៅក្នុងបញ្ជី A/B/C ទេ ដូច្នេះថ្លៃរបស់ពួកគេមិនទាន់ត្រូវបានរាប់នៅឡើយ។ សូមកែប្រទេសនៅលើកំណត់ត្រារបស់ពួកគេនៅក្នុង Portal។ |
+| No country given | មិនបានផ្តល់ប្រទេស |
+| Who is counted | អ្នកដែលត្រូវបានរាប់ |
+| Who is counted ({n}) | អ្នកដែលត្រូវបានរាប់ ({n}) |
+| GPDTS lecture phase | វគ្គមេរៀន GPDTS |
+| From the portal: the students accepted for each school, at the price for the country they are from — A {a}, B {b}, C {c}. | ពី Portal៖ សិស្សដែលត្រូវបានទទួលចូលសាលានីមួយៗ តាមតម្លៃសម្រាប់ប្រទេសដែលពួកគេមកពី — A {a}, B {b}, C {c}។ |
+| No school set up yet. The DTS team adds it on GPDTS → Database. | មិនទាន់មានសាលាត្រូវបានរៀបចំនៅឡើយទេ។ ក្រុម DTS បន្ថែមវានៅលើ GPDTS → មូលដ្ឋានទិន្នន័យ។ |
+
+GPDTS → Database → 💰 Lecture fees: the lecture phase's total from the students accepted for the school, by their country's category (A, B, C), with the price for each. The same total is on the Finances office's dashboard and Campus Leadership's Finances tab. "Category" is the A/B/C fee category, not a kind of ministry.
+
+## 98. GPDTS → Finances (lecture and outreach money, one school at a time)
+
+| English | Khmer (draft) |
+|---|---|
+| General DTS pool | មូលនិធិរួមរបស់ DTS |
+| A student no longer listed | សិស្សម្នាក់ដែលលែងមាននៅក្នុងបញ្ជី |
+| Finances — {school} | ហិរញ្ញវត្ថុ — {school} |
+| Lecture phase | វគ្គមេរៀន |
+| Budget | ថវិកា |
+| the fees of the students accepted | ថ្លៃរបស់សិស្សដែលត្រូវបានទទួលយក |
+| Received | បានទទួល |
+| Spent | បានចំណាយ |
+| Left in the budget | នៅសល់ក្នុងថវិកា |
+| {n} receipts not given to the office yet | វិក្កយបត្រ {n} មិនទាន់បានប្រគល់ឱ្យការិយាល័យនៅឡើយ |
+| Open Finances | បើកហិរញ្ញវត្ថុ |
+| Start with the school on the Database tab: its year and name, like 2027 · January DTS. Its money is kept under it. | ចាប់ផ្តើមជាមួយសាលានៅលើផ្ទាំងមូលដ្ឋានទិន្នន័យ៖ ឆ្នាំ និងឈ្មោះរបស់វា ដូចជា 2027 · January DTS។ ប្រាក់របស់វាត្រូវបានរក្សាទុកនៅក្រោមវា។ |
+| {money} in hand | {money} នៅក្នុងដៃ |
+| For students | សម្រាប់សិស្ស |
+| {a} of {b} | {a} ក្នុងចំណោម {b} |
+| Where the money came from | ប្រាក់មកពីណា |
+| Nothing in yet. | មិនទាន់មានអ្វីចូលនៅឡើយទេ។ |
+| {n} students have money in for outreach. | សិស្ស {n} នាក់មានប្រាក់ចូលសម្រាប់ការចេញផ្សាយ។ |
+| Nothing in for a student yet. | មិនទាន់មានអ្វីចូលសម្រាប់សិស្សណាម្នាក់នៅឡើយទេ។ |
+| See every student | មើលសិស្សទាំងអស់ |
+| The lecture budget | ថវិកាវគ្គមេរៀន |
+| Collected | បានប្រមូល |
+| In hand (received less spent) | នៅក្នុងដៃ (បានទទួល ដកបានចំណាយ) |
+| The budget is the lecture fees of the students accepted for this school, at their country’s price. | ថវិកាគឺជាថ្លៃវគ្គមេរៀនរបស់សិស្សដែលត្រូវបានទទួលចូលសាលានេះ តាមតម្លៃសម្រាប់ប្រទេសរបស់ពួកគេ។ |
+| Where it went | ប្រាក់បានទៅណា |
+| {a} of {b} have a receipt · {c} given to the office | {a} ក្នុងចំណោម {b} មានវិក្កយបត្រ · {c} បានប្រគល់ឱ្យការិយាល័យ |
+| Nothing spent yet. | មិនទាន់មានការចំណាយនៅឡើយទេ។ |
+| Paid in full | បានបង់គ្រប់ |
+| of {n} | ក្នុងចំណោម {n} |
+| Still owe | នៅជំពាក់ |
+| No student accepted for this school yet. | មិនទាន់មានសិស្សត្រូវបានទទួលចូលសាលានេះនៅឡើយទេ។ |
+| Edit the income | កែប្រែប្រាក់ចំណូល |
+| Add income | បន្ថែមប្រាក់ចំណូល |
+| Came in through | ចូលតាមរយៈ |
+| Who it is for | សម្រាប់នរណា |
+| Given for one student, it lowers what they still owe for the lecture phase. | បើផ្តល់សម្រាប់សិស្សម្នាក់ វាកាត់បន្ថយអ្វីដែលពួកគេនៅជំពាក់សម្រាប់វគ្គមេរៀន។ |
+| Given for one student, it shows against them under Students. | បើផ្តល់សម្រាប់សិស្សម្នាក់ វាបង្ហាញនៅលើពួកគេនៅក្រោមសិស្ស។ |
+| Note (optional) | កំណត់ចំណាំ (មិនចាំបាច់) |
+| e.g. from their home church | ឧ. ពីព្រះវិហាររបស់ពួកគេ |
+| Income | ប្រាក់ចំណូល |
+| Nothing in yet. Add each gift as it comes in — the day, how it came, who it is for and how much. | មិនទាន់មានអ្វីចូលនៅឡើយទេ។ បន្ថែមអំណោយនីមួយៗនៅពេលវាចូលមក — ថ្ងៃ របៀបដែលវាចូលមក សម្រាប់នរណា និងចំនួនប៉ុន្មាន។ |
+| Edit the expense | កែប្រែការចំណាយ |
+| Add an expense | បន្ថែមការចំណាយ |
+| What it was for | សម្រាប់អ្វី |
+| e.g. Honorarium for the week 3 speaker | ឧ. ប្រាក់ឧបត្ថម្ភសម្រាប់អ្នកនិយាយសប្តាហ៍ទី 3 |
+| Who made it | អ្នកដែលបានចំណាយ |
+| Has receipt already | មានវិក្កយបត្ររួចហើយ |
+| Nothing spent yet. Add each expense — the day, what kind, what it was for, who made it and how much. | មិនទាន់មានការចំណាយនៅឡើយទេ។ បន្ថែមការចំណាយនីមួយៗ — ថ្ងៃ ប្រភេទ សម្រាប់អ្វី អ្នកដែលបានចំណាយ និងចំនួនប៉ុន្មាន។ |
+| {n} with no receipt | {n} គ្មានវិក្កយបត្រ |
+| Amount | ចំនួនទឹកប្រាក់ |
+| Has receipt | មានវិក្កយបត្រ |
+| Receipt given to the office | វិក្កយបត្របានប្រគល់ឱ្យការិយាល័យ |
+| Download (CSV) | ទាញយក (CSV) |
+| Each student’s lecture fee | ថ្លៃវគ្គមេរៀនរបស់សិស្សម្នាក់ៗ |
+| What came in for each student | ប្រាក់ដែលចូលសម្រាប់សិស្សម្នាក់ៗ |
+| General DTS pool: {money} | មូលនិធិរួមរបស់ DTS៖ {money} |
+| The fee is the lecture price for their country (A, B or C). What came in for them comes off it. | ថ្លៃគឺជាតម្លៃវគ្គមេរៀនសម្រាប់ប្រទេសរបស់ពួកគេ (A B ឬ C)។ ប្រាក់ដែលចូលសម្រាប់ពួកគេត្រូវបានដកចេញពីវា។ |
+| Fee | ថ្លៃ |
+| Paid | បានបង់ |
+| Still owes | នៅជំពាក់ |
+| given to the school, not to one student. | ផ្តល់ឱ្យសាលា មិនមែនឱ្យសិស្សម្នាក់ទេ។ |
+| Put in the amount in US$. | សូមបញ្ចូលចំនួនទឹកប្រាក់ជាដុល្លារអាមេរិក។ |
+| Say how it came in: cash, ABA or Subsplash. | សូមប្រាប់ថាវាចូលមកតាមរបៀបណា៖ សាច់ប្រាក់ ABA ឬ Subsplash។ |
+| Pick a category. | សូមជ្រើសរើសប្រភេទមួយ។ |
+| Write what it was for. | សូមសរសេរថាវាសម្រាប់អ្វី។ |
+| Delete this entry? | លុបធាតុនេះ? |
+| Lecture: received | វគ្គមេរៀន៖ បានទទួល |
+| Lecture: spent | វគ្គមេរៀន៖ បានចំណាយ |
+| Left in the lecture budget | នៅសល់ក្នុងថវិកាវគ្គមេរៀន |
+| Outreach: received | ការចេញផ្សាយ៖ បានទទួល |
+| Cash | សាច់ប្រាក់ |
+| Honorarium | ប្រាក់ឧបត្ថម្ភ |
+| Supplies | សម្ភារៈ |
+| Coffee | កាហ្វេ |
+| Food / snacks | អាហារ / អាហារសម្រន់ |
+| Transport | ការធ្វើដំណើរ |
+
+GPDTS → Finances: income (cash, ABA, Subsplash — the last two are names, left as they are), for a student or the general DTS pool; the lecture phase's expenses with their category, memo, who made it and the two receipt ticks; each student's fee, what was paid and what they still owe; the Overview; and the short summary at the bottom of the Dashboard and on the Finances office's dashboard. “Honorarium” is the gift paid to a visiting speaker.
+
+## 99. GPDTS (accepted students, responsibilities that fold open, the long outreach's locations) and the portal (Cancelled / Rejected, editing a name)
+
+| English | Khmer (draft) |
+|---|---|
+| {n} accepted | ទទួលយក {n} នាក់ |
+| wk {n} | សប្តាហ៍ទី {n} |
+| wk {a}–{b} | សប្តាហ៍ទី {a}–{b} |
+| {a} of {b} weeks placed | បានដាក់ {a} ក្នុងចំណោម {b} សប្តាហ៍ |
+| Weeks {a}–{b} | សប្តាហ៍ទី {a}–{b} |
+| e.g. Kampot | ឧ. កំពត |
+| wks | សប្តាហ៍ |
+| more weeks than the outreach has | ច្រើនសប្តាហ៍ជាងការចេញផ្សាយមាន |
+| Moving around? Add each place and how many weeks there — e.g. 2 weeks in each of 4 places. | ផ្លាស់ទីទៅកន្លែងផ្សេងៗ? បន្ថែមកន្លែងនីមួយៗ និងចំនួនសប្តាហ៍នៅទីនោះ — ឧ. 2 សប្តាហ៍នៅកន្លែងនីមួយៗក្នុងចំណោម 4 កន្លែង។ |
+| Add a location | បន្ថែមទីតាំង |
+| {a} of {b} done | រួចរាល់ {a} ក្នុងចំណោម {b} |
+| No description yet. | មិនទាន់មានការពិពណ៌នានៅឡើយទេ។ |
+| Still to do | នៅត្រូវធ្វើ |
+| Write it as you would say it. Start a line with - for a list. | សរសេរវាដូចដែលអ្នកនិយាយ។ ចាប់ផ្តើមបន្ទាត់ដោយ - សម្រាប់បញ្ជី។ |
+| Leader’s name | ឈ្មោះអ្នកដឹកនាំ |
+| Edit the name | កែប្រែឈ្មោះ |
+| Closes it — to the archive | បិទវា — ទៅបណ្ណសារ |
+| {what} on {date} — in the archive. Reopen it below to bring it back. | {what} នៅថ្ងៃ {date} — នៅក្នុងបណ្ណសារ។ បើកវាឡើងវិញខាងក្រោម ដើម្បីនាំវាត្រឡប់មកវិញ។ |
+| Write the name first. | សូមសរសេរឈ្មោះជាមុនសិន។ |
+| Only a portal admin can change the name. | មានតែអ្នកគ្រប់គ្រង Portal ទេដែលអាចប្តូរឈ្មោះបាន។ |
+| Mark {name} as {what}? Their application goes to the archive — you can reopen it later. | សម្គាល់ {name} ថា {what}? ពាក្យសុំរបស់ពួកគេនឹងទៅបណ្ណសារ — អ្នកអាចបើកវាឡើងវិញពេលក្រោយ។ |
+| {what} — moved to the archive | {what} — បានផ្លាស់ទៅបណ្ណសារ |
+| Rejected | បានបដិសេធ |
+
+GPDTS → Database: the Students tile counts only those accepted; each responsibility folds open on its description; a team's long outreach can be split into locations, each so many weeks ("wk" is short for week, on the team card). Portal → a record: Cancelled and Rejected at the end of the stage list close the application into the archive; a portal admin can change the name ("Leader’s name" for a team).
+
+## 100. GPDTS → Students: how to graduate
+
+| English | Khmer (draft) |
+|---|---|
+| To graduate students, they need to be here first: mark each one Arrived in the portal ({n} accepted, not marked arrived yet). Then tick them here and tap Graduated. | ដើម្បីឱ្យសិស្សបញ្ចប់ការសិក្សា ពួកគេត្រូវតែនៅទីនេះជាមុនសិន៖ សម្គាល់ម្នាក់ៗថាបានមកដល់នៅក្នុង Portal (ទទួលយក {n} នាក់ មិនទាន់សម្គាល់ថាបានមកដល់)។ បន្ទាប់មកគូសធីកពួកគេនៅទីនេះ ហើយចុចបានបញ្ចប់ការសិក្សា។ |
+| To graduate students, they need to be here first: mark each one Arrived in the portal. Then tick them here and tap Graduated. | ដើម្បីឱ្យសិស្សបញ្ចប់ការសិក្សា ពួកគេត្រូវតែនៅទីនេះជាមុនសិន៖ សម្គាល់ម្នាក់ៗថាបានមកដល់នៅក្នុង Portal។ បន្ទាប់មកគូសធីកពួកគេនៅទីនេះ ហើយចុចបានបញ្ចប់ការសិក្សា។ |
+
+Shown on GPDTS → Database → Students when nobody is marked Arrived yet: graduating is only for students who are here.

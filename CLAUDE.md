@@ -780,6 +780,54 @@ school's home.
   `portalLoginGoogle` for someone with `fromCand` and no portal access) with **Open the GP app**, which
   carries the same sign-in over (`gp-staff`). The portal's staff header has **🔥 GPDTS on My Ministry**
   (`#toGpdts` → `teams.html?view=gpdts`, shown when `portalBoot.gpdts`).
+- **Lecture fees** (Nov 2026, Andrew: "for our finance team and the DTS team to get more clarity and
+  collaboration … the lecture phase is a fixed price, different by country A, B and C"): GPDTS → Database →
+  💰 Lecture fees (`dtsFeesHtml_`, `[data-dtssec="fees"]`) — the school's total from its students accepted
+  in the portal (columns accepted / arrived / graduated; archived without graduating is out), each at their
+  country's price, A $2,000 · B $1,500 · C $620 (`DTS_FEE_PRICE`), a table by category, "Country not known"
+  rows with a link to the record, and what it comes to if everyone still applying is accepted. The A/B/C list
+  is YWAM's, in ONE place — `DTS_FEE_LIST` in api.js, matched through `dtsFeeKey_` (accents, punctuation)
+  and `DTS_FEE_ALIAS` ("United States", "USA", "Turkey"…); a Khmer student with no country is Cambodia (C).
+  Each student on the board carries `feeCat`, the board `fees` (the prices). The same total is on the
+  Finances dashboard (`finDtsHtml_`, `#finDts`, from `getFinance`'s `dtsFees` = `dtsFeesForFinance_`:
+  schools ending within 60 days or later, names / country / category only) for the Finances office and
+  Campus Leadership. `COUNTRIES` (taxonomy.js) now holds every country on the list, so the portal's picker
+  offers them all. tests/test-dts-fees.mjs (server), test-dts-ui.mjs and test-finance-ui.mjs (the pages).
+- **Finances tab** (Nov 2026, Andrew: "track the real income and real expenses … so that the dts staff and leaders
+  can see how much they have left in their lecture budget"; tabs Dashboard · Database · **Finances** · Tasks ·
+  OKRs, `dtsfin`, `dtsFinHtml_` / `bindDtsFin_` in teams/16-dts.js). One school at a time; **📖 Lecture phase**
+  and **🌏 Outreach** apart (`S.dtsFinPhase`). Sections (`S.dtsFinSec`): 📊 Overview (`dtsFinOverviewHtml_`:
+  spent / collected of the budget, in hand, where the money came from by method and students vs pool, where it
+  went by category, receipts, who still owes), 💵 Income, 🧾 Expenses (lecture only), 🎓 Students (each one's
+  fee, paid, still owes; outreach: what came in for each) with CSV downloads. Income: date, came in through
+  cash / ABA / Subsplash, for a student (their candidate id — it comes off what they owe) or the **General DTS
+  pool** (''), amount in US$, note. Expense: date, category (honorarium, supplies, coffee, food, transport,
+  other), memo (needed), who made it (campus staff), amount, `hasReceipt`, and in the list a second tick
+  `toOffice` ("Receipt given to the office") that saves on the spot. The **budget** is the lecture fees of
+  the students accepted; **left** = budget − spent; **in hand** = received − spent. Server: `dtsFinSave` /
+  `dtsFinDelete` (`dtsGate_`, `cleanDtsFin_`; outreach takes income only for now), blob `dtsFin:<campus>` =
+  {entries}, on the board as `fin`; a school with money on it can't be deleted. The **Dashboard** keeps only
+  numbers (Nov 2026: "I want the dashboard to only have the metric informations") and ends with a short
+  finance summary (`dtsFinDashHtml_`); the portal buttons (`#dtsPortalBar`: Open the DTS list, ＋ Add a
+  contact) and **Follow-ups due** (`dtsDueHtml_`) are on the **Database** tab. The Finances office's GPDTS
+  card adds the school's lecture received / spent / left, receipts not yet in, and outreach received
+  (`dtsFinSums_`).
+- **Database, Nov 2026 (Andrew)**: the Students tile counts only the students accepted (accepted / here /
+  graduated). **Responsibilities fold open** (`details.dtsRespItem`, `S.dtsRespOpen`): title, who and done on
+  the line; opened, the description laid out by `dtsNotesHtml_` (paragraphs; lines starting -, •, * or 1. as
+  lists), who it's given to, status and Edit; notes up to 2,000. **A team's long outreach has locations**
+  (`stops: [{place, weeks}]` on the phase, `cleanDtsPhase_` keeps them in order and never past the phase's
+  weeks; `dtsStops_`, `dtsStopsFormHtml_`, `#dtsStops_long`, `[data-dtstop="i|place|weeks"]`, `#dtsStopAdd`):
+  "Weeks 1–2 · 1 Mar – 14 Mar", "8 of 8 weeks placed", each week of the week-by-week table says where
+  (`[data-dtwp]`, renamed as you type without a redraw), and the team card shows the route
+  ("📍 Kampot (wk 1–2) → Kep (wk 3–4) …").
+- **Portal, Nov 2026 (Andrew)**: a person's stage list ends with **🚫 Cancelled** and **✖️ Rejected** (not for
+  a team — closing a team cancels its trip). Picking one asks, then `hrArchiveCandidate(…, {outcome})` closes it
+  into the archive: `archived.outcome` and its reason, the stage left as it was, a log line; reopening clears
+  it (`CAND_OUTCOMES`; `#outcomeBanner`, the archive list's tag). **A portal admin can change an application's
+  name** (✏️ `#renameOpen` by the name → `#renameBox`; `portalRenameCand(…, {name, teamName?})`,
+  `isPortalAdmin_`): the person's name and their applicant account's (never a staff member's), a team's team
+  name (its application's answer), logged, the Teams Database following. tests/test-portal-outcome.mjs.
 - Tests: tests/test-dts.mjs (server), tests/test-dts-ui.mjs (GPDTS page, portal, Google, Admin).
 
 ## Signing in to the GP app with Google; every new account approved (Nov 2026, Andrew)
