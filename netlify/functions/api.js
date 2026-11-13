@@ -8079,7 +8079,7 @@ async function dtsBoardOut_(g) {
   const students = cands.filter(dtsIsStudent_).map(function (c) { return dtsStudentOut_(c, schoolsSorted); })
     .sort(function (a, b) { return a.name.localeCompare(b.name); });
   return {
-    db: db, students: students, fees: DTS_FEE_PRICE,
+    db: db, students: students, fees: DTS_FEE_PRICE, fin: await dtsFinList_(g.campus),
     ok: true, campus: g.campus, ministry: g.min, today: today, counts: counts, due: due.slice(0, 40), dueMore: Math.max(0, due.length - 40),
     school: school, lectures: Array.isArray(lect.lectures) ? lect.lectures : [], portal: canPortal_(g.s),
     outreaches: Array.isArray(outr.outreaches) ? outr.outreaches : [],
@@ -8393,9 +8393,10 @@ async function dtsFeesForFinance_(campus) {
   const since = dayOfNo_(dayNo_(baseToday_()) - 60);
   let show = schools.filter(function (s) { return (s.to || dtsSchoolStart_(s)) >= since; });
   if (!show.length) show = schools.slice(-1);
+  const money = await dtsFinList_(campus);
   return { prices: DTS_FEE_PRICE, schools: show.slice(0, 4).map(function (s) {
     const mine = studs.filter(function (x) { return x.schoolId === s.id; });
-    return { id: s.id, year: s.year, name: s.name, from: s.from || '', to: s.to || '', fees: dtsLectureFees_(mine),
+    return { id: s.id, year: s.year, name: s.name, from: s.from || '', to: s.to || '', fees: dtsLectureFees_(mine), money: dtsFinSums_(money, s.id),
       students: mine.filter(function (x) { return DTS_FEE_COLS.indexOf(x.column) > -1; })
         .map(function (x) { return { name: x.name, country: x.country || (x.audience === 'khmer' ? 'Cambodia' : ''), cat: x.feeCat, column: x.column }; }) };
   }) };
@@ -8462,6 +8463,105 @@ function cleanDtsRec_(kind, r, ctx) {
   }
   return null;
 }
+/* ---- GPDTS money: what really came in and went out (Nov 2026, Andrew: "for the lecture finances, we want
+   to track the real income and real expenses … so that the dts staff and leaders can see how much they have
+   left in their lecture budget"). One blob per campus, `dtsFin:<campus>` = { entries: [...] }, each entry a
+   school's, for one phase — lecture or outreach, "separate and tracked separately":
+     income   date, how it came in (cash / ABA / Subsplash), for a student (their candidate id — it lowers
+              what they still owe) or the general DTS pool (''), the amount in US$, a note
+     expense  (lecture) date, category, a memo saying what it was for, who made it (a staff id), the amount,
+              "has a receipt" and "receipt given to the office"
+   Written by the DTS team (dtsGate_); the Finances office sees the totals on its dashboard. */
+const DTS_FIN_PHASES = ['lecture', 'outreach'];
+const DTS_FIN_KINDS = { lecture: ['income', 'expense'], outreach: ['income'] };
+const DTS_FIN_METHODS = ['cash', 'aba', 'subsplash'];
+const DTS_FIN_CATS = ['honorarium', 'supplies', 'coffee', 'food', 'transport', 'other'];
+const DTS_FIN_MAX = 5000, DTS_FIN_MAX_AMOUNT = 100000;
+function dtsFinMoney_(v) {
+  const n = Math.round(Number(v) * 100) / 100;
+  return isFinite(n) && n > 0 && n <= DTS_FIN_MAX_AMOUNT ? n : 0;
+}
+function cleanDtsFin_(rec, ctx) {
+  const txt = function (v, n) { return String(v == null ? '' : v).trim().slice(0, n); };
+  rec = rec && typeof rec === 'object' ? rec : {};
+  const schoolId = txt(rec.schoolId, 60), phase = txt(rec.phase, 20), kind = txt(rec.kind, 20);
+  if (!ctx.schools.some(function (s) { return s.id === schoolId; })) return { err: 'no_school' };
+  if (DTS_FIN_PHASES.indexOf(phase) === -1 || DTS_FIN_KINDS[phase].indexOf(kind) === -1) return { err: 'bad_kind' };
+  const date = isoDate_(rec.date);
+  if (!date) return { err: 'bad_date' };
+  const amount = dtsFinMoney_(rec.amount);
+  if (!amount) return { err: 'bad_amount' };
+  const out = { schoolId: schoolId, phase: phase, kind: kind, date: date, amount: amount };
+  if (kind === 'income') {
+    const method = txt(rec.method, 20);
+    if (DTS_FIN_METHODS.indexOf(method) === -1) return { err: 'bad_method' };
+    const sid = txt(rec.studentId, 60);
+    if (sid && !ctx.candOk[sid]) return { err: 'bad_student' };
+    out.method = method; out.studentId = sid; out.note = txt(rec.note, 300);
+  } else {
+    const cat = txt(rec.category, 20);
+    if (DTS_FIN_CATS.indexOf(cat) === -1) return { err: 'bad_category' };
+    const memo = txt(rec.memo, 300).trim();
+    if (!memo) return { err: 'no_memo' };
+    const who = txt(rec.who, 60);
+    if (who && !ctx.staffOk[who]) return { err: 'bad_who' };
+    out.category = cat; out.memo = memo; out.who = who; out.whoName = who ? '' : txt(rec.whoName, 80).trim();
+    out.hasReceipt = !!rec.hasReceipt; out.toOffice = !!rec.toOffice;
+  }
+  return out;
+}
+async function dtsFinList_(campus) {
+  const doc = await readJSON('dtsFin:' + campus, { entries: [] });
+  return (Array.isArray(doc.entries) ? doc.entries : []).filter(function (e) { return e && e.id; })
+    .sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : (a.at < b.at ? 1 : -1); });
+}
+async function dtsFinSave(username, pin, rec) {
+  const g = await dtsGate_(username, pin); if (g.out) return g.out;
+  const db = dtsDbOut_(await readJSON('dtsDb:' + g.campus, DTS_DB_FALLBACK));
+  const ctx = { schools: db.schools, staffOk: await dtsCampusStaff_(g.campus), candOk: {} };
+  (await getCandidates_()).forEach(function (c) { if (isDtsCand_(c, g.campus)) ctx.candOk[c.id] = 1; });
+  const clean = cleanDtsFin_(rec, ctx);
+  if (clean.err) return { ok: false, err: clean.err };
+  const id = str_(rec && rec.id, 60), now = new Date().toISOString();
+  const r = await mutateKey_('dtsFin:' + g.campus, { entries: [] }, function (doc) {
+    const list = Array.isArray(doc.entries) ? doc.entries : (doc.entries = []);
+    const at = id ? list.findIndex(function (x) { return x && x.id === id; }) : -1;
+    if (id && at === -1) return { abort: true, ok: false, err: 'not_found' };
+    if (at === -1 && list.length >= DTS_FIN_MAX) return { abort: true, ok: false, err: 'too_many' };
+    const prev = at > -1 ? list[at] : null;
+    if (prev && (prev.phase !== clean.phase || prev.kind !== clean.kind)) return { abort: true, ok: false, err: 'bad_kind' };
+    const out = Object.assign({ id: prev ? prev.id : hrId_('df') }, clean, { by: prev ? prev.by : g.s.id, at: prev ? prev.at : now, updated: now, updatedBy: g.s.id });
+    if (at > -1) list[at] = out; else list.push(out);
+    return { ok: true };
+  });
+  if (!r || !r.ok) return r || { ok: false };
+  return { ok: true, fin: await dtsFinList_(g.campus) };
+}
+async function dtsFinDelete(username, pin, id) {
+  const g = await dtsGate_(username, pin); if (g.out) return g.out;
+  id = str_(id, 60);
+  const r = await mutateKey_('dtsFin:' + g.campus, { entries: [] }, function (doc) {
+    const list = Array.isArray(doc.entries) ? doc.entries : [];
+    const at = list.findIndex(function (x) { return x && x.id === id; });
+    if (at === -1) return { abort: true, ok: false, err: 'not_found' };
+    list.splice(at, 1); doc.entries = list;
+    return { ok: true };
+  });
+  if (!r || !r.ok) return r || { ok: false };
+  return { ok: true, fin: await dtsFinList_(g.campus) };
+}
+/* a school's money, for the Finances office's card: received and spent, lecture and outreach apart */
+function dtsFinSums_(entries, schoolId) {
+  const o = { lecture: { received: 0, spent: 0, receiptsOut: 0 }, outreach: { received: 0 } };
+  (entries || []).forEach(function (e) {
+    if (e.schoolId !== schoolId || !o[e.phase]) return;
+    if (e.kind === 'income') o[e.phase].received += e.amount;
+    else if (e.phase === 'lecture') { o.lecture.spent += e.amount; if (!e.toOffice) o.lecture.receiptsOut++; }
+  });
+  const r2 = function (n) { return Math.round(n * 100) / 100; };
+  o.lecture.received = r2(o.lecture.received); o.lecture.spent = r2(o.lecture.spent); o.outreach.received = r2(o.outreach.received);
+  return o;
+}
 async function dtsDbSave(username, pin, kind, rec) {
   const g = await dtsGate_(username, pin); if (g.out) return g.out;
   if (DTS_DB_KINDS.indexOf(kind) === -1) return { ok: false, err: 'bad_kind' };
@@ -8505,7 +8605,8 @@ async function dtsDbDelete(username, pin, kind, id) {
   if (kind === 'school') {
     const doc = dtsDbOut_(await readJSON(key, DTS_DB_FALLBACK)), lect = await readJSON('dtsLect:' + g.campus, { lectures: [] });
     const used = ['events', 'resp', 'resources', 'teams'].some(function (k) { return doc[k].some(function (x) { return x && x.schoolId === id; }); }) ||
-      (Array.isArray(lect.lectures) ? lect.lectures : []).some(function (l) { return l && l.schoolId === id; });
+      (Array.isArray(lect.lectures) ? lect.lectures : []).some(function (l) { return l && l.schoolId === id; }) ||
+      (await dtsFinList_(g.campus)).some(function (e) { return e.schoolId === id; });
     if (used) return { ok: false, err: 'in_use' };
   }
   const r = await mutateKey_(key, DTS_DB_FALLBACK, function (doc) {
@@ -12656,6 +12757,8 @@ const HANDLERS = {
   portalStaffSaveAnswers: function (a) { return portalStaffSaveAnswers(a[0], a[1], a[2], a[3]); },
   portalImportApplications: function (a) { return portalImportApplications(a[0], a[1], a[2], a[3]); },
   dtsDbSave: function (a) { return dtsDbSave(a[0], a[1], a[2], a[3]); },
+  dtsFinSave: function (a) { return dtsFinSave(a[0], a[1], a[2]); },
+  dtsFinDelete: function (a) { return dtsFinDelete(a[0], a[1], a[2]); },
   dtsDbDelete: function (a) { return dtsDbDelete(a[0], a[1], a[2], a[3]); },
   dtsStudentSave: function (a) { return dtsStudentSave(a[0], a[1], a[2], a[3]); },
   portalListAccounts: function (a) { return portalListAccounts(a[0], a[1]); },

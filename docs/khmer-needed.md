@@ -4817,3 +4817,86 @@ On a student's profile in GPDTS → Database → Students: GPDTS's own people as
 | No school set up yet. The DTS team adds it on GPDTS → Database. | មិនទាន់មានសាលាត្រូវបានរៀបចំនៅឡើយទេ។ ក្រុម DTS បន្ថែមវានៅលើ GPDTS → មូលដ្ឋានទិន្នន័យ។ |
 
 GPDTS → Database → 💰 Lecture fees: the lecture phase's total from the students accepted for the school, by their country's category (A, B, C), with the price for each. The same total is on the Finances office's dashboard and Campus Leadership's Finances tab. "Category" is the A/B/C fee category, not a kind of ministry.
+
+## 98. GPDTS → Finances (lecture and outreach money, one school at a time)
+
+| English | Khmer (draft) |
+|---|---|
+| General DTS pool | មូលនិធិរួមរបស់ DTS |
+| A student no longer listed | សិស្សម្នាក់ដែលលែងមាននៅក្នុងបញ្ជី |
+| Finances — {school} | ហិរញ្ញវត្ថុ — {school} |
+| Lecture phase | វគ្គមេរៀន |
+| Budget | ថវិកា |
+| the fees of the students accepted | ថ្លៃរបស់សិស្សដែលត្រូវបានទទួលយក |
+| Received | បានទទួល |
+| Spent | បានចំណាយ |
+| Left in the budget | នៅសល់ក្នុងថវិកា |
+| {n} receipts not given to the office yet | វិក្កយបត្រ {n} មិនទាន់បានប្រគល់ឱ្យការិយាល័យនៅឡើយ |
+| Open Finances | បើកហិរញ្ញវត្ថុ |
+| Start with the school on the Database tab: its year and name, like 2027 · January DTS. Its money is kept under it. | ចាប់ផ្តើមជាមួយសាលានៅលើផ្ទាំងមូលដ្ឋានទិន្នន័យ៖ ឆ្នាំ និងឈ្មោះរបស់វា ដូចជា 2027 · January DTS។ ប្រាក់របស់វាត្រូវបានរក្សាទុកនៅក្រោមវា។ |
+| {money} in hand | {money} នៅក្នុងដៃ |
+| For students | សម្រាប់សិស្ស |
+| {a} of {b} | {a} ក្នុងចំណោម {b} |
+| Where the money came from | ប្រាក់មកពីណា |
+| Nothing in yet. | មិនទាន់មានអ្វីចូលនៅឡើយទេ។ |
+| {n} students have money in for outreach. | សិស្ស {n} នាក់មានប្រាក់ចូលសម្រាប់ការចេញផ្សាយ។ |
+| Nothing in for a student yet. | មិនទាន់មានអ្វីចូលសម្រាប់សិស្សណាម្នាក់នៅឡើយទេ។ |
+| See every student | មើលសិស្សទាំងអស់ |
+| The lecture budget | ថវិកាវគ្គមេរៀន |
+| Collected | បានប្រមូល |
+| In hand (received less spent) | នៅក្នុងដៃ (បានទទួល ដកបានចំណាយ) |
+| The budget is the lecture fees of the students accepted for this school, at their country’s price. | ថវិកាគឺជាថ្លៃវគ្គមេរៀនរបស់សិស្សដែលត្រូវបានទទួលចូលសាលានេះ តាមតម្លៃសម្រាប់ប្រទេសរបស់ពួកគេ។ |
+| Where it went | ប្រាក់បានទៅណា |
+| {a} of {b} have a receipt · {c} given to the office | {a} ក្នុងចំណោម {b} មានវិក្កយបត្រ · {c} បានប្រគល់ឱ្យការិយាល័យ |
+| Nothing spent yet. | មិនទាន់មានការចំណាយនៅឡើយទេ។ |
+| Paid in full | បានបង់គ្រប់ |
+| of {n} | ក្នុងចំណោម {n} |
+| Still owe | នៅជំពាក់ |
+| No student accepted for this school yet. | មិនទាន់មានសិស្សត្រូវបានទទួលចូលសាលានេះនៅឡើយទេ។ |
+| Edit the income | កែប្រែប្រាក់ចំណូល |
+| Add income | បន្ថែមប្រាក់ចំណូល |
+| Came in through | ចូលតាមរយៈ |
+| Who it is for | សម្រាប់នរណា |
+| Given for one student, it lowers what they still owe for the lecture phase. | បើផ្តល់សម្រាប់សិស្សម្នាក់ វាកាត់បន្ថយអ្វីដែលពួកគេនៅជំពាក់សម្រាប់វគ្គមេរៀន។ |
+| Given for one student, it shows against them under Students. | បើផ្តល់សម្រាប់សិស្សម្នាក់ វាបង្ហាញនៅលើពួកគេនៅក្រោមសិស្ស។ |
+| Note (optional) | កំណត់ចំណាំ (មិនចាំបាច់) |
+| e.g. from their home church | ឧ. ពីព្រះវិហាររបស់ពួកគេ |
+| Income | ប្រាក់ចំណូល |
+| Nothing in yet. Add each gift as it comes in — the day, how it came, who it is for and how much. | មិនទាន់មានអ្វីចូលនៅឡើយទេ។ បន្ថែមអំណោយនីមួយៗនៅពេលវាចូលមក — ថ្ងៃ របៀបដែលវាចូលមក សម្រាប់នរណា និងចំនួនប៉ុន្មាន។ |
+| Edit the expense | កែប្រែការចំណាយ |
+| Add an expense | បន្ថែមការចំណាយ |
+| What it was for | សម្រាប់អ្វី |
+| e.g. Honorarium for the week 3 speaker | ឧ. ប្រាក់ឧបត្ថម្ភសម្រាប់អ្នកនិយាយសប្តាហ៍ទី 3 |
+| Who made it | អ្នកដែលបានចំណាយ |
+| Has receipt already | មានវិក្កយបត្ររួចហើយ |
+| Nothing spent yet. Add each expense — the day, what kind, what it was for, who made it and how much. | មិនទាន់មានការចំណាយនៅឡើយទេ។ បន្ថែមការចំណាយនីមួយៗ — ថ្ងៃ ប្រភេទ សម្រាប់អ្វី អ្នកដែលបានចំណាយ និងចំនួនប៉ុន្មាន។ |
+| {n} with no receipt | {n} គ្មានវិក្កយបត្រ |
+| Amount | ចំនួនទឹកប្រាក់ |
+| Has receipt | មានវិក្កយបត្រ |
+| Receipt given to the office | វិក្កយបត្របានប្រគល់ឱ្យការិយាល័យ |
+| Download (CSV) | ទាញយក (CSV) |
+| Each student’s lecture fee | ថ្លៃវគ្គមេរៀនរបស់សិស្សម្នាក់ៗ |
+| What came in for each student | ប្រាក់ដែលចូលសម្រាប់សិស្សម្នាក់ៗ |
+| General DTS pool: {money} | មូលនិធិរួមរបស់ DTS៖ {money} |
+| The fee is the lecture price for their country (A, B or C). What came in for them comes off it. | ថ្លៃគឺជាតម្លៃវគ្គមេរៀនសម្រាប់ប្រទេសរបស់ពួកគេ (A B ឬ C)។ ប្រាក់ដែលចូលសម្រាប់ពួកគេត្រូវបានដកចេញពីវា។ |
+| Fee | ថ្លៃ |
+| Paid | បានបង់ |
+| Still owes | នៅជំពាក់ |
+| given to the school, not to one student. | ផ្តល់ឱ្យសាលា មិនមែនឱ្យសិស្សម្នាក់ទេ។ |
+| Put in the amount in US$. | សូមបញ្ចូលចំនួនទឹកប្រាក់ជាដុល្លារអាមេរិក។ |
+| Say how it came in: cash, ABA or Subsplash. | សូមប្រាប់ថាវាចូលមកតាមរបៀបណា៖ សាច់ប្រាក់ ABA ឬ Subsplash។ |
+| Pick a category. | សូមជ្រើសរើសប្រភេទមួយ។ |
+| Write what it was for. | សូមសរសេរថាវាសម្រាប់អ្វី។ |
+| Delete this entry? | លុបធាតុនេះ? |
+| Lecture: received | វគ្គមេរៀន៖ បានទទួល |
+| Lecture: spent | វគ្គមេរៀន៖ បានចំណាយ |
+| Left in the lecture budget | នៅសល់ក្នុងថវិកាវគ្គមេរៀន |
+| Outreach: received | ការចេញផ្សាយ៖ បានទទួល |
+| Cash | សាច់ប្រាក់ |
+| Honorarium | ប្រាក់ឧបត្ថម្ភ |
+| Supplies | សម្ភារៈ |
+| Coffee | កាហ្វេ |
+| Food / snacks | អាហារ / អាហារសម្រន់ |
+| Transport | ការធ្វើដំណើរ |
+
+GPDTS → Finances: income (cash, ABA, Subsplash — the last two are names, left as they are), for a student or the general DTS pool; the lecture phase's expenses with their category, memo, who made it and the two receipt ticks; each student's fee, what was paid and what they still owe; the Overview; and the short summary at the bottom of the Dashboard and on the Finances office's dashboard. “Honorarium” is the gift paid to a visiting speaker.

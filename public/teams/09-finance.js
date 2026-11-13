@@ -297,6 +297,12 @@ function finDtsHtml_(F){
       (f.unknown ? '<tr class="warn"><td>'+esc(t('Country not known'))+'</td><td>'+f.unknown+'</td><td>—</td><td>—</td></tr>' : '')+
       '</tbody><tfoot><tr><td>'+esc(t('Total'))+'</td><td>'+n+'</td><td></td><td><b>'+esc(money(f.total))+'</b></td></tr></tfoot></table></div>'+
       (f.applying ? '<p class="hint" style="margin:6px 0 0">'+esc(gpT('{n} more have applied and are waiting. If they are all accepted: {money}.',{n:f.applying, money:money(f.ifAll)}))+'</p>' : '')+
+      (s.money ? (function(m){ var L=m.lecture||{}, O=m.outreach||{}, left=(f.total||0)-(L.spent||0);
+        return '<div class="finDtsMoney" data-findtsmoney="'+esc(s.id)+'"><div class="cafeLine"><span>'+esc(t('Lecture: received'))+'</span><b>'+esc(money(L.received))+'</b></div>'+
+          '<div class="cafeLine"><span>'+esc(t('Lecture: spent'))+'</span><b>'+esc(money(L.spent))+'</b></div>'+
+          '<div class="cafeLine"><span>'+esc(t('Left in the lecture budget'))+'</span><b'+(left<0?' class="finBad"':'')+'>'+esc(money(left))+'</b></div>'+
+          '<div class="cafeLine"><span>'+esc(t('Outreach: received'))+'</span><b>'+esc(money(O.received))+'</b></div>'+
+          (L.receiptsOut ? '<p class="hint" style="margin:4px 0 0">🧾 '+esc(gpT('{n} receipts not given to the office yet',{n:L.receiptsOut}))+'</p>' : '')+'</div>'; })(s.money) : '')+
       ((s.students||[]).length ? '<details class="dtsPast"><summary>'+esc(gpT('Who is counted ({n})',{n:s.students.length}))+'</summary>'+s.students.map(function(x){
         return '<div class="cafeLine"><span>'+esc(x.name)+'<span class="rowSub">'+esc(x.country || t('No country given'))+'</span></span>'+(x.cat ? '<span class="dtsCat cat'+x.cat+'">'+x.cat+'</span>' : '<span class="hint" style="margin:0">'+esc(t('Country not known'))+'</span>')+'</div>'; }).join('')+'</details>' : '')+
       '</div>';

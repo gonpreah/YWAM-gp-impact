@@ -793,6 +793,25 @@ school's home.
   schools ending within 60 days or later, names / country / category only) for the Finances office and
   Campus Leadership. `COUNTRIES` (taxonomy.js) now holds every country on the list, so the portal's picker
   offers them all. tests/test-dts-fees.mjs (server), test-dts-ui.mjs and test-finance-ui.mjs (the pages).
+- **Finances tab** (Nov 2026, Andrew: "track the real income and real expenses … so that the dts staff and leaders
+  can see how much they have left in their lecture budget"; tabs Dashboard · Database · **Finances** · Tasks ·
+  OKRs, `dtsfin`, `dtsFinHtml_` / `bindDtsFin_` in teams/16-dts.js). One school at a time; **📖 Lecture phase**
+  and **🌏 Outreach** apart (`S.dtsFinPhase`). Sections (`S.dtsFinSec`): 📊 Overview (`dtsFinOverviewHtml_`:
+  spent / collected of the budget, in hand, where the money came from by method and students vs pool, where it
+  went by category, receipts, who still owes), 💵 Income, 🧾 Expenses (lecture only), 🎓 Students (each one's
+  fee, paid, still owes; outreach: what came in for each) with CSV downloads. Income: date, came in through
+  cash / ABA / Subsplash, for a student (their candidate id — it comes off what they owe) or the **General DTS
+  pool** (''), amount in US$, note. Expense: date, category (honorarium, supplies, coffee, food, transport,
+  other), memo (needed), who made it (campus staff), amount, `hasReceipt`, and in the list a second tick
+  `toOffice` ("Receipt given to the office") that saves on the spot. The **budget** is the lecture fees of
+  the students accepted; **left** = budget − spent; **in hand** = received − spent. Server: `dtsFinSave` /
+  `dtsFinDelete` (`dtsGate_`, `cleanDtsFin_`; outreach takes income only for now), blob `dtsFin:<campus>` =
+  {entries}, on the board as `fin`; a school with money on it can't be deleted. The **Dashboard** keeps only
+  numbers (Nov 2026: "I want the dashboard to only have the metric informations") and ends with a short
+  finance summary (`dtsFinDashHtml_`); the portal buttons (`#dtsPortalBar`: Open the DTS list, ＋ Add a
+  contact) and **Follow-ups due** (`dtsDueHtml_`) are on the **Database** tab. The Finances office's GPDTS
+  card adds the school's lecture received / spent / left, receipts not yet in, and outreach received
+  (`dtsFinSums_`).
 - Tests: tests/test-dts.mjs (server), tests/test-dts-ui.mjs (GPDTS page, portal, Google, Admin).
 
 ## Signing in to the GP app with Google; every new account approved (Nov 2026, Andrew)

@@ -14,9 +14,9 @@
    Every number counts itself — the students from the portal, the fruit from the lectures and the
    outreach weeks. Server: dtsBoard / dtsMark / dtsToStaff / dtsSaveLecture / dtsDbSave / dtsDbDelete /
    dtsStudentSave / dtsSavePast (api.js, "GPDTS"). Siem Reap's GPDTS only for now (DTS_TOOL). */
-var DTS_TABS=['dtsdash','dtsdb'];
+var DTS_TABS=['dtsdash','dtsdb','dtsfin'];
 function isDtsMinistry_(dept, min){ return typeof autoMetricsFor==='function' && autoMetricsFor(S.me && S.me.campus, dept, min).length>0; }
-function dtsTabs_(){ return [['dtsdash',t('Dashboard')],['dtsdb',t('Database')]]; }
+function dtsTabs_(){ return [['dtsdash',t('Dashboard')],['dtsdb',t('Database')],['dtsfin',t('Finances')]]; }
 var DTS_COLS=[['lead','Reaching out','🌱'],['contacted','Contacted','💬'],['applied','Applied','📝'],['accepted','Accepted','✅'],['arrived','Here now','🏠'],['graduated','Graduated this year','🎓']];
 function dtsLoadHtml_(){
   if(S.dtsErr) return '<div class="card"><p class="sub" style="margin:0 0 8px">⚠️ '+esc(t('Couldn’t load the school.'))+'</p><p class="hint" style="margin:0 0 8px;overflow-wrap:anywhere">'+esc(S.dtsErr)+'</p>'+
@@ -28,6 +28,7 @@ function dtsPaneHtml_(cur){
   var d=S.dts;
   if(!d) return dtsLoadHtml_();
   if(cur==='dtsdb') return dtsDbHtml_(d);
+  if(cur==='dtsfin') return dtsFinHtml_(d);
   return dtsDashHtml_(d);
 }
 /* ---- Dashboard ---- */
@@ -39,9 +40,15 @@ function dtsDashHtml_(d){
       return '<div class="dtsStep'+(n?'':' empty')+'" data-dtscol="'+x[0]+'"><div class="dtsStepTop">'+x[2]+' <span class="dtsStepNum">'+n+'</span></div>'+
         '<div class="dtsStepName">'+esc(t(x[1]))+'</div><div class="dtsStepSplit">'+esc(gpT('{k} Khmer · {i} intl',{k:v.khmer||0, i:v.international||0}))+'</div></div>';
     }).join('')+'</div>'+
-    '<p class="hint" style="margin:8px 0 0">'+esc(t('From the portal: DTS applications, and the people you add there and reach out to. Applied, accepted, enrolled, graduated, potential staff and students contacted are counted from it — nobody types them.'))+'</p>'+
-    (d.portal ? '<div class="dtsBtns"><a class="btn small" id="dtsOpenPortal" href="'+esc(dtsPortalUrl_(''))+'" target="_blank" rel="noopener">🛂 '+esc(t('Open the DTS list in the portal'))+'</a>'+
-      '<a class="btn ghost small" href="'+esc(dtsPortalUrl_(''))+'" target="_blank" rel="noopener">＋ '+esc(t('Add a contact'))+'</a></div>' : '')+'</div>';
+    '<p class="hint" style="margin:8px 0 0">'+esc(t('From the portal: DTS applications, and the people you add there and reach out to. Applied, accepted, enrolled, graduated, potential staff and students contacted are counted from it — nobody types them.'))+'</p></div>';
+  h+=dtsYearHtml_(d);
+  h+=dtsFinDashHtml_();
+  return h;
+}
+/* the follow-ups due (from the portal's next steps) — on the Database tab since Nov 2026 (Andrew: "I want the
+   dashboard to only have the metric informations") */
+function dtsDueHtml_(d){
+  var h='';
   var due=d.due||[], today=d.today||todayStr();
   h+='<div class="card" id="dtsDue"><h3 style="margin-top:0">⏰ '+esc(t('Follow-ups due'))+(due.length ? ' · '+(due.length+(d.dueMore||0)) : '')+'</h3>';
   if(!due.length) h+='<p class="sub" style="margin:0">'+esc(t('Nothing due this week. Set a next step on each person in the portal and it shows here when it’s near.'))+'</p>';
@@ -52,8 +59,12 @@ function dtsDashHtml_(d){
     return d.portal ? '<a class="dtsDue" data-dtsdue="'+esc(x.id)+'" href="portal.html?open='+encodeURIComponent(x.id)+'" target="_blank" rel="noopener">'+row+'</a>' : '<div class="dtsDue" data-dtsdue="'+esc(x.id)+'">'+row+'</div>';
   }).join('')+'</div>'+(d.dueMore ? '<p class="hint" style="margin:6px 0 0">'+esc(gpT('{n} more in the portal',{n:d.dueMore}))+'</p>' : '');
   h+='</div>';
-  h+=dtsYearHtml_(d);
   return h;
+}
+/* the portal's DTS list and ＋ Add a contact, at the top of the Database tab */
+function dtsPortalBarHtml_(d){
+  return d.portal ? '<div class="dtsBtns dtsPortalBar" id="dtsPortalBar"><a class="btn small" id="dtsOpenPortal" href="'+esc(dtsPortalUrl_(''))+'" target="_blank" rel="noopener">🛂 '+esc(t('Open the DTS list in the portal'))+'</a>'+
+    '<a class="btn ghost small" href="'+esc(dtsPortalUrl_(''))+'" target="_blank" rel="noopener">＋ '+esc(t('Add a contact'))+'</a></div>' : '';
 }
 /* ---- the school by year: this year from the weekly rows, earlier years typed in (dtsSavePast) ---- */
 var DTS_STU_M=[['Local Students Contacted','Contacted (local)'],['Intl Students Contacted','Contacted (international)'],['Students Applied','Applied'],['Students Accepted','Accepted'],['Students Enrolled','Enrolled'],['Students Graduated','Graduated'],['Potential Staff','Potential staff']];
@@ -295,6 +306,7 @@ function bindDts_(){
   var ps=document.getElementById('dtsPastSave'); if(ps) ps.onclick=function(){ savePast(); };
   var pd=document.getElementById('dtsPastDel'); if(pd) pd.onclick=function(){ if(confirm(t('Delete this year’s numbers?'))) savePast(null); };
   bindDtsDb_();
+  bindDtsFin_();
 }
 
 /* ==================== Database (Nov 2026, Andrew) ====================
@@ -345,6 +357,9 @@ function dtsLectsIn_(sch){
   return all.filter(function(l){ return l.schoolId ? l.schoolId===sch.id : (ids.length && l.date && Number(l.date.slice(0,4))===Number(sch.year)); });
 }
 function dtsDbHtml_(d){
+  return dtsPortalBarHtml_(d)+dtsDbBodyHtml_(d);
+}
+function dtsDbBodyHtml_(d){
   var db=dtsDb_(), sch=dtsCurSchool_();
   var years=[]; (db.schools||[]).forEach(function(s){ if(years.indexOf(String(s.year))===-1) years.push(String(s.year)); });
   var yr=S.dtsDbYear && years.indexOf(S.dtsDbYear)>-1 ? S.dtsDbYear : (sch ? String(sch.year) : '');
@@ -355,7 +370,7 @@ function dtsDbHtml_(d){
     h+='<div class="card" id="dtsSchoolPick"><h3 style="margin-top:0">🏫 '+esc(t('Which school'))+'</h3>';
     h+=S.dtsSchoolEdit ? dtsSchoolFormHtml_(S.dtsSchoolEdit) :
       '<p class="sub" style="margin:0 0 8px">'+esc(t('Start with the school: its year and name, like 2027 · January DTS. Its lectures, students, events, outreach, responsibilities and resources all sit under it.'))+'</p><button class="btn small" id="dtsSchoolAdd">＋ '+esc(t('Add the school'))+'</button>';
-    return h+'</div>';
+    return h+'</div>'+dtsDueHtml_(d);
   }
   /* the school, on one line; the picker only when asked for */
   var picking=S.dtsPickOpen || S.dtsSchoolEdit;
@@ -370,7 +385,7 @@ function dtsDbHtml_(d){
   }
   h+='</div>';
   var sec=S.dtsSec||'';
-  if(!sec) return h+dtsHomeHtml_(d, sch);
+  if(!sec) return h+dtsHomeHtml_(d, sch)+dtsDueHtml_(d);
   var meta=DTS_SECS.filter(function(x){ return x[0]===sec; })[0]||DTS_SECS[0];
   h+='<div class="dtsPageHead"><button class="dtsBack" id="dtsHome">← '+esc(t('Back'))+'</button><h2 class="dtsPageTitle">'+meta[1]+' '+esc(t(meta[2]))+'</h2></div>';
   if(sec==='out') return h+dtsOutSecHtml_(d, sch);
@@ -850,3 +865,278 @@ function bindDtsDb_(){
   on('dtsResDel', function(){ if(S.dtsRes && confirm(t('Delete this resource?'))) dtsDbDel_('resource', S.dtsRes.id, function(){ S.dtsRes=null; }); });
 }
 function dtsCloseForms_(){ S.dtsLect=null; S.dtsEv=null; S.dtsTeam=null; S.dtsResp=null; S.dtsRes=null; S.dtsStu=null; S.dtsStuEdit=null; S.dtsPol=null; }
+
+/* ==================== Finances (Nov 2026, Andrew) ====================
+   "For the lecture finances, we want to track the real income and real expenses … so that the dts staff and
+   leaders can see how much they have left in their lecture budget." One school at a time, lecture and
+   outreach kept apart ("separate and tracked separately"):
+     Income    each gift entered by hand — the day, how it came in (cash, ABA, Subsplash), for one student
+               (it lowers what they still owe) or the general DTS pool, and the amount in US$
+     Expenses  (lecture) the day, a category, a memo of what it was for, who made it, the amount, "has a
+               receipt already"; in the list a second tick, "receipt given to the office"
+     Students  each student's lecture fee (their country's A/B/C price), what has come in for them, and what
+               they still owe; outreach: what has come in for each
+   The budget is the lecture fees of the students accepted (Lecture fees, above); what is left is the budget
+   less what has been spent. Server: dtsFinSave / dtsFinDelete, blob dtsFin:<campus> (api.js). */
+var DTS_FIN_METHODS=[['cash','Cash'],['aba','ABA'],['subsplash','Subsplash']];
+var DTS_FIN_CATS=[['honorarium','Honorarium'],['supplies','Supplies'],['coffee','Coffee'],['food','Food / snacks'],['transport','Transport'],['other','Other']];
+function dtsFinWord_(list, id){ var hit=list.filter(function(x){ return x[0]===id; })[0]; return hit ? t(hit[1]) : id; }
+function dtsMoney2_(n){ n=Math.round((Number(n)||0)*100)/100; return '$'+n.toLocaleString('en-US',{ minimumFractionDigits:n%1?2:0, maximumFractionDigits:2 }); }
+function dtsFinAll_(){ return (S.dts && S.dts.fin) || []; }
+function dtsFinIn_(phase, kind){ var id=S.dtsSchool; return dtsFinAll_().filter(function(e){ return e.schoolId===id && e.phase===phase && (!kind || e.kind===kind); }); }
+function dtsFinSum_(list){ return Math.round(list.reduce(function(a, e){ return a+(Number(e.amount)||0); }, 0)*100)/100; }
+function dtsFinStuName_(id){ if(!id) return t('General DTS pool'); var x=dtsStudent_(id); return x ? x.name : t('A student no longer listed'); }
+/* the money of the school on show, for the tab and the dashboard's card */
+function dtsFinNums_(){
+  var studs=dtsStudents_(), fees=dtsFees_(studs);
+  var linc=dtsFinIn_('lecture','income'), lexp=dtsFinIn_('lecture','expense'), oinc=dtsFinIn_('outreach','income');
+  var spent=dtsFinSum_(lexp);
+  return { budget:fees.total, received:dtsFinSum_(linc), spent:spent, left:Math.round((fees.total-spent)*100)/100, inHand:Math.round((dtsFinSum_(linc)-spent)*100)/100,
+    receiptsOut:lexp.filter(function(e){ return !e.toOffice; }).length, noReceipt:lexp.filter(function(e){ return !e.hasReceipt; }).length,
+    oReceived:dtsFinSum_(oinc), oPool:dtsFinSum_(oinc.filter(function(e){ return !e.studentId; })) };
+}
+function dtsFinTile_(label, money, sub, cls){
+  return '<div class="mmTile'+(cls?' '+cls:'')+'"><div class="mmTileName">'+esc(label)+'</div><div class="mmTileNum">'+esc(dtsMoney2_(money))+'</div>'+(sub ? '<div class="mmTileSub">'+esc(sub)+'</div>' : '')+'</div>';
+}
+/* the Dashboard's card, at the bottom (Andrew: "adding in a finance dashboard into the DTS dashboard … on the bottom") */
+function dtsFinDashHtml_(){
+  var sch=dtsCurSchool_(); if(!sch) return '';
+  var n=dtsFinNums_();
+  return '<div class="card" id="dtsFinDash"><h3 style="margin-top:0">💰 '+esc(gpT('Finances — {school}',{school:dtsSchoolName_(sch)}))+'</h3>'+
+    '<div class="dtsFinLabel">'+esc(t('Lecture phase'))+'</div><div class="mmGrid">'+
+    dtsFinTile_(t('Budget'), n.budget, t('the fees of the students accepted'))+dtsFinTile_(t('Received'), n.received)+dtsFinTile_(t('Spent'), n.spent)+
+    dtsFinTile_(t('Left in the budget'), n.left, '', n.left<0 ? 'dtsFinNeg' : '')+'</div>'+
+    '<div class="dtsFinLabel">'+esc(t('Outreach'))+'</div><div class="mmGrid">'+dtsFinTile_(t('Received'), n.oReceived)+'</div>'+
+    (n.receiptsOut ? '<p class="hint" style="margin:8px 0 0">🧾 '+esc(gpT('{n} receipts not given to the office yet',{n:n.receiptsOut}))+'</p>' : '')+
+    '<div class="dtsBtns"><button class="btn small ghost" data-mmtab="dtsfin">'+esc(t('Open Finances'))+' ›</button></div></div>';
+}
+function dtsFinHtml_(d){
+  var db=dtsDb_(), sch=dtsCurSchool_();
+  if(!sch) return '<div class="card"><p class="sub" style="margin:0">'+esc(t('Start with the school on the Database tab: its year and name, like 2027 · January DTS. Its money is kept under it.'))+'</p></div>';
+  var phase=S.dtsFinPhase==='outreach' ? 'outreach' : 'lecture';
+  var secs=phase==='lecture' ? [['overview','📊','Overview'],['income','💵','Income'],['expenses','🧾','Expenses'],['students','🎓','Students']] : [['overview','📊','Overview'],['income','💵','Income'],['students','🎓','Students']];
+  var sec=secs.some(function(x){ return x[0]===S.dtsFinSec; }) ? S.dtsFinSec : 'overview';
+  var h='';
+  if((db.schools||[]).length>1) h+='<div class="chips" id="dtsFinSchools">'+db.schools.slice().reverse().map(function(s){ return '<button class="chip'+(s.id===sch.id?' on':'')+'" data-dtsfinschool="'+esc(s.id)+'">'+esc(dtsSchoolName_(s))+'</button>'; }).join('')+'</div>';
+  else h+='<p class="sub" style="margin:0 0 8px">🏫 <b>'+esc(dtsSchoolName_(sch))+'</b></p>';
+  h+='<div class="seg dtsFinPhase" id="dtsFinPhase" role="tablist">'+[['lecture','📖 '+t('Lecture phase')],['outreach','🌏 '+t('Outreach')]].map(function(x){
+    return '<button class="'+(x[0]===phase?'on':'')+'" data-dtsfinphase="'+x[0]+'" role="tab" aria-selected="'+(x[0]===phase)+'">'+esc(x[1])+'</button>'; }).join('')+'</div>';
+  var n=dtsFinNums_();
+  if(phase==='lecture') h+='<div class="mmGrid" id="dtsFinTiles">'+dtsFinTile_(t('Left in the budget'), n.left, gpT('{money} in hand',{money:dtsMoney2_(n.inHand)}), n.left<0 ? 'dtsFinNeg' : '')+
+    dtsFinTile_(t('Budget'), n.budget, t('the fees of the students accepted'))+dtsFinTile_(t('Received'), n.received)+dtsFinTile_(t('Spent'), n.spent)+'</div>';
+  else h+='<div class="mmGrid" id="dtsFinTiles">'+dtsFinTile_(t('Received'), n.oReceived)+dtsFinTile_(t('For students'), n.oReceived-n.oPool)+dtsFinTile_(t('General DTS pool'), n.oPool)+'</div>';
+  h+='<div class="chips" id="dtsFinSecs">'+secs.map(function(x){ return '<button class="chip'+(x[0]===sec?' on':'')+'" data-dtsfinsec="'+x[0]+'">'+x[1]+' '+esc(t(x[2]))+'</button>'; }).join('')+'</div>';
+  if(sec==='expenses') return h+dtsFinExpHtml_(sch);
+  if(sec==='students') return h+dtsFinStuHtml_(phase, sch);
+  if(sec==='income') return h+dtsFinIncHtml_(phase, sch);
+  return h+dtsFinOverviewHtml_(phase);
+}
+/* ---- Overview: the finance dashboard with the detail (Nov 2026, Andrew: "a general overview of the finance
+   dashboard in the dashboard tab, but also a finance dashboard with more details on the lecture and outreach
+   finances"). Lecture: how much of the budget is spent and collected, where the money came from and where it
+   went, the receipts, and who still owes. Outreach: where its money came from and for whom. ---- */
+function dtsMeter_(label, part, whole, id, over){
+  var pct=whole>0 ? Math.round(part/whole*100) : 0, w=Math.max(0, Math.min(100, pct));
+  return '<div class="dtsMeterRow"'+(id?' id="'+id+'"':'')+'><div class="dtsMeterTop"><span>'+esc(label)+'</span><b>'+esc(gpT('{a} of {b}',{a:dtsMoney2_(part), b:dtsMoney2_(whole)}))+(whole>0 ? ' · '+pct+'%' : '')+'</b></div>'+
+    '<div class="dtsMeter'+(pct>100 && over ? ' over' : '')+'" role="img" aria-label="'+esc(label+': '+pct+'%')+'"><i style="width:'+w+'%"></i></div></div>';
+}
+function dtsFinBars_(rows, attr){
+  var top=Math.max.apply(null, rows.map(function(r){ return r[1]; }).concat([0])) || 1;
+  return rows.map(function(r){ return '<div class="dtsBarRow"'+(attr ? ' '+attr+'="'+esc(r[2]||r[0])+'"' : '')+'><span class="dtsBarName">'+esc(r[0])+'</span><span class="dtsBar"><i style="width:'+Math.round(r[1]/top*100)+'%"></i></span><b>'+esc(dtsMoney2_(r[1]))+'</b></div>'; }).join('');
+}
+function dtsFinOverviewHtml_(phase){
+  var inc=dtsFinIn_(phase,'income'), received=dtsFinSum_(inc), pool=dtsFinSum_(inc.filter(function(e){ return !e.studentId; }));
+  var byMethod=DTS_FIN_METHODS.map(function(m){ return [t(m[1]), dtsFinSum_(inc.filter(function(e){ return e.method===m[0]; })), m[0]]; });
+  var src='<div class="card" id="dtsFinFrom"><h3 style="margin-top:0">💵 '+esc(t('Where the money came from'))+(received ? ' · '+esc(dtsMoney2_(received)) : '')+'</h3>';
+  if(!inc.length) src+='<p class="sub" style="margin:0">'+esc(t('Nothing in yet.'))+'</p>';
+  else src+=dtsFinBars_(byMethod, 'data-dtsfinmethod')+'<div class="dtsFinSplit">'+dtsFinBars_([[t('For students'), Math.round((received-pool)*100)/100, 'students'],[t('General DTS pool'), pool, 'pool']], 'data-dtsfinfor')+'</div>';
+  src+='</div>';
+  if(phase==='outreach'){
+    var given={}; inc.forEach(function(e){ if(e.studentId) given[e.studentId]=(given[e.studentId]||0)+e.amount; });
+    var ids=Object.keys(given).sort(function(a, b){ return given[b]-given[a]; });
+    return src+'<div class="card" id="dtsFinOStu"><h3 style="margin-top:0">🎓 '+esc(t('Students'))+'</h3>'+
+      (ids.length ? '<p class="sub" style="margin:0 0 6px">'+esc(gpT('{n} students have money in for outreach.',{n:ids.length}))+'</p>'+dtsFinBars_(ids.slice(0, 6).map(function(id){ return [dtsFinStuName_(id), Math.round(given[id]*100)/100, id]; })) :
+        '<p class="sub" style="margin:0">'+esc(t('Nothing in for a student yet.'))+'</p>')+
+      '<div class="dtsBtns"><button class="btn small ghost" data-dtsfinsec="students">'+esc(t('See every student'))+' ›</button></div></div>';
+  }
+  var n=dtsFinNums_(), exp=dtsFinIn_('lecture','expense');
+  var h='<div class="card" id="dtsFinBudget"><h3 style="margin-top:0">📊 '+esc(t('The lecture budget'))+'</h3>'+
+    dtsMeter_(t('Spent'), n.spent, n.budget, 'dtsFinSpentMeter', true)+dtsMeter_(t('Collected'), n.received, n.budget, 'dtsFinGotMeter')+
+    '<div class="cafeLine"><span>'+esc(t('Left in the budget'))+'</span><b'+(n.left<0?' class="dtsNegTxt"':'')+'>'+esc(dtsMoney2_(n.left))+'</b></div>'+
+    '<div class="cafeLine"><span>'+esc(t('In hand (received less spent)'))+'</span><b'+(n.inHand<0?' class="dtsNegTxt"':'')+'>'+esc(dtsMoney2_(n.inHand))+'</b></div>'+
+    '<p class="hint" style="margin:6px 0 0">'+esc(t('The budget is the lecture fees of the students accepted for this school, at their country’s price.'))+'</p></div>';
+  h+=src;
+  var byCat=DTS_FIN_CATS.map(function(c){ return [t(c[1]), dtsFinSum_(exp.filter(function(e){ return e.category===c[0]; })), c[0]]; }).filter(function(r){ return r[1]; });
+  h+='<div class="card" id="dtsFinWent"><h3 style="margin-top:0">🧾 '+esc(t('Where it went'))+(n.spent ? ' · '+esc(dtsMoney2_(n.spent)) : '')+'</h3>'+
+    (exp.length ? dtsFinBars_(byCat, 'data-dtsfincat')+
+      '<p class="hint" style="margin:8px 0 0" id="dtsFinReceipts">🧾 '+esc(gpT('{a} of {b} have a receipt · {c} given to the office',{a:exp.length-n.noReceipt, b:exp.length, c:exp.length-n.receiptsOut}))+'</p>' :
+      '<p class="sub" style="margin:0">'+esc(t('Nothing spent yet.'))+'</p>')+'</div>';
+  var rows=dtsFinStuRows_('lecture').filter(function(r){ return r.accepted; }), owing=rows.filter(function(r){ return r.owes>0; });
+  var owed=Math.round(owing.reduce(function(a, r){ return a+r.owes; }, 0)*100)/100;
+  h+='<div class="card" id="dtsFinOwing"><h3 style="margin-top:0">🎓 '+esc(t('Students'))+'</h3>'+
+    (rows.length ? '<div class="mmGrid">'+
+      '<div class="mmTile"><div class="mmTileName">'+esc(t('Paid in full'))+'</div><div class="mmTileNum">'+(rows.length-owing.length)+'</div><div class="mmTileSub">'+esc(gpT('of {n}',{n:rows.length}))+'</div></div>'+
+      '<div class="mmTile"><div class="mmTileName">'+esc(t('Still owe'))+'</div><div class="mmTileNum">'+owing.length+'</div><div class="mmTileSub">'+esc(dtsMoney2_(owed))+'</div></div></div>'+
+      (owing.length ? dtsFinBars_(owing.slice(0, 6).map(function(r){ return [r.name, r.owes, r.id]; })) : '') :
+      '<p class="sub" style="margin:0">'+esc(t('No student accepted for this school yet.'))+'</p>')+
+    '<div class="dtsBtns"><button class="btn small ghost" data-dtsfinsec="students">'+esc(t('See every student'))+' ›</button></div></div>';
+  return h;
+}
+/* ---- income ---- */
+function dtsFinIncFormHtml_(f, phase){
+  var studs=dtsStudents_().filter(function(x){ return x.column!=='lead' && x.column!=='contacted'; });
+  if(f.studentId && !studs.some(function(x){ return x.id===f.studentId; })){ var gone=dtsStudent_(f.studentId); if(gone) studs.push(gone); }
+  return '<div class="card dtsForm" id="dtsFinIncForm"><h3 style="margin-top:0">'+esc(f.id ? t('Edit the income') : t('Add income'))+'</h3>'+
+    '<div class="dtsTwo"><div><label class="f" for="dfi_date">'+esc(t('Date'))+'</label><input type="date" id="dfi_date" data-dfi="date" value="'+esc(f.date||'')+'"></div>'+
+    '<div><label class="f" for="dfi_amount">'+esc(t('Amount (US$)'))+'</label><input type="number" id="dfi_amount" data-dfi="amount" min="0" step="0.01" inputmode="decimal" value="'+esc(f.amount ? String(f.amount) : '')+'"></div></div>'+
+    '<label class="f">'+esc(t('Came in through'))+'</label><div class="chips" id="dfi_method">'+DTS_FIN_METHODS.map(function(m){ return '<button type="button" class="chip'+(f.method===m[0]?' on':'')+'" data-dfimethod="'+m[0]+'">'+esc(t(m[1]))+'</button>'; }).join('')+'</div>'+
+    '<label class="f" for="dfi_student">'+esc(t('Who it is for'))+'</label><select id="dfi_student" data-dfi="studentId"><option value="">'+esc(t('General DTS pool'))+'</option>'+
+      studs.map(function(x){ return '<option value="'+esc(x.id)+'"'+(f.studentId===x.id?' selected':'')+'>'+esc(x.name)+'</option>'; }).join('')+'</select>'+
+    '<p class="hint" style="margin:4px 0 0">'+esc(phase==='lecture' ? t('Given for one student, it lowers what they still owe for the lecture phase.') : t('Given for one student, it shows against them under Students.'))+'</p>'+
+    '<label class="f" for="dfi_note">'+esc(t('Note (optional)'))+'</label><input type="text" id="dfi_note" data-dfi="note" maxlength="300" placeholder="'+esc(t('e.g. from their home church'))+'" value="'+esc(f.note||'')+'">'+
+    '<div class="dtsBtns"><button class="btn small" id="dtsFinSave"'+(S.dtsBusy?' disabled':'')+'>'+esc(S.dtsBusy ? t('Saving…') : t('Save'))+'</button><button class="btn ghost small" id="dtsFinCancel">'+esc(t('Cancel'))+'</button>'+
+    (f.id ? '<button class="linkbtn danger" id="dtsFinDel" style="width:auto">'+esc(t('Delete'))+'</button>' : '')+'</div></div>';
+}
+function dtsFinIncHtml_(phase, sch){
+  var list=dtsFinIn_(phase,'income'), f=S.dtsFinForm;
+  var h=(f && f.kind==='income') ? dtsFinIncFormHtml_(f, phase) : '<button class="btn small dtsAdd" id="dtsFinAddInc">＋ '+esc(t('Add income'))+'</button>';
+  h+='<div class="card" id="dtsFinIncome"><h3 style="margin-top:0">💵 '+esc(t('Income'))+(list.length ? ' · '+esc(dtsMoney2_(dtsFinSum_(list))) : '')+'</h3>';
+  if(!list.length) return h+'<p class="sub" style="margin:0">'+esc(t('Nothing in yet. Add each gift as it comes in — the day, how it came, who it is for and how much.'))+'</p></div>';
+  var by={}; DTS_FIN_METHODS.forEach(function(m){ var s=dtsFinSum_(list.filter(function(e){ return e.method===m[0]; })); if(s) by[m[0]]=s; });
+  h+='<p class="hint" style="margin:0 0 6px">'+DTS_FIN_METHODS.filter(function(m){ return by[m[0]]; }).map(function(m){ return esc(t(m[1]))+' '+esc(dtsMoney2_(by[m[0]])); }).join(' · ')+'</p>';
+  return h+list.map(function(e){
+    return '<button class="dtsFinRow" data-dtsfinedit="'+esc(e.id)+'"><span class="dtsFinWhen">'+esc(fmtDayShort_(e.date))+'</span><span class="dtsFinTxt"><b>'+esc(dtsFinStuName_(e.studentId))+'</b>'+
+      '<span class="rowSub">'+esc([dtsFinWord_(DTS_FIN_METHODS, e.method), e.note].filter(Boolean).join(' · '))+'</span></span><span class="dtsFinAmt">'+esc(dtsMoney2_(e.amount))+'</span></button>';
+  }).join('')+'</div>';
+}
+/* ---- expenses (lecture) ---- */
+function dtsFinExpFormHtml_(f){
+  return '<div class="card dtsForm" id="dtsFinExpForm"><h3 style="margin-top:0">'+esc(f.id ? t('Edit the expense') : t('Add an expense'))+'</h3>'+
+    '<div class="dtsTwo"><div><label class="f" for="dfe_date">'+esc(t('Date'))+'</label><input type="date" id="dfe_date" data-dfe="date" value="'+esc(f.date||'')+'"></div>'+
+    '<div><label class="f" for="dfe_amount">'+esc(t('Amount (US$)'))+'</label><input type="number" id="dfe_amount" data-dfe="amount" min="0" step="0.01" inputmode="decimal" value="'+esc(f.amount ? String(f.amount) : '')+'"></div></div>'+
+    '<label class="f">'+esc(t('Category'))+'</label><div class="chips" id="dfe_cat">'+DTS_FIN_CATS.map(function(c){ return '<button type="button" class="chip'+(f.category===c[0]?' on':'')+'" data-dfecat="'+c[0]+'">'+esc(t(c[1]))+'</button>'; }).join('')+'</div>'+
+    '<label class="f" for="dfe_memo">'+esc(t('What it was for'))+'</label><input type="text" id="dfe_memo" data-dfe="memo" maxlength="300" placeholder="'+esc(t('e.g. Honorarium for the week 3 speaker'))+'" value="'+esc(f.memo||'')+'">'+
+    '<label class="f" for="dfe_who">'+esc(t('Who made it'))+'</label>'+dtsStaffSelectHtml_('dfe_who', f.who, 'data-dfe="who"')+
+    '<label class="dtsConf"><input type="checkbox" id="dfe_receipt"'+(f.hasReceipt?' checked':'')+'> 🧾 '+esc(t('Has receipt already'))+'</label>'+
+    '<div class="dtsBtns"><button class="btn small" id="dtsFinSave"'+(S.dtsBusy?' disabled':'')+'>'+esc(S.dtsBusy ? t('Saving…') : t('Save'))+'</button><button class="btn ghost small" id="dtsFinCancel">'+esc(t('Cancel'))+'</button>'+
+    (f.id ? '<button class="linkbtn danger" id="dtsFinDel" style="width:auto">'+esc(t('Delete'))+'</button>' : '')+'</div></div>';
+}
+function dtsFinExpHtml_(sch){
+  var list=dtsFinIn_('lecture','expense'), f=S.dtsFinForm, n=dtsFinNums_();
+  var h=(f && f.kind==='expense') ? dtsFinExpFormHtml_(f) : '<button class="btn small dtsAdd" id="dtsFinAddExp">＋ '+esc(t('Add an expense'))+'</button>';
+  h+='<div class="card" id="dtsFinExpenses"><h3 style="margin-top:0">🧾 '+esc(t('Expenses'))+(list.length ? ' · '+esc(dtsMoney2_(dtsFinSum_(list))) : '')+'</h3>';
+  if(!list.length) return h+'<p class="sub" style="margin:0">'+esc(t('Nothing spent yet. Add each expense — the day, what kind, what it was for, who made it and how much.'))+'</p></div>';
+  h+='<div class="dtsFinCats">'+DTS_FIN_CATS.map(function(c){ var s=dtsFinSum_(list.filter(function(e){ return e.category===c[0]; })); return s ? '<span>'+esc(t(c[1]))+' <b>'+esc(dtsMoney2_(s))+'</b></span>' : ''; }).join('')+'</div>';
+  if(n.receiptsOut) h+='<p class="hint" style="margin:6px 0 0" id="dtsFinReceiptsOut">🧾 '+esc(gpT('{n} receipts not given to the office yet',{n:n.receiptsOut}))+(n.noReceipt ? ' · '+esc(gpT('{n} with no receipt',{n:n.noReceipt})) : '')+'</p>';
+  h+='<div class="dtsTblWrap"><table class="dtsTbl dtsFinTbl" id="dtsFinExpTbl"><thead><tr><th>'+esc(t('Date'))+'</th><th>'+esc(t('What'))+'</th><th>'+esc(t('Amount'))+'</th><th>'+esc(t('Has receipt'))+'</th><th>'+esc(t('Receipt given to the office'))+'</th></tr></thead><tbody>'+
+    list.map(function(e){
+      var who=e.who ? dtsStaffName_(e.who) : (e.whoName||'');
+      return '<tr data-dtsfinexp="'+esc(e.id)+'"><td data-l="'+esc(t('Date'))+'" class="dtsWhen">'+esc(fmtDayShort_(e.date))+'</td>'+
+        '<td data-l="'+esc(t('What'))+'"><button class="dtsFinOpen" data-dtsfinedit="'+esc(e.id)+'"><b>'+esc(e.memo)+'</b><span class="rowSub">'+esc([dtsFinWord_(DTS_FIN_CATS, e.category), who].filter(Boolean).join(' · '))+'</span></button></td>'+
+        '<td data-l="'+esc(t('Amount'))+'" class="dtsFinAmt">'+esc(dtsMoney2_(e.amount))+'</td>'+
+        '<td data-l="'+esc(t('Has receipt'))+'"><label class="dtsFinTick" data-l="'+esc(t('Has receipt'))+'"><input type="checkbox" data-dtsfintick="'+esc(e.id)+'|hasReceipt"'+(e.hasReceipt?' checked':'')+' aria-label="'+esc(t('Has receipt'))+'"></label></td>'+
+        '<td data-l="'+esc(t('Receipt given to the office'))+'"><label class="dtsFinTick" data-l="'+esc(t('Receipt given to the office'))+'"><input type="checkbox" data-dtsfintick="'+esc(e.id)+'|toOffice"'+(e.toOffice?' checked':'')+' aria-label="'+esc(t('Receipt given to the office'))+'"></label></td></tr>';
+    }).join('')+'</tbody></table></div>'+
+    '<div class="dtsBtns"><button class="btn small ghost" id="dtsFinCsvExp">⬇ '+esc(t('Download (CSV)'))+'</button></div></div>';
+  return h;
+}
+/* ---- students: each one's fee, what came in for them, what they still owe ---- */
+function dtsFinStuRows_(phase){
+  var inc=dtsFinIn_(phase,'income'), paid={};
+  inc.forEach(function(e){ if(e.studentId) paid[e.studentId]=(paid[e.studentId]||0)+(Number(e.amount)||0); });
+  var studs=dtsStudents_().filter(function(x){ return DTS_FEE_COLS.indexOf(x.column)>-1 || paid[x.id]; });
+  Object.keys(paid).forEach(function(id){ if(!studs.some(function(x){ return x.id===id; })){ var x=dtsStudent_(id); studs.push(x || { id:id, name:t('A student no longer listed'), column:'' }); } });
+  return studs.map(function(x){
+    var fee=phase==='lecture' && DTS_FEE_COLS.indexOf(x.column)>-1 ? dtsFeePrice_(x.feeCat) : 0, p=Math.round((paid[x.id]||0)*100)/100;
+    return { id:x.id, name:x.name, cat:x.feeCat||'', country:x.country||'', fee:fee, paid:p, owes:Math.max(0, Math.round((fee-p)*100)/100), accepted:DTS_FEE_COLS.indexOf(x.column)>-1 };
+  }).sort(function(a, b){ return b.owes-a.owes || a.name.localeCompare(b.name); });
+}
+function dtsFinStuHtml_(phase, sch){
+  var rows=dtsFinStuRows_(phase), pool=dtsFinSum_(dtsFinIn_(phase,'income').filter(function(e){ return !e.studentId; }));
+  var h='<div class="card" id="dtsFinStudents"><h3 style="margin-top:0">🎓 '+esc(phase==='lecture' ? t('Each student’s lecture fee') : t('What came in for each student'))+'</h3>';
+  if(!rows.length) return h+'<p class="sub" style="margin:0">'+esc(t('No student accepted for this school yet.'))+'</p>'+(pool ? '<p class="hint" style="margin:6px 0 0">'+esc(gpT('General DTS pool: {money}',{money:dtsMoney2_(pool)}))+'</p>' : '')+'</div>';
+  var tot={ fee:0, paid:0, owes:0 }; rows.forEach(function(r){ tot.fee+=r.fee; tot.paid+=r.paid; tot.owes+=r.owes; });
+  if(phase==='lecture'){
+    h+='<p class="hint" style="margin:0 0 6px">'+esc(t('The fee is the lecture price for their country (A, B or C). What came in for them comes off it.'))+'</p>'+
+      '<div class="dtsTblWrap"><table class="dtsFeeTbl" id="dtsFinStuTbl"><thead><tr><th>'+esc(t('Student'))+'</th><th>'+esc(t('Fee'))+'</th><th>'+esc(t('Paid'))+'</th><th>'+esc(t('Still owes'))+'</th></tr></thead><tbody>'+
+      rows.map(function(r){ return '<tr data-dtsfinstu="'+esc(r.id)+'"><td><b>'+esc(r.name)+'</b> '+(r.cat ? '<span class="dtsCat cat'+r.cat+'">'+r.cat+'</span>' : (r.accepted ? '<span class="hint" style="margin:0">'+esc(t('Country not known'))+'</span>' : ''))+'</td>'+
+        '<td>'+esc(r.accepted ? dtsMoney2_(r.fee) : '—')+'</td><td>'+esc(dtsMoney2_(r.paid))+'</td><td>'+(r.owes ? '<b>'+esc(dtsMoney2_(r.owes))+'</b>' : (r.accepted && r.fee ? '✅ '+esc(t('Paid')) : '—'))+'</td></tr>'; }).join('')+
+      '</tbody><tfoot><tr><td>'+esc(t('Total'))+'</td><td>'+esc(dtsMoney2_(tot.fee))+'</td><td>'+esc(dtsMoney2_(tot.paid))+'</td><td>'+esc(dtsMoney2_(tot.owes))+'</td></tr></tfoot></table></div>';
+  } else {
+    h+='<div class="dtsTblWrap"><table class="dtsFeeTbl" id="dtsFinStuTbl"><thead><tr><th>'+esc(t('Student'))+'</th><th>'+esc(t('Came in'))+'</th></tr></thead><tbody>'+
+      rows.map(function(r){ return '<tr data-dtsfinstu="'+esc(r.id)+'"><td><b>'+esc(r.name)+'</b></td><td>'+esc(dtsMoney2_(r.paid))+'</td></tr>'; }).join('')+
+      '</tbody><tfoot><tr><td>'+esc(t('Total'))+'</td><td>'+esc(dtsMoney2_(tot.paid))+'</td></tr></tfoot></table></div>';
+  }
+  h+='<p class="hint" style="margin:8px 0 0" id="dtsFinPool">'+esc(gpT('General DTS pool: {money}',{money:dtsMoney2_(pool)}))+' — '+esc(t('given to the school, not to one student.'))+'</p>';
+  return h+'<div class="dtsBtns"><button class="btn small ghost" id="dtsFinCsvStu">⬇ '+esc(t('Download (CSV)'))+'</button></div></div>';
+}
+function dtsFinCsv_(name, head, rows){
+  var q=function(v){ v=String(v==null?'':v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+  var blob=new Blob(['﻿'+[head].concat(rows).map(function(r){ return r.map(q).join(','); }).join('\r\n')], { type:'text/csv;charset=utf-8' });
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name.replace(/[^\w\- ]+/g,'').trim()+'.csv';
+  document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function dtsFinPut_(d, msg){
+  S.dtsBusy=false;
+  if(d && d.ok){ S.dts.fin=d.fin||[]; S.dtsFinForm=null; if(msg) showMsg(msg); return true; }
+  var err=d && d.err;
+  showMsg(err==='bad_amount' ? t('Put in the amount in US$.') : err==='bad_date' ? t('Pick the day first.') : err==='bad_method' ? t('Say how it came in: cash, ABA or Subsplash.') :
+    err==='bad_category' ? t('Pick a category.') : err==='no_memo' ? t('Write what it was for.') : t('Could not save'));
+  return false;
+}
+function dtsFinKeep_(){
+  var f=S.dtsFinForm; if(!f) return;
+  document.querySelectorAll('[data-dfi],[data-dfe]').forEach(function(el){ var k=el.getAttribute('data-dfi')||el.getAttribute('data-dfe'); f[k]=el.value; });
+  var rc=document.getElementById('dfe_receipt'); if(rc) f.hasReceipt=rc.checked;
+}
+function bindDtsFin_(){
+  var d=S.dts; if(!d) return;
+  var all=function(sel, fn){ document.querySelectorAll(sel).forEach(function(b){ b.onclick=function(e){ gpTap(); fn(b, e); }; }); };
+  all('[data-dtsfinschool]', function(b){ S.dtsSchool=b.getAttribute('data-dtsfinschool'); S.dtsFinForm=null; render(); });
+  all('[data-dtsfinphase]', function(b){ S.dtsFinPhase=b.getAttribute('data-dtsfinphase'); S.dtsFinForm=null; render(); });
+  all('[data-dtsfinsec]', function(b){ S.dtsFinSec=b.getAttribute('data-dtsfinsec'); S.dtsFinForm=null; render(); });
+  var phase=S.dtsFinPhase==='outreach' ? 'outreach' : 'lecture';
+  var ai=document.getElementById('dtsFinAddInc'); if(ai) ai.onclick=function(){ gpTap(); S.dtsFinForm={ kind:'income', phase:phase, date:d.today||todayStr(), method:'', studentId:'', amount:'', note:'' }; render(); };
+  var ae=document.getElementById('dtsFinAddExp'); if(ae) ae.onclick=function(){ gpTap(); S.dtsFinForm={ kind:'expense', phase:'lecture', date:d.today||todayStr(), category:'', memo:'', who:(S.me && S.me.id)||'', amount:'', hasReceipt:false }; render(); };
+  all('[data-dtsfinedit]', function(b){ var e=dtsFinAll_().filter(function(x){ return x.id===b.getAttribute('data-dtsfinedit'); })[0]; if(e){ S.dtsFinForm=Object.assign({}, e); render(); window.scrollTo(0,0); } });
+  all('[data-dfimethod]', function(b){ dtsFinKeep_(); S.dtsFinForm.method=b.getAttribute('data-dfimethod'); render(); });
+  all('[data-dfecat]', function(b){ dtsFinKeep_(); S.dtsFinForm.category=b.getAttribute('data-dfecat'); render(); });
+  document.querySelectorAll('[data-dfi],[data-dfe]').forEach(function(el){ el.oninput=el.onchange=dtsFinKeep_; });
+  var rc=document.getElementById('dfe_receipt'); if(rc) rc.onchange=dtsFinKeep_;
+  var cc=document.getElementById('dtsFinCancel'); if(cc) cc.onclick=function(){ S.dtsFinForm=null; render(); };
+  var sv=document.getElementById('dtsFinSave');
+  if(sv) sv.onclick=function(){
+    dtsFinKeep_(); var f=S.dtsFinForm; if(!f || S.dtsBusy) return;
+    if(!(Number(f.amount)>0)){ showMsg(t('Put in the amount in US$.')); return; }
+    if(f.kind==='income' && !f.method){ showMsg(t('Say how it came in: cash, ABA or Subsplash.')); return; }
+    if(f.kind==='expense' && !f.category){ showMsg(t('Pick a category.')); return; }
+    if(f.kind==='expense' && !String(f.memo||'').trim()){ showMsg(t('Write what it was for.')); return; }
+    var rec=Object.assign({}, f, { schoolId:S.dtsSchool, amount:Number(f.amount) });
+    S.dtsBusy=true; render();
+    run('dtsFinSave',[S.auth.user,S.auth.pin,rec],function(r){ dtsFinPut_(r, t('Saved')); render(); }, function(){ S.dtsBusy=false; showMsg(t('Connection problem — try again.')); render(); });
+  };
+  var dl=document.getElementById('dtsFinDel');
+  if(dl) dl.onclick=function(){
+    var f=S.dtsFinForm; if(!f || !f.id || !confirm(t('Delete this entry?'))) return;
+    S.dtsBusy=true; render();
+    run('dtsFinDelete',[S.auth.user,S.auth.pin,f.id],function(r){ dtsFinPut_(r, t('Deleted')); render(); }, function(){ S.dtsBusy=false; showMsg(t('Connection problem — try again.')); render(); });
+  };
+  /* the two ticks in the list save on the spot */
+  document.querySelectorAll('[data-dtsfintick]').forEach(function(cb){
+    cb.onchange=function(){
+      var p=cb.getAttribute('data-dtsfintick').split('|'), e=dtsFinAll_().filter(function(x){ return x.id===p[0]; })[0]; if(!e) return;
+      var rec=Object.assign({}, e); rec[p[1]]=cb.checked; e[p[1]]=cb.checked;
+      run('dtsFinSave',[S.auth.user,S.auth.pin,rec],function(r){ if(!dtsFinPut_(r)){ e[p[1]]=!cb.checked; } render(); }, function(){ e[p[1]]=!cb.checked; showMsg(t('Connection problem — try again.')); render(); });
+    };
+  });
+  var sch=dtsCurSchool_(), nm=sch ? dtsSchoolName_(sch) : 'DTS';
+  var ce=document.getElementById('dtsFinCsvExp');
+  if(ce) ce.onclick=function(){ dtsFinCsv_(nm+' - lecture expenses', ['Date','Category','What it was for','Who made it','Amount (US$)','Has receipt','Receipt given to the office'],
+    dtsFinIn_('lecture','expense').map(function(e){ return [e.date, dtsFinWord_(DTS_FIN_CATS, e.category), e.memo, e.who ? dtsStaffName_(e.who) : (e.whoName||''), e.amount, e.hasReceipt?'yes':'no', e.toOffice?'yes':'no']; })); };
+  var cs=document.getElementById('dtsFinCsvStu');
+  if(cs) cs.onclick=function(){
+    var rows=dtsFinStuRows_(phase);
+    if(phase==='lecture') dtsFinCsv_(nm+' - lecture fees by student', ['Student','Country','Category','Fee (US$)','Paid (US$)','Still owes (US$)'], rows.map(function(r){ return [r.name, r.country, r.cat, r.fee, r.paid, r.owes]; }));
+    else dtsFinCsv_(nm+' - outreach income by student', ['Student','Came in (US$)'], rows.map(function(r){ return [r.name, r.paid]; }));
+  };
+}
