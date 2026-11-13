@@ -509,6 +509,10 @@ function dtsStudentsHtml_(d, sch){
   h+='<div class="card" id="dtsStudents"><h3 style="margin-top:0">🎓 '+esc(gpT('Students — {school}',{school:dtsSchoolName_(sch)}))+'</h3>'+
     '<p class="hint" style="margin:0 0 8px">'+esc(t('From the portal’s DTS applications. Tap a student for their details and their 1-on-1.'))+'</p>';
   if(!list.length) h+='<p class="sub" style="margin:0">'+esc(t('No applications for this school yet.'))+'</p>';
+  /* graduating is for those here: say so when nobody is yet (Nov 2026, Andrew: "I don't see the option to graduate") */
+  var accN=list.filter(function(x){ return x.column==='accepted'; }).length;
+  if(!here.length && list.length) h+='<p class="hint dtsGradHow" id="dtsGradHow">🎓 '+esc(accN ? gpT('To graduate students, they need to be here first: mark each one Arrived in the portal ({n} accepted, not marked arrived yet). Then tick them here and tap Graduated.',{n:accN}) : t('To graduate students, they need to be here first: mark each one Arrived in the portal. Then tick them here and tap Graduated.'))+
+    (d.portal ? ' <a href="'+esc(dtsPortalUrl_(''))+'" target="_blank" rel="noopener">'+esc(t('Open the DTS list in the portal'))+' ↗</a>' : '')+'</p>';
   if(here.length) h+='<div class="dtsClassBar"><label class="dtsAll"><input type="checkbox" id="dtsSelAll"'+(nSel && nSel===here.length?' checked':'')+'> '+esc(t('Select everyone here'))+'</label>'+
     (nSel ? '<span class="dtsGradBox"><input type="date" id="dtsGradDate" max="'+esc(d.today||todayStr())+'" value="'+esc(S.dtsGradDate||d.today||todayStr())+'">'+
       '<button class="btn small" id="dtsMarkGrad">🎓 '+esc(gpT('Graduated ({n})',{n:nSel}))+'</button></span>' : '<span class="hint">'+esc(t('Tick students to mark them graduated together.'))+'</span>')+'</div>';

@@ -157,6 +157,9 @@ ok('back on the tiles, the speaker schedule says every topic has its speaker', /
 await goPart('students');
 ok('Students: everyone who applied for this school, by where they are — not one in no school', (await p.$$('#dtsStudents [data-dtsstu]')).length === 3 && /Here now/.test(await p.$eval('#dtsStudents', e => e.textContent)) && /Applied/.test(await p.$eval('#dtsStudents', e => e.textContent)));
 ok('and the one not in a school yet, with a way to put them in', /Not in a school yet \(1\)/.test(await p.$eval('#dtsLoose', e => e.textContent)) && !!(await p.$('[data-dtsplace="c_loose"]')));
+ok('with everyone here, no “how to graduate” note', !(await p.$('#dtsGradHow')));
+ok('with nobody here yet, it says how: mark them Arrived in the portal first', await p.evaluate(() => { const keep = S.dts.students; S.dts.students = keep.map(x => x.column === 'arrived' ? { ...x, column: 'accepted', arrived: '' } : x);
+  const h = dtsStudentsHtml_(S.dts, dtsCurSchool_()); S.dts.students = keep; return /mark each one Arrived in the portal \(2 accepted/.test(h) && !/dtsSelAll/.test(h); }));
 await p.check('#dtsSelAll'); await p.waitForTimeout(250);
 ok('select everyone here → one Graduated button for both', /Graduated \(2\)/.test(await p.$eval('#dtsMarkGrad', e => e.textContent)));
 await p.click('#dtsMarkGrad'); await p.waitForTimeout(500);

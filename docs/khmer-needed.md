@@ -4930,3 +4930,12 @@ GPDTS → Finances: income (cash, ABA, Subsplash — the last two are names, lef
 | Rejected | បានបដិសេធ |
 
 GPDTS → Database: the Students tile counts only those accepted; each responsibility folds open on its description; a team's long outreach can be split into locations, each so many weeks ("wk" is short for week, on the team card). Portal → a record: Cancelled and Rejected at the end of the stage list close the application into the archive; a portal admin can change the name ("Leader’s name" for a team).
+
+## 100. GPDTS → Students: how to graduate
+
+| English | Khmer (draft) |
+|---|---|
+| To graduate students, they need to be here first: mark each one Arrived in the portal ({n} accepted, not marked arrived yet). Then tick them here and tap Graduated. | ដើម្បីឱ្យសិស្សបញ្ចប់ការសិក្សា ពួកគេត្រូវតែនៅទីនេះជាមុនសិន៖ សម្គាល់ម្នាក់ៗថាបានមកដល់នៅក្នុង Portal (ទទួលយក {n} នាក់ មិនទាន់សម្គាល់ថាបានមកដល់)។ បន្ទាប់មកគូសធីកពួកគេនៅទីនេះ ហើយចុចបានបញ្ចប់ការសិក្សា។ |
+| To graduate students, they need to be here first: mark each one Arrived in the portal. Then tick them here and tap Graduated. | ដើម្បីឱ្យសិស្សបញ្ចប់ការសិក្សា ពួកគេត្រូវតែនៅទីនេះជាមុនសិន៖ សម្គាល់ម្នាក់ៗថាបានមកដល់នៅក្នុង Portal។ បន្ទាប់មកគូសធីកពួកគេនៅទីនេះ ហើយចុចបានបញ្ចប់ការសិក្សា។ |
+
+Shown on GPDTS → Database → Students when nobody is marked Arrived yet: graduating is only for students who are here.
