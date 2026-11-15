@@ -4939,3 +4939,40 @@ GPDTS → Database: the Students tile counts only those accepted; each responsib
 | To graduate students, they need to be here first: mark each one Arrived in the portal. Then tick them here and tap Graduated. | ដើម្បីឱ្យសិស្សបញ្ចប់ការសិក្សា ពួកគេត្រូវតែនៅទីនេះជាមុនសិន៖ សម្គាល់ម្នាក់ៗថាបានមកដល់នៅក្នុង Portal។ បន្ទាប់មកគូសធីកពួកគេនៅទីនេះ ហើយចុចបានបញ្ចប់ការសិក្សា។ |
 
 Shown on GPDTS → Database → Students when nobody is marked Arrived yet: graduating is only for students who are here.
+
+## 101. Signing in with Google when it doesn't go smoothly
+
+| English | Khmer (draft) |
+|---|---|
+| You opened this inside {app}. Google doesn’t allow signing in from inside other apps. | អ្នកបានបើកនេះនៅក្នុង {app}។ Google មិនអនុញ្ញាតឱ្យចូលពីក្នុងកម្មវិធីផ្សេងទេ។ |
+| Open it in Chrome to sign in: | បើកវានៅក្នុង Chrome ដើម្បីចូល៖ |
+| Open it in Safari to sign in: tap ⋯ or the share button, then “Open in Safari”. Or copy the link and paste it into Safari. | បើកវានៅក្នុង Safari ដើម្បីចូល៖ ចុច ⋯ ឬប៊ូតុងចែករំលែក រួចជ្រើស “Open in Safari”។ ឬចម្លងតំណ ហើយបិទភ្ជាប់វាក្នុង Safari។ |
+| Open in Chrome | បើកក្នុង Chrome |
+| Copy the link | ចម្លងតំណ |
+| Your phone stopped the Google window from opening. | ទូរស័ព្ទរបស់អ្នកបានរារាំងមិនឱ្យផ្ទាំង Google បើក។ |
+| Google didn’t open, or didn’t come back? | Google មិនបានបើក ឬមិនបានត្រឡប់មកវិញ? |
+| Tap Continue with Google again and wait a moment — the Google window can take a few seconds. | ចុច បន្តដោយ Google ម្តងទៀត ហើយរង់ចាំបន្តិច — ផ្ទាំង Google អាចចំណាយពេលពីរបីវិនាទី។ |
+| If your phone blocks pop-ups, allow them for this page and try again. | ប្រសិនបើទូរស័ព្ទរបស់អ្នករារាំងផ្ទាំងលោតឡើង សូមអនុញ្ញាតវាសម្រាប់ទំព័រនេះ ហើយព្យាយាមម្តងទៀត។ |
+| On an iPhone app from the Home Screen, Google sometimes can’t open. Open the page in Safari instead and sign in there. | នៅលើកម្មវិធី iPhone ពីអេក្រង់ដើម ជួនកាល Google មិនអាចបើកបានទេ។ សូមបើកទំព័រនៅក្នុង Safari ជំនួសវិញ ហើយចូលនៅទីនោះ។ |
+| Use the Google account you use for YWAM GP — the email on your profile. | សូមប្រើគណនី Google ដែលអ្នកប្រើសម្រាប់ YWAM GP — អ៊ីមែលនៅលើប្រវត្តិរូបរបស់អ្នក។ |
+| Try another way | សាកល្បងវិធីផ្សេង |
+| Use my username and PIN | ប្រើឈ្មោះអ្នកប្រើ និង PIN របស់ខ្ញុំ |
+| Continue for now — connect Google later | បន្តសិន — ភ្ជាប់ Google ពេលក្រោយ |
+| Link copied — paste it into your browser | បានចម្លងតំណ — បិទភ្ជាប់វាក្នុងកម្មវិធីរុករករបស់អ្នក |
+| Copy this link | ចម្លងតំណនេះ |
+| This profile isn’t active any more — ask an admin. | ប្រវត្តិរូបនេះលែងសកម្មហើយ — សូមសួរអ្នកគ្រប់គ្រង។ |
+| Google didn’t confirm the sign-in — try again. | Google មិនបានបញ្ជាក់ការចូលទេ — សូមព្យាយាមម្តងទៀត។ |
+| No profile uses {email} yet. | មិនទាន់មានប្រវត្តិរូបណាប្រើ {email} នៅឡើយទេ។ |
+| that Google account | គណនី Google នោះ |
+| Do you already have a profile in the app? | តើអ្នកមានប្រវត្តិរូបនៅក្នុងកម្មវិធីរួចហើយឬនៅ? |
+| Yes — connect this Google account to my profile | បាទ/ចាស — ភ្ជាប់គណនី Google នេះទៅប្រវត្តិរូបរបស់ខ្ញុំ |
+| Use a different Google account | ប្រើគណនី Google ផ្សេង |
+| I’m new — create my profile | ខ្ញុំជាអ្នកថ្មី — បង្កើតប្រវត្តិរូបរបស់ខ្ញុំ |
+| Forgot your username or PIN? Ask an admin to reset your PIN — or to put {email} on your profile, and Continue with Google works straight away. | ភ្លេចឈ្មោះអ្នកប្រើ ឬ PIN? សូមសួរអ្នកគ្រប់គ្រងឱ្យកំណត់ PIN របស់អ្នកឡើងវិញ — ឬឱ្យដាក់ {email} នៅលើប្រវត្តិរូបរបស់អ្នក ហើយ បន្តដោយ Google នឹងដំណើរការភ្លាម។ |
+| Sign in once with your username and PIN — {email} is then connected to your profile, and next time Continue with Google is all you need. | ចូលម្តងដោយឈ្មោះអ្នកប្រើ និង PIN របស់អ្នក — បន្ទាប់មក {email} នឹងត្រូវបានភ្ជាប់ទៅប្រវត្តិរូបរបស់អ្នក ហើយលើកក្រោយ គ្រាន់តែចុច បន្តដោយ Google។ |
+| {email} is connected — next time just tap Continue with Google. | {email} ត្រូវបានភ្ជាប់ហើយ — លើកក្រោយ គ្រាន់តែចុច បន្តដោយ Google។ |
+| Signed in — now connect your Google account. | បានចូលហើយ — ឥឡូវភ្ជាប់គណនី Google របស់អ្នក។ |
+| another app | កម្មវិធីផ្សេង |
+| Facebook or Messenger | Facebook ឬ Messenger |
+
+The GP app's sign-in screen and the "connect your Google account" step: the help box when Google's window doesn't open (or the page was opened inside Messenger, Facebook or another app), and the choice when no profile has the Google account someone picked. "Continue with Google" is the button's own words (បន្តដោយ Google), kept the same everywhere. "Open in Safari" stays in English: it is what the iPhone menu says.

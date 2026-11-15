@@ -877,7 +877,7 @@ function gglLoad_(after){
   var sc=document.createElement('script'); sc.src='https://accounts.google.com/gsi/client'; sc.async=true; sc.defer=true;
   sc.onload=function(){
     try {
-      _ggl.client=google.accounts.oauth2.initTokenClient({ client_id:_ggl.cfg.google, scope:'openid email profile', callback:gglCred_, error_callback:function(){ _ggl.busy=false; render(); } });
+      _ggl.client=google.accounts.oauth2.initTokenClient({ client_id:_ggl.cfg.google, scope:'openid email profile', callback:gglCred_, error_callback:gglPopupErr_ });
       _ggl.ready=true; _ggl.loading=false;
       if(_ggl.after){ var f=_ggl.after; _ggl.after=null; f(); }
     } catch(e){ _ggl.loading=false; gglFail_(); }
@@ -885,31 +885,140 @@ function gglLoad_(after){
   sc.onerror=function(){ _ggl.loading=false; gglFail_(); };
   document.head.appendChild(sc);
 }
-function gglFail_(){ _ggl.busy=false; render(); showMsg(t('Google sign-in could not load — use your username and PIN, or try again later.')); }
+/* When Google doesn't come back (Nov 2026, Andrew: "a few people having trouble logging into the app with
+   the Google account … make it smoother and easier"): the button never stays on "Opening Google…" — a window
+   that couldn't open, or nothing after 20 seconds, puts the button back and opens a help box (gglHelpHtml_)
+   that says what to do: allow pop-ups, open the page in the phone's browser, try another way, or the PIN. */
+function gglFail_(){ _ggl.busy=false; S.gglHelp='fail'; render(); }
+function gglPopupErr_(err){
+  _ggl.busy=false;
+  var ty=err && err.type;
+  if(ty==='popup_failed_to_open') S.gglHelp='blocked';
+  render();
+}
+/* Where Google won't sign anyone in: inside another app's browser (Messenger, Facebook, Instagram, LINE,
+   Telegram's, any Android web view). Google refuses those ("disallowed_useragent"), so we say so first. */
+function gglInApp_(){
+  var ua=''; try { ua=navigator.userAgent||''; } catch(e){}
+  if(/FBAN|FBAV|FB_IAB|FBIOS|MessengerForiOS|Messenger/i.test(ua)) return 'Facebook or Messenger';
+  if(/Instagram/i.test(ua)) return 'Instagram';
+  if(/\bLine\//i.test(ua)) return 'LINE';
+  if(/MicroMessenger/i.test(ua)) return 'WeChat';
+  if(/Telegram/i.test(ua)) return 'Telegram';
+  if(/Android/i.test(ua) && /; wv\)/.test(ua)) return 'another app';
+  var standalone=false; try { standalone=!!navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches); } catch(e){}
+  if(/iPhone|iPad|iPod/i.test(ua) && !/Safari\//.test(ua) && !standalone) return 'another app';
+  return '';
+}
+function gglIsAndroid_(){ try { return /Android/i.test(navigator.userAgent||''); } catch(e){ return false; } }
+function gglIosStandalone_(){ try { return /iPhone|iPad|iPod/i.test(navigator.userAgent||'') && (!!navigator.standalone || matchMedia('(display-mode: standalone)').matches); } catch(e){ return false; } }
+function gglAppUrl_(){ try { return location.origin+'/teams.html'; } catch(e){ return 'https://impact.gonpreah.org/teams.html'; } }
+function gglHelpHtml_(where){
+  var inApp=gglInApp_(), url=gglAppUrl_(), h='';
+  if(!inApp && !S.gglHelp) return '';
+  h+='<div class="gglHelp" id="gglHelp">';
+  if(inApp){
+    h+='<p class="gglHelpHead">⚠️ '+esc(gpT('You opened this inside {app}. Google doesn’t allow signing in from inside other apps.',{app:t(inApp)}))+'</p>'+
+      '<p class="sub" style="margin:4px 0 8px">'+esc(gglIsAndroid_() ? t('Open it in Chrome to sign in:') : t('Open it in Safari to sign in: tap ⋯ or the share button, then “Open in Safari”. Or copy the link and paste it into Safari.'))+'</p>'+
+      '<div class="gglHelpBtns">'+(gglIsAndroid_() ? '<a class="btn small" id="gglOpenChrome" href="intent://'+esc(url.replace(/^https?:\/\//,''))+'#Intent;scheme=https;package=com.android.chrome;end">'+esc(t('Open in Chrome'))+'</a>' : '')+
+      '<button class="btn small ghost" id="gglCopyLink">📋 '+esc(t('Copy the link'))+'</button></div>';
+  } else {
+    h+='<p class="gglHelpHead">'+esc(S.gglHelp==='blocked' ? t('Your phone stopped the Google window from opening.') : t('Google didn’t open, or didn’t come back?'))+'</p><ul class="gglHelpList">'+
+      '<li>'+esc(t('Tap Continue with Google again and wait a moment — the Google window can take a few seconds.'))+'</li>'+
+      '<li>'+esc(t('If your phone blocks pop-ups, allow them for this page and try again.'))+'</li>'+
+      (gglIosStandalone_() && !gglRedirectOn_() ? '<li>'+esc(t('On an iPhone app from the Home Screen, Google sometimes can’t open. Open the page in Safari instead and sign in there.'))+' <button class="linkbtn inline" id="gglCopyLink">📋 '+esc(t('Copy the link'))+'</button></li>' : '')+
+      '<li>'+esc(t('Use the Google account you use for YWAM GP — the email on your profile.'))+'</li></ul>'+
+      '<div class="gglHelpBtns">'+(gglRedirectOn_() ? '<button class="btn small" id="gglRedirect">'+esc(t('Try another way'))+'</button>' : '')+
+      (where==='login' ? '<button class="btn small ghost" id="gglUsePin">'+esc(t('Use my username and PIN'))+'</button>' : '')+
+      (where==='step' ? '<button class="btn small ghost" id="gglSkip">'+esc(t('Continue for now — connect Google later'))+'</button>' : '')+'</div>';
+  }
+  return h+'</div>';
+}
+function gglCopy_(){
+  var url=gglAppUrl_();
+  try { if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(url).then(function(){ showMsg(t('Link copied — paste it into your browser')); }, function(){ prompt(t('Copy this link'), url); }); return; } } catch(e){}
+  try { prompt(t('Copy this link'), url); } catch(e){}
+}
+/* Signing in by going to Google's page and back, instead of a pop-up window: what works in an iPhone
+   Home Screen app. Off until the site says so (portalAuthConfig's `redirect`, from GP_GOOGLE_REDIRECT),
+   because Google only sends people back to an address added in Google Cloud ("Authorized redirect URIs":
+   https://<site>/teams.html) — without it they'd be left on Google's error page. */
+function gglRedirectOn_(){ return !!(_ggl.cfg && _ggl.cfg.google && _ggl.cfg.redirect); }
+function gglRedirectGo_(mode){
+  if(!gglRedirectOn_()) return false;
+  var st=''; try { var a=new Uint8Array(16); crypto.getRandomValues(a); st=Array.prototype.map.call(a, function(b){ return ('0'+b.toString(16)).slice(-2); }).join(''); } catch(e){ st=String(Math.random()).slice(2)+String(Date.now()); }
+  lsSet('gp-ggl-redirect', JSON.stringify({ state:st, mode:mode||'login', at:Date.now(), wanted:S.gglNew ? { email:S.gglNew.email } : null }));
+  var q={ client_id:_ggl.cfg.google, redirect_uri:gglAppUrl_(), response_type:'token', scope:'openid email profile', state:st, prompt:'select_account', include_granted_scopes:'true' };
+  location.href='https://accounts.google.com/o/oauth2/v2/auth?'+Object.keys(q).map(function(k){ return k+'='+encodeURIComponent(q[k]); }).join('&');
+  return true;
+}
+/* coming back from Google's page: the token is in the address's #… — taken out at once (the address is
+   tidied before anything else), checked against the state we left, and finished once the page is up */
+function gglRedirectTake_(){
+  var h=''; try { h=String(location.hash||''); } catch(e){}
+  if(!/[#&](access_token|error)=/.test(h)) return;
+  var p={}; h.replace(/^#/,'').split('&').forEach(function(kv){ var i=kv.indexOf('='); if(i>0) p[decodeURIComponent(kv.slice(0,i))]=decodeURIComponent(kv.slice(i+1).replace(/\+/g,' ')); });
+  try { history.replaceState(null, '', location.pathname+location.search); } catch(e){}
+  var kept=null; try { kept=JSON.parse(lsGet('gp-ggl-redirect')||'null'); } catch(e){}
+  lsDel('gp-ggl-redirect');
+  if(!kept || !p.state || p.state!==kept.state || Date.now()-(kept.at||0)>15*60000) return;
+  _ggl.ret = p.access_token ? { tok:p.access_token, mode:kept.mode } : { err:p.error||'error', mode:kept.mode };
+}
+function gglRedirectFinish_(){
+  var r=_ggl.ret; if(!r) return; _ggl.ret=null;
+  if(r.err){ if(r.err!=='access_denied'){ S.gglHelp='fail'; render(); } return; }
+  _ggl.mode=r.mode;
+  gglCred_({ access_token:r.tok });
+}
 function gglGo_(mode){
   if(_ggl.busy) return;
-  _ggl.mode=mode||'login'; _ggl.busy=true; render();
+  _ggl.mode=mode||'login'; S.gglHelp=null;
+  /* an iPhone Home Screen app goes by Google's page when the site allows it — its pop-up often never comes back */
+  if(gglIosStandalone_() && gglRedirectGo_(_ggl.mode)) return;
+  _ggl.busy=true; render();
   gglLoad_(function(){ try { _ggl.client.requestAccessToken({ prompt:'select_account' }); } catch(e){ gglFail_(); } });
-  setTimeout(function(){ if(_ggl.busy && !_ggl.ready){ _ggl.busy=false; render(); } }, 12000);
+  var started=Date.now(); _ggl.started=started;
+  setTimeout(function(){ if(_ggl.busy && _ggl.started===started){ _ggl.busy=false; S.gglHelp='slow'; render(); } }, 20000);
+}
+function gglErrWord_(err){
+  return err==='pending' ? t('Your account is waiting on approval from a base leader.') :
+    err==='auth' ? t('This profile isn’t active any more — ask an admin.') :
+    err==='google' ? t('Google didn’t confirm the sign-in — try again.') :
+    t('Google sign-in didn’t work — try again.');
 }
 function gglCred_(resp){
-  var tok=resp && (resp.access_token || resp.credential); _ggl.busy=false;
+  var tok=resp && (resp.access_token || resp.credential); _ggl.busy=false; _ggl.started=0;
   if(!tok){ render(); return; }
+  S.gglHelp=null;
   if(_ggl.mode==='link'){
     run('staffLinkGoogle',[S.auth.user,S.auth.pin,tok],function(d){
       if(d && d.ok){ S.auth.pin=d.token; lsSet('gp-staff', JSON.stringify(S.auth)); if(S.profile && !S.profile.email) S.profile.email=d.email; if(S.me){ S.me.google=true; S.me.signIn='google'; } showMsg(t('Done — sign in with Google from now on.')); }
-      else showMsg(d && d.err==='email_taken' ? t('That Google account is already linked to another profile.') : t('Google sign-in didn’t work — try again.'));
+      else showMsg(d && d.err==='email_taken' ? t('That Google account is already linked to another profile.') : gglErrWord_(d && d.err));
       render();
     });
     return;
   }
   run('staffLoginGoogle',[tok],function(d){
-    if(d && d.ok){ S.auth={ user:d.user, pin:d.token }; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; afterLogin(); return; }
-    if(d && d.err==='new'){ S.regMode=true; S.regGoogle={ token:tok, email:d.email||'', name:d.name||'' }; render(); showMsg(t('Welcome! Make your profile — no username or PIN needed.')); return; }
+    if(d && d.ok){ S.auth={ user:d.user, pin:d.token }; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; S.gglNew=null; afterLogin(); return; }
+    /* a Google account no profile has yet: most often the person picked another Gmail than the one on their
+       profile — so ask before making a new profile (that made duplicate sign-ups waiting on an admin) */
+    if(d && d.err==='new'){ S.gglNew={ token:tok, email:d.email||'', name:d.name||'' }; S.pinLogin=false; render(); return; }
     if(d && d.err==='applicant'){ showMsg(t('That is a portal account — opening the YWAM GP Portal.')); setTimeout(function(){ location.href='portal.html'; }, 900); return; }
-    showMsg(d && d.err==='pending' ? t('Your account is waiting on approval from a base leader.') : t('Google sign-in didn’t work — try again.'));
+    showMsg(gglErrWord_(d && d.err));
     render();
   });
+}
+/* "We didn't find a profile for that Google account": connect it to the profile they have (sign in once
+   with the username and PIN — the Google account is joined to it right after, no second trip to Google),
+   choose another Google account, or make a new profile. */
+function gglNewHtml_(){
+  var g=S.gglNew||{};
+  return '<h2>'+esc(t('Almost there'))+'</h2><div class="card" id="gglNew"><p style="margin:0 0 6px">'+esc(gpT('No profile uses {email} yet.',{email:g.email||t('that Google account')}))+'</p>'+
+    '<p class="sub" style="margin:0 0 12px">'+esc(t('Do you already have a profile in the app?'))+'</p>'+
+    '<button class="btn" id="gglHaveProfile">'+esc(t('Yes — connect this Google account to my profile'))+'</button>'+
+    '<button class="btn ghost" id="gglOtherAccount">'+esc(t('Use a different Google account'))+'</button>'+
+    '<button class="btn ghost" id="gglImNew">'+esc(t('I’m new — create my profile'))+'</button>'+
+    '<p class="hint" style="margin:10px 0 0">'+esc(gpT('Forgot your username or PIN? Ask an admin to reset your PIN — or to put {email} on your profile, and Continue with Google works straight away.',{email:g.email||t('that Google account')}))+'</p></div>';
 }
 /* Moving everyone to Google (Nov 2026, Andrew: "have everyone sign in with their username and PIN and
    after that, it goes into the step of sign in with Google, and say from now on sign in using the
@@ -917,6 +1026,7 @@ function gglCred_(resp){
    signed in with a PIN whose profile has no Google yet gets this page and nothing else until they connect
    it (staffLinkGoogle swaps the PIN session for a Google one) — or log out. */
 function gglStepWanted_(){
+  if(lsGet('gp-ggl-skip')===String(new Date().toDateString())) return false;   // Google wouldn't work on this phone today: asked again tomorrow
   return !!(gglOn_() && S.me && S.auth && !S.guest && !S.board && !S.student && !S.stuPreview && !S.bootStale && !S.offlineSince &&
     /^\d{4}$/.test(String(S.auth.pin||'')) && !S.me.google);
 }
@@ -924,19 +1034,21 @@ function gglStepHtml_(){
   return '<div class="card gglStep" id="gglStep"><h2 style="margin-top:0">🔐 '+esc(t('From now on, sign in with Google'))+'</h2>'+
     '<p class="sub">'+esc(t('We are moving everyone off usernames and PINs. Connect your Google account once — next time, just tap Continue with Google.'))+'</p>'+
     ((S.profile && S.profile.email) ? '<p class="hint">'+esc(gpT('Use the Google account for {email} if you can.',{email:S.profile.email}))+'</p>' : '')+
-    gglBtnHtml_('gglStepGo', t('Connect my Google account'))+
+    gglBtnHtml_('gglStepGo', t('Connect my Google account'))+gglHelpHtml_('step')+
     '<button class="linkbtn" id="gglStepOut">'+esc(t('Log out'))+'</button></div>';
 }
 function loginHtml(){
   gglCfg_();
   /* with Google on, it is the way in: the username and PIN are only for connecting Google the first time */
+  if(gglOn_() && S.gglNew && !S.pinLogin) return gglNewHtml_();
   if(gglOn_() && !S.pinLogin) return '<h2>Welcome back</h2><p class="sub">'+esc(t('Sign in with your Google account.'))+'</p>'+
-    '<div class="card">'+gglBtnHtml_('googleLogin', t('Continue with Google'))+
+    '<div class="card">'+gglBtnHtml_('googleLogin', t('Continue with Google'))+gglHelpHtml_('login')+
     '<button class="linkbtn" id="showPinLogin">'+esc(t('First time with Google? Sign in once with your username and PIN to connect it'))+'</button>'+
     '<button class="linkbtn" id="toReg">New here? Create my profile</button></div>';
   return '<h2>Welcome back</h2><p class="sub">'+esc(gglOn_() ? t('Sign in once with your username and PIN — then connect your Google account.') : 'Log in with your username and 4-digit PIN.')+'</p>'+
     '<div class="card">'+
     (gglOn_() ? '<button class="linkbtn" id="hidePinLogin" style="margin-top:0">← '+esc(t('Continue with Google instead'))+'</button>' : '')+
+    (S.gglNew ? '<p class="gglJoin" id="gglJoin">🔗 '+esc(gpT('Sign in once with your username and PIN — {email} is then connected to your profile, and next time Continue with Google is all you need.',{email:S.gglNew.email}))+'</p>' : '')+
     '<label class="f">'+esc(t('Username or email'))+'</label><input type="text" id="li_user" autocapitalize="none" placeholder="e.g. sokha">'+
     '<label class="f">'+esc(t('PIN or password'))+'</label><input type="password" id="li_pin" maxlength="200" placeholder="••••">'+
     '<button class="btn" id="loginBtn">Log in</button>'+

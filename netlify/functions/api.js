@@ -834,10 +834,22 @@ function staffLoginOut_(s, extra) {
     profile: { phone: s.phone, joined: s.joined, debt: s.debt, mentorStatus: s.mentorStatus || '', dashboardColor: s.dashboardColor || '', dashboardBg: s.dashboardBg || '', email: s.email || '' }
   }, extra || {});
 }
+/* The same Gmail however it was typed on a profile (Nov 2026, sign-in trouble): capitals and spaces, and for
+   Gmail the dots and a +tag don't change the account — andrew.lee+ywam@Gmail.com is andrewlee@gmail.com. */
+function emailKey_(e) {
+  e = String(e || '').trim().toLowerCase();
+  const at = e.lastIndexOf('@');
+  if (at < 1) return e;
+  let local = e.slice(0, at), dom = e.slice(at + 1);
+  if (dom === 'gmail.com' || dom === 'googlemail.com') { local = local.split('+')[0].replace(/\./g, ''); dom = 'gmail.com'; }
+  return local + '@' + dom;
+}
 function staffByEmail_(rows, email) {
-  email = String(email || '').trim().toLowerCase();
-  if (!email) return null;
-  return rows.find(function (r) { return r && !isApplicant_(r) && String(r.email || '').toLowerCase() === email; }) || null;
+  const key = emailKey_(email);
+  if (!key || key.indexOf('@') < 1) return null;
+  const exact = String(email || '').trim().toLowerCase();
+  return rows.find(function (r) { return r && !isApplicant_(r) && String(r.email || '').trim().toLowerCase() === exact; }) ||
+    rows.find(function (r) { return r && !isApplicant_(r) && r.email && emailKey_(r.email) === key; }) || null;
 }
 async function staffLoginGoogle(token) {
   const gg = await verifyGoogleToken_(token);
@@ -5469,7 +5481,7 @@ async function getMyBoot(username, pin) {
 
   return {
     ok: true,
-    googleId: googleClientId_(),   // Continue with Google / the move off PINs (07-health-leave.js)
+    googleId: googleClientId_(), googleRedirect: googleRedirect_(),   // Continue with Google / the move off PINs (07-health-leave.js)
     staff: selfStaff_(s, { isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), signIn: authKindOf_(s), google: !!s.google, hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '', langLevel: langMine_(s), seeLangLevels: canSeeLangLevels_(s) }),   // created: for My Home's first 30 days
     profile: {
       phone: s.phone, joined: s.joined, debt: s.debt, mentorStatus: s.mentorStatus || '',
@@ -9076,8 +9088,11 @@ async function verifyGoogleToken_(token) {
   return { email: email, name: name, sub: String(info.sub || '') };
 }
 /* What the page needs before it can draw the sign-in: whether Google is on. */
+/* GP_GOOGLE_REDIRECT on: the GP app may sign in by going to Google's page and back (an iPhone Home Screen app,
+   where the pop-up often doesn't come back) — only once https://<site>/teams.html is an Authorized redirect URI. */
+function googleRedirect_() { return !!googleClientId_() && /^(1|on|true|yes)$/i.test(String(process.env.GP_GOOGLE_REDIRECT || '').trim()); }
 async function portalAuthConfig() {
-  return { ok: true, google: googleClientId_() };
+  return { ok: true, google: googleClientId_(), redirect: googleRedirect_() };
 }
 /* Sign in with Google: a verified token for an email that has an applicant
    account signs them in — a fresh device token comes back, which the page
