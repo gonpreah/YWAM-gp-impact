@@ -857,6 +857,34 @@ school's home.
   tests/test-applicant-walls.mjs calls every handler in HANDLERS with an applicant's sign-in and fails if
   one outside its APPLICANT_OK list opens, or any answer carries someone else's details — a new handler
   is covered without editing the test.
+- **When it doesn't go smoothly (Nov 2026, Andrew: "a few people having trouble logging into the app with the
+  Google account … make it smoother and easier")** (07-health-leave.js; tests/test-google-signin.mjs,
+  test-google-signin-ui.mjs):
+  - **No profile for that Google account** (`staffLoginGoogle` → `new`, usually another Gmail than the profile's):
+    no longer straight into sign-up (that made duplicate accounts waiting on an admin) but a choice
+    (`gglNewHtml_`, `S.gglNew`, `#gglNew`): **Yes — connect this Google account to my profile** (`#gglHaveProfile`
+    → the PIN form with `#gglJoin`; after `staffLogin` the held token goes straight to `staffLinkGoogle` — no
+    connect step, no second trip to Google), **Use a different Google account** (`#gglOtherAccount`), **I'm new**
+    (`#gglImNew`, the old sign-up with Google), and what to do with a forgotten PIN.
+  - **One Gmail however it's written** (`emailKey_`, `staffByEmail_`): case and spaces, and for gmail.com /
+    googlemail.com the dots and a +tag — the exact spelling first. Used by Google sign-in and an email typed in
+    the username box.
+  - **Never stuck on "Opening Google…"**: a window that can't open (`gglPopupErr_`, `popup_failed_to_open`) or
+    nothing after 20 s puts the button back and opens the help box (`gglHelpHtml_`, `#gglHelp`, `S.gglHelp`):
+    try again, allow pop-ups, the right Google account, an iPhone Home Screen app → Safari; **Use my username and
+    PIN** on the sign-in screen (`#gglUsePin`), and on the connect step — only after a failure — **Continue for now**
+    (`#gglSkip`, `gp-ggl-skip` = today: asked again tomorrow; Andrew had removed "Not now", this is only for a
+    phone Google won't open on).
+  - **Inside another app's browser** (`gglInApp_`: Messenger / Facebook, Instagram, LINE, WeChat, Telegram, an
+    Android web view, an iOS web view that isn't a Home Screen app) Google refuses to sign in, so the box says so
+    up front with **Open in Chrome** on Android (`#gglOpenChrome`, an `intent://` link) and **Copy the link**.
+  - **Google's page and back** (`gglRedirectGo_` / `gglRedirectTake_` / `gglRedirectFinish_`): the implicit flow
+    to `https://<site>/teams.html` with a random `state` kept in `gp-ggl-redirect` (15 minutes, one use); the
+    token is taken out of the address before boot. Used by an iPhone Home Screen app (`gglIosStandalone_`, where
+    the pop-up often never comes back) and as "Try another way" in the help box — **only when the site turns it
+    on**: `GP_GOOGLE_REDIRECT=on` in Netlify (`googleRedirect_` → `portalAuthConfig.redirect` and the boot's
+    `googleRedirect`), after adding `https://impact.gonpreah.org/teams.html` to the OAuth client's **Authorized
+    redirect URIs** in Google Cloud — without that Google would show its error page.
 - **Every new account waits for an admin** (Andrew: "admin will receive an approval whether they accept
   them or deny them"): `staffRegister` makes every sign-up pending (it used to be Campus Leadership only),
   pushes each admin at once (`pushNow_` 'signup' → `teams.html?view=approvals`), and Admin → Approvals has

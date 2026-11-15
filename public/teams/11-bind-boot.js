@@ -1645,6 +1645,14 @@ function bind(){
   var ggso=document.getElementById('gglStepOut'); if(ggso) ggso.onclick=function(){ logout(); };
   var spl=document.getElementById('showPinLogin'); if(spl) spl.onclick=function(){ S.pinLogin=true; render(); };
   var hpl=document.getElementById('hidePinLogin'); if(hpl) hpl.onclick=function(){ S.pinLogin=false; render(); };
+  // when Google doesn't work (07-health-leave.js): the help box, and the "no profile for that Google account" choice
+  var gcl=document.getElementById('gglCopyLink'); if(gcl) gcl.onclick=gglCopy_;
+  var grd=document.getElementById('gglRedirect'); if(grd) grd.onclick=function(){ gglRedirectGo_(S.me ? 'link' : 'login'); };
+  var gup=document.getElementById('gglUsePin'); if(gup) gup.onclick=function(){ S.pinLogin=true; S.gglHelp=null; render(); };
+  var gsk=document.getElementById('gglSkip'); if(gsk) gsk.onclick=function(){ lsSet('gp-ggl-skip', String(new Date().toDateString())); S.gglHelp=null; render(); };
+  var ghp=document.getElementById('gglHaveProfile'); if(ghp) ghp.onclick=function(){ S.pinLogin=true; render(); var u=document.getElementById('li_user'); if(u) u.focus(); };
+  var goa=document.getElementById('gglOtherAccount'); if(goa) goa.onclick=function(){ S.gglNew=null; gglGo_('login'); };
+  var gin=document.getElementById('gglImNew'); if(gin) gin.onclick=function(){ var g=S.gglNew||{}; S.regMode=true; S.regGoogle={ token:g.token, email:g.email||'', name:g.name||'' }; S.gglNew=null; render(); showMsg(t('Welcome! Make your profile — no username or PIN needed.')); };
   if(lb) lb.onclick=function(){
     var u=document.getElementById('li_user').value.trim();
     var pin=document.getElementById('li_pin').value;
@@ -1653,7 +1661,21 @@ function bind(){
     if(u.indexOf('@')===-1) pin=pin.trim();
     lb.disabled=true; lb.textContent='…';
     run('staffLogin',[u,pin],function(d){
-      if(d.ok){ S.auth={user:d.user||u,pin:pin}; S.me=d.staff; S.profile=d.profile; afterLogin(); }
+      if(d.ok){
+        S.auth={user:d.user||u,pin:pin}; S.me=d.staff; S.profile=d.profile;
+        /* they came from "No profile uses that Google account": join it to this profile now, with the Google
+           sign-in they already made — no connect step, no second trip to Google */
+        var gn=S.gglNew; S.gglNew=null;
+        if(gn && gn.token && !(S.me && S.me.google)){
+          run('staffLinkGoogle',[S.auth.user,S.auth.pin,gn.token],function(r){
+            if(r && r.ok){ S.auth.pin=r.token; if(S.me){ S.me.google=true; S.me.signIn='google'; } if(S.profile && !S.profile.email) S.profile.email=r.email; showMsg(gpT('{email} is connected — next time just tap Continue with Google.',{email:r.email||gn.email})); }
+            else showMsg(r && r.err==='email_taken' ? t('That Google account is already linked to another profile.') : t('Signed in — now connect your Google account.'));
+            afterLogin();
+          }, function(){ afterLogin(); });
+          return;
+        }
+        afterLogin();
+      }
       else if(!d.err){
         /* not staff — perhaps a member of the advisory board, with their own sign-in */
         run('boardLogin',[u,pin],function(b){
@@ -1669,7 +1691,7 @@ function bind(){
     });
   };
   var toReg=document.getElementById('toReg'); if(toReg) toReg.onclick=function(){ S.regMode=true; if(!S.roster.length){ run('teamRoster',[],function(r){S.roster=Array.isArray(r)?r:[];render();}); } else render(); };
-  var toLogin=document.getElementById('toLogin'); if(toLogin) toLogin.onclick=function(){ S.regMode=false; S.regGoogle=null; render(); };
+  var toLogin=document.getElementById('toLogin'); if(toLogin) toLogin.onclick=function(){ S.regMode=false; S.regGoogle=null; S.gglNew=null; render(); };
 
   // register
   var rb=document.getElementById('regBtn');
@@ -2133,4 +2155,6 @@ gpInstallPrompt();
     window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
   } catch(e){}
 })();
+gglRedirectTake_();   // back from Google's page: take the token out of the address before anything else reads it
 boot();
+gglRedirectFinish_();
