@@ -957,7 +957,8 @@ function adminStaffOut_(s) {
     mentorId: s.mentorId || '', mentorStatus: s.mentorStatus || '',
     leads: leadsOf_(s), ministries: ministriesOf_(s),
     archived: archivedOf_(s),
-    created: s.created || ''
+    created: s.created || '',
+    google: !!(s.google && s.google.sub), signIn: authKindOf_(s)   // Admin → Accounts' "Not on Google yet"
   };
 }
 

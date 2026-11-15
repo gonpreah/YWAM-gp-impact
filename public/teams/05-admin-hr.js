@@ -781,6 +781,17 @@ function adminAccountsHtml_(){
     esc(t('Search by name or username…'))+'"></div>'+
     '<p class="emptyLine" id="adminSearchEmpty" style="display:none">'+esc(t('No one matches that search.'))+'</p>';
   var shown = activeTab==='__other' ? other : list.filter(function(x){ return x.campus===activeTab; });
+  /* Who still signs in with a PIN (Nov 2026, Andrew: "who hasn't signed in with Google yet"): active
+     accounts with no Google account connected. Pending and archived accounts can't sign in at all. */
+  var noGgl=shown.filter(function(x){ return x.active && !x.archived && !x.google; });
+  if(S.adminGgl && !noGgl.length) S.adminGgl=false;
+  h+='<div class="deptChips" id="adminGglRow">'+
+    '<button class="deptChip'+(!S.adminGgl?' on':'')+'" data-adminggl="0">'+esc(t('Everyone'))+' · '+shown.length+'</button>'+
+    '<button class="deptChip'+(S.adminGgl?' on':'')+'" data-adminggl="1" id="adminGglBtn">'+esc(t('Not on Google yet'))+' · '+noGgl.length+'</button></div>';
+  if(S.adminGgl){
+    shown=noGgl;
+    h+='<p class="hint" id="adminGglHint" style="margin:6px 0">'+esc(t('These people still sign in with their username and PIN. Next time they open the app, it asks them to connect their Google account.'))+'</p>';
+  }
   if(!shown.length){
     h+='<p class="sub" style="margin:0 0 8px">'+esc(t('No accounts yet.'))+'</p>';
     return h;
@@ -800,6 +811,7 @@ function adminAccountsHtml_(){
     var key = x.id || ('row'+i);
     var status = x.archived ? '📦 '+t('Archived') : !x.active ? '⏳ '+t('Pending approval') : (x.isAdmin ? '🛡️ '+t('Admin') : '');
     var leadsN = (x.leads||[]).length;
+    if(x.active && !x.archived && !x.google) status = (status?status+' · ':'')+'🔑 '+t('PIN only');
     var summary = '@'+x.username+' · '+t(x.dept)+(x.ministry?' · '+t(x.ministry):'')+(status?' · '+status:'')+
       (leadsN ? ' · 👑 '+x.leads.map(function(k){ return t(k.split('|')[1]||k); }).join(', ') : '');
     var mine = !!x.id && x.id===S.me.id;
@@ -1453,6 +1465,9 @@ function bindAdmin(){
      dropped back into the full list, which read as "selecting a staff
      bugs". The query lives in S.adminSearch, the box is refilled from it,
      and the filter is applied once here as well as on every keystroke. */
+  document.querySelectorAll('[data-adminggl]').forEach(function(b){
+    b.onclick=function(){ S.adminGgl = b.getAttribute('data-adminggl')==='1'; render(); };
+  });
   var asr=document.getElementById('adminSearch');
   var adminFilter_=function(){
     var q=(S.adminSearch||'').trim().toLowerCase();

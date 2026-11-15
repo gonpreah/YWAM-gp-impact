@@ -80,6 +80,11 @@ r = (await call('portalAuthConfig', [])).body;
 ok('… GP_GOOGLE_REDIRECT=on turns it on', r.redirect === true);
 r = (await call('getMyBoot', ['andrew', '1234'])).body;
 ok('the boot says so too', r && r.ok && r.googleRedirect === true && r.googleId === 'cid.apps.googleusercontent.com');
+mem.staff.find(s => s.id === 'st_andrew').isAdmin = true;
+r = (await call('adminListStaff', ['andrew', '1234'])).body;
+const by = id => (r.staff || []).find(s => s.id === id) || {};
+ok('Admin → Accounts knows who has connected Google and who hasn’t', r.ok && by('st_andrew').google === true && by('st_dotless').google === false && by('st_work').google === true && by('st_dotless').signIn === 'pin', JSON.stringify((r.staff || []).map(s => s.id + ':' + s.google)));
+ok('… and sends nothing of the Google account itself', !JSON.stringify(r).includes('g-andrew'));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

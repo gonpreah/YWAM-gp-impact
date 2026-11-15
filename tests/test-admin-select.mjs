@@ -28,10 +28,10 @@ function ok(name, cond, extra) {
   else { fail++; console.log('FAIL ' + name + (extra !== undefined ? '  → ' + extra : '')); }
 }
 const base = { campus: 'siemreap', photo: '', mentorId: '', isAdmin: false, leads: [], active: true };
-const ME = { ...base, id: 'st_admin', name: 'Uriah Lyford', username: 'uriah', dept: 'Campus Leadership', ministry: 'Campus Director', role: 'Director', isAdmin: true, staffType: 'campus' };
+const ME = { ...base, id: 'st_admin', name: 'Uriah Lyford', username: 'uriah', dept: 'Campus Leadership', ministry: 'Campus Director', role: 'Director', isAdmin: true, staffType: 'campus', google: true };
 const staff = [ME];
 // ten ministry staff, three YAP, one whose kind of staff was never set
-for (let i = 0; i < 14; i++) staff.push({ ...base, id: 'st_' + i, name: 'Person ' + i, username: 'p' + i, dept: 'Community Service', ministry: 'Cafe', role: '', staffType: i < 10 ? 'ministry' : i < 13 ? 'yap' : '' });
+for (let i = 0; i < 14; i++) staff.push({ ...base, id: 'st_' + i, name: 'Person ' + i, username: 'p' + i, dept: 'Community Service', ministry: 'Cafe', role: '', staffType: i < 10 ? 'ministry' : i < 13 ? 'yap' : '', google: i < 5 });
 
 const browser = await chromium.launch({ executablePath: CHROMIUM });
 const ctx = await browser.newContext({ viewport: { width: 390, height: 700 } });
@@ -101,6 +101,17 @@ await page.waitForTimeout(400);
 await page.click('[data-admincampustab="siemreap"]');
 await page.waitForTimeout(400);
 ok('switching campus tabs keeps working', (await visible()).length === 15);
+// who isn't on Google yet (Nov 2026, Andrew): the five without a Google account connected, and nobody else
+ok('a chip says how many still sign in with a PIN', /Not on Google yet · 9/.test(await page.textContent('#adminGglBtn')), await page.textContent('#adminGglBtn'));
+await page.click('#adminGglBtn');
+await page.waitForTimeout(400);
+const noG = await visible();
+ok('tapping it lists only them', noG.length === 9 && !noG.includes('st_admin') && !noG.includes('st_0') && noG.includes('st_5') && noG.includes('st_13'), noG.join(','));
+ok('… says what happens next, and each row is marked PIN only', !!(await page.$('#adminGglHint')) && /PIN only/.test(await page.textContent('[data-adminperson="st_5"]')));
+await page.click('[data-adminggl="0"]');
+await page.waitForTimeout(400);
+ok('Everyone brings the whole list back', (await visible()).length === 15);
+ok('… where someone on Google carries no PIN only mark', !/PIN only/.test(await page.textContent('[data-adminperson="st_0"]')) && /PIN only/.test(await page.textContent('[data-adminperson="st_6"]')));
 await page.click('#adminBack');
 await page.waitForTimeout(400);
 const home = await page.evaluate(() => ({ cards: [].map.call(document.querySelectorAll('[data-adminsub]'), b => b.getAttribute('data-adminsub')), badge: (document.querySelector('[data-adminsub="accounts"] .adminBadge') || {}).textContent }));
