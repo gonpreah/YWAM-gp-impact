@@ -262,8 +262,9 @@ const TICKED_TODAY = thisWk === NOW;
   await page.click('[data-habitpast="bible"]'); await page.waitForTimeout(900);
   ok('tapping again unticks it', !(await page.$eval('[data-habitpast="bible"]', e => e.classList.contains('on'))) && mem.dailyLogs.filter(l => l.date === D3)[0].habits.bible === false);
   await page.click('[data-habitday="' + addDays(NOW, -1) + '"]'); await page.waitForTimeout(300);
-  const Y = addDays(NOW, -1), yWeekday = dowOf(Y) >= 1 && dowOf(Y) <= 5;
-  ok('yesterday shows what was already ticked then (Bible reading is a weekdays habit by now)', yWeekday ? await page.$eval('[data-habitpast="bible"]', e => e.classList.contains('on')) : !(await page.$('[data-habitpast="bible"]')));
+  /* Bible reading is every day again in this part (set back above), so yesterday has it whatever day that was —
+     the old check expected it gone when yesterday was a weekend, and failed every Sunday and Monday */
+  ok('yesterday shows what was already ticked then', await page.$eval('[data-habitpast="bible"]', e => e.classList.contains('on')));
   await page.click('#habitPastClose'); await page.waitForTimeout(300);
   ok('Done closes it, back to today’s tiles', !(await page.$('#habitPast')) && !!(await page.$('#habitPastOpen')) && (await page.$$('[data-habit]')).length > 0);
   ok('the chips scroll sideways without stopping the page scrolling', await page.evaluate(() => { S.habitPast = fmtD(new Date(Date.now() - 864e5)); render(); const t = getComputedStyle(document.querySelector('.habitPastDays')).touchAction; return /pan-x/.test(t) && /pan-y/.test(t); }));
