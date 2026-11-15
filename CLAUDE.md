@@ -885,6 +885,10 @@ school's home.
     on**: `GP_GOOGLE_REDIRECT=on` in Netlify (`googleRedirect_` → `portalAuthConfig.redirect` and the boot's
     `googleRedirect`), after adding `https://impact.gonpreah.org/teams.html` to the OAuth client's **Authorized
     redirect URIs** in Google Cloud — without that Google would show its error page.
+- **Who isn't on Google yet** (Nov 2026, Andrew): Admin → Accounts has an "Everyone · n / Not on Google yet · n"
+  chip row under the campus chips (`#adminGglRow`, `[data-adminggl]`, `S.adminGgl`): the active, unarchived accounts
+  with no Google account connected (`adminStaffOut_` carries `google` — true once `google.sub` is set — and
+  `signIn`, never the Google id), each row tagged 🔑 PIN only. tests/test-admin-select.mjs, test-google-signin.mjs.
 - **Every new account waits for an admin** (Andrew: "admin will receive an approval whether they accept
   them or deny them"): `staffRegister` makes every sign-up pending (it used to be Campus Leadership only),
   pushes each admin at once (`pushNow_` 'signup' → `teams.html?view=approvals`), and Admin → Approvals has

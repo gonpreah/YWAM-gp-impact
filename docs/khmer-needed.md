@@ -4976,3 +4976,13 @@ Shown on GPDTS → Database → Students when nobody is marked Arrived yet: grad
 | Facebook or Messenger | Facebook ឬ Messenger |
 
 The GP app's sign-in screen and the "connect your Google account" step: the help box when Google's window doesn't open (or the page was opened inside Messenger, Facebook or another app), and the choice when no profile has the Google account someone picked. "Continue with Google" is the button's own words (បន្តដោយ Google), kept the same everywhere. "Open in Safari" stays in English: it is what the iPhone menu says.
+
+## 102. Admin → Accounts: who isn't on Google yet
+
+| English | Khmer (draft) |
+|---|---|
+| Not on Google yet | មិនទាន់ប្រើ Google |
+| PIN only | PIN តែប៉ុណ្ណោះ |
+| These people still sign in with their username and PIN. Next time they open the app, it asks them to connect their Google account. | មនុស្សទាំងនេះនៅតែចូលដោយឈ្មោះអ្នកប្រើ និង PIN។ លើកក្រោយដែលពួកគេបើកកម្មវិធី វានឹងសុំឱ្យពួកគេភ្ជាប់គណនី Google របស់ពួកគេ។ |
+
+Admin → Accounts, a chip beside "Everyone" listing the active accounts with no Google account connected; "PIN only" is a short tag on each such row.
