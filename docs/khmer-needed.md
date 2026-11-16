@@ -5082,3 +5082,14 @@ GP Tasks installs on the Home Screen as its own app: the sign-in line, the ☰ i
 | Each Country C student | សិស្សម្នាក់ៗពីប្រទេស C |
 | Accepted for this school — counted from the portal | បានទទួលយកសម្រាប់សាលានេះ — រាប់ពីវិបផតថល |
 GPDTS → Finances → Lecture phase → 📋 Budget: the plan by group (materials, hospitality, honorariums, housing & food — the base fee by fee category A/B/C, passed on to the base — other), planned · spent · left on each line, and the "Budget line" picker on an expense. "Line" means a row of the budget.
+
+## 105. GPDTS: a search box over long lists
+
+| English | Khmer (draft) |
+|---|---|
+| Search {n}… | ស្វែងរកក្នុង {n}… |
+| Search the list | ស្វែងរកក្នុងបញ្ជី |
+| Nothing matches. | រកមិនឃើញទេ។ |
+| {n} more — keep typing | {n} ទៀត — វាយបន្តទៀត |
+
+A 🔎 box over every long drop-down and tick list on the GPDTS page (budget lines, students, staff). "Search {n}…" is its placeholder, {n} the number of choices — keep it short.

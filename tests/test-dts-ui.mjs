@@ -213,6 +213,19 @@ ok('the students to pick are open, the leaders folded under their names', await 
 await p.check('[data-dtps="short"][value="c_ar"]'); await p.waitForTimeout(250);
 await p.click('#dtsPhase_short details.dtsPick summary'); await p.check('[data-dtpl="short"][value="st_two"]'); await p.waitForTimeout(250);
 ok('ticks keep the folds as they were', await p.$eval('#dtsPhase_short', d => d.open) && await p.$eval('[data-dtfold="pl_short"]', d => d.open));
+/* a long tick list has a search box (the lists here are short, so the threshold is lowered for the test) */
+await p.evaluate(() => { GP_SEL_MIN = 2; render(); }); await p.waitForTimeout(250);
+ok('the students to tick have a search box', !!(await p.$('[data-dtfold="ps_short"] input.gpSelBox')));
+await p.fill('[data-dtfold="ps_short"] input.gpSelBox', 'boph'); await p.waitForTimeout(150);
+const shown = await p.$$eval('[data-dtfold="ps_short"] .dtsPickRow', rs => rs.filter(r => !r.hidden).map(r => r.textContent.trim()));
+ok('typing narrows it to the names that match', shown.length === 1 && /Bopha Here/.test(shown[0]), JSON.stringify(shown));
+await p.check('[data-dtps="short"][value="c_ar2"]'); await p.waitForTimeout(250);
+ok('ticking from the search keeps what was typed and what was ticked before', await p.$eval('[data-dtfold="ps_short"] input.gpSelBox', e => e.value) === 'boph' &&
+  await p.$eval('[data-dtps="short"][value="c_ar"]', e => e.checked) && await p.$eval('[data-dtps="short"][value="c_ar2"]', e => e.checked));
+await p.fill('[data-dtfold="ps_short"] input.gpSelBox', 'zzz'); await p.waitForTimeout(150);
+ok('no match says so', await p.$eval('[data-dtfold="ps_short"] .gpSelNone', e => !e.hidden));
+await p.fill('[data-dtfold="ps_short"] input.gpSelBox', ''); await p.uncheck('[data-dtps="short"][value="c_ar2"]'); await p.waitForTimeout(250);
+await p.evaluate(() => { GP_SEL_MIN = 7; render(); }); await p.waitForTimeout(250);
 await p.click('[data-dtfold="w_short"] > summary'); await p.waitForTimeout(150);
 await p.fill('[data-dtpw="short|0|salvations"]', '2'); await p.fill('[data-dtpw="short|0|male"]', '7');
 ok('the totals add up as you type', (await p.$$eval('#dtsWeeks_short tfoot td', c => c.map(x => x.textContent)))[2] === '2');
@@ -343,7 +356,20 @@ ok('a school not started yet says so', /hasn’t started yet/.test(await p.$eval
 const honLine = tb.lines.find(l => l.name === 'Outside speaker honorarium').id;
 await p.click('[data-dtsfinsec="expenses"]'); await p.waitForTimeout(250);
 await p.click('#dtsFinAddExp'); await p.waitForTimeout(200);
-await p.selectOption('#dfe_line', honLine); await p.waitForTimeout(250);
+ok('the budget line drop-down has a search box', !!(await p.$('.gpSelSearch input.gpSelBox ~ #dfe_line')));
+await p.fill('.gpSelSearch input.gpSelBox', 'honorar'); await p.waitForTimeout(150);
+const lineOpts = await p.$$eval('#dfe_line option', o => o.filter(x => x.value).map(x => x.textContent));
+ok('typing narrows the lines to the ones that match — here the Honorariums group, translator gift and all', lineOpts.length === 4 && lineOpts.filter(x => /honorarium/i.test(x)).length === 3 && JSON.stringify(await p.$$eval('#dfe_line optgroup', g => g.map(x => x.label))) === '["Honorariums"]', JSON.stringify(lineOpts));
+await p.fill('.gpSelSearch input.gpSelBox', 'hospitality'); await p.waitForTimeout(150);
+ok('a group’s name finds its lines too', await p.$$eval('#dfe_line optgroup', g => g.map(x => x.label).join('|')) === 'Student hospitality|Speaker hospitality|Staff hospitality');
+await p.fill('.gpSelSearch input.gpSelBox', 'snack'); await p.waitForTimeout(150);
+ok('the matches show under the box as buttons, each with its group', JSON.stringify(await p.$$eval('.gpSelHits [data-gpselhit]', b => b.map(x => x.textContent))) === JSON.stringify(['Lecture snacksStudent hospitality', 'Welcome day (snacks, drinks)Student hospitality', 'Welcome baskets (snacks, toothpaste, toothbrush, detergent)Student hospitality', 'Snacks for speakers and translatorsSpeaker hospitality', 'Training snacksStaff hospitality']),
+  JSON.stringify(await p.$$eval('.gpSelHits [data-gpselhit]', b => b.map(x => x.textContent))));
+await p.click('.gpSelHits [data-gpselhit]'); await p.waitForTimeout(250);
+ok('one tap picks it (and its category)', await p.$eval('#dfe_line', e => e.options[e.selectedIndex].textContent) === 'Lecture snacks' && await p.$eval('[data-dfecat="food"]', e => e.classList.contains('on')));
+await p.evaluate(() => { S.dtsFinForm.category = ''; S.dtsFinForm.lineId = ''; render(); }); await p.waitForTimeout(200);
+await p.fill('.gpSelSearch input.gpSelBox', 'outside speaker'); await p.press('.gpSelSearch input.gpSelBox', 'Enter'); await p.waitForTimeout(250);
+ok('Enter picks the first match', await p.$eval('#dfe_line', e => e.value) === honLine, await p.$eval('#dfe_line', e => e.value));
 ok('picking a budget line on an expense picks its category too', await p.$eval('[data-dfecat="honorarium"]', e => e.classList.contains('on')));
 await p.fill('#dfe_amount', '250'); await p.fill('#dfe_memo', 'Week 2 speaker'); await p.click('#dtsFinSave'); await p.waitForTimeout(400);
 ok('the expense is saved on its line', finSaves[finSaves.length - 1].lineId === honLine && finSaves[finSaves.length - 1].category === 'honorarium', JSON.stringify(finSaves[finSaves.length - 1]));
@@ -356,6 +382,7 @@ ok('the line shows planned, spent and over: $800 planned, $250 spent, $550 left'
 ok('an expense on no line is listed to be put on one', /1 expenses not on a budget line · \$10/.test(await p.$eval('#dtsBudLoose', e => e.innerText)));
 ok('spent counts both, on a line or not', /Spent\s*\$260/.test(await p.$eval('#dtsBudSum .mmGrid', e => e.innerText)), await p.$eval('#dtsBudSum .mmGrid', e => e.innerText.replace(/\n/g,' ')));
 const snackLine = tb.lines.find(l => l.name === 'Lecture snacks').id;
+ok('an expense on no line: its line picker has a search box too', !!(await p.$('#dtsBudLoose .gpSelSearch input.gpSelBox')));
 await p.selectOption('[data-dtsbudlink]', snackLine); await p.waitForTimeout(400);
 ok('picking its line there saves it on the spot', finSaves[finSaves.length - 1].lineId === snackLine && finSaves[finSaves.length - 1].memo === 'Coffee beans' && !(await p.$('#dtsBudLoose')));
 await p.click('[data-dtsbudgroup="students"] summary'); await p.waitForTimeout(150);

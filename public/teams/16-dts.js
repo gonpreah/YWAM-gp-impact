@@ -307,6 +307,7 @@ function bindDts_(){
   var pd=document.getElementById('dtsPastDel'); if(pd) pd.onclick=function(){ if(confirm(t('Delete this year’s numbers?'))) savePast(null); };
   bindDtsDb_();
   bindDtsFin_();
+  gpSelSearch_(document.getElementById('main'));
 }
 
 /* ==================== Database (Nov 2026, Andrew) ====================
@@ -1482,4 +1483,92 @@ function bindDtsBud_(){
     rows.push(['', '', t('Total'), '', '', B.planned, B.spent, B.left]);
     dtsFinCsv_((sch ? dtsSchoolName_(sch) : 'DTS')+' - lecture budget', ['Group','Code','Line','Each (US$)','How many','Planned (US$)','Spent (US$)','Left (US$)'], rows);
   };
+}
+/* ==================== Search in long lists (Nov 2026, Sinin) ====================
+   "For the budget line or for students or for drop-downs, especially ones with a lot of options, can you add in
+   a search bar in it as well." Every drop-down on the GPDTS page with GP_SEL_MIN options or more, and every tick
+   list (leaders, students on a team), gets a 🔎 box above it: typing narrows the list (a group's name matches all
+   of it; accents and case don't matter), Enter picks the first match in a drop-down. A drop-down keeps its
+   "none" option and what is picked; a tick list only hides rows, so nothing ticked is lost. What was typed stays
+   through a redraw (S.gpSelQ by the list's own id). */
+var GP_SEL_MIN=7;
+function gpSelNorm_(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+function gpSelKey_(el){
+  return el.id || el.getAttributeNames().filter(function(a){ return /^data-/.test(a); }).map(function(a){ return a+'='+el.getAttribute(a); }).join('&');
+}
+function gpSelBox_(key, n){
+  var box=document.createElement('input');
+  box.type='search'; box.className='gpSelBox'; box.autocomplete='off'; box.setAttribute('data-gpselq', key);
+  box.placeholder='🔎 '+gpT('Search {n}…',{n:n}); box.setAttribute('aria-label', t('Search the list'));
+  box.value=(S.gpSelQ||{})[key]||'';
+  return box;
+}
+function gpSelSearch_(root){
+  root=root||document;
+  S.gpSelQ=S.gpSelQ||{};
+  root.querySelectorAll('select').forEach(function(sel){
+    if(sel._gpSel || sel.options.length<GP_SEL_MIN) return;
+    sel._gpSel=true;
+    var key='s:'+gpSelKey_(sel), master=sel.cloneNode(true), real=Array.prototype.filter.call(sel.options, function(o){ return o.value; }).length;
+    var wrap=document.createElement('div'); wrap.className='gpSelSearch';
+    sel.parentNode.insertBefore(wrap, sel);
+    var box=gpSelBox_(key, real);
+    var none=document.createElement('span'); none.className='gpSelNone hint'; none.textContent=t('Nothing matches.'); none.hidden=true;
+    var hitList=document.createElement('div'); hitList.className='gpSelHits'; hitList.hidden=true;
+    wrap.appendChild(box); wrap.appendChild(hitList); wrap.appendChild(sel); wrap.appendChild(none);
+    /* the matches as buttons under the box — one tap picks, on a phone too */
+    var pick=function(v){ box.value=''; S.gpSelQ[key]=''; apply(); if(sel.value!==v){ sel.value=v; sel.dispatchEvent(new Event('change', { bubbles:true })); } };
+    var apply=function(){
+      var q=gpSelNorm_(box.value).trim(), cur=sel.value, hits=0;
+      S.gpSelQ[key]=box.value;
+      var ok=function(o, g){ return !q || gpSelNorm_(o.textContent).indexOf(q)>-1 || (g && gpSelNorm_(g.label).indexOf(q)>-1); };
+      sel.innerHTML='';
+      Array.prototype.forEach.call(master.children, function(n){
+        if(n.tagName==='OPTGROUP'){
+          var g=n.cloneNode(false);
+          Array.prototype.forEach.call(n.children, function(o){ if(ok(o, n) || o.value===cur){ g.appendChild(o.cloneNode(true)); if(o.value!==cur || ok(o, n)) hits++; } });
+          if(g.children.length) sel.appendChild(g);
+        } else if(!n.value || ok(n) || n.value===cur){ sel.appendChild(n.cloneNode(true)); if(n.value && ok(n)) hits++; }
+      });
+      sel.value=cur;
+      none.hidden=!(q && !hits);
+      hitList.innerHTML='';
+      var found=q ? Array.prototype.filter.call(sel.options, function(o){ return o.value && (gpSelNorm_(o.textContent).indexOf(q)>-1 || (o.parentNode.label && gpSelNorm_(o.parentNode.label).indexOf(q)>-1)); }) : [];
+      found.slice(0, 8).forEach(function(o){
+        var b=document.createElement('button'); b.type='button'; b.className='gpSelHit'+(o.value===cur?' on':''); b.setAttribute('data-gpselhit', o.value);
+        b.textContent=o.textContent; if(o.parentNode.label){ var g=document.createElement('span'); g.className='rowSub'; g.textContent=o.parentNode.label; b.appendChild(g); }
+        b.onclick=function(){ gpTap(); pick(o.value); };
+        hitList.appendChild(b);
+      });
+      if(found.length>8){ var more=document.createElement('span'); more.className='hint'; more.textContent=gpT('{n} more — keep typing',{n:found.length-8}); hitList.appendChild(more); }
+      hitList.hidden=!found.length;
+    };
+    box.oninput=apply;
+    box.onkeydown=function(e){
+      if(e.key!=='Enter') return;
+      e.preventDefault();
+      var q=gpSelNorm_(box.value).trim(); if(!q) return;
+      var first=Array.prototype.filter.call(sel.options, function(o){ return o.value && (gpSelNorm_(o.textContent).indexOf(q)>-1 || (o.parentNode.label && gpSelNorm_(o.parentNode.label).indexOf(q)>-1)); })[0];
+      if(first) pick(first.value);
+    };
+    if(box.value) apply();
+  });
+  root.querySelectorAll('.dtsPickList').forEach(function(list){
+    var rows=list.querySelectorAll('.dtsPickRow');
+    if(list._gpSel || rows.length<GP_SEL_MIN) return;
+    list._gpSel=true;
+    var det=list.closest('details'), key='p:'+(det && det.getAttribute('data-dtfold') || gpSelKey_(list.querySelector('input') || list));
+    var box=gpSelBox_(key, rows.length);
+    var none=document.createElement('span'); none.className='gpSelNone hint'; none.textContent=t('Nothing matches.'); none.hidden=true;
+    list.parentNode.insertBefore(box, list); list.appendChild(none);
+    var apply=function(){
+      var q=gpSelNorm_(box.value).trim(), hits=0;
+      S.gpSelQ[key]=box.value;
+      rows.forEach(function(r){ var show=!q || gpSelNorm_(r.textContent).indexOf(q)>-1; r.hidden=!show; if(show) hits++; });
+      none.hidden=!(q && !hits);
+    };
+    box.oninput=apply;
+    box.onkeydown=function(e){ if(e.key==='Enter') e.preventDefault(); };
+    if(box.value) apply();
+  });
 }

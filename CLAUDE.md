@@ -837,6 +837,15 @@ school's home.
   carries `finBudgets`; `cleanDtsFin_` refuses a `lineId` not in that school's budget (`bad_line`). The sheet's own
   total ($6,629.25) left its last student-hospitality line (Sunday food, $184) out of its subtotal; the app adds
   every line ($6,813.25). tests/test-dts-budget.mjs (server), test-dts-ui.mjs. Khmer: docs/khmer-needed.md §104.
+- **Search in long lists** (Nov 2026, Sinin: "for the budget line or for students or for drop-downs, especially ones
+  with a lot of options … a search bar"): `gpSelSearch_(root)` at the end of `bindDts_` puts a 🔎 box
+  (`input.gpSelBox`, `[data-gpselq]`) over every drop-down on the GPDTS page with `GP_SEL_MIN` (7) options or more,
+  and over every tick list (`.dtsPickList` — leaders, students on a team). A drop-down's matches show under the box as
+  buttons (`.gpSelHits [data-gpselhit]`, up to 8, each with its group) — one tap or Enter picks, firing the select's
+  own change; the select itself is narrowed too (a group's name matches all of it, accents and case ignored; its
+  "none" option and the current value stay). A tick list only hides rows. What was typed survives a redraw
+  (`S.gpSelQ`, keyed by the list's id or data attributes). tests/test-dts-ui.mjs lowers `GP_SEL_MIN` to test short
+  lists.
 - **Database, Nov 2026 (Andrew)**: the Students tile counts only the students accepted (accepted / here /
   graduated). **Responsibilities fold open** (`details.dtsRespItem`, `S.dtsRespOpen`): title, who and done on
   the line; opened, the description laid out by `dtsNotesHtml_` (paragraphs; lines starting -, •, * or 1. as
