@@ -299,7 +299,9 @@ function finDtsHtml_(F){
       (f.applying ? '<p class="hint" style="margin:6px 0 0">'+esc(gpT('{n} more have applied and are waiting. If they are all accepted: {money}.',{n:f.applying, money:money(f.ifAll)}))+'</p>' : '')+
       (s.money ? (function(m){ var L=m.lecture||{}, O=m.outreach||{}, left=(f.total||0)-(L.spent||0);
         return '<div class="finDtsMoney" data-findtsmoney="'+esc(s.id)+'"><div class="cafeLine"><span>'+esc(t('Lecture: received'))+'</span><b>'+esc(money(L.received))+'</b></div>'+
+          (L.planned!=null ? '<div class="cafeLine" data-findtsplan="'+esc(s.id)+'"><span>'+esc(t('Lecture: planned spending'))+'</span><b>'+esc(money(L.planned))+'</b></div>' : '')+
           '<div class="cafeLine"><span>'+esc(t('Lecture: spent'))+'</span><b>'+esc(money(L.spent))+'</b></div>'+
+          (L.planned ? '<div class="cafeLine"><span>'+esc(t('Left of the planned spending'))+'</span><b'+(L.planned-L.spent<0?' class="finBad"':'')+'>'+esc(money(L.planned-L.spent))+'</b></div>' : '')+
           '<div class="cafeLine"><span>'+esc(t('Left in the lecture budget'))+'</span><b'+(left<0?' class="finBad"':'')+'>'+esc(money(left))+'</b></div>'+
           '<div class="cafeLine"><span>'+esc(t('Outreach: received'))+'</span><b>'+esc(money(O.received))+'</b></div>'+
           (L.receiptsOut ? '<p class="hint" style="margin:4px 0 0">🧾 '+esc(gpT('{n} receipts not given to the office yet',{n:L.receiptsOut}))+'</p>' : '')+'</div>'; })(s.money) : '')+

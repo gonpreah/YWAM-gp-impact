@@ -812,6 +812,40 @@ school's home.
   contact) and **Follow-ups due** (`dtsDueHtml_`) are on the **Database** tab. The Finances office's GPDTS
   card adds the school's lecture received / spent / left, receipts not yet in, and outreach received
   (`dtsFinSums_`).
+- **The lecture budget** (Nov 2026, Sinin: "our DTS budget from last year … breakdowns of material costs and
+  honorariums … show that we are keeping in track with our expenses"): Finances → Lecture phase → **📋 Budget**
+  (`dtsBudHtml_` / `bindDtsBud_`, end of teams/16-dts.js). One plan per school, lines in the groups of the base's own
+  budget sheet (`DTS_BUD_GROUPS`: materials 60000, student hospitality 60100, speaker hospitality 60200, staff
+  hospitality 60300, honorariums 60207, **housing & food**, other); a line is each × how many — `per` 'student' (the
+  planned students), 'people' (students + staff), 'A' / 'B' / 'C' (the students accepted from Country A, B or C — the
+  base fee for housing and food, 3 months: C and Cambodia $321, B $495, A $660; married couples as their own lines)
+  or '' (its own `count`). **Housing is passed on to the base**: the housing group's planned total also counts as
+  income ("Base fees for housing and food", `#dtsBudBaseFees`), so it balances out in the plan, as on the sheet;
+  expenses for it take the category `housing`. The housing group shows how many it counted from each country (`#dtsBudCats`); the counts are
+  the lecture fees' own (`dtsFees_` of the school's students), so a student accepted in the portal moves it on the
+  next load, nobody types a number. An empty group offers "Add last year's lines" (`[data-dtsbudtpl]`). Starts from **last year's sheet** (`DTS_BUD_TEMPLATE`: the
+  January DTS's 44 lines and amounts — the school budget and the base fees — no names; students = those accepted so far, 8 staff, $500 carried over), a
+  copy of another school's, or empty. Each group folds to "spent of planned" with a bar; a line opens under itself
+  to be changed (`S.dtsBudEdit`); "People and other income" (`S.dtsBudSet`) sets students, staff and income beyond
+  the fees; the plan's balance = fees of the students accepted + other income − planned spending; the time line
+  ("40% of the school is done and 55% of the budget is spent", amber when spending runs 10 points ahead). An
+  expense names its line (`lineId`, the expense form's "Budget line", which also picks the category —
+  `DTS_BUD_CAT`); expenses on no line are listed with a picker that saves on the spot. The Overview shows spent of
+  the plan; the Finances office's GPDTS card shows planned spending and what is left of it. CSV download. Server:
+  `dtsFinBudgetSave(user, pin, schoolId, budget | null)` (`dtsGate_`, `cleanDtsBudget_`: ≤150 lines, ≤20 income
+  rows, amounts capped, ids made unique), kept on `dtsFin:<campus>`.budgets[schoolId] beside the entries; the board
+  carries `finBudgets`; `cleanDtsFin_` refuses a `lineId` not in that school's budget (`bad_line`). The sheet's own
+  total ($6,629.25) left its last student-hospitality line (Sunday food, $184) out of its subtotal; the app adds
+  every line ($6,813.25). tests/test-dts-budget.mjs (server), test-dts-ui.mjs. Khmer: docs/khmer-needed.md §104.
+- **Search in long lists** (Nov 2026, Sinin: "for the budget line or for students or for drop-downs, especially ones
+  with a lot of options … a search bar"): `gpSelSearch_(root)` at the end of `bindDts_` puts a 🔎 box
+  (`input.gpSelBox`, `[data-gpselq]`) over every drop-down on the GPDTS page with `GP_SEL_MIN` (7) options or more,
+  and over every tick list (`.dtsPickList` — leaders, students on a team). A drop-down's matches show under the box as
+  buttons (`.gpSelHits [data-gpselhit]`, up to 8, each with its group) — one tap or Enter picks, firing the select's
+  own change; the select itself is narrowed too (a group's name matches all of it, accents and case ignored; its
+  "none" option and the current value stay). A tick list only hides rows. What was typed survives a redraw
+  (`S.gpSelQ`, keyed by the list's id or data attributes). tests/test-dts-ui.mjs lowers `GP_SEL_MIN` to test short
+  lists.
 - **Database, Nov 2026 (Andrew)**: the Students tile counts only the students accepted (accepted / here /
   graduated). **Responsibilities fold open** (`details.dtsRespItem`, `S.dtsRespOpen`): title, who and done on
   the line; opened, the description laid out by `dtsNotesHtml_` (paragraphs; lines starting -, •, * or 1. as

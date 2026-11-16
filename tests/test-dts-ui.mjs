@@ -43,12 +43,13 @@ const TWO = { id: 'st_two', name: 'Tia Two', username: 'tia', campus: 'siemreap'
 const CAFE = { id: 'st_cafe', name: 'Cal Fay', username: 'cal', campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe' };
 const HELPER = { id: 'st_help', name: 'Hana Helper', username: 'hana', campus: 'siemreap', dept: 'Skills Training', ministry: 'Hospitality', ministries: ['Leadership Development|GPDTS'] };
 const marks = [], lectSaves = [], outSaves = [], pastSaves = [], toStaff = [], finSaves = [];
-let FIN = [];
+let FIN = [], BUDGETS = {};
+const budSaves = [];
 const board = () => ({
   ok: true, campus: 'siemreap', ministry: 'GPDTS', today: TODAY, portal: true,
   counts: { lead: { khmer: 2, international: 1 }, contacted: { khmer: 1, international: 0 }, applied: { khmer: 1, international: 0 }, accepted: { khmer: 0, international: 1 }, arrived: { khmer: 1, international: 1 }, graduated: { khmer: 0, international: 0 } },
   due: [{ id: 'c_kh', name: 'Sokha Khmer', audience: 'khmer', nextStep: 'Call her pastor', nextDate: YDAY, column: 'applied' }], dueMore: 0,
-  school: SCHOOL, lectures: LECTS, outreaches: OUTS, past: PAST, year: Number(TODAY.slice(0, 4)), db: DB, students: STUDS, fees: { A: 2000, B: 1500, C: 620 }, fin: FIN,
+  school: SCHOOL, lectures: LECTS, outreaches: OUTS, past: PAST, year: Number(TODAY.slice(0, 4)), db: DB, students: STUDS, fees: { A: 2000, B: 1500, C: 620 }, fin: FIN, finBudgets: BUDGETS,
   data: { ok: true, campus: 'siemreap', dept: 'Leadership Development', ministry: 'GPDTS', entries: { 'Students Applied': { '1': 2, '2': 3 }, 'Students Enrolled': { '1': 4, '2': 6, '3': 5 }, 'Healings': { '1': 3 }, 'Salvations': { '2': 2 } }, prev: {}, daily: {} }
 });
 
@@ -89,8 +90,9 @@ await p.route('**/.netlify/functions/api', r => {
   else if (q.fn === 'dtsSaveOutreach') { outSaves.push(q.args[2]); OUTS = [{ ...q.args[2], id: 'ot1' }]; o = { ok: true, outreaches: OUTS, id: 'ot1' }; }
   else if (q.fn === 'dtsSavePast') { pastSaves.push(q.args.slice(2)); PAST = { [q.args[2]]: { values: q.args[3], notes: q.args[4] } }; o = { ok: true, past: PAST }; }
   else if (q.fn === 'dtsSaveLecture') { lectSaves.push(q.args[2]); LECTS = [{ ...q.args[2], id: q.args[2].id || 'lc1' }]; o = { ok: true, lectures: LECTS, id: 'lc1' }; }
-  else if (q.fn === 'dtsFinSave') { const rec = q.args[2]; finSaves.push(rec); const id = rec.id || 'df' + (FIN.length + 1); FIN = FIN.filter(x => x.id !== id).concat([{ ...rec, id }]).sort((a, b) => a.date < b.date ? 1 : -1); o = { ok: true, fin: FIN }; }
+  else if (q.fn === 'dtsFinSave') { const rec = q.args[2]; finSaves.push(rec); const id = rec.id || 'df' + (finSaves.length); FIN = FIN.filter(x => x.id !== id).concat([{ ...rec, id }]).sort((a, b) => a.date < b.date ? 1 : -1); o = { ok: true, fin: FIN }; }
   else if (q.fn === 'dtsFinDelete') { FIN = FIN.filter(x => x.id !== q.args[2]); o = { ok: true, fin: FIN }; }
+  else if (q.fn === 'dtsFinBudgetSave') { budSaves.push(q.args); if (q.args[3] === null) delete BUDGETS[q.args[2]]; else BUDGETS[q.args[2]] = JSON.parse(JSON.stringify(q.args[3])); o = { ok: true, budgets: JSON.parse(JSON.stringify(BUDGETS)) }; }
   else if (q.fn === 'teamRoster') o = [ME];
   else if (/^getMy/.test(q.fn)) o = { ok: true, logs: [], goals: [], checkins: [], mentees: [], requests: [] };
   r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(o) });
@@ -211,6 +213,19 @@ ok('the students to pick are open, the leaders folded under their names', await 
 await p.check('[data-dtps="short"][value="c_ar"]'); await p.waitForTimeout(250);
 await p.click('#dtsPhase_short details.dtsPick summary'); await p.check('[data-dtpl="short"][value="st_two"]'); await p.waitForTimeout(250);
 ok('ticks keep the folds as they were', await p.$eval('#dtsPhase_short', d => d.open) && await p.$eval('[data-dtfold="pl_short"]', d => d.open));
+/* a long tick list has a search box (the lists here are short, so the threshold is lowered for the test) */
+await p.evaluate(() => { GP_SEL_MIN = 2; render(); }); await p.waitForTimeout(250);
+ok('the students to tick have a search box', !!(await p.$('[data-dtfold="ps_short"] input.gpSelBox')));
+await p.fill('[data-dtfold="ps_short"] input.gpSelBox', 'boph'); await p.waitForTimeout(150);
+const shown = await p.$$eval('[data-dtfold="ps_short"] .dtsPickRow', rs => rs.filter(r => !r.hidden).map(r => r.textContent.trim()));
+ok('typing narrows it to the names that match', shown.length === 1 && /Bopha Here/.test(shown[0]), JSON.stringify(shown));
+await p.check('[data-dtps="short"][value="c_ar2"]'); await p.waitForTimeout(250);
+ok('ticking from the search keeps what was typed and what was ticked before', await p.$eval('[data-dtfold="ps_short"] input.gpSelBox', e => e.value) === 'boph' &&
+  await p.$eval('[data-dtps="short"][value="c_ar"]', e => e.checked) && await p.$eval('[data-dtps="short"][value="c_ar2"]', e => e.checked));
+await p.fill('[data-dtfold="ps_short"] input.gpSelBox', 'zzz'); await p.waitForTimeout(150);
+ok('no match says so', await p.$eval('[data-dtfold="ps_short"] .gpSelNone', e => !e.hidden));
+await p.fill('[data-dtfold="ps_short"] input.gpSelBox', ''); await p.uncheck('[data-dtps="short"][value="c_ar2"]'); await p.waitForTimeout(250);
+await p.evaluate(() => { GP_SEL_MIN = 7; render(); }); await p.waitForTimeout(250);
 await p.click('[data-dtfold="w_short"] > summary'); await p.waitForTimeout(150);
 await p.fill('[data-dtpw="short|0|salvations"]', '2'); await p.fill('[data-dtpw="short|0|male"]', '7');
 ok('the totals add up as you type', (await p.$$eval('#dtsWeeks_short tfoot td', c => c.map(x => x.textContent)))[2] === '2');
@@ -260,7 +275,7 @@ ok('a resource with its link', dbSaves.some(x => x[0] === 'resource' && x[1].url
 await p.evaluate(() => window.scrollTo(0, 0));
 await p.click('.mmTabs [data-mmtab="dtsfin"]'); await p.waitForTimeout(300);
 ok('Finances opens on the lecture phase: budget, received, spent, left', /Budget\s*\$2,620/.test(await p.$eval('#dtsFinTiles', e => e.innerText)) && (await p.$eval('[data-dtsfinphase="lecture"]', e => e.classList.contains('on'))) &&
-  JSON.stringify(await p.$$eval('#dtsFinSecs [data-dtsfinsec]', b => b.map(x => x.getAttribute('data-dtsfinsec')))) === '["overview","income","expenses","students"]');
+  JSON.stringify(await p.$$eval('#dtsFinSecs [data-dtsfinsec]', b => b.map(x => x.getAttribute('data-dtsfinsec')))) === '["overview","budget","income","expenses","students"]');
 ok('… on its Overview: the budget, where money came from and went, who owes', !!(await p.$('#dtsFinSpentMeter')) && !!(await p.$('#dtsFinFrom')) && !!(await p.$('#dtsFinWent')) && /Still owe\s*2/.test(await p.$eval('#dtsFinOwing', e => e.innerText)));
 await p.click('[data-dtsfinsec="income"]'); await p.waitForTimeout(200);
 await p.click('#dtsFinAddInc'); await p.waitForTimeout(200);
@@ -309,6 +324,90 @@ await p.click('[data-dtsfinedit="df3"]'); await p.waitForTimeout(200);
 p.once('dialog', dlg => dlg.accept());
 await p.click('#dtsFinDel'); await p.waitForTimeout(400);
 ok('an expense can be opened and deleted', !FIN.some(x => x.id === 'df3') && /Spent\s*\$0/.test(await p.$eval('#dtsFinTiles', e => e.innerText)));
+
+/* the lecture budget, line by line (Nov 2026, Sinin: "breakdowns of material costs and honorariums … keeping in track") */
+await p.click('#dtsFinSecs [data-dtsfinsec="budget"]'); await p.waitForTimeout(250);
+ok('📋 Budget starts by offering last year’s DTS budget, or an empty one', !!(await p.$('#dtsBudStart #dtsBudTemplate')) && !!(await p.$('#dtsBudEmpty')));
+await p.click('#dtsBudTemplate'); await p.waitForTimeout(400);
+const tb = budSaves[0] && budSaves[0][3];
+ok('it starts from the base’s own budget sheet: its groups and lines, no names', budSaves.length === 1 && budSaves[0][2] === 'sc1' && tb.lines.length === 44 &&
+  ['materials', 'students', 'speakers', 'staff', 'honoraria', 'housing', 'other'].every(g => tb.lines.some(l => l.group === g)) && tb.staff === 8 && tb.income[0].amount === 500, JSON.stringify(tb && [tb.lines.length, tb.students, tb.staff]));
+ok('planned for the students accepted so far (2) and 8 staff', tb.students === 2 && /Planned for 2 students and 8 staff/.test(await p.$eval('#dtsBudPeople', e => e.innerText)));
+await p.click('#dtsBudSetOpen'); await p.waitForTimeout(200);
+await p.fill('#dbs_students', '23'); await p.click('#dtsBudSetSave'); await p.waitForTimeout(400);
+/* the sheet says $6,629.25, but its student-hospitality subtotal leaves out its last line (Sunday food, 8 × 23 = $184) */
+ok('with 23 students, as on the sheet, the plan adds up every line of the sheet: $6,813.25, and housing for the students accepted: $981 (Arno A $660, Bopha C $321)', /Planned spending\s*\$7,794.25/.test(await p.$eval('#dtsBudSum', e => e.innerText)), await p.$eval('#dtsBudSum .mmGrid', e => e.innerText.replace(/\n/g, ' ')));
+ok('each group says spent of planned: materials $557.75, honorariums $1,570', /\$0 of \$557.75/.test(await p.$eval('[data-dtsbudgroup="materials"] summary', e => e.innerText)) && /\$0 of \$1,570/.test(await p.$eval('[data-dtsbudgroup="honoraria"] summary', e => e.innerText)));
+ok('the plan: fees of the students accepted, other income, the planned balance', /Fees of the students accepted\s*\$2,620/.test(await p.$eval('#dtsBudSum', e => e.innerText)) && /From the previous DTS\s*\$500/.test(await p.$eval('#dtsBudSum', e => e.innerText)) && /Planned balance\s*-?\$-?3,693.25/.test(await p.$eval('#dtsBudBalance', e => e.innerText)), await p.$eval('#dtsBudBalance', e => e.innerText));
+ok('🏠 Housing & food: each student’s base fee by their fee category, counted from the students accepted', /\$0 of \$981/.test(await p.$eval('[data-dtsbudgroup="housing"] summary', e => e.innerText)) &&
+  /Base fees for housing and food \(paid on to the base\)\s*\$981/.test(await p.$eval('#dtsBudBaseFees', e => e.innerText)));
+await p.click('[data-dtsbudgroup="housing"] summary'); await p.waitForTimeout(150);
+ok('… a line per country, said in words: $660 × 1 accepted from Country A', /\$660 × 1 accepted from Country A/.test(await p.$eval('[data-dtsbudgroup="housing"]', e => e.innerText)) && /\$321 × 1 accepted from Country C/.test(await p.$eval('[data-dtsbudgroup="housing"]', e => e.innerText)) && !!(await p.$('#dtsBudHousingNote')));
+ok('the housing group says how many it counted from each country', /A\s*1/.test(await p.$eval('[data-dtsbudcat="A"]', e => e.innerText)) && /B\s*0/.test(await p.$eval('[data-dtsbudcat="B"]', e => e.innerText)) && /C\s*1/.test(await p.$eval('[data-dtsbudcat="C"]', e => e.innerText)));
+/* a student accepted in the portal: the housing budget follows by itself, nobody types a number */
+STUDS.push({ id: 'c_newb', name: 'Bruna Newly', column: 'accepted', audience: 'international', country: 'Brazil', feeCat: 'B', applied: YDAY, arrived: '', graduated: '', potentialStaff: '', schoolId: 'sc1', oneOnOne: '', portal: {}, profile: {} });
+await p.evaluate(() => dtsRefresh_()); await p.waitForTimeout(500);
+ok('a Country B student accepted in the portal: the Country B base fee and the total follow on their own ($495 more)', /B\s*1/.test(await p.$eval('[data-dtsbudcat="B"]', e => e.innerText)) &&
+  /\$495 × 1 accepted from Country B/.test(await p.$eval('[data-dtsbudgroup="housing"]', e => e.innerText)) && /\$0 of \$1,476/.test(await p.$eval('[data-dtsbudgroup="housing"] summary', e => e.innerText)) &&
+  /Base fees for housing and food \(paid on to the base\)\s*\$1,476/.test(await p.$eval('#dtsBudBaseFees', e => e.innerText)), await p.$eval('[data-dtsbudgroup="housing"] summary', e => e.innerText.replace(/\n/g, ' ')));
+STUDS.pop(); await p.evaluate(() => dtsRefresh_()); await p.waitForTimeout(500);
+await p.click('[data-dtsbudgroup="housing"] summary'); await p.waitForTimeout(150);
+ok('a school not started yet says so', /hasn’t started yet/.test(await p.$eval('#dtsBudPace', e => e.innerText)));
+const honLine = tb.lines.find(l => l.name === 'Outside speaker honorarium').id;
+await p.click('[data-dtsfinsec="expenses"]'); await p.waitForTimeout(250);
+await p.click('#dtsFinAddExp'); await p.waitForTimeout(200);
+ok('the budget line drop-down has a search box', !!(await p.$('.gpSelSearch input.gpSelBox ~ #dfe_line')));
+await p.fill('.gpSelSearch input.gpSelBox', 'honorar'); await p.waitForTimeout(150);
+const lineOpts = await p.$$eval('#dfe_line option', o => o.filter(x => x.value).map(x => x.textContent));
+ok('typing narrows the lines to the ones that match — here the Honorariums group, translator gift and all', lineOpts.length === 4 && lineOpts.filter(x => /honorarium/i.test(x)).length === 3 && JSON.stringify(await p.$$eval('#dfe_line optgroup', g => g.map(x => x.label))) === '["Honorariums"]', JSON.stringify(lineOpts));
+await p.fill('.gpSelSearch input.gpSelBox', 'hospitality'); await p.waitForTimeout(150);
+ok('a group’s name finds its lines too', await p.$$eval('#dfe_line optgroup', g => g.map(x => x.label).join('|')) === 'Student hospitality|Speaker hospitality|Staff hospitality');
+await p.fill('.gpSelSearch input.gpSelBox', 'snack'); await p.waitForTimeout(150);
+ok('the matches show under the box as buttons, each with its group', JSON.stringify(await p.$$eval('.gpSelHits [data-gpselhit]', b => b.map(x => x.textContent))) === JSON.stringify(['Lecture snacksStudent hospitality', 'Welcome day (snacks, drinks)Student hospitality', 'Welcome baskets (snacks, toothpaste, toothbrush, detergent)Student hospitality', 'Snacks for speakers and translatorsSpeaker hospitality', 'Training snacksStaff hospitality']),
+  JSON.stringify(await p.$$eval('.gpSelHits [data-gpselhit]', b => b.map(x => x.textContent))));
+await p.click('.gpSelHits [data-gpselhit]'); await p.waitForTimeout(250);
+ok('one tap picks it (and its category)', await p.$eval('#dfe_line', e => e.options[e.selectedIndex].textContent) === 'Lecture snacks' && await p.$eval('[data-dfecat="food"]', e => e.classList.contains('on')));
+await p.evaluate(() => { S.dtsFinForm.category = ''; S.dtsFinForm.lineId = ''; render(); }); await p.waitForTimeout(200);
+await p.fill('.gpSelSearch input.gpSelBox', 'outside speaker'); await p.press('.gpSelSearch input.gpSelBox', 'Enter'); await p.waitForTimeout(250);
+ok('Enter picks the first match', await p.$eval('#dfe_line', e => e.value) === honLine, await p.$eval('#dfe_line', e => e.value));
+ok('picking a budget line on an expense picks its category too', await p.$eval('[data-dfecat="honorarium"]', e => e.classList.contains('on')));
+await p.fill('#dfe_amount', '250'); await p.fill('#dfe_memo', 'Week 2 speaker'); await p.click('#dtsFinSave'); await p.waitForTimeout(400);
+ok('the expense is saved on its line', finSaves[finSaves.length - 1].lineId === honLine && finSaves[finSaves.length - 1].category === 'honorarium', JSON.stringify(finSaves[finSaves.length - 1]));
+ok('the expense list names the line', /Outside speaker honorarium/.test(await p.$eval('#dtsFinExpTbl', e => e.innerText)));
+await p.click('#dtsFinAddExp'); await p.waitForTimeout(200);
+await p.click('[data-dfecat="coffee"]'); await p.fill('#dfe_amount', '10'); await p.fill('#dfe_memo', 'Coffee beans'); await p.click('#dtsFinSave'); await p.waitForTimeout(400);
+await p.click('[data-dtsfinsec="budget"]'); await p.waitForTimeout(250);
+await p.click('[data-dtsbudgroup="honoraria"] summary'); await p.waitForTimeout(150);
+ok('the line shows planned, spent and over: $800 planned, $250 spent, $550 left', /\$800\s*\$250\s*\$550/.test(await p.$eval(`[data-dtsbudline="${honLine}"]`, e => e.innerText)), await p.$eval(`[data-dtsbudline="${honLine}"]`, e => e.innerText.replace(/\s+/g, ' ')));
+ok('an expense on no line is listed to be put on one', /1 expenses not on a budget line · \$10/.test(await p.$eval('#dtsBudLoose', e => e.innerText)));
+ok('spent counts both, on a line or not', /Spent\s*\$260/.test(await p.$eval('#dtsBudSum .mmGrid', e => e.innerText)), await p.$eval('#dtsBudSum .mmGrid', e => e.innerText.replace(/\n/g,' ')));
+const snackLine = tb.lines.find(l => l.name === 'Lecture snacks').id;
+ok('an expense on no line: its line picker has a search box too', !!(await p.$('#dtsBudLoose .gpSelSearch input.gpSelBox')));
+await p.selectOption('[data-dtsbudlink]', snackLine); await p.waitForTimeout(400);
+ok('picking its line there saves it on the spot', finSaves[finSaves.length - 1].lineId === snackLine && finSaves[finSaves.length - 1].memo === 'Coffee beans' && !(await p.$('#dtsBudLoose')));
+await p.click('[data-dtsbudgroup="students"] summary'); await p.waitForTimeout(150);
+await p.click(`[data-dtsbudline="${snackLine}"]`); await p.waitForTimeout(200);
+ok('a line opens to be changed, under itself', !!(await p.$('.dtsBudEditRow #dbl_name')) && await p.$eval('#dbl_name', e => e.value) === 'Lecture snacks' && await p.$eval('[data-dblper="student"]', e => e.classList.contains('on')));
+await p.fill('#dbl_each', '25'); await p.click('#dtsBudLineSave'); await p.waitForTimeout(400);
+const sn = budSaves[budSaves.length - 1][3].lines.find(l => l.id === snackLine);
+ok('changing it saves the whole budget with the new amount', sn.each === 25 && sn.per === 'student' && /\$25 × 23 students/.test(await p.$eval(`[data-dtsbudline="${snackLine}"]`, e => e.innerText)));
+await p.click('[data-dtsbudgroup="materials"] summary'); await p.waitForTimeout(150);
+await p.click('[data-dtsbudadd="materials"]'); await p.waitForTimeout(200);
+await p.fill('#dbl_name', 'Projector bulb'); await p.fill('#dbl_each', '45'); await p.click('[data-dblper=""]'); await p.waitForTimeout(150);
+await p.fill('#dbl_count', '2'); await p.click('#dtsBudLineSave'); await p.waitForTimeout(400);
+const pb = budSaves[budSaves.length - 1][3].lines.find(l => l.name === 'Projector bulb');
+ok('a new line: its group, an amount and its own number', pb && pb.group === 'materials' && pb.each === 45 && pb.per === '' && pb.count === 2 && /\$90/.test(await p.$eval('[data-dtsbudgroup="materials"] summary', e => e.innerText)) === false && /\$647.75/.test(await p.$eval('[data-dtsbudgroup="materials"] summary', e => e.innerText)), JSON.stringify(pb));
+ok('on a phone the budget fits', await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+await p.click('[data-dtsfinsec="overview"]'); await p.waitForTimeout(250);
+ok('the Overview shows spending against the plan', /Spent of the planned spending/.test(await p.$eval('#dtsFinPlanMeter', e => e.innerText)));
+await p.click('[data-dtsfinsec="budget"]'); await p.waitForTimeout(250);
+p.once('dialog', dlg => dlg.accept());
+await p.click('#dtsBudRemove'); await p.waitForTimeout(400);
+ok('the budget can be removed — and it starts again', budSaves[budSaves.length - 1][3] === null && !!(await p.$('#dtsBudStart')));
+await p.click('#dtsBudEmpty'); await p.waitForTimeout(400);
+await p.click('[data-dtsbudgroup="housing"] summary'); await p.waitForTimeout(150);
+await p.click('[data-dtsbudtpl="housing"]'); await p.waitForTimeout(400);
+ok('an empty group can take last year’s lines — housing’s six base fees', budSaves[budSaves.length - 1][3].lines.length === 6 && budSaves[budSaves.length - 1][3].lines.every(l => l.group === 'housing') && /\$0 of \$981/.test(await p.$eval('[data-dtsbudgroup="housing"] summary', e => e.innerText)));
 ok('nothing slides sideways on a phone', await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
 ok('no page errors in the GP app', errs.length === 0, errs.slice(0, 3).join(' | '));
 await p.close();
