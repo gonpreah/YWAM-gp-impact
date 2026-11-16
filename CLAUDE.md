@@ -2284,6 +2284,18 @@ numbers fill themselves in from using it (like Teams and Hospitality). Two so fa
   with 30 dots (`.useDots`), this week and the last day, a tap opens their account; a note while `daysFrom` is
   under 30 days old (`#adminUseNote`); Download (CSV) (`#adminUseCsv`). tests/test-app-use.mjs, test-app-use-ui.mjs.
   Khmer: docs/khmer-needed.md §104.
+- **Time in the app** (Nov 2026, Andrew: "total hours spent on app"): counted on the phone (01-core.js, `gpUseTick_`
+  every 15 s while on screen and touched / typed / scrolled in the last 2 minutes, `GP_USE_IDLE_MS`; a tick is at most
+  30 s, so a sleeping phone adds nothing) into `gp-use-time` ({u, d:{date:secs} for 14 days, sent, dirty}); staff only
+  (`gpUseOn_`: not guests, students, previews or the board). Sent as `markSeen(user, pin, {date: secs})` — with the
+  once-a-day call, and when the app goes to the background at most every 20 minutes (`gpUseFlush_`, a sendBeacon).
+  Totals, not additions: the server (`saveUseTime_`, its own blob `useTime` = {from, time:{staffId:{date:secs}}},
+  `mutateKey_`, 90 days) keeps the larger, days in the last two weeks only, ≤20 h a day. `adminAppUse` adds `secs30` /
+  `secs7` and `timeFrom`; the page shows ⏱ per person, the campus total and average (`#adminUseTime`), By days used /
+  By time in the app (`[data-usesort]`), a note while counting is under 30 days old (`#adminUseTimeNote`), and two CSV
+  columns in minutes. Only how long, never what. Khmer §105.
+- **A person's page goes back where it came from** (`S.adminPersonFrom`, set by `[data-adminperson]`): App use,
+  Mentors, Loose ends…, else Accounts.
 
 ## The weekly health check-in is on Tuesdays (Nov 2026, Andrew: "every Tuesday during our staff meeting")
 `CHECKIN_DOW` = 2 (02-goals-okrs.js, and api.js for the phone): on a Tuesday My Home has a card while this week's

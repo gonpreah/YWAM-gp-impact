@@ -42,6 +42,7 @@ const ago = n => { const d = new Date(today + 'T00:00:00Z'); d.setUTCDate(d.getU
 const span = (from, n) => Array.from({ length: n }, (_, i) => ago(from + i)).reverse();
 mem.lastSeen = { started: ago(40), daysFrom: ago(40), seen: { c1: today, c2: ago(1), c3: ago(10) },
   days: { c1: span(0, 20), c2: span(1, 8), c3: span(10, 2) } };
+mem.useTime = { from: ago(40), time: { c1: { [today]: 3600, [ago(3)]: 1500 }, c2: { [ago(1)]: 600 }, c3: { [ago(10)]: 4000 } } };
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.woff2': 'font/woff2' };
 const srv = http.createServer(async (req, res) => {
@@ -91,7 +92,15 @@ async function open(user, when) {
   const rows = await page.$$eval('[data-userow]', rs => rs.map(r => r.getAttribute('data-userow') + ':' + r.querySelector('.useNum b').textContent + ':' + r.querySelectorAll('.useDots i.on').length));
   ok('everyone, most days first, each with their days as dots', JSON.stringify(rows.slice(0, 3)) === '["c1:20:20","c2:8:8","c3:2:2"]', rows.join(' | '));
   ok('a row says this week and the last day', /7 this week/.test(await page.$eval('[data-userow="c1"]', e => e.innerText)) && /last used/.test(await page.$eval('[data-userow="c2"]', e => e.innerText)));
-  ok('a full history: no "fills in" note', !(await page.$('#adminUseNote')));
+  ok('a full history: no "fills in" note', !(await page.$('#adminUseNote')) && !(await page.$('#adminUseTimeNote')));
+  const tm = await page.$$eval('[data-userow] .useTime', es => es.map(e => e.textContent.trim()));
+  ok('each person’s time in the app in the last 30 days', JSON.stringify(tm.slice(0, 3)) === JSON.stringify(['⏱ 1 h 25 min', '⏱ 10 min', '⏱ 1 h 7 min']) && tm.includes('⏱ —'), tm.join(' | '));
+  const tot = await page.$eval('#adminUseTime', e => e.textContent);
+  ok('… all together, and on average for those who used it', /2 h 42 min in the app/.test(tot) && /54 min each on average/.test(tot), tot);
+  await page.click('[data-usesort="time"]'); await page.waitForTimeout(300);
+  const byTime = await page.$$eval('[data-userow]', rs => rs.slice(0, 3).map(r => r.getAttribute('data-userow')));
+  ok('“By time in the app” puts the most time first', JSON.stringify(byTime) === '["c1","c3","c2"]', byTime.join(','));
+  await page.click('[data-usesort="days"]'); await page.waitForTimeout(300);
   await page.click('[data-useband="none"]'); await page.waitForTimeout(300);
   const none = await page.$$eval('[data-userow]', rs => rs.map(r => r.getAttribute('data-userow')).sort());
   ok('a band narrows the list — Not in 30 days', JSON.stringify(none) === '["c4"]', none.join(','));
@@ -99,7 +108,7 @@ async function open(user, when) {
   ok('Show everyone brings them all back', (await page.$$('[data-userow]')).length === 5);
   const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 5000 }), page.click('#adminUseCsv')]);
   const csv = fs.readFileSync(await dl.path(), 'utf8');
-  ok('Download (CSV): a line for each person with their days', /Days used, last 30/.test(csv) && /Cora Every,Community Service,Cafe,20,7,/.test(csv), csv.split('\n')[1]);
+  ok('Download (CSV): a line for each person with their days', /Days used, last 30/.test(csv) && /Cora Every,Community Service,Cafe,20,7,[0-9-]+,85,85/.test(csv) && /Minutes in the app, last 30/.test(csv), csv.split('\n')[1]);
   await page.click('[data-userow="c2"] [data-adminperson]'); await page.waitForTimeout(600);
   ok('tapping someone opens their account', /Kanha Some/.test(await page.$eval('#main', e => e.innerText)) && !!(await page.$('#adminBack')));
   ok('… and its back button says App use', /App use/.test(await page.$eval('#adminBack', e => e.textContent)));
@@ -109,10 +118,10 @@ async function open(user, when) {
   await page.click('[data-adminperson="c2"]'); await page.waitForTimeout(400);
   await page.click('#adminBack'); await page.waitForTimeout(400);
   ok('opened from Accounts, back still goes to Accounts', await page.evaluate(() => S.adminSub === 'accounts'));
-  mem.lastSeen.daysFrom = ago(3);
+  mem.lastSeen.daysFrom = ago(3); mem.useTime.from = ago(3);
   await page.evaluate(() => { S.adminSub = 'use'; S.adminUse = {}; render(); });
   await page.waitForSelector('#adminUseList', { timeout: 8000 });
-  ok('while the history is under 30 days old, a note says the numbers fill in', !!(await page.$('#adminUseNote')));
+  ok('while the history is under 30 days old, a note says the numbers fill in', !!(await page.$('#adminUseNote')) && !!(await page.$('#adminUseTimeNote')));
   await ctx.close();
 }
 {
@@ -120,6 +129,36 @@ async function open(user, when) {
   await page.evaluate(() => { S.view = 'admin'; S.adminSub = 'use'; render(); });
   await page.waitForTimeout(500);
   ok('not an admin: no Admin page at all', !(await page.$('#adminUseList')));
+  await ctx.close();
+}
+
+/* ---------- 1b. the phone counts the minutes and sends them ---------- */
+{
+  const { ctx, page } = await open('kanha');
+  const day = await page.evaluate(() => todayStr());
+  const local = () => page.evaluate(() => JSON.parse(localStorage.getItem('gp-use-time') || 'null'));
+  await page.evaluate(() => { _gpUse.last = Date.now() - 15000; _gpUse.act = Date.now(); gpUseTick_(); });
+  let L = await local();
+  ok('fifteen seconds in use count toward today', L && L.u === 'kanha' && L.d[day] >= 14 && L.d[day] <= 16 && L.dirty === true, JSON.stringify(L));
+  const before = L.d[day];
+  await page.evaluate(() => { _gpUse.last = Date.now() - 15000; _gpUse.act = Date.now() - 5 * 60000; gpUseTick_(); });
+  ok('left open with nobody using it for minutes, nothing counts', (await local()).d[day] === before);
+  await page.evaluate(() => { _gpUse.last = Date.now() - 15 * 60000; _gpUse.act = Date.now(); gpUseTick_(); });
+  ok('a long gap (the phone asleep) counts only one tick’s worth', (await local()).d[day] <= before + 31);
+  await page.evaluate(() => { const U = JSON.parse(localStorage.getItem('gp-use-time')); U.sent = 0; localStorage.setItem('gp-use-time', JSON.stringify(U)); gpMarkSeen_(); });
+  await page.waitForTimeout(800);
+  L = await local();
+  ok('sent with the once-a-day markSeen, even after today’s day was marked', mem.useTime.time.c2[day] === L.d[day] && L.dirty === false && L.sent > 0, JSON.stringify(mem.useTime.time.c2));
+  await page.evaluate(() => { _gpUse.last = Date.now() - 15000; _gpUse.act = Date.now(); gpUseTick_();
+    const U = JSON.parse(localStorage.getItem('gp-use-time')); U.sent = 0; localStorage.setItem('gp-use-time', JSON.stringify(U));
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
+  await page.waitForTimeout(1000);
+  L = await local();
+  ok('going to the background sends the new total (a beacon)', mem.useTime.time.c2[day] === L.d[day] && L.d[day] > before + 20, JSON.stringify(mem.useTime.time.c2) + ' ' + JSON.stringify(L.d));
+  const n0 = JSON.stringify(mem.useTime);
+  await page.evaluate(() => { _gpUse.last = Date.now() - 15000; _gpUse.act = Date.now(); gpUseTick_(true); document.dispatchEvent(new Event('visibilitychange')); });
+  await page.waitForTimeout(600);
+  ok('… but not again within 20 minutes', JSON.stringify(mem.useTime) === n0);
   await ctx.close();
 }
 

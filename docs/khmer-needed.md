@@ -5122,3 +5122,20 @@ A 🔎 box over every long drop-down and tick list on the GPDTS page (budget lin
 | We do the weekly check-in together on Tuesdays, at the staff meeting. | យើងធ្វើការពិនិត្យសុខភាពប្រចាំសប្តាហ៍ជាមួយគ្នា នៅរៀងរាល់ថ្ងៃអង្គារ ក្នុងពេលប្រជុំបុគ្គលិក។ |
 
 Admin → App use: who uses the app and how often (days in the last 30, by person; the four bands are short tile labels). The weekly health check-in is now done on Tuesdays at the staff meeting: the card on My Home on a Tuesday, the bell, the line on the Health tab, and the phone reminder (PUSH_TEXT weeklyTue / weekly in api.js carry their own Khmer).
+
+## 105. Admin → App use: time in the app
+
+The minutes each person has the app open and in use, beside their days (Admin → App use). `{time}` is a length like "3 h 20 min"; `{h}` / `{m}` are hours and minutes, kept short — they sit under a number in a narrow column.
+
+| English | Khmer (draft) |
+|---|---|
+| {time} in the app in the last 30 days, all together | {time} នៅក្នុងកម្មវិធី ក្នុង 30 ថ្ងៃចុងក្រោយ សរុបទាំងអស់គ្នា |
+| {time} each on average | ជាមធ្យម {time} ម្នាក់ |
+| By days used | តាមចំនួនថ្ងៃដែលបានប្រើ |
+| By time in the app | តាមពេលវេលានៅក្នុងកម្មវិធី |
+| Time in the app is counted from {date}: the minutes the app is open and being used, once a phone has the update. It fills in over the next 30 days. | ពេលវេលានៅក្នុងកម្មវិធី ត្រូវបានរាប់ចាប់ពី {date}៖ ជានាទីដែលកម្មវិធីបើក ហើយកំពុងត្រូវបានប្រើ នៅពេលទូរស័ព្ទមានការធ្វើបច្ចុប្បន្នភាពនេះ។ វានឹងពេញលេញក្នុងរយៈពេល 30 ថ្ងៃខាងមុខ។ |
+| under a minute | តិចជាងមួយនាទី |
+| {m} min | {m} នាទី |
+| {h} h {m} min | {h} ម៉ោង {m} នាទី |
+| {h} h | {h} ម៉ោង |
+| Only which days someone used the app and for how long — never what they did in it. | មានតែថ្ងៃណាដែលនរណាម្នាក់បានប្រើកម្មវិធី និងរយៈពេលប៉ុន្មាន — មិនដែលបង្ហាញអ្វីដែលពួកគេបានធ្វើនៅក្នុងនោះទេ។ |

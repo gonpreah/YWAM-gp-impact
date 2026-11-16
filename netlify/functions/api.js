@@ -11407,7 +11407,8 @@ async function adminAppUse(username, pin, campus) {
   const s = await adminGate_(username, pin);
   if (!s) return { ok: false, err: 'not_authorized' };
   campus = CAMPUS_IDS_.indexOf(campus) > -1 ? campus : s.campus;
-  const [staff, rec, daily] = await Promise.all([getStaff_(), readJSON('lastSeen', {}), getDaily_()]);
+  const [staff, rec, daily, ut] = await Promise.all([getStaff_(), readJSON('lastSeen', {}), getDaily_(), readJSON('useTime', {})]);
+  const times = (ut.time && typeof ut.time === 'object' && !Array.isArray(ut.time)) ? ut.time : {};
   const today = baseToday_(), from30 = icsDay_(today, -29), from7 = icsDay_(today, -6);
   const days = (rec.days && typeof rec.days === 'object' && !Array.isArray(rec.days)) ? rec.days : {};
   const seen = (rec.seen && typeof rec.seen === 'object') ? rec.seen : {};
@@ -11424,15 +11425,51 @@ async function adminAppUse(username, pin, campus) {
   const people = staff.filter(function (x) { return x.active !== false && !x.archived && !isApplicant_(x) && x.campus === campus; }).map(function (x) {
     const all = Object.keys(used[x.id] || {}).sort();
     const in30 = all.filter(function (d) { return d >= from30; });
+    const tm = (times[x.id] && typeof times[x.id] === 'object') ? times[x.id] : {};
+    let secs30 = 0, secs7 = 0;
+    Object.keys(tm).forEach(function (d) { const n = Number(tm[d]) || 0; if (!isDate_(d) || d > today) return; if (d >= from30) secs30 += n; if (d >= from7) secs7 += n; });
     return { id: x.id, name: x.name || '', photo: photoOf_(x), dept: x.dept || '', ministry: x.ministry || '', staffType: x.staffType || '',
-      last: all.length ? all[all.length - 1] : '', d7: in30.filter(function (d) { return d >= from7; }).length, d30: in30.length, days: in30 };
+      last: all.length ? all[all.length - 1] : '', d7: in30.filter(function (d) { return d >= from7; }).length, d30: in30.length, days: in30,
+      secs30: Math.round(secs30), secs7: Math.round(secs7) };
   });
-  return { ok: true, campus: campus, today: today, from30: from30, daysFrom: rec.daysFrom || '', habitFrom: habitFrom, people: people };
+  return { ok: true, campus: campus, today: today, from30: from30, daysFrom: rec.daysFrom || '', habitFrom: habitFrom, timeFrom: ut.from || '', people: people };
 }
-async function markSeen(username, pin) {
+/* Time in the app (Nov 2026, Andrew: "total hours spent on app"): the phone counts the seconds the app is on
+   screen and being used (a touch, a key or a scroll in the last two minutes) and sends each recent day's total
+   with markSeen. Totals, not additions — the server keeps the larger of what it has and what came, so sending a
+   day twice, or a write lost to someone else's at the same moment, costs nothing: the next send heals it.
+   `time: { staffId: { 'YYYY-MM-DD': seconds } }` in its own blob (lastSeen's writes stay the date only), the
+   newest SEEN_KEEP_DAYS, `from` the day it began. Only how long, never what was done. */
+const USE_TIME_DAY_MAX = 20 * 3600;
+function cleanUseTime_(v) {
+  const out = {}, today = baseToday_(), from = icsDay_(today, -13);
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return out;
+  Object.keys(v).slice(0, 30).forEach(function (d) {
+    const n = Math.floor(Number(v[d]));
+    if (isDate_(d) && d >= from && d <= today && n > 0) out[d] = Math.min(n, USE_TIME_DAY_MAX);
+  });
+  return out;
+}
+async function saveUseTime_(s, time) {
+  const add = cleanUseTime_(time);
+  if (!Object.keys(add).length) return;
+  await mutateKey_('useTime', {}, function (rec) {
+    const all = (rec.time && typeof rec.time === 'object' && !Array.isArray(rec.time)) ? rec.time : {};
+    const mine = (all[s.id] && typeof all[s.id] === 'object') ? all[s.id] : {};
+    let changed = false;
+    Object.keys(add).forEach(function (d) { if (!(mine[d] >= add[d])) { mine[d] = add[d]; changed = true; } });
+    if (!changed) return { abort: true };
+    const keep = Object.keys(mine).filter(isDate_).sort().slice(-SEEN_KEEP_DAYS), kept = {};
+    keep.forEach(function (d) { kept[d] = mine[d]; });
+    all[s.id] = kept;
+    rec.time = all; rec.from = rec.from || baseToday_();
+  });
+}
+async function markSeen(username, pin, time) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
   await touchLastSeen_(s);
+  await saveUseTime_(s, time);
   return { ok: true };
 }
 async function adminLooseEnds(username, pin) {
@@ -12838,7 +12875,7 @@ const HANDLERS = {
   saveStaffDebt: function (a) { return saveStaffDebt(a[0], a[1], a[2]); },
   adminLooseEnds: function (a) { return adminLooseEnds(a[0], a[1]); },
   adminAppUse: function (a) { return adminAppUse(a[0], a[1], a[2]); },
-  markSeen: function (a) { return markSeen(a[0], a[1]); },
+  markSeen: function (a) { return markSeen(a[0], a[1], a[2]); },
   hrArchiveMany: function (a) { return hrArchiveMany(a[0], a[1], a[2], a[3]); },
   saveMyKpiDay: function (a) { return saveMyKpiDay(a[0], a[1], a[2], a[3]); },
   getMinistryFor: function (a) { return getMinistryFor(a[0], a[1], a[2], a[3]); },

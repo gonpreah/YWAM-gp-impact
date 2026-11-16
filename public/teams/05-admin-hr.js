@@ -271,6 +271,15 @@ var USE_BANDS=[
   { id:'none', label:'Not in 30 days', hint:'Hasn’t used it in the last 30 days', test:function(n){ return n===0; } }
 ];
 function useBandOf_(n){ for(var i=0;i<USE_BANDS.length;i++) if(USE_BANDS[i].test(n)) return USE_BANDS[i].id; return 'none'; }
+/* "3 h 20 min" / "45 min" / "under a minute" / "—" */
+function useTimeWord_(secs){
+  var m=Math.round((secs||0)/60);
+  if(!secs) return '—';
+  if(m<1) return t('under a minute');
+  if(m<60) return gpT('{m} min',{m:m});
+  var hh=Math.floor(m/60), mm=m%60;
+  return mm ? gpT('{h} h {m} min',{h:hh, m:mm}) : gpT('{h} h',{h:hh});
+}
 function adminUseHtml_(){
   var C = CAMPUSES.some(function(c){ return c.id===S.adminCampusTab; }) ? S.adminCampusTab : S.me.campus;
   S.adminCampusTab=C;
@@ -281,7 +290,8 @@ function adminUseHtml_(){
   var U=S.adminUse[C];
   if(!U) return h+'<p class="sub">'+esc(t('Loading…'))+'</p>';
   if(!U.ok) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Couldn’t load this — pull down to try again.'))+'</p><button class="btn small ghost" id="adminUseRetry">'+esc(t('Try again'))+'</button></div>';
-  var P=(U.people||[]).slice().sort(function(a,b){ return b.d30-a.d30 || (b.last>a.last ? 1 : b.last<a.last ? -1 : 0) || String(a.name).localeCompare(String(b.name)); });
+  var byTime=S.adminUseSort==='time';
+  var P=(U.people||[]).slice().sort(function(a,b){ return (byTime ? (b.secs30||0)-(a.secs30||0) : 0) || b.d30-a.d30 || (b.last>a.last ? 1 : b.last<a.last ? -1 : 0) || String(a.name).localeCompare(String(b.name)); });
   var count={}; USE_BANDS.forEach(function(b){ count[b.id]=0; }); P.forEach(function(x){ count[useBandOf_(x.d30)]++; });
   var band=S.adminUseBand && count[S.adminUseBand]!==undefined ? S.adminUseBand : '';
   var avg=P.length ? Math.round(P.reduce(function(a,x){ return a+x.d30; }, 0)/P.length*10)/10 : 0;
@@ -289,9 +299,14 @@ function adminUseHtml_(){
     return '<button class="useTile use-'+b.id+(band===b.id?' on':'')+'" data-useband="'+b.id+'"><b>'+count[b.id]+'</b><span>'+esc(t(b.label))+'</span><small>'+esc(t(b.hint))+'</small></button>';
   }).join('')+'</div>';
   h+='<p class="hint" id="adminUseAvg" style="margin:6px 0 4px">'+esc(gpT('{n} staff · on average {avg} of the last 30 days',{n:P.length, avg:avg}))+'</p>';
+  var totSecs=P.reduce(function(a,x){ return a+(x.secs30||0); }, 0), timers=P.filter(function(x){ return x.secs30>0; }).length;
+  h+='<p class="hint" id="adminUseTime" style="margin:0 0 6px">⏱ '+esc(gpT('{time} in the app in the last 30 days, all together',{time:useTimeWord_(totSecs)}))+
+    (timers ? ' · '+esc(gpT('{time} each on average',{time:useTimeWord_(totSecs/timers)})) : '')+'</p>';
+  h+='<div class="seg useSort" id="adminUseSort"><button class="'+(byTime?'':'on')+'" data-usesort="days">'+esc(t('By days used'))+'</button><button class="'+(byTime?'on':'')+'" data-usesort="time">'+esc(t('By time in the app'))+'</button></div>';
   /* the history of days opened only began when this page did — say so while it is under 30 days old */
   var fromWord=function(iso){ return iso ? new Date(iso+'T00:00:00').toLocaleDateString(LANG==='km'?'km-KH':'en-GB', { day:'numeric', month:'short', year:'numeric' }) : ''; };
   if(!U.daysFrom || U.daysFrom>U.from30) h+='<p class="hint useNote" id="adminUseNote">ℹ️ '+esc(gpT('The app keeps every day someone opens it from {date}; before that it counts the days they ticked a habit. The numbers fill in over the next 30 days.',{date:fromWord(U.daysFrom || U.today)}))+'</p>';
+  if(!U.timeFrom || U.timeFrom>U.from30) h+='<p class="hint useNote" id="adminUseTimeNote">ℹ️ '+esc(gpT('Time in the app is counted from {date}: the minutes the app is open and being used, once a phone has the update. It fills in over the next 30 days.',{date:fromWord(U.timeFrom || U.today)}))+'</p>';
   if(band) h+='<p class="hint" style="margin:4px 0"><button class="linkbtn inline" id="adminUseAll">'+esc(t('Show everyone'))+'</button></p>';
   var shown=P.filter(function(x){ return !band || useBandOf_(x.d30)===band; });
   var dayList=[]; for(var i=29;i>=0;i--){ var d=new Date(U.today+'T00:00:00'); d.setDate(d.getDate()-i); dayList.push(d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)); }
@@ -300,9 +315,9 @@ function adminUseHtml_(){
     return '<div class="useRow" data-userow="'+esc(x.id)+'"><button class="adminRow" data-adminperson="'+esc(x.id)+'">'+avatarHtml(x,'sm')+
       '<span class="adminRowText"><span class="rowName">'+esc(x.name)+'</span><span class="rowSub">'+esc([t(x.ministry||x.dept||''), x.last ? gpT('last used {date}',{date:fromWord(x.last)}) : t('not used yet')].filter(Boolean).join(' · '))+'</span>'+
       '<span class="useDots" aria-hidden="true">'+dayList.map(function(d){ return '<i'+(on[d]?' class="on"':'')+'></i>'; }).join('')+'</span></span>'+
-      '<span class="useNum use-'+useBandOf_(x.d30)+'"><b>'+x.d30+'</b><small>'+esc(t('of 30 days'))+'</small><small>'+esc(gpT('{n} this week',{n:x.d7}))+'</small></span></button></div>';
+      '<span class="useNum use-'+useBandOf_(x.d30)+'"><b>'+x.d30+'</b><small>'+esc(t('of 30 days'))+'</small><small>'+esc(gpT('{n} this week',{n:x.d7}))+'</small><small class="useTime">⏱ '+esc(useTimeWord_(x.secs30||0))+'</small></span></button></div>';
   }).join('') : '<p class="sub" style="margin:0">'+esc(t('Nobody here.'))+'</p>')+'</div>';
-  h+='<p class="hint" style="margin:6px 0">'+esc(t('Only which days someone used the app — never what they did in it.'))+'</p>';
+  h+='<p class="hint" style="margin:6px 0">'+esc(t('Only which days someone used the app and for how long — never what they did in it.'))+'</p>';
   h+='<button class="btn small ghost" id="adminUseCsv">⬇ '+esc(t('Download (CSV)'))+'</button>';
   return h;
 }
@@ -1574,12 +1589,13 @@ function bindAdmin(){
         function(){ S.adminUseLoading=false; S.adminUse[uc]={ ok:false }; if(S.view==='admin') render(); });
     }
     document.querySelectorAll('[data-useband]').forEach(function(b){ b.onclick=function(){ gpTap(); var v=b.getAttribute('data-useband'); S.adminUseBand = S.adminUseBand===v ? '' : v; render(); }; });
+    document.querySelectorAll('[data-usesort]').forEach(function(b){ b.onclick=function(){ gpTap(); S.adminUseSort=b.getAttribute('data-usesort'); render(); }; });
     var ua=document.getElementById('adminUseAll'); if(ua) ua.onclick=function(){ S.adminUseBand=''; render(); };
     var ur=document.getElementById('adminUseRetry'); if(ur) ur.onclick=function(){ delete S.adminUse[uc]; render(); };
     var uv=document.getElementById('adminUseCsv'); if(uv) uv.onclick=function(){
       var U=S.adminUse[uc]; if(!U || !U.ok) return;
-      dtsFinCsv_('App use - '+campusShort(uc)+' - '+U.today, ['Name','Department','Ministry','Days used, last 30','Days used, last 7','Last used'],
-        (U.people||[]).slice().sort(function(a,b){ return b.d30-a.d30; }).map(function(x){ return [x.name, x.dept, x.ministry, x.d30, x.d7, x.last]; }));
+      dtsFinCsv_('App use - '+campusShort(uc)+' - '+U.today, ['Name','Department','Ministry','Days used, last 30','Days used, last 7','Last used','Minutes in the app, last 30','Minutes in the app, last 7'],
+        (U.people||[]).slice().sort(function(a,b){ return b.d30-a.d30; }).map(function(x){ return [x.name, x.dept, x.ministry, x.d30, x.d7, x.last, Math.round((x.secs30||0)/60), Math.round((x.secs7||0)/60)]; }));
     };
   }
   if(S.adminSub==='loose' && S.adminLoose===null && !S.adminLooseLoading){
