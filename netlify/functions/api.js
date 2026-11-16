@@ -8453,7 +8453,8 @@ async function dtsFeesForFinance_(campus) {
   const money = await dtsFinList_(campus), budgets = await dtsFinBudgets_(campus);
   return { prices: DTS_FEE_PRICE, schools: show.slice(0, 4).map(function (s) {
     const mine = studs.filter(function (x) { return x.schoolId === s.id; });
-    return { id: s.id, year: s.year, name: s.name, from: s.from || '', to: s.to || '', fees: dtsLectureFees_(mine), money: dtsFinSums_(money, s.id, budgets[s.id]),
+    const fees = dtsLectureFees_(mine);
+    return { id: s.id, year: s.year, name: s.name, from: s.from || '', to: s.to || '', fees: fees, money: dtsFinSums_(money, s.id, budgets[s.id], fees),
       students: mine.filter(function (x) { return DTS_FEE_COLS.indexOf(x.column) > -1; })
         .map(function (x) { return { name: x.name, country: x.country || (x.audience === 'khmer' ? 'Cambodia' : ''), cat: x.feeCat, column: x.column }; }) };
   }) };
@@ -8541,7 +8542,7 @@ function cleanDtsRec_(kind, r, ctx) {
 const DTS_FIN_PHASES = ['lecture', 'outreach'];
 const DTS_FIN_KINDS = { lecture: ['income', 'expense'], outreach: ['income'] };
 const DTS_FIN_METHODS = ['cash', 'aba', 'subsplash'];
-const DTS_FIN_CATS = ['honorarium', 'supplies', 'coffee', 'food', 'transport', 'other'];
+const DTS_FIN_CATS = ['honorarium', 'supplies', 'coffee', 'food', 'transport', 'housing', 'other'];
 const DTS_FIN_MAX = 5000, DTS_FIN_MAX_AMOUNT = 100000;
 function dtsFinMoney_(v) {
   const n = Math.round(Number(v) * 100) / 100;
@@ -8591,8 +8592,10 @@ async function dtsFinList_(campus) {
              planned students ('student'), students and staff ('people'), or its own number ('')
      income  [{id, name, amount}] — money expected beyond the students' fees (carried over, donations)
    An expense names the line it was spent on (`lineId`), so each line shows planned, spent and left. */
-const DTS_BUD_GROUPS = ['materials', 'students', 'speakers', 'staff', 'honoraria', 'other'];
-const DTS_BUD_PER = ['', 'student', 'people'];
+const DTS_BUD_GROUPS = ['materials', 'students', 'speakers', 'staff', 'honoraria', 'housing', 'other'];
+/* 'A' / 'B' / 'C': the students accepted from that fee category — the base fee for housing and food is by
+   category, like the lecture fee (a Khmer student is C) */
+const DTS_BUD_PER = ['', 'student', 'people', 'A', 'B', 'C'];
 const DTS_BUD_MAX_LINES = 150, DTS_BUD_MAX_INCOME = 20;
 function dtsBudN_(v, max) { const n = Math.round(Number(v) * 100) / 100; return isFinite(n) && n >= 0 ? Math.min(n, max) : 0; }
 function cleanDtsBudget_(b) {
@@ -8615,9 +8618,12 @@ function cleanDtsBudget_(b) {
   }).filter(Boolean);
   return { students: Math.round(dtsBudN_(b.students, 500)), staff: Math.round(dtsBudN_(b.staff, 200)), lines: lines, income: income };
 }
-function dtsBudCount_(b, l) { return l.per === 'student' ? b.students : l.per === 'people' ? b.students + b.staff : l.count; }
-function dtsBudPlanned_(b) {
-  return b ? Math.round((b.lines || []).reduce(function (a, l) { return a + l.each * dtsBudCount_(b, l); }, 0) * 100) / 100 : 0;
+function dtsBudCount_(b, l, cats) {
+  if (l.per === 'A' || l.per === 'B' || l.per === 'C') return (cats && cats[l.per]) || 0;
+  return l.per === 'student' ? b.students : l.per === 'people' ? b.students + b.staff : l.count;
+}
+function dtsBudPlanned_(b, cats) {
+  return b ? Math.round((b.lines || []).reduce(function (a, l) { return a + l.each * dtsBudCount_(b, l, cats); }, 0) * 100) / 100 : 0;
 }
 async function dtsFinBudgets_(campus) {
   const doc = await readJSON('dtsFin:' + campus, { entries: [] });
@@ -8680,9 +8686,9 @@ async function dtsFinDelete(username, pin, id) {
   return { ok: true, fin: await dtsFinList_(g.campus) };
 }
 /* a school's money, for the Finances office's card: received and spent, lecture and outreach apart */
-function dtsFinSums_(entries, schoolId, budget) {
+function dtsFinSums_(entries, schoolId, budget, cats) {
   const o = { lecture: { received: 0, spent: 0, receiptsOut: 0 }, outreach: { received: 0 } };
-  if (budget) o.lecture.planned = dtsBudPlanned_(budget);
+  if (budget) o.lecture.planned = dtsBudPlanned_(budget, cats);
   (entries || []).forEach(function (e) {
     if (e.schoolId !== schoolId || !o[e.phase]) return;
     if (e.kind === 'income') o[e.phase].received += e.amount;

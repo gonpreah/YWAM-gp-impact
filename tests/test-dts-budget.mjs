@@ -69,6 +69,7 @@ const BUD = {
     { id: 'm1', group: 'materials', name: 'Whiteboard markers', each: 1, per: 'student' },
     { id: 's1', group: 'students', name: 'T-shirts', each: 7, per: 'people', count: 99 },
     { id: 'h1', group: 'honoraria', code: '60207', name: 'Outside speaker honorarium', each: 200, per: '', count: 4 },
+    { id: 'hA', group: 'housing', name: 'Base fee — category A', each: 660, per: 'A', count: 7 },
     { id: 'x1', group: 'nonsense', name: 'Somewhere else', each: -5, per: 'weird', count: 2 },
     { id: 'm1', group: 'materials', name: 'Same id twice', each: 2, per: '', count: 3 },
     { name: '', each: 9, count: 9 },
@@ -83,16 +84,17 @@ ok('a budget that is not a budget is refused', !r.body.ok && r.body.err === 'bad
 r = await call('dtsFinBudgetSave', ['dee', '1234', 'sc1', BUD]);
 ok('the DTS team saves a school’s budget', r.body.ok === true && r.body.budgets && r.body.budgets.sc1, JSON.stringify(r.body.err));
 const b = r.body.budgets.sc1;
-ok('a line without a name is dropped, the rest kept in order', b.lines.length === 5 && b.lines.map(l => l.name).join('|') === 'Whiteboard markers|T-shirts|Outside speaker honorarium|Somewhere else|Same id twice', b.lines.map(l => l.name).join('|'));
+ok('a line without a name is dropped, the rest kept in order', b.lines.length === 6 && b.lines.map(l => l.name).join('|') === 'Whiteboard markers|T-shirts|Outside speaker honorarium|Base fee — category A|Somewhere else|Same id twice', b.lines.map(l => l.name).join('|'));
+ok('a housing line counted by fee category keeps its group and category, no number of its own', b.lines[3].group === 'housing' && b.lines[3].per === 'A' && b.lines[3].count === 0, JSON.stringify(b.lines[3]));
 ok('a line counted per student or per person keeps no number of its own', b.lines[0].count === 0 && b.lines[1].count === 0 && b.lines[1].per === 'people');
-ok('an unknown group is Other, an unknown "how many" is a number, a negative amount is 0', b.lines[3].group === 'other' && b.lines[3].per === '' && b.lines[3].each === 0 && b.lines[3].count === 2, JSON.stringify(b.lines[3]));
-ok('an id used twice is given a new one', b.lines[4].id !== 'm1' && b.lines[4].id && b.lines[0].id === 'm1');
+ok('an unknown group is Other, an unknown "how many" is a number, a negative amount is 0', b.lines[4].group === 'other' && b.lines[4].per === '' && b.lines[4].each === 0 && b.lines[4].count === 2, JSON.stringify(b.lines[4]));
+ok('an id used twice is given a new one', b.lines[5].id !== 'm1' && b.lines[5].id && b.lines[0].id === 'm1');
 ok('the code stays', b.lines[2].code === '60207');
 ok('other income: names kept, an empty one dropped, ids unique', b.income.length === 2 && b.income[0].amount === 500 && b.income[1].id !== 'bi1', JSON.stringify(b.income));
 ok('who made it and when', b.by === 'st_dts' && !!b.at);
 
 r = await call('dtsBoard', ['dee', '1234']);
-ok('the board carries the budgets', r.body.finBudgets && r.body.finBudgets.sc1 && r.body.finBudgets.sc1.lines.length === 5);
+ok('the board carries the budgets', r.body.finBudgets && r.body.finBudgets.sc1 && r.body.finBudgets.sc1.lines.length === 6);
 
 const exp = (o) => ({ schoolId: 'sc1', phase: 'lecture', kind: 'expense', date: TODAY, category: 'supplies', memo: 'Markers', who: 'st_dts', amount: 12.5, ...o });
 r = await call('dtsFinSave', ['dee', '1234', exp({ lineId: 'm1' })]);
@@ -100,6 +102,8 @@ ok('an expense can name a line of its school’s budget', r.body.ok && r.body.fi
 const e1 = r.body.fin[0].id;
 r = await call('dtsFinSave', ['dee', '1234', exp({ lineId: 'not-a-line' })]);
 ok('… and no line that is not in it', !r.body.ok && r.body.err === 'bad_line', r.body.err);
+r = await call('dtsFinSave', ['dee', '1234', exp({ memo: 'Base fees to the base', category: 'housing', lineId: 'hA', amount: 0.5 })]);
+ok('an expense can be housing, on a housing line', r.body.ok && r.body.fin.some(e => e.category === 'housing' && e.lineId === 'hA'), JSON.stringify(r.body.err));
 r = await call('dtsFinSave', ['dee', '1234', exp({ memo: 'Coffee', lineId: '' })]);
 ok('an expense may be on no line', r.body.ok && r.body.fin.some(e => e.memo === 'Coffee' && e.lineId === ''));
 r = await call('dtsFinSave', ['dee', '1234', exp({ id: e1, lineId: 'h1', memo: 'Speaker' })]);
@@ -108,16 +112,16 @@ ok('an expense can be moved to another line', r.body.ok && r.body.fin.find(e => 
 /* the Finances office's card: the plan beside what was spent */
 r = await call('getFinance', ['fin', '1234']);
 const sc = r.body && r.body.dtsFees && r.body.dtsFees.schools.find(s => s.id === 'sc1');
-// planned: 1×23 + 7×31 + 200×4 + 0×2 + 2×3 = 23 + 217 + 800 + 0 + 6 = 1046
-ok('the Finances office sees the planned spending beside what was spent', sc && sc.money.lecture.planned === 1046 && sc.money.lecture.spent === 25, JSON.stringify(sc && sc.money));
+// planned: 1×23 + 7×31 + 200×4 + 660×(2 category A accepted) + 0×2 + 2×3 = 23 + 217 + 800 + 1320 + 0 + 6 = 2366
+ok('the Finances office sees the planned spending beside what was spent — housing by the students accepted in each category', sc && sc.money.lecture.planned === 2366 && sc.money.lecture.spent === 25.5, JSON.stringify(sc && sc.money));
 
 /* the budget lives beside the entries: writing one never loses the other */
-ok('the entries and the budget sit in one blob, both kept', Array.isArray(mem['dtsFin:siemreap'].entries) && mem['dtsFin:siemreap'].entries.length === 2 && mem['dtsFin:siemreap'].budgets.sc1);
+ok('the entries and the budget sit in one blob, both kept', Array.isArray(mem['dtsFin:siemreap'].entries) && mem['dtsFin:siemreap'].entries.length === 3 && mem['dtsFin:siemreap'].budgets.sc1);
 
 r = await call('dtsFinBudgetSave', ['dee', '1234', 'sc1', null]);
 ok('the budget can be removed', r.body.ok && !r.body.budgets.sc1);
 r = await call('dtsBoard', ['dee', '1234']);
-ok('… and its expenses stay, with their line id', r.body.fin.length === 2 && r.body.fin.some(e => e.lineId === 'h1'));
+ok('… and its expenses stay, with their line id', r.body.fin.length === 3 && r.body.fin.some(e => e.lineId === 'h1'));
 
 /* the caps */
 const many = { students: 9999, staff: -3, lines: Array.from({ length: 200 }, (_, i) => ({ name: 'L' + i, each: 1e9, count: 1e9 })), income: [] };

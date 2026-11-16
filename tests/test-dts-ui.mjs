@@ -317,15 +317,20 @@ await p.click('#dtsFinSecs [data-dtsfinsec="budget"]'); await p.waitForTimeout(2
 ok('📋 Budget starts by offering last year’s DTS budget, or an empty one', !!(await p.$('#dtsBudStart #dtsBudTemplate')) && !!(await p.$('#dtsBudEmpty')));
 await p.click('#dtsBudTemplate'); await p.waitForTimeout(400);
 const tb = budSaves[0] && budSaves[0][3];
-ok('it starts from the base’s own budget sheet: its groups and lines, no names', budSaves.length === 1 && budSaves[0][2] === 'sc1' && tb.lines.length === 38 &&
-  ['materials', 'students', 'speakers', 'staff', 'honoraria', 'other'].every(g => tb.lines.some(l => l.group === g)) && tb.staff === 8 && tb.income[0].amount === 500, JSON.stringify(tb && [tb.lines.length, tb.students, tb.staff]));
+ok('it starts from the base’s own budget sheet: its groups and lines, no names', budSaves.length === 1 && budSaves[0][2] === 'sc1' && tb.lines.length === 44 &&
+  ['materials', 'students', 'speakers', 'staff', 'honoraria', 'housing', 'other'].every(g => tb.lines.some(l => l.group === g)) && tb.staff === 8 && tb.income[0].amount === 500, JSON.stringify(tb && [tb.lines.length, tb.students, tb.staff]));
 ok('planned for the students accepted so far (2) and 8 staff', tb.students === 2 && /Planned for 2 students and 8 staff/.test(await p.$eval('#dtsBudPeople', e => e.innerText)));
 await p.click('#dtsBudSetOpen'); await p.waitForTimeout(200);
 await p.fill('#dbs_students', '23'); await p.click('#dtsBudSetSave'); await p.waitForTimeout(400);
 /* the sheet says $6,629.25, but its student-hospitality subtotal leaves out its last line (Sunday food, 8 × 23 = $184) */
-ok('with 23 students, as on the sheet, the plan adds up every line of the sheet: $6,813.25', /Planned spending\s*\$6,813.25/.test(await p.$eval('#dtsBudSum', e => e.innerText)), await p.$eval('#dtsBudSum .mmGrid', e => e.innerText.replace(/\n/g, ' ')));
+ok('with 23 students, as on the sheet, the plan adds up every line of the sheet: $6,813.25, and housing for the students accepted: $981 (Arno A $660, Bopha C $321)', /Planned spending\s*\$7,794.25/.test(await p.$eval('#dtsBudSum', e => e.innerText)), await p.$eval('#dtsBudSum .mmGrid', e => e.innerText.replace(/\n/g, ' ')));
 ok('each group says spent of planned: materials $557.75, honorariums $1,570', /\$0 of \$557.75/.test(await p.$eval('[data-dtsbudgroup="materials"] summary', e => e.innerText)) && /\$0 of \$1,570/.test(await p.$eval('[data-dtsbudgroup="honoraria"] summary', e => e.innerText)));
 ok('the plan: fees of the students accepted, other income, the planned balance', /Fees of the students accepted\s*\$2,620/.test(await p.$eval('#dtsBudSum', e => e.innerText)) && /From the previous DTS\s*\$500/.test(await p.$eval('#dtsBudSum', e => e.innerText)) && /Planned balance\s*-?\$-?3,693.25/.test(await p.$eval('#dtsBudBalance', e => e.innerText)), await p.$eval('#dtsBudBalance', e => e.innerText));
+ok('🏠 Housing & food: each student’s base fee by their fee category, counted from the students accepted', /\$0 of \$981/.test(await p.$eval('[data-dtsbudgroup="housing"] summary', e => e.innerText)) &&
+  /Base fees for housing and food \(paid on to the base\)\s*\$981/.test(await p.$eval('#dtsBudBaseFees', e => e.innerText)));
+await p.click('[data-dtsbudgroup="housing"] summary'); await p.waitForTimeout(150);
+ok('… a line per category, said in words: $660 × 1 category A students accepted', /\$660 × 1 category A students accepted/.test(await p.$eval('[data-dtsbudgroup="housing"]', e => e.innerText)) && /\$321 × 1 category C students accepted/.test(await p.$eval('[data-dtsbudgroup="housing"]', e => e.innerText)) && !!(await p.$('#dtsBudHousingNote')));
+await p.click('[data-dtsbudgroup="housing"] summary'); await p.waitForTimeout(150);
 ok('a school not started yet says so', /hasn’t started yet/.test(await p.$eval('#dtsBudPace', e => e.innerText)));
 const honLine = tb.lines.find(l => l.name === 'Outside speaker honorarium').id;
 await p.click('[data-dtsfinsec="expenses"]'); await p.waitForTimeout(250);
@@ -364,6 +369,10 @@ await p.click('[data-dtsfinsec="budget"]'); await p.waitForTimeout(250);
 p.once('dialog', dlg => dlg.accept());
 await p.click('#dtsBudRemove'); await p.waitForTimeout(400);
 ok('the budget can be removed — and it starts again', budSaves[budSaves.length - 1][3] === null && !!(await p.$('#dtsBudStart')));
+await p.click('#dtsBudEmpty'); await p.waitForTimeout(400);
+await p.click('[data-dtsbudgroup="housing"] summary'); await p.waitForTimeout(150);
+await p.click('[data-dtsbudtpl="housing"]'); await p.waitForTimeout(400);
+ok('an empty group can take last year’s lines — housing’s six base fees', budSaves[budSaves.length - 1][3].lines.length === 6 && budSaves[budSaves.length - 1][3].lines.every(l => l.group === 'housing') && /\$0 of \$981/.test(await p.$eval('[data-dtsbudgroup="housing"] summary', e => e.innerText)));
 ok('nothing slides sideways on a phone', await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
 ok('no page errors in the GP app', errs.length === 0, errs.slice(0, 3).join(' | '));
 await p.close();

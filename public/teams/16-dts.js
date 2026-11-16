@@ -945,7 +945,7 @@ function dtsCloseForms_(){ S.dtsLect=null; S.dtsEv=null; S.dtsTeam=null; S.dtsRe
    The budget is the lecture fees of the students accepted (Lecture fees, above); what is left is the budget
    less what has been spent. Server: dtsFinSave / dtsFinDelete, blob dtsFin:<campus> (api.js). */
 var DTS_FIN_METHODS=[['cash','Cash'],['aba','ABA'],['subsplash','Subsplash']];
-var DTS_FIN_CATS=[['honorarium','Honorarium'],['supplies','Supplies'],['coffee','Coffee'],['food','Food / snacks'],['transport','Transport'],['other','Other']];
+var DTS_FIN_CATS=[['honorarium','Honorarium'],['supplies','Supplies'],['coffee','Coffee'],['food','Food / snacks'],['transport','Transport'],['housing','Housing / base fee'],['other','Other']];
 function dtsFinWord_(list, id){ var hit=list.filter(function(x){ return x[0]===id; })[0]; return hit ? t(hit[1]) : id; }
 function dtsMoney2_(n){ n=Math.round((Number(n)||0)*100)/100; return '$'+n.toLocaleString('en-US',{ minimumFractionDigits:n%1?2:0, maximumFractionDigits:2 }); }
 function dtsFinAll_(){ return (S.dts && S.dts.fin) || []; }
@@ -1224,8 +1224,8 @@ function bindDtsFin_(){
    line and each group shows planned, spent and left, and the top says how far through the school we are
    against how much of the plan is spent. Stored by dtsFinBudgetSave (api.js) on dtsFin:<campus>.budgets. */
 var DTS_BUD_GROUPS=[['materials','📚','Materials of training','60000'],['students','🎓','Student hospitality','60100'],['speakers','🎤','Speaker hospitality','60200'],
-  ['staff','🙌','Staff hospitality','60300'],['honoraria','💝','Honorariums','60207'],['other','🧩','Other','']];
-var DTS_BUD_CAT={ materials:'supplies', students:'food', speakers:'food', staff:'food', honoraria:'honorarium', other:'other' };
+  ['staff','🙌','Staff hospitality','60300'],['honoraria','💝','Honorariums','60207'],['housing','🏠','Housing & food',''],['other','🧩','Other','']];
+var DTS_BUD_CAT={ materials:'supplies', students:'food', speakers:'food', staff:'food', honoraria:'honorarium', housing:'housing', other:'other' };
 /* the base's January DTS budget, as it was planned: 23 students and 8 staff (amounts only — no names) */
 var DTS_BUD_TEMPLATE={ students:23, staff:8, income:[['From the previous DTS',500],['Donations',0]], lines:[
   ['materials','','Whiteboard markers, ink, erasers',1,'student'],['materials','','Student journal and handbook',3.25,'student'],['materials','','Graduation supplies',3,'student'],
@@ -1239,6 +1239,10 @@ var DTS_BUD_TEMPLATE={ students:23, staff:8, income:[['From the previous DTS',50
   ['staff','','Gifts',0,'',8],['staff','','Meals',10,'',10],['staff','','Training snacks',5,'',10],['staff','','Training events',10,'',10],['staff','','Training resources',1.5,'',10],
   ['honoraria','60207','Outside speaker honorarium',200,'',4],['honoraria','60207','Cambodian speaker (from outside) honorarium',100,'',6],['honoraria','60207','Internal speaker honorarium',25,'',2],
   ['honoraria','','Translator gift',10,'',12],
+  /* the base fee for housing and food, 3 months, by fee category (Khmer students are C) — paid on to the base */
+  ['housing','','Base fee — category C and Cambodia, single (3 months)',321,'C'],['housing','','Base fee — category B, single (3 months)',495,'B'],
+  ['housing','','Base fee — category A, single (3 months)',660,'A'],['housing','','Base fee — category C and Cambodia, married couple (3 months)',600,'',0],
+  ['housing','','Base fee — category B, married couple (3 months)',960,'',0],['housing','','Base fee — category A, married couple (3 months)',1200,'',0],
   ['other','60130','Admin fees (course registration)',5,'student'],['other','60135','Communications',0,'student'],['other','','Skills training',5,'',22],
   ['other','','GP DTS trip',11,'',33],['other','','Deposit',20,'',18]] };
 function dtsBudId_(pre){ return pre+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
@@ -1252,16 +1256,20 @@ function dtsBudOf_(id){ return ((S.dts && S.dts.finBudgets) || {})[id] || null; 
 function dtsBud_(){ return dtsBudOf_(S.dtsSchool); }
 function dtsBudLine_(id){ var b=dtsBud_(); return id && b ? (b.lines||[]).filter(function(l){ return l.id===id; })[0] || null : null; }
 function dtsBudLineName_(id){ var l=dtsBudLine_(id); return l ? l.name : ''; }
-function dtsBudCount_(b, l){ return l.per==='student' ? (b.students||0) : l.per==='people' ? (b.students||0)+(b.staff||0) : (l.count||0); }
+function dtsBudCats_(){ return dtsFees_(dtsStudents_()); }
+function dtsBudCount_(b, l, cats){
+  if(l.per==='A' || l.per==='B' || l.per==='C') return ((cats || dtsBudCats_())[l.per])||0;
+  return l.per==='student' ? (b.students||0) : l.per==='people' ? (b.students||0)+(b.staff||0) : (l.count||0);
+}
 function dtsR2_(n){ return Math.round((Number(n)||0)*100)/100; }
 /* the plan with what has been spent: each line, each group, the whole */
 function dtsBudCalc_(){
   var b=dtsBud_(); if(!b) return null;
-  var exp=dtsFinIn_('lecture','expense'), spentBy={}, loose=[];
+  var exp=dtsFinIn_('lecture','expense'), spentBy={}, loose=[], cats=dtsBudCats_();
   exp.forEach(function(e){ if(e.lineId && dtsBudLine_(e.lineId)) spentBy[e.lineId]=(spentBy[e.lineId]||0)+(Number(e.amount)||0); else loose.push(e); });
   var groups=DTS_BUD_GROUPS.map(function(g){
     var lines=(b.lines||[]).filter(function(l){ return l.group===g[0]; }).map(function(l){
-      var n=dtsBudCount_(b, l), planned=dtsR2_(l.each*n), spent=dtsR2_(spentBy[l.id]);
+      var n=dtsBudCount_(b, l, cats), planned=dtsR2_(l.each*n), spent=dtsR2_(spentBy[l.id]);
       return { l:l, n:n, planned:planned, spent:spent, left:dtsR2_(planned-spent) };
     });
     var planned=dtsR2_(lines.reduce(function(a, x){ return a+x.planned; }, 0)), spent=dtsR2_(lines.reduce(function(a, x){ return a+x.spent; }, 0));
@@ -1269,9 +1277,11 @@ function dtsBudCalc_(){
   });
   var planned=dtsR2_(groups.reduce(function(a, g){ return a+g.planned; }, 0)), onLines=dtsR2_(groups.reduce(function(a, g){ return a+g.spent; }, 0));
   var looseSum=dtsFinSum_(loose), spent=dtsR2_(onLines+looseSum);
-  var fees=dtsFees_(dtsStudents_()).total, other=dtsR2_((b.income||[]).reduce(function(a, x){ return a+(Number(x.amount)||0); }, 0));
-  return { b:b, groups:groups, planned:planned, spent:spent, left:dtsR2_(planned-spent), loose:loose, looseSum:looseSum,
-    fees:fees, otherIncome:other, income:dtsR2_(fees+other), balance:dtsR2_(fees+other-planned) };
+  var fees=cats.total, other=dtsR2_((b.income||[]).reduce(function(a, x){ return a+(Number(x.amount)||0); }, 0));
+  /* the base fee comes in with the students and goes on to the base: income as much as it is spending */
+  var hg=groups.filter(function(g){ return g.id==='housing'; })[0], baseFees=hg ? hg.planned : 0;
+  return { b:b, groups:groups, planned:planned, spent:spent, left:dtsR2_(planned-spent), loose:loose, looseSum:looseSum, cats:cats, hasHousing:!!(hg && hg.lines.length),
+    fees:fees, baseFees:baseFees, otherIncome:other, income:dtsR2_(fees+baseFees+other), balance:dtsR2_(fees+baseFees+other-planned) };
 }
 /* how far through the school we are — the dates of the school on show */
 function dtsBudPace_(B){
@@ -1302,6 +1312,7 @@ function dtsBudHtml_(sch){
       (pace.over ? ' '+esc(t('Spending is ahead of the school — look at the groups below.')) : '')+'</p>' : '')+
     '<div class="dtsFinLabel" style="margin-top:10px">'+esc(t('The plan'))+'</div>'+
     '<div class="cafeLine"><span>'+esc(t('Fees of the students accepted'))+'</span><b>'+esc(dtsMoney2_(B.fees))+'</b></div>'+
+    (B.hasHousing ? '<div class="cafeLine" id="dtsBudBaseFees"><span>'+esc(t('Base fees for housing and food (paid on to the base)'))+'</span><b>'+esc(dtsMoney2_(B.baseFees))+'</b></div>' : '')+
     (b.income||[]).map(function(x){ return '<div class="cafeLine" data-dtsbudinc="'+esc(x.id)+'"><span>'+esc(x.name)+'</span><b>'+esc(dtsMoney2_(x.amount))+'</b></div>'; }).join('')+
     '<div class="cafeLine"><span>'+esc(t('Planned spending'))+'</span><b>− '+esc(dtsMoney2_(B.planned))+'</b></div>'+
     '<div class="cafeLine" id="dtsBudBalance"><span><b>'+esc(t('Planned balance'))+'</b></span><b'+(B.balance<0?' class="dtsNegTxt"':'')+'>'+esc(dtsMoney2_(B.balance))+'</b></div>'+
@@ -1319,7 +1330,9 @@ function dtsBudHtml_(sch){
       '<span class="dtsPhaseLine"><b'+(g.left<0?' class="dtsNegTxt"':'')+'>'+esc(gpT('{a} of {b}',{a:dtsMoney2_(g.spent), b:dtsMoney2_(g.planned)}))+'</b>'+(g.planned>0 ? ' · '+pct+'%' : '')+
         (g.left<0 ? ' · '+esc(gpT('over by {money}',{money:dtsMoney2_(-g.left)})) : '')+'</span>'+
       '<span class="dtsMeter'+(g.left<0 ? ' over' : '')+'" style="display:block;margin-top:4px"><i style="width:'+Math.max(0, Math.min(100, pct))+'%"></i></span></summary>'+
-      '<div class="dtsPhaseBody">'+(g.lines.length ? '<div class="dtsTblWrap"><table class="dtsTbl dtsBudTbl"><thead><tr><th>'+esc(t('Line'))+'</th><th>'+esc(t('Planned'))+'</th><th>'+esc(t('Spent'))+'</th><th>'+esc(t('Left'))+'</th></tr></thead><tbody>'+
+      '<div class="dtsPhaseBody">'+(g.id==='housing' ? '<p class="hint" style="margin:0 0 6px" id="dtsBudHousingNote">'+esc(t('The base fee each student pays for housing and food for the 3 months, by their fee category, passed on to the base. It comes in with the students, so in the plan it balances out.'))+
+        (B.cats.unknown ? ' ⚠️ '+esc(gpT('{n} accepted students have no category yet, so their base fee isn’t counted.',{n:B.cats.unknown})) : '')+'</p>' : '')+
+      (!g.lines.length && DTS_BUD_TEMPLATE.lines.some(function(x){ return x[0]===g.id; }) ? '<button class="btn small dtsAdd" data-dtsbudtpl="'+g.id+'">'+esc(t('Add last year’s lines'))+'</button> ' : '')+(g.lines.length ? '<div class="dtsTblWrap"><table class="dtsTbl dtsBudTbl"><thead><tr><th>'+esc(t('Line'))+'</th><th>'+esc(t('Planned'))+'</th><th>'+esc(t('Spent'))+'</th><th>'+esc(t('Left'))+'</th></tr></thead><tbody>'+
         g.lines.map(function(x){
           return '<tr data-dtsbudline="'+esc(x.l.id)+'" tabindex="0"'+(x.left<0 ? ' class="dtsBudOver"' : '')+'><td><b>'+esc(x.l.name)+'</b><span class="rowSub">'+esc(dtsBudHow_(x.l, x.n))+'</span></td>'+
             '<td>'+esc(dtsMoney2_(x.planned))+'</td><td>'+esc(dtsMoney2_(x.spent))+'</td><td><b'+(x.left<0?' class="dtsNegTxt"':'')+'>'+esc(dtsMoney2_(x.left))+'</b></td></tr>'+
@@ -1336,6 +1349,7 @@ function dtsBudHow_(l, n){
   var each=dtsMoney2_(l.each);
   if(l.per==='student') return gpT('{each} × {n} students',{each:each, n:n});
   if(l.per==='people') return gpT('{each} × {n} students and staff',{each:each, n:n});
+  if(l.per==='A' || l.per==='B' || l.per==='C') return gpT('{each} × {n} category {c} students accepted',{each:each, n:n, c:l.per});
   return each+' × '+n+(l.code ? ' · '+l.code : '');
 }
 function dtsBudLineFormHtml_(f){
@@ -1343,7 +1357,7 @@ function dtsBudLineFormHtml_(f){
     '<label class="f" for="dbl_name">'+esc(t('Line'))+'</label><input type="text" id="dbl_name" data-dbl="name" maxlength="120" placeholder="'+esc(t('e.g. Lecture snacks'))+'" value="'+esc(f.name||'')+'">'+
     '<div class="dtsTwo"><div><label class="f" for="dbl_each">'+esc(t('Amount each (US$)'))+'</label><input type="number" id="dbl_each" data-dbl="each" min="0" step="0.01" inputmode="decimal" value="'+esc(f.each===''||f.each==null ? '' : String(f.each))+'"></div>'+
     '<div><label class="f" for="dbl_code">'+esc(t('Account code (optional)'))+'</label><input type="text" id="dbl_code" data-dbl="code" maxlength="20" value="'+esc(f.code||'')+'"></div></div>'+
-    '<label class="f">'+esc(t('How many'))+'</label><div class="chips" id="dbl_per">'+[['student','Each student'],['people','Each student and staff'],['','A number']].map(function(x){
+    '<label class="f">'+esc(t('How many'))+'</label><div class="chips" id="dbl_per">'+[['student','Each student'],['people','Each student and staff']].concat(f.group==='housing' || /^[ABC]$/.test(f.per||'') ? [['C','Each category C student'],['B','Each category B student'],['A','Each category A student']] : []).concat([['','A number']]).map(function(x){
       return '<button type="button" class="chip'+((f.per||'')===x[0]?' on':'')+'" data-dblper="'+x[0]+'">'+esc(t(x[1]))+'</button>'; }).join('')+'</div>'+
     (f.per ? '' : '<input type="number" id="dbl_count" data-dbl="count" min="0" step="1" inputmode="numeric" aria-label="'+esc(t('How many'))+'" value="'+esc(f.count===''||f.count==null ? '' : String(f.count))+'">')+
     '<div class="dtsBtns"><button class="btn small" id="dtsBudLineSave"'+(S.dtsBusy?' disabled':'')+'>'+esc(S.dtsBusy ? t('Saving…') : t('Save'))+'</button><button class="btn ghost small" id="dtsBudLineCancel">'+esc(t('Cancel'))+'</button>'+
@@ -1402,6 +1416,13 @@ function bindDtsBud_(){
   document.querySelectorAll('details[data-dtsbudgroup]').forEach(function(d){ d.ontoggle=function(){ S.dtsBudOpen=S.dtsBudOpen||{}; S.dtsBudOpen[d.getAttribute('data-dtsbudgroup')]=d.open; }; });
   all('[data-dtsbudline]', function(b){ var l=dtsBudLine_(b.getAttribute('data-dtsbudline')); if(!l) return; S.dtsBudEdit=Object.assign({}, l); render(); });
   document.querySelectorAll('[data-dtsbudline]').forEach(function(r){ r.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); r.click(); } }; });
+  all('[data-dtsbudtpl]', function(b){
+    var g=b.getAttribute('data-dtsbudtpl'), bud=dtsBud_(); if(!bud) return;
+    var c=dtsBudCopy_(bud);
+    DTS_BUD_TEMPLATE.lines.filter(function(x){ return x[0]===g; }).forEach(function(x){ c.lines.push({ id:dtsBudId_('bl'), group:x[0], code:x[1], name:x[2], each:x[3], per:x[4], count:x[4] ? 0 : (x[5]||0) }); });
+    S.dtsBudOpen=S.dtsBudOpen||{}; S.dtsBudOpen[g]=true;
+    dtsBudSave_(c, t('Saved'));
+  });
   all('[data-dtsbudadd]', function(b){ S.dtsBudEdit={ isNew:true, id:dtsBudId_('bl'), group:b.getAttribute('data-dtsbudadd'), name:'', code:'', each:'', per:'student', count:'' }; render(); var n=document.getElementById('dbl_name'); if(n) n.focus(); });
   document.querySelectorAll('[data-dbl]').forEach(function(el){ el.oninput=dtsBudKeep_; });
   all('[data-dblper]', function(b){ dtsBudKeep_(); S.dtsBudEdit.per=b.getAttribute('data-dblper'); render(); });
