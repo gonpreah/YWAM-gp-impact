@@ -5074,10 +5074,11 @@ GP Tasks installs on the Home Screen as its own app: the sign-in line, the ☰ i
 | The base fee each student pays for housing and food for the 3 months, by their fee category, passed on to the base. It comes in with the students, so in the plan it balances out. | ថ្លៃមូលដ្ឋានដែលសិស្សម្នាក់ៗបង់សម្រាប់ការស្នាក់នៅ និងអាហារ រយៈពេល 3 ខែ តាមប្រភេទថ្លៃរបស់ពួកគេ ហើយបង់បន្តទៅមូលដ្ឋាន។ វាចូលមកជាមួយសិស្ស ដូច្នេះក្នុងផែនការ វាស្មើគ្នា។ |
 | {n} accepted students have no category yet, so their base fee isn’t counted. | សិស្សដែលបានទទួលយក {n} នាក់ មិនទាន់មានប្រភេទនៅឡើយ ដូច្នេះថ្លៃមូលដ្ឋានរបស់ពួកគេមិនត្រូវបានរាប់ទេ។ |
 | Add last year’s lines | បន្ថែមបន្ទាត់ពីឆ្នាំមុន |
-| {each} × {n} category {c} students accepted | {each} × សិស្សប្រភេទ {c} ដែលបានទទួលយក {n} នាក់ |
 | Housing / base fee | ការស្នាក់នៅ / ថ្លៃមូលដ្ឋាន |
 | Housing & food | ការស្នាក់នៅ និងអាហារ |
-| Each category A student | សិស្សប្រភេទ A ម្នាក់ៗ |
-| Each category B student | សិស្សប្រភេទ B ម្នាក់ៗ |
-| Each category C student | សិស្សប្រភេទ C ម្នាក់ៗ |
+| {each} × {n} accepted from Country {c} | {each} × {n} នាក់ដែលបានទទួលយកពីប្រទេស {c} |
+| Each Country A student | សិស្សម្នាក់ៗពីប្រទេស A |
+| Each Country B student | សិស្សម្នាក់ៗពីប្រទេស B |
+| Each Country C student | សិស្សម្នាក់ៗពីប្រទេស C |
+| Accepted for this school — counted from the portal | បានទទួលយកសម្រាប់សាលានេះ — រាប់ពីវិបផតថល |
 GPDTS → Finances → Lecture phase → 📋 Budget: the plan by group (materials, hospitality, honorariums, housing & food — the base fee by fee category A/B/C, passed on to the base — other), planned · spent · left on each line, and the "Budget line" picker on an expense. "Line" means a row of the budget.

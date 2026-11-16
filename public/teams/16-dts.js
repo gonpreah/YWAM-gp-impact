@@ -1240,9 +1240,9 @@ var DTS_BUD_TEMPLATE={ students:23, staff:8, income:[['From the previous DTS',50
   ['honoraria','60207','Outside speaker honorarium',200,'',4],['honoraria','60207','Cambodian speaker (from outside) honorarium',100,'',6],['honoraria','60207','Internal speaker honorarium',25,'',2],
   ['honoraria','','Translator gift',10,'',12],
   /* the base fee for housing and food, 3 months, by fee category (Khmer students are C) — paid on to the base */
-  ['housing','','Base fee — category C and Cambodia, single (3 months)',321,'C'],['housing','','Base fee — category B, single (3 months)',495,'B'],
-  ['housing','','Base fee — category A, single (3 months)',660,'A'],['housing','','Base fee — category C and Cambodia, married couple (3 months)',600,'',0],
-  ['housing','','Base fee — category B, married couple (3 months)',960,'',0],['housing','','Base fee — category A, married couple (3 months)',1200,'',0],
+  ['housing','','Base fee — Country C and Cambodia, single (3 months)',321,'C'],['housing','','Base fee — Country B, single (3 months)',495,'B'],
+  ['housing','','Base fee — Country A, single (3 months)',660,'A'],['housing','','Base fee — Country C and Cambodia, married couple (3 months)',600,'',0],
+  ['housing','','Base fee — Country B, married couple (3 months)',960,'',0],['housing','','Base fee — Country A, married couple (3 months)',1200,'',0],
   ['other','60130','Admin fees (course registration)',5,'student'],['other','60135','Communications',0,'student'],['other','','Skills training',5,'',22],
   ['other','','GP DTS trip',11,'',33],['other','','Deposit',20,'',18]] };
 function dtsBudId_(pre){ return pre+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
@@ -1330,7 +1330,9 @@ function dtsBudHtml_(sch){
       '<span class="dtsPhaseLine"><b'+(g.left<0?' class="dtsNegTxt"':'')+'>'+esc(gpT('{a} of {b}',{a:dtsMoney2_(g.spent), b:dtsMoney2_(g.planned)}))+'</b>'+(g.planned>0 ? ' · '+pct+'%' : '')+
         (g.left<0 ? ' · '+esc(gpT('over by {money}',{money:dtsMoney2_(-g.left)})) : '')+'</span>'+
       '<span class="dtsMeter'+(g.left<0 ? ' over' : '')+'" style="display:block;margin-top:4px"><i style="width:'+Math.max(0, Math.min(100, pct))+'%"></i></span></summary>'+
-      '<div class="dtsPhaseBody">'+(g.id==='housing' ? '<p class="hint" style="margin:0 0 6px" id="dtsBudHousingNote">'+esc(t('The base fee each student pays for housing and food for the 3 months, by their fee category, passed on to the base. It comes in with the students, so in the plan it balances out.'))+
+      '<div class="dtsPhaseBody">'+(g.id==='housing' ? '<div class="dtsBudCats" id="dtsBudCats"><span class="dtsBudCatsH">'+esc(t('Accepted for this school — counted from the portal'))+'</span>'+
+        ['A','B','C'].map(function(c){ return '<span data-dtsbudcat="'+c+'"><span class="dtsCat cat'+c+'">'+c+'</span> <b>'+(B.cats[c]||0)+'</b></span>'; }).join('')+
+        '</div><p class="hint" style="margin:0 0 6px" id="dtsBudHousingNote">'+esc(t('The base fee each student pays for housing and food for the 3 months, by their fee category, passed on to the base. It comes in with the students, so in the plan it balances out.'))+
         (B.cats.unknown ? ' ⚠️ '+esc(gpT('{n} accepted students have no category yet, so their base fee isn’t counted.',{n:B.cats.unknown})) : '')+'</p>' : '')+
       (!g.lines.length && DTS_BUD_TEMPLATE.lines.some(function(x){ return x[0]===g.id; }) ? '<button class="btn small dtsAdd" data-dtsbudtpl="'+g.id+'">'+esc(t('Add last year’s lines'))+'</button> ' : '')+(g.lines.length ? '<div class="dtsTblWrap"><table class="dtsTbl dtsBudTbl"><thead><tr><th>'+esc(t('Line'))+'</th><th>'+esc(t('Planned'))+'</th><th>'+esc(t('Spent'))+'</th><th>'+esc(t('Left'))+'</th></tr></thead><tbody>'+
         g.lines.map(function(x){
@@ -1349,7 +1351,7 @@ function dtsBudHow_(l, n){
   var each=dtsMoney2_(l.each);
   if(l.per==='student') return gpT('{each} × {n} students',{each:each, n:n});
   if(l.per==='people') return gpT('{each} × {n} students and staff',{each:each, n:n});
-  if(l.per==='A' || l.per==='B' || l.per==='C') return gpT('{each} × {n} category {c} students accepted',{each:each, n:n, c:l.per});
+  if(l.per==='A' || l.per==='B' || l.per==='C') return gpT('{each} × {n} accepted from Country {c}',{each:each, n:n, c:l.per});
   return each+' × '+n+(l.code ? ' · '+l.code : '');
 }
 function dtsBudLineFormHtml_(f){
@@ -1357,7 +1359,7 @@ function dtsBudLineFormHtml_(f){
     '<label class="f" for="dbl_name">'+esc(t('Line'))+'</label><input type="text" id="dbl_name" data-dbl="name" maxlength="120" placeholder="'+esc(t('e.g. Lecture snacks'))+'" value="'+esc(f.name||'')+'">'+
     '<div class="dtsTwo"><div><label class="f" for="dbl_each">'+esc(t('Amount each (US$)'))+'</label><input type="number" id="dbl_each" data-dbl="each" min="0" step="0.01" inputmode="decimal" value="'+esc(f.each===''||f.each==null ? '' : String(f.each))+'"></div>'+
     '<div><label class="f" for="dbl_code">'+esc(t('Account code (optional)'))+'</label><input type="text" id="dbl_code" data-dbl="code" maxlength="20" value="'+esc(f.code||'')+'"></div></div>'+
-    '<label class="f">'+esc(t('How many'))+'</label><div class="chips" id="dbl_per">'+[['student','Each student'],['people','Each student and staff']].concat(f.group==='housing' || /^[ABC]$/.test(f.per||'') ? [['C','Each category C student'],['B','Each category B student'],['A','Each category A student']] : []).concat([['','A number']]).map(function(x){
+    '<label class="f">'+esc(t('How many'))+'</label><div class="chips" id="dbl_per">'+[['student','Each student'],['people','Each student and staff']].concat(f.group==='housing' || /^[ABC]$/.test(f.per||'') ? [['C','Each Country C student'],['B','Each Country B student'],['A','Each Country A student']] : []).concat([['','A number']]).map(function(x){
       return '<button type="button" class="chip'+((f.per||'')===x[0]?' on':'')+'" data-dblper="'+x[0]+'">'+esc(t(x[1]))+'</button>'; }).join('')+'</div>'+
     (f.per ? '' : '<input type="number" id="dbl_count" data-dbl="count" min="0" step="1" inputmode="numeric" aria-label="'+esc(t('How many'))+'" value="'+esc(f.count===''||f.count==null ? '' : String(f.count))+'">')+
     '<div class="dtsBtns"><button class="btn small" id="dtsBudLineSave"'+(S.dtsBusy?' disabled':'')+'>'+esc(S.dtsBusy ? t('Saving…') : t('Save'))+'</button><button class="btn ghost small" id="dtsBudLineCancel">'+esc(t('Cancel'))+'</button>'+

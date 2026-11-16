@@ -817,11 +817,13 @@ school's home.
   (`dtsBudHtml_` / `bindDtsBud_`, end of teams/16-dts.js). One plan per school, lines in the groups of the base's own
   budget sheet (`DTS_BUD_GROUPS`: materials 60000, student hospitality 60100, speaker hospitality 60200, staff
   hospitality 60300, honorariums 60207, **housing & food**, other); a line is each × how many — `per` 'student' (the
-  planned students), 'people' (students + staff), 'A' / 'B' / 'C' (the students accepted in that fee category — the
+  planned students), 'people' (students + staff), 'A' / 'B' / 'C' (the students accepted from Country A, B or C — the
   base fee for housing and food, 3 months: C and Cambodia $321, B $495, A $660; married couples as their own lines)
   or '' (its own `count`). **Housing is passed on to the base**: the housing group's planned total also counts as
   income ("Base fees for housing and food", `#dtsBudBaseFees`), so it balances out in the plan, as on the sheet;
-  expenses for it take the category `housing`. An empty group offers "Add last year's lines" (`[data-dtsbudtpl]`). Starts from **last year's sheet** (`DTS_BUD_TEMPLATE`: the
+  expenses for it take the category `housing`. The housing group shows how many it counted from each country (`#dtsBudCats`); the counts are
+  the lecture fees' own (`dtsFees_` of the school's students), so a student accepted in the portal moves it on the
+  next load, nobody types a number. An empty group offers "Add last year's lines" (`[data-dtsbudtpl]`). Starts from **last year's sheet** (`DTS_BUD_TEMPLATE`: the
   January DTS's 44 lines and amounts — the school budget and the base fees — no names; students = those accepted so far, 8 staff, $500 carried over), a
   copy of another school's, or empty. Each group folds to "spent of planned" with a bar; a line opens under itself
   to be changed (`S.dtsBudEdit`); "People and other income" (`S.dtsBudSet`) sets students, staff and income beyond

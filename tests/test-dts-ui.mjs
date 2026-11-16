@@ -329,7 +329,15 @@ ok('the plan: fees of the students accepted, other income, the planned balance',
 ok('🏠 Housing & food: each student’s base fee by their fee category, counted from the students accepted', /\$0 of \$981/.test(await p.$eval('[data-dtsbudgroup="housing"] summary', e => e.innerText)) &&
   /Base fees for housing and food \(paid on to the base\)\s*\$981/.test(await p.$eval('#dtsBudBaseFees', e => e.innerText)));
 await p.click('[data-dtsbudgroup="housing"] summary'); await p.waitForTimeout(150);
-ok('… a line per category, said in words: $660 × 1 category A students accepted', /\$660 × 1 category A students accepted/.test(await p.$eval('[data-dtsbudgroup="housing"]', e => e.innerText)) && /\$321 × 1 category C students accepted/.test(await p.$eval('[data-dtsbudgroup="housing"]', e => e.innerText)) && !!(await p.$('#dtsBudHousingNote')));
+ok('… a line per country, said in words: $660 × 1 accepted from Country A', /\$660 × 1 accepted from Country A/.test(await p.$eval('[data-dtsbudgroup="housing"]', e => e.innerText)) && /\$321 × 1 accepted from Country C/.test(await p.$eval('[data-dtsbudgroup="housing"]', e => e.innerText)) && !!(await p.$('#dtsBudHousingNote')));
+ok('the housing group says how many it counted from each country', /A\s*1/.test(await p.$eval('[data-dtsbudcat="A"]', e => e.innerText)) && /B\s*0/.test(await p.$eval('[data-dtsbudcat="B"]', e => e.innerText)) && /C\s*1/.test(await p.$eval('[data-dtsbudcat="C"]', e => e.innerText)));
+/* a student accepted in the portal: the housing budget follows by itself, nobody types a number */
+STUDS.push({ id: 'c_newb', name: 'Bruna Newly', column: 'accepted', audience: 'international', country: 'Brazil', feeCat: 'B', applied: YDAY, arrived: '', graduated: '', potentialStaff: '', schoolId: 'sc1', oneOnOne: '', portal: {}, profile: {} });
+await p.evaluate(() => dtsRefresh_()); await p.waitForTimeout(500);
+ok('a Country B student accepted in the portal: the Country B base fee and the total follow on their own ($495 more)', /B\s*1/.test(await p.$eval('[data-dtsbudcat="B"]', e => e.innerText)) &&
+  /\$495 × 1 accepted from Country B/.test(await p.$eval('[data-dtsbudgroup="housing"]', e => e.innerText)) && /\$0 of \$1,476/.test(await p.$eval('[data-dtsbudgroup="housing"] summary', e => e.innerText)) &&
+  /Base fees for housing and food \(paid on to the base\)\s*\$1,476/.test(await p.$eval('#dtsBudBaseFees', e => e.innerText)), await p.$eval('[data-dtsbudgroup="housing"] summary', e => e.innerText.replace(/\n/g, ' ')));
+STUDS.pop(); await p.evaluate(() => dtsRefresh_()); await p.waitForTimeout(500);
 await p.click('[data-dtsbudgroup="housing"] summary'); await p.waitForTimeout(150);
 ok('a school not started yet says so', /hasn’t started yet/.test(await p.$eval('#dtsBudPace', e => e.innerText)));
 const honLine = tb.lines.find(l => l.name === 'Outside speaker honorarium').id;
