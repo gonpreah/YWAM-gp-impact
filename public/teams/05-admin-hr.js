@@ -734,7 +734,9 @@ function adminHolidaysHtml_(L, year){
    same sections the accordion used to hold (adminRowBodyHtml_ — reset PIN,
    profile, mentor, admin access, danger zone), unchanged. */
 function adminPersonHtml_(){
-  var h=adminBackHtml_('accounts', t('Accounts'));
+  /* back to the page they came from (App use, Mentors, Loose ends…), else Accounts */
+  var from=ADMIN_SUBS.filter(function(x){ return x.id===S.adminPersonFrom; })[0] || ADMIN_SUBS[0];
+  var h=adminBackHtml_(from.id, t(from.label));
   if(S.adminStaff===null) return h+'<p class="sub">'+esc(t('Loading…'))+'</p>';
   var x=S.adminStaff.filter(function(p){ return p.id===S.adminPersonId; })[0];
   var mine = !!x.id && x.id===S.me.id;
@@ -1385,7 +1387,7 @@ function bindAdmin(){
     render();
   };
   document.querySelectorAll('[data-adminperson]').forEach(function(b){
-    b.onclick=function(){ gpTap(); S.adminPersonId=b.getAttribute('data-adminperson'); S.adminSub='person'; S.adminEditId=null; S.adminEditDraft=null; render(); };
+    b.onclick=function(){ gpTap(); if(S.adminSub!=='person') S.adminPersonFrom=S.adminSub; S.adminPersonId=b.getAttribute('data-adminperson'); S.adminSub='person'; S.adminEditId=null; S.adminEditDraft=null; render(); };
   });
 
   document.querySelectorAll('[data-adminsub]').forEach(function(b){

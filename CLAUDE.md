@@ -1387,7 +1387,7 @@ already decided), away or coming up, days used per person against `PTO_ANNUAL_CA
 national holidays (dated ones edited and saved with `adminSaveHolidays`), earlier
 requests folded), `kpis`, `broadcast`, `merge`, and
 `person` (`S.adminPersonId`). Every page has one back link, `#adminBack[data-adminback]`
-— `week` (My Home), `home`, or `accounts`. **Accounts** is a campus chip row (opens on the
+— `week` (My Home), `home`, or — on a person page — the Admin page they opened it from (`S.adminPersonFrom`: App use, Mentors, Loose ends…, else Accounts). **Accounts** is a campus chip row (opens on the
 admin's own campus), the search (`#adminSearch`, kept in `S.adminSearch` so it survives a
 rebuild, filter re-applied in `bind()`), and a list of tappable rows
 `[data-adminperson="id"]`; tapping one opens the **person page**: who they are at the top,

@@ -102,6 +102,13 @@ async function open(user, when) {
   ok('Download (CSV): a line for each person with their days', /Days used, last 30/.test(csv) && /Cora Every,Community Service,Cafe,20,7,/.test(csv), csv.split('\n')[1]);
   await page.click('[data-userow="c2"] [data-adminperson]'); await page.waitForTimeout(600);
   ok('tapping someone opens their account', /Kanha Some/.test(await page.$eval('#main', e => e.innerText)) && !!(await page.$('#adminBack')));
+  ok('… and its back button says App use', /App use/.test(await page.$eval('#adminBack', e => e.textContent)));
+  await page.click('#adminBack'); await page.waitForTimeout(400);
+  ok('back goes to App use, not Accounts', await page.evaluate(() => S.adminSub === 'use') && !!(await page.$('#adminUseList')));
+  await page.evaluate(() => { S.adminSub = 'accounts'; render(); }); await page.waitForTimeout(600);
+  await page.click('[data-adminperson="c2"]'); await page.waitForTimeout(400);
+  await page.click('#adminBack'); await page.waitForTimeout(400);
+  ok('opened from Accounts, back still goes to Accounts', await page.evaluate(() => S.adminSub === 'accounts'));
   mem.lastSeen.daysFrom = ago(3);
   await page.evaluate(() => { S.adminSub = 'use'; S.adminUse = {}; render(); });
   await page.waitForSelector('#adminUseList', { timeout: 8000 });
