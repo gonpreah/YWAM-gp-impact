@@ -69,7 +69,8 @@ await call('getMyBoot', ['dara', '1234']);
 ok('the boot itself writes nothing', writes.length === 0, writes.join());
 r = await call('markSeen', ['dara', '1234']);
 ok('markSeen records today, and when counting started', r.body.ok && mem.lastSeen.seen.st_dara === TODAY && mem.lastSeen.started === TODAY);
-ok('… the date only', Object.keys(mem.lastSeen).sort().join() === 'seen,started' && typeof mem.lastSeen.seen.st_dara === 'string');
+ok('… the date only (and, for Admin → App use, the days themselves — dates too)', Object.keys(mem.lastSeen).sort().join() === 'days,daysFrom,seen,started' && typeof mem.lastSeen.seen.st_dara === 'string' &&
+  JSON.stringify(mem.lastSeen.days.st_dara) === JSON.stringify([TODAY]) && mem.lastSeen.daysFrom === TODAY, JSON.stringify(mem.lastSeen));
 writes.length = 0;
 await call('markSeen', ['dara', '1234']);
 ok('a second open the same day writes nothing', writes.length === 0);
