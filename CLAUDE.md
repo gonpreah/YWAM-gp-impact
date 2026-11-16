@@ -2272,6 +2272,27 @@ numbers fill themselves in from using it (like Teams and Hospitality). Two so fa
   staff list so a group can't race itself; someone already archived is left as they
   were. Bringing back is still one at a time (`hrUnarchive`).
 
+## Admin → App use (Nov 2026, Andrew: "data on our staff team who uses the app consistently")
+- `lastSeen` also keeps each person's days (`days: {staffId: [dates]}`, the newest `SEEN_KEEP_DAYS` = 90, and
+  `daysFrom`, when that history began) — `touchLastSeen_`, still once a day per phone through `markSeen`.
+- **`adminAppUse(user, pin, campus)`** (admins only): the campus's active staff (no applicants, no archived),
+  each with `d30` / `d7` / `last` and `days` (the dates in the last 30). A day of use = a day they opened the app,
+  or a day the Habit Tracker saved a tick (by its `updated` time on Cambodia's clock — that goes back further than
+  the opened-days history). **Only dates**, never what they did.
+- The page (`adminUseHtml_`, Admin card `use`): campus chips; four band tiles (`USE_BANDS`: Most days ≥15 · Some
+  days 5–14 · A few times 1–4 · Not in 30 days; `[data-useband]` narrows the list); everyone by days used, each
+  with 30 dots (`.useDots`), this week and the last day, a tap opens their account; a note while `daysFrom` is
+  under 30 days old (`#adminUseNote`); Download (CSV) (`#adminUseCsv`). tests/test-app-use.mjs, test-app-use-ui.mjs.
+  Khmer: docs/khmer-needed.md §104.
+
+## The weekly health check-in is on Tuesdays (Nov 2026, Andrew: "every Tuesday during our staff meeting")
+`CHECKIN_DOW` = 2 (02-goals-okrs.js, and api.js for the phone): on a Tuesday My Home has a card while this week's
+check-in isn't in (`checkinTueHtml_`, `#tueCheckin`, its button `data-gohealth="open"` opens this week's form —
+every `[data-gohealth]` handler takes `open`); the bell's nudge starts on Tuesday (it was Friday), worded for the
+staff meeting on the day itself; the Health tab says when it's done (`#checkinTueHint`); the daily phone reminder
+adds `weeklyTue` on Tuesday and `weekly` the rest of the week (`checkedIn` by survey token — nobody else learns
+who). Any day still works for answering. Same day for both campuses.
+
 ## Admin → Loose ends
 One page of the small gaps that quietly make the base's totals wrong, one campus at
 a time (`adminLooseHtml_`), each row a tap away from the person (Admin → person) or

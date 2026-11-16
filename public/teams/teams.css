@@ -2943,7 +2943,7 @@ details.dtsPhase[open] > summary .dtsPhaseName::before { content:'▾ '; }
 .taInstall .btn { margin-top:8px; }
 .gtGetApp { display:block; margin:18px auto 4px; font-size:13.5px; text-align:center; }
 .gtGetSteps { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:8px; font-size:14.5px; line-height:1.45; }
-.gtGetUrl { margin-top:4px; padding:8px 10px; border-radius:10px; background:var(--bg2, rgba(0,0,0,.05)); font-size:13px; word-break:break-all; user-select:all; }
+.gtGetUrl { margin-top:4px; padding:8px 10px; border-radius:10px; background:var(--bg); font-size:13px; word-break:break-all; user-select:all; }
 .gtGetBtns { display:flex; gap:8px; flex-wrap:wrap; }
 .gtGetBtns .btn { flex:1; min-width:140px; text-align:center; text-decoration:none; margin:0; }
 nav.bottom .gtBadge { margin-left:4px; }
@@ -2976,3 +2976,26 @@ details.dtsPick input.gpSelBox { margin:6px 0 4px; }
 .gpSelHit.on { font-weight:700; }
 .gpSelHit .rowSub { font-size:12px; color:var(--muted); font-weight:400; }
 .gpSelHits > .hint { padding:6px 12px; margin:0; font-size:12.5px; }
+
+/* Admin → App use */
+.useTiles { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; margin:10px 0 4px; }
+@media (min-width:640px){ .useTiles { grid-template-columns:repeat(4, minmax(0,1fr)); } }
+.useTile { text-align:left; border:1.5px solid var(--border2); border-radius:14px; background:var(--surface); color:var(--ink); padding:10px 12px; display:flex; flex-direction:column; gap:1px; cursor:pointer; font:inherit; }
+.useTile b { font-size:24px; line-height:1.1; }
+.useTile span { font-weight:700; font-size:14px; }
+.useTile small { color:var(--muted); font-size:12px; }
+.useTile.on { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset; }
+.useTile.use-most b, .useNum.use-most b { color:var(--good); }
+.useTile.use-none b, .useNum.use-none b { color:var(--bad); }
+.useNote { background:var(--surface2); padding:8px 10px; border-radius:10px; }
+.useRow .adminRow { align-items:center; }
+.useDots { display:flex; gap:2px; margin-top:5px; flex-wrap:nowrap; }
+.useDots i { width:6px; height:10px; border-radius:2px; background:var(--border2); flex:none; }
+.useDots i.on { background:var(--accent); }
+.useNum { display:flex; flex-direction:column; align-items:flex-end; flex:none; margin-left:8px; text-align:right; }
+.useNum b { font-size:20px; line-height:1.1; }
+.useNum small { color:var(--muted); font-size:11.5px; white-space:nowrap; }
+
+/* Tuesday: the weekly health check-in, at the staff meeting */
+.tueCheckin { border:1.5px solid var(--accent); }
+.tueCheckinHead { font-size:16px; }

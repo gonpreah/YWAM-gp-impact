@@ -1192,7 +1192,7 @@ function renderNotifPanel(){
      this function, not a full render()/bind() pass, so those handlers
      never reach whatever just got drawn inside #notifRoot. */
   document.querySelectorAll('#notifRoot [data-gohealth]').forEach(function(b){
-    b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='health'; render(); };
+    b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='health'; if(b.getAttribute('data-gohealth')==='open'){ S.healthWeek=thisWeek(); S.weekForm=thisWeek(); } render(); };
   });
   document.querySelectorAll('#notifRoot [data-jumpgoals]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='week'; render(); };

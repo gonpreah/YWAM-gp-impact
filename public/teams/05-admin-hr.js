@@ -39,6 +39,7 @@ var ADMIN_SUBS = [
   { id:'merge', label:'Merge duplicates', emoji:'🔀', blurb:'Two profiles that are really one person' },
   { id:'groups', label:'Staff sign-up link', emoji:'🔗', blurb:'One link a new group of staff opens to make their own profiles (students: 🎓 Students)' },
   { id:'leaving', label:'Archive several people', emoji:'🚪', blurb:'When a group of staff leaves: archive them in one go' },
+  { id:'use', label:'App use', emoji:'📊', blurb:'Who uses the app, and how often — each person’s days in the last 30, to cheer on or check in with' },
   { id:'loose', label:'Loose ends', emoji:'🧵', blurb:'Small gaps that quietly make the totals wrong — and who to nudge' },
   { id:'board', label:'Advisory Board', emoji:'🛡️', blurb:'The YWAM GP Advisory Board — who is on it, their roles, how staff reach them, and their sign-in' },
   { id:'gcal', label:'Google Calendar', emoji:'📅', blurb:'Connect the campus’s Google Calendar — birthdays, events, teams, guests and speakers show in the app' },
@@ -94,6 +95,7 @@ function adminHtml(){
   if(sub==='portal') return h+adminPortalHtml_();
   if(sub==='merge') return h+adminMergeHtml_();
   if(sub==='loose') return h+adminLooseHtml_();
+  if(sub==='use') return h+adminUseHtml_();
   if(sub==='groups') return h+adminGroupsHtml_('link');
   if(sub==='leaving') return h+adminGroupsHtml_('leave');
   if(sub==='board') return h+adminBoardHtml_();
@@ -257,6 +259,52 @@ function looseSection_(emoji, title, why, rows, extra){
   }
   else h+='<div class="rowSub">✓ '+esc(t('Nothing here'))+'</div>';
   return h+(extra||'')+'</div>';
+}
+/* ---- Admin → App use (Nov 2026, Andrew: "data on our staff team who uses the app consistently") ----
+   One campus at a time (adminAppUse): how many use it most days, some days, a few times, or not at all in
+   the last 30 days; then each person with their days in the last 30 as a row of dots, the last 7, and the
+   last day; a band chip narrows the list; Download (CSV). Only dates — never what anyone did. */
+var USE_BANDS=[
+  { id:'most', label:'Most days', hint:'15 or more of the last 30 days', test:function(n){ return n>=15; } },
+  { id:'some', label:'Some days', hint:'5 to 14 days', test:function(n){ return n>=5 && n<15; } },
+  { id:'few', label:'A few times', hint:'1 to 4 days', test:function(n){ return n>=1 && n<5; } },
+  { id:'none', label:'Not in 30 days', hint:'Hasn’t used it in the last 30 days', test:function(n){ return n===0; } }
+];
+function useBandOf_(n){ for(var i=0;i<USE_BANDS.length;i++) if(USE_BANDS[i].test(n)) return USE_BANDS[i].id; return 'none'; }
+function adminUseHtml_(){
+  var C = CAMPUSES.some(function(c){ return c.id===S.adminCampusTab; }) ? S.adminCampusTab : S.me.campus;
+  S.adminCampusTab=C;
+  S.adminUse=S.adminUse||{};
+  var h='<div class="deptChips">'+CAMPUSES.map(function(c){
+    return '<button class="deptChip'+(c.id===C?' on':'')+'" data-admincampustab="'+esc(c.id)+'">'+esc(c.short)+'</button>';
+  }).join('')+'</div>';
+  var U=S.adminUse[C];
+  if(!U) return h+'<p class="sub">'+esc(t('Loading…'))+'</p>';
+  if(!U.ok) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Couldn’t load this — pull down to try again.'))+'</p><button class="btn small ghost" id="adminUseRetry">'+esc(t('Try again'))+'</button></div>';
+  var P=(U.people||[]).slice().sort(function(a,b){ return b.d30-a.d30 || (b.last>a.last ? 1 : b.last<a.last ? -1 : 0) || String(a.name).localeCompare(String(b.name)); });
+  var count={}; USE_BANDS.forEach(function(b){ count[b.id]=0; }); P.forEach(function(x){ count[useBandOf_(x.d30)]++; });
+  var band=S.adminUseBand && count[S.adminUseBand]!==undefined ? S.adminUseBand : '';
+  var avg=P.length ? Math.round(P.reduce(function(a,x){ return a+x.d30; }, 0)/P.length*10)/10 : 0;
+  h+='<div class="useTiles" id="adminUseTiles">'+USE_BANDS.map(function(b){
+    return '<button class="useTile use-'+b.id+(band===b.id?' on':'')+'" data-useband="'+b.id+'"><b>'+count[b.id]+'</b><span>'+esc(t(b.label))+'</span><small>'+esc(t(b.hint))+'</small></button>';
+  }).join('')+'</div>';
+  h+='<p class="hint" id="adminUseAvg" style="margin:6px 0 4px">'+esc(gpT('{n} staff · on average {avg} of the last 30 days',{n:P.length, avg:avg}))+'</p>';
+  /* the history of days opened only began when this page did — say so while it is under 30 days old */
+  var fromWord=function(iso){ return iso ? new Date(iso+'T00:00:00').toLocaleDateString(LANG==='km'?'km-KH':'en-GB', { day:'numeric', month:'short', year:'numeric' }) : ''; };
+  if(!U.daysFrom || U.daysFrom>U.from30) h+='<p class="hint useNote" id="adminUseNote">ℹ️ '+esc(gpT('The app keeps every day someone opens it from {date}; before that it counts the days they ticked a habit. The numbers fill in over the next 30 days.',{date:fromWord(U.daysFrom || U.today)}))+'</p>';
+  if(band) h+='<p class="hint" style="margin:4px 0"><button class="linkbtn inline" id="adminUseAll">'+esc(t('Show everyone'))+'</button></p>';
+  var shown=P.filter(function(x){ return !band || useBandOf_(x.d30)===band; });
+  var dayList=[]; for(var i=29;i>=0;i--){ var d=new Date(U.today+'T00:00:00'); d.setDate(d.getDate()-i); dayList.push(d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)); }
+  h+='<div class="card adminList useList" id="adminUseList">'+(shown.length ? shown.map(function(x){
+    var on={}; (x.days||[]).forEach(function(d){ on[d]=1; });
+    return '<div class="useRow" data-userow="'+esc(x.id)+'"><button class="adminRow" data-adminperson="'+esc(x.id)+'">'+avatarHtml(x,'sm')+
+      '<span class="adminRowText"><span class="rowName">'+esc(x.name)+'</span><span class="rowSub">'+esc([t(x.ministry||x.dept||''), x.last ? gpT('last used {date}',{date:fromWord(x.last)}) : t('not used yet')].filter(Boolean).join(' · '))+'</span>'+
+      '<span class="useDots" aria-hidden="true">'+dayList.map(function(d){ return '<i'+(on[d]?' class="on"':'')+'></i>'; }).join('')+'</span></span>'+
+      '<span class="useNum use-'+useBandOf_(x.d30)+'"><b>'+x.d30+'</b><small>'+esc(t('of 30 days'))+'</small><small>'+esc(gpT('{n} this week',{n:x.d7}))+'</small></span></button></div>';
+  }).join('') : '<p class="sub" style="margin:0">'+esc(t('Nobody here.'))+'</p>')+'</div>';
+  h+='<p class="hint" style="margin:6px 0">'+esc(t('Only which days someone used the app — never what they did in it.'))+'</p>';
+  h+='<button class="btn small ghost" id="adminUseCsv">⬇ '+esc(t('Download (CSV)'))+'</button>';
+  return h;
 }
 function adminLooseHtml_(){
   var L=S.adminLoose;
@@ -1341,7 +1389,7 @@ function bindAdmin(){
   });
 
   document.querySelectorAll('[data-adminsub]').forEach(function(b){
-    b.onclick=function(){ gpTap(); S.adminSub=b.getAttribute('data-adminsub'); if(S.adminSub==='loose') S.adminLoose=null; if(S.adminSub==='students'){ S.adminStu=null; S.stuList=null; S.stuArchSchool=null; } render(); };
+    b.onclick=function(){ gpTap(); S.adminSub=b.getAttribute('data-adminsub'); if(S.adminSub==='loose') S.adminLoose=null; if(S.adminSub==='use'){ S.adminUse={}; S.adminUseBand=''; } if(S.adminSub==='students'){ S.adminStu=null; S.stuList=null; S.stuArchSchool=null; } render(); };
   });
   // --- students ---
   if(S.adminSub==='students' && !S.stuList && !S.stuListLoading){ S.stuListLoading=true; run('studentsList',[S.auth.user,S.auth.pin],function(d){ S.stuListLoading=false; S.stuList=d||{ ok:false }; render(); }); }
@@ -1515,6 +1563,23 @@ function bindAdmin(){
     });
   };
 
+  if(S.adminSub==='use'){
+    S.adminUse=S.adminUse||{};
+    var uc=CAMPUSES.some(function(c){ return c.id===S.adminCampusTab; }) ? S.adminCampusTab : S.me.campus;
+    if(!S.adminUse[uc] && !S.adminUseLoading){
+      S.adminUseLoading=true;
+      run('adminAppUse',[S.auth.user,S.auth.pin,uc],function(d){ S.adminUseLoading=false; S.adminUse[uc]=(d && d.ok) ? d : { ok:false }; if(S.view==='admin') render(); },
+        function(){ S.adminUseLoading=false; S.adminUse[uc]={ ok:false }; if(S.view==='admin') render(); });
+    }
+    document.querySelectorAll('[data-useband]').forEach(function(b){ b.onclick=function(){ gpTap(); var v=b.getAttribute('data-useband'); S.adminUseBand = S.adminUseBand===v ? '' : v; render(); }; });
+    var ua=document.getElementById('adminUseAll'); if(ua) ua.onclick=function(){ S.adminUseBand=''; render(); };
+    var ur=document.getElementById('adminUseRetry'); if(ur) ur.onclick=function(){ delete S.adminUse[uc]; render(); };
+    var uv=document.getElementById('adminUseCsv'); if(uv) uv.onclick=function(){
+      var U=S.adminUse[uc]; if(!U || !U.ok) return;
+      dtsFinCsv_('App use - '+campusShort(uc)+' - '+U.today, ['Name','Department','Ministry','Days used, last 30','Days used, last 7','Last used'],
+        (U.people||[]).slice().sort(function(a,b){ return b.d30-a.d30; }).map(function(x){ return [x.name, x.dept, x.ministry, x.d30, x.d7, x.last]; }));
+    };
+  }
   if(S.adminSub==='loose' && S.adminLoose===null && !S.adminLooseLoading){
     S.adminLooseLoading=true;
     run('adminLooseEnds',[S.auth.user,S.auth.pin],function(d){

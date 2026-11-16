@@ -5093,3 +5093,32 @@ GPDTS → Finances → Lecture phase → 📋 Budget: the plan by group (materia
 | {n} more — keep typing | {n} ទៀត — វាយបន្តទៀត |
 
 A 🔎 box over every long drop-down and tick list on the GPDTS page (budget lines, students, staff). "Search {n}…" is its placeholder, {n} the number of choices — keep it short.
+
+## 104. Admin → App use, and the weekly check-in on Tuesdays
+
+| English | Khmer (draft) |
+|---|---|
+| App use | ការប្រើកម្មវិធី |
+| Who uses the app, and how often — each person’s days in the last 30, to cheer on or check in with | អ្នកណាប្រើកម្មវិធី និងញឹកញាប់ប៉ុណ្ណា — ចំនួនថ្ងៃរបស់ម្នាក់ៗក្នុង 30 ថ្ងៃចុងក្រោយ ដើម្បីលើកទឹកចិត្ត ឬសួរសុខទុក្ខ |
+| Most days | ស្ទើររាល់ថ្ងៃ |
+| 15 or more of the last 30 days | 15 ថ្ងៃ ឬច្រើនជាងនេះ ក្នុង 30 ថ្ងៃចុងក្រោយ |
+| Some days | ខ្លះៗ |
+| 5 to 14 days | 5 ទៅ 14 ថ្ងៃ |
+| A few times | ពីរបីដង |
+| 1 to 4 days | 1 ទៅ 4 ថ្ងៃ |
+| Not in 30 days | មិនបានប្រើក្នុង 30 ថ្ងៃ |
+| Hasn’t used it in the last 30 days | មិនបានប្រើវាក្នុង 30 ថ្ងៃចុងក្រោយ |
+| {n} staff · on average {avg} of the last 30 days | បុគ្គលិក {n} នាក់ · ជាមធ្យម {avg} ថ្ងៃ ក្នុង 30 ថ្ងៃចុងក្រោយ |
+| The app keeps every day someone opens it from {date}; before that it counts the days they ticked a habit. The numbers fill in over the next 30 days. | កម្មវិធីរក្សាទុករាល់ថ្ងៃដែលនរណាម្នាក់បើកវា ចាប់ពី {date}; មុននោះ វារាប់ថ្ងៃដែលពួកគេបានគូសធីកទម្លាប់។ លេខនឹងពេញលេញក្នុងរយៈពេល 30 ថ្ងៃខាងមុខ។ |
+| last used {date} | ប្រើចុងក្រោយ {date} |
+| not used yet | មិនទាន់បានប្រើ |
+| of 30 days | ក្នុង 30 ថ្ងៃ |
+| Nobody here. | គ្មាននរណាម្នាក់នៅទីនេះទេ។ |
+| Only which days someone used the app — never what they did in it. | មានតែថ្ងៃណាដែលនរណាម្នាក់បានប្រើកម្មវិធី — មិនដែលបង្ហាញអ្វីដែលពួកគេបានធ្វើនៅក្នុងនោះទេ។ |
+| It’s Tuesday — answer your weekly health check-in at the staff meeting. | ថ្ងៃនេះជាថ្ងៃអង្គារ — សូមឆ្លើយការពិនិត្យសុខភាពប្រចាំសប្តាហ៍របស់អ្នក ក្នុងពេលប្រជុំបុគ្គលិក។ |
+| It’s Tuesday — check-in day | ថ្ងៃនេះជាថ្ងៃអង្គារ — ថ្ងៃពិនិត្យសុខភាព |
+| Answer your weekly health check-in during the staff meeting. It takes about two minutes, and only you and your mentor see your answers. | សូមឆ្លើយការពិនិត្យសុខភាពប្រចាំសប្តាហ៍របស់អ្នក ក្នុងពេលប្រជុំបុគ្គលិក។ វាចំណាយពេលប្រហែលពីរនាទី ហើយមានតែអ្នក និងគ្រូណែនាំរបស់អ្នកទេ ដែលឃើញចម្លើយរបស់អ្នក។ |
+| Answer it now | ឆ្លើយឥឡូវនេះ |
+| We do the weekly check-in together on Tuesdays, at the staff meeting. | យើងធ្វើការពិនិត្យសុខភាពប្រចាំសប្តាហ៍ជាមួយគ្នា នៅរៀងរាល់ថ្ងៃអង្គារ ក្នុងពេលប្រជុំបុគ្គលិក។ |
+
+Admin → App use: who uses the app and how often (days in the last 30, by person; the four bands are short tile labels). The weekly health check-in is now done on Tuesdays at the staff meeting: the card on My Home on a Tuesday, the bell, the line on the Health tab, and the phone reminder (PUSH_TEXT weeklyTue / weekly in api.js carry their own Khmer).
