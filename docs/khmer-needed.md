@@ -4986,3 +4986,26 @@ The GP app's sign-in screen and the "connect your Google account" step: the help
 | These people still sign in with their username and PIN. Next time they open the app, it asks them to connect their Google account. | មនុស្សទាំងនេះនៅតែចូលដោយឈ្មោះអ្នកប្រើ និង PIN។ លើកក្រោយដែលពួកគេបើកកម្មវិធី វានឹងសុំឱ្យពួកគេភ្ជាប់គណនី Google របស់ពួកគេ។ |
 
 Admin → Accounts, a chip beside "Everyone" listing the active accounts with no Google account connected; "PIN only" is a short tag on each such row.
+
+## 103. GP Tasks as an app of its own (tasks.html)
+
+| English | Khmer (draft) |
+|---|---|
+| Open the YWAM GP app | បើកកម្មវិធី YWAM GP |
+| Your tasks and the campus calendar. Sign in with your YWAM GP account — the same one as the main app. | កិច្ចការរបស់អ្នក និងប្រតិទិនរបស់មូលដ្ឋាន។ សូមចូលដោយគណនី YWAM GP របស់អ្នក — គណនីដូចគ្នានឹងកម្មវិធីធំ។ |
+| Put GP Tasks on your Home Screen | ដាក់ ភារកិច្ច GP នៅលើអេក្រង់ដើមរបស់អ្នក |
+| It opens straight to your tasks and the calendar, like an app. | វាបើកត្រង់ទៅកិច្ចការ និងប្រតិទិនរបស់អ្នក ដូចកម្មវិធីមួយ។ |
+| Add to Home Screen | បន្ថែមទៅអេក្រង់ដើម |
+| In Safari, tap the Share button, then “Add to Home Screen”. | នៅក្នុង Safari ចុចប៊ូតុង Share រួចចុច «Add to Home Screen»។ |
+| In your browser’s menu (⋮), tap “Install app” or “Add to Home screen”. | នៅក្នុងម៉ឺនុយរបស់កម្មវិធីរុករក (⋮) ចុច «Install app» ឬ «Add to Home screen»។ |
+| GP Tasks on your Home Screen, as an app of its own | ភារកិច្ច GP នៅលើអេក្រង់ដើម ជាកម្មវិធីដាច់ដោយឡែក |
+| GP Tasks, an app of its own | ភារកិច្ច GP ជាកម្មវិធីដាច់ដោយឡែក |
+| Your tasks and the calendar, one tap from your Home Screen. They are the same tasks as here: whatever you add or tick in one shows in the other. | កិច្ចការ និងប្រតិទិនរបស់អ្នក ចុចតែម្តងពីអេក្រង់ដើម។ វាជាកិច្ចការដូចគ្នានឹងនៅទីនេះ៖ អ្វីដែលអ្នកបន្ថែម ឬគូសធីកនៅកន្លែងមួយ នឹងបង្ហាញនៅកន្លែងមួយទៀត។ |
+| Open this link in Safari: | បើកតំណនេះនៅក្នុង Safari៖ |
+| Open this link in Chrome: | បើកតំណនេះនៅក្នុង Chrome៖ |
+| Tap the Share button, then “Add to Home Screen”. | ចុចប៊ូតុង Share រួចចុច «Add to Home Screen»។ |
+| In the menu (⋮), tap “Install app” or “Add to Home screen”. | នៅក្នុងម៉ឺនុយ (⋮) ចុច «Install app» ឬ «Add to Home screen»។ |
+| Open GP Tasks and sign in with Google, as you do here. | បើក ភារកិច្ច GP ហើយចូលដោយ Google ដូចអ្នកធ្វើនៅទីនេះ។ |
+| Open GP Tasks | បើក ភារកិច្ច GP |
+
+GP Tasks installs on the Home Screen as its own app: the sign-in line, the ☰ item back to the main app, the card that says how to add it to the Home Screen, and the sheet in the main app that explains it. "GP Tasks" is ភារកិច្ច GP as elsewhere. The iPhone and Android menu words ("Add to Home Screen", "Install app", Share) stay in English, as the phone shows them.

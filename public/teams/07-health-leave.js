@@ -913,8 +913,10 @@ function gglInApp_(){
 function gglIsAndroid_(){ try { return /Android/i.test(navigator.userAgent||''); } catch(e){ return false; } }
 function gglIosStandalone_(){ try { return /iPhone|iPad|iPod/i.test(navigator.userAgent||'') && (!!navigator.standalone || matchMedia('(display-mode: standalone)').matches); } catch(e){ return false; } }
 function gglAppUrl_(){ try { return location.origin+'/teams.html'; } catch(e){ return 'https://impact.gonpreah.org/teams.html'; } }
+/* the page to open in another browser (Copy the link, Open in Chrome): this one — GP Tasks' own page in the tasks app */
+function gglPageUrl_(){ return gpTasksApp_() ? gglAppUrl_().replace(/teams\.html$/, 'tasks.html') : gglAppUrl_(); }
 function gglHelpHtml_(where){
-  var inApp=gglInApp_(), url=gglAppUrl_(), h='';
+  var inApp=gglInApp_(), url=gglPageUrl_(), h='';
   if(!inApp && !S.gglHelp) return '';
   h+='<div class="gglHelp" id="gglHelp">';
   if(inApp){
@@ -935,7 +937,7 @@ function gglHelpHtml_(where){
   return h+'</div>';
 }
 function gglCopy_(){
-  var url=gglAppUrl_();
+  var url=gglPageUrl_();
   try { if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(url).then(function(){ showMsg(t('Link copied — paste it into your browser')); }, function(){ prompt(t('Copy this link'), url); }); return; } } catch(e){}
   try { prompt(t('Copy this link'), url); } catch(e){}
 }
@@ -947,7 +949,7 @@ function gglRedirectOn_(){ return !!(_ggl.cfg && _ggl.cfg.google && _ggl.cfg.red
 function gglRedirectGo_(mode){
   if(!gglRedirectOn_()) return false;
   var st=''; try { var a=new Uint8Array(16); crypto.getRandomValues(a); st=Array.prototype.map.call(a, function(b){ return ('0'+b.toString(16)).slice(-2); }).join(''); } catch(e){ st=String(Math.random()).slice(2)+String(Date.now()); }
-  lsSet('gp-ggl-redirect', JSON.stringify({ state:st, mode:mode||'login', at:Date.now(), wanted:S.gglNew ? { email:S.gglNew.email } : null }));
+  lsSet('gp-ggl-redirect', JSON.stringify({ state:st, mode:mode||'login', at:Date.now(), wanted:S.gglNew ? { email:S.gglNew.email } : null, app:gpTasksApp_() ? 'tasks' : '' }));
   var q={ client_id:_ggl.cfg.google, redirect_uri:gglAppUrl_(), response_type:'token', scope:'openid email profile', state:st, prompt:'select_account', include_granted_scopes:'true' };
   location.href='https://accounts.google.com/o/oauth2/v2/auth?'+Object.keys(q).map(function(k){ return k+'='+encodeURIComponent(q[k]); }).join('&');
   return true;
@@ -957,6 +959,8 @@ function gglRedirectGo_(mode){
 function gglRedirectTake_(){
   var h=''; try { h=String(location.hash||''); } catch(e){}
   if(!/[#&](access_token|error)=/.test(h)) return;
+  /* Google sends everyone back to teams.html (the one address in Google Cloud); someone who left from the tasks app goes on to it, token and all */
+  try { var k0=JSON.parse(lsGet('gp-ggl-redirect')||'null'); if(k0 && k0.app==='tasks' && !gpTasksApp_()){ location.replace('tasks.html'+h); return 'away'; } } catch(e){}
   var p={}; h.replace(/^#/,'').split('&').forEach(function(kv){ var i=kv.indexOf('='); if(i>0) p[decodeURIComponent(kv.slice(0,i))]=decodeURIComponent(kv.slice(i+1).replace(/\+/g,' ')); });
   try { history.replaceState(null, '', location.pathname+location.search); } catch(e){}
   var kept=null; try { kept=JSON.parse(lsGet('gp-ggl-redirect')||'null'); } catch(e){}
@@ -1037,15 +1041,19 @@ function gglStepHtml_(){
     gglBtnHtml_('gglStepGo', t('Connect my Google account'))+gglHelpHtml_('step')+
     '<button class="linkbtn" id="gglStepOut">'+esc(t('Log out'))+'</button></div>';
 }
+/* the tasks app (tasks.html) says what it is: the same YWAM GP account, just the tasks and the calendar */
+function loginHeadHtml_(){
+  return gpTasksApp_() ? '<h2 id="taLoginHead">'+esc(t('GP Tasks'))+'</h2><p class="sub" style="margin-bottom:2px">'+esc(t('Your tasks and the campus calendar. Sign in with your YWAM GP account — the same one as the main app.'))+'</p>' : '<h2>Welcome back</h2>';
+}
 function loginHtml(){
   gglCfg_();
   /* with Google on, it is the way in: the username and PIN are only for connecting Google the first time */
   if(gglOn_() && S.gglNew && !S.pinLogin) return gglNewHtml_();
-  if(gglOn_() && !S.pinLogin) return '<h2>Welcome back</h2><p class="sub">'+esc(t('Sign in with your Google account.'))+'</p>'+
+  if(gglOn_() && !S.pinLogin) return loginHeadHtml_()+'<p class="sub">'+esc(t('Sign in with your Google account.'))+'</p>'+
     '<div class="card">'+gglBtnHtml_('googleLogin', t('Continue with Google'))+gglHelpHtml_('login')+
     '<button class="linkbtn" id="showPinLogin">'+esc(t('First time with Google? Sign in once with your username and PIN to connect it'))+'</button>'+
     '<button class="linkbtn" id="toReg">New here? Create my profile</button></div>';
-  return '<h2>Welcome back</h2><p class="sub">'+esc(gglOn_() ? t('Sign in once with your username and PIN — then connect your Google account.') : 'Log in with your username and 4-digit PIN.')+'</p>'+
+  return loginHeadHtml_()+'<p class="sub">'+esc(gglOn_() ? t('Sign in once with your username and PIN — then connect your Google account.') : 'Log in with your username and 4-digit PIN.')+'</p>'+
     '<div class="card">'+
     (gglOn_() ? '<button class="linkbtn" id="hidePinLogin" style="margin-top:0">← '+esc(t('Continue with Google instead'))+'</button>' : '')+
     (S.gglNew ? '<p class="gglJoin" id="gglJoin">🔗 '+esc(gpT('Sign in once with your username and PIN — {email} is then connected to your profile, and next time Continue with Google is all you need.',{email:S.gglNew.email}))+'</p>' : '')+

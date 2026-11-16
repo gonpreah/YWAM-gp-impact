@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- Built from teams.html by scripts/build-tasks-page.mjs — edit teams.html and run it again, never this file. -->
+<script>window.GP_APP='tasks';</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>GP Tasks</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GP Tasks">
+<!-- The header is dark in both themes, so the status bar matches it either way. -->
+<meta name="theme-color" content="#17150F" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0C0B09" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" sizes="180x180" href="tasks-180.png">
+<link rel="icon" type="image/png" sizes="512x512" href="tasks-512.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='47' fill='%231F44FF'/%3E%3Ctext x='50' y='64' font-family='Arial' font-weight='bold' font-size='40' fill='%23FAF6F0' text-anchor='middle'%3EGP%3C/text%3E%3Cpath d='M76 12 L78.6 19.4 L86 22 L78.6 24.6 L76 32 L73.4 24.6 L66 22 L73.4 19.4 Z' fill='%23FFB323'/%3E%3C/svg%3E">
+<link rel="manifest" href="tasks-manifest.json">
+<!-- Fonts never block the app (history: as a render-blocking @import of Google Fonts
+     a hanging font request once meant 8.1 seconds before any JavaScript ran; then it was
+     loaded out of the render path and swapped in late). Now @font-face points at the
+     app's own files, which no stylesheet request can hold up. -->
+<!-- The fonts are the app's own (public/fonts/, SIL Open Font License), preloaded and
+     kept by the service worker. They used to come from Google Fonts after the page had
+     drawn, and when Koulen landed every heading on My Home grew and the page jumped
+     (Oct 2026, Uriah: "the card on My Home still loads small and then gets bigger").
+     font-display:block — the files are on this phone, so text waits a moment for its
+     face rather than drawing in another and moving. Khmer readers preload the Khmer
+     body face too; everyone else gets it on demand by unicode-range. -->
+<link rel="preload" href="fonts/kantumruy-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/koulen-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/koulen-khmer.woff2" as="font" type="font/woff2" crossorigin>
+<script>try { if (localStorage.getItem('gp-lang') === 'km') document.write('<link rel="preload" href="fonts/kantumruy-khmer.woff2" as="font" type="font/woff2" crossorigin>'); } catch (e) {}</script>
+<style>
+@font-face { font-family:'Kantumruy Pro'; font-style:normal; font-weight:400 700; font-display:block; src:url(fonts/kantumruy-khmer.woff2) format('woff2'); unicode-range:U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC; }
+@font-face { font-family:'Kantumruy Pro'; font-style:normal; font-weight:400 700; font-display:block; src:url(fonts/kantumruy-latin-ext.woff2) format('woff2'); unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family:'Kantumruy Pro'; font-style:normal; font-weight:400 700; font-display:block; src:url(fonts/kantumruy-latin.woff2) format('woff2'); unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family:'Koulen'; font-style:normal; font-weight:400; font-display:block; src:url(fonts/koulen-khmer.woff2) format('woff2'); unicode-range:U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC; }
+@font-face { font-family:'Koulen'; font-style:normal; font-weight:400; font-display:block; src:url(fonts/koulen-latin.woff2) format('woff2'); unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+</style>
+<script>
+/* Apply a saved theme BEFORE anything paints. Same class of problem as the splash:
+   read it late and the reader watches the app flash the wrong colours on every
+   open. No attribute means "follow the system", which is the default. */
+(function(){
+  try {
+    var t = localStorage.getItem('gp-theme');
+    if(t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch(e){}
+})();
+</script>
+<style>
+/* ==================== THEME TOKENS ====================
+   THIS BLOCK IS DUPLICATED VERBATIM IN index.html, teams.html AND help.html.
+   tests/test-theme.mjs asserts the copies are byte-identical — edit one, edit all.
+
+   Three states, which is what a phone actually has:
+     no attribute  -> follow the system (prefers-color-scheme)
+     data-theme="light" / "dark" -> the reader chose, and their choice wins both ways
+   That is why the media query is guarded with :not([data-theme="light"]) — without
+   it, a reader who picks light on a dark phone gets ignored.
+
+   Two pairs must never be collapsed into one token, because they diverge between
+   themes and a blind find-and-replace inverts them:
+     --ink (body text) vs --headerBg (the black header, hero and coin, which stay
+       dark in BOTH themes — this is the brand, not the background)
+     --surface (cards) vs --onDark (text sitting on that black header)
+   The brand marks in logo.js are white and drawn for the black header, so anything
+   showing them needs --headerBg behind it in either theme or they vanish. */
+:root {
+  --pInk:#17150F;          /* personality hero text — fixed: the hero sits on a fixed light tint in both themes */
+  --pInk2:#3B372E;
+  --pAgree:#1F8A6F;        /* the agree side of the seven circles */
+  --pDisagree:#7B4FA0;     /* the disagree side */
+  --pAgreeInk:#1B7A62;     /* the same, as small text */
+  --pDisagreeInk:#6E4592;
+  --pGood:#1F8A6F;         /* strengths ✓ */
+  --pBad:#B3261E;          /* watch out for ! */
+  --pOnMark:#fff;          /* the glyph inside those marks */
+  --bg:#FAF6F0;            /* page */
+  --surface:#fff;          /* cards */
+  --surface2:#F0EADF;      /* tracks, subtle fills */
+  --ink:#17150F;           /* body text */
+  --muted:#6B6557;         /* secondary text */
+  --faint:#6F6A5A;         /* tertiary text */
+  --line:#F0EADF;          /* hairlines */
+  --border:#E4DDD0;        /* card borders */
+  --border2:#C9C3B6;       /* input borders */
+  --accent:#1F44FF;        /* cobalt */
+  --accent2:#5B7BFF;       /* gradient partner */
+  --accentInk:#fff;        /* text on cobalt */
+  --accentSoft:#E8ECFF;    /* cobalt tint fill */
+  --accentSoftBorder:#B9C4FF;
+  --amber:#FFB323;
+  --amberInk:#17150F;      /* text on amber */
+  --amberDeep:#96650A;     /* amber as TEXT, so darker than --amber */
+  --good:#0A7D3C;
+  --goodInk:#fff;          /* text on a solid --good fill */
+  --goodSoft:#E3F6EA;
+  --bad:#B3261E;
+  --badSoft:#FBE6E6;
+  --warm:#A84E1C;       /* 'just started' on the goal rings */
+  --banner:#FFF1D6;
+  --bannerBorder:#FFD98A;
+  --bannerInk:#5C4A1E;
+  --headerBg:#17150F;      /* header, hero, black cards, loading coin */
+  --onDark:#FAF6F0;        /* text on --headerBg */
+  --onDarkFaint:#9A9384;   /* tertiary text on --headerBg, which is dark in BOTH themes */
+  --onDarkBorder:#4A463D;  /* outlined buttons in the header */
+  --navBg:var(--surface);  /* bottom tab bar — a card-like surface in light, but
+    flush with --headerBg in dark (see the dark blocks below): a visibly lighter
+    grey bar was the one thing standing out against an otherwise black shell
+    while the rest of the page was still loading. */
+  --shadow:rgba(31,68,255,.28);
+  --shadowSoft:rgba(31,68,255,.12);
+  --scrim:rgba(23,21,15,.45);
+  /* the finance charts (Oct 2026) — checked with the dataviz validator on these card
+     surfaces: income vs spending as two series, and how old staff debt is as one
+     ordered ramp (newest lightest; in dark, newest nearest the surface) */
+  --vizIn:#2a78d6;         /* money coming in */
+  --vizOut:#eb6834;        /* money going out */
+  --vizInSoft:#cde2fb;     /* the track behind a coming-in meter */
+  --vizAge1:#86b6ef; --vizAge2:#5598e7; --vizAge3:#2a78d6; --vizAge4:#1c5cab; --vizAge5:#0d366b;
+  color-scheme:light;
+}
+/* Dark: warm greys rather than pure black, so the paper-and-ink feel survives.
+   Cobalt is lifted to #6C86FF — #1F44FF on a dark ground fails contrast — and the
+   text that sits on cobalt goes dark to match. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --pAgreeInk:#5CC9A8;
+    --pDisagreeInk:#C3A2E0;
+    --bg:#121110;
+    --surface:#1C1A17;
+    --surface2:#26231D;
+    --ink:#F2EDE4;
+    --muted:#A8A192;
+    --faint:#8A8474;
+    --line:#2A261F;
+    --border:#332E26;
+    --border2:#463F34;
+    --accent:#6C86FF;
+    --accent2:#8EA0FF;
+    --accentInk:#0B0A08;
+    --accentSoft:#1B2145;
+    --accentSoftBorder:#2F3872;
+    --amber:#FFC352;
+    --amberInk:#17150F;
+    --amberDeep:#E9AE3A;
+    --good:#4CC98A;
+    --goodInk:#0B0A08;
+    --goodSoft:#12301F;
+    --bad:#FF7A6B;
+    --badSoft:#38191A;
+    --warm:#FF9E6B;
+    --banner:#2A2313;
+    --bannerBorder:#4C3D18;
+    --bannerInk:#F0DFB4;
+    --headerBg:#0C0B09;
+    --onDark:#F2EDE4;
+    --onDarkFaint:#9A9384;
+    --onDarkBorder:#3A352B;
+    --navBg:var(--headerBg);
+    --shadow:rgba(108,134,255,.30);
+    --shadowSoft:rgba(108,134,255,.14);
+    --scrim:rgba(0,0,0,.62);
+    --vizIn:#3987e5; --vizOut:#d95926; --vizInSoft:#1c2f4d;
+    --vizAge1:#184f95; --vizAge2:#256abf; --vizAge3:#3987e5; --vizAge4:#6da7ec; --vizAge5:#b7d3f6;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"] {
+  --pAgreeInk:#5CC9A8;
+  --pDisagreeInk:#C3A2E0;
+  --bg:#121110;
+  --surface:#1C1A17;
+  --surface2:#26231D;
+  --ink:#F2EDE4;
+  --muted:#A8A192;
+  --faint:#8A8474;
+  --line:#2A261F;
+  --border:#332E26;
+  --border2:#463F34;
+  --accent:#6C86FF;
+  --accent2:#8EA0FF;
+  --accentInk:#0B0A08;
+  --accentSoft:#1B2145;
+  --accentSoftBorder:#2F3872;
+  --amber:#FFC352;
+  --amberInk:#17150F;
+  --amberDeep:#E9AE3A;
+  --good:#4CC98A;
+  --goodInk:#0B0A08;
+  --goodSoft:#12301F;
+  --bad:#FF7A6B;
+  --badSoft:#38191A;
+  --warm:#FF9E6B;
+  --banner:#2A2313;
+  --bannerBorder:#4C3D18;
+  --bannerInk:#F0DFB4;
+  --headerBg:#0C0B09;
+  --onDark:#F2EDE4;
+  --onDarkFaint:#9A9384;
+  --onDarkBorder:#3A352B;
+  --navBg:var(--headerBg);
+  --shadow:rgba(108,134,255,.30);
+  --shadowSoft:rgba(108,134,255,.14);
+  --scrim:rgba(0,0,0,.62);
+  --vizIn:#3987e5; --vizOut:#d95926; --vizInSoft:#1c2f4d;
+  --vizAge1:#184f95; --vizAge2:#256abf; --vizAge3:#3987e5; --vizAge4:#6da7ec; --vizAge5:#b7d3f6;
+  color-scheme:dark;
+}
+/* Motion: one spring, used everywhere something appears or grows. The overshoot
+   is what separates "an app" from "a web page"; honoured only when the reader has
+   not asked for less motion. */
+:root { --spring:cubic-bezier(.34,1.56,.64,1); --ease:cubic-bezier(.4,0,.2,1);
+        --r:18px; --rSm:12px; --rLg:22px; }
+@media (prefers-reduced-motion: reduce) { :root { --spring:linear; --ease:linear; } }
+
+/* ---- progress rings, shared ----
+   Driven by gpRingHtml()/gpRingVars() in rollup.js. One element, no SVG: the
+   conic-gradient is the sweep and the ::after punches the middle out, so the ring
+   inherits whatever background it is sitting on. */
+.gRing { flex:0 0 auto; width:42px; height:42px; border-radius:50%; position:relative;
+  background:conic-gradient(var(--gc) calc(var(--p) * 1%), var(--surface2) 0);
+  display:grid; place-items:center; transition:background .3s var(--ease); }
+.gRing::after { content:''; position:absolute; inset:4px; border-radius:50%; background:var(--surface); }
+.gRing span { position:relative; z-index:1; font-family:'Koulen',sans-serif; font-size:12.5px;
+  color:var(--gc); letter-spacing:-.2px; }
+.gRing.sm { width:34px; height:34px; }
+.gRing.sm span { font-size:10.5px; }
+.gRing.sm::after { inset:3px; }
+.gRing.lg { width:58px; height:58px; }
+.gRing.lg span { font-size:16px; }
+.gRing.lg::after { inset:5px; }
+/* On the black hero the punched-out middle has to match the hero, not a card. */
+.hero .gRing::after, .focusCard .gRing::after { background:var(--headerBg); }
+.hero .gRing, .focusCard .gRing { background:conic-gradient(var(--gc) calc(var(--p) * 1%), var(--onDarkBorder) 0); }
+/* ...and the digits go to plain light text there. The paper-mode versions of those
+   colours are chosen to be readable ON PAPER, so they are far too dark to sit on
+   the hero; the sweep still carries the colour, which is where it reads anyway. */
+.hero .gRing span, .focusCard .gRing span { color:var(--onDark); }
+
+/* ---- a number that has just landed ----
+   Pairs with gpAnimateCounts(): the value climbs and the element settles into
+   place, so a figure reads as arriving rather than simply being there. */
+@keyframes gpPop { 0%{transform:scale(.88);opacity:.55} 100%{transform:scale(1);opacity:1} }
+[data-count] { display:inline-block; animation:gpPop .42s var(--spring) both; }
+@media (prefers-reduced-motion: reduce) { [data-count] { animation:none } }
+</style>
+<!-- The page's own styles are in teams/teams.css and its code in teams/01-core.js …
+     teams/11-bind-boot.js (Oct 2026: split out of this file, which had grown to 18,000
+     lines). The theme tokens above and the splash below stay inline: they must paint on
+     the first frame, and tests check they match index.html's — as do the page edges
+     and html/body backgrounds just below, for the same first frame. -->
+<style>
+* { box-sizing:border-box; margin:0; }
+/* ---- locked to the edges of the phone ----
+   The page asks for viewport-fit=cover and a black-translucent status bar, which
+   together hand it the whole screen INCLUDING the notch and the home-indicator
+   strip. Nothing then padded for them, so the header sat under the notch and the
+   tab bar under the indicator — and because iOS reports those insets late and
+   re-reports them on rotation, on keyboard open/close and when the URL bar
+   collapses, the content shifted each time. That is the wiggle. Pad by the insets
+   and the chrome stops moving.
+   overflow-x is on html as well as body on purpose: on iOS, body alone still lets
+   the document itself rubber-band sideways.
+
+   overscroll-behavior was `none` on both html and body — meant only to stop
+   the rubber-band bounce and any scroll chaining past the edges — and that
+   was reported, confirmed live in a real user's DevTools, as disabling
+   scrolling ENTIRELY on their desktop Chrome: wheel events fired, arrived
+   with real deltas, were never preventDefault()'d by anything, and the page
+   still would not move — until `overscroll-behavior` was set back to `auto`
+   from the console, at which point it scrolled immediately. Switching to
+   `contain` was tried next and turned out to trip the very same Chromium
+   bug — same live symptom (wheel deltas arriving, nothing scrolling) on a
+   fresh live check. So: no overscroll-behavior at all on html/body, which
+   is exactly the `auto` the user's own console test proved fixes it. The
+   scroll-chaining it would have suppressed (native pull-to-refresh,
+   trackpad back/forward swipe) is instead kept off by the touch-gesture
+   guards in rollup.js (gpPullToRefresh, gpSlideGuard), which don't rely on
+   this CSS property.
+
+   html gets its own background too, matching the splash — reported as a
+   sliver of slightly-lighter grey at the very bottom of the splash screen,
+   on a real iPhone with a home indicator. The splash is `inset:0` and
+   correctly covers nav.bottom (it isn't even on screen yet at that point),
+   so the gap isn't from anything z-index can fix — some iOS Safari builds
+   compute a position:fixed element's extent against a viewport that
+   hasn't yet grown to include the safe area, right at first paint. Without
+   this, whatever showed through that gap was body's --bg, a shade darker
+   than the splash's --headerBg but not identical to it; with html carrying
+   the same colour as the splash, there is nothing left for that gap to
+   reveal that reads as a different tone. */
+html { overflow-x:hidden; background:var(--headerBg); }
+/* body clips sideways overflow with `clip`, not `hidden`, where the browser
+   knows it (`hidden` stays as the fallback). `hidden` on body as well as html
+   turns body into a scroll container of its own, and iOS WebKit mishandles
+   position:fixed children of one: nav.bottom was reported "stuck on the page,
+   blocking the middle of it at different parts" — left behind mid-screen after
+   momentum scrolling. `clip` cuts the overflow without the scroll container. */
+body { background:var(--bg); color:var(--ink); font-family:'Kantumruy Pro',system-ui,sans-serif;
+  min-height:100vh; min-height:100dvh; box-sizing:border-box;   /* a short page (GP Tasks with one list) still reaches the bar — no dark strip above it */
+  padding-bottom:calc(76px + env(safe-area-inset-bottom));
+  padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right);
+  overflow-x:hidden; overflow-x:clip; -webkit-text-size-adjust:100%; }
+</style>
+<link rel="stylesheet" href="teams/teams.css">
+</head>
+<body>
+
+<!-- ==================== SPLASH ====================
+     THIS BLOCK IS DUPLICATED VERBATIM IN index.html AND teams.html.
+     tests/test-splash.mjs asserts the two copies are byte-identical — edit one,
+     edit both. It is inlined rather than pulled from a file because it has to
+     paint on the very first frame: an external stylesheet is another round trip,
+     and a round trip is the whole problem this solves.
+
+     Why it exists: the PWA's start_url is index.html, so every launch loads the
+     dashboard and then navigates to the staff page. That second navigation is a
+     real network fetch, so for as long as it takes you saw the dashboard. Script
+     timing cannot fix that — the splash is in the markup from the first byte and
+     covers the viewport, so there is nothing to see underneath at any point.
+
+     background is the manifest's background_color, so the iOS launch screen and
+     this are the same colour and the hand-off has no flash of white or paper.
+
+     The ring spins immediately, from CSS alone, because logo.js is 77KB and must
+     not block the head. The real GP mark fades into the middle the moment it
+     lands — normally within a few tens of ms, and instantly once cached. -->
+<style>
+#splash { position:fixed; inset:0; z-index:9999; background:var(--headerBg);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px;
+  opacity:1; transition:opacity .34s ease; }
+#splash.gone { opacity:0; pointer-events:none; }
+.spCoin { width:104px; height:104px; border-radius:50%; position:relative;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 0 0 4px rgba(31,68,255,.16), 0 14px 40px rgba(31,68,255,.34); }
+/* The comet ring: visible from frame one, no image needed. Masked to a 3px band
+   so it reads as a ring rather than a filled disc. */
+.spCoin::before { content:''; position:absolute; inset:-9px; border-radius:50%;
+  background:conic-gradient(from 0deg, rgba(31,68,255,0) 0deg, rgba(31,68,255,.15) 200deg, var(--accent) 340deg, var(--accent2) 360deg);
+  -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  animation:spSpin 1s linear infinite; }
+/* The mark is white, drawn for the black header, so it reads on this background
+   with no coin behind it. Hidden until it has a src, so it is never a blank gap. */
+.spCoin img { width:74px; height:auto; opacity:0; transition:opacity .3s ease;
+  animation:spSpin 1.4s linear infinite; }
+.spCoin img[src] { opacity:1; }
+.spWord { font-family:'Koulen',system-ui,sans-serif; font-size:20px; letter-spacing:2.5px;
+  color:var(--onDark); text-transform:uppercase; }
+.spWord::after { content:''; animation:spDots 1.4s steps(1,end) infinite; }
+@keyframes spSpin { to { transform:rotate(360deg) } }
+@keyframes spDots { 0%{content:''} 25%{content:'.'} 50%{content:'..'} 75%,100%{content:'...'} }
+@media (prefers-reduced-motion: reduce){
+  .spCoin::before, .spCoin img { animation:none }
+  .spWord::after { content:'...' }
+}
+</style>
+<div id="splash"><div class="spCoin"><img id="splashLogo" alt=""></div><div class="spWord">Impact Loading</div></div>
+<script>
+/* Two calls, so nothing else needs to know how the splash is built:
+   gpSplashLogo(src) drops the real mark in once logo.js has landed, and
+   gpSplashDone() takes the splash down when there is finally something behind it
+   worth looking at. Both are safe to call more than once, and safe to call before
+   the element exists.
+
+   The timeout is the important part: if any path forgets to call gpSplashDone —
+   an error boundary, a branch added later — the splash would sit there covering a
+   working app forever. Better to reveal a half-drawn page than to trap it. */
+(function(){
+  var TIMEOUT = 8000;
+  window.gpSplashLogo = function(src){
+    var i = document.getElementById('splashLogo');
+    if(i && typeof src === 'string' && src && !i.getAttribute('src')) i.src = src;
+  };
+  window.gpSplashDone = function(){
+    var s = document.getElementById('splash');
+    if(!s || s.className.indexOf('gone') > -1) return;
+    s.className = 'gone';
+    setTimeout(function(){ if(s.parentNode) s.parentNode.removeChild(s); }, 420);
+  };
+  setTimeout(function(){ window.gpSplashDone(); }, TIMEOUT);
+})();
+</script>
+<!-- ================== END SPLASH ================== -->
+
+<div class="ptr" id="ptr" aria-hidden="true"><div class="ptrCoin"><img id="ptrLogo" alt=""></div></div>
+
+<header>
+  <div class="brandRow">
+    <img id="brandLogo" alt="YWAM GP — Gon Preah" class="logoImg">
+    <div class="brand"><div class="brandKh">កូនព្រះ</div><div class="brandEn">GP TASKS</div></div>
+  </div>
+  <div class="hbtns" id="hbtns"></div>
+</header>
+
+<main id="main"></main>
+<nav class="bottom hidden" id="bottomNav"></nav>
+<div class="msg" id="msg"></div>
+<div id="menuRoot"></div>
+<div id="notifRoot"></div>
+
+<script>
+/*  Error boundary — must come first, before any other script.
+
+    This page is the app's front door for signed-in staff, so a failure here
+    used to be inescapable: index.html redirects here, and a blank screen gave
+    no way back to the dashboard. The fallback always offers that way out. */
+(function(){
+  var shown = false;
+  function fallback(what){
+    if(shown) return; shown = true;
+    // Latch it so a later render() can't paint over the message.
+    window.gpDead = true;
+    // And lift the splash, or the message sits behind it and the app looks hung.
+    if(window.gpSplashDone) window.gpSplashDone();
+    var html =
+      '<div style="max-width:420px;margin:12vh auto;padding:0 22px;text-align:center;'+
+      'font-family:system-ui,sans-serif;color:var(--ink)">'+
+      '<div style="font-size:40px;line-height:1">✦</div>'+
+      '<h2 style="font-size:19px;margin:14px 0 8px">This didn’t load properly</h2>'+
+      '<p style="font-size:14.5px;line-height:1.5;color:var(--muted);margin:0 0 18px">'+
+      'Usually a connection hiccup. Nothing you’ve logged was lost.</p>'+
+      '<button id="gpReload" style="width:100%;padding:14px;border:0;border-radius:12px;'+
+      'background:var(--accent);color:var(--accentInk);font-size:16px;font-weight:700;cursor:pointer">Try again</button>'+
+      '<button id="gpDash" style="width:100%;padding:13px;margin-top:9px;border:1.5px solid var(--border2);'+
+      'border-radius:12px;background:transparent;color:var(--ink);font-size:15px;cursor:pointer">Clear this phone’s copy and try again</button>'+
+      '<div style="font-size:11px;color:var(--faint);margin-top:20px">'+String(what||'').slice(0,140)+'</div>'+
+      '</div>';
+    function paint(){
+      var host = document.getElementById('main') || document.body;
+      if(!host) return;
+      host.innerHTML = html;
+      var nav = document.getElementById('bottomNav');
+      if(nav) nav.classList.add('hidden');
+      var r = document.getElementById('gpReload');
+      if(r) r.onclick = function(){ location.reload(); };
+      var d = document.getElementById('gpDash');
+      /* The dashboard is a view of this page now, so "open the dashboard" would open
+         this same page. What can help instead: forget the kept copy of the last boot
+         and the offline files, then load fresh. The sign-in stays. */
+      if(d) d.onclick = function(){
+        try { localStorage.removeItem('gp-boot-cache'); localStorage.removeItem('gp-tasks-boot-cache'); } catch(e){}
+        try {
+          caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); })
+            .then(function(){ location.reload(); }, function(){ location.reload(); });
+        } catch(e){ location.reload(); }
+      };
+    }
+    if(document.body) paint();
+    else document.addEventListener('DOMContentLoaded', paint);
+  }
+  window.addEventListener('error', function(e){
+  /* A failed <script src> fires an error event on the element itself.
+
+     Only some scripts are load-bearing. logo.js and km.js are marked
+     data-optional because the page works without them — a missing logo is a
+     missing image, and a missing dictionary just leaves the text in English.
+     Killing the whole app for either is far worse than the thing it prevents,
+     and on the patchy phone connections this is built for, a third request is a
+     third chance to fail. taxonomy.js has no fallback and stays fatal. */
+    if(e && e.target && e.target.tagName === 'SCRIPT'){
+      if(e.target.hasAttribute('data-optional')) return;
+      fallback('could not load ' + (e.target.src || 'a script'));
+      return;
+    }
+    if(e && e.message) fallback(e.message);
+  }, true);
+  window.addEventListener('unhandledrejection', function(e){
+    fallback((e && e.reason && e.reason.message) || 'unexpected error');
+  });
+  window.gpBootFailed = fallback;
+})();
+</script>
+<script src="logo.js" data-optional></script>
+<script>
+/* Paint the header mark and build the boot coin as soon as logo.js is in.
+
+   The coin is written here rather than sitting in the body markup, because as
+   markup it was an <img> with no src until this script ran: on a slow connection
+   you watched an empty black ring spin with a hole in the middle. The dashboard
+   never had that problem — it builds its loading box in render(), after the
+   scripts are in — so this now matches it. An empty <main> for the few ms before
+   logo.js lands looks like nothing; a hollow coin looks broken. */
+(function(){
+  var b=document.getElementById('brandLogo');
+  if(b && typeof GP_LOGO_WIDE==='string') b.src=GP_LOGO_WIDE;
+  if(typeof GP_LOGO!=='string') return;
+  window.gpSplashLogo(GP_LOGO);
+  var p=document.getElementById('ptrLogo'); if(p) p.src=GP_LOGO;
+  var m=document.getElementById('main');
+  if(m && !m.firstChild){
+    m.innerHTML='<div class="loadingBox"><div class="loadCoin">'+
+      '<img class="loadLogo" src="'+GP_LOGO+'" alt=""></div>'+
+      '<div class="loadText">Impact Loading<span class="ldots"></span></div></div>';
+  }
+})();
+</script>
+<script src="km.js" data-optional></script>
+<script src="jobfocus.js" data-optional></script>
+<script src="kpiguide.js" data-optional></script>
+<script src="personality.js" data-optional></script>
+<script src="gpstrengths.js" data-optional></script>
+<script src="sr-checkin-history.js" data-optional></script>
+<script src="taxonomy.js"></script>
+<script src="rollup.js"></script>
+<script src="finance.js"></script>
+<script src="duty.js" data-optional></script>
+<script src="teams/01-core.js"></script>
+<script src="teams/02-goals-okrs.js"></script>
+<script src="teams/03-library-org.js"></script>
+<script src="teams/04-ministry-strengths.js"></script>
+<script src="teams/05-admin-hr.js"></script>
+<script src="teams/06-numbers-contract.js"></script>
+<script src="teams/07-health-leave.js"></script>
+<script src="teams/08-team-profile.js"></script>
+<script src="teams/09-finance.js"></script>
+<script src="teams/10-review360.js"></script>
+<script src="teams/12-tasks.js"></script>
+<script src="teams/13-calendar.js"></script>
+<script src="teams/15-khmer.js"></script>
+<script src="teams/16-dts.js"></script>
+<script src="teams/11-bind-boot.js"></script>
+</body>
+</html>

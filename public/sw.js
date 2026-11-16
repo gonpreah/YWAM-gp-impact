@@ -12,7 +12,7 @@
    answered from here; nor are Google Fonts (the page has fallbacks).
 
    Bump SHELL when the list changes; old caches are dropped on activate. */
-var SHELL = 'gp-shell-v20';   // v20: GPDTS on My Ministry (teams/16-dts.js); v19: Learn Khmer's grammar (khmer-grammar.js); v18: Learn Khmer (teams/15-khmer.js, khmer-vocab.js); v17: GP Tasks and the Calendar redone; v16: student preview + student portal; v15: the Calendar (teams/13-calendar.js); v14: GP Tasks (teams/12-tasks.js); v2: the portal is in the shell too; v3: the Library; v4: its Khmer; v5: the letterhead;
+var SHELL = 'gp-shell-v21';   // v21: GP Tasks as an app of its own (tasks.html); v20: GPDTS on My Ministry (teams/16-dts.js); v19: Learn Khmer's grammar (khmer-grammar.js); v18: Learn Khmer (teams/15-khmer.js, khmer-vocab.js); v17: GP Tasks and the Calendar redone; v16: student preview + student portal; v15: the Calendar (teams/13-calendar.js); v14: GP Tasks (teams/12-tasks.js); v2: the portal is in the shell too; v3: the Library; v4: its Khmer; v5: the letterhead;
                               // v6: the Library's Khmer is kept the first time it's read, not downloaded on install;
                               // v7: the legal documents' Khmer (legal-km.js); v8: teams.html's code in teams/; v9: the dashboard joins it; v10: and goes (numbers are My Ministry's); v11: the finance tool (finance.js, teams/09-finance.js); v12: the app's own fonts (fonts/); v13: 360 reviews (teams/10-review360.js)
 var NET_WAIT_MS = 4000;
@@ -28,7 +28,9 @@ var PRECACHE = [
   /* the app's own fonts (v12) */
   'fonts/kantumruy-latin.woff2', 'fonts/kantumruy-latin-ext.woff2', 'fonts/kantumruy-khmer.woff2', 'fonts/koulen-latin.woff2', 'fonts/koulen-khmer.woff2',
   /* the YWAM GP Portal installs as its own app (portal-manifest.json) off the same worker */
-  'portal.html', 'portal-manifest.json', 'outreach-guide.js', 'letterhead.jpg', 'legal-km.js'
+  'portal.html', 'portal-manifest.json', 'outreach-guide.js', 'letterhead.jpg', 'legal-km.js',
+  /* GP Tasks installs as its own app too (tasks-manifest.json): the same code as teams.html */
+  'tasks.html', 'tasks-manifest.json', 'tasks-180.png', 'tasks-512.png'
 ];
 
 self.addEventListener('install', function (e) {
