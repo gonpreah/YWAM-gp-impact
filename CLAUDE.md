@@ -1820,7 +1820,7 @@ forms, documents and references follow.
   first; then the letter of invitation and supporting documents `from: 'us'` — staff upload
   them, the team opens them and cannot upload or remove one — and the team's e-visas):
   `portalUploadDoc` (applicant after submitting, or staff in scope with a candidateId; PDF /
-  images, ~4 MB, blobs `pdoc:<id>`, the record keeps only the list), `portalGetDoc`,
+  images, ~4 MB, blobs `pdoc:<id>`, the record keeps only the list; up to `PORTAL_DOCS_MAX` = MEMBERS_MAX × 3 + 40 files a record, every kind together — it was 40, and a team of fifteen ran out before its last e-visas, Nov 2026), `portalGetDoc`,
   `portalDeleteDoc` (own record, or portal staff / HR in scope). Required kinds all present tick
   the Documents item. The page shrinks big photos before upload (`shrinkImage_`).
 - **A question can open an upload box** (`attach: '<doc kind>'` on a yesno / choice question,

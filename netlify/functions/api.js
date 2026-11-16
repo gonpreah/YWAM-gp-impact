@@ -10360,7 +10360,11 @@ const PORTAL_DOC_KINDS = {
   team: [{ id: 'passports', required: true }, { id: 'photo', required: true }, { id: 'flights', required: true },
     { id: 'invitation', required: false, from: 'us' }, { id: 'evisa', required: false }]
 };
-const PORTAL_DOCS_MAX = 40;
+/* How many files one record can hold, every kind together. It was 40, and a team of fifteen with a passport and
+   an e-visa each, its flights and our letter with its papers ran out before its last e-visas (Nov 2026). Each
+   file is its own blob; the record keeps only a line per file. Room for a full team (MEMBERS_MAX) three times
+   over — a passport, an e-visa and one more each — and forty besides. */
+const PORTAL_DOCS_MAX = MEMBERS_MAX * 3 + 40;
 /* Some nationalities (India, for one) need more for the e-visa than the letter
    and its supporting documents. Staff turn that on for a record (portal.visa
    .extraDocs, portalSetVisaFlags) and the applicant gets an upload space for
