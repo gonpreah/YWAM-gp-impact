@@ -8136,7 +8136,7 @@ async function dtsBoardOut_(g) {
   const students = cands.filter(dtsIsStudent_).map(function (c) { return dtsStudentOut_(c, schoolsSorted); })
     .sort(function (a, b) { return a.name.localeCompare(b.name); });
   return {
-    db: db, students: students, fees: DTS_FEE_PRICE, fin: await dtsFinList_(g.campus),
+    db: db, students: students, fees: DTS_FEE_PRICE, fin: await dtsFinList_(g.campus), finBudgets: await dtsFinBudgets_(g.campus),
     ok: true, campus: g.campus, ministry: g.min, today: today, counts: counts, due: due.slice(0, 40), dueMore: Math.max(0, due.length - 40),
     school: school, lectures: Array.isArray(lect.lectures) ? lect.lectures : [], portal: canPortal_(g.s),
     outreaches: Array.isArray(outr.outreaches) ? outr.outreaches : [],
@@ -8450,10 +8450,10 @@ async function dtsFeesForFinance_(campus) {
   const since = dayOfNo_(dayNo_(baseToday_()) - 60);
   let show = schools.filter(function (s) { return (s.to || dtsSchoolStart_(s)) >= since; });
   if (!show.length) show = schools.slice(-1);
-  const money = await dtsFinList_(campus);
+  const money = await dtsFinList_(campus), budgets = await dtsFinBudgets_(campus);
   return { prices: DTS_FEE_PRICE, schools: show.slice(0, 4).map(function (s) {
     const mine = studs.filter(function (x) { return x.schoolId === s.id; });
-    return { id: s.id, year: s.year, name: s.name, from: s.from || '', to: s.to || '', fees: dtsLectureFees_(mine), money: dtsFinSums_(money, s.id),
+    return { id: s.id, year: s.year, name: s.name, from: s.from || '', to: s.to || '', fees: dtsLectureFees_(mine), money: dtsFinSums_(money, s.id, budgets[s.id]),
       students: mine.filter(function (x) { return DTS_FEE_COLS.indexOf(x.column) > -1; })
         .map(function (x) { return { name: x.name, country: x.country || (x.audience === 'khmer' ? 'Cambodia' : ''), cat: x.feeCat, column: x.column }; }) };
   }) };
@@ -8573,6 +8573,9 @@ function cleanDtsFin_(rec, ctx) {
     if (who && !ctx.staffOk[who]) return { err: 'bad_who' };
     out.category = cat; out.memo = memo; out.who = who; out.whoName = who ? '' : txt(rec.whoName, 80).trim();
     out.hasReceipt = !!rec.hasReceipt; out.toOffice = !!rec.toOffice;
+    const line = txt(rec.lineId, 40);
+    if (line && !(ctx.lines || {})[line]) return { err: 'bad_line' };
+    out.lineId = line;
   }
   return out;
 }
@@ -8581,11 +8584,71 @@ async function dtsFinList_(campus) {
   return (Array.isArray(doc.entries) ? doc.entries : []).filter(function (e) { return e && e.id; })
     .sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : (a.at < b.at ? 1 : -1); });
 }
+/* ---- a school's lecture budget (Nov 2026, Sinin: "our DTS budget … so that we can also do breakdowns of
+   material costs and honorariums … and show that we are keeping in track with our expenses"). Kept in the
+   same blob, `dtsFin:<campus>`.budgets[schoolId] = { students, staff, lines, income }:
+     lines   [{id, group, code, name, each, per, count}] — the plan of a line is each × how many: the
+             planned students ('student'), students and staff ('people'), or its own number ('')
+     income  [{id, name, amount}] — money expected beyond the students' fees (carried over, donations)
+   An expense names the line it was spent on (`lineId`), so each line shows planned, spent and left. */
+const DTS_BUD_GROUPS = ['materials', 'students', 'speakers', 'staff', 'honoraria', 'other'];
+const DTS_BUD_PER = ['', 'student', 'people'];
+const DTS_BUD_MAX_LINES = 150, DTS_BUD_MAX_INCOME = 20;
+function dtsBudN_(v, max) { const n = Math.round(Number(v) * 100) / 100; return isFinite(n) && n >= 0 ? Math.min(n, max) : 0; }
+function cleanDtsBudget_(b) {
+  if (!b || typeof b !== 'object' || Array.isArray(b)) return null;
+  const txt = function (v, n) { return String(v == null ? '' : v).trim().slice(0, n); };
+  const seen = {};
+  const id = function (v, pre) { let x = txt(v, 40).replace(/[^\w-]/g, ''); if (!x || seen[x]) x = hrId_(pre); seen[x] = 1; return x; };
+  const lines = (Array.isArray(b.lines) ? b.lines : []).slice(0, DTS_BUD_MAX_LINES).map(function (l) {
+    l = l && typeof l === 'object' ? l : {};
+    const name = txt(l.name, 120);
+    if (!name) return null;
+    const per = DTS_BUD_PER.indexOf(l.per) > -1 ? l.per : '';
+    return { id: id(l.id, 'bl'), group: DTS_BUD_GROUPS.indexOf(l.group) > -1 ? l.group : 'other', code: txt(l.code, 20), name: name,
+      each: dtsBudN_(l.each, DTS_FIN_MAX_AMOUNT), per: per, count: per ? 0 : Math.round(dtsBudN_(l.count, 10000)) };
+  }).filter(Boolean);
+  const income = (Array.isArray(b.income) ? b.income : []).slice(0, DTS_BUD_MAX_INCOME).map(function (l) {
+    l = l && typeof l === 'object' ? l : {};
+    const name = txt(l.name, 120);
+    return name ? { id: id(l.id, 'bi'), name: name, amount: dtsBudN_(l.amount, DTS_FIN_MAX_AMOUNT) } : null;
+  }).filter(Boolean);
+  return { students: Math.round(dtsBudN_(b.students, 500)), staff: Math.round(dtsBudN_(b.staff, 200)), lines: lines, income: income };
+}
+function dtsBudCount_(b, l) { return l.per === 'student' ? b.students : l.per === 'people' ? b.students + b.staff : l.count; }
+function dtsBudPlanned_(b) {
+  return b ? Math.round((b.lines || []).reduce(function (a, l) { return a + l.each * dtsBudCount_(b, l); }, 0) * 100) / 100 : 0;
+}
+async function dtsFinBudgets_(campus) {
+  const doc = await readJSON('dtsFin:' + campus, { entries: [] });
+  return doc.budgets && typeof doc.budgets === 'object' && !Array.isArray(doc.budgets) ? doc.budgets : {};
+}
+/* the whole budget of one school at a time; null takes it away (expenses keep their line id and show as
+   "not on a budget line") */
+async function dtsFinBudgetSave(username, pin, schoolId, b) {
+  const g = await dtsGate_(username, pin); if (g.out) return g.out;
+  schoolId = str_(schoolId, 60);
+  const db = dtsDbOut_(await readJSON('dtsDb:' + g.campus, DTS_DB_FALLBACK));
+  if (!db.schools.some(function (s) { return s.id === schoolId; })) return { ok: false, err: 'no_school' };
+  const clean = b === null ? null : cleanDtsBudget_(b);
+  if (b !== null && !clean) return { ok: false, err: 'bad_budget' };
+  const now = new Date().toISOString();
+  const r = await mutateKey_('dtsFin:' + g.campus, { entries: [] }, function (doc) {
+    if (!doc.budgets || typeof doc.budgets !== 'object' || Array.isArray(doc.budgets)) doc.budgets = {};
+    if (clean === null) delete doc.budgets[schoolId];
+    else doc.budgets[schoolId] = Object.assign(clean, { at: now, by: g.s.id });
+    return { ok: true };
+  });
+  if (!r || !r.ok) return r || { ok: false };
+  return { ok: true, budgets: await dtsFinBudgets_(g.campus) };
+}
 async function dtsFinSave(username, pin, rec) {
   const g = await dtsGate_(username, pin); if (g.out) return g.out;
   const db = dtsDbOut_(await readJSON('dtsDb:' + g.campus, DTS_DB_FALLBACK));
   const ctx = { schools: db.schools, staffOk: await dtsCampusStaff_(g.campus), candOk: {} };
   (await getCandidates_()).forEach(function (c) { if (isDtsCand_(c, g.campus)) ctx.candOk[c.id] = 1; });
+  const bud = (await dtsFinBudgets_(g.campus))[str_(rec && rec.schoolId, 60)];
+  ctx.lines = {}; ((bud && bud.lines) || []).forEach(function (l) { ctx.lines[l.id] = 1; });
   const clean = cleanDtsFin_(rec, ctx);
   if (clean.err) return { ok: false, err: clean.err };
   const id = str_(rec && rec.id, 60), now = new Date().toISOString();
@@ -8617,8 +8680,9 @@ async function dtsFinDelete(username, pin, id) {
   return { ok: true, fin: await dtsFinList_(g.campus) };
 }
 /* a school's money, for the Finances office's card: received and spent, lecture and outreach apart */
-function dtsFinSums_(entries, schoolId) {
+function dtsFinSums_(entries, schoolId, budget) {
   const o = { lecture: { received: 0, spent: 0, receiptsOut: 0 }, outreach: { received: 0 } };
+  if (budget) o.lecture.planned = dtsBudPlanned_(budget);
   (entries || []).forEach(function (e) {
     if (e.schoolId !== schoolId || !o[e.phase]) return;
     if (e.kind === 'income') o[e.phase].received += e.amount;
@@ -12861,6 +12925,7 @@ const HANDLERS = {
   dtsFinSave: function (a) { return dtsFinSave(a[0], a[1], a[2]); },
   portalRenameCand: function (a) { return portalRenameCand(a[0], a[1], a[2], a[3]); },
   dtsFinDelete: function (a) { return dtsFinDelete(a[0], a[1], a[2]); },
+  dtsFinBudgetSave: function (a) { return dtsFinBudgetSave(a[0], a[1], a[2], a[3]); },
   dtsDbDelete: function (a) { return dtsDbDelete(a[0], a[1], a[2], a[3]); },
   dtsStudentSave: function (a) { return dtsStudentSave(a[0], a[1], a[2], a[3]); },
   portalListAccounts: function (a) { return portalListAccounts(a[0], a[1]); },

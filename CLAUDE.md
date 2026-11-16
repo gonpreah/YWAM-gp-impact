@@ -812,6 +812,25 @@ school's home.
   contact) and **Follow-ups due** (`dtsDueHtml_`) are on the **Database** tab. The Finances office's GPDTS
   card adds the school's lecture received / spent / left, receipts not yet in, and outreach received
   (`dtsFinSums_`).
+- **The lecture budget** (Nov 2026, Sinin: "our DTS budget from last year … breakdowns of material costs and
+  honorariums … show that we are keeping in track with our expenses"): Finances → Lecture phase → **📋 Budget**
+  (`dtsBudHtml_` / `bindDtsBud_`, end of teams/16-dts.js). One plan per school, lines in the groups of the base's own
+  budget sheet (`DTS_BUD_GROUPS`: materials 60000, student hospitality 60100, speaker hospitality 60200, staff
+  hospitality 60300, honorariums 60207, other); a line is each × how many — `per` 'student' (the planned students),
+  'people' (students + staff) or '' (its own `count`). Starts from **last year's sheet** (`DTS_BUD_TEMPLATE`: the
+  January DTS's 38 lines and amounts, no names; students = those accepted so far, 8 staff, $500 carried over), a
+  copy of another school's, or empty. Each group folds to "spent of planned" with a bar; a line opens under itself
+  to be changed (`S.dtsBudEdit`); "People and other income" (`S.dtsBudSet`) sets students, staff and income beyond
+  the fees; the plan's balance = fees of the students accepted + other income − planned spending; the time line
+  ("40% of the school is done and 55% of the budget is spent", amber when spending runs 10 points ahead). An
+  expense names its line (`lineId`, the expense form's "Budget line", which also picks the category —
+  `DTS_BUD_CAT`); expenses on no line are listed with a picker that saves on the spot. The Overview shows spent of
+  the plan; the Finances office's GPDTS card shows planned spending and what is left of it. CSV download. Server:
+  `dtsFinBudgetSave(user, pin, schoolId, budget | null)` (`dtsGate_`, `cleanDtsBudget_`: ≤150 lines, ≤20 income
+  rows, amounts capped, ids made unique), kept on `dtsFin:<campus>`.budgets[schoolId] beside the entries; the board
+  carries `finBudgets`; `cleanDtsFin_` refuses a `lineId` not in that school's budget (`bad_line`). The sheet's own
+  total ($6,629.25) left its last student-hospitality line (Sunday food, $184) out of its subtotal; the app adds
+  every line ($6,813.25). tests/test-dts-budget.mjs (server), test-dts-ui.mjs. Khmer: docs/khmer-needed.md §104.
 - **Database, Nov 2026 (Andrew)**: the Students tile counts only the students accepted (accepted / here /
   graduated). **Responsibilities fold open** (`details.dtsRespItem`, `S.dtsRespOpen`): title, who and done on
   the line; opened, the description laid out by `dtsNotesHtml_` (paragraphs; lines starting -, •, * or 1. as

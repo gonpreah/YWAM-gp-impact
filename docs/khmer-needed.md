@@ -5009,3 +5009,66 @@ Admin → Accounts, a chip beside "Everyone" listing the active accounts with no
 | Open GP Tasks | បើក ភារកិច្ច GP |
 
 GP Tasks installs on the Home Screen as its own app: the sign-in line, the ☰ item back to the main app, the card that says how to add it to the Home Screen, and the sheet in the main app that explains it. "GP Tasks" is ភារកិច្ច GP as elsewhere. The iPhone and Android menu words ("Add to Home Screen", "Install app", Share) stay in English, as the phone shows them.
+
+## 104. GPDTS → Finances → Budget (the lecture budget, line by line)
+
+| English | Khmer (draft) |
+|---|---|
+| Plan the budget line by line | រៀបចំថវិកាតាមបន្ទាត់នីមួយៗ |
+| Against the plan | ធៀបនឹងផែនការ |
+| Spent of the planned spending | ចំណាយរួច ធៀបនឹងការចំណាយតាមផែនការ |
+| Open the budget | បើកថវិកា |
+| A budget for {school} | ថវិកាសម្រាប់ {school} |
+| Plan the lecture phase line by line — materials, hospitality, honorariums and the rest — then pick the line each expense was for, to see what is left on each one. | រៀបចំផែនការដំណាក់កាលបង្រៀនតាមបន្ទាត់នីមួយៗ — សម្ភារៈ ការទទួលភ្ញៀវ ប្រាក់ឧបត្ថម្ភ និងផ្សេងៗទៀត — បន្ទាប់មកជ្រើសបន្ទាត់សម្រាប់ការចំណាយនីមួយៗ ដើម្បីឃើញថានៅសល់ប៉ុន្មានលើបន្ទាត់នីមួយៗ។ |
+| Start from last year’s DTS budget | ចាប់ផ្ដើមពីថវិកា DTS ឆ្នាំមុន |
+| Copy the budget of {school} | ចម្លងថវិការបស់ {school} |
+| Start with an empty budget | ចាប់ផ្ដើមដោយថវិកាទទេ |
+| Budget — {school} | ថវិកា — {school} |
+| Planned spending | ការចំណាយតាមផែនការ |
+| Left of the plan | នៅសល់ពីផែនការ |
+| The school hasn’t started yet. | សាលាមិនទាន់ចាប់ផ្ដើមនៅឡើយទេ។ |
+| {time}% of the school is done and {money}% of the budget is spent. | សាលាបានដើរ {time}% ហើយ ថវិកាបានចំណាយ {money}%។ |
+| Spending is ahead of the school — look at the groups below. | ការចំណាយលឿនជាងដំណើរសាលា — សូមមើលក្រុមខាងក្រោម។ |
+| The plan | ផែនការ |
+| Fees of the students accepted | ថ្លៃសិក្សារបស់សិស្សដែលបានទទួលយក |
+| Planned balance | សមតុល្យតាមផែនការ |
+| Planned for {s} students and {n} staff. | គ្រោងសម្រាប់សិស្ស {s} នាក់ និងបុគ្គលិក {n} នាក់។ |
+| People and other income | ចំនួនមនុស្ស និងចំណូលផ្សេងទៀត |
+| {n} expenses not on a budget line · {money} | ការចំណាយ {n} មិនទាន់នៅលើបន្ទាត់ថវិកា · {money} |
+| Pick the line each one was for, so it counts against it. | សូមជ្រើសបន្ទាត់សម្រាប់ការចំណាយនីមួយៗ ដើម្បីឱ្យវារាប់ចូលបន្ទាត់នោះ។ |
+| Budget line | បន្ទាត់ថវិកា |
+| Pick a line… | ជ្រើសបន្ទាត់… |
+| over by {money} | លើស {money} |
+| Line | បន្ទាត់ |
+| Planned | តាមផែនការ |
+| No lines yet. | មិនទាន់មានបន្ទាត់នៅឡើយទេ។ |
+| Add a line | បន្ថែមបន្ទាត់ |
+| Remove this budget | លុបថវិកានេះ |
+| {each} × {n} students | {each} × សិស្ស {n} នាក់ |
+| {each} × {n} students and staff | {each} × សិស្ស និងបុគ្គលិក {n} នាក់ |
+| e.g. Lecture snacks | ឧ. អាហារសម្រន់ពេលបង្រៀន |
+| Amount each (US$) | ចំនួនទឹកប្រាក់ម្នាក់ៗ (US$) |
+| Account code (optional) | លេខកូដគណនី (មិនបាច់ក៏បាន) |
+| How many | ចំនួនប៉ុន្មាន |
+| Students planned for | ចំនួនសិស្សតាមផែនការ |
+| Other income (beyond the students’ fees) | ចំណូលផ្សេងទៀត (ក្រៅពីថ្លៃសិក្សារបស់សិស្ស) |
+| Not on a line | មិននៅលើបន្ទាត់ |
+| Budget started | បានចាប់ផ្ដើមថវិកា |
+| Give the line a name. | សូមដាក់ឈ្មោះឱ្យបន្ទាត់។ |
+| Put in the amount each, in US$. | សូមបញ្ចូលចំនួនទឹកប្រាក់ម្នាក់ៗ ជា US$។ |
+| Delete this line? Its {n} expenses will show as not on a line. | លុបបន្ទាត់នេះឬ? ការចំណាយ {n} របស់វានឹងបង្ហាញថាមិននៅលើបន្ទាត់។ |
+| Delete this line? | លុបបន្ទាត់នេះឬ? |
+| Remove this school’s budget? The expenses stay. | លុបថវិការបស់សាលានេះឬ? ការចំណាយនៅដដែល។ |
+| Subtotal | សរុបរង |
+| Materials of training | សម្ភារៈបណ្ដុះបណ្ដាល |
+| Student hospitality | ការទទួលភ្ញៀវសម្រាប់សិស្ស |
+| Speaker hospitality | ការទទួលភ្ញៀវសម្រាប់អ្នកបង្រៀន |
+| Staff hospitality | ការទទួលភ្ញៀវសម្រាប់បុគ្គលិក |
+| Honorariums | ប្រាក់ឧបត្ថម្ភ |
+| Each student | សិស្សម្នាក់ៗ |
+| Each student and staff | សិស្ស និងបុគ្គលិកម្នាក់ៗ |
+| A number | ចំនួនមួយ |
+| Lecture: planned spending | ដំណាក់កាលបង្រៀន៖ ការចំណាយតាមផែនការ |
+| Left of the planned spending | នៅសល់ពីការចំណាយតាមផែនការ |
+
+GPDTS → Finances → Lecture phase → 📋 Budget: the plan by group (materials, hospitality, honorariums, other), planned · spent · left on each line, and the "Budget line" picker on an expense. "Line" means a row of the budget.
