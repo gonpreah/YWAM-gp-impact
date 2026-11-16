@@ -135,12 +135,16 @@ ok('Dara at 07:00 the next morning: a new day, and her check-in isn\'t in yet', 
 mem.dailyLogs.push({ staffId: 'st2', date: '2026-10-20' });
 await call('savePushPrefs', ['kanha', '1234', { hour: 8, daily: true }]);
 sent = [];
-await api.runReminders(new Date('2026-10-20T01:00:00Z'));   // 08:00, Kanha logged
-ok('nothing to say, nothing sent', sent.length === 0);
+await api.runReminders(new Date('2026-10-20T01:00:00Z'));   // Tuesday 08:00, Kanha logged her day — but not this week's health check-in
+ok('Tuesday: the weekly health check-in, done at the staff meeting (Nov 2026)', sent.length === 1 && /staff meeting/.test(decrypt(k, sent[0].opts.body).body) && !/today isn/.test(decrypt(k, sent[0].opts.body).body), sent.length && decrypt(k, sent[0].opts.body).body);
+/* her check-in for week 43 (20 Oct 2026) is in, by her anonymous token */
+const kanRec = mem.staff.find((x) => x.id === 'st2'); kanRec.surveyToken = kanRec.surveyToken || 'tok-kanha';
+(mem.survey = mem.survey || []).push({ device: kanRec.surveyToken, week: 43, year: 2026, source: 'weekly', campus: 'siemreap' });
+await call('savePushPrefs', ['kanha', '1234', { hour: 9, daily: true }]);
 await call('savePushPrefs', ['uriah', '1234', { hour: 9, daily: false, oneonone: true, admin: false }]);
 sent = [];
-await api.runReminders(new Date('2026-10-20T02:00:00Z'));   // Tuesday 09:00: 1-on-1s only on Mondays, admin off, daily off
-ok('each kind can be switched off, and 1-on-1 reminders wait for Monday', sent.length === 0);
+await api.runReminders(new Date('2026-10-20T02:00:00Z'));   // Tuesday 09:00: Kanha's day and week are in; Uriah: 1-on-1s only on Mondays, admin off, daily off
+ok('nothing to say, nothing sent — and each kind can be switched off, 1-on-1 reminders wait for Monday', sent.length === 0, sent.length);
 
 /* ---------- 5. a phone that's gone ---------- */
 await call('savePushPrefs', ['kanha', '1234', { hour: 10 }]);

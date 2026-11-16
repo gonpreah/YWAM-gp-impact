@@ -115,7 +115,7 @@ ok('… where someone on Google carries no PIN only mark', !/PIN only/.test(awai
 await page.click('#adminBack');
 await page.waitForTimeout(400);
 const home = await page.evaluate(() => ({ cards: [].map.call(document.querySelectorAll('[data-adminsub]'), b => b.getAttribute('data-adminsub')), badge: (document.querySelector('[data-adminsub="accounts"] .adminBadge') || {}).textContent }));
-ok('Back from Accounts is the Admin home — one card per tool', JSON.stringify(home.cards) === JSON.stringify(['accounts', 'approvals', 'students', 'mentors', 'leave', 'portal', 'kpis', 'broadcast', 'merge', 'groups', 'leaving', 'loose', 'board', 'gcal', 'reminders']), home.cards.join(','));
+ok('Back from Accounts is the Admin home — one card per tool', JSON.stringify(home.cards) === JSON.stringify(['accounts', 'approvals', 'students', 'mentors', 'leave', 'portal', 'kpis', 'broadcast', 'merge', 'groups', 'leaving', 'use', 'loose', 'board', 'gcal', 'reminders']), home.cards.join(','));
 ok('the Accounts card counts the active accounts', home.badge === '15', home.badge);
 ok('no page errors', errors.length === 0, errors.join(' | '));
 

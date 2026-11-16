@@ -985,6 +985,7 @@ function homeHtml(){
   var h=miniDashboardHtml();
   h+=gpQueueBannerHtml_();
   h+=phaseBanner(phase, wk);
+  h += checkinTueHtml_();   // Tuesday: the weekly health check-in, at the staff meeting
   h += f30CardHtml_();
   h += goalsCardHtml(goalsViewWeek());
   h += habitsCardHtml();

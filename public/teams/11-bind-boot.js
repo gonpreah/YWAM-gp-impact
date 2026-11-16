@@ -300,7 +300,7 @@ function bindAway(){
   var db=document.getElementById('dashToBase'); if(db) db.onclick=function(){ gpTap(); S.view='base'; render(); window.scrollTo(0,0); };
   var gm=document.getElementById('goMinistryFromMe');
   if(gm) gm.onclick=function(){ gpTap(); S.view='ministry'; S.mmTab='ministry'; render(); };
-  document.querySelectorAll('[data-gohealth]').forEach(function(b){ b.onclick=function(){ gpTap(); S.view='health'; render(); }; });
+  document.querySelectorAll('[data-gohealth]').forEach(function(b){ b.onclick=function(){ gpTap(); S.view='health'; if(b.getAttribute('data-gohealth')==='open'){ S.healthWeek=thisWeek(); S.weekForm=thisWeek(); } render(); window.scrollTo(0,0); }; });
   var dth=document.getElementById('dashToHealth');
   if(dth) dth.onclick=function(){ gpTap(); S.view='health'; render(); };
 
@@ -1858,7 +1858,7 @@ function bind(){
 
   /* 1-on-1 requests, either direction of a mentor/mentee pair. */
   document.querySelectorAll('[data-gohealth]').forEach(function(b){
-    b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='health'; render(); };
+    b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='health'; if(b.getAttribute('data-gohealth')==='open'){ S.healthWeek=thisWeek(); S.weekForm=thisWeek(); } render(); };
   });
   document.querySelectorAll('[data-jumpgoals]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='week'; render(); };

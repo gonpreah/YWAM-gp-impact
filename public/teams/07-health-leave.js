@@ -1307,6 +1307,7 @@ function healthHtml(){
       '<button class="linkbtn inline" id="weekEdit">'+
         esc(t(open?'Hide the form':'Edit my answers'))+'</button></div></div>';
   } else if(!open){
+    if(isCurWk) h += '<p class="hint" id="checkinTueHint" style="margin:0 0 8px">📅 '+esc(t('We do the weekly check-in together on Tuesdays, at the staff meeting.'))+'</p>';
     h += '<button class="btn" id="weekStart">'+esc(t('Fill out this week’s check-in'))+'</button>';
   }
 

@@ -1449,17 +1449,15 @@ function notifItems_(){
   (S.broadcasts||[]).forEach(function(b){
     items.push({ when:b.created, text:'📣 '+t('Announcement')+': '+b.text });
   });
-  /* A nudge, not a server-tracked item — Friday through the end of the week,
-     if this week's check-in is still unanswered. "when" is that Friday's own
-     date, so clearing it only holds through the rest of THIS week: next
-     week's Friday is a later date, past the clear cutoff, so the same nudge
-     reappears fresh rather than staying cleared forever. */
+  /* A nudge, not a server-tracked item — from the check-in's day, Tuesday (the staff meeting, Nov 2026,
+     Andrew; it was Friday), through the end of the week, if this week's check-in is still unanswered.
+     "when" is that Tuesday's own date, so clearing it only holds through the rest of THIS week: next week's
+     Tuesday is a later date, past the clear cutoff, so the same nudge reappears fresh. */
   if(S.me){
-    var nwk=thisWeek(), nfri=new Date(weekBounds_(nwk).from);
-    nfri.setDate(nfri.getDate()+4);
-    if(new Date(todayStr())>=nfri && !myWeekRow(nwk)){
-      items.push({ when:isoDateOf_(nfri), text:t('Your weekly health check-in is due'),
-        actions:'<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-gohealth="1">'+esc(t('Answer it'))+'</button>' });
+    var nwk=thisWeek(), ntue=checkinDayOf_(nwk);
+    if(new Date(todayStr())>=ntue && !myWeekRow(nwk)){
+      items.push({ when:isoDateOf_(ntue), text:checkinIsToday_() ? t('It’s Tuesday — answer your weekly health check-in at the staff meeting.') : t('Your weekly health check-in is due'),
+        actions:'<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-gohealth="open">'+esc(t('Answer it'))+'</button>' });
     }
   }
   /* End of the week, goals not all the way there — used to be a big banner
@@ -1569,3 +1567,18 @@ function clearNotifications(){
 }
 
 
+
+/* ---- The weekly health check-in is on Tuesdays, at the staff meeting (Nov 2026, Andrew: "we want to move to
+   every Tuesday during our staff meeting") ----
+   CHECKIN_DOW (0 Sunday … 6 Saturday; api.js has its own for the phone reminder): the bell's nudge starts that
+   day, My Home shows a card on the day itself while this week's isn't in (checkinTueHtml_, #tueCheckin — it opens
+   the form), and the Health tab says when it is done (#checkinTueHint). Any day still works. */
+var CHECKIN_DOW=2;
+function checkinDayOf_(wk){ var d=new Date(weekBounds_(wk).from); d.setDate(d.getDate()+((CHECKIN_DOW+6)%7)); return d; }
+function checkinIsToday_(){ return new Date().getDay()===CHECKIN_DOW; }
+function checkinTueHtml_(){
+  if(!S.me || S.guest || S.student || S.board || !checkinIsToday_() || myWeekRow(thisWeek())) return '';
+  return '<div class="card tueCheckin" id="tueCheckin"><div class="tueCheckinHead">💚 <b>'+esc(t('It’s Tuesday — check-in day'))+'</b></div>'+
+    '<p class="hint" style="margin:4px 0 10px">'+esc(t('Answer your weekly health check-in during the staff meeting. It takes about two minutes, and only you and your mentor see your answers.'))+'</p>'+
+    '<button class="btn" data-gohealth="open" id="tueCheckinGo">'+esc(t('Answer it now'))+'</button></div>';
+}

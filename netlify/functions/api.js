@@ -5120,8 +5120,13 @@ async function p360Glance_(s) {
 const PUSH_HOSTS = [/^fcm\.googleapis\.com$/, /^updates\.push\.services\.mozilla\.com$/, /^([a-z0-9-]+\.)*push\.apple\.com$/, /^([a-z0-9-]+\.)*notify\.windows\.com$/];
 const PUSH_MAX_SUBS = 5;
 const PUSH_HOURS_MIN = 5, PUSH_HOURS_MAX = 22;
+/* The weekly health check-in's day: Tuesday, at the staff meeting (Nov 2026, Andrew: "we want to move to every
+   Tuesday during our staff meeting"). 0 Sunday … 6 Saturday; CHECKIN_DOW in teams/02-goals-okrs.js too. */
+const CHECKIN_DOW = 2;
 const PUSH_TEXT = {
   title: { en: 'My YWAM GP', km: 'My YWAM GP' },
+  weeklyTue: { en: 'It’s Tuesday — answer your weekly health check-in at the staff meeting.', km: 'ថ្ងៃនេះជាថ្ងៃអង្គារ — សូមឆ្លើយការពិនិត្យសុខភាពប្រចាំសប្តាហ៍របស់អ្នក ក្នុងពេលប្រជុំបុគ្គលិក។' },
+  weekly: { en: 'Your weekly health check-in for this week isn’t in yet.', km: 'ការពិនិត្យសុខភាពប្រចាំសប្តាហ៍របស់អ្នកសម្រាប់សប្តាហ៍នេះ មិនទាន់មាននៅឡើយទេ។' },
   daily: { en: 'Your check-in for today isn’t in yet.', km: 'ការរាយការណ៍ប្រចាំថ្ងៃរបស់អ្នកសម្រាប់ថ្ងៃនេះ មិនទាន់មាននៅឡើយទេ។' },
   oneonone: { en: '{n} of 2 1-on-1s with {name} this month.', km: 'ជួបមួយទល់មួយជាមួយ {name} បាន {n} ក្នុងចំណោម 2 ដងក្នុងខែនេះ។' },
   signup: { en: '{name} made a GP app account — approve or decline it in Admin.', km: '{name} បានបង្កើតគណនីកម្មវិធី GP — សូមអនុម័ត ឬបដិសេធនៅក្នុងផ្នែកអ្នកគ្រប់គ្រង។' },
@@ -5313,6 +5318,9 @@ async function adminPushStatus(username, pin) {
 function reminderItems_(s, ctx) {
   const p = pushPrefsOf_(s), out = [];
   if (p.daily && !ctx.loggedToday[s.id]) out.push({ key: 'daily' });
+  /* the weekly health check-in is done together at Tuesday's staff meeting (Nov 2026, Andrew): from Tuesday
+     to the end of the week, while this week's isn't in (the anonymous token only — nobody else learns who) */
+  if (p.daily && ctx.checkinDue && !(s.surveyToken && ctx.checkedIn[s.surveyToken])) out.push({ key: ctx.tuesday ? 'weeklyTue' : 'weekly' });
   if (p.oneonone && ctx.monday && ctx.dayOfMonth >= 8) {
     ctx.staff.filter(function (m) { return m.mentorId === s.id && m.mentorStatus === 'approved' && m.active !== false && !m.archived; }).forEach(function (m) {
       const n = ctx.held[s.id + '|' + m.id] || 0;
@@ -5351,7 +5359,11 @@ async function runReminders(now) {
       const menteeId = ooMenteeOf_(r, staff), mentorId = menteeId === r.fromId ? r.toId : r.fromId;
       held[mentorId + '|' + menteeId] = (held[mentorId + '|' + menteeId] || 0) + 1;
     });
-    const ctx = { staff: staff, loggedToday: loggedToday, held: held, monday: local.getUTCDay() === 1, dayOfMonth: local.getUTCDate(),
+    /* the weekly health check-in: this week's tokens that are in, and whether it is due yet (Tuesday on, CHECKIN_DOW) */
+    const dow = local.getUTCDay(), thisWk = isoWeek_(today), thisWkYr = weekYear_(today), checkedIn = {};
+    (await getSurvey_()).forEach(function (r) { if (r && r.device && Number(r.week) === thisWk && yearOf_(r) === thisWkYr) checkedIn[r.device] = 1; });
+    const ctx = { staff: staff, loggedToday: loggedToday, held: held, monday: dow === 1, dayOfMonth: local.getUTCDate(),
+      tuesday: dow === CHECKIN_DOW, checkinDue: dow === 0 || dow >= CHECKIN_DOW, checkedIn: checkedIn,
       waiting: staff.filter(function (r) { return (!r.active && !r.archived) || (r.active && r.cltRequest); }).length,
       hrDue: hrDueCount_(staff), p360: await readJSON('p360', []), quarter: p360Quarter_(today) };
     let sent = 0, people = 0, gone = [];
@@ -11367,13 +11379,51 @@ async function portalUpdateContact(username, pin, payload) {
    means something only 30 days after 'started' — the page says so until then. A
    lost write when two people open the app at once only costs a day. Only the
    date: never what they did. */
+/* Since Nov 2026 (Andrew: "data on our staff team who uses the app consistently") it also keeps each
+   person's days, the newest SEEN_KEEP_DAYS (90) — `days: { staffId: ['YYYY-MM-DD', …] }` and `daysFrom`, the
+   day that history began — for Admin → App use. Still only dates. */
+const SEEN_KEEP_DAYS = 90;
 async function touchLastSeen_(s) {
   const today = baseToday_();
   const rec = await readJSON('lastSeen', {});
   const seen = (rec.seen && typeof rec.seen === 'object') ? rec.seen : {};
-  if (seen[s.id] === today) return;
+  const days = (rec.days && typeof rec.days === 'object' && !Array.isArray(rec.days)) ? rec.days : {};
+  const mine = Array.isArray(days[s.id]) ? days[s.id] : [];
+  if (seen[s.id] === today && mine.indexOf(today) > -1) return;
   seen[s.id] = today;
-  await writeJSON('lastSeen', { started: rec.started || today, seen: seen });
+  if (mine.indexOf(today) === -1) mine.push(today);
+  days[s.id] = mine.filter(isDate_).sort().slice(-SEEN_KEEP_DAYS);
+  await writeJSON('lastSeen', { started: rec.started || today, seen: seen, days: days, daysFrom: rec.daysFrom || today });
+}
+/* Admin → App use: who uses the app, and how often — one campus, the active staff, each with the days in the
+   last 30 they used it, the last 7, and the last day. A day of use is a day they opened the app (markSeen's
+   history, from `daysFrom`) or a day they ticked a habit (the time the Habit Tracker saved it, on Cambodia's
+   clock — which goes back further). Only dates, never what they did; admins only. */
+async function adminAppUse(username, pin, campus) {
+  const s = await adminGate_(username, pin);
+  if (!s) return { ok: false, err: 'not_authorized' };
+  campus = CAMPUS_IDS_.indexOf(campus) > -1 ? campus : s.campus;
+  const [staff, rec, daily] = await Promise.all([getStaff_(), readJSON('lastSeen', {}), getDaily_()]);
+  const today = baseToday_(), from30 = icsDay_(today, -29), from7 = icsDay_(today, -6);
+  const days = (rec.days && typeof rec.days === 'object' && !Array.isArray(rec.days)) ? rec.days : {};
+  const seen = (rec.seen && typeof rec.seen === 'object') ? rec.seen : {};
+  const used = {};
+  const add = function (id, d) { if (!id || !isDate_(d) || d > today) return; (used[id] = used[id] || {})[d] = 1; };
+  Object.keys(days).forEach(function (id) { (Array.isArray(days[id]) ? days[id] : []).forEach(function (d) { add(id, d); }); });
+  Object.keys(seen).forEach(function (id) { add(id, seen[id]); });
+  let habitFrom = '';
+  daily.forEach(function (r) {
+    const t = Date.parse(r && r.updated); if (!r || !r.staffId || isNaN(t)) return;
+    const d = new Date(t + 7 * 3600 * 1000).toISOString().slice(0, 10);
+    add(r.staffId, d); if (!habitFrom || d < habitFrom) habitFrom = d;
+  });
+  const people = staff.filter(function (x) { return x.active !== false && !x.archived && !isApplicant_(x) && x.campus === campus; }).map(function (x) {
+    const all = Object.keys(used[x.id] || {}).sort();
+    const in30 = all.filter(function (d) { return d >= from30; });
+    return { id: x.id, name: x.name || '', photo: photoOf_(x), dept: x.dept || '', ministry: x.ministry || '', staffType: x.staffType || '',
+      last: all.length ? all[all.length - 1] : '', d7: in30.filter(function (d) { return d >= from7; }).length, d30: in30.length, days: in30 };
+  });
+  return { ok: true, campus: campus, today: today, from30: from30, daysFrom: rec.daysFrom || '', habitFrom: habitFrom, people: people };
 }
 async function markSeen(username, pin) {
   const s = await verifyStaff_(username, pin);
@@ -12783,6 +12833,7 @@ const HANDLERS = {
   finAheadSave: function (a) { return finAheadSave(a[0], a[1], a[2], a[3]); },
   saveStaffDebt: function (a) { return saveStaffDebt(a[0], a[1], a[2]); },
   adminLooseEnds: function (a) { return adminLooseEnds(a[0], a[1]); },
+  adminAppUse: function (a) { return adminAppUse(a[0], a[1], a[2]); },
   markSeen: function (a) { return markSeen(a[0], a[1]); },
   hrArchiveMany: function (a) { return hrArchiveMany(a[0], a[1], a[2], a[3]); },
   saveMyKpiDay: function (a) { return saveMyKpiDay(a[0], a[1], a[2], a[3]); },
