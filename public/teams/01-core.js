@@ -302,7 +302,7 @@ function run(fn, args, onOk, onErr){
      today's data, not the copy, and a read answers with what is true now. They
      go out in order the moment it lands (gpBootFresh_), or, if it fails, fall
      to the offline handling they already have. */
-  if(S.bootStale && fn!=='getMyBoot'){ _gpHeld.push([fn, args, onOk, onErr]); return; }
+  if(S.bootStale && fn!=='getMyBoot' && fn!=='getTasksBoot'){ _gpHeld.push([fn, args, onOk, onErr]); return; }
   var ctl = (typeof AbortController === 'function') ? new AbortController() : null;
   var settled = false;
   var timer = setTimeout(function(){ if(!settled && ctl) ctl.abort(); }, REQUEST_TIMEOUT_MS);
@@ -518,7 +518,20 @@ function count(rows, f){ var n=0; rows.forEach(function(r){ if(f(r)) n++; }); re
    refuses, deletes it. Saves that queue offline (goals, the health check-in,
    ministry numbers) still queue; the rest say they could not save. Back online,
    the page boots again by itself and the line goes. */
-var GP_BOOT_CACHE = 'gp-boot-cache', GP_BOOT_CACHE_MAX = 3000000;
+/* ---------- GP Tasks, the app of its own (Nov 2026, Andrew) ----------
+   tasks.html is teams.html built for one job (scripts/build-tasks-page.mjs): the same code with
+   window.GP_APP='tasks', its own home-screen icon and manifest. It opens on Tasks or the Calendar
+   (whichever was open last on this phone), with those two in the bottom bar and nothing else; its
+   one call per open is getTasksBoot — the tasks and, on the calendar, the month — not the whole
+   page. Same server, same data: a task ticked here is ticked in the main app. Its kept copy for
+   opening offline is its own (gp-tasks-boot-cache), so it never replaces the main app's. */
+function gpTasksApp_(){ return window.GP_APP==='tasks'; }
+var GP_TA_VIEWS=['tasks','calendar'];
+function gpTaView_(){ var v=lsGet('gp-ta-view'); return GP_TA_VIEWS.indexOf(v)>-1 ? v : 'tasks'; }
+function gpBootFn_(){ return gpTasksApp_() ? 'getTasksBoot' : 'getMyBoot'; }
+function gpTaCalFrom_(){ return (S.view==='calendar' && typeof calGridStart_==='function') ? calGridStart_(calMonthNow_()) : ''; }
+function gpBootArgs_(user, pin){ return gpTasksApp_() ? [user, pin, gpTaCalFrom_()] : [user, pin]; }
+var GP_BOOT_CACHE = gpTasksApp_() ? 'gp-tasks-boot-cache' : 'gp-boot-cache', GP_BOOT_CACHE_MAX = 3000000;
 /* A copy that can't be replaced must not stay behind: a phone that ran out of
    room went on showing an 11-day-old copy as "your page as it was" (Uriah, Oct
    2026). So the old one goes first — that also frees its room for the new one —
@@ -552,7 +565,7 @@ var _gpReboot = false;
 function gpRebootIfOffline_(){
   if(!S.offlineSince || _gpReboot || !gpOnline_() || !S.auth || !S.auth.user) return;
   _gpReboot = true;
-  run('getMyBoot', [S.auth.user, S.auth.pin], function(d){
+  run(gpBootFn_(), gpBootArgs_(S.auth.user, S.auth.pin), function(d){
     _gpReboot = false;
     if(d && d.ok) gpBootFresh_(d);
   }, function(){ _gpReboot = false; });
@@ -686,11 +699,12 @@ function boot(){
   var wantStudent=false, stu=null;
   try { wantStudent = new URLSearchParams(location.search||'').get('student')==='1'; } catch(e){}
   try { stu = JSON.parse(lsGet('gp-student')||'null'); } catch(e){}
+  if(gpTasksApp_()){ wantStudent=false; stu=null; wantGuest=false; wantDash=false; }   // the tasks app is for staff: a student, a guest or a board member signs in to the main app
   if(stu && stu.user && stu.pin && (wantStudent || !(saved && saved.user && saved.pin))){ gpStudentBoot_(stu); return; }
   if(wantStudent){ location.href='portal.html'; return; }
-  if(!(saved && saved.user && saved.pin) && lsGet(BOARD_KEY) && boardResume_()) return;
+  if(!(saved && saved.user && saved.pin) && !gpTasksApp_() && lsGet(BOARD_KEY) && boardResume_()) return;
   /* the old dashboard was public, so its links look around as a guest, on Base */
-  if(!(saved && saved.user && saved.pin) && (wantGuest || wantDash || lsGet(GUEST_KEY))){ gpEnterGuest_(); if(wantDash){ S.view='base'; render(); } return; }
+  if(!(saved && saved.user && saved.pin) && !gpTasksApp_() && (wantGuest || wantDash || lsGet(GUEST_KEY))){ gpEnterGuest_(); if(wantDash){ S.view='base'; render(); } return; }
   if(saved && saved.user && saved.pin){
     /* A remembered session goes straight to getMyBoot: it verifies the PIN and
        returns the staff record, so the separate staffLogin round-trip that used
@@ -701,7 +715,7 @@ function boot(){
     gpViewFromUrl_();
     var kept = gpBootCacheLoad_(saved.user);
     if(kept){ S.bootStale = true; S.me = kept.d.staff; S.profile = kept.d.profile; applyBoot(kept.d, true); }
-    run('getMyBoot', [saved.user, saved.pin], function(d){
+    run(gpBootFn_(), gpBootArgs_(saved.user, saved.pin), function(d){
       if(d && d.ok){ gpBootFresh_(d); return; }
       /* Only forget the session when the server actually says the credentials are
          wrong. Anything else — a 500, a bad gateway, a truncated response — is the
@@ -709,7 +723,7 @@ function boot(){
          hiccuped is the wrong answer. run() already reports a dropped connection;
          this covers a server that answered but not with a page. */
       if(d && d.err === 'auth'){
-        lsDel('gp-staff'); lsDel(GP_BOOT_CACHE);
+        lsDel('gp-staff'); lsDel('gp-boot-cache'); lsDel('gp-tasks-boot-cache');
         S.bootStale = false; _gpHeld = [];   // nothing held goes out under a PIN the server refused
         S.me = null; S.auth = { user:'', pin:'' };
         showMsg(t('Your PIN didn’t work — please log in again.'));
@@ -742,7 +756,7 @@ function saveStaffCard(){
 function afterLogin(){
   lsSet('gp-staff', JSON.stringify(S.auth));
   saveStaffCard();
-  S.view='week';
+  S.view = gpTasksApp_() ? gpTaView_() : 'week';
   gpResumeView_();
   gpViewFromUrl_();
   /* ONE request for everything this page needs. It used to be nine on top of the
@@ -755,7 +769,7 @@ function afterLogin(){
      "the card on My Home still loads small and then gets bigger"). */
   var waited = false, drawn = function(){ if(waited) return; waited = true; clearTimeout(S._bootWait); };
   S._bootWait = setTimeout(function(){ drawn(); render(); }, 3000);
-  run('getMyBoot', [S.auth.user, S.auth.pin], function(d){
+  run(gpBootFn_(), gpBootArgs_(S.auth.user, S.auth.pin), function(d){
     drawn();
     if(!d || !d.ok){ showMsg(t('Couldn’t load your page — pull down to try again.')); render(); return; }
     if(d.staff) S.me = d.staff;
@@ -778,7 +792,9 @@ function applyBoot(d, fromCache){
   S.mentees = d.mentees || [];
   S.mentorRequests = d.mentorRequests || [];
   S.stuMentor = d.stuMentor || null;
-  S.gpTaskInfo = d.gpTaskInfo || null;      // GP Tasks: open, due, and what the bell says        // Leadership Development: students who chose them as mentor
+  S.gpTaskInfo = d.gpTaskInfo || null;
+  if(d.gpTasks && d.gpTasks.ok && S.me && typeof gptTake_==='function'){ S.gptLoading=false; S.gptErr=''; gptTake_(d.gpTasks); }   // the tasks app: its boot brings the tasks
+  if(d.cal && d.cal.ok && typeof calGridStart_==='function' && d.cal.from===calGridStart_(calMonthNow_())){ S.cal=d.cal; S.calLoading=false; }   // … and the calendar's month, when it opened on it      // GP Tasks: open, due, and what the bell says        // Leadership Development: students who chose them as mentor
   S.goals = d.goals || [];
   S.checkins = d.checkins || [];
   if(d.trips) S.trips = d.trips;
@@ -871,7 +887,7 @@ function gpStudentBoot_(stu){
 function gpStudentLeave_(toPortal){ if(!toPortal) lsDel('gp-student'); location.href='portal.html'; }
 function logout(){
   if(S.student){ gpStudentLeave_(false); return; }
-  lsDel('gp-staff'); lsDel(GP_BOOT_CACHE); S.offlineSince=null;
+  lsDel('gp-staff'); lsDel('gp-boot-cache'); lsDel('gp-tasks-boot-cache'); S.offlineSince=null;
   lsDel('gp-lib-read'); lsDel('gp-lib-pending'); lsDel('gp-lib-synced'); lsDel('gp-lib-progress');
   lsDel('gp-staff-card');
   S.me=null; S.auth={user:'',pin:''}; S.logs=[]; S.mentees=[];
@@ -943,6 +959,7 @@ function render(){
     bind();
     return;
   }
+  if(gpTasksApp_()){ gpTaRender_(hb, nav); return; }
   var notifN = (S.guest || S.student) ? 0 : visibleNotifItems_().length;
   if(S.student && STUDENT_VIEWS.indexOf(S.view)===-1) S.view='week';
   if(S.board){ if(BOARD_VIEWS.indexOf(S.view)===-1) S.view='ywamgp'; }
@@ -1043,6 +1060,29 @@ function render(){
   if(S.view!==lastRenderedView){ window.scrollTo(0,0); lastRenderedView=S.view; }
   bind();
   gpEaseResume_();
+}
+
+/* the tasks app (tasks.html): Tasks and the Calendar, a two-tab bar, ☰ with the way to the main app */
+function gpTaRender_(hb, nav){
+  if(GP_TA_VIEWS.indexOf(S.view)===-1) S.view=gpTaView_();
+  lsSet('gp-ta-view', S.view);
+  document.body.classList.add('tasksApp');
+  hb.innerHTML='<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>'+
+    '<button class="hbtn icon" id="menuBtn" aria-label="'+esc(t('Menu'))+'">'+HAMBURGER_SVG+'</button>';
+  var ic=function(k){ return (GPT_SVG[k]||'').replace('<svg', '<svg width="20" height="20"'); };
+  var inbox=gptInboxCount_();
+  nav.classList.remove('hidden');
+  nav.innerHTML=[['tasks','Tasks'],['calendar','Calendar']].map(function(tab){
+    return '<button class="'+(S.view===tab[0]?'on':'')+'" data-tab="'+tab[0]+'"><span class="ic">'+ic(tab[0])+'</span>'+navLabel_(tab[1])+(tab[0]==='tasks' ? gptBadge_(inbox) : '')+'</button>';
+  }).join('');
+  var m=document.getElementById('main');
+  m.classList.remove('wide');
+  if(gglStepWanted_()) m.innerHTML=gglStepHtml_();
+  else m.innerHTML = S.view==='calendar' ? calendarHtml_() : gptPageHtml_(null);
+  if(S.offlineSince) m.insertAdjacentHTML('afterbegin', gpOfflineBannerHtml_());
+  if(S.bootStale) m.insertAdjacentHTML('afterbegin', gpStaleBarHtml_());
+  if(S.view!==lastRenderedView){ window.scrollTo(0,0); lastRenderedView=S.view; }
+  bind();
 }
 
 function greeting(){
@@ -1229,7 +1269,12 @@ function renderMenu(){
   IC.prayer='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-1.2 2.5-1.8 5-1.8 7.5L7 15.5V20h4l1-2.5"/><path d="M12 3c1.2 2.5 1.8 5 1.8 7.5l3.2 5V20h-4L12 17.5"/></svg>';
   IC.p360='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="4" r="1.6"/><circle cx="12" cy="20" r="1.6"/><circle cx="4.5" cy="8" r="1.6"/><circle cx="19.5" cy="8" r="1.6"/><circle cx="4.5" cy="16" r="1.6"/><circle cx="19.5" cy="16" r="1.6"/></svg>';
   IC.kmreview='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h8M8 3v2M5.5 5c.8 3.2 3 5.6 6 7"/><path d="M10.5 5c-.7 3.6-3 6.4-6 8"/><path d="M12.5 21l4-9 4 9M14 18h5"/></svg>';
-  var sections= S.stuPreview ? [
+  IC.openapp=IC.base;
+  IC.applogout=IC.profile;
+  var sections= gpTasksApp_() ? [
+    { title:'', items:[it('tasks', t('Tasks')), it('calendar', t('Calendar'))] },
+    { title:t('YWAM GP'), items:[it('openapp', t('Open the YWAM GP app')), it('applogout', t('Log out'))] }
+  ] : S.stuPreview ? [
     { title:'', items:[it('library', t('Library')), it('stuexit', t('Back to Admin'))] }
   ] : S.student ? [
     { title:'', items:[it('library', t('Library')), it('stuportal', t('My application (portal)')), it('boardlogout', t('Log out'))] }
@@ -1269,7 +1314,9 @@ function renderMenu(){
       else if(id==='library'){ S.view='library'; S.libBook=null; libLoad_(); render(); }
       else if(id==='guestreg' || id==='guestlogin'){ gpLeaveGuest_(id==='guestreg'); }
       else if(id==='ywamgp'){ S.view='ywamgp'; S.person=null; render(); window.scrollTo(0,0); }
-      else if(id==='tasks'){ gptOpenPage_('week'); }
+      else if(id==='tasks'){ if(gpTasksApp_()){ S.view='tasks'; render(); window.scrollTo(0,0); } else gptOpenPage_('week'); }
+      else if(id==='openapp'){ renderMenu(); location.href='teams.html'; }
+      else if(id==='applogout'){ logout(); }
       else if(id==='calendar' || id==='caltasks'){ S.view='calendar'; S.cal=null; S.calFrom=null; render(); window.scrollTo(0,0); }
       else if(id==='prayer'){ S.view='prayer'; S.pr=null; render(); window.scrollTo(0,0); }
       else if(id==='khmer'){ khOpen_(); }

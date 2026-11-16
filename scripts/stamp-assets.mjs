@@ -27,7 +27,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
-const PAGES = ['teams.html'];
+const PAGES = ['teams.html', 'tasks.html'];   // tasks.html: GP Tasks, the app of its own (built from teams.html)
 
 function hashOf(root, rel) {
   const f = path.join(root, rel);

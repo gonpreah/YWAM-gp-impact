@@ -2935,3 +2935,15 @@ details.dtsPhase[open] > summary .dtsPhaseName::before { content:'▾ '; }
 .gglHelpBtns .btn { width:auto; margin:0; }
 .gglJoin { margin:4px 0 10px; padding:10px 12px; border-radius:10px; background:color-mix(in srgb, var(--accent) 10%, transparent); font-size:14px; line-height:1.45; }
 #gglNew .btn { display:block; width:100%; margin:0 0 8px; }
+
+/* GP Tasks, the app of its own (tasks.html): the install card, and the main app's way to it */
+.taInstall { display:flex; flex-direction:column; gap:4px; }
+.taInstallHead { display:flex; gap:12px; align-items:center; }
+.taInstallIc { width:46px; height:46px; border-radius:11px; flex:none; }
+.taInstall .btn { margin-top:8px; }
+.gtGetApp { display:block; margin:18px auto 4px; font-size:13.5px; text-align:center; }
+.gtGetSteps { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:8px; font-size:14.5px; line-height:1.45; }
+.gtGetUrl { margin-top:4px; padding:8px 10px; border-radius:10px; background:var(--bg2, rgba(0,0,0,.05)); font-size:13px; word-break:break-all; user-select:all; }
+.gtGetBtns { display:flex; gap:8px; flex-wrap:wrap; }
+.gtGetBtns .btn { flex:1; min-width:140px; text-align:center; text-decoration:none; margin:0; }
+nav.bottom .gtBadge { margin-left:4px; }

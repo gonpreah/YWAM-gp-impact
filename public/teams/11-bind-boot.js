@@ -1690,7 +1690,7 @@ function bind(){
       }
     });
   };
-  var toReg=document.getElementById('toReg'); if(toReg) toReg.onclick=function(){ S.regMode=true; if(!S.roster.length){ run('teamRoster',[],function(r){S.roster=Array.isArray(r)?r:[];render();}); } else render(); };
+  var toReg=document.getElementById('toReg'); if(toReg) toReg.onclick=function(){ if(gpTasksApp_()){ location.href='teams.html?reg=1'; return; } S.regMode=true; if(!S.roster.length){ run('teamRoster',[],function(r){S.roster=Array.isArray(r)?r:[];render();}); } else render(); };
   var toLogin=document.getElementById('toLogin'); if(toLogin) toLogin.onclick=function(){ S.regMode=false; S.regGoogle=null; S.gglNew=null; render(); };
 
   // register
@@ -1997,6 +1997,7 @@ function refreshAll(){
   if(S.board){ S.orgLoading=false; orgLoad_(); return gpGuestLoadBase_(); }
   if(S.guest) return gpGuestLoadBase_();
   var u=S.auth.user, k=S.auth.pin;
+  if(gpTasksApp_()) return runP('getTasksBoot',[u,k,gpTaCalFrom_()]).then(function(d){ if(d && d.ok){ S.me=d.staff; S.profile=d.profile||{}; applyBoot(d); } });   // the tasks app: its own boot again
   if(S.student) return runP('getMyBoot',[u,k]).then(function(d){ if(d && d.ok && d.student){ S.me=d.staff; S.profile=d.profile||{}; applyBoot(d); } });
   return Promise.all([
     runP('teamRoster',[S.auth.user,S.auth.pin]).then(function(r){ if(Array.isArray(r)) S.roster=r; }),
@@ -2025,6 +2026,7 @@ function refreshAll(){
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
 var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
+if(gpTasksApp_()) GP_VER_FILES=['tasks.html'].concat(GP_VER_FILES.slice(1), ['teams/12-tasks.js','teams/13-calendar.js']);   // the tasks app's page is tasks.html
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){
   return Promise.all(GP_VER_FILES.map(function(f){
@@ -2155,6 +2157,5 @@ gpInstallPrompt();
     window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
   } catch(e){}
 })();
-gglRedirectTake_();   // back from Google's page: take the token out of the address before anything else reads it
-boot();
-gglRedirectFinish_();
+/* back from Google's page: take the token out of the address before anything else reads it (or, for the tasks app, go on to it) */
+if(gglRedirectTake_()!=='away'){ boot(); gglRedirectFinish_(); }

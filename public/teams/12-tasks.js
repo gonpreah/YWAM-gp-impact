@@ -37,6 +37,7 @@ function gptIc_(k, cls){ return '<span class="gtIc'+(cls?' '+cls:'')+'" aria-hid
 /* GP Calendar/Tasks is one place (Uriah, Oct 2026): the calendar opens first, with a Tasks tab on top */
 var CAL_PALETTE=['blue','green','amber','pink','purple','teal','red','orange','indigo','brown','grey','lime','lavender','sky','mint','rose'];
 function ctSegHtml_(on){
+  if(gpTasksApp_()) return '';   // the tasks app has Tasks and Calendar in its bottom bar
   return '<div class="ctSeg" role="tablist"><button class="ctTab'+(on==='calendar'?' on':'')+'" data-cttab="calendar" role="tab">'+gptIc_('calendar')+' '+esc(t('Calendar'))+'</button>'+
     '<button class="ctTab'+(on==='tasks'?' on':'')+'" data-cttab="tasks" role="tab">'+gptIc_('tasks')+' '+esc(t('Tasks'))+gptBadge_(S.gpTaskInfo ? S.gpTaskInfo.inbox : 0)+'</button></div>';
 }
@@ -154,9 +155,10 @@ function gptPageHtml_(scope, embedded){
   var h='';
   S.gptScope=scope||null;
   /* the ministry's page (Uriah, Oct 2026: "like the personal GP Tasks, just that ministry's tasks") is the same page, with its list */
-  if(!embedded) h+='<button class="linkbtn" id="gptBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(S.gptFrom==='ministry' ? t('My Ministry') : t('My Home'))+'</button>'+
+  h+=gpTaInstallHtml_();   // the tasks app, opened in a browser: put it on the Home Screen
+  if(!embedded && !gpTasksApp_()) h+='<button class="linkbtn" id="gptBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(S.gptFrom==='ministry' ? t('My Ministry') : t('My Home'))+'</button>'+
     (scope ? '<h2 class="gtTitle">'+gptIc_('tasks')+' '+esc(t('GP Tasks'))+' · '+esc(t(scope.min||scope.dept))+'</h2>' : ctSegHtml_('tasks'));
-  if(!S.gpt){ if(!S.gptLoading && !S.gptErr) setTimeout(gptLoad_, 0); return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.gptErr ? t('Couldn’t load the tasks — pull down to try again.') : t('Loading…'))+'</p></div>'; }
+  if(!S.gpt){ if(!S.gptLoading && !S.gptErr && !(gpTasksApp_() && S.bootStale)) setTimeout(gptLoad_, 0); /* the tasks app: the boot on its way brings the tasks */ return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.gptErr ? t('Couldn’t load the tasks — pull down to try again.') : t('Loading…'))+'</p></div>'; }
   var G=S.gpt, lists=gptLists_(scope);
   var ids=lists.map(function(L){ return L.id; });
   if(ids.indexOf(S.gptList)===-1) S.gptList=ids[0] || null;
@@ -175,6 +177,7 @@ function gptPageHtml_(scope, embedded){
   if(S.gptNewList) h+=gptNewListHtml_();
   if(S.gtArrange && !scope) h+=gtArrangeHtml_();
   if(S.gptAsk) h+=gptAskHtml_();
+  if(S.gtGetApp) h+=gtGetAppHtml_();
   if(S.gptFilterOpen && G.canAll && !scope) h+=gptFilterHtml_();
   if(!S.gptList){
     h+='<div class="gtEmpty"><div class="gtEmptyIc">'+GPT_SVG.tasks+'</div><p>'+esc(scope ? gpT('{ministry} has no task list yet — make one, and everyone in it shares it.',{ministry:t(scope.min||scope.dept)}) : t('No lists yet.'))+'</p>'+
@@ -183,6 +186,7 @@ function gptPageHtml_(scope, embedded){
   }
   var L=gptListById_(S.gptList);
   h+=gtListHtml_(L);
+  if(!embedded) h+=gtGetAppLinkHtml_();   // the main app: GP Tasks as an app of its own
   /* add: the round ＋ on the page; inside My Ministry, a plain row */
   var canAdd=L.canEdit || L.scope!=='personal';
   if(canAdd && !S.gtMenu) h+='<button class="gtFab" id="gtAdd" aria-label="'+esc(L && !L.canEdit ? gpT('Ask {name} for help',{name:t(L.ministry||L.dept)}) : t('Add a task'))+'">'+GPT_SVG.plus+'</button>';
@@ -490,6 +494,11 @@ function bindGpTasks_(){
   if(!document.querySelector('.gtBar, #gptBack, [data-gptmakefor], [data-cttab]')){ return; }
   var on=function(id, fn){ var el=document.getElementById(id); if(el) el.onclick=fn; return el; };
   var scope=S.gptScope;
+  on('gtGetApp', function(){ gpTap(); S.gtGetApp=true; render(); });
+  on('gtGetAppScrim', function(){ S.gtGetApp=false; render(); });
+  on('gtGetAppCopy', function(){ var u=gtAppUrl_(); try { if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(u).then(function(){ showMsg(t('Link copied — paste it into your browser')); }, function(){ prompt(t('Copy this link'), u); }); return; } } catch(e){} try { prompt(t('Copy this link'), u); } catch(e){} });
+  on('taInstallHide', function(){ gpTap(); lsSet('gp-ta-install-hide', '1'); render(); });
+  on('taInstallBtn', function(){ var p=_gpTaPrompt; if(!p) return; _gpTaPrompt=null; try { p.prompt(); (p.userChoice||Promise.resolve()).then(function(){ render(); }); } catch(e){ render(); } });
   on('gptBack', function(){ gpTap(); S.view=S.gptFrom==='ministry' ? 'ministry' : 'week'; render(); window.scrollTo(0,0); });
   document.querySelectorAll('[data-gptlist]').forEach(function(b){ b.onclick=function(){ if(Date.now()-S.gtDragEnd<400) return; gpTap(); gptGoList_(b.getAttribute('data-gptlist'), ''); }; });
   /* the open tab stays in view — the row used to scroll back to the start on every render, so the
@@ -760,3 +769,35 @@ function bindPeoplePick_(){
   document.querySelectorAll('[data-ppickrm]').forEach(function(b){ b.onclick=function(){ var p=ppickSplit_(b.getAttribute('data-ppickrm')), o=PPICK[p[0]]; if(o && o.onRemove){ gpTap(); o.onRemove(p[1]); } }; });
 }
 function bindPpickItems_(){ document.querySelectorAll('[data-ppickit]').forEach(function(b){ b.onclick=function(){ var p=ppickSplit_(b.getAttribute('data-ppickit')), o=PPICK[p[0]]; if(!o) return; gpTap(); if(S.ppick[p[0]]) S.ppick[p[0]].q=''; o.onPick(p[1]); }; }); }
+
+/* ---- GP Tasks on the Home Screen, as an app of its own (tasks.html, Nov 2026, Andrew) ----
+   In the tasks app opened in a browser, a card at the top says how to put it on the Home Screen (the
+   browser's own install prompt where there is one — Android, a computer — else Safari's Share → Add to
+   Home Screen); "Not now" hides it on this phone. In the main app, a quiet line under the list opens a
+   sheet with the link and the steps. Same account, same tasks: nothing to set up but the icon. */
+var _gpTaPrompt=null;
+window.addEventListener('beforeinstallprompt', function(e){ if(!gpTasksApp_()) return; e.preventDefault(); _gpTaPrompt=e; if(S.me && S.view==='tasks') render(); });
+function gpStandalone_(){ try { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true; } catch(e){ return false; } }
+function gpIos_(){ var u=navigator.userAgent||''; return /iPhone|iPad|iPod/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints>1); }
+function gtAppUrl_(){ try { return location.origin+location.pathname.replace(/[^\/]*$/, '')+'tasks.html'; } catch(e){ return 'https://impact.gonpreah.org/tasks.html'; } }
+function gpTaInstallHtml_(){
+  if(!gpTasksApp_() || gpStandalone_() || lsGet('gp-ta-install-hide')) return '';
+  return '<div class="card taInstall" id="taInstall"><div class="taInstallHead"><img src="tasks-180.png" alt="" class="taInstallIc"><div><b>'+esc(t('Put GP Tasks on your Home Screen'))+'</b>'+
+      '<p class="hint" style="margin:2px 0 0">'+esc(t('It opens straight to your tasks and the calendar, like an app.'))+'</p></div></div>'+
+    (_gpTaPrompt ? '<button class="btn" id="taInstallBtn">'+esc(t('Add to Home Screen'))+'</button>'
+      : '<p class="hint" id="taInstallHow" style="margin:8px 0 0">'+esc(gpIos_() ? t('In Safari, tap the Share button, then “Add to Home Screen”.') : t('In your browser’s menu (⋮), tap “Install app” or “Add to Home screen”.'))+'</p>')+
+    '<button class="linkbtn" id="taInstallHide">'+esc(t('Not now'))+'</button></div>';
+}
+function gtGetAppLinkHtml_(){
+  if(gpTasksApp_() || S.gptScope || S.student) return '';
+  return '<button class="linkbtn gtGetApp" id="gtGetApp">📲 '+esc(t('GP Tasks on your Home Screen, as an app of its own'))+'</button>';
+}
+function gtGetAppHtml_(){
+  var url=gtAppUrl_(), ios=gpIos_();
+  return '<div class="scrim" id="gtGetAppScrim"></div><div class="gtSheet" id="gtGetAppSheet" role="dialog"><div class="gtSheetHead"><b>📲 '+esc(t('GP Tasks, an app of its own'))+'</b></div>'+
+    '<p class="hint" style="margin:0">'+esc(t('Your tasks and the calendar, one tap from your Home Screen. They are the same tasks as here: whatever you add or tick in one shows in the other.'))+'</p>'+
+    '<ol class="gtGetSteps"><li>'+esc(ios ? t('Open this link in Safari:') : t('Open this link in Chrome:'))+'<div class="gtGetUrl" id="gtGetAppUrl">'+esc(url)+'</div></li>'+
+      '<li>'+esc(ios ? t('Tap the Share button, then “Add to Home Screen”.') : t('In the menu (⋮), tap “Install app” or “Add to Home screen”.'))+'</li>'+
+      '<li>'+esc(t('Open GP Tasks and sign in with Google, as you do here.'))+'</li></ol>'+
+    '<div class="gtGetBtns"><button class="btn" id="gtGetAppCopy">'+esc(t('Copy the link'))+'</button><a class="btn ghost" id="gtGetAppOpen" href="'+esc(url)+'" target="_blank" rel="noopener">'+esc(t('Open GP Tasks'))+'</a></div></div>';
+}

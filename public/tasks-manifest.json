@@ -1,0 +1,16 @@
+{
+  "id": "./tasks.html",
+  "name": "GP Tasks — YWAM GP",
+  "short_name": "GP Tasks",
+  "description": "Your tasks and the campus calendar, with your YWAM GP account. The same tasks as the main YWAM GP app.",
+  "display": "standalone",
+  "background_color": "#17150F",
+  "theme_color": "#17150F",
+  "start_url": "./tasks.html",
+  "scope": "./",
+  "icons": [
+    { "src": "tasks-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "tasks-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "tasks-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

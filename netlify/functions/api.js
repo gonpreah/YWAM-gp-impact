@@ -5441,6 +5441,40 @@ async function saveKmReview(username, pin, key, verdict, km) {
 
    It deliberately does NOT fail as a unit: each section is caught on its own, so
    a problem reading trips cannot stop the page from having the base's figures. */
+/* the boot's own staff card — what the page knows about the person signed in (both apps' boots) */
+function bootStaffCard_(s) {
+  return selfStaff_(s, { isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), signIn: authKindOf_(s), google: !!s.google, hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '', langLevel: langMine_(s), seeLangLevels: canSeeLangLevels_(s) });   // created: for My Home's first 30 days
+}
+/* GP Tasks as an app of its own (tasks.html, Nov 2026, Andrew: "a separate app for our tasks and calendar …
+   synced and linked to the main app"). It is the same data, so there is nothing to sync: this is the tasks
+   app's one call per open — who you are, the roster (names and the people picker), the tasks themselves,
+   and, when it opens on the calendar, that month — instead of getMyBoot's whole page. calFrom: the first
+   day of the calendar grid, or '' to leave the calendar until it is opened. */
+async function getTasksBoot(username, pin, calFrom) {
+  prefetch_(['staff', 'loginThrottle', 'gpTasks', 'kmReview']);
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false, err: 'auth' };
+  const part = async function (fn) { try { return await fn(); } catch (e) { return null; } };
+  const [staffRows, gpTasks, cal, info, kmFixes] = await Promise.all([
+    part(function () { return getStaff_(); }),
+    part(function () { return getGpTasks(username, pin); }),
+    part(function () { return isDate_(calFrom) ? getCalendar(username, pin, calFrom, 42) : null; }),
+    part(function () { return gpTaskInfo_(s); }),
+    part(async function () { return kmFixesOf_(await getKmReview_()); })
+  ]);
+  return {
+    ok: true, app: 'tasks',
+    googleId: googleClientId_(), googleRedirect: googleRedirect_(),
+    staff: bootStaffCard_(s),
+    profile: { email: s.email || '', sex: cleanSex_(s.sex) },
+    roster: (staffRows || []).filter(function (r) { return r.active && !isApplicant_(r); }).map(rosterStaff_),
+    gpTaskInfo: info || null,
+    gpTasks: gpTasks && gpTasks.ok ? gpTasks : null,
+    cal: cal && cal.ok ? Object.assign({ from: calFrom }, cal) : null,
+    kmFixes: kmFixes
+  };
+}
+
 const BOOT_KEYS = ['entries', 'survey', 'okrs', 'dailyLogs', 'goals', 'holidays', 'smartGoals', 'broadcasts',
   'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys'];
 async function getMyBoot(username, pin) {
@@ -5483,7 +5517,7 @@ async function getMyBoot(username, pin) {
   return {
     ok: true,
     googleId: googleClientId_(), googleRedirect: googleRedirect_(),   // Continue with Google / the move off PINs (07-health-leave.js)
-    staff: selfStaff_(s, { isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), signIn: authKindOf_(s), google: !!s.google, hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '', langLevel: langMine_(s), seeLangLevels: canSeeLangLevels_(s) }),   // created: for My Home's first 30 days
+    staff: bootStaffCard_(s),
     profile: {
       phone: s.phone, joined: s.joined, debt: s.debt, mentorStatus: s.mentorStatus || '',
       dashboardColor: s.dashboardColor || '', dashboardBg: s.dashboardBg || '', email: s.email || '',
@@ -12600,6 +12634,7 @@ async function adminDeleteBoardMember(username, pin, id) {
 
 const HANDLERS = {
   getMyBoot: function (a) { return getMyBoot(a[0], a[1]); },
+  getTasksBoot: function (a) { return getTasksBoot(a[0], a[1], a[2]); },
   libAudioIndex: function () { return libAudioIndex(); },
   cafePos: function (a) { return cafePos(a[0], a[1], a[2], a[3]); },
   saveLeadTuesday: function (a) { return saveLeadTuesday(a[0], a[1], a[2]); },

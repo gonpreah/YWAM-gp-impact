@@ -3232,6 +3232,39 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   goals) is separate and unchanged.
 - tests/test-gp-tasks.mjs (server: the rules), tests/test-gp-tasks-ui.mjs.
 
+## GP Tasks — an app of its own (tasks.html, Nov 2026, Andrew)
+"A separate app for our tasks and calendar … like a separate download for it but it's synced and linked to
+the main app." An installable web app, like the portal — not an App Store app.
+- **`public/tasks.html` is built, never edited**: `node scripts/build-tasks-page.mjs` writes it from
+  teams.html with its title / home-screen name (GP Tasks), its icons (`tasks-180.png`, `tasks-512.png`,
+  `tasks-maskable-512.png`), its manifest (`tasks-manifest.json`, id and start_url tasks.html) and
+  `<script>window.GP_APP='tasks';</script>` in the head. **After changing teams.html, run it again** —
+  tests/test-tasks-app.mjs fails while tasks.html is out of date. The same scripts and styles load, so the two
+  can't drift; stamp-assets.mjs stamps both pages, sw.js keeps tasks.html (SHELL v21).
+- **The same code in a mode** (`gpTasksApp_()`, 01-core.js): render goes to `gpTaRender_` — Tasks or the
+  Calendar (`GP_TA_VIEWS`, the last one kept as `gp-ta-view`), a two-tab bar (Tasks with the Inbox's red number),
+  ☰ = Tasks · Calendar · Open the YWAM GP app · Log out, no bell; `ctSegHtml_` and the "← My Home" links are left
+  out. No student, guest or board mode there; Create my profile goes to teams.html?reg=1; the sign-in screen
+  says what it is (`loginHeadHtml_`, `#taLoginHead`).
+- **One call per open**: `getTasksBoot(user, pin, calFrom)` (api.js, `bootStaffCard_` shared with getMyBoot) —
+  the staff card, the roster, `gpTasks` (getGpTasks' answer), `gpTaskInfo`, kmFixes, and `cal` (that month,
+  `from` = its first grid day) only when it opens on the Calendar (`gpBootFn_` / `gpBootArgs_` / `gpTaCalFrom_`;
+  `applyBoot` takes both). While the kept copy is up neither page fetches on its own. Its kept copy is
+  `gp-tasks-boot-cache` (`GP_BOOT_CACHE`), never the main app's; logging out or a refused PIN drops both.
+  Pull to refresh boots it again; GP_VER_FILES checks tasks.html.
+- **Same data, nothing to sync**: the same server and stores — a task ticked in one is ticked in the other.
+  On Android the sign-in is shared with the main app (same site); an iPhone Home Screen app keeps its own, so
+  people sign in once there (Google, one tap).
+- **Getting it**: in the tasks app opened in a browser, a card at the top (`gpTaInstallHtml_`, `#taInstall`):
+  the browser's install prompt (`beforeinstallprompt`, `#taInstallBtn`) or Safari's Share → Add to Home Screen;
+  Not now (`gp-ta-install-hide`). In the main app, a quiet line under the GP Tasks list (`#gtGetApp`) opens a sheet
+  with the link to tasks.html and the steps (`gtGetAppHtml_`, Copy / Open GP Tasks).
+- **Google's page and back** only returns to teams.html (the one address in Google Cloud): `gp-ggl-redirect`
+  carries `app:'tasks'` and teams.html sends the token on to tasks.html before it boots (`gglRedirectTake_` →
+  'away'). Copy the link / Open in Chrome in the help box give tasks.html there (`gglPageUrl_`).
+- tests/test-tasks-app.mjs (server and files), tests/test-tasks-app-ui.mjs (both apps, real api.js).
+  Khmer: docs/khmer-needed.md §103.
+
 ## Learn Khmer — the KBC vocabulary book as flashcards (Oct 2026, Andrew)
 - **☰ → Language → Learn Khmer / English** (`khOpen_`, view `khmer`, `teams/15-khmer.js`,
   `bindKhmer_`; the Language group is just this — Khmer review moved under Admin). The words are

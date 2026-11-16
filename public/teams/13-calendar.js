@@ -152,9 +152,9 @@ function calGridHtml_(ym, events, sel){
   return h+'</div>';
 }
 function calendarHtml_(){
-  var h='<button class="linkbtn" id="calBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('My Home'))+'</button>'+ctSegHtml_('calendar');
+  var h=(gpTasksApp_() ? '' : '<button class="linkbtn" id="calBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('My Home'))+'</button>')+ctSegHtml_('calendar');
   var C=S.cal, ym=calMonthNow_(), today=todayStr();
-  if(!C){ if(!S.calLoading) setTimeout(calLoad_, 0); return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>'; }
+  if(!C){ if(!S.calLoading && !(gpTasksApp_() && S.bootStale)) setTimeout(calLoad_, 0); /* the tasks app: the boot on its way brings the month */ return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>'; }
   if(!C.ok) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Couldn’t load the calendar — pull down to try again.'))+'</p></div>';
   if(!S.gpt && !S.gptLoading && !S.gptErr && !S.student) setTimeout(gptLoad_, 0);   // the tasks come along once loaded
   var from=calGridStart_(ym), to=calAddDays_(from, 41), all=calAllEvents_(C, from, to), ev=all.filter(calShown_);

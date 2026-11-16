@@ -442,7 +442,7 @@ body { background:var(--bg); color:var(--ink); font-family:'Kantumruy Pro',syste
          this same page. What can help instead: forget the kept copy of the last boot
          and the offline files, then load fresh. The sign-in stays. */
       if(d) d.onclick = function(){
-        try { localStorage.removeItem('gp-boot-cache'); } catch(e){}
+        try { localStorage.removeItem('gp-boot-cache'); localStorage.removeItem('gp-tasks-boot-cache'); } catch(e){}
         try {
           caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); })
             .then(function(){ location.reload(); }, function(){ location.reload(); });
