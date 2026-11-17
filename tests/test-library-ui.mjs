@@ -92,7 +92,7 @@ const openLib = async page => { await page.click('#menuBtn'); await page.waitFor
   ok('Library is in the ☰ menu (Profile took its place in the bottom bar)', !(await page.$('nav.bottom [data-tab="library"]')) && !!(await page.$('nav.bottom [data-tab="profile"]')));
   await page.click('#menuBtn'); await page.waitForTimeout(250); await page.click('[data-menu-item="library"]'); await page.waitForTimeout(900);
   const rows = await page.$$eval('.libSecHead', hs => hs.map(h => h.innerText.replace(/\s+/g, ' ')));
-  const SHOWN = C.L.shelves.filter(x => x.id === 'gp').concat(C.L.shelves.filter(x => x.id !== 'gp'));
+  const SHOWN = ['gp', 'family'].map(id => C.L.shelves.find(x => x.id === id)).concat(C.L.shelves.filter(x => x.id !== 'gp' && x.id !== 'family'));
   ok('the home is rows: Start here, the GP guides, then one per shelf, each with See all', rows.length === 1 + SHOWN.length && /Start here/.test(rows[0]) && /Made at YWAM GP/.test(rows[1]) && rows.slice(1).every((r, i) => r.includes(SHOWN[i].name) && /See all/.test(r)), rows.join(' | '));
   const ids = new Set(await page.$$eval('.libTile', ts => ts.map(t => t.getAttribute('data-libbook'))));
   ok('every book is on its shelf’s row', ids.size === BOOKS.length && BOOKS.every(b => ids.has(b.id)), ids.size + ' of ' + BOOKS.length);

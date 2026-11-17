@@ -337,6 +337,7 @@ function personHtml(){
   h+=reqPersonCardHtml_(d);
   h+=personTypeCardHtml(d);
   h+=personGSCardHtml(d);
+  if(d && d.apest && d.apest.length && typeof apestName_==='function') h+='<h3>🔥 '+esc(t('Fivefold gifts (APEST)'))+'</h3><div class="card" id="apPerson">'+d.apest.map(apestName_).map(esc).join(' · ')+'</div>';
 
   var withGoals=(d.goals||[]).filter(function(g){ return g.items.some(function(i){return i.text;}); });
   h+='<h3>🗒️ '+esc(t('Weekly goals'))+'</h3>';

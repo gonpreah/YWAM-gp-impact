@@ -3031,3 +3031,35 @@ details.dtsPick input.gpSelBox { margin:6px 0 4px; }
 .ooHow ol { margin:8px 0 0; padding-left:20px; }
 .ooHow li { margin:4px 0; }
 .ooRel .btn.small { width:auto; margin:0; padding:8px 12px; }
+
+/* ---- Tests (teams/17-tests.js, Nov 2026) ---- */
+.testRow { display:flex; align-items:center; gap:12px; width:100%; text-align:left; margin-bottom:8px; }
+.testIcon { flex:0 0 auto; width:40px; height:40px; border-radius:12px; background:var(--accentSoft); display:flex; align-items:center; justify-content:center; font-size:20px; }
+.testTitle { display:block; font-size:15px; font-weight:800; color:var(--ink); }
+.testSub { display:block; font-size:12.5px; color:var(--muted); margin-top:2px; }
+.testDone { flex:0 0 auto; color:var(--good); font-weight:800; }
+.testProg { height:6px; border-radius:999px; background:var(--line); overflow:hidden; margin:8px 0 2px; }
+.testProg span { display:block; height:100%; background:var(--accent); }
+.testQ { margin-bottom:8px; }
+.testQ.done { border-color:var(--good); }
+.testQText { font-weight:700; margin-bottom:8px; }
+.testScale { display:flex; flex-wrap:wrap; gap:6px; }
+.testOpt { flex:1 1 80px; padding:8px 6px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); font-size:12.5px; font-weight:600; }
+.testOpt.on { background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
+.apBar { margin:8px 0; }
+.apBar.top .apBarHead { font-weight:800; }
+.apBarHead { display:flex; justify-content:space-between; gap:8px; font-size:14px; margin-bottom:4px; }
+.apTrack { height:10px; border-radius:999px; background:var(--line); overflow:hidden; }
+.apTrack span { display:block; height:100%; border-radius:999px; background:var(--accent); }
+.apBar:not(.top) .apTrack span { opacity:.45; }
+.mcTiles { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; margin-bottom:10px; }
+.mcTile { border-radius:12px; padding:10px; text-align:center; border:1.5px solid var(--line); background:var(--surface); }
+.mcTile b { display:block; font-size:22px; color:var(--ink); }
+.mcTile span { font-size:12px; color:var(--muted); }
+.mcTile.ok { border-color:var(--good); }
+.mcTile.talk { border-color:var(--accent); }
+.mcArea summary { cursor:pointer; list-style:none; }
+.mcItem { padding:8px 0; border-top:1px solid var(--line); font-size:13.5px; }
+.mcItem.talk { border-left:3px solid var(--accent); padding-left:8px; }
+.mcItem.strength { border-left:3px solid var(--good); padding-left:8px; }
+.mcTalk { margin-top:8px; padding:8px 10px; border-radius:10px; background:var(--accentSoft); font-size:13.5px; color:var(--ink); }

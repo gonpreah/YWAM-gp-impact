@@ -722,7 +722,8 @@ function gpViewFromUrl_(){
     if(v==='mycontract'){ S.view='mycontract'; S.myc=null; }
     else if(v==='base' || v==='dashboard') S.view='base';
     else if(v==='tasks'){ S.view='tasks'; S.gptFrom='week'; }   // a phone notification about a task opens GP Tasks
-    else if(v==='mentor'){ S.view='mentor'; S.mentee=null; }   // a phone notification about a 1-on-1 opens Mentorship
+    else if(v==='mentor'){ S.view='mentor'; S.mentee=null; }
+    else if(v==='tests'){ S.view='tests'; S.tests.sub='home'; S.tests.mc=null; }   // a phone notification about a couple check-up   // a phone notification about a 1-on-1 opens Mentorship
     else if(v==='approvals'){ S.view='admin'; S.adminSub='approvals'; S.adminStaff=null; }   // a phone notification about a new account
     else if(v==='gpdts'){ S.view='ministry'; S.mmBrowseDept='Leadership Development'; S.mmBrowseMinistry='GPDTS'; S.mmTab='dtsdash'; S.mmTabTouched=true; }   // the portal's way back to GPDTS
     else if(v==='hr' && qv.get('hr')){ S.view='hr'; S.hrTab='staff'; S.hrSub='person'; S.hrPersonId=qv.get('hr'); S.hrStaff=null; }
@@ -1068,6 +1069,7 @@ function render(){
   else if(S.view==='prayer') m.innerHTML=prayerHtml_();
   else if(S.view==='khmer') m.innerHTML=khmerHtml_();
   else if(S.view==='p360') m.innerHTML=p360Html_();
+  else if(S.view==='tests') m.innerHTML=testsHtml_();
   else if(S.view==='week') m.innerHTML=S.student ? studentHomeHtml_() : homeHtml();
   else if(S.view==='health') m.innerHTML=healthHtml();
   else if(S.view==='tasks') m.innerHTML=gptPageHtml_(S.gptPageScope||null);
@@ -1320,6 +1322,7 @@ function renderMenu(){
   IC.prayer='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-1.2 2.5-1.8 5-1.8 7.5L7 15.5V20h4l1-2.5"/><path d="M12 3c1.2 2.5 1.8 5 1.8 7.5l3.2 5V20h-4L12 17.5"/></svg>';
   IC.p360='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="4" r="1.6"/><circle cx="12" cy="20" r="1.6"/><circle cx="4.5" cy="8" r="1.6"/><circle cx="19.5" cy="8" r="1.6"/><circle cx="4.5" cy="16" r="1.6"/><circle cx="19.5" cy="16" r="1.6"/></svg>';
   IC.kmreview='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h8M8 3v2M5.5 5c.8 3.2 3 5.6 6 7"/><path d="M10.5 5c-.7 3.6-3 6.4-6 8"/><path d="M12.5 21l4-9 4 9M14 18h5"/></svg>';
+  IC.tests='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 3v6L4.5 18.5A1.6 1.6 0 0 0 5.9 21h12.2a1.6 1.6 0 0 0 1.4-2.5L14 9V3"/><path d="M7 15h10"/></svg>';
   IC.openapp=IC.base;
   IC.applogout=IC.profile;
   var sections= gpTasksApp_() ? [
@@ -1334,7 +1337,7 @@ function renderMenu(){
   ] : S.guest ? [
     { title:'', items:[it('library', t('Library')), it('guestreg', t('Create my profile')), it('guestlogin', t('Log in'))] }
   ] : [
-    { title:'', items:[it('base', t('Base')), it('caltasks', t('GP Calendar/Tasks')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer')), it('p360', t('360 reviews')), it('leave', t('Leave Request')), it('library', t('Library'))] },
+    { title:'', items:[it('base', t('Base')), it('caltasks', t('GP Calendar/Tasks')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer')), it('p360', t('360 reviews')), it('tests', t('Tests')), it('leave', t('Leave Request')), it('library', t('Library'))] },
     { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : [], canStudentsClient_() ? [it('students', t('Students'))] : []) },
     { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal'))] : [] },
     { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : [], kmrCan_() ? [it('kmreview', t('Khmer review'))] : []) },
@@ -1372,6 +1375,7 @@ function renderMenu(){
       else if(id==='prayer'){ S.view='prayer'; S.pr=null; render(); window.scrollTo(0,0); }
       else if(id==='khmer'){ khOpen_(); }
       else if(id==='p360'){ S.view='p360'; S.p3Sub='home'; S.p3=null; render(); window.scrollTo(0,0); }
+      else if(id==='tests'){ S.tests.mc=null; testsOpen_('home'); }
       else if(id==='kmreview'){ S.view='kmreview'; S.kmr=null; S.kmrErr=''; render(); window.scrollTo(0,0); }
       else if(id==='boardlogout'){ if(S.student) gpStudentLeave_(false); else boardLeave_(false); }
       else if(id==='stuportal'){ gpStudentLeave_(true); }

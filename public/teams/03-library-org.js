@@ -73,6 +73,7 @@ function aboutMeHtml_(){
       ? homeTile_('gsSeeMine', '💪', t('Strengths'), '<span class="sChips homeTileChips">'+g.top.map(function(id,i){ return gsChipHtml(id,i+1); }).join('')+'</span>')
       : homeTile_('gsStart', '💪', t('Strengths'), esc(t('Find your top 5 strengths')));
   }
+  if(!S.student) tiles += homeTile_('testsTile', '🧪', t('Tests'), esc(t('Gifts, language, couple check-up')));
   var ss=S.supSum;
   if(!S.student) tiles += homeTile_('supTile', '💰', t('Support raising'), esc(ss && ss.goal ? gpT('${n} of ${goal} a month',{n:fmt(ss.pledged), goal:fmt(ss.goal)}) : t('Your partners and monthly goal')));
   if(!S.student) tiles += p3TileHtml_();
@@ -509,7 +510,8 @@ function libAuthor_(b){
   return (k && k.author) || b.author;
 }
 /* Shelves in the order the home shows them: the guides made at YWAM GP first. */
-function libShelvesShown_(){ return GP_LIBRARY.shelves.filter(function(x){ return x.id==='gp'; }).concat(GP_LIBRARY.shelves.filter(function(x){ return x.id!=='gp'; })); }
+/* Made at YWAM GP first, then Marriage & family (Nov 2026, Uriah: pre-marriage and marriage training starts), then the rest. */
+function libShelvesShown_(){ var first=['gp','family']; return first.map(function(id){ return GP_LIBRARY.shelves.filter(function(x){ return x.id===id; })[0]; }).filter(Boolean).concat(GP_LIBRARY.shelves.filter(function(x){ return first.indexOf(x.id)===-1; })); }
 /* In Khmer, the Khmer library is fetched the first time it's needed; until it
    arrives everything shows in English, and a failed fetch says so. */
 function libKmEnsure_(){
