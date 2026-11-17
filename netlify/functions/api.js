@@ -11401,13 +11401,15 @@ async function touchLastSeen_(s) {
 }
 /* Admin → App use: who uses the app, and how often — one campus, the active staff, each with the days in the
    last 30 they used it, the last 7, and the last day. A day of use is a day they opened the app (markSeen's
-   history, from `daysFrom`) or a day they ticked a habit (the time the Habit Tracker saved it, on Cambodia's
-   clock — which goes back further). Only dates, never what they did; admins only. */
+   history, from `daysFrom`) or a day they saved something — a habit, their weekly goals, a ministry's numbers,
+   a GP Task (by when it was saved, on Cambodia's clock — which goes back further). Only dates, never what
+   they did; admins only. */
 async function adminAppUse(username, pin, campus) {
   const s = await adminGate_(username, pin);
   if (!s) return { ok: false, err: 'not_authorized' };
   campus = CAMPUS_IDS_.indexOf(campus) > -1 ? campus : s.campus;
-  const [staff, rec, daily, ut] = await Promise.all([getStaff_(), readJSON('lastSeen', {}), getDaily_(), readJSON('useTime', {})]);
+  const [staff, rec, daily, ut, goals, entries, kpiDaily, gpt] = await Promise.all([getStaff_(), readJSON('lastSeen', {}), getDaily_(), readJSON('useTime', {}),
+    getGoals_(), readJSON('entries', []), readJSON('kpiDaily', []), readJSON('gpTasks', null)]);
   const times = (ut.time && typeof ut.time === 'object' && !Array.isArray(ut.time)) ? ut.time : {};
   const today = baseToday_(), from30 = icsDay_(today, -29), from7 = icsDay_(today, -6);
   const days = (rec.days && typeof rec.days === 'object' && !Array.isArray(rec.days)) ? rec.days : {};
@@ -11416,11 +11418,21 @@ async function adminAppUse(username, pin, campus) {
   const add = function (id, d) { if (!id || !isDate_(d) || d > today) return; (used[id] = used[id] || {})[d] = 1; };
   Object.keys(days).forEach(function (id) { (Array.isArray(days[id]) ? days[id] : []).forEach(function (d) { add(id, d); }); });
   Object.keys(seen).forEach(function (id) { add(id, seen[id]); });
+  /* A day they saved something counts too — the history of days opened began only in Nov 2026, so before it
+     this is the only evidence: a habit ticked, the week's goals, a ministry's numbers, a GP Task made or done.
+     Each by the time it was saved, on Cambodia's clock. (Never the weekly check-in: its rows are anonymous.) */
   let habitFrom = '';
-  daily.forEach(function (r) {
-    const t = Date.parse(r && r.updated); if (!r || !r.staffId || isNaN(t)) return;
+  const savedOn = function (id, when, track) {
+    const t = Date.parse(when); if (!id || typeof id !== 'string' || id.indexOf('tool:') === 0 || isNaN(t)) return;
     const d = new Date(t + 7 * 3600 * 1000).toISOString().slice(0, 10);
-    add(r.staffId, d); if (!habitFrom || d < habitFrom) habitFrom = d;
+    add(id, d); if (track && (!habitFrom || d < habitFrom)) habitFrom = d;
+  };
+  daily.forEach(function (r) { if (r) savedOn(r.staffId, r.updated, true); });
+  goals.forEach(function (r) { if (r) savedOn(r.staffId, r.updated, true); });
+  (Array.isArray(entries) ? entries : []).forEach(function (r) { if (r) savedOn(r.by, r.updated, true); });
+  (Array.isArray(kpiDaily) ? kpiDaily : []).forEach(function (r) { if (r) savedOn(r.staffId, r.updated, true); });
+  ((gpt && Array.isArray(gpt.tasks)) ? gpt.tasks : []).forEach(function (r) {
+    if (!r) return; savedOn(r.by, r.created, true); if (r.done) savedOn(r.doneBy, r.doneAt, true);
   });
   const people = staff.filter(function (x) { return x.active !== false && !x.archived && !isApplicant_(x) && x.campus === campus; }).map(function (x) {
     const all = Object.keys(used[x.id] || {}).sort();

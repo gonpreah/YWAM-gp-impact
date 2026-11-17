@@ -5139,3 +5139,4 @@ The minutes each person has the app open and in use, beside their days (Admin �
 | {h} h {m} min | {h} ម៉ោង {m} នាទី |
 | {h} h | {h} ម៉ោង |
 | Only which days someone used the app and for how long — never what they did in it. | មានតែថ្ងៃណាដែលនរណាម្នាក់បានប្រើកម្មវិធី និងរយៈពេលប៉ុន្មាន — មិនដែលបង្ហាញអ្វីដែលពួកគេបានធ្វើនៅក្នុងនោះទេ។ |
+| The app keeps every day someone opens it from {date}. Before that it can only count the days they saved something — a habit, their weekly goals, a ministry’s numbers or a GP Task — so earlier days may be missing. The numbers fill in over the next 30 days. | កម្មវិធីរក្សាទុករាល់ថ្ងៃដែលនរណាម្នាក់បើកវា ចាប់ពី {date}។ មុននោះ វាអាចរាប់បានតែថ្ងៃដែលពួកគេបានរក្សាទុកអ្វីមួយ — ទម្លាប់ គោលដៅប្រចាំសប្តាហ៍ លេខរបស់ការបម្រើ ឬកិច្ចការ GP — ដូច្នេះថ្ងៃមុនៗអាចខ្វះ។ លេខនឹងពេញលេញក្នុងរយៈពេល 30 ថ្ងៃខាងមុខ។ |
