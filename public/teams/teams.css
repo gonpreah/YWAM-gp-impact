@@ -3101,7 +3101,7 @@ details.dtsPick input.gpSelBox { margin:6px 0 4px; }
 .libPlanCard .libProgressBar, .libMonthText .libProgressBar, .libMenteePlan .libProgressBar { display:block; margin:4px 0 0; }
 .libPlanItem { display:flex; align-items:center; gap:10px; width:100%; text-align:left; margin-bottom:8px; }
 .libPlanItem .libInsightNum { background:var(--line); color:var(--ink); }
-.libPlanItem.done .libInsightNum { background:var(--good); color:#fff; }
+.libPlanItem.done .libInsightNum { background:var(--good); color:var(--surface); }
 .libPlanItem.next { border-color:var(--accent); }
 .libPlanItemText { flex:1; min-width:0; display:flex; flex-direction:column; }
 .libPlanItemText b { color:var(--ink); }
