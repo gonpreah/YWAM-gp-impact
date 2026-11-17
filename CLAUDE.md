@@ -2222,6 +2222,23 @@ none of it (`libOn_()`).
 - New Library sections use `.libHead2` / `.libScroll`, never `.libSecHead` / `.libRow` — test-library-ui counts those as
   shelves. tests/test-library-club.mjs (server), tests/test-library-club-ui.mjs. Khmer: docs/khmer-needed.md §108.
 
+## The look-through of Nov 2026 (Uriah: "look through the app to see ways you can improve the experience and debug anything")
+Every screen was opened at 320px, in English and Khmer, light and dark, looking for script errors, anything wider than
+the phone, and English left in Khmer. What it found, and the rules that came out of it (tests/test-polish-ui.mjs):
+- **Words written straight into the markup never reach Khmer.** Profile & settings and Create my profile had ~45 labels,
+  buttons and placeholders as plain English (`<label class="f">Full name</label>`), though many were in the dictionary.
+  All go through `t()` now. `showMsg(text)` passes its text through `t()` itself, so a pop-up written in English shows in
+  Khmer when the dictionary has it (its parameter was called `t`, which hid the translator inside it). Khmer: §109.
+- **A date box has its own minimum width**: two side by side ran off a 320px phone (`.dateRow input { min-width:0 }`,
+  stacked under 360px). Learn Khmer's three areas scroll in their own row instead of widening the page.
+- **Under 360px the header is one row** (smaller logo, gaps and buttons); the ☰ used to drop to a second row.
+- **On a dark card use the on-dark tokens**: the holiday names on the leave page's allowance card were `--ink` on
+  near-black (`.allowCard .holidayNote`). test-theme had no holidays in its fixture, so it never saw them.
+- **A label is tied to its field** (`gpLabelFix_` at the top of `bind()`): `label.f` / `label.fieldLabel` get `for` their
+  next box, so tapping the label focuses it and a screen reader reads a name. The leave tick is `role="checkbox"`.
+- **Every test file must be in run-all.mjs's SERVER or BROWSER list.** Eight were in neither, so CI never ran them; the
+  runner's pre-flight now fails when a `tests/test-*.mjs` is in neither list.
+
 ## Looking around without an account (teams.html guest mode, Oct 2026)
 `teams.html?guest=1` (the log-in screen's "Look around without an account" button was removed, Nov 2026, Andrew) sets
 `gp-app-guest` (localStorage — they stay a guest on reopen until Log in / Create my

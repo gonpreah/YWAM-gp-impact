@@ -28,7 +28,7 @@ function fillMinistrySelect(selId, campusSelId, deptSelId, current, curKind){
     return;
   }
   keep=keep.split('#')[0];
-  sel.innerHTML='<option value="">— none yet —</option>'+list.map(function(m){
+  sel.innerHTML='<option value="">'+esc(t('— none yet —'))+'</option>'+list.map(function(m){
     return '<option value="'+esc(m)+'"'+(keep===m?' selected':'')+'>'+esc(t(m))+'</option>';
   }).join('');
 }
@@ -1127,7 +1127,21 @@ function bindHome(){
   });
 }
 
+/* A field's label is tied to its field (Nov 2026): most forms write a label and then the box, with nothing
+   joining the two — so tapping the label did nothing and a screen reader read a box with no name. */
+function gpLabelFix_(){
+  var ls=document.querySelectorAll('#main label.f, #main label.fieldLabel');
+  for(var i=0;i<ls.length;i++){
+    var l=ls[i]; if(l.htmlFor || l.querySelector('input,select,textarea')) continue;
+    var n=l.nextElementSibling; while(n && n.classList && n.classList.contains('hint')) n=n.nextElementSibling;
+    if(n && !/^(INPUT|SELECT|TEXTAREA)$/.test(n.tagName)) n=n.querySelector ? n.querySelector('input:not([type=hidden]),select,textarea') : null;
+    if(!n) continue;
+    if(!n.id) n.id='gpf'+i;
+    l.htmlFor=n.id;
+  }
+}
 function bind(){
+  try{ gpLabelFix_(); }catch(e){}
   /* Who's here: Base's "On campus now" loads the count; the page loads team photos */
   if((S.view==='base' || S.view==='week') && !S.guest && !S.board && !S.student && S.me) whosHereLoad_();   // Base and My Home show the count
   [['goWhosHere','base'],['goWhosHereHome','week']].forEach(function(x){ var b=document.getElementById(x[0]); if(b) b.onclick=function(){ gpTap(); S.whosFrom=x[1]; S.view='whoshere'; render(); window.scrollTo(0,0); whosHereLoad_(true); }; });
@@ -1682,11 +1696,11 @@ function bind(){
         /* not staff — perhaps a member of the advisory board, with their own sign-in */
         run('boardLogin',[u,pin],function(b){
           if(b && b.ok){ boardEnter_(b.member, {user:u,pin:pin}); return; }
-          lb.disabled=false; lb.textContent='Log in'; showMsg('Wrong username or PIN');
+          lb.disabled=false; lb.textContent=t('Log in'); showMsg('Wrong username or PIN');
         });
       }
       else {
-        lb.disabled=false; lb.textContent='Log in';
+        lb.disabled=false; lb.textContent=t('Log in');
         if(d.err==='applicant'){ showMsg(t('That is a portal account — opening the YWAM GP Portal.')); setTimeout(function(){ location.href='portal.html'; }, 900); return; }
         showMsg(d.err==='pending' ? 'Your account is waiting on approval from a base leader.' : 'Wrong username or PIN');
       }
@@ -1727,12 +1741,12 @@ function bind(){
       if(d.ok && d.pending){
         // Campus Leadership only — every other department signs in right away.
         // There is no session to start: a base leader has to approve first.
-        rb.disabled=false; rb.textContent='Create profile'; S.regMode=false;
+        rb.disabled=false; rb.textContent=t('Create profile'); S.regMode=false;
         showMsg(t('Thanks! An admin will look at your account — you can sign in once it is approved.'));
         render();
       } else if(d.ok){ S.auth={user:d.user||payload.username.toLowerCase(),pin:d.token||payload.pin}; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; afterLogin(); showMsg('Profile created — add a photo!'); S.view='profile'; render(); }
       else {
-        rb.disabled=false; rb.textContent='Create profile';
+        rb.disabled=false; rb.textContent=t('Create profile');
         showMsg(d.err==='taken' ? 'That username is taken'
           : d.err==='email_taken' ? 'There’s already a profile with that email'
           : d.err==='bad_email' || d.err==='email_required' ? 'Add a real email address'
@@ -1944,7 +1958,7 @@ function bind(){
       debt:S.profile&&S.profile.debt?true:false
     };
     var pk=minSelValue_('p_ministry','p_dept'); if(pk.cdKind!==undefined) payload.cdKind=pk.cdKind;
-    sp.disabled=true; sp.textContent='Saving…';
+    sp.disabled=true; sp.textContent=t('Saving…');
     run('updateProfile',[S.auth.user,S.auth.pin,payload],function(d){
       if(d.ok){
         // merged, not replaced: updateProfile sends the public card, which has no
@@ -1957,7 +1971,7 @@ function bind(){
         run('teamRoster',[S.auth.user,S.auth.pin],function(r){S.roster=Array.isArray(r)?r:[];render();});
       }
       else {
-        sp.disabled=false; sp.textContent='Save profile';
+        sp.disabled=false; sp.textContent=t('Save profile');
         showMsg(d && d.err==='email_taken' ? 'There’s already a profile with that email'
           : d && d.err==='bad_email' ? 'That doesn’t look like a real email address'
           : 'Could not save');

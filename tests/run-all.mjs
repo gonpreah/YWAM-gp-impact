@@ -16,6 +16,9 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 const SERVER = [
+  'test-tests.mjs',          // Tests: the fivefold gifts are scored on the server; the couple check-up is only ever sent to the two partners and their counsellor
+  'test-library-club.mjs',   // the Library, read together: book of the month, plans, notes, sharing only with a yes, recommendations, who may give a plan
+  'test-photo-thumbs.mjs',   // lists carry the small copy of a photo; the owner and a person's page the full one
   'test-library.mjs',   // the Library's books: every field, shelves, unique ids, valid ISBNs, no quotations
   'test-required.mjs',  // books read on your account; the papers everyone signs, who sees what, versions, the contract
   'test-ministry-tools.mjs', // Campus Leadership "My week" and the Cafe tool fill their weekly numbers; who may use them; server-side prices
@@ -80,6 +83,11 @@ const SERVER = [
 ];
 
 const BROWSER = [
+  'test-polish-ui.mjs',        // a 320px phone and Khmer: profile / sign-up labels and pop-ups in Khmer, leave dates, Learn Khmer and the header fit, holiday names readable
+  'test-library-club-ui.mjs',  // the Library, read together, on the page: search, topics, a plan, finishing a book, the month's book, recommending, a mentor's plan
+  'test-tests-ui.mjs',         // ☰ → Tests: the fivefold gifts, the couple check-up from start to results, who sees it
+  'test-photo-thumbs-ui.mjs',  // an upload makes the small copy; an old photo gets one after a good boot
+  'test-khmer-learn-ui.mjs',   // Learn Khmer: the data, cards / quiz / match, readings, the game, grammar, the level test
   'test-library-ui.mjs',  // Menu → Library: loads when opened, covers or drawn ones, shelves, book page, read ticks, Khmer, retry
   'test-library-audio-ui.mjs', // 🎧 reads the screen aloud (phone's voice stood in), turns the page, ⏸, speed kept, stops on close, Khmer needs a Khmer voice
   'test-guest-ui.mjs',    // Look around without an account: the tour, the whole Library, Base (counts, no names), Team/Health locked, no credentials ever sent
@@ -181,6 +189,17 @@ const BROWSER = [
   'audit-allviews.mjs',     // every screen, no console errors
   'check-nav.mjs',          // the bottom tabs do not wrap at 320px
 ];
+
+/* Pre-flight: every test file is in one of the two lists. Eight were not (Nov 2026) — written, passing on the
+   machine that wrote them, and never run again by anyone, CI included. */
+{
+  const listed = new Set(SERVER.concat(BROWSER));
+  const lost = fs.readdirSync(HERE).filter((f) => /^test-.*\.mjs$/.test(f) && !listed.has(f));
+  if (lost.length) {
+    console.log('FAIL test files that are in neither SERVER nor BROWSER, so nothing runs them:\n  ' + lost.join('\n  '));
+    process.exit(1);
+  }
+}
 
 /* Pre-flight: no test may hardcode one machine's browser.
    Five files did exactly that — executablePath:'/opt/pw-browsers/chromium' — and

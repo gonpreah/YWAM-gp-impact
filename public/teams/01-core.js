@@ -260,8 +260,9 @@ function avatarHtml(person, cls){
   return '<div class="avatar '+cls+' ph">'+esc(initials(person?person.name:'')) +'</div>';
 }
 
-function showMsg(t){
-  var m=document.getElementById('msg'); m.textContent=t; m.classList.add('show');
+function showMsg(text){
+  /* A message written as plain English still shows in Khmer when the dictionary has it. */
+  var m=document.getElementById('msg'); m.textContent=t(String(text==null?'':text)); m.classList.add('show');
   clearTimeout(m._t); m._t=setTimeout(function(){ m.classList.remove('show'); }, 2200);
 }
 

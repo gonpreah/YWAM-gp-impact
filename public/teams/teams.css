@@ -1766,6 +1766,9 @@ input[type=color]::-webkit-color-swatch { border:none; border-radius:50%; }
 .field { margin-bottom:14px; }
 .fieldLabel { display:block; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:6px; }
 .dateRow { display:flex; gap:10px; }
+/* a date box has its own minimum width: on a 320px phone two side by side ran off the screen */
+.dateRow input { flex:1 1 0; min-width:0; }
+@media (max-width:359px){ .dateRow { flex-direction:column; gap:8px; } }
 input[type=date], input[type=month], input[type=time], textarea { width:100%; font:inherit; font-size:14.5px; padding:11px; border-radius:10px; border:1.5px solid var(--border2); background:var(--bg); color:var(--ink); }
 textarea { resize:vertical; min-height:64px; }
 .typeChips { display:flex; flex-direction:column; gap:8px; }
@@ -2616,6 +2619,8 @@ body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
 @media (prefers-reduced-motion: reduce){ .khGPick { animation:none; } }
 /* Learn Khmer — Level test */
 .khArea .gtTab { padding:7px 10px; }
+/* three areas never push the page wider than the phone: they scroll in their own row instead */
+.khWhich { max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; touch-action:pan-x pan-y; } .khWhich::-webkit-scrollbar { display:none; } .khWhich .gtTab { flex:0 0 auto; }
 .khTestCard { text-align:center; }
 .khLvBig { font-size:30px; line-height:1.2; margin:6px 0 2px; } .khLvBig b { font-size:22px; }
 .khLvDots { display:inline-flex; gap:5px; margin-top:4px; } .khLvDots i { width:22px; height:6px; border-radius:3px; background:var(--surface2); } .khLvDots i.on { background:var(--accent); }
@@ -3136,3 +3141,15 @@ details.dtsPick input.gpSelBox { margin:6px 0 4px; }
 .libScroll::-webkit-scrollbar { display:none; }
 .libPlanRow { grid-auto-columns:200px; }
 .libNextRow { grid-auto-columns:136px; }
+
+/* ---------- small phones (Nov 2026 look-through) ---------- */
+/* At 320px the ☰ dropped to a second row and the header grew by a third: tighter here, one row. */
+@media (max-width:359px){
+  header { padding-left:12px; padding-right:12px; }
+  .brandRow { gap:7px; } .brand { padding-left:7px; } .logoImg { height:26px; } .brandKh { font-size:19px; }
+  .hbtns { gap:5px; flex-wrap:nowrap; } .hbtn { padding:6px 9px; font-size:12px; } .hbtn.icon { padding:5px; }
+}
+/* My contract / a person's head: beside a large photo the lines were squeezed to a few words each. */
+@media (max-width:379px){ .adminPersonHead { flex-direction:column; align-items:flex-start; } }
+/* The holiday list sits inside the dark allowance card: its names were ink on near-black — unreadable in the light theme. */
+.allowCard .holidayNote { color:var(--onDarkFaint); } .allowCard .holidayNote b { color:var(--onDark); }

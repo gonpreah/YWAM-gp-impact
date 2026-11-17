@@ -1043,7 +1043,7 @@ function gglStepHtml_(){
 }
 /* the tasks app (tasks.html) says what it is: the same YWAM GP account, just the tasks and the calendar */
 function loginHeadHtml_(){
-  return gpTasksApp_() ? '<h2 id="taLoginHead">'+esc(t('GP Tasks'))+'</h2><p class="sub" style="margin-bottom:2px">'+esc(t('Your tasks and the campus calendar. Sign in with your YWAM GP account — the same one as the main app.'))+'</p>' : '<h2>Welcome back</h2>';
+  return gpTasksApp_() ? '<h2 id="taLoginHead">'+esc(t('GP Tasks'))+'</h2><p class="sub" style="margin-bottom:2px">'+esc(t('Your tasks and the campus calendar. Sign in with your YWAM GP account — the same one as the main app.'))+'</p>' : '<h2>'+esc(t('Welcome back'))+'</h2>';
 }
 function loginHtml(){
   gglCfg_();
@@ -1057,9 +1057,9 @@ function loginHtml(){
     '<div class="card">'+
     (gglOn_() ? '<button class="linkbtn" id="hidePinLogin" style="margin-top:0">← '+esc(t('Continue with Google instead'))+'</button>' : '')+
     (S.gglNew ? '<p class="gglJoin" id="gglJoin">🔗 '+esc(gpT('Sign in once with your username and PIN — {email} is then connected to your profile, and next time Continue with Google is all you need.',{email:S.gglNew.email}))+'</p>' : '')+
-    '<label class="f">'+esc(t('Username or email'))+'</label><input type="text" id="li_user" autocapitalize="none" placeholder="e.g. sokha">'+
+    '<label class="f">'+esc(t('Username or email'))+'</label><input type="text" id="li_user" autocapitalize="none" placeholder="'+esc(t('e.g. sokha'))+'">'+
     '<label class="f">'+esc(t('PIN or password'))+'</label><input type="password" id="li_pin" maxlength="200" placeholder="••••">'+
-    '<button class="btn" id="loginBtn">Log in</button>'+
+    '<button class="btn" id="loginBtn">'+esc(t('Log in'))+'</button>'+
     '<button class="linkbtn" id="toReg">New here? Create my profile</button></div>';
 }
 /*  Two facts the base counts people by: what kind of staff you are, and where you
@@ -1118,28 +1118,28 @@ function registerHtml(){
   gglCfg_();
   var inv = S.regPrefill, gg = S.regGoogle;
   var opts = S.roster.map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.name)+' · '+esc(p.dept)+'</option>'; }).join('');
-  return '<h2>Create my profile</h2><p class="sub">Pick a username and a 4-digit PIN you\u2019ll remember. You can add a photo right after.</p>'+
+  return '<h2>'+esc(t('Create my profile'))+'</h2><p class="sub">'+esc(t('Pick a username and a 4-digit PIN you’ll remember. You can add a photo right after.'))+'</p>'+
     (inv ? '<div class="banner" id="inviteBanner">👋 '+esc(gpT('You’re joining {where}. Check it below, then make your profile.',{where:[inv.ministry?t(inv.ministry):'', inv.dept?t(inv.dept):'', campusName(inv.campus)].filter(Boolean).join(' · ')}))+'</div>' : '')+
     '<div class="card">'+
     (gg ? '<div class="banner" id="regGoogle">'+esc(gpT('Signing up with Google as {email} — no username or PIN to remember.',{email:gg.email}))+'</div>'
         : (gglOn_() ? gglBtnHtml_('googleSignup', t('Sign up with Google'))+'<div class="orLine"><span>'+esc(t('or'))+'</span></div>' : ''))+
-    '<label class="f">Full name</label><input type="text" id="r_name" placeholder="Your name" value="'+esc(gg ? gg.name : '')+'">'+
+    '<label class="f">'+esc(t('Full name'))+'</label><input type="text" id="r_name" placeholder="'+esc(t('Your name'))+'" value="'+esc(gg ? gg.name : '')+'">'+
     (gg ? '' :
-    '<label class="f">Email</label><input type="email" id="r_email" autocapitalize="none" placeholder="you@example.com">'+
-    '<div class="hint">One profile per email \u2014 this is what stops a duplicate sign-up.</div>'+
-    '<label class="f">Username</label><input type="text" id="r_user" autocapitalize="none" placeholder="lowercase, no spaces"><div class="hint">Letters, numbers, . _ - (2\u201320 chars)</div>'+
-    '<label class="f">PIN (4 digits)</label><input type="password" id="r_pin" inputmode="numeric" maxlength="4" placeholder="••••">')+
-    '<label class="f">Campus</label><select id="r_campus">'+CAMPUSES.map(function(c){return '<option value="'+c.id+'"'+(inv && inv.campus===c.id?' selected':'')+'>'+c.name+'</option>';}).join('')+'</select>'+
-    '<label class="f">Department</label><select id="r_dept">'+deptsFor(inv ? inv.campus : 'poipet').map(function(d){return '<option value="'+esc(d)+'"'+(inv && inv.dept===d?' selected':'')+'>'+esc(t(d))+'</option>';}).join('')+'</select>'+
-    '<label class="f">Ministry</label><select id="r_ministry"></select><div class="hint">This is what puts your team’s KPIs on your home page.</div>'+
-    '<label class="f">Role / team</label><input type="text" id="r_role" placeholder="e.g. Cafe barista, DTS staff">'+
+    '<label class="f">'+esc(t('Email'))+'</label><input type="email" id="r_email" autocapitalize="none" placeholder="you@example.com">'+
+    '<div class="hint">'+esc(t('One profile per email — this is what stops a duplicate sign-up.'))+'</div>'+
+    '<label class="f">'+esc(t('Username'))+'</label><input type="text" id="r_user" autocapitalize="none" placeholder="'+esc(t('lowercase, no spaces'))+'"><div class="hint">'+esc(t('Letters, numbers, . _ - (2–20 chars)'))+'</div>'+
+    '<label class="f">'+esc(t('PIN (4 digits)'))+'</label><input type="password" id="r_pin" inputmode="numeric" maxlength="4" placeholder="••••">')+
+    '<label class="f">'+esc(t('Campus'))+'</label><select id="r_campus">'+CAMPUSES.map(function(c){return '<option value="'+c.id+'"'+(inv && inv.campus===c.id?' selected':'')+'>'+c.name+'</option>';}).join('')+'</select>'+
+    '<label class="f">'+esc(t('Department'))+'</label><select id="r_dept">'+deptsFor(inv ? inv.campus : 'poipet').map(function(d){return '<option value="'+esc(d)+'"'+(inv && inv.dept===d?' selected':'')+'>'+esc(t(d))+'</option>';}).join('')+'</select>'+
+    '<label class="f">'+esc(t('Ministry'))+'</label><select id="r_ministry"></select><div class="hint">'+esc(t('This is what puts your team’s KPIs on your home page.'))+'</div>'+
+    '<label class="f">'+esc(t('Role / team'))+'</label><input type="text" id="r_role" placeholder="'+esc(t('e.g. Cafe barista, DTS staff'))+'">'+
     staffTypeFieldHtml('r_type','')+
     countryFieldHtml('r_country','')+
-    '<label class="f">My mentor <span class="lock">🔒 sees my private check-ins</span></label><select id="r_mentor"><option value="">— choose later —</option>'+opts+'</select>'+
-    '<label class="f">Phone (optional)</label><input type="tel" id="r_phone" placeholder="">'+
+    '<label class="f">'+esc(t('My mentor'))+' <span class="lock">🔒 '+esc(t('sees my private check-ins'))+'</span></label><select id="r_mentor"><option value="">'+esc(t('— choose later —'))+'</option>'+opts+'</select>'+
+    '<label class="f">'+esc(t('Phone (optional)'))+'</label><input type="tel" id="r_phone" placeholder="">'+
     '<label class="f">'+esc(t('Year I started with YWAM GP (optional)'))+'</label><input type="number" id="r_joined" placeholder="2024">'+
-    '<button class="btn" id="regBtn">Create profile</button>'+
-    '<button class="linkbtn" id="toLogin">I already have a profile</button></div>';
+    '<button class="btn" id="regBtn">'+esc(t('Create profile'))+'</button>'+
+    '<button class="linkbtn" id="toLogin">'+esc(t('I already have a profile'))+'</button></div>';
 }
 
 
@@ -2264,8 +2264,8 @@ function leaveHtml(){
 
   h+='<h3>'+esc(t('New Request'))+'</h3><div class="card">';
   h+='<div class="field"><label class="fieldLabel">'+esc(t('Leave Dates'))+'</label>'+
-     '<div class="dateRow"><input type="date" id="lv_from" value="'+esc(draft.from||'')+'">'+
-     '<input type="date" id="lv_to" value="'+esc(draft.to||'')+'"></div></div>';
+     '<div class="dateRow"><input type="date" id="lv_from" aria-label="'+esc(t('First day'))+'" value="'+esc(draft.from||'')+'">'+
+     '<input type="date" id="lv_to" aria-label="'+esc(t('Last day'))+'" value="'+esc(draft.to||'')+'"></div></div>';
   h+='<div class="workDaysLine"><b>'+draftWorkDays+'</b> '+esc(t('work days requested (Mon–Fri)'))+'</div>';
   if(draft.from && draft.to && draft.to>=draft.from){
     var hol=leaveHolidaySet_(d.holidays), inside=[];
@@ -2296,9 +2296,9 @@ function leaveHtml(){
 
   h+='<div class="noticeNote">'+esc(t('In-country leave needs at least 1 week notice · out-of-country leave needs at least 1 month notice.'))+'</div>';
 
-  h+='<div class="ackRow"><button type="button" class="ackBox'+(draft.ack?' on':'')+'" id="lv_ack">'+
+  h+='<div class="ackRow"><button type="button" class="ackBox'+(draft.ack?' on':'')+'" id="lv_ack" role="checkbox" aria-checked="'+(draft.ack?'true':'false')+'" aria-labelledby="lv_ackText">'+
      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>'+
-     '<span>'+esc(t('I understand the 6-week (30-day) allowance for personal time off.'))+'</span></div>';
+     '<span id="lv_ackText">'+esc(t('I understand the 6-week (30-day) allowance for personal time off.'))+'</span></div>';
 
   var mentor = (S.me.mentorId && S.me.mentorStatus==='approved') ? personOf(S.me.mentorId) : null;
   var submitLabel = mentor ? gpT('Send to {name} for Approval',{name:mentor.name}) : t('Save this request');

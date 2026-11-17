@@ -539,7 +539,7 @@ function mentorHtml(){
     var mg=(S.menteeGoals||[]).filter(function(g){ return g.items.some(function(i){return i.text;}); });
     h+='<h3>🎯 Weekly goals</h3>';
     if(!mg.length){
-      h+='<div class="card"><p class="sub" style="margin:6px 0">No goals written yet.</p></div>';
+      h+='<div class="card"><p class="sub" style="margin:6px 0">'+esc(t('No goals written yet.'))+'</p></div>';
     } else {
       var scored=mg.filter(function(g){ return g.pct!==null; });
       var avg=scored.length ? Math.round(scored.reduce(function(a,g){return a+g.pct;},0)/scored.length) : null;
@@ -752,23 +752,23 @@ function profileHtml(){
   h+='<button class="card profMyc" id="profMyContract"><span class="profMycIc">📄</span><span class="profMycTxt"><b>'+esc(t('My contract'))+'</b>'+
     '<span class="pmeta">'+esc(t('Your contract, when you started, and the papers every staff member signs'))+'</span></span><span class="profMycGo">›</span></button>';
   h+='<div class="card"><div class="pcard">'+avatarHtml(S.me,'lg')+
-     '<div><button class="btn ghost" id="photoBtn" style="width:auto;margin:0;padding:9px 14px">'+(S.me.photo?'Change photo':'Add photo')+'</button>'+
+     '<div><button class="btn ghost" id="photoBtn" style="width:auto;margin:0;padding:9px 14px">'+esc(S.me.photo?t('Change photo'):t('Add photo'))+'</button>'+
      '<input type="file" accept="image/*" id="photoInput" style="display:none"></div></div>'+
      '<button class="libTally" id="profBooks">📚 '+esc(gpT('{n} books read',{n:libBooksRead_()}))+' · '+esc(t('Library'))+' →</button></div>';
   h+=reqProfileCardHtml_();
   h+=myPositionsHtml_();
   h+='<div class="card">'+
-    '<label class="f">Full name</label><input type="text" id="p_name" value="'+esc(S.me.name)+'">'+
-    '<label class="f">Email</label><input type="email" id="p_email" value="'+esc(p.email||'')+'" placeholder="you@example.com">'+
-    '<div class="hint">One profile per email — this is what stops a duplicate sign-up.</div>'+
-    '<label class="f">Campus</label><select id="p_campus">'+CAMPUSES.map(function(c){return '<option value="'+c.id+'"'+(S.me.campus===c.id?' selected':'')+'>'+c.name+'</option>';}).join('')+'</select>'+
+    '<label class="f">'+esc(t('Full name'))+'</label><input type="text" id="p_name" value="'+esc(S.me.name)+'">'+
+    '<label class="f">'+esc(t('Email'))+'</label><input type="email" id="p_email" value="'+esc(p.email||'')+'" placeholder="you@example.com">'+
+    '<div class="hint">'+esc(t('One profile per email — this is what stops a duplicate sign-up.'))+'</div>'+
+    '<label class="f">'+esc(t('Campus'))+'</label><select id="p_campus">'+CAMPUSES.map(function(c){return '<option value="'+c.id+'"'+(S.me.campus===c.id?' selected':'')+'>'+c.name+'</option>';}).join('')+'</select>'+
     cltRequestBannerHtml_()+
     '<label class="f">'+esc(t('Main department'))+'</label><select id="p_dept">'+deptsFor(S.me.campus).map(function(d){return '<option value="'+esc(d)+'"'+(S.me.dept===d?' selected':'')+'>'+esc(t(d))+'</option>';}).join('')+'</select>'+
     '<label class="f">'+esc(t('Main ministry'))+'</label><select id="p_ministry"></select><div class="hint">'+esc(t('The one My Ministry opens on.'))+'</div>'+
     '<label class="f">'+esc(t('Other ministries I’m part of'))+'</label>'+
     '<div class="hint" style="margin:0 0 6px">'+esc(t('Tick every other ministry you serve in. You see and enter numbers for your main ministry and these.'))+'</div>'+
     '<div class="leadsPick" id="p_ministries">'+leadsPickHtml_(S.me.campus, S.me.ministries||[], 'data-pmin', S.me.dept+'|'+(S.me.ministry||''))+'</div>'+
-    '<label class="f">Role / team</label><input type="text" id="p_role" value="'+esc(S.me.role)+'">'+
+    '<label class="f">'+esc(t('Role / team'))+'</label><input type="text" id="p_role" value="'+esc(S.me.role)+'">'+
     staffTypeFieldHtml('p_type', S.me.staffType||'')+
     '<label class="f">'+esc(t('Male or female'))+'</label><select id="p_sex">'+
       '<option value="">'+esc(t('— choose —'))+'</option>'+
@@ -776,13 +776,13 @@ function profileHtml(){
       '<option value="male"'+((p.sex||'')==='male'?' selected':'')+'>'+esc(t('Male'))+'</option></select>'+
       '<div class="hint">'+esc(t('Used for your personality character.'))+'</div>'+
     countryFieldHtml('p_country', S.me.country||'')+
-    '<label class="f">My mentor <span class="lock">🔒 sees my private check-ins</span></label><select id="p_mentor"><option value="">— none —</option>'+opts+'</select>'+
-    (p.mentorStatus==='pending' ? '<div class="hint">⏳ Waiting for them to accept</div>' : p.mentorStatus==='approved' ? '<div class="hint">✓ Accepted — they can see your private check-ins</div>' : '')+
-    '<label class="f">Phone</label><input type="tel" id="p_phone" value="'+esc(p.phone||'')+'">'+
+    '<label class="f">'+esc(t('My mentor'))+' <span class="lock">🔒 '+esc(t('sees my private check-ins'))+'</span></label><select id="p_mentor"><option value="">'+esc(t('— none —'))+'</option>'+opts+'</select>'+
+    (p.mentorStatus==='pending' ? '<div class="hint">⏳ '+esc(t('Waiting for them to accept'))+'</div>' : p.mentorStatus==='approved' ? '<div class="hint">✓ '+esc(t('Accepted — they can see your private check-ins'))+'</div>' : '')+
+    '<label class="f">'+esc(t('Phone'))+'</label><input type="tel" id="p_phone" value="'+esc(p.phone||'')+'">'+
     '<label class="f">'+esc(t('Year I started with YWAM GP'))+' <span class="hint" style="display:inline">'+esc(t('(not your DTS year)'))+'</span></label><input type="number" id="p_joined" value="'+esc(p.joined||'')+'">'+
-    '<label class="f">Staff debt <span class="lock">🔒 private</span></label><div class="seg" style="max-width:220px">'+
-      '<button id="debtY" class="'+(p.debt?'on bad':'')+'">Yes</button><button id="debtN" class="'+(!p.debt?'on':'')+'">No</button></div>'+
-    '<button class="btn" id="saveProfBtn">Save profile</button></div>';
+    '<label class="f">'+esc(t('Staff debt'))+' <span class="lock">🔒 '+esc(t('private'))+'</span></label><div class="seg" style="max-width:220px">'+
+      '<button id="debtY" class="'+(p.debt?'on bad':'')+'">'+esc(t('Yes'))+'</button><button id="debtN" class="'+(!p.debt?'on':'')+'">'+esc(t('No'))+'</button></div>'+
+    '<button class="btn" id="saveProfBtn">'+esc(t('Save profile'))+'</button></div>';
   gglCfg_();
   var sk=S.me && S.me.signIn, gOn=!!(S.me && S.me.google);
   h+='<div class="card" id="signInCard"><label class="f">'+esc(t('How you sign in'))+'</label>'+
@@ -790,8 +790,8 @@ function profileHtml(){
       : '<p class="sub" style="margin:0 0 8px">'+esc(sk==='password' ? t('With your email and password.') : t('With your username and PIN.'))+'</p>'+
         (gglOn_() ? '<p class="hint" style="margin:0 0 8px">'+esc(t('Sign in with Google from now on — quicker, and nothing to remember. The Google account you connect becomes this profile’s.'))+'</p>'+gglBtnHtml_('linkGoogle', t('Sign in with Google from now on')) : ''))+
     '</div>';
-  if(sk!=='password') h+='<div class="card"><label class="f">Change PIN</label><input type="password" id="p_newpin" inputmode="numeric" maxlength="4" placeholder="new 4-digit PIN">'+
-     '<button class="btn ghost" id="pinBtn">Update PIN</button></div>';
+  if(sk!=='password') h+='<div class="card"><label class="f">'+esc(t('Change PIN'))+'</label><input type="password" id="p_newpin" inputmode="numeric" maxlength="4" placeholder="'+esc(t('new 4-digit PIN'))+'">'+
+     '<button class="btn ghost" id="pinBtn">'+esc(t('Update PIN'))+'</button></div>';
   h+=remindersCardHtml_();
   /* Three states, not a switch: "Auto" is the default and the one most people
      want, because it follows what their phone already does at night. */
@@ -816,7 +816,7 @@ function profileHtml(){
       '<div class="numIn"><input type="password" id="p_admincode" placeholder="'+esc(t('Admin code'))+'">'+
       '<button class="btn ghost" style="margin:0;width:auto;padding:9px 14px" id="p_adminunlock">'+esc(t('Unlock'))+'</button></div></div>';
   }
-  h+='<button class="danger" id="logoutBtn" style="width:100%">Log out</button>';
+  h+='<button class="danger" id="logoutBtn" style="width:100%">'+esc(t('Log out'))+'</button>';
   h+='<footer>✦ Every number is a person.</footer>';
   return h;
 }

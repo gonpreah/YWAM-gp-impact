@@ -498,8 +498,8 @@ function phaseBanner(phase, wk){
   var rec=goalsForWeek(wk);
   var hasGoals=!!(rec && rec.items.some(function(i){return i.text;}));
   if(phase==='plan' && !hasGoals)
-    return '<div class="banner big">🎯 <strong>Start of the week.</strong> Pick the three things that matter for week '+wk+'.'+
-      ' <button class="linkbtn inline" id="jumpGoals">Set them now</button></div>';
+    return '<div class="banner big">🎯 <strong>'+esc(t('Start of the week.'))+'</strong> Pick the three things that matter for week '+wk+'.'+
+      ' <button class="linkbtn inline" id="jumpGoals">'+esc(t('Set them now'))+'</button></div>';
   /* No end-of-week "Log today" banner: there is no daily check-in any more —
      the weekly health check-in is the one thing to fill in. Goals-incomplete
      lives in the bell. */

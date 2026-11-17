@@ -1517,7 +1517,7 @@ function kpiCardHtml(wk){
   if(!S.me.ministry){
     return '<div class="card"><p class="sub" style="margin:4px 0 10px">'+
       'Set your ministry on the Profile tab and your team’s KPIs will show up here, ready to log.</p>'+
-      '<button class="btn ghost" id="goProfile">Choose my ministry</button></div>';
+      '<button class="btn ghost" id="goProfile">'+esc(t('Choose my ministry'))+'</button></div>';
   }
   var auto=autoMetricsFor(S.me.campus, S.me.dept, S.me.ministry);   // counted from the pipeline, never typed (GPDTS)
   var metrics=metricsFor(S.me.campus, S.me.dept, S.me.ministry).filter(function(m){ return auto.indexOf(m)===-1; });
@@ -1583,7 +1583,7 @@ function kpiCardHtml(wk){
         '<button class="hpBox'+(on?' on':'')+'" data-kpipin="'+esc(metric)+'">'+(on?'★':'')+'</button>'+
         '<span class="hpLabel">'+esc(t(metric))+'</span></div>';
     });
-    return h+'<button class="btn" id="saveKpiPins" style="margin-top:12px">Done</button></div>';
+    return h+'<button class="btn" id="saveKpiPins" style="margin-top:12px">'+esc(t('Done'))+'</button></div>';
   }
 
   /* ---- what happened today / what is true of the whole week ----

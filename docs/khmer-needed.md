@@ -5361,3 +5361,57 @@ The Mentorship page's "How a 1-on-1 works" fold and the 1-on-1 page: the step st
 | 25 books | 25 ក្បាល |
 
 The Library (teams/18-library-plus.js): the reading card at the top (books this year, weeks in a row, badges), the book of the month, reading plans and their descriptions, topic chips, what the campus is reading, recommending a book, the question after finishing a book, the line on My Home, a mentor giving a plan, and the weekly reading reminder. The push texts libMonthNew / libMonth / libRead / libRec / libPlan are in api.js PUSH_TEXT.
+
+## 109. Profile, sign-up and small messages that were English only
+
+Labels on Profile & settings and the Create my profile form, and the short messages that pop up after a save (Nov 2026). They were written in English in the code and never reached the dictionary, so they showed in English even in Khmer. Several are field labels with little room.
+
+| English | Khmer (draft) |
+|---|---|
+| Accepted — they can see your private check-ins | បានទទួលយក — គាត់អាចមើលការរាយការណ៍ឯកជនរបស់អ្នកបាន |
+| Add photo | បន្ថែមរូបថត |
+| Change PIN | ប្តូរលេខ PIN |
+| Change photo | ប្តូររូបថត |
+| Create profile | បង្កើតប្រវត្តិរូប |
+| Letters, numbers, . _ - (2–20 chars) | អក្សរ លេខ . _ - (២–២០ តួ) |
+| One profile per email — this is what stops a duplicate sign-up. | អ៊ីមែលមួយសម្រាប់ប្រវត្តិរូបមួយ — នេះជួយកុំឱ្យចុះឈ្មោះស្ទួន។ |
+| PIN (4 digits) | លេខ PIN (៤ ខ្ទង់) |
+| Pick a username and a 4-digit PIN you’ll remember. You can add a photo right after. | ជ្រើសឈ្មោះអ្នកប្រើ និងលេខ PIN ៤ ខ្ទង់ដែលអ្នកនឹងចាំបាន។ អ្នកអាចបន្ថែមរូបថតបន្ទាប់ពីនោះ។ |
+| Set them now | កំណត់ឥឡូវនេះ |
+| Start of the week. | ដើមសប្តាហ៍។ |
+| This is what puts your team’s KPIs on your home page. | នេះជាអ្វីដែលដាក់តួលេខក្រុមរបស់អ្នកនៅលើទំព័រដើមរបស់អ្នក។ |
+| Waiting for them to accept | កំពុងរង់ចាំគាត់ទទួលយក |
+| Your name | ឈ្មោះរបស់អ្នក |
+| e.g. Cafe barista, DTS staff | ឧ. អ្នកឆុងកាហ្វេ បុគ្គលិក DTS |
+| e.g. sokha | ឧ. sokha |
+| lowercase, no spaces | អក្សរតូច គ្មានដកឃ្លា |
+| new 4-digit PIN | លេខ PIN ថ្មី ៤ ខ្ទង់ |
+| private | ឯកជន |
+| sees my private check-ins | មើលឃើញការរាយការណ៍ឯកជនរបស់ខ្ញុំ |
+| — choose later — | — ជ្រើសពេលក្រោយ — |
+| — none yet — | — មិនទាន់មាន — |
+| Add a real email address | សូមបញ្ចូលអ៊ីមែលពិតប្រាកដ |
+| Add your name | សូមបញ្ចូលឈ្មោះរបស់អ្នក |
+| Admin access unlocked | បានបើកសិទ្ធិអ្នកគ្រប់គ្រង |
+| Could not approve | មិនអាចអនុម័តបានទេ |
+| Could not load accounts | មិនអាចបើកគណនីបានទេ |
+| Could not reset PIN | មិនអាចកំណត់លេខ PIN ឡើងវិញបានទេ |
+| Could not update | មិនអាចកែប្រែបានទេ |
+| Could not update PIN | មិនអាចប្តូរលេខ PIN បានទេ |
+| Could not update admin access | មិនអាចកែសិទ្ធិអ្នកគ្រប់គ្រងបានទេ |
+| Could not update mentor | មិនអាចកែអ្នកណែនាំបានទេ |
+| Eight is the max — unstar one first | ច្រើនបំផុតប្រាំបី — សូមដកផ្កាយមួយចេញសិន |
+| Enter the admin code | បញ្ចូលកូដអ្នកគ្រប់គ្រង |
+| Enter the admin code first | សូមបញ្ចូលកូដអ្នកគ្រប់គ្រងសិន |
+| Mentor updated | បានកែអ្នកណែនាំ |
+| PIN must be 4 digits | លេខ PIN ត្រូវមាន ៤ ខ្ទង់ |
+| PIN reset | បានកំណត់លេខ PIN ឡើងវិញ |
+| PIN updated | បានប្តូរលេខ PIN |
+| Photo updated | បានប្តូររូបថត |
+| Profile created — add a photo! | បានបង្កើតប្រវត្តិរូប — សូមបន្ថែមរូបថត! |
+| Uploading photo… | កំពុងបញ្ចូលរូបថត… |
+| Username: lowercase letters/numbers, 2–20 | ឈ្មោះអ្នកប្រើ៖ អក្សរតូច ឬលេខ ២–២០ តួ |
+| Wrong admin code | កូដអ្នកគ្រប់គ្រងមិនត្រឹមត្រូវ |
+| Wrong username or PIN | ឈ្មោះអ្នកប្រើ ឬលេខ PIN មិនត្រឹមត្រូវ |
+| First day | ថ្ងៃដំបូង |
+| Last day | ថ្ងៃចុងក្រោយ |
