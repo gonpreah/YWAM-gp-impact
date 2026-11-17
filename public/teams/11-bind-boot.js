@@ -1871,7 +1871,8 @@ function bind(){
   /* Mentorship: the dashboard's Mentor, My Home's card and Team all open the one page */
   document.querySelectorAll('[data-gomentorship]').forEach(function(b){ b.onclick=function(){ gpTap(); S.view='mentor'; S.mentee=null; render(); window.scrollTo(0,0); }; });
   document.querySelectorAll('[data-oohistall]').forEach(function(b){ b.onclick=function(){ S.ooHistAll=b.getAttribute('data-oohistall'); render(); }; });
-  document.querySelectorAll('[data-oolog]').forEach(function(b){ b.onclick=function(){ gpTap(); ooGo_(null, b.getAttribute('data-oolog')); var el=document.getElementById('ooLogHead'); if(el) el.scrollIntoView({ block:'start' }); }; });
+  document.querySelectorAll('[data-oolog]').forEach(function(b){ b.onclick=function(){ gpTap(); ooGo_(null, b.getAttribute('data-oolog')); S.ooLogOpen=true; render(); var el=document.getElementById('ooLogHead'); if(el) el.scrollIntoView({ block:'start' }); }; });
+  document.querySelectorAll('[data-oobegin]').forEach(function(b){ b.onclick=function(){ gpTap(); ooGo_(b.getAttribute('data-oobegin'), null, true); }; });
   var mpp=document.getElementById('mentorPickProfile'); if(mpp) mpp.onclick=function(){ S.view='profile'; render(); window.scrollTo(0,0); };
   document.querySelectorAll('[data-request121]').forEach(function(b){
     b.onclick=function(){ gpTap(); ooGo_(null, b.getAttribute('data-request121')); };

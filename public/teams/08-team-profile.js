@@ -404,11 +404,19 @@ function ooRelHtml_(o, otherId, name){
       ooTimePickHtml_(o.id, true, '')+
       '<div class="ooActsRow"><button class="linkbtn inline" data-ooopen="'+esc(o.id)+'">'+esc(o.iMentor ? t('Read their check-in first') : t('Open the 1-on-1'))+' ›</button>'+
       '<button class="linkbtn inline" style="color:var(--faint)" data-121decline="'+esc(o.id)+'">'+esc(t('Can’t right now — decline'))+'</button></div></div>';
-  /* accepted: the time, or a picker until there is one */
-  if(o.when && S.ooTimeEdit!==o.id)
+  /* accepted: the time, then the one next step — the check-in before, Begin on the day */
+  if(o.when && S.ooTimeEdit!==o.id){
+    var iMentor=o.menteeId!==S.me.id, step;
+    if(iMentor) step='<div class="ooLine ooState">'+(o.prep ? '✓ '+esc(gpT('{name} answered the check-in',{name:first})) : '⏳ '+esc(gpT('Waiting for {name}’s check-in',{name:first})))+'</div>'+
+      '<div class="ooActsRow"><button class="btn small" data-oobegin="'+esc(o.id)+'">▶ '+esc(o.notes || (o.followUps||[]).length ? t('Carry on the 1-on-1') : t('Begin 1-on-1'))+'</button>'+
+      '<button class="linkbtn inline" data-ooopen="'+esc(o.id)+'">'+esc(t('Open'))+' ›</button>';
+    else if(!o.prep) step='<div class="ooLine ooState">📝 '+esc(t('Answer your check-in before you meet'))+'</div>'+
+      '<div class="ooActsRow"><button class="btn small" data-ooopen="'+esc(o.id)+'">📝 '+esc(t('Answer the check-in'))+'</button>';
+    else step='<div class="ooLine ooState">✓ '+esc(t('Your check-in is in'))+'</div>'+
+      '<div class="ooActsRow"><button class="btn ghost small" data-ooopen="'+esc(o.id)+'">☕ '+esc(t('Open the 1-on-1'))+'</button>';
     return h+'<div class="ooLine ooWhen">📅 <b>'+esc(ooWhenNice_(o.when))+'</b> <span class="pmeta">· '+esc(o.whenByMe ? t('you set it') : gpT('{name} set it',{name:first}))+'</span></div>'+
-      '<div class="ooActsRow"><button class="btn ghost small" data-ooopen="'+esc(o.id)+'">☕ '+esc(t('Open the 1-on-1'))+'</button>'+
-      '<button class="linkbtn inline" data-oochange="'+esc(o.id)+'">'+esc(t('Change the time'))+'</button></div></div>';
+      step+'<button class="linkbtn inline" data-oochange="'+esc(o.id)+'">'+esc(t('Change the time'))+'</button></div></div>';
+  }
   return h+'<div class="ooLine">'+esc(o.when ? t('Pick a new day and time:') : gpT('You and {name} agreed to meet — no time yet:',{name:first}))+'</div>'+ooTimePickHtml_(o.id, false, o.when)+
     '<button class="linkbtn inline" data-ooopen="'+esc(o.id)+'">'+esc(t('Open the 1-on-1'))+' ›</button></div>';
 }
@@ -612,7 +620,7 @@ function mentorHtml(){
   /* The Mentorship page (Oct 2026, Uriah): everything about mentoring in one
      place — what is waiting on you, the people you mentor (tap one for their
      page and every 1-on-1 you've had), your own mentor, and what's coming up. */
-  var h='<h2>🤝 '+esc(t('Mentorship'))+'</h2><p class="sub">'+esc(t('Who you mentor and who mentors you. Each 1-on-1 sits with the person it’s with — whoever asked, the one asked sets the day and time.'))+'</p>';
+  var h='<h2>🤝 '+esc(t('Mentorship'))+'</h2><p class="sub" style="margin-bottom:6px">'+esc(t('Who you mentor and who mentors you, each with their next 1-on-1.'))+'</p>'+ooHowHtml_();
 
   /* 1-on-1 requests sit with their person below (Oct 2026, Uriah: "I'm mentoring Uriah and he's
      mentoring me — I don't know who asked whom"). Only one that has no place there any more
