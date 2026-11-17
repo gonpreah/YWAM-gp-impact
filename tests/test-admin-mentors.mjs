@@ -84,7 +84,7 @@ const person = await page.evaluate(() => ({ name: document.querySelector('.admin
 ok('tapping a name opens their account page, whose header names their mentor and that it is waiting', person.name === 'Sreilea Chan' && person.chips.some(c => /Mentor: Sina Sok · waiting/.test(c)), JSON.stringify(person));
 await page.click('#adminBack');
 await page.waitForTimeout(300);
-ok('Back from a person returns to Accounts (where the mentor is set)', await page.evaluate(() => S.adminSub === 'accounts'));
+ok('Back from a person returns to Mentors, where they were opened from', await page.evaluate(() => S.adminSub === 'mentors'));
 ok('no page errors', errors.length === 0, errors.join(' | '));
 
 await browser.close();
