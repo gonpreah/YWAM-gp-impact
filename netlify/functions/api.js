@@ -640,6 +640,175 @@ async function saveMyGStrengths(username, pin, payload) {
   });
 }
 
+/* ---------------- Tests: the fivefold gifts (APEST) — YWAM GP's own (Nov 2026, Uriah) ----------------
+   Ephesians 4:11 names five gifts — apostle, prophet, evangelist, shepherd, teacher. The statements are
+   YWAM GP's own (public/teams/17-tests.js, APEST_QS); Alan Hirsch's APEST / 5Q test is his and is never
+   copied. APEST_ITEMS is each statement's gift, in the page's order — the test checks the two agree.
+   The server scores it, as with GP Strengths: the page sends only the answers (1–5 each). */
+const APEST_IDS = ['a', 'p', 'e', 's', 't'];
+const APEST_ITEMS = ['a', 'p', 'e', 's', 't', 'p', 'a', 't', 'e', 's', 'e', 's', 'a', 'p', 't', 's', 't', 'p', 'a', 'e',
+  't', 'e', 's', 'p', 'a', 'a', 'p', 'e', 's', 't'];
+function apestScore_(answers) {
+  if (!answers || typeof answers !== 'object') return null;
+  const clean = {}, sum = { a: 0, p: 0, e: 0, s: 0, t: 0 }, per = { a: 0, p: 0, e: 0, s: 0, t: 0 };
+  for (let i = 0; i < APEST_ITEMS.length; i++) {
+    const v = Number(answers['q' + i]);
+    if (!(v >= 1 && v <= 5) || Math.round(v) !== v) return null;
+    clean['q' + i] = v; sum[APEST_ITEMS[i]] += v; per[APEST_ITEMS[i]]++;
+  }
+  const scores = {};
+  APEST_IDS.forEach(function (g) { scores[g] = Math.round((sum[g] - per[g]) / (per[g] * 4) * 100); });
+  const top = APEST_IDS.slice().sort(function (x, y) { return (scores[y] - scores[x]) || (APEST_IDS.indexOf(x) - APEST_IDS.indexOf(y)); });
+  return { answers: clean, scores: scores, top: top };
+}
+/* A teammate sees the first two gifts, while it is shared; never the answers. */
+function sharedApest_(s) {
+  const g = s && s.apest;
+  if (!g || !Array.isArray(g.top) || !g.top.length || g.share === false) return null;
+  return g.top.slice(0, 2);
+}
+function ownApest_(s) {
+  const g = s && s.apest;
+  if (!g || !Array.isArray(g.top) || !g.top.length) return null;
+  return { top: g.top.slice(), scores: Object.assign({}, g.scores || {}), answers: Object.assign({}, g.answers || {}),
+    takenAt: g.takenAt || '', share: g.share !== false };
+}
+async function saveMyApest(username, pin, payload) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const p = payload || {};
+  let result = null;
+  if (p.answers !== undefined) {
+    result = apestScore_(p.answers);
+    if (!result) return { ok: false, err: 'incomplete' };
+  }
+  return mutateStaff_(function (rows) {
+    const idx = rows.findIndex(function (r) { return r.id === s.id; });
+    if (idx === -1) return { abort: true, ok: false, err: 'not_found' };
+    const rec = rows[idx];
+    if (p.clear) delete rec.apest;
+    else {
+      if (!result && !rec.apest) return { abort: true, ok: false, err: 'no_result' };
+      const cur = Object.assign({}, rec.apest || {});
+      if (result) { cur.answers = result.answers; cur.scores = result.scores; cur.top = result.top; cur.takenAt = new Date().toISOString(); }
+      if (p.share !== undefined) cur.share = !!p.share;
+      rec.apest = cur;
+    }
+    rec.updated = new Date().toISOString();
+    rows[idx] = rec;
+    return { ok: true, staff: rosterStaff_(rec), apest: ownApest_(rec) };
+  });
+}
+
+/* ---------------- Tests: the couple check-up — YWAM GP's own (Nov 2026, Uriah) ----------------
+   For pre-marriage counselling and married couples. PREPARE/ENRICH is a licensed assessment taken
+   through a certified facilitator, so this is our own: MC_N statements (public/teams/17-tests.js,
+   MC_QS, in ten areas), each partner answering 1–5 on their own. One partner starts it and names the
+   other (staff on either campus) and, if they like, a counsellor (staff) who walks with them.
+   Blob `mcheck` = [{id, a, b, counselor, stage, created, by, answers:{staffId:{answers, at}}}].
+   Who sees what — the server's, tests/test-tests.mjs: the two partners and their counsellor, nobody
+   else (no admin door). Until both have answered, each sees only their own answers and whether the
+   other is done; the counsellor sees nothing but who has answered. Then all three see both. */
+const MC_N = 40;
+const MC_STAGES = ['dating', 'engaged', 'married'];
+const MC_MAX_OPEN = 3;
+function mcClean_(answers) {
+  if (!answers || typeof answers !== 'object') return null;
+  const out = {};
+  for (let i = 0; i < MC_N; i++) {
+    const v = Number(answers['q' + i]);
+    if (!(v >= 1 && v <= 5) || Math.round(v) !== v) return null;
+    out['q' + i] = v;
+  }
+  return out;
+}
+function mcIn_(r, id) { return r.a === id || r.b === id || r.counselor === id; }
+function mcOut_(r, me, people) {
+  const done = function (id) { return !!(r.answers && r.answers[id]); };
+  const both = done(r.a) && done(r.b);
+  const who = function (id) { const p = people[id] || {}; return id ? { id: id, name: p.name || '', photo: p.photo || '' } : null; };
+  const o = { id: r.id, stage: r.stage, created: r.created, by: r.by, a: who(r.a), b: who(r.b), counselor: who(r.counselor),
+    role: me === r.counselor ? 'counselor' : 'partner', doneA: done(r.a), doneB: done(r.b), both: both, mine: null, answers: null };
+  if (me !== r.counselor && done(me)) o.mine = Object.assign({}, r.answers[me].answers);
+  if (both) o.answers = { a: Object.assign({}, r.answers[r.a].answers), b: Object.assign({}, r.answers[r.b].answers),
+    aAt: r.answers[r.a].at, bAt: r.answers[r.b].at };
+  return o;
+}
+async function mcCtx_(username, pin) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return null;
+  const people = {};
+  (await getStaff_()).forEach(function (r) { if (r && r.id && !isApplicant_(r)) people[r.id] = { name: r.name || '', photo: photoOf_(r), active: r.active !== false && !r.archived }; });
+  return { s: s, me: s.id, people: people };
+}
+async function mcList(username, pin) {
+  const c = await mcCtx_(username, pin); if (!c) return { ok: false };
+  const rows = await readJSON('mcheck', []);
+  return { ok: true, n: MC_N, list: rows.filter(function (r) { return mcIn_(r, c.me); })
+    .map(function (r) { return mcOut_(r, c.me, c.people); })
+    .sort(function (x, y) { return x.created < y.created ? 1 : -1; }) };
+}
+async function mcStart(username, pin, p) {
+  const c = await mcCtx_(username, pin); if (!c) return { ok: false };
+  p = p || {};
+  const partner = String(p.partnerId || ''), counselor = String(p.counselorId || '');
+  if (!partner || partner === c.me || !c.people[partner] || !c.people[partner].active) return { ok: false, err: 'bad_partner' };
+  if (counselor && (counselor === c.me || counselor === partner || !c.people[counselor] || !c.people[counselor].active)) return { ok: false, err: 'bad_counselor' };
+  const stage = MC_STAGES.indexOf(p.stage) > -1 ? p.stage : 'engaged';
+  const id = 'mc_' + crypto.randomBytes(6).toString('hex');
+  const res = await mutateKey_('mcheck', [], function (rows) {
+    const open = rows.filter(function (r) { return (r.a === c.me || r.b === c.me) && !(r.answers && r.answers[r.a] && r.answers[r.b]); });
+    if (open.length >= MC_MAX_OPEN) return { abort: true, ok: false, err: 'too_many' };
+    rows.push({ id: id, a: c.me, b: partner, counselor: counselor, stage: stage, created: new Date().toISOString(), by: c.me, answers: {} });
+    return { ok: true };
+  });
+  if (!res.ok) return res;
+  await pushNow_(partner, 'mcInvite', { name: c.s.name || '' }, 'teams.html?view=tests');
+  const out = await mcList(username, pin); out.id = id; return out;
+}
+async function mcAnswer(username, pin, id, answers) {
+  const c = await mcCtx_(username, pin); if (!c) return { ok: false };
+  const clean = mcClean_(answers);
+  if (!clean) return { ok: false, err: 'incomplete' };
+  let notify = [];
+  const res = await mutateKey_('mcheck', [], function (rows) {
+    const r = rows.find(function (x) { return x.id === id; });
+    if (!r || !(r.a === c.me || r.b === c.me)) return { abort: true, ok: false, err: 'not_found' };
+    r.answers = r.answers || {};
+    const wasBoth = !!(r.answers[r.a] && r.answers[r.b]);
+    r.answers[c.me] = { answers: clean, at: new Date().toISOString() };
+    notify = (!wasBoth && r.answers[r.a] && r.answers[r.b]) ? [r.a, r.b, r.counselor].filter(function (x) { return x && x !== c.me; }) : [];
+    return { ok: true };
+  });
+  if (!res.ok) return res;
+  for (const who of notify) await pushNow_(who, 'mcReady', {}, 'teams.html?view=tests');
+  return mcList(username, pin);
+}
+async function mcSetCounselor(username, pin, id, counselorId) {
+  const c = await mcCtx_(username, pin); if (!c) return { ok: false };
+  const cid = String(counselorId || '');
+  const res = await mutateKey_('mcheck', [], function (rows) {
+    const r = rows.find(function (x) { return x.id === id; });
+    if (!r || !(r.a === c.me || r.b === c.me)) return { abort: true, ok: false, err: 'not_found' };
+    if (cid && (cid === r.a || cid === r.b || !c.people[cid] || !c.people[cid].active)) return { abort: true, ok: false, err: 'bad_counselor' };
+    r.counselor = cid;
+    return { ok: true };
+  });
+  if (!res.ok) return res;
+  return mcList(username, pin);
+}
+async function mcDelete(username, pin, id) {
+  const c = await mcCtx_(username, pin); if (!c) return { ok: false };
+  const res = await mutateKey_('mcheck', [], function (rows) {
+    const i = rows.findIndex(function (x) { return x.id === id; });
+    if (i === -1 || !(rows[i].a === c.me || rows[i].b === c.me)) return { abort: true, ok: false, err: 'not_found' };
+    rows.splice(i, 1);
+    return { ok: true };
+  });
+  if (!res.ok) return res;
+  return mcList(username, pin);
+}
+
 /* What a teammate may see: the type and its avatar, or nothing. */
 function sharedAvatar_(s) {
   const p = s && s.personality;
@@ -654,6 +823,8 @@ function rosterStaff_(s) {
   /* the directory and the team map only need the Top 5 ids, in order */
   const gs = sharedGStrengths_(s);
   if (gs) out.gstrengths = gs;
+  const ap = sharedApest_(s);
+  if (ap) out.apest = ap;
   return out;
 }
 /* The owner's own copy: everything, including season. */
@@ -1411,7 +1582,7 @@ async function updateProfile_(s, payload) {
         phone: rec.phone, joined: rec.joined, debt: rec.debt, mentorStatus: rec.mentorStatus || '',
         dashboardColor: rec.dashboardColor || '', dashboardBg: rec.dashboardBg || '', email: rec.email || '',
         sex: cleanSex_(rec.sex), personality: ownPersonality_(rec),
-        gstrengths: ownGStrengths_(rec), cltRequest: cltRequestOut_(rec)
+        gstrengths: ownGStrengths_(rec), apest: ownApest_(rec), cltRequest: cltRequestOut_(rec)
       }
     };
   });
@@ -4646,6 +4817,7 @@ async function staffProfile(username, pin, staffId) {
     personality: shared ? { type: p.personality.type, scores: p.personality.scores || null,
       source: p.personality.source || 'test' } : null,
     gstrengths: sharedGStrengths_(p),
+    apest: sharedApest_(p),
     goals: goals,
     activity: {
       weeksTracked: Object.keys(weeks).length,
@@ -5124,6 +5296,8 @@ const PUSH_HOURS_MIN = 5, PUSH_HOURS_MAX = 22;
    Tuesday during our staff meeting"). 0 Sunday … 6 Saturday; CHECKIN_DOW in teams/02-goals-okrs.js too. */
 const CHECKIN_DOW = 2;
 const PUSH_TEXT = {
+  mcInvite: { en: '{name} asked you to take the couple check-up together.', km: '{name} បានអញ្ជើញអ្នកឲ្យធ្វើការពិនិត្យសម្រាប់គូស្វាមីភរិយាជាមួយគ្នា។' },
+  mcReady: { en: 'You have both answered the couple check-up — your results are ready.', km: 'អ្នកទាំងពីរបានឆ្លើយការពិនិត្យសម្រាប់គូស្វាមីភរិយារួចហើយ — លទ្ធផលរបស់អ្នករួចរាល់ហើយ។' },
   title: { en: 'My YWAM GP', km: 'My YWAM GP' },
   weeklyTue: { en: 'It’s Tuesday — answer your weekly health check-in at the staff meeting.', km: 'ថ្ងៃនេះជាថ្ងៃអង្គារ — សូមឆ្លើយការពិនិត្យសុខភាពប្រចាំសប្តាហ៍របស់អ្នក ក្នុងពេលប្រជុំបុគ្គលិក។' },
   weekly: { en: 'Your weekly health check-in for this week isn’t in yet.', km: 'ការពិនិត្យសុខភាពប្រចាំសប្តាហ៍របស់អ្នកសម្រាប់សប្តាហ៍នេះ មិនទាន់មាននៅឡើយទេ។' },
@@ -5534,7 +5708,7 @@ async function getMyBoot(username, pin) {
       phone: s.phone, joined: s.joined, debt: s.debt, mentorStatus: s.mentorStatus || '',
       dashboardColor: s.dashboardColor || '', dashboardBg: s.dashboardBg || '', email: s.email || '',
       sex: cleanSex_(s.sex), personality: ownPersonality_(s),
-      gstrengths: ownGStrengths_(s), cltRequest: cltRequestOut_(s)
+      gstrengths: ownGStrengths_(s), apest: ownApest_(s), cltRequest: cltRequestOut_(s)
     },
     roster: (staffRows || []).filter(function (r) { return r.active && !isApplicant_(r); }).map(rosterStaff_),
     logs: (logs && logs.logs) || [],
@@ -12866,6 +13040,12 @@ const HANDLERS = {
   getDeptPulse: function (a) { return getDeptPulse(a[0], a[1], a[2]); },
   getStaffDebt: function (a) { return getStaffDebt(a[0], a[1]); },
   p360List: function (a) { return p360List(a[0], a[1]); },
+  saveMyApest: function (a) { return saveMyApest(a[0], a[1], a[2]); },
+  mcList: function (a) { return mcList(a[0], a[1]); },
+  mcStart: function (a) { return mcStart(a[0], a[1], a[2]); },
+  mcAnswer: function (a) { return mcAnswer(a[0], a[1], a[2], a[3]); },
+  mcSetCounselor: function (a) { return mcSetCounselor(a[0], a[1], a[2], a[3]); },
+  mcDelete: function (a) { return mcDelete(a[0], a[1], a[2]); },
   p360Get: function (a) { return p360Get(a[0], a[1], a[2]); },
   p360Create: function (a) { return p360Create(a[0], a[1], a[2]); },
   p360Answer: function (a) { return p360Answer(a[0], a[1], a[2], a[3]); },

@@ -557,6 +557,7 @@ function bindAway(){
   bindSupport_();
   bindPrayer_();
   bindP360_();
+  bindTests_();
   bindHosp();
   if(S.view==='ministry') bindLead_();
   if(typeof dutyHtml==='function') bindSched_();
@@ -2026,7 +2027,7 @@ function refreshAll(){
    ?fresh). If the page itself came from the offline copy (the worker leaves a
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
-var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
+var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
 if(gpTasksApp_()) GP_VER_FILES=['tasks.html'].concat(GP_VER_FILES.slice(1), ['teams/12-tasks.js','teams/13-calendar.js']);   // the tasks app's page is tasks.html
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){

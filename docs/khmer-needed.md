@@ -5192,3 +5192,70 @@ The Mentorship page's "How a 1-on-1 works" fold and the 1-on-1 page: the step st
 | Answer the check-in | ឆ្លើយការរាយការណ៍ |
 | Your check-in is in | ការរាយការណ៍របស់អ្នកបានផ្ញើរួចហើយ |
 | Who you mentor and who mentors you, each with their next 1-on-1. | អ្នកដែលអ្នកណែនាំ និងអ្នកដែលណែនាំអ្នក ម្នាក់ៗជាមួយការជួបមួយទល់មួយបន្ទាប់របស់ពួកគេ។ |
+
+## 107. Tests: the fivefold gifts and the couple check-up (and the Marriage & family shelf)
+
+| English | Khmer (draft) |
+|---|---|
+| Pick your partner from the list. | សូមជ្រើសរើសដៃគូរបស់អ្នកពីបញ្ជី។ |
+| Pick someone else as your counsellor. | សូមជ្រើសរើសអ្នកផ្សេងធ្វើជាអ្នកប្រឹក្សារបស់អ្នក។ |
+| You already have three check-ups waiting to be finished. | អ្នកមានការពិនិត្យបីរួចហើយ ដែលកំពុងរង់ចាំឲ្យបញ្ចប់។ |
+| Tests | តេស្ត |
+| Get to know how God made you, and the people you do life with. | ស្គាល់ពីរបៀបដែលព្រះបានបង្កើតអ្នក និងមនុស្សដែលអ្នករស់នៅជាមួយ។ |
+| About you | អំពីអ្នក |
+| Fivefold gifts (APEST) | អំណោយទានប្រាំយ៉ាង (APEST) |
+| 30 statements · about 5 minutes | សេចក្តីថ្លែង 30 · ប្រហែល 5 នាទី |
+| Language level test | តេស្តកម្រិតភាសា |
+| Khmer or English — where you are, and what to learn next | ភាសាខ្មែរ ឬអង់គ្លេស — អ្នកនៅកម្រិតណា និងអ្វីដែលត្រូវរៀនបន្ទាប់ |
+| Couple check-up | ការពិនិត្យសម្រាប់គូស្វាមីភរិយា |
+| For couples getting ready for marriage, and for married couples. Each of you answers on your own; then you see together where you are strong and what to talk about. Only the two of you, and a counsellor if you choose one, ever see it. | សម្រាប់គូដែលកំពុងត្រៀមរៀបការ និងគូដែលបានរៀបការរួច។ អ្នកម្នាក់ៗឆ្លើយដោយខ្លួនឯង រួចអ្នកមើលជាមួយគ្នាថា តើអ្នកខ្លាំងនៅត្រង់ណា និងគួរនិយាយគ្នាអំពីអ្វី។ មានតែអ្នកទាំងពីរ និងអ្នកប្រឹក្សាប្រសិនបើអ្នកជ្រើសរើស ទើបអាចមើលឃើញវា។ |
+| Start a couple check-up | ចាប់ផ្តើមការពិនិត្យសម្រាប់គូស្វាមីភរិយា |
+| These tests are YWAM GP’s own. They are not the official MBTI®, PREPARE/ENRICH or APEST assessments. | តេស្តទាំងនេះជារបស់ YWAM GP ផ្ទាល់។ វាមិនមែនជាការវាយតម្លៃផ្លូវការរបស់ MBTI®, PREPARE/ENRICH ឬ APEST ទេ។ |
+| {a} & {b} | {a} និង {b} |
+| With {name} | ជាមួយ {name} |
+| You have both answered — see your results | អ្នកទាំងពីរបានឆ្លើយរួចហើយ — មើលលទ្ធផលរបស់អ្នក |
+| See the results | មើលលទ្ធផល |
+| {n} of 2 have answered | បានឆ្លើយ {n} ក្នុងចំណោម 2 នាក់ |
+| Waiting for {name} to answer | កំពុងរង់ចាំ {name} ឆ្លើយ |
+| Your turn — answer the 40 statements | វេនរបស់អ្នក — ឆ្លើយសេចក្តីថ្លែងទាំង 40 |
+| Answer now | ឆ្លើយឥឡូវ |
+| You are their counsellor | អ្នកជាអ្នកប្រឹក្សារបស់ពួកគេ |
+| Counsellor: {name} | អ្នកប្រឹក្សា៖ {name} |
+| No counsellor yet | មិនទាន់មានអ្នកប្រឹក្សាទេ |
+| Ephesians 4:11–13 names five gifts Jesus gave his church — apostles, prophets, evangelists, shepherds and teachers — to build up his people. Every one of us carries something of all five, and most of us lean towards one or two. | អេភេសូរ 4:11–13 រៀបរាប់អំណោយទានប្រាំយ៉ាង ដែលព្រះយេស៊ូវបានប្រទានដល់ក្រុមជំនុំរបស់ទ្រង់ — សាវក ហោរា អ្នកផ្សាយដំណឹងល្អ គ្រូគង្វាល និងគ្រូបង្រៀន — ដើម្បីស្អាងរាស្ត្ររបស់ទ្រង់ឡើង។ យើងម្នាក់ៗមានផ្នែកខ្លះនៃទាំងប្រាំ ហើយភាគច្រើននៃយើងផ្អៀងទៅរកមួយ ឬពីរ។ |
+| Answer as you really are, not as you wish you were. | ឆ្លើយតាមអ្វីដែលអ្នកពិតជាមែន មិនមែនតាមអ្វីដែលអ្នកចង់ក្លាយជានោះទេ។ |
+| See my gifts | មើលអំណោយទានរបស់ខ្ញុំ |
+| You haven’t taken this test yet. | អ្នកមិនទាន់បានធ្វើតេស្តនេះនៅឡើយទេ។ |
+| Your fivefold gifts | អំណោយទានប្រាំយ៉ាងរបស់អ្នក |
+| Your strongest gift | អំណោយទានដែលខ្លាំងបំផុតរបស់អ្នក |
+| Your second gift | អំណោយទានទីពីររបស់អ្នក |
+| What you bring: | អ្វីដែលអ្នកនាំមក៖ |
+| Watch out for: | ប្រយ័ត្ននឹង៖ |
+| No gift is better than another. A healthy team needs all five, so notice who on your team is strong where you are not. | គ្មានអំណោយទានណាល្អជាងមួយទៀតទេ។ ក្រុមដែលមានសុខភាពល្អត្រូវការទាំងប្រាំ ដូច្នេះសូមកត់សម្គាល់ថា តើនរណាក្នុងក្រុមរបស់អ្នកខ្លាំង នៅត្រង់ដែលអ្នកមិនខ្លាំង។ |
+| Show my top two gifts to the team | បង្ហាញអំណោយទានពីរកំពូលរបស់ខ្ញុំដល់ក្រុម |
+| Take it again | ធ្វើម្តងទៀត |
+| Who is your partner? | តើនរណាជាដៃគូរបស់អ្នក? |
+| Type their name… | វាយឈ្មោះរបស់ពួកគេ… |
+| They need a profile in the app. They will be asked to answer too. | ពួកគេត្រូវមានប្រវត្តិរូបក្នុងកម្មវិធី។ ពួកគេក៏នឹងត្រូវបានស្នើឲ្យឆ្លើយដែរ។ |
+| Where are you now? | តើអ្នកនៅដំណាក់កាលណាឥឡូវនេះ? |
+| A counsellor (optional) | អ្នកប្រឹក្សា (មិនចាំបាច់) |
+| Someone who walks with you through pre-marriage or marriage counselling. They will see your results once you have both answered. | មនុស្សម្នាក់ដែលដើរជាមួយអ្នក ក្នុងការប្រឹក្សាមុនរៀបការ ឬការប្រឹក្សាអាពាហ៍ពិពាហ៍។ ពួកគេនឹងឃើញលទ្ធផលរបស់អ្នក នៅពេលអ្នកទាំងពីរបានឆ្លើយរួច។ |
+| Start and answer my part | ចាប់ផ្តើម ហើយឆ្លើយផ្នែករបស់ខ្ញុំ |
+| Answer on your own, honestly — not what you think {name} will say. They won’t see your answers until you have both finished. | ឆ្លើយដោយខ្លួនឯង ដោយស្មោះត្រង់ — មិនមែនតាមអ្វីដែលអ្នកគិតថា {name} នឹងឆ្លើយនោះទេ។ ពួកគេនឹងមិនឃើញចម្លើយរបស់អ្នក រហូតដល់អ្នកទាំងពីរបានបញ្ចប់។ |
+| Send my answers | ផ្ញើចម្លើយរបស់ខ្ញុំ |
+| This is a place to start talking, not a grade. Go through it together — with your counsellor if you have one. | នេះជាកន្លែងចាប់ផ្តើមនិយាយគ្នា មិនមែនជាពិន្ទុទេ។ សូមមើលវាជាមួយគ្នា — ជាមួយអ្នកប្រឹក្សារបស់អ្នក ប្រសិនបើអ្នកមាន។ |
+| To talk about | ត្រូវនិយាយគ្នា |
+| Strength | ចំណុចខ្លាំង |
+| Talk about it | និយាយគ្នាអំពីវា |
+| Grow in it | លូតលាស់ក្នុងចំណុចនេះ |
+| Talk together: | និយាយជាមួយគ្នា៖ |
+| Counsellor | អ្នកប្រឹក្សា |
+| Delete this check-up | លុបការពិនិត្យនេះ |
+| Delete this check-up and both sets of answers? This can’t be undone. | លុបការពិនិត្យនេះ និងចម្លើយរបស់អ្នកទាំងពីរ? មិនអាចធ្វើវិញបានទេ។ |
+| Gifts, language, couple check-up | អំណោយទាន ភាសា ការពិនិត្យសម្រាប់គូស្វាមីភរិយា |
+| Dating | កំពុងស្គាល់គ្នា |
+| Engaged | បានភ្ជាប់ពាក្យ |
+| Married | បានរៀបការ |
+| Marriage & family | អាពាហ៍ពិពាហ៍ និងគ្រួសារ |
+
+☰ → Tests (teams/17-tests.js). The APEST statements and the couple check-up statements, areas and talk-it-over questions are written with English and Khmer side by side in teams/17-tests.js (APEST_QS, APEST_GIFTS, MC_QS, MC_AREAS) — please read those there too. Gift names follow the Khmer Bible (សាវក, ហោរា, អ្នកផ្សាយដំណឹងល្អ, គ្រូគង្វាល, គ្រូបង្រៀន). The push texts mcInvite / mcReady are in api.js PUSH_TEXT. The seven Marriage & family books' Khmer (library-km.js) is Claude's translation too.

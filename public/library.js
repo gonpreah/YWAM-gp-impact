@@ -53,6 +53,13 @@ var GP_LIBRARY = {
    "emoji": "🌊",
    "color": "#1F44FF",
    "ink": "#1430B0"
+  },
+  {
+   "id": "family",
+   "name": "Marriage & family",
+   "emoji": "💍",
+   "color": "#A4572A",
+   "ink": "#7A3D1A"
   }
  ],
  "cover": {
@@ -4455,6 +4462,546 @@ var GP_LIBRARY = {
     "b": "cobalt",
     "motif": "pair",
     "layout": "bottom",
+    "font": "serif"
+   }
+  },
+  {
+   "id": "things-i-wish-id-known-before-we-got-married",
+   "title": "Things I Wish I'd Known Before We Got Married",
+   "author": "Gary Chapman",
+   "year": 2010,
+   "shelf": "family",
+   "mins": 10,
+   "vibe": "A wise marriage counsellor tells you, before the wedding, the things he had to learn the hard way.",
+   "bigIdea": "Gary Chapman has helped couples for many years as a marriage counsellor and pastor. But he did not start out as an expert. He says openly that the first years of his own marriage to Karolyn were very hard. They loved each other, but they did not understand each other, and they hurt each other often. Later, in his counselling office, he heard the same story again and again from other couples. Many of them said they wished someone had told them these things before they got married. So he wrote this short, practical book for couples who are dating or engaged. Each chapter takes one thing he wishes he had known: that strong romantic feelings do not last on their own, that couples can solve problems without arguing, that saying sorry and forgiving are skills, that housework and money need a plan, that sex takes learning, and that you marry a whole family, not just one person. His big idea is simple: a good marriage does not happen by accident. It is built by two people who talk honestly, learn about each other, and choose to love, starting before the wedding day. Many chapters end with questions for the couple to talk over together.",
+   "insights": [
+    {
+     "emoji": "💘",
+     "title": "Being in love is real, but it does not last on its own",
+     "body": "Chapman starts with the feeling most couples have when they decide to marry. You think about the other person all the time. They seem almost perfect. You are sure you will always feel this way. Chapman says this feeling is real and good, but it is not a strong enough foundation for a marriage.\n\nHe points to research suggesting that this intense, obsessed stage usually lasts about two years on average. Then it fades. It does not mean you married the wrong person. When the feelings settle, you start to see the faults you could not see before, and the real work of love begins.\n\nChapman calls this a second stage of love. In this stage, love is a choice and an action, not only a feeling. Here he brings in his idea of love languages. Each person feels loved most through one main way: kind words, time together, gifts, helpful acts or touch. If you learn to speak your partner's language, love can stay warm long after the first feelings fade.\n\nTalk it over: What will help us keep choosing love when the excited feelings are quieter?"
+    },
+    {
+     "emoji": "🤝",
+     "title": "Solve disagreements without arguing",
+     "body": "Every couple disagrees. Two different people will never think the same about everything. Chapman says the problem is not disagreeing. The problem is arguing, where each person tries to win and the other must lose.\n\nHe offers a better way. First, agree that you are on the same team. Then take turns. One person shares their idea and feelings, and the other listens to understand, not to answer back. The listener asks questions and repeats what they heard until the first person feels understood. Then you switch.\n\nOnly then do you look for a solution. Chapman describes a few ways to settle it. Sometimes you meet in the middle, with each person giving a little. Sometimes one person sees that the matter means more to the other, and freely agrees to do it their way. And sometimes you cannot agree yet, so you agree to wait and come back to it later, without fighting.\n\nHere is a simple everyday example. Sokha wants to visit his family every weekend. Dara wants some weekends to rest at home. Instead of fighting, they listen to each other, then agree on two family weekends a month.\n\nTalk it over: When we disagree now, do we listen first, or argue first?"
+    },
+    {
+     "emoji": "🙏",
+     "title": "Saying sorry is a sign of strength",
+     "body": "Chapman admits that as a young husband he found it very hard to apologize. He thought saying sorry made him look weak. He now believes the opposite. A person who can apologize is strong, because they can face the truth about themselves.\n\nChapman, who later wrote a whole book on apology with Jennifer Thomas, says people look for different things when someone apologizes. Some need to hear real regret: I am sorry I hurt you. Some need to hear the person take responsibility: I was wrong, it was my fault. Some want the person to make things right. Some want to hear a plan to change. Some want to be asked: will you forgive me? What feels sincere to one person may feel empty to another.\n\nSo a couple should learn what a sincere apology sounds like to each other. Here is a simple everyday example. Vanna says only sorry, but his wife needs to hear him say he was wrong. Once he learns this, her heart softens much faster.\n\nTalk it over: In my family, how did people say sorry, or did they?"
+    },
+    {
+     "emoji": "🕊️",
+     "title": "Forgiveness is a choice, not a feeling",
+     "body": "Many people think they cannot forgive until they feel like forgiving. Chapman says forgiveness is not a feeling. It is a decision. When someone sincerely apologizes, we choose to forgive them, even if the hurt is still there.\n\nHe explains what forgiveness is. It means we stop holding the wrong against the other person. We do not demand that they pay. We let the relationship go on. This is how God forgives us, and the Bible asks us to forgive one another in the same way (Colossians 3:13).\n\nChapman also explains what forgiveness is not. It does not wipe away the memory. When the memory comes back, you can tell God that you have already forgiven, and choose not to bring it up again. Forgiveness also does not remove every result of what was done. And it does not mean trust comes back at once. Trust is rebuilt step by step, as the person who did wrong shows they can be trusted again.\n\nTalk it over: Is there anything from our dating time that we still need to forgive?"
+    },
+    {
+     "emoji": "🧹",
+     "title": "Toilets don't clean themselves",
+     "body": "Many couples fight about housework. Who cooks? Who washes the dishes? Who cleans the bathroom? Who takes out the rubbish?\n\nChapman tells how he came into marriage with quiet expectations from his own home. He assumed that his wife would do certain jobs, because that is how it was in his parents' house. Karolyn came with different ideas from her family. Neither of them had talked about it, so each felt let down.\n\nHis advice is simple and practical. Before you marry, talk about who will do what. Each of you can write a list of the jobs your mother did and the jobs your father did when you were growing up. Then look at both lists together. This shows you the pictures you carry in your head. After that, make your own plan. Decide based on time, skill and what is fair, not just on what your parents did.\n\nHere is a simple everyday example. One husband offers to wash the dishes every night because his wife cooks. That one small choice removes a daily fight.\n\nTalk it over: Which jobs at home do I expect you to do, and why?"
+    },
+    {
+     "emoji": "💰",
+     "title": "We need a plan for our money",
+     "body": "Chapman says money causes many conflicts in marriage. Often the problem is not how much money a couple has. It is that they never made a plan together, and each person brings different habits from home. One likes to save. The other likes to spend. One thinks debt is normal. The other is afraid of it.\n\nHe encourages couples to talk openly about money before the wedding. Share what you earn, what you own and what you owe. Hiding a debt from the person you are marrying is a bad way to begin.\n\nThen make a simple plan. Chapman suggests a pattern of giving some back to God, saving some, and living on the rest. He also warns strongly against buying things you cannot afford, and against easy credit that lets you spend money you do not have.\n\nHe suggests that the person who is more careful with numbers can keep the records. But both should know where the money goes, and big decisions should be made together. After marriage, it is no longer my money and your money. It is our money.\n\nTalk it over: Do we have any debts or money worries we have not yet told each other?"
+    },
+    {
+     "emoji": "🏡",
+     "title": "You marry into a family",
+     "body": "Chapman says that when you marry, you do not marry just one person. You also join their family. So get to know your future in-laws before the wedding.\n\nHe adds a strong warning: watch how your partner's parents treat each other. We learn marriage first at home. If his father shouts, he may shout. If her mother never speaks about problems, she may stay quiet too. This is not a fixed fate, Chapman says, but it is a pattern to notice and talk about honestly.\n\nChapman also deals with where you will live, and how close you will be to your parents. The Bible says a man leaves his father and mother and is joined to his wife (Genesis 2:24). Leaving does not mean stopping love or respect. We still honor our parents. But after the wedding, your first loyalty is to your husband or wife, and the two of you make your decisions together.\n\nLiving with parents, or very close to them, can be hard if this is not clear. Talk about it early.\n\nTalk it over: What do I admire in your family, and what worries me?"
+    },
+    {
+     "emoji": "❤️",
+     "title": "Good sex does not happen naturally",
+     "body": "Many couples think that if they love each other, their sexual life will be wonderful from the first night. Chapman gently says this is often not true. He wishes he had known that sexual fulfillment is something a couple learns together over time.\n\nHe explains that husbands and wives are often different here. Men and women may differ in how quickly they want closeness, and in what they need to feel ready. A wife often needs to feel loved, safe and cared for during the day. A husband may need to learn patience, gentleness and to think of his wife's joy, not only his own.\n\nChapman sees sex as God's good gift for marriage, meant to give pleasure and to join two people closely. Because of that, he encourages couples to talk openly with each other about it, even when it feels awkward. Read a good Christian book on the subject together before the wedding. And if there are real problems, see a doctor or a counsellor rather than suffering in silence.\n\nTalk it over: What have we each been taught about sex, and what fears or hopes do we bring?"
+    },
+    {
+     "emoji": "⛪",
+     "title": "Spirituality is not the same as going to church",
+     "body": "Chapman says that many Christian couples assume they share the same faith because they go to the same church. But spirituality is deeper than attending services. It is about how each person relates to God every day: how they pray, read the Bible, make decisions and live out their faith.\n\nTwo believers can be very different here. One prays quietly alone. The other loves to pray out loud with others. One reads the Bible every morning. The other finds that hard. Chapman wishes he had known that he could not force his wife to grow spiritually the way he did. Faith is personal. Pushing usually makes it worse.\n\nHis advice is to share your spiritual journey honestly. Tell each other how you came to faith, what helps you feel close to God, and where you struggle. Find simple ways to grow together, like praying for each other, reading a short Bible passage together, or serving together. Accept each other's ways, and encourage rather than criticize.\n\nTalk it over: What helps me feel close to God, and how could we pray together?"
+    },
+    {
+     "emoji": "🧩",
+     "title": "Personality shapes everything",
+     "body": "Chapman says a person's personality deeply affects how they behave in marriage. When you are in love, you hardly notice these differences. Later, they can drive you crazy.\n\nHe describes several common opposites. One person is an optimist, who believes everything will work out. The other is a pessimist, who sees what can go wrong. One is neat and organized. The other is relaxed and messy. One talks a lot and shares every thought. The other is quiet and keeps things inside. One likes to lead and decide. The other prefers to follow.\n\nNone of these is wrong. But if you do not understand them, you may think your partner is being difficult on purpose. Chapman encourages couples to notice their personalities before marriage and to talk about how they will work with them. A quiet person can learn to share a little more. A talker can learn to listen and give space. Each personality has strengths the other needs.\n\nHere is a simple everyday example. A neat wife and a messy husband agree on one room he can keep as he likes, and the rest of the house stays tidy.\n\nTalk it over: Which of my habits might be hard for you to live with?"
+    }
+   ],
+   "tryThis": [
+    "Each write a list of the jobs your mother and father did at home, then make your own plan together for who will do what.",
+    "Sit down together and share what you earn, own and owe. Then write a simple plan for giving, saving and spending.",
+    "Pick one talk-it-over question from this book each evening this week, and take turns listening until the other feels understood."
+   ],
+   "forUs": "Leadership at YWAM GP is starting pre-marriage training and counselling for engaged couples, and this book fits that work well. Many couples at YWAM GP face extra layers. A Khmer and a Western partner may carry very different ideas about family, money and who does what at home. In Cambodia, a marriage often involves the whole family, and leaving parents may look different from a Western home, so talk early about where you will live and how you will honor both families. Living on support means a money plan matters even more, and it is wise to be open about any debts or family duties to send money home. Missionary life brings busy seasons, outreaches and long days, so plan time to talk, pray and rest together. Couples who expect to raise children on a base can talk about that too. A trusted mentor or married couple can walk with you through these conversations before the wedding.",
+   "oneLine": "Strong feelings bring you to the wedding, but honest talk, forgiveness and a shared plan build the marriage.",
+   "cover": {
+    "bg": "plum",
+    "fg": "paper",
+    "a": "marigold",
+    "b": "paper",
+    "motif": "compass",
+    "layout": "top",
+    "font": "sans"
+   }
+  },
+  {
+   "id": "the-meaning-of-marriage",
+   "title": "The Meaning of Marriage",
+   "author": "Timothy Keller with Kathy Keller",
+   "year": 2011,
+   "shelf": "family",
+   "mins": 10,
+   "vibe": "Marriage is harder than you hoped and better than you dreamed, because it is built on a love that came first.",
+   "bigIdea": "Timothy Keller was a pastor in New York City, and he and his wife Kathy were married for more than thirty-five years when this book came out. It grew from a series of sermons at their church, Redeemer Presbyterian, where many young people were afraid of marriage or confused about it. The Kellers wanted to give them a better picture, taken from the Bible. Their key passage is Ephesians 5, where Paul says that marriage points to the love between Christ and his church. Keller's big idea is that the secret of marriage is the gospel. Jesus gave himself for us when we were not lovely, and we can only give ourselves to a spouse in the same way if we first receive his love. The book is honest about how hard marriage is. Two sinners living close together will hurt each other. But it is also full of hope. Marriage is a covenant, a promise kept on purpose. It is a deep friendship that helps each person become who God made them to be. Kathy writes parts of the book too, and the Kellers share stories from their own marriage, fights included.",
+   "insights": [
+    {
+     "emoji": "🔑",
+     "title": "The secret of marriage is the gospel",
+     "body": "In Ephesians 5, Paul gives advice to husbands and wives. Then he says something surprising. He says that marriage is a deep mystery, and that he is really talking about Christ and the church (Ephesians 5:32). Keller builds the whole book on this verse.\n\nHe says that marriage was always meant to be a picture of something bigger. Jesus left his glory, came to us and gave his life for people who did not love him back.\n\nSo the gospel is not only the way we are saved. It is also the pattern and the power for marriage. A husband or wife who knows they are loved by Jesus, without earning it, can give that kind of love to a spouse.\n\nKeller notes that people today often swing between two errors. Some expect too much from marriage, as if a spouse could be their saviour. Others expect too little, and see marriage as a contract that can end when it stops working. The gospel answers both. Only Christ can be our saviour, and because of his love we can keep our promises."
+    },
+    {
+     "emoji": "🪞",
+     "title": "The real problem is self-centredness",
+     "body": "Why is marriage so hard? Keller's answer is simple and honest. Each of us is self-centred. We all bring our own sin into the home.\n\nWhen two people date, they show each other their best side. After the wedding, they live close together every day. Then each one sees the other's selfishness very clearly. We notice how our spouse hurt us, but we explain away how we hurt them.\n\nKeller mentions the writer Stanley Hauerwas, who said that we always marry the wrong person. He did not mean we should leave. He meant that no one is the perfect match we imagined, and marriage changes us anyway.\n\nSo Keller says the main problem in most marriages is not the wrong partner, poor communication or money. It is the selfish heart that both people carry. This is actually good news. If the problem is our own heart, then God can work on it. Each spouse can begin by looking at their own sin first, instead of waiting for the other to change.\n\nHere is a simple everyday example. A couple argues about who does the dishes. The deeper question is whether each one is keeping score."
+    },
+    {
+     "emoji": "🔥",
+     "title": "The power for marriage",
+     "body": "Just before his words to husbands and wives, Paul tells Christians to be filled with the Spirit (Ephesians 5:18). Then he says that we should submit to one another out of respect for Christ.\n\nKeller says the gospel does two things to our hearts at the same time. It humbles us, because it shows that we were so sinful that Jesus had to die for us. And it lifts us up, because it shows that we are loved so much that he was glad to do it. A person who is humbled and loved at the same time is free. They do not need to win every argument. They do not need their spouse's praise to feel worth something.\n\nWhen our deepest need for love is met in Christ, we stop demanding that our spouse fill it.\n\nThe Kellers tell honestly of times in their own marriage when this was hard. Kathy describes a day when Tim's long work hours were hurting the family and he did not seem to hear her. She broke some saucers to get his attention. Real change came as they both went back to God's love."
+    },
+    {
+     "emoji": "💍",
+     "title": "Love is a covenant, not only a feeling",
+     "body": "Our culture often says love is a strong feeling. If the feeling goes, the love is over. Keller says the Bible sees it differently. At its heart, marriage is a covenant. It is a promise made before God and other people.\n\nKeller explains that wedding vows are not a statement about how you feel today. The vows are a promise about the future. You promise to love this person in the days when you do not feel it, when they are sick, poor or hard to live with.\n\nThis promise is not a cage. Keller says it is what makes love safe. When both people know the other will not leave, they can be honest. They can show their weaknesses without fear.\n\nKeller also teaches that love is something you do, not only something you feel. You can speak kindly, serve, and give time. Often the feelings return after the actions, not before.\n\nHere is a simple everyday example. A husband is tired and a little annoyed. He makes his wife tea anyway and asks about her day. By the end of the evening, he feels warmer toward her."
+    },
+    {
+     "emoji": "🤝",
+     "title": "Marriage is a deep friendship",
+     "body": "In Genesis 2, God said it was not good for the man to be alone. Keller notes that God's answer was not only a helper for work, but a companion. Marriage is meant to be a friendship, the deepest one on earth.\n\nKeller draws on C. S. Lewis, who described friends as people who stand side by side, looking at the same thing together. Lovers look at each other. Friends look ahead together at something they both care about.\n\nFor Christians, Keller says, the best friendship in marriage is a shared journey toward Christ. A husband and wife walk side by side toward the same goal, which is becoming like Jesus.\n\nKeller notes that friendship needs two things above all: honesty and constancy. A real friend tells you the truth, even when it is hard to hear. A real friend stays with you when life goes badly. Marriage should have both.\n\nThis also says something to people choosing a spouse. Keller suggests that physical attraction and shared interests matter, but they are not enough. The best question is whether this person could be your closest friend for life, and whether you are going the same way."
+    },
+    {
+     "emoji": "✨",
+     "title": "Seeing your spouse's future glory",
+     "body": "Keller says one of the great purposes of marriage is to help each other become the person God is making us to be. He speaks of a spouse's future self, the person they will be when God finishes his work in them.\n\nWhen you marry, you see something beautiful in the other person. But you also start to see their flaws, sometimes more clearly than anyone. Keller says marriage gives you a special calling: to love your spouse as they are, and also to help them grow into the new person God has in mind.\n\nPaul says that Christ gave himself for the church to make her holy and without blemish (Ephesians 5:25–27). In a small way, spouses join in this work.\n\nThis is not about trying to fix or control your spouse. It must be done with grace and patience, and each person must work on their own heart too. But it gives marriage a hopeful goal.\n\nHere is a simple everyday example. A wife notices her husband is shy but kind. She gently encourages him to lead a small group, and stands with him as he grows."
+    },
+    {
+     "emoji": "🧭",
+     "title": "Loving the stranger",
+     "body": "Keller says that, in a sense, you always marry a stranger. You think you know the person well. But only after the wedding do you see many parts of them, and over the years they keep changing.\n\nSo how do you love someone who keeps surprising you? Keller points to three tools that work together: love, truth and grace.\n\nLove means learning to show love in a way your spouse can receive. Keller discusses the idea that people have different ways of feeling loved, such as kind words, time together, gifts, help with tasks or touch. What makes you feel loved may not be what makes your spouse feel loved.\n\nTruth means speaking honestly about hurts and sins, not hiding them. But truth must be spoken in love, not to win or to punish.\n\nGrace means forgiving and repenting. Keller says forgiveness is costly, because you choose to carry the hurt yourself instead of making the other person pay. You often forgive before you feel it. Repentance means owning your part without excuses. A marriage where both people repent and forgive can survive almost anything."
+    },
+    {
+     "emoji": "⚖️",
+     "title": "Embracing the other",
+     "body": "Kathy Keller writes much of this chapter. It is about men and women in marriage, and the Kellers know it is a sensitive topic.\n\nThey hold what is often called a complementarian view. In their view, husbands and wives are fully equal in worth and dignity before God, but they have different roles. They teach that the husband is called to lead as a servant, the way Jesus led by laying down his life, not by giving orders. And the wife is called to support that leadership freely. They point to the Trinity, where the Son is equal to the Father yet gladly honours the Father's will.\n\nThis is the Kellers' view. Many sincere Christians read the same Bible passages differently and hold an egalitarian view, where leadership in marriage is fully shared. Couples should study the Scriptures and talk honestly about it.\n\nWhatever view a couple holds, the Kellers make a point that many can agree with. Marriage brings two different people together, and the differences are not a mistake. Learning to embrace someone who is truly other than you is part of how marriage stretches and shapes us. Both spouses are called to humble, self-giving love."
+    },
+    {
+     "emoji": "🌿",
+     "title": "Singleness and marriage",
+     "body": "Keller writes a whole chapter for single people. He reminds readers that Jesus was single, and so was Paul. In the ancient world, people often saw singleness as failure. But the early church gave single people honour and a full place in God's family.\n\nKeller says that this is because Christianity does not make marriage the most important thing in life. Our final home and family is the people of God, and in the end, the true marriage is between Christ and his church. So a single person is not half a person. They can live a full life of love and service.\n\nAt the same time, Keller warns against two errors. One is to idolize marriage, thinking life will only begin once you are married. The other is to fear or look down on marriage.\n\nFor those who hope to marry, Keller gives wise advice. Look for someone who could be your best friend, who shares your faith and your direction. Let attraction grow, but do not let it rule. Take time, and involve wise friends and the church, who can see things you may miss. And do not rush into sexual intimacy, which can blind you to whether the relationship is really healthy."
+    },
+    {
+     "emoji": "❤️",
+     "title": "Sex as a covenant renewal",
+     "body": "The last chapter is about sex. Keller says the Bible is not shy about sex, and it does not see it as dirty. Sex is God's good gift, and the Song of Songs celebrates it.\n\nBut Keller argues that God made sex for the covenant of marriage. In the Bible, a covenant was often renewed with a special ceremony, where people remembered their promises and gave themselves again. Keller suggests that sex is meant to work like that for a married couple. It is a way of saying with the body what the vows said with words: I belong completely to you.\n\nThis is why, in Keller's view, sex outside marriage does not fit. It uses the body to say I give you all of myself, while the rest of life says I am keeping my options open.\n\nKeller is also honest that sex in marriage is not always easy. Couples come with different desires, hurts and histories. The answer is the same gospel love: to seek your spouse's joy more than your own, with patience. For those with past sexual sin or hurt, the gospel offers forgiveness and healing."
+    }
+   ],
+   "tryThis": [
+    "Read Ephesians 5:21–33 together, then each say one way Jesus' love for you can shape how you treat your spouse this week.",
+    "Ask your spouse or fiancé what makes them feel most loved. Do that one thing on purpose three times this week.",
+    "Think of one hurt you have been holding. Pray about it, then either forgive it fully or talk about it gently and honestly."
+   ],
+   "forUs": "At YWAM GP, many couples are crossing cultures as well as joining two lives. A Khmer husband and a Western wife may have very different ideas about family, money, roles and conflict. This book reminds us that the deepest problem is not culture but the selfish heart, and the deepest help is the gospel. Missionary life adds its own pressures. Living on support, long hours of ministry and life on a busy base can leave little time for friendship in marriage. Keller's picture of marriage as friendship on a shared journey can help couples guard time to pray, talk and laugh together. Engaged couples can use his chapters on covenant, love, truth and grace to talk honestly before the wedding. Single staff can take heart that they are full members of God's family. For couples raising children on a base, keeping the covenant visible is one of the best gifts to the next generation. Couples may hold different views on roles in marriage; this is a good topic to work through with a mentor.",
+   "oneLine": "Marriage works when two people who know they are loved by Christ keep their promise to give themselves to each other.",
+   "cover": {
+    "bg": "marigold",
+    "fg": "ink",
+    "a": "ink",
+    "b": "paper",
+    "motif": "heart",
+    "layout": "top",
+    "font": "serif"
+   }
+  },
+  {
+   "id": "sacred-marriage",
+   "title": "Sacred Marriage",
+   "author": "Gary Thomas",
+   "year": 2000,
+   "shelf": "family",
+   "mins": 10,
+   "vibe": "What if your marriage is not mainly about making you happy, but about making you more like Jesus?",
+   "bigIdea": "Most of us marry hoping to be happy. That is a good hope, but Gary Thomas asks a bigger question. What if God designed marriage to make us holy, even more than to make us happy? Gary is an American writer who has studied how Christians through the centuries grew close to God. Many of those old writers were monks and nuns who lived alone. Gary noticed that most believers today live in families, not in monasteries. So he asked: how can marriage itself be a path to God? His answer is that marriage is a school for the soul. Living close to another person shows us our selfishness, our pride and our impatience. It teaches us to love someone who is not perfect, to forgive, to pray, to serve and to keep going when it is hard. These are the same lessons God wants to teach every follower of Jesus. Gary does not say happiness is wrong. He says that if happiness is our only goal, we will give up when it fades. If holiness is the goal, even the hard days have a purpose. The book was first written in 2000 and revised in 2015, and it has helped many couples see their ordinary married life as sacred.",
+   "insights": [
+    {
+     "emoji": "🕯️",
+     "title": "Holy more than happy",
+     "body": "The heart of the book is one question. What if marriage is not mainly about our happiness, but about our holiness? Gary does not mean God wants us to be miserable. He means God has a deeper purpose than our feelings.\n\nThink about how most people choose to marry. They fall in love. They feel excited and alive. But that strong romantic feeling does not stay at the same level forever. In Gary's view, a couple who built their marriage only on that feeling will start to wonder if they married the wrong person when it fades.\n\nGary invites us to move beyond falling in love. Feelings come and go, but a covenant stays. He points to Ephesians 5, where Paul says that marriage is a picture of Christ and the church. Jesus does not love the church because she is always lovely. He loves her to make her holy and beautiful.\n\nSo a marriage can show the world something of God. When a husband and wife keep loving each other through ordinary and difficult days, people can see a small picture of how faithfully God loves his people."
+    },
+    {
+     "emoji": "🙏",
+     "title": "Marriage as a spiritual discipline",
+     "body": "Christians have always practised spiritual disciplines, like prayer, fasting, Bible reading and silence. These are not ways to earn God's love. They are ways to make room for God to change us.\n\nGary says marriage can work in the same way. Many of the great Christian writers of the past taught that you grow close to God by leaving the world and living alone. Gary respects them, but he notices that most believers today are married and busy. He does not believe they are second-class Christians. Their home can be the place where God shapes them.\n\nIn marriage you cannot hide for long. Every day you have chances to choose patience instead of anger, to listen instead of defend, and to give instead of take. Each of those small choices is like a step in a long walk with God.\n\nHere is a simple everyday example. A wife comes home tired after teaching all day. Her husband has also had a long day and wants to rest. Instead, he makes tea and asks about her class. Nobody sees it. But in that small act, he is learning to love like Jesus."
+    },
+    {
+     "emoji": "❤️",
+     "title": "Learning to love an imperfect person",
+     "body": "It is easy to love someone who is kind and doing everything right. It is much harder when they are moody or have hurt us. Gary says marriage teaches us to love the way God loves.\n\nGod does not wait for us to become perfect before he loves us. Romans 5:8 says that while we were still sinners, Christ died for us. God's love is a choice he makes, not a reward we earn. When we learn to love a spouse who has faults, we are learning a small part of God's own love.\n\nGary also connects love with serving. On the night before he died, Jesus took a towel and washed his disciples' feet. That was the work of a servant. In the same way, much of married love is not grand or romantic. It is serving: doing the dishes, caring for a sick spouse, taking the children so the other can rest.\n\nThis kind of love grows slowly. At first we serve because we have to. Over time, God changes our hearts so that we serve because we want to. Gary believes that this change in us is one of the main gifts of marriage."
+    },
+    {
+     "emoji": "🤝",
+     "title": "Learning to respect",
+     "body": "Ephesians 5:33 asks husbands to love their wives and wives to respect their husbands. Gary encourages both partners to show honour.\n\nAfter years together, it is easy to stop seeing your spouse with honour. You know their weaknesses. You have heard their stories many times. Small jokes can turn into put-downs, and that slowly cools a marriage.\n\nOne idea in the book helps many couples. Your spouse is not only your husband or wife. He or she is also a son or daughter of God. Think about how a loving father feels when someone treats his child badly. In Gary's view, how we treat our spouse is part of how we treat God, because God loves that person as his own child.\n\nRespect is shown in small things. It is in how we speak about our spouse to friends, how we listen when they talk, and whether we keep their secrets. It means taking their ideas seriously, even when we disagree. It is choosing to look for the good in them and to say it out loud."
+    },
+    {
+     "emoji": "🗣️",
+     "title": "Learning to pray",
+     "body": "Marriage often drives us to prayer, because we meet problems we cannot fix alone.\n\nGary points to 1 Peter 3:7, where husbands are told to be considerate and to honour their wives so that nothing will hinder their prayers. Gary sees a link here. How we treat our spouse affects our relationship with God. It is hard to pray with a clear heart while we are being cold or unkind at home.\n\nMarriage also teaches us to pray for another person, not only for ourselves. When we pray for our spouse, we start to see them through God's eyes. It becomes harder to stay angry with someone we are bringing before God every day. And sometimes God answers by changing us, not the other person.\n\nHere is a simple everyday example. A couple has had a hard week, with money worries and short tempers. They decide to sit together for five minutes each night and pray, even briefly. They do not solve every problem. But they stop facing each other as enemies and start facing the problem together, before God."
+    },
+    {
+     "emoji": "🪞",
+     "title": "A mirror that shows our sin",
+     "body": "Before marriage, many people think of themselves as fairly patient and kind. Then they marry, and they discover how selfish they can be. Gary says marriage works like a mirror. It shows us what is really in our hearts.\n\nWhen your spouse leaves the room messy or forgets something important, you may be surprised by how angry you become. It is tempting to blame your spouse for your anger. But Gary encourages us to ask a different question. What is this moment showing me about myself?\n\nIn Gary's view, the problem is often not that we married the wrong person. The problem is that we brought our own sin into the marriage, and living close to someone brings it out. If we left and married someone else, we would bring the same heart with us.\n\nSo the mirror is a gift, even if it is uncomfortable. God uses it to show us where we need to grow. When we stop pointing at our spouse and start asking God to change us, real growth begins. Often the things that annoy us most are where God is working most deeply."
+    },
+    {
+     "emoji": "🕊️",
+     "title": "Forgiveness, again and again",
+     "body": "Two sinners living together will hurt each other. That does not mean the marriage has failed. So Gary says that a good marriage needs a lot of forgiveness.\n\nJesus taught us to forgive as we have been forgiven. When Peter asked how many times he should forgive, Jesus told him to keep forgiving, far more than Peter expected (Matthew 18:21–22). In marriage, this is very practical. We need to forgive small things every week, and sometimes big things that take a long time to heal.\n\nForgiveness does not mean saying that the wrong did not matter. It means choosing not to hold it against the other person. It means not bringing up old failures in every new argument. A long list of each other's mistakes slowly poisons a home.\n\nWhen we forgive, we remember how much God has forgiven us. Our hearts become softer. We also become people who are easier to live with. Asking for forgiveness matters too. Saying sorry plainly, without excuses, is one of the most loving things a husband or wife can do."
+    },
+    {
+     "emoji": "⛰️",
+     "title": "Staying through hard seasons",
+     "body": "Every marriage has seasons. Some are full of joy. Others are dry, tiring or painful. There may be sickness, money trouble, grief, a hard move or long years with small children. Gary says perseverance is one of the ways marriage makes us holy.\n\nOur culture often teaches that when something is hard, we should leave and find something easier. Gary disagrees. He believes that staying committed through difficulty builds character that we could not gain any other way. James 1 says that the testing of our faith produces perseverance, and perseverance makes us mature.\n\nThis is not about staying in danger. Abuse is serious, and anyone being harmed needs safety and help. This is about the ordinary hard seasons most marriages meet.\n\nHere is a simple everyday example. A couple goes through a year when everything feels flat. They are busy and tired, and the warmth seems gone. They choose to keep going: to keep praying, to keep a weekly time together and to talk to a wise older couple. Slowly the warmth returns. Later they look back and see that the hard year made their love deeper."
+    },
+    {
+     "emoji": "📜",
+     "title": "Building a sacred history",
+     "body": "Gary writes about the value of a shared history. When a couple has been together for many years, they hold a story that nobody else in the world shares in the same way.\n\nThey remember their wedding day, the small first home, the birth of their children, the times they prayed through a crisis and the times God provided. They remember mistakes too, and how they came through. This shared memory becomes a treasure. It holds them together.\n\nIn the Bible, God often told his people to remember. They built stone piles, kept feasts and told their children what God had done. Remembering helped them trust God in new trials. Gary suggests that couples can do the same. Telling the story of what God has done in your marriage gives you courage for the next hard thing.\n\nThis is also one reason why leaving a marriage costs so much. A new relationship cannot replace a history that took decades to build. Every year a couple stays faithful, their story grows richer. Here is a simple everyday example. On each anniversary, a husband and wife write down three ways God was faithful to them that year, and keep the pages in one book."
+    },
+    {
+     "emoji": "🔥",
+     "title": "Sex is a holy gift",
+     "body": "Some Christians feel that sex is a little shameful, or not something to mention in church. Gary disagrees. He treats sexual intimacy in marriage as a good and holy gift from God.\n\nThe Bible is not silent about it. The Song of Songs celebrates the love and desire between a husband and wife. Paul writes in 1 Corinthians 7 that husbands and wives should not deny each other, except for a short time by agreement for prayer. God made our bodies, and he made sexual union to bring a married couple close.\n\nGary also sees sex as a place to grow in love. Good intimacy asks us to think of the other person's needs, not only our own. It asks for patience, gentleness and honesty. Selfishness shows up here as clearly as anywhere else in marriage, and so does generous love.\n\nIn his view, sex is not separate from spiritual life. A couple who give themselves to each other with love and faithfulness are honouring God with their bodies. And when sex is hard, because of tiredness, hurt or past wounds, it is something to talk about and pray about together, with patience and, where needed, wise help."
+    }
+   ],
+   "tryThis": [
+    "Sit together and ask each other one question: what is God teaching me through our marriage right now? Listen without arguing.",
+    "Pray for your spouse by name every day this week, and once ask them what they would like you to pray for.",
+    "Write down one shared memory where God was faithful to you as a couple, and tell it to your children or a friend."
+   ],
+   "forUs": "At YWAM GP, many of us live and serve as couples, and some are getting ready to marry. Missionary life puts real pressure on a marriage. We live on support, we move between countries, we serve long hours, and our homes are often open to students and teams. Many marriages here also join two cultures, Khmer and Western or other Asian cultures, with different ideas about family, money, respect and how to handle conflict. This book can help us see those pressures in a new way. The hard moments are not only problems to solve. They are places where God can make us more like Jesus. For engaged couples, it is a good reminder to build on more than romantic feelings. For married couples, it is an invitation to keep forgiving, keep praying and keep serving each other at home, not only in ministry. Children growing up on the base are watching how their parents treat each other. A home where husband and wife honour each other may teach them more about God than any lesson we give.",
+   "oneLine": "Marriage is God's school for the soul: through loving, forgiving and staying, he makes us holy.",
+   "cover": {
+    "bg": "ink",
+    "fg": "paper",
+    "a": "marigold",
+    "b": "paper",
+    "motif": "flame",
+    "layout": "bottom",
+    "font": "serif"
+   }
+  },
+  {
+   "id": "the-seven-principles-for-making-marriage-work",
+   "title": "The Seven Principles for Making Marriage Work",
+   "author": "John M. Gottman and Nan Silver",
+   "year": 1999,
+   "shelf": "family",
+   "mins": 10,
+   "vibe": "Strong marriages are not built on perfect talks. They are built on a deep friendship, shown in small ways every day.",
+   "bigIdea": "John Gottman is an American psychologist who spent decades studying married couples at the University of Washington. Instead of asking couples what makes a marriage work, he watched them. In his research lab, which people called the Love Lab, couples talked, argued and spent time together while his team recorded their words, faces and heartbeats. Then the team followed the couples for years to see who stayed together and who did not. Nan Silver, a writer, helped him turn this research into a book for ordinary couples. The book was first published in 1999, and a revised edition came out in 2015. Happy couples are not the ones who never fight, and they are not always good at talking through problems. What they have is a deep friendship. They know each other well, they like and respect each other, and they turn toward each other in small daily moments. The book names the habits that slowly destroy a marriage, and seven principles that build it up. This is a research book, not a Christian book. It does not quote the Bible or speak about God. But much of what it found fits closely with what Scripture teaches about love, honour and humility.",
+   "insights": [
+    {
+     "emoji": "🔬",
+     "title": "What the Love Lab saw",
+     "body": "Gottman's lab was set up like a small, comfortable apartment. Couples stayed there while cameras and sensors measured how they spoke, what their faces showed and how their bodies reacted.\n\nFrom this work, Gottman says he could often predict which couples would divorce, just by watching them talk about a disagreement for a short time. He gives a very high accuracy for these predictions. Some other researchers have questioned how strong these predictions really are, so it is fair to treat the exact numbers with care.\n\nThe biggest finding was not about fighting. Most couples, happy or unhappy, disagree. The difference was how they treated each other while they disagreed, and how much friendship they had built in ordinary times. Gottman also holds, and this is his view, that happy couples do not mainly rely on careful listening techniques in a fight.\n\nHere is a simple everyday example. Two couples both argue about money. One couple jokes a little, softens their words and stays kind. The other couple attacks and sneers. The topic is the same. The future is very different."
+    },
+    {
+     "emoji": "🐎",
+     "title": "The Four Horsemen",
+     "body": "Gottman names four ways of talking that, in his research, often came before the end of a marriage. He calls them the Four Horsemen.\n\nThe first is criticism. A complaint is about one action: you forgot to call. Criticism attacks the person: you never think of anyone but yourself. The second is contempt: mocking, sarcasm, rolling the eyes, speaking as if you are better than your partner. Gottman says contempt is the strongest single sign that a marriage is in danger. The third is defensiveness: making excuses, or blaming back, instead of hearing the complaint. The fourth is stonewalling: going silent, looking away and shutting your partner out. In his studies, men did this more often.\n\nThe horsemen often come after a harsh start-up, when a hard talk begins with blame or sharp words. Gottman says the first few minutes of a conflict talk usually show how it will end.\n\nEach horseman has a cure. Instead of criticism, start gently and talk about your own feelings and needs. Instead of contempt, build a habit of thanks and respect. Instead of defensiveness, take responsibility for your part, even a small part. Instead of stonewalling, calm your body and come back to the talk."
+    },
+    {
+     "emoji": "🌊",
+     "title": "Flooding and failed repair",
+     "body": "Sometimes a fight becomes too much. Gottman calls this flooding. The heart beats fast, the body is ready to fight or run, and the mind cannot think clearly. When this happens, a person cannot really hear or care about what the other is saying. They just want it to stop.\n\nGottman's advice is to notice it and take a real break. Agree to stop for at least twenty minutes, and do something calming, like a walk or slow breathing. Then come back and continue.\n\nHe also talks about repair attempts. These are small things a person says or does to calm a fight: a joke, a touch, saying sorry, or asking to start again. Happy couples make repair attempts often, and their partners accept them. In unhappy marriages, repair attempts are missed or pushed away, because there is too much hurt and not enough friendship underneath.\n\nHere is a simple everyday example. A wife is upset that her husband came home late again. Halfway through the argument he says, I am handling this badly, can we start over? If she can receive that, the fight cools down. If she answers with a cold remark, it gets worse."
+    },
+    {
+     "emoji": "🗺️",
+     "title": "Principle 1: Know each other's world",
+     "body": "The first principle is about what Gottman calls a love map. A love map is the part of your mind where you keep the details of your partner's life. Who are their friends right now? What are they worried about this week? What do they dream of doing one day?\n\nGottman found that couples with detailed love maps handle hard times much better. When a baby is born, a job changes or illness comes, they are not strangers to each other. They already know each other's inner world, so they can adjust together.\n\nLove maps fade if they are not updated. People change. So a love map is not something you finish. It is something you keep drawing.\n\nThe book gives many questions for couples to ask each other, like a game. The point is not to test your partner, but to stay curious about them.\n\nHere is a simple everyday example. A husband notices his wife has been quiet after her team meetings. Instead of guessing, he asks what is happening at work. He learns that one coworker has been making her feel small. Now he knows how to pray for her."
+    },
+    {
+     "emoji": "🌻",
+     "title": "Principle 2: Keep fondness and admiration alive",
+     "body": "The second principle is to nurture fondness and admiration. This means remembering what you like and respect in your partner, and saying it out loud. Gottman calls this the antidote to contempt. It is hard to look down on someone while you are honestly thankful for them.\n\nOne way his team measured this was by asking couples to tell the story of their relationship: how they met, what drew them together, how they got through hard times. Couples who told the story with warmth and pride usually did well. Couples who remembered it with bitterness were more at risk.\n\nThe good news is that fondness can be woken up again. Gottman says that if there is still some memory of good times, it can be built on. He suggests simple practices: think of a few qualities you love in your partner, remember a time they showed them, and tell them.\n\nHere is a simple everyday example. A wife writes on a small card three things she admires about her husband: he is patient with the children, he works hard, and he makes her laugh. She leaves it on his pillow. It takes two minutes, and it makes the next disagreement softer."
+    },
+    {
+     "emoji": "🔄",
+     "title": "Principle 3: Turn toward each other",
+     "body": "The third principle is about small moments. Every day, partners make bids for attention, interest or care. A bid can be very small: look at this, did you hear that news, can you help me, a sigh, a touch on the arm. Each time, the other person can turn toward the bid, turn away from it by ignoring it, or turn against it with an angry answer.\n\nGottman says these tiny moments are the real stuff of romance. He compares them to deposits in an emotional bank account. Each time you turn toward your partner, you add to the account. When a hard season or a fight comes, there is something saved to draw on.\n\nThis means romance is not mainly about big gifts or holidays. It is built in the kitchen, in the car, and while folding the washing.\n\nHere is a simple everyday example. A husband is scrolling on his phone. His wife says, the mango tree is flowering again. He could keep scrolling and grunt. Or he could look up, walk to the window with her, and say, we will have mangoes in April. A thousand small moments like that make a person feel loved."
+    },
+    {
+     "emoji": "🤝",
+     "title": "Principle 4: Let your partner influence you",
+     "body": "The fourth principle is to accept influence from your partner. This means taking their opinions and feelings seriously, being willing to be changed by them, and sharing decisions instead of controlling them.\n\nIn his research with newlywed couples, Gottman found that when husbands refused to accept influence from their wives, the marriage was much more likely to fail. He writes that many wives already accept influence from their husbands, so his strongest challenge in this chapter is to men. A husband who listens to his wife, says yes to some of her ideas, and lets her shape decisions makes the marriage stronger.\n\nGottman is careful to say this is not about men giving up all their views. It is about respect and partnership.\n\nHere is a simple everyday example. A couple must decide whether to move to another town for a new role. The husband has already decided in his mind. But his wife has concerns about the children's school. Instead of pushing past her, he asks her to explain, and he changes his plan to wait one more term. The decision becomes theirs, not just his."
+    },
+    {
+     "emoji": "🧩",
+     "title": "Principle 5: Solve the problems you can solve",
+     "body": "Gottman separates conflicts into two kinds. Some are solvable: a problem about one situation that can be worked out. Others are perpetual, which comes next. For the solvable ones, he gives a simple way forward.\n\nFirst, soften your start-up. Begin without blame. Talk about yourself and what you need, not about what is wrong with your partner. Second, make and receive repair attempts. Third, calm yourself and your partner when emotions run high. Fourth, look for a compromise, where both people give a little. And fifth, be patient with each other's weaknesses. Nobody marries a perfect person.\n\nGottman notes that in his research, wives started hard talks more often than husbands. So he says a gentle start matters a great deal.\n\nHere is a simple everyday example. Instead of saying, you never help with the dishes, you are so lazy, a wife says, I am really tired tonight. Could you wash the dishes while I put the kids to bed? Her husband hears a request, not an attack. He agrees, and later says thank you for telling me."
+    },
+    {
+     "emoji": "🔒",
+     "title": "Principle 6: Get past gridlock",
+     "body": "Here is one of the most freeing findings in the book. Gottman says that most conflicts in a marriage, about two thirds, are perpetual. They come from deep differences in personality, background or values, and they will never fully be solved. One partner likes to plan and the other likes to be spontaneous.\n\nHappy couples still have these problems. The difference is that they can talk about them with humour and kindness, and live with them. Unhappy couples get gridlocked: the same fight goes round and round, each person digs in, and both feel hurt and unseen.\n\nGottman says gridlock usually hides a dream within the conflict. Under the argument is a deep hope or value that a person feels the other does not respect. He encourages couples to take turns sharing the story behind their position, without trying to fix it, until each one understands the other's dream.\n\nHere is a simple everyday example. A couple keeps fighting about money sent home to family. For her, it is about honour and caring for her parents. For him, it is about fear of never having savings, because his family once lost everything. Once they hear each other's story, they can make a plan that respects both."
+    },
+    {
+     "emoji": "🕯️",
+     "title": "Principle 7: Build shared meaning",
+     "body": "The last principle goes deeper than solving problems. Gottman says a strong marriage creates a shared inner life, a kind of culture of its own, with its own habits, hopes and ways of doing things.\n\nHe points to a few parts of this shared meaning. There are rituals of connection, like how you eat together, greet each other at the end of the day, spend weekends, and celebrate birthdays and holidays. There are the roles you each carry, as spouse, parent, worker and friend, and what those roles mean to you. There are shared goals, and the values and symbols that matter most to you.\n\nCouples who talk about these things and agree on many of them are less likely to drift apart.\n\nHere is a simple everyday example. A couple decides that every Sunday evening they will drink tea together, look at the week ahead and pray for each other. It is a small ritual, but it says: this is who we are as a family."
+    }
+   ],
+   "tryThis": [
+    "Ask each other three questions you have not asked in a while, such as: what is worrying you this week, and what are you hoping for this year?",
+    "Each day, tell your partner one thing you appreciate about them, and notice and turn toward their small bids for attention.",
+    "Pick one recurring argument. Take turns sharing the story or hope behind your side for ten minutes each, without trying to solve it."
+   ],
+   "forUs": "This book is research, not Scripture, but it often points to what the Bible already asks of us: be kind, honour one another, be quick to listen and slow to anger (James 1:19). For couples at YWAM GP, it gives practical words for patterns we may already feel. Cross-cultural couples, Khmer and international, often face perpetual problems that come from different backgrounds, such as family duties, money, how to show respect, or how to raise children. It helps to know that these may never be fully solved, and that love can grow anyway. Ministry life brings its own pressure: living on support, busy weeks, guests and teams on the base, and little privacy. Engaged couples can use the love map questions and talk early about their dreams and fears. Married couples can notice the Four Horsemen, and replace them with gentle words, thanks and humility. When a marriage needs more help than a book can give, asking a trusted counsellor or mentor is a sign of strength, not failure.",
+   "oneLine": "A marriage lasts when friendship, respect and many small kindnesses are stronger than the habits that tear it down.",
+   "cover": {
+    "bg": "cobalt",
+    "fg": "paper",
+    "a": "marigold",
+    "b": "paper",
+    "motif": "steps",
+    "layout": "top",
+    "font": "sans"
+   }
+  },
+  {
+   "id": "the-5-love-languages",
+   "title": "The 5 Love Languages: The Secret to Love that Lasts",
+   "author": "Gary Chapman",
+   "year": 1992,
+   "shelf": "family",
+   "mins": 10,
+   "vibe": "You may love your spouse deeply and still not be understood. Learn to say love in the language they hear.",
+   "bigIdea": "Gary Chapman is a pastor and marriage counsellor in North Carolina in the United States. For many years he sat with couples who said the same sad thing: we used to be in love, and now we feel empty. Often both people were trying hard. The husband worked long hours to provide. The wife cooked and cleaned and kept the house. But each still felt unloved. Chapman began to see a pattern in his notes. People give and receive love in different ways, almost like different languages. If you speak only Khmer and your spouse understands only English, you can talk all day and they will not understand you. Love works the same way. Chapman describes five main love languages: words of affirmation, quality time, receiving gifts, acts of service and physical touch. Most people have one primary language that fills them most. His big idea is that we usually speak our own language, not our spouse's. So we must learn our spouse's language and speak it on purpose, even when it does not come naturally. He believes that when couples do this, cold marriages can become warm again. The five languages come from Chapman's experience as a counsellor; they are a helpful framework, not a scientific finding.",
+   "insights": [
+    {
+     "emoji": "🫙",
+     "title": "Everyone has a love tank",
+     "body": "Chapman uses a simple picture. Inside each of us there is an emotional love tank, like the fuel tank in a motorbike. When the tank is full, we feel secure and cared for. When the tank is empty, everything feels heavy.\n\nHe says this tank begins in childhood. A child who feels loved grows up with a sense of safety. A child whose tank stayed empty often looks for love in other places later.\n\nIn marriage, each partner wants the other to fill their tank. Many of the complaints couples brought to Chapman were really cries from an empty tank.\n\nHere is a simple everyday example. A husband comes home tired and snaps at his wife about dinner. The real problem is not the rice. For weeks no one has shown him that he matters. When his tank is filled again, the same tired evening goes very differently.\n\nThe question for every couple is simple: how full is your spouse's tank today, and how do you know?"
+    },
+    {
+     "emoji": "🎢",
+     "title": "Falling in love does not last",
+     "body": "Chapman is honest about the feeling of being in love. At the start, the other person seems perfect. You think about them all day. You feel that this happy feeling will never end.\n\nChapman says this stage is real, but it is temporary. Drawing on research about romantic love, he says it lasts about two years on average. Then the strong feeling fades. You start to notice habits that annoy you. You remember that you are two different people with different needs. Many couples think something has gone wrong.\n\nChapman's view is that nothing has gone wrong. The first excitement was never meant to carry a whole marriage. After that, a deeper kind of love has to take over. That love is not mainly a feeling. It is a choice to care for the other person and meet their needs.\n\nThis is good news. It means that couples who have lost the first spark are not stuck. They can learn to love in a way that lasts, and often the warm feelings come back as a result."
+    },
+    {
+     "emoji": "💬",
+     "title": "Words of affirmation",
+     "body": "The first language is words of affirmation. For some people, spoken words fill the love tank more than anything else.\n\nChapman describes different kinds of these words. Encouraging words help a spouse believe they can do something they are afraid to try. Kind words are about tone as well as content; the same sentence can hurt or heal depending on how it is said. Humble words turn demands into requests. Instead of telling your spouse what they must do, you share what you would love and leave them free to choose.\n\nFor a person with this language, harsh words wound very deeply. Criticism, mocking and a cold silence can empty their tank fast.\n\nHere is a simple everyday example. A wife spends the afternoon helping a neighbour's child with homework. That evening her husband notices and says, you were so patient with that boy; I am proud to be married to you. It costs him nothing. For her, it may be the best part of her week.\n\nChapman suggests keeping a small list of good words you could say, and using one every day."
+    },
+    {
+     "emoji": "⏳",
+     "title": "Quality time and quality conversation",
+     "body": "The second language is quality time. This means giving your spouse your full attention. A couple can sit together watching phones for an hour and spend no quality time at all.\n\nChapman describes two parts of this language. One is doing things together, a walk, a meal, a shared task, where the point is not the activity but being together. The other is quality conversation: talking and listening with real interest.\n\nHe gives practical advice for listening well. Look at your spouse while they talk. Do not do something else at the same time. Listen for feelings, not only facts. Do not interrupt to give advice they did not ask for. Often a person just wants to be understood, not fixed.\n\nFor someone whose language is quality time, broken plans and constant distraction hurt the most. When their spouse always picks up the phone, or is always too busy with ministry, they hear: you are not important to me.\n\nHere is a simple everyday example. Every evening a couple puts their phones in a basket for twenty minutes and sits outside with tea. Over months, that small habit builds a strong friendship."
+    },
+    {
+     "emoji": "🎁",
+     "title": "Receiving gifts",
+     "body": "The third language is receiving gifts. Chapman notes that giving gifts is part of love in almost every culture he knows of.\n\nFor people with this language, the value is not in the price. A flower from the roadside, a favourite snack from the market or a small stone from a walk can fill their tank. What matters is the thought behind it. Chapman says such gifts are visible signs of love.\n\nSome spouses find this language hard, especially if they grew up careful with money. Chapman encourages them to see gifts as an investment in the marriage, and to start small.\n\nChapman also speaks of the gift of yourself. Being physically present when your spouse needs you, at a hospital, at a funeral or on a very hard day, can be the most powerful gift of all. For a person with this language, a forgotten birthday or a missing presence at an important moment can hurt deeply.\n\nHere is a simple everyday example. A husband away on outreach brings back a small woven bracelet. It cost one dollar, but his wife wears it for years."
+    },
+    {
+     "emoji": "🧹",
+     "title": "Acts of service",
+     "body": "The fourth language is acts of service. For these people, love is shown by doing things that help. Cooking a meal, washing the dishes, fixing the leaking tap, taking the children so your spouse can rest: each of these says, I care about you.\n\nChapman tells of couples where one partner felt very unloved because the other never helped at home, even though they said loving words. For a person with this language, actions speak louder than words.\n\nChapman also warns about two mistakes. First, acts of service must be given freely. If they are forced through guilt or fear, they are not love. Second, old ideas about roles can get in the way. A husband may think washing clothes is not his job, or a wife may think fixing things is not hers. Chapman encourages couples to think again about these ideas if they stop them from loving each other well.\n\nHere is a simple everyday example. A wife knows her husband dreads the monthly support report. One evening she sorts the receipts for him and makes him a coffee. He does not say much, but he feels deeply loved."
+    },
+    {
+     "emoji": "🤝",
+     "title": "Physical touch",
+     "body": "The fifth language is physical touch. Chapman notes that babies who are held and touched tend to grow healthier emotionally than those who are left alone. Touch is a powerful way to communicate love, and for some adults it remains their primary language.\n\nIn marriage this includes sexual intimacy, but it is much wider than that. Holding hands, a hug when someone comes home, a hand on the shoulder while walking past, sitting close on the couch: all of these speak love. Chapman says touch has many dialects, big and small.\n\nThe most important thing is to learn what kind of touch your spouse enjoys, not what you enjoy. Touch must always be welcome. Touch that is unwanted or forceful is never love, and any violence does deep harm, especially to a person with this language.\n\nChapman also says that in a crisis, touch matters greatly.\n\nHere is a simple everyday example. A husband notices his wife is quiet after a hard phone call from home. He does not try to fix it. He just sits next to her and holds her hand until she is ready to talk."
+    },
+    {
+     "emoji": "🔍",
+     "title": "Finding your spouse's language, and your own",
+     "body": "How do you know which language is someone's primary one? Chapman gives a few simple clues.\n\nFirst, notice what your spouse asks for most often. Requests like, can we spend time together this weekend, or, can you help me with this, point to their language. Second, notice what they complain about. Complaints are often a sign of an empty tank. If your spouse often says, you never tell me you appreciate me, their language may be words. Third, notice how they show love to others. People tend to give love in the language they want to receive.\n\nYou can use the same three questions for yourself. What do you ask for? What hurts you most? How do you naturally show love?\n\nChapman stresses that most couples do not share the same language. This is why so many feel unloved. A husband may work hard fixing things, which is acts of service, while his wife longs for quality time. Both are loving; neither feels loved.\n\nHere is a simple everyday example. A couple preparing for marriage each write down the five languages in order, for themselves and for their partner. Then they compare."
+    },
+    {
+     "emoji": "💪",
+     "title": "Love is a choice, even when it is hard",
+     "body": "Chapman says that real love is a choice. Feelings come and go, but we can decide every day to speak our spouse's language.\n\nHe tells the story of a wife who came to him after years of a cold marriage. Her husband was distant and harsh, and she felt she had nothing left to give. Chapman suggested an experiment. For six months she would try to love her husband in his language, whether he responded or not. He based this on the teaching of Jesus to love even those who do not love us back (Luke 6:27–36). Every month she would also ask him gently how she could be a better wife.\n\nFor weeks almost nothing seemed to change. But slowly her husband began to soften. In time he started to ask what he could do for her. As Chapman tells it, the marriage that had seemed dead began to come back to life.\n\nChapman does not promise that every story ends this way. He also does not ask anyone to stay in danger; abuse needs a different kind of help. But he believes love is powerful, and that one person choosing love can change the climate of a home."
+    },
+    {
+     "emoji": "🌏",
+     "title": "The languages across cultures",
+     "body": "Chapman's book has been translated into many languages, and he says the five languages appear in every culture. But the way each language is spoken, the dialect, changes from place to place. For a cross-cultural couple, this matters a great deal.\n\nPhysical touch is a clear example. In many Western countries, a husband and wife may hold hands or kiss in public. In Cambodia, many couples keep touch private, and a public hug may feel uncomfortable or even shameful. A Western spouse may think, they never touch me, when the Khmer spouse is simply being respectful outside the home.\n\nGifts and service also look different. In Khmer culture, care is often shown through food: cooking a favourite dish, bringing fruit when visiting, making sure everyone has eaten. A Western spouse may expect gifts on birthdays or anniversaries, while a Khmer spouse may show love through daily acts of service and caring for parents.\n\nWords can differ too. Many Western people say I love you often. Many Khmer couples rarely say it aloud, and show it in other ways.\n\nHere is a simple everyday example. A mixed couple sit down and explain how love was shown in their families growing up. They agree to learn each other's dialect, in private and in public."
+    }
+   ],
+   "tryThis": [
+    "Each of you put the five languages in order for yourself and for your spouse, then compare and talk about the surprises.",
+    "Ask each other: what one thing could I do this week that would make you feel most loved? Then do it.",
+    "Choose your spouse's language and speak it in a small way every day for seven days, even if it feels unnatural."
+   ],
+   "forUs": "At YWAM GP, couples serve in busy ministry, often far from family, on a small budget and with little private time. It is easy to work hard for God and let each other's love tanks run dry. This book gives couples a simple shared language to talk about what they need. For cross-cultural couples, Khmer and international, it is especially useful: the same love language can look very different in a Cambodian home and a Western one, so talking openly about touch in public, gifts, words and family duties can prevent many hurts. Living on support may make gifts feel hard, but a small thoughtful gift still speaks loudly. Parents raising children on a base can also learn their children's languages; Chapman later wrote books for children, teenagers and singles too. For engaged couples, this is a good, light book to read together before marriage, and to talk about with a mentor or counsellor. It is not a cure for every problem, but it is a kind and practical place to start.",
+   "oneLine": "Learn which of the five languages fills your spouse's love tank, and choose to speak it every day.",
+   "cover": {
+    "bg": "berry",
+    "fg": "paper",
+    "a": "paper",
+    "b": "marigold",
+    "motif": "bubbles",
+    "layout": "top",
+    "font": "display"
+   }
+  },
+  {
+   "id": "boundaries-in-marriage",
+   "title": "Boundaries in Marriage",
+   "author": "Henry Cloud & John Townsend",
+   "year": 1999,
+   "shelf": "family",
+   "mins": 10,
+   "vibe": "Two people who each own their own life are free to love each other well.",
+   "bigIdea": "Henry Cloud and John Townsend are Christian psychologists who wrote the bestselling book Boundaries. Many married readers then asked them: how does this work in a marriage, where two people become one? This book is their answer. A boundary is like a property line. It shows where I end and you begin, and what I am responsible for and what I am not. Some Christians think boundaries do not belong in marriage, because love means giving everything. The authors say the opposite: love can only grow where two people are free and responsible. You are responsible for yourself: your feelings, attitudes, words and choices. You are responsible to your spouse: to love, serve and be honest with them. But you are not responsible for your spouse. You cannot make them change, and they cannot make you happy. When couples mix these up, they slip into control, blame and nagging, or they give in until resentment grows. The book applies the laws of boundaries to marriage, names the values that build a strong marriage, and shows how to handle conflict, outside pressures and a spouse who does not want to change. Boundaries are not walls to keep a spouse out. They protect love.",
+   "insights": [
+    {
+     "emoji": "🏡",
+     "title": "Me, you and us",
+     "body": "A boundary is like a fence around a field. It shows what is mine and what is not. The authors say that in marriage each of you owns your own heart: your feelings, your words, your choices and how you act.\n\nSo a marriage has three parts. There is you. There is your spouse. And there is the 'us' that the two of you build together. A healthy marriage takes care of all three. If one person disappears into the other, there is no real 'us' any more, only one person living through another.\n\nThe authors make a careful difference. You are responsible to your spouse: to love them, be kind, tell the truth and keep your promises. But you are not responsible for your spouse's moods, choices or growth. Those belong to them and to God.\n\nHere is a simple everyday example. Sokha comes home tired and silent. His wife Dara feels it is her job to fix his mood. She cooks his favourite food, asks again and again what is wrong, and feels like a failure when he stays quiet. With boundaries, Dara can show she cares and then let Sokha own his own feelings. She stays kind, but she does not carry what is his to carry."
+    },
+    {
+     "emoji": "🌱",
+     "title": "You reap what you sow",
+     "body": "The first law of boundaries comes from Galatians 6:7: what a person sows, they will reap. Choices have results.\n\nLoving spouses often get in the way of this law. A wife pays her husband's debts in secret. A husband makes excuses to the family when his wife loses her temper. They mean well, but the one who sows never reaps, so nothing changes. The authors say this kind of rescuing keeps a spouse from growing.\n\nThe second law is responsibility. Galatians 6 also says that we carry each other's burdens, and that each one carries their own load. A burden is too heavy for one person, like a crisis or an illness. A load is the daily work of life that each person must carry. Love helps with burdens. Love does not carry the other person's daily load for them.\n\nHere is a simple everyday example. A husband keeps spending the support money on things the family did not plan for. His wife keeps covering the gap from her own small savings. With boundaries, she tells him kindly that she will not cover it any more, and they sit down together with a budget. Now his choices have real results, and he has a reason to change."
+    },
+    {
+     "emoji": "🔑",
+     "title": "You can only change yourself",
+     "body": "The law of power says that you have power over yourself, not over your spouse. You cannot make your husband pray more or make your wife stop being late. You can pray, ask, explain and set limits. But in the end, they choose.\n\nMany people spend years trying to change their spouse and feel helpless. The authors point them back to what they can change: their own reactions, their own part in the problem and how they will respond next time. When one person changes their steps in a dance, the whole dance has to change.\n\nThe law of respect says that if I want my spouse to respect my limits, I must respect theirs. If I want my no to be heard, I must be able to hear their no without punishing them. A husband who expects his wife to accept his limits, but sulks every time she says no, is not respecting her freedom.\n\nThe law of motivation asks why we give. Love must be free. If you say yes to your spouse out of fear or guilt, or only to keep the peace, your yes is not really love, and resentment slowly grows. The authors say an honest no is better than a bitter yes. A gift given freely builds a marriage. A gift squeezed out by pressure slowly harms it."
+    },
+    {
+     "emoji": "💡",
+     "title": "Hurt is not harm, and limits must be spoken",
+     "body": "The law of evaluation says we must judge the effects of a boundary wisely. When you set a limit, your spouse may feel pain. That does not mean you did something wrong. The authors make a difference between hurting someone and harming them. A doctor hurts you when he sets a broken bone, but he does not harm you. A limit set in love may hurt for a while and still be good for your spouse and your marriage.\n\nThe law of exposure says that boundaries need to be spoken, not hidden. Many husbands and wives keep their limits secret. They pull away, go silent or punish quietly, and hope the other will guess. That only brings confusion and distance. Real boundaries are said out loud, with love, so the other person knows where you stand. Ephesians 4:15 calls this speaking the truth in love.\n\nHere is a simple everyday example. A wife feels hurt that her husband spends every evening on his phone, but instead of telling him, she goes cold. Weeks pass, and he has no idea why. When she finally tells him calmly that she misses him in the evenings and would like time together without phones, he can respond. The light gives a chance to change that the silence never gave."
+    },
+    {
+     "emoji": "💎",
+     "title": "What you value is what you get",
+     "body": "The authors say that what a couple values shapes what their marriage becomes. A marriage built on the right values grows strong. A marriage built on comfort, image or getting your own way grows weak. They name several values that help a marriage, and boundaries protect each one.\n\nThe first is loving God. When both of you look to God to meet your deepest needs, you stop demanding that your spouse be your god. No spouse can carry that weight.\n\nThe second is loving your spouse. Love is more than feelings. It is wanting the best for the other person, even when it costs you, and that sometimes means saying no.\n\nThe third is freedom. Love cannot grow under control. Each person must be free to choose, to disagree and to say no, or their yes means little. A marriage where one person controls the other may look calm, but it is not close.\n\nThe fourth is responsibility. Freedom and responsibility go together. Each of you owns your own part: your attitudes, your work, your words and your mistakes. When both spouses own their part, blame loses its power, and problems become things you solve together instead of weapons you use against each other."
+    },
+    {
+     "emoji": "🕊️",
+     "title": "Honest, faithful, forgiving and holy",
+     "body": "The next values are honesty, faithfulness, compassion and forgiveness, and holiness.\n\nHonesty means telling each other the truth, about facts and about feelings. The authors say real closeness is only possible when each person is known as they really are. Small lies and hidden feelings slowly build a wall.\n\nFaithfulness means more than not having an affair. It means being someone your spouse can trust in every part of life: with money, time, words and promises. Trust is built slowly, by keeping small promises again and again.\n\nCompassion and forgiveness are needed because both of you will fail. Every spouse is a sinner married to a sinner. Compassion sees your spouse's weakness with kindness. Forgiveness lets go of the right to punish. But the authors are clear that forgiveness is not the same as trust. You can forgive quickly, while trust is rebuilt step by step as the other person shows real change.\n\nHoliness means both of you growing to become more like God, together. The authors see marriage as a place where God shapes two people. Boundaries serve that growth. They are not about getting your own way. They help two people become more whole, more loving and more like Jesus."
+    },
+    {
+     "emoji": "🚪",
+     "title": "Guard the gate against intruders",
+     "body": "A marriage needs a fence around it too. The authors warn about things that slowly push into the space that belongs to the two of you.\n\nWork can take your best energy, so your spouse only gets what is left. Children can become the centre of the home, so the parents forget they are also husband and wife. Parents and in-laws can keep the final word, instead of the new couple leaving and cleaving as Genesis 2:24 describes. Friends, hobbies, phones and even ministry can all become a third party in the marriage.\n\nThe authors say the problem is usually not the intruder alone. It is that one or both spouses let it in, or use it to avoid each other. So the answer is not to blame the work or the mother-in-law. The couple agrees together on what comes first, and protects it.\n\nHere is a simple everyday example. A young couple lives near the wife's family. Her mother comes every day and gives orders about the house and the baby. The husband feels pushed aside but says nothing. Together they agree to honour her mother warmly and still make their own decisions. The wife, as the daughter, kindly tells her mother what they decided. Her mother is unhappy at first, but the couple grows closer."
+    },
+    {
+     "emoji": "🧩",
+     "title": "Know what kind of conflict it is",
+     "body": "Conflict in marriage is normal. The authors say what matters is understanding what kind of conflict you are in.\n\nSome conflicts are one-sided. One spouse has a sinful or immature pattern, like drinking, lying, rage or never keeping their word, and the other suffers from it. Here the hurt spouse needs to name the problem honestly, stop rescuing and set loving limits.\n\nSome conflicts are two-sided. Both spouses add to the problem. A wife who nags and a husband who withdraws feed each other: the more she pushes, the more he pulls away, and the more he pulls away, the more she pushes. Here each person first looks at their own part, as Jesus taught about the log in your own eye (Matthew 7:3–5).\n\nOther conflicts are simply about differences, and they are not sin at all. One loves people and one needs quiet. One plans and one is spontaneous. These are solved by respect, listening and finding ways that honour both.\n\nHere is a simple everyday example. A couple fights every Sunday about being late for church. When they stop blaming and look closer, they see it is two-sided. He does not get ready on time, and she criticises him in front of the children. Each owns their part, and the fights get smaller."
+    },
+    {
+     "emoji": "🛠️",
+     "title": "When your spouse does not want to change",
+     "body": "Often only one spouse wants things to change. The authors say that one person can still do a lot. First deal with your own part before God. Then name the problem and tell your spouse with love, not anger. Ask for change. If nothing changes, set a limit with a fitting consequence, and keep it calmly. Invite help from a pastor, counsellor or wise friends. And be patient, because change takes time.\n\nThe authors are careful about what boundaries are not. They are not a weapon to punish your spouse or get revenge. They are not a way to control the other person. And they are never an easy reason to walk out of a marriage. Their aim is always to protect love and restore the marriage, not to end it.\n\nHere is a simple everyday example. A husband speaks harshly when he is stressed. His wife tells him kindly that when he shouts, she will leave the room and come back to talk when he is calm. She does this each time, without shouting back. Slowly he learns that respect brings closeness.\n\nOne gentle but important note. If there is abuse, or you are in danger, safety comes first. Please tell a trusted leader or counsellor and get help. Boundaries are never meant to keep anyone in harm's way."
+    }
+   ],
+   "tryThis": [
+    "Each write down three things that are yours to own in the marriage, and one load you have been carrying for your spouse. Share them gently.",
+    "Choose one intruder to guard against this week, such as phones at dinner or work on your day off, and keep that limit together.",
+    "Think of your last argument. Each of you say one thing that was your own part in it, without adding a 'but'."
+   ],
+   "forUs": "At YWAM GP, marriages face pressures that many couples do not. Khmer and international staff sometimes marry across cultures, where ideas about family, money and roles can be very different. In Cambodian culture, saying no to parents or in-laws can feel like dishonour, while in some Western homes, always saying yes to family can feel like losing yourself. This book gives couples shared words to talk about what each of them owns. Missionary life also brings its own intruders: ministry that never ends, guests in the home, living on support and raising children on a busy base. Couples can agree together on their limits, such as a day off, time alone and how they handle money. For engaged couples in pre-marriage training, this book is a good start for honest talks before the wedding. For married couples, it can help change old patterns of rescuing, nagging or silence. And anyone who is hurting or unsafe should not carry it alone, but talk to a trusted leader.",
+   "oneLine": "A strong marriage is two free people who each own their own life and choose, every day, to love each other well.",
+   "cover": {
+    "bg": "blue",
+    "fg": "paper",
+    "a": "marigold",
+    "b": "paper",
+    "motif": "fence",
+    "layout": "top",
+    "font": "sans"
+   }
+  },
+  {
+   "id": "growing-kids-gods-way",
+   "title": "Growing Kids God's Way",
+   "author": "Gary & Anne Marie Ezzo",
+   "shelf": "family",
+   "mins": 10,
+   "vibe": "Good behaviour is not enough. Aim for a child's heart, and start with a strong marriage.",
+   "bigIdea": "Gary and Anne Marie Ezzo are an American couple who wrote this book as a parenting course for churches in the 1990s. Their main idea is that parenting is not only about getting children to behave. It is about shaping their hearts, so that they do what is right because they understand why it is right, even when no one is watching. The Ezzos call this moral training. They say it starts long before any correction: with a strong marriage at the centre of the home, with parents who live what they teach, and with clear teaching that comes before discipline. Children are trained to listen and obey, but also given a respectful way to ask for a change. They learn manners, respect, gratitude and care for others, and they grow up feeling part of a family team. You should know that this book and the Ezzos' other material, especially their baby book Babywise, are debated. Some pastors, Christian groups and doctors have said parts of their approach are too strict or rigid. So take what is wise here, weigh it with your church and your mentors, and always ask a doctor about anything to do with a child's health.",
+   "insights": [
+    {
+     "emoji": "💑",
+     "title": "A strong marriage is the centre of the home",
+     "body": "The Ezzos begin with marriage, not with children. Their view is that the best thing a mother and father can give a child is a husband and wife who love each other well. A child who sees that love feels safe.\n\nThey warn against what they call a child-centred home. In that kind of home, everything turns around the child. The child's wants decide the plans, the meals and even the parents' conversations. The Ezzos believe this is not good for the child either, because a child who is the centre of everything finds it hard to think of anyone else.\n\nOne simple practice the Ezzos are known for is 'couch time'. When a parent comes home, the husband and wife sit together for a short time and talk, while the children play nearby. They simply see that Mum and Dad come first for each other.\n\nHere is a simple everyday example. A couple promises to drink tea together for ten minutes after the evening meal. The kids learn to wait. Over time the children notice something: their parents like being together. That gives them quiet confidence."
+    },
+    {
+     "emoji": "❤️",
+     "title": "Aim for the heart, not just behaviour",
+     "body": "Many parents only want their children to behave. They want a quiet child in church and a polite child in front of guests. The Ezzos say this is too small a goal. A child can behave well on the outside and still be selfish on the inside.\n\nTheir answer is what they call moral reason. This means teaching children the why behind the what. Do not only say, stop pushing your brother. Explain why: pushing hurts him, and God made him precious. Do not only say, say thank you. Explain that someone gave you their time and kindness, and thanks honours that.\n\nThe Ezzos believe that when children understand the reason, the right action can come from inside them. It becomes theirs, not only their parents'.\n\nHere is a simple everyday example. A girl takes the last mango without asking. Her father does not just scold her. He kneels down and asks, who else wanted a mango? How might your sister feel? The girl thinks, and then offers half. That small moment teaches more than a hundred rules."
+    },
+    {
+     "emoji": "🪞",
+     "title": "Your example teaches before your words",
+     "body": "The Ezzos remind parents that children learn more from what they see than from what they hear. A father who tells his son to be honest, and then lies on the phone, teaches that honesty is only for children.\n\nThis is not meant to make parents feel guilty. No parent is perfect. But it means moral training starts with us. Before we ask our children to have good hearts, we ask God to work in our own. Children watch how we treat each other, how we speak about people who are not there, how we handle money and how we react when we are tired.\n\nThe Ezzos also say that parents should admit when they are wrong. When a parent says sorry to a child, the child learns that sorry is something strong people say. It makes their teaching more believable.\n\nHere is a simple everyday example. A father loses his temper at a driver on the road. Later, at home, he tells his children, I was wrong to shout like that, and I have asked God to forgive me. His children will remember that more than any lesson about patience."
+    },
+    {
+     "emoji": "📖",
+     "title": "Teach first, correct later",
+     "body": "One of the most helpful ideas in the book is that instruction comes before correction. It is not fair to punish a child for breaking a rule they never knew. Many conflicts in the home happen because parents expect something they never explained.\n\nThe Ezzos encourage parents to teach at calm times, not only in the middle of a problem. Before you visit a friend's house, explain how to greet the adults and what to do if they want to leave the table.\n\nThis also changes how parents see a mistake. If a child did not know, the right answer is more teaching, not correction. Correction is for a child who knew what was right and chose not to do it.\n\nHere is a simple everyday example. A family is going to a wedding. On the way, the mother says, there will be lots of food. We wait until the older people start eating, and we take only what we will finish. At the wedding, the children do well. Teaching first made the good day possible."
+    },
+    {
+     "emoji": "👂",
+     "title": "Obeying the first time, and a respectful way to ask",
+     "body": "The Ezzos teach that children should learn to obey the first time they are asked, without arguing, whining or being told five times. Their view is that this is kinder in the end. A parent who repeats an instruction again and again, getting louder each time, teaches the child that the first few times do not count.\n\nBut the Ezzos also know that parents do not always have all the facts. So they give children a way to respond, which they call the appeal process. When told to do something, a child can respectfully ask to explain. The child gives new information the parent may not know. For example, Dad, may I appeal? I promised to help Grandma first. The parent listens and decides. If the parent still says no, the child obeys.\n\nThe appeal works only when the child first stops and responds calmly, not when they argue. And it works only when parents really listen and are willing to change their mind.\n\nHere is a simple everyday example. A mother calls her son to come inside. He answers, Mum, may I explain? My friend's bicycle chain fell off and I am helping him. She agrees to five more minutes. He learns that respect opens doors that arguing never does."
+    },
+    {
+     "emoji": "🌟",
+     "title": "Encouragement and praise build a child up",
+     "body": "The book is not only about correction. The Ezzos give strong attention to encouragement. A child who only hears what they did wrong becomes discouraged and may stop trying. A child who also hears what they did right learns what good looks like and wants to do it again.\n\nThe Ezzos suggest that praise should be real and specific. It is better to say, you shared your toy with your cousin even though you wanted it, and that was kind. Specific praise teaches the value behind the action.\n\nThey also encourage parents to praise effort and character, not only results. Praise the effort, the honesty and the patience.\n\nEncouragement can be words, a touch, a smile, a note under a pillow or telling Grandpa what the child did. Many families find that when encouragement grows, the need for correction becomes smaller.\n\nHere is a simple everyday example. A boy cleans the room without being asked. His father does not stay silent. That evening at dinner, he tells the whole family. The boy smiles for a week, and does it again."
+    },
+    {
+     "emoji": "🏠",
+     "title": "We are a family: belonging, not just freedom",
+     "body": "The Ezzos speak about building a family identity. Children should grow up feeling, we are a team, we belong to each other, and our family has values. When children feel part of something good, they are more likely to choose its values for themselves.\n\nThey contrast this with a home where each person mostly goes their own way, and children look to their friends to know who they are. The Ezzos are concerned that when friends become the main voice in a young person's life, parents lose their place to guide.\n\nThe Ezzos also suggest that freedoms should grow with responsibility. Too much freedom too soon can be hard for a child to carry. As a child shows they can handle one freedom well, they receive more.\n\nFamily identity grows from simple things: eating together, working together, praying together, having traditions and stories, and speaking about our family with gladness.\n\nHere is a simple everyday example. Every Sunday evening, one family makes noodles together and each person shares one good thing from the week. Years later, they still make noodles on Sunday with their own children."
+    },
+    {
+     "emoji": "🤝",
+     "title": "Respect, manners and thinking of others",
+     "body": "For the Ezzos, manners are not just social rules. They are love made practical. Saying please and thank you, greeting adults, sharing and waiting your turn all teach a child that other people matter as much as they do.\n\nOne small idea the Ezzos are known for is a gentle way to interrupt. Instead of shouting for a parent who is talking, the child places a hand on the parent's arm and waits. The parent puts a hand over the child's to say, I know you are here. Then, at a good moment, the parent turns to listen.\n\nThe Ezzos also want children to learn gratitude and to think about how others feel. They encourage parents to help children notice: who was left out at the game? Who worked hard to cook this meal? How would you feel if that happened to you? These questions grow empathy.\n\nHere is a simple everyday example. After a birthday, a mother sits with her daughter to draw thank-you pictures for each person who gave a gift. The girl learns that gifts come from people, not from nowhere. Gratitude turns into a habit of seeing others."
+    },
+    {
+     "emoji": "⚖️",
+     "title": "Correction that trains, not punishes",
+     "body": "The Ezzos believe children need correction when they choose to do wrong. But in their view, the goal is to train, not to make the child pay.\n\nTheir guiding ideas are simple. Be consistent, so a child knows what will happen. Keep correction in proportion, so a small wrong gets a small response. Never correct in anger. And keep the child's dignity, never shaming them in front of others. After correction, restore the relationship quickly with warmth.\n\nThe Ezzos also ask parents to tell the difference between childishness and defiance. A child who spills the milk while trying to help is being a child. That calls for patience and teaching. A child who looks at a parent and does what they were just told not to do is making a different choice. Treating the two the same is unfair.\n\nIt is fair to say that some readers think parts of the Ezzos' approach to discipline are too strict. Weigh it with wisdom.\n\nHere is a simple everyday example. A boy breaks a cup by accident. His mother says, that is fine, let us clean it together. Later he lies about hitting his sister. That needs a calm, clear conversation and a fair consequence."
+    },
+    {
+     "emoji": "🌏",
+     "title": "Applying it with grace across cultures",
+     "body": "The Ezzos wrote for American churches in the 1990s. Families in other places will find that some ideas fit well and some need care.\n\nIn many Khmer homes, respect for parents and elders is already strong. Children greet with a sampeah and do not argue with adults. Here, the appeal process may feel new. It can help children learn to speak up respectfully when something is wrong, which is important for their safety too. In many Western homes, children are encouraged to share their opinions freely, but respect for elders can be weak. There, the Ezzos' emphasis on manners may be a good balance.\n\nIn Cambodia, grandparents and relatives often help raise children. A strong marriage still matters, but the family team may be bigger than two parents. Honour the grandmother who cares for the baby, and talk together about what you want to teach.\n\nWhatever your culture, hold to the heart of it: love, a strong marriage, teaching the why, a good example, and correction that is calm and fair. Let grace lead.\n\nHere is a simple everyday example. A Khmer mother and an Australian father sit down and list three values from each of their families. They choose five to build their home on together."
+    }
+   ],
+   "tryThis": [
+    "As a couple, choose a short daily time to sit and talk together while the children are nearby, and keep it for one week.",
+    "Before your next visit or outing, explain to your children what will happen and how to behave, and praise them afterwards for what went well.",
+    "When you correct a child this week, also explain the why behind the rule, and end with a hug or kind word."
+   ],
+   "forUs": "At YWAM GP many families raise children on a base, with students, teams and guests around all the time. Children can easily feel that the ministry comes first and they come second, so a strong marriage and real family time matter even more here. Couples in cross-cultural marriages bring two ideas of what a good child looks like. This book can start a helpful talk: what do we each believe about obedience, manners and correction, and what do we want our home to be? Khmer and international parents can learn from each other, as Khmer homes often model respect for elders and Western homes often model open conversation. Engaged couples can talk about these things before they have children. Living on support can bring stress, and stress can make us harsh. Let us correct calmly and encourage often. Remember that this book is debated, so read it with your mentor or your church, take what is wise, and ask a doctor about anything to do with health.",
+   "oneLine": "Build a strong marriage, live what you teach, explain the why, and train your child's heart with patience and grace.",
+   "cover": {
+    "bg": "laterite",
+    "fg": "paper",
+    "a": "marigold",
+    "b": "paper",
+    "motif": "sprout",
+    "layout": "top",
     "font": "serif"
    }
   }

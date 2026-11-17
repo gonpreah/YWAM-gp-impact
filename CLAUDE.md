@@ -2054,6 +2054,31 @@ results saved then are still in `staff.strengths` but nothing reads them.)
   localStorage (`gp_gstr_draft`) until saved.
 - **Khmer:** all ~515 strings in `PENDING_KM` (docs/khmer-needed.md §53).
 
+## Tests (☰ → Tests, About me → 🧪 Tests; teams/17-tests.js, Nov 2026, Uriah)
+"I want to do the prepare and enrich course, as well as the APES test … can we make a test section." One page,
+`S.view='tests'` (`testsHtml_`, `S.tests.sub`), `?view=tests`: Personality and Strengths (their own screens),
+🔥 Fivefold gifts, the Language level test (opens Learn Khmer's test), and 💍 the couple check-up. The fine print
+says these are YWAM GP's own, not the official MBTI®, PREPARE/ENRICH or APEST assessments — keep it.
+- **Fivefold gifts (APEST, Ephesians 4:11)**: YWAM GP's own 30 statements (`APEST_QS`, six per gift, English and
+  Khmer side by side, read through `lx_`), 1–5, a draft on the phone (`gp-apest-draft`). The server scores it
+  (`saveMyApest` → `apestScore_`, `APEST_ITEMS` = each statement's gift in the page's order — tests/test-tests.mjs
+  fails if the two drift): each gift 0–100, `top` all five in order. `staff.apest` {answers, scores, top, takenAt,
+  share}; the owner's copy in the boot's `profile.apest`; a teammate (`rosterStaff_`, `staffProfile`) sees the top two
+  only while shared; the public roster nothing. Results: five bars, the top two explained (`APEST_GIFTS`: what it is,
+  what you bring, watch out for). Alan Hirsch's APEST / 5Q test is his — never copy it.
+- **Couple check-up** (Uriah chose "our own" over PREPARE/ENRICH, which is a licensed assessment taken through a
+  certified facilitator — its questions can't be in the app): 40 statements in ten areas (`MC_AREAS` / `MC_QS`, each
+  area with a talk-it-over question), each partner on their own. One partner starts it (`mcStart`: partner and an
+  optional counsellor, both active staff on either campus; dating / engaged / married; at most `MC_MAX_OPEN` 3
+  unfinished), each answers (`mcAnswer`, all `MC_N` = 40 or none), the couple can change the counsellor
+  (`mcSetCounselor`) or delete it (`mcDelete`). Blob `mcheck` (`mutateKey_`). **Private**: only the two partners and
+  their counsellor are ever sent it (`mcOut_`) — no admin door; before both have answered each sees only their own
+  answers and the counsellor only who has answered; then all three see both. Results (`mcResult_`): each area as a
+  bar, every statement marked a strength (both 4+), talk about it (2+ apart) or grow in it (both 3 or less), the area
+  with differences open with its question. Push `mcInvite` / `mcReady` → `teams.html?view=tests`.
+- tests/test-tests.mjs (server), tests/test-tests-ui.mjs. Khmer: docs/khmer-needed.md §107 (and the statements in
+  17-tests.js).
+
 ## Library (public/library.js) — ten-minute reads
 Menu → Library. All 44 books from Craig Groeschel's four leadership lists ("44 Books
 Every Leader Should Read", the current list Uriah sent — Lead Like Jesus, not Dalio's
@@ -2106,6 +2131,14 @@ leading at YWAM GP (culture, teams, hard conversations, vision, systems, executi
   what to do when someone tells you, and everyday safe habits. It invents no YWAM GP policy:
   it says the written policy comes from the leaders and the board. The concern card links
   to it (`data-safeguide`).
+- **Marriage & family** (shelf `family`, 💍, laterite; shown right after Made at YWAM GP — `libShelvesShown_`; Nov 2026,
+  Uriah, for pre-marriage training and married couples): The Seven Principles for Making Marriage Work (Gottman &
+  Silver — a research book, said so), The Meaning of Marriage (Keller; his complementarian view given as his),
+  Sacred Marriage (Gary Thomas), Boundaries in Marriage (Cloud & Townsend), Things I Wish I'd Known Before We Got
+  Married and The 5 Love Languages (Chapman), and Growing Kids God's Way (the Ezzos — Uriah's pick after being told
+  it is debated; the summary says so plainly, keeps discipline general, and points health questions to a doctor). In
+  English and Khmer, written by Claude without the books to hand; details it was unsure of were left out, so someone
+  who has read them should check. The test expects 44 + the GP guides + 10 classics + 7 here.
 - **YWAM classics** (shelf `ywam`, 🌊, cobalt; shown right after Made at YWAM GP; Oct 2026):
   ten foundational YWAM books in the same ten-minute shape, in English and Khmer — Is That
   Really You, God?, Making Jesus Lord, Daring to Live on the Edge (Loren Cunningham),
