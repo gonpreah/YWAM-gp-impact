@@ -628,7 +628,13 @@ function gpUseFlush_(){
   window.addEventListener(ev, function(){ _gpUse.act=Date.now(); }, { passive:true, capture:true });
 });
 document.addEventListener('visibilitychange', function(){
-  if(document.hidden){ gpUseTick_(true); gpUseFlush_(); } else { _gpUse.last=Date.now(); _gpUse.act=Date.now(); }
+  if(document.hidden){ gpUseTick_(true); gpUseFlush_(); }
+  else {
+    _gpUse.last=Date.now(); _gpUse.act=Date.now();
+    /* an app kept open in the background (an iPhone Home Screen app can stay so for days) comes back without a
+       boot — so a new day is marked here too; gpMarkSeen_ sends at most once a day */
+    if(gpUseOn_() && !S.bootStale && !S.offlineSince) gpMarkSeen_();
+  }
 });
 setInterval(gpUseTick_, GP_USE_TICK_MS);
 

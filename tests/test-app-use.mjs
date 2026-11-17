@@ -70,6 +70,21 @@ ok('a day can’t hold more than 20 hours', mem.useTime.time.c2[today] === 72000
 await call('markSeen', ['kanha', '1234', 'junk']);
 await call('markSeen', ['kanha', '9999', { [ago(1)]: 50 }]);
 ok('junk, or a wrong PIN, writes nothing', mem.useTime.time.c2[today] === 72000 && !(ago(1) in mem.useTime.time.c2));
+/* before the history of days opened began, a day they saved something counts: goals, numbers, a GP Task */
+const kanhaWas = mem.lastSeen.days.c2;
+mem.lastSeen.days.c2 = [];
+mem.lastSeen.seen.c2 = '';
+mem.goals = [{ staffId: 'c2', week: 1, year: 2026, items: [], updated: ago(12) + 'T02:00:00.000Z' }];
+mem.entries = [{ campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', metric: 'Cups Sold', week: 1, value: 3, updated: ago(13) + 'T02:00:00.000Z', by: 'c2' },
+  { campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', metric: 'Cups Sold', week: 2, value: 3, updated: ago(14) + 'T02:00:00.000Z', by: 'tool:cafe' }];
+mem.kpiDaily = [{ campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', metric: 'Cups Sold', date: ago(15), value: 1, staffId: 'c2', updated: ago(15) + 'T02:00:00.000Z' }];
+mem.gpTasks = { lists: [], tasks: [{ id: 't1', listId: 'x', title: 'a', by: 'c2', created: ago(16) + 'T02:00:00.000Z', done: true, doneBy: 'c2', doneAt: ago(17) + 'T02:00:00.000Z' }] };
+let r0 = await call('adminAppUse', ['ada', '1234', 'siemreap']);
+const k0 = r0.people.find(x => x.id === 'c2');
+ok('days they saved goals, numbers or a GP Task count; a tool’s own rows don’t', k0.days.join(',') === [ago(17), ago(16), ago(15), ago(13), ago(12)].join(','), k0.days.join(','));
+ok('… still only dates leave the server', !/Cups Sold|Cafe","value|title/.test(JSON.stringify(r0.people)));
+mem.lastSeen.days.c2 = kanhaWas; mem.lastSeen.seen.c2 = today;
+delete mem.goals; delete mem.entries; delete mem.kpiDaily; delete mem.gpTasks;
 let r = await call('adminAppUse', ['cora', '1234', 'siemreap']);
 ok('only an admin may see it', r.ok === false && r.err === 'not_authorized');
 r = await call('adminAppUse', ['ada', '1234', 'siemreap']);

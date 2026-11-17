@@ -159,6 +159,12 @@ async function open(user, when) {
   await page.evaluate(() => { _gpUse.last = Date.now() - 15000; _gpUse.act = Date.now(); gpUseTick_(true); document.dispatchEvent(new Event('visibilitychange')); });
   await page.waitForTimeout(600);
   ok('… but not again within 20 minutes', JSON.stringify(mem.useTime) === n0);
+  /* an app kept open in the background comes back the next day without a boot: that day counts */
+  mem.lastSeen.days.c2 = (mem.lastSeen.days.c2 || []).filter(d => d !== day); mem.lastSeen.seen.c2 = '';
+  await page.evaluate(() => { localStorage.setItem('gp-seen-day', 'yesterday|kanha');
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => false }); document.dispatchEvent(new Event('visibilitychange')); });
+  await page.waitForTimeout(800);
+  ok('brought back to the front on a new day, the day counts (no boot needed)', mem.lastSeen.days.c2.includes(day) && mem.lastSeen.seen.c2 === day);
   await ctx.close();
 }
 

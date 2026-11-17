@@ -2277,8 +2277,12 @@ numbers fill themselves in from using it (like Teams and Hospitality). Two so fa
   `daysFrom`, when that history began) — `touchLastSeen_`, still once a day per phone through `markSeen`.
 - **`adminAppUse(user, pin, campus)`** (admins only): the campus's active staff (no applicants, no archived),
   each with `d30` / `d7` / `last` and `days` (the dates in the last 30). A day of use = a day they opened the app,
-  or a day the Habit Tracker saved a tick (by its `updated` time on Cambodia's clock — that goes back further than
-  the opened-days history). **Only dates**, never what they did.
+  or a day they saved something — a habit tick (`dailyLogs`), their weekly goals (`goals`), a ministry's numbers
+  (`entries.by`, `kpiDaily.staffId`; never `tool:` rows), a GP Task made or done (`by`/`created`, `doneBy`/`doneAt`) —
+  by when it was saved, on Cambodia's clock; that goes back further than the opened-days history (Nov 2026, Andrew:
+  "I used the app every day, why only 7?"). Never the weekly check-in (its rows are anonymous). **Only dates**, never
+  what they did. A day also counts when the app comes back to the front (`visibilitychange` → `gpMarkSeen_`, once
+  a day) — an iPhone Home Screen app can stay open for days without a boot.
 - The page (`adminUseHtml_`, Admin card `use`): campus chips; four band tiles (`USE_BANDS`: Most days ≥15 · Some
   days 5–14 · A few times 1–4 · Not in 30 days; `[data-useband]` narrows the list); everyone by days used, each
   with 30 dots (`.useDots`), this week and the last day, a tap opens their account; a note while `daysFrom` is
