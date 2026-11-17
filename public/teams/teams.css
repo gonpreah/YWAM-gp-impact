@@ -3063,3 +3063,76 @@ details.dtsPick input.gpSelBox { margin:6px 0 4px; }
 .mcItem.talk { border-left:3px solid var(--accent); padding-left:8px; }
 .mcItem.strength { border-left:3px solid var(--good); padding-left:8px; }
 .mcTalk { margin-top:8px; padding:8px 10px; border-radius:10px; background:var(--accentSoft); font-size:13.5px; color:var(--ink); }
+
+/* ---- the Library, read together (teams/18-library-plus.js, Nov 2026) ---- */
+.libFind { margin:10px 0; }
+.libTags { margin-top:-4px; }
+.libTagBtn { font-size:12.5px; }
+.libMine { margin-bottom:10px; }
+.libMineTop { display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; font-size:14px; color:var(--ink); }
+.libMineN { font-size:24px; font-weight:800; }
+.libStreak { font-size:13px; font-weight:700; color:var(--ink); background:var(--accentSoft); border-radius:999px; padding:3px 10px; }
+.libGoalBar { display:block; margin:8px 0 2px; }
+.libBadges { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:8px 0 4px; }
+.libBadge { width:32px; height:32px; border-radius:50%; background:var(--goodSoft); display:inline-flex; align-items:center; justify-content:center; font-size:17px; }
+.libBadge.next { background:var(--line); filter:grayscale(1); opacity:.6; }
+.libBadge.new { background:var(--accentSoft); }
+.libBadgeNext { font-size:12.5px; color:var(--muted); }
+.libGoalPick { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:6px; }
+.libMonth { margin-bottom:10px; border-left:4px solid var(--libc, var(--accent)); }
+.libMonthRow { display:flex; gap:12px; width:100%; text-align:left; background:none; border:0; padding:8px 0 0; color:var(--ink); font:inherit; }
+.libMonthCover { flex:0 0 76px; }
+.libMonthCover .libCover { width:76px; }
+.libMonthText { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.libMonthText b { font-size:16px; }
+.libMonthNote { font-size:13.5px; color:var(--ink); }
+.libMonthCount { font-size:12.5px; color:var(--muted); margin-top:4px; }
+.libMonthCta { font-size:13.5px; font-weight:700; color:var(--accent); margin-top:4px; }
+.libRecs { margin-bottom:10px; }
+.libRecRow { display:flex; align-items:center; gap:8px; border-top:1px solid var(--line); padding:8px 0; }
+.libRecRow:first-of-type { border-top:0; }
+.libRecBook, .libFeedRow, .libHomeRow { flex:1; min-width:0; text-align:left; background:none; border:0; padding:0; color:var(--ink); font:inherit; }
+.libRecBook b, .libRecBook .pmeta { display:block; }
+.libPlanRow { align-items:stretch; }
+.libPlanCard { flex:0 0 200px; display:flex; flex-direction:column; gap:4px; text-align:left; margin:0; }
+.libPlanCard.on { border-color:var(--accent); }
+.libPlanEmoji { font-size:22px; }
+.libPlanCard b { font-size:14.5px; color:var(--ink); }
+.libPlanCard .libProgressBar, .libMonthText .libProgressBar, .libMenteePlan .libProgressBar { display:block; margin:4px 0 0; }
+.libPlanItem { display:flex; align-items:center; gap:10px; width:100%; text-align:left; margin-bottom:8px; }
+.libPlanItem .libInsightNum { background:var(--line); color:var(--ink); }
+.libPlanItem.done .libInsightNum { background:var(--good); color:#fff; }
+.libPlanItem.next { border-color:var(--accent); }
+.libPlanItemText { flex:1; min-width:0; display:flex; flex-direction:column; }
+.libPlanItemText b { color:var(--ink); }
+.libTeam { margin-bottom:10px; }
+.libFeedRow { display:block; width:100%; padding:7px 0; border-top:1px solid var(--line); font-size:14px; }
+.libFeedRow:first-child { border-top:0; }
+.libFeedWho { font-weight:700; }
+.libTopN { display:inline-block; min-width:18px; color:var(--muted); font-weight:700; }
+.libShareRow { display:flex; gap:10px; align-items:center; margin-top:10px; font-size:13.5px; color:var(--ink); }
+.libBookTags { margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
+.libTagLink { border:0; cursor:pointer; font:inherit; font-size:12px; }
+.libDone { position:relative; margin-bottom:14px; border:2px solid var(--good); }
+.libDoneX { position:absolute; top:8px; right:8px; }
+.libDoneHead { font-size:17px; font-weight:800; color:var(--ink); padding-right:28px; }
+.libAsk { margin-top:12px; padding:10px 12px; border-radius:10px; background:var(--accentSoft); font-size:13.5px; color:var(--ink); }
+.libNote { margin-top:10px; }
+.libActs { display:flex; flex-direction:column; gap:0; }
+.libActs .btn { margin-top:8px; }
+.libRecForm { margin-top:10px; }
+.libHome { padding:4px 14px; margin-bottom:14px; }
+.libHomeRow { display:flex; align-items:center; gap:10px; width:100%; padding:10px 0; border-top:1px solid var(--line); }
+.libHomeRow:first-child { border-top:0; }
+.libHomeText { flex:1; min-width:0; display:flex; flex-direction:column; }
+.libHomeText b { font-size:14px; }
+.libMenteePlan { margin-top:10px; }
+.libGiveRow { display:flex; gap:8px; align-items:center; }
+.libGiveRow select { flex:1; min-width:0; }
+.libGiveRow .btn { width:auto; margin-top:0; }
+.libHead2 { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin:22px 0 10px; }
+.libHead2 h3 { flex:1; min-width:0; margin:0; font-size:18px; font-family:inherit; text-transform:none; font-weight:800; letter-spacing:-.01em; }
+.libScroll { display:grid; grid-auto-flow:column; gap:12px; overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:none; padding-bottom:4px; }
+.libScroll::-webkit-scrollbar { display:none; }
+.libPlanRow { grid-auto-columns:200px; }
+.libNextRow { grid-auto-columns:136px; }

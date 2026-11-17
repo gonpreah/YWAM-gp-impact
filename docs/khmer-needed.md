@@ -5259,3 +5259,105 @@ The Mentorship page's "How a 1-on-1 works" fold and the 1-on-1 page: the step st
 | Marriage & family | អាពាហ៍ពិពាហ៍ និងគ្រួសារ |
 
 ☰ → Tests (teams/17-tests.js). The APEST statements and the couple check-up statements, areas and talk-it-over questions are written with English and Khmer side by side in teams/17-tests.js (APEST_QS, APEST_GIFTS, MC_QS, MC_AREAS) — please read those there too. Gift names follow the Khmer Bible (សាវក, ហោរា, អ្នកផ្សាយដំណឹងល្អ, គ្រូគង្វាល, គ្រូបង្រៀន). The push texts mcInvite / mcReady are in api.js PUSH_TEXT. The seven Marriage & family books' Khmer (library-km.js) is Claude's translation too.
+
+## 108. The Library, read together (book of the month, reading plans, badges, topics)
+
+| English | Khmer (draft) |
+|---|---|
+| You have recommended five books today — more tomorrow. | ថ្ងៃនេះអ្នកបានណែនាំសៀវភៅប្រាំក្បាលហើយ — ស្អែកអាចណែនាំទៀត។ |
+| You already recommended this book to them. | អ្នកបានណែនាំសៀវភៅនេះដល់ពួកគេរួចហើយ។ |
+| Only Campus Leadership can choose the book of the month. | មានតែថ្នាក់ដឹកនាំទីតាំងទេ ដែលអាចជ្រើសរើសសៀវភៅប្រចាំខែ។ |
+| Shelf finished: {name} | អានចប់ធ្នើ៖ {name} |
+| Plan finished: {name} | បញ្ចប់ផែនការ៖ {name} |
+| The whole Library | បណ្ណាល័យទាំងមូល |
+| Search a title, an author or a topic… | ស្វែងរកចំណងជើង អ្នកនិពន្ធ ឬប្រធានបទ… |
+| of {n} books this year | ក្នុងចំណោម {n} ក្បាលនៅឆ្នាំនេះ |
+| books this year | ក្បាលនៅឆ្នាំនេះ |
+| {n} weeks in a row | {n} សប្តាហ៍ជាប់គ្នា |
+| Next: {name} | បន្ទាប់៖ {name} |
+| How many books this year? | ឆ្នាំនេះប៉ុន្មានក្បាល? |
+| Change my goal | ប្តូរគោលដៅរបស់ខ្ញុំ |
+| Set a goal for the year | កំណត់គោលដៅសម្រាប់ឆ្នាំនេះ |
+| Book of the month | សៀវភៅប្រចាំខែ |
+| None chosen yet. Open any book and tap “Make this the book of the month” — everyone on your campus will see it here. | មិនទាន់បានជ្រើសរើសនៅឡើយទេ។ បើកសៀវភៅណាមួយ ហើយចុច «ធ្វើឲ្យនេះជាសៀវភៅប្រចាំខែ» — មនុស្សគ្រប់គ្នានៅទីតាំងរបស់អ្នកនឹងឃើញវានៅទីនេះ។ |
+| {n} of {total} at {campus} have read it | {n} នាក់ក្នុងចំណោម {total} នាក់នៅ {campus} បានអានវា |
+| You’ve read it | អ្នកបានអានវាហើយ |
+| Read it — ten minutes | អានវា — ដប់នាទី |
+| Recommended to you | ណែនាំដល់អ្នក |
+| Reading plans | ផែនការអាន |
+| {n} of {m} read | អានបាន {n} ក្នុងចំណោម {m} |
+| Started | បានចាប់ផ្តើម |
+| {name} gave you this plan. | {name} បានផ្តល់ផែនការនេះដល់អ្នក។ |
+| You finished this plan. Well done! | អ្នកបានបញ្ចប់ផែនការនេះហើយ។ ល្អណាស់! |
+| Continue | បន្ត |
+| Read next | អានបន្ទាប់ |
+| Then: take the couple check-up together | បន្ទាប់មក៖ ធ្វើការពិនិត្យសម្រាប់គូស្វាមីភរិយាជាមួយគ្នា |
+| In Tests — each of you answers, then you see what to talk about. | នៅក្នុងតេស្ត — អ្នកម្នាក់ៗឆ្លើយ រួចអ្នកនឹងឃើញអ្វីដែលគួរនិយាយគ្នា។ |
+| Take this plan off my list | ដកផែនការនេះចេញពីបញ្ជីរបស់ខ្ញុំ |
+| Start this plan | ចាប់ផ្តើមផែនការនេះ |
+| Reading at {campus} | ការអាននៅ {campus} |
+| finished | បានអានចប់ |
+| Nobody has shared a finished book yet. Be the first — it encourages others to read. | មិនទាន់មាននរណាចែករំលែកសៀវភៅដែលអានចប់នៅឡើយទេ។ សូមធ្វើជាអ្នកទីមួយ — វាលើកទឹកចិត្តអ្នកដទៃឲ្យអាន។ |
+| Show the books I finish to my campus | បង្ហាញសៀវភៅដែលខ្ញុំអានចប់ ដល់ទីតាំងរបស់ខ្ញុំ |
+| Read the most | ដែលគេអានច្រើនជាងគេ |
+| {n} of us | យើង {n} នាក់ |
+| Well done — one more book finished! | ល្អណាស់ — អានចប់មួយក្បាលទៀតហើយ! |
+| {n} of {goal} this year | {n} ក្នុងចំណោម {goal} នៅឆ្នាំនេះ |
+| {n} this year | {n} ក្បាលនៅឆ្នាំនេះ |
+| New badge: {name} | ផ្លាកសញ្ញាថ្មី៖ {name} |
+| What is one thing you will do this week because of this book? | តើអ្វីជារឿងមួយ ដែលអ្នកនឹងធ្វើនៅសប្តាហ៍នេះ ដោយសារសៀវភៅនេះ? |
+| Only you see this. | មានតែអ្នកទេដែលឃើញវា។ |
+| Also add it to my weekly goals | បន្ថែមវាទៅក្នុងគោលដៅប្រចាំសប្តាហ៍របស់ខ្ញុំផង |
+| Show the books you finish to your campus? It encourages others to read. | បង្ហាញសៀវភៅដែលអ្នកអានចប់ ដល់ទីតាំងរបស់អ្នក? វាលើកទឹកចិត្តអ្នកដទៃឲ្យអាន។ |
+| Yes, share | បាទ/ចាស ចែករំលែក |
+| No thanks | ទេ អរគុណ |
+| My one thing | រឿងមួយរបស់ខ្ញុំ |
+| Recommend to someone | ណែនាំដល់នរណាម្នាក់ |
+| This is the book of the month — take it down | នេះជាសៀវភៅប្រចាំខែ — ដកវាចេញ |
+| Make this the book of the month | ធ្វើឲ្យនេះជាសៀវភៅប្រចាំខែ |
+| Who would like this book? | តើនរណានឹងចូលចិត្តសៀវភៅនេះ? |
+| A word about why (optional) | មួយឃ្លាអំពីមូលហេតុ (មិនចាំបាច់) |
+| Send | ផ្ញើ |
+| This month: {title} | ខែនេះ៖ {title} |
+| ✓ You’ve read it · {n} of {total} have | ✓ អ្នកបានអានវាហើយ · {n} នាក់ក្នុងចំណោម {total} បានអាន |
+| {n} of {total} have read it — ten minutes | {n} នាក់ក្នុងចំណោម {total} បានអានវា — ដប់នាទី |
+| Continue: {title} | បន្ត៖ {title} |
+| {n} of {m} pages | ទំព័រ {n} ក្នុងចំណោម {m} |
+| {name} recommended a book to you | {name} បានណែនាំសៀវភៅមួយដល់អ្នក |
+| {n} books recommended to you | សៀវភៅ {n} ក្បាលត្រូវបានណែនាំដល់អ្នក |
+| Give {name} a reading plan | ផ្តល់ផែនការអានដល់ {name} |
+| Give | ផ្តល់ |
+| Plan given | បានផ្តល់ផែនការ |
+| Saved — go and do it! | បានរក្សាទុក — ទៅធ្វើវាចុះ! |
+| Sent | បានផ្ញើ |
+| A line for everyone about why this book (optional): | មួយឃ្លាសម្រាប់មនុស្សគ្រប់គ្នា អំពីមូលហេតុដែលជ្រើសរើសសៀវភៅនេះ (មិនចាំបាច់)៖ |
+| It’s the book of the month | វាជាសៀវភៅប្រចាំខែហើយ |
+| No book matches that. Try a topic like marriage, habits or prayer. | គ្មានសៀវភៅណាត្រូវនឹងពាក្យនោះទេ។ សាកល្បងប្រធានបទដូចជា អាពាហ៍ពិពាហ៍ ទម្លាប់ ឬការអធិស្ឋាន។ |
+| A weekly nudge to read ten minutes | ការរំលឹកប្រចាំសប្តាហ៍ឲ្យអានដប់នាទី |
+| Reading day | ថ្ងៃអាន |
+| Conflict | ជម្លោះ |
+| Focus & time | ការផ្តោតអារម្មណ៍ និងពេលវេលា |
+| Money | លុយកាក់ |
+| Creativity | ការច្នៃប្រឌិត |
+| Mission | បេសកកម្ម |
+| Culture | វប្បធម៌ |
+| Marriage | អាពាហ៍ពិពាហ៍ |
+| Parenting | ការចិញ្ចឹមកូន |
+| New at YWAM GP | ថ្មីនៅ YWAM GP |
+| Start here in your first month: our values, keeping each other safe, working across cultures, and one YWAM classic. | ចាប់ផ្តើមនៅទីនេះក្នុងខែដំបូងរបស់អ្នក៖ តម្លៃរបស់យើង ការរក្សាសុវត្ថិភាពគ្នាទៅវិញទៅមក ការធ្វើការឆ្លងវប្បធម៌ និងសៀវភៅ YWAM មួយក្បាល។ |
+| Getting ready for marriage | ការត្រៀមខ្លួនសម្រាប់អាពាហ៍ពិពាហ៍ |
+| For couples preparing to marry. Read each one, talk about it together, then take the couple check-up. | សម្រាប់គូដែលកំពុងត្រៀមរៀបការ។ អានមួយក្បាលម្តងៗ និយាយគ្នាអំពីវា រួចធ្វើការពិនិត្យសម្រាប់គូស្វាមីភរិយា។ |
+| A stronger marriage | អាពាហ៍ពិពាហ៍ដែលរឹងមាំជាងមុន |
+| For married couples: what research and Scripture say about a marriage that lasts. | សម្រាប់គូដែលបានរៀបការ៖ អ្វីដែលការស្រាវជ្រាវ និងព្រះគម្ពីរនិយាយ អំពីអាពាហ៍ពិពាហ៍ដែលស្ថិតស្ថេរ។ |
+| Leading a team | ការដឹកនាំក្រុម |
+| For anyone who leads a ministry: trust, clarity, hard conversations and getting things done. | សម្រាប់អ្នកដែលដឹកនាំកិច្ចការបម្រើ៖ ការទុកចិត្ត ភាពច្បាស់លាស់ ការសន្ទនាដ៏ពិបាក និងការធ្វើឲ្យការងារសម្រេច។ |
+| Walking with God | ការដើរជាមួយព្រះ |
+| YWAM’s foundations: hearing God’s voice, knowing the Father, prayer and making Jesus Lord. | គ្រឹះរបស់ YWAM៖ ការស្តាប់ព្រះសូរសៀងរបស់ព្រះ ការស្គាល់ព្រះវរបិតា ការអធិស្ឋាន និងការលើកព្រះយេស៊ូវជាព្រះអម្ចាស់។ |
+| Better habits | ទម្លាប់ល្អជាងមុន |
+| Small daily changes that add up: how habits form, how to keep them, and how to focus. | ការផ្លាស់ប្តូរតូចៗប្រចាំថ្ងៃ ដែលបូកបញ្ចូលគ្នា៖ របៀបដែលទម្លាប់កើតឡើង របៀបរក្សាវា និងរបៀបផ្តោតអារម្មណ៍។ |
+| First book | សៀវភៅទីមួយ |
+| 5 books | 5 ក្បាល |
+| 10 books | 10 ក្បាល |
+| 25 books | 25 ក្បាល |
+
+The Library (teams/18-library-plus.js): the reading card at the top (books this year, weeks in a row, badges), the book of the month, reading plans and their descriptions, topic chips, what the campus is reading, recommending a book, the question after finishing a book, the line on My Home, a mentor giving a plan, and the weekly reading reminder. The push texts libMonthNew / libMonth / libRead / libRec / libPlan are in api.js PUSH_TEXT.

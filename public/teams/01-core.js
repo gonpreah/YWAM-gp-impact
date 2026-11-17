@@ -723,6 +723,7 @@ function gpViewFromUrl_(){
     else if(v==='base' || v==='dashboard') S.view='base';
     else if(v==='tasks'){ S.view='tasks'; S.gptFrom='week'; }   // a phone notification about a task opens GP Tasks
     else if(v==='mentor'){ S.view='mentor'; S.mentee=null; }
+    else if(v==='library'){ S.view='library'; S.libBook=null; S.libStep=null; S.libShelf='all'; if(typeof libLoad_==='function') libLoad_(); }   // a phone notification about a book
     else if(v==='tests'){ S.view='tests'; S.tests.sub='home'; S.tests.mc=null; }   // a phone notification about a couple check-up   // a phone notification about a 1-on-1 opens Mentorship
     else if(v==='approvals'){ S.view='admin'; S.adminSub='approvals'; S.adminStaff=null; }   // a phone notification about a new account
     else if(v==='gpdts'){ S.view='ministry'; S.mmBrowseDept='Leadership Development'; S.mmBrowseMinistry='GPDTS'; S.mmTab='dtsdash'; S.mmTabTouched=true; }   // the portal's way back to GPDTS
@@ -866,6 +867,7 @@ function applyBoot(d, fromCache){
   S.supSum = d.supportSummary || null;   // support raising: your own totals (the full list loads on its page)
   S.p3Glance = d.p360 || null;           // 360 reviews: waiting for my feedback, my plan's quarterly review due
   libAdoptServer_(d.libRead, fromCache);
+  if(d.lib) S.lib=d.lib;   // the Library together: the month's book, plans, what the campus reads (18-library-plus.js)
   if(d.teamTrips && d.teamTrips.ok) S.teamTrips[d.teamTrips.campus] = { trips: d.teamTrips.trips || [], canEdit: !!d.teamTrips.canEdit };
   S.smartGoals = d.smartGoals || [];
   S.tasks = d.tasks || [];

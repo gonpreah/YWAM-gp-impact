@@ -1982,6 +1982,7 @@ async function getMenteeLogs(username, pin, menteeId) {
     checkins: checkins,
     profile: { debt: m.debt },
     support: (m.support && m.support.mentorVisible) ? supportSummary_(m.support) : null,   // totals only, and only when shared
+    library: { read: cleanLibRead_(m.libRead), plans: libMine_(m).plans, goal: libMine_(m).goal },   // what they've read and their reading plans — never their notes
     ministry: await ministryDataFor_(m),
     trips: { trips: menteeTrips.map(tripOut_), totals: awayTotals_(menteeTrips), ptoCap: PTO_ANNUAL_CAP, holidays: holidayList_() },
     smartGoals: smartGoalsOut_(menteeSmart, menteeTasks)
@@ -5296,6 +5297,11 @@ const PUSH_HOURS_MIN = 5, PUSH_HOURS_MAX = 22;
    Tuesday during our staff meeting"). 0 Sunday … 6 Saturday; CHECKIN_DOW in teams/02-goals-okrs.js too. */
 const CHECKIN_DOW = 2;
 const PUSH_TEXT = {
+  libMonthNew: { en: 'This month’s book: {title}. Ten minutes in the Library.', km: 'សៀវភៅប្រចាំខែនេះ៖ {title}។ ដប់នាទីនៅក្នុងបណ្ណាល័យ។' },
+  libMonth: { en: 'Ten minutes for this month’s book? {title}', km: 'ដប់នាទីសម្រាប់សៀវភៅប្រចាំខែនេះ? {title}' },
+  libRead: { en: 'Ten minutes for a book? Pick up where you left off in the Library.', km: 'ដប់នាទីសម្រាប់សៀវភៅមួយ? បន្តអានពីកន្លែងដែលអ្នកឈប់នៅក្នុងបណ្ណាល័យ។' },
+  libRec: { en: '{name} thinks you’d like “{title}”.', km: '{name} គិតថាអ្នកនឹងចូលចិត្ត «{title}»។' },
+  libPlan: { en: '{name} gave you a reading plan in the Library.', km: '{name} បានផ្តល់ផែនការអានមួយដល់អ្នកនៅក្នុងបណ្ណាល័យ។' },
   mcInvite: { en: '{name} asked you to take the couple check-up together.', km: '{name} បានអញ្ជើញអ្នកឲ្យធ្វើការពិនិត្យសម្រាប់គូស្វាមីភរិយាជាមួយគ្នា។' },
   mcReady: { en: 'You have both answered the couple check-up — your results are ready.', km: 'អ្នកទាំងពីរបានឆ្លើយការពិនិត្យសម្រាប់គូស្វាមីភរិយារួចហើយ — លទ្ធផលរបស់អ្នករួចរាល់ហើយ។' },
   title: { en: 'My YWAM GP', km: 'My YWAM GP' },
@@ -5385,7 +5391,9 @@ async function pushSend_(sub, message, keys) {
 function pushPrefsOf_(s) {
   const p = (s && s.push) || {};
   const h = finiteNum_(p.hour, PUSH_HOURS_MIN, PUSH_HOURS_MAX);
-  return { hour: h == null ? 19 : Math.round(h), daily: p.daily !== false, oneonone: p.oneonone !== false, admin: p.admin !== false, hr: p.hr !== false, alerts: p.alerts !== false };
+  const rd = Math.round(Number(p.readDay));
+  return { hour: h == null ? 19 : Math.round(h), daily: p.daily !== false, oneonone: p.oneonone !== false, admin: p.admin !== false, hr: p.hr !== false, alerts: p.alerts !== false,
+    reading: p.reading !== false, readDay: rd >= 0 && rd <= 6 ? rd : 6 };   // a weekly nudge to read, on the day they pick (Saturday unless they say)
 }
 /* Right away (Oct 2026, Uriah: "even when you're off the app"): what the bell says the moment it
    happens — a 1-on-1 asked for or set, a mentor request, leave asked for or decided — to that
@@ -5451,7 +5459,9 @@ async function savePushPrefs(username, pin, prefs) {
   return mutateStaff_(function (rows) {
     const i = rows.findIndex(function (r) { return r.id === s.id; });
     if (i === -1) return { abort: true, ok: false };
-    rows[i].push = { hour: h == null ? 19 : Math.round(h), daily: p.daily !== false, oneonone: p.oneonone !== false, admin: p.admin !== false, hr: p.hr !== false, alerts: p.alerts !== false };
+    const rd = Math.round(Number(p.readDay));
+    rows[i].push = { hour: h == null ? 19 : Math.round(h), daily: p.daily !== false, oneonone: p.oneonone !== false, admin: p.admin !== false, hr: p.hr !== false, alerts: p.alerts !== false,
+      reading: p.reading !== false, readDay: rd >= 0 && rd <= 6 ? rd : 6 };
     return { ok: true, prefs: pushPrefsOf_(rows[i]) };
   });
 }
@@ -5509,6 +5519,12 @@ function reminderItems_(s, ctx) {
     if (asked) out.push({ key: 'p360ask', params: { n: asked } });
     if (ctx.monday && ctx.p360.some(function (r) { return r.subjectId === s.id && r.plan && r.plan.actions && r.plan.actions.length && !(r.plan.reviews || {})[ctx.quarter]; })) out.push({ key: 'p360plan', params: { q: ctx.quarter.replace('-Q', ' Q') } });
   }
+  /* the Library, once a week on the day they chose: this month's book while they haven't read it, else a plain nudge */
+  if (p.reading && ctx.dow === p.readDay) {
+    const m = ((ctx.club || {}).month || {})[s.campus];
+    if (m && m.bookId && !cleanLibRead_(s.libRead)[m.bookId]) out.push({ key: 'libMonth', params: { title: m.title || '' } });
+    else out.push({ key: 'libRead' });
+  }
   return out;
 }
 /* netlify/functions/reminders.js, every hour: everyone whose hour it is gets one
@@ -5539,7 +5555,7 @@ async function runReminders(now) {
     const ctx = { staff: staff, loggedToday: loggedToday, held: held, monday: dow === 1, dayOfMonth: local.getUTCDate(),
       tuesday: dow === CHECKIN_DOW, checkinDue: dow === 0 || dow >= CHECKIN_DOW, checkedIn: checkedIn,
       waiting: staff.filter(function (r) { return (!r.active && !r.archived) || (r.active && r.cltRequest); }).length,
-      hrDue: hrDueCount_(staff), p360: await readJSON('p360', []), quarter: p360Quarter_(today) };
+      hrDue: hrDueCount_(staff), p360: await readJSON('p360', []), quarter: p360Quarter_(today), dow: dow, club: await readJSON('libClub', {}) };
     let sent = 0, people = 0, gone = [];
     for (const s of staff) {
       if (s.active === false || s.archived) continue;
@@ -5661,7 +5677,7 @@ async function getTasksBoot(username, pin, calFrom) {
   };
 }
 
-const BOOT_KEYS = ['entries', 'survey', 'okrs', 'dailyLogs', 'goals', 'holidays', 'smartGoals', 'broadcasts',
+const BOOT_KEYS = ['libClub', 'entries', 'survey', 'okrs', 'dailyLogs', 'goals', 'holidays', 'smartGoals', 'broadcasts',
   'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys'];
 async function getMyBoot(username, pin) {
   prefetch_(['staff', 'loginThrottle'].concat(BOOT_KEYS));   // before the PIN check, so they travel together
@@ -5735,6 +5751,7 @@ async function getMyBoot(username, pin) {
     hrFollowUps: canHR_(s) ? candFollowUpsCount_(candRows || []) : null,
     // the books they have marked read in the Library, and the papers every staff member signs
     libRead: cleanLibRead_(s.libRead),
+    lib: await part(async function () { return libOut_(s, staffRows || [], await readJSON('libClub', {})); }),   // the Library together: book of the month, plans, what the campus reads
     stuMentor: deptOf_(s) === STU_LD_DEPT ? await part(function () { return stuMentorFor_(s.id); }) : null,   // students who chose them as mentor
     supportSummary: s.support ? supportSummary_(s.support) : null,   // support raising: your own totals, for My Home's tile
     p360: await part(function () { return p360Glance_(s); }),   // 360 reviews: waiting for my answer, a plan's quarterly review due
@@ -7707,6 +7724,168 @@ async function libSaveReads(username, pin, changes) {
     rows[idx].libRead = cur;
     return { ok: true, libRead: cur };
   });
+}
+
+/* ==================== the Library: reading together (Nov 2026, Uriah) ====================
+   "Suggest improvements that will motivate our team to read the books … let's do em all."
+   - Book of the month: Campus Leadership (or an admin) picks one book for the campus; everyone sees
+     how many have read it. Blob `libClub` = { month: { <campus>: { ym, bookId, title, note, by, at } },
+     recs: [{ id, from, to, bookId, title, note, at }] }.
+   - Each person's own, on their staff record as `lib`: { share (show the books I finish to my campus —
+     off until they say yes), goal (books this year), notes: { bookId: { text, at } } (the one thing
+     they will do — theirs alone), plans: { planId: { at, by } } (reading plans started, or given by
+     their mentor) }.
+   - Recommendations: one person to another, shown in the Library until dismissed, with a push.
+   The server has no copy of the book list (library.js is the page's), so ids are checked by shape and
+   the page sends the title for the push. Who sees what: which books someone finished goes to their
+   campus only while `share` is on (the count was already on their profile); notes never leave their
+   account; a mentor sees their mentee's read list, plans and goal (getMenteeLogs) — never the notes. */
+const LIB_ID = /^[a-z0-9-]{1,80}$/;
+const LIB_NOTE_MAX = 400, LIB_RECS_MAX = 400, LIB_RECS_DAY = 5, LIB_FEED_DAYS = 60;
+function libMine_(s) {
+  const l = (s && s.lib) || {};
+  const notes = {};
+  Object.keys(l.notes || {}).slice(0, LIB_MAX).forEach(function (k) { const n = l.notes[k]; if (LIB_ID.test(k) && n && n.text) notes[k] = { text: String(n.text).slice(0, LIB_NOTE_MAX), at: n.at || '' }; });
+  const plans = {};
+  Object.keys(l.plans || {}).slice(0, 20).forEach(function (k) { const x = l.plans[k]; if (/^[a-z0-9-]{1,40}$/.test(k) && x) plans[k] = { at: x.at || '', by: x.by || '' }; });
+  const g = Math.round(Number(l.goal));
+  return { share: l.share === true, shareAsked: l.share === true || l.share === false, goal: g >= 1 && g <= 200 ? g : 0, notes: notes, plans: plans };
+}
+function libOnCampus_(staff, campus) {
+  return (staff || []).filter(function (r) { return r && r.campus === campus && r.active !== false && !r.archived && !isApplicant_(r); });
+}
+function libOut_(s, staff, club) {
+  club = club || {};
+  const campus = libOnCampus_(staff, s.campus), names = {};
+  (staff || []).forEach(function (r) { if (r && r.id) names[r.id] = r.name || ''; });
+  const m = (club.month || {})[s.campus];
+  let month = null;
+  if (m && m.bookId) {
+    month = { ym: m.ym || '', bookId: m.bookId, title: m.title || '', note: m.note || '', by: names[m.by] || '',
+      readers: campus.filter(function (r) { return cleanLibRead_(r.libRead)[m.bookId]; }).length, total: campus.length };
+  }
+  const since = new Date(Date.now() + 7 * 3600 * 1000 - LIB_FEED_DAYS * 86400000).toISOString().slice(0, 10);
+  const feed = [], counts = {};
+  campus.forEach(function (r) {
+    const read = cleanLibRead_(r.libRead), sharing = libMine_(r).share;
+    Object.keys(read).forEach(function (id) {
+      counts[id] = (counts[id] || 0) + 1;
+      if (sharing && read[id] && read[id] >= since) feed.push({ id: r.id, name: r.name || '', photo: photoOf_(r), bookId: id, date: read[id] });
+    });
+  });
+  feed.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
+  const top = Object.keys(counts).map(function (id) { return { bookId: id, n: counts[id] }; })
+    .sort(function (a, b) { return (b.n - a.n) || (a.bookId < b.bookId ? -1 : 1); }).slice(0, 8);
+  const recs = (club.recs || []).filter(function (r) { return r.to === s.id; })
+    .map(function (r) { return { id: r.id, from: { id: r.from, name: names[r.from] || '' }, bookId: r.bookId, note: r.note || '', at: r.at }; }).reverse().slice(0, 20);
+  return { month: month, canPick: canLead_(s), feed: feed.slice(0, 12), top: top, recs: recs, mine: libMine_(s), people: campus.length };
+}
+async function libAnswer_(username, pin, extra) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  return Object.assign({ ok: true, lib: libOut_(s, await getStaff_(), await readJSON('libClub', {})) }, extra || {});
+}
+async function libState(username, pin) { return libAnswer_(username, pin); }
+/* Campus Leadership or an admin: this campus's book of the month ('' takes it down). */
+async function libSetMonth(username, pin, bookId, title, note) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!canLead_(s)) return { ok: false, err: 'not_authorized' };
+  const id = String(bookId || '');
+  if (id && !LIB_ID.test(id)) return { ok: false, err: 'bad_book' };
+  const ttl = String(title || '').trim().slice(0, 120);
+  const today = baseToday_();
+  await mutateKey_('libClub', {}, function (club) {
+    club.month = club.month || {};
+    if (!id) delete club.month[s.campus];
+    else club.month[s.campus] = { ym: today.slice(0, 7), bookId: id, title: ttl, note: String(note || '').trim().slice(0, 300), by: s.id, at: new Date().toISOString() };
+    return { ok: true };
+  });
+  if (id) {
+    for (const r of libOnCampus_(await getStaff_(), s.campus)) { if (r.id !== s.id) await pushNow_(r.id, 'libMonthNew', { title: ttl }, 'teams.html?view=library'); }
+  }
+  return libAnswer_(username, pin);
+}
+/* My own: sharing, the year's goal, the one thing I'll do from a book, a reading plan started or dropped. */
+async function libSaveMine(username, pin, p) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  p = p || {};
+  if (p.note && !LIB_ID.test(String(p.note.bookId || ''))) return { ok: false, err: 'bad_book' };
+  if (p.plan && !/^[a-z0-9-]{1,40}$/.test(String(p.plan.id || ''))) return { ok: false, err: 'bad_plan' };
+  const res = await mutateStaff_(function (rows) {
+    const i = rows.findIndex(function (r) { return r.id === s.id; });
+    if (i === -1) return { abort: true, ok: false, err: 'not_found' };
+    const l = Object.assign({}, rows[i].lib || {});
+    if (p.share !== undefined) l.share = !!p.share;
+    if (p.goal !== undefined) { const g = Math.round(Number(p.goal)); l.goal = g >= 1 && g <= 200 ? g : 0; }
+    if (p.note) {
+      l.notes = Object.assign({}, l.notes || {});
+      const text = String(p.note.text || '').trim().slice(0, LIB_NOTE_MAX);
+      if (text) l.notes[p.note.bookId] = { text: text, at: new Date().toISOString() }; else delete l.notes[p.note.bookId];
+    }
+    if (p.plan) {
+      l.plans = Object.assign({}, l.plans || {});
+      if (p.plan.on === false) delete l.plans[p.plan.id];
+      else if (!l.plans[p.plan.id]) l.plans[p.plan.id] = { at: new Date().toISOString(), by: '' };
+    }
+    rows[i].lib = l;
+    return { ok: true };
+  });
+  if (!res.ok) return res;
+  return libAnswer_(username, pin);
+}
+/* "You'd like this one": to anyone on staff, up to five a day. */
+async function libRecommend(username, pin, toId, bookId, title, note) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const id = String(bookId || ''), to = String(toId || '');
+  if (!LIB_ID.test(id)) return { ok: false, err: 'bad_book' };
+  const who = (await getStaff_()).find(function (r) { return r.id === to; });
+  if (!who || to === s.id || who.active === false || who.archived || isApplicant_(who)) return { ok: false, err: 'bad_person' };
+  const ttl = String(title || '').trim().slice(0, 120), today = baseToday_();
+  const res = await mutateKey_('libClub', {}, function (club) {
+    club.recs = Array.isArray(club.recs) ? club.recs : [];
+    if (club.recs.filter(function (r) { return r.from === s.id && r.day === today; }).length >= LIB_RECS_DAY) return { abort: true, ok: false, err: 'too_many' };
+    if (club.recs.some(function (r) { return r.from === s.id && r.to === to && r.bookId === id; })) return { abort: true, ok: false, err: 'already' };
+    club.recs.push({ id: 'lr_' + crypto.randomBytes(5).toString('hex'), from: s.id, to: to, bookId: id, title: ttl, note: String(note || '').trim().slice(0, 200), day: today, at: new Date().toISOString() });
+    if (club.recs.length > LIB_RECS_MAX) club.recs = club.recs.slice(-LIB_RECS_MAX);
+    return { ok: true };
+  });
+  if (!res.ok) return res;
+  await pushNow_(to, 'libRec', { name: String(s.name || '').split(' ')[0], title: ttl }, 'teams.html?view=library');
+  return libAnswer_(username, pin);
+}
+async function libRecDone(username, pin, recId) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  await mutateKey_('libClub', {}, function (club) {
+    club.recs = (Array.isArray(club.recs) ? club.recs : []).filter(function (r) { return !(r.id === recId && r.to === s.id); });
+    return { ok: true };
+  });
+  return libAnswer_(username, pin);
+}
+/* A reading plan given to someone: by their approved mentor, or by Campus Leadership / an admin of their campus. */
+async function libGivePlan(username, pin, staffId, planId, on) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!/^[a-z0-9-]{1,40}$/.test(String(planId || ''))) return { ok: false, err: 'bad_plan' };
+  const who = (await getStaff_()).find(function (r) { return r.id === staffId; });
+  if (!who || who.active === false || who.archived || isApplicant_(who)) return { ok: false, err: 'bad_person' };
+  const mentor = who.mentorId === s.id && who.mentorStatus === 'approved';
+  if (!mentor && !(canLead_(s) && who.campus === s.campus)) return { ok: false, err: 'not_authorized' };
+  let added = false;
+  const res = await mutateStaff_(function (rows) {
+    const i = rows.findIndex(function (r) { return r.id === staffId; });
+    if (i === -1) return { abort: true, ok: false, err: 'not_found' };
+    const l = Object.assign({}, rows[i].lib || {}); l.plans = Object.assign({}, l.plans || {});
+    if (on === false) delete l.plans[planId];
+    else if (!l.plans[planId]) { l.plans[planId] = { at: new Date().toISOString(), by: s.id }; added = true; }
+    rows[i].lib = l;
+    return { ok: true, plans: libMine_(rows[i]).plans };
+  });
+  if (res.ok && added) await pushNow_(staffId, 'libPlan', { name: String(s.name || '').split(' ')[0] }, 'teams.html?view=library');
+  return res;
 }
 
 /* ==================== required: papers every staff member signs ====================
@@ -13040,6 +13219,12 @@ const HANDLERS = {
   getDeptPulse: function (a) { return getDeptPulse(a[0], a[1], a[2]); },
   getStaffDebt: function (a) { return getStaffDebt(a[0], a[1]); },
   p360List: function (a) { return p360List(a[0], a[1]); },
+  libState: function (a) { return libState(a[0], a[1]); },
+  libSetMonth: function (a) { return libSetMonth(a[0], a[1], a[2], a[3], a[4]); },
+  libSaveMine: function (a) { return libSaveMine(a[0], a[1], a[2]); },
+  libRecommend: function (a) { return libRecommend(a[0], a[1], a[2], a[3], a[4], a[5]); },
+  libRecDone: function (a) { return libRecDone(a[0], a[1], a[2]); },
+  libGivePlan: function (a) { return libGivePlan(a[0], a[1], a[2], a[3], a[4]); },
   saveMyApest: function (a) { return saveMyApest(a[0], a[1], a[2]); },
   mcList: function (a) { return mcList(a[0], a[1]); },
   mcStart: function (a) { return mcStart(a[0], a[1], a[2]); },
