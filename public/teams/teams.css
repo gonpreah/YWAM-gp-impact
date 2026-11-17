@@ -2995,6 +2995,9 @@ details.dtsPick input.gpSelBox { margin:6px 0 4px; }
 .useNum { display:flex; flex-direction:column; align-items:flex-end; flex:none; margin-left:8px; text-align:right; }
 .useNum b { font-size:20px; line-height:1.1; }
 .useNum small { color:var(--muted); font-size:11.5px; white-space:nowrap; }
+.useNum small.useTime { color:var(--ink); font-weight:600; }
+.useSort { margin:2px 0 8px; max-width:280px; }
+.useSort button { padding:7px; font-size:13.5px; }
 
 /* Tuesday: the weekly health check-in, at the staff meeting */
 .tueCheckin { border:1.5px solid var(--accent); }

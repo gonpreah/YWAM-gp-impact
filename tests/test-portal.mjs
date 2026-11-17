@@ -933,6 +933,10 @@ ok('a team uploads its passport copies; the record lists the file, the blob hold
 ok('uploading them ticks the team’s Passport copies step by itself', r.body.application.steps.find(s => s.id === 'passports').done === true);
 r = await call('portalUploadDoc', ['team.au', '2468', 'photo', 'team.jpg', 'image/jpeg', '/9j/4AAQ']);
 ok('and the team photo its own', r.body.ok === true && r.body.application.steps.find(s => s.id === 'photo').done === true);
+{ const extra = [];
+  for (let i = 0; i < 45; i++) { const x = await call('portalUploadDoc', ['team.au', '2468', 'evisa', 'evisa-' + i + '.pdf', 'application/pdf', 'JVBERi0x']); if (x.body.ok) extra.push(x.body.doc.id); }
+  ok('a big team keeps adding e-visas past forty files (it used to stop at 40: “That is the most documents there can be”)', extra.length === 45 && mem.candidates.find(c => c.id === teamRec.id).portal.docs.length === 47, extra.length);
+  for (const id of extra) await call('portalDeleteDoc', ['team.au', '2468', id]); }
 r = await call('portalGetDoc', ['team.au', '2468', pdoc.id]);
 ok('the team opens its own file', r.body.ok === true && r.body.dataUrl === 'data:application/pdf;base64,JVBERi0xLjQK');
 r = await call('portalGetDoc', ['anna.b', '2468', pdoc.id]);

@@ -1387,7 +1387,7 @@ already decided), away or coming up, days used per person against `PTO_ANNUAL_CA
 national holidays (dated ones edited and saved with `adminSaveHolidays`), earlier
 requests folded), `kpis`, `broadcast`, `merge`, and
 `person` (`S.adminPersonId`). Every page has one back link, `#adminBack[data-adminback]`
-— `week` (My Home), `home`, or `accounts`. **Accounts** is a campus chip row (opens on the
+— `week` (My Home), `home`, or — on a person page — the Admin page they opened it from (`S.adminPersonFrom`: App use, Mentors, Loose ends…, else Accounts). **Accounts** is a campus chip row (opens on the
 admin's own campus), the search (`#adminSearch`, kept in `S.adminSearch` so it survives a
 rebuild, filter re-applied in `bind()`), and a list of tappable rows
 `[data-adminperson="id"]`; tapping one opens the **person page**: who they are at the top,
@@ -1820,7 +1820,7 @@ forms, documents and references follow.
   first; then the letter of invitation and supporting documents `from: 'us'` — staff upload
   them, the team opens them and cannot upload or remove one — and the team's e-visas):
   `portalUploadDoc` (applicant after submitting, or staff in scope with a candidateId; PDF /
-  images, ~4 MB, blobs `pdoc:<id>`, the record keeps only the list), `portalGetDoc`,
+  images, ~4 MB, blobs `pdoc:<id>`, the record keeps only the list; up to `PORTAL_DOCS_MAX` = MEMBERS_MAX × 3 + 40 files a record, every kind together — it was 40, and a team of fifteen ran out before its last e-visas, Nov 2026), `portalGetDoc`,
   `portalDeleteDoc` (own record, or portal staff / HR in scope). Required kinds all present tick
   the Documents item. The page shrinks big photos before upload (`shrinkImage_`).
 - **A question can open an upload box** (`attach: '<doc kind>'` on a yesno / choice question,
@@ -2284,6 +2284,18 @@ numbers fill themselves in from using it (like Teams and Hospitality). Two so fa
   with 30 dots (`.useDots`), this week and the last day, a tap opens their account; a note while `daysFrom` is
   under 30 days old (`#adminUseNote`); Download (CSV) (`#adminUseCsv`). tests/test-app-use.mjs, test-app-use-ui.mjs.
   Khmer: docs/khmer-needed.md §104.
+- **Time in the app** (Nov 2026, Andrew: "total hours spent on app"): counted on the phone (01-core.js, `gpUseTick_`
+  every 15 s while on screen and touched / typed / scrolled in the last 2 minutes, `GP_USE_IDLE_MS`; a tick is at most
+  30 s, so a sleeping phone adds nothing) into `gp-use-time` ({u, d:{date:secs} for 14 days, sent, dirty}); staff only
+  (`gpUseOn_`: not guests, students, previews or the board). Sent as `markSeen(user, pin, {date: secs})` — with the
+  once-a-day call, and when the app goes to the background at most every 20 minutes (`gpUseFlush_`, a sendBeacon).
+  Totals, not additions: the server (`saveUseTime_`, its own blob `useTime` = {from, time:{staffId:{date:secs}}},
+  `mutateKey_`, 90 days) keeps the larger, days in the last two weeks only, ≤20 h a day. `adminAppUse` adds `secs30` /
+  `secs7` and `timeFrom`; the page shows ⏱ per person, the campus total and average (`#adminUseTime`), By days used /
+  By time in the app (`[data-usesort]`), a note while counting is under 30 days old (`#adminUseTimeNote`), and two CSV
+  columns in minutes. Only how long, never what. Khmer §105.
+- **A person's page goes back where it came from** (`S.adminPersonFrom`, set by `[data-adminperson]`): App use,
+  Mentors, Loose ends…, else Accounts.
 
 ## The weekly health check-in is on Tuesdays (Nov 2026, Andrew: "every Tuesday during our staff meeting")
 `CHECKIN_DOW` = 2 (02-goals-okrs.js, and api.js for the phone): on a Tuesday My Home has a card while this week's

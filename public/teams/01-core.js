@@ -582,10 +582,55 @@ function gpOfflineBannerHtml_(){
 /* Once a day, after a good boot: "opened the app today", for Admin → Loose
    ends. Its own call because the boot writes nothing; the date only. */
 function gpMarkSeen_(){
-  var day=todayStr();
-  if(lsGet('gp-seen-day')===day+'|'+S.auth.user) return;
-  run('markSeen',[S.auth.user,S.auth.pin],function(d){ if(d && d.ok) lsSet('gp-seen-day', day+'|'+S.auth.user); }, function(){});
+  var day=todayStr(), U=gpUseTime_(), due=U && U.dirty && Date.now()-(U.sent||0) > GP_USE_SEND_MS;
+  if(lsGet('gp-seen-day')===day+'|'+S.auth.user && !due) return;
+  var sentAt=Date.now(), days=U ? U.d : {};
+  run('markSeen',[S.auth.user,S.auth.pin,days],function(d){ if(d && d.ok){ lsSet('gp-seen-day', day+'|'+S.auth.user); gpUseSent_(sentAt, days); } }, function(){});
 }
+
+/* Time in the app, for Admin → App use (Nov 2026, Andrew: "total hours spent on app"). Counted on the phone:
+   every 15 s the app is on screen and someone touched, typed or scrolled in the last two minutes, those seconds
+   go to today (`gp-use-time` = {u, d:{date:secs}, sent, dirty}, the last 14 days). The totals ride along with
+   markSeen — the once-a-day call — and, when the app goes to the background, at most every 20 minutes
+   (a beacon, so it goes even as the app closes). The server keeps the larger total, so nothing counts twice. */
+var GP_USE_TICK_MS=15000, GP_USE_IDLE_MS=120000, GP_USE_SEND_MS=20*60000;
+var _gpUse={ last:Date.now(), act:Date.now() };   // opening the app counts as using it
+function gpUseOn_(){ return !!(S.auth && S.auth.user && S.me && S.me.id && !S.guest && !S.student && !S.stuPreview && !S.board); }
+function gpUseTime_(){
+  if(!gpUseOn_()) return null;
+  var U=null; try { U=JSON.parse(lsGet('gp-use-time')||'null'); } catch(e){}
+  if(!U || U.u!==S.auth.user || !U.d || typeof U.d!=='object') U={ u:S.auth.user, d:{}, sent:0, dirty:false };
+  return U;
+}
+function gpUseSave_(U){
+  var keep=Object.keys(U.d).sort().slice(-14), d={}; keep.forEach(function(k){ d[k]=U.d[k]; }); U.d=d;
+  lsSet('gp-use-time', JSON.stringify(U));
+}
+function gpUseSent_(at, days){
+  var U=gpUseTime_(); if(!U) return;
+  U.sent=at; U.dirty=Object.keys(U.d).some(function(k){ return (U.d[k]||0) > (days[k]||0); });
+  gpUseSave_(U);
+}
+function gpUseTick_(leaving){
+  var now=Date.now(), was=_gpUse.last; _gpUse.last=now;
+  if((document.hidden && !leaving) || !was || !gpUseOn_() || now-_gpUse.act > GP_USE_IDLE_MS) return;
+  var secs=Math.round(Math.min(now-was, GP_USE_TICK_MS*2)/1000); if(secs<=0) return;
+  var U=gpUseTime_(), day=todayStr();
+  U.d[day]=(U.d[day]||0)+secs; U.dirty=true; gpUseSave_(U);
+}
+function gpUseFlush_(){
+  var U=gpUseTime_(); if(!U || !U.dirty || Date.now()-(U.sent||0) < GP_USE_SEND_MS) return;
+  var body=JSON.stringify({ fn:'markSeen', args:[S.auth.user, S.auth.pin, U.d] }), sent=false;
+  try { sent = !!(navigator.sendBeacon && navigator.sendBeacon('/.netlify/functions/api', new Blob([body], { type:'application/json' }))); } catch(e){}
+  if(sent) gpUseSent_(Date.now(), U.d);
+}
+['pointerdown','keydown','touchstart','wheel','scroll'].forEach(function(ev){
+  window.addEventListener(ev, function(){ _gpUse.act=Date.now(); }, { passive:true, capture:true });
+});
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden){ gpUseTick_(true); gpUseFlush_(); } else { _gpUse.last=Date.now(); _gpUse.act=Date.now(); }
+});
+setInterval(gpUseTick_, GP_USE_TICK_MS);
 
 /* Opening the app: the copy first, then the truth. With a remembered session and
    a copy of this person's last boot on the phone, the page draws from the copy at

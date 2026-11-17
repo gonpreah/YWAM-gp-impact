@@ -42,6 +42,7 @@ function ok(name, cond, extra) {
   else { fail++; console.log('FAIL ' + name + (extra !== undefined ? '  → ' + extra : '')); }
 }
 const today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+const icsDayT = (d, n) => { const x = new Date(d + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
 const ago = n => { const d = new Date(today + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); };
 
 await call('markSeen', ['cora', '1234']);
@@ -57,6 +58,18 @@ mem.dailyLogs = [
   { staffId: 'c1', date: ago(5), updated: ago(5) + 'T20:00:00.000Z', bible: true },   // 20:00 UTC is the next morning in Cambodia → ago(4)
   { staffId: 'c1', date: ago(40), updated: ago(40) + 'T03:00:00.000Z' }
 ];
+/* time in the app: each day's total in seconds, sent with markSeen; the larger total stays */
+await call('markSeen', ['cora', '1234', { [today]: 600, [ago(1)]: 1200 }]);
+ok('the phone’s minutes in the app are kept by day', mem.useTime && mem.useTime.time.c1[today] === 600 && mem.useTime.time.c1[ago(1)] === 1200 && mem.useTime.from === today, JSON.stringify(mem.useTime));
+await call('markSeen', ['cora', '1234', { [today]: 300 }]);
+ok('a smaller total for a day changes nothing (sent twice, or from an old copy)', mem.useTime.time.c1[today] === 600);
+await call('markSeen', ['cora', '1234', { [today]: 900, [ago(20)]: 500, [icsDayT(today, 2)]: 500, 'soon': 5, [ago(2)]: -40 }]);
+ok('a bigger one moves it on; a day over two weeks old, one ahead, a bad date or a negative is left out', mem.useTime.time.c1[today] === 900 && Object.keys(mem.useTime.time.c1).sort().join(',') === [ago(1), today].join(','), JSON.stringify(mem.useTime.time.c1));
+await call('markSeen', ['kanha', '1234', { [today]: 999999 }]);
+ok('a day can’t hold more than 20 hours', mem.useTime.time.c2[today] === 72000);
+await call('markSeen', ['kanha', '1234', 'junk']);
+await call('markSeen', ['kanha', '9999', { [ago(1)]: 50 }]);
+ok('junk, or a wrong PIN, writes nothing', mem.useTime.time.c2[today] === 72000 && !(ago(1) in mem.useTime.time.c2));
 let r = await call('adminAppUse', ['cora', '1234', 'siemreap']);
 ok('only an admin may see it', r.ok === false && r.err === 'not_authorized');
 r = await call('adminAppUse', ['ada', '1234', 'siemreap']);
@@ -66,6 +79,8 @@ ok('a day the Habit Tracker saved counts on Cambodia’s calendar; older than 30
 ok('… the last 7 days too, and the last day used', by('c1').d7 === 3 && by('c1').last === today);
 ok('Kanha’s 90 kept days: 30 in the last 30, 7 in the last 7', by('c2').d30 === 30 && by('c2').d7 === 7);
 ok('someone who never opened it: nothing, no last day', by('ad').d30 === 0 && by('ad').last === '');
+ok('each person’s time in the app, last 30 and last 7 days, in seconds', by('c1').secs30 === 2100 && by('c1').secs7 === 2100 && by('c2').secs30 === 72000 && by('ad').secs30 === 0);
+ok('… and the day the counting began', r.timeFrom === today);
 ok('only dates leave the server — never what anyone did', !/workout|bible|habits|lonely/.test(JSON.stringify(r)));
 r = await call('adminAppUse', ['ada', '1234', 'poipet']);
 ok('the other campus on asking', r.ok && r.campus === 'poipet' && r.people.length === 1 && r.people[0].id === 'p1');
