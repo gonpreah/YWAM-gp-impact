@@ -5140,3 +5140,55 @@ The minutes each person has the app open and in use, beside their days (Admin �
 | {h} h | {h} ម៉ោង |
 | Only which days someone used the app and for how long — never what they did in it. | មានតែថ្ងៃណាដែលនរណាម្នាក់បានប្រើកម្មវិធី និងរយៈពេលប៉ុន្មាន — មិនដែលបង្ហាញអ្វីដែលពួកគេបានធ្វើនៅក្នុងនោះទេ។ |
 | The app keeps every day someone opens it from {date}. Before that it can only count the days they saved something — a habit, their weekly goals, a ministry’s numbers or a GP Task — so earlier days may be missing. The numbers fill in over the next 30 days. | កម្មវិធីរក្សាទុករាល់ថ្ងៃដែលនរណាម្នាក់បើកវា ចាប់ពី {date}។ មុននោះ វាអាចរាប់បានតែថ្ងៃដែលពួកគេបានរក្សាទុកអ្វីមួយ — ទម្លាប់ គោលដៅប្រចាំសប្តាហ៍ លេខរបស់ការបម្រើ ឬកិច្ចការ GP — ដូច្នេះថ្ងៃមុនៗអាចខ្វះ។ លេខនឹងពេញលេញក្នុងរយៈពេល 30 ថ្ងៃខាងមុខ។ |
+
+## 106. Mentorship: a 1-on-1, step by step
+
+The Mentorship page's "How a 1-on-1 works" fold and the 1-on-1 page: the step strip on top (Ask · Day & time · Check-in · Meet · Done — very short labels under small circles, five across a phone), one card saying what happens next, the check-in before the meeting, and the mentor's Begin 1-on-1 → notes and follow-ups → Finish. "Check-in" here is the mentee's questions before a 1-on-1 (ការរាយការណ៍, as elsewhere in the 1-on-1 sheet).
+
+| English | Khmer (draft) |
+|---|---|
+| How a 1-on-1 works | របៀបនៃការជួបមួយទល់មួយ |
+| Either of you asks, from this page. | ម្នាក់ណាក៏បានក្នុងចំណោមអ្នកទាំងពីរ ស្នើសុំពីទំព័រនេះ។ |
+| The one asked picks a day and time — that is the yes, and the other gets a notification. | អ្នកដែលត្រូវបានស្នើសុំ ជ្រើសរើសថ្ងៃ និងម៉ោង — នោះជាការយល់ព្រម ហើយម្នាក់ទៀតទទួលបានការជូនដំណឹង។ |
+| Before you meet, the one being mentored answers a short check-in. | មុនពេលជួបគ្នា អ្នកដែលត្រូវបានណែនាំ ឆ្លើយការរាយការណ៍ខ្លីមួយ។ |
+| When you sit down together, the mentor taps Begin 1-on-1, writes notes and what to follow up, then Finish. | ពេលអ្នកអង្គុយជាមួយគ្នា អ្នកណែនាំចុច ចាប់ផ្តើមការជួបមួយទល់មួយ សរសេរកំណត់ចំណាំ និងអ្វីដែលត្រូវតាមដាន រួចចុច បញ្ចប់។ |
+| Two a month is the aim — each one finished counts. | គោលដៅគឺពីរដងក្នុងមួយខែ — ការជួបនីមួយៗដែលបានបញ្ចប់ត្រូវបានរាប់។ |
+| Asking {name} for a 1-on-1 | កំពុងស្នើសុំជួបមួយទល់មួយជាមួយ {name} |
+| First answer a few questions. {name} sees them with your request, so your time together can focus on what matters. | ជាដំបូង សូមឆ្លើយសំណួរខ្លីៗមួយចំនួន។ {name} នឹងឃើញចម្លើយទាំងនោះជាមួយសំណើរបស់អ្នក ដូច្នេះពេលវេលាជាមួយគ្នាអាចផ្តោតលើអ្វីដែលសំខាន់។ |
+| Step 1 · Your check-in | ជំហានទី 1 · ការរាយការណ៍របស់អ្នក |
+| Step 2 · Send your request | ជំហានទី 2 · ផ្ញើសំណើរបស់អ្នក |
+| {name} picks a day and time, and you get a notification. | {name} ជ្រើសរើសថ្ងៃ និងម៉ោង ហើយអ្នកនឹងទទួលបានការជូនដំណឹង។ |
+| {name} gets your request, picks a day and time, and answers a short check-in — you see it before you meet. | {name} ទទួលបានសំណើរបស់អ្នក ជ្រើសរើសថ្ងៃ និងម៉ោង ហើយឆ្លើយការរាយការណ៍ខ្លីមួយ — អ្នកនឹងឃើញវាមុនពេលជួបគ្នា។ |
+| Already met without asking here? Log it | បានជួបគ្នារួចហើយ ដោយមិនបានស្នើសុំនៅទីនេះ? កត់ត្រាវា |
+| Notes from your 1-on-1 with {name} | កំណត់ចំណាំពីការជួបមួយទល់មួយជាមួយ {name} |
+| In your 1-on-1 with {name} | កំពុងជួបមួយទល់មួយជាមួយ {name} |
+| Write as you talk — it is kept on this phone until you save. | សរសេរពេលអ្នកកំពុងនិយាយ — វាត្រូវបានរក្សាទុកនៅលើទូរស័ព្ទនេះ រហូតដល់អ្នករក្សាទុក។ |
+| ✓ Finish 1-on-1 | ✓ បញ្ចប់ការជួបមួយទល់មួយ |
+| Save and carry on later | រក្សាទុក ហើយបន្តពេលក្រោយ |
+| Pick a day and time — that says yes, and they get a notification. | ជ្រើសរើសថ្ងៃ និងម៉ោង — នោះមានន័យថាយល់ព្រម ហើយពួកគេនឹងទទួលបានការជូនដំណឹង។ |
+| Waiting for {name} to pick a day and time | កំពុងរង់ចាំ {name} ជ្រើសរើសថ្ងៃ និងម៉ោង |
+| You will get a notification when they do. | អ្នកនឹងទទួលបានការជូនដំណឹង នៅពេលពួកគេជ្រើសរើស។ |
+| Pick a new day and time | ជ្រើសរើសថ្ងៃ និងម៉ោងថ្មី |
+| Pick a day and time | ជ្រើសរើសថ្ងៃ និងម៉ោង |
+| {name} answered the check-in — it’s below. | {name} បានឆ្លើយការរាយការណ៍ហើយ — មាននៅខាងក្រោម។ |
+| {name} hasn’t answered the check-in yet. | {name} មិនទាន់បានឆ្លើយការរាយការណ៍នៅឡើយទេ។ |
+| Carry on the 1-on-1 | បន្តការជួបមួយទល់មួយ |
+| Begin 1-on-1 | ចាប់ផ្តើមការជួបមួយទល់មួយ |
+| When you sit down together: you’ll write notes and what to follow up as you talk. | ពេលអ្នកអង្គុយជាមួយគ្នា៖ អ្នកនឹងសរសេរកំណត់ចំណាំ និងអ្វីដែលត្រូវតាមដាន ពេលកំពុងនិយាយ។ |
+| Your check-in is in. | ការរាយការណ៍របស់អ្នកបានផ្ញើរួចហើយ។ |
+| When you meet, {name} takes the notes — you’ll see them here after. | ពេលជួបគ្នា {name} នឹងកត់ត្រា — អ្នកនឹងឃើញវានៅទីនេះបន្ទាប់ពីនោះ។ |
+| Before you meet, answer your check-in below. | មុនពេលជួបគ្នា សូមឆ្លើយការរាយការណ៍របស់អ្នកនៅខាងក្រោម។ |
+| Your check-in — before you meet | ការរាយការណ៍របស់អ្នក — មុនពេលជួបគ្នា |
+| Change the notes | កែកំណត់ចំណាំ |
+| Add notes | បន្ថែមកំណត់ចំណាំ |
+| Saved — carry on when you’re ready | បានរក្សាទុក — បន្តនៅពេលអ្នករួចរាល់ |
+| Ask | ស្នើសុំ |
+| Day & time | ថ្ងៃ និងម៉ោង |
+| Check-in | រាយការណ៍ |
+| Meet | ជួបគ្នា |
+| {name} answered the check-in | {name} បានឆ្លើយការរាយការណ៍ហើយ |
+| Waiting for {name}’s check-in | កំពុងរង់ចាំការរាយការណ៍របស់ {name} |
+| Answer your check-in before you meet | ឆ្លើយការរាយការណ៍របស់អ្នក មុនពេលជួបគ្នា |
+| Answer the check-in | ឆ្លើយការរាយការណ៍ |
+| Your check-in is in | ការរាយការណ៍របស់អ្នកបានផ្ញើរួចហើយ |
+| Who you mentor and who mentors you, each with their next 1-on-1. | អ្នកដែលអ្នកណែនាំ និងអ្នកដែលណែនាំអ្នក ម្នាក់ៗជាមួយការជួបមួយទល់មួយបន្ទាប់របស់ពួកគេ។ |

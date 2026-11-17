@@ -3002,3 +3002,32 @@ details.dtsPick input.gpSelBox { margin:6px 0 4px; }
 /* Tuesday: the weekly health check-in, at the staff meeting */
 .tueCheckin { border:1.5px solid var(--accent); }
 .tueCheckinHead { font-size:16px; }
+
+/* ---------- a 1-on-1, step by step (Nov 2026) ---------- */
+.ooSteps { list-style:none; display:flex; gap:4px; margin:4px 0 12px; padding:0; counter-reset:none; }
+.ooSteps li { flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center; position:relative; }
+.ooSteps li + li::before { content:''; position:absolute; top:13px; right:50%; width:100%; height:2px; background:var(--border); z-index:0; }
+.ooSteps li.done + li::before, .ooSteps li.done::before { background:var(--good); }
+.ooStepN { position:relative; z-index:1; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:12.5px; font-weight:800; background:var(--surface); border:2px solid var(--border); color:var(--muted); }
+.ooSteps li.done .ooStepN { background:var(--good); border-color:var(--good); color:var(--goodInk); }
+.ooSteps li.now .ooStepN { background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
+.ooStepL { font-size:11px; line-height:1.2; color:var(--muted); overflow-wrap:anywhere; }
+.ooSteps li.now .ooStepL { color:var(--ink); font-weight:700; }
+.ooNext { border:1.5px solid var(--accentSoftBorder); }
+.ooNextTitle { font-weight:800; font-size:16px; line-height:1.3; }
+.ooState { font-size:14px; margin:6px 0 8px; }
+.btn.ooBegin { margin:4px 0 0; font-size:16px; padding:13px; }
+.ooLiveHead { border-color:var(--good); background:var(--goodSoft); }
+.ooLiveHead .ooNextTitle, .ooLiveHead .sub { color:var(--ink); }
+.ooFold { margin:12px 0 0; }
+.ooFold > summary { cursor:pointer; font-weight:700; font-size:15px; padding:8px 0; list-style:none; }
+.ooFold > summary::-webkit-details-marker { display:none; }
+.ooFold > summary::after { content:' ▾'; color:var(--muted); }
+.ooFold[open] > summary::after { content:' ▴'; }
+.ooHow { margin:0 0 12px; font-size:14px; }
+.ooHow > summary { cursor:pointer; color:var(--accent); font-weight:700; list-style:none; }
+.ooHow > summary::-webkit-details-marker { display:none; }
+.ooHow ol { margin:8px 0 0; padding-left:20px; }
+.ooHow li { margin:4px 0; }
+.ooRel .btn.small { width:auto; margin:0; padding:8px 12px; }

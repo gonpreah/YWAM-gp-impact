@@ -2616,6 +2616,21 @@ also carries `menteeId`, the mentee's `prep`, and once it happened `heldOn`, `no
   (`saveOneOnOneNotes`). A mentor can also **log** one that happened without a request
   (`logOneOnOne`). Drafts live on `S.ooDrafts` / `S.ooNotes`, so a re-render never loses
   typing.
+- **Step by step (Nov 2026, Andrew: "a bit confusing … how asking for a 1 on 1 works … fill out the questions before
+  … press begin 1 on 1 and add in notes and follow up")**: the sheet (`oneOnOneHtml`, 02-goals-okrs.js) has a strip on
+  top, `#ooSteps` (`OO_STEPS`, `ooStepsHtml_`: Ask · Day & time · Check-in · Meet · Done, `[data-oostep]`, `.done` /
+  `.now`), then ONE card saying what happens next with its one button (`#ooNext`): asked → pick a day and time right
+  there (`ooTimePickHtml_` accept) or decline; waiting; the time + the check-in's state; for the mentor **▶ Begin
+  1-on-1** (`#ooBegin`; "Carry on the 1-on-1" once notes were saved). A mentee asking does "Step 1 · Your check-in",
+  "Step 2 · Send your request"; a mentee asked fills it in right after picking the time (`ooAfterAccept_`). Notes are
+  written only in the meeting (`S.ooLive`, `#ooLive`): last time's follow-ups, the notes form, **✓ Finish 1-on-1**
+  (`#ooFinish` → `saveOneOnOneNotes` with the day, held, confetti), **Save and carry on later** (`#ooSaveLater`, no
+  day — stays accepted), Close; the check-in and goals folds below (`#ooPrepFold`, `#ooGoalsFold`). What is typed is
+  kept on the phone (`gp-oo-notes` by 1-on-1, `ooNotesKeep_` / `ooNotesDrop_`), so closing the app mid-meeting
+  loses nothing. Held: the notes, "Change the notes" (`#ooEditNotes` → the meeting again, Save changes). "Log one
+  that already happened" is a fold (`#ooLogFold`). Mentorship: "How a 1-on-1 works" folded at the top (`#ooHow`), and
+  each person's line (`ooRelHtml_`) gives the next step — the mentor ▶ Begin 1-on-1 (`[data-oobegin]` →
+  `ooGo_(id, null, true)`), the mentee "Answer the check-in" until it is in. Khmer §106.
 - **Two a month** (`OO_PER_MONTH`), counted by `heldOn`: ●○ dots on My Home's Mentorship
   card (each mentee, and your own), on the Mentor page and on a mentee's page (which also
   lists their 1-on-1s). The monthly health question "2 one-on-ones?" shows the count.

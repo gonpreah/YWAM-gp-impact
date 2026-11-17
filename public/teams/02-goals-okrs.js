@@ -918,9 +918,10 @@ function ooLastFollow_(menteeId, cur){
   for(; k<rows.length; k++) if(rows[k].status==='held' && (rows[k].followUps||[]).length) return rows[k];
   return null;
 }
-function ooGo_(id, withId){
+function ooGo_(id, withId, live){
   if(S.view!=='oneonone') S.ooBack=S.view;
   S.view='oneonone'; S.ooId=id||null; S.ooWith=withId||null; S.ooEditPrep=null; S.bellOpen=false;
+  S.ooLive=live && id ? id : null; S.ooLogOpen=false; S.ooTimeEdit=null;
   render(); window.scrollTo(0,0);
 }
 /* The mentee's check-in being written — kept on S so a tap on a 1-5 button
@@ -934,8 +935,14 @@ function ooDraft_(key, from){
   }
   return S.ooDrafts[key];
 }
+/* The notes being written in a 1-on-1 are kept on the phone as they are typed (`gp-oo-notes`, by 1-on-1),
+   so closing the app mid-meeting loses nothing; a save that lands drops them. */
+function ooNotesStore_(){ var v=null; try { v=JSON.parse(lsGet('gp-oo-notes')||'null'); } catch(e){} return (v && v.u===(S.auth&&S.auth.user) && v.k) ? v : { u:(S.auth&&S.auth.user)||'', k:{} }; }
+function ooNotesKeep_(key){ var st=ooNotesStore_(); if(S.ooNotes && S.ooNotes[key]) st.k[key]=S.ooNotes[key]; lsSet('gp-oo-notes', JSON.stringify(st)); }
+function ooNotesDrop_(key){ if(S.ooNotes) delete S.ooNotes[key]; var st=ooNotesStore_(); delete st.k[key]; lsSet('gp-oo-notes', JSON.stringify(st)); }
 function ooNotesDraft_(key, o){
   if(!S.ooNotes) S.ooNotes={};
+  if(!S.ooNotes[key]){ var kept=ooNotesStore_().k[key]; if(kept && Array.isArray(kept.followUps)) S.ooNotes[key]=kept; }
   if(!S.ooNotes[key]){
     S.ooNotes[key]={ heldOn:(o&&o.heldOn)||todayStr(), notes:(o&&o.notes)||'',
       followUps:((o&&o.followUps)||[]).map(function(f){ return f.text; }) };
@@ -1027,77 +1034,145 @@ function ooGoalsHtml_(goals){
       '<div class="smartActions"><span class="smartPct">'+esc(smartProgressLine_(g))+'</span></div></div>';
   }).join('');
 }
+/* ---------- a 1-on-1, step by step (Nov 2026, Andrew: "a bit confusing … how asking for a 1 on 1 works …
+   fill out the questions before coming into a 1 on 1 … press begin 1 on 1 and add in notes and follow up") ----------
+   Five steps, said once on the strip at the top: Ask · Day & time · Check-in · Meet · Done. Under it one card
+   says what happens next and holds its one button; the check-in comes before the meeting; and the mentor runs the
+   meeting itself — Begin 1-on-1 opens notes and follow-ups (kept on the phone as they are typed), Finish counts it. */
+var OO_STEPS=[['ask','Ask'],['time','Day & time'],['prep','Check-in'],['meet','Meet'],['done','Done']];
+function ooStepsHtml_(o){
+  var held=!!o && o.status==='held';
+  var done={ ask:!!o, time:held || !!(o && o.when), prep:held || !!(o && o.prep), meet:held, done:held };
+  var now=-1; OO_STEPS.forEach(function(s,i){ if(now<0 && !done[s[0]]) now=i; });
+  return '<ol class="ooSteps" id="ooSteps">'+OO_STEPS.map(function(s,i){
+    return '<li class="'+(done[s[0]]?'done':'')+(i===now?' now':'')+'" data-oostep="'+s[0]+'"><span class="ooStepN">'+(done[s[0]]?'✓':(i+1))+'</span><span class="ooStepL">'+esc(t(s[1]))+'</span></li>';
+  }).join('')+'</ol>';
+}
+/* the few lines that say how it works — on the Mentorship page, folded */
+function ooHowHtml_(){
+  return '<details class="ooHow" id="ooHow"><summary>💡 '+esc(t('How a 1-on-1 works'))+'</summary><ol>'+
+    '<li>☕ '+esc(t('Either of you asks, from this page.'))+'</li>'+
+    '<li>📅 '+esc(t('The one asked picks a day and time — that is the yes, and the other gets a notification.'))+'</li>'+
+    '<li>📝 '+esc(t('Before you meet, the one being mentored answers a short check-in.'))+'</li>'+
+    '<li>▶ '+esc(t('When you sit down together, the mentor taps Begin 1-on-1, writes notes and what to follow up, then Finish.'))+'</li>'+
+    '</ol><p class="hint" style="margin:6px 0 0">'+esc(t('Two a month is the aim — each one finished counts.'))+'</p></details>';
+}
 function oneOnOneHtml(){
   var o=S.ooId ? ooById_(S.ooId) : null;
   var withId=o ? o.otherId : S.ooWith;
   var who=personOf(withId), name=who ? who.name : (o ? o.otherName : nameOf(withId)), first=String(name||'').split(' ')[0];
   var iMentor=o ? o.iMentor : (S.mentees||[]).some(function(p){ return p.id===withId; });
   var menteeId=o ? o.menteeId : (iMentor ? withId : S.me.id);
+  var held=!!o && o.status==='held';
+  var live=!!o && iMentor && S.ooLive===o.id && o.status!=='declined' && (o.status!=='pending');
   var h='<button class="linkbtn" id="ooBack" style="text-align:left;text-decoration:none">← '+esc(t('Back'))+'</button>';
   h+='<div class="card ooHead"><div class="mentorBlock" style="padding:0">'+avatarHtml(who||{name:name},'sm')+
     '<div style="flex:1"><div class="mentorName">☕ '+esc(gpT('1-on-1 with {name}',{name:name}))+'</div>'+
     '<div class="mentorMeta">'+esc(iMentor ? gpT('You mentor {name}',{name:first}) : gpT('{name} is your mentor',{name:first}))+'</div>'+
-    (o ? '<div class="mentorMeta">'+ooStatusHtml_(o)+(o.note?' · “'+esc(o.note)+'”':'')+'</div>' : '')+'</div></div>'+
+    (o && o.note ? '<div class="mentorMeta">“'+esc(o.note)+'”</div>' : '')+'</div></div>'+
     ooMonthHtml_(menteeId)+'</div>';
+  if(!o || o.status!=='declined') h+=ooStepsHtml_(o);
 
   var last=ooLastFollow_(menteeId, o);
-  var lastHtml = last ? '<h3>🔁 '+esc(t('From last time'))+' <small>· '+esc(last.heldOn)+'</small></h3><div class="card">'+
+  var lastHtml = last ? '<h3>🔁 '+esc(t('From last time'))+' <small>· '+esc(fmtDateShort_(last.heldOn))+'</small></h3><div class="card">'+
     '<p class="sub" style="margin:0 0 6px">'+esc(t('Things you said you’d follow up — tick what’s done.'))+'</p>'+ooFollowUpsHtml_(last, true)+'</div>' : '';
+  var goalsHtml=function(){
+    var g='<details class="ooFold" id="ooGoalsFold"><summary>🎯 '+esc(iMentor ? gpT('{name}’s goals this year',{name:first}) : t('Your goals this year'))+'</summary><div class="card">';
+    if(iMentor) g+=(S.ooGoalsFor===menteeId && S.ooGoals) ? ooGoalsHtml_(S.ooGoals) : '<p class="sub" style="margin:4px 0">'+esc(t('Loading…'))+'</p>';
+    else g+=ooGoalsHtml_(S.smartGoals);
+    return g+'</div></details>';
+  };
 
+  /* ---- a new one ---- */
   if(!o){
     if(!iMentor){
       var d=ooDraft_('new:'+withId, ooLastPrep_(S.me.id));
-      h+='<div class="banner ooWho">☕ <b>'+esc(gpT('You are asking {name}, your mentor, for a 1-on-1.',{name:first}))+'</b><br>'+
-        esc(gpT('Fill in this short check-in first — {name} sees it with your request, so your time together can focus on what matters.',{name:first}))+'</div>';
-      h+='<h3>📝 '+esc(t('Your check-in'))+'</h3><div class="card">'+ooPrepFormHtml_('new:'+withId, d)+
-        '<label class="f">'+esc(gpT('A note for {name} (optional)',{name:first}))+'</label>'+
+      h+='<div class="card ooNext" id="ooNext"><div class="ooNextTitle">☕ '+esc(gpT('Asking {name} for a 1-on-1',{name:first}))+'</div>'+
+        '<p class="sub" style="margin:4px 0 0">'+esc(gpT('First answer a few questions. {name} sees them with your request, so your time together can focus on what matters.',{name:first}))+'</p></div>';
+      h+='<h3>📝 '+esc(t('Step 1 · Your check-in'))+'</h3><div class="card">'+ooPrepFormHtml_('new:'+withId, d)+'</div>';
+      h+='<h3>☕ '+esc(t('Step 2 · Send your request'))+'</h3><div class="card">'+
+        '<label class="f" style="margin-top:0">'+esc(gpT('A note for {name} (optional)',{name:first}))+'</label>'+
         '<input type="text" data-oodraft="note" maxlength="300" value="'+esc(d.note)+'" placeholder="'+esc(t('e.g. Can we meet this week?'))+'">'+
-        '<button class="btn" id="ooSend">☕ '+esc(gpT('Send my request to {name}',{name:first}))+'</button></div>';
+        '<button class="btn" id="ooSend">☕ '+esc(gpT('Send my request to {name}',{name:first}))+'</button>'+
+        '<p class="hint" style="margin:6px 0 0">'+esc(gpT('{name} picks a day and time, and you get a notification.',{name:first}))+'</p></div>';
       return h+lastHtml;
     }
-    h+=lastHtml;
-    h+='<div class="card"><p class="sub" style="margin:0 0 8px"><b>'+esc(gpT('You are asking {name}, who you mentor, to meet.',{name:first}))+'</b> '+
-      esc(gpT('{name} gets your request, fills in a short check-in, and you see how they’re doing before you meet.',{name:first}))+'</p>'+
+    h+='<div class="card ooNext" id="ooNext"><div class="ooNextTitle">☕ '+esc(gpT('Asking {name} for a 1-on-1',{name:first}))+'</div>'+
+      '<p class="sub" style="margin:4px 0 8px">'+esc(gpT('{name} gets your request, picks a day and time, and answers a short check-in — you see it before you meet.',{name:first}))+'</p>'+
       '<button class="btn" id="ooAsk" style="margin:0">☕ '+esc(gpT('Send {name} a 1-on-1 request',{name:first}))+'</button></div>';
-    h+='<h3 id="ooLogHead">✍️ '+esc(t('Already met? Log it'))+'</h3><div class="card">'+ooNotesFormHtml_('new:'+withId)+
-      '<button class="btn" id="ooLog">'+esc(t('Save this 1-on-1'))+'</button></div>';
+    h+=lastHtml;
+    h+='<details class="ooFold" id="ooLogFold"'+(S.ooLogOpen?' open':'')+'><summary id="ooLogHead">✍️ '+esc(t('Already met without asking here? Log it'))+'</summary><div class="card">'+
+      ooNotesFormHtml_('new:'+withId)+'<button class="btn" id="ooLog">'+esc(t('Save this 1-on-1'))+'</button></div></details>';
     return h;
   }
 
-  if(!o.mine && o.status==='pending'){
-    h+='<div class="card"><p class="sub" style="margin:0 0 8px">'+esc(ooAskedYouText_(o))+'</p>'+
-      '<div style="display:flex;gap:8px"><button class="btn" style="margin:0" data-121accept="'+esc(o.id)+'">'+esc(t('Accept'))+'</button>'+
-      '<button class="btn ghost" style="margin:0" data-121decline="'+esc(o.id)+'">'+esc(t('Decline'))+'</button></div></div>';
+  if(o.status==='declined') return h+'<div class="card ooNext" id="ooNext"><span class="pill denied">'+esc(t('Declined'))+'</span></div>';
+
+  /* ---- the meeting itself (the mentor) ---- */
+  if(live){
+    h+='<div class="card ooNext ooLiveHead" id="ooLive"><div class="ooNextTitle">🟢 '+esc(held ? gpT('Notes from your 1-on-1 with {name}',{name:first}) : gpT('In your 1-on-1 with {name}',{name:first}))+'</div>'+
+      '<p class="sub" style="margin:4px 0 0">'+esc(t('Write as you talk — it is kept on this phone until you save.'))+'</p></div>';
+    /* the notes first — that is what the meeting is for — with last time's follow-ups above them and the
+       check-in and goals below, to look at while you talk */
+    h+=(held ? '' : lastHtml);
+    h+='<h3>✍️ '+esc(t('Notes and follow-ups'))+'</h3><div class="card">'+ooNotesFormHtml_(o.id)+
+      '<button class="btn" id="ooFinish">'+esc(held ? t('Save changes') : t('✓ Finish 1-on-1'))+'</button>'+
+      (held ? '' : '<button class="btn ghost" id="ooSaveLater" style="margin-top:8px">'+esc(t('Save and carry on later'))+'</button>')+
+      '<button class="linkbtn inline" id="ooLiveClose" style="display:block;margin:10px auto 0">'+esc(t('Close'))+'</button></div>';
+    if(o.prep) h+='<details class="ooFold" id="ooPrepFold" open><summary>📝 '+esc(gpT('{name}’s check-in',{name:first}))+'</summary><div class="card">'+ooPrepSummaryHtml_(o.prep, ooLastPrep_(menteeId, o))+'</div></details>';
+    return h+goalsHtml();
   }
 
-  var closed=o.status==='held' || o.status==='declined';
-  h+='<h3>📝 '+esc(iMentor ? gpT('{name}’s check-in',{name:first}) : t('Your check-in'))+'</h3>';
-  if(!iMentor && !closed && (!o.prep || S.ooEditPrep===o.id)){
-    h+='<div class="card">'+ooPrepFormHtml_(o.id, ooDraft_(o.id, o.prep || ooLastPrep_(S.me.id, o)))+
+  /* ---- what happens next, said once ---- */
+  var next='';
+  if(o.status==='pending' && !o.mine){
+    next='<div class="ooNextTitle">🔔 '+esc(ooAskedYouText_(o))+'</div>'+
+      '<p class="sub" style="margin:4px 0 8px">'+esc(t('Pick a day and time — that says yes, and they get a notification.'))+'</p>'+
+      ooTimePickHtml_(o.id, true, '')+
+      '<button class="linkbtn inline" style="color:var(--faint)" data-121decline="'+esc(o.id)+'">'+esc(t('Can’t right now — decline'))+'</button>';
+  } else if(o.status==='pending'){
+    next='<div class="ooNextTitle">⏳ '+esc(gpT('Waiting for {name} to pick a day and time',{name:first}))+'</div>'+
+      '<p class="sub" style="margin:4px 0 0">'+esc(t('You will get a notification when they do.'))+'</p>';
+  } else if(held){
+    next='<div class="ooNextTitle">✓ '+esc(gpT('Done · {date}',{date:fmtDateShort_(o.heldOn)}))+'</div>';
+  } else {
+    if(!o.when || S.ooTimeEdit===o.id){
+      next='<div class="ooNextTitle">📅 '+esc(o.when ? t('Pick a new day and time') : t('Pick a day and time'))+'</div>'+ooTimePickHtml_(o.id, false, o.when);
+    } else {
+      next='<div class="ooNextTitle">📅 '+esc(ooWhenNice_(o.when))+'</div>'+
+        '<div class="ooActsRow" style="margin:2px 0 6px"><span class="pmeta">'+esc(o.whenByMe ? t('you set it') : gpT('{name} set it',{name:first}))+'</span>'+
+        '<button class="linkbtn inline" data-oochange="'+esc(o.id)+'">'+esc(t('Change the time'))+'</button></div>';
+    }
+    if(iMentor){
+      next+='<div class="ooState">'+(o.prep ? '✓ '+esc(gpT('{name} answered the check-in — it’s below.',{name:first})) : '⏳ '+esc(gpT('{name} hasn’t answered the check-in yet.',{name:first})))+'</div>'+
+        '<button class="btn ooBegin" id="ooBegin">▶ '+esc(o.notes || (o.followUps||[]).length ? t('Carry on the 1-on-1') : t('Begin 1-on-1'))+'</button>'+
+        '<p class="hint" style="margin:6px 0 0">'+esc(t('When you sit down together: you’ll write notes and what to follow up as you talk.'))+'</p>';
+    } else {
+      next+='<div class="ooState">'+(o.prep ? '✓ '+esc(t('Your check-in is in.'))+' '+esc(gpT('When you meet, {name} takes the notes — you’ll see them here after.',{name:first})) : '📝 '+esc(t('Before you meet, answer your check-in below.')))+'</div>';
+    }
+  }
+  h+='<div class="card ooNext" id="ooNext">'+next+'</div>';
+
+  /* ---- the check-in ---- */
+  if(!iMentor && !held && (!o.prep || S.ooEditPrep===o.id)){
+    h+='<h3>📝 '+esc(t('Your check-in — before you meet'))+'</h3><div class="card">'+ooPrepFormHtml_(o.id, ooDraft_(o.id, o.prep || ooLastPrep_(S.me.id, o)))+
       '<button class="btn" id="ooSavePrep" data-id="'+esc(o.id)+'">'+esc(t('Save my check-in'))+'</button></div>';
   } else if(o.prep){
-    h+='<div class="card">'+ooPrepSummaryHtml_(o.prep, ooLastPrep_(menteeId, o))+
-      (!iMentor && !closed ? '<button class="linkbtn inline" id="ooEditPrep" style="margin-top:10px">✏️ '+esc(t('Change my check-in'))+'</button>' : '')+'</div>';
-  } else {
-    h+='<div class="card"><p class="sub" style="margin:4px 0">'+esc(iMentor && !closed ? gpT('Waiting for {name} to fill in their check-in.',{name:first}) : t('No check-in for this one.'))+'</p></div>';
+    h+='<h3>📝 '+esc(iMentor ? gpT('{name}’s check-in',{name:first}) : t('Your check-in'))+'</h3><div class="card">'+ooPrepSummaryHtml_(o.prep, ooLastPrep_(menteeId, o))+
+      (!iMentor && !held ? '<button class="linkbtn inline" id="ooEditPrep" style="margin-top:10px">✏️ '+esc(t('Change my check-in'))+'</button>' : '')+'</div>';
   }
 
-  h+='<h3>🎯 '+esc(iMentor ? gpT('{name}’s goals this year',{name:first}) : t('Your goals this year'))+'</h3><div class="card">';
-  if(iMentor) h+= (S.ooGoalsFor===menteeId && S.ooGoals) ? ooGoalsHtml_(S.ooGoals) : '<p class="sub" style="margin:4px 0">'+esc(t('Loading…'))+'</p>';
-  else h+=ooGoalsHtml_(S.smartGoals);
-  h+='</div>';
-
-  h+=lastHtml;
-
-  if(iMentor && o.status!=='declined'){
-    h+='<h3>✍️ '+esc(o.status==='held' ? t('Notes and follow-ups') : t('When you meet'))+'</h3><div class="card">'+ooNotesFormHtml_(o.id)+
-      '<button class="btn" id="ooSaveNotes" data-id="'+esc(o.id)+'">'+esc(o.status==='held' ? t('Save changes') : t('Mark as done ✓'))+'</button></div>';
-  } else if(!iMentor && (o.notes || (o.followUps||[]).length)){
-    h+='<h3>✍️ '+esc(t('Notes and follow-ups'))+'</h3><div class="card">'+
-      (o.notes ? '<div class="ooQuote">'+esc(o.notes)+'</div>' : '')+
-      ((o.followUps||[]).length ? '<div class="ooQuoteLabel">'+esc(t('To follow up next time'))+'</div>'+ooFollowUpsHtml_(o, true) : '')+'</div>';
+  /* ---- after: the notes and follow-ups ---- */
+  if(held){
+    if(o.notes || (o.followUps||[]).length){
+      h+='<h3>✍️ '+esc(t('Notes and follow-ups'))+'</h3><div class="card">'+
+        (o.notes ? '<div class="ooQuote">'+esc(o.notes)+'</div>' : '')+
+        ((o.followUps||[]).length ? '<div class="ooQuoteLabel">'+esc(t('To follow up next time'))+'</div>'+ooFollowUpsHtml_(o, true) : '')+
+        (iMentor ? '<button class="linkbtn inline" id="ooEditNotes" style="margin-top:10px">✏️ '+esc(t('Change the notes'))+'</button>' : '')+'</div>';
+    } else if(iMentor) h+='<button class="btn ghost" id="ooEditNotes">✏️ '+esc(t('Add notes'))+'</button>';
+    return h;
   }
-  return h;
+  return h+lastHtml+goalsHtml();
 }
 /* Who asked whom, in words — "Sokha (who you mentor) is asking you for a
    1-on-1" or "Andrew, your mentor, is asking to meet you". */
@@ -1140,7 +1215,7 @@ function ooSaved_(d, msg){
 }
 function bindOneOnOne_(){
   var back=document.getElementById('ooBack');
-  if(back) back.onclick=function(){ S.view=S.ooBack||'week'; S.ooId=null; S.ooWith=null; render(); window.scrollTo(0,0); };
+  if(back) back.onclick=function(){ S.view=S.ooBack||'week'; S.ooId=null; S.ooWith=null; S.ooLive=null; render(); window.scrollTo(0,0); };
   var o=S.ooId ? ooById_(S.ooId) : null;
   var key=o ? o.id : 'new:'+S.ooWith;
   document.querySelectorAll('[data-ooarea],[data-ooval]').forEach(function(b){
@@ -1154,15 +1229,24 @@ function bindOneOnOne_(){
     el.oninput=function(){ ooDraft_(key)[el.getAttribute('data-oodraft')]=el.value; };
   });
   document.querySelectorAll('[data-oonote]').forEach(function(el){
-    el.oninput=function(){ ooNotesDraft_(key, o).notes=el.value; };
+    el.oninput=function(){ ooNotesDraft_(key, o).notes=el.value; ooNotesKeep_(key); };
   });
   document.querySelectorAll('[data-oofu]').forEach(function(el){
-    el.oninput=function(){ ooNotesDraft_(key, o).followUps[Number(el.getAttribute('data-oofu'))]=el.value; };
+    el.oninput=function(){ ooNotesDraft_(key, o).followUps[Number(el.getAttribute('data-oofu'))]=el.value; ooNotesKeep_(key); };
   });
   var ho=document.getElementById('ooHeldOn');
-  if(ho) ho.onchange=function(){ ooNotesDraft_(key, o).heldOn=ho.value; };
+  if(ho) ho.onchange=function(){ ooNotesDraft_(key, o).heldOn=ho.value; ooNotesKeep_(key); };
   var add=document.getElementById('ooFuAdd');
-  if(add) add.onclick=function(){ ooNotesDraft_(key, o).followUps.push(''); render(); };
+  if(add) add.onclick=function(){ ooNotesDraft_(key, o).followUps.push(''); ooNotesKeep_(key); render();
+    var ins=document.querySelectorAll('[data-oofu]'); if(ins.length) ins[ins.length-1].focus(); };
+  var lf=document.getElementById('ooLogFold');
+  if(lf) lf.ontoggle=function(){ S.ooLogOpen=lf.open; };
+  var begin=document.getElementById('ooBegin');
+  if(begin) begin.onclick=function(){ gpTap(); S.ooLive=o.id; render(); window.scrollTo(0,0); };
+  var en=document.getElementById('ooEditNotes');
+  if(en) en.onclick=function(){ S.ooLive=o.id; render(); window.scrollTo(0,0); };
+  var lc=document.getElementById('ooLiveClose');
+  if(lc) lc.onclick=function(){ S.ooLive=null; render(); window.scrollTo(0,0); };
   var prepOf=function(d){ return { areas:d.areas, values:d.values, helpWith:d.helpWith, workingOn:d.workingOn, other:d.other }; };
   var filled=function(d){ return Object.keys(d.areas).length===OO_AREAS.length && Object.keys(d.values).length===OO_VALUES.length; };
   var send=document.getElementById('ooSend');
@@ -1194,7 +1278,7 @@ function bindOneOnOne_(){
     logB.disabled=true;
     run('logOneOnOne',[S.auth.user,S.auth.pin,S.ooWith,a[0],a[1],a[2]],function(r){
       logB.disabled=false;
-      if(ooSaved_(r, t('Saved'))){ delete S.ooNotes[key]; var row=(r.oneOnOnes||[]).filter(function(x){ return x.otherId===S.ooWith && x.status==='held'; })[0]; S.ooId=row?row.id:null; render(); window.scrollTo(0,0); }
+      if(ooSaved_(r, t('Saved'))){ ooNotesDrop_(key); var row=(r.oneOnOnes||[]).filter(function(x){ return x.otherId===S.ooWith && x.status==='held'; })[0]; S.ooId=row?row.id:null; render(); window.scrollTo(0,0); }
     });
   };
   var sp=document.getElementById('ooSavePrep');
@@ -1209,14 +1293,25 @@ function bindOneOnOne_(){
   };
   var ep=document.getElementById('ooEditPrep');
   if(ep) ep.onclick=function(){ S.ooEditPrep=o.id; if(S.ooDrafts) delete S.ooDrafts[key]; render(); };
-  var sn=document.getElementById('ooSaveNotes');
-  if(sn) sn.onclick=function(){
+  /* Finish: held on the day picked (today unless changed) — it counts toward the month */
+  var fin=document.getElementById('ooFinish');
+  if(fin) fin.onclick=function(){
     var a=notesArgs();
     if(!a[2]){ showMsg(t('Pick the date you met')); return; }
-    sn.disabled=true;
+    var wasHeld=o.status==='held'; fin.disabled=true;
     run('saveOneOnOneNotes',[S.auth.user,S.auth.pin,o.id,a[0],a[1],a[2]],function(r){
-      sn.disabled=false;
-      if(ooSaved_(r, o.status==='held' ? t('Saved') : t('Done — counted for this month'))){ delete S.ooNotes[key]; render(); }
+      fin.disabled=false;
+      if(ooSaved_(r, wasHeld ? t('Saved') : t('Done — counted for this month'))){ ooNotesDrop_(key); S.ooLive=null; render(); window.scrollTo(0,0);
+        if(!wasHeld && typeof gpConfetti==='function') gpConfetti(); }
+    });
+  };
+  /* Save and carry on later: the notes are kept, the 1-on-1 stays open */
+  var sl=document.getElementById('ooSaveLater');
+  if(sl) sl.onclick=function(){
+    var a=notesArgs(); sl.disabled=true;
+    run('saveOneOnOneNotes',[S.auth.user,S.auth.pin,o.id,a[0],a[1],''],function(r){
+      sl.disabled=false;
+      if(ooSaved_(r, t('Saved — carry on when you’re ready'))){ ooNotesDrop_(key); S.ooLive=null; render(); window.scrollTo(0,0); }
     });
   };
   document.querySelectorAll('[data-ootick]').forEach(function(b){
