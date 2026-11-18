@@ -498,8 +498,8 @@ function phaseBanner(phase, wk){
   var rec=goalsForWeek(wk);
   var hasGoals=!!(rec && rec.items.some(function(i){return i.text;}));
   if(phase==='plan' && !hasGoals)
-    return '<div class="banner big">🎯 <strong>Start of the week.</strong> Pick the three things that matter for week '+wk+'.'+
-      ' <button class="linkbtn inline" id="jumpGoals">Set them now</button></div>';
+    return '<div class="banner big">🎯 <strong>'+esc(t('Start of the week.'))+'</strong> Pick the three things that matter for week '+wk+'.'+
+      ' <button class="linkbtn inline" id="jumpGoals">'+esc(t('Set them now'))+'</button></div>';
   /* No end-of-week "Log today" banner: there is no daily check-in any more —
      the weekly health check-in is the one thing to fill in. Goals-incomplete
      lives in the bell. */
@@ -1431,6 +1431,7 @@ function miniDashboardHtml(){
       '<button class="dashSettingBtn'+(open?' on':'')+'" id="dashCustomizeBtn" aria-pressed="'+(open?'true':'false')+'" aria-label="'+esc(t('Customize dashboard'))+'">'+
         '<span class="ic">⚙️</span></button>'+
     '</div>';
+  h+=todayHtml_();   // ☀️ Today: what is waiting on you — above the summary card, so it is on the first screen (19-ux.js)
 
   /* ⚙️ opens the colour / photo options right here, under the greeting —
      below the card (where they were) they opened off the bottom of a phone's

@@ -28,7 +28,7 @@ function fillMinistrySelect(selId, campusSelId, deptSelId, current, curKind){
     return;
   }
   keep=keep.split('#')[0];
-  sel.innerHTML='<option value="">— none yet —</option>'+list.map(function(m){
+  sel.innerHTML='<option value="">'+esc(t('— none yet —'))+'</option>'+list.map(function(m){
     return '<option value="'+esc(m)+'"'+(keep===m?' selected':'')+'>'+esc(t(m))+'</option>';
   }).join('');
 }
@@ -422,7 +422,7 @@ function bindAway(){
     var tdb=document.getElementById('teamDeleteBtn');
     if(tdb) tdb.onclick=function(){
       if(S.busy || !S.teamForm || !S.teamForm.id) return;
-      if(!confirm(gpT('Delete “{team}”? Its numbers come out of the dashboards too.',{team:S.teamForm.name}))) return;
+      if(!gpAsk_(gpT('Delete “{team}”? Its numbers come out of the dashboards too.',{team:S.teamForm.name}))) return;
       S.busy=true;
       run('deleteTeamTrip',[S.auth.user,S.auth.pin,S.teamForm.id],function(d){
         S.busy=false;
@@ -1128,7 +1128,22 @@ function bindHome(){
   });
 }
 
+/* A field's label is tied to its field (Nov 2026): most forms write a label and then the box, with nothing
+   joining the two — so tapping the label did nothing and a screen reader read a box with no name. */
+function gpLabelFix_(){
+  var ls=document.querySelectorAll('#main label.f, #main label.fieldLabel');
+  for(var i=0;i<ls.length;i++){
+    var l=ls[i]; if(l.htmlFor || l.querySelector('input,select,textarea')) continue;
+    var n=l.nextElementSibling; while(n && n.classList && n.classList.contains('hint')) n=n.nextElementSibling;
+    if(n && !/^(INPUT|SELECT|TEXTAREA)$/.test(n.tagName)) n=n.querySelector ? n.querySelector('input:not([type=hidden]),select,textarea') : null;
+    if(!n) continue;
+    if(!n.id) n.id='gpf'+i;
+    l.htmlFor=n.id;
+  }
+}
 function bind(){
+  try{ gpLabelFix_(); }catch(e){}
+  bindUx_();
   /* Who's here: Base's "On campus now" loads the count; the page loads team photos */
   if((S.view==='base' || S.view==='week') && !S.guest && !S.board && !S.student && S.me) whosHereLoad_();   // Base and My Home show the count
   [['goWhosHere','base'],['goWhosHereHome','week']].forEach(function(x){ var b=document.getElementById(x[0]); if(b) b.onclick=function(){ gpTap(); S.whosFrom=x[1]; S.view='whoshere'; render(); window.scrollTo(0,0); whosHereLoad_(true); }; });
@@ -1331,7 +1346,7 @@ function bind(){
   if(wst) wst.onclick=function(){ S.weekForm=Number(S.healthWeek||thisWeek()); render(); };
   var wcl=document.getElementById('weekClear');
   if(wcl) wcl.onclick=function(){
-    if(!confirm(t('Clear this week’s check-in?'))) return;
+    if(!gpAsk_(t('Clear this week’s check-in?'))) return;
     weekClear();
   };
 
@@ -1381,7 +1396,7 @@ function bind(){
   if(oan) oan.onclick=function(){ var p=S.okrAdminPick||{}; if(!p.campus || !p.dept) return; S.okrAdmin={ campus:p.campus, dept:p.dept }; S.okrEditId=null; S.okrForm=true; render(); var f=document.getElementById('okrForm'); if(f) f.scrollIntoView({behavior:'smooth', block:'start'}); };
   document.querySelectorAll('[data-okr-del]').forEach(function(b){
     b.onclick=function(){
-      if(!confirm(t('Delete this objective?'))) return;
+      if(!gpAsk_(t('Delete this objective?'))) return;
       okrDelete(b.getAttribute('data-okr-del'));
     };
   });
@@ -1408,7 +1423,7 @@ function bind(){
     b.onclick=function(){
       var parts=b.getAttribute('data-okr-count').split('|'), o=okrFind_(parts[0]), kr=o && o.krs[Number(parts[1])];
       if(!kr) return;
-      var v = prompt(t('How many so far?'), String(Number(kr.current)||0));
+      var v = gpAskText_(t('How many so far?'), String(Number(kr.current)||0));
       if(v===null || v.trim()==='' || isNaN(Number(v))) return;
       okrSetCount(parts[0], Number(parts[1]), Number(v));
     };
@@ -1486,7 +1501,7 @@ function bind(){
   document.querySelectorAll('[data-smartdel]').forEach(function(b){
     b.onclick=function(){
       if(S.busy) return;
-      if(!confirm(t('Delete this goal? Its tasks stay under Other tasks.'))) return;
+      if(!gpAsk_(t('Delete this goal? Its tasks stay under Other tasks.'))) return;
       S.busy=true;
       run('deleteSmartGoal',[S.auth.user,S.auth.pin,b.getAttribute('data-smartdel')],function(r){
         S.busy=false;
@@ -1531,7 +1546,7 @@ function bind(){
   document.querySelectorAll('[data-stepdel]').forEach(function(b){
     b.onclick=function(){
       var parts=b.getAttribute('data-stepdel').split('|'), g=goalById_(parts[0]); if(!g) return;
-      if(!confirm(t('Remove this step?'))) return;
+      if(!gpAsk_(t('Remove this step?'))) return;
       var p=goalPayload_(g);
       p.steps=p.steps.filter(function(st){ return st.id!==parts[1]; });
       smartSend_(p);
@@ -1612,14 +1627,14 @@ function bind(){
   var tkd=document.getElementById('tkDeleteBtn');
   if(tkd) tkd.onclick=function(){
     if(!S.taskEdit) return;
-    if(!confirm(t('Delete this task?'))) return;
+    if(!gpAsk_(t('Delete this task?'))) return;
     taskSend_('deleteTask', [S.taskEdit], function(){ S.taskEdit=null; S.taskEditDraft=null; });
   };
   var tdt=document.getElementById('tasksDoneToggle');
   if(tdt) tdt.onclick=function(){ gpTap(); S.tasksDoneOpen=!S.tasksDoneOpen; render(); };
   var tcd=document.getElementById('tasksClearDone');
   if(tcd) tcd.onclick=function(){
-    if(!confirm(t('Clear all completed tasks?'))) return;
+    if(!gpAsk_(t('Clear all completed tasks?'))) return;
     taskSend_('clearDoneTasks', [], function(){ S.tasksDoneOpen=false; });
   };
 
@@ -1683,11 +1698,11 @@ function bind(){
         /* not staff — perhaps a member of the advisory board, with their own sign-in */
         run('boardLogin',[u,pin],function(b){
           if(b && b.ok){ boardEnter_(b.member, {user:u,pin:pin}); return; }
-          lb.disabled=false; lb.textContent='Log in'; showMsg('Wrong username or PIN');
+          lb.disabled=false; lb.textContent=t('Log in'); showMsg('Wrong username or PIN');
         });
       }
       else {
-        lb.disabled=false; lb.textContent='Log in';
+        lb.disabled=false; lb.textContent=t('Log in');
         if(d.err==='applicant'){ showMsg(t('That is a portal account — opening the YWAM GP Portal.')); setTimeout(function(){ location.href='portal.html'; }, 900); return; }
         showMsg(d.err==='pending' ? 'Your account is waiting on approval from a base leader.' : 'Wrong username or PIN');
       }
@@ -1728,12 +1743,12 @@ function bind(){
       if(d.ok && d.pending){
         // Campus Leadership only — every other department signs in right away.
         // There is no session to start: a base leader has to approve first.
-        rb.disabled=false; rb.textContent='Create profile'; S.regMode=false;
+        rb.disabled=false; rb.textContent=t('Create profile'); S.regMode=false;
         showMsg(t('Thanks! An admin will look at your account — you can sign in once it is approved.'));
         render();
       } else if(d.ok){ S.auth={user:d.user||payload.username.toLowerCase(),pin:d.token||payload.pin}; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; afterLogin(); showMsg('Profile created — add a photo!'); S.view='profile'; render(); }
       else {
-        rb.disabled=false; rb.textContent='Create profile';
+        rb.disabled=false; rb.textContent=t('Create profile');
         showMsg(d.err==='taken' ? 'That username is taken'
           : d.err==='email_taken' ? 'There’s already a profile with that email'
           : d.err==='bad_email' || d.err==='email_required' ? 'Add a real email address'
@@ -1946,7 +1961,7 @@ function bind(){
       debt:S.profile&&S.profile.debt?true:false
     };
     var pk=minSelValue_('p_ministry','p_dept'); if(pk.cdKind!==undefined) payload.cdKind=pk.cdKind;
-    sp.disabled=true; sp.textContent='Saving…';
+    sp.disabled=true; sp.textContent=t('Saving…');
     run('updateProfile',[S.auth.user,S.auth.pin,payload],function(d){
       if(d.ok){
         // merged, not replaced: updateProfile sends the public card, which has no
@@ -1959,7 +1974,7 @@ function bind(){
         run('teamRoster',[S.auth.user,S.auth.pin],function(r){S.roster=Array.isArray(r)?r:[];render();});
       }
       else {
-        sp.disabled=false; sp.textContent='Save profile';
+        sp.disabled=false; sp.textContent=t('Save profile');
         showMsg(d && d.err==='email_taken' ? 'There’s already a profile with that email'
           : d && d.err==='bad_email' ? 'That doesn’t look like a real email address'
           : 'Could not save');
@@ -2030,7 +2045,7 @@ function refreshAll(){
    ?fresh). If the page itself came from the offline copy (the worker leaves a
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
-var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
+var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
 if(gpTasksApp_()) GP_VER_FILES=['tasks.html'].concat(GP_VER_FILES.slice(1), ['teams/12-tasks.js','teams/13-calendar.js']);   // the tasks app's page is tasks.html
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){

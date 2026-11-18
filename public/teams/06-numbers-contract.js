@@ -2426,12 +2426,12 @@ function bindHosp(){
     if(!k) return; gpTap(); S.hospForm=JSON.parse(JSON.stringify(k)); S.hospBedPick=null; render(); top('hospFormCard'); }; });
   document.querySelectorAll('[data-hospfree]').forEach(function(b){ b.onclick=function(){
     var id=b.getAttribute('data-hospfree'), k=(S.hosp.bookings||[]).filter(function(x){ return x.id===id; })[0];
-    if(!confirm(gpT('Free the beds booked for “{name}”? The booking is deleted.',{name:k ? k.name : ''}))) return;
+    if(!gpAsk_(gpT('Free the beds booked for “{name}”? The booking is deleted.',{name:k ? k.name : ''}))) return;
     send('hospDelete', ['booking', id], function(){ showMsg(t('Beds freed')); }, b);
   }; });
   document.querySelectorAll('[data-hospstaydecline]').forEach(function(b){ b.onclick=function(){
     var q=(S.hosp.requests||[]).filter(function(x){ return x.stayId===b.getAttribute('data-hospstaydecline'); })[0];
-    if(!confirm(gpT('Decline the request from “{name}”? It comes off the list.',{name:q ? q.name : ''}))) return;
+    if(!gpAsk_(gpT('Decline the request from “{name}”? It comes off the list.',{name:q ? q.name : ''}))) return;
     send('hospStayStatus', [b.getAttribute('data-hospstaydecline'), 'declined'], function(){ showMsg(t('Declined')); }, b);
   }; });
   var su=document.getElementById('hospStayUrl');
@@ -2543,7 +2543,7 @@ function bindHosp(){
     };
     var dl=document.getElementById('hospDeleteBtn');
     if(dl) dl.onclick=function(){
-      if(!confirm(gpT('Delete the booking for “{name}”?',{name:f.name}))) return;
+      if(!gpAsk_(gpT('Delete the booking for “{name}”?',{name:f.name}))) return;
       send('hospDelete', ['booking', f.id], function(){ S.hospForm=null; showMsg(t('Booking deleted')); }, dl);
     };
   }
@@ -2573,7 +2573,7 @@ function bindHosp(){
     send('hospSave', ['building', { id:S.hospBld.id, name:S.hospBld.name.trim() }], function(){ S.hospBld=null; }, bs);
   };
   document.querySelectorAll('[data-hospbldel]').forEach(function(b){ b.onclick=function(){
-    if(!confirm(t('Delete this building?'))) return;
+    if(!gpAsk_(t('Delete this building?'))) return;
     send('hospDelete', ['building', b.getAttribute('data-hospbldel')], null, b); }; });
   // rooms
   document.querySelectorAll('[data-hospaddroom]').forEach(function(b){ b.onclick=function(){
@@ -2602,7 +2602,7 @@ function bindHosp(){
     };
     var rd=document.getElementById('hospRoomDelete');
     if(rd) rd.onclick=function(){
-      if(!confirm(gpT('Delete room {name} and its beds?',{name:rf.name}))) return;
+      if(!gpAsk_(gpT('Delete room {name} and its beds?',{name:rf.name}))) return;
       send('hospDelete', ['room', rf.id], function(){ S.hospRoom=null; }, rd);
     };
   }

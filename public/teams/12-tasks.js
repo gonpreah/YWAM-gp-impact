@@ -548,14 +548,14 @@ function bindGpTasks_(){
     run('saveGpListOrder',[S.auth.user,S.auth.pin,ids],function(d){ if(d && d.ok) gptTake_(d); }); }; });
   var L0=S.gptList ? gptListById_(S.gptList) : null;
   var saveList=function(payload, msg, after){ run('saveGpTaskList',[S.auth.user,S.auth.pin,payload],function(d){ if(d && d.ok){ gptTake_(d); if(after) after(d); if(msg) showMsg(msg); } else showMsg(t('Could not save')); render(); }); };
-  on('gtRename', function(){ S.gtMenu=false; var v=window.prompt(t('Rename list'), L0.title); if(v && v.trim()) saveList({ id:L0.id, title:v.trim() }, t('Saved')); else render(); });
+  on('gtRename', function(){ S.gtMenu=false; var v=gpAskText_(t('Rename list'), L0.title); if(v && v.trim()) saveList({ id:L0.id, title:v.trim() }, t('Saved')); else render(); });
   on('gtColor', function(){ S.gtMenu=false; S.gtColorFor=L0.id; render(); });
   on('gtShareList', function(){ S.gtMenu=false; S.gtShareFor=L0.id; S.ppick.share={ q:'' }; render(); var x=document.querySelector('[data-ppickq="share"]'); if(x) x.focus(); });
   on('gtShareScrim', function(){ S.gtShareFor=null; render(); });
   on('gtColorScrim', function(){ S.gtColorFor=null; render(); });
   document.querySelectorAll('[data-gtcolor]').forEach(function(b){ b.onclick=function(){ gpTap(); var id=S.gtColorFor; S.gtColorFor=null; saveList({ id:id, color:b.getAttribute('data-gtcolor') }, t('Saved')); }; });
   bindCtSeg_();
-  on('gptListDelete', function(){ S.gtMenu=false; if(!window.confirm(gpT('Delete “{title}” and all its tasks?',{title:L0.title}))){ render(); return; }
+  on('gptListDelete', function(){ S.gtMenu=false; if(!gpAsk_(gpT('Delete “{title}” and all its tasks?',{title:L0.title}))){ render(); return; }
     saveList({ id:L0.id, remove:true }, t('List deleted'), function(){ S.gptList=null; }); });
   on('gptAskBtn', function(){ gpTap(); S.gtMenu=false; S.gptAsk={ min:'', title:'', due:'', find:'' }; render(); });
   on('gptFilterBtn', function(){ S.gtMenu=false; S.gptFilterOpen=true; S.gptFilterDraft=S.gpt.filter ? S.gpt.filter.keys.slice() : []; render(); });
@@ -676,8 +676,15 @@ function bindGpTasks_(){
     on('gptSave', function(){ saveOpen(true); });
     on('gptClose', function(){ saveOpen(true); });   // ← keeps what you changed, like Google Tasks
     on('gtDetScrim', function(){ saveOpen(true); });
-    on('gptDelete', function(){ if(!window.confirm(t('Delete this task?'))) return;
-      run('deleteGpTask',[S.auth.user,S.auth.pin,D.id],function(d){ if(d && d.ok){ gptTake_(d); S.gptOpen=null; S.gptDraft=null; showMsg(t('Deleted')); } else showMsg(t('Could not save')); render(); }); });
+    /* No "are you sure?" (Nov 2026): the task goes at once, with a few seconds to put it back (gpUndo_). */
+    on('gptDelete', function(){
+      var G=S.gpt, id=D.id, at=G ? G.tasks.findIndex(function(x){ return x.id===id; }) : -1, was=at>-1 ? G.tasks[at] : null;
+      if(was){ G.tasks.splice(at, 1); }
+      S.gptOpen=null; S.gptDraft=null; render();
+      gpUndo_(t('Task deleted'), function(){
+        run('deleteGpTask',[S.auth.user,S.auth.pin,id],function(d){ if(d && d.ok){ gptTake_(d); showMsg(t('Deleted')); } else showMsg(t('Could not save')); render(); });
+      }, function(){ if(was && S.gpt===G){ G.tasks.splice(Math.min(at, G.tasks.length), 0, was); } else { S.gpt=null; } render(); });
+    });
   }
 }
 function gtSaveNew_(){

@@ -1451,7 +1451,7 @@ function bindReqHr_(){
   };
   document.querySelectorAll('[data-reqdel]').forEach(function(b){ b.onclick=function(){
     var d=reqDocById_(b.getAttribute('data-reqdel')); if(!d) return;
-    if(!confirm(gpT('Remove “{title}”? It will no longer be asked of anyone.',{title:d.title}))) return;
+    if(!gpAsk_(gpT('Remove “{title}”? It will no longer be asked of anyone.',{title:d.title}))) return;
     run('reqDocDelete',[S.auth.user,S.auth.pin,d.id],done);
   }; });
   document.querySelectorAll('[data-reqfilter]').forEach(function(b){ b.onclick=function(){ S.reqFilter=b.getAttribute('data-reqfilter'); render(); }; });
@@ -1924,7 +1924,7 @@ function bindPrayer_(){
   var a=document.getElementById('prAnsSave');
   if(a) a.onclick=function(){ var id=S.prAnswering; S.prAnswering=null; run('answerPrayer',[S.auth.user,S.auth.pin,id,(document.getElementById('prNote')||{}).value||''],function(d){ if(done(d)) showMsg(t('Praise God!')); }); };
   document.querySelectorAll('[data-prundo]').forEach(function(b){ b.onclick=function(){ run('answerPrayer',[S.auth.user,S.auth.pin,b.getAttribute('data-prundo'),'',true],done); }; });
-  document.querySelectorAll('[data-prdel]').forEach(function(b){ b.onclick=function(){ if(!confirm(t('Delete this request?'))) return; run('deletePrayer',[S.auth.user,S.auth.pin,b.getAttribute('data-prdel')],done); }; });
+  document.querySelectorAll('[data-prdel]').forEach(function(b){ b.onclick=function(){ if(!gpAsk_(t('Delete this request?'))) return; run('deletePrayer',[S.auth.user,S.auth.pin,b.getAttribute('data-prdel')],done); }; });
 }
 
 /* ==================== Support raising (My Home → Support raising) ====================
@@ -2174,7 +2174,7 @@ function bindSupport_(){
     supSave_(c, t('Saved'));
   });
   on('supDel', function(){
-    if(!confirm(t('Remove this partner?'))) return;
+    if(!gpAsk_(t('Remove this partner?'))) return;
     var c=copy(); c.partners=c.partners.filter(function(x){ return x.id!==S.supEdit; }); supSave_(c, t('Removed'));
   });
   on('supGSave', function(){
@@ -2188,7 +2188,7 @@ function bindSupport_(){
     supSave_(c, t('Saved'));
   });
   on('supGDel', function(){
-    if(!confirm(t('Take them off the list of people you support?'))) return;
+    if(!gpAsk_(t('Take them off the list of people you support?'))) return;
     var c=copy(); c.giving=c.giving.filter(function(y){ return y.id!==S.supGEdit; }); supSave_(c, t('Removed'));
   });
   var f=document.getElementById('supFile'); if(f) f.onchange=function(){ if(f.files && f.files[0]) supReadFile_(f.files[0]); f.value=''; };
@@ -2556,7 +2556,7 @@ function bindAdminBoard_(){
   };
   var del=document.getElementById('bdDelete');
   if(del) del.onclick=function(){
-    if(!confirm(t('Remove this person from the advisory board?'))) return;
+    if(!gpAsk_(t('Remove this person from the advisory board?'))) return;
     run('adminDeleteBoardMember',[S.auth.user,S.auth.pin,ed.id],function(d){ if(d && d.ok){ S.adminBoard=d; S.adminBoardEdit=null; S.org=null; render(); } });
   };
 }

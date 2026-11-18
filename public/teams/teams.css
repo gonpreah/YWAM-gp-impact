@@ -1766,6 +1766,9 @@ input[type=color]::-webkit-color-swatch { border:none; border-radius:50%; }
 .field { margin-bottom:14px; }
 .fieldLabel { display:block; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:6px; }
 .dateRow { display:flex; gap:10px; }
+/* a date box has its own minimum width: on a 320px phone two side by side ran off the screen */
+.dateRow input { flex:1 1 0; min-width:0; }
+@media (max-width:359px){ .dateRow { flex-direction:column; gap:8px; } }
 input[type=date], input[type=month], input[type=time], textarea { width:100%; font:inherit; font-size:14.5px; padding:11px; border-radius:10px; border:1.5px solid var(--border2); background:var(--bg); color:var(--ink); }
 textarea { resize:vertical; min-height:64px; }
 .typeChips { display:flex; flex-direction:column; gap:8px; }
@@ -2616,6 +2619,8 @@ body.gtDragOn { user-select:none; -webkit-user-select:none; cursor:grabbing; }
 @media (prefers-reduced-motion: reduce){ .khGPick { animation:none; } }
 /* Learn Khmer — Level test */
 .khArea .gtTab { padding:7px 10px; }
+/* three areas never push the page wider than the phone: they scroll in their own row instead */
+.khWhich { max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; touch-action:pan-x pan-y; } .khWhich::-webkit-scrollbar { display:none; } .khWhich .gtTab { flex:0 0 auto; }
 .khTestCard { text-align:center; }
 .khLvBig { font-size:30px; line-height:1.2; margin:6px 0 2px; } .khLvBig b { font-size:22px; }
 .khLvDots { display:inline-flex; gap:5px; margin-top:4px; } .khLvDots i { width:22px; height:6px; border-radius:3px; background:var(--surface2); } .khLvDots i.on { background:var(--accent); }
@@ -3139,3 +3144,55 @@ details.dtsPick input.gpSelBox { margin:6px 0 4px; }
 /* Profile & settings: Install this app (Nov 2026) */
 .profInstallHelp { margin-top:-4px; }
 .installSteps { margin:0; padding-left:22px; display:flex; flex-direction:column; gap:6px; font-size:14.5px; line-height:1.4; }
+
+/* ---------- small phones (Nov 2026 look-through) ---------- */
+/* At 320px the ☰ dropped to a second row and the header grew by a third: tighter here, one row. */
+@media (max-width:359px){
+  header { padding-left:12px; padding-right:12px; }
+  .brandRow { gap:7px; } .brand { padding-left:7px; } .logoImg { height:26px; } .brandKh { font-size:19px; }
+  .hbtns { gap:5px; flex-wrap:nowrap; } .hbtn { padding:6px 9px; font-size:12px; } .hbtn.icon { padding:5px; }
+}
+/* My contract / a person's head: beside a large photo the lines were squeezed to a few words each. */
+@media (max-width:379px){ .adminPersonHead { flex-direction:column; align-items:flex-start; } }
+/* The holiday list sits inside the dark allowance card: its names were ink on near-black — unreadable in the light theme. */
+.allowCard .holidayNote { color:var(--onDarkFaint); } .allowCard .holidayNote b { color:var(--onDark); }
+
+/* ---------- Today · search · the app's own sheets (19-ux.js, Nov 2026) ---------- */
+.homeAnchor { display:block; height:0; scroll-margin-top:12px; }
+.todayCard { padding:12px 14px; }
+.todayHead { display:flex; align-items:center; gap:8px; font-weight:800; font-size:15px; margin-bottom:4px; }
+.todayN { background:var(--accent); color:var(--accentInk); border-radius:999px; min-width:22px; height:22px; padding:0 7px; display:inline-flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:800; }
+.todayRow { display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:none; border:0; border-top:1px solid var(--border); padding:11px 0; color:var(--ink); font:inherit; cursor:pointer; }
+.todayHead + .todayRow { border-top:0; }
+.todayIc { flex:0 0 auto; font-size:18px; width:24px; text-align:center; }
+.todayText { flex:1 1 auto; min-width:0; font-size:14.5px; line-height:1.35; }
+.todayCta { flex:0 0 auto; color:var(--accent); font-weight:700; font-size:13.5px; white-space:nowrap; }
+.todayRow.soft .todayText { color:var(--muted); }
+.todayDone { margin:0 2px 12px; font-size:13.5px; color:var(--muted); }
+#findRoot { position:fixed; inset:0; z-index:70; background:var(--bg); display:flex; flex-direction:column; padding:calc(10px + env(safe-area-inset-top)) 14px 0; }
+body.findOn { overflow:hidden; }
+.findBar { display:flex; align-items:center; gap:8px; max-width:640px; width:100%; margin:0 auto; }
+.findMag { color:var(--muted); display:flex; }
+#findBox { flex:1 1 auto; min-width:0; margin:0; }
+.findOut { flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; max-width:640px; width:100%; margin:8px auto 0; padding-bottom:calc(24px + env(safe-area-inset-bottom) + var(--kb, 0px)); }
+.findSec { font-size:11.5px; letter-spacing:1.2px; text-transform:uppercase; font-weight:800; color:var(--muted); margin:14px 2px 4px; }
+.findRow { display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:none; border:0; border-bottom:1px solid var(--border); padding:10px 2px; color:var(--ink); font:inherit; cursor:pointer; }
+.findIc { flex:0 0 32px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; color:var(--muted); }
+.findIc .avatar, .findIc .av { width:32px; height:32px; font-size:12px; }
+.findEmoji { font-size:20px; }
+.findTxt { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; }
+.findTxt b { font-size:15px; font-weight:700; }
+.findTxt span { font-size:12.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.findGo { color:var(--faint); font-size:18px; }
+.findNone { color:var(--muted); margin:24px 4px; }
+.askScrim { z-index:80; }
+.askSheet { position:fixed; z-index:81; left:0; right:0; bottom:var(--kb, 0px); max-width:520px; margin:0 auto; background:var(--surface); color:var(--ink); border-radius:18px 18px 0 0; box-shadow:var(--shadow); padding:20px 18px calc(18px + env(safe-area-inset-bottom)); animation:askUp .18s ease-out; }
+@keyframes askUp { from { transform:translateY(24px); opacity:0; } to { transform:none; opacity:1; } }
+@media (prefers-reduced-motion:reduce){ .askSheet { animation:none; } }
+.askMsg { margin:0 0 14px; font-size:16px; line-height:1.45; font-weight:600; }
+.askSheet input { margin:0 0 14px; }
+.askBtns { display:flex; gap:10px; }
+.askBtns .btn { flex:1 1 0; margin:0; }
+#undoRoot { position:fixed; z-index:75; left:12px; right:12px; bottom:calc(84px + env(safe-area-inset-bottom)); max-width:480px; margin:0 auto; background:var(--headerBg); color:var(--onDark); border-radius:12px; padding:12px 14px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:var(--shadow); font-size:14.5px; }
+#undoRoot button { background:none; border:0; color:var(--amber); font:inherit; font-weight:800; cursor:pointer; padding:4px 6px; }
+@media (max-width:359px){ .hbtn.icon svg { width:18px; height:18px; } }

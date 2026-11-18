@@ -306,7 +306,7 @@ function bindP360_(){
   document.querySelectorAll('[data-p3open]').forEach(function(b){ b.onclick=function(){ gpTap(); p3Open_(b.getAttribute('data-p3open')); }; });
   document.querySelectorAll('[data-p3answer]').forEach(function(b){ b.onclick=function(){ gpTap(); S.p3Sub='answer'; S.p3Id=b.getAttribute('data-p3answer'); S.p3Ans=null; render(); window.scrollTo(0,0); }; });
   document.querySelectorAll('[data-p3decline]').forEach(function(b){ b.onclick=function(){
-    if(!confirm(t('Let them know you won’t be giving feedback this time?'))) return;
+    if(!gpAsk_(t('Let them know you won’t be giving feedback this time?'))) return;
     run('p360Decline', p3Auth_().concat([b.getAttribute('data-p3decline')]), function(d){ if(d && d.ok){ S.p3=null; render(); } else showMsg(t('Could not save')); }); }; });
   /* starting one */
   var D=S.p3Draft;
@@ -336,7 +336,7 @@ function bindP360_(){
     on('p3AnsSend', function(){
       var id=this.getAttribute('data-p3id'), o=pack();
       if(!P3_Q.some(function(q){ return o.ratings[q[0]]; }) && !P3_TEXTS.some(function(x){ return String(o[x[0]]).trim(); })){ showMsg(t('Answer at least one question first.')); return; }
-      if(!confirm(t('Send your feedback? Once sent it can’t be changed.'))) return;
+      if(!gpAsk_(t('Send your feedback? Once sent it can’t be changed.'))) return;
       if(S.p3Busy) return; S.p3Busy=true;
       run('p360Answer', p3Auth_().concat([id, o]), function(d){ S.p3Busy=false;
         if(d && d.ok){ S.p3Ans=null; showMsg(t('Thank you — sent anonymously')); p3Home_(); }
@@ -350,9 +350,9 @@ function bindP360_(){
   var R=S.p3R; if(!R || S.p3Sub!=='view') return;
   on('p3SelfOpen', function(){ S.p3SelfOpen=true; S.p3Ans=null; render(); window.scrollTo(0,0); });
   on('p3Close', function(){
-    if(!confirm(R.answered < R.minN ? gpT('Only {a} have answered — with fewer than {n} the results can’t be shown. Close it anyway?',{a:R.answered, n:R.minN}) : t('Close it now? Nobody else can answer after this.'))) return;
+    if(!gpAsk_(R.answered < R.minN ? gpT('Only {a} have answered — with fewer than {n} the results can’t be shown. Close it anyway?',{a:R.answered, n:R.minN}) : t('Close it now? Nobody else can answer after this.'))) return;
     S.p3Busy=true; run('p360Close', p3Auth_().concat([R.id]), function(d){ p3Put_(d, t('Closed')); render(); window.scrollTo(0,0); }); });
-  on('p3Delete', function(){ if(!confirm(t('Delete this review, its results and its plan? This can’t be undone.'))) return;
+  on('p3Delete', function(){ if(!gpAsk_(t('Delete this review, its results and its plan? This can’t be undone.'))) return;
     run('p360Delete', p3Auth_().concat([R.id]), function(d){ if(d && d.ok){ showMsg(t('Deleted')); p3Home_(); } else showMsg(t('Could not save')); }); });
   var plan=function(list, msg){ S.p3Busy=true; run('p360SavePlan', p3Auth_().concat([R.id, list]), function(d){ if(p3Put_(d, msg)) S.p3PlanEdit=null; render(); }); };
   on('p3ActAdd', function(){ S.p3PlanEdit={ id:'new', area:'', what:'', measure:'', by:'' }; render(); var w=document.getElementById('p3ActWhat'); if(w) w.focus(); });
@@ -364,7 +364,7 @@ function bindP360_(){
     on('p3ActSave', function(){ grab(); if(!String(E.what).trim()){ showMsg(t('Say what you’ll do')); return; }
       var list=R.plan.actions.slice(); if(E.id==='new') list.push({ area:E.area, what:E.what, measure:E.measure, by:E.by }); else list=list.map(function(a){ return a.id===E.id ? E : a; });
       plan(list, t('Saved')); });
-    on('p3ActDel', function(){ if(!confirm(t('Remove this action?'))) return; plan(R.plan.actions.filter(function(a){ return a.id!==E.id; }), t('Removed')); });
+    on('p3ActDel', function(){ if(!gpAsk_(t('Remove this action?'))) return; plan(R.plan.actions.filter(function(a){ return a.id!==E.id; }), t('Removed')); });
   }
   var RV=S.p3Rev;
   document.querySelectorAll('[data-p3st]').forEach(function(b){ b.onclick=function(){ var v=b.getAttribute('data-p3st').split('|'); RV.items[v[0]]=RV.items[v[0]]||{ note:'' }; RV.items[v[0]].status=v[1];
