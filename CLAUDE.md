@@ -2664,6 +2664,19 @@ also carries `menteeId`, the mentee's `prep`, and once it happened `heldOn`, `no
   that already happened" is a fold (`#ooLogFold`). Mentorship: "How a 1-on-1 works" folded at the top (`#ooHow`), and
   each person's line (`ooRelHtml_`) gives the next step — the mentor ▶ Begin 1-on-1 (`[data-oobegin]` →
   `ooGo_(id, null, true)`), the mentee "Answer the check-in" until it is in. Khmer §106.
+- **The one asking may suggest a day and time (Nov 2026, Andrew: "can that person set the date and time and the
+  other person can accept it?")**: "Suggest a day and time (optional)" on the request (`ooSuggestFieldsHtml_`,
+  `#ooSugDate` / `#ooSugTime` in the draft; both or neither) → `requestOneOnOne(…, note, prep, when)` keeps it as the
+  pending row's `when` (`whenBy` = the asker; `ooWhen_`, `bad_when`) and pushes `ooAskWhen`. The one asked sees it
+  (`ooSuggested_` — a day gone by counts as none; `ooSuggestTakeHtml_` on the sheet and on Mentorship's line): **✓ Accept
+  this time** (`[data-ooacceptwhen]` → `ooAcceptSuggested_` → `respondToOneOnOne(id, true)`: a yes with no time, or
+  the same time, takes the suggestion and keeps `whenBy` the asker's; push `ooYes`, bell "X said yes to your 1-on-1 on
+  …") or **Pick another time** (`[data-oochange]` → the picker from the suggestion, `data-ooset` accept — a different
+  time replaces it, set by the one asked). The bell's request line says the time with Accept / Pick another time. A
+  suggestion is no GP Task until it is a yes (`gptFromOneOnOne_` skips pending); the strip's Day & time step is done
+  only once accepted. The boot's own staff card now carries `mentorStatus` (the page read `S.me.mentorStatus`, which
+  was only on the profile: every 1-on-1 with one's own mentor also showed in the top "Asking you" list, and Leave said
+  "Save this request" instead of "Send to {mentor} for Approval"). Khmer §107.
 - **Two a month** (`OO_PER_MONTH`), counted by `heldOn`: ●○ dots on My Home's Mentorship
   card (each mentee, and your own), on the Mentor page and on a mentee's page (which also
   lists their 1-on-1s). The monthly health question "2 one-on-ones?" shows the count.

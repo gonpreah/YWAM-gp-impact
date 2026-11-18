@@ -1903,6 +1903,7 @@ function bind(){
     };
   });
   document.querySelectorAll('[data-oochange]').forEach(function(b){ b.onclick=function(){ S.ooTimeEdit=b.getAttribute('data-oochange'); render(); }; });
+  document.querySelectorAll('[data-ooacceptwhen]').forEach(function(b){ b.onclick=function(){ ooAcceptSuggested_(b); }; });
   document.querySelectorAll('[data-121decline]').forEach(function(b){
     b.onclick=function(){
       var id=b.getAttribute('data-121decline');

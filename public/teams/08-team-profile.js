@@ -397,6 +397,14 @@ function ooTimePickHtml_(id, accept, cur){
 function ooRelHtml_(o, otherId, name){
   var first=String(name||'').split(' ')[0], h='<div class="ooRel">';
   if(!o) return h+'<button class="btn ghost small mentorAct" data-request121="'+esc(otherId)+'">☕ '+esc(gpT('Ask {name} for a 1-on-1',{name:first}))+'</button></div>';
+  if(o.status==='pending' && o.mine && ooSuggested_(o))
+    return h+'<div class="ooLine">⏳ '+esc(gpT('You asked {name} for a 1-on-1 on {when} — waiting for them to say yes.',{name:first, when:ooWhenNice_(o.when)}))+'</div>'+
+      '<button class="linkbtn inline" data-ooopen="'+esc(o.id)+'">'+esc(t('Open the 1-on-1'))+' ›</button></div>';
+  if(o.status==='pending' && !o.mine && ooSuggested_(o))
+    return h+'<div class="ooLine ooAskedLine">🔔 '+esc(gpT('{name} asked you for a 1-on-1.',{name:first}))+(o.note ? '<div class="pmeta">“'+esc(o.note)+'”</div>' : '')+'</div>'+
+      ooSuggestTakeHtml_(o, first)+
+      '<div class="ooActsRow"><button class="linkbtn inline" data-ooopen="'+esc(o.id)+'">'+esc(o.iMentor ? t('Read their check-in first') : t('Open the 1-on-1'))+' ›</button>'+
+      '<button class="linkbtn inline" style="color:var(--faint)" data-121decline="'+esc(o.id)+'">'+esc(t('Can’t right now — decline'))+'</button></div></div>';
   if(o.status==='pending' && o.mine)
     return h+'<div class="ooLine">⏳ '+esc(gpT('You asked {name} for a 1-on-1 — waiting for them to set a time.',{name:first}))+'</div>'+
       '<button class="linkbtn inline" data-ooopen="'+esc(o.id)+'">'+esc(t('Open the 1-on-1'))+' ›</button></div>';

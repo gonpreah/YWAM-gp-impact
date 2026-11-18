@@ -4393,9 +4393,14 @@ async function getMyOneOnOnes(username, pin) {
   return { ok: true, oneOnOnes: list, perMonth: OO_PER_MONTH };
 }
 
-async function requestOneOnOne(username, pin, otherId, note, prep) {
+/* The one asking may suggest a day and time (Nov 2026, Andrew: "can that person set the date and time and the
+   other person can accept it?"): it is kept as the row's `when` (whenBy = the asker) while it waits; the one
+   asked takes it with one tap or picks another. */
+async function requestOneOnOne(username, pin, otherId, note, prep, when) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
+  const suggest = when ? ooWhen_(when) : '';
+  if (suggest === null) return { ok: false, err: 'bad_when' };
   const staff = await getStaff_();
   const other = staff.find(function (x) { return x.id === otherId; });
   if (!other) return { ok: false, err: 'not_found' };
@@ -4411,9 +4416,11 @@ async function requestOneOnOne(username, pin, otherId, note, prep) {
   };
   /* only the mentee's own check-in rides along with a request */
   if (isMentor) { const pp = ooPrep_(prep); if (pp) row.prep = pp; }
+  if (suggest) { row.when = suggest; row.whenBy = s.id; row.whenAt = now; }
   rows.push(row);
   await writeJSON('oneOnOnes', rows);
-  await pushNow_(otherId, 'ooAsk', { name: s.name }, 'teams.html?view=mentor');
+  if (suggest) await pushNow_(otherId, 'ooAskWhen', function (lang) { return { name: s.name, when: ooWhenText_(suggest, lang) }; }, 'teams.html?view=mentor');
+  else await pushNow_(otherId, 'ooAsk', { name: s.name }, 'teams.html?view=mentor');
   return getMyOneOnOnes(username, pin);
 }
 
@@ -4430,19 +4437,23 @@ function ooWhen_(v) {
 async function respondToOneOnOne(username, pin, requestId, approve, when) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
-  const at = approve && when ? ooWhen_(when) : '';
+  let at = approve && when ? ooWhen_(when) : '';
   if (at === null) return { ok: false, err: 'bad_when' };
   const rows = await getOneOnOnes_();
   const idx = rows.findIndex(function (r) { return r.id === requestId && r.toId === s.id && r.status === 'pending'; });
   if (idx === -1) return { ok: false, err: 'not_found' };
   const r = rows[idx], now = new Date().toISOString();
+  /* a yes with no time of its own, or with the very time suggested, takes the suggestion — still the asker's;
+     a different time replaces it, and a yes to nothing at all is accepted with no time yet, as before */
+  const yesToSuggested = approve && !!r.when && (!at || at === r.when);
+  if (yesToSuggested) at = r.when;
   r.status = approve ? 'accepted' : 'declined';
   r.decidedAt = now; r.updated = now;
-  if (at) { r.when = at; r.whenBy = s.id; r.whenAt = now; }
+  if (at && !yesToSuggested) { r.when = at; r.whenBy = s.id; r.whenAt = now; }
   await writeJSON('oneOnOnes', rows);
   if (at || !approve) await gptFromOneOnOne_(r);   // in both people's My Tasks, with its day and time
   if (!approve) await pushNow_(r.fromId, 'ooDeclined', { name: s.name }, 'teams.html?view=mentor');
-  else if (at) await pushNow_(r.fromId, 'ooSet', function (lang) { return { name: s.name, when: ooWhenText_(at, lang) }; }, 'teams.html?view=mentor');
+  else if (at) await pushNow_(r.fromId, yesToSuggested ? 'ooYes' : 'ooSet', function (lang) { return { name: s.name, when: ooWhenText_(at, lang) }; }, 'teams.html?view=mentor');
   return getMyOneOnOnes(username, pin);
 }
 /* Either of the pair sets or moves the time of one already on; the other hears of it. */
@@ -5314,6 +5325,8 @@ const PUSH_TEXT = {
   taskDeclined: { en: '{name} can’t take on: {title}', km: '{name} មិនអាចទទួលយក៖ {title}' },
   ooAsk: { en: '{name} asked you for a 1-on-1. Open Mentorship to set a time.', km: '{name} បានសុំជួបមួយទល់មួយជាមួយអ្នក។ បើកការណែនាំ ដើម្បីកំណត់ពេល។' },
   contractSigned: { en: '{name} signed their staff contract — open their HR profile to approve it.', km: '{name} បានចុះហត្ថលេខាលើកិច្ចសន្យាបុគ្គលិករបស់ពួកគេ — បើកប្រវត្តិរូប HR របស់ពួកគេដើម្បីអនុម័ត។' },
+  ooAskWhen: { en: '{name} asked you for a 1-on-1 on {when}. Open Mentorship to accept it or pick another time.', km: '{name} បានសុំជួបមួយទល់មួយជាមួយអ្នកនៅ {when}។ បើកការណែនាំ ដើម្បីយល់ព្រម ឬជ្រើសរើសពេលផ្សេង។' },
+  ooYes: { en: '{name} said yes to your 1-on-1 on {when}.', km: '{name} បានយល់ព្រមជួបមួយទល់មួយជាមួយអ្នកនៅ {when}។' },
   ooSet: { en: '{name} set your 1-on-1 for {when}.', km: '{name} បានកំណត់ការជួបមួយទល់មួយរបស់អ្នកនៅ {when}។' },
   ooDeclined: { en: '{name} can’t do the 1-on-1 you asked for.', km: '{name} មិនអាចជួបមួយទល់មួយដែលអ្នកបានសុំបានទេ។' },
   mentorAsk: { en: '{name} asked you to be their mentor.', km: '{name} បានសុំឲ្យអ្នកធ្វើជាគ្រូណែនាំរបស់គាត់។' },
@@ -5629,7 +5642,9 @@ async function saveKmReview(username, pin, key, verdict, km) {
    a problem reading trips cannot stop the page from having the base's figures. */
 /* the boot's own staff card — what the page knows about the person signed in (both apps' boots) */
 function bootStaffCard_(s) {
-  return selfStaff_(s, { isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), signIn: authKindOf_(s), google: !!s.google, hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '', langLevel: langMine_(s), seeLangLevels: canSeeLangLevels_(s) });   // created: for My Home's first 30 days
+  /* mentorStatus: their own — the page reads S.me.mentorStatus (whether their mentor has said yes); it was only on
+     the profile, so every 1-on-1 with one's own mentor also showed in "Asking you" and leave said "Save this request" */
+  return selfStaff_(s, { mentorStatus: s.mentorStatus || '', isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), signIn: authKindOf_(s), google: !!s.google, hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '', langLevel: langMine_(s), seeLangLevels: canSeeLangLevels_(s) });   // created: for My Home's first 30 days
 }
 /* GP Tasks as an app of its own (tasks.html, Nov 2026, Andrew: "a separate app for our tasks and calendar …
    synced and linked to the main app"). It is the same data, so there is nothing to sync: this is the tasks
@@ -12364,7 +12379,7 @@ async function gptFromOneOnOne_(r) {
     const d = await getGpt_(), staff = await getStaff_(), now = new Date().toISOString();
     const pair = [r.fromId, r.toId].map(function (id) { return staff.find(function (x) { return x && x.id === id; }); });
     let changed = false;
-    const gone = r.status === 'declined' || !r.when;
+    const gone = r.status === 'declined' || r.status === 'pending' || !r.when;   // a suggested time is not a task until it is a yes
     pair.forEach(function (me, i) {
       const other = pair[1 - i];
       let t = d.tasks.find(function (y) { return y.ooId === r.id && y.ooFor === (me && me.id); });
@@ -13096,7 +13111,7 @@ const HANDLERS = {
   adminListBoard: function (a) { return adminListBoard(a[0], a[1]); },
   adminSaveBoardMember: function (a) { return adminSaveBoardMember(a[0], a[1], a[2]); },
   adminDeleteBoardMember: function (a) { return adminDeleteBoardMember(a[0], a[1], a[2]); },
-  requestOneOnOne: function (a) { return requestOneOnOne(a[0], a[1], a[2], a[3], a[4]); },
+  requestOneOnOne: function (a) { return requestOneOnOne(a[0], a[1], a[2], a[3], a[4], a[5]); },
   saveOneOnOnePrep: function (a) { return saveOneOnOnePrep(a[0], a[1], a[2], a[3]); },
   saveOneOnOneNotes: function (a) { return saveOneOnOneNotes(a[0], a[1], a[2], a[3], a[4], a[5]); },
   logOneOnOne: function (a) { return logOneOnOne(a[0], a[1], a[2], a[3], a[4], a[5]); },
