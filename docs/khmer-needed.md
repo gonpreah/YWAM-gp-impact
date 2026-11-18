@@ -5522,3 +5522,41 @@ Points and day streaks for using the app. Short labels on a phone; the privacy l
 | The week runs Monday to Sunday and starts again each Monday. | សប្ដាហ៍ចាប់ពីថ្ងៃចន្ទដល់ថ្ងៃអាទិត្យ ហើយចាប់ផ្ដើមឡើងវិញរៀងរាល់ថ្ងៃចន្ទ។ |
 | Who is using the app this week: points for the small daily things, and days in a row. | អ្នកណាកំពុងប្រើកម្មវិធីសប្ដាហ៍នេះ៖ ពិន្ទុសម្រាប់កិច្ចការតូចៗប្រចាំថ្ងៃ និងចំនួនថ្ងៃជាប់គ្នា។ |
 
+## 113. Talk it through → tasks (GP Tasks, the microphone above the ＋)
+
+The sheet where someone says everything on their mind and gets tasks back to check. Short buttons; one line is a promise about where the words are sent — check it first. The example in the box is a made-up sentence someone might say.
+
+| English | Khmer (draft) |
+|---|---|
+| Talk it through | និយាយចេញមក |
+| Here is what I heard | នេះជាអ្វីដែលខ្ញុំបានឮ |
+| I didn’t hear anything to do | ខ្ញុំមិនបានឮអ្វីដែលត្រូវធ្វើទេ |
+| Check each one. Nothing is saved until you tap Add. | ពិនិត្យមួយៗ។ គ្មានអ្វីត្រូវបានរក្សាទុកទេ រហូតដល់អ្នកចុច បន្ថែម។ |
+| Add this one | បន្ថែមមួយនេះ |
+| List | បញ្ជី |
+| Take {name} off | ដក {name} ចេញ |
+| Say more | និយាយបន្ថែម |
+| Add 1 task | បន្ថែមកិច្ចការ ១ |
+| Add {n} tasks | បន្ថែមកិច្ចការ {n} |
+| Say everything on your mind — what needs doing, by when, and who should do it. I’ll turn it into tasks for you to check. | និយាយអ្វីៗទាំងអស់ដែលនៅក្នុងគំនិតអ្នក — អ្វីត្រូវធ្វើ ត្រឹមពេលណា និងអ្នកណាគួរធ្វើ។ ខ្ញុំនឹងប្រែវាជាកិច្ចការឱ្យអ្នកពិនិត្យ។ |
+| “Tomorrow I need to call the plumber, and Friday at two we meet about the outreach — ask Sokha to book the room…” | «ថ្ងៃស្អែកខ្ញុំត្រូវទូរស័ព្ទទៅជាងទឹក ហើយថ្ងៃសុក្រម៉ោងពីរ យើងប្រជុំអំពីការចេញផ្សាយ — សុំឱ្យសុខាកក់បន្ទប់…» |
+| Listening… tap to stop | កំពុងស្តាប់… ចុចដើម្បីឈប់ |
+| Tap to talk | ចុចដើម្បីនិយាយ |
+| Tap the box, then the microphone on your keyboard, and talk. | ចុចលើប្រអប់ រួចចុចមីក្រូហ្វូននៅលើក្តារចុចរបស់អ្នក ហើយនិយាយ។ |
+| Your words are sent to Claude (Anthropic) to be turned into tasks, with the names of your lists and your campus’s staff. | ពាក្យរបស់អ្នកត្រូវបានផ្ញើទៅ Claude (Anthropic) ដើម្បីប្រែជាកិច្ចការ ជាមួយឈ្មោះបញ្ជីរបស់អ្នក និងឈ្មោះបុគ្គលិកនៅទីតាំងរបស់អ្នក។ |
+| Working it out… | កំពុងរៀបចំ… |
+| Make my tasks | បង្កើតកិច្ចការរបស់ខ្ញុំ |
+| The microphone is blocked for this app. Allow it in your browser’s settings, or use the microphone on your keyboard. | មីក្រូហ្វូនត្រូវបានបិទសម្រាប់កម្មវិធីនេះ។ សូមអនុញ្ញាតវានៅក្នុងការកំណត់កម្មវិធីរុករក ឬប្រើមីក្រូហ្វូននៅលើក្តារចុចរបស់អ្នក។ |
+| This phone can’t listen in this language. Use the microphone on your keyboard. | ទូរស័ព្ទនេះមិនអាចស្តាប់ជាភាសានេះបានទេ។ សូមប្រើមីក្រូហ្វូននៅលើក្តារចុចរបស់អ្នក។ |
+| Say or type something first. | សូមនិយាយ ឬវាយអ្វីមួយជាមុនសិន។ |
+| That is a lot at once — send it in two parts. | នោះច្រើនពេកក្នុងមួយដង — សូមផ្ញើជាពីរផ្នែក។ |
+| That’s enough for today — try again tomorrow, or add the tasks by hand. | ថ្ងៃនេះគ្រប់ហើយ — សូមព្យាយាមម្តងទៀតថ្ងៃស្អែក ឬបន្ថែមកិច្ចការដោយដៃ។ |
+| This isn’t set up yet — an admin needs to add the key. | វាមិនទាន់បានរៀបចំនៅឡើយទេ — អ្នកគ្រប់គ្រងត្រូវបញ្ចូលសោ។ |
+| The key for this isn’t working — tell an admin. | សោសម្រាប់មុខងារនេះមិនដំណើរការទេ — សូមប្រាប់អ្នកគ្រប់គ្រង។ |
+| Claude is busy right now — try again in a moment. | Claude កំពុងជាប់រវល់ — សូមព្យាយាមម្តងទៀតបន្តិចទៀត។ |
+| That took too long — try again, or say a little less at once. | វាចំណាយពេលយូរពេក — សូមព្យាយាមម្តងទៀត ឬនិយាយតិចជាងនេះក្នុងមួយដង។ |
+| I couldn’t make tasks from that. | ខ្ញុំមិនអាចបង្កើតកិច្ចការពីអ្វីដែលបាននិយាយនោះទេ។ |
+| Something went wrong making the tasks — try again. | មានបញ្ហាពេលបង្កើតកិច្ចការ — សូមព្យាយាមម្តងទៀត។ |
+| Added {n} — the rest could not be saved. Try again. | បានបន្ថែម {n} — នៅសល់មិនអាចរក្សាទុកបានទេ។ សូមព្យាយាមម្តងទៀត។ |
+| Added 1 task | បានបន្ថែមកិច្ចការ ១ |
+| Added {n} tasks | បានបន្ថែមកិច្ចការ {n} |

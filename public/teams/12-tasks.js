@@ -190,6 +190,8 @@ function gptPageHtml_(scope, embedded){
   /* add: the round ＋ on the page; inside My Ministry, a plain row */
   var canAdd=L.canEdit || L.scope!=='personal';
   if(canAdd && !S.gtMenu) h+='<button class="gtFab" id="gtAdd" aria-label="'+esc(L && !L.canEdit ? gpT('Ask {name} for help',{name:t(L.ministry||L.dept)}) : t('Add a task'))+'">'+GPT_SVG.plus+'</button>';
+  if(canAdd) h+=gvFabHtml_();   // talk it through (21-voice.js)
+  if(S.gv) h+=gvHtml_();
   if(S.gtNew) h+=gtNewHtml_();
   if(S.gptOpen) h+=gtDetailHtml_();
   return h;
