@@ -1506,6 +1506,15 @@ forms, documents and references follow.
   "Signing up with Google" when `P.gtoken`), `signIn_`, `savePassword_` (the dashboard's contact
   card shows how you sign in and Change password). There is no email sending, so a forgotten
   password is reset by a portal admin on Accounts.
+- **Install this app, in Profile & settings** (Nov 2026, Uriah). The bar under the header
+  (`gpInstallPrompt`, rollup.js) goes for good once ✕'d (`gp-install-dismissed`); the card
+  under My contract (`gpInstallCardHtml_`, 08-team-profile.js) stays until the app is
+  installed and isn't shown when it's opened from the Home Screen (`gpStandalone_`). Where
+  the browser offers its own prompt (`beforeinstallprompt`, kept as `_gpInstallEvt`) the
+  button opens it, and an accepted install (or `appinstalled`) turns the card into
+  "Installed — open YWAM GP from your Home Screen". Otherwise it unfolds the steps: iPhone /
+  iPad Share → Add to Home Screen → Add; elsewhere the browser's ⋮ menu → Install app.
+  GP Tasks keeps its own (12-tasks.js). tests/test-install-card-ui.mjs.
 - **The portal installs as an app**: `portal-manifest.json` (its own `id`/`start_url`), the same
   `sw.js` (portal.html, its manifest and outreach-guide.js are in the shell, `gp-shell-v2`),
   `installCardHtml_` on the dashboard (the browser's install prompt where there is one, the
@@ -2220,7 +2229,7 @@ none of it (`libOn_()`).
 - **The weekly nudge** (Profile → Reminders: `#remRead`, `#remReadDay`; `push.reading`, `push.readDay`, Saturday by
   default): on that day the daily reminder adds the month's book if unread (`libMonth`), else a ten-minute read (`libRead`).
 - New Library sections use `.libHead2` / `.libScroll`, never `.libSecHead` / `.libRow` — test-library-ui counts those as
-  shelves. tests/test-library-club.mjs (server), tests/test-library-club-ui.mjs. Khmer: docs/khmer-needed.md §108.
+  shelves. tests/test-library-club.mjs (server), tests/test-library-club-ui.mjs. Khmer: docs/khmer-needed.md §109.
 
 ## The look-through of Nov 2026 (Uriah: "look through the app to see ways you can improve the experience and debug anything")
 Every screen was opened at 320px, in English and Khmer, light and dark, looking for script errors, anything wider than
@@ -2228,7 +2237,7 @@ the phone, and English left in Khmer. What it found, and the rules that came out
 - **Words written straight into the markup never reach Khmer.** Profile & settings and Create my profile had ~45 labels,
   buttons and placeholders as plain English (`<label class="f">Full name</label>`), though many were in the dictionary.
   All go through `t()` now. `showMsg(text)` passes its text through `t()` itself, so a pop-up written in English shows in
-  Khmer when the dictionary has it (its parameter was called `t`, which hid the translator inside it). Khmer: §109.
+  Khmer when the dictionary has it (its parameter was called `t`, which hid the translator inside it). Khmer: §110.
 - **A date box has its own minimum width**: two side by side ran off a 320px phone (`.dateRow input { min-width:0 }`,
   stacked under 360px). Learn Khmer's three areas scroll in their own row instead of widening the page.
 - **Under 360px the header is one row** (smaller logo, gaps and buttons); the ☰ used to drop to a second row.
@@ -2236,6 +2245,9 @@ the phone, and English left in Khmer. What it found, and the rules that came out
   near-black (`.allowCard .holidayNote`). test-theme had no holidays in its fixture, so it never saw them.
 - **A label is tied to its field** (`gpLabelFix_` at the top of `bind()`): `label.f` / `label.fieldLabel` get `for` their
   next box, so tapping the label focuses it and a screen reader reads a name. The leave tick is `role="checkbox"`.
+- **Adding Khmer by script: write to the `var PENDING_KM = {…};` line, by name.** In km.js the `};` just before the
+  "Reviewed last" comment closes REVIEWED_KM, not PENDING_KM — a script that appended there put ~165 unread drafts in
+  the reviewed dictionary (caught before it merged; REVIEWED_KM must stay exactly what a native speaker has read).
 - **Every test file must be in run-all.mjs's SERVER or BROWSER list.** Eight were in neither, so CI never ran them; the
   runner's pre-flight now fails when a `tests/test-*.mjs` is in neither list.
 
@@ -2268,7 +2280,7 @@ the phone, and English left in Khmer. What it found, and the rules that came out
 - **Undo** (`gpUndo_(text, commit, undo)`, `#undoRoot`, `#undoBtn`): a deleted GP task goes at once with five seconds
   to put it back; the delete is sent when the time is up, when the app is left, or when another starts. Under a test
   browser without the flag it is sent at once. Only GP Tasks uses it so far.
-- tests/test-ux-ui.mjs. Khmer: docs/khmer-needed.md §110. sw.js SHELL v24.
+- tests/test-ux-ui.mjs. Khmer: docs/khmer-needed.md §111. sw.js SHELL v24.
 
 ## Looking around without an account (teams.html guest mode, Oct 2026)
 `teams.html?guest=1` (the log-in screen's "Look around without an account" button was removed, Nov 2026, Andrew) sets
@@ -2744,6 +2756,19 @@ also carries `menteeId`, the mentee's `prep`, and once it happened `heldOn`, `no
   that already happened" is a fold (`#ooLogFold`). Mentorship: "How a 1-on-1 works" folded at the top (`#ooHow`), and
   each person's line (`ooRelHtml_`) gives the next step — the mentor ▶ Begin 1-on-1 (`[data-oobegin]` →
   `ooGo_(id, null, true)`), the mentee "Answer the check-in" until it is in. Khmer §106.
+- **The one asking may suggest a day and time (Nov 2026, Andrew: "can that person set the date and time and the
+  other person can accept it?")**: "Suggest a day and time (optional)" on the request (`ooSuggestFieldsHtml_`,
+  `#ooSugDate` / `#ooSugTime` in the draft; both or neither) → `requestOneOnOne(…, note, prep, when)` keeps it as the
+  pending row's `when` (`whenBy` = the asker; `ooWhen_`, `bad_when`) and pushes `ooAskWhen`. The one asked sees it
+  (`ooSuggested_` — a day gone by counts as none; `ooSuggestTakeHtml_` on the sheet and on Mentorship's line): **✓ Accept
+  this time** (`[data-ooacceptwhen]` → `ooAcceptSuggested_` → `respondToOneOnOne(id, true)`: a yes with no time, or
+  the same time, takes the suggestion and keeps `whenBy` the asker's; push `ooYes`, bell "X said yes to your 1-on-1 on
+  …") or **Pick another time** (`[data-oochange]` → the picker from the suggestion, `data-ooset` accept — a different
+  time replaces it, set by the one asked). The bell's request line says the time with Accept / Pick another time. A
+  suggestion is no GP Task until it is a yes (`gptFromOneOnOne_` skips pending); the strip's Day & time step is done
+  only once accepted. The boot's own staff card now carries `mentorStatus` (the page read `S.me.mentorStatus`, which
+  was only on the profile: every 1-on-1 with one's own mentor also showed in the top "Asking you" list, and Leave said
+  "Save this request" instead of "Send to {mentor} for Approval"). Khmer §107.
 - **Two a month** (`OO_PER_MONTH`), counted by `heldOn`: ●○ dots on My Home's Mentorship
   card (each mentee, and your own), on the Mentor page and on a mentee's page (which also
   lists their 1-on-1s). The monthly health question "2 one-on-ones?" shows the count.

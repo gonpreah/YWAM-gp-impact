@@ -3141,6 +3141,9 @@ details.dtsPick input.gpSelBox { margin:6px 0 4px; }
 .libScroll::-webkit-scrollbar { display:none; }
 .libPlanRow { grid-auto-columns:200px; }
 .libNextRow { grid-auto-columns:136px; }
+/* Profile & settings: Install this app (Nov 2026) */
+.profInstallHelp { margin-top:-4px; }
+.installSteps { margin:0; padding-left:22px; display:flex; flex-direction:column; gap:6px; font-size:14.5px; line-height:1.4; }
 
 /* ---------- small phones (Nov 2026 look-through) ---------- */
 /* At 320px the ☰ dropped to a second row and the header grew by a third: tighter here, one row. */
