@@ -1,4 +1,4 @@
-/* Today on My Home, search from the header, and the app’s own “are you sure?” (teams/19-ux.js). Made-up people. */
+/* My Home has no Today card (taken out, Nov 2026); search from the header, and the app’s own “are you sure?” (teams/19-ux.js). Made-up people. */
 import vm from 'node:vm';
 import { REPO, PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
 import { chromium, devices } from 'playwright';
@@ -89,22 +89,6 @@ await call('saveGpTask', ['mark', '1234', { listId: inbox.id, title: 'Call the p
 await call('libSetMonth', ['mark', '1234', 'atomic-habits', 'Atomic Habits', 'Our habits month']);
 let dialogs = 0;
 const ask = (page) => page.addInitScript(() => localStorage.setItem('gp-ask-test', '1'));
-
-/* ---------- 1. Today ---------- */
-{
-  const { ctx, page } = await open('mark');
-  page.on('dialog', () => { dialogs++; });
-  const rows = await page.$$eval('#today .todayRow', (rs) => rs.map((r) => r.innerText.replace(/\s+/g, ' ')));
-  ok('My Home has Today on the first screen, above the summary card', rows.length >= 3 && await page.evaluate(() => { const t = document.getElementById('today'), a = document.getElementById('homeHabits'); return !!t && !!a && t.getBoundingClientRect().top < innerHeight * 0.6 && t.getBoundingClientRect().top < a.getBoundingClientRect().top; }), rows.join(' | '));
-  ok('… a task due today', rows.some((r) => /1 task is due today or overdue/.test(r)));
-  ok('… today’s habits and the month’s book, as gentler rows', rows.some((r) => /habits left today/.test(r)) && rows.some((r) => /This month’s book: Atomic Habits/.test(r)) && (await page.$$('#today .todayRow.soft')).length === 2);
-  ok('… the weekly check-in from its day on (on Tuesday its own card)', dow === 2 ? !!(await page.$('#tueCheckin')) && !rows.some((r) => /check-in is due/.test(r)) : (dow === 1 ? !rows.some((r) => /check-in is due/.test(r)) : rows.some((r) => /check-in is due/.test(r))));
-  ok('… and the number counts what is firmly waiting, not the gentle rows', Number(await page.$eval('#today .todayN', (e) => e.innerText)) === rows.length - 2);
-  await page.screenshot({ path: OUT + '/today.png' });
-  await page.click('[data-todaygo="tasks"]'); await page.waitForTimeout(900);
-  ok('tapping the task row opens GP Tasks', await page.evaluate(() => S.view === 'tasks') && /Call the plumber/.test(await main(page)));
-  await ctx.close();
-}
 
 /* ---------- 2. Search ---------- */
 {

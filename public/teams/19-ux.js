@@ -1,81 +1,9 @@
-/* ==================== Today · search · the app's own "are you sure?" (Nov 2026, Uriah) ====================
-   Three things that came out of the look-through, chosen as the ones that help everyone every day:
-   1. TODAY, on My Home between the greeting and the summary card: what is waiting on YOU right now, in one short list — leave to
-      answer, a 1-on-1 to set a time for, the check-in, numbers due, tasks due, the month's book, today's habits.
-      Each of these already had its own card or bell item; nothing new is fetched (todayItems_ reads the boot).
+/* ==================== Search · the app's own "are you sure?" (Nov 2026, Uriah) ====================
+   Things that came out of the look-through, chosen as the ones that help everyone every day.
+   (The "Today" card on My Home that was section 1 was taken out again, Nov 2026, Andrew.)
    2. SEARCH, 🔍 in the header: one box that finds a page, a person, a ministry or a book (gpFind*).
    3. The browser's own confirm() and prompt() are replaced by the app's sheets (gpAsk_ / gpAskText_), which are in
       the app's language and look; a deleted GP task can be put back for a few seconds (gpUndo_).            */
-
-/* ---------- 1. Today ---------- */
-function todayItems_(){
-  var out=[];
-  if(!S.me || S.guest || S.student || S.board || S.stuPreview) return out;
-  var add=function(ic, text, attr, cta, soft){ out.push({ ic:ic, text:text, attr:attr, cta:cta, soft:!!soft }); };
-  var today=todayStr();
-  /* people waiting on you come first */
-  var tr=S.tripRequests||[];
-  if(tr.length) add('🌴', tr.length===1 ? gpT('{name} asked for leave — yours to answer',{name:firstName_(tr[0].name)}) : gpT('{n} leave requests are waiting for your answer',{n:tr.length}), 'data-gomentorship="1"', t('Answer'));
-  var mr=S.mentorRequests||[];
-  if(mr.length) add('🤝', mr.length===1 ? gpT('{name} asked you to be their mentor',{name:firstName_(mr[0].name)}) : gpT('{n} people asked you to be their mentor',{n:mr.length}), 'data-gomentorship="1"', t('Answer'));
-  (S.oneOnOnes||[]).forEach(function(o){
-    var nm=firstName_(o.otherName);
-    if(!o.mine && o.status==='pending') add('☕', gpT('{name} asked you for a 1-on-1 — pick a day and time',{name:nm}), 'data-gomentorship="1"', t('Set a time'));
-    else if(o.status==='accepted' && o.when && String(o.when).slice(0,10)===today) add('☕', gpT('Your 1-on-1 with {name} is today, {when}',{name:nm, when:ooWhenNice_(o.when)}), 'data-ooopen="'+esc(o.id)+'"', t('Open'));
-    if(!o.iMentor && ooOpen_(o) && !o.prep && !(o.status==='pending' && !o.mine)) add('📝', gpT('Fill in your check-in before your 1-on-1 with {name}',{name:o.otherName}), 'data-ooopen="'+esc(o.id)+'"', t('Open'));
-  });
-  /* the weekly check-in: from its day on, until it is in (on the day itself My Home has its own card) */
-  var wk=thisWeek();
-  if(!checkinIsToday_() && new Date(today)>=checkinDayOf_(wk) && !myWeekRow(wk)) add('💚', t('Your weekly health check-in is due'), 'data-gohealth="open"', t('Answer it'));
-  /* ministry numbers you are responsible for */
-  if(S.numbers){
-    var fri=isoDateOf_(weekFriday_(wk));
-    (S.numbers.duty||[]).forEach(function(x){
-      var go='data-gonumbers="'+esc(x.dept+'|'+x.ministry)+'"';
-      if(wk>1 && !numLogged_(x, wk-1)) add('📊', gpT('{ministry} numbers for week {wk} are overdue',{ministry:t(x.ministry), wk:wk-1}), go, t('Enter them'));
-      if(today>=fri && !numLogged_(x, wk)) add('📊', today>fri ? gpT('{ministry} numbers for week {wk} are overdue',{ministry:t(x.ministry), wk:wk}) : gpT('{ministry} numbers for week {wk} are due today',{ministry:t(x.ministry), wk:wk}), go, t('Enter them'));
-    });
-  }
-  /* tasks due today or overdue */
-  var I=S.gpTaskInfo;
-  if(I && I.due) add('☑️', I.due===1 ? t('1 task is due today or overdue') : gpT('{n} tasks are due today or overdue',{n:I.due}), 'data-todaygo="tasks"', t('Open'));
-  /* admins and HR */
-  if(S.me.isAdmin || S.me.hr){
-    if(S.hrDue) add('📄', S.hrDue===1 ? t('1 staff contract is due for renewal') : gpT('{n} staff contracts are due for renewal',{n:S.hrDue}), 'data-gohr="1"', t('Open HR'));
-    if(S.hrFollowUps) add('📞', S.hrFollowUps===1 ? t('1 candidate follow-up is due') : gpT('{n} candidate follow-ups are due',{n:S.hrFollowUps}), 'data-gohr="1"', t('Open HR'));
-  }
-  /* gentler things: today's habits, the month's book */
-  try {
-    var hs=myHabitsToday(), log=logForDate(today), left=hs.filter(function(hb){ return !habitDoneToday(hb, log); }).length;
-    if(hs.length && left) add('✅', left===1 ? t('1 habit left today') : gpT('{n} habits left today',{n:left}), 'data-todaygo="habits"', t('Tick them'), true);
-  } catch(e){}
-  try {
-    var m=S.lib && S.lib.month;
-    if(m && m.bookId && !libRead_()[m.bookId]) add('📚', gpT('This month’s book: {title} — a ten-minute read',{title:m.title||''}), 'data-libhome="'+esc(m.bookId)+'"', t('Read it'), true);
-  } catch(e){}
-  return out;
-}
-var TODAY_MAX=5;
-function todayHtml_(){
-  if(!S.me || S.guest || S.student || S.board || S.stuPreview) return '';
-  var it=todayItems_(), firm=it.filter(function(x){ return !x.soft; }).length;
-  if(!it.length) return '<div class="todayDone" id="today">✓ '+esc(t('Nothing is waiting on you today.'))+'</div>';
-  var show=S.todayAll ? it : it.slice(0, TODAY_MAX);
-  var h='<div class="card todayCard" id="today"><div class="todayHead"><span>☀️ '+esc(t('Today'))+'</span>'+(firm ? '<span class="todayN">'+firm+'</span>' : '')+'</div>';
-  h+=show.map(function(x){
-    return '<button class="todayRow'+(x.soft?' soft':'')+'" '+x.attr+'><span class="todayIc">'+x.ic+'</span><span class="todayText">'+esc(x.text)+'</span><span class="todayCta">'+esc(x.cta)+' ›</span></button>';
-  }).join('');
-  if(it.length>show.length) h+='<button class="linkbtn" id="todayMore" style="padding-left:0">'+esc(gpT('{n} more',{n:it.length-show.length}))+'</button>';
-  return h+'</div>';
-}
-function bindToday_(){
-  var more=document.getElementById('todayMore'); if(more) more.onclick=function(){ S.todayAll=true; render(); };
-  document.querySelectorAll('[data-todaygo]').forEach(function(b){ b.onclick=function(){
-    var k=b.getAttribute('data-todaygo'); gpTap();
-    if(k==='tasks'){ gptOpenPage_('week'); return; }
-    if(k==='habits'){ var a=document.getElementById('homeHabits'); if(a && a.scrollIntoView) a.scrollIntoView({ behavior:'smooth', block:'start' }); }
-  }; });
-}
 
 /* ---------- 2. Search ---------- */
 /* Other words people type for a page. English; a page's own label (in the app's language) always matches too. */
@@ -249,4 +177,4 @@ function gpUndo_(text, commit, undo){
 document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') gpUndoFlush_(); });
 window.addEventListener('pagehide', gpUndoFlush_);
 
-function bindUx_(){ bindToday_(); bindFind_(); }
+function bindUx_(){ bindFind_(); }
