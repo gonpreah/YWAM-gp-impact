@@ -3237,7 +3237,7 @@ body.findOn { overflow:hidden; }
 .gvMic.on { background:var(--accent); color:var(--accentInk); animation:gvPulse 1.4s ease-in-out infinite; }
 @keyframes gvPulse { 50% { opacity:.72; } }
 @media (prefers-reduced-motion: reduce) { .gvMic.on { animation:none; } }
-.gvErr { color:var(--bad, #B3261E); font-weight:700; }
+.gvErr { color:var(--bad); font-weight:700; }
 .gvFine { font-size:12.5px; }
 .gvItems { display:flex; flex-direction:column; gap:10px; }
 .gvItem { display:flex; gap:10px; align-items:flex-start; padding:10px; border:1px solid var(--line); border-radius:14px; }
