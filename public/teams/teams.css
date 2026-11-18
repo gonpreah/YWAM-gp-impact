@@ -1564,7 +1564,7 @@ body.hxOn { overflow:hidden; }
 .deptChip.on { background:var(--accent); border-color:var(--accent); color:var(--accentInk); font-weight:700; }
 /* Team → Structure: the org chart as nested cards. Leads wear the crown;
    children hang off a rule on the left, the way the Canva chart draws it. */
-.teamModeSeg { margin-bottom:8px; display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); max-width:none; width:100%; box-sizing:border-box; }
+.teamModeSeg { margin-bottom:8px; display:grid; grid-template-columns:repeat(auto-fit, minmax(110px,1fr)); max-width:none; width:100%; box-sizing:border-box; }
 .repGrid { display:grid; grid-template-columns:1fr; gap:0; }
 @media (min-width:760px){ .repGrid { grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; } .repGrid .card { margin-top:0; } }
 .repTitle { font-weight:800; font-size:16px; margin-bottom:6px; }
