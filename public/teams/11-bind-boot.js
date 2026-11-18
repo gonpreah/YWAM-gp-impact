@@ -1144,6 +1144,7 @@ function gpLabelFix_(){
 function bind(){
   try{ gpLabelFix_(); }catch(e){}
   bindUx_();
+  bindGame_();
   /* Who's here: Base's "On campus now" loads the count; the page loads team photos */
   if((S.view==='base' || S.view==='week') && !S.guest && !S.board && !S.student && S.me) whosHereLoad_();   // Base and My Home show the count
   [['goWhosHere','base'],['goWhosHereHome','week']].forEach(function(x){ var b=document.getElementById(x[0]); if(b) b.onclick=function(){ gpTap(); S.whosFrom=x[1]; S.view='whoshere'; render(); window.scrollTo(0,0); whosHereLoad_(true); }; });
@@ -2045,7 +2046,7 @@ function refreshAll(){
    ?fresh). If the page itself came from the offline copy (the worker leaves a
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
-var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
+var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/20-game.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
 if(gpTasksApp_()) GP_VER_FILES=['tasks.html'].concat(GP_VER_FILES.slice(1), ['teams/12-tasks.js','teams/13-calendar.js']);   // the tasks app's page is tasks.html
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){
