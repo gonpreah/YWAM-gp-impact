@@ -5284,3 +5284,20 @@ The one asking for a 1-on-1 may suggest a day and time; the one asked taps "Acce
 | {name} said yes to your 1-on-1 on {when} | {name} បានយល់ព្រមជួបមួយទល់មួយជាមួយអ្នកនៅ {when} |
 | You asked {name} for a 1-on-1 on {when} — waiting for them to say yes. | អ្នកបានសុំជួបមួយទល់មួយជាមួយ {name} នៅ {when} — កំពុងរង់ចាំពួកគេយល់ព្រម។ |
 | {name} asked you for a 1-on-1. | {name} បានសុំជួបមួយទល់មួយជាមួយអ្នក។ |
+
+## 108. Install this app (Profile & settings)
+
+| English | Khmer (draft) |
+|---|---|
+| Installed — open YWAM GP from your Home Screen. | បានដំឡើងហើយ — សូមបើក YWAM GP ពីអេក្រង់ដើមរបស់អ្នក។ |
+| Install this app | ដំឡើងកម្មវិធីនេះ |
+| Open YWAM GP from your Home Screen, full screen, like any other app. | បើក YWAM GP ពីអេក្រង់ដើមរបស់អ្នក ពេញអេក្រង់ ដូចកម្មវិធីផ្សេងទៀតដែរ។ |
+| Tap the Share button — the square with an arrow pointing up (at the bottom of Safari, or by the address bar). | ចុចប៊ូតុងចែករំលែក — ការ៉េដែលមានព្រួញចង្អុលឡើងលើ (នៅខាងក្រោមនៃ Safari ឬក្បែររបារអាសយដ្ឋាន)។ |
+| Scroll down and tap “Add to Home Screen”. | រំកិលចុះក្រោម ហើយចុច “Add to Home Screen”។ |
+| Tap “Add”. YWAM GP is now on your Home Screen. | ចុច “Add”។ ឥឡូវនេះ YWAM GP នៅលើអេក្រង់ដើមរបស់អ្នកហើយ។ |
+| Open your browser’s menu — the ⋮ at the top right. | បើកម៉ឺនុយរបស់កម្មវិធីរុករក — សញ្ញា ⋮ នៅខាងលើស្ដាំ។ |
+| Tap “Install app” or “Add to Home screen”. | ចុច “Install app” ឬ “Add to Home screen”។ |
+| Tap “Install”. YWAM GP is now on your Home Screen. | ចុច “Install”។ ឥឡូវនេះ YWAM GP នៅលើអេក្រង់ដើមរបស់អ្នកហើយ។ |
+| Installed | បានដំឡើងហើយ |
+
+Profile & settings, the card under My contract, until the app is installed. The steps quote the phone’s own buttons (“Add to Home Screen”, “Add”, “Install app”, “Install”) in English on purpose — they read that way on most phones here; if a Khmer-language phone shows them in Khmer, use its wording instead.

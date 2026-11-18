@@ -1506,6 +1506,15 @@ forms, documents and references follow.
   "Signing up with Google" when `P.gtoken`), `signIn_`, `savePassword_` (the dashboard's contact
   card shows how you sign in and Change password). There is no email sending, so a forgotten
   password is reset by a portal admin on Accounts.
+- **Install this app, in Profile & settings** (Nov 2026, Uriah). The bar under the header
+  (`gpInstallPrompt`, rollup.js) goes for good once ✕'d (`gp-install-dismissed`); the card
+  under My contract (`gpInstallCardHtml_`, 08-team-profile.js) stays until the app is
+  installed and isn't shown when it's opened from the Home Screen (`gpStandalone_`). Where
+  the browser offers its own prompt (`beforeinstallprompt`, kept as `_gpInstallEvt`) the
+  button opens it, and an accepted install (or `appinstalled`) turns the card into
+  "Installed — open YWAM GP from your Home Screen". Otherwise it unfolds the steps: iPhone /
+  iPad Share → Add to Home Screen → Add; elsewhere the browser's ⋮ menu → Install app.
+  GP Tasks keeps its own (12-tasks.js). tests/test-install-card-ui.mjs.
 - **The portal installs as an app**: `portal-manifest.json` (its own `id`/`start_url`), the same
   `sw.js` (portal.html, its manifest and outreach-guide.js are in the shell, `gp-shell-v2`),
   `installCardHtml_` on the dashboard (the browser's install prompt where there is one, the

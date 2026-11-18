@@ -3063,3 +3063,6 @@ details.dtsPick input.gpSelBox { margin:6px 0 4px; }
 .mcItem.talk { border-left:3px solid var(--accent); padding-left:8px; }
 .mcItem.strength { border-left:3px solid var(--good); padding-left:8px; }
 .mcTalk { margin-top:8px; padding:8px 10px; border-radius:10px; background:var(--accentSoft); font-size:13.5px; color:var(--ink); }
+/* Profile & settings: Install this app (Nov 2026) */
+.profInstallHelp { margin-top:-4px; }
+.installSteps { margin:0; padding-left:22px; display:flex; flex-direction:column; gap:6px; font-size:14.5px; line-height:1.4; }

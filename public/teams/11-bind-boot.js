@@ -546,6 +546,7 @@ function bindAway(){
   bindReqRows_();
   ['libHomeTile','personBooks','profBooks'].forEach(function(id){ var b=document.getElementById(id); if(b) b.onclick=function(){ gpTap(); libOpen_(); }; });
   var pmc=document.getElementById('profMyContract'); if(pmc) pmc.onclick=function(){ gpTap(); openMyContract_(); };
+  bindInstallCard_();
   if(S.view==='admin' && (S.adminSub==='groups' || S.adminSub==='leaving')) bindAdminGroups_();
   if(S.view==='admin' && S.adminSub==='board') bindAdminBoard_();
   if(S.view==='admin' && S.adminSub==='reminders') bindAdminReminders_();
