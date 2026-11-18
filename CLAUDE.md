@@ -2251,16 +2251,9 @@ the phone, and English left in Khmer. What it found, and the rules that came out
 - **Every test file must be in run-all.mjs's SERVER or BROWSER list.** Eight were in neither, so CI never ran them; the
   runner's pre-flight now fails when a `tests/test-*.mjs` is in neither list.
 
-## Today, search, and the app's own "are you sure?" (teams/19-ux.js, Nov 2026, Uriah: "build 1, 2 and 5")
-- **☀️ Today** (`todayHtml_` ← `todayItems_`, `#today`; drawn inside `miniDashboardHtml` between the greeting and the
-  summary card, so it is on the first screen): what is waiting on YOU, each row a button with the jump attribute the
-  app already binds — leave and mentor requests (`data-gomentorship`), a 1-on-1 to set a time for / today's / its
-  check-in (`data-ooopen`), the weekly check-in from its day on (not on the Tuesday itself — that day has its own card),
-  numbers due or overdue (`data-gonumbers`), tasks due (`gpTaskInfo.due`, `data-todaygo="tasks"`), HR's contracts and
-  follow-ups, then two gentler rows (`.soft`): today's habits (scrolls to `#homeHabits`) and the month's book
-  (`data-libhome`). The blue number counts the firm rows only. Five rows, then "n more" (`S.todayAll`). Nothing
-  waiting → one line, "Nothing is waiting on you today." **Nothing is fetched** — it reads the boot. It does not
-  follow the bell's Clear: a thing leaves Today when it is done. Not for guests, students, the board or a preview.
+## Search, and the app's own "are you sure?" (teams/19-ux.js, Nov 2026, Uriah: "build 1, 2 and 5")
+- **No Today card on My Home** (Nov 2026, Andrew: "let's get rid of that"): the ☀️ Today list that sat above the
+  summary card was taken out; the bell and each page's own cards say what is waiting.
 - **🔍 Search** (`#findBtn` in the header, first; `gpFindOpen_` → `#findRoot`, a full-screen layer drawn by
   `gpFindDraw_` without a render, so the box keeps its focus): pages, people, ministries, books. **Pages are read off
   the bottom bar and the ☰ menu themselves** (`gpFindPages_` renders the menu, reads its items, and opens one by

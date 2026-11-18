@@ -129,8 +129,7 @@ const toMinistry = async page => { await page.click('nav.bottom [data-tab="minis
   let bell = await bellText(page);
   ok('Friday: the main person is told the Cafe numbers are due today', new RegExp('Cafe numbers for week ' + WK + ' are due today').test(bell), bell.slice(0, 200));
   const home = await page.$eval('#main', e => e.innerText);
-  /* Nov 2026: My Home's Today list says so too, with the way in — and the bell still has its red dot */
-  ok('My Home’s Today list says it once, with “Enter them”; the bell keeps its red dot', (home.match(/Cafe numbers for week \d+ are due today/g) || []).length === 1 && !!(await page.$('#today [data-gonumbers]')) && !!(await page.$('#bellBtn .notifDot')));
+  ok('My Home itself is quiet — the bell (with its red dot) is where reminders live now', !/Cafe numbers for week \d+ are due today/.test(home) && !(await page.$('#today')) && !!(await page.$('#bellBtn .notifDot')));
   await page.click('#bellBtn'); await page.waitForTimeout(250);
   await page.click('#notifRoot [data-gonumbers="Community Service|Cafe"]'); await page.waitForTimeout(700);
   ok('"Enter them" opens the Cafe\'s boxes', !!(await page.$('[data-kpi="Cups Sold"]')));

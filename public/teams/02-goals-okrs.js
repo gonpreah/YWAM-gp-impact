@@ -1431,7 +1431,6 @@ function miniDashboardHtml(){
       '<button class="dashSettingBtn'+(open?' on':'')+'" id="dashCustomizeBtn" aria-pressed="'+(open?'true':'false')+'" aria-label="'+esc(t('Customize dashboard'))+'">'+
         '<span class="ic">⚙️</span></button>'+
     '</div>';
-  h+=todayHtml_();   // ☀️ Today: what is waiting on you — above the summary card, so it is on the first screen (19-ux.js)
 
   /* ⚙️ opens the colour / photo options right here, under the greeting —
      below the card (where they were) they opened off the bottom of a phone's

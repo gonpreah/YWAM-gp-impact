@@ -3157,18 +3157,8 @@ details.dtsPick input.gpSelBox { margin:6px 0 4px; }
 /* The holiday list sits inside the dark allowance card: its names were ink on near-black — unreadable in the light theme. */
 .allowCard .holidayNote { color:var(--onDarkFaint); } .allowCard .holidayNote b { color:var(--onDark); }
 
-/* ---------- Today · search · the app's own sheets (19-ux.js, Nov 2026) ---------- */
+/* ---------- Search · the app's own sheets (19-ux.js, Nov 2026) ---------- */
 .homeAnchor { display:block; height:0; scroll-margin-top:12px; }
-.todayCard { padding:12px 14px; }
-.todayHead { display:flex; align-items:center; gap:8px; font-weight:800; font-size:15px; margin-bottom:4px; }
-.todayN { background:var(--accent); color:var(--accentInk); border-radius:999px; min-width:22px; height:22px; padding:0 7px; display:inline-flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:800; }
-.todayRow { display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:none; border:0; border-top:1px solid var(--border); padding:11px 0; color:var(--ink); font:inherit; cursor:pointer; }
-.todayHead + .todayRow { border-top:0; }
-.todayIc { flex:0 0 auto; font-size:18px; width:24px; text-align:center; }
-.todayText { flex:1 1 auto; min-width:0; font-size:14.5px; line-height:1.35; }
-.todayCta { flex:0 0 auto; color:var(--accent); font-weight:700; font-size:13.5px; white-space:nowrap; }
-.todayRow.soft .todayText { color:var(--muted); }
-.todayDone { margin:0 2px 12px; font-size:13.5px; color:var(--muted); }
 #findRoot { position:fixed; inset:0; z-index:70; background:var(--bg); display:flex; flex-direction:column; padding:calc(10px + env(safe-area-inset-top)) 14px 0; }
 body.findOn { overflow:hidden; }
 .findBar { display:flex; align-items:center; gap:8px; max-width:640px; width:100%; margin:0 auto; }
