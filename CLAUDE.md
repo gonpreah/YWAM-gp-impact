@@ -2282,6 +2282,29 @@ the phone, and English left in Khmer. What it found, and the rules that came out
   browser without the flag it is sent at once. Only GP Tasks uses it so far.
 - tests/test-ux-ui.mjs. Khmer: docs/khmer-needed.md §111. sw.js SHELL v24.
 
+## The week's board (teams/20-game.js, Nov 2026, Uriah: "gamify the app … a daily driver rather than a weekly check-in thing")
+Borrowed from the GonPreah public app's leaderboard. **Nothing new is stored**: `gameBoard_(s, staff, campus)` (api.js
+"The week's board") works out, from what is already saved, each active staff member's **points for the week** (Monday
+to Sunday, Cambodia) and **day streak**, and the boot carries it as `game` (`lastSeen` and `gpTasks` joined BOOT_KEYS) —
+no extra call on open. `getGame(user, pin, campus)` reads the other campus on demand.
+- **Points** (`GAME_PTS`, sent to the page so the two can't drift): a day the app was opened 5; a habit ticked 2 (10 a
+  day at most); weekly goals 10 for setting them + up to 20 as their average moves; a GP Task done 5 (30); a day
+  ministry numbers were entered 10 (20; never `tool:` rows); a book finished 25 (50); a 1-on-1 held 15 (both people).
+  The page can't claim a point. **The weekly health check-in gives none, on purpose** — its rows are anonymous and a
+  point would say who answered; the page says so. Don't add it.
+- **Streak**: days in a row with any use (the same evidence as Admin → App use), ending today or yesterday.
+- **What others see**: `people` rows are exactly `{id, pts, streak, week, rank}` (`week` = seven characters, 1 / 0 / -
+  for a day to come) — never what was done. `me` adds `parts` (where my points came from). **Show me on the board**
+  (`gameSetHide`, `staff.gameHide`): off, a person is neither listed nor ranked but still counts in "n of N active" and
+  sees their own. On by default (Uriah asked for the board; Admin → App use had been admins only).
+- **Ministries**: average points a person, for ministries with two or more people on the board.
+- **The page**: My Home has one line above the summary card (`gameHomeHtml_`, `#gameHome`: 🔥 streak · ⭐ points · #place,
+  the week's dots; tap → the board). **Team → 🏆 This week** (`S.teamMode='game'`, `gameTeamHtml_`): the campus together
+  first ("n of N active this week"), my three figures with "Where my points came from" folded, People / Ministries, the
+  top ten with points (my own row always shown; people with none are a count, not a list), the switch. Not for guests,
+  students, the board or a preview (`gameOn_`).
+- tests/test-game.mjs (server), tests/test-game-ui.mjs. Khmer: docs/khmer-needed.md §112. sw.js SHELL v25.
+
 ## Looking around without an account (teams.html guest mode, Oct 2026)
 `teams.html?guest=1` (the log-in screen's "Look around without an account" button was removed, Nov 2026, Andrew) sets
 `gp-app-guest` (localStorage — they stay a guest on reopen until Log in / Create my

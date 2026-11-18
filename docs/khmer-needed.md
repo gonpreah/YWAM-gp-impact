@@ -5487,3 +5487,43 @@ The ☀️ Today list under My Home’s summary card (what is waiting on you, ea
 | Nothing found for “{q}”. | រកមិនឃើញអ្វីសម្រាប់ «{q}» ទេ។ |
 | OK | យល់ព្រម |
 | Task deleted | បានលុបកិច្ចការ |
+
+## 112. The week's board (Team → 🏆 This week, and one line on My Home)
+
+Points and day streaks for using the app. Short labels on a phone; the two privacy lines (the check-in gives no points; what others see) are promises — check them first.
+
+| English | Khmer (draft) |
+|---|---|
+| day in a row | ថ្ងៃជាប់គ្នា |
+| days in a row | ថ្ងៃជាប់គ្នា |
+| points this week | ពិន្ទុសប្ដាហ៍នេះ |
+| This week’s board | តារាងពិន្ទុសប្ដាហ៍នេះ |
+| {n} a day | {n} ក្នុងមួយថ្ងៃ |
+| Opened the app | បានបើកកម្មវិធី |
+| Habits ticked | ទម្លាប់ដែលបានគូស |
+| {n} each, up to {m} a day | {n} ក្នុងមួយ រហូតដល់ {m} ក្នុងមួយថ្ងៃ |
+| {n} for setting them, up to {m} more as they move | {n} សម្រាប់ការកំណត់ និងរហូតដល់ {m} ទៀតពេលវារីកចម្រើន |
+| GP Tasks done | GP Tasks ដែលបានធ្វើរួច |
+| {n} each, up to {m} | {n} ក្នុងមួយ រហូតដល់ {m} |
+| Ministry numbers entered | បានបញ្ចូលលេខកិច្ចការបម្រើ |
+| {n} a day, up to {m} | {n} ក្នុងមួយថ្ងៃ រហូតដល់ {m} |
+| Books finished | សៀវភៅដែលបានអានចប់ |
+| 1-on-1s held | ការជួប ១-ទល់-១ ដែលបានធ្វើ |
+| {n} each | {n} ក្នុងមួយ |
+| {a} of {n} active this week | {a} នាក់ក្នុងចំណោម {n} នាក់ បានប្រើសប្ដាហ៍នេះ |
+| {n} today | {n} នាក់ថ្ងៃនេះ |
+| not on the board | មិននៅលើតារាង |
+| Where my points came from | ពិន្ទុរបស់ខ្ញុំមកពីណា |
+| The weekly health check-in gives no points on purpose: it is anonymous, and points would show who answered. | ការពិនិត្យសុខភាពប្រចាំសប្ដាហ៍មិនផ្ដល់ពិន្ទុទេ ដោយចេតនា៖ វាមិនបង្ហាញឈ្មោះ ហើយពិន្ទុនឹងបង្ហាញថាអ្នកណាបានឆ្លើយ។ |
+| No ministry has two people on the board yet. | មិនទាន់មានកិច្ចការបម្រើណាមានមនុស្សពីរនាក់លើតារាងនៅឡើយទេ។ |
+| Average points a person, so a small ministry can lead. | ពិន្ទុមធ្យមក្នុងមនុស្សម្នាក់ ដូច្នេះកិច្ចការបម្រើតូចក៏អាចនាំមុខបាន។ |
+| {a} of {n} active | {a} ក្នុងចំណោម {n} នាក់បានប្រើ |
+| Nobody has points yet this week. Tick a habit and be the first. | សប្ដាហ៍នេះមិនទាន់មាននរណាមានពិន្ទុទេ។ គូសទម្លាប់មួយ ហើយក្លាយជាអ្នកទីមួយ។ |
+| {n} more have no points yet this week. | {n} នាក់ទៀតមិនទាន់មានពិន្ទុសប្ដាហ៍នេះទេ។ |
+| Show me on the board | បង្ហាញខ្ញុំលើតារាង |
+| Others see your points, your streak and which days you were active — never what you did. Off: you still see your own. | អ្នកដទៃឃើញពិន្ទុរបស់អ្នក ចំនួនថ្ងៃជាប់គ្នា និងថ្ងៃណាដែលអ្នកបានប្រើ — មិនដែលឃើញអ្វីដែលអ្នកបានធ្វើទេ។ បិទ៖ អ្នកនៅតែឃើញរបស់ខ្លួនឯង។ |
+| The week runs Monday to Sunday and starts again each Monday. | សប្ដាហ៍ចាប់ពីថ្ងៃចន្ទដល់ថ្ងៃអាទិត្យ ហើយចាប់ផ្ដើមឡើងវិញរៀងរាល់ថ្ងៃចន្ទ។ |
+| You are off the board | អ្នកមិននៅលើតារាងទៀតទេ |
+| You are on the board | អ្នកនៅលើតារាងហើយ |
+| Who is using the app this week: points for the small daily things, and days in a row. | អ្នកណាកំពុងប្រើកម្មវិធីសប្ដាហ៍នេះ៖ ពិន្ទុសម្រាប់កិច្ចការតូចៗប្រចាំថ្ងៃ និងចំនួនថ្ងៃជាប់គ្នា។ |
+

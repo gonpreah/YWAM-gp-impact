@@ -5693,7 +5693,7 @@ async function getTasksBoot(username, pin, calFrom) {
 }
 
 const BOOT_KEYS = ['libClub', 'entries', 'survey', 'okrs', 'dailyLogs', 'goals', 'holidays', 'smartGoals', 'broadcasts',
-  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys'];
+  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks'];
 async function getMyBoot(username, pin) {
   prefetch_(['staff', 'loginThrottle'].concat(BOOT_KEYS));   // before the PIN check, so they travel together
   const s = await verifyStaff_(username, pin);
@@ -5769,6 +5769,7 @@ async function getMyBoot(username, pin) {
     lib: await part(async function () { return libOut_(s, staffRows || [], await readJSON('libClub', {})); }),   // the Library together: book of the month, plans, what the campus reads
     stuMentor: deptOf_(s) === STU_LD_DEPT ? await part(function () { return stuMentorFor_(s.id); }) : null,   // students who chose them as mentor
     supportSummary: s.support ? supportSummary_(s.support) : null,   // support raising: your own totals, for My Home's tile
+    game: await part(function () { return gameBoard_(s, staffRows || [], s.campus); }),   // the week's board: points, streaks, who is active
     p360: await part(function () { return p360Glance_(s); }),   // 360 reviews: waiting for my answer, a plan's quarterly review due
     reqDocs: reqDocs ? reqDocsAnswer_(reqDocs) : [],
     required: (reqDocs && !isApplicant_(s)) ? requiredFor_(s, reqDocs) : null,
@@ -11814,6 +11815,137 @@ async function adminAppUse(username, pin, campus) {
   });
   return { ok: true, campus: campus, today: today, from30: from30, daysFrom: rec.daysFrom || '', habitFrom: habitFrom, timeFrom: ut.from || '', people: people };
 }
+/* ==================== The week's board (Nov 2026, Uriah) ====================
+   "I like how the public app has the leaderboard … put that in our team thing … gamify the app … see how active
+   people are … a daily driver rather than a weekly check-in thing."  Points for a week (Monday to Sunday, Cambodia)
+   and a day streak, worked out HERE from what is already stored — nothing new is written, and the page can't
+   claim a point. What others see of a person is a number of points, a streak and which days they were active:
+   never what they did. The weekly health check-in is NOT counted, on purpose — its rows are anonymous, and a
+   point for it would say who answered. A person can step off the board (`gameHide`); they still see their own. */
+const GAME_PTS = { open: 5, habit: 2, habitDayCap: 10, goalsSet: 10, goalsPct: 20, task: 5, taskCap: 30, numbers: 10, numbersCap: 20, book: 25, bookCap: 50, oneOnOne: 15 };
+function gameDayOf_(when) {
+  const t = Date.parse(when); if (isNaN(t)) return '';
+  return new Date(t + 7 * 3600 * 1000).toISOString().slice(0, 10);
+}
+function gameMonday_(today) {
+  const dow = new Date(today + 'T00:00:00Z').getUTCDay();   // 0 Sunday
+  return icsDay_(today, -((dow + 6) % 7));
+}
+async function gameBoard_(s, staff, campus) {
+  if (!s || isApplicant_(s)) return null;
+  campus = CAMPUS_IDS_.indexOf(campus) > -1 ? campus : s.campus;
+  const [rec, daily, goals, entries, kpiDaily, gpt, oos] = await Promise.all([readJSON('lastSeen', {}), getDaily_(), getGoals_(),
+    readJSON('entries', []), readJSON('kpiDaily', []), readJSON('gpTasks', null), readJSON('oneOnOnes', [])]);
+  const today = baseToday_(), from = gameMonday_(today), to = icsDay_(from, 6);
+  const inWeek = function (d) { return isDate_(d) && d >= from && d <= today; };
+  const people = (Array.isArray(staff) ? staff : []).filter(function (x) { return x && x.active !== false && !x.archived && !isApplicant_(x) && x.campus === campus; });
+  const ids = {}; people.forEach(function (x) { ids[x.id] = 1; });
+  const used = {}, P = {};
+  const row = function (id) { return P[id] || (P[id] = { open: {}, habit: {}, goalsSet: 0, goalsPct: 0, task: 0, numbers: {}, book: 0, oneOnOne: 0 }); };
+  const add = function (id, d) { if (!ids[id] || !isDate_(d) || d > today) return; (used[id] = used[id] || {})[d] = 1; };
+  const days = (rec.days && typeof rec.days === 'object' && !Array.isArray(rec.days)) ? rec.days : {};
+  const seen = (rec.seen && typeof rec.seen === 'object') ? rec.seen : {};
+  const opened = function (id, d) { add(id, d); if (ids[id] && inWeek(d)) row(id).open[d] = 1; };
+  Object.keys(days).forEach(function (id) { (Array.isArray(days[id]) ? days[id] : []).forEach(function (d) { opened(id, d); }); });
+  Object.keys(seen).forEach(function (id) { opened(id, seen[id]); });
+  (Array.isArray(daily) ? daily : []).forEach(function (r) {
+    if (!r || !ids[r.staffId]) return;
+    add(r.staffId, gameDayOf_(r.updated));
+    if (!inWeek(r.date)) return;
+    const hb = (r.habits && typeof r.habits === 'object') ? r.habits : {};
+    const n = Object.keys(hb).filter(function (k) { return hb[k] === true || hb[k] === 1; }).length;
+    if (n) { row(r.staffId).habit[r.date] = n; add(r.staffId, r.date); }
+  });
+  const wk = isoWeek_(today), yr = weekYear_(today);
+  (Array.isArray(goals) ? goals : []).forEach(function (r) {
+    if (!r || !ids[r.staffId]) return;
+    add(r.staffId, gameDayOf_(r.updated));
+    if (Number(r.week) !== wk || yearOf_(r) !== yr) return;
+    const items = (Array.isArray(r.items) ? r.items : []).filter(function (i) { return i && String(i.text || '').trim(); });
+    if (!items.length) return;
+    const g = row(r.staffId); g.goalsSet = 1;
+    g.goalsPct = Math.round(items.reduce(function (a, i) { return a + goalItemPct_(i); }, 0) / items.length);
+  });
+  const numbers = function (id, when) {
+    if (typeof id !== 'string' || id.indexOf('tool:') === 0 || !ids[id]) return;
+    const d = gameDayOf_(when); add(id, d); if (inWeek(d)) row(id).numbers[d] = 1;
+  };
+  (Array.isArray(entries) ? entries : []).forEach(function (r) { if (r) numbers(r.by, r.updated); });
+  (Array.isArray(kpiDaily) ? kpiDaily : []).forEach(function (r) { if (r) numbers(r.staffId, r.updated); });
+  ((gpt && Array.isArray(gpt.tasks)) ? gpt.tasks : []).forEach(function (r) {
+    if (!r) return;
+    if (ids[r.by]) add(r.by, gameDayOf_(r.created));
+    if (r.done && ids[r.doneBy]) { const d = gameDayOf_(r.doneAt); add(r.doneBy, d); if (inWeek(d)) row(r.doneBy).task++; }
+  });
+  (Array.isArray(oos) ? oos : []).forEach(function (r) {
+    if (!r || r.status !== 'held' || !inWeek(String(r.heldOn || '').slice(0, 10))) return;
+    [r.fromId, r.toId].forEach(function (id) { if (ids[id]) row(id).oneOnOne++; });
+  });
+  people.forEach(function (x) {
+    const read = cleanLibRead_(x.libRead);
+    Object.keys(read).forEach(function (b) { if (inWeek(read[b])) row(x.id).book++; });
+  });
+  const partsOf = function (id) {
+    const g = P[id]; if (!g) return { open: 0, habits: 0, goals: 0, tasks: 0, numbers: 0, books: 0, oneOnOnes: 0 };
+    let habits = 0; Object.keys(g.habit).forEach(function (d) { habits += Math.min(GAME_PTS.habitDayCap, g.habit[d] * GAME_PTS.habit); });
+    return {
+      open: Object.keys(g.open).length * GAME_PTS.open, habits: habits,
+      goals: g.goalsSet ? GAME_PTS.goalsSet + Math.round(GAME_PTS.goalsPct * Math.max(0, Math.min(100, g.goalsPct)) / 100) : 0,
+      tasks: Math.min(GAME_PTS.taskCap, g.task * GAME_PTS.task),
+      numbers: Math.min(GAME_PTS.numbersCap, Object.keys(g.numbers).length * GAME_PTS.numbers),
+      books: Math.min(GAME_PTS.bookCap, g.book * GAME_PTS.book), oneOnOnes: g.oneOnOne * GAME_PTS.oneOnOne
+    };
+  };
+  const streakOf = function (id) {
+    const u = used[id] || {}; let d = u[today] ? today : icsDay_(today, -1), n = 0;
+    while (u[d] && n < 400) { n++; d = icsDay_(d, -1); }
+    return n;
+  };
+  const all = people.map(function (x) {
+    const parts = partsOf(x.id); let pts = 0; Object.keys(parts).forEach(function (k) { pts += parts[k]; });
+    const u = used[x.id] || {}; let week = '';
+    for (let i = 0; i < 7; i++) { const d = icsDay_(from, i); week += d > today ? '-' : (u[d] ? '1' : '0'); }
+    return { id: x.id, pts: pts, streak: streakOf(x.id), week: week, parts: parts, hidden: !!x.gameHide, dept: deptOf_(x) || '', ministry: x.ministry || '' };
+  });
+  const shown = all.filter(function (p) { return !p.hidden; }).sort(function (a, b) { return b.pts - a.pts || b.streak - a.streak || (a.id < b.id ? -1 : 1); });
+  let rank = 0, last = null;
+  shown.forEach(function (p, i) { if (last === null || p.pts !== last) rank = i + 1; last = p.pts; p.rank = rank; });
+  const mine = all.filter(function (p) { return p.id === s.id; })[0] || null;
+  const mins = {};
+  shown.forEach(function (p) {
+    if (!p.dept || !p.ministry) return;
+    const k = p.dept + '|' + p.ministry, m = mins[k] || (mins[k] = { dept: p.dept, ministry: p.ministry, n: 0, pts: 0, active: 0 });
+    m.n++; m.pts += p.pts; if (p.week.indexOf('1') > -1) m.active++;
+  });
+  const ministries = Object.keys(mins).map(function (k) { const m = mins[k]; return { dept: m.dept, ministry: m.ministry, n: m.n, active: m.active, avg: Math.round(m.pts / m.n) }; })
+    .filter(function (m) { return m.n >= 2; }).sort(function (a, b) { return b.avg - a.avg || b.active - a.active; });
+  return {
+    ok: true, campus: campus, today: today, from: from, to: to, pts: GAME_PTS,
+    people: shown.map(function (p) { return { id: p.id, pts: p.pts, streak: p.streak, week: p.week, rank: p.rank }; }),
+    ministries: ministries,
+    of: all.length, active: all.filter(function (p) { return p.week.indexOf('1') > -1; }).length,
+    activeToday: all.filter(function (p) { return (used[p.id] || {})[today]; }).length,
+    me: mine ? { pts: mine.pts, streak: mine.streak, week: mine.week, parts: mine.parts, hidden: mine.hidden, rank: mine.hidden ? 0 : mine.rank } : null
+  };
+}
+async function getGame(username, pin, campus) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  return (await gameBoard_(s, await getStaff_(), campus)) || { ok: false };
+}
+async function gameSetHide(username, pin, hide) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const res = await mutateStaff_(function (rows) {
+    const i = rows.findIndex(function (r) { return r.id === s.id; });
+    if (i === -1) return { abort: true, ok: false, err: 'not_found' };
+    if (hide) rows[i].gameHide = true; else delete rows[i].gameHide;
+    return { ok: true };
+  });
+  if (!res.ok) return res;
+  const staff = await getStaff_();
+  return (await gameBoard_(staff.filter(function (r) { return r.id === s.id; })[0] || s, staff, s.campus)) || { ok: false };
+}
 /* Time in the app (Nov 2026, Andrew: "total hours spent on app"): the phone counts the seconds the app is on
    screen and being used (a touch, a key or a scroll in the last two minutes) and sends each recent day's total
    with markSeen. Totals, not additions — the server keeps the larger of what it has and what came, so sending a
@@ -13267,6 +13399,8 @@ const HANDLERS = {
   saveStaffDebt: function (a) { return saveStaffDebt(a[0], a[1], a[2]); },
   adminLooseEnds: function (a) { return adminLooseEnds(a[0], a[1]); },
   adminAppUse: function (a) { return adminAppUse(a[0], a[1], a[2]); },
+  getGame: function (a) { return getGame(a[0], a[1], a[2]); },
+  gameSetHide: function (a) { return gameSetHide(a[0], a[1], a[2]); },
   markSeen: function (a) { return markSeen(a[0], a[1], a[2]); },
   hrArchiveMany: function (a) { return hrArchiveMany(a[0], a[1], a[2], a[3]); },
   saveMyKpiDay: function (a) { return saveMyKpiDay(a[0], a[1], a[2], a[3]); },
