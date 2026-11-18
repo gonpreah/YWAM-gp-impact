@@ -1431,6 +1431,7 @@ function miniDashboardHtml(){
       '<button class="dashSettingBtn'+(open?' on':'')+'" id="dashCustomizeBtn" aria-pressed="'+(open?'true':'false')+'" aria-label="'+esc(t('Customize dashboard'))+'">'+
         '<span class="ic">⚙️</span></button>'+
     '</div>';
+  h+=gameHomeHtml_();   // my streak, points and place this week — tap for the board (20-game.js)
 
   /* ⚙️ opens the colour / photo options right here, under the greeting —
      below the card (where they were) they opened off the bottom of a phone's

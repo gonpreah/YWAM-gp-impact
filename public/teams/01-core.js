@@ -868,6 +868,7 @@ function applyBoot(d, fromCache){
   S.supSum = d.supportSummary || null;   // support raising: your own totals (the full list loads on its page)
   S.p3Glance = d.p360 || null;           // 360 reviews: waiting for my feedback, my plan's quarterly review due
   libAdoptServer_(d.libRead, fromCache);
+  if(d.game) S.game=d.game;   // the week's board (20-game.js)
   if(d.lib) S.lib=d.lib;   // the Library together: the month's book, plans, what the campus reads (18-library-plus.js)
   if(d.teamTrips && d.teamTrips.ok) S.teamTrips[d.teamTrips.campus] = { trips: d.teamTrips.trips || [], canEdit: !!d.teamTrips.canEdit };
   S.smartGoals = d.smartGoals || [];

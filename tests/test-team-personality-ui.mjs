@@ -109,9 +109,9 @@ const pair = (page, i) => page.$$eval('.tpPair', (ps, i) => ps[i].innerText.repl
   ok('someone who turned sharing off is not counted or named', !/Hidden/.test(m) && /Not on this team yet:.*ESTP/.test(m));
   ok('nothing about anyone’s season', !/stretched/i.test(m) && await page.evaluate(() => !JSON.stringify(S.roster).includes('season')));
   ok('the fine print is there', /not the official MBTI® assessment/.test(m));
-  ok('the four view buttons fit: nothing is cut off and nothing scrolls sideways', await page.evaluate(() => {
+  ok('the five view buttons fit: nothing is cut off and nothing scrolls sideways', await page.evaluate(() => {
     const bs = [...document.querySelectorAll('[data-teammode]')];
-    return bs.length === 4 && bs.every(b => b.scrollWidth <= b.clientWidth + 1) && document.documentElement.scrollWidth <= window.innerWidth + 1;
+    return bs.length === 5 && bs.every(b => b.scrollWidth <= b.clientWidth + 1) && document.documentElement.scrollWidth <= window.innerWidth + 1;
   }));
   await page.screenshot({ path: OUT + '/team-pers.png', fullPage: true });
 

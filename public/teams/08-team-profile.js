@@ -245,7 +245,7 @@ function teamHtml(){
      used to stack both campuses stacked at once, which read as one long list
      rather than "which base am I looking at right now". Defaults to your own
      campus, since that's whose team you open this tab to see. */
-  var mode = S.teamMode==='org' ? 'org' : (S.teamMode==='str' && gsOK() ? 'str' : (S.teamMode==='pers' && pOK() ? 'pers' : 'dir'));
+  var mode = (S.teamMode==='game' && gameOn_()) ? 'game' : S.teamMode==='org' ? 'org' : (S.teamMode==='str' && gsOK() ? 'str' : (S.teamMode==='pers' && pOK() ? 'pers' : 'dir'));
   /* Besides the two campuses, every view has YWAM GP's leadership team and the
      Advisory Board (teamOrgScope_) — in Structure, YWAM GP is the whole chart. */
   var campus = S.teamCampus || (S.me && S.me.campus) || CAMPUSES[0].id;
@@ -256,9 +256,11 @@ function teamHtml(){
     mentorEntryHtml();
   h+='<div class="campusSeg teamModeSeg">'+
     '<button class="campusBtn'+(mode==='dir'?' on':'')+'" data-teammode="dir">👥 '+esc(t('Directory'))+'</button>'+
+    (gameOn_()?'<button class="campusBtn'+(mode==='game'?' on':'')+'" data-teammode="game">🏆 '+esc(t('This week'))+'</button>':'')+
     '<button class="campusBtn'+(mode==='org'?' on':'')+'" data-teammode="org">🧭 '+esc(t('Structure'))+'</button>'+
     (gsOK()?'<button class="campusBtn'+(mode==='str'?' on':'')+'" data-teammode="str">💪 '+esc(t('Strengths'))+'</button>':'')+
     (pOK()?'<button class="campusBtn'+(mode==='pers'?' on':'')+'" data-teammode="pers">🧩 '+esc(t('Personalities'))+'</button>':'')+'</div>';
+  if(mode==='game') return h+'<p class="sub">'+esc(t('Who is using the app this week: points for the small daily things, and days in a row.'))+'</p>'+gameTeamHtml_();
   h+='<p class="sub">'+esc(mode==='org' ? t('Departments and ministries, and who is in each this quarter.') :
     mode==='str' ? t('Who on the base has which strengths, from the Top 5s people have shared.') :
     mode==='pers' ? t('The team’s mix of personality types, from the types people have shared.') :

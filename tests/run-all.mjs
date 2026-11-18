@@ -18,6 +18,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SERVER = [
   'test-tests.mjs',          // Tests: the fivefold gifts are scored on the server; the couple check-up is only ever sent to the two partners and their counsellor
   'test-library-club.mjs',   // the Library, read together: book of the month, plans, notes, sharing only with a yes, recommendations, who may give a plan
+  'test-game.mjs',   // the week's board: points and streaks from what is stored, what others see, the doors
   'test-photo-thumbs.mjs',   // lists carry the small copy of a photo; the owner and a person's page the full one
   'test-library.mjs',   // the Library's books: every field, shelves, unique ids, valid ISBNs, no quotations
   'test-required.mjs',  // books read on your account; the papers everyone signs, who sees what, versions, the contract
@@ -84,6 +85,7 @@ const SERVER = [
 
 const BROWSER = [
   'test-ux-ui.mjs',            // ☀️ Today on My Home, 🔍 search from the header, the app's own Yes / Cancel sheet, Undo on a deleted task
+  'test-game-ui.mjs',          // the week's board on the page: My Home's line, Team → This week, Khmer
   'test-polish-ui.mjs',        // a 320px phone and Khmer: profile / sign-up labels and pop-ups in Khmer, leave dates, Learn Khmer and the header fit, holiday names readable
   'test-library-club-ui.mjs',  // the Library, read together, on the page: search, topics, a plan, finishing a book, the month's book, recommending, a mentor's plan
   'test-tests-ui.mjs',         // ☰ → Tests: the fivefold gifts, the couple check-up from start to results, who sees it
