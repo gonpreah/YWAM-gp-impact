@@ -444,6 +444,7 @@ function mentorHtml(){
     h+='<div class="banner">🔒 Shared with you as '+esc(m.name.split(' ')[0])+'\u2019s mentor. Hold it with care and prayer — this is trust, not surveillance.</div>';
     if(S.menteeProfile && S.menteeProfile.debt) h+='<div class="banner">💰 Currently carrying staff debt.</div>';
     h+=supMentorCardHtml_(S.menteeSupport, m);
+    h+=libMenteeHtml_(m);
     h+=ooMenteeSectionHtml_(m);
 
     /* Any week, not just the latest: a picker at the top, and every section

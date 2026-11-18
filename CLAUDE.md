@@ -55,7 +55,7 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   (personality, Library, papers, guest, YWAM GP & the board, report, first 30 days, prayer,
   support raising, reminders, Khmer review) · `04-ministry-strengths.js` · `05-admin-hr.js` ·
   `06-numbers-contract.js` · `07-health-leave.js` · `08-team-profile.js` · `09-finance.js`
-  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app). `finance.js` (public/,
+  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app); later ones (12-tasks … 18-library-plus) load before 11. `finance.js` (public/,
   shared like taxonomy.js) reads the reports; `vendor/pdfjs/` is pdf.js, loaded on demand. **One global scope**, exactly as when it was one inline
   script: any function may call any other, but code that RUNS while a file loads (not
   inside a function) may only use what that file or an earlier one defines. Add new code to
@@ -2198,6 +2198,38 @@ leading at YWAM GP (culture, teams, hard conversations, vision, systems, executi
 - "Read" ticks (`gp-lib-read`) and where you are in a book (`gp-lib-progress`) are this
   phone's only (localStorage). To add a book, add an object to `GP_LIBRARY.books`;
   tests/test-library.mjs checks the shape.
+
+## The Library, read together (teams/18-library-plus.js, Nov 2026, Uriah: "improvements that will motivate our team to read")
+All of it rides on the boot's `lib` (`libOut_`; `libClub` is in BOOT_KEYS) — no extra call on open. Guests and students get
+none of it (`libOn_()`).
+- **Book of the month** (Campus Leadership or an admin, on a book's page: `#libMonthSet` / `#libMonthClear` →
+  `libSetMonth(bookId, title, note)`; blob `libClub.month[campus]` = {ym, bookId, title, note, by}; a new month clears it):
+  the Library leads with it (`libMonthHtml_`, `#libMonth`, "n of N at {campus} have read it" — a count, no names), My Home's
+  Reading card names it, and the campus's phones hear of it (`libMonthNew`).
+- **Reading plans** (`GP_LIBRARY.plans`: new-staff, pre-marriage, marriage, new-leader, hearing-god, habits; `end:'couple'`
+  ends in the couple check-up): a row on the home (`#libPlans`), a page per plan (`S.libPlan`, the next book marked), Start /
+  Stop (`libSaveMine {plan:{id,on}}`; on the phone too, `gp-lib-plans`). **A mentor (or Campus Leadership) gives one**
+  from the mentee's page (`libMenteeHtml_`, `#libMentee`, `libGivePlan`; pushed `libPlan`); a given plan has no Stop.
+  The mentor's card shows books this year, the goal and each plan's progress (`getMenteeLogs.library`) — never the notes.
+- **Finishing a book** (`libFinish_` from the reader's Done): confetti and a card on the book's page (`libDoneCardHtml_`,
+  `#libDone`) — any new badge, "What is one thing you will do?" (`#libTakeText`, ≤400, kept as `lib.notes[bookId]`, shown
+  after as "My one thing"; a tick puts it on this week's goals), once only "Show the books I finish to my campus?", and
+  what to read next (`libSuggest_`: the plan's next book, then shared topics).
+- **Read together**: the campus feed (`#libFeed`, the last 60 days, only people who said yes — `lib.share`, off until
+  asked; the tick sits under the feed), Read the most (`#libTop`, counts only), and **Recommend to a teammate**
+  (`#libRecOpen`, the people picker, a note; `libRecommend`, five a day, pushed `libRec`; shown in their Library
+  `#libRecs` and My Home's card until cleared, `libRecDone`).
+- **My reading** (`libMineHtml_`, `#libMine`, below Start here so covers stay on the first screen): books this year, a
+  goal for the year (6 / 12 / 24 / 52, `lib.goal`), weeks in a row with a book finished (`libWeekStreak_`), badges
+  (`libBadges_`: first book, 5 / 10 / 25 / all, a shelf finished, a plan finished).
+- **Finding a book**: a search box (`#libFind`, title / author / topic, results in `#libFindOut`, typing kept) and topic
+  chips (`GP_LIBRARY.tags`, every book has `tags`; `S.libShelf='tag:<id>'`); a book's page lists its topics.
+- **My Home** (`libHomeCardHtml_`, `#libHome`, above About me): carry on with the book you were in (`gp-lib-last`), this
+  month's book, a recommendation waiting. `teams.html?view=library` opens the Library.
+- **The weekly nudge** (Profile → Reminders: `#remRead`, `#remReadDay`; `push.reading`, `push.readDay`, Saturday by
+  default): on that day the daily reminder adds the month's book if unread (`libMonth`), else a ten-minute read (`libRead`).
+- New Library sections use `.libHead2` / `.libScroll`, never `.libSecHead` / `.libRow` — test-library-ui counts those as
+  shelves. tests/test-library-club.mjs (server), tests/test-library-club-ui.mjs. Khmer: docs/khmer-needed.md §109.
 
 ## Looking around without an account (teams.html guest mode, Oct 2026)
 `teams.html?guest=1` (the log-in screen's "Look around without an account" button was removed, Nov 2026, Andrew) sets

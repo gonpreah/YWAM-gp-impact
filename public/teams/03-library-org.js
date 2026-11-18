@@ -79,7 +79,7 @@ function aboutMeHtml_(){
   if(!S.student) tiles += p3TileHtml_();
   var nb=libBooksRead_();
   tiles += homeTile_('libHomeTile', '📚', t('Library'), esc(nb ? gpT('{n} books read',{n:nb}) : t('Ten-minute reads')));
-  return '<h3 id="sec-ptype">🧭 '+esc(t('About me'))+'</h3><div class="homeTiles" id="sec-strengths">'+tiles+'</div>';
+  return (typeof libHomeCardHtml_==='function' ? libHomeCardHtml_() : '')+'<h3 id="sec-ptype">🧭 '+esc(t('About me'))+'</h3><div class="homeTiles" id="sec-strengths">'+tiles+'</div>';
 }
 var PCHEV='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--faint);flex:0 0 auto"><path d="M9 6l6 6-6 6"/></svg>';
 
@@ -810,24 +810,35 @@ function libraryHtml(){
     S.libBook=null; S.libStep=null;
   }
   if(libLang_()==='km' && typeof GP_LIBRARY_KM==='undefined' && !S.libKmError) libLoadKm_();   // so Khmer names show on the shelves
+  if(S.libPlan){ var plan=(GP_LIBRARY.plans||[]).filter(function(x){ return x.id===S.libPlan; })[0]; if(plan) return libPlanPageHtml_(plan); S.libPlan=null; }
   var read=libRead_(), prog=libProg_(), books=GP_LIBRARY.books, picks=libPicks_();
   if(S.libShelf==='start' && !picks.length) S.libShelf='all';
   var readN=books.filter(function(x){ return read[x.id]; }).length;
   var h=back+'<h2>📚 '+esc(t('Library'))+'</h2>'+
     '<p class="sub">'+esc(t('Ten-minute reads of the best books on leading, culture, habits and creativity, and the YWAM classics — the big ideas, made for us.'))+'</p>'+
     '<div class="libProgress"><b>'+readN+'</b> / '+books.length+' '+esc(t('read'))+'<span class="libProgressBar"><span style="width:'+Math.round(readN/Math.max(1,books.length)*100)+'%"></span></span></div>'+
-    '<div class="libShelves">'+[{id:'all', name:'All'}].concat(picks.length ? [{id:'start', name:'Start here', emoji:'⭐'}] : [], libShelvesShown_()).map(function(sh){
+    libFindHtml_();
+  if(String(S.libQ||'').trim()){   // searching: the matches and nothing else
+    var hits=libMatches_(S.libQ);
+    return h+'<div id="libFindOut">'+(hits.length ? '<div class="libGrid">'+hits.map(function(b){ return libTileHtml_(b, read, prog); }).join('')+'</div>'
+      : '<p class="sub">'+esc(t('No book matches that. Try a topic like marriage, habits or prayer.'))+'</p>')+'</div>';
+  }
+  if(S.libShelf==='all') h+=libMonthHtml_(read)+libRecsHtml_();   // the month's book and what was recommended lead; the books come next
+  h+='<div class="libShelves">'+[{id:'all', name:'All'}].concat(picks.length ? [{id:'start', name:'Start here', emoji:'⭐'}] : [], libShelvesShown_()).map(function(sh){
       return '<button class="libShelfBtn'+(S.libShelf===sh.id?' on':'')+'" data-libshelf="'+esc(sh.id)+'"'+(sh.color&&S.libShelf===sh.id?' style="background:'+sh.color+';border-color:'+sh.color+'"':'')+'>'+(sh.emoji?sh.emoji+' ':'')+esc(t(sh.name))+'</button>';
-    }).join('')+'</div>';
+    }).join('')+'</div>'+libTagsRowHtml_();
   if(S.libShelf==='all'){
     var going=books.filter(function(x){ return prog[x.id] && !read[x.id]; });
     if(going.length) h+=libRowHtml_('📖 '+esc(t('Continue reading')), going, read, prog);
     if(picks.length) h+=libRowHtml_('⭐ '+esc(t('Start here')), picks, read, prog, 'start');
+    h+=libMineHtml_(read)+libPlansHtml_(read);
     libShelvesShown_().forEach(function(sh){
       h+=libRowHtml_((sh.emoji?sh.emoji+' ':'')+esc(t(sh.name)), books.filter(function(x){ return x.shelf===sh.id; }), read, prog, sh.id);
     });
+    h+=libTeamHtml_();
   } else {
-    var shown = S.libShelf==='start' ? picks : books.filter(function(x){ return x.shelf===S.libShelf; });
+    var tagId = S.libShelf.indexOf('tag:')===0 ? S.libShelf.slice(4) : '';
+    var shown = S.libShelf==='start' ? picks : tagId ? books.filter(function(x){ return (x.tags||[]).indexOf(tagId)>-1; }) : books.filter(function(x){ return x.shelf===S.libShelf; });
     if(S.libShelf==='start') h+='<p class="sub libStartNote">'+esc(gpT('{n} books to read first for leading at YWAM GP: culture, teams, hard conversations, vision, systems and getting things done.',{n:picks.length}))+'</p>';
     h+='<div class="libGrid">'+shown.map(function(b){ return libTileHtml_(b, read, prog); }).join('')+'</div>';
   }
@@ -840,10 +851,13 @@ function libBookHtml_(b){
     '<span class="libShelfTag">'+(sh.emoji||'')+' '+esc(t(sh.name))+'</span>'+(b.original?' <span class="libShelfTag">✨ '+esc(t('Original GP guide'))+'</span>':'')+
     '<h2 class="libTitle">'+esc(libTitle_(b))+'</h2><div class="libAuthor">'+esc(libAuthor_(b))+(b.year?' · '+b.year:'')+'</div>'+
     '<div class="libVibe">'+esc(T.vibe)+'</div>'+
-    '<div class="libStats"><span>⏱ '+esc(gpT('{n}-minute read',{n:b.mins||5}))+'</span><span>💡 '+esc(gpT('{n} key ideas',{n:b.insights.length}))+'</span>'+(read?'<span>✓ '+esc(t('Read'))+'</span>':'')+'</div></div>';
+    '<div class="libStats"><span>⏱ '+esc(gpT('{n}-minute read',{n:b.mins||5}))+'</span><span>💡 '+esc(gpT('{n} key ideas',{n:b.insights.length}))+'</span>'+(read?'<span>✓ '+esc(t('Read'))+'</span>':'')+'</div>'+
+    '<div class="libBookTags">'+libBookTagsHtml_(b)+'</div></div>';
+  h=libDoneCardHtml_(b)+h;
   h+='<button class="btn libCta" id="libStart" style="background:'+sh.color+';border-color:'+sh.color+'">'+
     esc(at && !read ? gpT('Continue — key idea {n}',{n:Math.min(at, b.insights.length)}) : read ? t('Read again') : '▶ '+t('Start reading'))+'</button>'+
     (libAudioOk_() ? '<button class="btn ghost libListenCta" id="libListenStart">🎧 '+esc(t('Listen'))+'</button>' : '');
+  h+=libBookExtrasHtml_(b);
   h+='<div class="libSec'+(T.km?' libKm':'')+'"><h3>'+esc(t('What’s it about?'))+'</h3>'+libParas_(T.bigIdea)+'</div>';
   h+='<div class="libSec'+(T.km?' libKm':'')+'"><h3>'+esc(t('What’s inside'))+'</h3><div class="libInside">'+T.insights.map(function(x, k){
     return '<button class="libInsideItem" data-libstep="'+(k+1)+'"><span class="libInsightNum" style="background:'+sh.color+'">'+(k+1)+'</span><span>'+esc(x.emoji||'')+' '+esc(x.title)+'</span><span class="libInsideGo">›</span></button>';
@@ -1060,19 +1074,19 @@ function libGo_(step){
   /* "Swipe to turn the page": the first three times a book is opened, never again after a first swipe */
   if(was==null){ var seen=Number(lsGet('gp-lib-swipehint'))||0; S.libHint = seen<3; if(S.libHint) lsSet('gp-lib-swipehint', String(seen+1)); }
   else S.libHint=false;
-  if(!libRead_()[b.id]) libSetProg_(b.id, S.libStep);
+  if(!libRead_()[b.id]){ libSetProg_(b.id, S.libStep); lsSet('gp-lib-last', JSON.stringify({ id:b.id, title:b.title, step:S.libStep, total:b.insights.length+2 })); }   // My Home's "Continue" line
   render(); window.scrollTo(0,0);
 }
 function bindLibrary_(){
   var lb=document.getElementById('libBack');
-  if(lb) lb.onclick=function(){ gpTap(); if(S.libBook){ S.libBook=null; S.libStep=null; render(); } else if(S.libShelf!=='all'){ S.libShelf='all'; render(); } else { S.view='week'; render(); } window.scrollTo(0,0); };
+  if(lb) lb.onclick=function(){ gpTap(); if(S.libBook){ S.libBook=null; S.libStep=null; S.libDone=null; S.libRecOpen=false; render(); } else if(S.libShelf!=='all'){ S.libShelf='all'; render(); } else { S.view='week'; render(); } window.scrollTo(0,0); };
   var lr=document.getElementById('libRetry');
   if(lr) lr.onclick=function(){ libLoad_(); render(); };
   libLiveCovers_(); libFitTitles_();
   var onChip=document.querySelector('.libShelfBtn.on');   // the chosen shelf's chip in view, without moving the page
   if(onChip && onChip.parentNode) onChip.parentNode.scrollLeft=Math.max(0, onChip.offsetLeft-onChip.parentNode.offsetLeft-24);
   document.querySelectorAll('[data-libshelf]').forEach(function(b){ b.onclick=function(){ gpTap(); S.libShelf=b.getAttribute('data-libshelf'); render(); if(b.classList.contains('libSeeAll')) window.scrollTo(0,0); }; });
-  document.querySelectorAll('[data-libbook]').forEach(function(b){ b.onclick=function(){ gpTap(); S.libBook=b.getAttribute('data-libbook'); S.libStep=null; render(); window.scrollTo(0,0); }; });
+  document.querySelectorAll('[data-libbook]').forEach(function(b){ b.onclick=function(){ gpTap(); S.libBook=b.getAttribute('data-libbook'); S.libStep=null; S.libDone=null; S.libRecOpen=false; S.libPlan=null; S.libQ=''; render(); window.scrollTo(0,0); }; });
   document.querySelectorAll('[data-libstep]').forEach(function(b){ b.onclick=function(){ gpTap(); libGo_(+b.getAttribute('data-libstep')); }; });
   libAudioBind_();
   var st=document.getElementById('libStart');
@@ -1084,7 +1098,7 @@ function bindLibrary_(){
   var pv=document.getElementById('libPrev'), nx=document.getElementById('libNext'), fin=document.getElementById('libFinish');
   if(pv) pv.onclick=function(){ gpTap(); libGo_(S.libStep-1); };
   if(nx) nx.onclick=function(){ gpTap(); libGo_(S.libStep+1); };
-  if(fin) fin.onclick=function(){ gpTap(); libSetRead_(S.libBook, true); libSetProg_(S.libBook, 0); S.libStep=null; render(); window.scrollTo(0,0); };
+  if(fin) fin.onclick=function(){ gpTap(); libFinish_(S.libBook); };
   var hint=document.getElementById('libSwipeHint');
   if(hint){ var gone=function(){ S.libHint=false; hint.classList.add('out'); };
     setTimeout(gone, 3600); var rr=document.getElementById('libReader'); if(rr) rr.addEventListener('touchstart', gone, { once:true, passive:true }); }
@@ -1144,7 +1158,7 @@ function libPush_(){
 }
 function libBooksRead_(){ return Object.keys(libRead_()).length; }
 /* The tally, wherever it shows — tap it and the Library opens. */
-function libOpen_(){ S.view='library'; S.libBook=null; S.libStep=null; S.libShelf='all'; libLoad_(); render(); window.scrollTo(0,0); }
+function libOpen_(){ S.view='library'; S.libBook=null; S.libStep=null; S.libShelf='all'; S.libPlan=null; S.libQ=''; S.libDone=null; libLoad_(); render(); window.scrollTo(0,0); }
 
 /* ==================== required: papers every staff member signs ====================
    What every profile must have done (Uriah, Oct 2026): the Child Protection
@@ -2237,6 +2251,8 @@ function remindersCardHtml_(){
     (mentor ? box('remOne', pr.oneonone!==false, t('When my 1-on-1s with a mentee are behind (Mondays)')) : '')+
     (S.me.isAdmin ? box('remAdmin', pr.admin!==false, t('When sign-ups are waiting for approval')) : '')+
     ((S.me.isAdmin || S.me.hr) ? box('remHr', pr.hr!==false, t('When contracts end soon (Mondays)')) : '')+
+    box('remRead', pr.reading!==false, t('A weekly nudge to read ten minutes'))+
+    '<label class="f" for="remReadDay">'+esc(t('Reading day'))+'</label><select id="remReadDay">'+['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].map(function(d, i){ return '<option value="'+i+'"'+((pr.readDay==null?6:pr.readDay)===i?' selected':'')+'>'+esc(t(d))+'</option>'; }).join('')+'</select>'+
     '<div class="kmrActs"><button class="btn ghost" id="remTest">'+esc(t('Send me a test'))+'</button><button class="btn ghost" id="remOff">'+esc(t('Turn off'))+'</button></div></div>';
   return h;
 }
@@ -2246,6 +2262,7 @@ function remSavePrefs_(){
   pr.hour=Number((document.getElementById('remHour')||{}).value)||pr.hour||19;
   pr.daily=g('remDaily', pr.daily!==false); pr.oneonone=g('remOne', pr.oneonone!==false);
   pr.admin=g('remAdmin', pr.admin!==false); pr.hr=g('remHr', pr.hr!==false); pr.alerts=g('remAlerts', pr.alerts!==false);
+  pr.reading=g('remRead', pr.reading!==false); var rdEl=document.getElementById('remReadDay'); if(rdEl) pr.readDay=Number(rdEl.value);
   S.push.prefs=pr;
   run('savePushPrefs',[S.auth.user,S.auth.pin,pr],function(d){ if(d && d.ok){ S.push.prefs=d.prefs; showMsg(t('Saved')); } else showMsg(t('Could not save')); });
 }
