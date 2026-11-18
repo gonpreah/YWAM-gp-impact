@@ -2294,14 +2294,14 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   point would say who answered; the page says so. Don't add it.
 - **Streak**: days in a row with any use (the same evidence as Admin → App use), ending today or yesterday.
 - **What others see**: `people` rows are exactly `{id, pts, streak, week, rank}` (`week` = seven characters, 1 / 0 / -
-  for a day to come) — never what was done. `me` adds `parts` (where my points came from). **Show me on the board**
-  (`gameSetHide`, `staff.gameHide`): off, a person is neither listed nor ranked but still counts in "n of N active" and
-  sees their own. On by default (Uriah asked for the board; Admin → App use had been admins only).
+  for a day to come) — never what was done. `me` adds `parts` (where my points came from). **Everyone active on the campus is on the
+  board — there is no switch to step off** (Uriah, Nov 2026: "no need to put the option, leave them on"; a first
+  version had one). Admin → App use had been admins only.
 - **Ministries**: average points a person, for ministries with two or more people on the board.
 - **The page**: My Home has one line above the summary card (`gameHomeHtml_`, `#gameHome`: 🔥 streak · ⭐ points · #place,
   the week's dots; tap → the board). **Team → 🏆 This week** (`S.teamMode='game'`, `gameTeamHtml_`): the campus together
   first ("n of N active this week"), my three figures with "Where my points came from" folded, People / Ministries, the
-  top ten with points (my own row always shown; people with none are a count, not a list), the switch. Not for guests,
+  top ten with points (my own row always shown; people with none are a count, not a list). Not for guests,
   students, the board or a preview (`gameOn_`).
 - tests/test-game.mjs (server), tests/test-game-ui.mjs. Khmer: docs/khmer-needed.md §112. sw.js SHELL v25.
 

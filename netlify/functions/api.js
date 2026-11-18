@@ -11821,7 +11821,8 @@ async function adminAppUse(username, pin, campus) {
    and a day streak, worked out HERE from what is already stored — nothing new is written, and the page can't
    claim a point. What others see of a person is a number of points, a streak and which days they were active:
    never what they did. The weekly health check-in is NOT counted, on purpose — its rows are anonymous, and a
-   point for it would say who answered. A person can step off the board (`gameHide`); they still see their own. */
+   point for it would say who answered. Everyone active on the campus is on it (Uriah: "no need to put the option,
+   leave them on"). */
 const GAME_PTS = { open: 5, habit: 2, habitDayCap: 10, goalsSet: 10, goalsPct: 20, task: 5, taskCap: 30, numbers: 10, numbersCap: 20, book: 25, bookCap: 50, oneOnOne: 15 };
 function gameDayOf_(when) {
   const t = Date.parse(when); if (isNaN(t)) return '';
@@ -11905,9 +11906,9 @@ async function gameBoard_(s, staff, campus) {
     const parts = partsOf(x.id); let pts = 0; Object.keys(parts).forEach(function (k) { pts += parts[k]; });
     const u = used[x.id] || {}; let week = '';
     for (let i = 0; i < 7; i++) { const d = icsDay_(from, i); week += d > today ? '-' : (u[d] ? '1' : '0'); }
-    return { id: x.id, pts: pts, streak: streakOf(x.id), week: week, parts: parts, hidden: !!x.gameHide, dept: deptOf_(x) || '', ministry: x.ministry || '' };
+    return { id: x.id, pts: pts, streak: streakOf(x.id), week: week, parts: parts, dept: deptOf_(x) || '', ministry: x.ministry || '' };
   });
-  const shown = all.filter(function (p) { return !p.hidden; }).sort(function (a, b) { return b.pts - a.pts || b.streak - a.streak || (a.id < b.id ? -1 : 1); });
+  const shown = all.slice().sort(function (a, b) { return b.pts - a.pts || b.streak - a.streak || (a.id < b.id ? -1 : 1); });
   let rank = 0, last = null;
   shown.forEach(function (p, i) { if (last === null || p.pts !== last) rank = i + 1; last = p.pts; p.rank = rank; });
   const mine = all.filter(function (p) { return p.id === s.id; })[0] || null;
@@ -11925,26 +11926,13 @@ async function gameBoard_(s, staff, campus) {
     ministries: ministries,
     of: all.length, active: all.filter(function (p) { return p.week.indexOf('1') > -1; }).length,
     activeToday: all.filter(function (p) { return (used[p.id] || {})[today]; }).length,
-    me: mine ? { pts: mine.pts, streak: mine.streak, week: mine.week, parts: mine.parts, hidden: mine.hidden, rank: mine.hidden ? 0 : mine.rank } : null
+    me: mine ? { pts: mine.pts, streak: mine.streak, week: mine.week, parts: mine.parts, rank: mine.rank } : null
   };
 }
 async function getGame(username, pin, campus) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
   return (await gameBoard_(s, await getStaff_(), campus)) || { ok: false };
-}
-async function gameSetHide(username, pin, hide) {
-  const s = await verifyStaff_(username, pin);
-  if (!s) return { ok: false };
-  const res = await mutateStaff_(function (rows) {
-    const i = rows.findIndex(function (r) { return r.id === s.id; });
-    if (i === -1) return { abort: true, ok: false, err: 'not_found' };
-    if (hide) rows[i].gameHide = true; else delete rows[i].gameHide;
-    return { ok: true };
-  });
-  if (!res.ok) return res;
-  const staff = await getStaff_();
-  return (await gameBoard_(staff.filter(function (r) { return r.id === s.id; })[0] || s, staff, s.campus)) || { ok: false };
 }
 /* Time in the app (Nov 2026, Andrew: "total hours spent on app"): the phone counts the seconds the app is on
    screen and being used (a touch, a key or a scroll in the last two minutes) and sends each recent day's total
@@ -13400,7 +13388,6 @@ const HANDLERS = {
   adminLooseEnds: function (a) { return adminLooseEnds(a[0], a[1]); },
   adminAppUse: function (a) { return adminAppUse(a[0], a[1], a[2]); },
   getGame: function (a) { return getGame(a[0], a[1], a[2]); },
-  gameSetHide: function (a) { return gameSetHide(a[0], a[1], a[2]); },
   markSeen: function (a) { return markSeen(a[0], a[1], a[2]); },
   hrArchiveMany: function (a) { return hrArchiveMany(a[0], a[1], a[2], a[3]); },
   saveMyKpiDay: function (a) { return saveMyKpiDay(a[0], a[1], a[2], a[3]); },

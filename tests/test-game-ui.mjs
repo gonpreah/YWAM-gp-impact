@@ -1,4 +1,4 @@
-/* The week’s board in the page (teams/20-game.js): the line on My Home, Team → This week, stepping off. Made-up people. */
+/* The week’s board in the page (teams/20-game.js): the line on My Home, Team → This week. Made-up people. */
 import vm from 'node:vm';
 import { REPO, PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
 import { chromium, devices } from 'playwright';
@@ -87,7 +87,7 @@ const today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
 const day = (iso, n) => { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const nowIso = new Date().toISOString();
 mem.staff.push(mk({ id: 'st6', name: 'Pich Poipet', username: 'pich', email: 'p@e.com', campus: 'poipet' }));
-mem.staff.push(mk({ id: 'st7', name: 'Ev Hidden', username: 'ev', email: 'e@e.com', gameHide: true }));
+mem.staff.push(mk({ id: 'st7', name: 'Ev Sixth', username: 'ev', email: 'e@e.com' }));
 mem.lastSeen = { started: '2026-01-01', seen: {}, days: { st1: [day(today, -1), today], st5: [day(today, -2), day(today, -1), today], st2: [today], st7: [today], st6: [today] } };
 mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: true }, updated: nowIso }, { staffId: 'st7', date: today, habits: { bible: true }, updated: nowIso }];
 
@@ -95,7 +95,7 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
 {
   const { ctx, page } = await open('mark');
   const line = await page.$eval('#gameHome', e => e.innerText).catch(() => '');
-  ok('My Home has my streak, points and place', /🔥 2/.test(line) && new RegExp('⭐ ' + (new Date(today + 'T00:00:00Z').getUTCDay() === 1 ? 5 : 10) + '\\b').test(line) && /#2/.test(line), line.replace(/\n/g, ' | '));
+  ok('My Home has my streak, points and place', /🔥 2/.test(line) && new RegExp('⭐ ' + (new Date(today + 'T00:00:00Z').getUTCDay() === 1 ? 5 : 10) + '\\b').test(line) && /#2 of 6/.test(line), line.replace(/\n/g, ' | '));
   const above = await page.evaluate(() => { const g = document.getElementById('gameHome'), h = document.querySelector('.myHero'); return g && h ? g.getBoundingClientRect().top < h.getBoundingClientRect().top : null; });
   ok('it sits above the summary card', above === true, String(above));
   ok('seven dots for the week', await page.$$eval('#gameHome .gameDots i', e => e.length) === 7);
@@ -110,7 +110,7 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   const rows = await page.$$eval('#gameList .gameRow', els => els.map(e => e.innerText.replace(/\s+/g, ' ').trim()));
   ok('Di leads, then me', /Di Sok/.test(rows[0]) && /🥇/.test(rows[0]) && /Mark Hill/.test(rows[1]) && /you/.test(rows[1]), rows.join(' / '));
   ok('my row is marked', await page.$('#gameList .gameRow.me') !== null);
-  ok('someone off the board is not there, nor the other campus', !/Ev Hidden|Pich Poipet/.test(rows.join(' ')));
+  ok('everyone with points is there; the other campus is not', /Ev Sixth/.test(rows.join(' ')) && !/Pich Poipet/.test(rows.join(' ')));
   ok('people with no points are a count, not a list', /2 more have no points yet/.test(txt), '');
   ok('no sideways scroll', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await page.click('#gameHow summary'); await page.waitForTimeout(150);
@@ -121,14 +121,10 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   await page.click('[data-gametab="people"]'); await page.waitForTimeout(200);
   await page.click('[data-gamecampus="poipet"]'); await page.waitForSelector('#gameList', { timeout: 5000 }); await page.waitForTimeout(200);
   const pp = await main(page);
-  ok('the other campus loads on demand', /Pich Poipet/.test(pp) && !/Di Sok/.test(pp) && await page.$('#gameMe') === null && await page.$('#gameShowMe') === null);
+  ok('the other campus loads on demand', /Pich Poipet/.test(pp) && !/Di Sok/.test(pp) && await page.$('#gameMe') === null);
   await page.click('[data-gamecampus="siemreap"]'); await page.waitForTimeout(300);
 
-  /* ---------- 3. stepping off ---------- */
-  await page.click('#gameShowMe'); await page.waitForFunction(() => !/Mark Hill/.test((document.getElementById('gameList') || {}).innerText || 'Mark Hill'), null, { timeout: 5000 });
-  ok('unticked: I am off the board', mem.staff[0].gameHide === true && /not on the board/.test(await page.$eval('#gameMe', e => e.innerText)));
-  await page.click('#gameShowMe'); await page.waitForFunction(() => /Mark Hill/.test((document.getElementById('gameList') || {}).innerText || ''), null, { timeout: 5000 });
-  ok('ticked again: back on', !mem.staff[0].gameHide);
+  ok('there is no switch to step off', await page.$('#gameShowMe') === null && !/Show me on the board/.test(await main(page)));
   await page.click('#gameList .gameRow:first-child'); await page.waitForTimeout(400);
   ok('a row opens the person', /Di Sok/.test(await main(page)) && await page.$('#gameList') === null);
   await ctx.close();
@@ -141,7 +137,7 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   ok('Khmer on My Home', KH.test(line) && !/points this week|in a row/.test(line), line.replace(/\n/g, ' | '));
   await page.click('#gameHome'); await page.waitForTimeout(300);
   const txt = await main(page);
-  ok('Khmer on the board', !/active this week|Show me on the board|People\b|Ministries/.test(txt), '');
+  ok('Khmer on the board', !/active this week|People\b|Ministries/.test(txt), '');
   ok('fits a 320px phone', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await ctx.close();
 }

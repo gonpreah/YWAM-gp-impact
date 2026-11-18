@@ -1,7 +1,6 @@
 /* The week's board, the server (Nov 2026, Uriah: "gamify the app … see how active people are"): points for a week
    and a day streak worked out from what is already stored. What others get of a person is points, a streak and
-   which days they were active — never what they did; the weekly health check-in gives nothing; someone who steps
-   off the board is not listed or ranked but still gets their own; applicants and archived people are never on it. */
+   which days they were active — never what they did; the weekly health check-in gives nothing; everyone active on the campus is on it; applicants and archived people are never on it. */
 import { REPO, tmpDir } from './env.mjs';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
@@ -40,7 +39,7 @@ mem.staff = [
   mk({ id: 'c1', name: 'Cora Cafe', username: 'cora', libRead: { 'atomic-habits': today } }),
   mk({ id: 'c2', name: 'Kanha Cafe', username: 'kanha' }),
   mk({ id: 'c3', name: 'Quiet Cafe', username: 'quiet' }),
-  mk({ id: 'h1', name: 'Hidden Hana', username: 'hana', gameHide: true }),
+  mk({ id: 'h1', name: 'Hana Fourth', username: 'hana', gameHide: true }),   // an old flag: no longer honoured
   mk({ id: 'p1', name: 'Pich Poipet', username: 'pich', campus: 'poipet' }),
   mk({ id: 'ar', name: 'Old Archived', username: 'old', active: false, archived: { at: '2026-01-01' } }),
   mk({ id: 'ap', name: 'Ann Applicant', username: 'ann@e.com', kind: 'applicant', applicant: { type: 'volunteer' } })
@@ -72,25 +71,18 @@ ok('my own parts add up', g.me && Object.values(g.me.parts).reduce((a, b) => a +
 
 console.log('2. who is on it');
 ok('other campus, archived and applicants are not', !row('p1') && !row('ar') && !row('ap'));
-ok('someone off the board is not listed', !row('h1'));
-ok('but counts as active', g.of === 4 && g.active === 3 && g.activeToday === 3, [g.of, g.active, g.activeToday]);
+ok('an old step-off flag is not honoured: everyone is listed', !!row('h1') && row('h1').pts === P.open + P.habit, row('h1'));
+ok('active counts', g.of === 4 && g.active === 3 && g.activeToday === 3, [g.of, g.active, g.activeToday]);
 ok('a row is only id, points, streak, week, rank', g.people.every(p => Object.keys(p).sort().join() === 'id,pts,rank,streak,week'), g.people[0]);
 ok('nothing of what anyone did leaves', !/bible|prayer|atomic|Cups|tok-c3/.test(JSON.stringify(g)));
-const hid = await call('getGame', ['hana', '1234', 'siemreap']);
-ok('off the board, I still get my own', hid.ok && hid.me && hid.me.hidden && hid.me.rank === 0 && hid.me.pts === P.open + P.habit, hid.me);
-ok('the ministry board needs two people', g.ministries.length === 1 && g.ministries[0].ministry === 'Cafe' && g.ministries[0].n === 3 && g.ministries[0].active === 2, g.ministries);
+ok('the ministry board needs two people', g.ministries.length === 1 && g.ministries[0].ministry === 'Cafe' && g.ministries[0].n === 4 && g.ministries[0].active === 3, g.ministries);
 
-console.log('3. stepping off and on');
-let r = await call('gameSetHide', ['kanha', '1234', true]);
-ok('saved', r.ok && r.me.hidden === true && !r.people.some(p => p.id === 'c2'), r.me);
-ok('kept on the record', mem.staff.find(s => s.id === 'c2').gameHide === true);
-r = await call('gameSetHide', ['kanha', '1234', false]);
-ok('and back', r.ok && !r.me.hidden && r.people.some(p => p.id === 'c2') && !('gameHide' in mem.staff.find(s => s.id === 'c2')));
+console.log('3. no way off');
+ok('there is no handler to step off', (await call('gameSetHide', ['kanha', '1234', true])).ok !== true && !mem.staff.find(s => s.id === 'c2').gameHide);
 
 console.log('4. doors');
 ok('a bad PIN gets nothing', (await call('getGame', ['cora', '9999', 'siemreap'])).ok === false);
 ok('an applicant gets nothing', (await call('getGame', ['ann@e.com', '1234', 'siemreap'])).ok === false);
-ok('an applicant cannot hide', (await call('gameSetHide', ['ann@e.com', '1234', true])).ok === false);
 const pp = await call('getGame', ['cora', '1234', 'poipet']);
 ok('another campus can be read', pp.ok && pp.campus === 'poipet' && pp.people.length === 1 && pp.me === null, pp);
 const boot = await call('getMyBoot', ['cora', '1234']);

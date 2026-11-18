@@ -4,7 +4,7 @@
    board") and carried on the boot as `game` — nothing extra is asked for on open. Two places:
    - My Home: one line under Today (gameHomeHtml_, #gameHome) — my streak, my points, my place; tap → the board.
    - Team → 🏆 This week (gameTeamHtml_, S.teamMode 'game'): the top three, everyone, the ministries, how points
-     work, and the switch to step off the board.
+     work. Everyone active on the campus is on it.
    Others see points, a streak and which days someone was active — never what they did. */
 
 function gameOn_(){ return !!(S.me && !S.guest && !S.student && !S.board && !S.stuPreview); }
@@ -88,7 +88,7 @@ function gameTeamHtml_(){
     h+='<div class="card gameMe" id="gameMe"><div class="gameMeTop">'+
       '<div class="gameStat"><b>🔥 '+me.streak+'</b><small>'+esc(me.streak===1 ? t('day in a row') : t('days in a row'))+'</small></div>'+
       '<div class="gameStat"><b>⭐ '+me.pts+'</b><small>'+esc(t('points this week'))+'</small></div>'+
-      '<div class="gameStat"><b>'+(me.rank ? '#'+me.rank : '—')+'</b><small>'+esc(me.rank ? gpT('of {n}',{n:G.people.length}) : t('not on the board'))+'</small></div></div>'+
+      '<div class="gameStat"><b>'+(me.rank ? '#'+me.rank : '—')+'</b><small>'+esc(gpT('of {n}',{n:G.people.length}))+'</small></div></div>'+
       '<details class="gameHow" id="gameHow"'+(S.gameHowOpen?' open':'')+'><summary>'+esc(t('Where my points came from'))+'</summary>'+gamePartsHtml_(me, G)+
       '<p class="sub" style="margin:8px 0 0">'+esc(t('The weekly health check-in gives no points on purpose: it is anonymous, and points would show who answered.'))+'</p></details></div>';
   }
@@ -112,10 +112,6 @@ function gameTeamHtml_(){
         (rest>0 ? '<p class="sub" style="margin:8px 0 0">'+esc(gpT('{n} more have no points yet this week.',{n:rest}))+'</p>' : '')+'</div>';
     }
   }
-  if(campus===S.me.campus && G.me){
-    h+='<div class="card gameHide"><label class="gameHideRow"><input type="checkbox" id="gameShowMe"'+(G.me.hidden?'':' checked')+'> <span><b>'+esc(t('Show me on the board'))+'</b><small>'+
-      esc(t('Others see your points, your streak and which days you were active — never what you did. Off: you still see your own.'))+'</small></span></label></div>';
-  }
   h+='<p class="sub gameFoot">'+esc(t('The week runs Monday to Sunday and starts again each Monday.'))+'</p>';
   return h;
 }
@@ -134,12 +130,4 @@ function bindGame_(){
   var more=document.getElementById('gameMore'); if(more) more.onclick=function(){ S.gameAll=true; render(); };
   var how=document.getElementById('gameHow'); if(how) how.addEventListener('toggle', function(){ S.gameHowOpen=how.open; });
   var retry=document.getElementById('gameRetry'); if(retry) retry.onclick=function(){ S.gameErr=''; render(); };
-  var show=document.getElementById('gameShowMe');
-  if(show) show.onchange=function(){
-    var hide=!show.checked; show.disabled=true;
-    run('gameSetHide',[S.auth.user,S.auth.pin,hide],function(d){
-      if(d && d.ok){ S.game=d; S.gameOther=null; showMsg(hide ? t('You are off the board') : t('You are on the board')); } else showMsg(t('Could not save'));
-      render();
-    },function(){ showMsg(t('Could not save')); render(); });
-  };
 }

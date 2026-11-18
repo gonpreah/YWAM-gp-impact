@@ -3236,8 +3236,4 @@ body.findOn { overflow:hidden; }
 .gameWho small { color:var(--muted); font-weight:400; font-size:12px; }
 .gameStreak { flex:0 0 auto; font-size:12px; color:var(--muted); white-space:nowrap; }
 .gamePts { flex:0 0 auto; font-weight:800; font-size:16px; min-width:34px; text-align:right; }
-.gameHideRow { display:flex; gap:10px; align-items:flex-start; cursor:pointer; }
-.gameHideRow input { margin-top:3px; }
-.gameHideRow b { display:block; font-size:14px; }
-.gameHideRow small { display:block; color:var(--muted); font-size:12px; }
 .gameFoot { text-align:center; }
