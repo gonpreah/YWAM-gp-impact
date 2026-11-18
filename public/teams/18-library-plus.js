@@ -216,7 +216,12 @@ function libHomeCardHtml_(){
   if(last && last.id && !read[last.id] && !(m && m.bookId===last.id && !rows)) rows+='<button class="libHomeRow" id="libHomeLast" data-libhome="'+esc(last.id)+'"><span>📖</span><span class="libHomeText"><b>'+esc(gpT('Continue: {title}',{title:last.title}))+'</b><span class="pmeta">'+
     esc(gpT('{n} of {m} pages',{n:Math.min(last.step+1, last.total), m:last.total}))+'</span></span><span class="libInsideGo">›</span></button>';
   if(libOn_() && S.lib.recs.length) rows+='<button class="libHomeRow" id="libHomeRecs" data-libhome=""><span>💌</span><span class="libHomeText"><b>'+esc(S.lib.recs.length===1 ? gpT('{name} recommended a book to you',{name:firstName_(S.lib.recs[0].from.name)}) : gpT('{n} books recommended to you',{n:S.lib.recs.length}))+'</b></span><span class="libInsideGo">›</span></button>';
-  return rows ? '<h3 id="sec-reading">📚 '+esc(t('Reading'))+'</h3><div class="card libHome" id="libHome">'+rows+'</div>' : '';
+  var pts=(S.game && S.game.ok && S.game.pts && !S.guest) ? S.game.pts.book : 0;
+  if(!rows && libOn_()) rows='<button class="libHomeRow" id="libHomeOpen" data-libhome=""><span>📖</span><span class="libHomeText"><b>'+esc(t('Read a book in ten minutes'))+'</b><span class="pmeta">'+
+    esc(S.lib.canPick ? t('Open the Library — and pick this month’s book for your campus') : t('Open the Library and pick one'))+'</span></span><span class="libInsideGo">›</span></button>';
+  if(!rows) return '';
+  return '<h3 id="sec-reading">📚 '+esc(t('Reading'))+'</h3><div class="card libHome" id="libHome">'+rows+
+    (pts ? '<p class="pmeta libHomePts" id="libHomePts">⭐ '+esc(gpT('A finished book is worth {n} points on this week’s board',{n:pts}))+'</p>' : '')+'</div>';
 }
 
 /* ---------- a mentor's view of a mentee's reading ---------- */

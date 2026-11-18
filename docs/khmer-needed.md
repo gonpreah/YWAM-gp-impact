@@ -5521,4 +5521,11 @@ Points and day streaks for using the app. Short labels on a phone; the privacy l
 | {n} more have no points yet this week. | {n} នាក់ទៀតមិនទាន់មានពិន្ទុសប្ដាហ៍នេះទេ។ |
 | The week runs Monday to Sunday and starts again each Monday. | សប្ដាហ៍ចាប់ពីថ្ងៃចន្ទដល់ថ្ងៃអាទិត្យ ហើយចាប់ផ្ដើមឡើងវិញរៀងរាល់ថ្ងៃចន្ទ។ |
 | Who is using the app this week: points for the small daily things, and days in a row. | អ្នកណាកំពុងប្រើកម្មវិធីសប្ដាហ៍នេះ៖ ពិន្ទុសម្រាប់កិច្ចការតូចៗប្រចាំថ្ងៃ និងចំនួនថ្ងៃជាប់គ្នា។ |
-
+| Readers | អ្នកអាន |
+| Books finished this year. Each one is worth {n} points the week you finish it. | សៀវភៅដែលបានអានចប់ឆ្នាំនេះ។ មួយក្បាលមានតម្លៃ {n} ពិន្ទុ ក្នុងសប្ដាហ៍ដែលអ្នកអានចប់។ |
+| Nobody has finished a book yet this year. Be the first. | ឆ្នាំនេះមិនទាន់មាននរណាអានសៀវភៅចប់ទេ។ ក្លាយជាអ្នកទីមួយ។ |
+| Open the Library | បើកបណ្ណាល័យ |
+| Read a book in ten minutes | អានសៀវភៅមួយក្បាលក្នុងដប់នាទី |
+| Open the Library — and pick this month’s book for your campus | បើកបណ្ណាល័យ — ហើយជ្រើសសៀវភៅប្រចាំខែសម្រាប់ទីតាំងរបស់អ្នក |
+| Open the Library and pick one | បើកបណ្ណាល័យ ហើយជ្រើសមួយក្បាល |
+| A finished book is worth {n} points on this week’s board | សៀវភៅអានចប់មួយក្បាលមានតម្លៃ {n} ពិន្ទុលើតារាងសប្ដាហ៍នេះ |
