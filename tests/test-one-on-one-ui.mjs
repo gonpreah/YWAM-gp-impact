@@ -277,6 +277,58 @@ mem.oneOnOnes.push({ id: 'ooU', fromId: 'st4', toId: 'st5', menteeId: 'st4', not
   await u.ctx.close();
 }
 
+/* ---------- 7. the one asking suggests a day and time (Nov 2026, Andrew) ---------- */
+{
+  mem.oneOnOnes = rows().filter(o => !([o.fromId, o.toId].includes('st1') && [o.fromId, o.toId].includes('st2')));
+  const pr = () => rows().filter(o => [o.fromId, o.toId].includes('st1') && [o.fromId, o.toId].includes('st2'));
+  const day = n => new Date(Date.now() + 7 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+  const a = await open('andrew');
+  await a.page.click('.heroRow[data-gomentorship]'); await a.page.waitForTimeout(300);
+  await a.page.click('#mentee-st2 [data-request121="st2"]'); await a.page.waitForTimeout(300);
+  ok('asking, a day and time can be suggested (optional)', !!(await a.page.$('#ooNext #ooSugDate')) && !!(await a.page.$('#ooNext #ooSugTime')) && /Suggest a day and time \(optional\)/.test(await a.page.$eval('#ooNext', e => e.textContent)));
+  await a.page.fill('#ooSugDate', day(3)); await a.page.waitForTimeout(100);
+  await a.page.click('#ooAsk'); await a.page.waitForTimeout(400);
+  ok('a day with no time is not sent', pr().length === 0 && /Pick both a day and a time/.test(await a.page.evaluate(() => document.body.innerText)));
+  await a.page.fill('#ooSugTime', '15:00'); await a.page.waitForTimeout(100);
+  await a.page.click('#ooAsk'); await a.page.waitForTimeout(600);
+  const sug = pr()[0] || {};
+  ok('the request goes with the suggested time', pr().length === 1 && sug.status === 'pending' && sug.when === day(3) + 'T15:00' && sug.whenBy === 'st1', JSON.stringify(sug));
+  ok('… the sheet says it waits for a yes to that time, and the time step is not done yet', /Waiting for Sokha to say yes to your time/.test(await a.page.$eval('#ooNext', e => e.innerText)) && (await a.page.$eval('#ooSteps li.now', l => l.getAttribute('data-oostep'))) === 'time');
+  await a.ctx.close();
+  const { ctx, page } = await open('sokha');
+  const bell = await page.evaluate(() => notifItems_().map(i => i.text).join(' | '));
+  ok('the bell says the time it was asked for', /Andrew Mentor, your mentor, asked you for a 1-on-1 on /.test(bell), bell);
+  await page.click('#goMentorshipHome'); await page.waitForTimeout(300);
+  const line = await page.$eval('#myMentorCard', e => e.innerText);
+  ok('Mentorship: Andrew suggests this time — Accept this time, or Pick another time', /Andrew suggests this time/.test(line) && !!(await page.$('#myMentorCard [data-ooacceptwhen="' + sug.id + '"]')) && !!(await page.$('#myMentorCard [data-oochange="' + sug.id + '"]')) && !(await page.$('#myMentorCard [data-ooset]')), line);
+  await page.screenshot({ path: OUT + '/suggested.png' });
+  ok('… once, with the mentor — not again in an "Asking you" list at the top', !(await page.$('#main .ooAsked')) && !/Asking you for a 1-on-1/i.test(await main(page)));
+  await page.click('#myMentorCard [data-ooacceptwhen="' + sug.id + '"]'); await page.waitForTimeout(700);
+  const acc = pr()[0];
+  ok('one tap: accepted at that time, still the one Andrew suggested', acc.status === 'accepted' && acc.when === day(3) + 'T15:00' && acc.whenBy === 'st1');
+  ok('… then straight to the check-in', !!(await page.$('#ooSavePrep')));
+  await ctx.close();
+  const b = await open('andrew');
+  const bell2 = await b.page.evaluate(() => notifItems_().map(i => i.text).join(' | '));
+  ok('the asker hears: Sokha said yes to your 1-on-1 on the day', /Sokha Chan said yes to your 1-on-1 on /.test(bell2), bell2);
+  /* again, and this time Sokha picks another time */
+  mem.oneOnOnes = rows().filter(o => !pr().includes(o));
+  await b.page.evaluate(() => ooGo_(null, 'st2')); await b.page.waitForTimeout(300);
+  await b.page.fill('#ooSugDate', day(4)); await b.page.fill('#ooSugTime', '09:00');
+  await b.page.click('#ooAsk'); await b.page.waitForTimeout(600);
+  await b.ctx.close();
+  const c = await open('sokha');
+  const id2 = pr()[0].id;
+  await c.page.evaluate(id => ooGo_(id), id2); await c.page.waitForTimeout(300);
+  ok('on the sheet too: the suggested time with Accept this time', /Andrew suggests this time/.test(await c.page.$eval('#ooNext', e => e.innerText)) && !!(await c.page.$('#ooNext [data-ooacceptwhen]')));
+  await c.page.click('#ooNext [data-oochange="' + id2 + '"]'); await c.page.waitForTimeout(300);
+  ok('Pick another time opens the picker, starting from the suggestion', (await c.page.inputValue('#ooNext [data-oodate="' + id2 + '"]')) === day(4) && (await c.page.inputValue('#ooNext [data-ootime="' + id2 + '"]')) === '09:00');
+  await c.page.fill('#ooNext [data-oodate="' + id2 + '"]', day(5)); await c.page.fill('#ooNext [data-ootime="' + id2 + '"]', '11:30');
+  await c.page.click('#ooNext [data-ooset="' + id2 + '"]'); await c.page.waitForTimeout(700);
+  ok('another time: accepted at the new time, set by Sokha', pr()[0].status === 'accepted' && pr()[0].when === day(5) + 'T11:30' && pr()[0].whenBy === 'st2');
+  await c.ctx.close();
+}
+
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 await browser.close(); srv.close();

@@ -546,6 +546,7 @@ function bindAway(){
   bindReqRows_();
   ['libHomeTile','personBooks','profBooks'].forEach(function(id){ var b=document.getElementById(id); if(b) b.onclick=function(){ gpTap(); libOpen_(); }; });
   var pmc=document.getElementById('profMyContract'); if(pmc) pmc.onclick=function(){ gpTap(); openMyContract_(); };
+  bindInstallCard_();
   if(S.view==='admin' && (S.adminSub==='groups' || S.adminSub==='leaving')) bindAdminGroups_();
   if(S.view==='admin' && S.adminSub==='board') bindAdminBoard_();
   if(S.view==='admin' && S.adminSub==='reminders') bindAdminReminders_();
@@ -1904,6 +1905,7 @@ function bind(){
     };
   });
   document.querySelectorAll('[data-oochange]').forEach(function(b){ b.onclick=function(){ S.ooTimeEdit=b.getAttribute('data-oochange'); render(); }; });
+  document.querySelectorAll('[data-ooacceptwhen]').forEach(function(b){ b.onclick=function(){ ooAcceptSuggested_(b); }; });
   document.querySelectorAll('[data-121decline]').forEach(function(b){
     b.onclick=function(){
       var id=b.getAttribute('data-121decline');

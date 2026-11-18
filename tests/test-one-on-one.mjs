@@ -159,6 +159,37 @@ ok('a mentee cannot log one for their mentor', r.body.ok === false && mem.oneOnO
 r = await call('logOneOnOne', ['andrew', '1234', 'st_stranger', 'x', [], today]);
 ok('nor a mentor for someone who isn\'t their mentee', r.body.ok === false && mem.oneOnOnes.length === 1);
 
+/* ---------- 9b. the one asking suggests a day and time; the other takes it with one tap or picks another ---------- */
+{
+  const day = n => { const d = new Date(Date.now() + 7 * 3600e3 + n * 864e5); return d.toISOString().slice(0, 10); };
+  seed();
+  r = await call('requestOneOnOne', ['sokha', '1234', 'st_mentor', '', null, day(5) + 'T25:00']);
+  ok('a suggested time that is not a time is refused', r.body.ok === false && r.body.err === 'bad_when' && mem.oneOnOnes.length === 0);
+  r = await call('requestOneOnOne', ['sokha', '1234', 'st_mentor', '', null, day(5) + 'T15:00']);
+  let row = mem.oneOnOnes[0];
+  ok('the asker\'s suggested time waits on the request, theirs', row.status === 'pending' && row.when === day(5) + 'T15:00' && row.whenBy === 'st_mentee');
+  r = await call('getMyOneOnOnes', ['andrew', '1234']);
+  ok('… the one asked sees it, not as theirs', r.body.oneOnOnes[0].when === day(5) + 'T15:00' && r.body.oneOnOnes[0].whenByMe === false);
+  ok('… and it is no task yet in anyone\'s GP Tasks', !((mem.gpTasks && mem.gpTasks.tasks) || []).some(t => t.ooId === row.id));
+  r = await call('respondToOneOnOne', ['andrew', '1234', row.id, true]);
+  row = mem.oneOnOnes[0];
+  ok('a yes takes the suggested time; it stays the asker\'s', row.status === 'accepted' && row.when === day(5) + 'T15:00' && row.whenBy === 'st_mentee');
+  ok('… and now it is a task for both', (mem.gpTasks.tasks || []).filter(t => t.ooId === row.id && t.due === day(5) && t.time === '15:00').length === 2);
+  seed();
+  await call('requestOneOnOne', ['andrew', '1234', 'st_mentee', '', null, day(3) + 'T09:00']);
+  row = mem.oneOnOnes[0];
+  r = await call('respondToOneOnOne', ['sokha', '1234', row.id, true, day(4) + 'T10:30']);
+  row = mem.oneOnOnes[0];
+  ok('picking another time replaces the suggestion, set by the one asked', row.status === 'accepted' && row.when === day(4) + 'T10:30' && row.whenBy === 'st_mentee' && r.body.oneOnOnes[0].whenByMe === true);
+  seed();
+  await call('requestOneOnOne', ['andrew', '1234', 'st_mentee', '', null, day(3) + 'T09:00']);
+  r = await call('respondToOneOnOne', ['sokha', '1234', mem.oneOnOnes[0].id, false]);
+  ok('a no to a suggested time is a no — no tasks', mem.oneOnOnes[0].status === 'declined' && !((mem.gpTasks && mem.gpTasks.tasks) || []).some(t => t.ooId === mem.oneOnOnes[0].id));
+  seed();
+  await call('requestOneOnOne', ['andrew', '1234', 'st_mentee', '', null, '']);
+  ok('no suggestion is still a request with no time', mem.oneOnOnes[0].status === 'pending' && !mem.oneOnOnes[0].when);
+}
+
 /* ---------- 10. the words stay with the pair ---------- */
 seed([{ id: 'oo4', fromId: 'st_mentee', toId: 'st_mentor', menteeId: 'st_mentee', note: '', status: 'held', heldOn: today,
   created: '2026-01-04T00:00:00.000Z', prep: { areas: { money: 1 }, values: {}, helpWith: 'secret', workingOn: '', other: '' }, notes: 'private', followUps: [] }]);

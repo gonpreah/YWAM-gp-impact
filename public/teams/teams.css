@@ -3136,3 +3136,6 @@ details.dtsPick input.gpSelBox { margin:6px 0 4px; }
 .libScroll::-webkit-scrollbar { display:none; }
 .libPlanRow { grid-auto-columns:200px; }
 .libNextRow { grid-auto-columns:136px; }
+/* Profile & settings: Install this app (Nov 2026) */
+.profInstallHelp { margin-top:-4px; }
+.installSteps { margin:0; padding-left:22px; display:flex; flex-direction:column; gap:6px; font-size:14.5px; line-height:1.4; }

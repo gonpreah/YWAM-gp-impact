@@ -5260,7 +5260,49 @@ The Mentorship page's "How a 1-on-1 works" fold and the 1-on-1 page: the step st
 
 ☰ → Tests (teams/17-tests.js). The APEST statements and the couple check-up statements, areas and talk-it-over questions are written with English and Khmer side by side in teams/17-tests.js (APEST_QS, APEST_GIFTS, MC_QS, MC_AREAS) — please read those there too. Gift names follow the Khmer Bible (សាវក, ហោរា, អ្នកផ្សាយដំណឹងល្អ, គ្រូគង្វាល, គ្រូបង្រៀន). The push texts mcInvite / mcReady are in api.js PUSH_TEXT. The seven Marriage & family books' Khmer (library-km.js) is Claude's translation too.
 
-## 108. The Library, read together (book of the month, reading plans, badges, topics)
+## 107. Mentorship: suggesting a day and time
+
+The one asking for a 1-on-1 may suggest a day and time; the one asked taps "Accept this time" or picks another. `{when}` is a day and time like "Thu 20 Nov, 3:00 PM". "Accept this time" and "Pick another time" are small buttons side by side.
+
+| English | Khmer (draft) |
+|---|---|
+| Suggest a day and time (optional) | ស្នើថ្ងៃ និងម៉ោង (ស្រេចចិត្ត) |
+| {name} can accept it, or pick another time. Leave it empty and {name} picks. | {name} អាចយល់ព្រម ឬជ្រើសរើសពេលផ្សេង។ ទុកវាទទេ ហើយ {name} នឹងជ្រើសរើស។ |
+| {name} suggests this time | {name} ស្នើពេលនេះ |
+| Pick another day and time: | ជ្រើសរើសថ្ងៃ និងម៉ោងផ្សេង៖ |
+| Accept this time | យល់ព្រមពេលនេះ |
+| Pick another time | ជ្រើសរើសពេលផ្សេង |
+| {name} says yes to the time, or picks one, and you get a notification. | {name} យល់ព្រមពេលនោះ ឬជ្រើសរើសពេលមួយ ហើយអ្នកនឹងទទួលបានការជូនដំណឹង។ |
+| {name} gets your request, says yes to a time, and answers a short check-in — you see it before you meet. | {name} ទទួលបានសំណើរបស់អ្នក យល់ព្រមពេលមួយ ហើយឆ្លើយការរាយការណ៍ខ្លីមួយ — អ្នកនឹងឃើញវាមុនពេលជួបគ្នា។ |
+| Waiting for {name} to say yes to your time | កំពុងរង់ចាំ {name} យល់ព្រមពេលរបស់អ្នក |
+| you suggested it | អ្នកបានស្នើ |
+| They can accept it or pick another time. You will get a notification. | ពួកគេអាចយល់ព្រម ឬជ្រើសរើសពេលផ្សេង។ អ្នកនឹងទទួលបានការជូនដំណឹង។ |
+| Accepted — {name} will get a notification | បានយល់ព្រម — {name} នឹងទទួលបានការជូនដំណឹង |
+| Pick both a day and a time — or leave both empty | ជ្រើសរើសទាំងថ្ងៃ និងម៉ោង — ឬទុកទាំងពីរទទេ |
+| {name} (you mentor them) asked you for a 1-on-1 on {when} | {name} (អ្នកណែនាំគាត់) បានសុំជួបមួយទល់មួយជាមួយអ្នកនៅ {when} |
+| {name}, your mentor, asked you for a 1-on-1 on {when} | {name} ដែលជាអ្នកណែនាំរបស់អ្នក បានសុំជួបមួយទល់មួយជាមួយអ្នកនៅ {when} |
+| {name} said yes to your 1-on-1 on {when} | {name} បានយល់ព្រមជួបមួយទល់មួយជាមួយអ្នកនៅ {when} |
+| You asked {name} for a 1-on-1 on {when} — waiting for them to say yes. | អ្នកបានសុំជួបមួយទល់មួយជាមួយ {name} នៅ {when} — កំពុងរង់ចាំពួកគេយល់ព្រម។ |
+| {name} asked you for a 1-on-1. | {name} បានសុំជួបមួយទល់មួយជាមួយអ្នក។ |
+
+## 108. Install this app (Profile & settings)
+
+| English | Khmer (draft) |
+|---|---|
+| Installed — open YWAM GP from your Home Screen. | បានដំឡើងហើយ — សូមបើក YWAM GP ពីអេក្រង់ដើមរបស់អ្នក។ |
+| Install this app | ដំឡើងកម្មវិធីនេះ |
+| Open YWAM GP from your Home Screen, full screen, like any other app. | បើក YWAM GP ពីអេក្រង់ដើមរបស់អ្នក ពេញអេក្រង់ ដូចកម្មវិធីផ្សេងទៀតដែរ។ |
+| Tap the Share button — the square with an arrow pointing up (at the bottom of Safari, or by the address bar). | ចុចប៊ូតុងចែករំលែក — ការ៉េដែលមានព្រួញចង្អុលឡើងលើ (នៅខាងក្រោមនៃ Safari ឬក្បែររបារអាសយដ្ឋាន)។ |
+| Scroll down and tap “Add to Home Screen”. | រំកិលចុះក្រោម ហើយចុច “Add to Home Screen”។ |
+| Tap “Add”. YWAM GP is now on your Home Screen. | ចុច “Add”។ ឥឡូវនេះ YWAM GP នៅលើអេក្រង់ដើមរបស់អ្នកហើយ។ |
+| Open your browser’s menu — the ⋮ at the top right. | បើកម៉ឺនុយរបស់កម្មវិធីរុករក — សញ្ញា ⋮ នៅខាងលើស្ដាំ។ |
+| Tap “Install app” or “Add to Home screen”. | ចុច “Install app” ឬ “Add to Home screen”។ |
+| Tap “Install”. YWAM GP is now on your Home Screen. | ចុច “Install”។ ឥឡូវនេះ YWAM GP នៅលើអេក្រង់ដើមរបស់អ្នកហើយ។ |
+| Installed | បានដំឡើងហើយ |
+
+Profile & settings, the card under My contract, until the app is installed. The steps quote the phone’s own buttons (“Add to Home Screen”, “Add”, “Install app”, “Install”) in English on purpose — they read that way on most phones here; if a Khmer-language phone shows them in Khmer, use its wording instead.
+
+## 109. The Library, read together (book of the month, reading plans, badges, topics)
 
 | English | Khmer (draft) |
 |---|---|

@@ -397,6 +397,14 @@ function ooTimePickHtml_(id, accept, cur){
 function ooRelHtml_(o, otherId, name){
   var first=String(name||'').split(' ')[0], h='<div class="ooRel">';
   if(!o) return h+'<button class="btn ghost small mentorAct" data-request121="'+esc(otherId)+'">☕ '+esc(gpT('Ask {name} for a 1-on-1',{name:first}))+'</button></div>';
+  if(o.status==='pending' && o.mine && ooSuggested_(o))
+    return h+'<div class="ooLine">⏳ '+esc(gpT('You asked {name} for a 1-on-1 on {when} — waiting for them to say yes.',{name:first, when:ooWhenNice_(o.when)}))+'</div>'+
+      '<button class="linkbtn inline" data-ooopen="'+esc(o.id)+'">'+esc(t('Open the 1-on-1'))+' ›</button></div>';
+  if(o.status==='pending' && !o.mine && ooSuggested_(o))
+    return h+'<div class="ooLine ooAskedLine">🔔 '+esc(gpT('{name} asked you for a 1-on-1.',{name:first}))+(o.note ? '<div class="pmeta">“'+esc(o.note)+'”</div>' : '')+'</div>'+
+      ooSuggestTakeHtml_(o, first)+
+      '<div class="ooActsRow"><button class="linkbtn inline" data-ooopen="'+esc(o.id)+'">'+esc(o.iMentor ? t('Read their check-in first') : t('Open the 1-on-1'))+' ›</button>'+
+      '<button class="linkbtn inline" style="color:var(--faint)" data-121decline="'+esc(o.id)+'">'+esc(t('Can’t right now — decline'))+'</button></div></div>';
   if(o.status==='pending' && o.mine)
     return h+'<div class="ooLine">⏳ '+esc(gpT('You asked {name} for a 1-on-1 — waiting for them to set a time.',{name:first}))+'</div>'+
       '<button class="linkbtn inline" data-ooopen="'+esc(o.id)+'">'+esc(t('Open the 1-on-1'))+' ›</button></div>';
@@ -742,6 +750,52 @@ function myPositionsHtml_(){
     rows.map(function(r){ return '<div class="myPos"><span>'+r[0]+'</span><span><b>'+esc(r[1])+'</b><small>'+esc(r[2])+'</small></span></div>'; }).join('')+
     '<p class="hint" style="margin:6px 0 0">'+esc(t('Your campus role you change below. YWAM GP places and the Advisory Board are set by an admin, on your account.'))+'</p></div>';
 }
+/* ---------- Install this app (Profile & settings, Nov 2026) ----------
+   Uriah: an "install this app" button here. The bar under the header (gpInstallPrompt in
+   rollup.js) goes for good once its ✕ is tapped, and then there was no way back to it; this
+   card stays until the app is installed — opened from the Home Screen it isn't shown at all.
+   Where the browser offers its own install prompt (Chrome and Edge on Android and computers)
+   the button opens that; elsewhere it shows the steps: on an iPhone or iPad, Share → Add to
+   Home Screen; anywhere else, the browser's menu → Install app / Add to Home screen. */
+var _gpInstallEvt=null, _gpInstalled=false;
+window.addEventListener('beforeinstallprompt', function(e){
+  if(gpTasksApp_()) return;   // GP Tasks has its own (12-tasks.js)
+  e.preventDefault(); _gpInstallEvt=e;
+  if(S.me && S.view==='profile') render();
+});
+window.addEventListener('appinstalled', function(){ _gpInstalled=true; _gpInstallEvt=null; if(S.me && S.view==='profile') render(); });
+function gpStandalone_(){ try { return !!((window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true); } catch(e){ return false; } }
+function gpIOS_(){ var ua=navigator.userAgent||''; return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1); }
+function gpInstallCardHtml_(){
+  if(gpStandalone_() || gpTasksApp_()) return '';
+  if(_gpInstalled) return '<div class="card profInstall"><p class="sub" style="margin:0">✓ '+esc(t('Installed — open YWAM GP from your Home Screen.'))+'</p></div>';
+  var h='<button class="card profMyc" id="profInstall"><span class="profMycIc">📲</span><span class="profMycTxt"><b>'+esc(t('Install this app'))+'</b>'+
+    '<span class="pmeta">'+esc(t('Open YWAM GP from your Home Screen, full screen, like any other app.'))+'</span></span><span class="profMycGo">'+(S.installHelp?'⌄':'›')+'</span></button>';
+  if(S.installHelp && !_gpInstallEvt){
+    h+='<div class="card profInstallHelp" id="profInstallHelp">'+(gpIOS_() ?
+      '<ol class="installSteps"><li>'+esc(t('Tap the Share button — the square with an arrow pointing up (at the bottom of Safari, or by the address bar).'))+'</li>'+
+        '<li>'+esc(t('Scroll down and tap “Add to Home Screen”.'))+'</li><li>'+esc(t('Tap “Add”. YWAM GP is now on your Home Screen.'))+'</li></ol>' :
+      '<ol class="installSteps"><li>'+esc(t('Open your browser’s menu — the ⋮ at the top right.'))+'</li>'+
+        '<li>'+esc(t('Tap “Install app” or “Add to Home screen”.'))+'</li><li>'+esc(t('Tap “Install”. YWAM GP is now on your Home Screen.'))+'</li></ol>')+
+      '</div>';
+  }
+  return h;
+}
+function bindInstallCard_(){
+  var b=document.getElementById('profInstall'); if(!b) return;
+  b.onclick=function(){
+    gpTap();
+    if(_gpInstallEvt){
+      var ev=_gpInstallEvt;
+      try {
+        ev.prompt();
+        ev.userChoice.then(function(c){ _gpInstallEvt=null; if(c && c.outcome==='accepted'){ _gpInstalled=true; showMsg(t('Installed')); } render(); }, function(){});
+      } catch(e){ _gpInstallEvt=null; S.installHelp=true; render(); }
+      return;
+    }
+    S.installHelp=!S.installHelp; render();
+  };
+}
 function profileHtml(){
   var p=S.profile||{};
   var opts=S.roster.filter(function(x){return x.id!==S.me.id;}).map(function(x){
@@ -751,6 +805,7 @@ function profileHtml(){
   /* My contract lives here now (Oct 2026, Uriah) — the contract, start dates and the papers to sign */
   h+='<button class="card profMyc" id="profMyContract"><span class="profMycIc">📄</span><span class="profMycTxt"><b>'+esc(t('My contract'))+'</b>'+
     '<span class="pmeta">'+esc(t('Your contract, when you started, and the papers every staff member signs'))+'</span></span><span class="profMycGo">›</span></button>';
+  h+=gpInstallCardHtml_();   // until the app is installed
   h+='<div class="card"><div class="pcard">'+avatarHtml(S.me,'lg')+
      '<div><button class="btn ghost" id="photoBtn" style="width:auto;margin:0;padding:9px 14px">'+(S.me.photo?'Change photo':'Add photo')+'</button>'+
      '<input type="file" accept="image/*" id="photoInput" style="display:none"></div></div>'+

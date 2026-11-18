@@ -1269,6 +1269,7 @@ function renderNotifPanel(){
       });
     };
   });
+  document.querySelectorAll('#notifRoot [data-ooacceptwhen]').forEach(function(b){ b.onclick=function(){ ooAcceptSuggested_(b); }; });
   document.querySelectorAll('#notifRoot [data-ooopen]').forEach(function(b){
     b.onclick=function(){ gpTap(); ooGo_(b.getAttribute('data-ooopen')); };
   });
