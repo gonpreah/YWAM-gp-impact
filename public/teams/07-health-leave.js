@@ -214,11 +214,11 @@ function bindSched_(){
   var d=S.schedData, s=d && d.sched;
   var mark=function(){ S.schedDirty=true; };
   var bk=document.getElementById('schedBack');
-  if(bk) bk.onclick=function(){ if(S.schedDirty && !confirm(t('Leave without saving your changes?'))) return; S.schedEdit=false; S.schedPick=null; S.view=S.schedFrom==='ministry'?'ministry':'week'; render(); };
+  if(bk) bk.onclick=function(){ if(S.schedDirty && !gpAsk_(t('Leave without saving your changes?'))) return; S.schedEdit=false; S.schedPick=null; S.view=S.schedFrom==='ministry'?'ministry':'week'; render(); };
   document.querySelectorAll('[data-schedkind]').forEach(function(b){ b.onclick=function(){
-    if(S.schedDirty && !confirm(t('Leave without saving your changes?'))) return;
+    if(S.schedDirty && !gpAsk_(t('Leave without saving your changes?'))) return;
     gpTap(); S.schedKind=b.getAttribute('data-schedkind'); S.schedPick=null; S.schedRows=false; S.schedDirty=false; render(); }; });
-  var wk=function(n){ if(S.schedDirty && !confirm(t('Leave without saving your changes?'))) return; S.schedWeek=dutyAddDays(S.schedWeek||dutyWeekOf(), n); S.schedPick=null; S.schedDirty=false; render(); };
+  var wk=function(n){ if(S.schedDirty && !gpAsk_(t('Leave without saving your changes?'))) return; S.schedWeek=dutyAddDays(S.schedWeek||dutyWeekOf(), n); S.schedPick=null; S.schedDirty=false; render(); };
   var sp=document.getElementById('schedPrev'); if(sp) sp.onclick=function(){ gpTap(); wk(-7); };
   var sn=document.getElementById('schedNext'); if(sn) sn.onclick=function(){ gpTap(); wk(7); };
   var stw=document.getElementById('schedThis'); if(stw) stw.onclick=function(){ gpTap(); S.schedWeek=null; S.schedDirty=false; render(); };
@@ -226,7 +226,7 @@ function bindSched_(){
   var se=document.getElementById('schedEditBtn'); if(se) se.onclick=function(){ gpTap(); S.schedEdit=true; render(); };
   document.querySelectorAll('[data-schedonly]').forEach(function(b){ b.onclick=function(){ gpTap(); S.schedOnlyMine=b.getAttribute('data-schedonly')==='1'; render(); }; });
   var sdt=document.getElementById('schedDetails'); if(sdt) sdt.onclick=function(){ gpTap(); S.schedDetails=!S.schedDetails; render(); };
-  var sde=document.getElementById('schedDoneEdit'); if(sde) sde.onclick=function(){ if(S.schedDirty && !confirm(t('Leave without saving your changes?'))) return; S.schedEdit=false; S.schedPick=null; S.schedRows=false; S.schedDirty=false; S.schedData=null; render(); };
+  var sde=document.getElementById('schedDoneEdit'); if(sde) sde.onclick=function(){ if(S.schedDirty && !gpAsk_(t('Leave without saving your changes?'))) return; S.schedEdit=false; S.schedPick=null; S.schedRows=false; S.schedDirty=false; S.schedData=null; render(); };
   var sh=document.getElementById('schedShare');
   if(sh) sh.onclick=function(){
     var k=schedKind_(s.kind);
@@ -275,14 +275,14 @@ function bindSched_(){
     if(i>-1){ if(s.days.length<2) return; s.days.splice(i,1); } else { s.days.push(dd); s.days.sort(function(a,c){ return DUTY_DAY_ORDER_.indexOf(a)-DUTY_DAY_ORDER_.indexOf(c); }); } mark(); render(); }; });
   document.querySelectorAll('[data-srowup]').forEach(function(b){ b.onclick=function(){ move(s.rows, Number(b.getAttribute('data-srowup')), -1); }; });
   document.querySelectorAll('[data-srowdown]').forEach(function(b){ b.onclick=function(){ move(s.rows, Number(b.getAttribute('data-srowdown')), 1); }; });
-  document.querySelectorAll('[data-srowdel]').forEach(function(b){ b.onclick=function(){ var i=Number(b.getAttribute('data-srowdel')); if(!confirm(gpT('Remove “{name}”?',{name:s.rows[i].label}))) return; s.rows.splice(i,1); mark(); render(); }; });
+  document.querySelectorAll('[data-srowdel]').forEach(function(b){ b.onclick=function(){ var i=Number(b.getAttribute('data-srowdel')); if(!gpAsk_(gpT('Remove “{name}”?',{name:s.rows[i].label}))) return; s.rows.splice(i,1); mark(); render(); }; });
   var ra=document.getElementById('schedRowAdd'); if(ra) ra.onclick=function(){ s.rows.push({ id:rid('r'), label:t('New row'), km:'', time:'', span:false, off:[] }); mark(); render(); };
   var at=function(v){ var p=v.split('|'); return { sec:s.sections[Number(p[0])], i:Number(p[1]) }; };
   document.querySelectorAll('[data-ssec]').forEach(function(inp){ inp.oninput=function(){ s.sections[Number(inp.getAttribute('data-ssec'))][inp.getAttribute('data-sf')]=inp.value; mark(); }; });
   document.querySelectorAll('[data-splace]').forEach(function(inp){ inp.oninput=function(){ var x=at(inp.getAttribute('data-splace')); x.sec.rows[x.i][inp.getAttribute('data-sf')]=inp.value; mark(); }; });
   document.querySelectorAll('[data-splaceup]').forEach(function(b){ b.onclick=function(){ var x=at(b.getAttribute('data-splaceup')); move(x.sec.rows, x.i, -1); }; });
   document.querySelectorAll('[data-splacedown]').forEach(function(b){ b.onclick=function(){ var x=at(b.getAttribute('data-splacedown')); move(x.sec.rows, x.i, 1); }; });
-  document.querySelectorAll('[data-splacedel]').forEach(function(b){ b.onclick=function(){ var x=at(b.getAttribute('data-splacedel')); if(!confirm(gpT('Remove “{name}”?',{name:x.sec.rows[x.i].place}))) return; x.sec.rows.splice(x.i,1); mark(); render(); }; });
+  document.querySelectorAll('[data-splacedel]').forEach(function(b){ b.onclick=function(){ var x=at(b.getAttribute('data-splacedel')); if(!gpAsk_(gpT('Remove “{name}”?',{name:x.sec.rows[x.i].place}))) return; x.sec.rows.splice(x.i,1); mark(); render(); }; });
   document.querySelectorAll('[data-splaceadd]').forEach(function(b){ b.onclick=function(){ s.sections[Number(b.getAttribute('data-splaceadd'))].rows.push({ id:rid('c'), place:t('New place'), km:'', duty:'', people:[] }); mark(); render(); }; });
   var sa=document.getElementById('schedSecAdd'); if(sa) sa.onclick=function(){ s.sections.push({ id:rid('s'), title:t('New section'), km:'', rows:[] }); mark(); render(); };
   // save
@@ -298,7 +298,7 @@ function bindSched_(){
   };
   var sv=document.getElementById('schedSave'); if(sv) sv.onclick=function(){ save('save', sv, t('Saved')); };
   var pb=document.getElementById('schedPub'); if(pb) pb.onclick=function(){ save('publish', pb, t('Published — everyone can see it now')); };
-  var up=document.getElementById('schedUnpub'); if(up) up.onclick=function(){ if(!confirm(t('Take this schedule down? Only your team will see it until you publish it again.'))) return; save('unpublish', up, t('Taken down')); };
+  var up=document.getElementById('schedUnpub'); if(up) up.onclick=function(){ if(!gpAsk_(t('Take this schedule down? Only your team will see it until you publish it again.'))) return; save('unpublish', up, t('Taken down')); };
 }
 var DUTY_DAY_ORDER_=['sun','mon','tue','wed','thu','fri','sat'];
 function schedOpen_(kind, edit, from){
@@ -752,7 +752,7 @@ function bindLead_(){
     if(sv) sv.onclick=function(){ if(!(f.title||'').trim()){ showMsg(t('Give the card a title first.')); return; } save(f, f.id ? t('Card saved') : t('Card added'), function(){ S.leadForm=null; }); };
     var dl=document.getElementById('leadDelete');
     if(dl) dl.onclick=function(){
-      if(!confirm(gpT('Delete “{name}”?',{name:f.title}))) return;
+      if(!gpAsk_(gpT('Delete “{name}”?',{name:f.title}))) return;
       if(S.busy) return; S.busy=true;
       run('deleteLeadCard',[S.auth.user,S.auth.pin,f.id],function(d){ S.busy=false; if(d && d.ok){ S.lead=d; S.leadForm=null; showMsg(t('Card deleted')); } else showMsg(t('Could not save')); render(); });
     };

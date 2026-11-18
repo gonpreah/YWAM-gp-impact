@@ -288,7 +288,7 @@ function bindLibPlus_(){
   on('libRecSend', function(){ var b=libById_(S.libBook); if(!b || !S.libRecTo) return;
     libCall_('libRecommend', [S.libRecTo, b.id, b.title, (document.getElementById('libRecNote')||{}).value||''], function(){ S.libRecOpen=false; S.libRecTo=''; showMsg(t('Sent')); }); });
   on('libMonthSet', function(){ var b=libById_(S.libBook); if(!b) return;
-    var note=prompt(t('A line for everyone about why this book (optional):'), ''); if(note===null) return;
+    var note=gpAskText_(t('A line for everyone about why this book (optional):'), ''); if(note===null) return;
     libCall_('libSetMonth', [b.id, b.title, note], function(){ showMsg(t('It’s the book of the month')); }); });
   on('libMonthClear', function(){ libCall_('libSetMonth', ['', '', '']); });
   if(typeof bindPeoplePick_==='function') bindPeoplePick_();

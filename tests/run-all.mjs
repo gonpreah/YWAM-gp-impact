@@ -83,6 +83,7 @@ const SERVER = [
 ];
 
 const BROWSER = [
+  'test-ux-ui.mjs',            // ☀️ Today on My Home, 🔍 search from the header, the app's own Yes / Cancel sheet, Undo on a deleted task
   'test-polish-ui.mjs',        // a 320px phone and Khmer: profile / sign-up labels and pop-ups in Khmer, leave dates, Learn Khmer and the header fit, holiday names readable
   'test-library-club-ui.mjs',  // the Library, read together, on the page: search, topics, a plan, finishing a book, the month's book, recommending, a mentor's plan
   'test-tests-ui.mjs',         // ☰ → Tests: the fivefold gifts, the couple check-up from start to results, who sees it

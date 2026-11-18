@@ -1216,7 +1216,7 @@ function bindHr(){
   var cd=document.getElementById('hrContractDelete');
   if(cd) cd.onclick=function(){
     if(S.busy || !S.hrContractForm || !S.hrContractForm.id) return;
-    if(!confirm(t('Delete this contract and anything attached to it?'))) return;
+    if(!gpAsk_(t('Delete this contract and anything attached to it?'))) return;
     S.busy=true;
     run('hrDeleteContract',[S.auth.user,S.auth.pin,pid,S.hrContractForm.id],function(d){
       S.busy=false; if(d && d.ok){ hrPut_(d); S.hrContractForm=null; showMsg(t('Contract deleted')); } else showMsg(hrFail_(d)); render();
@@ -1252,7 +1252,7 @@ function bindHr(){
   document.querySelectorAll('[data-hrfiledel]').forEach(function(b){
     b.onclick=function(){
       var v=b.getAttribute('data-hrfiledel'), i=v.indexOf('|'), cid=v.slice(0,i), fid=v.slice(i+1);
-      if(!confirm(t('Remove this attachment?'))) return;
+      if(!gpAsk_(t('Remove this attachment?'))) return;
       S.busy=true;
       run('hrDeleteFile',[S.auth.user,S.auth.pin,pid,cid,fid],function(d){ S.busy=false; if(d && d.ok){ hrPut_(d); showMsg(t('Removed')); } else showMsg(hrFail_(d)); render(); });
     };
@@ -1265,7 +1265,7 @@ function bindHr(){
   if(ar) ar.onclick=function(){
     if(S.busy) return;
     var at=(document.getElementById('hr_left')||{}).value||todayStr(), reason=(document.getElementById('hr_reason')||{}).value||'';
-    if(!confirm(gpT('Archive {name}? They come off the roster and the staff count, and can no longer sign in. You can bring them back later.',{name:person.name}))) return;
+    if(!gpAsk_(gpT('Archive {name}? They come off the roster and the staff count, and can no longer sign in. You can bring them back later.',{name:person.name}))) return;
     S.busy=true;
     run('hrArchive',[S.auth.user,S.auth.pin,pid,{ at:at, reason:reason }],function(d){ S.busy=false; if(d && d.ok){ hrPut_(d); S.hrArchiveDraft=null; showMsg(gpT('{name} archived',{name:person.name})); } else showMsg(d && d.err==='self_archive' ? t('You can’t archive yourself.') : hrFail_(d)); render(); });
   };
@@ -1366,7 +1366,7 @@ function bindCands_(){
   if(ar) ar.onclick=function(){
     if(S.busy) return;
     var why=(document.getElementById('cand_why')||{}).value||'', note=(document.getElementById('cand_whynote')||{}).value||'';
-    if(!confirm(gpT('Archive {name}? They stay in the list, marked archived, and can be brought back.',{name:c.name}))) return;
+    if(!gpAsk_(gpT('Archive {name}? They stay in the list, marked archived, and can be brought back.',{name:c.name}))) return;
     S.busy=true;
     run('hrArchiveCandidate',[S.auth.user,S.auth.pin,c.id,{ reason: why+(note?' — '+note:'') }],function(d){ S.busy=false; if(d && d.ok){ candPut_(d); showMsg(gpT('{name} archived',{name:c.name})); } else showMsg(candFail_(d)); render(); });
   };
@@ -1522,7 +1522,7 @@ function bindAdmin(){
     });
   };
   document.querySelectorAll('[data-adminleaveok]').forEach(function(b){ b.onclick=function(){ decideLeave(b.getAttribute('data-adminleaveok'), true); }; });
-  document.querySelectorAll('[data-adminleaveno]').forEach(function(b){ b.onclick=function(){ if(confirm(t('Decline this leave request?'))) decideLeave(b.getAttribute('data-adminleaveno'), false); }; });
+  document.querySelectorAll('[data-adminleaveno]').forEach(function(b){ b.onclick=function(){ if(gpAsk_(t('Decline this leave request?'))) decideLeave(b.getAttribute('data-adminleaveno'), false); }; });
 
   /* The search survives a re-render. Tapping a row rebuilds the Admin page
      (that's how the row opens), and the box used to come back empty with
@@ -1631,7 +1631,7 @@ function bindAdmin(){
   document.querySelectorAll('[data-admindecline]').forEach(function(b){
     b.onclick=function(){
       var id=b.getAttribute('data-admindecline'), x=(S.adminStaff||[]).filter(function(p){ return p.id===id; })[0];
-      if(!x || !confirm(gpT('Decline {name}’s account? It will be removed.',{name:x.name}))) return;
+      if(!x || !gpAsk_(gpT('Decline {name}’s account? It will be removed.',{name:x.name}))) return;
       b.disabled=true;
       run('adminDeleteStaff',[S.auth.user,S.auth.pin,id],function(d){
         if(d && d.ok){ S.adminStaff=S.adminStaff.filter(function(p){ return p.id!==id; }); showMsg(t('Declined')); }
@@ -1655,7 +1655,7 @@ function bindAdmin(){
     var keepS=(S.adminStaff||[]).find(function(x){ return x.id===keepId; });
     var mergeS=(S.adminStaff||[]).find(function(x){ return x.id===mergeId; });
     if(!keepS || !mergeS) return;
-    if(!confirm(gpT('Merge {merge} into {keep}? {merge}’s history moves onto {keep} where it doesn’t already overlap, then {merge}’s account is permanently deleted. This can’t be undone.',
+    if(!gpAsk_(gpT('Merge {merge} into {keep}? {merge}’s history moves onto {keep} where it doesn’t already overlap, then {merge}’s account is permanently deleted. This can’t be undone.',
       {merge:mergeS.name, keep:keepS.name}))) return;
     msb.disabled=true;
     run('adminMergeStaff',[S.auth.user,S.auth.pin,keepId,mergeId],function(d){
@@ -1679,7 +1679,7 @@ function bindAdmin(){
       var id=b.getAttribute('data-admindelete');
       var s=(S.adminStaff||[]).find(function(x){ return x.id===id; });
       if(!s) return;
-      if(!confirm(gpT('Permanently delete {name}’s account? This can’t be undone.',{name:s.name}))) return;
+      if(!gpAsk_(gpT('Permanently delete {name}’s account? This can’t be undone.',{name:s.name}))) return;
       run('adminDeleteStaff',[S.auth.user,S.auth.pin,id],function(d){
         if(d && d.ok){ showMsg(t('Account deleted')); adminRefresh_(); }
         else showMsg(t('Could not delete that account'));

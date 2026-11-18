@@ -1019,7 +1019,7 @@ function render(){
   if(S.student && STUDENT_VIEWS.indexOf(S.view)===-1) S.view='week';
   if(S.board){ if(BOARD_VIEWS.indexOf(S.view)===-1) S.view='ywamgp'; }
   else if(S.guest && GUEST_VIEWS.indexOf(S.view)===-1) S.view='week';
-  hb.innerHTML = '<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>'+ ((S.guest || S.student) ? '' :
+  hb.innerHTML = ((S.guest || S.student || S.board || S.stuPreview) ? '' : gpFindBtnHtml_())+'<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>'+ ((S.guest || S.student) ? '' :
     '<button class="hbtn icon" id="bellBtn" style="position:relative" aria-label="'+esc(gpT('Notifications ({n})',{n:notifN}))+'">'+BELL_SVG+
     (notifN?'<span class="notifDot"></span>':'')+'</button>')+
     '<button class="hbtn icon" id="menuBtn" aria-label="'+esc(t('Menu'))+'">'+HAMBURGER_SVG+'</button>';

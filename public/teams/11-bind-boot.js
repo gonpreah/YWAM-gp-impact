@@ -422,7 +422,7 @@ function bindAway(){
     var tdb=document.getElementById('teamDeleteBtn');
     if(tdb) tdb.onclick=function(){
       if(S.busy || !S.teamForm || !S.teamForm.id) return;
-      if(!confirm(gpT('Delete “{team}”? Its numbers come out of the dashboards too.',{team:S.teamForm.name}))) return;
+      if(!gpAsk_(gpT('Delete “{team}”? Its numbers come out of the dashboards too.',{team:S.teamForm.name}))) return;
       S.busy=true;
       run('deleteTeamTrip',[S.auth.user,S.auth.pin,S.teamForm.id],function(d){
         S.busy=false;
@@ -1142,6 +1142,7 @@ function gpLabelFix_(){
 }
 function bind(){
   try{ gpLabelFix_(); }catch(e){}
+  bindUx_();
   /* Who's here: Base's "On campus now" loads the count; the page loads team photos */
   if((S.view==='base' || S.view==='week') && !S.guest && !S.board && !S.student && S.me) whosHereLoad_();   // Base and My Home show the count
   [['goWhosHere','base'],['goWhosHereHome','week']].forEach(function(x){ var b=document.getElementById(x[0]); if(b) b.onclick=function(){ gpTap(); S.whosFrom=x[1]; S.view='whoshere'; render(); window.scrollTo(0,0); whosHereLoad_(true); }; });
@@ -1344,7 +1345,7 @@ function bind(){
   if(wst) wst.onclick=function(){ S.weekForm=Number(S.healthWeek||thisWeek()); render(); };
   var wcl=document.getElementById('weekClear');
   if(wcl) wcl.onclick=function(){
-    if(!confirm(t('Clear this week’s check-in?'))) return;
+    if(!gpAsk_(t('Clear this week’s check-in?'))) return;
     weekClear();
   };
 
@@ -1394,7 +1395,7 @@ function bind(){
   if(oan) oan.onclick=function(){ var p=S.okrAdminPick||{}; if(!p.campus || !p.dept) return; S.okrAdmin={ campus:p.campus, dept:p.dept }; S.okrEditId=null; S.okrForm=true; render(); var f=document.getElementById('okrForm'); if(f) f.scrollIntoView({behavior:'smooth', block:'start'}); };
   document.querySelectorAll('[data-okr-del]').forEach(function(b){
     b.onclick=function(){
-      if(!confirm(t('Delete this objective?'))) return;
+      if(!gpAsk_(t('Delete this objective?'))) return;
       okrDelete(b.getAttribute('data-okr-del'));
     };
   });
@@ -1421,7 +1422,7 @@ function bind(){
     b.onclick=function(){
       var parts=b.getAttribute('data-okr-count').split('|'), o=okrFind_(parts[0]), kr=o && o.krs[Number(parts[1])];
       if(!kr) return;
-      var v = prompt(t('How many so far?'), String(Number(kr.current)||0));
+      var v = gpAskText_(t('How many so far?'), String(Number(kr.current)||0));
       if(v===null || v.trim()==='' || isNaN(Number(v))) return;
       okrSetCount(parts[0], Number(parts[1]), Number(v));
     };
@@ -1499,7 +1500,7 @@ function bind(){
   document.querySelectorAll('[data-smartdel]').forEach(function(b){
     b.onclick=function(){
       if(S.busy) return;
-      if(!confirm(t('Delete this goal? Its tasks stay under Other tasks.'))) return;
+      if(!gpAsk_(t('Delete this goal? Its tasks stay under Other tasks.'))) return;
       S.busy=true;
       run('deleteSmartGoal',[S.auth.user,S.auth.pin,b.getAttribute('data-smartdel')],function(r){
         S.busy=false;
@@ -1544,7 +1545,7 @@ function bind(){
   document.querySelectorAll('[data-stepdel]').forEach(function(b){
     b.onclick=function(){
       var parts=b.getAttribute('data-stepdel').split('|'), g=goalById_(parts[0]); if(!g) return;
-      if(!confirm(t('Remove this step?'))) return;
+      if(!gpAsk_(t('Remove this step?'))) return;
       var p=goalPayload_(g);
       p.steps=p.steps.filter(function(st){ return st.id!==parts[1]; });
       smartSend_(p);
@@ -1625,14 +1626,14 @@ function bind(){
   var tkd=document.getElementById('tkDeleteBtn');
   if(tkd) tkd.onclick=function(){
     if(!S.taskEdit) return;
-    if(!confirm(t('Delete this task?'))) return;
+    if(!gpAsk_(t('Delete this task?'))) return;
     taskSend_('deleteTask', [S.taskEdit], function(){ S.taskEdit=null; S.taskEditDraft=null; });
   };
   var tdt=document.getElementById('tasksDoneToggle');
   if(tdt) tdt.onclick=function(){ gpTap(); S.tasksDoneOpen=!S.tasksDoneOpen; render(); };
   var tcd=document.getElementById('tasksClearDone');
   if(tcd) tcd.onclick=function(){
-    if(!confirm(t('Clear all completed tasks?'))) return;
+    if(!gpAsk_(t('Clear all completed tasks?'))) return;
     taskSend_('clearDoneTasks', [], function(){ S.tasksDoneOpen=false; });
   };
 
@@ -2042,7 +2043,7 @@ function refreshAll(){
    ?fresh). If the page itself came from the offline copy (the worker leaves a
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
-var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
+var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
 if(gpTasksApp_()) GP_VER_FILES=['tasks.html'].concat(GP_VER_FILES.slice(1), ['teams/12-tasks.js','teams/13-calendar.js']);   // the tasks app's page is tasks.html
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){

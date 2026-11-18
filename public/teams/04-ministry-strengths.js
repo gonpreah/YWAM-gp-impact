@@ -187,12 +187,12 @@ function bindLw_(){
   document.querySelectorAll('[data-lwconnect]').forEach(function(b){ b.onclick=function(){ gpTap(); var id=b.getAttribute('data-lwconnect'), p=S.lw.partners.filter(function(x){ return x.id===id; })[0]||{};
     var ds=lwDatesOf_(S.lwWeek).filter(function(d){ return d<=todayStr(); });
     call('leadLogAdd',[{ kind:'partner', who:id, whoName:p.name||'', date: ds.indexOf(todayStr())>-1 ? todayStr() : ds[ds.length-1] }]); }; });
-  document.querySelectorAll('[data-lwpdel]').forEach(function(b){ b.onclick=function(){ if(!confirm(t('Remove this partner from your list?'))) return; call('leadPartnerDelete',[b.getAttribute('data-lwpdel'), S.lwWeek]); }; });
+  document.querySelectorAll('[data-lwpdel]').forEach(function(b){ b.onclick=function(){ if(!gpAsk_(t('Remove this partner from your list?'))) return; call('leadPartnerDelete',[b.getAttribute('data-lwpdel'), S.lwWeek]); }; });
   var pa=document.getElementById('lwPAdd'); if(pa) pa.onclick=function(){ var n=document.getElementById('lwPName'), o=document.getElementById('lwPOrg');
     if(!String(n.value).trim()){ showMsg(t('Type their name.')); return; } call('leadPartnerSave',[{ name:n.value, org:o.value }, S.lwWeek]); };
   document.querySelectorAll('[data-lwplant]').forEach(function(sel){ sel.onchange=function(){ var p=S.lw.plants.filter(function(x){ return x.id===sel.getAttribute('data-lwplant'); })[0];
     call('basePlantSave',[Object.assign({}, p, { stage:sel.value }), S.lwWeek]); }; });
-  document.querySelectorAll('[data-lwplantdel]').forEach(function(b){ b.onclick=function(){ if(!confirm(t('Remove this from the list?'))) return; call('basePlantSave',[{ id:b.getAttribute('data-lwplantdel'), remove:true }, S.lwWeek]); }; });
+  document.querySelectorAll('[data-lwplantdel]').forEach(function(b){ b.onclick=function(){ if(!gpAsk_(t('Remove this from the list?'))) return; call('basePlantSave',[{ id:b.getAttribute('data-lwplantdel'), remove:true }, S.lwWeek]); }; });
   var ba=document.getElementById('lwBAdd'); if(ba) ba.onclick=function(){ var n=document.getElementById('lwBName'), pl=document.getElementById('lwBPlace');
     if(!String(n.value).trim()){ showMsg(t('Type a name.')); return; } call('basePlantSave',[{ name:n.value, place:pl.value, stage:'praying' }, S.lwWeek]); };
   document.querySelectorAll('[data-lwtab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.lwTab=b.getAttribute('data-lwtab'); lwTabKeep_(S.lwTab); render(); }; });
@@ -355,7 +355,7 @@ function bindCafe_(){
   var cl=document.getElementById('cafeClear'); if(cl) cl.onclick=function(){ S.cafeOrder={}; render(); };
   var ch=document.getElementById('cafeCharge'); if(ch) ch.onclick=function(){ var items=Object.keys(S.cafeOrder).map(function(id){ return { id:id, qty:S.cafeOrder[id] }; });
     call('cafeSale',[S.cafeDate, items], function(){ S.cafeOrder={}; gpTap(); showMsg(t('Sold')); }); };
-  document.querySelectorAll('[data-cafevoid]').forEach(function(b){ b.onclick=function(){ if(!confirm(t('Undo this order?'))) return; call('cafeVoid',[S.cafeDate, b.getAttribute('data-cafevoid')]); }; });
+  document.querySelectorAll('[data-cafevoid]').forEach(function(b){ b.onclick=function(){ if(!gpAsk_(t('Undo this order?'))) return; call('cafeVoid',[S.cafeDate, b.getAttribute('data-cafevoid')]); }; });
   document.querySelectorAll('[data-cafecount]').forEach(function(b){ b.onclick=function(){ gpTap(); var v=b.getAttribute('data-cafecount').split('|'); call('cafeCount',[S.cafeDate, v[0], Number(v[1])]); }; });
   var ea=document.getElementById('cafeExpAdd'); if(ea) ea.onclick=function(){ var a=document.getElementById('cafeExpAmt'), n=document.getElementById('cafeExpNote');
     if(!(Number(a.value)>0)){ showMsg(t('Type the amount.')); return; } call('cafeExpense',[S.cafeDate, Number(a.value), n.value, null]); };
@@ -988,7 +988,7 @@ function homeHtml(){
   h += checkinTueHtml_();   // Tuesday: the weekly health check-in, at the staff meeting
   h += f30CardHtml_();
   h += goalsCardHtml(goalsViewWeek());
-  h += habitsCardHtml();
+  h += '<span id="homeHabits" class="homeAnchor"></span>'+habitsCardHtml();
   h += annualGoalsHtml();
   h += calHomeCardHtml_();   // 📅 Coming up: the campus's Google Calendar, the next seven days
   h += mentorshipCardHtml();

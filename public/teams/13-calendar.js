@@ -280,11 +280,11 @@ function bindAdminGcal_(){
   document.querySelectorAll('[data-kindkeys]').forEach(function(inp){ inp.onchange=function(){ saveKind({ id:inp.getAttribute('data-kindkeys'), keywords:inp.value }, t('Saved')); }; });
   var ka=document.getElementById('gcKindAdd'); if(ka) ka.onclick=function(){ gpTap(); saveKind({ name:t('New kind'), color:'grey', keywords:[] }); };
   document.querySelectorAll('[data-kindrm]').forEach(function(b){ b.onclick=function(){
-    if(!window.confirm(t('Remove this kind? Its events become plain Events.'))) return;
+    if(!gpAsk_(t('Remove this kind? Its events become plain Events.'))) return;
     run('adminGcal',[S.auth.user,S.auth.pin,{ kindRemove:b.getAttribute('data-kindrm') }],function(d){ if(d && d.ok){ S.gcalAdmin=d; S.cal=null; S.calHome=null; showMsg(t('Removed')); } render(); });
   }; });
   document.querySelectorAll('[data-gcalrm]').forEach(function(b){ b.onclick=function(){
-    if(!window.confirm(t('Remove this calendar from the app?'))) return;
+    if(!gpAsk_(t('Remove this calendar from the app?'))) return;
     run('adminGcal',[S.auth.user,S.auth.pin,{ remove:b.getAttribute('data-gcalrm') }],function(d){ if(d && d.ok){ S.gcalAdmin=d; S.cal=null; S.calHome=null; showMsg(t('Removed')); } render(); });
   }; });
 }

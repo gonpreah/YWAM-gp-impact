@@ -5415,3 +5415,33 @@ Labels on Profile & settings and the Create my profile form, and the short messa
 | Wrong username or PIN | ឈ្មោះអ្នកប្រើ ឬលេខ PIN មិនត្រឹមត្រូវ |
 | First day | ថ្ងៃដំបូង |
 | Last day | ថ្ងៃចុងក្រោយ |
+
+## 110. Today on My Home, search, and the app’s own “are you sure?”
+
+The ☀️ Today list under My Home’s summary card (what is waiting on you, each row with a short button), the 🔍 search page, and the Yes / Cancel sheet that replaced the phone’s own pop-up. The buttons on a Today row have very little room.
+
+| English | Khmer (draft) |
+|---|---|
+| Nothing is waiting on you today. | ថ្ងៃនេះគ្មានអ្វីកំពុងរង់ចាំអ្នកទេ។ |
+| {name} asked for leave — yours to answer | {name} បានសុំច្បាប់ — រង់ចាំចម្លើយពីអ្នក |
+| {n} leave requests are waiting for your answer | សំណើសុំច្បាប់ {n} កំពុងរង់ចាំចម្លើយពីអ្នក |
+| {name} asked you to be their mentor | {name} បានសុំឱ្យអ្នកធ្វើជាអ្នកណែនាំ |
+| {n} people asked you to be their mentor | មនុស្ស {n} នាក់បានសុំឱ្យអ្នកធ្វើជាអ្នកណែនាំ |
+| {name} asked you for a 1-on-1 — pick a day and time | {name} បានសុំជួបមួយទល់មួយ — សូមជ្រើសថ្ងៃ និងម៉ោង |
+| Your 1-on-1 with {name} is today, {when} | ការជួបមួយទល់មួយជាមួយ {name} គឺថ្ងៃនេះ {when} |
+| 1 task is due today or overdue | កិច្ចការ ១ ដល់ថ្ងៃកំណត់ថ្ងៃនេះ ឬហួសកំណត់ |
+| {n} tasks are due today or overdue | កិច្ចការ {n} ដល់ថ្ងៃកំណត់ថ្ងៃនេះ ឬហួសកំណត់ |
+| 1 habit left today | នៅសល់ទម្លាប់ ១ សម្រាប់ថ្ងៃនេះ |
+| {n} habits left today | នៅសល់ទម្លាប់ {n} សម្រាប់ថ្ងៃនេះ |
+| This month’s book: {title} — a ten-minute read | សៀវភៅប្រចាំខែ៖ {title} — អានដប់នាទី |
+| Answer | ឆ្លើយ |
+| Tick them | គូសធីក |
+| Search | ស្វែងរក |
+| Search a page, a person, a book… | ស្វែងរកទំព័រ មនុស្ស សៀវភៅ… |
+| Go to | ទៅកាន់ |
+| Pages | ទំព័រ |
+| Ministries | កិច្ចការបម្រើ |
+| Books | សៀវភៅ |
+| Nothing found for “{q}”. | រកមិនឃើញអ្វីសម្រាប់ «{q}» ទេ។ |
+| OK | យល់ព្រម |
+| Task deleted | បានលុបកិច្ចការ |

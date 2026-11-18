@@ -117,7 +117,7 @@ function bindStructArrange_(){
   if(ad) ad.onclick=function(){ S.structArrange=null; S.structMove=null; render(); };
   var ar=document.getElementById('structArrangeReset');
   if(ar) ar.onclick=function(){
-    if(!confirm(t('Put everyone back where their profile says, for this quarter?'))) return;
+    if(!gpAsk_(t('Put everyone back where their profile says, for this quarter?'))) return;
     var ctx=S.structCtx, c=S.structCache[ctx.key]||{ doc:null, source:'none' };
     run('saveStructurePlan',[S.auth.user,S.auth.pin,ctx.campus,ctx.year,ctx.q, undefined, {}],function(d){ if(d && d.ok){ c.plan=d.plan; if(d.doc){ c.doc=d.doc; c.source='saved'; } S.structCache[ctx.key]=c; showMsg(t('Back to profiles')); } else showMsg(t('Could not save')); render(); });
   };

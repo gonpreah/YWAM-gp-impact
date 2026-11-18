@@ -383,7 +383,7 @@ function bindTests_(){
   }; });
   on('mcSubmit', function(){ T.busy=true; render();
     run('mcAnswer',[S.auth.user,S.auth.pin,T.mcOpen,T.mcAns],function(d){ mcTake_(d, function(){ T.mcAns=null; var r=(T.mc||[]).filter(function(x){ return x.id===T.mcOpen; })[0]; T.sub = r && r.both ? 'mcres' : 'home'; if(r && r.both && typeof gpConfetti==='function') gpConfetti(); }); }); });
-  on('mcDelete', function(){ if(!confirm(t('Delete this check-up and both sets of answers? This can’t be undone.'))) return;
+  on('mcDelete', function(){ if(!gpAsk_(t('Delete this check-up and both sets of answers? This can’t be undone.'))) return;
     run('mcDelete',[S.auth.user,S.auth.pin,T.mcOpen],function(d){ mcTake_(d, function(){ T.sub='home'; T.mcOpen=null; }); }); });
   if(typeof bindPeoplePick_==='function') bindPeoplePick_();
 }
