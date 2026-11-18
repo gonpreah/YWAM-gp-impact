@@ -93,7 +93,7 @@ mem.survey = [
   Object.assign(ans('tok_a3', WK), { source: '' })            // an old row the daily roll-up wrote
 ];
 mem.dailyLogs = [{ staffId: 'a3', date: NOW, week: WK, langHours: 3, minHours: 2, workout: true, quietTime: false, bible: true, habits: { bible: true } }];
-const hero = page => page.$eval('[data-gohealth]', e => e.innerText.replace(/\s+/g, ' ').trim()).catch(() => '');
+const hero = page => page.$eval('.myHero [data-gohealth]', e => e.innerText.replace(/\s+/g, ' ').trim()).catch(() => '');
 const card = hero;   // My Home's health lives on the summary card now (Oct 2026)
 
 {
