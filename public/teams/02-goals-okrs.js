@@ -1042,7 +1042,7 @@ function ooGoalsHtml_(goals){
 var OO_STEPS=[['ask','Ask'],['time','Day & time'],['prep','Check-in'],['meet','Meet'],['done','Done']];
 function ooStepsHtml_(o){
   var held=!!o && o.status==='held';
-  var done={ ask:!!o, time:held || !!(o && o.when), prep:held || !!(o && o.prep), meet:held, done:held };
+  var done={ ask:!!o, time:held || !!(o && o.when && o.status!=='pending'), prep:held || !!(o && o.prep), meet:held, done:held };
   var now=-1; OO_STEPS.forEach(function(s,i){ if(now<0 && !done[s[0]]) now=i; });
   return '<ol class="ooSteps" id="ooSteps">'+OO_STEPS.map(function(s,i){
     return '<li class="'+(done[s[0]]?'done':'')+(i===now?' now':'')+'" data-oostep="'+s[0]+'"><span class="ooStepN">'+(done[s[0]]?'✓':(i+1))+'</span><span class="ooStepL">'+esc(t(s[1]))+'</span></li>';
@@ -1056,6 +1056,23 @@ function ooHowHtml_(){
     '<li>📝 '+esc(t('Before you meet, the one being mentored answers a short check-in.'))+'</li>'+
     '<li>▶ '+esc(t('When you sit down together, the mentor taps Begin 1-on-1, writes notes and what to follow up, then Finish.'))+'</li>'+
     '</ol><p class="hint" style="margin:6px 0 0">'+esc(t('Two a month is the aim — each one finished counts.'))+'</p></details>';
+}
+/* The one asking may suggest a day and time (Nov 2026, Andrew); the one asked accepts it with one tap or picks
+   another. A suggestion whose day has gone by is treated as none. */
+function ooSuggested_(o){ return o && o.status==='pending' && o.when && String(o.when).slice(0,10)>=todayStr() ? o.when : ''; }
+function ooSuggestFieldsHtml_(d, first){
+  return '<label class="f">'+esc(t('Suggest a day and time (optional)'))+'</label>'+
+    '<div class="ooTime"><input type="date" data-oodraft="whenDate" id="ooSugDate" min="'+esc(todayStr())+'" value="'+esc(d.whenDate||'')+'" aria-label="'+esc(t('Day'))+'">'+
+    '<input type="time" data-oodraft="whenTime" id="ooSugTime" step="900" value="'+esc(d.whenTime||'')+'" aria-label="'+esc(t('Time'))+'"></div>'+
+    '<p class="hint" style="margin:0 0 6px">'+esc(gpT('{name} can accept it, or pick another time. Leave it empty and {name} picks.',{name:first}))+'</p>';
+}
+/* "accept this time" or "pick another" for a 1-on-1 someone suggested a time for */
+function ooSuggestTakeHtml_(o, first){
+  var w=ooSuggested_(o);
+  var h='<div class="ooLine ooSuggest" data-oosuggest="'+esc(o.id)+'">📅 <b>'+esc(ooWhenNice_(w))+'</b> <span class="pmeta">· '+esc(gpT('{name} suggests this time',{name:first}))+'</span></div>';
+  if(S.ooTimeEdit===o.id) return h+'<div class="ooLine">'+esc(t('Pick another day and time:'))+'</div>'+ooTimePickHtml_(o.id, true, w);
+  return h+'<div class="ooActsRow"><button class="btn small" data-ooacceptwhen="'+esc(o.id)+'">✓ '+esc(t('Accept this time'))+'</button>'+
+    '<button class="linkbtn inline" data-oochange="'+esc(o.id)+'">'+esc(t('Pick another time'))+'</button></div>';
 }
 function oneOnOneHtml(){
   var o=S.ooId ? ooById_(S.ooId) : null;
@@ -1090,16 +1107,17 @@ function oneOnOneHtml(){
       h+='<div class="card ooNext" id="ooNext"><div class="ooNextTitle">☕ '+esc(gpT('Asking {name} for a 1-on-1',{name:first}))+'</div>'+
         '<p class="sub" style="margin:4px 0 0">'+esc(gpT('First answer a few questions. {name} sees them with your request, so your time together can focus on what matters.',{name:first}))+'</p></div>';
       h+='<h3>📝 '+esc(t('Step 1 · Your check-in'))+'</h3><div class="card">'+ooPrepFormHtml_('new:'+withId, d)+'</div>';
-      h+='<h3>☕ '+esc(t('Step 2 · Send your request'))+'</h3><div class="card">'+
-        '<label class="f" style="margin-top:0">'+esc(gpT('A note for {name} (optional)',{name:first}))+'</label>'+
+      h+='<h3>☕ '+esc(t('Step 2 · Send your request'))+'</h3><div class="card">'+ooSuggestFieldsHtml_(d, first)+
+        '<label class="f">'+esc(gpT('A note for {name} (optional)',{name:first}))+'</label>'+
         '<input type="text" data-oodraft="note" maxlength="300" value="'+esc(d.note)+'" placeholder="'+esc(t('e.g. Can we meet this week?'))+'">'+
         '<button class="btn" id="ooSend">☕ '+esc(gpT('Send my request to {name}',{name:first}))+'</button>'+
-        '<p class="hint" style="margin:6px 0 0">'+esc(gpT('{name} picks a day and time, and you get a notification.',{name:first}))+'</p></div>';
+        '<p class="hint" style="margin:6px 0 0">'+esc(gpT('{name} says yes to the time, or picks one, and you get a notification.',{name:first}))+'</p></div>';
       return h+lastHtml;
     }
     h+='<div class="card ooNext" id="ooNext"><div class="ooNextTitle">☕ '+esc(gpT('Asking {name} for a 1-on-1',{name:first}))+'</div>'+
-      '<p class="sub" style="margin:4px 0 8px">'+esc(gpT('{name} gets your request, picks a day and time, and answers a short check-in — you see it before you meet.',{name:first}))+'</p>'+
-      '<button class="btn" id="ooAsk" style="margin:0">☕ '+esc(gpT('Send {name} a 1-on-1 request',{name:first}))+'</button></div>';
+      '<p class="sub" style="margin:4px 0 8px">'+esc(gpT('{name} gets your request, says yes to a time, and answers a short check-in — you see it before you meet.',{name:first}))+'</p>'+
+      ooSuggestFieldsHtml_(ooDraft_('new:'+withId), first)+
+      '<button class="btn" id="ooAsk" style="margin:4px 0 0">☕ '+esc(gpT('Send {name} a 1-on-1 request',{name:first}))+'</button></div>';
     h+=lastHtml;
     h+='<details class="ooFold" id="ooLogFold"'+(S.ooLogOpen?' open':'')+'><summary id="ooLogHead">✍️ '+esc(t('Already met without asking here? Log it'))+'</summary><div class="card">'+
       ooNotesFormHtml_('new:'+withId)+'<button class="btn" id="ooLog">'+esc(t('Save this 1-on-1'))+'</button></div></details>';
@@ -1127,11 +1145,16 @@ function oneOnOneHtml(){
   var next='';
   if(o.status==='pending' && !o.mine){
     next='<div class="ooNextTitle">🔔 '+esc(ooAskedYouText_(o))+'</div>'+
+      (ooSuggested_(o) ? ooSuggestTakeHtml_(o, first) :
       '<p class="sub" style="margin:4px 0 8px">'+esc(t('Pick a day and time — that says yes, and they get a notification.'))+'</p>'+
-      ooTimePickHtml_(o.id, true, '')+
+      ooTimePickHtml_(o.id, true, ''))+
       '<button class="linkbtn inline" style="color:var(--faint)" data-121decline="'+esc(o.id)+'">'+esc(t('Can’t right now — decline'))+'</button>';
   } else if(o.status==='pending'){
-    next='<div class="ooNextTitle">⏳ '+esc(gpT('Waiting for {name} to pick a day and time',{name:first}))+'</div>'+
+    next=ooSuggested_(o) ?
+      '<div class="ooNextTitle">⏳ '+esc(gpT('Waiting for {name} to say yes to your time',{name:first}))+'</div>'+
+        '<div class="ooLine">📅 <b>'+esc(ooWhenNice_(o.when))+'</b> <span class="pmeta">· '+esc(t('you suggested it'))+'</span></div>'+
+        '<p class="sub" style="margin:4px 0 0">'+esc(t('They can accept it or pick another time. You will get a notification.'))+'</p>' :
+      '<div class="ooNextTitle">⏳ '+esc(gpT('Waiting for {name} to pick a day and time',{name:first}))+'</div>'+
       '<p class="sub" style="margin:4px 0 0">'+esc(t('You will get a notification when they do.'))+'</p>';
   } else if(held){
     next='<div class="ooNextTitle">✓ '+esc(gpT('Done · {date}',{date:fmtDateShort_(o.heldOn)}))+'</div>';
@@ -1204,6 +1227,15 @@ function ooMenteeSectionHtml_(m){
   return h+'<div class="ooActs"><button class="btn" style="margin:10px 0 0" data-request121="'+esc(m.id)+'">☕ '+esc(gpT('Ask {name} for a 1-on-1',{name:first}))+'</button>'+
     '<button class="btn ghost" style="margin:8px 0 0" data-oolog="'+esc(m.id)+'">✍️ '+esc(t('Log one you already had'))+'</button></div></div>';
 }
+/* yes to the time they suggested: the server keeps it as theirs, and both get it in GP Tasks */
+function ooAcceptSuggested_(b){
+  var id=b.getAttribute('data-ooacceptwhen'), o=ooById_(id); b.disabled=true; gpTap();
+  run('respondToOneOnOne',[S.auth.user,S.auth.pin,id,true],function(r){
+    if(r && r.ok){ S.oneOnOnes=r.oneOnOnes; S.ooTimeEdit=null; S.bellOpen=false;
+      showMsg(gpT('Accepted — {name} will get a notification',{name:String((o&&o.otherName)||'').split(' ')[0]})); ooAfterAccept_(id); }
+    else { b.disabled=false; showMsg(t('Could not save')); }
+  });
+}
 function ooAfterAccept_(id){
   var o=ooById_(id);
   if(o && !o.iMentor && !o.prep){ ooGo_(id); showMsg(t('Accepted — now a quick check-in')); }
@@ -1249,22 +1281,33 @@ function bindOneOnOne_(){
   if(lc) lc.onclick=function(){ S.ooLive=null; render(); window.scrollTo(0,0); };
   var prepOf=function(d){ return { areas:d.areas, values:d.values, helpWith:d.helpWith, workingOn:d.workingOn, other:d.other }; };
   var filled=function(d){ return Object.keys(d.areas).length===OO_AREAS.length && Object.keys(d.values).length===OO_VALUES.length; };
+  /* the suggested day and time: both or neither ('' = none, null = only one of the two) */
+  var suggestOf=function(d){
+    var dd=d.whenDate||'', tt=d.whenTime||'';
+    if(!dd && !tt) return '';
+    if(!dd || !tt){ showMsg(t('Pick both a day and a time — or leave both empty')); return null; }
+    return dd+'T'+tt;
+  };
   var send=document.getElementById('ooSend');
   if(send) send.onclick=function(){
     var d=ooDraft_(key);
     if(!filled(d)){ showMsg(t('Please rate each area and value first')); return; }
+    var sw=suggestOf(d); if(sw===null) return;
     send.disabled=true;
-    run('requestOneOnOne',[S.auth.user,S.auth.pin,S.ooWith,d.note,prepOf(d)],function(r){
+    run('requestOneOnOne',[S.auth.user,S.auth.pin,S.ooWith,d.note,prepOf(d),sw],function(r){
       send.disabled=false;
+      if(r && r.err==='bad_when'){ showMsg(t('Pick a day from today on')); return; }
       if(ooSaved_(r, t('Request sent'))){ delete S.ooDrafts[key]; S.view=S.ooBack||'week'; S.ooWith=null; render(); window.scrollTo(0,0); }
     });
   };
   var ask=document.getElementById('ooAsk');
   if(ask) ask.onclick=function(){
+    var sw=suggestOf(ooDraft_(key)); if(sw===null) return;
     ask.disabled=true;
-    run('requestOneOnOne',[S.auth.user,S.auth.pin,S.ooWith,''],function(r){
+    run('requestOneOnOne',[S.auth.user,S.auth.pin,S.ooWith,'',null,sw],function(r){
       ask.disabled=false;
-      if(ooSaved_(r, t('Request sent'))){ var mine=(r.oneOnOnes||[]).filter(function(x){ return x.otherId===S.ooWith && x.status==='pending' && x.mine; })[0]; if(mine){ S.ooId=mine.id; } render(); }
+      if(r && r.err==='bad_when'){ showMsg(t('Pick a day from today on')); return; }
+      if(ooSaved_(r, t('Request sent'))){ if(S.ooDrafts) delete S.ooDrafts[key]; var mine=(r.oneOnOnes||[]).filter(function(x){ return x.otherId===S.ooWith && x.status==='pending' && x.mine; })[0]; if(mine){ S.ooId=mine.id; } render(); }
     });
   };
   var notesArgs=function(){
@@ -1511,12 +1554,19 @@ function notifItems_(){
       actions: notifActionBtnsHtml_('trok', r.id, 'trno', r.id, t('Approve'), t('Deny')) });
   });
   (S.oneOnOnes||[]).forEach(function(o){
-    if(!o.mine && o.status==='pending'){
+    if(!o.mine && o.status==='pending' && ooSuggested_(o)){
+      items.push({ when:o.created, text: o.iMentor ? gpT('{name} (you mentor them) asked you for a 1-on-1 on {when}', {name:o.otherName, when:ooWhenNice_(o.when)}) : gpT('{name}, your mentor, asked you for a 1-on-1 on {when}', {name:o.otherName, when:ooWhenNice_(o.when)}),
+        actions: '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-ooacceptwhen="'+esc(o.id)+'">'+esc(t('Accept'))+'</button>'+
+          '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-ooopen="'+esc(o.id)+'">'+esc(t('Pick another time'))+'</button>' });
+    } else if(!o.mine && o.status==='pending'){
       items.push({ when:o.created, text: o.iMentor ? gpT('{name} (you mentor them) asked you for a 1-on-1', {name:o.otherName}) : gpT('{name}, your mentor, asked you for a 1-on-1', {name:o.otherName}),
         actions: '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-gomentorship="1">'+esc(t('Set a time'))+'</button>'+
           '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px;color:var(--faint)" data-121decline="'+esc(o.id)+'">'+esc(t('Decline'))+'</button>' });
     } else if(o.status==='accepted' && o.when && !o.whenByMe){
       items.push({ when:o.whenAt||o.decidedAt||o.created, text: gpT('{name} set your 1-on-1 for {when}', {name:o.otherName, when:ooWhenNice_(o.when)}),
+        actions: '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-ooopen="'+esc(o.id)+'">'+esc(t('Open'))+'</button>' });
+    } else if(o.mine && o.status==='accepted' && o.when){
+      items.push({ when:o.decidedAt||o.created, text: gpT('{name} said yes to your 1-on-1 on {when}', {name:o.otherName, when:ooWhenNice_(o.when)}),
         actions: '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-ooopen="'+esc(o.id)+'">'+esc(t('Open'))+'</button>' });
     } else if(o.mine && o.status==='accepted'){
       items.push({ when:o.decidedAt||o.created, text: gpT('{name} accepted your 1-on-1 request', {name:o.otherName}) });
