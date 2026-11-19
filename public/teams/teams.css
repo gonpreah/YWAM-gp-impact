@@ -3227,3 +3227,28 @@ body.findOn { overflow:hidden; }
 .gameStreak { flex:0 0 auto; font-size:12px; color:var(--muted); white-space:nowrap; }
 .gamePts { flex:0 0 auto; font-weight:800; font-size:16px; min-width:34px; text-align:right; }
 .gameFoot { text-align:center; }
+
+/* ---- Talk it through → tasks (21-voice.js) ---- */
+.gtFab.gvFab { bottom:calc(154px + env(safe-area-inset-bottom)); width:50px; height:50px; right:22px; border-radius:16px; background:var(--surface); color:var(--accent); border:1.5px solid var(--line); }
+.gtFab.gvFab svg { width:24px; height:24px; stroke-width:2; }
+.gvSheet textarea { min-height:120px; font-size:16px; }
+.gvMic { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; min-height:54px; border-radius:16px; border:1.5px solid var(--accent); background:none; color:var(--accent); font:inherit; font-weight:800; font-size:16px; cursor:pointer; }
+.gvMic svg { width:24px; height:24px; }
+.gvMic.on { background:var(--accent); color:var(--accentInk); animation:gvPulse 1.4s ease-in-out infinite; }
+@keyframes gvPulse { 50% { opacity:.72; } }
+@media (prefers-reduced-motion: reduce) { .gvMic.on { animation:none; } }
+.gvErr { color:var(--bad); font-weight:700; }
+.gvFine { font-size:12.5px; }
+.gvItems { display:flex; flex-direction:column; gap:10px; }
+.gvItem { display:flex; gap:10px; align-items:flex-start; padding:10px; border:1px solid var(--line); border-radius:14px; }
+.gvItem.off { opacity:.5; }
+.gvTick { flex:none; width:28px; height:28px; margin-top:4px; border-radius:50%; border:2px solid var(--muted); background:none; color:var(--accentInk); font-size:15px; font-weight:900; line-height:1; cursor:pointer; }
+.gvTick.on { background:var(--accent); border-color:var(--accent); }
+.gvBody { flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; }
+.gvBody input.gvTitle { margin:0; font-weight:700; font-size:16px; }
+.gvNotes { font-size:14px; color:var(--muted); white-space:pre-wrap; }
+.gvSteps { margin:0; padding-left:20px; font-size:14px; color:var(--muted); }
+.gvMeta { display:flex; flex-wrap:wrap; gap:6px; }
+.gvMeta input, .gvMeta select { margin:0; min-width:0; flex:1 1 120px; font-size:14px; padding:8px; }
+.gvWho { display:flex; flex-wrap:wrap; gap:6px; }
+.gvSheet > .gtTools { position:sticky; bottom:calc(-16px - env(safe-area-inset-bottom)); background:var(--surface); padding:8px 0 calc(4px + env(safe-area-inset-bottom)); margin-bottom:calc(-1 * env(safe-area-inset-bottom)); }

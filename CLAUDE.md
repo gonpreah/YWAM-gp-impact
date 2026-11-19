@@ -3472,6 +3472,33 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   goals) is separate and unchanged.
 - tests/test-gp-tasks.mjs (server: the rules), tests/test-gp-tasks-ui.mjs.
 
+## Talk it through → tasks (teams/21-voice.js, Nov 2026, Uriah)
+"I want to add an api link into our app especially to voice stream of consciousness into our tasks app and then have
+Claude build out tasks and calendar dates in line with our verbal processing."
+- **The page**: GP Tasks (and tasks.html) has a microphone above the round ＋ (`gvFabHtml_`, `#gvOpen`, only when the
+  boot's `voice` is true → `S.voiceOn`; not guests, students or previews). It opens a sheet (`S.gv`, `gvHtml_`,
+  `#gvSheet`): a box (`#gvText`, ≤6,000 characters) and, where the browser has SpeechRecognition (`gvRec_`),
+  **Tap to talk** (`#gvMic`, `gvListen_`: continuous, km-KH or en-US by the app's language, the words written into the
+  box without a redraw); elsewhere a hint to use the keyboard's own microphone (`#gvKeyHint` — an iPhone Home Screen app
+  usually has no SpeechRecognition). **Make my tasks** (`#gvGo`) → `voiceTasks`; the answer is a list to check
+  (`#gvItems`: tick `[data-gvon]`, title / day / time / list `[data-gvf="i|field"]`, people as chips to take off
+  `[data-gvrm]`, steps shown) and **Add n tasks** (`#gvAdd`, `gvAdd_`) saves the ticked ones through `saveGpTask`, one
+  after another, each with its own `rid`. Nothing is saved before that. A task with a day is on the Calendar like any
+  other (the campus's Google Calendar is still read-only — nothing is written to Google).
+- **The server** (api.js "Talk it through → tasks"): `voiceTasks(user, pin, text, {lang})` — staff only (`gptAuth_`),
+  40 asks a person a day (`voiceUse` blob, `VOICE_MAX`), then ONE call to Claude (`voiceAsk_`: the official
+  `@anthropic-ai/sdk`, imported only when asked; `claude-opus-5-5`, effort low, a JSON schema `VOICE_SCHEMA` through
+  `output_config.format`, the refusal fallback on; 24 s, no retries). `voiceClean_` holds the answer to what a task may
+  be: a real day from today to three years out, a time only with a day, lists and people only by the codes it was given
+  (L1…, P1… — never ids), ≤25 tasks. It answers `{tasks, note}` and writes nothing but the day's count.
+- **The key is `ANTHROPIC_API_KEY` in Netlify's environment** — never in the repo, the chat or a commit. Unset → no
+  microphone anywhere, and `voiceTasks` answers `not_set_up`. Usage is billed to that key's Anthropic account.
+- **What leaves the site**: the words said, the names of the person's own task lists, and the names of their campus's
+  active staff (so "ask Sokha" can become Sokha). The sheet says so. Never ids, usernames or anything else.
+- tests/test-voice-tasks.mjs (server), tests/test-voice-tasks-ui.mjs; both use tests/voice-fixtures.mjs, a stand-in
+  for the SDK written into the test's own node_modules — no test calls Anthropic. Khmer: docs/khmer-needed.md §113.
+  sw.js SHELL v26.
+
 ## GP Tasks — an app of its own (tasks.html, Nov 2026, Andrew)
 "A separate app for our tasks and calendar … like a separate download for it but it's synced and linked to
 the main app." An installable web app, like the portal — not an App Store app.
