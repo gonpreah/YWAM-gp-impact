@@ -2663,6 +2663,17 @@ with quarterly reviews on progress." teams/10-review360.js; api.js "360 reviews"
   carries both (`p360ask`, and on Mondays `p360plan`).
 - **Sharing**: the person picks who else sees the results, their own answers and the plan
   (`p360Share`, ≤10; their mentor first) — read-only, never who was asked. They can delete it.
+- **Asking more people, also after it has closed** (Nov 2026, Uriah: "send it to more people to get input even after
+  it's been closed"): **＋ Ask more people** (`#p3More`, `p3MoreBtnHtml_`) on the person's own review, open or closed →
+  the picker without the people already asked (`p3MoreHtml_`, `S.p3Draft.more`, `#p3MoreSend`) → `p360AskMore(id,
+  {reviewers, due})`. An open review just gets the extra people. A closed one opens again (`gathering`, `#p3Gather`)
+  with **the results exactly as they were**: once results have been seen, new answers go to `r.more.answers` (who was
+  added: `r.more.ids`) and count only — all together — when it is closed again with at least `P360_MIN_N` of them
+  (`p360Answers_`); fewer stay waiting (`held`, `#p3Held`, "2 new answers are waiting"), and asking again keeps them.
+  So that round needs at least three new people (`moreNeed`, `too_few` + `need`); a review closed with too few answers
+  to show anything wants just one more and opens plainly. Why: the person could otherwise compare the results before
+  and after and read off what one new person said. Don't pour a later round straight into `r.answers`. Thirty people a
+  review at most (`moreRoom`). Khmer: docs/khmer-needed.md §114.
 - Store: `p360` (one list), written with `mutateKey_` (mutateStaff_'s write-and-check, for
   any key) so two answers at once can't lose one.
 - Tests: tests/test-p360.mjs (the server, anonymity), test-p360-ui.mjs (the whole journey).
