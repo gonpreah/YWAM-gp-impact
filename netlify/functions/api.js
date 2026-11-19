@@ -5694,7 +5694,7 @@ async function getTasksBoot(username, pin, calFrom) {
 }
 
 const BOOT_KEYS = ['libClub', 'entries', 'survey', 'okrs', 'dailyLogs', 'goals', 'holidays', 'smartGoals', 'broadcasts',
-  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks'];
+  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks', 'holidayCatch'];
 async function getMyBoot(username, pin) {
   prefetch_(['staff', 'loginThrottle'].concat(BOOT_KEYS));   // before the PIN check, so they travel together
   const s = await verifyStaff_(username, pin);
@@ -11824,7 +11824,16 @@ async function adminAppUse(username, pin, campus) {
    never what they did — except books: how many they finished (a count already on every profile), never which. The weekly health check-in is NOT counted, on purpose — its rows are anonymous, and a
    point for it would say who answered. Everyone active on the campus is on it (Uriah: "no need to put the option,
    leave them on"). */
-const GAME_PTS = { open: 5, habit: 2, habitDayCap: 10, goalsSet: 10, goalsPct: 20, task: 5, taskCap: 30, numbers: 10, numbersCap: 20, book: 50, bookCap: 150, oneOnOne: 15 };
+/* Balanced Nov 2026 (Andrew: "make it balanced … a book a little higher than the rest"): the everyday things count a
+   bit more and a book less, still the biggest single thing. streakMin / streakBonus: a day streak of 3 or more adds 20%
+   to the week's points; lose the streak and it goes back. holiday: a snowflake or candy cane caught in the holiday
+   season (HOLIDAY_FROM … HOLIDAY_TO), holidayDayCap of them a day. */
+const GAME_PTS = { open: 5, habit: 3, habitDayCap: 15, goalsSet: 15, goalsPct: 25, task: 5, taskCap: 40, numbers: 10, numbersCap: 20, book: 30, bookCap: 90, oneOnOne: 20,
+  streakMin: 3, streakBonus: 0.2, holiday: 5, holidayDayCap: 3 };
+/* The holiday season (Nov 2026, Andrew: "every now and then a snowflake or a candy cane falls … tap it and get 5
+   points"). Month-day on Cambodia's calendar, running over the new year. */
+const HOLIDAY_FROM = '11-15', HOLIDAY_TO = '01-06', HOLIDAY_GAP_MS = 30 * 1000, HOLIDAY_KEEP_DAYS = 60;
+function holidaySeason_(today) { const md = String(today || baseToday_()).slice(5, 10); return md >= HOLIDAY_FROM || md <= HOLIDAY_TO; }
 function gameDayOf_(when) {
   const t = Date.parse(when); if (isNaN(t)) return '';
   return new Date(t + 7 * 3600 * 1000).toISOString().slice(0, 10);
@@ -11836,14 +11845,14 @@ function gameMonday_(today) {
 async function gameBoard_(s, staff, campus) {
   if (!s || isApplicant_(s)) return null;
   campus = CAMPUS_IDS_.indexOf(campus) > -1 ? campus : s.campus;
-  const [rec, daily, goals, entries, kpiDaily, gpt, oos] = await Promise.all([readJSON('lastSeen', {}), getDaily_(), getGoals_(),
-    readJSON('entries', []), readJSON('kpiDaily', []), readJSON('gpTasks', null), readJSON('oneOnOnes', [])]);
+  const [rec, daily, goals, entries, kpiDaily, gpt, oos, hol] = await Promise.all([readJSON('lastSeen', {}), getDaily_(), getGoals_(),
+    readJSON('entries', []), readJSON('kpiDaily', []), readJSON('gpTasks', null), readJSON('oneOnOnes', []), readJSON('holidayCatch', {})]);
   const today = baseToday_(), from = gameMonday_(today), to = icsDay_(from, 6);
   const inWeek = function (d) { return isDate_(d) && d >= from && d <= today; };
   const people = (Array.isArray(staff) ? staff : []).filter(function (x) { return x && x.active !== false && !x.archived && !isApplicant_(x) && x.campus === campus; });
   const ids = {}; people.forEach(function (x) { ids[x.id] = 1; });
   const used = {}, P = {};
-  const row = function (id) { return P[id] || (P[id] = { open: {}, habit: {}, goalsSet: 0, goalsPct: 0, task: 0, numbers: {}, book: 0, oneOnOne: 0 }); };
+  const row = function (id) { return P[id] || (P[id] = { open: {}, habit: {}, goalsSet: 0, goalsPct: 0, task: 0, numbers: {}, book: 0, oneOnOne: 0, holiday: 0 }); };
   const add = function (id, d) { if (!ids[id] || !isDate_(d) || d > today) return; (used[id] = used[id] || {})[d] = 1; };
   const days = (rec.days && typeof rec.days === 'object' && !Array.isArray(rec.days)) ? rec.days : {};
   const seen = (rec.seen && typeof rec.seen === 'object') ? rec.seen : {};
@@ -11883,20 +11892,26 @@ async function gameBoard_(s, staff, campus) {
     if (!r || r.status !== 'held' || !inWeek(String(r.heldOn || '').slice(0, 10))) return;
     [r.fromId, r.toId].forEach(function (id) { if (ids[id]) row(id).oneOnOne++; });
   });
+  const catches = (hol.catches && typeof hol.catches === 'object') ? hol.catches : {};
+  Object.keys(catches).forEach(function (id) {
+    if (!ids[id] || !catches[id] || typeof catches[id] !== 'object') return;
+    Object.keys(catches[id]).forEach(function (d) { if (inWeek(d)) row(id).holiday += Math.max(0, Math.min(GAME_PTS.holidayDayCap, Math.floor(Number(catches[id][d]) || 0))); });
+  });
   const booksYear = {};
   people.forEach(function (x) {
     const read = cleanLibRead_(x.libRead);
     Object.keys(read).forEach(function (b) { if (inWeek(read[b])) row(x.id).book++; if (String(read[b] || '').slice(0, 4) === today.slice(0, 4)) booksYear[x.id] = (booksYear[x.id] || 0) + 1; });
   });
   const partsOf = function (id) {
-    const g = P[id]; if (!g) return { open: 0, habits: 0, goals: 0, tasks: 0, numbers: 0, books: 0, oneOnOnes: 0 };
+    const g = P[id]; if (!g) return { open: 0, habits: 0, goals: 0, tasks: 0, numbers: 0, books: 0, oneOnOnes: 0, holiday: 0 };
     let habits = 0; Object.keys(g.habit).forEach(function (d) { habits += Math.min(GAME_PTS.habitDayCap, g.habit[d] * GAME_PTS.habit); });
     return {
       open: Object.keys(g.open).length * GAME_PTS.open, habits: habits,
       goals: g.goalsSet ? GAME_PTS.goalsSet + Math.round(GAME_PTS.goalsPct * Math.max(0, Math.min(100, g.goalsPct)) / 100) : 0,
       tasks: Math.min(GAME_PTS.taskCap, g.task * GAME_PTS.task),
       numbers: Math.min(GAME_PTS.numbersCap, Object.keys(g.numbers).length * GAME_PTS.numbers),
-      books: Math.min(GAME_PTS.bookCap, g.book * GAME_PTS.book), oneOnOnes: g.oneOnOne * GAME_PTS.oneOnOne
+      books: Math.min(GAME_PTS.bookCap, g.book * GAME_PTS.book), oneOnOnes: g.oneOnOne * GAME_PTS.oneOnOne,
+      holiday: g.holiday * GAME_PTS.holiday
     };
   };
   const streakOf = function (id) {
@@ -11906,9 +11921,12 @@ async function gameBoard_(s, staff, campus) {
   };
   const all = people.map(function (x) {
     const parts = partsOf(x.id); let pts = 0; Object.keys(parts).forEach(function (k) { pts += parts[k]; });
+    const streak = streakOf(x.id);
+    /* on a streak: +20% of the week's points, gone again once the streak breaks */
+    parts.streak = streak >= GAME_PTS.streakMin ? Math.round(pts * GAME_PTS.streakBonus) : 0; pts += parts.streak;
     const u = used[x.id] || {}; let week = '';
     for (let i = 0; i < 7; i++) { const d = icsDay_(from, i); week += d > today ? '-' : (u[d] ? '1' : '0'); }
-    return { id: x.id, pts: pts, streak: streakOf(x.id), week: week, parts: parts, books: (P[x.id] || {}).book || 0, booksYear: booksYear[x.id] || 0, dept: deptOf_(x) || '', ministry: x.ministry || '' };
+    return { id: x.id, pts: pts, streak: streak, week: week, parts: parts, books: (P[x.id] || {}).book || 0, booksYear: booksYear[x.id] || 0, dept: deptOf_(x) || '', ministry: x.ministry || '' };
   });
   const shown = all.slice().sort(function (a, b) { return b.pts - a.pts || b.streak - a.streak || (a.id < b.id ? -1 : 1); });
   let rank = 0, last = null;
@@ -11928,8 +11946,33 @@ async function gameBoard_(s, staff, campus) {
     ministries: ministries,
     of: all.length, active: all.filter(function (p) { return p.week.indexOf('1') > -1; }).length,
     activeToday: all.filter(function (p) { return (used[p.id] || {})[today]; }).length,
-    me: mine ? { pts: mine.pts, streak: mine.streak, week: mine.week, parts: mine.parts, rank: mine.rank } : null
+    me: mine ? { pts: mine.pts, streak: mine.streak, week: mine.week, parts: mine.parts, rank: mine.rank } : null,
+    holiday: holidaySeason_(today) ? { left: Math.max(0, GAME_PTS.holidayDayCap - Math.floor(Number(((catches[s.id] || {})[today])) || 0)) } : null
   };
+}
+/* A snowflake or candy cane caught (the page drops one now and then in the holiday season; the person taps it).
+   The page can't prove one fell, so the server holds the line: staff only, in season, holidayDayCap a day, and
+   not two within HOLIDAY_GAP_MS. holidayCatch = { catches: { staffId: { 'YYYY-MM-DD': n } }, last: { staffId: ms } },
+   the newest HOLIDAY_KEEP_DAYS. Answers with the board again, so the points show at once. */
+async function catchHoliday(username, pin) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false, err: 'auth' };
+  const today = baseToday_();
+  if (!holidaySeason_(today)) return { ok: false, err: 'season' };
+  const now = Date.now(), from = icsDay_(today, -HOLIDAY_KEEP_DAYS);
+  const res = await mutateKey_('holidayCatch', {}, function (d) {
+    if (!d.catches || typeof d.catches !== 'object' || Array.isArray(d.catches)) d.catches = {};
+    if (!d.last || typeof d.last !== 'object' || Array.isArray(d.last)) d.last = {};
+    const mine = (d.catches[s.id] && typeof d.catches[s.id] === 'object') ? d.catches[s.id] : (d.catches[s.id] = {});
+    const n = Math.floor(Number(mine[today]) || 0);
+    if (n >= GAME_PTS.holidayDayCap) return { abort: true, ok: false, err: 'cap', left: 0 };
+    if (now - (Number(d.last[s.id]) || 0) < HOLIDAY_GAP_MS) return { abort: true, ok: false, err: 'soon', left: GAME_PTS.holidayDayCap - n };
+    mine[today] = n + 1; d.last[s.id] = now;
+    Object.keys(mine).forEach(function (k) { if (!isDate_(k) || k < from) delete mine[k]; });
+    return { ok: true, left: GAME_PTS.holidayDayCap - n - 1 };
+  });
+  if (!res || !res.ok) return res || { ok: false };
+  return { ok: true, left: res.left, pts: GAME_PTS.holiday, game: await gameBoard_(s, await getStaff_(), s.campus) };
 }
 async function getGame(username, pin, campus) {
   const s = await verifyStaff_(username, pin);
@@ -13511,6 +13554,7 @@ const HANDLERS = {
   adminLooseEnds: function (a) { return adminLooseEnds(a[0], a[1]); },
   adminAppUse: function (a) { return adminAppUse(a[0], a[1], a[2]); },
   getGame: function (a) { return getGame(a[0], a[1], a[2]); },
+  catchHoliday: function (a) { return catchHoliday(a[0], a[1]); },
   markSeen: function (a) { return markSeen(a[0], a[1], a[2]); },
   hrArchiveMany: function (a) { return hrArchiveMany(a[0], a[1], a[2], a[3]); },
   saveMyKpiDay: function (a) { return saveMyKpiDay(a[0], a[1], a[2], a[3]); },

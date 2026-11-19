@@ -177,4 +177,89 @@ function gpUndo_(text, commit, undo){
 document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') gpUndoFlush_(); });
 window.addEventListener('pagehide', gpUndoFlush_);
 
-function bindUx_(){ bindFind_(); }
+function bindUx_(){ bindFind_(); gpBannerTick_(); if(typeof holSchedule_==='function') holSchedule_(); }
+
+/* ---------- The slide-down reminder (Nov 2026, Andrew: "instead of a box pop-up on My Home … a small notification
+   slides down from the top, like on a smartphone … swipe it up and it's just in your notification bell … tap it and you
+   can finish that one thing") ----------
+   What it shows is the bell's own list (visibleNotifItems_: the check-in on Tuesday, goals not set, numbers due, a 1-on-1
+   asked for…): one at a time, the newest first, each once a day (gp-banner-seen = {key: date}, only today's kept), the
+   first a few seconds after the app is up, then at most one every GP_BANNER_GAP_MS. It stays GP_BANNER_SHOW_MS and slides
+   away by itself; ✕ or a swipe up sends it away now. Nothing is cleared — it is still in the bell. A tap does the thing:
+   with one action (Answer it, Enter them, Open) that action, exactly as the bell's button does it; with two (Approve /
+   Deny, Accept / Pick another time) or none, the bell opens so the person chooses there. Not for guests, students, the
+   board, a preview or the GP Tasks app, and not under a test browser unless localStorage 'gp-banner-test' is set. */
+var GP_BANNER_FIRST_MS=4000, GP_BANNER_GAP_MS=60000, GP_BANNER_SHOW_MS=9000;
+var _gpBan={ timer:0, hide:0, last:0, cur:null };
+function gpBannerOn_(){
+  if(!S.me || S.guest || S.student || S.board || S.stuPreview || !S.auth || !S.auth.user) return false;
+  if(S.bootStale || S.offlineSince || S.view==='login') return false;
+  if(typeof gpTasksApp_==='function' && gpTasksApp_()) return false;
+  if(navigator.webdriver && !lsGet('gp-banner-test')) return false;
+  return true;
+}
+function gpBannerKey_(it){ return String(it.when||'').slice(0,10)+'|'+String(it.text||'').slice(0,120); }
+function gpBannerSeen_(){
+  var today=todayStr(), m={};
+  try { m=JSON.parse(lsGet('gp-banner-seen')||'{}')||{}; } catch(e){ m={}; }
+  Object.keys(m).forEach(function(k){ if(m[k]!==today) delete m[k]; });
+  return m;
+}
+function gpBannerMark_(it){ var m=gpBannerSeen_(); m[gpBannerKey_(it)]=todayStr(); lsSet('gp-banner-seen', JSON.stringify(m)); }
+function gpBannerNext_(){
+  var seen=gpBannerSeen_();
+  return visibleNotifItems_().filter(function(it){ return !it.bellOnly && !seen[gpBannerKey_(it)]; })[0] || null;
+}
+function gpBannerTick_(){
+  if(_gpBan.cur || _gpBan.timer || !gpBannerOn_()) return;
+  var wait=Math.max(typeof S.bannerFirstMs==='number' ? S.bannerFirstMs : GP_BANNER_FIRST_MS, _gpBan.last ? _gpBan.last+(typeof S.bannerGapMs==='number' ? S.bannerGapMs : GP_BANNER_GAP_MS)-Date.now() : 0);
+  _gpBan.timer=setTimeout(function(){ _gpBan.timer=0; gpBannerShow_(); }, wait);
+}
+function gpBannerShow_(){
+  if(_gpBan.cur || !gpBannerOn_()) return;
+  if(document.hidden || S.bellOpen || document.getElementById('findRoot') || document.getElementById('askRoot')){ _gpBan.last=Date.now(); gpBannerTick_(); return; }
+  var it=gpBannerNext_(); if(!it) return;
+  gpBannerMark_(it);
+  var acts=document.createElement('div'); acts.innerHTML=it.actions||'';
+  var nAct=acts.querySelectorAll('button,a').length, label=nAct===1 ? acts.querySelector('button,a').textContent : '';
+  var el=document.createElement('div');
+  el.id='gpBanner'; el.className='gpBanner'; el.setAttribute('role','status');
+  el.innerHTML='<span class="gpBanIc">'+BELL_SVG+'</span>'+
+    '<span class="gpBanText"><b>'+esc(t('YWAM GP'))+'</b><span id="gpBanMsg">'+esc(it.text)+'</span>'+
+      (label ? '<span class="gpBanGo">'+esc(label)+' ›</span>' : '<span class="gpBanGo">'+esc(t('Open'))+' ›</span>')+'</span>'+
+    '<button class="gpBanX" id="gpBanX" aria-label="'+esc(t('Dismiss'))+'">×</button><span class="gpBanGrip" aria-hidden="true"></span>';
+  document.body.appendChild(el);
+  _gpBan.cur={ el:el, it:it, n:nAct };
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.classList.add('on'); }); });
+  _gpBan.hide=setTimeout(function(){ gpBannerAway_(); }, typeof S.bannerShowMs==='number' ? S.bannerShowMs : GP_BANNER_SHOW_MS);
+  /* a swipe up sends it away; a tap (no movement) opens it */
+  var y0=null, dy=0, moved=false;
+  el.addEventListener('pointerdown', function(e){ if(e.target.closest('#gpBanX')) return; y0=e.clientY; dy=0; moved=false; el.classList.add('drag'); try { el.setPointerCapture(e.pointerId); } catch(err){} });
+  el.addEventListener('pointermove', function(e){ if(y0===null) return; dy=Math.min(0, e.clientY-y0); if(dy<-6) moved=true; el.style.transform='translateY('+dy+'px)'; });
+  var up=function(){ if(y0===null) return; y0=null; el.classList.remove('drag'); el.style.transform='';
+    if(dy<-30){ gpBannerAway_(); return; }
+    if(!moved) gpBannerOpen_(); };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', function(){ y0=null; el.classList.remove('drag'); el.style.transform=''; });
+  document.getElementById('gpBanX').onclick=function(e){ e.stopPropagation(); gpTap(); gpBannerAway_(); };
+}
+function gpBannerAway_(){
+  var c=_gpBan.cur; if(!c) return;
+  clearTimeout(_gpBan.hide); _gpBan.cur=null; _gpBan.last=Date.now();
+  c.el.classList.remove('on'); c.el.classList.add('off');
+  setTimeout(function(){ if(c.el.parentNode) c.el.parentNode.removeChild(c.el); }, 350);
+  gpBannerTick_();
+}
+/* the tap: the bell's own button for this item, so it does exactly what the bell does */
+function gpBannerOpen_(){
+  var c=_gpBan.cur; if(!c) return;
+  var key=gpBannerKey_(c.it), n=c.n;
+  gpTap(); gpBannerAway_();
+  S.bellOpen=true; renderNotifPanel();
+  if(n!==1) return;   // two choices, or none: the bell is open on it
+  var idx=-1; visibleNotifItems_().some(function(x, i){ if(gpBannerKey_(x)===key){ idx=i; return true; } return false; });
+  var row=idx>-1 ? document.querySelectorAll('#notifRoot .drawer .row')[idx] : null;
+  var b=row && row.querySelector('button,a');
+  if(!b) return;
+  b.click();
+  if(S.bellOpen){ S.bellOpen=false; renderNotifPanel(); }
+}

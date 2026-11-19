@@ -985,7 +985,7 @@ function homeHtml(){
   var h=miniDashboardHtml();
   h+=gpQueueBannerHtml_();
   h+=phaseBanner(phase, wk);
-  h += checkinTueHtml_();   // Tuesday: the weekly health check-in, at the staff meeting
+  /* Tuesday's check-in is the slide-down reminder and the bell now, not a card here (Andrew, Nov 2026) */
   h += f30CardHtml_();
   h += libHomeCardHtml_();   // 📚 Reading: up top (Uriah, Nov 2026: "put the book thing up"), always there
   h += goalsCardHtml(goalsViewWeek());

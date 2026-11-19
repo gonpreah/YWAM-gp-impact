@@ -5568,3 +5568,20 @@ The sheet where someone says everything on their mind and gets tasks back to che
 | Added {n} — the rest could not be saved. Try again. | បានបន្ថែម {n} — នៅសល់មិនអាចរក្សាទុកបានទេ។ សូមព្យាយាមម្តងទៀត។ |
 | Added 1 task | បានបន្ថែមកិច្ចការ ១ |
 | Added {n} tasks | បានបន្ថែមកិច្ចការ {n} |
+
+## 113. The week's board: streak bonus, the holiday catch, the slide-down reminder
+
+"streak bonus" sits on My Home's points line after "+20%" (short). The holiday catch: a snowflake or a candy cane falls across the screen in the holiday season; tapping it gives 5 points ("Catch the …" is read aloud by screen readers). "Set them" is a small button on the goals reminder that slides down from the top.
+
+| English | Khmer (draft) |
+|---|---|
+| Don’t forget to set your three goals for this week | កុំភ្លេចកំណត់គោលដៅទាំងបីរបស់អ្នកសម្រាប់សប្ដាហ៍នេះ |
+| Set them | កំណត់ឥឡូវ |
+| streak bonus | ពិន្ទុបន្ថែមពេលប្រើជាប់ៗ |
+| Streak bonus | ពិន្ទុបន្ថែមពេលប្រើជាប់ៗ |
+| +{n}% of the week while you are on a streak of {m} days or more | +{n}% នៃពិន្ទុសប្ដាហ៍ ពេលអ្នកប្រើជាប់ៗគ្នា {m} ថ្ងៃ ឬច្រើនជាងនេះ |
+| Snowflakes and candy canes caught | ផ្កាព្រិល និងស្ករដំបងដែលចាប់បាន |
+| Catch the candy cane | ចាប់ស្ករដំបង |
+| Catch the snowflake | ចាប់ផ្កាព្រិល |
+| You caught a candy cane! +{n} points | អ្នកចាប់បានស្ករដំបង! +{n} ពិន្ទុ |
+| You caught a snowflake! +{n} points | អ្នកចាប់បានផ្កាព្រិល! +{n} ពិន្ទុ |

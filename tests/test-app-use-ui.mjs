@@ -172,16 +172,18 @@ async function open(user, when) {
 const next = (dow) => { const d = new Date(); d.setHours(10, 0, 0, 0); d.setDate(d.getDate() + ((dow - d.getDay() + 7) % 7)); return d; };
 {
   const { ctx, page } = await open('kanha', next(2));
-  ok('Tuesday: My Home says it is check-in day', !!(await page.$('#tueCheckin')) && /Tuesday/.test(await page.$eval('#tueCheckin', e => e.innerText)));
   const bell = await page.evaluate(() => visibleNotifItems_().map(x => x.text).join(' | '));
-  ok('… and the bell says so', /Tuesday — answer your weekly health check-in at the staff meeting/.test(bell), bell);
-  await page.click('#tueCheckinGo'); await page.waitForTimeout(500);
-  ok('“Answer it now” opens this week’s check-in form', await page.evaluate(() => S.view === 'health') && !!(await page.$('#weekForm')));
+  ok('Tuesday: the bell says it is check-in day — no box on My Home', /Tuesday — answer your weekly health check-in at the staff meeting/.test(bell) && !(await page.$('#tueCheckin')), bell);
+  await page.evaluate(() => { localStorage.setItem('gp-banner-test', '1'); S.bannerShowMs = 60000; gpBannerShow_(); });
+  await page.waitForSelector('#gpBanner.on', { timeout: 3000 });
+  ok('… and it slides down from the top', /Tuesday — answer your weekly health check-in/.test(await page.$eval('#gpBanMsg', e => e.textContent)) && /Answer it/.test(await page.$eval('#gpBanner', e => e.innerText)));
+  await page.click('#gpBanMsg'); await page.waitForTimeout(500);
+  ok('a tap opens this week’s check-in form', await page.evaluate(() => S.view === 'health' && !S.bellOpen) && !!(await page.$('#weekForm')));
   await page.evaluate(() => { S.weekForm = null; render(); }); await page.waitForTimeout(200);
   ok('the Health tab says it is done on Tuesdays at the staff meeting', /Tuesdays, at the staff meeting/.test(await page.$eval('#checkinTueHint', e => e.textContent)));
   await page.evaluate(() => { S.checkins = (S.checkins || []).concat([{ week: thisWeek(), source: 'weekly', clarity: 7, growth: 7, lonely: 3 }]); S.view = 'week'; render(); });
   await page.waitForTimeout(300);
-  ok('answered: the card goes', !(await page.$('#tueCheckin')));
+  ok('answered: the bell’s nudge goes', !(await page.evaluate(() => visibleNotifItems_().some(x => /check-in/.test(x.text)))));
   await ctx.close();
 }
 {
