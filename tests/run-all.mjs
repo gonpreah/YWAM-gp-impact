@@ -81,6 +81,7 @@ const SERVER = [
   'test-gpstrengths.mjs', // the free GP Strengths test: content, fair pairs, server scoring, who sees what
   'test-staff-email.mjs', // one profile per email; adminMergeStaff cleans up a real duplicate
   'test-overscroll-behavior.mjs', // none of the three pages' html/body may go back to overscroll-behavior:none (confirmed live: it disabled scrolling entirely on real desktop Chrome)
+  'test-voice-tasks.mjs',  // Talk it through → tasks (server): off without the key, what is sent to Claude, the answer held to real days / lists / people, nothing saved, the day's limit
 ];
 
 const BROWSER = [
@@ -159,6 +160,7 @@ const BROWSER = [
   'test-google-signin-ui.mjs', // signing in with Google made smoother: no profile for that Google account → connect it to theirs (no duplicate sign-up); Google won't open → help, the PIN, continue for today; inside Messenger → open in Chrome / copy the link; Google's page and back on an iPhone Home Screen app
   'test-gp-tasks.mjs',  // GP Tasks: ministry/department/personal lists, who sees and changes what, requests, Campus Leadership, the filter, board cards
   'test-gp-tasks-ui.mjs',  // GP Tasks in the browser: lists, Enter to add, day/time/person, the bell, asking another ministry, My Ministry's tab, the board card
+  'test-voice-tasks-ui.mjs',  // Talk it through → tasks: the microphone, the words sent once, the tasks to check, Add, a phone that can't listen, Khmer
   'test-students.mjs',  // students: profiles from SR Hospitality, invite + Google join, the student door (own data only), LD-only mentors
   'test-student-app-ui.mjs',  // the student GP app: staff Students page + invite, portal Go to GP app, student mode tabs/home/menu, mentor accept
   'test-team-personality-ui.mjs',  // Team → Personalities: the team's mix from shared types only, by campus / department / ministry
