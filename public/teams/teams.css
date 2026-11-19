@@ -3292,3 +3292,50 @@ body.findOn { overflow:hidden; }
 .gpBanX { flex:0 0 auto; background:none; border:0; color:var(--muted); font-size:22px; line-height:1; padding:0 4px; cursor:pointer; }
 .gpBanGrip { position:absolute; left:50%; bottom:5px; width:36px; height:4px; margin-left:-18px; border-radius:2px; background:var(--border2); }
 @media (prefers-reduced-motion: reduce) { .gpBanner, .gpBanner.off { transition:opacity .2s; } }
+
+/* ---------- the Library: highlights, notes, talking about them (18-library-plus.js, Nov 2026) ---------- */
+.lnHl-yellow { background:rgba(255,179,35,.38); } .lnHl-green { background:rgba(46,170,90,.28); }
+.lnHl-blue { background:rgba(31,68,255,.20); } .lnHl-pink { background:rgba(236,72,153,.26); }
+.lnPara { cursor:pointer; border-radius:6px; transition:background .2s, box-shadow .2s; -webkit-tap-highlight-color:transparent; }
+.lnPara.lnHl { padding:2px 6px; margin-left:-6px; margin-right:-6px; }
+.lnPara.lnSel { box-shadow:0 0 0 2px var(--accent); }
+.lnMark { display:inline-block; margin-left:6px; font-size:12px; padding:1px 6px; border-radius:999px; background:var(--surface); border:1px solid var(--border); vertical-align:middle; }
+.lnBar { position:fixed; left:10px; right:10px; bottom:calc(14px + env(safe-area-inset-bottom)); z-index:71; max-width:520px; margin:0 auto; display:flex; align-items:center; gap:8px;
+  padding:10px 12px; border-radius:16px; background:var(--surface); border:1px solid var(--border); box-shadow:0 8px 26px rgba(0,0,0,.22); animation:lnUp .2s ease-out; }
+@keyframes lnUp { from { transform:translateY(20px); opacity:0; } to { transform:none; opacity:1; } }
+.lnDot { width:30px; height:30px; border-radius:50%; border:2px solid var(--border2); cursor:pointer; font-weight:800; color:var(--ink); padding:0; flex:0 0 auto; }
+.lnDot.on { border-color:var(--ink); }
+.lnBarBtn { background:none; border:1px solid var(--border); border-radius:999px; padding:6px 11px; color:var(--ink); font:inherit; font-size:13.5px; cursor:pointer; white-space:nowrap; }
+.lnBarX { margin-left:auto; background:none; border:0; color:var(--muted); font-size:24px; line-height:1; cursor:pointer; padding:0 4px; }
+.lnScrim { position:fixed; inset:0; z-index:72; background:rgba(0,0,0,.35); }
+.lnSheet { position:fixed; left:0; right:0; bottom:var(--kb, 0px); z-index:73; max-width:560px; margin:0 auto; background:var(--bg); color:var(--ink); border-radius:18px 18px 0 0;
+  max-height:min(86vh, calc(100vh - var(--kb, 0px) - 20px)); display:flex; flex-direction:column; box-shadow:0 -8px 30px rgba(0,0,0,.25); animation:lnUp .22s ease-out; }
+.lnSheetHead { display:flex; align-items:center; gap:8px; padding:14px 16px 6px; font-size:16px; }
+.lnSheetBody { overflow:auto; padding:4px 16px calc(16px + env(safe-area-inset-bottom)); }
+.lnQuote { margin:6px 0 8px; padding:8px 10px; border-left:3px solid var(--accent); border-radius:6px; font-style:italic; font-size:14px; line-height:1.45; color:var(--ink); }
+.lnVis { display:flex; flex-wrap:wrap; gap:6px; }
+.lnPrayRow.off { opacity:.55; }
+.lnCard { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:10px 12px; margin:8px 0; cursor:pointer; }
+.lnCard.full { cursor:default; }
+.lnWho { display:flex; align-items:center; gap:8px; font-size:14px; }
+.lnText { margin:4px 0 6px; white-space:pre-wrap; line-height:1.45; }
+.lnPrayTag { font-size:13px; color:var(--muted); margin:2px 0 6px; }
+.lnActs { display:flex; flex-wrap:wrap; gap:6px; }
+.lnAct { background:none; border:1px solid var(--border); border-radius:999px; padding:5px 10px; font:inherit; font-size:13px; color:var(--ink); cursor:pointer; }
+.lnAct.on { border-color:var(--accent); color:var(--accent); }
+.lnAct.static { cursor:default; border-color:transparent; padding-left:2px; }
+.lnMine { display:flex; gap:12px; margin-top:4px; } .lnMine .linkbtn, .lnGo { width:auto; padding-left:0; margin:4px 0 0; text-align:left; }
+.lnCmts { margin-top:8px; }
+.lnCmt { display:flex; gap:8px; padding:8px 0; border-top:1px solid var(--border); font-size:14px; }
+.lnCmtBody { flex:1 1 auto; min-width:0; } .lnCmtBody div { white-space:pre-wrap; line-height:1.4; }
+.lnCmtDel { width:auto; padding:0; margin:2px 0 0; font-size:12.5px; }
+.lnCmtNew { display:flex; gap:8px; align-items:flex-end; margin-top:8px; } .lnCmtNew textarea { flex:1 1 auto; min-width:0; } .lnCmtNew .btn { width:auto; flex:0 0 auto; }
+.lnFeed { display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; touch-action:pan-x pan-y; }
+.lnFeedCard { flex:0 0 260px; text-align:left; display:flex; flex-direction:column; gap:6px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:10px 12px; font:inherit; color:var(--ink); cursor:pointer; }
+.lnFeedQuote { font-style:italic; font-size:13px; color:var(--muted); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.lnFeedNote { font-size:14px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.lnFeedMeta { font-size:12.5px; color:var(--muted); }
+.lnEmpty { margin:0 0 8px; }
+.prLib { width:auto; padding-left:0; margin:-2px 0 6px; text-align:left; font-size:13.5px; }
+@media (prefers-reduced-motion: reduce) { .lnBar, .lnSheet { animation:none; } }
+#lnBook .lnQuote { display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }

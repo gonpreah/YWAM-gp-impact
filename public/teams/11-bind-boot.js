@@ -539,6 +539,8 @@ function bindAway(){
   });
   bindHr();
   if(S.view==='library') bindLibrary_();
+  document.querySelectorAll('[data-prlib]').forEach(function(b){ b.onclick=function(){ gpTap(); var v=b.getAttribute('data-prlib').split('|');
+    S.view='library'; S.libBook=v[0]; S.libStep=null; S.libDone=null; if(S.ln){ S.ln.open=v[1]||''; delete S.ln.cache[v[0]]; } libLoad_(); render(); window.scrollTo(0,0); }; });
   if(S.view==='ministry'){ bindLw_(); bindCafe_(); bindLeadTools_(); bindFinance_(); bindDts_(); }
   if(S.view==='required') bindReqSign_();
   if(S.guest) bindGuest_();

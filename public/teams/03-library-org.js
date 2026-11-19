@@ -831,7 +831,7 @@ function libraryHtml(){
     var going=books.filter(function(x){ return prog[x.id] && !read[x.id]; });
     if(going.length) h+=libRowHtml_('📖 '+esc(t('Continue reading')), going, read, prog);
     if(picks.length) h+=libRowHtml_('⭐ '+esc(t('Start here')), picks, read, prog, 'start');
-    h+=libMineHtml_(read)+libPlansHtml_(read);
+    h+=libMineHtml_(read)+libPlansHtml_(read)+lnFeedHtml_();
     libShelvesShown_().forEach(function(sh){
       h+=libRowHtml_((sh.emoji?sh.emoji+' ':'')+esc(t(sh.name)), books.filter(function(x){ return x.shelf===sh.id; }), read, prog, sh.id);
     });
@@ -863,6 +863,7 @@ function libBookHtml_(b){
     return '<button class="libInsideItem" data-libstep="'+(k+1)+'"><span class="libInsightNum" style="background:'+sh.color+'">'+(k+1)+'</span><span>'+esc(x.emoji||'')+' '+esc(x.title)+'</span><span class="libInsideGo">›</span></button>';
   }).join('')+'</div></div>';
   h+='<div class="card libForUs'+(T.km?' libKm':'')+'" style="border-left-color:'+sh.color+'"><div class="libKicker">🌏 '+esc(t('For us at YWAM GP'))+'</div>'+libParas_(T.forUs)+'</div>';
+  h+=lnBookHtml_(b);   // 💬 notes and highlights (18-library-plus.js)
   h+='<div class="btnRow" style="margin-top:14px">'+
     '<button class="btn ghost" id="libMarkRead" data-libid="'+esc(b.id)+'">'+esc(read ? '✓ '+t('Read') : t('Mark as read'))+'</button>'+
     (next && next!==b ? '<button class="btn ghost" data-libbook="'+esc(next.id)+'">'+esc(t('Next book'))+' →</button>' : '')+'</div>';
@@ -1887,7 +1888,8 @@ function prayerHtml_(){
   list.forEach(function(p){
     h+='<div class="card prCard'+(p.answered?' answered':'')+'"><div class="prHead">'+avatarHtml(p,'sm')+'<span class="prWho"><b>'+esc(p.mine ? t('You') : p.name)+'</b>'+
       '<small>'+esc(prAgo_(p.created))+' · '+esc(p.scope==='mentor' ? t('only their mentor') : p.scope==='all' ? t('all of YWAM GP') : t(campusName(p.campus)))+'</small></span></div>'+
-      '<p class="prText">'+esc(p.text)+'</p>';
+      '<p class="prText">'+esc(p.text)+'</p>'+
+      (p.lib && p.lib.bookId ? '<button class="linkbtn prLib" data-prlib="'+esc(p.lib.bookId+'|'+(p.lib.noteId||''))+'">📚 '+esc(gpT('From “{title}”',{title:p.lib.title||''}))+'</button>' : '');
     if(p.answered) h+='<div class="prAnswered">🎉 '+esc(gpT('Answered {date}',{date:teamDate_(p.answered)}))+(p.answerNote ? '<div>'+esc(p.answerNote)+'</div>' : '')+'</div>';
     h+='<div class="prActs">';
     if(!p.mine) h+='<button class="btn '+(p.iPrayed?'':'ghost ')+'small" data-prpray="'+esc(p.id)+'" data-on="'+(p.iPrayed?'0':'1')+'">🙏 '+esc(p.iPrayed ? t('I prayed') : t('Pray'))+(p.prayedN ? ' · '+p.prayedN : '')+'</button>';

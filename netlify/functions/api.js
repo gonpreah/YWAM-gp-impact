@@ -4882,7 +4882,7 @@ function prOut_(r, s, staff) {
   const a = staff.find(function (x) { return x.id === r.staffId; });
   return { id: r.id, mine: r.staffId === s.id, name: a ? a.name : '—', photo: photoOf_(a), campus: r.campus, scope: r.scope,
     text: r.text, created: r.created, prayedN: (r.prayed || []).length, iPrayed: (r.prayed || []).indexOf(s.id) > -1,
-    answered: r.answered || '', answerNote: r.answerNote || '' };
+    answered: r.answered || '', answerNote: r.answerNote || '', lib: r.lib && r.lib.bookId ? { bookId: r.lib.bookId, title: r.lib.title || '', noteId: r.lib.noteId || '' } : null };
 }
 async function getPrayers(username, pin) {
   const s = await verifyStaff_(username, pin);
@@ -4940,6 +4940,205 @@ async function deletePrayer(username, pin, id) {
   if (!r || !(r.staffId === s.id || s.isAdmin)) return { ok: false, err: 'not_found' };
   await writeJSON('prayers', rows.filter(function (x) { return x.id !== id; }));
   return getPrayers(username, pin);
+}
+
+/* ==================== The Library: highlights, notes and talking about them (Nov 2026, Andrew) ====================
+   "Like the Bible app … highlight things you like in the reading … write a note on it … private, or public for everyone
+   in our base … people can comment on it, like it … even ask for prayer from it — private, public, or just to your mentor."
+   A paragraph of a book (bookId, the reader's step, its paragraph index p, the language it was read in) can carry one row
+   per person: a highlight colour, a note, who sees it (`vis` private | mentor | campus), and whether it asks for prayer.
+   Blob `libHl` = [{ id, staffId, campus, bookId, title, lang, step, p, quote, color, note, vis, prayerId, likes:[ids],
+   comments:[{ id, staffId, text, at }], at, edited }]. A prayer request is a real row in `prayers` (scope campus /
+   mentor, `lib: { bookId, title, noteId }`), so it shows on ☰ → Prayer too and "I prayed" counts in both places.
+   Who sees a row (lnCanSee_): its owner; with vis campus, active staff on its campus; with vis mentor, the owner's approved
+   mentor. Never applicants or students. Likes and comments go to whoever sees the row. Only the owner edits; the owner,
+   a comment's writer or an admin deletes. Nothing of it is on the roster, a profile or the week's board. */
+const LN_VIS = ['private', 'mentor', 'campus'], LN_COLORS = ['yellow', 'green', 'blue', 'pink'];
+const LN_NOTE_MAX = 1000, LN_QUOTE_MAX = 400, LN_COMMENT_MAX = 500, LN_PER_PERSON = 1000, LN_COMMENTS_MAX = 100, LN_COMMENTS_DAY = 60, LN_FEED_DAYS = 60;
+function lnCanSee_(r, s, staff) {
+  if (!r || !s) return false;
+  if (r.staffId === s.id) return true;
+  if (isApplicant_(s)) return false;
+  if (r.vis === 'campus') return r.campus === s.campus;
+  if (r.vis === 'mentor') { const a = (staff || []).find(function (x) { return x.id === r.staffId; }); return !!(a && a.mentorId === s.id && a.mentorStatus === 'approved'); }
+  return false;
+}
+function lnOut_(r, s, staff, prayers) {
+  const by = {}; (staff || []).forEach(function (x) { if (x && x.id) by[x.id] = x; });
+  const a = by[r.staffId];
+  const pr = r.prayerId ? (prayers || []).find(function (x) { return x.id === r.prayerId; }) : null;
+  return {
+    id: r.id, mine: r.staffId === s.id, staffId: r.staffId, name: a ? a.name : '—', photo: photoOf_(a), bookId: r.bookId, title: r.title || '',
+    lang: r.lang, step: r.step, p: r.p, quote: r.quote || '', color: r.color || '', note: r.note || '', vis: r.vis, at: r.at, edited: r.edited || '',
+    likes: (r.likes || []).length, iLiked: (r.likes || []).indexOf(s.id) > -1,
+    comments: (r.comments || []).map(function (c) { const w = by[c.staffId]; return { id: c.id, name: w ? w.name : '—', photo: photoOf_(w), text: c.text, at: c.at, mine: c.staffId === s.id }; }),
+    prayer: pr ? { prayedN: (pr.prayed || []).length, iPrayed: (pr.prayed || []).indexOf(s.id) > -1, answered: pr.answered || '', answerNote: pr.answerNote || '' } : null
+  };
+}
+/* The book's rows I may see: my own (highlights included) and what others share with me. */
+async function libNotes(username, pin, bookId) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const id = String(bookId || '');
+  if (!LIB_ID.test(id)) return { ok: false, err: 'bad_book' };
+  const [rows, staff, prayers] = await Promise.all([readJSON('libHl', []), getStaff_(), getPrayers_()]);
+  const out = rows.filter(function (r) { return r && r.bookId === id && lnCanSee_(r, s, staff); })
+    .sort(function (a, b) { return a.at < b.at ? 1 : -1; }).map(function (r) { return lnOut_(r, s, staff, prayers); });
+  return { ok: true, bookId: id, notes: out };
+}
+/* The campus's shared notes, newest first, for the Library's home (in the boot's `lib`). Short. */
+function lnFeed_(s, staff, rows) {
+  const since = new Date(Date.now() - LN_FEED_DAYS * 86400000).toISOString();
+  const by = {}; (staff || []).forEach(function (x) { if (x && x.id) by[x.id] = x; });
+  return (Array.isArray(rows) ? rows : []).filter(function (r) { return r && r.staffId !== s.id && r.note && r.at >= since && (r.vis === 'campus' || r.vis === 'mentor') && lnCanSee_(r, s, staff); })
+    .sort(function (a, b) { return a.at < b.at ? 1 : -1; }).slice(0, 8)
+    .map(function (r) { const a = by[r.staffId]; return { id: r.id, name: a ? a.name : '—', photo: photoOf_(a), bookId: r.bookId, title: r.title || '', vis: r.vis,
+      quote: String(r.quote || '').slice(0, 160), note: String(r.note || '').slice(0, 220), likes: (r.likes || []).length, comments: (r.comments || []).length, prayer: !!r.prayerId, at: r.at }; });
+}
+function lnMineCount_(s, rows) { return (Array.isArray(rows) ? rows : []).filter(function (r) { return r && r.staffId === s.id; }).length; }
+/* Make or change my row for a paragraph (one per person per paragraph). Empty colour and note → the row goes. */
+async function libNoteSave(username, pin, rec) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (isApplicant_(s)) return { ok: false, err: 'not_authorized' };
+  rec = rec || {};
+  const bookId = String(rec.bookId || '');
+  if (!LIB_ID.test(bookId)) return { ok: false, err: 'bad_book' };
+  const step = Math.floor(Number(rec.step)), pIdx = Math.floor(Number(rec.p));
+  if (!(step >= 0 && step <= 40) || !(pIdx >= 0 && pIdx <= 200)) return { ok: false, err: 'bad_place' };
+  const lang = rec.lang === 'km' ? 'km' : 'en';
+  const color = LN_COLORS.indexOf(rec.color) > -1 ? rec.color : '';
+  const note = String(str_(rec.note, LN_NOTE_MAX) || '').trim();
+  const vis = LN_VIS.indexOf(rec.vis) > -1 ? rec.vis : 'private';
+  if (vis === 'mentor' && !(s.mentorId && s.mentorStatus === 'approved')) return { ok: false, err: 'no_mentor' };
+  if (vis !== 'private' && !note) return { ok: false, err: 'need_note' };   // a shared row says something
+  const wantPrayer = !!rec.prayer && vis !== 'private' && !!note;
+  const quote = String(str_(rec.quote, LN_QUOTE_MAX) || '').trim(), title = String(str_(rec.title, 120) || '').trim();
+  const now = new Date().toISOString();
+  let saved = null, oldPrayer = '', wasMentor = false;
+  const res = await mutateKey_('libHl', [], function (rows) {
+    let i = rows.findIndex(function (r) { return r && r.staffId === s.id && r.bookId === bookId && r.step === step && r.p === pIdx && r.lang === lang; });
+    if (rec.id) { const j = rows.findIndex(function (r) { return r && r.id === rec.id; }); if (j === -1 || rows[j].staffId !== s.id) return { abort: true, ok: false, err: 'not_found' }; i = j; }
+    if (!color && !note) {   // nothing left: the row goes
+      if (i > -1) { oldPrayer = rows[i].prayerId || ''; rows.splice(i, 1); }
+      return { ok: true, gone: true };
+    }
+    if (i === -1) {
+      if (lnMineCount_(s, rows) >= LN_PER_PERSON) return { abort: true, ok: false, err: 'too_many' };
+      rows.push({ id: 'ln_' + crypto.randomBytes(6).toString('hex'), staffId: s.id, campus: s.campus, bookId: bookId, title: title, lang: lang, step: step, p: pIdx,
+        quote: quote, color: color, note: note, vis: vis, prayerId: '', likes: [], comments: [], at: now, edited: '' });
+      i = rows.length - 1;
+    } else {
+      const r = rows[i]; wasMentor = r.vis === 'mentor';
+      if (r.note !== note) r.edited = now;
+      r.color = color; r.note = note; r.vis = vis; r.campus = s.campus; if (title) r.title = title; if (quote) r.quote = quote;
+      if (vis === 'private') { r.likes = []; r.comments = []; }   // a row taken back to private keeps no conversation
+    }
+    oldPrayer = rows[i].prayerId || '';
+    saved = copy_(rows[i]);
+    return { ok: true };
+  });
+  if (!res || !res.ok) return res || { ok: false };
+  /* its prayer request: made, changed, or taken down */
+  if (saved && wantPrayer) {
+    const prId = oldPrayer || ('pr' + crypto.randomBytes(6).toString('hex'));
+    await mutateKey_('prayers', [], function (rows) {
+      let r = rows.find(function (x) { return x.id === prId; });
+      if (!r) { r = { id: prId, staffId: s.id, campus: s.campus, created: now, prayed: [], answered: '', answerNote: '' }; rows.push(r); }
+      r.scope = vis === 'mentor' ? 'mentor' : 'campus'; r.text = note.slice(0, PR_MAX_TEXT); r.lib = { bookId: bookId, title: saved.title || '', noteId: saved.id };
+      return { ok: true };
+    });
+    if (!oldPrayer) await mutateKey_('libHl', [], function (rows) { const r = rows.find(function (x) { return x.id === saved.id; }); if (r) r.prayerId = prId; return { ok: true }; });
+  } else if (oldPrayer) {
+    await mutateKey_('prayers', [], function (rows) { const i = rows.findIndex(function (x) { return x.id === oldPrayer; }); if (i > -1) rows.splice(i, 1); return { ok: true }; });
+    if (saved) await mutateKey_('libHl', [], function (rows) { const r = rows.find(function (x) { return x.id === saved.id; }); if (r) r.prayerId = ''; return { ok: true }; });
+  }
+  if (saved && vis === 'mentor' && !wasMentor) await pushNow_(s.mentorId, wantPrayer ? 'libMentorPray' : 'libMentorNote', { name: String(s.name || '').split(' ')[0], title: saved.title || '' }, 'teams.html?view=library&book=' + bookId + '&note=' + saved.id);
+  return Object.assign(await libNotes(username, pin, bookId), { id: saved ? saved.id : '' });
+}
+async function libNoteDelete(username, pin, id) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  let bookId = '', prayerId = '';
+  const res = await mutateKey_('libHl', [], function (rows) {
+    const i = rows.findIndex(function (r) { return r && r.id === id; });
+    if (i === -1) return { abort: true, ok: false, err: 'not_found' };
+    const r = rows[i];
+    if (!(r.staffId === s.id || (s.isAdmin && r.vis === 'campus' && r.campus === s.campus))) return { abort: true, ok: false, err: 'not_authorized' };
+    bookId = r.bookId; prayerId = r.prayerId || ''; rows.splice(i, 1);
+    return { ok: true };
+  });
+  if (!res || !res.ok) return res || { ok: false };
+  if (prayerId) await mutateKey_('prayers', [], function (rows) { const i = rows.findIndex(function (x) { return x.id === prayerId; }); if (i > -1) rows.splice(i, 1); return { ok: true }; });
+  return libNotes(username, pin, bookId);
+}
+/* like, comment, pray: whoever may see the row (and it is not private) */
+async function lnTouch_(username, pin, id, fn) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const staff = await getStaff_();
+  let bookId = '', owner = '', title = '';
+  const res = await mutateKey_('libHl', [], function (rows) {
+    const r = rows.find(function (x) { return x && x.id === id; });
+    if (!r || !lnCanSee_(r, s, staff) || r.vis === 'private') return { abort: true, ok: false, err: 'not_found' };
+    bookId = r.bookId; owner = r.staffId; title = r.title || '';
+    return fn(r, s);
+  });
+  if (!res || !res.ok) return res || { ok: false };
+  return { s: s, bookId: bookId, owner: owner, title: title, res: res };
+}
+async function libNoteLike(username, pin, id, on) {
+  const t = await lnTouch_(username, pin, id, function (r, s) {
+    r.likes = (r.likes || []).filter(function (x) { return x !== s.id; }); if (on) r.likes.push(s.id); return { ok: true };
+  });
+  if (!t.s) return t;
+  return libNotes(username, pin, t.bookId);
+}
+async function libNoteComment(username, pin, id, text) {
+  const body = String(str_(text, LN_COMMENT_MAX) || '').trim();
+  if (!body) return { ok: false, err: 'empty' };
+  const today = new Date().toISOString().slice(0, 10);
+  const t = await lnTouch_(username, pin, id, function (r, s) {
+    r.comments = Array.isArray(r.comments) ? r.comments : [];
+    if (r.comments.length >= LN_COMMENTS_MAX) return { abort: true, ok: false, err: 'too_many' };
+    r.comments.push({ id: 'lc_' + crypto.randomBytes(5).toString('hex'), staffId: s.id, text: body, at: new Date().toISOString() });
+    return { ok: true };
+  });
+  if (!t.s) return t;
+  /* not too many in a day from one person, across every note (checked after: a rare race costs nothing) */
+  const mine = (await readJSON('libHl', [])).reduce(function (n, r) { return n + ((r && r.comments) || []).filter(function (c) { return c.staffId === t.s.id && String(c.at).slice(0, 10) === today; }).length; }, 0);
+  if (mine > LN_COMMENTS_DAY) {
+    await mutateKey_('libHl', [], function (rows) { const r = rows.find(function (x) { return x.id === id; }); if (r) r.comments = r.comments.filter(function (c, i) { return !(i === r.comments.length - 1 && c.staffId === t.s.id); }); return { ok: true }; });
+    return { ok: false, err: 'too_many' };
+  }
+  if (t.owner !== t.s.id) await pushNow_(t.owner, 'libComment', { name: String(t.s.name || '').split(' ')[0], title: t.title }, 'teams.html?view=library&book=' + t.bookId + '&note=' + id);
+  return libNotes(username, pin, t.bookId);
+}
+async function libNoteUncomment(username, pin, id, commentId) {
+  const t = await lnTouch_(username, pin, id, function (r, s) {
+    const c = (r.comments || []).find(function (x) { return x.id === commentId; });
+    if (!c || !(c.staffId === s.id || r.staffId === s.id || (s.isAdmin && r.campus === s.campus))) return { abort: true, ok: false, err: 'not_authorized' };
+    r.comments = r.comments.filter(function (x) { return x.id !== commentId; });
+    return { ok: true };
+  });
+  if (!t.s) return t;
+  return libNotes(username, pin, t.bookId);
+}
+/* "I prayed" on a note that asks for prayer: the same count as on ☰ → Prayer */
+async function libNotePray(username, pin, id, on) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const staff = await getStaff_();
+  const r = (await readJSON('libHl', [])).find(function (x) { return x && x.id === id; });
+  if (!r || !r.prayerId || !lnCanSee_(r, s, staff)) return { ok: false, err: 'not_found' };
+  const res = await mutateKey_('prayers', [], function (rows) {
+    const pr = rows.find(function (x) { return x.id === r.prayerId; });
+    if (!pr) return { abort: true, ok: false, err: 'not_found' };
+    pr.prayed = (pr.prayed || []).filter(function (x) { return x !== s.id; }); if (on) pr.prayed.push(s.id);
+    return { ok: true };
+  });
+  if (!res || !res.ok) return res || { ok: false };
+  return libNotes(username, pin, r.bookId);
 }
 
 /* ==================== Support raising (Oct 2026) ====================
@@ -5312,6 +5511,9 @@ const PUSH_TEXT = {
   libMonth: { en: 'Ten minutes for this month’s book? {title}', km: 'ដប់នាទីសម្រាប់សៀវភៅប្រចាំខែនេះ? {title}' },
   libRead: { en: 'Ten minutes for a book? Pick up where you left off in the Library.', km: 'ដប់នាទីសម្រាប់សៀវភៅមួយ? បន្តអានពីកន្លែងដែលអ្នកឈប់នៅក្នុងបណ្ណាល័យ។' },
   libRec: { en: '{name} thinks you’d like “{title}”.', km: '{name} គិតថាអ្នកនឹងចូលចិត្ត «{title}»។' },
+  libComment: { en: '{name} commented on your note in “{title}”.', km: '{name} បានបញ្ចេញមតិលើកំណត់ចំណាំរបស់អ្នកក្នុង «{title}»។' },
+  libMentorNote: { en: '{name} shared a note with you from “{title}”.', km: '{name} បានចែករំលែកកំណត់ចំណាំមួយជាមួយអ្នកពី «{title}»។' },
+  libMentorPray: { en: '{name} asked you to pray, from “{title}”.', km: '{name} បានសុំឱ្យអ្នកអធិស្ឋាន ពី «{title}»។' },
   libPlan: { en: '{name} gave you a reading plan in the Library.', km: '{name} បានផ្តល់ផែនការអានមួយដល់អ្នកនៅក្នុងបណ្ណាល័យ។' },
   mcInvite: { en: '{name} asked you to take the couple check-up together.', km: '{name} បានអញ្ជើញអ្នកឲ្យធ្វើការពិនិត្យសម្រាប់គូស្វាមីភរិយាជាមួយគ្នា។' },
   mcReady: { en: 'You have both answered the couple check-up — your results are ready.', km: 'អ្នកទាំងពីរបានឆ្លើយការពិនិត្យសម្រាប់គូស្វាមីភរិយារួចហើយ — លទ្ធផលរបស់អ្នករួចរាល់ហើយ។' },
@@ -5694,7 +5896,7 @@ async function getTasksBoot(username, pin, calFrom) {
 }
 
 const BOOT_KEYS = ['libClub', 'entries', 'survey', 'okrs', 'dailyLogs', 'goals', 'holidays', 'smartGoals', 'broadcasts',
-  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks', 'holidayCatch'];
+  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks', 'holidayCatch', 'libHl'];
 async function getMyBoot(username, pin) {
   prefetch_(['staff', 'loginThrottle'].concat(BOOT_KEYS));   // before the PIN check, so they travel together
   const s = await verifyStaff_(username, pin);
@@ -5767,7 +5969,7 @@ async function getMyBoot(username, pin) {
     hrFollowUps: canHR_(s) ? candFollowUpsCount_(candRows || []) : null,
     // the books they have marked read in the Library, and the papers every staff member signs
     libRead: cleanLibRead_(s.libRead),
-    lib: await part(async function () { return libOut_(s, staffRows || [], await readJSON('libClub', {})); }),   // the Library together: book of the month, plans, what the campus reads
+    lib: await part(async function () { return libOut_(s, staffRows || [], await readJSON('libClub', {}), await readJSON('libHl', [])); }),   // the Library together: book of the month, plans, what the campus reads
     stuMentor: deptOf_(s) === STU_LD_DEPT ? await part(function () { return stuMentorFor_(s.id); }) : null,   // students who chose them as mentor
     supportSummary: s.support ? supportSummary_(s.support) : null,   // support raising: your own totals, for My Home's tile
     game: await part(function () { return gameBoard_(s, staffRows || [], s.campus); }),   // the week's board: points, streaks, who is active
@@ -7771,7 +7973,7 @@ function libMine_(s) {
 function libOnCampus_(staff, campus) {
   return (staff || []).filter(function (r) { return r && r.campus === campus && r.active !== false && !r.archived && !isApplicant_(r); });
 }
-function libOut_(s, staff, club) {
+function libOut_(s, staff, club, hl) {
   club = club || {};
   const campus = libOnCampus_(staff, s.campus), names = {};
   (staff || []).forEach(function (r) { if (r && r.id) names[r.id] = r.name || ''; });
@@ -7795,12 +7997,13 @@ function libOut_(s, staff, club) {
     .sort(function (a, b) { return (b.n - a.n) || (a.bookId < b.bookId ? -1 : 1); }).slice(0, 8);
   const recs = (club.recs || []).filter(function (r) { return r.to === s.id; })
     .map(function (r) { return { id: r.id, from: { id: r.from, name: names[r.from] || '' }, bookId: r.bookId, note: r.note || '', at: r.at }; }).reverse().slice(0, 20);
-  return { month: month, canPick: canLead_(s), feed: feed.slice(0, 12), top: top, recs: recs, mine: libMine_(s), people: campus.length };
+  return { month: month, canPick: canLead_(s), feed: feed.slice(0, 12), top: top, recs: recs, mine: libMine_(s), people: campus.length,
+    notesFeed: hl ? lnFeed_(s, staff, hl) : [] };
 }
 async function libAnswer_(username, pin, extra) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
-  return Object.assign({ ok: true, lib: libOut_(s, await getStaff_(), await readJSON('libClub', {})) }, extra || {});
+  return Object.assign({ ok: true, lib: libOut_(s, await getStaff_(), await readJSON('libClub', {}), await readJSON('libHl', [])) }, extra || {});
 }
 async function libState(username, pin) { return libAnswer_(username, pin); }
 /* Campus Leadership or an admin: this campus's book of the month ('' takes it down). */
@@ -13524,6 +13727,13 @@ const HANDLERS = {
   libSetMonth: function (a) { return libSetMonth(a[0], a[1], a[2], a[3], a[4]); },
   libSaveMine: function (a) { return libSaveMine(a[0], a[1], a[2]); },
   libRecommend: function (a) { return libRecommend(a[0], a[1], a[2], a[3], a[4], a[5]); },
+  libNotes: function (a) { return libNotes(a[0], a[1], a[2]); },
+  libNoteSave: function (a) { return libNoteSave(a[0], a[1], a[2]); },
+  libNoteDelete: function (a) { return libNoteDelete(a[0], a[1], a[2]); },
+  libNoteLike: function (a) { return libNoteLike(a[0], a[1], a[2], a[3]); },
+  libNoteComment: function (a) { return libNoteComment(a[0], a[1], a[2], a[3]); },
+  libNoteUncomment: function (a) { return libNoteUncomment(a[0], a[1], a[2], a[3]); },
+  libNotePray: function (a) { return libNotePray(a[0], a[1], a[2], a[3]); },
   libRecDone: function (a) { return libRecDone(a[0], a[1], a[2]); },
   libGivePlan: function (a) { return libGivePlan(a[0], a[1], a[2], a[3], a[4]); },
   saveMyApest: function (a) { return saveMyApest(a[0], a[1], a[2]); },

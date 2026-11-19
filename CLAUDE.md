@@ -2231,6 +2231,33 @@ none of it (`libOn_()`).
 - New Library sections use `.libHead2` / `.libScroll`, never `.libSecHead` / `.libRow` — test-library-ui counts those as
   shelves. tests/test-library-club.mjs (server), tests/test-library-club-ui.mjs. Khmer: docs/khmer-needed.md §109.
 
+## The Library: highlights, notes and talking about them (end of teams/18-library-plus.js, Nov 2026, Andrew)
+"Like the Bible app … highlight things you like … write a note … private, or public for everyone in our base … comment on it,
+like it … ask for prayer — private, public, or just to your mentor."
+- **In the reader** every paragraph can be tapped (`lnDecorate_` numbers `.libReaderBody` p / li in page order, outside
+  `.fightOv`: `data-lnp`; a row's place is bookId + step + p + the language read): a bar comes up (`#lnBar`) with four
+  colours (`LN_COLORS`), 📝 Note (`#lnNoteBtn`) and 💬 n when others wrote there (`#lnParaBtn`). My highlights are drawn in
+  their colour (`.lnHl-<colour>`, rgba, both themes); my note shows 📝, others' 💬 n. The bar and the sheet are drawn into
+  `#lnRoot` (outside #main) by `lnDraw_` without a render, so the page never turns and typing is kept (`S.ln.draft`, `S.ln.cmt`).
+- **The note** (`#lnSheet`, mode edit): the words (≤1000), who sees it — 🔒 Only me · 🤝 My mentor (only with an approved
+  mentor) · 👥 Everyone at the campus — and 🙏 Ask for prayer (not for Only me). A conversation (mode thread): ❤️, comments
+  (≤500), 🙏 I prayed; my own note shows the counts, not buttons. The book's page lists them (`lnBookHtml_`, `#lnBook`: the
+  campus's, then Mine, each with "Read it in the book"); the Library's home has **What encouraged us** (`lnFeedHtml_`,
+  `#lnFeed`, the boot's `lib.notesFeed`: the newest 8 shared with me in 60 days, short). One `libNotes` call per book opened.
+- **Server** (api.js "highlights, notes"): blob `libHl` (in BOOT_KEYS) = [{id, staffId, campus, bookId, title, lang, step, p,
+  quote, color, note, vis, prayerId, likes, comments:[{id, staffId, text, at}], at, edited}], one row per person per
+  paragraph. `libNotes(bookId)`, `libNoteSave(rec)` (no colour and no words → the row goes; a shared row needs words;
+  `no_mentor`; back to private drops its likes and comments), `libNoteDelete` (owner, or an admin for a campus note),
+  `libNoteLike`, `libNoteComment` (push `libComment` to the owner; 60 a day), `libNoteUncomment` (writer, note owner, or
+  admin), `libNotePray`. **Who sees a row** (`lnCanSee_`): its owner; vis campus → active staff on its campus; vis mentor
+  → the owner's approved mentor (push `libMentorNote` / `libMentorPray`). Never applicants, students, guests or the board;
+  nothing of it on the roster, a profile or the week's board.
+- **A prayer request is a real one**: asking for prayer writes a `prayers` row (scope campus or mentor, `lib: {bookId,
+  title, noteId}`), so it is on ☰ → Prayer too ("📚 From “title”", `[data-prlib]` opens the note) and "I prayed" is one
+  count in both places; taking prayer off, going private or deleting the note takes the request down.
+- `?view=library&book=<id>&note=<id>` (the pushes' link) opens the book with that note's conversation (`S.ln.open`).
+- tests/test-lib-notes.mjs (server), tests/test-lib-notes-ui.mjs. Khmer: docs/khmer-needed.md §114.
+
 ## The look-through of Nov 2026 (Uriah: "look through the app to see ways you can improve the experience and debug anything")
 Every screen was opened at 320px, in English and Khmer, light and dark, looking for script errors, anything wider than
 the phone, and English left in Khmer. What it found, and the rules that came out of it (tests/test-polish-ui.mjs):
