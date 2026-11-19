@@ -987,6 +987,7 @@ function homeHtml(){
   h+=phaseBanner(phase, wk);
   h += checkinTueHtml_();   // Tuesday: the weekly health check-in, at the staff meeting
   h += f30CardHtml_();
+  h += libHomeCardHtml_();   // 📚 Reading: up top (Uriah, Nov 2026: "put the book thing up"), always there
   h += goalsCardHtml(goalsViewWeek());
   h += '<span id="homeHabits" class="homeAnchor"></span>'+habitsCardHtml();
   h += annualGoalsHtml();

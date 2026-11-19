@@ -2282,15 +2282,23 @@ to Sunday, Cambodia) and **day streak**, and the boot carries it as `game` (`las
 no extra call on open. `getGame(user, pin, campus)` reads the other campus on demand.
 - **Points** (`GAME_PTS`, sent to the page so the two can't drift): a day the app was opened 5; a habit ticked 2 (10 a
   day at most); weekly goals 10 for setting them + up to 20 as their average moves; a GP Task done 5 (30); a day
-  ministry numbers were entered 10 (20; never `tool:` rows); a book finished 25 (50); a 1-on-1 held 15 (both people).
+  ministry numbers were entered 10 (20; never `tool:` rows); **a book finished 50 (150)** — raised from 25 (Uriah: "give extra
+  points for books"); a 1-on-1 held 15 (both people).
   The page can't claim a point. **The weekly health check-in gives none, on purpose** — its rows are anonymous and a
   point would say who answered; the page says so. Don't add it.
 - **Streak**: days in a row with any use (the same evidence as Admin → App use), ending today or yesterday.
-- **What others see**: `people` rows are exactly `{id, pts, streak, week, rank}` (`week` = seven characters, 1 / 0 / -
+- **What others see**: `people` rows are exactly `{id, pts, streak, week, rank, books, booksYear}` (books finished this
+  week and this year — counts, as every profile already shows; never which book) (`week` = seven characters, 1 / 0 / -
   for a day to come) — never what was done. `me` adds `parts` (where my points came from). **Everyone active on the campus is on the
   board — there is no switch to step off** (Uriah, Nov 2026: "no need to put the option, leave them on"; a first
   version had one). Admin → App use had been admins only.
-- **Ministries**: average points a person, for ministries with two or more people on the board.
+- **Ministries**: average points a person, for ministries with two or more people on the board. **📚 Readers** (the third
+  tab, `#gameBooks`): books finished this year, most first, and a button to the Library; a row on People shows 📚 n for
+  books this week.
+- **The Reading card is high on My Home and always there** (Uriah: "put the book thing up … I didn't see the book thing"):
+  `libHomeCardHtml_` is called from `homeHtml` right under the summary card's banners (it was above About me, and showed
+  nothing without a month's book, a book in progress or a recommendation); with none of those it says "Read a book in ten
+  minutes" (`#libHomeOpen`), and it ends with what a finished book is worth (`#libHomePts`).
 - **The page**: My Home has one line above the summary card (`gameHomeHtml_`, `#gameHome`: 🔥 streak · ⭐ points · #place,
   the week's dots; tap → the board). **Team → 🏆 This week** (`S.teamMode='game'`, `gameTeamHtml_`): the campus together
   first ("n of N active this week"), my three figures with "Where my points came from" folded, People / Ministries, the

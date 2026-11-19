@@ -52,7 +52,7 @@ function gameRowHtml_(p, G, big){
   return '<div class="gameRow'+(mine?' me':'')+(big?' big':'')+'" data-person="'+esc(p.id)+'">'+
     '<span class="gameRank">'+(p.rank===1?'🥇':p.rank===2?'🥈':p.rank===3?'🥉':p.rank)+'</span>'+avatarHtml(who,'sm')+
     '<span class="gameWho"><b>'+esc(who.name||'—')+(mine?' <small>· '+esc(t('you'))+'</small>':'')+'</b>'+gameDotsHtml_(p.week, G.today, G.from)+'</span>'+
-    (p.streak>=2?'<span class="gameStreak">🔥 '+p.streak+'</span>':'')+
+    (p.books?'<span class="gameStreak gameBooks">📚 '+p.books+'</span>':'')+(p.streak>=2?'<span class="gameStreak">🔥 '+p.streak+'</span>':'')+
     '<span class="gamePts">'+p.pts+'</span></div>';
 }
 function gamePartsHtml_(me, G){
@@ -79,7 +79,7 @@ function gameTeamHtml_(){
     gameLoad_(campus);
     return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
   }
-  var me=(campus===S.me.campus) ? G.me : null, tab=S.gameTab==='min' ? 'min' : 'people';
+  var me=(campus===S.me.campus) ? G.me : null, tab=S.gameTab==='min' ? 'min' : S.gameTab==='books' ? 'books' : 'people';
   /* the campus together, first: this is a team's week before it is a race */
   var pct=G.of ? Math.round(100*G.active/G.of) : 0;
   h+='<div class="card gameCampus" id="gameCampus"><div class="gameCampusTop"><b>'+esc(gpT('{a} of {n} active this week',{a:G.active, n:G.of}))+'</b><span>'+esc(gpT('{n} today',{n:G.activeToday}))+'</span></div>'+
@@ -93,8 +93,18 @@ function gameTeamHtml_(){
       '<p class="sub" style="margin:8px 0 0">'+esc(t('The weekly health check-in gives no points on purpose: it is anonymous, and points would show who answered.'))+'</p></details></div>';
   }
   h+='<div class="campusSeg gameTabs"><button class="campusBtn'+(tab==='people'?' on':'')+'" data-gametab="people">👤 '+esc(t('People'))+'</button>'+
+    '<button class="campusBtn'+(tab==='books'?' on':'')+'" data-gametab="books">📚 '+esc(t('Readers'))+'</button>'+
     '<button class="campusBtn'+(tab==='min'?' on':'')+'" data-gametab="min">🤝 '+esc(t('Ministries'))+'</button></div>';
-  if(tab==='min'){
+  if(tab==='books'){
+    var rd=G.people.filter(function(p){ return p.booksYear>0; }).sort(function(a,b){ return b.booksYear-a.booksYear || b.books-a.books; });
+    h+='<div class="card gameList" id="gameBooks"><p class="sub" style="margin:0 0 6px">'+esc(gpT('Books finished this year. Each one is worth {n} points the week you finish it.',{n:G.pts.book}))+'</p>'+
+      (rd.length ? rd.slice(0, S.gameAll ? 999 : 15).map(function(p, i){
+        var who=gamePerson_(p.id), mine=p.id===S.me.id;
+        return '<div class="gameRow'+(mine?' me':'')+'" data-person="'+esc(p.id)+'"><span class="gameRank">'+(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1))+'</span>'+avatarHtml(who,'sm')+
+          '<span class="gameWho"><b>'+esc(who.name||'—')+(mine?' <small>· '+esc(t('you'))+'</small>':'')+'</b>'+(p.books?'<small>'+esc(gpT('{n} this week',{n:p.books}))+'</small>':'')+'</span><span class="gamePts">📚 '+p.booksYear+'</span></div>';
+      }).join('') : '<p class="sub" style="margin:0">'+esc(t('Nobody has finished a book yet this year. Be the first.'))+'</p>')+
+      '<button class="btn" id="gameGoLib" data-libhome="" style="margin-top:10px">📚 '+esc(t('Open the Library'))+'</button></div>';
+  } else if(tab==='min'){
     if(!G.ministries.length) h+='<div class="card"><p class="sub" style="margin:0">'+esc(t('No ministry has two people on the board yet.'))+'</p></div>';
     else h+='<div class="card gameList" id="gameMins"><p class="sub" style="margin:0 0 6px">'+esc(t('Average points a person, so a small ministry can lead.'))+'</p>'+G.ministries.map(function(m, i){
       return '<div class="gameRow min"><span class="gameRank">'+(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1))+'</span>'+

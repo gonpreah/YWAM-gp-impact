@@ -89,6 +89,7 @@ const nowIso = new Date().toISOString();
 mem.staff.push(mk({ id: 'st6', name: 'Pich Poipet', username: 'pich', email: 'p@e.com', campus: 'poipet' }));
 mem.staff.push(mk({ id: 'st7', name: 'Ev Sixth', username: 'ev', email: 'e@e.com' }));
 mem.lastSeen = { started: '2026-01-01', seen: {}, days: { st1: [day(today, -1), today], st5: [day(today, -2), day(today, -1), today], st2: [today], st7: [today], st6: [today] } };
+mem.staff.find(x => x.id === 'st5').libRead = { 'atomic-habits': today };
 mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: true }, updated: nowIso }, { staffId: 'st7', date: today, habits: { bible: true }, updated: nowIso }];
 
 /* ---------- 1. My Home ---------- */
@@ -100,6 +101,8 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   ok('it sits above the summary card', above === true, String(above));
   ok('seven dots for the week', await page.$$eval('#gameHome .gameDots i', e => e.length) === 7);
   if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/home.png' });
+  const rd = await page.evaluate(() => { const c = document.getElementById('libHome'), g = document.getElementById('sec-goals') || document.querySelector('.goalsCard'), h = document.querySelector('.myHero'); return c ? { text: c.innerText.replace(/\s+/g, ' '), belowHero: h ? c.getBoundingClientRect().top > h.getBoundingClientRect().top : null, aboveAbout: c.getBoundingClientRect().top < document.getElementById('sec-ptype').getBoundingClientRect().top - 200 } : null; });
+  ok('the Reading card is always on My Home, high up, and says what a book is worth', !!rd && /Read a book in ten minutes|This month|Continue/.test(rd.text) && /50 points/.test(rd.text) && rd.aboveAbout, JSON.stringify(rd));
   await page.click('#gameHome'); await page.waitForTimeout(300);
   if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/board.png', fullPage: true });
 
@@ -116,6 +119,9 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   await page.click('#gameHow summary'); await page.waitForTimeout(150);
   const how = await page.$eval('#gameHow', e => e.innerText);
   ok('where my points came from', /Opened the app/.test(how) && /check-in gives no points/.test(how), '');
+  await page.click('[data-gametab="books"]'); await page.waitForTimeout(200);
+  const bk = await page.$eval('#gameBooks', e => e.innerText.replace(/\s+/g, ' '));
+  ok('Readers: books this year, and what a book is worth', /Di Sok/.test(bk) && /📚 1/.test(bk) && /50 points/.test(bk) && !/Mark Hill/.test(bk), bk.slice(0, 120));
   await page.click('[data-gametab="min"]'); await page.waitForTimeout(200);
   ok('ministries by average', /Average points a person/.test(await main(page)) || /No ministry has two people/.test(await main(page)));
   await page.click('[data-gametab="people"]'); await page.waitForTimeout(200);

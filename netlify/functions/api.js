@@ -11821,10 +11821,10 @@ async function adminAppUse(username, pin, campus) {
    people are … a daily driver rather than a weekly check-in thing."  Points for a week (Monday to Sunday, Cambodia)
    and a day streak, worked out HERE from what is already stored — nothing new is written, and the page can't
    claim a point. What others see of a person is a number of points, a streak and which days they were active:
-   never what they did. The weekly health check-in is NOT counted, on purpose — its rows are anonymous, and a
+   never what they did — except books: how many they finished (a count already on every profile), never which. The weekly health check-in is NOT counted, on purpose — its rows are anonymous, and a
    point for it would say who answered. Everyone active on the campus is on it (Uriah: "no need to put the option,
    leave them on"). */
-const GAME_PTS = { open: 5, habit: 2, habitDayCap: 10, goalsSet: 10, goalsPct: 20, task: 5, taskCap: 30, numbers: 10, numbersCap: 20, book: 25, bookCap: 50, oneOnOne: 15 };
+const GAME_PTS = { open: 5, habit: 2, habitDayCap: 10, goalsSet: 10, goalsPct: 20, task: 5, taskCap: 30, numbers: 10, numbersCap: 20, book: 50, bookCap: 150, oneOnOne: 15 };
 function gameDayOf_(when) {
   const t = Date.parse(when); if (isNaN(t)) return '';
   return new Date(t + 7 * 3600 * 1000).toISOString().slice(0, 10);
@@ -11883,9 +11883,10 @@ async function gameBoard_(s, staff, campus) {
     if (!r || r.status !== 'held' || !inWeek(String(r.heldOn || '').slice(0, 10))) return;
     [r.fromId, r.toId].forEach(function (id) { if (ids[id]) row(id).oneOnOne++; });
   });
+  const booksYear = {};
   people.forEach(function (x) {
     const read = cleanLibRead_(x.libRead);
-    Object.keys(read).forEach(function (b) { if (inWeek(read[b])) row(x.id).book++; });
+    Object.keys(read).forEach(function (b) { if (inWeek(read[b])) row(x.id).book++; if (String(read[b] || '').slice(0, 4) === today.slice(0, 4)) booksYear[x.id] = (booksYear[x.id] || 0) + 1; });
   });
   const partsOf = function (id) {
     const g = P[id]; if (!g) return { open: 0, habits: 0, goals: 0, tasks: 0, numbers: 0, books: 0, oneOnOnes: 0 };
@@ -11907,7 +11908,7 @@ async function gameBoard_(s, staff, campus) {
     const parts = partsOf(x.id); let pts = 0; Object.keys(parts).forEach(function (k) { pts += parts[k]; });
     const u = used[x.id] || {}; let week = '';
     for (let i = 0; i < 7; i++) { const d = icsDay_(from, i); week += d > today ? '-' : (u[d] ? '1' : '0'); }
-    return { id: x.id, pts: pts, streak: streakOf(x.id), week: week, parts: parts, dept: deptOf_(x) || '', ministry: x.ministry || '' };
+    return { id: x.id, pts: pts, streak: streakOf(x.id), week: week, parts: parts, books: (P[x.id] || {}).book || 0, booksYear: booksYear[x.id] || 0, dept: deptOf_(x) || '', ministry: x.ministry || '' };
   });
   const shown = all.slice().sort(function (a, b) { return b.pts - a.pts || b.streak - a.streak || (a.id < b.id ? -1 : 1); });
   let rank = 0, last = null;
@@ -11923,7 +11924,7 @@ async function gameBoard_(s, staff, campus) {
     .filter(function (m) { return m.n >= 2; }).sort(function (a, b) { return b.avg - a.avg || b.active - a.active; });
   return {
     ok: true, campus: campus, today: today, from: from, to: to, pts: GAME_PTS,
-    people: shown.map(function (p) { return { id: p.id, pts: p.pts, streak: p.streak, week: p.week, rank: p.rank }; }),
+    people: shown.map(function (p) { return { id: p.id, pts: p.pts, streak: p.streak, week: p.week, rank: p.rank, books: p.books, booksYear: p.booksYear }; }),
     ministries: ministries,
     of: all.length, active: all.filter(function (p) { return p.week.indexOf('1') > -1; }).length,
     activeToday: all.filter(function (p) { return (used[p.id] || {})[today]; }).length,

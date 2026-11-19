@@ -72,8 +72,9 @@ ok('my own parts add up', g.me && Object.values(g.me.parts).reduce((a, b) => a +
 console.log('2. who is on it');
 ok('other campus, archived and applicants are not', !row('p1') && !row('ar') && !row('ap'));
 ok('an old step-off flag is not honoured: everyone is listed', !!row('h1') && row('h1').pts === P.open + P.habit, row('h1'));
+ok('books: a count this week and this year, never which', row('c1').books === 1 && row('c1').booksYear === 1 && row('c2').books === 0 && P.book === 50 && P.bookCap === 150);
 ok('active counts', g.of === 4 && g.active === 3 && g.activeToday === 3, [g.of, g.active, g.activeToday]);
-ok('a row is only id, points, streak, week, rank', g.people.every(p => Object.keys(p).sort().join() === 'id,pts,rank,streak,week'), g.people[0]);
+ok('a row is only id, points, streak, week, rank and book counts', g.people.every(p => Object.keys(p).sort().join() === 'books,booksYear,id,pts,rank,streak,week'), g.people[0]);
 ok('nothing of what anyone did leaves', !/bible|prayer|atomic|Cups|tok-c3/.test(JSON.stringify(g)));
 ok('the ministry board needs two people', g.ministries.length === 1 && g.ministries[0].ministry === 'Cafe' && g.ministries[0].n === 4 && g.ministries[0].active === 3, g.ministries);
 
