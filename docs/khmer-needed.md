@@ -5634,7 +5634,7 @@ In the book reader a paragraph can be highlighted in a colour ("Highlight", as w
 | Blue | ខៀវ |
 | Pink | ផ្កាឈូក |
 
-## 115. Santa, books at 50, and the welcome to points
+## 116. Santa, books at 50, and the welcome to points
 
 In the holiday season Santa (សាន់តាក្លូស) and his reindeer fly across the screen when the app opens; tapping him gives 5 points; he comes round every few minutes ("Catch Santa" is read aloud by screen readers). The points sheet shows on the first open of each day: your points, then what each thing is worth on the week's board. "Let’s go!" is its closing button.
 
@@ -5665,3 +5665,21 @@ In the holiday season Santa (សាន់តាក្លូស) and his reindeer
 | How to earn points | របៀបទទួលបានពិន្ទុ |
 | Don’t show this when I open the app | កុំបង្ហាញនេះពេលខ្ញុំបើកកម្មវិធី |
 | You can still see how points work on Team → This week. | អ្នកនៅតែអាចមើលរបៀបដែលពិន្ទុដំណើរការ នៅលើ ក្រុម → សប្ដាហ៍នេះ។ |
+## 115. GP Tasks: light or dark, the Inbox's This week; the Portal as an app
+
+"Appearance: {mode}" is said when the 🌗 button on GP Tasks is tapped ({mode} is Light, Dark or Auto). "This week" is the Inbox's second switch: every list's tasks for the week, day by day. "Same time as another" is a small tag on a task. The Portal lines are a sheet in the YWAM GP app (☰ → Applications) and a card on the portal's staff side.
+
+| English | Khmer (draft) |
+|---|---|
+| Appearance: {mode} | រូបរាង៖ {mode} |
+| Auto — follows your phone | ស្វ័យប្រវត្តិ — តាមទូរស័ព្ទរបស់អ្នក |
+| Every list’s tasks for this week, day by day — so you can see where they pile up. | កិច្ចការប្រចាំសប្ដាហ៍នេះពីបញ្ជីទាំងអស់ ម្ដងមួយថ្ងៃ — ដើម្បីឱ្យអ្នកឃើញថាថ្ងៃណាមានច្រើន។ |
+| {n} tasks | កិច្ចការ {n} |
+| Nothing due | គ្មានអ្វីត្រូវធ្វើ |
+| Same time as another | ម៉ោងដូចគ្នានឹងកិច្ចការមួយទៀត |
+| The Portal on your phone | ផតថលនៅលើទូរស័ព្ទរបស់អ្នក |
+| The Portal, an app of its own | ផតថល ជាកម្មវិធីដាច់ដោយឡែក |
+| The applications, one tap from your Home Screen, with their own icon. The same portal as here. | ពាក្យសុំទាំងអស់ ចុចតែម្ដងពីអេក្រង់ដើម ជាមួយរូបតំណាងផ្ទាល់ខ្លួន។ ជាផតថលដូចគ្នានឹងនៅទីនេះ។ |
+| Open the Portal and sign in with Google, as you do here. | បើកផតថល ហើយចូលដោយប្រើ Google ដូចដែលអ្នកធ្វើនៅទីនេះ។ |
+| Open the Portal | បើកផតថល |
+| Install it like an app, with its own icon — the applications one tap from your Home Screen. | ដំឡើងវាដូចកម្មវិធីមួយ ជាមួយរូបតំណាងផ្ទាល់ខ្លួន — ពាក្យសុំទាំងអស់ ចុចតែម្ដងពីអេក្រង់ដើម។ |

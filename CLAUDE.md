@@ -1521,6 +1521,13 @@ forms, documents and references follow.
   Share → Add to Home Screen hint on iPhone, dismissable, gone once installed). The portal is
   meant to be the first door into the community — an account a student keeps through their
   time here; staff / volunteer applications from inside it (landing in HR) are the next step.
+  **Its own icon** (Nov 2026, Andrew: "just like the GP Tasks and calendar, the same for the GP portal, and the icon
+  fits it"): an open door on the portal's black with the YWAM GP spark, in the GP Tasks icon's flat style —
+  `portal-180.png` (apple-touch-icon), `portal-512.png`, `portal-maskable-512.png` (art shrunk into the safe circle),
+  drawn by `scripts/portal-icon.py` (Pillow; `python3 scripts/portal-icon.py public`). The staff side shows the install
+  card too (`installCardHtml_(true)` at the top of `crmHtml_`, worded for staff), and the YWAM GP app's ☰ → Applications
+  has **The Portal on your phone** (`portalapp` → `gpPortalAppOpen_`, end of 12-tasks.js: the link, the steps, Copy /
+  Open the Portal) for anyone with portal access. tests/test-gp-tasks-week-ui.mjs.
 - **The portal as a tool (Oct 2026)**: an applicant's dashboard has four tabs on top
   (`applicantNavHtml_`, `P.aview`): 📋 Application (`meHtml_`), 👥 Meet our team
   (`portalMeetTeam` — the campus's campus-staff **and YAP as one list, "YWAM <Campus> Campus
@@ -2352,7 +2359,7 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   `pts`), the streak bonus, Santa and the snowflakes in season, **See this week's board** / **Let's go!**, and
   **Don't show this when I open the app** (`#gameIntroOff`). The first time it says "Points are here!", after that "Your
   points this week". On the phone as `gp-game-intro-v2` = {n, last, off}. The slide-down reminder and Santa wait while
-  it is open. Not under a test browser unless `gp-intro-test` is set. Khmer: docs/khmer-needed.md §115.
+  it is open. Not under a test browser unless `gp-intro-test` is set. Khmer: docs/khmer-needed.md §116.
 - **Streak**: days in a row with any use (the same evidence as Admin → App use), ending today or yesterday.
 - **What others see**: `people` rows are exactly `{id, pts, streak, week, rank, books, booksYear}` (books finished this
   week and this year — counts, as every profile already shows; never which book) (`week` = seven characters, 1 / 0 / -
@@ -2371,7 +2378,7 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   first ("n of N active this week"), my three figures with "Where my points came from" folded, People / Ministries, the
   top ten with points (my own row always shown; people with none are a count, not a list). Not for guests,
   students, the board or a preview (`gameOn_`).
-- tests/test-game.mjs (server), tests/test-game-ui.mjs (also the holiday catch, Santa, the points sheet and the slide-down reminder). Khmer: docs/khmer-needed.md §112, §113, §115. sw.js SHELL v27.
+- tests/test-game.mjs (server), tests/test-game-ui.mjs (also the holiday catch, Santa, the points sheet and the slide-down reminder). Khmer: docs/khmer-needed.md §112, §113, §116. sw.js SHELL v27.
 
 ## Looking around without an account (teams.html guest mode, Oct 2026)
 `teams.html?guest=1` (the log-in screen's "Look around without an account" button was removed, Nov 2026, Andrew) sets
@@ -3460,6 +3467,16 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   (`#gtRename`, `#gtShareList`, `#gptListDelete`, …) and all items are on screen when it opens. In tests,
   close it with `page.click('#gtMenuScrim', { position: { x: 16, y: 60 } })` — the middle of the screen
   is covered by the grown item. The round ＋ is left out while the wheel is open.
+  **Inbox → This week** (Nov 2026, Andrew: "show the tasks for the current week from all of the task lists so that you
+  can see which ones overlap"): the Inbox has an **Inbox | 📅 This week · n** switch (`#gtInboxSeg`, `[data-gptweek]`,
+  `S.gptWeek`); This week (`gptWeekHtml_`, `#gtWeek`) is Monday to Sunday (`gptWeekRange_`), each day
+  (`[data-gptweekday]`; a day gone by only while something is still open on it) with the open tasks due that day from
+  every list you have as a tab (`gptLists_(null)`, leadership's filter applies) and what you were given
+  (`gptWeekTasks_`), each with its list's chip; "n tasks" on a day with two or more (amber from four), "⚠️ Same time as
+  another" when two share a time (`.gtClash`). Rows tick and open as anywhere; no grip (`gtItemHtml_(x, L, {noDrag})`).
+  **Light or dark** (Andrew: "in the GP tasks, add a light or dark option"): a 🌗 / ☀️ / 🌙 button (`gptThemeBtnHtml_`,
+  `[data-gptheme]`, `bindGptTheme_`) cycles Auto → Light → Dark — the same `gp-theme` as Profile → Appearance
+  (`applyTheme`) — beside the Calendar | Tasks toggle (`.ctRow`) and in the GP Tasks app's header (it has no Profile).
   **Arrange lists…** (`#gtArrange` → `#gtArrangeSheet`, `data-gtarr="id|±1"`): ▲ ▼ per list, saved through
   `saveGpListOrder` like dragging a tab — for the many who won't know a tab can be held and dragged.
   **The red number** (`.gtBadge`) on the Inbox tab and My Home's GP Tasks row = `gptInboxCount_()` /

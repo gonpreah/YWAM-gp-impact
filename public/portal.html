@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="apple-touch-icon" sizes="180x180" href="portal-180.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='47' fill='%231F44FF'/%3E%3Ctext x='50' y='64' font-family='Arial' font-weight='bold' font-size='40' fill='%23FAF6F0' text-anchor='middle'%3EGP%3C/text%3E%3Cpath d='M76 12 L78.6 19.4 L86 22 L78.6 24.6 L76 32 L73.4 24.6 L66 22 L73.4 19.4 Z' fill='%23FFB323'/%3E%3C/svg%3E">
 <!-- Fonts out of the render path, same as the other pages (see teams.html). -->
@@ -693,7 +693,7 @@ run('portalAuthConfig', [], function(d){ if(d && d.ok){ P.authCfg=d; if(d.google
 (function(){
   if(!('serviceWorker' in navigator)) return;
   window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
-  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); P.installEvt=e; if(P.view==='me') render(); });
+  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); P.installEvt=e; if(P.view==='me' || P.view==='crm') render(); });
   window.addEventListener('appinstalled', function(){ P.installEvt=null; lsSet('gp-portal-a2hs','1'); P.a2hsOff=true; if(P.view==='me') render(); });
 })();
 function isStandalone_(){ try { return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true; } catch(e){ return false; } }
@@ -701,9 +701,9 @@ function isIosSafari_(){ var ua=navigator.userAgent||''; return /iPhone|iPad|iPo
 /* "Add to your phone" on the applicant's dashboard: a real install button
    where the browser offers one (Android, desktop Chrome), the Share → Add to
    Home Screen hint on iPhone, nothing once installed or dismissed. */
-function installCardHtml_(){
+function installCardHtml_(staff){
   if(isStandalone_() || P.a2hsOff) return '';
-  if(P.installEvt) return '<div class="banner installCard" id="installCard"><b>📲 '+esc(t('Add the portal to your phone'))+'</b><br>'+esc(t('Install it like an app — your application, documents and, once you are here, everything else in one tap.'))+
+  if(P.installEvt) return '<div class="banner installCard" id="installCard"><b>📲 '+esc(t('Add the portal to your phone'))+'</b><br>'+esc(staff ? t('Install it like an app, with its own icon — the applications one tap from your Home Screen.') : t('Install it like an app — your application, documents and, once you are here, everything else in one tap.'))+
     '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn small" id="installBtn">'+esc(t('Install'))+'</button><button class="linkbtn inline" id="installLater">'+esc(t('Not now'))+'</button></div></div>';
   if(isIosSafari_()) return '<div class="banner installCard" id="installCard"><b>📲 '+esc(t('Add the portal to your phone'))+'</b><br>'+esc(t('Tap Share, then “Add to Home Screen” — it opens like an app.'))+
     ' <button class="linkbtn inline" id="installLater">'+esc(t('Not now'))+'</button></div>';
@@ -2196,7 +2196,7 @@ function crmHtml_(){
   h+='</div></div>';
   if(P.sel){ var c=list.filter(function(x){ return x.id===P.sel; })[0]; h+='<div>'+(c ? panelHtml_(c, byId) : '')+'</div>'; }
   h+='</div>';
-  return h;
+  return installCardHtml_(true)+h;   // the portal as an app of its own, with its own icon
 }
 /* Call notes (teams): what was said on each call with the team's leaders —
    the day, who was on it and the notes, newest first. P.call is the open form
