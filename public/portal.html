@@ -1436,10 +1436,16 @@ function registerHtml_(){
 /* "Application received" reads "Application & reference received" for anyone a reference is asked of. */
 function stepKey_(st, isTeam, app){ return !isTeam && st.id==='received' && app.refNeeded ? 'received2' : st.id; }
 function statusNote_(app){
-  if(app.type===TEAM_TYPE && app.visaOpen && (app.steps||[]).some(function(st){ return st.id==='evisa' && !st.done; })) return 'Your letter of invitation is in. Open “How to apply for your e-visa online” under Where you are — everything you need is there.';
+  if(visaGoWanted_(app)) return letterIn_(app) ? 'Your letter of invitation is in. Open “How to apply for your e-visa online” under Where you are — everything you need is there.'
+    : 'You can start your e-visas now. Open “How to apply for your e-visa online” under Where you are — your letter of invitation will follow.';
   return (app.type===TEAM_TYPE && TEAM_STATUS_NOTE[app.status]) || STATUS_NOTE[app.status] || '';
 }
 var TEAM_TYPE='team';
+/* the e-visa steps are open and a team's e-visas aren't all in: the hero says so and has a button straight to them
+   (Nov 2026, Andrew: the Norway team couldn't find them — they sit folded under step 8) */
+function visaGoWanted_(app){ return app.type===TEAM_TYPE && app.visaOpen && app.status!=='closed' && (app.steps||[]).some(function(st){ return st.id==='evisa' && !st.done; }); }
+function letterIn_(app){ var v=app.visa||{}; return !!v.invitationSent || (app.docs||[]).some(function(d){ return d.kind==='invitation'; }) || (app.steps||[]).some(function(st){ return st.id==='invitation' && st.done; }); }
+function visaGoHtml_(app){ return visaGoWanted_(app) ? '<button class="btn small" id="visaHowGo" style="margin-top:10px">🛂 '+esc(t('How to apply for your e-visa online'))+' →</button>' : ''; }
 /* ---- the applicant's dashboard ---- */
 /* ==================== the portal as a tool (Oct 2026, Uriah) ====================
    An applicant's portal is more than the application: four tabs on top.
@@ -1873,7 +1879,7 @@ function meHtml_(){
   h+='<div class="card hero"><div class="eyebrow">'+esc(t('Your application'))+'</div>'+
     '<h1 style="font-size:26px">'+esc(me.name)+'</h1><p class="sub" style="margin:2px 0 12px">'+esc(t('Applying for'))+': <b style="color:var(--ink)">'+esc(applyLabel_(app.type, app.school))+'</b>'+(app.campus?' · '+esc(campusName_(app.campus)):'')+'</p>'+
     '<span class="pill big '+esc(app.status)+'" id="statusPill">'+esc(t(STATUS_LABEL[app.status]||app.status))+'</span>'+
-    '<p class="sub" style="margin:12px 0 0">'+esc(gpT(statusNote_(app), {app:appName, campus:campusName_(app.campus||DEFAULT_CAMPUS)}))+'</p>'+gpAppBtnHtml_(app)+
+    '<p class="sub" style="margin:12px 0 0">'+esc(gpT(statusNote_(app), {app:appName, campus:campusName_(app.campus||DEFAULT_CAMPUS)}))+'</p>'+visaGoHtml_(app)+gpAppBtnHtml_(app)+
     (!app.submittedAt && app.status!=='closed' ? '<div class="banner" id="applyNext" style="margin:12px 0 0"><b>'+esc(t('Next: send in your application'))+'</b><br>'+esc(t('Your account is made, but we only see your application once you submit it.'))+
       '<button class="btn small" id="openFormTop" style="margin-top:8px">'+esc(t('Fill out my application'))+'</button></div>' : '')+'</div>';
   h+='<div class="card"><h3 style="margin-top:0">'+esc(t('Where you are'))+'</h3><ol class="timeline" id="timeline">'+app.steps.map(function(st, i){ return stepLiHtml_(app, st, i); }).join('')+'</ol></div>';
@@ -4190,6 +4196,7 @@ function bind_(){
   on_('viewAsCand', function(){ var c=selected_(); if(!c) return; P.pv.mode='record'; P.pv.candId=c.id; P.pv.boot=null; P.pv.screen='me'; P.pv.sec=0; P.view='preview'; render(); window.scrollTo(0,0); });
   on_('openForm', openForm_);
   on_('openFormTop', openForm_);
+  on_('visaHowGo', function(){ P.fold=P.fold||{}; P.fold.visaHow=true; render(); var d=document.getElementById('visaHow'); if(d){ d.open=true; d.scrollIntoView({ behavior:'smooth', block:'start' }); } });
   on_('viewAnswers', function(){ P.showAnswers=!P.showAnswers; render(); });
   on_('refNew', function(){ makeRefLink_(null, function(link, d){ P.refLink=link; if(P.boot.application) P.boot.application.reference=d.reference; render(); }); });
   var goRef=function(){ gpTapSafe_(); P.refNext=false; if(!P.refLink){ var r=(P.boot.application && P.boot.application.reference)||{}; if(r.status!=='received'){ makeRefLink_(null, function(link, d){ P.refLink=link; if(P.boot.application) P.boot.application.reference=d.reference; render(); scrollToRef_(); }); return; } } render(); scrollToRef_(); };

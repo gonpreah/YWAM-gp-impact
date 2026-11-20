@@ -5938,3 +5938,11 @@ A staff tick on a team's record opens "How to apply for your e-visa online" and 
 | they can see how to apply and upload their e-visas, before everything else is in | ពួកគេអាចមើលរបៀបដាក់ពាក្យ និងផ្ទុក e-visa ឡើង មុនពេលអ្វីៗផ្សេងទៀតរួចរាល់ |
 | for a team that has to apply soon — before the letter and their documents are in | សម្រាប់ក្រុមដែលត្រូវដាក់ពាក្យឆាប់ៗ — មុនពេលលិខិតអញ្ជើញ និងឯកសាររបស់ពួកគេរួចរាល់ |
 | Your letter of invitation will be here as soon as we have it. You can start the e-visa form now and attach the letter when it comes. | លិខិតអញ្ជើញរបស់អ្នកនឹងនៅទីនេះ ភ្លាមៗពេលយើងមានវា។ អ្នកអាចចាប់ផ្តើមបំពេញទម្រង់ e-visa ឥឡូវនេះ ហើយភ្ជាប់លិខិតនៅពេលវាមកដល់។ |
+
+## 128. The e-visa steps opened early: the line at the top of a team's page
+
+Shown at the top of a team's portal page when staff have opened the e-visa steps before the letter of invitation is in, above a button to the steps.
+
+| English | Khmer (draft) |
+|---|---|
+| You can start your e-visas now. Open “How to apply for your e-visa online” under Where you are — your letter of invitation will follow. | អ្នកអាចចាប់ផ្តើមដាក់ពាក្យសុំ e-visa បានឥឡូវនេះ។ បើក “របៀបដាក់ពាក្យសុំ e-visa តាមអនឡាញ” នៅក្រោម “អ្នកនៅដំណាក់កាលណា” — លិខិតអញ្ជើញរបស់អ្នកនឹងមកតាមក្រោយ។ |
