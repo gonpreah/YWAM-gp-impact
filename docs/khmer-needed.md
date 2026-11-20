@@ -5633,3 +5633,22 @@ In the book reader a paragraph can be highlighted in a colour ("Highlight", as w
 | Green | បៃតង |
 | Blue | ខៀវ |
 | Pink | ផ្កាឈូក |
+
+## 115. GP Tasks: light or dark, the Inbox's This week; the Portal as an app
+
+"Appearance: {mode}" is said when the 🌗 button on GP Tasks is tapped ({mode} is Light, Dark or Auto). "This week" is the Inbox's second switch: every list's tasks for the week, day by day. "Same time as another" is a small tag on a task. The Portal lines are a sheet in the YWAM GP app (☰ → Applications) and a card on the portal's staff side.
+
+| English | Khmer (draft) |
+|---|---|
+| Appearance: {mode} | រូបរាង៖ {mode} |
+| Auto — follows your phone | ស្វ័យប្រវត្តិ — តាមទូរស័ព្ទរបស់អ្នក |
+| Every list’s tasks for this week, day by day — so you can see where they pile up. | កិច្ចការប្រចាំសប្ដាហ៍នេះពីបញ្ជីទាំងអស់ ម្ដងមួយថ្ងៃ — ដើម្បីឱ្យអ្នកឃើញថាថ្ងៃណាមានច្រើន។ |
+| {n} tasks | កិច្ចការ {n} |
+| Nothing due | គ្មានអ្វីត្រូវធ្វើ |
+| Same time as another | ម៉ោងដូចគ្នានឹងកិច្ចការមួយទៀត |
+| The Portal on your phone | ផតថលនៅលើទូរស័ព្ទរបស់អ្នក |
+| The Portal, an app of its own | ផតថល ជាកម្មវិធីដាច់ដោយឡែក |
+| The applications, one tap from your Home Screen, with their own icon. The same portal as here. | ពាក្យសុំទាំងអស់ ចុចតែម្ដងពីអេក្រង់ដើម ជាមួយរូបតំណាងផ្ទាល់ខ្លួន។ ជាផតថលដូចគ្នានឹងនៅទីនេះ។ |
+| Open the Portal and sign in with Google, as you do here. | បើកផតថល ហើយចូលដោយប្រើ Google ដូចដែលអ្នកធ្វើនៅទីនេះ។ |
+| Open the Portal | បើកផតថល |
+| Install it like an app, with its own icon — the applications one tap from your Home Screen. | ដំឡើងវាដូចកម្មវិធីមួយ ជាមួយរូបតំណាងផ្ទាល់ខ្លួន — ពាក្យសុំទាំងអស់ ចុចតែម្ដងពីអេក្រង់ដើម។ |
