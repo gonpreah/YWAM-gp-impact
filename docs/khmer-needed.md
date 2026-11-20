@@ -5938,3 +5938,10 @@ A staff tick on a team's record opens "How to apply for your e-visa online" and 
 | they can see how to apply and upload their e-visas, before everything else is in | ពួកគេអាចមើលរបៀបដាក់ពាក្យ និងផ្ទុក e-visa ឡើង មុនពេលអ្វីៗផ្សេងទៀតរួចរាល់ |
 | for a team that has to apply soon — before the letter and their documents are in | សម្រាប់ក្រុមដែលត្រូវដាក់ពាក្យឆាប់ៗ — មុនពេលលិខិតអញ្ជើញ និងឯកសាររបស់ពួកគេរួចរាល់ |
 | Your letter of invitation will be here as soon as we have it. You can start the e-visa form now and attach the letter when it comes. | លិខិតអញ្ជើញរបស់អ្នកនឹងនៅទីនេះ ភ្លាមៗពេលយើងមានវា។ អ្នកអាចចាប់ផ្តើមបំពេញទម្រង់ e-visa ឥឡូវនេះ ហើយភ្ជាប់លិខិតនៅពេលវាមកដល់។ |
+
+
+## 128. Team → Strengths, one team at a time
+
+The line under the team picker on Team → Strengths (beside the Personalities one). Claude's draft, not yet reviewed.
+
+- {n} of {total} people have shared their Top 5 → មនុស្ស {n} នាក់ក្នុងចំណោម {total} នាក់ បានចែករំលែក Top 5 របស់ខ្លួន

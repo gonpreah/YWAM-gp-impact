@@ -36,7 +36,7 @@ mem.staff = [
   mk({ id: 'st1', name: 'Sreilea Chan', username: 'sreilea', email: 's@e.com' }),
   mk({ id: 'st2', name: 'Mealea Sok', username: 'mealea', email: 'm@e.com',
     gstrengths: { answers: {}, scores: {}, top: ['comforter', 'peacemaker', 'welcomer', 'dependable', 'mentor'], share: true } }),
-  mk({ id: 'st3', name: 'Dara Pen', username: 'dara', email: 'd@e.com',
+  mk({ id: 'st3', name: 'Dara Pen', username: 'dara', email: 'd@e.com', dept: 'Skills Training', ministry: 'Hospitality',
     gstrengths: { answers: {}, scores: {}, top: ['hardworker', 'dependable', 'coordinator', 'solver', 'orderly'], share: true } }),
   mk({ id: 'st4', name: 'Vuthy Lim', username: 'vuthy', email: 'v@e.com',
     gstrengths: { answers: {}, scores: {}, top: ['factfinder', 'curious', 'pathfinder', 'orderly', 'improver'], share: false } }),
@@ -151,7 +151,7 @@ const pick = i => { const p = G.GP_GSPAIRS[i]; const L = LIKES.includes(p[0]), R
   await page.click('nav.bottom button[data-tab="team"]'); await page.waitForTimeout(400);
   await page.click('[data-teammode="str"]'); await page.waitForTimeout(400);
   const txt = await page.$eval('#main', e => e.innerText);
-  ok('the map counts the three here who share (me, Mealea, Dara)', /3 people have shared their Top 5/.test(txt), (txt.match(/\d+ people[^\n]*/) || [''])[0]);
+  ok('the map counts the three here who share (me, Mealea, Dara)', /3 of 4 people have shared their Top 5/.test(txt), (txt.match(/\d+ people[^\n]*/) || [''])[0]);
   const row = name => page.evaluate(t => {
     const r = [].find.call(document.querySelectorAll('.sMapRow'), x => x.querySelector('.sChip').innerText.trim() === t);
     return r ? [].map.call(r.querySelectorAll('.sWhoBtn'), b => b.innerText) : null;
@@ -161,6 +161,17 @@ const pick = i => { const p = G.GP_GSPAIRS[i]; const L = LIKES.includes(p[0]), R
   ok('another campus is not on it', !/Bopha/.test(txt));
   ok('four groups, adding up to about 100%', (await page.$$('.pBarTop')).length === 4 &&
     Math.abs((await page.$$eval('.pBarTop b', b => b.reduce((a, x) => a + parseInt(x.innerText, 10), 0))) - 100) <= 2);
+  /* one team at a time, like Personalities (Uriah, Nov 2026: "break down the strengths results by team") */
+  ok('a team picker, starting on everyone at the campus', await page.$eval('#teamPScope', e => e.value === '' && /Everyone at/.test(e.options[0].text)));
+  await page.selectOption('#teamPScope', 'min:Community Service|Cafe'); await page.waitForTimeout(400);
+  const cafe = await page.$eval('#main', e => e.innerText);
+  ok('picking the Cafe narrows it to the Cafe: Dara (Hospitality) leaves', /2 of 3 people have shared their Top 5/.test(cafe) && JSON.stringify(await row('Dependable')) === '["Mealea"]', (cafe.match(/\d+ of \d+ people[^\n]*/) || [''])[0]);
+  await page.selectOption('#teamPScope', 'dept:Skills Training'); await page.waitForTimeout(400);
+  ok('a whole department works too', /1 of 1 people have shared their Top 5/.test(await page.$eval('#main', e => e.innerText)) && JSON.stringify(await row('Dependable')) === '["Dara"]');
+  await page.click('[data-teammode="pers"]'); await page.waitForTimeout(300);
+  ok('the same team stays picked on Personalities', await page.$eval('#teamPScope', e => e.value) === 'dept:Skills Training');
+  await page.click('[data-teammode="str"]'); await page.waitForTimeout(300);
+  await page.selectOption('#teamPScope', ''); await page.waitForTimeout(400);
   await page.click('.sWhoBtn[data-person="st2"]'); await page.waitForTimeout(800);
   ok('a name opens that person, with their strengths', /Mealea Sok/.test(await page.$eval('#main', e => e.innerText)) && !!(await page.$('#gsSeePerson')));
   await page.click('#gsSeePerson'); await page.waitForTimeout(300);

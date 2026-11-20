@@ -2160,6 +2160,11 @@ results saved then are still in `staff.strengths` but nothing reads them.)
   `staffProfile` carry the Top 5 ids while shared — never the answers or scores;
   the owner's `profile.gstrengths` has everything. Draft answers live in
   localStorage (`gp_gstr_draft`) until saved.
+- **Team → Strengths, one team at a time** (Nov 2026, Uriah: "break down the strengths results by team like the
+  personalities one does"): the same picker as Personalities (`teamPScopeSelect_` / `teamPScopePeople_`,
+  `#teamPScope`, `S.teamPScope` — so a team picked on one stays picked on the other): everyone at the campus, a
+  department, or one ministry, with "n of N people have shared their Top 5" (`#teamStrScope`). Not shown in the
+  YWAM GP / Advisory Board views, which have their own people. tests/test-gpstrengths-ui.mjs. Khmer §128.
 - **Khmer:** all ~515 strings in `PENDING_KM` (docs/khmer-needed.md §53).
 
 ## Tests (☰ → Tests, About me → 🧪 Tests; teams/17-tests.js, Nov 2026, Uriah)

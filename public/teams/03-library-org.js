@@ -415,11 +415,15 @@ function teamGpDirectoryHtml_(){
 /* Adds up the GP Strengths Top 5 of everyone on this campus who shares it. */
 function teamStrengthsHtml_(campus){
   if(!gsOK()) return '<p class="sub">'+esc(t('Strengths could not load. Pull down to refresh.'))+'</p>';
-  var people=teamPeopleIn_(campus).filter(function(p){ return p.gstrengths && p.gstrengths.length; });
+  /* the whole campus, a department or one ministry — the same picker as Personalities (S.teamPScope) */
+  var all=teamPScopePeople_(campus), scoped=!teamOrgScope_(campus);
+  var people=all.filter(function(p){ return p.gstrengths && p.gstrengths.length; });
   var orgNote=teamOrgNoteHtml_(campus);
+  var pick=scoped ? '<div class="card" id="teamStrScope">'+teamPScopeSelect_(campus)+
+    '<div class="pmeta" style="margin-top:8px">'+esc(gpT('{n} of {total} people have shared their Top 5',{n:people.length, total:all.length}))+'</div></div>' : '';
   if(!people.length){
-    if(teamOrgScope_(campus)) return '<div class="card"><p class="sub" style="margin:4px 0">'+esc(t('Nobody here has shared their strengths yet.'))+'</p></div>'+orgNote+gsFineHtml();
-    return '<div class="card"><p class="sub" style="margin:4px 0">'+
+    if(!scoped) return '<div class="card"><p class="sub" style="margin:4px 0">'+esc(t('Nobody here has shared their strengths yet.'))+'</p></div>'+orgNote+gsFineHtml();
+    return pick+'<div class="card"><p class="sub" style="margin:4px 0">'+
       esc(t('Nobody here has found their strengths yet. Take the free test from My Home.'))+'</p></div>'+gsFineHtml();
   }
   var byId={}, byGroup={}, total=0;
@@ -431,8 +435,8 @@ function teamStrengthsHtml_(campus){
       byGroup[g.id]++; total++;
     });
   });
-  var h='<div class="card"><div class="pmeta" style="margin-bottom:8px">'+
-    esc(gpT('{n} people have shared their Top 5',{n:people.length}))+'</div>';
+  var h=pick+'<div class="card">'+(scoped ? '' : '<div class="pmeta" style="margin-bottom:8px">'+
+    esc(gpT('{n} people have shared their Top 5',{n:people.length}))+'</div>');
   GP_GSGROUPS.forEach(function(g){
     var pct = total ? Math.round(byGroup[g.id]/total*100) : 0;
     h+='<div class="pBar"><div class="pBarTop"><span style="color:'+g.ink+';font-weight:800">'+esc(t(g.name))+'</span><span><b>'+pct+'%</b></span></div>'+
