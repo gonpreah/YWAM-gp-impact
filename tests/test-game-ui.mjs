@@ -102,7 +102,7 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   ok('seven dots for the week', await page.$$eval('#gameHome .gameDots i', e => e.length) === 7);
   if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/home.png' });
   const rd = await page.evaluate(() => { const c = document.getElementById('libHome'); return c ? { text: c.innerText.replace(/\s+/g, ' '), inHero: !!c.closest('.myHero'), h: c.getBoundingClientRect().height } : null; });
-  ok('reading is one small row in the summary card, saying what a book is worth', !!rd && /Read a book/.test(rd.text) && /50 points/.test(rd.text) && rd.inHero && rd.h < 80, JSON.stringify(rd));
+  ok('reading is one small row in the summary card, saying what a book is worth', !!rd && /Read a book/.test(rd.text) && /30 points/.test(rd.text) && rd.inHero && rd.h < 80, JSON.stringify(rd));
   ok('… and no Reading card of its own any more', !(await page.$('#sec-reading')) && !(await page.$('.card.libHome')));
   await page.click('#gameHome'); await page.waitForTimeout(300);
   if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/board.png', fullPage: true });
@@ -122,7 +122,7 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   ok('where my points came from', /Opened the app/.test(how) && /check-in gives no points/.test(how) && /Streak bonus/.test(how), '');
   await page.click('[data-gametab="books"]'); await page.waitForTimeout(200);
   const bk = await page.$eval('#gameBooks', e => e.innerText.replace(/\s+/g, ' '));
-  ok('Readers: books this year, and what a book is worth', /Di Sok/.test(bk) && /📚 1/.test(bk) && /50 points/.test(bk) && !/Mark Hill/.test(bk), bk.slice(0, 120));
+  ok('Readers: books this year, and what a book is worth', /Di Sok/.test(bk) && /📚 1/.test(bk) && /30 points/.test(bk) && !/Mark Hill/.test(bk), bk.slice(0, 120));
   await page.click('[data-gametab="min"]'); await page.waitForTimeout(200);
   ok('ministries by average', /Average points a person/.test(await main(page)) || /No ministry has two people/.test(await main(page)));
   await page.click('[data-gametab="people"]'); await page.waitForTimeout(200);
@@ -171,7 +171,7 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   await page.waitForSelector('#gameIntro', { timeout: 5000 });
   const intro = await page.$eval('#gameIntro', e => e.innerText.replace(/\s+/g, ' '));
   const mePts = await page.evaluate(() => S.game.me.pts);
-  ok('opening the app: the points sheet, my own points on top, then what each thing is worth', /Points are here!/.test(intro) && new RegExp('⭐ ' + mePts + ' points this week').test(intro) && /How to earn points/.test(intro) && /Finish a book \+50/.test(intro) && /Hold a 1-on-1 \+20/.test(intro) && /Catch Santa when he flies by \+5/.test(intro) && /3 days in a row/.test(intro), intro.slice(0, 260));
+  ok('opening the app: the points sheet, my own points on top, then what each thing is worth', /Points are here!/.test(intro) && new RegExp('⭐ ' + mePts + ' points this week').test(intro) && /How to earn points/.test(intro) && /Finish a book \+30/.test(intro) && /Hold a 1-on-1 \+20/.test(intro) && /Catch Santa when he flies by \+5/.test(intro) && /3 days in a row/.test(intro), intro.slice(0, 260));
   ok('… it fits a phone', await page.evaluate(() => { const r = document.getElementById('gameIntro').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1 && document.documentElement.scrollWidth <= innerWidth + 1; }));
   if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/intro.png' });
   await page.click('#gameIntroBoard'); await page.waitForTimeout(400);

@@ -2375,9 +2375,10 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
 - **Points** (`GAME_PTS`, sent to the page so the two can't drift; **balanced Nov 2026**, Andrew: "a book is 50 and a
   habit 2 … make it balanced … a book a little higher than the rest"): a day the app was opened 5; a habit ticked 3 (15 a
   day at most); weekly goals 15 for setting them + up to 25 as their average moves; a GP Task done 5 (40); a day
-  ministry numbers were entered 10 (20; never `tool:` rows); **a book finished 50 (150)** — the biggest single thing
-  (it was 25, then 50, then 30 for Andrew's balance, and back to 50 for the rollout, Nov 2026); a 1-on-1 held 20 (both
-  people); a holiday catch 5 (3 a day, below); Santa caught 5 (5 a day, below).
+  ministry numbers were entered 10 (20; never `tool:` rows); **a book finished 30 (90)** — the biggest single thing
+  (it was 25, then 50, then 30 for Andrew's balance, 50 for the rollout, and 30 again — Andrew, Nov 2026: "Let's change
+  the points for the books"); a 1-on-1 held 20 (both people); a holiday catch 5 (3 a day, below); Santa caught 5 (5 a
+  day, below).
 - **Streak bonus** (`streakMin` 3, `streakBonus` 0.2): on a day streak of 3 or more, +20% of the week's points
   (`parts.streak`, rounded); the streak breaks → the bonus goes, back to the plain points. My Home's line says
   "+20% streak bonus" (`#gameBonus`).
@@ -2396,7 +2397,7 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   board's `santa: {left}`) Santa and two reindeer fly across the screen (`#santaFly`, `.santaFly`, either way, `.ltr`)
   ~3.5 s after the app opens, then every 3–6 minutes while it stays open (`SANTA_GAP_MS`, caught or missed), until
   today's are caught; back to the front after 10 minutes away starts over with the quick first flight. A tap →
-  `catchSanta(user, pin)`: staff only, in season, **5 points, `santaDayCap` (5) a day** — 25 at most, half a book —
+  `catchSanta(user, pin)`: staff only, in season, **5 points, `santaDayCap` (5) a day** — 25 at most, less than a book —
   not two within a minute (server `SANTA_GAP_MS`); kept in `holidayCatch` as `santa` / `santaLast`; `parts.santa`. Waits
   while the bell, a snowflake or the points sheet is up. Not under a test browser unless `gp-santa-test` is set
   (`S.santaMs` / `S.santaGapMs` / `S.santaFlyMs`).
