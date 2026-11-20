@@ -853,7 +853,8 @@ function ownPersonality_(s) {
 function photoOf_(s) { return (s && (s.photoThumb || s.photo)) || ''; }
 /* The owner's own record: the full photo, and whether a small copy exists yet. */
 function selfStaff_(s, extra) {
-  return Object.assign(publicStaff_(s), { photo: s.photo || '', hasThumb: !!s.photoThumb }, extra || {});
+  /* setupTodo: a new account still to go through "Set up my profile" (Nov 2026) — their own card only */
+  return Object.assign(publicStaff_(s), { photo: s.photo || '', hasThumb: !!s.photoThumb }, s.setupTodo ? { setupTodo: true } : {}, extra || {});
 }
 function publicStaff_(s) {
   return {
@@ -968,8 +969,14 @@ async function staffRegister(payload) {
     staffType: cleanStaffType_(payload.staffType), country: cleanCountry_(payload.country),
     mentorId: payload.mentorId || '', mentorStatus: payload.mentorId ? 'pending' : '',
     phone: payload.phone || '', joined: payload.joined || '', debt: false, active: !pending,
-    isAdmin: false, created: now, updated: now
+    isAdmin: false, created: now, updated: now,
+    /* Signing up is only Google (or an email, username and PIN) and a name (Nov 2026, Andrew: "make the account
+       easy … not overwhelming with a bunch of questions"); once an admin says yes, the first sign-in walks them
+       through the rest — campus, ministry, kind of staff, country, mentor, papers — and updateProfile's setupDone
+       clears this. An invite link's campus / department / ministry are still kept and start the steps off. */
+    setupTodo: true
   };
+  if (!CAMPUS_IDS_.includes(rec.campus)) rec.campus = '';
   if (CD_KINDS.indexOf(payload.cdKind) > -1 && rec.dept === LEADERSHIP_DEPT && rec.ministry === 'Campus Director') rec.cdKind = payload.cdKind;
   let gtok = '';
   if (gg) { gtok = addDeviceToken_(rec); rec.google = { sub: gg.sub, lastAt: now }; }
@@ -1593,6 +1600,7 @@ async function updateProfile_(s, payload) {
       if (payload.cdKind !== undefined) rec.cdKind = CD_KINDS.indexOf(payload.cdKind) > -1 ? payload.cdKind : '';
     }
     if (payload.cancelCltRequest) delete rec.cltRequest;
+    if (payload.setupDone) delete rec.setupTodo;   // the steps after sign-up are done (22-setup.js)
     if (payload.role !== undefined) rec.role = payload.role;
     if (payload.staffType !== undefined) rec.staffType = cleanStaffType_(payload.staffType);
     if (payload.country !== undefined) rec.country = cleanCountry_(payload.country);

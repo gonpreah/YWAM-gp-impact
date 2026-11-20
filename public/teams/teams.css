@@ -3492,3 +3492,22 @@ button.homeBaseHead { width:100%; padding:0; border:0; background:none; color:in
 .lnS { border-radius:3px; -webkit-box-decoration-break:clone; box-decoration-break:clone; }
 .lnS.lnHlS { padding:1px 0; }
 .lnS.lnSelS { box-shadow:0 2px 0 0 var(--accent); background:rgba(31,68,255,.10); }
+
+/* "Set up my profile" — a new account's first steps (22-setup.js) */
+.suWrap { max-width:520px; margin:0 auto; padding-top:6px; }
+.suBar { height:6px; border-radius:6px; background:var(--line); overflow:hidden; margin:4px 0 6px; }
+.suBar span { display:block; height:100%; background:var(--accent); border-radius:6px; transition:width .3s ease; }
+.suCount { font-size:12px; color:var(--muted); margin-bottom:6px; }
+.suHello { font-size:46px; line-height:1; margin:18px 0 4px; }
+.suChoices { display:flex; flex-direction:column; gap:10px; margin:12px 0 4px; }
+.suChoices.two { flex-direction:row; }
+.suChoices.two .suChoice { flex:1; text-align:center; }
+.suChoice { display:block; width:100%; text-align:left; padding:14px 16px; border-radius:14px; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); font:inherit; font-size:16px; cursor:pointer; margin:0 0 10px; }
+.suChoices .suChoice { margin:0; }
+.suChoice b { display:block; }
+.suChoice span { display:block; font-size:13px; color:var(--muted); margin-top:3px; }
+.suChoice.on { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset; }
+.suNav { display:flex; gap:10px; margin-top:16px; }
+.suNav .btn { margin:0; }
+.suNav .btn.ghost { flex:0 0 auto; width:auto; padding-left:16px; padding-right:16px; }
+

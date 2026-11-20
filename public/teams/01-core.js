@@ -1013,7 +1013,7 @@ function render(){
   if(!S.me){
     hb.innerHTML = '<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>';   // (the old dashboard's button is gone: Look around shows Base)
     nav.classList.add('hidden');
-    document.getElementById('main').innerHTML = S.regMode ? registerHtml() : loginHtml();
+    document.getElementById('main').innerHTML = S.regDone ? regDoneHtml_() : S.regMode ? registerHtml() : loginHtml();
     bind();
     return;
   }
@@ -1065,6 +1065,7 @@ function render(){
   document.body.classList.toggle('libReading', S.view==='library' && !!S.libBook && S.libStep!=null);   // not 'reading': that is the Bible-reading box's class, and its yellow, border and font leaked onto the whole page
   if(LIBA.on && !(S.view==='library' && S.libBook && S.libStep!=null)) libAudioStop_();
   if(gglStepWanted_()) m.innerHTML=gglStepHtml_();   // moving everyone to Google: once, after a PIN sign-in (07-health-leave.js)
+  else if(setupWanted_()){ m.innerHTML=setupHtml_(); nav.classList.add('hidden'); nav.innerHTML=''; hb.innerHTML='<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>'; }   // a new account's first steps (22-setup.js): nothing else to tap but the language
   else if(S.guest && S.view==='week') m.innerHTML=gpGuestHomeHtml_();
   else if(S.guest && (S.view==='team' || S.view==='health')) m.innerHTML=gpGuestLockHtml_(S.view);
   else if(S.view==='base') m.innerHTML=(S.guest ? gpGuestCampusHtml_() : '')+(S.board ? orgCampusProfileHtml_(S.me.campus) : '')+baseHtml();
@@ -1137,6 +1138,7 @@ function gpTaRender_(hb, nav){
   var m=document.getElementById('main');
   m.classList.remove('wide');
   if(gglStepWanted_()) m.innerHTML=gglStepHtml_();
+  else if(S.me && S.me.setupTodo) m.innerHTML=setupTaHtml_();   // the steps after sign-up are in the main app (22-setup.js)
   else m.innerHTML = S.view==='calendar' ? calendarHtml_() : gptPageHtml_(null);
   if(S.offlineSince) m.insertAdjacentHTML('afterbegin', gpOfflineBannerHtml_());
   if(S.bootStale) m.insertAdjacentHTML('afterbegin', gpStaleBarHtml_());

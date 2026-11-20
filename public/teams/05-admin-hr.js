@@ -520,7 +520,8 @@ function adminApprovalsHtml_(){
   h+='<div class="card">';
   pending.forEach(function(x){
     h+='<div class="row"><div><div class="rowName">'+esc(x.name)+'</div>'+
-      '<div class="rowSub">@'+esc(x.username)+' · '+esc(campusShort(x.campus))+' · '+esc(t(x.dept))+(x.ministry?' · '+esc(t(x.ministry)):'')+'</div></div>'+
+      '<div class="rowSub">'+esc(x.email||('@'+x.username))+(x.campus ? ' · '+esc(campusShort(x.campus)) : '')+(x.dept ? ' · '+esc(t(x.dept)) : '')+(x.ministry?' · '+esc(t(x.ministry)):'')+'</div>'+
+      (x.campus && x.dept ? '' : '<div class="rowSub hint">'+esc(t('They choose their campus and ministry once you say yes.'))+'</div>')+'</div>'+
       '<span style="display:flex;gap:6px"><button class="btn" style="width:auto;margin:0;padding:9px 14px" data-adminapprove="'+esc(x.id)+'">'+esc(t('Approve'))+'</button>'+
       '<button class="btn ghost" style="width:auto;margin:0;padding:9px 12px" data-admindecline="'+esc(x.id)+'">'+esc(t('Decline'))+'</button></span></div>';
   });

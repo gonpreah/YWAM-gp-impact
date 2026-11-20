@@ -939,6 +939,26 @@ school's home.
   chip row under the campus chips (`#adminGglRow`, `[data-adminggl]`, `S.adminGgl`): the active, unarchived accounts
   with no Google account connected (`adminStaffOut_` carries `google` — true once `google.sub` is set — and
   `signIn`, never the Google id), each row tagged 🔑 PIN only. tests/test-admin-select.mjs, test-google-signin.mjs.
+- **Making an account is Google and a name; the rest comes after the admin's yes** (Nov 2026, Andrew: "make it simple,
+  just … your Gmail and … your name. And then once … it's been approved by the admin, then it'll go over the steps …
+  what ministry are you in and what kind of campus staff are you and did you fill out your staff contract"):
+  - `registerHtml` (07-health-leave.js) is **Sign up with Google** (`#googleSignup` → `gglGo_('signup')`; a Google
+    account with no profile goes straight to the name, `#regGoogle` + `#r_name`, not the "do you already have one?"
+    choice) — or, with Google off or "No Google account?" (`#regPinWay`, `S.regPin`), name, email, username and PIN.
+    Nothing else is asked; an invite link's campus / department / ministry ride along unseen. Then a thank-you
+    (`regDoneHtml_`, `#regDone`, `S.regDone`).
+  - `staffRegister` marks every new account `setupTodo` (and drops a campus that isn't one); `selfStaff_` carries it on
+    their own card only. Admin → Approvals shows the email and "They choose their campus and ministry once you say yes".
+  - **Set up my profile** (`teams/22-setup.js`, `setupWanted_` / `setupHtml_` / `bindSetup_`, `#setup[data-sustep]`):
+    on the first sign-in after approval, in place of the app (no bottom bar, header only the language) — a welcome, then
+    `SU_STEPS` one a screen with a bar and Back: campus (`[data-sucampus]`, a tap goes on), department + ministry + role
+    (`#su_dept`, `#su_ministry`, `#su_role`; Campus Leadership still waits for an admin), kind of staff
+    (`[data-sukind]`), home country (`#su_country`), mentor (`#su_mentor`, this campus first, "choose later"), and the
+    staff contract — "Have you signed it with HR?" (`[data-sucontract]`; Not yet → tell HR, who fill it out with you)
+    with the Child Protection Agreement and papers pointed to My contract. Nothing is saved until **Finish**: one
+    `updateProfile` with `setupDone` (which deletes `setupTodo`); then "You're all set!" with Add a photo / Sign my
+    papers / Go to My Home (`[data-sudone]` → `afterLogin()`, a fresh boot on their campus). The tasks app says to
+    finish in the main app (`setupTaHtml_`). tests/test-signup-setup-ui.mjs. Khmer: docs/khmer-needed.md §123.
 - **Every new account waits for an admin** (Andrew: "admin will receive an approval whether they accept
   them or deny them"): `staffRegister` makes every sign-up pending (it used to be Campus Leadership only),
   pushes each admin at once (`pushNow_` 'signup' → `teams.html?view=approvals`), and Admin → Approvals has
@@ -2462,7 +2482,7 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   first ("n of N active this week"), my three figures with "Where my points came from" folded, People / Ministries, the
   top ten with points (my own row always shown; people with none are a count, not a list). Not for guests,
   students, the board or a preview (`gameOn_`).
-- tests/test-game.mjs (server), tests/test-game-ui.mjs (also the holiday catch, Santa, the points sheet and the slide-down reminder). Khmer: docs/khmer-needed.md §112, §113, §118. sw.js SHELL v27.
+- tests/test-game.mjs (server), tests/test-game-ui.mjs (also the holiday catch, Santa, the points sheet and the slide-down reminder). Khmer: docs/khmer-needed.md §112, §113, §118. sw.js SHELL v27 (v28: 22-setup.js).
 
 ## Looking around without an account (teams.html guest mode, Oct 2026)
 `teams.html?guest=1` (the log-in screen's "Look around without an account" button was removed, Nov 2026, Andrew) sets

@@ -132,14 +132,14 @@ let link = '';
   await page.waitForSelector('#r_name', { timeout: 15000 }); await page.waitForTimeout(400);
   const ban = await page.$eval('#inviteBanner', e => e.innerText).catch(() => '');
   ok('the link opens the sign-up form saying where they are joining', /You’re joining GPDTS · Leadership Development · .*Siem Reap/.test(ban), ban);
-  ok('… with campus, department and ministry already chosen', (await page.$eval('#r_campus', e => e.value)) === 'siemreap' &&
-    (await page.$eval('#r_dept', e => e.value)) === 'Leadership Development' && (await page.$eval('#r_ministry', e => e.value)) === 'GPDTS');
+  ok('… and asks nothing about them: no campus, department or ministry boxes (Nov 2026 — the steps after approval start from the link)', !(await page.$('#r_campus')) && !(await page.$('#r_dept')) && !(await page.$('#r_ministry')));
   await page.screenshot({ path: OUT + '/groups-signup.png' });
   await page.fill('#r_name', 'Dana New'); await page.fill('#r_email', 'dana@e.com');
   await page.fill('#r_user', 'dana'); await page.fill('#r_pin', '4321');
   await page.click('#regBtn'); await page.waitForTimeout(1500);
   const dana = mem.staff.find(x => x.username === 'dana');
-  ok('signing up makes their own account in that ministry, with their own PIN — waiting for an admin to approve it (Nov 2026)', dana && dana.campus === 'siemreap' && dana.dept === 'Leadership Development' && dana.ministry === 'GPDTS' && dana.active === false && !!dana.pinHash);
+  ok('signing up makes their own account in that ministry, with their own PIN — waiting for an admin to approve it (Nov 2026), its setup still to do', dana && dana.campus === 'siemreap' && dana.dept === 'Leadership Development' && dana.ministry === 'GPDTS' && dana.active === false && !!dana.pinHash && dana.setupTodo === true);
+  ok('… and the page says thank you, and that an admin will look', /An admin will look at it soon/.test(await page.$eval('#regDone', e => e.innerText).catch(() => '')));
   await ctx.close();
 }
 {
