@@ -73,12 +73,10 @@ function aboutMeHtml_(){
       ? homeTile_('gsSeeMine', '💪', t('Strengths'), '<span class="sChips homeTileChips">'+g.top.map(function(id,i){ return gsChipHtml(id,i+1); }).join('')+'</span>')
       : homeTile_('gsStart', '💪', t('Strengths'), esc(t('Find your top 5 strengths')));
   }
-  if(!S.student) tiles += homeTile_('testsTile', '🧪', t('Tests'), esc(t('Gifts, language, couple check-up')));
-  var ss=S.supSum;
-  if(!S.student) tiles += homeTile_('supTile', '💰', t('Support raising'), esc(ss && ss.goal ? gpT('${n} of ${goal} a month',{n:fmt(ss.pledged), goal:fmt(ss.goal)}) : t('Your partners and monthly goal')));
-  if(!S.student) tiles += p3TileHtml_();
-  var nb=libBooksRead_();
-  tiles += homeTile_('libHomeTile', '📚', t('Library'), esc(nb ? gpT('{n} books read',{n:nb}) : t('Ten-minute reads')));
+  /* Just who you are (Nov 2026, Andrew: "too much to see"): Tests, Support raising and the Library are quick apps
+     and in ☰ now, not tiles here too. 360 reviews shows only while something waits on you. */
+  var G3=S.p3Glance;
+  if(!S.student && G3 && (G3.asked || G3.reviewDue)) tiles += p3TileHtml_();
   return '<h3 id="sec-ptype">🧭 '+esc(t('About me'))+'</h3><div class="homeTiles" id="sec-strengths">'+tiles+'</div>';
 }
 var PCHEV='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--faint);flex:0 0 auto"><path d="M9 6l6 6-6 6"/></svg>';

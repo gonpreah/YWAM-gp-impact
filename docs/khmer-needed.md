@@ -5738,3 +5738,11 @@ A row of small icons at the top of My Home's summary card that each person choos
 | Drag to move · ✕ to take off | អូសដើម្បីផ្លាស់ទី · ✕ ដើម្បីដកចេញ |
 | Add a quick app | បន្ថែមកម្មវិធីរហ័ស |
 | Everything is on your bar already. | អ្វីៗទាំងអស់មាននៅលើរបាររបស់អ្នករួចហើយ។ |
+
+## 120. My Home: the base at a glance
+
+The fourth figure under the campus's name on My Home's dark card — how many are on campus now (staff here and everyone booked tonight). A short label under a number; very little room.
+
+| English | Khmer (draft) |
+|---|---|
+| On campus | នៅក្នុងបរិវេណ |

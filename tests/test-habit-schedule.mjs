@@ -159,7 +159,7 @@ const TICKED_TODAY = thisWk === NOW;
   ok('… and says how many more sit on other days', /1 more on other days/.test(await text(page, '#habitShowRest')));
   await page.click('#habitShowRest'); await page.waitForTimeout(200);
   ok('… which open with their schedule', /Language study/.test(await text(page, '.habitRestList')) && /Every (Sun|Mon|Tue|Wed|Thu|Fri|Sat)/.test(await text(page, '.habitRestList')), await text(page, '.habitRestList'));
-  ok('the summary card counts today’s habits only', (TICKED_TODAY ? /Habits Today 1\/3/ : /Habits Today 0\/3/).test(await text(page, '.myHero')), await text(page, '.myHero').then(x => x.match(/Habits Today \S+/)[0]));
+  ok('the summary card counts today’s habits only', (TICKED_TODAY ? /1\/3/ : /0\/3/).test(await text(page, '.heroW[data-jump="sec-habits"]')), await text(page, '.heroW[data-jump="sec-habits"]'));
   ok('a weekly habit’s streak counts its own days — two weeks running', /🔥 2/.test(await text(page, '[data-habit="workout"]')), await text(page, '[data-habit="workout"]'));
   ok('the daily one’s streak is as before — yesterday, then the gap', /🔥 1/.test(await text(page, '[data-habit="bible"]')), await text(page, '[data-habit="bible"]'));
   ok('the section is headed Habits', (await page.$$eval('#main h3', hs => hs.map(h => h.innerText.trim()))).indexOf('✅ Habits') > -1);
@@ -215,8 +215,8 @@ const TICKED_TODAY = thisWk === NOW;
 
   /* the hero's time-off row and the goals head */
   const hero = await text(page, '.myHero');
-  ok('the summary card says Personal days off left, with a Request time off button', /PERSONAL DAYS OFF LEFT 30/.test(hero) && /Request time off/.test(await text(page, '#goLeaveFromMe')));
-  await page.click('#goLeaveFromMe'); await page.waitForTimeout(300);
+  ok('time off is not on the summary card any more — Leave is a quick app', !/PERSONAL DAYS OFF/.test(hero) && !(await page.$('.myHero #goLeaveFromMe')) && !!(await page.$('#qaBar [data-qago="leave"]')));
+  await page.click('#qaBar [data-qago="leave"]'); await page.waitForTimeout(500);
   ok('… which opens the Leave page', await page.evaluate(() => S.view === 'leave'));
   await page.click('#leaveBack'); await page.waitForTimeout(300);
   const goalsHead = await text(page, '#sec-goals + .card .goalCardHead');

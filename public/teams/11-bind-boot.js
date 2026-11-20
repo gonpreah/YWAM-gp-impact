@@ -298,6 +298,7 @@ function bindAway(){
   var mb=document.getElementById('ministryBack');
   if(mb) mb.onclick=function(){ S.view='week'; render(); };
   var db=document.getElementById('dashToBase'); if(db) db.onclick=function(){ gpTap(); S.view='base'; render(); window.scrollTo(0,0); };
+  document.querySelectorAll('[data-tobase]').forEach(function(b){ b.onclick=function(){ gpTap(); S.view='base'; render(); window.scrollTo(0,0); }; });
   var gm=document.getElementById('goMinistryFromMe');
   if(gm) gm.onclick=function(){ gpTap(); S.view='ministry'; S.mmTab='ministry'; render(); };
   document.querySelectorAll('[data-gohealth]').forEach(function(b){ b.onclick=function(){ gpTap(); S.view='health'; if(b.getAttribute('data-gohealth')==='open'){ S.healthWeek=thisWeek(); S.weekForm=thisWeek(); } render(); window.scrollTo(0,0); }; });

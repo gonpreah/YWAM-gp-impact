@@ -87,7 +87,7 @@ const rows = () => mem.oneOnOnes || [];
   const { ctx, page } = await open('sokha');
   ok('My Home shows the month: 0 of 2 1-on-1s', /0 of 2 1-on-1s this month/.test(await main(page)));
   ok('My Home keeps a short Mentorship card that opens the page', !!(await page.$('#goMentorshipHome')) && !(await page.$('#main [data-request121]')));
-  await page.click('.heroRow[data-gomentorship]'); await page.waitForTimeout(300);
+  await page.click('#goMentorshipHome'); await page.waitForTimeout(300);
   let txt = await main(page);
   ok('tapping Mentor on the dashboard opens the Mentorship page: your mentor, people you mentor', /🤝 Mentorship/.test(txt) && /Your mentor/i.test(txt) && /You mentor/.test(txt) && /Nobody has chosen you as their mentor yet/.test(txt), txt.slice(0, 200));
   ok('Mentorship says how a 1-on-1 works, folded: ask → day and time → check-in → Begin, notes, Finish', !!(await page.$('#ooHow:not([open])')) && /Begin 1-on-1/.test(await page.$eval('#ooHow', e => e.textContent)));
@@ -187,7 +187,7 @@ let firstId;
 /* ---------- 4. the mentor asks; the mentee accepts and lands on the check-in ---------- */
 {
   const a = await open('andrew');
-  await a.page.click('.heroRow[data-gomentorship]'); await a.page.waitForTimeout(300);
+  await a.page.click('#goMentorshipHome'); await a.page.waitForTimeout(300);
   await a.page.click('#main [data-mentee="st2"]'); await a.page.waitForTimeout(900);
   const hist = await a.page.$eval('#ooHistory + .card', e => e.innerText);
   ok('the history shows both held 1-on-1s, newest first, with how the follow-ups went', (hist.match(/✓ Done/g) || []).length === 2 && !/\d{4}-\d{2}-\d{2}/.test(hist) && /1 of 2 follow-ups done/.test(hist) && /Coffee after church/.test(hist), hist);
@@ -223,7 +223,7 @@ let firstId;
   await ctx.close();
   /* the mentor begins it from Mentorship, saves halfway, carries on later */
   const b = await open('andrew');
-  await b.page.click('.heroRow[data-gomentorship]'); await b.page.waitForTimeout(300);
+  await b.page.click('#goMentorshipHome'); await b.page.waitForTimeout(300);
   ok('the mentor line under Sokha: the check-in is in, and Begin 1-on-1', /Sokha answered the check-in/.test(await b.page.$eval('#mentee-st2', e => e.innerText)) && !!(await b.page.$('#mentee-st2 [data-oobegin="' + askId + '"]')));
   await b.page.screenshot({ path: OUT + '/mentorship-begin.png', fullPage: true });
   await b.page.click('#mentee-st2 [data-oobegin="' + askId + '"]'); await b.page.waitForTimeout(300);
@@ -283,7 +283,7 @@ mem.oneOnOnes.push({ id: 'ooU', fromId: 'st4', toId: 'st5', menteeId: 'st4', not
   const pr = () => rows().filter(o => [o.fromId, o.toId].includes('st1') && [o.fromId, o.toId].includes('st2'));
   const day = n => new Date(Date.now() + 7 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
   const a = await open('andrew');
-  await a.page.click('.heroRow[data-gomentorship]'); await a.page.waitForTimeout(300);
+  await a.page.click('#goMentorshipHome'); await a.page.waitForTimeout(300);
   await a.page.click('#mentee-st2 [data-request121="st2"]'); await a.page.waitForTimeout(300);
   ok('asking, a day and time can be suggested (optional)', !!(await a.page.$('#ooNext #ooSugDate')) && !!(await a.page.$('#ooNext #ooSugTime')) && /Suggest a day and time \(optional\)/.test(await a.page.$eval('#ooNext', e => e.textContent)));
   await a.page.fill('#ooSugDate', day(3)); await a.page.waitForTimeout(100);
