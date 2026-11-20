@@ -1467,6 +1467,7 @@ function miniDashboardHtml(){
      the big streak number read as an afterthought in the middle of the card. */
   h+='<div class="hero myHero'+(custom?' custom':'')+'"'+
     (custom?' style="'+(color?'background-color:'+esc(color)+';':'')+(bg?'background-image:url(\''+esc(bg)+'\');':'')+'"':'')+'>'+
+    qaBarHtml_()+   // the quick apps: the person's own row of small icons (19-ux.js)
     '<button class="heroRow'+(written.length?' withList':'')+'" data-jump="sec-goals">'+gpRingHtml(goalsPct,'sm',t('Weekly Goals'))+
       '<div class="heroTrend">'+esc(t('Weekly Goals'))+' <b class="heroFig">'+goalsDone+'</b>/'+written.length+'</div>'+
       (written.length?'<div class="heroGoalsPreview">'+written.map(function(g){
@@ -1487,6 +1488,7 @@ function miniDashboardHtml(){
     '<button class="heroRow heroRowGo" id="goMentorship" data-gomentorship="1" aria-label="'+esc(t('Mentorship'))+'">'+gpRingHtml(mentorPct,'sm',t('Mentor'))+
       '<div class="heroTrend">'+esc(t('Mentor'))+' <b class="heroFig">'+(mentorId?esc(mentorName):esc(t('Not set')))+'</b></div><span class="heroGo" aria-hidden="true">›</span></button>'+
     gptHomeRowHtml_()+
+    libHeroRowHtml_()+   // 📚 one small row: this month's book, the one you were in, or Read a book
     '<div class="heroSub">'+
       '<div class="heroSubRow">'+
         '<span class="heroSubLabel">'+esc(t('PERSONAL DAYS OFF LEFT'))+'</span>'+

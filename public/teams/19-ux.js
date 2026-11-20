@@ -177,7 +177,7 @@ function gpUndo_(text, commit, undo){
 document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') gpUndoFlush_(); });
 window.addEventListener('pagehide', gpUndoFlush_);
 
-function bindUx_(){ bindFind_(); if(typeof gameIntroMaybe_==='function') gameIntroMaybe_(); gpBannerTick_(); if(typeof holSchedule_==='function') holSchedule_(); if(typeof santaSchedule_==='function') santaSchedule_(); }
+function bindUx_(){ bindFind_(); bindQuickApps_(); if(typeof gameIntroMaybe_==='function') gameIntroMaybe_(); gpBannerTick_(); if(typeof holSchedule_==='function') holSchedule_(); if(typeof santaSchedule_==='function') santaSchedule_(); }
 
 /* ---------- The slide-down reminder (Nov 2026, Andrew: "instead of a box pop-up on My Home … a small notification
    slides down from the top, like on a smartphone … swipe it up and it's just in your notification bell … tap it and you
@@ -262,4 +262,130 @@ function gpBannerOpen_(){
   if(!b) return;
   b.click();
   if(S.bellOpen){ S.bellOpen=false; renderNotifPanel(); }
+}
+
+/* ---------- Quick apps, on My Home's summary card (Nov 2026, Andrew: "small little app icons in the dashboard … the
+   library, the language learning … hidden at the bottom of the hamburger menu … customise it like a hotbar … hold and
+   move the icons around, add new ones … don't make it too big") ----------
+   A row of small icons at the top of the summary card (`qaBarHtml_`, `#qaBar`). What can go on it is what the person's ☰
+   menu and search already offer (`gpFindPages_` — so it can never offer a page their role doesn't have), minus the bottom
+   bar's tabs and the sign-out items (`qaCatalog_`, kept for the visit in `S.qaCat`). Their choice is a list of ids on their
+   own staff record (`quickApps`, the boot's staff card; `saveQuickApps`); none yet → `QA_DEFAULT` (GP Tasks, the Library,
+   Learn Khmer, Leave, Prayer — whichever they have). A tap opens it. **Hold one** (or tap ✎) to arrange: the icons
+   wiggle, drag one sideways to move it (pointer events; `touch-action:none` only while arranging), ✕ takes it off,
+   ＋ adds from the rest (`#qaAddSheet`), Done saves. Up to `QA_MAX`. */
+var QA_DEFAULT=['caltasks','library','khmer','leave','prayer'], QA_MAX=10, QA_HOLD_MS=450;
+var QA_SKIP={ applogout:1, boardlogout:1, stuexit:1, openapp:1, stuportal:1, guestreg:1, guestlogin:1 };
+/* the bar's own short names, so a name fits under its icon (the menu's full name is the button's label for a screen reader) */
+var QA_SHORT={ caltasks:'Calendar', khmer:'Language', leave:'Leave', mycontract:'My contract', whoshere:'Who’s here', goals:'Goals', mentor:'Mentor', p360:'360 reviews' };
+function qaName_(p){ return QA_SHORT[p.id] ? t(QA_SHORT[p.id]) : p.label; }
+function qaOn_(){ return !!(S.me && S.auth && S.auth.user && !S.guest && !S.student && !S.board && !S.stuPreview); }
+function qaCatalog_(){
+  var who=S.me.id+'|'+LANG;
+  if(S.qaCat && S.qaCat.who===who) return S.qaCat.list;
+  var list=[];
+  try { list=gpFindPages_().filter(function(p){ return p.id.indexOf('tab:')!==0 && !QA_SKIP[p.id] && p.label; }); } catch(e){ list=[]; }
+  S.qaCat={ who:who, list:list };
+  return list;
+}
+function qaChosen_(){
+  var cat=qaCatalog_(), by={}; cat.forEach(function(p){ by[p.id]=p; });
+  var ids=Array.isArray(S.me.quickApps) ? S.me.quickApps : QA_DEFAULT;
+  return ids.filter(function(id, i){ return by[id] && ids.indexOf(id)===i; }).slice(0, QA_MAX).map(function(id){ return by[id]; });
+}
+function qaIconHtml_(p){ return '<span class="qaIc">'+(p.icon || '•')+'</span>'; }
+function qaBarHtml_(){
+  if(!qaOn_()) return '';
+  var on=qaChosen_(), edit=!!S.qaEdit;
+  var h='<div class="qaBar'+(edit?' edit':'')+'" id="qaBar" role="toolbar" aria-label="'+esc(t('Quick apps'))+'">';
+  h+=on.map(function(p){
+    return '<div class="qaItem" data-qa="'+esc(p.id)+'"><button class="qaBtn" data-qago="'+esc(p.id)+'" aria-label="'+esc(p.label)+'">'+qaIconHtml_(p)+
+      '<span class="qaLabel">'+esc(qaName_(p))+'</span></button>'+
+      (edit ? '<button class="qaX" data-qarm="'+esc(p.id)+'" aria-label="'+esc(gpT('Take {name} off',{name:p.label}))+'">×</button>' : '')+'</div>';
+  }).join('');
+  if(edit && on.length<QA_MAX) h+='<div class="qaItem qaAddItem"><button class="qaBtn" id="qaAdd" aria-label="'+esc(t('Add an app'))+'"><span class="qaIc qaPlus">＋</span><span class="qaLabel">'+esc(t('Add'))+'</span></button></div>';
+  if(!edit) h+='<div class="qaItem qaEditItem"><button class="qaBtn" id="qaEditBtn" aria-label="'+esc(t('Arrange your quick apps'))+'"><span class="qaIc qaPlus">✎</span><span class="qaLabel">'+esc(t('Edit'))+'</span></button></div>';
+  h+='</div>';
+  if(edit) h+='<div class="qaEditBar"><span>'+esc(t('Drag to move · ✕ to take off'))+'</span><button class="qaDone" id="qaDone">'+esc(t('Done'))+'</button></div>';
+  return h;
+}
+function qaAddSheetHtml_(){
+  var on={}; qaChosen_().forEach(function(p){ on[p.id]=1; });
+  var rest=qaCatalog_().filter(function(p){ return !on[p.id]; });
+  return '<div class="scrim" id="qaAddScrim" style="z-index:74"></div><div class="gtSheet" id="qaAddSheet" role="dialog" style="z-index:75">'+
+    '<div class="gtSheetHead"><b>'+esc(t('Add a quick app'))+'</b></div>'+
+    (rest.length ? '<div class="qaPick">'+rest.map(function(p){ return '<button class="qaPickRow" data-qapick="'+esc(p.id)+'">'+qaIconHtml_(p)+'<span>'+esc(p.label)+'</span><span class="qaPickAdd">＋</span></button>'; }).join('')+'</div>'
+      : '<p class="sub">'+esc(t('Everything is on your bar already.'))+'</p>')+'</div>';
+}
+function qaSave_(ids){
+  S.me.quickApps=ids.slice(0, QA_MAX);
+  run('saveQuickApps',[S.auth.user,S.auth.pin,S.me.quickApps],function(d){ if(!d || !d.ok) showMsg(t('Could not save — check your connection and try again.')); }, function(){});
+}
+function qaIds_(){ return qaChosen_().map(function(p){ return p.id; }); }
+/* every change is kept a moment after it is made, so leaving the page mid-arrange loses nothing */
+var _qaT=0;
+function qaSoon_(){ clearTimeout(_qaT); var ids=(S.me.quickApps||[]).slice(); _qaT=setTimeout(function(){ qaSave_(ids); }, 600); }
+function bindQuickApps_(){
+  var bar=document.getElementById('qaBar'); if(!bar) return;
+  var edit=!!S.qaEdit, held=false, timer=0;
+  Array.prototype.forEach.call(bar.querySelectorAll('[data-qago]'), function(b){
+    var id=b.getAttribute('data-qago');
+    b.onclick=function(e){
+      if(held){ held=false; e.preventDefault(); return; }
+      if(S.qaEdit) return;
+      var p=qaCatalog_().filter(function(x){ return x.id===id; })[0]; if(!p) return;
+      gpTap(); p.go();
+    };
+    if(!edit){   // hold to arrange
+      var x0=0, y0=0;
+      b.addEventListener('pointerdown', function(e){ x0=e.clientX; y0=e.clientY; clearTimeout(timer); timer=setTimeout(function(){ held=true; gpTap(); S.qaEdit=true; render(); }, QA_HOLD_MS); });
+      b.addEventListener('pointermove', function(e){ if(Math.abs(e.clientX-x0)>8 || Math.abs(e.clientY-y0)>8) clearTimeout(timer); });
+      ['pointerup','pointercancel','pointerleave'].forEach(function(ev){ b.addEventListener(ev, function(){ clearTimeout(timer); }); });
+      b.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+    }
+  });
+  var eb=document.getElementById('qaEditBtn'); if(eb) eb.onclick=function(){ gpTap(); S.qaEdit=true; render(); };
+  var done=document.getElementById('qaDone'); if(done) done.onclick=function(){ gpTap(); S.qaEdit=false; S.me.quickApps=qaIds_(); qaSoon_(); render(); };
+  Array.prototype.forEach.call(bar.querySelectorAll('[data-qarm]'), function(b){ b.onclick=function(e){ e.stopPropagation(); gpTap();
+    var id=b.getAttribute('data-qarm'); S.me.quickApps=qaIds_().filter(function(x){ return x!==id; }); qaSoon_(); render(); }; });
+  var add=document.getElementById('qaAdd'); if(add) add.onclick=function(){ gpTap(); qaAddOpen_(); };
+  if(edit) qaDrag_(bar);
+}
+function qaAddOpen_(){
+  var root=document.getElementById('qaAddRoot'); if(!root){ root=document.createElement('div'); root.id='qaAddRoot'; document.body.appendChild(root); }
+  root.innerHTML=qaAddSheetHtml_();
+  var shut=function(){ root.innerHTML=''; };
+  document.getElementById('qaAddScrim').onclick=shut;
+  Array.prototype.forEach.call(root.querySelectorAll('[data-qapick]'), function(b){ b.onclick=function(){ gpTap();
+    S.me.quickApps=qaIds_().concat([b.getAttribute('data-qapick')]).slice(0, QA_MAX); qaSoon_(); shut(); render(); }; });
+}
+/* arranging: drag an icon sideways; the others make room as it passes them */
+function qaDrag_(bar){
+  var drag=null;
+  Array.prototype.forEach.call(bar.querySelectorAll('.qaItem[data-qa]'), function(it){
+    it.addEventListener('pointerdown', function(e){
+      if(e.target.closest('.qaX')) return;
+      drag={ el:it, x0:e.clientX, moved:false }; it.classList.add('drag');
+      try { it.setPointerCapture(e.pointerId); } catch(err){}
+    });
+    it.addEventListener('pointermove', function(e){
+      if(!drag || drag.el!==it) return;
+      var dx=e.clientX-drag.x0; if(Math.abs(dx)>4) drag.moved=true;
+      it.style.transform='translateX('+dx+'px) scale(1.08)';
+      var items=Array.prototype.filter.call(bar.querySelectorAll('.qaItem[data-qa]'), function(x){ return x!==it; });
+      var mid=it.getBoundingClientRect(), cx=mid.left+mid.width/2;
+      for(var i=0;i<items.length;i++){
+        var r=items[i].getBoundingClientRect(), before=it.compareDocumentPosition(items[i]) & Node.DOCUMENT_POSITION_PRECEDING;
+        if(before && cx<r.left+r.width/2){ bar.insertBefore(it, items[i]); drag.x0=e.clientX; it.style.transform='scale(1.08)'; break; }
+        if(!before && cx>r.left+r.width/2){ bar.insertBefore(it, items[i].nextSibling); drag.x0=e.clientX; it.style.transform='scale(1.08)'; }
+      }
+    });
+    var end=function(){
+      if(!drag || drag.el!==it) return;
+      it.classList.remove('drag'); it.style.transform='';
+      var moved=drag.moved; drag=null;
+      if(moved){ S.me.quickApps=Array.prototype.map.call(bar.querySelectorAll('.qaItem[data-qa]'), function(x){ return x.getAttribute('data-qa'); }); qaSoon_(); }
+    };
+    it.addEventListener('pointerup', end); it.addEventListener('pointercancel', end);
+  });
 }

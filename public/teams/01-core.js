@@ -838,6 +838,7 @@ function afterLogin(){
 /* Everything a boot payload carries, in one place, because two entry points use
    it: a remembered session and a fresh login. */
 function applyBoot(d, fromCache){
+  S.qaCat=null;   // the quick apps' catalogue follows the menu, which can change with a fresh boot
   if(d && d.voice!==undefined) S.voiceOn=!!d.voice;   // talk it through → tasks (21-voice.js)
   if(d && d.googleId!==undefined){ _ggl.cfg={ google:d.googleId||'', redirect:!!d.googleRedirect }; _ggl.asked=true; }   // the site's Google client, for Continue with Google
   if(!fromCache){ S.offlineSince = null; if(!S.student) gpBootCacheSave_(d); gpMarkSeen_(); setTimeout(function(){ if(typeof gpThumbBackfill_==='function') gpThumbBackfill_(); }, 1500); }

@@ -934,7 +934,7 @@ school's home.
     "Can't get in? Message an admin…" (`#loginStuck`).
   - **A PIN reset now works on a password account**: `credOk_` checks only the password when there is one, so
     `adminResetPin` drops `secretHash` / `secretSalt` (the admin is replacing a forgotten password).
-  - tests/test-signin-link.mjs (server), tests/test-signin-link-ui.mjs. Khmer: docs/khmer-needed.md §117.
+  - tests/test-signin-link.mjs (server), tests/test-signin-link-ui.mjs. Khmer: docs/khmer-needed.md §119.
 - **Who isn't on Google yet** (Nov 2026, Andrew): Admin → Accounts has an "Everyone · n / Not on Google yet · n"
   chip row under the campus chips (`#adminGglRow`, `[data-adminggl]`, `S.adminGgl`): the active, unarchived accounts
   with no Google account connected (`adminStaffOut_` carries `google` — true once `google.sub` is set — and
@@ -2336,6 +2336,19 @@ the phone, and English left in Khmer. What it found, and the rules that came out
   browser without the flag it is sent at once. Only GP Tasks uses it so far.
 - tests/test-ux-ui.mjs. Khmer: docs/khmer-needed.md §111. sw.js SHELL v24.
 
+## Quick apps on My Home (end of teams/19-ux.js, Nov 2026, Andrew: "small little app icons in the dashboard … customise it like a hotbar … hold and move the icons around")
+- A row of small icons at the top of My Home's summary card (`qaBarHtml_`, `#qaBar`, `.qaItem[data-qa]`, `[data-qago]`), each a
+  page from the person's own ☰ menu and search (`qaCatalog_` = `gpFindPages_()` minus bottom-bar tabs and the sign-out items,
+  `QA_SKIP`; kept in `S.qaCat` by user and language, dropped on every `applyBoot`) — so it can never offer a page their role
+  doesn't have. Short names under the icons (`QA_SHORT`: Calendar, Language, Leave…). Default (`QA_DEFAULT`): GP
+  Calendar/Tasks, Library, Learn Khmer, Leave, Prayer.
+- **Arranging**: hold an icon (`QA_HOLD_MS` 450) or tap ✎ Edit (`#qaEditBtn`) → `S.qaEdit`: the icons wiggle, ✕ takes one off
+  (`[data-qarm]`), ＋ Add (`#qaAdd` → `#qaAddSheet`, `[data-qapick]`) adds from the rest, drag one sideways to move it
+  (`qaDrag_`, pointer events; `touch-action:none` only while arranging), Done (`#qaDone`). Up to `QA_MAX` (10).
+- **Saved on the staff record** as `quickApps` (ids only) by `saveQuickApps(user, pin, ids)` (well-formed ids, once each, ten at
+  most; null = the default), a moment after each change (`qaSoon_`); the boot's own staff card carries it, never the roster.
+- tests/test-quick-apps-ui.mjs. Khmer: docs/khmer-needed.md §117.
+
 ## The week's board (teams/20-game.js, Nov 2026, Uriah: "gamify the app … a daily driver rather than a weekly check-in thing")
 Borrowed from the GonPreah public app's leaderboard. **Nothing new is stored**: `gameBoard_(s, staff, campus)` (api.js
 "The week's board") works out, from what is already saved, each active staff member's **points for the week** (Monday
@@ -2375,7 +2388,7 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   `pts`), the streak bonus, Santa and the snowflakes in season, **See this week's board** / **Let's go!**, and
   **Don't show this when I open the app** (`#gameIntroOff`). The first time it says "Points are here!", after that "Your
   points this week". On the phone as `gp-game-intro-v2` = {n, last, off}. The slide-down reminder and Santa wait while
-  it is open. Not under a test browser unless `gp-intro-test` is set. Khmer: docs/khmer-needed.md §116.
+  it is open. Not under a test browser unless `gp-intro-test` is set. Khmer: docs/khmer-needed.md §118.
 - **Streak**: days in a row with any use (the same evidence as Admin → App use), ending today or yesterday.
 - **What others see**: `people` rows are exactly `{id, pts, streak, week, rank, books, booksYear}` (books finished this
   week and this year — counts, as every profile already shows; never which book) (`week` = seven characters, 1 / 0 / -
@@ -2385,16 +2398,18 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
 - **Ministries**: average points a person, for ministries with two or more people on the board. **📚 Readers** (the third
   tab, `#gameBooks`): books finished this year, most first, and a button to the Library; a row on People shows 📚 n for
   books this week.
-- **The Reading card is high on My Home and always there** (Uriah: "put the book thing up … I didn't see the book thing"):
-  `libHomeCardHtml_` is called from `homeHtml` right under the summary card's banners (it was above About me, and showed
-  nothing without a month's book, a book in progress or a recommendation); with none of those it says "Read a book in ten
-  minutes" (`#libHomeOpen`), and it ends with what a finished book is worth (`#libHomePts`).
+- **Reading is one small row in My Home's summary card** (Nov 2026, Andrew: "move that into the little dashboard … make
+  it small … a little book icon … read a book"; before that it was its own Reading card under the summary card):
+  `libHeroRowHtml_` (end of 18-library-plus.js, `#libHome`, `.libHeroRow`, after the GP Tasks row) — 📚 and one line:
+  this month's book while unread ("This month: …", "n of N have read it"), else the book you were in ("Continue: …",
+  "n of m pages"), else "Read a book · Ten minutes · 30 points"; "💌 n" when books were recommended to you. A tap
+  (`data-libhome`) opens that book, or the Library.
 - **The page**: My Home has one line above the summary card (`gameHomeHtml_`, `#gameHome`: 🔥 streak · ⭐ points · #place,
   the week's dots; tap → the board). **Team → 🏆 This week** (`S.teamMode='game'`, `gameTeamHtml_`): the campus together
   first ("n of N active this week"), my three figures with "Where my points came from" folded, People / Ministries, the
   top ten with points (my own row always shown; people with none are a count, not a list). Not for guests,
   students, the board or a preview (`gameOn_`).
-- tests/test-game.mjs (server), tests/test-game-ui.mjs (also the holiday catch, Santa, the points sheet and the slide-down reminder). Khmer: docs/khmer-needed.md §112, §113, §116. sw.js SHELL v27.
+- tests/test-game.mjs (server), tests/test-game-ui.mjs (also the holiday catch, Santa, the points sheet and the slide-down reminder). Khmer: docs/khmer-needed.md §112, §113, §118. sw.js SHELL v27.
 
 ## Looking around without an account (teams.html guest mode, Oct 2026)
 `teams.html?guest=1` (the log-in screen's "Look around without an account" button was removed, Nov 2026, Andrew) sets
@@ -3780,6 +3795,10 @@ the main app." An installable web app, like the portal — not an App Store app.
 - **teams/13-calendar.js**: ☰ → **📅 Calendar** (`S.view='calendar'`, a month at a time, day by day,
   colour per calendar, tap for details, Earlier / Later / Back to today) and **📅 Coming up** on My Home
   (the next seven days, five at most, `calHomeCardHtml_`) — nothing at all until a calendar is connected.
+  **Coming up moves on** (Nov 2026, Andrew: "once the day has passed, just move on to the next thing — right now it's
+  still on the teams"): `calHomeUpcoming_` keeps only what starts today or later (a stay that began on an earlier day —
+  which the server sends with its first day — is not "coming up") and drops today's timed things once they have ended;
+  `calHomeLoad_` asks again when the day changes (`S.calHome.day`), so an app left open overnight moves on too.
 - tests/test-gcal.mjs, tests/test-gcal-ui.mjs.- **Month view like Google Calendar (Oct 2026, redone later that month to match Google's own):**
   `S.calMonth` ('YYYY-MM'), six week rows from the Monday on or before the 1st (`calGridStart_`,
   fetched as 42 days), the ISO week number on the left (`calIsoWeek_`), **each thing a title bar

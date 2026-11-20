@@ -5634,7 +5634,7 @@ In the book reader a paragraph can be highlighted in a colour ("Highlight", as w
 | Blue | ខៀវ |
 | Pink | ផ្កាឈូក |
 
-## 116. Santa, books at 50, and the welcome to points
+## 118. Santa, books at 50, and the welcome to points
 
 In the holiday season Santa (សាន់តាក្លូស) and his reindeer fly across the screen when the app opens; tapping him gives 5 points; he comes round every few minutes ("Catch Santa" is read aloud by screen readers). The points sheet shows on the first open of each day: your points, then what each thing is worth on the week's board. "Let’s go!" is its closing button.
 
@@ -5685,7 +5685,7 @@ In the holiday season Santa (សាន់តាក្លូស) and his reindeer
 | Install it like an app, with its own icon — the applications one tap from your Home Screen. | ដំឡើងវាដូចកម្មវិធីមួយ ជាមួយរូបតំណាងផ្ទាល់ខ្លួន — ពាក្យសុំទាំងអស់ ចុចតែម្ដងពីអេក្រង់ដើម។ |
 
 
-## 117. Getting back in: the admin's sign-in link and the full email
+## 119. Getting back in: the admin's sign-in link and the full email
 
 Admin → a person: their whole email with Copy, how they sign in, an Email box in Edit profile, and **Sign-in link** — a one-time link an admin sends by Telegram or WhatsApp. The login screen says to ask for one. Claude's drafts, not yet reviewed.
 
@@ -5715,3 +5715,26 @@ Admin → a person: their whole email with Copy, how they sign in, an Email box 
 - That sign-in link was already used, or isn’t right. Ask an admin for a new one. → តំណសម្រាប់ចូលនោះត្រូវបានប្រើរួចហើយ ឬមិនត្រឹមត្រូវ។ សូមសុំតំណថ្មីពីអ្នកគ្រប់គ្រង។
 - No connection — open the link again when you are online. → គ្មានការតភ្ជាប់ — សូមបើកតំណម្តងទៀត ពេលអ្នកមានអ៊ីនធឺណិត។
 - Can’t get in? Message an admin on Telegram or WhatsApp — they can send you a link that signs you straight in, or set a new PIN. → ចូលមិនបាន? សូមផ្ញើសារទៅអ្នកគ្រប់គ្រងតាម Telegram ឬ WhatsApp — គាត់អាចផ្ញើតំណដែលបញ្ចូលអ្នកភ្លាមៗ ឬកំណត់ PIN ថ្មីឱ្យអ្នក។
+## 116. My Home: the Library as one row of the summary card
+
+A short line beside 📚 on the dark summary card — very little room. "Read a book" is shown when no book is under way; "Ten minutes · {n} points" sits after it.
+
+| English | Khmer (draft) |
+|---|---|
+| Read a book | អានសៀវភៅមួយក្បាល |
+| Ten minutes · {n} points | ដប់នាទី · {n} ពិន្ទុ |
+| Ten minutes | ដប់នាទី |
+| {n} of {total} have read it | {n} នាក់ក្នុងចំណោម {total} បានអានវាហើយ |
+
+## 117. My Home: quick apps
+
+A row of small icons at the top of My Home's summary card that each person chooses and arranges (hold an icon, or tap ✎ Edit). "Quick apps" names the row; the rest are on the edit row and the Add sheet.
+
+| English | Khmer (draft) |
+|---|---|
+| Quick apps | កម្មវិធីរហ័ស |
+| Add an app | បន្ថែមកម្មវិធី |
+| Arrange your quick apps | រៀបចំកម្មវិធីរហ័សរបស់អ្នក |
+| Drag to move · ✕ to take off | អូសដើម្បីផ្លាស់ទី · ✕ ដើម្បីដកចេញ |
+| Add a quick app | បន្ថែមកម្មវិធីរហ័ស |
+| Everything is on your bar already. | អ្វីៗទាំងអស់មាននៅលើរបាររបស់អ្នករួចហើយ។ |
