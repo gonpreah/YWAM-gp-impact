@@ -101,7 +101,9 @@ const samples = await p.evaluate(() => new Promise((res) => {
 const staleH = samples.filter((x) => x[2]).map((x) => x[1]), freshH = samples.filter((x) => !x[2]).map((x) => x[1]);
 const small = Math.max.apply(null, staleH), big = freshH[freshH.length - 1];
 const between = freshH.filter((h) => h > small + 1 && h < big - 1);
-ok('when the fresh boot makes My Home’s card bigger, it eases to its new size — no jump', big > small + 20 && between.length >= 3, 'copy ' + small + 'px → fresh ' + big + 'px, ' + between.length + ' frames between');
+/* Since Nov 2026 the card is widgets of a fixed size: goals and GP Tasks arriving with the fresh boot fill a widget
+   instead of adding a row, so there is nothing left to ease — the card simply stays the size it was. */
+ok('when the fresh boot brings goals and GP Tasks the kept copy lacked, My Home’s card stays exactly the same size', staleH.length > 0 && freshH.length > 0 && Math.max.apply(null, freshH) === small && Math.min.apply(null, freshH) === small, 'copy ' + small + 'px → fresh ' + big + 'px; ' + staleH.length + ' stale, fresh ' + Math.min.apply(null, freshH) + '–' + Math.max.apply(null, freshH));
 const heads = hits.filter((h) => h.method === 'HEAD' && /\?ver=/.test(h.url));
 ok('the new-version check waits until the fresh boot has landed', heads.length > 0 && heads.every((h) => h.at >= bootAt), heads.length + ' HEADs, first ' + (heads.length ? heads[0].at - bootAt : '-') + 'ms after the boot');
 ok('no page errors', errs.length === 0, errs.join(' | '));
