@@ -2231,6 +2231,33 @@ none of it (`libOn_()`).
 - New Library sections use `.libHead2` / `.libScroll`, never `.libSecHead` / `.libRow` — test-library-ui counts those as
   shelves. tests/test-library-club.mjs (server), tests/test-library-club-ui.mjs. Khmer: docs/khmer-needed.md §109.
 
+## The Library: highlights, notes and talking about them (end of teams/18-library-plus.js, Nov 2026, Andrew)
+"Like the Bible app … highlight things you like … write a note … private, or public for everyone in our base … comment on it,
+like it … ask for prayer — private, public, or just to your mentor."
+- **In the reader** every paragraph can be tapped (`lnDecorate_` numbers `.libReaderBody` p / li in page order, outside
+  `.fightOv`: `data-lnp`; a row's place is bookId + step + p + the language read): a bar comes up (`#lnBar`) with four
+  colours (`LN_COLORS`), 📝 Note (`#lnNoteBtn`) and 💬 n when others wrote there (`#lnParaBtn`). My highlights are drawn in
+  their colour (`.lnHl-<colour>`, rgba, both themes); my note shows 📝, others' 💬 n. The bar and the sheet are drawn into
+  `#lnRoot` (outside #main) by `lnDraw_` without a render, so the page never turns and typing is kept (`S.ln.draft`, `S.ln.cmt`).
+- **The note** (`#lnSheet`, mode edit): the words (≤1000), who sees it — 🔒 Only me · 🤝 My mentor (only with an approved
+  mentor) · 👥 Everyone at the campus — and 🙏 Ask for prayer (not for Only me). A conversation (mode thread): ❤️, comments
+  (≤500), 🙏 I prayed; my own note shows the counts, not buttons. The book's page lists them (`lnBookHtml_`, `#lnBook`: the
+  campus's, then Mine, each with "Read it in the book"); the Library's home has **What encouraged us** (`lnFeedHtml_`,
+  `#lnFeed`, the boot's `lib.notesFeed`: the newest 8 shared with me in 60 days, short). One `libNotes` call per book opened.
+- **Server** (api.js "highlights, notes"): blob `libHl` (in BOOT_KEYS) = [{id, staffId, campus, bookId, title, lang, step, p,
+  quote, color, note, vis, prayerId, likes, comments:[{id, staffId, text, at}], at, edited}], one row per person per
+  paragraph. `libNotes(bookId)`, `libNoteSave(rec)` (no colour and no words → the row goes; a shared row needs words;
+  `no_mentor`; back to private drops its likes and comments), `libNoteDelete` (owner, or an admin for a campus note),
+  `libNoteLike`, `libNoteComment` (push `libComment` to the owner; 60 a day), `libNoteUncomment` (writer, note owner, or
+  admin), `libNotePray`. **Who sees a row** (`lnCanSee_`): its owner; vis campus → active staff on its campus; vis mentor
+  → the owner's approved mentor (push `libMentorNote` / `libMentorPray`). Never applicants, students, guests or the board;
+  nothing of it on the roster, a profile or the week's board.
+- **A prayer request is a real one**: asking for prayer writes a `prayers` row (scope campus or mentor, `lib: {bookId,
+  title, noteId}`), so it is on ☰ → Prayer too ("📚 From “title”", `[data-prlib]` opens the note) and "I prayed" is one
+  count in both places; taking prayer off, going private or deleting the note takes the request down.
+- `?view=library&book=<id>&note=<id>` (the pushes' link) opens the book with that note's conversation (`S.ln.open`).
+- tests/test-lib-notes.mjs (server), tests/test-lib-notes-ui.mjs. Khmer: docs/khmer-needed.md §114.
+
 ## The look-through of Nov 2026 (Uriah: "look through the app to see ways you can improve the experience and debug anything")
 Every screen was opened at 320px, in English and Khmer, light and dark, looking for script errors, anything wider than
 the phone, and English left in Khmer. What it found, and the rules that came out of it (tests/test-polish-ui.mjs):
@@ -2270,6 +2297,17 @@ the phone, and English left in Khmer. What it found, and the rules that came out
   Outside a tap (a server answer coming back — no `window.event`) the browser's own box is still used; so it is under
   a test browser unless `localStorage['gp-ask-test']` is set, because every older test answers those boxes already.
   Three "copy this link" prompts (the clipboard's fallback) are left as they were. Never write a new `confirm(`.
+- **The slide-down reminder** (Nov 2026, Andrew: "a small notification slides down from the top like on a smartphone …
+  swipe up and it's just in your notification bell … tap it and you can finish that one thing"; `gpBanner*`, end of
+  19-ux.js, `#gpBanner`, `#gpBanMsg`, `#gpBanX`): the bell's own items (`visibleNotifItems_`, not `bellOnly`), one at a
+  time, newest first, each once a day (`gp-banner-seen` = {key: date}, today's only), the first ~4 s after the app is up
+  and then at most one a minute; it stays 9 s, or goes with ✕ or a swipe up — and stays in the bell (nothing is
+  cleared). A tap opens the bell and, when the item has exactly one action (Answer it, Enter them, Set them, Open),
+  presses that button — so it does just what the bell does; with two (Approve / Deny) or none, the bell stays open on
+  it. Not for guests, students, the board, a preview, the GP Tasks app, while the kept copy is up or offline, and not
+  under a test browser unless `gp-banner-test` is set (`S.bannerFirstMs` / `S.bannerGapMs` / `S.bannerShowMs`). The
+  bell gained **"Don't forget to set your three goals for this week"** (Set them → My Home), dated Monday, while this
+  week's goals are empty. `touch-action:none` on the banner is on purpose (it is a floating layer, not the page).
 - **Undo** (`gpUndo_(text, commit, undo)`, `#undoRoot`, `#undoBtn`): a deleted GP task goes at once with five seconds
   to put it back; the delete is sent when the time is up, when the app is left, or when another starts. Under a test
   browser without the flag it is sent at once. Only GP Tasks uses it so far.
@@ -2280,10 +2318,22 @@ Borrowed from the GonPreah public app's leaderboard. **Nothing new is stored**: 
 "The week's board") works out, from what is already saved, each active staff member's **points for the week** (Monday
 to Sunday, Cambodia) and **day streak**, and the boot carries it as `game` (`lastSeen` and `gpTasks` joined BOOT_KEYS) —
 no extra call on open. `getGame(user, pin, campus)` reads the other campus on demand.
-- **Points** (`GAME_PTS`, sent to the page so the two can't drift): a day the app was opened 5; a habit ticked 2 (10 a
-  day at most); weekly goals 10 for setting them + up to 20 as their average moves; a GP Task done 5 (30); a day
-  ministry numbers were entered 10 (20; never `tool:` rows); **a book finished 50 (150)** — raised from 25 (Uriah: "give extra
-  points for books"); a 1-on-1 held 15 (both people).
+- **Points** (`GAME_PTS`, sent to the page so the two can't drift; **balanced Nov 2026**, Andrew: "a book is 50 and a
+  habit 2 … make it balanced … a book a little higher than the rest"): a day the app was opened 5; a habit ticked 3 (15 a
+  day at most); weekly goals 15 for setting them + up to 25 as their average moves; a GP Task done 5 (40); a day
+  ministry numbers were entered 10 (20; never `tool:` rows); **a book finished 30 (90)** — the biggest single thing,
+  but not by far (it was 25, then 50); a 1-on-1 held 20 (both people); a holiday catch 5 (3 a day, below).
+- **Streak bonus** (`streakMin` 3, `streakBonus` 0.2): on a day streak of 3 or more, +20% of the week's points
+  (`parts.streak`, rounded); the streak breaks → the bonus goes, back to the plain points. My Home's line says
+  "+20% streak bonus" (`#gameBonus`).
+- **The holiday catch** (Andrew: "a snowflake or a candy cane falls … tap it and get 5 points … not so often"): in the
+  season (`holidaySeason_`: 15 Nov – 6 Jan, Cambodia) the board carries `holiday: {left}`; the page (`holSchedule_` /
+  `holDrop_` / `holCatch_`, end of 20-game.js) drops a ❄️ or a drawn candy cane (`#holDrop`, `.holDrop`) across the
+  screen 1½–4 minutes in, then every 4–10 minutes, never once today's are caught. A tap → `catchHoliday(user, pin)`:
+  staff only, in season, `holidayDayCap` (3) a day, not two within 30 s (`HOLIDAY_GAP_MS`); blob `holidayCatch` =
+  {catches: {staffId: {date: n}}, last: {staffId: ms}} (in BOOT_KEYS, 60 days kept); answers with the board, and
+  My Home's line is redrawn without a render (`holRefresh_`). The page can't add points: the server holds the count.
+  Not under a test browser unless `gp-hol-test` is set (`S.holMs` / `S.holFallMs` set the timing).
   The page can't claim a point. **The weekly health check-in gives none, on purpose** — its rows are anonymous and a
   point would say who answered; the page says so. Don't add it.
 - **Streak**: days in a row with any use (the same evidence as Admin → App use), ending today or yesterday.
@@ -2304,7 +2354,7 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   first ("n of N active this week"), my three figures with "Where my points came from" folded, People / Ministries, the
   top ten with points (my own row always shown; people with none are a count, not a list). Not for guests,
   students, the board or a preview (`gameOn_`).
-- tests/test-game.mjs (server), tests/test-game-ui.mjs. Khmer: docs/khmer-needed.md §112. sw.js SHELL v25.
+- tests/test-game.mjs (server), tests/test-game-ui.mjs (also the holiday catch and the slide-down reminder). Khmer: docs/khmer-needed.md §112, §113. sw.js SHELL v25.
 
 ## Looking around without an account (teams.html guest mode, Oct 2026)
 `teams.html?guest=1` (the log-in screen's "Look around without an account" button was removed, Nov 2026, Andrew) sets
@@ -2451,9 +2501,10 @@ numbers fill themselves in from using it (like Teams and Hospitality). Two so fa
   Mentors, Loose ends…, else Accounts.
 
 ## The weekly health check-in is on Tuesdays (Nov 2026, Andrew: "every Tuesday during our staff meeting")
-`CHECKIN_DOW` = 2 (02-goals-okrs.js, and api.js for the phone): on a Tuesday My Home has a card while this week's
-check-in isn't in (`checkinTueHtml_`, `#tueCheckin`, its button `data-gohealth="open"` opens this week's form —
-every `[data-gohealth]` handler takes `open`); the bell's nudge starts on Tuesday (it was Friday), worded for the
+`CHECKIN_DOW` = 2 (02-goals-okrs.js, and api.js for the phone): on a Tuesday, while this week's check-in isn't in, it
+slides down from the top (the slide-down reminder below — My Home's `#tueCheckin` card went, Andrew: "instead of a box
+on My Home"); its "Answer it" (`data-gohealth="open"`) opens this week's form —
+every `[data-gohealth]` handler takes `open`; the bell's nudge starts on Tuesday (it was Friday), worded for the
 staff meeting on the day itself; the Health tab says when it's done (`#checkinTueHint`); the daily phone reminder
 adds `weeklyTue` on Tuesday and `weekly` the rest of the week (`checkedIn` by survey token — nobody else learns
 who). Any day still works for answering. Same day for both campuses.

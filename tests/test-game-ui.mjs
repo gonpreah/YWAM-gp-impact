@@ -72,7 +72,7 @@ async function open(user, opts) {
   page.on('console', m => { if (m.type() === 'error' && !/net::|ERR_/.test(m.text())) errors.push('CONSOLE ' + m.text()); });
   page.on('dialog', d => d.accept());
   await page.route('**fonts.g**', r => r.abort());
-  await page.addInitScript(a => { if (a.u) localStorage.setItem('gp-staff', JSON.stringify({ user: a.u, pin: '1234' })); if (a.board) localStorage.setItem('gp-board', JSON.stringify({ user: a.board, pin: '4321' })); if (a.km) localStorage.setItem('gp-lang', 'km'); }, { u: user, km: !!opts.km, board: opts.board || '' });
+  await page.addInitScript(a => { Object.keys(a.ls || {}).forEach(k => localStorage.setItem(k, a.ls[k])); if (a.u) localStorage.setItem('gp-staff', JSON.stringify({ user: a.u, pin: '1234' })); if (a.board) localStorage.setItem('gp-board', JSON.stringify({ user: a.board, pin: '4321' })); if (a.km) localStorage.setItem('gp-lang', 'km'); }, { u: user, km: !!opts.km, board: opts.board || '', ls: opts.ls || {} });
   await page.goto(BASE + '/teams.html', { waitUntil: 'load' });
   if (user || opts.board) await page.waitForSelector('nav.bottom button', { timeout: 15000 }); else await page.waitForSelector('#loginBtn', { timeout: 15000 });
   await page.waitForTimeout(700);
@@ -102,7 +102,7 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   ok('seven dots for the week', await page.$$eval('#gameHome .gameDots i', e => e.length) === 7);
   if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/home.png' });
   const rd = await page.evaluate(() => { const c = document.getElementById('libHome'), g = document.getElementById('sec-goals') || document.querySelector('.goalsCard'), h = document.querySelector('.myHero'); return c ? { text: c.innerText.replace(/\s+/g, ' '), belowHero: h ? c.getBoundingClientRect().top > h.getBoundingClientRect().top : null, aboveAbout: c.getBoundingClientRect().top < document.getElementById('sec-ptype').getBoundingClientRect().top - 200 } : null; });
-  ok('the Reading card is always on My Home, high up, and says what a book is worth', !!rd && /Read a book in ten minutes|This month|Continue/.test(rd.text) && /50 points/.test(rd.text) && rd.aboveAbout, JSON.stringify(rd));
+  ok('the Reading card is always on My Home, high up, and says what a book is worth', !!rd && /Read a book in ten minutes|This month|Continue/.test(rd.text) && /30 points/.test(rd.text) && rd.aboveAbout, JSON.stringify(rd));
   await page.click('#gameHome'); await page.waitForTimeout(300);
   if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/board.png', fullPage: true });
 
@@ -118,10 +118,10 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   ok('no sideways scroll', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await page.click('#gameHow summary'); await page.waitForTimeout(150);
   const how = await page.$eval('#gameHow', e => e.innerText);
-  ok('where my points came from', /Opened the app/.test(how) && /check-in gives no points/.test(how), '');
+  ok('where my points came from', /Opened the app/.test(how) && /check-in gives no points/.test(how) && /Streak bonus/.test(how), '');
   await page.click('[data-gametab="books"]'); await page.waitForTimeout(200);
   const bk = await page.$eval('#gameBooks', e => e.innerText.replace(/\s+/g, ' '));
-  ok('Readers: books this year, and what a book is worth', /Di Sok/.test(bk) && /📚 1/.test(bk) && /50 points/.test(bk) && !/Mark Hill/.test(bk), bk.slice(0, 120));
+  ok('Readers: books this year, and what a book is worth', /Di Sok/.test(bk) && /📚 1/.test(bk) && /30 points/.test(bk) && !/Mark Hill/.test(bk), bk.slice(0, 120));
   await page.click('[data-gametab="min"]'); await page.waitForTimeout(200);
   ok('ministries by average', /Average points a person/.test(await main(page)) || /No ministry has two people/.test(await main(page)));
   await page.click('[data-gametab="people"]'); await page.waitForTimeout(200);
@@ -133,6 +133,71 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   ok('there is no switch to step off', await page.$('#gameShowMe') === null && !/Show me on the board/.test(await main(page)));
   await page.click('#gameList .gameRow:first-child'); await page.waitForTimeout(400);
   ok('a row opens the person', /Di Sok/.test(await main(page)) && await page.$('#gameList') === null);
+  await ctx.close();
+}
+
+/* ---------- 3. the streak bonus, the holiday catch, the slide-down reminder (Nov 2026, Andrew) ---------- */
+{
+  const { ctx, page } = await open('di', { ls: { 'gp-hol-test': '1' } });
+  const line = await page.$eval('#gameHome', e => e.innerText);
+  ok('on a 3-day streak: My Home says +20% streak bonus', /\+20% streak bonus/.test(line), line.replace(/\n/g, ' | '));
+  const md = today.slice(5), season = md >= '11-15' || md <= '01-06';
+  if (!season) ok('out of season: nothing falls', await page.evaluate(() => !holOn_()));
+  else {
+    const before = await page.evaluate(() => S.game.me.pts);
+    await page.evaluate(() => { clearTimeout(_hol.timer); _hol.timer = 0; S.holMs = 150; holSchedule_(); });
+    await page.waitForSelector('#holDrop', { timeout: 3000 });
+    ok('now and then, a snowflake or a candy cane falls', await page.evaluate(() => { const b = document.getElementById('holDrop'); return !!b && getComputedStyle(b).position === 'fixed' && /Catch the (snowflake|candy cane)/.test(b.getAttribute('aria-label')); }));
+    if (process.env.GP_SHOT) { await page.waitForTimeout(2500); await page.screenshot({ path: process.env.GP_SHOT + '/holiday.png' }); }
+    await page.evaluate(() => { S.holMs = 1e9; document.getElementById('holDrop').click(); });
+    await page.waitForTimeout(800);
+    ok('a tap catches it: +5 on the server (+20% on a streak) and on My Home at once', mem.holidayCatch.catches.st5[today] === 1 && await page.evaluate(b => S.game.me.pts >= b + 5 && S.game.me.parts.holiday === 5, before) && new RegExp('⭐ ' + (await page.evaluate(() => S.game.me.pts))).test(await page.$eval('#gameHome', e => e.innerText)), String(before));
+    ok('… with a word that says so', /You caught a (snowflake|candy cane)! \+5 points/.test(await page.$eval('#msg', e => e.textContent)));
+    ok('… and two more to catch today', await page.evaluate(() => S.game.holiday.left === 2 && !document.getElementById('holDrop')));
+    mem.holidayCatch.catches.st5[today] = 3;
+    await page.evaluate(() => new Promise(r => run('getGame', [S.auth.user, S.auth.pin, S.me.campus], d => { S.game = d; r(); })));
+    await page.evaluate(() => { clearTimeout(_hol.timer); _hol.timer = 0; S.holMs = 100; holSchedule_(); });
+    await page.waitForTimeout(500);
+    ok('none left today: nothing more falls', await page.evaluate(() => !document.getElementById('holDrop') && !holOn_()));
+    await page.click('#gameHome'); await page.waitForTimeout(300); await page.click('#gameHow summary'); await page.waitForTimeout(150);
+    ok('the board lists what was caught', /Snowflakes and candy canes caught/.test(await page.$eval('#gameHow', e => e.innerText)));
+  }
+  await ctx.close();
+}
+{
+  const { ctx, page } = await open('di', { ls: { 'gp-banner-test': '1' } });
+  await page.evaluate(() => { S.bannerShowMs = 60000; S.bannerGapMs = 300; S.broadcasts = [{ created: new Date().toISOString(), text: 'Team lunch at noon' }]; });
+  await page.waitForSelector('#gpBanner.on', { timeout: 8000 });
+  const first = await page.evaluate(() => visibleNotifItems_().filter(x => !x.bellOnly)[0].text);
+  ok('a reminder slides down from the top: the newest in the bell', (await page.$eval('#gpBanMsg', e => e.textContent)) === first && first === '📣 Announcement: Team lunch at noon' && await page.evaluate(() => document.getElementById('gpBanner').getBoundingClientRect().top < 80), first);
+  ok('no box on My Home for the Tuesday check-in any more', !(await page.$('#tueCheckin')));
+  if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/banner.png' });
+  const bb = await page.$eval('#gpBanner', e => { const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+  await page.mouse.move(bb.x, bb.y); await page.mouse.down(); await page.mouse.move(bb.x, bb.y - 25, { steps: 4 }); await page.mouse.move(bb.x, bb.y - 70, { steps: 4 }); await page.mouse.up();
+  await page.waitForTimeout(450);
+  ok('swiped up, it goes — and stays in the bell', !(await page.$('#gpBanner.on')) && await page.evaluate(() => visibleNotifItems_().some(x => /Team lunch/.test(x.text)) && !S.bellOpen));
+  await page.waitForSelector('#gpBanner.on', { timeout: 5000 });
+  const second = await page.$eval('#gpBanMsg', e => e.textContent);
+  ok('the next one comes after, never the same one twice in a day', second !== first && /Don’t forget to set your three goals|check-in|numbers/.test(second), second);
+  await page.evaluate(() => { S.view = 'team'; render(); });
+  const goals = /goals/.test(second);
+  await page.click('#gpBanMsg'); await page.waitForTimeout(500);
+  if (goals) ok('a tap does the one thing: Set them → My Home, bell closed', await page.evaluate(() => S.view === 'week' && !S.bellOpen && !document.getElementById('gpBanner')));
+  else ok('a tap does the one thing, bell closed', await page.evaluate(() => S.view !== 'team' && !S.bellOpen));
+  await page.waitForTimeout(800);
+  const third = await page.$eval('#gpBanMsg', e => e.textContent).catch(() => '');
+  if (third) { await page.click('#gpBanX'); await page.waitForTimeout(450); ok('✕ sends it away too', !(await page.$('#gpBanner.on'))); }
+  ok('each one once a day: they are remembered', await page.evaluate(f => Object.keys(JSON.parse(localStorage.getItem('gp-banner-seen'))).some(k => k.indexOf('Team lunch') > -1), first));
+  await page.reload({ waitUntil: 'load' }); await page.waitForSelector('nav.bottom button'); await page.waitForTimeout(700);
+  await page.evaluate(() => { S.broadcasts = [{ created: new Date().toISOString(), text: 'Team lunch at noon' }]; S.bannerGapMs = 300; });
+  await page.waitForTimeout(5000);
+  ok('reopened the same day: what was shown is not shown again', !/Team lunch/.test(await page.$eval('#gpBanMsg', e => e.textContent).catch(() => '')));
+  await ctx.close();
+}
+{
+  const { ctx, page } = await open('di');
+  await page.waitForTimeout(5000);
+  ok('under a test browser without the flag, nothing slides or falls (other tests are not disturbed)', !(await page.$('#gpBanner')) && !(await page.$('#holDrop')));
   await ctx.close();
 }
 

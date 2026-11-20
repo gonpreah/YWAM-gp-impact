@@ -5568,3 +5568,68 @@ The sheet where someone says everything on their mind and gets tasks back to che
 | Added {n} — the rest could not be saved. Try again. | បានបន្ថែម {n} — នៅសល់មិនអាចរក្សាទុកបានទេ។ សូមព្យាយាមម្តងទៀត។ |
 | Added 1 task | បានបន្ថែមកិច្ចការ ១ |
 | Added {n} tasks | បានបន្ថែមកិច្ចការ {n} |
+
+## 113. The week's board: streak bonus, the holiday catch, the slide-down reminder
+
+"streak bonus" sits on My Home's points line after "+20%" (short). The holiday catch: a snowflake or a candy cane falls across the screen in the holiday season; tapping it gives 5 points ("Catch the …" is read aloud by screen readers). "Set them" is a small button on the goals reminder that slides down from the top.
+
+| English | Khmer (draft) |
+|---|---|
+| Don’t forget to set your three goals for this week | កុំភ្លេចកំណត់គោលដៅទាំងបីរបស់អ្នកសម្រាប់សប្ដាហ៍នេះ |
+| Set them | កំណត់ឥឡូវ |
+| streak bonus | ពិន្ទុបន្ថែមពេលប្រើជាប់ៗ |
+| Streak bonus | ពិន្ទុបន្ថែមពេលប្រើជាប់ៗ |
+| +{n}% of the week while you are on a streak of {m} days or more | +{n}% នៃពិន្ទុសប្ដាហ៍ ពេលអ្នកប្រើជាប់ៗគ្នា {m} ថ្ងៃ ឬច្រើនជាងនេះ |
+| Snowflakes and candy canes caught | ផ្កាព្រិល និងស្ករដំបងដែលចាប់បាន |
+| Catch the candy cane | ចាប់ស្ករដំបង |
+| Catch the snowflake | ចាប់ផ្កាព្រិល |
+| You caught a candy cane! +{n} points | អ្នកចាប់បានស្ករដំបង! +{n} ពិន្ទុ |
+| You caught a snowflake! +{n} points | អ្នកចាប់បានផ្កាព្រិល! +{n} ពិន្ទុ |
+
+## 114. The Library: highlights, notes and talking about them
+
+In the book reader a paragraph can be highlighted in a colour ("Highlight", as with a highlighter pen), and a note written on it. A note is kept private, shared with your mentor, or with everyone on your campus, and can ask for prayer (it then shows on the Prayer page too). Others can like it (❤️), comment and pray. "to you" is a short tag on a note a mentee sent only to their mentor. Yellow / Green / Blue / Pink are read aloud for the colour buttons.
+
+| English | Khmer (draft) |
+|---|---|
+| Write a few words to share it. | សរសេរពាក្យខ្លះ ដើម្បីចែករំលែកវា។ |
+| You don’t have a mentor yet. | អ្នកមិនទាន់មានអ្នកណែនាំនៅឡើយទេ។ |
+| That’s a lot for one day — try again tomorrow. | នោះច្រើនហើយសម្រាប់មួយថ្ងៃ — សូមព្យាយាមម្ដងទៀតនៅថ្ងៃស្អែក។ |
+| {n} notes from others | កំណត់ចំណាំ {n} ពីអ្នកដទៃ |
+| Everyone at my campus | អ្នកទាំងអស់គ្នានៅទីតាំងរបស់ខ្ញុំ |
+| Prayer answered | ការអធិស្ឋានត្រូវបានឆ្លើយតប |
+| Asking for prayer | កំពុងសុំការអធិស្ឋាន |
+| Read it in the book | អានវានៅក្នុងសៀវភៅ |
+| Highlight | គូសពណ៌ |
+| My note | កំណត់ចំណាំរបស់ខ្ញុំ |
+| Your note | កំណត់ចំណាំរបស់អ្នក |
+| Notes on this part | កំណត់ចំណាំលើផ្នែកនេះ |
+| What stood out to you? | តើអ្វីដែលលេចធ្លោសម្រាប់អ្នក? |
+| What encouraged or challenged you here… | អ្វីដែលលើកទឹកចិត្ត ឬជំរុញអ្នកនៅទីនេះ… |
+| Only you see it. Share it to ask for prayer. | មានតែអ្នកទេដែលឃើញវា។ ចែករំលែកវា ដើម្បីសុំការអធិស្ឋាន។ |
+| Your mentor sees it, and can comment and pray. | អ្នកណែនាំរបស់អ្នកឃើញវា ហើយអាចបញ្ចេញមតិ និងអធិស្ឋាន។ |
+| Everyone at your campus sees it with your name, and can like it, comment and pray. | អ្នកទាំងអស់គ្នានៅទីតាំងរបស់អ្នកឃើញវាជាមួយឈ្មោះរបស់អ្នក ហើយអាចចូលចិត្ត បញ្ចេញមតិ និងអធិស្ឋាន។ |
+| Remove the note | លុបកំណត់ចំណាំ |
+| No notes here yet. | មិនទាន់មានកំណត់ចំណាំនៅទីនេះទេ។ |
+| This note is not there any more. | កំណត់ចំណាំនេះលែងមានទៀតហើយ។ |
+| No comments yet. Say something encouraging. | មិនទាន់មានមតិទេ។ សូមនិយាយអ្វីមួយដែលលើកទឹកចិត្ត។ |
+| Write a comment… | សរសេរមតិ… |
+| Saved — only you see it | បានរក្សាទុក — មានតែអ្នកទេដែលឃើញ |
+| Shared with your mentor | បានចែករំលែកជាមួយអ្នកណែនាំរបស់អ្នក |
+| Shared with your campus | បានចែករំលែកជាមួយទីតាំងរបស់អ្នក |
+| Remove your note? Its comments go too. | លុបកំណត់ចំណាំរបស់អ្នក? មតិរបស់វាក៏នឹងបាត់ដែរ។ |
+| Delete this comment? | លុបមតិនេះ? |
+| Thank you for praying | សូមអរគុណសម្រាប់ការអធិស្ឋាន |
+| Delete this note? Its comments and prayer request go too. | លុបកំណត់ចំណាំនេះ? មតិ និងសំណើអធិស្ឋានរបស់វាក៏នឹងបាត់ដែរ។ |
+| Take this note down for everyone? | ដកកំណត់ចំណាំនេះចេញសម្រាប់អ្នកទាំងអស់គ្នា? |
+| Notes and highlights | កំណត់ចំណាំ និងការគូសពណ៌ |
+| Tap any paragraph while you read to highlight it or write a note — keep it to yourself, share it with your mentor, or with your campus. | ចុចលើកថាខណ្ឌណាមួយពេលអ្នកអាន ដើម្បីគូសពណ៌ ឬសរសេរកំណត់ចំណាំ — ទុកសម្រាប់ខ្លួនឯង ចែករំលែកជាមួយអ្នកណែនាំ ឬជាមួយទីតាំងរបស់អ្នក។ |
+| From {campus} | ពី {campus} |
+| Mine · {n} | របស់ខ្ញុំ · {n} |
+| What encouraged us | អ្វីដែលលើកទឹកចិត្តយើង |
+| to you | ផ្ញើមកអ្នក |
+| From “{title}” | ពី «{title}» |
+| Yellow | លឿង |
+| Green | បៃតង |
+| Blue | ខៀវ |
+| Pink | ផ្កាឈូក |

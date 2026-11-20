@@ -1606,6 +1606,15 @@ function notifItems_(){
         actions:'<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-gohealth="open">'+esc(t('Answer it'))+'</button>' });
     }
   }
+  /* This week's goals not set yet (Nov 2026, Andrew: "don't forget your goals") — dated this week's Monday, so a
+     Clear holds for the week and it comes back next Monday while they are still not set. */
+  if(S.me && !S.student){
+    var sgwk=thisWeek(), sgrec=goalsForWeek(sgwk);
+    if(!(sgrec && (sgrec.items||[]).some(function(i){ return i && i.text; }))){
+      items.push({ when:isoDateOf_(new Date(weekBounds_(sgwk).from)), text:t('Don’t forget to set your three goals for this week'),
+        actions:'<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-jumpgoals="1">'+esc(t('Set them'))+'</button>' });
+    }
+  }
   /* End of the week, goals not all the way there — used to be a big banner
      inline on My Home; it's a bell item instead now so the page isn't
      stacking two "end of the week" banners at once. Same Friday-dated
@@ -1717,14 +1726,7 @@ function clearNotifications(){
 /* ---- The weekly health check-in is on Tuesdays, at the staff meeting (Nov 2026, Andrew: "we want to move to
    every Tuesday during our staff meeting") ----
    CHECKIN_DOW (0 Sunday … 6 Saturday; api.js has its own for the phone reminder): the bell's nudge starts that
-   day, My Home shows a card on the day itself while this week's isn't in (checkinTueHtml_, #tueCheckin — it opens
-   the form), and the Health tab says when it is done (#checkinTueHint). Any day still works. */
+   day — on the day itself as the slide-down reminder (19-ux.js) — while this week's isn't in, and the Health tab says when it is done (#checkinTueHint). Any day still works. */
 var CHECKIN_DOW=2;
 function checkinDayOf_(wk){ var d=new Date(weekBounds_(wk).from); d.setDate(d.getDate()+((CHECKIN_DOW+6)%7)); return d; }
 function checkinIsToday_(){ return new Date().getDay()===CHECKIN_DOW; }
-function checkinTueHtml_(){
-  if(!S.me || S.guest || S.student || S.board || !checkinIsToday_() || myWeekRow(thisWeek())) return '';
-  return '<div class="card tueCheckin" id="tueCheckin"><div class="tueCheckinHead">💚 <b>'+esc(t('It’s Tuesday — check-in day'))+'</b></div>'+
-    '<p class="hint" style="margin:4px 0 10px">'+esc(t('Answer your weekly health check-in during the staff meeting. It takes about two minutes, and only you and your mentor see your answers.'))+'</p>'+
-    '<button class="btn" data-gohealth="open" id="tueCheckinGo">'+esc(t('Answer it now'))+'</button></div>';
-}
