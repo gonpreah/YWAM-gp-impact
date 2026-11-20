@@ -1149,8 +1149,8 @@ volunteers, guests, speakers (names from `people` / `bedNames`, else the booking
 tests/test-whos-here-ui.mjs.
 
 - **Capacity** (`beds`, `capacity` in getWhosHere): SR Hospitality's beds booked tonight (every booking,
-  `max(count, bedIds)`) over its beds not marked out — "· 72% full" next to On campus now on Base and
-  My Home, and "46 of 64 beds filled" on Who's here. No rooms set up → nothing shown.
+  `max(count, bedIds)`) over its beds not marked out — "· 72% full" next to On campus now on Base (not My Home
+  since Nov 2026), and "46 of 64 beds filled" on Who's here. No rooms set up → nothing shown.
 - **My Home's card** has no big "Go to My Health" button: the My Health and Mentor rows carry a small ›
   (`.heroGo`) and open their pages; On campus now sits under the base's figures (`#goWhosHereHome`).
 ## The bottom bar (Oct 2026)
@@ -1164,6 +1164,24 @@ too long for a tab, `navLabel_` uses a short one kept as 'Tab: <English>' in km.
 (My Ministry → ការបម្រើ), and test-khmer checks no label overflows.
 
 ## My Home — the layout (reorganised Oct 2026)
+**Made simpler, Nov 2026 (Andrew: "I don't want it to be too much to see … like the widgets on an iPhone … if the
+leave form is already in there, why is it on twice?")** — each thing is on My Home once:
+- **The dark card** is: the quick apps (the dock), then **four widgets in one row** (`heroWidgetsHtml_`,
+  `.heroWidgets`, `.heroW`): Goals (this week's done/written, `data-jump="sec-goals"`), Habits (today's,
+  `data-jump="sec-habits"`), Health (`#goMyHealth`, the weekly check-in score), Tasks (`#goGpTasks`, the Inbox's red
+  number, else the open count, quiet) — three when GP Tasks hasn't loaded; then this week's chores / cooking line,
+  the 📚 reading row, and the base at a glance with **On campus** as its fourth figure (`#goWhosHereHome` inside
+  `.homeBaseRow.four`; the figures are `[data-tobase]` buttons, the campus name `#dashToBase`).
+- **Gone from the card**: the goals' list (the Weekly Goals card is right below), WEEK n / DAY STREAK (the streak is
+  on the line above the card, `#gameHome`), the habits' best streak, the Mentor row (the Mentorship card below), the
+  personal days off + Request time off (the Leave page has them, and Leave is a quick app), the separate On campus row
+  and its "% full" (Who's here has it).
+- **About me** is only Personality and Strengths, plus 360 reviews while something waits on you (feedback to give, a
+  plan's review due). Tests, Support raising and the Library left as tiles — they are quick apps and in ☰ (Support
+  raising joined ☰'s first group for that, `support`).
+- tests/test-home-layout-ui.mjs holds it. Khmer §118.
+
+The October layout, for history (the parts above replace what they name):
 `homeHtml` in this order, each idea said once: the **large summary card** (kept large on
 purpose, with the background photo / colour option behind ⚙️ — it opens right under the
 greeting, above the card, with a Done button: goals and their list,
@@ -3166,7 +3184,7 @@ inferred from volunteer counts.
   older than a year drop on the next new request. Not in the roster or any report.
 - tests/test-prayer-ui.mjs.
 
-## Support raising (My Home → Support raising, Oct 2026)
+## Support raising (☰ → Support raising, or a quick app; Oct 2026 — a My Home tile until Nov 2026)
 - Each staff member's ministry partners and monthly goal (US$), on their own staff record
   (`support`: { goal, partners[{ id, name, amount, freq month|year|once, status
   giving|asked|toask|paused, last, note, channel }], giving[{ id, name, amount, freq,

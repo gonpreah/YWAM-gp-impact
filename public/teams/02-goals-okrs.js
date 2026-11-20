@@ -1388,7 +1388,6 @@ function bindOneOnOne_(){
    photo-backed cards already use for contrast rather than text color. */
 function miniDashboardHtml(){
   var wk=thisWeek();
-  var st=graceStreak(function(){return true;});
   var rec=goalsForWeek(wk);
   var written=(rec && rec.items ? rec.items : []).filter(function(i){return i && i.text;});
   var goalsDone=written.filter(function(i){return goalItemPct(i)>=100;}).length;
@@ -1397,20 +1396,9 @@ function miniDashboardHtml(){
   var log=logForDate(todayStr());
   var habitsDone=list.filter(function(hb){return habitDoneToday(hb, log);}).length;
   var habitsPct=list.length ? Math.round(habitsDone/list.length*100) : 0;
-  var year=String(new Date().getFullYear());
-  var yt=(S.trips && S.trips.totals && S.trips.totals[year]) || {personal:0};
-  var cap=(S.trips && S.trips.ptoCap) || 30;
-  var ptoLeft=Math.max(0, cap-yt.personal);
   var HH=homeHealth_();   // the weekly check-in only: this week's, or last week's until it is answered
   var score=HH.score;
   var healthPct=score!==null?Math.round(score*10):0;
-  var prevScore=HH.prevScore;
-  var healthTrend=(score!==null&&prevScore!==null)?trendBadge(pctChange(prevScore,score),true):'';
-  var mentorId=S.me.mentorId||'';
-  var mentorRec=mentorId?personOf(mentorId):null;
-  var mentorName=mentorId?(mentorRec?mentorRec.name:nameOf(mentorId)):'';
-  var mentorPct=mentorId?100:0;
-  var bestRun=myHabits().reduce(function(m,hb){ return hb.perWeek ? m : Math.max(m, habitBest(hb)); }, 0);   // days; a times-a-week habit's best is in weeks
 
   var p=S.profile||{};
   var color=p.dashboardColor||'';
@@ -1468,34 +1456,9 @@ function miniDashboardHtml(){
   h+='<div class="hero myHero'+(custom?' custom':'')+'"'+
     (custom?' style="'+(color?'background-color:'+esc(color)+';':'')+(bg?'background-image:url(\''+esc(bg)+'\');':'')+'"':'')+'>'+
     qaBarHtml_()+   // the quick apps: the person's own row of small icons (19-ux.js)
-    '<button class="heroRow'+(written.length?' withList':'')+'" data-jump="sec-goals">'+gpRingHtml(goalsPct,'sm',t('Weekly Goals'))+
-      '<div class="heroTrend">'+esc(t('Weekly Goals'))+' <b class="heroFig">'+goalsDone+'</b>/'+written.length+'</div>'+
-      (written.length?'<div class="heroGoalsPreview">'+written.map(function(g){
-        return '<div><span class="heroGoalDot" style="background:'+gpRingColor(goalItemPct(g))+'"></span>'+esc(g.text)+'</div>';
-      }).join('')+'</div>':'')+
-    '</button>'+
+    heroWidgetsHtml_(goalsPct, goalsDone, written.length, habitsPct, habitsDone, list.length, healthPct, score)+
     (typeof dutyHtml==='function' ? schedHomeHtml_() : '')+
-    '<div class="heroDivider"></div>'+
-    '<div class="heroLabel">'+esc(t('WEEK'))+' '+wk+'</div>'+
-    '<div class="heroNum" data-count="'+st+'">0</div>'+
-    '<div class="heroLabel" style="letter-spacing:2px">'+esc(t('DAY STREAK'))+'</div>'+
-    '<button class="heroRow" data-jump="sec-habits">'+gpRingHtml(habitsPct,'sm',t('Habits Today'))+
-      '<div class="heroTrend">'+esc(t('Habits Today'))+' <b class="heroFig">'+habitsDone+'</b>/'+list.length+
-      (bestRun>0?'</div><div class="heroSubtext">🔥 '+esc(gpT('best {n}d streak',{n:bestRun}))+'</div>':'</div>')+'</button>'+
-    /* a small › on the row itself opens the page (Uriah: no big button under them) */
-    '<button class="heroRow heroRowGo" id="goMyHealth" data-gohealth="1" aria-label="'+esc(t('Go to My Health'))+'">'+gpRingHtml(healthPct,'sm',t('My Health'))+
-      '<div class="heroTrend">'+esc(t('My Health'))+' <b class="heroFig">'+(score!==null?score.toFixed(1):'—')+'</b>/10 '+healthTrend+'</div><span class="heroGo" aria-hidden="true">›</span></button>'+
-    '<button class="heroRow heroRowGo" id="goMentorship" data-gomentorship="1" aria-label="'+esc(t('Mentorship'))+'">'+gpRingHtml(mentorPct,'sm',t('Mentor'))+
-      '<div class="heroTrend">'+esc(t('Mentor'))+' <b class="heroFig">'+(mentorId?esc(mentorName):esc(t('Not set')))+'</b></div><span class="heroGo" aria-hidden="true">›</span></button>'+
-    gptHomeRowHtml_()+
     libHeroRowHtml_()+   // 📚 one small row: this month's book, the one you were in, or Read a book
-    '<div class="heroSub">'+
-      '<div class="heroSubRow">'+
-        '<span class="heroSubLabel">'+esc(t('PERSONAL DAYS OFF LEFT'))+'</span>'+
-        '<span class="heroSubNum">'+ptoLeft+'</span>'+
-        '<button class="heroSubBtn" id="goLeaveFromMe">🌴 '+esc(t('Request time off'))+'</button>'+
-      '</div>'+
-    '</div>'+
     homeBaseHtml_()+
   '</div>';
   h+=contractNoticeHtml_();
@@ -1506,29 +1469,45 @@ function miniDashboardHtml(){
 /* The base at a glance, at the foot of My Home's card (Base itself is in the
    menu now): the staff, the base's health score and salvations this year —
    the same figures, from the same rollup, as Base's own hero. Tap → Base. */
+/* The summary card, made simpler (Nov 2026, Andrew: "I don't want it to be too much to see … like the widgets on
+   an iPhone … if the leave form is already in there, why is it on twice?"). Each thing is on My Home once:
+   four small widgets in one row — this week's goals, today's habits, my health, my GP Tasks — each opening its own
+   place. The goals' list, habits, mentor and annual goals have their sections below; the day streak is on the
+   line above the card; days off are on the Leave page (and Leave is a quick app). */
+function heroWidgetsHtml_(goalsPct, goalsDone, goalsN, habitsPct, habitsDone, habitsN, healthPct, score){
+  var ring=function(p, fig, label){ return '<span class="gRing heroWRing" style="'+gpRingVars(p)+'" role="img" aria-label="'+esc(label)+'"><span>'+esc(fig)+'</span></span>'; };
+  var w=function(attrs, inner, label){ return '<button class="heroW" '+attrs+' aria-label="'+esc(label)+'">'+inner+'<span class="heroWLabel">'+esc(label)+'</span></button>'; };
+  var I=S.gpTaskInfo, tasks='';
+  if(I && !S.student && !S.guest && !S.board){
+    var n=I.inbox || I.open || 0;
+    tasks=w('id="goGpTasks"', '<span class="heroWRing heroWIcon">'+GPT_SVG.tasks+(n ? '<span class="gtBadge heroWBadge'+(I.inbox?'':' quiet')+'">'+n+'</span>' : '')+'</span>', t('Tasks'));
+  }
+  return '<div class="heroWidgets'+(tasks?'':' three')+'">'+
+    w('data-jump="sec-goals"', ring(goalsPct, goalsDone+'/'+goalsN, t('Weekly Goals')), t('Goals'))+
+    w('data-jump="sec-habits"', ring(habitsPct, habitsDone+'/'+habitsN, t('Habits Today')), t('Habits'))+
+    w('id="goMyHealth" data-gohealth="1"', ring(healthPct, score!==null ? score.toFixed(1) : '—', t('My Health')), t('Health'))+
+    tasks+
+  '</div>';
+}
 function homeBaseHtml_(){
   if(!S.me || !S.me.campus) return '';
   /* Drawn before the base's figures arrive too, with a dash for each — so the card is
      its full size from the first moment and doesn't grow when they land. */
   var R=S.base ? baseR() : null, ids=[S.me.campus];
   var staff=R ? R.totalStaff(ids) : null, hs=R ? R.healthScore(ids) : null, salv=R ? R.headlineFor(ids,'Salvations') : null;
+  /* who is on campus right now is the fourth figure (Who's here), not a row of its own */
+  var W=(S.guest || S.board || S.student) ? false : (S.whosHere && S.whosFor===(S.me.campus||'') ? S.whosHere : null);
+  var cell=function(v, label){ return '<button class="homeBaseCell" data-tobase="1"><b>'+v+'</b>'+esc(label)+'</button>'; };
   return '<div class="heroDivider"></div>'+
-    '<button class="homeBase" id="dashToBase">'+
-      '<span class="homeBaseHead"><span>🏠 '+esc(t(campusName(S.me.campus)))+'</span><span class="homeBaseGo">'+esc(t('Base'))+' →</span></span>'+
-      '<span class="homeBaseRow">'+
-        '<span><b>'+(staff===null?'—':staff)+'</b>'+esc(t('Staff'))+'</span>'+
-        '<span><b>'+(hs===null?'—':hs.toFixed(1))+'</b>'+esc(t('Base health'))+'</span>'+
-        '<span><b>'+(salv===null?'—':fmt(salv))+'</b>'+esc(t('Salvations'))+'</span>'+
+    '<div class="homeBase">'+
+      '<button class="homeBaseHead" id="dashToBase"><span>🏠 '+esc(t(campusName(S.me.campus)))+'</span><span class="homeBaseGo">'+esc(t('Base'))+' →</span></button>'+
+      '<span class="homeBaseRow'+(W===false?'':' four')+'">'+
+        cell(staff===null?'—':staff, t('Staff'))+
+        cell(hs===null?'—':hs.toFixed(1), t('Base health'))+
+        cell(salv===null?'—':fmt(salv), t('Salvations'))+
+        (W===false ? '' : '<button class="homeBaseCell homeWhos" id="goWhosHereHome"><b class="homeWhosN">'+(W ? W.count : '—')+'</b>'+esc(t('On campus'))+'</button>')+
       '</span>'+
-    '</button>'+
-    /* who is on campus right now (Who's here), the same count as Base's */
-    (S.guest || S.board || S.student ? '' : (function(){
-      var W=S.whosHere && S.whosFor===(S.me.campus||'') ? S.whosHere : null;
-      return '<button class="homeBase homeWhos" id="goWhosHereHome">'+
-        '<span class="homeBaseHead"><span>👥 '+esc(t('On campus now'))+' <b class="homeWhosN">'+(W ? W.count : '—')+'</b>'+
-          (W && W.capacity!=null ? ' <span class="whoCap">· '+esc(gpT('{n}% full',{n:W.capacity}))+'</span>' : '')+'</span>'+
-        '<span class="homeBaseGo">'+esc(t('Who’s here'))+' →</span></span></button>';
-    })());
+    '</div>';
 }
 /* Recent updates for the personal dashboard — leave decisions on my own
    requests, a mentee's leave request waiting on me, and 1-on-1 activity.
