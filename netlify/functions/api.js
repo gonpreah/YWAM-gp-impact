@@ -5018,7 +5018,7 @@ function lnOut_(r, s, staff, prayers) {
   const pr = r.prayerId ? (prayers || []).find(function (x) { return x.id === r.prayerId; }) : null;
   return {
     id: r.id, mine: r.staffId === s.id, staffId: r.staffId, name: a ? a.name : '—', photo: photoOf_(a), bookId: r.bookId, title: r.title || '',
-    lang: r.lang, step: r.step, p: r.p, quote: r.quote || '', color: r.color || '', note: r.note || '', vis: r.vis, at: r.at, edited: r.edited || '',
+    lang: r.lang, step: r.step, p: r.p, s: typeof r.s === 'number' ? r.s : -1, e: typeof r.e === 'number' ? r.e : -1, quote: r.quote || '', color: r.color || '', note: r.note || '', vis: r.vis, at: r.at, edited: r.edited || '',
     likes: (r.likes || []).length, iLiked: (r.likes || []).indexOf(s.id) > -1,
     comments: (r.comments || []).map(function (c) { const w = by[c.staffId]; return { id: c.id, name: w ? w.name : '—', photo: photoOf_(w), text: c.text, at: c.at, mine: c.staffId === s.id }; }),
     prayer: pr ? { prayedN: (pr.prayed || []).length, iPrayed: (pr.prayed || []).indexOf(s.id) > -1, answered: pr.answered || '', answerNote: pr.answerNote || '' } : null
@@ -5056,6 +5056,11 @@ async function libNoteSave(username, pin, rec) {
   const step = Math.floor(Number(rec.step)), pIdx = Math.floor(Number(rec.p));
   if (!(step >= 0 && step <= 40) || !(pIdx >= 0 && pIdx <= 200)) return { ok: false, err: 'bad_place' };
   const lang = rec.lang === 'km' ? 'km' : 'en';
+  /* the sentences s…e of the paragraph (Nov 2026, sentence highlights); -1 = the whole paragraph, as rows made before */
+  let sIdx = Math.floor(Number(rec.s)), eIdx = Math.floor(Number(rec.e));
+  if (!(sIdx >= 0 && sIdx <= 400)) { sIdx = -1; eIdx = -1; } else if (!(eIdx >= sIdx && eIdx <= 400)) eIdx = sIdx;
+  const sOf = function (r) { return typeof r.s === 'number' && r.s >= 0 ? r.s : -1; };
+  const eOf = function (r) { return sOf(r) >= 0 ? (typeof r.e === 'number' && r.e >= r.s ? r.e : r.s) : -1; };
   const color = LN_COLORS.indexOf(rec.color) > -1 ? rec.color : '';
   const note = String(str_(rec.note, LN_NOTE_MAX) || '').trim();
   const vis = LN_VIS.indexOf(rec.vis) > -1 ? rec.vis : 'private';
@@ -5066,7 +5071,7 @@ async function libNoteSave(username, pin, rec) {
   const now = new Date().toISOString();
   let saved = null, oldPrayer = '', wasMentor = false;
   const res = await mutateKey_('libHl', [], function (rows) {
-    let i = rows.findIndex(function (r) { return r && r.staffId === s.id && r.bookId === bookId && r.step === step && r.p === pIdx && r.lang === lang; });
+    let i = rows.findIndex(function (r) { return r && r.staffId === s.id && r.bookId === bookId && r.step === step && r.p === pIdx && r.lang === lang && sOf(r) === sIdx && eOf(r) === eIdx; });
     if (rec.id) { const j = rows.findIndex(function (r) { return r && r.id === rec.id; }); if (j === -1 || rows[j].staffId !== s.id) return { abort: true, ok: false, err: 'not_found' }; i = j; }
     if (!color && !note) {   // nothing left: the row goes
       if (i > -1) { oldPrayer = rows[i].prayerId || ''; rows.splice(i, 1); }
@@ -5074,8 +5079,10 @@ async function libNoteSave(username, pin, rec) {
     }
     if (i === -1) {
       if (lnMineCount_(s, rows) >= LN_PER_PERSON) return { abort: true, ok: false, err: 'too_many' };
-      rows.push({ id: 'ln_' + crypto.randomBytes(6).toString('hex'), staffId: s.id, campus: s.campus, bookId: bookId, title: title, lang: lang, step: step, p: pIdx,
-        quote: quote, color: color, note: note, vis: vis, prayerId: '', likes: [], comments: [], at: now, edited: '' });
+      const row = { id: 'ln_' + crypto.randomBytes(6).toString('hex'), staffId: s.id, campus: s.campus, bookId: bookId, title: title, lang: lang, step: step, p: pIdx,
+        quote: quote, color: color, note: note, vis: vis, prayerId: '', likes: [], comments: [], at: now, edited: '' };
+      if (sIdx >= 0) { row.s = sIdx; row.e = eIdx; }
+      rows.push(row);
       i = rows.length - 1;
     } else {
       const r = rows[i]; wasMentor = r.vis === 'mentor';

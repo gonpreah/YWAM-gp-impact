@@ -2276,6 +2276,14 @@ none of it (`libOn_()`).
 ## The Library: highlights, notes and talking about them (end of teams/18-library-plus.js, Nov 2026, Andrew)
 "Like the Bible app … highlight things you like … write a note … private, or public for everyone in our base … comment on it,
 like it … ask for prayer — private, public, or just to your mentor."
+- **Sentences, not whole paragraphs** (Nov 2026, Andrew: "highlight specific sentences … and then from there you can put a
+  note on that"): `lnSplit_` cuts each paragraph once into `span.lnS[data-lns=k]` (after . ! ? ។ ៕ and any closing quote,
+  before a space; a sentence crossing bold or italics is several spans with one k). A tap picks a sentence; more taps in
+  the paragraph stretch the pick over the sentences between (a tap on an end lets it go); a tap on a sentence I marked
+  picks what I marked (`lnSelect_`). The pick is underlined (`.lnSelS`), a colour paints just its spans (`.lnHlS`) and
+  then lets the pick go. A row carries `s` / `e` (the sentences; `libNoteSave` matches on them, -1 or absent = the whole
+  paragraph, as rows made before; `lnOut_` sends them), so one paragraph can hold several highlights and notes of mine.
+  `lnRange_`, `lnSame_`, `lnSpans_`; tests in test-lib-notes(-ui).mjs. Khmer §122.
 - **In the reader** every paragraph can be tapped (`lnDecorate_` numbers `.libReaderBody` p / li in page order, outside
   `.fightOv`: `data-lnp`; a row's place is bookId + step + p + the language read): a bar comes up (`#lnBar`) with four
   colours (`LN_COLORS`), 📝 Note (`#lnNoteBtn`) and 💬 n when others wrote there (`#lnParaBtn`). My highlights are drawn in

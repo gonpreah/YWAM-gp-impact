@@ -3487,3 +3487,8 @@ button.homeBaseHead { width:100%; padding:0; border:0; background:none; color:in
 .qaPickRow .qaPickW .heroWRing.gRing span { font-size:9px; color:var(--onDark); }
 .qaPickRow .qaPickW .heroWIcon { width:30px; height:30px; }
 @media (prefers-reduced-motion: reduce) { .myHero.dashEditing .qaItem, .myHero.dashEditing .dashItem, .myHero.dashEditing .dashRow { animation:none; } }
+
+/* sentence highlights in the reader (18-library-plus.js, Nov 2026) */
+.lnS { border-radius:3px; -webkit-box-decoration-break:clone; box-decoration-break:clone; }
+.lnS.lnHlS { padding:1px 0; }
+.lnS.lnSelS { box-shadow:0 2px 0 0 var(--accent); background:rgba(31,68,255,.10); }

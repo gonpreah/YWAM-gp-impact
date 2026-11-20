@@ -5771,3 +5771,11 @@ A note that slides down from the top when a teammate recommends a book (💌 goe
 | English | Khmer (draft) |
 |---|---|
 | {name} recommends a book to you: {title} | {name} ណែនាំសៀវភៅមួយក្បាលដល់អ្នក៖ {title} |
+
+## 122. The Library: highlighting sentences
+
+The hint on a book's page before anyone has highlighted anything. Sentences are picked by tapping them in the reader.
+
+| English | Khmer (draft) |
+|---|---|
+| Tap a sentence while you read (tap more to take in the ones next to it) to highlight it or write a note — keep it to yourself, share it with your mentor, or with your campus. | ចុចលើប្រយោគមួយពេលអ្នកកំពុងអាន (ចុចបន្ថែមដើម្បីយកប្រយោគនៅជាប់គ្នា) ដើម្បីគូសពណ៌ ឬសរសេរកំណត់ចំណាំ — ទុកសម្រាប់ខ្លួនឯង ចែករំលែកជាមួយអ្នកណែនាំ ឬជាមួយបរិវេណរបស់អ្នក។ |
