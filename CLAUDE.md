@@ -919,6 +919,22 @@ school's home.
     on**: `GP_GOOGLE_REDIRECT=on` in Netlify (`googleRedirect_` → `portalAuthConfig.redirect` and the boot's
     `googleRedirect`), after adding `https://impact.gonpreah.org/teams.html` to the OAuth client's **Authorized
     redirect URIs** in Google Cloud — without that Google would show its error page.
+- **Getting back in without email** (Nov 2026, Uriah: "I can't see the full email in the account on my admin dashboard
+  … I don't want people getting logged out and stuck"). The app sends no email, so recovery goes through an admin:
+  - Admin → a person shows the whole email on its own wrapping line with Copy (`#admEmail`, `[data-admincopy]`,
+    `gpCopyText_`) and how they sign in (`#admSignIn`); Edit profile has an **Email** box (`#adm_email` →
+    `adminUpdateStaff {email}`) — the email Continue with Google finds a profile by.
+  - **Sign-in link** (`[data-adminsignlink]` → `adminSignInLink(user, pin, staffId)`, admins only; not for applicants
+    or archived people): `teams.html?signin=<48 hex>` to copy or share (`#admSignLinkUrl`, `S.adminSignLink`). Kept only
+    as a hash (`signInLink {hash, salt, exp, by, at}` on the staff record; `adminStaffOut_` sends just `{exp}`), good
+    for `SIGNIN_LINK_HOURS` (72), one use, a new one replaces the old. The page takes it out of the address before boot
+    (`signLinkTake_` / `signLinkUse_`, 07-health-leave.js) → `staffUseSignInLink(token)` (public): signs them in with a
+    device token, lifts the lockout, then the connect-Google step shows with **Not now** (`S.linkSignIn`,
+    `#gglStepLater`). `expired` / `pending` / anything else is said on the sign-in screen, which now ends with
+    "Can't get in? Message an admin…" (`#loginStuck`).
+  - **A PIN reset now works on a password account**: `credOk_` checks only the password when there is one, so
+    `adminResetPin` drops `secretHash` / `secretSalt` (the admin is replacing a forgotten password).
+  - tests/test-signin-link.mjs (server), tests/test-signin-link-ui.mjs. Khmer: docs/khmer-needed.md §117.
 - **Who isn't on Google yet** (Nov 2026, Andrew): Admin → Accounts has an "Everyone · n / Not on Google yet · n"
   chip row under the campus chips (`#adminGglRow`, `[data-adminggl]`, `S.adminGgl`): the active, unarchived accounts
   with no Google account connected (`adminStaffOut_` carries `google` — true once `google.sub` is set — and

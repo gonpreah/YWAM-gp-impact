@@ -5683,3 +5683,35 @@ In the holiday season Santa (សាន់តាក្លូស) and his reindeer
 | Open the Portal and sign in with Google, as you do here. | បើកផតថល ហើយចូលដោយប្រើ Google ដូចដែលអ្នកធ្វើនៅទីនេះ។ |
 | Open the Portal | បើកផតថល |
 | Install it like an app, with its own icon — the applications one tap from your Home Screen. | ដំឡើងវាដូចកម្មវិធីមួយ ជាមួយរូបតំណាងផ្ទាល់ខ្លួន — ពាក្យសុំទាំងអស់ ចុចតែម្ដងពីអេក្រង់ដើម។ |
+
+
+## 117. Getting back in: the admin's sign-in link and the full email
+
+Admin → a person: their whole email with Copy, how they sign in, an Email box in Edit profile, and **Sign-in link** — a one-time link an admin sends by Telegram or WhatsApp. The login screen says to ask for one. Claude's drafts, not yet reviewed.
+
+- Copy this → ចម្លងនេះ
+- No email on this profile → ប្រវត្តិរូបនេះគ្មានអ៊ីមែលទេ
+- Signs in with Google → ចូលដោយប្រើ Google
+- Signs in with an email and password → ចូលដោយប្រើអ៊ីមែល និងពាក្យសម្ងាត់
+- Signs in with a username and PIN — not on Google yet → ចូលដោយប្រើឈ្មោះអ្នកប្រើ និង PIN — មិនទាន់ប្រើ Google នៅឡើយ
+- Continue with Google finds a profile by this email — put the Gmail they use here. → “បន្តជាមួយ Google” រកប្រវត្តិរូបតាមអ៊ីមែលនេះ — សូមដាក់ Gmail ដែលគាត់ប្រើនៅទីនេះ។
+- Sign-in link → តំណសម្រាប់ចូល
+- For someone who is locked out or forgot how they sign in. The link signs them in once, on their own phone, then asks them to connect Google. It works for 3 days. Send it to them yourself on Telegram or WhatsApp — only to them. → សម្រាប់អ្នកដែលចូលមិនបាន ឬភ្លេចរបៀបចូល។ តំណនេះនឹងបញ្ចូលគាត់ម្តង នៅលើទូរស័ព្ទរបស់គាត់ផ្ទាល់ រួចសុំឱ្យគាត់ភ្ជាប់ Google។ វាប្រើបានរយៈពេល ៣ ថ្ងៃ។ សូមផ្ញើវាទៅគាត់ដោយខ្លួនឯងតាម Telegram ឬ WhatsApp — ផ្ញើទៅគាត់តែម្នាក់គត់។
+- Copy the link → ចម្លងតំណ
+- Works once, until {date}. → ប្រើបានតែម្តង រហូតដល់ {date}។
+- A link is waiting to be used. Making a new one turns the old one off. → មានតំណមួយកំពុងរង់ចាំប្រើ។ ការបង្កើតតំណថ្មីនឹងបិទតំណចាស់។
+- Make a sign-in link → បង្កើតតំណសម្រាប់ចូល
+- Another profile already has that email → ប្រវត្តិរូបផ្សេងទៀតមានអ៊ីមែលនោះរួចហើយ
+- That email doesn’t look right → អ៊ីមែលនោះហាក់ដូចជាមិនត្រឹមត្រូវ
+- Could not make the link → មិនអាចបង្កើតតំណបានទេ
+- Sign in to the YWAM GP app → ចូលកម្មវិធី YWAM GP
+- Copied → បានចម្លងហើយ
+- PIN must be 4 digits → PIN ត្រូវមាន ៤ ខ្ទង់
+- PIN reset — tell them the new PIN → បានកំណត់ PIN ថ្មីហើយ — សូមប្រាប់គាត់ពី PIN ថ្មី
+- Could not reset PIN → មិនអាចកំណត់ PIN ថ្មីបានទេ
+- Not now — go to the app → មិនមែនឥឡូវទេ — ទៅកម្មវិធី
+- You’re signed in. → អ្នកបានចូលហើយ។
+- That sign-in link has run out. Ask an admin for a new one. → តំណសម្រាប់ចូលនោះផុតកំណត់ហើយ។ សូមសុំតំណថ្មីពីអ្នកគ្រប់គ្រង។
+- That sign-in link was already used, or isn’t right. Ask an admin for a new one. → តំណសម្រាប់ចូលនោះត្រូវបានប្រើរួចហើយ ឬមិនត្រឹមត្រូវ។ សូមសុំតំណថ្មីពីអ្នកគ្រប់គ្រង។
+- No connection — open the link again when you are online. → គ្មានការតភ្ជាប់ — សូមបើកតំណម្តងទៀត ពេលអ្នកមានអ៊ីនធឺណិត។
+- Can’t get in? Message an admin on Telegram or WhatsApp — they can send you a link that signs you straight in, or set a new PIN. → ចូលមិនបាន? សូមផ្ញើសារទៅអ្នកគ្រប់គ្រងតាម Telegram ឬ WhatsApp — គាត់អាចផ្ញើតំណដែលបញ្ចូលអ្នកភ្លាមៗ ឬកំណត់ PIN ថ្មីឱ្យអ្នក។

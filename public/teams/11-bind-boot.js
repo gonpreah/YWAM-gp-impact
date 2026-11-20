@@ -1664,6 +1664,7 @@ function bind(){
   var ggk=document.getElementById('linkGoogle'); if(ggk) ggk.onclick=function(){ gglGo_('link'); };
   var ggsg=document.getElementById('gglStepGo'); if(ggsg) ggsg.onclick=function(){ gglGo_('link'); };
   var ggso=document.getElementById('gglStepOut'); if(ggso) ggso.onclick=function(){ logout(); };
+  var ggsl=document.getElementById('gglStepLater'); if(ggsl) ggsl.onclick=function(){ S.linkSignIn=false; render(); };
   var spl=document.getElementById('showPinLogin'); if(spl) spl.onclick=function(){ S.pinLogin=true; render(); };
   var hpl=document.getElementById('hidePinLogin'); if(hpl) hpl.onclick=function(){ S.pinLogin=false; render(); };
   // when Google doesn't work (07-health-leave.js): the help box, and the "no profile for that Google account" choice
@@ -2181,4 +2182,6 @@ gpInstallPrompt();
   } catch(e){}
 })();
 /* back from Google's page: take the token out of the address before anything else reads it (or, for the tasks app, go on to it) */
-if(gglRedirectTake_()!=='away'){ boot(); gglRedirectFinish_(); }
+/* and an admin's one-time sign-in link (?signin=) signs them in instead of the boot */
+var _signLink=signLinkTake_();
+if(gglRedirectTake_()!=='away'){ if(_signLink) signLinkUse_(_signLink); else { boot(); gglRedirectFinish_(); } }

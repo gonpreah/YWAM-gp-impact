@@ -1129,7 +1129,8 @@ function adminStaffOut_(s) {
     leads: leadsOf_(s), ministries: ministriesOf_(s),
     archived: archivedOf_(s),
     created: s.created || '',
-    google: !!(s.google && s.google.sub), signIn: authKindOf_(s)   // Admin → Accounts' "Not on Google yet"
+    google: !!(s.google && s.google.sub), signIn: authKindOf_(s),   // Admin → Accounts' "Not on Google yet"
+    signInLink: s.signInLink && Date.parse(s.signInLink.exp) > Date.now() ? { exp: s.signInLink.exp } : null   // never the hash
   };
 }
 
@@ -1307,6 +1308,9 @@ async function adminResetPin(username, pin, staffId, newPin) {
     const salt = pinSalt_();
     rows[idx].pinHash = hashPin_(newPin, salt);
     rows[idx].pinSalt = salt;
+    /* a password account (made from the portal) checks only its password, so a new PIN would never
+       work while one is there: the admin is replacing how they sign in, so the forgotten password goes */
+    delete rows[idx].secretHash; delete rows[idx].secretSalt;
     rows[idx].updated = new Date().toISOString();
     resetUsername = rows[idx].username;
     return { ok: true };
@@ -1315,6 +1319,51 @@ async function adminResetPin(username, pin, staffId, newPin) {
   // locked out, so lift any lockout on the account it now belongs to.
   if (out.ok) await clearLoginThrottle_(resetUsername);
   return out;
+}
+
+/* A one-time sign-in link (Nov 2026, Uriah: "I don't want people getting logged out and stuck"). The app sends
+   no email, so an admin makes the link and sends it by Telegram or WhatsApp: teams.html?signin=<48 hex>. It is
+   kept only as a hash on the staff record, is good for SIGNIN_LINK_HOURS, works once, and a new one replaces the
+   old. Opening it signs that person in on that phone with a device token (like Google's), lifts any lockout, and
+   the page then asks them to connect Google so it doesn't happen again. Nothing else about the account changes. */
+const SIGNIN_LINK_HOURS = 72;
+async function adminSignInLink(username, pin, staffId) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  let tok = '', exp = '';
+  const out = await mutateStaff_(function (rows) {
+    const r = rows.find(function (x) { return x.id === staffId; });
+    if (!r) return { abort: true, ok: false, err: 'not_found' };
+    if (isApplicant_(r)) return { abort: true, ok: false, err: 'not_staff' };
+    if (r.archived) return { abort: true, ok: false, err: 'archived' };
+    tok = newDeviceToken_();
+    const salt = pinSalt_();
+    exp = new Date(Date.now() + SIGNIN_LINK_HOURS * 3600 * 1000).toISOString();
+    r.signInLink = { hash: hashPin_(tok, salt), salt: salt, exp: exp, by: admin.id, at: new Date().toISOString() };
+    return { ok: true };
+  });
+  if (!out || !out.ok) return out || { ok: false };
+  return { ok: true, token: tok, exp: exp };
+}
+async function staffUseSignInLink(token) {
+  token = String(token || '');
+  if (!/^[a-f0-9]{48}$/.test(token)) return { ok: false, err: 'link' };
+  let found = null, dev = '';
+  const out = await mutateStaff_(function (rows) {
+    const r = rows.find(function (x) { return x && x.signInLink && x.signInLink.hash && safeEq_(hashPin_(token, x.signInLink.salt), x.signInLink.hash); });
+    if (!r) return { abort: true, ok: false, err: 'link' };
+    if (!(Date.parse(r.signInLink.exp) > Date.now())) { delete r.signInLink; return { ok: false, err: 'expired' }; }
+    if (r.archived || isApplicant_(r)) return { abort: true, ok: false, err: 'link' };
+    if (r.active === false) return { abort: true, ok: false, err: 'pending' };
+    delete r.signInLink;
+    dev = addDeviceToken_(r);
+    r.updated = new Date().toISOString();
+    found = r;
+    return { ok: true };
+  });
+  if (!out || !out.ok || !found) return out && !out.ok ? out : { ok: false };
+  await clearLoginThrottle_(found.username);
+  return staffLoginOut_(found, { token: dev, viaLink: true });
 }
 
 /* Fixing a wrong campus/department/ministry for someone else — the same
@@ -13718,6 +13767,8 @@ const HANDLERS = {
   adminDecideCltRequest: function (a) { return adminDecideCltRequest(a[0], a[1], a[2], !!a[3]); },
   adminSetMentor: function (a) { return adminSetMentor(a[0], a[1], a[2], a[3], a[4]); },
   adminResetPin: function (a) { return adminResetPin(a[0], a[1], a[2], a[3]); },
+  adminSignInLink: function (a) { return adminSignInLink(a[0], a[1], a[2]); },
+  staffUseSignInLink: function (a) { return staffUseSignInLink(a[0]); },
   adminDeleteStaff: function (a) { return adminDeleteStaff(a[0], a[1], a[2]); },
   adminMergeStaff: function (a) { return adminMergeStaff(a[0], a[1], a[2], a[3]); },
   adminUpdateStaff: function (a) { return adminUpdateStaff(a[0], a[1], a[2], a[3]); },
