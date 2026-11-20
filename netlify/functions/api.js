@@ -12031,11 +12031,14 @@ async function adminAppUse(username, pin, campus) {
    bit more and a book less, still the biggest single thing. streakMin / streakBonus: a day streak of 3 or more adds 20%
    to the week's points; lose the streak and it goes back. holiday: a snowflake or candy cane caught in the holiday
    season (HOLIDAY_FROM … HOLIDAY_TO), holidayDayCap of them a day. */
-const GAME_PTS = { open: 5, habit: 3, habitDayCap: 15, goalsSet: 15, goalsPct: 25, task: 5, taskCap: 40, numbers: 10, numbersCap: 20, book: 30, bookCap: 90, oneOnOne: 20,
-  streakMin: 3, streakBonus: 0.2, holiday: 5, holidayDayCap: 3 };
+/* The rollout (Nov 2026): a book back to 50 (bookCap three books), and Santa — he flies across the screen each
+   time the app is opened in the holiday season, and catching him is 1 point (santaDayCap a day). */
+const GAME_PTS = { open: 5, habit: 3, habitDayCap: 15, goalsSet: 15, goalsPct: 25, task: 5, taskCap: 40, numbers: 10, numbersCap: 20, book: 50, bookCap: 150, oneOnOne: 20,
+  streakMin: 3, streakBonus: 0.2, holiday: 5, holidayDayCap: 3, santa: 1, santaDayCap: 10 };
 /* The holiday season (Nov 2026, Andrew: "every now and then a snowflake or a candy cane falls … tap it and get 5
    points"). Month-day on Cambodia's calendar, running over the new year. */
 const HOLIDAY_FROM = '11-15', HOLIDAY_TO = '01-06', HOLIDAY_GAP_MS = 30 * 1000, HOLIDAY_KEEP_DAYS = 60;
+const SANTA_GAP_MS = 60 * 1000;
 function holidaySeason_(today) { const md = String(today || baseToday_()).slice(5, 10); return md >= HOLIDAY_FROM || md <= HOLIDAY_TO; }
 function gameDayOf_(when) {
   const t = Date.parse(when); if (isNaN(t)) return '';
@@ -12055,7 +12058,7 @@ async function gameBoard_(s, staff, campus) {
   const people = (Array.isArray(staff) ? staff : []).filter(function (x) { return x && x.active !== false && !x.archived && !isApplicant_(x) && x.campus === campus; });
   const ids = {}; people.forEach(function (x) { ids[x.id] = 1; });
   const used = {}, P = {};
-  const row = function (id) { return P[id] || (P[id] = { open: {}, habit: {}, goalsSet: 0, goalsPct: 0, task: 0, numbers: {}, book: 0, oneOnOne: 0, holiday: 0 }); };
+  const row = function (id) { return P[id] || (P[id] = { open: {}, habit: {}, goalsSet: 0, goalsPct: 0, task: 0, numbers: {}, book: 0, oneOnOne: 0, holiday: 0, santa: 0 }); };
   const add = function (id, d) { if (!ids[id] || !isDate_(d) || d > today) return; (used[id] = used[id] || {})[d] = 1; };
   const days = (rec.days && typeof rec.days === 'object' && !Array.isArray(rec.days)) ? rec.days : {};
   const seen = (rec.seen && typeof rec.seen === 'object') ? rec.seen : {};
@@ -12100,13 +12103,18 @@ async function gameBoard_(s, staff, campus) {
     if (!ids[id] || !catches[id] || typeof catches[id] !== 'object') return;
     Object.keys(catches[id]).forEach(function (d) { if (inWeek(d)) row(id).holiday += Math.max(0, Math.min(GAME_PTS.holidayDayCap, Math.floor(Number(catches[id][d]) || 0))); });
   });
+  const santas = (hol.santa && typeof hol.santa === 'object' && !Array.isArray(hol.santa)) ? hol.santa : {};
+  Object.keys(santas).forEach(function (id) {
+    if (!ids[id] || !santas[id] || typeof santas[id] !== 'object') return;
+    Object.keys(santas[id]).forEach(function (d) { if (inWeek(d)) row(id).santa += Math.max(0, Math.min(GAME_PTS.santaDayCap, Math.floor(Number(santas[id][d]) || 0))); });
+  });
   const booksYear = {};
   people.forEach(function (x) {
     const read = cleanLibRead_(x.libRead);
     Object.keys(read).forEach(function (b) { if (inWeek(read[b])) row(x.id).book++; if (String(read[b] || '').slice(0, 4) === today.slice(0, 4)) booksYear[x.id] = (booksYear[x.id] || 0) + 1; });
   });
   const partsOf = function (id) {
-    const g = P[id]; if (!g) return { open: 0, habits: 0, goals: 0, tasks: 0, numbers: 0, books: 0, oneOnOnes: 0, holiday: 0 };
+    const g = P[id]; if (!g) return { open: 0, habits: 0, goals: 0, tasks: 0, numbers: 0, books: 0, oneOnOnes: 0, holiday: 0, santa: 0 };
     let habits = 0; Object.keys(g.habit).forEach(function (d) { habits += Math.min(GAME_PTS.habitDayCap, g.habit[d] * GAME_PTS.habit); });
     return {
       open: Object.keys(g.open).length * GAME_PTS.open, habits: habits,
@@ -12114,7 +12122,7 @@ async function gameBoard_(s, staff, campus) {
       tasks: Math.min(GAME_PTS.taskCap, g.task * GAME_PTS.task),
       numbers: Math.min(GAME_PTS.numbersCap, Object.keys(g.numbers).length * GAME_PTS.numbers),
       books: Math.min(GAME_PTS.bookCap, g.book * GAME_PTS.book), oneOnOnes: g.oneOnOne * GAME_PTS.oneOnOne,
-      holiday: g.holiday * GAME_PTS.holiday
+      holiday: g.holiday * GAME_PTS.holiday, santa: g.santa * GAME_PTS.santa
     };
   };
   const streakOf = function (id) {
@@ -12150,7 +12158,8 @@ async function gameBoard_(s, staff, campus) {
     of: all.length, active: all.filter(function (p) { return p.week.indexOf('1') > -1; }).length,
     activeToday: all.filter(function (p) { return (used[p.id] || {})[today]; }).length,
     me: mine ? { pts: mine.pts, streak: mine.streak, week: mine.week, parts: mine.parts, rank: mine.rank } : null,
-    holiday: holidaySeason_(today) ? { left: Math.max(0, GAME_PTS.holidayDayCap - Math.floor(Number(((catches[s.id] || {})[today])) || 0)) } : null
+    holiday: holidaySeason_(today) ? { left: Math.max(0, GAME_PTS.holidayDayCap - Math.floor(Number(((catches[s.id] || {})[today])) || 0)) } : null,
+    santa: holidaySeason_(today) ? { left: Math.max(0, GAME_PTS.santaDayCap - Math.floor(Number(((santas[s.id] || {})[today])) || 0)) } : null
   };
 }
 /* A snowflake or candy cane caught (the page drops one now and then in the holiday season; the person taps it).
@@ -12176,6 +12185,29 @@ async function catchHoliday(username, pin) {
   });
   if (!res || !res.ok) return res || { ok: false };
   return { ok: true, left: res.left, pts: GAME_PTS.holiday, game: await gameBoard_(s, await getStaff_(), s.campus) };
+}
+/* Santa caught (the page flies him across the screen when the app is opened, in the holiday season). Same line as
+   the holiday catch: staff only, in season, santaDayCap a day, not two within SANTA_GAP_MS. Kept in holidayCatch
+   beside the snowflakes: santa = { staffId: { 'YYYY-MM-DD': n } }, santaLast = { staffId: ms }. */
+async function catchSanta(username, pin) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false, err: 'auth' };
+  const today = baseToday_();
+  if (!holidaySeason_(today)) return { ok: false, err: 'season' };
+  const now = Date.now(), from = icsDay_(today, -HOLIDAY_KEEP_DAYS);
+  const res = await mutateKey_('holidayCatch', {}, function (d) {
+    if (!d.santa || typeof d.santa !== 'object' || Array.isArray(d.santa)) d.santa = {};
+    if (!d.santaLast || typeof d.santaLast !== 'object' || Array.isArray(d.santaLast)) d.santaLast = {};
+    const mine = (d.santa[s.id] && typeof d.santa[s.id] === 'object') ? d.santa[s.id] : (d.santa[s.id] = {});
+    const n = Math.floor(Number(mine[today]) || 0);
+    if (n >= GAME_PTS.santaDayCap) return { abort: true, ok: false, err: 'cap', left: 0 };
+    if (now - (Number(d.santaLast[s.id]) || 0) < SANTA_GAP_MS) return { abort: true, ok: false, err: 'soon', left: GAME_PTS.santaDayCap - n };
+    mine[today] = n + 1; d.santaLast[s.id] = now;
+    Object.keys(mine).forEach(function (k) { if (!isDate_(k) || k < from) delete mine[k]; });
+    return { ok: true, left: GAME_PTS.santaDayCap - n - 1 };
+  });
+  if (!res || !res.ok) return res || { ok: false };
+  return { ok: true, left: res.left, pts: GAME_PTS.santa, game: await gameBoard_(s, await getStaff_(), s.campus) };
 }
 async function getGame(username, pin, campus) {
   const s = await verifyStaff_(username, pin);
@@ -13765,6 +13797,7 @@ const HANDLERS = {
   adminAppUse: function (a) { return adminAppUse(a[0], a[1], a[2]); },
   getGame: function (a) { return getGame(a[0], a[1], a[2]); },
   catchHoliday: function (a) { return catchHoliday(a[0], a[1]); },
+  catchSanta: function (a) { return catchSanta(a[0], a[1]); },
   markSeen: function (a) { return markSeen(a[0], a[1], a[2]); },
   hrArchiveMany: function (a) { return hrArchiveMany(a[0], a[1], a[2], a[3]); },
   saveMyKpiDay: function (a) { return saveMyKpiDay(a[0], a[1], a[2], a[3]); },

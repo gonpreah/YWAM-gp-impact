@@ -3276,6 +3276,56 @@ body.findOn { overflow:hidden; }
 }
 @keyframes holFallCalm { 0% { transform:translateY(22vh); opacity:0; } 10%,90% { transform:translateY(22vh); opacity:1; } 100% { transform:translateY(22vh); opacity:0; } }
 
+/* ---------- Santa, and the welcome to points (20-game.js, Nov 2026) ---------- */
+.santaFly { position:fixed; right:-200px; z-index:60; background:none; border:0; padding:12px; margin:0; cursor:pointer; line-height:1;
+  filter:drop-shadow(0 3px 5px rgba(0,0,0,.25)); animation:santaRtl 8s linear forwards; -webkit-tap-highlight-color:transparent; }
+.santaFly.ltr { right:auto; left:-200px; animation-name:santaLtr; }
+/* the reindeer lead the way: Apple's 🦌 faces right, so flying left they are turned round; flying right the order flips */
+.santaFly:not(.ltr) .santaDeer { transform:scaleX(-1); }
+.santaFly:not(.ltr) .santaSled .santaDeer:nth-child(2) { transform:scaleX(-1) translateY(-6px); }
+.santaFly.ltr .santaSled { flex-direction:row-reverse; }
+.santaSled { display:inline-flex; align-items:flex-end; gap:2px; font-size:30px; }
+.santaSled .santaMan { font-size:38px; margin:0 4px; }
+.santaSled .santaSpark { font-size:16px; align-self:center; animation:santaTwinkle .6s ease-in-out infinite alternate; }
+.santaSled .santaDeer:nth-child(2) { transform:translateY(-6px); }
+@keyframes santaRtl {
+  0% { transform:translate(0,0) rotate(-4deg); }
+  25% { transform:translate(-30vw,-6vh) rotate(3deg); }
+  50% { transform:translate(-60vw,4vh) rotate(-3deg); }
+  75% { transform:translate(-90vw,-5vh) rotate(3deg); }
+  100% { transform:translate(calc(-100vw - 260px),0) rotate(-2deg); }
+}
+@keyframes santaLtr {
+  0% { transform:translate(0,0) rotate(4deg); }
+  25% { transform:translate(30vw,-6vh) rotate(-3deg); }
+  50% { transform:translate(60vw,4vh) rotate(3deg); }
+  75% { transform:translate(90vw,-5vh) rotate(-3deg); }
+  100% { transform:translate(calc(100vw + 260px),0) rotate(2deg); }
+}
+@keyframes santaTwinkle { from { opacity:.3; } to { opacity:1; } }
+.santaFly.caught { animation:holCaught .45s ease-out forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .santaFly, .santaFly.ltr { right:auto; left:50%; margin-left:-80px; animation-name:holFallCalm; }
+  .santaSled .santaSpark { animation:none; }
+}
+.gameIntroScrim { position:fixed; inset:0; z-index:78; background:rgba(0,0,0,.45); }
+.gameIntro { position:fixed; z-index:79; left:50%; top:50%; transform:translate(-50%,-50%); width:min(420px, calc(100vw - 32px));
+  max-height:calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow:auto; background:var(--surface); color:var(--ink);
+  border-radius:20px; padding:20px 18px 16px; box-shadow:0 12px 40px rgba(0,0,0,.3); animation:gameIntroIn .35s ease-out; }
+@keyframes gameIntroIn { from { opacity:0; transform:translate(-50%,-46%) scale(.96); } to { opacity:1; transform:translate(-50%,-50%); } }
+.gameIntroTop { font-size:36px; text-align:center; line-height:1; }
+.gameIntro h2 { text-align:center; margin:8px 0 6px; }
+.gameIntro > .sub { text-align:center; margin:0 0 12px; }
+.gameIntroList { display:flex; flex-direction:column; gap:2px; margin:0 0 10px; }
+.gameIntroRow { display:flex; align-items:center; gap:10px; padding:5px 4px; border-bottom:1px solid var(--line); font-size:15px; }
+.gameIntroRow:last-child { border-bottom:0; }
+.gameIntroWhat { flex:1; min-width:0; }
+.gameIntroRow b { color:var(--accent); white-space:nowrap; }
+.gameIntro .gameIntroBonus { text-align:left; margin:6px 0; }
+.gameIntroBtns { display:flex; flex-direction:column; gap:8px; margin:14px -18px -16px; padding:10px 18px 16px; position:sticky; bottom:-16px; background:var(--surface); }
+.gameIntroBtns .btn { width:100%; margin:0; }
+@media (prefers-reduced-motion: reduce) { .gameIntro { animation:none; } }
+
 /* ---------- the slide-down reminder (19-ux.js, Nov 2026) ---------- */
 .gpBanner { position:fixed; left:10px; right:10px; top:calc(8px + env(safe-area-inset-top)); z-index:65; max-width:520px; margin:0 auto;
   display:flex; align-items:flex-start; gap:10px; padding:12px 12px 16px; border-radius:18px; background:var(--surface); color:var(--ink);

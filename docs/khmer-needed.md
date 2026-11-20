@@ -5633,3 +5633,31 @@ In the book reader a paragraph can be highlighted in a colour ("Highlight", as w
 | Green | បៃតង |
 | Blue | ខៀវ |
 | Pink | ផ្កាឈូក |
+
+## 115. Santa, books at 50, and the welcome to points
+
+In the holiday season Santa (សាន់តាក្លូស) and his reindeer fly across the screen when the app opens; tapping him gives 1 point ("Catch Santa" is read aloud by screen readers). The welcome sheet shows once to each person: what each thing is worth on the week's board. "Let’s go!" is its closing button.
+
+| English | Khmer (draft) |
+|---|---|
+| Catch Santa | ចាប់សាន់តាក្លូស |
+| Ho ho ho! You caught Santa! +{n} point | ហូ ហូ ហូ! អ្នកចាប់បានសាន់តាក្លូស! +{n} ពិន្ទុ |
+| Santa is all caught for today. Come back tomorrow! | ថ្ងៃនេះអ្នកចាប់សាន់តាក្លូសគ្រប់ហើយ។ ត្រឡប់មកវិញនៅថ្ងៃស្អែក! |
+| Santa needs a minute to warm up — catch him next time! | សាន់តាក្លូសត្រូវការសម្រាកមួយនាទី — ចាប់គាត់នៅពេលក្រោយ! |
+| Santa caught | សាន់តាក្លូសដែលចាប់បាន |
+| {n} each time he flies by, up to {m} a day | {n} រាល់ពេលគាត់ហោះកាត់ រហូតដល់ {m} ក្នុងមួយថ្ងៃ |
+| Finish a book | អានសៀវភៅមួយក្បាលចប់ |
+| Hold a 1-on-1 | ជួបមួយទល់មួយ |
+| Set your three weekly goals | កំណត់គោលដៅទាំងបីប្រចាំសប្ដាហ៍របស់អ្នក |
+| Enter your ministry’s numbers | បញ្ចូលលេខនៃកិច្ចការបម្រើរបស់អ្នក |
+| Finish a GP Task | បញ្ចប់កិច្ចការ GP មួយ |
+| Open the app | បើកកម្មវិធី |
+| Tick a habit | គូសទម្លាប់មួយ |
+| Catch a snowflake or candy cane | ចាប់ផ្កាព្រិល ឬស្ករដំបង |
+| Catch Santa when he flies by | ចាប់សាន់តាក្លូសពេលគាត់ហោះកាត់ |
+| Points are here! | ពិន្ទុមកដល់ហើយ! |
+| Use the app every day and earn points for the good things you already do. Every Monday the week’s board starts again. | ប្រើកម្មវិធីរាល់ថ្ងៃ ហើយទទួលបានពិន្ទុសម្រាប់កិច្ចការល្អៗដែលអ្នកធ្វើរួចហើយ។ រាល់ថ្ងៃច័ន្ទ តារាងពិន្ទុសប្ដាហ៍ចាប់ផ្ដើមសាជាថ្មី។ |
+| Use the app {m} days in a row and get +{n}% on the whole week. | ប្រើកម្មវិធី {m} ថ្ងៃជាប់ៗគ្នា ហើយទទួលបាន +{n}% លើពិន្ទុពេញមួយសប្ដាហ៍។ |
+| It’s the holiday season: watch for Santa flying across the screen when you open the app! | នេះជារដូវបុណ្យ៖ សូមមើលសាន់តាក្លូសហោះកាត់អេក្រង់ ពេលអ្នកបើកកម្មវិធី! |
+| See this week’s board | មើលតារាងពិន្ទុសប្ដាហ៍នេះ |
+| Let’s go! | តោះចាប់ផ្ដើម! |

@@ -102,7 +102,7 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   ok('seven dots for the week', await page.$$eval('#gameHome .gameDots i', e => e.length) === 7);
   if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/home.png' });
   const rd = await page.evaluate(() => { const c = document.getElementById('libHome'), g = document.getElementById('sec-goals') || document.querySelector('.goalsCard'), h = document.querySelector('.myHero'); return c ? { text: c.innerText.replace(/\s+/g, ' '), belowHero: h ? c.getBoundingClientRect().top > h.getBoundingClientRect().top : null, aboveAbout: c.getBoundingClientRect().top < document.getElementById('sec-ptype').getBoundingClientRect().top - 200 } : null; });
-  ok('the Reading card is always on My Home, high up, and says what a book is worth', !!rd && /Read a book in ten minutes|This month|Continue/.test(rd.text) && /30 points/.test(rd.text) && rd.aboveAbout, JSON.stringify(rd));
+  ok('the Reading card is always on My Home, high up, and says what a book is worth', !!rd && /Read a book in ten minutes|This month|Continue/.test(rd.text) && /50 points/.test(rd.text) && rd.aboveAbout, JSON.stringify(rd));
   await page.click('#gameHome'); await page.waitForTimeout(300);
   if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/board.png', fullPage: true });
 
@@ -121,7 +121,7 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   ok('where my points came from', /Opened the app/.test(how) && /check-in gives no points/.test(how) && /Streak bonus/.test(how), '');
   await page.click('[data-gametab="books"]'); await page.waitForTimeout(200);
   const bk = await page.$eval('#gameBooks', e => e.innerText.replace(/\s+/g, ' '));
-  ok('Readers: books this year, and what a book is worth', /Di Sok/.test(bk) && /📚 1/.test(bk) && /30 points/.test(bk) && !/Mark Hill/.test(bk), bk.slice(0, 120));
+  ok('Readers: books this year, and what a book is worth', /Di Sok/.test(bk) && /📚 1/.test(bk) && /50 points/.test(bk) && !/Mark Hill/.test(bk), bk.slice(0, 120));
   await page.click('[data-gametab="min"]'); await page.waitForTimeout(200);
   ok('ministries by average', /Average points a person/.test(await main(page)) || /No ministry has two people/.test(await main(page)));
   await page.click('[data-gametab="people"]'); await page.waitForTimeout(200);
@@ -164,6 +164,42 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   }
   await ctx.close();
 }
+/* ---------- 3b. Santa, and the welcome to points (Nov 2026, the rollout) ---------- */
+{
+  const { ctx, page } = await open('di', { ls: { 'gp-intro-test': '1' } });
+  await page.waitForSelector('#gameIntro', { timeout: 5000 });
+  const intro = await page.$eval('#gameIntro', e => e.innerText.replace(/\s+/g, ' '));
+  ok('the welcome to points shows once: what each thing is worth, a book at 50', /Points are here!/.test(intro) && /Finish a book \+50/.test(intro) && /Hold a 1-on-1 \+20/.test(intro) && /3 days in a row/.test(intro), intro.slice(0, 200));
+  ok('… it fits a phone', await page.evaluate(() => { const r = document.getElementById('gameIntro').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1 && document.documentElement.scrollWidth <= innerWidth + 1; }));
+  if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/intro.png' });
+  await page.click('#gameIntroBoard'); await page.waitForTimeout(400);
+  ok('See this week’s board opens it, and the sheet is gone', !(await page.$('#gameIntro')) && await page.evaluate(() => S.view === 'team' && S.teamMode === 'game'));
+  await page.reload({ waitUntil: 'load' }); await page.waitForSelector('nav.bottom button'); await page.waitForTimeout(1200);
+  ok('… and never again on this phone', !(await page.$('#gameIntro')));
+  await ctx.close();
+}
+{
+  const { ctx, page } = await open('di', { ls: { 'gp-santa-test': '1' } });
+  const md = today.slice(5), season = md >= '11-15' || md <= '01-06';
+  if (!season) ok('out of season: no Santa', await page.evaluate(() => !santaOn_()));
+  else {
+    await page.evaluate(() => { S.santaFlyMs = 20000; });
+    await page.waitForSelector('#santaFly', { timeout: 8000 });
+    ok('a few seconds after the app opens, Santa flies across', await page.evaluate(() => { const b = document.getElementById('santaFly'); return !!b && getComputedStyle(b).position === 'fixed' && b.getAttribute('aria-label') === 'Catch Santa' && /🎅/.test(b.textContent); }));
+    if (process.env.GP_SHOT) { await page.waitForTimeout(9000); await page.screenshot({ path: process.env.GP_SHOT + '/santa.png' }); }
+    const before = await page.evaluate(() => S.game.me.pts);
+    await page.evaluate(() => document.getElementById('santaFly').click());
+    await page.waitForTimeout(800);
+    ok('a tap catches him: +1 point on the server and on My Home', mem.holidayCatch.santa.st5[today] === 1 && await page.evaluate(b => S.game.me.pts >= b + 1 && S.game.me.parts.santa === 1, before) && new RegExp('⭐ ' + (await page.evaluate(() => S.game.me.pts))).test(await page.$eval('#gameHome', e => e.innerText)), String(before));
+    ok('… with a word that says so', /You caught Santa! \+1 point/.test(await page.$eval('#msg', e => e.textContent)));
+    await page.evaluate(() => { S.view = 'week'; render(); });
+    await page.waitForTimeout(600);
+    ok('once per open: re-drawing the page does not send him again', !(await page.$('#santaFly')));
+    await page.click('#gameHome'); await page.waitForTimeout(300); await page.click('#gameHow summary'); await page.waitForTimeout(150);
+    ok('the board lists Santa caught', /Santa caught/.test(await page.$eval('#gameHow', e => e.innerText)));
+  }
+  await ctx.close();
+}
 {
   const { ctx, page } = await open('di', { ls: { 'gp-banner-test': '1' } });
   await page.evaluate(() => { S.bannerShowMs = 60000; S.bannerGapMs = 300; S.broadcasts = [{ created: new Date().toISOString(), text: 'Team lunch at noon' }]; });
@@ -197,7 +233,7 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
 {
   const { ctx, page } = await open('di');
   await page.waitForTimeout(5000);
-  ok('under a test browser without the flag, nothing slides or falls (other tests are not disturbed)', !(await page.$('#gpBanner')) && !(await page.$('#holDrop')));
+  ok('under a test browser without the flag, nothing slides, falls, flies or pops up (other tests are not disturbed)', !(await page.$('#gpBanner')) && !(await page.$('#holDrop')) && !(await page.$('#santaFly')) && !(await page.$('#gameIntro')));
   await ctx.close();
 }
 
