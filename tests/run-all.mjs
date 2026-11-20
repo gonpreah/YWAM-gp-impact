@@ -162,6 +162,7 @@ const BROWSER = [
   'test-google-signin-ui.mjs', // signing in with Google made smoother: no profile for that Google account → connect it to theirs (no duplicate sign-up); Google won't open → help, the PIN, continue for today; inside Messenger → open in Chrome / copy the link; Google's page and back on an iPhone Home Screen app
   'test-gp-tasks.mjs',  // GP Tasks: ministry/department/personal lists, who sees and changes what, requests, Campus Leadership, the filter, board cards
   'test-gp-tasks-ui.mjs',  // GP Tasks in the browser: lists, Enter to add, day/time/person, the bell, asking another ministry, My Ministry's tab, the board card
+  'test-gp-tasks-week-ui.mjs',  // GP Tasks: light / dark, the Inbox's This week across every list; the Portal as an app with its own icon
   'test-voice-tasks-ui.mjs',  // Talk it through → tasks: the microphone, the words sent once, the tasks to check, Add, a phone that can't listen, Khmer
   'test-students.mjs',  // students: profiles from SR Hospitality, invite + Google join, the student door (own data only), LD-only mentors
   'test-student-app-ui.mjs',  // the student GP app: staff Students page + invite, portal Go to GP app, student mode tabs/home/menu, mentor accept

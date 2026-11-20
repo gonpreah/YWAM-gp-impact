@@ -3339,3 +3339,15 @@ body.findOn { overflow:hidden; }
 .prLib { width:auto; padding-left:0; margin:-2px 0 6px; text-align:left; font-size:13.5px; }
 @media (prefers-reduced-motion: reduce) { .lnBar, .lnSheet { animation:none; } }
 #lnBook .lnQuote { display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+
+/* ---------- GP Tasks: light / dark, and the Inbox's This week (12-tasks.js, Nov 2026) ---------- */
+.ctRow { display:flex; align-items:center; gap:8px; } .ctRow .ctSeg { flex:1 1 auto; }
+.gtTheme { flex:0 0 auto; width:40px; height:40px; border-radius:12px; border:1px solid var(--border); background:var(--surface); font-size:18px; cursor:pointer; margin:6px 0 10px; }
+.gtInboxSeg { margin:2px 0 8px; }
+.gtWeekNote { margin:0 0 6px; }
+.gtWeek .gtDay.today { color:var(--accent); }
+.gtDayN { font-weight:600; font-size:12px; padding:1px 7px; border-radius:999px; background:var(--surface2); color:var(--muted); margin-left:4px; text-transform:none; letter-spacing:0; }
+.gtDayN.many { background:var(--amber); color:var(--amberInk); }
+.gtWeekFree { margin:2px 0 8px 2px; }
+
+.portalAppIc { width:32px; height:32px; border-radius:8px; margin-right:8px; vertical-align:middle; }

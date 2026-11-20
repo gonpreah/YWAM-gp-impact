@@ -1125,7 +1125,7 @@ function gpTaRender_(hb, nav){
   if(GP_TA_VIEWS.indexOf(S.view)===-1) S.view=gpTaView_();
   lsSet('gp-ta-view', S.view);
   document.body.classList.add('tasksApp');
-  hb.innerHTML='<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>'+
+  hb.innerHTML=gptThemeBtnHtml_('hbtn icon taTheme')+'<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>'+
     '<button class="hbtn icon" id="menuBtn" aria-label="'+esc(t('Menu'))+'">'+HAMBURGER_SVG+'</button>';
   var ic=function(k){ return (GPT_SVG[k]||'').replace('<svg', '<svg width="20" height="20"'); };
   var inbox=gptInboxCount_();
@@ -1330,6 +1330,7 @@ function renderMenu(){
   IC.kmreview='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h8M8 3v2M5.5 5c.8 3.2 3 5.6 6 7"/><path d="M10.5 5c-.7 3.6-3 6.4-6 8"/><path d="M12.5 21l4-9 4 9M14 18h5"/></svg>';
   IC.tests='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 3v6L4.5 18.5A1.6 1.6 0 0 0 5.9 21h12.2a1.6 1.6 0 0 0 1.4-2.5L14 9V3"/><path d="M7 15h10"/></svg>';
   IC.openapp=IC.base;
+  IC.portalapp='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M10 18h4"/><path d="M12 6v6M9.5 9.5 12 12l2.5-2.5"/></svg>';
   IC.applogout=IC.profile;
   var sections= gpTasksApp_() ? [
     { title:'', items:[it('tasks', t('Tasks')), it('calendar', t('Calendar'))] },
@@ -1345,7 +1346,7 @@ function renderMenu(){
   ] : [
     { title:'', items:[it('base', t('Base')), it('caltasks', t('GP Calendar/Tasks')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer')), it('p360', t('360 reviews')), it('tests', t('Tests')), it('leave', t('Leave Request')), it('library', t('Library'))] },
     { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : [], canStudentsClient_() ? [it('students', t('Students'))] : []) },
-    { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal'))] : [] },
+    { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal')), it('portalapp', t('The Portal on your phone'))] : [] },
     { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : [], kmrCan_() ? [it('kmreview', t('Khmer review'))] : []) },
     { title:t('Language'), items:[it('khmer', t('Learn Khmer / English'))] }
   ];
@@ -1393,6 +1394,7 @@ function renderMenu(){
       else if(id==='hosp'){ S.view='hosp'; render(); }
       else if(id==='sched'){ schedOpen_('kitchen', false, 'home'); }
       else if(id==='portal'){ renderMenu(); window.open('portal.html', '_blank', 'noopener'); }
+      else if(id==='portalapp'){ renderMenu(); gpPortalAppOpen_(); }
       else renderMenu();
     };
   });
