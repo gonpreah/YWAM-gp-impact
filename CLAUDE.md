@@ -2408,8 +2408,8 @@ but you can't delete them."
   `#dashBlocks` > `.dashBlock[data-dashblock]` in the person's `order` (`apps`, `widgets`, `row:<id>`). Editing, a row moves
   by itself and the apps / widgets by their grip (`.dashGrip`, `dashDrag_`'s `startOk`); an app or widget still moves
   within its own group. Saved as `order` (≤10, `/^(apps|widgets|row:[a-z]{2,20})$/`) and `v: 2`.
-- **What came with the card stays**: the five quick apps (`DASH_LOCKED_APPS` = `QA_DEFAULT`: GP Calendar/Tasks, Library,
-  Learn Khmer, Leave, Prayer), the four widgets (`DASH_W_LOCKED`: Goals, Habits, Health, Tasks) and every row can be moved,
+- **What came with the card stays**: the four quick apps (`DASH_LOCKED_APPS` = `QA_DEFAULT`: GP Calendar/Tasks, Library,
+  Learn Khmer, Leave — Prayer left the default in Nov 2026, Andrew; ＋ adds it), the four widgets (`DASH_W_LOCKED`: Goals, Habits, Health, Tasks) and every row can be moved,
   never taken off — no ✕, and put back if a saved layout lacks them. What the person adds has ✕: apps from their menu, and
   widgets from `DASH_W_EXTRA` — Days off (personal days left → Leave), Mentor (1-on-1s held this month of
   `OO_PER_MONTH` → Mentorship), Streak (days in a row → the week's board), Books (books read against their year's goal →

@@ -111,7 +111,7 @@ const drag = async (page, fromSel, toSel) => {
 // ---- Di: the default card ----
 {
   const { ctx, page } = await open('di');
-  ok('the default quick apps: Calendar, Library, Language, Leave, Prayer', JSON.stringify(await ids(page)) === '["caltasks","library","khmer","leave","prayer"]', JSON.stringify(await ids(page)));
+  ok('the default quick apps: Calendar, Library, Language, Leave (Nov 2026, Andrew)', JSON.stringify(await ids(page)) === '["caltasks","library","khmer","leave"]', JSON.stringify(await ids(page)));
   ok('… then the four widgets and the rows', JSON.stringify(await wids(page)) === '["goals","habits","health","tasks"]' || JSON.stringify(await wids(page)) === '["goals","habits","health"]', JSON.stringify(await wids(page)));
   ok('… the base at a glance — and no reading row (Nov 2026: the books come as notes)', !(await rowIds(page)).includes('reading') && (await rowIds(page)).includes('base'), JSON.stringify(await rowIds(page)));
   ok('… the blocks in their first order: apps, widgets, then the rows', JSON.stringify((await blocks(page)).slice(0, 2)) === '["apps","widgets"]', JSON.stringify(await blocks(page)));
@@ -150,8 +150,8 @@ const drag = async (page, fromSel, toSel) => {
   // drag
   await drag(page, '.dashItem[data-dashw="daysoff"]', '.dashItem[data-dashw="goals"]');
   ok('dragging a widget moves it (Days off to the front), saved', (await wids(page))[0] === 'daysoff' && lay('st5').widgets[0] === 'daysoff', JSON.stringify(await wids(page)));
-  await drag(page, '.qaItem[data-qa="prayer"]', '.qaItem[data-qa="caltasks"]');
-  ok('dragging an app moves it (Prayer to the front), saved', (await ids(page))[0] === 'prayer' && lay('st5').apps[0] === 'prayer', JSON.stringify(await ids(page)));
+  await drag(page, '.qaItem[data-qa="leave"]', '.qaItem[data-qa="caltasks"]');
+  ok('dragging an app moves it (Leave to the front), saved', (await ids(page))[0] === 'leave' && lay('st5').apps[0] === 'leave', JSON.stringify(await ids(page)));
   const r0 = await rowIds(page), last = r0[r0.length - 1];
   await drag(page, '.dashRow[data-dashrow="' + last + '"]', '#qaBar');
   const b1 = await blocks(page);
@@ -197,7 +197,7 @@ const drag = async (page, fromSel, toSel) => {
   await call('saveDashLayout', ['di', '1234', { apps: ['ywamgp'], widgets: ['books'], rows: ['reading'], v: 2 }]);
   const { ctx, page } = await open('di');
   const a = await ids(page), w = await wids(page), r = await rowIds(page);
-  ok('a saved layout missing the defaults gets them back (they can’t be taken off)', ['caltasks', 'library', 'khmer', 'leave', 'prayer'].every(x => a.includes(x)) && a[0] === 'ywamgp' && ['goals', 'habits', 'health'].every(x => w.includes(x)) && w[0] === 'books' && r.includes('base') && r[0] === 'reading', JSON.stringify({ a, w, r }));
+  ok('a saved layout missing the defaults gets them back (they can’t be taken off)', ['caltasks', 'library', 'khmer', 'leave'].every(x => a.includes(x)) && a[0] === 'ywamgp' && ['goals', 'habits', 'health'].every(x => w.includes(x)) && w[0] === 'books' && r.includes('base') && r[0] === 'reading', JSON.stringify({ a, w, r }));
   await ctx.close();
 }
 

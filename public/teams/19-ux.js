@@ -283,7 +283,7 @@ function gpBannerOpen_(){
      (`dashSwallow_`), and the tap that ends a hold never opens what was held.
    - Saved with `saveDashLayout` (`{apps, widgets, rows}`, on the staff record; the apps also as `quickApps`) a moment
      after each change (`dashSoon_`), and at once on Done. */
-var QA_DEFAULT=['caltasks','library','khmer','leave','prayer'], QA_MAX=10, QA_HOLD_MS=450, DASH_HOLD_MS=450;
+var QA_DEFAULT=['caltasks','library','khmer','leave'], QA_MAX=10, QA_HOLD_MS=450, DASH_HOLD_MS=450;
 var QA_SKIP={ applogout:1, boardlogout:1, stuexit:1, openapp:1, stuportal:1, guestreg:1, guestlogin:1 };
 var DASH_LOCKED_APPS=QA_DEFAULT;
 var DASH_W_LOCKED=['goals','habits','health','tasks'];
