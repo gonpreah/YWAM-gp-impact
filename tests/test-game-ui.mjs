@@ -101,8 +101,9 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   ok('it sits above the summary card', above === true, String(above));
   ok('seven dots for the week', await page.$$eval('#gameHome .gameDots i', e => e.length) === 7);
   if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/home.png' });
-  const rd = await page.evaluate(() => { const c = document.getElementById('libHome'), g = document.getElementById('sec-goals') || document.querySelector('.goalsCard'), h = document.querySelector('.myHero'); return c ? { text: c.innerText.replace(/\s+/g, ' '), belowHero: h ? c.getBoundingClientRect().top > h.getBoundingClientRect().top : null, aboveAbout: c.getBoundingClientRect().top < document.getElementById('sec-ptype').getBoundingClientRect().top - 200 } : null; });
-  ok('the Reading card is always on My Home, high up, and says what a book is worth', !!rd && /Read a book in ten minutes|This month|Continue/.test(rd.text) && /30 points/.test(rd.text) && rd.aboveAbout, JSON.stringify(rd));
+  const rd = await page.evaluate(() => { const c = document.getElementById('libHome'); return c ? { text: c.innerText.replace(/\s+/g, ' '), inHero: !!c.closest('.myHero'), h: c.getBoundingClientRect().height } : null; });
+  ok('reading is one small row in the summary card, saying what a book is worth', !!rd && /Read a book/.test(rd.text) && /30 points/.test(rd.text) && rd.inHero && rd.h < 80, JSON.stringify(rd));
+  ok('… and no Reading card of its own any more', !(await page.$('#sec-reading')) && !(await page.$('.card.libHome')));
   await page.click('#gameHome'); await page.waitForTimeout(300);
   if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/board.png', fullPage: true });
 

@@ -5652,3 +5652,14 @@ In the book reader a paragraph can be highlighted in a colour ("Highlight", as w
 | Open the Portal and sign in with Google, as you do here. | បើកផតថល ហើយចូលដោយប្រើ Google ដូចដែលអ្នកធ្វើនៅទីនេះ។ |
 | Open the Portal | បើកផតថល |
 | Install it like an app, with its own icon — the applications one tap from your Home Screen. | ដំឡើងវាដូចកម្មវិធីមួយ ជាមួយរូបតំណាងផ្ទាល់ខ្លួន — ពាក្យសុំទាំងអស់ ចុចតែម្ដងពីអេក្រង់ដើម។ |
+
+## 116. My Home: the Library as one row of the summary card
+
+A short line beside 📚 on the dark summary card — very little room. "Read a book" is shown when no book is under way; "Ten minutes · {n} points" sits after it.
+
+| English | Khmer (draft) |
+|---|---|
+| Read a book | អានសៀវភៅមួយក្បាល |
+| Ten minutes · {n} points | ដប់នាទី · {n} ពិន្ទុ |
+| Ten minutes | ដប់នាទី |
+| {n} of {total} have read it | {n} នាក់ក្នុងចំណោម {total} បានអានវាហើយ |

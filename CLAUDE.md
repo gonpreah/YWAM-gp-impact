@@ -2352,10 +2352,12 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
 - **Ministries**: average points a person, for ministries with two or more people on the board. **📚 Readers** (the third
   tab, `#gameBooks`): books finished this year, most first, and a button to the Library; a row on People shows 📚 n for
   books this week.
-- **The Reading card is high on My Home and always there** (Uriah: "put the book thing up … I didn't see the book thing"):
-  `libHomeCardHtml_` is called from `homeHtml` right under the summary card's banners (it was above About me, and showed
-  nothing without a month's book, a book in progress or a recommendation); with none of those it says "Read a book in ten
-  minutes" (`#libHomeOpen`), and it ends with what a finished book is worth (`#libHomePts`).
+- **Reading is one small row in My Home's summary card** (Nov 2026, Andrew: "move that into the little dashboard … make
+  it small … a little book icon … read a book"; before that it was its own Reading card under the summary card):
+  `libHeroRowHtml_` (end of 18-library-plus.js, `#libHome`, `.libHeroRow`, after the GP Tasks row) — 📚 and one line:
+  this month's book while unread ("This month: …", "n of N have read it"), else the book you were in ("Continue: …",
+  "n of m pages"), else "Read a book · Ten minutes · 30 points"; "💌 n" when books were recommended to you. A tap
+  (`data-libhome`) opens that book, or the Library.
 - **The page**: My Home has one line above the summary card (`gameHomeHtml_`, `#gameHome`: 🔥 streak · ⭐ points · #place,
   the week's dots; tap → the board). **Team → 🏆 This week** (`S.teamMode='game'`, `gameTeamHtml_`): the campus together
   first ("n of N active this week"), my three figures with "Where my points came from" folded, People / Ministries, the
@@ -3747,6 +3749,10 @@ the main app." An installable web app, like the portal — not an App Store app.
 - **teams/13-calendar.js**: ☰ → **📅 Calendar** (`S.view='calendar'`, a month at a time, day by day,
   colour per calendar, tap for details, Earlier / Later / Back to today) and **📅 Coming up** on My Home
   (the next seven days, five at most, `calHomeCardHtml_`) — nothing at all until a calendar is connected.
+  **Coming up moves on** (Nov 2026, Andrew: "once the day has passed, just move on to the next thing — right now it's
+  still on the teams"): `calHomeUpcoming_` keeps only what starts today or later (a stay that began on an earlier day —
+  which the server sends with its first day — is not "coming up") and drops today's timed things once they have ended;
+  `calHomeLoad_` asks again when the day changes (`S.calHome.day`), so an app left open overnight moves on too.
 - tests/test-gcal.mjs, tests/test-gcal-ui.mjs.- **Month view like Google Calendar (Oct 2026, redone later that month to match Google's own):**
   `S.calMonth` ('YYYY-MM'), six week rows from the Monday on or before the 1st (`calGridStart_`,
   fetched as 42 days), the ISO week number on the left (`calIsoWeek_`), **each thing a title bar

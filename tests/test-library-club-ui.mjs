@@ -159,8 +159,8 @@ const rec = (id) => mem.staff.find((s) => s.id === id);
 {
   const { ctx, page } = await open('bo');
   const home = await page.$eval('#libHome', (e) => e.innerText).catch(() => '');
-  ok('My Home has a Reading card: this month’s book, and Di’s recommendation', /This month: Atomic Habits/.test(home) && /1 of 5 have read it/.test(home) && /Di recommended a book to you/.test(home), home.replace(/\s+/g, ' '));
-  await page.click('#libHomeMonth'); await page.waitForFunction(() => typeof GP_LIBRARY !== 'undefined'); await page.waitForTimeout(500);
+  ok('My Home’s summary card has one Reading row: this month’s book, and 💌 a recommendation', /This month: Atomic Habits/.test(home) && /1 of 5 have read it/.test(home) && /💌 1/.test(home) && await page.$eval('#libHome', (e) => !!e.closest('.myHero')), home.replace(/\s+/g, ' '));
+  await page.click('#libHome'); await page.waitForFunction(() => typeof GP_LIBRARY !== 'undefined'); await page.waitForTimeout(500);
   ok('tapping it opens that book', await page.evaluate(() => S.view === 'library' && S.libBook === 'atomic-habits'));
   await page.click('#libBack'); await page.waitForTimeout(400);
   const recs = await page.$eval('#libRecs', (e) => e.innerText);

@@ -1487,6 +1487,7 @@ function miniDashboardHtml(){
     '<button class="heroRow heroRowGo" id="goMentorship" data-gomentorship="1" aria-label="'+esc(t('Mentorship'))+'">'+gpRingHtml(mentorPct,'sm',t('Mentor'))+
       '<div class="heroTrend">'+esc(t('Mentor'))+' <b class="heroFig">'+(mentorId?esc(mentorName):esc(t('Not set')))+'</b></div><span class="heroGo" aria-hidden="true">›</span></button>'+
     gptHomeRowHtml_()+
+    libHeroRowHtml_()+   // 📚 one small row: this month's book, the one you were in, or Read a book
     '<div class="heroSub">'+
       '<div class="heroSubRow">'+
         '<span class="heroSubLabel">'+esc(t('PERSONAL DAYS OFF LEFT'))+'</span>'+

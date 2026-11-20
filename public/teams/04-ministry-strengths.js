@@ -987,7 +987,7 @@ function homeHtml(){
   h+=phaseBanner(phase, wk);
   /* Tuesday's check-in is the slide-down reminder and the bell now, not a card here (Andrew, Nov 2026) */
   h += f30CardHtml_();
-  h += libHomeCardHtml_();   // 📚 Reading: up top (Uriah, Nov 2026: "put the book thing up"), always there
+  /* 📚 Reading is a row in the summary card now (libHeroRowHtml_, Andrew, Nov 2026: "make it small") */
   h += goalsCardHtml(goalsViewWeek());
   h += '<span id="homeHabits" class="homeAnchor"></span>'+habitsCardHtml();
   h += annualGoalsHtml();

@@ -3351,3 +3351,7 @@ body.findOn { overflow:hidden; }
 .gtWeekFree { margin:2px 0 8px 2px; }
 
 .portalAppIc { width:32px; height:32px; border-radius:8px; margin-right:8px; vertical-align:middle; }
+
+/* My Home: the Library as one row of the summary card (18-library-plus.js, Nov 2026) */
+.libHeroText { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.libHeroRow .gptRing { font-size:19px; }
