@@ -5018,7 +5018,7 @@ function lnOut_(r, s, staff, prayers) {
   const pr = r.prayerId ? (prayers || []).find(function (x) { return x.id === r.prayerId; }) : null;
   return {
     id: r.id, mine: r.staffId === s.id, staffId: r.staffId, name: a ? a.name : '—', photo: photoOf_(a), bookId: r.bookId, title: r.title || '',
-    lang: r.lang, step: r.step, p: r.p, quote: r.quote || '', color: r.color || '', note: r.note || '', vis: r.vis, at: r.at, edited: r.edited || '',
+    lang: r.lang, step: r.step, p: r.p, s: typeof r.s === 'number' ? r.s : -1, e: typeof r.e === 'number' ? r.e : -1, quote: r.quote || '', color: r.color || '', note: r.note || '', vis: r.vis, at: r.at, edited: r.edited || '',
     likes: (r.likes || []).length, iLiked: (r.likes || []).indexOf(s.id) > -1,
     comments: (r.comments || []).map(function (c) { const w = by[c.staffId]; return { id: c.id, name: w ? w.name : '—', photo: photoOf_(w), text: c.text, at: c.at, mine: c.staffId === s.id }; }),
     prayer: pr ? { prayedN: (pr.prayed || []).length, iPrayed: (pr.prayed || []).indexOf(s.id) > -1, answered: pr.answered || '', answerNote: pr.answerNote || '' } : null
@@ -5056,6 +5056,11 @@ async function libNoteSave(username, pin, rec) {
   const step = Math.floor(Number(rec.step)), pIdx = Math.floor(Number(rec.p));
   if (!(step >= 0 && step <= 40) || !(pIdx >= 0 && pIdx <= 200)) return { ok: false, err: 'bad_place' };
   const lang = rec.lang === 'km' ? 'km' : 'en';
+  /* the sentences s…e of the paragraph (Nov 2026, sentence highlights); -1 = the whole paragraph, as rows made before */
+  let sIdx = Math.floor(Number(rec.s)), eIdx = Math.floor(Number(rec.e));
+  if (!(sIdx >= 0 && sIdx <= 400)) { sIdx = -1; eIdx = -1; } else if (!(eIdx >= sIdx && eIdx <= 400)) eIdx = sIdx;
+  const sOf = function (r) { return typeof r.s === 'number' && r.s >= 0 ? r.s : -1; };
+  const eOf = function (r) { return sOf(r) >= 0 ? (typeof r.e === 'number' && r.e >= r.s ? r.e : r.s) : -1; };
   const color = LN_COLORS.indexOf(rec.color) > -1 ? rec.color : '';
   const note = String(str_(rec.note, LN_NOTE_MAX) || '').trim();
   const vis = LN_VIS.indexOf(rec.vis) > -1 ? rec.vis : 'private';
@@ -5066,7 +5071,7 @@ async function libNoteSave(username, pin, rec) {
   const now = new Date().toISOString();
   let saved = null, oldPrayer = '', wasMentor = false;
   const res = await mutateKey_('libHl', [], function (rows) {
-    let i = rows.findIndex(function (r) { return r && r.staffId === s.id && r.bookId === bookId && r.step === step && r.p === pIdx && r.lang === lang; });
+    let i = rows.findIndex(function (r) { return r && r.staffId === s.id && r.bookId === bookId && r.step === step && r.p === pIdx && r.lang === lang && sOf(r) === sIdx && eOf(r) === eIdx; });
     if (rec.id) { const j = rows.findIndex(function (r) { return r && r.id === rec.id; }); if (j === -1 || rows[j].staffId !== s.id) return { abort: true, ok: false, err: 'not_found' }; i = j; }
     if (!color && !note) {   // nothing left: the row goes
       if (i > -1) { oldPrayer = rows[i].prayerId || ''; rows.splice(i, 1); }
@@ -5074,8 +5079,10 @@ async function libNoteSave(username, pin, rec) {
     }
     if (i === -1) {
       if (lnMineCount_(s, rows) >= LN_PER_PERSON) return { abort: true, ok: false, err: 'too_many' };
-      rows.push({ id: 'ln_' + crypto.randomBytes(6).toString('hex'), staffId: s.id, campus: s.campus, bookId: bookId, title: title, lang: lang, step: step, p: pIdx,
-        quote: quote, color: color, note: note, vis: vis, prayerId: '', likes: [], comments: [], at: now, edited: '' });
+      const row = { id: 'ln_' + crypto.randomBytes(6).toString('hex'), staffId: s.id, campus: s.campus, bookId: bookId, title: title, lang: lang, step: step, p: pIdx,
+        quote: quote, color: color, note: note, vis: vis, prayerId: '', likes: [], comments: [], at: now, edited: '' };
+      if (sIdx >= 0) { row.s = sIdx; row.e = eIdx; }
+      rows.push(row);
       i = rows.length - 1;
     } else {
       const r = rows[i]; wasMentor = r.vis === 'mentor';
@@ -5912,7 +5919,7 @@ async function saveKmReview(username, pin, key, verdict, km) {
 function bootStaffCard_(s) {
   /* mentorStatus: their own — the page reads S.me.mentorStatus (whether their mentor has said yes); it was only on
      the profile, so every 1-on-1 with one's own mentor also showed in "Asking you" and leave said "Save this request" */
-  return selfStaff_(s, { mentorStatus: s.mentorStatus || '', isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), signIn: authKindOf_(s), google: !!s.google, hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '', langLevel: langMine_(s), seeLangLevels: canSeeLangLevels_(s), quickApps: Array.isArray(s.quickApps) ? s.quickApps : null });   // created: for My Home's first 30 days; quickApps: My Home's quick-apps bar
+  return selfStaff_(s, { mentorStatus: s.mentorStatus || '', isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), signIn: authKindOf_(s), google: !!s.google, hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '', langLevel: langMine_(s), seeLangLevels: canSeeLangLevels_(s), quickApps: Array.isArray(s.quickApps) ? s.quickApps : null, dashLayout: (s.dashLayout && typeof s.dashLayout === 'object') ? s.dashLayout : null });   // created: for My Home's first 30 days; quickApps: My Home's quick-apps bar
 }
 /* GP Tasks as an app of its own (tasks.html, Nov 2026, Andrew: "a separate app for our tasks and calendar …
    synced and linked to the main app"). It is the same data, so there is nothing to sync: this is the tasks
@@ -13265,6 +13272,31 @@ async function saveQuickApps(username, pin, ids) {
   });
   return r && r.ok ? { ok: true, quickApps: clean } : { ok: false };
 }
+/* My Home's whole dashboard card (Nov 2026, Andrew: "click, drag and move things around to the style you want … a little
+   plus sign … add in new things … certain things there by default, you can move them but you can't delete them"):
+   the person's own order of the quick apps, the widgets and the rows. Ids only; the page decides what each one is and
+   which can't be taken off (it puts those back if they are missing). null = the default. The apps are kept as
+   quickApps too, so an older page reads the same row. */
+function cleanIds_(a, re, max) {
+  return Array.isArray(a) ? a.map(function (k) { return String(k || ''); }).filter(function (k, i, x) { return re.test(k) && x.indexOf(k) === i; }).slice(0, max) : null;
+}
+async function saveDashLayout(username, pin, layout) {
+  const s = await verifyStaff_(username, pin); if (!s) return { ok: false };
+  let clean = null;
+  if (layout && typeof layout === 'object') {
+    clean = {
+      apps: cleanIds_(layout.apps, /^[a-z][a-z0-9:-]{0,39}$/, 10) || [],
+      widgets: cleanIds_(layout.widgets, /^[a-z]{2,20}$/, 8) || [],
+      rows: cleanIds_(layout.rows, /^[a-z]{2,20}$/, 6) || []
+    };
+  }
+  const r = await mutateStaff_(function (rows) {
+    const rec = rows.find(function (x) { return x.id === s.id; }); if (!rec) return { abort: true, ok: false };
+    if (clean) { rec.dashLayout = clean; rec.quickApps = clean.apps.slice(); } else { delete rec.dashLayout; delete rec.quickApps; }
+    return { ok: true };
+  });
+  return r && r.ok ? { ok: true, dashLayout: clean } : { ok: false };
+}
 async function saveGpTaskFilter(username, pin, keys) {
   const s = await gptAuth_(username, pin); if (!s) return { ok: false };
   const clean = Array.isArray(keys) ? keys.map(function (k) { return str_(k, 170); }).filter(Boolean).slice(0, 200) : null;
@@ -13866,6 +13898,7 @@ const HANDLERS = {
   catchHoliday: function (a) { return catchHoliday(a[0], a[1]); },
   catchSanta: function (a) { return catchSanta(a[0], a[1]); },
   saveQuickApps: function (a) { return saveQuickApps(a[0], a[1], a[2]); },
+  saveDashLayout: function (a) { return saveDashLayout(a[0], a[1], a[2]); },
   markSeen: function (a) { return markSeen(a[0], a[1], a[2]); },
   hrArchiveMany: function (a) { return hrArchiveMany(a[0], a[1], a[2], a[3]); },
   saveMyKpiDay: function (a) { return saveMyKpiDay(a[0], a[1], a[2], a[3]); },

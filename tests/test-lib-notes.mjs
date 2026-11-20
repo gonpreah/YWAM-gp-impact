@@ -48,6 +48,21 @@ ok('saved, and I see it', r.ok && r.notes.length === 1 && r.notes[0].color === '
 ok('nobody else sees a private highlight — not even the mentor', (await seeIds('mo')) === '' && (await seeIds('bo')) === '' && (await seeIds('ada')) === '');
 r = await call('libNoteSave', ['ana', '1234', Object.assign({ step: 1, p: 0, quote: 'Small habits add up.', color: 'green' }, base)]);
 ok('the same paragraph again changes my row, not a second one', r.notes.length === 1 && r.notes[0].id === hl && r.notes[0].color === 'green');
+/* sentences in a paragraph (Nov 2026): s…e; each pick its own row; -1 = the whole paragraph */
+{
+  const a = await call('libNoteSave', ['ana', '1234', Object.assign({ step: 3, p: 1, s: 2, e: 4, quote: 'Two sentences.', color: 'blue' }, base)]);
+  const b2 = await call('libNoteSave', ['ana', '1234', Object.assign({ step: 3, p: 1, s: 0, e: 0, quote: 'One.', color: 'pink' }, base)]);
+  const mineS = (mem.libHl || []).filter(r => r.staffId === 'a1' && r.step === 3 && r.p === 1);
+  ok('two picks in one paragraph are two rows, each with its sentences', a.ok && b2.ok && mineS.length === 2 && mineS.some(r => r.s === 2 && r.e === 4 && r.color === 'blue') && mineS.some(r => r.s === 0 && r.e === 0), JSON.stringify(mineS));
+  const back = (b2.notes || []).filter(n => n.mine && n.step === 3 && n.p === 1).map(n => [n.s, n.e]);
+  ok('… and the page gets them back with their sentences', JSON.stringify(back.sort()) === JSON.stringify([[0, 0], [2, 4]]), JSON.stringify(back));
+  await call('libNoteSave', ['ana', '1234', Object.assign({ step: 3, p: 1, s: 2, e: 4, color: 'green' }, base)]);
+  ok('the same pick again changes that row, not a new one', (mem.libHl || []).filter(r => r.staffId === 'a1' && r.step === 3 && r.p === 1).length === 2 && (mem.libHl || []).some(r => r.step === 3 && r.s === 2 && r.color === 'green'));
+  await call('libNoteSave', ['ana', '1234', Object.assign({ step: 3, p: 1, s: 7, e: 3, color: 'yellow' }, base)]);
+  ok('an end before the start is just the one sentence; nonsense is the whole paragraph', (mem.libHl || []).some(r => r.step === 3 && r.s === 7 && r.e === 7) &&
+    (await call('libNoteSave', ['ana', '1234', Object.assign({ step: 3, p: 2, s: 'x', color: 'yellow' }, base)])).ok && (mem.libHl || []).some(r => r.step === 3 && r.p === 2 && r.s === undefined));
+  for (const r of (mem.libHl || []).filter(r => r.step === 3)) await call('libNoteSave', ['ana', '1234', Object.assign({ id: r.id, step: 3, p: r.p, s: r.s, e: r.e, color: '' }, base)]);
+}
 ok('a bad colour is no colour; a shared row needs words', (await call('libNoteSave', ['ana', '1234', Object.assign({ step: 2, p: 0, color: 'red', vis: 'campus' }, base)])).err === 'need_note');
 ok('a bad book or place is refused', (await call('libNoteSave', ['ana', '1234', { bookId: '../x', step: 1, p: 0, color: 'yellow' }])).err === 'bad_book' &&
   (await call('libNoteSave', ['ana', '1234', Object.assign({ step: 99, p: 0, color: 'yellow' }, base)])).err === 'bad_place');

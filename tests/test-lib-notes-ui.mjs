@@ -98,12 +98,28 @@ const rows = () => mem.libHl || [];
   const { ctx, page } = await open('di');
   await reader(page, 1);
   ok('every paragraph of the page can be tapped', (await page.$$('#libReader .lnPara')).length >= 2);
-  await page.click('#libReader [data-lnp="0"]'); await page.waitForTimeout(200);
-  ok('a tap brings up the bar: four colours and Note', !!(await page.$('#lnBar')) && (await page.$$('#lnBar [data-lncolor]')).length === 4 && !!(await page.$('#lnNoteBtn')) && await page.$eval('#libReader [data-lnp="0"]', e => e.classList.contains('lnSel')));
+  /* sentences, not the whole paragraph (Nov 2026, Andrew: "highlight specific sentences") */
+  const sents = await page.$$eval('#libReader [data-lnp="0"] .lnS', els => Array.from(new Set(els.map(e => e.getAttribute('data-lns')))).length);
+  ok('each paragraph is cut into sentences you can tap', sents >= 3, String(sents));
+  await page.click('#libReader [data-lnp="0"] .lnS[data-lns="0"]'); await page.waitForTimeout(200);
+  ok('a tap on a sentence brings up the bar: four colours and Note, that sentence picked', !!(await page.$('#lnBar')) && (await page.$$('#lnBar [data-lncolor]')).length === 4 && !!(await page.$('#lnNoteBtn')) &&
+    await page.$$eval('#libReader [data-lnp="0"] .lnS', els => els.filter(e => e.classList.contains('lnSelS')).map(e => e.getAttribute('data-lns')).join()) === '0');
+  await page.click('#libReader [data-lnp="0"] .lnS[data-lns="1"]'); await page.waitForTimeout(200);
+  ok('a tap on the next sentence takes it in too', await page.$$eval('#libReader [data-lnp="0"] .lnS.lnSelS', els => Array.from(new Set(els.map(e => e.getAttribute('data-lns')))).join()) === '0,1');
   await page.click('#lnBar [data-lncolor="yellow"]'); await page.waitForTimeout(700);
-  ok('yellow: saved, private, and drawn in yellow', rows().length === 1 && rows()[0].color === 'yellow' && rows()[0].vis === 'private' && rows()[0].staffId === 'st5' && rows()[0].step === 1 && rows()[0].p === 0 &&
-    await page.$eval('#libReader [data-lnp="0"]', e => e.classList.contains('lnHl-yellow')), JSON.stringify(rows()[0]));
-  ok('… the quote is the paragraph’s words', rows()[0].quote.length > 20 && !/📝|💬/.test(rows()[0].quote));
+  const hl = await page.$$eval('#libReader [data-lnp="0"] .lnS', els => els.map(e => e.getAttribute('data-lns') + (e.classList.contains('lnHl-yellow') ? 'Y' : '')));
+  ok('yellow: saved, private, just those two sentences, drawn in yellow', rows().length === 1 && rows()[0].color === 'yellow' && rows()[0].vis === 'private' && rows()[0].staffId === 'st5' && rows()[0].step === 1 && rows()[0].p === 0 &&
+    rows()[0].s === 0 && rows()[0].e === 1 && hl.filter(x => /^[01]Y$/.test(x)).length >= 2 && !hl.some(x => /^[2-9]Y$/.test(x)) && !(await page.$eval('#libReader [data-lnp="0"]', e => e.classList.contains('lnHl'))), JSON.stringify([rows()[0], hl]));
+  const para = await page.$eval('#libReader [data-lnp="0"]', e => e.textContent);
+  ok('… the quote is those sentences’ words, not the whole paragraph', rows()[0].quote.length > 10 && rows()[0].quote.length < para.length - 5 && !/📝|💬/.test(rows()[0].quote), rows()[0].quote);
+  await page.click('#libReader [data-lnp="0"] .lnS[data-lns="2"]'); await page.waitForTimeout(200);
+  await page.click('#lnBar [data-lncolor="green"]'); await page.waitForTimeout(700);
+  ok('another sentence in the same paragraph is a highlight of its own', rows().length === 2 && rows().some(r => r.s === 2 && r.e === 2 && r.color === 'green') && rows().some(r => r.s === 0 && r.color === 'yellow'));
+  await page.click('#libReader [data-lnp="0"] .lnS[data-lns="1"]'); await page.waitForTimeout(200);
+  ok('tapping a sentence I marked picks what I marked, its colour ticked', await page.$$eval('#libReader [data-lnp="0"] .lnS.lnSelS', els => Array.from(new Set(els.map(e => e.getAttribute('data-lns')))).join()) === '0,1' && /✓/.test(await page.$eval('#lnBar [data-lncolor="yellow"]', e => e.textContent)));
+  await page.click('#lnBar [data-lncolor="yellow"]'); await page.waitForTimeout(700);
+  ok('… the same colour again takes it off; the green one stays', rows().length === 1 && rows()[0].s === 2 && rows()[0].color === 'green');
+  ok('… and once a colour is picked the pick is let go (the bar closes)', !(await page.$('#lnBar')));
   await page.click('#libReader [data-lnp="1"]'); await page.waitForTimeout(200);
   await page.click('#lnNoteBtn'); await page.waitForTimeout(200);
   ok('Note opens a sheet: the words, who sees it, ask for prayer', !!(await page.$('#lnSheet #lnText')) && (await page.$$('#lnSheet [data-lnvis]')).length === 3 && await page.$eval('#lnPray', e => e.disabled));
@@ -158,7 +174,7 @@ const rows = () => mem.libHl || [];
   const { ctx, page } = await open('ann');   // Di's mentor
   await reader(page, 1);
   ok('in the reader: 💬 1 on the paragraph with someone else’s note', /💬 1/.test(await page.$eval('#libReader [data-lnp="1"]', e => e.textContent)) && /💬 1/.test(await page.$eval('#libReader [data-lnp="2"]', e => e.textContent)));
-  ok('… my own highlights only: Di’s yellow is not drawn here', !(await page.$eval('#libReader [data-lnp="0"]', e => e.classList.contains('lnHl'))));
+  ok('… my own highlights only: Di’s green is not drawn here', !(await page.$eval('#libReader [data-lnp="0"]', e => e.classList.contains('lnHl') || !!e.querySelector('.lnHlS'))));
   await page.click('#libReader [data-lnp="2"]'); await page.waitForTimeout(200); await page.click('#lnParaBtn'); await page.waitForTimeout(200);
   ok('the mentor sees the note meant for them', /keep going when it is hard/.test(await page.$eval('#lnSheet', e => e.innerText)) && /My mentor/.test(await page.$eval('#lnSheet', e => e.innerText)));
   await ctx.close();

@@ -214,15 +214,47 @@ function libLast_(){ try { return JSON.parse(lsGet('gp-lib-last')||'null'); } ca
    book, or the Library. It used to be a card of its own under the summary card (#sec-reading). */
 function libHeroRowHtml_(){
   if(S.student || S.guest || S.board || S.stuPreview) return '';
-  var m=libOn_() && S.lib.month, last=libLast_(), read=libRead_(), go='', main='', sub='';
+  /* this month's book is not a fixture here any more — it comes now and then as a slide-down note (libNudgeItems_) */
+  var last=libLast_(), read=libRead_(), go='', main='', sub='';
   var pts=(S.game && S.game.ok && S.game.pts) ? S.game.pts.book : 0;
-  if(m && m.title && !read[m.bookId]){ go=m.bookId; main=gpT('This month: {title}',{title:m.title}); sub=gpT('{n} of {total} have read it',{n:m.readers, total:m.total}); }
-  else if(last && last.id && !read[last.id]){ go=last.id; main=gpT('Continue: {title}',{title:last.title}); sub=gpT('{n} of {m} pages',{n:Math.min(last.step+1, last.total), m:last.total}); }
+  if(last && last.id && !read[last.id]){ go=last.id; main=gpT('Continue: {title}',{title:last.title}); sub=gpT('{n} of {m} pages',{n:Math.min(last.step+1, last.total), m:last.total}); }
   else { main=t('Read a book'); sub=pts ? gpT('Ten minutes · {n} points',{n:pts}) : t('Ten minutes'); }
   var recs=libOn_() && S.lib.recs ? S.lib.recs.length : 0;
   return '<button class="heroRow heroRowGo libHeroRow" id="libHome" data-libhome="'+esc(go)+'" aria-label="'+esc(t('Library'))+'"><span class="gptRing">📚</span>'+
     '<div class="heroTrend libHeroText"><b class="heroFig">'+esc(main)+'</b> <span class="whoCap">· '+esc(sub)+'</span>'+
     (recs ? ' <span class="whoCap" id="libHomeRecs">· 💌 '+recs+'</span>' : '')+'</div><span class="heroGo" aria-hidden="true">›</span></button>';
+}
+
+/* This month's book and the books a teammate recommends, as notes that slide down from the top (Nov 2026, Andrew:
+   "instead of it just being stationary … every now and then, like a notification … hey, read this book this month").
+   Bell items like any other, so the slide-down reminder shows them and a tap opens the book: the month's book while it
+   is unread, on one day in LIB_NUDGE_EVERY (3) — which day is the person's own, so a campus isn't all nudged at once —
+   dated today, so Clear holds for the day; a recommendation once, dated when it came, until the book is read or the
+   recommendation cleared. The phone's own weekly reminder (Profile → Reminders, push.reading) is unchanged. */
+var LIB_NUDGE_EVERY=3;
+function libNudgeDay_(){
+  var d=Math.floor(Date.parse(todayStr()+'T00:00:00Z')/864e5), h=0, id=String((S.me && S.me.id) || '');
+  for(var i=0;i<id.length;i++) h=(h*31+id.charCodeAt(i))%9973;
+  return (d+h)%Math.max(1, LIB_NUDGE_EVERY)===0;
+}
+/* a recommendation's book by the Library's own title (in the reader's language) when the Library has loaded, else the title
+   it came with, else its id tidied ("atomic-habits" → "Atomic Habits") */
+function libNudgeTitle_(r){
+  var b=(typeof GP_LIBRARY!=='undefined' && typeof libById_==='function') ? libById_(r.bookId) : null;
+  if(b) return libTitle_(b);
+  return r.title || String(r.bookId||'').split('-').map(function(w){ return w ? w.charAt(0).toUpperCase()+w.slice(1) : w; }).join(' ');
+}
+function libNudgeItems_(){
+  var out=[]; if(typeof libOn_!=='function' || !libOn_()) return out;
+  var read=libRead_(), m=S.lib.month;
+  var btn=function(id){ return '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-libgo="'+esc(id)+'">'+esc(t('Read it'))+'</button>'; };
+  if(m && m.bookId && m.title && !read[m.bookId] && libNudgeDay_())
+    out.push({ when:todayStr(), text:'📚 '+gpT('This month’s book: {title} — a ten-minute read',{title:m.title}), actions:btn(m.bookId) });
+  (S.lib.recs||[]).forEach(function(r){
+    if(!r || !r.bookId || read[r.bookId]) return;
+    out.push({ when:String(r.at||todayStr()), text:'💌 '+gpT('{name} recommends a book to you: {title}',{name:(r.from && r.from.name) || '', title:libNudgeTitle_(r)}), actions:btn(r.bookId) });
+  });
+  return out;
 }
 
 /* ---------- a mentor's view of a mentee's reading ---------- */
@@ -355,34 +387,85 @@ function lnParas_(){
   return Array.prototype.filter.call(body.querySelectorAll('p, li'), function(el){ return !el.closest('.fightOv'); });
 }
 function lnAt_(rows, step, p, lang){ return (rows||[]).filter(function(n){ return n.step===step && n.p===p && n.lang===lang; }); }
+/* Sentences (Nov 2026, Andrew: "highlight specific sentences … not the whole page … and then put a note on that"): each
+   paragraph's text is cut into sentences once (`lnSplit_`: after . ! ? ។ ៕ and any closing quote, before a space or the
+   end), each piece a `span.lnS[data-lns=k]` — a sentence that crosses bold or italics is several spans with one k. A
+   row's place is its paragraph and the sentences s…e in it; a row with no s (made before this) is the whole paragraph. */
+var LN_END=/[.!?\u17D4\u17D5]+["'”’)\]]*(?=\s|$)/g;
+function lnSplit_(el){
+  if(el.getAttribute('data-lnsplit')) return;
+  el.setAttribute('data-lnsplit','1');
+  var k=0, w=document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), nodes=[], nd;
+  while((nd=w.nextNode())){ if(!nd.parentNode.closest('.lnMark')) nodes.push(nd); }
+  nodes.forEach(function(tn){
+    var txt=tn.nodeValue, parts=[], last=0, m; LN_END.lastIndex=0;
+    while((m=LN_END.exec(txt))){ var end=m.index+m[0].length; while(end<txt.length && /\s/.test(txt.charAt(end))) end++; parts.push([txt.slice(last, end), true]); last=end; if(m[0].length===0) LN_END.lastIndex++; }
+    if(last<txt.length) parts.push([txt.slice(last), false]);
+    var frag=document.createDocumentFragment();
+    parts.forEach(function(pc){
+      if(!/\S/.test(pc[0])){ frag.appendChild(document.createTextNode(pc[0])); return; }
+      var sp=document.createElement('span'); sp.className='lnS'; sp.setAttribute('data-lns', k); sp.textContent=pc[0]; frag.appendChild(sp);
+      if(pc[1]) k++;
+    });
+    tn.parentNode.replaceChild(frag, tn);
+  });
+}
+function lnSpans_(el, s, e){ return Array.prototype.filter.call(el.querySelectorAll('.lnS'), function(x){ var k=Number(x.getAttribute('data-lns')); return k>=s && k<=e; }); }
+function lnRange_(n){ return (n && typeof n.s==='number' && n.s>=0) ? [n.s, typeof n.e==='number' && n.e>=n.s ? n.e : n.s] : null; }
+function lnSame_(n, sel){ var r=lnRange_(n); return sel.s>=0 ? !!(r && r[0]===sel.s && r[1]===sel.e) : !r; }
+function lnSelText_(el, s, e){ return String((s>=0 ? lnSpans_(el, s, e).map(function(x){ return x.textContent; }).join('') : el.textContent)||'').replace(/📝|💬 \d+/g,'').replace(/\s+/g,' ').trim().slice(0, 400); }
 function lnDecorate_(){
   var b=libById_(S.libBook); if(!b || S.libStep==null || !lnOn_()) return;
   var rows=lnRows_(b.id), lang=lnLang_(b);
   lnParas_().forEach(function(el, i){
     el.setAttribute('data-lnp', i);
     el.classList.add('lnPara');
-    LN_COLORS.forEach(function(c){ el.classList.remove('lnHl-'+c); }); el.classList.remove('lnHl'); el.classList.toggle('lnSel', !!(S.ln.sel && S.ln.sel.step===S.libStep && S.ln.sel.p===i));
     Array.prototype.forEach.call(el.querySelectorAll('.lnMark'), function(m){ m.parentNode.removeChild(m); });
-    var here=lnAt_(rows, S.libStep, i, lang), mine=here.filter(function(n){ return n.mine; })[0], others=here.filter(function(n){ return !n.mine && n.note; });
-    if(mine && mine.color) el.classList.add('lnHl', 'lnHl-'+mine.color);
+    lnSplit_(el);
+    var sel=S.ln.sel && S.ln.sel.step===S.libStep && S.ln.sel.p===i ? S.ln.sel : null;
+    LN_COLORS.forEach(function(c){ el.classList.remove('lnHl-'+c); }); el.classList.remove('lnHl'); el.classList.toggle('lnSel', !!(sel && !(sel.s>=0)));
+    Array.prototype.forEach.call(el.querySelectorAll('.lnS'), function(x){ x.className='lnS'; });
+    var here=lnAt_(rows, S.libStep, i, lang), mine=here.filter(function(n){ return n.mine; }), others=here.filter(function(n){ return !n.mine && n.note; });
+    /* my colours: a whole-paragraph row on the paragraph, sentence rows on their sentences (the later one wins) */
+    mine.forEach(function(n){ if(!n.color) return; var r=lnRange_(n);
+      if(!r) el.classList.add('lnHl', 'lnHl-'+n.color);
+      else lnSpans_(el, r[0], r[1]).forEach(function(x){ LN_COLORS.forEach(function(c){ x.classList.remove('lnHl-'+c); }); x.classList.add('lnHlS', 'lnHl-'+n.color); }); });
+    if(sel && sel.s>=0) lnSpans_(el, sel.s, sel.e).forEach(function(x){ x.classList.add('lnSelS'); });
     var marks='';
-    if(mine && mine.note) marks+='<span class="lnMark" aria-hidden="true">📝</span>';
+    if(mine.some(function(n){ return n.note; })) marks+='<span class="lnMark" aria-hidden="true">📝</span>';
     if(others.length) marks+='<span class="lnMark lnMarkN" aria-label="'+esc(gpT('{n} notes from others',{n:others.length}))+'">💬 '+others.length+'</span>';
     if(marks) el.insertAdjacentHTML('beforeend', marks);
-    el.onclick=function(e){ if(e.target.closest('a,button')) return; gpTap(); lnSelect_(i, el); };
+    el.onclick=function(e){ if(e.target.closest('a,button')) return; var sp=e.target.closest('.lnS'); gpTap(); lnSelect_(i, el, sp ? Number(sp.getAttribute('data-lns')) : -1); };
   });
 }
-function lnSelect_(i, el){
-  if(S.ln.sel && S.ln.sel.step===S.libStep && S.ln.sel.p===i){ S.ln.sel=null; }
-  else S.ln.sel={ step:S.libStep, p:i, quote:String((el.textContent||'').replace(/📝|💬 \d+/g,'')).trim().slice(0, 400) };
+/* A tap picks one sentence; more taps in the same paragraph stretch it to take in the sentences between (a tap on an
+   end of the pick lets that sentence go); a tap on a sentence I already marked picks what I marked; a tap off the
+   sentences picks the paragraph. */
+function lnSelect_(i, el, k){
+  var cur=S.ln.sel && S.ln.sel.step===S.libStep && S.ln.sel.p===i ? S.ln.sel : null;
+  var b=libById_(S.libBook), lang=b ? lnLang_(b) : 'en';
+  if(k<0){ S.ln.sel = cur && !(cur.s>=0) ? null : { step:S.libStep, p:i, s:-1, e:-1 }; }
+  else if(cur && cur.s>=0){
+    if(cur.s===k && cur.e===k) S.ln.sel=null;
+    else if(k===cur.s) cur.s++;
+    else if(k===cur.e) cur.e--;
+    else if(k<cur.s) cur.s=k;
+    else if(k>cur.e) cur.e=k;
+    else { cur.s=k; cur.e=k; }
+  } else {
+    var mark=lnAt_(b ? lnRows_(b.id) : [], S.libStep, i, lang).filter(function(n){ var r=lnRange_(n); return n.mine && r && k>=r[0] && k<=r[1]; }).pop();
+    var r=lnRange_(mark);
+    S.ln.sel={ step:S.libStep, p:i, s:r ? r[0] : k, e:r ? r[1] : k };
+  }
+  if(S.ln.sel) S.ln.sel.quote=lnSelText_(el, S.ln.sel.s, S.ln.sel.e);
   S.ln.sheet=null; lnDecorate_(); lnDraw_();
 }
-function lnMineAt_(){ var b=libById_(S.libBook), s=S.ln.sel; if(!b || !s) return null; return lnAt_(lnRows_(b.id), s.step, s.p, lnLang_(b)).filter(function(n){ return n.mine; })[0] || null; }
-/* save my row for the selected paragraph: what is there now with these changes */
+function lnMineAt_(){ var b=libById_(S.libBook), s=S.ln.sel; if(!b || !s) return null; return lnAt_(lnRows_(b.id), s.step, s.p, lnLang_(b)).filter(function(n){ return n.mine && lnSame_(n, s); })[0] || null; }
+/* save my row for what is picked: what is there now with these changes */
 function lnSaveSel_(change, after){
   var b=libById_(S.libBook), s=S.ln.sel; if(!b || !s) return;
   var mine=lnMineAt_() || {};
-  var rec=Object.assign({ id:mine.id||'', bookId:b.id, title:libTitle_(b), lang:lnLang_(b), step:s.step, p:s.p, quote:mine.quote||s.quote,
+  var rec=Object.assign({ id:mine.id||'', bookId:b.id, title:libTitle_(b), lang:lnLang_(b), step:s.step, p:s.p, s:s.s>=0 ? s.s : -1, e:s.s>=0 ? s.e : -1, quote:s.quote||mine.quote,
     color:mine.color||'', note:mine.note||'', vis:mine.vis||'private', prayer:!!mine.prayer }, change);
   lnCall_('libNoteSave', [rec], b.id, after);
 }
@@ -467,7 +550,7 @@ function lnDraw_(){
 function lnBind_(root, b){
   var on=function(id, f){ var e=root.querySelector('#'+id); if(e) e.onclick=f; };
   Array.prototype.forEach.call(root.querySelectorAll('[data-lncolor]'), function(x){ x.onclick=function(){ gpTap(); var c=x.getAttribute('data-lncolor'), mine=lnMineAt_();
-    lnSaveSel_({ color: mine && mine.color===c ? '' : c }); }; });   // the same colour again takes it off
+    lnSaveSel_({ color: mine && mine.color===c ? '' : c }, function(){ S.ln.sel=null; }); }; });   // the same colour again takes it off; the pick is let go, as in a Bible app
   on('lnBarX', function(){ gpTap(); lnClose_(); });
   on('lnNoteBtn', function(){ gpTap(); var m=lnMineAt_() || {}; S.ln.draft={ id:m.id||'', quote:m.quote||S.ln.sel.quote, color:m.color||'', note:m.note||'', vis:m.vis||'private', prayer:!!m.prayer }; S.ln.sheet='edit'; lnDraw_(); var x=document.getElementById('lnText'); if(x) x.focus(); });
   on('lnParaBtn', function(){ gpTap(); S.ln.sheet='para'; lnDraw_(); });
@@ -483,11 +566,11 @@ function lnBind_(root, b){
     var change={ id:D.id, note:D.note, vis:D.vis, prayer:D.vis!=='private' && D.prayer, color:D.color };
     var done=function(){ S.ln.sheet=null; S.ln.draft=null; showMsg(D.vis==='private' ? t('Saved — only you see it') : D.vis==='mentor' ? t('Shared with your mentor') : t('Shared with your campus')); };
     if(S.ln.sel) lnSaveSel_(change, done);
-    else { var n=lnNote_(D.id); if(!n) return; lnCall_('libNoteSave', [Object.assign({ bookId:n.bookId, title:n.title, lang:n.lang, step:n.step, p:n.p, quote:n.quote }, change)], n.bookId, done); }
+    else { var n=lnNote_(D.id); if(!n) return; var rg=lnRange_(n); lnCall_('libNoteSave', [Object.assign({ bookId:n.bookId, title:n.title, lang:n.lang, step:n.step, p:n.p, s:rg ? rg[0] : -1, e:rg ? rg[1] : -1, quote:n.quote }, change)], n.bookId, done); }
   });
   on('lnClear', function(){ var D=S.ln.draft; if(!D || !gpAsk_(t('Remove your note? Its comments go too.'))) return;
     var n=lnNote_(D.id); if(!n) return;
-    lnCall_('libNoteSave', [{ id:n.id, bookId:n.bookId, title:n.title, lang:n.lang, step:n.step, p:n.p, quote:n.quote, color:n.color, note:'', vis:'private', prayer:false }], n.bookId, function(){ S.ln.sheet=null; S.ln.draft=null; }); });
+    var rg=lnRange_(n); lnCall_('libNoteSave', [{ id:n.id, bookId:n.bookId, title:n.title, lang:n.lang, step:n.step, p:n.p, s:rg ? rg[0] : -1, e:rg ? rg[1] : -1, quote:n.quote, color:n.color, note:'', vis:'private', prayer:false }], n.bookId, function(){ S.ln.sheet=null; S.ln.draft=null; }); });
   lnBindCards_(root);
   var ct=root.querySelector('#lnCmtText'); if(ct) ct.oninput=function(){ S.ln.cmt=ct.value; };
   on('lnCmtSend', function(){ var txt=String((root.querySelector('#lnCmtText')||{}).value||'').trim(); if(!txt) return; var n=lnNote_(S.ln.noteId); if(!n) return;
@@ -501,13 +584,13 @@ function lnBindCards_(root){
   Array.prototype.forEach.call(root.querySelectorAll('[data-lnthread]'), function(x){ x.onclick=function(e){ e.stopPropagation(); gpTap(); S.ln.noteId=x.getAttribute('data-lnthread'); S.ln.sheet='thread'; lnDraw_(); var c=document.getElementById('lnCmtText'); if(c && x.closest('.lnSheet')) c.focus(); }; });
   Array.prototype.forEach.call(root.querySelectorAll('[data-lnedit]'), function(x){ x.onclick=function(e){ e.stopPropagation(); gpTap(); var n=lnNote_(x.getAttribute('data-lnedit')); if(!n) return;
     S.ln.draft={ id:n.id, quote:n.quote, color:n.color, note:n.note, vis:n.vis, prayer:!!n.prayer };
-    if(S.libStep!=null && n.step===S.libStep) S.ln.sel={ step:n.step, p:n.p, quote:n.quote }; else S.ln.sel=null;
+    var rg=lnRange_(n); if(S.libStep!=null && n.step===S.libStep) S.ln.sel={ step:n.step, p:n.p, s:rg ? rg[0] : -1, e:rg ? rg[1] : -1, quote:n.quote }; else S.ln.sel=null;
     S.ln.sheet='edit'; lnDraw_(); }; });
   Array.prototype.forEach.call(root.querySelectorAll('[data-lndel]'), function(x){ x.onclick=function(e){ e.stopPropagation(); var n=lnNote_(x.getAttribute('data-lndel')); if(!n) return;
     if(!gpAsk_(n.mine ? t('Delete this note? Its comments and prayer request go too.') : t('Take this note down for everyone?'))) return;
     lnCall_('libNoteDelete', [n.id], n.bookId, function(){ S.ln.sheet=null; S.ln.noteId=''; }); }; });
   Array.prototype.forEach.call(root.querySelectorAll('[data-lngo]'), function(x){ x.onclick=function(e){ e.stopPropagation(); gpTap(); var n=lnNote_(x.getAttribute('data-lngo')); if(!n) return;
-    S.ln.sheet=null; S.ln.noteId=''; libGo_(n.step); S.ln.sel={ step:n.step, p:n.p, quote:n.quote }; lnDecorate_(); lnDraw_();
+    var rg=lnRange_(n); S.ln.sheet=null; S.ln.noteId=''; libGo_(n.step); S.ln.sel={ step:n.step, p:n.p, s:rg ? rg[0] : -1, e:rg ? rg[1] : -1, quote:n.quote }; lnDecorate_(); lnDraw_();
     var el=document.querySelector('#libReader [data-lnp="'+n.p+'"]'); if(el && el.scrollIntoView) el.scrollIntoView({ block:'center' }); }; });
   Array.prototype.forEach.call(root.querySelectorAll('.lnCard[data-lnnote]'), function(c){ if(c.classList.contains('full')) return; c.onclick=function(e){ if(e.target.closest('button,a')) return; var n=lnNote_(c.getAttribute('data-lnnote')); if(!n || n.vis==='private') return; gpTap(); S.ln.noteId=n.id; S.ln.sheet='thread'; lnDraw_(); }; });
 }
@@ -519,7 +602,7 @@ function lnBookHtml_(b){
   if(!rows){ lnLoad_(b.id); return S.ln.err[b.id] ? '' : '<div class="libHead2"><h3>💬 '+esc(t('Notes and highlights'))+'</h3></div><p class="pmeta" id="lnBook">'+esc(t('Loading…'))+'</p>'; }
   var mine=rows.filter(function(n){ return n.mine; }), others=rows.filter(function(n){ return !n.mine && n.note; });
   var h='<div class="libHead2"><h3>💬 '+esc(t('Notes and highlights'))+'</h3></div><div id="lnBook">';
-  if(!rows.length) h+='<p class="pmeta lnEmpty">'+esc(t('Tap any paragraph while you read to highlight it or write a note — keep it to yourself, share it with your mentor, or with your campus.'))+'</p>';
+  if(!rows.length) h+='<p class="pmeta lnEmpty">'+esc(t('Tap a sentence while you read (tap more to take in the ones next to it) to highlight it or write a note — keep it to yourself, share it with your mentor, or with your campus.'))+'</p>';
   if(others.length) h+='<div class="libKicker">👥 '+esc(gpT('From {campus}',{campus:campusName(S.me.campus)}))+'</div>'+others.map(function(n){ return lnCardHtml_(n); }).join('');
   if(mine.length) h+='<div class="libKicker" style="margin-top:10px">🖍 '+esc(gpT('Mine · {n}',{n:mine.length}))+'</div>'+mine.map(function(n){ return lnCardHtml_(n, true); }).join('');
   return h+'</div>';

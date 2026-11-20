@@ -1182,7 +1182,8 @@ too long for a tab, `navLabel_` uses a short one kept as 'Tab: <English>' in km.
 ## My Home — the layout (reorganised Oct 2026)
 **Made simpler, Nov 2026 (Andrew: "I don't want it to be too much to see … like the widgets on an iPhone … if the
 leave form is already in there, why is it on twice?")** — each thing is on My Home once:
-- **The dark card** is: the quick apps (the dock), then **four widgets in one row** (`heroWidgetsHtml_`,
+- **The dark card** (arranged by each person since Nov 2026 — see "My Home's dashboard card, arranged like a phone's Home
+  Screen") is: the quick apps (the dock), then **four widgets in one row** (`heroWidgetsHtml_`,
   `.heroWidgets`, `.heroW`): Goals (this week's done/written, `data-jump="sec-goals"`), Habits (today's,
   `data-jump="sec-habits"`), Health (`#goMyHealth`, the weekly check-in score), Tasks (`#goGpTasks`, the Inbox's red
   number, else the open count, quiet) — three when GP Tasks hasn't loaded; then this week's chores / cooking line,
@@ -2275,6 +2276,14 @@ none of it (`libOn_()`).
 ## The Library: highlights, notes and talking about them (end of teams/18-library-plus.js, Nov 2026, Andrew)
 "Like the Bible app … highlight things you like … write a note … private, or public for everyone in our base … comment on it,
 like it … ask for prayer — private, public, or just to your mentor."
+- **Sentences, not whole paragraphs** (Nov 2026, Andrew: "highlight specific sentences … and then from there you can put a
+  note on that"): `lnSplit_` cuts each paragraph once into `span.lnS[data-lns=k]` (after . ! ? ។ ៕ and any closing quote,
+  before a space; a sentence crossing bold or italics is several spans with one k). A tap picks a sentence; more taps in
+  the paragraph stretch the pick over the sentences between (a tap on an end lets it go); a tap on a sentence I marked
+  picks what I marked (`lnSelect_`). The pick is underlined (`.lnSelS`), a colour paints just its spans (`.lnHlS`) and
+  then lets the pick go. A row carries `s` / `e` (the sentences; `libNoteSave` matches on them, -1 or absent = the whole
+  paragraph, as rows made before; `lnOut_` sends them), so one paragraph can hold several highlights and notes of mine.
+  `lnRange_`, `lnSame_`, `lnSpans_`; tests in test-lib-notes(-ui).mjs. Khmer §122.
 - **In the reader** every paragraph can be tapped (`lnDecorate_` numbers `.libReaderBody` p / li in page order, outside
   `.fightOv`: `data-lnp`; a row's place is bookId + step + p + the language read): a bar comes up (`#lnBar`) with four
   colours (`LN_COLORS`), 📝 Note (`#lnNoteBtn`) and 💬 n when others wrote there (`#lnParaBtn`). My highlights are drawn in
@@ -2354,18 +2363,37 @@ the phone, and English left in Khmer. What it found, and the rules that came out
   browser without the flag it is sent at once. Only GP Tasks uses it so far.
 - tests/test-ux-ui.mjs. Khmer: docs/khmer-needed.md §111. sw.js SHELL v24.
 
-## Quick apps on My Home (end of teams/19-ux.js, Nov 2026, Andrew: "small little app icons in the dashboard … customise it like a hotbar … hold and move the icons around")
-- A row of small icons at the top of My Home's summary card (`qaBarHtml_`, `#qaBar`, `.qaItem[data-qa]`, `[data-qago]`), each a
-  page from the person's own ☰ menu and search (`qaCatalog_` = `gpFindPages_()` minus bottom-bar tabs and the sign-out items,
-  `QA_SKIP`; kept in `S.qaCat` by user and language, dropped on every `applyBoot`) — so it can never offer a page their role
-  doesn't have. Short names under the icons (`QA_SHORT`: Calendar, Language, Leave…). Default (`QA_DEFAULT`): GP
-  Calendar/Tasks, Library, Learn Khmer, Leave, Prayer.
-- **Arranging**: hold an icon (`QA_HOLD_MS` 450) or tap ✎ Edit (`#qaEditBtn`) → `S.qaEdit`: the icons wiggle, ✕ takes one off
-  (`[data-qarm]`), ＋ Add (`#qaAdd` → `#qaAddSheet`, `[data-qapick]`) adds from the rest, drag one sideways to move it
-  (`qaDrag_`, pointer events; `touch-action:none` only while arranging), Done (`#qaDone`). Up to `QA_MAX` (10).
-- **Saved on the staff record** as `quickApps` (ids only) by `saveQuickApps(user, pin, ids)` (well-formed ids, once each, ten at
-  most; null = the default), a moment after each change (`qaSoon_`); the boot's own staff card carries it, never the roster.
-- tests/test-quick-apps-ui.mjs. Khmer: docs/khmer-needed.md §117.
+## My Home's dashboard card, arranged like a phone's Home Screen (end of teams/19-ux.js, Nov 2026, Andrew)
+"Small little app icons in the dashboard … customise it like a hotbar", then: "make the little edit button smaller in the
+corner … when you click and hold down an app, the whole dashboard would wiggle a little bit … click, drag and move things
+around … a little plus sign … add in new things … certain things we just want there by default, so you can move them around
+but you can't delete them."
+- **Three groups, each in the person's own order** (`dashLayout_`, drawn by `dashBodyHtml_` into the card from
+  `miniDashboardHtml`): the quick apps (`#qaBar`, `.qaItem[data-qa]`, `[data-qago]`; what can go there is the person's own ☰
+  menu and search, `qaCatalog_` = `gpFindPages_()` minus bottom-bar tabs and sign-out items — never a page their role doesn't
+  have; short names `QA_SHORT`), the widgets (`#dashWidgets`, `.dashItem[data-dashw]` around a `.heroW`; `dashWidget_`), and
+  the rows (`#dashRows`, `.dashRow[data-dashrow]`: `sched` this week's chores / cooking, `reading`, `base` the base at a
+  glance with On campus as its fourth figure).
+- **What came with the card stays**: the five quick apps (`DASH_LOCKED_APPS` = `QA_DEFAULT`: GP Calendar/Tasks, Library,
+  Learn Khmer, Leave, Prayer), the four widgets (`DASH_W_LOCKED`: Goals, Habits, Health, Tasks) and every row can be moved,
+  never taken off — no ✕, and put back if a saved layout lacks them. What the person adds has ✕: apps from their menu, and
+  widgets from `DASH_W_EXTRA` — Days off (personal days left → Leave), Mentor (1-on-1s held this month of
+  `OO_PER_MONTH` → Mentorship), Streak (days in a row → the week's board), Books (books read against their year's goal →
+  the Library), Year goals (average % → Goals & Tasks), each opening through `data-dashgo` (`dashGo_`). Up to `QA_MAX` (10)
+  apps and `DASH_W_MAX` (8) widgets; the grid is four across and wraps.
+- **Editing**: hold anything on the card (`DASH_HOLD_MS` 450) or tap the small ✎ in its top corner (`#qaEditBtn`,
+  `.dashPencil`) → `S.qaEdit`: the card gets `.dashEditing` and everything on it wiggles (`dashWiggle`, rows a gentler
+  `dashWiggleRow`, every other one out of step; off under reduced motion); a bar on top has ＋ (`#qaAdd` → `#qaAddSheet`:
+  Widgets, then Apps, `[data-qapick="w:id" | "a:id"]`) and Done (`#qaDone`). Drag within a group to move (`dashDrag_`:
+  pointer events on the window, since moving the node can drop its pointer capture; the card is `touch-action:none` only
+  while editing). While editing, a tap on the card's things does nothing, and the tap that ends a hold never opens what was
+  held (`dashSwallow_`, a capturing click listener on the document).
+- **Saved on the staff record** as `dashLayout` `{apps, widgets, rows}` by `saveDashLayout(user, pin, layout)`
+  (well-formed ids once each, 10 / 8 / 6 at most; null = the default; the apps also as `quickApps`, which the older
+  `saveQuickApps` still writes) a moment after each change (`dashSoon_`) and at once on Done; the boot's own staff card
+  carries both, never the roster.
+- tests/test-quick-apps-ui.mjs (Playwright needs `{force:true}` to click something that is wiggling). Khmer:
+  docs/khmer-needed.md §117, §121.
 
 ## The week's board (teams/20-game.js, Nov 2026, Uriah: "gamify the app … a daily driver rather than a weekly check-in thing")
 Borrowed from the GonPreah public app's leaderboard. **Nothing new is stored**: `gameBoard_(s, staff, campus)` (api.js
@@ -2421,9 +2449,14 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
 - **Reading is one small row in My Home's summary card** (Nov 2026, Andrew: "move that into the little dashboard … make
   it small … a little book icon … read a book"; before that it was its own Reading card under the summary card):
   `libHeroRowHtml_` (end of 18-library-plus.js, `#libHome`, `.libHeroRow`, after the GP Tasks row) — 📚 and one line:
-  this month's book while unread ("This month: …", "n of N have read it"), else the book you were in ("Continue: …",
-  "n of m pages"), else "Read a book · Ten minutes · 30 points"; "💌 n" when books were recommended to you. A tap
-  (`data-libhome`) opens that book, or the Library.
+  the book you were in ("Continue: …", "n of m pages"), else "Read a book · Ten minutes · 30 points"; "💌 n" when books
+  were recommended to you. A tap (`data-libhome`) opens that book, or the Library.
+- **This month's book is a note now and then, not a fixture** (Nov 2026, Andrew: "instead of it just being stationary …
+  every now and then, like a notification … hey, read this book this month"): `libNudgeItems_` (18-library-plus.js) adds
+  bell items, so the slide-down reminder shows them and a tap ("Read it", `[data-libgo]`) opens the book — the month's book
+  while unread on one day in `LIB_NUDGE_EVERY` (3), the person's own day (`libNudgeDay_`, from their id, so a campus isn't
+  all nudged at once), dated today; and each book a teammate recommended (`💌 … recommends a book to you`, title through
+  `libNudgeTitle_`), dated when it came, until read or cleared. The phone's weekly reminder (`push.reading`) is unchanged.
 - **The page**: My Home has one line above the summary card (`gameHomeHtml_`, `#gameHome`: 🔥 streak · ⭐ points · #place,
   the week's dots; tap → the board). **Team → 🏆 This week** (`S.teamMode='game'`, `gameTeamHtml_`): the campus together
   first ("n of N active this week"), my three figures with "Where my points came from" folded, People / Ministries, the

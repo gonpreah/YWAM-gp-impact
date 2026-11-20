@@ -89,7 +89,7 @@ const SERVER = [
 const BROWSER = [
   'test-ux-ui.mjs',            // ☀️ Today on My Home, 🔍 search from the header, the app's own Yes / Cancel sheet, Undo on a deleted task
   'test-game-ui.mjs',          // the week's board on the page: My Home's line, Team → This week, Khmer
-  'test-quick-apps-ui.mjs',    // My Home's quick apps: hold to arrange, add, take off, drag; saveQuickApps
+  'test-quick-apps-ui.mjs',    // My Home's dashboard: hold or ✎ to edit, wiggle, drag, ＋ widgets and apps; saveDashLayout
   'test-polish-ui.mjs',        // a 320px phone and Khmer: profile / sign-up labels and pop-ups in Khmer, leave dates, Learn Khmer and the header fit, holiday names readable
   'test-library-club-ui.mjs',  // the Library, read together, on the page: search, topics, a plan, finishing a book, the month's book, recommending, a mentor's plan
   'test-lib-notes-ui.mjs',  // the Library's highlights and notes on the page: tap a paragraph, highlight, note, share, like, comment, pray

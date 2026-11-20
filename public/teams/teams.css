@@ -3416,7 +3416,7 @@ body.findOn { overflow:hidden; }
 .libHeroRow .gptRing { font-size:19px; }
 
 /* ---------- My Home's quick apps (19-ux.js, Nov 2026) ---------- */
-.qaBar { display:flex; gap:4px; overflow-x:auto; margin:-4px -6px 10px; padding:2px 2px 6px; scrollbar-width:none; touch-action:pan-x pan-y; }
+.qaBar { display:flex; gap:4px; overflow-x:auto; margin:-4px 22px 10px -6px; padding:2px 2px 6px; scrollbar-width:none; touch-action:pan-x pan-y; }
 .qaBar::-webkit-scrollbar { display:none; }
 .qaItem { position:relative; flex:0 0 auto; }
 .qaBtn { display:flex; flex-direction:column; align-items:center; gap:4px; width:58px; padding:4px 0; background:none; border:0; color:var(--onDark); font:inherit; cursor:pointer;
@@ -3426,27 +3426,19 @@ body.findOn { overflow:hidden; }
 .qaIc .findEmoji { font-size:19px; }
 .qaLabel { font-size:10.5px; line-height:1.15; color:var(--onDarkFaint); max-width:58px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .qaPlus { background:transparent; border:1.5px dashed rgba(255,255,255,.35); font-size:17px; color:var(--onDark); }
-.qaBar.edit { touch-action:none; }
-.qaBar.edit .qaItem[data-qa] .qaIc { animation:qaWiggle .32s ease-in-out infinite alternate; }
-.qaBar.edit .qaItem.drag { z-index:2; }
-.qaBar.edit .qaItem.drag .qaIc { animation:none; box-shadow:0 6px 16px rgba(0,0,0,.35); }
-@keyframes qaWiggle { from { transform:rotate(-3deg); } to { transform:rotate(3deg); } }
 .qaX { position:absolute; top:-2px; right:2px; width:20px; height:20px; border-radius:50%; border:0; background:var(--surface); color:var(--ink); font-size:14px; line-height:20px; padding:0; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.3); }
-.qaEditBar { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:-4px 0 10px; font-size:12px; color:var(--onDarkFaint); }
 .qaDone { background:var(--accent); color:var(--accentInk); border:0; border-radius:999px; padding:6px 14px; font:inherit; font-weight:700; font-size:13px; cursor:pointer; }
 .qaPick { display:flex; flex-direction:column; }
 .qaPickRow { display:flex; align-items:center; gap:12px; padding:9px 2px; background:none; border:0; border-top:1px solid var(--border); color:var(--ink); font:inherit; text-align:left; cursor:pointer; }
 .qaPickRow .qaIc { width:34px; height:34px; border-radius:11px; background:var(--surface2); color:var(--ink); }
 .qaPickRow span:nth-child(2) { flex:1 1 auto; }
 .qaPickAdd { color:var(--accent); font-weight:700; }
-@media (prefers-reduced-motion: reduce) { .qaBar.edit .qaItem[data-qa] .qaIc { animation:none; } }
 
 /* faint words in the summary card's rows sit on the dark card: the on-dark faint colour, not the paper's (AA) */
 .myHero .heroRow .whoCap { color:var(--onDarkFaint); opacity:1; }
 
 /* ---------- My Home's card as widgets (02-goals-okrs.js heroWidgetsHtml_, Nov 2026) ---------- */
 .heroWidgets { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px; margin:2px 0 4px; }
-.heroWidgets.three { grid-template-columns:repeat(3, minmax(0,1fr)); }
 .heroW { display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0; padding:10px 2px 8px; border:0; border-radius:14px; background:rgba(255,255,255,.07); color:var(--onDark); font-family:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
 .heroW:active { opacity:.75; }
 .hero .heroWRing.gRing { width:46px; height:46px; }
@@ -3464,3 +3456,39 @@ button.homeBaseHead { width:100%; padding:0; border:0; background:none; color:in
 .homeBaseCell { display:flex; flex-direction:column; align-items:flex-start; min-width:0; padding:0; border:0; background:none; color:inherit; font-family:inherit; font-size:11.5px; text-align:left; overflow-wrap:anywhere; cursor:pointer; }
 .homeBaseCell.homeWhos { margin-top:0; }
 .homeBaseCell .whoCap { font-size:10.5px; font-weight:600; color:var(--onDarkFaint); opacity:1; }
+
+/* ---------- My Home's dashboard, arranged like an iPhone's Home Screen (19-ux.js, Nov 2026) ---------- */
+.myHero { position:relative; }
+.dashPencil { position:absolute; top:10px; right:10px; z-index:2; width:26px; height:26px; padding:0; border:0; border-radius:50%;
+  background:rgba(255,255,255,.12); color:var(--onDark); font:inherit; font-size:13px; line-height:26px; cursor:pointer; }
+.dashPencil:active { opacity:.7; }
+.dashEditBar { display:flex; align-items:center; gap:10px; margin:-4px 0 10px; }
+.dashPlus { flex:0 0 auto; width:30px; height:30px; padding:0; border:0; border-radius:50%; background:var(--surface); color:var(--ink);
+  font:inherit; font-size:18px; font-weight:800; line-height:30px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.3); }
+.dashEditHint { flex:1 1 auto; min-width:0; font-size:11.5px; color:var(--onDarkFaint); }
+.dashItem { position:relative; min-width:0; display:flex; }
+.dashItem > .heroW { flex:1 1 auto; }
+.dashRow { position:relative; }
+.myHero.dashEditing { touch-action:none; -webkit-user-select:none; user-select:none; }
+.myHero .qaItem, .myHero .dashItem, .myHero .dashRow { -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
+.myHero.dashEditing .qaItem, .myHero.dashEditing .dashItem { animation:dashWiggle .3s ease-in-out infinite alternate; cursor:grab; }
+.myHero.dashEditing .qaItem:nth-child(even), .myHero.dashEditing .dashItem:nth-child(even) { animation-duration:.27s; animation-direction:alternate-reverse; }
+.myHero.dashEditing .dashRow { animation:dashWiggleRow .34s ease-in-out infinite alternate; cursor:grab; }
+.myHero.dashEditing .dashRow:nth-child(even) { animation-direction:alternate-reverse; }
+.myHero.dashEditing .drag { animation:none; z-index:3; transform:scale(1.08); opacity:.92; cursor:grabbing; }
+.myHero.dashEditing .dashRow.drag { transform:scale(1.02); }
+@keyframes dashWiggle { from { transform:rotate(-2.2deg); } to { transform:rotate(2.2deg); } }
+@keyframes dashWiggleRow { from { transform:rotate(-.35deg); } to { transform:rotate(.35deg); } }
+.dashItem .qaX { top:-6px; right:-4px; z-index:2; }
+.qaPickHead { margin:14px 2px 4px; font-size:12px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:var(--muted); }
+.qaPickRow .qaPickW { background:var(--headerBg); }
+.qaPickRow .qaPickW .heroWRing.gRing { width:30px; height:30px; }
+.qaPickRow .qaPickW .heroWRing.gRing::after { inset:3px; background:var(--headerBg); }
+.qaPickRow .qaPickW .heroWRing.gRing span { font-size:9px; color:var(--onDark); }
+.qaPickRow .qaPickW .heroWIcon { width:30px; height:30px; }
+@media (prefers-reduced-motion: reduce) { .myHero.dashEditing .qaItem, .myHero.dashEditing .dashItem, .myHero.dashEditing .dashRow { animation:none; } }
+
+/* sentence highlights in the reader (18-library-plus.js, Nov 2026) */
+.lnS { border-radius:3px; -webkit-box-decoration-break:clone; box-decoration-break:clone; }
+.lnS.lnHlS { padding:1px 0; }
+.lnS.lnSelS { box-shadow:0 2px 0 0 var(--accent); background:rgba(31,68,255,.10); }

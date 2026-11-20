@@ -5746,3 +5746,36 @@ The fourth figure under the campus's name on My Home's dark card — how many ar
 | English | Khmer (draft) |
 |---|---|
 | On campus | នៅក្នុងបរិវេណ |
+
+## 121. My Home: arranging the dashboard like a phone's Home Screen
+
+Hold anything on My Home's dark card (or tap its small ✎) and it wiggles: drag to move, ＋ adds widgets and apps, ✕ takes off what you added. The widget names (Streak, Books, Year goals, Days off) sit under a small ring — very little room. "Widgets" and "Apps" head the two lists on the ＋ sheet.
+
+| English | Khmer (draft) |
+|---|---|
+| Streak | ជាប់ៗគ្នា |
+| Widgets | ប្រអប់ព័ត៌មាន |
+| Apps | កម្មវិធី |
+| Year goals | គោលដៅឆ្នាំ |
+| Add to your dashboard | បន្ថែមទៅផ្ទាំងរបស់អ្នក |
+| Arrange your dashboard | រៀបចំផ្ទាំងរបស់អ្នក |
+| Drag to move · ✕ takes off what you added | អូសដើម្បីផ្លាស់ទី · ✕ ដកចេញនូវអ្វីដែលអ្នកបានបន្ថែម |
+| The dashboard is full — take one off first. | ផ្ទាំងពេញហើយ — សូមដកមួយចេញសិន។ |
+| Every widget is on your dashboard already. | ប្រអប់ព័ត៌មានទាំងអស់មាននៅលើផ្ទាំងរបស់អ្នករួចហើយ។ |
+| Personal days off left | ថ្ងៃឈប់សម្រាកផ្ទាល់ខ្លួននៅសល់ |
+| Days in a row | ថ្ងៃជាប់ៗគ្នា |
+| Books read | សៀវភៅដែលបានអាន |
+
+A note that slides down from the top when a teammate recommends a book (💌 goes before it).
+
+| English | Khmer (draft) |
+|---|---|
+| {name} recommends a book to you: {title} | {name} ណែនាំសៀវភៅមួយក្បាលដល់អ្នក៖ {title} |
+
+## 122. The Library: highlighting sentences
+
+The hint on a book's page before anyone has highlighted anything. Sentences are picked by tapping them in the reader.
+
+| English | Khmer (draft) |
+|---|---|
+| Tap a sentence while you read (tap more to take in the ones next to it) to highlight it or write a note — keep it to yourself, share it with your mentor, or with your campus. | ចុចលើប្រយោគមួយពេលអ្នកកំពុងអាន (ចុចបន្ថែមដើម្បីយកប្រយោគនៅជាប់គ្នា) ដើម្បីគូសពណ៌ ឬសរសេរកំណត់ចំណាំ — ទុកសម្រាប់ខ្លួនឯង ចែករំលែកជាមួយអ្នកណែនាំ ឬជាមួយបរិវេណរបស់អ្នក។ |
