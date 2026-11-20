@@ -420,7 +420,7 @@ function lnDraw_(){
   if(S.ln.sel && S.libStep!=null && S.ln.sel.step===S.libStep && !S.ln.sheet){
     var mine=lnMineAt_(), others=lnAt_(lnRows_(b.id), S.ln.sel.step, S.ln.sel.p, lnLang_(b)).filter(function(n){ return !n.mine && n.note; });
     h+='<div class="lnBar" id="lnBar" role="toolbar" aria-label="'+esc(t('Highlight'))+'">'+
-      LN_COLORS.map(function(c){ var on=mine && mine.color===c; return '<button class="lnDot lnHl-'+c+(on?' on':'')+'" data-lncolor="'+c+'" aria-pressed="'+(on?'true':'false')+'" aria-label="'+esc(t(c==='yellow'?'Yellow':c==='green'?'Green':c==='blue'?'Blue':'Pink'))+'">'+(on?'✓':'')+'</button>'; }).join('')+
+      LN_COLORS.map(function(c){ var on=mine && mine.color===c; return '<button class="lnDot lnHl-'+c+(on?' on':'')+'" data-lncolor="'+c+'" aria-pressed="'+(on?'true':'false')+'" aria-label="'+esc([t('Yellow'),t('Green'),t('Blue'),t('Pink')][LN_COLORS.indexOf(c)])+'">'+(on?'✓':'')+'</button>'; }).join('')+
       '<button class="lnBarBtn" id="lnNoteBtn">📝 '+esc(mine && mine.note ? t('My note') : t('Note'))+'</button>'+
       (others.length ? '<button class="lnBarBtn" id="lnParaBtn">💬 '+others.length+'</button>' : '')+
       '<button class="lnBarX" id="lnBarX" aria-label="'+esc(t('Close'))+'">×</button></div>';
