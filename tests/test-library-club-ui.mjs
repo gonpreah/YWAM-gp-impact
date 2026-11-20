@@ -158,8 +158,7 @@ const rec = (id) => mem.staff.find((s) => s.id === id);
 /* ---------- 3. Bo: My Home says so; the recommendation is waiting ---------- */
 {
   const { ctx, page } = await open('bo');
-  const home = await page.$eval('#libHome', (e) => e.innerText).catch(() => '');
-  ok('My Home’s Reading row no longer holds this month’s book (it comes now and then as a note) — 💌 still says a book was recommended', !/This month/.test(home) && /💌 1/.test(home) && await page.$eval('#libHome', (e) => !!e.closest('.myHero')), home.replace(/\s+/g, ' '));
+  ok('My Home has no Reading row any more (Nov 2026: this month’s book and recommendations come now and then as notes)', !(await page.$('#libHome')));
   /* the month's book on one day in LIB_NUDGE_EVERY, the person's own; a recommendation every day until read or cleared */
   const nudge = await page.evaluate(() => { const on = notifItems_().map((i) => i.text); LIB_NUDGE_EVERY = 1; const every = notifItems_().map((i) => i.text); LIB_NUDGE_EVERY = 3; return { on, every, day: libNudgeDay_() }; });
   ok('the bell carries this month’s book as a note — on the person’s own days, not every day', nudge.every.some((x) => /This month’s book: Atomic Habits/.test(x)) && (nudge.day === nudge.on.some((x) => /This month’s book/.test(x))), JSON.stringify(nudge));

@@ -248,8 +248,12 @@ function libNudgeItems_(){
   var out=[]; if(typeof libOn_!=='function' || !libOn_()) return out;
   var read=libRead_(), m=S.lib.month;
   var btn=function(id){ return '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-libgo="'+esc(id)+'">'+esc(t('Read it'))+'</button>'; };
-  if(m && m.bookId && m.title && !read[m.bookId] && libNudgeDay_())
+  var day=libNudgeDay_(), last=libLast_();
+  if(m && m.bookId && m.title && !read[m.bookId] && day)
     out.push({ when:todayStr(), text:'📚 '+gpT('This month’s book: {title} — a ten-minute read',{title:m.title}), actions:btn(m.bookId) });
+  /* the book they were in — now and then, not a fixture on My Home (Nov 2026, Andrew) */
+  else if(last && last.id && last.title && !read[last.id] && day)
+    out.push({ when:todayStr(), text:'📖 '+gpT('Pick up where you left off: {title}',{title:last.title}), actions:btn(last.id) });
   (S.lib.recs||[]).forEach(function(r){
     if(!r || !r.bookId || read[r.bookId]) return;
     out.push({ when:String(r.at||todayStr()), text:'💌 '+gpT('{name} recommends a book to you: {title}',{name:(r.from && r.from.name) || '', title:libNudgeTitle_(r)}), actions:btn(r.bookId) });

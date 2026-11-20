@@ -63,6 +63,7 @@ const SERVER = [
   'test-app-use.mjs',        // Admin → App use: the days each person opened the app (once a day, 90 kept) and saved a habit; admins only; only dates; the campus's active staff
   'test-tasks-app.mjs',      // GP Tasks as an app of its own: getTasksBoot is its one call (who you are, the roster, the tasks, the month only when asked, nothing of the main page); tasks.html is built from teams.html; its manifest, icons, the worker and the deploy
   'test-signin-link.mjs',     // getting back in: an admin's one-time sign-in link (single use, runs out, replaced by a new one, no hash out), a PIN reset on a password account, an admin setting an email
+  'test-demo.mjs',   // the preview (Look around): the app's own handlers on a made-up campus — the real store never opened, only the made-up person signs in, nothing kept
   'test-google-signin.mjs',   // signing in with Google: a Gmail written another way on the profile (capitals, dots, a +tag) still finds it, exact first; the email in the username box the same; whether Google's page-and-back way is on
   'test-dts-db.mjs', // GPDTS → Database: schools and what is filed under each, the policy, lectures' translator / MC / who finds the speaker, students from the portal with their 1-on-1, outreach teams' weeks counted
   'test-portal.mjs',     // YWAM GP Portal: applicant sign-up, applicants closed out of every staff handler and roster, own application only, portal access flags, timeline follows the CRM stage
@@ -98,7 +99,7 @@ const BROWSER = [
   'test-khmer-learn-ui.mjs',   // Learn Khmer: the data, cards / quiz / match, readings, the game, grammar, the level test
   'test-library-ui.mjs',  // Menu → Library: loads when opened, covers or drawn ones, shelves, book page, read ticks, Khmer, retry
   'test-library-audio-ui.mjs', // 🎧 reads the screen aloud (phone's voice stood in), turns the page, ⏸, speed kept, stops on close, Khmer needs a Khmer voice
-  'test-guest-ui.mjs',    // Look around without an account: the tour, the whole Library, Base (counts, no names), Team/Health locked, no credentials ever sent
+  'test-guest-ui.mjs',    // Look around without an account: the preview — the app itself on a made-up campus, the real Library, the real store untouched, no credentials ever sent
   'test-required-ui.mjs', // books-read tally, "Finish your profile", read + sign with a drawn signature, admin view, HR → Required
   'test-ministry-tools-ui.mjs', // My week: log, partners, reflection, base plants; Cafe: open, till, counters, expenses, rota, close, set up; Khmer at 320px
   'test-p360-ui.mjs',        // 360 reviews on the page: start with quick picks, answer (a board login too), close, results, plan from a growth area, the quarter's review, share
@@ -162,6 +163,7 @@ const BROWSER = [
   'test-app-use-ui.mjs',     // Admin → App use (bands, dots, filter, CSV, the note while the history is short) and the weekly health check-in on Tuesdays (My Home's card, the bell, the Health tab)
   'test-tasks-app-ui.mjs',  // GP Tasks as an app of its own: tasks.html opens on Tasks with one call, a two-tab bar, its own kept copy; a task added there is the main app's; the Calendar remembered; ☰ and Log out; the install card; the main app's way to it; back from Google's page on to it
   'test-signin-link-ui.mjs',  // getting back in: the whole email on Admin → a person, an Email box, Make a sign-in link; opening it signs them in and asks for Google with Not now; a bad link says so; the sign-in screen says to ask an admin
+  'test-signup-setup-ui.mjs', // making an account is Google and a name; after an admin's yes, "Set up my profile" asks campus, ministry, kind of staff, country, mentor and the staff contract, one a screen
   'test-google-signin-ui.mjs', // signing in with Google made smoother: no profile for that Google account → connect it to theirs (no duplicate sign-up); Google won't open → help, the PIN, continue for today; inside Messenger → open in Chrome / copy the link; Google's page and back on an iPhone Home Screen app
   'test-gp-tasks.mjs',  // GP Tasks: ministry/department/personal lists, who sees and changes what, requests, Campus Leadership, the filter, board cards
   'test-gp-tasks-ui.mjs',  // GP Tasks in the browser: lists, Enter to add, day/time/person, the bell, asking another ministry, My Ministry's tab, the board card

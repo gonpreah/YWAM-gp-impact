@@ -194,6 +194,7 @@ var _gpBan={ timer:0, hide:0, last:0, cur:null };
 function gpBannerOn_(){
   if(!S.me || S.guest || S.student || S.board || S.stuPreview || !S.auth || !S.auth.user) return false;
   if(S.bootStale || S.offlineSince || S.view==='login') return false;
+  if(S.awaiting || (typeof setupWanted_==='function' && setupWanted_())) return false;   // the setup steps and the waiting page
   if(typeof gpTasksApp_==='function' && gpTasksApp_()) return false;
   if(navigator.webdriver && !lsGet('gp-banner-test')) return false;
   return true;
@@ -282,12 +283,13 @@ function gpBannerOpen_(){
      (`dashSwallow_`), and the tap that ends a hold never opens what was held.
    - Saved with `saveDashLayout` (`{apps, widgets, rows}`, on the staff record; the apps also as `quickApps`) a moment
      after each change (`dashSoon_`), and at once on Done. */
-var QA_DEFAULT=['caltasks','library','khmer','leave','prayer'], QA_MAX=10, QA_HOLD_MS=450, DASH_HOLD_MS=450;
+var QA_DEFAULT=['caltasks','library','khmer','leave'], QA_MAX=10, QA_HOLD_MS=450, DASH_HOLD_MS=450;
 var QA_SKIP={ applogout:1, boardlogout:1, stuexit:1, openapp:1, stuportal:1, guestreg:1, guestlogin:1 };
 var DASH_LOCKED_APPS=QA_DEFAULT;
 var DASH_W_LOCKED=['goals','habits','health','tasks'];
 var DASH_W_EXTRA=['daysoff','mentor','streak','books','yeargoals'];
-var DASH_ROWS=['sched','reading','base'];
+var DASH_ROWS=['sched','base'];          // the rows that come with the card
+var DASH_ROW_EXTRA=['reading'];          // a row someone can add (Nov 2026: the book suggestions became notes; the reading row is off unless added)
 var DASH_W_MAX=8;
 /* the bar's own short names, so a name fits under its icon (the menu's full name is the button's label for a screen reader) */
 var QA_SHORT={ caltasks:'Calendar', khmer:'Language', leave:'Leave', mycontract:'My contract', whoshere:'Who’s here', goals:'Goals', mentor:'Mentor', p360:'360 reviews' };
@@ -309,11 +311,21 @@ function dashLayout_(){
   DASH_LOCKED_APPS.forEach(function(id){ if(apps.indexOf(id)<0) apps.push(id); });
   var widgets=dashUniq_(Array.isArray(L.widgets) ? L.widgets : DASH_W_LOCKED).filter(function(id){ return DASH_W_LOCKED.indexOf(id)>-1 || DASH_W_EXTRA.indexOf(id)>-1; });
   DASH_W_LOCKED.forEach(function(id){ if(widgets.indexOf(id)<0) widgets.push(id); });
-  var rows=dashUniq_(Array.isArray(L.rows) ? L.rows : DASH_ROWS).filter(function(id){ return DASH_ROWS.indexOf(id)>-1; });
+  var rows=dashUniq_(Array.isArray(L.rows) ? L.rows : DASH_ROWS).filter(function(id){ return DASH_ROWS.indexOf(id)>-1 || DASH_ROW_EXTRA.indexOf(id)>-1; });
+  if(!L.v) rows=rows.filter(function(id){ return id!=='reading'; });   // a layout saved before v2 had the reading row only because it came with the card
   DASH_ROWS.forEach(function(id){ if(rows.indexOf(id)<0) rows.push(id); });
-  return { apps:apps.slice(0, QA_MAX), widgets:widgets.slice(0, DASH_W_MAX), rows:rows };
+  /* the order of the blocks — the apps, the widgets and each row — any way round (Nov 2026, Andrew: "drag … the morning
+     chores … to the very top … mix and match") */
+  var all=['apps','widgets'].concat(rows.map(function(r){ return 'row:'+r; }));
+  var order=dashUniq_(Array.isArray(L.order) ? L.order : []).filter(function(b){ return all.indexOf(b)>-1; });
+  all.forEach(function(b){ if(order.indexOf(b)<0) order.push(b); });
+  return { apps:apps.slice(0, QA_MAX), widgets:widgets.slice(0, DASH_W_MAX), rows:rows, order:order, v:2 };
 }
-function dashSet_(L){ S.me.dashLayout={ apps:L.apps.slice(), widgets:L.widgets.slice(), rows:L.rows.slice() }; S.me.quickApps=L.apps.slice(); dashSoon_(); }
+function dashSet_(L){
+  var rows=L.rows.slice(), order=L.order.filter(function(b){ return b.indexOf('row:')!==0 || rows.indexOf(b.slice(4))>-1; });
+  rows.forEach(function(r){ if(order.indexOf('row:'+r)<0) order.push('row:'+r); });
+  S.me.dashLayout={ apps:L.apps.slice(), widgets:L.widgets.slice(), rows:rows, order:order, v:2 }; S.me.quickApps=L.apps.slice(); dashSoon_();
+}
 function qaChosen_(){
   var cat=qaCatalog_(), by={}; cat.forEach(function(p){ by[p.id]=p; });
   return dashLayout_().apps.filter(function(id){ return by[id]; }).map(function(id){ return by[id]; });
@@ -387,10 +399,11 @@ function qaBarHtml_(){
 }
 
 /* ---- the rows ---- */
-function dashRowHtml_(id){
+function dashRowHtml_(id, edit){
   var inner = id==='sched' ? (typeof dutyHtml==='function' ? schedHomeHtml_() : '') : id==='reading' ? libHeroRowHtml_() : id==='base' ? homeBaseHtml_() : '';
-  return inner ? '<div class="dashRow" data-dashrow="'+id+'">'+inner+'</div>' : '';
+  return inner ? '<div class="dashRow" data-dashrow="'+id+'">'+inner+(edit && DASH_ROW_EXTRA.indexOf(id)>-1 ? dashX_('r', id, t(DASH_ROW_NAME[id]||id)) : '')+'</div>' : '';
 }
+var DASH_ROW_NAME={ sched:'Chores and cooking', reading:'Reading', base:'The base at a glance' };
 
 /* ---- the card ---- */
 function dashBodyHtml_(c){
@@ -401,9 +414,12 @@ function dashBodyHtml_(c){
         '<span class="dashEditHint">'+esc(t('Drag to move · ✕ takes off what you added'))+'</span>'+
         '<button class="qaDone" id="qaDone">'+esc(t('Done'))+'</button></div>'
     : '<button class="dashPencil" id="qaEditBtn" aria-label="'+esc(t('Arrange your dashboard'))+'">✎</button>';
-  h+=qaBarHtml_();
-  h+=dashWidgetsHtml_(c, L, edit);
-  h+='<div id="dashRows">'+L.rows.map(dashRowHtml_).join('')+'</div>';
+  /* each block can go anywhere: in edit mode the apps and the widgets have a grip to move the whole group by; a row is moved by itself */
+  var grip=function(label){ return edit ? '<span class="dashGrip" aria-hidden="true">⠿ '+esc(label)+'</span>' : ''; };
+  h+='<div id="dashBlocks">'+L.order.map(function(b){
+    var inner = b==='apps' ? (qaBarHtml_() ? grip(t('Apps'))+qaBarHtml_() : '') : b==='widgets' ? grip(t('Widgets'))+dashWidgetsHtml_(c, L, edit) : dashRowHtml_(b.slice(4), edit);
+    return inner ? '<div class="dashBlock" data-dashblock="'+esc(b)+'">'+inner+'</div>' : '';
+  }).join('')+'</div>';
   return h;
 }
 
@@ -413,11 +429,13 @@ function qaAddSheetHtml_(){
   var ws=DASH_W_EXTRA.filter(function(id){ return L.widgets.indexOf(id)<0; }).map(function(id){ return { id:id, w:dashWidget_(id, dashCtx_()) }; }).filter(function(x){ return x.w; });
   var apps=cat.filter(function(p){ return L.apps.indexOf(p.id)<0; });
   var wFull=L.widgets.length>=DASH_W_MAX, aFull=L.apps.length>=QA_MAX;
+  var rs=DASH_ROW_EXTRA.filter(function(id){ return L.rows.indexOf(id)<0; });
   return '<div class="scrim" id="qaAddScrim" style="z-index:74"></div><div class="gtSheet" id="qaAddSheet" role="dialog" style="z-index:75">'+
     '<div class="gtSheetHead"><b>'+esc(t('Add to your dashboard'))+'</b></div>'+
     '<div class="qaPickHead">'+esc(t('Widgets'))+'</div>'+
     (ws.length && !wFull ? '<div class="qaPick">'+ws.map(function(x){ return '<button class="qaPickRow" data-qapick="w:'+x.id+'"><span class="qaIc qaPickW">'+x.w.inner+'</span><span>'+esc(x.w.title)+'</span><span class="qaPickAdd">＋</span></button>'; }).join('')+'</div>'
       : '<p class="sub">'+esc(wFull ? t('The dashboard is full — take one off first.') : t('Every widget is on your dashboard already.'))+'</p>')+
+    (rs.length ? '<div class="qaPickHead">'+esc(t('Rows'))+'</div><div class="qaPick">'+rs.map(function(id){ return '<button class="qaPickRow" data-qapick="r:'+id+'"><span class="qaIc">📚</span><span>'+esc(t(DASH_ROW_NAME[id]))+'</span><span class="qaPickAdd">＋</span></button>'; }).join('')+'</div>' : '')+
     '<div class="qaPickHead">'+esc(t('Apps'))+'</div>'+
     (apps.length && !aFull ? '<div class="qaPick">'+apps.map(function(p){ return '<button class="qaPickRow" data-qapick="a:'+esc(p.id)+'">'+qaIconHtml_(p)+'<span>'+esc(p.label)+'</span><span class="qaPickAdd">＋</span></button>'; }).join('')+'</div>'
       : '<p class="sub">'+esc(aFull ? t('The dashboard is full — take one off first.') : t('Everything is on your bar already.'))+'</p>')+'</div>';
@@ -488,11 +506,13 @@ function bindQuickApps_(){
     var v=b.getAttribute('data-dashrm'), kind=v.slice(0,1), id=v.slice(2), L=dashLayout_();
     if(kind==='a' && DASH_LOCKED_APPS.indexOf(id)<0) L.apps=L.apps.filter(function(x){ return x!==id; });
     if(kind==='w' && DASH_W_LOCKED.indexOf(id)<0) L.widgets=L.widgets.filter(function(x){ return x!==id; });
+    if(kind==='r' && DASH_ROWS.indexOf(id)<0) L.rows=L.rows.filter(function(x){ return x!==id; });
     dashSet_(L); render(); }; });
   if(S.qaEdit){
     dashDrag_(document.getElementById('qaBar'), '.qaItem[data-qa]', 'data-qa', function(ids){ var L=dashLayout_(); L.apps=ids; dashSet_(L); });
     dashDrag_(document.getElementById('dashWidgets'), '.dashItem[data-dashw]', 'data-dashw', function(ids){ var L=dashLayout_(); L.widgets=ids.concat(L.widgets.filter(function(x){ return ids.indexOf(x)<0; })); dashSet_(L); });
-    dashDrag_(document.getElementById('dashRows'), '.dashRow[data-dashrow]', 'data-dashrow', function(ids){ var L=dashLayout_(); L.rows=ids.concat(L.rows.filter(function(x){ return ids.indexOf(x)<0; })); dashSet_(L); });
+    dashDrag_(document.getElementById('dashBlocks'), '.dashBlock[data-dashblock]', 'data-dashblock', function(ids){ var L=dashLayout_(); L.order=ids.concat(L.order.filter(function(x){ return ids.indexOf(x)<0; })); dashSet_(L); },
+      function(e){ return !!e.target.closest('.dashGrip, .dashRow'); });   // a whole block moves by its grip, or a row by itself — an app or a widget moves within its own group
   }
 }
 function qaAddOpen_(){
@@ -504,31 +524,33 @@ function qaAddOpen_(){
     var v=b.getAttribute('data-qapick'), kind=v.slice(0,1), id=v.slice(2), L=dashLayout_();
     if(kind==='a' && L.apps.indexOf(id)<0 && L.apps.length<QA_MAX) L.apps.push(id);
     if(kind==='w' && L.widgets.indexOf(id)<0 && L.widgets.length<DASH_W_MAX) L.widgets.push(id);
+    if(kind==='r' && L.rows.indexOf(id)<0){ L.rows.push(id); L.order.push('row:'+id); }
     dashSet_(L); shut(); render(); }; });
 }
 /* dragging within one group: the held thing lifts, and the others make room as it passes over them. The window has
    the pointer while dragging, because moving the node in the page can drop the element's own pointer capture. */
-function dashDrag_(box, sel, attr, done){
+function dashDrag_(box, sel, attr, done, startOk){
   if(!box) return;
   Array.prototype.forEach.call(box.querySelectorAll(sel), function(it){
     it.addEventListener('pointerdown', function(e){
       if(e.target.closest('.qaX')) return;
+      if(startOk && !startOk(e)) return;
       e.preventDefault();
       var moved=false, x0=e.clientX, y0=e.clientY;
       it.classList.add('drag');
       var move=function(ev){
         if(Math.abs(ev.clientX-x0)>4 || Math.abs(ev.clientY-y0)>4) moved=true;
-        var sibs=Array.prototype.filter.call(box.querySelectorAll(sel), function(x){ return x!==it; }), over=null, best=1e9;
+        var sibs=Array.prototype.filter.call(box.children, function(x){ return x!==it && x.matches(sel); }), over=null, best=1e9;
         sibs.forEach(function(x){ var r=x.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2, d=Math.hypot(ev.clientX-cx, ev.clientY-cy);
           var inside=ev.clientX>=r.left && ev.clientX<=r.right && ev.clientY>=r.top && ev.clientY<=r.bottom; if(inside && d<best){ best=d; over=x; } });
         if(!over) return;
-        var all=Array.prototype.slice.call(box.querySelectorAll(sel));
+        var all=Array.prototype.filter.call(box.children, function(x){ return x.matches(sel); });
         if(all.indexOf(it)<all.indexOf(over)) box.insertBefore(it, over.nextSibling); else box.insertBefore(it, over);
       };
       var up=function(){
         window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
         it.classList.remove('drag');
-        if(moved) done(Array.prototype.map.call(box.querySelectorAll(sel), function(x){ return x.getAttribute(attr); }));
+        if(moved) done(Array.prototype.filter.call(box.children, function(x){ return x.matches(sel); }).map(function(x){ return x.getAttribute(attr); }));
       };
       window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
     });

@@ -939,6 +939,36 @@ school's home.
   chip row under the campus chips (`#adminGglRow`, `[data-adminggl]`, `S.adminGgl`): the active, unarchived accounts
   with no Google account connected (`adminStaffOut_` carries `google` — true once `google.sub` is set — and
   `signIn`, never the Google id), each row tagged 🔑 PIN only. tests/test-admin-select.mjs, test-google-signin.mjs.
+- **Making an account is Google and a name; the rest comes after the admin's yes** (Nov 2026, Andrew: "make it simple,
+  just … your Gmail and … your name. And then once … it's been approved by the admin, then it'll go over the steps …
+  what ministry are you in and what kind of campus staff are you and did you fill out your staff contract"):
+  - `registerHtml` (07-health-leave.js) is **Sign up with Google** (`#googleSignup` → `gglGo_('signup')`; a Google
+    account with no profile goes straight to the name, `#regGoogle` + `#r_name`, not the "do you already have one?"
+    choice) — or, with Google off or "No Google account?" (`#regPinWay`, `S.regPin`), name, email, username and PIN.
+    Nothing else is asked; an invite link's campus / department / ministry ride along unseen. Then a thank-you
+    (`regDoneHtml_`, `#regDone`, `S.regDone`).
+  - `staffRegister` marks every new account `setupTodo` and `awaiting` (and drops a campus that isn't one); `selfStaff_`
+    carries `setupTodo` on their own card only. Admin → Approvals shows the email and, until they answer, "They choose
+    their campus and ministry once you say yes".
+  - **Signed in at once, locked until approved** (Andrew, the same day: "it will log them into the app … you put in all
+    the information … but you still can't access the other parts of the app until the admin approves"):
+    `staffRegister`, `staffLoginGoogle` and `staffLogin` answer an `awaiting` account with a session (`awaitingOut_`); only
+    `getMyBoot` / `getTasksBoot` (`awaitingBoot_`: their card, the public roster for the mentor pick, nothing else),
+    `updateProfile` (no mentor push while waiting) take it, through `verifyAwaiting_` — every other handler still refuses
+    an inactive account. `adminSetActive(…, true)` deletes `awaiting`, so an account switched off later has no way in.
+    The page (`applyBoot` → `S.awaiting`): the steps, then the waiting page (`awaitingHtml_`, `#awaiting`: thank you,
+    their answers, `#awaitEdit` Change my answers, `#awaitCheck` Check again → a fresh boot, `#awaitOut`); no bar, menu,
+    bell, slide-downs or points. The tasks app says to open the main app.
+  - **Set up my profile** (`teams/22-setup.js`, `setupWanted_` / `setupHtml_` / `bindSetup_`, `#setup[data-sustep]`):
+    right after sign-up (and for any account with `setupTodo`), in place of the app (no bottom bar, header only the language) — a welcome, then
+    `SU_STEPS` one a screen with a bar and Back: campus (`[data-sucampus]`, a tap goes on), department + ministry + role
+    (`#su_dept`, `#su_ministry`, `#su_role`; Campus Leadership still waits for an admin), kind of staff
+    (`[data-sukind]`), home country (`#su_country`), mentor (`#su_mentor`, this campus first, "choose later"), and the
+    staff contract — "Have you signed it with HR?" (`[data-sucontract]`; Not yet → tell HR, who fill it out with you)
+    with the Child Protection Agreement and papers pointed to My contract. Nothing is saved until **Finish**: one
+    `updateProfile` with `setupDone` (which deletes `setupTodo`); while waiting, the waiting page; else "You're all set!" with Add a photo / Sign my
+    papers / Go to My Home (`[data-sudone]` → `afterLogin()`, a fresh boot on their campus). The tasks app says to
+    finish in the main app (`setupTaHtml_`). tests/test-signup-setup-ui.mjs. Khmer: docs/khmer-needed.md §123.
 - **Every new account waits for an admin** (Andrew: "admin will receive an approval whether they accept
   them or deny them"): `staffRegister` makes every sign-up pending (it used to be Campus Leadership only),
   pushes each admin at once (`pushNow_` 'signup' → `teams.html?view=approvals`), and Admin → Approvals has
@@ -1411,7 +1441,12 @@ names, a `span` row (Pray – Announcements) has one `cells['row|all']`, `off` d
   in `test-portal-page.mjs`.
 
 ## Admin — a home menu, one page per tool, one page per person
-`adminHtml` routes on `S.adminSub`: `home` (a card per tool, `ADMIN_SUBS`, with counts on
+**In sections** (Nov 2026, Andrew: "a lot going on there … categorizing them into sections … easy to navigate"): the home
+(`adminHomeHtml_`) is a "waiting for you" row first (`#adminDue`: approvals and leave waiting, only when there are any,
+else "Nothing is waiting on you."), then `ADMIN_SECS` — People · Students & applications · Ministries & numbers ·
+Messages & settings (`.adminSecHead`, `[data-adminsec]`) — each tool a row with one short line (`ADMIN_SUBS[].sec`), the
+backup line last. Tool ids and `[data-adminsub]` are unchanged.
+`adminHtml` routes on `S.adminSub`: `home` (a row per tool, `ADMIN_SUBS`, with counts on
 Accounts, Approvals and Mentors), `accounts`, `approvals`, `mentors` (`adminMentorsHtml_`:
 one campus at a time via `data-adminmentorcampus` chips opening on the admin's own, one card
 per mentor with their people, `Waiting` until accepted, then everyone with no mentor —
@@ -2372,10 +2407,14 @@ but you can't delete them."
   `miniDashboardHtml`): the quick apps (`#qaBar`, `.qaItem[data-qa]`, `[data-qago]`; what can go there is the person's own ☰
   menu and search, `qaCatalog_` = `gpFindPages_()` minus bottom-bar tabs and sign-out items — never a page their role doesn't
   have; short names `QA_SHORT`), the widgets (`#dashWidgets`, `.dashItem[data-dashw]` around a `.heroW`; `dashWidget_`), and
-  the rows (`#dashRows`, `.dashRow[data-dashrow]`: `sched` this week's chores / cooking, `reading`, `base` the base at a
-  glance with On campus as its fourth figure).
-- **What came with the card stays**: the five quick apps (`DASH_LOCKED_APPS` = `QA_DEFAULT`: GP Calendar/Tasks, Library,
-  Learn Khmer, Leave, Prayer), the four widgets (`DASH_W_LOCKED`: Goals, Habits, Health, Tasks) and every row can be moved,
+  the rows (`.dashRow[data-dashrow]`: `sched` this week's chores / cooking, `base` the base at a glance with On campus as its
+  fourth figure; `reading` only when added — `DASH_ROW_EXTRA`, ✕ to take it off; layouts saved before `v:2` lose it).
+- **Blocks, any way round** (Nov 2026, Andrew: "drag … the morning chores … to the very top … mix and match"): the card is
+  `#dashBlocks` > `.dashBlock[data-dashblock]` in the person's `order` (`apps`, `widgets`, `row:<id>`). Editing, a row moves
+  by itself and the apps / widgets by their grip (`.dashGrip`, `dashDrag_`'s `startOk`); an app or widget still moves
+  within its own group. Saved as `order` (≤10, `/^(apps|widgets|row:[a-z]{2,20})$/`) and `v: 2`.
+- **What came with the card stays**: the four quick apps (`DASH_LOCKED_APPS` = `QA_DEFAULT`: GP Calendar/Tasks, Library,
+  Learn Khmer, Leave — Prayer left the default in Nov 2026, Andrew; ＋ adds it), the four widgets (`DASH_W_LOCKED`: Goals, Habits, Health, Tasks) and every row can be moved,
   never taken off — no ✕, and put back if a saved layout lacks them. What the person adds has ✕: apps from their menu, and
   widgets from `DASH_W_EXTRA` — Days off (personal days left → Leave), Mentor (1-on-1s held this month of
   `OO_PER_MONTH` → Mentorship), Streak (days in a row → the week's board), Books (books read against their year's goal →
@@ -2462,9 +2501,24 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   first ("n of N active this week"), my three figures with "Where my points came from" folded, People / Ministries, the
   top ten with points (my own row always shown; people with none are a count, not a list). Not for guests,
   students, the board or a preview (`gameOn_`).
-- tests/test-game.mjs (server), tests/test-game-ui.mjs (also the holiday catch, Santa, the points sheet and the slide-down reminder). Khmer: docs/khmer-needed.md §112, §113, §118. sw.js SHELL v27.
+- tests/test-game.mjs (server), tests/test-game-ui.mjs (also the holiday catch, Santa, the points sheet and the slide-down reminder). Khmer: docs/khmer-needed.md §112, §113, §118. sw.js SHELL v27 (v28: 22-setup.js).
 
-## Looking around without an account (teams.html guest mode, Oct 2026)
+## Look around: the preview (Nov 2026, Andrew — replaces the guest tour below)
+"There's like a little area that says view it as a guest … it shows a view of the app, but none of the real data … a
+mock-up … the library [real]." The sign-in and sign-up screens have **👀 Look around first** (`#toGuest`, `gpLookHtml_`,
+not in the tasks app); `?guest=1` and `gp-app-guest` open it too (`gpEnterGuest_` → `gpEnterDemo_`, end of
+teams/22-setup.js). It is the real app, signed in as a made-up person (Dara Sok, Cafe, Siem Reap; `S.demo`, `S.auth`
+demo / 0000): **`run()` sends every call as `demoCall(fn, args)`**, and api.js runs that same handler inside `demoScope`
+(its own AsyncLocalStorage, so a nested requestScope stays inside), where `store()` is an in-memory store filled by
+`demoData_()` for that one request — twelve made-up people on both campuses, the year's numbers, check-ins, goals, habits,
+OKRs, GP Tasks, prayers. So the real store is never opened (tests/test-demo.mjs counts every touch), a "save" works within
+its request and is gone on the next, and only `demo` can sign in (everyone else's PIN is a fresh random secret). Only
+get… / list… and the everyday writes in `DEMO_WRITES` run; `DEMO_NEVER` (accounts, admin, HR, portal, QuickBooks, Google,
+voice, the tasks app's boot) never does. The page: `#demoBar` on every page (Create my profile / Log in →
+`gpLeaveDemo_`), a toast the first time something changes (`gpDemoNote_`, not for `DEMO_QUIET`), no boot cache, no
+connect-Google step. The Library is the real one. If the preview can't load, the old tour (`gpEnterGuestPlain_`) shows.
+
+## Looking around without an account (teams.html guest mode, Oct 2026 — now only the fallback)
 `teams.html?guest=1` (the log-in screen's "Look around without an account" button was removed, Nov 2026, Andrew) sets
 `gp-app-guest` (localStorage — they stay a guest on reopen until Log in / Create my
 profile). `S.guest` with a stand-in `S.me` (`gpGuestMe_`, id 'guest') and EMPTY `S.auth`:
@@ -2565,7 +2619,21 @@ numbers fill themselves in from using it (like Teams and Hospitality). Two so fa
   student's profile, test scores, progress, who has paid → Students Enrolled, Days with
   Classes, Passing Rate, etc.
 
-## Admin → Arrivals & departures
+## Admin → Invite staff: links that let new staff straight in (Nov 2026, Andrew)
+"If I want to invite someone in the admin section … the invite link will be already pre-approved by the admin."
+Admin → ✉️ Invite staff (`groups`, `adminInviteHtml_`): campus, and if wanted department and ministry; who it's for
+(`[data-grpuses]` one person · up to 10 · up to 30); how long (`[data-grpdays]` 3 / 7 / 14 / 30 days); a note → **Make the
+invite link** (`#grpMake` → `adminMakeInvite`, admins only) → `teams.html?reg=1&invite=<48 hex>` shown once (`#grpLink`,
+Copy / Share). Kept only as a hash in the `invites` blob (`{id, hash, salt, campus, dept, ministry, note, uses, used:[{staffId,
+name, at}], exp, off, by, byName, at}`, `INVITE_MAX_USES` 50, `INVITE_MAX_DAYS` 30); "Invite links" lists each with who used it
+and Turn off (`[data-grpoff]` → `adminInviteOff`). The sign-up page takes the token out of the address (`gpInviteTake_`,
+kept in sessionStorage `gp-invite` across Google's page-and-back), asks `inviteInfo` (public: where, who invited) and says
+so (`#inviteOk`, or `#inviteGone` when used / ended / off — they can still sign up and wait). `staffRegister {invite}`
+checks it again: the account is **active at once** (no `awaiting`, no admin push), in the invite's place,
+`invitedBy {inviteId, adminId}`, and the use recorded; the setup steps follow. A link is a key — anyone who has it can
+use it while it lasts. tests/test-groups-ui.mjs. Khmer §125.
+
+## Admin → Arrivals & departures (the old invite, kept for old links)
 - **Invite a new group:** pick campus, department and (optionally) ministry → one link,
   `teams.html?reg=1&campus=…&dept=…&ministry=…` (`gpInviteLink_`). It opens the
   sign-up form with those chosen and a "You're joining …" line (`gpInviteFromUrl_`,

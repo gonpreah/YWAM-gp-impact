@@ -1,4 +1,5 @@
-/* Looking around without an account (teams.html guest mode) — on the page, on the real backend: in the menu; the books load
+/* Looking around without an account (Nov 2026: the preview — the app itself on a made-up campus, demoCall) — on the page, on the real backend.
+   Older notes: in the menu; the books load
    only when it opens; the home is swipeable rows (Start here, each shelf, See all)
    of tiles with drawn covers — one series look, nothing fetched, neighbours never
    the same pattern; a book page has every part; the reader goes one key idea per
@@ -35,7 +36,7 @@ const H = (p, s) => crypto.createHash('sha256').update(s + ':' + String(p), 'utf
 const mk = o => Object.assign({ active: true, campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe',
   role: 'Staff', staffType: 'campus', country: 'Cambodia', surveyToken: 'tok_' + o.id }, o, { pinSalt: o.id, pinHash: H('1234', o.id) });
 mem.staff = [
-  mk({ id: 'st1', name: 'Dara Sok', username: 'dara', email: 'd@e.com', libRead: { 'atomic-habits': '2026-10-01', 'grit': '2026-10-02' } }),
+  mk({ id: 'st1', name: 'Real Rina', username: 'rina', email: 'd@e.com', libRead: { 'atomic-habits': '2026-10-01', 'grit': '2026-10-02' } }),
   mk({ id: 'st2', name: 'Emma Hill', username: 'emma', email: 'e@e.com' }),
   mk({ id: 'st3', name: 'Uriah Lyford', username: 'uriah', email: 'u@e.com', dept: 'Campus Leadership', ministry: 'Campus Director', isAdmin: true })
 ];
@@ -84,69 +85,73 @@ async function open(opts) {
   await page.waitForTimeout(900);
   return { ctx, page };
 }
-const credCalls = () => CALLS.filter(c => c.args.some(a => a === '1234' || a === 'dara'));
+const credCalls = () => CALLS.filter(c => JSON.stringify(c.args).indexOf('1234') > -1 || JSON.stringify(c.args).indexOf('"rina"') > -1);
+const realBefore = JSON.stringify(mem);
 
 {
   { const { ctx, page } = await open();
-    ok('the log-in screen has no "Look around without an account" (Nov 2026, Andrew)', !!(await page.$('#main h2')) && !(await page.$('#lookAround')) && !/Look around without an account/.test(await page.$eval('#main', e => e.innerText)));
+    ok('the log-in screen offers a look around first (Nov 2026, Andrew: "view it as a guest … a mock-up")', !!(await page.$('#toGuest')) && /Look around first/.test(await page.$eval('#toGuest', e => e.innerText)));
+    await page.click('#toGuest'); await page.waitForSelector('#demoBar', { timeout: 15000 }); await page.waitForTimeout(600);
+    ok('it opens the app itself, as a made-up person — not a tour', await page.evaluate(() => S.demo === true && !S.guest && S.me && S.me.name === 'Dara Sok') && !!(await page.$('.myHero')) && !(await page.$('.guestHero')));
     await ctx.close(); }
   const { ctx, page } = await open({ qs: '?guest=1' });
-  ok('it opens the app as a guest: the tour, the Library and the Base cards', await page.evaluate(() => S.guest === true) && !!(await page.$('.guestHero')) && !!(await page.$('#guestLibrary')) && !!(await page.$('#guestBase')));
-  ok('every tool is listed with what it does, and a lock', (await page.$$('.guestTool')).length >= 8 && (await page.$$('.guestTool .guestLock')).length === (await page.$$('.guestTool')).length);
-  ok('the bottom bar has five tabs, the first "Look around", the Library last; no bell', (await page.$$('nav.bottom button')).length === 5 && !!(await page.$('nav.bottom [data-tab="library"]')) && /Look around/.test(await page.$eval('nav.bottom button', e => e.innerText)) && !(await page.$('#bellBtn')));
-  await page.screenshot({ path: OUT + '/guest-home.png', fullPage: true });
+  await page.waitForSelector('#demoBar', { timeout: 15000 }); await page.waitForTimeout(600);
+  ok('?guest=1 opens the preview, saying so on top with Create my profile and Log in', /made up/.test(await page.$eval('#demoBar', e => e.innerText)) && !!(await page.$('#demoReg')) && !!(await page.$('#demoLogin')));
+  ok('My Home is the real My Home: the dashboard card, this week’s goals, habits', !!(await page.$('#qaBar')) && /Pray with a customer/.test(await page.$eval('#main', e => e.innerText)) && !!(await page.$('#sec-habits')));
+  ok('the bottom bar is the real one — My Home, My Ministry, Team, Health, Profile', (await page.$$eval('nav.bottom button', bs => bs.map(b => b.getAttribute('data-tab')))).join() === 'week,ministry,team,health,profile');
+  await page.screenshot({ path: OUT + '/preview-home.png', fullPage: true });
 
-  await page.click('#guestLibrary'); await page.waitForTimeout(1000);
-  ok('the Library opens, all of it', await page.evaluate(() => S.view === 'library' && typeof GP_LIBRARY !== 'undefined') && (await page.$$('.libTile')).length > 40);
+  await page.click('nav.bottom button[data-tab="team"]'); await page.waitForTimeout(900);
+  const team = await page.$eval('#main', e => e.innerText);
+  ok('Team shows the made-up team — and none of the real people', /Grace Miller/.test(team) && /Sophea Chan/.test(team) && !/Real Rina|Emma Hill|Uriah Lyford/.test(team), team.slice(0, 200).replace(/\s+/g, ' '));
+  await page.click('nav.bottom button[data-tab="health"]'); await page.waitForTimeout(900);
+  ok('Health shows check-ins (made-up ones)', /check-in/i.test(await page.$eval('#main', e => e.innerText)) && !/needs an account/.test(await page.$eval('#main', e => e.innerText)));
+  await page.click('nav.bottom button[data-tab="ministry"]'); await page.waitForTimeout(1200);
+  ok('My Ministry opens on the made-up Cafe', /Cafe/.test(await page.$eval('#main', e => e.innerText)));
+  await page.screenshot({ path: OUT + '/preview-ministry.png' });
+  await page.click('nav.bottom button[data-tab="week"]'); await page.waitForTimeout(600);
+
+  /* a change: shown, said to be a preview, and kept nowhere */
+  const tile = await page.$('[data-habit]');
+  const was = tile ? await tile.evaluate(e => e.classList.contains('on')) : null;
+  if (tile) await tile.click(); await page.waitForTimeout(1500);
+  ok('a habit ticks like the real thing', tile && (await page.$eval('[data-habit]', e => e.classList.contains('on'))) !== was);
+  ok('… and the page says nothing in the preview is kept', await page.evaluate(() => /preview/.test(document.body.innerText)) && CALLS.some(c => c.fn === 'demoCall' && c.args[0] === 'saveDaily'));
+
+  await page.click('#menuBtn'); await page.waitForTimeout(250);
+  const menu = await page.$$eval('[data-menu-item]', bs => bs.map(b => b.getAttribute('data-menu-item')));
+  ok('the menu is an ordinary staff member’s — no Admin or HR', menu.includes('library') && !menu.includes('admin') && !menu.includes('hr'), menu.join());
+  await page.click('[data-menu-item="library"]'); await page.waitForTimeout(1200);
+  ok('the Library is the real one, all of it', await page.evaluate(() => S.view === 'library' && typeof GP_LIBRARY !== 'undefined') && (await page.$$('.libTile')).length > 40);
   await page.click('.libRow [data-libbook="atomic-habits"]'); await page.waitForTimeout(400);
   await page.click('#libStart'); await page.waitForTimeout(300); await page.click('#libNext'); await page.waitForTimeout(300);
-  ok('a guest can read a whole book in the reader', /Key idea 1 of/i.test(await page.$eval('#libReader', e => e.innerText)));
+  ok('… a whole book to read', /Key idea 1 of/i.test(await page.$eval('#libReader', e => e.innerText)));
   await page.click('#libClose'); await page.waitForTimeout(300);
-  await page.click('#libMarkRead'); await page.waitForTimeout(500);
-  ok('… and mark it read — kept on this phone only', await page.evaluate(() => !!JSON.parse(localStorage.getItem('gp-lib-read'))['atomic-habits']) && !CALLS.some(c => c.fn === 'libSaveReads'));
 
-  await page.click('nav.bottom button[data-tab="base"]'); await page.waitForTimeout(900);
-  ok('Base shows the public figures', await page.evaluate(() => S.view === 'base' && !!S.base) && !!(await page.$('.hero')));
-  ok('… counting the staff, with no names or photos on the phone', /\b3\b/.test(await page.$eval('.hero', e => e.innerText)) && await page.evaluate(() => S.roster.length === 3 && S.roster.every(p => !p.name && !p.photo)));
-  await page.click('[data-guestcampus="poipet"]'); await page.waitForTimeout(300);
-  ok('… and a guest can switch to Poipet', /POIPET/i.test(await page.$eval('.hero', e => e.innerText)));
-  await page.click('[data-guestcampus="siemreap"]'); await page.waitForTimeout(300);
-  const heads = await page.$$('[data-acc]');
-  for (const hd of heads) { await hd.click().catch(() => {}); await page.waitForTimeout(250); }
-  ok('… and every Base section opens without an error', errors.length === 0, heads.length + ' sections');
-  await page.screenshot({ path: OUT + '/guest-base.png' });
-  await page.click('nav.bottom button[data-tab="team"]'); await page.waitForTimeout(300);
-  ok('Team is locked, with the reason and a way in', /names, photos and goals/.test(await page.$eval('#main', e => e.innerText)) && (await page.$$('[data-guestgo]')).length === 2);
-  await page.click('nav.bottom button[data-tab="health"]'); await page.waitForTimeout(300);
-  ok('Health is locked too — check-ins are private', /only you and your mentor/.test(await page.$eval('#main', e => e.innerText)));
-  await page.screenshot({ path: OUT + '/guest-lock.png' });
-  await page.click('#menuBtn'); await page.waitForTimeout(250);
-  ok('the menu: Library, Create my profile, Log in — nothing else', (await page.$$eval('[data-menu-item]', bs => bs.map(b => b.getAttribute('data-menu-item')))).join() === 'library,guestreg,guestlogin');
-  await page.click('[data-menu-item="library"]'); await page.waitForTimeout(500);
-  ok('… and the Library is in it', await page.evaluate(() => S.view === 'library'));
-  ok('a guest never sends a username or PIN, and never boots — only the public calls (the dashboard, the nameless roster, which books have recordings, whether Google sign-in is on)', CALLS.every(c => ['getData', 'teamRoster', 'libAudioIndex', 'portalAuthConfig'].indexOf(c.fn) > -1) && credCalls().length === 0 && !CALLS.some(c => c.fn === 'getMyBoot'), [...new Set(CALLS.map(c => c.fn))].join(','));
+  ok('every call is the preview’s — none with anyone’s real sign-in', CALLS.every(c => ['demoCall', 'libAudioIndex', 'portalAuthConfig'].indexOf(c.fn) > -1) && credCalls().length === 0, [...new Set(CALLS.map(c => c.fn))].join(','));
+  ok('… and the real store is exactly as it was: nothing read into the page, nothing written', JSON.stringify(mem) === realBefore);
   ok('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
 
-  await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(900);
-  ok('opening the app again stays a guest', await page.evaluate(() => S.guest === true) && !!(await page.$('.guestHero')));
-  await page.click('.guestHero [data-guestgo="login"]'); await page.waitForTimeout(400);
-  ok('"Log in" goes to the log-in screen and ends the guest visit', !!(await page.$('#li_user')) && await page.evaluate(() => !S.guest && !localStorage.getItem('gp-app-guest')));
+  await page.reload({ waitUntil: 'load' }); await page.waitForSelector('#demoBar', { timeout: 15000 });
+  ok('opening the app again stays in the preview', await page.evaluate(() => S.demo === true));
+  await page.click('#demoLogin'); await page.waitForTimeout(500);
+  ok('"Log in" goes to the log-in screen and ends the preview', !!(await page.$('#li_user')) && await page.evaluate(() => !S.demo && !S.me && !localStorage.getItem('gp-app-guest') && !localStorage.getItem('gp-staff')));
   CALLS.length = 0;
-  await page.fill('#li_user', 'dara'); await page.fill('#li_pin', '1234'); await page.click('#loginBtn'); await page.waitForTimeout(2000);
-  ok('logging in works as before', await page.evaluate(() => !!S.me && !S.guest && S.me.id === 'st1'));
-  ok('… and the books read as a guest go up to the account', !!(mem.staff.find(s => s.id === 'st1').libRead || {})['atomic-habits']);
+  await page.fill('#li_user', 'rina'); await page.fill('#li_pin', '1234'); await page.click('#loginBtn'); await page.waitForTimeout(2000);
+  ok('logging in works as before', await page.evaluate(() => !!S.me && !S.demo && S.me.id === 'st1' && !document.getElementById('demoBar')));
   await ctx.close();
 }
 {
   const { ctx, page } = await open({ qs: '?guest=1' });
-  ok('teams.html?guest=1 opens straight into looking around', await page.evaluate(() => S.guest === true));
-  await page.click('.guestHero [data-guestgo="reg"]'); await page.waitForTimeout(500);
-  ok('"Create my profile" opens the sign-up form', await page.evaluate(() => S.regMode === true && !S.guest) && /Create my profile/.test(await page.$eval('#main', e => e.innerText)));
+  await page.waitForSelector('#demoReg', { timeout: 15000 });
+  await page.click('#demoReg'); await page.waitForTimeout(500);
+  ok('"Create my profile" opens the sign-up', await page.evaluate(() => S.regMode === true && !S.demo) && /Create my profile/.test(await page.$eval('#main', e => e.innerText)));
   await ctx.close();
 }
 {
   const { ctx, page } = await open({ small: true, km: true, qs: '?guest=1' });
-  ok('in Khmer at 320px the tour is Khmer and fits', /[ក-៿]{4}/.test(await page.$eval('.guestHero h2', e => e.innerText)) && await page.evaluate(() => document.documentElement.scrollWidth <= 321));
+  await page.waitForSelector('#demoBar', { timeout: 15000 }); await page.waitForTimeout(500);
+  ok('in Khmer at 320px the preview’s bar is Khmer and fits', /[ក-៿]{4}/.test(await page.$eval('#demoBar', e => e.innerText)) && await page.evaluate(() => document.documentElement.scrollWidth <= 321));
   await ctx.close();
 }
 ok('no page errors', errors.length === 0, errors.join(' | '));
