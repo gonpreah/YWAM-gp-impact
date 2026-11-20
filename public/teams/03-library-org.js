@@ -1477,7 +1477,10 @@ function gpGuestMe_(){
   return { id:'guest', name:t('Guest'), username:'', campus: lsGet('gp-guest-campus') || 'siemreap', dept:'', ministry:'', role:'',
     photo:'', staffType:'campus', country:'—', ministries:[], leads:[], guest:true };
 }
-function gpEnterGuest_(){
+/* Looking around opens the preview now — the app on a made-up campus (22-setup.js); this plain guest tour is what
+   shows if the preview can't load */
+function gpEnterGuest_(){ gpEnterDemo_(); }
+function gpEnterGuestPlain_(){
   lsSet(GUEST_KEY, '1');
   S.guest=true; S.me=gpGuestMe_(); S.profile={}; S.auth={ user:'', pin:'' }; S.regMode=false;
   S.view='week'; S.roster=[]; S.required=null; S.reqDocs=[];
@@ -1503,6 +1506,7 @@ function gpGuestCampusHtml_(){
     return '<button class="campusBtn'+(S.me.campus===c.id?' on':'')+'" data-guestcampus="'+esc(c.id)+'">'+esc(t(c.short))+'</button>'; }).join('')+'</div>';
 }
 function gpLeaveGuest_(toRegister){
+  if(S.demo){ gpLeaveDemo_(toRegister); return; }
   lsDel(GUEST_KEY);
   S.guest=false; S.me=null; S.base=null; S.regMode=!!toRegister; S.menuOpen=false; S.view='week';
   renderMenu(); render(); window.scrollTo(0,0);

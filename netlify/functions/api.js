@@ -167,7 +167,7 @@ function inYear_(year) {
    times over and come back as 'busy' — "Could not save", though it had
    saved. Every read here goes through this one store, so the whole app
    reads its own writes. */
-function store() { return getStore({ name: 'gp-data', consistency: 'strong' }); }
+function store() { const demo = demoScope.getStore(); if (demo) return demo; return getStore({ name: 'gp-data', consistency: 'strong' }); }   // inside the preview, a made-up campus in memory (demoCall)
 /* Every blob in this store is either a JSON array of rows or, for loginThrottle,
    a plain object. If one ever comes back as something else — a half-finished
    write, a hand-edit in the Netlify UI, a future schema change — the old code
@@ -432,6 +432,24 @@ async function verifyStaff_(username, pin, allowApplicant) {
   // YWAM GP Portal block. Failing here closes them all at once.
   if (isApplicant_(s) && !allowApplicant) return null;
   return s;
+}
+
+/* A new account waiting for an admin's yes (Nov 2026, Andrew: "when a new person creates an account … it will log them
+   into the app … you put in all the information … but you still can't access the other parts of the app until the
+   admin approves"). `awaiting` is set by staffRegister and cleared when an admin switches the account on; an account an
+   admin switched off later never has it, so this is no way back in for them. Only three doors take it: getMyBoot (which
+   answers with the waiting page's few things), updateProfile (the setup questions) and getTasksBoot. Never a failed-login
+   count: verifyStaff_ has just checked the same credentials. */
+async function verifyAwaiting_(username, pin) {
+  if (await isLoginLocked_(username)) return null;
+  const s = findStaff_(await getStaff_(), username);
+  if (!s || !credOk_(s, pin)) return null;
+  if (s.active !== false || !s.awaiting || s.archived || isApplicant_(s)) return null;
+  return s;
+}
+function awaitingOut_(s) {
+  return { ok: true, awaiting: true, user: s.username, staff: selfStaff_(s, { awaiting: true }),
+    profile: { phone: s.phone || '', joined: s.joined || '', debt: false, mentorStatus: s.mentorStatus || '', dashboardColor: '', dashboardBg: '', email: s.email || '' } };
 }
 
 /* What kind of staff someone is. The three ids are duplicated from taxonomy.js
@@ -974,7 +992,7 @@ async function staffRegister(payload) {
        easy … not overwhelming with a bunch of questions"); once an admin says yes, the first sign-in walks them
        through the rest — campus, ministry, kind of staff, country, mentor, papers — and updateProfile's setupDone
        clears this. An invite link's campus / department / ministry are still kept and start the steps off. */
-    setupTodo: true
+    setupTodo: true, awaiting: true
   };
   if (!CAMPUS_IDS_.includes(rec.campus)) rec.campus = '';
   if (CD_KINDS.indexOf(payload.cdKind) > -1 && rec.dept === LEADERSHIP_DEPT && rec.ministry === 'Campus Director') rec.cdKind = payload.cdKind;
@@ -994,7 +1012,8 @@ async function staffRegister(payload) {
   if (pending) {
     const admins = (await getStaff_()).filter(function (r) { return r && r.isAdmin && r.active !== false && !r.archived && !isApplicant_(r); });
     for (const a of admins) await pushNow_(a.id, 'signup', { name: rec.name }, 'teams.html?view=approvals');
-    return { ok: true, pending: true };
+    /* signed in at once, to answer the setup questions — the rest of the app waits for the admin (verifyAwaiting_) */
+    return Object.assign(awaitingOut_(rec), { pending: true, token: gtok || undefined });
   }
   return {
     ok: true, user: u, token: gtok || undefined, staff: selfStaff_(rec),
@@ -1040,7 +1059,7 @@ async function staffLoginGoogle(token) {
     return app ? { ok: false, err: 'applicant' } : { ok: false, err: 'new', email: gg.email, name: gg.name };
   }
   if (rec.archived) return { ok: false, err: 'auth' };
-  if (rec.active === false) return { ok: false, err: 'pending' };
+  if (rec.active === false && !rec.awaiting) return { ok: false, err: 'pending' };
   let tok = '';
   const out = await mutateStaff_(function (all) {
     const r = all.find(function (x) { return x.id === rec.id; });
@@ -1051,6 +1070,7 @@ async function staffLoginGoogle(token) {
   });
   if (!out || !out.ok) return { ok: false };
   await clearLoginThrottle_(rec.username);
+  if (rec.active === false) return Object.assign(awaitingOut_(rec), { token: tok });
   return staffLoginOut_(rec, { token: tok });
 }
 /* Profile & settings → "Sign in with Google from now on": signed in (PIN or otherwise), they connect their
@@ -1097,6 +1117,7 @@ async function staffLogin(username, pin) {
     const rows = await getStaff_();
     const raw = findStaff_(rows, username);
     if (raw && raw.active === false && credOk_(raw, pin)) {
+      if (raw.awaiting && !raw.archived && !isApplicant_(raw)) return awaitingOut_(raw);   // a new account: in, to the waiting page
       return { ok: false, err: 'pending' };
     }
     // A portal applicant signing in on the staff app: right PIN, wrong door.
@@ -1275,6 +1296,7 @@ async function adminSetActive(username, pin, staffId, active) {
     const idx = rows.findIndex(function (r) { return r.id === staffId; });
     if (idx === -1) return { abort: true, ok: false, err: 'not_found' };
     rows[idx].active = !!active;
+    if (active) delete rows[idx].awaiting;   // approved: the whole app, and switching it off later is a real switch-off
     rows[idx].updated = new Date().toISOString();
     return { ok: true, staff: adminStaffOut_(rows[idx]) };
   });
@@ -1564,12 +1586,13 @@ async function adminMergeStaff(username, pin, keepId, mergeId) {
 }
 
 async function updateProfile(username, pin, payload) {
-  const s = await verifyStaff_(username, pin);
+  const s = await verifyAwaiting_(username, pin) || await verifyStaff_(username, pin);   // a new account answers its setup questions while it waits
   if (!s) return { ok: false };
   const out = await updateProfile_(s, payload || {});
-  /* a new mentor hears of it on their phone, right away */
+  if (out && out.ok && s.awaiting) { out.awaiting = true; if (out.staff) out.staff.awaiting = true; }
+  /* a new mentor hears of it on their phone, right away (an account still waiting: once it is approved, from the request) */
   const mid = payload && payload.mentorId;
-  if (out && out.ok && mid && mid !== s.mentorId) await pushNow_(mid, 'mentorAsk', { name: s.name }, 'teams.html?view=mentor');
+  if (out && out.ok && mid && mid !== s.mentorId && !s.awaiting) await pushNow_(mid, 'mentorAsk', { name: s.name }, 'teams.html?view=mentor');
   return out;
 }
 async function updateProfile_(s, payload) {
@@ -5936,6 +5959,8 @@ function bootStaffCard_(s) {
    day of the calendar grid, or '' to leave the calendar until it is opened. */
 async function getTasksBoot(username, pin, calFrom) {
   prefetch_(['staff', 'loginThrottle', 'gpTasks', 'kmReview']);
+  const waiting = await awaitingBoot_(username, pin);
+  if (waiting) return waiting;
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false, err: 'auth' };
   const part = async function (fn) { try { return await fn(); } catch (e) { return null; } };
@@ -5961,8 +5986,20 @@ async function getTasksBoot(username, pin, calFrom) {
 
 const BOOT_KEYS = ['libClub', 'entries', 'survey', 'okrs', 'dailyLogs', 'goals', 'holidays', 'smartGoals', 'broadcasts',
   'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks', 'holidayCatch', 'libHl'];
+async function awaitingBoot_(username, pin) {
+  const w = await verifyAwaiting_(username, pin);
+  if (!w) return null;
+  const rows = await getStaff_();
+  return Object.assign(awaitingOut_(w), {
+    staff: bootStaffCard_(w), googleId: googleClientId_(), googleRedirect: googleRedirect_(),
+    // names and departments only, as the public teamRoster already gives — for picking a mentor in the setup steps
+    roster: rows.filter(function (r) { return r.active && !isApplicant_(r); }).map(publicStaff_)
+  });
+}
 async function getMyBoot(username, pin) {
   prefetch_(['staff', 'loginThrottle'].concat(BOOT_KEYS));   // before the PIN check, so they travel together
+  const waiting = await awaitingBoot_(username, pin);
+  if (waiting) return waiting;
   const s = await verifyStaff_(username, pin);
   // `err:'auth'` on purpose: the page must be able to tell "your PIN is wrong"
   // from "the request failed", because only the first should log somebody out.
@@ -13295,8 +13332,11 @@ async function saveDashLayout(username, pin, layout) {
     clean = {
       apps: cleanIds_(layout.apps, /^[a-z][a-z0-9:-]{0,39}$/, 10) || [],
       widgets: cleanIds_(layout.widgets, /^[a-z]{2,20}$/, 8) || [],
-      rows: cleanIds_(layout.rows, /^[a-z]{2,20}$/, 6) || []
+      rows: cleanIds_(layout.rows, /^[a-z]{2,20}$/, 6) || [],
+      order: cleanIds_(layout.order, /^(apps|widgets|row:[a-z]{2,20})$/, 10) || [],   // the blocks, any way round (Nov 2026)
+      v: layout.v === 2 ? 2 : undefined
     };
+    if (!clean.v) delete clean.v;
   }
   const r = await mutateStaff_(function (rows) {
     const rec = rows.find(function (x) { return x.id === s.id; }); if (!rec) return { abort: true, ok: false };
@@ -13799,7 +13839,135 @@ async function voiceTasks(username, pin, text, opts) {
   return { ok: true, tasks: c.tasks, note: c.note, today: today };
 }
 
+/* ==================== the preview: the app on a made-up campus ====================
+   Nov 2026, Andrew: "when somebody goes into the app … there's a little area that says view it as a guest … it shows a
+   view of the app, but none of the real data is on there. It's just a mock-up so that people can get an idea of what
+   it looks like and how it works … the library [is real], everything else just kind of a mock-up."
+
+   demoCall(fn, args) runs one of the app's own handlers — the same code a signed-in page calls — against a campus made
+   up for the occasion and held in memory for this one request (demoData_). Every read and write of 'gp-data' goes
+   through store(), and inside demoScope store() is that memory, never the real store; demoScope is its own
+   AsyncLocalStorage, so a handler that opens a requestScope of its own stays inside it. So the preview looks exactly
+   like the app, can be tapped through and even "saves" (within its request — the next one starts from the made-up
+   campus again), and no real person, number or answer is ever in it.
+   Only the made-up person "demo" can be signed in (PIN 0000: every other made-up person's PIN is a fresh random
+   secret), and only reads (get… / list…) and the everyday writes in DEMO_WRITES are let through; nothing that reaches
+   another store (QuickBooks, backups), the outside world (Google, Anthropic) or accounts. */
+const demoScope = new AsyncLocalStorage();
+function demoStore_(data) {
+  const m = new Map(Object.keys(data).map(function (k) { return [k, JSON.stringify(data[k])]; }));
+  return {
+    get: async function (k, o) { if (!m.has(k)) return null; const v = m.get(k); return o && o.type === 'text' ? v : JSON.parse(v); },
+    setJSON: async function (k, v) { m.set(k, JSON.stringify(v)); },
+    set: async function (k, v) { m.set(k, typeof v === 'string' ? v : JSON.stringify(v)); },
+    delete: async function (k) { m.delete(k); },
+    list: async function () { return { blobs: Array.from(m.keys()).map(function (k) { return { key: k }; }) }; }
+  };
+}
+const DEMO_USER = 'demo', DEMO_PIN = '0000';
+const DEMO_WRITES = ['saveDaily', 'saveGoals', 'saveMyWeek', 'deleteMyWeek', 'saveMyHabits', 'saveGpTask', 'deleteGpTask', 'respondGpTask',
+  'orderGpTasks', 'fileGpTask', 'saveGpTaskList', 'saveGpListOrder', 'saveGpTaskFilter', 'saveTask', 'deleteTask', 'clearDoneTasks',
+  'saveDashLayout', 'saveQuickApps', 'libSaveReads', 'libSaveMine', 'markSeen', 'catchSanta', 'catchHoliday', 'saveMyKpiDay',
+  'saveMyMinistry', 'staffProfile', 'teamRoster', 'savePrayer', 'prayedFor', 'saveMyPersonality', 'saveMyGStrengths', 'saveMyApest',
+  'cafeGet', 'libNotes', 'myContract', 'mcList', 'leadWeek', 'whosHereTeamPhotos', 'requestOneOnOne', 'respondToOneOnOne', 'logOneOnOne',
+  'tickOneOnOneFollowUp', 'updateProfile', 'uploadPhoto', 'savePhotoThumb'];
+const DEMO_NEVER = /^(qbo|voice|staffLogin|staffLink|staffRegister|staffUse|portal|admin|hr|grantAdmin|board|student|demoCall|getTasksBoot|libAudio)/i;
+function demoCanRun_(fn) {
+  if (!Object.prototype.hasOwnProperty.call(HANDLERS, fn) || typeof HANDLERS[fn] !== 'function' || DEMO_NEVER.test(fn)) return false;
+  return /^(get|list)/.test(fn) || DEMO_WRITES.indexOf(fn) > -1;
+}
+function demoRand_(seed) { let x = seed % 2147483647; if (x <= 0) x += 2147483646; return function () { x = x * 16807 % 2147483647; return (x - 1) / 2147483646; }; }
+function demoData_() {
+  const today = baseToday_(), yr = thisWeekYear_(), wk = isoWeek_(today), now = new Date().toISOString();
+  const rnd = demoRand_(Number(yr) * 53 + wk), between = function (a, b) { return Math.round(a + rnd() * (b - a)); };
+  const secret = crypto.randomBytes(12).toString('hex');
+  const P = function (o) {
+    const salt = 'demo-' + o.id, pin = o.username === DEMO_USER ? DEMO_PIN : secret;
+    return Object.assign({ active: true, email: o.username + '@example.org', photo: '', mentorId: '', mentorStatus: '', role: '', leads: [], ministries: [],
+      surveyToken: 'demo-tok-' + o.id, created: '2025-01-15T00:00:00.000Z', updated: now, google: { sub: 'demo-' + o.id } }, o, { pinSalt: salt, pinHash: hashPin_(pin, salt) });
+  };
+  const staff = [
+    P({ id: 'dm1', username: DEMO_USER, name: 'Dara Sok', campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', role: 'Barista', staffType: 'ministry', country: 'Cambodia', mentorId: 'dm2', mentorStatus: 'approved', joined: '2024' }),
+    P({ id: 'dm2', username: 'demo-grace', name: 'Grace Miller', campus: 'siemreap', dept: 'Leadership Development', ministry: 'GPDTS', role: 'DTS leader', staffType: 'ministry', country: 'United States', leads: ['Leadership Development|GPDTS'] }),
+    P({ id: 'dm3', username: 'demo-sophea', name: 'Sophea Chan', campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', role: 'Cafe leader', staffType: 'ministry', country: 'Cambodia', leads: ['Community Service|Cafe'] }),
+    P({ id: 'dm4', username: 'demo-vuthy', name: 'Vuthy Heng', campus: 'siemreap', dept: 'Campus Leadership', ministry: 'Campus Director', cdKind: 'national', role: 'Campus Director', staffType: 'campus', country: 'Cambodia' }),
+    P({ id: 'dm5', username: 'demo-anna', name: 'Anna Schmidt', campus: 'siemreap', dept: 'Leadership Development', ministry: 'GPDTS', role: 'DTS staff', staffType: 'ministry', country: 'Germany' }),
+    P({ id: 'dm6', username: 'demo-malis', name: 'Malis Keo', campus: 'siemreap', dept: 'Skills Training', ministry: 'Hospitality', role: 'Hospitality', staffType: 'campus', country: 'Cambodia', leads: ['Skills Training|Hospitality'] }),
+    P({ id: 'dm7', username: 'demo-rotha', name: 'Rotha Lim', campus: 'siemreap', dept: 'Community Service', ministry: 'Outreach Teams', role: 'Outreach teams', staffType: 'ministry', country: 'Cambodia' }),
+    P({ id: 'dm8', username: 'demo-ben', name: 'Ben Carter', campus: 'siemreap', dept: 'Youth Education', ministry: 'GP Media', role: 'Media', staffType: 'yap', country: 'Australia' }),
+    P({ id: 'dm9', username: 'demo-chenda', name: 'Chenda Ros', campus: 'siemreap', dept: 'Youth Education', ministry: 'YDC', role: 'YDC teacher', staffType: 'campus', country: 'Cambodia' }),
+    P({ id: 'dm10', username: 'demo-kosal', name: 'Kosal Prak', campus: 'poipet', dept: 'Campus Leadership', ministry: 'Campus Director', cdKind: 'national', role: 'Campus Director', staffType: 'campus', country: 'Cambodia' }),
+    P({ id: 'dm11', username: 'demo-lina', name: 'Lina Ouk', campus: 'poipet', dept: 'Community Service', ministry: 'GP Education', role: 'Teacher', staffType: 'ministry', country: 'Cambodia' }),
+    P({ id: 'dm12', username: 'demo-tom', name: 'Tom Reyes', campus: 'poipet', dept: 'Leadership Development', ministry: 'DTS', role: 'DTS staff', staffType: 'ministry', country: 'Philippines' })
+  ];
+  /* the base's numbers, week by week this year */
+  const entries = [];
+  const plan = [
+    ['siemreap', 'Community Service', 'Cafe', 'Cups Sold', 140, 260], ['siemreap', 'Community Service', 'Cafe', 'Customers Served', 80, 160],
+    ['siemreap', 'Community Service', 'Cafe', 'Gospel Conversations', 2, 10], ['siemreap', 'Community Service', 'Cafe', 'Salvations', 0, 2],
+    ['siemreap', 'Leadership Development', 'GPDTS', 'Students Enrolled', 14, 14], ['siemreap', 'Leadership Development', 'GPDTS', 'People Heard the Gospel', 10, 45],
+    ['siemreap', 'Leadership Development', 'GPDTS', 'Salvations', 0, 3], ['siemreap', 'Community Service', 'Ponlork School', 'Students Enrolled', 58, 62],
+    ['siemreap', 'Youth Education', 'YDC', 'Youth Enrolled', 38, 42], ['siemreap', 'Leadership Development', 'Church Partnerships', 'Partner Churches Supported', 6, 6],
+    ['siemreap', 'Campus Leadership', 'Campus Director', 'Total Staff', 36, 36],
+    ['poipet', 'Community Service', 'GP Education', 'Students Enrolled', 45, 48], ['poipet', 'Leadership Development', 'DTS', 'Salvations', 0, 2],
+    ['poipet', 'Youth Education', 'YDC', 'Youth Enrolled', 25, 30], ['poipet', 'Campus Leadership', 'Campus Director', 'Total Staff', 22, 22]
+  ];
+  for (let w = 1; w < wk; w++) plan.forEach(function (p) { entries.push({ campus: p[0], dept: p[1], ministry: p[2], metric: p[3], week: w, year: yr, value: between(p[4], p[5]), updated: now }); });
+  /* the weekly health check-ins: anonymous rows, as always */
+  const survey = [];
+  for (let w = 1; w < wk; w++) staff.forEach(function (s, i) {
+    if (rnd() < 0.2 && s.username !== DEMO_USER) return;
+    survey.push({ campus: s.campus, week: w, year: yr, device: s.surveyToken, source: 'weekly', days: 7, updated: now,
+      lonely: between(2, 5), clarity: between(6, 9), growth: between(6, 9), porn: 0, oneOnOne: rnd() < 0.6 ? 1 : 0, exercise: rnd() < 0.7 ? 1 : 0,
+      quietTime: rnd() < 0.75 ? 1 : 0, debt: 0, sharedFaith: rnd() < 0.5 ? 1 : 0, sabbath: rnd() < 0.8 ? 1 : 0, langHours: between(0, 5) });
+  });
+  /* Dara's last few weeks: habits, goals */
+  const dailyLogs = [];
+  for (let i = 1; i <= 20; i++) {
+    const d = new Date(Date.parse(today + 'T00:00:00Z') - i * 864e5).toISOString().slice(0, 10);
+    dailyLogs.push({ staffId: 'dm1', date: d, week: isoWeek_(d), year: weekYear_(d), langHours: 0, minHours: 0, workout: i % 2 === 0, bible: true, quietTime: i % 3 !== 0,
+      oneOnOne: false, sharedFaith: false, sabbath: false, clarity: null, growth: null, lonely: null, porn: false, habits: { bible: true, quietTime: i % 3 !== 0, workout: i % 2 === 0 }, updated: now });
+  }
+  const goals = [
+    { staffId: 'dm1', week: wk, year: yr, updated: now, items: [
+      { text: 'Pray with a customer at the cafe', pct: 100, done: true, metricKey: '' },
+      { text: 'Learn two new drinks', pct: 60, done: false, metricKey: '' },
+      { text: 'Read a chapter of Atomic Habits', pct: 20, done: false, metricKey: '' }] },
+    { staffId: 'dm1', week: Math.max(1, wk - 1), year: yr, updated: now, items: [
+      { text: 'Train the new barista', pct: 100, done: true, metricKey: '' }, { text: 'Visit a church in town', pct: 100, done: true, metricKey: '' },
+      { text: 'Language study 3 times', pct: 70, done: false, metricKey: '' }] }
+  ];
+  const quarter = Math.min(3, Math.floor((wk - 1) / 13));
+  const okr = function (id, dept, objective, krs) { return krs.map(function (k) { return Object.assign({ campus: 'siemreap', quarter: quarter, dept: dept, id: id, objective: objective, kr: '', metricKey: '', target: 0, manualPct: 0, group: '', kind: '', current: 0, updated: now }, k); }); };
+  const okrs = [].concat(
+    okr('demo-o1', 'Community Service', 'Make the cafe a place people meet Jesus', [{ kr: 'Serve 2,500 cups this quarter', metricKey: 'Community Service|Cafe|Cups Sold', target: 2500 }, { kr: 'Train two new baristas', kind: 'count', target: 2, current: 1 }, { kr: 'A prayer corner in the cafe', manualPct: 40 }]),
+    okr('demo-o2', 'Campus Leadership', 'Every staff member walks with a mentor', [{ kr: 'Two 1-on-1s a month for everyone', manualPct: 65 }, { kr: 'Every new staff member has a mentor in their first month', manualPct: 80 }]));
+  const gpTasks = {
+    lists: [{ id: 'demo-l1', campus: 'siemreap', scope: 'personal', dept: '', ministry: '', ownerId: 'dm1', shared: false, title: 'Inbox', inboxKept: true, order: 0, created: now, by: 'dm1' },
+      { id: 'demo-l2', campus: 'siemreap', scope: 'ministry', dept: 'Community Service', ministry: 'Cafe', ownerId: '', shared: false, title: 'Cafe', order: 1, created: now, by: 'dm3' }],
+    tasks: [
+      { id: 'demo-t1', listId: 'demo-l2', title: 'Order coffee beans', notes: '', due: today, time: '09:00', assignees: ['dm1'], assignedAt: { dm1: now }, status: 'open', done: false, doneAt: '', doneBy: '', created: now, by: 'dm3', order: 0, from: null, subs: [] },
+      { id: 'demo-t2', listId: 'demo-l2', title: 'Clean the espresso machine', notes: 'Every Friday after closing', due: '', time: '', assignees: [], assignedAt: {}, status: 'open', done: false, doneAt: '', doneBy: '', created: now, by: 'dm3', order: 1, from: null, subs: [] },
+      { id: 'demo-t3', listId: 'demo-l1', title: 'Send my monthly update to supporters', notes: '', due: '', time: '', assignees: [], assignedAt: {}, status: 'open', done: false, doneAt: '', doneBy: '', created: now, by: 'dm1', order: 0, from: null, subs: [{ id: 's1', text: 'Write it', done: true }, { id: 's2', text: 'Add photos', done: false }] },
+      { id: 'demo-t4', listId: 'demo-l1', title: 'Book a 1-on-1 with Grace', notes: '', due: '', time: '', assignees: [], assignedAt: {}, status: 'open', done: true, doneAt: now, doneBy: 'dm1', created: now, by: 'dm1', order: 1, from: null, subs: [] }],
+    leadSynced: { siemreap: true, poipet: true }
+  };
+  const prayers = [
+    { id: 'demo-p1', staffId: 'dm5', campus: 'siemreap', scope: 'campus', text: 'For the DTS students arriving next month — safe travel and open hearts.', created: now, prayed: ['dm2', 'dm3'], answered: '', answerNote: '' },
+    { id: 'demo-p2', staffId: 'dm8', campus: 'siemreap', scope: 'campus', text: 'My family back home, and my visa renewal.', created: now, prayed: ['dm1'], answered: '', answerNote: '' }];
+  return { staff: staff, entries: entries, survey: survey, dailyLogs: dailyLogs, goals: goals, okrs: okrs, gpTasks: gpTasks, prayers: prayers, loginThrottle: {} };
+}
+async function demoCall(fn, args) {
+  fn = String(fn || '');
+  if (!demoCanRun_(fn)) return { ok: false, err: 'preview' };
+  const st = demoStore_(demoData_());
+  return demoScope.run(st, function () {
+    return requestScope.run(new Map(), function () { return HANDLERS[fn](Array.isArray(args) ? args : []); });
+  });
+}
+
 const HANDLERS = {
+  demoCall: function (a) { return demoCall(a[0], a[1]); },   // the preview (Look around): one of these handlers, on a made-up campus
   getMyBoot: function (a) { return getMyBoot(a[0], a[1]); },
   getTasksBoot: function (a) { return getTasksBoot(a[0], a[1], a[2]); },
   libAudioIndex: function () { return libAudioIndex(); },

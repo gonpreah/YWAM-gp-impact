@@ -90,26 +90,14 @@ const boxes = await page.$$eval('#main input:not([type=hidden])', es => es.map(e
 ok('… the name filled in from Google, the only box on the page', (await page.$eval('#r_name', e => e.value)) === 'Nara New' && boxes.join() === 'r_name', JSON.stringify([await page.$eval('#r_name', e => e.value), boxes]));
 await page.screenshot({ path: OUT + '/1-name.png' });
 await page.fill('#r_name', 'Nara Newton');
-await page.click('#regBtn'); await page.waitForSelector('#regDone', { timeout: 8000 });
+await page.click('#regBtn'); await page.waitForSelector('#setup', { timeout: 15000 }); await page.waitForTimeout(400);
 const n0 = nara();
-ok('the account is made, waiting for an admin, with its setup still to do', n0 && n0.active === false && n0.setupTodo === true && n0.name === 'Nara Newton' && n0.google && n0.google.sub === 'g-new' && !n0.campus && !n0.dept, JSON.stringify(n0 && { a: n0.active, s: n0.setupTodo, c: n0.campus }));
-ok('… and the page says thank you and what happens next', /An admin will look at it soon/.test(await page.$eval('#regDone', e => e.innerText)));
-await page.screenshot({ path: OUT + '/2-thanks.png' });
-await page.click('#regDoneOk'); await page.waitForTimeout(200);
-ok('OK goes back to the sign-in', !!(await page.$('#googleLogin')));
-await page.click('#googleLogin'); await page.waitForTimeout(800);
-ok('signing in before approval says it is waiting', await page.evaluate(() => /waiting on approval/.test((document.getElementById('toast') || document.body).innerText)));
+ok('the account is made, waiting for an admin, with its setup still to do', n0 && n0.active === false && n0.awaiting === true && n0.setupTodo === true && n0.name === 'Nara Newton' && n0.google && n0.google.sub === 'g-new' && !n0.campus && !n0.dept, JSON.stringify(n0 && { a: n0.active, s: n0.setupTodo, c: n0.campus }));
+ok('… and they are signed in at once: the phone keeps the session', JSON.parse(await page.evaluate(() => localStorage.getItem('gp-staff'))).user === n0.username);
 
-/* ---------- 2. the admin's Approvals: the email, and that the rest comes after ---------- */
-const appr = await page.evaluate(() => { S.adminStaff = [{ id: 'x', name: 'Nara Newton', username: 'newperson', email: 'new.person@gmail.com', campus: '', dept: '', ministry: '', active: false }]; return adminApprovalsHtml_(); });
-ok('Admin → Approvals shows their email and that they choose campus and ministry after a yes', /new\.person@gmail\.com/.test(appr) && /They choose their campus and ministry once you say yes/.test(appr) && !/undefined/.test(appr));
-await page.evaluate(() => { S.adminStaff = null; });
-mem.staff.find(x => x.email === 'new.person@gmail.com').active = true;   // approved
-
-/* ---------- 3. the first sign-in after approval: the steps ---------- */
-await page.click('#googleLogin'); await page.waitForSelector('#setup', { timeout: 15000 }); await page.waitForTimeout(400);
+/* ---------- 2. the setup steps, in the app, before any approval ---------- */
 const step = () => page.$eval('#setup', e => e.getAttribute('data-sustep'));
-ok('the first sign-in opens “Set up my profile”, welcoming them by name', (await step()) === 'hello' && /Welcome to YWAM GP, Nara!/.test(await page.$eval('#setup', e => e.innerText)));
+ok('signed in, the app opens on “Set up my profile”, welcoming them by name', (await step()) === 'hello' && /Welcome to YWAM GP, Nara!/.test(await page.$eval('#setup', e => e.innerText)) && /Then an admin says yes/.test(await page.$eval('#setup', e => e.innerText)));
 ok('… nothing else: no bottom bar, no menu, bell or search — only the language', await page.$eval('#bottomNav', e => e.classList.contains('hidden') && !e.children.length) && !(await page.$('#menuBtn')) && !(await page.$('#bellBtn')) && !(await page.$('#findBtn')) && !!(await page.$('#langBtn')));
 await page.screenshot({ path: OUT + '/3-hello.png' });
 await page.click('#suNext');
@@ -140,24 +128,49 @@ await page.click('[data-sucontract="no"]'); await page.waitForTimeout(150);
 ok('“Not yet” says HR will fill it out with them', /tell HR you’re new/.test(await page.$eval('#suContractNo', e => e.innerText)));
 ok('nothing is saved before the last step', nara().setupTodo === true && !nara().campus);
 await page.screenshot({ path: OUT + '/5-papers.png' });
-await page.click('#suNext'); await page.waitForFunction(() => document.querySelector('#setup') && document.querySelector('#setup').getAttribute('data-sustep') === 'done', null, { timeout: 8000 });
+await page.click('#suNext'); await page.waitForSelector('#awaiting', { timeout: 8000 }); await page.waitForTimeout(300);
 const n1 = nara();
-ok('Finish saves it all at once and the steps are done', n1.campus === 'siemreap' && n1.dept === 'Community Service' && n1.ministry === 'Cafe' && n1.role === 'Barista' && n1.staffType === 'ministry' && n1.country === 'Cambodia' && n1.mentorId === 'mo' && n1.mentorStatus === 'pending' && !('setupTodo' in n1),
+ok('Finish saves it all at once — still waiting for the admin', n1.campus === 'siemreap' && n1.dept === 'Community Service' && n1.ministry === 'Cafe' && n1.role === 'Barista' && n1.staffType === 'ministry' && n1.country === 'Cambodia' && n1.mentorId === 'mo' && n1.mentorStatus === 'pending' && !('setupTodo' in n1) && n1.active === false && n1.awaiting === true,
   JSON.stringify({ c: n1.campus, d: n1.dept, m: n1.ministry, k: n1.staffType, s: n1.setupTodo }));
-ok('… “You’re all set!”, with a photo and the papers to do next', /You’re all set!/.test(await page.$eval('#setup', e => e.innerText)) && !!(await page.$('[data-sudone="profile"]')) && !!(await page.$('[data-sudone="mycontract"]')));
-await page.screenshot({ path: OUT + '/6-done.png' });
-await page.click('#suHome'); await page.waitForSelector('nav.bottom button', { timeout: 15000 }); await page.waitForTimeout(800);
-ok('Go to My Home opens the app: the bottom bar, no steps', !(await page.$('#setup')) && !(await page.$eval('#bottomNav', e => e.classList.contains('hidden'))) && await page.evaluate(() => S.view === 'week' && S.me.campus === 'siemreap'));
+const wait = await page.$eval('#awaiting', e => e.innerText);
+ok('… then the waiting page: thank you, what they answered, the rest once an admin says yes', /Thank you, Nara!/.test(wait) && /once they say yes, the whole app opens up/.test(wait) && /Siem Reap/.test(wait) && /Cafe/.test(wait) && /Mo Mentor/.test(wait), wait.replace(/\s+/g, ' '));
+ok('… still nothing else to open', await page.$eval('#bottomNav', e => !e.children.length) && !(await page.$('#menuBtn')));
+await page.screenshot({ path: OUT + '/6-waiting.png' });
+await page.click('#awaitEdit'); await page.waitForTimeout(200);
+ok('Change my answers goes back to the steps, with the answers in', (await step()) === 'campus' && await page.$eval('[data-sucampus="siemreap"]', e => e.classList.contains('on')));
+await page.click('#suBack'); await page.waitForSelector('#awaiting');
+ok('… and Back from there returns to the waiting page', !!(await page.$('#awaiting')));
+await page.reload({ waitUntil: 'load' }); await page.waitForSelector('#awaiting', { timeout: 15000 });
+ok('opened again before approval: straight to the waiting page', !(await page.$('#setup')) && /Waiting for an admin/.test(await page.$eval('#awaiting', e => e.innerText)));
+ok('nothing in the app works for them yet (the server says no)', !(await call('getMyLogs', [n1.username, JSON.parse(await page.evaluate(() => localStorage.getItem('gp-staff'))).pin])).ok);
+
+/* ---------- 3. the admin's Approvals: the email, and the answers once given ---------- */
+const appr = await page.evaluate(() => { S.adminStaff = [{ id: 'x', name: 'Nara Newton', username: 'newperson', email: 'new.person@gmail.com', campus: '', dept: '', ministry: '', active: false }]; return adminApprovalsHtml_(); });
+ok('Admin → Approvals shows their email, and says when they haven’t answered yet', /new\.person@gmail\.com/.test(appr) && /They choose their campus and ministry/.test(appr) && !/undefined/.test(appr));
+await page.evaluate(() => { S.adminStaff = null; });
+const ap = await call('adminSetActive', ['uriah', '1234', n1.id, true]);
+ok('approving the account switches it on and ends the waiting', ap.ok && nara().active === true && !('awaiting' in nara()));
+
+/* ---------- 4. after the yes: the whole app ---------- */
+await page.click('#awaitCheck'); await page.waitForSelector('nav.bottom button', { timeout: 15000 }); await page.waitForTimeout(800);
+ok('Check again opens the app: the bottom bar, My Home, their campus', !(await page.$('#awaiting')) && !(await page.$('#setup')) && await page.evaluate(() => S.view === 'week' && S.me.campus === 'siemreap' && !S.awaiting));
 await page.reload({ waitUntil: 'load' }); await page.waitForSelector('nav.bottom button', { timeout: 15000 }); await page.waitForTimeout(600);
-ok('… and they do not come back on the next open', !(await page.$('#setup')));
+ok('… and on every open after', !(await page.$('#setup')) && !(await page.$('#awaiting')));
 ok('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
 await ctx.close();
 
-/* ---------- 4. the server's side ---------- */
+/* ---------- 5. the server's side ---------- */
 {
   const r = await call('staffRegister', [{ name: 'Pat Pin', email: 'pat@e.com', username: 'pat', pin: '4321', campus: 'nowhere' }]);
   const pat = mem.staff.find(x => x.username === 'pat');
-  ok('a username + PIN sign-up needs only the name, email, username and PIN; a made-up campus is dropped', r.ok && r.pending && pat && pat.campus === '' && pat.setupTodo === true);
+  ok('a username + PIN sign-up needs only the name, email, username and PIN; a made-up campus is dropped', r.ok && r.pending && r.awaiting && r.user === 'pat' && pat && pat.campus === '' && pat.setupTodo === true);
+  const w = await call('getMyBoot', ['pat', '4321']);
+  ok('… waiting, their boot is the waiting page’s few things — no base, logs or goals', w.ok && w.awaiting && w.staff && w.staff.setupTodo && !w.base && !w.logs && !w.goals && Array.isArray(w.roster));
+  ok('… and the PIN sign-in lets them in to it', (await call('staffLogin', ['pat', '4321'])).awaiting === true);
+  const wrong = await call('getMyBoot', ['pat', '0000']);
+  ok('… never with a wrong PIN', !wrong.ok && wrong.err === 'auth');
+  pat.active = false; delete pat.awaiting;
+  ok('an account an admin switched off is not “waiting”: no way in', (await call('staffLogin', ['pat', '4321'])).err === 'pending' && (await call('getMyBoot', ['pat', '4321'])).err === 'auth' && !(await call('updateProfile', ['pat', '4321', { name: 'x' }])).ok);
   pat.active = true;
   const lg = await call('staffLogin', ['pat', '4321']);
   ok('… their own card says the setup is still to do', lg.ok && lg.staff.setupTodo === true);
@@ -169,7 +182,7 @@ await ctx.close();
   ok('an account made before has no setup to do', old.ok && !old.staff.setupTodo);
 }
 
-/* ---------- 5. in Khmer ---------- */
+/* ---------- 6. in Khmer ---------- */
 {
   Object.assign(mem.staff.find(x => x.username === 'pat'), { setupTodo: true, google: { sub: 'g-pat' } });   // Google connected, so the connect step doesn't come first
   const c2 = await browser.newContext({ viewport: { width: 375, height: 800 } });

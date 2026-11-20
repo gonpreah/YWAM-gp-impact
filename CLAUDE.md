@@ -947,16 +947,26 @@ school's home.
     choice) — or, with Google off or "No Google account?" (`#regPinWay`, `S.regPin`), name, email, username and PIN.
     Nothing else is asked; an invite link's campus / department / ministry ride along unseen. Then a thank-you
     (`regDoneHtml_`, `#regDone`, `S.regDone`).
-  - `staffRegister` marks every new account `setupTodo` (and drops a campus that isn't one); `selfStaff_` carries it on
-    their own card only. Admin → Approvals shows the email and "They choose their campus and ministry once you say yes".
+  - `staffRegister` marks every new account `setupTodo` and `awaiting` (and drops a campus that isn't one); `selfStaff_`
+    carries `setupTodo` on their own card only. Admin → Approvals shows the email and, until they answer, "They choose
+    their campus and ministry once you say yes".
+  - **Signed in at once, locked until approved** (Andrew, the same day: "it will log them into the app … you put in all
+    the information … but you still can't access the other parts of the app until the admin approves"):
+    `staffRegister`, `staffLoginGoogle` and `staffLogin` answer an `awaiting` account with a session (`awaitingOut_`); only
+    `getMyBoot` / `getTasksBoot` (`awaitingBoot_`: their card, the public roster for the mentor pick, nothing else),
+    `updateProfile` (no mentor push while waiting) take it, through `verifyAwaiting_` — every other handler still refuses
+    an inactive account. `adminSetActive(…, true)` deletes `awaiting`, so an account switched off later has no way in.
+    The page (`applyBoot` → `S.awaiting`): the steps, then the waiting page (`awaitingHtml_`, `#awaiting`: thank you,
+    their answers, `#awaitEdit` Change my answers, `#awaitCheck` Check again → a fresh boot, `#awaitOut`); no bar, menu,
+    bell, slide-downs or points. The tasks app says to open the main app.
   - **Set up my profile** (`teams/22-setup.js`, `setupWanted_` / `setupHtml_` / `bindSetup_`, `#setup[data-sustep]`):
-    on the first sign-in after approval, in place of the app (no bottom bar, header only the language) — a welcome, then
+    right after sign-up (and for any account with `setupTodo`), in place of the app (no bottom bar, header only the language) — a welcome, then
     `SU_STEPS` one a screen with a bar and Back: campus (`[data-sucampus]`, a tap goes on), department + ministry + role
     (`#su_dept`, `#su_ministry`, `#su_role`; Campus Leadership still waits for an admin), kind of staff
     (`[data-sukind]`), home country (`#su_country`), mentor (`#su_mentor`, this campus first, "choose later"), and the
     staff contract — "Have you signed it with HR?" (`[data-sucontract]`; Not yet → tell HR, who fill it out with you)
     with the Child Protection Agreement and papers pointed to My contract. Nothing is saved until **Finish**: one
-    `updateProfile` with `setupDone` (which deletes `setupTodo`); then "You're all set!" with Add a photo / Sign my
+    `updateProfile` with `setupDone` (which deletes `setupTodo`); while waiting, the waiting page; else "You're all set!" with Add a photo / Sign my
     papers / Go to My Home (`[data-sudone]` → `afterLogin()`, a fresh boot on their campus). The tasks app says to
     finish in the main app (`setupTaHtml_`). tests/test-signup-setup-ui.mjs. Khmer: docs/khmer-needed.md §123.
 - **Every new account waits for an admin** (Andrew: "admin will receive an approval whether they accept
@@ -2392,8 +2402,12 @@ but you can't delete them."
   `miniDashboardHtml`): the quick apps (`#qaBar`, `.qaItem[data-qa]`, `[data-qago]`; what can go there is the person's own ☰
   menu and search, `qaCatalog_` = `gpFindPages_()` minus bottom-bar tabs and sign-out items — never a page their role doesn't
   have; short names `QA_SHORT`), the widgets (`#dashWidgets`, `.dashItem[data-dashw]` around a `.heroW`; `dashWidget_`), and
-  the rows (`#dashRows`, `.dashRow[data-dashrow]`: `sched` this week's chores / cooking, `reading`, `base` the base at a
-  glance with On campus as its fourth figure).
+  the rows (`.dashRow[data-dashrow]`: `sched` this week's chores / cooking, `base` the base at a glance with On campus as its
+  fourth figure; `reading` only when added — `DASH_ROW_EXTRA`, ✕ to take it off; layouts saved before `v:2` lose it).
+- **Blocks, any way round** (Nov 2026, Andrew: "drag … the morning chores … to the very top … mix and match"): the card is
+  `#dashBlocks` > `.dashBlock[data-dashblock]` in the person's `order` (`apps`, `widgets`, `row:<id>`). Editing, a row moves
+  by itself and the apps / widgets by their grip (`.dashGrip`, `dashDrag_`'s `startOk`); an app or widget still moves
+  within its own group. Saved as `order` (≤10, `/^(apps|widgets|row:[a-z]{2,20})$/`) and `v: 2`.
 - **What came with the card stays**: the five quick apps (`DASH_LOCKED_APPS` = `QA_DEFAULT`: GP Calendar/Tasks, Library,
   Learn Khmer, Leave, Prayer), the four widgets (`DASH_W_LOCKED`: Goals, Habits, Health, Tasks) and every row can be moved,
   never taken off — no ✕, and put back if a saved layout lacks them. What the person adds has ✕: apps from their menu, and
@@ -2484,7 +2498,22 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   students, the board or a preview (`gameOn_`).
 - tests/test-game.mjs (server), tests/test-game-ui.mjs (also the holiday catch, Santa, the points sheet and the slide-down reminder). Khmer: docs/khmer-needed.md §112, §113, §118. sw.js SHELL v27 (v28: 22-setup.js).
 
-## Looking around without an account (teams.html guest mode, Oct 2026)
+## Look around: the preview (Nov 2026, Andrew — replaces the guest tour below)
+"There's like a little area that says view it as a guest … it shows a view of the app, but none of the real data … a
+mock-up … the library [real]." The sign-in and sign-up screens have **👀 Look around first** (`#toGuest`, `gpLookHtml_`,
+not in the tasks app); `?guest=1` and `gp-app-guest` open it too (`gpEnterGuest_` → `gpEnterDemo_`, end of
+teams/22-setup.js). It is the real app, signed in as a made-up person (Dara Sok, Cafe, Siem Reap; `S.demo`, `S.auth`
+demo / 0000): **`run()` sends every call as `demoCall(fn, args)`**, and api.js runs that same handler inside `demoScope`
+(its own AsyncLocalStorage, so a nested requestScope stays inside), where `store()` is an in-memory store filled by
+`demoData_()` for that one request — twelve made-up people on both campuses, the year's numbers, check-ins, goals, habits,
+OKRs, GP Tasks, prayers. So the real store is never opened (tests/test-demo.mjs counts every touch), a "save" works within
+its request and is gone on the next, and only `demo` can sign in (everyone else's PIN is a fresh random secret). Only
+get… / list… and the everyday writes in `DEMO_WRITES` run; `DEMO_NEVER` (accounts, admin, HR, portal, QuickBooks, Google,
+voice, the tasks app's boot) never does. The page: `#demoBar` on every page (Create my profile / Log in →
+`gpLeaveDemo_`), a toast the first time something changes (`gpDemoNote_`, not for `DEMO_QUIET`), no boot cache, no
+connect-Google step. The Library is the real one. If the preview can't load, the old tour (`gpEnterGuestPlain_`) shows.
+
+## Looking around without an account (teams.html guest mode, Oct 2026 — now only the fallback)
 `teams.html?guest=1` (the log-in screen's "Look around without an account" button was removed, Nov 2026, Andrew) sets
 `gp-app-guest` (localStorage — they stay a guest on reopen until Log in / Create my
 profile). `S.guest` with a stand-in `S.me` (`gpGuestMe_`, id 'guest') and EMPTY `S.auth`:

@@ -3474,9 +3474,13 @@ button.homeBaseHead { width:100%; padding:0; border:0; background:none; color:in
 .myHero.dashEditing .qaItem, .myHero.dashEditing .dashItem { animation:dashWiggle .3s ease-in-out infinite alternate; cursor:grab; }
 .myHero.dashEditing .qaItem:nth-child(even), .myHero.dashEditing .dashItem:nth-child(even) { animation-duration:.27s; animation-direction:alternate-reverse; }
 .myHero.dashEditing .dashRow { animation:dashWiggleRow .34s ease-in-out infinite alternate; cursor:grab; }
-.myHero.dashEditing .dashRow:nth-child(even) { animation-direction:alternate-reverse; }
+.myHero.dashEditing .dashBlock:nth-child(even) .dashRow { animation-direction:alternate-reverse; }
 .myHero.dashEditing .drag { animation:none; z-index:3; transform:scale(1.08); opacity:.92; cursor:grabbing; }
-.myHero.dashEditing .dashRow.drag { transform:scale(1.02); }
+.myHero.dashEditing .dashRow.drag, .myHero.dashEditing .dashBlock.drag { transform:scale(1.02); }
+.myHero.dashEditing .dashBlock.drag .dashRow { animation:none; }
+.dashGrip { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--onDarkFaint); background:rgba(255,255,255,.1); border-radius:999px; padding:3px 10px; margin:6px 0 4px; cursor:grab; touch-action:none; }
+.dashBlock { position:relative; }
+.dashRow .qaX { top:4px; right:4px; z-index:2; }
 @keyframes dashWiggle { from { transform:rotate(-2.2deg); } to { transform:rotate(2.2deg); } }
 @keyframes dashWiggleRow { from { transform:rotate(-.35deg); } to { transform:rotate(.35deg); } }
 .dashItem .qaX { top:-6px; right:-4px; z-index:2; }
@@ -3510,4 +3514,10 @@ button.homeBaseHead { width:100%; padding:0; border:0; background:none; color:in
 .suNav { display:flex; gap:10px; margin-top:16px; }
 .suNav .btn { margin:0; }
 .suNav .btn.ghost { flex:0 0 auto; width:auto; padding-left:16px; padding-right:16px; }
+
+/* the preview's bar (Look around, 22-setup.js) */
+.demoBar { display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; margin:0 0 12px; font-size:13px; }
+.demoBar > span:first-child { flex:1 1 200px; }
+.demoBarBtns { display:flex; gap:6px; }
+.demoBarBtns .btn { width:auto; margin:0; padding:7px 12px; font-size:13px; }
 

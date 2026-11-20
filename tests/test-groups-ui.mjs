@@ -139,7 +139,9 @@ let link = '';
   await page.click('#regBtn'); await page.waitForTimeout(1500);
   const dana = mem.staff.find(x => x.username === 'dana');
   ok('signing up makes their own account in that ministry, with their own PIN — waiting for an admin to approve it (Nov 2026), its setup still to do', dana && dana.campus === 'siemreap' && dana.dept === 'Leadership Development' && dana.ministry === 'GPDTS' && dana.active === false && !!dana.pinHash && dana.setupTodo === true);
-  ok('… and the page says thank you, and that an admin will look', /An admin will look at it soon/.test(await page.$eval('#regDone', e => e.innerText).catch(() => '')));
+  await page.waitForSelector('#setup', { timeout: 15000 });
+  await page.click('#suNext'); await page.waitForTimeout(200);
+  ok('… and they are signed in to “Set up my profile”, the link’s campus already picked', await page.$eval('[data-sucampus="siemreap"]', e => e.classList.contains('on')).catch(() => false));
   await ctx.close();
 }
 {

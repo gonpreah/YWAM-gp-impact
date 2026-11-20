@@ -63,6 +63,7 @@ const SERVER = [
   'test-app-use.mjs',        // Admin → App use: the days each person opened the app (once a day, 90 kept) and saved a habit; admins only; only dates; the campus's active staff
   'test-tasks-app.mjs',      // GP Tasks as an app of its own: getTasksBoot is its one call (who you are, the roster, the tasks, the month only when asked, nothing of the main page); tasks.html is built from teams.html; its manifest, icons, the worker and the deploy
   'test-signin-link.mjs',     // getting back in: an admin's one-time sign-in link (single use, runs out, replaced by a new one, no hash out), a PIN reset on a password account, an admin setting an email
+  'test-demo.mjs',   // the preview (Look around): the app's own handlers on a made-up campus — the real store never opened, only the made-up person signs in, nothing kept
   'test-google-signin.mjs',   // signing in with Google: a Gmail written another way on the profile (capitals, dots, a +tag) still finds it, exact first; the email in the username box the same; whether Google's page-and-back way is on
   'test-dts-db.mjs', // GPDTS → Database: schools and what is filed under each, the policy, lectures' translator / MC / who finds the speaker, students from the portal with their 1-on-1, outreach teams' weeks counted
   'test-portal.mjs',     // YWAM GP Portal: applicant sign-up, applicants closed out of every staff handler and roster, own application only, portal access flags, timeline follows the CRM stage
@@ -98,7 +99,7 @@ const BROWSER = [
   'test-khmer-learn-ui.mjs',   // Learn Khmer: the data, cards / quiz / match, readings, the game, grammar, the level test
   'test-library-ui.mjs',  // Menu → Library: loads when opened, covers or drawn ones, shelves, book page, read ticks, Khmer, retry
   'test-library-audio-ui.mjs', // 🎧 reads the screen aloud (phone's voice stood in), turns the page, ⏸, speed kept, stops on close, Khmer needs a Khmer voice
-  'test-guest-ui.mjs',    // Look around without an account: the tour, the whole Library, Base (counts, no names), Team/Health locked, no credentials ever sent
+  'test-guest-ui.mjs',    // Look around without an account: the preview — the app itself on a made-up campus, the real Library, the real store untouched, no credentials ever sent
   'test-required-ui.mjs', // books-read tally, "Finish your profile", read + sign with a drawn signature, admin view, HR → Required
   'test-ministry-tools-ui.mjs', // My week: log, partners, reflection, base plants; Cafe: open, till, counters, expenses, rota, close, set up; Khmer at 320px
   'test-p360-ui.mjs',        // 360 reviews on the page: start with quick picks, answer (a board login too), close, results, plan from a growth area, the quarter's review, share

@@ -5,6 +5,11 @@
    account and once it's been approved by the admin, then it'll go over the steps of the information that it asks
    for … what ministry are you in and what kind of campus staff are you and did you fill out your staff contract."
 
+   Then (Andrew, the same day): "when a new person creates an account and they sign in using their Gmail, it will log
+   them into the app … you put in all the information … but you still can't access the other parts of the app until
+   the admin approves the account". So a new account is signed in at once (S.awaiting, from the boot), answers these
+   steps, then sees the waiting page (awaitingHtml_) until an admin's yes opens the whole app.
+
    A new account carries setupTodo (staffRegister) until these steps are done. One question a screen, a Back
    button, a bar showing how far along; nothing is saved until the last step, which sends it all in one
    updateProfile with setupDone — so leaving half-way just starts the steps again next time. The steps start from
@@ -13,7 +18,7 @@
 var SU_STEPS=['hello','campus','ministry','kind','country','mentor','papers'];
 function setupWanted_(){
   if(!S.me || S.guest || S.board || S.student || S.stuPreview || gpTasksApp_()) return false;
-  return !!(S.me.setupTodo || (S.setup && S.setup.step==='done'));
+  return !!(S.me.setupTodo || (S.setup && (S.setup.step==='done' || S.setup.editing)));
 }
 function setupDraft_(){
   if(S.setup && S.setup.d) return S.setup;
@@ -37,7 +42,7 @@ function setupHtml_(){
   var h='<div class="suWrap" id="setup" data-sustep="'+esc(step)+'">'+suHead_(step);
   if(step==='hello'){
     h+='<div class="suHello">👋</div><h2>'+esc(gpT('Welcome to YWAM GP, {name}!',{name:first}))+'</h2>'+
-      '<p class="sub">'+esc(t('An admin has said yes to your profile. A few short questions so the app fits you — about a minute.'))+'</p>'+
+      '<p class="sub">'+esc(S.awaiting ? t('A few short questions so the app fits you — about a minute. Then an admin says yes, and the whole app opens up.') : t('An admin has said yes to your profile. A few short questions so the app fits you — about a minute.'))+'</p>'+
       '<button class="btn" id="suNext">'+esc(t('Let’s start'))+'</button>';
   } else if(step==='campus'){
     h+='<h2>'+esc(t('Which campus are you at?'))+'</h2><div class="suChoices">'+CAMPUSES.map(function(c){
@@ -109,6 +114,7 @@ function suGo_(dir){
     var miss=suMissing_(); if(miss){ showMsg(miss); return; }
     if(su.step==='papers'){ suSave_(); return; }
   }
+  if(dir<0 && su.editing && su.step==='campus'){ S.setup=null; render(); return; }   // changing the answers: Back from the first goes back to waiting
   su.step=SU_STEPS[Math.max(0, Math.min(SU_STEPS.length-1, i+dir))];
   render(); window.scrollTo(0,0);
 }
@@ -122,7 +128,8 @@ function suSave_(){
     if(r && r.ok){
       if(r.staff) S.me=Object.assign({}, S.me, r.staff); if(S.me) delete S.me.setupTodo;
       if(r.profile) S.profile=Object.assign(S.profile||{}, r.profile);
-      su.step='done'; su.clt=!!r.cltPending;
+      if(S.awaiting){ S.setup=null; S.awaitThanks=true; S.awaitClt=!!r.cltPending; }   // still waiting for the admin: the waiting page says thank you
+      else { su.step='done'; su.clt=!!r.cltPending; }
       render(); window.scrollTo(0,0);
       try { if(typeof gpConfetti==='function') gpConfetti(); } catch(e){}
     } else { showMsg(t('Could not save — try again.')); render(); }
@@ -158,3 +165,72 @@ function setupTaHtml_(){
   return '<div class="card" id="setupTa"><h2 style="margin-top:0">👋 '+esc(t('Finish setting up your profile'))+'</h2><p class="sub">'+esc(t('A few short questions in the YWAM GP app first — then your tasks are here.'))+'</p>'+
     '<a class="btn" href="teams.html">'+esc(t('Open the YWAM GP app'))+'</a></div>';
 }
+
+/* The waiting page: a new account, set up, until an admin says yes. What they answered, a way to change it, and a way
+   to look again — the app opens on its own the next time it is opened after the yes. */
+function awaitingHtml_(){
+  var m=S.me||{}, first=String(m.name||'').split(' ')[0];
+  var rows=[[t('Campus'), m.campus ? campusName(m.campus) : ''], [t('Ministry'), [m.ministry ? t(m.ministry) : '', m.dept ? t(m.dept) : ''].filter(Boolean).join(' · ')],
+    [t('Kind of staff'), m.staffType ? t(staffTypeLabel(m.staffType)) : ''], [t('Home country'), m.country||'']];
+  var mentor=m.mentorId ? (S.roster||[]).filter(function(p){ return p.id===m.mentorId; })[0] : null;
+  if(mentor) rows.push([t('Mentor'), mentor.name]);
+  return '<div class="suWrap" id="awaiting"><div class="suHello">'+(S.awaitThanks ? '🙌' : '⏳')+'</div>'+
+    '<h2>'+esc(S.awaitThanks ? gpT('Thank you, {name}!',{name:first}) : t('Waiting for an admin'))+'</h2>'+
+    '<p class="sub">'+esc(t('Your profile is ready. An admin will look at it soon — once they say yes, the whole app opens up for you.'))+'</p>'+
+    (S.awaitClt || (S.profile && S.profile.cltRequest) ? '<div class="banner">🧭 '+esc(t('Your Campus Leadership role is waiting for an admin to approve it.'))+'</div>' : '')+
+    '<div class="card" id="awaitAnswers">'+rows.filter(function(r){ return r[1]; }).map(function(r){
+      return '<div class="row"><span class="sub" style="margin:0">'+esc(r[0])+'</span><b>'+esc(r[1])+'</b></div>'; }).join('')+
+    '<button class="linkbtn" id="awaitEdit">'+esc(t('Change my answers'))+'</button></div>'+
+    '<button class="btn" id="awaitCheck">'+esc(t('Check again'))+'</button>'+
+    '<button class="linkbtn" id="awaitOut">'+esc(t('Log out'))+'</button></div>';
+}
+function bindAwaiting_(){
+  if(!document.getElementById('awaiting')) return;
+  var ck=document.getElementById('awaitCheck'); if(ck) ck.onclick=function(){ gpTap(); S.awaitThanks=false; afterLogin(); };
+  var ed=document.getElementById('awaitEdit'); if(ed) ed.onclick=function(){ gpTap(); S.awaitThanks=false; S.setup=null; setupDraft_().step='campus'; S.setup.editing=true; render(); window.scrollTo(0,0); };
+  var lo=document.getElementById('awaitOut'); if(lo) lo.onclick=function(){ S.awaiting=false; S.awaitThanks=false; S.setup=null; logout(); };
+}
+
+/* ---------- Look around: the app as it is, on a made-up campus (Nov 2026, Andrew) ----------
+   "There's like a little area that says view it as a guest … it shows a view of the app, but none of the real data …
+   just kind of a mock-up so that people can get an idea of what it looks like and how it works … the library [real],
+   everything else just kind of a mock-up." The whole app, signed in as a made-up person (Dara Sok, the Cafe, Siem Reap):
+   every call goes to the server as demoCall, which runs that same handler on a campus made up in memory for that one
+   request (api.js) — so nothing real is read, and nothing is kept. The Library is the real one (its books are in the
+   page). A bar on top says it's a preview, with Create my profile and Log in. gp-app-guest keeps it on the phone, as
+   the guest mode before it did; if the preview can't load, the old guest tour (gpEnterGuestPlain_) takes over. */
+var DEMO_QUIET={ markSeen:1, savePhotoThumb:1, libSaveReads:1, libSaveMine:1, saveDashLayout:1, saveQuickApps:1, catchSanta:1, catchHoliday:1, staffProfile:1, teamRoster:1,
+  cafeGet:1, libNotes:1, myContract:1, mcList:1, leadWeek:1, whosHereTeamPhotos:1, dtsBoard:1, hrList:1, libAudioIndex:1 };   // reads, and what the page saves on its own
+var _demoNoteAt=0;
+function gpDemoNote_(){
+  if(Date.now()-_demoNoteAt<15000) return; _demoNoteAt=Date.now();
+  setTimeout(function(){ showMsg(t('This is a preview — what you change here isn’t kept. Make a profile to use it for real.')); }, 350);
+}
+function gpEnterDemo_(view){
+  lsSet(GUEST_KEY, '1');
+  S.demo=true; S.guest=false; S.demoLoading=true; S.regMode=false; S.me=null; S.view=view||'week';
+  S.auth={ user:'demo', pin:'0000' };
+  render();
+  run('getMyBoot',['demo','0000'],function(d){
+    S.demoLoading=false;
+    if(!(d && d.ok)){ S.demo=false; S.auth={ user:'', pin:'' }; gpEnterGuestPlain_(); return; }
+    S.me=d.staff; S.profile=d.profile; applyBoot(d); S.voiceOn=false;
+    render(); window.scrollTo(0,0);
+  }, function(){ S.demoLoading=false; S.demo=false; S.auth={ user:'', pin:'' }; gpEnterGuestPlain_(); });
+}
+function gpLeaveDemo_(toRegister){
+  lsDel(GUEST_KEY); S.demo=false;
+  logout();
+  S.regMode=!!toRegister; S.view='week'; render(); window.scrollTo(0,0);
+}
+function gpDemoBarHtml_(){
+  return '<div class="banner demoBar" id="demoBar"><span>👀 '+esc(t('A preview of the app — the people and numbers are made up. The Library is real.'))+'</span>'+
+    '<span class="demoBarBtns"><button class="btn small" id="demoReg">'+esc(t('Create my profile'))+'</button>'+
+    '<button class="btn small ghost" id="demoLogin">'+esc(t('Log in'))+'</button></span></div>';
+}
+function bindDemo_(){
+  var r=document.getElementById('demoReg'); if(r) r.onclick=function(){ gpTap(); gpLeaveDemo_(true); };
+  var l=document.getElementById('demoLogin'); if(l) l.onclick=function(){ gpTap(); gpLeaveDemo_(false); };
+  var g=document.getElementById('toGuest'); if(g) g.onclick=function(){ gpTap(); gpEnterDemo_(); };
+}
+

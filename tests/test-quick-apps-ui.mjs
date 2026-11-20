@@ -81,7 +81,8 @@ async function open(user, opts) {
 }
 const ids = (page) => page.$$eval('#qaBar .qaItem[data-qa]', els => els.map(e => e.getAttribute('data-qa')));
 const wids = (page) => page.$$eval('#dashWidgets .dashItem[data-dashw]', els => els.map(e => e.getAttribute('data-dashw')));
-const rowIds = (page) => page.$$eval('#dashRows .dashRow[data-dashrow]', els => els.map(e => e.getAttribute('data-dashrow')));
+const rowIds = (page) => page.$$eval('#dashBlocks .dashRow[data-dashrow]', els => els.map(e => e.getAttribute('data-dashrow')));
+const blocks = (page) => page.$$eval('#dashBlocks > .dashBlock[data-dashblock]', els => els.map(e => e.getAttribute('data-dashblock')));
 const lay = (id) => (mem.staff.find(s => s.id === id) || {}).dashLayout;
 const call = async (fn, args) => JSON.parse(await (await api.default({ method: 'POST', json: async () => ({ fn, args }), headers: new Map() }, {})).text());
 const hold = async (page, sel) => { const b = await (await page.$(sel)).boundingBox(); await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await page.mouse.down(); await page.waitForTimeout(650); await page.mouse.up(); await page.waitForTimeout(350); };
@@ -96,8 +97,10 @@ const drag = async (page, fromSel, toSel) => {
 // ---- the server ----
 {
   const d1 = await call('saveDashLayout', ['di', '1234', { apps: ['library', 'Library', 'bad id!', 'library', 'khmer'], widgets: ['goals', 'books', 'books', 'NOPE', 'x'], rows: ['base', 'reading'] }]);
-  ok('saveDashLayout keeps well-formed ids, once each', d1.ok && JSON.stringify(lay('st5')) === JSON.stringify({ apps: ['library', 'khmer'], widgets: ['goals', 'books'], rows: ['base', 'reading'] }), JSON.stringify(lay('st5')));
+  ok('saveDashLayout keeps well-formed ids, once each', d1.ok && JSON.stringify(lay('st5')) === JSON.stringify({ apps: ['library', 'khmer'], widgets: ['goals', 'books'], rows: ['base', 'reading'], order: [] }), JSON.stringify(lay('st5')));
   ok('… and the apps as quickApps too, for an older page', JSON.stringify((mem.staff.find(s => s.id === 'st5')).quickApps) === '["library","khmer"]');
+  const d2 = await call('saveDashLayout', ['di', '1234', { apps: [], widgets: [], rows: ['sched'], order: ['row:sched', 'apps', 'widgets', 'bogus', 'row:BAD', 'apps'], v: 2 }]);
+  ok('… and the order of the blocks (apps, widgets, row:…), and the layout’s version', d2.ok && JSON.stringify(lay('st5').order) === '["row:sched","apps","widgets"]' && lay('st5').v === 2, JSON.stringify(lay('st5')));
   const many = Array.from({ length: 14 }, (_, i) => 'app' + i);
   ok('… ten apps and eight widgets at most', (await call('saveDashLayout', ['di', '1234', { apps: many, widgets: many.map(x => x.replace(/\d/g, '') + 'abcdefghij'.slice(0, 1 + (many.indexOf(x) % 9))), rows: [] }])).ok && lay('st5').apps.length === 10 && lay('st5').widgets.length <= 8);
   ok('a wrong PIN saves nothing', !(await call('saveDashLayout', ['di', '9999', { apps: ['library'] }])).ok && lay('st5').apps.length === 10);
@@ -110,7 +113,8 @@ const drag = async (page, fromSel, toSel) => {
   const { ctx, page } = await open('di');
   ok('the default quick apps: Calendar, Library, Language, Leave, Prayer', JSON.stringify(await ids(page)) === '["caltasks","library","khmer","leave","prayer"]', JSON.stringify(await ids(page)));
   ok('… then the four widgets and the rows', JSON.stringify(await wids(page)) === '["goals","habits","health","tasks"]' || JSON.stringify(await wids(page)) === '["goals","habits","health"]', JSON.stringify(await wids(page)));
-  ok('… the reading row and the base at a glance', (await rowIds(page)).includes('reading') && (await rowIds(page)).includes('base'), JSON.stringify(await rowIds(page)));
+  ok('… the base at a glance — and no reading row (Nov 2026: the books come as notes)', !(await rowIds(page)).includes('reading') && (await rowIds(page)).includes('base'), JSON.stringify(await rowIds(page)));
+  ok('… the blocks in their first order: apps, widgets, then the rows', JSON.stringify((await blocks(page)).slice(0, 2)) === '["apps","widgets"]', JSON.stringify(await blocks(page)));
   const pen = await page.$eval('#qaEditBtn', e => { const r = e.getBoundingClientRect(), h = document.querySelector('.myHero').getBoundingClientRect(); return { w: r.width, right: h.right - r.right, top: r.top - h.top }; });
   ok('a small ✎ in the card’s top corner, not an icon in the row', pen.w <= 30 && pen.right < 20 && pen.top < 20 && !(await page.$('#qaBar #qaEditBtn')), JSON.stringify(pen));
   ok('nothing wiggles yet', await page.$eval('.myHero', e => !e.classList.contains('dashEditing')) && await page.$eval('.dashItem', e => getComputedStyle(e).animationName === 'none'));
@@ -148,10 +152,21 @@ const drag = async (page, fromSel, toSel) => {
   ok('dragging a widget moves it (Days off to the front), saved', (await wids(page))[0] === 'daysoff' && lay('st5').widgets[0] === 'daysoff', JSON.stringify(await wids(page)));
   await drag(page, '.qaItem[data-qa="prayer"]', '.qaItem[data-qa="caltasks"]');
   ok('dragging an app moves it (Prayer to the front), saved', (await ids(page))[0] === 'prayer' && lay('st5').apps[0] === 'prayer', JSON.stringify(await ids(page)));
-  const r0 = await rowIds(page);
-  await drag(page, '.dashRow[data-dashrow="' + r0[r0.length - 1] + '"]', '.dashRow[data-dashrow="' + r0[0] + '"]');
-  const r1 = await rowIds(page);
-  ok('dragging a row moves it (the last row to the top), saved', r1[0] === r0[r0.length - 1] && lay('st5').rows[0] === r0[r0.length - 1], JSON.stringify([r0, r1]));
+  const r0 = await rowIds(page), last = r0[r0.length - 1];
+  await drag(page, '.dashRow[data-dashrow="' + last + '"]', '#qaBar');
+  const b1 = await blocks(page);
+  ok('a row can go anywhere — dragged onto the apps, it goes above them, to the very top of the card; saved', b1[0] === 'row:' + last && lay('st5').order[0] === 'row:' + last, JSON.stringify(b1));
+  ok('… the apps and widgets have a grip to move the whole group by', (await page.$$('.dashBlock[data-dashblock="apps"] .dashGrip, .dashBlock[data-dashblock="widgets"] .dashGrip')).length === 2);
+  await drag(page, '.dashBlock[data-dashblock="widgets"] .dashGrip', '.dashBlock[data-dashblock="row:' + last + '"]');
+  const b2 = await blocks(page);
+  ok('… dragging the widgets by their grip moves the whole group up, saved', b2[0] === 'widgets' && lay('st5').order[0] === 'widgets', JSON.stringify(b2));
+  await drag(page, '.dashItem[data-dashw="habits"]', '.dashRow[data-dashrow="base"]');
+  ok('… while a widget dragged out of its group stays a widget (the blocks don’t change)', JSON.stringify(await blocks(page)) === JSON.stringify(b2) && (await wids(page)).includes('habits'));
+  await page.click('#qaAdd'); await page.waitForSelector('#qaAddSheet');
+  await page.click('#qaAddSheet [data-qapick="r:reading"]'); await page.waitForTimeout(900);
+  ok('＋ can put the reading row back, with a ✕ to take it off again', (await rowIds(page)).includes('reading') && !!(await page.$('.dashRow[data-dashrow="reading"] .qaX')) && lay('st5').rows.includes('reading'));
+  await page.click('.dashRow[data-dashrow="reading"] .qaX', { force: true }); await page.waitForTimeout(900);
+  ok('… ✕ takes it off', !(await rowIds(page)).includes('reading') && !lay('st5').rows.includes('reading'));
 
   // take off what was added
   await page.click('.qaItem[data-qa="ywamgp"] .qaX', { force: true }); await page.waitForTimeout(900);
@@ -171,15 +186,15 @@ const drag = async (page, fromSel, toSel) => {
   ok('holding an app does the same, without opening it', await page.$eval('.myHero', e => e.classList.contains('dashEditing')) && await page.evaluate(() => S.view) === 'week');
   await page.click('#qaDone'); await page.waitForTimeout(900);
 
-  const before = { apps: await ids(page), w: await wids(page), r: await rowIds(page) };
+  const before = { apps: await ids(page), w: await wids(page), r: await rowIds(page), b: await blocks(page) };
   await page.reload({ waitUntil: 'load' }); await page.waitForSelector('#qaBar'); await page.waitForTimeout(500);
-  ok('opened again: their own card, in their own order', JSON.stringify({ apps: await ids(page), w: await wids(page), r: await rowIds(page) }) === JSON.stringify(before), JSON.stringify(before));
+  ok('opened again: their own card, in their own order', JSON.stringify({ apps: await ids(page), w: await wids(page), r: await rowIds(page), b: await blocks(page) }) === JSON.stringify(before), JSON.stringify(before));
   await ctx.close();
 }
 
 // ---- what came with the card comes back ----
 {
-  await call('saveDashLayout', ['di', '1234', { apps: ['ywamgp'], widgets: ['books'], rows: ['reading'] }]);
+  await call('saveDashLayout', ['di', '1234', { apps: ['ywamgp'], widgets: ['books'], rows: ['reading'], v: 2 }]);
   const { ctx, page } = await open('di');
   const a = await ids(page), w = await wids(page), r = await rowIds(page);
   ok('a saved layout missing the defaults gets them back (they can’t be taken off)', ['caltasks', 'library', 'khmer', 'leave', 'prayer'].every(x => a.includes(x)) && a[0] === 'ywamgp' && ['goals', 'habits', 'health'].every(x => w.includes(x)) && w[0] === 'books' && r.includes('base') && r[0] === 'reading', JSON.stringify({ a, w, r }));

@@ -1148,6 +1148,8 @@ function bind(){
   try{ gpLabelFix_(); }catch(e){}
   bindUx_();
   bindSetup_();   // a new account's first steps (22-setup.js)
+  bindAwaiting_();
+  bindDemo_();
   bindGame_();
   /* Who's here: Base's "On campus now" loads the count; the page loads team photos */
   if((S.view==='base' || S.view==='week') && !S.guest && !S.board && !S.student && S.me) whosHereLoad_();   // Base and My Home show the count
@@ -1721,7 +1723,6 @@ function bind(){
   var rpw=document.getElementById('regPinWay'); if(rpw) rpw.onclick=function(){ S.regPin=true; render(); };
   var rgw=document.getElementById('regGoogleWay'); if(rgw) rgw.onclick=function(){ S.regPin=false; render(); };
   var rog=document.getElementById('regOtherGoogle'); if(rog) rog.onclick=function(){ S.regGoogle=null; gglGo_('signup'); };
-  var rdo=document.getElementById('regDoneOk'); if(rdo) rdo.onclick=function(){ S.regDone=false; S.regMode=false; render(); };
   var rb=document.getElementById('regBtn');
   if(rb) rb.onclick=function(){
     var gg=S.regGoogle, inv=S.regPrefill||{}, val=function(id){ var el=document.getElementById(id); return el ? el.value.trim() : ''; };
@@ -1741,11 +1742,8 @@ function bind(){
     }
     rb.disabled=true; rb.textContent='…';
     run('staffRegister',[payload],function(d){
-      if(d.ok && d.pending){
-        // every new account waits for an admin; there is no session to start yet
-        S.regMode=false; S.regGoogle=null; S.regPin=false; S.regDone=true;
-        render();
-      } else if(d.ok){ S.auth={user:d.user||payload.username.toLowerCase(),pin:d.token||payload.pin}; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; afterLogin(); }
+      /* signed in straight away: the setup questions now, the rest of the app once an admin says yes (22-setup.js) */
+      if(d.ok){ S.auth={user:d.user||payload.username.toLowerCase(),pin:d.token||payload.pin}; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; S.regPin=false; S.setup=null; afterLogin(); }
       else {
         rb.disabled=false; rb.textContent=t('Create my profile');
         showMsg(d.err==='taken' ? t('That username is taken')

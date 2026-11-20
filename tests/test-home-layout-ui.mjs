@@ -103,8 +103,8 @@ mem.goals.push({ staffId: 'me', week: WK - 1, year: YR, items: [{ text: 'Visit t
   const heads = await page.$$eval('#main h3', hs => hs.map(h => (h.firstChild && h.firstChild.nodeType === 3 && h.querySelector('.secBtn') ? h.firstChild.textContent : h.innerText).trim()));   // the heading's own words, not its GP Tasks button
   ok('the sections, in order — no Health or My Ministry below the summary card, and Reading is a row inside it', JSON.stringify(heads) === JSON.stringify(['🎯 Weekly Goals', '✅ Habits', 'Annual Goals · SMART', 'Mentorship', '🧭 About me']), heads.join(' | '));
   const card = await page.$eval('.myHero', e => e.innerText.replace(/\s+/g, ' '));
-  ok('the summary card, made simpler: the quick apps, four widgets (goals, habits, health, tasks), reading, and the base with who is on campus',
-    /1\/3\s*Goals/.test(card) && /2\/3\s*Habits/.test(card) && /9\.2\s*Health/.test(card) && /Read a book/.test(card) && /Staff/.test(card) && /Base health/.test(card) && /On campus/.test(card) &&
+  ok('the summary card, made simpler: the quick apps, four widgets (goals, habits, health, tasks), and the base with who is on campus — no reading row (Nov 2026: books come as notes)',
+    /1\/3\s*Goals/.test(card) && /2\/3\s*Habits/.test(card) && /9\.2\s*Health/.test(card) && !/Read a book/.test(card) && /Staff/.test(card) && /Base health/.test(card) && /On campus/.test(card) &&
     (await page.$$('.myHero .heroWidgets .heroW')).length >= 3 && !!(await page.$('.myHero #qaBar')), card.slice(0, 260));
   ok('… and each thing once: no goals list (Weekly Goals is below), no day streak (the line above has it), no mentor row (Mentorship is below), no days off (Leave is a quick app)',
     !/Plan the cafe menu/.test(card) && !/DAY STREAK/.test(card) && !/Mentor Mealea Sok/.test(card) && !/PERSONAL DAYS OFF/.test(card) && !/Health check-in/.test(card) && !(await page.$('#goMinistryFromMe')) && /in a row/.test(await page.$eval('#gameHome', e => e.innerText)));

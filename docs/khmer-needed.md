@@ -5834,3 +5834,24 @@ Making an account is now Google (or an email, username and PIN) and a name. Once
 | That username is taken | ឈ្មោះអ្នកប្រើនេះមានគេប្រើហើយ |
 | There’s already a profile with that email — sign in instead. | មានប្រវត្តិរូបមួយប្រើអ៊ីមែលនោះរួចហើយ — សូមចូលវិញ។ |
 | Check your details | សូមពិនិត្យព័ត៌មានរបស់អ្នក |
+
+## 124. Signed in to answer the setup questions; the waiting page; Look around (the preview); the dashboard's blocks
+
+A new account is signed in at once to answer the setup questions, then waits on a page that says an admin will look soon. "Look around" opens a preview of the app with made-up people and numbers (only the Library is real); its bar says so on every page. The reading row on My Home is now one that can be added, and the book you were in comes as a note now and then.
+
+| English | Khmer (draft) |
+|---|---|
+| Opening the preview | កំពុងបើកការមើលជាមុន |
+| Look around first — a preview with made-up people and numbers | មើលជុំវិញជាមុនសិន — ការមើលជាមុនដែលមានមនុស្ស និងលេខដែលបង្កើតឡើង |
+| Just your Google account and your name — then a few short questions in the app. | គ្រាន់តែគណនី Google និងឈ្មោះរបស់អ្នក — បន្ទាប់មកសំណួរខ្លីៗពីរបីនៅក្នុងកម្មវិធី។ |
+| Pick up where you left off: {title} | បន្តពីកន្លែងដែលអ្នកបានឈប់៖ {title} |
+| Rows | ជួរ |
+| A few short questions so the app fits you — about a minute. Then an admin says yes, and the whole app opens up. | សំណួរខ្លីៗពីរបី ដើម្បីឲ្យកម្មវិធីសមនឹងអ្នក — ប្រហែលមួយនាទី។ បន្ទាប់មកអ្នកគ្រប់គ្រងយល់ព្រម ហើយកម្មវិធីទាំងមូលបើកសម្រាប់អ្នក។ |
+| Thank you, {name}! | អរគុណ {name}! |
+| Waiting for an admin | កំពុងរង់ចាំអ្នកគ្រប់គ្រង |
+| Your profile is ready. An admin will look at it soon — once they say yes, the whole app opens up for you. | ប្រវត្តិរូបរបស់អ្នករួចរាល់ហើយ។ អ្នកគ្រប់គ្រងនឹងពិនិត្យវាឆាប់ៗនេះ — ពេលពួកគេយល់ព្រម កម្មវិធីទាំងមូលនឹងបើកសម្រាប់អ្នក។ |
+| Check again | ពិនិត្យម្តងទៀត |
+| This is a preview — what you change here isn’t kept. Make a profile to use it for real. | នេះគ្រាន់តែជាការមើលជាមុន — អ្វីដែលអ្នកប្តូរនៅទីនេះមិនត្រូវបានរក្សាទុកទេ។ សូមបង្កើតប្រវត្តិរូប ដើម្បីប្រើវាពិតប្រាកដ។ |
+| A preview of the app — the people and numbers are made up. The Library is real. | ការមើលកម្មវិធីជាមុន — មនុស្ស និងលេខត្រូវបានបង្កើតឡើង។ បណ្ណាល័យគឺពិតប្រាកដ។ |
+| Chores and cooking | ការងារផ្ទះ និងការចម្អិន |
+| The base at a glance | មូលដ្ឋានក្រឡេកមើលភ្លាមៗ |

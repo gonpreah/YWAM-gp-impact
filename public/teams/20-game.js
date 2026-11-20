@@ -7,7 +7,7 @@
      work. Everyone active on the campus is on it.
    Others see points, a streak and which days someone was active — never what they did. */
 
-function gameOn_(){ return !!(S.me && !S.guest && !S.student && !S.board && !S.stuPreview); }
+function gameOn_(){ return !!(S.me && !S.guest && !S.student && !S.board && !S.stuPreview && !S.awaiting && !S.me.setupTodo); }
 function gameMine_(){ return (S.game && S.game.ok && S.game.me) || null; }
 function gamePerson_(id){ return (S.roster||[]).filter(function(p){ return p.id===id; })[0] || { id:id, name:'—' }; }
 

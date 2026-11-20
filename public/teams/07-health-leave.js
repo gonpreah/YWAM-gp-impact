@@ -1052,7 +1052,7 @@ function gglNewHtml_(){
    it (staffLinkGoogle swaps the PIN session for a Google one) — or log out. */
 function gglStepWanted_(){
   if(lsGet('gp-ggl-skip')===String(new Date().toDateString())) return false;   // Google wouldn't work on this phone today: asked again tomorrow
-  return !!(gglOn_() && S.me && S.auth && !S.guest && !S.board && !S.student && !S.stuPreview && !S.bootStale && !S.offlineSince &&
+  return !!(gglOn_() && S.me && S.auth && !S.guest && !S.board && !S.student && !S.stuPreview && !S.bootStale && !S.offlineSince && !S.awaiting && !S.me.setupTodo && !S.demo &&
     (/^\d{4}$/.test(String(S.auth.pin||'')) || S.linkSignIn) && !S.me.google);
 }
 function gglStepHtml_(){
@@ -1074,7 +1074,7 @@ function loginHtml(){
   if(gglOn_() && !S.pinLogin) return loginHeadHtml_()+'<p class="sub">'+esc(t('Sign in with your Google account.'))+'</p>'+
     '<div class="card">'+gglBtnHtml_('googleLogin', t('Continue with Google'))+gglHelpHtml_('login')+
     '<button class="linkbtn" id="showPinLogin">'+esc(t('First time with Google? Sign in once with your username and PIN to connect it'))+'</button>'+
-    '<button class="linkbtn" id="toReg">New here? Create my profile</button>'+loginStuckHtml_()+'</div>';
+    '<button class="linkbtn" id="toReg">New here? Create my profile</button>'+gpLookHtml_()+loginStuckHtml_()+'</div>';
   return loginHeadHtml_()+'<p class="sub">'+esc(gglOn_() ? t('Sign in once with your username and PIN — then connect your Google account.') : 'Log in with your username and 4-digit PIN.')+'</p>'+
     '<div class="card">'+
     (gglOn_() ? '<button class="linkbtn" id="hidePinLogin" style="margin-top:0">← '+esc(t('Continue with Google instead'))+'</button>' : '')+
@@ -1082,8 +1082,10 @@ function loginHtml(){
     '<label class="f">'+esc(t('Username or email'))+'</label><input type="text" id="li_user" autocapitalize="none" placeholder="'+esc(t('e.g. sokha'))+'">'+
     '<label class="f">'+esc(t('PIN or password'))+'</label><input type="password" id="li_pin" maxlength="200" placeholder="••••">'+
     '<button class="btn" id="loginBtn">'+esc(t('Log in'))+'</button>'+
-    '<button class="linkbtn" id="toReg">New here? Create my profile</button>'+loginStuckHtml_()+'</div>';
+    '<button class="linkbtn" id="toReg">New here? Create my profile</button>'+gpLookHtml_()+loginStuckHtml_()+'</div>';
 }
+/* the preview (22-setup.js) — not in the tasks app, which is for staff */
+function gpLookHtml_(){ return gpTasksApp_() ? '' : '<button class="linkbtn" id="toGuest">👀 '+esc(t('Look around first — a preview with made-up people and numbers'))+'</button>'; }
 /* locked out, forgot the PIN, Google picks the wrong account: there is no email to send, so an admin sends a link */
 function loginStuckHtml_(){
   return '<p class="hint" id="loginStuck" style="margin:12px 0 0">🆘 '+esc(t('Can’t get in? Message an admin on Telegram or WhatsApp — they can send you a link that signs you straight in, or set a new PIN.'))+'</p>';
@@ -1149,7 +1151,7 @@ function registerHtml(){
   gglCfg_();
   var inv = S.regPrefill, gg = S.regGoogle, pinWay = !gg && (!gglOn_() || S.regPin);
   var invBanner = inv ? '<div class="banner" id="inviteBanner">👋 '+esc(gpT('You’re joining {where}.',{where:[inv.ministry?t(inv.ministry):'', inv.dept?t(inv.dept):'', campusName(inv.campus)].filter(Boolean).join(' · ')}))+'</div>' : '';
-  var h='<h2>'+esc(t('Create my profile'))+'</h2><p class="sub" id="regSub">'+esc(t('Just your Google account and your name. Once an admin says yes, the app walks you through the rest.'))+'</p>'+invBanner+'<div class="card">';
+  var h='<h2>'+esc(t('Create my profile'))+'</h2><p class="sub" id="regSub">'+esc(t('Just your Google account and your name — then a few short questions in the app.'))+'</p>'+invBanner+'<div class="card">';
   if(gg){
     h+='<div class="banner" id="regGoogle">✅ '+esc(gpT('Signing up with Google as {email}.',{email:gg.email}))+'</div>'+
       '<label class="f">'+esc(t('Your name'))+'</label><input type="text" id="r_name" autocomplete="name" placeholder="'+esc(t('First and last name'))+'" value="'+esc(gg.name||'')+'">'+
@@ -1166,16 +1168,8 @@ function registerHtml(){
       '<label class="f">'+esc(t('PIN (4 digits)'))+'</label><input type="password" id="r_pin" inputmode="numeric" maxlength="4" placeholder="••••">'+
       '<button class="btn" id="regBtn">'+esc(t('Create my profile'))+'</button>';
   }
-  return h+'<button class="linkbtn" id="toLogin">'+esc(t('I already have a profile'))+'</button></div>';
+  return h+'<button class="linkbtn" id="toLogin">'+esc(t('I already have a profile'))+'</button>'+gpLookHtml_()+'</div>';
 }
-/* After "Create my profile": nothing to do but wait for an admin. */
-function regDoneHtml_(){
-  return '<h2>'+esc(t('Thank you!'))+'</h2><div class="card" id="regDone"><p style="margin:0 0 8px;font-size:17px">🙌 '+esc(t('Your profile is made.'))+'</p>'+
-    '<p class="sub" style="margin:0 0 12px">'+esc(t('An admin will look at it soon. Once they say yes, sign in the same way — the app will then ask a few short questions to set up your profile.'))+'</p>'+
-    '<button class="btn" id="regDoneOk">'+esc(t('OK'))+'</button></div>';
-}
-
-
 /* ---------- me ---------- */
 /* Me is the looking-back page: streaks, this week's totals, recent days,
    settings. Home already greets you and carries today's actions, so the

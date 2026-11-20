@@ -293,6 +293,11 @@ function run(fn, args, onOk, onErr){
     if(onOk) setTimeout(function(){ onOk(pv); }, 0);
     return;
   }
+  /* the preview (Look around, 22-setup.js): every call runs on the made-up campus, never the real one */
+  if(S.demo && fn!=='demoCall'){
+    if(!/^(get|list)/.test(fn) && !DEMO_QUIET[fn]) gpDemoNote_();
+    return run('demoCall', [fn, args], onOk, onErr);
+  }
   if(S.student && fn!=='studentCall'){
     if(STUDENT_FNS_C[fn]) return run('studentCall', gpStudentArgs_(fn, args), onOk, onErr);
     if(onOk) setTimeout(function(){ onOk({ ok:false, err:'student' }); }, 0);
@@ -838,10 +843,17 @@ function afterLogin(){
 /* Everything a boot payload carries, in one place, because two entry points use
    it: a remembered session and a fresh login. */
 function applyBoot(d, fromCache){
-  S.qaCat=null;   // the quick apps' catalogue follows the menu, which can change with a fresh boot
+  S.qaCat=null;
+  /* a new account waiting for an admin: the setup questions, then the waiting page — nothing else (22-setup.js) */
+  S.awaiting=!!(d && d.awaiting);
+  if(S.awaiting){
+    if(d.googleId!==undefined){ _ggl.cfg={ google:d.googleId||'', redirect:!!d.googleRedirect }; _ggl.asked=true; }
+    S.roster=d.roster || []; S.offlineSince=null; S.bootStale=false;
+    render(); return;
+  }   // the quick apps' catalogue follows the menu, which can change with a fresh boot
   if(d && d.voice!==undefined) S.voiceOn=!!d.voice;   // talk it through → tasks (21-voice.js)
   if(d && d.googleId!==undefined){ _ggl.cfg={ google:d.googleId||'', redirect:!!d.googleRedirect }; _ggl.asked=true; }   // the site's Google client, for Continue with Google
-  if(!fromCache){ S.offlineSince = null; if(!S.student) gpBootCacheSave_(d); gpMarkSeen_(); setTimeout(function(){ if(typeof gpThumbBackfill_==='function') gpThumbBackfill_(); }, 1500); }
+  if(!fromCache){ S.offlineSince = null; if(!S.student && !S.demo) gpBootCacheSave_(d); gpMarkSeen_(); setTimeout(function(){ if(typeof gpThumbBackfill_==='function') gpThumbBackfill_(); }, 1500); }
   S.roster = d.roster || [];
   S.logs = d.logs || [];
   adoptHabits(d.habits);
@@ -945,6 +957,7 @@ function gpStudentBoot_(stu){
 function gpStudentLeave_(toPortal){ if(!toPortal) lsDel('gp-student'); location.href='portal.html'; }
 function logout(){
   if(S.student){ gpStudentLeave_(false); return; }
+  if(S.demo){ lsDel(GUEST_KEY); S.demo=false; }   // leaving the preview
   lsDel('gp-staff'); lsDel('gp-boot-cache'); lsDel('gp-tasks-boot-cache'); S.offlineSince=null;
   lsDel('gp-lib-read'); lsDel('gp-lib-pending'); lsDel('gp-lib-synced'); lsDel('gp-lib-progress');
   lsDel('gp-staff-card');
@@ -1013,7 +1026,8 @@ function render(){
   if(!S.me){
     hb.innerHTML = '<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>';   // (the old dashboard's button is gone: Look around shows Base)
     nav.classList.add('hidden');
-    document.getElementById('main').innerHTML = S.regDone ? regDoneHtml_() : S.regMode ? registerHtml() : loginHtml();
+    document.getElementById('main').innerHTML = S.demoLoading ? '<div class="loadingBox"><div class="loadCoin">'+(typeof GP_LOGO==='string' ? '<img class="loadLogo" src="'+GP_LOGO+'" alt="">' : '')+'</div><div class="loadText">'+esc(t('Opening the preview'))+'<span class="ldots"></span></div></div>'
+      : S.regMode ? registerHtml() : loginHtml();
     bind();
     return;
   }
@@ -1065,7 +1079,7 @@ function render(){
   document.body.classList.toggle('libReading', S.view==='library' && !!S.libBook && S.libStep!=null);   // not 'reading': that is the Bible-reading box's class, and its yellow, border and font leaked onto the whole page
   if(LIBA.on && !(S.view==='library' && S.libBook && S.libStep!=null)) libAudioStop_();
   if(gglStepWanted_()) m.innerHTML=gglStepHtml_();   // moving everyone to Google: once, after a PIN sign-in (07-health-leave.js)
-  else if(setupWanted_()){ m.innerHTML=setupHtml_(); nav.classList.add('hidden'); nav.innerHTML=''; hb.innerHTML='<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>'; }   // a new account's first steps (22-setup.js): nothing else to tap but the language
+  else if(setupWanted_() || S.awaiting){ m.innerHTML=setupWanted_() ? setupHtml_() : awaitingHtml_(); nav.classList.add('hidden'); nav.innerHTML=''; hb.innerHTML='<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>'; }   // a new account's first steps (22-setup.js): nothing else to tap but the language
   else if(S.guest && S.view==='week') m.innerHTML=gpGuestHomeHtml_();
   else if(S.guest && (S.view==='team' || S.view==='health')) m.innerHTML=gpGuestLockHtml_(S.view);
   else if(S.view==='base') m.innerHTML=(S.guest ? gpGuestCampusHtml_() : '')+(S.board ? orgCampusProfileHtml_(S.me.campus) : '')+baseHtml();
@@ -1106,6 +1120,7 @@ function render(){
   else if(S.view==='required') m.innerHTML=reqSignHtml();
   else m.innerHTML=profileHtml();
   if(S.offlineSince) m.insertAdjacentHTML('afterbegin', gpOfflineBannerHtml_());
+  if(S.demo) m.insertAdjacentHTML('afterbegin', gpDemoBarHtml_());   // the preview says so, on every page
   if(S.bootStale) m.insertAdjacentHTML('afterbegin', gpStaleBarHtml_());
   if(S.stuPreview) m.insertAdjacentHTML('afterbegin', stuPreviewBarHtml_());
   /* Switching screens should open at the top of the new one, not wherever the
@@ -1138,7 +1153,7 @@ function gpTaRender_(hb, nav){
   var m=document.getElementById('main');
   m.classList.remove('wide');
   if(gglStepWanted_()) m.innerHTML=gglStepHtml_();
-  else if(S.me && S.me.setupTodo) m.innerHTML=setupTaHtml_();   // the steps after sign-up are in the main app (22-setup.js)
+  else if(S.me && (S.me.setupTodo || S.awaiting)) m.innerHTML=setupTaHtml_();   // the steps after sign-up are in the main app (22-setup.js)
   else m.innerHTML = S.view==='calendar' ? calendarHtml_() : gptPageHtml_(null);
   if(S.offlineSince) m.insertAdjacentHTML('afterbegin', gpOfflineBannerHtml_());
   if(S.bootStale) m.insertAdjacentHTML('afterbegin', gpStaleBarHtml_());
