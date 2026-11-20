@@ -39,16 +39,17 @@ var CAL_PALETTE=['blue','green','amber','pink','purple','teal','red','orange','i
 /* Light or dark (Nov 2026, Andrew: "in the GP tasks, add a light or dark option"): one button, Auto → Light → Dark,
    the same choice as Profile & settings → Appearance (gp-theme, applyTheme). On GP Tasks' top row in the YWAM GP app,
    and in the GP Tasks app's header (it has no Profile page). */
+function gptThemeWord_(v, long){ return [t('Light'), t('Dark'), long ? t('Auto — follows your phone') : t('Auto')][['light','dark'].indexOf(v)>-1 ? ['light','dark'].indexOf(v) : 2]; }
 function gptThemeNow_(){ var v=savedTheme(); return v || 'auto'; }
 function gptThemeBtnHtml_(cls){
   var v=gptThemeNow_(), ic = v==='dark' ? '🌙' : v==='light' ? '☀️' : '🌗';
-  return '<button class="'+(cls||'gtTheme')+'" data-gptheme="1" aria-label="'+esc(gpT('Appearance: {mode}',{mode: v==='dark' ? t('Dark') : v==='light' ? t('Light') : t('Auto')}))+'">'+ic+'</button>';
+  return '<button class="'+(cls||'gtTheme')+'" data-gptheme="1" aria-label="'+esc(gpT('Appearance: {mode}',{mode: gptThemeWord_(v, false)}))+'">'+ic+'</button>';
 }
 function bindGptTheme_(){
   document.querySelectorAll('[data-gptheme]').forEach(function(b){ b.onclick=function(){
     gpTap(); var v=gptThemeNow_(), nx = v==='auto' ? 'light' : v==='light' ? 'dark' : '';
     applyTheme(nx);
-    showMsg(gpT('Appearance: {mode}',{mode: nx==='dark' ? t('Dark') : nx==='light' ? t('Light') : t('Auto — follows your phone')}));
+    showMsg(gpT('Appearance: {mode}',{mode: gptThemeWord_(nx, true)}));
     render();
   }; });
 }

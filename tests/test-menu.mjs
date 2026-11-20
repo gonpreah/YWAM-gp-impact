@@ -66,10 +66,10 @@ const EXPECT = {
   staff: 'base caltasks ywamgp prayer p360 tests leave library # Operations sched # Language khmer',
   hosp: 'base caltasks ywamgp prayer p360 tests leave library # Operations sched hosp students # Language khmer',
   hospLeader: 'base caltasks ywamgp prayer p360 tests leave library # Operations sched hosp students # Language khmer',
-  teamsLeader: 'base caltasks ywamgp prayer p360 tests leave library # Operations sched students # Applications portal # Language khmer',
+  teamsLeader: 'base caltasks ywamgp prayer p360 tests leave library # Operations sched students # Applications portal portalapp # Language khmer',
   cafeLeader: 'base caltasks ywamgp prayer p360 tests leave library # Operations sched # Language khmer',
   hr: 'base caltasks ywamgp prayer p360 tests leave library # Operations sched students # Admin hr # Language khmer',
-  admin: 'base caltasks ywamgp prayer p360 tests leave library # Operations sched hosp students # Applications portal # Admin hr admin kmreview # Language khmer',
+  admin: 'base caltasks ywamgp prayer p360 tests leave library # Operations sched hosp students # Applications portal portalapp # Admin hr admin kmreview # Language khmer',
 };
 for (const k of Object.keys(EXPECT)) {
   const { out, errors } = await menuOf(WHO[k]);
