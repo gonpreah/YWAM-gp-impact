@@ -2323,7 +2323,7 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   day at most); weekly goals 15 for setting them + up to 25 as their average moves; a GP Task done 5 (40); a day
   ministry numbers were entered 10 (20; never `tool:` rows); **a book finished 50 (150)** — the biggest single thing
   (it was 25, then 50, then 30 for Andrew's balance, and back to 50 for the rollout, Nov 2026); a 1-on-1 held 20 (both
-  people); a holiday catch 5 (3 a day, below); Santa caught 1 (10 a day, below).
+  people); a holiday catch 5 (3 a day, below); Santa caught 5 (5 a day, below).
 - **Streak bonus** (`streakMin` 3, `streakBonus` 0.2): on a day streak of 3 or more, +20% of the week's points
   (`parts.streak`, rounded); the streak breaks → the bonus goes, back to the plain points. My Home's line says
   "+20% streak bonus" (`#gameBonus`).
@@ -2338,16 +2338,21 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   The page can't claim a point. **The weekly health check-in gives none, on purpose** — its rows are anonymous and a
   point would say who answered; the page says so. Don't add it.
 - **Santa** (Nov 2026, Uriah: "a little Santa Claus that flies around the screen every time you open the app … click on
-  him, you get 1 point"; end of 20-game.js, `santa*`): in the holiday season (the board's `santa: {left}`) Santa and two
-  reindeer fly across the screen (`#santaFly`, `.santaFly`, either way, `.ltr`) ~3.5 s after the app opens, once per open
-  (`_santa.flown`), and again when it comes back to the front after 10 minutes away. A tap → `catchSanta(user, pin)`:
-  staff only, in season, `santaDayCap` (10) a day, not two within a minute (`SANTA_GAP_MS`); kept in `holidayCatch` as
-  `santa` / `santaLast`; `parts.santa`. Waits while the bell, a snowflake or the welcome sheet is up. Not under a test
-  browser unless `gp-santa-test` is set (`S.santaMs` / `S.santaFlyMs`).
-- **The welcome to points** (the rollout, `gameIntroMaybe_`, `#gameIntro`): once per person on that phone
-  (`gp-game-intro-v1`), on My Home after a fresh boot — what each thing is worth (from the board's own `pts`), the
-  streak bonus, Santa and the snowflakes in season, **See this week's board** / **Let's go!**. The slide-down reminder
-  waits while it is open. Not under a test browser unless `gp-intro-test` is set. Khmer: docs/khmer-needed.md §115.
+  him, you get … points"; then "make him fly pretty regularly"; end of 20-game.js, `santa*`): in the holiday season (the
+  board's `santa: {left}`) Santa and two reindeer fly across the screen (`#santaFly`, `.santaFly`, either way, `.ltr`)
+  ~3.5 s after the app opens, then every 3–6 minutes while it stays open (`SANTA_GAP_MS`, caught or missed), until
+  today's are caught; back to the front after 10 minutes away starts over with the quick first flight. A tap →
+  `catchSanta(user, pin)`: staff only, in season, **5 points, `santaDayCap` (5) a day** — 25 at most, half a book —
+  not two within a minute (server `SANTA_GAP_MS`); kept in `holidayCatch` as `santa` / `santaLast`; `parts.santa`. Waits
+  while the bell, a snowflake or the points sheet is up. Not under a test browser unless `gp-santa-test` is set
+  (`S.santaMs` / `S.santaGapMs` / `S.santaFlyMs`).
+- **The points sheet when the app opens** (the rollout, `gameIntroMaybe_`, `#gameIntro`; Uriah: "show the points when
+  they open the app … that kind of explains what's what"): on My Home, the first fresh boot of each day — my points,
+  streak and place (`#gameIntroMe`), then "How to earn points" with what each thing is worth (from the board's own
+  `pts`), the streak bonus, Santa and the snowflakes in season, **See this week's board** / **Let's go!**, and
+  **Don't show this when I open the app** (`#gameIntroOff`). The first time it says "Points are here!", after that "Your
+  points this week". On the phone as `gp-game-intro-v2` = {n, last, off}. The slide-down reminder and Santa wait while
+  it is open. Not under a test browser unless `gp-intro-test` is set. Khmer: docs/khmer-needed.md §115.
 - **Streak**: days in a row with any use (the same evidence as Admin → App use), ending today or yesterday.
 - **What others see**: `people` rows are exactly `{id, pts, streak, week, rank, books, booksYear}` (books finished this
   week and this year — counts, as every profile already shows; never which book) (`week` = seven characters, 1 / 0 / -
@@ -2366,7 +2371,7 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   first ("n of N active this week"), my three figures with "Where my points came from" folded, People / Ministries, the
   top ten with points (my own row always shown; people with none are a count, not a list). Not for guests,
   students, the board or a preview (`gameOn_`).
-- tests/test-game.mjs (server), tests/test-game-ui.mjs (also the holiday catch, Santa, the welcome sheet and the slide-down reminder). Khmer: docs/khmer-needed.md §112, §113, §115. sw.js SHELL v27.
+- tests/test-game.mjs (server), tests/test-game-ui.mjs (also the holiday catch, Santa, the points sheet and the slide-down reminder). Khmer: docs/khmer-needed.md §112, §113, §115. sw.js SHELL v27.
 
 ## Looking around without an account (teams.html guest mode, Oct 2026)
 `teams.html?guest=1` (the log-in screen's "Look around without an account" button was removed, Nov 2026, Andrew) sets

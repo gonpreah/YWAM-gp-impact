@@ -3323,7 +3323,14 @@ body.findOn { overflow:hidden; }
 .gameIntroRow b { color:var(--accent); white-space:nowrap; }
 .gameIntro .gameIntroBonus { text-align:left; margin:6px 0; }
 .gameIntroBtns { display:flex; flex-direction:column; gap:8px; margin:14px -18px -16px; padding:10px 18px 16px; position:sticky; bottom:-16px; background:var(--surface); }
-.gameIntroBtns .btn { width:100%; margin:0; }
+.gameIntroBtns .btn { width:100%; margin:0; padding:10px 12px; min-height:0; font-size:15px; }
+.gameIntroBtns { gap:6px !important; padding-top:8px !important; }
+.gameIntroMe { display:flex; justify-content:space-around; gap:6px; margin:4px 0 12px; padding:10px 6px; border-radius:14px; background:var(--headerBg); color:var(--onDark); text-align:center; }
+.gameIntroMe span { display:flex; flex-direction:column; min-width:0; }
+.gameIntroMe b { font-size:20px; }
+.gameIntroMe small { color:var(--onDarkFaint); font-size:12px; }
+.gameIntroHow { font-weight:700; margin:4px 0 2px; }
+.gameIntroBtns .gameIntroOff { align-self:center; font-size:13px; padding:2px 0; }
 @media (prefers-reduced-motion: reduce) { .gameIntro { animation:none; } }
 
 /* ---------- the slide-down reminder (19-ux.js, Nov 2026) ---------- */

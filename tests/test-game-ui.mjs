@@ -164,18 +164,27 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   }
   await ctx.close();
 }
-/* ---------- 3b. Santa, and the welcome to points (Nov 2026, the rollout) ---------- */
+/* ---------- 3b. Santa, and the points sheet on opening the app (Nov 2026, the rollout) ---------- */
 {
   const { ctx, page } = await open('di', { ls: { 'gp-intro-test': '1' } });
   await page.waitForSelector('#gameIntro', { timeout: 5000 });
   const intro = await page.$eval('#gameIntro', e => e.innerText.replace(/\s+/g, ' '));
-  ok('the welcome to points shows once: what each thing is worth, a book at 50', /Points are here!/.test(intro) && /Finish a book \+50/.test(intro) && /Hold a 1-on-1 \+20/.test(intro) && /3 days in a row/.test(intro), intro.slice(0, 200));
+  const mePts = await page.evaluate(() => S.game.me.pts);
+  ok('opening the app: the points sheet, my own points on top, then what each thing is worth', /Points are here!/.test(intro) && new RegExp('⭐ ' + mePts + ' points this week').test(intro) && /How to earn points/.test(intro) && /Finish a book \+50/.test(intro) && /Hold a 1-on-1 \+20/.test(intro) && /Catch Santa when he flies by \+5/.test(intro) && /3 days in a row/.test(intro), intro.slice(0, 260));
   ok('… it fits a phone', await page.evaluate(() => { const r = document.getElementById('gameIntro').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1 && document.documentElement.scrollWidth <= innerWidth + 1; }));
   if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/intro.png' });
   await page.click('#gameIntroBoard'); await page.waitForTimeout(400);
   ok('See this week’s board opens it, and the sheet is gone', !(await page.$('#gameIntro')) && await page.evaluate(() => S.view === 'team' && S.teamMode === 'game'));
   await page.reload({ waitUntil: 'load' }); await page.waitForSelector('nav.bottom button'); await page.waitForTimeout(1200);
-  ok('… and never again on this phone', !(await page.$('#gameIntro')));
+  ok('… once a day: opened again today, it waits for tomorrow', !(await page.$('#gameIntro')));
+  await page.evaluate(() => { const st = JSON.parse(localStorage.getItem('gp-game-intro-v2')); st.last = '2000-01-01'; localStorage.setItem('gp-game-intro-v2', JSON.stringify(st)); });
+  await page.reload({ waitUntil: 'load' }); await page.waitForSelector('#gameIntro', { timeout: 5000 });
+  const again = await page.$eval('#gameIntro', e => e.innerText);
+  ok('the next day it is back, as "Your points this week"', /Your points this week/i.test(again) && !/Points are here/i.test(again));
+  await page.click('#gameIntroOff'); await page.waitForTimeout(300);
+  await page.evaluate(() => { const st = JSON.parse(localStorage.getItem('gp-game-intro-v2')); st.last = '2000-01-01'; localStorage.setItem('gp-game-intro-v2', JSON.stringify(st)); });
+  await page.reload({ waitUntil: 'load' }); await page.waitForSelector('nav.bottom button'); await page.waitForTimeout(1200);
+  ok('"Don’t show this when I open the app" turns it off', !(await page.$('#gameIntro')));
   await ctx.close();
 }
 {
@@ -188,13 +197,20 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
     ok('a few seconds after the app opens, Santa flies across', await page.evaluate(() => { const b = document.getElementById('santaFly'); return !!b && getComputedStyle(b).position === 'fixed' && b.getAttribute('aria-label') === 'Catch Santa' && /🎅/.test(b.textContent); }));
     if (process.env.GP_SHOT) { await page.waitForTimeout(9000); await page.screenshot({ path: process.env.GP_SHOT + '/santa.png' }); }
     const before = await page.evaluate(() => S.game.me.pts);
-    await page.evaluate(() => document.getElementById('santaFly').click());
+    await page.evaluate(() => { S.santaGapMs = 400; S.santaFlyMs = 1500; document.getElementById('santaFly').click(); });
     await page.waitForTimeout(800);
-    ok('a tap catches him: +1 point on the server and on My Home', mem.holidayCatch.santa.st5[today] === 1 && await page.evaluate(b => S.game.me.pts >= b + 1 && S.game.me.parts.santa === 1, before) && new RegExp('⭐ ' + (await page.evaluate(() => S.game.me.pts))).test(await page.$eval('#gameHome', e => e.innerText)), String(before));
-    ok('… with a word that says so', /You caught Santa! \+1 point/.test(await page.$eval('#msg', e => e.textContent)));
-    await page.evaluate(() => { S.view = 'week'; render(); });
-    await page.waitForTimeout(600);
-    ok('once per open: re-drawing the page does not send him again', !(await page.$('#santaFly')));
+    ok('a tap catches him: +5 points on the server and on My Home', mem.holidayCatch.santa.st5[today] === 1 && await page.evaluate(b => S.game.me.pts >= b + 5 && S.game.me.parts.santa === 5, before) && new RegExp('⭐ ' + (await page.evaluate(() => S.game.me.pts))).test(await page.$eval('#gameHome', e => e.innerText)), String(before));
+    ok('… with a word that says so', /You caught Santa! \+5 points/.test(await page.$eval('#msg', e => e.textContent)));
+    await page.waitForSelector('#santaFly', { timeout: 4000 }).catch(() => {});
+    ok('he comes round again a few minutes later (sped up here)', !!(await page.$('#santaFly')));
+    await page.waitForSelector('#santaFly', { state: 'detached', timeout: 4000 }).catch(() => {});
+    await page.waitForSelector('#santaFly', { timeout: 4000 }).catch(() => {});
+    ok('… and again if he got away', !!(await page.$('#santaFly')));
+    mem.holidayCatch.santa.st5[today] = 5;
+    await page.evaluate(() => new Promise(r => run('getGame', [S.auth.user, S.auth.pin, S.me.campus], d => { S.game = d; r(); })));
+    await page.waitForSelector('#santaFly', { state: 'detached', timeout: 4000 }).catch(() => {});
+    await page.waitForTimeout(1500);
+    ok('five caught today: he stops coming', await page.evaluate(() => !document.getElementById('santaFly') && !santaOn_()));
     await page.click('#gameHome'); await page.waitForTimeout(300); await page.click('#gameHow summary'); await page.waitForTimeout(150);
     ok('the board lists Santa caught', /Santa caught/.test(await page.$eval('#gameHow', e => e.innerText)));
   }
