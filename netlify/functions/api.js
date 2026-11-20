@@ -12081,12 +12081,12 @@ async function adminAppUse(username, pin, campus) {
    to the week's points; lose the streak and it goes back. holiday: a snowflake or candy cane caught in the holiday
    season (HOLIDAY_FROM … HOLIDAY_TO), holidayDayCap of them a day. */
 /* The rollout (Nov 2026): a book back to 50 (bookCap three books), and Santa — he flies across the screen when the
-   app opens in the holiday season and every few minutes after; catching him is 5 points, santaDayCap (5) a day, so
-   25 at most, the same as a day of opening the app and ticking habits.
+   app opens in the holiday season and every few minutes after; catching him is 5 points, santaDayCap a day, so
+   at most 15 a day (5 a day until Andrew asked for him lower, Nov 2026 — with books at 30, 25 a day was nearly a book).
    Books back to 30 (bookCap three books, 90) — Andrew, Nov 2026: "Let's change the points for the books", after the
    rollout had made them 50. Still the biggest single thing. */
 const GAME_PTS = { open: 5, habit: 3, habitDayCap: 15, goalsSet: 15, goalsPct: 25, task: 5, taskCap: 40, numbers: 10, numbersCap: 20, book: 30, bookCap: 90, oneOnOne: 20,
-  streakMin: 3, streakBonus: 0.2, holiday: 5, holidayDayCap: 3, santa: 5, santaDayCap: 5 };
+  streakMin: 3, streakBonus: 0.2, holiday: 5, holidayDayCap: 3, santa: 5, santaDayCap: 3 };
 /* The holiday season (Nov 2026, Andrew: "every now and then a snowflake or a candy cane falls … tap it and get 5
    points"). Month-day on Cambodia's calendar, running over the new year. */
 const HOLIDAY_FROM = '11-15', HOLIDAY_TO = '01-06', HOLIDAY_GAP_MS = 30 * 1000, HOLIDAY_KEEP_DAYS = 60;
