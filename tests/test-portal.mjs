@@ -1052,6 +1052,17 @@ ok('a team from abroad: apply, 1st call, passports, photo, flights, letter of in
 ok('no reference, no interview, no generic documents step', !r.body.application.steps.some(st => ['docs', 'reference', 'interview', 'accepted'].includes(st.id)));
 ok('the documents and the visa part are grouped', r.body.application.steps.filter(st => st.group === 'docs').map(st => st.id).join(',') === 'passports,photo,flights' && r.body.application.steps.filter(st => st.group === 'visa').map(st => st.id).join(',') === 'invitation,evisa');
 ok('the 1st call is the step they are on', r.body.application.steps.find(st => st.state === 'current').id === 'call1');
+/* Nov 2026: staff can open the e-visa steps early, for a team that has to apply soon */
+ok('the e-visa steps are closed before the letter of invitation', r.body.application.visaOpen === false);
+r = await call('portalSetVisaFlags', ['rithy', '1234', teamRec.id, { early: true }]);
+ok('“Show them the e-visa steps now” opens them, and is logged', r.body.ok === true && !!r.body.candidate.portal.visa.early && /E-visa steps shown early/.test(r.body.candidate.log.slice(-1)[0].text));
+r = await call('portalBoot', ['team.au', '2468']);
+ok('… the team sees how to apply now — its steps and stage unchanged', r.body.application.visaOpen === true && r.body.application.steps.find(st => st.state === 'current').id === 'call1' && r.body.application.stage === 'applied', r.body.application.stage);
+r = await call('portalSetVisaFlags', ['team.au', '2468', teamRec.id, { early: false }]);
+ok('… the team cannot switch it itself', r.body.ok === false);
+r = await call('portalSetVisaFlags', ['rithy', '1234', teamRec.id, { early: false }]);
+r = await call('portalBoot', ['team.au', '2468']);
+ok('… and switched off, the steps wait for the letter again', r.body.application.visaOpen === false);
 r = await call('portalTeamStep', ['team.au', '2468', teamRec.id, 'call1', true]);
 ok('the team cannot tick its own steps', r.body.ok === false);
 r = await call('portalTeamStep', ['rithy', '1234', cand.id, 'call1', true]);

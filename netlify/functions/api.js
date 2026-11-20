@@ -11786,6 +11786,7 @@ function visaCampus_(c) { return Object.prototype.hasOwnProperty.call(PORTAL_CAM
 function visaOpen_(c) {
   if (!c || !needsVisa_(c)) return false;
   const v = (c.portal && c.portal.visa) || {};
+  if (v.early) return true;   // staff opened the e-visa steps early (portalSetVisaFlags {early}) — a team in a hurry
   return c.type === 'team' ? (hasDoc_(c, 'invitation') || !!v.invitationSent || teamMarked_(c, 'invitation')) : !!v.invitationSent;
 }
 async function getVisaInfo_(campus) {
@@ -11898,6 +11899,15 @@ async function portalSetVisaFlags(username, pin, candidateId, flags) {
     visa.extraDocs = !!flags.extraDocs;
   }
   if (flags.extraNote !== undefined) visa.extraNote = String(flags.extraNote == null ? '' : flags.extraNote).trim().slice(0, 600);
+  /* Show the e-visa steps now (Nov 2026, Andrew: "some teams need to apply as soon as possible but don't have all
+     the information yet … a little checkbox that makes the steps for the e-visa process appear"): the guide, the
+     supporting documents and the e-visa upload open before the letter and the team's documents are in (visaOpen_);
+     nothing else moves — the steps and the stage stay where they are. */
+  if (flags.early !== undefined) {
+    if (!needsVisa_(a.cand)) return { ok: false, err: 'no_visa' };
+    if (!!visa.early !== !!flags.early) a.cand.log = (Array.isArray(a.cand.log) ? a.cand.log : []).concat([{ at: new Date().toISOString(), by: a.s.id, kind: 'note', text: flags.early ? 'E-visa steps shown early' : 'E-visa steps hidden until the letter of invitation' }]).slice(-CAND_LOG_MAX);
+    if (flags.early) visa.early = new Date().toISOString(); else delete visa.early;
+  }
   a.cand.portal.visa = visa;
   a.cand.updated = new Date().toISOString(); a.cand.updatedBy = a.s.id;
   await writeJSON('candidates', a.rows);

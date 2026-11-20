@@ -1856,7 +1856,7 @@ function stepLiHtml_(app, st, i){
    same drawing code shows staff what the applicant sees */
 function asApplicant_(c){
   var v=(c.portal && c.portal.visa)||{}, docs=(c.portal && Array.isArray(c.portal.docs)) ? c.portal.docs : [];
-  var visaOpen = !!c.needsVisa && (c.type==='team' ? (docs.some(function(d){ return d.kind==='invitation'; }) || !!v.invitationSent) : !!v.invitationSent);
+  var visaOpen = !!c.needsVisa && (!!v.early || (c.type==='team' ? (docs.some(function(d){ return d.kind==='invitation'; }) || !!v.invitationSent || (c.steps||[]).some(function(st){ return st.id==='invitation' && st.marked; })) : !!v.invitationSent));
   return { id:c.id, campus:c.campus||'', type:c.type, school:c.school||'', stage:c.stage, status:c.status, submittedAt:(c.portal && c.portal.submittedAt)||null,
     needsVisa:!!c.needsVisa, refNeeded:!!c.refNeeded, visa:v, visaOpen:visaOpen, rooms:c.type==='team' ? ((c.portal && c.portal.rooms)||null) : undefined,
     docs:docs, steps:c.steps||[] };
@@ -2970,7 +2970,8 @@ var VISA_PREP = [
   'At the airport, go to the immigration officers in person, not the machines — show your e-visa. Check your passport has the white sticker.'
 ];
 /* A team's visa part opens once its passports, team photo and flights are in. */
-function teamDocsIn_(app){ var st=app.steps||[]; return ['passports','photo','flights'].every(function(id){ var x=st.filter(function(y){ return y.id===id; })[0]; return !x || x.done; }); }
+function teamDocsIn_(app){ if(app.visa && app.visa.early) return true;   // staff opened the e-visa steps early
+  var st=app.steps||[]; return ['passports','photo','flights'].every(function(id){ var x=st.filter(function(y){ return y.id===id; })[0]; return !x || x.done; }); }
 /* A team's numbers — the Outreach Teams metrics the Teams Database asks for,
    and men / women reached — saved onto its team there. The team fills them
    in on its dashboard (portalSaveTeamNumbers, prefix 't'); staff see and
@@ -3296,7 +3297,7 @@ function visaCardHtml_(app){
   if(!app.needsVisa) return '';
   if(app.type==='team') return '';   // a team's visa part sits under its e-visa step in Where you are (visaHowHtml_)
   var idx=['new','applied','contacted','interview','accepted','practical','arrived'].indexOf(app.stage);
-  if(idx<4 && app.type!=='team') return '<div class="card"><h3 style="margin-top:0">🛂 '+esc(t('Visa'))+'</h3><p class="sub" style="margin:0">'+esc(t('You will need a visa for Cambodia. The step-by-step e-visa guide appears here once you are accepted.'))+'</p></div>';
+  if(idx<4 && app.type!=='team' && !app.visaOpen) return '<div class="card"><h3 style="margin-top:0">🛂 '+esc(t('Visa'))+'</h3><p class="sub" style="margin:0">'+esc(t('You will need a visa for Cambodia. The step-by-step e-visa guide appears here once you are accepted.'))+'</p></div>';
   var v=app.visa||{};
   var tick=function(done, label){ return '<li class="'+(done?'done':'')+'">'+(done?'✓':'○')+' '+esc(label)+(done?'':' · <i>'+esc(t('pending'))+'</i>')+'</li>'; };
   return '<div class="card"><h3 style="margin-top:0">🛂 '+esc(t('Your e-visa, step by step'))+'</h3>'+
@@ -3337,7 +3338,8 @@ function visaHowBodyHtml_(app){
   var inv=(app.docs||[]).filter(function(d){ return d.kind==='invitation'; });
   var file=function(attr, id, name){ return '<button type="button" class="visaFile" '+attr+'="'+esc(id)+'">📄 <span>'+esc(name)+'</span><b>'+esc(t('Open'))+'</b></button>'; };
   var h='<div class="visaSec"><div class="eyebrow">1 · '+esc(t('Your letter of invitation'))+'</div>'+
-    (inv.length ? inv.map(function(d){ return file('data-docopen', d.id, d.name); }).join('') : '<p class="sub" style="margin:4px 0 0">'+esc(t('We have sent you your letter of invitation. Ask us if you can’t find it.'))+'</p>')+'</div>';
+    (inv.length ? inv.map(function(d){ return file('data-docopen', d.id, d.name); }).join('')
+      : '<p class="sub" style="margin:4px 0 0" id="visaNoLetter">'+esc(app.visa && app.visa.early && !app.visa.invitationSent ? t('Your letter of invitation will be here as soon as we have it. You can start the e-visa form now and attach the letter when it comes.') : t('We have sent you your letter of invitation. Ask us if you can’t find it.'))+'</p>')+'</div>';
   if(!V) return h+'<p class="sub" data-visaload="'+esc(app.campus||DEFAULT_CAMPUS)+'">'+esc(t('Loading…'))+'</p>';
   h+='<div class="visaSec"><div class="eyebrow">2 · '+esc(t('Supporting documents'))+'</div>'+
     (V.docs.length ? V.docs.map(function(d){ return file('data-visadoc', d.id, d.name); }).join('') : '<p class="sub" style="margin:4px 0 0">'+esc(t('We send the supporting documents with your letter of invitation.'))+'</p>')+'</div>';
@@ -4022,14 +4024,23 @@ function panelTeamFlowHtml_(c){
     if(st.id==='rooms' && st.done && c.portal && c.portal.rooms) name+=' <span class="hint">· 🛏 '+esc(roomsLine_(c.portal.rooms))+'</span>';
     return '<li class="auto'+(st.done?' done':'')+(st.state==='current'?' cur':'')+'"><span class="flowMark">'+(st.done?'✓':'○')+'</span> '+name+
       ' <span class="hint">'+esc(st.id==='form' ? t('when they submit') : st.id==='invitation' ? t('ticks when you upload it below') : st.id==='rooms' ? t('ticks when SR Hospitality books their beds') : st.id==='practical' ? t('until they arrive') : t('ticks when they upload it'))+'</span>'+eye(st)+seen(st)+'</li>';
-  }).join('')+'</ul><p class="hint" style="margin:4px 0 0">'+esc(t('Tap 👁 on a step to see it exactly as the team does.'))+'</p><p class="hint">'+esc(t('The stage follows the steps: the 1st call moves them to Awaiting documents, the last e-visa to the 2nd call, and the 2nd call to Getting ready. The team sees the same steps on their dashboard, and is in the Teams Database from the day it applies.'))+'</p>';
+  }).join('')+visaEarlyHtml_(c)+'</ul><p class="hint" style="margin:4px 0 0">'+esc(t('Tap 👁 on a step to see it exactly as the team does.'))+'</p><p class="hint">'+esc(t('The stage follows the steps: the 1st call moves them to Awaiting documents, the last e-visa to the 2nd call, and the 2nd call to Getting ready. The team sees the same steps on their dashboard, and is in the Teams Database from the day it applies.'))+'</p>';
   return h;
+}
+/* Show the e-visa steps now (Nov 2026, Andrew): for a team (or anyone) in a hurry, before the letter and their
+   documents are in — the guide, the supporting documents and the e-visa upload open; the steps stay as they are. */
+function visaEarlyHtml_(c){
+  if(!c.needsVisa) return '';
+  var v=(c.portal && c.portal.visa)||{}, open=asApplicant_(c).visaOpen;
+  if(open && !v.early) return '';   // the letter is in already: the steps are open anyway
+  return '<li class="visaEarly" id="visaEarly"><label class="portalTick"><input type="checkbox" data-visaflag="early"'+(v.early?' checked':'')+(P.busy?' disabled':'')+'> 🛂 '+esc(t('Show them the e-visa steps now'))+'</label>'+
+    ' <span class="hint">'+esc(v.early ? t('they can see how to apply and upload their e-visas, before everything else is in') : t('for a team that has to apply soon — before the letter and their documents are in'))+'</span></li>';
 }
 function panelVisaHtml_(c){
   if(!c.needsVisa) return '';
   var v=(c.portal && c.portal.visa)||{};
   if(c.type==='team') return '<h3>'+esc(t('Visa'))+'</h3>'+visaExtraStaffHtml_(c, v);
-  return '<h3>'+esc(t('Visa'))+'</h3>'+visaExtraStaffHtml_(c, v)+'<label class="portalTick" style="margin-bottom:6px"><input type="checkbox" data-visaflag="flightsConfirmed"'+(v.flightsConfirmed?' checked':'')+'> '+esc(t('Flights confirmed'))+'</label>'+
+  return '<h3>'+esc(t('Visa'))+'</h3>'+visaExtraStaffHtml_(c, v)+(visaEarlyHtml_(c) ? '<ul class="flowList">'+visaEarlyHtml_(c)+'</ul>' : '')+'<label class="portalTick" style="margin-bottom:6px"><input type="checkbox" data-visaflag="flightsConfirmed"'+(v.flightsConfirmed?' checked':'')+'> '+esc(t('Flights confirmed'))+'</label>'+
     '<label class="portalTick"><input type="checkbox" data-visaflag="invitationSent"'+(v.invitationSent?' checked':'')+'> '+esc(t('Letter of invitation sent'))+'</label>'+
     '<p class="hint">'+esc(t('The applicant sees these two ticks on their e-visa guide.'))+' <button type="button" class="linkbtn inline" id="seeVisa">'+esc(P.seeVisa===c.id ? t('Hide') : t('See their e-visa guide as they see it'))+'</button></p>'+
     (P.seeVisa===c.id ? asSeenHtml_(c, visaCardHtml_(asApplicant_(c))) : '');

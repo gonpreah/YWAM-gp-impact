@@ -834,7 +834,7 @@ async function open(viewport, query, seed) {
   ok('… and says when nothing matches', /Nothing in the answers matches/.test(await page.$eval('#ansBody', e => e.textContent)));
   await page.fill('#ansQ', ''); await page.waitForTimeout(80);
   await ptab(page, 'docs'); pan = await page.$eval('#panel', e => e.textContent);
-  ok('and the visa ticks for an international applicant', (await page.$$eval('[data-visaflag]', c => c.map(x => x.getAttribute('data-visaflag')).join(','))) === 'flightsConfirmed,invitationSent');
+  ok('and the visa ticks for an international applicant', (await page.$$eval('[data-visaflag]', c => c.map(x => x.getAttribute('data-visaflag')).join(','))) === 'early,flightsConfirmed,invitationSent');   // early: Show them the e-visa steps now (Nov 2026)
   await page.click('#seeVisa'); await page.waitForTimeout(150);
   ok('"See their e-visa guide as they see it" shows the applicant’s visa card, as it is for them right now', !!(await page.$('.asSeen')) && /As they see it/.test(await page.$eval('.asSeen', e => e.textContent)) && /(Your e-visa, step by step|You will need a visa for Cambodia)/.test(await page.$eval('.asSeen', e => e.textContent)), await page.$eval('.asSeen', e => e.textContent.slice(0, 120)));
   await page.click('#seeVisa'); await page.waitForTimeout(100);
@@ -1560,8 +1560,13 @@ async function open(viewport, query, seed) {
   await ptab(page, 'overview');
   ok('the record shows the team’s steps with what is next', /Next: 1st call — getting to know each other · on us/.test(await page.$eval('#teamNext', e => e.textContent)));
   ok('staff tick the steps done outside the portal; the document steps tick themselves on an upload — or staff tick them (Nov 2026)', (await page.$$eval('[data-teamstep]', c => c.map(x => x.getAttribute('data-teamstep')).join(','))) === 'call1,passports,photo,flights,invitation,evisa,call2,arrived' && /ticks when they upload it — or tick it here/.test(await page.$eval('.flowList', e => e.textContent)));
-  ok('no separate visa ticks for a team', !(await page.$('[data-visaflag]')));
-  ok('every team step has 👁', (await page.$$eval('[data-seestep]', b => b.length)) === (await page.$$eval('.flowList li', b => b.length)) && /Tap 👁 on a step/.test(await page.$eval('.flowList + .hint', e => e.textContent)));
+  ok('no separate visa ticks for a team — only “Show them the e-visa steps now”, in Team steps (Nov 2026)', (await page.$$eval('[data-visaflag]', c => c.map(x => x.getAttribute('data-visaflag')).join(','))) === 'early' && !!(await page.$('.flowList #visaEarly')));
+  ok('every team step has 👁', (await page.$$eval('[data-seestep]', b => b.length)) === (await page.$$eval('.flowList li:not(.visaEarly)', b => b.length)) && /Tap 👁 on a step/.test(await page.$eval('.flowList + .hint', e => e.textContent)));
+  await page.check('[data-visaflag="early"]'); await page.waitForTimeout(400);
+  const ve = sent.filter(b => b.fn === 'portalSetVisaFlags').pop();
+  ok('ticking it opens the e-visa steps for the team, through portalSetVisaFlags', ve && ve.args[2] === 'cd_team' && ve.args[3].early === true && await page.$eval('[data-visaflag="early"]', c => c.checked) && /they can see how to apply/.test(await page.$eval('#visaEarly', e => e.textContent)));
+  ok('… so the team’s documents card offers the e-visa upload before the rest is in', await page.evaluate(() => teamDocsIn_({ visa: { early: '2026-11-20' }, steps: [{ id: 'passports', done: false }] }) === true && teamDocsIn_({ visa: {}, steps: [{ id: 'passports', done: false }] }) === false));
+  await page.uncheck('[data-visaflag="early"]'); await page.waitForTimeout(400);
   await page.click('[data-seestep="evisa"]'); await page.waitForTimeout(150);
   ok('👁 on the e-visa step shows it exactly as the team sees it: the step, its note about the letter of invitation', !!(await page.$('.asSeen .step[data-step="evisa"]')) && /As the team sees it/.test(await page.$eval('.asSeen', e => e.textContent)) && /E-visas approved/.test(await page.$eval('.asSeen', e => e.textContent)) && /How to apply for your e-visa online/.test(await page.$eval('.asSeen', e => e.textContent)), await page.$eval('.asSeen', e => e.textContent.slice(0, 160)));
   await ptab(page, 'docs');

@@ -1992,6 +1992,13 @@ forms, documents and references follow.
     `visaOpen_`, `teamFlightsIn_`): the step, the stage moving on, the Teams Database's pending, the e-visa guide opening.
     Steps carry `mark`, `marked` and `byDoc`; the staff record shows a tick on a document step while nothing has ticked
     it or once staff did ("ticked by staff"), and the plain ✓ once a file is in. Rooms stays SR Hospitality's.
+  - **Show them the e-visa steps now** (Nov 2026, Andrew: "some teams … need to apply as soon as possible but don't have all
+    the information yet … a little checkbox that makes the steps for the e-visa process appear"): a staff tick under Team
+    steps (`visaEarlyHtml_`, `#visaEarly`, `[data-visaflag="early"]`; for an individual it sits in the Visa part) →
+    `portalSetVisaFlags {early}` (logged; `no_visa` for someone from Cambodia) → `visa.early`. `visaOpen_` is then true:
+    the guide, the supporting documents and the e-visa upload (`teamDocsIn_` on the page) open before the letter and the
+    documents are in; the steps and the stage stay where they are. Without a letter yet the guide says it will come
+    (`#visaNoLetter`). Hidden once the letter is in (the steps are open anyway). Khmer §127.
   - **The stage follows the steps forward on its own** (`teamAutoStage_`, run after a tick
     and after every upload): call1 done → docs; passports + photo + flights in and the
     e-visas approved → call2; call2 done → practical. It never moves back; unticking Arrived

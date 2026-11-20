@@ -5927,3 +5927,14 @@ A file (the letter of invitation, a passport…) now opens in a small sheet with
 | ticked by staff | បុគ្គលិកបានគូសធីក |
 | ticks when you upload it below — or tick it here if you sent it another way | ធីកឯងៗ ពេលអ្នកផ្ទុកវាឡើងខាងក្រោម — ឬធីកនៅទីនេះ បើអ្នកបានផ្ញើវាតាមវិធីផ្សេង |
 | ticks when they upload it — or tick it here if they sent it another way | ធីកឯងៗ ពេលពួកគេផ្ទុកវាឡើង — ឬធីកនៅទីនេះ បើពួកគេបានផ្ញើវាតាមវិធីផ្សេង |
+
+## 127. Portal: showing a team the e-visa steps early
+
+A staff tick on a team's record opens "How to apply for your e-visa online" and the e-visa upload before the letter of invitation and the team's documents are in, for a team that has to apply soon. The team sees a line saying the letter will come.
+
+| English | Khmer (draft) |
+|---|---|
+| Show them the e-visa steps now | បង្ហាញជំហាន e-visa ដល់ពួកគេឥឡូវនេះ |
+| they can see how to apply and upload their e-visas, before everything else is in | ពួកគេអាចមើលរបៀបដាក់ពាក្យ និងផ្ទុក e-visa ឡើង មុនពេលអ្វីៗផ្សេងទៀតរួចរាល់ |
+| for a team that has to apply soon — before the letter and their documents are in | សម្រាប់ក្រុមដែលត្រូវដាក់ពាក្យឆាប់ៗ — មុនពេលលិខិតអញ្ជើញ និងឯកសាររបស់ពួកគេរួចរាល់ |
+| Your letter of invitation will be here as soon as we have it. You can start the e-visa form now and attach the letter when it comes. | លិខិតអញ្ជើញរបស់អ្នកនឹងនៅទីនេះ ភ្លាមៗពេលយើងមានវា។ អ្នកអាចចាប់ផ្តើមបំពេញទម្រង់ e-visa ឥឡូវនេះ ហើយភ្ជាប់លិខិតនៅពេលវាមកដល់។ |
