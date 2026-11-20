@@ -177,7 +177,7 @@ function gpUndo_(text, commit, undo){
 document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') gpUndoFlush_(); });
 window.addEventListener('pagehide', gpUndoFlush_);
 
-function bindUx_(){ bindFind_(); bindQuickApps_(); gpBannerTick_(); if(typeof holSchedule_==='function') holSchedule_(); }
+function bindUx_(){ bindFind_(); bindQuickApps_(); if(typeof gameIntroMaybe_==='function') gameIntroMaybe_(); gpBannerTick_(); if(typeof holSchedule_==='function') holSchedule_(); if(typeof santaSchedule_==='function') santaSchedule_(); }
 
 /* ---------- The slide-down reminder (Nov 2026, Andrew: "instead of a box pop-up on My Home … a small notification
    slides down from the top, like on a smartphone … swipe it up and it's just in your notification bell … tap it and you
@@ -217,7 +217,7 @@ function gpBannerTick_(){
 }
 function gpBannerShow_(){
   if(_gpBan.cur || !gpBannerOn_()) return;
-  if(document.hidden || S.bellOpen || document.getElementById('findRoot') || document.getElementById('askRoot')){ _gpBan.last=Date.now(); gpBannerTick_(); return; }
+  if(document.hidden || S.bellOpen || document.getElementById('findRoot') || document.getElementById('askRoot') || document.getElementById('gameIntro')){ _gpBan.last=Date.now(); gpBannerTick_(); return; }
   var it=gpBannerNext_(); if(!it) return;
   gpBannerMark_(it);
   var acts=document.createElement('div'); acts.innerHTML=it.actions||'';
