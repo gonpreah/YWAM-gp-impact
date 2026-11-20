@@ -713,6 +713,21 @@ function gpInviteFromUrl_(){
     return { campus:c, dept:d, ministry:m };
   } catch(e){ return null; }
 }
+/* teams.html?reg=1&invite=<48 hex> — an admin's invite (Admin → Invite staff): taken out of the address, kept for
+   this tab (Google's page-and-back comes back here), and what it is for asked of the server (inviteInfo) */
+function gpInviteTake_(){
+  var tok='';
+  try { var q=new URLSearchParams(location.search||''); tok=q.get('invite')||''; if(tok){ q.delete('invite'); var qs=q.toString(); history.replaceState(null, '', location.pathname+(qs?'?'+qs:'')+location.hash); } } catch(e){}
+  try { if(tok) sessionStorage.setItem('gp-invite', tok); else tok=sessionStorage.getItem('gp-invite')||''; } catch(e){}
+  if(!/^[a-f0-9]{48}$/.test(tok)) return;
+  S.regInvite={ token:tok, info:null, err:'' }; S.regMode=true;
+  run('inviteInfo',[tok],function(d){
+    if(!S.regInvite) return;
+    if(d && d.ok) S.regInvite.info=d; else { S.regInvite.err=(d && d.err) || 'bad'; try { sessionStorage.removeItem('gp-invite'); } catch(e){} }
+    if(!S.me) render();
+  }, function(){});
+}
+function gpInviteDrop_(){ S.regInvite=null; try { sessionStorage.removeItem('gp-invite'); } catch(e){} }
 function gpInviteLink_(c, d, m){
   var base=location.origin+location.pathname.replace(/[^\/]*$/, '')+'teams.html';
   return base+'?reg=1&campus='+encodeURIComponent(c)+(d?'&dept='+encodeURIComponent(d):'')+(m?'&ministry='+encodeURIComponent(m):'');
@@ -748,6 +763,7 @@ function boot(){
      form rather than making someone find the "New here?" link first. */
   try { if(String(location.search||'').indexOf('reg=1')>-1) S.regMode = true; } catch(e){}
   S.regPrefill = gpInviteFromUrl_();
+  gpInviteTake_();   // an admin's invite link (?invite=…): pre-approved
   var saved = null;
   try { saved = JSON.parse(lsGet('gp-staff')||'null'); } catch(e){}
   var wantGuest = false, wantDash = false;

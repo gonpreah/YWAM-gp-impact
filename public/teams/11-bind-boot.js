@@ -1732,7 +1732,8 @@ function bind(){
       username:gg ? '' : val('r_user'),
       pin:gg ? '' : val('r_pin'),
       googleToken:gg ? gg.token : undefined,
-      campus:inv.campus||'', dept:inv.dept||'', ministry:inv.ministry||''   // an invite link's, if any: the setup steps start from them
+      campus:inv.campus||'', dept:inv.dept||'', ministry:inv.ministry||'',   // an invite link's, if any: the setup steps start from them
+      invite:(S.regInvite && S.regInvite.info) ? S.regInvite.token : undefined   // an admin's invite: in at once
     };
     if(!payload.name){ showMsg(t('Add your name')); return; }
     if(!gg){
@@ -1743,7 +1744,8 @@ function bind(){
     rb.disabled=true; rb.textContent='…';
     run('staffRegister',[payload],function(d){
       /* signed in straight away: the setup questions now, the rest of the app once an admin says yes (22-setup.js) */
-      if(d.ok){ S.auth={user:d.user||payload.username.toLowerCase(),pin:d.token||payload.pin}; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; S.regPin=false; S.setup=null; afterLogin(); }
+      if(d.ok){ gpInviteDrop_(); S.auth={user:d.user||payload.username.toLowerCase(),pin:d.token||payload.pin}; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; S.regPin=false; S.setup=null; afterLogin(); }
+      else if(/^invite_/.test(d.err||'')){ rb.disabled=false; rb.textContent=t('Create my profile'); if(S.regInvite){ S.regInvite.info=null; S.regInvite.err=d.err.slice(7); } try { sessionStorage.removeItem('gp-invite'); } catch(e){} render(); }
       else {
         rb.disabled=false; rb.textContent=t('Create my profile');
         showMsg(d.err==='taken' ? t('That username is taken')

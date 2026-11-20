@@ -1441,7 +1441,12 @@ names, a `span` row (Pray – Announcements) has one `cells['row|all']`, `off` d
   in `test-portal-page.mjs`.
 
 ## Admin — a home menu, one page per tool, one page per person
-`adminHtml` routes on `S.adminSub`: `home` (a card per tool, `ADMIN_SUBS`, with counts on
+**In sections** (Nov 2026, Andrew: "a lot going on there … categorizing them into sections … easy to navigate"): the home
+(`adminHomeHtml_`) is a "waiting for you" row first (`#adminDue`: approvals and leave waiting, only when there are any,
+else "Nothing is waiting on you."), then `ADMIN_SECS` — People · Students & applications · Ministries & numbers ·
+Messages & settings (`.adminSecHead`, `[data-adminsec]`) — each tool a row with one short line (`ADMIN_SUBS[].sec`), the
+backup line last. Tool ids and `[data-adminsub]` are unchanged.
+`adminHtml` routes on `S.adminSub`: `home` (a row per tool, `ADMIN_SUBS`, with counts on
 Accounts, Approvals and Mentors), `accounts`, `approvals`, `mentors` (`adminMentorsHtml_`:
 one campus at a time via `data-adminmentorcampus` chips opening on the admin's own, one card
 per mentor with their people, `Waiting` until accepted, then everyone with no mentor —
@@ -2614,7 +2619,21 @@ numbers fill themselves in from using it (like Teams and Hospitality). Two so fa
   student's profile, test scores, progress, who has paid → Students Enrolled, Days with
   Classes, Passing Rate, etc.
 
-## Admin → Arrivals & departures
+## Admin → Invite staff: links that let new staff straight in (Nov 2026, Andrew)
+"If I want to invite someone in the admin section … the invite link will be already pre-approved by the admin."
+Admin → ✉️ Invite staff (`groups`, `adminInviteHtml_`): campus, and if wanted department and ministry; who it's for
+(`[data-grpuses]` one person · up to 10 · up to 30); how long (`[data-grpdays]` 3 / 7 / 14 / 30 days); a note → **Make the
+invite link** (`#grpMake` → `adminMakeInvite`, admins only) → `teams.html?reg=1&invite=<48 hex>` shown once (`#grpLink`,
+Copy / Share). Kept only as a hash in the `invites` blob (`{id, hash, salt, campus, dept, ministry, note, uses, used:[{staffId,
+name, at}], exp, off, by, byName, at}`, `INVITE_MAX_USES` 50, `INVITE_MAX_DAYS` 30); "Invite links" lists each with who used it
+and Turn off (`[data-grpoff]` → `adminInviteOff`). The sign-up page takes the token out of the address (`gpInviteTake_`,
+kept in sessionStorage `gp-invite` across Google's page-and-back), asks `inviteInfo` (public: where, who invited) and says
+so (`#inviteOk`, or `#inviteGone` when used / ended / off — they can still sign up and wait). `staffRegister {invite}`
+checks it again: the account is **active at once** (no `awaiting`, no admin push), in the invite's place,
+`invitedBy {inviteId, adminId}`, and the use recorded; the setup steps follow. A link is a key — anyone who has it can
+use it while it lasts. tests/test-groups-ui.mjs. Khmer §125.
+
+## Admin → Arrivals & departures (the old invite, kept for old links)
 - **Invite a new group:** pick campus, department and (optionally) ministry → one link,
   `teams.html?reg=1&campus=…&dept=…&ministry=…` (`gpInviteLink_`). It opens the
   sign-up form with those chosen and a "You're joining …" line (`gpInviteFromUrl_`,

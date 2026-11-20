@@ -945,6 +945,73 @@ async function teamRoster(username, pin) {
    every new account. */
 function needsApproval_(dept) { return normDept_(String(dept || '')) === LEADERSHIP_DEPT; }
 
+/* ==================== invite links (Nov 2026, Andrew) ====================
+   "If I want to invite someone in the admin section … the invite link will be already pre-approved by the admin."
+   An admin makes a link for a campus (and, if they like, a department and ministry), for one person or a group, for a
+   few days: teams.html?reg=1&invite=<48 hex>. Whoever opens it signs up (Google and a name) and is in at once — active,
+   no waiting — then answers the setup questions, starting from the link's place. The token is kept only as a hash
+   (like the sign-in link); it stops at its end date, when it has been used as many times as it allows, or when an admin
+   turns it off. Store `invites` = [{ id, hash, salt, campus, dept, ministry, note, uses, used:[{ staffId, name, at }],
+   exp, off, by, byName, at }]. A link is a key: say so to whoever shares it, keep groups' links short. */
+const INVITE_MAX_USES = 50, INVITE_MAX_DAYS = 30;
+async function getInvites_() { return readJSON('invites', []); }
+function inviteFind_(rows, token) {
+  token = String(token || '');
+  if (!/^[a-f0-9]{48}$/.test(token)) return null;
+  return rows.find(function (r) { return r && r.hash && safeEq_(hashPin_(token, r.salt), r.hash); }) || null;
+}
+function inviteState_(r) {
+  if (!r) return 'bad';
+  if (r.off) return 'off';
+  if (!(Date.parse(r.exp) > Date.now())) return 'expired';
+  if ((r.used || []).length >= (r.uses || 1)) return 'used';
+  return 'ok';
+}
+function inviteOut_(r) {
+  return { id: r.id, campus: r.campus, dept: r.dept || '', ministry: r.ministry || '', note: r.note || '', uses: r.uses || 1,
+    used: (r.used || []).map(function (u) { return { staffId: u.staffId, name: u.name, at: u.at }; }), exp: r.exp, off: !!r.off,
+    byName: r.byName || '', at: r.at, state: inviteState_(r) };
+}
+async function adminMakeInvite(username, pin, p) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  p = p && typeof p === 'object' ? p : {};
+  const campus = CAMPUS_IDS_.includes(p.campus) ? p.campus : '';
+  if (!campus) return { ok: false, err: 'campus' };
+  const dept = p.dept ? normDept_(str_(p.dept, 80), str_(p.ministry, 80) || '') : '';
+  const ministry = dept && p.ministry ? normMinistry_(dept, str_(p.ministry, 80)) : '';
+  const uses = Math.max(1, Math.min(INVITE_MAX_USES, Math.round(Number(p.uses) || 1)));
+  const days = Math.max(1, Math.min(INVITE_MAX_DAYS, Math.round(Number(p.days) || 7)));
+  const token = crypto.randomBytes(24).toString('hex'), salt = crypto.randomBytes(8).toString('hex');
+  const rec = { id: 'inv' + crypto.randomBytes(6).toString('hex'), hash: hashPin_(token, salt), salt: salt, campus: campus, dept: dept, ministry: ministry,
+    note: str_(p.note, 80) || '', uses: uses, used: [], exp: new Date(Date.now() + days * 864e5).toISOString(), off: false,
+    by: admin.id, byName: admin.name || '', at: new Date().toISOString() };
+  const rows = (await getInvites_()).filter(function (r) { return r && (Date.parse(r.exp) > Date.now() - 60 * 864e5); });   // ended ones go after two months
+  rows.unshift(rec);
+  await writeJSON('invites', rows.slice(0, 200));
+  return { ok: true, token: token, invite: inviteOut_(rec) };
+}
+async function adminListInvites(username, pin) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  return { ok: true, invites: (await getInvites_()).map(inviteOut_) };
+}
+async function adminInviteOff(username, pin, id) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  const rows = await getInvites_(), r = rows.find(function (x) { return x && x.id === id; });
+  if (!r) return { ok: false, err: 'not_found' };
+  r.off = true;
+  await writeJSON('invites', rows);
+  return { ok: true, invites: rows.map(inviteOut_) };
+}
+/* public: what the sign-up page says about the link before anyone signs up — where, and who invited them */
+async function inviteInfo(token) {
+  const r = inviteFind_(await getInvites_(), token), st = inviteState_(r);
+  if (st !== 'ok') return { ok: false, err: st };
+  return { ok: true, campus: r.campus, dept: r.dept || '', ministry: r.ministry || '', byName: r.byName || '' };
+}
+
 async function staffRegister(payload) {
   payload = payload && typeof payload === 'object' ? Object.assign({}, payload) : {};
   /* Signing up with Google: the email and name are Google's, the username is made from the email, and
@@ -972,13 +1039,21 @@ async function staffRegister(payload) {
   const email = cleanEmail_(payload.email);
   if (email === null) return { ok: false, err: 'bad_email' };
   if (!email) return { ok: false, err: 'email_required' };
+  /* an admin's invite link: checked now and used up in the same write as the account (below) */
+  let invite = null;
+  if (payload.invite) {
+    invite = inviteFind_(await getInvites_(), payload.invite);
+    const st = inviteState_(invite);
+    if (st !== 'ok') return { ok: false, err: 'invite_' + st };
+    payload.campus = invite.campus; payload.dept = invite.dept || ''; payload.ministry = invite.ministry || '';
+  }
   const salt = pinSalt_();
   const id = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const now = new Date().toISOString();
   /* Every new account waits for an admin to accept or decline it (Nov 2026, Andrew: "when creating a new
      account … admin will receive an approval whether they accept them or deny them"); it used to be only
      Campus Leadership. The admins hear of it at once (pushNow_ 'signup') and it waits in Admin → Approvals. */
-  const pending = true;
+  const pending = !invite;   // an admin's invite link is the admin's yes
   const rec = {
     id: id, username: u, name: payload.name || u, email: email,
     campus: payload.campus || '', dept: normDept_(payload.dept || '', payload.ministry || ''), ministry: normMinistry_(payload.dept || '', payload.ministry || ''),
@@ -992,8 +1067,10 @@ async function staffRegister(payload) {
        easy … not overwhelming with a bunch of questions"); once an admin says yes, the first sign-in walks them
        through the rest — campus, ministry, kind of staff, country, mentor, papers — and updateProfile's setupDone
        clears this. An invite link's campus / department / ministry are still kept and start the steps off. */
-    setupTodo: true, awaiting: true
+    setupTodo: true, awaiting: !invite
   };
+  if (invite) rec.invitedBy = { inviteId: invite.id, adminId: invite.by, at: now };
+  if (!rec.awaiting) delete rec.awaiting;
   if (!CAMPUS_IDS_.includes(rec.campus)) rec.campus = '';
   if (CD_KINDS.indexOf(payload.cdKind) > -1 && rec.dept === LEADERSHIP_DEPT && rec.ministry === 'Campus Director') rec.cdKind = payload.cdKind;
   let gtok = '';
@@ -1007,6 +1084,10 @@ async function staffRegister(payload) {
     return { ok: true };
   });
   if (!added.ok) return added;
+  if (invite) {   // the invite is used once more (or, if it ran out a moment ago, the account still stands: it was checked above)
+    const rows = await getInvites_(), r = rows.find(function (x) { return x && x.id === invite.id; });
+    if (r) { r.used = (r.used || []).concat([{ staffId: rec.id, name: rec.name, at: now }]); await writeJSON('invites', rows); }
+  }
   // No staff/profile in a pending response: this account has no session yet,
   // and returning one would let the client log it straight in anyway.
   if (pending) {
@@ -13967,7 +14048,11 @@ async function demoCall(fn, args) {
 }
 
 const HANDLERS = {
-  demoCall: function (a) { return demoCall(a[0], a[1]); },   // the preview (Look around): one of these handlers, on a made-up campus
+  demoCall: function (a) { return demoCall(a[0], a[1]); },
+  adminMakeInvite: function (a) { return adminMakeInvite(a[0], a[1], a[2]); },
+  adminListInvites: function (a) { return adminListInvites(a[0], a[1]); },
+  adminInviteOff: function (a) { return adminInviteOff(a[0], a[1], a[2]); },
+  inviteInfo: function (a) { return inviteInfo(a[0]); },   // the preview (Look around): one of these handlers, on a made-up campus
   getMyBoot: function (a) { return getMyBoot(a[0], a[1]); },
   getTasksBoot: function (a) { return getTasksBoot(a[0], a[1], a[2]); },
   libAudioIndex: function () { return libAudioIndex(); },

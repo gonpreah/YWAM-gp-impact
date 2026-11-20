@@ -3521,3 +3521,19 @@ button.homeBaseHead { width:100%; padding:0; border:0; background:none; color:in
 .demoBarBtns { display:flex; gap:6px; }
 .demoBarBtns .btn { width:auto; margin:0; padding:7px 12px; font-size:13px; }
 
+/* Admin's home in sections (Nov 2026) */
+.adminSecHead { margin:18px 0 6px; font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.adminSec { padding:2px 0; gap:0; }
+.adminSec .adminMenuCard { background:none; border:0; border-bottom:1px solid var(--line); border-radius:0; padding:12px 14px; box-shadow:none; }
+.adminSec .adminMenuCard:last-child { border-bottom:0; }
+.adminSec .adminMenuEmoji { font-size:22px; }
+.adminSec .adminMenuText b { font-size:15px; }
+.adminDueRow { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 4px; }
+.adminDue { font:inherit; font-size:14px; font-weight:700; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:8px 14px; cursor:pointer; }
+.adminDue.hot { border-color:var(--accent); color:var(--accent); }
+/* Admin → Invite staff */
+.invRow { display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--line); }
+.invRow:last-child { border-bottom:0; }
+.invState { font-size:12px; font-weight:700; border-radius:999px; padding:3px 9px; background:var(--line); color:var(--muted); white-space:nowrap; }
+.invState.ok { background:var(--accent); color:var(--accentInk); }
+

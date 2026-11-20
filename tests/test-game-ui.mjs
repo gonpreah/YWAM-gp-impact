@@ -101,8 +101,10 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   ok('it sits above the summary card', above === true, String(above));
   ok('seven dots for the week', await page.$$eval('#gameHome .gameDots i', e => e.length) === 7);
   if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/home.png' });
+  ok('no reading row on the card by default (Nov 2026: books come as notes; ＋ can add the row)', !(await page.$('#libHome')));
+  await page.evaluate(() => { S.me.dashLayout = { apps: [], widgets: [], rows: ['sched', 'base', 'reading'], v: 2 }; render(); }); await page.waitForTimeout(200);
   const rd = await page.evaluate(() => { const c = document.getElementById('libHome'); return c ? { text: c.innerText.replace(/\s+/g, ' '), inHero: !!c.closest('.myHero'), h: c.getBoundingClientRect().height } : null; });
-  ok('reading is one small row in the summary card, saying what a book is worth', !!rd && /Read a book/.test(rd.text) && /30 points/.test(rd.text) && rd.inHero && rd.h < 80, JSON.stringify(rd));
+  ok('added back, reading is one small row in the summary card, saying what a book is worth', !!rd && /Read a book/.test(rd.text) && /30 points/.test(rd.text) && rd.inHero && rd.h < 80, JSON.stringify(rd));
   ok('… and no Reading card of its own any more', !(await page.$('#sec-reading')) && !(await page.$('.card.libHome')));
   await page.click('#gameHome'); await page.waitForTimeout(300);
   if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/board.png', fullPage: true });

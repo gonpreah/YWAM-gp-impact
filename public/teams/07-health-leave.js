@@ -1150,7 +1150,10 @@ function bindCountryOther(){
 function registerHtml(){
   gglCfg_();
   var inv = S.regPrefill, gg = S.regGoogle, pinWay = !gg && (!gglOn_() || S.regPin);
-  var invBanner = inv ? '<div class="banner" id="inviteBanner">👋 '+esc(gpT('You’re joining {where}.',{where:[inv.ministry?t(inv.ministry):'', inv.dept?t(inv.dept):'', campusName(inv.campus)].filter(Boolean).join(' · ')}))+'</div>' : '';
+  var ri=S.regInvite, invBanner;
+  if(ri && ri.info) invBanner='<div class="banner" id="inviteOk">✉️ '+esc(gpT('{name} invited you to join {where}. Sign up and you’re in — no waiting for approval.',{name:ri.info.byName || t('An admin'), where:[ri.info.ministry?t(ri.info.ministry):'', ri.info.dept?t(ri.info.dept):'', campusName(ri.info.campus)].filter(Boolean).join(' · ')}))+'</div>';
+  else if(ri && ri.err) invBanner='<div class="banner" id="inviteGone">⚠️ '+esc(ri.err==='used' ? t('This invite link has already been used.') : ri.err==='expired' ? t('This invite link has run out.') : ri.err==='off' ? t('This invite link was turned off.') : t('This invite link doesn’t work.'))+' '+esc(t('You can still sign up — an admin will then approve you.'))+'</div>';
+  else invBanner = inv ? '<div class="banner" id="inviteBanner">👋 '+esc(gpT('You’re joining {where}.',{where:[inv.ministry?t(inv.ministry):'', inv.dept?t(inv.dept):'', campusName(inv.campus)].filter(Boolean).join(' · ')}))+'</div>' : '';
   var h='<h2>'+esc(t('Create my profile'))+'</h2><p class="sub" id="regSub">'+esc(t('Just your Google account and your name — then a few short questions in the app.'))+'</p>'+invBanner+'<div class="card">';
   if(gg){
     h+='<div class="banner" id="regGoogle">✅ '+esc(gpT('Signing up with Google as {email}.',{email:gg.email}))+'</div>'+

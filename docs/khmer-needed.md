@@ -5855,3 +5855,62 @@ A new account is signed in at once to answer the setup questions, then waits on 
 | A preview of the app — the people and numbers are made up. The Library is real. | ការមើលកម្មវិធីជាមុន — មនុស្ស និងលេខត្រូវបានបង្កើតឡើង។ បណ្ណាល័យគឺពិតប្រាកដ។ |
 | Chores and cooking | ការងារផ្ទះ និងការចម្អិន |
 | The base at a glance | មូលដ្ឋានក្រឡេកមើលភ្លាមៗ |
+
+## 125. Admin in sections; invite links that let new staff straight in
+
+Admin's home is grouped under four headings, each tool with one short line. Admin → Invite staff makes a link (one person or a group, for a few days) that lets someone sign up and be in at once; the sign-up page says who invited them. The chips and the badges have little room.
+
+| English | Khmer (draft) |
+|---|---|
+| {n} waiting for approval | {n} កំពុងរង់ចាំការអនុម័ត |
+| {n} leave requests waiting | សំណើសុំច្បាប់ {n} កំពុងរង់ចាំ |
+| Nothing is waiting on you. | គ្មានអ្វីកំពុងរង់ចាំអ្នកទេ។ |
+| Invite new staff | អញ្ជើញបុគ្គលិកថ្មី |
+| Make a link and send it on WhatsApp or Telegram. Whoever opens it signs up with Google and their name, and is in straight away — no waiting for approval. Then the app asks them a few short questions. | បង្កើតតំណមួយ ហើយផ្ញើវាតាម WhatsApp ឬ Telegram។ អ្នកណាដែលបើកវា ចុះឈ្មោះជាមួយ Google និងឈ្មោះរបស់ពួកគេ ហើយចូលបានភ្លាម — មិនបាច់រង់ចាំការអនុម័តទេ។ បន្ទាប់មកកម្មវិធីសួរពួកគេនូវសំណួរខ្លីៗពីរបី។ |
+| Who is it for? | សម្រាប់អ្នកណា? |
+| The link works for | តំណនេះប្រើបានរយៈពេល |
+| A note for you (optional) | កំណត់ចំណាំសម្រាប់អ្នក (ស្រេចចិត្ត) |
+| e.g. Sokha, or the new DTS staff | ឧ. សុខា ឬបុគ្គលិក DTS ថ្មី |
+| Making… | កំពុងបង្កើត… |
+| Make the invite link | បង្កើតតំណអញ្ជើញ |
+| Your invite link | តំណអញ្ជើញរបស់អ្នក |
+| One person | មនុស្សម្នាក់ |
+| Up to {n} people | រហូតដល់ {n} នាក់ |
+| This is the only time the link is shown — copy it now. You can make another any time. | នេះជាពេលតែមួយគត់ដែលតំណត្រូវបានបង្ហាញ — ចម្លងវាឥឡូវនេះ។ អ្នកអាចបង្កើតមួយទៀតបានគ្រប់ពេល។ |
+| Invite links | តំណអញ្ជើញ |
+| No invite links yet. | មិនទាន់មានតំណអញ្ជើញនៅឡើយទេ។ |
+| Used up | ប្រើអស់ហើយ |
+| Ended | ផុតកំណត់ |
+| Turned off | បានបិទ |
+| {n} of {m} used | បានប្រើ {n} នៃ {m} |
+| Turn this invite link off? Nobody else can join with it. | បិទតំណអញ្ជើញនេះ? គ្មាននរណាម្នាក់ទៀតអាចចូលរួមតាមវាបានទេ។ |
+| {name} invited you to join {where}. Sign up and you’re in — no waiting for approval. | {name} បានអញ្ជើញអ្នកឲ្យចូលរួម {where}។ ចុះឈ្មោះ ហើយអ្នកចូលបានភ្លាម — មិនបាច់រង់ចាំការអនុម័តទេ។ |
+| An admin | អ្នកគ្រប់គ្រងម្នាក់ |
+| This invite link has already been used. | តំណអញ្ជើញនេះត្រូវបានប្រើរួចហើយ។ |
+| This invite link has run out. | តំណអញ្ជើញនេះផុតកំណត់ហើយ។ |
+| This invite link was turned off. | តំណអញ្ជើញនេះត្រូវបានបិទ។ |
+| This invite link doesn’t work. | តំណអញ្ជើញនេះមិនដំណើរការទេ។ |
+| You can still sign up — an admin will then approve you. | អ្នកនៅតែអាចចុះឈ្មោះបាន — បន្ទាប់មកអ្នកគ្រប់គ្រងនឹងអនុម័តអ្នក។ |
+| Students & applications | សិស្ស និងពាក្យសុំ |
+| Ministries & numbers | កិច្ចការបម្រើ និងលេខ |
+| Messages & settings | សារ និងការកំណត់ |
+| Invite staff | អញ្ជើញបុគ្គលិក |
+| Find anyone — profile, PIN, mentor, leader | ស្វែងរកអ្នកណាម្នាក់ — ប្រវត្តិរូប PIN អ្នកណែនាំ អ្នកដឹកនាំ |
+| New sign-ups waiting for a yes | ការចុះឈ្មោះថ្មីកំពុងរង់ចាំការយល់ព្រម |
+| A link that lets new staff straight in | តំណដែលអនុញ្ញាតឲ្យបុគ្គលិកថ្មីចូលបានភ្លាម |
+| Who walks with whom, and who has nobody | អ្នកណាដើរជាមួយអ្នកណា និងអ្នកណាមិនទាន់មាននរណា |
+| Requests waiting, and days used | សំណើកំពុងរង់ចាំ និងថ្ងៃដែលបានប្រើ |
+| When a group leaves | ពេលក្រុមមួយចាកចេញ |
+| Two profiles that are one person | ប្រវត្តិរូបពីរដែលជាមនុស្សតែម្នាក់ |
+| Who is staying, each school, their app | អ្នកណាកំពុងស្នាក់នៅ សាលានីមួយៗ កម្មវិធីរបស់ពួកគេ |
+| Who works in applications | អ្នកណាធ្វើការលើពាក្យសុំ |
+| What each ministry tracks | អ្វីដែលកិច្ចការបម្រើនីមួយៗតាមដាន |
+| Gaps that make the totals wrong | ចន្លោះដែលធ្វើឲ្យលេខសរុបខុស |
+| Who uses the app, and how often | អ្នកណាប្រើកម្មវិធី និងញឹកញាប់ប៉ុណ្ណា |
+| A message to everyone’s bell | សារមួយទៅកណ្តឹងរបស់អ្នករាល់គ្នា |
+| Phone reminders for the app | ការរំលឹកតាមទូរស័ព្ទសម្រាប់កម្មវិធី |
+| The campus calendar in the app | ប្រតិទិនបរិវេណនៅក្នុងកម្មវិធី |
+| Members, roles and their sign-in | សមាជិក តួនាទី និងការចូលរបស់ពួកគេ |
+| A group (up to 10) | ក្រុមមួយ (រហូតដល់ ១០) |
+| A big group (up to 30) | ក្រុមធំ (រហូតដល់ ៣០) |
+| For {where}. {uses} — until {date}. Anyone who has the link can use it, so send it only to them. | សម្រាប់ {where}។ {uses} — រហូតដល់ {date}។ អ្នកណាដែលមានតំណនេះអាចប្រើវាបាន ដូច្នេះសូមផ្ញើវាតែទៅពួកគេប៉ុណ្ណោះ។ |
