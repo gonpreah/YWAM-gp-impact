@@ -74,7 +74,7 @@ console.log('2. who is on it');
 ok('other campus, archived and applicants are not', !row('p1') && !row('ar') && !row('ap'));
 ok('an old step-off flag is not honoured: everyone is listed', !!row('h1') && row('h1').pts === P.open + P.habit, row('h1'));
 ok('books: a count this week and this year, never which', row('c1').books === 1 && row('c1').booksYear === 1 && row('c2').books === 0);
-ok('the rollout (Nov 2026): a book is 50, the biggest single thing; the everyday things as balanced', P.book === 50 && P.bookCap === 150 && P.habit === 3 && P.habitDayCap === 15 && P.oneOnOne === 20 && P.goalsSet === 15 && P.goalsPct === 25 && P.taskCap === 40 && P.santa === 5 && P.santaDayCap === 5 && P.santa * P.santaDayCap <= P.book / 2 && ['open', 'habit', 'goalsSet', 'goalsPct', 'task', 'numbers', 'oneOnOne', 'holiday', 'santa'].every(k => P[k] < P.book), P);
+ok('a book is 30 (Andrew, Nov 2026), still the biggest single thing; the everyday things as balanced', P.book === 30 && P.bookCap === 90 && P.habit === 3 && P.habitDayCap === 15 && P.oneOnOne === 20 && P.goalsSet === 15 && P.goalsPct === 25 && P.taskCap === 40 && P.santa === 5 && P.santaDayCap === 3 && P.santa * P.santaDayCap < P.book && ['open', 'habit', 'goalsSet', 'goalsPct', 'task', 'numbers', 'oneOnOne', 'holiday', 'santa'].every(k => P[k] < P.book), P);
 ok('the streak bonus is in my parts; a 1-day streak gets none', g.me.parts.streak === Math.round(coraBase * P.streakBonus) && row('c2').streak === 1 && row('c2').pts === P.open + P.habitDayCap, [g.me.parts, row('c2')]);
 ok('active counts', g.of === 4 && g.active === 3 && g.activeToday === 3, [g.of, g.active, g.activeToday]);
 ok('a row is only id, points, streak, week, rank and book counts', g.people.every(p => Object.keys(p).sort().join() === 'books,booksYear,id,pts,rank,streak,week'), g.people[0]);
@@ -123,18 +123,18 @@ console.log('2d. Santa');
   if (!season) {
     ok('out of season: no Santa, and the board says so', (await call('catchSanta', ['kanha', '1234'])).err === 'season' && b0.santa === null);
   } else {
-    ok('in season: five Santas to catch today', b0.santa && b0.santa.left === 5, b0.santa);
+    ok('in season: three Santas to catch today', b0.santa && b0.santa.left === 3, b0.santa);
     const c1 = await call('catchSanta', ['kanha', '1234']);
-    ok('Santa is 5 points, on the board at once', c1.ok && c1.pts === 5 && c1.left === 4 && c1.game.me.parts.santa === 5 && c1.game.me.pts >= b0.me.pts + 5, [c1.left, c1.game && c1.game.me]);
+    ok('Santa is 5 points, on the board at once', c1.ok && c1.pts === 5 && c1.left === 2 && c1.game.me.parts.santa === 5 && c1.game.me.pts >= b0.me.pts + 5, [c1.left, c1.game && c1.game.me]);
     ok('not two within a minute', (await call('catchSanta', ['kanha', '1234'])).err === 'soon');
     ok('… and a snowflake still counts on its own', (await call('catchHoliday', ['kanha', '1234'])).ok === true);
-    for (let i = 0; i < 4; i++) { mem.holidayCatch.santaLast.c2 = 0; await call('catchSanta', ['kanha', '1234']); }
+    for (let i = 0; i < 2; i++) { mem.holidayCatch.santaLast.c2 = 0; await call('catchSanta', ['kanha', '1234']); }
     mem.holidayCatch.santaLast.c2 = 0;
     const cx = await call('catchSanta', ['kanha', '1234']);
-    ok('five a day, then no more', cx.ok === false && cx.err === 'cap' && mem.holidayCatch.santa.c2[today] === 5, cx);
+    ok('three a day, then no more', cx.ok === false && cx.err === 'cap' && mem.holidayCatch.santa.c2[today] === 3, cx);
     mem.holidayCatch.santa.c2[today] = 500;
     const b1 = await call('getGame', ['kanha', '1234', 'siemreap']);
-    ok('a tampered count still gives at most five catches (25 points)', b1.me.parts.santa === 25 && b1.santa.left === 0, [b1.me.parts, b1.santa]);
+    ok('a tampered count still gives at most three catches (15 points)', b1.me.parts.santa === 15 && b1.santa.left === 0, [b1.me.parts, b1.santa]);
     ok('what others see is still points, never a Santa count', b1.people.every(p => !('santa' in p)));
     delete mem.holidayCatch;
   }
