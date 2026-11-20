@@ -5652,3 +5652,27 @@ In the book reader a paragraph can be highlighted in a colour ("Highlight", as w
 | Open the Portal and sign in with Google, as you do here. | បើកផតថល ហើយចូលដោយប្រើ Google ដូចដែលអ្នកធ្វើនៅទីនេះ។ |
 | Open the Portal | បើកផតថល |
 | Install it like an app, with its own icon — the applications one tap from your Home Screen. | ដំឡើងវាដូចកម្មវិធីមួយ ជាមួយរូបតំណាងផ្ទាល់ខ្លួន — ពាក្យសុំទាំងអស់ ចុចតែម្ដងពីអេក្រង់ដើម។ |
+
+## 116. My Home: the Library as one row of the summary card
+
+A short line beside 📚 on the dark summary card — very little room. "Read a book" is shown when no book is under way; "Ten minutes · {n} points" sits after it.
+
+| English | Khmer (draft) |
+|---|---|
+| Read a book | អានសៀវភៅមួយក្បាល |
+| Ten minutes · {n} points | ដប់នាទី · {n} ពិន្ទុ |
+| Ten minutes | ដប់នាទី |
+| {n} of {total} have read it | {n} នាក់ក្នុងចំណោម {total} បានអានវាហើយ |
+
+## 117. My Home: quick apps
+
+A row of small icons at the top of My Home's summary card that each person chooses and arranges (hold an icon, or tap ✎ Edit). "Quick apps" names the row; the rest are on the edit row and the Add sheet.
+
+| English | Khmer (draft) |
+|---|---|
+| Quick apps | កម្មវិធីរហ័ស |
+| Add an app | បន្ថែមកម្មវិធី |
+| Arrange your quick apps | រៀបចំកម្មវិធីរហ័សរបស់អ្នក |
+| Drag to move · ✕ to take off | អូសដើម្បីផ្លាស់ទី · ✕ ដើម្បីដកចេញ |
+| Add a quick app | បន្ថែមកម្មវិធីរហ័ស |
+| Everything is on your bar already. | អ្វីៗទាំងអស់មាននៅលើរបាររបស់អ្នករួចហើយ។ |

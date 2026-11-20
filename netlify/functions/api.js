@@ -5863,7 +5863,7 @@ async function saveKmReview(username, pin, key, verdict, km) {
 function bootStaffCard_(s) {
   /* mentorStatus: their own — the page reads S.me.mentorStatus (whether their mentor has said yes); it was only on
      the profile, so every 1-on-1 with one's own mentor also showed in "Asking you" and leave said "Save this request" */
-  return selfStaff_(s, { mentorStatus: s.mentorStatus || '', isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), signIn: authKindOf_(s), google: !!s.google, hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '', langLevel: langMine_(s), seeLangLevels: canSeeLangLevels_(s) });   // created: for My Home's first 30 days
+  return selfStaff_(s, { mentorStatus: s.mentorStatus || '', isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), signIn: authKindOf_(s), google: !!s.google, hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '', langLevel: langMine_(s), seeLangLevels: canSeeLangLevels_(s), quickApps: Array.isArray(s.quickApps) ? s.quickApps : null });   // created: for My Home's first 30 days; quickApps: My Home's quick-apps bar
 }
 /* GP Tasks as an app of its own (tasks.html, Nov 2026, Andrew: "a separate app for our tasks and calendar …
    synced and linked to the main app"). It is the same data, so there is nothing to sync: this is the tasks
@@ -13168,6 +13168,19 @@ async function saveGpListOrder(username, pin, ids) {
   if (!r || !r.ok) return { ok: false };
   return getGpTasks(username, pin);
 }
+/* My Home's quick apps (Nov 2026, Andrew: "customise it like a hotbar"): the person's own list of which pages sit on
+   their summary card, in order. Ids only (the page decides what each one is, from the person's own menu); null puts the
+   default back. */
+async function saveQuickApps(username, pin, ids) {
+  const s = await verifyStaff_(username, pin); if (!s) return { ok: false };
+  const clean = Array.isArray(ids) ? ids.map(function (k) { return String(k || ''); }).filter(function (k, i, a) { return /^[a-z][a-z0-9:-]{0,39}$/.test(k) && a.indexOf(k) === i; }).slice(0, 10) : null;
+  const r = await mutateStaff_(function (rows) {
+    const rec = rows.find(function (x) { return x.id === s.id; }); if (!rec) return { abort: true, ok: false };
+    if (clean) rec.quickApps = clean; else delete rec.quickApps;
+    return { ok: true };
+  });
+  return r && r.ok ? { ok: true, quickApps: clean } : { ok: false };
+}
 async function saveGpTaskFilter(username, pin, keys) {
   const s = await gptAuth_(username, pin); if (!s) return { ok: false };
   const clean = Array.isArray(keys) ? keys.map(function (k) { return str_(k, 170); }).filter(Boolean).slice(0, 200) : null;
@@ -13765,6 +13778,7 @@ const HANDLERS = {
   adminAppUse: function (a) { return adminAppUse(a[0], a[1], a[2]); },
   getGame: function (a) { return getGame(a[0], a[1], a[2]); },
   catchHoliday: function (a) { return catchHoliday(a[0], a[1]); },
+  saveQuickApps: function (a) { return saveQuickApps(a[0], a[1], a[2]); },
   markSeen: function (a) { return markSeen(a[0], a[1], a[2]); },
   hrArchiveMany: function (a) { return hrArchiveMany(a[0], a[1], a[2], a[3]); },
   saveMyKpiDay: function (a) { return saveMyKpiDay(a[0], a[1], a[2], a[3]); },
