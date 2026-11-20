@@ -264,18 +264,31 @@ function gpBannerOpen_(){
   if(S.bellOpen){ S.bellOpen=false; renderNotifPanel(); }
 }
 
-/* ---------- Quick apps, on My Home's summary card (Nov 2026, Andrew: "small little app icons in the dashboard … the
-   library, the language learning … hidden at the bottom of the hamburger menu … customise it like a hotbar … hold and
-   move the icons around, add new ones … don't make it too big") ----------
-   A row of small icons at the top of the summary card (`qaBarHtml_`, `#qaBar`). What can go on it is what the person's ☰
-   menu and search already offer (`gpFindPages_` — so it can never offer a page their role doesn't have), minus the bottom
-   bar's tabs and the sign-out items (`qaCatalog_`, kept for the visit in `S.qaCat`). Their choice is a list of ids on their
-   own staff record (`quickApps`, the boot's staff card; `saveQuickApps`); none yet → `QA_DEFAULT` (GP Tasks, the Library,
-   Learn Khmer, Leave, Prayer — whichever they have). A tap opens it. **Hold one** (or tap ✎) to arrange: the icons
-   wiggle, drag one sideways to move it (pointer events; `touch-action:none` only while arranging), ✕ takes it off,
-   ＋ adds from the rest (`#qaAddSheet`), Done saves. Up to `QA_MAX`. */
-var QA_DEFAULT=['caltasks','library','khmer','leave','prayer'], QA_MAX=10, QA_HOLD_MS=450;
+/* ---------- My Home's dashboard card, arranged like an iPhone's Home Screen (Nov 2026, Andrew) ----------
+   First the quick apps ("small little app icons in the dashboard … customise it like a hotbar"), then the whole card:
+   "make the little edit button smaller in the corner … when you click and hold down an app, the whole dashboard would
+   wiggle a little bit … click, drag and move things around … a little plus sign … add in new things … certain things
+   we want there by default, so you can move them around but you can't delete them."
+   - The card is three groups, each in the person's own order (`dashLayout_`): the quick apps (`#qaBar`, `.qaItem`),
+     the widgets (`#dashWidgets`, `.dashItem` around a `.heroW`), and the rows (`#dashRows`, `.dashRow`: this week's
+     chores, the reading row, the base at a glance).
+   - **What came with the card stays** (`DASH_LOCKED_APPS` = QA_DEFAULT, `DASH_W_LOCKED`, every row): it can be moved,
+     never taken off, and is put back if a saved layout lacks it. What the person adds — more apps from their own menu
+     (`qaCatalog_`), more widgets (`DASH_W_EXTRA`: days off, mentor, streak, books, year goals) — has ✕.
+   - **Editing**: hold anything on the card (`DASH_HOLD_MS`) or tap the small ✎ in its corner (`#qaEditBtn`) →
+     `S.qaEdit`: the card gets `.dashEditing`, everything on it wiggles, a bar on top has ＋ (`#qaAdd` → `#qaAddSheet`
+     with Widgets and Apps) and Done (`#qaDone`). Drag within a group to move (`dashDrag_`, pointer events on the
+     window, `touch-action:none` on the card only while editing). Taps on the card's things do nothing while editing
+     (`dashSwallow_`), and the tap that ends a hold never opens what was held.
+   - Saved with `saveDashLayout` (`{apps, widgets, rows}`, on the staff record; the apps also as `quickApps`) a moment
+     after each change (`dashSoon_`), and at once on Done. */
+var QA_DEFAULT=['caltasks','library','khmer','leave','prayer'], QA_MAX=10, QA_HOLD_MS=450, DASH_HOLD_MS=450;
 var QA_SKIP={ applogout:1, boardlogout:1, stuexit:1, openapp:1, stuportal:1, guestreg:1, guestlogin:1 };
+var DASH_LOCKED_APPS=QA_DEFAULT;
+var DASH_W_LOCKED=['goals','habits','health','tasks'];
+var DASH_W_EXTRA=['daysoff','mentor','streak','books','yeargoals'];
+var DASH_ROWS=['sched','reading','base'];
+var DASH_W_MAX=8;
 /* the bar's own short names, so a name fits under its icon (the menu's full name is the button's label for a screen reader) */
 var QA_SHORT={ caltasks:'Calendar', khmer:'Language', leave:'Leave', mycontract:'My contract', whoshere:'Who’s here', goals:'Goals', mentor:'Mentor', p360:'360 reviews' };
 function qaName_(p){ return QA_SHORT[p.id] ? t(QA_SHORT[p.id]) : p.label; }
@@ -288,68 +301,199 @@ function qaCatalog_(){
   S.qaCat={ who:who, list:list };
   return list;
 }
+function dashUniq_(a){ return (a||[]).filter(function(x, i, arr){ return typeof x==='string' && arr.indexOf(x)===i; }); }
+/* the person's order, with everything that came with the card put back if it is missing */
+function dashLayout_(){
+  var L=(S.me && S.me.dashLayout) || {};
+  var apps=dashUniq_(Array.isArray(L.apps) ? L.apps : (Array.isArray(S.me.quickApps) ? S.me.quickApps : QA_DEFAULT));
+  DASH_LOCKED_APPS.forEach(function(id){ if(apps.indexOf(id)<0) apps.push(id); });
+  var widgets=dashUniq_(Array.isArray(L.widgets) ? L.widgets : DASH_W_LOCKED).filter(function(id){ return DASH_W_LOCKED.indexOf(id)>-1 || DASH_W_EXTRA.indexOf(id)>-1; });
+  DASH_W_LOCKED.forEach(function(id){ if(widgets.indexOf(id)<0) widgets.push(id); });
+  var rows=dashUniq_(Array.isArray(L.rows) ? L.rows : DASH_ROWS).filter(function(id){ return DASH_ROWS.indexOf(id)>-1; });
+  DASH_ROWS.forEach(function(id){ if(rows.indexOf(id)<0) rows.push(id); });
+  return { apps:apps.slice(0, QA_MAX), widgets:widgets.slice(0, DASH_W_MAX), rows:rows };
+}
+function dashSet_(L){ S.me.dashLayout={ apps:L.apps.slice(), widgets:L.widgets.slice(), rows:L.rows.slice() }; S.me.quickApps=L.apps.slice(); dashSoon_(); }
 function qaChosen_(){
   var cat=qaCatalog_(), by={}; cat.forEach(function(p){ by[p.id]=p; });
-  var ids=Array.isArray(S.me.quickApps) ? S.me.quickApps : QA_DEFAULT;
-  return ids.filter(function(id, i){ return by[id] && ids.indexOf(id)===i; }).slice(0, QA_MAX).map(function(id){ return by[id]; });
+  return dashLayout_().apps.filter(function(id){ return by[id]; }).map(function(id){ return by[id]; });
 }
+function qaIds_(){ return qaChosen_().map(function(p){ return p.id; }); }
 function qaIconHtml_(p){ return '<span class="qaIc">'+(p.icon || '•')+'</span>'; }
+function dashX_(kind, id, label){ return '<button class="qaX" data-dashrm="'+kind+':'+esc(id)+'" aria-label="'+esc(gpT('Take {name} off',{name:label}))+'">×</button>'; }
+
+/* ---- the widgets ---- */
+function dashRing_(p, fig, label){ return '<span class="gRing heroWRing" style="'+gpRingVars(Math.max(0, Math.min(100, Math.round(p))))+'" role="img" aria-label="'+esc(label)+'"><span>'+esc(fig)+'</span></span>'; }
+function dashWidget_(id, c){
+  if(id==='goals') return { label:t('Goals'), title:t('Weekly Goals'), attrs:'data-jump="sec-goals"', inner:dashRing_(c.goalsPct, c.goalsDone+'/'+c.goalsN, t('Weekly Goals')) };
+  if(id==='habits') return { label:t('Habits'), title:t('Habits Today'), attrs:'data-jump="sec-habits"', inner:dashRing_(c.habitsPct, c.habitsDone+'/'+c.habitsN, t('Habits Today')) };
+  if(id==='health') return { label:t('Health'), title:t('My Health'), attrs:'id="goMyHealth" data-gohealth="1"', inner:dashRing_(c.healthPct, c.score!==null ? c.score.toFixed(1) : '—', t('My Health')) };
+  if(id==='tasks'){
+    var I=S.gpTaskInfo; if(!I) return null;
+    var n=I.inbox || I.open || 0;
+    return { label:t('Tasks'), title:t('GP Tasks'), attrs:'id="goGpTasks"', inner:'<span class="heroWRing heroWIcon">'+GPT_SVG.tasks+(n ? '<span class="gtBadge heroWBadge'+(I.inbox?'':' quiet')+'">'+n+'</span>' : '')+'</span>' };
+  }
+  if(id==='daysoff'){
+    var yr=String(new Date().getFullYear()), yt=(S.trips && S.trips.totals && S.trips.totals[yr]) || {personal:0}, cap=(S.trips && S.trips.ptoCap) || 30;
+    var left=Math.max(0, cap-(yt.personal||0));
+    return { label:t('Days off'), title:t('Personal days off left'), attrs:'data-dashgo="daysoff"', inner:dashRing_(left/cap*100, String(left), t('Personal days off left')) };
+  }
+  if(id==='mentor'){
+    var held=S.me.mentorId ? ooHeldThisMonth_(S.me.id) : 0;
+    return { label:t('Mentor'), title:t('Mentorship'), attrs:'data-dashgo="mentor"', inner:dashRing_(held/OO_PER_MONTH*100, S.me.mentorId ? held+'/'+OO_PER_MONTH : '—', t('Mentorship')) };
+  }
+  if(id==='streak'){
+    var st=graceStreak(function(){ return true; });
+    return { label:t('Streak'), title:t('Days in a row'), attrs:'data-dashgo="streak"', inner:dashRing_(st/7*100, '🔥'+st, t('Days in a row')) };
+  }
+  if(id==='books'){
+    var nb=libBooksRead_(), goal=(S.lib && S.lib.goal) || 12;
+    return { label:t('Books'), title:t('Books read'), attrs:'data-dashgo="books"', inner:dashRing_(nb/goal*100, String(nb), t('Books read')) };
+  }
+  if(id==='yeargoals'){
+    var yg=(S.smartGoals||[]).filter(function(g){ return Number(g.year)===Number(smartYear_()); });
+    var avg=yg.length ? Math.round(yg.reduce(function(a,g){ return a+(Number(g.pct)||0); },0)/yg.length) : 0;
+    return { label:t('Year goals'), title:t('Year goals'), attrs:'data-dashgo="yeargoals"', inner:dashRing_(avg, yg.length ? avg+'%' : '—', t('Year goals')) };
+  }
+  return null;
+}
+function dashGo_(id){
+  gpTap();
+  if(id==='daysoff'){ S.view='leave'; render(); window.scrollTo(0,0); }
+  else if(id==='mentor'){ S.view='mentor'; S.mentee=null; render(); window.scrollTo(0,0); }
+  else if(id==='streak'){ S.person=null; S.teamMode='game'; S.gameCampus=null; S.view='team'; render(); window.scrollTo(0,0); }
+  else if(id==='books'){ libOpen_(); }
+  else if(id==='yeargoals'){ S.view='goals'; S.goalsTab='goals'; render(); window.scrollTo(0,0); }
+}
+function dashWidgetsHtml_(c, L, edit){
+  var items=L.widgets.map(function(id){
+    var w=dashWidget_(id, c); if(!w) return '';
+    var locked=DASH_W_LOCKED.indexOf(id)>-1;
+    return '<div class="dashItem" data-dashw="'+esc(id)+'"><button class="heroW" '+w.attrs+' aria-label="'+esc(w.title)+'">'+w.inner+'<span class="heroWLabel">'+esc(w.label)+'</span></button>'+
+      (edit && !locked ? dashX_('w', id, w.label) : '')+'</div>';
+  }).filter(Boolean);
+  return '<div class="heroWidgets" id="dashWidgets" style="grid-template-columns:repeat('+Math.max(1, Math.min(4, items.length))+', minmax(0,1fr))">'+items.join('')+'</div>';
+}
+
+/* ---- the quick apps ---- */
 function qaBarHtml_(){
   if(!qaOn_()) return '';
   var on=qaChosen_(), edit=!!S.qaEdit;
-  var h='<div class="qaBar'+(edit?' edit':'')+'" id="qaBar" role="toolbar" aria-label="'+esc(t('Quick apps'))+'">';
-  h+=on.map(function(p){
+  return '<div class="qaBar'+(edit?' edit':'')+'" id="qaBar" role="toolbar" aria-label="'+esc(t('Quick apps'))+'">'+on.map(function(p){
+    var locked=DASH_LOCKED_APPS.indexOf(p.id)>-1;
     return '<div class="qaItem" data-qa="'+esc(p.id)+'"><button class="qaBtn" data-qago="'+esc(p.id)+'" aria-label="'+esc(p.label)+'">'+qaIconHtml_(p)+
-      '<span class="qaLabel">'+esc(qaName_(p))+'</span></button>'+
-      (edit ? '<button class="qaX" data-qarm="'+esc(p.id)+'" aria-label="'+esc(gpT('Take {name} off',{name:p.label}))+'">×</button>' : '')+'</div>';
-  }).join('');
-  if(edit && on.length<QA_MAX) h+='<div class="qaItem qaAddItem"><button class="qaBtn" id="qaAdd" aria-label="'+esc(t('Add an app'))+'"><span class="qaIc qaPlus">＋</span><span class="qaLabel">'+esc(t('Add'))+'</span></button></div>';
-  if(!edit) h+='<div class="qaItem qaEditItem"><button class="qaBtn" id="qaEditBtn" aria-label="'+esc(t('Arrange your quick apps'))+'"><span class="qaIc qaPlus">✎</span><span class="qaLabel">'+esc(t('Edit'))+'</span></button></div>';
-  h+='</div>';
-  if(edit) h+='<div class="qaEditBar"><span>'+esc(t('Drag to move · ✕ to take off'))+'</span><button class="qaDone" id="qaDone">'+esc(t('Done'))+'</button></div>';
+      '<span class="qaLabel">'+esc(qaName_(p))+'</span></button>'+(edit && !locked ? dashX_('a', p.id, p.label) : '')+'</div>';
+  }).join('')+'</div>';
+}
+
+/* ---- the rows ---- */
+function dashRowHtml_(id){
+  var inner = id==='sched' ? (typeof dutyHtml==='function' ? schedHomeHtml_() : '') : id==='reading' ? libHeroRowHtml_() : id==='base' ? homeBaseHtml_() : '';
+  return inner ? '<div class="dashRow" data-dashrow="'+id+'">'+inner+'</div>' : '';
+}
+
+/* ---- the card ---- */
+function dashBodyHtml_(c){
+  if(!qaOn_()) return dashWidgetsHtml_(c, { widgets:DASH_W_LOCKED, apps:[], rows:DASH_ROWS }, false)+DASH_ROWS.map(dashRowHtml_).join('');
+  var L=dashLayout_(), edit=!!S.qaEdit;
+  var h = edit
+    ? '<div class="dashEditBar"><button class="dashPlus" id="qaAdd" aria-label="'+esc(t('Add to your dashboard'))+'">＋</button>'+
+        '<span class="dashEditHint">'+esc(t('Drag to move · ✕ takes off what you added'))+'</span>'+
+        '<button class="qaDone" id="qaDone">'+esc(t('Done'))+'</button></div>'
+    : '<button class="dashPencil" id="qaEditBtn" aria-label="'+esc(t('Arrange your dashboard'))+'">✎</button>';
+  h+=qaBarHtml_();
+  h+=dashWidgetsHtml_(c, L, edit);
+  h+='<div id="dashRows">'+L.rows.map(dashRowHtml_).join('')+'</div>';
   return h;
 }
+
+/* ---- the add sheet: widgets and apps not on the card yet ---- */
 function qaAddSheetHtml_(){
-  var on={}; qaChosen_().forEach(function(p){ on[p.id]=1; });
-  var rest=qaCatalog_().filter(function(p){ return !on[p.id]; });
+  var L=dashLayout_(), cat=qaCatalog_();
+  var ws=DASH_W_EXTRA.filter(function(id){ return L.widgets.indexOf(id)<0; }).map(function(id){ return { id:id, w:dashWidget_(id, dashCtx_()) }; }).filter(function(x){ return x.w; });
+  var apps=cat.filter(function(p){ return L.apps.indexOf(p.id)<0; });
+  var wFull=L.widgets.length>=DASH_W_MAX, aFull=L.apps.length>=QA_MAX;
   return '<div class="scrim" id="qaAddScrim" style="z-index:74"></div><div class="gtSheet" id="qaAddSheet" role="dialog" style="z-index:75">'+
-    '<div class="gtSheetHead"><b>'+esc(t('Add a quick app'))+'</b></div>'+
-    (rest.length ? '<div class="qaPick">'+rest.map(function(p){ return '<button class="qaPickRow" data-qapick="'+esc(p.id)+'">'+qaIconHtml_(p)+'<span>'+esc(p.label)+'</span><span class="qaPickAdd">＋</span></button>'; }).join('')+'</div>'
-      : '<p class="sub">'+esc(t('Everything is on your bar already.'))+'</p>')+'</div>';
+    '<div class="gtSheetHead"><b>'+esc(t('Add to your dashboard'))+'</b></div>'+
+    '<div class="qaPickHead">'+esc(t('Widgets'))+'</div>'+
+    (ws.length && !wFull ? '<div class="qaPick">'+ws.map(function(x){ return '<button class="qaPickRow" data-qapick="w:'+x.id+'"><span class="qaIc qaPickW">'+x.w.inner+'</span><span>'+esc(x.w.title)+'</span><span class="qaPickAdd">＋</span></button>'; }).join('')+'</div>'
+      : '<p class="sub">'+esc(wFull ? t('The dashboard is full — take one off first.') : t('Every widget is on your dashboard already.'))+'</p>')+
+    '<div class="qaPickHead">'+esc(t('Apps'))+'</div>'+
+    (apps.length && !aFull ? '<div class="qaPick">'+apps.map(function(p){ return '<button class="qaPickRow" data-qapick="a:'+esc(p.id)+'">'+qaIconHtml_(p)+'<span>'+esc(p.label)+'</span><span class="qaPickAdd">＋</span></button>'; }).join('')+'</div>'
+      : '<p class="sub">'+esc(aFull ? t('The dashboard is full — take one off first.') : t('Everything is on your bar already.'))+'</p>')+'</div>';
 }
-function qaSave_(ids){
-  S.me.quickApps=ids.slice(0, QA_MAX);
-  run('saveQuickApps',[S.auth.user,S.auth.pin,S.me.quickApps],function(d){ if(!d || !d.ok) showMsg(t('Could not save — check your connection and try again.')); }, function(){});
+/* the figures the widgets need, worked out the way the card's own are */
+function dashCtx_(){
+  var rec=goalsForWeek(thisWeek()), written=(rec && rec.items ? rec.items : []).filter(function(i){ return i && i.text; });
+  var goalsDone=written.filter(function(i){ return goalItemPct(i)>=100; }).length;
+  var list=myHabitsToday(), log=logForDate(todayStr()), habitsDone=list.filter(function(hb){ return habitDoneToday(hb, log); }).length;
+  var HH=homeHealth_(), score=HH.score;
+  return { goalsPct: written.length ? goalsDone/written.length*100 : 0, goalsDone:goalsDone, goalsN:written.length,
+    habitsPct: list.length ? habitsDone/list.length*100 : 0, habitsDone:habitsDone, habitsN:list.length,
+    healthPct: score!==null ? score*10 : 0, score:score };
 }
-function qaIds_(){ return qaChosen_().map(function(p){ return p.id; }); }
-/* every change is kept a moment after it is made, so leaving the page mid-arrange loses nothing */
-var _qaT=0;
-function qaSoon_(){ clearTimeout(_qaT); var ids=(S.me.quickApps||[]).slice(); _qaT=setTimeout(function(){ qaSave_(ids); }, 600); }
+
+/* ---- saving ---- */
+var _dashT=0;
+function dashSave_(){
+  clearTimeout(_dashT); _dashT=0;
+  var L=dashLayout_();
+  run('saveDashLayout',[S.auth.user,S.auth.pin,L],function(d){ if(!d || !d.ok) showMsg(t('Could not save — check your connection and try again.')); }, function(){});
+}
+function dashSoon_(){ clearTimeout(_dashT); _dashT=setTimeout(dashSave_, 600); }
+
+/* ---- holding, tapping, editing ---- */
+var _dash={ held:false, heldAt:0, swallowOn:false };
+function dashEnter_(){ if(S.qaEdit) return; gpTap(); S.qaEdit=true; render(); }
+function dashExit_(){ S.qaEdit=false; if(_dashT) dashSave_(); render(); }
+/* while editing, a tap on the card's things does nothing; the tap that ends a hold never opens what was held */
+function dashSwallow_(){
+  if(_dash.swallowOn) return; _dash.swallowOn=true;
+  document.addEventListener('click', function(e){
+    var hero=e.target && e.target.closest ? e.target.closest('.myHero') : null; if(!hero) return;
+    if(_dash.held && Date.now()-_dash.heldAt<900){ _dash.held=false; e.preventDefault(); e.stopPropagation(); return; }
+    _dash.held=false;
+    if(S.qaEdit && !e.target.closest('.qaX, #qaAdd, #qaDone, .dashEditBar')){ e.preventDefault(); e.stopPropagation(); }
+  }, true);
+}
 function bindQuickApps_(){
-  var bar=document.getElementById('qaBar'); if(!bar) return;
-  var edit=!!S.qaEdit, held=false, timer=0;
-  Array.prototype.forEach.call(bar.querySelectorAll('[data-qago]'), function(b){
-    var id=b.getAttribute('data-qago');
-    b.onclick=function(e){
-      if(held){ held=false; e.preventDefault(); return; }
-      if(S.qaEdit) return;
-      var p=qaCatalog_().filter(function(x){ return x.id===id; })[0]; if(!p) return;
-      gpTap(); p.go();
-    };
-    if(!edit){   // hold to arrange
-      var x0=0, y0=0;
-      b.addEventListener('pointerdown', function(e){ x0=e.clientX; y0=e.clientY; clearTimeout(timer); timer=setTimeout(function(){ held=true; gpTap(); S.qaEdit=true; render(); }, QA_HOLD_MS); });
-      b.addEventListener('pointermove', function(e){ if(Math.abs(e.clientX-x0)>8 || Math.abs(e.clientY-y0)>8) clearTimeout(timer); });
-      ['pointerup','pointercancel','pointerleave'].forEach(function(ev){ b.addEventListener(ev, function(){ clearTimeout(timer); }); });
-      b.addEventListener('contextmenu', function(e){ e.preventDefault(); });
-    }
+  var hero=document.querySelector('.myHero'); if(!hero || !document.getElementById('qaBar') && !document.getElementById('dashWidgets')) return;
+  if(!qaOn_()) return;
+  dashSwallow_();
+  hero.classList.toggle('dashEditing', !!S.qaEdit);
+  /* what each thing opens */
+  Array.prototype.forEach.call(hero.querySelectorAll('[data-qago]'), function(b){
+    b.onclick=function(){ if(S.qaEdit) return; var id=b.getAttribute('data-qago'); var p=qaCatalog_().filter(function(x){ return x.id===id; })[0]; if(!p) return; gpTap(); p.go(); };
   });
-  var eb=document.getElementById('qaEditBtn'); if(eb) eb.onclick=function(){ gpTap(); S.qaEdit=true; render(); };
-  var done=document.getElementById('qaDone'); if(done) done.onclick=function(){ gpTap(); S.qaEdit=false; S.me.quickApps=qaIds_(); qaSoon_(); render(); };
-  Array.prototype.forEach.call(bar.querySelectorAll('[data-qarm]'), function(b){ b.onclick=function(e){ e.stopPropagation(); gpTap();
-    var id=b.getAttribute('data-qarm'); S.me.quickApps=qaIds_().filter(function(x){ return x!==id; }); qaSoon_(); render(); }; });
+  Array.prototype.forEach.call(hero.querySelectorAll('[data-dashgo]'), function(b){ b.onclick=function(){ if(!S.qaEdit) dashGo_(b.getAttribute('data-dashgo')); }; });
+  /* hold anything on the card to arrange it */
+  if(!S.qaEdit){
+    var timer=0, x0=0, y0=0;
+    hero.onpointerdown=function(e){
+      if(!e.target.closest('.qaItem, .dashItem, .dashRow')) return;
+      x0=e.clientX; y0=e.clientY; clearTimeout(timer);
+      timer=setTimeout(function(){ _dash.held=true; _dash.heldAt=Date.now(); dashEnter_(); }, DASH_HOLD_MS);
+    };
+    hero.onpointermove=function(e){ if(timer && (Math.abs(e.clientX-x0)>8 || Math.abs(e.clientY-y0)>8)){ clearTimeout(timer); timer=0; } };
+    hero.onpointerup=hero.onpointercancel=hero.onpointerleave=function(){ clearTimeout(timer); timer=0; };
+    hero.oncontextmenu=function(e){ if(e.target.closest('.qaItem, .dashItem, .dashRow')) e.preventDefault(); };
+  } else {
+    hero.onpointerdown=hero.onpointermove=hero.onpointerup=hero.onpointercancel=hero.onpointerleave=null;
+    hero.oncontextmenu=function(e){ e.preventDefault(); };
+  }
+  var eb=document.getElementById('qaEditBtn'); if(eb) eb.onclick=function(e){ e.stopPropagation(); dashEnter_(); };
+  var done=document.getElementById('qaDone'); if(done) done.onclick=function(){ gpTap(); dashExit_(); };
   var add=document.getElementById('qaAdd'); if(add) add.onclick=function(){ gpTap(); qaAddOpen_(); };
-  if(edit) qaDrag_(bar);
+  Array.prototype.forEach.call(hero.querySelectorAll('[data-dashrm]'), function(b){ b.onclick=function(e){ e.stopPropagation(); gpTap();
+    var v=b.getAttribute('data-dashrm'), kind=v.slice(0,1), id=v.slice(2), L=dashLayout_();
+    if(kind==='a' && DASH_LOCKED_APPS.indexOf(id)<0) L.apps=L.apps.filter(function(x){ return x!==id; });
+    if(kind==='w' && DASH_W_LOCKED.indexOf(id)<0) L.widgets=L.widgets.filter(function(x){ return x!==id; });
+    dashSet_(L); render(); }; });
+  if(S.qaEdit){
+    dashDrag_(document.getElementById('qaBar'), '.qaItem[data-qa]', 'data-qa', function(ids){ var L=dashLayout_(); L.apps=ids; dashSet_(L); });
+    dashDrag_(document.getElementById('dashWidgets'), '.dashItem[data-dashw]', 'data-dashw', function(ids){ var L=dashLayout_(); L.widgets=ids.concat(L.widgets.filter(function(x){ return ids.indexOf(x)<0; })); dashSet_(L); });
+    dashDrag_(document.getElementById('dashRows'), '.dashRow[data-dashrow]', 'data-dashrow', function(ids){ var L=dashLayout_(); L.rows=ids.concat(L.rows.filter(function(x){ return ids.indexOf(x)<0; })); dashSet_(L); });
+  }
 }
 function qaAddOpen_(){
   var root=document.getElementById('qaAddRoot'); if(!root){ root=document.createElement('div'); root.id='qaAddRoot'; document.body.appendChild(root); }
@@ -357,35 +501,36 @@ function qaAddOpen_(){
   var shut=function(){ root.innerHTML=''; };
   document.getElementById('qaAddScrim').onclick=shut;
   Array.prototype.forEach.call(root.querySelectorAll('[data-qapick]'), function(b){ b.onclick=function(){ gpTap();
-    S.me.quickApps=qaIds_().concat([b.getAttribute('data-qapick')]).slice(0, QA_MAX); qaSoon_(); shut(); render(); }; });
+    var v=b.getAttribute('data-qapick'), kind=v.slice(0,1), id=v.slice(2), L=dashLayout_();
+    if(kind==='a' && L.apps.indexOf(id)<0 && L.apps.length<QA_MAX) L.apps.push(id);
+    if(kind==='w' && L.widgets.indexOf(id)<0 && L.widgets.length<DASH_W_MAX) L.widgets.push(id);
+    dashSet_(L); shut(); render(); }; });
 }
-/* arranging: drag an icon sideways; the others make room as it passes them */
-function qaDrag_(bar){
-  var drag=null;
-  Array.prototype.forEach.call(bar.querySelectorAll('.qaItem[data-qa]'), function(it){
+/* dragging within one group: the held thing lifts, and the others make room as it passes over them. The window has
+   the pointer while dragging, because moving the node in the page can drop the element's own pointer capture. */
+function dashDrag_(box, sel, attr, done){
+  if(!box) return;
+  Array.prototype.forEach.call(box.querySelectorAll(sel), function(it){
     it.addEventListener('pointerdown', function(e){
       if(e.target.closest('.qaX')) return;
-      drag={ el:it, x0:e.clientX, moved:false }; it.classList.add('drag');
-      try { it.setPointerCapture(e.pointerId); } catch(err){}
+      e.preventDefault();
+      var moved=false, x0=e.clientX, y0=e.clientY;
+      it.classList.add('drag');
+      var move=function(ev){
+        if(Math.abs(ev.clientX-x0)>4 || Math.abs(ev.clientY-y0)>4) moved=true;
+        var sibs=Array.prototype.filter.call(box.querySelectorAll(sel), function(x){ return x!==it; }), over=null, best=1e9;
+        sibs.forEach(function(x){ var r=x.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2, d=Math.hypot(ev.clientX-cx, ev.clientY-cy);
+          var inside=ev.clientX>=r.left && ev.clientX<=r.right && ev.clientY>=r.top && ev.clientY<=r.bottom; if(inside && d<best){ best=d; over=x; } });
+        if(!over) return;
+        var all=Array.prototype.slice.call(box.querySelectorAll(sel));
+        if(all.indexOf(it)<all.indexOf(over)) box.insertBefore(it, over.nextSibling); else box.insertBefore(it, over);
+      };
+      var up=function(){
+        window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
+        it.classList.remove('drag');
+        if(moved) done(Array.prototype.map.call(box.querySelectorAll(sel), function(x){ return x.getAttribute(attr); }));
+      };
+      window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
     });
-    it.addEventListener('pointermove', function(e){
-      if(!drag || drag.el!==it) return;
-      var dx=e.clientX-drag.x0; if(Math.abs(dx)>4) drag.moved=true;
-      it.style.transform='translateX('+dx+'px) scale(1.08)';
-      var items=Array.prototype.filter.call(bar.querySelectorAll('.qaItem[data-qa]'), function(x){ return x!==it; });
-      var mid=it.getBoundingClientRect(), cx=mid.left+mid.width/2;
-      for(var i=0;i<items.length;i++){
-        var r=items[i].getBoundingClientRect(), before=it.compareDocumentPosition(items[i]) & Node.DOCUMENT_POSITION_PRECEDING;
-        if(before && cx<r.left+r.width/2){ bar.insertBefore(it, items[i]); drag.x0=e.clientX; it.style.transform='scale(1.08)'; break; }
-        if(!before && cx>r.left+r.width/2){ bar.insertBefore(it, items[i].nextSibling); drag.x0=e.clientX; it.style.transform='scale(1.08)'; }
-      }
-    });
-    var end=function(){
-      if(!drag || drag.el!==it) return;
-      it.classList.remove('drag'); it.style.transform='';
-      var moved=drag.moved; drag=null;
-      if(moved){ S.me.quickApps=Array.prototype.map.call(bar.querySelectorAll('.qaItem[data-qa]'), function(x){ return x.getAttribute('data-qa'); }); qaSoon_(); }
-    };
-    it.addEventListener('pointerup', end); it.addEventListener('pointercancel', end);
   });
 }

@@ -1,4 +1,5 @@
-/* My Home's quick apps (teams/19-ux.js): the row of small icons, hold to arrange, add, take off, drag; saveQuickApps. Made-up people. */
+/* My Home's dashboard card arranged like a phone's Home Screen (teams/19-ux.js): hold or ✎ to edit, everything wiggles, drag to
+   move apps / widgets / rows, ＋ adds widgets and apps, ✕ only on what was added; saveDashLayout. Made-up people. */
 import vm from 'node:vm';
 import { REPO, PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
 import { chromium, devices } from 'playwright';
@@ -79,91 +80,109 @@ async function open(user, opts) {
   return { ctx, page };
 }
 const ids = (page) => page.$$eval('#qaBar .qaItem[data-qa]', els => els.map(e => e.getAttribute('data-qa')));
-const saved = (id) => (mem.staff.find(s => s.id === id) || {}).quickApps;
+const wids = (page) => page.$$eval('#dashWidgets .dashItem[data-dashw]', els => els.map(e => e.getAttribute('data-dashw')));
+const rowIds = (page) => page.$$eval('#dashRows .dashRow[data-dashrow]', els => els.map(e => e.getAttribute('data-dashrow')));
+const lay = (id) => (mem.staff.find(s => s.id === id) || {}).dashLayout;
+const call = async (fn, args) => JSON.parse(await (await api.default({ method: 'POST', json: async () => ({ fn, args }), headers: new Map() }, {})).text());
+const hold = async (page, sel) => { const b = await (await page.$(sel)).boundingBox(); await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await page.mouse.down(); await page.waitForTimeout(650); await page.mouse.up(); await page.waitForTimeout(350); };
+const drag = async (page, fromSel, toSel) => {
+  const a = await (await page.$(fromSel)).boundingBox(), b = await (await page.$(toSel)).boundingBox();
+  const ax = a.x + a.width / 2, ay = a.y + a.height / 2, bx = b.x + b.width / 2, by = b.y + b.height / 2;
+  await page.mouse.move(ax, ay); await page.mouse.down();
+  for (let i = 1; i <= 14; i++) { await page.mouse.move(ax + (bx - ax) * i / 14, ay + (by - ay) * i / 14); await page.waitForTimeout(25); }
+  await page.mouse.up(); await page.waitForTimeout(800);
+};
 
 // ---- the server ----
 {
-  const r1 = await api.default({ method: 'POST', json: async () => ({ fn: 'saveQuickApps', args: ['di', '1234', ['library', 'Library', 'bad id!', 'library', 'khmer', '<x>', 'a'.repeat(50)]] }), headers: new Map() }, {});
-  const d1 = JSON.parse(await r1.text());
-  ok('saveQuickApps keeps only well-formed ids, once each', d1.ok && JSON.stringify(saved('st5')) === '["library","khmer"]', JSON.stringify(d1));
+  const d1 = await call('saveDashLayout', ['di', '1234', { apps: ['library', 'Library', 'bad id!', 'library', 'khmer'], widgets: ['goals', 'books', 'books', 'NOPE', 'x'], rows: ['base', 'reading'] }]);
+  ok('saveDashLayout keeps well-formed ids, once each', d1.ok && JSON.stringify(lay('st5')) === JSON.stringify({ apps: ['library', 'khmer'], widgets: ['goals', 'books'], rows: ['base', 'reading'] }), JSON.stringify(lay('st5')));
+  ok('… and the apps as quickApps too, for an older page', JSON.stringify((mem.staff.find(s => s.id === 'st5')).quickApps) === '["library","khmer"]');
   const many = Array.from({ length: 14 }, (_, i) => 'app' + i);
-  const r2 = JSON.parse(await (await api.default({ method: 'POST', json: async () => ({ fn: 'saveQuickApps', args: ['di', '1234', many] }), headers: new Map() }, {})).text());
-  ok('… and ten at most', r2.ok && saved('st5').length === 10);
-  const r3 = JSON.parse(await (await api.default({ method: 'POST', json: async () => ({ fn: 'saveQuickApps', args: ['di', '9999', ['library']] }), headers: new Map() }, {})).text());
-  ok('a wrong PIN saves nothing', !r3.ok && saved('st5').length === 10);
-  const r4 = JSON.parse(await (await api.default({ method: 'POST', json: async () => ({ fn: 'saveQuickApps', args: ['di', '1234', null]}), headers: new Map() }, {})).text());
-  ok('null puts the default back', r4.ok && saved('st5') === undefined);
-  ok('the public roster never carries it', !JSON.stringify(JSON.parse(await (await api.default({ method: 'POST', json: async () => ({ fn: 'teamRoster', args: [] }), headers: new Map() }, {})).text())).includes('quickApps'));
+  ok('… ten apps and eight widgets at most', (await call('saveDashLayout', ['di', '1234', { apps: many, widgets: many.map(x => x.replace(/\d/g, '') + 'abcdefghij'.slice(0, 1 + (many.indexOf(x) % 9))), rows: [] }])).ok && lay('st5').apps.length === 10 && lay('st5').widgets.length <= 8);
+  ok('a wrong PIN saves nothing', !(await call('saveDashLayout', ['di', '9999', { apps: ['library'] }])).ok && lay('st5').apps.length === 10);
+  ok('null puts the default back', (await call('saveDashLayout', ['di', '1234', null])).ok && lay('st5') === undefined && (mem.staff.find(s => s.id === 'st5')).quickApps === undefined);
+  ok('the public roster never carries it', !/dashLayout|quickApps/.test(JSON.stringify(await call('teamRoster', []))));
 }
 
-// ---- Di: the default row ----
+// ---- Di: the default card ----
 {
   const { ctx, page } = await open('di');
-  const first = await ids(page);
-  ok('the default quick apps: GP Calendar/Tasks, Library, Learn Khmer, Leave, Prayer', JSON.stringify(first) === '["caltasks","library","khmer","leave","prayer"]', JSON.stringify(first));
-  const box = await page.$eval('#qaBar', e => ({ inHero: !!e.closest('.myHero'), h: e.getBoundingClientRect().height, top: e.getBoundingClientRect().top < document.querySelector('.myHero [data-jump="sec-goals"]').getBoundingClientRect().top }));
-  ok('it is a small row at the top of the summary card', box.inHero && box.h < 90 && box.top, JSON.stringify(box));
-  const labels = await page.$$eval('#qaBar .qaLabel', els => els.map(e => e.textContent));
-  ok('each icon has its name under it', labels.includes('Library') && labels.includes('Language') && labels.includes('Calendar') && labels.includes('Leave'), JSON.stringify(labels));
-  ok('an ✎ Edit icon at the end', !!(await page.$('#qaEditBtn')));
+  ok('the default quick apps: Calendar, Library, Language, Leave, Prayer', JSON.stringify(await ids(page)) === '["caltasks","library","khmer","leave","prayer"]', JSON.stringify(await ids(page)));
+  ok('… then the four widgets and the rows', JSON.stringify(await wids(page)) === '["goals","habits","health","tasks"]' || JSON.stringify(await wids(page)) === '["goals","habits","health"]', JSON.stringify(await wids(page)));
+  ok('… the reading row and the base at a glance', (await rowIds(page)).includes('reading') && (await rowIds(page)).includes('base'), JSON.stringify(await rowIds(page)));
+  const pen = await page.$eval('#qaEditBtn', e => { const r = e.getBoundingClientRect(), h = document.querySelector('.myHero').getBoundingClientRect(); return { w: r.width, right: h.right - r.right, top: r.top - h.top }; });
+  ok('a small ✎ in the card’s top corner, not an icon in the row', pen.w <= 30 && pen.right < 20 && pen.top < 20 && !(await page.$('#qaBar #qaEditBtn')), JSON.stringify(pen));
+  ok('nothing wiggles yet', await page.$eval('.myHero', e => !e.classList.contains('dashEditing')) && await page.$eval('.dashItem', e => getComputedStyle(e).animationName === 'none'));
 
-  await page.click('#qaBar [data-qago="library"]');
-  await page.waitForTimeout(600);
-  ok('a tap opens it (Library)', await page.evaluate(() => S.view) === 'library');
-  await page.click('nav.bottom [data-tab="week"]').catch(() => {});
-  await page.waitForSelector('#qaBar');
-  await page.click('#qaBar [data-qago="khmer"]');
-  await page.waitForTimeout(800);
-  ok('Learn Khmer is one tap away', await page.evaluate(() => S.view) === 'khmer');
-  await page.click('nav.bottom [data-tab="week"]').catch(() => {});
-  await page.waitForSelector('#qaBar');
+  await page.click('#qaBar [data-qago="library"]'); await page.waitForTimeout(600);
+  ok('a tap opens an app (Library)', await page.evaluate(() => S.view) === 'library');
+  await page.click('nav.bottom [data-tab="week"]'); await page.waitForSelector('#qaBar');
 
-  // hold to arrange
-  const b = await (await page.$('#qaBar [data-qago="leave"]')).boundingBox();
-  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
-  await page.mouse.down(); await page.waitForTimeout(650); await page.mouse.up();
-  await page.waitForTimeout(300);
-  ok('holding an icon starts arranging (the icons wiggle, a Done button)', await page.$eval('#qaBar', e => e.classList.contains('edit')) && !!(await page.$('#qaDone')) && await page.evaluate(() => S.view) === 'week');
-  ok('… with an ✕ on each and ＋ Add', (await page.$$('#qaBar [data-qarm]')).length === 5 && !!(await page.$('#qaAdd')));
-  ok('the row only takes the finger while arranging', await page.$eval('#qaBar', e => getComputedStyle(e).touchAction) === 'none');
+  // hold a widget: the whole card goes into edit mode
+  await hold(page, '.dashItem[data-dashw="habits"] .heroW');
+  ok('holding a widget puts the whole card in edit mode, and does not open it', await page.$eval('.myHero', e => e.classList.contains('dashEditing')) && await page.evaluate(() => S.view) === 'week');
+  const anims = await page.$$eval('.myHero .qaItem, .myHero .dashItem, .myHero .dashRow', els => els.map(e => getComputedStyle(e).animationName));
+  ok('… everything on it wiggles — apps, widgets and rows', anims.length >= 9 && anims.every(a => /dashWiggle/.test(a)), anims.join(','));
+  ok('… a ＋ and Done on top, the ✎ gone', !!(await page.$('.dashEditBar #qaAdd')) && !!(await page.$('.dashEditBar #qaDone')) && !(await page.$('#qaEditBtn')));
+  ok('… and what came with the card has no ✕ — it can be moved, not taken off', (await page.$$('.myHero .qaX')).length === 0);
+  ok('the card only takes the finger while editing', await page.$eval('.myHero', e => getComputedStyle(e).touchAction) === 'none');
+  await page.click('.dashItem[data-dashw="habits"] .heroW', { force: true }); await page.waitForTimeout(400);
+  ok('… and a tap on a widget while editing does nothing', await page.evaluate(() => S.view === 'week' && S.qaEdit === true));
 
-  await page.click('#qaBar [data-qarm="prayer"]');
-  await page.waitForTimeout(900);
-  ok('✕ takes one off, and it is saved', !(await ids(page)).includes('prayer') && JSON.stringify(saved('st5')) === '["caltasks","library","khmer","leave"]', JSON.stringify(saved('st5')));
-
-  await page.click('#qaAdd');
-  await page.waitForSelector('#qaAddSheet');
+  // ＋ : widgets and apps
+  await page.click('#qaAdd'); await page.waitForSelector('#qaAddSheet');
   const offer = await page.$$eval('#qaAddSheet [data-qapick]', els => els.map(e => e.getAttribute('data-qapick')));
-  ok('＋ Add offers the rest of their menu (Prayer back, YWAM GP…)', offer.includes('prayer') && offer.includes('ywamgp') && offer.includes('base'), JSON.stringify(offer));
-  ok('… never what their role doesn’t have, a bottom-bar tab, or Log out', !offer.includes('admin') && !offer.includes('hr') && !offer.some(x => /^tab:|logout/.test(x)));
-  ok('… nor anything already on the bar', !offer.includes('library') && !offer.includes('leave'));
-  await page.click('#qaAddSheet [data-qapick="ywamgp"]');
-  await page.waitForTimeout(900);
-  ok('picking one adds it at the end, saved', (await ids(page)).slice(-1)[0] === 'ywamgp' && saved('st5').slice(-1)[0] === 'ywamgp' && !(await page.$('#qaAddSheet')));
+  ok('＋ offers more widgets (days off, mentor, streak, books, year goals)', ['w:daysoff', 'w:mentor', 'w:streak', 'w:books', 'w:yeargoals'].every(x => offer.includes(x)), JSON.stringify(offer));
+  ok('… and the rest of their own menu as apps — never what their role doesn’t have, a tab or Log out', offer.includes('a:ywamgp') && offer.includes('a:base') && !offer.includes('a:admin') && !offer.includes('a:hr') && !offer.some(x => /^a:tab:|logout/.test(x)) && !offer.includes('a:library'));
+  await page.click('#qaAddSheet [data-qapick="w:daysoff"]'); await page.waitForTimeout(900);
+  ok('a widget added goes on the card, with a ✕, and is saved', (await wids(page)).slice(-1)[0] === 'daysoff' && !!(await page.$('.dashItem[data-dashw="daysoff"] .qaX')) && lay('st5') && lay('st5').widgets.includes('daysoff'), JSON.stringify(lay('st5')));
+  ok('… still in edit mode', await page.$eval('.myHero', e => e.classList.contains('dashEditing')));
+  ok('… the Days off widget says how many are left', /30\s*Days off/.test(await page.$eval('.dashItem[data-dashw="daysoff"]', e => e.innerText)), await page.$eval('.dashItem[data-dashw="daysoff"]', e => e.innerText));
+  await page.click('#qaAdd'); await page.waitForSelector('#qaAddSheet');
+  await page.click('#qaAddSheet [data-qapick="a:ywamgp"]'); await page.waitForTimeout(900);
+  ok('an app added goes at the end of the row, with a ✕, saved', (await ids(page)).slice(-1)[0] === 'ywamgp' && !!(await page.$('.qaItem[data-qa="ywamgp"] .qaX')) && lay('st5').apps.slice(-1)[0] === 'ywamgp');
 
-  // drag the last one to the front
-  const last = await (await page.$('#qaBar .qaItem[data-qa="ywamgp"]')).boundingBox();
-  const firstB = await (await page.$('#qaBar .qaItem[data-qa="caltasks"]')).boundingBox();
-  await page.mouse.move(last.x + last.width / 2, last.y + last.height / 2);
-  await page.mouse.down();
-  for (let i = 1; i <= 12; i++) { await page.mouse.move(last.x + last.width / 2 - (last.x - firstB.x + 10) * i / 12, last.y + last.height / 2); await page.waitForTimeout(30); }
-  await page.mouse.up();
-  await page.waitForTimeout(900);
-  const afterDrag = await ids(page);
-  ok('dragging an icon moves it (YWAM GP to the front)', afterDrag[0] === 'ywamgp', JSON.stringify(afterDrag));
-  ok('… and the order is saved', JSON.stringify(saved('st5')) === JSON.stringify(afterDrag), JSON.stringify(saved('st5')));
+  // drag
+  await drag(page, '.dashItem[data-dashw="daysoff"]', '.dashItem[data-dashw="goals"]');
+  ok('dragging a widget moves it (Days off to the front), saved', (await wids(page))[0] === 'daysoff' && lay('st5').widgets[0] === 'daysoff', JSON.stringify(await wids(page)));
+  await drag(page, '.qaItem[data-qa="prayer"]', '.qaItem[data-qa="caltasks"]');
+  ok('dragging an app moves it (Prayer to the front), saved', (await ids(page))[0] === 'prayer' && lay('st5').apps[0] === 'prayer', JSON.stringify(await ids(page)));
+  const r0 = await rowIds(page);
+  await drag(page, '.dashRow[data-dashrow="' + r0[r0.length - 1] + '"]', '.dashRow[data-dashrow="' + r0[0] + '"]');
+  const r1 = await rowIds(page);
+  ok('dragging a row moves it (the last row to the top), saved', r1[0] === r0[r0.length - 1] && lay('st5').rows[0] === r0[r0.length - 1], JSON.stringify([r0, r1]));
 
-  await page.click('#qaDone');
-  await page.waitForTimeout(400);
-  ok('Done stops arranging', !(await page.$eval('#qaBar', e => e.classList.contains('edit'))) && !(await page.$('#qaDone')) && !!(await page.$('#qaEditBtn')));
-  ok('… and the row scrolls normally again', /pan/.test(await page.$eval('#qaBar', e => getComputedStyle(e).touchAction)));
-  await page.click('#qaEditBtn'); await page.waitForTimeout(250);
-  ok('✎ Edit starts arranging too', await page.$eval('#qaBar', e => e.classList.contains('edit')));
-  await page.click('#qaDone'); await page.waitForTimeout(800);
+  // take off what was added
+  await page.click('.qaItem[data-qa="ywamgp"] .qaX', { force: true }); await page.waitForTimeout(900);
+  ok('✕ takes an added app off, saved', !(await ids(page)).includes('ywamgp') && !lay('st5').apps.includes('ywamgp'));
 
-  await page.reload({ waitUntil: 'load' });
-  await page.waitForSelector('#qaBar'); await page.waitForTimeout(500);
-  ok('opened again, their own row in their own order', JSON.stringify(await ids(page)) === JSON.stringify(afterDrag), JSON.stringify(await ids(page)));
+  await page.click('#qaDone'); await page.waitForTimeout(500);
+  ok('Done: the wiggle stops, the ✎ is back', await page.$eval('.myHero', e => !e.classList.contains('dashEditing')) && !!(await page.$('#qaEditBtn')) && !(await page.$('.myHero .qaX')));
+  ok('… and the card scrolls with the page again', await page.$eval('.myHero', e => getComputedStyle(e).touchAction) !== 'none');
+  await page.click('.dashItem[data-dashw="daysoff"] .heroW'); await page.waitForTimeout(600);
+  ok('the Days off widget opens Leave', await page.evaluate(() => S.view) === 'leave');
+  await page.click('nav.bottom [data-tab="week"]'); await page.waitForSelector('#qaEditBtn');
+
+  await page.click('#qaEditBtn'); await page.waitForTimeout(300);
+  ok('the ✎ puts it in edit mode too', await page.$eval('.myHero', e => e.classList.contains('dashEditing')));
+  await page.click('#qaDone'); await page.waitForTimeout(400);
+  await hold(page, '#qaBar [data-qago="khmer"]');
+  ok('holding an app does the same, without opening it', await page.$eval('.myHero', e => e.classList.contains('dashEditing')) && await page.evaluate(() => S.view) === 'week');
+  await page.click('#qaDone'); await page.waitForTimeout(900);
+
+  const before = { apps: await ids(page), w: await wids(page), r: await rowIds(page) };
+  await page.reload({ waitUntil: 'load' }); await page.waitForSelector('#qaBar'); await page.waitForTimeout(500);
+  ok('opened again: their own card, in their own order', JSON.stringify({ apps: await ids(page), w: await wids(page), r: await rowIds(page) }) === JSON.stringify(before), JSON.stringify(before));
+  await ctx.close();
+}
+
+// ---- what came with the card comes back ----
+{
+  await call('saveDashLayout', ['di', '1234', { apps: ['ywamgp'], widgets: ['books'], rows: ['reading'] }]);
+  const { ctx, page } = await open('di');
+  const a = await ids(page), w = await wids(page), r = await rowIds(page);
+  ok('a saved layout missing the defaults gets them back (they can’t be taken off)', ['caltasks', 'library', 'khmer', 'leave', 'prayer'].every(x => a.includes(x)) && a[0] === 'ywamgp' && ['goals', 'habits', 'health'].every(x => w.includes(x)) && w[0] === 'books' && r.includes('base') && r[0] === 'reading', JSON.stringify({ a, w, r }));
   await ctx.close();
 }
 
@@ -173,18 +192,19 @@ const saved = (id) => (mem.staff.find(s => s.id === id) || {}).quickApps;
   await page.click('#qaEditBtn'); await page.waitForTimeout(250);
   await page.click('#qaAdd'); await page.waitForSelector('#qaAddSheet');
   const offer = await page.$$eval('#qaAddSheet [data-qapick]', els => els.map(e => e.getAttribute('data-qapick')));
-  ok('an admin can put Admin and HR on his bar', offer.includes('admin') && offer.includes('hr'), JSON.stringify(offer));
-  await page.click('#qaAddSheet [data-qapick="admin"]'); await page.waitForTimeout(300);
+  ok('an admin can put Admin and HR on his card', offer.includes('a:admin') && offer.includes('a:hr'), JSON.stringify(offer));
+  await page.click('#qaAddSheet [data-qapick="a:admin"]'); await page.waitForTimeout(300);
   await page.click('#qaDone'); await page.waitForTimeout(900);
-  ok('… saved on his record, Di’s untouched', saved('st1').includes('admin') && !saved('st5').includes('admin'));
+  ok('… saved on his record, Di’s untouched', lay('st1').apps.includes('admin') && !lay('st5').apps.includes('admin'));
   await page.click('#qaBar [data-qago="admin"]'); await page.waitForTimeout(600);
   ok('… and it opens Admin', await page.evaluate(() => S.view) === 'admin');
   await ctx.close();
 }
 {
   const { ctx, page } = await open('di', { km: true, small: true });
+  await page.click('#qaEditBtn'); await page.waitForTimeout(300);
   const w = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth, win: innerWidth }));
-  ok('in Khmer on a 320px phone the page doesn’t widen', w.doc <= w.win, JSON.stringify(w));
+  ok('in Khmer on a 320px phone, editing, the page doesn’t widen', w.doc <= w.win, JSON.stringify(w));
   const lab = await page.$eval('#qaBar [data-qago="library"] .qaLabel', e => e.textContent);
   ok('… and the names are Khmer', /[ក-៿]/.test(lab), lab);
   await ctx.close();

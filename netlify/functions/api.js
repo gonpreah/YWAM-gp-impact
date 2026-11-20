@@ -5912,7 +5912,7 @@ async function saveKmReview(username, pin, key, verdict, km) {
 function bootStaffCard_(s) {
   /* mentorStatus: their own — the page reads S.me.mentorStatus (whether their mentor has said yes); it was only on
      the profile, so every 1-on-1 with one's own mentor also showed in "Asking you" and leave said "Save this request" */
-  return selfStaff_(s, { mentorStatus: s.mentorStatus || '', isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), signIn: authKindOf_(s), google: !!s.google, hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '', langLevel: langMine_(s), seeLangLevels: canSeeLangLevels_(s), quickApps: Array.isArray(s.quickApps) ? s.quickApps : null });   // created: for My Home's first 30 days; quickApps: My Home's quick-apps bar
+  return selfStaff_(s, { mentorStatus: s.mentorStatus || '', isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), signIn: authKindOf_(s), google: !!s.google, hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '', langLevel: langMine_(s), seeLangLevels: canSeeLangLevels_(s), quickApps: Array.isArray(s.quickApps) ? s.quickApps : null, dashLayout: (s.dashLayout && typeof s.dashLayout === 'object') ? s.dashLayout : null });   // created: for My Home's first 30 days; quickApps: My Home's quick-apps bar
 }
 /* GP Tasks as an app of its own (tasks.html, Nov 2026, Andrew: "a separate app for our tasks and calendar …
    synced and linked to the main app"). It is the same data, so there is nothing to sync: this is the tasks
@@ -13265,6 +13265,31 @@ async function saveQuickApps(username, pin, ids) {
   });
   return r && r.ok ? { ok: true, quickApps: clean } : { ok: false };
 }
+/* My Home's whole dashboard card (Nov 2026, Andrew: "click, drag and move things around to the style you want … a little
+   plus sign … add in new things … certain things there by default, you can move them but you can't delete them"):
+   the person's own order of the quick apps, the widgets and the rows. Ids only; the page decides what each one is and
+   which can't be taken off (it puts those back if they are missing). null = the default. The apps are kept as
+   quickApps too, so an older page reads the same row. */
+function cleanIds_(a, re, max) {
+  return Array.isArray(a) ? a.map(function (k) { return String(k || ''); }).filter(function (k, i, x) { return re.test(k) && x.indexOf(k) === i; }).slice(0, max) : null;
+}
+async function saveDashLayout(username, pin, layout) {
+  const s = await verifyStaff_(username, pin); if (!s) return { ok: false };
+  let clean = null;
+  if (layout && typeof layout === 'object') {
+    clean = {
+      apps: cleanIds_(layout.apps, /^[a-z][a-z0-9:-]{0,39}$/, 10) || [],
+      widgets: cleanIds_(layout.widgets, /^[a-z]{2,20}$/, 8) || [],
+      rows: cleanIds_(layout.rows, /^[a-z]{2,20}$/, 6) || []
+    };
+  }
+  const r = await mutateStaff_(function (rows) {
+    const rec = rows.find(function (x) { return x.id === s.id; }); if (!rec) return { abort: true, ok: false };
+    if (clean) { rec.dashLayout = clean; rec.quickApps = clean.apps.slice(); } else { delete rec.dashLayout; delete rec.quickApps; }
+    return { ok: true };
+  });
+  return r && r.ok ? { ok: true, dashLayout: clean } : { ok: false };
+}
 async function saveGpTaskFilter(username, pin, keys) {
   const s = await gptAuth_(username, pin); if (!s) return { ok: false };
   const clean = Array.isArray(keys) ? keys.map(function (k) { return str_(k, 170); }).filter(Boolean).slice(0, 200) : null;
@@ -13866,6 +13891,7 @@ const HANDLERS = {
   catchHoliday: function (a) { return catchHoliday(a[0], a[1]); },
   catchSanta: function (a) { return catchSanta(a[0], a[1]); },
   saveQuickApps: function (a) { return saveQuickApps(a[0], a[1], a[2]); },
+  saveDashLayout: function (a) { return saveDashLayout(a[0], a[1], a[2]); },
   markSeen: function (a) { return markSeen(a[0], a[1], a[2]); },
   hrArchiveMany: function (a) { return hrArchiveMany(a[0], a[1], a[2], a[3]); },
   saveMyKpiDay: function (a) { return saveMyKpiDay(a[0], a[1], a[2], a[3]); },

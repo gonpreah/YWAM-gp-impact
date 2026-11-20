@@ -214,15 +214,47 @@ function libLast_(){ try { return JSON.parse(lsGet('gp-lib-last')||'null'); } ca
    book, or the Library. It used to be a card of its own under the summary card (#sec-reading). */
 function libHeroRowHtml_(){
   if(S.student || S.guest || S.board || S.stuPreview) return '';
-  var m=libOn_() && S.lib.month, last=libLast_(), read=libRead_(), go='', main='', sub='';
+  /* this month's book is not a fixture here any more — it comes now and then as a slide-down note (libNudgeItems_) */
+  var last=libLast_(), read=libRead_(), go='', main='', sub='';
   var pts=(S.game && S.game.ok && S.game.pts) ? S.game.pts.book : 0;
-  if(m && m.title && !read[m.bookId]){ go=m.bookId; main=gpT('This month: {title}',{title:m.title}); sub=gpT('{n} of {total} have read it',{n:m.readers, total:m.total}); }
-  else if(last && last.id && !read[last.id]){ go=last.id; main=gpT('Continue: {title}',{title:last.title}); sub=gpT('{n} of {m} pages',{n:Math.min(last.step+1, last.total), m:last.total}); }
+  if(last && last.id && !read[last.id]){ go=last.id; main=gpT('Continue: {title}',{title:last.title}); sub=gpT('{n} of {m} pages',{n:Math.min(last.step+1, last.total), m:last.total}); }
   else { main=t('Read a book'); sub=pts ? gpT('Ten minutes · {n} points',{n:pts}) : t('Ten minutes'); }
   var recs=libOn_() && S.lib.recs ? S.lib.recs.length : 0;
   return '<button class="heroRow heroRowGo libHeroRow" id="libHome" data-libhome="'+esc(go)+'" aria-label="'+esc(t('Library'))+'"><span class="gptRing">📚</span>'+
     '<div class="heroTrend libHeroText"><b class="heroFig">'+esc(main)+'</b> <span class="whoCap">· '+esc(sub)+'</span>'+
     (recs ? ' <span class="whoCap" id="libHomeRecs">· 💌 '+recs+'</span>' : '')+'</div><span class="heroGo" aria-hidden="true">›</span></button>';
+}
+
+/* This month's book and the books a teammate recommends, as notes that slide down from the top (Nov 2026, Andrew:
+   "instead of it just being stationary … every now and then, like a notification … hey, read this book this month").
+   Bell items like any other, so the slide-down reminder shows them and a tap opens the book: the month's book while it
+   is unread, on one day in LIB_NUDGE_EVERY (3) — which day is the person's own, so a campus isn't all nudged at once —
+   dated today, so Clear holds for the day; a recommendation once, dated when it came, until the book is read or the
+   recommendation cleared. The phone's own weekly reminder (Profile → Reminders, push.reading) is unchanged. */
+var LIB_NUDGE_EVERY=3;
+function libNudgeDay_(){
+  var d=Math.floor(Date.parse(todayStr()+'T00:00:00Z')/864e5), h=0, id=String((S.me && S.me.id) || '');
+  for(var i=0;i<id.length;i++) h=(h*31+id.charCodeAt(i))%9973;
+  return (d+h)%Math.max(1, LIB_NUDGE_EVERY)===0;
+}
+/* a recommendation's book by the Library's own title (in the reader's language) when the Library has loaded, else the title
+   it came with, else its id tidied ("atomic-habits" → "Atomic Habits") */
+function libNudgeTitle_(r){
+  var b=(typeof GP_LIBRARY!=='undefined' && typeof libById_==='function') ? libById_(r.bookId) : null;
+  if(b) return libTitle_(b);
+  return r.title || String(r.bookId||'').split('-').map(function(w){ return w ? w.charAt(0).toUpperCase()+w.slice(1) : w; }).join(' ');
+}
+function libNudgeItems_(){
+  var out=[]; if(typeof libOn_!=='function' || !libOn_()) return out;
+  var read=libRead_(), m=S.lib.month;
+  var btn=function(id){ return '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-libgo="'+esc(id)+'">'+esc(t('Read it'))+'</button>'; };
+  if(m && m.bookId && m.title && !read[m.bookId] && libNudgeDay_())
+    out.push({ when:todayStr(), text:'📚 '+gpT('This month’s book: {title} — a ten-minute read',{title:m.title}), actions:btn(m.bookId) });
+  (S.lib.recs||[]).forEach(function(r){
+    if(!r || !r.bookId || read[r.bookId]) return;
+    out.push({ when:String(r.at||todayStr()), text:'💌 '+gpT('{name} recommends a book to you: {title}',{name:(r.from && r.from.name) || '', title:libNudgeTitle_(r)}), actions:btn(r.bookId) });
+  });
+  return out;
 }
 
 /* ---------- a mentor's view of a mentee's reading ---------- */

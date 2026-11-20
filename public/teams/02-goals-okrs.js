@@ -1455,11 +1455,8 @@ function miniDashboardHtml(){
      the big streak number read as an afterthought in the middle of the card. */
   h+='<div class="hero myHero'+(custom?' custom':'')+'"'+
     (custom?' style="'+(color?'background-color:'+esc(color)+';':'')+(bg?'background-image:url(\''+esc(bg)+'\');':'')+'"':'')+'>'+
-    qaBarHtml_()+   // the quick apps: the person's own row of small icons (19-ux.js)
-    heroWidgetsHtml_(goalsPct, goalsDone, written.length, habitsPct, habitsDone, list.length, healthPct, score)+
-    (typeof dutyHtml==='function' ? schedHomeHtml_() : '')+
-    libHeroRowHtml_()+   // 📚 one small row: this month's book, the one you were in, or Read a book
-    homeBaseHtml_()+
+    /* the quick apps, the widgets and the rows, each in the person's own order (19-ux.js, dashBodyHtml_) */
+    dashBodyHtml_({ goalsPct:goalsPct, goalsDone:goalsDone, goalsN:written.length, habitsPct:habitsPct, habitsDone:habitsDone, habitsN:list.length, healthPct:healthPct, score:score })+
   '</div>';
   h+=contractNoticeHtml_();
 
@@ -1470,25 +1467,8 @@ function miniDashboardHtml(){
    menu now): the staff, the base's health score and salvations this year —
    the same figures, from the same rollup, as Base's own hero. Tap → Base. */
 /* The summary card, made simpler (Nov 2026, Andrew: "I don't want it to be too much to see … like the widgets on
-   an iPhone … if the leave form is already in there, why is it on twice?"). Each thing is on My Home once:
-   four small widgets in one row — this week's goals, today's habits, my health, my GP Tasks — each opening its own
-   place. The goals' list, habits, mentor and annual goals have their sections below; the day streak is on the
-   line above the card; days off are on the Leave page (and Leave is a quick app). */
-function heroWidgetsHtml_(goalsPct, goalsDone, goalsN, habitsPct, habitsDone, habitsN, healthPct, score){
-  var ring=function(p, fig, label){ return '<span class="gRing heroWRing" style="'+gpRingVars(p)+'" role="img" aria-label="'+esc(label)+'"><span>'+esc(fig)+'</span></span>'; };
-  var w=function(attrs, inner, label){ return '<button class="heroW" '+attrs+' aria-label="'+esc(label)+'">'+inner+'<span class="heroWLabel">'+esc(label)+'</span></button>'; };
-  var I=S.gpTaskInfo, tasks='';
-  if(I && !S.student && !S.guest && !S.board){
-    var n=I.inbox || I.open || 0;
-    tasks=w('id="goGpTasks"', '<span class="heroWRing heroWIcon">'+GPT_SVG.tasks+(n ? '<span class="gtBadge heroWBadge'+(I.inbox?'':' quiet')+'">'+n+'</span>' : '')+'</span>', t('Tasks'));
-  }
-  return '<div class="heroWidgets'+(tasks?'':' three')+'">'+
-    w('data-jump="sec-goals"', ring(goalsPct, goalsDone+'/'+goalsN, t('Weekly Goals')), t('Goals'))+
-    w('data-jump="sec-habits"', ring(habitsPct, habitsDone+'/'+habitsN, t('Habits Today')), t('Habits'))+
-    w('id="goMyHealth" data-gohealth="1"', ring(healthPct, score!==null ? score.toFixed(1) : '—', t('My Health')), t('Health'))+
-    tasks+
-  '</div>';
-}
+   an iPhone"): each thing is on My Home once. Its quick apps, widgets and rows are drawn and arranged in 19-ux.js
+   (dashBodyHtml_); the goals' list, habits, mentor and annual goals have their sections below. */
 function homeBaseHtml_(){
   if(!S.me || !S.me.campus) return '';
   /* Drawn before the base's figures arrive too, with a dash for each — so the card is
@@ -1596,6 +1576,8 @@ function notifItems_(){
         actions:'<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-jumpgoals="1">'+esc(t('Set them'))+'</button>' });
     }
   }
+  /* this month's book now and then, and a teammate's recommendation (18-library-plus.js) */
+  if(S.me && !S.student && typeof libNudgeItems_==='function') libNudgeItems_().forEach(function(it){ items.push(it); });
   /* End of the week, goals not all the way there — used to be a big banner
      inline on My Home; it's a bell item instead now so the page isn't
      stacking two "end of the week" banners at once. Same Friday-dated

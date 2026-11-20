@@ -1256,6 +1256,9 @@ function renderNotifPanel(){
   document.querySelectorAll('#notifRoot [data-jumpgoals]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='week'; render(); };
   });
+  document.querySelectorAll('#notifRoot [data-libgo]').forEach(function(b){
+    b.onclick=function(){ gpTap(); var id=b.getAttribute('data-libgo'); S.bellOpen=false; renderNotifPanel(); libOpen_(); if(id){ S.libBook=id; render(); } };
+  });
   document.querySelectorAll('#notifRoot [data-goprofile]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='profile'; render(); };
   });
