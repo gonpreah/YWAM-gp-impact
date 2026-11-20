@@ -2320,6 +2320,19 @@ the phone, and English left in Khmer. What it found, and the rules that came out
   browser without the flag it is sent at once. Only GP Tasks uses it so far.
 - tests/test-ux-ui.mjs. Khmer: docs/khmer-needed.md §111. sw.js SHELL v24.
 
+## Quick apps on My Home (end of teams/19-ux.js, Nov 2026, Andrew: "small little app icons in the dashboard … customise it like a hotbar … hold and move the icons around")
+- A row of small icons at the top of My Home's summary card (`qaBarHtml_`, `#qaBar`, `.qaItem[data-qa]`, `[data-qago]`), each a
+  page from the person's own ☰ menu and search (`qaCatalog_` = `gpFindPages_()` minus bottom-bar tabs and the sign-out items,
+  `QA_SKIP`; kept in `S.qaCat` by user and language, dropped on every `applyBoot`) — so it can never offer a page their role
+  doesn't have. Short names under the icons (`QA_SHORT`: Calendar, Language, Leave…). Default (`QA_DEFAULT`): GP
+  Calendar/Tasks, Library, Learn Khmer, Leave, Prayer.
+- **Arranging**: hold an icon (`QA_HOLD_MS` 450) or tap ✎ Edit (`#qaEditBtn`) → `S.qaEdit`: the icons wiggle, ✕ takes one off
+  (`[data-qarm]`), ＋ Add (`#qaAdd` → `#qaAddSheet`, `[data-qapick]`) adds from the rest, drag one sideways to move it
+  (`qaDrag_`, pointer events; `touch-action:none` only while arranging), Done (`#qaDone`). Up to `QA_MAX` (10).
+- **Saved on the staff record** as `quickApps` (ids only) by `saveQuickApps(user, pin, ids)` (well-formed ids, once each, ten at
+  most; null = the default), a moment after each change (`qaSoon_`); the boot's own staff card carries it, never the roster.
+- tests/test-quick-apps-ui.mjs. Khmer: docs/khmer-needed.md §117.
+
 ## The week's board (teams/20-game.js, Nov 2026, Uriah: "gamify the app … a daily driver rather than a weekly check-in thing")
 Borrowed from the GonPreah public app's leaderboard. **Nothing new is stored**: `gameBoard_(s, staff, campus)` (api.js
 "The week's board") works out, from what is already saved, each active staff member's **points for the week** (Monday

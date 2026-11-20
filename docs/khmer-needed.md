@@ -5663,3 +5663,16 @@ A short line beside 📚 on the dark summary card — very little room. "Read a 
 | Ten minutes · {n} points | ដប់នាទី · {n} ពិន្ទុ |
 | Ten minutes | ដប់នាទី |
 | {n} of {total} have read it | {n} នាក់ក្នុងចំណោម {total} បានអានវាហើយ |
+
+## 117. My Home: quick apps
+
+A row of small icons at the top of My Home's summary card that each person chooses and arranges (hold an icon, or tap ✎ Edit). "Quick apps" names the row; the rest are on the edit row and the Add sheet.
+
+| English | Khmer (draft) |
+|---|---|
+| Quick apps | កម្មវិធីរហ័ស |
+| Add an app | បន្ថែមកម្មវិធី |
+| Arrange your quick apps | រៀបចំកម្មវិធីរហ័សរបស់អ្នក |
+| Drag to move · ✕ to take off | អូសដើម្បីផ្លាស់ទី · ✕ ដើម្បីដកចេញ |
+| Add a quick app | បន្ថែមកម្មវិធីរហ័ស |
+| Everything is on your bar already. | អ្វីៗទាំងអស់មាននៅលើរបាររបស់អ្នករួចហើយ។ |
