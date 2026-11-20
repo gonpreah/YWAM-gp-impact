@@ -919,6 +919,22 @@ school's home.
     on**: `GP_GOOGLE_REDIRECT=on` in Netlify (`googleRedirect_` → `portalAuthConfig.redirect` and the boot's
     `googleRedirect`), after adding `https://impact.gonpreah.org/teams.html` to the OAuth client's **Authorized
     redirect URIs** in Google Cloud — without that Google would show its error page.
+- **Getting back in without email** (Nov 2026, Uriah: "I can't see the full email in the account on my admin dashboard
+  … I don't want people getting logged out and stuck"). The app sends no email, so recovery goes through an admin:
+  - Admin → a person shows the whole email on its own wrapping line with Copy (`#admEmail`, `[data-admincopy]`,
+    `gpCopyText_`) and how they sign in (`#admSignIn`); Edit profile has an **Email** box (`#adm_email` →
+    `adminUpdateStaff {email}`) — the email Continue with Google finds a profile by.
+  - **Sign-in link** (`[data-adminsignlink]` → `adminSignInLink(user, pin, staffId)`, admins only; not for applicants
+    or archived people): `teams.html?signin=<48 hex>` to copy or share (`#admSignLinkUrl`, `S.adminSignLink`). Kept only
+    as a hash (`signInLink {hash, salt, exp, by, at}` on the staff record; `adminStaffOut_` sends just `{exp}`), good
+    for `SIGNIN_LINK_HOURS` (72), one use, a new one replaces the old. The page takes it out of the address before boot
+    (`signLinkTake_` / `signLinkUse_`, 07-health-leave.js) → `staffUseSignInLink(token)` (public): signs them in with a
+    device token, lifts the lockout, then the connect-Google step shows with **Not now** (`S.linkSignIn`,
+    `#gglStepLater`). `expired` / `pending` / anything else is said on the sign-in screen, which now ends with
+    "Can't get in? Message an admin…" (`#loginStuck`).
+  - **A PIN reset now works on a password account**: `credOk_` checks only the password when there is one, so
+    `adminResetPin` drops `secretHash` / `secretSalt` (the admin is replacing a forgotten password).
+  - tests/test-signin-link.mjs (server), tests/test-signin-link-ui.mjs. Khmer: docs/khmer-needed.md §119.
 - **Who isn't on Google yet** (Nov 2026, Andrew): Admin → Accounts has an "Everyone · n / Not on Google yet · n"
   chip row under the campus chips (`#adminGglRow`, `[data-adminggl]`, `S.adminGgl`): the active, unarchived accounts
   with no Google account connected (`adminStaffOut_` carries `google` — true once `google.sub` is set — and
@@ -2341,8 +2357,9 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
 - **Points** (`GAME_PTS`, sent to the page so the two can't drift; **balanced Nov 2026**, Andrew: "a book is 50 and a
   habit 2 … make it balanced … a book a little higher than the rest"): a day the app was opened 5; a habit ticked 3 (15 a
   day at most); weekly goals 15 for setting them + up to 25 as their average moves; a GP Task done 5 (40); a day
-  ministry numbers were entered 10 (20; never `tool:` rows); **a book finished 30 (90)** — the biggest single thing,
-  but not by far (it was 25, then 50); a 1-on-1 held 20 (both people); a holiday catch 5 (3 a day, below).
+  ministry numbers were entered 10 (20; never `tool:` rows); **a book finished 50 (150)** — the biggest single thing
+  (it was 25, then 50, then 30 for Andrew's balance, and back to 50 for the rollout, Nov 2026); a 1-on-1 held 20 (both
+  people); a holiday catch 5 (3 a day, below); Santa caught 5 (5 a day, below).
 - **Streak bonus** (`streakMin` 3, `streakBonus` 0.2): on a day streak of 3 or more, +20% of the week's points
   (`parts.streak`, rounded); the streak breaks → the bonus goes, back to the plain points. My Home's line says
   "+20% streak bonus" (`#gameBonus`).
@@ -2356,6 +2373,22 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   Not under a test browser unless `gp-hol-test` is set (`S.holMs` / `S.holFallMs` set the timing).
   The page can't claim a point. **The weekly health check-in gives none, on purpose** — its rows are anonymous and a
   point would say who answered; the page says so. Don't add it.
+- **Santa** (Nov 2026, Uriah: "a little Santa Claus that flies around the screen every time you open the app … click on
+  him, you get … points"; then "make him fly pretty regularly"; end of 20-game.js, `santa*`): in the holiday season (the
+  board's `santa: {left}`) Santa and two reindeer fly across the screen (`#santaFly`, `.santaFly`, either way, `.ltr`)
+  ~3.5 s after the app opens, then every 3–6 minutes while it stays open (`SANTA_GAP_MS`, caught or missed), until
+  today's are caught; back to the front after 10 minutes away starts over with the quick first flight. A tap →
+  `catchSanta(user, pin)`: staff only, in season, **5 points, `santaDayCap` (5) a day** — 25 at most, half a book —
+  not two within a minute (server `SANTA_GAP_MS`); kept in `holidayCatch` as `santa` / `santaLast`; `parts.santa`. Waits
+  while the bell, a snowflake or the points sheet is up. Not under a test browser unless `gp-santa-test` is set
+  (`S.santaMs` / `S.santaGapMs` / `S.santaFlyMs`).
+- **The points sheet when the app opens** (the rollout, `gameIntroMaybe_`, `#gameIntro`; Uriah: "show the points when
+  they open the app … that kind of explains what's what"): on My Home, the first fresh boot of each day — my points,
+  streak and place (`#gameIntroMe`), then "How to earn points" with what each thing is worth (from the board's own
+  `pts`), the streak bonus, Santa and the snowflakes in season, **See this week's board** / **Let's go!**, and
+  **Don't show this when I open the app** (`#gameIntroOff`). The first time it says "Points are here!", after that "Your
+  points this week". On the phone as `gp-game-intro-v2` = {n, last, off}. The slide-down reminder and Santa wait while
+  it is open. Not under a test browser unless `gp-intro-test` is set. Khmer: docs/khmer-needed.md §118.
 - **Streak**: days in a row with any use (the same evidence as Admin → App use), ending today or yesterday.
 - **What others see**: `people` rows are exactly `{id, pts, streak, week, rank, books, booksYear}` (books finished this
   week and this year — counts, as every profile already shows; never which book) (`week` = seven characters, 1 / 0 / -
@@ -2376,7 +2409,7 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   first ("n of N active this week"), my three figures with "Where my points came from" folded, People / Ministries, the
   top ten with points (my own row always shown; people with none are a count, not a list). Not for guests,
   students, the board or a preview (`gameOn_`).
-- tests/test-game.mjs (server), tests/test-game-ui.mjs (also the holiday catch and the slide-down reminder). Khmer: docs/khmer-needed.md §112, §113. sw.js SHELL v25.
+- tests/test-game.mjs (server), tests/test-game-ui.mjs (also the holiday catch, Santa, the points sheet and the slide-down reminder). Khmer: docs/khmer-needed.md §112, §113, §118. sw.js SHELL v27.
 
 ## Looking around without an account (teams.html guest mode, Oct 2026)
 `teams.html?guest=1` (the log-in screen's "Look around without an account" button was removed, Nov 2026, Andrew) sets

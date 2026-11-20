@@ -5634,6 +5634,37 @@ In the book reader a paragraph can be highlighted in a colour ("Highlight", as w
 | Blue | ខៀវ |
 | Pink | ផ្កាឈូក |
 
+## 118. Santa, books at 50, and the welcome to points
+
+In the holiday season Santa (សាន់តាក្លូស) and his reindeer fly across the screen when the app opens; tapping him gives 5 points; he comes round every few minutes ("Catch Santa" is read aloud by screen readers). The points sheet shows on the first open of each day: your points, then what each thing is worth on the week's board. "Let’s go!" is its closing button.
+
+| English | Khmer (draft) |
+|---|---|
+| Catch Santa | ចាប់សាន់តាក្លូស |
+| Santa is all caught for today. Come back tomorrow! | ថ្ងៃនេះអ្នកចាប់សាន់តាក្លូសគ្រប់ហើយ។ ត្រឡប់មកវិញនៅថ្ងៃស្អែក! |
+| Santa needs a minute to warm up — catch him next time! | សាន់តាក្លូសត្រូវការសម្រាកមួយនាទី — ចាប់គាត់នៅពេលក្រោយ! |
+| Santa caught | សាន់តាក្លូសដែលចាប់បាន |
+| Finish a book | អានសៀវភៅមួយក្បាលចប់ |
+| Hold a 1-on-1 | ជួបមួយទល់មួយ |
+| Set your three weekly goals | កំណត់គោលដៅទាំងបីប្រចាំសប្ដាហ៍របស់អ្នក |
+| Enter your ministry’s numbers | បញ្ចូលលេខនៃកិច្ចការបម្រើរបស់អ្នក |
+| Finish a GP Task | បញ្ចប់កិច្ចការ GP មួយ |
+| Open the app | បើកកម្មវិធី |
+| Tick a habit | គូសទម្លាប់មួយ |
+| Catch a snowflake or candy cane | ចាប់ផ្កាព្រិល ឬស្ករដំបង |
+| Catch Santa when he flies by | ចាប់សាន់តាក្លូសពេលគាត់ហោះកាត់ |
+| Points are here! | ពិន្ទុមកដល់ហើយ! |
+| Use the app every day and earn points for the good things you already do. Every Monday the week’s board starts again. | ប្រើកម្មវិធីរាល់ថ្ងៃ ហើយទទួលបានពិន្ទុសម្រាប់កិច្ចការល្អៗដែលអ្នកធ្វើរួចហើយ។ រាល់ថ្ងៃច័ន្ទ តារាងពិន្ទុសប្ដាហ៍ចាប់ផ្ដើមសាជាថ្មី។ |
+| Use the app {m} days in a row and get +{n}% on the whole week. | ប្រើកម្មវិធី {m} ថ្ងៃជាប់ៗគ្នា ហើយទទួលបាន +{n}% លើពិន្ទុពេញមួយសប្ដាហ៍។ |
+| See this week’s board | មើលតារាងពិន្ទុសប្ដាហ៍នេះ |
+| Let’s go! | តោះចាប់ផ្ដើម! |
+| Ho ho ho! You caught Santa! +{n} points | ហូ ហូ ហូ! អ្នកចាប់បានសាន់តាក្លូស! +{n} ពិន្ទុ |
+| {n} each time you catch him, up to {m} a day | {n} រាល់ពេលអ្នកចាប់គាត់បាន រហូតដល់ {m} ក្នុងមួយថ្ងៃ |
+| It’s the holiday season: Santa flies across the screen every few minutes. Tap him to catch him! | នេះជារដូវបុណ្យ៖ សាន់តាក្លូសហោះកាត់អេក្រង់រៀងរាល់ប៉ុន្មាននាទីម្ដង។ ចុចលើគាត់ ដើម្បីចាប់គាត់! |
+| Your points this week | ពិន្ទុរបស់អ្នកសប្ដាហ៍នេះ |
+| How to earn points | របៀបទទួលបានពិន្ទុ |
+| Don’t show this when I open the app | កុំបង្ហាញនេះពេលខ្ញុំបើកកម្មវិធី |
+| You can still see how points work on Team → This week. | អ្នកនៅតែអាចមើលរបៀបដែលពិន្ទុដំណើរការ នៅលើ ក្រុម → សប្ដាហ៍នេះ។ |
 ## 115. GP Tasks: light or dark, the Inbox's This week; the Portal as an app
 
 "Appearance: {mode}" is said when the 🌗 button on GP Tasks is tapped ({mode} is Light, Dark or Auto). "This week" is the Inbox's second switch: every list's tasks for the week, day by day. "Same time as another" is a small tag on a task. The Portal lines are a sheet in the YWAM GP app (☰ → Applications) and a card on the portal's staff side.
@@ -5653,6 +5684,37 @@ In the book reader a paragraph can be highlighted in a colour ("Highlight", as w
 | Open the Portal | បើកផតថល |
 | Install it like an app, with its own icon — the applications one tap from your Home Screen. | ដំឡើងវាដូចកម្មវិធីមួយ ជាមួយរូបតំណាងផ្ទាល់ខ្លួន — ពាក្យសុំទាំងអស់ ចុចតែម្ដងពីអេក្រង់ដើម។ |
 
+
+## 119. Getting back in: the admin's sign-in link and the full email
+
+Admin → a person: their whole email with Copy, how they sign in, an Email box in Edit profile, and **Sign-in link** — a one-time link an admin sends by Telegram or WhatsApp. The login screen says to ask for one. Claude's drafts, not yet reviewed.
+
+- Copy this → ចម្លងនេះ
+- No email on this profile → ប្រវត្តិរូបនេះគ្មានអ៊ីមែលទេ
+- Signs in with Google → ចូលដោយប្រើ Google
+- Signs in with an email and password → ចូលដោយប្រើអ៊ីមែល និងពាក្យសម្ងាត់
+- Signs in with a username and PIN — not on Google yet → ចូលដោយប្រើឈ្មោះអ្នកប្រើ និង PIN — មិនទាន់ប្រើ Google នៅឡើយ
+- Continue with Google finds a profile by this email — put the Gmail they use here. → “បន្តជាមួយ Google” រកប្រវត្តិរូបតាមអ៊ីមែលនេះ — សូមដាក់ Gmail ដែលគាត់ប្រើនៅទីនេះ។
+- Sign-in link → តំណសម្រាប់ចូល
+- For someone who is locked out or forgot how they sign in. The link signs them in once, on their own phone, then asks them to connect Google. It works for 3 days. Send it to them yourself on Telegram or WhatsApp — only to them. → សម្រាប់អ្នកដែលចូលមិនបាន ឬភ្លេចរបៀបចូល។ តំណនេះនឹងបញ្ចូលគាត់ម្តង នៅលើទូរស័ព្ទរបស់គាត់ផ្ទាល់ រួចសុំឱ្យគាត់ភ្ជាប់ Google។ វាប្រើបានរយៈពេល ៣ ថ្ងៃ។ សូមផ្ញើវាទៅគាត់ដោយខ្លួនឯងតាម Telegram ឬ WhatsApp — ផ្ញើទៅគាត់តែម្នាក់គត់។
+- Copy the link → ចម្លងតំណ
+- Works once, until {date}. → ប្រើបានតែម្តង រហូតដល់ {date}។
+- A link is waiting to be used. Making a new one turns the old one off. → មានតំណមួយកំពុងរង់ចាំប្រើ។ ការបង្កើតតំណថ្មីនឹងបិទតំណចាស់។
+- Make a sign-in link → បង្កើតតំណសម្រាប់ចូល
+- Another profile already has that email → ប្រវត្តិរូបផ្សេងទៀតមានអ៊ីមែលនោះរួចហើយ
+- That email doesn’t look right → អ៊ីមែលនោះហាក់ដូចជាមិនត្រឹមត្រូវ
+- Could not make the link → មិនអាចបង្កើតតំណបានទេ
+- Sign in to the YWAM GP app → ចូលកម្មវិធី YWAM GP
+- Copied → បានចម្លងហើយ
+- PIN must be 4 digits → PIN ត្រូវមាន ៤ ខ្ទង់
+- PIN reset — tell them the new PIN → បានកំណត់ PIN ថ្មីហើយ — សូមប្រាប់គាត់ពី PIN ថ្មី
+- Could not reset PIN → មិនអាចកំណត់ PIN ថ្មីបានទេ
+- Not now — go to the app → មិនមែនឥឡូវទេ — ទៅកម្មវិធី
+- You’re signed in. → អ្នកបានចូលហើយ។
+- That sign-in link has run out. Ask an admin for a new one. → តំណសម្រាប់ចូលនោះផុតកំណត់ហើយ។ សូមសុំតំណថ្មីពីអ្នកគ្រប់គ្រង។
+- That sign-in link was already used, or isn’t right. Ask an admin for a new one. → តំណសម្រាប់ចូលនោះត្រូវបានប្រើរួចហើយ ឬមិនត្រឹមត្រូវ។ សូមសុំតំណថ្មីពីអ្នកគ្រប់គ្រង។
+- No connection — open the link again when you are online. → គ្មានការតភ្ជាប់ — សូមបើកតំណម្តងទៀត ពេលអ្នកមានអ៊ីនធឺណិត។
+- Can’t get in? Message an admin on Telegram or WhatsApp — they can send you a link that signs you straight in, or set a new PIN. → ចូលមិនបាន? សូមផ្ញើសារទៅអ្នកគ្រប់គ្រងតាម Telegram ឬ WhatsApp — គាត់អាចផ្ញើតំណដែលបញ្ចូលអ្នកភ្លាមៗ ឬកំណត់ PIN ថ្មីឱ្យអ្នក។
 ## 116. My Home: the Library as one row of the summary card
 
 A short line beside 📚 on the dark summary card — very little room. "Read a book" is shown when no book is under way; "Ten minutes · {n} points" sits after it.

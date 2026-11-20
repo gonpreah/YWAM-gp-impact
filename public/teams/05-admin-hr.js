@@ -745,6 +745,13 @@ function adminHolidaysHtml_(L, year){
   h+='<button class="btn small" id="holSave" style="width:auto;margin:6px 0 0;padding:8px 12px;font-size:14px">'+esc(t('Save holidays'))+'</button>';
   return h+'</div>';
 }
+/* copy a line (an email, a link): the clipboard, else select it, else the browser's box */
+function gpCopyText_(v){
+  v=String(v||''); if(!v) return;
+  var done=function(){ showMsg(t('Copied')); };
+  try { if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(v).then(done, function(){ prompt(t('Copy this'), v); }); return; } } catch(e){}
+  try { prompt(t('Copy this'), v); } catch(e){}
+}
 /* One person's account, on its own page: who they are at the top, then the
    same sections the accordion used to hold (adminRowBodyHtml_ — reset PIN,
    profile, mentor, admin access, danger zone), unchanged. */
@@ -765,7 +772,11 @@ function adminPersonHtml_(){
   (x.leads||[]).forEach(function(k){ chips+='<span class="teamStat">👑 '+esc(t(k.split('|')[1]||k))+'</span>'; });
   h+='<div class="card"><div class="adminPersonHead">'+avatarHtml(x,'lg')+'<div style="min-width:0">'+
     '<div class="pname">'+esc(x.name)+(mine?' <span class="hint" style="display:inline">('+esc(t('you'))+')</span>':'')+'</div>'+
-    '<div class="pmeta">@'+esc(x.username)+(x.email?' · '+esc(x.email):'')+'</div>'+
+    '<div class="pmeta">@'+esc(x.username)+'</div>'+
+    /* the whole email on a line of its own, wrapping, selectable, with Copy (Nov 2026, Uriah: "I can't see the full email") */
+    (x.email ? '<div class="pmeta admEmail" id="admEmail"><span class="admEmailText">✉️ '+esc(x.email)+'</span> <button class="linkbtn inline" data-admincopy="'+esc(x.email)+'">'+esc(t('Copy'))+'</button></div>'
+      : '<div class="pmeta admEmail" id="admEmail">✉️ '+esc(t('No email on this profile'))+'</div>')+
+    '<div class="pmeta" id="admSignIn">'+esc(x.google ? t('Signs in with Google') : x.signIn==='password' ? t('Signs in with an email and password') : t('Signs in with a username and PIN — not on Google yet'))+'</div>'+
     '<div class="pmeta">'+esc(campusName(x.campus))+' · '+esc(t(x.dept))+(x.ministry?' · '+esc(t(x.ministry)):'')+(x.role?' · '+esc(x.role):'')+'</div>'+
     '</div></div>'+(chips?'<div class="teamStats">'+chips+'</div>':'')+'</div>';
   h+='<div class="card">'+adminRowBodyHtml_(x)+'</div>';
@@ -930,6 +941,23 @@ function adminRowBodyHtml_(s){
     '<button class="btn ghost" style="margin:0;width:auto;padding:9px 14px" data-adminresetpin="'+esc(s.id)+'">'+esc(t('Save'))+'</button></div>'+
     '<div class="mentorDivider"></div>';
 
+  /* someone who can't sign in at all: a link that signs them in once, sent by Telegram or WhatsApp */
+  if(!mine && !s.archived && s.kind!=='applicant'){
+    var sl=S.adminSignLink && S.adminSignLink.id===s.id ? S.adminSignLink : null;
+    b+='<div class="mentorLabel">🔗 '+esc(t('Sign-in link'))+'</div>'+
+      '<p class="hint" style="margin:0 0 8px">'+esc(t('For someone who is locked out or forgot how they sign in. The link signs them in once, on their own phone, then asks them to connect Google. It works for 3 days. Send it to them yourself on Telegram or WhatsApp — only to them.'))+'</p>';
+    if(sl){
+      b+='<div id="admSignLinkBox"><input type="text" readonly id="admSignLinkUrl" value="'+esc(sl.url)+'" style="font-size:13px">'+
+        '<div class="leaveActions"><button class="btn" id="admSignLinkCopy">'+esc(t('Copy the link'))+'</button>'+
+        (navigator.share ? '<button class="btn ghost" id="admSignLinkShare">'+esc(t('Share'))+'</button>' : '')+'</div>'+
+        '<p class="hint" style="margin:6px 0 0">'+esc(gpT('Works once, until {date}.',{date:new Date(sl.exp).toLocaleString()}))+'</p></div>';
+    } else {
+      b+=(s.signInLink ? '<p class="hint" style="margin:0 0 6px">'+esc(t('A link is waiting to be used. Making a new one turns the old one off.'))+'</p>' : '')+
+        '<button class="btn ghost" data-adminsignlink="'+esc(s.id)+'">'+esc(t('Make a sign-in link'))+'</button>';
+    }
+    b+='<div class="mentorDivider"></div>';
+  }
+
   b+='<div class="mentorLabel">✏️ '+esc(t('Profile'))+'</div>';
   if(S.adminEditId!==s.id){
     b+='<button class="btn ghost" data-adminedit="'+esc(s.id)+'">'+esc(t('Edit profile details'))+'</button>';
@@ -946,6 +974,8 @@ function adminRowBodyHtml_(s){
     var dDept = d.dept!==undefined ? d.dept : (s.dept||'');
     b+='<label class="f">'+esc(t('Full name'))+'</label><input type="text" id="adm_name" value="'+esc(d.name!==undefined?d.name:(s.name||''))+'">'+
       '<label class="f">'+esc(t('Username'))+'</label><input type="text" id="adm_username" autocapitalize="none" maxlength="20" value="'+esc(d.username!==undefined?d.username:(s.username||''))+'">'+
+      '<label class="f">'+esc(t('Email'))+'</label><input type="email" id="adm_email" autocapitalize="none" autocomplete="off" maxlength="200" value="'+esc(d.email!==undefined?d.email:(s.email||''))+'">'+
+      '<p class="hint" style="margin:4px 0 0">'+esc(t('Continue with Google finds a profile by this email — put the Gmail they use here.'))+'</p>'+
       '<label class="f">'+esc(t('Campus'))+'</label><select id="adm_campus">'+
       CAMPUSES.map(function(c){return '<option value="'+c.id+'"'+(dCampus===c.id?' selected':'')+'>'+c.name+'</option>';}).join('')+'</select>'+
       '<label class="f">'+esc(t('Department'))+'</label><select id="adm_dept">'+
@@ -1693,19 +1723,40 @@ function bindAdmin(){
     b.onclick=function(){
       var id=b.getAttribute('data-adminresetpin');
       var pin=S.adminPinDraft[id]||'';
-      if(!/^\d{4}$/.test(pin)){ showMsg('PIN must be 4 digits'); return; }
+      if(!/^\d{4}$/.test(pin)){ showMsg(t('PIN must be 4 digits')); return; }
       run('adminResetPin',[S.auth.user,S.auth.pin,id,pin],function(d){
-        if(d && d.ok){ S.adminPinDraft[id]=''; showMsg('PIN reset'); render(); }
-        else showMsg('Could not reset PIN');
+        if(d && d.ok){ S.adminPinDraft[id]=''; showMsg(t('PIN reset — tell them the new PIN')); render(); }
+        else showMsg(t('Could not reset PIN'));
       });
     };
   });
+  document.querySelectorAll('[data-admincopy]').forEach(function(b){
+    b.onclick=function(){ gpCopyText_(b.getAttribute('data-admincopy')); };
+  });
+  document.querySelectorAll('[data-adminsignlink]').forEach(function(b){
+    b.onclick=function(){
+      var id=b.getAttribute('data-adminsignlink');
+      b.disabled=true;
+      run('adminSignInLink',[S.auth.user,S.auth.pin,id],function(d){
+        if(d && d.ok && d.token){
+          var base=String(location.href).split('#')[0].split('?')[0].replace(/[^/]*$/,'');
+          S.adminSignLink={ id:id, url:base+'teams.html?signin='+d.token, exp:d.exp };
+          if(S.adminStaff) S.adminStaff=S.adminStaff.map(function(x){ return x.id===id ? Object.assign({}, x, { signInLink:{ exp:d.exp } }) : x; });
+          render();
+        } else { b.disabled=false; showMsg(t('Could not make the link')); }
+      });
+    };
+  });
+  var slCopy=document.getElementById('admSignLinkCopy');
+  if(slCopy) slCopy.onclick=function(){ gpCopyText_(S.adminSignLink && S.adminSignLink.url); };
+  var slShare=document.getElementById('admSignLinkShare');
+  if(slShare) slShare.onclick=function(){ try { navigator.share({ title:t('Sign in to the YWAM GP app'), url:S.adminSignLink.url }).catch(function(){}); } catch(e){} };
   document.querySelectorAll('[data-adminedit]').forEach(function(b){
     b.onclick=function(){
       var id=b.getAttribute('data-adminedit');
       var s=(S.adminStaff||[]).find(function(x){ return x.id===id; })||{};
       S.adminEditId=id;
-      S.adminEditDraft={ name:s.name||'', username:s.username||'', campus:s.campus||'', dept:s.dept||'', ministry:s.ministry||'',
+      S.adminEditDraft={ name:s.name||'', username:s.username||'', email:s.email||'', campus:s.campus||'', dept:s.dept||'', ministry:s.ministry||'',
         role:s.role||'', staffType:s.staffType||'', country:s.country||'', leads:(s.leads||[]).slice(), ministries:(s.ministries||[]).slice(),
         gpRoles:(s.gpRoles || (s.gpRole ? [s.gpRole] : [])).slice(), board: s.board ? { on:true, role:s.board.role } : { on:false, role:'Advisor' } };
       render();
@@ -1726,6 +1777,8 @@ function bindAdmin(){
     if(admName) admName.oninput=function(){ admD.name=admName.value; };
     var admUser=document.getElementById('adm_username');
     if(admUser) admUser.oninput=function(){ admD.username=admUser.value; };
+    var admEmail=document.getElementById('adm_email');
+    if(admEmail) admEmail.oninput=function(){ admD.email=admEmail.value; };
     var admRole=document.getElementById('adm_role');
     if(admRole) admRole.oninput=function(){ admD.role=admRole.value; };
     var admType=document.getElementById('adm_type');
@@ -1770,6 +1823,7 @@ function bindAdmin(){
       var payload={
         name:document.getElementById('adm_name').value.trim(),
         username:document.getElementById('adm_username').value.trim(),
+        email:((document.getElementById('adm_email')||{}).value||'').trim(),
         campus:document.getElementById('adm_campus').value,
         dept:document.getElementById('adm_dept').value,
         ministry:(document.getElementById('adm_ministry')||{}).value||'',
@@ -1802,6 +1856,8 @@ function bindAdmin(){
           b.disabled=false; b.textContent=t('Save');
           showMsg(d && d.err==='username_taken' ? t('That username is already taken')
             : d && d.err==='bad_username' ? t('Usernames are letters, numbers, . _ - (2–20 characters)')
+            : d && d.err==='email_taken' ? t('Another profile already has that email')
+            : d && d.err==='bad_email' ? t('That email doesn’t look right')
             : t('Could not save'));
         }
       });

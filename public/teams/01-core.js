@@ -70,7 +70,7 @@ var S = {
      so more than one can sit on the same page without their state colliding. */
   oversee:{}, ovWeek:{}, ovWeekDraft:{}, ovAcc:{}, ovLoading:{}, ovError:{}, ovDeptOf:{}, ovInputOpen:{},
   // Admin screen — S.me.isAdmin only. adminStaff loads lazily on first visit.
-  adminStaff:null, adminLoading:false, adminAcc:{}, adminEditId:null, adminEditDraft:null, adminPinDraft:{}, adminCode:'', adminCampusTab:null, adminSub:null, adminPersonId:null, adminSearch:'', adminMentorCampus:null, adminPortalCampus:null, adminLeave:null, adminLeaveLoading:false, adminLeaveError:'', adminLeaveCampus:null, adminLeaveYear:null, adminLeavePast:false, broadcastDraft:'',
+  adminStaff:null, adminLoading:false, adminAcc:{}, adminEditId:null, adminEditDraft:null, adminPinDraft:{}, adminSignLink:null, adminCode:'', adminCampusTab:null, adminSub:null, adminPersonId:null, adminSearch:'', adminMentorCampus:null, adminPortalCampus:null, adminLeave:null, adminLeaveLoading:false, adminLeaveError:'', adminLeaveCampus:null, adminLeaveYear:null, adminLeavePast:false, broadcastDraft:'',
   hrStaff:null, hrLoading:false, hrError:'', hrSub:'home', hrPersonId:null, hrSearch:'', hrCampusTab:null, hrShowArchived:false, hrContractForm:null, hrArchiveDraft:null, hrDue:null, hrFollowUps:null, hrTab:'staff',
   cands:null, candsLoading:false, candsError:'', candStage:'', candType:'', candSearch:'', candShowArchived:false, candForm:null, candPersonId:null, candNoteDraft:'',
   adminOkrAcc:{},
@@ -948,7 +948,7 @@ function logout(){
   lsDel('gp-staff'); lsDel('gp-boot-cache'); lsDel('gp-tasks-boot-cache'); S.offlineSince=null;
   lsDel('gp-lib-read'); lsDel('gp-lib-pending'); lsDel('gp-lib-synced'); lsDel('gp-lib-progress');
   lsDel('gp-staff-card');
-  S.me=null; S.auth={user:'',pin:''}; S.logs=[]; S.mentees=[];
+  S.me=null; S.linkSignIn=false; S.auth={user:'',pin:''}; S.logs=[]; S.mentees=[];
   S.goals=[]; S.checkins=[]; S.ministry=null; S.goalsWeek=null; S.goalEditIdx=null; S.kpiWeek=null; S.leaveDraft=null; S.weekDraft={}; S.kpiDraft={}; S.kpiWeekDraft={};
   S.personal=null; S.personalDraft={}; S.mmTab='ministry'; S.mmPickOpen=false; S.mmPickQ=''; S.kpiInputOpen=false; S.mmDashAll=false; S.metricRename=null;
   S.mmPeriod='quarter'; S.teamTrips={}; S.teamLoading={}; S.teamError={}; S.teamForm=null;
