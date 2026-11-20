@@ -213,10 +213,16 @@ function gpEnterDemo_(view){
   render();
   run('getMyBoot',['demo','0000'],function(d){
     S.demoLoading=false;
-    if(!(d && d.ok)){ S.demo=false; S.auth={ user:'', pin:'' }; gpEnterGuestPlain_(); return; }
+    if(!(d && d.ok)){ gpDemoFallback_(); return; }
     S.me=d.staff; S.profile=d.profile; applyBoot(d); S.voiceOn=false;
     render(); window.scrollTo(0,0);
-  }, function(){ S.demoLoading=false; S.demo=false; S.auth={ user:'', pin:'' }; gpEnterGuestPlain_(); });
+  }, function(){ S.demoLoading=false; gpDemoFallback_(); });
+}
+/* the preview couldn't load: the plain guest tour, on the page that was asked for (Base, from an old dashboard link) */
+function gpDemoFallback_(){
+  var want=S.view; S.demo=false; S.auth={ user:'', pin:'' };
+  gpEnterGuestPlain_();
+  if(want==='base' && S.view!=='base'){ S.view='base'; render(); }
 }
 function gpLeaveDemo_(toRegister){
   lsDel(GUEST_KEY); S.demo=false;
