@@ -50,7 +50,8 @@ const TEAM_STEPS = (current) => {
   const defs = [['account', 'you'], ['form', 'you', 'auto'], ['call1', 'us', 'tick'], ['passports', 'you', 'auto', 'docs'], ['photo', 'you', 'auto', 'docs'], ['flights', 'you', 'auto', 'docs'],
     ['invitation', 'us', 'auto', 'visa'], ['evisa', 'you', 'auto', 'visa'], ['rooms', 'us', 'auto'], ['call2', 'us', 'tick'], ['practical', 'you'], ['arrived', 'us', 'tick']];
   const ci = defs.findIndex(d => d[0] === current);
-  return defs.map(([id, who, kind, group], i) => ({ id, who, group, tick: kind === 'tick' || undefined, auto: kind === 'auto' || undefined, done: i < ci, state: i < ci ? 'done' : i === ci ? 'current' : 'todo' }));
+  const MARK = ['passports', 'photo', 'flights', 'invitation', 'evisa'];
+  return defs.map(([id, who, kind, group], i) => ({ id, who, group, tick: kind === 'tick' || undefined, auto: kind === 'auto' || undefined, mark: MARK.includes(id) || undefined, byDoc: (MARK.includes(id) && i < ci) || undefined, done: i < ci, state: i < ci ? 'done' : i === ci ? 'current' : 'todo' }));
 };
 const FORM = { key: 'dts', title: { en: 'DTS application', km: 'ពាក្យសុំ DTS' }, sections: [
   { id: 'about', title: { en: 'About you', km: 'អំពីអ្នក' }, help: { en: '', km: '' }, questions: [
@@ -298,6 +299,8 @@ async function open(viewport, query, seed) {
     } else if (b.fn === 'portalUpdateAccount') {
       const p = b.args[3]; ACCOUNTS = ACCOUNTS.map(a => a.id === b.args[2] ? { ...a, name: p.name, username: p.username, email: p.email, phone: p.phone, messenger: p.messenger, country: p.country } : a);
       out = { ok: true, account: ACCOUNTS.find(a => a.id === b.args[2]) };
+    } else if (b.fn === 'portalTeamStep' && b.args[3] === 'flights') {
+      CANDS = CANDS.map(x => x.id === b.args[2] ? { ...x, steps: x.steps.map(st => st.id === 'flights' ? { ...st, done: !!b.args[4], marked: !!b.args[4], state: b.args[4] ? 'done' : 'todo' } : st) } : x); out = { ok: true, candidate: CANDS.find(x => x.id === b.args[2]) };
     } else if (b.fn === 'portalTeamStep') {
       CANDS = CANDS.map(x => x.id === b.args[2] ? { ...x, stage: b.args[3] === 'call1' ? 'docs' : x.stage, steps: TEAM_STEPS(b.args[3] === 'call1' ? 'passports' : 'call1') } : x); out = { ok: true, candidate: CANDS.find(x => x.id === b.args[2]) };
     } else if (b.fn === 'portalStaffSyncTeam') {
@@ -532,7 +535,8 @@ async function open(viewport, query, seed) {
   await page.evaluate(() => { window.__opened = []; window.open = (u) => { window.__opened.push(u); return null; }; HTMLAnchorElement.prototype.click = function(){ window.__opened.push(this.href); }; });
   await page.click('#visaHow [data-visadoc="vd1"]'); await page.waitForTimeout(400);
   const gets = sent.filter(b => b.fn === 'portalVisaDocGet');
-  ok('a supporting document comes in its parts and opens', gets.length === 2 && gets[0].args[4] === 0 && gets[1].args[4] === 1 && (await page.evaluate(() => window.__opened.length)) === 1, JSON.stringify(gets.map(g => g.args.slice(2))));
+  ok('a supporting document comes in its parts and opens — in the file sheet, its Open a real link (Nov 2026)', gets.length === 2 && gets[0].args[4] === 0 && gets[1].args[4] === 1 && !!(await page.$('#fileSheet a#fileOpen[href^="blob:"]')), JSON.stringify(gets.map(g => g.args.slice(2))));
+  await page.click('#fileClose'); await page.waitForTimeout(150);
   ok('it stays open after a re-render', await page.$eval('#visaHow', d => d.open));
   const docs = await page.$('details#myDocs');
   ok('Documents folds, with a summary of what is in — folded when nothing is missing', !!docs && !(await page.$eval('#myDocs', d => d.open)) && /2 of 3 in|All in/.test(await page.$eval('#myDocs summary', e => e.textContent)), await page.$eval('#myDocs summary', e => e.textContent));
@@ -650,8 +654,15 @@ async function open(viewport, query, seed) {
   const ups = sent.filter(b => b.fn === 'portalUploadDoc');
   ok('choosing two files uploads both, one call each, as passports, and lists them', ups.length === 2 && ups.every(u => u.args[2] === 'passports' && u.args[4] === 'application/pdf' && u.args.length === 6) && ups[0].args[3] === 'passports.pdf' && Buffer.from(ups[0].args[5], 'base64').toString() === '%PDF-1.4 fake' && /2 files/.test(await page.$eval('[data-dockind="passports"]', e => e.textContent)));
   await page.click('[data-dockind="passports"] [data-docopen]');
-  await page.waitForTimeout(300);
+  await page.waitForSelector('#fileSheet', { timeout: 5000 });
   ok('Open fetches that file', sent.some(b => b.fn === 'portalGetDoc'));
+  /* Nov 2026: a team couldn't open its letter of invitation — a new tab opened after the download is blocked on
+     iPhones and in Messenger, so the file now comes up in a sheet whose buttons are real taps on real links */
+  const fs1 = await page.evaluate(() => { const o = document.getElementById('fileOpen'), d = document.getElementById('fileDownload'); return { open: o && o.tagName === 'A' && /^blob:/.test(o.href) && o.target === '_blank', dl: d && /^blob:/.test(d.href) && d.getAttribute('download') }; });
+  ok('… and shows it in a sheet: Open and Download are real links to the file, the name kept', fs1.open && fs1.dl === 'passports.pdf', JSON.stringify(fs1));
+  ok('… which says what to do when it still won’t open', /Share and save it to Files/.test(await page.$eval('#fileSheet', e => e.textContent)));
+  await page.click('#fileClose'); await page.waitForTimeout(150);
+  ok('… and closes', !(await page.$('#fileSheet')));
   page.once('dialog', d => d.accept());
   await page.click('[data-dockind="passports"] [data-docdel]');
   await page.waitForFunction(() => document.querySelectorAll('[data-dockind="passports"] .docList li').length === 1, null, { timeout: 5000 });
@@ -823,7 +834,7 @@ async function open(viewport, query, seed) {
   ok('… and says when nothing matches', /Nothing in the answers matches/.test(await page.$eval('#ansBody', e => e.textContent)));
   await page.fill('#ansQ', ''); await page.waitForTimeout(80);
   await ptab(page, 'docs'); pan = await page.$eval('#panel', e => e.textContent);
-  ok('and the visa ticks for an international applicant', (await page.$$eval('[data-visaflag]', c => c.map(x => x.getAttribute('data-visaflag')).join(','))) === 'flightsConfirmed,invitationSent');
+  ok('and the visa ticks for an international applicant', (await page.$$eval('[data-visaflag]', c => c.map(x => x.getAttribute('data-visaflag')).join(','))) === 'early,flightsConfirmed,invitationSent');   // early: Show them the e-visa steps now (Nov 2026)
   await page.click('#seeVisa'); await page.waitForTimeout(150);
   ok('"See their e-visa guide as they see it" shows the applicant’s visa card, as it is for them right now', !!(await page.$('.asSeen')) && /As they see it/.test(await page.$eval('.asSeen', e => e.textContent)) && /(Your e-visa, step by step|You will need a visa for Cambodia)/.test(await page.$eval('.asSeen', e => e.textContent)), await page.$eval('.asSeen', e => e.textContent.slice(0, 120)));
   await page.click('#seeVisa'); await page.waitForTimeout(100);
@@ -1548,9 +1559,14 @@ async function open(viewport, query, seed) {
   ok('staff upload the letter of invitation themselves', /You send this/.test(await page.$eval('[data-dockind="invitation"]', e => e.textContent)) && !!(await page.$('[data-docup="invitation"]')));
   await ptab(page, 'overview');
   ok('the record shows the team’s steps with what is next', /Next: 1st call — getting to know each other · on us/.test(await page.$eval('#teamNext', e => e.textContent)));
-  ok('staff tick the steps done outside the portal; the ones the portal sees tick themselves', (await page.$$eval('[data-teamstep]', c => c.map(x => x.getAttribute('data-teamstep')).join(','))) === 'call1,call2,arrived' && /ticks when they upload it/.test(await page.$eval('.flowList', e => e.textContent)));
-  ok('no separate visa ticks for a team', !(await page.$('[data-visaflag]')));
-  ok('every team step has 👁', (await page.$$eval('[data-seestep]', b => b.length)) === (await page.$$eval('.flowList li', b => b.length)) && /Tap 👁 on a step/.test(await page.$eval('.flowList + .hint', e => e.textContent)));
+  ok('staff tick the steps done outside the portal; the document steps tick themselves on an upload — or staff tick them (Nov 2026)', (await page.$$eval('[data-teamstep]', c => c.map(x => x.getAttribute('data-teamstep')).join(','))) === 'call1,passports,photo,flights,invitation,evisa,call2,arrived' && /ticks when they upload it — or tick it here/.test(await page.$eval('.flowList', e => e.textContent)));
+  ok('no separate visa ticks for a team — only “Show them the e-visa steps now”, in Team steps (Nov 2026)', (await page.$$eval('[data-visaflag]', c => c.map(x => x.getAttribute('data-visaflag')).join(','))) === 'early' && !!(await page.$('.flowList #visaEarly')));
+  ok('every team step has 👁', (await page.$$eval('[data-seestep]', b => b.length)) === (await page.$$eval('.flowList li:not(.visaEarly)', b => b.length)) && /Tap 👁 on a step/.test(await page.$eval('.flowList + .hint', e => e.textContent)));
+  await page.check('[data-visaflag="early"]'); await page.waitForTimeout(400);
+  const ve = sent.filter(b => b.fn === 'portalSetVisaFlags').pop();
+  ok('ticking it opens the e-visa steps for the team, through portalSetVisaFlags', ve && ve.args[2] === 'cd_team' && ve.args[3].early === true && await page.$eval('[data-visaflag="early"]', c => c.checked) && /they can see how to apply/.test(await page.$eval('#visaEarly', e => e.textContent)));
+  ok('… so the team’s documents card offers the e-visa upload before the rest is in', await page.evaluate(() => teamDocsIn_({ visa: { early: '2026-11-20' }, steps: [{ id: 'passports', done: false }] }) === true && teamDocsIn_({ visa: {}, steps: [{ id: 'passports', done: false }] }) === false));
+  await page.uncheck('[data-visaflag="early"]'); await page.waitForTimeout(400);
   await page.click('[data-seestep="evisa"]'); await page.waitForTimeout(150);
   ok('👁 on the e-visa step shows it exactly as the team sees it: the step, its note about the letter of invitation', !!(await page.$('.asSeen .step[data-step="evisa"]')) && /As the team sees it/.test(await page.$eval('.asSeen', e => e.textContent)) && /E-visas approved/.test(await page.$eval('.asSeen', e => e.textContent)) && /How to apply for your e-visa online/.test(await page.$eval('.asSeen', e => e.textContent)), await page.$eval('.asSeen', e => e.textContent.slice(0, 160)));
   await ptab(page, 'docs');
@@ -1597,6 +1613,11 @@ async function open(viewport, query, seed) {
   const ts = sent.filter(b => b.fn === 'portalTeamStep').pop();
   ok('ticking the 1st call goes through portalTeamStep', ts && ts.args[2] === 'cd_team' && ts.args[3] === 'call1' && ts.args[4] === true, JSON.stringify(ts && ts.args.slice(2)));
   ok('and the record moves on to the documents', /Next: Passport copies for the whole team · waiting on the team/.test(await page.$eval('#teamNext', e => e.textContent)));
+  /* Nov 2026: staff can tick a document step by hand — the flights, the letter of invitation… sent another way */
+  ok('each document step not yet in has its own tick for staff', (await page.$$eval('.flowList [data-teamstep]', cs => cs.map(c => c.getAttribute('data-teamstep')))).join(',') === 'call1,passports,photo,flights,invitation,evisa,call2,arrived', (await page.$$eval('.flowList [data-teamstep]', cs => cs.map(c => c.getAttribute('data-teamstep')))).join(','));
+  await page.check('[data-teamstep="flights"]'); await page.waitForTimeout(400);
+  const tf = sent.filter(b => b.fn === 'portalTeamStep').pop();
+  ok('ticking Flights goes through portalTeamStep, and says staff ticked it', tf && tf.args[3] === 'flights' && tf.args[4] === true && /ticked by staff/.test(await page.$eval('[data-teamstep="flights"]', e => e.closest('li').textContent)));
   await ptab(page, 'docs');
   ok('the names-and-photos document has no upload on the record either: it lists files that came the old way and points to the roster', !(await page.$('[data-docup="photo"]')) && /team\.pdf/.test(await page.$eval('[data-dockind="photo"]', e => e.textContent)) && /Member Two\.png/.test(await page.$eval('[data-dockind="photo"]', e => e.textContent)) && /put each one on a person under Team members/.test(await page.$eval('[data-dockind="photo"]', e => e.textContent)) && !!(await page.$('[data-docup="passports"]')));
   await ptab(page, 'people');

@@ -1363,6 +1363,14 @@ Cambodia time (`impTime_`). Name = first + last, else the Latin-letters name.
 - **The sheet never goes in the repo** — it holds people's phones, guardians and health. Tests use made-up rows.
   tests/test-portal-import.mjs (server), tests/test-portal-import-ui.mjs. Khmer: docs/khmer-needed.md §93.
 
+## Opening a file in the portal: a sheet, not a new tab (Nov 2026)
+A team couldn't open its letter of invitation. `openDataUrl_` (portal.html) used to open the file in a new tab once
+`portalGetDoc` had answered — no longer the tap that asked, so iPhone Safari, a Home Screen app and Messenger's browser
+quietly blocked it. Now every file (documents, the e-visa supporting documents, signed PDFs, the gallery) comes up in a
+sheet (`#fileSheet`): an image preview, **Open** and **⬇ Download** as real links to a blob URL (`#fileOpen`,
+`#fileDownload` with the name), **📤 Share or save to Files** where the phone can share files (`#fileShare`), and what to do
+when it still won't open. tests/test-portal-page.mjs. Khmer §126.
+
 ## Documents: every file at once (portal staff, Oct 2026)
 On a record's Documents tab, a kind with more than one file (passports above all) has **👁 View all n**
 — one full-screen page (`P.docGallery`, `#docGallery`, `docGalleryHtml_`) with every picture shown and
@@ -1977,6 +1985,20 @@ forms, documents and references follow.
   - Each step carries `who` ('you' or 'us') and either `auto` (it ticks itself when its
     document is on the record) or `tick` (a staff checkbox through
     `portalTeamStep(user, pin, candId, step, done)`, for call1 / call2 / arrived).
+  - **Staff can tick a document step by hand** (Nov 2026, Andrew: a team couldn't open its letter of invitation —
+    "a manual thing where our staff … can just manually mark … flight, letter of invitation"): `TEAM_MARKS` (passports,
+    photo, flights, invitation, evisa) joined `TEAM_TICKS`, so `portalTeamStep` sets `c.portal.team[step]` (logged "… —
+    marked by staff"). A mark counts exactly as the upload would (`teamMarked_` in `teamDocsIn_`, `teamVisaDone_`,
+    `visaOpen_`, `teamFlightsIn_`): the step, the stage moving on, the Teams Database's pending, the e-visa guide opening.
+    Steps carry `mark`, `marked` and `byDoc`; the staff record shows a tick on a document step while nothing has ticked
+    it or once staff did ("ticked by staff"), and the plain ✓ once a file is in. Rooms stays SR Hospitality's.
+  - **Show them the e-visa steps now** (Nov 2026, Andrew: "some teams … need to apply as soon as possible but don't have all
+    the information yet … a little checkbox that makes the steps for the e-visa process appear"): a staff tick under Team
+    steps (`visaEarlyHtml_`, `#visaEarly`, `[data-visaflag="early"]`; for an individual it sits in the Visa part) →
+    `portalSetVisaFlags {early}` (logged; `no_visa` for someone from Cambodia) → `visa.early`. `visaOpen_` is then true:
+    the guide, the supporting documents and the e-visa upload (`teamDocsIn_` on the page) open before the letter and the
+    documents are in; the steps and the stage stay where they are. Without a letter yet the guide says it will come
+    (`#visaNoLetter`). Hidden once the letter is in (the steps are open anyway). Khmer §127.
   - **The stage follows the steps forward on its own** (`teamAutoStage_`, run after a tick
     and after every upload): call1 done → docs; passports + photo + flights in and the
     e-visas approved → call2; call2 done → practical. It never moves back; unticking Arrived

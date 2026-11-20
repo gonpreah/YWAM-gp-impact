@@ -6511,7 +6511,7 @@ async function portalStaffSaveTeamNumbers(username, pin, candidateId, metrics, r
    calendar) from the day it applies, but its numbers only count on the
    dashboards once it is no longer pending. */
 function teamFlightsIn_(c) {
-  return hasDoc_(c, 'flights') || !!((c.portal && c.portal.visa) || {}).flightsConfirmed || portalStageIdx_(c.stage, 'team') >= portalStageIdx_('call2', 'team');
+  return hasDoc_(c, 'flights') || !!((c.portal && c.portal.visa) || {}).flightsConfirmed || teamMarked_(c, 'flights') || portalStageIdx_(c.stage, 'team') >= portalStageIdx_('call2', 'team');
 }
 async function pendingTeamIds_() {
   const out = {};
@@ -9796,11 +9796,18 @@ function portalStatus_(c) {
    the portal (the two calls, arrival). The stage follows the steps
    forward on its own (teamAutoStage_): the 1st call done → Awaiting
    documents; everything in → 2nd call; the 2nd call done → Getting ready. */
-const TEAM_TICKS = ['call1', 'call2', 'arrived'];
+/* The steps a document ticks can also be ticked by staff (Nov 2026, Andrew: a team couldn't open its letter of
+   invitation — "can you add in a manual thing where our staff … can just manually mark … flight, letter of
+   invitation"): the passports came by email, the flights are booked but not uploaded, the letter went by WhatsApp.
+   A mark is a flag beside the call ticks (c.portal.team[step] = when), logged, and counts exactly as the upload
+   would — for the step, the stage moving on, the Teams Database's "pending", and the e-visa guide opening. */
+const TEAM_MARKS = ['passports', 'photo', 'flights', 'invitation', 'evisa'];
+const TEAM_TICKS = ['call1', 'call2', 'arrived'].concat(TEAM_MARKS);
 function teamFlags_(c) { return (c && c.portal && c.portal.team) || {}; }
+function teamMarked_(c, step) { return c && c.type === 'team' && !!teamFlags_(c)[step]; }
 function hasDoc_(c, kind) { return docsOf_(c).some(function (d) { return d && d.kind === kind; }); }
-function teamDocsIn_(c) { return hasDoc_(c, 'passports') && hasPhotoDoc_(c) && (hasDoc_(c, 'flights') || !!((c.portal && c.portal.visa) || {}).flightsConfirmed); }
-function teamVisaDone_(c) { return !needsVisa_(c) || hasDoc_(c, 'evisa'); }
+function teamDocsIn_(c) { return (hasDoc_(c, 'passports') || teamMarked_(c, 'passports')) && (hasPhotoDoc_(c) || teamMarked_(c, 'photo')) && (hasDoc_(c, 'flights') || !!((c.portal && c.portal.visa) || {}).flightsConfirmed || teamMarked_(c, 'flights')); }
+function teamVisaDone_(c) { return !needsVisa_(c) || hasDoc_(c, 'evisa') || teamMarked_(c, 'evisa'); }
 function teamSteps_(c) {
   const idx = portalStageIdx_(c.stage, 'team');
   const at = function (stage) { return idx >= portalStageIdx_(stage, 'team'); };
@@ -9811,11 +9818,11 @@ function teamSteps_(c) {
     { id: 'account', done: true, who: 'you' },
     { id: 'form', done: submitted, who: 'you', auto: true },
     { id: 'call1', done: !!f.call1 || at('docs'), who: 'us', tick: true },
-    { id: 'passports', done: past || hasDoc_(c, 'passports'), who: 'you', auto: true, group: 'docs' },
-    { id: 'photo', done: past || hasPhotoDoc_(c), who: 'you', auto: true, group: 'docs' },
-    { id: 'flights', done: past || hasDoc_(c, 'flights') || !!visa.flightsConfirmed, who: 'you', auto: true, group: 'docs' },
-    intl && { id: 'invitation', done: past || hasDoc_(c, 'invitation') || !!visa.invitationSent, who: 'us', auto: true, group: 'visa' },
-    intl && { id: 'evisa', done: past || hasDoc_(c, 'evisa'), who: 'you', auto: true, group: 'visa' },
+    { id: 'passports', done: past || hasDoc_(c, 'passports') || !!f.passports, byDoc: hasDoc_(c, 'passports'), marked: !!f.passports, mark: true, who: 'you', auto: true, group: 'docs' },
+    { id: 'photo', done: past || hasPhotoDoc_(c) || !!f.photo, byDoc: hasPhotoDoc_(c), marked: !!f.photo, mark: true, who: 'you', auto: true, group: 'docs' },
+    { id: 'flights', done: past || hasDoc_(c, 'flights') || !!visa.flightsConfirmed || !!f.flights, byDoc: hasDoc_(c, 'flights') || !!visa.flightsConfirmed, marked: !!f.flights, mark: true, who: 'you', auto: true, group: 'docs' },
+    intl && { id: 'invitation', done: past || hasDoc_(c, 'invitation') || !!visa.invitationSent || !!f.invitation, byDoc: hasDoc_(c, 'invitation') || !!visa.invitationSent, marked: !!f.invitation, mark: true, who: 'us', auto: true, group: 'visa' },
+    intl && { id: 'evisa', done: past || hasDoc_(c, 'evisa') || !!f.evisa, byDoc: hasDoc_(c, 'evisa'), marked: !!f.evisa, mark: true, who: 'you', auto: true, group: 'visa' },
     { id: 'rooms', done: !!(c.portal && c.portal.rooms) || at('arrived'), who: 'us', auto: true, side: true },   // SR Hospitality booked their beds (syncTeamRooms_); any time, so never the current step
     { id: 'call2', done: !!f.call2 || at('practical'), who: 'us', tick: true },
     { id: 'practical', done: at('arrived'), who: 'you' },
@@ -11779,7 +11786,8 @@ function visaCampus_(c) { return Object.prototype.hasOwnProperty.call(PORTAL_CAM
 function visaOpen_(c) {
   if (!c || !needsVisa_(c)) return false;
   const v = (c.portal && c.portal.visa) || {};
-  return c.type === 'team' ? (hasDoc_(c, 'invitation') || !!v.invitationSent) : !!v.invitationSent;
+  if (v.early) return true;   // staff opened the e-visa steps early (portalSetVisaFlags {early}) — a team in a hurry
+  return c.type === 'team' ? (hasDoc_(c, 'invitation') || !!v.invitationSent || teamMarked_(c, 'invitation')) : !!v.invitationSent;
 }
 async function getVisaInfo_(campus) {
   campus = visaCampus_(campus);
@@ -11891,6 +11899,15 @@ async function portalSetVisaFlags(username, pin, candidateId, flags) {
     visa.extraDocs = !!flags.extraDocs;
   }
   if (flags.extraNote !== undefined) visa.extraNote = String(flags.extraNote == null ? '' : flags.extraNote).trim().slice(0, 600);
+  /* Show the e-visa steps now (Nov 2026, Andrew: "some teams need to apply as soon as possible but don't have all
+     the information yet … a little checkbox that makes the steps for the e-visa process appear"): the guide, the
+     supporting documents and the e-visa upload open before the letter and the team's documents are in (visaOpen_);
+     nothing else moves — the steps and the stage stay where they are. */
+  if (flags.early !== undefined) {
+    if (!needsVisa_(a.cand)) return { ok: false, err: 'no_visa' };
+    if (!!visa.early !== !!flags.early) a.cand.log = (Array.isArray(a.cand.log) ? a.cand.log : []).concat([{ at: new Date().toISOString(), by: a.s.id, kind: 'note', text: flags.early ? 'E-visa steps shown early' : 'E-visa steps hidden until the letter of invitation' }]).slice(-CAND_LOG_MAX);
+    if (flags.early) visa.early = new Date().toISOString(); else delete visa.early;
+  }
   a.cand.portal.visa = visa;
   a.cand.updated = new Date().toISOString(); a.cand.updatedBy = a.s.id;
   await writeJSON('candidates', a.rows);
@@ -11910,7 +11927,8 @@ async function portalTeamStep(username, pin, candidateId, step, done) {
   done = !!done;
   const now = new Date().toISOString();
   c.portal = c.portal || {};
-  const label = { call1: '1st call', call2: '2nd call — cultural orientation', arrived: 'Arrived' }[step];
+  const label = { call1: '1st call', call2: '2nd call — cultural orientation', arrived: 'Arrived', passports: 'Passports — marked by staff',
+    photo: 'Team photos — marked by staff', flights: 'Flights — marked by staff', invitation: 'Letter of invitation — marked by staff', evisa: 'E-visas — marked by staff' }[step];
   c.log = (Array.isArray(c.log) ? c.log : []).concat([{ at: now, by: a.s.id, kind: 'note', text: (done ? '✓ ' : '✗ ') + label }]).slice(-CAND_LOG_MAX);
   if (step === 'arrived') {
     const before = c.stage;

@@ -5914,3 +5914,27 @@ Admin's home is grouped under four headings, each tool with one short line. Admi
 | A group (up to 10) | ក្រុមមួយ (រហូតដល់ ១០) |
 | A big group (up to 30) | ក្រុមធំ (រហូតដល់ ៣០) |
 | For {where}. {uses} — until {date}. Anyone who has the link can use it, so send it only to them. | សម្រាប់ {where}។ {uses} — រហូតដល់ {date}។ អ្នកណាដែលមានតំណនេះអាចប្រើវាបាន ដូច្នេះសូមផ្ញើវាតែទៅពួកគេប៉ុណ្ណោះ។ |
+
+## 126. Portal: opening a file; staff ticking a team's document steps
+
+A file (the letter of invitation, a passport…) now opens in a small sheet with Open / Download / Share, because opening it straight in a new tab was blocked on iPhones and inside Messenger. Staff can tick a team's document steps by hand when the team sent them another way; the hints sit beside a step's name and have little room.
+
+| English | Khmer (draft) |
+|---|---|
+| Download | ទាញយក |
+| Share or save to Files | ចែករំលែក ឬរក្សាទុកក្នុង Files |
+| Doesn’t open? Tap Download, or Share and save it to Files. Inside Messenger or Facebook, open the portal in Safari or Chrome first. | បើកមិនបាន? ចុច ទាញយក ឬ ចែករំលែក ហើយរក្សាទុកក្នុង Files។ បើអ្នកនៅក្នុង Messenger ឬ Facebook សូមបើកវិបផតថលក្នុង Safari ឬ Chrome ជាមុនសិន។ |
+| ticked by staff | បុគ្គលិកបានគូសធីក |
+| ticks when you upload it below — or tick it here if you sent it another way | ធីកឯងៗ ពេលអ្នកផ្ទុកវាឡើងខាងក្រោម — ឬធីកនៅទីនេះ បើអ្នកបានផ្ញើវាតាមវិធីផ្សេង |
+| ticks when they upload it — or tick it here if they sent it another way | ធីកឯងៗ ពេលពួកគេផ្ទុកវាឡើង — ឬធីកនៅទីនេះ បើពួកគេបានផ្ញើវាតាមវិធីផ្សេង |
+
+## 127. Portal: showing a team the e-visa steps early
+
+A staff tick on a team's record opens "How to apply for your e-visa online" and the e-visa upload before the letter of invitation and the team's documents are in, for a team that has to apply soon. The team sees a line saying the letter will come.
+
+| English | Khmer (draft) |
+|---|---|
+| Show them the e-visa steps now | បង្ហាញជំហាន e-visa ដល់ពួកគេឥឡូវនេះ |
+| they can see how to apply and upload their e-visas, before everything else is in | ពួកគេអាចមើលរបៀបដាក់ពាក្យ និងផ្ទុក e-visa ឡើង មុនពេលអ្វីៗផ្សេងទៀតរួចរាល់ |
+| for a team that has to apply soon — before the letter and their documents are in | សម្រាប់ក្រុមដែលត្រូវដាក់ពាក្យឆាប់ៗ — មុនពេលលិខិតអញ្ជើញ និងឯកសាររបស់ពួកគេរួចរាល់ |
+| Your letter of invitation will be here as soon as we have it. You can start the e-visa form now and attach the letter when it comes. | លិខិតអញ្ជើញរបស់អ្នកនឹងនៅទីនេះ ភ្លាមៗពេលយើងមានវា។ អ្នកអាចចាប់ផ្តើមបំពេញទម្រង់ e-visa ឥឡូវនេះ ហើយភ្ជាប់លិខិតនៅពេលវាមកដល់។ |
