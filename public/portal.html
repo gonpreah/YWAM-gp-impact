@@ -518,6 +518,12 @@ body.menuOn { overflow:hidden; }
 @media print { .pvGuideBar { display:none; } }
 body.guideOn { overflow:hidden; }
 @media print { body.guideOn { overflow:visible; } .guideOverlay { position:static; overflow:visible; background:#fff; } .guideBar { display:none; } .guideBody { padding:0; max-width:none; } }
+.fileScrim { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:90; }
+.fileSheet { position:fixed; left:50%; bottom:max(16px, env(safe-area-inset-bottom)); transform:translateX(-50%); width:min(460px, calc(100% - 24px)); max-height:85vh; overflow:auto; background:var(--surface); color:var(--ink); border:1px solid var(--border); border-radius:var(--r); padding:16px; z-index:91; }
+.fileHead { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:10px; word-break:break-word; }
+.filePrev { display:block; max-width:100%; max-height:45vh; margin:0 auto 12px; border-radius:var(--rSm); }
+.fileBtns { display:flex; flex-direction:column; gap:8px; }
+.fileBtns .btn { text-align:center; text-decoration:none; margin:0; }
 </style>
 </head>
 <body class="gate">
@@ -3501,17 +3507,37 @@ function uploadDocs_(files, kind, candId){
   };
   P.busy=true; next();
 }
+/* A file, once it has come from the server, opens in a small sheet with Open / Download / Share (Nov 2026: a team
+   couldn't open its letter of invitation). Opening it straight away — a new tab after the file had downloaded — is
+   no longer the tap that asked for it, so iPhone Safari, a Home Screen app and Messenger's browser quietly block it.
+   Each button in the sheet is a tap of its own on a real link, which every browser lets through; Share hands the
+   file to the phone (Save to Files, WhatsApp…), which works even where a download doesn't. */
 function openDataUrl_(dataUrl, name){
+  var url='', mime='', blob=null;
   try {
     var m=/^data:([^;]+);base64,(.*)$/.exec(dataUrl); if(!m) throw new Error('bad');
     var bin=atob(m[2]), arr=new Uint8Array(bin.length);
     for(var i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
-    var url=URL.createObjectURL(new Blob([arr],{type:m[1]}));
-    var a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener';
-    if(!/^(application\/pdf|image\/)/.test(m[1])) a.download=name||'file';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
-  } catch(e){ showMsg(t('Could not open the file')); }
+    mime=m[1]; blob=new Blob([arr],{type:mime}); url=URL.createObjectURL(blob);
+  } catch(e){ showMsg(t('Could not open the file')); return; }
+  name=String(name||'file');
+  if(mime==='application/pdf' && !/\.pdf$/i.test(name)) name+='.pdf';
+  var old=document.getElementById('fileSheetRoot'); if(old) old.remove();
+  var root=document.createElement('div'); root.id='fileSheetRoot';
+  var canShare=false, file=null;
+  try { file=new File([blob], name, {type:mime}); canShare=!!(navigator.canShare && navigator.share && navigator.canShare({files:[file]})); } catch(e){ canShare=false; }
+  root.innerHTML='<div class="fileScrim" id="fileScrim"></div><div class="fileSheet" id="fileSheet" role="dialog" aria-label="'+esc(name)+'">'+
+    '<div class="fileHead"><b>'+(/^image\//.test(mime)?'🖼':'📄')+' '+esc(name)+'</b><button type="button" class="linkbtn inline" id="fileClose" aria-label="'+esc(t('Close'))+'">✕</button></div>'+
+    (/^image\//.test(mime) ? '<img class="filePrev" src="'+url+'" alt="">' : '')+
+    '<div class="fileBtns"><a class="btn" id="fileOpen" href="'+url+'" target="_blank" rel="noopener">'+esc(t('Open'))+'</a>'+
+    '<a class="btn ghost" id="fileDownload" href="'+url+'" download="'+esc(name)+'">⬇ '+esc(t('Download'))+'</a>'+
+    (canShare ? '<button type="button" class="btn ghost" id="fileShare">📤 '+esc(t('Share or save to Files'))+'</button>' : '')+'</div>'+
+    '<p class="hint" style="margin:10px 0 0">'+esc(t('Doesn’t open? Tap Download, or Share and save it to Files. Inside Messenger or Facebook, open the portal in Safari or Chrome first.'))+'</p></div>';
+  document.body.appendChild(root);
+  var shut=function(){ root.remove(); setTimeout(function(){ URL.revokeObjectURL(url); }, 60000); };
+  document.getElementById('fileScrim').onclick=shut;
+  document.getElementById('fileClose').onclick=shut;
+  var sh=document.getElementById('fileShare'); if(sh) sh.onclick=function(){ navigator.share({ files:[file], title:name }).catch(function(){}); };
 }
 /* ---- every file of a kind at once (staff) ----
    View all: one page with each passport (or e-visa, flight…) under the next —
@@ -3990,6 +4016,9 @@ function panelTeamFlowHtml_(c){
   h+='<ul class="flowList">'+c.steps.filter(function(st){ return st.id!=='account'; }).map(function(st){
     var name=esc(t(TEAM_STEP_LABEL[st.id]||st.id));
     if(st.tick) return '<li class="'+(st.state==='current'?'cur':'')+'"><label class="portalTick"><input type="checkbox" data-teamstep="'+esc(st.id)+'"'+(st.done?' checked':'')+(P.busy?' disabled':'')+'> '+name+'</label>'+eye(st)+seen(st)+'</li>';
+    /* a document step staff can tick by hand (Nov 2026): while nothing has ticked it, or once they did */
+    if(st.mark && !st.byDoc && (!st.done || st.marked)) return '<li class="'+(st.state==='current'?'cur':'')+'"><label class="portalTick"><input type="checkbox" data-teamstep="'+esc(st.id)+'"'+(st.marked?' checked':'')+(P.busy?' disabled':'')+'> '+name+'</label>'+
+      ' <span class="hint">'+esc(st.marked ? t('ticked by staff') : st.id==='invitation' ? t('ticks when you upload it below — or tick it here if you sent it another way') : t('ticks when they upload it — or tick it here if they sent it another way'))+'</span>'+eye(st)+seen(st)+'</li>';
     if(st.id==='rooms' && st.done && c.portal && c.portal.rooms) name+=' <span class="hint">· 🛏 '+esc(roomsLine_(c.portal.rooms))+'</span>';
     return '<li class="auto'+(st.done?' done':'')+(st.state==='current'?' cur':'')+'"><span class="flowMark">'+(st.done?'✓':'○')+'</span> '+name+
       ' <span class="hint">'+esc(st.id==='form' ? t('when they submit') : st.id==='invitation' ? t('ticks when you upload it below') : st.id==='rooms' ? t('ticks when SR Hospitality books their beds') : st.id==='practical' ? t('until they arrive') : t('ticks when they upload it'))+'</span>'+eye(st)+seen(st)+'</li>';

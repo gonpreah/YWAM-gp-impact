@@ -5914,3 +5914,16 @@ Admin's home is grouped under four headings, each tool with one short line. Admi
 | A group (up to 10) | ក្រុមមួយ (រហូតដល់ ១០) |
 | A big group (up to 30) | ក្រុមធំ (រហូតដល់ ៣០) |
 | For {where}. {uses} — until {date}. Anyone who has the link can use it, so send it only to them. | សម្រាប់ {where}។ {uses} — រហូតដល់ {date}។ អ្នកណាដែលមានតំណនេះអាចប្រើវាបាន ដូច្នេះសូមផ្ញើវាតែទៅពួកគេប៉ុណ្ណោះ។ |
+
+## 126. Portal: opening a file; staff ticking a team's document steps
+
+A file (the letter of invitation, a passport…) now opens in a small sheet with Open / Download / Share, because opening it straight in a new tab was blocked on iPhones and inside Messenger. Staff can tick a team's document steps by hand when the team sent them another way; the hints sit beside a step's name and have little room.
+
+| English | Khmer (draft) |
+|---|---|
+| Download | ទាញយក |
+| Share or save to Files | ចែករំលែក ឬរក្សាទុកក្នុង Files |
+| Doesn’t open? Tap Download, or Share and save it to Files. Inside Messenger or Facebook, open the portal in Safari or Chrome first. | បើកមិនបាន? ចុច ទាញយក ឬ ចែករំលែក ហើយរក្សាទុកក្នុង Files។ បើអ្នកនៅក្នុង Messenger ឬ Facebook សូមបើកវិបផតថលក្នុង Safari ឬ Chrome ជាមុនសិន។ |
+| ticked by staff | បុគ្គលិកបានគូសធីក |
+| ticks when you upload it below — or tick it here if you sent it another way | ធីកឯងៗ ពេលអ្នកផ្ទុកវាឡើងខាងក្រោម — ឬធីកនៅទីនេះ បើអ្នកបានផ្ញើវាតាមវិធីផ្សេង |
+| ticks when they upload it — or tick it here if they sent it another way | ធីកឯងៗ ពេលពួកគេផ្ទុកវាឡើង — ឬធីកនៅទីនេះ បើពួកគេបានផ្ញើវាតាមវិធីផ្សេង |
