@@ -546,6 +546,14 @@ async function open(viewport, query, seed) {
   const rooms = await page.$eval('[data-step="rooms"]', e => ({ cls: e.className, txt: e.innerText }));
   ok('Rooms booked is ticked, with how many beds and the nights SR Hospitality booked', /done/.test(rooms.cls) && /Rooms booked/.test(rooms.txt) && /12 beds · 10 Jan 2027 – 20 Jan 2027/.test(rooms.txt), JSON.stringify(rooms));
   ok('no sideways scroll on a phone', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+  /* Nov 2026 (Andrew: the Norway team couldn't find the e-visa steps, folded under step 8): a button at the top */
+  ok('the top of the page says the letter is in and has a button to the e-visa steps', /Your letter of invitation is in/.test(await page.$eval('.card.hero', e => e.textContent)) && !!(await page.$('.card.hero #visaHowGo')));
+  if (await page.$eval('#visaHow', d => d.open)) { await page.click('#visaHow summary'); await page.waitForTimeout(200); }
+  await page.click('#visaHowGo'); await page.waitForTimeout(700);
+  ok('… which opens How to apply for your e-visa online and brings it into view', await page.$eval('#visaHow', d => d.open) && await page.$eval('#visaHow', d => { const r = d.getBoundingClientRect(); return r.top >= -2 && r.top < window.innerHeight; }));
+  ok('opened early, before the letter, the top says they can start now and the letter will follow', await page.evaluate(() => /You can start your e-visas now/.test(statusNote_({ type: 'team', visaOpen: true, status: 'docs', visa: { early: '2026-11-20' }, docs: [], steps: [{ id: 'invitation', done: false }, { id: 'evisa', done: false }] }))
+    && !/letter of invitation is in/.test(statusNote_({ type: 'team', visaOpen: true, status: 'docs', visa: { early: '2026-11-20' }, docs: [], steps: [{ id: 'invitation', done: false }, { id: 'evisa', done: false }] }))
+    && visaGoHtml_({ type: 'team', visaOpen: false, status: 'docs', steps: [{ id: 'evisa', done: false }] }) === ''));
   await ctx.close();
 }
 

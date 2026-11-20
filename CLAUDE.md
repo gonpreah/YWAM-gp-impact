@@ -1999,6 +1999,11 @@ forms, documents and references follow.
     the guide, the supporting documents and the e-visa upload (`teamDocsIn_` on the page) open before the letter and the
     documents are in; the steps and the stage stay where they are. Without a letter yet the guide says it will come
     (`#visaNoLetter`). Hidden once the letter is in (the steps are open anyway). Khmer §127.
+  - **A button to them at the top** (Nov 2026, Andrew: the Norway team couldn't find them, folded under step 8): while a
+    team's e-visa steps are open and its e-visas aren't all in (`visaGoWanted_`), the hero's line says so — "Your letter of
+    invitation is in…", or, opened early with no letter yet (`letterIn_`), "You can start your e-visas now … your letter of
+    invitation will follow" — with **🛂 How to apply for your e-visa online →** (`#visaHowGo`), which opens the fold and
+    scrolls to it. Khmer §128.
   - **The stage follows the steps forward on its own** (`teamAutoStage_`, run after a tick
     and after every upload): call1 done → docs; passports + photo + flights in and the
     e-visas approved → call2; call2 done → practical. It never moves back; unticking Arrived
