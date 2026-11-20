@@ -156,8 +156,8 @@ mem.goals.push({ staffId: 'me', week: WK - 1, year: YR, items: [{ text: 'Visit t
   await page.click('#goMyHealth'); await page.waitForTimeout(400);
   ok('… My Health’s opens My Health', await page.evaluate(() => S.view === 'health'));
   await page.click('nav.bottom [data-tab="week"]'); await page.waitForTimeout(400);
-  await page.click('#goMentorship'); await page.waitForTimeout(400);
-  ok('… and Mentor’s opens Mentorship', await page.evaluate(() => S.view === 'mentor'));
+  await page.click('#goMentorshipHome'); await page.waitForTimeout(400);
+  ok('… and the Mentorship card below opens Mentorship', await page.evaluate(() => S.view === 'mentor'));
   await page.click('nav.bottom [data-tab="week"]'); await page.waitForTimeout(400);
   ok('the bottom bar: My Home, My Ministry, Team, Health, Profile — the Library is in the menu now', (await page.$$eval('nav.bottom [data-tab]', bs => bs.map(b => b.dataset.tab).join())) === 'week,ministry,team,health,profile');
   await page.click('#menuBtn'); await page.waitForTimeout(300);
@@ -174,8 +174,11 @@ mem.goals.push({ staffId: 'me', week: WK - 1, year: YR, items: [{ text: 'Visit t
   await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(400);
   ok('the summary card’s My Ministry opens My Ministry', await page.evaluate(() => S.view === 'ministry'));
   await page.click('nav.bottom button[data-tab="week"]'); await page.waitForTimeout(300);
-  await page.click('#goLeaveFromMe'); await page.waitForTimeout(400);
-  ok('the summary card’s time-off row opens the Leave Request page', await page.evaluate(() => S.view === 'leave'));
+  await page.click('#qaBar [data-qago="leave"]'); await page.waitForTimeout(400);
+  ok('the Leave quick app opens the Leave Request page (time off is no longer a row of the card)', await page.evaluate(() => S.view === 'leave') && true);
+  await page.click('nav.bottom button[data-tab="week"]'); await page.waitForTimeout(300);
+  await page.click('.heroW[data-jump="sec-habits"]'); await page.waitForTimeout(600);
+  ok('the Habits widget takes you to the habits', await page.evaluate(() => { const r = document.getElementById('sec-habits'); return !!r && r.getBoundingClientRect().top < innerHeight; }));
   await ctx.close();
 }
 {

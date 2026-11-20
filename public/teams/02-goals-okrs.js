@@ -1505,7 +1505,7 @@ function homeBaseHtml_(){
         cell(staff===null?'—':staff, t('Staff'))+
         cell(hs===null?'—':hs.toFixed(1), t('Base health'))+
         cell(salv===null?'—':fmt(salv), t('Salvations'))+
-        (W===false ? '' : '<button class="homeBaseCell homeWhos" id="goWhosHereHome"><b class="homeWhosN">'+(W ? W.count : '—')+'</b>'+esc(t('On campus'))+'</button>')+
+        (W===false ? '' : '<button class="homeBaseCell homeWhos" id="goWhosHereHome"><b class="homeWhosN">'+(W && W.count!=null ? W.count : '—')+'</b>'+esc(t('On campus'))+'</button>')+
       '</span>'+
     '</div>';
 }
