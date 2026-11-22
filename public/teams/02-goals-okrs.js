@@ -1610,6 +1610,12 @@ function notifItems_(){
     if(S.hrDue) items.push({ when:todayStr()+'T23:59:59.000Z', text: S.hrDue===1 ? t('1 staff contract is due for renewal') : gpT('{n} staff contracts are due for renewal',{n:S.hrDue}), actions:hrBtn });
     if(S.hrFollowUps) items.push({ when:todayStr()+'T23:59:58.000Z', text: S.hrFollowUps===1 ? t('1 candidate follow-up is due') : gpT('{n} candidate follow-ups are due',{n:S.hrFollowUps}), actions:hrBtn });
   }
+  /* SR Hospitality (the Hospitality ministry and admins): a team's dates changed and its booking moved,
+     or someone left and their bed came free — each until someone taps Got it there (Nov 2026). */
+  (S.hospNews||[]).forEach(function(c){
+    items.push({ when:c.at, text: c.kind==='left' ? gpT('SR Hospitality: {name} has left — their bed is free',{name:c.name}) : gpT('SR Hospitality: {name} has new dates, {range}',{name:c.name, range:hospRangeOf_(c.now)}),
+      actions:'<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-gohosp="1">'+esc(t('Open'))+'</button>' });
+  });
   /* The nightly backup (admins): only when a night was missed or the last run
      failed — dated today, so Clear holds until tomorrow and it comes back while
      it is still not running. */
