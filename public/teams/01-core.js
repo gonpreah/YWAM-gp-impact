@@ -1487,7 +1487,7 @@ function baseHealthAccHtml(){
     prevRows = q>0 ? R.surveyRows(ids, undefined, q-1) : null;
   }
   var cr = (period==='week') ? R.checkinRate(ids, wk) : null;
-  var summary = score===null ? t('No check-ins yet.') :
+  var summary = score===null ? t(period==='week' ? 'No check-ins yet this week.' : 'No check-ins yet.') :
     (cr && cr.total) ? gpT('Score {n}/10 · {pct}% checked in', {n:score.toFixed(1), pct:gpCheckinPct(cr.n,cr.total)})
       : gpT('Score {n}/10', {n:score.toFixed(1)});
   return accRowHtml('baseAcc', 'health', '🏠 '+esc(t('Base Health')), summary, function(){
@@ -1713,7 +1713,7 @@ function baseHtml(){
     });
 
   h+=accRowHtml('baseAcc', 'ld', '🌱 '+esc(t('Leadership Development Schools')),
-    gpT('{s} schools running · {n} enrolled', {s:fmt(R.ldSchools(ids)), n:fmt(R.ldStudents(ids))}),
+    gpT(R.ldSchools(ids)===1 ? '{s} school running · {n} enrolled' : '{s} schools running · {n} enrolled', {s:fmt(R.ldSchools(ids)), n:fmt(R.ldStudents(ids))}),
     function(){
       return '<div class="grid">'+
         bstat('Schools', R.ldSchools(ids))+

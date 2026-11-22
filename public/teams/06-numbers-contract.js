@@ -806,7 +806,7 @@ function mmHeadHtml_(opts, sel, mine){
   if(leaders.length) sub+=' · 👑 '+esc(t('Led by'))+' '+leaders.map(function(p){ return esc(p.name); }).join(', ');
   var note = isBL ? '' : mine ? t('Your main ministry — you are entering its numbers') : sel.role==='member' ? t('One of your ministries — you are entering its numbers') : sel.role==='leader' ? t('You lead this ministry — you are entering its numbers') : sel.role==='admin' ? t('As an admin you can see and enter its numbers') : sel.role==='oversee' ? t('Viewing as its director') : '';
   return '<div class="mmHead'+(isBL?' leadBanner':'')+'" id="mmBanner"><div class="eyebrow">'+esc(t('My Ministry'))+'</div>'+
-    '<div class="mmHeadRow"><span class="mmBannerEmoji">'+emoji+'</span><div class="mmHeadText"><div class="mmBannerName">'+esc(name)+'</div><div class="rowSub">'+sub+(note ? ' · <span class="mmBannerNote">'+esc(note)+'</span>' : '')+'</div></div>'+
+    '<div class="mmHeadRow"><span class="mmBannerEmoji">'+emoji+'</span><div class="mmHeadText"><div class="mmBannerName">'+esc(name)+'</div><div class="rowSub">'+sub+(note ? '<span class="mmBannerNote">'+esc(note)+'</span>' : '')+'</div></div>'+
     (opts.length>1 ? '<button class="mmSwitch" id="mmSwitch" aria-haspopup="dialog">'+esc(t('Switch'))+' ▾</button>' : '')+'</div></div>';
 }
 /* the one row of tabs: [key, label, attr] — most keys are data-mmtab; a tool's own keys keep their
@@ -2184,7 +2184,7 @@ function hospRoomsHtml_(H){
     rooms.forEach(function(r){
       var out=r.beds.filter(function(x){ return x.out; }).length, sp=r.beds.filter(function(x){ return x.spot; }).length;
       h+='<button class="hospRoomRow" data-hosproom="'+esc(r.id)+'"><span><b>'+esc(r.name)+'</b> '+hospStyleTag_(r.style)+'</span><span class="rowSub">'+
-        esc(sp ? gpT('{b} beds + {s} extra · fits {n}',{b:r.beds.length-sp, s:sp, n:r.beds.length-out}) : gpT('{n} beds',{n:r.beds.length}))+(out?' · '+esc(gpT('{n} out',{n:out})):'')+' ›</span></button>';
+        esc(sp ? gpT('{b} beds + {s} extra · fits {n}',{b:r.beds.length-sp, s:sp, n:r.beds.length-out}) : (r.beds.length===1 ? t('1 bed') : gpT('{n} beds',{n:r.beds.length})))+(out?' · '+esc(gpT('{n} out',{n:out})):'')+' ›</span></button>';
     });
     h+='</div><button class="btn ghost small" data-hospaddroom="'+esc(b.id)+'" style="margin:8px 0 0">＋ '+esc(t('Add a room'))+'</button>';
     if(!rooms.length) h+=' <button class="linkbtn inline teamDelete" data-hospbldel="'+esc(b.id)+'">'+esc(t('Delete building'))+'</button>';

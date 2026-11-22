@@ -6063,3 +6063,49 @@ On a 360 review that has closed (or is still open): a button to send it to more 
 | Want more input? You can ask more people, even now it has closed. | ចង់បានមតិបន្ថែម? អ្នកអាចសួរមនុស្សបន្ថែមបាន ទោះបីវាបានបិទហើយក៏ដោយ។ |
 | Pick at least {n} new people. | សូមជ្រើសរើសមនុស្សថ្មីយ៉ាងហោចណាស់ {n} នាក់។ |
 | That is too many people for one review. | មនុស្សច្រើនពេកសម្រាប់ការវាយតម្លៃមួយ។ |
+
+## 133. The look-through of 22 Nov 2026
+
+Small fixes from a sweep of every screen: Base's Leadership Development line when one school is running, Base Health when nobody has checked in this week yet, and the Admin page for who works in the portal (its heading had no Khmer).
+
+| English | Khmer (draft) |
+|---|---|
+| {s} school running · {n} enrolled | សាលា {s} កំពុងដំណើរការ · សិស្ស {n} នាក់ចុះឈ្មោះ |
+| No check-ins yet this week. | សប្តាហ៍នេះមិនទាន់មានការរាយការណ៍នៅឡើយទេ។ |
+| Portal access | សិទ្ធិចូលច្រកទ្វារ |
+
+## 134. A team’s next steps on its portal page
+
+The top of a team’s page lists what is theirs to do now (each with its own button) and what waits on us; the timeline marks a step they can already do with “Do it now”; three step notes are reworded. Button labels are short; the “Waiting on us” lines sit in a small list.
+
+| English | Khmer (draft) |
+|---|---|
+| Your next steps | ជំហានបន្ទាប់របស់អ្នក |
+| Waiting on us | កំពុងរង់ចាំយើង |
+| Nothing for you to do right now. | ឥឡូវនេះ មិនមានអ្វីដែលអ្នកត្រូវធ្វើទេ។ |
+| Do it now | ធ្វើវាឥឡូវនេះ |
+| Open my team | បើកក្រុមរបស់ខ្ញុំ |
+| Enter our numbers | បញ្ចូលលេខរបស់យើង |
+| Upload passport copies | ផ្ទុកឡើងច្បាប់ចម្លងលិខិតឆ្លងដែន |
+| The photo page of every team member’s passport. | ទំព័ររូបថតនៃលិខិតឆ្លងដែនរបស់សមាជិកក្រុមម្នាក់ៗ។ |
+| Everyone coming, with a photo of each. | អ្នកដែលនឹងមកទាំងអស់ ព្រមទាំងរូបថតម្នាក់ៗ។ |
+| Upload your flight itineraries | ផ្ទុកឡើងកាលវិភាគជើងហោះហើររបស់អ្នក |
+| We need them to start your visa process and to pick you up at the airport. Not booked yet? Upload them once you have. | យើងត្រូវការវា ដើម្បីចាប់ផ្តើមដំណើរការទិដ្ឋាការរបស់អ្នក និងដើម្បីទៅទទួលអ្នកនៅព្រលានយន្តហោះ។ មិនទាន់កក់ទេ? សូមផ្ទុកឡើងនៅពេលអ្នកកក់រួច។ |
+| Apply for your e-visas | ដាក់ពាក្យសុំ e-visa របស់អ្នក |
+| Your letter of invitation and everything else you need is in “How to apply for your e-visa online”. Then upload each approved e-visa. | លិខិតអញ្ជើញរបស់អ្នក និងអ្វីៗផ្សេងទៀតដែលអ្នកត្រូវការ មាននៅក្នុង «របៀបដាក់ពាក្យសុំ e-visa តាមអនឡាញ»។ បន្ទាប់មក សូមផ្ទុកឡើង e-visa នីមួយៗដែលបានអនុម័ត។ |
+| Get ready to travel | រៀបចំខ្លួនធ្វើដំណើរ |
+| Read and sign the legal documents, and read the Outreach Leader’s Guide. | អាន និងចុះហត្ថលេខាលើឯកសារច្បាប់ ហើយអានមគ្គុទ្ទេសក៍សម្រាប់អ្នកដឹកនាំបេសកកម្ម។ |
+| Enter your team’s numbers | បញ្ចូលលេខរបស់ក្រុមអ្នក |
+| What your team saw God do here — they go into our Outreach Teams figures. | អ្វីដែលក្រុមរបស់អ្នកបានឃើញព្រះធ្វើនៅទីនេះ — លេខទាំងនេះចូលទៅក្នុងតួលេខក្រុមបេសកកម្មរបស់យើង។ |
+| Keep your team’s numbers up to date | ធ្វើបច្ចុប្បន្នភាពលេខរបស់ក្រុមអ្នកជានិច្ច |
+| Totals for your whole time with us — add to them as you go. | សរុបសម្រាប់ពេលវេលាទាំងអស់ដែលអ្នកនៅជាមួយយើង — បន្ថែមវាជាបន្តបន្ទាប់។ |
+| 1st call: we will message you on {app} to find a time. | ការហៅលើកទី១៖ យើងនឹងផ្ញើសារទៅអ្នកតាម {app} ដើម្បីរកពេលវេលា។ |
+| Letter of invitation: we are preparing it. | លិខិតអញ្ជើញ៖ យើងកំពុងរៀបចំវា។ |
+| 2nd call: cultural orientation with your whole team — we will message you to set a time. | ការហៅលើកទី២៖ ការណែនាំអំពីវប្បធម៌ជាមួយក្រុមទាំងមូលរបស់អ្នក — យើងនឹងផ្ញើសារទៅអ្នកដើម្បីកំណត់ពេលវេលា។ |
+| {n} file in — add the rest | មានឯកសារ {n} ហើយ — សូមបន្ថែមឯកសារដែលនៅសល់ |
+| {n} files in — add the rest | មានឯកសារ {n} ហើយ — សូមបន្ថែមឯកសារដែលនៅសល់ |
+| Under Your team members: add everyone coming, with a photo of each. We use the names for the cooking and morning chores schedules while you are here. | នៅក្រោម «សមាជិកក្រុមរបស់អ្នក»៖ បន្ថែមអ្នកដែលនឹងមកទាំងអស់ ព្រមទាំងរូបថតម្នាក់ៗ។ យើងប្រើឈ្មោះទាំងនេះសម្រាប់កាលវិភាគចម្អិនអាហារ និងការងារពេលព្រឹក ពេលអ្នកនៅទីនេះ។ |
+| From us — we prepare them once your passports, your team’s names and photos, and flights are in. You will find them under Documents and in “How to apply for your e-visa online”. | ពីយើង — យើងរៀបចំវានៅពេលលិខិតឆ្លងដែន ឈ្មោះ និងរូបថតក្រុមរបស់អ្នក និងជើងហោះហើរបានមកដល់។ អ្នកនឹងរកឃើញវានៅក្រោម «ឯកសារ» និងនៅក្នុង «របៀបដាក់ពាក្យសុំ e-visa តាមអនឡាញ»។ |
+| A copy of the photo page of every team member’s passport, under Documents. | ច្បាប់ចម្លងទំព័ររូបថតនៃលិខិតឆ្លងដែនរបស់សមាជិកក្រុមម្នាក់ៗ នៅក្រោម «ឯកសារ»។ |
+| Your letter of invitation is in — you can apply for your e-visas now. | លិខិតអញ្ជើញរបស់អ្នកបានមកដល់ហើយ — អ្នកអាចដាក់ពាក្យសុំ e-visa ឥឡូវនេះ។ |
+| You can start your e-visas now — your letter of invitation will follow. | អ្នកអាចចាប់ផ្តើមដាក់ពាក្យសុំ e-visa ឥឡូវនេះ — លិខិតអញ្ជើញរបស់អ្នកនឹងមកតាមក្រោយ។ |

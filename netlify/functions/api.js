@@ -1494,7 +1494,7 @@ async function adminUpdateStaff(username, pin, staffId, payload) {
     if (idx === -1) return { abort: true, ok: false, err: 'not_found' };
     const rec = rows[idx];
     if (payload.name !== undefined) rec.name = payload.name;
-    if (payload.campus !== undefined) rec.campus = payload.campus;
+    if (payload.campus !== undefined && CAMPUS_IDS_.indexOf(payload.campus) > -1) rec.campus = payload.campus;   // a real campus or nothing
     if (payload.dept !== undefined) rec.dept = normDept_(payload.dept);
     if (payload.ministry !== undefined) rec.ministry = normMinistry_(rec.dept, payload.ministry);
     rec.dept = normDept_(rec.dept, rec.ministry);   // a ministry that moved department goes where it is now
@@ -1689,7 +1689,7 @@ async function updateProfile_(s, payload) {
     if (idx === -1) return { abort: true, ok: false };
     const rec = rows[idx];
     if (payload.name !== undefined) rec.name = payload.name;
-    if (payload.campus !== undefined) rec.campus = payload.campus;
+    if (payload.campus !== undefined && CAMPUS_IDS_.indexOf(payload.campus) > -1) rec.campus = payload.campus;   // a real campus or nothing
     /* Moving yourself INTO Campus Leadership waits for an admin (Oct 2026, Uriah) — the
        same rule as a Campus Leadership sign-up, since the department carries the
        leadership tools (the meeting board, other ministries' numbers, a title). The
@@ -14376,7 +14376,7 @@ function demoData_() {
       { text: 'Train the new barista', pct: 100, done: true, metricKey: '' }, { text: 'Visit a church in town', pct: 100, done: true, metricKey: '' },
       { text: 'Language study 3 times', pct: 70, done: false, metricKey: '' }] }
   ];
-  const quarter = Math.min(3, Math.floor((wk - 1) / 13));
+  const quarter = Math.min(4, Math.floor((wk - 1) / 13) + 1); /* objectives keep quarters 1–4 (okrSectionHtml's qNow) */
   const okr = function (id, dept, objective, krs) { return krs.map(function (k) { return Object.assign({ campus: 'siemreap', quarter: quarter, dept: dept, id: id, objective: objective, kr: '', metricKey: '', target: 0, manualPct: 0, group: '', kind: '', current: 0, updated: now }, k); }); };
   const okrs = [].concat(
     okr('demo-o1', 'Community Service', 'Make the cafe a place people meet Jesus', [{ kr: 'Serve 2,500 cups this quarter', metricKey: 'Community Service|Cafe|Cups Sold', target: 2500 }, { kr: 'Train two new baristas', kind: 'count', target: 2, current: 1 }, { kr: 'A prayer corner in the cafe', manualPct: 40 }]),
