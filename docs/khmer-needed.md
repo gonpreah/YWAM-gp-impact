@@ -6028,7 +6028,6 @@ The schedule editor's "Who is here this week" note (who leaves or arrives midwee
 | not here {day} | មិននៅទីនេះ {day} |
 | For SR Hospitality’s beds and the weekly schedules. Empty: from the day the school starts. | សម្រាប់គ្រែរបស់ SR Hospitality និងកាលវិភាគប្រចាំសប្តាហ៍។ ទទេ៖ ចាប់ពីថ្ងៃដែលសាលាចាប់ផ្តើម។ |
 | Typed before | បានវាយពីមុន |
-<<<<<<< HEAD
 
 ## 131. The look-through of 22 Nov 2026
 
@@ -6039,5 +6038,3 @@ Small fixes from a sweep of every screen: Base's Leadership Development line whe
 | {s} school running · {n} enrolled | សាលា {s} កំពុងដំណើរការ · សិស្ស {n} នាក់ចុះឈ្មោះ |
 | No check-ins yet this week. | សប្តាហ៍នេះមិនទាន់មានការរាយការណ៍នៅឡើយទេ។ |
 | Portal access | សិទ្ធិចូលច្រកទ្វារ |
-=======
->>>>>>> origin/claude/laughing-brahmagupta-0z7mg2
