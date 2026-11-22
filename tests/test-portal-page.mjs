@@ -545,6 +545,19 @@ async function open(viewport, query, seed) {
   ok('… and opens to the list', await page.$eval('#teamMembers', d => d.open) && !!(await page.$('#editMembers')));
   const rooms = await page.$eval('[data-step="rooms"]', e => ({ cls: e.className, txt: e.innerText }));
   ok('Rooms booked is ticked, with how many beds and the nights SR Hospitality booked', /done/.test(rooms.cls) && /Rooms booked/.test(rooms.txt) && /12 beds · 10 Jan 2027 – 20 Jan 2027/.test(rooms.txt), JSON.stringify(rooms));
+  /* Nov 2026 (the Rogaland team couldn't see its letter): with a photo still to come, the letter staff posted is still under Documents */
+  const docKinds = await page.evaluate(() => {
+    const app = P.boot.application, keep = app.steps;
+    app.steps = keep.map(st => st.id === 'photo' ? { ...st, done: false, state: 'todo' } : st);
+    render(); const p = document.querySelector('#myDocs'); if (p) p.open = true;
+    const open = [...document.querySelectorAll('#myDocs [data-dockind]')].map(e => e.getAttribute('data-dockind'));
+    app.visaOpen = false; render();
+    const shut = [...document.querySelectorAll('#myDocs [data-dockind]')].map(e => e.getAttribute('data-dockind'));
+    app.visaOpen = true; app.steps = keep; render();
+    return { open, shut };
+  });
+  ok('a photo still missing: the letter of invitation and the e-visa upload are under Documents once the e-visa steps are open', docKinds.open.includes('invitation') && docKinds.open.includes('evisa'), JSON.stringify(docKinds));
+  ok('… and not before (nothing there yet for them)', !docKinds.shut.includes('invitation') && !docKinds.shut.includes('evisa'), JSON.stringify(docKinds));
   ok('no sideways scroll on a phone', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   /* Nov 2026 (Andrew: the Norway team couldn't find the e-visa steps, folded under step 8): a button at the top */
   ok('the top of the page says the letter is in and has a button to the e-visa steps', /Your letter of invitation is in/.test(await page.$eval('.card.hero', e => e.textContent)) && !!(await page.$('.card.hero #visaHowGo')));

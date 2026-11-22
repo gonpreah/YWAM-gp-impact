@@ -1898,8 +1898,11 @@ function meHtml_(){
   h+=legalCardHtml_(app);
   h+=membersCardHtml_(app);
   h+=visaCardHtml_(app);
+  /* A team's letter of invitation and e-visa uploads are listed once its passports, photos and flights are in — or as soon as
+     the e-visa steps are open (the letter uploaded, or staff opened them early): a team waiting on one photo must still find
+     the letter staff posted under Documents (Nov 2026, the Rogaland team couldn't). */
   h+=foldCardHtml_('myDocs', '📎 '+t('Documents'), myDocsSummary_(app), myDocsOpen_(app),
-    ((app.docKinds||[]).filter(function(k){ return k.id!=='photo' && !k.visa; }).length ? docsBodyHtml_((app.docKinds||[]).filter(function(k){ return k.id!=='photo' && !k.visa && (app.type!=='team' || teamDocsIn_(app) || (k.id!=='invitation' && k.id!=='evisa')); }), app.docs||[], app.submittedAt ? 'me' : 'before', '')
+    ((app.docKinds||[]).filter(function(k){ return k.id!=='photo' && !k.visa; }).length ? docsBodyHtml_((app.docKinds||[]).filter(function(k){ return k.id!=='photo' && !k.visa && (app.type!=='team' || teamDocsIn_(app) || app.visaOpen || (k.id!=='invitation' && k.id!=='evisa')); }), app.docs||[], app.submittedAt ? 'me' : 'before', '')
       : '<p class="sub" style="margin:0">'+esc(t('After you apply, the things to attach for your kind of application are listed here, each one checked off as it arrives.'))+'</p>'));
   h+='<div class="card"><div class="panelHead"><h3 style="margin-top:0">📱 '+esc(t('How we reach you'))+'</h3>'+(P.editContact?'':'<button class="linkbtn inline" id="editContact">'+esc(t('Edit'))+'</button>')+'</div>';
   if(P.editContact){
