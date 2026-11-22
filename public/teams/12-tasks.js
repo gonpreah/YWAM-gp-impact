@@ -842,7 +842,7 @@ function bindPpickItems_(){ document.querySelectorAll('[data-ppickit]').forEach(
    sheet with the link and the steps. Same account, same tasks: nothing to set up but the icon. */
 var _gpTaPrompt=null;
 window.addEventListener('beforeinstallprompt', function(e){ if(!gpTasksApp_()) return; e.preventDefault(); _gpTaPrompt=e; if(S.me && S.view==='tasks') render(); });
-function gpStandalone_(){ try { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true; } catch(e){ return false; } }
+/* gpStandalone_ is in 08-team-profile.js */
 function gpIos_(){ var u=navigator.userAgent||''; return /iPhone|iPad|iPod/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints>1); }
 function gtAppUrl_(){ try { return location.origin+location.pathname.replace(/[^\/]*$/, '')+'tasks.html'; } catch(e){ return 'https://impact.gonpreah.org/tasks.html'; } }
 function gpTaInstallHtml_(){

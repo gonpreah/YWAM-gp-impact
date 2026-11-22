@@ -1128,7 +1128,7 @@ function habitsCardHtml(){
 
   var h='<h3 id="sec-habits">✅ '+esc(t('Habits'))+'</h3>'+
     '<div class="card"><div class="goalCardHead"><span class="goalCardTitle">'+esc(t('Habit Tracker'))+'</span>'+
-    '<span class="goalCardDate">'+esc(today)+'</span></div>';
+    '<span class="goalCardDate">'+esc(fmtDateShort_(today))+'</span></div>';
   if(S.habitEdit) return h+habitPickerHtml_(all)+'</div>';
 
   h+='<div class="row" style="border:0;padding-top:0">'+

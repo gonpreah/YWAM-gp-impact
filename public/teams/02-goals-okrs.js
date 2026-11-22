@@ -1211,7 +1211,7 @@ function ooHistRowHtml_(o){
     (fu.length ? '<div class="ooTodo" style="color:var(--faint)">'+esc(gpT('{done} of {n} follow-ups done',{done:done, n:fu.length}))+'</div>' : '')+
     '</span><span class="ooChev">›</span></button>';
 }
-function fmtDateShort_(iso){ var d=new Date(String(iso).slice(0,10)+'T00:00:00'); return isNaN(d) ? String(iso||'') : d.toLocaleDateString(LANG==='km'?'km-KH':'en-GB', { day:'numeric', month:'short', year:'numeric' }); }
+/* fmtDateShort_ lives in 04-ministry-strengths.js (a second copy here was always overridden by it) */
 /* On a mentee's page: this month's count, then their whole 1-on-1 history —
    what's still to happen first, then every one held, newest first. */
 function ooMenteeSectionHtml_(m){
