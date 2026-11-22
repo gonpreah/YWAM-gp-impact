@@ -104,7 +104,7 @@ await call('saveGpTask', ['cora', '1234', { id: doneId, done: true }]);
   const wk = await page.$eval('#gtWeek', e => e.innerText);
   ok('This week: every list’s tasks, not next week’s, not the done one', /Plan the outreach/.test(wk) && /Clean the till/.test(wk) && /Order the beans/.test(wk) && /Given to Cora/.test(wk) && !/Next week thing/.test(wk) && !/Already done/.test(wk), wk.slice(0, 300));
   ok('… day by day: today, and Sunday', !!(await page.$('#gtWeek [data-gptweekday="' + today + '"]')) && !!(await page.$('#gtWeek [data-gptweekday="' + sunday + '"]')) && (await page.$$('#gtWeek [data-gptweekday]')).length >= 7 - ((dow + 6) % 7));
-  ok('… a busy day says how many', /3 tasks/i.test(await page.$eval('#gtWeek [data-gptweekday="' + today + '"]', e => e.innerText)));
+  ok('… a busy day says how many', new RegExp((today === sunday ? 4 : 3) + ' tasks', 'i').test(await page.$eval('#gtWeek [data-gptweekday="' + today + '"]', e => e.innerText)));
   ok('… each says which list it is in', /Cafe/.test(wk));
   ok('… two at 9:00 are marked as the same time', (await page.$$('#gtWeek .gtClash')).length === 2);
   ok('… nothing to drag here', !(await page.$('#gtWeek [data-gptgrip]')));
