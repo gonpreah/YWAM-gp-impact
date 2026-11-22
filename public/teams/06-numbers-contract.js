@@ -1559,7 +1559,9 @@ function hospReqNeed_(q){ var n=Number(q.size)||0; var mf=(Number(q.males)||0)+(
 /* teams cancelled or deleted with beds still booked for them */
 function hospGoneReqs_(H){ return (H.requests||[]).filter(function(q){ return q.cancelled; }); }
 /* a request's own key: a team's tripId, or 'sr:<id>' for a guest or speaker who asked from the link */
-function hospReqKey_(q){ return q.stayId ? 'sr:'+q.stayId : q.tripId; }
+function hospReqKey_(q){ return q.stayId ? 'sr:'+q.stayId : q.schoolId ? 'sc:'+q.schoolId : q.tripId; }
+/* a school booked for fewer beds than its students now (more were accepted since) */
+function hospSchoolShort_(q){ return q && q.schoolId && q.bookingId ? Math.max(0, (Number(q.size)||0)-(Number(q.booked)||0)) : 0; }
 function hospOpenReqs_(H){ return (H.requests||[]).filter(function(q){ return !q.bookingId && !q.cancelled; }).map(function(q){ return { id:'req_'+hospReqKey_(q), from:q.from, to:q.to, count:hospReqNeed_(q) }; }); }
 /* Does a stay of `need` people over [from, to) fit? Against the tightest night. */
 function hospFit_(H, from, to, need, skip){
@@ -1680,6 +1682,7 @@ function hospAttnHtml_(H){
   var rows=[];
   if(gone) rows.push('<button class="hospAttnRow bad" data-hosptab="req">✕ '+esc(gpT(gone===1?'{n} team cancelled — beds still booked':'{n} teams cancelled — beds still booked',{n:gone}))+' ›</button>');
   if(wait) rows.push('<button class="hospAttnRow" data-hosptab="req">👥 '+esc(gpT(wait===1?'{n} request waiting for beds':'{n} requests waiting for beds',{n:wait}))+' ›</button>');
+  (H.requests||[]).filter(hospSchoolShort_).forEach(function(q){ rows.push('<button class="hospAttnRow bad" data-hosptab="req">🎓 '+esc(gpT('{name}: {n} more students than beds booked',{name:q.name, n:hospSchoolShort_(q)}))+' ›</button>'); });
   pick.slice(0,5).forEach(function(k){ rows.push('<button class="hospAttnRow" data-hospedit="'+esc(k.id)+'">🛏 '+esc(gpT('{name}: {n} beds to pick',{name:k.name, n:(Number(k.count)||0)-(k.bedIds||[]).length}))+' · '+esc(hospDate_(k.from))+' ›</button>'); });
   if(pick.length>5) rows.push('<button class="hospAttnRow" data-hosptab="book">'+esc(gpT('{n} more bookings with beds to pick',{n:pick.length-5}))+' ›</button>');
   h+='<div class="card slim hospAttn" id="hospAttn"><b>'+esc(t('Needs you'))+'</b>'+(rows.length ? rows.join('') : '<p class="sub" style="margin:4px 0 0">✓ '+esc(t('Nothing waiting — every request has beds.'))+'</p>')+'</div>';
@@ -1741,16 +1744,28 @@ function hospReqCardHtml_(H, q){
   var need=hospReqNeed_(q), f=hospFit_(H, q.from, q.to, need);
   var h='<div class="card slim hospReq'+(q.stayId?' hospStay':'')+'" data-hospreq="'+esc(hospReqKey_(q))+'">';
   h+='<div class="rowName"><b>'+esc(q.name)+'</b>'+(q.pending?' <span class="teamStat pending" data-pending>⏳ '+esc(t('Pending'))+'</span>':'')+
-    (q.stayId ? ' <span class="teamStat" data-staycat>'+(q.category==='speaker' ? '🎤 '+esc(t('Speaker')) : '🧳 '+esc(t('Guest')))+'</span>' : '')+'</div>';
+    (q.stayId ? ' <span class="teamStat" data-staycat>'+(q.category==='speaker' ? '🎤 '+esc(t('Speaker')) : '🧳 '+esc(t('Guest')))+'</span>' : '')+
+    (q.schoolId ? ' <span class="teamStat" data-school>🎓 '+esc(t('School'))+'</span>' : '')+'</div>';
   if(q.org) h+='<div class="rowSub">⛪ '+esc(q.org)+'</div>';
   if(q.country) h+='<div class="rowSub">📍 '+esc(q.country)+'</div>';
   h+='<div class="rowSub">📅 '+esc(hospRange_(q))+'</div>';
-  h+='<div class="rowSub">👥 '+esc(teamPeopleLine_(q))+'</div>';
+  if(q.schoolId){
+    /* a school: its students accepted, how many still applying, when they arrive, and its booking against them */
+    h+='<div class="rowSub">🎓 '+esc(gpT('{n} students accepted',{n:q.size||0}))+(q.males||q.females ? ' · '+esc([q.males?q.males+' '+t('men'):'', q.females?q.females+' '+t('women'):''].filter(Boolean).join(' · ')) : '')+
+      (q.applied ? ' · '+esc(gpT('{n} still applying',{n:q.applied})) : '')+'</div>';
+    var arr={}, first=0; (q.people||[]).forEach(function(p){ if(p.arrive) arr[p.arrive]=(arr[p.arrive]||0)+1; else first++; });
+    var ad=Object.keys(arr).sort();
+    if(ad.length) h+='<div class="rowSub">🛬 '+esc(ad.map(function(d){ return hospDate_(d)+' ('+arr[d]+')'; }).join(', '))+(first?' · '+esc(gpT('{n} on the first day',{n:first})):'')+'</div>';
+    if((q.people||[]).length) h+='<details class="hospSchoolPeople"><summary>'+esc(gpT('Students ({n})',{n:q.people.length}))+'</summary><div class="rowSub">'+
+      q.people.map(function(p){ return esc(p.name)+(p.sex?' '+(p.sex==='m'?'♂':'♀'):'')+(p.arrive?' · '+esc(hospDate_(p.arrive)):'')+(p.here?' · '+esc(t('here')):''); }).join('<br>')+'</div></details>';
+    var sh=hospSchoolShort_(q);
+    if(sh) h+='<div class="rowSub hospChangeWarn" data-schoolshort>⚠️ '+esc(gpT('{n} more students than beds booked ({b} booked)',{n:sh, b:q.booked}))+'</div>';
+  } else h+='<div class="rowSub">👥 '+esc(teamPeopleLine_(q))+'</div>';
   if(q.stayId && (q.phone || q.email)) h+='<div class="rowSub">'+(q.phone?'📞 <a href="tel:'+esc(q.phone.replace(/[^\d+]/g,''))+'">'+esc(q.phone)+'</a>':'')+(q.phone && q.email?' · ':'')+(q.email?'✉️ <a href="mailto:'+esc(q.email)+'">'+esc(q.email)+'</a>':'')+'</div>';
   if(q.stayId && q.notes) h+='<div class="rowSub" style="white-space:pre-line">📝 '+esc(q.notes)+'</div>';
   h+='<div class="teamStats">'+(q.bookingId ? '<span class="teamStat hospFit ok" data-booked>✓ '+esc(t('Booked'))+'</span>' : hospFitChip_(f, need))+'</div>';
   h+='<div class="hospActions">'+(q.bookingId
-    ? '<button class="btn ghost small" data-hospedit="'+esc(q.bookingId)+'">'+esc(t('Open booking'))+'</button>'
+    ? (hospSchoolShort_(q) ? '<button class="btn small" data-hospschoolup="'+esc(q.schoolId)+'">🛏 '+esc(t('Add beds for the new students'))+'</button>' : '')+'<button class="btn ghost small" data-hospedit="'+esc(q.bookingId)+'">'+esc(t('Open booking'))+'</button>'
     : '<button class="btn small" data-hospbookreq="'+esc(hospReqKey_(q))+'">🛏 '+esc(t('Book beds'))+'</button>')+
     (q.stayId && !q.bookingId ? '<button class="btn ghost small" data-hospstaydecline="'+esc(q.stayId)+'">'+esc(t('Decline'))+'</button>' : '')+
     (q.candidateId && canPortalClient_() ? '<a class="btn ghost small" href="portal.html?open='+encodeURIComponent(q.candidateId)+'" target="_blank" rel="noopener">🛂 '+esc(t('Open application'))+'</a>' : '')+'</div>';
@@ -2579,11 +2594,23 @@ function bindHosp(){
     var q=(S.hosp.requests||[]).filter(function(x){ return hospReqKey_(x)===b.getAttribute('data-hospbookreq'); })[0];
     if(!q) return; gpTap();
     S.hospBedPick=null;
-    if(q.stayId) S.hospForm=Object.assign(hospBlank_(), { category:q.category==='speaker'?'speaker':'guest', name:q.name, from:q.from, to:q.to, males:q.males||'', females:q.females||'',
+    if(q.schoolId) S.hospForm=Object.assign(hospBlank_(), { category:'student', name:q.name, from:q.from, to:q.to, males:q.males||'', females:q.females||'',
+      count:q.size||'', schoolId:q.schoolId, people:(q.people||[]).map(function(p){ return { name:p.name, sex:p.sex||'' }; }) });
+    else if(q.stayId) S.hospForm=Object.assign(hospBlank_(), { category:q.category==='speaker'?'speaker':'guest', name:q.name, from:q.from, to:q.to, males:q.males||'', females:q.females||'',
       count:hospReqNeed_(q)||'', notes:[q.org, q.phone, q.email, q.notes].filter(Boolean).join(' · '), stayId:q.stayId });
     else S.hospForm=Object.assign(hospBlank_(), { category:'team', name:q.name, from:q.from, to:q.to, males:q.males==null?'':q.males, females:q.females==null?'':q.females,
       count:hospReqNeed_(q)||'', tripId:q.tripId });
     render(); top('hospFormCard'); }; });
+  /* a school with more students than beds booked: its booking, with everyone in it now, to pick the new beds */
+  document.querySelectorAll('[data-hospschoolup]').forEach(function(b){ b.onclick=function(){
+    var q=(S.hosp.requests||[]).filter(function(x){ return x.schoolId===b.getAttribute('data-hospschoolup'); })[0];
+    var k=q && S.hosp.bookings.filter(function(x){ return x.id===q.bookingId; })[0];
+    if(!k) return; gpTap();
+    var f=JSON.parse(JSON.stringify(k)), have={};
+    (f.people||[]).forEach(function(p){ have[String(p.name).toLowerCase()]=1; });
+    (q.people||[]).forEach(function(p){ if(!have[String(p.name).toLowerCase()]) (f.people=f.people||[]).push({ name:p.name, sex:p.sex||'' }); });
+    f.count=Math.max(Number(f.count)||0, Number(q.size)||0); f.males=q.males||f.males; f.females=q.females||f.females;
+    S.hospForm=f; S.hospBedPick=null; render(); top('hospFormCard'); }; });
   /* staff beds */
   document.querySelectorAll('[data-hstaff]').forEach(function(inp){
     inp.oninput=function(){ S.hospStaffDraft=S.hospStaffDraft||{}; var v=inp.value.trim(); if(v) S.hospStaffDraft[inp.getAttribute('data-hstaff')]=v; else delete S.hospStaffDraft[inp.getAttribute('data-hstaff')];
@@ -2674,7 +2701,7 @@ function bindHosp(){
       if(!f.permanent && (!f.to || f.to<=f.from)){ showMsg(t('The leaving date has to be after the arriving date.')); return; }
       var num=function(v){ return v===''||v==null ? 0 : Number(v); };
       var doc={ id:f.id||'', category:f.category, name:f.name.trim(), from:f.from, to:f.permanent?'':f.to, permanent:!!f.permanent,
-        males:num(f.males), females:num(f.females), count:hospFormCount_(f), family:!!f.family, bedIds:f.bedIds.slice(), bedNames:Object.assign({}, f.bedNames||{}), people:(f.people||[]).filter(function(p){ return String(p.name||'').trim(); }).map(function(p){ return { name:String(p.name).trim(), sex:p.sex||'' }; }), notes:f.notes||'', tripId:f.tripId||'', stayId:f.stayId||'' };
+        males:num(f.males), females:num(f.females), count:hospFormCount_(f), family:!!f.family, bedIds:f.bedIds.slice(), bedNames:Object.assign({}, f.bedNames||{}), people:(f.people||[]).filter(function(p){ return String(p.name||'').trim(); }).map(function(p){ return { name:String(p.name).trim(), sex:p.sex||'' }; }), notes:f.notes||'', tripId:f.tripId||'', stayId:f.stayId||'', schoolId:f.schoolId||'', staffId:f.staffId||'' };
       send('hospSave', ['booking', doc], function(){ S.hospForm=null; showMsg(t('Booking saved')); }, sv);
     };
     var dl=document.getElementById('hospDeleteBtn');

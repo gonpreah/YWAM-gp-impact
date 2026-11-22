@@ -438,5 +438,26 @@ console.log('=== someone archived leaves SR Hospitality (Nov 2026) ===');
   ok('deleting a sign-up never let in, with the same name as someone housed, frees nothing', r.ok && h.bookings.find(k => k.id === 'kQ').bedIds.length === 1);
 }
 
+console.log('=== a school is a group in SR Hospitality (Nov 2026) ===');
+{
+  mem['hosp:siemreap'] = { buildings: [{ id: 'b9', name: 'House' }], rooms: [{ id: 'r9', buildingId: 'b9', name: '9', style: 'mixed', notes: '', beds: [{ id: 'z1', label: 'A' }, { id: 'z2', label: 'B' }, { id: 'z3', label: 'C' }] }], bookings: [] };
+  mem['dtsDb:siemreap'] = { schools: [{ id: 'sc1', year: 2027, name: 'January DTS', from: day(30), to: day(120) }] };
+  mem.candidates = (mem.candidates || []).concat([
+    { id: 'cs1', type: 'student', school: 'dts', campus: 'siemreap', name: 'Dana Student', stage: 'accepted', portal: { submittedAt: day(-10), form: { answers: { gender: 'Female' } } }, dts: {} },
+    { id: 'cs2', type: 'student', school: 'dts', campus: 'siemreap', name: 'Eli Student', stage: 'accepted', portal: { submittedAt: day(-10), form: { answers: { gender: 'Male' } } }, dts: { arrive: day(28) } },
+    { id: 'cs3', type: 'student', school: 'dts', campus: 'siemreap', name: 'Fay Applying', stage: 'applied', portal: { submittedAt: day(-10) } }]);
+  let h = await call('getHospitality', H);
+  let q = h.requests.find(x => x.schoolId === 'sc1');
+  ok('the January DTS is a request like a team: its students accepted (m / f, each with the day they arrive), how many still applying', q && q.kind === 'school' && q.name === 'January DTS 2027' && q.size === 2 && q.males === 1 && q.females === 1 && q.applied === 1 && q.people.map(p => p.name + ':' + p.sex + ':' + (p.arrive || '-')).join() === 'Dana Student:f:-,Eli Student:m:' + day(28), JSON.stringify(q));
+  ok('… from the first student’s arrival (earlier than the school) to the morning after its last day', q.from === day(28) && q.to === day(121));
+  let r = await call('hospSave', [...H, 'booking', { category: 'student', name: q.name, from: q.from, to: q.to, females: 1, males: 1, count: 2, schoolId: 'sc1', bedIds: ['z1', 'z2'], people: q.people }]);
+  ok('a booking for it links to the school — booked, with its beds', r.ok && r.saved.schoolId === 'sc1' && r.requests.find(x => x.schoolId === 'sc1').bookingId === r.saved.id && r.requests.find(x => x.schoolId === 'sc1').booked === 2);
+  ok('… booked once', (await call('hospSave', [...H, 'booking', { category: 'student', name: 'Again', from: q.from, to: q.to, count: 1, schoolId: 'sc1' }])).err === 'already_booked');
+  mem.candidates.find(c => c.id === 'cs3').stage = 'accepted';
+  h = await call('getHospitality', H);
+  q = h.requests.find(x => x.schoolId === 'sc1');
+  ok('a student accepted after the booking: the request has 3, the booking 2 — Hospitality can see it is short', q.size === 3 && q.booked === 2 && q.applied === 0);
+}
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

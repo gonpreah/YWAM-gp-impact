@@ -65,11 +65,12 @@ async function open(who, opts) {
   page.on('console', m => { if (m.type() === 'error' && !/fonts\.googleapis|ERR_CERT|ERR_CONNECTION/.test(m.text())) errors.push('console: ' + m.text()); });
   const H = FIXTURE(); let n = 0;
   if (opts.extra) H.bookings.push(...opts.extra);
-  const hospOut = () => ({ ok: true, campus: 'siemreap', buildings: H.buildings, rooms: H.rooms, bookings: H.bookings,
+  let hospOut = () => ({ ok: true, campus: 'siemreap', buildings: H.buildings, rooms: H.rooms, bookings: H.bookings,
     requests: H.trips.map(q => ({ ...q, bookingId: (H.bookings.find(k => k.tripId === q.tripId) || {}).id || '' }))
       .concat((opts.gone || []).filter(q => H.bookings.some(k => k.id === q.bookingId)))
       .concat((opts.stays || []).filter(q => !q.declined).map(q => ({ ...q, bookingId: (H.bookings.find(k => k.stayId === q.stayId) || {}).id || '' }))),
     changes: (opts.changes || []).filter(c => !c.done) });
+  if (opts.schools) { const base = hospOut; hospOut = () => { const o = base(); o.requests = o.requests.concat(opts.schools.map(q => ({ ...q, bookingId: (H.bookings.find(k => k.schoolId === q.schoolId) || {}).id || '', booked: (H.bookings.find(k => k.schoolId === q.schoolId) || {}).count || 0 }))); return o; }; }
   await ctx.route('**/.netlify/functions/api', r => {
     const b = JSON.parse(r.request().postData() || '{}'); sent.push(b);
     let out = { ok: true };
@@ -560,6 +561,35 @@ console.log('=== staff beds ===');
   ok('… and the room list says it fits more than its beds', /4 beds \+ 2 extra · fits 5/.test(await page.$eval('[data-hosproom="r2"]', e => e.textContent)), await page.$eval('[data-hosproom="r2"]', e => e.textContent));
   ok('no sideways scroll', !(await overflow(page)));
   ok('no errors (Nov 2026 changes)', errors.length === 0, errors.join(' | '));
+  await ctx.close();
+}
+
+/* ---------- a school is a group in SR Hospitality (Nov 2026) ---------- */
+{
+  const schools = [{ schoolId: 'sc1', kind: 'school', tripId: '', name: 'January DTS 2027', country: '', from: day(28), to: day(121), size: 3, males: 1, females: 2, couples: null, pending: false, portalStage: '', candidateId: '', applied: 4,
+    people: [{ name: 'Dana Student', sex: 'f', arrive: day(28) }, { name: 'Eli Student', sex: 'm', arrive: '' }, { name: 'Fay Student', sex: 'f', arrive: '' }] }];
+  const { ctx, page, errors, sent, H } = await open(HANA, { schools });
+  await page.click('#menuBtn'); await page.waitForTimeout(150);
+  await page.click('[data-menu-item="hosp"]'); await page.waitForTimeout(500);
+  await page.click('[data-hosptab="req"]'); await page.waitForTimeout(200);
+  const card = await page.$eval('[data-hospreq="sc:sc1"]', e => e.textContent);
+  ok('the January DTS is a request: School, its students accepted (men / women), how many still applying, when they arrive', /January DTS 2027/.test(card) && /School/.test(card) && /3 students accepted/.test(card) && /1 men/.test(card) && /2 women/.test(card) && /4 still applying/.test(card) && /2 on the first day/.test(card), card);
+  await page.click('[data-hospbookreq="sc:sc1"]'); await page.waitForTimeout(250);
+  const f = await page.evaluate(() => S.hospForm);
+  ok('Book beds fills a student booking for the school, its students named', f && f.category === 'student' && f.schoolId === 'sc1' && String(f.count) === '3' && f.people.length === 3, JSON.stringify(f));
+  await page.evaluate(() => { S.hospForm.count = 2; S.hospForm.males = 1; S.hospForm.females = 1; S.hospForm.people = S.hospForm.people.slice(0, 2); });   // booked before the third was accepted
+  await page.click('#hospSaveBtn'); await page.waitForTimeout(300);
+  const sv = sent.filter(b => b.fn === 'hospSave').pop();
+  ok('… saved with its schoolId', sv && sv.args[3].schoolId === 'sc1');
+  await page.click('[data-hosptab="req"]'); await page.waitForTimeout(200);
+  ok('booked for fewer than its students: the card says so, with a way to add the beds', /1 more students than beds booked \(2 booked\)/.test(await page.$eval('[data-hospreq="sc:sc1"]', e => e.textContent)) && !!(await page.$('[data-hospschoolup="sc1"]')));
+  await page.click('[data-hosptab="dash"]'); await page.waitForTimeout(200);
+  ok('… and the Overview’s Needs you has it', /January DTS 2027: 1 more students than beds booked/.test(await page.$eval('#hospAttn', e => e.textContent)));
+  await page.click('[data-hosptab="req"]'); await page.waitForTimeout(200);
+  await page.click('[data-hospschoolup="sc1"]'); await page.waitForTimeout(250);
+  const f2 = await page.evaluate(() => S.hospForm);
+  ok('Add beds opens the booking with everyone in it now', f2 && f2.schoolId === 'sc1' && Number(f2.count) === 3 && f2.people.map(p => p.name).join() === 'Dana Student,Eli Student,Fay Student');
+  ok('no errors (schools)', errors.length === 0, errors.join(' | '));
   await ctx.close();
 }
 

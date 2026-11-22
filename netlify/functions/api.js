@@ -6751,7 +6751,7 @@ function cleanHospBooking_(k) {
     id: str_(k.id, 60) || hospId_('hk'), category: category, name: name, from: from, to: to, permanent: permanent,
     males: males, females: females, count: count, family: !!k.family, bedIds: kept, bedNames: bedNames, people: people,
     notes: str_(k.notes, 1000) || '', tripId: str_(k.tripId, 60) || '', stayId: str_(k.stayId, 60) || '',
-    staffId: str_(k.staffId, 60) || ''
+    staffId: str_(k.staffId, 60) || '', schoolId: str_(k.schoolId, 60) || ''
   };
 }
 /* ---- a guest or speaker asks for a room (Oct 2026, Uriah) ----
@@ -6813,8 +6813,8 @@ async function hospRequests_(campus, bookings) {
   const pend = await pendingTeamIds_();
   const byCand = {};
   (await getCandidates_()).forEach(function (c) { if (c && c.id) byCand[c.id] = c; });
-  const booked = {}, bookedStay = {};
-  bookings.forEach(function (k) { if (k.tripId) booked[k.tripId] = k.id; if (k.stayId) bookedStay[k.stayId] = k.id; });
+  const booked = {}, bookedStay = {}, bookedSchool = {};
+  bookings.forEach(function (k) { if (k.tripId) booked[k.tripId] = k.id; if (k.stayId) bookedStay[k.stayId] = k.id; if (k.schoolId) bookedSchool[k.schoolId] = k; });
   /* a team whose application was deleted in the portal is gone too */
   const goneCand = function (t) { return !!(t.candidateId && !byCand[t.candidateId]); };
   const trips = await getTeamTrips_();
@@ -6846,7 +6846,17 @@ async function hospRequests_(campus, bookings) {
       candidateId: t.candidateId || '', bookingId: booked[t.id] || '',
       people: teamPeople_(t.candidateId && byCand[t.candidateId])
     };
-  }).concat(gone, (await getStays_(campus)).filter(function (r) { return r.status !== 'declined' && r.to >= today; }).map(function (r) {
+  }).concat(gone, (await schoolGroups_(campus, Object.keys(byCand).map(function (id) { return byCand[id]; }))).filter(function (g) {
+    return g.school.to >= today && (g.accepted.length || g.applied || bookedSchool[g.school.id]);
+  }).map(function (g) {
+    // a school: its students accepted (each from the day they arrive), how many still applying, and its booking's beds against them
+    const k = bookedSchool[g.school.id], arr = g.accepted.map(function (p) { return p.arrive; }).filter(Boolean).sort();
+    const sex = function (x) { return g.accepted.filter(function (p) { return p.sex === x; }).length; };
+    return { schoolId: g.school.id, kind: 'school', tripId: '', name: g.label, country: '', from: arr[0] && arr[0] < g.school.from ? arr[0] : g.school.from,
+      to: addDays_(g.school.to, 1), size: g.accepted.length, males: sex('m'), females: sex('f'), couples: null, pending: false, portalStage: '', candidateId: '',
+      bookingId: k ? k.id : '', booked: k ? Math.max(Number(k.count) || 0, (k.bedIds || []).length) : 0, applied: g.applied,
+      people: g.accepted.map(function (p) { return { name: p.name, sex: p.sex, arrive: p.arrive, here: p.here }; }) };
+  }), (await getStays_(campus)).filter(function (r) { return r.status !== 'declined' && r.to >= today; }).map(function (r) {
     return { stayId: r.id, kind: 'stay', category: r.category, tripId: '', name: r.name, country: '', from: r.from, to: r.to, size: r.count,
       males: r.males, females: r.females, couples: null, pending: false, portalStage: '', candidateId: '', bookingId: bookedStay[r.id] || '',
       people: [{ name: r.name, sex: '' }], email: r.email || '', phone: r.phone || '', org: r.org || '', notes: r.notes || '', at: r.at };
@@ -7133,6 +7143,7 @@ async function hospSave(username, pin, kind, rec) {
     if (clash) return { ok: false, err: 'bed_taken', with: clash.name };
     if (clean.tripId && d.bookings.some(function (o) { return o.id !== clean.id && o.tripId === clean.tripId; })) return { ok: false, err: 'already_booked' };
     if (clean.stayId && d.bookings.some(function (o) { return o.id !== clean.id && o.stayId === clean.stayId; })) return { ok: false, err: 'already_booked' };
+    if (clean.schoolId && d.bookings.some(function (o) { return o.id !== clean.id && o.schoolId === clean.schoolId; })) return { ok: false, err: 'already_booked' };
   }
   clean.updated = new Date().toISOString(); clean.updatedBy = a.s.id;
   if (idx > -1) list[idx] = clean; else list.push(clean);
@@ -7532,72 +7543,132 @@ function dutyAway_(trips, week) {
   });
   return out;
 }
-/* Who can be put on the week starting `week`: grouped, each group a label
-   and names; `away` notes the days someone on leave for part of the week is
-   gone. Staff away the whole working week (Mon–Fri) are left out. */
+/* Who can be put on the week starting `week` (Nov 2026, Andrew: "make sure the names show up according to that
+   week … if a team leaves earlier that week … there's no room for mistakes or people that we may have missed"):
+   groups in a set order — campus staff & YAP, other staff, each team, each school, students, volunteers, guests
+   and speakers, then names typed before — each { id, kind, label, names, days? }. Everyone in a group is here at
+   least one day of the week (Sun … Sat); `days` is the days a team or school is here when it is not all week,
+   `here[name]` the days for anyone here part of the week (a team leaving Wednesday is here Sun–Tue: the day
+   they leave is not theirs), `awayDays[name]` the days a staff member is on leave (`away` says it in words, as
+   before). Staff on leave the whole working week (Mon–Fri) are left out. Sources: the staff list and their leave,
+   the Teams Database (with everyone the leader listed on the portal), each DTS school's accepted students (from
+   the day they arrive, else the school's first day, to its last), and SR Hospitality's bookings that week — the
+   names in their beds, else the booking's name. */
 async function dutyPeople_(campus, week, extras) {
-  const weekEnd = addDays_(week, 7), groups = [], away = {};
+  const weekEnd = addDays_(week, 7), groups = [], away = {}, awayDays = {}, here = {};
+  const days7 = []; for (let i = 0; i < 7; i++) days7.push(addDays_(week, i));
+  // the days of this week someone staying [from, to) is here — to is the day they leave (or, inclusive, a school's last day)
+  const span = function (from, to, inclusive) {
+    return days7.map(function (d, i) { return from && from <= d && (!to || (inclusive ? d <= to : d < to)) ? i : -1; }).filter(function (i) { return i > -1; });
+  };
+  const seenAt = {};
+  const mark = function (n, idx) {
+    if (!idx || idx.length === 7) { seenAt[n] = [0, 1, 2, 3, 4, 5, 6]; delete here[n]; return; }
+    const was = seenAt[n] || [], all = was.concat(idx).filter(function (v, i, a) { return a.indexOf(v) === i; }).sort();
+    seenAt[n] = all;
+    if (all.length === 7) delete here[n]; else here[n] = all;
+  };
   const gone = dutyAway_(await getTrips_(), week);
   const staff = (await getStaff_()).filter(function (s) { return s && s.active !== false && !isApplicant_(s) && s.campus === campus && !s.archived; })
     .sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
   const shorts = dutyShortNames_(staff);
-  const campusNames = [], otherNames = [];
+  const campusNames = [], otherNames = [], staffSet = {};
   staff.forEach(function (s, i) {
     if (!shorts[i]) return;
     const g = gone[s.id];
     if (g && [1, 2, 3, 4, 5].every(function (d) { return g[d]; })) return;   // away all week
-    if (g) away[shorts[i]] = Object.keys(g).sort().map(function (d) { return DUTY_DAY_SHORT[d]; }).join(', ');
+    if (g) { away[shorts[i]] = Object.keys(g).sort().map(function (d) { return DUTY_DAY_SHORT[d]; }).join(', '); awayDays[shorts[i]] = Object.keys(g).map(Number).sort(); }
     /* Campus staff and YAP share the chores and the cooking (Uriah), so they are one group;
        ministry staff — and anyone whose type is not set — are the other. */
     const st = cleanStaffType_(s.staffType);
     (st === 'campus' || st === 'yap' ? campusNames : otherNames).push(shorts[i]);
+    staffSet[shorts[i].toLowerCase()] = 1; seenAt[shorts[i]] = [0, 1, 2, 3, 4, 5, 6];
   });
-  if (campusNames.length) groups.push({ id: 'campus', label: 'Campus staff & YAP', names: campusNames });
-  if (otherNames.length) groups.push({ id: 'staff', label: 'Other staff', names: otherNames });
-  // teams whose dates cover any of the week, with everyone their leader listed on the portal
+  if (campusNames.length) groups.push({ id: 'campus', kind: 'staff', label: 'Campus staff & YAP', names: campusNames });
+  if (otherNames.length) groups.push({ id: 'staff', kind: 'staff', label: 'Other staff', names: otherNames });
+  const put = function (g, n, idx) {
+    n = dutyText_(n, DUTY_MAX.name);
+    if (!n || staffSet[n.toLowerCase()]) return;
+    if (g.names.indexOf(n) === -1) g.names.push(n);
+    mark(n, idx);
+  };
+  // teams whose dates take in any day of the week, with everyone their leader listed on the portal
   const cands = await getCandidates_(), byCand = {};
   cands.forEach(function (c) { if (c && c.id) byCand[c.id] = c; });
-  (await getTeamTrips_()).filter(function (t) { return t.campus === campus && t.status !== 'cancelled' && t.from && t.to && t.from < weekEnd && t.to >= week; })
+  (await getTeamTrips_()).filter(function (t) { return t.campus === campus && t.status !== 'cancelled' && t.from && t.to && t.from < weekEnd && t.to > week; })
+    .sort(function (a, b) { return a.from < b.from ? -1 : 1; })
     .forEach(function (t) {
+      const idx = span(t.from, t.to, false);
+      if (!idx.length) return;
+      const g = { id: 'team_' + t.id, kind: 'team', label: t.name, names: [] };
+      if (idx.length < 7) g.days = idx;
       const c = t.candidateId && byCand[t.candidateId];
-      if (!c) return;
-      const a = teamAnswers_(c), names = [];
-      const add = function (n) { n = dutyText_(n, DUTY_MAX.name); if (n && names.indexOf(n) === -1) names.push(n); };
-      add(a.leaderName || c.name);
-      (Array.isArray(a.coLeaders) ? a.coLeaders : []).forEach(function (p) { add(p && p.name); });
-      ((c.portal && c.portal.members) || []).forEach(function (p) { add(p && p.name); });
-      if (names.length) groups.push({ id: 'team_' + t.id, label: t.name, names: names });
+      if (c) {
+        const a = teamAnswers_(c);
+        put(g, a.leaderName || c.name, idx);
+        (Array.isArray(a.coLeaders) ? a.coLeaders : []).forEach(function (p) { put(g, p && p.name, idx); });
+        ((c.portal && c.portal.members) || []).forEach(function (p) { put(g, p && p.name, idx); });
+      }
+      groups.push(g);   // kept even before its people are named, so its beds' names (below) join it
     });
-  /* who is booked into SR Hospitality that week — by the names in their
-     beds (bedNames) where Hospitality has put them in, else the booking's name:
-     students in a group of their own; guests, speakers and volunteers as
-     "Staying with us"; names typed in for a team join that team's list.
-     Staff come in above, from the staff list, so a staff bed adds nobody. */
-  const students = [], guests = [];
-  const put = function (list, n) { n = dutyText_(n, DUTY_MAX.name); if (n && list.indexOf(n) === -1) list.push(n); };
+  // each DTS school's accepted students, in the weeks they are here
+  try {
+    (await schoolGroups_(campus, cands)).forEach(function (sg) {
+      const g = { id: 'school_' + sg.school.id, kind: 'school', label: sg.label, names: [] };
+      sg.accepted.forEach(function (p) { const idx = span(p.arrive || sg.school.from, sg.school.to, true); if (idx.length) put(g, p.name, idx); });
+      const idx = span(sg.school.from, sg.school.to, true);
+      if (idx.length && idx.length < 7) g.days = idx;
+      if (g.names.length) groups.push(g);
+    });
+  } catch (e) { console.error('duty: schools', e); }
+  /* who is booked into SR Hospitality that week — by the names in their beds where Hospitality has put them
+     in, else the booking's name; a team's names join that team; a school's booking adds its students' names
+     where they aren't in the school already. Staff come in above, from the staff list. */
+  const students = { id: 'students', kind: 'students', label: 'Students', names: [] },
+    vols = { id: 'volunteers', kind: 'volunteers', label: 'Volunteers', names: [] },
+    guests = { id: 'guests', kind: 'guests', label: 'Guests & speakers', names: [] };
   (await getHosp_(campus)).bookings.forEach(function (k) {
     if (k.category === 'staff' || !(k.from < weekEnd && (k.permanent || k.to > week))) return;
+    const idx = span(k.from, k.permanent ? '' : k.to, false);
+    if (!idx.length) return;
     const named = Object.keys(k.bedNames || {}).map(function (id) { return k.bedNames[id]; }).filter(Boolean)
       .concat((k.people || []).map(function (p) { return p && p.name; }).filter(Boolean));
     if (k.category === 'team') {
-      if (!named.length) return;   // the team's own list (above) has them
+      if (!named.length) return;
       let g = groups.filter(function (x) { return k.tripId && x.id === 'team_' + k.tripId; })[0];
-      if (!g) { g = { id: 'hteam_' + k.id, label: k.name, names: [] }; groups.push(g); }
-      named.forEach(function (n) { put(g.names, n); });
+      if (!g) { g = { id: 'hteam_' + k.id, kind: 'team', label: k.name, names: [] }; if (idx.length < 7) g.days = idx; groups.push(g); }
+      named.forEach(function (n) { put(g, n, idx); });
       return;
     }
-    const list = k.category === 'student' ? students : guests;
-    if (named.length) named.forEach(function (n) { put(list, n); });
-    else if (!(k.category === 'student' && k.count > 1)) put(list, k.name);   // a school's booking name isn't a person
+    if (k.schoolId) {
+      const g = groups.filter(function (x) { return x.id === 'school_' + k.schoolId; })[0];
+      if (g) { named.forEach(function (n) { put(g, n, idx); }); return; }
+    }
+    const g = k.category === 'student' ? students : k.category === 'volunteer' ? vols : guests;
+    const inGroup = function (n) { return groups.some(function (x) { return x.names.indexOf(n) > -1; }); };   // already in a school or team: once is enough
+    if (named.length) named.forEach(function (n) { if (inGroup(n)) mark(n, idx); else put(g, n, idx); });
+    else if (!(k.category === 'student' && k.count > 1)) put(g, k.name, idx);   // a group's booking name isn't a person
   });
-  if (students.length) groups.push({ id: 'students', label: 'Students', names: students });
-  if (guests.length) groups.push({ id: 'guests', label: 'Staying with us', names: guests });
+  [students, vols, guests].forEach(function (g) { if (g.names.length) groups.push(g); });
+  const keep = groups.filter(function (g) { return g.names.length || g.kind === 'team'; });
   const seen = {};
-  groups.forEach(function (g) { g.names.forEach(function (n) { seen[n] = 1; }); });
+  keep.forEach(function (g) { g.names.forEach(function (n) { seen[n] = 1; }); });
   const more = (extras || []).filter(function (n) { return !seen[n]; });
-  if (more.length) groups.push({ id: 'extras', label: 'Added before', names: more });
-  if (Object.keys(away).length) groups.away = away;
-  return groups;
+  if (more.length) keep.push({ id: 'extras', kind: 'extras', label: 'Typed before', names: more });
+  const out = keep.filter(function (g) { return g.names.length; });
+  if (Object.keys(away).length) out.away = away;
+  out.awayDays = awayDays; out.here = here;
+  return out;
+}
+/* A new week starts as a copy of the week before (most duties carry over) — but only with the people here
+   this week: anyone not in this week's names (a team that left, a student whose school ended, someone who left
+   the staff) is taken off, and the page is told who. */
+function dutyKeepOnly_(sched, known) {
+  const removed = [];
+  const keep = function (list) { return (list || []).filter(function (n) { if (known[n]) return true; if (removed.indexOf(n) === -1) removed.push(n); return false; }); };
+  if (sched.layout === 'grid') Object.keys(sched.cells || {}).forEach(function (k) { sched.cells[k] = keep(sched.cells[k]); });
+  else (sched.sections || []).forEach(function (sec) { (sec.rows || []).forEach(function (r) { r.people = keep(r.people); }); });
+  return removed;
 }
 function dutyTemplate_(kind) {
   const t = JSON.parse(JSON.stringify(DUTY_TEMPLATES[kind]));
@@ -7622,16 +7693,21 @@ async function getDuty(username, pin, kind, week) {
   const d = await getDutyDoc_(a.campus), box = d[kind];
   const rec = box.weeks[week] || null;
   if (!a.canEdit) return { ok: true, kind: kind, week: week, canEdit: false, sched: rec && rec.published ? dutyOut_(rec, week, kind) : null };
-  let sched = rec, isNew = false, from = '';
+  let sched = rec, isNew = false, from = '', removed = [];
+  const people = await dutyPeople_(a.campus, week, box.extras);
   if (!sched) {
     isNew = true;
     const before = Object.keys(box.weeks).filter(function (w) { return w < week; }).sort().pop();
-    if (before) { sched = cleanSched_(box.weeks[before], kind); from = before; } else sched = dutyTemplate_(kind);
+    if (before) {
+      sched = cleanSched_(box.weeks[before], kind); from = before;
+      const known = {};
+      people.forEach(function (g) { g.names.forEach(function (n) { known[n] = 1; }); });
+      removed = dutyKeepOnly_(sched, known);   // last week's names who aren't here this week come off
+    } else sched = dutyTemplate_(kind);
     sched.published = false;
   }
-  const people = await dutyPeople_(a.campus, week, box.extras);
-  return { ok: true, kind: kind, week: week, canEdit: true, isNew: isNew, from: from, sched: dutyOut_(sched, week, kind),
-    people: people, away: people.away || {} };
+  return { ok: true, kind: kind, week: week, canEdit: true, isNew: isNew, from: from, removed: removed, sched: dutyOut_(sched, week, kind),
+    people: people, away: people.away || {}, awayDays: people.awayDays || {}, here: people.here || {} };
 }
 /* action: 'save' keeps it as it is (a draft stays a draft, a published week
    stays published), 'publish' shows it to everyone, 'unpublish' takes it down. */
@@ -9303,6 +9379,32 @@ function dtsSchoolOf_(c, schools) {
   const hit = schools.filter(function (s) { return dtsSchoolStart_(s) >= day; })[0];
   return hit ? hit.id : '';
 }
+/* ---- a school is a group, like a team (Nov 2026, Andrew: "treating the schools as a team as well … so that
+   the hospitality team also knows and sees in their system that there is a DTS group that they need to book")
+   Each DTS school with its dates, and its students: accepted or here (each with the day they arrive, when the
+   school has set it, and m / f from their application), plus how many are still applying. SR Hospitality lists
+   it as a request (hospRequests_), the weekly schedules offer its students in the weeks they are here
+   (dutyPeople_). Graduated or closed students are not counted. */
+function dtsSex_(v) { v = String(v || '').toLowerCase(); return /^m|ប្រុស|male/.test(v) && !/female/.test(v) ? 'm' : /^f|ស្រី|female/.test(v) ? 'f' : ''; }
+function dtsSchoolLabel_(sc) { const n = String(sc.name || '').trim(); return /\b(19|20)\d\d\b/.test(n) ? n : (n + ' ' + (sc.year || '')).trim(); }
+async function schoolGroups_(campus, cands) {
+  const db = dtsDbOut_(await readJSON('dtsDb:' + campus, DTS_DB_FALLBACK));
+  const all = dtsSortSchools_(db.schools.slice());
+  const out = all.filter(function (sc) { return sc && sc.from && sc.to; }).map(function (sc) { return { school: sc, label: dtsSchoolLabel_(sc), accepted: [], applied: 0 }; });
+  if (!out.length) return [];
+  (cands || await getCandidates_()).forEach(function (c) {
+    if (!isDtsCand_(c, campus) || c.archived || !dtsIsStudent_(c)) return;
+    const g = out.find(function (x) { return x.school.id === dtsSchoolOf_(c, all); });
+    if (!g) return;
+    const col = dtsColumn_(c);
+    if (col === 'applied') { g.applied++; return; }
+    if (col !== 'accepted' && col !== 'arrived') return;
+    const a = (c.portal && ((c.portal.form && c.portal.form.answers) || c.portal.draft)) || {}, m = dtsMarks_(c);
+    g.accepted.push({ id: c.id, name: c.name || '', sex: dtsSex_((m.profile && m.profile.sex) || a.gender), arrive: m.arrive || '', here: col === 'arrived' });
+  });
+  out.forEach(function (g) { g.accepted.sort(function (x, y) { return String(x.name).localeCompare(String(y.name)); }); });
+  return out;
+}
 function dtsIsStudent_(c) {
   if (!c) return false;
   const col = dtsColumn_(c);
@@ -9315,7 +9417,7 @@ function dtsStudentOut_(c, schools) {
   return {
     id: c.id, name: c.name, stage: c.stage, column: dtsColumn_(c), audience: audienceOf_(c), country: c.country || '', feeCat: dtsFeeCat_(c.country, audienceOf_(c)),
     applied: dtsApplied_(c), arrived: c.stage === 'arrived' ? dtsReached_(c, 'arrived') : '',
-    graduated: m.graduated || '', potentialStaff: m.potentialStaff || '', archived: !!c.archived,
+    graduated: m.graduated || '', potentialStaff: m.potentialStaff || '', archived: !!c.archived, arrive: m.arrive || '',
     schoolId: dtsSchoolOf_(c, schools), placed: !!m.schoolId, oneOnOne: m.oneOnOne || '', oneOnOneName: m.oneOnOneName || '', hasAccount: !!c.staffId,
     // what they wrote in the portal — only the contact details the school needs, never their health or story
     portal: { sex: s(a.gender), dob: s(a.dob), phone: s(a.phone || c.phone), email: s(a.email || c.email), guardianName: s(a.guardianName), guardianPhone: s(a.guardianPhone),
@@ -9713,6 +9815,8 @@ async function dtsStudentSave(username, pin, candId, p) {
   /* their 1-on-1 is a staff member (an id) or, typed in, a name — someone outside GPDTS or not in the app; one replaces the other */
   if (p.oneOnOne !== undefined) { if (p.oneOnOne) m.oneOnOne = str_(p.oneOnOne, 60); else delete m.oneOnOne; delete m.oneOnOneName; notes.push('Their 1-on-1 changed'); }
   else if (p.oneOnOneName !== undefined) { const nm = str_(p.oneOnOneName, 120); delete m.oneOnOne; if (nm) m.oneOnOneName = nm; else delete m.oneOnOneName; notes.push('Their 1-on-1 changed'); }
+  /* the day they arrive (Nov 2026): SR Hospitality books their bed from it, the weekly schedules offer them from it */
+  if (p.arrive !== undefined) { const v = isoDate_(p.arrive); if (v) m.arrive = v; else delete m.arrive; notes.push(v ? 'Arriving ' + v : 'Arrival day cleared'); }
   if (p.profile !== undefined) {
     const pr = {};
     DTS_PROFILE_FIELDS.forEach(function (k) { const v = String(p.profile && p.profile[k] != null ? p.profile[k] : '').trim().slice(0, k === 'notes' ? 2000 : 200); if (v) pr[k] = v; });

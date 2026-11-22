@@ -682,6 +682,22 @@ quietest bucket named), Requests, Calendar, Bookings, Rooms.
   says which beds came free. The same moment `staffLeftCleanup_` clears their mentees' mentor and takes them off open GP
   Tasks and shared lists.
 - tests/test-hospitality.mjs (server), tests/test-hospitality-page.mjs. Khmer: docs/khmer-needed.md §129.
+- **A school is a group, like a team** (Nov 2026, Andrew: "treating the schools as a team … the hospitality team also knows …
+  there is a DTS group that they need to book"): `schoolGroups_(campus)` — each DTS school with dates (`dtsDb`) and its
+  students accepted or here (m / f from the application, each with the day they arrive — `dts.arrive`, set on the student's
+  GPDTS record, `#dtsStuArrive` → `dtsStudentSave {arrive}`), and how many still applying. `hospRequests_` lists it
+  (`kind:'school'`, `schoolId`, key `sc:<id>`, from the earliest arrival to the morning after the school's last day,
+  `booked` = its booking's beds); Book beds makes a student booking with `schoolId` (one per school) and the students named.
+  Accepted after it was booked: the card says "n more students than beds booked" with **Add beds for the new students**
+  (`[data-hospschoolup]`), and Needs you lists it. Khmer §130.
+- **The weekly schedules know who is here, day by day** (`dutyPeople_`): groups in a set order with `kind` — staff, each team,
+  each school (`school_<id>`), students, volunteers, guests & speakers, names typed before — and `days` for a team or school
+  here part of the week; getDuty adds `here[name]` (the days someone is here when not all week — a team leaving Wednesday is
+  Sun–Tue) and `awayDays`. A new week copied from last week keeps only this week's names (`dutyKeepOnly_`, `removed`). The
+  editor (07-health-leave.js) leads with **Who is here this week** (`#schedWeekNote`: counts, who leaves / arrives midweek, who
+  came off the copy, who is on leave, names on a day they aren't here); those names are red in the schedule (duty.js
+  `o.flag`, `[data-dwarn]`); the picker won't offer someone for a day they aren't here (`.hospChip.nothere`) and folds names
+  typed before (`#schedExtrasBtn`). tests/test-duty.mjs, test-duty-page.mjs.
 
 ## The hamburger menu, by role
 `renderMenu` draws sections, and leaves out a section with nothing in it:

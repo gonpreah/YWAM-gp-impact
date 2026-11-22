@@ -5999,3 +5999,32 @@ The Overview's "Needs you" and "The next 7 days"; the change cards (a team's dat
 | All free | ទំនេរទាំងអស់ |
 | Some free | ទំនេរខ្លះ |
 | This room has {n} beds. To fit fewer, take beds off below. | បន្ទប់នេះមានគ្រែ {n}។ ដើម្បីដាក់តិចជាងនេះ សូមដកគ្រែចេញខាងក្រោម។ |
+
+## 130. The weekly schedules know who is here, day by day; a school is a group in SR Hospitality
+
+The schedule editor's "Who is here this week" note (who leaves or arrives midweek, names taken off last week's copy, names on a day they aren't here), the picker's groups and day notes, a DTS student's arrival day, and a school's request in SR Hospitality. "Leaves {day}" / "Arrives {day}" sit beside a name: very little room.
+
+| English | Khmer (draft) |
+|---|---|
+| {name}: {n} more students than beds booked | {name}៖ សិស្សច្រើនជាងគ្រែដែលបានកក់ {n} នាក់ |
+| {n} still applying | {n} នាក់កំពុងដាក់ពាក្យ |
+| {n} on the first day | {n} នាក់នៅថ្ងៃដំបូង |
+| here | នៅទីនេះ |
+| {n} more students than beds booked ({b} booked) | សិស្សច្រើនជាងគ្រែដែលបានកក់ {n} នាក់ (បានកក់ {b}) |
+| Add beds for the new students | បន្ថែមគ្រែសម្រាប់សិស្សថ្មី |
+| Leaves {day} | ចាកចេញ {day} |
+| Arrives {day} | មកដល់ {day} |
+| Here {days} | នៅទីនេះ {days} |
+| Not here this week | មិននៅទីនេះសប្តាហ៍នេះ |
+| Not here {days} | មិននៅទីនេះ {days} |
+| Here part of the week | នៅទីនេះមួយផ្នែកនៃសប្តាហ៍ |
+| On leave part of the week | ឈប់សម្រាកមួយផ្នែកនៃសប្តាហ៍ |
+| Taken off last week’s copy — not here this week: {names} | បានដកចេញពីច្បាប់ចម្លងសប្តាហ៍មុន — មិននៅទីនេះសប្តាហ៍នេះ៖ {names} |
+| Who is here this week | អ្នកណានៅទីនេះសប្តាហ៍នេះ |
+| {n} name is on a day they aren’t here — marked in red | ឈ្មោះ {n} ស្ថិតនៅថ្ងៃដែលគាត់មិននៅទីនេះ — សម្គាល់ពណ៌ក្រហម |
+| {n} names are on days they aren’t here — marked in red | ឈ្មោះ {n} ស្ថិតនៅថ្ងៃដែលពួកគេមិននៅទីនេះ — សម្គាល់ពណ៌ក្រហម |
+| Everyone on the list is here all week. | អ្នករាល់គ្នាក្នុងបញ្ជី នៅទីនេះពេញមួយសប្តាហ៍។ |
+| Names typed before ({n}) | ឈ្មោះដែលបានវាយពីមុន ({n}) |
+| not here {day} | មិននៅទីនេះ {day} |
+| For SR Hospitality’s beds and the weekly schedules. Empty: from the day the school starts. | សម្រាប់គ្រែរបស់ SR Hospitality និងកាលវិភាគប្រចាំសប្តាហ៍។ ទទេ៖ ចាប់ពីថ្ងៃដែលសាលាចាប់ផ្តើម។ |
+| Typed before | បានវាយពីមុន |
