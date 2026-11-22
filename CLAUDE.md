@@ -2063,7 +2063,9 @@ forms, documents and references follow.
     e-visas approved → call2; call2 done → practical. It never moves back; unticking Arrived
     returns the team to practical. Every move is logged.
   - On the team's side, the visa card and the letter and e-visa uploads stay hidden until
-    passports, photo and flights are in. Portal staff get `teamStages` for the stage picker
+    passports, photo and flights are in — or until the e-visa steps are open (`app.visaOpen`: the letter
+    uploaded, or staff opened them early), so a team still missing a photo finds the letter under Documents
+    (Nov 2026, the Rogaland team). Portal staff get `teamStages` for the stage picker
     and for the Teams tab's chips and tiles. The GP app's HR page uses `TEAM_CAND_STAGES`
     for a team.
 - **A team application is a team in the Teams Database** (`syncTeamTrip_`, linked by
