@@ -3537,3 +3537,43 @@ button.homeBaseHead { width:100%; padding:0; border:0; background:none; color:in
 .invState { font-size:12px; font-weight:700; border-radius:999px; padding:3px 9px; background:var(--line); color:var(--muted); white-space:nowrap; }
 .invState.ok { background:var(--accent); color:var(--accentInk); }
 
+
+/* SR Hospitality, Nov 2026: extra spaces, free beds by day, the overview's "needs you", changes */
+.hospFitRow { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.hospFitRow input { width:90px; flex:none; }
+.hospBedEdit.spot input { border-style:dashed; }
+.hospSpotTag { font-size:11px; font-weight:700; color:var(--muted); white-space:nowrap; }
+.hospBed.spot { border-style:dashed; }
+.hospFree { border-collapse:separate; border-spacing:3px; font-size:13px; min-width:100%; }
+.hospFree th, .hospFree td { padding:0; text-align:center; }
+.hospFree thead th { font-weight:600; color:var(--muted); font-size:11px; padding:2px 0; min-width:34px; }
+.hospFree thead th b { display:block; font-size:14px; color:var(--ink); }
+.hospFree thead th.today b { color:var(--accent); }
+.hospFree .hospFreeRoom { position:sticky; left:0; background:var(--surface); text-align:left; padding:2px 8px 2px 2px; min-width:110px; max-width:150px; font-weight:600; z-index:1; }
+.hospFree .hospFreeRoom small { display:block; font-weight:600; font-size:11px; color:var(--muted); }
+.hospFree .hospFreeRoom .hospStyleTag { font-size:10px; }
+.hospFreeBld th { text-align:left; font-weight:800; padding:8px 2px 2px; color:var(--ink); }
+.hospFreeAll .hospFreeRoom { font-weight:800; }
+.hospFreeCell { width:100%; min-width:32px; height:32px; border-radius:8px; border:1.5px solid var(--border2); background:var(--surface2); color:var(--muted); font:inherit; font-weight:800; cursor:pointer; }
+.hospFreeCell.f-all { background:color-mix(in srgb, var(--good) 16%, var(--surface)); border-color:var(--good); color:var(--ink); }
+.hospFreeCell.f-some { background:color-mix(in srgb, var(--amber) 20%, var(--surface)); border-color:var(--amberDeep); color:var(--ink); }
+.hospFreeCell.f-none { background:var(--surface2); color:var(--muted); }
+.hospFreeWaitN { display:inline-block; font-weight:800; font-size:12px; color:var(--amberDeep); }
+.calDot.hospFreeAllDot { background:var(--good); } .calDot.hospFreeSomeDot { background:var(--amber); } .calDot.hospFreeNoneDot { background:var(--border2); }
+.hospNightHead { display:flex; flex-wrap:wrap; gap:4px 12px; align-items:baseline; justify-content:space-between; margin:0 0 6px; }
+.hospNightHead b { font-size:16px; }
+.hospNightHead span { color:var(--muted); font-size:13px; }
+.hospBoardHead { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
+.hospRoomFree { font-size:12px; font-weight:800; border-radius:999px; padding:1px 8px; }
+.hospRoomFree.f-all { color:var(--good); } .hospRoomFree.f-some { color:var(--amberDeep); } .hospRoomFree.f-none { color:var(--muted); }
+.hospComeGo .rowSub { margin:2px 0; }
+.hospAttn, .hospWeek { margin-bottom:10px; }
+.hospAttnRow { display:block; width:100%; text-align:left; background:none; border:0; border-top:1px solid var(--border); padding:10px 2px; font:inherit; color:var(--ink); cursor:pointer; }
+.hospAttnRow:first-of-type { margin-top:6px; }
+.hospAttnRow.bad { color:var(--bad); font-weight:700; }
+.hospAttnRow small { color:var(--muted); }
+.hospWeekPart { font-size:12px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin:10px 0 0; }
+.hospChanges { border-left:4px solid var(--accent); margin-bottom:10px; }
+.hospChange { border-top:1px solid var(--border); padding:10px 0 4px; }
+.hospChange:first-of-type { border-top:0; }
+.hospChangeWarn { color:var(--bad); font-weight:600; }

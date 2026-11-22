@@ -353,5 +353,90 @@ console.log('=== guests and speakers ask from a link ===');
   ok('declining takes it off the list', r.ok && !r.requests.some(x => x.stayId === q2.stayId));
 }
 
+console.log('=== a room fits more than its beds (Nov 2026) ===');
+{
+  mem['hosp:siemreap'] = { buildings: [{ id: 'b2', name: 'Second Building' }], rooms: [], bookings: [] };
+  let r = await call('hospSave', [...H, 'room', { buildingId: 'b2', name: 'Apartment', style: 'female', beds: [{ label: 'A' }, { label: 'B' }, { label: '+1', spot: true }, { label: '+2', spot: true }] }]);
+  const apt = r.ok && r.rooms.find(x => x.name === 'Apartment');
+  ok('extra spaces past the beds are kept as spaces — the room fits 4', apt && apt.beds.length === 4 && apt.beds.filter(b => b.spot).map(b => b.label).join() === '+1,+2' && !apt.beds[0].spot);
+  r = await call('hospSave', [...H, 'booking', { category: 'student', name: 'Girls', from: day(1), to: day(30), females: 4, bedIds: apt.beds.map(b => b.id) }]);
+  ok('… and all four can be booked like beds', r.ok && r.saved.bedIds.length === 4);
+}
+
+console.log('=== a team’s new dates move its booking (Nov 2026) ===');
+{
+  mem.teamTrips = [{ id: 'tt_mv', campus: 'siemreap', name: 'Moving Team', from: day(10), to: day(20), size: 3, males: 1, females: 2, status: 'active', metrics: {} },
+                   { id: 'tt_nb', campus: 'siemreap', name: 'Unbooked Team', from: day(40), to: day(45), size: 2, status: 'active', metrics: {} }];
+  mem['hosp:siemreap'] = { buildings: [{ id: 'b3', name: 'House' }],
+    rooms: [{ id: 'r3', buildingId: 'b3', name: '7', style: 'mixed', notes: '', beds: [{ id: 'x1', label: 'A' }, { id: 'x2', label: 'B' }, { id: 'x3', label: 'C' }] }],
+    bookings: [{ id: 'kTeam', category: 'team', name: 'Moving Team', from: day(10), to: day(20), count: 3, bedIds: ['x1', 'x2'], bedNames: { x2: 'Bea' }, tripId: 'tt_mv' },
+               { id: 'kG', category: 'guest', name: 'A Guest', from: day(21), to: day(24), count: 1, bedIds: ['x2'], tripId: '' }] };
+  let r = await call('saveTeamTrip', ['tom', '1234', { id: 'tt_mv', campus: 'siemreap', name: 'Moving Team', from: day(12), to: day(23), size: 3, males: 1, females: 2, status: 'active', metrics: {} }]);
+  ok('the Teams Database saves the new dates', r.ok);
+  let h = await call('getHospitality', H);
+  const k = h.bookings.find(x => x.id === 'kTeam');
+  ok('the booking follows them — two days later in, three days later out', k.from === day(12) && k.to === day(23), k.from + '→' + k.to);
+  ok('… a bed someone else holds on the new nights comes off it (to pick again), the rest stay', JSON.stringify(k.bedIds) === '["x1"]' && !(k.bedNames || {}).x2 && k.count === 3);
+  const c = h.changes.find(x => x.tripId === 'tt_mv');
+  ok('… and SR Hospitality is told: was, now, booked, the bed that came off, who and where', c && c.kind === 'dates' && c.was.from === day(10) && c.now.from === day(12) && c.now.to === day(23) && c.booked && c.dropped.join() === '7 B' && c.byName === 'Teams Tom' && c.via === 'teamsdb', JSON.stringify(c));
+  r = await call('saveTeamTrip', ['tom', '1234', { id: 'tt_mv', campus: 'siemreap', name: 'Moving Team', from: day(13), to: day(23), size: 3, status: 'active', metrics: {} }]);
+  h = await call('getHospitality', H);
+  ok('another change soon after is the same line — from the first dates to the newest', h.changes.filter(x => x.tripId === 'tt_mv').length === 1 && h.changes.find(x => x.tripId === 'tt_mv').was.from === day(10) && h.changes.find(x => x.tripId === 'tt_mv').now.from === day(13));
+  r = await call('saveTeamTrip', ['tom', '1234', { id: 'tt_mv', campus: 'siemreap', name: 'Moving Team', from: day(10), to: day(20), size: 3, status: 'active', metrics: {} }]);
+  h = await call('getHospitality', H);
+  ok('… and changed back, there is nothing to say', !h.changes.some(x => x.tripId === 'tt_mv') && h.bookings.find(x => x.id === 'kTeam').from === day(10));
+  r = await call('saveTeamTrip', ['tom', '1234', { id: 'tt_nb', campus: 'siemreap', name: 'Unbooked Team', from: day(42), to: day(47), size: 2, status: 'active', metrics: {} }]);
+  h = await call('getHospitality', H);
+  const nb = h.changes.find(x => x.tripId === 'tt_nb');
+  ok('a team not booked yet is noted too, as not booked', nb && nb.booked === false && nb.now.from === day(42));
+  const boot = await call('getMyBoot', H);
+  ok('the boot brings the changes to the Hospitality ministry (My Ministry, the bell) …', Array.isArray(boot.hospNews) && boot.hospNews.some(x => x.tripId === 'tt_nb'));
+  ok('… and to nobody else', (await call('getMyBoot', ['kim', '1234'])).hospNews === null);
+  ok('only Hospitality marks one seen', (await call('hospChangeDone', ['kim', '1234', nb.id])).ok === false);
+  r = await call('hospChangeDone', [...H, nb.id]);
+  ok('Got it takes it off the list', r.ok && !r.changes.some(x => x.id === nb.id));
+}
+
+console.log('=== someone archived leaves SR Hospitality (Nov 2026) ===');
+{
+  mem.staff.push({ ...st({ id: 'st_j', name: 'Judah Example', username: 'judah', dept: 'Community Service', ministry: 'Cafe' }), pinSalt: 'st_j', pinHash: mkHash('1234', 'st_j') });
+  mem.staff.push({ ...st({ id: 'st_q', name: 'Quinn Example', username: 'quinn', dept: 'Community Service', ministry: 'Cafe' }), pinSalt: 'st_q', pinHash: mkHash('1234', 'st_q') });
+  mem.staff.push({ ...st({ id: 'st_hr', name: 'Hara', username: 'hara', dept: 'Community Service', ministry: 'Cafe', hr: true }), pinSalt: 'st_hr', pinHash: mkHash('1234', 'st_hr') });
+  mem['hosp:siemreap'] = { buildings: [{ id: 'b4', name: 'House' }],
+    rooms: [{ id: 'r4', buildingId: 'b4', name: '203', style: 'male', notes: '', beds: [{ id: 'y1', label: 'A' }, { id: 'y2', label: 'B' }, { id: 'y3', label: 'C' }, { id: 'y4', label: 'D' }] }],
+    bookings: [{ id: 'kQ', category: 'volunteer', name: 'Q Family', from: day(-30), to: '', permanent: true, count: 2, bedIds: ['y3', 'y4'], bedNames: { y3: 'Quinn Example', y4: 'Kid Example' }, people: [{ name: 'Quinn Example', sex: '' }, { name: 'Kid Example', sex: '' }], tripId: '' },
+               { id: 'kT', category: 'team', name: 'Judah Example', from: day(1), to: day(5), count: 1, bedIds: [], tripId: '' }] };
+  let r = await call('hospStaffBeds', [...H, { y1: 'judah example' }]);
+  const jb = r.bookings.find(k => k.bedIds && k.bedIds[0] === 'y1');
+  ok('a staff bed given by name knows who it is (staffId)', jb && jb.staffId === 'st_j');
+  r = await call('hospSave', [...H, 'booking', { category: 'staff', name: 'Long Ago Bed', from: day(-90), permanent: true, count: 1, bedIds: ['y2'], staffId: 'st_j' }]);
+  ok('a booking keeps its staffId', r.ok && r.saved.staffId === 'st_j');
+  r = await call('hrArchive', ['hara', '1234', 'st_j', { reason: 'Finished' }]);
+  ok('HR archives Judah', r.ok);
+  let h = await call('getHospitality', H);
+  ok('… the bed given today just goes, the one held for months ends today — both free', !h.bookings.some(k => k.id === jb.id) && h.bookings.find(k => k.name === 'Long Ago Bed').to === day(0) && !h.bookings.find(k => k.name === 'Long Ago Bed').permanent);
+  ok('… a team or guest booking that happens to share the name is left alone', h.bookings.find(k => k.id === 'kT').to === day(5));
+  const lc = h.changes.find(c => c.kind === 'left' && c.staffId === 'st_j');
+  ok('… and SR Hospitality is told which beds came free', lc && lc.dropped.sort().join() === '203 A,203 B' && lc.byName === 'Hara', JSON.stringify(lc));
+  r = await call('hrArchiveMany', ['hara', '1234', ['st_q'], { reason: 'Left' }]);
+  h = await call('getHospitality', H);
+  const q = h.bookings.find(k => k.id === 'kQ');
+  ok('one of a family archived (several at once): just their bed comes free, the family stays', r.ok && q.permanent && JSON.stringify(q.bedIds) === '["y4"]' && !q.bedNames.y3 && q.people.map(p => p.name).join() === 'Kid Example' && q.count === 1);
+  mem.staff.push({ ...st({ id: 'st_me', name: 'Mentee Example', username: 'mentee', dept: 'Community Service', ministry: 'Cafe', mentorId: 'st_z', mentorStatus: 'approved' }), pinSalt: 'st_me', pinHash: mkHash('1234', 'st_me') });
+  mem.staff.push({ ...st({ id: 'st_z', name: 'Zed Mentor', username: 'zed', dept: 'Community Service', ministry: 'Cafe' }), pinSalt: 'st_z', pinHash: mkHash('1234', 'st_z') });
+  mem.gpTasks = { lists: [{ id: 'gl1', scope: 'personal', ownerId: 'st_me', title: 'Mine', campus: 'siemreap', members: ['st_z', 'st_hr'] }],
+    tasks: [{ id: 'gt1', listId: 'gl1', title: 'Open one', done: false, assignees: ['st_z', 'st_me'], assignedAt: { st_z: 'x', st_me: 'y' } },
+            { id: 'gt2', listId: 'gl1', title: 'Done one', done: true, assignees: ['st_z'], assignedAt: { st_z: 'x' } }] };
+  r = await call('hrArchive', ['hara', '1234', 'st_z', { reason: 'Left' }]);
+  const me = mem.staff.find(x => x.id === 'st_me');
+  ok('the rest of the app lets go too: a mentee of someone archived has no mentor (free to pick a new one)', r.ok && me.mentorId === '' && me.mentorStatus === '');
+  ok('… open GP Tasks given to them let go of them, done ones keep their history', JSON.stringify(mem.gpTasks.tasks[0].assignees) === '["st_me"]' && !mem.gpTasks.tasks[0].assignedAt.st_z && JSON.stringify(mem.gpTasks.tasks[1].assignees) === '["st_z"]');
+  ok('… and lists shared with them do too', JSON.stringify(mem.gpTasks.lists[0].members) === '["st_hr"]');
+  mem.staff.push({ ...st({ id: 'st_dup', name: 'Kid Example', username: 'kid2', dept: 'Community Service', ministry: 'Cafe', active: false, awaiting: true }), pinSalt: 'st_dup', pinHash: mkHash('1234', 'st_dup') });
+  r = await call('adminDeleteStaff', ['adam', '1234', 'st_dup']);
+  h = await call('getHospitality', H);
+  ok('deleting a sign-up never let in, with the same name as someone housed, frees nothing', r.ok && h.bookings.find(k => k.id === 'kQ').bedIds.length === 1);
+}
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

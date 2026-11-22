@@ -1373,7 +1373,7 @@ async function adminDecideCltRequest(username, pin, staffId, approve) {
 async function adminSetActive(username, pin, staffId, active) {
   const admin = await adminGate_(username, pin);
   if (!admin) return { ok: false };
-  return mutateStaff_(function (rows) {
+  const out = await mutateStaff_(function (rows) {
     const idx = rows.findIndex(function (r) { return r.id === staffId; });
     if (idx === -1) return { abort: true, ok: false, err: 'not_found' };
     rows[idx].active = !!active;
@@ -1381,6 +1381,8 @@ async function adminSetActive(username, pin, staffId, active) {
     rows[idx].updated = new Date().toISOString();
     return { ok: true, staff: adminStaffOut_(rows[idx]) };
   });
+  if (out && out.ok && !active) await hospPeopleLeft_([staffId], admin.id);   // switched off: their bed is free
+  return out;
 }
 
 /* Setting someone's mentor directly, not asking the mentor to accept —
@@ -1568,7 +1570,9 @@ async function adminDeleteStaff(username, pin, staffId) {
   const admin = await adminGate_(username, pin);
   if (!admin) return { ok: false };
   if (admin.id === staffId) return { ok: false, err: 'self_delete' };
-  return mutateStaff_(function (rows) {
+  const gone = (await getStaff_()).find(function (r) { return r && r.id === staffId; });
+  if (gone) { try { await hospPersonLeft_(gone, admin.id); } catch (e) { console.error('hosp: person left', e); } }   // before the record goes
+  const out = await mutateStaff_(function (rows) {
     const idx = rows.findIndex(function (r) { return r.id === staffId; });
     if (idx === -1) return { abort: true, ok: false, err: 'not_found' };
     rows.splice(idx, 1);
@@ -1577,6 +1581,8 @@ async function adminDeleteStaff(username, pin, staffId) {
     });
     return { ok: true };
   });
+  if (out && out.ok) await staffLeftCleanup_([staffId]);   // their open tasks and shared lists
+  return out;
 }
 
 /* For the one real duplicate this exists to fix — someone who accidentally
@@ -6163,6 +6169,7 @@ async function getMyBoot(username, pin) {
     kmFixes: await part(async function () { return kmFixesOf_(await getKmReview_()); }),   // a Khmer reviewer's corrections, live for everyone
     push: await part(async function () { const k = await pushKeys_(); return k ? { key: k.pub, prefs: pushPrefsOf_(s) } : null; }),   // reminders: the app's public key and your times
     backup: s.isAdmin ? await part(backupStatus_) : null,
+    hospNews: canHosp_(s) ? await part(function () { return hospNews_(s.campus); }) : null,   // SR Hospitality: a team's new dates, someone who left
     // the roster is already top-level above; no need to ship it twice in one response
     base: base ? Object.assign({}, base, { roster: undefined }) : null
   };
@@ -6451,6 +6458,7 @@ async function syncTeamTrip_(c, by, status) {
   rec.updated = new Date().toISOString(); rec.updatedBy = by;
   if (idx > -1) rows[idx] = rec; else rows.push(rec);
   await writeJSON('teamTrips', rows);
+  try { await hospTripMoved_(rec, prev, by, 'portal'); } catch (e) { console.error('hosp: trip moved', e); }   // its booking follows the new dates
   return rec;
 }
 async function linkedTrip_(c) {
@@ -6574,8 +6582,10 @@ async function saveTeamTrip(username, pin, trip) {
   const rows = await getTeamTripsRaw_();
   const idx = rows.findIndex(function (r) { return r && r.id === rec.id; });
   if (idx > -1 && rows[idx].candidateId) rec.candidateId = rows[idx].candidateId;   // still the portal application's team
+  const prev = idx > -1 ? rows[idx] : null;
   if (idx > -1) rows[idx] = rec; else rows.push(rec);
   await writeJSON('teamTrips', rows);
+  try { await hospTripMoved_(rec, prev, s.id, 'teamsdb'); } catch (e) { console.error('hosp: trip moved', e); }
   return getTeamTrips(username, pin, campus);
 }
 async function deleteTeamTrip(username, pin, id) {
@@ -6681,7 +6691,8 @@ async function getHosp_(campus) {
   return {
     buildings: Array.isArray(d.buildings) ? d.buildings : [],
     rooms: Array.isArray(d.rooms) ? d.rooms : [],
-    bookings: Array.isArray(d.bookings) ? d.bookings : []
+    bookings: Array.isArray(d.bookings) ? d.bookings : [],
+    changes: Array.isArray(d.changes) ? d.changes : []   // what moved on its own: a team's new dates, someone who left (hospNote_)
   };
 }
 function hospId_(p) { return p + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
@@ -6708,7 +6719,9 @@ function cleanHospRoom_(r, d) {
     let id = str_(b.id, 60) || hospId_('bd');
     if (seen[id]) id = hospId_('bd');
     seen[id] = 1;
-    return { id: id, label: label, out: !!b.out };
+    const bed = { id: id, label: label, out: !!b.out };
+    if (b.spot) bed.spot = true;   // an extra space past the beds — a mattress, a sofa (the room's "how many fit", Nov 2026)
+    return bed;
   }).filter(Boolean);
   return {
     id: str_(r.id, 60) || hospId_('hr'), buildingId: buildingId, name: name,
@@ -6737,7 +6750,8 @@ function cleanHospBooking_(k) {
   return {
     id: str_(k.id, 60) || hospId_('hk'), category: category, name: name, from: from, to: to, permanent: permanent,
     males: males, females: females, count: count, family: !!k.family, bedIds: kept, bedNames: bedNames, people: people,
-    notes: str_(k.notes, 1000) || '', tripId: str_(k.tripId, 60) || '', stayId: str_(k.stayId, 60) || ''
+    notes: str_(k.notes, 1000) || '', tripId: str_(k.tripId, 60) || '', stayId: str_(k.stayId, 60) || '',
+    staffId: str_(k.staffId, 60) || ''
   };
 }
 /* ---- a guest or speaker asks for a room (Oct 2026, Uriah) ----
@@ -6867,6 +6881,155 @@ async function syncTeamRooms_(campus, bookings) {
   });
   if (changed) await writeJSON('candidates', rows);
 }
+/* ---- what moved on its own (Nov 2026, Andrew: "when teams' arrival dates change … it automatically
+   updates it on the SR Hospitality booking … and it shows in my ministry page … that there was a date
+   change"; "when I archive or a staff leaves, take them out of the SR Hospitality system") ----
+   A team's dates changed on the portal (its leader, or staff) or in the Teams Database: its booking moves
+   with them, and any bed someone else holds on the new nights comes off it (to pick again). Someone
+   archived, switched off or deleted: the bed they live in is free from today. Each is a line in
+   `changes` on hosp:<campus> — {id, at, kind:'dates'|'left', name, bookingId, tripId, was, now, booked,
+   dropped:[bed names], via, byName, done} — which SR Hospitality's Overview and the Hospitality
+   ministry's My Ministry page show until someone taps Got it (hospChangeDone). */
+const HOSP_CHANGES_MAX = 60, HOSP_COALESCE_MS = 30 * 60000;
+function hospDays_(a, b) { return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000); }
+function hospBedName_(d, id) {
+  for (const r of d.rooms) for (const b of (r.beds || [])) if (b.id === id) return r.name + ' ' + b.label;
+  return '';
+}
+function hospNote_(d, c) {
+  d.changes = [Object.assign({ id: hospId_('hc'), at: new Date().toISOString() }, c)].concat(d.changes || []).slice(0, HOSP_CHANGES_MAX);
+}
+async function hospWhoName_(id) {
+  if (!id) return '';
+  const r = (await getStaff_()).find(function (x) { return x && x.id === id; });
+  return r ? (r.name || '') : '';
+}
+async function hospTripMoved_(trip, prev, by, via) {
+  if (!trip || !prev || !trip.campus || prev.deleted) return;
+  if (prev.from === trip.from && prev.to === trip.to) return;
+  if (!prev.from || !prev.to || !trip.from || !trip.to) return;   // dates set for the first time are not a change
+  if (!(await readJSON(hospKey_(trip.campus), null))) return;    // no book on this campus yet: nothing booked to move
+  const d = await getHosp_(trip.campus), today = new Date().toISOString().slice(0, 10), now = new Date().toISOString();   // the book's own day, as everywhere in it
+  const k = d.bookings.find(function (b) { return b && b.tripId === trip.id; });
+  if (!k && (trip.status === 'cancelled' || trip.to < today)) return;
+  const dropped = [];
+  if (k && !k.permanent) {
+    let nf = addDays_(k.from, hospDays_(prev.from, trip.from)), nt = addDays_(k.to, hospDays_(prev.to, trip.to));
+    if (nt <= nf) { nf = trip.from; nt = trip.to; }
+    k.from = nf; k.to = nt;
+    k.bedIds = (k.bedIds || []).filter(function (id) {
+      const held = d.bookings.some(function (o) { return o.id !== k.id && hospOverlap_(o, k) && (o.bedIds || []).indexOf(id) > -1; });
+      if (held) { dropped.push(hospBedName_(d, id)); if (k.bedNames) delete k.bedNames[id]; }
+      return !held;
+    });
+    k.updated = now; k.updatedBy = by || '';
+  }
+  // the draft autosaves as a team picks its dates: one line for a run of changes, not one a tap
+  const last = d.changes.find(function (c) { return c.kind === 'dates' && c.tripId === trip.id && !c.done && (Date.now() - Date.parse(c.at)) < HOSP_COALESCE_MS; });
+  const was = last ? last.was : { from: prev.from, to: prev.to }, nowD = { from: trip.from, to: trip.to };
+  if (last) d.changes.splice(d.changes.indexOf(last), 1);
+  if (was.from !== nowD.from || was.to !== nowD.to) {
+    hospNote_(d, { kind: 'dates', name: trip.name || (k && k.name) || '', tripId: trip.id, bookingId: k ? k.id : '', booked: !!k,
+      was: was, now: nowD, bookingNow: k ? { from: k.from, to: k.to } : null,
+      dropped: (last && last.dropped ? last.dropped : []).concat(dropped).filter(Boolean).slice(0, 40),
+      via: via || '', byName: await hospWhoName_(by) });
+  }
+  await saveHosp_(trip.campus, d);
+}
+/* Someone left (archived, switched off, deleted): the beds they live in are free from today. Only the
+   bookings of people who live here (staff, students, volunteers) — a team or a guest is never theirs.
+   Theirs by id (staff beds set since Nov 2026 carry staffId) or by their name. */
+async function hospPersonLeft_(p, by) {
+  if (!p || !p.id) return;
+  const key = function (v) { return String(v || '').trim().toLowerCase().replace(/\s+/g, ' '); };
+  /* By name only when nobody else still here has that name, and never for a sign-up that was never let in
+     (a duplicate or declined account would otherwise free the real person's bed). */
+  const twin = (await getStaff_()).some(function (r) { return r && r.id !== p.id && r.active !== false && !r.archived && !isApplicant_(r) && key(r.name) === key(p.name); });
+  const nm = p.awaiting || twin ? '' : key(p.name), today = new Date().toISOString().slice(0, 10), now = new Date().toISOString();
+  for (const campus of HR_CAMPUSES) {
+    if (!(await readJSON(hospKey_(campus), null))) continue;
+    const d = await getHosp_(campus), freed = [];
+    let changed = false;
+    d.bookings.slice().forEach(function (k) {
+      if (!k || HOSP_STAY_CATS.indexOf(k.category) === -1) return;
+      if (!(k.permanent || (k.to && k.to > today))) return;
+      if (k.staffId === p.id || (nm && key(k.name) === nm)) {
+        (k.bedIds || []).forEach(function (id) { freed.push(hospBedName_(d, id)); });
+        if (k.from >= today) d.bookings.splice(d.bookings.indexOf(k), 1);
+        else { k.permanent = false; k.to = today; k.updated = now; k.updatedBy = by || ''; }
+        changed = true; return;
+      }
+      // one of several in a family or shared booking: just their bed
+      const bed = nm && Object.keys(k.bedNames || {}).find(function (id) { return key(k.bedNames[id]) === nm; });
+      if (!bed) return;
+      freed.push(hospBedName_(d, bed));
+      k.bedIds = (k.bedIds || []).filter(function (id) { return id !== bed; });
+      delete k.bedNames[bed];
+      k.people = (k.people || []).filter(function (x) { return key(x && x.name) !== nm; });
+      k.count = Math.max(1, (Number(k.count) || 1) - 1);
+      k.updated = now; k.updatedBy = by || '';
+      changed = true;
+    });
+    if (!changed) continue;
+    hospNote_(d, { kind: 'left', name: p.name || '', staffId: p.id, dropped: freed.filter(Boolean).slice(0, 20), byName: await hospWhoName_(by) });
+    await saveHosp_(campus, d);
+  }
+}
+async function hospPeopleLeft_(ids, by) {
+  try {
+    const rows = await getStaff_();
+    for (const id of ids) { const r = rows.find(function (x) { return x && x.id === id; }); if (r) await hospPersonLeft_(r, by); }
+  } catch (e) { console.error('hosp: person left', e); }
+  await staffLeftCleanup_(ids);
+}
+/* The rest of the app, when someone leaves (Nov 2026, Andrew: "look through the entire app for anything I
+   may have missed"): their mentees no longer wait on a mentor who can't sign in — the pairing is cleared,
+   as deleting someone always did, so the mentee can pick a new one (and Loose ends counts them as having
+   none); and open GP Tasks given to them, and lists shared with them, let go of them. Their own history
+   (logs, goals, done tasks) is untouched. */
+async function staffLeftCleanup_(ids) {
+  ids = (ids || []).filter(Boolean);
+  if (!ids.length) return;
+  const gone = new Set(ids);
+  try {
+    await mutateStaff_(function (rows) {
+      let n = 0;
+      const now = new Date().toISOString();
+      rows.forEach(function (r) { if (r && r.mentorId && gone.has(r.mentorId)) { r.mentorId = ''; r.mentorStatus = ''; r.updated = now; n++; } });
+      return n ? { ok: true } : { abort: true, ok: true };
+    });
+  } catch (e) { console.error('left: mentees', e); }
+  try {
+    const d = await getGpt_();
+    let changed = false;
+    d.tasks.forEach(function (t) {
+      if (!t || t.done || !Array.isArray(t.assignees) || !t.assignees.some(function (id) { return gone.has(id); })) return;
+      t.assignees = t.assignees.filter(function (id) { return !gone.has(id); });
+      if (t.assignedAt) ids.forEach(function (id) { delete t.assignedAt[id]; });
+      changed = true;
+    });
+    d.lists.forEach(function (L) {
+      if (!L || !Array.isArray(L.members) || !L.members.some(function (id) { return gone.has(id); })) return;
+      L.members = L.members.filter(function (id) { return !gone.has(id); }); changed = true;
+    });
+    if (changed) await writeJSON('gpTasks', d);
+  } catch (e) { console.error('left: tasks', e); }
+}
+function hospChangesOut_(d) { return (d.changes || []).filter(function (c) { return c && !c.done; }).slice(0, 30); }
+async function hospNews_(campus) {
+  if (!(await readJSON(hospKey_(campus), null))) return [];
+  return hospChangesOut_(await getHosp_(campus)).slice(0, 10);
+}
+async function hospChangeDone(username, pin, id) {
+  const a = await hospAuth_(username, pin); if (a.out) return a.out;
+  const d = await getHosp_(a.s.campus), at = new Date().toISOString();
+  id = str_(id, 60);
+  let n = 0;
+  d.changes.forEach(function (c) { if (c && !c.done && (id === 'all' || c.id === id)) { c.done = { by: a.s.id, at: at }; n++; } });
+  if (!n) return { ok: false, err: 'not_found' };
+  await saveHosp_(a.s.campus, d);
+  return getHospitality(username, pin);
+}
 /* ==================== Who's here (Oct 2026, Uriah) ====================
    Everyone on a campus tonight, for Base's "On campus now" and its page:
    - staff on the campus, each marked away when an approved (or noted) trip or
@@ -6944,7 +7107,7 @@ async function getHospitality(username, pin) {
   await backfillTeamTrips_();
   const d = await getHosp_(campus);
   try { await syncTeamRooms_(campus, d.bookings); } catch (e) { console.error('rooms sync', e); }   // catches up teams booked before the step existed; writes only on a change
-  return { ok: true, campus: campus, buildings: d.buildings, rooms: d.rooms, bookings: d.bookings, requests: await hospRequests_(campus, d.bookings) };
+  return { ok: true, campus: campus, buildings: d.buildings, rooms: d.rooms, bookings: d.bookings, requests: await hospRequests_(campus, d.bookings), changes: hospChangesOut_(d) };
 }
 /* One save for all three kinds — a building, a room (with its beds), a
    booking — so the page has one call to make and one answer to read. */
@@ -7042,10 +7205,13 @@ async function hospStaffBeds(username, pin, map) {
     const k = d.bookings.find(function (x) { return x.id === kId; });
     k.bedIds = [moved[kId]]; k.bedNames = {}; k.updated = now; k.updatedBy = a.s.id;
   });
+  // the staff member it is, when the name is someone's on this campus — so archiving them frees the bed (hospPersonLeft_)
+  const people = (await getStaff_()).filter(function (r) { return r && r.active !== false && !isApplicant_(r) && r.campus === campus; });
+  const idOf = function (n) { const m = people.filter(function (r) { return String(r.name || '').trim().toLowerCase() === n.trim().toLowerCase(); }); return m.length === 1 ? m[0].id : ''; };
   add.forEach(function (x) {
     if (d.bookings.length >= HOSP_MAX.bookings) return;
     d.bookings.push({ id: hospId_('hk'), category: 'staff', name: x.name, from: today, to: '', permanent: true, males: 0, females: 0, count: 1, family: false,
-      bedIds: [x.bed], bedNames: {}, notes: '', tripId: '', created: now, createdBy: a.s.id, updated: now, updatedBy: a.s.id });
+      bedIds: [x.bed], bedNames: {}, notes: '', tripId: '', staffId: idOf(x.name), created: now, createdBy: a.s.id, updated: now, updatedBy: a.s.id });
   });
   await saveHosp_(campus, d);
   return getHospitality(username, pin);
@@ -8475,12 +8641,16 @@ async function reqStatusAll(username, pin) {
 }
 
 async function hrArchive(username, pin, staffId, info) {
-  return hrMutate_(username, pin, staffId, function (rec, me) {
+  let by = '';
+  const out = await hrMutate_(username, pin, staffId, function (rec, me) {
     if (rec.id === me.id) return { abort: true, ok: false, err: 'self_archive' };
     const at = isoDate_(info && info.at) || new Date().toISOString().slice(0, 10);
     rec.archived = { at: at, reason: str_(info && info.reason, 300), by: me.id };
     rec.active = false;
+    by = me.id;
   });
+  if (out && out.ok) await hospPeopleLeft_([str_(staffId, 60)], by);   // the bed they lived in is free from today
+  return out;
 }
 /* Archive a group at once — a school or team that has left — in ONE write of the
    staff list, so twenty archives cannot race each other the way twenty single
@@ -8498,7 +8668,8 @@ async function hrArchiveMany(username, pin, ids, info) {
   if (want.has(s.id)) return { ok: false, err: 'self_archive' };
   const at = isoDate_(info && info.at) || new Date().toISOString().slice(0, 10);
   const reason = str_(info && info.reason, 300);
-  return mutateStaff_(function (rows) {
+  const done = [];
+  const out = await mutateStaff_(function (rows) {
     let n = 0;
     const now = new Date().toISOString();
     rows.forEach(function (r) {
@@ -8506,10 +8677,13 @@ async function hrArchiveMany(username, pin, ids, info) {
       r.archived = { at: at, reason: reason, by: s.id };
       r.active = false;
       r.updated = now;
+      done.push(r.id);
       n++;
     });
     return { ok: true, archived: n };
   });
+  if (out && out.ok) await hospPeopleLeft_(done, s.id);
+  return out;
 }
 async function hrUnarchive(username, pin, staffId) {
   return hrMutate_(username, pin, staffId, function (rec) {
@@ -14350,6 +14524,7 @@ const HANDLERS = {
   hospStayStatus: function (a) { return hospStayStatus(a[0], a[1], a[2], a[3]); },
   hospMoveBed: function (a) { return hospMoveBed(a[0], a[1], a[2], a[3], a[4]); },
   hospStaffBeds: function (a) { return hospStaffBeds(a[0], a[1], a[2]); },
+  hospChangeDone: function (a) { return hospChangeDone(a[0], a[1], a[2]); },
   hospImport: function (a) { return hospImport(a[0], a[1], a[2]); },
   getLeadBoard: function (a) { return getLeadBoard(a[0], a[1]); },
   saveLeadCard: function (a) { return saveLeadCard(a[0], a[1], a[2]); },

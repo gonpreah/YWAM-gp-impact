@@ -68,14 +68,15 @@ async function open(who, opts) {
   const hospOut = () => ({ ok: true, campus: 'siemreap', buildings: H.buildings, rooms: H.rooms, bookings: H.bookings,
     requests: H.trips.map(q => ({ ...q, bookingId: (H.bookings.find(k => k.tripId === q.tripId) || {}).id || '' }))
       .concat((opts.gone || []).filter(q => H.bookings.some(k => k.id === q.bookingId)))
-      .concat((opts.stays || []).filter(q => !q.declined).map(q => ({ ...q, bookingId: (H.bookings.find(k => k.stayId === q.stayId) || {}).id || '' }))) });
+      .concat((opts.stays || []).filter(q => !q.declined).map(q => ({ ...q, bookingId: (H.bookings.find(k => k.stayId === q.stayId) || {}).id || '' }))),
+    changes: (opts.changes || []).filter(c => !c.done) });
   await ctx.route('**/.netlify/functions/api', r => {
     const b = JSON.parse(r.request().postData() || '{}'); sent.push(b);
     let out = { ok: true };
     if (b.fn === 'getMyBoot') out = { ok: true, staff: who, profile: {}, roster: [HANA, ADMIN, KIM], logs: [], habits: null, mentees: [], mentorRequests: [],
       goals: [], checkins: [], ministry: { ok: true, campus: 'siemreap', dept: who.dept, ministry: who.ministry, entries: {}, daily: {}, prev: {}, pins: [] }, personal: { ok: true, entries: {} },
       trips: { ok: true, trips: [], totals: {}, reasons: { work: [], personal: [] }, hasMentor: false }, tripRequests: [],
-      base: { leader: false, entries: { siemreap: {} }, okrs: [], survey: [], metricOverrides: [] } };
+      base: { leader: false, entries: { siemreap: {} }, okrs: [], survey: [], metricOverrides: [] }, hospNews: who.hospitality ? (opts.changes || []).filter(c => !c.done) : null };
     else if (b.fn === 'getData') out = { entries: {}, okrs: [], survey: [] };
     else if (b.fn === 'getHospitality') out = who.hospitality ? hospOut() : { ok: false, err: 'not_authorized' };
     else if (b.fn === 'hospSave') {
@@ -86,6 +87,7 @@ async function open(who, opts) {
       const i = list.findIndex(x => x.id === rec.id); if (i > -1) list[i] = rec; else list.push(rec);
       out = { ...hospOut(), saved: rec };
     }
+    else if (b.fn === 'hospChangeDone') { (opts.changes || []).forEach(c => { if (b.args[2] === 'all' || c.id === b.args[2]) c.done = true; }); out = hospOut(); }
     else if (b.fn === 'hospStayStatus') { (opts.stays || []).forEach(q => { if (q.stayId === b.args[2]) q.declined = b.args[3] === 'declined'; }); out = hospOut(); }
     else if (b.fn === 'hospStaffBeds') {
       const map = b.args[2];
@@ -277,6 +279,7 @@ const UNPLACED = { id: 'k2', category: 'volunteer', name: 'Volunteer Example', f
   await page.click('#menuBtn'); await page.waitForTimeout(150);
   await page.click('[data-menu-item="hosp"]'); await page.waitForTimeout(500);
   await page.click('[data-hosptab="cal"]'); await page.waitForTimeout(200);
+  await page.click('[data-hospcalmode="cal"]'); await page.waitForTimeout(200);   // the Beds tab opens on Free beds (Nov 2026)
   const cal = await page.evaluate(() => ({
     days: [].map.call(document.querySelectorAll('[data-hospday]'), d => d.dataset.hospday),
     today: (document.querySelector('.hospCalDay.today') || {}).dataset?.hospday,
@@ -509,6 +512,54 @@ console.log('=== staff beds ===');
   const dc = sent.filter(b => b.fn === 'hospStayStatus').pop();
   ok('Decline takes a request off the list', dc && dc.args[2] === 'sr_2' && dc.args[3] === 'declined' && !(await page.$('[data-hospreq="sr:sr_2"]')));
   ok('no errors (guest requests)', errors.length === 0, errors.join(' | '));
+  await ctx.close();
+}
+
+/* ---------- Nov 2026 (Andrew): extra spaces, free beds by day, a clearer board, a team's new dates, someone who left ---------- */
+{
+  const changes = [
+    { id: 'hc1', at: day(0) + 'T03:00:00.000Z', kind: 'dates', name: 'Example Church', tripId: 'tt1', bookingId: 'k1', booked: true, was: { from: day(1), to: day(6) }, now: { from: day(3), to: day(8) }, bookingNow: { from: day(3), to: day(8) }, dropped: ['101 B'], via: 'portal', byName: 'Lee Leader' },
+    { id: 'hc2', at: day(0) + 'T02:00:00.000Z', kind: 'left', name: 'Judah Example', dropped: ['102 A'], byName: 'Hara' }];
+  const { ctx, page, errors, sent } = await open(HANA, { changes, extra: [{ id: 'kNo', category: 'guest', name: 'No Bed Guest', from: day(2), to: day(4), males: 1, females: 0, count: 2, family: false, bedIds: [], notes: '', tripId: '', permanent: false }] });
+  await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(300);
+  const news = await page.$eval('#hospNews', e => e.textContent).catch(() => '');
+  ok('My Ministry for Hospitality says what changed: a team’s new dates (and who changed them where) and someone who left', /2 changes in SR Hospitality/.test(news) && /Example Church/.test(news) && /new dates/.test(news) && /Changed on the portal by Lee Leader/.test(news) && /Judah Example has left/.test(news) && /102 A/.test(news), news.slice(0, 300));
+  ok('… with the beds that came off the moved booking, to pick again', /Pick beds again — someone else has 101 B/.test(news));
+  await page.click('#bellBtn').catch(() => {}); await page.waitForTimeout(250);
+  ok('the bell says it too, with Open', /SR Hospitality: Example Church has new dates/.test(await page.$eval('#notifRoot', e => e.textContent).catch(() => '')) && !!(await page.$('#notifRoot [data-gohosp]')));
+  await page.click('#notifRoot [data-gohosp]').catch(() => {}); await page.waitForTimeout(500);
+  ok('… Open goes to SR Hospitality, where the Overview leads with the same changes', !!(await page.$('#hospPage #hospChanges')) && !!(await page.$('#hospChanges [data-hospedit="k1"]')));
+  const attn = await page.$eval('#hospAttn', e => e.textContent);
+  ok('the Overview says what needs doing: requests waiting, a booking with beds to pick', /request.*waiting for beds/.test(attn) && /No Bed Guest: 2 beds to pick/.test(attn), attn);
+  ok('… and who comes and goes in the next 7 days', /The next 7 days/.test(await page.$eval('#hospWeek', e => e.textContent)) && /No Bed Guest/.test(await page.$eval('#hospWeek', e => e.textContent)));
+  await page.click('#hospChanges [data-hospnewsok="hc2"]'); await page.waitForTimeout(300);
+  ok('Got it takes one off — in SR Hospitality and on My Ministry', sent.some(b => b.fn === 'hospChangeDone' && b.args[2] === 'hc2') && !(await page.$('[data-hospchange="hc2"]')) && (await page.evaluate(() => S.hospNews.length)) === 1);
+  // Beds: free beds by day
+  await page.click('[data-hosptab="cal"]'); await page.waitForTimeout(250);
+  ok('the Beds tab opens on Free beds: a row per room, 14 nights', !!(await page.$('#hospFree')) && (await page.$$('#hospFree thead th')).length === 15 && (await page.$$('[data-hospfreeroom]')).length === 2);
+  const tonight = await page.$eval('.hospFreeAll [data-hospfreeday="' + day(0) + '"]', e => e.textContent);
+  ok('… the whole base on top: 7 usable beds, the speaker in one — 6 free tonight', tonight === '6', tonight);
+  ok('… each room’s own free beds: 101 has 3 of 4, 102 all 3', (await page.$eval('[data-hospfreeroom="r1"] [data-hospfreeday="' + day(0) + '"]', e => e.textContent)) === '3' && (await page.$eval('[data-hospfreeroom="r2"] [data-hospfreeday="' + day(0) + '"]', e => e.className)).includes('f-all'));
+  ok('… and the people booked with no bed yet, under it', /Booked, no bed yet/.test(await page.$eval('#hospFree', e => e.textContent)));
+  await page.click('[data-hospfreeroom="r1"] [data-hospfreeday="' + day(2) + '"]'); await page.waitForTimeout(250);
+  ok('tapping a night opens the bed board for that night, said in words', (await page.evaluate(() => S.hospCalMode)) === 'board' && (await page.$eval('#hospBoardDay', i => i.value)) === day(2) && /Night of/.test(await page.$eval('.hospNightHead', e => e.textContent)));
+  ok('the board says who arrives that day, free beds by kind of room, and each room’s free count', /No Bed Guest/.test(await page.$eval('#hospComeGo', e => e.textContent)) && /free/.test(await page.$eval('#hospFreeBy', e => e.textContent)) && /of 4 free|of 3 free|Full/.test(await page.$eval('[data-hospboardroom="r1"]', e => e.textContent)));
+  await page.check('#hospBoardOnlyFree'); await page.waitForTimeout(200);
+  ok('… and can show only the rooms with a free bed', (await page.$$('[data-hospboardroom]')).length >= 1);
+  // Rooms: fits more than its beds
+  await page.click('[data-hosptab="rooms"]'); await page.waitForTimeout(200);
+  await page.click('[data-hosproom="r2"]'); await page.waitForTimeout(200);
+  await page.fill('#hrFit', '9'); await page.dispatchEvent('#hrFit', 'change'); await page.waitForTimeout(200);
+  ok('a room can fit more than its beds: 9 adds five extra spaces (+1 … +5)', (await page.$$('.hospBedEdit.spot')).length === 5 && /4 beds \+ 5 extra spaces/.test(await page.$eval('#hrFitHint', e => e.textContent)));
+  await page.fill('#hrFit', '2'); await page.dispatchEvent('#hrFit', 'change'); await page.waitForTimeout(200);
+  ok('… fewer than its beds keeps the beds and says how', (await page.$$('.hospBedEdit.spot')).length === 0 && (await page.$$('.hospBedEdit')).length === 4);
+  await page.fill('#hrFit', '6'); await page.dispatchEvent('#hrFit', 'change'); await page.waitForTimeout(200);
+  await page.click('#hospRoomSave'); await page.waitForTimeout(300);
+  const rs = sent.filter(b => b.fn === 'hospSave' && b.args[2] === 'room').pop();
+  ok('… saved with the extra spaces marked as such', rs && rs.args[3].beds.length === 6 && rs.args[3].beds.filter(b => b.spot).map(b => b.label).join() === '+1,+2');
+  ok('… and the room list says it fits more than its beds', /4 beds \+ 2 extra · fits 5/.test(await page.$eval('[data-hosproom="r2"]', e => e.textContent)), await page.$eval('[data-hosproom="r2"]', e => e.textContent));
+  ok('no sideways scroll', !(await overflow(page)));
+  ok('no errors (Nov 2026 changes)', errors.length === 0, errors.join(' | '));
   await ctx.close();
 }
 

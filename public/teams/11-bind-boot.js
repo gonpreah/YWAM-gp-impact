@@ -532,6 +532,7 @@ function bindAway(){
     if(gse) gse.onclick=function(){ gpTap(); schedOpen_(gse.getAttribute('data-schedkind-edit'), true, 'ministry'); };
     var gho=document.getElementById('goHosp');
     if(gho) gho.onclick=function(){ gpTap(); S.view='hosp'; render(); };
+    if(typeof bindHospNews_==='function') bindHospNews_();   // SR Hospitality's changes on My Ministry: Got it / Open
   }
   var tdbk=document.getElementById('teamsDbBack');
   if(tdbk) tdbk.onclick=function(){ S.view='ministry'; render(); };
