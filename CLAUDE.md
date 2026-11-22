@@ -3821,6 +3821,20 @@ Claude build out tasks and calendar dates in line with our verbal processing."
   microphone anywhere, and `voiceTasks` answers `not_set_up`. Usage is billed to that key's Anthropic account.
 - **What leaves the site**: the words said, the names of the person's own task lists, and the names of their campus's
   active staff (so "ask Sokha" can become Sokha). The sheet says so. Never ids, usernames or anything else.
+- **Never stuck, and Khmer** (Nov 2026, Uriah: "the voice mode to tasks … just freezes" / "how it might work in Khmer
+  language"). The freeze was on the phone (no server errors): the browser's listening can start and then hang with no
+  word or end, worst in an iPhone Home Screen app. Now: no in-app mic there (`gvRec_` → the keyboard-microphone hint);
+  elsewhere a watchdog stops listening that has heard nothing in `GV_LISTEN_WAIT` (9 s) and every `onerror` ends it
+  with a message; the ask has its own `GV_ASK_WAIT` (30 s) and a late answer is ignored (`V.ask`); Cancel works while
+  it waits; `voiceTasks` is not held behind the kept copy's fresh boot (`run()`); the server answers in
+  `VOICE_WAIT_MS` (17 s), before the page's own 20 s request limit, so slow says "too long", not "no connection".
+  **I'm talking in ខ្មែរ / English** (`gvLangHtml_`, `[data-gvlang]`, `gp-gv-lang` on the phone; starts from the app's
+  language) sets the listening language (km-KH) and goes to the server as `spoke`; with Khmer the instructions add
+  `VOICE_KHMER` — Khmer days, the hour + part of the day (ម៉ោង ២ រសៀល = 14:00, កន្លះ = :30), Khmer digits, names matched
+  by sound to the Latin roster with words of respect (បង, លោកគ្រូ…) dropped, "ប្រាប់ … ឲ្យ" as giving a task. Titles stay
+  in the words they used (mixed stays mixed), the note in the app's language. On an iPhone, Apple's dictation has no
+  Khmer, so the sheet points to Gboard's microphone (`gvKmHintHtml_`). Tried on the real model with a made-up mixed
+  Khmer ramble: days, 3 pm after "2… no, 3", and both people came out right. Khmer: docs/khmer-needed.md §131.
 - tests/test-voice-tasks.mjs (server), tests/test-voice-tasks-ui.mjs; both use tests/voice-fixtures.mjs, a stand-in
   for the SDK written into the test's own node_modules — no test calls Anthropic. Khmer: docs/khmer-needed.md §113.
   sw.js SHELL v26.

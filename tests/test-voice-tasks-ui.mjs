@@ -40,6 +40,7 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/cs
 const srv = http.createServer(async (req, res) => {
   if (req.url.indexOf('/.netlify/functions/api') === 0) {
     let b = ''; for await (const c of req) b += c;
+    if (globalThis.__voiceSlow && b.indexOf('"voiceTasks"') > -1) await new Promise(r => setTimeout(r, globalThis.__voiceSlow));
     const r = await api.default({ method: 'POST', json: async () => JSON.parse(b || '{}'), headers: new Map() }, {});
     res.writeHead(r.status || 200, { 'Content-Type': 'application/json' }); res.end(await r.text()); return;
   }
@@ -66,11 +67,13 @@ async function open(user, opts) {
   await page.addInitScript(a => {
     localStorage.setItem('gp-staff', JSON.stringify({ user: a.u, pin: '1234' }));
     if (a.km) localStorage.setItem('gp-lang', 'km');
+    if (a.gvlang) localStorage.setItem('gp-gv-lang', a.gvlang);
+    if (a.standalone) Object.defineProperty(navigator, 'standalone', { get: () => true });
     if (a.rec) {   // a phone that can listen: a stand-in SpeechRecognition the test speaks through
-      window.SpeechRecognition = function () { var me = this; window.__rec = me; me.start = function () { me.started = true; }; me.stop = function () { me.started = false; if (me.onend) me.onend(); }; };
+      window.SpeechRecognition = function () { var me = this; window.__rec = me; me.start = function () { me.started = true; }; me.abort = function () { me.started = false; }; me.stop = function () { me.started = false; if (me.onend) me.onend(); }; };
       window.__say = function (finals, live) { var res = finals.map(function (s) { var r = [{ transcript: s }]; r.isFinal = true; return r; }); if (live) { var r = [{ transcript: live }]; r.isFinal = false; res.push(r); } window.__rec.onresult({ results: res }); };
     } else { delete window.SpeechRecognition; delete window.webkitSpeechRecognition; }
-  }, { u: user, km: !!opts.km, rec: opts.rec !== false });
+  }, { u: user, km: !!opts.km, rec: opts.rec !== false, gvlang: opts.gvlang || '', standalone: !!opts.standalone });
   await page.goto(BASE + (opts.path || '/teams.html?view=tasks'), { waitUntil: 'load' });
   await page.waitForSelector('nav.bottom button', { timeout: 15000 });
   await page.waitForSelector('#gtAdd', { timeout: 6000 })
@@ -152,7 +155,7 @@ C.reply = function (req) {
   C.reply = 'rate';
   await page.fill('#gvText', 'ទូរស័ព្ទទៅជាងទឹកថ្ងៃស្អែក'); await page.click('#gvGo'); await page.waitForSelector('#gvErr', { timeout: 8000 });
   ok('Claude busy → it says so and keeps the words', (await page.$eval('#gvText', e => e.value)) === 'ទូរស័ព្ទទៅជាងទឹកថ្ងៃស្អែក' && !!(await page.$('#gvGo:not([disabled])')));
-  ok('the app\'s language went with the request', /set to Khmer/.test(C.calls[C.calls.length - 1].system));
+  ok('the app\'s language went with the request: talking in Khmer, the note in Khmer', /talking in Khmer/.test(C.calls[C.calls.length - 1].system) && /note in Khmer/.test(C.calls[C.calls.length - 1].system));
   C.reply = { tasks: [], note: 'ខ្ញុំមិនបានឮអ្វីដែលត្រូវធ្វើទេ។' };
   await page.click('#gvGo'); await page.waitForSelector('#gvNote', { timeout: 8000 });
   ok('nothing to do → the note, and no Add to tap', /ខ្ញុំមិនបានឮ/.test(await txt(page, '#gvNote')) && await page.$eval('#gvAdd', e => e.disabled));
@@ -174,6 +177,53 @@ C.reply = function (req) {
   ok('with no key on the site there is no microphone at all', !(await o.page.$('#gvOpen')) && !!(await o.page.$('#gtAdd')));
   await o.ctx.close();
 }
+/* ---------- never stuck: a phone that hears nothing, a slow answer ---------- */
+process.env.ANTHROPIC_API_KEY = 'test-key-not-real';
+{
+  const { ctx, page } = await open('cora');
+  await page.evaluate(() => { S.gvListenWait = 600; S.gvAskWait = 1200; });
+  await page.click('#gvOpen'); await page.waitForSelector('#gvMic');
+  await page.click('#gvMic'); await page.waitForTimeout(1000);
+  ok('listening that hears nothing stops by itself and says so', !/Listening/.test(await txt(page, '#gvMic')) && /couldn’t hear anything/.test(await txt(page, '#gvErr')));
+  await page.click('#gvMic'); await page.evaluate(() => window.__rec.onerror({ error: 'network' })); await page.waitForTimeout(200);
+  ok('an error from the phone ends listening too', !/Listening/.test(await txt(page, '#gvMic')) && /Listening stopped/.test(await txt(page, '#gvErr')));
+  globalThis.__voiceSlow = 2500; C.reply = { tasks: [{ title: 'Late one', notes: '', due: '', time: '', list: '', people: [], steps: [] }], note: '' };
+  await page.fill('#gvText', 'call the plumber tomorrow'); await page.click('#gvGo'); await page.waitForTimeout(300);
+  ok('asking shows it is working', /Working it out/.test(await txt(page, '#gvGo')));
+  await page.waitForTimeout(1300);
+  ok('an answer that takes too long gives the button back, with a word why', /Make my tasks/.test(await txt(page, '#gvGo')) && /too long/.test(await txt(page, '#gvErr')) && !(await page.$('#gvItems')));
+  await page.waitForTimeout(1500);
+  ok('… and the late answer, when it comes, doesn\'t jump in', !(await page.$('#gvItems')));
+  await page.click('#gvGo'); await page.waitForTimeout(200);
+  await page.click('#gvClose'); await page.waitForTimeout(200);
+  ok('Cancel works while it is working', !(await page.$('#gvSheet')));
+  await page.waitForTimeout(2500); globalThis.__voiceSlow = 0;
+  await ctx.close();
+}
+/* ---------- Khmer ---------- */
+{
+  const { ctx, page } = await open('cora');
+  await page.click('#gvOpen'); await page.waitForSelector('[data-gvlang]');
+  ok('the sheet asks which language you are talking in, English to start in an English app', await page.$eval('[data-gvlang="en"]', b => b.classList.contains('on')));
+  await page.click('[data-gvlang="km"]'); await page.waitForTimeout(150);
+  ok('picking ខ្មែរ is kept on the phone', await page.evaluate(() => localStorage.getItem('gp-gv-lang')) === 'km' && await page.$eval('[data-gvlang="km"]', b => b.classList.contains('on')));
+  ok('… and on an iPhone it says Khmer talking goes through Gboard', /Gboard/.test(await txt(page, '#gvKmHint')));
+  await page.click('#gvMic'); await page.waitForTimeout(100);
+  ok('the microphone listens in Khmer, whatever the app\'s language', await page.evaluate(() => window.__rec.lang === 'km-KH'));
+  await page.evaluate(() => window.__rec.onerror({ error: 'language-not-supported' })); await page.waitForTimeout(150);
+  ok('a phone that can\'t listen in Khmer says what to do instead', /can’t listen in Khmer/.test(await txt(page, '#gvErr')) && !/Listening/.test(await txt(page, '#gvMic')));
+  C.calls.length = 0; C.reply = { tasks: [{ title: 'ទិញកាហ្វេ', notes: '', due: day(1), time: '', list: '', people: [], steps: [] }], note: '' };
+  await page.fill('#gvText', 'ស្អែក ទិញកាហ្វេ'); await page.click('#gvGo'); await page.waitForSelector('#gvItems', { timeout: 8000 });
+  ok('it sends that it was Khmer, and the Khmer task comes back to check', /ស្អែក tomorrow/.test(C.calls[0].system) && await page.$eval('.gvTitle', i => i.value) === 'ទិញកាហ្វេ');
+  await ctx.close();
+}
+{
+  const { ctx, page } = await open('cora', { standalone: true });
+  await page.click('#gvOpen'); await page.waitForSelector('#gvSheet');
+  ok('an iPhone Home Screen app gets the keyboard microphone, not the in-app one that hangs there', !(await page.$('#gvMic')) && !!(await page.$('#gvKeyHint')));
+  await ctx.close();
+}
+
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 await browser.close(); srv.close();
