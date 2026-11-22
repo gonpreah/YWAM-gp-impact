@@ -222,6 +222,19 @@ textarea { min-height:80px; resize:vertical; }
 /* the applicant's dashboard */
 .two { display:grid; grid-template-columns:1fr; gap:0; }
 .timeline { list-style:none; margin:6px 0 0; padding:0; }
+.teamTodo { margin:14px 0 0; padding:14px 0 0; border-top:1px solid var(--border); }
+.todoList { list-style:none; margin:6px 0 0; padding:0; counter-reset:todo; }
+.todoRow { display:grid; grid-template-columns:22px 1fr; gap:10px; padding:10px 0; border-top:1px solid var(--border); }
+.todoRow:first-child { border-top:0; padding-top:4px; }
+.todoRow b { font-size:15px; }
+.todoRow .sub { font-size:13.5px; margin:2px 0 0; }
+.todoDot { width:16px; height:16px; margin-top:3px; border-radius:50%; border:2px solid var(--ink); }
+.todoExtra { margin:4px 0 0; }
+.todoBtns { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.todoBtns .btn { margin:0; }
+.waitList { list-style:none; margin:6px 0 0; padding:0; }
+.waitList li { font-size:13.5px; color:var(--muted); padding:3px 0; }
+.stepNow { display:inline-block; margin-left:6px; font-size:11px; font-weight:700; padding:1px 8px; border-radius:999px; background:var(--ink); color:var(--accentInk); vertical-align:2px; cursor:pointer; border:0; font-family:inherit; }
 .step { display:grid; grid-template-columns:28px 1fr; gap:12px; align-items:start; position:relative; padding-bottom:16px; }
 .step:not(:last-child)::before { content:''; position:absolute; left:13px; top:26px; bottom:0; width:2px; background:var(--border2); }
 .step.done:not(:last-child)::before { background:var(--good); }
@@ -634,10 +647,10 @@ var TEAM_STEP_LABEL = { account:'Create your account', form:'Send your applicati
 var TEAM_STEP_NOTE = {
   form:'Your answers save as a draft — come back any time.',
   call1:'A video call to get to know each other and go over the logistics. We message you to find a time.',
-  passports:'A copy of the photo page of every team member’s passport. Upload them under Documents.',
-  photo:'Nothing to upload — under Your team members, add everyone coming and take a photo of each. We use the names for the cooking and morning chores schedules while you are here.',
+  passports:'A copy of the photo page of every team member’s passport, under Documents.',
+  photo:'Under Your team members: add everyone coming, with a photo of each. We use the names for the cooking and morning chores schedules while you are here.',
   flights:'Important — we need them to start your visa process, and we arrange your airport pick-up from them.',
-  invitation:'We send these once your passports, your team’s names and photos, and flights are in. They appear under Documents for you to download.',
+  invitation:'From us — we prepare them once your passports, your team’s names and photos, and flights are in. You will find them under Documents and in “How to apply for your e-visa online”.',
   evisa:'Once we upload your letter of invitation, “How to apply for your e-visa online” opens right here, with everything you need. Then upload each approved e-visa under Documents.',
   rooms:'Our hospitality team books your beds for your dates. It ticks here once they have.',
   call2:'A call with your whole team to prepare for Cambodian culture and serving here.',
@@ -1436,6 +1449,8 @@ function registerHtml_(){
 /* "Application received" reads "Application & reference received" for anyone a reference is asked of. */
 function stepKey_(st, isTeam, app){ return !isTeam && st.id==='received' && app.refNeeded ? 'received2' : st.id; }
 function statusNote_(app){
+  /* with Your next steps under it (teamTodo_), the note just says where things are; the button is in the list */
+  if(visaGoWanted_(app) && app.submittedAt) return letterIn_(app) ? 'Your letter of invitation is in — you can apply for your e-visas now.' : 'You can start your e-visas now — your letter of invitation will follow.';
   if(visaGoWanted_(app)) return letterIn_(app) ? 'Your letter of invitation is in. Open “How to apply for your e-visa online” under Where you are — everything you need is there.'
     : 'You can start your e-visas now. Open “How to apply for your e-visa online” under Where you are — your letter of invitation will follow.';
   return (app.type===TEAM_TYPE && TEAM_STATUS_NOTE[app.status]) || STATUS_NOTE[app.status] || '';
@@ -1446,6 +1461,62 @@ var TEAM_TYPE='team';
 function visaGoWanted_(app){ return app.type===TEAM_TYPE && app.visaOpen && app.status!=='closed' && (app.steps||[]).some(function(st){ return st.id==='evisa' && !st.done; }); }
 function letterIn_(app){ var v=app.visa||{}; return !!v.invitationSent || (app.docs||[]).some(function(d){ return d.kind==='invitation'; }) || (app.steps||[]).some(function(st){ return st.id==='invitation' && st.done; }); }
 function visaGoHtml_(app){ return visaGoWanted_(app) ? '<button class="btn small" id="visaHowGo" style="margin-top:10px">🛂 '+esc(t('How to apply for your e-visa online'))+' →</button>' : ''; }
+/* ---- a team's next steps (Nov 2026, Andrew: "fix the flow of the portal … for teams … a bit confusing") ----
+   The timeline marks one step "current", often one that waits on us (the 1st call), so a leader couldn't tell that
+   passports, names and photos and flights can go in already, and the places to do them sat far down the page.
+   So the top of a team's page lists what is theirs to do now, each with its own button, and what waits on us. */
+function teamTodo_(app){
+  if(!app || app.type!==TEAM_TYPE || !app.submittedAt || app.status==='closed' || app.status==='completed') return null;
+  var st={}; (app.steps||[]).forEach(function(x){ st[x.id]=x; });
+  var open=function(id){ return st[id] && !st[id].done; };
+  var todo=[], wait=[];
+  ['passports','photo','flights'].forEach(function(id){ if(open(id)) todo.push(id); });
+  if(open('evisa') && app.visaOpen) todo.push('evisa');
+  if(app.stage==='practical' && open('practical')) todo.push('practical');
+  if(app.stage==='arrived') todo.push('numbers');
+  if(open('call1')) wait.push('call1');
+  if(open('invitation') && !app.visaOpen && !open('passports') && !open('photo') && !open('flights')) wait.push('invitation');
+  if(open('call2') && !open('call1') && !open('passports') && !open('photo') && !open('flights') && !open('evisa')) wait.push('call2');
+  return { todo:todo, wait:wait };
+}
+function teamTodoHas_(app, id){ var m=teamTodo_(app); return !!(m && m.todo.indexOf(id)>-1); }
+var TEAM_TODO_TEXT = {
+  passports:['Upload passport copies', 'The photo page of every team member’s passport.'],
+  photo:['Add your team members', 'Everyone coming, with a photo of each.'],
+  flights:['Upload your flight itineraries', 'We need them to start your visa process and to pick you up at the airport. Not booked yet? Upload them once you have.'],
+  evisa:['Apply for your e-visas', 'Your letter of invitation and everything else you need is in “How to apply for your e-visa online”. Then upload each approved e-visa.'],
+  practical:['Get ready to travel', 'Read and sign the legal documents, and read the Outreach Leader’s Guide.'],
+  numbers:['Enter your team’s numbers', 'What your team saw God do here — they go into our Outreach Teams figures.'],
+  numbersIn:['Keep your team’s numbers up to date', 'Totals for your whole time with us — add to them as you go.']
+};
+var TEAM_WAIT_TEXT = {
+  call1:'1st call: we will message you on {app} to find a time.',
+  invitation:'Letter of invitation: we are preparing it.',
+  call2:'2nd call: cultural orientation with your whole team — we will message you to set a time.'
+};
+function teamTodoHtml_(app){
+  var m=teamTodo_(app); if(!m) return '';
+  var appName=MESSENGER_LABEL[(P.boot.me||{}).messenger] || t('WhatsApp or Telegram');
+  var docN=function(kind){ return (app.docs||[]).filter(function(d){ return d.kind===kind; }).length; };
+  var up=function(kind){ return '<label class="btn small docUp">⬆ '+esc(t('Upload'))+'<input type="file" multiple accept="application/pdf,image/*" data-docup="'+kind+'" hidden></label>'; };
+  var row=function(id){
+    var tx=TEAM_TODO_TEXT[id], btn='', extra='';
+    if(id==='numbers' && app.trip && Object.keys(app.trip.metrics||{}).some(function(k){ return Number(app.trip.metrics[k])>0; })) tx=TEAM_TODO_TEXT.numbersIn;
+    if(id==='passports' || id==='flights'){ btn=up(id); var n=docN(id); if(n) extra=gpT(n===1?'{n} file in — add the rest':'{n} files in — add the rest',{n:n}); }
+    else if(id==='photo'){ btn='<button class="btn small" data-teamgo="members">'+esc(t('Open my team'))+' →</button>';
+      var tp=P.tphotos; if(tp && (tp.people||[]).length){ var have=tp.people.filter(function(p){ return (tp.photos||{})[p.key]; }).length; extra=gpT('{have} of {n} have a photo',{have:have, n:tp.people.length}); } }
+    else if(id==='evisa') btn='<button class="btn small" id="visaHowGo">🛂 '+esc(t('How to apply for your e-visa online'))+' →</button>';
+    else if(id==='practical') btn='<button class="btn small" data-teamgo="legal">'+esc(t('Read and sign'))+' →</button> <button class="btn ghost small" data-teamgo="guide">'+esc(t('Open the guide'))+'</button>';
+    else if(id==='numbers') btn='<button class="btn small" data-aview="metrics">'+esc(t('Enter our numbers'))+' →</button>';
+    return '<li class="todoRow" data-todo="'+id+'"><span class="todoDot" aria-hidden="true"></span><div><b>'+esc(t(tx[0]))+'</b><div class="sub">'+esc(t(tx[1]))+'</div>'+
+      (extra ? '<div class="hint todoExtra">'+esc(extra)+'</div>' : '')+'<div class="todoBtns">'+btn+'</div></div></li>';
+  };
+  var h='<div class="teamTodo" id="teamTodo"><div class="eyebrow">'+esc(t('Your next steps'))+'</div>';
+  h+= m.todo.length ? '<ol class="todoList">'+m.todo.map(row).join('')+'</ol>'
+    : '<p class="sub" style="margin:4px 0 0">✓ '+esc(t('Nothing for you to do right now.'))+'</p>';
+  if(m.wait.length) h+='<div class="eyebrow" style="margin-top:12px">'+esc(t('Waiting on us'))+'</div><ul class="waitList">'+m.wait.map(function(id){ return '<li data-wait="'+id+'">⏳ '+esc(gpT(TEAM_WAIT_TEXT[id],{app:appName}))+'</li>'; }).join('')+'</ul>';
+  return h+'</div>';
+}
 /* ---- the applicant's dashboard ---- */
 /* ==================== the portal as a tool (Oct 2026, Uriah) ====================
    An applicant's portal is more than the application: four tabs on top.
@@ -1850,7 +1921,7 @@ function stepLiHtml_(app, st, i){
   var isTeam=app.type==='team', LBL=isTeam?TEAM_STEP_LABEL:STEP_LABEL, NOTE=isTeam?TEAM_STEP_NOTE:STEP_NOTE;
   var grp = isTeam && st.group && (!app.steps[i-1] || app.steps[i-1].group!==st.group) ? '<div class="stepGroup">'+esc(t(TEAM_GROUP_LABEL[st.group]||''))+'</div>' : '';
   return '<li class="step '+st.state+'" data-step="'+st.id+'"><span class="dot">'+(st.state==='done'?'✓':(i+1))+'</span><div>'+grp+
-    '<div class="stepName">'+esc(t(LBL[stepKey_(st, isTeam, app)]||st.id))+(isTeam && st.state!=='done' && st.who ? ' <span class="whoTag '+esc(st.who)+'">'+esc(st.who==='you' ? t('You') : t('Us'))+'</span>' : '')+'</div>'+
+    '<div class="stepName">'+esc(t(LBL[stepKey_(st, isTeam, app)]||st.id))+(isTeam && st.state!=='done' && st.who ? ' <span class="whoTag '+esc(st.who)+'">'+esc(st.who==='you' ? t('You') : t('Us'))+'</span>' : '')+(isTeam && st.state!=='done' && teamTodoHas_(app, st.id) ? '<button class="stepNow" data-teamgo="todo:'+esc(st.id)+'">'+esc(t('Do it now'))+' ↑</button>' : '')+'</div>'+
     (NOTE[st.id] && st.state!=='done' && !(isTeam && st.id==='evisa' && app.visaOpen) ? '<div class="stepNote">'+esc(t(NOTE[st.id]))+'</div>' : '')+
     (st.items ? '<ul class="subItems">'+st.items.map(function(it){ return '<li class="'+(it.done?'done':'')+'">'+(it.done?'✓':'○')+' '+esc(t(SUBITEM_LABEL[it.id]||it.id))+(it.done?'':' · <i>'+esc(t('pending'))+'</i>')+
       (it.id==='reference' && !it.done && app.submittedAt && app.status!=='closed' ? ' <button class="linkbtn inline" data-refgo="1">'+esc(t('Send the link to my leader'))+' →</button>' : '')+'</li>'; }).join('')+'</ul>' : '')+
@@ -1879,31 +1950,33 @@ function meHtml_(){
   h+='<div class="card hero"><div class="eyebrow">'+esc(t('Your application'))+'</div>'+
     '<h1 style="font-size:26px">'+esc(me.name)+'</h1><p class="sub" style="margin:2px 0 12px">'+esc(t('Applying for'))+': <b style="color:var(--ink)">'+esc(applyLabel_(app.type, app.school))+'</b>'+(app.campus?' · '+esc(campusName_(app.campus)):'')+'</p>'+
     '<span class="pill big '+esc(app.status)+'" id="statusPill">'+esc(t(STATUS_LABEL[app.status]||app.status))+'</span>'+
-    '<p class="sub" style="margin:12px 0 0">'+esc(gpT(statusNote_(app), {app:appName, campus:campusName_(app.campus||DEFAULT_CAMPUS)}))+'</p>'+visaGoHtml_(app)+gpAppBtnHtml_(app)+
+    '<p class="sub" style="margin:12px 0 0">'+esc(gpT(statusNote_(app), {app:appName, campus:campusName_(app.campus||DEFAULT_CAMPUS)}))+'</p>'+(teamTodo_(app) ? teamTodoHtml_(app) : visaGoHtml_(app))+gpAppBtnHtml_(app)+
     (!app.submittedAt && app.status!=='closed' ? '<div class="banner" id="applyNext" style="margin:12px 0 0"><b>'+esc(t('Next: send in your application'))+'</b><br>'+esc(t('Your account is made, but we only see your application once you submit it.'))+
       '<button class="btn small" id="openFormTop" style="margin-top:8px">'+esc(t('Fill out my application'))+'</button></div>' : '')+'</div>';
   h+='<div class="card"><h3 style="margin-top:0">'+esc(t('Where you are'))+'</h3><ol class="timeline" id="timeline">'+app.steps.map(function(st, i){ return stepLiHtml_(app, st, i); }).join('')+'</ol></div>';
   h+='</div><div>';
-  h+=guideCardHtml_(app);
+  var guideH=guideCardHtml_(app), formH='', restH='';
   var submitted = !!app.submittedAt;
   var total = d.form ? askedAll_(d.form, app.audience).length : 0, done = d.form ? askedAll_(d.form, app.audience).filter(function(q){ return answered_(q, P.answers[q.id]); }).length : 0;
-  h+='<div class="card"><div class="panelHead"><h3 style="margin-top:0">📝 '+esc(t('Application form'))+'</h3>'+(submitted?'<button class="linkbtn inline" id="viewAnswers">'+esc(P.showAnswers?t('Hide'):t('View my application'))+'</button>':'')+'</div>'+
+  formH+='<div class="card" id="formCard"><div class="panelHead"><h3 style="margin-top:0">📝 '+esc(t('Application form'))+'</h3>'+(submitted?'<button class="linkbtn inline" id="viewAnswers">'+esc(P.showAnswers?t('Hide'):t('View my application'))+'</button>':'')+'</div>'+
     (submitted ? '<p class="sub" style="margin:0">✓ '+esc(t('Submitted'))+(app.submittedAt?' · '+esc(fmtDate_(app.submittedAt)):'')+(app.answersUpdatedAt?' · '+esc(gpT('updated {when}',{when:fmtDate_(app.answersUpdatedAt)})):'')+'</p>'+
         (app.type==='team' ? '<p class="hint">'+esc(t('Dates and head counts can be estimates — come back and update them here as your plans firm up.'))+'</p>' : '')+
         (app.status!=='closed' && app.status!=='completed' ? '<button class="btn ghost small" id="editAnswersMine" style="margin-top:10px">'+esc(t('Edit my answers'))+'</button>' : '')+
         (P.showAnswers ? answersHtml_(d.form, P.answers, app.audience) : '')
       : '<p class="sub" style="margin:0 0 8px">'+esc(done ? gpT('{done} of {total} answered — pick up where you left off.',{done:done,total:total}) : t('A few sections about you, your faith and what you are applying for. Your answers save as you go.'))+'</p>'+
         '<button class="btn small" id="openForm">'+esc(done ? t('Continue my application') : t('Fill out my application'))+'</button>')+'</div>';
-  if(app.refNeeded) h+='<div class="card" id="refCard"><h3 style="margin-top:0">🙏 '+esc(t('Leader reference'))+'</h3>'+refCardHtml_(app)+'</div>';
-  h+=legalCardHtml_(app);
-  h+=membersCardHtml_(app);
-  h+=visaCardHtml_(app);
+  if(app.refNeeded) restH+='<div class="card" id="refCard"><h3 style="margin-top:0">🙏 '+esc(t('Leader reference'))+'</h3>'+refCardHtml_(app)+'</div>';
+  restH+=legalCardHtml_(app);
+  restH+=membersCardHtml_(app);
+  restH+=visaCardHtml_(app);
   /* A team's letter of invitation and e-visa uploads are listed once its passports, photos and flights are in — or as soon as
      the e-visa steps are open (the letter uploaded, or staff opened them early): a team waiting on one photo must still find
      the letter staff posted under Documents (Nov 2026, the Rogaland team couldn't). */
-  h+=foldCardHtml_('myDocs', '📎 '+t('Documents'), myDocsSummary_(app), myDocsOpen_(app),
+  restH+=foldCardHtml_('myDocs', '📎 '+t('Documents'), myDocsSummary_(app), myDocsOpen_(app),
     ((app.docKinds||[]).filter(function(k){ return k.id!=='photo' && !k.visa; }).length ? docsBodyHtml_((app.docKinds||[]).filter(function(k){ return k.id!=='photo' && !k.visa && (app.type!=='team' || teamDocsIn_(app) || app.visaOpen || (k.id!=='invitation' && k.id!=='evisa')); }), app.docs||[], app.submittedAt ? 'me' : 'before', '')
       : '<p class="sub" style="margin:0">'+esc(t('After you apply, the things to attach for your kind of application are listed here, each one checked off as it arrives.'))+'</p>'));
+  /* a team's page in the order they use it once applied: the people and papers to send, then the guide and the form */
+  h += (app.type===TEAM_TYPE && app.submittedAt) ? restH+guideH+formH : guideH+formH+restH;
   h+='<div class="card"><div class="panelHead"><h3 style="margin-top:0">📱 '+esc(t('How we reach you'))+'</h3>'+(P.editContact?'':'<button class="linkbtn inline" id="editContact">'+esc(t('Edit'))+'</button>')+'</div>';
   if(P.editContact){
     var c=P.contact||{ phone:me.phone, messenger:me.messenger, country:me.country };
@@ -4199,6 +4272,14 @@ function bind_(){
   on_('viewAsCand', function(){ var c=selected_(); if(!c) return; P.pv.mode='record'; P.pv.candId=c.id; P.pv.boot=null; P.pv.screen='me'; P.pv.sec=0; P.view='preview'; render(); window.scrollTo(0,0); });
   on_('openForm', openForm_);
   on_('openFormTop', openForm_);
+  document.querySelectorAll('[data-teamgo]').forEach(function(b){ b.onclick=function(){
+    var g=b.getAttribute('data-teamgo'), go=function(id){ var el=document.getElementById(id); if(el) el.scrollIntoView({ behavior:'smooth', block:'start' }); return el; };
+    P.fold=P.fold||{};
+    if(g==='members'){ P.fold.teamMembers=true; render(); var m=go('teamMembers'); if(m) m.open=true; }
+    else if(g==='legal') go('legalCard');
+    else if(g==='guide'){ P.guideOpen=true; render(); var o=document.getElementById('guideOverlay'); if(o) o.scrollTop=0; }
+    else if(g.indexOf('todo:')===0){ var r=document.querySelector('[data-todo="'+g.slice(5)+'"]'); if(r) r.scrollIntoView({ behavior:'smooth', block:'center' }); }
+  }; });
   on_('visaHowGo', function(){ P.fold=P.fold||{}; P.fold.visaHow=true; render(); var d=document.getElementById('visaHow'); if(d){ d.open=true; d.scrollIntoView({ behavior:'smooth', block:'start' }); } });
   on_('viewAnswers', function(){ P.showAnswers=!P.showAnswers; render(); });
   on_('refNew', function(){ makeRefLink_(null, function(link, d){ P.refLink=link; if(P.boot.application) P.boot.application.reference=d.reference; render(); }); });

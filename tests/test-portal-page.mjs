@@ -567,6 +567,35 @@ async function open(viewport, query, seed) {
   ok('opened early, before the letter, the top says they can start now and the letter will follow', await page.evaluate(() => /You can start your e-visas now/.test(statusNote_({ type: 'team', visaOpen: true, status: 'docs', visa: { early: '2026-11-20' }, docs: [], steps: [{ id: 'invitation', done: false }, { id: 'evisa', done: false }] }))
     && !/letter of invitation is in/.test(statusNote_({ type: 'team', visaOpen: true, status: 'docs', visa: { early: '2026-11-20' }, docs: [], steps: [{ id: 'invitation', done: false }, { id: 'evisa', done: false }] }))
     && visaGoHtml_({ type: 'team', visaOpen: false, status: 'docs', steps: [{ id: 'evisa', done: false }] }) === ''));
+  ok('Your next steps sits in the top card: here, apply for the e-visas, with the button to the steps', !!(await page.$('.card.hero #teamTodo [data-todo="evisa"] #visaHowGo')));
+  /* Nov 2026 (Andrew: "fix the flow … for teams"): just applied, the 1st call still to come — the top says what they can do already */
+  const early = await page.evaluate(() => {
+    const app = P.boot.application, keep = { steps: app.steps, visaOpen: app.visaOpen, docs: app.docs, stage: app.stage };
+    app.steps = app.steps.map((st, i) => ['account', 'form'].includes(st.id) ? { ...st, done: true, state: 'done' } : { ...st, done: false, state: st.id === 'call1' ? 'current' : 'todo' });
+    app.visaOpen = false; app.docs = [{ id: 'pd_p', kind: 'passports', name: 'passports.pdf', mime: 'application/pdf' }]; app.stage = 'applied';
+    render();
+    const out = {
+      todo: [...document.querySelectorAll('.card.hero [data-todo]')].map(e => e.getAttribute('data-todo')),
+      wait: [...document.querySelectorAll('.card.hero [data-wait]')].map(e => e.getAttribute('data-wait')),
+      waitText: (document.querySelector('[data-wait="call1"]') || {}).textContent || '',
+      uploads: [...document.querySelectorAll('#teamTodo input[data-docup]')].map(e => e.getAttribute('data-docup')),
+      passExtra: (document.querySelector('[data-todo="passports"] .todoExtra') || {}).textContent || '',
+      now: [...document.querySelectorAll('#timeline .stepNow')].map(e => e.closest('[data-step]').getAttribute('data-step')),
+      current: (document.querySelector('#timeline .step.current') || {}).getAttribute ? document.querySelector('#timeline .step.current').getAttribute('data-step') : '',
+      order: [...document.querySelectorAll('#main .card[id], #main details.card[id]')].map(e => e.id)
+    };
+    Object.assign(app, keep);
+    return out;
+  });
+  ok('… what is theirs to do: passports, names and photos, flights', JSON.stringify(early.todo) === '["passports","photo","flights"]', JSON.stringify(early));
+  ok('… and what waits on us: the 1st call, on their messaging app', JSON.stringify(early.wait) === '["call1"]' && /1st call: we will message you on/.test(early.waitText));
+  ok('… passports and flights upload right there; passports says how many files are in', JSON.stringify(early.uploads) === '["passports","flights"]' && /1 file in/.test(early.passExtra), JSON.stringify(early));
+  ok('the timeline still marks the 1st call as where things are, and the steps they can do now say “Do it now”', early.current === 'call1' && JSON.stringify(early.now) === '["passports","photo","flights"]', JSON.stringify(early));
+  ok('once applied, a team’s team members and documents come before the guide and the form', early.order.indexOf('teamMembers') > -1 && early.order.indexOf('teamMembers') < early.order.indexOf('guideCard') && early.order.indexOf('myDocs') < early.order.indexOf('formCard'), early.order.join(','));
+  await page.evaluate(() => { const app = P.boot.application; app._keep = app.steps; app.steps = app.steps.map(st => st.id === 'photo' ? { ...st, done: false, state: 'todo' } : st); P.fold = {}; render(); });
+  await page.click('[data-teamgo="members"]'); await page.waitForTimeout(500);
+  ok('“Open my team” opens Your team members', await page.$eval('#teamMembers', d => d.open));
+  await page.evaluate(() => { const app = P.boot.application; app.steps = app._keep; render(); });
   await ctx.close();
 }
 

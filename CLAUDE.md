@@ -2026,6 +2026,16 @@ forms, documents and references follow.
   staff account (a record whose `staffId` is real staff loses only the record). The panel's
   "Delete this account and application" asks for the name to be typed back. Applicant
   accounts are not in Admin → Accounts, so this is their one delete.
+- **A team's next steps (Nov 2026, Andrew: "fix the flow of the portal … for teams in specific. It's a bit confusing")**: the
+  timeline marks one step "current" — often one that waits on us (the 1st call) — so leaders couldn't tell passports, names and
+  photos and flights could go in already, and the places to do them were far down the page. Once applied, a team's top card has
+  **Your next steps** (`teamTodo_` / `teamTodoHtml_`, `#teamTodo`, `[data-todo]`): passports and flights with their own ⬆ Upload
+  (the Documents card's `data-docup` input), names and photos (`[data-teamgo="members"]` opens Your team members), the e-visas
+  once open (`#visaHowGo` lives here now), getting ready to travel (`[data-teamgo="legal"]` / `"guide"`), and after arrival the
+  team's numbers (`data-aview="metrics"`; "Keep … up to date" once some are in); then **Waiting on us** (`[data-wait]`: the 1st
+  call, the letter once their documents are in, the 2nd call). A step in the list carries **Do it now ↑** in the timeline
+  (`.stepNow`, `data-teamgo="todo:<step>"`). A team's cards after applying go members / documents / legal first, then the guide
+  and the form (`restH+guideH+formH` in `meHtml_`). Khmer: docs/khmer-needed.md §134.
 - **A team has its own stages and journey.**
   - **Stages** (`TEAM_STAGES`): new → applied → call1 (1st call) → docs (awaiting documents)
     → call2 (2nd call, cultural orientation) → practical → arrived. There is no interview.
