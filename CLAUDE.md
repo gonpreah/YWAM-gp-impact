@@ -2927,7 +2927,7 @@ with quarterly reviews on progress." teams/10-review360.js; api.js "360 reviews"
   So that round needs at least three new people (`moreNeed`, `too_few` + `need`); a review closed with too few answers
   to show anything wants just one more and opens plainly. Why: the person could otherwise compare the results before
   and after and read off what one new person said. Don't pour a later round straight into `r.answers`. Thirty people a
-  review at most (`moreRoom`). Khmer: docs/khmer-needed.md §114.
+  review at most (`moreRoom`). Khmer: docs/khmer-needed.md §130.
 - Store: `p360` (one list), written with `mutateKey_` (mutateStaff_'s write-and-check, for
   any key) so two answers at once can't lose one.
 - Tests: tests/test-p360.mjs (the server, anonymity), test-p360-ui.mjs (the whole journey).
