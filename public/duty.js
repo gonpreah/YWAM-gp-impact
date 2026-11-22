@@ -66,10 +66,11 @@ function dutyAddDays(iso, n){ var d=new Date(iso+'T12:00:00'); d.setDate(d.getDa
    line a place, the names beside it), only: a name — just that person's } */
 function dutyHtml(s, o){
   var t=o.t, esc=o.esc;
-  var names=function(list, attr){
+  var names=function(list, key){
     var l=list||[];
     // a space between names: the line can break there, and only there (a name is never split)
-    var inner = l.length ? l.map(function(n){ return '<span class="dutyName'+(dutyIsMe_(n, o.me)?' me':'')+'">'+esc(n)+'</span>'; }).join(' ')
+    // o.flag(name, key) → why this name shouldn't be here (not here that day), when the page is making the week
+    var inner = l.length ? l.map(function(n){ var why=o.flag ? o.flag(n, key) : ''; return '<span class="dutyName'+(dutyIsMe_(n, o.me)?' me':'')+(why?' warn':'')+'"'+(why?' title="'+esc(why)+'" data-dwarn="'+esc(why)+'"':'')+'>'+esc(n)+(why?' <small class="dutyWarn">⚠️ '+esc(why)+'</small>':'')+'</span>'; }).join(' ')
       : (o.edit ? '<span class="dutyEmpty">＋</span>' : '');
     return inner;
   };
@@ -83,11 +84,11 @@ function dutyHtml(s, o){
         s.days.forEach(function(d, i){
           if((r.off||[]).indexOf(d)>-1){ h+='<td class="off"></td>'; return; }
           if(d!==on[0]) return;
-          h+='<td colspan="'+on.length+'"'+(o.edit?' class="dutyCell" data-dcell="'+esc(r.id)+'|all"':'')+'>'+names(s.cells[r.id+'|all'])+'</td>';
+          h+='<td colspan="'+on.length+'"'+(o.edit?' class="dutyCell" data-dcell="'+esc(r.id)+'|all"':'')+'>'+names(s.cells[r.id+'|all'], r.id+'|all')+'</td>';
         });
       } else s.days.forEach(function(d){
         if((r.off||[]).indexOf(d)>-1){ h+='<td class="off"></td>'; return; }
-        h+='<td'+(o.edit?' class="dutyCell" data-dcell="'+esc(r.id)+'|'+d+'"':'')+'>'+names(s.cells[r.id+'|'+d])+'</td>';
+        h+='<td'+(o.edit?' class="dutyCell" data-dcell="'+esc(r.id)+'|'+d+'"':'')+'>'+names(s.cells[r.id+'|'+d], r.id+'|'+d)+'</td>';
       });
       h+='</tr>';
     });
@@ -101,7 +102,7 @@ function dutyHtml(s, o){
     out+='<div class="dutyList'+(o.compact?' compact':'')+'" data-duty="list">'+rows.map(function(r){
       var tag=o.edit?'button':'div';
       return '<'+tag+' class="dutyItem'+(o.edit?' dutyCell':'')+'"'+(o.edit?' data-dcell="'+esc(sec.id)+'|'+esc(r.id)+'"':'')+'><div><div class="dutyPlace">'+esc(r.place)+(r.km?' <span class="dutyKm" style="display:inline">'+esc(r.km)+'</span>':'')+'</div>'+
-        (r.duty && !o.compact?'<div class="dutyWhat">'+esc(r.duty)+'</div>':'')+'</div><div class="dutyWho">'+names(r.people)+'</div></'+tag+'>';
+        (r.duty && !o.compact?'<div class="dutyWhat">'+esc(r.duty)+'</div>':'')+'</div><div class="dutyWho">'+names(r.people, sec.id+'|'+r.id)+'</div></'+tag+'>';
     }).join('')+'</div>';
   });
   return out;

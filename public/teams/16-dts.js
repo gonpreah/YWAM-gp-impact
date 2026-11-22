@@ -583,6 +583,9 @@ function dtsStuHtml_(x, sch){
   var schools=dtsDb_().schools||[];
   h+='<label class="f" for="dtsStuSchool">🏫 '+esc(t('School'))+'</label><select id="dtsStuSchool">'+schools.map(function(s){ return '<option value="'+esc(s.id)+'"'+(x.schoolId===s.id?' selected':'')+'>'+esc(dtsSchoolName_(s))+'</option>'; }).join('')+
     (x.schoolId ? '' : '<option value="" selected>'+esc(t('— not in a school yet —'))+'</option>')+'</select>';
+  /* the day they arrive (Nov 2026): SR Hospitality books their bed from it; the weekly schedules offer them from it */
+  h+='<label class="f" for="dtsStuArrive">🛬 '+esc(t('Arriving'))+'</label><input type="date" id="dtsStuArrive" value="'+esc(x.arrive||'')+'">'+
+    '<p class="hint" style="margin:4px 0 0">'+esc(t('For SR Hospitality’s beds and the weekly schedules. Empty: from the day the school starts.'))+'</p>';
   if(x.arrived) h+='<div class="dtsBtns"><button class="dtsStaff'+(x.potentialStaff?' on':'')+'" data-dtsstaff="'+esc(x.id)+'" aria-pressed="'+!!x.potentialStaff+'">⭐ <span>'+esc(t('Potential staff'))+'</span></button>'+
     (x.graduated ? '<span class="rowSub">🎓 '+esc(gpT('Graduated {date}',{date:fmtDayShort_(x.graduated)}))+' · <button class="linkbtn inline" data-dtsungrad="'+esc(x.id)+'">'+esc(t('Undo'))+'</button></span>' : '')+'</div>'+dtsPipeLine_(x);
   return h+'</div>';
@@ -879,6 +882,7 @@ function bindDtsDb_(){
   if(ooIn){ ooIn.oninput=function(){ S.dtsOoType=ooIn.value; }; ooIn.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); ooSave(); } }; }
   on('dtsStuOOSave', ooSave);
   var ss=document.getElementById('dtsStuSchool'); if(ss) ss.onchange=function(){ if(ss.value) dtsStuSave_(S.dtsStu, { schoolId:ss.value }); };
+  var sa=document.getElementById('dtsStuArrive'); if(sa) sa.onchange=function(){ if(!sa.value || /^\d{4}-\d{2}-\d{2}$/.test(sa.value)) dtsStuSave_(S.dtsStu, { arrive:sa.value }); };
   all('[data-dtsplace]', function(b){ dtsStuSave_(b.getAttribute('data-dtsplace'), { schoolId:S.dtsSchool }); });
   // events
   on('dtsEvAdd', function(){ S.dtsEv={ title:'', date:'', end:'', notes:'', schoolId:S.dtsSchool }; render(); var n=document.getElementById('de_title'); if(n) n.focus(); });
