@@ -1256,6 +1256,13 @@ Team · Health · Library. Five tabs stay on one line down to 320px; where the f
 too long for a tab, `navLabel_` uses a short one kept as 'Tab: <English>' in km.js
 (My Ministry → ការបម្រើ), and test-khmer checks no label overflows.
 
+**On an iPad** (Nov 2026, Uriah: "more iPad friendly"; end of teams.css): a phone is unchanged. From 700px wide
+(an iPad held upright) the page is 760px wide and the five tabs sit together in the middle of the bar; from 900px
+(an iPad on its side, a computer) the bar is a **rail down the left edge** (`nav.bottom` turned to a column, body
+`padding-left` 96px, the open tab on a tint), the page up to 900px, the round ＋ lower — and the rail stays up while
+typing (`body.kbOpen` only hides the phone bar). The same `nav.bottom button[data-tab]`, so nothing else changed.
+tests/test-bottom-bar.mjs §3.
+
 ## My Home — the layout (reorganised Oct 2026)
 **Made simpler, Nov 2026 (Andrew: "I don't want it to be too much to see … like the widgets on an iPhone … if the
 leave form is already in there, why is it on twice?")** — each thing is on My Home once:
@@ -2964,6 +2971,17 @@ with quarterly reviews on progress." teams/10-review360.js; api.js "360 reviews"
   carries both (`p360ask`, and on Mondays `p360plan`).
 - **Sharing**: the person picks who else sees the results, their own answers and the plan
   (`p360Share`, ≤10; their mentor first) — read-only, never who was asked. They can delete it.
+- **Asking more people, also after it has closed** (Nov 2026, Uriah: "send it to more people to get input even after
+  it's been closed"): **＋ Ask more people** (`#p3More`, `p3MoreBtnHtml_`) on the person's own review, open or closed →
+  the picker without the people already asked (`p3MoreHtml_`, `S.p3Draft.more`, `#p3MoreSend`) → `p360AskMore(id,
+  {reviewers, due})`. An open review just gets the extra people. A closed one opens again (`gathering`, `#p3Gather`)
+  with **the results exactly as they were**: once results have been seen, new answers go to `r.more.answers` (who was
+  added: `r.more.ids`) and count only — all together — when it is closed again with at least `P360_MIN_N` of them
+  (`p360Answers_`); fewer stay waiting (`held`, `#p3Held`, "2 new answers are waiting"), and asking again keeps them.
+  So that round needs at least three new people (`moreNeed`, `too_few` + `need`); a review closed with too few answers
+  to show anything wants just one more and opens plainly. Why: the person could otherwise compare the results before
+  and after and read off what one new person said. Don't pour a later round straight into `r.answers`. Thirty people a
+  review at most (`moreRoom`). Khmer: docs/khmer-needed.md §132.
 - Store: `p360` (one list), written with `mutateKey_` (mutateStaff_'s write-and-check, for
   any key) so two answers at once can't lose one.
 - Tests: tests/test-p360.mjs (the server, anonymity), test-p360-ui.mjs (the whole journey).
@@ -3814,6 +3832,20 @@ Claude build out tasks and calendar dates in line with our verbal processing."
   microphone anywhere, and `voiceTasks` answers `not_set_up`. Usage is billed to that key's Anthropic account.
 - **What leaves the site**: the words said, the names of the person's own task lists, and the names of their campus's
   active staff (so "ask Sokha" can become Sokha). The sheet says so. Never ids, usernames or anything else.
+- **Never stuck, and Khmer** (Nov 2026, Uriah: "the voice mode to tasks … just freezes" / "how it might work in Khmer
+  language"). The freeze was on the phone (no server errors): the browser's listening can start and then hang with no
+  word or end, worst in an iPhone Home Screen app. Now: no in-app mic there (`gvRec_` → the keyboard-microphone hint);
+  elsewhere a watchdog stops listening that has heard nothing in `GV_LISTEN_WAIT` (9 s) and every `onerror` ends it
+  with a message; the ask has its own `GV_ASK_WAIT` (30 s) and a late answer is ignored (`V.ask`); Cancel works while
+  it waits; `voiceTasks` is not held behind the kept copy's fresh boot (`run()`); the server answers in
+  `VOICE_WAIT_MS` (17 s), before the page's own 20 s request limit, so slow says "too long", not "no connection".
+  **I'm talking in ខ្មែរ / English** (`gvLangHtml_`, `[data-gvlang]`, `gp-gv-lang` on the phone; starts from the app's
+  language) sets the listening language (km-KH) and goes to the server as `spoke`; with Khmer the instructions add
+  `VOICE_KHMER` — Khmer days, the hour + part of the day (ម៉ោង ២ រសៀល = 14:00, កន្លះ = :30), Khmer digits, names matched
+  by sound to the Latin roster with words of respect (បង, លោកគ្រូ…) dropped, "ប្រាប់ … ឲ្យ" as giving a task. Titles stay
+  in the words they used (mixed stays mixed), the note in the app's language. On an iPhone, Apple's dictation has no
+  Khmer, so the sheet points to Gboard's microphone (`gvKmHintHtml_`). Tried on the real model with a made-up mixed
+  Khmer ramble: days, 3 pm after "2… no, 3", and both people came out right. Khmer: docs/khmer-needed.md §131.
 - tests/test-voice-tasks.mjs (server), tests/test-voice-tasks-ui.mjs; both use tests/voice-fixtures.mjs, a stand-in
   for the SDK written into the test's own node_modules — no test calls Anthropic. Khmer: docs/khmer-needed.md §113.
   sw.js SHELL v26.

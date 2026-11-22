@@ -308,7 +308,7 @@ function run(fn, args, onOk, onErr){
      today's data, not the copy, and a read answers with what is true now. They
      go out in order the moment it lands (gpBootFresh_), or, if it fails, fall
      to the offline handling they already have. */
-  if(S.bootStale && fn!=='getMyBoot' && fn!=='getTasksBoot'){ _gpHeld.push([fn, args, onOk, onErr]); return; }
+  if(S.bootStale && fn!=='getMyBoot' && fn!=='getTasksBoot' && fn!=='voiceTasks'){ _gpHeld.push([fn, args, onOk, onErr]); return; }
   var ctl = (typeof AbortController === 'function') ? new AbortController() : null;
   var settled = false;
   var timer = setTimeout(function(){ if(!settled && ctl) ctl.abort(); }, REQUEST_TIMEOUT_MS);
