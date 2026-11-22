@@ -3623,3 +3623,7 @@ button.homeBaseHead { width:100%; padding:0; border:0; background:none; color:in
   nav.bottom button:hover { color:var(--ink); }
   .dircard:hover { border-color:var(--accent); }
 }
+
+.gvLang { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:13px; color:var(--muted); }
+.gvLang .chip { margin:0; }
+.gvKmHint { font-size:12.5px; }

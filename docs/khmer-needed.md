@@ -6029,6 +6029,20 @@ The schedule editor's "Who is here this week" note (who leaves or arrives midwee
 | For SR Hospitality’s beds and the weekly schedules. Empty: from the day the school starts. | សម្រាប់គ្រែរបស់ SR Hospitality និងកាលវិភាគប្រចាំសប្តាហ៍។ ទទេ៖ ចាប់ពីថ្ងៃដែលសាលាចាប់ផ្តើម។ |
 | Typed before | បានវាយពីមុន |
 
+## 131. Talk it through → tasks: which language you talk in, and when listening stops
+
+In the GP Tasks microphone sheet: a switch for the language the person talks in (it can differ from the app's), a hint for Khmer (on an iPhone, Khmer goes through the Gboard keyboard), and what the sheet says when the phone stops listening. Short lines in a small sheet.
+
+| English | Khmer (draft) |
+|---|---|
+| I’m talking in | ខ្ញុំកំពុងនិយាយជា |
+| iPhone dictation has no Khmer. Install the Gboard keyboard, add Khmer to it, then tap the box and Gboard’s microphone, and talk. | ការនិយាយបញ្ចូលរបស់ iPhone មិនមានភាសាខ្មែរទេ។ សូមដំឡើងក្តារចុច Gboard បន្ថែមភាសាខ្មែរ រួចចុចលើប្រអប់ និងមីក្រូហ្វូនរបស់ Gboard ហើយនិយាយ។ |
+| Mixing Khmer and English is fine. Say names and times the way you normally would. | និយាយខ្មែរលាយអង់គ្លេសក៏បាន។ និយាយឈ្មោះ និងម៉ោង ដូចដែលអ្នកនិយាយធម្មតា។ |
+| This phone can’t listen here. Tap the box, then the microphone on your keyboard, and talk. | ទូរស័ព្ទនេះមិនអាចស្តាប់នៅទីនេះបានទេ។ សូមចុចលើប្រអប់ រួចចុចមីក្រូហ្វូននៅលើក្តារចុចរបស់អ្នក ហើយនិយាយ។ |
+| I couldn’t hear anything. Tap to talk again, or use the microphone on your keyboard. | ខ្ញុំមិនបានឮអ្វីទេ។ សូមចុចដើម្បីនិយាយម្តងទៀត ឬប្រើមីក្រូហ្វូននៅលើក្តារចុចរបស់អ្នក។ |
+| This phone can’t listen in Khmer. Use the Gboard keyboard’s microphone, or switch to English. | ទូរស័ព្ទនេះមិនអាចស្តាប់ភាសាខ្មែរបានទេ។ សូមប្រើមីក្រូហ្វូនរបស់ក្តារចុច Gboard ឬប្តូរទៅភាសាអង់គ្លេស។ |
+| Listening stopped. Tap to talk again, or use the microphone on your keyboard. | ការស្តាប់បានឈប់។ សូមចុចដើម្បីនិយាយម្តងទៀត ឬប្រើមីក្រូហ្វូននៅលើក្តារចុចរបស់អ្នក។ |
+
 ## 132. 360 reviews — asking more people after it has closed
 
 On a 360 review that has closed (or is still open): a button to send it to more people, the form to pick them, and the lines that explain why new answers wait until three are in. The long line is a promise about anonymity — check it first.
