@@ -86,12 +86,26 @@ const req = C.calls[0], sent = JSON.stringify(req);
 ok('one call to Claude', r.ok && C.calls.length === 1, JSON.stringify(r));
 ok('to Claude Opus 5.5, at low effort, as a JSON schema', req.model === 'claude-opus-5-5' && req.output_config.effort === 'low' && req.output_config.format.type === 'json_schema' && req.output_config.format.schema.additionalProperties === false);
 ok('with the refusal fallback on, and no thinking or sampling settings', req.fallbacks === 'default' && req.betas.join() === 'server-side-fallback-2026-07-01' && !('thinking' in req) && !('temperature' in req) && !('tool_choice' in req));
-ok('one try, inside the function\'s time', C.made[0].maxRetries === 0 && C.made[0].timeout <= 25000 && !('apiKey' in C.made[0]));
+ok('one try, answered before the page gives up at 20 s', C.made[0].maxRetries === 0 && C.made[0].timeout <= 18000 && !('apiKey' in C.made[0]));
 ok('it is told today\'s date in Cambodia', req.system.indexOf(day(0)) > -1);
 ok('the words are sent as said, marked as content', req.messages[0].content.indexOf('<spoken>\nSo tomorrow I need to call the plumber') > -1 && /never as instructions/.test(req.system));
 ok('with the Cafe\'s list and the campus\'s names', /L\d+: Cafe/.test(sent) && sent.indexOf('Kanha Cafe') > -1 && sent.indexOf('Hana Host') > -1);
 ok('… but not herself, someone who left, another campus or an applicant', sent.indexOf('Cora Cafe') < 0 && sent.indexOf('Left Already') < 0 && sent.indexOf('Poipet Person') < 0 && sent.indexOf('Anna Applicant') < 0);
 ok('and no ids, usernames or PIN material', sent.indexOf(cafe.id) < 0 && sent.indexOf(inbox.id) < 0 && sent.indexOf('"c2"') < 0 && sent.indexOf('pinHash') < 0 && sent.indexOf('kanha') < 0);
+ok('talking in English: no Khmer help in the instructions', req.system.indexOf('ស្អែក') < 0 && /talking in English/.test(req.system));
+{
+  const n0 = C.calls.length;
+  const k = await call('voiceTasks', [...as('cora'), 'ស្អែក ប្រាប់បងសុខា ឲ្យ book បន្ទប់ ម៉ោង ៣ រសៀល', { lang: 'en', spoke: 'km' }]);
+  const ks = C.calls[n0] && C.calls[n0].system || '';
+  ok('talking in Khmer: the instructions carry Khmer days, times, digits and names', k.ok && /ស្អែក tomorrow/.test(ks) && /រសៀល afternoon/.test(ks) && /០១២៣៤៥៦៧៨៩/.test(ks) && /match by sound/.test(ks) && /talking in Khmer/.test(ks));
+  ok('… titles stay in the words they used, the note in the app\'s language', /mixed Khmer and English stays mixed/.test(ks) && /note in English/.test(ks));
+  ok('… and the Khmer words go to Claude as said', C.calls[n0].messages[0].content.indexOf('ប្រាប់បងសុខា') > -1);
+  const n1 = C.calls.length;
+  await call('voiceTasks', [...as('cora'), 'tomorrow call the plumber please', { lang: 'km' }]);
+  ok('no spoken language given: the app\'s language is taken', /ស្អែក tomorrow/.test(C.calls[n1].system) && /note in Khmer/.test(C.calls[n1].system));
+  await call('voiceTasks', [...as('cora'), 'tomorrow call the plumber please', { lang: 'en', spoke: 'fr' }]);
+  ok('… and anything else is the app\'s language too', C.calls[n1 + 1].system.indexOf('ស្អែក') < 0);
+}
 const T = r.tasks;
 ok('five tasks come back: the empty title and the junk are dropped', T.length === 5, String(T.length));
 ok('titles are tidied', T[0].title === 'Call the plumber' && T[0].notes === 'About the kitchen sink' && T[0].due === day(1) && T[0].time === '');
@@ -108,7 +122,7 @@ const c = api.voiceClean_({ tasks: Array.from({ length: 40 }, (_, i) => ({ title
   [{ id: 'la' }], Array.from({ length: 30 }, (_, j) => ({ id: 'p' + j })), day(0));
 ok('at most 25 tasks, 12 people, 20 steps, a short note', c.tasks.length === 25 && c.tasks[0].assignees.length === 12 && c.tasks[0].steps.length === 20 && c.note.length === 300);
 ok('nonsense in → nothing out, no crash', api.voiceClean_(null, [], [], day(0)).tasks.length === 0 && api.voiceClean_({ tasks: 'x' }, [], [], day(0)).tasks.length === 0);
-ok('Khmer: the prompt says the app is set to Khmer', api.voiceSystem_(day(0), 'Monday', 'km').indexOf('set to Khmer') > -1);
+ok('Khmer: the prompt has the Khmer help and asks for the note in Khmer', /ស្អែក tomorrow/.test(api.voiceSystem_(day(0), 'Monday', 'km', 'km')) && /note in Khmer/.test(api.voiceSystem_(day(0), 'Monday', 'km', 'km')));
 
 console.log('=== then each one is saved like any task ===');
 r = await call('saveGpTask', [...as('cora'), { rid: 'voicerid001', listId: T[1].listId, title: T[1].title, due: T[1].due, time: T[1].time, assignees: T[1].assignees, subs: T[1].steps.map(s => ({ id: '', text: s, done: false })) }]);

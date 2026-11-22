@@ -3537,3 +3537,6 @@ button.homeBaseHead { width:100%; padding:0; border:0; background:none; color:in
 .invState { font-size:12px; font-weight:700; border-radius:999px; padding:3px 9px; background:var(--line); color:var(--muted); white-space:nowrap; }
 .invState.ok { background:var(--accent); color:var(--accentInk); }
 
+.gvLang { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:13px; color:var(--muted); }
+.gvLang .chip { margin:0; }
+.gvKmHint { font-size:12.5px; }
