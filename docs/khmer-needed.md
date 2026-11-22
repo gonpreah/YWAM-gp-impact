@@ -6042,3 +6042,24 @@ In the GP Tasks microphone sheet: a switch for the language the person talks in 
 | I couldn’t hear anything. Tap to talk again, or use the microphone on your keyboard. | ខ្ញុំមិនបានឮអ្វីទេ។ សូមចុចដើម្បីនិយាយម្តងទៀត ឬប្រើមីក្រូហ្វូននៅលើក្តារចុចរបស់អ្នក។ |
 | This phone can’t listen in Khmer. Use the Gboard keyboard’s microphone, or switch to English. | ទូរស័ព្ទនេះមិនអាចស្តាប់ភាសាខ្មែរបានទេ។ សូមប្រើមីក្រូហ្វូនរបស់ក្តារចុច Gboard ឬប្តូរទៅភាសាអង់គ្លេស។ |
 | Listening stopped. Tap to talk again, or use the microphone on your keyboard. | ការស្តាប់បានឈប់។ សូមចុចដើម្បីនិយាយម្តងទៀត ឬប្រើមីក្រូហ្វូននៅលើក្តារចុចរបស់អ្នក។ |
+
+## 132. 360 reviews — asking more people after it has closed
+
+On a 360 review that has closed (or is still open): a button to send it to more people, the form to pick them, and the lines that explain why new answers wait until three are in. The long line is a promise about anonymity — check it first.
+
+| English | Khmer (draft) |
+|---|---|
+| Ask more people | សួរមនុស្សបន្ថែម |
+| You have already seen the results, so the new answers are kept apart and added all together once at least {n} new people have answered. That way nobody’s answer can be picked out. | អ្នកបានឃើញលទ្ធផលរួចហើយ ដូច្នេះចម្លើយថ្មីត្រូវបានទុកដោយឡែក ហើយបញ្ចូលទាំងអស់ព្រមគ្នា នៅពេលមានមនុស្សថ្មីយ៉ាងហោចណាស់ {n} នាក់បានឆ្លើយ។ ធ្វើដូច្នេះ គ្មាននរណាអាចដឹងថាចម្លើយណាជារបស់អ្នកណាទេ។ |
+| They get the same questions. You’ll never see who has answered. | ពួកគេទទួលបានសំណួរដូចគ្នា។ អ្នកនឹងមិនឃើញថាអ្នកណាបានឆ្លើយទេ។ |
+| Who else to ask | សួរអ្នកណាទៀត |
+| That is too many — {n} more at most | ច្រើនពេក — បន្ថែមបានច្រើនបំផុត {n} នាក់ |
+| Open again for more people | បើកម្តងទៀតសម្រាប់មនុស្សបន្ថែម |
+| {a} of {n} have answered in all{until}. The results below are as they were — the new answers are added when you close it, once at least {m} new people have answered. | សរុប {a} នាក់ក្នុងចំណោម {n} នាក់បានឆ្លើយ{until}។ លទ្ធផលខាងក្រោមនៅដដែល — ចម្លើយថ្មីនឹងត្រូវបញ្ចូលពេលអ្នកបិទវា នៅពេលមានមនុស្សថ្មីយ៉ាងហោចណាស់ {m} នាក់បានឆ្លើយ។ |
+| Close it and add the new answers | បិទវា ហើយបញ្ចូលចម្លើយថ្មី |
+| Closed with {a} answers. Fewer than {n} can’t be shown without people being able to work out who said what — ask a few more people. | បានបិទដោយមានចម្លើយ {a}។ បើតិចជាង {n} មិនអាចបង្ហាញបានទេ ព្រោះអាចទាយដឹងថាអ្នកណានិយាយអ្វី — សូមសួរមនុស្សបន្ថែមខ្លះទៀត។ |
+| 1 new answer is waiting. It is added once at least {n} new people have answered — ask a few more. | មានចម្លើយថ្មី ១ កំពុងរង់ចាំ។ វានឹងត្រូវបញ្ចូលនៅពេលមានមនុស្សថ្មីយ៉ាងហោចណាស់ {n} នាក់បានឆ្លើយ — សូមសួរបន្ថែមខ្លះទៀត។ |
+| {a} new answers are waiting. They are added once at least {n} new people have answered — ask a few more. | មានចម្លើយថ្មី {a} កំពុងរង់ចាំ។ វានឹងត្រូវបញ្ចូលនៅពេលមានមនុស្សថ្មីយ៉ាងហោចណាស់ {n} នាក់បានឆ្លើយ — សូមសួរបន្ថែមខ្លះទៀត។ |
+| Want more input? You can ask more people, even now it has closed. | ចង់បានមតិបន្ថែម? អ្នកអាចសួរមនុស្សបន្ថែមបាន ទោះបីវាបានបិទហើយក៏ដោយ។ |
+| Pick at least {n} new people. | សូមជ្រើសរើសមនុស្សថ្មីយ៉ាងហោចណាស់ {n} នាក់។ |
+| That is too many people for one review. | មនុស្សច្រើនពេកសម្រាប់ការវាយតម្លៃមួយ។ |

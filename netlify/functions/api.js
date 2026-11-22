@@ -5426,6 +5426,8 @@ async function saveMySupport(username, pin, support) {
    - The action plan comes from the results: actions { id, area (a question's key), what,
      measure (how I'll know), by (YYYY-Qn) }, and each quarter a review of every action
      { status notstarted|ontrack|stuck|done, note } with a reflection, under 'YYYY-Qn'.
+   - More people can be asked later, also after it has closed (p360AskMore): see p360Answers_ for
+     why their answers wait apart until three are in.
    Store: 'p360' — every review, one list (mutateKey_ makes a concurrent answer safe). */
 const P360_MIN_N = 3, P360_MAX_REVIEWERS = 30, P360_TEXT = 1000;
 const P360_QS = ['faith', 'vision', 'care', 'comms', 'team', 'reliable', 'humble', 'decide', 'culture'];
@@ -5478,7 +5480,17 @@ async function p360People_() {
   board.forEach(function (b) { map[b.id] = { id: b.id, name: b.name, photo: b.photo || '', kind: 'board', campus: '' }; });
   return map;
 }
-function p360Results_(r) {
+/* ASKING MORE PEOPLE AFTER IT CLOSED (Nov 2026, Uriah: "send it to more people to get input even after it's
+   been closed"). The person has already seen the results, so a second round can't simply be poured in: results
+   before and after would differ by exactly what the new people said, and one new answer would be readable.
+   So once results have been shown, new answers wait apart (r.more.answers) and only count — all together —
+   when the review is closed again with at least P360_MIN_N of them. Until then the results stay exactly as
+   they were, and fewer than that many stay waiting (the person is told how many, never whose). */
+function p360Answers_(r, closed) {
+  return closed && r.more && r.more.answers.length >= P360_MIN_N ? r.answers.concat(r.more.answers) : r.answers;
+}
+function p360Results_(r, answers) {
+  r = { answers: answers || r.answers };
   const n = r.answers.length;
   if (n < P360_MIN_N) return null;
   const areas = {};
@@ -5506,7 +5518,13 @@ function p360Out_(r, me, people) {
     out.sharedWith = r.sharedWith.map(function (id) { const p = people[id]; return { id: id, name: p ? p.name : '' }; });
   }
   out.self = r.self || null;
-  out.results = closed ? p360Results_(r) : null;
+  out.results = (closed || r.more) ? p360Results_(r, p360Answers_(r, closed)) : null;
+  out.gathering = !closed && !!r.more;   // open again for more people, the earlier results still showing
+  if (isSubject) {
+    out.held = closed && r.more && r.more.answers.length < P360_MIN_N ? r.more.answers.length : 0;
+    out.moreNeed = r.answers.length >= P360_MIN_N ? Math.max(1, P360_MIN_N - (r.more ? r.more.ids.length : 0)) : 1;
+    out.moreRoom = Math.max(0, P360_MAX_REVIEWERS - r.reviewers.length);
+  }
   out.plan = r.plan || { actions: [], reviews: {} };
   return out;
 }
@@ -5566,7 +5584,8 @@ async function p360Answer(username, pin, id, answer) {
     if (!r || r.reviewers.indexOf(c.me) === -1) return { abort: true, ok: false, err: 'not_found' };
     if (p360Closed_(r)) return { abort: true, ok: false, err: 'closed' };
     if (r.done.indexOf(c.me) > -1) return { abort: true, ok: false, err: 'already' };
-    r.answers.splice(crypto.randomInt(r.answers.length + 1), 0, a);
+    const into = r.more ? r.more.answers : r.answers;   // a later round waits apart — see p360Answers_
+    into.splice(crypto.randomInt(into.length + 1), 0, a);
     r.done.push(c.me); r.done.sort();
     r.declined = (r.declined || []).filter(function (x) { return x !== c.me; });
     return { ok: true };
@@ -5600,6 +5619,30 @@ async function p360Self(username, pin, id, answer) {
 }
 async function p360Close(username, pin, id) {
   return p360Mine_(username, pin, id, function (r) { if (r.status !== 'closed') { r.status = 'closed'; r.closedAt = new Date().toISOString(); } });
+}
+async function p360AskMore(username, pin, id, x) {
+  x = x && typeof x === 'object' ? x : {};
+  const due = isoDate_(x.due);
+  if (due && due < baseToday_()) return { ok: false, err: 'bad_date' };
+  return p360Mine_(username, pin, id, function (r, c) {
+    const ids = []; (Array.isArray(x.reviewers) ? x.reviewers : []).forEach(function (pid) { if (c.people[pid] && pid !== c.me && r.reviewers.indexOf(pid) === -1 && ids.indexOf(pid) === -1) ids.push(pid); });
+    if (!ids.length) return { err: 'none' };
+    if (r.reviewers.length + ids.length > P360_MAX_REVIEWERS) return { err: 'too_many' };
+    const closed = p360Closed_(r);
+    if (closed || r.more) {
+      if (closed && r.more && r.more.answers.length >= P360_MIN_N) {   // the last round was already counted in the results: make it part of them
+        r.more.answers.forEach(function (a) { r.answers.splice(crypto.randomInt(r.answers.length + 1), 0, a); });
+        r.more = null;
+      }
+      if (r.answers.length >= P360_MIN_N) {   // results have been seen: the new people's answers wait apart
+        r.more = r.more || { ids: [], answers: [] };
+        if (r.more.ids.length + ids.length < P360_MIN_N) return { err: 'too_few', need: P360_MIN_N - r.more.ids.length };
+        r.more.ids = r.more.ids.concat(ids);
+      }
+      r.status = 'open'; r.due = due; r.reopenedAt = new Date().toISOString();
+    } else if (due) r.due = due;
+    r.reviewers = r.reviewers.concat(ids);
+  });
 }
 async function p360Share(username, pin, id, ids) {
   return p360Mine_(username, pin, id, function (r, c) {
@@ -14455,6 +14498,7 @@ const HANDLERS = {
   p360Decline: function (a) { return p360Decline(a[0], a[1], a[2]); },
   p360Self: function (a) { return p360Self(a[0], a[1], a[2], a[3]); },
   p360Close: function (a) { return p360Close(a[0], a[1], a[2]); },
+  p360AskMore: function (a) { return p360AskMore(a[0], a[1], a[2], a[3]); },
   p360Share: function (a) { return p360Share(a[0], a[1], a[2], a[3]); },
   p360SavePlan: function (a) { return p360SavePlan(a[0], a[1], a[2], a[3]); },
   p360Review: function (a) { return p360Review(a[0], a[1], a[2], a[3], a[4], a[5]); },
