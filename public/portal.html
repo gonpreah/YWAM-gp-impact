@@ -117,10 +117,12 @@ textarea { min-height:80px; resize:vertical; }
 .chip:disabled { opacity:.5; cursor:default; }
 .memberList { margin:0 0 8px; padding-left:22px; line-height:1.6; }
 /* the applicant's tabs, meet our team, strengths, resources */
-.anav { display:grid; gap:4px; }
+.staffNav.anav { display:grid; gap:4px; flex-wrap:nowrap; }
 .anav .staffNavBtn { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; min-width:0; padding:8px 2px 7px; font-size:11.5px; line-height:1.15; white-space:normal; text-align:center; }
 .anav .aIcon { font-size:18px; line-height:1; } .anav .aLabel { overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 @media (min-width:600px) { .anav .staffNavBtn { flex-direction:row; gap:7px; font-size:13.5px; padding:9px 10px; } }
+/* on a phone the tabs go three to a row, so six make an even two rows and every label has room */
+@media (max-width:599px) { .staffNav.anav { grid-template-columns:repeat(3, minmax(0,1fr)) !important; } }
 .meetGrid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; }
 @media (min-width:600px) { .meetGrid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
 @media (min-width:900px) { .meetGrid { grid-template-columns:repeat(4, minmax(0,1fr)); } }
@@ -271,6 +273,8 @@ textarea { min-height:80px; resize:vertical; }
 .whatTab:hover { color:var(--ink); }
 .whatTab.on { background:var(--ink); color:var(--accentInk); }
 .whatTab .n { font-size:11.5px; font-weight:600; opacity:.7; }
+/* on a phone, four to a row: All and the seven kinds make two even rows, none left alone (Nov 2026) */
+@media (max-width:599px) { .whatTabs { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:4px; } .whatTab { padding:9px 4px; font-size:13px; gap:4px; } }
 /* the application form */
 .formProgress { display:flex; flex-direction:column; align-items:center; gap:8px; font-size:13px; color:var(--muted); }
 .formProgress .bar { width:220px; max-width:70vw; height:4px; background:var(--border2); border-radius:2px; overflow:hidden; }
@@ -452,6 +456,9 @@ body.menuOn { overflow:hidden; }
 .menuGroup { display:flex; flex-direction:column; gap:2px; }
 .menuItem { text-align:left; border:0; background:transparent; color:var(--ink); font:inherit; font-size:14.5px; font-weight:600; padding:9px 10px; border-radius:var(--rSm); cursor:pointer; }
 .menuItem:hover { background:var(--surface2); } .menuItem.on { background:var(--ink); color:var(--accentInk); }
+.menuFoot { margin-top:auto; padding-top:10px; border-top:1px solid var(--border); }
+.hbtn.icon { padding:6px 9px; display:inline-flex; align-items:center; justify-content:center; line-height:1; }
+.hbtn.menuBtn.on { background:var(--ink); color:var(--accentInk); border-color:var(--ink); }
 .accessRow { display:grid; grid-template-columns:1fr 92px 92px; gap:8px; align-items:center; padding:9px 0; border-top:1px solid var(--border); }
 .accessRow.head { border-top:0; padding-top:0; font-size:12px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
 .accessRow.head span:not(:first-child), .accessChk { text-align:center; justify-self:center; }
@@ -748,7 +755,7 @@ function boot_(){
     P.view='login'; P.err='boot'; render();
   }, function(e){ P.view='login'; P.err='boot'; render(); showMsg(t('Connection problem — try again.')); });
 }
-function signOut_(){ lsDel('gp-portal'); P.auth=null; P.boot=null; P.sel=null; P.view='login'; P.aview='status'; P.meet=null; P.staffPhotos={}; P.strengths=null; P.ptest=null; P.resources=null; P.resDraft=null; render(); }
+function signOut_(){ lsDel('gp-portal'); P.menuOpen=false; P.linkOpen=false; P.auth=null; P.boot=null; P.sel=null; P.view='login'; P.aview='status'; P.meet=null; P.staffPhotos={}; P.strengths=null; P.ptest=null; P.resources=null; P.resDraft=null; render(); }
 
 /* ---- the logo ----
    PORTAL_LOGO is the YWAM mark for the top of the page — drop the file into
@@ -764,9 +771,10 @@ var PORTAL_LOGO = 'ywam-logo.png';
 /* ---- render ---- */
 function render(){
   var hb=document.getElementById('hbtns');
+  /* Signed in, the header is the language and ☰ in the top-right corner, as in the GP app (Andrew, Nov 2026: "move that
+     hamburger menu … in the top right corner … put the sign out button in the menu"). */
   hb.innerHTML='<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>'+
-
-    (P.auth && P.boot ? '<button class="hbtn" id="outBtn">'+esc(t('Sign out'))+'</button>' : '');
+    (P.auth && P.boot ? '<button class="hbtn icon menuBtn'+(P.menuOpen?' on':'')+'" id="navMenu" aria-label="'+esc(t('Menu'))+'" aria-expanded="'+(P.menuOpen?'true':'false')+'" aria-controls="staffMenu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>' : '');
   var m=document.getElementById('main');
   var v=P.view;
   /* The gate — everything before you are signed in — is the portal's name
@@ -778,6 +786,7 @@ function render(){
   try { m.innerHTML = (staffView ? staffNavHtml_(v) : applicantTabs ? applicantNavHtml_() : '') + (v==='booting' ? '<p class="sub" style="text-align:center;padding:40px 0">'+esc(t('Loading…'))+'</p>'
     : v==='register' ? registerHtml_() : v==='choose' ? chooseHtml_() : v==='me' ? meTabHtml_() : v==='crm' ? crmHtml_() : v==='form' ? formHtml_() : v==='forms' ? formsHtml_() : v==='resources' ? resourcesAdminHtml_() : v==='team' ? teamAdminHtml_() : v==='access' ? accessHtml_() : v==='accounts' ? accountsHtml_() : v==='import' ? importHtml_() : v==='preview' ? previewHtml_()
     : v==='noaccess' ? noAccessHtml_() : v==='ref' ? refHtml_() : v==='stay' ? stayHtml_() : v==='join' ? joinHtml_() : v==='sign' ? signHtml_() : v==='legal' ? legalAdminHtml_() : v==='visa' ? visaAdminHtml_() : loginHtml_())
+    + (P.menuOpen && P.auth && P.boot ? menuDrawerHtml_(v) : '')
     + (P.guideOpen && P.boot && typeof outreachGuideHtml==='function' ? guideOverlayHtml_() : '')
     + (staffView && P.docGallery ? docGalleryHtml_() : '');
   document.body.classList.toggle('guideOn', !!(P.guideOpen && P.boot));
@@ -796,30 +805,37 @@ function render(){
 /* The staff side's tools, as a bar under the header rather than buttons in
    it — a phone's header has room for the name, the language and Sign out,
    not four more. Forms and Accounts are portal-admin only. */
-function staffNavHtml_(v){
+function staffMenuItems_(){
   var admin=P.boot.role==='portal-admin';
-  /* The bar keeps the two everyone uses — home and Applications — and a ☰ menu
-     for the rest, in two groups: what staff access has, what admin access adds. */
-  var staffItems=[['preview','toPreview','👁 '+t('View as applicant')],['link','toLink','🔗 '+t('Link for applicants')],['import','toImport','📥 '+t('Import applications')]];
-  var adminItems=[['forms','toForms','📝 '+t('Forms')],['accounts','toAccounts','👤 '+t('Accounts')],['team','toTeam','👥 '+t('Our team')],['resources','toResources','📚 '+t('Resources')],['legal','toLegal','✍️ '+t('Legal documents')],['visa','toVisaInfo','🛂 '+t('E-visa info')],['access','toAccess','🔑 '+t('Who has access')]];
-  var crmItem=['crm','navCrm','📋 '+t('Applications')];
-  var here=[crmItem].concat(staffItems, admin ? adminItems : []).filter(function(x){ return x[0]===v; })[0];
+  return {
+    crm:['crm','navCrm','📋 '+t('Applications')],
+    staff:[['preview','toPreview','👁 '+t('View as applicant')],['link','toLink','🔗 '+t('Link for applicants')],['import','toImport','📥 '+t('Import applications')]],
+    admin: admin ? [['forms','toForms','📝 '+t('Forms')],['accounts','toAccounts','👤 '+t('Accounts')],['team','toTeam','👥 '+t('Our team')],['resources','toResources','📚 '+t('Resources')],['legal','toLegal','✍️ '+t('Legal documents')],['visa','toVisaInfo','🛂 '+t('E-visa info')],['access','toAccess','🔑 '+t('Who has access')]] : []
+  };
+}
+/* The staff side's top: the way back to the GP app as a small line of text (Uriah, Oct 2026), and the link card when it is
+   open. The pages themselves are in ☰, top right (menuDrawerHtml_); each page's own heading says where you are. */
+function staffNavHtml_(v){
+  return '<a class="gpHomeLink" id="toGpApp" href="teams.html">← '+esc(t('Go back to GP Home'))+'</a>'+(P.linkOpen ? applyLinkHtml_() : '');
+}
+/* ☰ — the menu slides in from the side, over the page; tap outside, ✕ or Esc closes it. Staff: Applications, then what staff
+   access has, then what admin access adds, the GP app and Sign out. An applicant: their tabs and Sign out. */
+function menuDrawerHtml_(v){
   var item=function(x){ return '<button class="menuItem'+(v===x[0] || (x[0]==='link' && P.linkOpen)?' on':'')+'" id="'+x[1]+'">'+esc(x[2])+'</button>'; };
-  /* Uriah, Oct 2026: the way back to the GP app is a small line of text on
-     its own (no more tapping it by mistake), the bar is one ☰ button that says
-     where you are — just the three lines and the name of the page, nothing
-     else — and Applications sits first in the menu. */
-  return '<a class="gpHomeLink" id="toGpApp" href="teams.html">← '+esc(t('Go back to GP Home'))+'</a>'+
-    '<nav class="staffNav" id="staffNav"><button class="staffNavBtn menuBtn'+(P.menuOpen ? ' on':'')+'" id="navMenu" aria-expanded="'+(P.menuOpen?'true':'false')+'" aria-controls="staffMenu">'+
-    '<span class="menuIc" aria-hidden="true">☰</span><span class="menuHere">'+esc(here ? here[2] : t('Menu'))+'</span></button></nav>'+
-    /* the menu slides in from the side, over the page; tap outside, ✕ or Esc closes it */
-    (P.menuOpen ? '<div class="menuScrim" id="menuScrim"></div><aside class="staffMenu" id="staffMenu" role="dialog" aria-modal="true" aria-label="'+esc(t('Menu'))+'">'+
-      '<div class="menuHead"><b>'+esc(t('Menu'))+'</b><button type="button" class="hbtn" id="menuClose" aria-label="'+esc(t('Close'))+'">✕</button></div>'+
-      '<div class="menuGroup">'+item(crmItem)+'</div>'+
-      '<div class="menuGroup"><div class="eyebrow">'+esc(t('Staff access'))+'</div>'+staffItems.map(item).join('')+'</div>'+
-      (admin ? '<div class="menuGroup"><div class="eyebrow">'+esc(t('Admin access'))+'</div>'+adminItems.map(item).join('')+'</div>' : '')+
-      '<a class="menuItem menuHome" href="teams.html">🏠 '+esc(t('GP app home'))+'</a></aside>' : '')+
-    (P.linkOpen ? applyLinkHtml_() : '');
+  var h='<div class="menuScrim" id="menuScrim"></div><aside class="staffMenu" id="staffMenu" role="dialog" aria-modal="true" aria-label="'+esc(t('Menu'))+'">'+
+    '<div class="menuHead"><b>'+esc(t('Menu'))+'</b><button type="button" class="hbtn" id="menuClose" aria-label="'+esc(t('Close'))+'">✕</button></div>';
+  if(P.boot.role==='applicant'){
+    var app=P.boot.application, team=app && app.type==='team', cur=v==='me' ? (P.aview||'status') : '';
+    if(!studentPortal_()) h+='<div class="menuGroup">'+AVIEWS.filter(function(x){ return x[0]!=='metrics' || team; }).map(function(x){
+      return '<button class="menuItem'+(cur===x[0]?' on':'')+'" data-amenu="'+x[0]+'">'+x[1]+' '+esc(t(x[2]))+'</button>'; }).join('')+'</div>';
+  } else {
+    var M=staffMenuItems_();
+    h+='<div class="menuGroup">'+item(M.crm)+'</div>'+
+      '<div class="menuGroup"><div class="eyebrow">'+esc(t('Staff access'))+'</div>'+M.staff.map(item).join('')+'</div>'+
+      (M.admin.length ? '<div class="menuGroup"><div class="eyebrow">'+esc(t('Admin access'))+'</div>'+M.admin.map(item).join('')+'</div>' : '')+
+      '<a class="menuItem menuHome" href="teams.html">🏠 '+esc(t('GP app home'))+'</a>';
+  }
+  return h+'<div class="menuGroup menuFoot"><button class="menuItem menuOut" id="outBtn">↩ '+esc(t('Sign out'))+'</button></div></aside>';
 }
 /* The link staff send to someone who should apply: the portal itself, or —
    picked from the chips — the portal opened straight on one kind of
@@ -2224,7 +2240,7 @@ function crmHtml_(){
   var live=list.filter(function(c){ return !c.archived; });
   var counts={}; live.forEach(function(c){ counts[c.stage]=(counts[c.stage]||0)+1; });
   var h='<div class="panelHead"><div><h1 style="font-size:28px">'+esc(t('Applications'))+'</h1><p class="sub">'+esc(gpT('{n} open · signed in as {name} ({role})',{n:live.length, name:d.me.name, role:(d.role==='portal-admin' ? t('portal admin') : t('portal staff'))}))+(scope ? ' · '+esc(t('You see'))+': '+esc(seesText_(scope)) : '')+'</p></div>'+
-    '<div class="headBtns">'+(d.gpdts ? '<a class="btn small ghost" id="toGpdts" href="teams.html?view=gpdts">🔥 '+esc(t('GPDTS on My Ministry'))+'</a>' : '')+
+    '<div class="headBtns">'+(d.gpdts && P.what==='dts' ? '<a class="btn small ghost" id="toGpdts" href="teams.html?view=gpdts">🔥 '+esc(t('GPDTS on My Ministry'))+'</a>' : '')+
     (P.lead ? '' : '<button class="btn small" id="addLead">＋ '+esc(t('Add a contact'))+'</button>')+'</div></div>';
   if(P.lead) h+=leadFormHtml_();
   if(campusChips.length>1) h+='<div class="chips" style="margin-bottom:12px">'+[['',t('All campuses')]].concat(campusChips.map(function(c){ return [c[0], t(c[1])]; })).map(function(x){
@@ -4291,6 +4307,7 @@ function bind_(){
   on_('navMenu', function(){ P.menuOpen=!P.menuOpen; render(); if(P.menuOpen){ var f=document.querySelector('#staffMenu .menuItem'); if(f) f.focus(); } });
   on_('menuClose', function(){ P.menuOpen=false; render(); var b=document.getElementById('navMenu'); if(b) b.focus(); });
   on_('menuScrim', function(){ P.menuOpen=false; render(); });
+  document.querySelectorAll('[data-amenu]').forEach(function(b){ b.onclick=function(){ P.menuOpen=false; P.view='me'; P.aview=b.getAttribute('data-amenu'); P.ptest=null; P.pview=null; P.ppickFor=null; render(); window.scrollTo(0,0); }; });
   on_('toForms', function(){ P.menuOpen=false; if(P.view==='forms') return; P.view='forms'; render(); });
   on_('toVisaInfo', function(){ P.menuOpen=false; if(P.view==='visa') return; P.view='visa'; P.viDraft=null; render(); });
   on_('toResources', function(){ P.menuOpen=false; if(P.view==='resources') return; P.view='resources'; P.resDraft=null; render(); });

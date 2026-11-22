@@ -1820,6 +1820,15 @@ forms, documents and references follow.
   its documents opening for that record's campus (`[data-ascampus]`). On other applicants, the Visa
   ticks under Documents have "See their e-visa guide as they see it" (`#seeVisa`, `P.seeVisa`) showing
   `visaCardHtml_` as it is for them at their stage.
+- **☰ in the top-right corner, Sign out inside it (Nov 2026, Andrew: "move that hamburger menu … in the top right corner like in
+  the impact app … put the sign out button in the menu … make navigating through the portal easy")**: signed in, the header is
+  the language and ☰ (`#navMenu`, `.hbtn.icon.menuBtn`) for staff, admins and applicants alike; the old bar under the header
+  (`#staffNav`) is gone — each page's own heading says where you are. The drawer (`menuDrawerHtml_`, still `#staffMenu`, drawn
+  for anyone signed in) holds the staff groups (`staffMenuItems_`) or an applicant's tabs (`[data-amenu]`; a student has none),
+  then **Sign out** (`#outBtn`) last, in `.menuFoot`. Signing out closes it. The applicant tab row is a real grid now (a later
+  `.staffNav` rule had made it wrap 5 + 1), three to a row on a phone; the staff side's kinds of application (`.whatTabs`) four
+  to a row on a phone. **🔥 GPDTS on My Ministry** (`#toGpdts`) shows only on the DTS tab (`P.what==='dts'`).
+  The older notes below describe the bar as it was.
 - **Staff side bar and menu (Oct 2026)**: above the bar, a small text link "← Go back to GP Home"
   (`#toGpApp`, `.gpHomeLink` — Uriah kept tapping the old ‹ button by mistake); the bar is one ☰ button
   that says where you are and nothing else — the three lines and the page's name (`staffNavHtml_`,

@@ -409,6 +409,10 @@ async function open(viewport, query, seed) {
   ok('the form card invites them to fill out the application', !!(await page.$('#openForm')) && /Fill out my application/.test(await page.$eval('#openForm', e => e.textContent)));
   ok('and the top of the dashboard says the next step is sending it in', /Next: send in your application/.test(await page.$eval('#applyNext', e => e.textContent)) && !!(await page.$('#openFormTop')));
   ok('an applicant has no staff bar and no link into the GP app', !(await page.$('#staffNav')) && !(await page.$('#toGpApp')));
+  await page.click('#navMenu'); await page.waitForSelector('#staffMenu');
+  const smenu = await page.evaluate(() => ({ items: [...document.querySelectorAll('#staffMenu .menuItem')].map(b => b.id || b.getAttribute('data-amenu')), staff: !!document.querySelector('#staffMenu #navCrm') }));
+  ok('a student’s ☰ (top right) holds Sign out, and nothing of the staff side', JSON.stringify(smenu.items) === '["outBtn"]' && !smenu.staff, JSON.stringify(smenu));
+  await page.click('#menuClose'); await page.waitForTimeout(150);
   await page.click('#openFormTop');
   await page.waitForSelector('#formSubmit, #formNext', { timeout: 5000 });
   ok('the top button opens the application too', /Section 1 of/.test(await page.$eval('#main', e => e.textContent)));
@@ -743,7 +747,7 @@ async function open(viewport, query, seed) {
   await page.fill('#l_pw', 'secret123'); await page.keyboard.press('Enter');
   await page.waitForSelector('#statusPill');
   ok('an applicant signs in with her email and password and lands on her dashboard, which says how she signs in', /Email and password/.test(await page.$eval('#main', e => e.textContent)) && !!(await page.$('#changePw')));
-  await page.click('#outBtn'); await page.waitForTimeout(150);
+  await page.click('#navMenu'); await page.click('#outBtn'); await page.waitForTimeout(150);
   await page.click('#toPinLogin'); await page.waitForTimeout(100);
   ok('the username-and-PIN door is for staff and older accounts', !!(await page.$('#l_user')) && /YWAM staff sign in with their My YWAM GP username and PIN/.test(await page.$eval('#main', e => e.textContent)));
   await page.fill('#l_user', 'bopha'); await page.fill('#l_pin', '1234'); await page.click('#pinLoginBtn');
@@ -928,7 +932,7 @@ async function open(viewport, query, seed) {
   const { ctx, page } = await open({ width: 1280, height: 900 }, '', () => localStorage.setItem('gp-portal', JSON.stringify({ user: 'sina', pin: '1234' })));
   await page.waitForSelector('.trow');
   await page.click('#navMenu'); await page.waitForSelector('#staffMenu');
-  ok('a portal admin finds Forms under Admin access in the ☰ menu, apart from Staff access', !!(await page.$('#toForms')) && /Staff access/.test(await page.$eval('#staffMenu', e => e.textContent)) && /Admin access/.test(await page.$eval('#staffMenu', e => e.textContent)) && (await page.$$eval('#staffMenu .menuGroup', g => g.map(x => [...x.querySelectorAll('button')].map(b => b.id).join(',')).join('|'))) === 'navCrm|toPreview,toLink,toImport|toForms,toAccounts,toTeam,toResources,toLegal,toVisaInfo,toAccess');
+  ok('a portal admin finds Forms under Admin access in the ☰ menu, apart from Staff access', !!(await page.$('#toForms')) && /Staff access/.test(await page.$eval('#staffMenu', e => e.textContent)) && /Admin access/.test(await page.$eval('#staffMenu', e => e.textContent)) && (await page.$$eval('#staffMenu .menuGroup', g => g.map(x => [...x.querySelectorAll('button')].map(b => b.id).join(',')).join('|'))) === 'navCrm|toPreview,toLink,toImport|toForms,toAccounts,toTeam,toResources,toLegal,toVisaInfo,toAccess|outBtn');
   await page.click('#toVisaInfo'); await page.waitForSelector('#vi_org');
   ok('☰ → E-visa info: the details the e-visa form asks, filled in', await page.$eval('#vi_org', i => i.value) === 'Example Org' && await page.$eval('#vi_email', i => i.value) === 'visa@example.org' && /defaults/.test(await page.$eval('#main', e => e.textContent)));
   await page.fill('#vi_phone', '+855 11 111 111'); await page.fill('#vi_extra', 'Bring two photos');
@@ -1118,6 +1122,13 @@ async function open(viewport, query, seed) {
   await page.waitForSelector('#applicantNav');
   const tabs = await page.$$eval('#applicantNav [data-aview]', bs => bs.map(b => b.getAttribute('data-aview') + (b.classList.contains('on') ? '*' : '')));
   ok('a team has six tabs on top: Application (open), Our team, Strengths, Metrics, Schedule, Resources — icons over short labels, none squashed', tabs.join() === 'status*,team,strengths,metrics,schedule,resources' && await page.$$eval('#applicantNav .aLabel', ls => ls.every(l => l.scrollWidth <= l.clientWidth + 1)), tabs.join());
+  ok('… on a phone, an even three by two — no tab left alone on a row (Resources used to drop to a row of its own)', await page.$$eval('#applicantNav [data-aview]', bs => { const rows = {}; bs.forEach(b => { const t = Math.round(b.getBoundingClientRect().top); rows[t] = (rows[t] || 0) + 1; }); return Object.values(rows).join() === '3,3'; }));
+  await page.click('#navMenu'); await page.waitForSelector('#staffMenu');
+  const amenu = await page.evaluate(() => ({ items: [...document.querySelectorAll('#staffMenu [data-amenu]')].map(b => b.getAttribute('data-amenu')), last: [...document.querySelectorAll('#staffMenu .menuItem')].pop().id, staff: !!document.querySelector('#staffMenu #navCrm') }));
+  ok('a team’s ☰ (top right) has the same six pages and Sign out, nothing of the staff side', amenu.items.join() === 'status,team,strengths,metrics,schedule,resources' && amenu.last === 'outBtn' && !amenu.staff, JSON.stringify(amenu));
+  await page.click('#staffMenu [data-amenu="resources"]'); await page.waitForTimeout(400);
+  ok('… a page in it opens and the menu closes', !(await page.$('#staffMenu')) && await page.$eval('#applicantNav [data-aview="resources"]', b => b.classList.contains('on')));
+  await page.click('#applicantNav [data-aview="status"]'); await page.waitForTimeout(300);
   await page.click('[data-aview="metrics"]'); await page.waitForTimeout(200);
   ok('Team metrics has its own tab; before arrival it says the numbers open on arrival', /Team metrics/.test(await page.$eval('#main h2', e => e.textContent)) && /open on arrival/.test(await page.$eval('#main', e => e.textContent)) && !(await page.$('#teamNumbers')));
   /* 👥 */
@@ -1716,13 +1727,18 @@ async function open(viewport, query, seed) {
   await page.waitForSelector('.trow');
   const bar = await page.evaluate(() => ({
     header: [...document.querySelectorAll('#hbtns button')].map(b => b.id),
-    nav: [...document.querySelectorAll('#staffNav button')].map(b => b.id),
-    inView: [...document.querySelectorAll('#staffNav button, #hbtns button')].every(b => { const r = b.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 0.5; }),
+    navBar: !!document.querySelector('#staffNav'),
+    menuBtn: (() => { const r = document.querySelector('#navMenu').getBoundingClientRect(); return { right: r.right, top: r.top, W: innerWidth }; })(),
+    inView: [...document.querySelectorAll('#hbtns button')].every(b => { const r = b.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 0.5; }),
     noScroll: document.documentElement.scrollWidth <= innerWidth + 1
   }));
-  ok('on a phone the header keeps only language and Sign out', JSON.stringify(bar.header) === JSON.stringify(['langBtn', 'outBtn']), JSON.stringify(bar.header));
-  ok('the bar is one ☰ button that says where you are — Applications when the portal opens', JSON.stringify(bar.nav) === JSON.stringify(['navMenu']) && /Applications/.test(await page.$eval('#navMenu', b => b.textContent)) && !(await page.$('#staffMenu')), JSON.stringify(bar.nav));
-  ok('the way back to the GP app is small text on its own line, not a button beside the menu', await page.$eval('#toGpApp', a => a.tagName === 'A' && a.getAttribute('href') === 'teams.html' && /Go back to GP Home/.test(a.textContent) && !a.closest('#staffNav') && a.getBoundingClientRect().bottom <= document.querySelector('#staffNav').getBoundingClientRect().top));
+  /* Nov 2026 (Andrew): ☰ in the top-right corner, as in the GP app, and Sign out inside it */
+  ok('on a phone the header is the language and ☰, in the top-right corner — no Sign out button there', JSON.stringify(bar.header) === JSON.stringify(['langBtn', 'navMenu']) && bar.menuBtn.W - bar.menuBtn.right < 24 && bar.menuBtn.top < 40, JSON.stringify(bar));
+  ok('the kinds of application sit four to a row on a phone — two even rows, all on screen', await page.$$eval('.whatTab', bs => { const rows = {}; bs.forEach(b => { const t = Math.round(b.getBoundingClientRect().top); rows[t] = (rows[t] || 0) + 1; }); return Object.values(rows).join() === '4,4' && bs.every(b => { const r = b.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 0.5 && b.scrollWidth <= b.clientWidth + 1; }); }));
+  const gp = await page.evaluate(() => { P.boot.gpdts = true; P.what = ''; render(); const all = !!document.querySelector('#toGpdts'); P.what = 'dts'; render(); const dts = !!document.querySelector('#toGpdts'); P.what = ''; delete P.boot.gpdts; render(); return { all, dts }; });
+  ok('the GPDTS button shows only on the DTS tab', !gp.all && gp.dts, JSON.stringify(gp));
+  ok('no menu bar under the header any more; the page has its own heading', !bar.navBar && /Applications/.test(await page.$eval('#main h1', e => e.textContent)) && !(await page.$('#staffMenu')));
+  ok('the way back to the GP app is small text on its own line', await page.$eval('#toGpApp', a => a.tagName === 'A' && a.getAttribute('href') === 'teams.html' && /Go back to GP Home/.test(a.textContent)));
   await page.click('#navMenu'); await page.waitForSelector('#staffMenu'); await page.waitForTimeout(350);
   ok('☰ opens the menu as a panel on the side, over the page, with a backdrop', await page.$eval('#staffMenu', m => { const r = m.getBoundingClientRect(), cs = getComputedStyle(m); return cs.position === 'fixed' && Math.abs(r.right - innerWidth) < 1 && r.top === 0 && r.width < innerWidth; }) && !!(await page.$('#menuScrim')) && await page.evaluate(() => document.body.classList.contains('menuOn')), JSON.stringify(await page.$eval('#staffMenu', m => { const r = m.getBoundingClientRect(); return { pos: getComputedStyle(m).position, r: [r.left, r.top, r.right, r.width], w: innerWidth }; })));
   await page.click('#menuScrim', { position: { x: 10, y: 400 } }); await page.waitForTimeout(150);
@@ -1731,16 +1747,22 @@ async function open(viewport, query, seed) {
   ok('… and so does Esc', !(await page.$('#staffMenu')));
   await page.click('#navMenu'); await page.waitForSelector('#menuClose'); await page.click('#menuClose'); await page.waitForTimeout(150);
   ok('… and ✕', !(await page.$('#staffMenu')));
+  await page.click('#navMenu'); await page.waitForSelector('#staffMenu');
+  ok('Sign out is the last thing in the menu', await page.$eval('#staffMenu', m => { const b = [...m.querySelectorAll('.menuItem')]; return b[b.length - 1].id === 'outBtn' && /Sign out/.test(b[b.length - 1].textContent); }));
+  await page.click('#menuClose'); await page.waitForTimeout(150);
   ok('every button is fully on screen, nothing scrolls sideways', bar.inView && bar.noScroll && await page.$eval('#toGpApp', a => { const r = a.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 0.5; }));
   if(!(await page.$('#toPreview'))){ await page.click('#navMenu'); await page.waitForSelector('#toPreview'); }
   await page.click('#toPreview');
   await page.waitForSelector('#pvFrame');
-  ok('the ☰ button says where you are (and the menu closes)', /View as applicant/.test(await page.$eval('#navMenu', b => b.textContent)) && !(await page.$('#staffMenu')) && !(await page.$('#navCrm')));
+  ok('the menu closes and the page is View as applicant', !(await page.$('#staffMenu')) && !(await page.$('#navCrm')));
+  await page.click('#navMenu'); await page.waitForSelector('#toPreview');
+  ok('… marked as where you are in the menu', await page.$eval('#toPreview', b => b.classList.contains('on')));
+  await page.click('#menuClose'); await page.waitForTimeout(150);
   await page.click('#navMenu'); await page.waitForSelector('#navCrm');
   ok('Applications is the first thing in the menu', await page.$eval('#staffMenu .menuItem', b => b.id) === 'navCrm');
   await page.click('#navCrm');
   await page.waitForSelector('.trow');
-  ok('… and takes you back to the list', /Applications/.test(await page.$eval('#navMenu', b => b.textContent)) && !(await page.$('#staffMenu')));
+  ok('… and takes you back to the list', /Applications/.test(await page.$eval('#main h1', e => e.textContent)) && !(await page.$('#staffMenu')));
   await ctx.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {});
   if(!(await page.$('#toLink'))){ await page.click('#navMenu'); await page.waitForSelector('#toLink'); }
   await page.click('#toLink');
