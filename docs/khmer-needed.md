@@ -5947,7 +5947,89 @@ Shown at the top of a team's portal page when staff have opened the e-visa steps
 |---|---|
 | You can start your e-visas now. Open “How to apply for your e-visa online” under Where you are — your letter of invitation will follow. | អ្នកអាចចាប់ផ្តើមដាក់ពាក្យសុំ e-visa បានឥឡូវនេះ។ បើក “របៀបដាក់ពាក្យសុំ e-visa តាមអនឡាញ” នៅក្រោម “អ្នកនៅដំណាក់កាលណា” — លិខិតអញ្ជើញរបស់អ្នកនឹងមកតាមក្រោយ។ |
 
-## 129. Talk it through → tasks: which language you talk in, and when listening stops
+## 129. SR Hospitality: extra spaces, free beds by day, a team's new dates, someone who left
+
+The Overview's "Needs you" and "The next 7 days"; the change cards (a team's dates moved on the portal or in the Teams Database, someone archived — on My Ministry, in SR Hospitality and in the bell); a room's "How many people can sleep here?" and its extra spaces; the Beds tab's Free beds grid and the clearer bed board. The grid's column heading ("Night of") and "free" / "Full" have very little room.
+
+| English | Khmer (draft) |
+|---|---|
+| SR Hospitality: {name} has left — their bed is free | SR Hospitality៖ {name} បានចាកចេញ — គ្រែរបស់គាត់ទំនេរហើយ |
+| SR Hospitality: {name} has new dates, {range} | SR Hospitality៖ {name} មានកាលបរិច្ឆេទថ្មី {range} |
+| {n} team cancelled — beds still booked | ក្រុម {n} បានលុបចោល — គ្រែនៅតែកក់ |
+| {n} teams cancelled — beds still booked | ក្រុម {n} បានលុបចោល — គ្រែនៅតែកក់ |
+| {n} request waiting for beds | សំណើ {n} កំពុងរង់ចាំគ្រែ |
+| {n} requests waiting for beds | សំណើ {n} កំពុងរង់ចាំគ្រែ |
+| {n} more bookings with beds to pick | ការកក់ {n} ទៀតដែលត្រូវរើសគ្រែ |
+| Needs you | ត្រូវការអ្នក |
+| Nothing waiting — every request has beds. | គ្មានអ្វីរង់ចាំទេ — សំណើនីមួយៗមានគ្រែហើយ។ |
+| The next 7 days | ៧ ថ្ងៃខាងមុខ |
+| {name} has left | {name} បានចាកចេញ |
+| Their bed is free from today: {beds} | គ្រែរបស់គាត់ទំនេរចាប់ពីថ្ងៃនេះ៖ {beds} |
+| Their booking ended today. | ការកក់របស់គាត់បានបញ្ចប់ថ្ងៃនេះ។ |
+| new dates | កាលបរិច្ឆេទថ្មី |
+| was {range} | ពីមុន {range} |
+| Their booking moved with them: {range} | ការកក់របស់ពួកគេបានផ្លាស់តាមពួកគេ៖ {range} |
+| Their booking moved with them. | ការកក់របស់ពួកគេបានផ្លាស់តាមពួកគេ។ |
+| Not booked yet — book beds for the new dates. | មិនទាន់កក់ទេ — កក់គ្រែសម្រាប់កាលបរិច្ឆេទថ្មី។ |
+| Pick beds again — someone else has {beds} on the new nights. | រើសគ្រែម្តងទៀត — មានអ្នកផ្សេងប្រើ {beds} នៅយប់ថ្មីទាំងនោះ។ |
+| Changed on the portal by {name} | ផ្លាស់ប្តូរនៅលើវិបផតថលដោយ {name} |
+| Changed in the Teams Database by {name} | ផ្លាស់ប្តូរនៅក្នុងមូលដ្ឋានទិន្នន័យក្រុមដោយ {name} |
+| Archived by {name} | ដាក់ក្នុងបណ្ណសារដោយ {name} |
+| {n} change in SR Hospitality | ការផ្លាស់ប្តូរ {n} នៅក្នុង SR Hospitality |
+| {n} changes in SR Hospitality | ការផ្លាស់ប្តូរ {n} នៅក្នុង SR Hospitality |
+| Got it, all | យល់ហើយ ទាំងអស់ |
+| {b} beds + {s} extra · fits {n} | គ្រែ {b} + បន្ថែម {s} · ដាក់បាន {n} |
+| How many people can sleep here? | មនុស្សប៉ុន្មាននាក់អាចដេកនៅទីនេះ? |
+| {b} beds + {s} extra spaces | គ្រែ {b} + កន្លែងបន្ថែម {s} |
+| One for each bed. Make it bigger to add extra spaces — mattresses, a sofa. | ម្នាក់សម្រាប់គ្រែនីមួយៗ។ ដាក់លេខធំជាងនេះ ដើម្បីបន្ថែមកន្លែង — ពូក សាឡុង។ |
+| {n} extra spaces | កន្លែងបន្ថែម {n} |
+| Extra space | កន្លែងបន្ថែម |
+| extra space | កន្លែងបន្ថែម |
+| Leaving that morning | ចាកចេញនៅព្រឹកនោះ |
+| free | ទំនេរ |
+| Only rooms with a free bed | តែបន្ទប់ដែលមានគ្រែទំនេរ |
+| {a} of {b} free | ទំនេរ {a} ក្នុងចំណោម {b} |
+| Full | ពេញ |
+| Free beds | គ្រែទំនេរ |
+| Night of | យប់ |
+| All rooms | បន្ទប់ទាំងអស់ |
+| Booked, no bed yet | បានកក់ មិនទាន់មានគ្រែ |
+| fits {n} | ដាក់បាន {n} |
+| How many beds are free each night. Tap a night to see who is in which bed. | គ្រែទំនេរប៉ុន្មានរៀងរាល់យប់។ ចុចលើយប់មួយ ដើម្បីមើលថាអ្នកណានៅគ្រែណា។ |
+| All free | ទំនេរទាំងអស់ |
+| Some free | ទំនេរខ្លះ |
+| This room has {n} beds. To fit fewer, take beds off below. | បន្ទប់នេះមានគ្រែ {n}។ ដើម្បីដាក់តិចជាងនេះ សូមដកគ្រែចេញខាងក្រោម។ |
+
+## 130. The weekly schedules know who is here, day by day; a school is a group in SR Hospitality
+
+The schedule editor's "Who is here this week" note (who leaves or arrives midweek, names taken off last week's copy, names on a day they aren't here), the picker's groups and day notes, a DTS student's arrival day, and a school's request in SR Hospitality. "Leaves {day}" / "Arrives {day}" sit beside a name: very little room.
+
+| English | Khmer (draft) |
+|---|---|
+| {name}: {n} more students than beds booked | {name}៖ សិស្សច្រើនជាងគ្រែដែលបានកក់ {n} នាក់ |
+| {n} still applying | {n} នាក់កំពុងដាក់ពាក្យ |
+| {n} on the first day | {n} នាក់នៅថ្ងៃដំបូង |
+| here | នៅទីនេះ |
+| {n} more students than beds booked ({b} booked) | សិស្សច្រើនជាងគ្រែដែលបានកក់ {n} នាក់ (បានកក់ {b}) |
+| Add beds for the new students | បន្ថែមគ្រែសម្រាប់សិស្សថ្មី |
+| Leaves {day} | ចាកចេញ {day} |
+| Arrives {day} | មកដល់ {day} |
+| Here {days} | នៅទីនេះ {days} |
+| Not here this week | មិននៅទីនេះសប្តាហ៍នេះ |
+| Not here {days} | មិននៅទីនេះ {days} |
+| Here part of the week | នៅទីនេះមួយផ្នែកនៃសប្តាហ៍ |
+| On leave part of the week | ឈប់សម្រាកមួយផ្នែកនៃសប្តាហ៍ |
+| Taken off last week’s copy — not here this week: {names} | បានដកចេញពីច្បាប់ចម្លងសប្តាហ៍មុន — មិននៅទីនេះសប្តាហ៍នេះ៖ {names} |
+| Who is here this week | អ្នកណានៅទីនេះសប្តាហ៍នេះ |
+| {n} name is on a day they aren’t here — marked in red | ឈ្មោះ {n} ស្ថិតនៅថ្ងៃដែលគាត់មិននៅទីនេះ — សម្គាល់ពណ៌ក្រហម |
+| {n} names are on days they aren’t here — marked in red | ឈ្មោះ {n} ស្ថិតនៅថ្ងៃដែលពួកគេមិននៅទីនេះ — សម្គាល់ពណ៌ក្រហម |
+| Everyone on the list is here all week. | អ្នករាល់គ្នាក្នុងបញ្ជី នៅទីនេះពេញមួយសប្តាហ៍។ |
+| Names typed before ({n}) | ឈ្មោះដែលបានវាយពីមុន ({n}) |
+| not here {day} | មិននៅទីនេះ {day} |
+| For SR Hospitality’s beds and the weekly schedules. Empty: from the day the school starts. | សម្រាប់គ្រែរបស់ SR Hospitality និងកាលវិភាគប្រចាំសប្តាហ៍។ ទទេ៖ ចាប់ពីថ្ងៃដែលសាលាចាប់ផ្តើម។ |
+| Typed before | បានវាយពីមុន |
+
+## 131. Talk it through → tasks: which language you talk in, and when listening stops
 
 In the GP Tasks microphone sheet: a switch for the language the person talks in (it can differ from the app's), a hint for Khmer (on an iPhone, Khmer goes through the Gboard keyboard), and what the sheet says when the phone stops listening. Short lines in a small sheet.
 

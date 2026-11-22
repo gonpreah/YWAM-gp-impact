@@ -177,5 +177,31 @@ ok('only portal team accounts keep a member list', (await call('portalSaveTeamMe
 r = await call('getDuty', [...K, 'kitchen', W0]);
 ok('the new member list is on offer to the kitchen', r.people.find(x => x.id === 'team_ta_cd_t').names.includes('Plain Name'));
 
+console.log('=== who is here, day by day; last week’s copy keeps only who is here (Nov 2026) ===');
+{
+  const W5 = sunday(5), W6 = sunday(6);
+  mem.teamTrips = [
+    { id: 'ta_cd_t', candidateId: 'cd_t', campus: 'siemreap', name: 'Example Church', from: addD(W5, -10), to: addD(W5, 3), status: 'active', size: 4, metrics: {} }];
+  mem['hosp:siemreap'] = { buildings: [], rooms: [], bookings: [
+    { id: 'kg', category: 'guest', name: 'Two Nights', from: addD(W5, 1), to: addD(W5, 3), count: 1, bedIds: [] },
+    { id: 'kv', category: 'volunteer', name: 'Vera Volunteer', from: addD(W5, -5), to: addD(W5, 40), count: 1, bedIds: [] }] };
+  mem['dtsDb:siemreap'] = { schools: [{ id: 'sc1', year: 2027, name: 'January DTS', from: addD(W5, 5), to: addD(W5, 90) }] };
+  mem.candidates.push({ id: 'cs1', type: 'student', school: 'dts', campus: 'siemreap', name: 'Dana Student', stage: 'accepted', portal: { submittedAt: addD(W5, -60), form: { answers: { gender: 'Female' } } }, dts: {} });
+  mem.candidates.push({ id: 'cs2', type: 'student', school: 'dts', campus: 'siemreap', name: 'Eli Student', stage: 'accepted', portal: { submittedAt: addD(W5, -60), form: { answers: { gender: 'Male' } } }, dts: { arrive: addD(W5, 6) } });
+  mem.candidates.push({ id: 'cs3', type: 'student', school: 'dts', campus: 'siemreap', name: 'Fay Applying', stage: 'applied', portal: { submittedAt: addD(W5, -60) } });
+  let r2 = await call('getDuty', [...K, 'kitchen', W5]);
+  const G = Object.fromEntries(r2.people.map(x => [x.id, x]));
+  ok('a team leaving midweek (Wednesday): here Sun–Tue — the group and each of its people', G.team_ta_cd_t && G.team_ta_cd_t.kind === 'team' && JSON.stringify(G.team_ta_cd_t.days) === '[0,1,2]' && JSON.stringify(r2.here['Lee Leader']) === '[0,1,2]', JSON.stringify(G.team_ta_cd_t));
+  ok('the school is a group: its accepted students in the weeks they are here — from the first day, or the day they arrive; nobody still applying', G.school_sc1 && G.school_sc1.kind === 'school' && G.school_sc1.label === 'January DTS 2027' && G.school_sc1.names.join() === 'Dana Student,Eli Student' && JSON.stringify(r2.here['Dana Student']) === '[5,6]' && JSON.stringify(r2.here['Eli Student']) === '[6]' && !JSON.stringify(r2.people).includes('Fay Applying'), JSON.stringify(G.school_sc1));
+  ok('guests and volunteers each in their own group, with their days', G.guests && G.guests.label === 'Guests & speakers' && G.guests.names.join() === 'Two Nights' && JSON.stringify(r2.here['Two Nights']) === '[1,2]' && G.volunteers && G.volunteers.names.join() === 'Vera Volunteer' && !r2.here['Vera Volunteer']);
+  ok('staff are there all week (no days), in the set order: staff first', r2.people[0].kind === 'staff' && !r2.here['Kara Cook']);
+  const sc = r2.sched, cell = sc.rows.find(x => !x.span && !(x.off || []).includes('mon')).id + '|mon';   // an earlier test took the breakfast row off these weeks
+  sc.cells[cell] = ['Lee Leader', 'Dana Student', 'Kara Cook'];
+  r2 = await call('saveDuty', [...K, 'kitchen', W5, sc, 'save']);
+  ok('saved with a team member, a student and a staff member', r2.ok && r2.sched.cells[cell].length === 3);
+  const r3 = await call('getDuty', [...K, 'kitchen', W6]);
+  ok('next week starts as a copy — without the team that left (and says who came off), keeping who is still here', r3.isNew && r3.from === W5 && r3.sched.cells[cell].join() === 'Dana Student,Kara Cook' && r3.removed.includes('Lee Leader') && !r3.removed.includes('Kara Cook'), JSON.stringify([r3.sched.cells[cell], r3.removed]));
+}
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

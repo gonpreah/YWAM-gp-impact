@@ -1373,7 +1373,7 @@ async function adminDecideCltRequest(username, pin, staffId, approve) {
 async function adminSetActive(username, pin, staffId, active) {
   const admin = await adminGate_(username, pin);
   if (!admin) return { ok: false };
-  return mutateStaff_(function (rows) {
+  const out = await mutateStaff_(function (rows) {
     const idx = rows.findIndex(function (r) { return r.id === staffId; });
     if (idx === -1) return { abort: true, ok: false, err: 'not_found' };
     rows[idx].active = !!active;
@@ -1381,6 +1381,8 @@ async function adminSetActive(username, pin, staffId, active) {
     rows[idx].updated = new Date().toISOString();
     return { ok: true, staff: adminStaffOut_(rows[idx]) };
   });
+  if (out && out.ok && !active) await hospPeopleLeft_([staffId], admin.id);   // switched off: their bed is free
+  return out;
 }
 
 /* Setting someone's mentor directly, not asking the mentor to accept —
@@ -1568,7 +1570,9 @@ async function adminDeleteStaff(username, pin, staffId) {
   const admin = await adminGate_(username, pin);
   if (!admin) return { ok: false };
   if (admin.id === staffId) return { ok: false, err: 'self_delete' };
-  return mutateStaff_(function (rows) {
+  const gone = (await getStaff_()).find(function (r) { return r && r.id === staffId; });
+  if (gone) { try { await hospPersonLeft_(gone, admin.id); } catch (e) { console.error('hosp: person left', e); } }   // before the record goes
+  const out = await mutateStaff_(function (rows) {
     const idx = rows.findIndex(function (r) { return r.id === staffId; });
     if (idx === -1) return { abort: true, ok: false, err: 'not_found' };
     rows.splice(idx, 1);
@@ -1577,6 +1581,8 @@ async function adminDeleteStaff(username, pin, staffId) {
     });
     return { ok: true };
   });
+  if (out && out.ok) await staffLeftCleanup_([staffId]);   // their open tasks and shared lists
+  return out;
 }
 
 /* For the one real duplicate this exists to fix — someone who accidentally
@@ -6163,6 +6169,7 @@ async function getMyBoot(username, pin) {
     kmFixes: await part(async function () { return kmFixesOf_(await getKmReview_()); }),   // a Khmer reviewer's corrections, live for everyone
     push: await part(async function () { const k = await pushKeys_(); return k ? { key: k.pub, prefs: pushPrefsOf_(s) } : null; }),   // reminders: the app's public key and your times
     backup: s.isAdmin ? await part(backupStatus_) : null,
+    hospNews: canHosp_(s) ? await part(function () { return hospNews_(s.campus); }) : null,   // SR Hospitality: a team's new dates, someone who left
     // the roster is already top-level above; no need to ship it twice in one response
     base: base ? Object.assign({}, base, { roster: undefined }) : null
   };
@@ -6451,6 +6458,7 @@ async function syncTeamTrip_(c, by, status) {
   rec.updated = new Date().toISOString(); rec.updatedBy = by;
   if (idx > -1) rows[idx] = rec; else rows.push(rec);
   await writeJSON('teamTrips', rows);
+  try { await hospTripMoved_(rec, prev, by, 'portal'); } catch (e) { console.error('hosp: trip moved', e); }   // its booking follows the new dates
   return rec;
 }
 async function linkedTrip_(c) {
@@ -6574,8 +6582,10 @@ async function saveTeamTrip(username, pin, trip) {
   const rows = await getTeamTripsRaw_();
   const idx = rows.findIndex(function (r) { return r && r.id === rec.id; });
   if (idx > -1 && rows[idx].candidateId) rec.candidateId = rows[idx].candidateId;   // still the portal application's team
+  const prev = idx > -1 ? rows[idx] : null;
   if (idx > -1) rows[idx] = rec; else rows.push(rec);
   await writeJSON('teamTrips', rows);
+  try { await hospTripMoved_(rec, prev, s.id, 'teamsdb'); } catch (e) { console.error('hosp: trip moved', e); }
   return getTeamTrips(username, pin, campus);
 }
 async function deleteTeamTrip(username, pin, id) {
@@ -6681,7 +6691,8 @@ async function getHosp_(campus) {
   return {
     buildings: Array.isArray(d.buildings) ? d.buildings : [],
     rooms: Array.isArray(d.rooms) ? d.rooms : [],
-    bookings: Array.isArray(d.bookings) ? d.bookings : []
+    bookings: Array.isArray(d.bookings) ? d.bookings : [],
+    changes: Array.isArray(d.changes) ? d.changes : []   // what moved on its own: a team's new dates, someone who left (hospNote_)
   };
 }
 function hospId_(p) { return p + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
@@ -6708,7 +6719,9 @@ function cleanHospRoom_(r, d) {
     let id = str_(b.id, 60) || hospId_('bd');
     if (seen[id]) id = hospId_('bd');
     seen[id] = 1;
-    return { id: id, label: label, out: !!b.out };
+    const bed = { id: id, label: label, out: !!b.out };
+    if (b.spot) bed.spot = true;   // an extra space past the beds — a mattress, a sofa (the room's "how many fit", Nov 2026)
+    return bed;
   }).filter(Boolean);
   return {
     id: str_(r.id, 60) || hospId_('hr'), buildingId: buildingId, name: name,
@@ -6737,7 +6750,8 @@ function cleanHospBooking_(k) {
   return {
     id: str_(k.id, 60) || hospId_('hk'), category: category, name: name, from: from, to: to, permanent: permanent,
     males: males, females: females, count: count, family: !!k.family, bedIds: kept, bedNames: bedNames, people: people,
-    notes: str_(k.notes, 1000) || '', tripId: str_(k.tripId, 60) || '', stayId: str_(k.stayId, 60) || ''
+    notes: str_(k.notes, 1000) || '', tripId: str_(k.tripId, 60) || '', stayId: str_(k.stayId, 60) || '',
+    staffId: str_(k.staffId, 60) || '', schoolId: str_(k.schoolId, 60) || ''
   };
 }
 /* ---- a guest or speaker asks for a room (Oct 2026, Uriah) ----
@@ -6799,8 +6813,8 @@ async function hospRequests_(campus, bookings) {
   const pend = await pendingTeamIds_();
   const byCand = {};
   (await getCandidates_()).forEach(function (c) { if (c && c.id) byCand[c.id] = c; });
-  const booked = {}, bookedStay = {};
-  bookings.forEach(function (k) { if (k.tripId) booked[k.tripId] = k.id; if (k.stayId) bookedStay[k.stayId] = k.id; });
+  const booked = {}, bookedStay = {}, bookedSchool = {};
+  bookings.forEach(function (k) { if (k.tripId) booked[k.tripId] = k.id; if (k.stayId) bookedStay[k.stayId] = k.id; if (k.schoolId) bookedSchool[k.schoolId] = k; });
   /* a team whose application was deleted in the portal is gone too */
   const goneCand = function (t) { return !!(t.candidateId && !byCand[t.candidateId]); };
   const trips = await getTeamTrips_();
@@ -6832,7 +6846,17 @@ async function hospRequests_(campus, bookings) {
       candidateId: t.candidateId || '', bookingId: booked[t.id] || '',
       people: teamPeople_(t.candidateId && byCand[t.candidateId])
     };
-  }).concat(gone, (await getStays_(campus)).filter(function (r) { return r.status !== 'declined' && r.to >= today; }).map(function (r) {
+  }).concat(gone, (await schoolGroups_(campus, Object.keys(byCand).map(function (id) { return byCand[id]; }))).filter(function (g) {
+    return g.school.to >= today && (g.accepted.length || g.applied || bookedSchool[g.school.id]);
+  }).map(function (g) {
+    // a school: its students accepted (each from the day they arrive), how many still applying, and its booking's beds against them
+    const k = bookedSchool[g.school.id], arr = g.accepted.map(function (p) { return p.arrive; }).filter(Boolean).sort();
+    const sex = function (x) { return g.accepted.filter(function (p) { return p.sex === x; }).length; };
+    return { schoolId: g.school.id, kind: 'school', tripId: '', name: g.label, country: '', from: arr[0] && arr[0] < g.school.from ? arr[0] : g.school.from,
+      to: addDays_(g.school.to, 1), size: g.accepted.length, males: sex('m'), females: sex('f'), couples: null, pending: false, portalStage: '', candidateId: '',
+      bookingId: k ? k.id : '', booked: k ? Math.max(Number(k.count) || 0, (k.bedIds || []).length) : 0, applied: g.applied,
+      people: g.accepted.map(function (p) { return { name: p.name, sex: p.sex, arrive: p.arrive, here: p.here }; }) };
+  }), (await getStays_(campus)).filter(function (r) { return r.status !== 'declined' && r.to >= today; }).map(function (r) {
     return { stayId: r.id, kind: 'stay', category: r.category, tripId: '', name: r.name, country: '', from: r.from, to: r.to, size: r.count,
       males: r.males, females: r.females, couples: null, pending: false, portalStage: '', candidateId: '', bookingId: bookedStay[r.id] || '',
       people: [{ name: r.name, sex: '' }], email: r.email || '', phone: r.phone || '', org: r.org || '', notes: r.notes || '', at: r.at };
@@ -6866,6 +6890,155 @@ async function syncTeamRooms_(campus, bookings) {
     c.portal = c.portal || {}; c.portal.rooms = want; changed = true;
   });
   if (changed) await writeJSON('candidates', rows);
+}
+/* ---- what moved on its own (Nov 2026, Andrew: "when teams' arrival dates change … it automatically
+   updates it on the SR Hospitality booking … and it shows in my ministry page … that there was a date
+   change"; "when I archive or a staff leaves, take them out of the SR Hospitality system") ----
+   A team's dates changed on the portal (its leader, or staff) or in the Teams Database: its booking moves
+   with them, and any bed someone else holds on the new nights comes off it (to pick again). Someone
+   archived, switched off or deleted: the bed they live in is free from today. Each is a line in
+   `changes` on hosp:<campus> — {id, at, kind:'dates'|'left', name, bookingId, tripId, was, now, booked,
+   dropped:[bed names], via, byName, done} — which SR Hospitality's Overview and the Hospitality
+   ministry's My Ministry page show until someone taps Got it (hospChangeDone). */
+const HOSP_CHANGES_MAX = 60, HOSP_COALESCE_MS = 30 * 60000;
+function hospDays_(a, b) { return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000); }
+function hospBedName_(d, id) {
+  for (const r of d.rooms) for (const b of (r.beds || [])) if (b.id === id) return r.name + ' ' + b.label;
+  return '';
+}
+function hospNote_(d, c) {
+  d.changes = [Object.assign({ id: hospId_('hc'), at: new Date().toISOString() }, c)].concat(d.changes || []).slice(0, HOSP_CHANGES_MAX);
+}
+async function hospWhoName_(id) {
+  if (!id) return '';
+  const r = (await getStaff_()).find(function (x) { return x && x.id === id; });
+  return r ? (r.name || '') : '';
+}
+async function hospTripMoved_(trip, prev, by, via) {
+  if (!trip || !prev || !trip.campus || prev.deleted) return;
+  if (prev.from === trip.from && prev.to === trip.to) return;
+  if (!prev.from || !prev.to || !trip.from || !trip.to) return;   // dates set for the first time are not a change
+  if (!(await readJSON(hospKey_(trip.campus), null))) return;    // no book on this campus yet: nothing booked to move
+  const d = await getHosp_(trip.campus), today = new Date().toISOString().slice(0, 10), now = new Date().toISOString();   // the book's own day, as everywhere in it
+  const k = d.bookings.find(function (b) { return b && b.tripId === trip.id; });
+  if (!k && (trip.status === 'cancelled' || trip.to < today)) return;
+  const dropped = [];
+  if (k && !k.permanent) {
+    let nf = addDays_(k.from, hospDays_(prev.from, trip.from)), nt = addDays_(k.to, hospDays_(prev.to, trip.to));
+    if (nt <= nf) { nf = trip.from; nt = trip.to; }
+    k.from = nf; k.to = nt;
+    k.bedIds = (k.bedIds || []).filter(function (id) {
+      const held = d.bookings.some(function (o) { return o.id !== k.id && hospOverlap_(o, k) && (o.bedIds || []).indexOf(id) > -1; });
+      if (held) { dropped.push(hospBedName_(d, id)); if (k.bedNames) delete k.bedNames[id]; }
+      return !held;
+    });
+    k.updated = now; k.updatedBy = by || '';
+  }
+  // the draft autosaves as a team picks its dates: one line for a run of changes, not one a tap
+  const last = d.changes.find(function (c) { return c.kind === 'dates' && c.tripId === trip.id && !c.done && (Date.now() - Date.parse(c.at)) < HOSP_COALESCE_MS; });
+  const was = last ? last.was : { from: prev.from, to: prev.to }, nowD = { from: trip.from, to: trip.to };
+  if (last) d.changes.splice(d.changes.indexOf(last), 1);
+  if (was.from !== nowD.from || was.to !== nowD.to) {
+    hospNote_(d, { kind: 'dates', name: trip.name || (k && k.name) || '', tripId: trip.id, bookingId: k ? k.id : '', booked: !!k,
+      was: was, now: nowD, bookingNow: k ? { from: k.from, to: k.to } : null,
+      dropped: (last && last.dropped ? last.dropped : []).concat(dropped).filter(Boolean).slice(0, 40),
+      via: via || '', byName: await hospWhoName_(by) });
+  }
+  await saveHosp_(trip.campus, d);
+}
+/* Someone left (archived, switched off, deleted): the beds they live in are free from today. Only the
+   bookings of people who live here (staff, students, volunteers) — a team or a guest is never theirs.
+   Theirs by id (staff beds set since Nov 2026 carry staffId) or by their name. */
+async function hospPersonLeft_(p, by) {
+  if (!p || !p.id) return;
+  const key = function (v) { return String(v || '').trim().toLowerCase().replace(/\s+/g, ' '); };
+  /* By name only when nobody else still here has that name, and never for a sign-up that was never let in
+     (a duplicate or declined account would otherwise free the real person's bed). */
+  const twin = (await getStaff_()).some(function (r) { return r && r.id !== p.id && r.active !== false && !r.archived && !isApplicant_(r) && key(r.name) === key(p.name); });
+  const nm = p.awaiting || twin ? '' : key(p.name), today = new Date().toISOString().slice(0, 10), now = new Date().toISOString();
+  for (const campus of HR_CAMPUSES) {
+    if (!(await readJSON(hospKey_(campus), null))) continue;
+    const d = await getHosp_(campus), freed = [];
+    let changed = false;
+    d.bookings.slice().forEach(function (k) {
+      if (!k || HOSP_STAY_CATS.indexOf(k.category) === -1) return;
+      if (!(k.permanent || (k.to && k.to > today))) return;
+      if (k.staffId === p.id || (nm && key(k.name) === nm)) {
+        (k.bedIds || []).forEach(function (id) { freed.push(hospBedName_(d, id)); });
+        if (k.from >= today) d.bookings.splice(d.bookings.indexOf(k), 1);
+        else { k.permanent = false; k.to = today; k.updated = now; k.updatedBy = by || ''; }
+        changed = true; return;
+      }
+      // one of several in a family or shared booking: just their bed
+      const bed = nm && Object.keys(k.bedNames || {}).find(function (id) { return key(k.bedNames[id]) === nm; });
+      if (!bed) return;
+      freed.push(hospBedName_(d, bed));
+      k.bedIds = (k.bedIds || []).filter(function (id) { return id !== bed; });
+      delete k.bedNames[bed];
+      k.people = (k.people || []).filter(function (x) { return key(x && x.name) !== nm; });
+      k.count = Math.max(1, (Number(k.count) || 1) - 1);
+      k.updated = now; k.updatedBy = by || '';
+      changed = true;
+    });
+    if (!changed) continue;
+    hospNote_(d, { kind: 'left', name: p.name || '', staffId: p.id, dropped: freed.filter(Boolean).slice(0, 20), byName: await hospWhoName_(by) });
+    await saveHosp_(campus, d);
+  }
+}
+async function hospPeopleLeft_(ids, by) {
+  try {
+    const rows = await getStaff_();
+    for (const id of ids) { const r = rows.find(function (x) { return x && x.id === id; }); if (r) await hospPersonLeft_(r, by); }
+  } catch (e) { console.error('hosp: person left', e); }
+  await staffLeftCleanup_(ids);
+}
+/* The rest of the app, when someone leaves (Nov 2026, Andrew: "look through the entire app for anything I
+   may have missed"): their mentees no longer wait on a mentor who can't sign in — the pairing is cleared,
+   as deleting someone always did, so the mentee can pick a new one (and Loose ends counts them as having
+   none); and open GP Tasks given to them, and lists shared with them, let go of them. Their own history
+   (logs, goals, done tasks) is untouched. */
+async function staffLeftCleanup_(ids) {
+  ids = (ids || []).filter(Boolean);
+  if (!ids.length) return;
+  const gone = new Set(ids);
+  try {
+    await mutateStaff_(function (rows) {
+      let n = 0;
+      const now = new Date().toISOString();
+      rows.forEach(function (r) { if (r && r.mentorId && gone.has(r.mentorId)) { r.mentorId = ''; r.mentorStatus = ''; r.updated = now; n++; } });
+      return n ? { ok: true } : { abort: true, ok: true };
+    });
+  } catch (e) { console.error('left: mentees', e); }
+  try {
+    const d = await getGpt_();
+    let changed = false;
+    d.tasks.forEach(function (t) {
+      if (!t || t.done || !Array.isArray(t.assignees) || !t.assignees.some(function (id) { return gone.has(id); })) return;
+      t.assignees = t.assignees.filter(function (id) { return !gone.has(id); });
+      if (t.assignedAt) ids.forEach(function (id) { delete t.assignedAt[id]; });
+      changed = true;
+    });
+    d.lists.forEach(function (L) {
+      if (!L || !Array.isArray(L.members) || !L.members.some(function (id) { return gone.has(id); })) return;
+      L.members = L.members.filter(function (id) { return !gone.has(id); }); changed = true;
+    });
+    if (changed) await writeJSON('gpTasks', d);
+  } catch (e) { console.error('left: tasks', e); }
+}
+function hospChangesOut_(d) { return (d.changes || []).filter(function (c) { return c && !c.done; }).slice(0, 30); }
+async function hospNews_(campus) {
+  if (!(await readJSON(hospKey_(campus), null))) return [];
+  return hospChangesOut_(await getHosp_(campus)).slice(0, 10);
+}
+async function hospChangeDone(username, pin, id) {
+  const a = await hospAuth_(username, pin); if (a.out) return a.out;
+  const d = await getHosp_(a.s.campus), at = new Date().toISOString();
+  id = str_(id, 60);
+  let n = 0;
+  d.changes.forEach(function (c) { if (c && !c.done && (id === 'all' || c.id === id)) { c.done = { by: a.s.id, at: at }; n++; } });
+  if (!n) return { ok: false, err: 'not_found' };
+  await saveHosp_(a.s.campus, d);
+  return getHospitality(username, pin);
 }
 /* ==================== Who's here (Oct 2026, Uriah) ====================
    Everyone on a campus tonight, for Base's "On campus now" and its page:
@@ -6944,7 +7117,7 @@ async function getHospitality(username, pin) {
   await backfillTeamTrips_();
   const d = await getHosp_(campus);
   try { await syncTeamRooms_(campus, d.bookings); } catch (e) { console.error('rooms sync', e); }   // catches up teams booked before the step existed; writes only on a change
-  return { ok: true, campus: campus, buildings: d.buildings, rooms: d.rooms, bookings: d.bookings, requests: await hospRequests_(campus, d.bookings) };
+  return { ok: true, campus: campus, buildings: d.buildings, rooms: d.rooms, bookings: d.bookings, requests: await hospRequests_(campus, d.bookings), changes: hospChangesOut_(d) };
 }
 /* One save for all three kinds — a building, a room (with its beds), a
    booking — so the page has one call to make and one answer to read. */
@@ -6970,6 +7143,7 @@ async function hospSave(username, pin, kind, rec) {
     if (clash) return { ok: false, err: 'bed_taken', with: clash.name };
     if (clean.tripId && d.bookings.some(function (o) { return o.id !== clean.id && o.tripId === clean.tripId; })) return { ok: false, err: 'already_booked' };
     if (clean.stayId && d.bookings.some(function (o) { return o.id !== clean.id && o.stayId === clean.stayId; })) return { ok: false, err: 'already_booked' };
+    if (clean.schoolId && d.bookings.some(function (o) { return o.id !== clean.id && o.schoolId === clean.schoolId; })) return { ok: false, err: 'already_booked' };
   }
   clean.updated = new Date().toISOString(); clean.updatedBy = a.s.id;
   if (idx > -1) list[idx] = clean; else list.push(clean);
@@ -7042,10 +7216,13 @@ async function hospStaffBeds(username, pin, map) {
     const k = d.bookings.find(function (x) { return x.id === kId; });
     k.bedIds = [moved[kId]]; k.bedNames = {}; k.updated = now; k.updatedBy = a.s.id;
   });
+  // the staff member it is, when the name is someone's on this campus — so archiving them frees the bed (hospPersonLeft_)
+  const people = (await getStaff_()).filter(function (r) { return r && r.active !== false && !isApplicant_(r) && r.campus === campus; });
+  const idOf = function (n) { const m = people.filter(function (r) { return String(r.name || '').trim().toLowerCase() === n.trim().toLowerCase(); }); return m.length === 1 ? m[0].id : ''; };
   add.forEach(function (x) {
     if (d.bookings.length >= HOSP_MAX.bookings) return;
     d.bookings.push({ id: hospId_('hk'), category: 'staff', name: x.name, from: today, to: '', permanent: true, males: 0, females: 0, count: 1, family: false,
-      bedIds: [x.bed], bedNames: {}, notes: '', tripId: '', created: now, createdBy: a.s.id, updated: now, updatedBy: a.s.id });
+      bedIds: [x.bed], bedNames: {}, notes: '', tripId: '', staffId: idOf(x.name), created: now, createdBy: a.s.id, updated: now, updatedBy: a.s.id });
   });
   await saveHosp_(campus, d);
   return getHospitality(username, pin);
@@ -7366,72 +7543,132 @@ function dutyAway_(trips, week) {
   });
   return out;
 }
-/* Who can be put on the week starting `week`: grouped, each group a label
-   and names; `away` notes the days someone on leave for part of the week is
-   gone. Staff away the whole working week (Mon–Fri) are left out. */
+/* Who can be put on the week starting `week` (Nov 2026, Andrew: "make sure the names show up according to that
+   week … if a team leaves earlier that week … there's no room for mistakes or people that we may have missed"):
+   groups in a set order — campus staff & YAP, other staff, each team, each school, students, volunteers, guests
+   and speakers, then names typed before — each { id, kind, label, names, days? }. Everyone in a group is here at
+   least one day of the week (Sun … Sat); `days` is the days a team or school is here when it is not all week,
+   `here[name]` the days for anyone here part of the week (a team leaving Wednesday is here Sun–Tue: the day
+   they leave is not theirs), `awayDays[name]` the days a staff member is on leave (`away` says it in words, as
+   before). Staff on leave the whole working week (Mon–Fri) are left out. Sources: the staff list and their leave,
+   the Teams Database (with everyone the leader listed on the portal), each DTS school's accepted students (from
+   the day they arrive, else the school's first day, to its last), and SR Hospitality's bookings that week — the
+   names in their beds, else the booking's name. */
 async function dutyPeople_(campus, week, extras) {
-  const weekEnd = addDays_(week, 7), groups = [], away = {};
+  const weekEnd = addDays_(week, 7), groups = [], away = {}, awayDays = {}, here = {};
+  const days7 = []; for (let i = 0; i < 7; i++) days7.push(addDays_(week, i));
+  // the days of this week someone staying [from, to) is here — to is the day they leave (or, inclusive, a school's last day)
+  const span = function (from, to, inclusive) {
+    return days7.map(function (d, i) { return from && from <= d && (!to || (inclusive ? d <= to : d < to)) ? i : -1; }).filter(function (i) { return i > -1; });
+  };
+  const seenAt = {};
+  const mark = function (n, idx) {
+    if (!idx || idx.length === 7) { seenAt[n] = [0, 1, 2, 3, 4, 5, 6]; delete here[n]; return; }
+    const was = seenAt[n] || [], all = was.concat(idx).filter(function (v, i, a) { return a.indexOf(v) === i; }).sort();
+    seenAt[n] = all;
+    if (all.length === 7) delete here[n]; else here[n] = all;
+  };
   const gone = dutyAway_(await getTrips_(), week);
   const staff = (await getStaff_()).filter(function (s) { return s && s.active !== false && !isApplicant_(s) && s.campus === campus && !s.archived; })
     .sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
   const shorts = dutyShortNames_(staff);
-  const campusNames = [], otherNames = [];
+  const campusNames = [], otherNames = [], staffSet = {};
   staff.forEach(function (s, i) {
     if (!shorts[i]) return;
     const g = gone[s.id];
     if (g && [1, 2, 3, 4, 5].every(function (d) { return g[d]; })) return;   // away all week
-    if (g) away[shorts[i]] = Object.keys(g).sort().map(function (d) { return DUTY_DAY_SHORT[d]; }).join(', ');
+    if (g) { away[shorts[i]] = Object.keys(g).sort().map(function (d) { return DUTY_DAY_SHORT[d]; }).join(', '); awayDays[shorts[i]] = Object.keys(g).map(Number).sort(); }
     /* Campus staff and YAP share the chores and the cooking (Uriah), so they are one group;
        ministry staff — and anyone whose type is not set — are the other. */
     const st = cleanStaffType_(s.staffType);
     (st === 'campus' || st === 'yap' ? campusNames : otherNames).push(shorts[i]);
+    staffSet[shorts[i].toLowerCase()] = 1; seenAt[shorts[i]] = [0, 1, 2, 3, 4, 5, 6];
   });
-  if (campusNames.length) groups.push({ id: 'campus', label: 'Campus staff & YAP', names: campusNames });
-  if (otherNames.length) groups.push({ id: 'staff', label: 'Other staff', names: otherNames });
-  // teams whose dates cover any of the week, with everyone their leader listed on the portal
+  if (campusNames.length) groups.push({ id: 'campus', kind: 'staff', label: 'Campus staff & YAP', names: campusNames });
+  if (otherNames.length) groups.push({ id: 'staff', kind: 'staff', label: 'Other staff', names: otherNames });
+  const put = function (g, n, idx) {
+    n = dutyText_(n, DUTY_MAX.name);
+    if (!n || staffSet[n.toLowerCase()]) return;
+    if (g.names.indexOf(n) === -1) g.names.push(n);
+    mark(n, idx);
+  };
+  // teams whose dates take in any day of the week, with everyone their leader listed on the portal
   const cands = await getCandidates_(), byCand = {};
   cands.forEach(function (c) { if (c && c.id) byCand[c.id] = c; });
-  (await getTeamTrips_()).filter(function (t) { return t.campus === campus && t.status !== 'cancelled' && t.from && t.to && t.from < weekEnd && t.to >= week; })
+  (await getTeamTrips_()).filter(function (t) { return t.campus === campus && t.status !== 'cancelled' && t.from && t.to && t.from < weekEnd && t.to > week; })
+    .sort(function (a, b) { return a.from < b.from ? -1 : 1; })
     .forEach(function (t) {
+      const idx = span(t.from, t.to, false);
+      if (!idx.length) return;
+      const g = { id: 'team_' + t.id, kind: 'team', label: t.name, names: [] };
+      if (idx.length < 7) g.days = idx;
       const c = t.candidateId && byCand[t.candidateId];
-      if (!c) return;
-      const a = teamAnswers_(c), names = [];
-      const add = function (n) { n = dutyText_(n, DUTY_MAX.name); if (n && names.indexOf(n) === -1) names.push(n); };
-      add(a.leaderName || c.name);
-      (Array.isArray(a.coLeaders) ? a.coLeaders : []).forEach(function (p) { add(p && p.name); });
-      ((c.portal && c.portal.members) || []).forEach(function (p) { add(p && p.name); });
-      if (names.length) groups.push({ id: 'team_' + t.id, label: t.name, names: names });
+      if (c) {
+        const a = teamAnswers_(c);
+        put(g, a.leaderName || c.name, idx);
+        (Array.isArray(a.coLeaders) ? a.coLeaders : []).forEach(function (p) { put(g, p && p.name, idx); });
+        ((c.portal && c.portal.members) || []).forEach(function (p) { put(g, p && p.name, idx); });
+      }
+      groups.push(g);   // kept even before its people are named, so its beds' names (below) join it
     });
-  /* who is booked into SR Hospitality that week — by the names in their
-     beds (bedNames) where Hospitality has put them in, else the booking's name:
-     students in a group of their own; guests, speakers and volunteers as
-     "Staying with us"; names typed in for a team join that team's list.
-     Staff come in above, from the staff list, so a staff bed adds nobody. */
-  const students = [], guests = [];
-  const put = function (list, n) { n = dutyText_(n, DUTY_MAX.name); if (n && list.indexOf(n) === -1) list.push(n); };
+  // each DTS school's accepted students, in the weeks they are here
+  try {
+    (await schoolGroups_(campus, cands)).forEach(function (sg) {
+      const g = { id: 'school_' + sg.school.id, kind: 'school', label: sg.label, names: [] };
+      sg.accepted.forEach(function (p) { const idx = span(p.arrive || sg.school.from, sg.school.to, true); if (idx.length) put(g, p.name, idx); });
+      const idx = span(sg.school.from, sg.school.to, true);
+      if (idx.length && idx.length < 7) g.days = idx;
+      if (g.names.length) groups.push(g);
+    });
+  } catch (e) { console.error('duty: schools', e); }
+  /* who is booked into SR Hospitality that week — by the names in their beds where Hospitality has put them
+     in, else the booking's name; a team's names join that team; a school's booking adds its students' names
+     where they aren't in the school already. Staff come in above, from the staff list. */
+  const students = { id: 'students', kind: 'students', label: 'Students', names: [] },
+    vols = { id: 'volunteers', kind: 'volunteers', label: 'Volunteers', names: [] },
+    guests = { id: 'guests', kind: 'guests', label: 'Guests & speakers', names: [] };
   (await getHosp_(campus)).bookings.forEach(function (k) {
     if (k.category === 'staff' || !(k.from < weekEnd && (k.permanent || k.to > week))) return;
+    const idx = span(k.from, k.permanent ? '' : k.to, false);
+    if (!idx.length) return;
     const named = Object.keys(k.bedNames || {}).map(function (id) { return k.bedNames[id]; }).filter(Boolean)
       .concat((k.people || []).map(function (p) { return p && p.name; }).filter(Boolean));
     if (k.category === 'team') {
-      if (!named.length) return;   // the team's own list (above) has them
+      if (!named.length) return;
       let g = groups.filter(function (x) { return k.tripId && x.id === 'team_' + k.tripId; })[0];
-      if (!g) { g = { id: 'hteam_' + k.id, label: k.name, names: [] }; groups.push(g); }
-      named.forEach(function (n) { put(g.names, n); });
+      if (!g) { g = { id: 'hteam_' + k.id, kind: 'team', label: k.name, names: [] }; if (idx.length < 7) g.days = idx; groups.push(g); }
+      named.forEach(function (n) { put(g, n, idx); });
       return;
     }
-    const list = k.category === 'student' ? students : guests;
-    if (named.length) named.forEach(function (n) { put(list, n); });
-    else if (!(k.category === 'student' && k.count > 1)) put(list, k.name);   // a school's booking name isn't a person
+    if (k.schoolId) {
+      const g = groups.filter(function (x) { return x.id === 'school_' + k.schoolId; })[0];
+      if (g) { named.forEach(function (n) { put(g, n, idx); }); return; }
+    }
+    const g = k.category === 'student' ? students : k.category === 'volunteer' ? vols : guests;
+    const inGroup = function (n) { return groups.some(function (x) { return x.names.indexOf(n) > -1; }); };   // already in a school or team: once is enough
+    if (named.length) named.forEach(function (n) { if (inGroup(n)) mark(n, idx); else put(g, n, idx); });
+    else if (!(k.category === 'student' && k.count > 1)) put(g, k.name, idx);   // a group's booking name isn't a person
   });
-  if (students.length) groups.push({ id: 'students', label: 'Students', names: students });
-  if (guests.length) groups.push({ id: 'guests', label: 'Staying with us', names: guests });
+  [students, vols, guests].forEach(function (g) { if (g.names.length) groups.push(g); });
+  const keep = groups.filter(function (g) { return g.names.length || g.kind === 'team'; });
   const seen = {};
-  groups.forEach(function (g) { g.names.forEach(function (n) { seen[n] = 1; }); });
+  keep.forEach(function (g) { g.names.forEach(function (n) { seen[n] = 1; }); });
   const more = (extras || []).filter(function (n) { return !seen[n]; });
-  if (more.length) groups.push({ id: 'extras', label: 'Added before', names: more });
-  if (Object.keys(away).length) groups.away = away;
-  return groups;
+  if (more.length) keep.push({ id: 'extras', kind: 'extras', label: 'Typed before', names: more });
+  const out = keep.filter(function (g) { return g.names.length; });
+  if (Object.keys(away).length) out.away = away;
+  out.awayDays = awayDays; out.here = here;
+  return out;
+}
+/* A new week starts as a copy of the week before (most duties carry over) — but only with the people here
+   this week: anyone not in this week's names (a team that left, a student whose school ended, someone who left
+   the staff) is taken off, and the page is told who. */
+function dutyKeepOnly_(sched, known) {
+  const removed = [];
+  const keep = function (list) { return (list || []).filter(function (n) { if (known[n]) return true; if (removed.indexOf(n) === -1) removed.push(n); return false; }); };
+  if (sched.layout === 'grid') Object.keys(sched.cells || {}).forEach(function (k) { sched.cells[k] = keep(sched.cells[k]); });
+  else (sched.sections || []).forEach(function (sec) { (sec.rows || []).forEach(function (r) { r.people = keep(r.people); }); });
+  return removed;
 }
 function dutyTemplate_(kind) {
   const t = JSON.parse(JSON.stringify(DUTY_TEMPLATES[kind]));
@@ -7456,16 +7693,21 @@ async function getDuty(username, pin, kind, week) {
   const d = await getDutyDoc_(a.campus), box = d[kind];
   const rec = box.weeks[week] || null;
   if (!a.canEdit) return { ok: true, kind: kind, week: week, canEdit: false, sched: rec && rec.published ? dutyOut_(rec, week, kind) : null };
-  let sched = rec, isNew = false, from = '';
+  let sched = rec, isNew = false, from = '', removed = [];
+  const people = await dutyPeople_(a.campus, week, box.extras);
   if (!sched) {
     isNew = true;
     const before = Object.keys(box.weeks).filter(function (w) { return w < week; }).sort().pop();
-    if (before) { sched = cleanSched_(box.weeks[before], kind); from = before; } else sched = dutyTemplate_(kind);
+    if (before) {
+      sched = cleanSched_(box.weeks[before], kind); from = before;
+      const known = {};
+      people.forEach(function (g) { g.names.forEach(function (n) { known[n] = 1; }); });
+      removed = dutyKeepOnly_(sched, known);   // last week's names who aren't here this week come off
+    } else sched = dutyTemplate_(kind);
     sched.published = false;
   }
-  const people = await dutyPeople_(a.campus, week, box.extras);
-  return { ok: true, kind: kind, week: week, canEdit: true, isNew: isNew, from: from, sched: dutyOut_(sched, week, kind),
-    people: people, away: people.away || {} };
+  return { ok: true, kind: kind, week: week, canEdit: true, isNew: isNew, from: from, removed: removed, sched: dutyOut_(sched, week, kind),
+    people: people, away: people.away || {}, awayDays: people.awayDays || {}, here: people.here || {} };
 }
 /* action: 'save' keeps it as it is (a draft stays a draft, a published week
    stays published), 'publish' shows it to everyone, 'unpublish' takes it down. */
@@ -8475,12 +8717,16 @@ async function reqStatusAll(username, pin) {
 }
 
 async function hrArchive(username, pin, staffId, info) {
-  return hrMutate_(username, pin, staffId, function (rec, me) {
+  let by = '';
+  const out = await hrMutate_(username, pin, staffId, function (rec, me) {
     if (rec.id === me.id) return { abort: true, ok: false, err: 'self_archive' };
     const at = isoDate_(info && info.at) || new Date().toISOString().slice(0, 10);
     rec.archived = { at: at, reason: str_(info && info.reason, 300), by: me.id };
     rec.active = false;
+    by = me.id;
   });
+  if (out && out.ok) await hospPeopleLeft_([str_(staffId, 60)], by);   // the bed they lived in is free from today
+  return out;
 }
 /* Archive a group at once — a school or team that has left — in ONE write of the
    staff list, so twenty archives cannot race each other the way twenty single
@@ -8498,7 +8744,8 @@ async function hrArchiveMany(username, pin, ids, info) {
   if (want.has(s.id)) return { ok: false, err: 'self_archive' };
   const at = isoDate_(info && info.at) || new Date().toISOString().slice(0, 10);
   const reason = str_(info && info.reason, 300);
-  return mutateStaff_(function (rows) {
+  const done = [];
+  const out = await mutateStaff_(function (rows) {
     let n = 0;
     const now = new Date().toISOString();
     rows.forEach(function (r) {
@@ -8506,10 +8753,13 @@ async function hrArchiveMany(username, pin, ids, info) {
       r.archived = { at: at, reason: reason, by: s.id };
       r.active = false;
       r.updated = now;
+      done.push(r.id);
       n++;
     });
     return { ok: true, archived: n };
   });
+  if (out && out.ok) await hospPeopleLeft_(done, s.id);
+  return out;
 }
 async function hrUnarchive(username, pin, staffId) {
   return hrMutate_(username, pin, staffId, function (rec) {
@@ -9129,6 +9379,32 @@ function dtsSchoolOf_(c, schools) {
   const hit = schools.filter(function (s) { return dtsSchoolStart_(s) >= day; })[0];
   return hit ? hit.id : '';
 }
+/* ---- a school is a group, like a team (Nov 2026, Andrew: "treating the schools as a team as well … so that
+   the hospitality team also knows and sees in their system that there is a DTS group that they need to book")
+   Each DTS school with its dates, and its students: accepted or here (each with the day they arrive, when the
+   school has set it, and m / f from their application), plus how many are still applying. SR Hospitality lists
+   it as a request (hospRequests_), the weekly schedules offer its students in the weeks they are here
+   (dutyPeople_). Graduated or closed students are not counted. */
+function dtsSex_(v) { v = String(v || '').toLowerCase(); return /^m|ប្រុស|male/.test(v) && !/female/.test(v) ? 'm' : /^f|ស្រី|female/.test(v) ? 'f' : ''; }
+function dtsSchoolLabel_(sc) { const n = String(sc.name || '').trim(); return /\b(19|20)\d\d\b/.test(n) ? n : (n + ' ' + (sc.year || '')).trim(); }
+async function schoolGroups_(campus, cands) {
+  const db = dtsDbOut_(await readJSON('dtsDb:' + campus, DTS_DB_FALLBACK));
+  const all = dtsSortSchools_(db.schools.slice());
+  const out = all.filter(function (sc) { return sc && sc.from && sc.to; }).map(function (sc) { return { school: sc, label: dtsSchoolLabel_(sc), accepted: [], applied: 0 }; });
+  if (!out.length) return [];
+  (cands || await getCandidates_()).forEach(function (c) {
+    if (!isDtsCand_(c, campus) || c.archived || !dtsIsStudent_(c)) return;
+    const g = out.find(function (x) { return x.school.id === dtsSchoolOf_(c, all); });
+    if (!g) return;
+    const col = dtsColumn_(c);
+    if (col === 'applied') { g.applied++; return; }
+    if (col !== 'accepted' && col !== 'arrived') return;
+    const a = (c.portal && ((c.portal.form && c.portal.form.answers) || c.portal.draft)) || {}, m = dtsMarks_(c);
+    g.accepted.push({ id: c.id, name: c.name || '', sex: dtsSex_((m.profile && m.profile.sex) || a.gender), arrive: m.arrive || '', here: col === 'arrived' });
+  });
+  out.forEach(function (g) { g.accepted.sort(function (x, y) { return String(x.name).localeCompare(String(y.name)); }); });
+  return out;
+}
 function dtsIsStudent_(c) {
   if (!c) return false;
   const col = dtsColumn_(c);
@@ -9141,7 +9417,7 @@ function dtsStudentOut_(c, schools) {
   return {
     id: c.id, name: c.name, stage: c.stage, column: dtsColumn_(c), audience: audienceOf_(c), country: c.country || '', feeCat: dtsFeeCat_(c.country, audienceOf_(c)),
     applied: dtsApplied_(c), arrived: c.stage === 'arrived' ? dtsReached_(c, 'arrived') : '',
-    graduated: m.graduated || '', potentialStaff: m.potentialStaff || '', archived: !!c.archived,
+    graduated: m.graduated || '', potentialStaff: m.potentialStaff || '', archived: !!c.archived, arrive: m.arrive || '',
     schoolId: dtsSchoolOf_(c, schools), placed: !!m.schoolId, oneOnOne: m.oneOnOne || '', oneOnOneName: m.oneOnOneName || '', hasAccount: !!c.staffId,
     // what they wrote in the portal — only the contact details the school needs, never their health or story
     portal: { sex: s(a.gender), dob: s(a.dob), phone: s(a.phone || c.phone), email: s(a.email || c.email), guardianName: s(a.guardianName), guardianPhone: s(a.guardianPhone),
@@ -9539,6 +9815,8 @@ async function dtsStudentSave(username, pin, candId, p) {
   /* their 1-on-1 is a staff member (an id) or, typed in, a name — someone outside GPDTS or not in the app; one replaces the other */
   if (p.oneOnOne !== undefined) { if (p.oneOnOne) m.oneOnOne = str_(p.oneOnOne, 60); else delete m.oneOnOne; delete m.oneOnOneName; notes.push('Their 1-on-1 changed'); }
   else if (p.oneOnOneName !== undefined) { const nm = str_(p.oneOnOneName, 120); delete m.oneOnOne; if (nm) m.oneOnOneName = nm; else delete m.oneOnOneName; notes.push('Their 1-on-1 changed'); }
+  /* the day they arrive (Nov 2026): SR Hospitality books their bed from it, the weekly schedules offer them from it */
+  if (p.arrive !== undefined) { const v = isoDate_(p.arrive); if (v) m.arrive = v; else delete m.arrive; notes.push(v ? 'Arriving ' + v : 'Arrival day cleared'); }
   if (p.profile !== undefined) {
     const pr = {};
     DTS_PROFILE_FIELDS.forEach(function (k) { const v = String(p.profile && p.profile[k] != null ? p.profile[k] : '').trim().slice(0, k === 'notes' ? 2000 : 200); if (v) pr[k] = v; });
@@ -14369,6 +14647,7 @@ const HANDLERS = {
   hospStayStatus: function (a) { return hospStayStatus(a[0], a[1], a[2], a[3]); },
   hospMoveBed: function (a) { return hospMoveBed(a[0], a[1], a[2], a[3], a[4]); },
   hospStaffBeds: function (a) { return hospStaffBeds(a[0], a[1], a[2]); },
+  hospChangeDone: function (a) { return hospChangeDone(a[0], a[1], a[2]); },
   hospImport: function (a) { return hospImport(a[0], a[1], a[2]); },
   getLeadBoard: function (a) { return getLeadBoard(a[0], a[1]); },
   saveLeadCard: function (a) { return saveLeadCard(a[0], a[1], a[2]); },

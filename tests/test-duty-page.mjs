@@ -56,7 +56,7 @@ async function open(who, opts) {
   const errors = [], sent = [];
   page.on('pageerror', e => errors.push(String(e)));
   page.on('console', m => { if (m.type() === 'error' && !/fonts\.googleapis|ERR_CERT|ERR_CONNECTION/.test(m.text())) errors.push('console: ' + m.text()); });
-  const store = { ['kitchen|' + W0]: { ...KITCHEN(), published: true, publishedAt: '2026-10-04T01:00:00Z' }, ['chores|' + W0]: opts.chores || null };
+  const store = { ['kitchen|' + W0]: { ...KITCHEN(), published: true, publishedAt: '2026-10-04T01:00:00Z' }, ['chores|' + W0]: opts.chores || null, ...(opts.store || {}) };
   const edits = { kitchen: who === KARA, chores: who === HANA };
   await ctx.route('**/.netlify/functions/api', r => {
     const b = JSON.parse(r.request().postData() || '{}'); sent.push(b);
@@ -74,7 +74,7 @@ async function open(who, opts) {
       else {
         let s = store[k + '|' + w], isNew = false, from = '';
         if (!s) { isNew = true; s = { ...(k === 'kitchen' ? KITCHEN() : CHORES()), published: false }; from = k === 'kitchen' ? W0 : ''; if (k === 'chores') s.sections.forEach(x => x.rows.forEach(r => r.people = [])); }
-        out = { ok: true, kind: k, week: w, canEdit: true, isNew, from, sched: { ...JSON.parse(JSON.stringify(s)), kind: k, week: w }, people: PEOPLE, away: { Kim: 'Tue, Wed' } };
+        out = { ok: true, kind: k, week: w, canEdit: true, isNew, from, sched: { ...JSON.parse(JSON.stringify(s)), kind: k, week: w }, people: opts.people || PEOPLE, away: { Kim: 'Tue, Wed' }, ...(opts.dutyExtra || {}) };
       }
     }
     else if (b.fn === 'saveDuty') {
@@ -249,6 +249,34 @@ console.log('=== the morning chores at a glance ===');
   ok('with no chore, My Home shows no chore row', !(await page.$('#schedMineChore')));
   await page.evaluate(() => schedOpen_('chores', false, 'home')); await page.waitForTimeout(700);
   ok('someone with no chore sees no “your chore” and no Mine switch', !(await page.$('#schedMine')) && !(await page.$('[data-schedonly]')));
+  await ctx.close();
+}
+
+console.log('=== who is here this week, day by day (Nov 2026) ===');
+{
+  const people = [{ id: 'campus', kind: 'staff', label: 'Campus staff & YAP', names: ['Hana', 'Kara', 'Kim'] },
+    { id: 'team_t1', kind: 'team', label: 'Example Church', names: ['Lee Leader', 'Member One'], days: [0, 1, 2] },
+    { id: 'school_s1', kind: 'school', label: 'January DTS 2027', names: ['Dana Student'], days: [5, 6] },
+    { id: 'extras', kind: 'extras', label: 'Typed before', names: ['Visiting Cook'] }];
+  const k = KITCHEN(); k.cells = { 'di|mon': ['Member One'], 'di|thu': ['Lee Leader'], 'di|wed': ['Uriah Lyford'], 'di|fri': ['Dana Student'] };
+  const { ctx, page, errors } = await open(KARA, { people, store: { ['kitchen|' + W1]: { ...k, published: false } },
+    dutyExtra: { here: { 'Lee Leader': [0, 1, 2], 'Member One': [0, 1, 2], 'Dana Student': [5, 6] }, awayDays: { Kim: [2, 3] }, removed: ['Old Team Member'] } });
+  await page.evaluate(w => { schedOpen_('kitchen', true, 'ministry'); S.schedWeek = w; S.schedData = null; render(); }, W1); await page.waitForTimeout(700);
+  const note = await page.$eval('#schedWeekNote', e => e.innerText).catch(() => '');
+  ok('the week says who is here: how many in each group, a team that leaves midweek, a school that arrives', /Who is here this week/.test(note) && /Example Church · Leaves Wed/.test(note) && /January DTS 2027 · Arrives Fri/.test(note) && /Campus staff & YAP\s*3/.test(note), note.slice(0, 400));
+  ok('… who came off last week’s copy, and who is on leave part of it', /Taken off last week’s copy — not here this week: Old Team Member/.test(note) && /On leave part of the week: Kim \(Tue, Wed\)/.test(note));
+  ok('… and the names on a day they aren’t here, in red: the team on Thursday, someone not here at all', /2 names are on days they aren’t here/.test(note) && (await page.$$('[data-dwarn]')).length === 2 && /Not here Thu/.test(await page.$eval('[data-dcell="di|thu"]', e => e.textContent)) && /Not here this week/.test(await page.$eval('[data-dcell="di|wed"]', e => e.textContent)));
+  ok('… someone here that day is not marked', !(await page.$('[data-dcell="di|mon"] [data-dwarn]')) && !(await page.$('[data-dcell="di|fri"] [data-dwarn]')));
+  await page.click('[data-dcell="di|thu"]'); await page.waitForTimeout(250);
+  const chip = n => page.$eval('[data-dpick="' + n + '"]', b => ({ dis: b.disabled, txt: b.textContent })).catch(() => null);
+  const lee = await chip('Lee Leader'), mem = await chip('Member One'), dana = await chip('Dana Student'), hana = await chip('Hana');
+  ok('the picker for Thursday: the team (gone Wednesday) and the school (from Friday) can’t be picked — it says why', mem && mem.dis && /not here Thu/.test(mem.txt) && dana && dana.dis && hana && !hana.dis, JSON.stringify([mem, dana, hana]));
+  ok('… someone already in the box can still be taken off', lee && !lee.dis);
+  ok('… each group says who it is and when', /Example Church · Leaves Wed/.test(await page.$eval('#schedSheet', e => e.textContent)));
+  ok('… names typed before wait behind a fold', !(await page.$('[data-dpick="Visiting Cook"]')) && !!(await page.$('#schedExtrasBtn')));
+  await page.click('#schedExtrasBtn'); await page.waitForTimeout(200);
+  ok('… and open with a tap', !!(await page.$('[data-dpick="Visiting Cook"]')));
+  ok('no sideways scroll; no errors', !(await overflow(page)) && errors.length === 0, errors.join(' | '));
   await ctx.close();
 }
 

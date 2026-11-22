@@ -652,6 +652,53 @@ quietest bucket named), Requests, Calendar, Bookings, Rooms.
   text, a free one tinted with a coloured border, each with ♂ / ♀ / 👪; rooms carry a coloured
   style tag (`hospStyleTag_`).
 
+## SR Hospitality, cleaned up (Nov 2026, Andrew: "clean up some things and make it easy and clear to see")
+- **The Overview leads with what needs you** (`hospAttnHtml_`): the change cards (below), then `#hospAttn` "Needs you" —
+  teams cancelled with beds still booked, requests waiting for beds, bookings in the next 14 days with beds to pick
+  (each a row that goes where it's done) or "Nothing waiting" — then `#hospWeek` "The next 7 days" (arriving / leaving,
+  names and dates). The tiles and "How full we are" follow.
+- **A room can fit more than its beds** ("the apartment … a bunch of girls"): the room form's **How many people can sleep
+  here?** (`#hrFit`) adds extra spaces past the beds — beds `{label:'+1', spot:true}` (kept by `cleanHospRoom_`), dashed,
+  booked, counted and moved exactly like beds; lowering it takes spaces off, never real beds. The room list says
+  "4 beds + 2 extra · fits 6".
+- **The Beds tab** (was Calendar; `data-hosptab="cal"`) opens on **Free beds** (`hospFreeHtml_`, `#hospFree`, `S.hospCalMode`
+  'free' | 'board' | 'cal'): every room down the side, 14 nights across (‹ › a week, `S.hospFreeFrom`), each box that room's
+  free beds that night (`.hospFreeCell` f-all / f-some / f-none), the whole base on top (cap − held) and "Booked, no bed yet"
+  under it; a tap (`[data-hospfreeday]`) opens the bed board on that night. The **bed board** now reads: the date picker,
+  "Night of Wed 14 Oct" with "n in a bed · m beds free" (`.hospNightHead`), who arrives / leaves that morning
+  (`#hospComeGo`), free beds by kind of room (`#hospFreeBy`), "Only rooms with a free bed" (`#hospBoardOnlyFree`,
+  `S.hospBoardFree`) and each room's "3 of 4 free".
+- **A team's new dates move its booking** (api.js `hospTripMoved_`, from `syncTeamTrip_` — the portal, the team or staff —
+  and `saveTeamTrip` — the Teams Database): the booking's first night and leaving day shift by as much as the team's did,
+  and a named bed someone else holds on the new nights comes off it (`dropped`, to pick again). A team not booked yet is
+  noted too. Each is a line in `changes` on `hosp:<campus>` (`hospNote_`, 60 kept; a run of changes within 30 minutes is one
+  line, and changed back it goes) — shown on SR Hospitality's Overview (`#hospChanges`), on the Hospitality ministry's My
+  Ministry page (`#hospNews`, from the boot's `hospNews` for `canHosp_` staff, `mmTop`) and in the bell (`data-gohosp`), until
+  someone taps **Got it** (`hospChangeDone(user, pin, id | 'all')`, `bindHospNews_`).
+- **Someone who leaves leaves SR Hospitality** (`hospPersonLeft_` from hrArchive, hrArchiveMany, adminSetActive(false) and
+  adminDeleteStaff): their resident booking (staff / student / volunteer — never a team or guest), by `staffId` (staff beds
+  set by name now carry it) or by their name, ends today (or goes, if it starts today or later); in a family booking only
+  their bed comes off. Not by name for a sign-up never let in, or when someone still here shares the name. A change card
+  says which beds came free. The same moment `staffLeftCleanup_` clears their mentees' mentor and takes them off open GP
+  Tasks and shared lists.
+- tests/test-hospitality.mjs (server), tests/test-hospitality-page.mjs. Khmer: docs/khmer-needed.md §129.
+- **A school is a group, like a team** (Nov 2026, Andrew: "treating the schools as a team … the hospitality team also knows …
+  there is a DTS group that they need to book"): `schoolGroups_(campus)` — each DTS school with dates (`dtsDb`) and its
+  students accepted or here (m / f from the application, each with the day they arrive — `dts.arrive`, set on the student's
+  GPDTS record, `#dtsStuArrive` → `dtsStudentSave {arrive}`), and how many still applying. `hospRequests_` lists it
+  (`kind:'school'`, `schoolId`, key `sc:<id>`, from the earliest arrival to the morning after the school's last day,
+  `booked` = its booking's beds); Book beds makes a student booking with `schoolId` (one per school) and the students named.
+  Accepted after it was booked: the card says "n more students than beds booked" with **Add beds for the new students**
+  (`[data-hospschoolup]`), and Needs you lists it. Khmer §130.
+- **The weekly schedules know who is here, day by day** (`dutyPeople_`): groups in a set order with `kind` — staff, each team,
+  each school (`school_<id>`), students, volunteers, guests & speakers, names typed before — and `days` for a team or school
+  here part of the week; getDuty adds `here[name]` (the days someone is here when not all week — a team leaving Wednesday is
+  Sun–Tue) and `awayDays`. A new week copied from last week keeps only this week's names (`dutyKeepOnly_`, `removed`). The
+  editor (07-health-leave.js) leads with **Who is here this week** (`#schedWeekNote`: counts, who leaves / arrives midweek, who
+  came off the copy, who is on leave, names on a day they aren't here); those names are red in the schedule (duty.js
+  `o.flag`, `[data-dwarn]`); the picker won't offer someone for a day they aren't here (`.hospChip.nothere`) and folds names
+  typed before (`#schedExtrasBtn`). tests/test-duty.mjs, test-duty-page.mjs.
+
 ## The hamburger menu, by role
 `renderMenu` draws sections, and leaves out a section with nothing in it:
 - everyone: **Base** (first — it left the bottom bar, Oct 2026), YWAM GP, Prayer, 360 reviews,
@@ -3780,7 +3827,7 @@ Claude build out tasks and calendar dates in line with our verbal processing."
   by sound to the Latin roster with words of respect (បង, លោកគ្រូ…) dropped, "ប្រាប់ … ឲ្យ" as giving a task. Titles stay
   in the words they used (mixed stays mixed), the note in the app's language. On an iPhone, Apple's dictation has no
   Khmer, so the sheet points to Gboard's microphone (`gvKmHintHtml_`). Tried on the real model with a made-up mixed
-  Khmer ramble: days, 3 pm after "2… no, 3", and both people came out right. Khmer: docs/khmer-needed.md §129.
+  Khmer ramble: days, 3 pm after "2… no, 3", and both people came out right. Khmer: docs/khmer-needed.md §131.
 - tests/test-voice-tasks.mjs (server), tests/test-voice-tasks-ui.mjs; both use tests/voice-fixtures.mjs, a stand-in
   for the SDK written into the test's own node_modules — no test calls Anthropic. Khmer: docs/khmer-needed.md §113.
   sw.js SHELL v26.

@@ -891,6 +891,7 @@ function applyBoot(d, fromCache){
   S.hrDue = (d.hrDue===undefined) ? null : d.hrDue;
   S.backup = d.backup || null;   // admins only: the nightly backup's last run
   S.numbers = d.numbers || null;
+  S.hospNews = d.hospNews || null;   // SR Hospitality: a team's new dates, someone who left (06-numbers-contract.js hospChangesHtml_)
   S.pulse = {}; S.staffDebt = null;
   S.hrFollowUps = (d.hrFollowUps===undefined) ? null : d.hrFollowUps;
   S.reqDocs = d.reqDocs || [];
@@ -1300,6 +1301,9 @@ function renderNotifPanel(){
   });
   document.querySelectorAll('#notifRoot [data-gohr]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='hr'; S.hrSub='home'; render(); };
+  });
+  document.querySelectorAll('#notifRoot [data-gohosp]').forEach(function(b){
+    b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='hosp'; S.hospTab='dash'; render(); };
   });
   document.querySelectorAll('#notifRoot [data-121accept]').forEach(function(b){
     b.onclick=function(){
