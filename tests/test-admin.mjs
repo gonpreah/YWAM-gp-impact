@@ -66,27 +66,38 @@ function seed(extra) {
 /* ---------- 1. every new account waits for an admin (Nov 2026; it used to be only Campus Leadership) ---------- */
 seed();
 let r = await call('staffRegister', [{ username: 'newstaff', pin: '5555', name: 'New Staff', email: 'newstaff@example.com', dept: 'Community Service', campus: 'poipet' }]);
-ok('any new sign-up comes back pending, no session',
-  r.body && r.body.ok === true && r.body.pending === true && !r.body.staff, JSON.stringify(r.body));
+/* Nov 2026 (Andrew): signed in at once to answer the setup questions — but only to that and the waiting page */
+ok('any new sign-up comes back pending — signed in only to answer the setup questions while it waits',
+  r.body && r.body.ok === true && r.body.pending === true && r.body.awaiting === true && r.body.staff && r.body.staff.setupTodo, JSON.stringify(r.body));
 r = await call('staffLogin', ['newstaff', '5555']);
-ok('and can’t log in until an admin approves it', r.body && r.body.ok === false && r.body.err === 'pending', JSON.stringify(r.body));
+ok('and its sign-in is the waiting one until an admin approves it', r.body && r.body.ok === true && r.body.awaiting === true, JSON.stringify(r.body));
+r = await call('getMyLogs', ['newstaff', '5555']);
+ok('… nothing else in the app answers it', r.body && r.body.ok === false, JSON.stringify(r.body));
 
 seed();
 r = await call('staffRegister', [{ username: 'newleader', pin: '5555', name: 'New Leader', email: 'newleader@example.com', dept: 'Campus Leadership', campus: 'poipet' }]);
-ok('a Campus Leadership sign-up comes back pending, no session',
-  r.body && r.body.ok === true && r.body.pending === true && !r.body.staff, JSON.stringify(r.body));
+ok('a Campus Leadership sign-up comes back pending, waiting',
+  r.body && r.body.ok === true && r.body.pending === true && r.body.awaiting === true, JSON.stringify(r.body));
 const created = (mem.staff || []).find(function (s) { return s.username === 'newleader'; });
 ok('and the record itself is inactive', !!created && created.active === false);
 
 r = await call('staffLogin', ['newleader', '5555']);
-ok('the right PIN on a pending account reports "pending", not a generic failure',
-  r.body && r.body.ok === false && r.body.err === 'pending', JSON.stringify(r.body));
+ok('the right PIN on a waiting account signs in to the waiting page',
+  r.body && r.body.ok === true && r.body.awaiting === true, JSON.stringify(r.body));
 r = await call('staffLogin', ['newleader', '0000']);
 ok('a wrong PIN on the same account never leaks "pending"',
   r.body && r.body.ok === false && r.body.err !== 'pending', JSON.stringify(r.body));
 r = await call('getMyBoot', ['newleader', '5555']);
-ok('and every other handler treats a pending account as no session at all (getMyBoot)',
-  r.body && r.body.ok === false && r.body.err === 'auth', JSON.stringify(r.body));
+ok('and its boot is only the waiting page’s few things — no base, logs, goals, trips or tasks',
+  r.body && r.body.ok === true && r.body.awaiting === true && !r.body.base && !r.body.logs && !r.body.goals && !r.body.trips && !r.body.gpTasks, Object.keys(r.body || {}).join(','));
+r = await call('adminListStaff', ['newleader', '5555']);
+ok('… and an admin handler refuses it', r.body && r.body.ok === false, JSON.stringify(r.body).slice(0, 80));
+mem.staff = mem.staff.map(function (s) { return s.username === 'newleader' ? { ...s, awaiting: undefined } : s; });
+r = await call('staffLogin', ['newleader', '5555']);
+ok('an inactive account that is not a new sign-up still reports "pending", not a generic failure',
+  r.body && r.body.ok === false && r.body.err === 'pending', JSON.stringify(r.body));
+r = await call('getMyBoot', ['newleader', '5555']);
+ok('… and every handler treats it as no session at all (getMyBoot)', r.body && r.body.ok === false && r.body.err === 'auth', JSON.stringify(r.body));
 
 /* ---------- 2. deactivating someone actually blocks login now ---------- */
 seed();

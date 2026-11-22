@@ -293,7 +293,7 @@ console.log('\n=== staff sign in with Google ===');
   const newbie = mem.staff.find(x => x.username === 'newbie');
   ok('sign up with Google: no username or PIN to pick — and it waits for an admin', r.body.ok && r.body.pending === true && newbie && !newbie.pinHash && newbie.google.sub === 'g-new' && newbie.active === false, JSON.stringify(r.body).slice(0, 120));
   r = await call('staffLoginGoogle', ['a.b.c']);
-  ok('until approved, Continue with Google says it is waiting', r.body.ok === false && r.body.err === 'pending');
+  ok('until approved, Continue with Google signs them in to the waiting page only (Nov 2026)', r.body.ok === true && r.body.awaiting === true && !!r.body.token);
   r = await call('adminSetActive', ['admin', '1234', newbie.id, true]);
   r = await call('staffLoginGoogle', ['a.b.c']);
   ok('once approved, Continue with Google signs them in', r.body.ok && r.body.user === 'newbie');

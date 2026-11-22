@@ -298,6 +298,7 @@ function bindAway(){
   var mb=document.getElementById('ministryBack');
   if(mb) mb.onclick=function(){ S.view='week'; render(); };
   var db=document.getElementById('dashToBase'); if(db) db.onclick=function(){ gpTap(); S.view='base'; render(); window.scrollTo(0,0); };
+  document.querySelectorAll('[data-tobase]').forEach(function(b){ b.onclick=function(){ gpTap(); S.view='base'; render(); window.scrollTo(0,0); }; });
   var gm=document.getElementById('goMinistryFromMe');
   if(gm) gm.onclick=function(){ gpTap(); S.view='ministry'; S.mmTab='ministry'; render(); };
   document.querySelectorAll('[data-gohealth]').forEach(function(b){ b.onclick=function(){ gpTap(); S.view='health'; if(b.getAttribute('data-gohealth')==='open'){ S.healthWeek=thisWeek(); S.weekForm=thisWeek(); } render(); window.scrollTo(0,0); }; });
@@ -539,6 +540,8 @@ function bindAway(){
   });
   bindHr();
   if(S.view==='library') bindLibrary_();
+  document.querySelectorAll('[data-prlib]').forEach(function(b){ b.onclick=function(){ gpTap(); var v=b.getAttribute('data-prlib').split('|');
+    S.view='library'; S.libBook=v[0]; S.libStep=null; S.libDone=null; if(S.ln){ S.ln.open=v[1]||''; delete S.ln.cache[v[0]]; } libLoad_(); render(); window.scrollTo(0,0); }; });
   if(S.view==='ministry'){ bindLw_(); bindCafe_(); bindLeadTools_(); bindFinance_(); bindDts_(); }
   if(S.view==='required') bindReqSign_();
   if(S.guest) bindGuest_();
@@ -1144,6 +1147,9 @@ function gpLabelFix_(){
 function bind(){
   try{ gpLabelFix_(); }catch(e){}
   bindUx_();
+  bindSetup_();   // a new account's first steps (22-setup.js)
+  bindAwaiting_();
+  bindDemo_();
   bindGame_();
   /* Who's here: Base's "On campus now" loads the count; the page loads team photos */
   if((S.view==='base' || S.view==='week') && !S.guest && !S.board && !S.student && S.me) whosHereLoad_();   // Base and My Home show the count
@@ -1658,10 +1664,11 @@ function bind(){
   // login
   var lb=document.getElementById('loginBtn');
   var ggl=document.getElementById('googleLogin'); if(ggl) ggl.onclick=function(){ gglGo_('login'); };
-  var ggs=document.getElementById('googleSignup'); if(ggs) ggs.onclick=function(){ gglGo_('login'); };
+  var ggs=document.getElementById('googleSignup'); if(ggs) ggs.onclick=function(){ gglGo_('signup'); };
   var ggk=document.getElementById('linkGoogle'); if(ggk) ggk.onclick=function(){ gglGo_('link'); };
   var ggsg=document.getElementById('gglStepGo'); if(ggsg) ggsg.onclick=function(){ gglGo_('link'); };
   var ggso=document.getElementById('gglStepOut'); if(ggso) ggso.onclick=function(){ logout(); };
+  var ggsl=document.getElementById('gglStepLater'); if(ggsl) ggsl.onclick=function(){ S.linkSignIn=false; render(); };
   var spl=document.getElementById('showPinLogin'); if(spl) spl.onclick=function(){ S.pinLogin=true; render(); };
   var hpl=document.getElementById('hidePinLogin'); if(hpl) hpl.onclick=function(){ S.pinLogin=false; render(); };
   // when Google doesn't work (07-health-leave.js): the help box, and the "no profile for that Google account" choice
@@ -1671,7 +1678,7 @@ function bind(){
   var gsk=document.getElementById('gglSkip'); if(gsk) gsk.onclick=function(){ lsSet('gp-ggl-skip', String(new Date().toDateString())); S.gglHelp=null; render(); };
   var ghp=document.getElementById('gglHaveProfile'); if(ghp) ghp.onclick=function(){ S.pinLogin=true; render(); var u=document.getElementById('li_user'); if(u) u.focus(); };
   var goa=document.getElementById('gglOtherAccount'); if(goa) goa.onclick=function(){ S.gglNew=null; gglGo_('login'); };
-  var gin=document.getElementById('gglImNew'); if(gin) gin.onclick=function(){ var g=S.gglNew||{}; S.regMode=true; S.regGoogle={ token:g.token, email:g.email||'', name:g.name||'' }; S.gglNew=null; render(); showMsg(t('Welcome! Make your profile — no username or PIN needed.')); };
+  var gin=document.getElementById('gglImNew'); if(gin) gin.onclick=function(){ var g=S.gglNew||{}; S.regMode=true; S.regGoogle={ token:g.token, email:g.email||'', name:g.name||'' }; S.gglNew=null; render(); };
   if(lb) lb.onclick=function(){
     var u=document.getElementById('li_user').value.trim();
     var pin=document.getElementById('li_pin').value;
@@ -1709,52 +1716,43 @@ function bind(){
       }
     });
   };
-  var toReg=document.getElementById('toReg'); if(toReg) toReg.onclick=function(){ if(gpTasksApp_()){ location.href='teams.html?reg=1'; return; } S.regMode=true; if(!S.roster.length){ run('teamRoster',[],function(r){S.roster=Array.isArray(r)?r:[];render();}); } else render(); };
-  var toLogin=document.getElementById('toLogin'); if(toLogin) toLogin.onclick=function(){ S.regMode=false; S.regGoogle=null; S.gglNew=null; render(); };
+  var toReg=document.getElementById('toReg'); if(toReg) toReg.onclick=function(){ if(gpTasksApp_()){ location.href='teams.html?reg=1'; return; } S.regMode=true; render(); };
+  var toLogin=document.getElementById('toLogin'); if(toLogin) toLogin.onclick=function(){ S.regMode=false; S.regGoogle=null; S.regPin=false; S.gglNew=null; render(); };
 
-  // register
+  // register — only a name with Google; with a PIN, the name, email, username and PIN (registerHtml)
+  var rpw=document.getElementById('regPinWay'); if(rpw) rpw.onclick=function(){ S.regPin=true; render(); };
+  var rgw=document.getElementById('regGoogleWay'); if(rgw) rgw.onclick=function(){ S.regPin=false; render(); };
+  var rog=document.getElementById('regOtherGoogle'); if(rog) rog.onclick=function(){ S.regGoogle=null; gglGo_('signup'); };
   var rb=document.getElementById('regBtn');
   if(rb) rb.onclick=function(){
-    var gg=S.regGoogle, val=function(id){ var el=document.getElementById(id); return el ? el.value.trim() : ''; };
+    var gg=S.regGoogle, inv=S.regPrefill||{}, val=function(id){ var el=document.getElementById(id); return el ? el.value.trim() : ''; };
     var payload={
       name:val('r_name'),
       email:gg ? gg.email : val('r_email'),
       username:gg ? '' : val('r_user'),
       pin:gg ? '' : val('r_pin'),
       googleToken:gg ? gg.token : undefined,
-      campus:document.getElementById('r_campus').value,
-      dept:document.getElementById('r_dept').value,
-      ministry:minSelValue_('r_ministry','r_dept').ministry,
-      cdKind:minSelValue_('r_ministry','r_dept').cdKind,
-      role:document.getElementById('r_role').value.trim(),
-      staffType:document.getElementById('r_type').value,
-      country:countryValue('r_country'),
-      mentorId:document.getElementById('r_mentor').value,
-      phone:document.getElementById('r_phone').value.trim(),
-      joined:document.getElementById('r_joined').value.trim()
+      campus:inv.campus||'', dept:inv.dept||'', ministry:inv.ministry||'',   // an invite link's, if any: the setup steps start from them
+      invite:(S.regInvite && S.regInvite.info) ? S.regInvite.token : undefined   // an admin's invite: in at once
     };
-    if(!payload.name){ showMsg('Add your name'); return; }
+    if(!payload.name){ showMsg(t('Add your name')); return; }
     if(!gg){
-      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)){ showMsg('Add a real email address'); return; }
-      if(!/^[a-z0-9._-]{2,20}$/.test(payload.username.toLowerCase())){ showMsg('Username: lowercase letters/numbers, 2–20'); return; }
-      if(!/^\d{4}$/.test(payload.pin)){ showMsg('PIN must be 4 digits'); return; }
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)){ showMsg(t('Add a real email address')); return; }
+      if(!/^[a-z0-9._-]{2,20}$/.test(payload.username.toLowerCase())){ showMsg(t('Username: lowercase letters/numbers, 2–20')); return; }
+      if(!/^\d{4}$/.test(payload.pin)){ showMsg(t('PIN must be 4 digits')); return; }
     }
     rb.disabled=true; rb.textContent='…';
     run('staffRegister',[payload],function(d){
-      if(d.ok && d.pending){
-        // Campus Leadership only — every other department signs in right away.
-        // There is no session to start: a base leader has to approve first.
-        rb.disabled=false; rb.textContent=t('Create profile'); S.regMode=false;
-        showMsg(t('Thanks! An admin will look at your account — you can sign in once it is approved.'));
-        render();
-      } else if(d.ok){ S.auth={user:d.user||payload.username.toLowerCase(),pin:d.token||payload.pin}; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; afterLogin(); showMsg('Profile created — add a photo!'); S.view='profile'; render(); }
+      /* signed in straight away: the setup questions now, the rest of the app once an admin says yes (22-setup.js) */
+      if(d.ok){ gpInviteDrop_(); S.auth={user:d.user||payload.username.toLowerCase(),pin:d.token||payload.pin}; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; S.regPin=false; S.setup=null; afterLogin(); }
+      else if(/^invite_/.test(d.err||'')){ rb.disabled=false; rb.textContent=t('Create my profile'); if(S.regInvite){ S.regInvite.info=null; S.regInvite.err=d.err.slice(7); } try { sessionStorage.removeItem('gp-invite'); } catch(e){} render(); }
       else {
-        rb.disabled=false; rb.textContent=t('Create profile');
-        showMsg(d.err==='taken' ? 'That username is taken'
-          : d.err==='email_taken' ? 'There’s already a profile with that email'
-          : d.err==='bad_email' || d.err==='email_required' ? 'Add a real email address'
+        rb.disabled=false; rb.textContent=t('Create my profile');
+        showMsg(d.err==='taken' ? t('That username is taken')
+          : d.err==='email_taken' ? t('There’s already a profile with that email — sign in instead.')
+          : d.err==='bad_email' || d.err==='email_required' ? t('Add a real email address')
           : d.err==='google' ? t('Google sign-in didn’t work — try again.')
-          : 'Check your details');
+          : t('Check your details'));
       }
     });
   };
@@ -2046,7 +2044,7 @@ function refreshAll(){
    ?fresh). If the page itself came from the offline copy (the worker leaves a
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
-var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/20-game.js','teams/21-voice.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
+var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/20-game.js','teams/21-voice.js','teams/22-setup.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
 if(gpTasksApp_()) GP_VER_FILES=['tasks.html'].concat(GP_VER_FILES.slice(1), ['teams/12-tasks.js','teams/13-calendar.js']);   // the tasks app's page is tasks.html
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){
@@ -2179,4 +2177,6 @@ gpInstallPrompt();
   } catch(e){}
 })();
 /* back from Google's page: take the token out of the address before anything else reads it (or, for the tasks app, go on to it) */
-if(gglRedirectTake_()!=='away'){ boot(); gglRedirectFinish_(); }
+/* and an admin's one-time sign-in link (?signin=) signs them in instead of the boot */
+var _signLink=signLinkTake_();
+if(gglRedirectTake_()!=='away'){ if(_signLink) signLinkUse_(_signLink); else { boot(); gglRedirectFinish_(); } }

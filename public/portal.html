@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="apple-touch-icon" sizes="180x180" href="portal-180.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='47' fill='%231F44FF'/%3E%3Ctext x='50' y='64' font-family='Arial' font-weight='bold' font-size='40' fill='%23FAF6F0' text-anchor='middle'%3EGP%3C/text%3E%3Cpath d='M76 12 L78.6 19.4 L86 22 L78.6 24.6 L76 32 L73.4 24.6 L66 22 L73.4 19.4 Z' fill='%23FFB323'/%3E%3C/svg%3E">
 <!-- Fonts out of the render path, same as the other pages (see teams.html). -->
@@ -518,6 +518,12 @@ body.menuOn { overflow:hidden; }
 @media print { .pvGuideBar { display:none; } }
 body.guideOn { overflow:hidden; }
 @media print { body.guideOn { overflow:visible; } .guideOverlay { position:static; overflow:visible; background:#fff; } .guideBar { display:none; } .guideBody { padding:0; max-width:none; } }
+.fileScrim { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:90; }
+.fileSheet { position:fixed; left:50%; bottom:max(16px, env(safe-area-inset-bottom)); transform:translateX(-50%); width:min(460px, calc(100% - 24px)); max-height:85vh; overflow:auto; background:var(--surface); color:var(--ink); border:1px solid var(--border); border-radius:var(--r); padding:16px; z-index:91; }
+.fileHead { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:10px; word-break:break-word; }
+.filePrev { display:block; max-width:100%; max-height:45vh; margin:0 auto 12px; border-radius:var(--rSm); }
+.fileBtns { display:flex; flex-direction:column; gap:8px; }
+.fileBtns .btn { text-align:center; text-decoration:none; margin:0; }
 </style>
 </head>
 <body class="gate">
@@ -693,7 +699,7 @@ run('portalAuthConfig', [], function(d){ if(d && d.ok){ P.authCfg=d; if(d.google
 (function(){
   if(!('serviceWorker' in navigator)) return;
   window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
-  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); P.installEvt=e; if(P.view==='me') render(); });
+  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); P.installEvt=e; if(P.view==='me' || P.view==='crm') render(); });
   window.addEventListener('appinstalled', function(){ P.installEvt=null; lsSet('gp-portal-a2hs','1'); P.a2hsOff=true; if(P.view==='me') render(); });
 })();
 function isStandalone_(){ try { return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true; } catch(e){ return false; } }
@@ -701,9 +707,9 @@ function isIosSafari_(){ var ua=navigator.userAgent||''; return /iPhone|iPad|iPo
 /* "Add to your phone" on the applicant's dashboard: a real install button
    where the browser offers one (Android, desktop Chrome), the Share → Add to
    Home Screen hint on iPhone, nothing once installed or dismissed. */
-function installCardHtml_(){
+function installCardHtml_(staff){
   if(isStandalone_() || P.a2hsOff) return '';
-  if(P.installEvt) return '<div class="banner installCard" id="installCard"><b>📲 '+esc(t('Add the portal to your phone'))+'</b><br>'+esc(t('Install it like an app — your application, documents and, once you are here, everything else in one tap.'))+
+  if(P.installEvt) return '<div class="banner installCard" id="installCard"><b>📲 '+esc(t('Add the portal to your phone'))+'</b><br>'+esc(staff ? t('Install it like an app, with its own icon — the applications one tap from your Home Screen.') : t('Install it like an app — your application, documents and, once you are here, everything else in one tap.'))+
     '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn small" id="installBtn">'+esc(t('Install'))+'</button><button class="linkbtn inline" id="installLater">'+esc(t('Not now'))+'</button></div></div>';
   if(isIosSafari_()) return '<div class="banner installCard" id="installCard"><b>📲 '+esc(t('Add the portal to your phone'))+'</b><br>'+esc(t('Tap Share, then “Add to Home Screen” — it opens like an app.'))+
     ' <button class="linkbtn inline" id="installLater">'+esc(t('Not now'))+'</button></div>';
@@ -1430,10 +1436,16 @@ function registerHtml_(){
 /* "Application received" reads "Application & reference received" for anyone a reference is asked of. */
 function stepKey_(st, isTeam, app){ return !isTeam && st.id==='received' && app.refNeeded ? 'received2' : st.id; }
 function statusNote_(app){
-  if(app.type===TEAM_TYPE && app.visaOpen && (app.steps||[]).some(function(st){ return st.id==='evisa' && !st.done; })) return 'Your letter of invitation is in. Open “How to apply for your e-visa online” under Where you are — everything you need is there.';
+  if(visaGoWanted_(app)) return letterIn_(app) ? 'Your letter of invitation is in. Open “How to apply for your e-visa online” under Where you are — everything you need is there.'
+    : 'You can start your e-visas now. Open “How to apply for your e-visa online” under Where you are — your letter of invitation will follow.';
   return (app.type===TEAM_TYPE && TEAM_STATUS_NOTE[app.status]) || STATUS_NOTE[app.status] || '';
 }
 var TEAM_TYPE='team';
+/* the e-visa steps are open and a team's e-visas aren't all in: the hero says so and has a button straight to them
+   (Nov 2026, Andrew: the Norway team couldn't find them — they sit folded under step 8) */
+function visaGoWanted_(app){ return app.type===TEAM_TYPE && app.visaOpen && app.status!=='closed' && (app.steps||[]).some(function(st){ return st.id==='evisa' && !st.done; }); }
+function letterIn_(app){ var v=app.visa||{}; return !!v.invitationSent || (app.docs||[]).some(function(d){ return d.kind==='invitation'; }) || (app.steps||[]).some(function(st){ return st.id==='invitation' && st.done; }); }
+function visaGoHtml_(app){ return visaGoWanted_(app) ? '<button class="btn small" id="visaHowGo" style="margin-top:10px">🛂 '+esc(t('How to apply for your e-visa online'))+' →</button>' : ''; }
 /* ---- the applicant's dashboard ---- */
 /* ==================== the portal as a tool (Oct 2026, Uriah) ====================
    An applicant's portal is more than the application: four tabs on top.
@@ -1850,7 +1862,7 @@ function stepLiHtml_(app, st, i){
    same drawing code shows staff what the applicant sees */
 function asApplicant_(c){
   var v=(c.portal && c.portal.visa)||{}, docs=(c.portal && Array.isArray(c.portal.docs)) ? c.portal.docs : [];
-  var visaOpen = !!c.needsVisa && (c.type==='team' ? (docs.some(function(d){ return d.kind==='invitation'; }) || !!v.invitationSent) : !!v.invitationSent);
+  var visaOpen = !!c.needsVisa && (!!v.early || (c.type==='team' ? (docs.some(function(d){ return d.kind==='invitation'; }) || !!v.invitationSent || (c.steps||[]).some(function(st){ return st.id==='invitation' && st.marked; })) : !!v.invitationSent));
   return { id:c.id, campus:c.campus||'', type:c.type, school:c.school||'', stage:c.stage, status:c.status, submittedAt:(c.portal && c.portal.submittedAt)||null,
     needsVisa:!!c.needsVisa, refNeeded:!!c.refNeeded, visa:v, visaOpen:visaOpen, rooms:c.type==='team' ? ((c.portal && c.portal.rooms)||null) : undefined,
     docs:docs, steps:c.steps||[] };
@@ -1867,7 +1879,7 @@ function meHtml_(){
   h+='<div class="card hero"><div class="eyebrow">'+esc(t('Your application'))+'</div>'+
     '<h1 style="font-size:26px">'+esc(me.name)+'</h1><p class="sub" style="margin:2px 0 12px">'+esc(t('Applying for'))+': <b style="color:var(--ink)">'+esc(applyLabel_(app.type, app.school))+'</b>'+(app.campus?' · '+esc(campusName_(app.campus)):'')+'</p>'+
     '<span class="pill big '+esc(app.status)+'" id="statusPill">'+esc(t(STATUS_LABEL[app.status]||app.status))+'</span>'+
-    '<p class="sub" style="margin:12px 0 0">'+esc(gpT(statusNote_(app), {app:appName, campus:campusName_(app.campus||DEFAULT_CAMPUS)}))+'</p>'+gpAppBtnHtml_(app)+
+    '<p class="sub" style="margin:12px 0 0">'+esc(gpT(statusNote_(app), {app:appName, campus:campusName_(app.campus||DEFAULT_CAMPUS)}))+'</p>'+visaGoHtml_(app)+gpAppBtnHtml_(app)+
     (!app.submittedAt && app.status!=='closed' ? '<div class="banner" id="applyNext" style="margin:12px 0 0"><b>'+esc(t('Next: send in your application'))+'</b><br>'+esc(t('Your account is made, but we only see your application once you submit it.'))+
       '<button class="btn small" id="openFormTop" style="margin-top:8px">'+esc(t('Fill out my application'))+'</button></div>' : '')+'</div>';
   h+='<div class="card"><h3 style="margin-top:0">'+esc(t('Where you are'))+'</h3><ol class="timeline" id="timeline">'+app.steps.map(function(st, i){ return stepLiHtml_(app, st, i); }).join('')+'</ol></div>';
@@ -2196,7 +2208,7 @@ function crmHtml_(){
   h+='</div></div>';
   if(P.sel){ var c=list.filter(function(x){ return x.id===P.sel; })[0]; h+='<div>'+(c ? panelHtml_(c, byId) : '')+'</div>'; }
   h+='</div>';
-  return h;
+  return installCardHtml_(true)+h;   // the portal as an app of its own, with its own icon
 }
 /* Call notes (teams): what was said on each call with the team's leaders —
    the day, who was on it and the notes, newest first. P.call is the open form
@@ -2964,7 +2976,8 @@ var VISA_PREP = [
   'At the airport, go to the immigration officers in person, not the machines — show your e-visa. Check your passport has the white sticker.'
 ];
 /* A team's visa part opens once its passports, team photo and flights are in. */
-function teamDocsIn_(app){ var st=app.steps||[]; return ['passports','photo','flights'].every(function(id){ var x=st.filter(function(y){ return y.id===id; })[0]; return !x || x.done; }); }
+function teamDocsIn_(app){ if(app.visa && app.visa.early) return true;   // staff opened the e-visa steps early
+  var st=app.steps||[]; return ['passports','photo','flights'].every(function(id){ var x=st.filter(function(y){ return y.id===id; })[0]; return !x || x.done; }); }
 /* A team's numbers — the Outreach Teams metrics the Teams Database asks for,
    and men / women reached — saved onto its team there. The team fills them
    in on its dashboard (portalSaveTeamNumbers, prefix 't'); staff see and
@@ -3290,7 +3303,7 @@ function visaCardHtml_(app){
   if(!app.needsVisa) return '';
   if(app.type==='team') return '';   // a team's visa part sits under its e-visa step in Where you are (visaHowHtml_)
   var idx=['new','applied','contacted','interview','accepted','practical','arrived'].indexOf(app.stage);
-  if(idx<4 && app.type!=='team') return '<div class="card"><h3 style="margin-top:0">🛂 '+esc(t('Visa'))+'</h3><p class="sub" style="margin:0">'+esc(t('You will need a visa for Cambodia. The step-by-step e-visa guide appears here once you are accepted.'))+'</p></div>';
+  if(idx<4 && app.type!=='team' && !app.visaOpen) return '<div class="card"><h3 style="margin-top:0">🛂 '+esc(t('Visa'))+'</h3><p class="sub" style="margin:0">'+esc(t('You will need a visa for Cambodia. The step-by-step e-visa guide appears here once you are accepted.'))+'</p></div>';
   var v=app.visa||{};
   var tick=function(done, label){ return '<li class="'+(done?'done':'')+'">'+(done?'✓':'○')+' '+esc(label)+(done?'':' · <i>'+esc(t('pending'))+'</i>')+'</li>'; };
   return '<div class="card"><h3 style="margin-top:0">🛂 '+esc(t('Your e-visa, step by step'))+'</h3>'+
@@ -3331,7 +3344,8 @@ function visaHowBodyHtml_(app){
   var inv=(app.docs||[]).filter(function(d){ return d.kind==='invitation'; });
   var file=function(attr, id, name){ return '<button type="button" class="visaFile" '+attr+'="'+esc(id)+'">📄 <span>'+esc(name)+'</span><b>'+esc(t('Open'))+'</b></button>'; };
   var h='<div class="visaSec"><div class="eyebrow">1 · '+esc(t('Your letter of invitation'))+'</div>'+
-    (inv.length ? inv.map(function(d){ return file('data-docopen', d.id, d.name); }).join('') : '<p class="sub" style="margin:4px 0 0">'+esc(t('We have sent you your letter of invitation. Ask us if you can’t find it.'))+'</p>')+'</div>';
+    (inv.length ? inv.map(function(d){ return file('data-docopen', d.id, d.name); }).join('')
+      : '<p class="sub" style="margin:4px 0 0" id="visaNoLetter">'+esc(app.visa && app.visa.early && !app.visa.invitationSent ? t('Your letter of invitation will be here as soon as we have it. You can start the e-visa form now and attach the letter when it comes.') : t('We have sent you your letter of invitation. Ask us if you can’t find it.'))+'</p>')+'</div>';
   if(!V) return h+'<p class="sub" data-visaload="'+esc(app.campus||DEFAULT_CAMPUS)+'">'+esc(t('Loading…'))+'</p>';
   h+='<div class="visaSec"><div class="eyebrow">2 · '+esc(t('Supporting documents'))+'</div>'+
     (V.docs.length ? V.docs.map(function(d){ return file('data-visadoc', d.id, d.name); }).join('') : '<p class="sub" style="margin:4px 0 0">'+esc(t('We send the supporting documents with your letter of invitation.'))+'</p>')+'</div>';
@@ -3501,17 +3515,37 @@ function uploadDocs_(files, kind, candId){
   };
   P.busy=true; next();
 }
+/* A file, once it has come from the server, opens in a small sheet with Open / Download / Share (Nov 2026: a team
+   couldn't open its letter of invitation). Opening it straight away — a new tab after the file had downloaded — is
+   no longer the tap that asked for it, so iPhone Safari, a Home Screen app and Messenger's browser quietly block it.
+   Each button in the sheet is a tap of its own on a real link, which every browser lets through; Share hands the
+   file to the phone (Save to Files, WhatsApp…), which works even where a download doesn't. */
 function openDataUrl_(dataUrl, name){
+  var url='', mime='', blob=null;
   try {
     var m=/^data:([^;]+);base64,(.*)$/.exec(dataUrl); if(!m) throw new Error('bad');
     var bin=atob(m[2]), arr=new Uint8Array(bin.length);
     for(var i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
-    var url=URL.createObjectURL(new Blob([arr],{type:m[1]}));
-    var a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener';
-    if(!/^(application\/pdf|image\/)/.test(m[1])) a.download=name||'file';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
-  } catch(e){ showMsg(t('Could not open the file')); }
+    mime=m[1]; blob=new Blob([arr],{type:mime}); url=URL.createObjectURL(blob);
+  } catch(e){ showMsg(t('Could not open the file')); return; }
+  name=String(name||'file');
+  if(mime==='application/pdf' && !/\.pdf$/i.test(name)) name+='.pdf';
+  var old=document.getElementById('fileSheetRoot'); if(old) old.remove();
+  var root=document.createElement('div'); root.id='fileSheetRoot';
+  var canShare=false, file=null;
+  try { file=new File([blob], name, {type:mime}); canShare=!!(navigator.canShare && navigator.share && navigator.canShare({files:[file]})); } catch(e){ canShare=false; }
+  root.innerHTML='<div class="fileScrim" id="fileScrim"></div><div class="fileSheet" id="fileSheet" role="dialog" aria-label="'+esc(name)+'">'+
+    '<div class="fileHead"><b>'+(/^image\//.test(mime)?'🖼':'📄')+' '+esc(name)+'</b><button type="button" class="linkbtn inline" id="fileClose" aria-label="'+esc(t('Close'))+'">✕</button></div>'+
+    (/^image\//.test(mime) ? '<img class="filePrev" src="'+url+'" alt="">' : '')+
+    '<div class="fileBtns"><a class="btn" id="fileOpen" href="'+url+'" target="_blank" rel="noopener">'+esc(t('Open'))+'</a>'+
+    '<a class="btn ghost" id="fileDownload" href="'+url+'" download="'+esc(name)+'">⬇ '+esc(t('Download'))+'</a>'+
+    (canShare ? '<button type="button" class="btn ghost" id="fileShare">📤 '+esc(t('Share or save to Files'))+'</button>' : '')+'</div>'+
+    '<p class="hint" style="margin:10px 0 0">'+esc(t('Doesn’t open? Tap Download, or Share and save it to Files. Inside Messenger or Facebook, open the portal in Safari or Chrome first.'))+'</p></div>';
+  document.body.appendChild(root);
+  var shut=function(){ root.remove(); setTimeout(function(){ URL.revokeObjectURL(url); }, 60000); };
+  document.getElementById('fileScrim').onclick=shut;
+  document.getElementById('fileClose').onclick=shut;
+  var sh=document.getElementById('fileShare'); if(sh) sh.onclick=function(){ navigator.share({ files:[file], title:name }).catch(function(){}); };
 }
 /* ---- every file of a kind at once (staff) ----
    View all: one page with each passport (or e-visa, flight…) under the next —
@@ -3990,17 +4024,29 @@ function panelTeamFlowHtml_(c){
   h+='<ul class="flowList">'+c.steps.filter(function(st){ return st.id!=='account'; }).map(function(st){
     var name=esc(t(TEAM_STEP_LABEL[st.id]||st.id));
     if(st.tick) return '<li class="'+(st.state==='current'?'cur':'')+'"><label class="portalTick"><input type="checkbox" data-teamstep="'+esc(st.id)+'"'+(st.done?' checked':'')+(P.busy?' disabled':'')+'> '+name+'</label>'+eye(st)+seen(st)+'</li>';
+    /* a document step staff can tick by hand (Nov 2026): while nothing has ticked it, or once they did */
+    if(st.mark && !st.byDoc && (!st.done || st.marked)) return '<li class="'+(st.state==='current'?'cur':'')+'"><label class="portalTick"><input type="checkbox" data-teamstep="'+esc(st.id)+'"'+(st.marked?' checked':'')+(P.busy?' disabled':'')+'> '+name+'</label>'+
+      ' <span class="hint">'+esc(st.marked ? t('ticked by staff') : st.id==='invitation' ? t('ticks when you upload it below — or tick it here if you sent it another way') : t('ticks when they upload it — or tick it here if they sent it another way'))+'</span>'+eye(st)+seen(st)+'</li>';
     if(st.id==='rooms' && st.done && c.portal && c.portal.rooms) name+=' <span class="hint">· 🛏 '+esc(roomsLine_(c.portal.rooms))+'</span>';
     return '<li class="auto'+(st.done?' done':'')+(st.state==='current'?' cur':'')+'"><span class="flowMark">'+(st.done?'✓':'○')+'</span> '+name+
       ' <span class="hint">'+esc(st.id==='form' ? t('when they submit') : st.id==='invitation' ? t('ticks when you upload it below') : st.id==='rooms' ? t('ticks when SR Hospitality books their beds') : st.id==='practical' ? t('until they arrive') : t('ticks when they upload it'))+'</span>'+eye(st)+seen(st)+'</li>';
-  }).join('')+'</ul><p class="hint" style="margin:4px 0 0">'+esc(t('Tap 👁 on a step to see it exactly as the team does.'))+'</p><p class="hint">'+esc(t('The stage follows the steps: the 1st call moves them to Awaiting documents, the last e-visa to the 2nd call, and the 2nd call to Getting ready. The team sees the same steps on their dashboard, and is in the Teams Database from the day it applies.'))+'</p>';
+  }).join('')+visaEarlyHtml_(c)+'</ul><p class="hint" style="margin:4px 0 0">'+esc(t('Tap 👁 on a step to see it exactly as the team does.'))+'</p><p class="hint">'+esc(t('The stage follows the steps: the 1st call moves them to Awaiting documents, the last e-visa to the 2nd call, and the 2nd call to Getting ready. The team sees the same steps on their dashboard, and is in the Teams Database from the day it applies.'))+'</p>';
   return h;
+}
+/* Show the e-visa steps now (Nov 2026, Andrew): for a team (or anyone) in a hurry, before the letter and their
+   documents are in — the guide, the supporting documents and the e-visa upload open; the steps stay as they are. */
+function visaEarlyHtml_(c){
+  if(!c.needsVisa) return '';
+  var v=(c.portal && c.portal.visa)||{}, open=asApplicant_(c).visaOpen;
+  if(open && !v.early) return '';   // the letter is in already: the steps are open anyway
+  return '<li class="visaEarly" id="visaEarly"><label class="portalTick"><input type="checkbox" data-visaflag="early"'+(v.early?' checked':'')+(P.busy?' disabled':'')+'> 🛂 '+esc(t('Show them the e-visa steps now'))+'</label>'+
+    ' <span class="hint">'+esc(v.early ? t('they can see how to apply and upload their e-visas, before everything else is in') : t('for a team that has to apply soon — before the letter and their documents are in'))+'</span></li>';
 }
 function panelVisaHtml_(c){
   if(!c.needsVisa) return '';
   var v=(c.portal && c.portal.visa)||{};
   if(c.type==='team') return '<h3>'+esc(t('Visa'))+'</h3>'+visaExtraStaffHtml_(c, v);
-  return '<h3>'+esc(t('Visa'))+'</h3>'+visaExtraStaffHtml_(c, v)+'<label class="portalTick" style="margin-bottom:6px"><input type="checkbox" data-visaflag="flightsConfirmed"'+(v.flightsConfirmed?' checked':'')+'> '+esc(t('Flights confirmed'))+'</label>'+
+  return '<h3>'+esc(t('Visa'))+'</h3>'+visaExtraStaffHtml_(c, v)+(visaEarlyHtml_(c) ? '<ul class="flowList">'+visaEarlyHtml_(c)+'</ul>' : '')+'<label class="portalTick" style="margin-bottom:6px"><input type="checkbox" data-visaflag="flightsConfirmed"'+(v.flightsConfirmed?' checked':'')+'> '+esc(t('Flights confirmed'))+'</label>'+
     '<label class="portalTick"><input type="checkbox" data-visaflag="invitationSent"'+(v.invitationSent?' checked':'')+'> '+esc(t('Letter of invitation sent'))+'</label>'+
     '<p class="hint">'+esc(t('The applicant sees these two ticks on their e-visa guide.'))+' <button type="button" class="linkbtn inline" id="seeVisa">'+esc(P.seeVisa===c.id ? t('Hide') : t('See their e-visa guide as they see it'))+'</button></p>'+
     (P.seeVisa===c.id ? asSeenHtml_(c, visaCardHtml_(asApplicant_(c))) : '');
@@ -4150,6 +4196,7 @@ function bind_(){
   on_('viewAsCand', function(){ var c=selected_(); if(!c) return; P.pv.mode='record'; P.pv.candId=c.id; P.pv.boot=null; P.pv.screen='me'; P.pv.sec=0; P.view='preview'; render(); window.scrollTo(0,0); });
   on_('openForm', openForm_);
   on_('openFormTop', openForm_);
+  on_('visaHowGo', function(){ P.fold=P.fold||{}; P.fold.visaHow=true; render(); var d=document.getElementById('visaHow'); if(d){ d.open=true; d.scrollIntoView({ behavior:'smooth', block:'start' }); } });
   on_('viewAnswers', function(){ P.showAnswers=!P.showAnswers; render(); });
   on_('refNew', function(){ makeRefLink_(null, function(link, d){ P.refLink=link; if(P.boot.application) P.boot.application.reference=d.reference; render(); }); });
   var goRef=function(){ gpTapSafe_(); P.refNext=false; if(!P.refLink){ var r=(P.boot.application && P.boot.application.reference)||{}; if(r.status!=='received'){ makeRefLink_(null, function(link, d){ P.refLink=link; if(P.boot.application) P.boot.application.reference=d.reference; render(); scrollToRef_(); }); return; } } render(); scrollToRef_(); };

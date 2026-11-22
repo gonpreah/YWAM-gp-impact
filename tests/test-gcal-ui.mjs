@@ -61,6 +61,9 @@ const ICS = ['BEGIN:VCALENDAR', 'VERSION:2.0',
   'BEGIN:VEVENT', 'UID:b1', 'DTSTART;VALUE=DATE:' + ymd(day(1)).replace(/^\d{4}/, '2010'), 'RRULE:FREQ=YEARLY', 'SUMMARY:Sokha\'s birthday', 'END:VEVENT',
   'BEGIN:VEVENT', 'UID:t1', 'DTSTART;VALUE=DATE:' + ymd(day(2)), 'DTEND;VALUE=DATE:' + ymd(day(5)), 'SUMMARY:Grace Church team staying', 'DESCRIPTION:12 people', 'END:VEVENT',
   'BEGIN:VEVENT', 'UID:m1', 'DTSTART;TZID=Asia/Phnom_Penh:' + ymd(day(0)) + 'T150000', 'DTEND;TZID=Asia/Phnom_Penh:' + ymd(day(0)) + 'T160000', 'SUMMARY:Worship night', 'LOCATION:Main hall', 'END:VEVENT',
+  'BEGIN:VEVENT', 'UID:s1', 'DTSTART;VALUE=DATE:' + ymd(day(0)), 'DTEND;VALUE=DATE:' + ymd(day(1)), 'SUMMARY:Staff day', 'END:VEVENT',
+  'BEGIN:VEVENT', 'UID:o1', 'DTSTART;VALUE=DATE:' + ymd(day(-1)), 'DTEND;VALUE=DATE:' + ymd(day(3)), 'SUMMARY:Earlier team staying', 'END:VEVENT',
+  'BEGIN:VEVENT', 'UID:e1', 'DTSTART;TZID=Asia/Phnom_Penh:' + ymd(day(0)) + 'T000000', 'DTEND;TZID=Asia/Phnom_Penh:' + ymd(day(0)) + 'T000100', 'SUMMARY:Early prayer', 'END:VEVENT',
   'END:VCALENDAR'].join('\r\n');
 globalThis.fetch = async (url) => url === URL1 ? { ok: true, status: 200, text: async () => ICS } : { ok: false, status: 404, text: async () => '' };
 const browser = await chromium.launch({ executablePath: CHROMIUM });
@@ -124,7 +127,10 @@ const main = p => p.$eval('#main', e => e.innerText);
   const { ctx, page } = await open('cora');
   await page.waitForSelector('#sec-cal', { timeout: 5000 }).catch(() => {});
   const home = await page.$eval('#sec-cal + .card', e => e.innerText).catch(() => '');
-  ok('My Home: 📅 Coming up, the next days', /Worship night/.test(home) && /Sokha's birthday|Sokha’s birthday/.test(home) && /today/i.test(home), home.slice(0, 200));
+  ok('My Home: 📅 Coming up, the next days', /Staff day/.test(home) && /Sokha's birthday|Sokha’s birthday/.test(home) && /today/i.test(home), home.slice(0, 200));
+  ok('… and it moves on: not a stay that began on an earlier day, not something today that has ended', !/Earlier team staying/.test(home) && !/Early prayer/.test(home), home.slice(0, 300));
+  ok('… and a new day asks again (an app left open overnight)', await page.evaluate(() => { S.calHome.day = '2000-01-01'; calHomeLoad_(); return S.calHome === null || S.calHomeLoading === true; }));
+  await page.waitForTimeout(800);
   await page.click('#goCalendar'); await page.waitForTimeout(800);
   const txt = await main(page);
   ok('the Calendar like Google\'s: month chips, week rows with their number, title bars across the days, today marked — then the days from today on', !!(await page.$('.gcGrid')) && !!(await page.$('.gcMonth.on')) && (await page.$$eval('.gcWk', w => w.length)) === 6 && (await page.$$eval('.gcCell', c => c.length)) === 42 && !!(await page.$('.gcCell.today.sel .gcNum')) && (await page.$$eval('.gcBar', d => d.length)) >= 3 && /Worship night/.test(txt) && /3:00/.test(txt) && /All day/.test(txt) && /Grace Church team staying/.test(txt) && /until/.test(txt), txt.slice(0, 400));
@@ -136,7 +142,7 @@ const main = p => p.$eval('#main', e => e.innerText);
   await page.click('.gcMonth:not(.on)'); await page.waitForTimeout(700);
   ok('a month chip jumps to that month', await page.evaluate(() => S.calMonth && S.calMonth !== new Date().toISOString().slice(0, 7)));
   await page.click('#calToday'); await page.waitForTimeout(700);
-  await page.click('.gcCell[data-calday="' + day(2) + '"]'); await page.waitForTimeout(300);
+  await page.$eval('.gcCell[data-calday="' + day(2) + '"]', e => e.click()); await page.waitForTimeout(300);
   const fromD2 = await page.$eval('.calList', e => e.innerText).catch(() => '');
   ok('tapping a day lists from that day: the team\'s stay, not the worship night before it', /Grace Church/.test(fromD2) && !/Worship night/.test(fromD2) && !!(await page.$('.gcCell.sel[data-calday="' + day(2) + '"]')), fromD2.slice(0, 200));
   ok('… and never the secret address', !(await page.content()).includes('private-abc123'));

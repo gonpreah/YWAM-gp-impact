@@ -956,6 +956,26 @@ function gglRedirectGo_(mode){
 }
 /* coming back from Google's page: the token is in the address's #… — taken out at once (the address is
    tidied before anything else), checked against the state we left, and finished once the page is up */
+/* teams.html?signin=<token> — an admin's one-time sign-in link (Admin → a person → Sign-in link), for someone
+   locked out: taken out of the address before anything else reads it, then spent once (staffUseSignInLink) */
+function signLinkTake_(){
+  var tok=''; try { tok=new URLSearchParams(location.search||'').get('signin')||''; } catch(e){}
+  if(!tok) return '';
+  try { var u=new URLSearchParams(location.search); u.delete('signin'); var q=u.toString(); history.replaceState(null, '', location.pathname+(q?'?'+q:'')+location.hash); } catch(e){}
+  return tok;
+}
+function signLinkUse_(tok){
+  var bad=function(msg){ boot(); showMsg(msg); };
+  run('staffUseSignInLink',[tok],function(d){
+    if(d && d.ok && d.token){
+      S.auth={ user:d.user, pin:d.token }; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.linkSignIn=true;
+      afterLogin(); showMsg(t('You’re signed in.')); return;
+    }
+    bad(d && d.err==='expired' ? t('That sign-in link has run out. Ask an admin for a new one.')
+      : d && d.err==='pending' ? gglErrWord_('pending')
+      : t('That sign-in link was already used, or isn’t right. Ask an admin for a new one.'));
+  }, function(){ bad(t('No connection — open the link again when you are online.')); });
+}
 function gglRedirectTake_(){
   var h=''; try { h=String(location.hash||''); } catch(e){}
   if(!/[#&](access_token|error)=/.test(h)) return;
@@ -1006,6 +1026,7 @@ function gglCred_(resp){
     if(d && d.ok){ S.auth={ user:d.user, pin:d.token }; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; S.gglNew=null; afterLogin(); return; }
     /* a Google account no profile has yet: most often the person picked another Gmail than the one on their
        profile — so ask before making a new profile (that made duplicate sign-ups waiting on an admin) */
+    if(d && d.err==='new' && _ggl.mode==='signup'){ S.regMode=true; S.regGoogle={ token:tok, email:d.email||'', name:d.name||'' }; S.gglNew=null; render(); return; }   // they came to make a profile: just their name now
     if(d && d.err==='new'){ S.gglNew={ token:tok, email:d.email||'', name:d.name||'' }; S.pinLogin=false; render(); return; }
     if(d && d.err==='applicant'){ showMsg(t('That is a portal account — opening the YWAM GP Portal.')); setTimeout(function(){ location.href='portal.html'; }, 900); return; }
     showMsg(gglErrWord_(d && d.err));
@@ -1031,14 +1052,15 @@ function gglNewHtml_(){
    it (staffLinkGoogle swaps the PIN session for a Google one) — or log out. */
 function gglStepWanted_(){
   if(lsGet('gp-ggl-skip')===String(new Date().toDateString())) return false;   // Google wouldn't work on this phone today: asked again tomorrow
-  return !!(gglOn_() && S.me && S.auth && !S.guest && !S.board && !S.student && !S.stuPreview && !S.bootStale && !S.offlineSince &&
-    /^\d{4}$/.test(String(S.auth.pin||'')) && !S.me.google);
+  return !!(gglOn_() && S.me && S.auth && !S.guest && !S.board && !S.student && !S.stuPreview && !S.bootStale && !S.offlineSince && !S.awaiting && !S.me.setupTodo && !S.demo &&
+    (/^\d{4}$/.test(String(S.auth.pin||'')) || S.linkSignIn) && !S.me.google);
 }
 function gglStepHtml_(){
   return '<div class="card gglStep" id="gglStep"><h2 style="margin-top:0">🔐 '+esc(t('From now on, sign in with Google'))+'</h2>'+
     '<p class="sub">'+esc(t('We are moving everyone off usernames and PINs. Connect your Google account once — next time, just tap Continue with Google.'))+'</p>'+
     ((S.profile && S.profile.email) ? '<p class="hint">'+esc(gpT('Use the Google account for {email} if you can.',{email:S.profile.email}))+'</p>' : '')+
     gglBtnHtml_('gglStepGo', t('Connect my Google account'))+gglHelpHtml_('step')+
+    (S.linkSignIn ? '<button class="btn ghost" id="gglStepLater">'+esc(t('Not now — go to the app'))+'</button>' : '')+
     '<button class="linkbtn" id="gglStepOut">'+esc(t('Log out'))+'</button></div>';
 }
 /* the tasks app (tasks.html) says what it is: the same YWAM GP account, just the tasks and the calendar */
@@ -1052,7 +1074,7 @@ function loginHtml(){
   if(gglOn_() && !S.pinLogin) return loginHeadHtml_()+'<p class="sub">'+esc(t('Sign in with your Google account.'))+'</p>'+
     '<div class="card">'+gglBtnHtml_('googleLogin', t('Continue with Google'))+gglHelpHtml_('login')+
     '<button class="linkbtn" id="showPinLogin">'+esc(t('First time with Google? Sign in once with your username and PIN to connect it'))+'</button>'+
-    '<button class="linkbtn" id="toReg">New here? Create my profile</button></div>';
+    '<button class="linkbtn" id="toReg">New here? Create my profile</button>'+gpLookHtml_()+loginStuckHtml_()+'</div>';
   return loginHeadHtml_()+'<p class="sub">'+esc(gglOn_() ? t('Sign in once with your username and PIN — then connect your Google account.') : 'Log in with your username and 4-digit PIN.')+'</p>'+
     '<div class="card">'+
     (gglOn_() ? '<button class="linkbtn" id="hidePinLogin" style="margin-top:0">← '+esc(t('Continue with Google instead'))+'</button>' : '')+
@@ -1060,7 +1082,13 @@ function loginHtml(){
     '<label class="f">'+esc(t('Username or email'))+'</label><input type="text" id="li_user" autocapitalize="none" placeholder="'+esc(t('e.g. sokha'))+'">'+
     '<label class="f">'+esc(t('PIN or password'))+'</label><input type="password" id="li_pin" maxlength="200" placeholder="••••">'+
     '<button class="btn" id="loginBtn">'+esc(t('Log in'))+'</button>'+
-    '<button class="linkbtn" id="toReg">New here? Create my profile</button></div>';
+    '<button class="linkbtn" id="toReg">New here? Create my profile</button>'+gpLookHtml_()+loginStuckHtml_()+'</div>';
+}
+/* the preview (22-setup.js) — not in the tasks app, which is for staff */
+function gpLookHtml_(){ return gpTasksApp_() ? '' : '<button class="linkbtn" id="toGuest">👀 '+esc(t('Look around first — a preview with made-up people and numbers'))+'</button>'; }
+/* locked out, forgot the PIN, Google picks the wrong account: there is no email to send, so an admin sends a link */
+function loginStuckHtml_(){
+  return '<p class="hint" id="loginStuck" style="margin:12px 0 0">🆘 '+esc(t('Can’t get in? Message an admin on Telegram or WhatsApp — they can send you a link that signs you straight in, or set a new PIN.'))+'</p>';
 }
 /*  Two facts the base counts people by: what kind of staff you are, and where you
     are from. Asked when a profile is created and changed from Profile & settings
@@ -1114,35 +1142,37 @@ function bindCountryOther(){
   });
 }
 
+/* Making an account is two things (Nov 2026, Andrew: "make it simple, just … logging in with your Gmail and
+   entering in your name … so that it's not just overwhelming with a bunch of questions"): Google — or, where
+   Google is off or someone has no Google account, an email, username and PIN — and a name. Everything else
+   (campus, ministry, kind of staff, country, mentor, papers) is asked step by step once an admin has said yes
+   (22-setup.js). An invite link's campus / department / ministry ride along unseen and start those steps off. */
 function registerHtml(){
   gglCfg_();
-  var inv = S.regPrefill, gg = S.regGoogle;
-  var opts = S.roster.map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.name)+' · '+esc(p.dept)+'</option>'; }).join('');
-  return '<h2>'+esc(t('Create my profile'))+'</h2><p class="sub">'+esc(t('Pick a username and a 4-digit PIN you’ll remember. You can add a photo right after.'))+'</p>'+
-    (inv ? '<div class="banner" id="inviteBanner">👋 '+esc(gpT('You’re joining {where}. Check it below, then make your profile.',{where:[inv.ministry?t(inv.ministry):'', inv.dept?t(inv.dept):'', campusName(inv.campus)].filter(Boolean).join(' · ')}))+'</div>' : '')+
-    '<div class="card">'+
-    (gg ? '<div class="banner" id="regGoogle">'+esc(gpT('Signing up with Google as {email} — no username or PIN to remember.',{email:gg.email}))+'</div>'
-        : (gglOn_() ? gglBtnHtml_('googleSignup', t('Sign up with Google'))+'<div class="orLine"><span>'+esc(t('or'))+'</span></div>' : ''))+
-    '<label class="f">'+esc(t('Full name'))+'</label><input type="text" id="r_name" placeholder="'+esc(t('Your name'))+'" value="'+esc(gg ? gg.name : '')+'">'+
-    (gg ? '' :
-    '<label class="f">'+esc(t('Email'))+'</label><input type="email" id="r_email" autocapitalize="none" placeholder="you@example.com">'+
-    '<div class="hint">'+esc(t('One profile per email — this is what stops a duplicate sign-up.'))+'</div>'+
-    '<label class="f">'+esc(t('Username'))+'</label><input type="text" id="r_user" autocapitalize="none" placeholder="'+esc(t('lowercase, no spaces'))+'"><div class="hint">'+esc(t('Letters, numbers, . _ - (2–20 chars)'))+'</div>'+
-    '<label class="f">'+esc(t('PIN (4 digits)'))+'</label><input type="password" id="r_pin" inputmode="numeric" maxlength="4" placeholder="••••">')+
-    '<label class="f">'+esc(t('Campus'))+'</label><select id="r_campus">'+CAMPUSES.map(function(c){return '<option value="'+c.id+'"'+(inv && inv.campus===c.id?' selected':'')+'>'+c.name+'</option>';}).join('')+'</select>'+
-    '<label class="f">'+esc(t('Department'))+'</label><select id="r_dept">'+deptsFor(inv ? inv.campus : 'poipet').map(function(d){return '<option value="'+esc(d)+'"'+(inv && inv.dept===d?' selected':'')+'>'+esc(t(d))+'</option>';}).join('')+'</select>'+
-    '<label class="f">'+esc(t('Ministry'))+'</label><select id="r_ministry"></select><div class="hint">'+esc(t('This is what puts your team’s KPIs on your home page.'))+'</div>'+
-    '<label class="f">'+esc(t('Role / team'))+'</label><input type="text" id="r_role" placeholder="'+esc(t('e.g. Cafe barista, DTS staff'))+'">'+
-    staffTypeFieldHtml('r_type','')+
-    countryFieldHtml('r_country','')+
-    '<label class="f">'+esc(t('My mentor'))+' <span class="lock">🔒 '+esc(t('sees my private check-ins'))+'</span></label><select id="r_mentor"><option value="">'+esc(t('— choose later —'))+'</option>'+opts+'</select>'+
-    '<label class="f">'+esc(t('Phone (optional)'))+'</label><input type="tel" id="r_phone" placeholder="">'+
-    '<label class="f">'+esc(t('Year I started with YWAM GP (optional)'))+'</label><input type="number" id="r_joined" placeholder="2024">'+
-    '<button class="btn" id="regBtn">'+esc(t('Create profile'))+'</button>'+
-    '<button class="linkbtn" id="toLogin">'+esc(t('I already have a profile'))+'</button></div>';
+  var inv = S.regPrefill, gg = S.regGoogle, pinWay = !gg && (!gglOn_() || S.regPin);
+  var ri=S.regInvite, invBanner;
+  if(ri && ri.info) invBanner='<div class="banner" id="inviteOk">✉️ '+esc(gpT('{name} invited you to join {where}. Sign up and you’re in — no waiting for approval.',{name:ri.info.byName || t('An admin'), where:[ri.info.ministry?t(ri.info.ministry):'', ri.info.dept?t(ri.info.dept):'', campusName(ri.info.campus)].filter(Boolean).join(' · ')}))+'</div>';
+  else if(ri && ri.err) invBanner='<div class="banner" id="inviteGone">⚠️ '+esc(ri.err==='used' ? t('This invite link has already been used.') : ri.err==='expired' ? t('This invite link has run out.') : ri.err==='off' ? t('This invite link was turned off.') : t('This invite link doesn’t work.'))+' '+esc(t('You can still sign up — an admin will then approve you.'))+'</div>';
+  else invBanner = inv ? '<div class="banner" id="inviteBanner">👋 '+esc(gpT('You’re joining {where}.',{where:[inv.ministry?t(inv.ministry):'', inv.dept?t(inv.dept):'', campusName(inv.campus)].filter(Boolean).join(' · ')}))+'</div>' : '';
+  var h='<h2>'+esc(t('Create my profile'))+'</h2><p class="sub" id="regSub">'+esc(t('Just your Google account and your name — then a few short questions in the app.'))+'</p>'+invBanner+'<div class="card">';
+  if(gg){
+    h+='<div class="banner" id="regGoogle">✅ '+esc(gpT('Signing up with Google as {email}.',{email:gg.email}))+'</div>'+
+      '<label class="f">'+esc(t('Your name'))+'</label><input type="text" id="r_name" autocomplete="name" placeholder="'+esc(t('First and last name'))+'" value="'+esc(gg.name||'')+'">'+
+      '<button class="btn" id="regBtn">'+esc(t('Create my profile'))+'</button>'+
+      '<button class="linkbtn" id="regOtherGoogle">'+esc(t('Use a different Google account'))+'</button>';
+  } else if(!pinWay){
+    h+=gglBtnHtml_('googleSignup', t('Sign up with Google'))+gglHelpHtml_('login')+
+      '<button class="linkbtn" id="regPinWay">'+esc(t('No Google account? Use a username and PIN'))+'</button>';
+  } else {
+    h+=(gglOn_() ? '<button class="linkbtn" id="regGoogleWay" style="margin-top:0">← '+esc(t('Sign up with Google instead'))+'</button>' : '')+
+      '<label class="f">'+esc(t('Your name'))+'</label><input type="text" id="r_name" autocomplete="name" placeholder="'+esc(t('First and last name'))+'">'+
+      '<label class="f">'+esc(t('Email'))+'</label><input type="email" id="r_email" autocapitalize="none" placeholder="you@example.com">'+
+      '<label class="f">'+esc(t('Username'))+'</label><input type="text" id="r_user" autocapitalize="none" placeholder="'+esc(t('lowercase, no spaces'))+'"><div class="hint">'+esc(t('Letters, numbers, . _ - (2–20 chars)'))+'</div>'+
+      '<label class="f">'+esc(t('PIN (4 digits)'))+'</label><input type="password" id="r_pin" inputmode="numeric" maxlength="4" placeholder="••••">'+
+      '<button class="btn" id="regBtn">'+esc(t('Create my profile'))+'</button>';
+  }
+  return h+'<button class="linkbtn" id="toLogin">'+esc(t('I already have a profile'))+'</button>'+gpLookHtml_()+'</div>';
 }
-
-
 /* ---------- me ---------- */
 /* Me is the looking-back page: streaks, this week's totals, recent days,
    settings. Home already greets you and carries today's actions, so the

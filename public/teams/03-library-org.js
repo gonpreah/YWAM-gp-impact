@@ -73,12 +73,10 @@ function aboutMeHtml_(){
       ? homeTile_('gsSeeMine', '💪', t('Strengths'), '<span class="sChips homeTileChips">'+g.top.map(function(id,i){ return gsChipHtml(id,i+1); }).join('')+'</span>')
       : homeTile_('gsStart', '💪', t('Strengths'), esc(t('Find your top 5 strengths')));
   }
-  if(!S.student) tiles += homeTile_('testsTile', '🧪', t('Tests'), esc(t('Gifts, language, couple check-up')));
-  var ss=S.supSum;
-  if(!S.student) tiles += homeTile_('supTile', '💰', t('Support raising'), esc(ss && ss.goal ? gpT('${n} of ${goal} a month',{n:fmt(ss.pledged), goal:fmt(ss.goal)}) : t('Your partners and monthly goal')));
-  if(!S.student) tiles += p3TileHtml_();
-  var nb=libBooksRead_();
-  tiles += homeTile_('libHomeTile', '📚', t('Library'), esc(nb ? gpT('{n} books read',{n:nb}) : t('Ten-minute reads')));
+  /* Just who you are (Nov 2026, Andrew: "too much to see"): Tests, Support raising and the Library are quick apps
+     and in ☰ now, not tiles here too. 360 reviews shows only while something waits on you. */
+  var G3=S.p3Glance;
+  if(!S.student && G3 && (G3.asked || G3.reviewDue)) tiles += p3TileHtml_();
   return '<h3 id="sec-ptype">🧭 '+esc(t('About me'))+'</h3><div class="homeTiles" id="sec-strengths">'+tiles+'</div>';
 }
 var PCHEV='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--faint);flex:0 0 auto"><path d="M9 6l6 6-6 6"/></svg>';
@@ -831,7 +829,7 @@ function libraryHtml(){
     var going=books.filter(function(x){ return prog[x.id] && !read[x.id]; });
     if(going.length) h+=libRowHtml_('📖 '+esc(t('Continue reading')), going, read, prog);
     if(picks.length) h+=libRowHtml_('⭐ '+esc(t('Start here')), picks, read, prog, 'start');
-    h+=libMineHtml_(read)+libPlansHtml_(read);
+    h+=libMineHtml_(read)+libPlansHtml_(read)+lnFeedHtml_();
     libShelvesShown_().forEach(function(sh){
       h+=libRowHtml_((sh.emoji?sh.emoji+' ':'')+esc(t(sh.name)), books.filter(function(x){ return x.shelf===sh.id; }), read, prog, sh.id);
     });
@@ -863,6 +861,7 @@ function libBookHtml_(b){
     return '<button class="libInsideItem" data-libstep="'+(k+1)+'"><span class="libInsightNum" style="background:'+sh.color+'">'+(k+1)+'</span><span>'+esc(x.emoji||'')+' '+esc(x.title)+'</span><span class="libInsideGo">›</span></button>';
   }).join('')+'</div></div>';
   h+='<div class="card libForUs'+(T.km?' libKm':'')+'" style="border-left-color:'+sh.color+'"><div class="libKicker">🌏 '+esc(t('For us at YWAM GP'))+'</div>'+libParas_(T.forUs)+'</div>';
+  h+=lnBookHtml_(b);   // 💬 notes and highlights (18-library-plus.js)
   h+='<div class="btnRow" style="margin-top:14px">'+
     '<button class="btn ghost" id="libMarkRead" data-libid="'+esc(b.id)+'">'+esc(read ? '✓ '+t('Read') : t('Mark as read'))+'</button>'+
     (next && next!==b ? '<button class="btn ghost" data-libbook="'+esc(next.id)+'">'+esc(t('Next book'))+' →</button>' : '')+'</div>';
@@ -1478,7 +1477,10 @@ function gpGuestMe_(){
   return { id:'guest', name:t('Guest'), username:'', campus: lsGet('gp-guest-campus') || 'siemreap', dept:'', ministry:'', role:'',
     photo:'', staffType:'campus', country:'—', ministries:[], leads:[], guest:true };
 }
-function gpEnterGuest_(){
+/* Looking around opens the preview now — the app on a made-up campus (22-setup.js); this plain guest tour is what
+   shows if the preview can't load */
+function gpEnterGuest_(){ gpEnterDemo_(); }
+function gpEnterGuestPlain_(){
   lsSet(GUEST_KEY, '1');
   S.guest=true; S.me=gpGuestMe_(); S.profile={}; S.auth={ user:'', pin:'' }; S.regMode=false;
   S.view='week'; S.roster=[]; S.required=null; S.reqDocs=[];
@@ -1504,6 +1506,7 @@ function gpGuestCampusHtml_(){
     return '<button class="campusBtn'+(S.me.campus===c.id?' on':'')+'" data-guestcampus="'+esc(c.id)+'">'+esc(t(c.short))+'</button>'; }).join('')+'</div>';
 }
 function gpLeaveGuest_(toRegister){
+  if(S.demo){ gpLeaveDemo_(toRegister); return; }
   lsDel(GUEST_KEY);
   S.guest=false; S.me=null; S.base=null; S.regMode=!!toRegister; S.menuOpen=false; S.view='week';
   renderMenu(); render(); window.scrollTo(0,0);
@@ -1887,7 +1890,8 @@ function prayerHtml_(){
   list.forEach(function(p){
     h+='<div class="card prCard'+(p.answered?' answered':'')+'"><div class="prHead">'+avatarHtml(p,'sm')+'<span class="prWho"><b>'+esc(p.mine ? t('You') : p.name)+'</b>'+
       '<small>'+esc(prAgo_(p.created))+' · '+esc(p.scope==='mentor' ? t('only their mentor') : p.scope==='all' ? t('all of YWAM GP') : t(campusName(p.campus)))+'</small></span></div>'+
-      '<p class="prText">'+esc(p.text)+'</p>';
+      '<p class="prText">'+esc(p.text)+'</p>'+
+      (p.lib && p.lib.bookId ? '<button class="linkbtn prLib" data-prlib="'+esc(p.lib.bookId+'|'+(p.lib.noteId||''))+'">📚 '+esc(gpT('From “{title}”',{title:p.lib.title||''}))+'</button>' : '');
     if(p.answered) h+='<div class="prAnswered">🎉 '+esc(gpT('Answered {date}',{date:teamDate_(p.answered)}))+(p.answerNote ? '<div>'+esc(p.answerNote)+'</div>' : '')+'</div>';
     h+='<div class="prActs">';
     if(!p.mine) h+='<button class="btn '+(p.iPrayed?'':'ghost ')+'small" data-prpray="'+esc(p.id)+'" data-on="'+(p.iPrayed?'0':'1')+'">🙏 '+esc(p.iPrayed ? t('I prayed') : t('Pray'))+(p.prayedN ? ' · '+p.prayedN : '')+'</button>';

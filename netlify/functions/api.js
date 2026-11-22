@@ -167,7 +167,7 @@ function inYear_(year) {
    times over and come back as 'busy' — "Could not save", though it had
    saved. Every read here goes through this one store, so the whole app
    reads its own writes. */
-function store() { return getStore({ name: 'gp-data', consistency: 'strong' }); }
+function store() { const demo = demoScope.getStore(); if (demo) return demo; return getStore({ name: 'gp-data', consistency: 'strong' }); }   // inside the preview, a made-up campus in memory (demoCall)
 /* Every blob in this store is either a JSON array of rows or, for loginThrottle,
    a plain object. If one ever comes back as something else — a half-finished
    write, a hand-edit in the Netlify UI, a future schema change — the old code
@@ -432,6 +432,24 @@ async function verifyStaff_(username, pin, allowApplicant) {
   // YWAM GP Portal block. Failing here closes them all at once.
   if (isApplicant_(s) && !allowApplicant) return null;
   return s;
+}
+
+/* A new account waiting for an admin's yes (Nov 2026, Andrew: "when a new person creates an account … it will log them
+   into the app … you put in all the information … but you still can't access the other parts of the app until the
+   admin approves"). `awaiting` is set by staffRegister and cleared when an admin switches the account on; an account an
+   admin switched off later never has it, so this is no way back in for them. Only three doors take it: getMyBoot (which
+   answers with the waiting page's few things), updateProfile (the setup questions) and getTasksBoot. Never a failed-login
+   count: verifyStaff_ has just checked the same credentials. */
+async function verifyAwaiting_(username, pin) {
+  if (await isLoginLocked_(username)) return null;
+  const s = findStaff_(await getStaff_(), username);
+  if (!s || !credOk_(s, pin)) return null;
+  if (s.active !== false || !s.awaiting || s.archived || isApplicant_(s)) return null;
+  return s;
+}
+function awaitingOut_(s) {
+  return { ok: true, awaiting: true, user: s.username, staff: selfStaff_(s, { awaiting: true }),
+    profile: { phone: s.phone || '', joined: s.joined || '', debt: false, mentorStatus: s.mentorStatus || '', dashboardColor: '', dashboardBg: '', email: s.email || '' } };
 }
 
 /* What kind of staff someone is. The three ids are duplicated from taxonomy.js
@@ -853,7 +871,8 @@ function ownPersonality_(s) {
 function photoOf_(s) { return (s && (s.photoThumb || s.photo)) || ''; }
 /* The owner's own record: the full photo, and whether a small copy exists yet. */
 function selfStaff_(s, extra) {
-  return Object.assign(publicStaff_(s), { photo: s.photo || '', hasThumb: !!s.photoThumb }, extra || {});
+  /* setupTodo: a new account still to go through "Set up my profile" (Nov 2026) — their own card only */
+  return Object.assign(publicStaff_(s), { photo: s.photo || '', hasThumb: !!s.photoThumb }, s.setupTodo ? { setupTodo: true } : {}, extra || {});
 }
 function publicStaff_(s) {
   return {
@@ -926,6 +945,73 @@ async function teamRoster(username, pin) {
    every new account. */
 function needsApproval_(dept) { return normDept_(String(dept || '')) === LEADERSHIP_DEPT; }
 
+/* ==================== invite links (Nov 2026, Andrew) ====================
+   "If I want to invite someone in the admin section … the invite link will be already pre-approved by the admin."
+   An admin makes a link for a campus (and, if they like, a department and ministry), for one person or a group, for a
+   few days: teams.html?reg=1&invite=<48 hex>. Whoever opens it signs up (Google and a name) and is in at once — active,
+   no waiting — then answers the setup questions, starting from the link's place. The token is kept only as a hash
+   (like the sign-in link); it stops at its end date, when it has been used as many times as it allows, or when an admin
+   turns it off. Store `invites` = [{ id, hash, salt, campus, dept, ministry, note, uses, used:[{ staffId, name, at }],
+   exp, off, by, byName, at }]. A link is a key: say so to whoever shares it, keep groups' links short. */
+const INVITE_MAX_USES = 50, INVITE_MAX_DAYS = 30;
+async function getInvites_() { return readJSON('invites', []); }
+function inviteFind_(rows, token) {
+  token = String(token || '');
+  if (!/^[a-f0-9]{48}$/.test(token)) return null;
+  return rows.find(function (r) { return r && r.hash && safeEq_(hashPin_(token, r.salt), r.hash); }) || null;
+}
+function inviteState_(r) {
+  if (!r) return 'bad';
+  if (r.off) return 'off';
+  if (!(Date.parse(r.exp) > Date.now())) return 'expired';
+  if ((r.used || []).length >= (r.uses || 1)) return 'used';
+  return 'ok';
+}
+function inviteOut_(r) {
+  return { id: r.id, campus: r.campus, dept: r.dept || '', ministry: r.ministry || '', note: r.note || '', uses: r.uses || 1,
+    used: (r.used || []).map(function (u) { return { staffId: u.staffId, name: u.name, at: u.at }; }), exp: r.exp, off: !!r.off,
+    byName: r.byName || '', at: r.at, state: inviteState_(r) };
+}
+async function adminMakeInvite(username, pin, p) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  p = p && typeof p === 'object' ? p : {};
+  const campus = CAMPUS_IDS_.includes(p.campus) ? p.campus : '';
+  if (!campus) return { ok: false, err: 'campus' };
+  const dept = p.dept ? normDept_(str_(p.dept, 80), str_(p.ministry, 80) || '') : '';
+  const ministry = dept && p.ministry ? normMinistry_(dept, str_(p.ministry, 80)) : '';
+  const uses = Math.max(1, Math.min(INVITE_MAX_USES, Math.round(Number(p.uses) || 1)));
+  const days = Math.max(1, Math.min(INVITE_MAX_DAYS, Math.round(Number(p.days) || 7)));
+  const token = crypto.randomBytes(24).toString('hex'), salt = crypto.randomBytes(8).toString('hex');
+  const rec = { id: 'inv' + crypto.randomBytes(6).toString('hex'), hash: hashPin_(token, salt), salt: salt, campus: campus, dept: dept, ministry: ministry,
+    note: str_(p.note, 80) || '', uses: uses, used: [], exp: new Date(Date.now() + days * 864e5).toISOString(), off: false,
+    by: admin.id, byName: admin.name || '', at: new Date().toISOString() };
+  const rows = (await getInvites_()).filter(function (r) { return r && (Date.parse(r.exp) > Date.now() - 60 * 864e5); });   // ended ones go after two months
+  rows.unshift(rec);
+  await writeJSON('invites', rows.slice(0, 200));
+  return { ok: true, token: token, invite: inviteOut_(rec) };
+}
+async function adminListInvites(username, pin) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  return { ok: true, invites: (await getInvites_()).map(inviteOut_) };
+}
+async function adminInviteOff(username, pin, id) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  const rows = await getInvites_(), r = rows.find(function (x) { return x && x.id === id; });
+  if (!r) return { ok: false, err: 'not_found' };
+  r.off = true;
+  await writeJSON('invites', rows);
+  return { ok: true, invites: rows.map(inviteOut_) };
+}
+/* public: what the sign-up page says about the link before anyone signs up — where, and who invited them */
+async function inviteInfo(token) {
+  const r = inviteFind_(await getInvites_(), token), st = inviteState_(r);
+  if (st !== 'ok') return { ok: false, err: st };
+  return { ok: true, campus: r.campus, dept: r.dept || '', ministry: r.ministry || '', byName: r.byName || '' };
+}
+
 async function staffRegister(payload) {
   payload = payload && typeof payload === 'object' ? Object.assign({}, payload) : {};
   /* Signing up with Google: the email and name are Google's, the username is made from the email, and
@@ -953,13 +1039,21 @@ async function staffRegister(payload) {
   const email = cleanEmail_(payload.email);
   if (email === null) return { ok: false, err: 'bad_email' };
   if (!email) return { ok: false, err: 'email_required' };
+  /* an admin's invite link: checked now and used up in the same write as the account (below) */
+  let invite = null;
+  if (payload.invite) {
+    invite = inviteFind_(await getInvites_(), payload.invite);
+    const st = inviteState_(invite);
+    if (st !== 'ok') return { ok: false, err: 'invite_' + st };
+    payload.campus = invite.campus; payload.dept = invite.dept || ''; payload.ministry = invite.ministry || '';
+  }
   const salt = pinSalt_();
   const id = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const now = new Date().toISOString();
   /* Every new account waits for an admin to accept or decline it (Nov 2026, Andrew: "when creating a new
      account … admin will receive an approval whether they accept them or deny them"); it used to be only
      Campus Leadership. The admins hear of it at once (pushNow_ 'signup') and it waits in Admin → Approvals. */
-  const pending = true;
+  const pending = !invite;   // an admin's invite link is the admin's yes
   const rec = {
     id: id, username: u, name: payload.name || u, email: email,
     campus: payload.campus || '', dept: normDept_(payload.dept || '', payload.ministry || ''), ministry: normMinistry_(payload.dept || '', payload.ministry || ''),
@@ -968,8 +1062,16 @@ async function staffRegister(payload) {
     staffType: cleanStaffType_(payload.staffType), country: cleanCountry_(payload.country),
     mentorId: payload.mentorId || '', mentorStatus: payload.mentorId ? 'pending' : '',
     phone: payload.phone || '', joined: payload.joined || '', debt: false, active: !pending,
-    isAdmin: false, created: now, updated: now
+    isAdmin: false, created: now, updated: now,
+    /* Signing up is only Google (or an email, username and PIN) and a name (Nov 2026, Andrew: "make the account
+       easy … not overwhelming with a bunch of questions"); once an admin says yes, the first sign-in walks them
+       through the rest — campus, ministry, kind of staff, country, mentor, papers — and updateProfile's setupDone
+       clears this. An invite link's campus / department / ministry are still kept and start the steps off. */
+    setupTodo: true, awaiting: !invite
   };
+  if (invite) rec.invitedBy = { inviteId: invite.id, adminId: invite.by, at: now };
+  if (!rec.awaiting) delete rec.awaiting;
+  if (!CAMPUS_IDS_.includes(rec.campus)) rec.campus = '';
   if (CD_KINDS.indexOf(payload.cdKind) > -1 && rec.dept === LEADERSHIP_DEPT && rec.ministry === 'Campus Director') rec.cdKind = payload.cdKind;
   let gtok = '';
   if (gg) { gtok = addDeviceToken_(rec); rec.google = { sub: gg.sub, lastAt: now }; }
@@ -982,12 +1084,17 @@ async function staffRegister(payload) {
     return { ok: true };
   });
   if (!added.ok) return added;
+  if (invite) {   // the invite is used once more (or, if it ran out a moment ago, the account still stands: it was checked above)
+    const rows = await getInvites_(), r = rows.find(function (x) { return x && x.id === invite.id; });
+    if (r) { r.used = (r.used || []).concat([{ staffId: rec.id, name: rec.name, at: now }]); await writeJSON('invites', rows); }
+  }
   // No staff/profile in a pending response: this account has no session yet,
   // and returning one would let the client log it straight in anyway.
   if (pending) {
     const admins = (await getStaff_()).filter(function (r) { return r && r.isAdmin && r.active !== false && !r.archived && !isApplicant_(r); });
     for (const a of admins) await pushNow_(a.id, 'signup', { name: rec.name }, 'teams.html?view=approvals');
-    return { ok: true, pending: true };
+    /* signed in at once, to answer the setup questions — the rest of the app waits for the admin (verifyAwaiting_) */
+    return Object.assign(awaitingOut_(rec), { pending: true, token: gtok || undefined });
   }
   return {
     ok: true, user: u, token: gtok || undefined, staff: selfStaff_(rec),
@@ -1033,7 +1140,7 @@ async function staffLoginGoogle(token) {
     return app ? { ok: false, err: 'applicant' } : { ok: false, err: 'new', email: gg.email, name: gg.name };
   }
   if (rec.archived) return { ok: false, err: 'auth' };
-  if (rec.active === false) return { ok: false, err: 'pending' };
+  if (rec.active === false && !rec.awaiting) return { ok: false, err: 'pending' };
   let tok = '';
   const out = await mutateStaff_(function (all) {
     const r = all.find(function (x) { return x.id === rec.id; });
@@ -1044,6 +1151,7 @@ async function staffLoginGoogle(token) {
   });
   if (!out || !out.ok) return { ok: false };
   await clearLoginThrottle_(rec.username);
+  if (rec.active === false) return Object.assign(awaitingOut_(rec), { token: tok });
   return staffLoginOut_(rec, { token: tok });
 }
 /* Profile & settings → "Sign in with Google from now on": signed in (PIN or otherwise), they connect their
@@ -1090,6 +1198,7 @@ async function staffLogin(username, pin) {
     const rows = await getStaff_();
     const raw = findStaff_(rows, username);
     if (raw && raw.active === false && credOk_(raw, pin)) {
+      if (raw.awaiting && !raw.archived && !isApplicant_(raw)) return awaitingOut_(raw);   // a new account: in, to the waiting page
       return { ok: false, err: 'pending' };
     }
     // A portal applicant signing in on the staff app: right PIN, wrong door.
@@ -1129,7 +1238,8 @@ function adminStaffOut_(s) {
     leads: leadsOf_(s), ministries: ministriesOf_(s),
     archived: archivedOf_(s),
     created: s.created || '',
-    google: !!(s.google && s.google.sub), signIn: authKindOf_(s)   // Admin → Accounts' "Not on Google yet"
+    google: !!(s.google && s.google.sub), signIn: authKindOf_(s),   // Admin → Accounts' "Not on Google yet"
+    signInLink: s.signInLink && Date.parse(s.signInLink.exp) > Date.now() ? { exp: s.signInLink.exp } : null   // never the hash
   };
 }
 
@@ -1267,6 +1377,7 @@ async function adminSetActive(username, pin, staffId, active) {
     const idx = rows.findIndex(function (r) { return r.id === staffId; });
     if (idx === -1) return { abort: true, ok: false, err: 'not_found' };
     rows[idx].active = !!active;
+    if (active) delete rows[idx].awaiting;   // approved: the whole app, and switching it off later is a real switch-off
     rows[idx].updated = new Date().toISOString();
     return { ok: true, staff: adminStaffOut_(rows[idx]) };
   });
@@ -1307,6 +1418,9 @@ async function adminResetPin(username, pin, staffId, newPin) {
     const salt = pinSalt_();
     rows[idx].pinHash = hashPin_(newPin, salt);
     rows[idx].pinSalt = salt;
+    /* a password account (made from the portal) checks only its password, so a new PIN would never
+       work while one is there: the admin is replacing how they sign in, so the forgotten password goes */
+    delete rows[idx].secretHash; delete rows[idx].secretSalt;
     rows[idx].updated = new Date().toISOString();
     resetUsername = rows[idx].username;
     return { ok: true };
@@ -1315,6 +1429,51 @@ async function adminResetPin(username, pin, staffId, newPin) {
   // locked out, so lift any lockout on the account it now belongs to.
   if (out.ok) await clearLoginThrottle_(resetUsername);
   return out;
+}
+
+/* A one-time sign-in link (Nov 2026, Uriah: "I don't want people getting logged out and stuck"). The app sends
+   no email, so an admin makes the link and sends it by Telegram or WhatsApp: teams.html?signin=<48 hex>. It is
+   kept only as a hash on the staff record, is good for SIGNIN_LINK_HOURS, works once, and a new one replaces the
+   old. Opening it signs that person in on that phone with a device token (like Google's), lifts any lockout, and
+   the page then asks them to connect Google so it doesn't happen again. Nothing else about the account changes. */
+const SIGNIN_LINK_HOURS = 72;
+async function adminSignInLink(username, pin, staffId) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  let tok = '', exp = '';
+  const out = await mutateStaff_(function (rows) {
+    const r = rows.find(function (x) { return x.id === staffId; });
+    if (!r) return { abort: true, ok: false, err: 'not_found' };
+    if (isApplicant_(r)) return { abort: true, ok: false, err: 'not_staff' };
+    if (r.archived) return { abort: true, ok: false, err: 'archived' };
+    tok = newDeviceToken_();
+    const salt = pinSalt_();
+    exp = new Date(Date.now() + SIGNIN_LINK_HOURS * 3600 * 1000).toISOString();
+    r.signInLink = { hash: hashPin_(tok, salt), salt: salt, exp: exp, by: admin.id, at: new Date().toISOString() };
+    return { ok: true };
+  });
+  if (!out || !out.ok) return out || { ok: false };
+  return { ok: true, token: tok, exp: exp };
+}
+async function staffUseSignInLink(token) {
+  token = String(token || '');
+  if (!/^[a-f0-9]{48}$/.test(token)) return { ok: false, err: 'link' };
+  let found = null, dev = '';
+  const out = await mutateStaff_(function (rows) {
+    const r = rows.find(function (x) { return x && x.signInLink && x.signInLink.hash && safeEq_(hashPin_(token, x.signInLink.salt), x.signInLink.hash); });
+    if (!r) return { abort: true, ok: false, err: 'link' };
+    if (!(Date.parse(r.signInLink.exp) > Date.now())) { delete r.signInLink; return { ok: false, err: 'expired' }; }
+    if (r.archived || isApplicant_(r)) return { abort: true, ok: false, err: 'link' };
+    if (r.active === false) return { abort: true, ok: false, err: 'pending' };
+    delete r.signInLink;
+    dev = addDeviceToken_(r);
+    r.updated = new Date().toISOString();
+    found = r;
+    return { ok: true };
+  });
+  if (!out || !out.ok || !found) return out && !out.ok ? out : { ok: false };
+  await clearLoginThrottle_(found.username);
+  return staffLoginOut_(found, { token: dev, viaLink: true });
 }
 
 /* Fixing a wrong campus/department/ministry for someone else — the same
@@ -1508,12 +1667,13 @@ async function adminMergeStaff(username, pin, keepId, mergeId) {
 }
 
 async function updateProfile(username, pin, payload) {
-  const s = await verifyStaff_(username, pin);
+  const s = await verifyAwaiting_(username, pin) || await verifyStaff_(username, pin);   // a new account answers its setup questions while it waits
   if (!s) return { ok: false };
   const out = await updateProfile_(s, payload || {});
-  /* a new mentor hears of it on their phone, right away */
+  if (out && out.ok && s.awaiting) { out.awaiting = true; if (out.staff) out.staff.awaiting = true; }
+  /* a new mentor hears of it on their phone, right away (an account still waiting: once it is approved, from the request) */
   const mid = payload && payload.mentorId;
-  if (out && out.ok && mid && mid !== s.mentorId) await pushNow_(mid, 'mentorAsk', { name: s.name }, 'teams.html?view=mentor');
+  if (out && out.ok && mid && mid !== s.mentorId && !s.awaiting) await pushNow_(mid, 'mentorAsk', { name: s.name }, 'teams.html?view=mentor');
   return out;
 }
 async function updateProfile_(s, payload) {
@@ -1544,6 +1704,7 @@ async function updateProfile_(s, payload) {
       if (payload.cdKind !== undefined) rec.cdKind = CD_KINDS.indexOf(payload.cdKind) > -1 ? payload.cdKind : '';
     }
     if (payload.cancelCltRequest) delete rec.cltRequest;
+    if (payload.setupDone) delete rec.setupTodo;   // the steps after sign-up are done (22-setup.js)
     if (payload.role !== undefined) rec.role = payload.role;
     if (payload.staffType !== undefined) rec.staffType = cleanStaffType_(payload.staffType);
     if (payload.country !== undefined) rec.country = cleanCountry_(payload.country);
@@ -4882,7 +5043,7 @@ function prOut_(r, s, staff) {
   const a = staff.find(function (x) { return x.id === r.staffId; });
   return { id: r.id, mine: r.staffId === s.id, name: a ? a.name : '—', photo: photoOf_(a), campus: r.campus, scope: r.scope,
     text: r.text, created: r.created, prayedN: (r.prayed || []).length, iPrayed: (r.prayed || []).indexOf(s.id) > -1,
-    answered: r.answered || '', answerNote: r.answerNote || '' };
+    answered: r.answered || '', answerNote: r.answerNote || '', lib: r.lib && r.lib.bookId ? { bookId: r.lib.bookId, title: r.lib.title || '', noteId: r.lib.noteId || '' } : null };
 }
 async function getPrayers(username, pin) {
   const s = await verifyStaff_(username, pin);
@@ -4940,6 +5101,212 @@ async function deletePrayer(username, pin, id) {
   if (!r || !(r.staffId === s.id || s.isAdmin)) return { ok: false, err: 'not_found' };
   await writeJSON('prayers', rows.filter(function (x) { return x.id !== id; }));
   return getPrayers(username, pin);
+}
+
+/* ==================== The Library: highlights, notes and talking about them (Nov 2026, Andrew) ====================
+   "Like the Bible app … highlight things you like in the reading … write a note on it … private, or public for everyone
+   in our base … people can comment on it, like it … even ask for prayer from it — private, public, or just to your mentor."
+   A paragraph of a book (bookId, the reader's step, its paragraph index p, the language it was read in) can carry one row
+   per person: a highlight colour, a note, who sees it (`vis` private | mentor | campus), and whether it asks for prayer.
+   Blob `libHl` = [{ id, staffId, campus, bookId, title, lang, step, p, quote, color, note, vis, prayerId, likes:[ids],
+   comments:[{ id, staffId, text, at }], at, edited }]. A prayer request is a real row in `prayers` (scope campus /
+   mentor, `lib: { bookId, title, noteId }`), so it shows on ☰ → Prayer too and "I prayed" counts in both places.
+   Who sees a row (lnCanSee_): its owner; with vis campus, active staff on its campus; with vis mentor, the owner's approved
+   mentor. Never applicants or students. Likes and comments go to whoever sees the row. Only the owner edits; the owner,
+   a comment's writer or an admin deletes. Nothing of it is on the roster, a profile or the week's board. */
+const LN_VIS = ['private', 'mentor', 'campus'], LN_COLORS = ['yellow', 'green', 'blue', 'pink'];
+const LN_NOTE_MAX = 1000, LN_QUOTE_MAX = 400, LN_COMMENT_MAX = 500, LN_PER_PERSON = 1000, LN_COMMENTS_MAX = 100, LN_COMMENTS_DAY = 60, LN_FEED_DAYS = 60;
+function lnCanSee_(r, s, staff) {
+  if (!r || !s) return false;
+  if (r.staffId === s.id) return true;
+  if (isApplicant_(s)) return false;
+  if (r.vis === 'campus') return r.campus === s.campus;
+  if (r.vis === 'mentor') { const a = (staff || []).find(function (x) { return x.id === r.staffId; }); return !!(a && a.mentorId === s.id && a.mentorStatus === 'approved'); }
+  return false;
+}
+function lnOut_(r, s, staff, prayers) {
+  const by = {}; (staff || []).forEach(function (x) { if (x && x.id) by[x.id] = x; });
+  const a = by[r.staffId];
+  const pr = r.prayerId ? (prayers || []).find(function (x) { return x.id === r.prayerId; }) : null;
+  return {
+    id: r.id, mine: r.staffId === s.id, staffId: r.staffId, name: a ? a.name : '—', photo: photoOf_(a), bookId: r.bookId, title: r.title || '',
+    lang: r.lang, step: r.step, p: r.p, s: typeof r.s === 'number' ? r.s : -1, e: typeof r.e === 'number' ? r.e : -1, quote: r.quote || '', color: r.color || '', note: r.note || '', vis: r.vis, at: r.at, edited: r.edited || '',
+    likes: (r.likes || []).length, iLiked: (r.likes || []).indexOf(s.id) > -1,
+    comments: (r.comments || []).map(function (c) { const w = by[c.staffId]; return { id: c.id, name: w ? w.name : '—', photo: photoOf_(w), text: c.text, at: c.at, mine: c.staffId === s.id }; }),
+    prayer: pr ? { prayedN: (pr.prayed || []).length, iPrayed: (pr.prayed || []).indexOf(s.id) > -1, answered: pr.answered || '', answerNote: pr.answerNote || '' } : null
+  };
+}
+/* The book's rows I may see: my own (highlights included) and what others share with me. */
+async function libNotes(username, pin, bookId) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const id = String(bookId || '');
+  if (!LIB_ID.test(id)) return { ok: false, err: 'bad_book' };
+  const [rows, staff, prayers] = await Promise.all([readJSON('libHl', []), getStaff_(), getPrayers_()]);
+  const out = rows.filter(function (r) { return r && r.bookId === id && lnCanSee_(r, s, staff); })
+    .sort(function (a, b) { return a.at < b.at ? 1 : -1; }).map(function (r) { return lnOut_(r, s, staff, prayers); });
+  return { ok: true, bookId: id, notes: out };
+}
+/* The campus's shared notes, newest first, for the Library's home (in the boot's `lib`). Short. */
+function lnFeed_(s, staff, rows) {
+  const since = new Date(Date.now() - LN_FEED_DAYS * 86400000).toISOString();
+  const by = {}; (staff || []).forEach(function (x) { if (x && x.id) by[x.id] = x; });
+  return (Array.isArray(rows) ? rows : []).filter(function (r) { return r && r.staffId !== s.id && r.note && r.at >= since && (r.vis === 'campus' || r.vis === 'mentor') && lnCanSee_(r, s, staff); })
+    .sort(function (a, b) { return a.at < b.at ? 1 : -1; }).slice(0, 8)
+    .map(function (r) { const a = by[r.staffId]; return { id: r.id, name: a ? a.name : '—', photo: photoOf_(a), bookId: r.bookId, title: r.title || '', vis: r.vis,
+      quote: String(r.quote || '').slice(0, 160), note: String(r.note || '').slice(0, 220), likes: (r.likes || []).length, comments: (r.comments || []).length, prayer: !!r.prayerId, at: r.at }; });
+}
+function lnMineCount_(s, rows) { return (Array.isArray(rows) ? rows : []).filter(function (r) { return r && r.staffId === s.id; }).length; }
+/* Make or change my row for a paragraph (one per person per paragraph). Empty colour and note → the row goes. */
+async function libNoteSave(username, pin, rec) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (isApplicant_(s)) return { ok: false, err: 'not_authorized' };
+  rec = rec || {};
+  const bookId = String(rec.bookId || '');
+  if (!LIB_ID.test(bookId)) return { ok: false, err: 'bad_book' };
+  const step = Math.floor(Number(rec.step)), pIdx = Math.floor(Number(rec.p));
+  if (!(step >= 0 && step <= 40) || !(pIdx >= 0 && pIdx <= 200)) return { ok: false, err: 'bad_place' };
+  const lang = rec.lang === 'km' ? 'km' : 'en';
+  /* the sentences s…e of the paragraph (Nov 2026, sentence highlights); -1 = the whole paragraph, as rows made before */
+  let sIdx = Math.floor(Number(rec.s)), eIdx = Math.floor(Number(rec.e));
+  if (!(sIdx >= 0 && sIdx <= 400)) { sIdx = -1; eIdx = -1; } else if (!(eIdx >= sIdx && eIdx <= 400)) eIdx = sIdx;
+  const sOf = function (r) { return typeof r.s === 'number' && r.s >= 0 ? r.s : -1; };
+  const eOf = function (r) { return sOf(r) >= 0 ? (typeof r.e === 'number' && r.e >= r.s ? r.e : r.s) : -1; };
+  const color = LN_COLORS.indexOf(rec.color) > -1 ? rec.color : '';
+  const note = String(str_(rec.note, LN_NOTE_MAX) || '').trim();
+  const vis = LN_VIS.indexOf(rec.vis) > -1 ? rec.vis : 'private';
+  if (vis === 'mentor' && !(s.mentorId && s.mentorStatus === 'approved')) return { ok: false, err: 'no_mentor' };
+  if (vis !== 'private' && !note) return { ok: false, err: 'need_note' };   // a shared row says something
+  const wantPrayer = !!rec.prayer && vis !== 'private' && !!note;
+  const quote = String(str_(rec.quote, LN_QUOTE_MAX) || '').trim(), title = String(str_(rec.title, 120) || '').trim();
+  const now = new Date().toISOString();
+  let saved = null, oldPrayer = '', wasMentor = false;
+  const res = await mutateKey_('libHl', [], function (rows) {
+    let i = rows.findIndex(function (r) { return r && r.staffId === s.id && r.bookId === bookId && r.step === step && r.p === pIdx && r.lang === lang && sOf(r) === sIdx && eOf(r) === eIdx; });
+    if (rec.id) { const j = rows.findIndex(function (r) { return r && r.id === rec.id; }); if (j === -1 || rows[j].staffId !== s.id) return { abort: true, ok: false, err: 'not_found' }; i = j; }
+    if (!color && !note) {   // nothing left: the row goes
+      if (i > -1) { oldPrayer = rows[i].prayerId || ''; rows.splice(i, 1); }
+      return { ok: true, gone: true };
+    }
+    if (i === -1) {
+      if (lnMineCount_(s, rows) >= LN_PER_PERSON) return { abort: true, ok: false, err: 'too_many' };
+      const row = { id: 'ln_' + crypto.randomBytes(6).toString('hex'), staffId: s.id, campus: s.campus, bookId: bookId, title: title, lang: lang, step: step, p: pIdx,
+        quote: quote, color: color, note: note, vis: vis, prayerId: '', likes: [], comments: [], at: now, edited: '' };
+      if (sIdx >= 0) { row.s = sIdx; row.e = eIdx; }
+      rows.push(row);
+      i = rows.length - 1;
+    } else {
+      const r = rows[i]; wasMentor = r.vis === 'mentor';
+      if (r.note !== note) r.edited = now;
+      r.color = color; r.note = note; r.vis = vis; r.campus = s.campus; if (title) r.title = title; if (quote) r.quote = quote;
+      if (vis === 'private') { r.likes = []; r.comments = []; }   // a row taken back to private keeps no conversation
+    }
+    oldPrayer = rows[i].prayerId || '';
+    saved = copy_(rows[i]);
+    return { ok: true };
+  });
+  if (!res || !res.ok) return res || { ok: false };
+  /* its prayer request: made, changed, or taken down */
+  if (saved && wantPrayer) {
+    const prId = oldPrayer || ('pr' + crypto.randomBytes(6).toString('hex'));
+    await mutateKey_('prayers', [], function (rows) {
+      let r = rows.find(function (x) { return x.id === prId; });
+      if (!r) { r = { id: prId, staffId: s.id, campus: s.campus, created: now, prayed: [], answered: '', answerNote: '' }; rows.push(r); }
+      r.scope = vis === 'mentor' ? 'mentor' : 'campus'; r.text = note.slice(0, PR_MAX_TEXT); r.lib = { bookId: bookId, title: saved.title || '', noteId: saved.id };
+      return { ok: true };
+    });
+    if (!oldPrayer) await mutateKey_('libHl', [], function (rows) { const r = rows.find(function (x) { return x.id === saved.id; }); if (r) r.prayerId = prId; return { ok: true }; });
+  } else if (oldPrayer) {
+    await mutateKey_('prayers', [], function (rows) { const i = rows.findIndex(function (x) { return x.id === oldPrayer; }); if (i > -1) rows.splice(i, 1); return { ok: true }; });
+    if (saved) await mutateKey_('libHl', [], function (rows) { const r = rows.find(function (x) { return x.id === saved.id; }); if (r) r.prayerId = ''; return { ok: true }; });
+  }
+  if (saved && vis === 'mentor' && !wasMentor) await pushNow_(s.mentorId, wantPrayer ? 'libMentorPray' : 'libMentorNote', { name: String(s.name || '').split(' ')[0], title: saved.title || '' }, 'teams.html?view=library&book=' + bookId + '&note=' + saved.id);
+  return Object.assign(await libNotes(username, pin, bookId), { id: saved ? saved.id : '' });
+}
+async function libNoteDelete(username, pin, id) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  let bookId = '', prayerId = '';
+  const res = await mutateKey_('libHl', [], function (rows) {
+    const i = rows.findIndex(function (r) { return r && r.id === id; });
+    if (i === -1) return { abort: true, ok: false, err: 'not_found' };
+    const r = rows[i];
+    if (!(r.staffId === s.id || (s.isAdmin && r.vis === 'campus' && r.campus === s.campus))) return { abort: true, ok: false, err: 'not_authorized' };
+    bookId = r.bookId; prayerId = r.prayerId || ''; rows.splice(i, 1);
+    return { ok: true };
+  });
+  if (!res || !res.ok) return res || { ok: false };
+  if (prayerId) await mutateKey_('prayers', [], function (rows) { const i = rows.findIndex(function (x) { return x.id === prayerId; }); if (i > -1) rows.splice(i, 1); return { ok: true }; });
+  return libNotes(username, pin, bookId);
+}
+/* like, comment, pray: whoever may see the row (and it is not private) */
+async function lnTouch_(username, pin, id, fn) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const staff = await getStaff_();
+  let bookId = '', owner = '', title = '';
+  const res = await mutateKey_('libHl', [], function (rows) {
+    const r = rows.find(function (x) { return x && x.id === id; });
+    if (!r || !lnCanSee_(r, s, staff) || r.vis === 'private') return { abort: true, ok: false, err: 'not_found' };
+    bookId = r.bookId; owner = r.staffId; title = r.title || '';
+    return fn(r, s);
+  });
+  if (!res || !res.ok) return res || { ok: false };
+  return { s: s, bookId: bookId, owner: owner, title: title, res: res };
+}
+async function libNoteLike(username, pin, id, on) {
+  const t = await lnTouch_(username, pin, id, function (r, s) {
+    r.likes = (r.likes || []).filter(function (x) { return x !== s.id; }); if (on) r.likes.push(s.id); return { ok: true };
+  });
+  if (!t.s) return t;
+  return libNotes(username, pin, t.bookId);
+}
+async function libNoteComment(username, pin, id, text) {
+  const body = String(str_(text, LN_COMMENT_MAX) || '').trim();
+  if (!body) return { ok: false, err: 'empty' };
+  const today = new Date().toISOString().slice(0, 10);
+  const t = await lnTouch_(username, pin, id, function (r, s) {
+    r.comments = Array.isArray(r.comments) ? r.comments : [];
+    if (r.comments.length >= LN_COMMENTS_MAX) return { abort: true, ok: false, err: 'too_many' };
+    r.comments.push({ id: 'lc_' + crypto.randomBytes(5).toString('hex'), staffId: s.id, text: body, at: new Date().toISOString() });
+    return { ok: true };
+  });
+  if (!t.s) return t;
+  /* not too many in a day from one person, across every note (checked after: a rare race costs nothing) */
+  const mine = (await readJSON('libHl', [])).reduce(function (n, r) { return n + ((r && r.comments) || []).filter(function (c) { return c.staffId === t.s.id && String(c.at).slice(0, 10) === today; }).length; }, 0);
+  if (mine > LN_COMMENTS_DAY) {
+    await mutateKey_('libHl', [], function (rows) { const r = rows.find(function (x) { return x.id === id; }); if (r) r.comments = r.comments.filter(function (c, i) { return !(i === r.comments.length - 1 && c.staffId === t.s.id); }); return { ok: true }; });
+    return { ok: false, err: 'too_many' };
+  }
+  if (t.owner !== t.s.id) await pushNow_(t.owner, 'libComment', { name: String(t.s.name || '').split(' ')[0], title: t.title }, 'teams.html?view=library&book=' + t.bookId + '&note=' + id);
+  return libNotes(username, pin, t.bookId);
+}
+async function libNoteUncomment(username, pin, id, commentId) {
+  const t = await lnTouch_(username, pin, id, function (r, s) {
+    const c = (r.comments || []).find(function (x) { return x.id === commentId; });
+    if (!c || !(c.staffId === s.id || r.staffId === s.id || (s.isAdmin && r.campus === s.campus))) return { abort: true, ok: false, err: 'not_authorized' };
+    r.comments = r.comments.filter(function (x) { return x.id !== commentId; });
+    return { ok: true };
+  });
+  if (!t.s) return t;
+  return libNotes(username, pin, t.bookId);
+}
+/* "I prayed" on a note that asks for prayer: the same count as on ☰ → Prayer */
+async function libNotePray(username, pin, id, on) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  const staff = await getStaff_();
+  const r = (await readJSON('libHl', [])).find(function (x) { return x && x.id === id; });
+  if (!r || !r.prayerId || !lnCanSee_(r, s, staff)) return { ok: false, err: 'not_found' };
+  const res = await mutateKey_('prayers', [], function (rows) {
+    const pr = rows.find(function (x) { return x.id === r.prayerId; });
+    if (!pr) return { abort: true, ok: false, err: 'not_found' };
+    pr.prayed = (pr.prayed || []).filter(function (x) { return x !== s.id; }); if (on) pr.prayed.push(s.id);
+    return { ok: true };
+  });
+  if (!res || !res.ok) return res || { ok: false };
+  return libNotes(username, pin, r.bookId);
 }
 
 /* ==================== Support raising (Oct 2026) ====================
@@ -5355,6 +5722,9 @@ const PUSH_TEXT = {
   libMonth: { en: 'Ten minutes for this month’s book? {title}', km: 'ដប់នាទីសម្រាប់សៀវភៅប្រចាំខែនេះ? {title}' },
   libRead: { en: 'Ten minutes for a book? Pick up where you left off in the Library.', km: 'ដប់នាទីសម្រាប់សៀវភៅមួយ? បន្តអានពីកន្លែងដែលអ្នកឈប់នៅក្នុងបណ្ណាល័យ។' },
   libRec: { en: '{name} thinks you’d like “{title}”.', km: '{name} គិតថាអ្នកនឹងចូលចិត្ត «{title}»។' },
+  libComment: { en: '{name} commented on your note in “{title}”.', km: '{name} បានបញ្ចេញមតិលើកំណត់ចំណាំរបស់អ្នកក្នុង «{title}»។' },
+  libMentorNote: { en: '{name} shared a note with you from “{title}”.', km: '{name} បានចែករំលែកកំណត់ចំណាំមួយជាមួយអ្នកពី «{title}»។' },
+  libMentorPray: { en: '{name} asked you to pray, from “{title}”.', km: '{name} បានសុំឱ្យអ្នកអធិស្ឋាន ពី «{title}»។' },
   libPlan: { en: '{name} gave you a reading plan in the Library.', km: '{name} បានផ្តល់ផែនការអានមួយដល់អ្នកនៅក្នុងបណ្ណាល័យ។' },
   mcInvite: { en: '{name} asked you to take the couple check-up together.', km: '{name} បានអញ្ជើញអ្នកឲ្យធ្វើការពិនិត្យសម្រាប់គូស្វាមីភរិយាជាមួយគ្នា។' },
   mcReady: { en: 'You have both answered the couple check-up — your results are ready.', km: 'អ្នកទាំងពីរបានឆ្លើយការពិនិត្យសម្រាប់គូស្វាមីភរិយារួចហើយ — លទ្ធផលរបស់អ្នករួចរាល់ហើយ។' },
@@ -5704,7 +6074,7 @@ async function saveKmReview(username, pin, key, verdict, km) {
 function bootStaffCard_(s) {
   /* mentorStatus: their own — the page reads S.me.mentorStatus (whether their mentor has said yes); it was only on
      the profile, so every 1-on-1 with one's own mentor also showed in "Asking you" and leave said "Save this request" */
-  return selfStaff_(s, { mentorStatus: s.mentorStatus || '', isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), signIn: authKindOf_(s), google: !!s.google, hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '', langLevel: langMine_(s), seeLangLevels: canSeeLangLevels_(s) });   // created: for My Home's first 30 days
+  return selfStaff_(s, { mentorStatus: s.mentorStatus || '', isAdmin: !!s.isAdmin, hr: !!s.hr, portalStaff: !!s.portalStaff, portalAdmin: !!s.portalAdmin, portal: canPortal_(s), signIn: authKindOf_(s), google: !!s.google, hospitality: canHosp_(s), kmReviewer: isKmReviewer_(s), created: s.created || '', langLevel: langMine_(s), seeLangLevels: canSeeLangLevels_(s), quickApps: Array.isArray(s.quickApps) ? s.quickApps : null, dashLayout: (s.dashLayout && typeof s.dashLayout === 'object') ? s.dashLayout : null });   // created: for My Home's first 30 days; quickApps: My Home's quick-apps bar
 }
 /* GP Tasks as an app of its own (tasks.html, Nov 2026, Andrew: "a separate app for our tasks and calendar …
    synced and linked to the main app"). It is the same data, so there is nothing to sync: this is the tasks
@@ -5713,6 +6083,8 @@ function bootStaffCard_(s) {
    day of the calendar grid, or '' to leave the calendar until it is opened. */
 async function getTasksBoot(username, pin, calFrom) {
   prefetch_(['staff', 'loginThrottle', 'gpTasks', 'kmReview']);
+  const waiting = await awaitingBoot_(username, pin);
+  if (waiting) return waiting;
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false, err: 'auth' };
   const part = async function (fn) { try { return await fn(); } catch (e) { return null; } };
@@ -5737,9 +6109,21 @@ async function getTasksBoot(username, pin, calFrom) {
 }
 
 const BOOT_KEYS = ['libClub', 'entries', 'survey', 'okrs', 'dailyLogs', 'goals', 'holidays', 'smartGoals', 'broadcasts',
-  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks'];
+  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks', 'holidayCatch', 'libHl'];
+async function awaitingBoot_(username, pin) {
+  const w = await verifyAwaiting_(username, pin);
+  if (!w) return null;
+  const rows = await getStaff_();
+  return Object.assign(awaitingOut_(w), {
+    staff: bootStaffCard_(w), googleId: googleClientId_(), googleRedirect: googleRedirect_(),
+    // names and departments only, as the public teamRoster already gives — for picking a mentor in the setup steps
+    roster: rows.filter(function (r) { return r.active && !isApplicant_(r); }).map(publicStaff_)
+  });
+}
 async function getMyBoot(username, pin) {
   prefetch_(['staff', 'loginThrottle'].concat(BOOT_KEYS));   // before the PIN check, so they travel together
+  const waiting = await awaitingBoot_(username, pin);
+  if (waiting) return waiting;
   const s = await verifyStaff_(username, pin);
   // `err:'auth'` on purpose: the page must be able to tell "your PIN is wrong"
   // from "the request failed", because only the first should log somebody out.
@@ -5810,7 +6194,7 @@ async function getMyBoot(username, pin) {
     hrFollowUps: canHR_(s) ? candFollowUpsCount_(candRows || []) : null,
     // the books they have marked read in the Library, and the papers every staff member signs
     libRead: cleanLibRead_(s.libRead),
-    lib: await part(async function () { return libOut_(s, staffRows || [], await readJSON('libClub', {})); }),   // the Library together: book of the month, plans, what the campus reads
+    lib: await part(async function () { return libOut_(s, staffRows || [], await readJSON('libClub', {}), await readJSON('libHl', [])); }),   // the Library together: book of the month, plans, what the campus reads
     stuMentor: deptOf_(s) === STU_LD_DEPT ? await part(function () { return stuMentorFor_(s.id); }) : null,   // students who chose them as mentor
     supportSummary: s.support ? supportSummary_(s.support) : null,   // support raising: your own totals, for My Home's tile
     game: await part(function () { return gameBoard_(s, staffRows || [], s.campus); }),   // the week's board: points, streaks, who is active
@@ -6170,7 +6554,7 @@ async function portalStaffSaveTeamNumbers(username, pin, candidateId, metrics, r
    calendar) from the day it applies, but its numbers only count on the
    dashboards once it is no longer pending. */
 function teamFlightsIn_(c) {
-  return hasDoc_(c, 'flights') || !!((c.portal && c.portal.visa) || {}).flightsConfirmed || portalStageIdx_(c.stage, 'team') >= portalStageIdx_('call2', 'team');
+  return hasDoc_(c, 'flights') || !!((c.portal && c.portal.visa) || {}).flightsConfirmed || teamMarked_(c, 'flights') || portalStageIdx_(c.stage, 'team') >= portalStageIdx_('call2', 'team');
 }
 async function pendingTeamIds_() {
   const out = {};
@@ -7814,7 +8198,7 @@ function libMine_(s) {
 function libOnCampus_(staff, campus) {
   return (staff || []).filter(function (r) { return r && r.campus === campus && r.active !== false && !r.archived && !isApplicant_(r); });
 }
-function libOut_(s, staff, club) {
+function libOut_(s, staff, club, hl) {
   club = club || {};
   const campus = libOnCampus_(staff, s.campus), names = {};
   (staff || []).forEach(function (r) { if (r && r.id) names[r.id] = r.name || ''; });
@@ -7838,12 +8222,13 @@ function libOut_(s, staff, club) {
     .sort(function (a, b) { return (b.n - a.n) || (a.bookId < b.bookId ? -1 : 1); }).slice(0, 8);
   const recs = (club.recs || []).filter(function (r) { return r.to === s.id; })
     .map(function (r) { return { id: r.id, from: { id: r.from, name: names[r.from] || '' }, bookId: r.bookId, note: r.note || '', at: r.at }; }).reverse().slice(0, 20);
-  return { month: month, canPick: canLead_(s), feed: feed.slice(0, 12), top: top, recs: recs, mine: libMine_(s), people: campus.length };
+  return { month: month, canPick: canLead_(s), feed: feed.slice(0, 12), top: top, recs: recs, mine: libMine_(s), people: campus.length,
+    notesFeed: hl ? lnFeed_(s, staff, hl) : [] };
 }
 async function libAnswer_(username, pin, extra) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
-  return Object.assign({ ok: true, lib: libOut_(s, await getStaff_(), await readJSON('libClub', {})) }, extra || {});
+  return Object.assign({ ok: true, lib: libOut_(s, await getStaff_(), await readJSON('libClub', {}), await readJSON('libHl', [])) }, extra || {});
 }
 async function libState(username, pin) { return libAnswer_(username, pin); }
 /* Campus Leadership or an admin: this campus's book of the month ('' takes it down). */
@@ -9454,11 +9839,18 @@ function portalStatus_(c) {
    the portal (the two calls, arrival). The stage follows the steps
    forward on its own (teamAutoStage_): the 1st call done → Awaiting
    documents; everything in → 2nd call; the 2nd call done → Getting ready. */
-const TEAM_TICKS = ['call1', 'call2', 'arrived'];
+/* The steps a document ticks can also be ticked by staff (Nov 2026, Andrew: a team couldn't open its letter of
+   invitation — "can you add in a manual thing where our staff … can just manually mark … flight, letter of
+   invitation"): the passports came by email, the flights are booked but not uploaded, the letter went by WhatsApp.
+   A mark is a flag beside the call ticks (c.portal.team[step] = when), logged, and counts exactly as the upload
+   would — for the step, the stage moving on, the Teams Database's "pending", and the e-visa guide opening. */
+const TEAM_MARKS = ['passports', 'photo', 'flights', 'invitation', 'evisa'];
+const TEAM_TICKS = ['call1', 'call2', 'arrived'].concat(TEAM_MARKS);
 function teamFlags_(c) { return (c && c.portal && c.portal.team) || {}; }
+function teamMarked_(c, step) { return c && c.type === 'team' && !!teamFlags_(c)[step]; }
 function hasDoc_(c, kind) { return docsOf_(c).some(function (d) { return d && d.kind === kind; }); }
-function teamDocsIn_(c) { return hasDoc_(c, 'passports') && hasPhotoDoc_(c) && (hasDoc_(c, 'flights') || !!((c.portal && c.portal.visa) || {}).flightsConfirmed); }
-function teamVisaDone_(c) { return !needsVisa_(c) || hasDoc_(c, 'evisa'); }
+function teamDocsIn_(c) { return (hasDoc_(c, 'passports') || teamMarked_(c, 'passports')) && (hasPhotoDoc_(c) || teamMarked_(c, 'photo')) && (hasDoc_(c, 'flights') || !!((c.portal && c.portal.visa) || {}).flightsConfirmed || teamMarked_(c, 'flights')); }
+function teamVisaDone_(c) { return !needsVisa_(c) || hasDoc_(c, 'evisa') || teamMarked_(c, 'evisa'); }
 function teamSteps_(c) {
   const idx = portalStageIdx_(c.stage, 'team');
   const at = function (stage) { return idx >= portalStageIdx_(stage, 'team'); };
@@ -9469,11 +9861,11 @@ function teamSteps_(c) {
     { id: 'account', done: true, who: 'you' },
     { id: 'form', done: submitted, who: 'you', auto: true },
     { id: 'call1', done: !!f.call1 || at('docs'), who: 'us', tick: true },
-    { id: 'passports', done: past || hasDoc_(c, 'passports'), who: 'you', auto: true, group: 'docs' },
-    { id: 'photo', done: past || hasPhotoDoc_(c), who: 'you', auto: true, group: 'docs' },
-    { id: 'flights', done: past || hasDoc_(c, 'flights') || !!visa.flightsConfirmed, who: 'you', auto: true, group: 'docs' },
-    intl && { id: 'invitation', done: past || hasDoc_(c, 'invitation') || !!visa.invitationSent, who: 'us', auto: true, group: 'visa' },
-    intl && { id: 'evisa', done: past || hasDoc_(c, 'evisa'), who: 'you', auto: true, group: 'visa' },
+    { id: 'passports', done: past || hasDoc_(c, 'passports') || !!f.passports, byDoc: hasDoc_(c, 'passports'), marked: !!f.passports, mark: true, who: 'you', auto: true, group: 'docs' },
+    { id: 'photo', done: past || hasPhotoDoc_(c) || !!f.photo, byDoc: hasPhotoDoc_(c), marked: !!f.photo, mark: true, who: 'you', auto: true, group: 'docs' },
+    { id: 'flights', done: past || hasDoc_(c, 'flights') || !!visa.flightsConfirmed || !!f.flights, byDoc: hasDoc_(c, 'flights') || !!visa.flightsConfirmed, marked: !!f.flights, mark: true, who: 'you', auto: true, group: 'docs' },
+    intl && { id: 'invitation', done: past || hasDoc_(c, 'invitation') || !!visa.invitationSent || !!f.invitation, byDoc: hasDoc_(c, 'invitation') || !!visa.invitationSent, marked: !!f.invitation, mark: true, who: 'us', auto: true, group: 'visa' },
+    intl && { id: 'evisa', done: past || hasDoc_(c, 'evisa') || !!f.evisa, byDoc: hasDoc_(c, 'evisa'), marked: !!f.evisa, mark: true, who: 'you', auto: true, group: 'visa' },
     { id: 'rooms', done: !!(c.portal && c.portal.rooms) || at('arrived'), who: 'us', auto: true, side: true },   // SR Hospitality booked their beds (syncTeamRooms_); any time, so never the current step
     { id: 'call2', done: !!f.call2 || at('practical'), who: 'us', tick: true },
     { id: 'practical', done: at('arrived'), who: 'you' },
@@ -11437,7 +11829,8 @@ function visaCampus_(c) { return Object.prototype.hasOwnProperty.call(PORTAL_CAM
 function visaOpen_(c) {
   if (!c || !needsVisa_(c)) return false;
   const v = (c.portal && c.portal.visa) || {};
-  return c.type === 'team' ? (hasDoc_(c, 'invitation') || !!v.invitationSent) : !!v.invitationSent;
+  if (v.early) return true;   // staff opened the e-visa steps early (portalSetVisaFlags {early}) — a team in a hurry
+  return c.type === 'team' ? (hasDoc_(c, 'invitation') || !!v.invitationSent || teamMarked_(c, 'invitation')) : !!v.invitationSent;
 }
 async function getVisaInfo_(campus) {
   campus = visaCampus_(campus);
@@ -11549,6 +11942,15 @@ async function portalSetVisaFlags(username, pin, candidateId, flags) {
     visa.extraDocs = !!flags.extraDocs;
   }
   if (flags.extraNote !== undefined) visa.extraNote = String(flags.extraNote == null ? '' : flags.extraNote).trim().slice(0, 600);
+  /* Show the e-visa steps now (Nov 2026, Andrew: "some teams need to apply as soon as possible but don't have all
+     the information yet … a little checkbox that makes the steps for the e-visa process appear"): the guide, the
+     supporting documents and the e-visa upload open before the letter and the team's documents are in (visaOpen_);
+     nothing else moves — the steps and the stage stay where they are. */
+  if (flags.early !== undefined) {
+    if (!needsVisa_(a.cand)) return { ok: false, err: 'no_visa' };
+    if (!!visa.early !== !!flags.early) a.cand.log = (Array.isArray(a.cand.log) ? a.cand.log : []).concat([{ at: new Date().toISOString(), by: a.s.id, kind: 'note', text: flags.early ? 'E-visa steps shown early' : 'E-visa steps hidden until the letter of invitation' }]).slice(-CAND_LOG_MAX);
+    if (flags.early) visa.early = new Date().toISOString(); else delete visa.early;
+  }
   a.cand.portal.visa = visa;
   a.cand.updated = new Date().toISOString(); a.cand.updatedBy = a.s.id;
   await writeJSON('candidates', a.rows);
@@ -11568,7 +11970,8 @@ async function portalTeamStep(username, pin, candidateId, step, done) {
   done = !!done;
   const now = new Date().toISOString();
   c.portal = c.portal || {};
-  const label = { call1: '1st call', call2: '2nd call — cultural orientation', arrived: 'Arrived' }[step];
+  const label = { call1: '1st call', call2: '2nd call — cultural orientation', arrived: 'Arrived', passports: 'Passports — marked by staff',
+    photo: 'Team photos — marked by staff', flights: 'Flights — marked by staff', invitation: 'Letter of invitation — marked by staff', evisa: 'E-visas — marked by staff' }[step];
   c.log = (Array.isArray(c.log) ? c.log : []).concat([{ at: now, by: a.s.id, kind: 'note', text: (done ? '✓ ' : '✗ ') + label }]).slice(-CAND_LOG_MAX);
   if (step === 'arrived') {
     const before = c.stage;
@@ -11867,7 +12270,22 @@ async function adminAppUse(username, pin, campus) {
    never what they did — except books: how many they finished (a count already on every profile), never which. The weekly health check-in is NOT counted, on purpose — its rows are anonymous, and a
    point for it would say who answered. Everyone active on the campus is on it (Uriah: "no need to put the option,
    leave them on"). */
-const GAME_PTS = { open: 5, habit: 2, habitDayCap: 10, goalsSet: 10, goalsPct: 20, task: 5, taskCap: 30, numbers: 10, numbersCap: 20, book: 50, bookCap: 150, oneOnOne: 15 };
+/* Balanced Nov 2026 (Andrew: "make it balanced … a book a little higher than the rest"): the everyday things count a
+   bit more and a book less, still the biggest single thing. streakMin / streakBonus: a day streak of 3 or more adds 20%
+   to the week's points; lose the streak and it goes back. holiday: a snowflake or candy cane caught in the holiday
+   season (HOLIDAY_FROM … HOLIDAY_TO), holidayDayCap of them a day. */
+/* The rollout (Nov 2026): a book back to 50 (bookCap three books), and Santa — he flies across the screen when the
+   app opens in the holiday season and every few minutes after; catching him is 5 points, santaDayCap a day, so
+   at most 15 a day (5 a day until Andrew asked for him lower, Nov 2026 — with books at 30, 25 a day was nearly a book).
+   Books back to 30 (bookCap three books, 90) — Andrew, Nov 2026: "Let's change the points for the books", after the
+   rollout had made them 50. Still the biggest single thing. */
+const GAME_PTS = { open: 5, habit: 3, habitDayCap: 15, goalsSet: 15, goalsPct: 25, task: 5, taskCap: 40, numbers: 10, numbersCap: 20, book: 30, bookCap: 90, oneOnOne: 20,
+  streakMin: 3, streakBonus: 0.2, holiday: 5, holidayDayCap: 3, santa: 5, santaDayCap: 3 };
+/* The holiday season (Nov 2026, Andrew: "every now and then a snowflake or a candy cane falls … tap it and get 5
+   points"). Month-day on Cambodia's calendar, running over the new year. */
+const HOLIDAY_FROM = '11-15', HOLIDAY_TO = '01-06', HOLIDAY_GAP_MS = 30 * 1000, HOLIDAY_KEEP_DAYS = 60;
+const SANTA_GAP_MS = 60 * 1000;
+function holidaySeason_(today) { const md = String(today || baseToday_()).slice(5, 10); return md >= HOLIDAY_FROM || md <= HOLIDAY_TO; }
 function gameDayOf_(when) {
   const t = Date.parse(when); if (isNaN(t)) return '';
   return new Date(t + 7 * 3600 * 1000).toISOString().slice(0, 10);
@@ -11879,14 +12297,14 @@ function gameMonday_(today) {
 async function gameBoard_(s, staff, campus) {
   if (!s || isApplicant_(s)) return null;
   campus = CAMPUS_IDS_.indexOf(campus) > -1 ? campus : s.campus;
-  const [rec, daily, goals, entries, kpiDaily, gpt, oos] = await Promise.all([readJSON('lastSeen', {}), getDaily_(), getGoals_(),
-    readJSON('entries', []), readJSON('kpiDaily', []), readJSON('gpTasks', null), readJSON('oneOnOnes', [])]);
+  const [rec, daily, goals, entries, kpiDaily, gpt, oos, hol] = await Promise.all([readJSON('lastSeen', {}), getDaily_(), getGoals_(),
+    readJSON('entries', []), readJSON('kpiDaily', []), readJSON('gpTasks', null), readJSON('oneOnOnes', []), readJSON('holidayCatch', {})]);
   const today = baseToday_(), from = gameMonday_(today), to = icsDay_(from, 6);
   const inWeek = function (d) { return isDate_(d) && d >= from && d <= today; };
   const people = (Array.isArray(staff) ? staff : []).filter(function (x) { return x && x.active !== false && !x.archived && !isApplicant_(x) && x.campus === campus; });
   const ids = {}; people.forEach(function (x) { ids[x.id] = 1; });
   const used = {}, P = {};
-  const row = function (id) { return P[id] || (P[id] = { open: {}, habit: {}, goalsSet: 0, goalsPct: 0, task: 0, numbers: {}, book: 0, oneOnOne: 0 }); };
+  const row = function (id) { return P[id] || (P[id] = { open: {}, habit: {}, goalsSet: 0, goalsPct: 0, task: 0, numbers: {}, book: 0, oneOnOne: 0, holiday: 0, santa: 0 }); };
   const add = function (id, d) { if (!ids[id] || !isDate_(d) || d > today) return; (used[id] = used[id] || {})[d] = 1; };
   const days = (rec.days && typeof rec.days === 'object' && !Array.isArray(rec.days)) ? rec.days : {};
   const seen = (rec.seen && typeof rec.seen === 'object') ? rec.seen : {};
@@ -11926,20 +12344,31 @@ async function gameBoard_(s, staff, campus) {
     if (!r || r.status !== 'held' || !inWeek(String(r.heldOn || '').slice(0, 10))) return;
     [r.fromId, r.toId].forEach(function (id) { if (ids[id]) row(id).oneOnOne++; });
   });
+  const catches = (hol.catches && typeof hol.catches === 'object') ? hol.catches : {};
+  Object.keys(catches).forEach(function (id) {
+    if (!ids[id] || !catches[id] || typeof catches[id] !== 'object') return;
+    Object.keys(catches[id]).forEach(function (d) { if (inWeek(d)) row(id).holiday += Math.max(0, Math.min(GAME_PTS.holidayDayCap, Math.floor(Number(catches[id][d]) || 0))); });
+  });
+  const santas = (hol.santa && typeof hol.santa === 'object' && !Array.isArray(hol.santa)) ? hol.santa : {};
+  Object.keys(santas).forEach(function (id) {
+    if (!ids[id] || !santas[id] || typeof santas[id] !== 'object') return;
+    Object.keys(santas[id]).forEach(function (d) { if (inWeek(d)) row(id).santa += Math.max(0, Math.min(GAME_PTS.santaDayCap, Math.floor(Number(santas[id][d]) || 0))); });
+  });
   const booksYear = {};
   people.forEach(function (x) {
     const read = cleanLibRead_(x.libRead);
     Object.keys(read).forEach(function (b) { if (inWeek(read[b])) row(x.id).book++; if (String(read[b] || '').slice(0, 4) === today.slice(0, 4)) booksYear[x.id] = (booksYear[x.id] || 0) + 1; });
   });
   const partsOf = function (id) {
-    const g = P[id]; if (!g) return { open: 0, habits: 0, goals: 0, tasks: 0, numbers: 0, books: 0, oneOnOnes: 0 };
+    const g = P[id]; if (!g) return { open: 0, habits: 0, goals: 0, tasks: 0, numbers: 0, books: 0, oneOnOnes: 0, holiday: 0, santa: 0 };
     let habits = 0; Object.keys(g.habit).forEach(function (d) { habits += Math.min(GAME_PTS.habitDayCap, g.habit[d] * GAME_PTS.habit); });
     return {
       open: Object.keys(g.open).length * GAME_PTS.open, habits: habits,
       goals: g.goalsSet ? GAME_PTS.goalsSet + Math.round(GAME_PTS.goalsPct * Math.max(0, Math.min(100, g.goalsPct)) / 100) : 0,
       tasks: Math.min(GAME_PTS.taskCap, g.task * GAME_PTS.task),
       numbers: Math.min(GAME_PTS.numbersCap, Object.keys(g.numbers).length * GAME_PTS.numbers),
-      books: Math.min(GAME_PTS.bookCap, g.book * GAME_PTS.book), oneOnOnes: g.oneOnOne * GAME_PTS.oneOnOne
+      books: Math.min(GAME_PTS.bookCap, g.book * GAME_PTS.book), oneOnOnes: g.oneOnOne * GAME_PTS.oneOnOne,
+      holiday: g.holiday * GAME_PTS.holiday, santa: g.santa * GAME_PTS.santa
     };
   };
   const streakOf = function (id) {
@@ -11949,9 +12378,12 @@ async function gameBoard_(s, staff, campus) {
   };
   const all = people.map(function (x) {
     const parts = partsOf(x.id); let pts = 0; Object.keys(parts).forEach(function (k) { pts += parts[k]; });
+    const streak = streakOf(x.id);
+    /* on a streak: +20% of the week's points, gone again once the streak breaks */
+    parts.streak = streak >= GAME_PTS.streakMin ? Math.round(pts * GAME_PTS.streakBonus) : 0; pts += parts.streak;
     const u = used[x.id] || {}; let week = '';
     for (let i = 0; i < 7; i++) { const d = icsDay_(from, i); week += d > today ? '-' : (u[d] ? '1' : '0'); }
-    return { id: x.id, pts: pts, streak: streakOf(x.id), week: week, parts: parts, books: (P[x.id] || {}).book || 0, booksYear: booksYear[x.id] || 0, dept: deptOf_(x) || '', ministry: x.ministry || '' };
+    return { id: x.id, pts: pts, streak: streak, week: week, parts: parts, books: (P[x.id] || {}).book || 0, booksYear: booksYear[x.id] || 0, dept: deptOf_(x) || '', ministry: x.ministry || '' };
   });
   const shown = all.slice().sort(function (a, b) { return b.pts - a.pts || b.streak - a.streak || (a.id < b.id ? -1 : 1); });
   let rank = 0, last = null;
@@ -11971,8 +12403,57 @@ async function gameBoard_(s, staff, campus) {
     ministries: ministries,
     of: all.length, active: all.filter(function (p) { return p.week.indexOf('1') > -1; }).length,
     activeToday: all.filter(function (p) { return (used[p.id] || {})[today]; }).length,
-    me: mine ? { pts: mine.pts, streak: mine.streak, week: mine.week, parts: mine.parts, rank: mine.rank } : null
+    me: mine ? { pts: mine.pts, streak: mine.streak, week: mine.week, parts: mine.parts, rank: mine.rank } : null,
+    holiday: holidaySeason_(today) ? { left: Math.max(0, GAME_PTS.holidayDayCap - Math.floor(Number(((catches[s.id] || {})[today])) || 0)) } : null,
+    santa: holidaySeason_(today) ? { left: Math.max(0, GAME_PTS.santaDayCap - Math.floor(Number(((santas[s.id] || {})[today])) || 0)) } : null
   };
+}
+/* A snowflake or candy cane caught (the page drops one now and then in the holiday season; the person taps it).
+   The page can't prove one fell, so the server holds the line: staff only, in season, holidayDayCap a day, and
+   not two within HOLIDAY_GAP_MS. holidayCatch = { catches: { staffId: { 'YYYY-MM-DD': n } }, last: { staffId: ms } },
+   the newest HOLIDAY_KEEP_DAYS. Answers with the board again, so the points show at once. */
+async function catchHoliday(username, pin) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false, err: 'auth' };
+  const today = baseToday_();
+  if (!holidaySeason_(today)) return { ok: false, err: 'season' };
+  const now = Date.now(), from = icsDay_(today, -HOLIDAY_KEEP_DAYS);
+  const res = await mutateKey_('holidayCatch', {}, function (d) {
+    if (!d.catches || typeof d.catches !== 'object' || Array.isArray(d.catches)) d.catches = {};
+    if (!d.last || typeof d.last !== 'object' || Array.isArray(d.last)) d.last = {};
+    const mine = (d.catches[s.id] && typeof d.catches[s.id] === 'object') ? d.catches[s.id] : (d.catches[s.id] = {});
+    const n = Math.floor(Number(mine[today]) || 0);
+    if (n >= GAME_PTS.holidayDayCap) return { abort: true, ok: false, err: 'cap', left: 0 };
+    if (now - (Number(d.last[s.id]) || 0) < HOLIDAY_GAP_MS) return { abort: true, ok: false, err: 'soon', left: GAME_PTS.holidayDayCap - n };
+    mine[today] = n + 1; d.last[s.id] = now;
+    Object.keys(mine).forEach(function (k) { if (!isDate_(k) || k < from) delete mine[k]; });
+    return { ok: true, left: GAME_PTS.holidayDayCap - n - 1 };
+  });
+  if (!res || !res.ok) return res || { ok: false };
+  return { ok: true, left: res.left, pts: GAME_PTS.holiday, game: await gameBoard_(s, await getStaff_(), s.campus) };
+}
+/* Santa caught (the page flies him across the screen when the app is opened, in the holiday season). Same line as
+   the holiday catch: staff only, in season, santaDayCap a day, not two within SANTA_GAP_MS. Kept in holidayCatch
+   beside the snowflakes: santa = { staffId: { 'YYYY-MM-DD': n } }, santaLast = { staffId: ms }. */
+async function catchSanta(username, pin) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false, err: 'auth' };
+  const today = baseToday_();
+  if (!holidaySeason_(today)) return { ok: false, err: 'season' };
+  const now = Date.now(), from = icsDay_(today, -HOLIDAY_KEEP_DAYS);
+  const res = await mutateKey_('holidayCatch', {}, function (d) {
+    if (!d.santa || typeof d.santa !== 'object' || Array.isArray(d.santa)) d.santa = {};
+    if (!d.santaLast || typeof d.santaLast !== 'object' || Array.isArray(d.santaLast)) d.santaLast = {};
+    const mine = (d.santa[s.id] && typeof d.santa[s.id] === 'object') ? d.santa[s.id] : (d.santa[s.id] = {});
+    const n = Math.floor(Number(mine[today]) || 0);
+    if (n >= GAME_PTS.santaDayCap) return { abort: true, ok: false, err: 'cap', left: 0 };
+    if (now - (Number(d.santaLast[s.id]) || 0) < SANTA_GAP_MS) return { abort: true, ok: false, err: 'soon', left: GAME_PTS.santaDayCap - n };
+    mine[today] = n + 1; d.santaLast[s.id] = now;
+    Object.keys(mine).forEach(function (k) { if (!isDate_(k) || k < from) delete mine[k]; });
+    return { ok: true, left: GAME_PTS.santaDayCap - n - 1 };
+  });
+  if (!res || !res.ok) return res || { ok: false };
+  return { ok: true, left: res.left, pts: GAME_PTS.santa, game: await gameBoard_(s, await getStaff_(), s.campus) };
 }
 async function getGame(username, pin, campus) {
   const s = await verifyStaff_(username, pin);
@@ -12965,6 +13446,47 @@ async function saveGpListOrder(username, pin, ids) {
   if (!r || !r.ok) return { ok: false };
   return getGpTasks(username, pin);
 }
+/* My Home's quick apps (Nov 2026, Andrew: "customise it like a hotbar"): the person's own list of which pages sit on
+   their summary card, in order. Ids only (the page decides what each one is, from the person's own menu); null puts the
+   default back. */
+async function saveQuickApps(username, pin, ids) {
+  const s = await verifyStaff_(username, pin); if (!s) return { ok: false };
+  const clean = Array.isArray(ids) ? ids.map(function (k) { return String(k || ''); }).filter(function (k, i, a) { return /^[a-z][a-z0-9:-]{0,39}$/.test(k) && a.indexOf(k) === i; }).slice(0, 10) : null;
+  const r = await mutateStaff_(function (rows) {
+    const rec = rows.find(function (x) { return x.id === s.id; }); if (!rec) return { abort: true, ok: false };
+    if (clean) rec.quickApps = clean; else delete rec.quickApps;
+    return { ok: true };
+  });
+  return r && r.ok ? { ok: true, quickApps: clean } : { ok: false };
+}
+/* My Home's whole dashboard card (Nov 2026, Andrew: "click, drag and move things around to the style you want … a little
+   plus sign … add in new things … certain things there by default, you can move them but you can't delete them"):
+   the person's own order of the quick apps, the widgets and the rows. Ids only; the page decides what each one is and
+   which can't be taken off (it puts those back if they are missing). null = the default. The apps are kept as
+   quickApps too, so an older page reads the same row. */
+function cleanIds_(a, re, max) {
+  return Array.isArray(a) ? a.map(function (k) { return String(k || ''); }).filter(function (k, i, x) { return re.test(k) && x.indexOf(k) === i; }).slice(0, max) : null;
+}
+async function saveDashLayout(username, pin, layout) {
+  const s = await verifyStaff_(username, pin); if (!s) return { ok: false };
+  let clean = null;
+  if (layout && typeof layout === 'object') {
+    clean = {
+      apps: cleanIds_(layout.apps, /^[a-z][a-z0-9:-]{0,39}$/, 10) || [],
+      widgets: cleanIds_(layout.widgets, /^[a-z]{2,20}$/, 8) || [],
+      rows: cleanIds_(layout.rows, /^[a-z]{2,20}$/, 6) || [],
+      order: cleanIds_(layout.order, /^(apps|widgets|row:[a-z]{2,20})$/, 10) || [],   // the blocks, any way round (Nov 2026)
+      v: layout.v === 2 ? 2 : undefined
+    };
+    if (!clean.v) delete clean.v;
+  }
+  const r = await mutateStaff_(function (rows) {
+    const rec = rows.find(function (x) { return x.id === s.id; }); if (!rec) return { abort: true, ok: false };
+    if (clean) { rec.dashLayout = clean; rec.quickApps = clean.apps.slice(); } else { delete rec.dashLayout; delete rec.quickApps; }
+    return { ok: true };
+  });
+  return r && r.ok ? { ok: true, dashLayout: clean } : { ok: false };
+}
 async function saveGpTaskFilter(username, pin, keys) {
   const s = await gptAuth_(username, pin); if (!s) return { ok: false };
   const clean = Array.isArray(keys) ? keys.map(function (k) { return str_(k, 170); }).filter(Boolean).slice(0, 200) : null;
@@ -13459,7 +13981,139 @@ async function voiceTasks(username, pin, text, opts) {
   return { ok: true, tasks: c.tasks, note: c.note, today: today };
 }
 
+/* ==================== the preview: the app on a made-up campus ====================
+   Nov 2026, Andrew: "when somebody goes into the app … there's a little area that says view it as a guest … it shows a
+   view of the app, but none of the real data is on there. It's just a mock-up so that people can get an idea of what
+   it looks like and how it works … the library [is real], everything else just kind of a mock-up."
+
+   demoCall(fn, args) runs one of the app's own handlers — the same code a signed-in page calls — against a campus made
+   up for the occasion and held in memory for this one request (demoData_). Every read and write of 'gp-data' goes
+   through store(), and inside demoScope store() is that memory, never the real store; demoScope is its own
+   AsyncLocalStorage, so a handler that opens a requestScope of its own stays inside it. So the preview looks exactly
+   like the app, can be tapped through and even "saves" (within its request — the next one starts from the made-up
+   campus again), and no real person, number or answer is ever in it.
+   Only the made-up person "demo" can be signed in (PIN 0000: every other made-up person's PIN is a fresh random
+   secret), and only reads (get… / list…) and the everyday writes in DEMO_WRITES are let through; nothing that reaches
+   another store (QuickBooks, backups), the outside world (Google, Anthropic) or accounts. */
+const demoScope = new AsyncLocalStorage();
+function demoStore_(data) {
+  const m = new Map(Object.keys(data).map(function (k) { return [k, JSON.stringify(data[k])]; }));
+  return {
+    get: async function (k, o) { if (!m.has(k)) return null; const v = m.get(k); return o && o.type === 'text' ? v : JSON.parse(v); },
+    setJSON: async function (k, v) { m.set(k, JSON.stringify(v)); },
+    set: async function (k, v) { m.set(k, typeof v === 'string' ? v : JSON.stringify(v)); },
+    delete: async function (k) { m.delete(k); },
+    list: async function () { return { blobs: Array.from(m.keys()).map(function (k) { return { key: k }; }) }; }
+  };
+}
+const DEMO_USER = 'demo', DEMO_PIN = '0000';
+const DEMO_WRITES = ['saveDaily', 'saveGoals', 'saveMyWeek', 'deleteMyWeek', 'saveMyHabits', 'saveGpTask', 'deleteGpTask', 'respondGpTask',
+  'orderGpTasks', 'fileGpTask', 'saveGpTaskList', 'saveGpListOrder', 'saveGpTaskFilter', 'saveTask', 'deleteTask', 'clearDoneTasks',
+  'saveDashLayout', 'saveQuickApps', 'libSaveReads', 'libSaveMine', 'markSeen', 'catchSanta', 'catchHoliday', 'saveMyKpiDay',
+  'saveMyMinistry', 'staffProfile', 'teamRoster', 'savePrayer', 'prayedFor', 'saveMyPersonality', 'saveMyGStrengths', 'saveMyApest',
+  'cafeGet', 'libNotes', 'myContract', 'mcList', 'leadWeek', 'whosHereTeamPhotos', 'requestOneOnOne', 'respondToOneOnOne', 'logOneOnOne',
+  'tickOneOnOneFollowUp', 'updateProfile', 'uploadPhoto', 'savePhotoThumb'];
+const DEMO_NEVER = /^(qbo|voice|staffLogin|staffLink|staffRegister|staffUse|portal|admin|hr|grantAdmin|board|student|demoCall|getTasksBoot|libAudio)/i;
+function demoCanRun_(fn) {
+  if (!Object.prototype.hasOwnProperty.call(HANDLERS, fn) || typeof HANDLERS[fn] !== 'function' || DEMO_NEVER.test(fn)) return false;
+  return /^(get|list)/.test(fn) || DEMO_WRITES.indexOf(fn) > -1;
+}
+function demoRand_(seed) { let x = seed % 2147483647; if (x <= 0) x += 2147483646; return function () { x = x * 16807 % 2147483647; return (x - 1) / 2147483646; }; }
+function demoData_() {
+  const today = baseToday_(), yr = thisWeekYear_(), wk = isoWeek_(today), now = new Date().toISOString();
+  const rnd = demoRand_(Number(yr) * 53 + wk), between = function (a, b) { return Math.round(a + rnd() * (b - a)); };
+  const secret = crypto.randomBytes(12).toString('hex');
+  const P = function (o) {
+    const salt = 'demo-' + o.id, pin = o.username === DEMO_USER ? DEMO_PIN : secret;
+    return Object.assign({ active: true, email: o.username + '@example.org', photo: '', mentorId: '', mentorStatus: '', role: '', leads: [], ministries: [],
+      surveyToken: 'demo-tok-' + o.id, created: '2025-01-15T00:00:00.000Z', updated: now, google: { sub: 'demo-' + o.id } }, o, { pinSalt: salt, pinHash: hashPin_(pin, salt) });
+  };
+  const staff = [
+    P({ id: 'dm1', username: DEMO_USER, name: 'Dara Sok', campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', role: 'Barista', staffType: 'ministry', country: 'Cambodia', mentorId: 'dm2', mentorStatus: 'approved', joined: '2024' }),
+    P({ id: 'dm2', username: 'demo-grace', name: 'Grace Miller', campus: 'siemreap', dept: 'Leadership Development', ministry: 'GPDTS', role: 'DTS leader', staffType: 'ministry', country: 'United States', leads: ['Leadership Development|GPDTS'] }),
+    P({ id: 'dm3', username: 'demo-sophea', name: 'Sophea Chan', campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', role: 'Cafe leader', staffType: 'ministry', country: 'Cambodia', leads: ['Community Service|Cafe'] }),
+    P({ id: 'dm4', username: 'demo-vuthy', name: 'Vuthy Heng', campus: 'siemreap', dept: 'Campus Leadership', ministry: 'Campus Director', cdKind: 'national', role: 'Campus Director', staffType: 'campus', country: 'Cambodia' }),
+    P({ id: 'dm5', username: 'demo-anna', name: 'Anna Schmidt', campus: 'siemreap', dept: 'Leadership Development', ministry: 'GPDTS', role: 'DTS staff', staffType: 'ministry', country: 'Germany' }),
+    P({ id: 'dm6', username: 'demo-malis', name: 'Malis Keo', campus: 'siemreap', dept: 'Skills Training', ministry: 'Hospitality', role: 'Hospitality', staffType: 'campus', country: 'Cambodia', leads: ['Skills Training|Hospitality'] }),
+    P({ id: 'dm7', username: 'demo-rotha', name: 'Rotha Lim', campus: 'siemreap', dept: 'Community Service', ministry: 'Outreach Teams', role: 'Outreach teams', staffType: 'ministry', country: 'Cambodia' }),
+    P({ id: 'dm8', username: 'demo-ben', name: 'Ben Carter', campus: 'siemreap', dept: 'Youth Education', ministry: 'GP Media', role: 'Media', staffType: 'yap', country: 'Australia' }),
+    P({ id: 'dm9', username: 'demo-chenda', name: 'Chenda Ros', campus: 'siemreap', dept: 'Youth Education', ministry: 'YDC', role: 'YDC teacher', staffType: 'campus', country: 'Cambodia' }),
+    P({ id: 'dm10', username: 'demo-kosal', name: 'Kosal Prak', campus: 'poipet', dept: 'Campus Leadership', ministry: 'Campus Director', cdKind: 'national', role: 'Campus Director', staffType: 'campus', country: 'Cambodia' }),
+    P({ id: 'dm11', username: 'demo-lina', name: 'Lina Ouk', campus: 'poipet', dept: 'Community Service', ministry: 'GP Education', role: 'Teacher', staffType: 'ministry', country: 'Cambodia' }),
+    P({ id: 'dm12', username: 'demo-tom', name: 'Tom Reyes', campus: 'poipet', dept: 'Leadership Development', ministry: 'DTS', role: 'DTS staff', staffType: 'ministry', country: 'Philippines' })
+  ];
+  /* the base's numbers, week by week this year */
+  const entries = [];
+  const plan = [
+    ['siemreap', 'Community Service', 'Cafe', 'Cups Sold', 140, 260], ['siemreap', 'Community Service', 'Cafe', 'Customers Served', 80, 160],
+    ['siemreap', 'Community Service', 'Cafe', 'Gospel Conversations', 2, 10], ['siemreap', 'Community Service', 'Cafe', 'Salvations', 0, 2],
+    ['siemreap', 'Leadership Development', 'GPDTS', 'Students Enrolled', 14, 14], ['siemreap', 'Leadership Development', 'GPDTS', 'People Heard the Gospel', 10, 45],
+    ['siemreap', 'Leadership Development', 'GPDTS', 'Salvations', 0, 3], ['siemreap', 'Community Service', 'Ponlork School', 'Students Enrolled', 58, 62],
+    ['siemreap', 'Youth Education', 'YDC', 'Youth Enrolled', 38, 42], ['siemreap', 'Leadership Development', 'Church Partnerships', 'Partner Churches Supported', 6, 6],
+    ['siemreap', 'Campus Leadership', 'Campus Director', 'Total Staff', 36, 36],
+    ['poipet', 'Community Service', 'GP Education', 'Students Enrolled', 45, 48], ['poipet', 'Leadership Development', 'DTS', 'Salvations', 0, 2],
+    ['poipet', 'Youth Education', 'YDC', 'Youth Enrolled', 25, 30], ['poipet', 'Campus Leadership', 'Campus Director', 'Total Staff', 22, 22]
+  ];
+  for (let w = 1; w < wk; w++) plan.forEach(function (p) { entries.push({ campus: p[0], dept: p[1], ministry: p[2], metric: p[3], week: w, year: yr, value: between(p[4], p[5]), updated: now }); });
+  /* the weekly health check-ins: anonymous rows, as always */
+  const survey = [];
+  for (let w = 1; w < wk; w++) staff.forEach(function (s, i) {
+    if (rnd() < 0.2 && s.username !== DEMO_USER) return;
+    survey.push({ campus: s.campus, week: w, year: yr, device: s.surveyToken, source: 'weekly', days: 7, updated: now,
+      lonely: between(2, 5), clarity: between(6, 9), growth: between(6, 9), porn: 0, oneOnOne: rnd() < 0.6 ? 1 : 0, exercise: rnd() < 0.7 ? 1 : 0,
+      quietTime: rnd() < 0.75 ? 1 : 0, debt: 0, sharedFaith: rnd() < 0.5 ? 1 : 0, sabbath: rnd() < 0.8 ? 1 : 0, langHours: between(0, 5) });
+  });
+  /* Dara's last few weeks: habits, goals */
+  const dailyLogs = [];
+  for (let i = 1; i <= 20; i++) {
+    const d = new Date(Date.parse(today + 'T00:00:00Z') - i * 864e5).toISOString().slice(0, 10);
+    dailyLogs.push({ staffId: 'dm1', date: d, week: isoWeek_(d), year: weekYear_(d), langHours: 0, minHours: 0, workout: i % 2 === 0, bible: true, quietTime: i % 3 !== 0,
+      oneOnOne: false, sharedFaith: false, sabbath: false, clarity: null, growth: null, lonely: null, porn: false, habits: { bible: true, quietTime: i % 3 !== 0, workout: i % 2 === 0 }, updated: now });
+  }
+  const goals = [
+    { staffId: 'dm1', week: wk, year: yr, updated: now, items: [
+      { text: 'Pray with a customer at the cafe', pct: 100, done: true, metricKey: '' },
+      { text: 'Learn two new drinks', pct: 60, done: false, metricKey: '' },
+      { text: 'Read a chapter of Atomic Habits', pct: 20, done: false, metricKey: '' }] },
+    { staffId: 'dm1', week: Math.max(1, wk - 1), year: yr, updated: now, items: [
+      { text: 'Train the new barista', pct: 100, done: true, metricKey: '' }, { text: 'Visit a church in town', pct: 100, done: true, metricKey: '' },
+      { text: 'Language study 3 times', pct: 70, done: false, metricKey: '' }] }
+  ];
+  const quarter = Math.min(3, Math.floor((wk - 1) / 13));
+  const okr = function (id, dept, objective, krs) { return krs.map(function (k) { return Object.assign({ campus: 'siemreap', quarter: quarter, dept: dept, id: id, objective: objective, kr: '', metricKey: '', target: 0, manualPct: 0, group: '', kind: '', current: 0, updated: now }, k); }); };
+  const okrs = [].concat(
+    okr('demo-o1', 'Community Service', 'Make the cafe a place people meet Jesus', [{ kr: 'Serve 2,500 cups this quarter', metricKey: 'Community Service|Cafe|Cups Sold', target: 2500 }, { kr: 'Train two new baristas', kind: 'count', target: 2, current: 1 }, { kr: 'A prayer corner in the cafe', manualPct: 40 }]),
+    okr('demo-o2', 'Campus Leadership', 'Every staff member walks with a mentor', [{ kr: 'Two 1-on-1s a month for everyone', manualPct: 65 }, { kr: 'Every new staff member has a mentor in their first month', manualPct: 80 }]));
+  const gpTasks = {
+    lists: [{ id: 'demo-l1', campus: 'siemreap', scope: 'personal', dept: '', ministry: '', ownerId: 'dm1', shared: false, title: 'Inbox', inboxKept: true, order: 0, created: now, by: 'dm1' },
+      { id: 'demo-l2', campus: 'siemreap', scope: 'ministry', dept: 'Community Service', ministry: 'Cafe', ownerId: '', shared: false, title: 'Cafe', order: 1, created: now, by: 'dm3' }],
+    tasks: [
+      { id: 'demo-t1', listId: 'demo-l2', title: 'Order coffee beans', notes: '', due: today, time: '09:00', assignees: ['dm1'], assignedAt: { dm1: now }, status: 'open', done: false, doneAt: '', doneBy: '', created: now, by: 'dm3', order: 0, from: null, subs: [] },
+      { id: 'demo-t2', listId: 'demo-l2', title: 'Clean the espresso machine', notes: 'Every Friday after closing', due: '', time: '', assignees: [], assignedAt: {}, status: 'open', done: false, doneAt: '', doneBy: '', created: now, by: 'dm3', order: 1, from: null, subs: [] },
+      { id: 'demo-t3', listId: 'demo-l1', title: 'Send my monthly update to supporters', notes: '', due: '', time: '', assignees: [], assignedAt: {}, status: 'open', done: false, doneAt: '', doneBy: '', created: now, by: 'dm1', order: 0, from: null, subs: [{ id: 's1', text: 'Write it', done: true }, { id: 's2', text: 'Add photos', done: false }] },
+      { id: 'demo-t4', listId: 'demo-l1', title: 'Book a 1-on-1 with Grace', notes: '', due: '', time: '', assignees: [], assignedAt: {}, status: 'open', done: true, doneAt: now, doneBy: 'dm1', created: now, by: 'dm1', order: 1, from: null, subs: [] }],
+    leadSynced: { siemreap: true, poipet: true }
+  };
+  const prayers = [
+    { id: 'demo-p1', staffId: 'dm5', campus: 'siemreap', scope: 'campus', text: 'For the DTS students arriving next month — safe travel and open hearts.', created: now, prayed: ['dm2', 'dm3'], answered: '', answerNote: '' },
+    { id: 'demo-p2', staffId: 'dm8', campus: 'siemreap', scope: 'campus', text: 'My family back home, and my visa renewal.', created: now, prayed: ['dm1'], answered: '', answerNote: '' }];
+  return { staff: staff, entries: entries, survey: survey, dailyLogs: dailyLogs, goals: goals, okrs: okrs, gpTasks: gpTasks, prayers: prayers, loginThrottle: {} };
+}
+async function demoCall(fn, args) {
+  fn = String(fn || '');
+  if (!demoCanRun_(fn)) return { ok: false, err: 'preview' };
+  const st = demoStore_(demoData_());
+  return demoScope.run(st, function () {
+    return requestScope.run(new Map(), function () { return HANDLERS[fn](Array.isArray(args) ? args : []); });
+  });
+}
+
 const HANDLERS = {
+  demoCall: function (a) { return demoCall(a[0], a[1]); },
+  adminMakeInvite: function (a) { return adminMakeInvite(a[0], a[1], a[2]); },
+  adminListInvites: function (a) { return adminListInvites(a[0], a[1]); },
+  adminInviteOff: function (a) { return adminInviteOff(a[0], a[1], a[2]); },
+  inviteInfo: function (a) { return inviteInfo(a[0]); },   // the preview (Look around): one of these handlers, on a made-up campus
   getMyBoot: function (a) { return getMyBoot(a[0], a[1]); },
   getTasksBoot: function (a) { return getTasksBoot(a[0], a[1], a[2]); },
   libAudioIndex: function () { return libAudioIndex(); },
@@ -13482,6 +14136,8 @@ const HANDLERS = {
   adminDecideCltRequest: function (a) { return adminDecideCltRequest(a[0], a[1], a[2], !!a[3]); },
   adminSetMentor: function (a) { return adminSetMentor(a[0], a[1], a[2], a[3], a[4]); },
   adminResetPin: function (a) { return adminResetPin(a[0], a[1], a[2], a[3]); },
+  adminSignInLink: function (a) { return adminSignInLink(a[0], a[1], a[2]); },
+  staffUseSignInLink: function (a) { return staffUseSignInLink(a[0]); },
   adminDeleteStaff: function (a) { return adminDeleteStaff(a[0], a[1], a[2]); },
   adminMergeStaff: function (a) { return adminMergeStaff(a[0], a[1], a[2], a[3]); },
   adminUpdateStaff: function (a) { return adminUpdateStaff(a[0], a[1], a[2], a[3]); },
@@ -13524,6 +14180,13 @@ const HANDLERS = {
   libSetMonth: function (a) { return libSetMonth(a[0], a[1], a[2], a[3], a[4]); },
   libSaveMine: function (a) { return libSaveMine(a[0], a[1], a[2]); },
   libRecommend: function (a) { return libRecommend(a[0], a[1], a[2], a[3], a[4], a[5]); },
+  libNotes: function (a) { return libNotes(a[0], a[1], a[2]); },
+  libNoteSave: function (a) { return libNoteSave(a[0], a[1], a[2]); },
+  libNoteDelete: function (a) { return libNoteDelete(a[0], a[1], a[2]); },
+  libNoteLike: function (a) { return libNoteLike(a[0], a[1], a[2], a[3]); },
+  libNoteComment: function (a) { return libNoteComment(a[0], a[1], a[2], a[3]); },
+  libNoteUncomment: function (a) { return libNoteUncomment(a[0], a[1], a[2], a[3]); },
+  libNotePray: function (a) { return libNotePray(a[0], a[1], a[2], a[3]); },
   libRecDone: function (a) { return libRecDone(a[0], a[1], a[2]); },
   libGivePlan: function (a) { return libGivePlan(a[0], a[1], a[2], a[3], a[4]); },
   saveMyApest: function (a) { return saveMyApest(a[0], a[1], a[2]); },
@@ -13555,6 +14218,10 @@ const HANDLERS = {
   adminLooseEnds: function (a) { return adminLooseEnds(a[0], a[1]); },
   adminAppUse: function (a) { return adminAppUse(a[0], a[1], a[2]); },
   getGame: function (a) { return getGame(a[0], a[1], a[2]); },
+  catchHoliday: function (a) { return catchHoliday(a[0], a[1]); },
+  catchSanta: function (a) { return catchSanta(a[0], a[1]); },
+  saveQuickApps: function (a) { return saveQuickApps(a[0], a[1], a[2]); },
+  saveDashLayout: function (a) { return saveDashLayout(a[0], a[1], a[2]); },
   markSeen: function (a) { return markSeen(a[0], a[1], a[2]); },
   hrArchiveMany: function (a) { return hrArchiveMany(a[0], a[1], a[2], a[3]); },
   saveMyKpiDay: function (a) { return saveMyKpiDay(a[0], a[1], a[2], a[3]); },

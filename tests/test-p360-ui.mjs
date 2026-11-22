@@ -95,8 +95,8 @@ const go = async (page) => { await page.evaluate(() => { S.view = 'p360'; S.p3Su
 /* ---------- 1. starting one ---------- */
 {
   const { ctx, page } = await open('mark');
-  ok('My Home has a 360 reviews tile', /360 reviews/.test(await page.$eval('#p3Tile', (e) => e.innerText)));
-  await page.click('#p3Tile'); await page.waitForTimeout(900);
+  ok('My Home has no 360 tile while nothing waits — it is in ☰', !(await page.$('#p3Tile')));
+  await page.evaluate(() => { S.menuOpen = true; renderMenu(); }); await page.click('#menuRoot [data-menu-item="p360"]'); await page.waitForTimeout(900);
   ok('the page says plainly how it stays anonymous', /How it stays anonymous/i.test(await main(page)) && /never who/.test(await main(page)));
   await page.click('#p3New'); await page.waitForTimeout(400);
   ok('starting one: under three picked, it says how many more', /Pick 3 more/.test(await page.$eval('#p3Send', (e) => e.innerText)) && await page.$eval('#p3Send', (e) => e.disabled));

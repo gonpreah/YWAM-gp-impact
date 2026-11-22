@@ -118,8 +118,8 @@ const call = async (fn, args) => {
 /* ---------- 2. the page ---------- */
 {
   const { ctx, page } = await open('kanha');
-  ok('My Home has a Support raising tile with the month so far', /\$600 of \$1,?200 a month/.test(await page.$eval('#supTile', (e) => e.textContent)));
-  await page.click('#supTile'); await page.waitForTimeout(800);
+  ok('Support raising is in ☰ (and a quick app), no longer a tile on My Home', !(await page.$('#supTile')) && await page.evaluate(() => { S.menuOpen = true; renderMenu(); return !!document.querySelector('#menuRoot [data-menu-item="support"]'); }));
+  await page.click('#menuRoot [data-menu-item="support"]'); await page.waitForTimeout(800);
   let txt = await main(page);
   ok('the page: goal, pledged, the partners', /\$600 a month pledged/.test(txt) && /Grace Church/.test(txt) && /Pastor Lee/.test(txt) && /50%/.test(txt));
   await page.screenshot({ path: OUT + '/support.png', fullPage: true });

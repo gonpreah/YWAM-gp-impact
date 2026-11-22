@@ -7,7 +7,7 @@
      work. Everyone active on the campus is on it.
    Others see points, a streak and which days someone was active — never what they did. */
 
-function gameOn_(){ return !!(S.me && !S.guest && !S.student && !S.board && !S.stuPreview); }
+function gameOn_(){ return !!(S.me && !S.guest && !S.student && !S.board && !S.stuPreview && !S.awaiting && !S.me.setupTodo); }
 function gameMine_(){ return (S.game && S.game.ok && S.game.me) || null; }
 function gamePerson_(id){ return (S.roster||[]).filter(function(p){ return p.id===id; })[0] || { id:id, name:'—' }; }
 
@@ -31,6 +31,7 @@ function gameHomeHtml_(){
   var bits=[];
   bits.push('<span class="gameBit"><b>🔥 '+me.streak+'</b> '+esc(me.streak===1 ? t('day in a row') : t('days in a row'))+'</span>');
   bits.push('<span class="gameBit"><b>⭐ '+me.pts+'</b> '+esc(t('points this week'))+'</span>');
+  if(me.parts && me.parts.streak) bits.push('<span class="gameBit gameBonus" id="gameBonus"><b>+'+Math.round(100*G.pts.streakBonus)+'%</b> '+esc(t('streak bonus'))+'</span>');
   if(me.rank) bits.push('<span class="gameBit"><b>#'+me.rank+'</b> '+esc(gpT('of {n}',{n:G.people.length}))+'</span>');
   return '<button class="gameHome" id="gameHome" data-gogame="1" aria-label="'+esc(t('This week’s board'))+'">'+
     '<span class="gameBits">'+bits.join('')+'</span>'+gameDotsHtml_(me.week, G.today, G.from)+'<span class="gameGo">›</span></button>';
@@ -65,6 +66,9 @@ function gamePartsHtml_(me, G){
     ['📚', t('Books finished'), P.books, gpT('{n} each, up to {m}',{n:G.pts.book, m:G.pts.bookCap})],
     ['☕', t('1-on-1s held'), P.oneOnOnes, gpT('{n} each',{n:G.pts.oneOnOne})]
   ];
+  if(G.holiday || P.holiday) rows.push(['❄️', t('Snowflakes and candy canes caught'), P.holiday, gpT('{n} each, up to {m} a day',{n:G.pts.holiday, m:G.pts.holidayDayCap})]);
+  if(G.santa || P.santa) rows.push(['🎅', t('Santa caught'), P.santa, gpT('{n} each time you catch him, up to {m} a day',{n:G.pts.santa, m:G.pts.santaDayCap})]);
+  rows.push(['🔥', t('Streak bonus'), P.streak, gpT('+{n}% of the week while you are on a streak of {m} days or more',{n:Math.round(100*G.pts.streakBonus), m:G.pts.streakMin})]);
   return '<div class="gameParts">'+rows.map(function(r){
     return '<div class="gamePart'+(r[2]?'':' zero')+'"><span class="gamePartIc">'+r[0]+'</span><span class="gamePartText"><b>'+esc(r[1])+'</b><small>'+esc(r[3])+'</small></span><span class="gamePartN">'+(r[2]||0)+'</span></div>';
   }).join('')+'</div>';
@@ -140,4 +144,235 @@ function bindGame_(){
   var more=document.getElementById('gameMore'); if(more) more.onclick=function(){ S.gameAll=true; render(); };
   var how=document.getElementById('gameHow'); if(how) how.addEventListener('toggle', function(){ S.gameHowOpen=how.open; });
   var retry=document.getElementById('gameRetry'); if(retry) retry.onclick=function(){ S.gameErr=''; render(); };
+}
+
+/* ---------- The holiday catch (Nov 2026, Andrew: "since it's the holiday season … every now and then a snowflake or a
+   candy cane will fall down from the screen … tap on it and get 5 points … don't make it so often") ----------
+   In the season (the server says so: the board's `holiday`, with how many are left today) a snowflake or a candy cane
+   falls across the screen now and then while the app is open — the first a few minutes in, then every 4 to 10 minutes,
+   none once today's are caught. A tap catches it (catchHoliday: the server keeps the count and the cap, 5 points each,
+   three a day) and the points show at once. Not for guests, students, the board or a preview; not under a test browser
+   unless localStorage 'gp-hol-test' is set (S.holMs sets the wait, for tests). */
+var HOL_FIRST_MS=[90000, 240000], HOL_GAP_MS=[240000, 600000], HOL_FALL_MS=9000;
+var _hol={ timer:0, el:null, started:false, busy:false };
+var HOL_CANE='<svg viewBox="0 0 40 64" width="30" height="48" aria-hidden="true"><path d="M13 60V22a9 9 0 0 1 18 0v5" fill="none" stroke="white" stroke-width="8" stroke-linecap="round"/>'+
+  '<path d="M13 60V22a9 9 0 0 1 18 0v5" fill="none" stroke="crimson" stroke-width="8" stroke-dasharray="5 6"/></svg>';
+function holOn_(){
+  var G=S.game;
+  if(!gameOn_() || !S.auth || !S.auth.user || !G || !G.ok || !G.holiday || !(G.holiday.left>0)) return false;
+  if(S.bootStale || S.offlineSince) return false;
+  if(typeof gpTasksApp_==='function' && gpTasksApp_()) return false;
+  if(navigator.webdriver && !lsGet('gp-hol-test')) return false;
+  return true;
+}
+function holSchedule_(){
+  if(_hol.timer || _hol.el || !holOn_()) return;
+  var r=_hol.started ? HOL_GAP_MS : HOL_FIRST_MS; _hol.started=true;
+  var ms=(typeof S.holMs==='number') ? S.holMs : r[0]+Math.random()*(r[1]-r[0]);
+  _hol.timer=setTimeout(function(){
+    _hol.timer=0;
+    if(document.hidden || S.bellOpen || !holOn_()){ _hol.started=true; holSchedule_(); return; }
+    holDrop_();
+  }, ms);
+}
+function holDrop_(){
+  if(_hol.el || !holOn_()) return;
+  var cane=Math.random()<0.4, b=document.createElement('button');
+  b.className='holDrop'+(cane?' cane':'');
+  b.id='holDrop';
+  b.setAttribute('aria-label', cane ? t('Catch the candy cane') : t('Catch the snowflake'));
+  b.innerHTML=cane ? HOL_CANE : '<span aria-hidden="true">❄️</span>';
+  b.style.left=(6+Math.round(Math.random()*76))+'%';
+  b.style.animationDuration=(S.holFallMs||HOL_FALL_MS)+'ms';
+  b.onclick=function(e){ e.preventDefault(); e.stopPropagation(); holCatch_(b, cane); };
+  b.addEventListener('animationend', function(ev){ if(ev.target===b && !b.classList.contains('caught')) holGone_(); });
+  document.body.appendChild(b);
+  _hol.el=b;
+}
+function holGone_(){
+  if(_hol.el && _hol.el.parentNode) _hol.el.parentNode.removeChild(_hol.el);
+  _hol.el=null;
+  holSchedule_();
+}
+function holCatch_(b, cane){
+  if(_hol.busy || b.classList.contains('caught')) return;
+  _hol.busy=true; gpTap();
+  var r=b.getBoundingClientRect();
+  b.classList.add('caught');
+  b.style.top=Math.round(r.top)+'px'; b.style.left=Math.round(r.left)+'px'; b.style.animation='holCaught .45s ease-out forwards';   // stop where it was caught
+  var pop=document.createElement('div'); pop.className='holPop'; pop.textContent='+'+((S.game && S.game.pts && S.game.pts.holiday) || 5)+' ⭐';
+  pop.style.left=Math.round(r.left+r.width/2)+'px'; pop.style.top=Math.round(r.top)+'px';
+  document.body.appendChild(pop);
+  setTimeout(function(){ if(pop.parentNode) pop.parentNode.removeChild(pop); }, 1400);
+  setTimeout(function(){ if(b.parentNode) b.parentNode.removeChild(b); if(_hol.el===b) _hol.el=null; }, 450);
+  run('catchHoliday',[S.auth.user,S.auth.pin],function(d){
+    _hol.busy=false;
+    if(d && d.ok){
+      if(d.game && d.game.ok) S.game=d.game; else if(S.game && S.game.holiday) S.game.holiday.left=d.left;
+      showMsg(cane ? gpT('You caught a candy cane! +{n} points',{n:d.pts}) : gpT('You caught a snowflake! +{n} points',{n:d.pts}));
+      holRefresh_();
+    } else if(d && d.err==='cap' && S.game && S.game.holiday){ S.game.holiday.left=0; }
+    holSchedule_();
+  },function(){ _hol.busy=false; holSchedule_(); });
+}
+/* the points line on My Home, and the board if it is open, without a full redraw (nobody loses what they typed) */
+function holRefresh_(){
+  var home=document.getElementById('gameHome');
+  if(home){ var w=document.createElement('div'); w.innerHTML=gameHomeHtml_(); var nu=w.firstChild; if(nu){ home.parentNode.replaceChild(nu, home); bindGame_(); } }
+  if(S.view==='team' && S.teamMode==='game') render();
+}
+
+/* ---------- Santa (Nov 2026, Uriah: "a little Santa Claus that flies around the screen every time you open the app,
+   and when you click on him, you get … points"; then "make him fly pretty regularly") ----------
+   In the holiday season (the board's `santa`, with how many are left today) Santa and his reindeer fly across the
+   screen a few seconds after the app opens, then again every SANTA_GAP_MS (3–6 minutes) while it stays open, until
+   today's are caught; coming back to the front after SANTA_AWAY_MS away starts over with the quick first flight (an
+   iPhone Home Screen app is rarely reloaded). A tap catches him: catchSanta (the server keeps the count, santa points
+   each, santaDayCap a day, not two within a minute). Not while the welcome sheet, the bell, a snowflake or another
+   Santa is up; not for guests, students, the board or a preview; not under a test browser unless 'gp-santa-test' is
+   set (S.santaMs sets the first wait, S.santaGapMs the ones after, S.santaFlyMs the flight). */
+var SANTA_FIRST_MS=3500, SANTA_GAP_MS=[180000, 360000], SANTA_FLY_MS=8000, SANTA_AWAY_MS=10*60*1000;
+var _santa={ timer:0, el:null, started:false, busy:false, hiddenAt:0 };
+function santaOn_(){
+  var G=S.game;
+  if(!gameOn_() || !S.auth || !S.auth.user || !G || !G.ok || !G.santa || !(G.santa.left>0)) return false;
+  if(S.bootStale || S.offlineSince || S.view==='login') return false;
+  if(typeof gpTasksApp_==='function' && gpTasksApp_()) return false;
+  if(navigator.webdriver && !lsGet('gp-santa-test')) return false;
+  return true;
+}
+/* called on every bind and after each flight: it only sets a timer when none is waiting */
+function santaSchedule_(){
+  if(_santa.timer || _santa.el || !santaOn_()) return;
+  var ms;
+  if(!_santa.started) ms=typeof S.santaMs==='number' ? S.santaMs : SANTA_FIRST_MS;
+  else ms=typeof S.santaGapMs==='number' ? S.santaGapMs : SANTA_GAP_MS[0]+Math.random()*(SANTA_GAP_MS[1]-SANTA_GAP_MS[0]);
+  _santa.started=true;
+  _santa.timer=setTimeout(function(){
+    _santa.timer=0;
+    if(!santaOn_()) return;
+    if(document.hidden || S.bellOpen || _hol.el || document.getElementById('gameIntro') || document.getElementById('askRoot')){
+      _santa.timer=setTimeout(function(){ _santa.timer=0; santaSchedule_(); }, 5000); return;   // busy: look again shortly
+    }
+    santaFly_();
+  }, ms);
+}
+function santaFly_(){
+  if(_santa.el || !santaOn_()) return;
+  var b=document.createElement('button');
+  b.className='santaFly'+(Math.random()<0.5?' ltr':'');
+  b.id='santaFly';
+  b.setAttribute('aria-label', t('Catch Santa'));
+  b.innerHTML='<span class="santaSled" aria-hidden="true"><span class="santaDeer">🦌</span><span class="santaDeer">🦌</span><span class="santaMan">🎅</span><span class="santaSpark">✨</span></span>';
+  b.style.top=(14+Math.round(Math.random()*46))+'%';
+  b.style.animationDuration=(S.santaFlyMs||SANTA_FLY_MS)+'ms';
+  b.onclick=function(e){ e.preventDefault(); e.stopPropagation(); santaCatch_(b); };
+  b.addEventListener('animationend', function(ev){ if(ev.target===b && !b.classList.contains('caught')) santaGone_(); });
+  document.body.appendChild(b);
+  _santa.el=b;
+}
+function santaGone_(){
+  if(_santa.el && _santa.el.parentNode) _santa.el.parentNode.removeChild(_santa.el);
+  _santa.el=null;
+  santaSchedule_();   // missed him: he comes round again in a few minutes
+}
+function santaCatch_(b){
+  if(_santa.busy || b.classList.contains('caught')) return;
+  _santa.busy=true; gpTap();
+  var r=b.getBoundingClientRect();
+  b.classList.add('caught');
+  b.style.top=Math.round(r.top)+'px'; b.style.left=Math.round(r.left)+'px'; b.style.right='auto'; b.style.animation='holCaught .45s ease-out forwards';
+  var pop=document.createElement('div'); pop.className='holPop'; pop.textContent='+'+((S.game && S.game.pts && S.game.pts.santa) || 5)+' ⭐';
+  pop.style.left=Math.round(r.left+r.width/2)+'px'; pop.style.top=Math.round(r.top)+'px';
+  document.body.appendChild(pop);
+  setTimeout(function(){ if(pop.parentNode) pop.parentNode.removeChild(pop); }, 1400);
+  setTimeout(function(){ if(b.parentNode) b.parentNode.removeChild(b); if(_santa.el===b) _santa.el=null; }, 450);
+  if(typeof gpConfetti==='function') try { gpConfetti(b); } catch(e){}
+  run('catchSanta',[S.auth.user,S.auth.pin],function(d){
+    _santa.busy=false;
+    if(d && d.ok){
+      if(d.game && d.game.ok) S.game=d.game; else if(S.game && S.game.santa) S.game.santa.left=d.left;
+      showMsg(gpT('Ho ho ho! You caught Santa! +{n} points',{n:d.pts}));
+      holRefresh_();
+    } else if(d && d.err==='cap' && S.game && S.game.santa){ S.game.santa.left=0; showMsg(t('Santa is all caught for today. Come back tomorrow!')); }
+    else if(d && d.err==='soon') showMsg(t('Santa needs a minute to warm up — catch him next time!'));
+    setTimeout(santaSchedule_, 500);
+  },function(){ _santa.busy=false; setTimeout(santaSchedule_, 500); });
+}
+/* back to the front after a while away counts as opening the app again: the quick first flight */
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden){ _santa.hiddenAt=Date.now(); return; }
+  if(_santa.hiddenAt && Date.now()-_santa.hiddenAt>=SANTA_AWAY_MS){ clearTimeout(_santa.timer); _santa.timer=0; _santa.started=false; santaSchedule_(); }
+  _santa.hiddenAt=0;
+});
+
+/* ---------- The points sheet when the app opens (Nov 2026, the rollout: "show the points when they open the app …
+   that kind of explains what's what") ----------
+   On My Home, on the first fresh boot of each day: my points this week, my streak and place, then what each thing is
+   worth (from the server's own GAME_PTS, so it can't drift), the streak bonus, Santa and the snowflakes while it's
+   the season, and a button to the board. The first time it says "Points are here!". "Don't show this when I open the
+   app" turns it off on that phone (GAME_INTRO_KEY = {n, last, off}). Not under a test browser unless 'gp-intro-test'. */
+var GAME_INTRO_KEY='gp-game-intro-v2';
+function gameIntroState_(){
+  var st={};
+  try { st=JSON.parse(lsGet(GAME_INTRO_KEY)||'{}')||{}; } catch(e){ st={}; }
+  return st;
+}
+function gameIntroOn_(){
+  if(!gameOn_() || !S.auth || !S.auth.user || !S.game || !S.game.ok || !S.game.me) return false;
+  if(S.bootStale || S.offlineSince || S.view!=='week') return false;
+  if(typeof gpTasksApp_==='function' && gpTasksApp_()) return false;
+  if(navigator.webdriver && !lsGet('gp-intro-test')) return false;
+  var st=gameIntroState_();
+  return !st.off && st.last!==todayStr();
+}
+function gameIntroHtml_(){
+  var P=S.game.pts, me=S.game.me, season=!!(S.game.santa || S.game.holiday), first=!gameIntroState_().n;
+  var rows=[
+    ['📚', t('Finish a book'), P.book],
+    ['☕', t('Hold a 1-on-1'), P.oneOnOne],
+    ['🗒️', t('Set your three weekly goals'), P.goalsSet],
+    ['📊', t('Enter your ministry’s numbers'), P.numbers],
+    ['☑️', t('Finish a GP Task'), P.task],
+    ['📱', t('Open the app'), P.open],
+    ['✅', t('Tick a habit'), P.habit]
+  ];
+  if(season){
+    rows.push(['❄️', t('Catch a snowflake or candy cane'), P.holiday]);
+    rows.push(['🎅', t('Catch Santa when he flies by'), P.santa]);
+  }
+  return '<div class="gameIntroScrim" id="gameIntroScrim"></div>'+
+    '<div class="gameIntro" id="gameIntro" role="dialog" aria-modal="true" aria-labelledby="gameIntroH">'+
+    '<div class="gameIntroTop">🏆</div>'+
+    '<h2 id="gameIntroH">'+esc(first ? t('Points are here!') : t('Your points this week'))+'</h2>'+
+    '<div class="gameIntroMe" id="gameIntroMe"><span><b>⭐ '+me.pts+'</b><small>'+esc(t('points this week'))+'</small></span>'+
+      '<span><b>🔥 '+me.streak+'</b><small>'+esc(me.streak===1 ? t('day in a row') : t('days in a row'))+'</small></span>'+
+      '<span><b>'+(me.rank ? '#'+me.rank : '—')+'</b><small>'+esc(gpT('of {n}',{n:(S.game.people||[]).length}))+'</small></span></div>'+
+    '<p class="sub">'+esc(t('Use the app every day and earn points for the good things you already do. Every Monday the week’s board starts again.'))+'</p>'+
+    '<p class="gameIntroHow">'+esc(t('How to earn points'))+'</p>'+
+    '<div class="gameIntroList">'+rows.map(function(r){
+      return '<div class="gameIntroRow"><span class="gamePartIc">'+r[0]+'</span><span class="gameIntroWhat">'+esc(r[1])+'</span><b>+'+esc(String(r[2]))+'</b></div>';
+    }).join('')+'</div>'+
+    '<p class="sub gameIntroBonus">🔥 '+esc(gpT('Use the app {m} days in a row and get +{n}% on the whole week.',{m:P.streakMin, n:Math.round(100*P.streakBonus)}))+'</p>'+
+    (season ? '<p class="sub gameIntroBonus">🎄 '+esc(t('It’s the holiday season: Santa flies across the screen every few minutes. Tap him to catch him!'))+'</p>' : '')+
+    '<div class="gameIntroBtns"><button class="btn" id="gameIntroBoard">🏆 '+esc(t('See this week’s board'))+'</button>'+
+    '<button class="btn ghost" id="gameIntroGo">'+esc(t('Let’s go!'))+'</button>'+
+    '<button class="linkbtn gameIntroOff" id="gameIntroOff">'+esc(t('Don’t show this when I open the app'))+'</button></div></div>';
+}
+function gameIntroMaybe_(){
+  if(document.getElementById('gameIntro') || !gameIntroOn_()) return;
+  var root=document.createElement('div'); root.id='gameIntroRoot'; root.innerHTML=gameIntroHtml_();
+  document.body.appendChild(root);
+  var st=gameIntroState_();
+  lsSet(GAME_INTRO_KEY, JSON.stringify({ n:(st.n||0)+1, last:todayStr(), off:!!st.off }));   // shown today: not again until tomorrow
+  var close=function(toBoard, off){
+    if(off){ var s2=gameIntroState_(); s2.off=true; lsSet(GAME_INTRO_KEY, JSON.stringify(s2)); }
+    if(typeof gpConfetti==='function') try { gpConfetti(document.getElementById('gameIntroGo')); } catch(e){}
+    if(root.parentNode) root.parentNode.removeChild(root);
+    if(toBoard){ S.person=null; S.teamMode='game'; S.gameCampus=null; S.view='team'; render(); window.scrollTo(0,0); }
+  };
+  document.getElementById('gameIntroGo').onclick=function(){ gpTap(); close(false); };
+  document.getElementById('gameIntroBoard').onclick=function(){ gpTap(); close(true); };
+  document.getElementById('gameIntroScrim').onclick=function(){ close(false); };
+  document.getElementById('gameIntroOff').onclick=function(){ gpTap(); close(false, true); showMsg(t('You can still see how points work on Team → This week.')); };
 }

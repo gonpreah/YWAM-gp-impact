@@ -1166,6 +1166,8 @@ body.libReading nav.bottom { display:none; } body.libReading { overflow:hidden; 
 .adminRowText { flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
 .adminRowText .rowSub { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .adminPersonHead { display:flex; gap:12px; align-items:center; }
+.admEmailText { overflow-wrap:anywhere; word-break:break-word; user-select:text; -webkit-user-select:text; }
+.admEmail { display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 8px; }
 .adminMentor { margin-bottom:12px; }
 .leaveActions { display:flex; gap:8px; margin-top:8px; }
 .leaveActions .btn { margin:0; flex:1; padding:9px 10px; }
@@ -3005,8 +3007,6 @@ details.dtsPick input.gpSelBox { margin:6px 0 4px; }
 .useSort button { padding:7px; font-size:13.5px; }
 
 /* Tuesday: the weekly health check-in, at the staff meeting */
-.tueCheckin { border:1.5px solid var(--accent); }
-.tueCheckinHead { font-size:16px; }
 
 /* ---------- a 1-on-1, step by step (Nov 2026) ---------- */
 .ooSteps { list-style:none; display:flex; gap:4px; margin:4px 0 12px; padding:0; counter-reset:none; }
@@ -3254,3 +3254,286 @@ body.findOn { overflow:hidden; }
 .gvMeta input, .gvMeta select { margin:0; min-width:0; flex:1 1 120px; font-size:14px; padding:8px; }
 .gvWho { display:flex; flex-wrap:wrap; gap:6px; }
 .gvSheet > .gtTools { position:sticky; bottom:calc(-16px - env(safe-area-inset-bottom)); background:var(--surface); padding:8px 0 calc(4px + env(safe-area-inset-bottom)); margin-bottom:calc(-1 * env(safe-area-inset-bottom)); }
+
+/* ---------- the week's board: streak bonus; the holiday catch (20-game.js, Nov 2026) ---------- */
+.gameBonus b { color:var(--good); }
+.holDrop { position:fixed; top:-70px; z-index:60; background:none; border:0; padding:10px; margin:0; cursor:pointer; font-size:34px; line-height:1;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.25)); animation:holFall 9s linear forwards; -webkit-tap-highlight-color:transparent; }
+.holDrop.cane svg { display:block; }
+.holDrop.caught { animation:holCaught .45s ease-out forwards; }
+@keyframes holFall {
+  0% { transform:translate(0,0) rotate(0deg); }
+  25% { transform:translate(18px,28vh) rotate(25deg); }
+  50% { transform:translate(-14px,56vh) rotate(-20deg); }
+  75% { transform:translate(16px,84vh) rotate(20deg); }
+  100% { transform:translate(0,calc(100vh + 120px)) rotate(0deg); }
+}
+@keyframes holCaught { to { transform:scale(1.8); opacity:0; } }
+.holPop { position:fixed; z-index:61; transform:translate(-50%,0); font-weight:800; font-size:20px; color:var(--accent); pointer-events:none;
+  animation:holPopUp 1.3s ease-out forwards; text-shadow:0 1px 2px var(--surface); }
+@keyframes holPopUp { from { opacity:1; transform:translate(-50%,0); } to { opacity:0; transform:translate(-50%,-60px); } }
+@media (prefers-reduced-motion: reduce) {
+  .holDrop { animation-name:holFallCalm; }
+  .holPop { animation:none; opacity:1; }
+}
+@keyframes holFallCalm { 0% { transform:translateY(22vh); opacity:0; } 10%,90% { transform:translateY(22vh); opacity:1; } 100% { transform:translateY(22vh); opacity:0; } }
+
+/* ---------- Santa, and the welcome to points (20-game.js, Nov 2026) ---------- */
+.santaFly { position:fixed; right:-200px; z-index:60; background:none; border:0; padding:12px; margin:0; cursor:pointer; line-height:1;
+  filter:drop-shadow(0 3px 5px rgba(0,0,0,.25)); animation:santaRtl 8s linear forwards; -webkit-tap-highlight-color:transparent; }
+.santaFly.ltr { right:auto; left:-200px; animation-name:santaLtr; }
+/* the reindeer lead the way: Apple's 🦌 faces right, so flying left they are turned round; flying right the order flips */
+.santaFly:not(.ltr) .santaDeer { transform:scaleX(-1); }
+.santaFly:not(.ltr) .santaSled .santaDeer:nth-child(2) { transform:scaleX(-1) translateY(-6px); }
+.santaFly.ltr .santaSled { flex-direction:row-reverse; }
+.santaSled { display:inline-flex; align-items:flex-end; gap:2px; font-size:30px; }
+.santaSled .santaMan { font-size:38px; margin:0 4px; }
+.santaSled .santaSpark { font-size:16px; align-self:center; animation:santaTwinkle .6s ease-in-out infinite alternate; }
+.santaSled .santaDeer:nth-child(2) { transform:translateY(-6px); }
+@keyframes santaRtl {
+  0% { transform:translate(0,0) rotate(-4deg); }
+  25% { transform:translate(-30vw,-6vh) rotate(3deg); }
+  50% { transform:translate(-60vw,4vh) rotate(-3deg); }
+  75% { transform:translate(-90vw,-5vh) rotate(3deg); }
+  100% { transform:translate(calc(-100vw - 260px),0) rotate(-2deg); }
+}
+@keyframes santaLtr {
+  0% { transform:translate(0,0) rotate(4deg); }
+  25% { transform:translate(30vw,-6vh) rotate(-3deg); }
+  50% { transform:translate(60vw,4vh) rotate(3deg); }
+  75% { transform:translate(90vw,-5vh) rotate(-3deg); }
+  100% { transform:translate(calc(100vw + 260px),0) rotate(2deg); }
+}
+@keyframes santaTwinkle { from { opacity:.3; } to { opacity:1; } }
+.santaFly.caught { animation:holCaught .45s ease-out forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .santaFly, .santaFly.ltr { right:auto; left:50%; margin-left:-80px; animation-name:holFallCalm; }
+  .santaSled .santaSpark { animation:none; }
+}
+.gameIntroScrim { position:fixed; inset:0; z-index:78; background:rgba(0,0,0,.45); }
+.gameIntro { position:fixed; z-index:79; left:50%; top:50%; transform:translate(-50%,-50%); width:min(420px, calc(100vw - 32px));
+  max-height:calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow:auto; background:var(--surface); color:var(--ink);
+  border-radius:20px; padding:20px 18px 16px; box-shadow:0 12px 40px rgba(0,0,0,.3); animation:gameIntroIn .35s ease-out; }
+@keyframes gameIntroIn { from { opacity:0; transform:translate(-50%,-46%) scale(.96); } to { opacity:1; transform:translate(-50%,-50%); } }
+.gameIntroTop { font-size:36px; text-align:center; line-height:1; }
+.gameIntro h2 { text-align:center; margin:8px 0 6px; }
+.gameIntro > .sub { text-align:center; margin:0 0 12px; }
+.gameIntroList { display:flex; flex-direction:column; gap:2px; margin:0 0 10px; }
+.gameIntroRow { display:flex; align-items:center; gap:10px; padding:5px 4px; border-bottom:1px solid var(--line); font-size:15px; }
+.gameIntroRow:last-child { border-bottom:0; }
+.gameIntroWhat { flex:1; min-width:0; }
+.gameIntroRow b { color:var(--accent); white-space:nowrap; }
+.gameIntro .gameIntroBonus { text-align:left; margin:6px 0; }
+.gameIntroBtns { display:flex; flex-direction:column; gap:8px; margin:14px -18px -16px; padding:10px 18px 16px; position:sticky; bottom:-16px; background:var(--surface); }
+.gameIntroBtns .btn { width:100%; margin:0; padding:10px 12px; min-height:0; font-size:15px; }
+.gameIntroBtns { gap:6px !important; padding-top:8px !important; }
+.gameIntroMe { display:flex; justify-content:space-around; gap:6px; margin:4px 0 12px; padding:10px 6px; border-radius:14px; background:var(--headerBg); color:var(--onDark); text-align:center; }
+.gameIntroMe span { display:flex; flex-direction:column; min-width:0; }
+.gameIntroMe b { font-size:20px; }
+.gameIntroMe small { color:var(--onDarkFaint); font-size:12px; }
+.gameIntroHow { font-weight:700; margin:4px 0 2px; }
+.gameIntroBtns .gameIntroOff { align-self:center; font-size:13px; padding:2px 0; }
+@media (prefers-reduced-motion: reduce) { .gameIntro { animation:none; } }
+
+/* ---------- the slide-down reminder (19-ux.js, Nov 2026) ---------- */
+.gpBanner { position:fixed; left:10px; right:10px; top:calc(8px + env(safe-area-inset-top)); z-index:65; max-width:520px; margin:0 auto;
+  display:flex; align-items:flex-start; gap:10px; padding:12px 12px 16px; border-radius:18px; background:var(--surface); color:var(--ink);
+  border:1px solid var(--border); box-shadow:0 10px 30px rgba(0,0,0,.22); cursor:pointer; touch-action:none; user-select:none;
+  transform:translateY(calc(-100% - 30px)); transition:transform .35s cubic-bezier(.2,.9,.3,1.2), opacity .3s; }
+.gpBanner.on { transform:translateY(0); }
+.gpBanner.off { transform:translateY(calc(-100% - 30px)); opacity:0; transition:transform .3s ease-in, opacity .3s; }
+.gpBanner.drag { transition:none; }
+.gpBanIc { flex:0 0 auto; width:30px; height:30px; border-radius:9px; background:var(--accent); color:var(--accentInk); display:flex; align-items:center; justify-content:center; }
+.gpBanIc svg { width:17px; height:17px; }
+.gpBanText { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:2px; font-size:14px; line-height:1.35; }
+.gpBanText b { font-size:12px; color:var(--muted); font-weight:700; }
+.gpBanGo { color:var(--accent); font-weight:700; font-size:13px; margin-top:2px; }
+.gpBanX { flex:0 0 auto; background:none; border:0; color:var(--muted); font-size:22px; line-height:1; padding:0 4px; cursor:pointer; }
+.gpBanGrip { position:absolute; left:50%; bottom:5px; width:36px; height:4px; margin-left:-18px; border-radius:2px; background:var(--border2); }
+@media (prefers-reduced-motion: reduce) { .gpBanner, .gpBanner.off { transition:opacity .2s; } }
+
+/* ---------- the Library: highlights, notes, talking about them (18-library-plus.js, Nov 2026) ---------- */
+.lnHl-yellow { background:rgba(255,179,35,.38); } .lnHl-green { background:rgba(46,170,90,.28); }
+.lnHl-blue { background:rgba(31,68,255,.20); } .lnHl-pink { background:rgba(236,72,153,.26); }
+.lnPara { cursor:pointer; border-radius:6px; transition:background .2s, box-shadow .2s; -webkit-tap-highlight-color:transparent; }
+.lnPara.lnHl { padding:2px 6px; margin-left:-6px; margin-right:-6px; }
+.lnPara.lnSel { box-shadow:0 0 0 2px var(--accent); }
+.lnMark { display:inline-block; margin-left:6px; font-size:12px; padding:1px 6px; border-radius:999px; background:var(--surface); border:1px solid var(--border); vertical-align:middle; }
+.lnBar { position:fixed; left:10px; right:10px; bottom:calc(14px + env(safe-area-inset-bottom)); z-index:71; max-width:520px; margin:0 auto; display:flex; align-items:center; gap:8px;
+  padding:10px 12px; border-radius:16px; background:var(--surface); border:1px solid var(--border); box-shadow:0 8px 26px rgba(0,0,0,.22); animation:lnUp .2s ease-out; }
+@keyframes lnUp { from { transform:translateY(20px); opacity:0; } to { transform:none; opacity:1; } }
+.lnDot { width:30px; height:30px; border-radius:50%; border:2px solid var(--border2); cursor:pointer; font-weight:800; color:var(--ink); padding:0; flex:0 0 auto; }
+.lnDot.on { border-color:var(--ink); }
+.lnBarBtn { background:none; border:1px solid var(--border); border-radius:999px; padding:6px 11px; color:var(--ink); font:inherit; font-size:13.5px; cursor:pointer; white-space:nowrap; }
+.lnBarX { margin-left:auto; background:none; border:0; color:var(--muted); font-size:24px; line-height:1; cursor:pointer; padding:0 4px; }
+.lnScrim { position:fixed; inset:0; z-index:72; background:rgba(0,0,0,.35); }
+.lnSheet { position:fixed; left:0; right:0; bottom:var(--kb, 0px); z-index:73; max-width:560px; margin:0 auto; background:var(--bg); color:var(--ink); border-radius:18px 18px 0 0;
+  max-height:min(86vh, calc(100vh - var(--kb, 0px) - 20px)); display:flex; flex-direction:column; box-shadow:0 -8px 30px rgba(0,0,0,.25); animation:lnUp .22s ease-out; }
+.lnSheetHead { display:flex; align-items:center; gap:8px; padding:14px 16px 6px; font-size:16px; }
+.lnSheetBody { overflow:auto; padding:4px 16px calc(16px + env(safe-area-inset-bottom)); }
+.lnQuote { margin:6px 0 8px; padding:8px 10px; border-left:3px solid var(--accent); border-radius:6px; font-style:italic; font-size:14px; line-height:1.45; color:var(--ink); }
+.lnVis { display:flex; flex-wrap:wrap; gap:6px; }
+.lnPrayRow.off { opacity:.55; }
+.lnCard { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:10px 12px; margin:8px 0; cursor:pointer; }
+.lnCard.full { cursor:default; }
+.lnWho { display:flex; align-items:center; gap:8px; font-size:14px; }
+.lnText { margin:4px 0 6px; white-space:pre-wrap; line-height:1.45; }
+.lnPrayTag { font-size:13px; color:var(--muted); margin:2px 0 6px; }
+.lnActs { display:flex; flex-wrap:wrap; gap:6px; }
+.lnAct { background:none; border:1px solid var(--border); border-radius:999px; padding:5px 10px; font:inherit; font-size:13px; color:var(--ink); cursor:pointer; }
+.lnAct.on { border-color:var(--accent); color:var(--accent); }
+.lnAct.static { cursor:default; border-color:transparent; padding-left:2px; }
+.lnMine { display:flex; gap:12px; margin-top:4px; } .lnMine .linkbtn, .lnGo { width:auto; padding-left:0; margin:4px 0 0; text-align:left; }
+.lnCmts { margin-top:8px; }
+.lnCmt { display:flex; gap:8px; padding:8px 0; border-top:1px solid var(--border); font-size:14px; }
+.lnCmtBody { flex:1 1 auto; min-width:0; } .lnCmtBody div { white-space:pre-wrap; line-height:1.4; }
+.lnCmtDel { width:auto; padding:0; margin:2px 0 0; font-size:12.5px; }
+.lnCmtNew { display:flex; gap:8px; align-items:flex-end; margin-top:8px; } .lnCmtNew textarea { flex:1 1 auto; min-width:0; } .lnCmtNew .btn { width:auto; flex:0 0 auto; }
+.lnFeed { display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; touch-action:pan-x pan-y; }
+.lnFeedCard { flex:0 0 260px; text-align:left; display:flex; flex-direction:column; gap:6px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:10px 12px; font:inherit; color:var(--ink); cursor:pointer; }
+.lnFeedQuote { font-style:italic; font-size:13px; color:var(--muted); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.lnFeedNote { font-size:14px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.lnFeedMeta { font-size:12.5px; color:var(--muted); }
+.lnEmpty { margin:0 0 8px; }
+.prLib { width:auto; padding-left:0; margin:-2px 0 6px; text-align:left; font-size:13.5px; }
+@media (prefers-reduced-motion: reduce) { .lnBar, .lnSheet { animation:none; } }
+#lnBook .lnQuote { display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+
+/* ---------- GP Tasks: light / dark, and the Inbox's This week (12-tasks.js, Nov 2026) ---------- */
+.ctRow { display:flex; align-items:center; gap:8px; } .ctRow .ctSeg { flex:1 1 auto; }
+.gtTheme { flex:0 0 auto; width:40px; height:40px; border-radius:12px; border:1px solid var(--border); background:var(--surface); font-size:18px; cursor:pointer; margin:6px 0 10px; }
+.gtInboxSeg { margin:2px 0 8px; }
+.gtWeekNote { margin:0 0 6px; }
+.gtWeek .gtDay.today { color:var(--accent); }
+.gtDayN { font-weight:600; font-size:12px; padding:1px 7px; border-radius:999px; background:var(--surface2); color:var(--muted); margin-left:4px; text-transform:none; letter-spacing:0; }
+.gtDayN.many { background:var(--amber); color:var(--amberInk); }
+.gtWeekFree { margin:2px 0 8px 2px; }
+
+.portalAppIc { width:32px; height:32px; border-radius:8px; margin-right:8px; vertical-align:middle; }
+
+/* My Home: the Library as one row of the summary card (18-library-plus.js, Nov 2026) */
+.libHeroText { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.libHeroRow .gptRing { font-size:19px; }
+
+/* ---------- My Home's quick apps (19-ux.js, Nov 2026) ---------- */
+.qaBar { display:flex; gap:4px; overflow-x:auto; margin:-4px 22px 10px -6px; padding:2px 2px 6px; scrollbar-width:none; touch-action:pan-x pan-y; }
+.qaBar::-webkit-scrollbar { display:none; }
+.qaItem { position:relative; flex:0 0 auto; }
+.qaBtn { display:flex; flex-direction:column; align-items:center; gap:4px; width:58px; padding:4px 0; background:none; border:0; color:var(--onDark); font:inherit; cursor:pointer;
+  -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+.qaIc { width:40px; height:40px; border-radius:13px; background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-size:19px; line-height:1; }
+.qaIc svg { width:20px; height:20px; }
+.qaIc .findEmoji { font-size:19px; }
+.qaLabel { font-size:10.5px; line-height:1.15; color:var(--onDarkFaint); max-width:58px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.qaPlus { background:transparent; border:1.5px dashed rgba(255,255,255,.35); font-size:17px; color:var(--onDark); }
+.qaX { position:absolute; top:-2px; right:2px; width:20px; height:20px; border-radius:50%; border:0; background:var(--surface); color:var(--ink); font-size:14px; line-height:20px; padding:0; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.3); }
+.qaDone { background:var(--accent); color:var(--accentInk); border:0; border-radius:999px; padding:6px 14px; font:inherit; font-weight:700; font-size:13px; cursor:pointer; }
+.qaPick { display:flex; flex-direction:column; }
+.qaPickRow { display:flex; align-items:center; gap:12px; padding:9px 2px; background:none; border:0; border-top:1px solid var(--border); color:var(--ink); font:inherit; text-align:left; cursor:pointer; }
+.qaPickRow .qaIc { width:34px; height:34px; border-radius:11px; background:var(--surface2); color:var(--ink); }
+.qaPickRow span:nth-child(2) { flex:1 1 auto; }
+.qaPickAdd { color:var(--accent); font-weight:700; }
+
+/* faint words in the summary card's rows sit on the dark card: the on-dark faint colour, not the paper's (AA) */
+.myHero .heroRow .whoCap { color:var(--onDarkFaint); opacity:1; }
+
+/* ---------- My Home's card as widgets (02-goals-okrs.js heroWidgetsHtml_, Nov 2026) ---------- */
+.heroWidgets { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px; margin:2px 0 4px; }
+.heroW { display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0; padding:10px 2px 8px; border:0; border-radius:14px; background:rgba(255,255,255,.07); color:var(--onDark); font-family:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.heroW:active { opacity:.75; }
+.hero .heroWRing.gRing { width:46px; height:46px; }
+.hero .heroWRing.gRing::after { inset:4px; }
+.hero .heroWRing.gRing span { font-size:13.5px; }
+.heroWIcon { position:relative; width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.1); }
+.heroWIcon svg { width:22px; height:22px; }
+.heroWBadge { position:absolute; top:-4px; right:-6px; }
+.heroWBadge.quiet { background:var(--surface); color:var(--ink); }
+.heroWLabel { max-width:100%; font-size:11.5px; font-weight:700; color:var(--onDark); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* the base at a glance: four figures, the fourth "on campus" opening Who's here */
+button.homeBaseHead { width:100%; padding:0; border:0; background:none; color:inherit; font-family:inherit; text-align:left; cursor:pointer; }
+.homeBase { cursor:default; }
+.homeBaseRow.four { grid-template-columns:repeat(4, minmax(0,1fr)); }
+.homeBaseCell { display:flex; flex-direction:column; align-items:flex-start; min-width:0; padding:0; border:0; background:none; color:inherit; font-family:inherit; font-size:11.5px; text-align:left; overflow-wrap:anywhere; cursor:pointer; }
+.homeBaseCell.homeWhos { margin-top:0; }
+.homeBaseCell .whoCap { font-size:10.5px; font-weight:600; color:var(--onDarkFaint); opacity:1; }
+
+/* ---------- My Home's dashboard, arranged like an iPhone's Home Screen (19-ux.js, Nov 2026) ---------- */
+.myHero { position:relative; }
+.dashPencil { position:absolute; top:10px; right:10px; z-index:2; width:26px; height:26px; padding:0; border:0; border-radius:50%;
+  background:rgba(255,255,255,.12); color:var(--onDark); font:inherit; font-size:13px; line-height:26px; cursor:pointer; }
+.dashPencil:active { opacity:.7; }
+.dashEditBar { display:flex; align-items:center; gap:10px; margin:-4px 0 10px; }
+.dashPlus { flex:0 0 auto; width:30px; height:30px; padding:0; border:0; border-radius:50%; background:var(--surface); color:var(--ink);
+  font:inherit; font-size:18px; font-weight:800; line-height:30px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.3); }
+.dashEditHint { flex:1 1 auto; min-width:0; font-size:11.5px; color:var(--onDarkFaint); }
+.dashItem { position:relative; min-width:0; display:flex; }
+.dashItem > .heroW { flex:1 1 auto; }
+.dashRow { position:relative; }
+.myHero.dashEditing { touch-action:none; -webkit-user-select:none; user-select:none; }
+.myHero .qaItem, .myHero .dashItem, .myHero .dashRow { -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
+.myHero.dashEditing .qaItem, .myHero.dashEditing .dashItem { animation:dashWiggle .3s ease-in-out infinite alternate; cursor:grab; }
+.myHero.dashEditing .qaItem:nth-child(even), .myHero.dashEditing .dashItem:nth-child(even) { animation-duration:.27s; animation-direction:alternate-reverse; }
+.myHero.dashEditing .dashRow { animation:dashWiggleRow .34s ease-in-out infinite alternate; cursor:grab; }
+.myHero.dashEditing .dashBlock:nth-child(even) .dashRow { animation-direction:alternate-reverse; }
+.myHero.dashEditing .drag { animation:none; z-index:3; transform:scale(1.08); opacity:.92; cursor:grabbing; }
+.myHero.dashEditing .dashRow.drag, .myHero.dashEditing .dashBlock.drag { transform:scale(1.02); }
+.myHero.dashEditing .dashBlock.drag .dashRow { animation:none; }
+.dashGrip { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--onDarkFaint); background:rgba(255,255,255,.1); border-radius:999px; padding:3px 10px; margin:6px 0 4px; cursor:grab; touch-action:none; }
+.dashBlock { position:relative; }
+.dashRow .qaX { top:4px; right:4px; z-index:2; }
+@keyframes dashWiggle { from { transform:rotate(-2.2deg); } to { transform:rotate(2.2deg); } }
+@keyframes dashWiggleRow { from { transform:rotate(-.35deg); } to { transform:rotate(.35deg); } }
+.dashItem .qaX { top:-6px; right:-4px; z-index:2; }
+.qaPickHead { margin:14px 2px 4px; font-size:12px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:var(--muted); }
+.qaPickRow .qaPickW { background:var(--headerBg); }
+.qaPickRow .qaPickW .heroWRing.gRing { width:30px; height:30px; }
+.qaPickRow .qaPickW .heroWRing.gRing::after { inset:3px; background:var(--headerBg); }
+.qaPickRow .qaPickW .heroWRing.gRing span { font-size:9px; color:var(--onDark); }
+.qaPickRow .qaPickW .heroWIcon { width:30px; height:30px; }
+@media (prefers-reduced-motion: reduce) { .myHero.dashEditing .qaItem, .myHero.dashEditing .dashItem, .myHero.dashEditing .dashRow { animation:none; } }
+
+/* sentence highlights in the reader (18-library-plus.js, Nov 2026) */
+.lnS { border-radius:3px; -webkit-box-decoration-break:clone; box-decoration-break:clone; }
+.lnS.lnHlS { padding:1px 0; }
+.lnS.lnSelS { box-shadow:0 2px 0 0 var(--accent); background:rgba(31,68,255,.10); }
+
+/* "Set up my profile" — a new account's first steps (22-setup.js) */
+.suWrap { max-width:520px; margin:0 auto; padding-top:6px; }
+.suBar { height:6px; border-radius:6px; background:var(--line); overflow:hidden; margin:4px 0 6px; }
+.suBar span { display:block; height:100%; background:var(--accent); border-radius:6px; transition:width .3s ease; }
+.suCount { font-size:12px; color:var(--muted); margin-bottom:6px; }
+.suHello { font-size:46px; line-height:1; margin:18px 0 4px; }
+.suChoices { display:flex; flex-direction:column; gap:10px; margin:12px 0 4px; }
+.suChoices.two { flex-direction:row; }
+.suChoices.two .suChoice { flex:1; text-align:center; }
+.suChoice { display:block; width:100%; text-align:left; padding:14px 16px; border-radius:14px; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); font:inherit; font-size:16px; cursor:pointer; margin:0 0 10px; }
+.suChoices .suChoice { margin:0; }
+.suChoice b { display:block; }
+.suChoice span { display:block; font-size:13px; color:var(--muted); margin-top:3px; }
+.suChoice.on { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset; }
+.suNav { display:flex; gap:10px; margin-top:16px; }
+.suNav .btn { margin:0; }
+.suNav .btn.ghost { flex:0 0 auto; width:auto; padding-left:16px; padding-right:16px; }
+
+/* the preview's bar (Look around, 22-setup.js) */
+.demoBar { display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; margin:0 0 12px; font-size:13px; }
+.demoBar > span:first-child { flex:1 1 200px; }
+.demoBarBtns { display:flex; gap:6px; }
+.demoBarBtns .btn { width:auto; margin:0; padding:7px 12px; font-size:13px; }
+
+/* Admin's home in sections (Nov 2026) */
+.adminSecHead { margin:18px 0 6px; font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.adminSec { padding:2px 0; gap:0; }
+.adminSec .adminMenuCard { background:none; border:0; border-bottom:1px solid var(--line); border-radius:0; padding:12px 14px; box-shadow:none; }
+.adminSec .adminMenuCard:last-child { border-bottom:0; }
+.adminSec .adminMenuEmoji { font-size:22px; }
+.adminSec .adminMenuText b { font-size:15px; }
+.adminDueRow { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 4px; }
+.adminDue { font:inherit; font-size:14px; font-weight:700; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:8px 14px; cursor:pointer; }
+.adminDue.hot { border-color:var(--accent); color:var(--accent); }
+/* Admin → Invite staff */
+.invRow { display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--line); }
+.invRow:last-child { border-bottom:0; }
+.invState { font-size:12px; font-weight:700; border-radius:999px; padding:3px 9px; background:var(--line); color:var(--muted); white-space:nowrap; }
+.invState.ok { background:var(--accent); color:var(--accentInk); }
+

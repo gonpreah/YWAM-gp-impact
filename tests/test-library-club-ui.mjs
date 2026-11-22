@@ -158,10 +158,16 @@ const rec = (id) => mem.staff.find((s) => s.id === id);
 /* ---------- 3. Bo: My Home says so; the recommendation is waiting ---------- */
 {
   const { ctx, page } = await open('bo');
-  const home = await page.$eval('#libHome', (e) => e.innerText).catch(() => '');
-  ok('My Home has a Reading card: this month’s book, and Di’s recommendation', /This month: Atomic Habits/.test(home) && /1 of 5 have read it/.test(home) && /Di recommended a book to you/.test(home), home.replace(/\s+/g, ' '));
-  await page.click('#libHomeMonth'); await page.waitForFunction(() => typeof GP_LIBRARY !== 'undefined'); await page.waitForTimeout(500);
-  ok('tapping it opens that book', await page.evaluate(() => S.view === 'library' && S.libBook === 'atomic-habits'));
+  ok('My Home has no Reading row any more (Nov 2026: this month’s book and recommendations come now and then as notes)', !(await page.$('#libHome')));
+  /* the month's book on one day in LIB_NUDGE_EVERY, the person's own; a recommendation every day until read or cleared */
+  const nudge = await page.evaluate(() => { const on = notifItems_().map((i) => i.text); LIB_NUDGE_EVERY = 1; const every = notifItems_().map((i) => i.text); LIB_NUDGE_EVERY = 3; return { on, every, day: libNudgeDay_() }; });
+  ok('the bell carries this month’s book as a note — on the person’s own days, not every day', nudge.every.some((x) => /This month’s book: Atomic Habits/.test(x)) && (nudge.day === nudge.on.some((x) => /This month’s book/.test(x))), JSON.stringify(nudge));
+  ok('… and Di’s recommendation', nudge.every.some((x) => /Di Sok recommends a book to you: Grit/.test(x)));
+  await page.evaluate(() => { LIB_NUDGE_EVERY = 1; S.bellOpen = true; renderNotifPanel(); });
+  await page.waitForSelector('#notifRoot [data-libgo="atomic-habits"]');
+  await page.click('#notifRoot [data-libgo="atomic-habits"]'); await page.waitForFunction(() => typeof GP_LIBRARY !== 'undefined'); await page.waitForTimeout(500);
+  ok('Read it opens that book', await page.evaluate(() => S.view === 'library' && S.libBook === 'atomic-habits' && !S.bellOpen));
+  await page.evaluate(() => { LIB_NUDGE_EVERY = 3; });
   await page.click('#libBack'); await page.waitForTimeout(400);
   const recs = await page.$eval('#libRecs', (e) => e.innerText);
   ok('the Library shows it: Grit, from Di, with her note', /Grit/.test(recs) && /from Di Sok/.test(recs) && /Made me think of you/.test(recs));

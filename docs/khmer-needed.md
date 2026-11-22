@@ -5569,7 +5569,385 @@ The sheet where someone says everything on their mind and gets tasks back to che
 | Added 1 task | បានបន្ថែមកិច្ចការ ១ |
 | Added {n} tasks | បានបន្ថែមកិច្ចការ {n} |
 
-## 114. 360 reviews — asking more people after it has closed
+## 113. The week's board: streak bonus, the holiday catch, the slide-down reminder
+
+"streak bonus" sits on My Home's points line after "+20%" (short). The holiday catch: a snowflake or a candy cane falls across the screen in the holiday season; tapping it gives 5 points ("Catch the …" is read aloud by screen readers). "Set them" is a small button on the goals reminder that slides down from the top.
+
+| English | Khmer (draft) |
+|---|---|
+| Don’t forget to set your three goals for this week | កុំភ្លេចកំណត់គោលដៅទាំងបីរបស់អ្នកសម្រាប់សប្ដាហ៍នេះ |
+| Set them | កំណត់ឥឡូវ |
+| streak bonus | ពិន្ទុបន្ថែមពេលប្រើជាប់ៗ |
+| Streak bonus | ពិន្ទុបន្ថែមពេលប្រើជាប់ៗ |
+| +{n}% of the week while you are on a streak of {m} days or more | +{n}% នៃពិន្ទុសប្ដាហ៍ ពេលអ្នកប្រើជាប់ៗគ្នា {m} ថ្ងៃ ឬច្រើនជាងនេះ |
+| Snowflakes and candy canes caught | ផ្កាព្រិល និងស្ករដំបងដែលចាប់បាន |
+| Catch the candy cane | ចាប់ស្ករដំបង |
+| Catch the snowflake | ចាប់ផ្កាព្រិល |
+| You caught a candy cane! +{n} points | អ្នកចាប់បានស្ករដំបង! +{n} ពិន្ទុ |
+| You caught a snowflake! +{n} points | អ្នកចាប់បានផ្កាព្រិល! +{n} ពិន្ទុ |
+
+## 114. The Library: highlights, notes and talking about them
+
+In the book reader a paragraph can be highlighted in a colour ("Highlight", as with a highlighter pen), and a note written on it. A note is kept private, shared with your mentor, or with everyone on your campus, and can ask for prayer (it then shows on the Prayer page too). Others can like it (❤️), comment and pray. "to you" is a short tag on a note a mentee sent only to their mentor. Yellow / Green / Blue / Pink are read aloud for the colour buttons.
+
+| English | Khmer (draft) |
+|---|---|
+| Write a few words to share it. | សរសេរពាក្យខ្លះ ដើម្បីចែករំលែកវា។ |
+| You don’t have a mentor yet. | អ្នកមិនទាន់មានអ្នកណែនាំនៅឡើយទេ។ |
+| That’s a lot for one day — try again tomorrow. | នោះច្រើនហើយសម្រាប់មួយថ្ងៃ — សូមព្យាយាមម្ដងទៀតនៅថ្ងៃស្អែក។ |
+| {n} notes from others | កំណត់ចំណាំ {n} ពីអ្នកដទៃ |
+| Everyone at my campus | អ្នកទាំងអស់គ្នានៅទីតាំងរបស់ខ្ញុំ |
+| Prayer answered | ការអធិស្ឋានត្រូវបានឆ្លើយតប |
+| Asking for prayer | កំពុងសុំការអធិស្ឋាន |
+| Read it in the book | អានវានៅក្នុងសៀវភៅ |
+| Highlight | គូសពណ៌ |
+| My note | កំណត់ចំណាំរបស់ខ្ញុំ |
+| Your note | កំណត់ចំណាំរបស់អ្នក |
+| Notes on this part | កំណត់ចំណាំលើផ្នែកនេះ |
+| What stood out to you? | តើអ្វីដែលលេចធ្លោសម្រាប់អ្នក? |
+| What encouraged or challenged you here… | អ្វីដែលលើកទឹកចិត្ត ឬជំរុញអ្នកនៅទីនេះ… |
+| Only you see it. Share it to ask for prayer. | មានតែអ្នកទេដែលឃើញវា។ ចែករំលែកវា ដើម្បីសុំការអធិស្ឋាន។ |
+| Your mentor sees it, and can comment and pray. | អ្នកណែនាំរបស់អ្នកឃើញវា ហើយអាចបញ្ចេញមតិ និងអធិស្ឋាន។ |
+| Everyone at your campus sees it with your name, and can like it, comment and pray. | អ្នកទាំងអស់គ្នានៅទីតាំងរបស់អ្នកឃើញវាជាមួយឈ្មោះរបស់អ្នក ហើយអាចចូលចិត្ត បញ្ចេញមតិ និងអធិស្ឋាន។ |
+| Remove the note | លុបកំណត់ចំណាំ |
+| No notes here yet. | មិនទាន់មានកំណត់ចំណាំនៅទីនេះទេ។ |
+| This note is not there any more. | កំណត់ចំណាំនេះលែងមានទៀតហើយ។ |
+| No comments yet. Say something encouraging. | មិនទាន់មានមតិទេ។ សូមនិយាយអ្វីមួយដែលលើកទឹកចិត្ត។ |
+| Write a comment… | សរសេរមតិ… |
+| Saved — only you see it | បានរក្សាទុក — មានតែអ្នកទេដែលឃើញ |
+| Shared with your mentor | បានចែករំលែកជាមួយអ្នកណែនាំរបស់អ្នក |
+| Shared with your campus | បានចែករំលែកជាមួយទីតាំងរបស់អ្នក |
+| Remove your note? Its comments go too. | លុបកំណត់ចំណាំរបស់អ្នក? មតិរបស់វាក៏នឹងបាត់ដែរ។ |
+| Delete this comment? | លុបមតិនេះ? |
+| Thank you for praying | សូមអរគុណសម្រាប់ការអធិស្ឋាន |
+| Delete this note? Its comments and prayer request go too. | លុបកំណត់ចំណាំនេះ? មតិ និងសំណើអធិស្ឋានរបស់វាក៏នឹងបាត់ដែរ។ |
+| Take this note down for everyone? | ដកកំណត់ចំណាំនេះចេញសម្រាប់អ្នកទាំងអស់គ្នា? |
+| Notes and highlights | កំណត់ចំណាំ និងការគូសពណ៌ |
+| Tap any paragraph while you read to highlight it or write a note — keep it to yourself, share it with your mentor, or with your campus. | ចុចលើកថាខណ្ឌណាមួយពេលអ្នកអាន ដើម្បីគូសពណ៌ ឬសរសេរកំណត់ចំណាំ — ទុកសម្រាប់ខ្លួនឯង ចែករំលែកជាមួយអ្នកណែនាំ ឬជាមួយទីតាំងរបស់អ្នក។ |
+| From {campus} | ពី {campus} |
+| Mine · {n} | របស់ខ្ញុំ · {n} |
+| What encouraged us | អ្វីដែលលើកទឹកចិត្តយើង |
+| to you | ផ្ញើមកអ្នក |
+| From “{title}” | ពី «{title}» |
+| Yellow | លឿង |
+| Green | បៃតង |
+| Blue | ខៀវ |
+| Pink | ផ្កាឈូក |
+
+## 118. Santa, books at 50, and the welcome to points
+
+In the holiday season Santa (សាន់តាក្លូស) and his reindeer fly across the screen when the app opens; tapping him gives 5 points; he comes round every few minutes ("Catch Santa" is read aloud by screen readers). The points sheet shows on the first open of each day: your points, then what each thing is worth on the week's board. "Let’s go!" is its closing button.
+
+| English | Khmer (draft) |
+|---|---|
+| Catch Santa | ចាប់សាន់តាក្លូស |
+| Santa is all caught for today. Come back tomorrow! | ថ្ងៃនេះអ្នកចាប់សាន់តាក្លូសគ្រប់ហើយ។ ត្រឡប់មកវិញនៅថ្ងៃស្អែក! |
+| Santa needs a minute to warm up — catch him next time! | សាន់តាក្លូសត្រូវការសម្រាកមួយនាទី — ចាប់គាត់នៅពេលក្រោយ! |
+| Santa caught | សាន់តាក្លូសដែលចាប់បាន |
+| Finish a book | អានសៀវភៅមួយក្បាលចប់ |
+| Hold a 1-on-1 | ជួបមួយទល់មួយ |
+| Set your three weekly goals | កំណត់គោលដៅទាំងបីប្រចាំសប្ដាហ៍របស់អ្នក |
+| Enter your ministry’s numbers | បញ្ចូលលេខនៃកិច្ចការបម្រើរបស់អ្នក |
+| Finish a GP Task | បញ្ចប់កិច្ចការ GP មួយ |
+| Open the app | បើកកម្មវិធី |
+| Tick a habit | គូសទម្លាប់មួយ |
+| Catch a snowflake or candy cane | ចាប់ផ្កាព្រិល ឬស្ករដំបង |
+| Catch Santa when he flies by | ចាប់សាន់តាក្លូសពេលគាត់ហោះកាត់ |
+| Points are here! | ពិន្ទុមកដល់ហើយ! |
+| Use the app every day and earn points for the good things you already do. Every Monday the week’s board starts again. | ប្រើកម្មវិធីរាល់ថ្ងៃ ហើយទទួលបានពិន្ទុសម្រាប់កិច្ចការល្អៗដែលអ្នកធ្វើរួចហើយ។ រាល់ថ្ងៃច័ន្ទ តារាងពិន្ទុសប្ដាហ៍ចាប់ផ្ដើមសាជាថ្មី។ |
+| Use the app {m} days in a row and get +{n}% on the whole week. | ប្រើកម្មវិធី {m} ថ្ងៃជាប់ៗគ្នា ហើយទទួលបាន +{n}% លើពិន្ទុពេញមួយសប្ដាហ៍។ |
+| See this week’s board | មើលតារាងពិន្ទុសប្ដាហ៍នេះ |
+| Let’s go! | តោះចាប់ផ្ដើម! |
+| Ho ho ho! You caught Santa! +{n} points | ហូ ហូ ហូ! អ្នកចាប់បានសាន់តាក្លូស! +{n} ពិន្ទុ |
+| {n} each time you catch him, up to {m} a day | {n} រាល់ពេលអ្នកចាប់គាត់បាន រហូតដល់ {m} ក្នុងមួយថ្ងៃ |
+| It’s the holiday season: Santa flies across the screen every few minutes. Tap him to catch him! | នេះជារដូវបុណ្យ៖ សាន់តាក្លូសហោះកាត់អេក្រង់រៀងរាល់ប៉ុន្មាននាទីម្ដង។ ចុចលើគាត់ ដើម្បីចាប់គាត់! |
+| Your points this week | ពិន្ទុរបស់អ្នកសប្ដាហ៍នេះ |
+| How to earn points | របៀបទទួលបានពិន្ទុ |
+| Don’t show this when I open the app | កុំបង្ហាញនេះពេលខ្ញុំបើកកម្មវិធី |
+| You can still see how points work on Team → This week. | អ្នកនៅតែអាចមើលរបៀបដែលពិន្ទុដំណើរការ នៅលើ ក្រុម → សប្ដាហ៍នេះ។ |
+## 115. GP Tasks: light or dark, the Inbox's This week; the Portal as an app
+
+"Appearance: {mode}" is said when the 🌗 button on GP Tasks is tapped ({mode} is Light, Dark or Auto). "This week" is the Inbox's second switch: every list's tasks for the week, day by day. "Same time as another" is a small tag on a task. The Portal lines are a sheet in the YWAM GP app (☰ → Applications) and a card on the portal's staff side.
+
+| English | Khmer (draft) |
+|---|---|
+| Appearance: {mode} | រូបរាង៖ {mode} |
+| Auto — follows your phone | ស្វ័យប្រវត្តិ — តាមទូរស័ព្ទរបស់អ្នក |
+| Every list’s tasks for this week, day by day — so you can see where they pile up. | កិច្ចការប្រចាំសប្ដាហ៍នេះពីបញ្ជីទាំងអស់ ម្ដងមួយថ្ងៃ — ដើម្បីឱ្យអ្នកឃើញថាថ្ងៃណាមានច្រើន។ |
+| {n} tasks | កិច្ចការ {n} |
+| Nothing due | គ្មានអ្វីត្រូវធ្វើ |
+| Same time as another | ម៉ោងដូចគ្នានឹងកិច្ចការមួយទៀត |
+| The Portal on your phone | ផតថលនៅលើទូរស័ព្ទរបស់អ្នក |
+| The Portal, an app of its own | ផតថល ជាកម្មវិធីដាច់ដោយឡែក |
+| The applications, one tap from your Home Screen, with their own icon. The same portal as here. | ពាក្យសុំទាំងអស់ ចុចតែម្ដងពីអេក្រង់ដើម ជាមួយរូបតំណាងផ្ទាល់ខ្លួន។ ជាផតថលដូចគ្នានឹងនៅទីនេះ។ |
+| Open the Portal and sign in with Google, as you do here. | បើកផតថល ហើយចូលដោយប្រើ Google ដូចដែលអ្នកធ្វើនៅទីនេះ។ |
+| Open the Portal | បើកផតថល |
+| Install it like an app, with its own icon — the applications one tap from your Home Screen. | ដំឡើងវាដូចកម្មវិធីមួយ ជាមួយរូបតំណាងផ្ទាល់ខ្លួន — ពាក្យសុំទាំងអស់ ចុចតែម្ដងពីអេក្រង់ដើម។ |
+
+
+## 119. Getting back in: the admin's sign-in link and the full email
+
+Admin → a person: their whole email with Copy, how they sign in, an Email box in Edit profile, and **Sign-in link** — a one-time link an admin sends by Telegram or WhatsApp. The login screen says to ask for one. Claude's drafts, not yet reviewed.
+
+- Copy this → ចម្លងនេះ
+- No email on this profile → ប្រវត្តិរូបនេះគ្មានអ៊ីមែលទេ
+- Signs in with Google → ចូលដោយប្រើ Google
+- Signs in with an email and password → ចូលដោយប្រើអ៊ីមែល និងពាក្យសម្ងាត់
+- Signs in with a username and PIN — not on Google yet → ចូលដោយប្រើឈ្មោះអ្នកប្រើ និង PIN — មិនទាន់ប្រើ Google នៅឡើយ
+- Continue with Google finds a profile by this email — put the Gmail they use here. → “បន្តជាមួយ Google” រកប្រវត្តិរូបតាមអ៊ីមែលនេះ — សូមដាក់ Gmail ដែលគាត់ប្រើនៅទីនេះ។
+- Sign-in link → តំណសម្រាប់ចូល
+- For someone who is locked out or forgot how they sign in. The link signs them in once, on their own phone, then asks them to connect Google. It works for 3 days. Send it to them yourself on Telegram or WhatsApp — only to them. → សម្រាប់អ្នកដែលចូលមិនបាន ឬភ្លេចរបៀបចូល។ តំណនេះនឹងបញ្ចូលគាត់ម្តង នៅលើទូរស័ព្ទរបស់គាត់ផ្ទាល់ រួចសុំឱ្យគាត់ភ្ជាប់ Google។ វាប្រើបានរយៈពេល ៣ ថ្ងៃ។ សូមផ្ញើវាទៅគាត់ដោយខ្លួនឯងតាម Telegram ឬ WhatsApp — ផ្ញើទៅគាត់តែម្នាក់គត់។
+- Copy the link → ចម្លងតំណ
+- Works once, until {date}. → ប្រើបានតែម្តង រហូតដល់ {date}។
+- A link is waiting to be used. Making a new one turns the old one off. → មានតំណមួយកំពុងរង់ចាំប្រើ។ ការបង្កើតតំណថ្មីនឹងបិទតំណចាស់។
+- Make a sign-in link → បង្កើតតំណសម្រាប់ចូល
+- Another profile already has that email → ប្រវត្តិរូបផ្សេងទៀតមានអ៊ីមែលនោះរួចហើយ
+- That email doesn’t look right → អ៊ីមែលនោះហាក់ដូចជាមិនត្រឹមត្រូវ
+- Could not make the link → មិនអាចបង្កើតតំណបានទេ
+- Sign in to the YWAM GP app → ចូលកម្មវិធី YWAM GP
+- Copied → បានចម្លងហើយ
+- PIN must be 4 digits → PIN ត្រូវមាន ៤ ខ្ទង់
+- PIN reset — tell them the new PIN → បានកំណត់ PIN ថ្មីហើយ — សូមប្រាប់គាត់ពី PIN ថ្មី
+- Could not reset PIN → មិនអាចកំណត់ PIN ថ្មីបានទេ
+- Not now — go to the app → មិនមែនឥឡូវទេ — ទៅកម្មវិធី
+- You’re signed in. → អ្នកបានចូលហើយ។
+- That sign-in link has run out. Ask an admin for a new one. → តំណសម្រាប់ចូលនោះផុតកំណត់ហើយ។ សូមសុំតំណថ្មីពីអ្នកគ្រប់គ្រង។
+- That sign-in link was already used, or isn’t right. Ask an admin for a new one. → តំណសម្រាប់ចូលនោះត្រូវបានប្រើរួចហើយ ឬមិនត្រឹមត្រូវ។ សូមសុំតំណថ្មីពីអ្នកគ្រប់គ្រង។
+- No connection — open the link again when you are online. → គ្មានការតភ្ជាប់ — សូមបើកតំណម្តងទៀត ពេលអ្នកមានអ៊ីនធឺណិត។
+- Can’t get in? Message an admin on Telegram or WhatsApp — they can send you a link that signs you straight in, or set a new PIN. → ចូលមិនបាន? សូមផ្ញើសារទៅអ្នកគ្រប់គ្រងតាម Telegram ឬ WhatsApp — គាត់អាចផ្ញើតំណដែលបញ្ចូលអ្នកភ្លាមៗ ឬកំណត់ PIN ថ្មីឱ្យអ្នក។
+## 116. My Home: the Library as one row of the summary card
+
+A short line beside 📚 on the dark summary card — very little room. "Read a book" is shown when no book is under way; "Ten minutes · {n} points" sits after it.
+
+| English | Khmer (draft) |
+|---|---|
+| Read a book | អានសៀវភៅមួយក្បាល |
+| Ten minutes · {n} points | ដប់នាទី · {n} ពិន្ទុ |
+| Ten minutes | ដប់នាទី |
+| {n} of {total} have read it | {n} នាក់ក្នុងចំណោម {total} បានអានវាហើយ |
+
+## 117. My Home: quick apps
+
+A row of small icons at the top of My Home's summary card that each person chooses and arranges (hold an icon, or tap ✎ Edit). "Quick apps" names the row; the rest are on the edit row and the Add sheet.
+
+| English | Khmer (draft) |
+|---|---|
+| Quick apps | កម្មវិធីរហ័ស |
+| Add an app | បន្ថែមកម្មវិធី |
+| Arrange your quick apps | រៀបចំកម្មវិធីរហ័សរបស់អ្នក |
+| Drag to move · ✕ to take off | អូសដើម្បីផ្លាស់ទី · ✕ ដើម្បីដកចេញ |
+| Add a quick app | បន្ថែមកម្មវិធីរហ័ស |
+| Everything is on your bar already. | អ្វីៗទាំងអស់មាននៅលើរបាររបស់អ្នករួចហើយ។ |
+
+## 120. My Home: the base at a glance
+
+The fourth figure under the campus's name on My Home's dark card — how many are on campus now (staff here and everyone booked tonight). A short label under a number; very little room.
+
+| English | Khmer (draft) |
+|---|---|
+| On campus | នៅក្នុងបរិវេណ |
+
+## 121. My Home: arranging the dashboard like a phone's Home Screen
+
+Hold anything on My Home's dark card (or tap its small ✎) and it wiggles: drag to move, ＋ adds widgets and apps, ✕ takes off what you added. The widget names (Streak, Books, Year goals, Days off) sit under a small ring — very little room. "Widgets" and "Apps" head the two lists on the ＋ sheet.
+
+| English | Khmer (draft) |
+|---|---|
+| Streak | ជាប់ៗគ្នា |
+| Widgets | ប្រអប់ព័ត៌មាន |
+| Apps | កម្មវិធី |
+| Year goals | គោលដៅឆ្នាំ |
+| Add to your dashboard | បន្ថែមទៅផ្ទាំងរបស់អ្នក |
+| Arrange your dashboard | រៀបចំផ្ទាំងរបស់អ្នក |
+| Drag to move · ✕ takes off what you added | អូសដើម្បីផ្លាស់ទី · ✕ ដកចេញនូវអ្វីដែលអ្នកបានបន្ថែម |
+| The dashboard is full — take one off first. | ផ្ទាំងពេញហើយ — សូមដកមួយចេញសិន។ |
+| Every widget is on your dashboard already. | ប្រអប់ព័ត៌មានទាំងអស់មាននៅលើផ្ទាំងរបស់អ្នករួចហើយ។ |
+| Personal days off left | ថ្ងៃឈប់សម្រាកផ្ទាល់ខ្លួននៅសល់ |
+| Days in a row | ថ្ងៃជាប់ៗគ្នា |
+| Books read | សៀវភៅដែលបានអាន |
+
+A note that slides down from the top when a teammate recommends a book (💌 goes before it).
+
+| English | Khmer (draft) |
+|---|---|
+| {name} recommends a book to you: {title} | {name} ណែនាំសៀវភៅមួយក្បាលដល់អ្នក៖ {title} |
+
+## 122. The Library: highlighting sentences
+
+The hint on a book's page before anyone has highlighted anything. Sentences are picked by tapping them in the reader.
+
+| English | Khmer (draft) |
+|---|---|
+| Tap a sentence while you read (tap more to take in the ones next to it) to highlight it or write a note — keep it to yourself, share it with your mentor, or with your campus. | ចុចលើប្រយោគមួយពេលអ្នកកំពុងអាន (ចុចបន្ថែមដើម្បីយកប្រយោគនៅជាប់គ្នា) ដើម្បីគូសពណ៌ ឬសរសេរកំណត់ចំណាំ — ទុកសម្រាប់ខ្លួនឯង ចែករំលែកជាមួយអ្នកណែនាំ ឬជាមួយបរិវេណរបស់អ្នក។ |
+
+## 123. Sign-up in two things, then "Set up my profile"
+
+Making an account is now Google (or an email, username and PIN) and a name. Once an admin approves it, the first sign-in walks the person through campus, ministry, kind of staff, country, mentor and the staff contract, one question a screen. The buttons and headings are short; the choice buttons have little room.
+
+| English | Khmer (draft) |
+|---|---|
+| They choose their campus and ministry once you say yes. | ពួកគេនឹងជ្រើសបរិវេណ និងកិច្ចការបម្រើរបស់ពួកគេ បន្ទាប់ពីអ្នកយល់ព្រម។ |
+| You’re joining {where}. | អ្នកកំពុងចូលរួមជាមួយ {where}។ |
+| Just your Google account and your name. Once an admin says yes, the app walks you through the rest. | គ្រាន់តែគណនី Google និងឈ្មោះរបស់អ្នកប៉ុណ្ណោះ។ ពេលអ្នកគ្រប់គ្រងយល់ព្រម កម្មវិធីនឹងនាំអ្នកបំពេញផ្នែកដែលនៅសល់។ |
+| Signing up with Google as {email}. | កំពុងចុះឈ្មោះជាមួយ Google ជា {email}។ |
+| First and last name | នាមខ្លួន និងនាមត្រកូល |
+| No Google account? Use a username and PIN | គ្មានគណនី Google? ប្រើឈ្មោះអ្នកប្រើ និងលេខ PIN |
+| Sign up with Google instead | ចុះឈ្មោះជាមួយ Google វិញ |
+| Thank you! | អរគុណ! |
+| Your profile is made. | ប្រវត្តិរូបរបស់អ្នកត្រូវបានបង្កើតហើយ។ |
+| An admin will look at it soon. Once they say yes, sign in the same way — the app will then ask a few short questions to set up your profile. | អ្នកគ្រប់គ្រងនឹងពិនិត្យវាឆាប់ៗនេះ។ ពេលពួកគេយល់ព្រម សូមចូលតាមរបៀបដដែល — បន្ទាប់មកកម្មវិធីនឹងសួរសំណួរខ្លីៗពីរបីដើម្បីរៀបចំប្រវត្តិរូបរបស់អ្នក។ |
+| Step {n} of {total} | ជំហាន {n} នៃ {total} |
+| Welcome to YWAM GP, {name}! | សូមស្វាគមន៍មកកាន់ YWAM GP, {name}! |
+| An admin has said yes to your profile. A few short questions so the app fits you — about a minute. | អ្នកគ្រប់គ្រងបានយល់ព្រមប្រវត្តិរូបរបស់អ្នកហើយ។ សំណួរខ្លីៗពីរបី ដើម្បីឲ្យកម្មវិធីសមនឹងអ្នក — ប្រហែលមួយនាទី។ |
+| Let’s start | តោះចាប់ផ្តើម |
+| Which campus are you at? | តើអ្នកនៅបរិវេណណា? |
+| Where do you serve? | តើអ្នកបម្រើនៅឯណា? |
+| Your department and your ministry. This puts your team’s numbers and tasks on your page. | នាយកដ្ឋាន និងកិច្ចការបម្រើរបស់អ្នក។ វាដាក់លេខ និងកិច្ចការរបស់ក្រុមអ្នកនៅលើទំព័ររបស់អ្នក។ |
+| Not sure of your ministry yet? Pick your department — you can change it any time in Profile & settings. | មិនទាន់ច្បាស់ពីកិច្ចការបម្រើរបស់អ្នកទេ? សូមជ្រើសនាយកដ្ឋានរបស់អ្នក — អ្នកអាចប្តូរវាបានគ្រប់ពេលនៅក្នុង ប្រវត្តិរូប និងការកំណត់។ |
+| A Campus Leadership role waits for an admin to approve it. | តួនាទីក្នុងថ្នាក់ដឹកនាំបរិវេណ ត្រូវរង់ចាំអ្នកគ្រប់គ្រងអនុម័ត។ |
+| Role / team (optional) | តួនាទី / ក្រុម (ស្រេចចិត្ត) |
+| Where are you from? | តើអ្នកមកពីណា? |
+| Who is your mentor? | តើអ្នកណាជាអ្នកណែនាំរបស់អ្នក? |
+| Everyone at YWAM GP has a mentor — someone who meets with you twice a month. They see your private weekly check-ins, so pick someone you trust. | អ្នករាល់គ្នានៅ YWAM GP មានអ្នកណែនាំម្នាក់ — ជាអ្នកដែលជួបជាមួយអ្នកពីរដងក្នុងមួយខែ។ ពួកគេឃើញការឆែកប្រចាំសប្តាហ៍ឯកជនរបស់អ្នក ដូច្នេះសូមជ្រើសអ្នកដែលអ្នកទុកចិត្ត។ |
+| I don’t know yet — choose later | ខ្ញុំមិនទាន់ដឹងទេ — ជ្រើសពេលក្រោយ |
+| Other campus | បរិវេណផ្សេងទៀត |
+| They are asked first, and see nothing until they say yes. | ពួកគេត្រូវបានសួរជាមុនសិន ហើយមិនឃើញអ្វីទាំងអស់ រហូតដល់ពួកគេយល់ព្រម។ |
+| Your staff contract | កិច្ចសន្យាបុគ្គលិករបស់អ្នក |
+| HR fills out your staff contract with you, in person, and you both sign it in the app. | ផ្នែកធនធានមនុស្សបំពេញកិច្ចសន្យាបុគ្គលិកជាមួយអ្នកដោយផ្ទាល់ ហើយអ្នកទាំងពីរចុះហត្ថលេខាលើវាក្នុងកម្មវិធី។ |
+| Have you signed your staff contract with HR? | តើអ្នកបានចុះហត្ថលេខាលើកិច្ចសន្យាបុគ្គលិកជាមួយផ្នែកធនធានមនុស្សហើយឬនៅ? |
+| Yes, I have | បាទ/ចាស ខ្ញុំបានធ្វើហើយ |
+| No problem — tell HR you’re new, and they will set a time to fill it out with you. | មិនអីទេ — ប្រាប់ផ្នែកធនធានមនុស្សថាអ្នកជាបុគ្គលិកថ្មី ហើយពួកគេនឹងកំណត់ពេលដើម្បីបំពេញវាជាមួយអ្នក។ |
+| The Child Protection Agreement and any other papers everyone signs are in My contract — you can sign them right after this. | កិច្ចព្រមព្រៀងការពារកុមារ និងឯកសារផ្សេងទៀតដែលអ្នករាល់គ្នាចុះហត្ថលេខា មាននៅក្នុង កិច្ចសន្យារបស់ខ្ញុំ — អ្នកអាចចុះហត្ថលេខាភ្លាមៗបន្ទាប់ពីនេះ។ |
+| You’re all set! | អ្នករួចរាល់ហើយ! |
+| Your profile is ready. A couple of things to do when you can: | ប្រវត្តិរូបរបស់អ្នករួចរាល់ហើយ។ មានរឿងពីរបីដែលត្រូវធ្វើពេលអ្នកទំនេរ៖ |
+| Your Campus Leadership role is waiting for an admin to approve it. | តួនាទីក្នុងថ្នាក់ដឹកនាំបរិវេណរបស់អ្នក កំពុងរង់ចាំអ្នកគ្រប់គ្រងអនុម័ត។ |
+| So the team knows your face. | ដើម្បីឲ្យក្រុមស្គាល់មុខអ្នក។ |
+| Sign my papers | ចុះហត្ថលេខាលើឯកសាររបស់ខ្ញុំ |
+| The Child Protection Agreement and the rest, in My contract. | កិច្ចព្រមព្រៀងការពារកុមារ និងឯកសារផ្សេងទៀត នៅក្នុង កិច្ចសន្យារបស់ខ្ញុំ។ |
+| Go to My Home | ទៅកាន់ ទំព័រដើមរបស់ខ្ញុំ |
+| Pick your campus | ជ្រើសបរិវេណរបស់អ្នក |
+| Pick your department | ជ្រើសនាយកដ្ឋានរបស់អ្នក |
+| Pick one | ជ្រើសមួយ |
+| Pick your country | ជ្រើសប្រទេសរបស់អ្នក |
+| Finish setting up your profile | បញ្ចប់ការរៀបចំប្រវត្តិរូបរបស់អ្នក |
+| A few short questions in the YWAM GP app first — then your tasks are here. | សំណួរខ្លីៗពីរបីនៅក្នុងកម្មវិធី YWAM GP ជាមុនសិន — បន្ទាប់មកកិច្ចការរបស់អ្នកនឹងនៅទីនេះ។ |
+| That username is taken | ឈ្មោះអ្នកប្រើនេះមានគេប្រើហើយ |
+| There’s already a profile with that email — sign in instead. | មានប្រវត្តិរូបមួយប្រើអ៊ីមែលនោះរួចហើយ — សូមចូលវិញ។ |
+| Check your details | សូមពិនិត្យព័ត៌មានរបស់អ្នក |
+
+## 124. Signed in to answer the setup questions; the waiting page; Look around (the preview); the dashboard's blocks
+
+A new account is signed in at once to answer the setup questions, then waits on a page that says an admin will look soon. "Look around" opens a preview of the app with made-up people and numbers (only the Library is real); its bar says so on every page. The reading row on My Home is now one that can be added, and the book you were in comes as a note now and then.
+
+| English | Khmer (draft) |
+|---|---|
+| Opening the preview | កំពុងបើកការមើលជាមុន |
+| Look around first — a preview with made-up people and numbers | មើលជុំវិញជាមុនសិន — ការមើលជាមុនដែលមានមនុស្ស និងលេខដែលបង្កើតឡើង |
+| Just your Google account and your name — then a few short questions in the app. | គ្រាន់តែគណនី Google និងឈ្មោះរបស់អ្នក — បន្ទាប់មកសំណួរខ្លីៗពីរបីនៅក្នុងកម្មវិធី។ |
+| Pick up where you left off: {title} | បន្តពីកន្លែងដែលអ្នកបានឈប់៖ {title} |
+| Rows | ជួរ |
+| A few short questions so the app fits you — about a minute. Then an admin says yes, and the whole app opens up. | សំណួរខ្លីៗពីរបី ដើម្បីឲ្យកម្មវិធីសមនឹងអ្នក — ប្រហែលមួយនាទី។ បន្ទាប់មកអ្នកគ្រប់គ្រងយល់ព្រម ហើយកម្មវិធីទាំងមូលបើកសម្រាប់អ្នក។ |
+| Thank you, {name}! | អរគុណ {name}! |
+| Waiting for an admin | កំពុងរង់ចាំអ្នកគ្រប់គ្រង |
+| Your profile is ready. An admin will look at it soon — once they say yes, the whole app opens up for you. | ប្រវត្តិរូបរបស់អ្នករួចរាល់ហើយ។ អ្នកគ្រប់គ្រងនឹងពិនិត្យវាឆាប់ៗនេះ — ពេលពួកគេយល់ព្រម កម្មវិធីទាំងមូលនឹងបើកសម្រាប់អ្នក។ |
+| Check again | ពិនិត្យម្តងទៀត |
+| This is a preview — what you change here isn’t kept. Make a profile to use it for real. | នេះគ្រាន់តែជាការមើលជាមុន — អ្វីដែលអ្នកប្តូរនៅទីនេះមិនត្រូវបានរក្សាទុកទេ។ សូមបង្កើតប្រវត្តិរូប ដើម្បីប្រើវាពិតប្រាកដ។ |
+| A preview of the app — the people and numbers are made up. The Library is real. | ការមើលកម្មវិធីជាមុន — មនុស្ស និងលេខត្រូវបានបង្កើតឡើង។ បណ្ណាល័យគឺពិតប្រាកដ។ |
+| Chores and cooking | ការងារផ្ទះ និងការចម្អិន |
+| The base at a glance | មូលដ្ឋានក្រឡេកមើលភ្លាមៗ |
+
+## 125. Admin in sections; invite links that let new staff straight in
+
+Admin's home is grouped under four headings, each tool with one short line. Admin → Invite staff makes a link (one person or a group, for a few days) that lets someone sign up and be in at once; the sign-up page says who invited them. The chips and the badges have little room.
+
+| English | Khmer (draft) |
+|---|---|
+| {n} waiting for approval | {n} កំពុងរង់ចាំការអនុម័ត |
+| {n} leave requests waiting | សំណើសុំច្បាប់ {n} កំពុងរង់ចាំ |
+| Nothing is waiting on you. | គ្មានអ្វីកំពុងរង់ចាំអ្នកទេ។ |
+| Invite new staff | អញ្ជើញបុគ្គលិកថ្មី |
+| Make a link and send it on WhatsApp or Telegram. Whoever opens it signs up with Google and their name, and is in straight away — no waiting for approval. Then the app asks them a few short questions. | បង្កើតតំណមួយ ហើយផ្ញើវាតាម WhatsApp ឬ Telegram។ អ្នកណាដែលបើកវា ចុះឈ្មោះជាមួយ Google និងឈ្មោះរបស់ពួកគេ ហើយចូលបានភ្លាម — មិនបាច់រង់ចាំការអនុម័តទេ។ បន្ទាប់មកកម្មវិធីសួរពួកគេនូវសំណួរខ្លីៗពីរបី។ |
+| Who is it for? | សម្រាប់អ្នកណា? |
+| The link works for | តំណនេះប្រើបានរយៈពេល |
+| A note for you (optional) | កំណត់ចំណាំសម្រាប់អ្នក (ស្រេចចិត្ត) |
+| e.g. Sokha, or the new DTS staff | ឧ. សុខា ឬបុគ្គលិក DTS ថ្មី |
+| Making… | កំពុងបង្កើត… |
+| Make the invite link | បង្កើតតំណអញ្ជើញ |
+| Your invite link | តំណអញ្ជើញរបស់អ្នក |
+| One person | មនុស្សម្នាក់ |
+| Up to {n} people | រហូតដល់ {n} នាក់ |
+| This is the only time the link is shown — copy it now. You can make another any time. | នេះជាពេលតែមួយគត់ដែលតំណត្រូវបានបង្ហាញ — ចម្លងវាឥឡូវនេះ។ អ្នកអាចបង្កើតមួយទៀតបានគ្រប់ពេល។ |
+| Invite links | តំណអញ្ជើញ |
+| No invite links yet. | មិនទាន់មានតំណអញ្ជើញនៅឡើយទេ។ |
+| Used up | ប្រើអស់ហើយ |
+| Ended | ផុតកំណត់ |
+| Turned off | បានបិទ |
+| {n} of {m} used | បានប្រើ {n} នៃ {m} |
+| Turn this invite link off? Nobody else can join with it. | បិទតំណអញ្ជើញនេះ? គ្មាននរណាម្នាក់ទៀតអាចចូលរួមតាមវាបានទេ។ |
+| {name} invited you to join {where}. Sign up and you’re in — no waiting for approval. | {name} បានអញ្ជើញអ្នកឲ្យចូលរួម {where}។ ចុះឈ្មោះ ហើយអ្នកចូលបានភ្លាម — មិនបាច់រង់ចាំការអនុម័តទេ។ |
+| An admin | អ្នកគ្រប់គ្រងម្នាក់ |
+| This invite link has already been used. | តំណអញ្ជើញនេះត្រូវបានប្រើរួចហើយ។ |
+| This invite link has run out. | តំណអញ្ជើញនេះផុតកំណត់ហើយ។ |
+| This invite link was turned off. | តំណអញ្ជើញនេះត្រូវបានបិទ។ |
+| This invite link doesn’t work. | តំណអញ្ជើញនេះមិនដំណើរការទេ។ |
+| You can still sign up — an admin will then approve you. | អ្នកនៅតែអាចចុះឈ្មោះបាន — បន្ទាប់មកអ្នកគ្រប់គ្រងនឹងអនុម័តអ្នក។ |
+| Students & applications | សិស្ស និងពាក្យសុំ |
+| Ministries & numbers | កិច្ចការបម្រើ និងលេខ |
+| Messages & settings | សារ និងការកំណត់ |
+| Invite staff | អញ្ជើញបុគ្គលិក |
+| Find anyone — profile, PIN, mentor, leader | ស្វែងរកអ្នកណាម្នាក់ — ប្រវត្តិរូប PIN អ្នកណែនាំ អ្នកដឹកនាំ |
+| New sign-ups waiting for a yes | ការចុះឈ្មោះថ្មីកំពុងរង់ចាំការយល់ព្រម |
+| A link that lets new staff straight in | តំណដែលអនុញ្ញាតឲ្យបុគ្គលិកថ្មីចូលបានភ្លាម |
+| Who walks with whom, and who has nobody | អ្នកណាដើរជាមួយអ្នកណា និងអ្នកណាមិនទាន់មាននរណា |
+| Requests waiting, and days used | សំណើកំពុងរង់ចាំ និងថ្ងៃដែលបានប្រើ |
+| When a group leaves | ពេលក្រុមមួយចាកចេញ |
+| Two profiles that are one person | ប្រវត្តិរូបពីរដែលជាមនុស្សតែម្នាក់ |
+| Who is staying, each school, their app | អ្នកណាកំពុងស្នាក់នៅ សាលានីមួយៗ កម្មវិធីរបស់ពួកគេ |
+| Who works in applications | អ្នកណាធ្វើការលើពាក្យសុំ |
+| What each ministry tracks | អ្វីដែលកិច្ចការបម្រើនីមួយៗតាមដាន |
+| Gaps that make the totals wrong | ចន្លោះដែលធ្វើឲ្យលេខសរុបខុស |
+| Who uses the app, and how often | អ្នកណាប្រើកម្មវិធី និងញឹកញាប់ប៉ុណ្ណា |
+| A message to everyone’s bell | សារមួយទៅកណ្តឹងរបស់អ្នករាល់គ្នា |
+| Phone reminders for the app | ការរំលឹកតាមទូរស័ព្ទសម្រាប់កម្មវិធី |
+| The campus calendar in the app | ប្រតិទិនបរិវេណនៅក្នុងកម្មវិធី |
+| Members, roles and their sign-in | សមាជិក តួនាទី និងការចូលរបស់ពួកគេ |
+| A group (up to 10) | ក្រុមមួយ (រហូតដល់ ១០) |
+| A big group (up to 30) | ក្រុមធំ (រហូតដល់ ៣០) |
+| For {where}. {uses} — until {date}. Anyone who has the link can use it, so send it only to them. | សម្រាប់ {where}។ {uses} — រហូតដល់ {date}។ អ្នកណាដែលមានតំណនេះអាចប្រើវាបាន ដូច្នេះសូមផ្ញើវាតែទៅពួកគេប៉ុណ្ណោះ។ |
+
+## 126. Portal: opening a file; staff ticking a team's document steps
+
+A file (the letter of invitation, a passport…) now opens in a small sheet with Open / Download / Share, because opening it straight in a new tab was blocked on iPhones and inside Messenger. Staff can tick a team's document steps by hand when the team sent them another way; the hints sit beside a step's name and have little room.
+
+| English | Khmer (draft) |
+|---|---|
+| Download | ទាញយក |
+| Share or save to Files | ចែករំលែក ឬរក្សាទុកក្នុង Files |
+| Doesn’t open? Tap Download, or Share and save it to Files. Inside Messenger or Facebook, open the portal in Safari or Chrome first. | បើកមិនបាន? ចុច ទាញយក ឬ ចែករំលែក ហើយរក្សាទុកក្នុង Files។ បើអ្នកនៅក្នុង Messenger ឬ Facebook សូមបើកវិបផតថលក្នុង Safari ឬ Chrome ជាមុនសិន។ |
+| ticked by staff | បុគ្គលិកបានគូសធីក |
+| ticks when you upload it below — or tick it here if you sent it another way | ធីកឯងៗ ពេលអ្នកផ្ទុកវាឡើងខាងក្រោម — ឬធីកនៅទីនេះ បើអ្នកបានផ្ញើវាតាមវិធីផ្សេង |
+| ticks when they upload it — or tick it here if they sent it another way | ធីកឯងៗ ពេលពួកគេផ្ទុកវាឡើង — ឬធីកនៅទីនេះ បើពួកគេបានផ្ញើវាតាមវិធីផ្សេង |
+
+## 127. Portal: showing a team the e-visa steps early
+
+A staff tick on a team's record opens "How to apply for your e-visa online" and the e-visa upload before the letter of invitation and the team's documents are in, for a team that has to apply soon. The team sees a line saying the letter will come.
+
+| English | Khmer (draft) |
+|---|---|
+| Show them the e-visa steps now | បង្ហាញជំហាន e-visa ដល់ពួកគេឥឡូវនេះ |
+| they can see how to apply and upload their e-visas, before everything else is in | ពួកគេអាចមើលរបៀបដាក់ពាក្យ និងផ្ទុក e-visa ឡើង មុនពេលអ្វីៗផ្សេងទៀតរួចរាល់ |
+| for a team that has to apply soon — before the letter and their documents are in | សម្រាប់ក្រុមដែលត្រូវដាក់ពាក្យឆាប់ៗ — មុនពេលលិខិតអញ្ជើញ និងឯកសាររបស់ពួកគេរួចរាល់ |
+| Your letter of invitation will be here as soon as we have it. You can start the e-visa form now and attach the letter when it comes. | លិខិតអញ្ជើញរបស់អ្នកនឹងនៅទីនេះ ភ្លាមៗពេលយើងមានវា។ អ្នកអាចចាប់ផ្តើមបំពេញទម្រង់ e-visa ឥឡូវនេះ ហើយភ្ជាប់លិខិតនៅពេលវាមកដល់។ |
+
+## 128. The e-visa steps opened early: the line at the top of a team's page
+
+Shown at the top of a team's portal page when staff have opened the e-visa steps before the letter of invitation is in, above a button to the steps.
+
+| English | Khmer (draft) |
+|---|---|
+| You can start your e-visas now. Open “How to apply for your e-visa online” under Where you are — your letter of invitation will follow. | អ្នកអាចចាប់ផ្តើមដាក់ពាក្យសុំ e-visa បានឥឡូវនេះ។ បើក “របៀបដាក់ពាក្យសុំ e-visa តាមអនឡាញ” នៅក្រោម “អ្នកនៅដំណាក់កាលណា” — លិខិតអញ្ជើញរបស់អ្នកនឹងមកតាមក្រោយ។ |
+
+## 130. 360 reviews — asking more people after it has closed
 
 On a 360 review that has closed (or is still open): a button to send it to more people, the form to pick them, and the lines that explain why new answers wait until three are in. The long line is a promise about anonymity — check it first.
 

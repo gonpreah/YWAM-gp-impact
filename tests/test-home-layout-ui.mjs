@@ -101,11 +101,15 @@ mem.goals.push({ staffId: 'me', week: WK - 1, year: YR, items: [{ text: 'Visit t
   const { ctx, page } = await open('sreilea');
   await page.waitForTimeout(800);
   const heads = await page.$$eval('#main h3', hs => hs.map(h => (h.firstChild && h.firstChild.nodeType === 3 && h.querySelector('.secBtn') ? h.firstChild.textContent : h.innerText).trim()));   // the heading's own words, not its GP Tasks button
-  ok('the sections, in order — no Health or My Ministry below the summary card', JSON.stringify(heads) === JSON.stringify(['📚 Reading', '🎯 Weekly Goals', '✅ Habits', 'Annual Goals · SMART', 'Mentorship', '🧭 About me']), heads.join(' | '));
+  ok('the sections, in order — no Health or My Ministry below the summary card, and Reading is a row inside it', JSON.stringify(heads) === JSON.stringify(['🎯 Weekly Goals', '✅ Habits', 'Annual Goals · SMART', 'Mentorship', '🧭 About me']), heads.join(' | '));
   const card = await page.$eval('.myHero', e => e.innerText.replace(/\s+/g, ' '));
-  ok('the large summary card: goals and their list, streak, habits, health, mentor, time off, and the base at a glance (Health and My Ministry are in the bar now)',
-    /Weekly Goals 1\/3/.test(card) && /Plan the cafe menu/.test(card) && !/Health check-in/.test(card) && !(await page.$('#goMinistryFromMe')) && /Staff/.test(card) && /Base health/.test(card) &&
-    /DAY STREAK/.test(card) && /Habits Today/.test(card) && /My Health 9\.2\/10/.test(card) && /Mentor Mealea Sok/.test(card) && /PERSONAL DAYS OFF LEFT 29/.test(card), card.slice(0, 220));
+  ok('the summary card, made simpler: the quick apps, four widgets (goals, habits, health, tasks), and the base with who is on campus — no reading row (Nov 2026: books come as notes)',
+    /1\/3\s*Goals/.test(card) && /2\/3\s*Habits/.test(card) && /9\.2\s*Health/.test(card) && !/Read a book/.test(card) && /Staff/.test(card) && /Base health/.test(card) && /On campus/.test(card) &&
+    (await page.$$('.myHero .heroWidgets .heroW')).length >= 3 && !!(await page.$('.myHero #qaBar')), card.slice(0, 260));
+  ok('… and each thing once: no goals list (Weekly Goals is below), no day streak (the line above has it), no mentor row (Mentorship is below), no days off (Leave is a quick app)',
+    !/Plan the cafe menu/.test(card) && !/DAY STREAK/.test(card) && !/Mentor Mealea Sok/.test(card) && !/PERSONAL DAYS OFF/.test(card) && !/Health check-in/.test(card) && !(await page.$('#goMinistryFromMe')) && /in a row/.test(await page.$eval('#gameHome', e => e.innerText)));
+  const tall = await page.$eval('.myHero', e => e.getBoundingClientRect().height);
+  ok('… so the card is short', tall < 560, Math.round(tall) + 'px');
   ok('… with the photo and colour option behind the gear', !!(await page.$('#dashCustomizeBtn')));
   await page.screenshot({ path: OUT + '/home-en.png', fullPage: true });
   await page.evaluate(() => window.scrollTo(0, 0)); await page.click('#dashCustomizeBtn'); await page.waitForTimeout(500);
@@ -147,12 +151,13 @@ mem.goals.push({ staffId: 'me', week: WK - 1, year: YR, items: [{ text: 'Visit t
   ok('“You’re mentoring” is not shown to someone who mentors nobody', !/YOU'RE MENTORING|You're not mentoring/i.test(await page.$eval('#sec-mentor + .card', e => e.innerText)));
   ok('About me: personality and strengths side by side', !!(await page.$('.homeTiles #pSeeMine')) && !!(await page.$('.homeTiles #gsStart')));
   ok('no Leave / Profile tiles at the bottom — they are in the menu', !(await page.$('.homeTiles #goLeaveFromMe')) && !(await page.$('#goProfileFromMe')));
-  ok('no big “Go to My Health” button: a small › on the My Health and Mentor rows', !(await page.$('.heroHealthBtn')) && !!(await page.$('#goMyHealth .heroGo')) && !!(await page.$('#goMentorship .heroGo')));
+  ok('no big “Go to My Health” button: the Health widget opens it', !(await page.$('.heroHealthBtn')) && !!(await page.$('.heroW#goMyHealth')));
+  ok('About me is only who you are — Tests, Support raising and the Library are quick apps and in ☰', !(await page.$('#testsTile, #supTile, #libHomeTile')));
   await page.click('#goMyHealth'); await page.waitForTimeout(400);
   ok('… My Health’s opens My Health', await page.evaluate(() => S.view === 'health'));
   await page.click('nav.bottom [data-tab="week"]'); await page.waitForTimeout(400);
-  await page.click('#goMentorship'); await page.waitForTimeout(400);
-  ok('… and Mentor’s opens Mentorship', await page.evaluate(() => S.view === 'mentor'));
+  await page.click('#goMentorshipHome'); await page.waitForTimeout(400);
+  ok('… and the Mentorship card below opens Mentorship', await page.evaluate(() => S.view === 'mentor'));
   await page.click('nav.bottom [data-tab="week"]'); await page.waitForTimeout(400);
   ok('the bottom bar: My Home, My Ministry, Team, Health, Profile — the Library is in the menu now', (await page.$$eval('nav.bottom [data-tab]', bs => bs.map(b => b.dataset.tab).join())) === 'week,ministry,team,health,profile');
   await page.click('#menuBtn'); await page.waitForTimeout(300);
@@ -169,8 +174,11 @@ mem.goals.push({ staffId: 'me', week: WK - 1, year: YR, items: [{ text: 'Visit t
   await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(400);
   ok('the summary card’s My Ministry opens My Ministry', await page.evaluate(() => S.view === 'ministry'));
   await page.click('nav.bottom button[data-tab="week"]'); await page.waitForTimeout(300);
-  await page.click('#goLeaveFromMe'); await page.waitForTimeout(400);
-  ok('the summary card’s time-off row opens the Leave Request page', await page.evaluate(() => S.view === 'leave'));
+  await page.click('#qaBar [data-qago="leave"]'); await page.waitForTimeout(400);
+  ok('the Leave quick app opens the Leave Request page (time off is no longer a row of the card)', await page.evaluate(() => S.view === 'leave') && true);
+  await page.click('nav.bottom button[data-tab="week"]'); await page.waitForTimeout(300);
+  await page.click('.heroW[data-jump="sec-habits"]'); await page.waitForTimeout(600);
+  ok('the Habits widget takes you to the habits', await page.evaluate(() => { const r = document.getElementById('sec-habits'); return !!r && r.getBoundingClientRect().top < innerHeight; }));
   await ctx.close();
 }
 {

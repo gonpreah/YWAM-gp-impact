@@ -90,14 +90,26 @@ const toGroups = async page => {
 let link = '';
 {
   const { ctx, page } = await open('uriah');
+  /* the Admin home in sections (Nov 2026, Andrew: "simplify … categorizing them into sections") */
+  await page.evaluate(() => { S.view = 'admin'; S.adminSub = 'home'; render(); }); await page.waitForTimeout(800);
+  const secs = await page.$$eval('[data-adminsec]', els => els.map(e => e.getAttribute('data-adminsec') + ':' + e.querySelectorAll('[data-adminsub]').length));
+  ok('Admin is in four sections — People, Students & applications, Ministries & numbers, Messages & settings — every tool in one', secs.join() === 'people:7,school:2,numbers:3,settings:4', secs.join());
+  ok('… with each section’s heading', (await page.$$eval('.adminSecHead', hs => hs.map(h => h.innerText.trim().toLowerCase()))).join('|') === 'people|students & applications|ministries & numbers|messages & settings');
+  ok('… and nothing waiting says so', /Nothing is waiting on you/.test(await page.$eval('#adminDue', e => e.innerText)));
+  await page.screenshot({ path: OUT + '/admin-home.png', fullPage: true });
   await toGroups(page);
-  ok('Admin has Staff sign-up link: the link, and nothing about archiving', !!(await page.$('#grpLink')) && !(await page.$('#grpSearch')));
+  ok('Invite staff: a form for the link, and nothing about archiving', !!(await page.$('#grpMake')) && !(await page.$('#grpSearch')) && /No invite links yet/.test(await page.$eval('#main', e => e.innerText)));
   await page.selectOption('#grpCampus', 'siemreap'); await page.waitForTimeout(150);
   await page.selectOption('#grpDept', 'Leadership Development'); await page.waitForTimeout(150);
   await page.selectOption('#grpMin', 'GPDTS'); await page.waitForTimeout(150);
+  await page.fill('#grpNote', 'Dana');
+  await page.click('#grpMake'); await page.waitForSelector('#grpLink', { timeout: 8000 });
   link = await page.$eval('#grpLink', e => e.value);
-  ok('the link carries where they are joining', /teams\.html\?reg=1&campus=siemreap&dept=Leadership%20Development&ministry=GPDTS$/.test(link), link);
-  await page.screenshot({ path: OUT + '/groups-invite.png' });
+  ok('Make the invite link: a link with a one-time token, shown once', /teams\.html\?reg=1&invite=[a-f0-9]{48}$/.test(link), link);
+  const inv = (mem.invites || [])[0];
+  ok('… kept only as a hash, for that place, one person, a week', inv && inv.hash && !JSON.stringify(mem.invites).includes(link.split('invite=')[1]) && inv.campus === 'siemreap' && inv.dept === 'Leadership Development' && inv.ministry === 'GPDTS' && inv.uses === 1 && inv.note === 'Dana' && (Date.parse(inv.exp) - Date.now()) > 6.9 * 864e5);
+  ok('… and listed under Invite links, open', /Dana/.test(await page.$eval('#invList', e => e.innerText)) && !!(await page.$('#invList .invState.ok')));
+  await page.screenshot({ path: OUT + '/groups-invite.png', fullPage: true });
 
   // archive several: its own Admin card now
   await page.evaluate(() => { S.adminSub = 'home'; render(); }); await page.waitForTimeout(300);
@@ -129,17 +141,58 @@ let link = '';
   page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
   await page.route('**fonts.g**', r => r.abort());
   await page.goto(link.replace(/^https?:\/\/[^/]+/, BASE), { waitUntil: 'load' });
-  await page.waitForSelector('#r_name', { timeout: 15000 }); await page.waitForTimeout(400);
-  const ban = await page.$eval('#inviteBanner', e => e.innerText).catch(() => '');
-  ok('the link opens the sign-up form saying where they are joining', /You’re joining GPDTS · Leadership Development · .*Siem Reap/.test(ban), ban);
-  ok('… with campus, department and ministry already chosen', (await page.$eval('#r_campus', e => e.value)) === 'siemreap' &&
-    (await page.$eval('#r_dept', e => e.value)) === 'Leadership Development' && (await page.$eval('#r_ministry', e => e.value)) === 'GPDTS');
+  await page.waitForSelector('#inviteOk', { timeout: 15000 }); await page.waitForTimeout(300);
+  const ban = await page.$eval('#inviteOk', e => e.innerText);
+  ok('the link opens sign-up saying who invited them, where to, and that there is no waiting', /Uriah Admin invited you to join GPDTS · Leadership Development · .*Siem Reap/.test(ban) && /no waiting/.test(ban), ban);
+  ok('… and the token is taken out of the address', !/invite=/.test(page.url()));
+  ok('… asking nothing about campus, department or ministry', !(await page.$('#r_campus')) && !(await page.$('#r_dept')) && !(await page.$('#r_ministry')));
   await page.screenshot({ path: OUT + '/groups-signup.png' });
   await page.fill('#r_name', 'Dana New'); await page.fill('#r_email', 'dana@e.com');
   await page.fill('#r_user', 'dana'); await page.fill('#r_pin', '4321');
-  await page.click('#regBtn'); await page.waitForTimeout(1500);
+  await page.click('#regBtn'); await page.waitForSelector('#setup', { timeout: 15000 });
   const dana = mem.staff.find(x => x.username === 'dana');
-  ok('signing up makes their own account in that ministry, with their own PIN — waiting for an admin to approve it (Nov 2026)', dana && dana.campus === 'siemreap' && dana.dept === 'Leadership Development' && dana.ministry === 'GPDTS' && dana.active === false && !!dana.pinHash);
+  ok('signing up with it: in at once — active, no waiting — in that ministry, its setup still to do', dana && dana.active === true && !dana.awaiting && dana.campus === 'siemreap' && dana.dept === 'Leadership Development' && dana.ministry === 'GPDTS' && dana.setupTodo === true && dana.invitedBy && dana.invitedBy.adminId === 'ad', JSON.stringify(dana && { a: dana.active, w: dana.awaiting, c: dana.campus }));
+  ok('… the invite is used up', mem.invites[0].used.length === 1 && mem.invites[0].used[0].name === 'Dana New');
+  await page.click('#suNext'); await page.waitForTimeout(200);
+  ok('… and the setup steps start from the link’s place', await page.$eval('[data-sucampus="siemreap"]', e => e.classList.contains('on')).catch(() => false));
+  await ctx.close();
+}
+{
+  const ctx = await browser.newContext({ ...devices['iPhone 13'] });
+  const page = await ctx.newPage();
+  page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
+  await page.route('**fonts.g**', r => r.abort());
+  await page.goto(link.replace(/^https?:\/\/[^/]+/, BASE), { waitUntil: 'load' });
+  await page.waitForSelector('#inviteGone', { timeout: 15000 });
+  ok('a used link says so — and sign-up still works, waiting for an admin', /already been used/.test(await page.$eval('#inviteGone', e => e.innerText)) && !!(await page.$('#r_name')));
+  await page.fill('#r_name', 'Eve Late'); await page.fill('#r_email', 'eve@e.com'); await page.fill('#r_user', 'eve'); await page.fill('#r_pin', '4321');
+  await page.click('#regBtn'); await page.waitForSelector('#setup', { timeout: 15000 });
+  const eve = mem.staff.find(x => x.username === 'eve');
+  ok('… that sign-up waits for an admin as any other', eve && eve.active === false && eve.awaiting === true && !eve.invitedBy);
+  await ctx.close();
+}
+{
+  /* a group link, turned off */
+  const r = await api.default({ method: 'POST', json: async () => ({ fn: 'adminMakeInvite', args: ['uriah', '1234', { campus: 'poipet', uses: 10, days: 3 }] }), headers: new Map() }, {});
+  const made = await r.json();
+  const info = async () => (await (await api.default({ method: 'POST', json: async () => ({ fn: 'inviteInfo', args: [made.token] }), headers: new Map() }, {})).json());
+  ok('a group link: ten people, three days', made.ok && made.invite.uses === 10 && (await info()).ok);
+  const notAdmin = await (await api.default({ method: 'POST', json: async () => ({ fn: 'adminMakeInvite', args: ['cora', '1234', { campus: 'poipet' }] }), headers: new Map() }, {})).json();
+  ok('only an admin can make one', !notAdmin.ok && !notAdmin.token);
+  await api.default({ method: 'POST', json: async () => ({ fn: 'adminInviteOff', args: ['uriah', '1234', made.invite.id] }), headers: new Map() }, {});
+  ok('turned off, it works no more', (await info()).err === 'off');
+  const reg = await (await api.default({ method: 'POST', json: async () => ({ fn: 'staffRegister', args: [{ name: 'Zed', email: 'z@e.com', username: 'zed', pin: '1111', invite: made.token }] }), headers: new Map() }, {})).json();
+  ok('… and signing up with it is refused, saying why', !reg.ok && reg.err === 'invite_off');
+  ok('a made-up token is no invite', (await (await api.default({ method: 'POST', json: async () => ({ fn: 'inviteInfo', args: ['a'.repeat(48)] }), headers: new Map() }, {})).json()).err === 'bad');
+}
+{
+  const ctx = await browser.newContext({ ...devices['iPhone 13'] });
+  const page = await ctx.newPage();
+  page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
+  await page.route('**fonts.g**', r => r.abort());
+  await page.goto(BASE + '/teams.html?reg=1&campus=siemreap&dept=Leadership%20Development&ministry=GPDTS', { waitUntil: 'load' });
+  await page.waitForSelector('#inviteBanner', { timeout: 15000 });
+  ok('an old-style link (no token) still says where they are joining, and waits for an admin as before', /You’re joining GPDTS/.test(await page.$eval('#inviteBanner', e => e.innerText)));
   await ctx.close();
 }
 {

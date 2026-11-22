@@ -70,7 +70,7 @@ var S = {
      so more than one can sit on the same page without their state colliding. */
   oversee:{}, ovWeek:{}, ovWeekDraft:{}, ovAcc:{}, ovLoading:{}, ovError:{}, ovDeptOf:{}, ovInputOpen:{},
   // Admin screen — S.me.isAdmin only. adminStaff loads lazily on first visit.
-  adminStaff:null, adminLoading:false, adminAcc:{}, adminEditId:null, adminEditDraft:null, adminPinDraft:{}, adminCode:'', adminCampusTab:null, adminSub:null, adminPersonId:null, adminSearch:'', adminMentorCampus:null, adminPortalCampus:null, adminLeave:null, adminLeaveLoading:false, adminLeaveError:'', adminLeaveCampus:null, adminLeaveYear:null, adminLeavePast:false, broadcastDraft:'',
+  adminStaff:null, adminLoading:false, adminAcc:{}, adminEditId:null, adminEditDraft:null, adminPinDraft:{}, adminSignLink:null, adminCode:'', adminCampusTab:null, adminSub:null, adminPersonId:null, adminSearch:'', adminMentorCampus:null, adminPortalCampus:null, adminLeave:null, adminLeaveLoading:false, adminLeaveError:'', adminLeaveCampus:null, adminLeaveYear:null, adminLeavePast:false, broadcastDraft:'',
   hrStaff:null, hrLoading:false, hrError:'', hrSub:'home', hrPersonId:null, hrSearch:'', hrCampusTab:null, hrShowArchived:false, hrContractForm:null, hrArchiveDraft:null, hrDue:null, hrFollowUps:null, hrTab:'staff',
   cands:null, candsLoading:false, candsError:'', candStage:'', candType:'', candSearch:'', candShowArchived:false, candForm:null, candPersonId:null, candNoteDraft:'',
   adminOkrAcc:{},
@@ -292,6 +292,11 @@ function run(fn, args, onOk, onErr){
     }
     if(onOk) setTimeout(function(){ onOk(pv); }, 0);
     return;
+  }
+  /* the preview (Look around, 22-setup.js): every call runs on the made-up campus, never the real one */
+  if(S.demo && fn!=='demoCall'){
+    if(!/^(get|list)/.test(fn) && !DEMO_QUIET[fn]) gpDemoNote_();
+    return run('demoCall', [fn, args], onOk, onErr);
   }
   if(S.student && fn!=='studentCall'){
     if(STUDENT_FNS_C[fn]) return run('studentCall', gpStudentArgs_(fn, args), onOk, onErr);
@@ -708,6 +713,21 @@ function gpInviteFromUrl_(){
     return { campus:c, dept:d, ministry:m };
   } catch(e){ return null; }
 }
+/* teams.html?reg=1&invite=<48 hex> — an admin's invite (Admin → Invite staff): taken out of the address, kept for
+   this tab (Google's page-and-back comes back here), and what it is for asked of the server (inviteInfo) */
+function gpInviteTake_(){
+  var tok='';
+  try { var q=new URLSearchParams(location.search||''); tok=q.get('invite')||''; if(tok){ q.delete('invite'); var qs=q.toString(); history.replaceState(null, '', location.pathname+(qs?'?'+qs:'')+location.hash); } } catch(e){}
+  try { if(tok) sessionStorage.setItem('gp-invite', tok); else tok=sessionStorage.getItem('gp-invite')||''; } catch(e){}
+  if(!/^[a-f0-9]{48}$/.test(tok)) return;
+  S.regInvite={ token:tok, info:null, err:'' }; S.regMode=true;
+  run('inviteInfo',[tok],function(d){
+    if(!S.regInvite) return;
+    if(d && d.ok) S.regInvite.info=d; else { S.regInvite.err=(d && d.err) || 'bad'; try { sessionStorage.removeItem('gp-invite'); } catch(e){} }
+    if(!S.me) render();
+  }, function(){});
+}
+function gpInviteDrop_(){ S.regInvite=null; try { sessionStorage.removeItem('gp-invite'); } catch(e){} }
 function gpInviteLink_(c, d, m){
   var base=location.origin+location.pathname.replace(/[^\/]*$/, '')+'teams.html';
   return base+'?reg=1&campus='+encodeURIComponent(c)+(d?'&dept='+encodeURIComponent(d):'')+(m?'&ministry='+encodeURIComponent(m):'');
@@ -724,7 +744,7 @@ function gpViewFromUrl_(){
     else if(v==='base' || v==='dashboard') S.view='base';
     else if(v==='tasks'){ S.view='tasks'; S.gptFrom='week'; }   // a phone notification about a task opens GP Tasks
     else if(v==='mentor'){ S.view='mentor'; S.mentee=null; }
-    else if(v==='library'){ S.view='library'; S.libBook=null; S.libStep=null; S.libShelf='all'; if(typeof libLoad_==='function') libLoad_(); }   // a phone notification about a book
+    else if(v==='library'){ S.view='library'; S.libBook=null; S.libStep=null; S.libShelf='all'; if(/^[a-z0-9-]{1,80}$/.test(qv.get('book')||'')){ S.libBook=qv.get('book'); if(S.ln) S.ln.open=qv.get('note')||''; } if(typeof libLoad_==='function') libLoad_(); }   // a phone notification about a book, or a note on one
     else if(v==='tests'){ S.view='tests'; S.tests.sub='home'; S.tests.mc=null; }   // a phone notification about a couple check-up   // a phone notification about a 1-on-1 opens Mentorship
     else if(v==='approvals'){ S.view='admin'; S.adminSub='approvals'; S.adminStaff=null; }   // a phone notification about a new account
     else if(v==='gpdts'){ S.view='ministry'; S.mmBrowseDept='Leadership Development'; S.mmBrowseMinistry='GPDTS'; S.mmTab='dtsdash'; S.mmTabTouched=true; }   // the portal's way back to GPDTS
@@ -743,6 +763,7 @@ function boot(){
      form rather than making someone find the "New here?" link first. */
   try { if(String(location.search||'').indexOf('reg=1')>-1) S.regMode = true; } catch(e){}
   S.regPrefill = gpInviteFromUrl_();
+  gpInviteTake_();   // an admin's invite link (?invite=…): pre-approved
   var saved = null;
   try { saved = JSON.parse(lsGet('gp-staff')||'null'); } catch(e){}
   var wantGuest = false, wantDash = false;
@@ -838,9 +859,17 @@ function afterLogin(){
 /* Everything a boot payload carries, in one place, because two entry points use
    it: a remembered session and a fresh login. */
 function applyBoot(d, fromCache){
+  S.qaCat=null;
+  /* a new account waiting for an admin: the setup questions, then the waiting page — nothing else (22-setup.js) */
+  S.awaiting=!!(d && d.awaiting);
+  if(S.awaiting){
+    if(d.googleId!==undefined){ _ggl.cfg={ google:d.googleId||'', redirect:!!d.googleRedirect }; _ggl.asked=true; }
+    S.roster=d.roster || []; S.offlineSince=null; S.bootStale=false;
+    render(); return;
+  }   // the quick apps' catalogue follows the menu, which can change with a fresh boot
   if(d && d.voice!==undefined) S.voiceOn=!!d.voice;   // talk it through → tasks (21-voice.js)
   if(d && d.googleId!==undefined){ _ggl.cfg={ google:d.googleId||'', redirect:!!d.googleRedirect }; _ggl.asked=true; }   // the site's Google client, for Continue with Google
-  if(!fromCache){ S.offlineSince = null; if(!S.student) gpBootCacheSave_(d); gpMarkSeen_(); setTimeout(function(){ if(typeof gpThumbBackfill_==='function') gpThumbBackfill_(); }, 1500); }
+  if(!fromCache){ S.offlineSince = null; if(!S.student && !S.demo) gpBootCacheSave_(d); gpMarkSeen_(); setTimeout(function(){ if(typeof gpThumbBackfill_==='function') gpThumbBackfill_(); }, 1500); }
   S.roster = d.roster || [];
   S.logs = d.logs || [];
   adoptHabits(d.habits);
@@ -944,10 +973,11 @@ function gpStudentBoot_(stu){
 function gpStudentLeave_(toPortal){ if(!toPortal) lsDel('gp-student'); location.href='portal.html'; }
 function logout(){
   if(S.student){ gpStudentLeave_(false); return; }
+  if(S.demo){ lsDel(GUEST_KEY); S.demo=false; }   // leaving the preview
   lsDel('gp-staff'); lsDel('gp-boot-cache'); lsDel('gp-tasks-boot-cache'); S.offlineSince=null;
   lsDel('gp-lib-read'); lsDel('gp-lib-pending'); lsDel('gp-lib-synced'); lsDel('gp-lib-progress');
   lsDel('gp-staff-card');
-  S.me=null; S.auth={user:'',pin:''}; S.logs=[]; S.mentees=[];
+  S.me=null; S.linkSignIn=false; S.auth={user:'',pin:''}; S.logs=[]; S.mentees=[];
   S.goals=[]; S.checkins=[]; S.ministry=null; S.goalsWeek=null; S.goalEditIdx=null; S.kpiWeek=null; S.leaveDraft=null; S.weekDraft={}; S.kpiDraft={}; S.kpiWeekDraft={};
   S.personal=null; S.personalDraft={}; S.mmTab='ministry'; S.mmPickOpen=false; S.mmPickQ=''; S.kpiInputOpen=false; S.mmDashAll=false; S.metricRename=null;
   S.mmPeriod='quarter'; S.teamTrips={}; S.teamLoading={}; S.teamError={}; S.teamForm=null;
@@ -1012,7 +1042,8 @@ function render(){
   if(!S.me){
     hb.innerHTML = '<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>';   // (the old dashboard's button is gone: Look around shows Base)
     nav.classList.add('hidden');
-    document.getElementById('main').innerHTML = S.regMode ? registerHtml() : loginHtml();
+    document.getElementById('main').innerHTML = S.demoLoading ? '<div class="loadingBox"><div class="loadCoin">'+(typeof GP_LOGO==='string' ? '<img class="loadLogo" src="'+GP_LOGO+'" alt="">' : '')+'</div><div class="loadText">'+esc(t('Opening the preview'))+'<span class="ldots"></span></div></div>'
+      : S.regMode ? registerHtml() : loginHtml();
     bind();
     return;
   }
@@ -1064,6 +1095,7 @@ function render(){
   document.body.classList.toggle('libReading', S.view==='library' && !!S.libBook && S.libStep!=null);   // not 'reading': that is the Bible-reading box's class, and its yellow, border and font leaked onto the whole page
   if(LIBA.on && !(S.view==='library' && S.libBook && S.libStep!=null)) libAudioStop_();
   if(gglStepWanted_()) m.innerHTML=gglStepHtml_();   // moving everyone to Google: once, after a PIN sign-in (07-health-leave.js)
+  else if(setupWanted_() || S.awaiting){ m.innerHTML=setupWanted_() ? setupHtml_() : awaitingHtml_(); nav.classList.add('hidden'); nav.innerHTML=''; hb.innerHTML='<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>'; }   // a new account's first steps (22-setup.js): nothing else to tap but the language
   else if(S.guest && S.view==='week') m.innerHTML=gpGuestHomeHtml_();
   else if(S.guest && (S.view==='team' || S.view==='health')) m.innerHTML=gpGuestLockHtml_(S.view);
   else if(S.view==='base') m.innerHTML=(S.guest ? gpGuestCampusHtml_() : '')+(S.board ? orgCampusProfileHtml_(S.me.campus) : '')+baseHtml();
@@ -1104,6 +1136,7 @@ function render(){
   else if(S.view==='required') m.innerHTML=reqSignHtml();
   else m.innerHTML=profileHtml();
   if(S.offlineSince) m.insertAdjacentHTML('afterbegin', gpOfflineBannerHtml_());
+  if(S.demo) m.insertAdjacentHTML('afterbegin', gpDemoBarHtml_());   // the preview says so, on every page
   if(S.bootStale) m.insertAdjacentHTML('afterbegin', gpStaleBarHtml_());
   if(S.stuPreview) m.insertAdjacentHTML('afterbegin', stuPreviewBarHtml_());
   /* Switching screens should open at the top of the new one, not wherever the
@@ -1125,7 +1158,7 @@ function gpTaRender_(hb, nav){
   if(GP_TA_VIEWS.indexOf(S.view)===-1) S.view=gpTaView_();
   lsSet('gp-ta-view', S.view);
   document.body.classList.add('tasksApp');
-  hb.innerHTML='<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>'+
+  hb.innerHTML=gptThemeBtnHtml_('hbtn icon taTheme')+'<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>'+
     '<button class="hbtn icon" id="menuBtn" aria-label="'+esc(t('Menu'))+'">'+HAMBURGER_SVG+'</button>';
   var ic=function(k){ return (GPT_SVG[k]||'').replace('<svg', '<svg width="20" height="20"'); };
   var inbox=gptInboxCount_();
@@ -1136,6 +1169,7 @@ function gpTaRender_(hb, nav){
   var m=document.getElementById('main');
   m.classList.remove('wide');
   if(gglStepWanted_()) m.innerHTML=gglStepHtml_();
+  else if(S.me && (S.me.setupTodo || S.awaiting)) m.innerHTML=setupTaHtml_();   // the steps after sign-up are in the main app (22-setup.js)
   else m.innerHTML = S.view==='calendar' ? calendarHtml_() : gptPageHtml_(null);
   if(S.offlineSince) m.insertAdjacentHTML('afterbegin', gpOfflineBannerHtml_());
   if(S.bootStale) m.insertAdjacentHTML('afterbegin', gpStaleBarHtml_());
@@ -1255,6 +1289,9 @@ function renderNotifPanel(){
   document.querySelectorAll('#notifRoot [data-jumpgoals]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='week'; render(); };
   });
+  document.querySelectorAll('#notifRoot [data-libgo]').forEach(function(b){
+    b.onclick=function(){ gpTap(); var id=b.getAttribute('data-libgo'); S.bellOpen=false; renderNotifPanel(); libOpen_(); if(id){ S.libBook=id; render(); } };
+  });
   document.querySelectorAll('#notifRoot [data-goprofile]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='profile'; render(); };
   });
@@ -1330,7 +1367,9 @@ function renderMenu(){
   IC.kmreview='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h8M8 3v2M5.5 5c.8 3.2 3 5.6 6 7"/><path d="M10.5 5c-.7 3.6-3 6.4-6 8"/><path d="M12.5 21l4-9 4 9M14 18h5"/></svg>';
   IC.tests='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 3v6L4.5 18.5A1.6 1.6 0 0 0 5.9 21h12.2a1.6 1.6 0 0 0 1.4-2.5L14 9V3"/><path d="M7 15h10"/></svg>';
   IC.openapp=IC.base;
+  IC.portalapp='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M10 18h4"/><path d="M12 6v6M9.5 9.5 12 12l2.5-2.5"/></svg>';
   IC.applogout=IC.profile;
+  IC.support='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z"/><path d="M12 8.5v6M9.5 11.5h5"/></svg>';
   var sections= gpTasksApp_() ? [
     { title:'', items:[it('tasks', t('Tasks')), it('calendar', t('Calendar'))] },
     { title:t('YWAM GP'), items:[it('openapp', t('Open the YWAM GP app')), it('applogout', t('Log out'))] }
@@ -1343,9 +1382,9 @@ function renderMenu(){
   ] : S.guest ? [
     { title:'', items:[it('library', t('Library')), it('guestreg', t('Create my profile')), it('guestlogin', t('Log in'))] }
   ] : [
-    { title:'', items:[it('base', t('Base')), it('caltasks', t('GP Calendar/Tasks')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer')), it('p360', t('360 reviews')), it('tests', t('Tests')), it('leave', t('Leave Request')), it('library', t('Library'))] },
+    { title:'', items:[it('base', t('Base')), it('caltasks', t('GP Calendar/Tasks')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer')), it('p360', t('360 reviews')), it('tests', t('Tests')), it('leave', t('Leave Request')), it('library', t('Library'))].concat(S.student ? [] : [it('support', t('Support raising'))]) },
     { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : [], canStudentsClient_() ? [it('students', t('Students'))] : []) },
-    { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal'))] : [] },
+    { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal')), it('portalapp', t('The Portal on your phone'))] : [] },
     { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : [], kmrCan_() ? [it('kmreview', t('Khmer review'))] : []) },
     { title:t('Language'), items:[it('khmer', t('Learn Khmer / English'))] }
   ];
@@ -1382,6 +1421,7 @@ function renderMenu(){
       else if(id==='khmer'){ khOpen_(); }
       else if(id==='p360'){ S.view='p360'; S.p3Sub='home'; S.p3=null; render(); window.scrollTo(0,0); }
       else if(id==='tests'){ S.tests.mc=null; testsOpen_('home'); }
+      else if(id==='support'){ S.sup=null; S.supErr=''; S.supEdit=null; S.supGEdit=null; S.view='support'; render(); window.scrollTo(0,0); }
       else if(id==='kmreview'){ S.view='kmreview'; S.kmr=null; S.kmrErr=''; render(); window.scrollTo(0,0); }
       else if(id==='boardlogout'){ if(S.student) gpStudentLeave_(false); else boardLeave_(false); }
       else if(id==='stuportal'){ gpStudentLeave_(true); }
@@ -1393,6 +1433,7 @@ function renderMenu(){
       else if(id==='hosp'){ S.view='hosp'; render(); }
       else if(id==='sched'){ schedOpen_('kitchen', false, 'home'); }
       else if(id==='portal'){ renderMenu(); window.open('portal.html', '_blank', 'noopener'); }
+      else if(id==='portalapp'){ renderMenu(); gpPortalAppOpen_(); }
       else renderMenu();
     };
   });
