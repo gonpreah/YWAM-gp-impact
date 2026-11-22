@@ -153,6 +153,27 @@ const wait = page => page.waitForTimeout(150);
   await ctx.close();
 }
 
+/* ---------- 3. on an iPad ---------- */
+{
+  const { ctx, page } = await open('sreilea', { viewport: { width: 820, height: 1180 } });
+  const box = () => page.$eval('nav.bottom', n => { const r = n.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+  let b = await box();
+  ok('an iPad held upright keeps the bar along the bottom', b.y > 1000 && b.w >= 800);
+  const span = await page.$$eval('nav.bottom button', bs => { const r = bs.map(x => x.getBoundingClientRect()); return r[r.length - 1].right - r[0].left; });
+  ok('… with the five tabs together in the middle, not spread across it', span < 700);
+  ok('… and the page wider than a phone\'s', await page.$eval('main', m => m.getBoundingClientRect().width) > 700);
+  await page.setViewportSize({ width: 1180, height: 820 }); await wait(page);
+  b = await box();
+  ok('turned on its side, the bar is a rail down the left edge', b.x === 0 && b.w < 120 && b.h >= 800);
+  ok('… the page sits beside it, not under it', await page.$eval('main', m => m.getBoundingClientRect().left) >= b.w);
+  await addFields(page); await page.focus('#kA'); await page.setViewportSize({ width: 1180, height: 500 }); await wait(page);
+  ok('… and the keyboard leaves the rail alone', await navShown(page));
+  await page.evaluate(() => document.activeElement.blur()); await page.setViewportSize({ width: 1180, height: 820 }); await wait(page);
+  await page.click('nav.bottom button[data-tab="team"]'); await page.waitForTimeout(400);
+  ok('… and it still switches tabs', await page.$eval('nav.bottom button[data-tab="team"]', x => x.classList.contains('on')));
+  await ctx.close();
+}
+
 ok('no console or page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
 await browser.close(); srv.close();
 fs.rmSync(TMP, { recursive: true, force: true });

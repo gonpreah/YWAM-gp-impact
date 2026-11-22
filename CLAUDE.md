@@ -1256,6 +1256,13 @@ Team · Health · Library. Five tabs stay on one line down to 320px; where the f
 too long for a tab, `navLabel_` uses a short one kept as 'Tab: <English>' in km.js
 (My Ministry → ការបម្រើ), and test-khmer checks no label overflows.
 
+**On an iPad** (Nov 2026, Uriah: "more iPad friendly"; end of teams.css): a phone is unchanged. From 700px wide
+(an iPad held upright) the page is 760px wide and the five tabs sit together in the middle of the bar; from 900px
+(an iPad on its side, a computer) the bar is a **rail down the left edge** (`nav.bottom` turned to a column, body
+`padding-left` 96px, the open tab on a tint), the page up to 900px, the round ＋ lower — and the rail stays up while
+typing (`body.kbOpen` only hides the phone bar). The same `nav.bottom button[data-tab]`, so nothing else changed.
+tests/test-bottom-bar.mjs §3.
+
 ## My Home — the layout (reorganised Oct 2026)
 **Made simpler, Nov 2026 (Andrew: "I don't want it to be too much to see … like the widgets on an iPhone … if the
 leave form is already in there, why is it on twice?")** — each thing is on My Home once:
