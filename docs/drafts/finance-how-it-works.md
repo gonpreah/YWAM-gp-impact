@@ -102,6 +102,13 @@ Income.
   (`mergeSnap_`). A whole deleted category shows the same way (`ghostGroups_`).
 - Up to 8 categories (the bar's colours).
 
+### 📒 Detailed breakdown
+- Where every transaction will be kept, one line each. Columns: **Date · Account · Transaction
+  type · Name · Memo · Amount · Category** (`LEDGER_COLS`, `inLedgerHtml_`).
+- *23 Nov 2026: headings only — no transactions are put in it yet, and it reads or moves
+  nothing.* When it is filled, this section must say which parts write lines into it and how
+  each column is filled (e.g. a transfer's Account and Category).
+
 ---
 
 ## 3. Approved and Live
