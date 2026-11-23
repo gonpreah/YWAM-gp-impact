@@ -632,14 +632,21 @@ function inDebtSave_(){
 }
 /* ---- Input: the income formula — each kind of income shared out to the funds by percent ----
    A fund is "allocation id|fund name" (by name, so reordering funds never breaks a formula). */
-var INC_TYPES=['Staff contributions','Teams','School contributions — DTS','School contributions — DBS','School contributions — SOMD','School contributions — Other schools','Donations','Ministry rent','Other income'];
+var INC_TYPES=['Staff contributions','Team contributions','School contributions — DTS','School contributions — DTS outreach','School contributions — DBS','School contributions — SOMD','School contributions — Other schools','General donations','Ministry rent','KSS & YAP','Antonia','Designated donation'];
+var INC_TYPES_BASE=INC_TYPES.slice();
+var INC_TYPE_RENAMES={ 'Teams':'Team contributions', 'Donations':'General donations' };   /* old names → new, for anything already saved */
+var INC_TYPES_GONE=['Other income'];
 var INC_RULES={
   'Staff contributions':[{ f:'adm|Office/General', p:100 }],
-  'Teams':[{ f:'adm|Office/General', p:40 },{ f:'adm|Hospitality', p:5 },{ f:'adm|Technical', p:5 },{ f:'adm|Kitchen', p:25 },{ f:'fund|Leadership team fund (LT Fund)', p:12.5 },{ f:'sav|Savings', p:12.5 }],
+  'Team contributions':[{ f:'adm|Office/General', p:40 },{ f:'adm|Hospitality', p:5 },{ f:'adm|Technical', p:5 },{ f:'adm|Kitchen', p:25 },{ f:'fund|Leadership team fund (LT Fund)', p:12.5 },{ f:'sav|Savings', p:12.5 }],
   'School contributions — DTS':[{ f:'min|DTS', p:100 }],
+  'School contributions — DTS outreach':[{ f:'min|DTS', p:100 }],
   'School contributions — DBS':[{ f:'min|DBS', p:100 }],
   'School contributions — SOMD':[{ f:'min|SOMD', p:100 }],
-  'School contributions — Other schools':[{ f:'min|Other Schools', p:100 }]
+  'School contributions — Other schools':[{ f:'min|Other Schools', p:100 }],
+  'KSS & YAP':[{ f:'des|KSS & YAP', p:100 }],
+  'Antonia':[{ f:'des|Other Base Payable (Antonia)', p:100 }],
+  'Designated donation':[{ f:'des|Other', p:100 }]
 };
 function fundList_(){ var out=[]; ALLOC.forEach(function(g){ g.items.forEach(function(it){ out.push({ k:g.id+'|'+it[0], g:g, name:it[0] }); }); }); return out; }
 function fundOf_(k){ return fundList_().filter(function(f){ return f.k===k; })[0]; }
@@ -1060,8 +1067,8 @@ function keep_(){ try { localStorage.setItem(KEEP_KEY, JSON.stringify({ bal:BAL_
   allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, incTypes:INC_TYPES, incRules:INC_RULES, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved })); } catch(e){} }
 (function(){ try { var k=JSON.parse(localStorage.getItem(KEEP_KEY)||'null'); if(!k) return;
   if(Array.isArray(k.bal)) BAL_DAYS=k.bal;
-  if(Array.isArray(k.incTypes)) INC_TYPES=k.incTypes;
-  if(k.incRules && typeof k.incRules==='object') INC_RULES=k.incRules;
+  if(k.incRules && typeof k.incRules==='object'){ Object.keys(k.incRules).forEach(function(t){ var nt=INC_TYPE_RENAMES[t]||t; if(INC_TYPES_GONE.indexOf(nt)<0) INC_RULES[nt]=k.incRules[t]; }); }
+  if(Array.isArray(k.incTypes)) k.incTypes.forEach(function(t){ var nt=INC_TYPE_RENAMES[t]||t; if(INC_TYPES.indexOf(nt)<0 && INC_TYPES_GONE.indexOf(nt)<0 && ['Donations','Teams','Other income'].indexOf(t)<0) INC_TYPES.push(nt); });
   if(Array.isArray(k.alHist)){ ALLOC_HIST=k.alHist; ALLOC_HIST.forEach(function(e){ Object.keys(e.groups||{}).forEach(function(gk){ e.groups[gk].forEach(function(it){ if(FUND_RENAMES[it[0]]) it[0]=FUND_RENAMES[it[0]]; }); }); }); }
   if(Array.isArray(k.debtHist)) DEBT_HIST=k.debtHist;
   if(k.alSaved && Array.isArray(k.alloc)){ k.alloc.forEach(function(x){ var g=ALLOC.filter(function(a){ return a.id===x.id; })[0]; if(g && Array.isArray(x.items)){ var byName={}; x.items.forEach(function(it){ byName[FUND_RENAMES[it[0]]||it[0]]=it[1]; }); g.prev=x.prev; g.items.forEach(function(it){ if(byName[it[0]]!=null) it[1]=byName[it[0]]; }); g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); } });
