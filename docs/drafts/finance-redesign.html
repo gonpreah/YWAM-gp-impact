@@ -85,6 +85,9 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .sw{ width:14px; height:14px; border-radius:4px; }
 .alName{ font-weight:600; }
 .alEg{ font-size:12px; color:var(--muted); }
+.alDelta{ font-size:12px; font-weight:600; color:var(--muted); }
+.alDelta.up{ color:var(--good); }
+.alDelta.down{ color:var(--bad); }
 .alAmt{ text-align:right; font-weight:700; white-space:nowrap; }
 .alPct{ display:block; font-size:12px; color:var(--muted); font-weight:600; }
 .alRow.on > button .alName{ color:var(--accent); }
@@ -186,17 +189,17 @@ var BAL = { asOf:'2026-11-20', reconciled:'2026-11-14', prevTotal:69940.10, prev
           { id:'us',  name:'US bank',  sub:'United States', amt:21600.00 },
           { id:'cash',name:'Cash on hand', sub:'the cash box', amt:1820.75 } ] };
 var ALLOC = [
-  { id:'des', name:'Designated funds', eg:'KSS, Antonia …', c:'--al1', dark:false,
+  { id:'des', prev:17900, name:'Designated funds', eg:'KSS, Antonia …', c:'--al1', dark:false,
     items:[['KSS',11200],['Antonia',7200]], note:'Money given for a named person or project — it can only be spent on that.' },
-  { id:'min', name:'Ministry budgets', eg:'including the schools', c:'--al2', dark:false,
+  { id:'min', prev:23050, name:'Ministry budgets', eg:'including the schools', c:'--al2', dark:false,
     items:[['GPDTS',9800],['YDC',4350],['Ponlork',3600],['Hospitality',2400],['Cafe',2000]], note:'What each ministry and school still has to spend this year.' },
-  { id:'war', name:'War relief', eg:'', c:'--al3', dark:true,
+  { id:'war', prev:5300, name:'War relief', eg:'', c:'--al3', dark:true,
     items:[['War relief',6300]], note:'Given for war relief — kept apart from everything else.' },
-  { id:'adm', name:'Admin / Operational', eg:'running the base', c:'--al4', dark:true,
+  { id:'adm', prev:8690.1, name:'Admin / Operational', eg:'running the base', c:'--al4', dark:true,
     items:[['Rent and utilities',5200],['Staff costs',2900],['Office and admin',1721.15]], note:'The day-to-day cost of running the base.' },
-  { id:'sav', name:'Savings', eg:'put aside', c:'--al5', dark:true,
+  { id:'sav', prev:6000, name:'Savings', eg:'put aside', c:'--al5', dark:true,
     items:[['Savings',6000]], note:'Put aside for later — not for this year’s spending.' },
-  { id:'fund', name:'Funds', eg:'LT fund, Base fund', c:'--al6', dark:false,
+  { id:'fund', prev:9000, name:'Funds', eg:'LT fund, Base fund', c:'--al6', dark:false,
     items:[['LT fund',6000],['Base fund',3000]], note:'The base’s standing funds, each kept for its own purpose.' }
 ];
 /* staff debt — as the A/R Ageing report gives it: by how long it has been owed.
@@ -231,6 +234,12 @@ function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {'&':'&a
 function total(){ return BAL.accts.reduce(function(s,a){ return s+a.amt; },0); }
 
 /* ---- Dashboard ---- */
+/* how an allocation moved since the last balances day, worded like the liquid assets' line */
+function alDeltaHtml(a){
+  var d=a.amt-a.prev;
+  if(Math.abs(d)<0.005) return '<span class="alDelta">Same as '+date(BAL.prevAsOf)+'</span>';
+  return '<span class="alDelta '+(d>0?'up':'down')+'">'+(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+' since '+date(BAL.prevAsOf)+'</span>';
+}
 function balancesHtml(){
   var T=total(), d=T-BAL.prevTotal, whole=Math.floor(T), cents=Math.round((T-whole)*100);
   var h='<section class="sec" id="balances"><div class="secHead"><h2>🏦 Balances</h2><button class="more" data-sheet="balances">Details ›</button></div>'+
@@ -258,7 +267,7 @@ function allocHtml(){
   h+='<ul class="alList">'+ALLOC.map(function(a){ var p=a.amt/T*100;
     return '<li class="alRow'+(S.open===a.id?' on':'')+'"><button data-al="'+a.id+'" aria-expanded="'+(S.open===a.id)+'">'+
       '<span class="sw" style="background:var('+a.c+')"></span>'+
-      '<span><span class="alName">'+esc(a.name)+'</span>'+(a.eg?'<br><span class="alEg">'+esc(a.eg)+'</span>':'')+'</span>'+
+      '<span><span class="alName">'+esc(a.name)+'</span>'+(a.eg?'<br><span class="alEg">'+esc(a.eg)+'</span>':'')+'<br>'+alDeltaHtml(a)+'</span>'+
       '<span class="alAmt">'+money(a.amt)+'<span class="alPct">'+(p<1?'<1':Math.round(p))+'%</span></span></button>'+
       '<div class="alSub"><table>'+a.items.map(function(i){ return '<tr><td>'+esc(i[0])+'</td><td>'+money(i[1],true)+'</td></tr>'; }).join('')+'</table><p class="note">'+esc(a.note)+'</p></div></li>';
   }).join('')+'</ul></section>';
@@ -318,10 +327,10 @@ function sheet(which){
       BAL.accts.map(function(a){ return '<tr><td>'+esc(a.name)+'</td><td class="r">'+money(a.amt,true)+'</td><td class="r">'+(a.amt/T*100).toFixed(1)+'%</td></tr>'; }).join('')+
       '<tr><td><b>Total liquid assets</b></td><td class="r"><b>'+money(T,true)+'</b></td><td class="r">100%</td></tr></table>';
   } else {
-    h+='<h3>📊 Allocation report — details</h3><p class="hint">Every allocation and what it holds. Later: how each has moved since last month.</p><table><tr><th>Allocation</th><th class="r">Amount</th><th class="r">Share</th></tr>';
+    h+='<h3>📊 Allocation report — details</h3><p class="hint">Every allocation, what it holds, and how it has moved since '+date(BAL.prevAsOf)+'.</p><table><tr><th>Allocation</th><th class="r">Amount</th><th class="r">Share</th><th class="r">Change</th></tr>';
     ALLOC.forEach(function(a){
-      h+='<tr><td><span class="sw" style="display:inline-block;vertical-align:-2px;margin-right:6px;background:var('+a.c+')"></span><b>'+esc(a.name)+'</b></td><td class="r"><b>'+money(a.amt,true)+'</b></td><td class="r">'+(a.amt/T*100).toFixed(1)+'%</td></tr>';
-      a.items.forEach(function(i){ if(a.items.length>1) h+='<tr><td style="padding-left:22px;color:var(--muted)">'+esc(i[0])+'</td><td class="r" style="color:var(--muted)">'+money(i[1],true)+'</td><td></td></tr>'; });
+      h+='<tr><td><span class="sw" style="display:inline-block;vertical-align:-2px;margin-right:6px;background:var('+a.c+')"></span><b>'+esc(a.name)+'</b></td><td class="r"><b>'+money(a.amt,true)+'</b></td><td class="r">'+(a.amt/T*100).toFixed(1)+'%</td><td class="r">'+(function(d){ return Math.abs(d)<0.005 ? '—' : '<span class="alDelta '+(d>0?'up':'down')+'">'+(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+'</span>'; })(a.amt-a.prev)+'</td></tr>';
+      a.items.forEach(function(i){ if(a.items.length>1) h+='<tr><td style="padding-left:22px;color:var(--muted)">'+esc(i[0])+'</td><td class="r" style="color:var(--muted)">'+money(i[1],true)+'</td><td></td><td></td></tr>'; });
     });
     h+='</table>';
   }
