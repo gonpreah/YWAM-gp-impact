@@ -420,6 +420,7 @@ button.tick.done{ background:var(--good); }
 .advItem{ border-top:1px solid var(--line); padding:10px 0; font-size:13.5px; }
 .advItem .dsub{ display:block; }
 .advLine{ font-size:12.5px; color:var(--amberDeep); font-weight:600; margin:4px 0 0; }
+.advWarn{ display:block; background:color-mix(in srgb, var(--bad) 10%, var(--surface)); border:1px solid color-mix(in srgb, var(--bad) 45%, transparent); color:var(--ink); border-radius:9px; padding:8px 10px; font-size:13px; font-weight:600; }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -1546,9 +1547,13 @@ function advSettleHtml_(a){
     '<label class="f">Money returned into</label>'+bankSelect_('advSBank', D.bank, 'data-advssel="bank"')+
     '<label class="f" for="advSNote">Note (optional)</label><input type="text" id="advSNote" data-advs="note" maxlength="200" value="'+esc(D.note)+'">'+
     (S.advSErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.advSErr)+'</p>' : '')+
-    '<div class="inBtns" style="margin-top:8px"><button class="btn" data-advsettlesave="'+a.id+'">Save — settled</button><button class="linkAdd" id="advSettleCancel">Cancel</button></div></div>';
+    (S.advBigAsk===a.id ? '<div class="advWarn" style="margin-top:8px">⚠️ The difference is '+money(Math.abs(diff),true)+' — over 20% or $50. Do you want to continue and save it as settled?</div>' : '')+
+    '<div class="inBtns" style="margin-top:8px"><button class="btn'+(S.advBigAsk===a.id?' warn':'')+'" data-advsettlesave="'+a.id+'">'+(S.advBigAsk===a.id?'Yes, save it anyway':'Save — settled')+'</button><button class="linkAdd" id="advSettleCancel">Cancel</button></div></div>';
 }
-function advDiffText_(a, diff){ return Math.abs(diff)<0.005 ? '✓ Spent + returned = the advance ('+money(a.amt,true)+')' : (diff>0 ? money(diff,true)+' not accounted for (exchange rate, or a receipt missing?) — that’s fine, it won’t stop you saving' : money(-diff,true)+' more than the advance (exchange rate?) — that’s fine, it won’t stop you saving'); }
+/* a big gap between the advance and what was spent + returned: over 20% of it, or over $50 */
+function advBig_(a, diff){ return Math.abs(diff)>50 || Math.abs(diff)>a.amt*0.2; }
+function advDiffText_(a, diff){ if(advBig_(a, diff)) return '<span class="advWarn">⚠️ '+money(Math.abs(diff),true)+(diff>0?' not accounted for':' more than the advance')+' — that’s a big difference (over 20% or $50). Check the receipts and what came back; you can still save it.</span>';
+  return Math.abs(diff)<0.005 ? '✓ Spent + returned = the advance ('+money(a.amt,true)+')' : (diff>0 ? money(diff,true)+' not accounted for (exchange rate, or a receipt missing?) — that’s fine, it won’t stop you saving' : money(-diff,true)+' more than the advance (exchange rate?) — that’s fine, it won’t stop you saving'); }
 function advSave_(){
   var D=advForm_(), a=calc_(D.amt), err='';
   if(!String(D.who).trim()) err='Write who is responsible for the money.'; else if(!D.date||D.date>TODAY) err='Pick the day it was taken (not in the future).';
@@ -1565,6 +1570,9 @@ function advSettle_(id){
   else if(isNaN(sp)||sp<0||isNaN(rt)||rt<0) err='Spent and returned must be numbers (0 if nothing).'; else if(sp<=0 && rt<=0) err='Type what was spent, what came back, or both.';
   else if(rt>0 && !D.bank) err='Pick which account the money came back into.';
   S.advSErr=err; if(err){ render(); return; }
+  var gapNow=Math.round((a.amt-sp-rt)*100)/100;
+  if(advBig_(a, gapNow) && S.advBigAsk!==a.id){ S.advBigAsk=a.id; render(); return; }   /* first tap: ask; second tap saves */
+  S.advBigAsk=null;
   snap_('Unsettled the advance to '+a.who);
   var st={ date:D.date, spent:Math.round(sp*100)/100, returned:Math.round(rt*100)/100, qbo:String(D.qbo||'').trim(), type:'Not sure', bank:rt>0?D.bank:'', note:String(D.note||'').trim(), at:Date.now(), expId:'' };
   if(st.spent>0){ var e={ id:'e'+Date.now().toString(36), at:st.at, date:st.date, amt:st.spent, type:st.type, who:a.who, memo:'Advance — '+(a.memo||a.who)+(st.qbo?' · QBO ref '+st.qbo:'')+(st.note?' · '+st.note:''), split:[{ f:a.fund, amt:st.spent }], bank:'', src:'advance', advId:a.id, qbo:st.qbo };
@@ -2063,7 +2071,7 @@ document.addEventListener('input', function(e){
   if(e.target.dataset && e.target.dataset.debtday){ S.debtDay=e.target.value; return; }
   var f1=e.target.dataset && e.target.dataset.f1; if(f1){ var q1=f1.split('|'); flOne_(q1[0])[q1[1]]=e.target.value; if(q1[1]==='date'){ var ap=document.getElementById('fl_'+q1[0]+'_appr'); if(ap) ap.innerHTML=approvedAskHtml_(e.target.value, flOne_(q1[0]).incl, 'data-f1incl="'+q1[0]+'"'); } if(q1[1]==='amt'){ var pv=document.getElementById('fl_'+q1[0]+'_prev'); if(pv) pv.innerHTML=flOnePrevHtml_(q1[0]); } return; }
   if(e.target.dataset && e.target.dataset.adv){ advForm_()[e.target.dataset.adv]=e.target.value; return; }
-  if(e.target.dataset && e.target.dataset.advs){ S.advS[e.target.dataset.advs]=e.target.value; var aS=ADVANCES.filter(function(x){ return x.id===S.advSettle; })[0], dv=document.getElementById('advDiff');
+  if(e.target.dataset && e.target.dataset.advs){ S.advS[e.target.dataset.advs]=e.target.value; if(S.advBigAsk && /spent|returned/.test(e.target.dataset.advs)){ S.advBigAsk=null; var bb=document.querySelector('[data-advsettlesave]'); if(bb){ bb.textContent='Save — settled'; bb.classList.remove('warn'); } var bw=document.querySelector('.bulkEd > .advWarn'); if(bw) bw.remove(); } var aS=ADVANCES.filter(function(x){ return x.id===S.advSettle; })[0], dv=document.getElementById('advDiff');
     if(aS && dv){ var sp2=calc_(S.advS.spent||'0'), rt2=calc_(S.advS.returned||'0'); dv.innerHTML=advDiffText_(aS, Math.round((aS.amt-(isNaN(sp2)?0:sp2)-(isNaN(rt2)?0:rt2))*100)/100); } return; }
   var xk=e.target.dataset && e.target.dataset.xf; if(xk){ S.xfer[xk]=e.target.value; if(xk==='date'){ var xa=document.getElementById('xfAppr'); if(xa) xa.innerHTML=approvedAskHtml_(e.target.value, S.xfer.incl, 'data-xfincl="1"'); } if(xk==='amt'){ var pv=document.getElementById('xfPrev'); if(pv) pv.innerHTML=xferPrevHtml_(); } return; }
   var rp=e.target.dataset && e.target.dataset.rulepct;
@@ -2106,7 +2114,7 @@ document.addEventListener('click', function(e){
   if(e.target.id==='advSave'){ advSave_(); return; }
   var ast=e.target.closest && e.target.closest('[data-advsettle]'); if(ast){ S.advSettle=ast.dataset.advsettle; S.advS=null; S.advSErr=''; render(); return; }
   var ass=e.target.closest && e.target.closest('[data-advsettlesave]'); if(ass){ advSettle_(ass.dataset.advsettlesave); return; }
-  if(e.target.id==='advSettleCancel'){ S.advSettle=null; S.advS=null; render(); return; }
+  if(e.target.id==='advSettleCancel'){ S.advSettle=null; S.advS=null; S.advBigAsk=null; render(); return; }
   var arp=e.target.closest && e.target.closest('[data-advreopen]'); if(arp){ advUnsettle_(arp.dataset.advreopen); return; }
   var adl=e.target.dataset && e.target.dataset.advdel; if(adl){ if(S.advDelAsk!==adl){ S.advDelAsk=adl; e.target.textContent='Remove? Tap again'; e.target.classList.add('ask'); return; }
     var av=ADVANCES.filter(function(x){ return x.id===adl; })[0]; if(av){ snap_('Brought back the advance to '+av.who); ADVANCES=ADVANCES.filter(function(x){ return x.id!==adl; }); keep_(); } S.advDelAsk=null; render(); toast('Removed'); return; }
