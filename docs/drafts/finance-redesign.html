@@ -395,6 +395,11 @@ label.f{ display:block; font-size:12.5px; font-weight:600; margin:6px 0 4px; }
 .emptyApproved{ background:var(--surface); border-radius:14px; padding:16px; font-size:14px; line-height:1.5; color:var(--muted); }
 .emptyApproved b{ color:var(--ink); }
 .apprAsk{ background:color-mix(in srgb, var(--amber, #FFB323) 12%, var(--surface)); border:1px solid color-mix(in srgb, var(--amber, #FFB323) 55%, transparent); border-radius:10px; padding:10px 12px; font-size:13px; margin-top:10px; }
+.editBar{ display:flex; align-items:center; gap:10px; background:var(--accentSoft); border:1px solid var(--accent); border-radius:10px; padding:8px 12px; font-size:13px; margin-bottom:10px; }
+.editBar span{ flex:1; }
+.rowBtns{ display:flex; gap:6px; align-items:center; margin-top:4px; flex-wrap:wrap; }
+.editBtn{ border:1px solid var(--accent); background:none; color:var(--accent); border-radius:999px; padding:2px 10px; font-weight:700; font-size:12.5px; cursor:pointer; }
+.apprTag{ font-size:11.5px; font-weight:700; color:var(--good); }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -826,7 +831,7 @@ function inXferHtml_(){
   var D=S.xfer||(S.xfer={ from:'', to:'', amt:'', date:reportDay_(), memo:'' }), open=S.foldOpen&&S.foldOpen.xfer;
   var h='<details class="inCard fold" id="inXfer" data-fold="xfer"'+(open?' open':'')+'><summary class="foldHead"><span><b>🔁 Internal transfers</b><span class="dsub">'+(TRANSFERS.length?TRANSFERS.length+' transfer'+(TRANSFERS.length>1?'s':'')+' · last '+date(TRANSFERS[0].date):'Move money from one fund to another')+'</span></span><span class="foldR"><button class="histLink" data-hist="xf">🕘 History</button><span class="chev">▾</span></span></summary>'+
     nothingNewHtml_('xfer', 'transfers')+'<p class="inLast">Move money between any two funds, or between the bank accounts and cash (cash taken out, money sent from the US). It shows as an internal transfer, with its day and why.</p>'+
-    xferGapHtml_()+'<div class="xfGrid"><label class="f" for="xfFrom">From</label>'+fundSelect_('xfFrom', D.from, 'From', TOOL_ADD, true)+
+    (D.editing ? editBarHtml_('this '+(D.editKind==='tool'?'adjustment':'transfer')+' ('+money(D.editing.amt,true)+')', 'xfCancelEdit') : xferGapHtml_())+'<div class="xfGrid"><label class="f" for="xfFrom">From</label>'+fundSelect_('xfFrom', D.from, 'From', TOOL_ADD, true)+
     '<div class="xfArrow" aria-hidden="true">↓</div>'+
     '<label class="f" for="xfTo">To</label>'+fundSelect_('xfTo', D.to, 'To', TOOL_REMOVE, true)+
     '<div class="xfRow"><div><label class="f" for="xfAmt">Amount</label><div class="money"><span>$</span><input id="xfAmt" data-xf="amt" type="text" inputmode="text" autocomplete="off" value="'+esc(D.amt)+'" placeholder="0.00"></div></div>'+
@@ -835,11 +840,11 @@ function inXferHtml_(){
     '<label class="f" for="xfMemo">Memo — why</label><textarea id="xfMemo" data-xf="memo" rows="2" maxlength="300" placeholder="e.g. Kitchen ran over this month; covered from Office/General">'+esc(D.memo)+'</textarea></div>'+
     '<div id="xfPrev">'+xferPrevHtml_()+'</div>'+
     (S.xfErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.xfErr)+'</p>' : '')+
-    '<div class="inBtns"><button class="btn" id="xfSave">Move the money</button></div>';
+    '<div class="inBtns"><button class="btn" id="xfSave">'+(D.editing?'Save change':'Move the money')+'</button></div>';
   if(TRANSFERS.length) h+='<div class="xfList"><div class="dListHead">Transfers made</div>'+TRANSFERS.map(function(t){
       return '<div class="xfItem"><div class="xfTop"><b>'+money(t.amt,true)+'</b><span class="dsub">'+date(t.date)+'</span></div>'+
         '<div class="xfPath">'+esc(xferShort_(t.from))+' <span>→</span> '+esc(xferShort_(t.to))+'</div><div class="xfMemo">“'+esc(t.memo)+'”</div>'+
-        '<button class="delBtn" data-xfdel="'+t.id+'">↩ Undo this transfer</button></div>'; }).join('')+'</div>';
+        '<div class="rowBtns">'+editBtnHtml_('xf', t)+'<button class="delBtn" data-xfdel="'+t.id+'">↩ Undo this transfer</button></div></div>'; }).join('')+'</div>';
   return h+'</details>';
 }
 function xferGapHtml_(){
@@ -874,7 +879,7 @@ function xferSave_(){
   else if(fundOf_(D.from) && a>fundAmt_(D.from)+0.004) err='That is more than '+fundOf_(D.from).name+' holds ('+money(fundAmt_(D.from),true)+').';
   else if(!D.date||D.date>TODAY) err='Pick the day of the transfer (not in the future).'; else if(!String(D.memo).trim()) err='Write a memo saying why.';
   S.xfErr=err; if(err){ render(); return; }
-  snap_(isTool_(D.from) ? 'Undid adding '+money(a,true)+' to '+xferShort_(D.to)+' (Financial tools)' : isTool_(D.to) ? 'Undid removing '+money(a,true)+' from '+xferShort_(D.from)+' (Financial tools)' : 'Undid the transfer of '+money(a,true)+' from '+xferShort_(D.from)+' to '+xferShort_(D.to));
+  if(!D.editing) snap_(isTool_(D.from) ? 'Undid adding '+money(a,true)+' to '+xferShort_(D.to)+' (Financial tools)' : isTool_(D.to) ? 'Undid removing '+money(a,true)+' from '+xferShort_(D.from)+' (Financial tools)' : 'Undid the transfer of '+money(a,true)+' from '+xferShort_(D.from)+' to '+xferShort_(D.to));
   if(isTool_(D.from) || isTool_(D.to)){
     if(!isTool_(D.from)) fundMove_(D.from, -a); if(!isTool_(D.to)) fundMove_(D.to, a);
     var tx={ id:'f'+Date.now().toString(36), at:Date.now(), date:D.date, from:D.from, to:D.to, amt:a, memo:String(D.memo).trim() }; TOOL_XFERS.unshift(tx); if(D.incl) addToApproved_(tx, 'tool');
@@ -889,11 +894,11 @@ function xferSave_(){
 function xferSnap_(day){ if(day && day>ALLOC_ASOF){ ALLOC_PREV_ASOF=ALLOC_ASOF; ALLOC_ASOF=day; } S.alSaved=true; ALLOC_HIST=ALLOC_HIST.filter(function(x){ return x.asOf!==ALLOC_ASOF; }); ALLOC_HIST.push(allocSnap_(ALLOC_ASOF)); ALLOC_HIST.sort(function(x,y){ return x.asOf<y.asOf?1:-1; }); keep_(); }
 /* transfers that touch an allocation, for the Dashboard's breakdown and Details */
 function xfersFor_(gid, upto){ return TRANSFERS.filter(function(t){ return !isAcct_(t.from) && !isAcct_(t.to) && (!upto || t.date<=upto) && (!gid || t.from.split('|')[0]===gid || t.to.split('|')[0]===gid); }); }
-function xferRowsHtml_(list, gid){
+function xferRowsHtml_(list, gid, edit){
   return list.map(function(t){ var out=gid && t.from.split('|')[0]===gid && t.to.split('|')[0]!==gid, inn=gid && t.to.split('|')[0]===gid && t.from.split('|')[0]!==gid;
     return '<div class="xfLine"><div><span class="xfTag">↔ Internal transfer</span> <span class="dsub" style="display:inline">'+date(t.date)+'</span></div>'+
       '<div class="xfPath">'+esc(xferShort_(t.from))+' <span>→</span> '+esc(xferShort_(t.to))+'</div><div class="xfMemo">“'+esc(t.memo)+'”</div>'+
-      '<b class="xfAmt'+(out?' out':inn?' in':'')+'">'+(out?'−':inn?'+':'')+money(t.amt,true)+'</b></div>'; }).join('');
+      '<b class="xfAmt'+(out?' out':inn?' in':'')+'">'+(out?'−':inn?'+':'')+money(t.amt,true)+'</b>'+(edit?'<div class="rowBtns">'+editBtnHtml_('xf', t)+'</div>':'')+'</div>'; }).join('');
 }
 /* ---- Input: income and expenses — one module, two kinds ----
    Income goes INTO the funds, an expense comes OUT of them. Each is entered one at a time or many
@@ -983,7 +988,7 @@ function bankLabel_(k){ var o=BANK_OPTS.filter(function(x){ return x[0]===k; })[
 function bankGuess_(t){ t=String(t||'').toLowerCase(); if(!t) return ''; if(/\baba\b/.test(t)) return 'acct|aba'; if(/cash|petty/.test(t)) return 'acct|cash'; if(/\bus\b|usa|united states|chase|wells|boa|bank of america/.test(t)) return 'acct|us'; return ''; }
 function flOneHtml_(k){
   var F=FK[k], D=flOne_(k), noRule=D.type && !(F.rules()[D.type]||[]).length, p='fl_'+k+'_';
-  return '<div class="xfGrid"><div class="xfRow"><div><label class="f" for="'+p+'date">Date</label><input type="date" id="'+p+'date" data-f1="'+k+'|date" max="'+TODAY+'" value="'+esc(D.date)+'"></div>'+
+  return (D.editing ? editBarHtml_('this '+F.one+' ('+money(D.editing.amt,true)+')', p+'cancelEdit') : '')+'<div class="xfGrid"><div class="xfRow"><div><label class="f" for="'+p+'date">Date</label><input type="date" id="'+p+'date" data-f1="'+k+'|date" max="'+TODAY+'" value="'+esc(D.date)+'"></div>'+
     '<div><label class="f" for="'+p+'amt">Amount</label><div class="money"><span>$</span><input id="'+p+'amt" data-f1="'+k+'|amt" type="text" inputmode="text" autocomplete="off" placeholder="0.00" value="'+esc(D.amt)+'"></div></div></div>'+
     '<label class="f" for="'+p+'type">'+F.kindLabel+'</label>'+flTypeSelect_(k, 'id="'+p+'type" data-f1sel="'+k+'|type"', D.type, '— Kind of '+F.one+' —')+
     (F.sign<0 ? flPaidFromHtml_(k, D, p)
@@ -994,7 +999,7 @@ function flOneHtml_(k){
     '<div id="'+p+'appr">'+approvedAskHtml_(D.date, D.incl, 'data-f1incl="'+k+'"')+'</div>'+
     '<div id="'+p+'prev">'+flOnePrevHtml_(k)+'</div>'+
     ((S.flErr||{})[k] ? '<p class="inErr" role="alert">⚠️ '+esc(S.flErr[k])+'</p>' : '')+
-    '<div class="inBtns"><button class="btn" id="'+p+'save1">'+F.addBtn+'</button></div>';
+    '<div class="inBtns"><button class="btn" id="'+p+'save1">'+(D.editing?'Save change':F.addBtn)+'</button></div>';
 }
 function flPaidFromHtml_(k, D, p){
   var F=FK[k], r=D.type ? (F.rules()[D.type]||[]) : [], sel=fundSelect_(p+'fund', D.fund, 'Paid from');
@@ -1018,9 +1023,9 @@ function flOneSave_(k){
   else if(!D.type) err='Pick what it '+(F.sign<0?'was for':'is')+'.'; else if(!D.bank) err='Pick which account it '+(F.sign<0?'was paid out of':'went into')+' — ABA, cash or US.'; else if(!flOneSplit_(k, D, a)) err=F.sign<0?'Pick which category it is paid from.':'Pick which fund.';
   flErr_(k, err); if(err){ render(); return; }
   var e={ id:k[0]+Date.now().toString(36), date:D.date, amt:a, type:D.type, bank:D.bank, who:String(D.who||'').trim(), memo:String(D.memo||'').trim(), split:flOneSplit_(k, D, a), src:'manual' };
-  snap_('Removed '+money(a,true)+' '+e.type+' '+F.one+(e.who?(F.sign<0?' paid to ':' from ')+e.who:''));
+  if(!D.editing) snap_('Removed '+money(a,true)+' '+e.type+' '+F.one+(e.who?(F.sign<0?' paid to ':' from ')+e.who:''));
   e.at=Date.now(); flApply_(k, e, 1); F.list().unshift(e); if(D.incl) addToApproved_(e, k); flSort_(k); xferSnap_(e.date);
-  S.fl1[k]={ date:D.date, amt:'', type:'', who:'', memo:'', fund:'', bank:D.bank }; render(); toast('Added '+money(a,true)+' — '+e.type);
+  var wasEdit=!!D.editing; S.fl1[k]={ date:D.date, amt:'', type:'', who:'', memo:'', fund:'', bank:D.bank }; render(); toast((wasEdit?'Saved the change — ':'Added ')+money(a,true)+' — '+e.type);
 }
 /* many at once from QuickBooks */
 function flKey_(r){ return String(r.acct||r.who||r.memo||'').toLowerCase().trim(); }
@@ -1165,7 +1170,7 @@ function flHistHtml_(k){
         (x.who||x.memo||x.bank ? '<div class="xfMemo" style="font-style:normal">'+esc([x.bank?(F.sign<0?'out of ':'into ')+bankLabel_(x.bank):'', x.who, x.memo].filter(Boolean).join(' · '))+'</div>' : '')+
         '<div class="dsub">'+x.split.map(function(sp){ var f=fundOf_(sp.f); return esc(f?f.name:sp.f)+' '+money(sp.amt,true); }).join(' · ')+'</div>'+
         (x.addedTo ? '<div class="dsub">✅ Added to the '+date(x.addedTo)+' approval later'+(x.addedAt?', on '+date(new Date(x.addedAt).toISOString().slice(0,10)):'')+'</div>' : (approvedDay_() && !inApproved_(x, k) ? '<div class="dsub">📡 Live only — not in the approved report</div>' : ''))+
-        '<b class="xfAmt '+(F.sign<0?'out':'in')+'">'+(F.sign<0?'−':'+')+money(x.amt,true)+'</b><button class="delBtn" data-fdel="'+k+'|'+x.id+'">✕ Take out</button></div>'; }).join('')+'</div>'; }).join('');
+        '<b class="xfAmt '+(F.sign<0?'out':'in')+'">'+(F.sign<0?'−':'+')+money(x.amt,true)+'</b><div class="rowBtns">'+editBtnHtml_(k, x)+'<button class="delBtn" data-fdel="'+k+'|'+x.id+'">✕ Take out</button></div></div>'; }).join('')+'</div>'; }).join('');
 }
 /* the Dashboard's income and expense reports read what was entered, once there is any */
 /* Approved / Live. Approved: the last day the accountant put on the Dashboard. Live: that, plus
@@ -1183,6 +1188,31 @@ function liveSince_(){ var a=approvedDay_(); if(!a) return { n:0, day:null };
   var n=INCOMES.filter(function(x){ return !inApproved_(x,'inc'); }).length+EXPENSES.filter(function(x){ return !inApproved_(x,'exp'); }).length+
         TRANSFERS.filter(function(x){ return !inApproved_(x,'xf'); }).length+TOOL_XFERS.filter(function(x){ return !inApproved_(x,'tool'); }).length;
   return { n:n, day:a }; }
+/* in any approval at all? Only entries no approval took in can be edited */
+function anyApproved_(x, kind){ return Object.keys(PUBLISHED).some(function(d){ var P=PUBLISHED[d]; return P.ids ? (P.ids[kind]||[]).indexOf(x.id)>=0 : x.date<=d; }); }
+function editBtnHtml_(kind, x){ return anyApproved_(x, kind) ? '<span class="apprTag">✅ Approved</span>' : '<button class="editBtn" data-edit="'+kind+'|'+x.id+'">✏️ Edit</button>'; }
+/* Edit: the entry comes off (its money goes back), and its form opens filled in. Save puts the
+   changed one back; Cancel puts the original back as it was. */
+function startEdit_(kind, id){
+  var L = kind==='inc'?INCOMES : kind==='exp'?EXPENSES : kind==='xf'?TRANSFERS : TOOL_XFERS, x=L.filter(function(y){ return y.id===id; })[0]; if(!x || anyApproved_(x, kind)) return;
+  snap_('Put back '+(kind==='inc'||kind==='exp' ? money(x.amt,true)+' '+x.type+' '+FK[kind].one : 'the transfer of '+money(x.amt,true))+' as it was before editing');
+  if(kind==='inc'||kind==='exp'){ flApply_(kind, x, -1); FK[kind].list(L.filter(function(y){ return y.id!==id; }));
+    S.fl1=S.fl1||{}; var oneFund = x.split && x.split.length===1 && (kind==='exp' || !(INC_RULES[x.type]||[]).length) ? x.split[0].f : '';
+    S.fl1[kind]={ date:x.date, amt:x.amt.toFixed(2), type:x.type, who:x.who||'', memo:x.memo||'', fund:oneFund, bank:x.bank||'', editing:x };
+    (S.flMode=S.flMode||{})[kind]='one'; (S.foldOpen=S.foldOpen||{})[kind]=true; S.editGo='in_'+kind; }
+  else { if(fundOf_(x.from)) fundMove_(x.from, x.amt); if(fundOf_(x.to)) fundMove_(x.to, -x.amt);
+    if(kind==='xf') TRANSFERS=TRANSFERS.filter(function(y){ return y.id!==id; }); else TOOL_XFERS=TOOL_XFERS.filter(function(y){ return y.id!==id; });
+    S.xfer={ from:x.from, to:x.to, amt:x.amt.toFixed(2), date:x.date, memo:x.memo||'', editing:x, editKind:kind }; (S.foldOpen=S.foldOpen||{}).xfer=true; S.editGo='inXfer'; }
+  xferSnap_(); S.tab='input'; closeSheet(); render(); toast('Editing — change it and save, or cancel');
+}
+function cancelEdit_(kind){
+  var x;
+  if(kind==='inc'||kind==='exp'){ var D=(S.fl1||{})[kind]; x=D && D.editing; if(!x) return; flApply_(kind, x, 1); FK[kind].list().push(x); flSort_(kind); S.fl1[kind]=null; }
+  else { x=S.xfer && S.xfer.editing; if(!x) return; if(fundOf_(x.from)) fundMove_(x.from, -x.amt); if(fundOf_(x.to)) fundMove_(x.to, x.amt);
+    (S.xfer.editKind==='tool'?TOOL_XFERS:TRANSFERS).push(x); S.xfer=null; }
+  xferSnap_(); render(); toast('Edit cancelled — put back as it was');
+}
+function editBarHtml_(what, id){ return '<div class="editBar">✏️ <span>Editing '+what+' — save to put it back changed.</span><button class="linkAdd" id="'+id+'">Cancel edit</button></div>'; }
 /* "add it to the approved report as well": the entry joins that approval and its funds move there too */
 function addToApproved_(x, kind){
   var a=approvedDay_(), P=a && PUBLISHED[a]; if(!P || !P.groups || x.date>a) return;
@@ -1514,7 +1544,7 @@ function nextHtml(){
   return '<section class="sec"><p class="hint" style="margin:0">Next on the dashboard: the other reports (Profit and Loss, Burn Rate…) — each a short summary here, with its details a tap away.</p></section>';
 }
 function soon(icon, title, line){ return '<div class="soon"><div class="big">'+icon+'</div><h3>'+title+'</h3><div>'+line+'</div></div>'; }
-function render(){
+function render(){ setTimeout(function(){ if(S.editGo){ var el=document.getElementById(S.editGo); S.editGo=null; if(el) el.scrollIntoView({ block:'start', behavior:'smooth' }); } }, 30);
   var p=document.getElementById('pane');
   if(S.tab==='dash'){ var undo=viewApply_(); S.liveDraw=isLive_();
     try { p.innerHTML = (!isLive_() && !reportDays_().length)
@@ -1560,7 +1590,7 @@ function histHtml_(kind){
         TOOL_XFERS.map(function(t){ var add=t.from===TOOL_ADD, fund=add?t.to:t.from;
           return '<div class="xfLine"><div><span class="xfTag tool">🛠 '+TOOL_LABEL[add?TOOL_ADD:TOOL_REMOVE]+'</span> <span class="dsub" style="display:inline">'+date(t.date)+'</span></div>'+
             '<div class="xfPath">'+(add?'→ ':'')+esc(xferShort_(fund))+(add?'':' →')+'</div><div class="xfMemo">“'+esc(t.memo)+'”</div>'+
-            '<b class="xfAmt '+(add?'in':'out')+'">'+(add?'+':'−')+money(t.amt,true)+'</b><button class="delBtn" data-tooldel="'+t.id+'">↩ Undo</button></div>'; }).join('');
+            '<b class="xfAmt '+(add?'in':'out')+'">'+(add?'+':'−')+money(t.amt,true)+'</b><div class="rowBtns">'+editBtnHtml_('tool', t)+'<button class="delBtn" data-tooldel="'+t.id+'">↩ Undo</button></div></div>'; }).join('');
     }
     return flHistHtml_('inc');
   }
@@ -1575,7 +1605,7 @@ function histHtml_(kind){
     var months={}; list.forEach(function(t){ var m=t.date.slice(0,7); (months[m]=months[m]||[]).push(t); });
     return h2+Object.keys(months).sort().reverse().map(function(m){ var L=months[m], tot=L.reduce(function(s2,t){ return s2+t.amt; },0);
       var mn=new Date(m+'-01T00:00:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'});
-      return '<div class="xfMonth"><div class="xfMonthHead"><b>'+mn+'</b><span class="dsub" style="display:inline">'+L.length+' transfer'+(L.length>1?'s':'')+' · '+money(tot,true)+' moved</span></div>'+xferRowsHtml_(L, flt||null)+'</div>'; }).join('');
+      return '<div class="xfMonth"><div class="xfMonthHead"><b>'+mn+'</b><span class="dsub" style="display:inline">'+L.length+' transfer'+(L.length>1?'s':'')+' · '+money(tot,true)+' moved</span></div>'+xferRowsHtml_(L, flt||null, true)+'</div>'; }).join('');
   }
   if(kind==='debt'){
     var D=DEBT_HIST.length ? DEBT_HIST : [{ asOf:DEBT.asOf, file:'', people:DEBT.people, sample:true }];
@@ -1694,6 +1724,9 @@ document.addEventListener('click', function(e){
     S.pubAsk=false; S.viewDay=null; keep_(); render(); toast('✓ Approved — '+date(pd)+' is now the approved Dashboard'); return; }
   if(e.target.id==='unpubDay'){ var ud=reportDay_(); snap_('Approved '+date(ud)+' again'); delete PUBLISHED[ud]; S.viewDay=null; keep_(); render(); toast(date(ud)+' is no longer approved'); return; }
   var dm=e.target.closest && e.target.closest('[data-dashmode]'); if(dm){ S.dashMode=dm.dataset.dashmode; render(); return; }
+  var ed=e.target.closest && e.target.closest('[data-edit]'); if(ed){ var ep=ed.dataset.edit.split('|'); startEdit_(ep[0], ep.slice(1).join('|')); return; }
+  var ce=/^fl_(inc|exp)_cancelEdit$/.exec(e.target.id||''); if(ce){ cancelEdit_(ce[1]); return; }
+  if(e.target.id==='xfCancelEdit'){ cancelEdit_('xf'); return; }
   if(e.target.id==='viewLatest'){ S.viewDay=null; S.viewDebtDay=null; render(); return; }
   if(e.target.id==='undoLast'){ if(!S.undoAsk){ S.undoAsk=true; render(); setTimeout(function(){ if(S.undoAsk){ S.undoAsk=false; if(S.tab==='input') render(); } }, 4000); return; } undoLast_(); return; }
   if(e.target.id==='inBalSave'){ inSave_(); return; }
