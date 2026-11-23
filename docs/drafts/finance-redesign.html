@@ -385,6 +385,12 @@ label.f{ display:block; font-size:12.5px; font-weight:600; margin:6px 0 4px; }
 .pubList li.done{ color:var(--ink); }
 .pubBar{ height:8px; border-radius:999px; background:var(--surface2); overflow:hidden; } .pubBar span{ display:block; height:100%; background:var(--good); border-radius:999px; }
 .btn.warn{ background:var(--amberDeep); color:#fff; }
+.modeSeg{ display:flex; gap:4px; background:var(--surface2); border-radius:12px; padding:4px; margin:14px 0 0; }
+.modeSeg button{ flex:1; border:0; background:none; border-radius:9px; padding:9px 6px; font-weight:700; font-size:14px; cursor:pointer; color:var(--muted); }
+.modeSeg button.on{ background:var(--surface); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.12); }
+.liveBanner{ margin-top:10px; background:color-mix(in srgb, var(--amber, #FFB323) 16%, var(--surface)); border:1px solid color-mix(in srgb, var(--amber, #FFB323) 60%, transparent); border-radius:10px; padding:9px 12px; font-size:13px; }
+.liquid.est{ background:repeating-linear-gradient(135deg, var(--headerBg), var(--headerBg) 14px, color-mix(in srgb, var(--headerBg) 88%, #FFB323) 14px, color-mix(in srgb, var(--headerBg) 88%, #FFB323) 28px); }
+.estTag{ font-size:10.5px; font-weight:600; color:var(--muted); }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -490,7 +496,7 @@ function money(n, cents){ var s=Math.abs(n).toLocaleString('en-US',{minimumFract
 function date(iso){ var d=new Date(iso+'T00:00:00'); return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
 function daysAgo(iso){ return Math.round((Date.parse('2026-11-23T00:00:00')-Date.parse(iso+'T00:00:00'))/86400000); }
 function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
-function total(){ return BAL.accts.reduce(function(s,a){ return s+a.amt; },0); }
+function total(){ var t=BAL.accts.reduce(function(s,a){ return s+a.amt; },0); return S.liveDraw ? Math.round((t+liveNet_())*100)/100 : t; }
 
 /* ---- Dashboard ---- */
 /* how an allocation moved since the last balances day, worded like the liquid assets' line */
@@ -1122,7 +1128,17 @@ function flHistHtml_(k){
         '<b class="xfAmt '+(F.sign<0?'out':'in')+'">'+(F.sign<0?'−':'+')+money(x.amt,true)+'</b><button class="delBtn" data-fdel="'+k+'|'+x.id+'">✕ Take out</button></div>'; }).join('')+'</div>'; }).join('');
 }
 /* the Dashboard's income and expense reports read what was entered, once there is any */
-function flowRef_(){ var days=reportDays_(); return S.viewDay && days.indexOf(S.viewDay)>=0 ? S.viewDay : (days[0] || TODAY); }
+/* Approved / Live. Approved: the last day the accountant put on the Dashboard. Live: that, plus
+   everything entered since — income, expenses and transfers have already moved the funds — so
+   its figures are estimates, and say so. */
+function isLive_(){ return S.dashMode==='live'; }
+function EST(t){ return isLive_() ? 'Estimated '+t.charAt(0).toLowerCase()+t.slice(1) : t; }
+function approvedDay_(){ return Object.keys(PUBLISHED).sort().reverse()[0] || null; }
+function liveSince_(){ var a=approvedDay_(); if(!a) return { n:0, day:null };
+  var n=INCOMES.concat(EXPENSES, TRANSFERS, TOOL_XFERS).filter(function(x){ return x.date>a; }).length; return { n:n, day:a }; }
+/* the bank total moved by what came in and went out after the last balances day */
+function liveNet_(){ var d=BAL.asOf||''; return Math.round((INCOMES.reduce(function(s2,x){ return s2+(x.date>d?x.amt:0); },0)-EXPENSES.reduce(function(s2,x){ return s2+(x.date>d?x.amt:0); },0))*100)/100; }
+function flowRef_(){ if(isLive_()) return TODAY; var days=reportDays_(); return S.viewDay && days.indexOf(S.viewDay)>=0 ? S.viewDay : (days[0] || TODAY); }
 function monthName_(ym){ return new Date(ym+'-01T00:00:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'}); }
 function prevYm_(ym){ var y=+ym.slice(0,4), m=+ym.slice(5,7)-1; if(!m){ m=12; y--; } return y+'-'+String(m).padStart(2,'0'); }
 function flowLive_(kind){ return !!FK[kind] && FK[kind].list().length>0; }
@@ -1184,13 +1200,13 @@ function balancesHtml(){
     '<div class="liquid"><div class="lbl">Total liquid assets</div><div class="num">—</div><div class="delta" style="color:var(--onDarkFaint)">No balances entered yet</div></div>'+
     '<p class="hint" style="margin-top:10px">Enter the ABA, US bank and cash on hand on the <button class="more" data-tab="input" style="display:inline;padding:0">Input tab</button>.</p></section>';
   var T=total(), d=BAL.prevTotal==null?null:T-BAL.prevTotal, whole=Math.floor(T), cents=Math.round((T-whole)*100);
-  var h='<section class="sec" id="balances"><div class="secHead"><h2>🏦 Balances</h2><button class="more" data-sheet="balances">Details ›</button></div>'+
-    '<p class="hint">Siem Reap base · as of '+date(BAL.asOf)+' · entered by the Finances office</p>'+
-    '<div class="liquid"><div class="lbl">Total liquid assets</div>'+
+  var h='<section class="sec" id="balances"><div class="secHead"><h2>🏦 '+EST('Balances')+'</h2><button class="more" data-sheet="balances">Details ›</button></div>'+
+    '<p class="hint">Siem Reap base · '+(isLive_() ? 'bank balances as of '+date(BAL.asOf)+', moved by '+(liveNet_()<0?'−':'+')+money(Math.abs(liveNet_()),true)+' of income and expenses entered since' : 'as of '+date(BAL.asOf)+' · entered by the Finances office')+'</p>'+
+    '<div class="liquid'+(isLive_()?' est':'')+'"><div class="lbl">'+EST('Total liquid assets')+'</div>'+
     '<div class="num">'+money(whole)+'<span class="c">.'+String(cents).padStart(2,'0')+'</span></div>'+
-    (d==null ? '<div class="delta" style="color:var(--onDarkFaint)">The first day entered</div>' : '<div class="delta"'+(d<0?' style="color:#FF9B8F"':'')+'>'+(Math.abs(d)<0.005?'Same as ':(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+' since ')+date(BAL.prevAsOf)+'</div>')+'</div>'+
+    (isLive_() ? (function(n){ return '<div class="delta"'+(n<0?' style="color:#FF9B8F"':'')+'>'+(Math.abs(n)<0.005?'No change':(n>0?'▲ ':'▼ ')+money(Math.abs(n),true))+' estimated since the bank balances of '+date(BAL.asOf)+'</div>'; })(liveNet_()) : d==null ? '<div class="delta" style="color:var(--onDarkFaint)">The first day entered</div>' : '<div class="delta"'+(d<0?' style="color:#FF9B8F"':'')+'>'+(Math.abs(d)<0.005?'Same as ':(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+' since ')+date(BAL.prevAsOf)+'</div>')+'</div>'+
     '<div class="accts">'+BAL.accts.map(function(a){
-      return '<div class="acct"><div class="an">'+esc(a.name)+'</div><div class="av">'+money(a.amt)+'</div><div class="as">'+(T?Math.round(a.amt/T*100):0)+'% · '+esc(a.sub)+'</div></div>';
+      return '<div class="acct"><div class="an">'+esc(a.name)+(isLive_()?' <span class="estTag">as entered</span>':'')+'</div><div class="av">'+money(a.amt)+'</div><div class="as">'+(T?Math.round(a.amt/T*100):0)+'% · '+esc(a.sub)+'</div></div>';
     }).join('')+'</div>';
   h+='</section>';
   return h;
@@ -1200,11 +1216,11 @@ function balancesHtml(){
 function allocOrder_(){ return ALLOC.slice(); }
 function allocHtml(){
   var T=total(), A=ALLOC.reduce(function(s,a){ return s+a.amt; },0), gap=T-A;
-  var h='<section class="sec" id="alloc"><div class="secHead"><h2>📊 Allocation report</h2><button class="more" data-sheet="alloc">Details ›</button></div>'+
+  var h='<section class="sec" id="alloc"><div class="secHead"><h2>📊 '+EST('Allocation report')+'</h2><button class="more" data-sheet="alloc">Details ›</button></div>'+
     '<p class="hint">Where the '+money(T)+' in total liquid assets is set aside.</p>';
   var gA=ALLOC.filter(function(a){ return a.id==='adm'; })[0], gF=ALLOC.filter(function(a){ return a.id==='fund'; })[0];
   h+='<div class="alKey">'+[[gA,'Admin'],[gF,'Funds']].map(function(x){ var a=x[0], p=a.amt/(T||A)*100;
-      return '<button class="alKeyTile" data-al="'+a.id+'"><span class="sw" style="background:var('+a.c+')"></span><span><small>'+x[1]+'</small><b>'+money(a.amt)+'</b><span class="alPct">'+Math.round(p)+'%</span></span></button>'; }).join('')+'</div>';
+      return '<button class="alKeyTile" data-al="'+a.id+'"><span class="sw" style="background:var('+a.c+')"></span><span><small>'+EST(x[1])+'</small><b>'+money(a.amt)+'</b><span class="alPct">'+Math.round(p)+'%</span></span></button>'; }).join('')+'</div>';
   h+='<div class="alBar'+(S.open?' focus':'')+'" role="img" aria-label="'+esc(allocOrder_().map(function(a){ return a.name+' '+money(a.amt)+' '+Math.round(a.amt/(T||A)*100)+'%'; }).join(', '))+'">'+
     allocOrder_().map(function(a){ var p=a.amt/(T||A)*100;
       return '<button class="alSeg'+(a.dark?' dark':'')+(S.open===a.id?' on':'')+'" data-al="'+a.id+'" style="flex:'+a.amt+' 1 0;background:var('+a.c+')" title="'+esc(a.name+' · '+money(a.amt,true)+' · '+Math.round(p)+'%')+'">'+(p>=9?Math.round(p)+'%':'')+'</button>';
@@ -1301,7 +1317,7 @@ function flowHtml(kind){
       '<p class="hint" style="margin-top:8px">Shows here once '+(kind==='inc'?'income is':'expenses are')+' entered on the Input tab.</p></section>'; }
   var F=FLOW[kind], ytd=S.flowPer[kind]==='ytd', rows=allocOrder_().map(function(a){ return { a:a, o:flowOf_(kind, a.id) }; }), T=0, PT=0;
   rows.forEach(function(r){ T+=r.o.tot; PT+=r.o.prev||0; });
-  var h='<section class="sec" id="'+F.id+'"><div class="secHead"><h2>'+F.icon+' '+F.title+'</h2><button class="more" data-sheet="'+F.id+'">Details ›</button></div>'+
+  var h='<section class="sec" id="'+F.id+'"><div class="secHead"><h2>'+F.icon+' '+EST(F.title)+'</h2><button class="more" data-sheet="'+F.id+'">Details ›</button></div>'+
     '<p class="hint">'+F.hint+'</p>'+flowPerHtml_(kind)+
     '<div class="incHead"><span class="incTot">'+money(T)+'</span><span class="incTotL">'+F.verb+(ytd?' this year':' during '+flowMonth_(kind))+'</span>'+
     (!ytd ? flowDelta_(kind, T-PT, flowPrev_(kind)) : '')+'</div>';
@@ -1331,7 +1347,7 @@ function flowSheetHtml_(kind){
   var colTot=function(k){ return ALLOC.reduce(function(s2,a){ return s2+(flowOf_(kind, a.id).by[k]||0); },0); };
   var all=ALLOC.reduce(function(s2,a){ return s2+flowOf_(kind, a.id).tot; },0);
   return flowPerHtml_(kind).replace('class="incPer"','class="incPer" style="margin:0 0 4px"')+
-    '<div class="rep"><div class="repTitle">'+F.report+'</div><div class="repSub">'+(ytd?flowYtdLabel_(kind):flowMonth_(kind))+'</div>'+
+    '<div class="rep"><div class="repTitle">'+(isLive_()?'Estimated ':'')+F.report+'</div><div class="repSub">'+(ytd?flowYtdLabel_(kind):flowMonth_(kind))+'</div>'+
     '<div class="tblWrap gridWrap"><table class="gridTbl" style="width:'+(150+96*(used.length+1))+'px"><colgroup><col style="width:150px">'+used.map(function(){ return '<col style="width:96px">'; }).join('')+'<col style="width:96px"></colgroup>'+
     '<thead><tr><th class="nm">Allocation</th>'+used.map(function(k){ return '<th>'+esc(k)+'</th>'; }).join('')+'<th class="tot">Total</th></tr></thead><tbody>'+
     allocOrder_().map(function(a){ var o=flowOf_(kind, a.id);
@@ -1381,7 +1397,7 @@ function debtDays_(){ var d={}; DEBT_HIST.forEach(function(r){ d[r.asOf]=1; }); 
 function viewApply_(){
   var undo=[], days=reportDays_(), day=S.viewDay && days.indexOf(S.viewDay)>=0 ? S.viewDay : (days[0]||null), newest=enteredDays_()[0];
   S.pendDay = Object.keys(PUBLISHED).length && newest && days[0] && newest>days[0] && !PUBLISHED[newest] ? newest : null;
-  if(day && newest && day<newest){
+  if(!isLive_() && day && newest && day<newest){
     var keepBal=JSON.stringify(BAL), keepDays=BAL_DAYS;
     BAL_DAYS=keepDays.filter(function(r){ return r.asOf<=day; }); refreshBal_();
     undo.push(function(){ BAL_DAYS=keepDays; var o=JSON.parse(keepBal); Object.keys(o).forEach(function(k){ BAL[k]=o[k]; }); });
@@ -1402,7 +1418,14 @@ function asOfBarHtml_(){
   var days=reportDays_(), dd=debtDays_(), latest=days[0], cur=S.viewDay && days.indexOf(S.viewDay)>=0 ? S.viewDay : latest;
   var dcur=S.viewDebtDay && dd.indexOf(S.viewDebtDay)>=0 ? S.viewDebtDay : DEBT.asOf;
   var sel=function(id, list, val, top){ return '<select id="'+id+'" class="daySel">'+list.map(function(d){ return '<option value="'+d+'"'+(d===val?' selected':'')+'>'+date(d)+(d===top?' · latest':'')+'</option>'; }).join('')+'</select>'; };
-  var h='<div class="asOfBar"><label for="viewDay">📅 Reports as of</label>'+(days.length ? sel('viewDay', days, cur, latest) : '<b>—</b>')+
+  var live=isLive_(), ls=liveSince_();
+  var h='<div class="modeSeg" role="tablist"><button class="'+(live?'':'on')+'" data-dashmode="approved">✅ Approved</button><button class="'+(live?'on':'')+'" data-dashmode="live">📡 Live</button></div>';
+  if(live){
+    h+='<div class="liveBanner">📡 <b>Live — estimated.</b> '+(ls.day ? 'The approved update of '+date(ls.day)+' plus '+ls.n+' entr'+(ls.n===1?'y':'ies')+' since, not yet checked by the accountant.' : 'Everything entered so far, not yet checked by the accountant.')+'</div>'+
+      '<div class="asOfBar"><span>📡 Up to today, '+date(TODAY)+'</span><span class="sep">·</span><label for="viewDebtDay">💳 Staff debt as of</label>'+sel('viewDebtDay', dd, dcur, dd[0])+'</div>';
+    return h;
+  }
+  h+='<div class="asOfBar"><label for="viewDay">📅 Reports as of</label>'+(days.length ? sel('viewDay', days, cur, latest) : '<b>—</b>')+
     (BAL.asOf && ALLOC_ASOF!==BAL.asOf ? '<span class="warn">· allocations as of '+date(ALLOC_ASOF)+'</span>' : '')+
     '<span class="sep">·</span><label for="viewDebtDay">💳 Staff debt as of</label>'+sel('viewDebtDay', dd, dcur, dd[0])+'</div>';
   if(S.pendDay) h+='<div class="pastNote" style="background:var(--accentSoft);color:var(--ink)">✏️ '+date(S.pendDay)+' is being entered — not on the Dashboard yet.</div>';
@@ -1415,7 +1438,7 @@ function nextHtml(){
 function soon(icon, title, line){ return '<div class="soon"><div class="big">'+icon+'</div><h3>'+title+'</h3><div>'+line+'</div></div>'; }
 function render(){
   var p=document.getElementById('pane');
-  if(S.tab==='dash'){ var undo=viewApply_(); try { p.innerHTML=asOfBarHtml_()+balancesHtml()+allocHtml()+debtHtml()+flowHtml('inc')+flowHtml('exp')+nextHtml(); } finally { undo(); } }
+  if(S.tab==='dash'){ var undo=viewApply_(); S.liveDraw=isLive_(); try { p.innerHTML=asOfBarHtml_()+balancesHtml()+allocHtml()+debtHtml()+flowHtml('inc')+flowHtml('exp')+nextHtml(); } finally { S.liveDraw=false; undo(); } }
   else if(S.tab==='input') p.innerHTML=inputHtml();
   else if(S.tab==='tasks') p.innerHTML=soon('✅','Tasks','The Finances office’s GP Tasks list — as on every ministry.');
   else p.innerHTML=soon('🎯','OKRs','Kept exactly as it is in the current app — the Finances office’s OKRs and the Leadership OKRs, no changes.');
@@ -1484,7 +1507,8 @@ function histHtml_(kind){
 }
 function sheet(which){
   var undo=/^hist-/.test(which) ? function(){} : viewApply_();   /* Details follow the day the Dashboard shows */
-  try { return sheetInner_(which); } finally { undo(); }
+  S.liveDraw=isLive_() && !/^hist-/.test(which);
+  try { return sheetInner_(which); } finally { S.liveDraw=false; undo(); }
 }
 function sheetInner_(which){
   var T=total(), h='<button class="x" id="sx" aria-label="Close">✕</button>';
@@ -1500,12 +1524,12 @@ function sheetInner_(which){
       debtReportHtml(P, DEBT.title)+
       '<p class="hint" style="margin-top:10px">US$. The red columns are 2 months old or more. On a phone, swipe the table sideways.</p>';
   } else if(which==='balances'){
-    h+='<h3>🏦 Balances — details</h3><p class="hint">As of '+date(BAL.asOf)+'. Later: the history of each account, month by month.</p>'+
+    h+='<h3>🏦 '+EST('Balances')+' — details</h3><p class="hint">As of '+date(BAL.asOf)+'. Later: the history of each account, month by month.</p>'+
       '<table><tr><th>Account</th><th class="r">Amount</th><th class="r">Share</th></tr>'+
       BAL.accts.map(function(a){ return '<tr><td>'+esc(a.name)+'</td><td class="r">'+money(a.amt,true)+'</td><td class="r">'+(a.amt/T*100).toFixed(1)+'%</td></tr>'; }).join('')+
-      '<tr><td><b>Total liquid assets</b></td><td class="r"><b>'+money(T,true)+'</b></td><td class="r">100%</td></tr></table>';
+      '<tr><td><b>'+EST('Total liquid assets')+'</b></td><td class="r"><b>'+money(T,true)+'</b></td><td class="r">100%</td></tr></table>';
   } else {
-    h+='<h3>📊 Allocation report — details</h3><p class="hint">Every allocation, what it holds, and how it has moved since '+date(ALLOC_PREV_ASOF)+'.</p><table><tr><th>Allocation</th><th class="r">Amount</th><th class="r">Share</th><th class="r">Change</th></tr>';
+    h+='<h3>📊 '+EST('Allocation report')+' — details</h3><p class="hint">Every allocation, what it holds, and how it has moved since '+date(ALLOC_PREV_ASOF)+'.</p><table><tr><th>Allocation</th><th class="r">Amount</th><th class="r">Share</th><th class="r">Change</th></tr>';
     allocOrder_().forEach(function(a){
       h+='<tr><td><span class="sw" style="display:inline-block;vertical-align:-2px;margin-right:6px;background:var('+a.c+')"></span><b>'+esc(a.name)+'</b></td><td class="r"><b>'+money(a.amt,true)+'</b></td><td class="r">'+(a.amt/(T||ALLOC.reduce(function(s2,g){ return s2+g.amt; },0))*100).toFixed(1)+'%</td><td class="r">'+(function(d){ return Math.abs(d)<0.005 ? '—' : '<span class="alDelta '+(d>0?'up':'down')+'">'+(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+'</span>'; })(a.amt-a.prev)+'</td></tr>';
       a.items.forEach(function(i){ if(a.items.length>1) h+='<tr><td style="padding-left:22px;color:var(--muted)">'+esc(i[0])+'</td><td class="r" style="color:var(--muted)">'+money(i[1],true)+'</td><td></td><td></td></tr>'; });
@@ -1577,6 +1601,7 @@ document.addEventListener('click', function(e){
     snap_(PUBLISHED[pd] ? 'Put back the Dashboard as it was for '+date(pd) : 'Took '+date(pd)+' off the Dashboard');
     PUBLISHED[pd]={ at:Date.now() }; S.pubAsk=false; S.viewDay=null; keep_(); render(); toast('✓ The Dashboard now shows '+date(pd)); return; }
   if(e.target.id==='unpubDay'){ var ud=reportDay_(); snap_('Put '+date(ud)+' back on the Dashboard'); delete PUBLISHED[ud]; S.viewDay=null; keep_(); render(); toast(date(ud)+' is off the Dashboard'); return; }
+  var dm=e.target.closest && e.target.closest('[data-dashmode]'); if(dm){ S.dashMode=dm.dataset.dashmode; render(); return; }
   if(e.target.id==='viewLatest'){ S.viewDay=null; S.viewDebtDay=null; render(); return; }
   if(e.target.id==='undoLast'){ if(!S.undoAsk){ S.undoAsk=true; render(); setTimeout(function(){ if(S.undoAsk){ S.undoAsk=false; if(S.tab==='input') render(); } }, 4000); return; } undoLast_(); return; }
   if(e.target.id==='inBalSave'){ inSave_(); return; }
