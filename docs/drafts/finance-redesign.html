@@ -1531,18 +1531,18 @@ function inAdvHtml_(){
     : '<p class="hint">Nothing out right now.</p>';
   if(done.length) h+='<details class="incGroup"><summary><b>Settled ('+done.length+')</b><span class="chev">▾</span></summary>'+done.slice().sort(function(x,y){ return x.settled.date<y.settled.date?1:-1; }).map(function(a){ var st=a.settled, diff=Math.round((a.amt-st.spent-st.returned)*100)/100;
       return '<div class="advItem"><div class="xfTop"><b>'+esc(a.who)+' · '+money(a.amt,true)+'</b><span class="dsub">'+date(a.date)+' → '+date(st.date)+'</span></div>'+
-        '<div class="dsub">Spent '+money(st.spent,true)+(st.type?' ('+esc(st.type)+')':'')+' · returned '+money(st.returned,true)+(st.bank?' into '+bankLabel_(st.bank):'')+(Math.abs(diff)>=0.005?' · <b class="'+(diff>0?'late':'')+'">'+(diff>0?money(diff,true)+' unaccounted':money(-diff,true)+' more than given')+'</b>':'')+'</div>'+
+        '<div class="dsub">Spent '+money(st.spent,true)+' · returned '+money(st.returned,true)+(st.bank?' into '+bankLabel_(st.bank):'')+(st.qbo?' · QBO ref <b>'+esc(st.qbo)+'</b>':'')+(Math.abs(diff)>=0.005?' · <b class="'+(diff>0?'late':'')+'">'+(diff>0?money(diff,true)+' unaccounted':money(-diff,true)+' more than given')+'</b>':'')+'</div>'+
         (a.memo?'<div class="xfMemo">“'+esc(a.memo)+'”</div>':'')+'<div class="rowBtns"><button class="delBtn" data-advreopen="'+a.id+'">↩ Unsettle</button></div></div>'; }).join('')+'</details>';
   return h+'</details>';
 }
 function advSettleHtml_(a){
-  var D=S.advS||(S.advS={ date:reportDay_(), spent:'', returned:'', type:'', bank:a.bank||'acct|cash', note:'' });
+  var D=S.advS||(S.advS={ date:reportDay_(), spent:'', returned:'', qbo:'', bank:a.bank||'acct|cash', note:'' });
   var sp=calc_(D.spent), rt=calc_(D.returned), diff=Math.round((a.amt-(isNaN(sp)?0:sp)-(isNaN(rt)?0:rt))*100)/100;
   return '<div class="bulkEd"><div class="xfRow"><div><label class="f" for="advSDate">Day settled</label><input type="date" id="advSDate" data-advs="date" max="'+TODAY+'" value="'+esc(D.date)+'"></div><div></div></div>'+
     '<div class="xfRow"><div><label class="f" for="advSSpent">Spent (receipts)</label><div class="money"><span>$</span><input id="advSSpent" data-advs="spent" type="text" autocomplete="off" placeholder="0.00" value="'+esc(D.spent)+'"></div></div>'+
     '<div><label class="f" for="advSRet">Returned / left over</label><div class="money"><span>$</span><input id="advSRet" data-advs="returned" type="text" autocomplete="off" placeholder="0.00" value="'+esc(D.returned)+'"></div></div></div>'+
     '<div id="advDiff" class="dsub" style="margin-top:4px">'+advDiffText_(a, diff)+'</div>'+
-    '<label class="f">What it was spent on</label>'+flTypeSelect_('exp', 'data-advssel="type"', D.type||'', '— Pick (or Not sure) —')+
+    '<label class="f" for="advSQbo">QuickBooks reference number</label><input type="text" id="advSQbo" data-advs="qbo" maxlength="40" autocomplete="off" placeholder="e.g. the Ref no. or Expense no. in QBO" value="'+esc(D.qbo||'')+'">'+
     '<label class="f">Money returned into</label>'+bankSelect_('advSBank', D.bank, 'data-advssel="bank"')+
     '<label class="f" for="advSNote">Note (optional)</label><input type="text" id="advSNote" data-advs="note" maxlength="200" value="'+esc(D.note)+'">'+
     (S.advSErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.advSErr)+'</p>' : '')+
@@ -1563,11 +1563,11 @@ function advSettle_(id){
   var a=ADVANCES.filter(function(x){ return x.id===id; })[0], D=S.advS, sp=calc_(D.spent||'0'), rt=calc_(D.returned||'0'), err='';
   if(!D.date||D.date>TODAY) err='Pick the day it was settled (not in the future).'; else if(D.date<a.date) err='It can’t be settled before it was taken.';
   else if(isNaN(sp)||sp<0||isNaN(rt)||rt<0) err='Spent and returned must be numbers (0 if nothing).'; else if(sp<=0 && rt<=0) err='Type what was spent, what came back, or both.';
-  else if(sp>0 && !D.type) err='Pick what it was spent on (or Not sure).'; else if(rt>0 && !D.bank) err='Pick which account the money came back into.';
+  else if(rt>0 && !D.bank) err='Pick which account the money came back into.';
   S.advSErr=err; if(err){ render(); return; }
   snap_('Unsettled the advance to '+a.who);
-  var st={ date:D.date, spent:Math.round(sp*100)/100, returned:Math.round(rt*100)/100, type:D.type||'', bank:rt>0?D.bank:'', note:String(D.note||'').trim(), at:Date.now(), expId:'' };
-  if(st.spent>0){ var e={ id:'e'+Date.now().toString(36), at:st.at, date:st.date, amt:st.spent, type:st.type, who:a.who, memo:'Advance — '+(a.memo||a.who)+(st.note?' · '+st.note:''), split:[{ f:a.fund, amt:st.spent }], bank:'', src:'advance', advId:a.id };
+  var st={ date:D.date, spent:Math.round(sp*100)/100, returned:Math.round(rt*100)/100, qbo:String(D.qbo||'').trim(), type:'Not sure', bank:rt>0?D.bank:'', note:String(D.note||'').trim(), at:Date.now(), expId:'' };
+  if(st.spent>0){ var e={ id:'e'+Date.now().toString(36), at:st.at, date:st.date, amt:st.spent, type:st.type, who:a.who, memo:'Advance — '+(a.memo||a.who)+(st.qbo?' · QBO ref '+st.qbo:'')+(st.note?' · '+st.note:''), split:[{ f:a.fund, amt:st.spent }], bank:'', src:'advance', advId:a.id, qbo:st.qbo };
     flApply_('exp', e, 1); EXPENSES.unshift(e); flSort_('exp'); st.expId=e.id; }
   a.settled=st; xferSnap_(st.date); S.advSettle=null; S.advS=null; render(); toast('Settled — '+money(st.spent,true)+' spent, '+money(st.returned,true)+' back');
 }
@@ -1933,7 +1933,7 @@ function histHtml_(kind){
     var line=function(a){ var f=fundOf_(a.fund), st=a.settled, days=Math.round((Date.parse(st?st.date:TODAY)-Date.parse(a.date))/864e5), diff=st?Math.round((a.amt-st.spent-st.returned)*100)/100:0;
       return '<div class="xfLine"><div><b>'+esc(a.who)+'</b> <span class="dsub" style="display:inline">'+date(a.date)+'</span> '+(st?'<span class="apprTag">✓ Settled '+date(st.date)+'</span>':'<span class="xfTag tool">Out · '+days+' day'+(days===1?'':'s')+'</span>')+'</div>'+
         '<div class="dsub">From '+esc(f?f.name:a.fund)+(a.bank?' · out of '+bankLabel_(a.bank):'')+' · '+(a.budgeted==='yes'?'pre-budgeted':'not budgeted')+'</div>'+
-        (st ? '<div class="dsub">Spent '+money(st.spent,true)+(st.type?' ('+esc(st.type)+')':'')+' · returned '+money(st.returned,true)+(Math.abs(diff)>=0.005?' · '+(diff>0?money(diff,true)+' unaccounted':money(-diff,true)+' over'):'')+'</div>' : '')+
+        (st ? '<div class="dsub">Spent '+money(st.spent,true)+' · returned '+money(st.returned,true)+(st.qbo?' · QBO ref <b>'+esc(st.qbo)+'</b>':'')+(Math.abs(diff)>=0.005?' · '+(diff>0?money(diff,true)+' unaccounted':money(-diff,true)+' over'):'')+'</div>' : '')+
         (a.memo?'<div class="xfMemo">“'+esc(a.memo)+'”</div>':'')+
         '<b class="xfAmt out">'+money(a.amt,true)+'</b>'+(st?'':'<div class="rowBtns"><button class="editBtn" data-advgo="'+a.id+'">Settle it</button></div>')+'</div>'; };
     var h4='<h3>🤝 Advances — history</h3><div class="seg" style="margin:8px 0 4px"><button class="'+(tab==='out'?'on':'')+'" data-advtab="out">Outstanding · '+out.length+'</button><button class="'+(tab==='all'?'on':'')+'" data-advtab="all">All advances · '+all.length+'</button></div>';
