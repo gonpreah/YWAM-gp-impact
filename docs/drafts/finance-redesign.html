@@ -833,16 +833,28 @@ function ledgerLines_(){ var L=[];
     Object.keys(keys).sort(function(a,b){ var ia=order.indexOf(a), ib=order.indexOf(b); return (ia<0?999:ia)-(ib<0?999:ib); }).forEach(function(k){
       var d=Math.round((amt(m.after,k)-amt(m.before,k))*100)/100; if(Math.abs(d)<0.005) return;
       L.push({ date:m.date, at:m.at||0, acct:'', type:'Manual allocation', name:'', memo:'', amt:null, cat:fundLabel_(k), camt:d, appr:pd }); }); });
-  return L.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:(x.type===y.type?0:(x.type==='Balance entry'?-1:1)); }); }
-/* does every dollar have a home? the newest balances (the gold standard) − every category amount */
-function ledgerCheck_(L){ var b=BAL_DAYS[0], real=b?Math.round((b.aba+b.us+b.cash)*100)/100:0, cat=Math.round(L.reduce(function(s2,x){ return s2+(x.camt||0); },0)*100)/100;
+  /* expenses: real money out of an account (Amount −) and out of the category's "virtual bank
+     account" (Category amount −), the same amount in both. One line per category it was paid
+     from. Kind of expense goes first in the memo. An expense from settling an advance has no
+     account and no Amount — the real money left when the advance was given out. */
+  EXPENSES.forEach(function(x){
+    var pd=Object.keys(PUBLISHED).filter(function(d){ var P=PUBLISHED[d]; return P.ids && (P.ids.exp||[]).indexOf(x.id)>=0; }).sort()[0]||'';
+    var adv=x.src==='advance', memo=[x.type, x.memo].filter(function(v){ return v && String(v).trim(); }).join(' · ');
+    (x.split&&x.split.length?x.split:[{ f:'', amt:x.amt }]).forEach(function(sp){
+      L.push({ date:x.date, at:x.at||0, acct:adv?'':(ACCT_KEYS[x.bank]||bankLabel_(x.bank)||''), type:'Expense', name:x.who||'', memo:memo, amt:adv?null:-sp.amt, cat:sp.f?fundLabel_(sp.f):'', camt:-sp.amt, appr:pd, src:x }); }); });
+  var TORD={ 'Balance entry':0, 'Manual allocation':1, 'Expense':2 };
+  return L.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:((TORD[x.type]||9)-(TORD[y.type]||9)) || ((y.at||0)-(x.at||0)); }); }
+/* does every dollar have a home? real money = the newest balances (the gold standard) + the Amount
+   of every line that came after them (afterBal_, the same rule as the Live estimates); minus
+   every category amount */
+function ledgerCheck_(L){ var b=BAL_DAYS[0], real=b?Math.round(((b.aba+b.us+b.cash)+L.reduce(function(s2,x){ return s2+(x.type!=='Balance entry' && x.amt!=null && x.src && afterBal_(x.src) ? x.amt : 0); },0))*100)/100:0, cat=Math.round(L.reduce(function(s2,x){ return s2+(x.camt||0); },0)*100)/100;
   return { day:b?b.asOf:'', real:real, cat:cat, sum:Math.round((real-cat)*100)/100 }; }
 function inLedgerHtml_(){
   var open=S.foldOpen&&S.foldOpen.ledger;
   return '<details class="inCard fold" id="inLedger" data-fold="ledger"'+(open?' open':'')+'><summary class="foldHead"><span><b>📒 Detailed breakdown</b><span class="dsub">'+(function(){ var n=ledgerLines_().length; return n ? n+' line'+(n>1?'s':'') : 'Every transaction, line by line'; })()+'</span></span><span class="foldR"><span class="chev">▾</span></span></summary>'+
     '<p class="inLast">Where every transaction is kept — one line each, with its date and all its details. On a phone, swipe the table sideways to see every column.</p>'+
     (function(){ var L=ledgerLines_(); if(!L.length) return ''; var c=ledgerCheck_(L), ok=Math.abs(c.sum)<0.005;
-      return '<div class="ledCheck '+(ok?'ok':'off')+'"><div><small>Real money'+(c.day?' · balances '+date(c.day):'')+'</small><b>'+money(c.real,true)+'</b></div><div><small>Category amounts</small><b>'+(c.cat<0?'−':'')+money(Math.abs(c.cat),true)+'</b></div>'+
+      return '<div class="ledCheck '+(ok?'ok':'off')+'"><div><small>Real money'+(c.day?' · from balances '+date(c.day):'')+'</small><b>'+money(c.real,true)+'</b></div><div><small>Category amounts</small><b>'+(c.cat<0?'−':'')+money(Math.abs(c.cat),true)+'</b></div>'+
         '<div><small>Real − category</small><b>'+(c.sum<0?'−':'')+money(Math.abs(c.sum),true)+'</b></div><p>'+(ok?'✓ Every dollar has a home':(c.sum>0?'⚠️ '+money(c.sum,true)+' has no home yet':'⚠️ '+money(-c.sum,true)+' more is given a home than there is'))+'</p></div>'; })()+
     '<div class="ledWrap"><table class="ledTbl"><thead><tr>'+LEDGER_COLS.map(function(c){ return '<th'+(c==='Amount'||c==='Category amount'?' class="r"':'')+'>'+c+'</th>'; }).join('')+'</tr></thead>'+
     '<tbody>'+(function(){ var L=ledgerLines_(); if(!L.length) return '<tr><td colspan="'+LEDGER_COLS.length+'" class="ledEmpty">No transactions yet.</td></tr>';

@@ -129,11 +129,24 @@ Income.
   - Data saved before manual allocations were kept gets one from the first approved day's
     allocations (else the first saved allocations day) when it is opened.
   - Category renames and moves carry into them (`catRekey_`).
+- **Expense** (from 🧾 Expenses, one entry or imported) — Date, Account (the bank account it came
+  out of), Name (who was paid), Memo (the kind of expense, then the memo), and the same amount
+  **negative in both Amount and Category amount**: it lowers our real balance and the category's
+  "virtual bank account" alike. One line per category it was paid from. An expense made by
+  settling an advance has no Account and no Amount (the real money left when the advance was
+  given out) — only the Category amount. Approved: the approved day whose frozen list holds it
+  (`PUBLISHED[day].ids.exp`), else "Not yet".
 - **The check above the table** (`ledgerCheck_`): real money = the newest balances day's total
-  (balances are levels, not movements, so only the newest counts) − every Category amount.
+  (balances are levels, not movements, so only the newest counts) + the Amount of every line
+  that came after those balances (the same rule as the Live estimates, `afterBal_`) − every
+  Category amount. An expense from before the newest balances is already in them; its
+  Category amount still counts, which is right because the allocations saved since already
+  start from the funds after it.
   $0 → "✓ Every dollar has a home"; otherwise how much has no home, or how much more is given a
   home than there is.
-- Not in it yet: income, expenses, transfers, Financial tools, advances. Until they are, the check
+- Not in it yet: income, transfers, Financial tools, advances. A settled advance's spend is in
+  (as an expense) but the advance itself is not, so the check is off by what went out on
+  advances until they are added. Until they are, the check
   is only right when nothing of those has happened since the newest balances. Still to decide:
   how each fills the columns (a transfer has two accounts or two categories; an income split by
   a formula touches several categories).
