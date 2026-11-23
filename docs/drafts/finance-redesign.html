@@ -169,6 +169,12 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .incSrc .sb{ grid-column:1 / -1; height:6px; border-radius:999px; background:var(--surface2); overflow:hidden; }
 .incSrc .sb span{ display:block; height:100%; border-radius:999px; }
 .incSrc .sp{ color:var(--muted); font-weight:600; font-size:12px; margin-left:4px; }
+.alKey{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:4px 0 10px; }
+.alKeyTile{ display:flex; gap:10px; align-items:flex-start; text-align:left; background:var(--surface); border:0; border-radius:14px; padding:10px 12px; cursor:pointer; color:var(--ink); }
+.alKeyTile .sw{ margin-top:4px; flex:none; }
+.alKeyTile small{ display:block; font-size:12px; color:var(--muted); font-weight:600; }
+.alKeyTile b{ display:block; font-size:20px; font-variant-numeric:tabular-nums; }
+.alKeyTile .alPct{ display:inline; }
 .flowDrop{ width:100%; display:flex; justify-content:space-between; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-top:10px; font-weight:600; font-size:14px; cursor:pointer; }
 .flowDrop .chev{ transition:transform .2s; color:var(--muted); }
 .flowDrop.on{ border-radius:12px 12px 0 0; border-bottom-color:transparent; }
@@ -1193,13 +1199,19 @@ function allocOrder_(){ return ALLOC.slice(); }
 function allocHtml(){
   var T=total(), A=ALLOC.reduce(function(s,a){ return s+a.amt; },0), gap=T-A;
   var h='<section class="sec" id="alloc"><div class="secHead"><h2>📊 Allocation report</h2><button class="more" data-sheet="alloc">Details ›</button></div>'+
-    '<p class="hint">Where the '+money(T)+' in total liquid assets is set aside. Tap a colour or a line to see what is in it.</p>';
+    '<p class="hint">Where the '+money(T)+' in total liquid assets is set aside.</p>';
+  var gA=ALLOC.filter(function(a){ return a.id==='adm'; })[0], gF=ALLOC.filter(function(a){ return a.id==='fund'; })[0];
+  h+='<div class="alKey">'+[[gA,'Admin'],[gF,'Funds']].map(function(x){ var a=x[0], p=a.amt/(T||A)*100;
+      return '<button class="alKeyTile" data-al="'+a.id+'"><span class="sw" style="background:var('+a.c+')"></span><span><small>'+x[1]+'</small><b>'+money(a.amt)+'</b><span class="alPct">'+Math.round(p)+'%</span></span></button>'; }).join('')+'</div>';
   h+='<div class="alBar'+(S.open?' focus':'')+'" role="img" aria-label="'+esc(allocOrder_().map(function(a){ return a.name+' '+money(a.amt)+' '+Math.round(a.amt/(T||A)*100)+'%'; }).join(', '))+'">'+
     allocOrder_().map(function(a){ var p=a.amt/(T||A)*100;
       return '<button class="alSeg'+(a.dark?' dark':'')+(S.open===a.id?' on':'')+'" data-al="'+a.id+'" style="flex:'+a.amt+' 1 0;background:var('+a.c+')" title="'+esc(a.name+' · '+money(a.amt,true)+' · '+Math.round(p)+'%')+'">'+(p>=9?Math.round(p)+'%':'')+'</button>';
     }).join('')+'</div>';
   h+= Math.abs(gap)<0.005 ? '<div class="alCheck ok">✓ Every dollar is allocated — '+money(A,true)+' of '+money(T,true)+'</div>'
     : '<div class="alCheck off">⚠️ '+money(Math.abs(gap),true)+(gap>0?' not allocated yet':' more allocated than is in hand')+'</div>';
+  var alOn=!!S.alList;
+  h+='<button class="flowDrop'+(alOn?' on':'')+'" data-allist="1" aria-expanded="'+alOn+'"><span>'+(alOn?'Hide':'Show')+' all '+ALLOC.length+' allocations</span><span class="chev">▾</span></button>';
+  if(!alOn) return h+'</section>';
   h+='<ul class="alList">'+allocOrder_().map(function(a){ var p=a.amt/(T||A)*100;
     return '<li class="alRow'+(S.open===a.id?' on':'')+'"><button data-al="'+a.id+'" aria-expanded="'+(S.open===a.id)+'">'+
       '<span class="sw" style="background:var('+a.c+')"></span>'+
@@ -1603,14 +1615,16 @@ document.addEventListener('click', function(e){
   if(e.target.id==='inDebtCancel'){ S.debtUp=null; S.debtDay=null; S.debtReadErr=''; render(); return; }
   if(e.target.id==='inAlReset'){ S.inAl=null; S.inAlErr=''; render(); return; }
   if(e.target.id==='inBalCopy'){ BAL.accts.forEach(function(a){ S.inBal[a.id]=inMoney_(a.amt); }); S.inErr=''; render(); return; }
-  var t=e.target.closest('[data-tab],[data-al],[data-sheet],[data-debtall],[data-flow],[data-flowper],[data-flowlist]'); if(!t) return;
+  var t=e.target.closest('[data-tab],[data-al],[data-sheet],[data-debtall],[data-flow],[data-flowper],[data-flowlist],[data-allist]'); if(!t) return;
   if(t.dataset.tab){ S.tab=t.dataset.tab; render(); }
+  else if(t.dataset.allist){ S.alList=!S.alList; render(); }
   else if(t.dataset.flowlist){ var fk=t.dataset.flowlist; S.flowList[fk]=!S.flowList[fk]; render(); }
   else if(t.dataset.flow){ var fp=t.dataset.flow.split('|');
     if(t.classList.contains('alSeg')){ S.flowList[fp[0]]=true; S.flowOpen[fp[0]]=fp[1]; }   /* a colour opens the list on its own row */
     else S.flowOpen[fp[0]] = S.flowOpen[fp[0]]===fp[1] ? null : fp[1];
     render(); }
   else if(t.dataset.flowper){ var pp=t.dataset.flowper.split('|'); S.flowPer[pp[0]]=pp[1]; render(); if(document.body.classList.contains('sheetOn')) sheet(FLOW[pp[0]].id); }
+  else if(t.dataset.al && !t.closest('.alRow')){ S.alList=true; S.open=t.dataset.al; render(); }
   else if(t.dataset.al){ S.open = S.open===t.dataset.al ? null : t.dataset.al; render(); }
   else if(t.dataset.sheet) sheet(t.dataset.sheet);
   else if(t.dataset.debtall!=null){ S.debtAll = t.dataset.debtall==='1'; sheet('debt'); }
