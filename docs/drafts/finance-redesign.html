@@ -26,7 +26,7 @@
   color-scheme:dark;
 }
 *{ box-sizing:border-box; }
-html,body{ margin:0; background:var(--bg); color:var(--ink); overflow-x:hidden; }
+html,body{ margin:0; background:var(--bg); color:var(--ink); overflow-x:clip; }  /* clip, not hidden: hidden stops the sticky bars sticking */
 body{ font-family:'Kantumruy Pro','Hanken Grotesk',system-ui,sans-serif; font-size:15px; line-height:1.45; }
 button{ font:inherit; color:inherit; }
 .draftBar{ background:#FFF1D6; color:#5C4A1E; border-bottom:1px solid #FFD98A; padding:8px 16px; font-size:13px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
@@ -204,6 +204,25 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .inDates{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:12px; }
 .inDates label{ font-size:12.5px; font-weight:600; display:block; margin-bottom:4px; }
 .inDates input{ width:100%; padding:9px 10px; font:inherit; border:1px solid color-mix(in srgb, var(--muted) 40%, transparent); border-radius:10px; background:var(--bg); color:var(--ink); }
+.inDates.one{ grid-template-columns:minmax(0,1fr); max-width:260px; }
+.inDay{ border:2px solid var(--accent); position:sticky; top:calc(env(safe-area-inset-top, 0px) + 46px); z-index:5; padding:10px 14px; box-shadow:0 6px 14px -8px rgba(0,0,0,.25); }
+.inDayRow{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.inDayRow label{ font-weight:700; font-size:16px; }
+.inDayRow input{ padding:9px 10px; font:inherit; font-weight:700; border:1px solid color-mix(in srgb, var(--muted) 40%, transparent); border-radius:10px; background:var(--bg); color:var(--ink); }
+.inDrop{ display:flex; gap:10px; align-items:center; border:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); border-radius:12px; padding:14px; margin-top:4px; cursor:pointer; font-size:14px; background:var(--accentSoft); }
+.inDrop small{ color:var(--muted); }
+.upSum{ margin-top:12px; font-size:13.5px; background:var(--surface2); border-radius:10px; padding:10px 12px; }
+.upSum .okc{ color:var(--good); font-weight:700; }
+.upSum .badc{ color:var(--bad); font-weight:700; }
+.upList{ border-top:1px solid var(--line); max-height:420px; overflow:auto; }
+.upRow{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); gap:4px 10px; align-items:center; padding:8px 0; border-bottom:1px solid var(--line); }
+.upN{ font-weight:600; font-size:14px; min-width:0; }
+.upN span{ display:block; font-size:12px; color:var(--muted); font-weight:400; }
+.upN .late{ color:var(--bad); }
+.upRow select{ width:100%; padding:8px; font:inherit; font-size:13px; border:1px solid color-mix(in srgb, var(--muted) 40%, transparent); border-radius:9px; background:var(--bg); color:var(--ink); min-width:0; }
+.upLinked{ grid-column:2; font-size:11.5px; color:var(--good); font-weight:600; }
+.inUpload{ display:flex; gap:10px; align-items:flex-start; border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:12px; padding:12px; margin-top:12px; font-size:14px; }
+.inUpload small{ color:var(--muted); }
 .inDates .ls{ font-size:11.5px; color:var(--muted); margin-top:3px; }
 .inErr{ color:var(--bad); font-size:13px; margin:10px 0 0; }
 .inBtns{ display:flex; gap:8px; margin-top:14px; }
@@ -216,7 +235,7 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .inHist th{ text-align:right; color:var(--muted); font-weight:600; padding:5px 4px; border-bottom:1px solid var(--line); }
 .inHist td{ text-align:right; padding:6px 4px; border-bottom:1px solid var(--line); }
 .inHist th:first-child, .inHist td:first-child{ text-align:left; }
-.inAlSum{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 12px; background:var(--headerBg); color:var(--onDark); border-radius:12px; padding:12px 14px; margin:0 0 12px; position:sticky; top:calc(env(safe-area-inset-top, 0px) + 46px); z-index:4; }
+.inAlSum{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 12px; background:var(--headerBg); color:var(--onDark); border-radius:12px; padding:12px 14px; margin:0 0 12px; position:sticky; top:calc(env(safe-area-inset-top, 0px) + 158px); z-index:4; }
 .inAlSum small{ display:block; color:var(--onDarkFaint); font-size:12px; }
 .inAlSum b{ font-size:18px; font-variant-numeric:tabular-nums; }
 .inAlSum .st{ grid-column:1 / -1; font-size:13px; font-weight:600; }
@@ -235,6 +254,10 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .inAlBody{ padding:0 0 10px 24px; }
 .inAlRow{ display:grid; grid-template-columns:minmax(0,1fr) 140px; gap:10px; align-items:center; padding:5px 0; }
 .inAlRow label{ font-size:14px; }
+.asOfBar{ font-size:13px; color:var(--muted); padding:12px 0 0; display:flex; flex-wrap:wrap; gap:4px 6px; align-items:center; }
+.asOfBar b{ color:var(--ink); }
+.asOfBar .warn{ color:var(--amberDeep); font-weight:600; }
+.asOfBar .sep{ margin:0 2px; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
 .inNext b{ color:var(--ink); }
 .soon{ text-align:center; color:var(--muted); padding:40px 10px; }
@@ -360,20 +383,29 @@ function calc_(v){
 function isSum_(v){ return /[+\-*/x×÷()=]/i.test(String(v).replace(/^\s*-/,'')); }
 /* ---- Input: the balances ---- */
 function inMoney_(v){ return v==null||v==='' ? '' : Number(v).toFixed(2); }
+/* one "as of" day for every report on the Input tab but staff debt, which has its own */
+var TODAY='2026-11-23', ALLOC_ASOF='2026-11-20';
+function reportDay_(){ return S.reportDay || TODAY; }
+function inDayHtml_(){
+  var d=reportDay_();
+  return '<div class="inCard inDay" id="inDay"><div class="inDayRow"><label for="inReportDay">📅 Reports as of</label>'+
+    '<input type="date" id="inReportDay" data-reportday="1" max="'+TODAY+'" value="'+esc(d)+'"></div>'+
+    '<p class="inLast" style="margin:4px 0 0">Everything below is saved for <b>'+date(d)+'</b> — except staff debt, which has its own day.</p>'+
+    (S.dayErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.dayErr)+'</p>' : '')+'</div>';
+}
 function inputHtml(){
-  var B=BAL, D=S.inBal || (S.inBal={ aba:'', us:'', cash:'', asOf:'2026-11-23', rec:B.reconciled });
+  var B=BAL, D=S.inBal || (S.inBal={ aba:'', us:'', cash:'', rec:B.reconciled });
   var acc=function(id){ return B.accts.filter(function(a){ return a.id===id; })[0]; };
   var row=function(id, label, sub){ var a=acc(id);
     return '<div class="inRow"><label for="inB_'+id+'">'+label+'<span class="ls">'+sub+'</span></label>'+
       '<div class="money"><span>$</span><input id="inB_'+id+'" data-inbal="'+id+'" type="text" inputmode="text" autocomplete="off" spellcheck="false" enterkeyhint="done" placeholder="'+inMoney_(a.amt)+'" value="'+esc(D[id])+'"></div>'+
       '<div class="inWas">Last time: '+money(a.amt,true)+' on '+date(B.asOf)+'</div></div>'; };
-  var h='<div class="inCard" id="inBalances"><h2>🏦 Balances</h2>'+
+  var h=inDayHtml_()+'<div class="inCard" id="inBalances"><h2>🏦 Balances</h2>'+
     '<p class="inLast">Last entered '+date(B.asOf)+' by the Finances office. Type what is in each account today — the Dashboard updates when you save.</p>'+
     '<p class="inTip">🧮 Boxes do simple sums: type <b>500-30</b> or <b>5*6</b> and it works it out.</p>'+
     row('aba','ABA bank','Cambodia · US$ account')+row('us','US bank','United States')+row('cash','Cash on hand','the cash box, counted')+
     '<div class="inTotal" id="inTotal">'+inTotalHtml_()+'</div>'+
-    '<div class="inDates"><div><label for="inB_asOf">Balances as of</label><input type="date" id="inB_asOf" data-inbal="asOf" max="2026-11-23" value="'+esc(D.asOf)+'"></div>'+
-    '<div><label for="inB_rec">Last reconciled with the bank</label><input type="date" id="inB_rec" data-inbal="rec" max="2026-11-23" value="'+esc(D.rec||'')+'"><div class="ls">Leave empty if not reconciled yet.</div></div></div>'+
+    '<div class="inDates one"><div><label for="inB_rec">Last reconciled with the bank</label><input type="date" id="inB_rec" data-inbal="rec" max="2026-11-23" value="'+esc(D.rec||'')+'"><div class="ls">Leave empty if not reconciled yet.</div></div></div>'+
     (S.inErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.inErr)+'</p>' : '')+
     '<div class="inBtns"><button class="btn" id="inBalSave">Save balances</button><button class="btn ghost" id="inBalCopy">Same as last time</button></div>'+
     '<details class="inHist"><summary>Earlier balances ('+BAL_HIST.length+')</summary><table><tr><th>Date</th><th>ABA</th><th>US bank</th><th>Cash</th><th>Total</th></tr>'+
@@ -382,7 +414,7 @@ function inputHtml(){
   h+=inAllocHtml_();
   h+=
     '<div class="inNext">💵 <span><b>Income and expenses</b> — entered by category and shared out to the allocations.</span></div>'+
-    '<div class="inNext">💳 <span><b>Staff debt</b> — upload the A/R Ageing report.</span></div>';
+    inDebtHtml_();
   return h;
 }
 /* ---- Input: the allocations — every sub-fund's balance, in one form ---- */
@@ -420,10 +452,130 @@ function inAlSumHtml_(){
 function inAlSave_(){
   var err='';
   ALLOC.forEach(function(g){ g.items.forEach(function(_, i){ var v=inAlVal_(g.id,i); if(v==='') err=err||('Fill in '+g.items[i][0]+' (0 if empty).'); else if(isNaN(calc_(v))) err=err||(g.items[i][0]+': that isn’t a number or a sum I can work out.'); else if(calc_(v)<0) err=err||'Balances can’t be below zero.'; }); });
+  var day=reportDay_(); if(!err && (!day || day>TODAY)) err='Pick a “Reports as of” day at the top that isn’t in the future.';
   S.inAlErr=err; if(err){ render(); return; }
+  ALLOC_ASOF=day;
   ALLOC.forEach(function(g){ g.prev=g.amt; g.items.forEach(function(it, i){ it[1]=+inAlNum_(g.id,i).toFixed(2); }); g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); });
   var gap=total()-ALLOC.reduce(function(s2,g){ return s2+g.amt; },0);
   S.inAl=null; render(); toast(Math.abs(gap)<0.005 ? 'Saved — every dollar is allocated' : 'Saved — '+money(Math.abs(gap),true)+(gap>0?' still not allocated':' over what is in hand'));
+}
+/* ---- Input: staff debt — attach the office's A/R Ageing spreadsheet ----
+   Read here in the browser (a small .xlsx reader of its own, below): the "As of" line, the
+   CURRENT · 1 Month · 2 Months · 3 Months · 3+ Months · Total columns, one row a person, the
+   TOTAL row as a check. Each name can be linked to a staff profile; the link is kept by the
+   spelling on the report, so next month's file links itself. SAMPLE_STAFF stands in for the
+   campus roster in this draft. */
+var SAMPLE_STAFF=[
+  { id:'s1', name:'Sample Person A', dept:'Skills Training' }, { id:'s2', name:'Sample Person B', dept:'Community Service' },
+  { id:'s3', name:'Sample Person C', dept:'Media' }, { id:'s4', name:'Sample Person D', dept:'Leadership Development' },
+  { id:'s5', name:'Sample Person E', dept:'Youth Education' }, { id:'s6', name:'Sample Person G', dept:'Community Service' },
+  { id:'s7', name:'Sample Person J', dept:'Campus Leadership' }, { id:'s8', name:'Sample Person N', dept:'Community Service' } ];
+var DEBT_LINKS={};   /* spelling on the report → staff id, or 'none' (not on staff) */
+function staffById_(id){ return SAMPLE_STAFF.filter(function(x){ return x.id===id; })[0]; }
+function debtAutoLink_(name){
+  if(DEBT_LINKS[name]) return DEBT_LINKS[name];
+  var n=name.toLowerCase().trim(), hit=SAMPLE_STAFF.filter(function(x){ return x.name.toLowerCase()===n; })[0];
+  if(!hit && /&| and /i.test(name)){ var first=name.split(/&| and /i)[0].trim().toLowerCase(); hit=SAMPLE_STAFF.filter(function(x){ return x.name.toLowerCase()===first; })[0]; }
+  return hit ? hit.id : '';
+}
+function inDebtHtml_(){
+  var U=S.debtUp, d=S.debtDay || (U && U.asOf) || DEBT.asOf;
+  var h='<div class="inCard" id="inDebt"><h2>💳 Staff debt</h2>'+
+    '<p class="inLast">Last report: as of '+date(DEBT.asOf)+(DEBT.file?' · '+esc(DEBT.file):'')+'. Staff debt has its own day — the day on the A/R Ageing report.</p>'+
+    '<label class="inDrop" for="inDebtFile">📎 <span><b>'+(U?'Attach a different file':'Attach the A/R Ageing report')+'</b><br><small>The Excel file (.xlsx) the office makes — or a .csv of it</small></span></label>'+
+    '<input type="file" id="inDebtFile" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" hidden>'+
+    '<div class="inDates one" style="margin-top:12px"><div><label for="inDebtDay">Staff debt as of</label><input type="date" id="inDebtDay" data-debtday="1" max="'+TODAY+'" value="'+esc(d)+'">'+
+      (U && U.asOf ? '<div class="ls">Read from the file: “'+esc(U.asOfText)+'”. Change it if that’s wrong.</div>' : '')+'</div></div>';
+  if(S.debtReadErr) h+='<p class="inErr" role="alert">⚠️ '+esc(S.debtReadErr)+'</p>';
+  if(U){
+    var tot=U.people.reduce(function(s2,p){ return s2+p.tot; },0), linked=U.people.filter(function(p){ return S.debtLink[p.n] && S.debtLink[p.n]!=='none'; }).length;
+    h+='<div class="upSum"><b>'+esc(U.file)+'</b> · '+U.people.length+' people · '+money(tot,true)+
+      (U.check==null ? '' : U.check ? ' <span class="okc">✓ matches its TOTAL row</span>' : ' <span class="badc">⚠️ doesn’t match its TOTAL row ('+money(U.fileTotal,true)+')</span>')+'</div>'+
+      '<p class="inLast" style="margin:10px 0 6px"><b>Link each name to a staff profile</b> — '+linked+' of '+U.people.length+' linked. A link is remembered by the name as the report spells it, so next month’s file links itself.</p>'+
+      '<div class="upList">'+U.people.map(function(p, i){ var cur=S.debtLink[p.n]||'', st=staffById_(cur);
+        return '<div class="upRow"><div class="upN">'+esc(p.n)+'<span>'+money(p.tot,true)+(p.old?' · <b class="late">'+money(p.old,true)+' 2+ months</b>':'')+'</span></div>'+
+          '<select data-debtlink="'+i+'" aria-label="Staff profile for '+esc(p.n)+'"><option value="">— Not linked yet —</option>'+
+          SAMPLE_STAFF.map(function(x){ return '<option value="'+x.id+'"'+(cur===x.id?' selected':'')+'>'+esc(x.name)+' · '+esc(x.dept)+'</option>'; }).join('')+
+          '<option value="none"'+(cur==='none'?' selected':'')+'>Not on staff</option></select>'+
+          (st ? '<div class="upLinked">🔗 '+esc(st.dept)+'</div>' : '')+'</div>'; }).join('')+'</div>';
+  }
+  h+=(S.debtErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.debtErr)+'</p>' : '')+
+    '<div class="inBtns"><button class="btn" id="inDebtSave">'+(U?'Save staff debt':'Save staff debt day')+'</button>'+(U?'<button class="btn ghost" id="inDebtCancel">Cancel</button>':'')+'</div></div>';
+  return h;
+}
+/* a small .xlsx reader: unzip (the browser's own deflate), shared strings, the first sheet */
+function xlsxRows_(buf){
+  var dv=new DataView(buf), u8=new Uint8Array(buf), eocd=-1;
+  for(var i=buf.byteLength-22;i>=Math.max(0,buf.byteLength-66000);i--){ if(dv.getUint32(i,true)===0x06054b50){ eocd=i; break; } }
+  if(eocd<0) return Promise.reject(new Error('not_xlsx'));
+  var n=dv.getUint16(eocd+10,true), off=dv.getUint32(eocd+16,true), files={}, td=new TextDecoder();
+  for(var k=0;k<n;k++){
+    if(dv.getUint32(off,true)!==0x02014b50) break;
+    var meth=dv.getUint16(off+10,true), csz=dv.getUint32(off+20,true), nl=dv.getUint16(off+28,true), el=dv.getUint16(off+30,true), cl=dv.getUint16(off+32,true), lo=dv.getUint32(off+42,true);
+    files[td.decode(u8.subarray(off+46, off+46+nl))]={ meth:meth, csz:csz, lo:lo }; off+=46+nl+el+cl;
+  }
+  function read(name){ var f=files[name]; if(!f) return Promise.resolve(null);
+    var start=f.lo+30+dv.getUint16(f.lo+26,true)+dv.getUint16(f.lo+28,true), data=u8.subarray(start, start+f.csz);
+    if(f.meth===0) return Promise.resolve(td.decode(data));
+    return new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text(); }
+  var sheet=Object.keys(files).filter(function(f){ return /^xl\/worksheets\/sheet\d+\.xml$/.test(f); }).sort()[0];
+  if(!sheet) return Promise.reject(new Error('not_xlsx'));
+  return Promise.all([read('xl/sharedStrings.xml'), read(sheet)]).then(function(r){
+    var P=new DOMParser(), ss=[];
+    if(r[0]){ var sd=P.parseFromString(r[0],'application/xml'); Array.prototype.forEach.call(sd.getElementsByTagName('si'), function(si){ ss.push(Array.prototype.map.call(si.getElementsByTagName('t'), function(t){ return t.textContent; }).join('')); }); }
+    var wd=P.parseFromString(r[1],'application/xml'), rows=[];
+    Array.prototype.forEach.call(wd.getElementsByTagName('c'), function(c){
+      var ref=c.getAttribute('r')||'', m=/^([A-Z]+)(\d+)$/.exec(ref); if(!m) return;
+      var col=0; for(var j=0;j<m[1].length;j++) col=col*26+(m[1].charCodeAt(j)-64); col--; var row=+m[2]-1;
+      var t=c.getAttribute('t'), vEl=c.getElementsByTagName('v')[0], v=vEl?vEl.textContent:null;
+      if(t==='s') v=ss[+v]; else if(t==='inlineStr'){ var is=c.getElementsByTagName('t')[0]; v=is?is.textContent:''; } else if(t==='str'||t==='b'||t==='e'){ } else if(v!=null && v!=='') v=+v;
+      (rows[row]=rows[row]||[])[col]=v;
+    });
+    return rows;
+  });
+}
+function csvRows_(text){ return text.split(/\r?\n/).map(function(line){ var out=[], cur='', q=false;
+  for(var i=0;i<line.length;i++){ var ch=line[i]; if(q){ if(ch==='"'&&line[i+1]==='"'){ cur+='"'; i++; } else if(ch==='"') q=false; else cur+=ch; } else if(ch==='"') q=true; else if(ch===','){ out.push(cur); cur=''; } else cur+=ch; }
+  out.push(cur); return out.map(function(v){ var x=v.replace(/[$,\s]/g,''); return x!=='' && !isNaN(+x) ? +x : v; }); }); }
+/* turn the sheet's rows into the report */
+function debtFromRows_(rows, file){
+  var txt=function(v){ return v==null ? '' : String(v).trim(); }, hdr=-1, asOfText='', cols={};
+  rows.forEach(function(r, i){ (r||[]).forEach(function(v){ var m=/^as of\s+(.+)$/i.exec(txt(v)); if(m && !asOfText) asOfText=txt(v).replace(/^as of\s+/i,''); }); });
+  for(var i=0;i<rows.length && hdr<0;i++){ var r=rows[i]||[]; for(var j=0;j<r.length;j++) if(/^current$/i.test(txt(r[j]))){ hdr=i; break; } }
+  if(hdr<0) throw new Error('no_header');
+  (rows[hdr]||[]).forEach(function(v, j){ var t=txt(v).toLowerCase().replace(/\s+/g,' ');
+    if(t==='current') cols.c0=j; else if(/^1 month/.test(t)) cols.c1=j; else if(/^2 months?/.test(t)) cols.c2=j; else if(/^3 months?$/.test(t)) cols.c3=j;
+    else if(/^(3\+|over 3|more than 3)/.test(t)) cols.c4=j; else if(t==='total') cols.tot=j; });
+  var num=function(v){ var x=typeof v==='number' ? v : parseFloat(String(v==null?'':v).replace(/[$,\s]/g,'')); return isNaN(x)?0:x; };
+  var people=[], fileTotal=null;
+  for(var r2=hdr+1;r2<rows.length;r2++){ var row=rows[r2]||[], name=txt(row[0]); if(!name) continue;
+    if(/^total$/i.test(name)){ fileTotal = cols.tot!=null ? num(row[cols.tot]) : null; break; }
+    var b=[num(row[cols.c0]), num(row[cols.c1]), num(row[cols.c2]), num(row[cols.c3]), num(row[cols.c4])].map(function(x){ return Math.round(x*100)/100; });
+    var tot=b.reduce(function(s2,x){ return s2+x; },0); if(Math.abs(tot)<0.005) continue;
+    people.push({ n:name, b:b, tot:tot, old:b[2]+b[3]+b[4] });
+  }
+  if(!people.length) throw new Error('no_people');
+  var sum=people.reduce(function(s2,p){ return s2+p.tot; },0), d=asOfText ? new Date(asOfText) : null;
+  var iso = d && !isNaN(d) ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : '';
+  return { file:file, people:people, asOf:iso, asOfText:asOfText, fileTotal:fileTotal, check: fileTotal==null ? null : Math.abs(sum-fileTotal)<0.01 };
+}
+function debtReadFile_(f){
+  S.debtReadErr=''; S.debtErr='';
+  var isCsv=/\.csv$/i.test(f.name);
+  f.arrayBuffer().then(function(buf){ return isCsv ? csvRows_(new TextDecoder().decode(buf)) : xlsxRows_(buf); })
+   .then(function(rows){ var U=debtFromRows_(rows, f.name); S.debtUp=U; S.debtDay=U.asOf||null; S.debtLink={}; U.people.forEach(function(p){ S.debtLink[p.n]=debtAutoLink_(p.n); }); render(); })
+   .catch(function(e){ S.debtUp=null; S.debtReadErr = e && e.message==='no_header' ? 'Couldn’t find the CURRENT · 1 Month · 2 Months … headings in that file.' : e && e.message==='no_people' ? 'That file has no one owing anything.' : 'Couldn’t read that file — attach the .xlsx the office makes (or a .csv of it).'; render(); });
+}
+function inDebtSave_(){
+  var U=S.debtUp, dd=S.debtDay || (U && U.asOf) || DEBT.asOf;
+  S.debtErr = !dd ? 'Pick the day on the report.' : (dd>TODAY ? 'That day is in the future.' : '');
+  if(S.debtErr){ render(); return; }
+  if(U){
+    Object.keys(S.debtLink).forEach(function(n){ if(S.debtLink[n]) DEBT_LINKS[n]=S.debtLink[n]; else delete DEBT_LINKS[n]; });
+    DEBT.people=U.people.map(function(p){ var st=staffById_(S.debtLink[p.n]); return { n:p.n, b:p.b, tot:p.tot, old:p.old, d: st ? st.dept : '', staffId: st ? st.id : null }; });
+    DEBT.file=U.file; DEBT.src='A/R Ageing Summary · '+U.file;
+  }
+  DEBT.asOf=dd; S.debtUp=null; S.debtDay=null; S.debtLink={}; render(); toast('Saved — staff debt is as of '+date(dd));
 }
 function inTotalHtml_(){
   var D=S.inBal||{}, ids=['aba','us','cash'], filled=ids.filter(function(k){ return D[k]!=='' && D[k]!=null; });
@@ -435,14 +587,15 @@ function inTotalHtml_(){
 function inSave_(){
   var D=S.inBal, err='';
   ['aba','us','cash'].forEach(function(k){ var v=D[k]; if(v===''||v==null) err=err||'Fill in all three amounts.'; else if(isNaN(calc_(v))) err=err||'One of the amounts isn’t a number or a sum I can work out.'; else if(calc_(v)<0) err=err||'Amounts can’t be below zero.'; });
-  if(!err && !D.asOf) err='Pick the day these balances are for.';
-  if(!err && D.asOf>'2026-11-23') err='The balances day can’t be in the future.';
-  if(!err && D.rec && D.rec>D.asOf) err='The reconciled day can’t be after the balances day.';
+  var day=reportDay_();
+  if(!err && !day) err='Pick the “Reports as of” day at the top.';
+  if(!err && day>TODAY) err='The “Reports as of” day can’t be in the future.';
+  if(!err && D.rec && D.rec>day) err='The reconciled day can’t be after the “Reports as of” day.';
   S.inErr=err; if(err){ render(); return; }
   BAL_HIST.unshift({ asOf:BAL.asOf, aba:BAL.accts[0].amt, us:BAL.accts[1].amt, cash:BAL.accts[2].amt, by:'the Finances office' });
   BAL.prevTotal=total(); BAL.prevAsOf=BAL.asOf;
   BAL.accts[0].amt=+calc_(D.aba).toFixed(2); BAL.accts[1].amt=+calc_(D.us).toFixed(2); BAL.accts[2].amt=+calc_(D.cash).toFixed(2);
-  BAL.asOf=D.asOf; BAL.reconciled=D.rec||null;
+  BAL.asOf=day; BAL.reconciled=D.rec||null;
   S.inBal=null; render(); toast('Saved — the Dashboard shows the new balances');
 }
 function toast(msg){ var t=document.createElement('div'); t.className='toast'; t.setAttribute('role','status'); t.textContent=msg; document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 2600); }
@@ -588,13 +741,18 @@ function flowSheetHtml_(kind){
     '</tbody><tfoot><tr><td class="nm">TOTAL</td>'+used.map(function(k){ return '<td>'+cell(colTot(k))+'</td>'; }).join('')+'<td class="tot">'+cell(all)+'</td></tr></tfoot></table></div></div>'+
     '<p class="hint" style="margin-top:10px">US$. '+F.tHint+' On a phone, swipe the table sideways.</p>';
 }
+function asOfBarHtml_(){
+  var same=BAL.asOf===ALLOC_ASOF;
+  return '<div class="asOfBar">📅 Reports as of <b>'+date(BAL.asOf)+'</b>'+(same?'':' <span class="warn">· allocations as of '+date(ALLOC_ASOF)+'</span>')+
+    '<span class="sep">·</span>💳 Staff debt as of <b>'+date(DEBT.asOf)+'</b></div>';
+}
 function nextHtml(){
   return '<section class="sec"><p class="hint" style="margin:0">Next on the dashboard: the other reports (Profit and Loss, Burn Rate…) — each a short summary here, with its details a tap away.</p></section>';
 }
 function soon(icon, title, line){ return '<div class="soon"><div class="big">'+icon+'</div><h3>'+title+'</h3><div>'+line+'</div></div>'; }
 function render(){
   var p=document.getElementById('pane');
-  if(S.tab==='dash') p.innerHTML=balancesHtml()+allocHtml()+debtHtml()+flowHtml('inc')+flowHtml('exp')+nextHtml();
+  if(S.tab==='dash') p.innerHTML=asOfBarHtml_()+balancesHtml()+allocHtml()+debtHtml()+flowHtml('inc')+flowHtml('exp')+nextHtml();
   else if(S.tab==='input') p.innerHTML=inputHtml();
   else if(S.tab==='tasks') p.innerHTML=soon('✅','Tasks','The Finances office’s GP Tasks list — as on every ministry.');
   else p.innerHTML=soon('🎯','OKRs','The Finances office’s objectives for the quarter — as on every ministry.');
@@ -633,6 +791,10 @@ function closeSheet(){ document.body.classList.remove('sheetOn'); }
 document.getElementById('scrim').onclick=closeSheet;
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSheet(); });
 
+document.addEventListener('change', function(e){
+  if(e.target.id==='inDebtFile' && e.target.files[0]){ debtReadFile_(e.target.files[0]); return; }
+  var li=e.target.dataset && e.target.dataset.debtlink; if(li!=null && S.debtUp){ S.debtLink[S.debtUp.people[+li].n]=e.target.value; render(); }
+});
 document.addEventListener('toggle', function(e){ var g=e.target.dataset && e.target.dataset.inalgrp; if(g){ (S.inAlOpen=S.inAlOpen||{})[g]=e.target.open; } }, true);
 function calcPreview_(inp){
   var box=inp.parentNode, pv=box.querySelector('.calcPrev'), v=inp.value;
@@ -651,6 +813,9 @@ document.addEventListener('focusout', function(e){ calcFinish_(e.target); });
 document.addEventListener('keydown', function(e){ if(e.key==='Enter' && e.target.closest && e.target.closest('.money')){ e.preventDefault(); calcFinish_(e.target); } });
 document.addEventListener('input', function(e){
   if(e.target.closest && e.target.closest('.money')) calcPreview_(e.target);
+  if(e.target.dataset && e.target.dataset.reportday){ S.reportDay=e.target.value; S.dayErr = !e.target.value ? 'Pick a day.' : (e.target.value>TODAY ? 'That day is in the future.' : '');
+    document.querySelectorAll('#inDay .inLast b').forEach(function(b){ b.textContent = e.target.value ? date(e.target.value) : '—'; }); return; }
+  if(e.target.dataset && e.target.dataset.debtday){ S.debtDay=e.target.value; return; }
   var ak=e.target.dataset && e.target.dataset.inal;
   if(ak){ (S.inAl=S.inAl||{})[ak]=e.target.value; var gid=ak.split('|')[0], g=ALLOC.filter(function(a){ return a.id===gid; })[0];
     var gt=document.getElementById('inAlT_'+gid); if(gt) gt.textContent=money(inAlGroupTot_(g),true);
@@ -662,6 +827,8 @@ document.addEventListener('input', function(e){
 document.addEventListener('click', function(e){
   if(e.target.id==='inBalSave'){ inSave_(); return; }
   if(e.target.id==='inAlSave'){ inAlSave_(); return; }
+  if(e.target.id==='inDebtSave'){ inDebtSave_(); return; }
+  if(e.target.id==='inDebtCancel'){ S.debtUp=null; S.debtDay=null; S.debtReadErr=''; render(); return; }
   if(e.target.id==='inAlReset'){ S.inAl=null; S.inAlErr=''; render(); return; }
   if(e.target.id==='inBalCopy'){ BAL.accts.forEach(function(a){ S.inBal[a.id]=inMoney_(a.amt); }); S.inErr=''; render(); return; }
   var t=e.target.closest('[data-tab],[data-al],[data-sheet],[data-debtall],[data-flow],[data-flowper],[data-flowlist]'); if(!t) return;
