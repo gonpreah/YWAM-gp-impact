@@ -624,7 +624,7 @@ function debtAutoLink_(name){
 function inDebtHtml_(){
   var U=S.debtUp, d=S.debtDay || (U && U.asOf) || DEBT.asOf;
   var h='<details class="inCard fold" id="inDebt" data-fold="debt"'+(S.foldOpen&&S.foldOpen.debt?' open':'')+'><summary class="foldHead"><span><b>💳 Staff debt</b><span class="dsub">'+'As of '+date(DEBT.asOf)+' · '+money(DEBT.people.reduce(function(s2,x){ return s2+x.tot; },0),true)+' owed'+'</span></span><span class="foldR"><button class="histLink" data-hist="debt">🕘 History</button><span class="chev">▾</span></span></summary>'+
-    '<p class="inLast">Last report: as of '+date(DEBT.asOf)+(DEBT.file?' · '+esc(DEBT.file):'')+'. Staff debt has its own day — the day on the A/R Ageing report.</p>'+
+    nothingNewHtml_('debt', 'staff debt report')+'<p class="inLast">Last report: as of '+date(DEBT.asOf)+(DEBT.file?' · '+esc(DEBT.file):'')+'. Staff debt has its own day — the day on the A/R Ageing report.</p>'+
     '<label class="inDrop" for="inDebtFile">📎 <span><b>'+(U?'Attach a different file':'Attach the A/R Ageing report')+'</b><br><small>The Excel file (.xlsx) the office makes — or a .csv of it</small></span></label>'+
     '<input type="file" id="inDebtFile" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" hidden>'+
     '<div class="inDates one" style="margin-top:12px"><div><label for="inDebtDay">Staff debt as of</label><input type="date" id="inDebtDay" data-debtday="1" max="'+TODAY+'" value="'+esc(d)+'">'+
