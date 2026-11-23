@@ -15,14 +15,14 @@
   --accent:#1F44FF; --accentInk:#fff; --accentSoft:#E8ECFF; --good:#0A7D3C; --bad:#B3261E; --amberDeep:#96650A;
   --headerBg:#17150F; --onDark:#FAF6F0; --onDarkFaint:#9A9384;
   /* allocation categories — checked with the dataviz validator, light on #fff, dark on #1C1A17 */
-  --al1:#2a78d6; --al2:#eb6834; --al3:#1baf7a; --al4:#eda100; --al5:#e87ba4;
+  --al1:#2a78d6; --al2:#eb6834; --al3:#1baf7a; --al4:#eda100; --al5:#e87ba4; --al6:#008300;
   color-scheme:light;
 }
 :root[data-theme="dark"]{
   --bg:#121110; --surface:#1C1A17; --surface2:#26231D; --ink:#F2EDE4; --muted:#A8A192; --line:#2A261F;
   --accent:#6C86FF; --accentInk:#0B0A08; --accentSoft:#1B2145; --good:#4CC27E; --bad:#F2867E; --amberDeep:#E0B25A;
   --headerBg:#0C0B09; --onDark:#F2EDE4;
-  --al1:#3987e5; --al2:#d95926; --al3:#199e70; --al4:#c98500; --al5:#d55181;
+  --al1:#3987e5; --al2:#d95926; --al3:#199e70; --al4:#c98500; --al5:#d55181; --al6:#0ca30c;
   color-scheme:dark;
 }
 *{ box-sizing:border-box; }
@@ -72,29 +72,29 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .rec.ok{ color:var(--good); }
 
 /* Allocation report */
-.alBar{ display:flex; gap:2px; height:28px; margin:6px 0 4px; }
-.alSeg{ border-radius:4px; display:flex; align-items:center; padding-left:6px; color:#fff; font-size:12px; font-weight:700; cursor:pointer; min-width:0; overflow:hidden; white-space:nowrap; border:0; outline-offset:2px; transition:opacity .15s; }
+.alChart{ position:relative; display:grid; grid-template-columns:44px minmax(0,1fr); column-gap:0; margin:8px 0 4px; }
+.alBar{ display:flex; flex-direction:column; gap:2px; width:44px; }
+.alSeg{ border-radius:4px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:11.5px; font-weight:700; cursor:pointer; min-height:0; overflow:hidden; border:0; padding:0; outline-offset:2px; transition:opacity .15s; }
 .alSeg.dark{ color:#17150F; }
-.alBar.focus .alSeg:not(.on){ opacity:.35; }
-.alCheck{ font-size:12.5px; color:var(--muted); margin:2px 0 10px; }
+.alChart.focus .alSeg:not(.on), .alChart.focus .alLbl:not(.on){ opacity:.35; }
+.alLeads{ position:absolute; left:44px; top:0; pointer-events:none; overflow:visible; }
+.alLeads path{ fill:none; stroke:var(--muted); stroke-width:1.25; opacity:.6; }
+.alLabels{ position:relative; margin-left:30px; }
+.alLbl{ position:absolute; left:0; right:0; transform:translateY(-50%); background:none; border:0; padding:4px 0; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center; text-align:left; cursor:pointer; transition:opacity .15s; }
+.alLbl .alName{ font-weight:600; display:block; line-height:1.2; }
+.alLbl .alEg{ font-size:12px; color:var(--muted); display:block; line-height:1.2; }
+.alAmt{ text-align:right; font-weight:700; white-space:nowrap; line-height:1.2; }
+.alPct{ display:block; font-size:12px; color:var(--muted); font-weight:600; }
+.alLbl.on .alName{ color:var(--accent); }
+.alCheck{ font-size:12.5px; color:var(--muted); margin:10px 0 0; }
 .alCheck.ok{ color:var(--good); }
 .alCheck.off{ color:var(--amberDeep); }
-.alList{ list-style:none; margin:0; padding:0; }
-.alRow{ border-top:1px solid var(--line); }
-.alRow > button{ width:100%; background:none; border:0; display:grid; grid-template-columns:14px minmax(0,1fr) auto; gap:10px; align-items:center; padding:12px 0; text-align:left; cursor:pointer; }
-.sw{ width:14px; height:14px; border-radius:4px; }
-.alName{ font-weight:600; }
-.alEg{ font-size:12px; color:var(--muted); }
-.alAmt{ text-align:right; font-weight:700; white-space:nowrap; }
-.alPct{ display:block; font-size:12px; color:var(--muted); font-weight:600; }
-.alRow.on > button .alName{ color:var(--accent); }
-.alSub{ display:none; padding:0 0 12px 24px; }
-.alRow.on .alSub{ display:block; }
-.alSub table{ width:100%; border-collapse:collapse; font-size:13.5px; }
-.alSub td{ padding:5px 0; border-bottom:1px dashed var(--line); }
-.alSub td:last-child{ text-align:right; font-variant-numeric:tabular-nums; }
-.alSub .note{ font-size:12px; color:var(--muted); margin:8px 0 0; }
-
+.alOpen{ margin-top:12px; background:var(--surface); border-radius:12px; padding:12px 14px; border-left:4px solid var(--c); }
+.alOpen h3{ margin:0 0 6px; font-size:15px; }
+.alOpen table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+.alOpen td{ padding:5px 0; border-bottom:1px dashed var(--line); }
+.alOpen td:last-child{ text-align:right; font-variant-numeric:tabular-nums; }
+.alOpen .note{ font-size:12px; color:var(--muted); margin:8px 0 0; }
 .soon{ text-align:center; color:var(--muted); padding:40px 10px; }
 .soon .big{ font-size:36px; }
 .soon h3{ color:var(--ink); margin:8px 0 4px; }
@@ -150,8 +150,10 @@ var ALLOC = [
     items:[['War relief',6300]], note:'Given for war relief — kept apart from everything else.' },
   { id:'adm', name:'Admin / Operational', eg:'running the base', c:'--al4', dark:true,
     items:[['Rent and utilities',5200],['Staff costs',2900],['Office and admin',1721.15]], note:'The day-to-day cost of running the base.' },
-  { id:'sav', name:'Savings funds', eg:'LT fund, Base fund', c:'--al5', dark:true,
-    items:[['LT fund',10000],['Base fund',5000]], note:'Put aside — not for this year’s spending.' }
+  { id:'sav', name:'Savings', eg:'put aside', c:'--al5', dark:true,
+    items:[['Savings',6000]], note:'Put aside for later — not for this year’s spending.' },
+  { id:'fund', name:'Funds', eg:'LT fund, Base fund', c:'--al6', dark:false,
+    items:[['LT fund',6000],['Base fund',3000]], note:'The base’s standing funds, each kept for its own purpose.' }
 ];
 ALLOC.forEach(function(a){ a.amt=a.items.reduce(function(s,i){ return s+i[1]; },0); });
 
@@ -178,24 +180,38 @@ function balancesHtml(){
   h+='<p class="rec ok">✓ Reconciled with the bank '+date(BAL.reconciled)+' ('+ago+' days ago)</p></section>';
   return h;
 }
+var AL_H=400, AL_GAP=2, AL_MINROW=46;
 function allocHtml(){
   var T=total(), A=ALLOC.reduce(function(s,a){ return s+a.amt; },0), gap=T-A;
   var h='<section class="sec" id="alloc"><div class="secHead"><h2>📊 Allocation report</h2><button class="more" data-sheet="alloc">Details ›</button></div>'+
-    '<p class="hint">Where the '+money(T)+' in total liquid assets is set aside. Tap a colour or a line to see what is in it.</p>';
-  h+='<div class="alBar'+(S.open?' focus':'')+'" role="img" aria-label="'+esc(ALLOC.map(function(a){ return a.name+' '+money(a.amt)+' '+Math.round(a.amt/T*100)+'%'; }).join(', '))+'">'+
+    '<p class="hint">Where the '+money(T)+' in total liquid assets is set aside. Tap a colour or a name to see what is in it.</p>';
+  /* the bar is drawn to scale; each name sits level with the middle of its colour,
+     nudged apart only where two small parts are too close to fit their names */
+  var free=AL_H-AL_GAP*(ALLOC.length-1), y=0, mids=[];
+  ALLOC.forEach(function(a){ var hh=a.amt/A*free; mids.push(y+hh/2); a._h=hh; y+=hh+AL_GAP; });
+  var pos=mids.slice();
+  for(var i=1;i<pos.length;i++) if(pos[i]-pos[i-1]<AL_MINROW) pos[i]=pos[i-1]+AL_MINROW;
+  var over=pos[pos.length-1]-(AL_H-AL_MINROW/2);
+  if(over>0){ pos[pos.length-1]-=over; for(var j=pos.length-2;j>=0;j--) if(pos[j+1]-pos[j]<AL_MINROW) pos[j]=pos[j+1]-AL_MINROW; }
+  var top=Math.min(0, pos[0]-AL_MINROW/2);
+  h+='<div class="alChart'+(S.open?' focus':'')+'" style="height:'+AL_H+'px;margin-top:'+(8-top)+'px">'+
+    '<div class="alBar" style="height:'+AL_H+'px" role="img" aria-label="'+esc(ALLOC.map(function(a){ return a.name+' '+money(a.amt)+' '+Math.round(a.amt/T*100)+'%'; }).join(', '))+'">'+
     ALLOC.map(function(a){ var p=a.amt/T*100;
-      return '<button class="alSeg'+(a.dark?' dark':'')+(S.open===a.id?' on':'')+'" data-al="'+a.id+'" style="flex:'+a.amt+' 1 0;background:var('+a.c+')" title="'+esc(a.name+' · '+money(a.amt,true)+' · '+Math.round(p)+'%')+'">'+(p>=9?Math.round(p)+'%':'')+'</button>';
-    }).join('')+'</div>';
+      return '<button class="alSeg'+(a.dark?' dark':'')+(S.open===a.id?' on':'')+'" data-al="'+a.id+'" style="height:'+a._h.toFixed(1)+'px;background:var('+a.c+')" title="'+esc(a.name+' · '+money(a.amt,true)+' · '+Math.round(p)+'%')+'">'+(a._h>=20?Math.round(p)+'%':'')+'</button>';
+    }).join('')+'</div>'+
+    '<svg class="alLeads" width="30" height="'+AL_H+'" viewBox="0 0 30 '+AL_H+'" aria-hidden="true">'+
+    mids.map(function(m,i){ return '<path d="M2 '+m.toFixed(1)+' C 15 '+m.toFixed(1)+', 15 '+pos[i].toFixed(1)+', 28 '+pos[i].toFixed(1)+'"/>'; }).join('')+'</svg>'+
+    '<div class="alLabels">'+ALLOC.map(function(a,i){ var p=a.amt/T*100;
+      return '<button class="alLbl'+(S.open===a.id?' on':'')+'" data-al="'+a.id+'" aria-expanded="'+(S.open===a.id)+'" style="top:'+pos[i].toFixed(1)+'px">'+
+        '<span><span class="alName">'+esc(a.name)+'</span>'+(a.eg?'<span class="alEg">'+esc(a.eg)+'</span>':'')+'</span>'+
+        '<span class="alAmt">'+money(a.amt)+'<span class="alPct">'+(p<1?'<1':Math.round(p))+'%</span></span></button>';
+    }).join('')+'</div></div>';
   h+= Math.abs(gap)<0.005 ? '<div class="alCheck ok">✓ Every dollar is allocated — '+money(A,true)+' of '+money(T,true)+'</div>'
     : '<div class="alCheck off">⚠️ '+money(Math.abs(gap),true)+(gap>0?' not allocated yet':' more allocated than is in hand')+'</div>';
-  h+='<ul class="alList">'+ALLOC.map(function(a){ var p=a.amt/T*100;
-    return '<li class="alRow'+(S.open===a.id?' on':'')+'"><button data-al="'+a.id+'" aria-expanded="'+(S.open===a.id)+'">'+
-      '<span class="sw" style="background:var('+a.c+')"></span>'+
-      '<span><span class="alName">'+esc(a.name)+'</span>'+(a.eg?'<br><span class="alEg">'+esc(a.eg)+'</span>':'')+'</span>'+
-      '<span class="alAmt">'+money(a.amt)+'<span class="alPct">'+(p<1?'<1':Math.round(p))+'%</span></span></button>'+
-      '<div class="alSub"><table>'+a.items.map(function(i){ return '<tr><td>'+esc(i[0])+'</td><td>'+money(i[1],true)+'</td></tr>'; }).join('')+'</table><p class="note">'+esc(a.note)+'</p></div></li>';
-  }).join('')+'</ul></section>';
-  return h;
+  var o=ALLOC.filter(function(a){ return a.id===S.open; })[0];
+  if(o) h+='<div class="alOpen" style="--c:var('+o.c+')"><h3>'+esc(o.name)+' · '+money(o.amt,true)+'</h3><table>'+
+    o.items.map(function(i){ return '<tr><td>'+esc(i[0])+'</td><td>'+money(i[1],true)+'</td></tr>'; }).join('')+'</table><p class="note">'+esc(o.note)+'</p></div>';
+  return h+'</section>';
 }
 function nextHtml(){
   return '<section class="sec"><p class="hint" style="margin:0">Next on the dashboard: the other reports (Profit and Loss, Burn Rate, staff debt…) — each a short summary here, with its details a tap away.</p></section>';
