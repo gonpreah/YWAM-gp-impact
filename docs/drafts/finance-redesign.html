@@ -120,20 +120,23 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .sheet .chip.on{ background:var(--accent); color:var(--accentInk); border-color:var(--accent); }
 .sheet .tblWrap{ overflow-x:auto; }
 .sheet .tblWrap td.r, .sheet .tblWrap th.r{ padding-left:14px; white-space:nowrap; }
-.rep{ margin-top:8px; }
+.rep{ margin-top:8px; --repBg:var(--surface); }
+.sec .rep{ --repBg:var(--bg); }
+.tblWrap{ overflow-x:auto; }
 .repTitle{ text-align:center; font-weight:700; font-size:17px; }
 .repSub{ text-align:center; font-weight:600; font-size:12.5px; color:var(--muted); margin:2px 0 10px; }
-.sheet .repTbl{ min-width:560px; border-collapse:collapse; font-size:12.5px; margin:0; font-variant-numeric:tabular-nums; }
-.sheet .repTbl th{ font-size:11.5px; font-weight:700; color:var(--ink); text-align:center; padding:6px 8px; border-bottom:1px solid var(--ink); white-space:nowrap; }
-.sheet .repTbl td{ padding:5px 8px; border:0; text-align:right; white-space:nowrap; }
-.sheet .repTbl tbody tr:nth-child(even) td{ background:color-mix(in srgb, var(--surface2) 45%, var(--surface)); }
-.sheet .repTbl .nm{ text-align:left; position:sticky; left:0; background:var(--surface); z-index:1; min-width:130px; white-space:normal; }
-.sheet .repTbl tbody tr:nth-child(even) .nm{ background:color-mix(in srgb, var(--surface2) 45%, var(--surface)); }
-.sheet .repTbl .old{ color:var(--bad); }
-.sheet .repTbl th.old{ color:var(--bad); }
-.sheet .repTbl td.tot{ font-weight:600; }
-.sheet .repTbl tfoot td{ font-weight:700; border-top:1px solid var(--ink); padding-top:7px; }
-.sheet .repTbl tfoot .nm{ background:var(--surface); }
+.repTbl{ min-width:560px; border-collapse:collapse; font-size:12.5px; margin:0; font-variant-numeric:tabular-nums; }
+.repTbl th{ font-size:11.5px; font-weight:700; color:var(--ink); text-align:center; padding:6px 8px; border-bottom:1px solid var(--ink); white-space:nowrap; }
+.repTbl td{ padding:5px 8px; border:0; text-align:right; white-space:nowrap; }
+.repTbl tbody tr:nth-child(even) td{ background:color-mix(in srgb, var(--surface2) 45%, var(--repBg)); }
+.repTbl .nm{ text-align:left; position:sticky; left:0; background:var(--repBg); z-index:1; min-width:130px; white-space:normal; }
+.repTbl tbody tr:nth-child(even) .nm{ background:color-mix(in srgb, var(--surface2) 45%, var(--repBg)); }
+.repTbl .old{ color:var(--bad); }
+.repTbl th.old{ color:var(--bad); }
+.repTbl td.tot{ font-weight:600; }
+.repTbl tfoot td{ font-weight:700; border-top:1px solid var(--ink); padding-top:7px; }
+.repTbl tfoot .nm{ background:var(--repBg); }
+.repTbl{ width:100%; }
 .sheet td.late, .sheet th.late{ color:var(--bad); font-weight:700; }
 .sheet .dsub{ display:block; font-size:11.5px; color:var(--muted); }
 .soon{ text-align:center; color:var(--muted); padding:40px 10px; }
@@ -261,6 +264,16 @@ function allocHtml(){
   }).join('')+'</ul></section>';
   return h;
 }
+function debtReportHtml(P, title){
+  var cell=function(v){ return v ? v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''; };
+  var asOf=new Date(DEBT.asOf+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  return '<div class="rep"><div class="repTitle">'+esc(title)+'</div><div class="repSub">As of '+esc(asOf)+'</div>'+
+    '<div class="tblWrap"><table class="repTbl"><thead><tr><th class="nm"></th>'+DEBT_COLS.map(function(c,i){ return '<th'+(i>=DEBT_OLD_FROM?' class="old"':'')+'>'+(i?c:c.toUpperCase())+'</th>'; }).join('')+'<th>Total</th></tr></thead><tbody>'+
+    P.map(function(p){
+      return '<tr><td class="nm">'+esc(p.n)+'</td>'+p.b.map(function(v,i){ return '<td'+(i>=DEBT_OLD_FROM?' class="old"':'')+'>'+cell(v)+'</td>'; }).join('')+'<td class="tot">'+cell(p.tot)+'</td></tr>'; }).join('')+
+    '</tbody><tfoot><tr><td class="nm">TOTAL</td>'+DEBT_COLS.map(function(c,i){ var v=P.reduce(function(s,p){ return s+p.b[i]; },0); return '<td'+(i>=DEBT_OLD_FROM?' class="old"':'')+'>'+cell(v)+'</td>'; }).join('')+
+    '<td class="tot">'+cell(P.reduce(function(s,p){ return s+p.tot; },0))+'</td></tr></tfoot></table></div></div>';
+}
 function debtHtml(){
   var P=DEBT.people, tot=0, old=0;
   P.forEach(function(p){ tot+=p.tot; old+=p.old; });
@@ -272,11 +285,7 @@ function debtHtml(){
     '<div class="dTile late"><div class="dl">2 months or older</div><div class="dv">'+money(old)+'</div><div class="ds">'+late.length+' people · '+pct+'% of the total</div></div></div>'+
     '<div class="dMeter" role="img" aria-label="'+pct+'% of staff debt is 2 months or older"><span style="width:'+pct+'%"></span></div>'+
     '<div class="dMeterL">'+pct+'% of what staff owe is 2 months old or more</div>';
-  h+='<div class="dListHead">⚠️ Owing for 2 months or more</div>';
-  h+= late.length ? '<ul class="dList">'+late.map(function(p){
-      return '<li><span><span class="dn">'+esc(p.n)+'</span><br><span class="dd">'+esc(p.d)+'</span></span>'+
-        '<span class="da">'+money(p.old)+'<small>of '+money(p.tot)+' owed</small></span>'+
-        '<span class="dBreak">'+p.b.map(function(v,i){ return v ? '<span'+(i>=DEBT_OLD_FROM?' class="late"':'')+'>'+DEBT_COLS[i]+' '+money(v)+'</span>' : ''; }).join('')+'</span></li>'; }).join('')+'</ul>'
+  h+= late.length ? debtReportHtml(DEBT.people.filter(function(p){ return p.old>0; }), 'Owing for 2 Months or more')
     : '<p class="hint">Nobody owes anything 2 months old or more. 🎉</p>';
   return h+'</section>';
 }
@@ -299,16 +308,9 @@ function sheet(which){
   if(which==='debt'){
     var all=S.debtAll!==false, P=DEBT.people.filter(function(p){ return all ? p.tot>0 : p.old>0; });
     var nAll=DEBT.people.filter(function(p){ return p.tot>0; }).length, nOld=DEBT.people.filter(function(p){ return p.old>0; }).length;
-    var cell=function(v){ return v ? v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''; };
-    var asOf=new Date(DEBT.asOf+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
     h+='<div class="chips" style="margin:0 0 4px"><button class="chip'+(all?' on':'')+'" data-debtall="1">Everyone · '+nAll+'</button>'+
       '<button class="chip'+(all?'':' on')+'" data-debtall="0">2 Months or older · '+nOld+'</button></div>'+
-      '<div class="rep"><div class="repTitle">'+esc(DEBT.title)+'</div><div class="repSub">As of '+esc(asOf)+'</div>'+
-      '<div class="tblWrap"><table class="repTbl"><thead><tr><th class="nm"></th>'+DEBT_COLS.map(function(c,i){ return '<th'+(i>=DEBT_OLD_FROM?' class="old"':'')+'>'+(i?c:c.toUpperCase())+'</th>'; }).join('')+'<th>Total</th></tr></thead><tbody>'+
-      P.map(function(p){
-        return '<tr><td class="nm">'+esc(p.n)+'</td>'+p.b.map(function(v,i){ return '<td'+(i>=DEBT_OLD_FROM?' class="old"':'')+'>'+cell(v)+'</td>'; }).join('')+'<td class="tot">'+cell(p.tot)+'</td></tr>'; }).join('')+
-      '</tbody><tfoot><tr><td class="nm">TOTAL</td>'+DEBT_COLS.map(function(c,i){ var v=P.reduce(function(s,p){ return s+p.b[i]; },0); return '<td'+(i>=DEBT_OLD_FROM?' class="old"':'')+'>'+cell(v)+'</td>'; }).join('')+
-      '<td class="tot">'+cell(P.reduce(function(s,p){ return s+p.tot; },0))+'</td></tr></tfoot></table></div></div>'+
+      debtReportHtml(P, DEBT.title)+
       '<p class="hint" style="margin-top:10px">US$. The red columns are 2 months old or more. On a phone, swipe the table sideways.</p>';
   } else if(which==='balances'){
     h+='<h3>🏦 Balances — details</h3><p class="hint">As of '+date(BAL.asOf)+'. Later: the history of each account, month by month.</p>'+
