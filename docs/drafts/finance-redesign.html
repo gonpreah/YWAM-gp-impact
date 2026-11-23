@@ -179,8 +179,6 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .flowDrop .chev{ transition:transform .2s; color:var(--muted); }
 .flowDrop.on{ border-radius:12px 12px 0 0; border-bottom-color:transparent; }
 .flowDrop.on .chev{ transform:rotate(180deg); }
-.flowDrop.on + .dropBody{ background:var(--surface); border:1px solid var(--line); border-top:0; border-radius:0 0 12px 12px; padding:4px 12px 10px; }
-.flowDrop.on + .dropBody .rep{ --repBg:var(--surface); }
 .flowDrop.on + .alList{ background:var(--surface); border:1px solid var(--line); border-top:0; border-radius:0 0 12px 12px; padding:0 14px; }
 .incPer{ display:flex; gap:6px; margin:0 0 10px; }
 .incPer button{ border:1px solid var(--line); background:var(--surface2); border-radius:999px; padding:4px 12px; cursor:pointer; font-size:13px; font-weight:600; }
@@ -1250,9 +1248,7 @@ function debtHtml(){
     '<div class="dTile late"><div class="dl">2 months or older</div><div class="dv">'+money(old)+'</div><div class="ds">'+late.length+' people · '+pct+'% of the total</div></div></div>'+
     '<div class="dMeter" role="img" aria-label="'+pct+'% of staff debt is 2 months or older"><span style="width:'+pct+'%"></span></div>'+
     '<div class="dMeterL">'+pct+'% of what staff owe is 2 months old or more</div>';
-  var lOn=!!S.debtLateOpen;
-  if(late.length) h+='<button class="flowDrop'+(lOn?' on':'')+'" data-debtlate="1" aria-expanded="'+lOn+'"><span>⚠️ Owing for 2 months or more · '+late.length+' '+(late.length===1?'person':'people')+'</span><span class="chev">▾</span></button>';
-  h+= late.length ? (lOn ? '<div class="dropBody">'+debtReportHtml(DEBT.people.filter(function(p){ return p.old>0; }).sort(function(a,b){ return b.tot-a.tot; }), 'Owing for 2 Months or more', true)+'</div>' : '')
+  h+= late.length ? debtReportHtml(DEBT.people.filter(function(p){ return p.old>0; }).sort(function(a,b){ return b.tot-a.tot; }), 'Owing for 2 Months or more', true)
     : '<p class="hint">Nobody owes anything 2 months old or more. 🎉</p>';
   return h+'</section>';
 }
@@ -1619,9 +1615,8 @@ document.addEventListener('click', function(e){
   if(e.target.id==='inDebtCancel'){ S.debtUp=null; S.debtDay=null; S.debtReadErr=''; render(); return; }
   if(e.target.id==='inAlReset'){ S.inAl=null; S.inAlErr=''; render(); return; }
   if(e.target.id==='inBalCopy'){ BAL.accts.forEach(function(a){ S.inBal[a.id]=inMoney_(a.amt); }); S.inErr=''; render(); return; }
-  var t=e.target.closest('[data-tab],[data-al],[data-sheet],[data-debtall],[data-flow],[data-flowper],[data-flowlist],[data-allist],[data-debtlate]'); if(!t) return;
+  var t=e.target.closest('[data-tab],[data-al],[data-sheet],[data-debtall],[data-flow],[data-flowper],[data-flowlist],[data-allist]'); if(!t) return;
   if(t.dataset.tab){ S.tab=t.dataset.tab; render(); }
-  else if(t.dataset.debtlate){ S.debtLateOpen=!S.debtLateOpen; render(); }
   else if(t.dataset.allist){ S.alList=!S.alList; render(); }
   else if(t.dataset.flowlist){ var fk=t.dataset.flowlist; S.flowList[fk]=!S.flowList[fk]; render(); }
   else if(t.dataset.flow){ var fp=t.dataset.flow.split('|');
