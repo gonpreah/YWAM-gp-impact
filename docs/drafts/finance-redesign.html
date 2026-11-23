@@ -365,21 +365,6 @@ label.f{ display:block; font-size:12.5px; font-weight:600; margin:6px 0 4px; }
 .undoBtn.ask{ background:var(--bad); color:#fff; border-color:var(--bad); }
 .undoBtn[disabled]{ opacity:.5; cursor:not-allowed; }
 .undoBar .dsub{ font-size:12px; min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.okrSum{ display:grid; grid-template-columns:1fr 1fr; gap:10px; background:var(--headerBg); color:var(--onDark); border-radius:14px; padding:12px 14px; margin:6px 0 12px; }
-.okrSum small{ display:block; color:var(--onDarkFaint); font-size:12px; } .okrSum b{ font-size:22px; }
-.okrCard{ background:var(--surface); border-radius:14px; padding:12px 14px; margin:10px 0; }
-.okrTop{ display:flex; gap:10px; align-items:baseline; } .okrTop b{ flex:1; font-size:15px; }
-.okrN{ width:22px; height:22px; border-radius:999px; background:var(--accentSoft); color:var(--accent); font-weight:700; font-size:12px; display:inline-flex; align-items:center; justify-content:center; flex:none; }
-.okrP{ font-weight:700; font-variant-numeric:tabular-nums; }
-.okrBar{ height:6px; border-radius:999px; background:var(--surface2); margin:8px 0; overflow:hidden; } .okrBar span{ display:block; height:100%; background:var(--accent); border-radius:999px; }
-.okrKrs{ list-style:none; margin:0; padding:0; } .okrKrs li{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 10px; align-items:center; padding:6px 0; border-top:1px solid var(--line); font-size:13.5px; }
-.okrKrs li input{ grid-column:1 / -1; grid-row:2; width:100%; touch-action:pan-y; accent-color:var(--accent); }
-.okrKrs b{ font-variant-numeric:tabular-nums; }
-.okrCamp{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:12px 0 2px; }
-#leadOkrs .okrCard{ background:var(--bg); }
-#leadOkrs .chips{ display:flex; gap:6px; flex-wrap:wrap; }
-#leadOkrs .chip{ border:1px solid var(--line); background:var(--surface2); border-radius:999px; padding:5px 12px; cursor:pointer; font-size:13px; font-weight:600; color:var(--ink); }
-#leadOkrs .chip.on{ background:var(--accent); color:var(--accentInk); border-color:var(--accent); }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -1328,47 +1313,6 @@ function asOfBarHtml_(){
   if((cur && cur!==latest) || (dcur && dcur!==dd[0])) h+='<div class="pastNote">🕘 You’re looking at an earlier day. <button class="more" id="viewLatest" style="padding:0">Back to the latest</button></div>';
   return h;
 }
-/* ---- OKRs: the Finances office's own, then Campus Leadership's to see (folded) ----
-   SAMPLE objectives. The office's own are edited the way every ministry's are; leadership's
-   are read only, by quarter. */
-var OKR_Q=4, OKR_WEEK=8;   /* 23 Nov 2026 is week 8 of Q4 (the app's 13-week quarters) */
-var OKR_MINE=[
-  { o:'Every report on time, every month', kr:[ ['Balances entered every Friday', 75], ['Profit and Loss in by the 10th', 100], ['Staff debt report each month', 66] ] },
-  { o:'Every dollar has a home', kr:[ ['Allocations add up to 100% every week', 80], ['Income formulas set for every kind of income', 83] ] },
-  { o:'Less staff debt', kr:[ ['Debt over 2 months below $500', 40], ['Talk with everyone owing 3+ months', 50] ] }
-];
-var OKR_LEAD={
-  4:{ sr:[ { o:'A base that runs on its income', kr:[ ['Cash reserve covers 3 months of costs', 55], ['Every ministry has a budget for 2027', 70] ] },
-           { o:'Leaders raised from within', kr:[ ['6 staff in the leadership pathway', 50], ['Every department director has a 1-on-1 twice a month', 85] ] },
-           { o:'The new house ready for teams', kr:[ ['Building finished by 15 Dec', 60], ['Beds for 40 booked through SR Hospitality', 35] ] } ],
-      pp:[ { o:'GP Kids grows to 120 children', kr:[ ['120 children enrolled', 78], ['4 teachers trained', 50] ] },
-           { o:'Health in the base', kr:[ ['Staff Health Score 7.5 or more', 90], ['Every staff member checks in weekly', 64] ] } ] },
-  3:{ sr:[ { o:'Prepare the 2027 schools', kr:[ ['DTS speakers booked', 100], ['Outreach locations confirmed', 100] ] },
-           { o:'Partners reached', kr:[ ['10 partner churches visited', 90] ] } ], pp:[] }
-};
-function okrPct_(o){ return Math.round(o.kr.reduce(function(s2,k){ return s2+k[1]; },0)/o.kr.length); }
-function okrBar_(p){ return '<div class="okrBar"><span style="width:'+p+'%"></span></div>'; }
-function okrCard_(o, n, edit){
-  var p=okrPct_(o);
-  return '<div class="okrCard"><div class="okrTop"><span class="okrN">'+n+'</span><b>'+esc(o.o)+'</b><span class="okrP">'+p+'%</span></div>'+okrBar_(p)+
-    '<ul class="okrKrs">'+o.kr.map(function(k){ return '<li><span>'+esc(k[0])+'</span>'+(edit?'<input type="range" min="0" max="100" step="5" value="'+k[1]+'" aria-label="'+esc(k[0])+'">':'')+'<b>'+k[1]+'%</b></li>'; }).join('')+'</ul></div>';
-}
-function okrsHtml_(){
-  var all=OKR_MINE, overall=Math.round(all.reduce(function(s2,o){ return s2+okrPct_(o); },0)/all.length);
-  var h='<section class="sec"><div class="secHead"><h2>🎯 Q'+OKR_Q+' OKRs</h2></div><p class="hint">Skills Training · Finances</p>'+
-    '<div class="okrSum"><div><small>This quarter</small><b>'+overall+'%</b></div><div><small>Week</small><b>'+OKR_WEEK+' of 13</b></div></div>'+
-    all.map(function(o, i){ return okrCard_(o, i+1, true); }).join('')+
-    '<button class="linkAdd">＋ New objective</button></section>';
-  var q=S.okrLeadQ||OKR_Q, L=OKR_LEAD[q]||{ sr:[], pp:[] }, open=S.foldOpen&&S.foldOpen.leadokr, n=(L.sr||[]).length+(L.pp||[]).length;
-  h+='<details class="inCard fold" id="leadOkrs" data-fold="leadokr"'+(open?' open':'')+' style="margin-top:16px"><summary class="foldHead"><span><b>🧭 Leadership OKRs</b><span class="dsub">What the leadership team is working on this quarter — to see, not to change.</span></span><span class="chev">▾</span></summary>'+
-    '<div class="chips" style="margin:0 0 6px">'+[1,2,3,4].map(function(x){ return '<button class="chip'+(x===q?' on':'')+'" data-okrq="'+x+'">Q'+x+(x===OKR_Q?' · now':'')+'</button>'; }).join('')+'</div>';
-  n=(L.sr||[]).length;
-  h+='<p class="hint" style="margin:0 0 6px">Siem Reap’s Campus Leadership. <span class="tag">sample</span> In the app these are the real objectives, straight from Campus Leadership’s OKRs.</p>';
-  if(!n) h+='<p class="hint">No leadership objectives set for Q'+q+' 2026.</p>';
-  [['sr','YWAM Siem Reap']].forEach(function(c){ var list=L[c[0]]||[]; if(!list.length) return;
-    h+='<div class="okrCamp">'+c[1]+'</div>'+list.map(function(o, i){ return okrCard_(o, i+1, false); }).join(''); });
-  return h+'</details>';
-}
 function nextHtml(){
   return '<section class="sec"><p class="hint" style="margin:0">Next on the dashboard: the other reports (Profit and Loss, Burn Rate…) — each a short summary here, with its details a tap away.</p></section>';
 }
@@ -1378,7 +1322,7 @@ function render(){
   if(S.tab==='dash'){ var undo=viewApply_(); try { p.innerHTML=asOfBarHtml_()+balancesHtml()+allocHtml()+debtHtml()+flowHtml('inc')+flowHtml('exp')+nextHtml(); } finally { undo(); } }
   else if(S.tab==='input') p.innerHTML=inputHtml();
   else if(S.tab==='tasks') p.innerHTML=soon('✅','Tasks','The Finances office’s GP Tasks list — as on every ministry.');
-  else p.innerHTML=okrsHtml_();
+  else p.innerHTML=soon('🎯','OKRs','Kept exactly as it is in the current app — the Finances office’s OKRs and the Leadership OKRs, no changes.');
   document.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('on', b.dataset.tab===S.tab); });
 }
 
@@ -1532,7 +1476,6 @@ document.addEventListener('input', function(e){
   var el=document.getElementById('inTotal'); if(el) el.innerHTML=inTotalHtml_();   /* no re-render, so typing is never lost */
 });
 document.addEventListener('click', function(e){
-  var oq=e.target.closest && e.target.closest('[data-okrq]'); if(oq){ S.okrLeadQ=+oq.dataset.okrq; render(); return; }
   if(e.target.id==='viewLatest'){ S.viewDay=null; S.viewDebtDay=null; render(); return; }
   if(e.target.id==='undoLast'){ if(!S.undoAsk){ S.undoAsk=true; render(); setTimeout(function(){ if(S.undoAsk){ S.undoAsk=false; if(S.tab==='input') render(); } }, 4000); return; } undoLast_(); return; }
   if(e.target.id==='inBalSave'){ inSave_(); return; }
