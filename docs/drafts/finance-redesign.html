@@ -1181,7 +1181,11 @@ function EST(t){ return isLive_() ? 'Estimated '+t.charAt(0).toLowerCase()+t.sli
 function approvedDay_(){ return Object.keys(PUBLISHED).sort().reverse()[0] || null; }
 /* entered after the bank balances were saved — whatever date is written on it. Entries from
    before times were kept fall back to their date. */
-function afterBal_(x){ return BAL.at && x.at ? x.at>BAL.at : x.date>(BAL.asOf||''); }
+function afterBal_(x){
+  if(BAL.at && x.at) return x.at>BAL.at;      /* both timed: entered after the balances were saved */
+  if(!BAL.at && x.at) return true;            /* balances saved before times were kept: anything timed is newer */
+  return x.date>=(BAL.asOf||'') && !(BAL.at && !x.at && x.date===BAL.asOf);   /* neither timed: by date, the balances day included */
+}
 /* in the latest approval? — by what it took in, so a later entry with an earlier date isn't */
 function inApproved_(x, kind){ var a=approvedDay_(), P=a && PUBLISHED[a]; if(!P) return false; if(P.ids) return (P.ids[kind]||[]).indexOf(x.id)>=0; return x.date<=a; }
 function liveSince_(){ var a=approvedDay_(); if(!a) return { n:0, day:null };
