@@ -115,7 +115,7 @@ Income.
 - **Approved** says which approved report a line is in (✅ and that day), or "Not yet".
 - The lines are built from what has been entered — nothing is typed into the breakdown itself.
   Newest day first (the ↓ / ↑ on the Date heading flips it to oldest first, `S.ledAsc`); within a
-  day, balance entries, then manual allocations, then expenses. Memos are cut short to one line;
+  day, balance entries, then manual allocations, then income, then expenses. Memos are cut short to one line;
   tapping one shows it whole.
 - **Balance entry** (from 🏦 Balances) — the **gold standard**: straight from the bank and the cash
   box. Each balances day gives three lines (ABA bank, US bank, Cash on hand) with the Amount
@@ -138,6 +138,11 @@ Income.
   settling an advance has no Account and no Amount (the real money left when the advance was
   given out) — only the Category amount. Approved: the approved day whose frozen list holds it
   (`PUBLISHED[day].ids.exp`), else "Not yet".
+- **Income** (from 💵 Income, one entry or imported) — Date, Account (the bank account it came
+  into), Name (who it came from), Memo (the kind of income, then the memo), and the same amount
+  **positive in both Amount and Category amount**. One line per category its formula shares it
+  out to; each line's Amount is that share, so the lines add up to the whole income. Approved:
+  the approved day whose frozen list holds it (`PUBLISHED[day].ids.inc`), else "Not yet".
 - **The check above the table** (`ledgerCheck_`): real money = the newest balances day's total
   (balances are levels, not movements, so only the newest counts) + the Amount of every line
   that came after those balances (the same rule as the Live estimates, `afterBal_`) − every
@@ -146,7 +151,7 @@ Income.
   start from the funds after it.
   $0 → "✓ Every dollar has a home"; otherwise how much has no home, or how much more is given a
   home than there is.
-- Not in it yet: income, transfers, Financial tools, advances. A settled advance's spend is in
+- Not in it yet: transfers, Financial tools, advances. A settled advance's spend is in
   (as an expense) but the advance itself is not, so the check is off by what went out on
   advances until they are added. Until they are, the check
   is only right when nothing of those has happened since the newest balances. Still to decide:

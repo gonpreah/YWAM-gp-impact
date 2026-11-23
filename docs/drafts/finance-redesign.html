@@ -846,7 +846,15 @@ function ledgerLines_(){ var L=[];
     var adv=x.src==='advance', memo=[x.type, x.memo].filter(function(v){ return v && String(v).trim(); }).join(' · ');
     (x.split&&x.split.length?x.split:[{ f:'', amt:x.amt }]).forEach(function(sp){
       L.push({ date:x.date, at:x.at||0, acct:adv?'':(ACCT_KEYS[x.bank]||bankLabel_(x.bank)||''), type:'Expense', name:x.who||'', memo:memo, amt:adv?null:-sp.amt, cat:sp.f?fundLabel_(sp.f):'', camt:-sp.amt, appr:pd, src:x }); }); });
-  var TORD={ 'Balance entry':0, 'Manual allocation':1, 'Expense':2 };
+  /* income: real money into an account and into the category's "virtual bank account" — the same
+     amount, + in both. One line per category its formula shares it out to (each line's Amount is
+     that share, so the lines add up to the whole income). Kind of income first in the memo. */
+  INCOMES.forEach(function(x){
+    var pd=Object.keys(PUBLISHED).filter(function(d){ var P=PUBLISHED[d]; return P.ids && (P.ids.inc||[]).indexOf(x.id)>=0; }).sort()[0]||'';
+    var memo=[x.type, x.memo].filter(function(v){ return v && String(v).trim(); }).join(' · ');
+    (x.split&&x.split.length?x.split:[{ f:'', amt:x.amt }]).forEach(function(sp){
+      L.push({ date:x.date, at:x.at||0, acct:ACCT_KEYS[x.bank]||bankLabel_(x.bank)||'', type:'Income', name:x.who||'', memo:memo, amt:sp.amt, cat:sp.f?fundLabel_(sp.f):'', camt:sp.amt, appr:pd, src:x }); }); });
+  var TORD={ 'Balance entry':0, 'Manual allocation':1, 'Income':2, 'Expense':3 };
   return L.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:((TORD[x.type]||9)-(TORD[y.type]||9)) || ((y.at||0)-(x.at||0)); }); }
 /* does every dollar have a home? real money = the newest balances (the gold standard) + the Amount
    of every line that came after them (afterBal_, the same rule as the Live estimates); minus
