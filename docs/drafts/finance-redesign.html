@@ -811,7 +811,7 @@ function catRestore_(idx){ var d=DELETED_FUNDS[idx]; if(!d) return;
   }
   DELETED_FUNDS.splice(idx,1); catAfter_('Brought “'+d.name+'” back'); }
 /* ---- Input: detailed breakdown — every transaction, one line each (headings only for now) ---- */
-var LEDGER_COLS=['Date','Account','Transaction type','Name','Memo','Amount','Category','Category amount','Approved'];
+var LEDGER_COLS=['Date','Account','Transaction type','Name','Memo','Amount','Category amount','Category','Approved'];
 var MANUAL_ALLOCS=[];   /* each time Allocations is saved by hand: { id, at, date, before (null = from nothing), after } */
 /* the lines, built from what has been entered. So far only balance entries: what is typed under
    🏦 Balances comes straight from the bank and the cash box, so it is the gold standard — one line
@@ -847,7 +847,7 @@ function inLedgerHtml_(){
     '<div class="ledWrap"><table class="ledTbl"><thead><tr>'+LEDGER_COLS.map(function(c){ return '<th'+(c==='Amount'||c==='Category amount'?' class="r"':'')+'>'+c+'</th>'; }).join('')+'</tr></thead>'+
     '<tbody>'+(function(){ var L=ledgerLines_(); if(!L.length) return '<tr><td colspan="'+LEDGER_COLS.length+'" class="ledEmpty">No transactions yet.</td></tr>';
       return L.map(function(x){ return '<tr><td class="nw">'+date(x.date)+'</td><td class="nw">'+esc(x.acct)+'</td><td class="nw">'+esc(x.type)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.memo)+'</td>'+
-        '<td class="r nw">'+(x.amt==null?'':money(x.amt,true))+'</td><td class="nw">'+esc(x.cat)+'</td><td class="r nw">'+(x.camt==null?'':(x.camt<0?'−':'')+money(Math.abs(x.camt),true))+'</td><td class="nw">'+(x.appr?'✅ '+date(x.appr):'<span class="ledNo">Not yet</span>')+'</td></tr>'; }).join(''); })()+'</tbody></table></div></details>';
+        '<td class="r nw">'+(x.amt==null?'':money(x.amt,true))+'</td><td class="r nw">'+(x.camt==null?'':(x.camt<0?'−':'')+money(Math.abs(x.camt),true))+'</td><td class="nw">'+esc(x.cat)+'</td><td class="nw">'+(x.appr?'✅ '+date(x.appr):'<span class="ledNo">Not yet</span>')+'</td></tr>'; }).join(''); })()+'</tbody></table></div></details>';
 }
 function inCatsHtml_(){
   var open=S.foldOpen&&S.foldOpen.cats, n=0, E=S.catEdit||''; ALLOC.forEach(function(g){ n+=g.items.length; });

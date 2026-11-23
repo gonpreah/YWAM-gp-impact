@@ -104,7 +104,7 @@ Income.
 
 ### 📒 Detailed breakdown
 - Where every transaction is kept, one line each. Columns: **Date · Account · Transaction type ·
-  Name · Memo · Amount · Category · Category amount · Approved** (`LEDGER_COLS`,
+  Name · Memo · Amount · Category amount · Category · Approved** (`LEDGER_COLS`,
   `inLedgerHtml_`, `ledgerLines_`).
 - **Two money columns:**
   - **Amount** is real money — what is in, or moves through, a bank account or the cash box.
