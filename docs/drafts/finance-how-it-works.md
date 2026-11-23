@@ -117,6 +117,12 @@ Income.
   Newest day first (the ↓ / ↑ on the Date heading flips it to oldest first, `S.ledAsc`); within a
   day, balance entries, then manual allocations, then income, then expenses. Memos are cut short to one line;
   tapping one shows it whole.
+- **Filters** (`LED_FILTERS`, `S.ledF`): tap Account, Transaction type, Category or Approved to
+  pick which values to show — All, or any number of them (blank values are "(blank)"). Only lines
+  matching every column's picks show, with "Showing n of N lines" and Clear filters. The check
+  above the table always uses every line, whatever is filtered.
+- The table scrolls inside its own box (up to 70% of the screen high) with the headings stuck at
+  the top, so it can be swiped sideways wherever you are in it.
 - **Balance entry** (from 🏦 Balances) — the **gold standard**: straight from the bank and the cash
   box. Each balances day gives three lines (ABA bank, US bank, Cash on hand) with the Amount
   typed; Name, Memo, Category blank. Approved: the approved day whose frozen balances are that

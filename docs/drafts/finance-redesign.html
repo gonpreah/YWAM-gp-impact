@@ -435,7 +435,21 @@ button.tick.done{ background:var(--good); }
 .advChip .sw{ width:9px; height:9px; }
 .advOld{ display:inline-flex; align-items:center; justify-content:center; background:#FFD84D; border-radius:6px; padding:0 4px; margin-right:5px; font-size:12px; line-height:18px; }
 .advOldLine{ margin-top:10px; background:color-mix(in srgb, #FFD84D 30%, var(--surface)); border:1px solid #E8B800; border-radius:10px; padding:7px 10px; font-size:13px; font-weight:600; color:var(--ink); }
-.ledWrap{ overflow-x:auto; margin-top:8px; border:1px solid var(--line); border-radius:10px; }
+.ledWrap{ overflow:auto; max-height:70vh; margin-top:8px; border:1px solid var(--line); border-radius:10px; overscroll-behavior:contain; }
+.ledTbl thead th{ position:sticky; top:0; z-index:1; }
+.ledFBtn{ border:0; background:none; font:inherit; color:inherit; cursor:pointer; padding:0; white-space:nowrap; }
+.ledFBtn.act{ color:var(--accent); }
+.ledFBtn.open{ text-decoration:underline; }
+.ledPanel{ scroll-margin-top:240px; margin-top:10px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--surface2); }
+.ledPanelHead{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+.ledPanelHead .btn{ padding:5px 14px; }
+.ledChips{ display:flex; flex-wrap:wrap; gap:6px; }
+.ledChip{ border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:5px 11px; font:inherit; font-size:13px; cursor:pointer; }
+.ledChip span{ color:var(--muted); font-size:12px; }
+.ledChip.on{ background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
+.ledChip.on span{ color:inherit; opacity:.8; }
+.ledActive{ margin-top:8px; font-size:13px; color:var(--muted); }
+.ledActive b{ color:var(--ink); font-weight:600; }
 .ledTbl{ width:100%; min-width:1040px; border-collapse:collapse; font-size:13.5px; }
 .ledTbl th{ text-align:left; font-size:12px; font-weight:700; color:var(--muted); background:var(--surface2); padding:8px 10px; white-space:nowrap; border-bottom:1px solid var(--line); }
 .ledTbl th.r{ text-align:right; }
@@ -861,19 +875,43 @@ function ledgerLines_(){ var L=[];
    every category amount */
 function ledgerCheck_(L){ var b=BAL_DAYS[0], real=b?Math.round(((b.aba+b.us+b.cash)+L.reduce(function(s2,x){ return s2+(x.type!=='Balance entry' && x.amt!=null && x.src && afterBal_(x.src) ? x.amt : 0); },0))*100)/100:0, cat=Math.round(L.reduce(function(s2,x){ return s2+(x.camt||0); },0)*100)/100;
   return { day:b?b.asOf:'', real:real, cat:cat, sum:Math.round((real-cat)*100)/100 }; }
+/* filters: a column's values to show; none picked = all */
+var LED_FILTERS={ 'Account':'acct', 'Transaction type':'type', 'Category':'cat', 'Approved':'appr' };
+var LED_FNAME={ acct:'accounts', type:'transaction types', cat:'categories', appr:'approval status' };
+function ledVal_(x, k){ if(k==='appr') return x.appr ? '✅ '+date(x.appr) : 'Not yet'; return x[k] || '(blank)'; }
+function ledF_(){ return S.ledF||(S.ledF={}); }
+function ledShown_(L){ var F=ledF_(); return L.filter(function(x){ return Object.keys(F).every(function(k){ return !F[k] || !F[k].length || F[k].indexOf(ledVal_(x, k))>=0; }); }); }
+function ledPanelHtml_(L){ var k=S.ledFOpen; if(!k) return ''; var F=ledF_(), on=F[k]||[], cnt={}, vals=[];
+  L.forEach(function(x){ var v=ledVal_(x, k); if(cnt[v]==null){ cnt[v]=0; vals.push(v); } cnt[v]++; });
+  if(k==='cat'){ var order=fundList_().map(function(f){ return fundLabel_(f.k); }); vals.sort(function(a,b){ var ia=order.indexOf(a), ib=order.indexOf(b); return (ia<0?999:ia)-(ib<0?999:ib) || (a<b?-1:1); }); }
+  else if(k==='appr') vals.sort(function(a,b){ return a==='Not yet'?-1:b==='Not yet'?1:(a<b?1:-1); });
+  else vals.sort(function(a,b){ return a==='(blank)'?1:b==='(blank)'?-1:(a<b?-1:1); });
+  return '<div class="ledPanel" id="ledPanel"><div class="ledPanelHead"><b>Show which '+LED_FNAME[k]+'</b><button class="btn" data-ledfdone="1">Done</button></div><div class="ledChips">'+
+    '<button class="ledChip'+(on.length?'':' on')+'" data-ledfall="'+k+'">All</button>'+
+    vals.map(function(v){ return '<button class="ledChip'+(on.indexOf(v)>=0?' on':'')+'" data-ledfv="'+k+'" data-v="'+esc(v)+'">'+esc(v)+' <span>'+cnt[v]+'</span></button>'; }).join('')+'</div></div>'; }
 function inLedgerHtml_(){
-  var open=S.foldOpen&&S.foldOpen.ledger;
-  return '<details class="inCard fold" id="inLedger" data-fold="ledger"'+(open?' open':'')+'><summary class="foldHead"><span><b>📒 Detailed breakdown</b><span class="dsub">'+(function(){ var n=ledgerLines_().length; return n ? n+' line'+(n>1?'s':'') : 'Every transaction, line by line'; })()+'</span></span><span class="foldR"><span class="chev">▾</span></span></summary>'+
-    '<p class="inLast">Where every transaction is kept — one line each, with its date and all its details. On a phone, swipe the table sideways to see every column.</p>'+
-    (function(){ var L=ledgerLines_(); if(!L.length) return ''; var c=ledgerCheck_(L), ok=Math.abs(c.sum)<0.005;
-      return '<div class="ledCheck '+(ok?'ok':'off')+'"><div><small>Real money'+(c.day?' · from balances '+date(c.day):'')+'</small><b>'+money(c.real,true)+'</b></div><div><small>Category amounts</small><b>'+(c.cat<0?'−':'')+money(Math.abs(c.cat),true)+'</b></div>'+
-        '<div><small>Real − category</small><b>'+(c.sum<0?'−':'')+money(Math.abs(c.sum),true)+'</b></div><p>'+(ok?'✓ Every dollar has a home':(c.sum>0?'⚠️ '+money(c.sum,true)+' has no home yet':'⚠️ '+money(-c.sum,true)+' more is given a home than there is'))+'</p></div>'; })()+
-    '<div class="ledWrap"><table class="ledTbl"><thead><tr>'+LEDGER_COLS.map(function(c){ return '<th'+(c==='Amount'||c==='Category amount'?' class="r"':'')+'>'+(c==='Date'?'<button class="ledSort" id="ledSort" aria-label="'+(S.ledAsc?'Oldest first — tap for newest first':'Newest first — tap for oldest first')+'">Date '+(S.ledAsc?'↑':'↓')+'</button>':c)+'</th>'; }).join('')+'</tr></thead>'+
-    '<tbody>'+(function(){ var L=ledgerLines_(); if(!L.length) return '<tr><td colspan="'+LEDGER_COLS.length+'" class="ledEmpty">No transactions yet.</td></tr>';
-      if(S.ledAsc) L=L.slice().reverse();
-      return L.map(function(x){ return '<tr><td class="nw">'+date(x.date)+'</td><td class="nw">'+esc(x.acct)+'</td><td class="nw">'+esc(x.type)+'</td><td>'+esc(x.name)+'</td><td>'+(x.memo?'<button class="ledMemo" data-ledmemo="1" title="'+esc(x.memo)+'">'+esc(x.memo)+'</button>':'')+'</td>'+
-        '<td class="r nw">'+(x.amt==null?'':money(x.amt,true))+'</td><td class="r nw">'+(x.camt==null?'':(x.camt<0?'−':'')+money(Math.abs(x.camt),true))+'</td><td class="nw">'+esc(x.cat)+'</td><td class="nw">'+(x.appr?'✅ '+date(x.appr):'<span class="ledNo">Not yet</span>')+'</td></tr>'; }).join(''); })()+'</tbody></table></div></details>';
+  var open=S.foldOpen&&S.foldOpen.ledger, all=ledgerLines_(), F=ledF_();
+  var shown=ledShown_(all), active=Object.keys(F).filter(function(k){ return F[k] && F[k].length; });
+  var h='<details class="inCard fold" id="inLedger" data-fold="ledger"'+(open?' open':'')+'><summary class="foldHead"><span><b>📒 Detailed breakdown</b><span class="dsub">'+(all.length ? all.length+' line'+(all.length>1?'s':'') : 'Every transaction, line by line')+'</span></span><span class="foldR"><span class="chev">▾</span></span></summary>'+
+    '<p class="inLast">Where every transaction is kept — one line each, with its date and all its details. Tap Account, Transaction type, Category or Approved to filter.</p>';
+  if(all.length){ var c=ledgerCheck_(all), ok=Math.abs(c.sum)<0.005;
+    h+='<div class="ledCheck '+(ok?'ok':'off')+'"><div><small>Real money'+(c.day?' · from balances '+date(c.day):'')+'</small><b>'+money(c.real,true)+'</b></div><div><small>Category amounts</small><b>'+(c.cat<0?'−':'')+money(Math.abs(c.cat),true)+'</b></div>'+
+      '<div><small>Real − category</small><b>'+(c.sum<0?'−':'')+money(Math.abs(c.sum),true)+'</b></div><p>'+(ok?'✓ Every dollar has a home':(c.sum>0?'⚠️ '+money(c.sum,true)+' has no home yet':'⚠️ '+money(-c.sum,true)+' more is given a home than there is'))+'</p></div>'; }
+  h+=ledPanelHtml_(all);
+  if(active.length) h+='<div class="ledActive">Showing '+shown.length+' of '+all.length+' lines · '+active.map(function(k){ return '<b>'+esc(F[k].join(', '))+'</b>'; }).join(' · ')+' <button class="histLink" data-ledfclear="1">Clear filters</button></div>';
+  h+='<div class="ledWrap" id="ledWrap"><table class="ledTbl"><thead><tr>'+LEDGER_COLS.map(function(c){ var r=c==='Amount'||c==='Category amount', fk=LED_FILTERS[c];
+      var inner = c==='Date' ? '<button class="ledSort" id="ledSort" aria-label="'+(S.ledAsc?'Oldest first — tap for newest first':'Newest first — tap for oldest first')+'">Date '+(S.ledAsc?'↑':'↓')+'</button>'
+        : fk ? '<button class="ledFBtn'+(F[fk]&&F[fk].length?' act':'')+(S.ledFOpen===fk?' open':'')+'" data-ledfopen="'+fk+'" aria-expanded="'+(S.ledFOpen===fk)+'">'+c+(F[fk]&&F[fk].length?' ('+F[fk].length+')':'')+' ▾</button>' : c;
+      return '<th'+(r?' class="r"':'')+'>'+inner+'</th>'; }).join('')+'</tr></thead><tbody>';
+  if(!all.length) h+='<tr><td colspan="'+LEDGER_COLS.length+'" class="ledEmpty">No transactions yet.</td></tr>';
+  else if(!shown.length) h+='<tr><td colspan="'+LEDGER_COLS.length+'" class="ledEmpty">Nothing matches these filters.</td></tr>';
+  else { var L=S.ledAsc ? shown.slice().reverse() : shown;
+    h+=L.map(function(x){ return '<tr><td class="nw">'+date(x.date)+'</td><td class="nw">'+esc(x.acct)+'</td><td class="nw">'+esc(x.type)+'</td><td>'+esc(x.name)+'</td><td>'+(x.memo?'<button class="ledMemo" data-ledmemo="1" title="'+esc(x.memo)+'">'+esc(x.memo)+'</button>':'')+'</td>'+
+      '<td class="r nw">'+(x.amt==null?'':money(x.amt,true))+'</td><td class="r nw">'+(x.camt==null?'':(x.camt<0?'−':'')+money(Math.abs(x.camt),true))+'</td><td class="nw">'+esc(x.cat)+'</td><td class="nw">'+(x.appr?'✅ '+date(x.appr):'<span class="ledNo">Not yet</span>')+'</td></tr>'; }).join(''); }
+  return h+'</tbody></table></div></details>';
 }
+/* redraw without losing where the table was scrolled to */
+function ledRender_(){ var w=document.getElementById('ledWrap'), x=w?w.scrollLeft:0, y=w?w.scrollTop:0; render(); var n=document.getElementById('ledWrap'); if(n){ n.scrollLeft=x; n.scrollTop=y; } }
 function inCatsHtml_(){
   var open=S.foldOpen&&S.foldOpen.cats, n=0, E=S.catEdit||''; ALLOC.forEach(function(g){ n+=g.items.length; });
   var h='<details class="inCard fold" id="inCats" data-fold="cats"'+(open?' open':'')+'><summary class="foldHead"><span><b>🗂 Category list</b><span class="dsub">'+ALLOC.length+' categories · '+n+' sub-categories</span></span><span class="foldR"><button class="histLink" data-hist="cats">🕘 History</button><span class="chev">▾</span></span></summary>'+
@@ -2411,7 +2449,15 @@ document.addEventListener('input', function(e){
 document.addEventListener('click', function(e){
   var ce=e.target.closest && e.target.closest('[data-catedit]');
   if(ce){ var nv=ce.dataset.catedit; S.catSubDraft=null; S.catEdit= (S.catEdit===nv && nv!=='') ? '' : nv; S.catErr=''; S.catDel=null; render(); if(S.catEdit==='new' || S.catEdit==='newsub'){ var ni=document.getElementById(S.catEdit==='new'?'catNewGrp':'catNewSub'); if(ni) ni.focus(); } return; }
-  if(e.target.closest && e.target.closest('#ledSort')){ S.ledAsc=!S.ledAsc; render(); return; }
+  if(e.target.closest && e.target.closest('#ledSort')){ S.ledAsc=!S.ledAsc; ledRender_(); return; }
+  var lf=e.target.closest && e.target.closest('[data-ledfopen],[data-ledfall],[data-ledfv],[data-ledfdone],[data-ledfclear]');
+  if(lf){ var ld=lf.dataset, F=ledF_();
+    if(ld.ledfopen){ S.ledFOpen= S.ledFOpen===ld.ledfopen ? null : ld.ledfopen; if(S.ledFOpen){ ledRender_(); var pn=document.getElementById('ledPanel'); if(pn) pn.scrollIntoView({ block:'nearest', behavior:'smooth' }); return; } }
+    else if(ld.ledfall){ delete F[ld.ledfall]; }
+    else if(ld.ledfv){ var arr=F[ld.ledfv]=F[ld.ledfv]||[], i=arr.indexOf(ld.v); if(i>=0) arr.splice(i,1); else arr.push(ld.v); if(!arr.length) delete F[ld.ledfv]; }
+    else if(ld.ledfdone){ S.ledFOpen=null; }
+    else if(ld.ledfclear){ S.ledF={}; S.ledFOpen=null; }
+    ledRender_(); return; }
   var lm=e.target.closest && e.target.closest('[data-ledmemo]'); if(lm){ lm.classList.toggle('open'); return; }
   var cb=e.target.closest && e.target.closest('[data-catgmv],[data-catimv],[data-catgdel],[data-catidel],[data-catadd],[data-catback],#catNewGrpBtn,#catNewSubBtn');
   if(cb){ var d=cb.dataset;
