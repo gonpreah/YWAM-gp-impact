@@ -1887,7 +1887,7 @@ function debtReportHtml(P, title, compact, day){
 /* advances always show what is out now — or on the day picked for them in the bar at the top,
    like staff debt. Approved / Live doesn't change them. */
 function advDays_(){ var d={}; d[TODAY]=1; ADVANCES.forEach(function(a){ if(a.date<=TODAY) d[a.date]=1; if(a.settled && a.settled.date<=TODAY) d[a.settled.date]=1; }); return Object.keys(d).sort().reverse(); }
-function advRef_(){ var dd=advDays_(); return S.viewAdvDay && dd.indexOf(S.viewAdvDay)>=0 ? S.viewAdvDay : TODAY; }
+function advRef_(){ return TODAY; }   /* advances always show as they are now — no day to pick */
 function advShown_(){ var day=advRef_(); return ADVANCES.filter(function(a){ return a.date<=day && (!a.settled || a.settled.date>day); }); }
 function advByFund_(L){ var by={}; L.forEach(function(a){ (by[a.fund]=by[a.fund]||{ n:0, amt:0 }); by[a.fund].n++; by[a.fund].amt+=a.amt; }); return by; }
 function advDashHtml_(){
@@ -2101,12 +2101,12 @@ function asOfBarHtml_(){
   var h='<div class="modeSeg" role="tablist"><button class="'+(live?'':'on')+'" data-dashmode="approved">✅ Approved</button><button class="'+(live?'on':'')+'" data-dashmode="live">📡 Live</button></div>';
   if(live){
     h+='<div class="liveBanner">📡 <b>Live — estimated.</b> '+(ls.day ? 'The approved update of '+date(ls.day)+' plus '+ls.n+' entr'+(ls.n===1?'y':'ies')+' since, not yet checked by the accountant.' : 'Everything entered so far, not yet checked by the accountant.')+'</div>'+
-      '<div class="asOfBar"><span>📡 Up to today, '+date(TODAY)+'</span><span class="sep">·</span><label for="viewDebtDay">💳 Staff debt as of</label>'+sel('viewDebtDay', dd, dcur, dd[0])+'<span class="sep">·</span><label for="viewAdvDay">🤝 Advances as of</label>'+(function(){ var ad=advDays_(), cur=advRef_(); return '<select id="viewAdvDay" class="daySel">'+ad.map(function(d){ return '<option value="'+d+'"'+(d===cur?' selected':'')+'>'+date(d)+(d===TODAY?' · now':'')+'</option>'; }).join('')+'</select>'; })()+'</div>';
+      '<div class="asOfBar"><span>📡 Up to today, '+date(TODAY)+'</span><span class="sep">·</span><label for="viewDebtDay">💳 Staff debt as of</label>'+sel('viewDebtDay', dd, dcur, dd[0])+'</div>';
     return h;
   }
   h+='<div class="asOfBar"><label for="viewDay">📅 Reports as of</label>'+(days.length ? sel('viewDay', days, cur, latest) : '<b>—</b>')+
     (days.length && BAL.asOf && ALLOC_ASOF!==BAL.asOf ? '<span class="warn">· allocations as of '+date(ALLOC_ASOF)+'</span>' : '')+
-    '<span class="sep">·</span><label for="viewDebtDay">💳 Staff debt as of</label>'+sel('viewDebtDay', dd, dcur, dd[0])+'<span class="sep">·</span><label for="viewAdvDay">🤝 Advances as of</label>'+(function(){ var ad=advDays_(), cur=advRef_(); return '<select id="viewAdvDay" class="daySel">'+ad.map(function(d){ return '<option value="'+d+'"'+(d===cur?' selected':'')+'>'+date(d)+(d===TODAY?' · now':'')+'</option>'; }).join('')+'</select>'; })()+'</div>';
+    '<span class="sep">·</span><label for="viewDebtDay">💳 Staff debt as of</label>'+sel('viewDebtDay', dd, dcur, dd[0])+'</div>';
   if(S.pendDay) h+='<div class="pastNote" style="background:var(--accentSoft);color:var(--ink)">✏️ '+date(S.pendDay)+' is being entered — not approved yet (see 📡 Live).</div>';
   if((cur && cur!==latest) || (dcur && dcur!==dd[0]) || advRef_()!==TODAY) h+='<div class="pastNote">🕘 You’re looking at an earlier day. <button class="more" id="viewLatest" style="padding:0">Back to the latest</button></div>';
   return h;
