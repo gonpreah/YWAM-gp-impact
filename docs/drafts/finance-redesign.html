@@ -158,6 +158,11 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .incSrc .sb{ grid-column:1 / -1; height:6px; border-radius:999px; background:var(--surface2); overflow:hidden; }
 .incSrc .sb span{ display:block; height:100%; border-radius:999px; }
 .incSrc .sp{ color:var(--muted); font-weight:600; font-size:12px; margin-left:4px; }
+.flowDrop{ width:100%; display:flex; justify-content:space-between; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-top:10px; font-weight:600; font-size:14px; cursor:pointer; }
+.flowDrop .chev{ transition:transform .2s; color:var(--muted); }
+.flowDrop.on{ border-radius:12px 12px 0 0; border-bottom-color:transparent; }
+.flowDrop.on .chev{ transform:rotate(180deg); }
+.flowDrop.on + .alList{ background:var(--surface); border:1px solid var(--line); border-top:0; border-radius:0 0 12px 12px; padding:0 14px; }
 .incPer{ display:flex; gap:6px; margin:0 0 10px; }
 .incPer button{ border:1px solid var(--line); background:var(--surface2); border-radius:999px; padding:4px 12px; cursor:pointer; font-size:13px; font-weight:600; }
 .incPer button.on{ background:var(--accent); color:var(--accentInk); border-color:var(--accent); }
@@ -327,7 +332,7 @@ function debtHtml(){
    is the amount for that allocation; prev = the month before. One report, two kinds. */
 var FLOW = {
   inc: { id:'income', icon:'💵', title:'Income allocation', report:'SR Income Allocation', verb:'came in', upGood:true,
-    hint:'Money that came in, and how it was shared out to the allocations. Tap one to see where its money came from.',
+    hint:'Money that came in, and how it was shared out to the allocations. Tap a colour, or open the list, to see where each one’s money came from.',
     tHint:'Each column is one kind of income; each row is where it went.', none:'nothing came in', srcWord:'source',
     cats:['Teams','School fees','Staff contributions','Donations','Ministry rent','Other'],
     by:{ des:{ prev:2100, by:{ 'Donations':2400 } },
@@ -337,7 +342,7 @@ var FLOW = {
          sav:{ prev:750, by:{ 'Teams':500, 'Other':250 } },
          fund:{ prev:1000, by:{ 'Staff contributions':600, 'Donations':400 } } } },
   exp: { id:'expense', icon:'🧾', title:'Expense allocation', report:'SR Expense Allocation', verb:'went out', upGood:false,
-    hint:'Money that went out, and which allocation paid for it. Tap one to see what it was spent on.',
+    hint:'Money that went out, and which allocation paid for it. Tap a colour, or open the list, to see what each one spent it on.',
     tHint:'Each column is one kind of spending; each row is the allocation that paid for it.', none:'nothing spent', srcWord:'kind',
     cats:['Rent & utilities','Food','Transport','Ministry costs','Relief supplies','Maintenance','Staff care','Office','Other'],
     by:{ des:{ prev:1500, by:{ 'Ministry costs':1800 } },
@@ -351,7 +356,7 @@ var FLOW_MONTH='November 2026', FLOW_PREV='October 2026';
 /* year to date: the same shares, bigger — sample */
 Object.keys(FLOW).forEach(function(kind){ var F=FLOW[kind]; F.ytd={};
   Object.keys(F.by).forEach(function(k){ var o={}; Object.keys(F.by[k].by).forEach(function(c){ o[c]=Math.round(F.by[k].by[c]*(9.4+(c.length%4)*0.6)); }); F.ytd[k]={ by:o }; }); });
-S.flowPer={}; S.flowOpen={};
+S.flowPer={}; S.flowOpen={}; S.flowList={};
 function flowOf_(kind, id){ var F=FLOW[kind], src=(S.flowPer[kind]==='ytd'?F.ytd:F.by)[id], by=src?src.by:{}, tot=0;
   Object.keys(by).forEach(function(k){ tot+=by[k]; }); return { by:by, tot:tot, prev:src&&src.prev }; }
 function flowDelta_(kind, d, vs){
@@ -371,7 +376,10 @@ function flowHtml(kind){
   h+='<div class="alBar" role="img" aria-label="'+esc(rows.map(function(r){ return r.a.name+' '+money(r.o.tot); }).join(', '))+'">'+
     rows.filter(function(r){ return r.o.tot>0; }).map(function(r){ var p=r.o.tot/T*100;
       return '<button class="alSeg'+(r.a.dark?' dark':'')+'" data-flow="'+kind+'|'+r.a.id+'" style="flex:'+r.o.tot+' 1 0;background:var('+r.a.c+')" title="'+esc(r.a.name+' · '+money(r.o.tot)+' · '+Math.round(p)+'%')+'">'+(p>=9?Math.round(p)+'%':'')+'</button>'; }).join('')+'</div>';
-  h+='<ul class="alList" style="margin-top:10px">'+rows.map(function(r){ var a=r.a, o=r.o, p=T?o.tot/T*100:0, on=S.flowOpen[kind]===a.id;
+  var listOn=!!S.flowList[kind];
+  h+='<button class="flowDrop'+(listOn?' on':'')+'" data-flowlist="'+kind+'" aria-expanded="'+listOn+'"><span>'+(listOn?'Hide':'Show')+' the '+ALLOC.length+' allocations</span><span class="chev">▾</span></button>';
+  if(!listOn) return h+'</section>';
+  h+='<ul class="alList">'+rows.map(function(r){ var a=r.a, o=r.o, p=T?o.tot/T*100:0, on=S.flowOpen[kind]===a.id;
     var dl = (o.prev==null || ytd) ? '' : '<br>'+flowDelta_(kind, o.tot-o.prev, FLOW_PREV);
     var cs=Object.keys(o.by).sort(function(x,y){ return o.by[y]-o.by[x]; });
     return '<li class="alRow'+(on?' on':'')+'"><button data-flow="'+kind+'|'+a.id+'" aria-expanded="'+on+'">'+
@@ -443,9 +451,13 @@ document.getElementById('scrim').onclick=closeSheet;
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSheet(); });
 
 document.addEventListener('click', function(e){
-  var t=e.target.closest('[data-tab],[data-al],[data-sheet],[data-debtall],[data-flow],[data-flowper]'); if(!t) return;
+  var t=e.target.closest('[data-tab],[data-al],[data-sheet],[data-debtall],[data-flow],[data-flowper],[data-flowlist]'); if(!t) return;
   if(t.dataset.tab){ S.tab=t.dataset.tab; render(); }
-  else if(t.dataset.flow){ var fp=t.dataset.flow.split('|'); S.flowOpen[fp[0]] = S.flowOpen[fp[0]]===fp[1] ? null : fp[1]; render(); }
+  else if(t.dataset.flowlist){ var fk=t.dataset.flowlist; S.flowList[fk]=!S.flowList[fk]; render(); }
+  else if(t.dataset.flow){ var fp=t.dataset.flow.split('|');
+    if(t.classList.contains('alSeg')){ S.flowList[fp[0]]=true; S.flowOpen[fp[0]]=fp[1]; }   /* a colour opens the list on its own row */
+    else S.flowOpen[fp[0]] = S.flowOpen[fp[0]]===fp[1] ? null : fp[1];
+    render(); }
   else if(t.dataset.flowper){ var pp=t.dataset.flowper.split('|'); S.flowPer[pp[0]]=pp[1]; render(); if(document.body.classList.contains('sheetOn')) sheet(FLOW[pp[0]].id); }
   else if(t.dataset.al){ S.open = S.open===t.dataset.al ? null : t.dataset.al; render(); }
   else if(t.dataset.sheet) sheet(t.dataset.sheet);
