@@ -521,7 +521,7 @@ function inputHtml(){
     return '<div class="inRow"><label for="inB_'+id+'">'+label+'<span class="ls">'+sub+'</span></label>'+
       '<div class="money"><span>$</span><input id="inB_'+id+'" data-inbal="'+id+'" type="text" inputmode="text" autocomplete="off" spellcheck="false" enterkeyhint="done" placeholder="'+(B.none?'0.00':inMoney_(a.amt))+'" value="'+esc(D[id])+'"></div>'+
       '<div class="inWas">'+(B.none?'Nothing entered yet':'Last time: '+money(a.amt,true)+' on '+date(B.asOf))+'</div></div>'; };
-  var h=inDayHtml_()+'<div class="inCard" id="inBalances">'+'<div class="inHead"><h2>🏦 Balances</h2><button class="histLink" data-hist="bal">🕘 History</button></div>'+
+  var h=inDayHtml_()+'<details class="inCard fold" id="inBalances" data-fold="bal"'+(S.foldOpen&&S.foldOpen.bal?' open':'')+'><summary class="foldHead"><span><b>🏦 Balances</b><span class="dsub">'+(B.none?'Nothing entered yet':date(B.asOf)+' · '+money(total(),true))+'</span></span><span class="foldR"><button class="histLink" data-hist="bal">🕘 History</button><span class="chev">▾</span></span></summary>'+
     '<p class="inLast">'+(B.none?'No balances entered yet.':'Last entered for '+date(B.asOf)+'.')+' Type what is in each account on the “Reports as of” day — saving the same day again replaces it.</p>'+
     '<p class="inTip">🧮 Boxes do simple sums: type <b>500-30</b> or <b>5*6</b> and it works it out.</p>'+
     row('aba','ABA bank','Cambodia · US$ account')+row('us','US bank','United States')+row('cash','Cash on hand','the cash box, counted')+
@@ -529,7 +529,7 @@ function inputHtml(){
     '<div class="inDates one"><div><label for="inB_rec">Last reconciled with the bank</label><input type="date" id="inB_rec" data-inbal="rec" max="2026-11-23" value="'+esc(D.rec||'')+'"><div class="ls">Leave empty if not reconciled yet.</div></div></div>'+
     (S.inErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.inErr)+'</p>' : '')+
     '<div class="inBtns"><button class="btn" id="inBalSave">Save balances</button>'+(B.none?'':'<button class="btn ghost" id="inBalCopy">Same as last time</button>')+'</div>'+
-    '</div>';
+    '</details>';
   h+=inAllocHtml_();
   h+=inRulesHtml_();
   h+=inXferHtml_();
@@ -544,7 +544,8 @@ function inAlNum_(gid, i){ var v=calc_(inAlVal_(gid, i)); return isNaN(v)?0:v; }
 function inAlGroupTot_(g){ var t=0; g.items.forEach(function(_, i){ t+=inAlNum_(g.id, i); }); return t; }
 function inAllocHtml_(){
   var open=S.inAlOpen||{};
-  var h='<div class="inCard" id="inAlloc">'+'<div class="inHead"><h2>📊 Allocations</h2><button class="histLink" data-hist="al">🕘 History</button></div>'+
+  var gap_=total()-ALLOC.reduce(function(s2,g){ return s2+g.amt; },0);
+  var h='<details class="inCard fold" id="inAlloc" data-fold="alloc"'+(S.foldOpen&&S.foldOpen.alloc?' open':'')+'><summary class="foldHead"><span><b>📊 Allocations</b><span class="dsub">'+(Math.abs(gap_)<0.005?'✓ Every dollar allocated':(gap_>0?money(gap_,true)+' not allocated yet':money(-gap_,true)+' more than in hand'))+'</span></span><span class="foldR"><button class="histLink" data-hist="al">🕘 History</button><span class="chev">▾</span></span></summary>'+
     '<p class="inLast">How the total liquid assets are set aside. Change any balance, then save — every dollar should be in one place.</p>'+
     '<p class="inTip">🧮 Boxes do simple sums too, like <b>2400+200</b>.</p>'+
     '<div class="inAlSum" id="inAlSum">'+inAlSumHtml_()+'</div>';
@@ -561,7 +562,7 @@ function inAllocHtml_(){
       '</div></details>';
   }).join('');
   h+=(S.inAlErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.inAlErr)+'</p>' : '')+
-    '<div class="inBtns"><button class="btn" id="inAlSave">Save allocations</button><button class="btn ghost" id="inAlReset">Undo changes</button></div></div>';
+    '<div class="inBtns"><button class="btn" id="inAlSave">Save allocations</button><button class="btn ghost" id="inAlReset">Undo changes</button></div></details>';
   return h;
 }
 function inAlSumHtml_(){
@@ -605,7 +606,7 @@ function debtAutoLink_(name){
 }
 function inDebtHtml_(){
   var U=S.debtUp, d=S.debtDay || (U && U.asOf) || DEBT.asOf;
-  var h='<div class="inCard" id="inDebt">'+'<div class="inHead"><h2>💳 Staff debt</h2><button class="histLink" data-hist="debt">🕘 History</button></div>'+
+  var h='<details class="inCard fold" id="inDebt" data-fold="debt"'+(S.foldOpen&&S.foldOpen.debt?' open':'')+'><summary class="foldHead"><span><b>💳 Staff debt</b><span class="dsub">'+'As of '+date(DEBT.asOf)+' · '+money(DEBT.people.reduce(function(s2,x){ return s2+x.tot; },0),true)+' owed'+'</span></span><span class="foldR"><button class="histLink" data-hist="debt">🕘 History</button><span class="chev">▾</span></span></summary>'+
     '<p class="inLast">Last report: as of '+date(DEBT.asOf)+(DEBT.file?' · '+esc(DEBT.file):'')+'. Staff debt has its own day — the day on the A/R Ageing report.</p>'+
     '<label class="inDrop" for="inDebtFile">📎 <span><b>'+(U?'Attach a different file':'Attach the A/R Ageing report')+'</b><br><small>The Excel file (.xlsx) the office makes — or a .csv of it</small></span></label>'+
     '<input type="file" id="inDebtFile" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" hidden>'+
@@ -625,7 +626,7 @@ function inDebtHtml_(){
           (st ? '<div class="upLinked">🔗 '+esc(st.dept)+'</div>' : '')+'</div>'; }).join('')+'</div>';
   }
   h+=(S.debtErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.debtErr)+'</p>' : '')+
-    '<div class="inBtns"><button class="btn" id="inDebtSave">'+(U?'Save staff debt':'Save staff debt day')+'</button>'+(U?'<button class="btn ghost" id="inDebtCancel">Cancel</button>':'')+'</div></div>';
+    '<div class="inBtns"><button class="btn" id="inDebtSave">'+(U?'Save staff debt':'Save staff debt day')+'</button>'+(U?'<button class="btn ghost" id="inDebtCancel">Cancel</button>':'')+'</div></details>';
   return h;
 }
 /* a small .xlsx reader: unzip (the browser's own deflate), shared strings, the first sheet */
