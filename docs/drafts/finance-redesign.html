@@ -322,6 +322,9 @@ label.f{ display:block; font-size:12.5px; font-weight:600; margin:6px 0 4px; }
 .xfAmt{ position:absolute; right:0; top:10px; font-variant-numeric:tabular-nums; }
 .xfAmt.out{ color:var(--bad); } .xfAmt.in{ color:var(--good); }
 .xfIn{ margin-top:8px; }
+.foldR{ display:flex; align-items:center; gap:12px; }
+.xfMonth{ margin-top:14px; }
+.xfMonthHead{ display:flex; justify-content:space-between; gap:10px; align-items:baseline; padding-bottom:4px; border-bottom:2px solid var(--line); }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -717,7 +720,7 @@ function fundMove_(k, d){ var f=fundOf_(k); if(!f) return; f.g.items.forEach(fun
 function xferShort_(k){ var f=fundOf_(k); return f ? (f.g.single ? f.name : f.name+' ('+f.g.name+')') : k; }
 function inXferHtml_(){
   var D=S.xfer||(S.xfer={ from:'', to:'', amt:'', date:reportDay_(), memo:'' }), open=S.foldOpen&&S.foldOpen.xfer;
-  var h='<details class="inCard fold" id="inXfer" data-fold="xfer"'+(open?' open':'')+'><summary class="foldHead"><span><b>🔁 Internal transfers</b><span class="dsub">'+(TRANSFERS.length?TRANSFERS.length+' transfer'+(TRANSFERS.length>1?'s':'')+' · last '+date(TRANSFERS[0].date):'Move money from one fund to another')+'</span></span><span class="chev">▾</span></summary>'+
+  var h='<details class="inCard fold" id="inXfer" data-fold="xfer"'+(open?' open':'')+'><summary class="foldHead"><span><b>🔁 Internal transfers</b><span class="dsub">'+(TRANSFERS.length?TRANSFERS.length+' transfer'+(TRANSFERS.length>1?'s':'')+' · last '+date(TRANSFERS[0].date):'Move money from one fund to another')+'</span></span><span class="foldR"><button class="histLink" data-hist="xf">🕘 History</button><span class="chev">▾</span></span></summary>'+
     '<p class="inLast">Move money between any two funds. It shows on the Dashboard as an internal transfer, with its day and why.</p>'+
     '<div class="xfGrid"><label class="f" for="xfFrom">From</label>'+fundSelect_('xfFrom', D.from, 'From fund')+
     '<div class="xfArrow" aria-hidden="true">↓</div>'+
@@ -1020,6 +1023,18 @@ function histHtml_(kind){
       H.map(function(e){ var t=0; Object.keys(e.groups).forEach(function(k){ t+=histSum_(e.groups[k].map(function(x){ return x[1]; })); });
         return '<li><button data-histpick="'+e.asOf+'"><span><b>'+date(e.asOf)+'</b>'+(e.sample?' <span class="tag">sample</span>':'')+'<span class="dsub">'+ALLOC.length+' allocations</span></span><span class="r"><b>'+money(t,true)+'</b><span class="dsub">allocated ›</span></span></button></li>'; }).join('')+'</ul>';
   }
+  if(kind==='xf'){
+    var flt=S.xfFilter||'', list=TRANSFERS.filter(function(t){ return !flt || t.from.split('|')[0]===flt || t.to.split('|')[0]===flt; });
+    var h2='<h3>🔁 Internal transfers — history</h3><p class="hint">Every transfer between funds, newest first, with the day and why.</p>'+
+      '<div class="chips"><button class="chip'+(flt?'':' on')+'" data-xffilter="">All · '+TRANSFERS.length+'</button>'+
+      ALLOC.filter(function(g){ return TRANSFERS.some(function(t){ return t.from.split('|')[0]===g.id || t.to.split('|')[0]===g.id; }); }).map(function(g){
+        return '<button class="chip'+(flt===g.id?' on':'')+'" data-xffilter="'+g.id+'"><span class="sw" style="display:inline-block;width:9px;height:9px;margin-right:5px;background:var('+g.c+')"></span>'+esc(g.name)+'</button>'; }).join('')+'</div>';
+    if(!list.length) return h2+'<p class="hint" style="margin-top:12px">No transfers yet.</p>';
+    var months={}; list.forEach(function(t){ var m=t.date.slice(0,7); (months[m]=months[m]||[]).push(t); });
+    return h2+Object.keys(months).sort().reverse().map(function(m){ var L=months[m], tot=L.reduce(function(s2,t){ return s2+t.amt; },0);
+      var mn=new Date(m+'-01T00:00:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+      return '<div class="xfMonth"><div class="xfMonthHead"><b>'+mn+'</b><span class="dsub" style="display:inline">'+L.length+' transfer'+(L.length>1?'s':'')+' · '+money(tot,true)+' moved</span></div>'+xferRowsHtml_(L, flt||null)+'</div>'; }).join('');
+  }
   if(kind==='debt'){
     var D=DEBT_HIST.length ? DEBT_HIST : [{ asOf:DEBT.asOf, file:'', people:DEBT.people, sample:true }];
     if(pick){ var e2=D.filter(function(x){ return x.asOf===pick; })[0]; if(e2) return back+'<h3>💳 Staff debt — '+date(e2.asOf)+(e2.sample?' (sample)':'')+'</h3>'+(e2.file?'<p class="hint">From '+esc(e2.file)+'</p>':'')+debtReportHtml(e2.people, DEBT.title, false, e2.asOf); }
@@ -1125,7 +1140,8 @@ document.addEventListener('click', function(e){
     if(INC_TYPES.indexOf(nm)<0) INC_TYPES.push(nm); S.ruleType=nm; S.ruleNewOpen=false; keep_(); render(); return; }
   var rdl=e.target.dataset && e.target.dataset.ruledel; if(rdl!=null){ ruleRows_(S.ruleType||INC_TYPES[0]).splice(+rdl,1); render(); return; }
   var rpk=e.target.closest && e.target.closest('[data-rulepick]'); if(rpk){ S.ruleType=rpk.dataset.rulepick; S.ruleErr=''; render(); document.getElementById('inRules').scrollIntoView({block:'start'}); return; }
-  var hb=e.target.closest && e.target.closest('[data-hist]'); if(hb){ S.histPick=''; S.histOpen=hb.dataset.hist; sheet('hist-'+hb.dataset.hist); return; }
+  var xff=e.target.closest && e.target.closest('[data-xffilter]'); if(xff){ S.xfFilter=xff.dataset.xffilter; sheet('hist-xf'); return; }
+  var hb=e.target.closest && e.target.closest('[data-hist]'); if(hb){ e.preventDefault(); S.histPick=''; S.histOpen=hb.dataset.hist; sheet('hist-'+hb.dataset.hist); return; }
   var hp=e.target.closest && e.target.closest('[data-histpick]'); if(hp){ S.histPick=hp.dataset.histpick; sheet('hist-'+S.histOpen); document.getElementById('sheet').scrollTop=0; return; }
   if(e.target.dataset && e.target.dataset.baldel){ var dday=e.target.dataset.baldel;
     if(S.balDelAsk!==dday){ S.balDelAsk=dday; e.target.textContent='Delete?'; e.target.classList.add('ask'); return; }
