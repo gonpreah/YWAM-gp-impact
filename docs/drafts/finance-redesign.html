@@ -358,6 +358,11 @@ label.f{ display:block; font-size:12.5px; font-weight:600; margin:6px 0 4px; }
 .toolSum{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:10px 0; }
 .toolSum div{ background:var(--surface2); border-radius:10px; padding:8px 12px; display:flex; justify-content:space-between; font-variant-numeric:tabular-nums; }
 .toolSum .in{ color:var(--good); } .toolSum .out{ color:var(--bad); }
+.undoBar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:-6px 0 6px; }
+.undoBtn{ border:1px solid color-mix(in srgb, var(--muted) 45%, transparent); background:var(--surface); color:var(--ink); border-radius:999px; padding:7px 14px; font-weight:700; font-size:13.5px; cursor:pointer; }
+.undoBtn.ask{ background:var(--bad); color:#fff; border-color:var(--bad); }
+.undoBtn[disabled]{ opacity:.5; cursor:not-allowed; }
+.undoBar .dsub{ font-size:12px; min-width:0; }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -501,7 +506,12 @@ function inDayHtml_(){
   return '<div class="inCard inDay" id="inDay"><div class="inDayRow"><label for="inReportDay">📅 Reports as of</label>'+
     '<input type="date" id="inReportDay" data-reportday="1" max="'+TODAY+'" value="'+esc(d)+'"></div>'+
     '<p class="inLast" style="margin:4px 0 0">Everything below is saved for <b>'+date(d)+'</b> — except staff debt, which has its own day.</p>'+
-    (S.dayErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.dayErr)+'</p>' : '')+'</div>';
+    (S.dayErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.dayErr)+'</p>' : '')+'</div>'+undoBtnHtml_();
+}
+function undoBtnHtml_(){
+  var u=UNDO[UNDO.length-1];
+  return '<div class="undoBar"><button class="undoBtn'+(S.undoAsk?' ask':'')+'" id="undoLast"'+(u?'':' disabled')+'>↩ '+(S.undoAsk?'Tap again to undo':'Undo previous input')+'</button>'+
+    '<span class="dsub">'+(u ? 'Would undo: '+esc(u.msg.replace(/^(Removed|Put back|Undid|Brought back)/, function(m){ return m; })) : 'Nothing to undo yet')+'</span></div>';
 }
 function inputHtml(){
   var B=BAL, D=S.inBal || (S.inBal={ aba:'', us:'', cash:'', rec:B.reconciled });
@@ -564,6 +574,7 @@ function inAlSave_(){
   ALLOC.forEach(function(g){ g.items.forEach(function(_, i){ var v=inAlVal_(g.id,i); if(v==='') err=err||('Fill in '+g.items[i][0]+' (0 if empty).'); else if(isNaN(calc_(v))) err=err||(g.items[i][0]+': that isn’t a number or a sum I can work out.'); else if(calc_(v)<0) err=err||'Balances can’t be below zero.'; }); });
   var day=reportDay_(); if(!err && (!day || day>TODAY)) err='Pick a “Reports as of” day at the top that isn’t in the future.';
   S.inAlErr=err; if(err){ render(); return; }
+  snap_('Put back the allocations from before');
   if(ALLOC_ASOF!==day) ALLOC_PREV_ASOF=ALLOC_ASOF; ALLOC_ASOF=day;
   ALLOC.forEach(function(g){ g.prev=g.amt; g.items.forEach(function(it, i){ it[1]=+inAlNum_(g.id,i).toFixed(2); }); g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); });
   var gap=total()-ALLOC.reduce(function(s2,g){ return s2+g.amt; },0);
@@ -683,6 +694,7 @@ function inDebtSave_(){
   var U=S.debtUp, dd=S.debtDay || (U && U.asOf) || DEBT.asOf;
   S.debtErr = !dd ? 'Pick the day on the report.' : (dd>TODAY ? 'That day is in the future.' : '');
   if(S.debtErr){ render(); return; }
+  snap_(U ? 'Put back the staff debt from before '+U.file : 'Put back the staff debt day ('+date(DEBT.asOf)+')');
   if(U){
     Object.keys(S.debtLink).forEach(function(n){ if(S.debtLink[n]) DEBT_LINKS[n]=S.debtLink[n]; else delete DEBT_LINKS[n]; });
     DEBT.people=U.people.map(function(p){ var st=staffById_(S.debtLink[p.n]); return { n:p.n, b:p.b, tot:p.tot, old:p.old, d: st ? st.dept : '', staffId: st ? st.id : null }; });
@@ -801,6 +813,7 @@ function xferSave_(){
   else if(isNaN(a)||a<=0) err='Type an amount more than 0.'; else if(!isTool_(D.from) && a>fundAmt_(D.from)+0.004) err='That is more than '+fundOf_(D.from).name+' holds ('+money(fundAmt_(D.from),true)+').';
   else if(!D.date||D.date>TODAY) err='Pick the day of the transfer (not in the future).'; else if(!String(D.memo).trim()) err='Write a memo saying why.';
   S.xfErr=err; if(err){ render(); return; }
+  snap_(isTool_(D.from) ? 'Undid adding '+money(a,true)+' to '+xferShort_(D.to)+' (Financial tools)' : isTool_(D.to) ? 'Undid removing '+money(a,true)+' from '+xferShort_(D.from)+' (Financial tools)' : 'Undid the transfer of '+money(a,true)+' from '+xferShort_(D.from)+' to '+xferShort_(D.to));
   if(isTool_(D.from) || isTool_(D.to)){
     if(!isTool_(D.from)) fundMove_(D.from, -a); if(!isTool_(D.to)) fundMove_(D.to, a);
     TOOL_XFERS.unshift({ id:'f'+Date.now().toString(36), date:D.date, from:D.from, to:D.to, amt:a, memo:String(D.memo).trim() });
@@ -883,6 +896,7 @@ function inc1Save_(){
   else if(!D.type) err='Pick what the income is.'; else if(!incSplit_(D.type, a, D.fund)) err='Pick which fund it goes to.';
   S.incErr=err; if(err){ render(); return; }
   var inc={ id:'i'+Date.now().toString(36), date:D.date, amt:a, type:D.type, who:String(D.who||'').trim(), memo:String(D.memo||'').trim(), split:incSplit_(D.type, a, D.fund), src:'manual' };
+  snap_('Removed '+money(a,true)+' '+inc.type+' income'+(inc.who?' from '+inc.who:''));
   incApply_(inc, 1); INCOMES.unshift(inc); incSort_(); xferSnap_(inc.date);
   S.inc1={ date:D.date, amt:'', type:'', who:'', memo:'', fund:'' }; render(); toast('Added '+money(a,true)+' — '+inc.type);
 }
@@ -992,6 +1006,7 @@ function incFileSave_(){
   var add=U.rows.filter(function(r){ return r.on && !r.skip && r.type && !incNeedsFund_(r); });
   if(!add.length){ S.incErr='Nothing to add.'; render(); return; }
   if(S.incRemember!==false) U.rows.forEach(function(r){ var k=incKey_(r); if(k && r.type && (r.answered || !r.sure || r.fund)) INC_MAP[k]={ t:r.type, f:r.fund||'' }; });
+  snap_('Removed '+add.length+' income'+(add.length>1?'s':'')+' ('+money(add.reduce(function(s2,r){ return s2+r.amt; },0),true)+') from '+U.file);
   add.forEach(function(r, i){ var inc={ id:'i'+Date.now().toString(36)+i, date:r.date, amt:r.amt, type:r.type, who:r.who, memo:[r.acct, r.memo].filter(Boolean).join(' · '), split:incSplit_(r.type, r.amt, r.fund), src:'file', file:U.file };
     incApply_(inc, 1); INCOMES.push(inc); });
   incSort_(); xferSnap_(add.reduce(function(m,r){ return r.date>m?r.date:m; },'')); var tot=add.reduce(function(s2,r){ return s2+r.amt; },0);
@@ -1030,6 +1045,7 @@ function ruleSave_(){
   var seen={}; rows.forEach(function(r){ if(seen[r.f]) err=err||'A fund is in the list twice.'; seen[r.f]=1; });
   if(!err && rows.length && Math.abs(ruleSum_(rows)-100)>0.001) err='The percents must add up to 100% (now '+ruleSum_(rows)+'%).';
   S.ruleErr=err; if(err){ render(); return; }
+  snap_('Put back the formula for '+type+' as it was');
   INC_RULES[type]=rows.map(function(r){ return { f:r.f, p:calc_(r.p) }; }); delete S.ruleDrafts[type]; keep_(); render(); toast('Saved the formula for '+type);
 }
 function inTotalHtml_(){
@@ -1048,6 +1064,7 @@ function inSave_(){
   if(!err && D.rec && D.rec>day) err='The reconciled day can’t be after the “Reports as of” day.';
   S.inErr=err; if(err){ render(); return; }
   var had=BAL_DAYS.some(function(r){ return r.asOf===day; });
+  snap_(had ? 'Put back the earlier balances for '+date(day) : 'Removed the balances for '+date(day));
   BAL_DAYS=BAL_DAYS.filter(function(r){ return r.asOf!==day; });
   BAL_DAYS.push({ asOf:day, aba:+calc_(D.aba).toFixed(2), us:+calc_(D.us).toFixed(2), cash:+calc_(D.cash).toFixed(2), rec:D.rec||null });
   refreshBal_(); keep_();
@@ -1409,6 +1426,7 @@ document.addEventListener('input', function(e){
 });
 document.addEventListener('click', function(e){
   if(e.target.id==='viewLatest'){ S.viewDay=null; S.viewDebtDay=null; render(); return; }
+  if(e.target.id==='undoLast'){ if(!S.undoAsk){ S.undoAsk=true; render(); setTimeout(function(){ if(S.undoAsk){ S.undoAsk=false; if(S.tab==='input') render(); } }, 4000); return; } undoLast_(); return; }
   if(e.target.id==='inBalSave'){ inSave_(); return; }
   if(e.target.id==='xfSave'){ xferSave_(); return; }
   if(e.target.id==='xfFixGap'){ var gp=+e.target.dataset.gap; S.xfer=S.xfer||{}; S.xfer.amt=Math.abs(gp).toFixed(2); if(gp<0){ S.xfer.to=TOOL_REMOVE; if(isTool_(S.xfer.from)) S.xfer.from=''; } else { S.xfer.from=TOOL_ADD; if(isTool_(S.xfer.to)) S.xfer.to=''; }
@@ -1416,7 +1434,7 @@ document.addEventListener('click', function(e){
   var itl=e.target.closest && e.target.closest('[data-inctools]'); if(itl){ S.incTools=itl.dataset.inctools==='1'; sheet('hist-inc'); document.getElementById('sheet').scrollTop=0; return; }
   var tdl=e.target.dataset && e.target.dataset.tooldel;
   if(tdl){ if(S.toolDelAsk!==tdl){ S.toolDelAsk=tdl; e.target.textContent='Undo it? Tap again'; e.target.classList.add('ask'); return; }
-    var tt=TOOL_XFERS.filter(function(x){ return x.id===tdl; })[0]; if(tt){ if(tt.from===TOOL_ADD) fundMove_(tt.to, -tt.amt); else fundMove_(tt.from, tt.amt); TOOL_XFERS=TOOL_XFERS.filter(function(x){ return x.id!==tdl; }); xferSnap_(); }
+    var tt=TOOL_XFERS.filter(function(x){ return x.id===tdl; })[0]; if(tt){ snap_('Brought back the Financial tools adjustment of '+money(tt.amt,true)); if(tt.from===TOOL_ADD) fundMove_(tt.to, -tt.amt); else fundMove_(tt.from, tt.amt); TOOL_XFERS=TOOL_XFERS.filter(function(x){ return x.id!==tdl; }); xferSnap_(); }
     S.toolDelAsk=null; render(); sheet('hist-inc'); toast('Adjustment undone'); return; }
   var im=e.target.closest && e.target.closest('[data-incmode]'); if(im){ S.incMode=im.dataset.incmode; S.incErr=''; render(); return; }
   if(e.target.id==='inc1Save'){ inc1Save_(); return; }
@@ -1428,18 +1446,18 @@ document.addEventListener('click', function(e){
   var ifl=e.target.closest && e.target.closest('[data-incfilter]'); if(ifl){ S.incFilter=ifl.dataset.incfilter; sheet('hist-inc'); return; }
   var idl=e.target.dataset && e.target.dataset.incdel;
   if(idl){ if(S.incDelAsk!==idl){ S.incDelAsk=idl; e.target.textContent='Take it out? Tap again'; e.target.classList.add('ask'); return; }
-    var x=INCOMES.filter(function(y){ return y.id===idl; })[0]; if(x){ incApply_(x, -1); INCOMES=INCOMES.filter(function(y){ return y.id!==idl; }); xferSnap_(); }
+    var x=INCOMES.filter(function(y){ return y.id===idl; })[0]; if(x){ snap_('Brought back '+money(x.amt,true)+' '+x.type+' income'); incApply_(x, -1); INCOMES=INCOMES.filter(function(y){ return y.id!==idl; }); xferSnap_(); }
     S.incDelAsk=null; render(); sheet('hist-inc'); toast('Taken out'); return; }
   var xd=e.target.dataset && e.target.dataset.xfdel;
   if(xd){ if(S.xfDelAsk!==xd){ S.xfDelAsk=xd; e.target.textContent='Undo it? Tap again'; e.target.classList.add('ask'); return; }
-    var t=TRANSFERS.filter(function(x){ return x.id===xd; })[0]; if(t){ fundMove_(t.to, -t.amt); fundMove_(t.from, t.amt); TRANSFERS=TRANSFERS.filter(function(x){ return x.id!==xd; }); xferSnap_(); }
+    var t=TRANSFERS.filter(function(x){ return x.id===xd; })[0]; if(t){ snap_('Brought back the transfer of '+money(t.amt,true)+' to '+xferShort_(t.to)); fundMove_(t.to, -t.amt); fundMove_(t.from, t.amt); TRANSFERS=TRANSFERS.filter(function(x){ return x.id!==xd; }); xferSnap_(); }
     S.xfDelAsk=null; render(); toast('Transfer undone'); return; }
   if(e.target.id==='ruleAdd'){ ruleRows_(S.ruleType||INC_TYPES[0]).push({ f:'', p:'' }); render(); return; }
   if(e.target.id==='ruleSave'){ ruleSave_(); return; }
   if(e.target.id==='ruleUndo'){ if(S.ruleDrafts) delete S.ruleDrafts[S.ruleType||INC_TYPES[0]]; S.ruleErr=''; render(); return; }
   if(e.target.id==='ruleNewType'){ S.ruleNewOpen=!S.ruleNewOpen; render(); var ni=document.getElementById('ruleNewName'); if(ni) ni.focus(); return; }
   if(e.target.id==='ruleNewAdd'){ var nm=(document.getElementById('ruleNewName').value||'').trim(); if(!nm) return;
-    if(INC_TYPES.indexOf(nm)<0) INC_TYPES.push(nm); S.ruleType=nm; S.ruleNewOpen=false; keep_(); render(); return; }
+    if(INC_TYPES.indexOf(nm)<0){ snap_('Removed the kind of income “'+nm+'”'); INC_TYPES.push(nm); } S.ruleType=nm; S.ruleNewOpen=false; keep_(); render(); return; }
   var rdl=e.target.dataset && e.target.dataset.ruledel; if(rdl!=null){ ruleRows_(S.ruleType||INC_TYPES[0]).splice(+rdl,1); render(); return; }
   var rpk=e.target.closest && e.target.closest('[data-rulepick]'); if(rpk){ S.ruleType=rpk.dataset.rulepick; S.ruleErr=''; render(); document.getElementById('inRules').scrollIntoView({block:'start'}); return; }
   var xff=e.target.closest && e.target.closest('[data-xffilter]'); if(xff){ S.xfFilter=xff.dataset.xffilter; sheet('hist-xf'); return; }
@@ -1447,7 +1465,7 @@ document.addEventListener('click', function(e){
   var hp=e.target.closest && e.target.closest('[data-histpick]'); if(hp){ S.histPick=hp.dataset.histpick; sheet('hist-'+S.histOpen); document.getElementById('sheet').scrollTop=0; return; }
   if(e.target.dataset && e.target.dataset.baldel){ var dday=e.target.dataset.baldel;
     if(S.balDelAsk!==dday){ S.balDelAsk=dday; e.target.textContent='Delete?'; e.target.classList.add('ask'); return; }
-    BAL_DAYS=BAL_DAYS.filter(function(r){ return r.asOf!==dday; }); S.balDelAsk=null; refreshBal_(); keep_(); render(); if(document.body.classList.contains('sheetOn')) sheet('hist-bal'); toast('Deleted the balances for '+date(dday)); return; }
+    snap_('Brought back the balances for '+date(dday)); BAL_DAYS=BAL_DAYS.filter(function(r){ return r.asOf!==dday; }); S.balDelAsk=null; refreshBal_(); keep_(); render(); if(document.body.classList.contains('sheetOn')) sheet('hist-bal'); toast('Deleted the balances for '+date(dday)); return; }
   if(e.target.id==='inAlSave'){ inAlSave_(); return; }
   if(e.target.id==='inDebtSave'){ inDebtSave_(); return; }
   if(e.target.id==='inDebtCancel'){ S.debtUp=null; S.debtDay=null; S.debtReadErr=''; render(); return; }
@@ -1473,9 +1491,17 @@ document.getElementById('themeBtn').onclick=function(){
    preview never wipes it. The real app will save to the server instead. */
 var KEEP_KEY='gp-fin-draft-v1';
 var FUND_RENAMES={ 'Office':'Office/General' };   /* old fund name → new, for anything already saved */
-function keep_(){ try { localStorage.setItem(KEEP_KEY, JSON.stringify({ bal:BAL_DAYS, alloc:ALLOC.map(function(g){ return { id:g.id, prev:g.prev, items:g.items }; }),
-  allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, incTypes:INC_TYPES, incRules:INC_RULES, transfers:TRANSFERS, toolXfers:TOOL_XFERS, incomes:INCOMES, incMap:INC_MAP, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved })); } catch(e){} }
-(function(){ try { var k=JSON.parse(localStorage.getItem(KEEP_KEY)||'null'); if(!k) return;
+function stateObj_(){ return { bal:BAL_DAYS, alloc:ALLOC.map(function(g){ return { id:g.id, prev:g.prev, items:g.items }; }),
+  allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, incTypes:INC_TYPES, incRules:INC_RULES, transfers:TRANSFERS, toolXfers:TOOL_XFERS, incomes:INCOMES, incMap:INC_MAP, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved }; }
+function keep_(){ try { localStorage.setItem(KEEP_KEY, JSON.stringify(stateObj_())); } catch(e){} }
+/* what the page starts from before anything is entered — an undo goes back through this */
+var PRISTINE=JSON.parse(JSON.stringify({ alloc:ALLOC.map(function(g){ return { items:g.items, prev:g.prev }; }), allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF,
+  debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file||'', src:DEBT.src }, incTypes:INC_TYPES, incRules:INC_RULES }));
+function resetState_(){ var P=JSON.parse(JSON.stringify(PRISTINE));
+  ALLOC.forEach(function(g, i){ g.items=P.alloc[i].items; g.prev=P.alloc[i].prev; g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); });
+  ALLOC_ASOF=P.allocAsOf; ALLOC_PREV_ASOF=P.allocPrevAsOf; DEBT.asOf=P.debt.asOf; DEBT.people=P.debt.people; DEBT.file=P.debt.file; DEBT.src=P.debt.src;
+  INC_TYPES=P.incTypes; INC_RULES=P.incRules; BAL_DAYS=[]; TRANSFERS=[]; TOOL_XFERS=[]; INCOMES=[]; INC_MAP={}; ALLOC_HIST=[]; DEBT_HIST=[]; DEBT_LINKS={}; S.alSaved=false; }
+function loadState_(k){ if(!k) return;
   if(Array.isArray(k.bal)) BAL_DAYS=k.bal;
   if(Array.isArray(k.transfers)) TRANSFERS=k.transfers;
   if(Array.isArray(k.toolXfers)) TOOL_XFERS=k.toolXfers;
@@ -1490,7 +1516,16 @@ function keep_(){ try { localStorage.setItem(KEEP_KEY, JSON.stringify({ bal:BAL_
   if(k.debt && k.debt.file && Array.isArray(k.debt.people)){ DEBT.asOf=k.debt.asOf; DEBT.people=k.debt.people; DEBT.file=k.debt.file; DEBT.src=k.debt.src; }
   else if(k.debt && k.debt.asOf) DEBT.asOf=k.debt.asOf;
   if(k.links) DEBT_LINKS=k.links;
-} catch(e){} })();
+}
+try { loadState_(JSON.parse(localStorage.getItem(KEEP_KEY)||'null')); } catch(e){}
+/* undo: the state as it was before each input, newest last (ten kept, on this device) */
+var UNDO_KEY='gp-fin-draft-undo', UNDO=[];
+try { UNDO=JSON.parse(localStorage.getItem(UNDO_KEY)||'[]'); if(!Array.isArray(UNDO)) UNDO=[]; } catch(e){ UNDO=[]; }
+function snap_(msg){ UNDO.push({ msg:msg, at:Date.now(), st:JSON.parse(JSON.stringify(stateObj_())) }); if(UNDO.length>10) UNDO.shift(); try { localStorage.setItem(UNDO_KEY, JSON.stringify(UNDO)); } catch(e){} }
+function undoLast_(){ var u=UNDO.pop(); if(!u) return; try { localStorage.setItem(UNDO_KEY, JSON.stringify(UNDO)); } catch(e){}
+  resetState_(); loadState_(u.st); refreshBal_(); keep_();
+  S.inBal=null; S.inAl=null; S.ruleDrafts={}; S.xfer=null; S.inc1=null; S.incUp=null; S.debtUp=null; S.undoAsk=false;
+  render(); if(document.body.classList.contains('sheetOn')) closeSheet(); toast('↩ '+u.msg); }
 refreshBal_();
 render();
 </script>
