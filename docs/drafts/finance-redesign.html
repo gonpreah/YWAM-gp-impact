@@ -954,7 +954,7 @@ function ledLiquidHtml_(L){
   return '<div class="ledLiq" id="ledLiq"><div class="ledLiqHead"><b>💧 Estimated liquid assets — from the breakdown</b><label>on <input type="date" id="ledLiqDay" value="'+day+'" max="'+TODAY+'"></label></div>'+
     '<table><tr><th>Account</th><th class="r">Breakdown</th>'+(live?'<th class="r">Dashboard (Live)</th>':'')+'</tr>'+rows+
     '<tr class="tot"><td><b>Total liquid assets</b></td><td class="r"><b>'+money(r.total,true)+'</b></td>'+(live?'<td class="r'+(Math.abs(dash-r.total)>0.004?' ledDiff':'')+'"><b>'+money(dash,true)+'</b></td>':'')+'</tr></table>'+
-    (live ? '<p class="dsub">'+(Math.abs(dash-r.total)<0.005 ? '✓ The breakdown and the Dashboard agree.' : 'They differ by '+money(Math.abs(dash-r.total),true)+'. Advances aren’t in the breakdown yet — money given out on advance, or brought back, is missing from it.')+'</p>' : '<p class="dsub">The Dashboard only estimates today, so there is nothing to set this beside for an earlier day.</p>')+'</div>'; }
+    (live ? '<p class="dsub">'+(Math.abs(dash-r.total)<0.005 ? '✓ The breakdown and the Dashboard agree.' : 'They differ by '+money(Math.abs(dash-r.total),true)+' — something counts on the Dashboard that isn’t in the breakdown, or the other way round.')+'</p>' : '<p class="dsub">The Dashboard only estimates today, so there is nothing to set this beside for an earlier day.</p>')+'</div>'; }
 /* redraw without losing where the table was scrolled to */
 function ledRender_(){ var w=document.getElementById('ledWrap'), x=w?w.scrollLeft:0, y=w?w.scrollTop:0; render(); var n=document.getElementById('ledWrap'); if(n){ n.scrollLeft=x; n.scrollTop=y; } }
 function inCatsHtml_(){
@@ -1189,7 +1189,7 @@ var ACCT_KEYS={ 'acct|aba':'ABA bank', 'acct|us':'US bank', 'acct|cash':'Cash on
 function isAcct_(k){ return !!ACCT_KEYS[k]; }
 /* an account now: as last entered, plus what has moved in or out of it since that day */
 function acctMoved_(k){
-  var adv=ADVANCES.reduce(function(s2,a){ return s2-(afterBal_(a) && a.bank===k ? a.amt : 0)+(a.settled && a.settled.bank===k && afterBal_(a.settled) ? a.settled.returned : 0); },0);
+  var adv=0;   /* advances are their own report: they never move an account */
   var m=TRANSFERS.concat(TOOL_XFERS).reduce(function(s2,t){ if(!afterBal_(t)) return s2; return s2+(t.to===k?t.amt:0)-(t.from===k?t.amt:0); },0);
   m+=INCOMES.reduce(function(s2,x){ return s2+(afterBal_(x) && x.bank===k ? x.amt : 0); },0)-EXPENSES.reduce(function(s2,x){ return s2+(afterBal_(x) && x.bank===k ? x.amt : 0); },0);
   return Math.round((m+adv)*100)/100; }
@@ -1636,7 +1636,6 @@ function approvedAskHtml_(day, checked, attr){
 }
 /* the bank total moved by what came in and went out after the last balances day */
 function liveNet_(){ return Math.round((INCOMES.reduce(function(s2,x){ return s2+(afterBal_(x)?x.amt:0); },0)-EXPENSES.reduce(function(s2,x){ return s2+(afterBal_(x) && x.src!=='advance'?x.amt:0); },0)
-  -ADVANCES.reduce(function(s2,a){ return s2+(afterBal_(a)?a.amt:0); },0)+ADVANCES.reduce(function(s2,a){ return s2+(a.settled && afterBal_(a.settled)?a.settled.returned:0); },0)
   +TOOL_XFERS.reduce(function(s2,t){ return s2+(afterBal_(t) ? (isAcct_(t.to)?t.amt:0)-(isAcct_(t.from)?t.amt:0) : 0); },0))*100)/100; }
 function flowRef_(){ if(isLive_()) return TODAY; var days=reportDays_(); return S.viewDay && days.indexOf(S.viewDay)>=0 ? S.viewDay : (days[0] || TODAY); }
 function monthName_(ym){ return new Date(ym+'-01T00:00:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'}); }
@@ -1856,8 +1855,8 @@ function bulkAdd_(){
   toast('Added '+list.length+' lines to 📡 Live'+(left.length?' — '+left.length+' still to check':''));
 }
 /* ---- Input: advances — money handed out before a purchase, settled with the receipts ----
-   Given: the money leaves an account (Live sees it go) but no fund is spent yet. Settled: what was
-   spent comes off the fund as an expense, and what came back goes into an account. Spent and
+   They are their own report: giving, settling and bringing money back move no account and no
+   category, and none of it is in Live or the Detailed breakdown (23 Nov 2026). Spent and
    returned don't have to add up to the advance — exchange rates differ; the gap is shown. */
 var ADVANCES=[];   /* { id, at, who, date, fund, bank, amt, budgeted, memo, settled:null|{ date, spent, returned, type, bank, note, at, expId } } */
 /* out for more than a month gets a yellow ⚠️ — except a school's (likely outreach, which is fine) */
@@ -1933,8 +1932,8 @@ function advSettle_(id){
   S.advBigAsk=null;
   snap_('Unsettled the advance to '+a.who);
   var st={ date:D.date, spent:Math.round(sp*100)/100, returned:Math.round(rt*100)/100, qbo:String(D.qbo||'').trim(), type:'Not sure', bank:rt>0?D.bank:'', note:String(D.note||'').trim(), at:Date.now(), expId:'' };
-  if(st.spent>0){ var e={ id:'e'+Date.now().toString(36), at:st.at, date:st.date, amt:st.spent, type:st.type, who:a.who, memo:'Advance — '+(a.memo||a.who)+(st.qbo?' · QBO ref '+st.qbo:'')+(st.note?' · '+st.note:''), split:[{ f:a.fund, amt:st.spent }], bank:'', src:'advance', advId:a.id, qbo:st.qbo };
-    flApply_('exp', e, 1); EXPENSES.unshift(e); flSort_('exp'); st.expId=e.id; }
+  /* advances are their own report: settling one records what was spent and brought back here only —
+     no expense, no account, no category moves (the real spending comes in with the expenses) */
   a.settled=st; xferSnap_(st.date); S.advSettle=null; S.advS=null; render(); toast('Settled — '+money(st.spent,true)+' spent, '+money(st.returned,true)+' back');
 }
 function advUnsettle_(id){
@@ -2669,8 +2668,13 @@ function loadState_(k){ if(!k) return;
   if(k.debt && k.debt.file && Array.isArray(k.debt.people)){ DEBT.asOf=k.debt.asOf; DEBT.people=k.debt.people; DEBT.file=k.debt.file; DEBT.src=k.debt.src; }
   else if(k.debt && k.debt.asOf) DEBT.asOf=k.debt.asOf;
   if(k.links) DEBT_LINKS=k.links;
+  /* advances used to put their spend in as an expense — take those back out (they never touch the funds now) */
+  var advExp=EXPENSES.filter(function(x){ return x.src==='advance'; });
+  if(advExp.length){ advExp.forEach(function(x){ flApply_('exp', x, -1); }); EXPENSES=EXPENSES.filter(function(x){ return x.src!=='advance'; });
+    ADVANCES.forEach(function(a){ if(a.settled) a.settled.expId=''; }); }
 }
 try { loadState_(JSON.parse(localStorage.getItem(KEEP_KEY)||'null')); } catch(e){}
+try { if(EXPENSES.length || localStorage.getItem(KEEP_KEY)) keep_(); } catch(e){}   /* store anything loadState_ tidied (e.g. advance expenses taken out) */
 /* undo: the state as it was before each input, newest last (ten kept, on this device) */
 var UNDO_KEY='gp-fin-draft-undo', UNDO=[];
 try { UNDO=JSON.parse(localStorage.getItem(UNDO_KEY)||'[]'); if(!Array.isArray(UNDO)) UNDO=[]; } catch(e){ UNDO=[]; }

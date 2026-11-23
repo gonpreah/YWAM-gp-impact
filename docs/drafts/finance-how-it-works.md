@@ -72,18 +72,19 @@ Income.
   Live estimate — and so the total liquid assets.
 - Shown in the transfer history and in Income → History → Financial tools, nowhere else.
 
-### 🤝 Advances
-- **Given out:** who, date, fund, account, amount, pre-budgeted or not. The account goes down in
-  the Live estimate. **The fund does not move yet** — nothing has been spent.
-- **Settled:** day, spent, returned, QuickBooks reference.
-  - *Spent* becomes an expense on the advance's fund (kind "Not sure", marked as from the
-    advance). That fund goes down by what was spent. The account does **not** go down again —
-    it already did when the money was given out.
-  - *Returned* goes back into the account picked, in the Live estimate. No fund moves.
+### 🤝 Advances — their own report
+- **Advances never move an account or a category, and are not in Live or the Detailed
+  breakdown** (23 Nov 2026 — they belong to a different report). The real spending comes in
+  with the expenses, like any other.
+- **Given out:** who, date, fund, account, amount, pre-budgeted or not — recorded in the
+  Advances list only.
+- **Settled:** day, spent, returned, QuickBooks reference — recorded on the advance only. It no
+  longer makes an expense.
   - Spent + returned don't have to equal the advance; over 20% or $50 apart, it warns first.
 - On the Dashboard advances are **always as they are now** — no day to pick. More than a month
   out (schools not counted) is flagged.
-- Unsettling takes the spent-expense back off the fund.
+- Data from before this: an expense a settled advance made (`src:'advance'`) is taken back out
+  of the expenses, and off its fund, the first time the page is opened (`loadState_`).
 
 ### 💳 Staff debt
 - Its own world: attach the A/R Ageing spreadsheet; it carries its own "as of" day from the
@@ -124,7 +125,7 @@ Income.
   before the day, then the Amount of every line after it up to the day (same day: only lines
   typed after the balances were saved). Under each account, where it was worked out from. For
   today it sits beside the Dashboard's Live figure for each account, red where they differ, with
-  why (advances aren't in the breakdown yet). An earlier day has nothing to compare against.
+  why. An earlier day has nothing to compare against.
 - **Filters** (`LED_FILTERS`, `S.ledF`): tap Account, Transaction type, Category or Approved to
   pick which values to show — All, or any number of them (blank values are "(blank)"). Only lines
   matching every column's picks show, with "Showing n of N lines" and Clear filters. The check
@@ -148,9 +149,7 @@ Income.
 - **Expense** (from 🧾 Expenses, one entry or imported) — Date, Account (the bank account it came
   out of), Name (who was paid), Memo (the kind of expense, then the memo), and the same amount
   **negative in both Amount and Category amount**: it lowers our real balance and the category's
-  "virtual bank account" alike. One line per category it was paid from. An expense made by
-  settling an advance has no Account and no Amount (the real money left when the advance was
-  given out) — only the Category amount. Approved: the approved day whose frozen list holds it
+  "virtual bank account" alike. One line per category it was paid from. Approved: the approved day whose frozen list holds it
   (`PUBLISHED[day].ids.exp`), else "Not yet".
 - **Income** (from 💵 Income, one entry or imported) — Date, Account (the bank account it came
   into), Name (who it came from), Memo (the kind of income, then the memo), and the same amount
@@ -174,12 +173,7 @@ Income.
   start from the funds after it.
   $0 → "✓ Every dollar has a home"; otherwise how much has no home, or how much more is given a
   home than there is.
-- Not in it yet: advances. A settled advance's spend is in
-  (as an expense) but the advance itself is not, so the check is off by what went out on
-  advances until they are added. Until they are, the check
-  is only right when nothing of those has happened since the newest balances. Still to decide:
-  how each fills the columns (a transfer has two accounts or two categories; an income split by
-  a formula touches several categories).
+- Everything that moves money is in it (advances are their own report and move nothing).
 
 ---
 
@@ -217,7 +211,6 @@ estimate = the newest balances entry for that account
          + incomes into it              − expenses out of it
          + transfers into it            − transfers out of it
          + Financial tools adding to it − Financial tools removing from it
-         − advances given out of it     + advance money returned into it
 ```
 
 …counting **only entries that came after the balances** (`afterBal_`). An entry came after the
@@ -235,11 +228,10 @@ balances when:
 **Total liquid assets (Live)** = the three account estimates added up. An account → account
 transfer cancels out, so it never changes the total.
 
-Expenses that came from settling an advance are left out of the account side (the advance
-already took the money off when it was given) — see Advances.
+Advances move nothing — see Advances.
 
-The **funds** need no estimate: income, expenses, fund transfers, fund adjustments and settled
-advances already moved them when they were saved. Live shows the funds as they are now.
+The **funds** need no estimate: income, expenses, fund transfers and fund adjustments already
+moved them when they were saved. Live shows the funds as they are now.
 
 ### Worked example
 Balances for 20 Nov saved: ABA $10,000 · US $0 · Cash $1,000 → total $11,000.
@@ -249,9 +241,9 @@ Balances for 20 Nov saved: ABA $10,000 · US $0 · Cash $1,000 → total $11,000
 | Transfer ABA → Cash $500, dated 22 Nov | 9,500 | 1,500 | 11,000 | no change |
 | Income $300 into Cash, kind Staff contributions, 22 Nov | 9,500 | 1,800 | 11,300 | Office/General +300 |
 | Expense $100 out of ABA, from Kitchen, 22 Nov | 9,400 | 1,800 | 11,200 | Kitchen −100 |
-| Advance $200 to Sam out of Cash, from DTS, 22 Nov | 9,400 | 1,600 | 11,000 | no change yet |
-| Settled: $150 spent, $50 returned to Cash | 9,400 | 1,650 | 11,050 | DTS −150 |
-| Balances for 20 Nov saved again, same numbers | 9,400 | 1,650 | 11,050 | (still counted — all dated after the 20th) |
+| Advance $200 to Sam out of Cash, from DTS, 22 Nov | 9,400 | 1,800 | 11,200 | no change (advances move nothing) |
+| Settled: $150 spent, $50 returned to Cash | 9,400 | 1,800 | 11,200 | no change |
+| Balances for 20 Nov saved again, same numbers | 9,400 | 1,800 | 11,200 | (still counted — all dated after the 20th) |
 
 ---
 
@@ -300,17 +292,15 @@ report; every line gives Live.
    **$0**; otherwise Update and approve says how far apart they are and doesn't approve.
 4. **"Approved up to D"**: a report for D is every line approved on D or earlier, not only the
    lines first approved on D.
-5. **Order to build in**: advances into the breakdown first (until then a settled advance leaves
-   its cash movement out, and the two can't match — see the $150 in the example below); then
-   rule 1 in the adding up; then approving by rule 3; then the Dashboard read from the
+5. **Order to build in**: rule 1 in the adding up (the 💧 box in the breakdown already uses it); then approving by rule 3; then the Dashboard read from the
    breakdown, checked figure by figure against what it shows today.
 
 Example (made up): balances 16 Nov ABA 50,000 · US 20,000 · Cash 1,671.15, allocations, approved;
 17th ABA → Cash 500 and Office/General → Kitchen 300; 18th income 1,000 into ABA (Team
 contributions) and food 120 from Cash; 19th advance 200 from Cash for DTS, settled 150 spent,
-50 back. Breakdown added up, no balance entry after the 16th: ABA 50,500 · US 20,000 · Cash
-2,051.15 (the advance's cash isn't in the breakdown yet — 1,901.15 once it is) · categories
-72,401.15. With a balance entry on the 20th (ABA 50,400 · Cash 2,051.15), the accounts reset to
+50 back (moves nothing). Breakdown added up, no balance entry after the 16th: ABA 50,500 · US
+20,000 · Cash 2,051.15 = 72,551.15, the same as the Dashboard's Live · categories 72,551.15 ·
+real − category $0. With a balance entry on the 20th (ABA 50,400 · Cash 2,051.15), the accounts reset to
 those and match the Dashboard's Live figures today.
 
 ## 8. Before changing a rule — checklist
