@@ -421,6 +421,9 @@ button.tick.done{ background:var(--good); }
 .advItem .dsub{ display:block; }
 .advLine{ font-size:12.5px; color:var(--amberDeep); font-weight:600; margin:4px 0 0; }
 .advWarn{ display:block; background:color-mix(in srgb, var(--bad) 10%, var(--surface)); border:1px solid color-mix(in srgb, var(--bad) 45%, transparent); color:var(--ink); border-radius:9px; padding:8px 10px; font-size:13px; font-weight:600; }
+.advFunds{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.advChip{ display:inline-flex; align-items:center; gap:6px; background:var(--surface); border-radius:999px; padding:4px 10px; font-size:12.5px; font-weight:600; }
+.advChip .sw{ width:9px; height:9px; }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -1688,6 +1691,38 @@ function debtReportHtml(P, title, compact, day){
     '</tbody><tfoot><tr><td class="nm">TOTAL</td>'+cols.map(function(c,i){ var v=P.reduce(function(s,p){ return s+vals(p)[i]; },0); return '<td'+(old(i)?' class="old"':'')+'>'+cell(v)+'</td>'; }).join('')+
     '<td class="tot">'+cell(P.reduce(function(s,p){ return s+p.tot; },0))+'</td></tr></tfoot></table></div></div>';
 }
+/* advances out on the day shown: Live — every one not settled now; Approved — those given on or before
+   the approved day, entered before it was approved, and not settled by then */
+function advShown_(){
+  if(isLive_()) return advOut_();
+  var day=reportDays_().indexOf(S.viewDay)>=0 ? S.viewDay : reportDays_()[0], P=day && PUBLISHED[day]; if(!P) return [];
+  return ADVANCES.filter(function(a){ return a.date<=day && (!a.at || !P.at || a.at<=P.at) && (!a.settled || a.settled.date>day || (P.at && a.settled.at>P.at)); });
+}
+function advByFund_(L){ var by={}; L.forEach(function(a){ (by[a.fund]=by[a.fund]||{ n:0, amt:0 }); by[a.fund].n++; by[a.fund].amt+=a.amt; }); return by; }
+function advDashHtml_(){
+  var L=advShown_(), tot=L.reduce(function(s2,a){ return s2+a.amt; },0), people={}; L.forEach(function(a){ people[a.who.toLowerCase()]=1; });
+  var oldest=L.reduce(function(m,a){ return !m || a.date<m.date ? a : m; }, null), ref=isLive_()?TODAY:(reportDays_().indexOf(S.viewDay)>=0?S.viewDay:reportDays_()[0]);
+  var h='<section class="sec" id="advDash"><div class="secHead"><h2>🤝 '+EST('Advances')+'</h2><button class="more" data-sheet="adv">Details ›</button></div>';
+  if(!L.length) return h+'<p class="hint">Nothing out on advance'+(isLive_()?'.':' on '+date(ref)+'.')+'</p></section>';
+  var by=advByFund_(L), funds=Object.keys(by).sort(function(a,b){ return by[b].amt-by[a].amt; });
+  h+='<div class="dTiles"><div class="dTile"><div class="dl">'+EST('Out on advance')+'</div><div class="dv">'+money(tot)+'</div><div class="ds">'+L.length+' advance'+(L.length>1?'s':'')+' · '+Object.keys(people).length+' '+(Object.keys(people).length===1?'person':'people')+'</div></div>'+
+    '<div class="dTile"><div class="dl">Oldest</div><div class="dv">'+Math.round((Date.parse(ref)-Date.parse(oldest.date))/864e5)+' days</div><div class="ds">'+esc(oldest.who)+' · since '+date(oldest.date)+'</div></div></div>'+
+    '<div class="advFunds">'+funds.map(function(k){ var f=fundOf_(k); return '<span class="advChip"><span class="sw" style="background:var('+(f?f.g.c:'--muted')+')"></span>'+esc(f?f.name:k)+' · '+money(by[k].amt)+'</span>'; }).join('')+'</div>';
+  return h+'</section>';
+}
+function advSheetHtml_(){
+  var L=advShown_().slice().sort(function(a,b){ return a.date<b.date?-1:1; }), tot=L.reduce(function(s2,a){ return s2+a.amt; },0), ref=isLive_()?TODAY:(reportDays_().indexOf(S.viewDay)>=0?S.viewDay:reportDays_()[0]);
+  var h='<h3>🤝 '+EST('Advances')+' — details</h3><p class="hint">'+(isLive_()?'Out now':'Out on '+date(ref))+' — '+money(tot,true)+' in '+L.length+' advance'+(L.length===1?'':'s')+'.</p>';
+  if(!L.length) return h+'<p class="hint">Nothing out on advance.</p>';
+  h+='<div class="dListHead">Who has what</div><div class="tblWrap"><table><tr><th>Who</th><th>Fund</th><th class="r">Taken</th><th class="r">Days</th><th class="r">Amount</th></tr>'+
+    L.map(function(a){ var f=fundOf_(a.fund); return '<tr><td><b>'+esc(a.who)+'</b>'+(a.memo?'<span class="dsub">'+esc(a.memo)+'</span>':'')+'</td><td>'+esc(f?f.name:a.fund)+'<span class="dsub">'+(a.budgeted==='yes'?'pre-budgeted':'not budgeted')+'</span></td><td class="r">'+date(a.date)+'</td><td class="r">'+Math.round((Date.parse(ref)-Date.parse(a.date))/864e5)+'</td><td class="r"><b>'+money(a.amt,true)+'</b></td></tr>'; }).join('')+
+    '<tr><td colspan="4"><b>Total</b></td><td class="r"><b>'+money(tot,true)+'</b></td></tr></table></div>';
+  var by=advByFund_(L), funds=Object.keys(by).sort(function(a,b){ return by[b].amt-by[a].amt; });
+  h+='<div class="dListHead" style="margin-top:16px">By fund</div><table><tr><th>Fund</th><th class="r">Advances</th><th class="r">Out</th></tr>'+
+    funds.map(function(k){ var f=fundOf_(k); return '<tr><td><span class="sw" style="display:inline-block;width:10px;height:10px;margin-right:6px;background:var('+(f?f.g.c:'--muted')+')"></span>'+esc(f?f.name:k)+(f&&!f.g.single?'<span class="dsub">'+esc(f.g.name)+'</span>':'')+'</td><td class="r">'+by[k].n+'</td><td class="r"><b>'+money(by[k].amt,true)+'</b></td></tr>'; }).join('')+
+    '<tr><td><b>Total</b></td><td class="r">'+L.length+'</td><td class="r"><b>'+money(tot,true)+'</b></td></tr></table>';
+  return h;
+}
 function debtHtml(){
   var P=DEBT.people, tot=0, old=0;
   P.forEach(function(p){ tot+=p.tot; old+=p.old; });
@@ -1890,7 +1925,7 @@ function render(){ setTimeout(function(){ if(S.editGo){ var el=document.getEleme
   if(S.tab==='dash'){ var undo=viewApply_(); S.liveDraw=isLive_();
     try { p.innerHTML = (!isLive_() && !reportDays_().length)
       ? asOfBarHtml_()+'<section class="sec"><div class="emptyApproved"><b>Nothing approved yet.</b><br>Numbers reach this view when “Update and approve” is tapped on the Input tab. Until then, <button class="more" data-dashmode="live" style="padding:0">📡 Live</button> shows everything entered.</div></section>'+debtHtml()
-      : asOfBarHtml_()+balancesHtml()+allocHtml()+debtHtml()+flowHtml('inc')+flowHtml('exp')+nextHtml(); } finally { S.liveDraw=false; undo(); } }
+      : asOfBarHtml_()+balancesHtml()+allocHtml()+debtHtml()+advDashHtml_()+flowHtml('inc')+flowHtml('exp')+nextHtml(); } finally { S.liveDraw=false; undo(); } }
   else if(S.tab==='input') p.innerHTML=inputHtml();
   else if(S.tab==='tasks') p.innerHTML=soon('✅','Tasks','The Finances office’s GP Tasks list — as on every ministry.');
   else p.innerHTML=soon('🎯','OKRs','Kept exactly as it is in the current app — the Finances office’s OKRs and the Leadership OKRs, no changes.');
@@ -1980,7 +2015,9 @@ function sheet(which){
 }
 function sheetInner_(which){
   var T=total(), h='<button class="x" id="sx" aria-label="Close">✕</button>';
-  if(/^hist-/.test(which)){
+  if(which==='adv'){
+    h+=advSheetHtml_();
+  } else if(/^hist-/.test(which)){
     h+=histHtml_(which.slice(5));
   } else if(which==='income' || which==='expense'){
     h+=flowSheetHtml_(which==='income'?'inc':'exp');
