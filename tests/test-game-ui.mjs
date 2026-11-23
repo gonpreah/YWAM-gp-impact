@@ -90,13 +90,14 @@ mem.staff.push(mk({ id: 'st6', name: 'Pich Poipet', username: 'pich', email: 'p@
 mem.staff.push(mk({ id: 'st7', name: 'Ev Sixth', username: 'ev', email: 'e@e.com' }));
 mem.lastSeen = { started: '2026-01-01', seen: {}, days: { st1: [day(today, -1), today], st5: [day(today, -2), day(today, -1), today], st2: [today], st7: [today], st6: [today] } };
 mem.staff.find(x => x.id === 'st5').libRead = { 'atomic-habits': today };
-mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: true }, updated: nowIso }, { staffId: 'st7', date: today, habits: { bible: true }, updated: nowIso }];
+/* Mark ticks two habits today as well, so he is second on any day of the week — on a Monday his yesterday is last week's (it failed on 23 Nov 2026) */
+mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: true }, updated: nowIso }, { staffId: 'st7', date: today, habits: { bible: true }, updated: nowIso }, { staffId: 'st1', date: today, habits: { bible: true, prayer: true }, updated: nowIso }];
 
 /* ---------- 1. My Home ---------- */
 {
   const { ctx, page } = await open('mark');
   const line = await page.$eval('#gameHome', e => e.innerText).catch(() => '');
-  ok('My Home has my streak, points and place', /🔥 2/.test(line) && new RegExp('⭐ ' + (new Date(today + 'T00:00:00Z').getUTCDay() === 1 ? 5 : 10) + '\\b').test(line) && /#2 of 6/.test(line), line.replace(/\n/g, ' | '));
+  ok('My Home has my streak, points and place', /🔥 2/.test(line) && new RegExp('⭐ ' + (new Date(today + 'T00:00:00Z').getUTCDay() === 1 ? 11 : 16) + '\\b').test(line) && /#2 of 6/.test(line), line.replace(/\n/g, ' | '));
   const above = await page.evaluate(() => { const g = document.getElementById('gameHome'), h = document.querySelector('.myHero'); return g && h ? g.getBoundingClientRect().top < h.getBoundingClientRect().top : null; });
   ok('it sits above the summary card', above === true, String(above));
   ok('seven dots for the week', await page.$$eval('#gameHome .gameDots i', e => e.length) === 7);
