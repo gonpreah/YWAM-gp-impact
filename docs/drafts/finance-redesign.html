@@ -435,22 +435,30 @@ button.tick.done{ background:var(--good); }
 .advChip .sw{ width:9px; height:9px; }
 .advOld{ display:inline-flex; align-items:center; justify-content:center; background:#FFD84D; border-radius:6px; padding:0 4px; margin-right:5px; font-size:12px; line-height:18px; }
 .advOldLine{ margin-top:10px; background:color-mix(in srgb, #FFD84D 30%, var(--surface)); border:1px solid #E8B800; border-radius:10px; padding:7px 10px; font-size:13px; font-weight:600; color:var(--ink); }
-.catGrp{ border-top:1px solid var(--line); padding:10px 0; }
-.catHead,.catRow{ display:flex; gap:6px; align-items:center; }
-.catRow{ padding:6px 0 6px 22px; flex-wrap:wrap; border-top:1px dashed var(--line); }
-.catGrp .catRow input{ flex:1 1 100%; }
-.catRow .amt{ min-width:70px; }
-.catHead input,.catRow input,.catAdd input{ flex:1; min-width:0; font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); }
-.catHead input{ font-weight:700; }
-.catRow .amt{ font-size:12.5px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
-.catRow select{ flex:1; min-width:0; font:inherit; font-size:12.5px; padding:5px 4px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); }
-.catBtn{ border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:8px; width:30px; height:30px; padding:0; cursor:pointer; flex:none; }
+.catList{ border-top:1px solid var(--line); margin-top:6px; }
+.catGrp{ border-bottom:1px solid var(--line); padding:4px 0; }
+.catLine{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:8px; align-items:center; width:100%; border:0; background:none; text-align:left; padding:8px 4px; cursor:pointer; border-radius:8px; }
+@media (hover:hover){ .catLine:hover{ background:var(--surface2); } }
+.catLine.head{ font-weight:700; }
+.catLine.sub{ grid-template-columns:minmax(0,1fr) auto; padding-left:26px; font-size:14px; }
+.catLine .amt{ font-variant-numeric:tabular-nums; color:var(--muted); font-weight:400; font-size:13px; }
+.catLine[aria-expanded="true"]{ background:var(--surface2); }
+.catEdit{ background:var(--surface2); border-radius:10px; padding:4px 12px 12px; margin:2px 0 6px; }
+.catEdit.sub{ margin-left:22px; }
+.catEdit.newCat{ margin-top:12px; }
+.catEdit input,.catEdit select{ width:100%; font:inherit; padding:7px 9px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); }
+.catAdd{ display:flex; gap:6px; }
+.catAdd input{ flex:1; min-width:0; }
+.catAdd .btn{ padding:6px 12px; flex:none; }
+.catTools{ display:flex; gap:6px; align-items:center; margin-top:12px; }
+.catTools .btn{ margin-left:auto; padding:6px 14px; }
+.catBtn{ border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:8px; width:32px; height:32px; padding:0; cursor:pointer; flex:none; }
 .catBtn:disabled{ opacity:.35; cursor:default; }
-.catBtn.del{ color:var(--bad); }
-.catBtn.del.sure{ width:auto; padding:0 8px; background:var(--bad); color:#fff; border-color:var(--bad); font-size:12.5px; }
-.catAdd{ display:flex; gap:6px; padding:6px 0 0 22px; }
-.catAdd.top{ padding-left:0; margin-top:12px; }
-.catAdd .btn{ padding:6px 12px; }
+.catDelTxt{ border:0; background:none; color:var(--bad); font-weight:600; font-size:13px; cursor:pointer; padding:6px 8px; border-radius:8px; }
+.catDelTxt.sure{ background:var(--bad); color:#fff; }
+.catNewBtn{ margin-top:12px; }
+.catDel{ margin-top:14px; }
+.catDel summary{ cursor:pointer; }
 .catDelList{ list-style:none; margin:6px 0 0; padding:0; }
 .catDelList li{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; border-top:1px dashed var(--line); font-size:13.5px; }
 .delTag{ color:var(--muted); font-style:italic; font-weight:400; }
@@ -732,7 +740,7 @@ function catMoveTo_(gid, i, to){ var g=catG_(gid), t=catG_(to), it=g&&g.items[i]
   if(t.items.some(function(x){ return x[0].toLowerCase()===it[0].toLowerCase(); })) return catErr_('“'+t.name+'” already has a “'+it[0]+'” — rename one of them first.');
   snap_('Put “'+it[0]+'” back in '+g.name);
   catRekey_(g.id+'|'+it[0], t.id+'|'+it[0], it[0], it[0], g.id, t.id);
-  g.items.splice(i,1); t.items.push(it); t.single=false; catAfter_('Moved “'+it[0]+'” to '+t.name); }
+  g.items.splice(i,1); t.items.push(it); t.single=false; S.catEdit=''; catAfter_('Moved “'+it[0]+'” to '+t.name); }
 function catAddItem_(gid){ var g=catG_(gid), el=document.getElementById('catAdd_'+gid), n=catClean_(el && el.value); if(!g) return;
   if(!n) return catErr_('Type the new sub-category’s name first.');
   if(n.indexOf('|')>=0) return catErr_('A name can’t have “|” in it.');
@@ -749,7 +757,7 @@ function catAddGroup_(){ var el=document.getElementById('catNewGrp'), n=catClean
   if(!free.length) return catErr_('There can be '+CAT_COLORS.length+' categories at most — the bar runs out of colours that tell apart. Add a sub-category instead.');
   snap_('Took the category “'+n+'” off');
   ALLOC.push({ id:'c'+Date.now().toString(36), prev:0, amt:0, name:n, eg:'', c:free[0], dark:false, single:true, items:[[n, 0]], note:'' });
-  catAfter_('Added the category “'+n+'”'); }
+  S.catEdit=''; catAfter_('Added the category “'+n+'”'); }
 function catDelItem_(gid, i){ var g=catG_(gid), it=g&&g.items[i]; if(!it) return;
   if(Math.abs(it[1])>0.004) return catErr_('“'+it[0]+'” still holds '+money(it[1],true)+'. Move it to another fund first (Internal transfers), then delete it.');
   if(g.items.length<2) return catErr_('“'+it[0]+'” is the last one in “'+g.name+'” — delete the whole category instead.');
@@ -757,7 +765,7 @@ function catDelItem_(gid, i){ var g=catG_(gid), it=g&&g.items[i]; if(!it) return
   if(S.catDel!==gid+'|'+i){ S.catDel=gid+'|'+i; S.catErr=''; render(); return; }
   snap_('Brought “'+it[0]+'” back');
   DELETED_FUNDS.push({ gid:g.id, gname:g.name, name:it[0], at:TODAY }); g.items.splice(i,1);
-  catAfter_('Deleted “'+it[0]+'” — kept under Deleted, and in old reports as “(deleted)”'); }
+  S.catEdit=''; catAfter_('Deleted “'+it[0]+'” — kept under Deleted, and in old reports as “(deleted)”'); }
 function catDelGroup_(gid){ var g=catG_(gid); if(!g) return;
   if(Math.abs(g.amt)>0.004) return catErr_('“'+g.name+'” still holds '+money(g.amt,true)+'. Move it to other funds first (Internal transfers), then delete it.');
   if(ALLOC.length<2) return catErr_('There has to be at least one category.');
@@ -766,7 +774,7 @@ function catDelGroup_(gid){ var g=catG_(gid); if(!g) return;
   snap_('Brought the category “'+g.name+'” back');
   DELETED_FUNDS.push({ gid:g.id, name:g.name, at:TODAY, group:{ id:g.id, name:g.name, eg:g.eg, c:g.c, dark:!!g.dark, single:!!g.single, note:g.note, items:g.items.map(function(it){ return it[0]; }) } });
   ALLOC.splice(ALLOC.indexOf(g),1); if(S.open===gid) S.open=null;
-  catAfter_('Deleted the category “'+g.name+'”'); }
+  S.catEdit=''; catAfter_('Deleted the category “'+g.name+'”'); }
 function catRestore_(idx){ var d=DELETED_FUNDS[idx]; if(!d) return;
   if(d.group){
     if(catG_(d.gid)) return catErr_('That category is already back.');
@@ -781,30 +789,31 @@ function catRestore_(idx){ var d=DELETED_FUNDS[idx]; if(!d) return;
   }
   DELETED_FUNDS.splice(idx,1); catAfter_('Brought “'+d.name+'” back'); }
 function inCatsHtml_(){
-  var open=S.foldOpen&&S.foldOpen.cats, n=0; ALLOC.forEach(function(g){ n+=g.items.length; });
-  var h='<details class="inCard fold" id="inCats" data-fold="cats"'+(open?' open':'')+'><summary class="foldHead"><span><b>🗂 Category list</b><span class="dsub">'+ALLOC.length+' categories · '+n+' sub-categories'+(DELETED_FUNDS.length?' · '+DELETED_FUNDS.length+' deleted':'')+'</span></span><span class="chev">▾</span></summary>'+
-    '<p class="inLast">Every category and sub-category. Add, rename, move or delete one here and it changes everywhere at once — the Dashboard, every fund picker, the formulas, transfers and advances. In a report already approved, one added since shows as $0, and one deleted since keeps its amount with “(deleted)” beside it.</p>';
+  var open=S.foldOpen&&S.foldOpen.cats, n=0, E=S.catEdit||''; ALLOC.forEach(function(g){ n+=g.items.length; });
+  var h='<details class="inCard fold" id="inCats" data-fold="cats"'+(open?' open':'')+'><summary class="foldHead"><span><b>🗂 Category list</b><span class="dsub">'+ALLOC.length+' categories · '+n+' sub-categories</span></span><span class="chev">▾</span></summary>'+
+    '<p class="inLast">The categories used everywhere in Finances. Tap one to change it.</p><div class="catList">';
+  var err=function(){ return S.catErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.catErr)+'</p>' : ''; };
   h+=ALLOC.map(function(g, gi){
-    var gd=S.catDel===g.id;
-    var r='<div class="catGrp" data-catgrp="'+g.id+'"><div class="catHead"><span class="sw" style="background:var('+g.c+')"></span>'+
-      '<input data-catgname="'+g.id+'" value="'+esc(g.name)+'" aria-label="Name of the category '+esc(g.name)+'" maxlength="60" spellcheck="false">'+
-      '<button class="catBtn" data-catgmv="'+g.id+'|-1"'+(gi===0?' disabled':'')+' aria-label="Move '+esc(g.name)+' up">▲</button>'+
-      '<button class="catBtn" data-catgmv="'+g.id+'|1"'+(gi===ALLOC.length-1?' disabled':'')+' aria-label="Move '+esc(g.name)+' down">▼</button>'+
-      '<button class="catBtn del'+(gd?' sure':'')+'" data-catgdel="'+g.id+'" aria-label="Delete the category '+esc(g.name)+'">'+(gd?'Delete?':'✕')+'</button></div>';
-    if(!g.single) r+=g.items.map(function(it, i){ var dd=S.catDel===g.id+'|'+i;
-      return '<div class="catRow"><input data-catiname="'+g.id+'|'+i+'" value="'+esc(it[0])+'" aria-label="Name of '+esc(it[0])+'" maxlength="60" spellcheck="false">'+
-        '<span class="amt">'+money(it[1],true)+'</span>'+
-        '<select data-catto="'+g.id+'|'+i+'" aria-label="Move '+esc(it[0])+' to another category"><option value="">Move to…</option>'+ALLOC.filter(function(a){ return a!==g; }).map(function(a){ return '<option value="'+a.id+'">'+esc(a.name)+'</option>'; }).join('')+'</select>'+
-        '<button class="catBtn" data-catimv="'+g.id+'|'+i+'|-1"'+(i===0?' disabled':'')+' aria-label="Move '+esc(it[0])+' up">▲</button>'+
-        '<button class="catBtn" data-catimv="'+g.id+'|'+i+'|1"'+(i===g.items.length-1?' disabled':'')+' aria-label="Move '+esc(it[0])+' down">▼</button>'+
-        '<button class="catBtn del'+(dd?' sure':'')+'" data-catidel="'+g.id+'|'+i+'" aria-label="Delete '+esc(it[0])+'">'+(dd?'Delete?':'✕')+'</button></div>'; }).join('');
-    r+='<div class="catAdd"><input id="catAdd_'+g.id+'" data-catenter="'+g.id+'" placeholder="New sub-category in '+esc(g.name)+'" aria-label="New sub-category in '+esc(g.name)+'" maxlength="60" spellcheck="false"><button class="btn ghost" data-catadd="'+g.id+'">＋ Add</button></div>';
-    return r+'</div>'; }).join('');
-  h+='<div class="catAdd top"><input id="catNewGrp" data-catenter="@" placeholder="New category" aria-label="New category" maxlength="60" spellcheck="false"><button class="btn ghost" id="catNewGrpBtn">＋ Add category</button></div>';
-  h+=(S.catErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.catErr)+'</p>' : '');
-  if(DELETED_FUNDS.length) h+='<details class="catDel" style="margin-top:12px"><summary class="dsub" style="cursor:pointer">🗑 Deleted ('+DELETED_FUNDS.length+')</summary><ul class="catDelList">'+
+    var on=E==='g:'+g.id, gd=S.catDel===g.id;
+    var r='<div class="catGrp'+(on?' editing':'')+'"><button class="catLine head" data-catedit="g:'+g.id+'" aria-expanded="'+on+'"><span class="sw" style="background:var('+g.c+')"></span><span class="nm">'+esc(g.name)+'</span><span class="amt">'+money(g.amt,true)+'</span></button>';
+    if(on) r+='<div class="catEdit"><label class="f" for="catGN_'+g.id+'">Name</label><input id="catGN_'+g.id+'" data-catgname="'+g.id+'" value="'+esc(g.name)+'" maxlength="60" spellcheck="false">'+
+      '<label class="f" for="catAdd_'+g.id+'">Add a sub-category</label><div class="catAdd"><input id="catAdd_'+g.id+'" data-catenter="'+g.id+'" placeholder="Name" maxlength="60" spellcheck="false"><button class="btn ghost" data-catadd="'+g.id+'">＋ Add</button></div>'+
+      '<div class="catTools"><button class="catBtn" data-catgmv="'+g.id+'|-1"'+(gi===0?' disabled':'')+' aria-label="Move up">▲</button><button class="catBtn" data-catgmv="'+g.id+'|1"'+(gi===ALLOC.length-1?' disabled':'')+' aria-label="Move down">▼</button>'+
+      '<button class="catDelTxt'+(gd?' sure':'')+'" data-catgdel="'+g.id+'">'+(gd?'Tap again to delete':'Delete category')+'</button><button class="btn" data-catedit="">Done</button></div>'+err()+'</div>';
+    if(!g.single) r+=g.items.map(function(it, i){ var k='i:'+g.id+'|'+i, io=E===k, dd=S.catDel===g.id+'|'+i;
+      var x='<button class="catLine sub" data-catedit="'+k+'" aria-expanded="'+io+'"><span class="nm">'+esc(it[0])+'</span><span class="amt">'+money(it[1],true)+'</span></button>';
+      if(io) x+='<div class="catEdit sub"><label class="f" for="catIN_'+g.id+'_'+i+'">Name</label><input id="catIN_'+g.id+'_'+i+'" data-catiname="'+g.id+'|'+i+'" value="'+esc(it[0])+'" maxlength="60" spellcheck="false">'+
+        '<label class="f" for="catTo_'+g.id+'_'+i+'">Move to another category</label><select id="catTo_'+g.id+'_'+i+'" data-catto="'+g.id+'|'+i+'"><option value="">Keep in '+esc(g.name)+'</option>'+ALLOC.filter(function(a){ return a!==g; }).map(function(a){ return '<option value="'+a.id+'">'+esc(a.name)+'</option>'; }).join('')+'</select>'+
+        '<div class="catTools"><button class="catBtn" data-catimv="'+g.id+'|'+i+'|-1"'+(i===0?' disabled':'')+' aria-label="Move up">▲</button><button class="catBtn" data-catimv="'+g.id+'|'+i+'|1"'+(i===g.items.length-1?' disabled':'')+' aria-label="Move down">▼</button>'+
+        '<button class="catDelTxt'+(dd?' sure':'')+'" data-catidel="'+g.id+'|'+i+'">'+(dd?'Tap again to delete':'Delete')+'</button><button class="btn" data-catedit="">Done</button></div>'+err()+'</div>';
+      return x; }).join('');
+    return r+'</div>'; }).join('')+'</div>';
+  if(E==='new') h+='<div class="catEdit newCat"><label class="f" for="catNewGrp">New category</label><div class="catAdd"><input id="catNewGrp" data-catenter="@" placeholder="Name" maxlength="60" spellcheck="false"><button class="btn" id="catNewGrpBtn">Add</button><button class="btn ghost" data-catedit="">Cancel</button></div>'+err()+'</div>';
+  else h+='<button class="btn ghost catNewBtn" data-catedit="new">＋ Add a category</button>';
+  if(DELETED_FUNDS.length) h+='<details class="catDel"><summary class="dsub">🗑 Deleted ('+DELETED_FUNDS.length+')</summary><ul class="catDelList">'+
     DELETED_FUNDS.map(function(d, i){ return { d:d, i:i }; }).reverse().map(function(o){ var d=o.d;
       return '<li><span><b>'+esc(d.name)+'</b><span class="dsub">'+(d.group?'a whole category · ':'in '+esc(d.gname)+' · ')+'deleted '+date(d.at)+'</span></span><button class="btn ghost" data-catback="'+o.i+'">↩ Bring back</button></li>'; }).join('')+'</ul></details>';
+  if(!E && S.catErr) h+=err();
   return h+'</details>';
 }
 /* ---- Input: staff debt — attach the office's A/R Ageing spreadsheet ----
@@ -2305,6 +2314,8 @@ document.addEventListener('input', function(e){
   var el=document.getElementById('inTotal'); if(el) el.innerHTML=inTotalHtml_();   /* no re-render, so typing is never lost */
 });
 document.addEventListener('click', function(e){
+  var ce=e.target.closest && e.target.closest('[data-catedit]');
+  if(ce){ var nv=ce.dataset.catedit; S.catEdit= (S.catEdit===nv && nv!=='') ? '' : nv; S.catErr=''; S.catDel=null; render(); if(S.catEdit==='new'){ var ni=document.getElementById('catNewGrp'); if(ni) ni.focus(); } return; }
   var cb=e.target.closest && e.target.closest('[data-catgmv],[data-catimv],[data-catgdel],[data-catidel],[data-catadd],[data-catback],#catNewGrpBtn');
   if(cb){ var d=cb.dataset;
     if(cb.id==='catNewGrpBtn') return catAddGroup_();
@@ -2312,8 +2323,8 @@ document.addEventListener('click', function(e){
     if(d.catback!=null) return catRestore_(+d.catback);
     if(d.catgdel) return catDelGroup_(d.catgdel);
     if(d.catidel){ var di=d.catidel.split('|'); return catDelItem_(di[0], +di[1]); }
-    if(d.catgmv){ var gm=d.catgmv.split('|'), gi=ALLOC.indexOf(catG_(gm[0])); snap_('Put the categories back in their order'); if(catOrder_(ALLOC, gi, +gm[1])) catAfter_(); else UNDO.pop(); return; }
-    if(d.catimv){ var im=d.catimv.split('|'), g=catG_(im[0]); snap_('Put '+g.name+' back in its order'); if(catOrder_(g.items, +im[1], +im[2])) catAfter_(); else UNDO.pop(); return; }
+    if(d.catgmv){ var gm=d.catgmv.split('|'), gi=ALLOC.indexOf(catG_(gm[0])); snap_('Put the categories back in their order'); if(catOrder_(ALLOC, gi, +gm[1])){ var keg=S.catEdit; catAfter_(); S.catEdit=keg; render(); } else UNDO.pop(); return; }
+    if(d.catimv){ var im=d.catimv.split('|'), g=catG_(im[0]); snap_('Put '+g.name+' back in its order'); if(catOrder_(g.items, +im[1], +im[2])){ var ke=S.catEdit; catAfter_(); S.catEdit='i:'+g.id+'|'+(+im[1]+(+im[2])); render(); } else UNDO.pop(); return; }
   }
   if(e.target.id==='pubDay'){ var pd=reportDay_(), left=DAY_PARTS.filter(function(x){ return !partDone_(x[0], pd); }).length;
     if(left && !S.pubAsk){ S.pubAsk=true; render(); setTimeout(function(){ if(S.pubAsk){ S.pubAsk=false; if(S.tab==='input') render(); } }, 5000); return; }
