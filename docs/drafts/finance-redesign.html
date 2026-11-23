@@ -1383,7 +1383,6 @@ function asOfBarHtml_(){
     (BAL.asOf && ALLOC_ASOF!==BAL.asOf ? '<span class="warn">· allocations as of '+date(ALLOC_ASOF)+'</span>' : '')+
     '<span class="sep">·</span><label for="viewDebtDay">💳 Staff debt as of</label>'+sel('viewDebtDay', dd, dcur, dd[0])+'</div>';
   if(S.pendDay) h+='<div class="pastNote" style="background:var(--accentSoft);color:var(--ink)">✏️ '+date(S.pendDay)+' is being entered — not on the Dashboard yet.</div>';
-  if(!Object.keys(PUBLISHED).length && days.length) h+='<div class="pastNote" style="background:var(--accentSoft);color:var(--ink)">✏️ Nothing has been put on the Dashboard yet — this is what has been entered so far.</div>';
   if((cur && cur!==latest) || (dcur && dcur!==dd[0])) h+='<div class="pastNote">🕘 You’re looking at an earlier day. <button class="more" id="viewLatest" style="padding:0">Back to the latest</button></div>';
   return h;
 }
