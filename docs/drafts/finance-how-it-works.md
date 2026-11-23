@@ -119,13 +119,18 @@ Income.
   day, balance entries, then manual allocations, then income, expenses, internal transfers and
   adjustments. Memos are cut short to one line;
   tapping one shows it whole.
-- **💧 Estimated liquid assets — from the breakdown** (`ledgerLiquid_`, `ledLiquidHtml_`; in the
-  draft, **not yet on the demo**): for a day picked (today to start), each account worked out from
-  the breakdown alone by the reset rule (section 7, rule 1): its latest Balance entry on or
-  before the day, then the Amount of every line after it up to the day, and of every line on or
-  before it that isn't approved yet. Under each account, where it was worked out from. For
-  today it sits beside the Dashboard's Live figure for each account, red where they differ, with
-  why. An earlier day has nothing to compare against.
+- **💧 Estimated liquid assets — from the breakdown** (a drop-down, `ledgerLiquid_`,
+  `ledLiquidHtml_`): for a day picked (today to start), each account worked out from the breakdown
+  alone: its latest Balance entry on or before the day, then the Amount of every line after it up
+  to the day, and of every line on or before it that isn't approved yet. Under each account,
+  where it was worked out from. **For today these are the Dashboard's Live figures** (section 4).
+  Folded, it shows the day and the total.
+- **📊 Estimated allocation breakdown — from the breakdown** (a drop-down, `ledgerCats_`,
+  `ledCatsHtml_`): for the same day, every Category amount up to it added up for each
+  sub-category, grouped by category, with the total allocated. A category no longer on the list
+  shows "(deleted)". No resets — allocations already hold only what changed. For today it comes
+  to the same as the Dashboard's categories (which move as entries are saved).
+- Both share one day picker value (`S.ledLiqDay`).
 - **Filters** (`LED_FILTERS`, `S.ledF`): tap Account, Transaction type, Category or Approved to
   pick which values to show — All, or any number of them (blank values are "(blank)"). Only lines
   matching every column's picks show, with "Showing n of N lines" and Clear filters. The check
@@ -207,6 +212,12 @@ The Dashboard has two views.
 ---
 
 ## 4. The estimates in Live — how each account is worked out
+
+**Since 23 Nov 2026 the Dashboard reads these from the 📒 Detailed breakdown** (`liveLiquid_` →
+`ledgerLiquid_` for today; `acctAmt_`, `liveNet_` and `total()` in Live all go through it, as do
+the transfer form's "more than the account holds" checks and the breakdown's check). Each
+account = its latest Balance entry + the Amount of every line after it, or not approved yet. The
+sum below is what that comes to.
 
 For each account (ABA, US bank, Cash):
 

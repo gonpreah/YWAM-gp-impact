@@ -468,8 +468,15 @@ button.tick.done{ background:var(--good); }
 .ledMemo{ display:block; max-width:150px; border:0; background:none; padding:0; font:inherit; font-size:12.5px; color:var(--muted); text-align:left; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .ledMemo.open{ max-width:260px; white-space:normal; color:var(--ink); }
 .ledLiq{ margin-top:10px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; }
-.ledLiqHead{ display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; }
-.ledLiqHead input{ font:inherit; padding:4px 6px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); }
+.ledLiqHead{ display:flex; justify-content:space-between; align-items:center; gap:8px; cursor:pointer; list-style:none; }
+.ledLiqHead::-webkit-details-marker{ display:none; }
+.ledLiqHead > span:first-child{ min-width:0; }
+.ledLiqHead .dsub{ display:block; }
+.ledLiqHead .chev{ color:var(--muted); transition:transform .2s; }
+.ledLiq[open] > .ledLiqHead .chev{ transform:rotate(180deg); }
+.ledDay{ display:block; margin-top:8px; font-size:13px; color:var(--muted); }
+.ledLiq td.sub{ padding-left:22px; color:var(--muted); font-size:13px; }
+.ledDay input{ font:inherit; padding:4px 6px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); }
 .ledLiq table{ width:100%; border-collapse:collapse; margin-top:8px; font-size:13.5px; }
 .ledLiq th{ text-align:left; font-size:11.5px; color:var(--muted); font-weight:700; padding:4px 4px; }
 .ledLiq td{ padding:6px 4px; border-top:1px solid var(--line); vertical-align:top; }
@@ -895,7 +902,7 @@ function ledgerLines_(){ var L=[];
 /* does every dollar have a home? real money = the newest balances (the gold standard) + the Amount
    of every line that came after them (afterBal_, the same rule as the Live estimates); minus
    every category amount */
-function ledgerCheck_(L){ var b=BAL_DAYS[0], real=b?Math.round(((b.aba+b.us+b.cash)+L.reduce(function(s2,x){ return s2+(x.type!=='Balance entry' && x.amt!=null && x.src && afterBal_(x.src) ? x.amt : 0); },0))*100)/100:0, cat=Math.round(L.reduce(function(s2,x){ return s2+(x.camt||0); },0)*100)/100;
+function ledgerCheck_(L){ var b=BAL_DAYS[0], real=b?ledgerLiquid_(L, TODAY).total:0, cat=Math.round(L.reduce(function(s2,x){ return s2+(x.camt||0); },0)*100)/100;
   return { day:b?b.asOf:'', real:real, cat:cat, sum:Math.round((real-cat)*100)/100 }; }
 /* filters: a column's values to show; none picked = all */
 var LED_FILTERS={ 'Account':'acct', 'Transaction type':'type', 'Category':'cat', 'Approved':'appr' };
@@ -919,7 +926,7 @@ function inLedgerHtml_(){
   if(all.length){ var c=ledgerCheck_(all), ok=Math.abs(c.sum)<0.005;
     h+='<div class="ledCheck '+(ok?'ok':'off')+'"><div><small>Real money'+(c.day?' · from balances '+date(c.day):'')+'</small><b>'+money(c.real,true)+'</b></div><div><small>Category amounts</small><b>'+(c.cat<0?'−':'')+money(Math.abs(c.cat),true)+'</b></div>'+
       '<div><small>Real − category</small><b>'+(c.sum<0?'−':'')+money(Math.abs(c.sum),true)+'</b></div><p>'+(ok?'✓ Every dollar has a home':(c.sum>0?'⚠️ '+money(c.sum,true)+' has no home yet':'⚠️ '+money(-c.sum,true)+' more is given a home than there is'))+'</p></div>'; }
-  if(all.length) h+=ledLiquidHtml_(all);
+  if(all.length) h+=ledLiquidHtml_(all)+ledCatsHtml_(all);
   h+=ledPanelHtml_(all);
   if(active.length) h+='<div class="ledActive">Showing '+shown.length+' of '+all.length+' lines · '+active.map(function(k){ return '<b>'+esc(F[k].join(', '))+'</b>'; }).join(' · ')+' <button class="histLink" data-ledfclear="1">Clear filters</button></div>';
   h+='<div class="ledWrap" id="ledWrap"><table class="ledTbl"><thead><tr>'+LEDGER_COLS.map(function(c){ var r=c==='Amount'||c==='Category amount', fk=LED_FILTERS[c];
@@ -950,17 +957,38 @@ function ledgerLiquid_(L, day){ var out={ day:day, accts:[], total:0 };
     var v=Math.round(((be?be.amt:0)+after.reduce(function(s2,x){ return s2+x.amt; },0))*100)/100;
     out.accts.push({ name:a, from:be?be.date:'', start:be?be.amt:0, moves:after.length, moved:Math.round((v-(be?be.amt:0))*100)/100, amt:v }); out.total+=v; });
   out.total=Math.round(out.total*100)/100; return out; }
+function ledDayPick_(id, day){ return '<label class="ledDay">on <input type="date" id="'+id+'" data-ledday="1" value="'+day+'" max="'+TODAY+'"></label>'; }
+function ledFoldOpen_(k){ return S.foldOpen && S.foldOpen[k]; }
 function ledLiquidHtml_(L){
-  var day=S.ledLiqDay||TODAY, r=ledgerLiquid_(L, day), live=day===TODAY;
-  var keyOf={ 'ABA bank':'acct|aba', 'US bank':'acct|us', 'Cash on hand':'acct|cash' }, dash=0;
-  var rows=r.accts.map(function(a){ var d=live ? acctAmt_(keyOf[a.name]) : null; if(d!=null) dash+=d;
+  var day=S.ledLiqDay||TODAY, r=ledgerLiquid_(L, day);
+  var rows=r.accts.map(function(a){
     return '<tr><td><b>'+a.name+'</b><span class="ledFrom">'+(a.from?'Balance entry '+date(a.from)+': '+money(a.start,true)+(a.moves?' · then '+(a.moved<0?'−':'+')+money(Math.abs(a.moved),true)+' ('+a.moves+' line'+(a.moves>1?'s':'')+')':''):'No balance entry yet')+'</span></td>'+
-      '<td class="r"><b>'+money(a.amt,true)+'</b></td>'+(live?'<td class="r'+(Math.abs(d-a.amt)>0.004?' ledDiff':'')+'">'+money(d,true)+'</td>':'')+'</tr>'; }).join('');
-  dash=Math.round(dash*100)/100;
-  return '<div class="ledLiq" id="ledLiq"><div class="ledLiqHead"><b>💧 Estimated liquid assets — from the breakdown</b><label>on <input type="date" id="ledLiqDay" value="'+day+'" max="'+TODAY+'"></label></div>'+
-    '<table><tr><th>Account</th><th class="r">Breakdown</th>'+(live?'<th class="r">Dashboard (Live)</th>':'')+'</tr>'+rows+
-    '<tr class="tot"><td><b>Total liquid assets</b></td><td class="r"><b>'+money(r.total,true)+'</b></td>'+(live?'<td class="r'+(Math.abs(dash-r.total)>0.004?' ledDiff':'')+'"><b>'+money(dash,true)+'</b></td>':'')+'</tr></table>'+
-    (live ? '<p class="dsub">'+(Math.abs(dash-r.total)<0.005 ? '✓ The breakdown and the Dashboard agree.' : 'They differ by '+money(Math.abs(dash-r.total),true)+' — something counts on the Dashboard that isn’t in the breakdown, or the other way round.')+'</p>' : '<p class="dsub">The Dashboard only estimates today, so there is nothing to set this beside for an earlier day.</p>')+'</div>'; }
+      '<td class="r"><b>'+money(a.amt,true)+'</b></td></tr>'; }).join('');
+  return '<details class="ledLiq" id="ledLiq" data-fold="ledliq"'+(ledFoldOpen_('ledliq')?' open':'')+'><summary class="ledLiqHead"><span><b>💧 Estimated liquid assets — from the breakdown</b><span class="dsub">'+date(day)+' · '+money(r.total,true)+'</span></span><span class="chev">▾</span></summary>'+
+    ledDayPick_('ledLiqDay', day)+
+    '<table><tr><th>Account</th><th class="r">Amount</th></tr>'+rows+
+    '<tr class="tot"><td><b>Total liquid assets</b></td><td class="r"><b>'+money(r.total,true)+'</b></td></tr></table>'+
+    '<p class="dsub">'+(day===TODAY ? 'These are the Dashboard’s 📡 Live figures — it reads them from here.' : 'As it stood on '+date(day)+', from the lines up to that day.')+'</p></details>'; }
+/* the categories on a day, from the breakdown alone: every Category amount up to that day,
+   added up per sub-category (no resets — allocations already hold only what changed) */
+function ledgerCats_(L, day){ var by={};
+  L.forEach(function(x){ if(x.camt==null || x.date>day) return; by[x.cat]=Math.round(((by[x.cat]||0)+x.camt)*100)/100; });
+  var groups=ALLOC.map(function(g){ var items=g.items.map(function(it){ var lab=fundLabel_(g.id+'|'+it[0]), v=by[lab]||0; delete by[lab]; return { name:it[0], amt:v }; });
+    return { g:g, items:items, amt:Math.round(items.reduce(function(s2,i){ return s2+i.amt; },0)*100)/100 }; });
+  var other=Object.keys(by).filter(function(k){ return Math.abs(by[k])>0.004; }).map(function(k){ return { name:k||'(no category)', amt:by[k] }; });
+  var total=Math.round((groups.reduce(function(s2,g){ return s2+g.amt; },0)+other.reduce(function(s2,o){ return s2+o.amt; },0))*100)/100;
+  return { groups:groups, other:other, total:total }; }
+function ledCatsHtml_(L){
+  var day=S.ledLiqDay||TODAY, r=ledgerCats_(L, day), sg=function(v){ return (v<0?'−':'')+money(Math.abs(v),true); };
+  var rows=r.groups.map(function(G){ var g=G.g;
+    return '<tr class="grp"><td><span class="sw" style="display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:2px;background:var('+g.c+')"></span><b>'+esc(g.name)+'</b></td><td class="r"><b>'+sg(G.amt)+'</b></td></tr>'+
+      (G.items.length>1 ? G.items.map(function(i){ return '<tr><td class="sub">'+esc(i.name)+'</td><td class="r sub">'+sg(i.amt)+'</td></tr>'; }).join('') : ''); }).join('')+
+    r.other.map(function(o){ return '<tr><td class="sub">'+esc(o.name)+' <span class="delTag">(deleted)</span></td><td class="r sub">'+sg(o.amt)+'</td></tr>'; }).join('');
+  return '<details class="ledLiq" id="ledCats" data-fold="ledcats"'+(ledFoldOpen_('ledcats')?' open':'')+'><summary class="ledLiqHead"><span><b>📊 Estimated allocation breakdown — from the breakdown</b><span class="dsub">'+date(day)+' · '+sg(r.total)+'</span></span><span class="chev">▾</span></summary>'+
+    ledDayPick_('ledCatsDay', day)+
+    '<table><tr><th>Category</th><th class="r">Amount</th></tr>'+rows+
+    '<tr class="tot"><td><b>Total allocated</b></td><td class="r"><b>'+sg(r.total)+'</b></td></tr></table>'+
+    '<p class="dsub">Every Category amount up to '+date(day)+', added up for each sub-category.</p></details>'; }
 /* redraw without losing where the table was scrolled to */
 function ledRender_(){ var w=document.getElementById('ledWrap'), x=w?w.scrollLeft:0, y=w?w.scrollTop:0; render(); var n=document.getElementById('ledWrap'); if(n){ n.scrollLeft=x; n.scrollTop=y; } }
 function inCatsHtml_(){
@@ -1194,12 +1222,10 @@ function isTool_(k){ return k===TOOL_ADD || k===TOOL_REMOVE; }
 var ACCT_KEYS={ 'acct|aba':'ABA bank', 'acct|us':'US bank', 'acct|cash':'Cash on hand' };
 function isAcct_(k){ return !!ACCT_KEYS[k]; }
 /* an account now: as last entered, plus what has moved in or out of it since that day */
-function acctMoved_(k){
-  var adv=0;   /* advances are their own report: they never move an account */
-  var m=TRANSFERS.concat(TOOL_XFERS).reduce(function(s2,t){ if(!afterBal_(t)) return s2; return s2+(t.to===k?t.amt:0)-(t.from===k?t.amt:0); },0);
-  m+=INCOMES.reduce(function(s2,x){ return s2+(afterBal_(x) && x.bank===k ? x.amt : 0); },0)-EXPENSES.reduce(function(s2,x){ return s2+(afterBal_(x) && x.bank===k ? x.amt : 0); },0);
-  return Math.round((m+adv)*100)/100; }
-function acctAmt_(k){ var a=BAL.accts.filter(function(x){ return 'acct|'+x.id===k; })[0]; return (a?a.amt:0)+acctMoved_(k); }
+/* each account in Live — worked out from the Detailed breakdown (its latest balance entry, then every
+   line since and every line not approved yet: ledgerLiquid_), so the Dashboard and the breakdown can't differ */
+function liveLiquid_(){ return ledgerLiquid_(ledgerLines_(), TODAY); }
+function acctAmt_(k){ var a=liveLiquid_().accts.filter(function(x){ return x.name===ACCT_KEYS[k]; })[0]; return a?a.amt:0; }
 function fundSelect_(id, val, label, tool, accts){
   return '<select id="'+id+'" aria-label="'+label+'"><option value="">— Pick a fund —</option>'+ALLOC.map(function(g){ return '<optgroup label="'+esc(g.name)+'">'+
     g.items.map(function(it){ var k=g.id+'|'+it[0]; return '<option value="'+esc(k)+'"'+(val===k?' selected':'')+'>'+esc(it[0])+' — '+money(it[1],true)+'</option>'; }).join('')+'</optgroup>'; }).join('')+
@@ -1642,8 +1668,7 @@ function approvedAskHtml_(day, checked, attr){
     '<label class="incChk" style="margin-top:6px"><input type="checkbox" '+attr+(checked?' checked':'')+'><span>Add it to the '+date(a)+' approved report as well</span></label></div>';
 }
 /* the bank total moved by what came in and went out after the last balances day */
-function liveNet_(){ return Math.round((INCOMES.reduce(function(s2,x){ return s2+(afterBal_(x)?x.amt:0); },0)-EXPENSES.reduce(function(s2,x){ return s2+(afterBal_(x) && x.src!=='advance'?x.amt:0); },0)
-  +TOOL_XFERS.reduce(function(s2,t){ return s2+(afterBal_(t) ? (isAcct_(t.to)?t.amt:0)-(isAcct_(t.from)?t.amt:0) : 0); },0))*100)/100; }
+function liveNet_(){ var t=BAL.accts.reduce(function(s2,a){ return s2+a.amt; },0); return Math.round((liveLiquid_().total-t)*100)/100; }   /* Live total − the newest balances */
 function flowRef_(){ if(isLive_()) return TODAY; var days=reportDays_(); return S.viewDay && days.indexOf(S.viewDay)>=0 ? S.viewDay : (days[0] || TODAY); }
 function monthName_(ym){ return new Date(ym+'-01T00:00:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'}); }
 function prevYm_(ym){ var y=+ym.slice(0,4), m=+ym.slice(5,7)-1; if(!m){ m=12; y--; } return y+'-'+String(m).padStart(2,'0'); }
@@ -1996,13 +2021,13 @@ function balancesHtml(){
     '<p class="hint" style="margin-top:10px">Enter the ABA, US bank and cash on hand on the <button class="more" data-tab="input" style="display:inline;padding:0">Input tab</button>.</p></section>';
   var T=total(), d=BAL.prevTotal==null?null:T-BAL.prevTotal, whole=Math.floor(T), cents=Math.round((T-whole)*100);
   var h='<section class="sec" id="balances"><div class="secHead"><h2>🏦 '+EST('Balances')+'</h2><button class="more" data-sheet="balances">Details ›</button></div>'+
-    '<p class="hint">Siem Reap base · '+(isLive_() ? 'bank balances as of '+date(BAL.asOf)+', moved by '+(liveNet_()<0?'−':'+')+money(Math.abs(liveNet_()),true)+' of income and expenses entered since' : 'as of '+date(BAL.asOf)+' · entered by the Finances office')+'</p>'+
+    '<p class="hint">Siem Reap base · '+(isLive_() ? 'bank balances as of '+date(BAL.asOf)+', moved by '+(liveNet_()<0?'−':'+')+money(Math.abs(liveNet_()),true)+' of everything since, or not approved yet — from the Detailed breakdown' : 'as of '+date(BAL.asOf)+' · entered by the Finances office')+'</p>'+
     '<div class="liquid'+(isLive_()?' est':'')+'"><div class="lbl">'+EST('Total liquid assets')+'</div>'+
     '<div class="num">'+money(whole)+'<span class="c">.'+String(cents).padStart(2,'0')+'</span></div>'+
     (isLive_() ? (function(n){ return '<div class="delta"'+(n<0?' style="color:#FF9B8F"':'')+'>'+(Math.abs(n)<0.005?'No change':(n>0?'▲ ':'▼ ')+money(Math.abs(n),true))+' estimated since the bank balances of '+date(BAL.asOf)+'</div>'; })(liveNet_()) : d==null ? '<div class="delta" style="color:var(--onDarkFaint)">The first day entered</div>' : '<div class="delta"'+(d<0?' style="color:#FF9B8F"':'')+'>'+(Math.abs(d)<0.005?'Same as ':(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+' since ')+date(BAL.prevAsOf)+'</div>')+'</div>'+
     '<div class="accts">'+BAL.accts.map(function(a){
       var amt=isLive_() ? acctAmt_('acct|'+a.id) : a.amt;
-      return '<div class="acct"><div class="an">'+esc(a.name)+(isLive_()?' <span class="estTag">est.</span>':'')+'</div><div class="av">'+money(amt)+'</div><div class="as">'+(T?Math.round(a.amt/T*100):0)+'% · '+esc(a.sub)+'</div></div>';
+      return '<div class="acct"><div class="an">'+esc(a.name)+(isLive_()?' <span class="estTag">est.</span>':'')+'</div><div class="av">'+money(amt)+'</div><div class="as">'+(T?Math.round(amt/T*100):0)+'% · '+esc(a.sub)+'</div></div>';
     }).join('')+'</div>';
   h+='</section>';
   return h;
@@ -2422,7 +2447,7 @@ document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeShee
 
 document.addEventListener('change', function(e){
   if(e.target.id==='catNewSubGrp'){ S.catErr=''; var er=document.querySelector('.newCat .inErr'); if(er) er.remove(); return; }
-  if(e.target.id==='ledLiqDay'){ S.ledLiqDay=e.target.value||null; ledRender_(); return; }
+  if(e.target.dataset && e.target.dataset.ledday){ S.ledLiqDay=e.target.value||null; ledRender_(); return; }
   if(e.target.dataset && e.target.dataset.catgname!=null){ catRenameGroup_(e.target.dataset.catgname, e.target.value); return; }
   if(e.target.dataset && e.target.dataset.catiname!=null){ var ci=e.target.dataset.catiname.split('|'); catRenameItem_(ci[0], +ci[1], e.target.value); return; }
   if(e.target.dataset && e.target.dataset.catto!=null){ var ct=e.target.dataset.catto.split('|'); if(e.target.value) catMoveTo_(ct[0], +ct[1], e.target.value); return; }
