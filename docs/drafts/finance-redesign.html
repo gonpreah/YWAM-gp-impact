@@ -336,6 +336,21 @@ label.f{ display:block; font-size:12.5px; font-weight:600; margin:6px 0 4px; }
 .incChk input{ margin-top:3px; width:18px; height:18px; }
 .incChk .dsub{ display:block; }
 .xfLine .delBtn{ margin-top:4px; }
+.qHead{ margin:14px 0 6px; font-weight:700; font-size:15px; color:var(--amberDeep); }
+.qHead.done{ color:var(--good); }
+.qCard{ border:2px solid color-mix(in srgb, var(--amber, #FFB323) 60%, transparent); background:color-mix(in srgb, var(--amber, #FFB323) 8%, var(--surface)); border-radius:12px; padding:12px; margin:8px 0; }
+.qLine{ font-size:14px; } .qLine .dsub{ display:block; }
+.qAsk{ font-weight:700; margin:8px 0 6px; font-size:14px; }
+.qOpts{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+.qOpts .chip{ border:1px solid var(--accent); background:var(--surface); color:var(--accent); border-radius:999px; padding:6px 12px; font-weight:700; font-size:13px; cursor:pointer; }
+.qCard select{ width:100%; padding:8px; font:inherit; font-size:13px; border:1px solid color-mix(in srgb, var(--muted) 40%, transparent); border-radius:9px; background:var(--bg); color:var(--ink); }
+.linkAdd.skip{ color:var(--muted); font-weight:600; display:block; }
+.incGroup{ border-top:1px solid var(--line); margin-top:8px; }
+.incGroup > summary{ display:flex; justify-content:space-between; padding:10px 0; cursor:pointer; list-style:none; font-size:14px; }
+.incGroup > summary::-webkit-details-marker{ display:none; }
+.incGroup[open] > summary .chev{ transform:rotate(180deg); }
+.why{ color:var(--good)!important; }
+.btn[disabled]{ opacity:.55; cursor:not-allowed; }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -841,22 +856,56 @@ function inc1Save_(){
   S.inc1={ date:D.date, amt:'', type:'', who:'', memo:'', fund:'' }; render(); toast('Added '+money(a,true)+' — '+inc.type);
 }
 function incSort_(){ INCOMES.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; }); }
-/* many at once: the QuickBooks export (Excel or CSV) — a row a deposit, a kind picked for each */
+/* many at once from QuickBooks: a list of deposits (each with its own date) or a Profit and Loss
+   (its income lines, one date for the lot). Lines it is sure about are assigned; anything else
+   becomes a question for the office — nothing is guessed silently. Answers are remembered by the
+   line's account (or name), so next month's file asks less. */
+var INC_MAP={};   /* lower-case account/name → kind of income, from the office's own answers */
+var INC_DONATION_OPTS=['General donations','Designated donation','KSS & YAP','Antonia'];
+var INC_COMMON_OPTS=['Staff contributions','Team contributions','General donations','Ministry rent'];
+function incKey_(r){ return String(r.acct||r.who||r.memo||'').toLowerCase().trim(); }
+function incJudge_(r){
+  var k=incKey_(r);
+  var m=k && INC_MAP[k]; if(m){ m=typeof m==='string'?{ t:m }:m; return { type:m.t, fund:m.f||'', sure:true, why:'You chose this last time for “'+(r.acct||r.who||r.memo)+'”' }; }
+  var g=incGuess_([r.acct, r.memo, r.who].join(' '));
+  if(g && g!=='General donations' && g!=='Designated donation') return { type:g, sure:true, why:'Matched “'+(r.acct||r.memo||r.who)+'”' };
+  if(g) return { type:'', sure:false, opts:INC_DONATION_OPTS, ask:'Looks like a donation — which kind?' };
+  return { type:'', sure:false, opts:INC_COMMON_OPTS, ask:'Not sure what this is.' };
+}
+function incNeedsFund_(r){ return r.type && !(INC_RULES[r.type]||[]).length && !r.fund; }
+function incOpen_(r){ return r.on && !r.skip && (!r.type || incNeedsFund_(r)); }
+function incRowText_(r){ return [r.acct, r.who, r.memo].filter(Boolean).map(esc).join(' · ')||'—'; }
 function incFileHtml_(){
   var U=S.incUp;
-  var h='<label class="inDrop" for="incFile">📎 <span><b>'+(U?'Attach a different file':'Attach the QuickBooks export')+'</b><br><small>Excel (.xlsx) or CSV — e.g. Deposit Detail or Income by Customer. PDF: see below.</small></span></label>'+
+  var h='<label class="inDrop" for="incFile">📎 <span><b>'+(U?'Attach a different file':'Attach a QuickBooks report')+'</b><br><small>Excel (.xlsx) or CSV — a Profit and Loss, or a list of deposits (Deposit Detail, Income by Customer…)</small></span></label>'+
     '<input type="file" id="incFile" accept=".xlsx,.csv,.pdf" hidden>';
   if(S.incReadErr) h+='<p class="inErr" role="alert">⚠️ '+esc(S.incReadErr)+'</p>';
-  if(!U) return h+'<p class="inLast" style="margin-top:10px">Each row with a date and an amount becomes one income. You pick what each one is (it guesses from the account, name and memo), then add them all at once.</p>';
-  var on=U.rows.filter(function(r){ return r.on; }), tot=on.reduce(function(s2,r){ return s2+r.amt; },0), unset=on.filter(function(r){ return !r.type || !incSplit_(r.type, r.amt, r.fund); }).length;
-  h+='<div class="upSum"><b>'+esc(U.file)+'</b> · '+U.rows.length+' rows · '+on.length+' to add · '+money(tot,true)+(unset?' · <span class="badc">'+unset+' need a kind</span>':' <span class="okc">✓ all have a kind</span>')+'</div>'+
-    '<div class="upList">'+U.rows.map(function(r, i){
-      return '<div class="incRow'+(r.on?'':' off')+'"><label class="incChk"><input type="checkbox" data-incon="'+i+'"'+(r.on?' checked':'')+'><span><b>'+money(r.amt,true)+'</b> · '+date(r.date)+(r.dup?' <span class="tag">already in</span>':'')+
-        '<span class="dsub">'+esc([r.who, r.acct, r.memo].filter(Boolean).join(' · ')||'—')+'</span></span></label>'+
-        incTypeSelect_('data-inctype="'+i+'" aria-label="Kind of income"', r.type)+
-        (r.type && !(INC_RULES[r.type]||[]).length ? fundSelect_('incFund'+i, r.fund, 'Fund').replace('<select ','<select data-incfund="'+i+'" ') : '')+'</div>'; }).join('')+'</div>'+
-    (S.incErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.incErr)+'</p>' : '')+
-    '<div class="inBtns"><button class="btn" id="incFileSave">Add '+on.length+' income'+(on.length===1?'':'s')+'</button><button class="btn ghost" id="incFileCancel">Cancel</button></div>';
+  if(!U) return h+'<p class="inLast" style="margin-top:10px">Lines it is sure about are assigned to a kind of income straight away. Anything it isn’t sure about, it asks you — and remembers your answer for next time.</p>';
+  var R=U.rows, open=R.filter(incOpen_), auto=R.filter(function(r){ return r.on && !r.skip && r.type && !incNeedsFund_(r) && r.sure && !r.answered; }),
+      answered=R.filter(function(r){ return r.on && !r.skip && r.type && !incNeedsFund_(r) && (r.answered || !r.sure); }),
+      skipped=R.filter(function(r){ return r.skip || !r.on; }), add=R.filter(function(r){ return r.on && !r.skip && r.type && !incNeedsFund_(r); });
+  var tot=add.reduce(function(s2,r){ return s2+r.amt; },0);
+  h+='<div class="upSum"><b>'+esc(U.file)+'</b> · '+(U.kind==='pl'?'Profit and Loss':'list of deposits')+(U.period?' · '+esc(U.period):'')+' · '+R.length+' income line'+(R.length>1?'s':'')+'</div>';
+  if(U.kind==='pl') h+='<div class="inDates one" style="margin-top:10px"><div><label for="incPlDate">Date for these incomes</label><input type="date" id="incPlDate" max="'+TODAY+'" value="'+esc(U.date)+'"><div class="ls">A Profit and Loss has totals, not days — they’re all dated this day.</div></div></div>';
+  /* the questions */
+  h+='<div class="qHead'+(open.length?'':' done')+'">'+(open.length ? '❓ '+open.length+' question'+(open.length>1?'s':'')+' for you' : '✓ No questions left')+'</div>';
+  h+=open.map(function(r){ var i=R.indexOf(r), needFund=r.type && incNeedsFund_(r);
+    return '<div class="qCard"><div class="qLine"><b>'+money(r.amt,true)+'</b> · '+date(r.date)+'<span class="dsub">'+incRowText_(r)+'</span></div>'+
+      (needFund
+        ? '<div class="qAsk">“'+esc(r.type)+'” has no formula yet — which fund does it go to?</div>'+fundSelect_('incFund'+i, r.fund, 'Fund').replace('<select ','<select data-incfund="'+i+'" ')+
+          '<button class="linkAdd" data-incq="'+i+'|">← Pick a different kind</button>'
+        : '<div class="qAsk">'+esc(r.ask||'What is this income?')+'</div><div class="qOpts">'+(r.opts||INC_COMMON_OPTS).map(function(t){ return '<button class="chip" data-incq="'+i+'|'+esc(t)+'">'+esc(t)+'</button>'; }).join('')+'</div>'+
+          incTypeSelect_('data-inctype="'+i+'" aria-label="Something else"', '').replace('— Kind of income —','Something else…'))+
+      '<button class="linkAdd skip" data-incskip="'+i+'">Skip — don’t add this one</button></div>'; }).join('');
+  var listHtml=function(L, label, id, openIt){ if(!L.length) return '';
+    return '<details class="incGroup" data-incgroup="'+id+'"'+(openIt?' open':'')+'><summary><b>'+label+' ('+L.length+')</b><span class="chev">▾</span></summary>'+L.map(function(r){ var i=R.indexOf(r);
+      return '<div class="incRow"><div class="incChk"><span><b>'+money(r.amt,true)+'</b> · '+date(r.date)+(r.dup?' <span class="tag">already in</span>':'')+'<span class="dsub">'+incRowText_(r)+'</span>'+(r.why&&id==='auto'?'<span class="dsub why">'+esc(r.why)+'</span>':'')+'</span></div>'+
+        (id==='skip' ? '<button class="linkAdd" data-incunskip="'+i+'">Add it after all</button>'
+          : incTypeSelect_('data-inctype="'+i+'" aria-label="Kind of income"', r.type)+(r.fund?'<div class="dsub">→ '+esc(fundOf_(r.fund)?fundOf_(r.fund).name:r.fund)+'</div>':''))+'</div>'; }).join('')+'</details>'; };
+  h+=listHtml(answered, '✍️ Answered by you', 'ans', false)+listHtml(auto, '✓ Assigned automatically — check them', 'auto', false)+listHtml(skipped, '⏭ Not adding', 'skip', false);
+  h+='<label class="incChk" style="margin-top:12px"><input type="checkbox" id="incRemember"'+(S.incRemember!==false?' checked':'')+'><span>Remember my answers for next month’s file</span></label>';
+  h+=(S.incErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.incErr)+'</p>' : '')+
+    '<div class="inBtns"><button class="btn" id="incFileSave"'+(open.length?' disabled':'')+'>'+(open.length ? 'Answer the questions first' : 'Add '+add.length+' income'+(add.length===1?'':'s')+' · '+money(tot,true))+'</button><button class="btn ghost" id="incFileCancel">Cancel</button></div>';
   return h;
 }
 function xlDate_(v){
@@ -865,46 +914,57 @@ function xlDate_(v){
   if((m=/^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s2))) return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
   if((m=/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/.exec(s2))){ var a=+m[1], b=+m[2], y=+m[3]; if(y<100) y+=2000; var mo=a, dd=b; if(a>12){ mo=b; dd=a; }   /* QuickBooks writes MM/DD/YYYY */
     if(mo<1||mo>12||dd<1||dd>31) return ''; return y+'-'+String(mo).padStart(2,'0')+'-'+String(dd).padStart(2,'0'); }
-  var d2=new Date(s2); return isNaN(d2) ? '' : d2.getFullYear()+'-'+String(d2.getMonth()+1).padStart(2,'0')+'-'+String(d2.getDate()).padStart(2,'0');
+  return '';
 }
 function incFromRows_(rows, file){
-  var txt=function(v){ return v==null ? '' : String(v).trim(); }, hdr=-1, c={};
+  var txt=function(v){ return v==null ? '' : String(v).trim(); };
+  var num=function(v){ var x=typeof v==='number'?v:parseFloat(String(v==null?'':v).replace(/[$,\s]/g,'').replace(/^\((.*)\)$/,'-$1')); return isNaN(x)?NaN:x; };
+  var period=''; for(var p=0;p<Math.min(rows.length,6);p++) (rows[p]||[]).forEach(function(v){ var t=txt(v); if(!period && /(january|february|march|april|may|june|july|august|september|october|november|december|\d{4})/i.test(t) && !/profit|loss|deposit|detail|income by/i.test(t) && t.length<60) period=t; });
+  var out=[], kind='';
+  /* a list of deposits: a header with a Date and an Amount column */
+  var hdr=-1, c={};
   for(var i=0;i<Math.min(rows.length,40) && hdr<0;i++){ var r=(rows[i]||[]).map(function(v){ return txt(v).toLowerCase(); });
     if(r.some(function(v){ return /date/.test(v); }) && r.some(function(v){ return /^(amount|total|credit|deposit|amount \(usd\))$/.test(v); })) hdr=i; }
-  if(hdr<0) throw new Error('no_header');
-  (rows[hdr]||[]).forEach(function(v, j){ var t=txt(v).toLowerCase();
-    if(c.date==null && /date/.test(t)) c.date=j;
-    else if(c.amt==null && /^(amount|total|credit|deposit|amount \(usd\))$/.test(t)) c.amt=j;
-    else if(c.who==null && /^(name|customer|received from|payer|donor|full name|customer full name)$/.test(t)) c.who=j;
-    else if(c.memo==null && /memo|description/.test(t)) c.memo=j;
-    else if(c.acct==null && /^(account|account name|item|product\/service|class|split|category)$/.test(t)) c.acct=j; });
-  var num=function(v){ var x=typeof v==='number'?v:parseFloat(String(v==null?'':v).replace(/[$,\s]/g,'').replace(/^\((.*)\)$/,'-$1')); return isNaN(x)?NaN:x; };
-  var out=[];
-  for(var r2=hdr+1;r2<rows.length;r2++){ var row=rows[r2]||[], d=xlDate_(row[c.date]), a=num(row[c.amt]);
-    if(!d || isNaN(a) || a<=0) continue;
-    var who=txt(row[c.who]), memo=txt(row[c.memo]), acct=txt(row[c.acct]);
-    var type=incGuess_([acct, memo, who].join(' ')), dup=INCOMES.some(function(x){ return x.date===d && Math.abs(x.amt-a)<0.005 && (x.who||'')===who; });
-    out.push({ date:d, amt:Math.round(a*100)/100, who:who, memo:memo, acct:acct, type:type, fund:'', on:!dup && d<=TODAY, dup:dup });
+  if(hdr>=0){
+    kind='list';
+    (rows[hdr]||[]).forEach(function(v, j){ var t=txt(v).toLowerCase();
+      if(c.date==null && /date/.test(t)) c.date=j; else if(c.amt==null && /^(amount|total|credit|deposit|amount \(usd\))$/.test(t)) c.amt=j;
+      else if(c.who==null && /^(name|customer|received from|payer|donor|full name|customer full name)$/.test(t)) c.who=j;
+      else if(c.memo==null && /memo|description/.test(t)) c.memo=j; else if(c.acct==null && /^(account|account name|item|product\/service|class|split|category)$/.test(t)) c.acct=j; });
+    for(var r2=hdr+1;r2<rows.length;r2++){ var row=rows[r2]||[], d=xlDate_(row[c.date]), a=num(row[c.amt]); if(!d || isNaN(a) || a<=0) continue;
+      out.push({ date:d, amt:Math.round(a*100)/100, who:txt(row[c.who]), memo:txt(row[c.memo]), acct:txt(row[c.acct]) }); }
+  } else {
+    /* a Profit and Loss: the lines between "Income" and its total, the last number on each line */
+    var st=-1, en=rows.length;
+    for(var k=0;k<rows.length;k++){ var f0=txt((rows[k]||[])[0]).toLowerCase(); if(st<0 && /^income$/.test(f0)) st=k; else if(st>=0 && /^total (for )?income$/.test(f0)){ en=k; break; } }
+    if(st<0) throw new Error('no_header');
+    kind='pl';
+    for(var k2=st+1;k2<en;k2++){ var rw=rows[k2]||[], name=txt(rw[0]); if(!name || /^total\b/i.test(name)) continue;
+      var nums=rw.slice(1).map(num).filter(function(x){ return !isNaN(x); }); if(!nums.length) continue; var amt=nums[nums.length-1]; if(amt<=0) continue;
+      out.push({ date:'', amt:Math.round(amt*100)/100, who:'', memo:'', acct:name.replace(/^\d+\s+/,'') }); }
   }
   if(!out.length) throw new Error('no_rows');
-  return { file:file, rows:out };
+  var pdate=reportDay_();
+  out.forEach(function(r){ if(kind==='pl') r.date=pdate; var j=incJudge_(r); r.type=j.type; r.sure=j.sure; r.why=j.why||''; r.opts=j.opts; r.ask=j.ask; r.fund=j.fund||'';
+    r.dup=INCOMES.some(function(x){ return x.date===r.date && Math.abs(x.amt-r.amt)<0.005 && (x.who||'')===r.who; }); r.on=!r.dup && r.date<=TODAY; r.skip=false; });
+  return { file:file, kind:kind, period:period, date:pdate, rows:out };
 }
 function incReadFile_(f){
   S.incReadErr=''; S.incErr='';
   if(/\.pdf$/i.test(f.name)){ S.incUp=null; S.incReadErr='This preview can’t read a PDF. When this is built into the app it will, the same way the app already reads the QuickBooks Profit and Loss PDF. For now, export the report from QuickBooks as Excel.'; render(); return; }
   f.arrayBuffer().then(function(buf){ return /\.csv$/i.test(f.name) ? csvRows_(new TextDecoder().decode(buf)) : xlsxRows_(buf); })
    .then(function(rows){ S.incUp=incFromRows_(rows, f.name); render(); })
-   .catch(function(e){ S.incUp=null; S.incReadErr = e && e.message==='no_header' ? 'Couldn’t find a Date and an Amount column in that file.' : e && e.message==='no_rows' ? 'No rows with a date and an amount above 0.' : 'Couldn’t read that file — attach the Excel (.xlsx) or CSV export.'; render(); });
+   .catch(function(e){ S.incUp=null; S.incReadErr = e && e.message==='no_header' ? 'Couldn’t find income in that file — it needs a Date and an Amount column, or an Income section (Profit and Loss).' : e && e.message==='no_rows' ? 'No income lines above 0 in that file.' : 'Couldn’t read that file — attach the Excel (.xlsx) or CSV export.'; render(); });
 }
 function incFileSave_(){
-  var U=S.incUp, on=U.rows.filter(function(r){ return r.on; });
-  if(!on.length){ S.incErr='Tick at least one row.'; render(); return; }
-  var bad=on.filter(function(r){ return !r.type || !incSplit_(r.type, r.amt, r.fund); });
-  if(bad.length){ S.incErr=bad.length+' ticked row'+(bad.length>1?'s need':' needs')+' a kind of income (or a fund).'; render(); return; }
-  on.forEach(function(r, i){ var inc={ id:'i'+Date.now().toString(36)+i, date:r.date, amt:r.amt, type:r.type, who:r.who, memo:[r.acct, r.memo].filter(Boolean).join(' · '), split:incSplit_(r.type, r.amt, r.fund), src:'file', file:U.file };
+  var U=S.incUp; if(U.rows.some(incOpen_)){ S.incErr='Answer the questions first (or skip them).'; render(); return; }
+  var add=U.rows.filter(function(r){ return r.on && !r.skip && r.type && !incNeedsFund_(r); });
+  if(!add.length){ S.incErr='Nothing to add.'; render(); return; }
+  if(S.incRemember!==false) U.rows.forEach(function(r){ var k=incKey_(r); if(k && r.type && (r.answered || !r.sure || r.fund)) INC_MAP[k]={ t:r.type, f:r.fund||'' }; });
+  add.forEach(function(r, i){ var inc={ id:'i'+Date.now().toString(36)+i, date:r.date, amt:r.amt, type:r.type, who:r.who, memo:[r.acct, r.memo].filter(Boolean).join(' · '), split:incSplit_(r.type, r.amt, r.fund), src:'file', file:U.file };
     incApply_(inc, 1); INCOMES.push(inc); });
-  incSort_(); xferSnap_(on.reduce(function(m,r){ return r.date>m?r.date:m; },'')); var tot=on.reduce(function(s2,r){ return s2+r.amt; },0);
-  S.incUp=null; S.incErr=''; render(); toast('Added '+on.length+' incomes — '+money(tot,true));
+  incSort_(); xferSnap_(add.reduce(function(m,r){ return r.date>m?r.date:m; },'')); var tot=add.reduce(function(s2,r){ return s2+r.amt; },0);
+  S.incUp=null; S.incErr=''; render(); toast('Added '+add.length+' incomes — '+money(tot,true));
 }
 /* the Dashboard's income report reads what was entered, once there is any */
 function flowRef_(){ var days=reportDays_(); return S.viewDay && days.indexOf(S.viewDay)>=0 ? S.viewDay : (days[0] || TODAY); }
@@ -1258,9 +1318,10 @@ document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeShee
 
 document.addEventListener('change', function(e){
   if(e.target.id==='incFile' && e.target.files[0]){ incReadFile_(e.target.files[0]); return; }
-  var it=e.target.dataset && e.target.dataset.inctype; if(it!=null && S.incUp){ S.incUp.rows[+it].type=e.target.value; S.incUp.rows[+it].fund=''; S.incErr=''; render(); return; }
-  var ifd=e.target.dataset && e.target.dataset.incfund; if(ifd!=null && S.incUp){ S.incUp.rows[+ifd].fund=e.target.value; render(); return; }
-  var io=e.target.dataset && e.target.dataset.incon; if(io!=null && S.incUp){ S.incUp.rows[+io].on=e.target.checked; render(); return; }
+  var it=e.target.dataset && e.target.dataset.inctype; if(it!=null && S.incUp){ var rr=S.incUp.rows[+it]; rr.type=e.target.value; rr.fund=''; rr.answered=true; S.incErr=''; render(); return; }
+  if(e.target.id==='incPlDate' && S.incUp){ S.incUp.date=e.target.value; S.incUp.rows.forEach(function(r){ r.date=e.target.value; }); return; }
+  if(e.target.id==='incRemember'){ S.incRemember=e.target.checked; return; }
+  var ifd=e.target.dataset && e.target.dataset.incfund; if(ifd!=null && S.incUp){ S.incUp.rows[+ifd].fund=e.target.value; S.incUp.rows[+ifd].answered=true; render(); return; }
   if(e.target.id==='inc1Type'){ S.inc1.type=e.target.value; S.inc1.fund=''; S.incErr=''; render(); return; }
   if(e.target.id==='inc1Fund'){ S.inc1.fund=e.target.value; var pv=document.getElementById('inc1Prev'); if(pv) pv.innerHTML=inc1PrevHtml_(); return; }
   if(e.target.id==='xfFrom' || e.target.id==='xfTo'){ S.xfer[e.target.id==='xfFrom'?'from':'to']=e.target.value; S.xfErr=''; var pv=document.getElementById('xfPrev'); if(pv) pv.innerHTML=xferPrevHtml_(); return; }
@@ -1311,6 +1372,9 @@ document.addEventListener('click', function(e){
   var im=e.target.closest && e.target.closest('[data-incmode]'); if(im){ S.incMode=im.dataset.incmode; S.incErr=''; render(); return; }
   if(e.target.id==='inc1Save'){ inc1Save_(); return; }
   if(e.target.id==='incFileSave'){ incFileSave_(); return; }
+  var iq=e.target.closest && e.target.closest('[data-incq]'); if(iq && S.incUp){ var pr=iq.dataset.incq.split('|'), qr=S.incUp.rows[+pr[0]]; qr.type=pr.slice(1).join('|'); qr.fund=''; qr.answered=true; render(); return; }
+  var isk=e.target.dataset && e.target.dataset.incskip; if(isk!=null && S.incUp){ S.incUp.rows[+isk].skip=true; render(); return; }
+  var iun=e.target.dataset && e.target.dataset.incunskip; if(iun!=null && S.incUp){ var ur=S.incUp.rows[+iun]; ur.skip=false; ur.on=true; render(); return; }
   if(e.target.id==='incFileCancel'){ S.incUp=null; S.incErr=''; render(); return; }
   var ifl=e.target.closest && e.target.closest('[data-incfilter]'); if(ifl){ S.incFilter=ifl.dataset.incfilter; sheet('hist-inc'); return; }
   var idl=e.target.dataset && e.target.dataset.incdel;
@@ -1361,11 +1425,12 @@ document.getElementById('themeBtn').onclick=function(){
 var KEEP_KEY='gp-fin-draft-v1';
 var FUND_RENAMES={ 'Office':'Office/General' };   /* old fund name → new, for anything already saved */
 function keep_(){ try { localStorage.setItem(KEEP_KEY, JSON.stringify({ bal:BAL_DAYS, alloc:ALLOC.map(function(g){ return { id:g.id, prev:g.prev, items:g.items }; }),
-  allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, incTypes:INC_TYPES, incRules:INC_RULES, transfers:TRANSFERS, incomes:INCOMES, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved })); } catch(e){} }
+  allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, incTypes:INC_TYPES, incRules:INC_RULES, transfers:TRANSFERS, incomes:INCOMES, incMap:INC_MAP, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved })); } catch(e){} }
 (function(){ try { var k=JSON.parse(localStorage.getItem(KEEP_KEY)||'null'); if(!k) return;
   if(Array.isArray(k.bal)) BAL_DAYS=k.bal;
   if(Array.isArray(k.transfers)) TRANSFERS=k.transfers;
   if(Array.isArray(k.incomes)) INCOMES=k.incomes;
+  if(k.incMap && typeof k.incMap==='object') INC_MAP=k.incMap;
   if(k.incRules && typeof k.incRules==='object'){ Object.keys(k.incRules).forEach(function(t){ var nt=INC_TYPE_RENAMES[t]||t; if(INC_TYPES_GONE.indexOf(nt)<0) INC_RULES[nt]=k.incRules[t]; }); }
   if(Array.isArray(k.incTypes)) k.incTypes.forEach(function(t){ var nt=INC_TYPE_RENAMES[t]||t; if(INC_TYPES.indexOf(nt)<0 && INC_TYPES_GONE.indexOf(nt)<0 && ['Donations','Teams','Other income'].indexOf(t)<0) INC_TYPES.push(nt); });
   if(Array.isArray(k.alHist)){ ALLOC_HIST=k.alHist; ALLOC_HIST.forEach(function(e){ Object.keys(e.groups||{}).forEach(function(gk){ e.groups[gk].forEach(function(it){ if(FUND_RENAMES[it[0]]) it[0]=FUND_RENAMES[it[0]]; }); }); }); }
