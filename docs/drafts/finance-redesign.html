@@ -600,9 +600,9 @@ function inDayHtml_(){
 }
 function undoBtnHtml_(){
   var u=UNDO[UNDO.length-1];
-  return '<div class="undoBar"><button class="undoBtn'+(S.undoAsk?' ask':'')+'" id="undoLast"'+(u?'':' disabled')+'>↩ '+(S.undoAsk?'Tap again to undo':'Undo previous input')+'</button>'+
-    '<button class="undoBtn" id="inHistBtn"'+(u?'':' disabled')+'>🕘 History'+(UNDO.length?' ('+UNDO.length+')':'')+'</button>'+
-    '<span class="dsub" title="'+(u?esc(u.msg):'')+'">'+(u ? esc(u.msg.replace(/^(Removed|Put back|Undid|Brought back)/, function(m){ return m; })) : 'Nothing to undo yet')+'</span></div>';
+  return '<div class="undoBar"><button class="undoBtn'+(S.undoAsk?' ask':'')+'" id="undoLast"'+(u?'':' disabled')+'>↩ '+(S.undoAsk?'Tap again':'Undo')+'</button>'+
+    '<span class="dsub" title="'+(u?esc(u.msg):'')+'">'+(u ? esc(u.msg.replace(/^(Removed|Put back|Undid|Brought back)/, function(m){ return m; })) : 'Nothing to undo yet')+'</span>'+
+    '<button class="undoBtn" id="inHistBtn"'+(u?'':' disabled')+'>🕘 History</button></div>';
 }
 function inputHtml(){
   var B=BAL, D=S.inBal || (S.inBal={ aba:'', us:'', cash:'' });
