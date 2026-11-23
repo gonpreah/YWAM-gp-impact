@@ -549,7 +549,7 @@ function inputHtml(){
     flHtml_('inc')+flHtml_('exp')+
     inDebtHtml_();
   /* a tick by each part that is done for the day */
-  [['inBalances','bal'],['inAlloc','alloc'],['in_inc','inc'],['in_exp','exp'],['inXfer','xfer'],['inDebt','debt']].forEach(function(x){
+  [['inBalances','bal'],['inAlloc','alloc'],['in_inc','inc'],['in_exp','exp'],['inXfer','xfer']].forEach(function(x){
     h=h.replace(new RegExp('(<details class="inCard fold" id="'+x[0]+'"[^>]*><summary class="foldHead">)'), '$1'+dayTick_(x[1]));
   });
   h+=publishHtml_();
@@ -624,7 +624,7 @@ function debtAutoLink_(name){
 function inDebtHtml_(){
   var U=S.debtUp, d=S.debtDay || (U && U.asOf) || DEBT.asOf;
   var h='<details class="inCard fold" id="inDebt" data-fold="debt"'+(S.foldOpen&&S.foldOpen.debt?' open':'')+'><summary class="foldHead"><span><b>💳 Staff debt</b><span class="dsub">'+'As of '+date(DEBT.asOf)+' · '+money(DEBT.people.reduce(function(s2,x){ return s2+x.tot; },0),true)+' owed'+'</span></span><span class="foldR"><button class="histLink" data-hist="debt">🕘 History</button><span class="chev">▾</span></span></summary>'+
-    nothingNewHtml_('debt', 'staff debt report')+'<p class="inLast">Last report: as of '+date(DEBT.asOf)+(DEBT.file?' · '+esc(DEBT.file):'')+'. Staff debt has its own day — the day on the A/R Ageing report.</p>'+
+    '<p class="inLast">Last report: as of '+date(DEBT.asOf)+(DEBT.file?' · '+esc(DEBT.file):'')+'. Staff debt has its own day — the day on the A/R Ageing report.</p>'+
     '<label class="inDrop" for="inDebtFile">📎 <span><b>'+(U?'Attach a different file':'Attach the A/R Ageing report')+'</b><br><small>The Excel file (.xlsx) the office makes — or a .csv of it</small></span></label>'+
     '<input type="file" id="inDebtFile" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" hidden>'+
     '<div class="inDates one" style="margin-top:12px"><div><label for="inDebtDay">Staff debt as of</label><input type="date" id="inDebtDay" data-debtday="1" max="'+TODAY+'" value="'+esc(d)+'">'+
@@ -1328,7 +1328,7 @@ var PUBLISHED={};   /* day → { at } */
 function reportDays_(){ var p=Object.keys(PUBLISHED).sort().reverse(); return p.length ? p : enteredDays_(); }
 /* the day's checklist: each part is done when something was saved for that day, or marked "nothing new" */
 var DAY_DONE={};    /* day → { part:true } marked by hand */
-var DAY_PARTS=[ ['bal','🏦 Balances'], ['alloc','📊 Allocations'], ['inc','💵 Income'], ['exp','🧾 Expenses'], ['xfer','🔁 Internal transfers'], ['debt','💳 Staff debt'] ];
+var DAY_PARTS=[ ['bal','🏦 Balances'], ['alloc','📊 Allocations'], ['inc','💵 Income'], ['exp','🧾 Expenses'], ['xfer','🔁 Internal transfers'] ];   /* staff debt is updated on its own day, so it isn't part of this */
 function partSaved_(part, day){
   if(part==='bal') return BAL_DAYS.some(function(r){ return r.asOf===day; });
   if(part==='alloc') return ALLOC_HIST.some(function(r){ return !r.sample && r.asOf===day; });
@@ -1347,7 +1347,7 @@ function nothingNewHtml_(part, what){ var day=reportDay_(); if(partSaved_(part, 
 function publishHtml_(){
   var day=reportDay_(), done=DAY_PARTS.filter(function(x){ return partDone_(x[0], day); }).length, all=done===DAY_PARTS.length, pub=PUBLISHED[day];
   var h='<div class="inCard pubCard" id="inPublish"><div class="inHead"><h2>📤 Update the Dashboard</h2></div>'+
-    '<p class="inLast">'+(pub ? '✓ '+date(day)+' is on the Dashboard.' : 'When everything for '+date(day)+' is in, put it on the Dashboard.')+'</p>'+
+    '<p class="inLast">'+(pub ? '✓ '+date(day)+' is on the Dashboard.' : 'When everything for '+date(day)+' is in, put it on the Dashboard.')+' Staff debt goes on by itself when its report is saved.</p>'+
     '<ul class="pubList">'+DAY_PARTS.map(function(x){ var ok=partDone_(x[0], day), how=partSaved_(x[0], day)?'':(ok?' · nothing new':'');
       return '<li class="'+(ok?'done':'')+'"><span class="tick'+(ok?' done':'')+'">'+(ok?'✓':'')+'</span>'+x[1]+'<span class="dsub" style="display:inline">'+how+'</span></li>'; }).join('')+'</ul>'+
     '<div class="pubBar"><span style="width:'+Math.round(done/DAY_PARTS.length*100)+'%"></span></div><div class="dsub">'+done+' of '+DAY_PARTS.length+' done</div>';
