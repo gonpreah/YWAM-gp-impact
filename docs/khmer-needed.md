@@ -5284,3 +5284,11 @@ The one asking for a 1-on-1 may suggest a day and time; the one asked taps "Acce
 | {name} said yes to your 1-on-1 on {when} | {name} បានយល់ព្រមជួបមួយទល់មួយជាមួយអ្នកនៅ {when} |
 | You asked {name} for a 1-on-1 on {when} — waiting for them to say yes. | អ្នកបានសុំជួបមួយទល់មួយជាមួយ {name} នៅ {when} — កំពុងរង់ចាំពួកគេយល់ព្រម។ |
 | {name} asked you for a 1-on-1. | {name} បានសុំជួបមួយទល់មួយជាមួយអ្នក។ |
+
+## 108. Finances: the finance tool's tab (Nov 2026)
+My Ministry → Finances now has Dashboard · Input · Tasks · OKRs. "Input" is a tab label (very little room).
+The finance tool itself (public/finance.html) is English only for now — its Khmer is still to be written.
+
+| English | Khmer (draft) |
+|---|---|
+| Input | បញ្ចូល |

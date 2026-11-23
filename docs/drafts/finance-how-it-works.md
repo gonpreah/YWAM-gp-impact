@@ -279,13 +279,19 @@ Balances for 20 Nov saved: ABA $10,000 · US $0 · Cash $1,000 → total $11,000
 
 ---
 
-## 6. Where it is kept (the draft only)
+## 6. Where it is kept
 
-Everything is kept in this browser (`localStorage`: `gp-fin-draft-v1` for the data,
-`gp-fin-draft-undo` for History). The real app will keep it on the server. The amounts in the
-draft are sample numbers; real reports and names never go in the repository.
-
----
+- **The demo** (this draft, published as an artifact): in that browser (`localStorage`: `gp-fin-draft-v1` for the
+  data, `gp-fin-draft-undo` for History), with sample numbers to start from. Its top bar has
+  **📤 Copy my entries for Impact**.
+- **Impact** (`public/finance.html`, built from this file by `scripts/build-finance-page.mjs` with
+  `window.GP_FIN_APP`): on the server, one document per campus (`fin2:<campus>`, `fin2Get` / `fin2Save`), saved a
+  moment after each change ("Saving…" / "✓ Saved" bottom left; "⚠️ Not saved — tap to try again" when it
+  couldn't). If someone else saved first, the newer copy is shown and the last change has to be entered again.
+  No sample numbers. The Finances office edits; Campus Leadership sees the Dashboard only. History (undo) stays
+  on each device. **📥 Bring in entries from the demo** on Input replaces this campus's document with the
+  pasted copy (Undo puts it back).
+- Real reports and names never go in the repository.
 
 ## 7. Agreed, not built yet (23 Nov 2026)
 

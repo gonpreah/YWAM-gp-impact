@@ -822,7 +822,7 @@ function mmTabsFor_(sel, mine, schedH){
     out=[['today',t('Today'),'data-cafetab'],['till',t('Till'),'data-cafetab'],['rota',t('Rota'),'data-cafetab'],['week',t('Week'),'data-cafetab']].concat(S.cafe && S.cafe.canSetup ? [['setup',t('Set up'),'data-cafetab']] : []);
     out.push(['numbers',t('Numbers')]);
   } else if(sel.dept==='Skills Training' && sel.min==='Finances' && finCanEditClient_()){
-    out=[['reports',t('Reports'),'data-fintab'],['dash',t('Dashboard'),'data-fintab'],['numbers',t('Numbers')]];
+    out=[['fdash',t('Dashboard'),'data-fintab'],['finput',t('Input'),'data-fintab']];   // the finance tool (public/finance.html, teams/09-finance.js fin2FrameHtml_)
   } else if(isTeamsMinistry_(sel.dept, sel.min)){
     out=[['teams',t('Teams')]];
   } else if(isDtsMinistry_(sel.dept, sel.min)){
@@ -842,7 +842,7 @@ function mmCurTab_(sel, tabs){
   if(MM_SHELL_KEYS.indexOf(S.mmTab)>-1 && keys.indexOf(S.mmTab)>-1) return S.mmTab;
   if(S.mmTab==='ministry' && !S.mmTabTouched){ var kept=mmTabKept_(); if(kept && keys.indexOf(kept)>-1){ if(MM_SHELL_KEYS.indexOf(kept)>-1) S.mmTab=kept; else if(sel.min==='Cafe') S.cafeTab=kept; else S.finTab=kept; S.mmTabTouched=true; return kept; } }
   if(sel.dept==='Community Service' && sel.min==='Cafe') return keys.indexOf(S.cafeTab)>-1 ? S.cafeTab : 'today';
-  if(sel.dept==='Skills Training' && sel.min==='Finances' && finCanEditClient_()) return S.finTab==='numbers' ? 'numbers' : (keys.indexOf(S.finTab)>-1 ? S.finTab : 'reports');
+  if(sel.dept==='Skills Training' && sel.min==='Finances' && finCanEditClient_()) return keys.indexOf(S.finTab)>-1 ? S.finTab : 'fdash';
   return keys[0];
 }
 function myMinistryHtml(){
@@ -889,7 +889,7 @@ function myMinistryHtml(){
       if(lwt==='week') pane=lwHtml_();
       // the base's finances, from the Finances office's reports (teams/09-finance.js) — with the
       // QuickBooks card on top for whoever may connect it (an admin, the Finances office)
-      else if(lwt==='money') pane=(S.fin && S.fin.canEdit ? finQboHtml_(S.fin) : '')+finDashHtml_();
+      else if(lwt==='money') pane=fin2FrameHtml_('dash');   // the finance tool's Dashboard, read-only for leadership
       else if(lwt==='okrs') pane=okrTabHtml_();   // the OKRs page itself — yours, leadership's, and (admins) every department's
       else if(lwt==='base') pane=leadBaseHtml_(ph)+orgCltCardHtml_(S.me.campus);   // the role's own numbers first; who is on the leadership team at the foot
       else pane=leadSectionHtml_();
@@ -912,8 +912,7 @@ function myMinistryHtml(){
       esc(t('Teams are entered one at a time, once their visit is over — not week by week. Each team counts in the week it leaves, and the Base dashboard picks it up from there.'))+'</p>'+
       '<button class="btn" id="goTeamsDb" style="margin-top:0">🗂️ '+esc(t('Open the Teams Database'))+'</button></div>';
   }
-  else if(cur==='reports') pane=finReportsHtml_();
-  else if(cur==='dash') pane=finDashHtml_();
+  else if(cur==='fdash' || cur==='finput') pane=fin2FrameHtml_(cur==='finput' ? 'input' : 'dash');
   else if(cur!=='numbers') pane=cafeHtml_(true);   // the Cafe runs its day here — open, sell, close, the rota — and its numbers fill themselves in
   else {
     /* The week's numbers — status, who is responsible, and the boxes themselves, already open when

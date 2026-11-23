@@ -29,6 +29,15 @@
 html,body{ margin:0; background:var(--bg); color:var(--ink); overflow-x:clip; }  /* clip, not hidden: hidden stops the sticky bars sticking */
 body{ font-family:'Kantumruy Pro','Hanken Grotesk',system-ui,sans-serif; font-size:15px; line-height:1.45; }
 button{ font:inherit; color:inherit; }
+/* in Impact (window.GP_FIN_APP, public/finance.html — built from this file): no draft bar, no header of its
+   own; inside My Ministry (?embed=1) no tab row either (the app shows Dashboard · Input · Tasks · OKRs) */
+body.app .draftBar, body.app header.app, body.app .mmHead, body.app .tab[data-tab="tasks"], body.app .tab[data-tab="okrs"]{ display:none; }
+body.embed nav.tabs{ display:none; }
+body.ro .tab[data-tab="input"]{ display:none; }
+.finSave{ position:fixed; left:12px; bottom:12px; z-index:60; font-size:12.5px; padding:6px 12px; border-radius:999px; background:var(--surface); border:1px solid var(--line); box-shadow:0 2px 8px rgba(0,0,0,.08); color:var(--muted); cursor:default; }
+.finSave.bad{ color:#fff; background:var(--bad); border-color:var(--bad); cursor:pointer; }
+.finSave:empty{ display:none; }
+.finMsg{ padding:40px 16px; text-align:center; color:var(--muted); }
 .draftBar{ background:#FFF1D6; color:#5C4A1E; border-bottom:1px solid #FFD98A; padding:8px 16px; font-size:13px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 .draftBar b{ font-weight:700; }
 .draftBar .sp{ flex:1; }
@@ -538,7 +547,7 @@ body.sheetOn .sheet{ transform:none; visibility:visible; transition:transform .2
 </style>
 </head>
 <body>
-<div class="draftBar"><b>Draft preview</b> · Finances on My Ministry · sample numbers only <span class="sp"></span><button id="themeBtn" type="button">🌙 Dark</button></div>
+<div class="draftBar"><b>Draft preview</b> · Finances on My Ministry · sample numbers only <span class="sp"></span><button id="copyForImpact" type="button">📤 Copy my entries for Impact</button> <button id="themeBtn" type="button">🌙 Dark</button></div>
 <header class="app"><span class="logo">YWAM GP <span class="spark">✦</span></span></header>
 <main>
   <div class="mmHead">
@@ -575,7 +584,7 @@ function refreshBal_(){
   BAL.accts[0].amt=c?c.aba:0; BAL.accts[1].amt=c?c.us:0; BAL.accts[2].amt=c?c.cash:0;
   BAL.prevAsOf=pv?pv.asOf:null; BAL.prevTotal=pv?pv.aba+pv.us+pv.cash:null;
 }
-var ALLOC_PREV_ASOF='2026-11-13';
+var ALLOC_PREV_ASOF=window.GP_FIN_APP ? '' : '2026-11-13';
 var ALLOC_HIST=[], DEBT_HIST=[];   /* one saved entry per day, newest first */
 var ALLOC = [   /* the six allocations and their sub-funds, as the Finances office keeps them — SAMPLE amounts */
   { id:'adm', prev:8690.1, name:'Admin / Operational', eg:'office/general, kitchen, hospitality, technical, building', c:'--al1', dark:false,
@@ -608,6 +617,9 @@ var DEBT = { asOf:'2026-11-23', src:'A/R Ageing Summary · uploaded 23 Nov 2026'
   { n:'Sample Person M',          d:'Skills Training',        b:[16, 16, 16, 0, 0] },
   { n:'Sample Person N & O',      d:'Community Service',      b:[35, 0, 0, 0, 0] }
 ] };
+if(window.GP_FIN_APP){   /* Impact: no sample amounts or names — only what the office enters */
+  ALLOC.forEach(function(g){ g.prev=0; g.items.forEach(function(it){ it[1]=0; }); });
+  DEBT.people=[]; DEBT.asOf=TODAY; DEBT.src='No A/R Ageing report attached yet'; }
 /* buckets, as the office's report heads them: Current · 1 month · 2 months · 3 months · Over 3 months.
    "2 months or older" = the 2 months, 3 months and Over 3 months columns. */
 var DEBT_COLS=['Current','1 Month','2 Months','3 Months','3+ Months'], DEBT_OLD_FROM=2;
@@ -616,6 +628,9 @@ ALLOC.forEach(function(a){ a.amt=a.items.reduce(function(s,i){ return s+i[1]; },
 
 /* ---- helpers ---- */
 var S = { tab:'dash', open:null };
+var APP=!!window.GP_FIN_APP, QS=new URLSearchParams(location.search);
+if(APP){ document.body.classList.add('app'); if(QS.get('embed')) document.body.classList.add('embed'); if(QS.get('view')==='input') S.tab='input';
+  try { var th=localStorage.getItem('gp-theme'); if(th==='dark' || (!th && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.dataset.theme='dark'; } catch(e){} }
 function money(n, cents){ var s=Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:cents?2:0, maximumFractionDigits:cents?2:0}); return (n<0?'−$':'$')+s; }
 function date(iso){ var d=new Date(iso+'T00:00:00'); return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
 function daysAgo(iso){ return Math.round((Date.parse('2026-11-23T00:00:00')-Date.parse(iso+'T00:00:00'))/86400000); }
@@ -651,7 +666,8 @@ function isSum_(v){ return /[+\-*/x×÷()=]/i.test(String(v).replace(/^\s*-/,'')
 /* ---- Input: the balances ---- */
 function inMoney_(v){ return v==null||v==='' ? '' : Number(v).toFixed(2); }
 /* one "as of" day for every report on the Input tab but staff debt, which has its own */
-var TODAY='2026-11-23', ALLOC_ASOF='2026-11-20';
+/* today on the base's clock (Cambodia, UTC+7); the demo keeps the day it was drawn for */
+var TODAY=window.GP_FIN_APP ? new Date(Date.now()+7*3600e3).toISOString().slice(0,10) : '2026-11-23', ALLOC_ASOF=window.GP_FIN_APP ? TODAY : '2026-11-20';
 function reportDay_(){ return S.reportDay || TODAY; }
 function inDayHtml_(){
   var d=reportDay_();
@@ -672,7 +688,7 @@ function inputHtml(){
     return '<div class="inRow"><label for="inB_'+id+'">'+label+'<span class="ls">'+sub+'</span></label>'+
       '<div class="money"><span>$</span><input id="inB_'+id+'" data-inbal="'+id+'" type="text" inputmode="text" autocomplete="off" spellcheck="false" enterkeyhint="done" placeholder="'+(B.none?'0.00':inMoney_(a.amt))+'" value="'+esc(D[id])+'"></div>'+
       '<div class="inWas">'+(B.none?'Nothing entered yet':'Last time: '+money(a.amt,true)+' on '+date(B.asOf))+'</div></div>'; };
-  var h=inDayHtml_()+'<details class="inCard fold" id="inBalances" data-fold="bal"'+(S.foldOpen&&S.foldOpen.bal?' open':'')+'><summary class="foldHead"><span><b>🏦 Balances</b><span class="dsub">'+(B.none?'Nothing entered yet':date(B.asOf)+' · '+money(total(),true))+'</span></span><span class="foldR"><button class="histLink" data-hist="bal">🕘 History</button><span class="chev">▾</span></span></summary>'+
+  var h=inDayHtml_()+inImportHtml_()+'<details class="inCard fold" id="inBalances" data-fold="bal"'+(S.foldOpen&&S.foldOpen.bal?' open':'')+'><summary class="foldHead"><span><b>🏦 Balances</b><span class="dsub">'+(B.none?'Nothing entered yet':date(B.asOf)+' · '+money(total(),true))+'</span></span><span class="foldR"><button class="histLink" data-hist="bal">🕘 History</button><span class="chev">▾</span></span></summary>'+
     '<p class="inLast">'+(B.none?'No balances entered yet.':'Last entered for '+date(B.asOf)+'.')+' Type what is in each account on the “Reports as of” day — saving the same day again replaces it.</p>'+
     '<p class="inTip">🧮 Boxes do simple sums: type <b>500-30</b> or <b>5*6</b> and it works it out.</p>'+
     row('aba','ABA bank','Cambodia · US$ account')+row('us','US bank','United States')+row('cash','Cash on hand','the cash box, counted')+
@@ -1025,7 +1041,7 @@ function inCatsHtml_(){
    TOTAL row as a check. Each name can be linked to a staff profile; the link is kept by the
    spelling on the report, so next month's file links itself. SAMPLE_STAFF stands in for the
    campus roster in this draft. */
-var SAMPLE_STAFF=[
+var SAMPLE_STAFF=window.GP_FIN_APP ? [] : [   /* in Impact: the campus's active staff, from fin2Get */
   { id:'s1', name:'Sample Person A', dept:'Skills Training' }, { id:'s2', name:'Sample Person B', dept:'Community Service' },
   { id:'s3', name:'Sample Person C', dept:'Media' }, { id:'s4', name:'Sample Person D', dept:'Leadership Development' },
   { id:'s5', name:'Sample Person E', dept:'Youth Education' }, { id:'s6', name:'Sample Person G', dept:'Community Service' },
@@ -1692,6 +1708,7 @@ function flowLiveOf_(kind, id, ytd){
    📡 Live only — never into an approved report. */
 var PDFJS_SRC=[ ['https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js','https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'],
                 ['../../public/vendor/pdfjs/pdf.min.js','../../public/vendor/pdfjs/pdf.worker.min.js'] ];
+if(window.GP_FIN_APP) PDFJS_SRC=[ ['vendor/pdfjs/pdf.min.js','vendor/pdfjs/pdf.worker.min.js'] ];   /* Impact: its own copy, next to the page */
 function loadScript_(src){ return new Promise(function(ok, no){ var s=document.createElement('script'); s.src=src; s.onload=ok; s.onerror=no; document.head.appendChild(s); }); }
 function pdfLib_(){
   if(window.pdfjsLib && window.pdfjsWorker) return Promise.resolve(window.pdfjsLib);
@@ -2649,6 +2666,7 @@ document.addEventListener('click', function(e){
   else if(t.dataset.sheet) sheet(t.dataset.sheet);
   else if(t.dataset.debtall!=null){ S.debtAll = t.dataset.debtall==='1'; sheet('debt'); }
 });
+var cfi=document.getElementById('copyForImpact'); if(cfi) cfi.onclick=function(){ demoCopyOut_(); };
 document.getElementById('themeBtn').onclick=function(){
   var r=document.documentElement, dark=r.dataset.theme==='dark';
   r.dataset.theme = dark ? 'light' : 'dark'; this.textContent = dark ? '🌙 Dark' : '☀️ Light';
@@ -2660,6 +2678,7 @@ var FUND_RENAMES={ 'Office':'Office/General' };   /* old fund name → new, for 
 function stateObj_(){ return { bal:BAL_DAYS, alloc:ALLOC.map(function(g){ return { id:g.id, prev:g.prev, items:g.items }; }), struct:catStruct_(), deletedFunds:DELETED_FUNDS, manualAllocs:MANUAL_ALLOCS,
   allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, incTypes:INC_TYPES, incRules:INC_RULES, published:PUBLISHED, dayDone:DAY_DONE, expTypes:EXP_TYPES, expRules:EXP_RULES, expenses:EXPENSES, expMap:EXP_MAP, transfers:TRANSFERS, toolXfers:TOOL_XFERS, incomes:INCOMES, advances:ADVANCES, incMap:INC_MAP, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved }; }
 function keep_(){ var u=typeof UNDO!=='undefined' && UNDO[UNDO.length-1]; if(u && u.open){ u.after=JSON.parse(JSON.stringify(stateObj_())); delete u.open; undoSave_(); }
+  if(APP){ finSaveSoon_(); return; }
   try { localStorage.setItem(KEEP_KEY, JSON.stringify(stateObj_())); } catch(e){} }
 /* what the page starts from before anything is entered — an undo goes back through this */
 var PRISTINE=JSON.parse(JSON.stringify({ alloc:ALLOC, allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF,
@@ -2705,10 +2724,10 @@ function loadState_(k){ if(!k) return;
   if(advExp.length){ advExp.forEach(function(x){ flApply_('exp', x, -1); }); EXPENSES=EXPENSES.filter(function(x){ return x.src!=='advance'; });
     ADVANCES.forEach(function(a){ if(a.settled) a.settled.expId=''; }); }
 }
-try { loadState_(JSON.parse(localStorage.getItem(KEEP_KEY)||'null')); } catch(e){}
-try { if(EXPENSES.length || localStorage.getItem(KEEP_KEY)) keep_(); } catch(e){}   /* store anything loadState_ tidied (e.g. advance expenses taken out) */
+if(!APP){ try { loadState_(JSON.parse(localStorage.getItem(KEEP_KEY)||'null')); } catch(e){}
+try { if(EXPENSES.length || localStorage.getItem(KEEP_KEY)) keep_(); } catch(e){} }   /* store anything loadState_ tidied (e.g. advance expenses taken out) */
 /* undo: the state as it was before each input, newest last (ten kept, on this device) */
-var UNDO_KEY='gp-fin-draft-undo', UNDO=[];
+var UNDO_KEY=APP ? 'gp-fin-app-undo' : 'gp-fin-draft-undo', UNDO=[];
 try { UNDO=JSON.parse(localStorage.getItem(UNDO_KEY)||'[]'); if(!Array.isArray(UNDO)) UNDO=[]; } catch(e){ UNDO=[]; }
 var UNDO_MAX=40;
 function undoSave_(){ while(UNDO.length){ try { localStorage.setItem(UNDO_KEY, JSON.stringify(UNDO)); return; } catch(e){ if(UNDO.length<=1) return; UNDO.shift(); } } try { localStorage.setItem(UNDO_KEY, '[]'); } catch(e){} }
@@ -2774,8 +2793,71 @@ function undoLast_(){ var u=UNDO.pop(); if(!u) return; try { localStorage.setIte
   resetState_(); loadState_(u.st); refreshBal_(); keep_();
   S.inBal=null; S.inAl=null; S.ruleDrafts={}; S.xfer=null; S.fl1=null; S.flUp=null; S.debtUp=null; S.undoAsk=false;
   render(); if(document.body.classList.contains('sheetOn')) closeSheet(); toast('↩ '+u.msg); }
+/* ---- In Impact: load from the server, save to it (fin2Get / fin2Save in api.js) ----
+   The whole document is saved a moment after each change; `rev` stops two people overwriting each
+   other — a save from an older copy is refused, and the newer copy is shown instead. */
+var FIN={ rev:0, campus:'', canEdit:false, saving:false, dirty:false, again:false, err:'', t:0 };
+function finAuth_(){ try { var a=JSON.parse(localStorage.getItem('gp-staff')||'null'); return a && a.user ? a : null; } catch(e){ return null; } }
+function api_(fn, args){ return fetch('/.netlify/functions/api', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ fn:fn, args:args }) }).then(function(r){ return r.json(); }); }
+function finMsg_(html){ document.getElementById('pane').innerHTML='<div class="finMsg">'+html+'</div>'; }
+function finStatus_(){ var el=document.getElementById('finSave'); if(!el){ el=document.createElement('div'); el.id='finSave'; el.className='finSave'; el.onclick=function(){ if(FIN.err) finSaveNow_(); }; document.body.appendChild(el); }
+  if(!FIN.canEdit){ el.textContent=''; return; }
+  el.className='finSave'+(FIN.err?' bad':'');
+  el.textContent = FIN.err ? '⚠️ Not saved — tap to try again' : (FIN.saving || FIN.dirty) ? 'Saving…' : FIN.rev ? '✓ Saved' : ''; }
+function finSaveSoon_(){ if(!FIN.canEdit) return; FIN.dirty=true; clearTimeout(FIN.t); FIN.t=setTimeout(finSaveNow_, 600); finStatus_(); }
+function finSaveNow_(){ if(FIN.saving){ FIN.again=true; return; }
+  var a=finAuth_(); if(!a){ FIN.err='auth'; finStatus_(); return; }
+  FIN.saving=true; FIN.dirty=false; finStatus_();
+  api_('fin2Save', [a.user, a.pin, FIN.campus, stateObj_(), FIN.rev]).then(function(d){
+    FIN.saving=false;
+    if(d && d.ok){ FIN.rev=d.rev; FIN.err=''; }
+    else if(d && d.err==='conflict'){ FIN.rev=d.rev; FIN.err=''; resetState_(); if(d.state) loadState_(d.state); refreshBal_(); render();
+      toast('Someone else saved first — this is their copy now. Your last change wasn’t saved: please enter it again.'); }
+    else { FIN.err=(d && d.err) || 'error'; FIN.dirty=true; }
+    finStatus_(); if(FIN.again){ FIN.again=false; finSaveNow_(); }
+  }).catch(function(){ FIN.saving=false; FIN.dirty=true; FIN.err='offline'; finStatus_(); }); }
+window.addEventListener('beforeunload', function(e){ if(APP && (FIN.dirty || FIN.saving)){ e.preventDefault(); e.returnValue=''; } });
+function finBoot_(){
+  var a=finAuth_(); if(!a){ finMsg_('Sign in to the YWAM GP app first, then open Finances from My Ministry.<br><br><a href="teams.html">Open the YWAM GP app</a>'); return; }
+  finMsg_('Loading…');
+  api_('fin2Get', [a.user, a.pin, QS.get('campus')||'']).then(function(d){
+    if(!d || !d.ok){ finMsg_(d && d.err==='not_authorized' ? 'Only the Finances office and Campus Leadership can open this.' : 'This couldn’t be opened — sign in to the YWAM GP app again.'); return; }
+    FIN.rev=d.rev||0; FIN.campus=d.campus; FIN.canEdit=!!d.canEdit;
+    SAMPLE_STAFF.length=0; (d.staff||[]).forEach(function(x){ SAMPLE_STAFF.push(x); });
+    resetState_(); if(d.state) loadState_(d.state); refreshBal_();
+    if(!FIN.canEdit){ document.body.classList.add('ro'); S.tab='dash'; }
+    document.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('on', b.dataset.tab===S.tab); });
+    render(); finStatus_();
+  }).catch(function(){ finMsg_('No connection — try again when you are online.'); }); }
+/* ---- Bringing the demo's entries into Impact ----
+   The demo (a page on claude.ai) and Impact are different websites, so the demo can't hand its
+   entries over by itself: it copies them as text (📤 in its top bar), and Impact's Input takes
+   that text (📥 Bring in entries from the demo). */
+function demoCopyOut_(){ var txt=JSON.stringify({ gpFinDemo:1, at:new Date().toISOString(), state:stateObj_() });
+  var done=function(){ toast('Copied — now open Finances in Impact → Input → “Bring in entries from the demo” and paste'); };
+  var show=function(){ var h='<button class="x" id="sx" aria-label="Close">✕</button><h3>📤 Your entries, for Impact</h3><p class="hint">Copy all of this text, then in Impact open My Ministry → Finances → Input → “Bring in entries from the demo” and paste it there.</p><textarea id="demoOut" readonly style="width:100%;height:240px;font:12px monospace">'+esc(txt)+'</textarea><div class="inBtns"><button class="btn" id="demoOutCopy">Copy</button></div>';
+    var el=document.getElementById('sheet'); el.innerHTML=h; document.body.classList.add('sheetOn'); document.getElementById('sx').onclick=closeSheet;
+    document.getElementById('demoOutCopy').onclick=function(){ var ta=document.getElementById('demoOut'); ta.select(); try { document.execCommand('copy'); done(); } catch(e){} }; };
+  try { if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function(){ done(); show(); }, show); else show(); } catch(e){ show(); } }
+function inImportHtml_(){
+  if(!APP || !FIN.canEdit) return '';
+  var open=S.foldOpen&&S.foldOpen.imp;
+  return '<details class="inCard fold" id="inImport" data-fold="imp"'+(open?' open':'')+'><summary class="foldHead"><span><b>📥 Bring in entries from the demo</b><span class="dsub">Everything entered in the preview, in one go</span></span><span class="foldR"><span class="chev">▾</span></span></summary>'+
+    '<p class="inLast">In the demo, tap <b>📤 Copy my entries for Impact</b> at the top, then paste it here. It <b>replaces</b> what is in Impact for this campus now — Undo puts it back.</p>'+
+    '<textarea id="impText" style="width:100%;height:120px;font:12px monospace" placeholder="Paste here">'+esc(S.impTxt||'')+'</textarea>'+
+    (S.impErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.impErr)+'</p>' : '')+
+    '<div class="inBtns"><button class="btn'+(S.impAsk?' warn':'')+'" id="impGo">'+(S.impAsk?'Tap again — this replaces what is here':'Bring them in')+'</button></div></details>'; }
+function importDemo_(){ var ta=document.getElementById('impText'), txt=ta?ta.value.trim():'', o=null;
+  try { o=JSON.parse(txt); } catch(e){}
+  if(!o || o.gpFinDemo!==1 || !o.state || typeof o.state!=='object'){ S.impErr='That isn’t the text the demo copies — tap 📤 in the demo again and paste all of it.'; S.impAsk=false; S.impTxt=txt; render(); return; }
+  var has=BAL_DAYS.length || INCOMES.length || EXPENSES.length || TRANSFERS.length || MANUAL_ALLOCS.length;
+  if(has && !S.impAsk){ S.impAsk=true; S.impErr=''; S.impTxt=txt; render(); return; }
+  snap_('Put back what was in Impact before the demo’s entries');
+  resetState_(); loadState_(o.state); refreshBal_(); keep_();
+  S.impAsk=false; S.impErr=''; S.impTxt=''; (S.foldOpen=S.foldOpen||{}).imp=false; render(); toast('Brought in — saving to Impact'); }
+document.addEventListener('click', function(e){ if(e.target.id==='impGo') importDemo_(); });
 refreshBal_();
-render();
+if(APP) finBoot_(); else render();
 </script>
 </body>
 </html>

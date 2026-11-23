@@ -21,7 +21,7 @@
    top of Reports), the Profit and Loss and the A/R Ageing come in by themselves every night —
    see "QuickBooks" in api.js. The Burn Rate is their own spreadsheet, so it's still uploaded. */
 S.fin=null; S.finBalEdit=null; S.qboWaiting=false; S.finLoading=false; S.finErr=''; S.finPending=[]; S.finMonth=null; S.finAheadEdit=null; S.finReading=0;
-S.finTab=(lsGet('gp-fin-tab')==='dash' || lsGet('gp-fin-tab')==='numbers' ? lsGet('gp-fin-tab') : 'reports');
+S.finTab=(lsGet('gp-fin-tab')==='finput' ? 'finput' : 'fdash');
 function finCanEditClient_(){ return typeof canEnterStaffDebtClient_==='function' && canEnterStaffDebtClient_(); }
 function finLoad_(force){
   if(S.finLoading || (S.fin && !force)) return;
@@ -692,6 +692,20 @@ function finReportsHtml_(){
   }
   return h+'</div></div>';
 }
+/* The finance tool (Nov 2026): public/finance.html — built from docs/drafts/finance-redesign.html —
+   shown inside My Ministry as the Finances office's Dashboard and Input tabs, and as Campus
+   Leadership's Finances tab (read-only: fin2Get answers canEdit false). It reads the same signed-in
+   session (gp-staff) and saves to the server itself (fin2Get / fin2Save). It replaced the Reports /
+   Dashboard / The numbers tabs below, which are no longer shown (their saved data stays). The frame
+   scrolls on its own and is sized to the screen below it, so the page's sticky bar works. */
+function fin2FrameHtml_(view){
+  var src='finance.html?embed=1&view='+(view==='input'?'input':'dash')+(S.me && S.me.isAdmin && S.me.campus ? '&campus='+encodeURIComponent(S.me.campus) : '');
+  return '<iframe class="fin2Frame" id="fin2Frame" src="'+esc(src)+'" title="'+esc(t('Finances'))+'"></iframe>';
+}
+function fin2FrameSize_(){ var f=document.getElementById('fin2Frame'); if(!f) return;
+  var nav=document.querySelector('nav.bottom'), top=f.getBoundingClientRect().top+window.scrollY, below=nav ? nav.offsetHeight : 0;
+  f.style.height=Math.max(420, window.innerHeight-Math.max(0, top-window.scrollY)-below-8)+'px'; }
+window.addEventListener('resize', fin2FrameSize_);
 /* The Finances office's page on My Ministry: the reports, what leadership sees, and the usual numbers. */
 function finMinistryTabsHtml_(){
   var tab=S.finTab;
@@ -700,6 +714,7 @@ function finMinistryTabsHtml_(){
 }
 
 function bindFinance_(){
+  fin2FrameSize_();
   bindFinQr_();
   var be=document.getElementById('finBalEdit'); if(be) be.onclick=function(){
     var B=S.fin && S.fin.balances;

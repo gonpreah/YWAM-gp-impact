@@ -219,14 +219,10 @@ const txt = p => p.$eval('#main', e => e.innerText);
   await ctx.close();
 }
 {
-  /* the money ahead moved to the Finances tab (tests/test-finance-ui.mjs drives it); signed in, it saves */
+  /* a leader's Finances tab is the finance tool's Dashboard (public/finance.html, read-only for them —
+     tests/test-fin2-page.mjs drives the page itself) */
   const { ctx, page } = await open('cd', { lw: 'money' });
-  ok('a leader’s Finances tab: six months ahead, from $0 until the office enters the cash', /starts from \$0/.test(await page.$eval('#leadMoney', e => e.innerText)) && (await page.$$('#leadMoney .lmRow')).length === 7);
-  const ins = await page.$$('[data-finahead$="|exp"]');
-  await ins[0].fill('3000'); await ins[1].fill('3000');
-  ok('typing what goes out moves the balance and warns when it runs short', /runs short/.test(await page.$eval('#leadMoney .lmSum', e => e.innerText)) && await page.$eval('#leadMoney .lmSum', e => e.classList.contains('bad')));
-  await page.click('#finAheadSave'); await page.waitForTimeout(1200);
-  ok('saved for Campus Leadership', !!mem['finProj:siemreap'] && Object.values(mem['finProj:siemreap'].months).some(m => m.exp === 3000));
+  ok('a leader’s Finances tab shows the finance tool’s Dashboard', /finance\.html\?embed=1&view=dash/.test(await page.$eval('#fin2Frame', e => e.getAttribute('src'))));
   await page.click('[data-lwtab="base"]'); await page.waitForTimeout(800);
   await page.evaluate(() => window.scrollTo(0, 0)); await page.screenshot({ path: OUT + '/lead-overview.png', fullPage: true });
   ok('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
