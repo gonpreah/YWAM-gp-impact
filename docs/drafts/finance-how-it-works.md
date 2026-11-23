@@ -118,6 +118,13 @@ Income.
   day, balance entries, then manual allocations, then income, expenses, internal transfers and
   adjustments. Memos are cut short to one line;
   tapping one shows it whole.
+- **💧 Estimated liquid assets — from the breakdown** (`ledgerLiquid_`, `ledLiquidHtml_`; in the
+  draft, **not yet on the demo**): for a day picked (today to start), each account worked out from
+  the breakdown alone by the reset rule (section 7, rule 1): its latest Balance entry on or
+  before the day, then the Amount of every line after it up to the day (same day: only lines
+  typed after the balances were saved). Under each account, where it was worked out from. For
+  today it sits beside the Dashboard's Live figure for each account, red where they differ, with
+  why (advances aren't in the breakdown yet). An earlier day has nothing to compare against.
 - **Filters** (`LED_FILTERS`, `S.ledF`): tap Account, Transaction type, Category or Approved to
   pick which values to show — All, or any number of them (blank values are "(blank)"). Only lines
   matching every column's picks show, with "Showing n of N lines" and Clear filters. The check

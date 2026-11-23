@@ -467,6 +467,16 @@ button.tick.done{ background:var(--good); }
 .ledSort:hover{ color:var(--ink); }
 .ledMemo{ display:block; max-width:150px; border:0; background:none; padding:0; font:inherit; font-size:12.5px; color:var(--muted); text-align:left; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .ledMemo.open{ max-width:260px; white-space:normal; color:var(--ink); }
+.ledLiq{ margin-top:10px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; }
+.ledLiqHead{ display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; }
+.ledLiqHead input{ font:inherit; padding:4px 6px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); }
+.ledLiq table{ width:100%; border-collapse:collapse; margin-top:8px; font-size:13.5px; }
+.ledLiq th{ text-align:left; font-size:11.5px; color:var(--muted); font-weight:700; padding:4px 4px; }
+.ledLiq td{ padding:6px 4px; border-top:1px solid var(--line); vertical-align:top; }
+.ledFrom{ display:block; font-size:12px; color:var(--muted); margin-top:2px; }
+.ledLiq .r{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.ledLiq .ledDiff{ color:var(--bad); }
+.ledLiq p{ margin:8px 0 0; }
 .ledEmpty{ color:var(--muted); text-align:left; padding:18px 10px !important; }
 .catList{ border-top:1px solid var(--line); margin-top:6px; }
 .catGrp{ border-bottom:1px solid var(--line); padding:4px 0; }
@@ -908,6 +918,7 @@ function inLedgerHtml_(){
   if(all.length){ var c=ledgerCheck_(all), ok=Math.abs(c.sum)<0.005;
     h+='<div class="ledCheck '+(ok?'ok':'off')+'"><div><small>Real money'+(c.day?' · from balances '+date(c.day):'')+'</small><b>'+money(c.real,true)+'</b></div><div><small>Category amounts</small><b>'+(c.cat<0?'−':'')+money(Math.abs(c.cat),true)+'</b></div>'+
       '<div><small>Real − category</small><b>'+(c.sum<0?'−':'')+money(Math.abs(c.sum),true)+'</b></div><p>'+(ok?'✓ Every dollar has a home':(c.sum>0?'⚠️ '+money(c.sum,true)+' has no home yet':'⚠️ '+money(-c.sum,true)+' more is given a home than there is'))+'</p></div>'; }
+  if(all.length) h+=ledLiquidHtml_(all);
   h+=ledPanelHtml_(all);
   if(active.length) h+='<div class="ledActive">Showing '+shown.length+' of '+all.length+' lines · '+active.map(function(k){ return '<b>'+esc(F[k].join(', '))+'</b>'; }).join(' · ')+' <button class="histLink" data-ledfclear="1">Clear filters</button></div>';
   h+='<div class="ledWrap" id="ledWrap"><table class="ledTbl"><thead><tr>'+LEDGER_COLS.map(function(c){ var r=c==='Amount'||c==='Category amount', fk=LED_FILTERS[c];
@@ -921,6 +932,29 @@ function inLedgerHtml_(){
       '<td class="r nw">'+(x.amt==null?'':money(x.amt,true))+'</td><td class="r nw">'+(x.camt==null?'':(x.camt<0?'−':'')+money(Math.abs(x.camt),true))+'</td><td class="nw">'+esc(x.cat)+'</td><td class="nw">'+(x.appr?'✅ '+date(x.appr):'<span class="ledNo">Not yet</span>')+'</td></tr>'; }).join(''); }
   return h+'</tbody></table></div></details>';
 }
+/* liquid assets on a day, from the breakdown alone. Each account starts from its latest Balance
+   entry on or before the day — a reset: nothing before it counts — and adds the Amount of every
+   line after it up to that day. A line dated the same day as the balance entry counts only if
+   it was typed after the balances were saved. No balance entry yet: every line adds up. */
+function ledgerLiquid_(L, day){ var out={ day:day, accts:[], total:0 };
+  ['ABA bank','US bank','Cash on hand'].forEach(function(a){
+    var mine=L.filter(function(x){ return x.acct===a && x.date<=day && x.amt!=null; });
+    var be=mine.filter(function(x){ return x.type==='Balance entry'; }).sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:((y.at||0)-(x.at||0)); })[0];
+    var after=mine.filter(function(x){ return x.type!=='Balance entry' && (!be || x.date>be.date || (x.date===be.date && (x.at||0)>(be.at||0))); });
+    var v=Math.round(((be?be.amt:0)+after.reduce(function(s2,x){ return s2+x.amt; },0))*100)/100;
+    out.accts.push({ name:a, from:be?be.date:'', start:be?be.amt:0, moves:after.length, moved:Math.round((v-(be?be.amt:0))*100)/100, amt:v }); out.total+=v; });
+  out.total=Math.round(out.total*100)/100; return out; }
+function ledLiquidHtml_(L){
+  var day=S.ledLiqDay||TODAY, r=ledgerLiquid_(L, day), live=day===TODAY;
+  var keyOf={ 'ABA bank':'acct|aba', 'US bank':'acct|us', 'Cash on hand':'acct|cash' }, dash=0;
+  var rows=r.accts.map(function(a){ var d=live ? acctAmt_(keyOf[a.name]) : null; if(d!=null) dash+=d;
+    return '<tr><td><b>'+a.name+'</b><span class="ledFrom">'+(a.from?'Balance entry '+date(a.from)+': '+money(a.start,true)+(a.moves?' · then '+(a.moved<0?'−':'+')+money(Math.abs(a.moved),true)+' ('+a.moves+' line'+(a.moves>1?'s':'')+')':''):'No balance entry yet')+'</span></td>'+
+      '<td class="r"><b>'+money(a.amt,true)+'</b></td>'+(live?'<td class="r'+(Math.abs(d-a.amt)>0.004?' ledDiff':'')+'">'+money(d,true)+'</td>':'')+'</tr>'; }).join('');
+  dash=Math.round(dash*100)/100;
+  return '<div class="ledLiq" id="ledLiq"><div class="ledLiqHead"><b>💧 Estimated liquid assets — from the breakdown</b><label>on <input type="date" id="ledLiqDay" value="'+day+'" max="'+TODAY+'"></label></div>'+
+    '<table><tr><th>Account</th><th class="r">Breakdown</th>'+(live?'<th class="r">Dashboard (Live)</th>':'')+'</tr>'+rows+
+    '<tr class="tot"><td><b>Total liquid assets</b></td><td class="r"><b>'+money(r.total,true)+'</b></td>'+(live?'<td class="r'+(Math.abs(dash-r.total)>0.004?' ledDiff':'')+'"><b>'+money(dash,true)+'</b></td>':'')+'</tr></table>'+
+    (live ? '<p class="dsub">'+(Math.abs(dash-r.total)<0.005 ? '✓ The breakdown and the Dashboard agree.' : 'They differ by '+money(Math.abs(dash-r.total),true)+'. Advances aren’t in the breakdown yet — money given out on advance, or brought back, is missing from it.')+'</p>' : '<p class="dsub">The Dashboard only estimates today, so there is nothing to set this beside for an earlier day.</p>')+'</div>'; }
 /* redraw without losing where the table was scrolled to */
 function ledRender_(){ var w=document.getElementById('ledWrap'), x=w?w.scrollLeft:0, y=w?w.scrollTop:0; render(); var n=document.getElementById('ledWrap'); if(n){ n.scrollLeft=x; n.scrollTop=y; } }
 function inCatsHtml_(){
@@ -2382,6 +2416,7 @@ document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeShee
 
 document.addEventListener('change', function(e){
   if(e.target.id==='catNewSubGrp'){ S.catErr=''; var er=document.querySelector('.newCat .inErr'); if(er) er.remove(); return; }
+  if(e.target.id==='ledLiqDay'){ S.ledLiqDay=e.target.value||null; ledRender_(); return; }
   if(e.target.dataset && e.target.dataset.catgname!=null){ catRenameGroup_(e.target.dataset.catgname, e.target.value); return; }
   if(e.target.dataset && e.target.dataset.catiname!=null){ var ci=e.target.dataset.catiname.split('|'); catRenameItem_(ci[0], +ci[1], e.target.value); return; }
   if(e.target.dataset && e.target.dataset.catto!=null){ var ct=e.target.dataset.catto.split('|'); if(e.target.value) catMoveTo_(ct[0], +ct[1], e.target.value); return; }
