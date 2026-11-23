@@ -400,6 +400,20 @@ label.f{ display:block; font-size:12.5px; font-weight:600; margin:6px 0 4px; }
 .rowBtns{ display:flex; gap:6px; align-items:center; margin-top:4px; flex-wrap:wrap; }
 .editBtn{ border:1px solid var(--accent); background:none; color:var(--accent); border-radius:999px; padding:2px 10px; font-weight:700; font-size:12.5px; cursor:pointer; }
 .apprTag{ font-size:11.5px; font-weight:700; color:var(--good); }
+.bulkTools{ display:flex; gap:14px; margin:6px 0 2px; }
+.bulkList{ border-top:1px solid var(--line); margin-top:6px; }
+.bulkRow{ display:grid; grid-template-columns:28px minmax(0,1fr); gap:8px; padding:10px 0; border-bottom:1px solid var(--line); }
+.bulkRow.ok{ background:color-mix(in srgb, var(--good) 7%, transparent); }
+.bulkChk input{ width:20px; height:20px; margin-top:2px; }
+.bulkTop{ display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; }
+.bulkDesc{ font-size:13px; color:var(--muted); margin:2px 0; overflow-wrap:anywhere; }
+.bulkGuess{ font-size:13.5px; font-weight:600; margin-bottom:4px; }
+.bulkNeed{ font-size:12px; font-weight:700; color:var(--amberDeep); margin-bottom:4px; }
+.bulkEd{ background:var(--surface2); border-radius:10px; padding:10px; margin-top:6px; }
+.bulkEd select, .bulkEd input[type=text], .bulkEd input[type=date]{ width:100%; padding:8px; font:inherit; font-size:13.5px; border:1px solid color-mix(in srgb, var(--muted) 40%, transparent); border-radius:9px; background:var(--surface); color:var(--ink); min-width:0; }
+.bulkEd .money input{ padding-left:22px; }
+.bulkTot{ font-size:13px; font-weight:600; margin-top:10px; }
+.dateOrder{ font-size:12.5px; color:var(--muted); margin:10px 0 0; }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -566,6 +580,7 @@ function inputHtml(){
     '</details>';
   h+=inAllocHtml_();
   h+=inRulesHtml_();
+  h+=inBulkHtml_();
   h+=inXferHtml_();
   h+=
     flHtml_('inc')+flHtml_('exp')+
@@ -1251,6 +1266,196 @@ function flowLiveOf_(kind, id, ytd){
   Object.keys(by).forEach(function(c){ by[c]=Math.round(by[c]*100)/100; });
   return { by:by, prev:ytd?null:Math.round(prev*100)/100 };
 }
+/* ---- Input: bulk import — a month of mixed income, expenses and transfers at once ----
+   From a bank statement or QuickBooks, as PDF, Excel or CSV. Each line becomes a suggestion
+   (income, expense or transfer, and where it goes); the office ticks the right ones and edits
+   the rest. Anything it can't tell is left blank with just the amount. What is added goes to
+   📡 Live only — never into an approved report. */
+var PDFJS_SRC=[ ['https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js','https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'],
+                ['../../public/vendor/pdfjs/pdf.min.js','../../public/vendor/pdfjs/pdf.worker.min.js'] ];
+function loadScript_(src){ return new Promise(function(ok, no){ var s=document.createElement('script'); s.src=src; s.onload=ok; s.onerror=no; document.head.appendChild(s); }); }
+function pdfLib_(){
+  if(window.pdfjsLib && window.pdfjsWorker) return Promise.resolve(window.pdfjsLib);
+  var i=0; function next(){ if(i>=PDFJS_SRC.length) return Promise.reject(new Error('no_pdfjs')); var pair=PDFJS_SRC[i++];
+    return loadScript_(pair[0]).then(function(){ return loadScript_(pair[1]); }).then(function(){ window.pdfjsLib.GlobalWorkerOptions.workerSrc=pair[1]; return window.pdfjsLib; }).catch(next); }
+  return next();
+}
+/* a PDF's text, as rows of positioned words */
+function pdfRows_(buf){
+  return pdfLib_().then(function(lib){ return lib.getDocument({ data:new Uint8Array(buf) }).promise; }).then(function(doc){
+    var pages=[]; for(var n=1;n<=doc.numPages;n++) pages.push(doc.getPage(n).then(function(pg){ return pg.getTextContent(); }));
+    return Promise.all(pages).then(function(cs){ var rows=[];
+      cs.forEach(function(c, pi){ var by={};
+        c.items.forEach(function(it){ if(!String(it.str).trim()) return; var y=Math.round(it.transform[5]/3)*3; (by[y]=by[y]||[]).push({ s:String(it.str).trim(), x:it.transform[4], w:it.width||0 }); });
+        Object.keys(by).map(Number).sort(function(a,b){ return b-a; }).forEach(function(y){ rows.push(by[y].sort(function(a,b){ return a.x-b.x; })); }); });
+      return rows; }); });
+}
+var MON={ jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,sept:9,oct:10,nov:11,dec:12 };
+var DATE_ORDER='mdy';   /* set per file by bulkRead_ */
+function anyDate_(t, order){
+  t=String(t||'').trim(); var m; order=order||DATE_ORDER;
+  var iso=function(y,mo,d){ y=+y; if(y<100) y+=2000; mo=+mo; d=+d; if(mo<1||mo>12||d<1||d>31) return ''; return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0'); };
+  if((m=/^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(t))) return iso(m[1],m[2],m[3]);
+  if((m=/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/.exec(t))) return (+m[1]>12 || (order==='dmy' && +m[2]<=12)) ? iso(m[3],m[2],m[1]) : iso(m[3],m[1],m[2]);
+  if((m=/^(\d{1,2})[\s\-]([A-Za-z]{3,4})[a-z]*[\s\-,]+(\d{2,4})$/.exec(t)) && MON[m[2].toLowerCase()]) return iso(m[3],MON[m[2].toLowerCase()],m[1]);
+  if((m=/^([A-Za-z]{3,4})[a-z]*\s+(\d{1,2}),?\s+(\d{4})$/.exec(t)) && MON[m[1].toLowerCase()]) return iso(m[3],MON[m[1].toLowerCase()],m[2]);
+  return '';
+}
+function anyAmt_(t){ var s=String(t||'').trim(); if(!/\d/.test(s)) return NaN; var neg=/^\(.*\)$/.test(s)||/^-/.test(s)||/-$/.test(s)||/\bDR\b/i.test(s);
+  var x=parseFloat(s.replace(/[^\d.]/g,'')); if(!/[.,]\d{2}\b/.test(s) && !/^\$/.test(s)) return NaN; return isNaN(x)?NaN:(neg?-x:x); }
+/* lines → transactions: date, amount, which way, words */
+function bulkFromPdfRows_(rows){
+  var cols=null, out=[];
+  rows.forEach(function(r){
+    var low=r.map(function(w){ return w.s.toLowerCase(); }).join(' ');
+    if(!cols && /(debit|withdrawal|money out|paid out)/.test(low) && /(credit|deposit|money in|paid in)/.test(low)){
+      cols={}; r.forEach(function(w){ var l=w.s.toLowerCase(), c=w.x+w.w/2; if(/debit|withdraw|money out|paid out/.test(l)) cols.out=c; else if(/credit|deposit|money in|paid in/.test(l)) cols.inn=c; else if(/balance/.test(l)) cols.bal=c; }); return; }
+    var dIdx=-1, dLen=1, d='';
+    for(var i=0;i<Math.min(r.length,4) && !d;i++){ d=anyDate_(r[i].s); if(d){ dIdx=i; dLen=1; } else if(i+2<r.length){ d=anyDate_(r[i].s+' '+r[i+1].s+' '+r[i+2].s); if(d){ dIdx=i; dLen=3; } } }
+    if(!d) return;
+    var amts=[], words=[];
+    r.forEach(function(w, j){ if(j>=dIdx && j<dIdx+dLen) return; var a=anyAmt_(w.s); if(!isNaN(a)) amts.push({ a:a, c:w.x+w.w/2 }); else if(!anyDate_(w.s)) words.push(w.s); });
+    if(!amts.length) return;
+    var amt=null, dir='';
+    if(cols){ amts.forEach(function(x){ var dOut=cols.out!=null?Math.abs(x.c-cols.out):1e9, dIn=cols.inn!=null?Math.abs(x.c-cols.inn):1e9, dBal=cols.bal!=null?Math.abs(x.c-cols.bal):1e9;
+      if(amt==null && dOut<dIn && dOut<dBal){ amt=Math.abs(x.a); dir='out'; } else if(amt==null && dIn<dOut && dIn<dBal){ amt=Math.abs(x.a); dir='in'; } }); }
+    if(amt==null){ var pick=amts.length>1 ? amts[amts.length-2] : amts[0]; amt=Math.abs(pick.a); dir = pick.a<0 ? 'out' : ''; }
+    if(!amt) return;
+    out.push({ date:d, amt:Math.round(amt*100)/100, dir:dir, desc:words.join(' ').replace(/\s+/g,' ').trim() });
+  });
+  return out;
+}
+function bulkFromSheet_(rows){
+  var txt=function(v){ return v==null?'':String(v).trim(); }, hdr=-1, c={};
+  for(var i=0;i<Math.min(rows.length,40) && hdr<0;i++){ var r=(rows[i]||[]).map(function(v){ return txt(v).toLowerCase(); });
+    if(r.some(function(v){ return /date/.test(v); }) && r.some(function(v){ return /^(amount|debit|credit|withdrawal|deposit|money in|money out|paid in|paid out|amount \(usd\))/.test(v); })) hdr=i; }
+  if(hdr<0) throw new Error('no_header');
+  (rows[hdr]||[]).forEach(function(v, j){ var t=txt(v).toLowerCase();
+    if(c.date==null && /date/.test(t)) c.date=j; else if(c.out==null && /^(debit|withdrawal|money out|paid out)/.test(t)) c.out=j; else if(c.inn==null && /^(credit|deposit|money in|paid in)/.test(t)) c.inn=j;
+    else if(c.amt==null && /^(amount|amount \(usd\))/.test(t)) c.amt=j; else if(c.type==null && /^(transaction type|type)$/.test(t)) c.type=j;
+    else if(c.desc==null && /(description|details|memo|narrative|particular)/.test(t)) c.desc=j; else if(c.who==null && /^(name|payee|customer|vendor|full name)/.test(t)) c.who=j;
+    else if(c.acct==null && /^(account|category|split)/.test(t)) c.acct=j; else if(c.cls==null && /^class/.test(t)) c.cls=j; });
+  var out=[];
+  for(var r2=hdr+1;r2<rows.length;r2++){ var row=rows[r2]||[], d=xlDate_(row[c.date])||anyDate_(txt(row[c.date])); if(!d) continue;
+    var num=function(v){ return typeof v==='number' ? v : anyAmt_(v); }, a=null, dir='';
+    if(c.out!=null || c.inn!=null){ var o=num(row[c.out]), n=num(row[c.inn]); if(!isNaN(o) && o){ a=Math.abs(o); dir='out'; } else if(!isNaN(n) && n){ a=Math.abs(n); dir='in'; } }
+    if(a==null && c.amt!=null){ var v=num(row[c.amt]); if(!isNaN(v) && v){ a=Math.abs(v); dir=v<0?'out':''; } }
+    if(!a) continue;
+    var ty=txt(row[c.type]).toLowerCase();
+    out.push({ date:d, amt:Math.round(a*100)/100, dir:dir, qbType:ty, desc:[txt(row[c.who]), txt(row[c.desc]), txt(row[c.acct])].filter(Boolean).join(' · '), cls:txt(row[c.cls]) });
+  }
+  if(!out.length) throw new Error('no_rows');
+  return out;
+}
+/* a first guess for each line; blank where it can't tell */
+function bulkGuess_(t, src){
+  var d=String(t.desc||'').toLowerCase(), qb=t.qbType||'', g={ kind:'', type:'', fund:'', bank:'', from:'', to:'' };
+  var acc = /^acct\|/.test(src) ? src : '';
+  if(/transfer/.test(qb) || /\b(transfer|trf|tfr)\b|atm|cash withdraw|withdrawal at|top ?up|wire/.test(d)){
+    g.kind='xf'; var other=/atm|cash withdraw|withdrawal at|\bcash\b/.test(d)?'acct|cash' : /\b(us|usa|united states|wire)\b/.test(d)?'acct|us' : /\baba\b/.test(d)?'acct|aba' : '';
+    if(other===acc) other='';
+    if(t.dir==='in'){ g.to=acc; g.from=other; } else { g.from=acc; g.to=other; }
+    return g; }
+  if(/deposit|sales receipt|payment|receive/.test(qb) || t.dir==='in'){ g.kind='inc'; g.type=incGuess_(d); g.bank=acc; return g; }
+  if(/expense|bill|check|cheque|purchase/.test(qb) || t.dir==='out'){ g.kind='exp'; g.type=expGuess_(d); g.bank=acc; if(t.cls) g.fund=expClassFund_(t.cls).f; return g; }
+  return g;
+}
+function bulkNeeds_(r){
+  var n=[];
+  if(!r.date) n.push('date'); if(!(r.amt>0)) n.push('amount'); if(!r.kind){ n.push('income, expense or transfer'); return n; }
+  if(r.kind==='inc'){ if(!r.type) n.push('kind of income'); else if(!(INC_RULES[r.type]||[]).length && !r.fund) n.push('fund'); if(!r.bank) n.push('account'); }
+  if(r.kind==='exp'){ if(!r.type) n.push('what it was for'); if(!r.fund) n.push('category'); if(!r.bank) n.push('account'); }
+  if(r.kind==='xf'){ if(!r.from) n.push('from'); if(!r.to) n.push('to'); if(r.from && r.from===r.to) n.push('two different sides');
+    if((isAcct_(r.from) && fundOf_(r.to)) || (isAcct_(r.to) && fundOf_(r.from))) n.push('not bank ↔ fund'); if(isTool_(r.from) && isTool_(r.to)) n.push('one real side'); }
+  return n;
+}
+var BULK_KIND={ inc:'💵 Income', exp:'🧾 Expense', xf:'🔁 Transfer' };
+function bulkSummary_(r){
+  if(!r.kind) return '<span class="dsub">Not sure — '+money(r.amt,true)+(r.dir==='in'?' in':r.dir==='out'?' out':'')+'</span>';
+  var bits=[BULK_KIND[r.kind]];
+  if(r.kind==='inc') bits.push(r.type||'?', r.fund?'→ '+(fundOf_(r.fund)||{}).name:'', r.bank?'into '+bankLabel_(r.bank):'');
+  if(r.kind==='exp') bits.push(r.type||'?', r.fund?'from '+(fundOf_(r.fund)||{}).name:'', r.bank?'out of '+bankLabel_(r.bank):'');
+  if(r.kind==='xf') bits.push((r.from?xferShort_(r.from):'?')+' → '+(r.to?xferShort_(r.to):'?'));
+  return esc(bits.filter(Boolean).join(' · '));
+}
+function inBulkHtml_(){
+  var U=S.bulk, open=S.foldOpen&&S.foldOpen.bulk;
+  var h='<details class="inCard fold" id="inBulk" data-fold="bulk"'+(open?' open':'')+'><summary class="foldHead"><span><b>📥 Bulk import</b><span class="dsub">'+(U?U.rows.length+' lines to check from '+esc(U.file):'Many income, expenses and transfers at once')+'</span></span><span class="chev">▾</span></summary>'+
+    '<p class="inLast">For a month of mixed lines from QuickBooks or straight from the bank. Each line gets a suggestion — tick it if it’s right, or Edit it. Added lines go to 📡 Live, not the approved report.</p>'+
+    '<label class="f" for="bulkSrc">These lines are from</label><select id="bulkSrc" class="bigSel">'+[['acct|aba','ABA bank statement'],['acct|us','US bank statement'],['acct|cash','Cash book'],['qbo','QuickBooks (mixed accounts)']].map(function(o){ return '<option value="'+o[0]+'"'+((S.bulkSrc||'acct|aba')===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select>'+
+    '<label class="inDrop" for="bulkFile" style="margin-top:10px">📎 <span><b>'+(U?'Read a different file':'Attach a PDF, Excel or CSV')+'</b><br><small>A bank statement, or a QuickBooks transaction list</small></span></label>'+
+    '<input type="file" id="bulkFile" accept=".pdf,.xlsx,.csv" hidden>';
+  if(S.bulkBusy) h+='<p class="inLast" style="margin-top:10px">Reading the file…</p>';
+  if(S.bulkErr) h+='<p class="inErr" role="alert">⚠️ '+esc(S.bulkErr)+'</p>';
+  if(!U) return h+'</details>';
+  var R=U.rows, ready=R.filter(function(r){ return !bulkNeeds_(r).length; }), ticked=R.filter(function(r){ return r.ok && !bulkNeeds_(r).length; });
+  var tot=function(k){ return ticked.filter(function(r){ return r.kind===k; }).reduce(function(s2,r){ return s2+r.amt; },0); };
+  h+='<div class="dateOrder">Dates read as <b>'+(U.order==='dmy'?'day / month / year':'month / day / year')+'</b> <button class="linkAdd" id="bulkFlip">Read them the other way</button></div>';
+  h+='<div class="upSum"><b>'+esc(U.file)+'</b> · '+R.length+' lines · '+ready.length+' with everything filled in · '+R.filter(function(r){ return !r.kind; }).length+' not sure</div>'+
+    '<div class="bulkTools"><button class="linkAdd" id="bulkTickAll">✓ Tick every complete line</button><button class="linkAdd" id="bulkUntick">Untick all</button></div>';
+  h+='<div class="bulkList">'+R.map(function(r, i){ var need=bulkNeeds_(r), ed=S.bulkEdit===i;
+    return '<div class="bulkRow'+(r.ok&&!need.length?' ok':'')+(need.length?' need':'')+'">'+
+      '<label class="bulkChk"><input type="checkbox" data-bulkok="'+i+'"'+(r.ok&&!need.length?' checked':'')+(need.length?' disabled':'')+' aria-label="Right"></label>'+
+      '<div class="bulkMain"><div class="bulkTop"><b>'+money(r.amt,true)+'</b><span class="dsub" style="display:inline">'+(r.date?date(r.date):'no date')+(r.dir?(r.dir==='in'?' · in':' · out'):'')+'</span>'+(r.dup?' <span class="tag">already in?</span>':'')+'</div>'+
+      '<div class="bulkDesc">'+esc(r.desc||'—')+'</div><div class="bulkGuess">'+bulkSummary_(r)+'</div>'+
+      (need.length ? '<div class="bulkNeed">Needs: '+esc(need.join(', '))+'</div>' : '')+
+      (ed ? bulkEditHtml_(r, i) : '<button class="editBtn" data-bulkedit="'+i+'">✏️ Edit</button>')+'</div></div>'; }).join('')+'</div>';
+  h+='<div class="bulkTot">Ticked: '+ticked.length+' · income '+money(tot('inc'),true)+' · expenses '+money(tot('exp'),true)+' · transfers '+money(tot('xf'),true)+'</div>'+
+    (S.bulkSaveErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.bulkSaveErr)+'</p>' : '')+
+    '<div class="inBtns"><button class="btn" id="bulkAdd"'+(ticked.length?'':' disabled')+'>Add '+ticked.length+' ticked to 📡 Live</button><button class="btn ghost" id="bulkCancel">Cancel</button></div>';
+  return h+'</details>';
+}
+function bulkEditHtml_(r, i){
+  var p='bk'+i+'_', sel=function(a){ return 'data-bulkf="'+i+'|'+a+'"'; };
+  var h='<div class="bulkEd"><div class="xfRow"><div><label class="f" for="'+p+'kind">It is</label><select id="'+p+'kind" '+sel('kind')+'><option value="">— Not sure —</option>'+Object.keys(BULK_KIND).map(function(k){ return '<option value="'+k+'"'+(r.kind===k?' selected':'')+'>'+BULK_KIND[k]+'</option>'; }).join('')+'</select></div>'+
+    '<div><label class="f" for="'+p+'date">Date</label><input type="date" id="'+p+'date" '+sel('date')+' value="'+esc(r.date)+'"></div></div>'+
+    '<div class="xfRow"><div><label class="f" for="'+p+'amt">Amount</label><div class="money"><span>$</span><input id="'+p+'amt" type="text" '+sel('amt')+' value="'+esc(r.amt?r.amt.toFixed(2):'')+'"></div></div>'+
+    '<div><label class="f" for="'+p+'desc">Description</label><input type="text" id="'+p+'desc" '+sel('desc')+' value="'+esc(r.desc||'')+'"></div></div>';
+  if(r.kind==='inc') h+='<label class="f">Kind of income</label>'+flTypeSelect_('inc', sel('type'), r.type, '— Kind of income —')+
+    (r.type && !(INC_RULES[r.type]||[]).length ? '<label class="f">Which fund (no formula)</label>'+fundSelect_(p+'fund', r.fund, 'Fund').replace('<select ','<select '+sel('fund')+' ') : '')+
+    '<label class="f">Went into</label>'+bankSelect_(p+'bank', r.bank, sel('bank'));
+  if(r.kind==='exp') h+='<label class="f">What it was for</label>'+flTypeSelect_('exp', sel('type'), r.type, '— What it was for —')+
+    '<label class="f">Paid from — which category</label>'+fundSelect_(p+'fund', r.fund, 'Category').replace('<select ','<select '+sel('fund')+' ').replace('— Pick a fund —','— Pick the category —')+
+    '<label class="f">Paid out of</label>'+bankSelect_(p+'bank', r.bank, sel('bank'));
+  if(r.kind==='xf') h+='<label class="f">From</label>'+fundSelect_(p+'from', r.from, 'From', TOOL_ADD, true).replace('<select ','<select '+sel('from')+' ')+
+    '<label class="f">To</label>'+fundSelect_(p+'to', r.to, 'To', TOOL_REMOVE, true).replace('<select ','<select '+sel('to')+' ');
+  return h+'<div class="inBtns" style="margin-top:8px"><button class="btn" data-bulkdone="'+i+'">Done</button><button class="linkAdd" data-bulkdrop="'+i+'">Leave this line out</button></div></div>';
+}
+/* day/month or month/day? the reading with no dates in the future and the shortest spread wins */
+function pickDateOrder_(samples){
+  var score=function(o){ var ds=samples.map(function(t){ return anyDate_(t, o); }).filter(Boolean).sort(); if(!ds.length) return 1e12;
+    var fut=ds.filter(function(d){ return d>TODAY; }).length; return fut*1e9+(Date.parse(ds[ds.length-1])-Date.parse(ds[0]))/864e5; };
+  return score('dmy')<score('mdy') ? 'dmy' : 'mdy';
+}
+function bulkRead_(f){
+  S.bulkErr=''; S.bulkBusy=true; S.bulkFileObj=f; render();
+  var isPdf=/\.pdf$/i.test(f.name), src=S.bulkSrc||'acct|aba';
+  var decide=function(cells){ var sm=cells.filter(function(t){ return /^\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}$/.test(String(t).trim()); }); DATE_ORDER = S.bulkOrder || pickDateOrder_(sm); };
+  f.arrayBuffer().then(function(buf){ return isPdf ? pdfRows_(buf).then(function(rows){ decide([].concat.apply([], rows.map(function(r){ return r.map(function(w){ return w.s; }); }))); return bulkFromPdfRows_(rows); })
+      : (/\.csv$/i.test(f.name) ? Promise.resolve(csvRows_(new TextDecoder().decode(buf))) : xlsxRows_(buf)).then(function(rows){ decide([].concat.apply([], rows.map(function(r){ return (r||[]).map(function(v){ return v==null?'':String(v); }); }))); return bulkFromSheet_(rows); }); })
+   .then(function(list){ if(!list.length) throw new Error('no_rows');
+     var all=INCOMES.concat(EXPENSES, TRANSFERS, TOOL_XFERS);
+     S.bulk={ file:f.name, order:DATE_ORDER, buf:null, rows:list.map(function(t){ var g=bulkGuess_(t, src), r=Object.assign({}, t, g);
+       r.dup=all.some(function(x){ return x.date===r.date && Math.abs(x.amt-r.amt)<0.005; }); r.ok=false; return r; }) };
+     S.bulkBusy=false; S.bulkEdit=null; render(); })
+   .catch(function(e){ S.bulkBusy=false; S.bulk=null; S.bulkErr = e && e.message==='no_pdfjs' ? 'Couldn’t load the PDF reader — check the connection and try again, or use the Excel export.' : e && e.message==='no_header' ? 'Couldn’t find a Date and an Amount (or Debit / Credit) column.' : e && e.message==='no_rows' ? 'Couldn’t find any lines with a date and an amount in that file.' : 'Couldn’t read that file.'; render(); });
+}
+function bulkAdd_(){
+  var U=S.bulk, list=U.rows.filter(function(r){ return r.ok && !bulkNeeds_(r).length; }); if(!list.length) return;
+  snap_('Removed the '+list.length+' lines bulk-imported from '+U.file);
+  list.forEach(function(r, i){ var id=Date.now().toString(36)+i, at=Date.now();
+    if(r.kind==='inc' || r.kind==='exp'){ var e={ id:r.kind[0]+id, at:at, date:r.date, amt:r.amt, type:r.type, who:'', memo:r.desc, bank:r.bank, src:'bulk', file:U.file,
+        split: r.kind==='exp' ? [{ f:r.fund, amt:r.amt }] : flSplit_('inc', r.type, r.amt, r.fund) };
+      flApply_(r.kind, e, 1); FK[r.kind].list().push(e); }
+    else { var t={ id:(isTool_(r.from)||isTool_(r.to)?'f':'t')+id, at:at, date:r.date, from:r.from, to:r.to, amt:r.amt, memo:r.desc||'Bulk import', src:'bulk', file:U.file };
+      if(fundOf_(r.from)) fundMove_(r.from, -r.amt); if(fundOf_(r.to)) fundMove_(r.to, r.amt);
+      (isTool_(r.from)||isTool_(r.to) ? TOOL_XFERS : TRANSFERS).push(t); } });
+  flSort_('inc'); flSort_('exp'); [TRANSFERS, TOOL_XFERS].forEach(function(L){ L.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; }); });
+  xferSnap_(list.reduce(function(m,r){ return r.date>m?r.date:m; },''));
+  var left=U.rows.filter(function(r){ return !(r.ok && !bulkNeeds_(r).length); });
+  S.bulk = left.length ? { file:U.file, rows:left } : null; S.bulkEdit=null; render();
+  toast('Added '+list.length+' lines to 📡 Live'+(left.length?' — '+left.length+' still to check':''));
+}
 function ruleLiveHtml_(rows){
   var sum=ruleSum_(rows), left=Math.round((100-sum)*1000)/1000, ok=Math.abs(left)<0.001;
   var good=rows.filter(function(r){ return fundOf_(r.f) && calc_(r.p)>0; });
@@ -1661,6 +1866,14 @@ document.getElementById('scrim').onclick=closeSheet;
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSheet(); });
 
 document.addEventListener('change', function(e){
+  if(e.target.id==='bulkFile' && e.target.files[0]){ bulkRead_(e.target.files[0]); e.target.value=''; return; }
+  if(e.target.id==='bulkSrc'){ S.bulkSrc=e.target.value; return; }
+  if(e.target.dataset && e.target.dataset.bulkok!=null){ S.bulk.rows[+e.target.dataset.bulkok].ok=e.target.checked; render(); return; }
+  if(e.target.dataset && e.target.dataset.bulkf){ var bf=e.target.dataset.bulkf.split('|'), br=S.bulk.rows[+bf[0]], v=e.target.value;
+    if(bf[1]==='amt'){ var n=calc_(v); br.amt=isNaN(n)?0:Math.round(n*100)/100; } else br[bf[1]]=v;
+    if(bf[1]==='kind'){ br.type=''; br.fund=''; if(v!=='xf'){ br.bank=br.bank||(/^acct\|/.test(S.bulkSrc||'acct|aba')?(S.bulkSrc||'acct|aba'):''); } else { br.from=br.from||(/^acct\|/.test(S.bulkSrc||'acct|aba')?(S.bulkSrc||'acct|aba'):''); } }
+    if(bf[1]==='type' && br.kind==='inc') br.fund='';
+    br.ok=false; render(); return; }
   if(e.target.dataset && e.target.dataset.f1incl){ flOne_(e.target.dataset.f1incl).incl=e.target.checked; return; }
   if(e.target.dataset && e.target.dataset.xfincl){ S.xfer.incl=e.target.checked; return; }
   if(e.target.dataset && e.target.dataset.fincl){ flUp_(e.target.dataset.fincl).incl=e.target.checked; return; }
@@ -1731,6 +1944,15 @@ document.addEventListener('click', function(e){
   var ed=e.target.closest && e.target.closest('[data-edit]'); if(ed){ var ep=ed.dataset.edit.split('|'); startEdit_(ep[0], ep.slice(1).join('|')); return; }
   var ce=/^fl_(inc|exp)_cancelEdit$/.exec(e.target.id||''); if(ce){ cancelEdit_(ce[1]); return; }
   if(e.target.id==='xfCancelEdit'){ cancelEdit_('xf'); return; }
+  if(e.target.id==='bulkFlip' && S.bulk && S.bulkFileObj){ S.bulkOrder = S.bulk.order==='dmy' ? 'mdy' : 'dmy'; bulkRead_(S.bulkFileObj); return; }
+  if(e.target.id==='bulkFile'){ S.bulkOrder=null; }
+  if(e.target.id==='bulkTickAll' && S.bulk){ S.bulk.rows.forEach(function(r){ if(!bulkNeeds_(r).length && !r.dup) r.ok=true; }); render(); return; }
+  if(e.target.id==='bulkUntick' && S.bulk){ S.bulk.rows.forEach(function(r){ r.ok=false; }); render(); return; }
+  if(e.target.id==='bulkAdd'){ bulkAdd_(); return; }
+  if(e.target.id==='bulkCancel'){ S.bulk=null; S.bulkEdit=null; render(); return; }
+  var be=e.target.closest && e.target.closest('[data-bulkedit]'); if(be){ S.bulkEdit=+be.dataset.bulkedit; render(); return; }
+  var bd=e.target.closest && e.target.closest('[data-bulkdone]'); if(bd){ var dr=S.bulk.rows[+bd.dataset.bulkdone]; S.bulkEdit=null; if(!bulkNeeds_(dr).length) dr.ok=true; render(); return; }
+  var bx=e.target.closest && e.target.closest('[data-bulkdrop]'); if(bx){ S.bulk.rows.splice(+bx.dataset.bulkdrop,1); S.bulkEdit=null; if(!S.bulk.rows.length) S.bulk=null; render(); return; }
   if(e.target.id==='viewLatest'){ S.viewDay=null; S.viewDebtDay=null; render(); return; }
   if(e.target.id==='undoLast'){ if(!S.undoAsk){ S.undoAsk=true; render(); setTimeout(function(){ if(S.undoAsk){ S.undoAsk=false; if(S.tab==='input') render(); } }, 4000); return; } undoLast_(); return; }
   if(e.target.id==='inBalSave'){ inSave_(); return; }
