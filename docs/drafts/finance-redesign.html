@@ -70,6 +70,7 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .acct .as{ font-size:11.5px; color:var(--muted); }
 .rec{ font-size:13px; margin:12px 0 0; }
 .rec.ok{ color:var(--good); }
+.rec.late{ color:var(--amberDeep); }
 
 /* Allocation report */
 .alBar{ display:flex; gap:2px; height:28px; margin:6px 0 4px; }
@@ -176,6 +177,44 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .incPer{ display:flex; gap:6px; margin:0 0 10px; }
 .incPer button{ border:1px solid var(--line); background:var(--surface2); border-radius:999px; padding:4px 12px; cursor:pointer; font-size:13px; font-weight:600; }
 .incPer button.on{ background:var(--accent); color:var(--accentInk); border-color:var(--accent); }
+/* Input tab */
+.inCard{ background:var(--surface); border-radius:16px; padding:16px; margin:16px 0; }
+.inCard h2{ margin:0 0 2px; font-size:17px; }
+.inLast{ font-size:12.5px; color:var(--muted); margin:0 0 14px; }
+.inRow{ display:grid; grid-template-columns:minmax(0,1fr) 150px; gap:10px; align-items:center; padding:10px 0; border-top:1px solid var(--line); }
+.inRow:first-of-type{ border-top:0; }
+.inRow label{ font-weight:600; }
+.inRow .ls{ display:block; font-size:12px; color:var(--muted); font-weight:400; }
+.money{ position:relative; }
+.money span{ position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--muted); font-weight:600; pointer-events:none; }
+.money input{ width:100%; padding:10px 10px 10px 22px; text-align:right; font:inherit; font-weight:700; font-variant-numeric:tabular-nums; border:1px solid color-mix(in srgb, var(--muted) 40%, transparent); border-radius:10px; background:var(--bg); color:var(--ink); }
+.money input::placeholder{ font-weight:400; color:color-mix(in srgb, var(--muted) 70%, transparent); }
+.money input::-webkit-outer-spin-button, .money input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+.money input{ -moz-appearance:textfield; }
+.inCard input:focus{ outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+.inCard input.bad{ border-color:var(--bad); }
+.inWas{ grid-column:1 / -1; font-size:12px; color:var(--muted); margin-top:-4px; text-align:right; }
+.inTotal{ display:flex; justify-content:space-between; align-items:baseline; background:var(--headerBg); color:var(--onDark); border-radius:12px; padding:12px 14px; margin:12px 0 4px; }
+.inTotal b{ font-size:22px; font-variant-numeric:tabular-nums; }
+.inTotal small{ display:block; color:var(--onDarkFaint); font-size:12px; }
+.inTotal .dd{ font-size:12px; text-align:right; }
+.inDates{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:12px; }
+.inDates label{ font-size:12.5px; font-weight:600; display:block; margin-bottom:4px; }
+.inDates input{ width:100%; padding:9px 10px; font:inherit; border:1px solid color-mix(in srgb, var(--muted) 40%, transparent); border-radius:10px; background:var(--bg); color:var(--ink); }
+.inDates .ls{ font-size:11.5px; color:var(--muted); margin-top:3px; }
+.inErr{ color:var(--bad); font-size:13px; margin:10px 0 0; }
+.inBtns{ display:flex; gap:8px; margin-top:14px; }
+.btn{ border:0; border-radius:12px; padding:11px 18px; font-weight:700; cursor:pointer; background:var(--accent); color:var(--accentInk); }
+.btn.ghost{ background:var(--surface2); color:var(--ink); }
+.toast{ position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); background:var(--headerBg); color:var(--onDark); padding:10px 16px; border-radius:999px; font-size:14px; font-weight:600; z-index:30; }
+.inHist{ margin-top:14px; }
+.inHist summary{ cursor:pointer; font-weight:600; font-size:13.5px; color:var(--accent); }
+.inHist table{ width:100%; border-collapse:collapse; font-size:12.5px; margin-top:8px; font-variant-numeric:tabular-nums; }
+.inHist th{ text-align:right; color:var(--muted); font-weight:600; padding:5px 4px; border-bottom:1px solid var(--line); }
+.inHist td{ text-align:right; padding:6px 4px; border-bottom:1px solid var(--line); }
+.inHist th:first-child, .inHist td:first-child{ text-align:left; }
+.inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
+.inNext b{ color:var(--ink); }
 .soon{ text-align:center; color:var(--muted); padding:40px 10px; }
 .soon .big{ font-size:36px; }
 .soon h3{ color:var(--ink); margin:8px 0 4px; }
@@ -218,6 +257,10 @@ body.sheetOn .sheet{ transform:none; visibility:visible; transition:transform .2
 
 <script>
 /* ---- sample data (made up) ---- */
+var BAL_HIST = [ /* earlier balance days — SAMPLE */
+  { asOf:'2026-11-13', aba:47120.10, us:21000.00, cash:1820.00, by:'the Finances office' },
+  { asOf:'2026-11-06', aba:45980.55, us:21000.00, cash:2105.25, by:'the Finances office' },
+  { asOf:'2026-10-30', aba:44210.00, us:20400.00, cash:1950.00, by:'the Finances office' } ];
 var BAL = { asOf:'2026-11-20', reconciled:'2026-11-14', prevTotal:69940.10, prevAsOf:'2026-11-13',
   accts:[ { id:'aba', name:'ABA bank', sub:'Cambodia', amt:48250.40 },
           { id:'us',  name:'US bank',  sub:'United States', amt:21600.00 },
@@ -274,6 +317,52 @@ function alDeltaHtml(a){
   if(Math.abs(d)<0.005) return '<span class="alDelta">Same as '+date(BAL.prevAsOf)+'</span>';
   return '<span class="alDelta '+(d>0?'up':'down')+'">'+(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+' since '+date(BAL.prevAsOf)+'</span>';
 }
+/* ---- Input: the balances ---- */
+function inMoney_(v){ return v==null||v==='' ? '' : Number(v).toFixed(2); }
+function inputHtml(){
+  var B=BAL, D=S.inBal || (S.inBal={ aba:'', us:'', cash:'', asOf:'2026-11-23', rec:B.reconciled });
+  var acc=function(id){ return B.accts.filter(function(a){ return a.id===id; })[0]; };
+  var row=function(id, label, sub){ var a=acc(id);
+    return '<div class="inRow"><label for="inB_'+id+'">'+label+'<span class="ls">'+sub+'</span></label>'+
+      '<div class="money"><span>$</span><input id="inB_'+id+'" data-inbal="'+id+'" type="number" inputmode="decimal" step="0.01" min="0" placeholder="'+inMoney_(a.amt)+'" value="'+esc(D[id])+'"></div>'+
+      '<div class="inWas">Last time: '+money(a.amt,true)+' on '+date(B.asOf)+'</div></div>'; };
+  var h='<div class="inCard" id="inBalances"><h2>🏦 Balances</h2>'+
+    '<p class="inLast">Last entered '+date(B.asOf)+' by the Finances office. Type what is in each account today — the Dashboard updates when you save.</p>'+
+    row('aba','ABA bank','Cambodia · US$ account')+row('us','US bank','United States')+row('cash','Cash on hand','the cash box, counted')+
+    '<div class="inTotal" id="inTotal">'+inTotalHtml_()+'</div>'+
+    '<div class="inDates"><div><label for="inB_asOf">Balances as of</label><input type="date" id="inB_asOf" data-inbal="asOf" max="2026-11-23" value="'+esc(D.asOf)+'"></div>'+
+    '<div><label for="inB_rec">Last reconciled with the bank</label><input type="date" id="inB_rec" data-inbal="rec" max="2026-11-23" value="'+esc(D.rec||'')+'"><div class="ls">Leave empty if not reconciled yet.</div></div></div>'+
+    (S.inErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.inErr)+'</p>' : '')+
+    '<div class="inBtns"><button class="btn" id="inBalSave">Save balances</button><button class="btn ghost" id="inBalCopy">Same as last time</button></div>'+
+    '<details class="inHist"><summary>Earlier balances ('+BAL_HIST.length+')</summary><table><tr><th>Date</th><th>ABA</th><th>US bank</th><th>Cash</th><th>Total</th></tr>'+
+      BAL_HIST.map(function(r){ return '<tr><td>'+date(r.asOf)+'</td><td>'+money(r.aba)+'</td><td>'+money(r.us)+'</td><td>'+money(r.cash)+'</td><td><b>'+money(r.aba+r.us+r.cash)+'</b></td></tr>'; }).join('')+
+    '</table></details></div>';
+  h+='<div class="inNext">📊 <span><b>Allocations</b> — how the total is set aside. Next.</span></div>'+
+    '<div class="inNext">💵 <span><b>Income and expenses</b> — entered by category and shared out to the allocations.</span></div>'+
+    '<div class="inNext">💳 <span><b>Staff debt</b> — upload the A/R Ageing report.</span></div>';
+  return h;
+}
+function inTotalHtml_(){
+  var D=S.inBal||{}, ids=['aba','us','cash'], filled=ids.filter(function(k){ return D[k]!=='' && D[k]!=null; });
+  if(!filled.length) return '<span><small>Total liquid assets</small><b>—</b></span><span class="dd">Type the three amounts</span>';
+  var t=ids.reduce(function(s2,k){ var v=parseFloat(D[k]); return s2+(isNaN(v)?0:v); },0), d=t-total();
+  return '<span><small>Total liquid assets'+(filled.length<3?' (so far)':'')+'</small><b>'+money(t,true)+'</b></span>'+
+    (filled.length===3 ? '<span class="dd">'+(Math.abs(d)<0.005?'Same as '+date(BAL.asOf):(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+'<br>since '+date(BAL.asOf))+'</span>' : '<span class="dd">'+(3-filled.length)+' to go</span>');
+}
+function inSave_(){
+  var D=S.inBal, err='';
+  ['aba','us','cash'].forEach(function(k){ var v=D[k]; if(v===''||v==null) err=err||'Fill in all three amounts.'; else if(isNaN(parseFloat(v))||parseFloat(v)<0) err=err||'Amounts can’t be below zero.'; });
+  if(!err && !D.asOf) err='Pick the day these balances are for.';
+  if(!err && D.asOf>'2026-11-23') err='The balances day can’t be in the future.';
+  if(!err && D.rec && D.rec>D.asOf) err='The reconciled day can’t be after the balances day.';
+  S.inErr=err; if(err){ render(); return; }
+  BAL_HIST.unshift({ asOf:BAL.asOf, aba:BAL.accts[0].amt, us:BAL.accts[1].amt, cash:BAL.accts[2].amt, by:'the Finances office' });
+  BAL.prevTotal=total(); BAL.prevAsOf=BAL.asOf;
+  BAL.accts[0].amt=+parseFloat(D.aba).toFixed(2); BAL.accts[1].amt=+parseFloat(D.us).toFixed(2); BAL.accts[2].amt=+parseFloat(D.cash).toFixed(2);
+  BAL.asOf=D.asOf; BAL.reconciled=D.rec||null;
+  S.inBal=null; render(); toast('Saved — the Dashboard shows the new balances');
+}
+function toast(msg){ var t=document.createElement('div'); t.className='toast'; t.setAttribute('role','status'); t.textContent=msg; document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 2600); }
 function balancesHtml(){
   var T=total(), d=T-BAL.prevTotal, whole=Math.floor(T), cents=Math.round((T-whole)*100);
   var h='<section class="sec" id="balances"><div class="secHead"><h2>🏦 Balances</h2><button class="more" data-sheet="balances">Details ›</button></div>'+
@@ -284,8 +373,8 @@ function balancesHtml(){
     '<div class="accts">'+BAL.accts.map(function(a){
       return '<div class="acct"><div class="an">'+esc(a.name)+'</div><div class="av">'+money(a.amt)+'</div><div class="as">'+Math.round(a.amt/T*100)+'% · '+esc(a.sub)+'</div></div>';
     }).join('')+'</div>';
-  var ago=daysAgo(BAL.reconciled);
-  h+='<p class="rec ok">✓ Reconciled with the bank '+date(BAL.reconciled)+' ('+ago+' days ago)</p></section>';
+  var ago=BAL.reconciled ? daysAgo(BAL.reconciled) : null, late=ago==null||ago>35;
+  h+='<p class="rec '+(late?'late':'ok')+'">'+(BAL.reconciled ? (late?'⚠️ Last reconciled ':'✓ Reconciled with the bank ')+date(BAL.reconciled)+' ('+ago+' days ago)' : '⚠️ Not reconciled with the bank yet')+'</p></section>';
   return h;
 }
 function allocHtml(){
@@ -423,7 +512,7 @@ function soon(icon, title, line){ return '<div class="soon"><div class="big">'+i
 function render(){
   var p=document.getElementById('pane');
   if(S.tab==='dash') p.innerHTML=balancesHtml()+allocHtml()+debtHtml()+flowHtml('inc')+flowHtml('exp')+nextHtml();
-  else if(S.tab==='input') p.innerHTML=soon('✏️','Input','Where the Finances office types the balances, uploads the reports and sets the allocations. We design this next.');
+  else if(S.tab==='input') p.innerHTML=inputHtml();
   else if(S.tab==='tasks') p.innerHTML=soon('✅','Tasks','The Finances office’s GP Tasks list — as on every ministry.');
   else p.innerHTML=soon('🎯','OKRs','The Finances office’s objectives for the quarter — as on every ministry.');
   document.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('on', b.dataset.tab===S.tab); });
@@ -461,7 +550,14 @@ function closeSheet(){ document.body.classList.remove('sheetOn'); }
 document.getElementById('scrim').onclick=closeSheet;
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSheet(); });
 
+document.addEventListener('input', function(e){
+  var k=e.target.dataset && e.target.dataset.inbal; if(!k) return;
+  S.inBal[k]=e.target.value; e.target.classList.remove('bad');
+  var el=document.getElementById('inTotal'); if(el) el.innerHTML=inTotalHtml_();   /* no re-render, so typing is never lost */
+});
 document.addEventListener('click', function(e){
+  if(e.target.id==='inBalSave'){ inSave_(); return; }
+  if(e.target.id==='inBalCopy'){ BAL.accts.forEach(function(a){ S.inBal[a.id]=inMoney_(a.amt); }); S.inErr=''; render(); return; }
   var t=e.target.closest('[data-tab],[data-al],[data-sheet],[data-debtall],[data-flow],[data-flowper],[data-flowlist]'); if(!t) return;
   if(t.dataset.tab){ S.tab=t.dataset.tab; render(); }
   else if(t.dataset.flowlist){ var fk=t.dataset.flowlist; S.flowList[fk]=!S.flowList[fk]; render(); }
