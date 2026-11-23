@@ -424,6 +424,8 @@ button.tick.done{ background:var(--good); }
 .advFunds{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
 .advChip{ display:inline-flex; align-items:center; gap:6px; background:var(--surface); border-radius:999px; padding:4px 10px; font-size:12.5px; font-weight:600; }
 .advChip .sw{ width:9px; height:9px; }
+.advOld{ display:inline-flex; align-items:center; justify-content:center; background:#FFD84D; border-radius:6px; padding:0 4px; margin-right:5px; font-size:12px; line-height:18px; }
+.advOldLine{ margin-top:10px; background:color-mix(in srgb, #FFD84D 30%, var(--surface)); border:1px solid #E8B800; border-radius:10px; padding:7px 10px; font-size:13px; font-weight:600; color:var(--ink); }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -1509,6 +1511,10 @@ function bulkAdd_(){
    spent comes off the fund as an expense, and what came back goes into an account. Spent and
    returned don't have to add up to the advance — exchange rates differ; the gap is shown. */
 var ADVANCES=[];   /* { id, at, who, date, fund, bank, amt, budgeted, memo, settled:null|{ date, spent, returned, type, bank, note, at, expId } } */
+/* out for more than a month gets a yellow ⚠️ — except a school's (likely outreach, which is fine) */
+var ADV_SCHOOL_FUNDS=['min|DTS','min|DBS','min|SOMD','min|Other Schools'];
+function advOld_(a, ref){ if(ADV_SCHOOL_FUNDS.indexOf(a.fund)>=0) return false; return (Date.parse(ref||TODAY)-Date.parse(a.date))/864e5>30; }
+function advWarnHtml_(a, ref){ return advOld_(a, ref) ? '<span class="advOld" title="Out for more than a month">⚠️</span>' : ''; }
 function advOut_(){ return ADVANCES.filter(function(a){ return !a.settled; }); }
 function advForm_(){ return S.adv||(S.adv={ who:'', date:reportDay_(), fund:'', bank:'acct|cash', amt:'', budgeted:'', memo:'' }); }
 function inAdvHtml_(){
@@ -1528,7 +1534,7 @@ function inAdvHtml_(){
     '<div class="inBtns"><button class="btn" id="advSave">Record the advance</button></div>';
   h+='<div class="dListHead" style="margin-top:16px">Out now'+(out.length?' · '+money(outTot,true):'')+'</div>';
   h+= out.length ? out.map(function(a){ var days=Math.round((Date.parse(TODAY)-Date.parse(a.date))/864e5), f=fundOf_(a.fund);
-      return '<div class="advItem"><div class="xfTop"><b>'+esc(a.who)+' · '+money(a.amt,true)+'</b><span class="dsub">'+date(a.date)+' · '+days+' day'+(days===1?'':'s')+' out</span></div>'+
+      return '<div class="advItem"><div class="xfTop"><b>'+advWarnHtml_(a)+esc(a.who)+' · '+money(a.amt,true)+'</b><span class="dsub">'+date(a.date)+' · '+days+' day'+(days===1?'':'s')+' out</span></div>'+
         '<div class="dsub">From '+esc(f?f.name:a.fund)+(a.bank?' · out of '+bankLabel_(a.bank):'')+' · <span class="tag">'+(a.budgeted==='yes'?'pre-budgeted':'not budgeted')+'</span></div>'+
         (a.memo?'<div class="xfMemo">“'+esc(a.memo)+'”</div>':'')+
         (S.advSettle===a.id ? advSettleHtml_(a) : '<div class="rowBtns"><button class="btn" style="padding:7px 14px" data-advsettle="'+a.id+'">Settle it</button><button class="delBtn" data-advdel="'+a.id+'">✕ Remove</button></div>')+'</div>'; }).join('')
@@ -1707,6 +1713,7 @@ function advDashHtml_(){
   var by=advByFund_(L), funds=Object.keys(by).sort(function(a,b){ return by[b].amt-by[a].amt; });
   h+='<div class="dTiles"><div class="dTile"><div class="dl">'+EST('Out on advance')+'</div><div class="dv">'+money(tot)+'</div><div class="ds">'+L.length+' advance'+(L.length>1?'s':'')+' · '+Object.keys(people).length+' '+(Object.keys(people).length===1?'person':'people')+'</div></div>'+
     '<div class="dTile"><div class="dl">Oldest</div><div class="dv">'+Math.round((Date.parse(ref)-Date.parse(oldest.date))/864e5)+' days</div><div class="ds">'+esc(oldest.who)+' · since '+date(oldest.date)+'</div></div></div>'+
+    (function(){ var old=L.filter(function(a){ return advOld_(a, ref); }); return old.length ? '<div class="advOldLine">⚠️ '+old.length+' out for more than a month (not counting schools) — '+money(old.reduce(function(s2,a){ return s2+a.amt; },0),true)+'</div>' : ''; })()+
     '<div class="advFunds">'+funds.map(function(k){ var f=fundOf_(k); return '<span class="advChip"><span class="sw" style="background:var('+(f?f.g.c:'--muted')+')"></span>'+esc(f?f.name:k)+' · '+money(by[k].amt)+'</span>'; }).join('')+'</div>';
   return h+'</section>';
 }
@@ -1714,8 +1721,9 @@ function advSheetHtml_(){
   var L=advShown_().slice().sort(function(a,b){ return a.date<b.date?-1:1; }), tot=L.reduce(function(s2,a){ return s2+a.amt; },0), ref=isLive_()?TODAY:(reportDays_().indexOf(S.viewDay)>=0?S.viewDay:reportDays_()[0]);
   var h='<h3>🤝 '+EST('Advances')+' — details</h3><p class="hint">'+(isLive_()?'Out now':'Out on '+date(ref))+' — '+money(tot,true)+' in '+L.length+' advance'+(L.length===1?'':'s')+'.</p>';
   if(!L.length) return h+'<p class="hint">Nothing out on advance.</p>';
+  if(L.some(function(a){ return advOld_(a, ref); })) h+='<p class="hint">⚠️ = out for more than a month. Schools’ advances aren’t marked — they’re usually for outreach.</p>';
   h+='<div class="dListHead">Who has what</div><div class="tblWrap"><table><tr><th>Who</th><th>Fund</th><th class="r">Taken</th><th class="r">Days</th><th class="r">Amount</th></tr>'+
-    L.map(function(a){ var f=fundOf_(a.fund); return '<tr><td><b>'+esc(a.who)+'</b>'+(a.memo?'<span class="dsub">'+esc(a.memo)+'</span>':'')+'</td><td>'+esc(f?f.name:a.fund)+'<span class="dsub">'+(a.budgeted==='yes'?'pre-budgeted':'not budgeted')+'</span></td><td class="r">'+date(a.date)+'</td><td class="r">'+Math.round((Date.parse(ref)-Date.parse(a.date))/864e5)+'</td><td class="r"><b>'+money(a.amt,true)+'</b></td></tr>'; }).join('')+
+    L.map(function(a){ var f=fundOf_(a.fund); return '<tr><td>'+advWarnHtml_(a, ref)+'<b>'+esc(a.who)+'</b>'+(a.memo?'<span class="dsub">'+esc(a.memo)+'</span>':'')+'</td><td>'+esc(f?f.name:a.fund)+'<span class="dsub">'+(a.budgeted==='yes'?'pre-budgeted':'not budgeted')+'</span></td><td class="r">'+date(a.date)+'</td><td class="r">'+Math.round((Date.parse(ref)-Date.parse(a.date))/864e5)+'</td><td class="r"><b>'+money(a.amt,true)+'</b></td></tr>'; }).join('')+
     '<tr><td colspan="4"><b>Total</b></td><td class="r"><b>'+money(tot,true)+'</b></td></tr></table></div>';
   var by=advByFund_(L), funds=Object.keys(by).sort(function(a,b){ return by[b].amt-by[a].amt; });
   h+='<div class="dListHead" style="margin-top:16px">By fund</div><table><tr><th>Fund</th><th class="r">Advances</th><th class="r">Out</th></tr>'+
@@ -1974,7 +1982,7 @@ function histHtml_(kind){
   if(kind==='adv'){
     var tab=S.advTab||'out', out=advOut_().slice().sort(function(x,y){ return x.date<y.date?-1:1; }), all=ADVANCES.slice().sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; });
     var line=function(a){ var f=fundOf_(a.fund), st=a.settled, days=Math.round((Date.parse(st?st.date:TODAY)-Date.parse(a.date))/864e5), diff=st?Math.round((a.amt-st.spent-st.returned)*100)/100:0;
-      return '<div class="xfLine"><div><b>'+esc(a.who)+'</b> <span class="dsub" style="display:inline">'+date(a.date)+'</span> '+(st?'<span class="apprTag">✓ Settled '+date(st.date)+'</span>':'<span class="xfTag tool">Out · '+days+' day'+(days===1?'':'s')+'</span>')+'</div>'+
+      return '<div class="xfLine"><div>'+(st?'':advWarnHtml_(a))+'<b>'+esc(a.who)+'</b> <span class="dsub" style="display:inline">'+date(a.date)+'</span> '+(st?'<span class="apprTag">✓ Settled '+date(st.date)+'</span>':'<span class="xfTag tool">Out · '+days+' day'+(days===1?'':'s')+'</span>')+'</div>'+
         '<div class="dsub">From '+esc(f?f.name:a.fund)+(a.bank?' · out of '+bankLabel_(a.bank):'')+' · '+(a.budgeted==='yes'?'pre-budgeted':'not budgeted')+'</div>'+
         (st ? '<div class="dsub">Spent '+money(st.spent,true)+' · returned '+money(st.returned,true)+(st.qbo?' · QBO ref <b>'+esc(st.qbo)+'</b>':'')+(Math.abs(diff)>=0.005?' · '+(diff>0?money(diff,true)+' unaccounted':money(-diff,true)+' over'):'')+'</div>' : '')+
         (a.memo?'<div class="xfMemo">“'+esc(a.memo)+'”</div>':'')+
