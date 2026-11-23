@@ -130,6 +130,10 @@ Income.
   pick which values to show — All, or any number of them (blank values are "(blank)"). Only lines
   matching every column's picks show, with "Showing n of N lines" and Clear filters. The check
   above the table always uses every line, whatever is filtered.
+- **Total row** at the bottom (stuck to the foot of the table box): the Amount and the Category
+  amount of every line that can be seen, added up — with a filter on, only the lines it shows,
+  and it says "n lines shown". It is a plain sum: with more than one balances day the Amount
+  total adds the balance entries together (the 💧 box is the one that resets at each).
 - The table scrolls inside its own box (up to 70% of the screen high) with the headings stuck at
   the top, so it can be swiped sideways wherever you are in it.
 - **Balance entry** (from 🏦 Balances) — the **gold standard**: straight from the bank and the cash

@@ -477,6 +477,7 @@ button.tick.done{ background:var(--good); }
 .ledLiq .r{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .ledLiq .ledDiff{ color:var(--bad); }
 .ledLiq p{ margin:8px 0 0; }
+.ledTbl tfoot td{ position:sticky; bottom:0; background:var(--surface2); border-top:2px solid var(--line); border-bottom:0; padding:9px 10px; }
 .ledEmpty{ color:var(--muted); text-align:left; padding:18px 10px !important; }
 .catList{ border-top:1px solid var(--line); margin-top:6px; }
 .catGrp{ border-bottom:1px solid var(--line); padding:4px 0; }
@@ -930,7 +931,12 @@ function inLedgerHtml_(){
   else { var L=S.ledAsc ? shown.slice().reverse() : shown;
     h+=L.map(function(x){ return '<tr><td class="nw">'+date(x.date)+'</td><td class="nw">'+esc(x.acct)+'</td><td class="nw">'+esc(x.type)+'</td><td>'+esc(x.name)+'</td><td>'+(x.memo?'<button class="ledMemo" data-ledmemo="1" title="'+esc(x.memo)+'">'+esc(x.memo)+'</button>':'')+'</td>'+
       '<td class="r nw">'+(x.amt==null?'':money(x.amt,true))+'</td><td class="r nw">'+(x.camt==null?'':(x.camt<0?'−':'')+money(Math.abs(x.camt),true))+'</td><td class="nw">'+esc(x.cat)+'</td><td class="nw">'+(x.appr?'✅ '+date(x.appr):'<span class="ledNo">Not yet</span>')+'</td></tr>'; }).join(''); }
-  return h+'</tbody></table></div></details>';
+  h+='</tbody>';
+  if(shown.length){   /* the totals of what can be seen — filters included */
+    var tA=Math.round(shown.reduce(function(s2,x){ return s2+(x.amt||0); },0)*100)/100, tC=Math.round(shown.reduce(function(s2,x){ return s2+(x.camt||0); },0)*100)/100;
+    var sg=function(v){ return (v<0?'−':'')+money(Math.abs(v),true); };
+    h+='<tfoot><tr><td colspan="5"><b>Total</b> <span class="ledNo">· '+shown.length+' line'+(shown.length>1?'s':'')+(active.length?' shown':'')+'</span></td><td class="r nw"><b>'+sg(tA)+'</b></td><td class="r nw"><b>'+sg(tC)+'</b></td><td colspan="2"></td></tr></tfoot>'; }
+  return h+'</table></div></details>';
 }
 /* liquid assets on a day, from the breakdown alone. Each account starts from its latest Balance
    entry on or before the day — a reset — and adds the Amount of every line after it up to that
