@@ -95,6 +95,30 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .alSub td:last-child{ text-align:right; font-variant-numeric:tabular-nums; }
 .alSub .note{ font-size:12px; color:var(--muted); margin:8px 0 0; }
 
+/* Staff debt */
+.dTiles{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.dTile{ background:var(--surface); border-radius:14px; padding:12px 14px; min-width:0; }
+.dTile .dl{ font-size:12px; color:var(--muted); font-weight:600; }
+.dTile .dv{ font-size:24px; font-weight:700; margin-top:2px; font-variant-numeric:tabular-nums; }
+.dTile .ds{ font-size:12px; color:var(--muted); }
+.dTile.late .dv{ color:var(--bad); }
+.dMeter{ height:8px; border-radius:999px; background:var(--surface2); margin:12px 0 4px; overflow:hidden; }
+.dMeter span{ display:block; height:100%; background:var(--bad); border-radius:999px; }
+.dMeterL{ font-size:12px; color:var(--muted); }
+.dListHead{ font-size:13px; font-weight:700; margin:16px 0 4px; }
+.dList{ list-style:none; margin:0; padding:0; }
+.dList li{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; padding:10px 0; border-top:1px solid var(--line); align-items:center; }
+.dList .dn{ font-weight:600; }
+.dList .dd{ font-size:12px; color:var(--muted); }
+.dList .da{ text-align:right; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.dList .da small{ display:block; font-size:11.5px; color:var(--muted); font-weight:600; }
+.sheet .chips{ display:flex; gap:6px; margin:10px 0 0; flex-wrap:wrap; }
+.sheet .chip{ border:1px solid var(--line); background:var(--surface2); border-radius:999px; padding:5px 12px; cursor:pointer; font-size:13px; font-weight:600; }
+.sheet .chip.on{ background:var(--accent); color:var(--accentInk); border-color:var(--accent); }
+.sheet .tblWrap{ overflow-x:auto; }
+.sheet .tblWrap td.r, .sheet .tblWrap th.r{ padding-left:12px; }
+.sheet td.late, .sheet th.late{ color:var(--bad); font-weight:700; }
+.sheet .dsub{ display:block; font-size:11.5px; color:var(--muted); }
 .soon{ text-align:center; color:var(--muted); padding:40px 10px; }
 .soon .big{ font-size:36px; }
 .soon h3{ color:var(--ink); margin:8px 0 4px; }
@@ -155,6 +179,20 @@ var ALLOC = [
   { id:'fund', name:'Funds', eg:'LT fund, Base fund', c:'--al6', dark:false,
     items:[['LT fund',6000],['Base fund',3000]], note:'The base’s standing funds, each kept for its own purpose.' }
 ];
+/* staff debt — as the A/R Ageing report gives it: by how long it has been owed.
+   SAMPLE names, made up for the draft. */
+var DEBT = { asOf:'2026-10-31', src:'A/R Ageing Summary · uploaded 4 Nov 2026', people:[
+  { n:'Sample Person A', d:'Skills Training',        b:[120, 80, 0, 260, 410] },
+  { n:'Sample Person B', d:'Leadership Development', b:[60, 60, 60, 120, 0] },
+  { n:'Sample Person C', d:'Community Service',      b:[200, 150, 0, 0, 0] },
+  { n:'Sample Person D', d:'Youth Education',        b:[0, 0, 0, 0, 540] },
+  { n:'Sample Person E', d:'Skills Training',        b:[45, 0, 0, 0, 0] },
+  { n:'Sample Person F', d:'Media',                  b:[80, 80, 80, 0, 0] },
+  { n:'Sample Person G', d:'Community Service',      b:[0, 30, 0, 95, 0] },
+  { n:'Sample Person H', d:'Leadership Development', b:[150, 0, 0, 0, 0] }
+] };
+/* buckets: current · 1–30 · 31–60 · 61–90 · over 90 days. "2 months or older" = the last two. */
+DEBT.people.forEach(function(p){ p.tot=p.b.reduce(function(s,v){ return s+v; },0); p.old=p.b[3]+p.b[4]; });
 ALLOC.forEach(function(a){ a.amt=a.items.reduce(function(s,i){ return s+i[1]; },0); });
 
 /* ---- helpers ---- */
@@ -199,13 +237,31 @@ function allocHtml(){
   }).join('')+'</ul></section>';
   return h;
 }
+function debtHtml(){
+  var P=DEBT.people, tot=0, old=0;
+  P.forEach(function(p){ tot+=p.tot; old+=p.old; });
+  var owing=P.filter(function(p){ return p.tot>0; }), late=P.filter(function(p){ return p.old>0; }).sort(function(a,b){ return b.old-a.old; });
+  var pct=tot ? Math.round(old/tot*100) : 0;
+  var h='<section class="sec" id="debt"><div class="secHead"><h2>💳 Staff debt</h2><button class="more" data-sheet="debt">Details ›</button></div>'+
+    '<p class="hint">From the '+esc(DEBT.src)+' · as of '+date(DEBT.asOf)+'</p>'+
+    '<div class="dTiles"><div class="dTile"><div class="dl">Total outstanding</div><div class="dv">'+money(tot)+'</div><div class="ds">'+owing.length+' people owe money</div></div>'+
+    '<div class="dTile late"><div class="dl">2 months or older</div><div class="dv">'+money(old)+'</div><div class="ds">'+late.length+' people · '+pct+'% of the total</div></div></div>'+
+    '<div class="dMeter" role="img" aria-label="'+pct+'% of staff debt is 2 months or older"><span style="width:'+pct+'%"></span></div>'+
+    '<div class="dMeterL">'+pct+'% of what staff owe is 2 months old or more</div>';
+  h+='<div class="dListHead">⚠️ Owing for 2 months or more</div>';
+  h+= late.length ? '<ul class="dList">'+late.map(function(p){
+      return '<li><span><span class="dn">'+esc(p.n)+'</span><br><span class="dd">'+esc(p.d)+'</span></span>'+
+        '<span class="da">'+money(p.old)+'<small>of '+money(p.tot)+' owed</small></span></li>'; }).join('')+'</ul>'
+    : '<p class="hint">Nobody owes anything 2 months old or more. 🎉</p>';
+  return h+'</section>';
+}
 function nextHtml(){
-  return '<section class="sec"><p class="hint" style="margin:0">Next on the dashboard: the other reports (Profit and Loss, Burn Rate, staff debt…) — each a short summary here, with its details a tap away.</p></section>';
+  return '<section class="sec"><p class="hint" style="margin:0">Next on the dashboard: the other reports (Profit and Loss, Burn Rate…) — each a short summary here, with its details a tap away.</p></section>';
 }
 function soon(icon, title, line){ return '<div class="soon"><div class="big">'+icon+'</div><h3>'+title+'</h3><div>'+line+'</div></div>'; }
 function render(){
   var p=document.getElementById('pane');
-  if(S.tab==='dash') p.innerHTML=balancesHtml()+allocHtml()+nextHtml();
+  if(S.tab==='dash') p.innerHTML=balancesHtml()+allocHtml()+debtHtml()+nextHtml();
   else if(S.tab==='input') p.innerHTML=soon('✏️','Input','Where the Finances office types the balances, uploads the reports and sets the allocations. We design this next.');
   else if(S.tab==='tasks') p.innerHTML=soon('✅','Tasks','The Finances office’s GP Tasks list — as on every ministry.');
   else p.innerHTML=soon('🎯','OKRs','The Finances office’s objectives for the quarter — as on every ministry.');
@@ -215,7 +271,17 @@ function render(){
 /* ---- details sheets ---- */
 function sheet(which){
   var T=total(), h='<button class="x" id="sx" aria-label="Close">✕</button>';
-  if(which==='balances'){
+  if(which==='debt'){
+    var all=S.debtAll!==false, P=DEBT.people.filter(function(p){ return all ? p.tot>0 : p.old>0; }).sort(function(a,b){ return b.tot-a.tot; });
+    var sum=function(i){ return P.reduce(function(s,p){ return s+(i==null?p.tot:(i==='old'?p.old:p.b[0]+p.b[1]+p.b[2])); },0); };
+    h+='<h3>💳 Staff debt — everyone</h3><p class="hint">As of '+date(DEBT.asOf)+' · names as the A/R Ageing report has them, with the department of the person they are matched to.</p>'+
+      '<div class="chips"><button class="chip'+(all?' on':'')+'" data-debtall="1">Everyone · '+DEBT.people.filter(function(p){ return p.tot>0; }).length+'</button>'+
+      '<button class="chip'+(all?'':' on')+'" data-debtall="0">2 months or older · '+DEBT.people.filter(function(p){ return p.old>0; }).length+'</button></div>'+
+      '<div class="tblWrap"><table><tr><th>Name</th><th class="r">Under 2 months</th><th class="r late">2 months +</th><th class="r">Total</th></tr>'+
+      P.map(function(p){ var nw=p.b[0]+p.b[1]+p.b[2];
+        return '<tr><td>'+esc(p.n)+'<span class="dsub">'+esc(p.d)+'</span></td><td class="r">'+(nw?money(nw):'—')+'</td><td class="r'+(p.old?' late':'')+'">'+(p.old?money(p.old):'—')+'</td><td class="r"><b>'+money(p.tot)+'</b></td></tr>'; }).join('')+
+      '<tr><td><b>Total</b></td><td class="r"><b>'+money(sum('new'))+'</b></td><td class="r late">'+money(sum('old'))+'</td><td class="r"><b>'+money(sum())+'</b></td></tr></table></div>';
+  } else if(which==='balances'){
     h+='<h3>🏦 Balances — details</h3><p class="hint">As of '+date(BAL.asOf)+'. Later: the history of each account, month by month.</p>'+
       '<table><tr><th>Account</th><th class="r">Amount</th><th class="r">Share</th></tr>'+
       BAL.accts.map(function(a){ return '<tr><td>'+esc(a.name)+'</td><td class="r">'+money(a.amt,true)+'</td><td class="r">'+(a.amt/T*100).toFixed(1)+'%</td></tr>'; }).join('')+
@@ -236,10 +302,11 @@ document.getElementById('scrim').onclick=closeSheet;
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSheet(); });
 
 document.addEventListener('click', function(e){
-  var t=e.target.closest('[data-tab],[data-al],[data-sheet]'); if(!t) return;
+  var t=e.target.closest('[data-tab],[data-al],[data-sheet],[data-debtall]'); if(!t) return;
   if(t.dataset.tab){ S.tab=t.dataset.tab; render(); }
   else if(t.dataset.al){ S.open = S.open===t.dataset.al ? null : t.dataset.al; render(); }
   else if(t.dataset.sheet) sheet(t.dataset.sheet);
+  else if(t.dataset.debtall!=null){ S.debtAll = t.dataset.debtall==='1'; sheet('debt'); }
 });
 document.getElementById('themeBtn').onclick=function(){
   var r=document.documentElement, dark=r.dataset.theme==='dark';
