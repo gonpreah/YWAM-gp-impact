@@ -1187,17 +1187,20 @@ function balancesHtml(){
   h+='</section>';
   return h;
 }
+/* the allocations largest first — the allocation report's order, which the income and expense
+   reports follow too (colours stay with each allocation) */
+function allocOrder_(){ return ALLOC.slice().sort(function(a,b){ return b.amt-a.amt || ALLOC.indexOf(a)-ALLOC.indexOf(b); }); }
 function allocHtml(){
   var T=total(), A=ALLOC.reduce(function(s,a){ return s+a.amt; },0), gap=T-A;
   var h='<section class="sec" id="alloc"><div class="secHead"><h2>📊 Allocation report</h2><button class="more" data-sheet="alloc">Details ›</button></div>'+
     '<p class="hint">Where the '+money(T)+' in total liquid assets is set aside. Tap a colour or a line to see what is in it.</p>';
-  h+='<div class="alBar'+(S.open?' focus':'')+'" role="img" aria-label="'+esc(ALLOC.map(function(a){ return a.name+' '+money(a.amt)+' '+Math.round(a.amt/(T||A)*100)+'%'; }).join(', '))+'">'+
-    ALLOC.map(function(a){ var p=a.amt/(T||A)*100;
+  h+='<div class="alBar'+(S.open?' focus':'')+'" role="img" aria-label="'+esc(allocOrder_().map(function(a){ return a.name+' '+money(a.amt)+' '+Math.round(a.amt/(T||A)*100)+'%'; }).join(', '))+'">'+
+    allocOrder_().map(function(a){ var p=a.amt/(T||A)*100;
       return '<button class="alSeg'+(a.dark?' dark':'')+(S.open===a.id?' on':'')+'" data-al="'+a.id+'" style="flex:'+a.amt+' 1 0;background:var('+a.c+')" title="'+esc(a.name+' · '+money(a.amt,true)+' · '+Math.round(p)+'%')+'">'+(p>=9?Math.round(p)+'%':'')+'</button>';
     }).join('')+'</div>';
   h+= Math.abs(gap)<0.005 ? '<div class="alCheck ok">✓ Every dollar is allocated — '+money(A,true)+' of '+money(T,true)+'</div>'
     : '<div class="alCheck off">⚠️ '+money(Math.abs(gap),true)+(gap>0?' not allocated yet':' more allocated than is in hand')+'</div>';
-  h+='<ul class="alList">'+ALLOC.map(function(a){ var p=a.amt/(T||A)*100;
+  h+='<ul class="alList">'+allocOrder_().map(function(a){ var p=a.amt/(T||A)*100;
     return '<li class="alRow'+(S.open===a.id?' on':'')+'"><button data-al="'+a.id+'" aria-expanded="'+(S.open===a.id)+'">'+
       '<span class="sw" style="background:var('+a.c+')"></span>'+
       '<span><span class="alName">'+esc(a.name)+'</span>'+(a.eg?'<br><span class="alEg">'+esc(a.eg)+'</span>':'')+'<br>'+alDeltaHtml(a)+'</span>'+
@@ -1277,7 +1280,7 @@ function flowDelta_(kind, d, vs){
 function flowPerHtml_(kind){ var ytd=S.flowPer[kind]==='ytd';
   return '<div class="incPer"><button class="'+(ytd?'':'on')+'" data-flowper="'+kind+'|month">'+flowMonth_(kind)+'</button><button class="'+(ytd?'on':'')+'" data-flowper="'+kind+'|ytd">2026 so far</button></div>'; }
 function flowHtml(kind){
-  var F=FLOW[kind], ytd=S.flowPer[kind]==='ytd', rows=ALLOC.map(function(a){ return { a:a, o:flowOf_(kind, a.id) }; }), T=0, PT=0;
+  var F=FLOW[kind], ytd=S.flowPer[kind]==='ytd', rows=allocOrder_().map(function(a){ return { a:a, o:flowOf_(kind, a.id) }; }), T=0, PT=0;
   rows.forEach(function(r){ T+=r.o.tot; PT+=r.o.prev||0; });
   var h='<section class="sec" id="'+F.id+'"><div class="secHead"><h2>'+F.icon+' '+F.title+'</h2><button class="more" data-sheet="'+F.id+'">Details ›</button></div>'+
     '<p class="hint">'+F.hint+'</p>'+flowPerHtml_(kind)+
@@ -1311,7 +1314,7 @@ function flowSheetHtml_(kind){
     '<div class="rep"><div class="repTitle">'+F.report+'</div><div class="repSub">'+(ytd?flowYtdLabel_(kind):flowMonth_(kind))+'</div>'+
     '<div class="tblWrap gridWrap"><table class="gridTbl" style="width:'+(150+96*(used.length+1))+'px"><colgroup><col style="width:150px">'+used.map(function(){ return '<col style="width:96px">'; }).join('')+'<col style="width:96px"></colgroup>'+
     '<thead><tr><th class="nm">Allocation</th>'+used.map(function(k){ return '<th>'+esc(k)+'</th>'; }).join('')+'<th class="tot">Total</th></tr></thead><tbody>'+
-    ALLOC.map(function(a){ var o=flowOf_(kind, a.id);
+    allocOrder_().map(function(a){ var o=flowOf_(kind, a.id);
       return '<tr><td class="nm"><span class="sw" style="display:inline-block;width:10px;height:10px;vertical-align:0;margin-right:6px;background:var('+a.c+')"></span>'+esc(a.name)+'</td>'+used.map(function(k){ return '<td>'+cell(o.by[k])+'</td>'; }).join('')+'<td class="tot">'+cell(o.tot)+'</td></tr>'; }).join('')+
     '</tbody><tfoot><tr><td class="nm">TOTAL</td>'+used.map(function(k){ return '<td>'+cell(colTot(k))+'</td>'; }).join('')+'<td class="tot">'+cell(all)+'</td></tr></tfoot></table></div></div>'+
     '<p class="hint" style="margin-top:10px">US$. '+F.tHint+' On a phone, swipe the table sideways.</p>';
@@ -1483,7 +1486,7 @@ function sheetInner_(which){
       '<tr><td><b>Total liquid assets</b></td><td class="r"><b>'+money(T,true)+'</b></td><td class="r">100%</td></tr></table>';
   } else {
     h+='<h3>📊 Allocation report — details</h3><p class="hint">Every allocation, what it holds, and how it has moved since '+date(ALLOC_PREV_ASOF)+'.</p><table><tr><th>Allocation</th><th class="r">Amount</th><th class="r">Share</th><th class="r">Change</th></tr>';
-    ALLOC.forEach(function(a){
+    allocOrder_().forEach(function(a){
       h+='<tr><td><span class="sw" style="display:inline-block;vertical-align:-2px;margin-right:6px;background:var('+a.c+')"></span><b>'+esc(a.name)+'</b></td><td class="r"><b>'+money(a.amt,true)+'</b></td><td class="r">'+(a.amt/(T||ALLOC.reduce(function(s2,g){ return s2+g.amt; },0))*100).toFixed(1)+'%</td><td class="r">'+(function(d){ return Math.abs(d)<0.005 ? '—' : '<span class="alDelta '+(d>0?'up':'down')+'">'+(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+'</span>'; })(a.amt-a.prev)+'</td></tr>';
       a.items.forEach(function(i){ if(a.items.length>1) h+='<tr><td style="padding-left:22px;color:var(--muted)">'+esc(i[0])+'</td><td class="r" style="color:var(--muted)">'+money(i[1],true)+'</td><td></td><td></td></tr>'; });
     });
