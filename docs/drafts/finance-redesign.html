@@ -770,7 +770,7 @@ function catDelItem_(gid, i){ var g=catG_(gid), it=g&&g.items[i]; if(!it) return
   if(S.catDel!==gid+'|'+i){ S.catDel=gid+'|'+i; S.catErr=''; render(); return; }
   snap_('Brought “'+it[0]+'” back');
   DELETED_FUNDS.push({ gid:g.id, gname:g.name, name:it[0], at:TODAY }); g.items.splice(i,1);
-  S.catEdit=''; catAfter_('Deleted “'+it[0]+'” — kept under Deleted, and in old reports as “(deleted)”'); }
+  S.catEdit=''; catAfter_('Deleted “'+it[0]+'” — kept in History, and in old reports as “(deleted)”'); }
 function catDelGroup_(gid){ var g=catG_(gid); if(!g) return;
   if(Math.abs(g.amt)>0.004) return catErr_('“'+g.name+'” still holds '+money(g.amt,true)+'. Move it to other funds first (Internal transfers), then delete it.');
   if(ALLOC.length<2) return catErr_('There has to be at least one category.');
@@ -795,7 +795,7 @@ function catRestore_(idx){ var d=DELETED_FUNDS[idx]; if(!d) return;
   DELETED_FUNDS.splice(idx,1); catAfter_('Brought “'+d.name+'” back'); }
 function inCatsHtml_(){
   var open=S.foldOpen&&S.foldOpen.cats, n=0, E=S.catEdit||''; ALLOC.forEach(function(g){ n+=g.items.length; });
-  var h='<details class="inCard fold" id="inCats" data-fold="cats"'+(open?' open':'')+'><summary class="foldHead"><span><b>🗂 Category list</b><span class="dsub">'+ALLOC.length+' categories · '+n+' sub-categories</span></span><span class="chev">▾</span></summary>'+
+  var h='<details class="inCard fold" id="inCats" data-fold="cats"'+(open?' open':'')+'><summary class="foldHead"><span><b>🗂 Category list</b><span class="dsub">'+ALLOC.length+' categories · '+n+' sub-categories</span></span><span class="foldR"><button class="histLink" data-hist="cats">🕘 History</button><span class="chev">▾</span></span></summary>'+
     '<p class="inLast">The categories used everywhere in Finances. Tap one to change it.</p><div class="catList">';
   var err=function(){ return S.catErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.catErr)+'</p>' : ''; };
   h+=ALLOC.map(function(g, gi){
@@ -818,9 +818,6 @@ function inCatsHtml_(){
     '<label class="f" for="catNewSubGrp">Under which category</label><select id="catNewSubGrp"><option value="">— Pick a category —</option>'+ALLOC.map(function(a){ return '<option value="'+a.id+'"'+((S.catSubDraft||{}).g===a.id?' selected':'')+'>'+esc(a.name)+'</option>'; }).join('')+'</select>'+
     '<div class="catTools"><button class="btn ghost" data-catedit="">Cancel</button><button class="btn" id="catNewSubBtn">Add</button></div>'+err()+'</div>';
   else h+='<div class="catNewRow"><button class="btn ghost catNewBtn" data-catedit="new">＋ Add a category</button><button class="btn ghost catNewBtn" data-catedit="newsub">＋ Add a sub-category</button></div>';
-  if(DELETED_FUNDS.length) h+='<details class="catDel"><summary class="dsub">🗑 Deleted ('+DELETED_FUNDS.length+')</summary><ul class="catDelList">'+
-    DELETED_FUNDS.map(function(d, i){ return { d:d, i:i }; }).reverse().map(function(o){ var d=o.d;
-      return '<li><span><b>'+esc(d.name)+'</b><span class="dsub">'+(d.group?'a whole category · ':'in '+esc(d.gname)+' · ')+'deleted '+date(d.at)+'</span></span><button class="btn ghost" data-catback="'+o.i+'">↩ Bring back</button></li>'; }).join('')+'</ul></details>';
   if(!E && S.catErr) h+=err();
   return h+'</details>';
 }
@@ -2141,6 +2138,13 @@ function histHtml_(kind){
           '<span class="r"><b>'+money(t,true)+'</b>'+(d==null?'<span class="dsub">first day</span>':'<span class="dsub">'+(Math.abs(d)<0.005?'same':(d>0?'▲ ':'▼ ')+money(Math.abs(d),true))+'</span>')+
           '<button class="delBtn" data-baldel="'+r.asOf+'" aria-label="Delete the balances for '+date(r.asOf)+'">✕ Delete</button></span></div></li>'; }).join('')+'</ul>';
   }
+  if(kind==='cats'){
+    var hc='<h3>🗂 Category list — history</h3><p class="hint">Categories and sub-categories that have been deleted, newest first. Bring one back and it shows everywhere again, starting at $0.</p>';
+    if(!DELETED_FUNDS.length) return hc+'<p class="hint">Nothing has been deleted.</p>';
+    return hc+'<ul class="histList">'+DELETED_FUNDS.map(function(d, i){ return { d:d, i:i }; }).reverse().map(function(o){ var d=o.d;
+      return '<li><div class="hb"><span><b>'+esc(d.name)+'</b><span class="dsub">'+(d.group?'A whole category'+(d.group.items.length>1?' · '+esc(d.group.items.join(', ')):''):'Sub-category in '+esc(d.gname))+' · deleted '+date(d.at)+'</span></span>'+
+        '<span class="r"><button class="histLink" data-catback="'+o.i+'">↩ Bring back</button></span></div></li>'; }).join('')+'</ul>'+(S.catErr && S.histOpen==='cats' ? '<p class="inErr" role="alert">⚠️ '+esc(S.catErr)+'</p>' : '');
+  }
   if(kind==='al'){
     var H=ALLOC_HIST.length ? ALLOC_HIST : [allocSnap_(ALLOC_ASOF, true)];
     if(pick){ var e=H.filter(function(x){ return x.asOf===pick; })[0]; if(e){
@@ -2330,7 +2334,7 @@ document.addEventListener('click', function(e){
     if(cb.id==='catNewGrpBtn') return catAddGroup_();
     if(cb.id==='catNewSubBtn') return catAddSub_();
     if(d.catadd) return catAddItem_(d.catadd);
-    if(d.catback!=null) return catRestore_(+d.catback);
+    if(d.catback!=null){ catRestore_(+d.catback); if(document.body.classList.contains('sheetOn') && S.histOpen==='cats') sheet('hist-cats'); return; }
     if(d.catgdel) return catDelGroup_(d.catgdel);
     if(d.catidel){ var di=d.catidel.split('|'); return catDelItem_(di[0], +di[1]); }
     if(d.catgmv){ var gm=d.catgmv.split('|'), gi=ALLOC.indexOf(catG_(gm[0])); snap_('Put the categories back in their order'); if(catOrder_(ALLOC, gi, +gm[1])){ var keg=S.catEdit; catAfter_(); S.catEdit=keg; render(); } else UNDO.pop(); return; }
