@@ -620,13 +620,12 @@ function inputHtml(){
     '<div class="inBtns"><button class="btn" id="inBalSave">Save balances</button>'+(B.none?'':'<button class="btn ghost" id="inBalCopy">Same as last time</button>')+'</div>'+
     '</details>';
   h+=inAllocHtml_();
-  h+=inCatsHtml_();
   h+=inRulesHtml_();
   h+=inBulkHtml_();
   h+=inXferHtml_();
   h+=
     flHtml_('inc')+flHtml_('exp')+inAdvHtml_()+
-    inDebtHtml_();
+    inDebtHtml_()+inCatsHtml_();
   /* a tick by each part that is done for the day */
   [['inBalances','bal'],['inAlloc','alloc'],['in_inc','inc'],['in_exp','exp'],['inXfer','xfer']].forEach(function(x){
     h=h.replace(new RegExp('(<details class="inCard fold" id="'+x[0]+'"[^>]*><summary class="foldHead">)'), '$1'+dayTick_(x[1]));
@@ -783,7 +782,7 @@ function catRestore_(idx){ var d=DELETED_FUNDS[idx]; if(!d) return;
   DELETED_FUNDS.splice(idx,1); catAfter_('Brought “'+d.name+'” back'); }
 function inCatsHtml_(){
   var open=S.foldOpen&&S.foldOpen.cats, n=0; ALLOC.forEach(function(g){ n+=g.items.length; });
-  var h='<details class="inCard fold" id="inCats" data-fold="cats"'+(open?' open':'')+'><summary class="foldHead"><span><b>🗂 Categories list</b><span class="dsub">'+ALLOC.length+' categories · '+n+' sub-categories'+(DELETED_FUNDS.length?' · '+DELETED_FUNDS.length+' deleted':'')+'</span></span><span class="chev">▾</span></summary>'+
+  var h='<details class="inCard fold" id="inCats" data-fold="cats"'+(open?' open':'')+'><summary class="foldHead"><span><b>🗂 Category list</b><span class="dsub">'+ALLOC.length+' categories · '+n+' sub-categories'+(DELETED_FUNDS.length?' · '+DELETED_FUNDS.length+' deleted':'')+'</span></span><span class="chev">▾</span></summary>'+
     '<p class="inLast">Every category and sub-category. Add, rename, move or delete one here and it changes everywhere at once — the Dashboard, every fund picker, the formulas, transfers and advances. In a report already approved, one added since shows as $0, and one deleted since keeps its amount with “(deleted)” beside it.</p>';
   h+=ALLOC.map(function(g, gi){
     var gd=S.catDel===g.id;
