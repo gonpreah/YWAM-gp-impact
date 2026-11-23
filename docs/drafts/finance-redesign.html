@@ -120,8 +120,20 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .sheet .chip.on{ background:var(--accent); color:var(--accentInk); border-color:var(--accent); }
 .sheet .tblWrap{ overflow-x:auto; }
 .sheet .tblWrap td.r, .sheet .tblWrap th.r{ padding-left:14px; white-space:nowrap; }
-.dTbl{ min-width:620px; }
-.dTbl .nm{ position:sticky; left:0; background:var(--surface); padding-right:10px; z-index:1; min-width:150px; }
+.rep{ margin-top:8px; }
+.repTitle{ text-align:center; font-weight:700; font-size:17px; }
+.repSub{ text-align:center; font-weight:600; font-size:12.5px; color:var(--muted); margin:2px 0 10px; }
+.sheet .repTbl{ min-width:560px; border-collapse:collapse; font-size:12.5px; margin:0; font-variant-numeric:tabular-nums; }
+.sheet .repTbl th{ font-size:11.5px; font-weight:700; color:var(--ink); text-align:center; padding:6px 8px; border-bottom:1px solid var(--ink); white-space:nowrap; }
+.sheet .repTbl td{ padding:5px 8px; border:0; text-align:right; white-space:nowrap; }
+.sheet .repTbl tbody tr:nth-child(even) td{ background:color-mix(in srgb, var(--surface2) 45%, var(--surface)); }
+.sheet .repTbl .nm{ text-align:left; position:sticky; left:0; background:var(--surface); z-index:1; min-width:130px; white-space:normal; }
+.sheet .repTbl tbody tr:nth-child(even) .nm{ background:color-mix(in srgb, var(--surface2) 45%, var(--surface)); }
+.sheet .repTbl .old{ color:var(--bad); }
+.sheet .repTbl th.old{ color:var(--bad); }
+.sheet .repTbl td.tot{ font-weight:600; }
+.sheet .repTbl tfoot td{ font-weight:700; border-top:1px solid var(--ink); padding-top:7px; }
+.sheet .repTbl tfoot .nm{ background:var(--surface); }
 .sheet td.late, .sheet th.late{ color:var(--bad); font-weight:700; }
 .sheet .dsub{ display:block; font-size:11.5px; color:var(--muted); }
 .soon{ text-align:center; color:var(--muted); padding:40px 10px; }
@@ -130,7 +142,7 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 
 /* details sheet */
 .scrim{ position:fixed; inset:0; background:rgba(23,21,15,.45); display:none; z-index:20; }
-.sheet{ position:fixed; left:0; right:0; bottom:0; max-width:560px; margin:0 auto; background:var(--surface); border-radius:18px 18px 0 0; padding:18px 18px 28px; z-index:21; transform:translateY(105%); visibility:hidden; transition:transform .22s ease, visibility 0s .22s; max-height:85vh; overflow:auto; }
+.sheet{ position:fixed; left:0; right:0; bottom:0; max-width:720px; margin:0 auto; background:var(--surface); border-radius:18px 18px 0 0; padding:18px 18px 28px; z-index:21; transform:translateY(105%); visibility:hidden; transition:transform .22s ease, visibility 0s .22s; max-height:85vh; overflow:auto; }
 body.sheetOn .scrim{ display:block; }
 body.sheetOn .sheet{ transform:none; visibility:visible; transition:transform .22s ease; }
 .sheet h3{ margin:0 0 4px; }
@@ -186,19 +198,24 @@ var ALLOC = [
 ];
 /* staff debt — as the A/R Ageing report gives it: by how long it has been owed.
    SAMPLE names, made up for the draft. */
-var DEBT = { asOf:'2026-10-31', src:'A/R Ageing Summary · uploaded 4 Nov 2026', people:[
-  { n:'Sample Person A', d:'Skills Training',        b:[120, 80, 0, 260, 410] },
-  { n:'Sample Person B', d:'Leadership Development', b:[60, 60, 60, 120, 0] },
-  { n:'Sample Person C', d:'Community Service',      b:[200, 150, 0, 0, 0] },
-  { n:'Sample Person D', d:'Youth Education',        b:[0, 0, 0, 0, 540] },
-  { n:'Sample Person E', d:'Skills Training',        b:[45, 0, 0, 0, 0] },
-  { n:'Sample Person F', d:'Media',                  b:[80, 80, 80, 0, 0] },
-  { n:'Sample Person G', d:'Community Service',      b:[0, 30, 0, 95, 0] },
-  { n:'Sample Person H', d:'Leadership Development', b:[150, 0, 0, 0, 0] }
+var DEBT = { asOf:'2026-11-23', src:'A/R Ageing Summary · uploaded 23 Nov 2026', title:'SR Staff Debt', people:[
+  { n:'Sample Person A',          d:'Skills Training',        b:[11.53, 0, 0, 0, 0] },
+  { n:'Sample Person B',          d:'Community Service',      b:[16, 16, 16, 0, 0] },
+  { n:'Sample Person C',          d:'Media',                  b:[91.50, 0, 0, 0, 0] },
+  { n:'Sample Person D',          d:'Leadership Development', b:[107, 107, 18, 0, 0] },
+  { n:'Sample Person E',          d:'Youth Education',        b:[0, 112, 0, 0, 0] },
+  { n:'Sample Person F',          d:'Skills Training',        b:[220, 220, 0, 0, 0] },
+  { n:'Sample Person G',          d:'Community Service',      b:[107, 107, 107, 107, 111.50] },
+  { n:'Sample Person H',          d:'Leadership Development', b:[16, 16, 16, 16, 48] },
+  { n:'Sample Person I',          d:'Youth Education',        b:[16, 0, 0, 0, 0] },
+  { n:'Sample Person J & K',      d:'Campus Leadership',      b:[590, 0, 0, 0, 0] },
+  { n:'Sample Person L',          d:'Media',                  b:[107, 0, 0, 0, 0] },
+  { n:'Sample Person M',          d:'Skills Training',        b:[16, 16, 16, 0, 0] },
+  { n:'Sample Person N & O',      d:'Community Service',      b:[35, 0, 0, 0, 0] }
 ] };
 /* buckets, as the office's report heads them: Current · 1 month · 2 months · 3 months · Over 3 months.
    "2 months or older" = the 2 months, 3 months and Over 3 months columns. */
-var DEBT_COLS=['Current','1 month','2 months','3 months','Over 3 months'], DEBT_OLD_FROM=2;
+var DEBT_COLS=['Current','1 Month','2 Months','3 Months','3+ Months'], DEBT_OLD_FROM=2;
 DEBT.people.forEach(function(p){ p.tot=p.b.reduce(function(s,v){ return s+v; },0); p.old=p.b.slice(DEBT_OLD_FROM).reduce(function(s,v){ return s+v; },0); });
 ALLOC.forEach(function(a){ a.amt=a.items.reduce(function(s,i){ return s+i[1]; },0); });
 
@@ -280,16 +297,19 @@ function render(){
 function sheet(which){
   var T=total(), h='<button class="x" id="sx" aria-label="Close">✕</button>';
   if(which==='debt'){
-    var all=S.debtAll!==false, P=DEBT.people.filter(function(p){ return all ? p.tot>0 : p.old>0; }).sort(function(a,b){ return b.tot-a.tot; });
-    var sum=function(){ return P.reduce(function(s,p){ return s+p.tot; },0); };
-    h+='<h3>💳 Staff debt — everyone</h3><p class="hint">As of '+date(DEBT.asOf)+' · names as the A/R Ageing report has them, with the department of the person they are matched to.</p>'+
-      '<div class="chips"><button class="chip'+(all?' on':'')+'" data-debtall="1">Everyone · '+DEBT.people.filter(function(p){ return p.tot>0; }).length+'</button>'+
-      '<button class="chip'+(all?'':' on')+'" data-debtall="0">2 months or older · '+DEBT.people.filter(function(p){ return p.old>0; }).length+'</button></div>'+
-      '<div class="tblWrap"><table class="dTbl"><tr><th class="nm">Name</th>'+DEBT_COLS.map(function(c,i){ return '<th class="r'+(i>=DEBT_OLD_FROM?' late':'')+'">'+c+'</th>'; }).join('')+'<th class="r">Total</th></tr>'+
+    var all=S.debtAll!==false, P=DEBT.people.filter(function(p){ return all ? p.tot>0 : p.old>0; });
+    var nAll=DEBT.people.filter(function(p){ return p.tot>0; }).length, nOld=DEBT.people.filter(function(p){ return p.old>0; }).length;
+    var cell=function(v){ return v ? v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''; };
+    var asOf=new Date(DEBT.asOf+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    h+='<div class="chips" style="margin:0 0 4px"><button class="chip'+(all?' on':'')+'" data-debtall="1">Everyone · '+nAll+'</button>'+
+      '<button class="chip'+(all?'':' on')+'" data-debtall="0">2 Months or older · '+nOld+'</button></div>'+
+      '<div class="rep"><div class="repTitle">'+esc(DEBT.title)+'</div><div class="repSub">As of '+esc(asOf)+'</div>'+
+      '<div class="tblWrap"><table class="repTbl"><thead><tr><th class="nm"></th>'+DEBT_COLS.map(function(c,i){ return '<th'+(i>=DEBT_OLD_FROM?' class="old"':'')+'>'+(i?c:c.toUpperCase())+'</th>'; }).join('')+'<th>Total</th></tr></thead><tbody>'+
       P.map(function(p){
-        return '<tr><td class="nm">'+esc(p.n)+'<span class="dsub">'+esc(p.d)+'</span></td>'+p.b.map(function(v,i){ return '<td class="r'+(v&&i>=DEBT_OLD_FROM?' late':'')+'">'+(v?money(v):'—')+'</td>'; }).join('')+'<td class="r"><b>'+money(p.tot)+'</b></td></tr>'; }).join('')+
-      '<tr><td class="nm"><b>Total</b></td>'+DEBT_COLS.map(function(c,i){ var v=P.reduce(function(s,p){ return s+p.b[i]; },0); return '<td class="r'+(i>=DEBT_OLD_FROM?' late':'')+'"><b>'+money(v)+'</b></td>'; }).join('')+'<td class="r"><b>'+money(sum())+'</b></td></tr></table></div>'+
-      '<p class="hint" style="margin-top:8px">Red columns are the debt 2 months old or more. Swipe the table sideways on a phone.</p>';
+        return '<tr><td class="nm">'+esc(p.n)+'</td>'+p.b.map(function(v,i){ return '<td'+(i>=DEBT_OLD_FROM?' class="old"':'')+'>'+cell(v)+'</td>'; }).join('')+'<td class="tot">'+cell(p.tot)+'</td></tr>'; }).join('')+
+      '</tbody><tfoot><tr><td class="nm">TOTAL</td>'+DEBT_COLS.map(function(c,i){ var v=P.reduce(function(s,p){ return s+p.b[i]; },0); return '<td'+(i>=DEBT_OLD_FROM?' class="old"':'')+'>'+cell(v)+'</td>'; }).join('')+
+      '<td class="tot">'+cell(P.reduce(function(s,p){ return s+p.tot; },0))+'</td></tr></tfoot></table></div></div>'+
+      '<p class="hint" style="margin-top:10px">US$. The red columns are 2 months old or more. On a phone, swipe the table sideways.</p>';
   } else if(which==='balances'){
     h+='<h3>🏦 Balances — details</h3><p class="hint">As of '+date(BAL.asOf)+'. Later: the history of each account, month by month.</p>'+
       '<table><tr><th>Account</th><th class="r">Amount</th><th class="r">Share</th></tr>'+
