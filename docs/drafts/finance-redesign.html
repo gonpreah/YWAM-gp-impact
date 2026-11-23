@@ -207,7 +207,9 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .inDates.one{ grid-template-columns:minmax(0,1fr); max-width:260px; }
 .inDay{ border:2px solid var(--accent); position:sticky; top:calc(env(safe-area-inset-top, 0px) + 46px); z-index:5; padding:10px 14px; box-shadow:0 6px 14px -8px rgba(0,0,0,.25); }
 .inDayRow{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
-.inDayRow label{ font-weight:700; font-size:16px; }
+.inDayRow label{ font-weight:700; font-size:15px; }
+.inDayRow{ flex-wrap:nowrap!important; }
+.inDayRow input{ padding:6px 8px!important; }
 .inDayRow input{ padding:9px 10px; font:inherit; font-weight:700; border:1px solid color-mix(in srgb, var(--muted) 40%, transparent); border-radius:10px; background:var(--bg); color:var(--ink); }
 .inDrop{ display:flex; gap:10px; align-items:center; border:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); border-radius:12px; padding:14px; margin-top:4px; cursor:pointer; font-size:14px; background:var(--accentSoft); }
 .inDrop small{ color:var(--muted); }
@@ -358,11 +360,11 @@ label.f{ display:block; font-size:12.5px; font-weight:600; margin:6px 0 4px; }
 .toolSum{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:10px 0; }
 .toolSum div{ background:var(--surface2); border-radius:10px; padding:8px 12px; display:flex; justify-content:space-between; font-variant-numeric:tabular-nums; }
 .toolSum .in{ color:var(--good); } .toolSum .out{ color:var(--bad); }
-.undoBar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:-6px 0 6px; }
-.undoBtn{ border:1px solid color-mix(in srgb, var(--muted) 45%, transparent); background:var(--surface); color:var(--ink); border-radius:999px; padding:7px 14px; font-weight:700; font-size:13.5px; cursor:pointer; }
+.undoBar{ display:flex; align-items:center; gap:10px; margin:8px 0 0; padding-top:8px; border-top:1px solid var(--line); min-width:0; }
+.undoBtn{ border:1px solid color-mix(in srgb, var(--muted) 45%, transparent); background:var(--surface); color:var(--ink); border-radius:999px; padding:5px 12px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap; flex:none; }
 .undoBtn.ask{ background:var(--bad); color:#fff; border-color:var(--bad); }
 .undoBtn[disabled]{ opacity:.5; cursor:not-allowed; }
-.undoBar .dsub{ font-size:12px; min-width:0; }
+.undoBar .dsub{ font-size:12px; min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -505,13 +507,12 @@ function inDayHtml_(){
   var d=reportDay_();
   return '<div class="inCard inDay" id="inDay"><div class="inDayRow"><label for="inReportDay">📅 Reports as of</label>'+
     '<input type="date" id="inReportDay" data-reportday="1" max="'+TODAY+'" value="'+esc(d)+'"></div>'+
-    '<p class="inLast" style="margin:4px 0 0">Everything below is saved for <b>'+date(d)+'</b> — except staff debt, which has its own day.</p>'+
-    (S.dayErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.dayErr)+'</p>' : '')+'</div>'+undoBtnHtml_();
+    (S.dayErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.dayErr)+'</p>' : '')+undoBtnHtml_()+'</div>';
 }
 function undoBtnHtml_(){
   var u=UNDO[UNDO.length-1];
   return '<div class="undoBar"><button class="undoBtn'+(S.undoAsk?' ask':'')+'" id="undoLast"'+(u?'':' disabled')+'>↩ '+(S.undoAsk?'Tap again to undo':'Undo previous input')+'</button>'+
-    '<span class="dsub">'+(u ? 'Would undo: '+esc(u.msg.replace(/^(Removed|Put back|Undid|Brought back)/, function(m){ return m; })) : 'Nothing to undo yet')+'</span></div>';
+    '<span class="dsub" title="'+(u?esc(u.msg):'')+'">'+(u ? esc(u.msg.replace(/^(Removed|Put back|Undid|Brought back)/, function(m){ return m; })) : 'Nothing to undo yet')+'</span></div>';
 }
 function inputHtml(){
   var B=BAL, D=S.inBal || (S.inBal={ aba:'', us:'', cash:'', rec:B.reconciled });
