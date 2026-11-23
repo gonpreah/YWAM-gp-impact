@@ -868,7 +868,18 @@ function ledgerLines_(){ var L=[];
     var memo=[x.type, x.memo].filter(function(v){ return v && String(v).trim(); }).join(' · ');
     (x.split&&x.split.length?x.split:[{ f:'', amt:x.amt }]).forEach(function(sp){
       L.push({ date:x.date, at:x.at||0, acct:ACCT_KEYS[x.bank]||bankLabel_(x.bank)||'', type:'Income', name:x.who||'', memo:memo, amt:sp.amt, cat:sp.f?fundLabel_(sp.f):'', camt:sp.amt, appr:pd, src:x }); }); });
-  var TORD={ 'Balance entry':0, 'Manual allocation':1, 'Income':2, 'Expense':3 };
+  /* internal transfers: two lines, the side it left (−) and the side it reached (+). Category to
+     category moves only Category amount; account to account moves only Amount. A Financial tools
+     adjustment is one line on the real side it fixes: an account (Amount) or a category
+     (Category amount), + for "Add income", − for "Remove income". */
+  var side=function(k, v){ return isAcct_(k) ? { acct:ACCT_KEYS[k], amt:v, cat:'', camt:null } : { acct:'', amt:null, cat:fundLabel_(k), camt:v }; };
+  var xpd=function(t, kind){ return Object.keys(PUBLISHED).filter(function(d){ var P=PUBLISHED[d]; return P.ids && (P.ids[kind]||[]).indexOf(t.id)>=0; }).sort()[0]||''; };
+  TRANSFERS.forEach(function(t){ var pd=xpd(t, 'xf'), m=t.memo||'';
+    [[t.from, -t.amt, '→ '+xferShort_(t.to)], [t.to, t.amt, '← '+xferShort_(t.from)]].forEach(function(r){ var sd=side(r[0], r[1]);
+      L.push({ date:t.date, at:t.at||0, acct:sd.acct, type:'Internal transfer', name:'', memo:[r[2], m].filter(Boolean).join(' · '), amt:sd.amt, cat:sd.cat, camt:sd.camt, appr:pd, src:t }); }); });
+  TOOL_XFERS.forEach(function(t){ var add=isTool_(t.from), k=add?t.to:t.from, sd=side(k, add?t.amt:-t.amt);
+    L.push({ date:t.date, at:t.at||0, acct:sd.acct, type:'Adjustment (Financial tools)', name:'', memo:[add?'Add income':'Remove income', t.memo].filter(Boolean).join(' · '), amt:sd.amt, cat:sd.cat, camt:sd.camt, appr:xpd(t, 'tool'), src:t }); });
+  var TORD={ 'Balance entry':0, 'Manual allocation':1, 'Income':2, 'Expense':3, 'Internal transfer':4, 'Adjustment (Financial tools)':5 };
   return L.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:((TORD[x.type]||9)-(TORD[y.type]||9)) || ((y.at||0)-(x.at||0)); }); }
 /* does every dollar have a home? real money = the newest balances (the gold standard) + the Amount
    of every line that came after them (afterBal_, the same rule as the Live estimates); minus

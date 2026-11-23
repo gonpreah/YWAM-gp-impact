@@ -115,7 +115,8 @@ Income.
 - **Approved** says which approved report a line is in (✅ and that day), or "Not yet".
 - The lines are built from what has been entered — nothing is typed into the breakdown itself.
   Newest day first (the ↓ / ↑ on the Date heading flips it to oldest first, `S.ledAsc`); within a
-  day, balance entries, then manual allocations, then income, then expenses. Memos are cut short to one line;
+  day, balance entries, then manual allocations, then income, expenses, internal transfers and
+  adjustments. Memos are cut short to one line;
   tapping one shows it whole.
 - **Filters** (`LED_FILTERS`, `S.ledF`): tap Account, Transaction type, Category or Approved to
   pick which values to show — All, or any number of them (blank values are "(blank)"). Only lines
@@ -149,6 +150,15 @@ Income.
   **positive in both Amount and Category amount**. One line per category its formula shares it
   out to; each line's Amount is that share, so the lines add up to the whole income. Approved:
   the approved day whose frozen list holds it (`PUBLISHED[day].ids.inc`), else "Not yet".
+- **Internal transfer** (from 🔁 Internal transfers) — two lines: the side it left (−) and the side
+  it reached (+), the memo starting "→ where it went" / "← where it came from". Category to
+  category: only **Category amount** moves (no Account, no Amount). Account to account: only
+  **Amount** moves (no Category). Approved: `PUBLISHED[day].ids.xf`.
+- **Adjustment (Financial tools)** — one line on the side it fixes: an account (Amount) or a
+  category (Category amount); + for "Add income", − for "Remove income", memo saying which.
+  It has no other side, so it moves the check: adding to an account leaves that much with no
+  home until it is allocated; adding to a category gives a home to money that isn't there.
+  Approved: `PUBLISHED[day].ids.tool`.
 - **The check above the table** (`ledgerCheck_`): real money = the newest balances day's total
   (balances are levels, not movements, so only the newest counts) + the Amount of every line
   that came after those balances (the same rule as the Live estimates, `afterBal_`) − every
@@ -157,7 +167,7 @@ Income.
   start from the funds after it.
   $0 → "✓ Every dollar has a home"; otherwise how much has no home, or how much more is given a
   home than there is.
-- Not in it yet: transfers, Financial tools, advances. A settled advance's spend is in
+- Not in it yet: advances. A settled advance's spend is in
   (as an expense) but the advance itself is not, so the check is off by what went out on
   advances until they are added. Until they are, the check
   is only right when nothing of those has happened since the newest balances. Still to decide:
