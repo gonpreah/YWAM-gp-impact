@@ -140,12 +140,27 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .repTbl tfoot td{ font-weight:700; border-top:1px solid var(--ink); padding-top:7px; }
 .repTbl tfoot .nm{ background:var(--repBg); }
 .repTbl{ width:100%; }
+.repTbl.wrapH th{ white-space:normal; line-height:1.2; vertical-align:bottom; min-width:78px; }
+.repTbl.wrapH th.nm{ min-width:130px; }
 .rep.compact .repTbl{ min-width:0; font-size:12px; table-layout:auto; }
 .rep.compact .repTbl th{ padding:6px 3px; font-size:11px; white-space:normal; line-height:1.2; }
 .rep.compact .repTbl td{ padding:5px 3px; }
 .rep.compact .repTbl .nm{ position:static; min-width:0; padding-left:0; }
 .sheet td.late, .sheet th.late{ color:var(--bad); font-weight:700; }
 .sheet .dsub{ display:block; font-size:11.5px; color:var(--muted); }
+/* Income allocation */
+.incHead{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:2px 0 6px; }
+.incTot{ font-size:28px; font-weight:700; font-variant-numeric:tabular-nums; }
+.incTotL{ font-size:12.5px; color:var(--muted); }
+.incSrc{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 10px; padding:6px 0; border-bottom:1px dashed var(--line); font-size:13.5px; }
+.incSrc:last-child{ border-bottom:0; }
+.incSrc .sv{ text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
+.incSrc .sb{ grid-column:1 / -1; height:6px; border-radius:999px; background:var(--surface2); overflow:hidden; }
+.incSrc .sb span{ display:block; height:100%; border-radius:999px; }
+.incSrc .sp{ color:var(--muted); font-weight:600; font-size:12px; margin-left:4px; }
+.incPer{ display:flex; gap:6px; margin:0 0 10px; }
+.incPer button{ border:1px solid var(--line); background:var(--surface2); border-radius:999px; padding:4px 12px; cursor:pointer; font-size:13px; font-weight:600; }
+.incPer button.on{ background:var(--accent); color:var(--accentInk); border-color:var(--accent); }
 .soon{ text-align:center; color:var(--muted); padding:40px 10px; }
 .soon .big{ font-size:36px; }
 .soon h3{ color:var(--ink); margin:8px 0 4px; }
@@ -307,13 +322,50 @@ function debtHtml(){
     : '<p class="hint">Nobody owes anything 2 months old or more. 🎉</p>';
   return h+'</section>';
 }
+/* income allocation — SAMPLE numbers. Each income category is shared out to the allocations;
+   by[source] is what that source gave this allocation. prev = the month before. */
+var INC_SRC=['Teams','School fees','Staff contributions','Donations','Ministry rent','Other'];
+var INC = { month:'November 2026', prevMonth:'October 2026', by:{
+  des: { prev:2100, by:{ 'Donations':2400 } },
+  min: { prev:7900, by:{ 'School fees':6200, 'Teams':1500, 'Donations':800 } },
+  war: { prev:1400, by:{ 'Donations':1000 } },
+  adm: { prev:11800, by:{ 'Teams':3000, 'School fees':5000, 'Staff contributions':4000, 'Ministry rent':1200 } },
+  sav: { prev:750, by:{ 'Teams':500, 'Other':250 } },
+  fund:{ prev:1000, by:{ 'Staff contributions':600, 'Donations':400 } } } };
+/* year to date: the same shares, bigger — sample */
+INC.ytd = {}; Object.keys(INC.by).forEach(function(k){ var o={}; Object.keys(INC.by[k].by).forEach(function(s2){ o[s2]=Math.round(INC.by[k].by[s2]*(9.4+(s2.length%4)*0.6)); }); INC.ytd[k]={ by:o }; });
+function incOf_(id){ var src=(S.incPer==='ytd'?INC.ytd:INC.by)[id]; var by=src?src.by:{}; var tot=0; Object.keys(by).forEach(function(k){ tot+=by[k]; }); return { by:by, tot:tot, prev:src&&src.prev }; }
+function incHtml(){
+  var ytd=S.incPer==='ytd', rows=ALLOC.map(function(a){ var o=incOf_(a.id); return { a:a, o:o }; }), T=0, PT=0;
+  rows.forEach(function(r){ T+=r.o.tot; PT+=r.o.prev||0; });
+  var h='<section class="sec" id="income"><div class="secHead"><h2>💵 Income allocation</h2><button class="more" data-sheet="income">Details ›</button></div>'+
+    '<p class="hint">Money that came in, and how it was shared out to the allocations. Tap one to see where its money came from.</p>'+
+    '<div class="incPer"><button class="'+(ytd?'':'on')+'" data-incper="month">'+INC.month+'</button><button class="'+(ytd?'on':'')+'" data-incper="ytd">2026 so far</button></div>'+
+    '<div class="incHead"><span class="incTot">'+money(T)+'</span><span class="incTotL">came in'+(ytd?' this year':' in '+INC.month)+'</span>'+
+    (!ytd ? '<span class="alDelta '+(T>=PT?'up':'down')+'">'+(T>=PT?'▲ ':'▼ ')+money(Math.abs(T-PT))+' vs '+INC.prevMonth+'</span>' : '')+'</div>';
+  h+='<div class="alBar" role="img" aria-label="'+esc(rows.map(function(r){ return r.a.name+' '+money(r.o.tot); }).join(', '))+'">'+
+    rows.filter(function(r){ return r.o.tot>0; }).map(function(r){ var p=r.o.tot/T*100;
+      return '<button class="alSeg'+(r.a.dark?' dark':'')+'" data-inc="'+r.a.id+'" style="flex:'+r.o.tot+' 1 0;background:var('+r.a.c+')" title="'+esc(r.a.name+' · '+money(r.o.tot)+' · '+Math.round(p)+'%')+'">'+(p>=9?Math.round(p)+'%':'')+'</button>'; }).join('')+'</div>';
+  h+='<ul class="alList" style="margin-top:10px">'+rows.map(function(r){ var a=r.a, o=r.o, p=T?o.tot/T*100:0, on=S.incOpen===a.id;
+    var d=o.prev!=null && !ytd ? o.tot-o.prev : null;
+    var dl = d==null ? '' : '<br>'+(Math.abs(d)<0.5 ? '<span class="alDelta">Same as '+INC.prevMonth+'</span>' : '<span class="alDelta '+(d>0?'up':'down')+'">'+(d>0?'▲ ':'▼ ')+money(Math.abs(d))+' vs '+INC.prevMonth+'</span>');
+    var srcs=Object.keys(o.by).sort(function(x,y){ return o.by[y]-o.by[x]; });
+    return '<li class="alRow'+(on?' on':'')+'"><button data-inc="'+a.id+'" aria-expanded="'+on+'">'+
+      '<span class="sw" style="background:var('+a.c+')"></span>'+
+      '<span><span class="alName">'+esc(a.name)+'</span><br><span class="alEg">'+(srcs.length ? srcs.length+' source'+(srcs.length>1?'s':'')+' · '+esc(srcs.slice(0,2).join(', '))+(srcs.length>2?'…':'') : 'nothing came in')+'</span>'+dl+'</span>'+
+      '<span class="alAmt">'+money(o.tot)+'<span class="alPct">'+Math.round(p)+'%</span></span></button>'+
+      '<div class="alSub">'+srcs.map(function(k){ var sp=o.by[k]/o.tot*100;
+        return '<div class="incSrc"><span>'+esc(k)+'<span class="sp">'+Math.round(sp)+'%</span></span><span class="sv">'+money(o.by[k])+'</span><span class="sb"><span style="width:'+sp.toFixed(1)+'%;background:var('+a.c+')"></span></span></div>'; }).join('')+'</div></li>';
+  }).join('')+'</ul>';
+  return h+'</section>';
+}
 function nextHtml(){
   return '<section class="sec"><p class="hint" style="margin:0">Next on the dashboard: the other reports (Profit and Loss, Burn Rate…) — each a short summary here, with its details a tap away.</p></section>';
 }
 function soon(icon, title, line){ return '<div class="soon"><div class="big">'+icon+'</div><h3>'+title+'</h3><div>'+line+'</div></div>'; }
 function render(){
   var p=document.getElementById('pane');
-  if(S.tab==='dash') p.innerHTML=balancesHtml()+allocHtml()+debtHtml()+nextHtml();
+  if(S.tab==='dash') p.innerHTML=balancesHtml()+allocHtml()+incHtml()+debtHtml()+nextHtml();
   else if(S.tab==='input') p.innerHTML=soon('✏️','Input','Where the Finances office types the balances, uploads the reports and sets the allocations. We design this next.');
   else if(S.tab==='tasks') p.innerHTML=soon('✅','Tasks','The Finances office’s GP Tasks list — as on every ministry.');
   else p.innerHTML=soon('🎯','OKRs','The Finances office’s objectives for the quarter — as on every ministry.');
@@ -323,7 +375,19 @@ function render(){
 /* ---- details sheets ---- */
 function sheet(which){
   var T=total(), h='<button class="x" id="sx" aria-label="Close">✕</button>';
-  if(which==='debt'){
+  if(which==='income'){
+    var ytd=S.incPer==='ytd', cell=function(v){ return v ? v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''; };
+    var used=INC_SRC.filter(function(k){ return ALLOC.some(function(a){ return incOf_(a.id).by[k]; }); });
+    var colTot=function(k){ return ALLOC.reduce(function(s2,a){ return s2+(incOf_(a.id).by[k]||0); },0); };
+    var all=ALLOC.reduce(function(s2,a){ return s2+incOf_(a.id).tot; },0);
+    h+='<div class="incPer" style="margin:0 0 4px"><button class="'+(ytd?'':'on')+'" data-incper="month">'+INC.month+'</button><button class="'+(ytd?'on':'')+'" data-incper="ytd">2026 so far</button></div>'+
+      '<div class="rep"><div class="repTitle">SR Income Allocation</div><div class="repSub">'+(ytd?'January – November 2026':INC.month)+'</div>'+
+      '<div class="tblWrap"><table class="repTbl wrapH"><thead><tr><th class="nm"></th>'+used.map(function(k){ return '<th>'+esc(k)+'</th>'; }).join('')+'<th>Total</th></tr></thead><tbody>'+
+      ALLOC.map(function(a){ var o=incOf_(a.id);
+        return '<tr><td class="nm"><span class="sw" style="display:inline-block;width:10px;height:10px;vertical-align:0;margin-right:6px;background:var('+a.c+')"></span>'+esc(a.name)+'</td>'+used.map(function(k){ return '<td>'+cell(o.by[k])+'</td>'; }).join('')+'<td class="tot">'+cell(o.tot)+'</td></tr>'; }).join('')+
+      '</tbody><tfoot><tr><td class="nm">TOTAL</td>'+used.map(function(k){ return '<td>'+cell(colTot(k))+'</td>'; }).join('')+'<td class="tot">'+cell(all)+'</td></tr></tfoot></table></div></div>'+
+      '<p class="hint" style="margin-top:10px">US$. Each column is one kind of income; each row is where it went. On a phone, swipe the table sideways.</p>';
+  } else if(which==='debt'){
     var all=S.debtAll!==false, P=DEBT.people.filter(function(p){ return all ? p.tot>0 : p.old>0; });
     var nAll=DEBT.people.filter(function(p){ return p.tot>0; }).length, nOld=DEBT.people.filter(function(p){ return p.old>0; }).length;
     h+='<div class="chips" style="margin:0 0 4px"><button class="chip'+(all?' on':'')+'" data-debtall="1">Everyone · '+nAll+'</button>'+
@@ -351,8 +415,10 @@ document.getElementById('scrim').onclick=closeSheet;
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSheet(); });
 
 document.addEventListener('click', function(e){
-  var t=e.target.closest('[data-tab],[data-al],[data-sheet],[data-debtall]'); if(!t) return;
+  var t=e.target.closest('[data-tab],[data-al],[data-sheet],[data-debtall],[data-inc],[data-incper]'); if(!t) return;
   if(t.dataset.tab){ S.tab=t.dataset.tab; render(); }
+  else if(t.dataset.inc){ S.incOpen = S.incOpen===t.dataset.inc ? null : t.dataset.inc; render(); }
+  else if(t.dataset.incper){ S.incPer=t.dataset.incper; render(); if(document.body.classList.contains('sheetOn')) sheet('income'); }
   else if(t.dataset.al){ S.open = S.open===t.dataset.al ? null : t.dataset.al; render(); }
   else if(t.dataset.sheet) sheet(t.dataset.sheet);
   else if(t.dataset.debtall!=null){ S.debtAll = t.dataset.debtall==='1'; sheet('debt'); }
