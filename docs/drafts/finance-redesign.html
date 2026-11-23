@@ -322,42 +322,80 @@ function debtHtml(){
     : '<p class="hint">Nobody owes anything 2 months old or more. 🎉</p>';
   return h+'</section>';
 }
-/* income allocation — SAMPLE numbers. Each income category is shared out to the allocations;
-   by[source] is what that source gave this allocation. prev = the month before. */
-var INC_SRC=['Teams','School fees','Staff contributions','Donations','Ministry rent','Other'];
-var INC = { month:'November 2026', prevMonth:'October 2026', by:{
-  des: { prev:2100, by:{ 'Donations':2400 } },
-  min: { prev:7900, by:{ 'School fees':6200, 'Teams':1500, 'Donations':800 } },
-  war: { prev:1400, by:{ 'Donations':1000 } },
-  adm: { prev:11800, by:{ 'Teams':3000, 'School fees':5000, 'Staff contributions':4000, 'Ministry rent':1200 } },
-  sav: { prev:750, by:{ 'Teams':500, 'Other':250 } },
-  fund:{ prev:1000, by:{ 'Staff contributions':600, 'Donations':400 } } } };
+/* income and expense allocation — SAMPLE numbers. Income: each kind of income is shared out
+   to the allocations. Expenses: each kind of spending is paid from an allocation. by[category]
+   is the amount for that allocation; prev = the month before. One report, two kinds. */
+var FLOW = {
+  inc: { id:'income', icon:'💵', title:'Income allocation', report:'SR Income Allocation', verb:'came in', upGood:true,
+    hint:'Money that came in, and how it was shared out to the allocations. Tap one to see where its money came from.',
+    tHint:'Each column is one kind of income; each row is where it went.', none:'nothing came in', srcWord:'source',
+    cats:['Teams','School fees','Staff contributions','Donations','Ministry rent','Other'],
+    by:{ des:{ prev:2100, by:{ 'Donations':2400 } },
+         min:{ prev:7900, by:{ 'School fees':6200, 'Teams':1500, 'Donations':800 } },
+         war:{ prev:1400, by:{ 'Donations':1000 } },
+         adm:{ prev:11800, by:{ 'Teams':3000, 'School fees':5000, 'Staff contributions':4000, 'Ministry rent':1200 } },
+         sav:{ prev:750, by:{ 'Teams':500, 'Other':250 } },
+         fund:{ prev:1000, by:{ 'Staff contributions':600, 'Donations':400 } } } },
+  exp: { id:'expense', icon:'🧾', title:'Expense allocation', report:'SR Expense Allocation', verb:'went out', upGood:false,
+    hint:'Money that went out, and which allocation paid for it. Tap one to see what it was spent on.',
+    tHint:'Each column is one kind of spending; each row is the allocation that paid for it.', none:'nothing spent', srcWord:'kind',
+    cats:['Rent & utilities','Food','Transport','Ministry costs','Relief supplies','Maintenance','Staff care','Office','Other'],
+    by:{ des:{ prev:1500, by:{ 'Ministry costs':1800 } },
+         min:{ prev:7200, by:{ 'Ministry costs':4200, 'Food':1600, 'Transport':900 } },
+         war:{ prev:900, by:{ 'Relief supplies':1200 } },
+         adm:{ prev:9800, by:{ 'Rent & utilities':5200, 'Food':2400, 'Maintenance':1300, 'Staff care':800, 'Office':450 } },
+         sav:{ prev:0, by:{} },
+         fund:{ prev:0, by:{ 'Maintenance':700 } } } }
+};
+var FLOW_MONTH='November 2026', FLOW_PREV='October 2026';
 /* year to date: the same shares, bigger — sample */
-INC.ytd = {}; Object.keys(INC.by).forEach(function(k){ var o={}; Object.keys(INC.by[k].by).forEach(function(s2){ o[s2]=Math.round(INC.by[k].by[s2]*(9.4+(s2.length%4)*0.6)); }); INC.ytd[k]={ by:o }; });
-function incOf_(id){ var src=(S.incPer==='ytd'?INC.ytd:INC.by)[id]; var by=src?src.by:{}; var tot=0; Object.keys(by).forEach(function(k){ tot+=by[k]; }); return { by:by, tot:tot, prev:src&&src.prev }; }
-function incHtml(){
-  var ytd=S.incPer==='ytd', rows=ALLOC.map(function(a){ var o=incOf_(a.id); return { a:a, o:o }; }), T=0, PT=0;
+Object.keys(FLOW).forEach(function(kind){ var F=FLOW[kind]; F.ytd={};
+  Object.keys(F.by).forEach(function(k){ var o={}; Object.keys(F.by[k].by).forEach(function(c){ o[c]=Math.round(F.by[k].by[c]*(9.4+(c.length%4)*0.6)); }); F.ytd[k]={ by:o }; }); });
+S.flowPer={}; S.flowOpen={};
+function flowOf_(kind, id){ var F=FLOW[kind], src=(S.flowPer[kind]==='ytd'?F.ytd:F.by)[id], by=src?src.by:{}, tot=0;
+  Object.keys(by).forEach(function(k){ tot+=by[k]; }); return { by:by, tot:tot, prev:src&&src.prev }; }
+function flowDelta_(kind, d, vs){
+  if(Math.abs(d)<0.5) return '<span class="alDelta">Same as '+vs+'</span>';
+  var good = FLOW[kind].upGood ? d>0 : d<0;
+  return '<span class="alDelta '+(good?'up':'down')+'">'+(d>0?'▲ ':'▼ ')+money(Math.abs(d))+' vs '+vs+'</span>';
+}
+function flowPerHtml_(kind){ var ytd=S.flowPer[kind]==='ytd';
+  return '<div class="incPer"><button class="'+(ytd?'':'on')+'" data-flowper="'+kind+'|month">'+FLOW_MONTH+'</button><button class="'+(ytd?'on':'')+'" data-flowper="'+kind+'|ytd">2026 so far</button></div>'; }
+function flowHtml(kind){
+  var F=FLOW[kind], ytd=S.flowPer[kind]==='ytd', rows=ALLOC.map(function(a){ return { a:a, o:flowOf_(kind, a.id) }; }), T=0, PT=0;
   rows.forEach(function(r){ T+=r.o.tot; PT+=r.o.prev||0; });
-  var h='<section class="sec" id="income"><div class="secHead"><h2>💵 Income allocation</h2><button class="more" data-sheet="income">Details ›</button></div>'+
-    '<p class="hint">Money that came in, and how it was shared out to the allocations. Tap one to see where its money came from.</p>'+
-    '<div class="incPer"><button class="'+(ytd?'':'on')+'" data-incper="month">'+INC.month+'</button><button class="'+(ytd?'on':'')+'" data-incper="ytd">2026 so far</button></div>'+
-    '<div class="incHead"><span class="incTot">'+money(T)+'</span><span class="incTotL">came in'+(ytd?' this year':' in '+INC.month)+'</span>'+
-    (!ytd ? '<span class="alDelta '+(T>=PT?'up':'down')+'">'+(T>=PT?'▲ ':'▼ ')+money(Math.abs(T-PT))+' vs '+INC.prevMonth+'</span>' : '')+'</div>';
+  var h='<section class="sec" id="'+F.id+'"><div class="secHead"><h2>'+F.icon+' '+F.title+'</h2><button class="more" data-sheet="'+F.id+'">Details ›</button></div>'+
+    '<p class="hint">'+F.hint+'</p>'+flowPerHtml_(kind)+
+    '<div class="incHead"><span class="incTot">'+money(T)+'</span><span class="incTotL">'+F.verb+(ytd?' this year':' during '+FLOW_MONTH)+'</span>'+
+    (!ytd ? flowDelta_(kind, T-PT, FLOW_PREV) : '')+'</div>';
   h+='<div class="alBar" role="img" aria-label="'+esc(rows.map(function(r){ return r.a.name+' '+money(r.o.tot); }).join(', '))+'">'+
     rows.filter(function(r){ return r.o.tot>0; }).map(function(r){ var p=r.o.tot/T*100;
-      return '<button class="alSeg'+(r.a.dark?' dark':'')+'" data-inc="'+r.a.id+'" style="flex:'+r.o.tot+' 1 0;background:var('+r.a.c+')" title="'+esc(r.a.name+' · '+money(r.o.tot)+' · '+Math.round(p)+'%')+'">'+(p>=9?Math.round(p)+'%':'')+'</button>'; }).join('')+'</div>';
-  h+='<ul class="alList" style="margin-top:10px">'+rows.map(function(r){ var a=r.a, o=r.o, p=T?o.tot/T*100:0, on=S.incOpen===a.id;
-    var d=o.prev!=null && !ytd ? o.tot-o.prev : null;
-    var dl = d==null ? '' : '<br>'+(Math.abs(d)<0.5 ? '<span class="alDelta">Same as '+INC.prevMonth+'</span>' : '<span class="alDelta '+(d>0?'up':'down')+'">'+(d>0?'▲ ':'▼ ')+money(Math.abs(d))+' vs '+INC.prevMonth+'</span>');
-    var srcs=Object.keys(o.by).sort(function(x,y){ return o.by[y]-o.by[x]; });
-    return '<li class="alRow'+(on?' on':'')+'"><button data-inc="'+a.id+'" aria-expanded="'+on+'">'+
+      return '<button class="alSeg'+(r.a.dark?' dark':'')+'" data-flow="'+kind+'|'+r.a.id+'" style="flex:'+r.o.tot+' 1 0;background:var('+r.a.c+')" title="'+esc(r.a.name+' · '+money(r.o.tot)+' · '+Math.round(p)+'%')+'">'+(p>=9?Math.round(p)+'%':'')+'</button>'; }).join('')+'</div>';
+  h+='<ul class="alList" style="margin-top:10px">'+rows.map(function(r){ var a=r.a, o=r.o, p=T?o.tot/T*100:0, on=S.flowOpen[kind]===a.id;
+    var dl = (o.prev==null || ytd) ? '' : '<br>'+flowDelta_(kind, o.tot-o.prev, FLOW_PREV);
+    var cs=Object.keys(o.by).sort(function(x,y){ return o.by[y]-o.by[x]; });
+    return '<li class="alRow'+(on?' on':'')+'"><button data-flow="'+kind+'|'+a.id+'" aria-expanded="'+on+'">'+
       '<span class="sw" style="background:var('+a.c+')"></span>'+
-      '<span><span class="alName">'+esc(a.name)+'</span><br><span class="alEg">'+(srcs.length ? srcs.length+' source'+(srcs.length>1?'s':'')+' · '+esc(srcs.slice(0,2).join(', '))+(srcs.length>2?'…':'') : 'nothing came in')+'</span>'+dl+'</span>'+
+      '<span><span class="alName">'+esc(a.name)+'</span><br><span class="alEg">'+(cs.length ? cs.length+' '+F.srcWord+(cs.length>1?'s':'')+' · '+esc(cs.slice(0,2).join(', '))+(cs.length>2?'…':'') : F.none)+'</span>'+dl+'</span>'+
       '<span class="alAmt">'+money(o.tot)+'<span class="alPct">'+Math.round(p)+'%</span></span></button>'+
-      '<div class="alSub">'+srcs.map(function(k){ var sp=o.by[k]/o.tot*100;
-        return '<div class="incSrc"><span>'+esc(k)+'<span class="sp">'+Math.round(sp)+'%</span></span><span class="sv">'+money(o.by[k])+'</span><span class="sb"><span style="width:'+sp.toFixed(1)+'%;background:var('+a.c+')"></span></span></div>'; }).join('')+'</div></li>';
+      '<div class="alSub">'+(cs.length ? cs.map(function(k){ var sp=o.by[k]/o.tot*100;
+        return '<div class="incSrc"><span>'+esc(k)+'<span class="sp">'+Math.round(sp)+'%</span></span><span class="sv">'+money(o.by[k])+'</span><span class="sb"><span style="width:'+sp.toFixed(1)+'%;background:var('+a.c+')"></span></span></div>'; }).join('')
+        : '<p class="note" style="margin:0">'+esc(F.none.charAt(0).toUpperCase()+F.none.slice(1))+(ytd?' this year.':' in '+FLOW_MONTH+'.')+'</p>')+'</div></li>';
   }).join('')+'</ul>';
   return h+'</section>';
+}
+function flowSheetHtml_(kind){
+  var F=FLOW[kind], ytd=S.flowPer[kind]==='ytd', cell=function(v){ return v ? v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''; };
+  var used=F.cats.filter(function(k){ return ALLOC.some(function(a){ return flowOf_(kind, a.id).by[k]; }); });
+  var colTot=function(k){ return ALLOC.reduce(function(s2,a){ return s2+(flowOf_(kind, a.id).by[k]||0); },0); };
+  var all=ALLOC.reduce(function(s2,a){ return s2+flowOf_(kind, a.id).tot; },0);
+  return flowPerHtml_(kind).replace('class="incPer"','class="incPer" style="margin:0 0 4px"')+
+    '<div class="rep"><div class="repTitle">'+F.report+'</div><div class="repSub">'+(ytd?'January – November 2026':FLOW_MONTH)+'</div>'+
+    '<div class="tblWrap"><table class="repTbl wrapH"><thead><tr><th class="nm"></th>'+used.map(function(k){ return '<th>'+esc(k)+'</th>'; }).join('')+'<th>Total</th></tr></thead><tbody>'+
+    ALLOC.map(function(a){ var o=flowOf_(kind, a.id);
+      return '<tr><td class="nm"><span class="sw" style="display:inline-block;width:10px;height:10px;vertical-align:0;margin-right:6px;background:var('+a.c+')"></span>'+esc(a.name)+'</td>'+used.map(function(k){ return '<td>'+cell(o.by[k])+'</td>'; }).join('')+'<td class="tot">'+cell(o.tot)+'</td></tr>'; }).join('')+
+    '</tbody><tfoot><tr><td class="nm">TOTAL</td>'+used.map(function(k){ return '<td>'+cell(colTot(k))+'</td>'; }).join('')+'<td class="tot">'+cell(all)+'</td></tr></tfoot></table></div></div>'+
+    '<p class="hint" style="margin-top:10px">US$. '+F.tHint+' On a phone, swipe the table sideways.</p>';
 }
 function nextHtml(){
   return '<section class="sec"><p class="hint" style="margin:0">Next on the dashboard: the other reports (Profit and Loss, Burn Rate…) — each a short summary here, with its details a tap away.</p></section>';
@@ -365,7 +403,7 @@ function nextHtml(){
 function soon(icon, title, line){ return '<div class="soon"><div class="big">'+icon+'</div><h3>'+title+'</h3><div>'+line+'</div></div>'; }
 function render(){
   var p=document.getElementById('pane');
-  if(S.tab==='dash') p.innerHTML=balancesHtml()+allocHtml()+incHtml()+debtHtml()+nextHtml();
+  if(S.tab==='dash') p.innerHTML=balancesHtml()+allocHtml()+debtHtml()+flowHtml('inc')+flowHtml('exp')+nextHtml();
   else if(S.tab==='input') p.innerHTML=soon('✏️','Input','Where the Finances office types the balances, uploads the reports and sets the allocations. We design this next.');
   else if(S.tab==='tasks') p.innerHTML=soon('✅','Tasks','The Finances office’s GP Tasks list — as on every ministry.');
   else p.innerHTML=soon('🎯','OKRs','The Finances office’s objectives for the quarter — as on every ministry.');
@@ -375,18 +413,8 @@ function render(){
 /* ---- details sheets ---- */
 function sheet(which){
   var T=total(), h='<button class="x" id="sx" aria-label="Close">✕</button>';
-  if(which==='income'){
-    var ytd=S.incPer==='ytd', cell=function(v){ return v ? v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''; };
-    var used=INC_SRC.filter(function(k){ return ALLOC.some(function(a){ return incOf_(a.id).by[k]; }); });
-    var colTot=function(k){ return ALLOC.reduce(function(s2,a){ return s2+(incOf_(a.id).by[k]||0); },0); };
-    var all=ALLOC.reduce(function(s2,a){ return s2+incOf_(a.id).tot; },0);
-    h+='<div class="incPer" style="margin:0 0 4px"><button class="'+(ytd?'':'on')+'" data-incper="month">'+INC.month+'</button><button class="'+(ytd?'on':'')+'" data-incper="ytd">2026 so far</button></div>'+
-      '<div class="rep"><div class="repTitle">SR Income Allocation</div><div class="repSub">'+(ytd?'January – November 2026':INC.month)+'</div>'+
-      '<div class="tblWrap"><table class="repTbl wrapH"><thead><tr><th class="nm"></th>'+used.map(function(k){ return '<th>'+esc(k)+'</th>'; }).join('')+'<th>Total</th></tr></thead><tbody>'+
-      ALLOC.map(function(a){ var o=incOf_(a.id);
-        return '<tr><td class="nm"><span class="sw" style="display:inline-block;width:10px;height:10px;vertical-align:0;margin-right:6px;background:var('+a.c+')"></span>'+esc(a.name)+'</td>'+used.map(function(k){ return '<td>'+cell(o.by[k])+'</td>'; }).join('')+'<td class="tot">'+cell(o.tot)+'</td></tr>'; }).join('')+
-      '</tbody><tfoot><tr><td class="nm">TOTAL</td>'+used.map(function(k){ return '<td>'+cell(colTot(k))+'</td>'; }).join('')+'<td class="tot">'+cell(all)+'</td></tr></tfoot></table></div></div>'+
-      '<p class="hint" style="margin-top:10px">US$. Each column is one kind of income; each row is where it went. On a phone, swipe the table sideways.</p>';
+  if(which==='income' || which==='expense'){
+    h+=flowSheetHtml_(which==='income'?'inc':'exp');
   } else if(which==='debt'){
     var all=S.debtAll!==false, P=DEBT.people.filter(function(p){ return all ? p.tot>0 : p.old>0; });
     var nAll=DEBT.people.filter(function(p){ return p.tot>0; }).length, nOld=DEBT.people.filter(function(p){ return p.old>0; }).length;
@@ -415,10 +443,10 @@ document.getElementById('scrim').onclick=closeSheet;
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSheet(); });
 
 document.addEventListener('click', function(e){
-  var t=e.target.closest('[data-tab],[data-al],[data-sheet],[data-debtall],[data-inc],[data-incper]'); if(!t) return;
+  var t=e.target.closest('[data-tab],[data-al],[data-sheet],[data-debtall],[data-flow],[data-flowper]'); if(!t) return;
   if(t.dataset.tab){ S.tab=t.dataset.tab; render(); }
-  else if(t.dataset.inc){ S.incOpen = S.incOpen===t.dataset.inc ? null : t.dataset.inc; render(); }
-  else if(t.dataset.incper){ S.incPer=t.dataset.incper; render(); if(document.body.classList.contains('sheetOn')) sheet('income'); }
+  else if(t.dataset.flow){ var fp=t.dataset.flow.split('|'); S.flowOpen[fp[0]] = S.flowOpen[fp[0]]===fp[1] ? null : fp[1]; render(); }
+  else if(t.dataset.flowper){ var pp=t.dataset.flowper.split('|'); S.flowPer[pp[0]]=pp[1]; render(); if(document.body.classList.contains('sheetOn')) sheet(FLOW[pp[0]].id); }
   else if(t.dataset.al){ S.open = S.open===t.dataset.al ? null : t.dataset.al; render(); }
   else if(t.dataset.sheet) sheet(t.dataset.sheet);
   else if(t.dataset.debtall!=null){ S.debtAll = t.dataset.debtall==='1'; sheet('debt'); }
