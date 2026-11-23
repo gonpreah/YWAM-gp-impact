@@ -103,11 +103,19 @@ Income.
 - Up to 8 categories (the bar's colours).
 
 ### 📒 Detailed breakdown
-- Where every transaction will be kept, one line each. Columns: **Date · Account · Transaction
-  type · Name · Memo · Amount · Category** (`LEDGER_COLS`, `inLedgerHtml_`).
-- *23 Nov 2026: headings only — no transactions are put in it yet, and it reads or moves
-  nothing.* When it is filled, this section must say which parts write lines into it and how
-  each column is filled (e.g. a transfer's Account and Category).
+- Where every transaction is kept, one line each. Columns: **Date · Account · Transaction type ·
+  Name · Memo · Amount · Category · Approved** (`LEDGER_COLS`, `inLedgerHtml_`, `ledgerLines_`).
+- **Approved** says which approved report a line is in (✅ and that day), or "Not yet".
+- The lines are built from what has been entered — nothing is typed into the breakdown itself.
+  Newest day first.
+- **So far only balance entries** (23 Nov 2026). The balances come straight from the bank and the
+  cash box, so they are the **gold standard**. Each day under 🏦 Balances gives three lines —
+  ABA bank, US bank, Cash on hand — transaction type **Balance entry**, the amount typed, Name /
+  Memo / Category blank. Approved: the approved day whose frozen balances are that same day with
+  the same three amounts (re-typing an approved day's balances makes the new lines "Not yet").
+- Still to decide before income, expenses, transfers and advances go in: how each fills the
+  columns (a transfer has two accounts or two categories; an income split by a formula touches
+  several categories).
 
 ---
 
