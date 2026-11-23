@@ -140,6 +140,10 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .repTbl tfoot td{ font-weight:700; border-top:1px solid var(--ink); padding-top:7px; }
 .repTbl tfoot .nm{ background:var(--repBg); }
 .repTbl{ width:100%; }
+.rep.compact .repTbl{ min-width:0; font-size:12px; table-layout:auto; }
+.rep.compact .repTbl th{ padding:6px 3px; font-size:11px; white-space:normal; line-height:1.2; }
+.rep.compact .repTbl td{ padding:5px 3px; }
+.rep.compact .repTbl .nm{ position:static; min-width:0; padding-left:0; }
 .sheet td.late, .sheet th.late{ color:var(--bad); font-weight:700; }
 .sheet .dsub{ display:block; font-size:11.5px; color:var(--muted); }
 .soon{ text-align:center; color:var(--muted); padding:40px 10px; }
@@ -273,14 +277,19 @@ function allocHtml(){
   }).join('')+'</ul></section>';
   return h;
 }
-function debtReportHtml(P, title){
+/* the report as the office lays it out. compact (the dashboard): 3 Months and 3+ Months share
+   one column, so it fits a phone without scrolling; Details keeps every column. */
+function debtReportHtml(P, title, compact){
   var cell=function(v){ return v ? v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''; };
   var asOf=new Date(DEBT.asOf+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  return '<div class="rep"><div class="repTitle">'+esc(title)+'</div><div class="repSub">As of '+esc(asOf)+'</div>'+
-    '<div class="tblWrap"><table class="repTbl"><thead><tr><th class="nm"></th>'+DEBT_COLS.map(function(c,i){ return '<th'+(i>=DEBT_OLD_FROM?' class="old"':'')+'>'+(i?c:c.toUpperCase())+'</th>'; }).join('')+'<th>Total</th></tr></thead><tbody>'+
+  var cols = compact ? ['Current','1 Month','2 Months','3+ Months'] : DEBT_COLS;
+  var vals = function(p){ return compact ? [p.b[0], p.b[1], p.b[2], p.b[3]+p.b[4]] : p.b; };
+  var old = function(i){ return i>=DEBT_OLD_FROM; };
+  return '<div class="rep'+(compact?' compact':'')+'"><div class="repTitle">'+esc(title)+'</div><div class="repSub">As of '+esc(asOf)+'</div>'+
+    '<div class="tblWrap"><table class="repTbl"><thead><tr><th class="nm"></th>'+cols.map(function(c,i){ return '<th'+(old(i)?' class="old"':'')+'>'+(i?c:c.toUpperCase())+'</th>'; }).join('')+'<th>Total</th></tr></thead><tbody>'+
     P.map(function(p){
-      return '<tr><td class="nm">'+esc(p.n)+'</td>'+p.b.map(function(v,i){ return '<td'+(i>=DEBT_OLD_FROM?' class="old"':'')+'>'+cell(v)+'</td>'; }).join('')+'<td class="tot">'+cell(p.tot)+'</td></tr>'; }).join('')+
-    '</tbody><tfoot><tr><td class="nm">TOTAL</td>'+DEBT_COLS.map(function(c,i){ var v=P.reduce(function(s,p){ return s+p.b[i]; },0); return '<td'+(i>=DEBT_OLD_FROM?' class="old"':'')+'>'+cell(v)+'</td>'; }).join('')+
+      return '<tr><td class="nm">'+esc(p.n)+'</td>'+vals(p).map(function(v,i){ return '<td'+(old(i)?' class="old"':'')+'>'+cell(v)+'</td>'; }).join('')+'<td class="tot">'+cell(p.tot)+'</td></tr>'; }).join('')+
+    '</tbody><tfoot><tr><td class="nm">TOTAL</td>'+cols.map(function(c,i){ var v=P.reduce(function(s,p){ return s+vals(p)[i]; },0); return '<td'+(old(i)?' class="old"':'')+'>'+cell(v)+'</td>'; }).join('')+
     '<td class="tot">'+cell(P.reduce(function(s,p){ return s+p.tot; },0))+'</td></tr></tfoot></table></div></div>';
 }
 function debtHtml(){
@@ -294,7 +303,7 @@ function debtHtml(){
     '<div class="dTile late"><div class="dl">2 months or older</div><div class="dv">'+money(old)+'</div><div class="ds">'+late.length+' people · '+pct+'% of the total</div></div></div>'+
     '<div class="dMeter" role="img" aria-label="'+pct+'% of staff debt is 2 months or older"><span style="width:'+pct+'%"></span></div>'+
     '<div class="dMeterL">'+pct+'% of what staff owe is 2 months old or more</div>';
-  h+= late.length ? debtReportHtml(DEBT.people.filter(function(p){ return p.old>0; }), 'Owing for 2 Months or more')
+  h+= late.length ? debtReportHtml(DEBT.people.filter(function(p){ return p.old>0; }), 'Owing for 2 Months or more', true)
     : '<p class="hint">Nobody owes anything 2 months old or more. 🎉</p>';
   return h+'</section>';
 }
