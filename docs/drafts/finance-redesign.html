@@ -72,20 +72,26 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .rec.ok{ color:var(--good); }
 
 /* Allocation report */
-.alChart{ position:relative; display:grid; grid-template-columns:44px minmax(0,1fr); column-gap:0; margin:8px 0 4px; }
-.alBar{ display:flex; flex-direction:column; gap:2px; width:44px; }
-.alSeg{ border-radius:4px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:11.5px; font-weight:700; cursor:pointer; min-height:0; overflow:hidden; border:0; padding:0; outline-offset:2px; transition:opacity .15s; }
-.alSeg.dark{ color:#17150F; }
-.alChart.focus .alSeg:not(.on), .alChart.focus .alLbl:not(.on){ opacity:.35; }
-.alLeads{ position:absolute; left:44px; top:0; pointer-events:none; overflow:visible; }
-.alLeads path{ fill:none; stroke:var(--muted); stroke-width:1.25; opacity:.6; }
-.alLabels{ position:relative; margin-left:30px; }
-.alLbl{ position:absolute; left:0; right:0; transform:translateY(-50%); background:none; border:0; padding:4px 0; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center; text-align:left; cursor:pointer; transition:opacity .15s; }
-.alLbl .alName{ font-weight:600; display:block; line-height:1.2; }
-.alLbl .alEg{ font-size:12px; color:var(--muted); display:block; line-height:1.2; }
-.alAmt{ text-align:right; font-weight:700; white-space:nowrap; line-height:1.2; }
-.alPct{ display:block; font-size:12px; color:var(--muted); font-weight:600; }
-.alLbl.on .alName{ color:var(--accent); }
+.alTotal{ display:flex; align-items:baseline; gap:8px; margin:4px 0 10px; font-size:12.5px; color:var(--muted); }
+.alTotal b{ color:var(--ink); font-size:15px; }
+.alChart{ position:relative; display:grid; grid-template-columns:30px minmax(0,1fr); margin:0 0 4px; }
+.alBar{ display:flex; flex-direction:column; gap:3px; width:30px; padding:3px; background:var(--surface2); border-radius:10px; box-sizing:content-box; margin-left:-3px; }
+.alSeg{ border-radius:5px; border:0; padding:0; cursor:pointer; min-height:0; outline-offset:3px; transition:opacity .15s, box-shadow .15s; }
+.alSeg.on{ box-shadow:0 0 0 2px var(--bg), 0 0 0 4px var(--c); }
+.alChart.focus .alSeg:not(.on){ opacity:.3; }
+.alLeads{ position:absolute; left:30px; top:3px; pointer-events:none; overflow:visible; }
+.alLeads path{ fill:none; stroke-width:1.5; stroke-linecap:round; transition:opacity .15s; }
+.alLeads circle{ transition:opacity .15s; }
+.alChart.focus .alLeads .off{ opacity:.25; }
+.alLabels{ position:relative; margin-left:34px; }
+.alLbl{ position:absolute; left:0; right:0; transform:translateY(-50%); background:none; border:0; border-radius:10px; padding:6px 10px; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center; text-align:left; cursor:pointer; transition:background .15s, opacity .15s; }
+.alLbl:hover{ background:color-mix(in srgb, var(--c) 8%, transparent); }
+.alLbl.on{ background:color-mix(in srgb, var(--c) 14%, transparent); }
+.alChart.focus .alLbl:not(.on){ opacity:.45; }
+.alLbl .alName{ font-weight:600; font-size:15px; display:block; line-height:1.2; }
+.alLbl .alEg{ font-size:12px; color:var(--muted); display:block; line-height:1.25; margin-top:1px; }
+.alAmt{ text-align:right; font-weight:700; white-space:nowrap; line-height:1.2; font-variant-numeric:tabular-nums; font-size:15px; }
+.alPct{ display:inline-block; margin-top:3px; font-size:11.5px; font-weight:700; color:var(--ink); background:color-mix(in srgb, var(--c) 18%, transparent); border-radius:999px; padding:1px 8px; }
 .alCheck{ font-size:12.5px; color:var(--muted); margin:10px 0 0; }
 .alCheck.ok{ color:var(--good); }
 .alCheck.off{ color:var(--amberDeep); }
@@ -180,31 +186,33 @@ function balancesHtml(){
   h+='<p class="rec ok">✓ Reconciled with the bank '+date(BAL.reconciled)+' ('+ago+' days ago)</p></section>';
   return h;
 }
-var AL_H=400, AL_GAP=2, AL_MINROW=46;
+var AL_H=420, AL_GAP=3, AL_MINROW=56;
 function allocHtml(){
   var T=total(), A=ALLOC.reduce(function(s,a){ return s+a.amt; },0), gap=T-A;
   var h='<section class="sec" id="alloc"><div class="secHead"><h2>📊 Allocation report</h2><button class="more" data-sheet="alloc">Details ›</button></div>'+
-    '<p class="hint">Where the '+money(T)+' in total liquid assets is set aside. Tap a colour or a name to see what is in it.</p>';
+    '<p class="hint">Where the total liquid assets are set aside. Tap a colour or a name to see what is in it.</p>'+
+    '<div class="alTotal"><b>'+money(T)+'</b> in '+ALLOC.length+' allocations</div>';
   /* the bar is drawn to scale; each name sits level with the middle of its colour,
      nudged apart only where two small parts are too close to fit their names */
   var free=AL_H-AL_GAP*(ALLOC.length-1), y=0, mids=[];
   ALLOC.forEach(function(a){ var hh=a.amt/A*free; mids.push(y+hh/2); a._h=hh; y+=hh+AL_GAP; });
-  var pos=mids.slice();
+  var pos=mids.slice(), half=AL_MINROW/2;
+  if(pos[0]<half) pos[0]=half;
   for(var i=1;i<pos.length;i++) if(pos[i]-pos[i-1]<AL_MINROW) pos[i]=pos[i-1]+AL_MINROW;
-  var over=pos[pos.length-1]-(AL_H-AL_MINROW/2);
+  var over=pos[pos.length-1]-(AL_H-half);
   if(over>0){ pos[pos.length-1]-=over; for(var j=pos.length-2;j>=0;j--) if(pos[j+1]-pos[j]<AL_MINROW) pos[j]=pos[j+1]-AL_MINROW; }
-  var top=Math.min(0, pos[0]-AL_MINROW/2);
-  h+='<div class="alChart'+(S.open?' focus':'')+'" style="height:'+AL_H+'px;margin-top:'+(8-top)+'px">'+
+  h+='<div class="alChart'+(S.open?' focus':'')+'" style="height:'+(AL_H+6)+'px">'+
     '<div class="alBar" style="height:'+AL_H+'px" role="img" aria-label="'+esc(ALLOC.map(function(a){ return a.name+' '+money(a.amt)+' '+Math.round(a.amt/T*100)+'%'; }).join(', '))+'">'+
-    ALLOC.map(function(a){ var p=a.amt/T*100;
-      return '<button class="alSeg'+(a.dark?' dark':'')+(S.open===a.id?' on':'')+'" data-al="'+a.id+'" style="height:'+a._h.toFixed(1)+'px;background:var('+a.c+')" title="'+esc(a.name+' · '+money(a.amt,true)+' · '+Math.round(p)+'%')+'">'+(a._h>=20?Math.round(p)+'%':'')+'</button>';
+    ALLOC.map(function(a){
+      return '<button class="alSeg'+(S.open===a.id?' on':'')+'" data-al="'+a.id+'" style="--c:var('+a.c+');height:'+a._h.toFixed(1)+'px;background:var('+a.c+')" title="'+esc(a.name+' · '+money(a.amt,true)+' · '+Math.round(a.amt/T*100)+'%')+'" aria-label="'+esc(a.name)+'"></button>';
     }).join('')+'</div>'+
-    '<svg class="alLeads" width="30" height="'+AL_H+'" viewBox="0 0 30 '+AL_H+'" aria-hidden="true">'+
-    mids.map(function(m,i){ return '<path d="M2 '+m.toFixed(1)+' C 15 '+m.toFixed(1)+', 15 '+pos[i].toFixed(1)+', 28 '+pos[i].toFixed(1)+'"/>'; }).join('')+'</svg>'+
+    '<svg class="alLeads" width="34" height="'+AL_H+'" viewBox="0 0 34 '+AL_H+'" aria-hidden="true">'+
+    mids.map(function(m,i){ var c='var('+ALLOC[i].c+')', off=(S.open && S.open!==ALLOC[i].id)?' class="off"':'', y1=m.toFixed(1), y2=pos[i].toFixed(1);
+      return '<g'+off+'><path stroke="'+c+'" d="M4 '+y1+' C 18 '+y1+', 16 '+y2+', 30 '+y2+'"/><circle cx="4" cy="'+y1+'" r="2.5" fill="'+c+'"/></g>'; }).join('')+'</svg>'+
     '<div class="alLabels">'+ALLOC.map(function(a,i){ var p=a.amt/T*100;
-      return '<button class="alLbl'+(S.open===a.id?' on':'')+'" data-al="'+a.id+'" aria-expanded="'+(S.open===a.id)+'" style="top:'+pos[i].toFixed(1)+'px">'+
+      return '<button class="alLbl'+(S.open===a.id?' on':'')+'" data-al="'+a.id+'" aria-expanded="'+(S.open===a.id)+'" style="--c:var('+a.c+');top:'+(pos[i]+3).toFixed(1)+'px">'+
         '<span><span class="alName">'+esc(a.name)+'</span>'+(a.eg?'<span class="alEg">'+esc(a.eg)+'</span>':'')+'</span>'+
-        '<span class="alAmt">'+money(a.amt)+'<span class="alPct">'+(p<1?'<1':Math.round(p))+'%</span></span></button>';
+        '<span class="alAmt">'+money(a.amt)+'<br><span class="alPct">'+(p<1?'<1':Math.round(p))+'%</span></span></button>';
     }).join('')+'</div></div>';
   h+= Math.abs(gap)<0.005 ? '<div class="alCheck ok">✓ Every dollar is allocated — '+money(A,true)+' of '+money(T,true)+'</div>'
     : '<div class="alCheck off">⚠️ '+money(Math.abs(gap),true)+(gap>0?' not allocated yet':' more allocated than is in hand')+'</div>';
