@@ -170,25 +170,11 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
 }
 /* ---------- 3b. Santa, and the points sheet on opening the app (Nov 2026, the rollout) ---------- */
 {
+  /* the points sheet on opening the app was turned off (Nov 2026, Andrew: "stop the pop up about the leaderboard") */
   const { ctx, page } = await open('di', { ls: { 'gp-intro-test': '1' } });
-  await page.waitForSelector('#gameIntro', { timeout: 5000 });
-  const intro = await page.$eval('#gameIntro', e => e.innerText.replace(/\s+/g, ' '));
-  const mePts = await page.evaluate(() => S.game.me.pts);
-  ok('opening the app: the points sheet, my own points on top, then what each thing is worth', /Points are here!/.test(intro) && new RegExp('⭐ ' + mePts + ' points this week').test(intro) && /How to earn points/.test(intro) && /Finish a book \+30/.test(intro) && /Hold a 1-on-1 \+20/.test(intro) && /Catch Santa when he flies by \+5/.test(intro) && /3 days in a row/.test(intro), intro.slice(0, 260));
-  ok('… it fits a phone', await page.evaluate(() => { const r = document.getElementById('gameIntro').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1 && document.documentElement.scrollWidth <= innerWidth + 1; }));
-  if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/intro.png' });
-  await page.click('#gameIntroBoard'); await page.waitForTimeout(400);
-  ok('See this week’s board opens it, and the sheet is gone', !(await page.$('#gameIntro')) && await page.evaluate(() => S.view === 'team' && S.teamMode === 'game'));
-  await page.reload({ waitUntil: 'load' }); await page.waitForSelector('nav.bottom button'); await page.waitForTimeout(1200);
-  ok('… once a day: opened again today, it waits for tomorrow', !(await page.$('#gameIntro')));
-  await page.evaluate(() => { const st = JSON.parse(localStorage.getItem('gp-game-intro-v2')); st.last = '2000-01-01'; localStorage.setItem('gp-game-intro-v2', JSON.stringify(st)); });
-  await page.reload({ waitUntil: 'load' }); await page.waitForSelector('#gameIntro', { timeout: 5000 });
-  const again = await page.$eval('#gameIntro', e => e.innerText);
-  ok('the next day it is back, as "Your points this week"', /Your points this week/i.test(again) && !/Points are here/i.test(again));
-  await page.click('#gameIntroOff'); await page.waitForTimeout(300);
-  await page.evaluate(() => { const st = JSON.parse(localStorage.getItem('gp-game-intro-v2')); st.last = '2000-01-01'; localStorage.setItem('gp-game-intro-v2', JSON.stringify(st)); });
-  await page.reload({ waitUntil: 'load' }); await page.waitForSelector('nav.bottom button'); await page.waitForTimeout(1200);
-  ok('"Don’t show this when I open the app" turns it off', !(await page.$('#gameIntro')));
+  await page.waitForTimeout(1500);
+  ok('opening the app: no points sheet pops up any more', !(await page.$('#gameIntro')) && await page.evaluate(() => !gameIntroOn_()));
+  ok('… the line on My Home still opens the board', !!(await page.$('#gameHome')));
   await ctx.close();
 }
 {
@@ -222,7 +208,8 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
 }
 {
   const { ctx, page } = await open('di', { ls: { 'gp-banner-test': '1' } });
-  await page.evaluate(() => { S.bannerShowMs = 60000; S.bannerGapMs = 300; S.broadcasts = [{ created: new Date().toISOString(), text: 'Team lunch at noon' }]; });
+  /* dated late today, so it is the newest even on a Tuesday, when the check-in nudge is dated today too */
+  await page.evaluate(() => { S.bannerShowMs = 60000; S.bannerGapMs = 300; S.broadcasts = [{ created: todayStr() + 'T23:59:59', text: 'Team lunch at noon' }]; });
   await page.waitForSelector('#gpBanner.on', { timeout: 8000 });
   const first = await page.evaluate(() => visibleNotifItems_().filter(x => !x.bellOnly)[0].text);
   ok('a reminder slides down from the top: the newest in the bell', (await page.$eval('#gpBanMsg', e => e.textContent)) === first && first === '📣 Announcement: Team lunch at noon' && await page.evaluate(() => document.getElementById('gpBanner').getBoundingClientRect().top < 80), first);
@@ -247,7 +234,7 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   if (third) { await page.click('#gpBanX'); await page.waitForTimeout(450); ok('✕ sends it away too', !(await page.$('#gpBanner.on'))); }
   ok('each one once a day: they are remembered', await page.evaluate(f => Object.keys(JSON.parse(localStorage.getItem('gp-banner-seen'))).some(k => k.indexOf('Team lunch') > -1), first));
   await page.reload({ waitUntil: 'load' }); await page.waitForSelector('nav.bottom button'); await page.waitForTimeout(700);
-  await page.evaluate(() => { S.broadcasts = [{ created: new Date().toISOString(), text: 'Team lunch at noon' }]; S.bannerGapMs = 300; });
+  await page.evaluate(() => { S.broadcasts = [{ created: todayStr() + 'T23:59:59', text: 'Team lunch at noon' }]; S.bannerGapMs = 300; });
   await page.waitForTimeout(5000);
   ok('reopened the same day: what was shown is not shown again', !/Team lunch/.test(await page.$eval('#gpBanMsg', e => e.textContent).catch(() => '')));
   await ctx.close();

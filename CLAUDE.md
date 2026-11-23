@@ -2607,7 +2607,8 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   not two within a minute (server `SANTA_GAP_MS`); kept in `holidayCatch` as `santa` / `santaLast`; `parts.santa`. Waits
   while the bell, a snowflake or the points sheet is up. Not under a test browser unless `gp-santa-test` is set
   (`S.santaMs` / `S.santaGapMs` / `S.santaFlyMs`).
-- **The points sheet when the app opens** (the rollout, `gameIntroMaybe_`, `#gameIntro`; Uriah: "show the points when
+- **The points sheet when the app opens — turned off** (Nov 2026, Andrew: "stop the pop up about the leaderboard for points";
+  `GAME_INTRO_ON=false` in 20-game.js, the code kept — set it to true to bring it back). As it was (the rollout, `gameIntroMaybe_`, `#gameIntro`; Uriah: "show the points when
   they open the app … that kind of explains what's what"): on My Home, the first fresh boot of each day — my points,
   streak and place (`#gameIntroMe`), then "How to earn points" with what each thing is worth (from the board's own
   `pts`), the streak bonus, Santa and the snowflakes in season, **See this week's board** / **Let's go!**, and

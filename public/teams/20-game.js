@@ -313,12 +313,16 @@ document.addEventListener('visibilitychange', function(){
    the season, and a button to the board. The first time it says "Points are here!". "Don't show this when I open the
    app" turns it off on that phone (GAME_INTRO_KEY = {n, last, off}). Not under a test browser unless 'gp-intro-test'. */
 var GAME_INTRO_KEY='gp-game-intro-v2';
+/* Turned off (Nov 2026, Andrew: "stop the pop up about the leaderboard for points"). The code stays so it can come back:
+   set this to true. How points work is still on Team → This week. */
+var GAME_INTRO_ON=false;
 function gameIntroState_(){
   var st={};
   try { st=JSON.parse(lsGet(GAME_INTRO_KEY)||'{}')||{}; } catch(e){ st={}; }
   return st;
 }
 function gameIntroOn_(){
+  if(!GAME_INTRO_ON) return false;
   if(!gameOn_() || !S.auth || !S.auth.user || !S.game || !S.game.ok || !S.game.me) return false;
   if(S.bootStale || S.offlineSince || S.view!=='week') return false;
   if(typeof gpTasksApp_==='function' && gpTasksApp_()) return false;
