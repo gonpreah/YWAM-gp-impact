@@ -193,6 +193,9 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .money input{ -moz-appearance:textfield; }
 .inCard input:focus{ outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
 .inCard input.bad{ border-color:var(--bad); }
+.money .calcPrev{ position:absolute; right:6px; left:auto; top:-12px; transform:none; font-size:11.5px; font-weight:700; color:var(--accentInk); background:var(--accent); border-radius:999px; padding:2px 9px; z-index:3; box-shadow:0 2px 6px rgba(0,0,0,.18); white-space:nowrap; }
+.money .calcPrev.bad{ background:var(--bad); color:#fff; }
+.inTip{ font-size:12px; color:var(--muted); margin:-8px 0 10px; }
 .inWas{ grid-column:1 / -1; font-size:12px; color:var(--muted); margin-top:-4px; text-align:right; }
 .inTotal{ display:flex; justify-content:space-between; align-items:baseline; background:var(--headerBg); color:var(--onDark); border-radius:12px; padding:12px 14px; margin:12px 0 4px; }
 .inTotal b{ font-size:22px; font-variant-numeric:tabular-nums; }
@@ -336,6 +339,25 @@ function alDeltaHtml(a){
   if(Math.abs(d)<0.005) return '<span class="alDelta">Same as '+date(BAL.prevAsOf)+'</span>';
   return '<span class="alDelta '+(d>0?'up':'down')+'">'+(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+' since '+date(BAL.prevAsOf)+'</span>';
 }
+/* ---- simple sums in the amount boxes: 500-30, 5*6, (120+80)/2, 1,250 + 40 ----
+   A small parser of its own (never eval): numbers, + - * / ( ), x × for times, ÷ for divide.
+   "$" and thousands commas are ignored; anything after "=" is dropped (5*6=30 → 30). */
+function calc_(v){
+  if(typeof v==='number') return v;
+  var str=String(v==null?'':v).split('=')[0].replace(/[\s$,]/g,'').replace(/[x×]/gi,'*').replace(/÷/g,'/');
+  if(!str) return NaN;
+  if(/[^0-9.+\-*/()]/.test(str)) return NaN;
+  var i=0;
+  function num(){ var m=/^\d*\.?\d+|^\d+\./.exec(str.slice(i)); if(!m) throw 0; i+=m[0].length; return parseFloat(m[0]); }
+  function atom(){ var c=str[i];
+    if(c==='-'){ i++; return -atom(); } if(c==='+'){ i++; return atom(); }
+    if(c==='('){ i++; var v2=expr(); if(str[i]!==')') throw 0; i++; return v2; }
+    return num(); }
+  function term(){ var v2=atom(); while(str[i]==='*'||str[i]==='/'){ var op=str[i++], r=atom(); if(op==='/'&&r===0) throw 0; v2= op==='*' ? v2*r : v2/r; } return v2; }
+  function expr(){ var v2=term(); while(str[i]==='+'||str[i]==='-'){ var op=str[i++], r=term(); v2= op==='+' ? v2+r : v2-r; } return v2; }
+  try { var out=expr(); if(i!==str.length || !isFinite(out)) return NaN; return Math.round(out*100)/100; } catch(e){ return NaN; }
+}
+function isSum_(v){ return /[+\-*/x×÷()=]/i.test(String(v).replace(/^\s*-/,'')); }
 /* ---- Input: the balances ---- */
 function inMoney_(v){ return v==null||v==='' ? '' : Number(v).toFixed(2); }
 function inputHtml(){
@@ -343,10 +365,11 @@ function inputHtml(){
   var acc=function(id){ return B.accts.filter(function(a){ return a.id===id; })[0]; };
   var row=function(id, label, sub){ var a=acc(id);
     return '<div class="inRow"><label for="inB_'+id+'">'+label+'<span class="ls">'+sub+'</span></label>'+
-      '<div class="money"><span>$</span><input id="inB_'+id+'" data-inbal="'+id+'" type="number" inputmode="decimal" step="0.01" min="0" placeholder="'+inMoney_(a.amt)+'" value="'+esc(D[id])+'"></div>'+
+      '<div class="money"><span>$</span><input id="inB_'+id+'" data-inbal="'+id+'" type="text" inputmode="text" autocomplete="off" spellcheck="false" enterkeyhint="done" placeholder="'+inMoney_(a.amt)+'" value="'+esc(D[id])+'"></div>'+
       '<div class="inWas">Last time: '+money(a.amt,true)+' on '+date(B.asOf)+'</div></div>'; };
   var h='<div class="inCard" id="inBalances"><h2>🏦 Balances</h2>'+
     '<p class="inLast">Last entered '+date(B.asOf)+' by the Finances office. Type what is in each account today — the Dashboard updates when you save.</p>'+
+    '<p class="inTip">🧮 Boxes do simple sums: type <b>500-30</b> or <b>5*6</b> and it works it out.</p>'+
     row('aba','ABA bank','Cambodia · US$ account')+row('us','US bank','United States')+row('cash','Cash on hand','the cash box, counted')+
     '<div class="inTotal" id="inTotal">'+inTotalHtml_()+'</div>'+
     '<div class="inDates"><div><label for="inB_asOf">Balances as of</label><input type="date" id="inB_asOf" data-inbal="asOf" max="2026-11-23" value="'+esc(D.asOf)+'"></div>'+
@@ -364,23 +387,24 @@ function inputHtml(){
 }
 /* ---- Input: the allocations — every sub-fund's balance, in one form ---- */
 function inAlVal_(gid, i){ var D=S.inAl||{}, k=gid+'|'+i; if(D[k]!=null) return D[k]; var g=ALLOC.filter(function(a){ return a.id===gid; })[0]; return inMoney_(g.items[i][1]); }
-function inAlNum_(gid, i){ var v=parseFloat(inAlVal_(gid, i)); return isNaN(v)?0:v; }
+function inAlNum_(gid, i){ var v=calc_(inAlVal_(gid, i)); return isNaN(v)?0:v; }
 function inAlGroupTot_(g){ var t=0; g.items.forEach(function(_, i){ t+=inAlNum_(g.id, i); }); return t; }
 function inAllocHtml_(){
   var open=S.inAlOpen||{};
   var h='<div class="inCard" id="inAlloc"><h2>📊 Allocations</h2>'+
     '<p class="inLast">How the total liquid assets are set aside. Change any balance, then save — every dollar should be in one place.</p>'+
+    '<p class="inTip">🧮 Boxes do simple sums too, like <b>2400+200</b>.</p>'+
     '<div class="inAlSum" id="inAlSum">'+inAlSumHtml_()+'</div>';
   h+=ALLOC.map(function(g){
     var changed=g.items.some(function(_, i){ return Math.abs(inAlNum_(g.id,i)-g.items[i][1])>0.004; });
     if(g.single){
       return '<div class="inAlGrp single"><div class="inAlHead"><span class="sw" style="background:var('+g.c+')"></span><label for="inA_'+g.id+'_0" class="gn">'+esc(g.name)+'</label>'+
-        '<div class="money"><span>$</span><input id="inA_'+g.id+'_0" data-inal="'+g.id+'|0" type="number" inputmode="decimal" step="0.01" min="0" value="'+esc(inAlVal_(g.id,0))+'"></div></div></div>';
+        '<div class="money"><span>$</span><input id="inA_'+g.id+'_0" data-inal="'+g.id+'|0" type="text" inputmode="text" autocomplete="off" spellcheck="false" enterkeyhint="done" value="'+esc(inAlVal_(g.id,0))+'"></div></div></div>';
     }
     return '<details class="inAlGrp" data-inalgrp="'+g.id+'"'+(open[g.id]?' open':'')+'><summary class="inAlHead"><span class="sw" style="background:var('+g.c+')"></span><span class="gn">'+esc(g.name)+
       '<span class="gs">'+g.items.length+' funds'+(changed?' · <b class="chg">changed</b>':'')+'</span></span><span class="gt" id="inAlT_'+g.id+'">'+money(inAlGroupTot_(g),true)+'</span><span class="chev">▾</span></summary>'+
       '<div class="inAlBody">'+g.items.map(function(it, i){
-        return '<div class="inAlRow"><label for="inA_'+g.id+'_'+i+'">'+esc(it[0])+'</label><div class="money"><span>$</span><input id="inA_'+g.id+'_'+i+'" data-inal="'+g.id+'|'+i+'" type="number" inputmode="decimal" step="0.01" min="0" value="'+esc(inAlVal_(g.id,i))+'"></div></div>'; }).join('')+
+        return '<div class="inAlRow"><label for="inA_'+g.id+'_'+i+'">'+esc(it[0])+'</label><div class="money"><span>$</span><input id="inA_'+g.id+'_'+i+'" data-inal="'+g.id+'|'+i+'" type="text" inputmode="text" autocomplete="off" spellcheck="false" enterkeyhint="done" value="'+esc(inAlVal_(g.id,i))+'"></div></div>'; }).join('')+
       '</div></details>';
   }).join('');
   h+=(S.inAlErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.inAlErr)+'</p>' : '')+
@@ -395,7 +419,7 @@ function inAlSumHtml_(){
 }
 function inAlSave_(){
   var err='';
-  ALLOC.forEach(function(g){ g.items.forEach(function(_, i){ var v=inAlVal_(g.id,i); if(v===''||isNaN(parseFloat(v))) err=err||('Fill in '+g.items[i][0]+' (0 if empty).'); else if(parseFloat(v)<0) err=err||'Balances can’t be below zero.'; }); });
+  ALLOC.forEach(function(g){ g.items.forEach(function(_, i){ var v=inAlVal_(g.id,i); if(v==='') err=err||('Fill in '+g.items[i][0]+' (0 if empty).'); else if(isNaN(calc_(v))) err=err||(g.items[i][0]+': that isn’t a number or a sum I can work out.'); else if(calc_(v)<0) err=err||'Balances can’t be below zero.'; }); });
   S.inAlErr=err; if(err){ render(); return; }
   ALLOC.forEach(function(g){ g.prev=g.amt; g.items.forEach(function(it, i){ it[1]=+inAlNum_(g.id,i).toFixed(2); }); g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); });
   var gap=total()-ALLOC.reduce(function(s2,g){ return s2+g.amt; },0);
@@ -404,20 +428,20 @@ function inAlSave_(){
 function inTotalHtml_(){
   var D=S.inBal||{}, ids=['aba','us','cash'], filled=ids.filter(function(k){ return D[k]!=='' && D[k]!=null; });
   if(!filled.length) return '<span><small>Total liquid assets</small><b>—</b></span><span class="dd">Type the three amounts</span>';
-  var t=ids.reduce(function(s2,k){ var v=parseFloat(D[k]); return s2+(isNaN(v)?0:v); },0), d=t-total();
+  var t=ids.reduce(function(s2,k){ var v=calc_(D[k]); return s2+(isNaN(v)?0:v); },0), d=t-total();
   return '<span><small>Total liquid assets'+(filled.length<3?' (so far)':'')+'</small><b>'+money(t,true)+'</b></span>'+
     (filled.length===3 ? '<span class="dd">'+(Math.abs(d)<0.005?'Same as '+date(BAL.asOf):(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+'<br>since '+date(BAL.asOf))+'</span>' : '<span class="dd">'+(3-filled.length)+' to go</span>');
 }
 function inSave_(){
   var D=S.inBal, err='';
-  ['aba','us','cash'].forEach(function(k){ var v=D[k]; if(v===''||v==null) err=err||'Fill in all three amounts.'; else if(isNaN(parseFloat(v))||parseFloat(v)<0) err=err||'Amounts can’t be below zero.'; });
+  ['aba','us','cash'].forEach(function(k){ var v=D[k]; if(v===''||v==null) err=err||'Fill in all three amounts.'; else if(isNaN(calc_(v))) err=err||'One of the amounts isn’t a number or a sum I can work out.'; else if(calc_(v)<0) err=err||'Amounts can’t be below zero.'; });
   if(!err && !D.asOf) err='Pick the day these balances are for.';
   if(!err && D.asOf>'2026-11-23') err='The balances day can’t be in the future.';
   if(!err && D.rec && D.rec>D.asOf) err='The reconciled day can’t be after the balances day.';
   S.inErr=err; if(err){ render(); return; }
   BAL_HIST.unshift({ asOf:BAL.asOf, aba:BAL.accts[0].amt, us:BAL.accts[1].amt, cash:BAL.accts[2].amt, by:'the Finances office' });
   BAL.prevTotal=total(); BAL.prevAsOf=BAL.asOf;
-  BAL.accts[0].amt=+parseFloat(D.aba).toFixed(2); BAL.accts[1].amt=+parseFloat(D.us).toFixed(2); BAL.accts[2].amt=+parseFloat(D.cash).toFixed(2);
+  BAL.accts[0].amt=+calc_(D.aba).toFixed(2); BAL.accts[1].amt=+calc_(D.us).toFixed(2); BAL.accts[2].amt=+calc_(D.cash).toFixed(2);
   BAL.asOf=D.asOf; BAL.reconciled=D.rec||null;
   S.inBal=null; render(); toast('Saved — the Dashboard shows the new balances');
 }
@@ -610,7 +634,23 @@ document.getElementById('scrim').onclick=closeSheet;
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSheet(); });
 
 document.addEventListener('toggle', function(e){ var g=e.target.dataset && e.target.dataset.inalgrp; if(g){ (S.inAlOpen=S.inAlOpen||{})[g]=e.target.open; } }, true);
+function calcPreview_(inp){
+  var box=inp.parentNode, pv=box.querySelector('.calcPrev'), v=inp.value;
+  if(!isSum_(v)){ if(pv) pv.remove(); return; }
+  if(!pv){ pv=document.createElement('span'); pv.className='calcPrev'; box.appendChild(pv); }
+  var n=calc_(v); pv.classList.toggle('bad', isNaN(n)); pv.textContent = isNaN(n) ? 'not a sum I can work out' : '= '+n.toFixed(2);
+}
+function calcFinish_(inp){
+  if(!inp.closest || !inp.closest('.money')) return;
+  var v=inp.value; if(!isSum_(v)) return;
+  var n=calc_(v); if(isNaN(n)){ inp.classList.add('bad'); return; }
+  inp.value=n.toFixed(2); var pv=inp.parentNode.querySelector('.calcPrev'); if(pv) pv.remove();
+  inp.dispatchEvent(new Event('input', { bubbles:true }));
+}
+document.addEventListener('focusout', function(e){ calcFinish_(e.target); });
+document.addEventListener('keydown', function(e){ if(e.key==='Enter' && e.target.closest && e.target.closest('.money')){ e.preventDefault(); calcFinish_(e.target); } });
 document.addEventListener('input', function(e){
+  if(e.target.closest && e.target.closest('.money')) calcPreview_(e.target);
   var ak=e.target.dataset && e.target.dataset.inal;
   if(ak){ (S.inAl=S.inAl||{})[ak]=e.target.value; var gid=ak.split('|')[0], g=ALLOC.filter(function(a){ return a.id===gid; })[0];
     var gt=document.getElementById('inAlT_'+gid); if(gt) gt.textContent=money(inAlGroupTot_(g),true);
