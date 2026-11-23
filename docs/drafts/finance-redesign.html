@@ -456,6 +456,8 @@ button.tick.done{ background:var(--good); }
 .catBtn:disabled{ opacity:.35; cursor:default; }
 .catDelTxt{ border:0; background:none; color:var(--bad); font-weight:600; font-size:13px; cursor:pointer; padding:6px 8px; border-radius:8px; }
 .catDelTxt.sure{ background:var(--bad); color:#fff; }
+.catNewRow{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.catNewRow .catNewBtn{ margin-top:0; }
 .catNewBtn{ margin-top:12px; }
 .catDel{ margin-top:14px; }
 .catDel summary{ cursor:pointer; }
@@ -741,14 +743,17 @@ function catMoveTo_(gid, i, to){ var g=catG_(gid), t=catG_(to), it=g&&g.items[i]
   snap_('Put “'+it[0]+'” back in '+g.name);
   catRekey_(g.id+'|'+it[0], t.id+'|'+it[0], it[0], it[0], g.id, t.id);
   g.items.splice(i,1); t.items.push(it); t.single=false; S.catEdit=''; catAfter_('Moved “'+it[0]+'” to '+t.name); }
-function catAddItem_(gid){ var g=catG_(gid), el=document.getElementById('catAdd_'+gid), n=catClean_(el && el.value); if(!g) return;
+function catAddItem_(gid, typed){ var g=catG_(gid), el=document.getElementById('catAdd_'+gid), n=catClean_(typed!=null ? typed : el && el.value); if(!g) return catErr_('Pick which category it goes under.');
   if(!n) return catErr_('Type the new sub-category’s name first.');
   if(n.indexOf('|')>=0) return catErr_('A name can’t have “|” in it.');
   if(g.items.some(function(x){ return x[0].toLowerCase()===n.toLowerCase(); })) return catErr_('“'+g.name+'” already has a “'+n+'”.');
   var back=DELETED_FUNDS.filter(function(x){ return !x.group && x.gid===gid && x.name.toLowerCase()===n.toLowerCase(); })[0];
   snap_('Took “'+n+'” off '+g.name);
   if(back) DELETED_FUNDS=DELETED_FUNDS.filter(function(x){ return x!==back; });
-  g.items.push([back?back.name:n, 0]); g.single=false; catAfter_('Added “'+n+'” to '+g.name+' — it shows everywhere now'); }
+  g.items.push([back?back.name:n, 0]); g.single=false; if(S.catEdit==='newsub'){ S.catEdit=''; S.catSubDraft=null; } catAfter_('Added “'+n+'” to '+g.name+' — it shows everywhere now'); }
+function catAddSub_(){ var n=document.getElementById('catNewSub'), g=document.getElementById('catNewSubGrp'); S.catSubDraft={ n:n?n.value:'', g:g?g.value:'' };
+  if(!catClean_(S.catSubDraft.n)) return catErr_('Type the new sub-category’s name first.');
+  catAddItem_(S.catSubDraft.g, S.catSubDraft.n); }
 function catAddGroup_(){ var el=document.getElementById('catNewGrp'), n=catClean_(el && el.value);
   if(!n) return catErr_('Type the new category’s name first.');
   if(n.indexOf('|')>=0) return catErr_('A name can’t have “|” in it.');
@@ -809,7 +814,10 @@ function inCatsHtml_(){
       return x; }).join('');
     return r+'</div>'; }).join('')+'</div>';
   if(E==='new') h+='<div class="catEdit newCat"><label class="f" for="catNewGrp">New category</label><div class="catAdd"><input id="catNewGrp" data-catenter="@" placeholder="Name" maxlength="60" spellcheck="false"><button class="btn" id="catNewGrpBtn">Add</button><button class="btn ghost" data-catedit="">Cancel</button></div>'+err()+'</div>';
-  else h+='<button class="btn ghost catNewBtn" data-catedit="new">＋ Add a category</button>';
+  else if(E==='newsub') h+='<div class="catEdit newCat"><label class="f" for="catNewSub">New sub-category</label><input id="catNewSub" data-catenter="#" placeholder="Name" maxlength="60" spellcheck="false" value="'+esc((S.catSubDraft||{}).n||'')+'">'+
+    '<label class="f" for="catNewSubGrp">Under which category</label><select id="catNewSubGrp"><option value="">— Pick a category —</option>'+ALLOC.map(function(a){ return '<option value="'+a.id+'"'+((S.catSubDraft||{}).g===a.id?' selected':'')+'>'+esc(a.name)+'</option>'; }).join('')+'</select>'+
+    '<div class="catTools"><button class="btn ghost" data-catedit="">Cancel</button><button class="btn" id="catNewSubBtn">Add</button></div>'+err()+'</div>';
+  else h+='<div class="catNewRow"><button class="btn ghost catNewBtn" data-catedit="new">＋ Add a category</button><button class="btn ghost catNewBtn" data-catedit="newsub">＋ Add a sub-category</button></div>';
   if(DELETED_FUNDS.length) h+='<details class="catDel"><summary class="dsub">🗑 Deleted ('+DELETED_FUNDS.length+')</summary><ul class="catDelList">'+
     DELETED_FUNDS.map(function(d, i){ return { d:d, i:i }; }).reverse().map(function(o){ var d=o.d;
       return '<li><span><b>'+esc(d.name)+'</b><span class="dsub">'+(d.group?'a whole category · ':'in '+esc(d.gname)+' · ')+'deleted '+date(d.at)+'</span></span><button class="btn ghost" data-catback="'+o.i+'">↩ Bring back</button></li>'; }).join('')+'</ul></details>';
@@ -2238,6 +2246,7 @@ document.getElementById('scrim').onclick=closeSheet;
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSheet(); });
 
 document.addEventListener('change', function(e){
+  if(e.target.id==='catNewSubGrp'){ S.catErr=''; var er=document.querySelector('.newCat .inErr'); if(er) er.remove(); return; }
   if(e.target.dataset && e.target.dataset.catgname!=null){ catRenameGroup_(e.target.dataset.catgname, e.target.value); return; }
   if(e.target.dataset && e.target.dataset.catiname!=null){ var ci=e.target.dataset.catiname.split('|'); catRenameItem_(ci[0], +ci[1], e.target.value); return; }
   if(e.target.dataset && e.target.dataset.catto!=null){ var ct=e.target.dataset.catto.split('|'); if(e.target.value) catMoveTo_(ct[0], +ct[1], e.target.value); return; }
@@ -2289,7 +2298,7 @@ function calcFinish_(inp){
   inp.dispatchEvent(new Event('input', { bubbles:true }));
 }
 document.addEventListener('focusout', function(e){ calcFinish_(e.target); });
-document.addEventListener('keydown', function(e){ if(e.key==='Enter' && e.target.dataset && e.target.dataset.catenter){ e.preventDefault(); var ce=e.target.dataset.catenter; if(ce==='@') catAddGroup_(); else catAddItem_(ce); return; } });
+document.addEventListener('keydown', function(e){ if(e.key==='Enter' && e.target.dataset && e.target.dataset.catenter){ e.preventDefault(); var ce=e.target.dataset.catenter; if(ce==='@') catAddGroup_(); else if(ce==='#') catAddSub_(); else catAddItem_(ce); return; } });
 document.addEventListener('keydown', function(e){ if(e.key==='Enter' && e.target.closest && e.target.closest('.money')){ e.preventDefault(); calcFinish_(e.target); } });
 document.addEventListener('input', function(e){
   if(e.target.closest && e.target.closest('.money')) calcPreview_(e.target);
@@ -2315,10 +2324,11 @@ document.addEventListener('input', function(e){
 });
 document.addEventListener('click', function(e){
   var ce=e.target.closest && e.target.closest('[data-catedit]');
-  if(ce){ var nv=ce.dataset.catedit; S.catEdit= (S.catEdit===nv && nv!=='') ? '' : nv; S.catErr=''; S.catDel=null; render(); if(S.catEdit==='new'){ var ni=document.getElementById('catNewGrp'); if(ni) ni.focus(); } return; }
-  var cb=e.target.closest && e.target.closest('[data-catgmv],[data-catimv],[data-catgdel],[data-catidel],[data-catadd],[data-catback],#catNewGrpBtn');
+  if(ce){ var nv=ce.dataset.catedit; S.catSubDraft=null; S.catEdit= (S.catEdit===nv && nv!=='') ? '' : nv; S.catErr=''; S.catDel=null; render(); if(S.catEdit==='new' || S.catEdit==='newsub'){ var ni=document.getElementById(S.catEdit==='new'?'catNewGrp':'catNewSub'); if(ni) ni.focus(); } return; }
+  var cb=e.target.closest && e.target.closest('[data-catgmv],[data-catimv],[data-catgdel],[data-catidel],[data-catadd],[data-catback],#catNewGrpBtn,#catNewSubBtn');
   if(cb){ var d=cb.dataset;
     if(cb.id==='catNewGrpBtn') return catAddGroup_();
+    if(cb.id==='catNewSubBtn') return catAddSub_();
     if(d.catadd) return catAddItem_(d.catadd);
     if(d.catback!=null) return catRestore_(+d.catback);
     if(d.catgdel) return catDelGroup_(d.catgdel);
