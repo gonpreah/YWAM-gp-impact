@@ -1419,6 +1419,7 @@ function approvedDay_(){ return Object.keys(PUBLISHED).sort().reverse()[0] || nu
 /* entered after the bank balances were saved — whatever date is written on it. Entries from
    before times were kept fall back to their date. */
 function afterBal_(x){
+  if(x.date && BAL.asOf && x.date>BAL.asOf) return true;   /* dated after the balances day: it can’t be in them, whenever it was typed */
   if(BAL.at && x.at) return x.at>BAL.at;      /* both timed: entered after the balances were saved */
   if(!BAL.at && x.at) return true;            /* balances saved before times were kept: anything timed is newer */
   return x.date>=(BAL.asOf||'') && !(BAL.at && !x.at && x.date===BAL.asOf);   /* neither timed: by date, the balances day included */
