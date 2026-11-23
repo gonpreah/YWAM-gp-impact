@@ -111,12 +111,17 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .dList .dn{ font-weight:600; }
 .dList .dd{ font-size:12px; color:var(--muted); }
 .dList .da{ text-align:right; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.dBreak{ grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:4px 6px; margin-top:-2px; }
+.dBreak span{ font-size:11.5px; background:var(--surface2); border-radius:6px; padding:2px 7px; color:var(--muted); font-weight:600; font-variant-numeric:tabular-nums; }
+.dBreak span.late{ color:var(--bad); }
 .dList .da small{ display:block; font-size:11.5px; color:var(--muted); font-weight:600; }
 .sheet .chips{ display:flex; gap:6px; margin:10px 0 0; flex-wrap:wrap; }
 .sheet .chip{ border:1px solid var(--line); background:var(--surface2); border-radius:999px; padding:5px 12px; cursor:pointer; font-size:13px; font-weight:600; }
 .sheet .chip.on{ background:var(--accent); color:var(--accentInk); border-color:var(--accent); }
 .sheet .tblWrap{ overflow-x:auto; }
-.sheet .tblWrap td.r, .sheet .tblWrap th.r{ padding-left:12px; }
+.sheet .tblWrap td.r, .sheet .tblWrap th.r{ padding-left:14px; white-space:nowrap; }
+.dTbl{ min-width:620px; }
+.dTbl .nm{ position:sticky; left:0; background:var(--surface); padding-right:10px; z-index:1; min-width:150px; }
 .sheet td.late, .sheet th.late{ color:var(--bad); font-weight:700; }
 .sheet .dsub{ display:block; font-size:11.5px; color:var(--muted); }
 .soon{ text-align:center; color:var(--muted); padding:40px 10px; }
@@ -191,8 +196,10 @@ var DEBT = { asOf:'2026-10-31', src:'A/R Ageing Summary · uploaded 4 Nov 2026',
   { n:'Sample Person G', d:'Community Service',      b:[0, 30, 0, 95, 0] },
   { n:'Sample Person H', d:'Leadership Development', b:[150, 0, 0, 0, 0] }
 ] };
-/* buckets: current · 1–30 · 31–60 · 61–90 · over 90 days. "2 months or older" = the last two. */
-DEBT.people.forEach(function(p){ p.tot=p.b.reduce(function(s,v){ return s+v; },0); p.old=p.b[3]+p.b[4]; });
+/* buckets, as the office's report heads them: Current · 1 month · 2 months · 3 months · Over 3 months.
+   "2 months or older" = the 2 months, 3 months and Over 3 months columns. */
+var DEBT_COLS=['Current','1 month','2 months','3 months','Over 3 months'], DEBT_OLD_FROM=2;
+DEBT.people.forEach(function(p){ p.tot=p.b.reduce(function(s,v){ return s+v; },0); p.old=p.b.slice(DEBT_OLD_FROM).reduce(function(s,v){ return s+v; },0); });
 ALLOC.forEach(function(a){ a.amt=a.items.reduce(function(s,i){ return s+i[1]; },0); });
 
 /* ---- helpers ---- */
@@ -251,7 +258,8 @@ function debtHtml(){
   h+='<div class="dListHead">⚠️ Owing for 2 months or more</div>';
   h+= late.length ? '<ul class="dList">'+late.map(function(p){
       return '<li><span><span class="dn">'+esc(p.n)+'</span><br><span class="dd">'+esc(p.d)+'</span></span>'+
-        '<span class="da">'+money(p.old)+'<small>of '+money(p.tot)+' owed</small></span></li>'; }).join('')+'</ul>'
+        '<span class="da">'+money(p.old)+'<small>of '+money(p.tot)+' owed</small></span>'+
+        '<span class="dBreak">'+p.b.map(function(v,i){ return v ? '<span'+(i>=DEBT_OLD_FROM?' class="late"':'')+'>'+DEBT_COLS[i]+' '+money(v)+'</span>' : ''; }).join('')+'</span></li>'; }).join('')+'</ul>'
     : '<p class="hint">Nobody owes anything 2 months old or more. 🎉</p>';
   return h+'</section>';
 }
@@ -273,14 +281,15 @@ function sheet(which){
   var T=total(), h='<button class="x" id="sx" aria-label="Close">✕</button>';
   if(which==='debt'){
     var all=S.debtAll!==false, P=DEBT.people.filter(function(p){ return all ? p.tot>0 : p.old>0; }).sort(function(a,b){ return b.tot-a.tot; });
-    var sum=function(i){ return P.reduce(function(s,p){ return s+(i==null?p.tot:(i==='old'?p.old:p.b[0]+p.b[1]+p.b[2])); },0); };
+    var sum=function(){ return P.reduce(function(s,p){ return s+p.tot; },0); };
     h+='<h3>💳 Staff debt — everyone</h3><p class="hint">As of '+date(DEBT.asOf)+' · names as the A/R Ageing report has them, with the department of the person they are matched to.</p>'+
       '<div class="chips"><button class="chip'+(all?' on':'')+'" data-debtall="1">Everyone · '+DEBT.people.filter(function(p){ return p.tot>0; }).length+'</button>'+
       '<button class="chip'+(all?'':' on')+'" data-debtall="0">2 months or older · '+DEBT.people.filter(function(p){ return p.old>0; }).length+'</button></div>'+
-      '<div class="tblWrap"><table><tr><th>Name</th><th class="r">Under 2 months</th><th class="r late">2 months +</th><th class="r">Total</th></tr>'+
-      P.map(function(p){ var nw=p.b[0]+p.b[1]+p.b[2];
-        return '<tr><td>'+esc(p.n)+'<span class="dsub">'+esc(p.d)+'</span></td><td class="r">'+(nw?money(nw):'—')+'</td><td class="r'+(p.old?' late':'')+'">'+(p.old?money(p.old):'—')+'</td><td class="r"><b>'+money(p.tot)+'</b></td></tr>'; }).join('')+
-      '<tr><td><b>Total</b></td><td class="r"><b>'+money(sum('new'))+'</b></td><td class="r late">'+money(sum('old'))+'</td><td class="r"><b>'+money(sum())+'</b></td></tr></table></div>';
+      '<div class="tblWrap"><table class="dTbl"><tr><th class="nm">Name</th>'+DEBT_COLS.map(function(c,i){ return '<th class="r'+(i>=DEBT_OLD_FROM?' late':'')+'">'+c+'</th>'; }).join('')+'<th class="r">Total</th></tr>'+
+      P.map(function(p){
+        return '<tr><td class="nm">'+esc(p.n)+'<span class="dsub">'+esc(p.d)+'</span></td>'+p.b.map(function(v,i){ return '<td class="r'+(v&&i>=DEBT_OLD_FROM?' late':'')+'">'+(v?money(v):'—')+'</td>'; }).join('')+'<td class="r"><b>'+money(p.tot)+'</b></td></tr>'; }).join('')+
+      '<tr><td class="nm"><b>Total</b></td>'+DEBT_COLS.map(function(c,i){ var v=P.reduce(function(s,p){ return s+p.b[i]; },0); return '<td class="r'+(i>=DEBT_OLD_FROM?' late':'')+'"><b>'+money(v)+'</b></td>'; }).join('')+'<td class="r"><b>'+money(sum())+'</b></td></tr></table></div>'+
+      '<p class="hint" style="margin-top:8px">Red columns are the debt 2 months old or more. Swipe the table sideways on a phone.</p>';
   } else if(which==='balances'){
     h+='<h3>🏦 Balances — details</h3><p class="hint">As of '+date(BAL.asOf)+'. Later: the history of each account, month by month.</p>'+
       '<table><tr><th>Account</th><th class="r">Amount</th><th class="r">Share</th></tr>'+
