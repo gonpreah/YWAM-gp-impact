@@ -3438,7 +3438,7 @@ body.findOn { overflow:hidden; }
 .myHero .heroRow .whoCap { color:var(--onDarkFaint); opacity:1; }
 
 /* ---------- My Home's card as widgets (02-goals-okrs.js heroWidgetsHtml_, Nov 2026) ---------- */
-.heroWidgets { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px; margin:2px 0 4px; }
+.heroWidgets { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; margin:4px 0 6px; }   /* a bit of air between the widgets (Andrew, Nov 2026) */
 .heroW { display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0; padding:10px 2px 8px; border:0; border-radius:14px; background:rgba(255,255,255,.07); color:var(--onDark); font-family:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
 .heroW:active { opacity:.75; }
 .hero .heroWRing.gRing { width:46px; height:46px; }
