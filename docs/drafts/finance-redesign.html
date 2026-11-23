@@ -414,6 +414,9 @@ label.f{ display:block; font-size:12.5px; font-weight:600; margin:6px 0 4px; }
 .bulkEd .money input{ padding-left:22px; }
 .bulkTot{ font-size:13px; font-weight:600; margin-top:10px; }
 .dateOrder{ font-size:12.5px; color:var(--muted); margin:10px 0 0; }
+button.tick{ padding:0; cursor:pointer; background:var(--surface); }
+button.tick.done{ background:var(--good); }
+.pubRow{ display:flex; align-items:center; width:100%; background:none; border:0; padding:0; font:inherit; color:inherit; text-align:left; cursor:pointer; }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -1690,18 +1693,20 @@ function partSaved_(part, day){
   if(part==='debt') return DEBT_HIST.some(function(r){ return r.asOf===day; });
   return false;
 }
-function partDone_(part, day){ return partSaved_(part, day) || !!(DAY_DONE[day] && DAY_DONE[day][part]); }
+function partDone_(part, day){ return !!(DAY_DONE[day] && DAY_DONE[day][part]); }   /* only ever ticked by hand */
 function dayTick_(part){ var day=reportDay_(), ok=partDone_(part, day);
-  return '<span class="tick'+(ok?' done':'')+'" title="'+(ok?'Done for ':'Still to do for ')+date(day)+'">'+(ok?'✓':'')+'</span>'; }
-function nothingNewHtml_(part, what){ var day=reportDay_(); if(partSaved_(part, day)) return '';
+  return '<button type="button" class="tick'+(ok?' done':'')+'" data-daytick="'+part+'" aria-pressed="'+ok+'" title="'+(ok?'Ticked for ':'Tap to tick it done for ')+date(day)+'">'+(ok?'✓':'')+'</button>'; }
+function nothingNewHtml_(part, what){ return '';   /* the tick by the title does this now */
+  var day=reportDay_();
   var on=DAY_DONE[day] && DAY_DONE[day][part];
   return '<label class="nothingNew"><input type="checkbox" data-daydone="'+part+'"'+(on?' checked':'')+'><span>No new '+what+' for '+date(day)+' — mark it done</span></label>'; }
 function publishHtml_(){
   var day=reportDay_(), done=DAY_PARTS.filter(function(x){ return partDone_(x[0], day); }).length, all=done===DAY_PARTS.length, pub=PUBLISHED[day];
   var h='<div class="inCard pubCard" id="inPublish"><div class="inHead"><h2>✅ Update and approve</h2></div>'+
     '<p class="inLast">'+(pub ? '✓ '+date(day)+' is approved — it is what the Approved view shows.' : 'Until you approve, everything entered only shows in 📡 Live. When everything for '+date(day)+' is in, approve it.')+' Staff debt goes on by itself when its report is saved.</p>'+
-    '<ul class="pubList">'+DAY_PARTS.map(function(x){ var ok=partDone_(x[0], day), how=partSaved_(x[0], day)?'':(ok?' · nothing new':'');
-      return '<li class="'+(ok?'done':'')+'"><span class="tick'+(ok?' done':'')+'">'+(ok?'✓':'')+'</span>'+x[1]+'<span class="dsub" style="display:inline">'+how+'</span></li>'; }).join('')+'</ul>'+
+    '<p class="dsub" style="margin:0 0 4px">Tick each part when it’s done — here or by its title above.</p>'+
+    '<ul class="pubList">'+DAY_PARTS.map(function(x){ var ok=partDone_(x[0], day), how=!ok && partSaved_(x[0], day) ? ' · something saved for this day' : '';
+      return '<li class="'+(ok?'done':'')+'"><button type="button" class="pubRow" data-daytick="'+x[0]+'" aria-pressed="'+ok+'"><span class="tick'+(ok?' done':'')+'">'+(ok?'✓':'')+'</span>'+x[1]+'<span class="dsub" style="display:inline">'+how+'</span></button></li>'; }).join('')+'</ul>'+
     '<div class="pubBar"><span style="width:'+Math.round(done/DAY_PARTS.length*100)+'%"></span></div><div class="dsub">'+done+' of '+DAY_PARTS.length+' done</div>';
   h+='<div class="inBtns"><button class="btn'+(S.pubAsk?' warn':'')+'" id="pubDay">'+(S.pubAsk ? (DAY_PARTS.length-done)+' still to do — tap again to approve anyway' : (pub?'Update and approve again — ':'Update and approve — ')+date(day))+'</button>'+
     (pub ? '<button class="btn ghost" id="unpubDay">Take the approval off</button>' : '')+'</div>';
@@ -1968,6 +1973,8 @@ document.addEventListener('click', function(e){
   var be=e.target.closest && e.target.closest('[data-bulkedit]'); if(be){ S.bulkEdit=+be.dataset.bulkedit; render(); return; }
   var bd=e.target.closest && e.target.closest('[data-bulkdone]'); if(bd){ var dr=S.bulk.rows[+bd.dataset.bulkdone]; S.bulkEdit=null; if(!bulkNeeds_(dr).length) dr.ok=true; render(); return; }
   var bx=e.target.closest && e.target.closest('[data-bulkdrop]'); if(bx){ S.bulk.rows.splice(+bx.dataset.bulkdrop,1); S.bulkEdit=null; if(!S.bulk.rows.length) S.bulk=null; render(); return; }
+  var dt=e.target.closest && e.target.closest('[data-daytick]'); if(dt){ e.preventDefault(); e.stopPropagation(); var dday=reportDay_(), part=dt.dataset.daytick;
+    (DAY_DONE[dday]=DAY_DONE[dday]||{})[part]=!(DAY_DONE[dday][part]); keep_(); render(); return; }
   if(e.target.id==='viewLatest'){ S.viewDay=null; S.viewDebtDay=null; render(); return; }
   if(e.target.id==='undoLast'){ if(!S.undoAsk){ S.undoAsk=true; render(); setTimeout(function(){ if(S.undoAsk){ S.undoAsk=false; if(S.tab==='input') render(); } }, 4000); return; } undoLast_(); return; }
   if(e.target.id==='inBalSave'){ inSave_(); return; }
