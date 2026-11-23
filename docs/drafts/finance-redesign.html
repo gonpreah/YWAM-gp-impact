@@ -258,6 +258,18 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .asOfBar b{ color:var(--ink); }
 .asOfBar .warn{ color:var(--amberDeep); font-weight:600; }
 .asOfBar .sep{ margin:0 2px; }
+.inHead{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+.inHead h2{ margin:0 0 2px; }
+.histLink{ border:0; background:none; color:var(--accent); font-weight:700; font-size:13.5px; cursor:pointer; padding:4px 0; white-space:nowrap; }
+.histBack{ border:0; background:none; color:var(--accent); font-weight:700; cursor:pointer; padding:0 0 8px; font-size:14px; }
+.histList{ list-style:none; margin:10px 0 0; padding:0; }
+.histList li button{ width:100%; display:flex; justify-content:space-between; gap:10px; align-items:center; background:none; border:0; border-top:1px solid var(--line); padding:12px 0; text-align:left; cursor:pointer; }
+.histList .hb{ display:flex; justify-content:space-between; gap:10px; border-top:1px solid var(--line); padding:12px 0; }
+.histList .hb .dsub{ display:block; }
+.histList .r .delBtn{ margin-top:4px; }
+.histList .r{ text-align:right; font-variant-numeric:tabular-nums; }
+.histList .late{ color:var(--bad); }
+.tag{ font-size:11px; background:var(--surface2); color:var(--muted); border-radius:6px; padding:1px 6px; font-weight:700; }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -319,6 +331,7 @@ function refreshBal_(){
   BAL.prevAsOf=pv?pv.asOf:null; BAL.prevTotal=pv?pv.aba+pv.us+pv.cash:null;
 }
 var ALLOC_PREV_ASOF='2026-11-13';
+var ALLOC_HIST=[], DEBT_HIST=[];   /* one saved entry per day, newest first */
 var ALLOC = [   /* the six allocations and their sub-funds, as the Finances office keeps them — SAMPLE amounts */
   { id:'des', prev:17900, name:'Designated funds', eg:'KSS & YAP, Other Base Payable (Antonia), Other', c:'--al1', dark:false,
     items:[['KSS & YAP',11200],['Other Base Payable (Antonia)',6500],['Other',700]], note:'Money given for a named person or project — it can only be spent on that.' },
@@ -409,7 +422,7 @@ function inputHtml(){
     return '<div class="inRow"><label for="inB_'+id+'">'+label+'<span class="ls">'+sub+'</span></label>'+
       '<div class="money"><span>$</span><input id="inB_'+id+'" data-inbal="'+id+'" type="text" inputmode="text" autocomplete="off" spellcheck="false" enterkeyhint="done" placeholder="'+(B.none?'0.00':inMoney_(a.amt))+'" value="'+esc(D[id])+'"></div>'+
       '<div class="inWas">'+(B.none?'Nothing entered yet':'Last time: '+money(a.amt,true)+' on '+date(B.asOf))+'</div></div>'; };
-  var h=inDayHtml_()+'<div class="inCard" id="inBalances"><h2>🏦 Balances</h2>'+
+  var h=inDayHtml_()+'<div class="inCard" id="inBalances">'+'<div class="inHead"><h2>🏦 Balances</h2><button class="histLink" data-hist="bal">🕘 History</button></div>'+
     '<p class="inLast">'+(B.none?'No balances entered yet.':'Last entered for '+date(B.asOf)+'.')+' Type what is in each account on the “Reports as of” day — saving the same day again replaces it.</p>'+
     '<p class="inTip">🧮 Boxes do simple sums: type <b>500-30</b> or <b>5*6</b> and it works it out.</p>'+
     row('aba','ABA bank','Cambodia · US$ account')+row('us','US bank','United States')+row('cash','Cash on hand','the cash box, counted')+
@@ -417,9 +430,7 @@ function inputHtml(){
     '<div class="inDates one"><div><label for="inB_rec">Last reconciled with the bank</label><input type="date" id="inB_rec" data-inbal="rec" max="2026-11-23" value="'+esc(D.rec||'')+'"><div class="ls">Leave empty if not reconciled yet.</div></div></div>'+
     (S.inErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.inErr)+'</p>' : '')+
     '<div class="inBtns"><button class="btn" id="inBalSave">Save balances</button>'+(B.none?'':'<button class="btn ghost" id="inBalCopy">Same as last time</button>')+'</div>'+
-    (BAL_DAYS.length ? '<details class="inHist" open><summary>Balances entered ('+BAL_DAYS.length+')</summary><table><tr><th>Date</th><th>ABA</th><th>US bank</th><th>Cash</th><th>Total</th><th></th></tr>'+
-      BAL_DAYS.map(function(r){ return '<tr><td>'+date(r.asOf)+'</td><td>'+money(r.aba)+'</td><td>'+money(r.us)+'</td><td>'+money(r.cash)+'</td><td><b>'+money(r.aba+r.us+r.cash)+'</b></td><td><button class="delBtn" data-baldel="'+r.asOf+'" aria-label="Delete the balances for '+date(r.asOf)+'">✕</button></td></tr>'; }).join('')+
-    '</table></details>' : '')+'</div>';
+    '</div>';
   h+=inAllocHtml_();
   h+=
     '<div class="inNext">💵 <span><b>Income and expenses</b> — entered by category and shared out to the allocations.</span></div>'+
@@ -432,7 +443,7 @@ function inAlNum_(gid, i){ var v=calc_(inAlVal_(gid, i)); return isNaN(v)?0:v; }
 function inAlGroupTot_(g){ var t=0; g.items.forEach(function(_, i){ t+=inAlNum_(g.id, i); }); return t; }
 function inAllocHtml_(){
   var open=S.inAlOpen||{};
-  var h='<div class="inCard" id="inAlloc"><h2>📊 Allocations</h2>'+
+  var h='<div class="inCard" id="inAlloc">'+'<div class="inHead"><h2>📊 Allocations</h2><button class="histLink" data-hist="al">🕘 History</button></div>'+
     '<p class="inLast">How the total liquid assets are set aside. Change any balance, then save — every dollar should be in one place.</p>'+
     '<p class="inTip">🧮 Boxes do simple sums too, like <b>2400+200</b>.</p>'+
     '<div class="inAlSum" id="inAlSum">'+inAlSumHtml_()+'</div>';
@@ -466,7 +477,9 @@ function inAlSave_(){
   if(ALLOC_ASOF!==day) ALLOC_PREV_ASOF=ALLOC_ASOF; ALLOC_ASOF=day;
   ALLOC.forEach(function(g){ g.prev=g.amt; g.items.forEach(function(it, i){ it[1]=+inAlNum_(g.id,i).toFixed(2); }); g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); });
   var gap=total()-ALLOC.reduce(function(s2,g){ return s2+g.amt; },0);
-  S.alSaved=true; keep_();
+  S.alSaved=true;
+  ALLOC_HIST=ALLOC_HIST.filter(function(x){ return x.asOf!==day; }); ALLOC_HIST.push(allocSnap_(day)); ALLOC_HIST.sort(function(x,y){ return x.asOf<y.asOf?1:-1; });
+  keep_();
   S.inAl=null; render(); toast(Math.abs(gap)<0.005 ? 'Saved — every dollar is allocated' : 'Saved — '+money(Math.abs(gap),true)+(gap>0?' still not allocated':' over what is in hand'));
 }
 /* ---- Input: staff debt — attach the office's A/R Ageing spreadsheet ----
@@ -490,7 +503,7 @@ function debtAutoLink_(name){
 }
 function inDebtHtml_(){
   var U=S.debtUp, d=S.debtDay || (U && U.asOf) || DEBT.asOf;
-  var h='<div class="inCard" id="inDebt"><h2>💳 Staff debt</h2>'+
+  var h='<div class="inCard" id="inDebt">'+'<div class="inHead"><h2>💳 Staff debt</h2><button class="histLink" data-hist="debt">🕘 History</button></div>'+
     '<p class="inLast">Last report: as of '+date(DEBT.asOf)+(DEBT.file?' · '+esc(DEBT.file):'')+'. Staff debt has its own day — the day on the A/R Ageing report.</p>'+
     '<label class="inDrop" for="inDebtFile">📎 <span><b>'+(U?'Attach a different file':'Attach the A/R Ageing report')+'</b><br><small>The Excel file (.xlsx) the office makes — or a .csv of it</small></span></label>'+
     '<input type="file" id="inDebtFile" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" hidden>'+
@@ -585,7 +598,9 @@ function inDebtSave_(){
     DEBT.people=U.people.map(function(p){ var st=staffById_(S.debtLink[p.n]); return { n:p.n, b:p.b, tot:p.tot, old:p.old, d: st ? st.dept : '', staffId: st ? st.id : null }; });
     DEBT.file=U.file; DEBT.src='A/R Ageing Summary · '+U.file;
   }
-  DEBT.asOf=dd; keep_(); S.debtUp=null; S.debtDay=null; S.debtLink={}; render(); toast('Saved — staff debt is as of '+date(dd));
+  DEBT.asOf=dd;
+  DEBT_HIST=DEBT_HIST.filter(function(x){ return x.asOf!==dd; }); DEBT_HIST.push({ asOf:dd, file:DEBT.file||'', people:JSON.parse(JSON.stringify(DEBT.people)), sample:!DEBT.file }); DEBT_HIST.sort(function(x,y){ return x.asOf<y.asOf?1:-1; });
+  keep_(); S.debtUp=null; S.debtDay=null; S.debtLink={}; render(); toast('Saved — staff debt is as of '+date(dd));
 }
 function inTotalHtml_(){
   var D=S.inBal||{}, ids=['aba','us','cash'], filled=ids.filter(function(k){ return D[k]!=='' && D[k]!=null; });
@@ -647,9 +662,9 @@ function allocHtml(){
 }
 /* the report as the office lays it out. compact (the dashboard): 3 Months and 3+ Months share
    one column, so it fits a phone without scrolling; Details keeps every column. */
-function debtReportHtml(P, title, compact){
+function debtReportHtml(P, title, compact, day){
   var cell=function(v){ return v ? v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''; };
-  var asOf=new Date(DEBT.asOf+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  var asOf=new Date((day||DEBT.asOf)+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   var cols = compact ? ['Current','1 Month','2 Months','3+ Months'] : DEBT_COLS;
   var vals = function(p){ return compact ? [p.b[0], p.b[1], p.b[2], p.b[3]+p.b[4]] : p.b; };
   var old = function(i){ return i>=DEBT_OLD_FROM; };
@@ -773,9 +788,45 @@ function render(){
 }
 
 /* ---- details sheets ---- */
+function allocSnap_(day, sample){ var g={}; ALLOC.forEach(function(a){ g[a.id]=a.items.map(function(it){ return [it[0], it[1]]; }); }); return { asOf:day, groups:g, sample:!!sample }; }
+function histSum_(list){ return list.reduce(function(s2,x){ return s2+x; },0); }
+function histHtml_(kind){
+  var pick=S.histPick, back='<button class="histBack" data-histpick="">‹ All entries</button>';
+  if(kind==='bal'){
+    var h='<h3>🏦 Balances — history</h3><p class="hint">Every day the balances were entered, newest first. ✕ deletes a day that was entered by mistake.</p>';
+    if(!BAL_DAYS.length) return h+'<p class="hint">Nothing entered yet.</p>';
+    return h+'<ul class="histList bal">'+BAL_DAYS.map(function(r, i){ var t=r.aba+r.us+r.cash, pv=BAL_DAYS[i+1], d=pv?t-(pv.aba+pv.us+pv.cash):null;
+        return '<li><div class="hb"><span><b>'+date(r.asOf)+'</b>'+(i===0?' <span class="tag">on the Dashboard</span>':'')+
+          '<span class="dsub">ABA '+money(r.aba,true)+' · US bank '+money(r.us,true)+' · Cash '+money(r.cash,true)+'</span>'+
+          '<span class="dsub">'+(r.rec?'Reconciled '+date(r.rec):'Not reconciled')+'</span></span>'+
+          '<span class="r"><b>'+money(t,true)+'</b>'+(d==null?'<span class="dsub">first day</span>':'<span class="dsub">'+(Math.abs(d)<0.005?'same':(d>0?'▲ ':'▼ ')+money(Math.abs(d),true))+'</span>')+
+          '<button class="delBtn" data-baldel="'+r.asOf+'" aria-label="Delete the balances for '+date(r.asOf)+'">✕ Delete</button></span></div></li>'; }).join('')+'</ul>';
+  }
+  if(kind==='al'){
+    var H=ALLOC_HIST.length ? ALLOC_HIST : [allocSnap_(ALLOC_ASOF, true)];
+    if(pick){ var e=H.filter(function(x){ return x.asOf===pick; })[0]; if(e){
+      var all=0, rows=ALLOC.map(function(a){ var it=e.groups[a.id]||[], t=histSum_(it.map(function(x){ return x[1]; })); all+=t;
+        return '<tr><td><span class="sw" style="display:inline-block;width:10px;height:10px;margin-right:6px;background:var('+a.c+')"></span><b>'+esc(a.name)+'</b></td><td class="r"><b>'+money(t,true)+'</b></td></tr>'+
+          (it.length>1 ? it.map(function(x){ return '<tr><td style="padding-left:22px;color:var(--muted)">'+esc(x[0])+'</td><td class="r" style="color:var(--muted)">'+money(x[1],true)+'</td></tr>'; }).join('') : ''); }).join('');
+      return back+'<h3>📊 Allocations — '+date(e.asOf)+(e.sample?' (sample)':'')+'</h3><table><tr><th>Allocation</th><th class="r">Amount</th></tr>'+rows+'<tr><td><b>Total allocated</b></td><td class="r"><b>'+money(all,true)+'</b></td></tr></table>'; } }
+    return '<h3>📊 Allocations — history</h3><p class="hint">Every day the allocations were saved. Tap one to see every fund that day.</p><ul class="histList">'+
+      H.map(function(e){ var t=0; Object.keys(e.groups).forEach(function(k){ t+=histSum_(e.groups[k].map(function(x){ return x[1]; })); });
+        return '<li><button data-histpick="'+e.asOf+'"><span><b>'+date(e.asOf)+'</b>'+(e.sample?' <span class="tag">sample</span>':'')+'<span class="dsub">'+ALLOC.length+' allocations</span></span><span class="r"><b>'+money(t,true)+'</b><span class="dsub">allocated ›</span></span></button></li>'; }).join('')+'</ul>';
+  }
+  if(kind==='debt'){
+    var D=DEBT_HIST.length ? DEBT_HIST : [{ asOf:DEBT.asOf, file:'', people:DEBT.people, sample:true }];
+    if(pick){ var e2=D.filter(function(x){ return x.asOf===pick; })[0]; if(e2) return back+'<h3>💳 Staff debt — '+date(e2.asOf)+(e2.sample?' (sample)':'')+'</h3>'+(e2.file?'<p class="hint">From '+esc(e2.file)+'</p>':'')+debtReportHtml(e2.people, DEBT.title, false, e2.asOf); }
+    return '<h3>💳 Staff debt — history</h3><p class="hint">Every A/R Ageing report saved, by the day it is as of. Tap one to see it.</p><ul class="histList">'+
+      D.map(function(e){ var t=histSum_(e.people.map(function(p){ return p.tot; })), o=histSum_(e.people.map(function(p){ return p.old; }));
+        return '<li><button data-histpick="'+e.asOf+'"><span><b>'+date(e.asOf)+'</b>'+(e.sample?' <span class="tag">sample</span>':'')+'<span class="dsub">'+(e.file?esc(e.file)+' · ':'')+e.people.length+' people</span></span><span class="r"><b>'+money(t,true)+'</b><span class="dsub late">'+money(o,true)+' 2+ months ›</span></span></button></li>'; }).join('')+'</ul>';
+  }
+  return '';
+}
 function sheet(which){
   var T=total(), h='<button class="x" id="sx" aria-label="Close">✕</button>';
-  if(which==='income' || which==='expense'){
+  if(/^hist-/.test(which)){
+    h+=histHtml_(which.slice(5));
+  } else if(which==='income' || which==='expense'){
     h+=flowSheetHtml_(which==='income'?'inc':'exp');
   } else if(which==='debt'){
     var all=S.debtAll!==false, P=DEBT.people.filter(function(p){ return all ? p.tot>0 : p.old>0; });
@@ -839,9 +890,11 @@ document.addEventListener('input', function(e){
 });
 document.addEventListener('click', function(e){
   if(e.target.id==='inBalSave'){ inSave_(); return; }
+  var hb=e.target.closest && e.target.closest('[data-hist]'); if(hb){ S.histPick=''; S.histOpen=hb.dataset.hist; sheet('hist-'+hb.dataset.hist); return; }
+  var hp=e.target.closest && e.target.closest('[data-histpick]'); if(hp){ S.histPick=hp.dataset.histpick; sheet('hist-'+S.histOpen); document.getElementById('sheet').scrollTop=0; return; }
   if(e.target.dataset && e.target.dataset.baldel){ var dday=e.target.dataset.baldel;
     if(S.balDelAsk!==dday){ S.balDelAsk=dday; e.target.textContent='Delete?'; e.target.classList.add('ask'); return; }
-    BAL_DAYS=BAL_DAYS.filter(function(r){ return r.asOf!==dday; }); S.balDelAsk=null; refreshBal_(); keep_(); render(); toast('Deleted the balances for '+date(dday)); return; }
+    BAL_DAYS=BAL_DAYS.filter(function(r){ return r.asOf!==dday; }); S.balDelAsk=null; refreshBal_(); keep_(); render(); if(document.body.classList.contains('sheetOn')) sheet('hist-bal'); toast('Deleted the balances for '+date(dday)); return; }
   if(e.target.id==='inAlSave'){ inAlSave_(); return; }
   if(e.target.id==='inDebtSave'){ inDebtSave_(); return; }
   if(e.target.id==='inDebtCancel'){ S.debtUp=null; S.debtDay=null; S.debtReadErr=''; render(); return; }
@@ -867,9 +920,11 @@ document.getElementById('themeBtn').onclick=function(){
    preview never wipes it. The real app will save to the server instead. */
 var KEEP_KEY='gp-fin-draft-v1';
 function keep_(){ try { localStorage.setItem(KEEP_KEY, JSON.stringify({ bal:BAL_DAYS, alloc:ALLOC.map(function(g){ return { id:g.id, prev:g.prev, items:g.items }; }),
-  allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, alSaved:!!S.alSaved })); } catch(e){} }
+  allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved })); } catch(e){} }
 (function(){ try { var k=JSON.parse(localStorage.getItem(KEEP_KEY)||'null'); if(!k) return;
   if(Array.isArray(k.bal)) BAL_DAYS=k.bal;
+  if(Array.isArray(k.alHist)) ALLOC_HIST=k.alHist;
+  if(Array.isArray(k.debtHist)) DEBT_HIST=k.debtHist;
   if(k.alSaved && Array.isArray(k.alloc)){ k.alloc.forEach(function(x){ var g=ALLOC.filter(function(a){ return a.id===x.id; })[0]; if(g && Array.isArray(x.items) && x.items.length===g.items.length){ g.prev=x.prev; g.items=x.items; g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); } });
     ALLOC_ASOF=k.allocAsOf||ALLOC_ASOF; ALLOC_PREV_ASOF=k.allocPrevAsOf||ALLOC_PREV_ASOF; S.alSaved=true; }
   if(k.debt && k.debt.file && Array.isArray(k.debt.people)){ DEBT.asOf=k.debt.asOf; DEBT.people=k.debt.people; DEBT.file=k.debt.file; DEBT.src=k.debt.src; }
