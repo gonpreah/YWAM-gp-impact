@@ -325,6 +325,17 @@ label.f{ display:block; font-size:12.5px; font-weight:600; margin:6px 0 4px; }
 .foldR{ display:flex; align-items:center; gap:12px; }
 .xfMonth{ margin-top:14px; }
 .xfMonthHead{ display:flex; justify-content:space-between; gap:10px; align-items:baseline; padding-bottom:4px; border-bottom:2px solid var(--line); }
+.seg{ display:flex; gap:4px; background:var(--surface2); border-radius:12px; padding:4px; margin:4px 0 12px; }
+.seg button{ flex:1; border:0; background:none; border-radius:9px; padding:9px 6px; font-weight:700; font-size:13.5px; cursor:pointer; color:var(--muted); }
+.seg button.on{ background:var(--surface); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.12); }
+.xfGrid input[type=text]{ width:100%; padding:9px 10px; font:inherit; font-size:14px; border:1px solid color-mix(in srgb, var(--muted) 40%, transparent); border-radius:10px; background:var(--bg); color:var(--ink); }
+.incRow{ display:grid; gap:6px; padding:10px 0; border-bottom:1px solid var(--line); }
+.incRow.off{ opacity:.5; }
+.incRow select{ width:100%; padding:8px; font:inherit; font-size:13px; border:1px solid color-mix(in srgb, var(--muted) 40%, transparent); border-radius:9px; background:var(--bg); color:var(--ink); }
+.incChk{ display:flex; gap:10px; align-items:flex-start; font-size:14px; cursor:pointer; }
+.incChk input{ margin-top:3px; width:18px; height:18px; }
+.incChk .dsub{ display:block; }
+.xfLine .delBtn{ margin-top:4px; }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -490,7 +501,7 @@ function inputHtml(){
   h+=inRulesHtml_();
   h+=inXferHtml_();
   h+=
-    '<div class="inNext">💵 <span><b>Income and expenses</b> — entered by category and shared out to the allocations.</span></div>'+
+    inIncHtml_()+'<div class="inNext">🧾 <span><b>Expenses</b> — next.</span></div>'+
     inDebtHtml_();
   return h;
 }
@@ -753,9 +764,9 @@ function xferSave_(){
   fundMove_(D.from, -a); fundMove_(D.to, a);
   TRANSFERS.unshift({ id:'t'+Date.now().toString(36), date:D.date, from:D.from, to:D.to, amt:a, memo:String(D.memo).trim() });
   TRANSFERS.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; });
-  xferSnap_(); S.xfer=null; render(); toast('Moved '+money(a,true)+' to '+fundOf_(TRANSFERS.filter(function(t){ return true; })[0].to).name);
+  xferSnap_(D.date); S.xfer=null; render(); toast('Moved '+money(a,true)+' to '+fundOf_(TRANSFERS.filter(function(t){ return true; })[0].to).name);
 }
-function xferSnap_(){ S.alSaved=true; ALLOC_HIST=ALLOC_HIST.filter(function(x){ return x.asOf!==ALLOC_ASOF; }); ALLOC_HIST.push(allocSnap_(ALLOC_ASOF)); ALLOC_HIST.sort(function(x,y){ return x.asOf<y.asOf?1:-1; }); keep_(); }
+function xferSnap_(day){ if(day && day>ALLOC_ASOF){ ALLOC_PREV_ASOF=ALLOC_ASOF; ALLOC_ASOF=day; } S.alSaved=true; ALLOC_HIST=ALLOC_HIST.filter(function(x){ return x.asOf!==ALLOC_ASOF; }); ALLOC_HIST.push(allocSnap_(ALLOC_ASOF)); ALLOC_HIST.sort(function(x,y){ return x.asOf<y.asOf?1:-1; }); keep_(); }
 /* transfers that touch an allocation, for the Dashboard's breakdown and Details */
 function xfersFor_(gid, upto){ return TRANSFERS.filter(function(t){ return (!upto || t.date<=upto) && (!gid || t.from.split('|')[0]===gid || t.to.split('|')[0]===gid); }); }
 function xferRowsHtml_(list, gid){
@@ -763,6 +774,154 @@ function xferRowsHtml_(list, gid){
     return '<div class="xfLine"><div><span class="xfTag">↔ Internal transfer</span> <span class="dsub" style="display:inline">'+date(t.date)+'</span></div>'+
       '<div class="xfPath">'+esc(xferShort_(t.from))+' <span>→</span> '+esc(xferShort_(t.to))+'</div><div class="xfMemo">“'+esc(t.memo)+'”</div>'+
       '<b class="xfAmt'+(out?' out':inn?' in':'')+'">'+(out?'−':inn?'+':'')+money(t.amt,true)+'</b></div>'; }).join('');
+}
+/* ---- Input: income — one at a time, or many from a QuickBooks export ----
+   Every income is shared out to the funds by its kind's formula (or to one fund picked by hand
+   when its kind has no formula), and the funds' balances go up by those amounts. */
+var INCOMES=[];   /* { id, date, amt, type, who, memo, split:[{f, amt}], src:'manual'|'file', file } newest first */
+function incSplit_(type, amt, fund){
+  var r=INC_RULES[type];
+  if(!r || !r.length) return fund ? [{ f:fund, amt:amt }] : null;
+  var out=[], left=amt; r.forEach(function(x, i){ var v = i===r.length-1 ? Math.round(left*100)/100 : Math.round(amt*x.p)/100; left-=v; out.push({ f:x.f, amt:v }); });
+  return out;
+}
+function incApply_(inc, sign){ inc.split.forEach(function(s2){ fundMove_(s2.f, sign*s2.amt); }); }
+function incGuess_(txt){
+  var t=String(txt||'').toLowerCase();
+  if(/outreach/.test(t) && /dts/.test(t)) return 'School contributions — DTS outreach';
+  if(/\bdts\b/.test(t)) return 'School contributions — DTS';
+  if(/\bdbs\b/.test(t)) return 'School contributions — DBS';
+  if(/\bsomd\b/.test(t)) return 'School contributions — SOMD';
+  if(/school|tuition|student/.test(t)) return 'School contributions — Other schools';
+  if(/kss|yap/.test(t)) return 'KSS & YAP';
+  if(/antonia|base payable/.test(t)) return 'Antonia';
+  if(/staff/.test(t)) return 'Staff contributions';
+  if(/team/.test(t)) return 'Team contributions';
+  if(/rent/.test(t)) return 'Ministry rent';
+  if(/designated/.test(t)) return 'Designated donation';
+  if(/donat|gift|offering/.test(t)) return 'General donations';
+  return '';
+}
+function incTypeSelect_(attr, val){
+  return '<select '+attr+'><option value="">— Kind of income —</option>'+INC_TYPES.map(function(t){ return '<option value="'+esc(t)+'"'+(t===val?' selected':'')+'>'+esc(t)+'</option>'; }).join('')+'</select>';
+}
+function inIncHtml_(){
+  var mode=S.incMode||'one', n=INCOMES.length;
+  var h='<div class="inCard" id="inIncome"><div class="inHead"><h2>💵 Income</h2><button class="histLink" data-hist="inc">🕘 History</button></div>'+
+    '<p class="inLast">'+(n ? n+' income'+(n>1?'s':'')+' entered · last '+date(INCOMES[0].date)+'.' : 'No income entered yet.')+' Each one is shared out to the funds by its kind’s formula.</p>'+
+    '<div class="seg"><button class="'+(mode==='one'?'on':'')+'" data-incmode="one">✍️ One income</button><button class="'+(mode==='file'?'on':'')+'" data-incmode="file">📄 From QuickBooks</button></div>';
+  h+= mode==='one' ? incOneHtml_() : incFileHtml_();
+  return h+'</div>';
+}
+function incOneHtml_(){
+  var D=S.inc1||(S.inc1={ date:reportDay_(), amt:'', type:'', who:'', memo:'', fund:'' }), noRule=D.type && !(INC_RULES[D.type]||[]).length;
+  var h='<div class="xfGrid"><div class="xfRow"><div><label class="f" for="inc1Date">Date</label><input type="date" id="inc1Date" data-inc1="date" max="'+TODAY+'" value="'+esc(D.date)+'"></div>'+
+    '<div><label class="f" for="inc1Amt">Amount</label><div class="money"><span>$</span><input id="inc1Amt" data-inc1="amt" type="text" inputmode="text" autocomplete="off" placeholder="0.00" value="'+esc(D.amt)+'"></div></div></div>'+
+    '<label class="f" for="inc1Type">What it is</label>'+incTypeSelect_('id="inc1Type" data-inc1="type"', D.type)+
+    (noRule ? '<label class="f" for="inc1Fund">“'+esc(D.type)+'” has no formula yet — which fund does it go to?</label>'+fundSelect_('inc1Fund', D.fund, 'Fund') : '')+
+    '<label class="f" for="inc1Who">From (optional)</label><input type="text" id="inc1Who" data-inc1="who" maxlength="80" placeholder="e.g. YWAM Montana team" value="'+esc(D.who)+'">'+
+    '<label class="f" for="inc1Memo">Memo (optional)</label><input type="text" id="inc1Memo" data-inc1="memo" maxlength="200" value="'+esc(D.memo)+'"></div>'+
+    '<div id="inc1Prev">'+inc1PrevHtml_()+'</div>'+
+    (S.incErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.incErr)+'</p>' : '')+
+    '<div class="inBtns"><button class="btn" id="inc1Save">Add income</button></div>';
+  return h;
+}
+function inc1PrevHtml_(){
+  var D=S.inc1||{}, a=calc_(D.amt); if(!D.type || isNaN(a) || a<=0) return '';
+  var sp=incSplit_(D.type, a, D.fund); if(!sp) return '';
+  return '<div class="ruleEg" style="margin-top:10px"><div class="dsub">'+money(a,true)+' goes to:</div><ul>'+sp.map(function(x){ var f=fundOf_(x.f); return '<li><span>'+esc(f?f.name:x.f)+'</span><b>'+money(x.amt,true)+'</b></li>'; }).join('')+'</ul></div>';
+}
+function inc1Save_(){
+  var D=S.inc1, a=calc_(D.amt), err='';
+  if(!D.date||D.date>TODAY) err='Pick the day it came in (not in the future).'; else if(isNaN(a)||a<=0) err='Type an amount more than 0.';
+  else if(!D.type) err='Pick what the income is.'; else if(!incSplit_(D.type, a, D.fund)) err='Pick which fund it goes to.';
+  S.incErr=err; if(err){ render(); return; }
+  var inc={ id:'i'+Date.now().toString(36), date:D.date, amt:a, type:D.type, who:String(D.who||'').trim(), memo:String(D.memo||'').trim(), split:incSplit_(D.type, a, D.fund), src:'manual' };
+  incApply_(inc, 1); INCOMES.unshift(inc); incSort_(); xferSnap_(inc.date);
+  S.inc1={ date:D.date, amt:'', type:'', who:'', memo:'', fund:'' }; render(); toast('Added '+money(a,true)+' — '+inc.type);
+}
+function incSort_(){ INCOMES.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; }); }
+/* many at once: the QuickBooks export (Excel or CSV) — a row a deposit, a kind picked for each */
+function incFileHtml_(){
+  var U=S.incUp;
+  var h='<label class="inDrop" for="incFile">📎 <span><b>'+(U?'Attach a different file':'Attach the QuickBooks export')+'</b><br><small>Excel (.xlsx) or CSV — e.g. Deposit Detail or Income by Customer. PDF: see below.</small></span></label>'+
+    '<input type="file" id="incFile" accept=".xlsx,.csv,.pdf" hidden>';
+  if(S.incReadErr) h+='<p class="inErr" role="alert">⚠️ '+esc(S.incReadErr)+'</p>';
+  if(!U) return h+'<p class="inLast" style="margin-top:10px">Each row with a date and an amount becomes one income. You pick what each one is (it guesses from the account, name and memo), then add them all at once.</p>';
+  var on=U.rows.filter(function(r){ return r.on; }), tot=on.reduce(function(s2,r){ return s2+r.amt; },0), unset=on.filter(function(r){ return !r.type || !incSplit_(r.type, r.amt, r.fund); }).length;
+  h+='<div class="upSum"><b>'+esc(U.file)+'</b> · '+U.rows.length+' rows · '+on.length+' to add · '+money(tot,true)+(unset?' · <span class="badc">'+unset+' need a kind</span>':' <span class="okc">✓ all have a kind</span>')+'</div>'+
+    '<div class="upList">'+U.rows.map(function(r, i){
+      return '<div class="incRow'+(r.on?'':' off')+'"><label class="incChk"><input type="checkbox" data-incon="'+i+'"'+(r.on?' checked':'')+'><span><b>'+money(r.amt,true)+'</b> · '+date(r.date)+(r.dup?' <span class="tag">already in</span>':'')+
+        '<span class="dsub">'+esc([r.who, r.acct, r.memo].filter(Boolean).join(' · ')||'—')+'</span></span></label>'+
+        incTypeSelect_('data-inctype="'+i+'" aria-label="Kind of income"', r.type)+
+        (r.type && !(INC_RULES[r.type]||[]).length ? fundSelect_('incFund'+i, r.fund, 'Fund').replace('<select ','<select data-incfund="'+i+'" ') : '')+'</div>'; }).join('')+'</div>'+
+    (S.incErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.incErr)+'</p>' : '')+
+    '<div class="inBtns"><button class="btn" id="incFileSave">Add '+on.length+' income'+(on.length===1?'':'s')+'</button><button class="btn ghost" id="incFileCancel">Cancel</button></div>';
+  return h;
+}
+function xlDate_(v){
+  if(typeof v==='number' && v>20000 && v<80000){ var d=new Date(Date.UTC(1899,11,30)+v*86400000); return d.toISOString().slice(0,10); }
+  var s2=String(v==null?'':v).trim(), m;
+  if((m=/^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s2))) return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+  if((m=/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/.exec(s2))){ var a=+m[1], b=+m[2], y=+m[3]; if(y<100) y+=2000; var mo=a, dd=b; if(a>12){ mo=b; dd=a; }   /* QuickBooks writes MM/DD/YYYY */
+    if(mo<1||mo>12||dd<1||dd>31) return ''; return y+'-'+String(mo).padStart(2,'0')+'-'+String(dd).padStart(2,'0'); }
+  var d2=new Date(s2); return isNaN(d2) ? '' : d2.getFullYear()+'-'+String(d2.getMonth()+1).padStart(2,'0')+'-'+String(d2.getDate()).padStart(2,'0');
+}
+function incFromRows_(rows, file){
+  var txt=function(v){ return v==null ? '' : String(v).trim(); }, hdr=-1, c={};
+  for(var i=0;i<Math.min(rows.length,40) && hdr<0;i++){ var r=(rows[i]||[]).map(function(v){ return txt(v).toLowerCase(); });
+    if(r.some(function(v){ return /date/.test(v); }) && r.some(function(v){ return /^(amount|total|credit|deposit|amount \(usd\))$/.test(v); })) hdr=i; }
+  if(hdr<0) throw new Error('no_header');
+  (rows[hdr]||[]).forEach(function(v, j){ var t=txt(v).toLowerCase();
+    if(c.date==null && /date/.test(t)) c.date=j;
+    else if(c.amt==null && /^(amount|total|credit|deposit|amount \(usd\))$/.test(t)) c.amt=j;
+    else if(c.who==null && /^(name|customer|received from|payer|donor|full name|customer full name)$/.test(t)) c.who=j;
+    else if(c.memo==null && /memo|description/.test(t)) c.memo=j;
+    else if(c.acct==null && /^(account|account name|item|product\/service|class|split|category)$/.test(t)) c.acct=j; });
+  var num=function(v){ var x=typeof v==='number'?v:parseFloat(String(v==null?'':v).replace(/[$,\s]/g,'').replace(/^\((.*)\)$/,'-$1')); return isNaN(x)?NaN:x; };
+  var out=[];
+  for(var r2=hdr+1;r2<rows.length;r2++){ var row=rows[r2]||[], d=xlDate_(row[c.date]), a=num(row[c.amt]);
+    if(!d || isNaN(a) || a<=0) continue;
+    var who=txt(row[c.who]), memo=txt(row[c.memo]), acct=txt(row[c.acct]);
+    var type=incGuess_([acct, memo, who].join(' ')), dup=INCOMES.some(function(x){ return x.date===d && Math.abs(x.amt-a)<0.005 && (x.who||'')===who; });
+    out.push({ date:d, amt:Math.round(a*100)/100, who:who, memo:memo, acct:acct, type:type, fund:'', on:!dup && d<=TODAY, dup:dup });
+  }
+  if(!out.length) throw new Error('no_rows');
+  return { file:file, rows:out };
+}
+function incReadFile_(f){
+  S.incReadErr=''; S.incErr='';
+  if(/\.pdf$/i.test(f.name)){ S.incUp=null; S.incReadErr='This preview can’t read a PDF. When this is built into the app it will, the same way the app already reads the QuickBooks Profit and Loss PDF. For now, export the report from QuickBooks as Excel.'; render(); return; }
+  f.arrayBuffer().then(function(buf){ return /\.csv$/i.test(f.name) ? csvRows_(new TextDecoder().decode(buf)) : xlsxRows_(buf); })
+   .then(function(rows){ S.incUp=incFromRows_(rows, f.name); render(); })
+   .catch(function(e){ S.incUp=null; S.incReadErr = e && e.message==='no_header' ? 'Couldn’t find a Date and an Amount column in that file.' : e && e.message==='no_rows' ? 'No rows with a date and an amount above 0.' : 'Couldn’t read that file — attach the Excel (.xlsx) or CSV export.'; render(); });
+}
+function incFileSave_(){
+  var U=S.incUp, on=U.rows.filter(function(r){ return r.on; });
+  if(!on.length){ S.incErr='Tick at least one row.'; render(); return; }
+  var bad=on.filter(function(r){ return !r.type || !incSplit_(r.type, r.amt, r.fund); });
+  if(bad.length){ S.incErr=bad.length+' ticked row'+(bad.length>1?'s need':' needs')+' a kind of income (or a fund).'; render(); return; }
+  on.forEach(function(r, i){ var inc={ id:'i'+Date.now().toString(36)+i, date:r.date, amt:r.amt, type:r.type, who:r.who, memo:[r.acct, r.memo].filter(Boolean).join(' · '), split:incSplit_(r.type, r.amt, r.fund), src:'file', file:U.file };
+    incApply_(inc, 1); INCOMES.push(inc); });
+  incSort_(); xferSnap_(on.reduce(function(m,r){ return r.date>m?r.date:m; },'')); var tot=on.reduce(function(s2,r){ return s2+r.amt; },0);
+  S.incUp=null; S.incErr=''; render(); toast('Added '+on.length+' incomes — '+money(tot,true));
+}
+/* the Dashboard's income report reads what was entered, once there is any */
+function flowRef_(){ var days=reportDays_(); return S.viewDay && days.indexOf(S.viewDay)>=0 ? S.viewDay : (days[0] || TODAY); }
+function monthName_(ym){ return new Date(ym+'-01T00:00:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'}); }
+function prevYm_(ym){ var y=+ym.slice(0,4), m=+ym.slice(5,7)-1; if(!m){ m=12; y--; } return y+'-'+String(m).padStart(2,'0'); }
+function flowLive_(kind){ return kind==='inc' && INCOMES.length>0; }
+function flowMonth_(kind){ return flowLive_(kind) ? monthName_(flowRef_().slice(0,7)) : FLOW_MONTH; }
+function flowPrev_(kind){ return flowLive_(kind) ? monthName_(prevYm_(flowRef_().slice(0,7))) : FLOW_PREV; }
+function flowYtdLabel_(kind){ if(!flowLive_(kind)) return 'January – November 2026'; var r=flowRef_(); return 'January – '+monthName_(r.slice(0,7)); }
+function flowCats_(kind){ return flowLive_(kind) ? INC_TYPES : FLOW[kind].cats; }
+function flowLiveOf_(id, ytd){
+  var r=flowRef_(), ym=r.slice(0,7), pym=prevYm_(ym), by={}, prev=0;
+  INCOMES.forEach(function(x){ if(x.date>r) return; var inYtd=x.date.slice(0,4)===r.slice(0,4), inM=x.date.slice(0,7)===ym, inP=x.date.slice(0,7)===pym;
+    x.split.forEach(function(s2){ if(s2.f.split('|')[0]!==id) return;
+      if(ytd ? inYtd : inM) by[x.type]=(by[x.type]||0)+s2.amt; if(inP) prev+=s2.amt; }); });
+  Object.keys(by).forEach(function(k){ by[k]=Math.round(by[k]*100)/100; });
+  return { by:by, prev:ytd?null:Math.round(prev*100)/100 };
 }
 function ruleLiveHtml_(rows){
   var sum=ruleSum_(rows), left=Math.round((100-sum)*1000)/1000, ok=Math.abs(left)<0.001;
@@ -901,7 +1060,7 @@ var FLOW_MONTH='November 2026', FLOW_PREV='October 2026';
 Object.keys(FLOW).forEach(function(kind){ var F=FLOW[kind]; F.ytd={};
   Object.keys(F.by).forEach(function(k){ var o={}; Object.keys(F.by[k].by).forEach(function(c){ o[c]=Math.round(F.by[k].by[c]*(9.4+(c.length%4)*0.6)); }); F.ytd[k]={ by:o }; }); });
 S.flowPer={}; S.flowOpen={}; S.flowList={};
-function flowOf_(kind, id){ var F=FLOW[kind], src=(S.flowPer[kind]==='ytd'?F.ytd:F.by)[id], by=src?src.by:{}, tot=0;
+function flowOf_(kind, id){ var F=FLOW[kind], src=flowLive_(kind) ? flowLiveOf_(id, S.flowPer[kind]==='ytd') : (S.flowPer[kind]==='ytd'?F.ytd:F.by)[id], by=src?src.by:{}, tot=0;
   Object.keys(by).forEach(function(k){ tot+=by[k]; }); return { by:by, tot:tot, prev:src&&src.prev }; }
 function flowDelta_(kind, d, vs){
   if(Math.abs(d)<0.5) return '<span class="alDelta">Same as '+vs+'</span>';
@@ -909,14 +1068,14 @@ function flowDelta_(kind, d, vs){
   return '<span class="alDelta '+(good?'up':'down')+'">'+(d>0?'▲ ':'▼ ')+money(Math.abs(d))+' vs '+vs+'</span>';
 }
 function flowPerHtml_(kind){ var ytd=S.flowPer[kind]==='ytd';
-  return '<div class="incPer"><button class="'+(ytd?'':'on')+'" data-flowper="'+kind+'|month">'+FLOW_MONTH+'</button><button class="'+(ytd?'on':'')+'" data-flowper="'+kind+'|ytd">2026 so far</button></div>'; }
+  return '<div class="incPer"><button class="'+(ytd?'':'on')+'" data-flowper="'+kind+'|month">'+flowMonth_(kind)+'</button><button class="'+(ytd?'on':'')+'" data-flowper="'+kind+'|ytd">2026 so far</button></div>'; }
 function flowHtml(kind){
   var F=FLOW[kind], ytd=S.flowPer[kind]==='ytd', rows=ALLOC.map(function(a){ return { a:a, o:flowOf_(kind, a.id) }; }), T=0, PT=0;
   rows.forEach(function(r){ T+=r.o.tot; PT+=r.o.prev||0; });
   var h='<section class="sec" id="'+F.id+'"><div class="secHead"><h2>'+F.icon+' '+F.title+'</h2><button class="more" data-sheet="'+F.id+'">Details ›</button></div>'+
     '<p class="hint">'+F.hint+'</p>'+flowPerHtml_(kind)+
-    '<div class="incHead"><span class="incTot">'+money(T)+'</span><span class="incTotL">'+F.verb+(ytd?' this year':' during '+FLOW_MONTH)+'</span>'+
-    (!ytd ? flowDelta_(kind, T-PT, FLOW_PREV) : '')+'</div>';
+    '<div class="incHead"><span class="incTot">'+money(T)+'</span><span class="incTotL">'+F.verb+(ytd?' this year':' during '+flowMonth_(kind))+'</span>'+
+    (!ytd ? flowDelta_(kind, T-PT, flowPrev_(kind)) : '')+'</div>';
   h+='<div class="alBar" role="img" aria-label="'+esc(rows.map(function(r){ return r.a.name+' '+money(r.o.tot); }).join(', '))+'">'+
     rows.filter(function(r){ return r.o.tot>0; }).map(function(r){ var p=r.o.tot/T*100;
       return '<button class="alSeg'+(r.a.dark?' dark':'')+'" data-flow="'+kind+'|'+r.a.id+'" style="flex:'+r.o.tot+' 1 0;background:var('+r.a.c+')" title="'+esc(r.a.name+' · '+money(r.o.tot)+' · '+Math.round(p)+'%')+'">'+(p>=9?Math.round(p)+'%':'')+'</button>'; }).join('')+'</div>';
@@ -924,7 +1083,7 @@ function flowHtml(kind){
   h+='<button class="flowDrop'+(listOn?' on':'')+'" data-flowlist="'+kind+'" aria-expanded="'+listOn+'"><span>'+(listOn?'Hide':'Show')+' the '+ALLOC.length+' allocations</span><span class="chev">▾</span></button>';
   if(!listOn) return h+'</section>';
   h+='<ul class="alList">'+rows.map(function(r){ var a=r.a, o=r.o, p=T?o.tot/T*100:0, on=S.flowOpen[kind]===a.id;
-    var dl = (o.prev==null || ytd) ? '' : '<br>'+flowDelta_(kind, o.tot-o.prev, FLOW_PREV);
+    var dl = (o.prev==null || ytd) ? '' : '<br>'+flowDelta_(kind, o.tot-o.prev, flowPrev_(kind));
     var cs=Object.keys(o.by).sort(function(x,y){ return o.by[y]-o.by[x]; });
     return '<li class="alRow'+(on?' on':'')+'"><button data-flow="'+kind+'|'+a.id+'" aria-expanded="'+on+'">'+
       '<span class="sw" style="background:var('+a.c+')"></span>'+
@@ -932,17 +1091,17 @@ function flowHtml(kind){
       '<span class="alAmt">'+money(o.tot)+'<span class="alPct">'+Math.round(p)+'%</span></span></button>'+
       '<div class="alSub">'+(cs.length ? cs.map(function(k){ var sp=o.by[k]/o.tot*100;
         return '<div class="incSrc"><span>'+esc(k)+'<span class="sp">'+Math.round(sp)+'%</span></span><span class="sv">'+money(o.by[k])+'</span><span class="sb"><span style="width:'+sp.toFixed(1)+'%;background:var('+a.c+')"></span></span></div>'; }).join('')
-        : '<p class="note" style="margin:0">'+esc(F.none.charAt(0).toUpperCase()+F.none.slice(1))+(ytd?' this year.':' in '+FLOW_MONTH+'.')+'</p>')+'</div></li>';
+        : '<p class="note" style="margin:0">'+esc(F.none.charAt(0).toUpperCase()+F.none.slice(1))+(ytd?' this year.':' in '+flowMonth_(kind)+'.')+'</p>')+'</div></li>';
   }).join('')+'</ul>';
   return h+'</section>';
 }
 function flowSheetHtml_(kind){
   var F=FLOW[kind], ytd=S.flowPer[kind]==='ytd', cell=function(v){ return v ? v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''; };
-  var used=F.cats.filter(function(k){ return ALLOC.some(function(a){ return flowOf_(kind, a.id).by[k]; }); });
+  var used=flowCats_(kind).filter(function(k){ return ALLOC.some(function(a){ return flowOf_(kind, a.id).by[k]; }); });
   var colTot=function(k){ return ALLOC.reduce(function(s2,a){ return s2+(flowOf_(kind, a.id).by[k]||0); },0); };
   var all=ALLOC.reduce(function(s2,a){ return s2+flowOf_(kind, a.id).tot; },0);
   return flowPerHtml_(kind).replace('class="incPer"','class="incPer" style="margin:0 0 4px"')+
-    '<div class="rep"><div class="repTitle">'+F.report+'</div><div class="repSub">'+(ytd?'January – November 2026':FLOW_MONTH)+'</div>'+
+    '<div class="rep"><div class="repTitle">'+F.report+'</div><div class="repSub">'+(ytd?flowYtdLabel_(kind):flowMonth_(kind))+'</div>'+
     '<div class="tblWrap gridWrap"><table class="gridTbl" style="width:'+(150+96*(used.length+1))+'px"><colgroup><col style="width:150px">'+used.map(function(){ return '<col style="width:96px">'; }).join('')+'<col style="width:96px"></colgroup>'+
     '<thead><tr><th class="nm">Allocation</th>'+used.map(function(k){ return '<th>'+esc(k)+'</th>'; }).join('')+'<th class="tot">Total</th></tr></thead><tbody>'+
     ALLOC.map(function(a){ var o=flowOf_(kind, a.id);
@@ -1023,6 +1182,20 @@ function histHtml_(kind){
       H.map(function(e){ var t=0; Object.keys(e.groups).forEach(function(k){ t+=histSum_(e.groups[k].map(function(x){ return x[1]; })); });
         return '<li><button data-histpick="'+e.asOf+'"><span><b>'+date(e.asOf)+'</b>'+(e.sample?' <span class="tag">sample</span>':'')+'<span class="dsub">'+ALLOC.length+' allocations</span></span><span class="r"><b>'+money(t,true)+'</b><span class="dsub">allocated ›</span></span></button></li>'; }).join('')+'</ul>';
   }
+  if(kind==='inc'){
+    var tf=S.incFilter||'', L=INCOMES.filter(function(x){ return !tf || x.type===tf; });
+    var h3='<h3>💵 Income — history</h3><p class="hint">Every income entered, newest first, and where it went. ✕ takes one out (its money comes back off the funds).</p>'+
+      '<div class="chips"><button class="chip'+(tf?'':' on')+'" data-incfilter="">All · '+INCOMES.length+'</button>'+
+      INC_TYPES.filter(function(t){ return INCOMES.some(function(x){ return x.type===t; }); }).map(function(t){ return '<button class="chip'+(tf===t?' on':'')+'" data-incfilter="'+esc(t)+'">'+esc(t)+'</button>'; }).join('')+'</div>';
+    if(!L.length) return h3+'<p class="hint" style="margin-top:12px">No income entered yet.</p>';
+    var mo={}; L.forEach(function(x){ (mo[x.date.slice(0,7)]=mo[x.date.slice(0,7)]||[]).push(x); });
+    return h3+Object.keys(mo).sort().reverse().map(function(m){ var M=mo[m], tot=M.reduce(function(s2,x){ return s2+x.amt; },0);
+      return '<div class="xfMonth"><div class="xfMonthHead"><b>'+monthName_(m)+'</b><span class="dsub" style="display:inline">'+M.length+' · '+money(tot,true)+'</span></div>'+
+        M.map(function(x){ return '<div class="xfLine"><div><b>'+esc(x.type)+'</b> <span class="dsub" style="display:inline">'+date(x.date)+(x.src==='file'?' · from '+esc(x.file||'a file'):'')+'</span></div>'+
+          (x.who||x.memo ? '<div class="xfMemo" style="font-style:normal">'+esc([x.who, x.memo].filter(Boolean).join(' · '))+'</div>' : '')+
+          '<div class="dsub">'+x.split.map(function(sp){ var f=fundOf_(sp.f); return esc(f?f.name:sp.f)+' '+money(sp.amt,true); }).join(' · ')+'</div>'+
+          '<b class="xfAmt in">+'+money(x.amt,true)+'</b><button class="delBtn" data-incdel="'+x.id+'">✕ Take out</button></div>'; }).join('')+'</div>'; }).join('');
+  }
   if(kind==='xf'){
     var flt=S.xfFilter||'', list=TRANSFERS.filter(function(t){ return !flt || t.from.split('|')[0]===flt || t.to.split('|')[0]===flt; });
     var h2='<h3>🔁 Internal transfers — history</h3><p class="hint">Every transfer between funds, newest first, with the day and why.</p>'+
@@ -1084,6 +1257,12 @@ document.getElementById('scrim').onclick=closeSheet;
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSheet(); });
 
 document.addEventListener('change', function(e){
+  if(e.target.id==='incFile' && e.target.files[0]){ incReadFile_(e.target.files[0]); return; }
+  var it=e.target.dataset && e.target.dataset.inctype; if(it!=null && S.incUp){ S.incUp.rows[+it].type=e.target.value; S.incUp.rows[+it].fund=''; S.incErr=''; render(); return; }
+  var ifd=e.target.dataset && e.target.dataset.incfund; if(ifd!=null && S.incUp){ S.incUp.rows[+ifd].fund=e.target.value; render(); return; }
+  var io=e.target.dataset && e.target.dataset.incon; if(io!=null && S.incUp){ S.incUp.rows[+io].on=e.target.checked; render(); return; }
+  if(e.target.id==='inc1Type'){ S.inc1.type=e.target.value; S.inc1.fund=''; S.incErr=''; render(); return; }
+  if(e.target.id==='inc1Fund'){ S.inc1.fund=e.target.value; var pv=document.getElementById('inc1Prev'); if(pv) pv.innerHTML=inc1PrevHtml_(); return; }
   if(e.target.id==='xfFrom' || e.target.id==='xfTo'){ S.xfer[e.target.id==='xfFrom'?'from':'to']=e.target.value; S.xfErr=''; var pv=document.getElementById('xfPrev'); if(pv) pv.innerHTML=xferPrevHtml_(); return; }
   if(e.target.id==='viewDay'){ S.viewDay=e.target.value; render(); return; }
   if(e.target.id==='viewDebtDay'){ S.viewDebtDay=e.target.value; render(); return; }
@@ -1113,6 +1292,7 @@ document.addEventListener('input', function(e){
   if(e.target.dataset && e.target.dataset.reportday){ S.reportDay=e.target.value; S.dayErr = !e.target.value ? 'Pick a day.' : (e.target.value>TODAY ? 'That day is in the future.' : '');
     document.querySelectorAll('#inDay .inLast b').forEach(function(b){ b.textContent = e.target.value ? date(e.target.value) : '—'; }); return; }
   if(e.target.dataset && e.target.dataset.debtday){ S.debtDay=e.target.value; return; }
+  var i1=e.target.dataset && e.target.dataset.inc1; if(i1 && i1!=='type'){ S.inc1[i1]=e.target.value; if(i1==='amt'){ var pv=document.getElementById('inc1Prev'); if(pv) pv.innerHTML=inc1PrevHtml_(); } return; }
   var xk=e.target.dataset && e.target.dataset.xf; if(xk){ S.xfer[xk]=e.target.value; if(xk==='amt'){ var pv=document.getElementById('xfPrev'); if(pv) pv.innerHTML=xferPrevHtml_(); } return; }
   var rp=e.target.dataset && e.target.dataset.rulepct;
   if(rp!=null){ var rows=ruleRows_(S.ruleType||INC_TYPES[0]); rows[+rp].p=e.target.value; var lv=document.getElementById('ruleLive'); if(lv) lv.innerHTML=ruleLiveHtml_(rows); return; }
@@ -1128,6 +1308,15 @@ document.addEventListener('click', function(e){
   if(e.target.id==='viewLatest'){ S.viewDay=null; S.viewDebtDay=null; render(); return; }
   if(e.target.id==='inBalSave'){ inSave_(); return; }
   if(e.target.id==='xfSave'){ xferSave_(); return; }
+  var im=e.target.closest && e.target.closest('[data-incmode]'); if(im){ S.incMode=im.dataset.incmode; S.incErr=''; render(); return; }
+  if(e.target.id==='inc1Save'){ inc1Save_(); return; }
+  if(e.target.id==='incFileSave'){ incFileSave_(); return; }
+  if(e.target.id==='incFileCancel'){ S.incUp=null; S.incErr=''; render(); return; }
+  var ifl=e.target.closest && e.target.closest('[data-incfilter]'); if(ifl){ S.incFilter=ifl.dataset.incfilter; sheet('hist-inc'); return; }
+  var idl=e.target.dataset && e.target.dataset.incdel;
+  if(idl){ if(S.incDelAsk!==idl){ S.incDelAsk=idl; e.target.textContent='Take it out? Tap again'; e.target.classList.add('ask'); return; }
+    var x=INCOMES.filter(function(y){ return y.id===idl; })[0]; if(x){ incApply_(x, -1); INCOMES=INCOMES.filter(function(y){ return y.id!==idl; }); xferSnap_(); }
+    S.incDelAsk=null; render(); sheet('hist-inc'); toast('Taken out'); return; }
   var xd=e.target.dataset && e.target.dataset.xfdel;
   if(xd){ if(S.xfDelAsk!==xd){ S.xfDelAsk=xd; e.target.textContent='Undo it? Tap again'; e.target.classList.add('ask'); return; }
     var t=TRANSFERS.filter(function(x){ return x.id===xd; })[0]; if(t){ fundMove_(t.to, -t.amt); fundMove_(t.from, t.amt); TRANSFERS=TRANSFERS.filter(function(x){ return x.id!==xd; }); xferSnap_(); }
@@ -1172,10 +1361,11 @@ document.getElementById('themeBtn').onclick=function(){
 var KEEP_KEY='gp-fin-draft-v1';
 var FUND_RENAMES={ 'Office':'Office/General' };   /* old fund name → new, for anything already saved */
 function keep_(){ try { localStorage.setItem(KEEP_KEY, JSON.stringify({ bal:BAL_DAYS, alloc:ALLOC.map(function(g){ return { id:g.id, prev:g.prev, items:g.items }; }),
-  allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, incTypes:INC_TYPES, incRules:INC_RULES, transfers:TRANSFERS, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved })); } catch(e){} }
+  allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, incTypes:INC_TYPES, incRules:INC_RULES, transfers:TRANSFERS, incomes:INCOMES, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved })); } catch(e){} }
 (function(){ try { var k=JSON.parse(localStorage.getItem(KEEP_KEY)||'null'); if(!k) return;
   if(Array.isArray(k.bal)) BAL_DAYS=k.bal;
   if(Array.isArray(k.transfers)) TRANSFERS=k.transfers;
+  if(Array.isArray(k.incomes)) INCOMES=k.incomes;
   if(k.incRules && typeof k.incRules==='object'){ Object.keys(k.incRules).forEach(function(t){ var nt=INC_TYPE_RENAMES[t]||t; if(INC_TYPES_GONE.indexOf(nt)<0) INC_RULES[nt]=k.incRules[t]; }); }
   if(Array.isArray(k.incTypes)) k.incTypes.forEach(function(t){ var nt=INC_TYPE_RENAMES[t]||t; if(INC_TYPES.indexOf(nt)<0 && INC_TYPES_GONE.indexOf(nt)<0 && ['Donations','Teams','Other income'].indexOf(t)<0) INC_TYPES.push(nt); });
   if(Array.isArray(k.alHist)){ ALLOC_HIST=k.alHist; ALLOC_HIST.forEach(function(e){ Object.keys(e.groups||{}).forEach(function(gk){ e.groups[gk].forEach(function(it){ if(FUND_RENAMES[it[0]]) it[0]=FUND_RENAMES[it[0]]; }); }); }); }
