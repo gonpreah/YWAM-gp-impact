@@ -1510,7 +1510,7 @@ function advForm_(){ return S.adv||(S.adv={ who:'', date:reportDay_(), fund:'', 
 function inAdvHtml_(){
   var D=advForm_(), out=advOut_(), done=ADVANCES.filter(function(a){ return a.settled; }), open=S.foldOpen&&S.foldOpen.adv;
   var outTot=out.reduce(function(s2,a){ return s2+a.amt; },0);
-  var h='<details class="inCard fold" id="inAdv" data-fold="adv"'+(open?' open':'')+'><summary class="foldHead"><span><b>🤝 Advances</b><span class="dsub">'+(out.length ? out.length+' out · '+money(outTot,true)+' not settled yet' : 'Money given out before a purchase')+'</span></span><span class="chev">▾</span></summary>'+
+  var h='<details class="inCard fold" id="inAdv" data-fold="adv"'+(open?' open':'')+'><summary class="foldHead"><span><b>🤝 Advances</b><span class="dsub">'+(out.length ? out.length+' out · '+money(outTot,true)+' not settled yet' : 'Money given out before a purchase')+'</span></span><span class="foldR"><button class="histLink" data-hist="adv">🕘 History</button><span class="chev">▾</span></span></summary>'+
     '<p class="inLast">Money handed out ahead of a purchase — e.g. $500 to DTS for a week of school — then settled when the receipts come back.</p>';
   h+='<div class="dListHead">Give an advance</div><div class="xfGrid">'+
     '<label class="f" for="advWho">Who is responsible for it</label><input type="text" id="advWho" data-adv="who" maxlength="80" placeholder="Name" value="'+esc(D.who)+'">'+
@@ -1928,6 +1928,22 @@ function histHtml_(kind){
     return flHistHtml_('inc');
   }
   if(kind==='exp') return flHistHtml_('exp');
+  if(kind==='adv'){
+    var tab=S.advTab||'out', out=advOut_().slice().sort(function(x,y){ return x.date<y.date?-1:1; }), all=ADVANCES.slice().sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; });
+    var line=function(a){ var f=fundOf_(a.fund), st=a.settled, days=Math.round((Date.parse(st?st.date:TODAY)-Date.parse(a.date))/864e5), diff=st?Math.round((a.amt-st.spent-st.returned)*100)/100:0;
+      return '<div class="xfLine"><div><b>'+esc(a.who)+'</b> <span class="dsub" style="display:inline">'+date(a.date)+'</span> '+(st?'<span class="apprTag">✓ Settled '+date(st.date)+'</span>':'<span class="xfTag tool">Out · '+days+' day'+(days===1?'':'s')+'</span>')+'</div>'+
+        '<div class="dsub">From '+esc(f?f.name:a.fund)+(a.bank?' · out of '+bankLabel_(a.bank):'')+' · '+(a.budgeted==='yes'?'pre-budgeted':'not budgeted')+'</div>'+
+        (st ? '<div class="dsub">Spent '+money(st.spent,true)+(st.type?' ('+esc(st.type)+')':'')+' · returned '+money(st.returned,true)+(Math.abs(diff)>=0.005?' · '+(diff>0?money(diff,true)+' unaccounted':money(-diff,true)+' over'):'')+'</div>' : '')+
+        (a.memo?'<div class="xfMemo">“'+esc(a.memo)+'”</div>':'')+
+        '<b class="xfAmt out">'+money(a.amt,true)+'</b>'+(st?'':'<div class="rowBtns"><button class="editBtn" data-advgo="'+a.id+'">Settle it</button></div>')+'</div>'; };
+    var h4='<h3>🤝 Advances — history</h3><div class="seg" style="margin:8px 0 4px"><button class="'+(tab==='out'?'on':'')+'" data-advtab="out">Outstanding · '+out.length+'</button><button class="'+(tab==='all'?'on':'')+'" data-advtab="all">All advances · '+all.length+'</button></div>';
+    if(tab==='out'){ var ot=out.reduce(function(s2,a){ return s2+a.amt; },0);
+      return h4+(out.length ? '<p class="hint">'+money(ot,true)+' out with '+out.length+' '+(out.length===1?'person':'people')+', oldest first.</p>'+out.map(line).join('') : '<p class="hint" style="margin-top:10px">Nothing outstanding — every advance is settled. 🎉</p>'); }
+    if(!all.length) return h4+'<p class="hint" style="margin-top:10px">No advances yet.</p>';
+    var mo={}; all.forEach(function(a){ (mo[a.date.slice(0,7)]=mo[a.date.slice(0,7)]||[]).push(a); });
+    return h4+'<p class="hint">Every advance, newest first.</p>'+Object.keys(mo).sort().reverse().map(function(m){ var M=mo[m];
+      return '<div class="xfMonth"><div class="xfMonthHead"><b>'+monthName_(m)+'</b><span class="dsub" style="display:inline">'+M.length+' · '+money(M.reduce(function(s2,a){ return s2+a.amt; },0),true)+' given</span></div>'+M.map(line).join('')+'</div>'; }).join('');
+  }
   if(kind==='xf'){
     var flt=S.xfFilter||'', AX=allXfers_(), list=AX.filter(function(t){ return !flt || t.from.split('|')[0]===flt || t.to.split('|')[0]===flt; });
     var h2='<h3>🔁 Internal transfers — history</h3><p class="hint">Every transfer — between funds, between bank and cash, and Financial tools adjustments — newest first, with the day and why.</p>'+
@@ -2094,6 +2110,8 @@ document.addEventListener('click', function(e){
   var arp=e.target.closest && e.target.closest('[data-advreopen]'); if(arp){ advUnsettle_(arp.dataset.advreopen); return; }
   var adl=e.target.dataset && e.target.dataset.advdel; if(adl){ if(S.advDelAsk!==adl){ S.advDelAsk=adl; e.target.textContent='Remove? Tap again'; e.target.classList.add('ask'); return; }
     var av=ADVANCES.filter(function(x){ return x.id===adl; })[0]; if(av){ snap_('Brought back the advance to '+av.who); ADVANCES=ADVANCES.filter(function(x){ return x.id!==adl; }); keep_(); } S.advDelAsk=null; render(); toast('Removed'); return; }
+  var atb=e.target.closest && e.target.closest('[data-advtab]'); if(atb){ S.advTab=atb.dataset.advtab; sheet('hist-adv'); return; }
+  var ago=e.target.closest && e.target.closest('[data-advgo]'); if(ago){ S.advSettle=ago.dataset.advgo; S.advS=null; S.advSErr=''; (S.foldOpen=S.foldOpen||{}).adv=true; S.editGo='inAdv'; S.tab='input'; closeSheet(); render(); return; }
   if(e.target.id==='viewLatest'){ S.viewDay=null; S.viewDebtDay=null; render(); return; }
   if(e.target.id==='undoLast'){ if(!S.undoAsk){ S.undoAsk=true; render(); setTimeout(function(){ if(S.undoAsk){ S.undoAsk=false; if(S.tab==='input') render(); } }, 4000); return; } undoLast_(); return; }
   if(e.target.id==='inBalSave'){ inSave_(); return; }
@@ -2130,7 +2148,7 @@ document.addEventListener('click', function(e){
   var rdl=e.target.dataset && e.target.dataset.ruledel; if(rdl!=null){ ruleRows_(ruleTypeCur_()).splice(+rdl,1); render(); return; }
   var rpk=e.target.closest && e.target.closest('[data-rulepick]'); if(rpk){ (S.ruleTypeBy=S.ruleTypeBy||{})[RK_().k]=rpk.dataset.rulepick; S.ruleErr=''; render(); document.getElementById('inRules').scrollIntoView({block:'start'}); return; }
   var xff=e.target.closest && e.target.closest('[data-xffilter]'); if(xff){ S.xfFilter=xff.dataset.xffilter; sheet('hist-xf'); return; }
-  var hb=e.target.closest && e.target.closest('[data-hist]'); if(hb){ e.preventDefault(); S.incTools=false; S.histPick=''; S.histOpen=hb.dataset.hist; sheet('hist-'+hb.dataset.hist); return; }
+  var hb=e.target.closest && e.target.closest('[data-hist]'); if(hb){ e.preventDefault(); S.incTools=false; if(hb.dataset.hist==='adv') S.advTab='out'; S.histPick=''; S.histOpen=hb.dataset.hist; sheet('hist-'+hb.dataset.hist); return; }
   var hp=e.target.closest && e.target.closest('[data-histpick]'); if(hp){ S.histPick=hp.dataset.histpick; sheet('hist-'+S.histOpen); document.getElementById('sheet').scrollTop=0; return; }
   if(e.target.dataset && e.target.dataset.baldel){ var dday=e.target.dataset.baldel;
     if(S.balDelAsk!==dday){ S.balDelAsk=dday; e.target.textContent='Delete?'; e.target.classList.add('ask'); return; }
