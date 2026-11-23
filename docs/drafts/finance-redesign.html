@@ -1362,8 +1362,10 @@ function okrsHtml_(){
   var q=S.okrLeadQ||OKR_Q, L=OKR_LEAD[q]||{ sr:[], pp:[] }, open=S.foldOpen&&S.foldOpen.leadokr, n=(L.sr||[]).length+(L.pp||[]).length;
   h+='<details class="inCard fold" id="leadOkrs" data-fold="leadokr"'+(open?' open':'')+' style="margin-top:16px"><summary class="foldHead"><span><b>🧭 Leadership OKRs</b><span class="dsub">What the leadership team is working on this quarter — to see, not to change.</span></span><span class="chev">▾</span></summary>'+
     '<div class="chips" style="margin:0 0 6px">'+[1,2,3,4].map(function(x){ return '<button class="chip'+(x===q?' on':'')+'" data-okrq="'+x+'">Q'+x+(x===OKR_Q?' · now':'')+'</button>'; }).join('')+'</div>';
+  n=(L.sr||[]).length;
+  h+='<p class="hint" style="margin:0 0 6px">Siem Reap’s Campus Leadership. <span class="tag">sample</span> In the app these are the real objectives, straight from Campus Leadership’s OKRs.</p>';
   if(!n) h+='<p class="hint">No leadership objectives set for Q'+q+' 2026.</p>';
-  [['sr','YWAM Siem Reap'],['pp','YWAM Poipet']].forEach(function(c){ var list=L[c[0]]||[]; if(!list.length) return;
+  [['sr','YWAM Siem Reap']].forEach(function(c){ var list=L[c[0]]||[]; if(!list.length) return;
     h+='<div class="okrCamp">'+c[1]+'</div>'+list.map(function(o, i){ return okrCard_(o, i+1, false); }).join(''); });
   return h+'</details>';
 }
