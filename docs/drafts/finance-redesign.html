@@ -365,6 +365,18 @@ label.f{ display:block; font-size:12.5px; font-weight:600; margin:6px 0 4px; }
 .undoBtn.ask{ background:var(--bad); color:#fff; border-color:var(--bad); }
 .undoBtn[disabled]{ opacity:.5; cursor:not-allowed; }
 .undoBar .dsub{ font-size:12px; min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tick{ width:20px; height:20px; border-radius:999px; border:2px solid color-mix(in srgb, var(--muted) 55%, transparent); display:inline-flex; align-items:center; justify-content:center; flex:none; font-size:12px; font-weight:800; color:#fff; margin-right:10px; }
+.tick.done{ background:var(--good); border-color:var(--good); }
+.foldHead{ justify-content:flex-start!important; }
+.foldHead > span:not(.tick):not(.foldR){ flex:1; min-width:0; }
+.nothingNew{ display:flex; gap:8px; align-items:center; font-size:13px; color:var(--muted); margin:0 0 10px; cursor:pointer; }
+.nothingNew input{ width:17px; height:17px; }
+.pubCard{ border:2px solid var(--good); }
+.pubList{ list-style:none; margin:4px 0 10px; padding:0; }
+.pubList li{ display:flex; align-items:center; padding:6px 0; border-top:1px solid var(--line); font-size:14px; color:var(--muted); }
+.pubList li.done{ color:var(--ink); }
+.pubBar{ height:8px; border-radius:999px; background:var(--surface2); overflow:hidden; } .pubBar span{ display:block; height:100%; background:var(--good); border-radius:999px; }
+.btn.warn{ background:var(--amberDeep); color:#fff; }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -536,6 +548,11 @@ function inputHtml(){
   h+=
     flHtml_('inc')+flHtml_('exp')+
     inDebtHtml_();
+  /* a tick by each part that is done for the day */
+  [['inBalances','bal'],['inAlloc','alloc'],['in_inc','inc'],['in_exp','exp'],['inXfer','xfer'],['inDebt','debt']].forEach(function(x){
+    h=h.replace(new RegExp('(<details class="inCard fold" id="'+x[0]+'"[^>]*><summary class="foldHead">)'), '$1'+dayTick_(x[1]));
+  });
+  h+=publishHtml_();
   return h;
 }
 /* ---- Input: the allocations — every sub-fund's balance, in one form ---- */
@@ -779,7 +796,7 @@ function xferShort_(k){ if(isTool_(k)) return TOOL_LABEL[k]; var f=fundOf_(k); r
 function inXferHtml_(){
   var D=S.xfer||(S.xfer={ from:'', to:'', amt:'', date:reportDay_(), memo:'' }), open=S.foldOpen&&S.foldOpen.xfer;
   var h='<details class="inCard fold" id="inXfer" data-fold="xfer"'+(open?' open':'')+'><summary class="foldHead"><span><b>🔁 Internal transfers</b><span class="dsub">'+(TRANSFERS.length?TRANSFERS.length+' transfer'+(TRANSFERS.length>1?'s':'')+' · last '+date(TRANSFERS[0].date):'Move money from one fund to another')+'</span></span><span class="foldR"><button class="histLink" data-hist="xf">🕘 History</button><span class="chev">▾</span></span></summary>'+
-    '<p class="inLast">Move money between any two funds. It shows on the Dashboard as an internal transfer, with its day and why.</p>'+
+    nothingNewHtml_('xfer', 'transfers')+'<p class="inLast">Move money between any two funds. It shows on the Dashboard as an internal transfer, with its day and why.</p>'+
     xferGapHtml_()+'<div class="xfGrid"><label class="f" for="xfFrom">From</label>'+fundSelect_('xfFrom', D.from, 'From fund', TOOL_ADD)+
     '<div class="xfArrow" aria-hidden="true">↓</div>'+
     '<label class="f" for="xfTo">To</label>'+fundSelect_('xfTo', D.to, 'To fund', TOOL_REMOVE)+
@@ -915,7 +932,7 @@ function flHtml_(k){
     (L.length ? L.length+' '+(L.length>1?F.many:F.one)+' entered · last '+date(L[0].date) : 'Nothing entered yet')+'</span></span>'+
     '<span class="foldR"><button class="histLink" data-hist="'+k+'">🕘 History</button><span class="chev">▾</span></span></summary>'+
     '<p class="inLast">'+(F.sign<0 ? 'Each expense comes off the category it is paid from — picked here, or its class in QuickBooks.' : 'Each income is shared out to the funds by its kind’s formula.')+'</p>'+
-    '<div class="seg"><button class="'+(mode==='one'?'on':'')+'" data-fmode="'+k+'|one">✍️ One '+F.one+'</button><button class="'+(mode==='file'?'on':'')+'" data-fmode="'+k+'|file">📄 From QuickBooks</button></div>';
+    nothingNewHtml_(k, F.many)+'<div class="seg"><button class="'+(mode==='one'?'on':'')+'" data-fmode="'+k+'|one">✍️ One '+F.one+'</button><button class="'+(mode==='file'?'on':'')+'" data-fmode="'+k+'|file">📄 From QuickBooks</button></div>';
   h+= mode==='one' ? flOneHtml_(k) : flFileHtml_(k);
   return h+'</details>';
 }
@@ -1303,13 +1320,48 @@ function flowSheetHtml_(kind){
     '<p class="hint" style="margin-top:10px">US$. '+F.tHint+' On a phone, swipe the table sideways.</p>';
 }
 /* ---- the Dashboard can show any day that has numbers: the latest by default ---- */
-function reportDays_(){ var d={}; BAL_DAYS.forEach(function(r){ d[r.asOf]=1; }); ALLOC_HIST.forEach(function(r){ if(!r.sample) d[r.asOf]=1; });
+function enteredDays_(){ var d={}; BAL_DAYS.forEach(function(r){ d[r.asOf]=1; }); ALLOC_HIST.forEach(function(r){ if(!r.sample) d[r.asOf]=1; });
   return Object.keys(d).sort().reverse(); }
+/* the Dashboard shows the days the office has put on it ("Update the Dashboard"); until the first,
+   it shows what has been entered */
+var PUBLISHED={};   /* day → { at } */
+function reportDays_(){ var p=Object.keys(PUBLISHED).sort().reverse(); return p.length ? p : enteredDays_(); }
+/* the day's checklist: each part is done when something was saved for that day, or marked "nothing new" */
+var DAY_DONE={};    /* day → { part:true } marked by hand */
+var DAY_PARTS=[ ['bal','🏦 Balances'], ['alloc','📊 Allocations'], ['inc','💵 Income'], ['exp','🧾 Expenses'], ['xfer','🔁 Internal transfers'], ['debt','💳 Staff debt'] ];
+function partSaved_(part, day){
+  if(part==='bal') return BAL_DAYS.some(function(r){ return r.asOf===day; });
+  if(part==='alloc') return ALLOC_HIST.some(function(r){ return !r.sample && r.asOf===day; });
+  if(part==='inc') return INCOMES.some(function(r){ return r.date===day; });
+  if(part==='exp') return EXPENSES.some(function(r){ return r.date===day; });
+  if(part==='xfer') return TRANSFERS.concat(TOOL_XFERS).some(function(r){ return r.date===day; });
+  if(part==='debt') return DEBT_HIST.some(function(r){ return r.asOf===day; });
+  return false;
+}
+function partDone_(part, day){ return partSaved_(part, day) || !!(DAY_DONE[day] && DAY_DONE[day][part]); }
+function dayTick_(part){ var day=reportDay_(), ok=partDone_(part, day);
+  return '<span class="tick'+(ok?' done':'')+'" title="'+(ok?'Done for ':'Still to do for ')+date(day)+'">'+(ok?'✓':'')+'</span>'; }
+function nothingNewHtml_(part, what){ var day=reportDay_(); if(partSaved_(part, day)) return '';
+  var on=DAY_DONE[day] && DAY_DONE[day][part];
+  return '<label class="nothingNew"><input type="checkbox" data-daydone="'+part+'"'+(on?' checked':'')+'><span>No new '+what+' for '+date(day)+' — mark it done</span></label>'; }
+function publishHtml_(){
+  var day=reportDay_(), done=DAY_PARTS.filter(function(x){ return partDone_(x[0], day); }).length, all=done===DAY_PARTS.length, pub=PUBLISHED[day];
+  var h='<div class="inCard pubCard" id="inPublish"><div class="inHead"><h2>📤 Update the Dashboard</h2></div>'+
+    '<p class="inLast">'+(pub ? '✓ '+date(day)+' is on the Dashboard.' : 'When everything for '+date(day)+' is in, put it on the Dashboard.')+'</p>'+
+    '<ul class="pubList">'+DAY_PARTS.map(function(x){ var ok=partDone_(x[0], day), how=partSaved_(x[0], day)?'':(ok?' · nothing new':'');
+      return '<li class="'+(ok?'done':'')+'"><span class="tick'+(ok?' done':'')+'">'+(ok?'✓':'')+'</span>'+x[1]+'<span class="dsub" style="display:inline">'+how+'</span></li>'; }).join('')+'</ul>'+
+    '<div class="pubBar"><span style="width:'+Math.round(done/DAY_PARTS.length*100)+'%"></span></div><div class="dsub">'+done+' of '+DAY_PARTS.length+' done</div>';
+  h+='<div class="inBtns"><button class="btn'+(S.pubAsk?' warn':'')+'" id="pubDay">'+(S.pubAsk ? (DAY_PARTS.length-done)+' still to do — tap again to update anyway' : (pub?'Update the Dashboard again for ':'Update the Dashboard for ')+date(day))+'</button>'+
+    (pub ? '<button class="btn ghost" id="unpubDay">Take it off</button>' : '')+'</div>';
+  return h+'</div>';
+}
+
 function debtDays_(){ var d={}; DEBT_HIST.forEach(function(r){ d[r.asOf]=1; }); d[DEBT.asOf]=1; return Object.keys(d).sort().reverse(); }
 /* lay the chosen day's numbers over the page's state while the Dashboard draws; give back an undo */
 function viewApply_(){
-  var undo=[], days=reportDays_(), day=S.viewDay && days.indexOf(S.viewDay)>=0 ? S.viewDay : null;
-  if(day && day!==days[0]){
+  var undo=[], days=reportDays_(), day=S.viewDay && days.indexOf(S.viewDay)>=0 ? S.viewDay : (days[0]||null), newest=enteredDays_()[0];
+  S.pendDay = Object.keys(PUBLISHED).length && newest && days[0] && newest>days[0] && !PUBLISHED[newest] ? newest : null;
+  if(day && newest && day<newest){
     var keepBal=JSON.stringify(BAL), keepDays=BAL_DAYS;
     BAL_DAYS=keepDays.filter(function(r){ return r.asOf<=day; }); refreshBal_();
     undo.push(function(){ BAL_DAYS=keepDays; var o=JSON.parse(keepBal); Object.keys(o).forEach(function(k){ BAL[k]=o[k]; }); });
@@ -1333,6 +1385,8 @@ function asOfBarHtml_(){
   var h='<div class="asOfBar"><label for="viewDay">📅 Reports as of</label>'+(days.length ? sel('viewDay', days, cur, latest) : '<b>—</b>')+
     (BAL.asOf && ALLOC_ASOF!==BAL.asOf ? '<span class="warn">· allocations as of '+date(ALLOC_ASOF)+'</span>' : '')+
     '<span class="sep">·</span><label for="viewDebtDay">💳 Staff debt as of</label>'+sel('viewDebtDay', dd, dcur, dd[0])+'</div>';
+  if(S.pendDay) h+='<div class="pastNote" style="background:var(--accentSoft);color:var(--ink)">✏️ '+date(S.pendDay)+' is being entered — not on the Dashboard yet.</div>';
+  if(!Object.keys(PUBLISHED).length && days.length) h+='<div class="pastNote" style="background:var(--accentSoft);color:var(--ink)">✏️ Nothing has been put on the Dashboard yet — this is what has been entered so far.</div>';
   if((cur && cur!==latest) || (dcur && dcur!==dd[0])) h+='<div class="pastNote">🕘 You’re looking at an earlier day. <button class="more" id="viewLatest" style="padding:0">Back to the latest</button></div>';
   return h;
 }
@@ -1450,6 +1504,7 @@ document.getElementById('scrim').onclick=closeSheet;
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSheet(); });
 
 document.addEventListener('change', function(e){
+  if(e.target.dataset && e.target.dataset.daydone){ var dday=reportDay_(); (DAY_DONE[dday]=DAY_DONE[dday]||{})[e.target.dataset.daydone]=e.target.checked; keep_(); render(); return; }
   if(e.target.id==='xfFrom' || e.target.id==='xfTo'){ S.xfer[e.target.id==='xfFrom'?'from':'to']=e.target.value; S.xfErr=''; var pv=document.getElementById('xfPrev'); if(pv) pv.innerHTML=xferPrevHtml_(); return; }
   if(e.target.id==='viewDay'){ S.viewDay=e.target.value; render(); return; }
   if(e.target.id==='viewDebtDay'){ S.viewDebtDay=e.target.value; render(); return; }
@@ -1483,7 +1538,7 @@ document.addEventListener('focusout', function(e){ calcFinish_(e.target); });
 document.addEventListener('keydown', function(e){ if(e.key==='Enter' && e.target.closest && e.target.closest('.money')){ e.preventDefault(); calcFinish_(e.target); } });
 document.addEventListener('input', function(e){
   if(e.target.closest && e.target.closest('.money')) calcPreview_(e.target);
-  if(e.target.dataset && e.target.dataset.reportday){ S.reportDay=e.target.value; S.dayErr = !e.target.value ? 'Pick a day.' : (e.target.value>TODAY ? 'That day is in the future.' : '');
+  if(e.target.dataset && e.target.dataset.reportday){ S.reportDay=e.target.value; clearTimeout(S.dayT); S.dayT=setTimeout(function(){ if(S.reportDay && S.reportDay<=TODAY) render(); }, 600); S.dayErr = !e.target.value ? 'Pick a day.' : (e.target.value>TODAY ? 'That day is in the future.' : '');
     document.querySelectorAll('#inDay .inLast b').forEach(function(b){ b.textContent = e.target.value ? date(e.target.value) : '—'; }); return; }
   if(e.target.dataset && e.target.dataset.debtday){ S.debtDay=e.target.value; return; }
   var f1=e.target.dataset && e.target.dataset.f1; if(f1){ var q1=f1.split('|'); flOne_(q1[0])[q1[1]]=e.target.value; if(q1[1]==='amt'){ var pv=document.getElementById('fl_'+q1[0]+'_prev'); if(pv) pv.innerHTML=flOnePrevHtml_(q1[0]); } return; }
@@ -1499,6 +1554,11 @@ document.addEventListener('input', function(e){
   var el=document.getElementById('inTotal'); if(el) el.innerHTML=inTotalHtml_();   /* no re-render, so typing is never lost */
 });
 document.addEventListener('click', function(e){
+  if(e.target.id==='pubDay'){ var pd=reportDay_(), left=DAY_PARTS.filter(function(x){ return !partDone_(x[0], pd); }).length;
+    if(left && !S.pubAsk){ S.pubAsk=true; render(); setTimeout(function(){ if(S.pubAsk){ S.pubAsk=false; if(S.tab==='input') render(); } }, 5000); return; }
+    snap_(PUBLISHED[pd] ? 'Put back the Dashboard as it was for '+date(pd) : 'Took '+date(pd)+' off the Dashboard');
+    PUBLISHED[pd]={ at:Date.now() }; S.pubAsk=false; S.viewDay=null; keep_(); render(); toast('✓ The Dashboard now shows '+date(pd)); return; }
+  if(e.target.id==='unpubDay'){ var ud=reportDay_(); snap_('Put '+date(ud)+' back on the Dashboard'); delete PUBLISHED[ud]; S.viewDay=null; keep_(); render(); toast(date(ud)+' is off the Dashboard'); return; }
   if(e.target.id==='viewLatest'){ S.viewDay=null; S.viewDebtDay=null; render(); return; }
   if(e.target.id==='undoLast'){ if(!S.undoAsk){ S.undoAsk=true; render(); setTimeout(function(){ if(S.undoAsk){ S.undoAsk=false; if(S.tab==='input') render(); } }, 4000); return; } undoLast_(); return; }
   if(e.target.id==='inBalSave'){ inSave_(); return; }
@@ -1566,7 +1626,7 @@ document.getElementById('themeBtn').onclick=function(){
 var KEEP_KEY='gp-fin-draft-v1';
 var FUND_RENAMES={ 'Office':'Office/General' };   /* old fund name → new, for anything already saved */
 function stateObj_(){ return { bal:BAL_DAYS, alloc:ALLOC.map(function(g){ return { id:g.id, prev:g.prev, items:g.items }; }),
-  allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, incTypes:INC_TYPES, incRules:INC_RULES, expTypes:EXP_TYPES, expRules:EXP_RULES, expenses:EXPENSES, expMap:EXP_MAP, transfers:TRANSFERS, toolXfers:TOOL_XFERS, incomes:INCOMES, incMap:INC_MAP, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved }; }
+  allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, incTypes:INC_TYPES, incRules:INC_RULES, published:PUBLISHED, dayDone:DAY_DONE, expTypes:EXP_TYPES, expRules:EXP_RULES, expenses:EXPENSES, expMap:EXP_MAP, transfers:TRANSFERS, toolXfers:TOOL_XFERS, incomes:INCOMES, incMap:INC_MAP, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved }; }
 function keep_(){ try { localStorage.setItem(KEEP_KEY, JSON.stringify(stateObj_())); } catch(e){} }
 /* what the page starts from before anything is entered — an undo goes back through this */
 var PRISTINE=JSON.parse(JSON.stringify({ alloc:ALLOC.map(function(g){ return { items:g.items, prev:g.prev }; }), allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF,
@@ -1574,9 +1634,11 @@ var PRISTINE=JSON.parse(JSON.stringify({ alloc:ALLOC.map(function(g){ return { i
 function resetState_(){ var P=JSON.parse(JSON.stringify(PRISTINE));
   ALLOC.forEach(function(g, i){ g.items=P.alloc[i].items; g.prev=P.alloc[i].prev; g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); });
   ALLOC_ASOF=P.allocAsOf; ALLOC_PREV_ASOF=P.allocPrevAsOf; DEBT.asOf=P.debt.asOf; DEBT.people=P.debt.people; DEBT.file=P.debt.file; DEBT.src=P.debt.src;
-  INC_TYPES=P.incTypes; INC_RULES=P.incRules; EXP_TYPES=P.expTypes; EXP_RULES=P.expRules; EXPENSES=[]; EXP_MAP={}; BAL_DAYS=[]; TRANSFERS=[]; TOOL_XFERS=[]; INCOMES=[]; INC_MAP={}; ALLOC_HIST=[]; DEBT_HIST=[]; DEBT_LINKS={}; S.alSaved=false; }
+  INC_TYPES=P.incTypes; INC_RULES=P.incRules; EXP_TYPES=P.expTypes; EXP_RULES=P.expRules; EXPENSES=[]; EXP_MAP={}; BAL_DAYS=[]; TRANSFERS=[]; TOOL_XFERS=[]; PUBLISHED={}; DAY_DONE={}; INCOMES=[]; INC_MAP={}; ALLOC_HIST=[]; DEBT_HIST=[]; DEBT_LINKS={}; S.alSaved=false; }
 function loadState_(k){ if(!k) return;
   if(Array.isArray(k.bal)) BAL_DAYS=k.bal;
+  if(k.published && typeof k.published==='object') PUBLISHED=k.published;
+  if(k.dayDone && typeof k.dayDone==='object') DAY_DONE=k.dayDone;
   if(Array.isArray(k.transfers)) TRANSFERS=k.transfers;
   if(Array.isArray(k.toolXfers)) TOOL_XFERS=k.toolXfers;
   if(Array.isArray(k.incomes)) INCOMES=k.incomes;
