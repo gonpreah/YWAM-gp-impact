@@ -847,7 +847,7 @@ function fundMove_(k, d){ var f=fundOf_(k); if(!f) return; f.g.items.forEach(fun
 function xferShort_(k){ if(isTool_(k)) return TOOL_LABEL[k]; if(isAcct_(k)) return ACCT_KEYS[k]; var f=fundOf_(k); return f ? (f.g.single ? f.name : f.name+' ('+f.g.name+')') : k; }
 function inXferHtml_(){
   var D=S.xfer||(S.xfer={ from:'', to:'', amt:'', date:reportDay_(), memo:'' }), open=S.foldOpen&&S.foldOpen.xfer;
-  var h='<details class="inCard fold" id="inXfer" data-fold="xfer"'+(open?' open':'')+'><summary class="foldHead"><span><b>🔁 Internal transfers</b><span class="dsub">'+(TRANSFERS.length?TRANSFERS.length+' transfer'+(TRANSFERS.length>1?'s':'')+' · last '+date(TRANSFERS[0].date):'Move money from one fund to another')+'</span></span><span class="foldR"><button class="histLink" data-hist="xf">🕘 History</button><span class="chev">▾</span></span></summary>'+
+  var h='<details class="inCard fold" id="inXfer" data-fold="xfer"'+(open?' open':'')+'><summary class="foldHead"><span><b>🔁 Internal transfers</b><span class="dsub">'+(allXfers_().length?allXfers_().length+' transfer'+(allXfers_().length>1?'s':'')+' · last '+date(allXfers_()[0].date):'Move money from one fund to another')+'</span></span><span class="foldR"><button class="histLink" data-hist="xf">🕘 History</button><span class="chev">▾</span></span></summary>'+
     nothingNewHtml_('xfer', 'transfers')+'<p class="inLast">Move money between any two funds, or between the bank accounts and cash (cash taken out, money sent from the US). It shows as an internal transfer, with its day and why.</p>'+
     (D.editing ? editBarHtml_('this '+(D.editKind==='tool'?'adjustment':'transfer')+' ('+money(D.editing.amt,true)+')', 'xfCancelEdit') : xferGapHtml_())+'<div class="xfGrid"><label class="f" for="xfFrom">From</label>'+fundSelect_('xfFrom', D.from, 'From', TOOL_ADD, true)+
     '<div class="xfArrow" aria-hidden="true">↓</div>'+
@@ -859,10 +859,10 @@ function inXferHtml_(){
     '<div id="xfPrev">'+xferPrevHtml_()+'</div>'+
     (S.xfErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.xfErr)+'</p>' : '')+
     '<div class="inBtns"><button class="btn" id="xfSave">'+(D.editing?'Save change':'Move the money')+'</button></div>';
-  if(TRANSFERS.length) h+='<div class="xfList"><div class="dListHead">Transfers made</div>'+TRANSFERS.map(function(t){
-      return '<div class="xfItem"><div class="xfTop"><b>'+money(t.amt,true)+'</b><span class="dsub">'+date(t.date)+'</span></div>'+
+  if(allXfers_().length) h+='<div class="xfList"><div class="dListHead">Transfers made</div>'+allXfers_().map(function(t){ var tool=isToolX_(t);
+      return '<div class="xfItem"><div class="xfTop"><b>'+money(t.amt,true)+'</b><span class="dsub">'+(tool?'<span class="xfTag tool">🛠 Financial tools</span> ':'')+date(t.date)+'</span></div>'+
         '<div class="xfPath">'+esc(xferShort_(t.from))+' <span>→</span> '+esc(xferShort_(t.to))+'</div><div class="xfMemo">“'+esc(t.memo)+'”</div>'+
-        '<div class="rowBtns">'+editBtnHtml_('xf', t)+'<button class="delBtn" data-xfdel="'+t.id+'">↩ Undo this transfer</button></div></div>'; }).join('')+'</div>';
+        '<div class="rowBtns">'+editBtnHtml_(tool?'tool':'xf', t)+(tool?'<button class="delBtn" data-tooldel="'+t.id+'">↩ Undo</button>':'<button class="delBtn" data-xfdel="'+t.id+'">↩ Undo this transfer</button>')+'</div></div>'; }).join('')+'</div>';
   return h+'</details>';
 }
 function xferGapHtml_(){
@@ -911,12 +911,15 @@ function xferSave_(){
 }
 function xferSnap_(day){ if(day && day>ALLOC_ASOF){ ALLOC_PREV_ASOF=ALLOC_ASOF; ALLOC_ASOF=day; } S.alSaved=true; ALLOC_HIST=ALLOC_HIST.filter(function(x){ return x.asOf!==ALLOC_ASOF; }); ALLOC_HIST.push(allocSnap_(ALLOC_ASOF)); ALLOC_HIST.sort(function(x,y){ return x.asOf<y.asOf?1:-1; }); keep_(); }
 /* transfers that touch an allocation, for the Dashboard's breakdown and Details */
+function allXfers_(){ return TRANSFERS.concat(TOOL_XFERS).sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:((y.at||0)-(x.at||0)); }); }
+function isToolX_(t){ return isTool_(t.from)||isTool_(t.to); }
 function xfersFor_(gid, upto){ return TRANSFERS.filter(function(t){ return !isAcct_(t.from) && !isAcct_(t.to) && (!upto || t.date<=upto) && (!gid || t.from.split('|')[0]===gid || t.to.split('|')[0]===gid); }); }
 function xferRowsHtml_(list, gid, edit){
   return list.map(function(t){ var out=gid && t.from.split('|')[0]===gid && t.to.split('|')[0]!==gid, inn=gid && t.to.split('|')[0]===gid && t.from.split('|')[0]!==gid;
-    return '<div class="xfLine"><div><span class="xfTag">↔ Internal transfer</span> <span class="dsub" style="display:inline">'+date(t.date)+'</span></div>'+
+    var tool=isToolX_(t);
+    return '<div class="xfLine"><div><span class="xfTag'+(tool?' tool':'')+'">'+(tool?'🛠 Financial tools':'↔ Internal transfer')+'</span> <span class="dsub" style="display:inline">'+date(t.date)+'</span></div>'+
       '<div class="xfPath">'+esc(xferShort_(t.from))+' <span>→</span> '+esc(xferShort_(t.to))+'</div><div class="xfMemo">“'+esc(t.memo)+'”</div>'+
-      '<b class="xfAmt'+(out?' out':inn?' in':'')+'">'+(out?'−':inn?'+':'')+money(t.amt,true)+'</b>'+(edit?'<div class="rowBtns">'+editBtnHtml_('xf', t)+'</div>':'')+'</div>'; }).join('');
+      '<b class="xfAmt'+(out?' out':inn?' in':'')+'">'+(out?'−':inn?'+':'')+money(t.amt,true)+'</b>'+(edit?'<div class="rowBtns">'+editBtnHtml_(tool?'tool':'xf', t)+'</div>':'')+'</div>'; }).join('');
 }
 /* ---- Input: income and expenses — one module, two kinds ----
    Income goes INTO the funds, an expense comes OUT of them. Each is entered one at a time or many
@@ -1823,10 +1826,10 @@ function histHtml_(kind){
   }
   if(kind==='exp') return flHistHtml_('exp');
   if(kind==='xf'){
-    var flt=S.xfFilter||'', list=TRANSFERS.filter(function(t){ return !flt || t.from.split('|')[0]===flt || t.to.split('|')[0]===flt; });
-    var h2='<h3>🔁 Internal transfers — history</h3><p class="hint">Every transfer between funds, newest first, with the day and why.</p>'+
-      '<div class="chips"><button class="chip'+(flt?'':' on')+'" data-xffilter="">All · '+TRANSFERS.length+'</button>'+
-      ALLOC.filter(function(g){ return TRANSFERS.some(function(t){ return t.from.split('|')[0]===g.id || t.to.split('|')[0]===g.id; }); }).map(function(g){
+    var flt=S.xfFilter||'', AX=allXfers_(), list=AX.filter(function(t){ return !flt || t.from.split('|')[0]===flt || t.to.split('|')[0]===flt; });
+    var h2='<h3>🔁 Internal transfers — history</h3><p class="hint">Every transfer — between funds, between bank and cash, and Financial tools adjustments — newest first, with the day and why.</p>'+
+      '<div class="chips"><button class="chip'+(flt?'':' on')+'" data-xffilter="">All · '+AX.length+'</button>'+
+      ALLOC.filter(function(g){ return AX.some(function(t){ return t.from.split('|')[0]===g.id || t.to.split('|')[0]===g.id; }); }).map(function(g){
         return '<button class="chip'+(flt===g.id?' on':'')+'" data-xffilter="'+g.id+'"><span class="sw" style="display:inline-block;width:9px;height:9px;margin-right:5px;background:var('+g.c+')"></span>'+esc(g.name)+'</button>'; }).join('')+'</div>';
     if(!list.length) return h2+'<p class="hint" style="margin-top:12px">No transfers yet.</p>';
     var months={}; list.forEach(function(t){ var m=t.date.slice(0,7); (months[m]=months[m]||[]).push(t); });
@@ -1985,7 +1988,7 @@ document.addEventListener('click', function(e){
   var tdl=e.target.dataset && e.target.dataset.tooldel;
   if(tdl){ if(S.toolDelAsk!==tdl){ S.toolDelAsk=tdl; e.target.textContent='Undo it? Tap again'; e.target.classList.add('ask'); return; }
     var tt=TOOL_XFERS.filter(function(x){ return x.id===tdl; })[0]; if(tt){ snap_('Brought back the Financial tools adjustment of '+money(tt.amt,true)); if(tt.from===TOOL_ADD) fundMove_(tt.to, -tt.amt); else fundMove_(tt.from, tt.amt); TOOL_XFERS=TOOL_XFERS.filter(function(x){ return x.id!==tdl; }); xferSnap_(); }
-    S.toolDelAsk=null; render(); sheet('hist-inc'); toast('Adjustment undone'); return; }
+    S.toolDelAsk=null; render(); if(document.body.classList.contains('sheetOn')) sheet('hist-'+(S.histOpen||'inc')); toast('Adjustment undone'); return; }
   var fm=e.target.closest && e.target.closest('[data-fmode]'); if(fm){ var fmp=fm.dataset.fmode.split('|'); (S.flMode=S.flMode||{})[fmp[0]]=fmp[1]; flErr_(fmp[0], ''); render(); return; }
   var fid=/^fl_(inc|exp)_(save1|saveFile|cancel)$/.exec(e.target.id||'');
   if(fid){ if(fid[2]==='save1') flOneSave_(fid[1]); else if(fid[2]==='saveFile') flFileSave_(fid[1]); else { S.flUp[fid[1]]=null; flErr_(fid[1], ''); render(); } return; }
