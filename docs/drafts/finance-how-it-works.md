@@ -271,7 +271,42 @@ draft are sample numbers; real reports and names never go in the repository.
 
 ---
 
-## 7. Before changing a rule — checklist
+## 7. Agreed, not built yet (23 Nov 2026)
+
+The direction: **every input builds the 📒 Detailed breakdown, and every report is the breakdown
+added up** — e.g. Account = ABA bank and Approved up to the 16th gives ABA in the 16th's approved
+report; every line gives Live.
+
+1. **A balance entry resets its account.** Adding up an account starts from its latest Balance
+   entry (the whole amount, as typed — nothing before it counts) and adds only the lines after
+   it. A balance entry exists only where one was typed under 🏦 Balances; a day without one has
+   just the *expected* balance (the last entry + lines since). Balance entry lines stay as they
+   are now — the rule is in how they're added up.
+   - Still to agree: a line dated the **same day** as a balance entry — proposed: typed before the
+     balances were saved → already in them; typed after → added on top (as the Live estimate does
+     now).
+2. **Categories are added up as they are**: every Category amount, no resets (manual allocations
+   already hold only what changed).
+3. **Real money and category amounts only have to match to approve.** In Live they may differ —
+   the check above the breakdown is information then, not a warning. To approve day D:
+   real money (each account by rule 1, up to D) − category amounts (rule 2, up to D) must be
+   **$0**; otherwise Update and approve says how far apart they are and doesn't approve.
+4. **"Approved up to D"**: a report for D is every line approved on D or earlier, not only the
+   lines first approved on D.
+5. **Order to build in**: advances into the breakdown first (until then a settled advance leaves
+   its cash movement out, and the two can't match — see the $150 in the example below); then
+   rule 1 in the adding up; then approving by rule 3; then the Dashboard read from the
+   breakdown, checked figure by figure against what it shows today.
+
+Example (made up): balances 16 Nov ABA 50,000 · US 20,000 · Cash 1,671.15, allocations, approved;
+17th ABA → Cash 500 and Office/General → Kitchen 300; 18th income 1,000 into ABA (Team
+contributions) and food 120 from Cash; 19th advance 200 from Cash for DTS, settled 150 spent,
+50 back. Breakdown added up, no balance entry after the 16th: ABA 50,500 · US 20,000 · Cash
+2,051.15 (the advance's cash isn't in the breakdown yet — 1,901.15 once it is) · categories
+72,401.15. With a balance entry on the 20th (ABA 50,400 · Cash 2,051.15), the accounts reset to
+those and match the Dashboard's Live figures today.
+
+## 8. Before changing a rule — checklist
 
 1. Which part is it, and which other parts does it move (section 2)?
 2. Does it change Approved, Live, or both (section 3)?
