@@ -933,14 +933,14 @@ function inLedgerHtml_(){
   return h+'</tbody></table></div></details>';
 }
 /* liquid assets on a day, from the breakdown alone. Each account starts from its latest Balance
-   entry on or before the day — a reset: nothing before it counts — and adds the Amount of every
-   line after it up to that day. A line dated the same day as the balance entry counts only if
-   it was typed after the balances were saved. No balance entry yet: every line adds up. */
+   entry on or before the day — a reset — and adds the Amount of every line after it up to that
+   day, and of any line dated on or before it that isn't approved yet (only approved lines are
+   inside a balance). No balance entry yet: every line adds up. */
 function ledgerLiquid_(L, day){ var out={ day:day, accts:[], total:0 };
   ['ABA bank','US bank','Cash on hand'].forEach(function(a){
     var mine=L.filter(function(x){ return x.acct===a && x.date<=day && x.amt!=null; });
     var be=mine.filter(function(x){ return x.type==='Balance entry'; }).sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:((y.at||0)-(x.at||0)); })[0];
-    var after=mine.filter(function(x){ return x.type!=='Balance entry' && (!be || x.date>be.date || (x.date===be.date && (x.at||0)>(be.at||0))); });
+    var after=mine.filter(function(x){ return x.type!=='Balance entry' && (!be || x.date>be.date || !x.appr); });   /* on or before the balance entry: only approved lines are inside it */
     var v=Math.round(((be?be.amt:0)+after.reduce(function(s2,x){ return s2+x.amt; },0))*100)/100;
     out.accts.push({ name:a, from:be?be.date:'', start:be?be.amt:0, moves:after.length, moved:Math.round((v-(be?be.amt:0))*100)/100, amt:v }); out.total+=v; });
   out.total=Math.round(out.total*100)/100; return out; }
@@ -1580,14 +1580,15 @@ function flHistHtml_(k){
 function isLive_(){ return S.dashMode==='live'; }
 function EST(t){ return isLive_() ? 'Estimated '+t.charAt(0).toLowerCase()+t.slice(1) : t; }
 function approvedDay_(){ return Object.keys(PUBLISHED).sort().reverse()[0] || null; }
-/* entered after the bank balances were saved — whatever date is written on it. Entries from
-   before times were kept fall back to their date. */
+/* does this entry count on top of the newest bank balances in Live? Yes if it is dated after them,
+   or if it isn't approved yet — only approved entries are taken to be inside the balances. */
 function afterBal_(x){
-  if(x.date && BAL.asOf && x.date>BAL.asOf) return true;   /* dated after the balances day: it can’t be in them, whenever it was typed */
-  if(BAL.at && x.at) return x.at>BAL.at;      /* both timed: entered after the balances were saved */
-  if(!BAL.at && x.at) return true;            /* balances saved before times were kept: anything timed is newer */
-  return x.date>=(BAL.asOf||'') && !(BAL.at && !x.at && x.date===BAL.asOf);   /* neither timed: by date, the balances day included */
+  if(x.date && BAL.asOf && x.date>BAL.asOf) return true;   /* dated after the balances day: it can’t be in them */
+  return !approvedAny_(x);   /* on or before it: only an approved entry is taken to be inside the balances — until then it counts on top (23 Nov 2026) */
 }
+/* is this entry in an approved report? (by id; reports from before ids were kept: by date) */
+function approvedAny_(x){ return Object.keys(PUBLISHED).some(function(d){ var P=PUBLISHED[d]; if(!P) return false;
+  if(P.ids) return ['inc','exp','xf','tool'].some(function(k){ return (P.ids[k]||[]).indexOf(x.id)>=0; }); return x.date<=d; }); }
 /* in the latest approval? — by what it took in, so a later entry with an earlier date isn't */
 function inApproved_(x, kind){ var a=approvedDay_(), P=a && PUBLISHED[a]; if(!P) return false; if(P.ids) return (P.ids[kind]||[]).indexOf(x.id)>=0; return x.date<=a; }
 function liveSince_(){ var a=approvedDay_(); if(!a) return { n:0, day:null };

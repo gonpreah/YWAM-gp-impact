@@ -122,8 +122,8 @@ Income.
 - **💧 Estimated liquid assets — from the breakdown** (`ledgerLiquid_`, `ledLiquidHtml_`; in the
   draft, **not yet on the demo**): for a day picked (today to start), each account worked out from
   the breakdown alone by the reset rule (section 7, rule 1): its latest Balance entry on or
-  before the day, then the Amount of every line after it up to the day (same day: only lines
-  typed after the balances were saved). Under each account, where it was worked out from. For
+  before the day, then the Amount of every line after it up to the day, and of every line on or
+  before it that isn't approved yet. Under each account, where it was worked out from. For
   today it sits beside the Dashboard's Live figure for each account, red where they differ, with
   why. An earlier day has nothing to compare against.
 - **Filters** (`LED_FILTERS`, `S.ledF`): tap Account, Transaction type, Category or Approved to
@@ -213,17 +213,19 @@ estimate = the newest balances entry for that account
          + Financial tools adding to it − Financial tools removing from it
 ```
 
-…counting **only entries that came after the balances** (`afterBal_`). An entry came after the
-balances when:
+…counting **only entries that came after the balances** (`afterBal_`). An entry counts on top of
+the newest balances when:
 
-1. **It is dated after the balances day** — always, whenever it was typed. (It can't be in those
-   balances.) *Added 23 Nov 2026: before this, re-saving the balances for an earlier day dropped
-   a transfer dated after it from the estimate.*
-2. Otherwise (dated on or before the balances day), **it was typed after the balances were
-   saved** — e.g. an expense paid in the afternoon after the morning's balances, or a late
-   entry for an earlier day. Typed before the balances were saved → it is taken to be in them
-   already, and not counted again.
-3. Entries from before times were kept fall back to their date (the balances day included).
+1. **It is dated after the balances day**, or
+2. **it isn't approved yet** — whatever its date and whenever it was typed. Only an entry that is
+   in an approved report is taken to be inside the balances. *(23 Nov 2026, the rule from the
+   office: "we only don't count stuff if it's approved". It replaced "typed after the balances
+   were saved", which left out a $1,272.80 Financial tools adjustment on Cash typed before the
+   23rd's balances were saved, though nothing was approved.)*
+
+So in Live an unapproved entry can be counted on top of a balance that already holds it (e.g.
+an expense paid, then the cash counted and typed, neither approved). That is accepted: Live may
+not line up; approving is when real money and category amounts must match.
 
 **Total liquid assets (Live)** = the three account estimates added up. An account → account
 transfer cancels out, so it never changes the total.
@@ -281,9 +283,8 @@ report; every line gives Live.
    it. A balance entry exists only where one was typed under 🏦 Balances; a day without one has
    just the *expected* balance (the last entry + lines since). Balance entry lines stay as they
    are now — the rule is in how they're added up.
-   - Still to agree: a line dated the **same day** as a balance entry — proposed: typed before the
-     balances were saved → already in them; typed after → added on top (as the Live estimate does
-     now).
+   - Agreed: a line dated on or before the balance entry is inside it only if it is approved;
+     otherwise it is added on top (the same rule as the Live estimate, section 4).
 2. **Categories are added up as they are**: every Category amount, no resets (manual allocations
    already hold only what changed).
 3. **Real money and category amounts only have to match to approve.** In Live they may differ —
