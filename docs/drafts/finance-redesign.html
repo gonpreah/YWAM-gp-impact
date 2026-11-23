@@ -270,6 +270,30 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .histList .r{ text-align:right; font-variant-numeric:tabular-nums; }
 .histList .late{ color:var(--bad); }
 .tag{ font-size:11px; background:var(--surface2); color:var(--muted); border-radius:6px; padding:1px 6px; font-weight:700; }
+.bigSel{ width:100%; padding:10px; font:inherit; font-weight:700; border:1px solid color-mix(in srgb, var(--muted) 40%, transparent); border-radius:10px; background:var(--bg); color:var(--ink); }
+label.f{ display:block; font-size:12.5px; font-weight:600; margin:6px 0 4px; }
+.linkAdd{ border:0; background:none; color:var(--accent); font-weight:700; cursor:pointer; padding:8px 0; font-size:13.5px; }
+.ruleNew{ display:flex; gap:8px; margin-bottom:6px; }
+.ruleNew input{ flex:1; min-width:0; padding:9px 10px; font:inherit; border:1px solid color-mix(in srgb, var(--muted) 40%, transparent); border-radius:10px; background:var(--bg); color:var(--ink); }
+.ruleHead{ display:grid; grid-template-columns:minmax(0,1fr) 92px 30px; gap:8px; font-size:12px; color:var(--muted); font-weight:600; margin-top:10px; padding-bottom:4px; border-bottom:1px solid var(--line); }
+.ruleRow{ display:grid; grid-template-columns:minmax(0,1fr) 92px 30px; gap:8px; align-items:center; padding:6px 0; }
+.ruleRow select{ width:100%; min-width:0; padding:9px 8px; font:inherit; font-size:14px; border:1px solid color-mix(in srgb, var(--muted) 40%, transparent); border-radius:10px; background:var(--bg); color:var(--ink); }
+.pct{ position:relative; }
+.pct input{ width:100%; padding:9px 24px 9px 8px; text-align:right; font:inherit; font-weight:700; font-variant-numeric:tabular-nums; border:1px solid color-mix(in srgb, var(--muted) 40%, transparent); border-radius:10px; background:var(--bg); color:var(--ink); }
+.pct span{ position:absolute; right:9px; top:50%; transform:translateY(-50%); color:var(--muted); font-weight:700; }
+.ruleBar{ margin-top:10px; }
+.ruleBar .alSeg{ cursor:default; }
+.ruleBar .alSeg.gap{ background:repeating-linear-gradient(45deg, var(--surface2), var(--surface2) 5px, transparent 5px, transparent 10px); color:var(--muted); border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); }
+.ruleSt{ font-size:13.5px; margin:6px 0; }
+.ruleSt .okc{ color:var(--good); font-weight:700; } .ruleSt .badc{ color:var(--bad); font-weight:700; }
+.ruleEg{ background:var(--surface2); border-radius:10px; padding:8px 12px; font-size:13px; }
+.ruleEg ul{ list-style:none; margin:4px 0 0; padding:0; columns:2; column-gap:16px; }
+.ruleEg li{ display:flex; justify-content:space-between; gap:8px; break-inside:avoid; padding:2px 0; font-variant-numeric:tabular-nums; }
+.ruleAll{ list-style:none; margin:8px 0 0; padding:0; }
+.ruleAll button{ width:100%; text-align:left; background:none; border:0; border-top:1px solid var(--line); padding:9px 0; cursor:pointer; font-size:13.5px; }
+.ruleAll .dsub{ display:block; }
+.st{ font-size:11.5px; font-weight:700; border-radius:6px; padding:1px 6px; margin-left:4px; }
+.st.ok{ color:var(--good); background:color-mix(in srgb, var(--good) 12%, transparent); } .st.off{ color:var(--bad); background:color-mix(in srgb, var(--bad) 12%, transparent); } .st.none{ color:var(--muted); background:var(--surface2); }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -432,6 +456,7 @@ function inputHtml(){
     '<div class="inBtns"><button class="btn" id="inBalSave">Save balances</button>'+(B.none?'':'<button class="btn ghost" id="inBalCopy">Same as last time</button>')+'</div>'+
     '</div>';
   h+=inAllocHtml_();
+  h+=inRulesHtml_();
   h+=
     '<div class="inNext">💵 <span><b>Income and expenses</b> — entered by category and shared out to the allocations.</span></div>'+
     inDebtHtml_();
@@ -601,6 +626,66 @@ function inDebtSave_(){
   DEBT.asOf=dd;
   DEBT_HIST=DEBT_HIST.filter(function(x){ return x.asOf!==dd; }); DEBT_HIST.push({ asOf:dd, file:DEBT.file||'', people:JSON.parse(JSON.stringify(DEBT.people)), sample:!DEBT.file }); DEBT_HIST.sort(function(x,y){ return x.asOf<y.asOf?1:-1; });
   keep_(); S.debtUp=null; S.debtDay=null; S.debtLink={}; render(); toast('Saved — staff debt is as of '+date(dd));
+}
+/* ---- Input: the income formula — each kind of income shared out to the funds by percent ----
+   A fund is "allocation id|fund name" (by name, so reordering funds never breaks a formula). */
+var INC_TYPES=['Staff contributions','Teams','School contributions — DTS','School contributions — DBS','School contributions — SOMD','School contributions — Other schools','Donations','Ministry rent','Other income'];
+var INC_RULES={
+  'Staff contributions':[{ f:'adm|Office/General', p:100 }],
+  'Teams':[{ f:'adm|Office/General', p:40 },{ f:'adm|Hospitality', p:5 },{ f:'adm|Technical', p:5 },{ f:'adm|Kitchen', p:25 },{ f:'fund|Leadership team fund (LT Fund)', p:12.5 },{ f:'sav|Savings', p:12.5 }],
+  'School contributions — DTS':[{ f:'min|DTS', p:100 }],
+  'School contributions — DBS':[{ f:'min|DBS', p:100 }],
+  'School contributions — SOMD':[{ f:'min|SOMD', p:100 }],
+  'School contributions — Other schools':[{ f:'min|Other Schools', p:100 }]
+};
+function fundList_(){ var out=[]; ALLOC.forEach(function(g){ g.items.forEach(function(it){ out.push({ k:g.id+'|'+it[0], g:g, name:it[0] }); }); }); return out; }
+function fundOf_(k){ return fundList_().filter(function(f){ return f.k===k; })[0]; }
+function fundLabel_(k){ var f=fundOf_(k); return f ? (f.g.single ? f.name : f.name+' · '+f.g.name) : k+' (no longer a fund)'; }
+function ruleRows_(type){ S.ruleDrafts=S.ruleDrafts||{}; if(!S.ruleDrafts[type]) S.ruleDrafts[type]=(INC_RULES[type]||[]).map(function(r){ return { f:r.f, p:String(r.p) }; }); return S.ruleDrafts[type]; }
+function ruleSum_(rows){ return Math.round(rows.reduce(function(s2,r){ var v=calc_(r.p); return s2+(isNaN(v)?0:v); },0)*1000)/1000; }
+function ruleState_(type){ var r=INC_RULES[type]; if(!r||!r.length) return { cls:'none', txt:'Not set yet' }; var t=ruleSum_(r.map(function(x){ return { p:String(x.p) }; })); return Math.abs(t-100)<0.001 ? { cls:'ok', txt:'✓ 100%' } : { cls:'off', txt:t+'%' }; }
+function inRulesHtml_(){
+  var type=S.ruleType||INC_TYPES[0], rows=ruleRows_(type);
+  var h='<div class="inCard" id="inRules"><div class="inHead"><h2>🧮 Income formula</h2></div>'+
+    '<p class="inLast">How each kind of income is shared out to the funds, by percent. When income is entered, it goes where its formula says — nobody works it out by hand.</p>'+
+    '<label class="f" for="ruleType">Kind of income</label><select id="ruleType" class="bigSel">'+
+    INC_TYPES.map(function(t){ var st=ruleState_(t); return '<option value="'+esc(t)+'"'+(t===type?' selected':'')+'>'+esc(t)+' — '+st.txt+'</option>'; }).join('')+'</select>'+
+    '<button class="linkAdd" id="ruleNewType">＋ Add a kind of income</button>'+
+    (S.ruleNewOpen ? '<div class="ruleNew"><input type="text" id="ruleNewName" placeholder="e.g. Guest house" maxlength="60"><button class="btn" id="ruleNewAdd">Add</button></div>' : '');
+  h+='<div class="ruleHead"><span>Goes to</span><span>%</span><span></span></div>';
+  h+='<div class="ruleRows">'+(rows.length ? rows.map(function(r, i){
+      return '<div class="ruleRow"><select data-rulefund="'+i+'" aria-label="Fund"><option value="">— Pick a fund —</option>'+
+        ALLOC.map(function(g){ return '<optgroup label="'+esc(g.name)+'">'+g.items.map(function(it){ var k=g.id+'|'+it[0], taken=rows.some(function(o, j){ return j!==i && o.f===k; });
+          return '<option value="'+esc(k)+'"'+(r.f===k?' selected':'')+(taken?' disabled':'')+'>'+esc(it[0])+'</option>'; }).join('')+'</optgroup>'; }).join('')+
+        (r.f && !fundOf_(r.f) ? '<option value="'+esc(r.f)+'" selected>'+esc(fundLabel_(r.f))+'</option>' : '')+'</select>'+
+        '<div class="pct"><input type="text" inputmode="decimal" data-rulepct="'+i+'" value="'+esc(r.p)+'" aria-label="Percent"><span>%</span></div>'+
+        '<button class="delBtn" data-ruledel="'+i+'" aria-label="Remove">✕</button></div>'; }).join('')
+    : '<p class="hint" style="margin:8px 0">No funds yet — add the first one below.</p>')+'</div>'+
+    '<button class="linkAdd" id="ruleAdd">＋ Add a fund</button>';
+  h+='<div id="ruleLive">'+ruleLiveHtml_(rows)+'</div>';
+  h+=(S.ruleErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.ruleErr)+'</p>' : '')+
+    '<div class="inBtns"><button class="btn" id="ruleSave">Save formula</button><button class="btn ghost" id="ruleUndo">Undo changes</button></div>';
+  h+='<details class="inHist"><summary>All formulas ('+INC_TYPES.length+')</summary><ul class="ruleAll">'+INC_TYPES.map(function(t){ var r=INC_RULES[t]||[], st=ruleState_(t);
+      return '<li><button data-rulepick="'+esc(t)+'"><b>'+esc(t)+'</b> <span class="st '+st.cls+'">'+st.txt+'</span><span class="dsub">'+(r.length ? r.map(function(x){ var f=fundOf_(x.f); return x.p+'% '+esc(f?f.name:x.f); }).join(' · ') : 'Not set yet')+'</span></button></li>'; }).join('')+'</ul></details></div>';
+  return h;
+}
+function ruleLiveHtml_(rows){
+  var sum=ruleSum_(rows), left=Math.round((100-sum)*1000)/1000, ok=Math.abs(left)<0.001;
+  var good=rows.filter(function(r){ return fundOf_(r.f) && calc_(r.p)>0; });
+  var bar='<div class="alBar ruleBar">'+good.map(function(r){ var f=fundOf_(r.f), v=calc_(r.p);
+      return '<span class="alSeg'+(f.g.dark?' dark':'')+'" style="flex:'+v+' 1 0;background:var('+f.g.c+')" title="'+esc(f.name+' '+v+'%')+'">'+(v>=9?v+'%':'')+'</span>'; }).join('')+
+    (left>0.001 ? '<span class="alSeg gap" style="flex:'+left+' 1 0">'+(left>=9?left+'%':'')+'</span>' : '')+'</div>';
+  var st = ok ? '<span class="okc">✓ Adds up to 100%</span>' : left>0 ? '<span class="badc">'+left+'% still to assign</span>' : '<span class="badc">'+(-left)+'% too much — it adds up to '+sum+'%</span>';
+  var eg = good.map(function(r){ return '<li><span>'+esc(fundOf_(r.f).name)+'</span><b>'+money(1000*calc_(r.p)/100,true)+'</b></li>'; }).join('');
+  return bar+'<div class="ruleSt">'+st+'</div>'+(eg ? '<div class="ruleEg"><div class="dsub">If $1,000 comes in:</div><ul>'+eg+'</ul></div>' : '');
+}
+function ruleSave_(){
+  var type=S.ruleType||INC_TYPES[0], rows=ruleRows_(type), err='';
+  rows.forEach(function(r){ if(!r.f) err=err||'Pick a fund on every line (or remove the empty line).'; var v=calc_(r.p); if(isNaN(v)||v<=0) err=err||'Every percent must be more than 0.'; });
+  var seen={}; rows.forEach(function(r){ if(seen[r.f]) err=err||'A fund is in the list twice.'; seen[r.f]=1; });
+  if(!err && rows.length && Math.abs(ruleSum_(rows)-100)>0.001) err='The percents must add up to 100% (now '+ruleSum_(rows)+'%).';
+  S.ruleErr=err; if(err){ render(); return; }
+  INC_RULES[type]=rows.map(function(r){ return { f:r.f, p:calc_(r.p) }; }); delete S.ruleDrafts[type]; keep_(); render(); toast('Saved the formula for '+type);
 }
 function inTotalHtml_(){
   var D=S.inBal||{}, ids=['aba','us','cash'], filled=ids.filter(function(k){ return D[k]!=='' && D[k]!=null; });
@@ -856,6 +941,8 @@ document.getElementById('scrim').onclick=closeSheet;
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSheet(); });
 
 document.addEventListener('change', function(e){
+  if(e.target.id==='ruleType'){ S.ruleType=e.target.value; S.ruleErr=''; render(); return; }
+  var rf=e.target.dataset && e.target.dataset.rulefund; if(rf!=null){ ruleRows_(S.ruleType||INC_TYPES[0])[+rf].f=e.target.value; S.ruleErr=''; render(); return; }
   if(e.target.id==='inDebtFile' && e.target.files[0]){ debtReadFile_(e.target.files[0]); return; }
   var li=e.target.dataset && e.target.dataset.debtlink; if(li!=null && S.debtUp){ S.debtLink[S.debtUp.people[+li].n]=e.target.value; render(); }
 });
@@ -880,6 +967,8 @@ document.addEventListener('input', function(e){
   if(e.target.dataset && e.target.dataset.reportday){ S.reportDay=e.target.value; S.dayErr = !e.target.value ? 'Pick a day.' : (e.target.value>TODAY ? 'That day is in the future.' : '');
     document.querySelectorAll('#inDay .inLast b').forEach(function(b){ b.textContent = e.target.value ? date(e.target.value) : '—'; }); return; }
   if(e.target.dataset && e.target.dataset.debtday){ S.debtDay=e.target.value; return; }
+  var rp=e.target.dataset && e.target.dataset.rulepct;
+  if(rp!=null){ var rows=ruleRows_(S.ruleType||INC_TYPES[0]); rows[+rp].p=e.target.value; var lv=document.getElementById('ruleLive'); if(lv) lv.innerHTML=ruleLiveHtml_(rows); return; }
   var ak=e.target.dataset && e.target.dataset.inal;
   if(ak){ (S.inAl=S.inAl||{})[ak]=e.target.value; var gid=ak.split('|')[0], g=ALLOC.filter(function(a){ return a.id===gid; })[0];
     var gt=document.getElementById('inAlT_'+gid); if(gt) gt.textContent=money(inAlGroupTot_(g),true);
@@ -890,6 +979,14 @@ document.addEventListener('input', function(e){
 });
 document.addEventListener('click', function(e){
   if(e.target.id==='inBalSave'){ inSave_(); return; }
+  if(e.target.id==='ruleAdd'){ ruleRows_(S.ruleType||INC_TYPES[0]).push({ f:'', p:'' }); render(); return; }
+  if(e.target.id==='ruleSave'){ ruleSave_(); return; }
+  if(e.target.id==='ruleUndo'){ if(S.ruleDrafts) delete S.ruleDrafts[S.ruleType||INC_TYPES[0]]; S.ruleErr=''; render(); return; }
+  if(e.target.id==='ruleNewType'){ S.ruleNewOpen=!S.ruleNewOpen; render(); var ni=document.getElementById('ruleNewName'); if(ni) ni.focus(); return; }
+  if(e.target.id==='ruleNewAdd'){ var nm=(document.getElementById('ruleNewName').value||'').trim(); if(!nm) return;
+    if(INC_TYPES.indexOf(nm)<0) INC_TYPES.push(nm); S.ruleType=nm; S.ruleNewOpen=false; keep_(); render(); return; }
+  var rdl=e.target.dataset && e.target.dataset.ruledel; if(rdl!=null){ ruleRows_(S.ruleType||INC_TYPES[0]).splice(+rdl,1); render(); return; }
+  var rpk=e.target.closest && e.target.closest('[data-rulepick]'); if(rpk){ S.ruleType=rpk.dataset.rulepick; S.ruleErr=''; render(); document.getElementById('inRules').scrollIntoView({block:'start'}); return; }
   var hb=e.target.closest && e.target.closest('[data-hist]'); if(hb){ S.histPick=''; S.histOpen=hb.dataset.hist; sheet('hist-'+hb.dataset.hist); return; }
   var hp=e.target.closest && e.target.closest('[data-histpick]'); if(hp){ S.histPick=hp.dataset.histpick; sheet('hist-'+S.histOpen); document.getElementById('sheet').scrollTop=0; return; }
   if(e.target.dataset && e.target.dataset.baldel){ var dday=e.target.dataset.baldel;
@@ -921,9 +1018,11 @@ document.getElementById('themeBtn').onclick=function(){
 var KEEP_KEY='gp-fin-draft-v1';
 var FUND_RENAMES={ 'Office':'Office/General' };   /* old fund name → new, for anything already saved */
 function keep_(){ try { localStorage.setItem(KEEP_KEY, JSON.stringify({ bal:BAL_DAYS, alloc:ALLOC.map(function(g){ return { id:g.id, prev:g.prev, items:g.items }; }),
-  allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved })); } catch(e){} }
+  allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, incTypes:INC_TYPES, incRules:INC_RULES, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved })); } catch(e){} }
 (function(){ try { var k=JSON.parse(localStorage.getItem(KEEP_KEY)||'null'); if(!k) return;
   if(Array.isArray(k.bal)) BAL_DAYS=k.bal;
+  if(Array.isArray(k.incTypes)) INC_TYPES=k.incTypes;
+  if(k.incRules && typeof k.incRules==='object') INC_RULES=k.incRules;
   if(Array.isArray(k.alHist)){ ALLOC_HIST=k.alHist; ALLOC_HIST.forEach(function(e){ Object.keys(e.groups||{}).forEach(function(gk){ e.groups[gk].forEach(function(it){ if(FUND_RENAMES[it[0]]) it[0]=FUND_RENAMES[it[0]]; }); }); }); }
   if(Array.isArray(k.debtHist)) DEBT_HIST=k.debtHist;
   if(k.alSaved && Array.isArray(k.alloc)){ k.alloc.forEach(function(x){ var g=ALLOC.filter(function(a){ return a.id===x.id; })[0]; if(g && Array.isArray(x.items)){ var byName={}; x.items.forEach(function(it){ byName[FUND_RENAMES[it[0]]||it[0]]=it[1]; }); g.prev=x.prev; g.items.forEach(function(it){ if(byName[it[0]]!=null) it[1]=byName[it[0]]; }); g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); } });
