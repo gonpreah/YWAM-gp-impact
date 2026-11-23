@@ -14,6 +14,7 @@
    hand-draw and nothing to fall out of date. Tap anyone to open them. */
 function orgPersonChip_(p, lead){
   var title=orgTitleOf_(p);
+  if(p.extra) return '<span class="orgPerson extra'+(lead?' lead':'')+'">'+avatarHtml(p,'sm')+'<span>'+(lead?'👑 ':'')+esc(p.name)+'</span></span>';   // a name typed in on the structure whiteboard
   return '<button class="orgPerson'+(lead?' lead':'')+'" '+(S.orgArranging ? 'data-arrange' : 'data-person')+'="'+esc(p.id)+'">'+avatarHtml(p,'sm')+
     '<span>'+(lead?'👑 ':'')+esc(p.name)+(title ? '<small class="orgChipTitle">'+esc(orgTitleText_(title))+'</small>' : '')+'</span></button>';
 }
@@ -57,9 +58,13 @@ function orgStructureHtml_(campus){
       h+='<button class="btn ghost" id="structStudentsBtn" style="margin:0 0 10px 8px;width:auto;padding:9px 14px">🎓 '+esc(gpT('Students in Q{q} {year}',{q:q, year:year}))+(stuN?' · '+stuN:'')+'</button>';
       if(S.structStudentsEdit===key) h+=structStudentsEditorHtml_(campus, q, year);
     }
-    var place=(c && c.plan && c.plan.place) || {}, arranging=S.me.isAdmin && S.structArrange===key;
+    var place=(c && c.plan && c.plan.place) || {}, arranging=false;
     S.structCtx={ campus:campus, year:year, q:q, key:key };
-    if(S.me.isAdmin && !arranging) h+='<button class="btn ghost" id="structArrangeBtn" style="margin:0 0 10px 8px;width:auto;padding:9px 14px">✏️ '+esc(gpT('Arrange Q{q} {year}',{q:q, year:year}))+'</button>';
+    /* Nov 2026 (Andrew): the structure is arranged on Campus Leadership's whiteboard (teams/23-structure.js) — here it is
+       shown, as this list or as the same tree */
+    if(S.sbTeam && typeof sbTeamHtml_==='function') return h+sbTeamHtml_(campus, year, q);
+    h+='<div class="sbTeamBtns"><button class="btn ghost" id="sbTeamOpen">🗺️ '+esc(t('See it as a tree'))+'</button>'+
+      (typeof sbCanEdit_==='function' && sbCanEdit_(campus) ? '<button class="btn ghost" id="sbTeamEdit">✏️ '+esc(gpT('Edit Q{q} {year}',{q:q, year:year}))+'</button>' : '')+'</div>';
     if(c && c.plan && c.plan.inherited && c.plan.from) h+='<p class="hint" style="margin:0 0 8px">'+esc(gpT('Starting from the Q{q} {year} arrangement.',{q:c.plan.from.quarter, year:c.plan.from.year}))+'</p>';
     if(arranging){
       h+='<div class="arrangeBar" id="arrangeBar"><div><b>✏️ '+esc(gpT('Arranging Q{q} {year}',{q:q, year:year}))+'</b><p class="hint" style="margin:2px 0 0">'+
@@ -68,7 +73,7 @@ function orgStructureHtml_(campus){
         '<button class="btn small" id="structArrangeDone">'+esc(t('Done'))+'</button></div></div>';
       if(S.structMove) h+=structMoveHtml_(campus, S.structMove, place, stu);
     }
-    return h+orgChartHtml_(campus, S.roster, stu, place, arranging);
+    return h+orgChartHtml_(campus, S.roster, stu, place, arranging, c && c.plan ? c.plan.leads : null, c && c.plan ? c.plan.extra : null);
   }
   if(S.structError[key]) return h+'<div class="card"><p class="sub" style="margin:0 0 8px">⚠️ '+esc(t('Couldn’t load this quarter.'))+'</p><p class="hint" style="margin:0 0 8px;overflow-wrap:anywhere">'+esc(S.structError[key])+'</p><button class="btn ghost" id="structRetry" style="margin-top:0">'+esc(t('Try again'))+'</button></div>';
   if(!c) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
@@ -163,11 +168,16 @@ function structStudentsEditorHtml_(campus, q, year){
     }).join('')+
     '<button class="btn" id="structStudentsSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="structStudentsCancel">'+esc(t('Cancel'))+'</button></div>';
 }
-function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging){
+function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging, planLeads, extras){
   /* The chart is the base's structure for the quarter, which can differ from
-     what a profile says: placeMap (the quarter's arrangement) wins. */
-  var everyone=(roster||S.roster).filter(function(p){ return p.campus===campus && p.kind!=='applicant'; }).map(function(p){
-    var pl=placeMap && placeMap[p.id]; return pl ? Object.assign({}, p, { dept:pl.dept, ministry:pl.ministry }) : p; });
+     what a profile says: placeMap (the quarter's arrangement) wins, and so do the quarter's leaders (planLeads) and the
+     names typed in on the whiteboard (extras) — Nov 2026. */
+  var base=(roster||S.roster).filter(function(p){ return p.campus===campus && p.kind!=='applicant'; });
+  (extras||[]).forEach(function(x){ base=base.concat([{ id:x.id, name:x.name, campus:campus, dept:'_off', ministry:'', extra:true, leads:[] }]); });
+  var everyone=base.map(function(p){
+    var pl=placeMap && placeMap[p.id], o=pl ? Object.assign({}, p, { dept:pl.dept, ministry:pl.ministry }) : p;
+    if(planLeads) o=Object.assign({}, o, { leads:Object.keys(planLeads).filter(function(k){ return planLeads[k].indexOf(p.id)>-1; }) });
+    return o; });
   S.orgArranging = !!arranging;
   /* Staff doing a school this quarter (the quarter's plan, or a snapshot's
      own "student" mark) sit in a Students box, not their ministry. */

@@ -6109,3 +6109,57 @@ The top of a team’s page lists what is theirs to do now (each with its own but
 | A copy of the photo page of every team member’s passport, under Documents. | ច្បាប់ចម្លងទំព័ររូបថតនៃលិខិតឆ្លងដែនរបស់សមាជិកក្រុមម្នាក់ៗ នៅក្រោម «ឯកសារ»។ |
 | Your letter of invitation is in — you can apply for your e-visas now. | លិខិតអញ្ជើញរបស់អ្នកបានមកដល់ហើយ — អ្នកអាចដាក់ពាក្យសុំ e-visa ឥឡូវនេះ។ |
 | You can start your e-visas now — your letter of invitation will follow. | អ្នកអាចចាប់ផ្តើមដាក់ពាក្យសុំ e-visa ឥឡូវនេះ — លិខិតអញ្ជើញរបស់អ្នកនឹងមកតាមក្រោយ។ |
+
+## 135. The structure whiteboard (Campus Leadership → Structure, Team → Structure)
+
+A quarter of a campus as a tree to pan and zoom: faces dragged from a tray onto departments and ministries, ＋ to add people or a typed-in name, a tap to make someone the leader or move them. Zoom buttons and the tray hint have little room; "See it as a tree" is a button in Team → Structure. "Chart" (តារាង) is the same word Team → Structure already uses.
+
+| English | Khmer (draft) |
+|---|---|
+| Not on the chart | មិននៅលើតារាង |
+| Add to {box} | បន្ថែមទៅ {box} |
+| Drop the directors here | ទម្លាក់នាយកនៅទីនេះ |
+| Drop staff doing a school here | ទម្លាក់បុគ្គលិកដែលកំពុងរៀនសាលានៅទីនេះ |
+| Zoom out | បង្រួម |
+| Zoom in | ពង្រីក |
+| Fit the whole structure | បង្ហាញរចនាសម្ព័ន្ធទាំងមូល |
+| Close full screen | បិទពេញអេក្រង់ |
+| Full screen | ពេញអេក្រង់ |
+| Saved ✓ | បានរក្សាទុក ✓ |
+| Drag a face onto a box. Tap ＋ to add, tap a face for more. | អូសមុខមនុស្សទៅដាក់ក្នុងប្រអប់។ ចុច ＋ ដើម្បីបន្ថែម ចុចលើមុខមនុស្សដើម្បីមើលបន្ថែម។ |
+| Pinch or scroll to zoom, drag to move around. | ច្របាច់ ឬរំកិល ដើម្បីពង្រីក អូសដើម្បីផ្លាស់ទី។ |
+| Not on the chart yet · {n} | មិនទាន់នៅលើតារាង · {n} |
+| Find someone… | ស្វែងរកនរណាម្នាក់… |
+| Drop a face here to take them off the chart for this quarter. | ទម្លាក់មុខមនុស្សនៅទីនេះ ដើម្បីដកពួកគេចេញពីតារាងសម្រាប់ត្រីមាសនេះ។ |
+| typed in | បានវាយបញ្ចូល |
+| Make leader | ធ្វើជាអ្នកដឹកនាំ |
+| Take {name} out | ដក {name} ចេញ |
+| Not on the chart yet | មិនទាន់នៅលើតារាង |
+| Add people | បន្ថែមមនុស្ស |
+| Someone not in the app yet | អ្នកដែលមិនទាន់មាននៅក្នុងកម្មវិធី |
+| For someone coming this quarter. It is only on this chart. | សម្រាប់អ្នកដែលនឹងមកក្នុងត្រីមាសនេះ។ វាមាននៅលើតារាងនេះតែប៉ុណ្ណោះ។ |
+| A {school} student this quarter | សិស្ស {school} ក្នុងត្រីមាសនេះ |
+| Not on the chart this quarter | មិននៅលើតារាងក្នុងត្រីមាសនេះ |
+| In {box} | នៅក្នុង {box} |
+| Not the leader | មិនមែនជាអ្នកដឹកនាំ |
+| Make leader of {min} | ធ្វើជាអ្នកដឹកនាំ {min} |
+| Move to | ផ្លាស់ទីទៅ |
+| Take off the chart this quarter | ដកចេញពីតារាងក្នុងត្រីមាសនេះ |
+| Typed-in name | ឈ្មោះដែលបានវាយបញ្ចូល |
+| Remove this name | លុបឈ្មោះនេះ |
+| Which school is {name} doing? | តើ {name} កំពុងរៀនសាលាណា? |
+| For this quarter only. Their profile stays as it is. | សម្រាប់តែត្រីមាសនេះប៉ុណ្ណោះ។ ប្រវត្តិរូបរបស់ពួកគេនៅដដែល។ |
+| Only Campus Leadership and admins can change the structure. | មានតែក្រុមដឹកនាំមូលដ្ឋាន និងអ្នកគ្រប់គ្រងប៉ុណ្ណោះ ដែលអាចផ្លាស់ប្តូររចនាសម្ព័ន្ធបាន។ |
+| {name} is off the chart for this quarter | {name} ត្រូវបានដកចេញពីតារាងសម្រាប់ត្រីមាសនេះ |
+| {name} moved to {box} | {name} បានផ្លាស់ទីទៅ {box} |
+| Remove this name from the chart? | លុបឈ្មោះនេះចេញពីតារាងឬ? |
+| The structure | រចនាសម្ព័ន្ធ |
+| Who is in which department and ministry this quarter, and who leads. Only on this chart — nobody’s profile changes. | នរណានៅផ្នែក និងកិច្ចការបម្រើណាក្នុងត្រីមាសនេះ និងនរណាជាអ្នកដឹកនាំ។ មានតែនៅលើតារាងនេះ — គ្មានប្រវត្តិរូបរបស់នរណាម្នាក់ផ្លាស់ប្តូរទេ។ |
+| Starting from the Q{q} {year} structure — your first change makes Q{q2} {year2} its own. | ចាប់ផ្តើមពីរចនាសម្ព័ន្ធ Q{q} {year} — ការផ្លាស់ប្តូរដំបូងរបស់អ្នកធ្វើឲ្យ Q{q2} {year2} មានរចនាសម្ព័ន្ធផ្ទាល់ខ្លួន។ |
+| Starting from everyone’s profile — your first change makes Q{q} {year} its own. | ចាប់ផ្តើមពីប្រវត្តិរូបរបស់អ្នករាល់គ្នា — ការផ្លាស់ប្តូរដំបូងរបស់អ្នកធ្វើឲ្យ Q{q} {year} មានរចនាសម្ព័ន្ធផ្ទាល់ខ្លួន។ |
+| Start Q{q} {year} again from everyone’s profile | ចាប់ផ្តើម Q{q} {year} ម្តងទៀតពីប្រវត្តិរូបរបស់អ្នករាល់គ្នា |
+| Everyone sees this quarter’s structure under Team → Structure. | អ្នករាល់គ្នាមើលឃើញរចនាសម្ព័ន្ធត្រីមាសនេះនៅក្រោម ក្រុម → រចនាសម្ព័ន្ធ។ |
+| Put everyone back where their profile says for this quarter? Names typed in stay off the chart. | ដាក់អ្នករាល់គ្នាត្រឡប់ទៅកន្លែងដែលប្រវត្តិរូបរបស់ពួកគេនិយាយសម្រាប់ត្រីមាសនេះឬ? ឈ្មោះដែលបានវាយបញ្ចូលនឹងនៅក្រៅតារាង។ |
+| The list | បញ្ជី |
+| See it as a tree | មើលជាដើមឈើ |
+| Edit Q{q} {year} | កែ Q{q} {year} |

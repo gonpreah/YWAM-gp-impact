@@ -882,7 +882,7 @@ function myMinistryHtml(){
         var myTitle=orgTitleOf_(S.me);
         if(myTitle) h+='<div class="orgYou">🧭 '+esc(gpT('Your role: {title}',{title:orgTitleText_(myTitle)}))+'</div>';
       }
-      var TABS={ week:t('My week'), base: role==='dept' ? (view ? t(view.key) : t('My department')) : t('Overview'), money:t('Finances'), board:t('Board'), okrs:t('OKRs') };
+      var TABS={ week:t('My week'), base: role==='dept' ? (view ? t(view.key) : t('My department')) : t('Overview'), money:t('Finances'), board:t('Board'), okrs:t('OKRs'), struct:t('Structure') };
       h+=mmTabsHtml_(tabList.map(function(k){ return [k, TABS[k], 'data-lwtab']; }), lwt, 'lwSeg');
       if(R.focus) h+='<p class="hint lwFocus">'+esc(t(R.focus))+'</p>';
       var pane;
@@ -890,6 +890,7 @@ function myMinistryHtml(){
       // the base's finances, from the Finances office's reports (teams/09-finance.js) — with the
       // QuickBooks card on top for whoever may connect it (an admin, the Finances office)
       else if(lwt==='money') pane=(S.fin && S.fin.canEdit ? finQboHtml_(S.fin) : '')+finDashHtml_();
+      else if(lwt==='struct') pane=sbLeadHtml_();   // the quarter's structure as a whiteboard tree (teams/23-structure.js)
       else if(lwt==='okrs') pane=okrTabHtml_();   // the OKRs page itself — yours, leadership's, and (admins) every department's
       else if(lwt==='base') pane=leadBaseHtml_(ph)+orgCltCardHtml_(S.me.campus);   // the role's own numbers first; who is on the leadership team at the foot
       else pane=leadSectionHtml_();

@@ -1184,6 +1184,8 @@ function bind(){
   /* GP Tasks: the page and its buttons */
   bindGpTasks_(); bindVoice_();
   bindPeoplePick_();   // every people picker with a search box on the page (12-tasks.js)
+  if(S.view==='ministry' && typeof bindSbLead_==='function' && document.querySelector('#sbWrap, [data-sbq]')) bindSbLead_();   // Campus Leadership → Structure, the whiteboard (23-structure.js)
+  if(!document.getElementById('sbWrap')) document.body.classList.remove('sbFullOn');
   bindKhmer_();   // Learn Khmer (15-khmer.js)
   [['goGpTasks','week']].forEach(function(x){ var b=document.getElementById(x[0]); if(b) b.onclick=function(){ gpTap(); gptOpenPage_(x[1]); }; });
   document.querySelectorAll('[data-gogptasks]').forEach(function(b){ b.onclick=function(){ gpTap(); S.bellOpen=false; gptOpenPage_('week'); }; });
@@ -1809,6 +1811,7 @@ function bind(){
     var srt=document.getElementById('structRetry');
     if(srt) srt.onclick=function(){ S.structError[sKey]=''; render(); };
     bindStructArrange_();
+    if(typeof bindSbTeam_==='function') bindSbTeam_();   // Team → Structure: the tree, read only (23-structure.js)
     var stb=document.getElementById('structStudentsBtn');
     if(stb) stb.onclick=function(){ gpTap(); if(S.structStudentsEdit===sKey){ S.structStudentsEdit=null; } else { var c0=S.structCache[sKey]; S.structStudentsDraft=Object.assign({}, (c0 && c0.plan && c0.plan.students) || {}); S.structStudentsEdit=sKey; } render(); };
     document.querySelectorAll('[data-stu]').forEach(function(sel){ sel.onchange=function(){ var id=sel.getAttribute('data-stu'); S.structStudentsDraft=S.structStudentsDraft||{}; if(sel.value) S.structStudentsDraft[id]=sel.value; else delete S.structStudentsDraft[id]; }; });
@@ -2045,7 +2048,7 @@ function refreshAll(){
    ?fresh). If the page itself came from the offline copy (the worker leaves a
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
-var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/20-game.js','teams/21-voice.js','teams/22-setup.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
+var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/20-game.js','teams/21-voice.js','teams/22-setup.js','teams/23-structure.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
 if(gpTasksApp_()) GP_VER_FILES=['tasks.html'].concat(GP_VER_FILES.slice(1), ['teams/12-tasks.js','teams/13-calendar.js']);   // the tasks app's page is tasks.html
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){
