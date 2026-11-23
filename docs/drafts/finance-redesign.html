@@ -822,8 +822,8 @@ function ledgerLines_(){ var L=[];
     [['aba','ABA bank'],['us','US bank'],['cash','Cash on hand']].forEach(function(a){
       L.push({ date:r.asOf, at:r.at||0, acct:a[1], type:'Balance entry', name:'', memo:'', amt:r[a[0]], cat:'', appr:inP }); }); });
   /* manual allocations: giving money its home. Not income — a movement, so it goes in the
-     Category amount column, as the opposite of the real money it gives a home to: balances +
-     category amounts come to $0 when every dollar has a home. Each line is what that save
+     Category amount column, + when a category's balance goes up: balances − category amounts
+     come to $0 when every dollar has a home. Each line is what that save
      changed for that sub-category (the first one: the whole amount). */
   MANUAL_ALLOCS.forEach(function(m){
     var pd=Object.keys(PUBLISHED).filter(function(d){ return d>=m.date && (PUBLISHED[d].at||0)>=(m.at||0); }).sort()[0]||'';
@@ -832,18 +832,18 @@ function ledgerLines_(){ var L=[];
     var order=fundList_().map(function(f){ return f.k; });
     Object.keys(keys).sort(function(a,b){ var ia=order.indexOf(a), ib=order.indexOf(b); return (ia<0?999:ia)-(ib<0?999:ib); }).forEach(function(k){
       var d=Math.round((amt(m.after,k)-amt(m.before,k))*100)/100; if(Math.abs(d)<0.005) return;
-      L.push({ date:m.date, at:m.at||0, acct:'', type:'Manual allocation', name:'', memo:'', amt:null, cat:fundLabel_(k), camt:-d, appr:pd }); }); });
+      L.push({ date:m.date, at:m.at||0, acct:'', type:'Manual allocation', name:'', memo:'', amt:null, cat:fundLabel_(k), camt:d, appr:pd }); }); });
   return L.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:(x.type===y.type?0:(x.type==='Balance entry'?-1:1)); }); }
-/* does every dollar have a home? the newest balances (the gold standard) + every category amount */
+/* does every dollar have a home? the newest balances (the gold standard) − every category amount */
 function ledgerCheck_(L){ var b=BAL_DAYS[0], real=b?Math.round((b.aba+b.us+b.cash)*100)/100:0, cat=Math.round(L.reduce(function(s2,x){ return s2+(x.camt||0); },0)*100)/100;
-  return { day:b?b.asOf:'', real:real, cat:cat, sum:Math.round((real+cat)*100)/100 }; }
+  return { day:b?b.asOf:'', real:real, cat:cat, sum:Math.round((real-cat)*100)/100 }; }
 function inLedgerHtml_(){
   var open=S.foldOpen&&S.foldOpen.ledger;
   return '<details class="inCard fold" id="inLedger" data-fold="ledger"'+(open?' open':'')+'><summary class="foldHead"><span><b>📒 Detailed breakdown</b><span class="dsub">'+(function(){ var n=ledgerLines_().length; return n ? n+' line'+(n>1?'s':'') : 'Every transaction, line by line'; })()+'</span></span><span class="foldR"><span class="chev">▾</span></span></summary>'+
     '<p class="inLast">Where every transaction is kept — one line each, with its date and all its details. On a phone, swipe the table sideways to see every column.</p>'+
     (function(){ var L=ledgerLines_(); if(!L.length) return ''; var c=ledgerCheck_(L), ok=Math.abs(c.sum)<0.005;
       return '<div class="ledCheck '+(ok?'ok':'off')+'"><div><small>Real money'+(c.day?' · balances '+date(c.day):'')+'</small><b>'+money(c.real,true)+'</b></div><div><small>Category amounts</small><b>'+(c.cat<0?'−':'')+money(Math.abs(c.cat),true)+'</b></div>'+
-        '<div><small>Together</small><b>'+(c.sum<0?'−':'')+money(Math.abs(c.sum),true)+'</b></div><p>'+(ok?'✓ Every dollar has a home':(c.sum>0?'⚠️ '+money(c.sum,true)+' has no home yet':'⚠️ '+money(-c.sum,true)+' more is given a home than there is'))+'</p></div>'; })()+
+        '<div><small>Real − category</small><b>'+(c.sum<0?'−':'')+money(Math.abs(c.sum),true)+'</b></div><p>'+(ok?'✓ Every dollar has a home':(c.sum>0?'⚠️ '+money(c.sum,true)+' has no home yet':'⚠️ '+money(-c.sum,true)+' more is given a home than there is'))+'</p></div>'; })()+
     '<div class="ledWrap"><table class="ledTbl"><thead><tr>'+LEDGER_COLS.map(function(c){ return '<th'+(c==='Amount'||c==='Category amount'?' class="r"':'')+'>'+c+'</th>'; }).join('')+'</tr></thead>'+
     '<tbody>'+(function(){ var L=ledgerLines_(); if(!L.length) return '<tr><td colspan="'+LEDGER_COLS.length+'" class="ledEmpty">No transactions yet.</td></tr>';
       return L.map(function(x){ return '<tr><td class="nw">'+date(x.date)+'</td><td class="nw">'+esc(x.acct)+'</td><td class="nw">'+esc(x.type)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.memo)+'</td>'+
