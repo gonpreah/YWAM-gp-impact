@@ -417,6 +417,9 @@ label.f{ display:block; font-size:12.5px; font-weight:600; margin:6px 0 4px; }
 button.tick{ padding:0; cursor:pointer; background:var(--surface); }
 button.tick.done{ background:var(--good); }
 .pubRow{ display:flex; align-items:center; width:100%; background:none; border:0; padding:0; font:inherit; color:inherit; text-align:left; cursor:pointer; }
+.advItem{ border-top:1px solid var(--line); padding:10px 0; font-size:13.5px; }
+.advItem .dsub{ display:block; }
+.advLine{ font-size:12.5px; color:var(--amberDeep); font-weight:600; margin:4px 0 0; }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -586,7 +589,7 @@ function inputHtml(){
   h+=inBulkHtml_();
   h+=inXferHtml_();
   h+=
-    flHtml_('inc')+flHtml_('exp')+
+    flHtml_('inc')+flHtml_('exp')+inAdvHtml_()+
     inDebtHtml_();
   /* a tick by each part that is done for the day */
   [['inBalances','bal'],['inAlloc','alloc'],['in_inc','inc'],['in_exp','exp'],['inXfer','xfer']].forEach(function(x){
@@ -832,9 +835,10 @@ var ACCT_KEYS={ 'acct|aba':'ABA bank', 'acct|us':'US bank', 'acct|cash':'Cash on
 function isAcct_(k){ return !!ACCT_KEYS[k]; }
 /* an account now: as last entered, plus what has moved in or out of it since that day */
 function acctMoved_(k){
+  var adv=ADVANCES.reduce(function(s2,a){ return s2-(afterBal_(a) && a.bank===k ? a.amt : 0)+(a.settled && a.settled.bank===k && afterBal_(a.settled) ? a.settled.returned : 0); },0);
   var m=TRANSFERS.concat(TOOL_XFERS).reduce(function(s2,t){ if(!afterBal_(t)) return s2; return s2+(t.to===k?t.amt:0)-(t.from===k?t.amt:0); },0);
   m+=INCOMES.reduce(function(s2,x){ return s2+(afterBal_(x) && x.bank===k ? x.amt : 0); },0)-EXPENSES.reduce(function(s2,x){ return s2+(afterBal_(x) && x.bank===k ? x.amt : 0); },0);
-  return Math.round(m*100)/100; }
+  return Math.round((m+adv)*100)/100; }
 function acctAmt_(k){ var a=BAL.accts.filter(function(x){ return 'acct|'+x.id===k; })[0]; return (a?a.amt:0)+acctMoved_(k); }
 function fundSelect_(id, val, label, tool, accts){
   return '<select id="'+id+'" aria-label="'+label+'"><option value="">— Pick a fund —</option>'+ALLOC.map(function(g){ return '<optgroup label="'+esc(g.name)+'">'+
@@ -1276,7 +1280,8 @@ function approvedAskHtml_(day, checked, attr){
     '<label class="incChk" style="margin-top:6px"><input type="checkbox" '+attr+(checked?' checked':'')+'><span>Add it to the '+date(a)+' approved report as well</span></label></div>';
 }
 /* the bank total moved by what came in and went out after the last balances day */
-function liveNet_(){ return Math.round((INCOMES.reduce(function(s2,x){ return s2+(afterBal_(x)?x.amt:0); },0)-EXPENSES.reduce(function(s2,x){ return s2+(afterBal_(x)?x.amt:0); },0)
+function liveNet_(){ return Math.round((INCOMES.reduce(function(s2,x){ return s2+(afterBal_(x)?x.amt:0); },0)-EXPENSES.reduce(function(s2,x){ return s2+(afterBal_(x) && x.src!=='advance'?x.amt:0); },0)
+  -ADVANCES.reduce(function(s2,a){ return s2+(afterBal_(a)?a.amt:0); },0)+ADVANCES.reduce(function(s2,a){ return s2+(a.settled && afterBal_(a.settled)?a.settled.returned:0); },0)
   +TOOL_XFERS.reduce(function(s2,t){ return s2+(afterBal_(t) ? (isAcct_(t.to)?t.amt:0)-(isAcct_(t.from)?t.amt:0) : 0); },0))*100)/100; }
 function flowRef_(){ if(isLive_()) return TODAY; var days=reportDays_(); return S.viewDay && days.indexOf(S.viewDay)>=0 ? S.viewDay : (days[0] || TODAY); }
 function monthName_(ym){ return new Date(ym+'-01T00:00:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'}); }
@@ -1495,6 +1500,83 @@ function bulkAdd_(){
   S.bulk = left.length ? { file:U.file, rows:left } : null; S.bulkEdit=null; render();
   toast('Added '+list.length+' lines to 📡 Live'+(left.length?' — '+left.length+' still to check':''));
 }
+/* ---- Input: advances — money handed out before a purchase, settled with the receipts ----
+   Given: the money leaves an account (Live sees it go) but no fund is spent yet. Settled: what was
+   spent comes off the fund as an expense, and what came back goes into an account. Spent and
+   returned don't have to add up to the advance — exchange rates differ; the gap is shown. */
+var ADVANCES=[];   /* { id, at, who, date, fund, bank, amt, budgeted, memo, settled:null|{ date, spent, returned, type, bank, note, at, expId } } */
+function advOut_(){ return ADVANCES.filter(function(a){ return !a.settled; }); }
+function advForm_(){ return S.adv||(S.adv={ who:'', date:reportDay_(), fund:'', bank:'acct|cash', amt:'', budgeted:'', memo:'' }); }
+function inAdvHtml_(){
+  var D=advForm_(), out=advOut_(), done=ADVANCES.filter(function(a){ return a.settled; }), open=S.foldOpen&&S.foldOpen.adv;
+  var outTot=out.reduce(function(s2,a){ return s2+a.amt; },0);
+  var h='<details class="inCard fold" id="inAdv" data-fold="adv"'+(open?' open':'')+'><summary class="foldHead"><span><b>🤝 Advances</b><span class="dsub">'+(out.length ? out.length+' out · '+money(outTot,true)+' not settled yet' : 'Money given out before a purchase')+'</span></span><span class="chev">▾</span></summary>'+
+    '<p class="inLast">Money handed out ahead of a purchase — e.g. $500 to DTS for a week of school — then settled when the receipts come back.</p>';
+  h+='<div class="dListHead">Give an advance</div><div class="xfGrid">'+
+    '<label class="f" for="advWho">Who is responsible for it</label><input type="text" id="advWho" data-adv="who" maxlength="80" placeholder="Name" value="'+esc(D.who)+'">'+
+    '<div class="xfRow"><div><label class="f" for="advDate">Date taken</label><input type="date" id="advDate" data-adv="date" max="'+TODAY+'" value="'+esc(D.date)+'"></div>'+
+    '<div><label class="f" for="advAmt">Amount</label><div class="money"><span>$</span><input id="advAmt" data-adv="amt" type="text" autocomplete="off" placeholder="0.00" value="'+esc(D.amt)+'"></div></div></div>'+
+    '<label class="f" for="advFund">From which fund</label>'+fundSelect_('advFund', D.fund, 'Fund').replace('<select ','<select data-advsel="fund" ').replace('— Pick a fund —','— Pick the fund —')+
+    '<label class="f" for="advBank">Given out of</label>'+bankSelect_('advBank', D.bank, 'data-advsel="bank"')+
+    '<label class="f">Was it in the budget?</label><div class="seg" style="margin:0"><button class="'+(D.budgeted==='yes'?'on':'')+'" data-advbud="yes">✅ Pre-budgeted</button><button class="'+(D.budgeted==='no'?'on':'')+'" data-advbud="no">Not budgeted</button></div>'+
+    '<label class="f" for="advMemo">Memo</label><input type="text" id="advMemo" data-adv="memo" maxlength="200" placeholder="e.g. Food for the first week of school" value="'+esc(D.memo)+'"></div>'+
+    (S.advErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.advErr)+'</p>' : '')+
+    '<div class="inBtns"><button class="btn" id="advSave">Record the advance</button></div>';
+  h+='<div class="dListHead" style="margin-top:16px">Out now'+(out.length?' · '+money(outTot,true):'')+'</div>';
+  h+= out.length ? out.map(function(a){ var days=Math.round((Date.parse(TODAY)-Date.parse(a.date))/864e5), f=fundOf_(a.fund);
+      return '<div class="advItem"><div class="xfTop"><b>'+esc(a.who)+' · '+money(a.amt,true)+'</b><span class="dsub">'+date(a.date)+' · '+days+' day'+(days===1?'':'s')+' out</span></div>'+
+        '<div class="dsub">From '+esc(f?f.name:a.fund)+(a.bank?' · out of '+bankLabel_(a.bank):'')+' · <span class="tag">'+(a.budgeted==='yes'?'pre-budgeted':'not budgeted')+'</span></div>'+
+        (a.memo?'<div class="xfMemo">“'+esc(a.memo)+'”</div>':'')+
+        (S.advSettle===a.id ? advSettleHtml_(a) : '<div class="rowBtns"><button class="btn" style="padding:7px 14px" data-advsettle="'+a.id+'">Settle it</button><button class="delBtn" data-advdel="'+a.id+'">✕ Remove</button></div>')+'</div>'; }).join('')
+    : '<p class="hint">Nothing out right now.</p>';
+  if(done.length) h+='<details class="incGroup"><summary><b>Settled ('+done.length+')</b><span class="chev">▾</span></summary>'+done.slice().sort(function(x,y){ return x.settled.date<y.settled.date?1:-1; }).map(function(a){ var st=a.settled, diff=Math.round((a.amt-st.spent-st.returned)*100)/100;
+      return '<div class="advItem"><div class="xfTop"><b>'+esc(a.who)+' · '+money(a.amt,true)+'</b><span class="dsub">'+date(a.date)+' → '+date(st.date)+'</span></div>'+
+        '<div class="dsub">Spent '+money(st.spent,true)+(st.type?' ('+esc(st.type)+')':'')+' · returned '+money(st.returned,true)+(st.bank?' into '+bankLabel_(st.bank):'')+(Math.abs(diff)>=0.005?' · <b class="'+(diff>0?'late':'')+'">'+(diff>0?money(diff,true)+' unaccounted':money(-diff,true)+' more than given')+'</b>':'')+'</div>'+
+        (a.memo?'<div class="xfMemo">“'+esc(a.memo)+'”</div>':'')+'<div class="rowBtns"><button class="delBtn" data-advreopen="'+a.id+'">↩ Unsettle</button></div></div>'; }).join('')+'</details>';
+  return h+'</details>';
+}
+function advSettleHtml_(a){
+  var D=S.advS||(S.advS={ date:reportDay_(), spent:'', returned:'', type:'', bank:a.bank||'acct|cash', note:'' });
+  var sp=calc_(D.spent), rt=calc_(D.returned), diff=Math.round((a.amt-(isNaN(sp)?0:sp)-(isNaN(rt)?0:rt))*100)/100;
+  return '<div class="bulkEd"><div class="xfRow"><div><label class="f" for="advSDate">Day settled</label><input type="date" id="advSDate" data-advs="date" max="'+TODAY+'" value="'+esc(D.date)+'"></div><div></div></div>'+
+    '<div class="xfRow"><div><label class="f" for="advSSpent">Spent (receipts)</label><div class="money"><span>$</span><input id="advSSpent" data-advs="spent" type="text" autocomplete="off" placeholder="0.00" value="'+esc(D.spent)+'"></div></div>'+
+    '<div><label class="f" for="advSRet">Returned / left over</label><div class="money"><span>$</span><input id="advSRet" data-advs="returned" type="text" autocomplete="off" placeholder="0.00" value="'+esc(D.returned)+'"></div></div></div>'+
+    '<div id="advDiff" class="dsub" style="margin-top:4px">'+advDiffText_(a, diff)+'</div>'+
+    '<label class="f">What it was spent on</label>'+flTypeSelect_('exp', 'data-advssel="type"', D.type||'', '— Pick (or Not sure) —')+
+    '<label class="f">Money returned into</label>'+bankSelect_('advSBank', D.bank, 'data-advssel="bank"')+
+    '<label class="f" for="advSNote">Note (optional)</label><input type="text" id="advSNote" data-advs="note" maxlength="200" value="'+esc(D.note)+'">'+
+    (S.advSErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.advSErr)+'</p>' : '')+
+    '<div class="inBtns" style="margin-top:8px"><button class="btn" data-advsettlesave="'+a.id+'">Save — settled</button><button class="linkAdd" id="advSettleCancel">Cancel</button></div></div>';
+}
+function advDiffText_(a, diff){ return Math.abs(diff)<0.005 ? '✓ Spent + returned = the advance ('+money(a.amt,true)+')' : (diff>0 ? money(diff,true)+' not accounted for (exchange rate, or a receipt missing?) — that’s fine, it won’t stop you saving' : money(-diff,true)+' more than the advance (exchange rate?) — that’s fine, it won’t stop you saving'); }
+function advSave_(){
+  var D=advForm_(), a=calc_(D.amt), err='';
+  if(!String(D.who).trim()) err='Write who is responsible for the money.'; else if(!D.date||D.date>TODAY) err='Pick the day it was taken (not in the future).';
+  else if(isNaN(a)||a<=0) err='Type an amount more than 0.'; else if(!fundOf_(D.fund)) err='Pick which fund it is from.'; else if(!D.bank) err='Pick which account it was given out of.';
+  else if(!D.budgeted) err='Say whether it was pre-budgeted.';
+  S.advErr=err; if(err){ render(); return; }
+  snap_('Removed the advance of '+money(a,true)+' to '+String(D.who).trim());
+  ADVANCES.unshift({ id:'v'+Date.now().toString(36), at:Date.now(), who:String(D.who).trim(), date:D.date, fund:D.fund, bank:D.bank, amt:Math.round(a*100)/100, budgeted:D.budgeted, memo:String(D.memo||'').trim(), settled:null });
+  S.adv={ who:'', date:D.date, fund:'', bank:D.bank, amt:'', budgeted:'', memo:'' }; keep_(); render(); toast('Recorded — '+money(a,true)+' out with '+ADVANCES[0].who);
+}
+function advSettle_(id){
+  var a=ADVANCES.filter(function(x){ return x.id===id; })[0], D=S.advS, sp=calc_(D.spent||'0'), rt=calc_(D.returned||'0'), err='';
+  if(!D.date||D.date>TODAY) err='Pick the day it was settled (not in the future).'; else if(D.date<a.date) err='It can’t be settled before it was taken.';
+  else if(isNaN(sp)||sp<0||isNaN(rt)||rt<0) err='Spent and returned must be numbers (0 if nothing).'; else if(sp<=0 && rt<=0) err='Type what was spent, what came back, or both.';
+  else if(sp>0 && !D.type) err='Pick what it was spent on (or Not sure).'; else if(rt>0 && !D.bank) err='Pick which account the money came back into.';
+  S.advSErr=err; if(err){ render(); return; }
+  snap_('Unsettled the advance to '+a.who);
+  var st={ date:D.date, spent:Math.round(sp*100)/100, returned:Math.round(rt*100)/100, type:D.type||'', bank:rt>0?D.bank:'', note:String(D.note||'').trim(), at:Date.now(), expId:'' };
+  if(st.spent>0){ var e={ id:'e'+Date.now().toString(36), at:st.at, date:st.date, amt:st.spent, type:st.type, who:a.who, memo:'Advance — '+(a.memo||a.who)+(st.note?' · '+st.note:''), split:[{ f:a.fund, amt:st.spent }], bank:'', src:'advance', advId:a.id };
+    flApply_('exp', e, 1); EXPENSES.unshift(e); flSort_('exp'); st.expId=e.id; }
+  a.settled=st; xferSnap_(st.date); S.advSettle=null; S.advS=null; render(); toast('Settled — '+money(st.spent,true)+' spent, '+money(st.returned,true)+' back');
+}
+function advUnsettle_(id){
+  var a=ADVANCES.filter(function(x){ return x.id===id; })[0]; if(!a || !a.settled) return;
+  snap_('Settled the advance to '+a.who+' again');
+  if(a.settled.expId){ var e=EXPENSES.filter(function(x){ return x.id===a.settled.expId; })[0]; if(e){ flApply_('exp', e, -1); EXPENSES=EXPENSES.filter(function(x){ return x.id!==e.id; }); } }
+  a.settled=null; xferSnap_(); render(); toast('Back in “Out now”');
+}
 function ruleLiveHtml_(rows){
   var sum=ruleSum_(rows), left=Math.round((100-sum)*1000)/1000, ok=Math.abs(left)<0.001;
   var good=rows.filter(function(r){ return fundOf_(r.f) && calc_(r.p)>0; });
@@ -1567,6 +1649,7 @@ function allocHtml(){
     allocOrder_().map(function(a){ var p=a.amt/(T||A)*100;
       return '<button class="alSeg'+(a.dark?' dark':'')+(S.open===a.id?' on':'')+'" data-al="'+a.id+'" style="flex:'+a.amt+' 1 0;background:var('+a.c+')" title="'+esc(a.name+' · '+money(a.amt,true)+' · '+Math.round(p)+'%')+'">'+(p>=9?Math.round(p)+'%':'')+'</button>';
     }).join('')+'</div>';
+  var advO=advOut_(); if(isLive_() && advO.length) h+='<div class="advLine">🤝 '+money(advO.reduce(function(s2,a){ return s2+a.amt; },0),true)+' out on advance · '+advO.length+' not settled yet</div>';
   h+= Math.abs(gap)<0.005 ? '<div class="alCheck ok">✓ Every dollar is allocated — '+money(A,true)+' of '+money(T,true)+'</div>'
     : '<div class="alCheck off">⚠️ '+money(Math.abs(gap),true)+(gap>0?' not allocated yet':' more allocated than is in hand')+'</div>';
   var alOn=!!S.alList;
@@ -1907,6 +1990,8 @@ document.getElementById('scrim').onclick=closeSheet;
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSheet(); });
 
 document.addEventListener('change', function(e){
+  if(e.target.dataset && e.target.dataset.advsel){ advForm_()[e.target.dataset.advsel]=e.target.value; S.advErr=''; return; }
+  if(e.target.dataset && e.target.dataset.advssel){ S.advS[e.target.dataset.advssel]=e.target.value; return; }
   if(e.target.id==='bulkFile' && e.target.files[0]){ bulkRead_(e.target.files[0]); e.target.value=''; return; }
   if(e.target.id==='bulkSrc'){ S.bulkSrc=e.target.value; return; }
   if(e.target.dataset && e.target.dataset.bulkok!=null){ S.bulk.rows[+e.target.dataset.bulkok].ok=e.target.checked; render(); return; }
@@ -1961,6 +2046,9 @@ document.addEventListener('input', function(e){
     document.querySelectorAll('#inDay .inLast b').forEach(function(b){ b.textContent = e.target.value ? date(e.target.value) : '—'; }); return; }
   if(e.target.dataset && e.target.dataset.debtday){ S.debtDay=e.target.value; return; }
   var f1=e.target.dataset && e.target.dataset.f1; if(f1){ var q1=f1.split('|'); flOne_(q1[0])[q1[1]]=e.target.value; if(q1[1]==='date'){ var ap=document.getElementById('fl_'+q1[0]+'_appr'); if(ap) ap.innerHTML=approvedAskHtml_(e.target.value, flOne_(q1[0]).incl, 'data-f1incl="'+q1[0]+'"'); } if(q1[1]==='amt'){ var pv=document.getElementById('fl_'+q1[0]+'_prev'); if(pv) pv.innerHTML=flOnePrevHtml_(q1[0]); } return; }
+  if(e.target.dataset && e.target.dataset.adv){ advForm_()[e.target.dataset.adv]=e.target.value; return; }
+  if(e.target.dataset && e.target.dataset.advs){ S.advS[e.target.dataset.advs]=e.target.value; var aS=ADVANCES.filter(function(x){ return x.id===S.advSettle; })[0], dv=document.getElementById('advDiff');
+    if(aS && dv){ var sp2=calc_(S.advS.spent||'0'), rt2=calc_(S.advS.returned||'0'); dv.innerHTML=advDiffText_(aS, Math.round((aS.amt-(isNaN(sp2)?0:sp2)-(isNaN(rt2)?0:rt2))*100)/100); } return; }
   var xk=e.target.dataset && e.target.dataset.xf; if(xk){ S.xfer[xk]=e.target.value; if(xk==='date'){ var xa=document.getElementById('xfAppr'); if(xa) xa.innerHTML=approvedAskHtml_(e.target.value, S.xfer.incl, 'data-xfincl="1"'); } if(xk==='amt'){ var pv=document.getElementById('xfPrev'); if(pv) pv.innerHTML=xferPrevHtml_(); } return; }
   var rp=e.target.dataset && e.target.dataset.rulepct;
   if(rp!=null){ var rows=ruleRows_(ruleTypeCur_()); rows[+rp].p=e.target.value; var lv=document.getElementById('ruleLive'); if(lv) lv.innerHTML=ruleLiveHtml_(rows); return; }
@@ -1998,6 +2086,14 @@ document.addEventListener('click', function(e){
   var bx=e.target.closest && e.target.closest('[data-bulkdrop]'); if(bx){ S.bulk.rows.splice(+bx.dataset.bulkdrop,1); S.bulkEdit=null; if(!S.bulk.rows.length) S.bulk=null; render(); return; }
   var dt=e.target.closest && e.target.closest('[data-daytick]'); if(dt){ e.preventDefault(); e.stopPropagation(); var dday=reportDay_(), part=dt.dataset.daytick;
     (DAY_DONE[dday]=DAY_DONE[dday]||{})[part]=!(DAY_DONE[dday][part]); keep_(); render(); return; }
+  var ab=e.target.closest && e.target.closest('[data-advbud]'); if(ab){ advForm_().budgeted=ab.dataset.advbud; S.advErr=''; render(); return; }
+  if(e.target.id==='advSave'){ advSave_(); return; }
+  var ast=e.target.closest && e.target.closest('[data-advsettle]'); if(ast){ S.advSettle=ast.dataset.advsettle; S.advS=null; S.advSErr=''; render(); return; }
+  var ass=e.target.closest && e.target.closest('[data-advsettlesave]'); if(ass){ advSettle_(ass.dataset.advsettlesave); return; }
+  if(e.target.id==='advSettleCancel'){ S.advSettle=null; S.advS=null; render(); return; }
+  var arp=e.target.closest && e.target.closest('[data-advreopen]'); if(arp){ advUnsettle_(arp.dataset.advreopen); return; }
+  var adl=e.target.dataset && e.target.dataset.advdel; if(adl){ if(S.advDelAsk!==adl){ S.advDelAsk=adl; e.target.textContent='Remove? Tap again'; e.target.classList.add('ask'); return; }
+    var av=ADVANCES.filter(function(x){ return x.id===adl; })[0]; if(av){ snap_('Brought back the advance to '+av.who); ADVANCES=ADVANCES.filter(function(x){ return x.id!==adl; }); keep_(); } S.advDelAsk=null; render(); toast('Removed'); return; }
   if(e.target.id==='viewLatest'){ S.viewDay=null; S.viewDebtDay=null; render(); return; }
   if(e.target.id==='undoLast'){ if(!S.undoAsk){ S.undoAsk=true; render(); setTimeout(function(){ if(S.undoAsk){ S.undoAsk=false; if(S.tab==='input') render(); } }, 4000); return; } undoLast_(); return; }
   if(e.target.id==='inBalSave'){ inSave_(); return; }
@@ -2067,7 +2163,7 @@ document.getElementById('themeBtn').onclick=function(){
 var KEEP_KEY='gp-fin-draft-v1';
 var FUND_RENAMES={ 'Office':'Office/General' };   /* old fund name → new, for anything already saved */
 function stateObj_(){ return { bal:BAL_DAYS, alloc:ALLOC.map(function(g){ return { id:g.id, prev:g.prev, items:g.items }; }),
-  allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, incTypes:INC_TYPES, incRules:INC_RULES, published:PUBLISHED, dayDone:DAY_DONE, expTypes:EXP_TYPES, expRules:EXP_RULES, expenses:EXPENSES, expMap:EXP_MAP, transfers:TRANSFERS, toolXfers:TOOL_XFERS, incomes:INCOMES, incMap:INC_MAP, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved }; }
+  allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, incTypes:INC_TYPES, incRules:INC_RULES, published:PUBLISHED, dayDone:DAY_DONE, expTypes:EXP_TYPES, expRules:EXP_RULES, expenses:EXPENSES, expMap:EXP_MAP, transfers:TRANSFERS, toolXfers:TOOL_XFERS, incomes:INCOMES, advances:ADVANCES, incMap:INC_MAP, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved }; }
 function keep_(){ try { localStorage.setItem(KEEP_KEY, JSON.stringify(stateObj_())); } catch(e){} }
 /* what the page starts from before anything is entered — an undo goes back through this */
 var PRISTINE=JSON.parse(JSON.stringify({ alloc:ALLOC.map(function(g){ return { items:g.items, prev:g.prev }; }), allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF,
@@ -2075,12 +2171,13 @@ var PRISTINE=JSON.parse(JSON.stringify({ alloc:ALLOC.map(function(g){ return { i
 function resetState_(){ var P=JSON.parse(JSON.stringify(PRISTINE));
   ALLOC.forEach(function(g, i){ g.items=P.alloc[i].items; g.prev=P.alloc[i].prev; g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); });
   ALLOC_ASOF=P.allocAsOf; ALLOC_PREV_ASOF=P.allocPrevAsOf; DEBT.asOf=P.debt.asOf; DEBT.people=P.debt.people; DEBT.file=P.debt.file; DEBT.src=P.debt.src;
-  INC_TYPES=P.incTypes; INC_RULES=P.incRules; EXP_TYPES=P.expTypes; EXP_RULES=P.expRules; EXPENSES=[]; EXP_MAP={}; BAL_DAYS=[]; TRANSFERS=[]; TOOL_XFERS=[]; PUBLISHED={}; DAY_DONE={}; INCOMES=[]; INC_MAP={}; ALLOC_HIST=[]; DEBT_HIST=[]; DEBT_LINKS={}; S.alSaved=false; }
+  INC_TYPES=P.incTypes; INC_RULES=P.incRules; EXP_TYPES=P.expTypes; EXP_RULES=P.expRules; EXPENSES=[]; EXP_MAP={}; BAL_DAYS=[]; TRANSFERS=[]; TOOL_XFERS=[]; ADVANCES=[]; PUBLISHED={}; DAY_DONE={}; INCOMES=[]; INC_MAP={}; ALLOC_HIST=[]; DEBT_HIST=[]; DEBT_LINKS={}; S.alSaved=false; }
 function loadState_(k){ if(!k) return;
   if(Array.isArray(k.bal)) BAL_DAYS=k.bal;
   if(k.published && typeof k.published==='object') PUBLISHED=k.published;
   if(k.dayDone && typeof k.dayDone==='object') DAY_DONE=k.dayDone;
   if(Array.isArray(k.transfers)) TRANSFERS=k.transfers;
+  if(Array.isArray(k.advances)) ADVANCES=k.advances;
   if(Array.isArray(k.toolXfers)) TOOL_XFERS=k.toolXfers;
   if(Array.isArray(k.incomes)) INCOMES=k.incomes;
   if(Array.isArray(k.expenses)){ EXPENSES=k.expenses; EXPENSES.forEach(function(x){ if(EXP_TYPE_RENAMES[x.type]) x.type=EXP_TYPE_RENAMES[x.type]; }); }
