@@ -175,6 +175,8 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .alKeyTile small{ display:block; font-size:12px; color:var(--muted); font-weight:600; }
 .alKeyTile b{ display:block; font-size:20px; font-variant-numeric:tabular-nums; }
 .alKeyTile .alPct{ display:inline; }
+.emptyBar{ background:var(--surface2); border-radius:6px; }
+.emptyBar span{ flex:1; }
 .flowDrop{ width:100%; display:flex; justify-content:space-between; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-top:10px; font-weight:600; font-size:14px; cursor:pointer; }
 .flowDrop .chev{ transition:transform .2s; color:var(--muted); }
 .flowDrop.on{ border-radius:12px 12px 0 0; border-bottom-color:transparent; background:var(--bg); }
@@ -1292,6 +1294,11 @@ function flowDelta_(kind, d, vs){
 function flowPerHtml_(kind){ var ytd=S.flowPer[kind]==='ytd';
   return '<div class="incPer"><button class="'+(ytd?'':'on')+'" data-flowper="'+kind+'|month">'+flowMonth_(kind)+'</button><button class="'+(ytd?'on':'')+'" data-flowper="'+kind+'|ytd">2026 so far</button></div>'; }
 function flowHtml(kind){
+  if(!flowLive_(kind)){ var F0=FLOW[kind];   /* nothing entered yet: a grey placeholder, no sample numbers */
+    return '<section class="sec" id="'+F0.id+'"><div class="secHead"><h2>'+F0.icon+' '+F0.title+'</h2></div>'+
+      '<div class="incHead"><span class="incTot" style="color:var(--muted)">—</span><span class="incTotL">Not entered yet</span></div>'+
+      '<div class="alBar emptyBar" aria-hidden="true"><span></span></div>'+
+      '<p class="hint" style="margin-top:8px">Shows here once '+(kind==='inc'?'income is':'expenses are')+' entered on the Input tab.</p></section>'; }
   var F=FLOW[kind], ytd=S.flowPer[kind]==='ytd', rows=allocOrder_().map(function(a){ return { a:a, o:flowOf_(kind, a.id) }; }), T=0, PT=0;
   rows.forEach(function(r){ T+=r.o.tot; PT+=r.o.prev||0; });
   var h='<section class="sec" id="'+F.id+'"><div class="secHead"><h2>'+F.icon+' '+F.title+'</h2><button class="more" data-sheet="'+F.id+'">Details ›</button></div>'+
@@ -1318,6 +1325,7 @@ function flowHtml(kind){
   return h+'</section>';
 }
 function flowSheetHtml_(kind){
+  if(!flowLive_(kind)) return '<h3>'+FLOW[kind].icon+' '+FLOW[kind].title+'</h3><p class="hint">Not entered yet.</p>';
   var F=FLOW[kind], ytd=S.flowPer[kind]==='ytd', cell=function(v){ return v ? v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''; };
   var used=flowCats_(kind).filter(function(k){ return ALLOC.some(function(a){ return flowOf_(kind, a.id).by[k]; }); });
   var colTot=function(k){ return ALLOC.reduce(function(s2,a){ return s2+(flowOf_(kind, a.id).by[k]||0); },0); };
