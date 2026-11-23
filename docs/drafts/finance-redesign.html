@@ -941,9 +941,20 @@ var FK={
     whoLabel:'Paid to (optional)', whoPh:'e.g. Lucky Market', kindLabel:'What it was for', plStart:/^(expenses?|cost of goods sold)$/, plEnd:/^total (for )?(expenses?|cost of goods sold)$/,
     fileHint:'a Profit and Loss by Class, or a list of expenses with a Class column — the class says which category pays',
     guess:function(t){ return expGuess_(t); }, unsure:[], unsureOpts:null, unsureAsk:'',
-    common:['Food','Rent & utilities','Maintenance','Office supplies'] }
+    common:['Food','Supplies','Travel & Transportation','Repair & Maintenance','Not sure'] }
 };
-var EXP_TYPES=['Food','Rent & utilities','Maintenance','Hospitality','Technical','Office supplies','Staff care','Transport','DTS costs','DTS outreach costs','DBS costs','SOMD costs','Other school costs','GP Music','GP Media','YDC','War relief','Honorariums','Other'];
+/* what an expense was for: the organisation's QuickBooks expense accounts (main accounts only —
+   sub-accounts may come later), plus Honorarium and Not sure. The number shows at the end. */
+var EXP_ACCOUNTS=[['Rent /Lease',50300],['Electricity, Water, Garbage',50400],['Food',50500],['Equipment & Furniture',51000],['Repair & Maintenance',52000],
+  ['Service Expenses',52100],['Program Expenses',53000],['Supplies',53200],['Hospitality',53800],['Honorarium',54000],['Salary',55000],['Staff Training',55500],
+  ['Khmer Language Training',55510],['Entertainment / Meals',56000],['Conference/Meeting Expense',56500],['Vehicle Expenses',57000],['Travel & Transportation',57500],
+  ['Taxes',59100],['Bank Charge',59200],['Miscellaneous Expenses',59600],['Contract Expenses',60100],['Materials',60200],['Expendable Assets',60500],['IT Equipment',60510],['Not sure',null]];
+var EXP_TYPES=EXP_ACCOUNTS.map(function(x){ return x[0]; });
+var EXP_NUM={}; EXP_ACCOUNTS.forEach(function(x){ if(x[1]) EXP_NUM[x[0]]=x[1]; });
+/* the kinds used before → the QuickBooks account (anything unclear → Not sure) */
+var EXP_TYPE_RENAMES={ 'Maintenance':'Repair & Maintenance', 'Transport':'Travel & Transportation', 'Office supplies':'Supplies', 'Honorariums':'Honorarium',
+  'Rent & utilities':'Not sure', 'Technical':'Not sure', 'Staff care':'Not sure', 'DTS costs':'Not sure', 'DTS outreach costs':'Not sure', 'DBS costs':'Not sure', 'SOMD costs':'Not sure',
+  'Other school costs':'Not sure', 'GP Music':'Not sure', 'GP Media':'Not sure', 'YDC':'Not sure', 'War relief':'Not sure', 'Other':'Not sure' };
 var EXP_RULES={};   /* expenses have no formulas: each is paid from the category picked, or from its QuickBooks class */
 function incGuess_(txt){
   var t=String(txt||'').toLowerCase();
@@ -963,20 +974,31 @@ function incGuess_(txt){
 }
 function expGuess_(txt){
   var t=String(txt||'').toLowerCase();
-  if(/outreach/.test(t) && /dts/.test(t)) return 'DTS outreach costs';
-  if(/\bdts\b/.test(t)) return 'DTS costs'; if(/\bdbs\b/.test(t)) return 'DBS costs'; if(/\bsomd\b/.test(t)) return 'SOMD costs';
-  if(/school|student|tuition/.test(t)) return 'Other school costs';
-  if(/food|grocer|kitchen|market|meal|rice/.test(t)) return 'Food';
-  if(/rent|electric|water|utilit|internet|wifi/.test(t)) return 'Rent & utilities';
-  if(/repair|maint|building|construction/.test(t)) return 'Maintenance';
-  if(/hospitality|guest|linen|cleaning/.test(t)) return 'Hospitality';
-  if(/technical|computer|sound|equipment/.test(t)) return 'Technical';
-  if(/office|stationery|printing|bank fee|supplies/.test(t)) return 'Office supplies';
-  if(/staff care|medical|visa|health/.test(t)) return 'Staff care';
-  if(/transport|fuel|gas|tuk|taxi|vehicle|travel/.test(t)) return 'Transport';
-  if(/music/.test(t)) return 'GP Music'; if(/media|camera/.test(t)) return 'GP Media'; if(/\bydc\b|youth/.test(t)) return 'YDC';
-  if(/war|relief/.test(t)) return 'War relief';
-  if(/honorar|speaker/.test(t)) return 'Honorariums';
+  /* "Program Expenses:Outreach Expenses" → its main account; longest names first so "IT Equipment" isn't "Equipment" */
+  var named=EXP_TYPES.filter(function(n){ return n!=='Not sure'; }).sort(function(a,b){ return b.length-a.length; }).filter(function(n){ return t.indexOf(n.toLowerCase())>=0; })[0];
+  if(named) return named;
+  if(/honorar|speaker/.test(t)) return 'Honorarium';
+  if(/food|grocer|kitchen|market|rice|vegetable/.test(t)) return 'Food';
+  if(/\brent\b|lease/.test(t)) return 'Rent /Lease';
+  if(/electric|water|garbage|utilit|\bedc\b/.test(t)) return 'Electricity, Water, Garbage';
+  if(/repair|maint/.test(t)) return 'Repair & Maintenance';
+  if(/hospitality|guest|linen|laundry/.test(t)) return 'Hospitality';
+  if(/laptop|computer|printer|it equipment|router/.test(t)) return 'IT Equipment';
+  if(/furniture|equipment|chair|table/.test(t)) return 'Equipment & Furniture';
+  if(/suppl|stationery|printing|paper|cleaning/.test(t)) return 'Supplies';
+  if(/salary|wage|payroll|seniority/.test(t)) return 'Salary';
+  if(/khmer|language/.test(t)) return 'Khmer Language Training';
+  if(/training|course|seminar/.test(t)) return 'Staff Training';
+  if(/restaurant|meal|entertain|coffee|cafe/.test(t)) return 'Entertainment / Meals';
+  if(/conference|meeting/.test(t)) return 'Conference/Meeting Expense';
+  if(/fuel|petrol|gasoline|vehicle|car |moto|tyre|tire/.test(t)) return 'Vehicle Expenses';
+  if(/travel|transport|taxi|tuk|bus|flight|ticket|grab|passapp/.test(t)) return 'Travel & Transportation';
+  if(/\btax\b|taxes|\bvat\b/.test(t)) return 'Taxes';
+  if(/bank (fee|charge)|service charge|transfer fee|bank charge/.test(t)) return 'Bank Charge';
+  if(/contract|architect|construction|engineer|plumb|electrician|legal/.test(t)) return 'Contract Expenses';
+  if(/material|paint|cement|tile|plywood|sand|brick/.test(t)) return 'Materials';
+  if(/outreach|program|donation/.test(t)) return 'Program Expenses';
+  if(/misc/.test(t)) return 'Miscellaneous Expenses';
   return '';
 }
 function flSplit_(k, type, amt, fund){
@@ -988,7 +1010,7 @@ function flSplit_(k, type, amt, fund){
 function flApply_(k, e, sign){ e.split.forEach(function(s2){ fundMove_(s2.f, FK[k].sign*sign*s2.amt); }); }
 function flSort_(k){ FK[k].list().sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; }); }
 function flTypeSelect_(k, attr, val, first){
-  return '<select '+attr+'><option value="">'+(first||'— Kind —')+'</option>'+FK[k].types().map(function(t){ return '<option value="'+esc(t)+'"'+(t===val?' selected':'')+'>'+esc(t)+'</option>'; }).join('')+'</select>';
+  return '<select '+attr+'><option value="">'+(first||'— Kind —')+'</option>'+FK[k].types().map(function(t){ var n=k==='exp'&&EXP_NUM[t]; return '<option value="'+esc(t)+'"'+(t===val?' selected':'')+'>'+esc(t)+(n?'  ·  '+n:'')+'</option>'; }).join('')+'</select>';
 }
 function flHtml_(k){
   var F=FK[k], L=F.list(), mode=(S.flMode||{})[k]||'one', open=S.foldOpen&&S.foldOpen[k];
@@ -1355,9 +1377,7 @@ function bulkFromSheet_(rows){
 }
 /* a first guess for each line; blank where it can't tell */
 /* what an expense's kind most likely comes out of — only a suggestion here, to be ticked */
-var EXP_HINT={ 'Food':'adm|Kitchen', 'Rent & utilities':'adm|Office/General', 'Maintenance':'adm|Building', 'Hospitality':'adm|Hospitality', 'Technical':'adm|Technical',
-  'Office supplies':'adm|Office/General', 'Staff care':'adm|Office/General', 'DTS costs':'min|DTS', 'DTS outreach costs':'min|DTS', 'DBS costs':'min|DBS', 'SOMD costs':'min|SOMD',
-  'Other school costs':'min|Other Schools', 'GP Music':'min|GP Music', 'GP Media':'min|GP Media', 'YDC':'min|YDC', 'War relief':'war|War relief' };
+var EXP_HINT={ 'Food':'adm|Kitchen' };   /* the one usual pairing; anything else is chosen each time */
 /* a fund named in the words ("DTS lunch", "kitchen gas") beats the kind's usual one */
 function fundInWords_(d){ var hit=''; fundList_().some(function(f){ var n=f.name.toLowerCase().split(/[ /(]/)[0]; if(n.length>=3 && new RegExp('\\b'+n.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b').test(d) && !/^other$/.test(n)){ hit=f.k; return true; } return false; }); return hit; }
 function bulkGuess_(t, src){
@@ -2063,9 +2083,10 @@ function loadState_(k){ if(!k) return;
   if(Array.isArray(k.transfers)) TRANSFERS=k.transfers;
   if(Array.isArray(k.toolXfers)) TOOL_XFERS=k.toolXfers;
   if(Array.isArray(k.incomes)) INCOMES=k.incomes;
-  if(Array.isArray(k.expenses)) EXPENSES=k.expenses;
+  if(Array.isArray(k.expenses)){ EXPENSES=k.expenses; EXPENSES.forEach(function(x){ if(EXP_TYPE_RENAMES[x.type]) x.type=EXP_TYPE_RENAMES[x.type]; }); }
   if(k.expMap && typeof k.expMap==='object') EXP_MAP=k.expMap;
-  if(Array.isArray(k.expTypes)) k.expTypes.forEach(function(t){ if(EXP_TYPES.indexOf(t)<0) EXP_TYPES.push(t); });
+  if(Array.isArray(k.expTypes)) k.expTypes.forEach(function(t){ if(EXP_TYPES.indexOf(t)<0 && !EXP_TYPE_RENAMES[t]) EXP_TYPES.splice(EXP_TYPES.length-1, 0, t); });
+  Object.keys(EXP_MAP).forEach(function(key){ var m=EXP_MAP[key]; if(m && m.t && EXP_TYPE_RENAMES[m.t]) m.t=EXP_TYPE_RENAMES[m.t]; });
   if(k.incMap && typeof k.incMap==='object') INC_MAP=k.incMap;
   if(k.incRules && typeof k.incRules==='object'){ Object.keys(k.incRules).forEach(function(t){ var nt=INC_TYPE_RENAMES[t]||t; if(INC_TYPES_GONE.indexOf(nt)<0) INC_RULES[nt]=k.incRules[t]; }); }
   if(Array.isArray(k.incTypes)) k.incTypes.forEach(function(t){ var nt=INC_TYPE_RENAMES[t]||t; if(INC_TYPES.indexOf(nt)<0 && INC_TYPES_GONE.indexOf(nt)<0 && ['Donations','Teams','Other income'].indexOf(t)<0) INC_TYPES.push(nt); });
