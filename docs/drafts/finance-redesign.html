@@ -339,8 +339,8 @@ var ALLOC = [   /* the six allocations and their sub-funds, as the Finances offi
     items:[['DTS',7800],['DBS',3200],['SOMD',2100],['Other Schools',2600],['GP Music',1950],['GP Media',2300],['YDC',2200]], note:'What each ministry and school still has to spend this year.' },
   { id:'war', prev:5300, name:'War relief', eg:'', c:'--al3', dark:true, single:true,
     items:[['War relief',6300]], note:'Given for war relief — kept apart from everything else.' },
-  { id:'adm', prev:8690.1, name:'Admin / Operational', eg:'kitchen, hospitality, technical, building, office', c:'--al4', dark:true,
-    items:[['Kitchen',2400],['Hospitality',1850],['Technical',1200],['Building',2600],['Office',1121.15],['Other',650]], note:'The day-to-day cost of running the base.' },
+  { id:'adm', prev:8690.1, name:'Admin / Operational', eg:'office/general, kitchen, hospitality, technical, building', c:'--al4', dark:true,
+    items:[['Office/General',1121.15],['Kitchen',2400],['Hospitality',1850],['Technical',1200],['Building',2600],['Other',650]], note:'The day-to-day cost of running the base.' },
   { id:'sav', prev:6000, name:'Savings', eg:'put aside', c:'--al5', dark:true, single:true,
     items:[['Savings',6000]], note:'Put aside for later — not for this year’s spending.' },
   { id:'fund', prev:9000, name:'Funds', eg:'LT Fund, Development, Training, Other', c:'--al6', dark:false,
@@ -919,13 +919,14 @@ document.getElementById('themeBtn').onclick=function(){
 /* keep what is entered on this device (this draft only), so reloading or an update to the
    preview never wipes it. The real app will save to the server instead. */
 var KEEP_KEY='gp-fin-draft-v1';
+var FUND_RENAMES={ 'Office':'Office/General' };   /* old fund name → new, for anything already saved */
 function keep_(){ try { localStorage.setItem(KEEP_KEY, JSON.stringify({ bal:BAL_DAYS, alloc:ALLOC.map(function(g){ return { id:g.id, prev:g.prev, items:g.items }; }),
   allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved })); } catch(e){} }
 (function(){ try { var k=JSON.parse(localStorage.getItem(KEEP_KEY)||'null'); if(!k) return;
   if(Array.isArray(k.bal)) BAL_DAYS=k.bal;
-  if(Array.isArray(k.alHist)) ALLOC_HIST=k.alHist;
+  if(Array.isArray(k.alHist)){ ALLOC_HIST=k.alHist; ALLOC_HIST.forEach(function(e){ Object.keys(e.groups||{}).forEach(function(gk){ e.groups[gk].forEach(function(it){ if(FUND_RENAMES[it[0]]) it[0]=FUND_RENAMES[it[0]]; }); }); }); }
   if(Array.isArray(k.debtHist)) DEBT_HIST=k.debtHist;
-  if(k.alSaved && Array.isArray(k.alloc)){ k.alloc.forEach(function(x){ var g=ALLOC.filter(function(a){ return a.id===x.id; })[0]; if(g && Array.isArray(x.items) && x.items.length===g.items.length){ g.prev=x.prev; g.items=x.items; g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); } });
+  if(k.alSaved && Array.isArray(k.alloc)){ k.alloc.forEach(function(x){ var g=ALLOC.filter(function(a){ return a.id===x.id; })[0]; if(g && Array.isArray(x.items)){ var byName={}; x.items.forEach(function(it){ byName[FUND_RENAMES[it[0]]||it[0]]=it[1]; }); g.prev=x.prev; g.items.forEach(function(it){ if(byName[it[0]]!=null) it[1]=byName[it[0]]; }); g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); } });
     ALLOC_ASOF=k.allocAsOf||ALLOC_ASOF; ALLOC_PREV_ASOF=k.allocPrevAsOf||ALLOC_PREV_ASOF; S.alSaved=true; }
   if(k.debt && k.debt.file && Array.isArray(k.debt.people)){ DEBT.asOf=k.debt.asOf; DEBT.people=k.debt.people; DEBT.file=k.debt.file; DEBT.src=k.debt.src; }
   else if(k.debt && k.debt.asOf) DEBT.asOf=k.debt.asOf;
