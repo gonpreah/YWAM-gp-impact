@@ -440,18 +440,18 @@ function refreshBal_(){
 var ALLOC_PREV_ASOF='2026-11-13';
 var ALLOC_HIST=[], DEBT_HIST=[];   /* one saved entry per day, newest first */
 var ALLOC = [   /* the six allocations and their sub-funds, as the Finances office keeps them — SAMPLE amounts */
-  { id:'des', prev:17900, name:'Designated funds', eg:'KSS & YAP, Other Base Payable (Antonia), Other', c:'--al1', dark:false,
-    items:[['KSS & YAP',11200],['Other Base Payable (Antonia)',6500],['Other',700]], note:'Money given for a named person or project — it can only be spent on that.' },
-  { id:'min', prev:23050, name:'Ministry budgets', eg:'DTS, DBS, SOMD, schools, music, media, YDC', c:'--al2', dark:false,
-    items:[['DTS',7800],['DBS',3200],['SOMD',2100],['Other Schools',2600],['GP Music',1950],['GP Media',2300],['YDC',2200]], note:'What each ministry and school still has to spend this year.' },
-  { id:'war', prev:5300, name:'War relief', eg:'', c:'--al3', dark:true, single:true,
-    items:[['War relief',6300]], note:'Given for war relief — kept apart from everything else.' },
-  { id:'adm', prev:8690.1, name:'Admin / Operational', eg:'office/general, kitchen, hospitality, technical, building', c:'--al4', dark:true,
+  { id:'adm', prev:8690.1, name:'Admin / Operational', eg:'office/general, kitchen, hospitality, technical, building', c:'--al1', dark:false,
     items:[['Office/General',1121.15],['Kitchen',2400],['Hospitality',1850],['Technical',1200],['Building',2600],['Other',650]], note:'The day-to-day cost of running the base.' },
-  { id:'sav', prev:6000, name:'Savings', eg:'put aside', c:'--al5', dark:true, single:true,
+  { id:'fund', prev:9000, name:'Funds', eg:'LT Fund, Development, Training, Other', c:'--al2', dark:false,
+    items:[['Leadership team fund (LT Fund)',4000],['Development fund',2500],['Training fund',1800],['Other',700]], note:'The base’s standing funds, each kept for its own purpose.' },
+  { id:'min', prev:23050, name:'Ministry budgets', eg:'DTS, DBS, SOMD, schools, music, media, YDC', c:'--al3', dark:true,
+    items:[['DTS',7800],['DBS',3200],['SOMD',2100],['Other Schools',2600],['GP Music',1950],['GP Media',2300],['YDC',2200]], note:'What each ministry and school still has to spend this year.' },
+  { id:'sav', prev:6000, name:'Savings', eg:'put aside', c:'--al4', dark:true, single:true,
     items:[['Savings',6000]], note:'Put aside for later — not for this year’s spending.' },
-  { id:'fund', prev:9000, name:'Funds', eg:'LT Fund, Development, Training, Other', c:'--al6', dark:false,
-    items:[['Leadership team fund (LT Fund)',4000],['Development fund',2500],['Training fund',1800],['Other',700]], note:'The base’s standing funds, each kept for its own purpose.' }
+  { id:'war', prev:5300, name:'War relief', eg:'', c:'--al5', dark:true, single:true,
+    items:[['War relief',6300]], note:'Given for war relief — kept apart from everything else.' },
+  { id:'des', prev:17900, name:'Designated funds', eg:'KSS & YAP, Other Base Payable (Antonia), Other', c:'--al6', dark:false,
+    items:[['KSS & YAP',11200],['Other Base Payable (Antonia)',6500],['Other',700]], note:'Money given for a named person or project — it can only be spent on that.' }
 ];
 /* staff debt — as the A/R Ageing report gives it: by how long it has been owed.
    SAMPLE names, made up for the draft. */
@@ -1187,9 +1187,9 @@ function balancesHtml(){
   h+='</section>';
   return h;
 }
-/* the allocations largest first — the allocation report's order, which the income and expense
-   reports follow too (colours stay with each allocation) */
-function allocOrder_(){ return ALLOC.slice().sort(function(a,b){ return b.amt-a.amt || ALLOC.indexOf(a)-ALLOC.indexOf(b); }); }
+/* the allocations in the office's own order — Admin, Funds, Ministry, Savings, War relief,
+   Designated — on every report (colours stay with each allocation) */
+function allocOrder_(){ return ALLOC.slice(); }
 function allocHtml(){
   var T=total(), A=ALLOC.reduce(function(s,a){ return s+a.amt; },0), gap=T-A;
   var h='<section class="sec" id="alloc"><div class="secHead"><h2>📊 Allocation report</h2><button class="more" data-sheet="alloc">Details ›</button></div>'+
