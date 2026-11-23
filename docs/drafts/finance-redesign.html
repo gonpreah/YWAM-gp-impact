@@ -449,6 +449,10 @@ button.tick.done{ background:var(--good); }
 .ledCheck p{ grid-column:1/-1; margin:2px 0 0; font-size:13px; font-weight:700; }
 .ledCheck.ok p{ color:var(--good); }
 .ledCheck.off p{ color:var(--bad); }
+.ledSort{ border:0; background:none; font:inherit; color:inherit; cursor:pointer; padding:0; white-space:nowrap; }
+.ledSort:hover{ color:var(--ink); }
+.ledMemo{ display:block; max-width:150px; border:0; background:none; padding:0; font:inherit; font-size:12.5px; color:var(--muted); text-align:left; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ledMemo.open{ max-width:260px; white-space:normal; color:var(--ink); }
 .ledEmpty{ color:var(--muted); text-align:left; padding:18px 10px !important; }
 .catList{ border-top:1px solid var(--line); margin-top:6px; }
 .catGrp{ border-bottom:1px solid var(--line); padding:4px 0; }
@@ -856,9 +860,10 @@ function inLedgerHtml_(){
     (function(){ var L=ledgerLines_(); if(!L.length) return ''; var c=ledgerCheck_(L), ok=Math.abs(c.sum)<0.005;
       return '<div class="ledCheck '+(ok?'ok':'off')+'"><div><small>Real money'+(c.day?' · from balances '+date(c.day):'')+'</small><b>'+money(c.real,true)+'</b></div><div><small>Category amounts</small><b>'+(c.cat<0?'−':'')+money(Math.abs(c.cat),true)+'</b></div>'+
         '<div><small>Real − category</small><b>'+(c.sum<0?'−':'')+money(Math.abs(c.sum),true)+'</b></div><p>'+(ok?'✓ Every dollar has a home':(c.sum>0?'⚠️ '+money(c.sum,true)+' has no home yet':'⚠️ '+money(-c.sum,true)+' more is given a home than there is'))+'</p></div>'; })()+
-    '<div class="ledWrap"><table class="ledTbl"><thead><tr>'+LEDGER_COLS.map(function(c){ return '<th'+(c==='Amount'||c==='Category amount'?' class="r"':'')+'>'+c+'</th>'; }).join('')+'</tr></thead>'+
+    '<div class="ledWrap"><table class="ledTbl"><thead><tr>'+LEDGER_COLS.map(function(c){ return '<th'+(c==='Amount'||c==='Category amount'?' class="r"':'')+'>'+(c==='Date'?'<button class="ledSort" id="ledSort" aria-label="'+(S.ledAsc?'Oldest first — tap for newest first':'Newest first — tap for oldest first')+'">Date '+(S.ledAsc?'↑':'↓')+'</button>':c)+'</th>'; }).join('')+'</tr></thead>'+
     '<tbody>'+(function(){ var L=ledgerLines_(); if(!L.length) return '<tr><td colspan="'+LEDGER_COLS.length+'" class="ledEmpty">No transactions yet.</td></tr>';
-      return L.map(function(x){ return '<tr><td class="nw">'+date(x.date)+'</td><td class="nw">'+esc(x.acct)+'</td><td class="nw">'+esc(x.type)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.memo)+'</td>'+
+      if(S.ledAsc) L=L.slice().reverse();
+      return L.map(function(x){ return '<tr><td class="nw">'+date(x.date)+'</td><td class="nw">'+esc(x.acct)+'</td><td class="nw">'+esc(x.type)+'</td><td>'+esc(x.name)+'</td><td>'+(x.memo?'<button class="ledMemo" data-ledmemo="1" title="'+esc(x.memo)+'">'+esc(x.memo)+'</button>':'')+'</td>'+
         '<td class="r nw">'+(x.amt==null?'':money(x.amt,true))+'</td><td class="r nw">'+(x.camt==null?'':(x.camt<0?'−':'')+money(Math.abs(x.camt),true))+'</td><td class="nw">'+esc(x.cat)+'</td><td class="nw">'+(x.appr?'✅ '+date(x.appr):'<span class="ledNo">Not yet</span>')+'</td></tr>'; }).join(''); })()+'</tbody></table></div></details>';
 }
 function inCatsHtml_(){
@@ -2398,6 +2403,8 @@ document.addEventListener('input', function(e){
 document.addEventListener('click', function(e){
   var ce=e.target.closest && e.target.closest('[data-catedit]');
   if(ce){ var nv=ce.dataset.catedit; S.catSubDraft=null; S.catEdit= (S.catEdit===nv && nv!=='') ? '' : nv; S.catErr=''; S.catDel=null; render(); if(S.catEdit==='new' || S.catEdit==='newsub'){ var ni=document.getElementById(S.catEdit==='new'?'catNewGrp':'catNewSub'); if(ni) ni.focus(); } return; }
+  if(e.target.closest && e.target.closest('#ledSort')){ S.ledAsc=!S.ledAsc; render(); return; }
+  var lm=e.target.closest && e.target.closest('[data-ledmemo]'); if(lm){ lm.classList.toggle('open'); return; }
   var cb=e.target.closest && e.target.closest('[data-catgmv],[data-catimv],[data-catgdel],[data-catidel],[data-catadd],[data-catback],#catNewGrpBtn,#catNewSubBtn');
   if(cb){ var d=cb.dataset;
     if(cb.id==='catNewGrpBtn') return catAddGroup_();

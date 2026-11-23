@@ -114,7 +114,9 @@ Income.
     **real money − category amounts = $0 when every dollar has a home**.
 - **Approved** says which approved report a line is in (✅ and that day), or "Not yet".
 - The lines are built from what has been entered — nothing is typed into the breakdown itself.
-  Newest day first; within a day, balance entries first.
+  Newest day first (the ↓ / ↑ on the Date heading flips it to oldest first, `S.ledAsc`); within a
+  day, balance entries, then manual allocations, then expenses. Memos are cut short to one line;
+  tapping one shows it whole.
 - **Balance entry** (from 🏦 Balances) — the **gold standard**: straight from the bank and the cash
   box. Each balances day gives three lines (ABA bank, US bank, Cash on hand) with the Amount
   typed; Name, Memo, Category blank. Approved: the approved day whose frozen balances are that
