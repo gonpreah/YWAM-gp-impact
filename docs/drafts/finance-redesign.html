@@ -376,7 +376,8 @@ label.f{ display:block; font-size:12.5px; font-weight:600; margin:6px 0 4px; }
 .tick{ width:20px; height:20px; border-radius:999px; border:2px solid color-mix(in srgb, var(--muted) 55%, transparent); display:inline-flex; align-items:center; justify-content:center; flex:none; font-size:12px; font-weight:800; color:#fff; margin-right:10px; }
 .tick.done{ background:var(--good); border-color:var(--good); }
 .foldHead{ justify-content:flex-start!important; }
-.foldHead > span:not(.tick):not(.foldR){ flex:1; min-width:0; }
+.foldHead > span:not(.tick):not(.foldR):not(.chev){ flex:1; min-width:0; }
+.foldHead > .chev{ margin-left:auto; flex:none; }
 .nothingNew{ display:flex; gap:8px; align-items:center; font-size:13px; color:var(--muted); margin:0 0 10px; cursor:pointer; }
 .nothingNew input{ width:17px; height:17px; }
 .pubCard{ border:2px solid var(--good); }
