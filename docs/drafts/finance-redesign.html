@@ -804,7 +804,10 @@ function isTool_(k){ return k===TOOL_ADD || k===TOOL_REMOVE; }
 var ACCT_KEYS={ 'acct|aba':'ABA bank', 'acct|us':'US bank', 'acct|cash':'Cash on hand' };
 function isAcct_(k){ return !!ACCT_KEYS[k]; }
 /* an account now: as last entered, plus what has moved in or out of it since that day */
-function acctMoved_(k){ var d=BAL.asOf||''; return Math.round(TRANSFERS.concat(TOOL_XFERS).reduce(function(s2,t){ if(t.date<=d) return s2; return s2+(t.to===k?t.amt:0)-(t.from===k?t.amt:0); },0)*100)/100; }
+function acctMoved_(k){ var d=BAL.asOf||'';
+  var m=TRANSFERS.concat(TOOL_XFERS).reduce(function(s2,t){ if(t.date<=d) return s2; return s2+(t.to===k?t.amt:0)-(t.from===k?t.amt:0); },0);
+  m+=INCOMES.reduce(function(s2,x){ return s2+(x.date>d && x.bank===k ? x.amt : 0); },0)-EXPENSES.reduce(function(s2,x){ return s2+(x.date>d && x.bank===k ? x.amt : 0); },0);
+  return Math.round(m*100)/100; }
 function acctAmt_(k){ var a=BAL.accts.filter(function(x){ return 'acct|'+x.id===k; })[0]; return (a?a.amt:0)+acctMoved_(k); }
 function fundSelect_(id, val, label, tool, accts){
   return '<select id="'+id+'" aria-label="'+label+'"><option value="">— Pick a fund —</option>'+ALLOC.map(function(g){ return '<optgroup label="'+esc(g.name)+'">'+
@@ -966,7 +969,13 @@ function flHtml_(k){
   h+= mode==='one' ? flOneHtml_(k) : flFileHtml_(k);
   return h+'</details>';
 }
-function flOne_(k){ S.fl1=S.fl1||{}; return S.fl1[k]||(S.fl1[k]={ date:reportDay_(), amt:'', type:'', who:'', memo:'', fund:'' }); }
+function flOne_(k){ S.fl1=S.fl1||{}; return S.fl1[k]||(S.fl1[k]={ date:reportDay_(), amt:'', type:'', who:'', memo:'', fund:'', bank:'' }); }
+/* which account the money went into (income) or came out of (an expense) */
+var BANK_OPTS=[['acct|aba','ABA bank'],['acct|cash','Cash on hand'],['acct|us','US bank']];
+function bankSelect_(id, val, attr, first){ return '<select id="'+id+'" '+attr+'><option value="">'+(first||'— Pick the account —')+'</option>'+BANK_OPTS.map(function(o){ return '<option value="'+o[0]+'"'+(val===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select>'; }
+function bankLabel_(k){ var o=BANK_OPTS.filter(function(x){ return x[0]===k; })[0]; return o?o[1]:''; }
+/* a QuickBooks bank column ("Deposit to", "Payment account"…) → one of the three */
+function bankGuess_(t){ t=String(t||'').toLowerCase(); if(!t) return ''; if(/\baba\b/.test(t)) return 'acct|aba'; if(/cash|petty/.test(t)) return 'acct|cash'; if(/\bus\b|usa|united states|chase|wells|boa|bank of america/.test(t)) return 'acct|us'; return ''; }
 function flOneHtml_(k){
   var F=FK[k], D=flOne_(k), noRule=D.type && !(F.rules()[D.type]||[]).length, p='fl_'+k+'_';
   return '<div class="xfGrid"><div class="xfRow"><div><label class="f" for="'+p+'date">Date</label><input type="date" id="'+p+'date" data-f1="'+k+'|date" max="'+TODAY+'" value="'+esc(D.date)+'"></div>'+
@@ -974,6 +983,7 @@ function flOneHtml_(k){
     '<label class="f" for="'+p+'type">'+F.kindLabel+'</label>'+flTypeSelect_(k, 'id="'+p+'type" data-f1sel="'+k+'|type"', D.type, '— Kind of '+F.one+' —')+
     (F.sign<0 ? flPaidFromHtml_(k, D, p)
       : (noRule ? '<label class="f" for="'+p+'fund">“'+esc(D.type)+'” has no formula yet — which fund does it go to?</label>'+fundSelect_(p+'fund', D.fund, 'Fund').replace('<select ','<select data-f1sel="'+k+'|fund" ') : ''))+
+    '<label class="f" for="'+p+'bank">'+(F.sign<0?'Paid out of — which account':'Went into — which account')+'</label>'+bankSelect_(p+'bank', D.bank, 'data-f1sel="'+k+'|bank"')+
     '<label class="f" for="'+p+'who">'+F.whoLabel+'</label><input type="text" id="'+p+'who" data-f1="'+k+'|who" maxlength="80" placeholder="'+esc(F.whoPh)+'" value="'+esc(D.who)+'">'+
     '<label class="f" for="'+p+'memo">Memo (optional)</label><input type="text" id="'+p+'memo" data-f1="'+k+'|memo" maxlength="200" value="'+esc(D.memo)+'"></div>'+
     '<div id="'+p+'prev">'+flOnePrevHtml_(k)+'</div>'+
@@ -999,12 +1009,12 @@ function flErr_(k, m){ S.flErr=S.flErr||{}; S.flErr[k]=m; }
 function flOneSave_(k){
   var F=FK[k], D=flOne_(k), a=calc_(D.amt), err='';
   if(!D.date||D.date>TODAY) err='Pick the day (not in the future).'; else if(isNaN(a)||a<=0) err='Type an amount more than 0.';
-  else if(!D.type) err='Pick what it '+(F.sign<0?'was for':'is')+'.'; else if(!flOneSplit_(k, D, a)) err=F.sign<0?'Pick which category it is paid from.':'Pick which fund.';
+  else if(!D.type) err='Pick what it '+(F.sign<0?'was for':'is')+'.'; else if(!D.bank) err='Pick which account it '+(F.sign<0?'was paid out of':'went into')+' — ABA, cash or US.'; else if(!flOneSplit_(k, D, a)) err=F.sign<0?'Pick which category it is paid from.':'Pick which fund.';
   flErr_(k, err); if(err){ render(); return; }
-  var e={ id:k[0]+Date.now().toString(36), date:D.date, amt:a, type:D.type, who:String(D.who||'').trim(), memo:String(D.memo||'').trim(), split:flOneSplit_(k, D, a), src:'manual' };
+  var e={ id:k[0]+Date.now().toString(36), date:D.date, amt:a, type:D.type, bank:D.bank, who:String(D.who||'').trim(), memo:String(D.memo||'').trim(), split:flOneSplit_(k, D, a), src:'manual' };
   snap_('Removed '+money(a,true)+' '+e.type+' '+F.one+(e.who?(F.sign<0?' paid to ':' from ')+e.who:''));
   flApply_(k, e, 1); F.list().unshift(e); flSort_(k); xferSnap_(e.date);
-  S.fl1[k]={ date:D.date, amt:'', type:'', who:'', memo:'', fund:'' }; render(); toast('Added '+money(a,true)+' — '+e.type);
+  S.fl1[k]={ date:D.date, amt:'', type:'', who:'', memo:'', fund:'', bank:D.bank }; render(); toast('Added '+money(a,true)+' — '+e.type);
 }
 /* many at once from QuickBooks */
 function flKey_(r){ return String(r.acct||r.who||r.memo||'').toLowerCase().trim(); }
@@ -1045,6 +1055,9 @@ function flFileHtml_(k){
   var auto=R.filter(function(r){ return ok(r) && r.sure && !r.answered; }), answered=R.filter(function(r){ return ok(r) && (r.answered || !r.sure); }),
       skipped=R.filter(function(r){ return r.skip || !r.on; }), add=R.filter(ok), tot=add.reduce(function(s2,r){ return s2+r.amt; },0);
   h+='<div class="upSum"><b>'+esc(U.file)+'</b> · '+(U.kind==='pl'?'Profit and Loss':'list of '+F.many)+(U.period?' · '+esc(U.period):'')+' · '+R.length+' line'+(R.length>1?'s':'')+'</div>';
+  var noBank=R.filter(function(r){ return !r.bank; }).length;
+  h+='<div class="inDates one" style="margin-top:10px"><div><label for="'+p+'bankall">'+(noBank===R.length ? (F.sign<0?'Paid out of':'Went into') : (F.sign<0?'Paid out of (for the '+noBank+' without one in the file)':'Went into (for the '+noBank+' without one in the file)'))+'</label>'+
+    (noBank ? bankSelect_(p+'bankall', U.bank||'', 'data-fbankall="'+k+'"') : '<div class="ls">Each line’s account is in the file.</div>')+'</div></div>';
   if(U.kind==='pl') h+='<div class="inDates one" style="margin-top:10px"><div><label for="'+p+'pldate">Date for these '+F.many+'</label><input type="date" id="'+p+'pldate" data-fpldate="'+k+'" max="'+TODAY+'" value="'+esc(U.date)+'"><div class="ls">A Profit and Loss has totals, not days — they’re all dated this day.</div></div></div>';
   h+='<div class="qHead'+(open.length?'':' done')+'">'+(open.length ? '❓ '+open.length+' question'+(open.length>1?'s':'')+' for you' : '✓ No questions left')+'</div>';
   h+=open.map(function(r){ var i=R.indexOf(r), needFund=r.type && flNeedsFund_(k, r);
@@ -1063,7 +1076,7 @@ function flFileHtml_(k){
   h+=listHtml(answered, '✍️ Answered by you', 'ans')+listHtml(auto, '✓ Assigned automatically — check them', 'auto')+listHtml(skipped, '⏭ Not adding', 'skip');
   h+='<label class="incChk" style="margin-top:12px"><input type="checkbox" data-frem="'+k+'"'+((S.flRem||{})[k]!==false?' checked':'')+'><span>Remember my answers for next month’s file</span></label>';
   h+=((S.flErr||{})[k] ? '<p class="inErr" role="alert">⚠️ '+esc(S.flErr[k])+'</p>' : '')+
-    '<div class="inBtns"><button class="btn" id="'+p+'saveFile"'+(open.length?' disabled':'')+'>'+(open.length ? 'Answer the questions first' : 'Add '+add.length+' '+(add.length===1?F.one:F.many)+' · '+money(tot,true))+'</button><button class="btn ghost" id="'+p+'cancel">Cancel</button></div>';
+    '<div class="inBtns"><button class="btn" id="'+p+'saveFile"'+(open.length||(noBank&&!U.bank)?' disabled':'')+'>'+(open.length ? 'Answer the questions first' : (noBank&&!U.bank) ? 'Pick the account first' : 'Add '+add.length+' '+(add.length===1?F.one:F.many)+' · '+money(tot,true))+'</button><button class="btn ghost" id="'+p+'cancel">Cancel</button></div>';
   return h;
 }
 function xlDate_(v){
@@ -1086,9 +1099,9 @@ function flFromRows_(k, rows, file){
     (rows[hdr]||[]).forEach(function(v, j){ var t=txt(v).toLowerCase();
       if(c.date==null && /date/.test(t)) c.date=j; else if(c.amt==null && amtRe.test(t)) c.amt=j;
       else if(c.who==null && /^(name|customer|vendor|payee|supplier|received from|payer|donor|full name|customer full name|vendor full name)$/.test(t)) c.who=j;
-      else if(c.memo==null && /memo|description/.test(t)) c.memo=j; else if(c.cls==null && /^(class|class full name|location)$/.test(t)) c.cls=j; else if(c.acct==null && /^(account|account name|item|product\/service|split|category|expense account)$/.test(t)) c.acct=j; });
+      else if(c.memo==null && /memo|description/.test(t)) c.memo=j; else if(c.cls==null && /^(class|class full name|location)$/.test(t)) c.cls=j; else if(c.bank==null && /^(deposit to|bank account|payment account|paid from|bank|account \(bank\)|payment method)$/.test(t)) c.bank=j; else if(c.acct==null && /^(account|account name|item|product\/service|split|category|expense account)$/.test(t)) c.acct=j; });
     for(var r2=hdr+1;r2<rows.length;r2++){ var row=rows[r2]||[], d=xlDate_(row[c.date]), a=num(row[c.amt]); if(!d || isNaN(a) || a===0) continue;
-      a=Math.abs(a); out.push({ date:d, amt:Math.round(a*100)/100, who:txt(row[c.who]), memo:txt(row[c.memo]), acct:txt(row[c.acct]), cls:txt(row[c.cls]) }); }
+      a=Math.abs(a); out.push({ date:d, amt:Math.round(a*100)/100, who:txt(row[c.who]), memo:txt(row[c.memo]), acct:txt(row[c.acct]), cls:txt(row[c.cls]), bank:bankGuess_(txt(row[c.bank])) }); }
   } else {
     var st=-1, en=rows.length;
     for(var q=0;q<rows.length;q++){ var f0=txt((rows[q]||[])[0]).toLowerCase(); if(st<0 && F.plStart.test(f0)) st=q; else if(st>=0 && F.plEnd.test(f0)){ en=q; break; } }
@@ -1120,10 +1133,11 @@ function flFileSave_(k){
   var F=FK[k], U=flUp_(k); if(U.rows.some(function(r){ return flOpen_(k, r); })){ flErr_(k, 'Answer the questions first (or skip them).'); render(); return; }
   var add=U.rows.filter(function(r){ return r.on && !r.skip && r.type && !flNeedsFund_(k, r); });
   if(!add.length){ flErr_(k, 'Nothing to add.'); render(); return; }
+  if(add.some(function(r){ return !r.bank; }) && !U.bank){ flErr_(k, 'Pick which account these '+(F.sign<0?'were paid out of':'went into')+'.'); render(); return; }
   var tot=add.reduce(function(s2,r){ return s2+r.amt; },0);
   snap_('Removed '+add.length+' '+(add.length>1?F.many:F.one)+' ('+money(tot,true)+') from '+U.file);
   if((S.flRem||{})[k]!==false){ var M=F.map(); U.rows.forEach(function(r){ var key=flKey_(r); if(key && r.type && (r.answered || !r.sure || (k==='inc' && r.fund))) M[key]={ t:r.type, f:(k==='exp'?'':r.fund||'') }; if(k==='exp' && r.cls && r.fund) M['class:'+r.cls.toLowerCase().trim()]={ f:r.fund }; }); }
-  add.forEach(function(r, i){ var e={ id:k[0]+Date.now().toString(36)+i, date:r.date, amt:r.amt, type:r.type, who:r.who, cls:r.cls||'', memo:[r.acct, r.memo].filter(Boolean).join(' · '), split:flSplit_(k, r.type, r.amt, r.fund), src:'file', file:U.file };
+  add.forEach(function(r, i){ var e={ id:k[0]+Date.now().toString(36)+i, date:r.date, amt:r.amt, type:r.type, who:r.who, cls:r.cls||'', bank:r.bank||U.bank, memo:[r.acct, r.memo].filter(Boolean).join(' · '), split:flSplit_(k, r.type, r.amt, r.fund), src:'file', file:U.file };
     flApply_(k, e, 1); F.list().push(e); });
   flSort_(k); xferSnap_(add.reduce(function(m,r){ return r.date>m?r.date:m; },''));
   S.flUp[k]=null; flErr_(k, ''); render(); toast('Added '+add.length+' '+F.many+' — '+money(tot,true));
@@ -1140,7 +1154,7 @@ function flHistHtml_(k){
   return h+Object.keys(mo).sort().reverse().map(function(m){ var M=mo[m], tot=M.reduce(function(s2,x){ return s2+x.amt; },0);
     return '<div class="xfMonth"><div class="xfMonthHead"><b>'+monthName_(m)+'</b><span class="dsub" style="display:inline">'+M.length+' · '+money(tot,true)+'</span></div>'+
       M.map(function(x){ return '<div class="xfLine"><div><b>'+esc(x.type)+'</b> <span class="dsub" style="display:inline">'+date(x.date)+(x.src==='file'?' · from '+esc(x.file||'a file'):'')+'</span></div>'+
-        (x.who||x.memo ? '<div class="xfMemo" style="font-style:normal">'+esc([x.who, x.memo].filter(Boolean).join(' · '))+'</div>' : '')+
+        (x.who||x.memo||x.bank ? '<div class="xfMemo" style="font-style:normal">'+esc([x.bank?(F.sign<0?'out of ':'into ')+bankLabel_(x.bank):'', x.who, x.memo].filter(Boolean).join(' · '))+'</div>' : '')+
         '<div class="dsub">'+x.split.map(function(sp){ var f=fundOf_(sp.f); return esc(f?f.name:sp.f)+' '+money(sp.amt,true); }).join(' · ')+'</div>'+
         '<b class="xfAmt '+(F.sign<0?'out':'in')+'">'+(F.sign<0?'−':'+')+money(x.amt,true)+'</b><button class="delBtn" data-fdel="'+k+'|'+x.id+'">✕ Take out</button></div>'; }).join('')+'</div>'; }).join('');
 }
@@ -1576,6 +1590,7 @@ document.addEventListener('change', function(e){
   if(ds.ftype){ sp_=ds.ftype.split('|'); var ru=flUp_(sp_[0]).rows[+sp_[1]]; ru.type=e.target.value; ru.fund=''; ru.answered=true; flErr_(sp_[0], ''); render(); return; }
   if(ds.ffund){ sp_=ds.ffund.split('|'); var rf2=flUp_(sp_[0]).rows[+sp_[1]]; rf2.fund=e.target.value; rf2.answered=true; render(); return; }
   if(ds.fpldate){ var Up=flUp_(ds.fpldate); Up.date=e.target.value; Up.rows.forEach(function(r){ r.date=e.target.value; }); return; }
+  if(ds.fbankall){ flUp_(ds.fbankall).bank=e.target.value; render(); return; }
   if(ds.frem){ (S.flRem=S.flRem||{})[ds.frem]=e.target.checked; return; }
   if(ds.f1sel){ sp_=ds.f1sel.split('|'); var D1=flOne_(sp_[0]); D1[sp_[1]]=e.target.value; if(sp_[1]==='type'){ D1.fund=''; flErr_(sp_[0], ''); render(); } else { var pv1=document.getElementById('fl_'+sp_[0]+'_prev'); if(pv1) pv1.innerHTML=flOnePrevHtml_(sp_[0]); } return; }
   if(e.target.id==='inDebtFile' && e.target.files[0]){ debtReadFile_(e.target.files[0]); return; }
