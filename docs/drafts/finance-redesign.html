@@ -436,13 +436,19 @@ button.tick.done{ background:var(--good); }
 .advOld{ display:inline-flex; align-items:center; justify-content:center; background:#FFD84D; border-radius:6px; padding:0 4px; margin-right:5px; font-size:12px; line-height:18px; }
 .advOldLine{ margin-top:10px; background:color-mix(in srgb, #FFD84D 30%, var(--surface)); border:1px solid #E8B800; border-radius:10px; padding:7px 10px; font-size:13px; font-weight:600; color:var(--ink); }
 .ledWrap{ overflow-x:auto; margin-top:8px; border:1px solid var(--line); border-radius:10px; }
-.ledTbl{ width:100%; min-width:820px; border-collapse:collapse; font-size:13.5px; }
+.ledTbl{ width:100%; min-width:1040px; border-collapse:collapse; font-size:13.5px; }
 .ledTbl th{ text-align:left; font-size:12px; font-weight:700; color:var(--muted); background:var(--surface2); padding:8px 10px; white-space:nowrap; border-bottom:1px solid var(--line); }
 .ledTbl th.r{ text-align:right; }
 .ledTbl td{ padding:8px 10px; border-bottom:1px solid var(--line); }
 .ledTbl td.r{ text-align:right; font-variant-numeric:tabular-nums; }
 .ledTbl .nw{ white-space:nowrap; }
 .ledNo{ color:var(--muted); }
+.ledCheck{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:10px; padding:10px 12px; border-radius:10px; background:var(--surface2); }
+.ledCheck small{ display:block; font-size:11.5px; color:var(--muted); }
+.ledCheck b{ font-variant-numeric:tabular-nums; font-size:14px; }
+.ledCheck p{ grid-column:1/-1; margin:2px 0 0; font-size:13px; font-weight:700; }
+.ledCheck.ok p{ color:var(--good); }
+.ledCheck.off p{ color:var(--bad); }
 .ledEmpty{ color:var(--muted); text-align:left; padding:18px 10px !important; }
 .catList{ border-top:1px solid var(--line); margin-top:6px; }
 .catGrp{ border-bottom:1px solid var(--line); padding:4px 0; }
@@ -691,10 +697,12 @@ function inAlSave_(){
   var day=reportDay_(); if(!err && (!day || day>TODAY)) err='Pick a “Reports as of” day at the top that isn’t in the future.';
   S.inAlErr=err; if(err){ render(); return; }
   snap_('Put back the allocations from before');
+  var alBefore=MANUAL_ALLOCS.length ? allocSnap_(day).groups : null;   /* the first one starts from nothing */
   if(ALLOC_ASOF!==day) ALLOC_PREV_ASOF=ALLOC_ASOF; ALLOC_ASOF=day;
   ALLOC.forEach(function(g){ g.prev=g.amt; g.items.forEach(function(it, i){ it[1]=+inAlNum_(g.id,i).toFixed(2); }); g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); });
   var gap=total()-ALLOC.reduce(function(s2,g){ return s2+g.amt; },0);
   S.alSaved=true;
+  MANUAL_ALLOCS.push({ id:'m'+Date.now().toString(36), at:Date.now(), date:day, before:alBefore, after:allocSnap_(day).groups });
   ALLOC_HIST=ALLOC_HIST.filter(function(x){ return x.asOf!==day; }); ALLOC_HIST.push(allocSnap_(day)); ALLOC_HIST.sort(function(x,y){ return x.asOf<y.asOf?1:-1; });
   keep_();
   S.inAl=null; render(); toast(Math.abs(gap)<0.005 ? 'Saved — every dollar is allocated' : 'Saved — '+money(Math.abs(gap),true)+(gap>0?' still not allocated':' over what is in hand'));
@@ -722,7 +730,7 @@ function catRekey_(o, n, oName, nName, oGid, nGid){
   Object.keys(EXP_HINT).forEach(function(t){ EXP_HINT[t]=fx(EXP_HINT[t]); });
   ADV_SCHOOL_FUNDS=ADV_SCHOOL_FUNDS.map(fx);
   /* the saved reports: the same sub-category, under its new name or in its new category */
-  var snaps=ALLOC_HIST.slice(); Object.keys(PUBLISHED).forEach(function(d){ if(PUBLISHED[d] && PUBLISHED[d].groups) snaps.push(PUBLISHED[d]); });
+  var snaps=ALLOC_HIST.slice(); MANUAL_ALLOCS.forEach(function(m){ snaps.push({ groups:m.after }); if(m.before) snaps.push({ groups:m.before }); }); Object.keys(PUBLISHED).forEach(function(d){ if(PUBLISHED[d] && PUBLISHED[d].groups) snaps.push(PUBLISHED[d]); });
   snaps.forEach(function(e){ var G=e.groups||{}, from=G[oGid]||[], hit=from.filter(function(x){ return x[0]===oName; })[0]; if(!hit) return;
     G[oGid]=from.filter(function(x){ return x!==hit; });
     var to=G[nGid]=G[nGid]||[], same=to.filter(function(x){ return x[0]===nName; })[0];
@@ -803,7 +811,8 @@ function catRestore_(idx){ var d=DELETED_FUNDS[idx]; if(!d) return;
   }
   DELETED_FUNDS.splice(idx,1); catAfter_('Brought “'+d.name+'” back'); }
 /* ---- Input: detailed breakdown — every transaction, one line each (headings only for now) ---- */
-var LEDGER_COLS=['Date','Account','Transaction type','Name','Memo','Amount','Category','Approved'];
+var LEDGER_COLS=['Date','Account','Transaction type','Name','Memo','Amount','Category','Category amount','Approved'];
+var MANUAL_ALLOCS=[];   /* each time Allocations is saved by hand: { id, at, date, before (null = from nothing), after } */
 /* the lines, built from what has been entered. So far only balance entries: what is typed under
    🏦 Balances comes straight from the bank and the cash box, so it is the gold standard — one line
    per account per day. Approved = the approved report that day's balances are in. */
@@ -812,15 +821,33 @@ function ledgerLines_(){ var L=[];
     var inP=Object.keys(PUBLISHED).filter(function(d){ var b=PUBLISHED[d].bal; return b && b.asOf===r.asOf && b.aba===r.aba && b.us===r.us && b.cash===r.cash; }).sort()[0]||'';
     [['aba','ABA bank'],['us','US bank'],['cash','Cash on hand']].forEach(function(a){
       L.push({ date:r.asOf, at:r.at||0, acct:a[1], type:'Balance entry', name:'', memo:'', amt:r[a[0]], cat:'', appr:inP }); }); });
-  return L.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; }); }
+  /* manual allocations: giving money its home. Not income — a movement, so it goes in the
+     Category amount column, as the opposite of the real money it gives a home to: balances +
+     category amounts come to $0 when every dollar has a home. Each line is what that save
+     changed for that sub-category (the first one: the whole amount). */
+  MANUAL_ALLOCS.forEach(function(m){
+    var pd=Object.keys(PUBLISHED).filter(function(d){ return d>=m.date && (PUBLISHED[d].at||0)>=(m.at||0); }).sort()[0]||'';
+    var keys={}; [m.before||{}, m.after].forEach(function(G){ Object.keys(G).forEach(function(g){ (G[g]||[]).forEach(function(it){ keys[g+'|'+it[0]]=1; }); }); });
+    var amt=function(G, k){ if(!G) return 0; var g=k.split('|')[0], n=k.slice(g.length+1), it=(G[g]||[]).filter(function(x){ return x[0]===n; })[0]; return it?it[1]:0; };
+    var order=fundList_().map(function(f){ return f.k; });
+    Object.keys(keys).sort(function(a,b){ var ia=order.indexOf(a), ib=order.indexOf(b); return (ia<0?999:ia)-(ib<0?999:ib); }).forEach(function(k){
+      var d=Math.round((amt(m.after,k)-amt(m.before,k))*100)/100; if(Math.abs(d)<0.005) return;
+      L.push({ date:m.date, at:m.at||0, acct:'', type:'Manual allocation', name:'', memo:'', amt:null, cat:fundLabel_(k), camt:-d, appr:pd }); }); });
+  return L.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:(x.type===y.type?0:(x.type==='Balance entry'?-1:1)); }); }
+/* does every dollar have a home? the newest balances (the gold standard) + every category amount */
+function ledgerCheck_(L){ var b=BAL_DAYS[0], real=b?Math.round((b.aba+b.us+b.cash)*100)/100:0, cat=Math.round(L.reduce(function(s2,x){ return s2+(x.camt||0); },0)*100)/100;
+  return { day:b?b.asOf:'', real:real, cat:cat, sum:Math.round((real+cat)*100)/100 }; }
 function inLedgerHtml_(){
   var open=S.foldOpen&&S.foldOpen.ledger;
   return '<details class="inCard fold" id="inLedger" data-fold="ledger"'+(open?' open':'')+'><summary class="foldHead"><span><b>📒 Detailed breakdown</b><span class="dsub">'+(function(){ var n=ledgerLines_().length; return n ? n+' line'+(n>1?'s':'') : 'Every transaction, line by line'; })()+'</span></span><span class="foldR"><span class="chev">▾</span></span></summary>'+
     '<p class="inLast">Where every transaction is kept — one line each, with its date and all its details. On a phone, swipe the table sideways to see every column.</p>'+
-    '<div class="ledWrap"><table class="ledTbl"><thead><tr>'+LEDGER_COLS.map(function(c){ return '<th'+(c==='Amount'?' class="r"':'')+'>'+c+'</th>'; }).join('')+'</tr></thead>'+
+    (function(){ var L=ledgerLines_(); if(!L.length) return ''; var c=ledgerCheck_(L), ok=Math.abs(c.sum)<0.005;
+      return '<div class="ledCheck '+(ok?'ok':'off')+'"><div><small>Real money'+(c.day?' · balances '+date(c.day):'')+'</small><b>'+money(c.real,true)+'</b></div><div><small>Category amounts</small><b>'+(c.cat<0?'−':'')+money(Math.abs(c.cat),true)+'</b></div>'+
+        '<div><small>Together</small><b>'+(c.sum<0?'−':'')+money(Math.abs(c.sum),true)+'</b></div><p>'+(ok?'✓ Every dollar has a home':(c.sum>0?'⚠️ '+money(c.sum,true)+' has no home yet':'⚠️ '+money(-c.sum,true)+' more is given a home than there is'))+'</p></div>'; })()+
+    '<div class="ledWrap"><table class="ledTbl"><thead><tr>'+LEDGER_COLS.map(function(c){ return '<th'+(c==='Amount'||c==='Category amount'?' class="r"':'')+'>'+c+'</th>'; }).join('')+'</tr></thead>'+
     '<tbody>'+(function(){ var L=ledgerLines_(); if(!L.length) return '<tr><td colspan="'+LEDGER_COLS.length+'" class="ledEmpty">No transactions yet.</td></tr>';
       return L.map(function(x){ return '<tr><td class="nw">'+date(x.date)+'</td><td class="nw">'+esc(x.acct)+'</td><td class="nw">'+esc(x.type)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.memo)+'</td>'+
-        '<td class="r nw">'+money(x.amt,true)+'</td><td>'+esc(x.cat)+'</td><td class="nw">'+(x.appr?'✅ '+date(x.appr):'<span class="ledNo">Not yet</span>')+'</td></tr>'; }).join(''); })()+'</tbody></table></div></details>';
+        '<td class="r nw">'+(x.amt==null?'':money(x.amt,true))+'</td><td class="nw">'+esc(x.cat)+'</td><td class="r nw">'+(x.camt==null?'':(x.camt<0?'−':'')+money(Math.abs(x.camt),true))+'</td><td class="nw">'+(x.appr?'✅ '+date(x.appr):'<span class="ledNo">Not yet</span>')+'</td></tr>'; }).join(''); })()+'</tbody></table></div></details>';
 }
 function inCatsHtml_(){
   var open=S.foldOpen&&S.foldOpen.cats, n=0, E=S.catEdit||''; ALLOC.forEach(function(g){ n+=g.items.length; });
@@ -2480,7 +2507,7 @@ document.getElementById('themeBtn').onclick=function(){
    preview never wipes it. The real app will save to the server instead. */
 var KEEP_KEY='gp-fin-draft-v1';
 var FUND_RENAMES={ 'Office':'Office/General' };   /* old fund name → new, for anything already saved */
-function stateObj_(){ return { bal:BAL_DAYS, alloc:ALLOC.map(function(g){ return { id:g.id, prev:g.prev, items:g.items }; }), struct:catStruct_(), deletedFunds:DELETED_FUNDS,
+function stateObj_(){ return { bal:BAL_DAYS, alloc:ALLOC.map(function(g){ return { id:g.id, prev:g.prev, items:g.items }; }), struct:catStruct_(), deletedFunds:DELETED_FUNDS, manualAllocs:MANUAL_ALLOCS,
   allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, incTypes:INC_TYPES, incRules:INC_RULES, published:PUBLISHED, dayDone:DAY_DONE, expTypes:EXP_TYPES, expRules:EXP_RULES, expenses:EXPENSES, expMap:EXP_MAP, transfers:TRANSFERS, toolXfers:TOOL_XFERS, incomes:INCOMES, advances:ADVANCES, incMap:INC_MAP, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved }; }
 function keep_(){ var u=typeof UNDO!=='undefined' && UNDO[UNDO.length-1]; if(u && u.open){ u.after=JSON.parse(JSON.stringify(stateObj_())); delete u.open; undoSave_(); }
   try { localStorage.setItem(KEEP_KEY, JSON.stringify(stateObj_())); } catch(e){} }
@@ -2488,7 +2515,7 @@ function keep_(){ var u=typeof UNDO!=='undefined' && UNDO[UNDO.length-1]; if(u &
 var PRISTINE=JSON.parse(JSON.stringify({ alloc:ALLOC, allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF,
   debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file||'', src:DEBT.src }, incTypes:INC_TYPES, incRules:INC_RULES, expTypes:EXP_TYPES, expRules:EXP_RULES }));
 function resetState_(){ var P=JSON.parse(JSON.stringify(PRISTINE));
-  ALLOC.length=0; P.alloc.forEach(function(g){ g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); ALLOC.push(g); }); DELETED_FUNDS=[];
+  ALLOC.length=0; P.alloc.forEach(function(g){ g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); ALLOC.push(g); }); DELETED_FUNDS=[]; MANUAL_ALLOCS=[];
   ALLOC_ASOF=P.allocAsOf; ALLOC_PREV_ASOF=P.allocPrevAsOf; DEBT.asOf=P.debt.asOf; DEBT.people=P.debt.people; DEBT.file=P.debt.file; DEBT.src=P.debt.src;
   INC_TYPES=P.incTypes; INC_RULES=P.incRules; EXP_TYPES=P.expTypes; EXP_RULES=P.expRules; EXPENSES=[]; EXP_MAP={}; BAL_DAYS=[]; TRANSFERS=[]; TOOL_XFERS=[]; ADVANCES=[]; PUBLISHED={}; DAY_DONE={}; INCOMES=[]; INC_MAP={}; ALLOC_HIST=[]; DEBT_HIST=[]; DEBT_LINKS={}; S.alSaved=false; }
 function loadState_(k){ if(!k) return;
@@ -2496,6 +2523,12 @@ function loadState_(k){ if(!k) return;
     ALLOC.length=0; k.struct.forEach(function(c){ var g={ id:c.id, name:c.name, eg:c.eg||'', c:c.c, dark:!!c.dark, single:!!c.single, note:c.note||'', prev:wasPrev[c.id]||0,
       items:(c.items||[]).map(function(n){ return [n, was[c.id+'|'+n]||0]; }) }; g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); ALLOC.push(g); }); }
   if(Array.isArray(k.deletedFunds)) DELETED_FUNDS=k.deletedFunds;
+  if(Array.isArray(k.manualAllocs)) MANUAL_ALLOCS=k.manualAllocs;
+  else {   /* saved before manual allocations were kept: the first allocations saved become the first one — the approved day's if there is one */
+    var pdays=Object.keys(k.published||{}).filter(function(d){ return k.published[d] && k.published[d].groups; }).sort(), real=(k.alHist||[]).filter(function(r){ return !r.sample; }).sort(function(x,y){ return x.asOf<y.asOf?-1:1; });
+    if(pdays.length) MANUAL_ALLOCS=[{ id:'m0', at:0, date:pdays[0], before:null, after:JSON.parse(JSON.stringify(k.published[pdays[0]].groups)), from:'approved' }];
+    else if(real.length) MANUAL_ALLOCS=[{ id:'m0', at:0, date:real[0].asOf, before:null, after:JSON.parse(JSON.stringify(real[0].groups)), from:'saved' }];
+  }
   if(Array.isArray(k.bal)) BAL_DAYS=k.bal;
   if(k.published && typeof k.published==='object') PUBLISHED=k.published;
   if(k.dayDone && typeof k.dayDone==='object') DAY_DONE=k.dayDone;

@@ -104,18 +104,38 @@ Income.
 
 ### 📒 Detailed breakdown
 - Where every transaction is kept, one line each. Columns: **Date · Account · Transaction type ·
-  Name · Memo · Amount · Category · Approved** (`LEDGER_COLS`, `inLedgerHtml_`, `ledgerLines_`).
+  Name · Memo · Amount · Category · Category amount · Approved** (`LEDGER_COLS`,
+  `inLedgerHtml_`, `ledgerLines_`).
+- **Two money columns:**
+  - **Amount** is real money — what is in, or moves through, a bank account or the cash box.
+  - **Category amount** is money being given its *home* (a category). It is not income; it moves
+    money, so it never touches Amount.
+  - The two are signed so that **real money + category amounts = $0 when every dollar has a
+    home**: real money is +, a category getting its home is −.
 - **Approved** says which approved report a line is in (✅ and that day), or "Not yet".
 - The lines are built from what has been entered — nothing is typed into the breakdown itself.
-  Newest day first.
-- **So far only balance entries** (23 Nov 2026). The balances come straight from the bank and the
-  cash box, so they are the **gold standard**. Each day under 🏦 Balances gives three lines —
-  ABA bank, US bank, Cash on hand — transaction type **Balance entry**, the amount typed, Name /
-  Memo / Category blank. Approved: the approved day whose frozen balances are that same day with
-  the same three amounts (re-typing an approved day's balances makes the new lines "Not yet").
-- Still to decide before income, expenses, transfers and advances go in: how each fills the
-  columns (a transfer has two accounts or two categories; an income split by a formula touches
-  several categories).
+  Newest day first; within a day, balance entries first.
+- **Balance entry** (from 🏦 Balances) — the **gold standard**: straight from the bank and the cash
+  box. Each balances day gives three lines (ABA bank, US bank, Cash on hand) with the Amount
+  typed; Name, Memo, Category blank. Approved: the approved day whose frozen balances are that
+  same day with the same three amounts.
+- **Manual allocation** (from saving 📊 Allocations by hand, `MANUAL_ALLOCS`) — one line per
+  sub-category the save changed, in **Category amount**: −(what it changed by). The first manual
+  allocation starts from nothing, so its lines are the whole amounts. A later one only has the
+  sub-categories whose amount was changed (moving $100 Kitchen → Hospitality by re-typing =
+  Kitchen +$100, Hospitality −$100). Account, Name, Memo, Amount blank. Approved: the first
+  approved day on or after it that was approved after it was saved.
+  - Data saved before manual allocations were kept gets one from the first approved day's
+    allocations (else the first saved allocations day) when it is opened.
+  - Category renames and moves carry into them (`catRekey_`).
+- **The check above the table** (`ledgerCheck_`): real money = the newest balances day's total
+  (balances are levels, not movements, so only the newest counts) + every Category amount.
+  $0 → "✓ Every dollar has a home"; otherwise how much has no home, or how much more is given a
+  home than there is.
+- Not in it yet: income, expenses, transfers, Financial tools, advances. Until they are, the check
+  is only right when nothing of those has happened since the newest balances. Still to decide:
+  how each fills the columns (a transfer has two accounts or two categories; an income split by
+  a formula touches several categories).
 
 ---
 
