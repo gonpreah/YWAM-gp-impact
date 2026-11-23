@@ -931,16 +931,25 @@ function flOneHtml_(k){
   return '<div class="xfGrid"><div class="xfRow"><div><label class="f" for="'+p+'date">Date</label><input type="date" id="'+p+'date" data-f1="'+k+'|date" max="'+TODAY+'" value="'+esc(D.date)+'"></div>'+
     '<div><label class="f" for="'+p+'amt">Amount</label><div class="money"><span>$</span><input id="'+p+'amt" data-f1="'+k+'|amt" type="text" inputmode="text" autocomplete="off" placeholder="0.00" value="'+esc(D.amt)+'"></div></div></div>'+
     '<label class="f" for="'+p+'type">'+F.kindLabel+'</label>'+flTypeSelect_(k, 'id="'+p+'type" data-f1sel="'+k+'|type"', D.type, '— Kind of '+F.one+' —')+
-    (noRule ? '<label class="f" for="'+p+'fund">“'+esc(D.type)+'” has no formula yet — which fund '+(F.sign<0?'pays for it':'does it go to')+'?</label>'+fundSelect_(p+'fund', D.fund, 'Fund').replace('<select ','<select data-f1sel="'+k+'|fund" ') : '')+
+    (F.sign<0 ? flPaidFromHtml_(k, D, p)
+      : (noRule ? '<label class="f" for="'+p+'fund">“'+esc(D.type)+'” has no formula yet — which fund does it go to?</label>'+fundSelect_(p+'fund', D.fund, 'Fund').replace('<select ','<select data-f1sel="'+k+'|fund" ') : ''))+
     '<label class="f" for="'+p+'who">'+F.whoLabel+'</label><input type="text" id="'+p+'who" data-f1="'+k+'|who" maxlength="80" placeholder="'+esc(F.whoPh)+'" value="'+esc(D.who)+'">'+
     '<label class="f" for="'+p+'memo">Memo (optional)</label><input type="text" id="'+p+'memo" data-f1="'+k+'|memo" maxlength="200" value="'+esc(D.memo)+'"></div>'+
     '<div id="'+p+'prev">'+flOnePrevHtml_(k)+'</div>'+
     ((S.flErr||{})[k] ? '<p class="inErr" role="alert">⚠️ '+esc(S.flErr[k])+'</p>' : '')+
     '<div class="inBtns"><button class="btn" id="'+p+'save1">'+F.addBtn+'</button></div>';
 }
+function flPaidFromHtml_(k, D, p){
+  var F=FK[k], r=D.type ? (F.rules()[D.type]||[]) : [], sel=fundSelect_(p+'fund', D.fund, 'Paid from');
+  var first = r.length ? 'By its formula — '+r.map(function(x){ var f=fundOf_(x.f); return (r.length>1?x.p+'% ':'')+(f?f.name:x.f); }).join(', ') : (D.type ? '— Pick a fund —' : '— Pick the kind first, or a fund —');
+  sel=sel.replace('<option value="">— Pick a fund —</option>', '<option value="">'+esc(first)+'</option>').replace('<select ','<select data-f1sel="'+k+'|fund" ');
+  return '<label class="f" for="'+p+'fund">Paid from — which category</label>'+sel+
+    (D.fund && r.length ? '<div class="ls" style="font-size:12px;color:var(--muted);margin-top:3px">All of it comes off '+esc(fundOf_(D.fund)?fundOf_(D.fund).name:D.fund)+' this time, not by the formula.</div>' : '');
+}
+function flOneSplit_(k, D, a){ return (FK[k].sign<0 && D.fund) ? [{ f:D.fund, amt:a }] : flSplit_(k, D.type, a, D.fund); }
 function flOnePrevHtml_(k){
   var F=FK[k], D=flOne_(k), a=calc_(D.amt); if(!D.type || isNaN(a) || a<=0) return '';
-  var sp=flSplit_(k, D.type, a, D.fund); if(!sp) return '';
+  var sp=flOneSplit_(k, D, a); if(!sp) return '';
   return '<div class="ruleEg" style="margin-top:10px"><div class="dsub">'+money(a,true)+(F.sign<0?' comes off:':' goes to:')+'</div><ul>'+sp.map(function(x){ var f=fundOf_(x.f), now=fundAmt_(x.f), after=now+F.sign*x.amt;
     return '<li><span>'+esc(f?f.name:x.f)+'</span><b'+(after<-0.004?' class="late"':'')+'>'+(F.sign<0?'−':'')+money(x.amt,true)+'</b></li>'; }).join('')+'</ul>'+
     (F.sign<0 && sp.some(function(x){ return fundAmt_(x.f)-x.amt<-0.004; }) ? '<div class="badc" style="margin-top:4px">This takes a fund below zero.</div>' : '')+'</div>';
@@ -949,9 +958,9 @@ function flErr_(k, m){ S.flErr=S.flErr||{}; S.flErr[k]=m; }
 function flOneSave_(k){
   var F=FK[k], D=flOne_(k), a=calc_(D.amt), err='';
   if(!D.date||D.date>TODAY) err='Pick the day (not in the future).'; else if(isNaN(a)||a<=0) err='Type an amount more than 0.';
-  else if(!D.type) err='Pick what it '+(F.sign<0?'was for':'is')+'.'; else if(!flSplit_(k, D.type, a, D.fund)) err='Pick which fund.';
+  else if(!D.type) err='Pick what it '+(F.sign<0?'was for':'is')+'.'; else if(!flOneSplit_(k, D, a)) err=F.sign<0?'Pick which category it is paid from.':'Pick which fund.';
   flErr_(k, err); if(err){ render(); return; }
-  var e={ id:k[0]+Date.now().toString(36), date:D.date, amt:a, type:D.type, who:String(D.who||'').trim(), memo:String(D.memo||'').trim(), split:flSplit_(k, D.type, a, D.fund), src:'manual' };
+  var e={ id:k[0]+Date.now().toString(36), date:D.date, amt:a, type:D.type, who:String(D.who||'').trim(), memo:String(D.memo||'').trim(), split:flOneSplit_(k, D, a), src:'manual' };
   snap_('Removed '+money(a,true)+' '+e.type+' '+F.one+(e.who?(F.sign<0?' paid to ':' from ')+e.who:''));
   flApply_(k, e, 1); F.list().unshift(e); flSort_(k); xferSnap_(e.date);
   S.fl1[k]={ date:D.date, amt:'', type:'', who:'', memo:'', fund:'' }; render(); toast('Added '+money(a,true)+' — '+e.type);
