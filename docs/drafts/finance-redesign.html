@@ -257,6 +257,9 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .asOfBar{ font-size:13px; color:var(--muted); padding:12px 0 0; display:flex; flex-wrap:wrap; gap:4px 6px; align-items:center; }
 .asOfBar b{ color:var(--ink); }
 .asOfBar .warn{ color:var(--amberDeep); font-weight:600; }
+.daySel{ font:inherit; font-weight:700; color:var(--ink); background:var(--surface); border:1px solid color-mix(in srgb, var(--muted) 40%, transparent); border-radius:8px; padding:4px 6px; }
+.asOfBar label{ cursor:pointer; }
+.pastNote{ margin-top:8px; background:var(--banner, #FFF1D6); color:#5C4A1E; border-radius:10px; padding:8px 12px; font-size:13px; }
 .asOfBar .sep{ margin:0 2px; }
 .inHead{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
 .inHead h2{ margin:0 0 2px; }
@@ -854,10 +857,39 @@ function flowSheetHtml_(kind){
     '</tbody><tfoot><tr><td class="nm">TOTAL</td>'+used.map(function(k){ return '<td>'+cell(colTot(k))+'</td>'; }).join('')+'<td class="tot">'+cell(all)+'</td></tr></tfoot></table></div></div>'+
     '<p class="hint" style="margin-top:10px">US$. '+F.tHint+' On a phone, swipe the table sideways.</p>';
 }
+/* ---- the Dashboard can show any day that has numbers: the latest by default ---- */
+function reportDays_(){ var d={}; BAL_DAYS.forEach(function(r){ d[r.asOf]=1; }); ALLOC_HIST.forEach(function(r){ if(!r.sample) d[r.asOf]=1; });
+  return Object.keys(d).sort().reverse(); }
+function debtDays_(){ var d={}; DEBT_HIST.forEach(function(r){ d[r.asOf]=1; }); d[DEBT.asOf]=1; return Object.keys(d).sort().reverse(); }
+/* lay the chosen day's numbers over the page's state while the Dashboard draws; give back an undo */
+function viewApply_(){
+  var undo=[], days=reportDays_(), day=S.viewDay && days.indexOf(S.viewDay)>=0 ? S.viewDay : null;
+  if(day && day!==days[0]){
+    var keepBal=JSON.stringify(BAL), keepDays=BAL_DAYS;
+    BAL_DAYS=keepDays.filter(function(r){ return r.asOf<=day; }); refreshBal_();
+    undo.push(function(){ BAL_DAYS=keepDays; var o=JSON.parse(keepBal); Object.keys(o).forEach(function(k){ BAL[k]=o[k]; }); });
+    var snaps=ALLOC_HIST.filter(function(r){ return !r.sample && r.asOf<=day; });
+    if(snaps.length){ var cur=snaps[0], pv=snaps[1], keepAl=ALLOC.map(function(g){ return { items:g.items, amt:g.amt, prev:g.prev }; }), keepAs=[ALLOC_ASOF, ALLOC_PREV_ASOF];
+      ALLOC.forEach(function(g){ var it=(cur.groups[g.id]||[]).map(function(x){ return [x[0], x[1]]; }); g.items=it.length?it:g.items.map(function(x){ return [x[0],0]; });
+        g.amt=g.items.reduce(function(s2,x){ return s2+x[1]; },0); g.prev= pv ? (pv.groups[g.id]||[]).reduce(function(s2,x){ return s2+x[1]; },0) : g.amt; });
+      ALLOC_ASOF=cur.asOf; ALLOC_PREV_ASOF= pv ? pv.asOf : cur.asOf;
+      undo.push(function(){ ALLOC.forEach(function(g, i){ g.items=keepAl[i].items; g.amt=keepAl[i].amt; g.prev=keepAl[i].prev; }); ALLOC_ASOF=keepAs[0]; ALLOC_PREV_ASOF=keepAs[1]; }); }
+  }
+  var dd=debtDays_(), dday=S.viewDebtDay && dd.indexOf(S.viewDebtDay)>=0 ? S.viewDebtDay : null;
+  if(dday && dday!==DEBT.asOf){ var e=DEBT_HIST.filter(function(r){ return r.asOf===dday; })[0];
+    if(e){ var kp=DEBT.people, ka=DEBT.asOf, ks=DEBT.src; DEBT.people=e.people; DEBT.asOf=e.asOf; DEBT.src='A/R Ageing Summary'+(e.file?' · '+e.file:'');
+      undo.push(function(){ DEBT.people=kp; DEBT.asOf=ka; DEBT.src=ks; }); } }
+  return function(){ undo.reverse().forEach(function(f){ f(); }); };
+}
 function asOfBarHtml_(){
-  var same=BAL.asOf===ALLOC_ASOF;
-  return '<div class="asOfBar">📅 Reports as of <b>'+(BAL.asOf?date(BAL.asOf):'—')+'</b>'+(same||!BAL.asOf?'':' <span class="warn">· allocations as of '+date(ALLOC_ASOF)+'</span>')+
-    '<span class="sep">·</span>💳 Staff debt as of <b>'+date(DEBT.asOf)+'</b></div>';
+  var days=reportDays_(), dd=debtDays_(), latest=days[0], cur=S.viewDay && days.indexOf(S.viewDay)>=0 ? S.viewDay : latest;
+  var dcur=S.viewDebtDay && dd.indexOf(S.viewDebtDay)>=0 ? S.viewDebtDay : DEBT.asOf;
+  var sel=function(id, list, val, top){ return '<select id="'+id+'" class="daySel">'+list.map(function(d){ return '<option value="'+d+'"'+(d===val?' selected':'')+'>'+date(d)+(d===top?' · latest':'')+'</option>'; }).join('')+'</select>'; };
+  var h='<div class="asOfBar"><label for="viewDay">📅 Reports as of</label>'+(days.length ? sel('viewDay', days, cur, latest) : '<b>—</b>')+
+    (BAL.asOf && ALLOC_ASOF!==BAL.asOf ? '<span class="warn">· allocations as of '+date(ALLOC_ASOF)+'</span>' : '')+
+    '<span class="sep">·</span><label for="viewDebtDay">💳 Staff debt as of</label>'+sel('viewDebtDay', dd, dcur, dd[0])+'</div>';
+  if((cur && cur!==latest) || (dcur && dcur!==dd[0])) h+='<div class="pastNote">🕘 You’re looking at an earlier day. <button class="more" id="viewLatest" style="padding:0">Back to the latest</button></div>';
+  return h;
 }
 function nextHtml(){
   return '<section class="sec"><p class="hint" style="margin:0">Next on the dashboard: the other reports (Profit and Loss, Burn Rate…) — each a short summary here, with its details a tap away.</p></section>';
@@ -865,7 +897,7 @@ function nextHtml(){
 function soon(icon, title, line){ return '<div class="soon"><div class="big">'+icon+'</div><h3>'+title+'</h3><div>'+line+'</div></div>'; }
 function render(){
   var p=document.getElementById('pane');
-  if(S.tab==='dash') p.innerHTML=asOfBarHtml_()+balancesHtml()+allocHtml()+debtHtml()+flowHtml('inc')+flowHtml('exp')+nextHtml();
+  if(S.tab==='dash'){ var undo=viewApply_(); try { p.innerHTML=asOfBarHtml_()+balancesHtml()+allocHtml()+debtHtml()+flowHtml('inc')+flowHtml('exp')+nextHtml(); } finally { undo(); } }
   else if(S.tab==='input') p.innerHTML=inputHtml();
   else if(S.tab==='tasks') p.innerHTML=soon('✅','Tasks','The Finances office’s GP Tasks list — as on every ministry.');
   else p.innerHTML=soon('🎯','OKRs','The Finances office’s objectives for the quarter — as on every ministry.');
@@ -908,6 +940,10 @@ function histHtml_(kind){
   return '';
 }
 function sheet(which){
+  var undo=/^hist-/.test(which) ? function(){} : viewApply_();   /* Details follow the day the Dashboard shows */
+  try { return sheetInner_(which); } finally { undo(); }
+}
+function sheetInner_(which){
   var T=total(), h='<button class="x" id="sx" aria-label="Close">✕</button>';
   if(/^hist-/.test(which)){
     h+=histHtml_(which.slice(5));
@@ -941,6 +977,8 @@ document.getElementById('scrim').onclick=closeSheet;
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSheet(); });
 
 document.addEventListener('change', function(e){
+  if(e.target.id==='viewDay'){ S.viewDay=e.target.value; render(); return; }
+  if(e.target.id==='viewDebtDay'){ S.viewDebtDay=e.target.value; render(); return; }
   if(e.target.id==='ruleType'){ S.ruleType=e.target.value; S.ruleErr=''; render(); return; }
   var rf=e.target.dataset && e.target.dataset.rulefund; if(rf!=null){ ruleRows_(S.ruleType||INC_TYPES[0])[+rf].f=e.target.value; S.ruleErr=''; render(); return; }
   if(e.target.id==='inDebtFile' && e.target.files[0]){ debtReadFile_(e.target.files[0]); return; }
@@ -978,6 +1016,7 @@ document.addEventListener('input', function(e){
   var el=document.getElementById('inTotal'); if(el) el.innerHTML=inTotalHtml_();   /* no re-render, so typing is never lost */
 });
 document.addEventListener('click', function(e){
+  if(e.target.id==='viewLatest'){ S.viewDay=null; S.viewDebtDay=null; render(); return; }
   if(e.target.id==='inBalSave'){ inSave_(); return; }
   if(e.target.id==='ruleAdd'){ ruleRows_(S.ruleType||INC_TYPES[0]).push({ f:'', p:'' }); render(); return; }
   if(e.target.id==='ruleSave'){ ruleSave_(); return; }
