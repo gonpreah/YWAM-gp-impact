@@ -392,6 +392,8 @@ label.f{ display:block; font-size:12.5px; font-weight:600; margin:6px 0 4px; }
 .liveBanner{ margin-top:10px; background:color-mix(in srgb, var(--amber, #FFB323) 16%, var(--surface)); border:1px solid color-mix(in srgb, var(--amber, #FFB323) 60%, transparent); border-radius:10px; padding:9px 12px; font-size:13px; }
 .liquid.est{ background:repeating-linear-gradient(135deg, var(--headerBg), var(--headerBg) 14px, color-mix(in srgb, var(--headerBg) 88%, #FFB323) 14px, color-mix(in srgb, var(--headerBg) 88%, #FFB323) 28px); }
 .estTag{ font-size:10.5px; font-weight:600; color:var(--muted); }
+.emptyApproved{ background:var(--surface); border-radius:14px; padding:16px; font-size:14px; line-height:1.5; color:var(--muted); }
+.emptyApproved b{ color:var(--ink); }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -1392,10 +1394,10 @@ function flowSheetHtml_(kind){
 /* ---- the Dashboard can show any day that has numbers: the latest by default ---- */
 function enteredDays_(){ var d={}; BAL_DAYS.forEach(function(r){ d[r.asOf]=1; }); ALLOC_HIST.forEach(function(r){ if(!r.sample) d[r.asOf]=1; });
   return Object.keys(d).sort().reverse(); }
-/* the Dashboard shows the days the office has put on it ("Update the Dashboard"); until the first,
+/* the Approved view shows the days the office has approved ("Update and approve") — nothing else;
    it shows what has been entered */
 var PUBLISHED={};   /* day → { at } */
-function reportDays_(){ var p=Object.keys(PUBLISHED).sort().reverse(); return p.length ? p : enteredDays_(); }
+function reportDays_(){ return Object.keys(PUBLISHED).sort().reverse(); }   /* only approved days — nothing else reaches the Approved view */
 /* the day's checklist: each part is done when something was saved for that day, or marked "nothing new" */
 var DAY_DONE={};    /* day → { part:true } marked by hand */
 var DAY_PARTS=[ ['bal','🏦 Balances'], ['alloc','📊 Allocations'], ['inc','💵 Income'], ['exp','🧾 Expenses'], ['xfer','🔁 Internal transfers'] ];   /* staff debt is updated on its own day, so it isn't part of this */
@@ -1416,13 +1418,13 @@ function nothingNewHtml_(part, what){ var day=reportDay_(); if(partSaved_(part, 
   return '<label class="nothingNew"><input type="checkbox" data-daydone="'+part+'"'+(on?' checked':'')+'><span>No new '+what+' for '+date(day)+' — mark it done</span></label>'; }
 function publishHtml_(){
   var day=reportDay_(), done=DAY_PARTS.filter(function(x){ return partDone_(x[0], day); }).length, all=done===DAY_PARTS.length, pub=PUBLISHED[day];
-  var h='<div class="inCard pubCard" id="inPublish"><div class="inHead"><h2>📤 Update the Dashboard</h2></div>'+
-    '<p class="inLast">'+(pub ? '✓ '+date(day)+' is on the Dashboard.' : 'When everything for '+date(day)+' is in, put it on the Dashboard.')+' Staff debt goes on by itself when its report is saved.</p>'+
+  var h='<div class="inCard pubCard" id="inPublish"><div class="inHead"><h2>✅ Update and approve</h2></div>'+
+    '<p class="inLast">'+(pub ? '✓ '+date(day)+' is approved — it is what the Approved view shows.' : 'Until you approve, everything entered only shows in 📡 Live. When everything for '+date(day)+' is in, approve it.')+' Staff debt goes on by itself when its report is saved.</p>'+
     '<ul class="pubList">'+DAY_PARTS.map(function(x){ var ok=partDone_(x[0], day), how=partSaved_(x[0], day)?'':(ok?' · nothing new':'');
       return '<li class="'+(ok?'done':'')+'"><span class="tick'+(ok?' done':'')+'">'+(ok?'✓':'')+'</span>'+x[1]+'<span class="dsub" style="display:inline">'+how+'</span></li>'; }).join('')+'</ul>'+
     '<div class="pubBar"><span style="width:'+Math.round(done/DAY_PARTS.length*100)+'%"></span></div><div class="dsub">'+done+' of '+DAY_PARTS.length+' done</div>';
-  h+='<div class="inBtns"><button class="btn'+(S.pubAsk?' warn':'')+'" id="pubDay">'+(S.pubAsk ? (DAY_PARTS.length-done)+' still to do — tap again to update anyway' : (pub?'Update the Dashboard again for ':'Update the Dashboard for ')+date(day))+'</button>'+
-    (pub ? '<button class="btn ghost" id="unpubDay">Take it off</button>' : '')+'</div>';
+  h+='<div class="inBtns"><button class="btn'+(S.pubAsk?' warn':'')+'" id="pubDay">'+(S.pubAsk ? (DAY_PARTS.length-done)+' still to do — tap again to approve anyway' : (pub?'Update and approve again — ':'Update and approve — ')+date(day))+'</button>'+
+    (pub ? '<button class="btn ghost" id="unpubDay">Take the approval off</button>' : '')+'</div>';
   return h+'</div>';
 }
 
@@ -1431,7 +1433,21 @@ function debtDays_(){ var d={}; DEBT_HIST.forEach(function(r){ d[r.asOf]=1; }); 
 function viewApply_(){
   var undo=[], days=reportDays_(), day=S.viewDay && days.indexOf(S.viewDay)>=0 ? S.viewDay : (days[0]||null), newest=enteredDays_()[0];
   S.pendDay = Object.keys(PUBLISHED).length && newest && days[0] && newest>days[0] && !PUBLISHED[newest] ? newest : null;
-  if(!isLive_() && day && newest && day<newest){
+  var P=day && PUBLISHED[day];
+  if(!isLive_() && P && P.groups){
+    var pubDays=Object.keys(PUBLISHED).sort(), prevP=PUBLISHED[pubDays[pubDays.indexOf(day)-1]]||null;
+    var kBal=JSON.stringify(BAL), kDays=BAL_DAYS, kAl=ALLOC.map(function(g){ return { items:g.items, amt:g.amt, prev:g.prev }; }), kAs=[ALLOC_ASOF, ALLOC_PREV_ASOF],
+        kL=[INCOMES, EXPENSES, TRANSFERS, TOOL_XFERS];
+    BAL_DAYS=[P.bal, prevP && prevP.bal].filter(Boolean); refreshBal_();
+    ALLOC.forEach(function(g){ var it=(P.groups[g.id]||[]).map(function(x){ return [x[0], x[1]]; }); g.items=it.length?it:g.items.map(function(x){ return [x[0],0]; });
+      g.amt=g.items.reduce(function(s2,x){ return s2+x[1]; },0); g.prev= prevP && prevP.groups ? (prevP.groups[g.id]||[]).reduce(function(s2,x){ return s2+x[1]; },0) : g.amt; });
+    ALLOC_ASOF=day; ALLOC_PREV_ASOF= prevP ? pubDays[pubDays.indexOf(day)-1] : day;
+    var keep=function(L, list){ return L.filter(function(x){ return list.indexOf(x.id)>=0; }); };
+    INCOMES=keep(INCOMES, P.ids.inc); EXPENSES=keep(EXPENSES, P.ids.exp); TRANSFERS=keep(TRANSFERS, P.ids.xf); TOOL_XFERS=keep(TOOL_XFERS, P.ids.tool);
+    undo.push(function(){ BAL_DAYS=kDays; var o=JSON.parse(kBal); Object.keys(o).forEach(function(k){ BAL[k]=o[k]; });
+      ALLOC.forEach(function(g, i){ g.items=kAl[i].items; g.amt=kAl[i].amt; g.prev=kAl[i].prev; }); ALLOC_ASOF=kAs[0]; ALLOC_PREV_ASOF=kAs[1];
+      INCOMES=kL[0]; EXPENSES=kL[1]; TRANSFERS=kL[2]; TOOL_XFERS=kL[3]; });
+  } else if(!isLive_() && day && newest && day<newest){
     var keepBal=JSON.stringify(BAL), keepDays=BAL_DAYS;
     BAL_DAYS=keepDays.filter(function(r){ return r.asOf<=day; }); refreshBal_();
     undo.push(function(){ BAL_DAYS=keepDays; var o=JSON.parse(keepBal); Object.keys(o).forEach(function(k){ BAL[k]=o[k]; }); });
@@ -1460,9 +1476,9 @@ function asOfBarHtml_(){
     return h;
   }
   h+='<div class="asOfBar"><label for="viewDay">📅 Reports as of</label>'+(days.length ? sel('viewDay', days, cur, latest) : '<b>—</b>')+
-    (BAL.asOf && ALLOC_ASOF!==BAL.asOf ? '<span class="warn">· allocations as of '+date(ALLOC_ASOF)+'</span>' : '')+
+    (days.length && BAL.asOf && ALLOC_ASOF!==BAL.asOf ? '<span class="warn">· allocations as of '+date(ALLOC_ASOF)+'</span>' : '')+
     '<span class="sep">·</span><label for="viewDebtDay">💳 Staff debt as of</label>'+sel('viewDebtDay', dd, dcur, dd[0])+'</div>';
-  if(S.pendDay) h+='<div class="pastNote" style="background:var(--accentSoft);color:var(--ink)">✏️ '+date(S.pendDay)+' is being entered — not on the Dashboard yet.</div>';
+  if(S.pendDay) h+='<div class="pastNote" style="background:var(--accentSoft);color:var(--ink)">✏️ '+date(S.pendDay)+' is being entered — not approved yet (see 📡 Live).</div>';
   if((cur && cur!==latest) || (dcur && dcur!==dd[0])) h+='<div class="pastNote">🕘 You’re looking at an earlier day. <button class="more" id="viewLatest" style="padding:0">Back to the latest</button></div>';
   return h;
 }
@@ -1472,7 +1488,10 @@ function nextHtml(){
 function soon(icon, title, line){ return '<div class="soon"><div class="big">'+icon+'</div><h3>'+title+'</h3><div>'+line+'</div></div>'; }
 function render(){
   var p=document.getElementById('pane');
-  if(S.tab==='dash'){ var undo=viewApply_(); S.liveDraw=isLive_(); try { p.innerHTML=asOfBarHtml_()+balancesHtml()+allocHtml()+debtHtml()+flowHtml('inc')+flowHtml('exp')+nextHtml(); } finally { S.liveDraw=false; undo(); } }
+  if(S.tab==='dash'){ var undo=viewApply_(); S.liveDraw=isLive_();
+    try { p.innerHTML = (!isLive_() && !reportDays_().length)
+      ? asOfBarHtml_()+'<section class="sec"><div class="emptyApproved"><b>Nothing approved yet.</b><br>Numbers reach this view when “Update and approve” is tapped on the Input tab. Until then, <button class="more" data-dashmode="live" style="padding:0">📡 Live</button> shows everything entered.</div></section>'+debtHtml()
+      : asOfBarHtml_()+balancesHtml()+allocHtml()+debtHtml()+flowHtml('inc')+flowHtml('exp')+nextHtml(); } finally { S.liveDraw=false; undo(); } }
   else if(S.tab==='input') p.innerHTML=inputHtml();
   else if(S.tab==='tasks') p.innerHTML=soon('✅','Tasks','The Finances office’s GP Tasks list — as on every ministry.');
   else p.innerHTML=soon('🎯','OKRs','Kept exactly as it is in the current app — the Finances office’s OKRs and the Leadership OKRs, no changes.');
@@ -1633,9 +1652,14 @@ document.addEventListener('input', function(e){
 document.addEventListener('click', function(e){
   if(e.target.id==='pubDay'){ var pd=reportDay_(), left=DAY_PARTS.filter(function(x){ return !partDone_(x[0], pd); }).length;
     if(left && !S.pubAsk){ S.pubAsk=true; render(); setTimeout(function(){ if(S.pubAsk){ S.pubAsk=false; if(S.tab==='input') render(); } }, 5000); return; }
-    snap_(PUBLISHED[pd] ? 'Put back the Dashboard as it was for '+date(pd) : 'Took '+date(pd)+' off the Dashboard');
-    PUBLISHED[pd]={ at:Date.now() }; S.pubAsk=false; S.viewDay=null; keep_(); render(); toast('✓ The Dashboard now shows '+date(pd)); return; }
-  if(e.target.id==='unpubDay'){ var ud=reportDay_(); snap_('Put '+date(ud)+' back on the Dashboard'); delete PUBLISHED[ud]; S.viewDay=null; keep_(); render(); toast(date(ud)+' is off the Dashboard'); return; }
+    snap_(PUBLISHED[pd] ? 'Put back the approval of '+date(pd)+' as it was' : 'Took the approval of '+date(pd)+' off');
+    var bd=BAL_DAYS.filter(function(r){ return r.asOf<=pd; }).sort(function(x,y){ return x.asOf<y.asOf?1:-1; })[0]||null;
+    var ids=function(L){ return L.filter(function(x){ return x.date<=pd; }).map(function(x){ return x.id; }); };
+    var snapAt=ALLOC_HIST.filter(function(r){ return !r.sample && r.asOf<=pd; }).sort(function(x,y){ return x.asOf<y.asOf?1:-1; })[0];   /* the funds as they stood on that day, not after later entries */
+    PUBLISHED[pd]={ at:Date.now(), groups:JSON.parse(JSON.stringify(snapAt ? snapAt.groups : allocSnap_(pd).groups)), bal:bd?JSON.parse(JSON.stringify(bd)):null,
+      ids:{ inc:ids(INCOMES), exp:ids(EXPENSES), xf:ids(TRANSFERS), tool:ids(TOOL_XFERS) } };
+    S.pubAsk=false; S.viewDay=null; keep_(); render(); toast('✓ Approved — '+date(pd)+' is now the approved Dashboard'); return; }
+  if(e.target.id==='unpubDay'){ var ud=reportDay_(); snap_('Approved '+date(ud)+' again'); delete PUBLISHED[ud]; S.viewDay=null; keep_(); render(); toast(date(ud)+' is no longer approved'); return; }
   var dm=e.target.closest && e.target.closest('[data-dashmode]'); if(dm){ S.dashMode=dm.dataset.dashmode; render(); return; }
   if(e.target.id==='viewLatest'){ S.viewDay=null; S.viewDebtDay=null; render(); return; }
   if(e.target.id==='undoLast'){ if(!S.undoAsk){ S.undoAsk=true; render(); setTimeout(function(){ if(S.undoAsk){ S.undoAsk=false; if(S.tab==='input') render(); } }, 4000); return; } undoLast_(); return; }
