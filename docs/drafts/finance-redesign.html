@@ -15,14 +15,14 @@
   --accent:#1F44FF; --accentInk:#fff; --accentSoft:#E8ECFF; --good:#0A7D3C; --bad:#B3261E; --amberDeep:#96650A;
   --headerBg:#17150F; --onDark:#FAF6F0; --onDarkFaint:#9A9384;
   /* allocation categories — checked with the dataviz validator, light on #fff, dark on #1C1A17 */
-  --al1:#2a78d6; --al2:#eb6834; --al3:#1baf7a; --al4:#eda100; --al5:#e87ba4; --al6:#008300;
+  --al1:#2a78d6; --al2:#eb6834; --al3:#1baf7a; --al4:#eda100; --al5:#e87ba4; --al6:#008300; --al7:#6250d6; --al8:#e34948;
   color-scheme:light;
 }
 :root[data-theme="dark"]{
   --bg:#121110; --surface:#1C1A17; --surface2:#26231D; --ink:#F2EDE4; --muted:#A8A192; --line:#2A261F;
   --accent:#6C86FF; --accentInk:#0B0A08; --accentSoft:#1B2145; --good:#4CC27E; --bad:#F2867E; --amberDeep:#E0B25A;
   --headerBg:#0C0B09; --onDark:#F2EDE4;
-  --al1:#3987e5; --al2:#d95926; --al3:#199e70; --al4:#c98500; --al5:#d55181; --al6:#0ca30c;
+  --al1:#3987e5; --al2:#d95926; --al3:#199e70; --al4:#c98500; --al5:#d55181; --al6:#0ca30c; --al7:#9085e9; --al8:#e66767;
   color-scheme:dark;
 }
 *{ box-sizing:border-box; }
@@ -371,6 +371,15 @@ label.f{ display:block; font-size:12.5px; font-weight:600; margin:6px 0 4px; }
 .undoBar{ display:flex; align-items:center; gap:10px; margin:8px 0 0; padding-top:8px; border-top:1px solid var(--line); min-width:0; }
 .undoBtn{ border:1px solid color-mix(in srgb, var(--muted) 45%, transparent); background:var(--surface); color:var(--ink); border-radius:999px; padding:5px 12px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap; flex:none; }
 .undoBtn.ask{ background:var(--bad); color:#fff; border-color:var(--bad); }
+.ihList{ list-style:none; margin:10px 0 0; padding:0; }
+.ihList li{ border-top:1px solid var(--line); padding:10px 0; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:center; }
+.ihList .ihTag{ display:inline-block; font-size:11.5px; font-weight:700; padding:1px 7px; border-radius:999px; background:var(--surface2); margin-right:6px; }
+.ihList .ihMsg{ font-size:13.5px; margin-top:3px; }
+.ihList .ihBtn{ border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:5px 11px; font-weight:700; font-size:12.5px; cursor:pointer; white-space:nowrap; }
+.ihList .ihBtn.ask{ background:var(--bad); color:#fff; border-color:var(--bad); }
+.ihList li.gone{ opacity:.55; }
+.ihWarn{ background:color-mix(in srgb, var(--bad) 10%, var(--surface)); border:1px solid color-mix(in srgb, var(--bad) 35%, transparent); border-radius:10px; padding:10px 12px; margin-top:10px; font-size:13.5px; }
+.ihWarn .ihBtn{ margin-top:8px; }
 .undoBtn[disabled]{ opacity:.5; cursor:not-allowed; }
 .undoBar .dsub{ font-size:12px; min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .tick{ width:20px; height:20px; border-radius:999px; border:2px solid color-mix(in srgb, var(--muted) 55%, transparent); display:inline-flex; align-items:center; justify-content:center; flex:none; font-size:12px; font-weight:800; color:#fff; margin-right:10px; }
@@ -426,6 +435,25 @@ button.tick.done{ background:var(--good); }
 .advChip .sw{ width:9px; height:9px; }
 .advOld{ display:inline-flex; align-items:center; justify-content:center; background:#FFD84D; border-radius:6px; padding:0 4px; margin-right:5px; font-size:12px; line-height:18px; }
 .advOldLine{ margin-top:10px; background:color-mix(in srgb, #FFD84D 30%, var(--surface)); border:1px solid #E8B800; border-radius:10px; padding:7px 10px; font-size:13px; font-weight:600; color:var(--ink); }
+.catGrp{ border-top:1px solid var(--line); padding:10px 0; }
+.catHead,.catRow{ display:flex; gap:6px; align-items:center; }
+.catRow{ padding:6px 0 6px 22px; flex-wrap:wrap; border-top:1px dashed var(--line); }
+.catGrp .catRow input{ flex:1 1 100%; }
+.catRow .amt{ min-width:70px; }
+.catHead input,.catRow input,.catAdd input{ flex:1; min-width:0; font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); }
+.catHead input{ font-weight:700; }
+.catRow .amt{ font-size:12.5px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.catRow select{ flex:1; min-width:0; font:inherit; font-size:12.5px; padding:5px 4px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); }
+.catBtn{ border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:8px; width:30px; height:30px; padding:0; cursor:pointer; flex:none; }
+.catBtn:disabled{ opacity:.35; cursor:default; }
+.catBtn.del{ color:var(--bad); }
+.catBtn.del.sure{ width:auto; padding:0 8px; background:var(--bad); color:#fff; border-color:var(--bad); font-size:12.5px; }
+.catAdd{ display:flex; gap:6px; padding:6px 0 0 22px; }
+.catAdd.top{ padding-left:0; margin-top:12px; }
+.catAdd .btn{ padding:6px 12px; }
+.catDelList{ list-style:none; margin:6px 0 0; padding:0; }
+.catDelList li{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; border-top:1px dashed var(--line); font-size:13.5px; }
+.delTag{ color:var(--muted); font-style:italic; font-weight:400; }
 .delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
 .delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
@@ -573,6 +601,7 @@ function inDayHtml_(){
 function undoBtnHtml_(){
   var u=UNDO[UNDO.length-1];
   return '<div class="undoBar"><button class="undoBtn'+(S.undoAsk?' ask':'')+'" id="undoLast"'+(u?'':' disabled')+'>↩ '+(S.undoAsk?'Tap again to undo':'Undo previous input')+'</button>'+
+    '<button class="undoBtn" id="inHistBtn"'+(u?'':' disabled')+'>🕘 History'+(UNDO.length?' ('+UNDO.length+')':'')+'</button>'+
     '<span class="dsub" title="'+(u?esc(u.msg):'')+'">'+(u ? esc(u.msg.replace(/^(Removed|Put back|Undid|Brought back)/, function(m){ return m; })) : 'Nothing to undo yet')+'</span></div>';
 }
 function inputHtml(){
@@ -591,6 +620,7 @@ function inputHtml(){
     '<div class="inBtns"><button class="btn" id="inBalSave">Save balances</button>'+(B.none?'':'<button class="btn ghost" id="inBalCopy">Same as last time</button>')+'</div>'+
     '</details>';
   h+=inAllocHtml_();
+  h+=inCatsHtml_();
   h+=inRulesHtml_();
   h+=inBulkHtml_();
   h+=inXferHtml_();
@@ -650,6 +680,133 @@ function inAlSave_(){
   ALLOC_HIST=ALLOC_HIST.filter(function(x){ return x.asOf!==day; }); ALLOC_HIST.push(allocSnap_(day)); ALLOC_HIST.sort(function(x,y){ return x.asOf<y.asOf?1:-1; });
   keep_();
   S.inAl=null; render(); toast(Math.abs(gap)<0.005 ? 'Saved — every dollar is allocated' : 'Saved — '+money(Math.abs(gap),true)+(gap>0?' still not allocated':' over what is in hand'));
+}
+/* ---- Input: the categories list — every category and sub-category, added, renamed, moved,
+   reordered or deleted here, and so everywhere: the Dashboard, every fund picker, the formulas,
+   transfers, advances and the saved reports. A saved report keeps what it held: a category
+   added since shows there as $0, one deleted since keeps its amount with “(deleted)”. Deleted
+   ones are kept in a list here and can be brought back. */
+var CAT_COLORS=['--al1','--al2','--al3','--al4','--al5','--al6','--al7','--al8'];
+function catStruct_(){ return ALLOC.filter(function(g){ return !g.ghost; }).map(function(g){ return { id:g.id, name:g.name, eg:g.eg, c:g.c, dark:!!g.dark, single:!!g.single, note:g.note, items:g.items.map(function(it){ return it[0]; }) }; }); }
+function catG_(gid){ return ALLOC.filter(function(g){ return g.id===gid; })[0]; }
+function catUses_(k){ var u=[];
+  [INC_RULES, EXP_RULES].forEach(function(R){ Object.keys(R).forEach(function(t){ if((R[t]||[]).some(function(r){ return r.f===k; })) u.push('the formula for “'+t+'”'); }); });
+  return u; }
+/* a sub-category's key is “category|name”: renaming or moving it changes the key, so everything that points at it follows */
+function catRekey_(o, n, oName, nName, oGid, nGid){
+  if(o===n) return;
+  var fx=function(v){ return v===o ? n : v; };
+  [INC_RULES, EXP_RULES].forEach(function(R){ Object.keys(R).forEach(function(t){ (R[t]||[]).forEach(function(r){ r.f=fx(r.f); }); }); });
+  INCOMES.concat(EXPENSES).forEach(function(x){ (x.split||[]).forEach(function(s2){ s2.f=fx(s2.f); }); });
+  TRANSFERS.concat(TOOL_XFERS).forEach(function(t){ t.from=fx(t.from); t.to=fx(t.to); });
+  ADVANCES.forEach(function(a){ a.fund=fx(a.fund); });
+  [INC_MAP, EXP_MAP].forEach(function(M){ Object.keys(M).forEach(function(key){ if(M[key] && M[key].f) M[key].f=fx(M[key].f); }); });
+  Object.keys(EXP_HINT).forEach(function(t){ EXP_HINT[t]=fx(EXP_HINT[t]); });
+  ADV_SCHOOL_FUNDS=ADV_SCHOOL_FUNDS.map(fx);
+  /* the saved reports: the same sub-category, under its new name or in its new category */
+  var snaps=ALLOC_HIST.slice(); Object.keys(PUBLISHED).forEach(function(d){ if(PUBLISHED[d] && PUBLISHED[d].groups) snaps.push(PUBLISHED[d]); });
+  snaps.forEach(function(e){ var G=e.groups||{}, from=G[oGid]||[], hit=from.filter(function(x){ return x[0]===oName; })[0]; if(!hit) return;
+    G[oGid]=from.filter(function(x){ return x!==hit; });
+    var to=G[nGid]=G[nGid]||[], same=to.filter(function(x){ return x[0]===nName; })[0];
+    if(same) same[1]=Math.round((same[1]+hit[1])*100)/100; else to.push([nName, hit[1]]); }); }
+function catAfter_(msg){ ALLOC.forEach(function(g){ if(g.items.length>1) g.single=false; if(!g.single) g.eg=g.items.map(function(it){ return it[0]; }).join(', ');
+    g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); });
+  S.inAl=null; S.catErr=''; S.catDel=null; keep_(); render(); if(msg) toast(msg); }
+function catErr_(m){ S.catErr=m; S.catDel=null; render(); }
+function catClean_(v){ return String(v||'').replace(/\s+/g,' ').trim().slice(0,60); }
+function catRenameGroup_(gid, v){ var g=catG_(gid), n=catClean_(v); if(!g || n===g.name) return;
+  if(!n) return catErr_('A category needs a name.');
+  if(n.indexOf('|')>=0) return catErr_('A name can’t have “|” in it.');
+  if(ALLOC.some(function(a){ return a!==g && a.name.toLowerCase()===n.toLowerCase(); })) return catErr_('There is already a category called “'+n+'”.');
+  snap_('Put back the name “'+g.name+'”');
+  if(g.single){ var on=g.items[0][0]; catRekey_(g.id+'|'+on, g.id+'|'+n, on, n, g.id, g.id); g.items[0][0]=n; }
+  g.name=n; catAfter_('Renamed to “'+n+'” everywhere'); }
+function catRenameItem_(gid, i, v){ var g=catG_(gid), it=g&&g.items[i], n=catClean_(v); if(!it || n===it[0]) return;
+  if(!n) return catErr_('A sub-category needs a name.');
+  if(n.indexOf('|')>=0) return catErr_('A name can’t have “|” in it.');
+  if(g.items.some(function(x){ return x!==it && x[0].toLowerCase()===n.toLowerCase(); })) return catErr_('“'+g.name+'” already has a “'+n+'”.');
+  snap_('Put back the name “'+it[0]+'”'); var on=it[0];
+  catRekey_(g.id+'|'+on, g.id+'|'+n, on, n, g.id, g.id); it[0]=n; catAfter_('Renamed to “'+n+'” everywhere'); }
+function catOrder_(L, i, d){ var j=i+d; if(j<0 || j>=L.length) return false; var x=L[i]; L[i]=L[j]; L[j]=x; return true; }
+function catMoveTo_(gid, i, to){ var g=catG_(gid), t=catG_(to), it=g&&g.items[i]; if(!it || !t || g===t) return;
+  if(g.items.length<2) return catErr_('“'+it[0]+'” is the only one in “'+g.name+'” — add another there first, or delete the whole category.');
+  if(t.items.some(function(x){ return x[0].toLowerCase()===it[0].toLowerCase(); })) return catErr_('“'+t.name+'” already has a “'+it[0]+'” — rename one of them first.');
+  snap_('Put “'+it[0]+'” back in '+g.name);
+  catRekey_(g.id+'|'+it[0], t.id+'|'+it[0], it[0], it[0], g.id, t.id);
+  g.items.splice(i,1); t.items.push(it); t.single=false; catAfter_('Moved “'+it[0]+'” to '+t.name); }
+function catAddItem_(gid){ var g=catG_(gid), el=document.getElementById('catAdd_'+gid), n=catClean_(el && el.value); if(!g) return;
+  if(!n) return catErr_('Type the new sub-category’s name first.');
+  if(n.indexOf('|')>=0) return catErr_('A name can’t have “|” in it.');
+  if(g.items.some(function(x){ return x[0].toLowerCase()===n.toLowerCase(); })) return catErr_('“'+g.name+'” already has a “'+n+'”.');
+  var back=DELETED_FUNDS.filter(function(x){ return !x.group && x.gid===gid && x.name.toLowerCase()===n.toLowerCase(); })[0];
+  snap_('Took “'+n+'” off '+g.name);
+  if(back) DELETED_FUNDS=DELETED_FUNDS.filter(function(x){ return x!==back; });
+  g.items.push([back?back.name:n, 0]); g.single=false; catAfter_('Added “'+n+'” to '+g.name+' — it shows everywhere now'); }
+function catAddGroup_(){ var el=document.getElementById('catNewGrp'), n=catClean_(el && el.value);
+  if(!n) return catErr_('Type the new category’s name first.');
+  if(n.indexOf('|')>=0) return catErr_('A name can’t have “|” in it.');
+  if(ALLOC.some(function(a){ return a.name.toLowerCase()===n.toLowerCase(); })) return catErr_('There is already a category called “'+n+'”.');
+  var free=CAT_COLORS.filter(function(c){ return !ALLOC.some(function(a){ return a.c===c; }); });
+  if(!free.length) return catErr_('There can be '+CAT_COLORS.length+' categories at most — the bar runs out of colours that tell apart. Add a sub-category instead.');
+  snap_('Took the category “'+n+'” off');
+  ALLOC.push({ id:'c'+Date.now().toString(36), prev:0, amt:0, name:n, eg:'', c:free[0], dark:false, single:true, items:[[n, 0]], note:'' });
+  catAfter_('Added the category “'+n+'”'); }
+function catDelItem_(gid, i){ var g=catG_(gid), it=g&&g.items[i]; if(!it) return;
+  if(Math.abs(it[1])>0.004) return catErr_('“'+it[0]+'” still holds '+money(it[1],true)+'. Move it to another fund first (Internal transfers), then delete it.');
+  if(g.items.length<2) return catErr_('“'+it[0]+'” is the last one in “'+g.name+'” — delete the whole category instead.');
+  var u=catUses_(g.id+'|'+it[0]); if(u.length) return catErr_('“'+it[0]+'” is used in '+u.join(', ')+'. Change that first.');
+  if(S.catDel!==gid+'|'+i){ S.catDel=gid+'|'+i; S.catErr=''; render(); return; }
+  snap_('Brought “'+it[0]+'” back');
+  DELETED_FUNDS.push({ gid:g.id, gname:g.name, name:it[0], at:TODAY }); g.items.splice(i,1);
+  catAfter_('Deleted “'+it[0]+'” — kept under Deleted, and in old reports as “(deleted)”'); }
+function catDelGroup_(gid){ var g=catG_(gid); if(!g) return;
+  if(Math.abs(g.amt)>0.004) return catErr_('“'+g.name+'” still holds '+money(g.amt,true)+'. Move it to other funds first (Internal transfers), then delete it.');
+  if(ALLOC.length<2) return catErr_('There has to be at least one category.');
+  var u=[]; g.items.forEach(function(it){ u=u.concat(catUses_(g.id+'|'+it[0])); }); if(u.length) return catErr_('“'+g.name+'” is used in '+u.join(', ')+'. Change that first.');
+  if(S.catDel!==gid){ S.catDel=gid; S.catErr=''; render(); return; }
+  snap_('Brought the category “'+g.name+'” back');
+  DELETED_FUNDS.push({ gid:g.id, name:g.name, at:TODAY, group:{ id:g.id, name:g.name, eg:g.eg, c:g.c, dark:!!g.dark, single:!!g.single, note:g.note, items:g.items.map(function(it){ return it[0]; }) } });
+  ALLOC.splice(ALLOC.indexOf(g),1); if(S.open===gid) S.open=null;
+  catAfter_('Deleted the category “'+g.name+'”'); }
+function catRestore_(idx){ var d=DELETED_FUNDS[idx]; if(!d) return;
+  if(d.group){
+    if(catG_(d.gid)) return catErr_('That category is already back.');
+    if(ALLOC.some(function(a){ return a.name.toLowerCase()===d.name.toLowerCase(); })) return catErr_('There is already a category called “'+d.name+'” — rename it first.');
+    var c=d.group.c; if(ALLOC.some(function(a){ return a.c===c; })){ var free=CAT_COLORS.filter(function(x){ return !ALLOC.some(function(a){ return a.c===x; }); }); if(!free.length) return catErr_('There can be '+CAT_COLORS.length+' categories at most.'); c=free[0]; }
+    snap_('Deleted “'+d.name+'” again');
+    ALLOC.push({ id:d.gid, prev:0, amt:0, name:d.group.name, eg:d.group.eg||'', c:c, dark:!!d.group.dark, single:!!d.group.single, note:d.group.note||'', items:d.group.items.map(function(n){ return [n, 0]; }) });
+  } else {
+    var g=catG_(d.gid); if(!g) return catErr_('Its category, “'+d.gname+'”, is deleted too — bring that back first.');
+    if(g.items.some(function(x){ return x[0].toLowerCase()===d.name.toLowerCase(); })) return catErr_('“'+g.name+'” already has a “'+d.name+'” — rename it first.');
+    snap_('Deleted “'+d.name+'” again'); g.items.push([d.name, 0]); g.single=false;
+  }
+  DELETED_FUNDS.splice(idx,1); catAfter_('Brought “'+d.name+'” back'); }
+function inCatsHtml_(){
+  var open=S.foldOpen&&S.foldOpen.cats, n=0; ALLOC.forEach(function(g){ n+=g.items.length; });
+  var h='<details class="inCard fold" id="inCats" data-fold="cats"'+(open?' open':'')+'><summary class="foldHead"><span><b>🗂 Categories list</b><span class="dsub">'+ALLOC.length+' categories · '+n+' sub-categories'+(DELETED_FUNDS.length?' · '+DELETED_FUNDS.length+' deleted':'')+'</span></span><span class="chev">▾</span></summary>'+
+    '<p class="inLast">Every category and sub-category. Add, rename, move or delete one here and it changes everywhere at once — the Dashboard, every fund picker, the formulas, transfers and advances. In a report already approved, one added since shows as $0, and one deleted since keeps its amount with “(deleted)” beside it.</p>';
+  h+=ALLOC.map(function(g, gi){
+    var gd=S.catDel===g.id;
+    var r='<div class="catGrp" data-catgrp="'+g.id+'"><div class="catHead"><span class="sw" style="background:var('+g.c+')"></span>'+
+      '<input data-catgname="'+g.id+'" value="'+esc(g.name)+'" aria-label="Name of the category '+esc(g.name)+'" maxlength="60" spellcheck="false">'+
+      '<button class="catBtn" data-catgmv="'+g.id+'|-1"'+(gi===0?' disabled':'')+' aria-label="Move '+esc(g.name)+' up">▲</button>'+
+      '<button class="catBtn" data-catgmv="'+g.id+'|1"'+(gi===ALLOC.length-1?' disabled':'')+' aria-label="Move '+esc(g.name)+' down">▼</button>'+
+      '<button class="catBtn del'+(gd?' sure':'')+'" data-catgdel="'+g.id+'" aria-label="Delete the category '+esc(g.name)+'">'+(gd?'Delete?':'✕')+'</button></div>';
+    if(!g.single) r+=g.items.map(function(it, i){ var dd=S.catDel===g.id+'|'+i;
+      return '<div class="catRow"><input data-catiname="'+g.id+'|'+i+'" value="'+esc(it[0])+'" aria-label="Name of '+esc(it[0])+'" maxlength="60" spellcheck="false">'+
+        '<span class="amt">'+money(it[1],true)+'</span>'+
+        '<select data-catto="'+g.id+'|'+i+'" aria-label="Move '+esc(it[0])+' to another category"><option value="">Move to…</option>'+ALLOC.filter(function(a){ return a!==g; }).map(function(a){ return '<option value="'+a.id+'">'+esc(a.name)+'</option>'; }).join('')+'</select>'+
+        '<button class="catBtn" data-catimv="'+g.id+'|'+i+'|-1"'+(i===0?' disabled':'')+' aria-label="Move '+esc(it[0])+' up">▲</button>'+
+        '<button class="catBtn" data-catimv="'+g.id+'|'+i+'|1"'+(i===g.items.length-1?' disabled':'')+' aria-label="Move '+esc(it[0])+' down">▼</button>'+
+        '<button class="catBtn del'+(dd?' sure':'')+'" data-catidel="'+g.id+'|'+i+'" aria-label="Delete '+esc(it[0])+'">'+(dd?'Delete?':'✕')+'</button></div>'; }).join('');
+    r+='<div class="catAdd"><input id="catAdd_'+g.id+'" data-catenter="'+g.id+'" placeholder="New sub-category in '+esc(g.name)+'" aria-label="New sub-category in '+esc(g.name)+'" maxlength="60" spellcheck="false"><button class="btn ghost" data-catadd="'+g.id+'">＋ Add</button></div>';
+    return r+'</div>'; }).join('');
+  h+='<div class="catAdd top"><input id="catNewGrp" data-catenter="@" placeholder="New category" aria-label="New category" maxlength="60" spellcheck="false"><button class="btn ghost" id="catNewGrpBtn">＋ Add category</button></div>';
+  h+=(S.catErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.catErr)+'</p>' : '');
+  if(DELETED_FUNDS.length) h+='<details class="catDel" style="margin-top:12px"><summary class="dsub" style="cursor:pointer">🗑 Deleted ('+DELETED_FUNDS.length+')</summary><ul class="catDelList">'+
+    DELETED_FUNDS.map(function(d, i){ return { d:d, i:i }; }).reverse().map(function(o){ var d=o.d;
+      return '<li><span><b>'+esc(d.name)+'</b><span class="dsub">'+(d.group?'a whole category · ':'in '+esc(d.gname)+' · ')+'deleted '+date(d.at)+'</span></span><button class="btn ghost" data-catback="'+o.i+'">↩ Bring back</button></li>'; }).join('')+'</ul></details>';
+  return h+'</details>';
 }
 /* ---- Input: staff debt — attach the office's A/R Ageing spreadsheet ----
    Read here in the browser (a small .xlsx reader of its own, below): the "As of" line, the
@@ -792,7 +949,21 @@ var INC_RULES={
 };
 function fundList_(){ var out=[]; ALLOC.forEach(function(g){ g.items.forEach(function(it){ out.push({ k:g.id+'|'+it[0], g:g, name:it[0] }); }); }); return out; }
 function fundOf_(k){ return fundList_().filter(function(f){ return f.k===k; })[0]; }
-function fundLabel_(k){ var f=fundOf_(k); return f ? (f.g.single ? f.name : f.name+' · '+f.g.name) : k+' (no longer a fund)'; }
+function fundNm_(k){ var f=fundOf_(k); if(f) return f.name; var p=String(k||'').split('|'); return (p.length>1?p.slice(1).join('|'):k)+' (deleted)'; }
+function fundLabel_(k){ var f=fundOf_(k); return f ? (f.g.single ? f.name : f.name+' · '+f.g.name) : fundNm_(k); }
+/* ---- the categories list: what a saved report held, laid over the categories as they are now ----
+   a category added since shows as $0; one deleted since keeps its amount and says “(deleted)”. */
+var DELETED_FUNDS=[];   /* { gid, gname, name, at } for a sub-category, or { gid, name, at, group:{…} } for a whole category */
+function itLabel_(i){ return esc(i[0])+(i[2]?' <span class="delTag">(deleted)</span>':''); }
+function mergeSnap_(groups, g){ var snap=(groups||{})[g.id]||[], by={}; snap.forEach(function(x){ by[x[0]]=(by[x[0]]||0)+x[1]; });
+  var out=g.items.map(function(it){ return [it[0], by[it[0]]!=null?by[it[0]]:0]; });
+  snap.forEach(function(x){ if(!g.items.some(function(it){ return it[0]===x[0]; }) && !out.some(function(o){ return o[0]===x[0]; })) out.push([x[0], by[x[0]], true]); });
+  return out; }
+function ghostGroups_(groups){ return Object.keys(groups||{}).filter(function(id){ return !ALLOC.some(function(g){ return g.id===id; }) && (groups[id]||[]).length; }).map(function(id){
+  var d=DELETED_FUNDS.filter(function(x){ return x.group && x.gid===id; }).pop(), s=d?d.group:{ name:'A category', c:'--muted' };
+  var it=(groups[id]||[]).map(function(x){ return [x[0], x[1]]; });
+  return { id:id, name:s.name+' (deleted)', eg:'', c:s.c, dark:!!s.dark, single:it.length===1, note:'This category has since been deleted.', ghost:true, items:it, prev:0, amt:it.reduce(function(a,x){ return a+x[1]; },0) }; }); }
+
 /* the formulas — one card, income or expenses */
 function RK_(){ return FK.inc; }
 function ruleTypeCur_(){ var T=RK_().types(), t=(S.ruleTypeBy||{})[RK_().k]; return t && T.indexOf(t)>=0 ? t : T[0]; }
@@ -854,7 +1025,7 @@ function fundSelect_(id, val, label, tool, accts){
 }
 function fundAmt_(k){ var f=fundOf_(k); if(!f) return 0; var it=f.g.items.filter(function(x){ return x[0]===f.name; })[0]; return it?it[1]:0; }
 function fundMove_(k, d){ var f=fundOf_(k); if(!f) return; f.g.items.forEach(function(it){ if(it[0]===f.name) it[1]=Math.round((it[1]+d)*100)/100; }); f.g.amt=f.g.items.reduce(function(s2,x){ return s2+x[1]; },0); }
-function xferShort_(k){ if(isTool_(k)) return TOOL_LABEL[k]; if(isAcct_(k)) return ACCT_KEYS[k]; var f=fundOf_(k); return f ? (f.g.single ? f.name : f.name+' ('+f.g.name+')') : k; }
+function xferShort_(k){ if(isTool_(k)) return TOOL_LABEL[k]; if(isAcct_(k)) return ACCT_KEYS[k]; var f=fundOf_(k); return f ? (f.g.single ? f.name : f.name+' ('+f.g.name+')') : fundNm_(k); }
 function inXferHtml_(){
   var D=S.xfer||(S.xfer={ from:'', to:'', amt:'', date:reportDay_(), memo:'' }), open=S.foldOpen&&S.foldOpen.xfer;
   var h='<details class="inCard fold" id="inXfer" data-fold="xfer"'+(open?' open':'')+'><summary class="foldHead"><span><b>🔁 Internal transfers</b><span class="dsub">'+(allXfers_().length?allXfers_().length+' transfer'+(allXfers_().length>1?'s':'')+' · last '+date(allXfers_()[0].date):'Move money from one fund to another')+'</span></span><span class="foldR"><button class="histLink" data-hist="xf">🕘 History</button><span class="chev">▾</span></span></summary>'+
@@ -1066,7 +1237,7 @@ function flOnePrevHtml_(k){
   var F=FK[k], D=flOne_(k), a=calc_(D.amt); if(!D.type || isNaN(a) || a<=0) return '';
   var sp=flOneSplit_(k, D, a); if(!sp) return '';
   return '<div class="ruleEg" style="margin-top:10px"><div class="dsub">'+money(a,true)+(F.sign<0?' comes off:':' goes to:')+'</div><ul>'+sp.map(function(x){ var f=fundOf_(x.f), now=fundAmt_(x.f), after=now+F.sign*x.amt;
-    return '<li><span>'+esc(f?f.name:x.f)+'</span><b'+(after<-0.004?' class="late"':'')+'>'+(F.sign<0?'−':'')+money(x.amt,true)+'</b></li>'; }).join('')+'</ul>'+
+    return '<li><span>'+esc(fundNm_(x.f))+'</span><b'+(after<-0.004?' class="late"':'')+'>'+(F.sign<0?'−':'')+money(x.amt,true)+'</b></li>'; }).join('')+'</ul>'+
     (F.sign<0 && sp.some(function(x){ return fundAmt_(x.f)-x.amt<-0.004; }) ? '<div class="badc" style="margin-top:4px">This takes a fund below zero.</div>' : '')+'</div>';
 }
 function flErr_(k, m){ S.flErr=S.flErr||{}; S.flErr[k]=m; }
@@ -1221,7 +1392,7 @@ function flHistHtml_(k){
     return '<div class="xfMonth"><div class="xfMonthHead"><b>'+monthName_(m)+'</b><span class="dsub" style="display:inline">'+M.length+' · '+money(tot,true)+'</span></div>'+
       M.map(function(x){ return '<div class="xfLine"><div><b>'+esc(x.type)+'</b> <span class="dsub" style="display:inline">'+date(x.date)+(x.src==='file'?' · from '+esc(x.file||'a file'):'')+'</span></div>'+
         (x.who||x.memo||x.bank ? '<div class="xfMemo" style="font-style:normal">'+esc([x.bank?(F.sign<0?'out of ':'into ')+bankLabel_(x.bank):'', x.who, x.memo].filter(Boolean).join(' · '))+'</div>' : '')+
-        '<div class="dsub">'+x.split.map(function(sp){ var f=fundOf_(sp.f); return esc(f?f.name:sp.f)+' '+money(sp.amt,true); }).join(' · ')+'</div>'+
+        '<div class="dsub">'+x.split.map(function(sp){ return esc(fundNm_(sp.f))+' '+money(sp.amt,true); }).join(' · ')+'</div>'+
         (x.addedTo ? '<div class="dsub">✅ Added to the '+date(x.addedTo)+' approval later'+(x.addedAt?', on '+date(new Date(x.addedAt).toISOString().slice(0,10)):'')+'</div>' : (approvedDay_() && !inApproved_(x, k) ? '<div class="dsub">📡 Live only — not in the approved report</div>' : ''))+
         '<b class="xfAmt '+(F.sign<0?'out':'in')+'">'+(F.sign<0?'−':'+')+money(x.amt,true)+'</b><div class="rowBtns">'+editBtnHtml_(k, x)+'<button class="delBtn" data-fdel="'+k+'|'+x.id+'">✕ Take out</button></div></div>'; }).join('')+'</div>'; }).join('');
 }
@@ -1677,7 +1848,7 @@ function allocHtml(){
       '<span class="sw" style="background:var('+a.c+')"></span>'+
       '<span><span class="alName">'+esc(a.name)+'</span>'+(a.eg?'<br><span class="alEg">'+esc(a.eg)+'</span>':'')+'<br>'+alDeltaHtml(a)+'</span>'+
       '<span class="alAmt">'+money(a.amt)+'<span class="alPct">'+(p<1?'<1':Math.round(p))+'%</span></span></button>'+
-      '<div class="alSub"><table>'+a.items.map(function(i){ return '<tr><td>'+esc(i[0])+'</td><td>'+money(i[1],true)+'</td></tr>'; }).join('')+'</table><p class="note">'+esc(a.note)+'</p>'+
+      '<div class="alSub"><table>'+a.items.map(function(i){ return '<tr><td>'+itLabel_(i)+'</td><td>'+money(i[1],true)+'</td></tr>'; }).join('')+'</table><p class="note">'+esc(a.note)+'</p>'+
       (function(){ var xs=xfersFor_(a.id, BAL.asOf); return xs.length ? '<div class="xfIn">'+xferRowsHtml_(xs, a.id)+'</div>' : ''; })()+'</div></li>';
   }).join('')+'</ul></section>';
   return h;
@@ -1879,13 +2050,14 @@ function viewApply_(){
     var kBal=JSON.stringify(BAL), kDays=BAL_DAYS, kAl=ALLOC.map(function(g){ return { items:g.items, amt:g.amt, prev:g.prev }; }), kAs=[ALLOC_ASOF, ALLOC_PREV_ASOF],
         kL=[INCOMES, EXPENSES, TRANSFERS, TOOL_XFERS];
     BAL_DAYS=[P.bal, prevP && prevP.bal].filter(Boolean); refreshBal_();
-    ALLOC.forEach(function(g){ var it=(P.groups[g.id]||[]).map(function(x){ return [x[0], x[1]]; }); g.items=it.length?it:g.items.map(function(x){ return [x[0],0]; });
+    ALLOC.forEach(function(g){ g.items=mergeSnap_(P.groups, g);
       g.amt=g.items.reduce(function(s2,x){ return s2+x[1]; },0); g.prev= prevP && prevP.groups ? (prevP.groups[g.id]||[]).reduce(function(s2,x){ return s2+x[1]; },0) : g.amt; });
+    ghostGroups_(P.groups).forEach(function(g){ g.prev= prevP && prevP.groups ? (prevP.groups[g.id]||[]).reduce(function(s2,x){ return s2+x[1]; },0) : g.amt; ALLOC.push(g); });
     ALLOC_ASOF=day; ALLOC_PREV_ASOF= prevP ? pubDays[pubDays.indexOf(day)-1] : day;
     var keep=function(L, list){ return L.filter(function(x){ return list.indexOf(x.id)>=0; }); };
     INCOMES=keep(INCOMES, P.ids.inc); EXPENSES=keep(EXPENSES, P.ids.exp); TRANSFERS=keep(TRANSFERS, P.ids.xf); TOOL_XFERS=keep(TOOL_XFERS, P.ids.tool);
     undo.push(function(){ BAL_DAYS=kDays; var o=JSON.parse(kBal); Object.keys(o).forEach(function(k){ BAL[k]=o[k]; });
-      ALLOC.forEach(function(g, i){ g.items=kAl[i].items; g.amt=kAl[i].amt; g.prev=kAl[i].prev; }); ALLOC_ASOF=kAs[0]; ALLOC_PREV_ASOF=kAs[1];
+      ALLOC.length=kAl.length; ALLOC.forEach(function(g, i){ g.items=kAl[i].items; g.amt=kAl[i].amt; g.prev=kAl[i].prev; }); ALLOC_ASOF=kAs[0]; ALLOC_PREV_ASOF=kAs[1];
       INCOMES=kL[0]; EXPENSES=kL[1]; TRANSFERS=kL[2]; TOOL_XFERS=kL[3]; });
   } else if(!isLive_() && day && newest && day<newest){
     var keepBal=JSON.stringify(BAL), keepDays=BAL_DAYS;
@@ -1893,10 +2065,11 @@ function viewApply_(){
     undo.push(function(){ BAL_DAYS=keepDays; var o=JSON.parse(keepBal); Object.keys(o).forEach(function(k){ BAL[k]=o[k]; }); });
     var snaps=ALLOC_HIST.filter(function(r){ return !r.sample && r.asOf<=day; });
     if(snaps.length){ var cur=snaps[0], pv=snaps[1], keepAl=ALLOC.map(function(g){ return { items:g.items, amt:g.amt, prev:g.prev }; }), keepAs=[ALLOC_ASOF, ALLOC_PREV_ASOF];
-      ALLOC.forEach(function(g){ var it=(cur.groups[g.id]||[]).map(function(x){ return [x[0], x[1]]; }); g.items=it.length?it:g.items.map(function(x){ return [x[0],0]; });
+      ALLOC.forEach(function(g){ g.items=mergeSnap_(cur.groups, g);
         g.amt=g.items.reduce(function(s2,x){ return s2+x[1]; },0); g.prev= pv ? (pv.groups[g.id]||[]).reduce(function(s2,x){ return s2+x[1]; },0) : g.amt; });
+      ghostGroups_(cur.groups).forEach(function(g){ g.prev= pv ? (pv.groups[g.id]||[]).reduce(function(s2,x){ return s2+x[1]; },0) : g.amt; ALLOC.push(g); });
       ALLOC_ASOF=cur.asOf; ALLOC_PREV_ASOF= pv ? pv.asOf : cur.asOf;
-      undo.push(function(){ ALLOC.forEach(function(g, i){ g.items=keepAl[i].items; g.amt=keepAl[i].amt; g.prev=keepAl[i].prev; }); ALLOC_ASOF=keepAs[0]; ALLOC_PREV_ASOF=keepAs[1]; }); }
+      undo.push(function(){ ALLOC.length=keepAl.length; ALLOC.forEach(function(g, i){ g.items=keepAl[i].items; g.amt=keepAl[i].amt; g.prev=keepAl[i].prev; }); ALLOC_ASOF=keepAs[0]; ALLOC_PREV_ASOF=keepAs[1]; }); }
   }
   var dd=debtDays_(), dday=S.viewDebtDay && dd.indexOf(S.viewDebtDay)>=0 ? S.viewDebtDay : null;
   if(dday && dday!==DEBT.asOf){ var e=DEBT_HIST.filter(function(r){ return r.asOf===dday; })[0];
@@ -1955,13 +2128,13 @@ function histHtml_(kind){
   if(kind==='al'){
     var H=ALLOC_HIST.length ? ALLOC_HIST : [allocSnap_(ALLOC_ASOF, true)];
     if(pick){ var e=H.filter(function(x){ return x.asOf===pick; })[0]; if(e){
-      var all=0, rows=ALLOC.map(function(a){ var it=e.groups[a.id]||[], t=histSum_(it.map(function(x){ return x[1]; })); all+=t;
+      var all=0, rows=ALLOC.concat(ghostGroups_(e.groups)).map(function(a){ var it=a.ghost?a.items:mergeSnap_(e.groups, a), t=histSum_(it.map(function(x){ return x[1]; })); all+=t;
         return '<tr><td><span class="sw" style="display:inline-block;width:10px;height:10px;margin-right:6px;background:var('+a.c+')"></span><b>'+esc(a.name)+'</b></td><td class="r"><b>'+money(t,true)+'</b></td></tr>'+
-          (it.length>1 ? it.map(function(x){ return '<tr><td style="padding-left:22px;color:var(--muted)">'+esc(x[0])+'</td><td class="r" style="color:var(--muted)">'+money(x[1],true)+'</td></tr>'; }).join('') : ''); }).join('');
+          (it.length>1 ? it.map(function(x){ return '<tr><td style="padding-left:22px;color:var(--muted)">'+itLabel_(x)+'</td><td class="r" style="color:var(--muted)">'+money(x[1],true)+'</td></tr>'; }).join('') : ''); }).join('');
       return back+'<h3>📊 Allocations — '+date(e.asOf)+(e.sample?' (sample)':'')+'</h3><table><tr><th>Allocation</th><th class="r">Amount</th></tr>'+rows+'<tr><td><b>Total allocated</b></td><td class="r"><b>'+money(all,true)+'</b></td></tr></table>'; } }
     return '<h3>📊 Allocations — history</h3><p class="hint">Every day the allocations were saved. Tap one to see every fund that day.</p><ul class="histList">'+
       H.map(function(e){ var t=0; Object.keys(e.groups).forEach(function(k){ t+=histSum_(e.groups[k].map(function(x){ return x[1]; })); });
-        return '<li><button data-histpick="'+e.asOf+'"><span><b>'+date(e.asOf)+'</b>'+(e.sample?' <span class="tag">sample</span>':'')+'<span class="dsub">'+ALLOC.length+' allocations</span></span><span class="r"><b>'+money(t,true)+'</b><span class="dsub">allocated ›</span></span></button></li>'; }).join('')+'</ul>';
+        return '<li><button data-histpick="'+e.asOf+'"><span><b>'+date(e.asOf)+'</b>'+(e.sample?' <span class="tag">sample</span>':'')+'<span class="dsub">'+Object.keys(e.groups).filter(function(k){ return (e.groups[k]||[]).length; }).length+' allocations</span></span><span class="r"><b>'+money(t,true)+'</b><span class="dsub">allocated ›</span></span></button></li>'; }).join('')+'</ul>';
   }
   if(kind==='inc'){
     if(S.incTools){
@@ -2043,7 +2216,7 @@ function sheetInner_(which){
     h+='<h3>📊 '+EST('Allocation report')+' — details</h3><p class="hint">Every allocation, what it holds, and how it has moved since '+date(ALLOC_PREV_ASOF)+'.</p><table><tr><th>Allocation</th><th class="r">Amount</th><th class="r">Share</th><th class="r">Change</th></tr>';
     allocOrder_().forEach(function(a){
       h+='<tr><td><span class="sw" style="display:inline-block;vertical-align:-2px;margin-right:6px;background:var('+a.c+')"></span><b>'+esc(a.name)+'</b></td><td class="r"><b>'+money(a.amt,true)+'</b></td><td class="r">'+(a.amt/(T||ALLOC.reduce(function(s2,g){ return s2+g.amt; },0))*100).toFixed(1)+'%</td><td class="r">'+(function(d){ return Math.abs(d)<0.005 ? '—' : '<span class="alDelta '+(d>0?'up':'down')+'">'+(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+'</span>'; })(a.amt-a.prev)+'</td></tr>';
-      a.items.forEach(function(i){ if(a.items.length>1) h+='<tr><td style="padding-left:22px;color:var(--muted)">'+esc(i[0])+'</td><td class="r" style="color:var(--muted)">'+money(i[1],true)+'</td><td></td><td></td></tr>'; });
+      a.items.forEach(function(i){ if(a.items.length>1) h+='<tr><td style="padding-left:22px;color:var(--muted)">'+itLabel_(i)+'</td><td class="r" style="color:var(--muted)">'+money(i[1],true)+'</td><td></td><td></td></tr>'; });
     });
     h+='</table>';
     var xs=xfersFor_(null, BAL.asOf);
@@ -2057,6 +2230,9 @@ document.getElementById('scrim').onclick=closeSheet;
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSheet(); });
 
 document.addEventListener('change', function(e){
+  if(e.target.dataset && e.target.dataset.catgname!=null){ catRenameGroup_(e.target.dataset.catgname, e.target.value); return; }
+  if(e.target.dataset && e.target.dataset.catiname!=null){ var ci=e.target.dataset.catiname.split('|'); catRenameItem_(ci[0], +ci[1], e.target.value); return; }
+  if(e.target.dataset && e.target.dataset.catto!=null){ var ct=e.target.dataset.catto.split('|'); if(e.target.value) catMoveTo_(ct[0], +ct[1], e.target.value); return; }
   if(e.target.dataset && e.target.dataset.advsel){ advForm_()[e.target.dataset.advsel]=e.target.value; S.advErr=''; return; }
   if(e.target.dataset && e.target.dataset.advssel){ S.advS[e.target.dataset.advssel]=e.target.value; return; }
   if(e.target.id==='bulkFile' && e.target.files[0]){ bulkRead_(e.target.files[0]); e.target.value=''; return; }
@@ -2105,6 +2281,7 @@ function calcFinish_(inp){
   inp.dispatchEvent(new Event('input', { bubbles:true }));
 }
 document.addEventListener('focusout', function(e){ calcFinish_(e.target); });
+document.addEventListener('keydown', function(e){ if(e.key==='Enter' && e.target.dataset && e.target.dataset.catenter){ e.preventDefault(); var ce=e.target.dataset.catenter; if(ce==='@') catAddGroup_(); else catAddItem_(ce); return; } });
 document.addEventListener('keydown', function(e){ if(e.key==='Enter' && e.target.closest && e.target.closest('.money')){ e.preventDefault(); calcFinish_(e.target); } });
 document.addEventListener('input', function(e){
   if(e.target.closest && e.target.closest('.money')) calcPreview_(e.target);
@@ -2129,6 +2306,16 @@ document.addEventListener('input', function(e){
   var el=document.getElementById('inTotal'); if(el) el.innerHTML=inTotalHtml_();   /* no re-render, so typing is never lost */
 });
 document.addEventListener('click', function(e){
+  var cb=e.target.closest && e.target.closest('[data-catgmv],[data-catimv],[data-catgdel],[data-catidel],[data-catadd],[data-catback],#catNewGrpBtn');
+  if(cb){ var d=cb.dataset;
+    if(cb.id==='catNewGrpBtn') return catAddGroup_();
+    if(d.catadd) return catAddItem_(d.catadd);
+    if(d.catback!=null) return catRestore_(+d.catback);
+    if(d.catgdel) return catDelGroup_(d.catgdel);
+    if(d.catidel){ var di=d.catidel.split('|'); return catDelItem_(di[0], +di[1]); }
+    if(d.catgmv){ var gm=d.catgmv.split('|'), gi=ALLOC.indexOf(catG_(gm[0])); snap_('Put the categories back in their order'); if(catOrder_(ALLOC, gi, +gm[1])) catAfter_(); else UNDO.pop(); return; }
+    if(d.catimv){ var im=d.catimv.split('|'), g=catG_(im[0]); snap_('Put '+g.name+' back in its order'); if(catOrder_(g.items, +im[1], +im[2])) catAfter_(); else UNDO.pop(); return; }
+  }
   if(e.target.id==='pubDay'){ var pd=reportDay_(), left=DAY_PARTS.filter(function(x){ return !partDone_(x[0], pd); }).length;
     if(left && !S.pubAsk){ S.pubAsk=true; render(); setTimeout(function(){ if(S.pubAsk){ S.pubAsk=false; if(S.tab==='input') render(); } }, 5000); return; }
     snap_(PUBLISHED[pd] ? 'Put back the approval of '+date(pd)+' as it was' : 'Took the approval of '+date(pd)+' off');
@@ -2165,6 +2352,13 @@ document.addEventListener('click', function(e){
   var atb=e.target.closest && e.target.closest('[data-advtab]'); if(atb){ S.advTab=atb.dataset.advtab; sheet('hist-adv'); return; }
   var ago=e.target.closest && e.target.closest('[data-advgo]'); if(ago){ S.advSettle=ago.dataset.advgo; S.advS=null; S.advSErr=''; (S.foldOpen=S.foldOpen||{}).adv=true; S.editGo='inAdv'; S.tab='input'; closeSheet(); render(); return; }
   if(e.target.id==='viewLatest'){ S.viewDay=null; S.viewDebtDay=null; S.viewAdvDay=null; render(); return; }
+  if(e.target.id==='inHistBtn'){ S.ihAsk=null; S.ihClash=null; ihOpen_(); return; }
+  var ihb=e.target.closest && e.target.closest('[data-ihundo],[data-ihback],[data-ihcancel]');
+  if(ihb){ var dd=ihb.dataset;
+    if(dd.ihcancel){ S.ihClash=null; ihOpen_(); return; }
+    if(dd.ihback!=null){ ihUndoBack_(+dd.ihback); return; }
+    var ii=+dd.ihundo; if(S.ihAsk!==ii){ S.ihAsk=ii; ihOpen_(); setTimeout(function(){ if(S.ihAsk===ii){ S.ihAsk=null; if(document.body.classList.contains('sheetOn') && document.querySelector('.ihList')) ihOpen_(); } }, 4000); return; }
+    ihUndoOne_(ii); return; }
   if(e.target.id==='undoLast'){ if(!S.undoAsk){ S.undoAsk=true; render(); setTimeout(function(){ if(S.undoAsk){ S.undoAsk=false; if(S.tab==='input') render(); } }, 4000); return; } undoLast_(); return; }
   if(e.target.id==='inBalSave'){ inSave_(); return; }
   if(e.target.id==='xfSave'){ xferSave_(); return; }
@@ -2232,17 +2426,22 @@ document.getElementById('themeBtn').onclick=function(){
    preview never wipes it. The real app will save to the server instead. */
 var KEEP_KEY='gp-fin-draft-v1';
 var FUND_RENAMES={ 'Office':'Office/General' };   /* old fund name → new, for anything already saved */
-function stateObj_(){ return { bal:BAL_DAYS, alloc:ALLOC.map(function(g){ return { id:g.id, prev:g.prev, items:g.items }; }),
+function stateObj_(){ return { bal:BAL_DAYS, alloc:ALLOC.map(function(g){ return { id:g.id, prev:g.prev, items:g.items }; }), struct:catStruct_(), deletedFunds:DELETED_FUNDS,
   allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, incTypes:INC_TYPES, incRules:INC_RULES, published:PUBLISHED, dayDone:DAY_DONE, expTypes:EXP_TYPES, expRules:EXP_RULES, expenses:EXPENSES, expMap:EXP_MAP, transfers:TRANSFERS, toolXfers:TOOL_XFERS, incomes:INCOMES, advances:ADVANCES, incMap:INC_MAP, alHist:ALLOC_HIST, debtHist:DEBT_HIST, alSaved:!!S.alSaved }; }
-function keep_(){ try { localStorage.setItem(KEEP_KEY, JSON.stringify(stateObj_())); } catch(e){} }
+function keep_(){ var u=typeof UNDO!=='undefined' && UNDO[UNDO.length-1]; if(u && u.open){ u.after=JSON.parse(JSON.stringify(stateObj_())); delete u.open; undoSave_(); }
+  try { localStorage.setItem(KEEP_KEY, JSON.stringify(stateObj_())); } catch(e){} }
 /* what the page starts from before anything is entered — an undo goes back through this */
-var PRISTINE=JSON.parse(JSON.stringify({ alloc:ALLOC.map(function(g){ return { items:g.items, prev:g.prev }; }), allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF,
+var PRISTINE=JSON.parse(JSON.stringify({ alloc:ALLOC, allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF,
   debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file||'', src:DEBT.src }, incTypes:INC_TYPES, incRules:INC_RULES, expTypes:EXP_TYPES, expRules:EXP_RULES }));
 function resetState_(){ var P=JSON.parse(JSON.stringify(PRISTINE));
-  ALLOC.forEach(function(g, i){ g.items=P.alloc[i].items; g.prev=P.alloc[i].prev; g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); });
+  ALLOC.length=0; P.alloc.forEach(function(g){ g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); ALLOC.push(g); }); DELETED_FUNDS=[];
   ALLOC_ASOF=P.allocAsOf; ALLOC_PREV_ASOF=P.allocPrevAsOf; DEBT.asOf=P.debt.asOf; DEBT.people=P.debt.people; DEBT.file=P.debt.file; DEBT.src=P.debt.src;
   INC_TYPES=P.incTypes; INC_RULES=P.incRules; EXP_TYPES=P.expTypes; EXP_RULES=P.expRules; EXPENSES=[]; EXP_MAP={}; BAL_DAYS=[]; TRANSFERS=[]; TOOL_XFERS=[]; ADVANCES=[]; PUBLISHED={}; DAY_DONE={}; INCOMES=[]; INC_MAP={}; ALLOC_HIST=[]; DEBT_HIST=[]; DEBT_LINKS={}; S.alSaved=false; }
 function loadState_(k){ if(!k) return;
+  if(Array.isArray(k.struct) && k.struct.length){ var was={}, wasPrev={}; ALLOC.forEach(function(g){ wasPrev[g.id]=g.prev; g.items.forEach(function(it){ was[g.id+'|'+it[0]]=it[1]; }); });
+    ALLOC.length=0; k.struct.forEach(function(c){ var g={ id:c.id, name:c.name, eg:c.eg||'', c:c.c, dark:!!c.dark, single:!!c.single, note:c.note||'', prev:wasPrev[c.id]||0,
+      items:(c.items||[]).map(function(n){ return [n, was[c.id+'|'+n]||0]; }) }; g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); ALLOC.push(g); }); }
+  if(Array.isArray(k.deletedFunds)) DELETED_FUNDS=k.deletedFunds;
   if(Array.isArray(k.bal)) BAL_DAYS=k.bal;
   if(k.published && typeof k.published==='object') PUBLISHED=k.published;
   if(k.dayDone && typeof k.dayDone==='object') DAY_DONE=k.dayDone;
@@ -2269,7 +2468,66 @@ try { loadState_(JSON.parse(localStorage.getItem(KEEP_KEY)||'null')); } catch(e)
 /* undo: the state as it was before each input, newest last (ten kept, on this device) */
 var UNDO_KEY='gp-fin-draft-undo', UNDO=[];
 try { UNDO=JSON.parse(localStorage.getItem(UNDO_KEY)||'[]'); if(!Array.isArray(UNDO)) UNDO=[]; } catch(e){ UNDO=[]; }
-function snap_(msg){ UNDO.push({ msg:msg, at:Date.now(), st:JSON.parse(JSON.stringify(stateObj_())) }); if(UNDO.length>10) UNDO.shift(); try { localStorage.setItem(UNDO_KEY, JSON.stringify(UNDO)); } catch(e){} }
+var UNDO_MAX=40;
+function undoSave_(){ while(UNDO.length){ try { localStorage.setItem(UNDO_KEY, JSON.stringify(UNDO)); return; } catch(e){ if(UNDO.length<=1) return; UNDO.shift(); } } try { localStorage.setItem(UNDO_KEY, '[]'); } catch(e){} }
+function snap_(msg){ UNDO.forEach(function(x){ delete x.open; }); UNDO.push({ msg:msg, at:Date.now(), st:JSON.parse(JSON.stringify(stateObj_())), open:true }); if(UNDO.length>UNDO_MAX) UNDO.shift(); undoSave_(); }
+/* ---- history of inputs: any one of them can be undone on its own ----
+   each input keeps the state before it and after it; undoing it takes away only what it changed
+   (amounts by the difference, entries by their id), keeping everything done since. If something
+   done since changed the very same thing, it can't be pulled apart — then it offers to go back
+   to before that input, which undoes the ones after it too. */
+var IH_PARTS=[['Categories',['struct','deletedFunds']],['Transfers',['transfers','toolXfers']],['Advances',['advances']],['Income',['incomes','incMap']],['Expenses',['expenses','expMap']],
+  ['Staff debt',['debt','debtHist','links']],['Update & approve',['published','dayDone']],['Balances',['bal']],['Formulas & kinds',['incRules','incTypes','expRules','expTypes']],['Allocations',['alloc','allocAsOf','allocPrevAsOf','alHist','alSaved']]];
+function same_(x, y){ return JSON.stringify(x)===JSON.stringify(y); }
+function ihPart_(u){ if(!u.after) return ''; for(var i=0;i<IH_PARTS.length;i++){ if(IH_PARTS[i][1].some(function(k){ return !same_(u.st[k], u.after[k]); })) return IH_PARTS[i][0]; } return ''; }
+function ihKey_(x){ if(Array.isArray(x) && typeof x[0]==='string' && x.length===2 && typeof x[1]==='number') return 't:'+x[0]; if(x && typeof x==='object' && !Array.isArray(x)){ if(x.id!=null) return 'i:'+x.id; if(x.asOf!=null) return 'a:'+x.asOf; } return null; }
+function merge3_(B, A, C){
+  if(same_(A, B)) return C;
+  if(typeof A==='number' && typeof B==='number' && typeof C==='number') return Math.round((C+B-A)*100)/100;
+  if(same_(C, A)) return B;
+  if(same_(C, B)) return C;
+  var arr=[A,B,C].every(Array.isArray), obj=[A,B,C].every(function(x){ return x && typeof x==='object' && !Array.isArray(x); });
+  if(arr){
+    var all=A.concat(B, C);
+    if(all.length && all.every(function(x){ return ihKey_(x)!=null; })){
+      var m=function(L){ var o={}; L.forEach(function(x){ o[ihKey_(x)]=x; }); return o; }, mA=m(A), mB=m(B), mC=m(C), out=[], seen={};
+      C.forEach(function(x){ var k=ihKey_(x); seen[k]=1; var r=merge3_(mB[k], mA[k], x); if(r!==undefined) out.push(r); });
+      B.forEach(function(x, i){ var k=ihKey_(x); if(seen[k]) return; var r=merge3_(x, mA[k], undefined); if(r!==undefined) out.splice(Math.min(i, out.length), 0, r); });
+      return out; }
+    if(A.length===B.length && B.length===C.length) return C.map(function(x, i){ return merge3_(B[i], A[i], x); });
+    throw { conflict:true };
+  }
+  if(obj){ var r={}, ks={}; [A,B,C].forEach(function(o){ Object.keys(o).forEach(function(k){ ks[k]=1; }); });
+    Object.keys(ks).forEach(function(k){ var v=merge3_(B[k], A[k], C[k]); if(v!==undefined) r[k]=v; }); return r; }
+  throw { conflict:true };
+}
+function ihUndoBack_(i){ var u=UNDO[i]; if(!u) return; var cur=JSON.parse(JSON.stringify(stateObj_())), gone=UNDO.length-i;
+  UNDO.splice(i); UNDO.push({ msg:'Put back the '+gone+' input'+(gone>1?'s':'')+' undone from “'+u.msg+'” on', at:Date.now(), st:cur, open:true });
+  ihApply_(u.st, 'Went back to before “'+u.msg+'”'); }
+function ihApply_(st, msg){ resetState_(); loadState_(st); refreshBal_(); keep_();
+  S.inBal=null; S.inAl=null; S.ruleDrafts={}; S.xfer=null; S.fl1=null; S.flUp=null; S.debtUp=null; S.undoAsk=false; S.ihAsk=null; S.ihClash=null;
+  render(); ihOpen_(); toast('↩ '+msg); }
+function ihUndoOne_(i){ var u=UNDO[i]; if(!u) return;
+  if(i===UNDO.length-1){ UNDO.pop(); undoSave_(); S.ihAsk=null; ihApply_(u.st, u.msg); return; }
+  if(!u.after){ S.ihClash=i; S.ihAsk=null; ihOpen_(); return; }
+  var cur=JSON.parse(JSON.stringify(stateObj_())), R;
+  try { R=merge3_(u.st, u.after, cur); } catch(e){ if(!e || !e.conflict) throw e; S.ihClash=i; S.ihAsk=null; ihOpen_(); return; }
+  UNDO.splice(i, 1); UNDO.push({ msg:'Cancel the earlier undo (“'+u.msg+'”)', at:Date.now(), st:cur, open:true });
+  ihApply_(R, u.msg); }
+function ihWhen_(t){ var d=new Date(t); return d.toLocaleDateString('en-GB',{ day:'numeric', month:'short' })+', '+d.toLocaleTimeString('en-GB',{ hour:'2-digit', minute:'2-digit' }); }
+function ihOpen_(){
+  var h='<button class="x" id="sx" aria-label="Close">✕</button><h3>🕘 History of inputs</h3><p class="hint">Every input on this device, newest first. Undo any one of them — only what it changed is taken back, and everything done since stays.</p>';
+  if(!UNDO.length) h+='<p class="hint">Nothing entered yet.</p>';
+  if(S.ihClash!=null && UNDO[S.ihClash]){ var c=UNDO[S.ihClash], n=UNDO.length-1-S.ihClash;
+    h+='<div class="ihWarn" role="alert"><b>“'+esc(c.msg)+'” can’t be undone on its own.</b> '+(c.after ? 'Something entered after it changed the same thing.' : 'It was entered before this history began.')+
+      ' You can go back to before it instead — that also undoes the '+n+' input'+(n>1?'s':'')+' after it.<br><button class="ihBtn ask" data-ihback="'+S.ihClash+'">↩ Go back to before it ('+(n+1)+' inputs)</button> <button class="ihBtn" data-ihcancel="1">Keep everything</button></div>'; }
+  h+='<ul class="ihList">'+UNDO.map(function(u, i){ return { u:u, i:i }; }).reverse().map(function(o){ var u=o.u, i=o.i, part=ihPart_(u), ask=S.ihAsk===i;
+    return '<li><div><span class="ihTag">'+(part||'Input')+'</span><span class="dsub">'+ihWhen_(u.at)+(i===UNDO.length-1?' · latest':'')+'</span><div class="ihMsg">Undo: '+esc(u.msg)+'</div></div>'+
+      '<button class="ihBtn'+(ask?' ask':'')+'" data-ihundo="'+i+'">'+(ask?'Tap again':'↩ Undo')+'</button></li>'; }).join('')+'</ul>';
+  if(UNDO.length>=UNDO_MAX) h+='<p class="hint" style="margin-top:10px">The last '+UNDO_MAX+' inputs are kept.</p>';
+  var el=document.getElementById('sheet'); el.innerHTML=h; document.body.classList.add('sheetOn');
+  document.getElementById('sx').onclick=closeSheet;
+}
 function undoLast_(){ var u=UNDO.pop(); if(!u) return; try { localStorage.setItem(UNDO_KEY, JSON.stringify(UNDO)); } catch(e){}
   resetState_(); loadState_(u.st); refreshBal_(); keep_();
   S.inBal=null; S.inAl=null; S.ruleDrafts={}; S.xfer=null; S.fl1=null; S.flUp=null; S.debtUp=null; S.undoAsk=false;
