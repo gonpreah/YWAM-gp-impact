@@ -140,6 +140,16 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .repTbl tfoot td{ font-weight:700; border-top:1px solid var(--ink); padding-top:7px; }
 .repTbl tfoot .nm{ background:var(--repBg); }
 .repTbl{ width:100%; }
+.gridWrap{ border:1px solid var(--line2, var(--muted)); border-radius:8px; max-height:60vh; overflow:auto; }
+.sheet .gridTbl{ table-layout:fixed; border-collapse:separate; border-spacing:0; font-size:12.5px; font-variant-numeric:tabular-nums; --gl:color-mix(in srgb, var(--muted) 30%, transparent); }
+.sheet .gridTbl th, .sheet .gridTbl td{ border-right:1px solid var(--gl); border-bottom:1px solid var(--gl); padding:6px 8px; text-align:right; overflow:hidden; text-overflow:ellipsis; background:var(--surface); }
+.sheet .gridTbl th:last-child, .sheet .gridTbl td:last-child{ border-right:0; }
+.sheet .gridTbl thead th{ position:sticky; top:0; z-index:2; background:var(--surface2); font-weight:700; font-size:11.5px; vertical-align:bottom; white-space:normal; line-height:1.25; color:var(--ink); }
+.sheet .gridTbl .nm{ text-align:left; position:sticky; left:0; z-index:1; white-space:normal; line-height:1.3; }
+.sheet .gridTbl thead .nm{ z-index:3; }
+.sheet .gridTbl tbody tr:nth-child(even) td{ background:color-mix(in srgb, var(--surface2) 45%, var(--surface)); }
+.sheet .gridTbl .tot{ font-weight:700; background:color-mix(in srgb, var(--surface2) 70%, var(--surface)); }
+.sheet .gridTbl tfoot td{ font-weight:700; background:var(--surface2); border-top:2px solid var(--ink); border-bottom:0; }
 .repTbl.wrapH th{ white-space:normal; line-height:1.2; vertical-align:bottom; min-width:78px; }
 .repTbl.wrapH th.nm{ min-width:130px; }
 .rep.compact .repTbl{ min-width:0; font-size:12px; table-layout:auto; }
@@ -399,7 +409,8 @@ function flowSheetHtml_(kind){
   var all=ALLOC.reduce(function(s2,a){ return s2+flowOf_(kind, a.id).tot; },0);
   return flowPerHtml_(kind).replace('class="incPer"','class="incPer" style="margin:0 0 4px"')+
     '<div class="rep"><div class="repTitle">'+F.report+'</div><div class="repSub">'+(ytd?'January – November 2026':FLOW_MONTH)+'</div>'+
-    '<div class="tblWrap"><table class="repTbl wrapH"><thead><tr><th class="nm"></th>'+used.map(function(k){ return '<th>'+esc(k)+'</th>'; }).join('')+'<th>Total</th></tr></thead><tbody>'+
+    '<div class="tblWrap gridWrap"><table class="gridTbl" style="width:'+(150+96*(used.length+1))+'px"><colgroup><col style="width:150px">'+used.map(function(){ return '<col style="width:96px">'; }).join('')+'<col style="width:96px"></colgroup>'+
+    '<thead><tr><th class="nm">Allocation</th>'+used.map(function(k){ return '<th>'+esc(k)+'</th>'; }).join('')+'<th class="tot">Total</th></tr></thead><tbody>'+
     ALLOC.map(function(a){ var o=flowOf_(kind, a.id);
       return '<tr><td class="nm"><span class="sw" style="display:inline-block;width:10px;height:10px;vertical-align:0;margin-right:6px;background:var('+a.c+')"></span>'+esc(a.name)+'</td>'+used.map(function(k){ return '<td>'+cell(o.by[k])+'</td>'; }).join('')+'<td class="tot">'+cell(o.tot)+'</td></tr>'; }).join('')+
     '</tbody><tfoot><tr><td class="nm">TOTAL</td>'+used.map(function(k){ return '<td>'+cell(colTot(k))+'</td>'; }).join('')+'<td class="tot">'+cell(all)+'</td></tr></tfoot></table></div></div>'+
