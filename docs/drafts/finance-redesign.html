@@ -258,6 +258,8 @@ section.sec{ padding:18px 0; border-bottom:1px solid var(--line); }
 .asOfBar b{ color:var(--ink); }
 .asOfBar .warn{ color:var(--amberDeep); font-weight:600; }
 .asOfBar .sep{ margin:0 2px; }
+.delBtn{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:6px; }
+.delBtn.ask{ background:var(--bad); color:#fff; font-weight:700; }
 .inNext{ border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:14px; padding:12px 14px; margin:10px 0; color:var(--muted); font-size:13.5px; display:flex; gap:10px; align-items:center; }
 .inNext b{ color:var(--ink); }
 .soon{ text-align:center; color:var(--muted); padding:40px 10px; }
@@ -302,14 +304,21 @@ body.sheetOn .sheet{ transform:none; visibility:visible; transition:transform .2
 
 <script>
 /* ---- sample data (made up) ---- */
-var BAL_HIST = [ /* earlier balance days — SAMPLE */
-  { asOf:'2026-11-13', aba:47120.10, us:21000.00, cash:1820.00, by:'the Finances office' },
-  { asOf:'2026-11-06', aba:45980.55, us:21000.00, cash:2105.25, by:'the Finances office' },
-  { asOf:'2026-10-30', aba:44210.00, us:20400.00, cash:1950.00, by:'the Finances office' } ];
-var BAL = { asOf:'2026-11-20', reconciled:'2026-11-14', prevTotal:69940.10, prevAsOf:'2026-11-13',
-  accts:[ { id:'aba', name:'ABA bank', sub:'Cambodia', amt:48250.40 },
-          { id:'us',  name:'US bank',  sub:'United States', amt:21600.00 },
-          { id:'cash',name:'Cash on hand', sub:'the cash box', amt:1820.75 } ] };
+/* balances: one entry per day the office saves. No sample days — only what is entered.
+   Saving a day that already has an entry replaces it; the newest day is the one shown. */
+var BAL_DAYS = [];
+var BAL = { asOf:null, reconciled:null, prevTotal:null, prevAsOf:null, none:true,
+  accts:[ { id:'aba', name:'ABA bank', sub:'Cambodia', amt:0 },
+          { id:'us',  name:'US bank',  sub:'United States', amt:0 },
+          { id:'cash',name:'Cash on hand', sub:'the cash box', amt:0 } ] };
+function refreshBal_(){
+  BAL_DAYS.sort(function(x,y){ return x.asOf<y.asOf ? 1 : -1; });
+  var c=BAL_DAYS[0], pv=BAL_DAYS[1];
+  BAL.none=!c; BAL.asOf=c?c.asOf:null; BAL.reconciled=c?c.rec:null;
+  BAL.accts[0].amt=c?c.aba:0; BAL.accts[1].amt=c?c.us:0; BAL.accts[2].amt=c?c.cash:0;
+  BAL.prevAsOf=pv?pv.asOf:null; BAL.prevTotal=pv?pv.aba+pv.us+pv.cash:null;
+}
+var ALLOC_PREV_ASOF='2026-11-13';
 var ALLOC = [   /* the six allocations and their sub-funds, as the Finances office keeps them — SAMPLE amounts */
   { id:'des', prev:17900, name:'Designated funds', eg:'KSS & YAP, Other Base Payable (Antonia), Other', c:'--al1', dark:false,
     items:[['KSS & YAP',11200],['Other Base Payable (Antonia)',6500],['Other',700]], note:'Money given for a named person or project — it can only be spent on that.' },
@@ -359,8 +368,8 @@ function total(){ return BAL.accts.reduce(function(s,a){ return s+a.amt; },0); }
 /* how an allocation moved since the last balances day, worded like the liquid assets' line */
 function alDeltaHtml(a){
   var d=a.amt-a.prev;
-  if(Math.abs(d)<0.005) return '<span class="alDelta">Same as '+date(BAL.prevAsOf)+'</span>';
-  return '<span class="alDelta '+(d>0?'up':'down')+'">'+(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+' since '+date(BAL.prevAsOf)+'</span>';
+  if(Math.abs(d)<0.005) return '<span class="alDelta">Same as '+date(ALLOC_PREV_ASOF)+'</span>';
+  return '<span class="alDelta '+(d>0?'up':'down')+'">'+(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+' since '+date(ALLOC_PREV_ASOF)+'</span>';
 }
 /* ---- simple sums in the amount boxes: 500-30, 5*6, (120+80)/2, 1,250 + 40 ----
    A small parser of its own (never eval): numbers, + - * / ( ), x × for times, ÷ for divide.
@@ -398,19 +407,19 @@ function inputHtml(){
   var acc=function(id){ return B.accts.filter(function(a){ return a.id===id; })[0]; };
   var row=function(id, label, sub){ var a=acc(id);
     return '<div class="inRow"><label for="inB_'+id+'">'+label+'<span class="ls">'+sub+'</span></label>'+
-      '<div class="money"><span>$</span><input id="inB_'+id+'" data-inbal="'+id+'" type="text" inputmode="text" autocomplete="off" spellcheck="false" enterkeyhint="done" placeholder="'+inMoney_(a.amt)+'" value="'+esc(D[id])+'"></div>'+
-      '<div class="inWas">Last time: '+money(a.amt,true)+' on '+date(B.asOf)+'</div></div>'; };
+      '<div class="money"><span>$</span><input id="inB_'+id+'" data-inbal="'+id+'" type="text" inputmode="text" autocomplete="off" spellcheck="false" enterkeyhint="done" placeholder="'+(B.none?'0.00':inMoney_(a.amt))+'" value="'+esc(D[id])+'"></div>'+
+      '<div class="inWas">'+(B.none?'Nothing entered yet':'Last time: '+money(a.amt,true)+' on '+date(B.asOf))+'</div></div>'; };
   var h=inDayHtml_()+'<div class="inCard" id="inBalances"><h2>🏦 Balances</h2>'+
-    '<p class="inLast">Last entered '+date(B.asOf)+' by the Finances office. Type what is in each account today — the Dashboard updates when you save.</p>'+
+    '<p class="inLast">'+(B.none?'No balances entered yet.':'Last entered for '+date(B.asOf)+'.')+' Type what is in each account on the “Reports as of” day — saving the same day again replaces it.</p>'+
     '<p class="inTip">🧮 Boxes do simple sums: type <b>500-30</b> or <b>5*6</b> and it works it out.</p>'+
     row('aba','ABA bank','Cambodia · US$ account')+row('us','US bank','United States')+row('cash','Cash on hand','the cash box, counted')+
     '<div class="inTotal" id="inTotal">'+inTotalHtml_()+'</div>'+
     '<div class="inDates one"><div><label for="inB_rec">Last reconciled with the bank</label><input type="date" id="inB_rec" data-inbal="rec" max="2026-11-23" value="'+esc(D.rec||'')+'"><div class="ls">Leave empty if not reconciled yet.</div></div></div>'+
     (S.inErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.inErr)+'</p>' : '')+
-    '<div class="inBtns"><button class="btn" id="inBalSave">Save balances</button><button class="btn ghost" id="inBalCopy">Same as last time</button></div>'+
-    '<details class="inHist"><summary>Earlier balances ('+BAL_HIST.length+')</summary><table><tr><th>Date</th><th>ABA</th><th>US bank</th><th>Cash</th><th>Total</th></tr>'+
-      BAL_HIST.map(function(r){ return '<tr><td>'+date(r.asOf)+'</td><td>'+money(r.aba)+'</td><td>'+money(r.us)+'</td><td>'+money(r.cash)+'</td><td><b>'+money(r.aba+r.us+r.cash)+'</b></td></tr>'; }).join('')+
-    '</table></details></div>';
+    '<div class="inBtns"><button class="btn" id="inBalSave">Save balances</button>'+(B.none?'':'<button class="btn ghost" id="inBalCopy">Same as last time</button>')+'</div>'+
+    (BAL_DAYS.length ? '<details class="inHist" open><summary>Balances entered ('+BAL_DAYS.length+')</summary><table><tr><th>Date</th><th>ABA</th><th>US bank</th><th>Cash</th><th>Total</th><th></th></tr>'+
+      BAL_DAYS.map(function(r){ return '<tr><td>'+date(r.asOf)+'</td><td>'+money(r.aba)+'</td><td>'+money(r.us)+'</td><td>'+money(r.cash)+'</td><td><b>'+money(r.aba+r.us+r.cash)+'</b></td><td><button class="delBtn" data-baldel="'+r.asOf+'" aria-label="Delete the balances for '+date(r.asOf)+'">✕</button></td></tr>'; }).join('')+
+    '</table></details>' : '')+'</div>';
   h+=inAllocHtml_();
   h+=
     '<div class="inNext">💵 <span><b>Income and expenses</b> — entered by category and shared out to the allocations.</span></div>'+
@@ -454,9 +463,10 @@ function inAlSave_(){
   ALLOC.forEach(function(g){ g.items.forEach(function(_, i){ var v=inAlVal_(g.id,i); if(v==='') err=err||('Fill in '+g.items[i][0]+' (0 if empty).'); else if(isNaN(calc_(v))) err=err||(g.items[i][0]+': that isn’t a number or a sum I can work out.'); else if(calc_(v)<0) err=err||'Balances can’t be below zero.'; }); });
   var day=reportDay_(); if(!err && (!day || day>TODAY)) err='Pick a “Reports as of” day at the top that isn’t in the future.';
   S.inAlErr=err; if(err){ render(); return; }
-  ALLOC_ASOF=day;
+  if(ALLOC_ASOF!==day) ALLOC_PREV_ASOF=ALLOC_ASOF; ALLOC_ASOF=day;
   ALLOC.forEach(function(g){ g.prev=g.amt; g.items.forEach(function(it, i){ it[1]=+inAlNum_(g.id,i).toFixed(2); }); g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); });
   var gap=total()-ALLOC.reduce(function(s2,g){ return s2+g.amt; },0);
+  S.alSaved=true; keep_();
   S.inAl=null; render(); toast(Math.abs(gap)<0.005 ? 'Saved — every dollar is allocated' : 'Saved — '+money(Math.abs(gap),true)+(gap>0?' still not allocated':' over what is in hand'));
 }
 /* ---- Input: staff debt — attach the office's A/R Ageing spreadsheet ----
@@ -575,14 +585,14 @@ function inDebtSave_(){
     DEBT.people=U.people.map(function(p){ var st=staffById_(S.debtLink[p.n]); return { n:p.n, b:p.b, tot:p.tot, old:p.old, d: st ? st.dept : '', staffId: st ? st.id : null }; });
     DEBT.file=U.file; DEBT.src='A/R Ageing Summary · '+U.file;
   }
-  DEBT.asOf=dd; S.debtUp=null; S.debtDay=null; S.debtLink={}; render(); toast('Saved — staff debt is as of '+date(dd));
+  DEBT.asOf=dd; keep_(); S.debtUp=null; S.debtDay=null; S.debtLink={}; render(); toast('Saved — staff debt is as of '+date(dd));
 }
 function inTotalHtml_(){
   var D=S.inBal||{}, ids=['aba','us','cash'], filled=ids.filter(function(k){ return D[k]!=='' && D[k]!=null; });
   if(!filled.length) return '<span><small>Total liquid assets</small><b>—</b></span><span class="dd">Type the three amounts</span>';
   var t=ids.reduce(function(s2,k){ var v=calc_(D[k]); return s2+(isNaN(v)?0:v); },0), d=t-total();
   return '<span><small>Total liquid assets'+(filled.length<3?' (so far)':'')+'</small><b>'+money(t,true)+'</b></span>'+
-    (filled.length===3 ? '<span class="dd">'+(Math.abs(d)<0.005?'Same as '+date(BAL.asOf):(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+'<br>since '+date(BAL.asOf))+'</span>' : '<span class="dd">'+(3-filled.length)+' to go</span>');
+    (filled.length===3 && !BAL.none ? '<span class="dd">'+(Math.abs(d)<0.005?'Same as '+date(BAL.asOf):(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+'<br>since '+date(BAL.asOf))+'</span>' : '<span class="dd">'+(filled.length<3?(3-filled.length)+' to go':'')+'</span>');
 }
 function inSave_(){
   var D=S.inBal, err='';
@@ -592,22 +602,25 @@ function inSave_(){
   if(!err && day>TODAY) err='The “Reports as of” day can’t be in the future.';
   if(!err && D.rec && D.rec>day) err='The reconciled day can’t be after the “Reports as of” day.';
   S.inErr=err; if(err){ render(); return; }
-  BAL_HIST.unshift({ asOf:BAL.asOf, aba:BAL.accts[0].amt, us:BAL.accts[1].amt, cash:BAL.accts[2].amt, by:'the Finances office' });
-  BAL.prevTotal=total(); BAL.prevAsOf=BAL.asOf;
-  BAL.accts[0].amt=+calc_(D.aba).toFixed(2); BAL.accts[1].amt=+calc_(D.us).toFixed(2); BAL.accts[2].amt=+calc_(D.cash).toFixed(2);
-  BAL.asOf=day; BAL.reconciled=D.rec||null;
-  S.inBal=null; render(); toast('Saved — the Dashboard shows the new balances');
+  var had=BAL_DAYS.some(function(r){ return r.asOf===day; });
+  BAL_DAYS=BAL_DAYS.filter(function(r){ return r.asOf!==day; });
+  BAL_DAYS.push({ asOf:day, aba:+calc_(D.aba).toFixed(2), us:+calc_(D.us).toFixed(2), cash:+calc_(D.cash).toFixed(2), rec:D.rec||null });
+  refreshBal_(); keep_();
+  S.inBal=null; render(); toast((had?'Replaced':'Saved')+' the balances for '+date(day)+(BAL.asOf!==day?' — the Dashboard still shows the newer '+date(BAL.asOf):''));
 }
 function toast(msg){ var t=document.createElement('div'); t.className='toast'; t.setAttribute('role','status'); t.textContent=msg; document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 2600); }
 function balancesHtml(){
-  var T=total(), d=T-BAL.prevTotal, whole=Math.floor(T), cents=Math.round((T-whole)*100);
+  if(BAL.none) return '<section class="sec" id="balances"><div class="secHead"><h2>🏦 Balances</h2></div>'+
+    '<div class="liquid"><div class="lbl">Total liquid assets</div><div class="num">—</div><div class="delta" style="color:var(--onDarkFaint)">No balances entered yet</div></div>'+
+    '<p class="hint" style="margin-top:10px">Enter the ABA, US bank and cash on hand on the <button class="more" data-tab="input" style="display:inline;padding:0">Input tab</button>.</p></section>';
+  var T=total(), d=BAL.prevTotal==null?null:T-BAL.prevTotal, whole=Math.floor(T), cents=Math.round((T-whole)*100);
   var h='<section class="sec" id="balances"><div class="secHead"><h2>🏦 Balances</h2><button class="more" data-sheet="balances">Details ›</button></div>'+
     '<p class="hint">Siem Reap base · as of '+date(BAL.asOf)+' · entered by the Finances office</p>'+
     '<div class="liquid"><div class="lbl">Total liquid assets</div>'+
     '<div class="num">'+money(whole)+'<span class="c">.'+String(cents).padStart(2,'0')+'</span></div>'+
-    '<div class="delta">'+(d>=0?'▲ ':'▼ ')+money(Math.abs(d),true)+' since '+date(BAL.prevAsOf)+'</div></div>'+
+    (d==null ? '<div class="delta" style="color:var(--onDarkFaint)">The first day entered</div>' : '<div class="delta"'+(d<0?' style="color:#FF9B8F"':'')+'>'+(Math.abs(d)<0.005?'Same as ':(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+' since ')+date(BAL.prevAsOf)+'</div>')+'</div>'+
     '<div class="accts">'+BAL.accts.map(function(a){
-      return '<div class="acct"><div class="an">'+esc(a.name)+'</div><div class="av">'+money(a.amt)+'</div><div class="as">'+Math.round(a.amt/T*100)+'% · '+esc(a.sub)+'</div></div>';
+      return '<div class="acct"><div class="an">'+esc(a.name)+'</div><div class="av">'+money(a.amt)+'</div><div class="as">'+(T?Math.round(a.amt/T*100):0)+'% · '+esc(a.sub)+'</div></div>';
     }).join('')+'</div>';
   var ago=BAL.reconciled ? daysAgo(BAL.reconciled) : null, late=ago==null||ago>35;
   h+='<p class="rec '+(late?'late':'ok')+'">'+(BAL.reconciled ? (late?'⚠️ Last reconciled ':'✓ Reconciled with the bank ')+date(BAL.reconciled)+' ('+ago+' days ago)' : '⚠️ Not reconciled with the bank yet')+'</p></section>';
@@ -743,7 +756,7 @@ function flowSheetHtml_(kind){
 }
 function asOfBarHtml_(){
   var same=BAL.asOf===ALLOC_ASOF;
-  return '<div class="asOfBar">📅 Reports as of <b>'+date(BAL.asOf)+'</b>'+(same?'':' <span class="warn">· allocations as of '+date(ALLOC_ASOF)+'</span>')+
+  return '<div class="asOfBar">📅 Reports as of <b>'+(BAL.asOf?date(BAL.asOf):'—')+'</b>'+(same||!BAL.asOf?'':' <span class="warn">· allocations as of '+date(ALLOC_ASOF)+'</span>')+
     '<span class="sep">·</span>💳 Staff debt as of <b>'+date(DEBT.asOf)+'</b></div>';
 }
 function nextHtml(){
@@ -777,7 +790,7 @@ function sheet(which){
       BAL.accts.map(function(a){ return '<tr><td>'+esc(a.name)+'</td><td class="r">'+money(a.amt,true)+'</td><td class="r">'+(a.amt/T*100).toFixed(1)+'%</td></tr>'; }).join('')+
       '<tr><td><b>Total liquid assets</b></td><td class="r"><b>'+money(T,true)+'</b></td><td class="r">100%</td></tr></table>';
   } else {
-    h+='<h3>📊 Allocation report — details</h3><p class="hint">Every allocation, what it holds, and how it has moved since '+date(BAL.prevAsOf)+'.</p><table><tr><th>Allocation</th><th class="r">Amount</th><th class="r">Share</th><th class="r">Change</th></tr>';
+    h+='<h3>📊 Allocation report — details</h3><p class="hint">Every allocation, what it holds, and how it has moved since '+date(ALLOC_PREV_ASOF)+'.</p><table><tr><th>Allocation</th><th class="r">Amount</th><th class="r">Share</th><th class="r">Change</th></tr>';
     ALLOC.forEach(function(a){
       h+='<tr><td><span class="sw" style="display:inline-block;vertical-align:-2px;margin-right:6px;background:var('+a.c+')"></span><b>'+esc(a.name)+'</b></td><td class="r"><b>'+money(a.amt,true)+'</b></td><td class="r">'+(a.amt/T*100).toFixed(1)+'%</td><td class="r">'+(function(d){ return Math.abs(d)<0.005 ? '—' : '<span class="alDelta '+(d>0?'up':'down')+'">'+(d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+'</span>'; })(a.amt-a.prev)+'</td></tr>';
       a.items.forEach(function(i){ if(a.items.length>1) h+='<tr><td style="padding-left:22px;color:var(--muted)">'+esc(i[0])+'</td><td class="r" style="color:var(--muted)">'+money(i[1],true)+'</td><td></td><td></td></tr>'; });
@@ -826,6 +839,9 @@ document.addEventListener('input', function(e){
 });
 document.addEventListener('click', function(e){
   if(e.target.id==='inBalSave'){ inSave_(); return; }
+  if(e.target.dataset && e.target.dataset.baldel){ var dday=e.target.dataset.baldel;
+    if(S.balDelAsk!==dday){ S.balDelAsk=dday; e.target.textContent='Delete?'; e.target.classList.add('ask'); return; }
+    BAL_DAYS=BAL_DAYS.filter(function(r){ return r.asOf!==dday; }); S.balDelAsk=null; refreshBal_(); keep_(); render(); toast('Deleted the balances for '+date(dday)); return; }
   if(e.target.id==='inAlSave'){ inAlSave_(); return; }
   if(e.target.id==='inDebtSave'){ inDebtSave_(); return; }
   if(e.target.id==='inDebtCancel'){ S.debtUp=null; S.debtDay=null; S.debtReadErr=''; render(); return; }
@@ -847,6 +863,20 @@ document.getElementById('themeBtn').onclick=function(){
   var r=document.documentElement, dark=r.dataset.theme==='dark';
   r.dataset.theme = dark ? 'light' : 'dark'; this.textContent = dark ? '🌙 Dark' : '☀️ Light';
 };
+/* keep what is entered on this device (this draft only), so reloading or an update to the
+   preview never wipes it. The real app will save to the server instead. */
+var KEEP_KEY='gp-fin-draft-v1';
+function keep_(){ try { localStorage.setItem(KEEP_KEY, JSON.stringify({ bal:BAL_DAYS, alloc:ALLOC.map(function(g){ return { id:g.id, prev:g.prev, items:g.items }; }),
+  allocAsOf:ALLOC_ASOF, allocPrevAsOf:ALLOC_PREV_ASOF, debt:{ asOf:DEBT.asOf, people:DEBT.people, file:DEBT.file, src:DEBT.src }, links:DEBT_LINKS, alSaved:!!S.alSaved })); } catch(e){} }
+(function(){ try { var k=JSON.parse(localStorage.getItem(KEEP_KEY)||'null'); if(!k) return;
+  if(Array.isArray(k.bal)) BAL_DAYS=k.bal;
+  if(k.alSaved && Array.isArray(k.alloc)){ k.alloc.forEach(function(x){ var g=ALLOC.filter(function(a){ return a.id===x.id; })[0]; if(g && Array.isArray(x.items) && x.items.length===g.items.length){ g.prev=x.prev; g.items=x.items; g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); } });
+    ALLOC_ASOF=k.allocAsOf||ALLOC_ASOF; ALLOC_PREV_ASOF=k.allocPrevAsOf||ALLOC_PREV_ASOF; S.alSaved=true; }
+  if(k.debt && k.debt.file && Array.isArray(k.debt.people)){ DEBT.asOf=k.debt.asOf; DEBT.people=k.debt.people; DEBT.file=k.debt.file; DEBT.src=k.debt.src; }
+  else if(k.debt && k.debt.asOf) DEBT.asOf=k.debt.asOf;
+  if(k.links) DEBT_LINKS=k.links;
+} catch(e){} })();
+refreshBal_();
 render();
 </script>
 </body>
