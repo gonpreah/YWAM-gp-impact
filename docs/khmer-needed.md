@@ -6163,3 +6163,11 @@ A quarter of a campus as a tree to pan and zoom: faces dragged from a tray onto 
 | The list | បញ្ជី |
 | See it as a tree | មើលជាដើមឈើ |
 | Edit Q{q} {year} | កែ Q{q} {year} |
+
+## 136. Finances: the finance tool's tab (Nov 2026)
+My Ministry → Finances now has Dashboard · Input · Tasks · OKRs. "Input" is a tab label (very little room).
+The finance tool itself (public/finance.html) is English only for now — its Khmer is still to be written.
+
+| English | Khmer (draft) |
+|---|---|
+| Input | បញ្ចូល |

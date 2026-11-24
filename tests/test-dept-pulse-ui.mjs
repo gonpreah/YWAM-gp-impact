@@ -113,17 +113,14 @@ const tiles = page => page.$$eval('.pulseCard .pulseTile', ts => ts.map(t => t.i
 }
 
 /* ---------- 2. Finance enters the staff debt ---------- */
+/* Since Nov 2026 the A/R Ageing report saved in the finance tool (public/finance.html → fin2Save)
+   writes each department's Staff Debt ($) — The numbers tab, where it was typed, is gone. */
 {
-  const { ctx, page } = await open('finance');
-  await toMinistry(page);
-  /* the Finances page opens on its reports (the finance tool); the typed box is under "The numbers" */
-  await page.click('.mmTabs [data-mmtab="numbers"]'); await page.waitForTimeout(600);
-  ok('Finance has a staff-debt card on its page', !!(await page.$('[data-debt="Community Service"]')));
-  await page.fill('[data-debt="Community Service"]', '1200');
-  await page.click('#debtSave'); await page.waitForTimeout(800);
-  ok('and saving stores it for the department', mem.entries.some(e => e.dept === 'Campus Leadership' && e.ministry === 'Community Service' && e.metric === 'Staff Debt ($)' && e.value === 1200));
-  ok('the card says when it was entered', /last entered/.test(await page.$eval('[data-debt="Community Service"]', e => e.closest('.row').innerText)));
-  await ctx.close();
+  const call = async (fn, args) => (await api.default({ method: 'POST', json: async () => ({ fn, args }), headers: new Map() }, {})).json();
+  const g = await call('fin2Get', ['finance', '1234']);
+  ok('Finance can open the finance tool', g.ok && g.canEdit);
+  const r = await call('fin2Save', ['finance', '1234', '', { debt: { asOf: '2026-11-20', file: 'ageing.xlsx', people: [{ n: 'Someone', b: [1200, 0, 0, 0, 0], tot: 1200, d: 'Community Service', staffId: null }] } }, g.rev]);
+  ok('and saving a report stores it for the department', r.ok && mem.entries.some(e => e.dept === 'Campus Leadership' && e.ministry === 'Community Service' && e.metric === 'Staff Debt ($)' && e.value === 1200));
 }
 {
   const { ctx, page } = await open('chea');

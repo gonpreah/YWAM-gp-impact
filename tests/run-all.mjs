@@ -25,6 +25,7 @@ const SERVER = [
   'test-required.mjs',  // books read on your account; the papers everyone signs, who sees what, versions, the contract
   'test-ministry-tools.mjs', // Campus Leadership "My week" and the Cafe tool fill their weekly numbers; who may use them; server-side prices
   'test-p360.mjs',           // 360 reviews: answers kept with no name, counts not who, results only closed and from 3+, comments shuffled, plan and quarterly reviews the person's own
+  'test-fin2.mjs',           // the finance tool's records: only the office saves, leadership reads, a save from an older copy is refused
   'test-finance.mjs',        // the finance tool: only the Finances office saves; leadership sees debt as totals only; shape checks; names matched; dept staff debt follows
   'test-qbo.mjs',            // QuickBooks: only the office connects; single-use state; tokens never leave the server or reach the backup; P&L + ageing come in as an upload's would; refresh, reconnect, Location, disconnect, nightly
   'test-finance-parse.mjs',  // finance.js reads the three reports (made-up PDFs' text): P&L lines and totals, the Burn Rate's tables, the ageing buckets, a spreadsheet paste
@@ -88,6 +89,7 @@ const SERVER = [
 ];
 
 const BROWSER = [
+  'test-fin2-page.mjs',      // the finance tool in Impact: loads from the server, saves, a clash shows the newer copy, leadership read-only, the demo's entries brought in
   'test-ux-ui.mjs',            // ☀️ Today on My Home, 🔍 search from the header, the app's own Yes / Cancel sheet, Undo on a deleted task
   'test-game-ui.mjs',          // the week's board on the page: My Home's line, Team → This week, Khmer
   'test-quick-apps-ui.mjs',    // My Home's dashboard: hold or ✎ to edit, wiggle, drag, ＋ widgets and apps; saveDashLayout
@@ -104,9 +106,7 @@ const BROWSER = [
   'test-required-ui.mjs', // books-read tally, "Finish your profile", read + sign with a drawn signature, admin view, HR → Required
   'test-ministry-tools-ui.mjs', // My week: log, partners, reflection, base plants; Cafe: open, till, counters, expenses, rota, close, set up; Khmer at 320px
   'test-p360-ui.mjs',        // 360 reviews on the page: start with quick picks, answer (a board login too), close, results, plan from a growth area, the quarter's review, share
-  'test-qbo-ui.mjs',         // the QuickBooks card: connect in a window of its own, back from Intuit, numbers in, a Location, leadership sees "from QuickBooks", disconnect
   'test-lead-roles-ui.mjs',  // each Campus Leadership role its own My Ministry: International, National, a department's Director, untitled; opens on Overview each time
-  'test-finance-ui.mjs',     // the office uploads three PDFs, previews checked, saved; a Director's Finances tab: tiles, charts, burn rate, debt with no names, money ahead
   'test-pull-drill.mjs',    // the pull gesture on both pages, and which figures open
   'test-touch-scroll.mjs',  // a swipe over a slider or the chip strip scrolls the page, and answers nothing
   'test-number-entry.mjs',  // typing into a number box replaces what is in it, and no box starts at a 0 nobody typed

@@ -1079,7 +1079,34 @@ school's home.
   Campus Leadership row, with `by` — so everything reading it still does. Funds
   Raised is left alone (Uriah: don't worry about it).
 
-## Finances: the office's three reports, and leadership's dashboard (Oct 2026)
+## Finances: the finance tool (Nov 2026) — replaces Reports / Dashboard / The numbers
+The Finances office designed it as a demo (docs/drafts/finance-redesign.html, published as an artifact) and
+asked for it on My Ministry. **How every part fits together is docs/drafts/finance-how-it-works.md — read it
+before changing a rule, and change it in the same commit.**
+- **public/finance.html is built, never edited**: `node scripts/build-finance-page.mjs` writes it from the draft
+  with `window.GP_FIN_APP=true`, which makes the same code load from and save to the server, drop the sample
+  numbers / names and the draft bar, use Impact's own fonts and pdf.js, and today on Cambodia's clock.
+  tests/test-fin2-page.mjs fails while it is out of date. The demo keeps working as it was (its data in the
+  browser) and has **📤 Copy my entries for Impact**; Input in Impact has **📥 Bring in entries from the demo**
+  (the two are different websites, so the entries travel as pasted text).
+- **Where it shows**: My Ministry → Skills Training › Finances for the office (`finCanEditClient_`): tabs
+  **Dashboard · Input** (`fdash` / `finput`, `data-fintab`) then the app's own Tasks · OKRs; Campus Leadership's
+  **Finances** tab (`lwt==='money'`) shows the Dashboard read-only. Both are an iframe (`fin2FrameHtml_` /
+  `fin2FrameSize_` in teams/09-finance.js, `?embed=1&view=dash|input`), sized to the screen below it and
+  scrolling on its own so the page's sticky bar works. It reads the app's sign-in (`gp-staff`).
+- **Server** (api.js "The finance tool"): one document per campus, `fin2:<campus>` = {rev, state, at, by, byName};
+  `fin2Get` (finCanView_; the office also gets the campus staff, to link staff-debt names) and
+  `fin2Save(user, pin, campus, state, rev)` (finCanEdit_; only the keys in `FIN2_KEYS`; ≤3 MB; a save from an
+  older `rev` is refused with the newer copy, which the page then shows). A changed A/R Ageing report writes each
+  department's Staff Debt ($) this week (`fin2DeptDebt_`), as The numbers used to — the department pulse reads it.
+- **Gone from the page** (code and saved data left in place, nothing shows them): Reports (PDF uploads, QuickBooks
+  card, own reports), leadership's old dashboard (incl. the money ahead and the DTS lecture-fees card) and The
+  numbers. getFinance / QuickBooks' nightly sync still run. tests/test-finance-ui.mjs and test-qbo-ui.mjs were
+  retired with the screens; test-finance.mjs / test-qbo.mjs (server) stay.
+- **Khmer**: the tab label is in PENDING_KM (§136); the finance tool's own text is English only so far.
+- Tests: tests/test-fin2.mjs (server), tests/test-fin2-page.mjs (the page, real api.js).
+
+## Finances: the office's three reports, and leadership's dashboard (Oct 2026) — no longer shown (see above)
 Uriah: "Build the finance tool for the accounting ministry … build the finance page around
 [our three reports] and then give all the leadership a base financial dashboard in their
 ministry page." The three reports are the ones the Finances office (Skills Training →
