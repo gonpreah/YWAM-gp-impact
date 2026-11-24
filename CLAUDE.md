@@ -947,6 +947,51 @@ school's home.
   name (its application's answer), logged, the Teams Database following. tests/test-portal-outcome.mjs.
 - Tests: tests/test-dts.mjs (server), tests/test-dts-ui.mjs (GPDTS page, portal, Google, Admin).
 
+## Intercession on My Ministry — Wednesdays and the fast (teams/25-intercession.js, Nov 2026, Uriah)
+"For intercession, we only do it once a week, every Wednesday … but it would be great for them to also plan like a
+January 21-day fast and prayer as well." Youth Education › Intercession, both campuses. Tabs **Wednesdays · 21-day fast ·
+Requests · Dashboard** (`ICP_TABS` icwed / icfast / icreq / icdash, in `MM_SHELL_KEYS`, `mmTabsFor_` via `isIcpMinistry_`)
+then Numbers · Tasks · OKRs. One `getIntercession` load per open (`S.icp`).
+- **Wednesdays** (`icpWedsHtml_`): "How was Wednesday …?" (`#icpAskHeld`) while the last one isn't recorded, the next 8
+  Wednesdays (Cambodia's calendar), earlier ones folded (`#icpPast`). A plan (`icpWedFormHtml_`, `#icpForm`, draft in
+  `S.icpDraft`, kept across redraws by `icpKeep_`): who leads (the people picker, key `icpl`, or a typed guest name), focus,
+  scripture **reference only**, worship team (a plain line — **the hook for the Worship tool**, being built separately),
+  the campus's ministries prayed for (`[data-icpmin]`), other needs, notes; "Copy the plan from {date}" (`#icpCopyLast`).
+  Once the day has come: held yes / no (`[data-icpheld]`), how many came, hours, answered-prayer testimonies.
+- **Prayer needs**: any staff member sends one for a Wednesday (the next by default) from **Wednesday intercession**
+  (`S.view='icp'`, `icpPageHtml_`: the next Wednesday read-only, the send form, "Needs I sent", the fast) — reached from
+  ☰ → Prayer (`#prToIcp`) and search (`intercession`); it points back to Prayer for requests meant for everyone. A need:
+  text, ministry, private to the team or not. The team marks it prayed / answered (with a line) on Requests. Others see
+  shared needs without the sender's name, and their own.
+- **The fast** (`icpFastTabHtml_`, `fastFormHtml_`): title, first day, 7–40 days, theme, each day's focus + reference + note —
+  **📋 Fill in our 21 themes** (`ICP_FAST_TPL`: our own wording, English and Khmer side by side, references only) — and
+  prayer gatherings (day, time, place, leader; held + hours once the day has come; "One every day"). Staff see it while it
+  runs or starts within 45 days (`fastCurrent_`): **☰ item** with the fast's title (`fast`), **search**, the **bell**
+  (`fastNotifItems_`: an invitation from 14 days before; for those who joined, the day's focus until they tick it;
+  `[data-gofast]`, `bindGoFast_`, so the slide-down presses it), and the daily phone reminder (`fastDay` in `PUSH_TEXT`,
+  with `p.daily`). Joining picks a kind (`FAST_KINDS`: full, partial / Daniel, one meal a day, media, other — no medical
+  advice; one line says anyone with a health condition, pregnant or nursing should choose a partial fast or ask a
+  doctor), then the days are ticked (`.fastDay`, not ahead of today). **Who fasts and how is private**: the team gets
+  counts only (joined, prayed today, days ticked) — tests/test-intercession.mjs checks no id, name or kind leaves.
+- **Server** (api.js "Intercession"): `icp:<campus>` = {weds: {date: plan}, needs}; `fast:<campus>` = {fasts (8 kept)};
+  `fastJoin:<campus>` = {fastId: {staffId: {kind, ticks}}} — apart, so the plan is read without the people. All written
+  with `mutateKey_`. Handlers `getIntercession`, `intercessionSaveWed(date, rec|null)`, `intercessionNeedSend`,
+  `intercessionNeedMark(id, open|prayed|answered, answer)`, `intercessionNeedDelete` (sender or team), `fastSave`,
+  `fastDelete` (joins go too), `fastJoin(fastId, kind|'')`, `fastTick(fastId, day, done)`. Rights: writing plans, needs'
+  status and the fast — `canIcp_` = `canLogFor_` Youth Education|Intercession (members incl. old Community Service rows,
+  leaders, the Youth Education director, admins); reading, sending, joining — any active staff on the campus; applicants
+  never. Ten needs a person a day. The boot carries `fast` (`fastGlance_`, two reads only) → `S.fast`; no new call on open.
+- **The numbers count themselves** (`icpSyncDates_` after every change, `toolSync_` tag `tool:intercession`, per the week
+  and week year of each date): Prayer Meetings Held (Wednesdays held + fast gatherings held), Prayer Hours Covered (their
+  hours), Ministries Covered in Prayer (distinct: the held Wednesday's ministries and its needs prayed for / answered),
+  Answered-Prayer Testimonies. **Never over a typed row** (a metric with a row not by the tool is left out of that week).
+  `ICP_AUTO_METRICS` (taxonomy.js, `autoMetricsFor`) = `ICP_METRICS` (api.js) — test-checked; so Numbers asks only for
+  **Director Weekly Score (1-10)**, which stays typed (not `numbersExempt_`; `numbersStatus_` ignores `tool:intercession`
+  rows, so the reminders wait on the score). `isDtsMinistry_` now names GPDTS itself (autoMetricsFor is no longer GPDTS's
+  alone). Dashboard (`dash` on the answer): Wednesdays held, average attendance, hours, ministries, testimonies, needs
+  answered, each fast's counts, the testimonies.
+- tests/test-intercession.mjs (server), tests/test-intercession-ui.mjs. Khmer: docs/khmer-needed.md §137. sw.js SHELL v30.
+
 ## Signing in to the GP app with Google; every new account approved (Nov 2026, Andrew)
 - **Continue with Google** (`07-health-leave.js`: `_ggl`, `gglBtnHtml_`, `gglGo_`, `gglCred_` — the portal's
   own button and Google's OAuth token client, loaded on the first tap; on when `GP_GOOGLE_CLIENT_ID` is set,

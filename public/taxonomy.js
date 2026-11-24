@@ -75,7 +75,11 @@ var GPDTS_METRICS = ['Students Applied','Students Accepted','Students Enrolled',
 var DTS_AUTO_METRICS = ['Students Applied','Students Accepted','Students Enrolled','Students Graduated',
   'Potential Staff','Local Students Contacted','Intl Students Contacted',
   'People Heard the Gospel','Healings','Salvations','Baptisms'];
+/* Intercession (both campuses, Nov 2026): its Wednesdays and fast gatherings count these four
+   (api.js "Intercession", ICP_METRICS — keep the two lists the same); Director Weekly Score is typed. */
+var ICP_AUTO_METRICS = ['Prayer Meetings Held','Prayer Hours Covered','Ministries Covered in Prayer','Answered-Prayer Testimonies'];
 function autoMetricsFor(campus, dept, ministry) {
+  if (dept === 'Youth Education' && ministry === 'Intercession') return ICP_AUTO_METRICS.slice();
   return campus === 'siemreap' && dept === 'Leadership Development' && ministry === 'GPDTS'
     ? DTS_AUTO_METRICS.slice() : [];
 }
