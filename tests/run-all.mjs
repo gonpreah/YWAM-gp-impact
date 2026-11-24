@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 const SERVER = [
+  'test-worship.mjs',        // the Worship rota: who makes it, drafts hidden until published, cleaned weeks, its numbers as tool:worship rows never over a typed one
   'test-tests.mjs',          // Tests: the fivefold gifts are scored on the server; the couple check-up is only ever sent to the two partners and their counsellor
   'test-library-club.mjs',   // the Library, read together: book of the month, plans, notes, sharing only with a yes, recommendations, who may give a plan
   'test-lib-notes.mjs',      // the Library's highlights and notes: who sees them (me / my mentor / my campus), likes, comments, prayer requests
@@ -89,6 +90,7 @@ const SERVER = [
 ];
 
 const BROWSER = [
+  'test-worship-ui.mjs',     // the Worship rota on My Ministry: tabs, the people picker, songs, publish; My Home's line, the bell, ☰ → Worship rota for anyone
   'test-fin2-frame-ui.mjs',  // the finance tool in My Ministry is one page with the app: the frame as tall as the page, the bar sticks, sheets on screen
   'test-fin2-page.mjs',      // the finance tool in Impact: loads from the server, saves, a clash shows the newer copy, leadership read-only, the demo's entries brought in
   'test-ux-ui.mjs',            // ☀️ Today on My Home, 🔍 search from the header, the app's own Yes / Cancel sheet, Undo on a deleted task

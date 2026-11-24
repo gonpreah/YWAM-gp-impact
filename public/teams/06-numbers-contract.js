@@ -815,7 +815,7 @@ function mmTabsHtml_(tabs, cur, extraClass){
   return '<div class="gtBar mmTabsBar"><div class="gtTabs mmTabs'+(extraClass?' '+extraClass:'')+'" role="tablist">'+tabs.map(function(x){
     return '<button class="gtTab'+(cur===x[0]?' on':'')+'" '+(x[2]||'data-mmtab')+'="'+esc(x[0])+'" role="tab">'+esc(x[1])+'</button>'; }).join('')+'</div></div>';
 }
-var MM_SHELL_KEYS=['numbers','sched','tasks','okr','teams','dtsdash','dtsdb','dtsfin'];
+var MM_SHELL_KEYS=['numbers','sched','tasks','okr','teams','dtsdash','dtsdb','dtsfin','wsweek','wsrota','wsteam','wssongs','wsdash'];
 function mmTabsFor_(sel, mine, schedH){
   var out=[];
   if(sel.dept==='Community Service' && sel.min==='Cafe'){
@@ -825,6 +825,8 @@ function mmTabsFor_(sel, mine, schedH){
     out=[['fdash',t('Dashboard'),'data-fintab'],['finput',t('Input'),'data-fintab']];   // the finance tool (public/finance.html, teams/09-finance.js fin2FrameHtml_)
   } else if(isTeamsMinistry_(sel.dept, sel.min)){
     out=[['teams',t('Teams')]];
+  } else if(isWorshipMinistry_(sel.dept, sel.min)){
+    out=wsTabs_().concat([['numbers',t('Numbers')]]);   // Worship's rota, team, songs — the numbers count themselves but Salvations (teams/26-worship.js)
   } else if(isDtsMinistry_(sel.dept, sel.min)){
     out=dtsTabs_();   // GPDTS: the school's home — every number counts itself, so no Numbers tab (teams/16-dts.js)
   } else out=[['numbers',t('Numbers')]];
@@ -905,6 +907,7 @@ function myMinistryHtml(){
   var mmTop=(sel.dept==='Skills Training' && sel.min==='Hospitality' && canHospClient_()) ? hospChangesHtml_(S.hospNews, false) : '';   // a team's new dates, someone who left (Nov 2026)
   S.mmSkip=autoMetricsFor(S.me.campus, sel.dept, sel.min);   // what counts itself (GPDTS) is not "logged" by hand
   if(DTS_TABS.indexOf(cur)>-1) pane=dtsPaneHtml_(cur);
+  else if(WS_TABS.indexOf(cur)>-1) pane=wsPaneHtml_(cur);
   else if(cur==='okr') pane=okrTabHtml_();
   else if(cur==='tasks'){ S.gptFrom='ministry'; pane=gptPageHtml_({ dept:sel.dept, min:sel.min }, true); }
   else if(cur==='sched') pane=schedH;
@@ -919,7 +922,8 @@ function myMinistryHtml(){
     /* The week's numbers — status, who is responsible, and the boxes themselves, already open when
        the week has nothing in yet — then the at-a-glance figures. */
     if(sel.dept==='Community Service' && sel.min==='Cafe') pane+='<p class="hint">'+esc(t('When the cafe tool is used, these numbers fill themselves in from it.'))+'</p>';
-    if(S.mmSkip.length) pane+='<p class="hint" id="dtsAutoHint">🔄 '+esc(t('Applied, accepted, enrolled, graduated, potential staff and students contacted count themselves from the portal — see the Dashboard. Enter the rest here.'))+'</p>';
+    if(S.mmSkip.length && isWorshipMinistry_(sel.dept, sel.min)) pane+='<p class="hint" id="wsAutoHint">🔄 '+esc(t('Services held, attendance, practice hours, musicians in training and our own songs count themselves from the rota. Enter the rest here.'))+'</p>';
+    else if(S.mmSkip.length) pane+='<p class="hint" id="dtsAutoHint">🔄 '+esc(t('Applied, accepted, enrolled, graduated, potential staff and students contacted count themselves from the portal — see the Dashboard. Enter the rest here.'))+'</p>';
     if(mine){
       var wk=kpiViewWeek(), akey=sel.dept+'|'+sel.min+'|'+wk;
       if(S.ministry && S.kpiAutoKey!==akey){

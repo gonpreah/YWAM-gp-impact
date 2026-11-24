@@ -75,7 +75,13 @@ var GPDTS_METRICS = ['Students Applied','Students Accepted','Students Enrolled',
 var DTS_AUTO_METRICS = ['Students Applied','Students Accepted','Students Enrolled','Students Graduated',
   'Potential Staff','Local Students Contacted','Intl Students Contacted',
   'People Heard the Gospel','Healings','Salvations','Baptisms'];
+/* Worship's rota counts these (Nov 2026; "Worship" in api.js, WORSHIP_AUTO — keep the two lists the same):
+   services held, attendance, practice hours, musicians in training, and our own songs written, recorded and
+   uploaded. Salvations stays typed on the Numbers tab. Both campuses. */
+var WORSHIP_AUTO_METRICS = ['Worship Nights Hosted','Attendance at Gatherings','Musicians in Training','Hours Spent Practicing',
+  'Songs Written','Songs Recorded','Songs Uploaded to Social Media'];
 function autoMetricsFor(campus, dept, ministry) {
+  if (dept === 'Youth Education' && ministry === 'Worship') return WORSHIP_AUTO_METRICS.slice();
   return campus === 'siemreap' && dept === 'Leadership Development' && ministry === 'GPDTS'
     ? DTS_AUTO_METRICS.slice() : [];
 }

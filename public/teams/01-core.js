@@ -908,6 +908,7 @@ function applyBoot(d, fromCache){
   S.broadcasts = d.broadcasts || [];
   /* this week's chores and cooking come with the boot, so My Home's card has its line from
      the first frame (a kept copy from last week is no use — then it asks, as before) */
+  S.worship=d.worship || null;   // the Worship rota: the services I'm on soon (teams/26-worship.js)
   if(d.schedules && d.schedules.ok && typeof dutyWeekOf==='function' && d.schedules.week===dutyWeekOf()){ S.sched = d.schedules; S.schedError = ''; }
   if(d.base && d.base.entries) S.base = d.base;
   /* A boot payload is always the server's view, which for a week still
@@ -984,7 +985,7 @@ function logout(){
   S.mmPeriod='quarter'; S.teamTrips={}; S.teamLoading={}; S.teamError={}; S.teamForm=null;
   S.hosp=null; S.hospLoading=false; S.hospError=''; S.hospForm=null; S.hospBedPick=null; S.hospRoom=null; S.hospBld=null; S.hospMove=null;
   S.lead=null; S.leadErr=''; S.leadForm=null; S.leadLoading=false; S.leadEdit=null;
-  S.sched=null; S.schedError=''; S.schedData=null; S.schedEdit=false; S.schedPick=null; S.schedDirty=false;
+  S.worship=null; S.ws=null; S.sched=null; S.schedError=''; S.schedData=null; S.schedEdit=false; S.schedPick=null; S.schedDirty=false;
   S.hrStaff=null; S.hrLoading=false; S.hrError=''; S.hrSub='home'; S.hrPersonId=null; S.hrSearch=''; S.hrContractForm=null; S.hrArchiveDraft=null; S.hrDue=null; S.hrFollowUps=null; S.hrTab='staff';
   S.cands=null; S.candsLoading=false; S.candsError=''; S.candForm=null; S.candPersonId=null; S.candNoteDraft='';
   S.teamMode='dir'; S.structYear=null; S.structQ=null; S.structCache={}; S.structLoading={}; S.structError={};
@@ -1125,6 +1126,7 @@ function render(){
   else if(S.view==='mycontract') m.innerHTML=myContractHtml();
   else if(S.view==='hosp') m.innerHTML=hospHtml();
   else if(S.view==='sched') m.innerHTML=schedHtml();
+  else if(S.view==='worship') m.innerHTML=wsPageHtml_();
   /* OKRs live on My Ministry's second tab now — anything still pointing at
      the old view lands there rather than on a page that no longer exists. */
   else if(S.view==='okr'){ S.view='ministry'; S.mmTab='okr'; m.innerHTML=myMinistryHtml(); }
@@ -1302,6 +1304,9 @@ function renderNotifPanel(){
   document.querySelectorAll('#notifRoot [data-gohr]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='hr'; S.hrSub='home'; render(); };
   });
+  document.querySelectorAll('#notifRoot [data-goworship]').forEach(function(b){
+    b.onclick=function(){ gpTap(); S.bellOpen=false; renderNotifPanel(); wsOpen_(b.getAttribute('data-goworship')||null); };
+  });
   document.querySelectorAll('#notifRoot [data-gohosp]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='hosp'; S.hospTab='dash'; render(); };
   });
@@ -1373,6 +1378,7 @@ function renderMenu(){
   IC.openapp=IC.base;
   IC.portalapp='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M10 18h4"/><path d="M12 6v6M9.5 9.5 12 12l2.5-2.5"/></svg>';
   IC.applogout=IC.profile;
+  IC.worship='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
   IC.support='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z"/><path d="M12 8.5v6M9.5 11.5h5"/></svg>';
   var sections= gpTasksApp_() ? [
     { title:'', items:[it('tasks', t('Tasks')), it('calendar', t('Calendar'))] },
@@ -1387,7 +1393,7 @@ function renderMenu(){
     { title:'', items:[it('library', t('Library')), it('guestreg', t('Create my profile')), it('guestlogin', t('Log in'))] }
   ] : [
     { title:'', items:[it('base', t('Base')), it('caltasks', t('GP Calendar/Tasks')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer')), it('p360', t('360 reviews')), it('tests', t('Tests')), it('leave', t('Leave Request')), it('library', t('Library'))].concat(S.student ? [] : [it('support', t('Support raising'))]) },
-    { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : [], canStudentsClient_() ? [it('students', t('Students'))] : []) },
+    { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], [it('worship', t('Worship rota'))], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : [], canStudentsClient_() ? [it('students', t('Students'))] : []) },
     { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal')), it('portalapp', t('The Portal on your phone'))] : [] },
     { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : [], kmrCan_() ? [it('kmreview', t('Khmer review'))] : []) },
     { title:t('Language'), items:[it('khmer', t('Learn Khmer / English'))] }
@@ -1436,6 +1442,7 @@ function renderMenu(){
       else if(id==='hr'){ S.view='hr'; S.hrSub='home'; render(); }
       else if(id==='hosp'){ S.view='hosp'; render(); }
       else if(id==='sched'){ schedOpen_('kitchen', false, 'home'); }
+      else if(id==='worship'){ wsOpen_(null); }
       else if(id==='portal'){ renderMenu(); window.open('portal.html', '_blank', 'noopener'); }
       else if(id==='portalapp'){ renderMenu(); gpPortalAppOpen_(); }
       else renderMenu();

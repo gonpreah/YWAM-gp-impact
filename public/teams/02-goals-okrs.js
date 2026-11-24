@@ -1541,7 +1541,8 @@ function notifItems_(){
         actions: '<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-ooopen="'+esc(o.id)+'">'+esc(t('Open'))+'</button>' });
     }
   });
-  items=items.concat(gptNotifItems_());   // GP Tasks: given a task, asked for help, turned down
+  items=items.concat(gptNotifItems_());
+  if(typeof wsNotifItems_==='function') items=items.concat(wsNotifItems_());   // the day before a worship service I'm on   // GP Tasks: given a task, asked for help, turned down
   (S.trips && S.trips.trips || []).forEach(function(r){
     var range=r.from+(r.to!==r.from?' → '+r.to:'');
     if(r.status==='approved'){
