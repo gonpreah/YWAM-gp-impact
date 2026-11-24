@@ -6171,3 +6171,19 @@ The finance tool itself (public/finance.html) is English only for now — its Kh
 | English | Khmer (draft) |
 |---|---|
 | Input | បញ្ចូល |
+
+## 137. The structure whiteboard: View / Edit, and the schools running each quarter (My Ministry → Structure)
+
+The View / Edit switch above the board, the line under it, and the row of schools to tick while editing. "View" and "Edit" reuse existing words.
+
+| English | Khmer (draft) |
+|---|---|
+| Looking only — nobody moves. Tap Edit to make changes. | មើលប៉ុណ្ណោះ — គ្មាននរណាម្នាក់ត្រូវបានផ្លាស់ទីទេ។ ចុច កែសម្រួល ដើម្បីធ្វើការផ្លាស់ប្តូរ។ |
+| View or edit | មើល ឬកែសម្រួល |
+| none | គ្មាន |
+| Which schools run in Q{q} {year}? | តើសាលាណាខ្លះដំណើរការនៅ Q{q} {year}? |
+| Editing: drag faces, tap ＋ to add, tap a face for more. | កំពុងកែសម្រួល៖ អូសមុខមនុស្ស ចុច ＋ ដើម្បីបន្ថែម ចុចមុខមនុស្សដើម្បីមើលបន្ថែម។ |
+| Viewing: move around and zoom — nobody can be moved by accident. | កំពុងមើល៖ រំកិល និងពង្រីកបាន — គ្មាននរណាម្នាក់ត្រូវបានផ្លាស់ទីដោយចៃដន្យទេ។ |
+| Not running this quarter: {list} | មិនដំណើរការក្នុងត្រីមាសនេះ៖ {list} |
+| Schools running in Q{q} {year}: {list} | សាលាដែលដំណើរការនៅ Q{q} {year}៖ {list} |
+| A school that isn’t running has no box this quarter. Add its leaders and staff in its box once it runs. | សាលាដែលមិនដំណើរការ គ្មានប្រអប់ក្នុងត្រីមាសនេះទេ។ បន្ថែមអ្នកដឹកនាំ និងបុគ្គលិករបស់វានៅក្នុងប្រអប់របស់វា នៅពេលវាដំណើរការ។ |

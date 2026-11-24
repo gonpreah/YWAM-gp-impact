@@ -73,7 +73,7 @@ function orgStructureHtml_(campus){
         '<button class="btn small" id="structArrangeDone">'+esc(t('Done'))+'</button></div></div>';
       if(S.structMove) h+=structMoveHtml_(campus, S.structMove, place, stu);
     }
-    return h+orgChartHtml_(campus, S.roster, stu, place, arranging, c && c.plan ? c.plan.leads : null, c && c.plan ? c.plan.extra : null);
+    return h+orgChartHtml_(campus, S.roster, stu, place, arranging, c && c.plan ? c.plan.leads : null, c && c.plan ? c.plan.extra : null, c && c.plan ? c.plan.schools : null);
   }
   if(S.structError[key]) return h+'<div class="card"><p class="sub" style="margin:0 0 8px">⚠️ '+esc(t('Couldn’t load this quarter.'))+'</p><p class="hint" style="margin:0 0 8px;overflow-wrap:anywhere">'+esc(S.structError[key])+'</p><button class="btn ghost" id="structRetry" style="margin-top:0">'+esc(t('Try again'))+'</button></div>';
   if(!c) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
@@ -81,7 +81,7 @@ function orgStructureHtml_(campus){
   var note = c.source==='saved' ? gpT('Q{q} {year} structure saved on {date}',{q:q, year:year, date:teamDate_((c.doc.savedAt||'').slice(0,10))})
     : gpT('Nothing saved for Q{q} {year} — showing the Q{q2} {year2} structure.',{q:q, year:year, q2:c.doc.quarter, year2:c.doc.year});
   h+='<p class="sub" style="margin:0 0 8px">💾 '+esc(note)+'</p>';
-  return h+orgChartHtml_(campus, (c.doc.people||[]).map(function(p){ return Object.assign({ campus:campus }, p); }));
+  return h+orgChartHtml_(campus, (c.doc.people||[]).map(function(p){ return Object.assign({ campus:campus }, p); }), null, null, false, null, null, c.doc.schools || null);
 }
 /* Tap someone in Arrange mode: pick where they sit this quarter. */
 function structMoveHtml_(campus, id, place, stu){
@@ -168,7 +168,9 @@ function structStudentsEditorHtml_(campus, q, year){
     }).join('')+
     '<button class="btn" id="structStudentsSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="structStudentsCancel">'+esc(t('Cancel'))+'</button></div>';
 }
-function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging, planLeads, extras){
+function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging, planLeads, extras, schools){
+  /* schools: the Leadership Development schools running that quarter (null = all) — the others have no box (Nov 2026) */
+  var runs=function(m){ return !Array.isArray(schools) || LD_SCHOOL_MINISTRIES.indexOf(m)===-1 || schools.indexOf(m)>-1; };
   /* The chart is the base's structure for the quarter, which can differ from
      what a profile says: placeMap (the quarter's arrangement) wins, and so do the quarter's leaders (planLeads) and the
      names typed in on the whiteboard (extras) — Nov 2026. */
@@ -208,7 +210,7 @@ function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging, planLea
   depts.forEach(function(dept){
     var ov=here.filter(function(p){ return p.dept===BL_DEPT && p.ministry===dept; });
     var staffN=here.filter(function(p){ return p.dept===dept; }).length;
-    var mins=Object.keys(deps[dept]||{});
+    var allMins=Object.keys(deps[dept]||{}), mins=allMins.filter(runs), off=allMins.filter(function(m){ return !runs(m); });
     h+='<div class="orgBox dept" data-orgbox="'+esc(dept)+'"><div class="orgBoxTitle">'+(MIN_EMOJI[dept]?MIN_EMOJI[dept]+' ':'')+esc(t(dept))+
       '<span class="orgBoxMeta">'+esc(gpT('{n} staff',{n:staffN}))+'</span></div>';
     if(ov.length) h+='<div class="orgSub">'+esc(t('Director'))+'</div>'+orgPeople_(ov, ov);
@@ -224,7 +226,7 @@ function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging, planLea
         '<span class="orgMinN">'+(all.length||'—')+'</span></div>'+
         (all.length ? orgPeople_(all, leads) : '')+'</div>';
     });
-    h+='</div></div>';
+    h+='</div>'+(off.length ? '<p class="hint orgNotRun" style="margin:6px 0 0">'+esc(gpT('Not running this quarter: {list}',{list:off.map(function(m){ return t(m); }).join(' · ')}))+'</p>' : '')+'</div>';
   });
   h+='</div>';
 

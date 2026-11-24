@@ -164,5 +164,17 @@ ok('a snapshot of the quarter carries the typed-in name and the quarter’s lead
 r = await call('saveStructurePlan', ['kosal', '1234', 'siemreap', 2027, 2, undefined, {}, null, []]);
 ok('back to the profiles: leaders null, no names, no places', r.body.ok && r.body.plan.leads === null && r.body.plan.extra.length === 0 && JSON.stringify(r.body.plan.place) === '{}');
 
+console.log('=== which schools run in the quarter (Nov 2026, Andrew: "in Q1, we only have the GPDTS school running") ===');
+r = await call('saveStructurePlan', ['kosal', '1234', 'siemreap', 2027, 1, undefined, undefined, undefined, undefined, ['GPDTS', 'Nope', 'GPDTS', 'Cafe']]);
+ok('the schools running are kept: only real schools, once each', r.body.ok && JSON.stringify(r.body.plan.schools) === '["GPDTS"]', JSON.stringify(r.body.plan && r.body.plan.schools));
+r = await call('saveStructurePlan', ['kosal', '1234', 'siemreap', 2027, 1, undefined, { st_dara: { dept: 'Leadership Development', ministry: 'GPDTS' } }]);
+ok('saving without them keeps the quarter’s', r.body.ok && JSON.stringify(r.body.plan.schools) === '["GPDTS"]');
+r = await call('getStructure', ['dara', '1234', 'siemreap', 2027, 2]);
+ok('a quarter with its own plan from before has no school list: every school', r.body.plan.schools === null, JSON.stringify(r.body.plan.schools));
+r = await call('saveStructurePlan', ['kosal', '1234', 'siemreap', 2027, 1, undefined, undefined, undefined, undefined, null]);
+ok('null puts every school back', r.body.ok && r.body.plan.schools === null);
+r = await call('saveStructurePlan', ['dara', '1234', 'siemreap', 2027, 1, undefined, undefined, undefined, undefined, ['GPDTS']]);
+ok('only Campus Leadership and admins can set them', r.body.ok === false && r.body.err === 'not_authorized');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
