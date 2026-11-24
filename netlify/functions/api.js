@@ -3090,6 +3090,74 @@ async function getFinance(username, pin, campus) {
   const c = finCampus_(s, campus);
   return finOut_(s, c, await getFinDoc_(c));
 }
+/* ---- The finance tool (Nov 2026): public/finance.html — the Finances office's Dashboard and Input,
+   built from docs/drafts/finance-redesign.html (how it works: docs/drafts/finance-how-it-works.md).
+   The page keeps the whole of one campus's finance records as one document and saves it whole;
+   `rev` counts saves, so two people saving at once can't silently overwrite each other (the
+   later one is told and handed the newer copy). The office edits (finCanEdit_); Campus
+   Leadership on that campus reads (finCanView_). Kept apart from 'finance:<campus>' (the old
+   Reports / QuickBooks tool), which stays as it was. */
+const FIN2_KEYS = ['bal', 'alloc', 'struct', 'deletedFunds', 'manualAllocs', 'allocAsOf', 'allocPrevAsOf', 'debt', 'links',
+  'incTypes', 'incRules', 'expTypes', 'expRules', 'expenses', 'expMap', 'transfers', 'toolXfers', 'incomes', 'advances',
+  'incMap', 'alHist', 'debtHist', 'alSaved', 'published', 'dayDone'];
+const FIN2_MAX = 3000000;   // characters of JSON — years of entries; a PDF never goes in it
+function fin2Key_(c) { return 'fin2:' + c; }
+function fin2Clean_(st) {
+  if (!st || typeof st !== 'object' || Array.isArray(st)) return null;
+  const out = {};
+  FIN2_KEYS.forEach(function (k) { if (st[k] !== undefined) out[k] = st[k]; });
+  return out;
+}
+function fin2Staff_(all, c) {   // who a staff-debt name can be linked to: the campus's active staff
+  return all.filter(function (x) { return x.campus === c && x.active !== false && !x.archived && !isApplicant_(x); })
+    .map(function (x) { return { id: x.id, name: x.name || '', dept: x.dept || '' }; })
+    .sort(function (a, b) { return a.name < b.name ? -1 : 1; });
+}
+async function fin2Out_(s, c, d) {
+  const edit = finCanEdit_(s);
+  return { ok: true, campus: c, canEdit: edit, rev: d.rev || 0, state: d.state || null, savedAt: d.at || '', savedBy: d.byName || '',
+    staff: edit ? fin2Staff_(await getStaff_(), c) : [] };
+}
+/* A new A/R Ageing report (or a changed one) writes each department's Staff Debt ($) this week, as the
+   office used to type it on The numbers — the department pulse and leadership's pages read it from
+   there. A person counts to their linked staff member's department as it is now, else the department
+   the page recorded. Unchanged debt writes nothing. */
+function fin2DebtSig_(st) { const D = st && st.debt; return D ? JSON.stringify([D.asOf || '', (D.people || []).map(function (p) { return [p.n, p.staffId || '', p.d || '', p.tot]; })]) : ''; }
+async function fin2DeptDebt_(c, st, by) {
+  const D = st.debt || {}, people = Array.isArray(D.people) ? D.people : [];
+  const byId = {}; (await getStaff_()).forEach(function (x) { byId[x.id] = x; });
+  const sums = {};
+  people.forEach(function (p) {
+    if (!p || typeof p !== 'object') return;
+    const who = p.staffId && byId[p.staffId], dept = normDept_((who && who.dept) || p.d || '', '');
+    const tot = Array.isArray(p.b) ? p.b.reduce(function (a, v) { return a + (Number(v) || 0); }, 0) : (Number(p.tot) || 0);
+    if (PULSE_DEPTS.indexOf(dept) > -1) sums[dept] = (sums[dept] || 0) + tot;
+  });
+  const wk = isoWeek_(baseToday_());
+  for (const dept of PULSE_DEPTS) await saveMinistryInternal_(c, 'Campus Leadership', dept, wk, [{ metric: 'Staff Debt ($)', value: Math.round(sums[dept] || 0) }], by, thisWeekYear_());
+}
+async function fin2Get(username, pin, campus) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!finCanView_(s)) return { ok: false, err: 'not_authorized' };
+  const c = finCampus_(s, campus);
+  return fin2Out_(s, c, await readJSON(fin2Key_(c), {}));
+}
+async function fin2Save(username, pin, campus, state, rev) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  if (!finCanEdit_(s)) return { ok: false, err: 'not_authorized' };
+  const clean = fin2Clean_(state);
+  if (!clean) return { ok: false, err: 'bad_state' };
+  if (JSON.stringify(clean).length > FIN2_MAX) return { ok: false, err: 'too_large' };
+  const c = finCampus_(s, campus), key = fin2Key_(c);
+  const d = await readJSON(key, {});
+  if ((d.rev || 0) !== (Number(rev) || 0)) return Object.assign(await fin2Out_(s, c, d), { ok: false, err: 'conflict' });
+  const next = { rev: (d.rev || 0) + 1, state: clean, at: new Date().toISOString(), by: s.id, byName: s.name || '' };
+  await writeJSON(key, next);
+  if (fin2DebtSig_(clean) !== fin2DebtSig_(d.state)) await fin2DeptDebt_(c, clean, s.id);
+  return fin2Out_(s, c, next);
+}
 /* The PDF a report came from, kept so anyone who sees the numbers can open the page
    they came from. The ageing has names, so it is the office's alone. */
 async function finPutFile_(c, kind, file, by) {
@@ -14470,6 +14538,8 @@ async function demoCall(fn, args) {
 }
 
 const HANDLERS = {
+  fin2Get: function (a) { return fin2Get(a[0], a[1], a[2]); },
+  fin2Save: function (a) { return fin2Save(a[0], a[1], a[2], a[3], a[4]); },
   demoCall: function (a) { return demoCall(a[0], a[1]); },
   adminMakeInvite: function (a) { return adminMakeInvite(a[0], a[1], a[2]); },
   adminListInvites: function (a) { return adminListInvites(a[0], a[1]); },

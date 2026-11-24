@@ -21,7 +21,7 @@
    top of Reports), the Profit and Loss and the A/R Ageing come in by themselves every night —
    see "QuickBooks" in api.js. The Burn Rate is their own spreadsheet, so it's still uploaded. */
 S.fin=null; S.finBalEdit=null; S.qboWaiting=false; S.finLoading=false; S.finErr=''; S.finPending=[]; S.finMonth=null; S.finAheadEdit=null; S.finReading=0;
-S.finTab=(lsGet('gp-fin-tab')==='dash' || lsGet('gp-fin-tab')==='numbers' ? lsGet('gp-fin-tab') : 'reports');
+S.finTab=(lsGet('gp-fin-tab')==='finput' ? 'finput' : 'fdash');
 function finCanEditClient_(){ return typeof canEnterStaffDebtClient_==='function' && canEnterStaffDebtClient_(); }
 function finLoad_(force){
   if(S.finLoading || (S.fin && !force)) return;
@@ -692,6 +692,35 @@ function finReportsHtml_(){
   }
   return h+'</div></div>';
 }
+/* The finance tool (Nov 2026): public/finance.html — built from docs/drafts/finance-redesign.html —
+   shown inside My Ministry as the Finances office's Dashboard and Input tabs, and as Campus
+   Leadership's Finances tab (read-only: fin2Get answers canEdit false). It reads the same signed-in
+   session (gp-staff) and saves to the server itself (fin2Get / fin2Save). It replaced the Reports /
+   Dashboard / The numbers tabs below, which are no longer shown (their saved data stays). The frame
+   scrolls on its own and is sized to the screen below it, so the page's sticky bar works. */
+function fin2FrameHtml_(view){
+  var src='finance.html?embed=1&view='+(view==='input'?'input':'dash')+(S.me && S.me.isAdmin && S.me.campus ? '&campus='+encodeURIComponent(S.me.campus) : '');
+  return '<iframe class="fin2Frame" id="fin2Frame" scrolling="no" src="'+esc(src)+'" title="'+esc(t('Finances'))+'"></iframe>';
+}
+/* One page with the app (Nov 2026: "it does not act as one single page"): the frame is as tall as the
+   finance page says it is (it posts {gpFin:'h'}), so My Ministry scrolls the two together; as the app
+   scrolls, the frame is told which part of it is on screen ({gpFin:'view', top, h}) so its sticky bar,
+   pop-up sheets, toasts and "Saved" stay where they can be seen. */
+var _fin2H=0, _fin2Raf=0;
+function fin2FrameView_(){ var f=document.getElementById('fin2Frame'); if(!f || !f.contentWindow) return;
+  var r=f.getBoundingClientRect(), nav=document.querySelector('nav.bottom'), navH=(nav && !nav.classList.contains('hidden')) ? nav.offsetHeight : 0;
+  var visTop=Math.max(0, r.top), visBot=Math.min(window.innerHeight-navH, r.bottom);
+  try { f.contentWindow.postMessage({ gpFin:'view', top:Math.round(visTop-r.top), h:Math.round(Math.max(0, visBot-visTop)) }, location.origin); } catch(e){} }
+function fin2FrameSize_(){ var f=document.getElementById('fin2Frame'); if(!f) return;
+  var nav=document.querySelector('nav.bottom'), navH=nav ? nav.offsetHeight : 0;
+  f.style.height=Math.max(_fin2H || 0, 300)+'px';
+  f.style.minHeight=Math.max(300, window.innerHeight-navH-Math.max(0, f.getBoundingClientRect().top))+'px';   // room for a pop-up even when the page is short
+  fin2FrameView_(); }
+window.addEventListener('message', function(e){ var f=document.getElementById('fin2Frame');
+  if(!f || e.source!==f.contentWindow || e.origin!==location.origin || !e.data || e.data.gpFin!=='h') return;
+  _fin2H=+e.data.h||0; fin2FrameSize_(); });
+window.addEventListener('scroll', function(){ if(_fin2Raf) return; _fin2Raf=requestAnimationFrame(function(){ _fin2Raf=0; fin2FrameView_(); }); }, { passive:true });
+window.addEventListener('resize', fin2FrameSize_);
 /* The Finances office's page on My Ministry: the reports, what leadership sees, and the usual numbers. */
 function finMinistryTabsHtml_(){
   var tab=S.finTab;
@@ -700,6 +729,7 @@ function finMinistryTabsHtml_(){
 }
 
 function bindFinance_(){
+  fin2FrameSize_();
   bindFinQr_();
   var be=document.getElementById('finBalEdit'); if(be) be.onclick=function(){
     var B=S.fin && S.fin.balances;

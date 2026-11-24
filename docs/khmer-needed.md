@@ -6164,7 +6164,15 @@ A quarter of a campus as a tree to pan and zoom: faces dragged from a tray onto 
 | See it as a tree | មើលជាដើមឈើ |
 | Edit Q{q} {year} | កែ Q{q} {year} |
 
-## 136. The structure whiteboard: View / Edit, and the schools running each quarter (My Ministry → Structure)
+## 136. Finances: the finance tool's tab (Nov 2026)
+My Ministry → Finances now has Dashboard · Input · Tasks · OKRs. "Input" is a tab label (very little room).
+The finance tool itself (public/finance.html) is English only for now — its Khmer is still to be written.
+
+| English | Khmer (draft) |
+|---|---|
+| Input | បញ្ចូល |
+
+## 137. The structure whiteboard: View / Edit, and the schools running each quarter (My Ministry → Structure)
 
 The View / Edit switch above the board, the line under it, and the row of schools to tick while editing. "View" and "Edit" reuse existing words.
 
