@@ -91,6 +91,7 @@ const BROWSER = [
   'test-ux-ui.mjs',            // ☀️ Today on My Home, 🔍 search from the header, the app's own Yes / Cancel sheet, Undo on a deleted task
   'test-game-ui.mjs',          // the week's board on the page: My Home's line, Team → This week, Khmer
   'test-quick-apps-ui.mjs',    // My Home's dashboard: hold or ✎ to edit, wiggle, drag, ＋ widgets and apps; saveDashLayout
+  'test-structure-board-ui.mjs', // the structure whiteboard: Campus Leadership arranges a quarter (drag faces, leaders, typed-in names), pinch and pan, Team → Structure shows it
   'test-polish-ui.mjs',        // a 320px phone and Khmer: profile / sign-up labels and pop-ups in Khmer, leave dates, Learn Khmer and the header fit, holiday names readable
   'test-library-club-ui.mjs',  // the Library, read together, on the page: search, topics, a plan, finishing a book, the month's book, recommending, a mentor's plan
   'test-lib-notes-ui.mjs',  // the Library's highlights and notes on the page: tap a paragraph, highlight, note, share, like, comment, pray

@@ -537,6 +537,42 @@ someone leaves. An earlier version had hand-editable team boxes; it read as mess
 removed — don't bring the editor back. `test-org-chart.mjs` (browser) and
 `test-structure.mjs` (server) cover it.
 
+## The structure whiteboard (teams/23-structure.js, Nov 2026, Andrew)
+"Every quarter we restructure everything … a whiteboard view … zoom in and out … a tree graph of the whole structure … a plus
+sign in each ministry and department … add people's names and who the leader is … not synced into our staff profile … edited
+in the leadership My Ministry, and it shows in Team → Structure … profile faces … click and drag … smooth on mobile and desktop."
+- **Where**: Campus Leadership's My Ministry row has a **Structure** tab (`struct` in every `LW_ROLES` tab list, `sbLeadHtml_` /
+  `bindSbLead_`): the quarter ahead by default, with this quarter beside it (`[data-sbq]`, `S.sb.year/q`); an admin also picks the
+  campus (`[data-sbcampus]`). **Team → Structure** shows the same quarter read only: the list (`orgChartHtml_` now takes the
+  quarter's `leads` and `extra`; a typed-in name is a `.orgPerson.extra` span, not a link) and **🗺️ See it as a tree**
+  (`#sbTeamOpen` → `S.sbTeam`, `sbTeamHtml_`, ← The list); **✏️ Edit Qn yyyy** (`#sbTeamEdit`, `sbCanEdit_`) opens the tab on that
+  quarter. The old admin **Arrange** mode is gone from Team (its code, `bindStructArrange_`, is left unused).
+- **The tree** (`sbModel_` → `sbTreeHtml_`, plain HTML laid out by CSS, connectors drawn with borders): the campus, then
+  Campus Leadership (`Campus Leadership|Campus Director`), a column per department with its **Director** spot
+  (`Campus Leadership|<dept>`) and its ministries under it — the leader(s) first with 👑, then the people, all as faces
+  (`sbFace_`, `avatarHtml`) — then 🎓 Students this quarter; read only, anyone not on the chart shows in "Not placed yet".
+- **Pan and zoom** (`bindSb_`, `S.sb = {x, y, k}`, a CSS transform on `#sbCanvas`, nothing re-rendered while moving): one finger
+  or the mouse moves it, two fingers pinch (every pointer is counted in a capture listener, so a pinch that starts on a face is
+  a pinch — the face drag stands down, `B.pinch`), the wheel zooms round the pointer (a trackpad pinch too), − / ＋ / ⤢ fit /
+  ⛶ full screen (`.sbWrap.full`, `body.sbFullOn` hides the bottom bar). It opens readable on a phone (`sbFit_(true)`: ≥45%, the
+  top of the tree), ⤢ shows it all.
+- **Editing** (Campus Leadership on their campus, admins anywhere — `structEditor_` on the server, `sbCanEdit_` on the page): drag
+  a face (from the chart or the **tray** under it — everyone, those not on the chart first, a search box) onto a box
+  (`[data-sbdrop]`: a ministry, a director spot, Campus Leadership, Students → asks the school, the tray → off the chart);
+  ＋ on a box (`[data-sbbox]`) opens a sheet: its people with **Make leader** / ✕, Add people (the people picker, key `sb`), and
+  **Someone not in the app yet** (a typed name, `x_…`); a tap on a face opens them: make / not the leader, Move to (any box, a
+  school, off), take off the chart, rename or remove a typed name. Each change saves at once (`sbChange_` → `sbSave_`, 450 ms,
+  `#sbSaved`). The first change makes the quarter its own (`sbOwn_`: everyone where they stand, the leaders as they are), so a
+  profile edited later moves nobody; "Start Qn again from everyone's profile" (`#sbReset`) clears it.
+- **Store**: the quarter's row in `structurePlans` gains `leads` ({"Dept|Ministry": [ids]}, null = the profiles') and `extra`
+  ([{id:'x_…', name}]), and a place may be `{dept:'_off'}` (off the chart). `saveStructurePlan(user, pin, campus, year, q,
+  students, place, leads, extra)` — Campus Leadership of that campus or an admin (was admins only); `cleanStructLeads_` (only
+  people here, ≤8 a ministry), `cleanStructExtra_` (≤80). A later quarter starts from it, leaders and names too (`planFor_`).
+  A snapshot (`saveStructure` / `structPeople_`) carries both; saving a plan for this quarter or a later one rebuilds an
+  existing snapshot. **No profile is ever written.**
+- tests/test-structure.mjs (server), tests/test-structure-board-ui.mjs (mouse and touch). Khmer: docs/khmer-needed.md §135.
+  sw.js SHELL v29.
+
 ## Outreach Teams — one record per team, not a weekly form
 Outreach Teams (Community Service) doesn't log week by week: a team comes for a stretch
 and its numbers are gathered once, when it leaves. So picking it on My Ministry shows a
@@ -2571,7 +2607,8 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   not two within a minute (server `SANTA_GAP_MS`); kept in `holidayCatch` as `santa` / `santaLast`; `parts.santa`. Waits
   while the bell, a snowflake or the points sheet is up. Not under a test browser unless `gp-santa-test` is set
   (`S.santaMs` / `S.santaGapMs` / `S.santaFlyMs`).
-- **The points sheet when the app opens** (the rollout, `gameIntroMaybe_`, `#gameIntro`; Uriah: "show the points when
+- **The points sheet when the app opens — turned off** (Nov 2026, Andrew: "stop the pop up about the leaderboard for points";
+  `GAME_INTRO_ON=false` in 20-game.js, the code kept — set it to true to bring it back). As it was (the rollout, `gameIntroMaybe_`, `#gameIntro`; Uriah: "show the points when
   they open the app … that kind of explains what's what"): on My Home, the first fresh boot of each day — my points,
   streak and place (`#gameIntroMe`), then "How to earn points" with what each thing is worth (from the board's own
   `pts`), the streak bonus, Santa and the snowflakes in season, **See this week's board** / **Let's go!**, and

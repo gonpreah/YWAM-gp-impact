@@ -136,5 +136,33 @@ ok('a snapshot saved for that quarter follows the arrangement', q1p.dept === 'Yo
 r = await call('saveStructurePlan', ['uriah', '1234', 'siemreap', 2027, 1, undefined, {}]);
 ok('clearing the arrangement puts people back where their profile says, in the saved snapshot too', JSON.stringify(r.body.plan.place) === '{}' && r.body.doc.people.find(p => p.id === 'st_dara').ministry === 'Cafe');
 
+console.log('=== the structure whiteboard (Nov 2026): Campus Leadership edits, leaders and typed-in names per quarter ===');
+mem.staff.push(withPin({ id: 'st_clt', name: 'Kosal', username: 'kosal', campus: 'siemreap', dept: 'Campus Leadership', ministry: 'Youth Education', active: true }));
+r = await call('saveStructurePlan', ['kosal', '1234', 'poipet', 2027, 2, undefined, { st_pp: { dept: 'Youth Education', ministry: 'YDC' } }]);
+ok('Campus Leadership may not arrange the other campus', r.body.ok === false && r.body.err === 'not_authorized', JSON.stringify(r.body));
+r = await call('saveStructurePlan', ['dara', '1234', 'siemreap', 2027, 2, undefined, {}, {}, []]);
+ok('nor may an ordinary staff member arrange their own', r.body.ok === false && r.body.err === 'not_authorized');
+const profBefore = JSON.stringify(mem.staff.map(x => [x.id, x.dept, x.ministry, x.leads]));
+r = await call('saveStructurePlan', ['kosal', '1234', 'siemreap', 2027, 2, { st_dara: 'dts' },
+  { st_dara: { dept: 'Community Service', ministry: 'Cafe' }, st_lead: { dept: '_off', ministry: '' }, x_newperson1: { dept: 'Youth Education', ministry: 'GP Media' }, x_bad: { dept: 'Youth Education', ministry: 'YDC' } },
+  { 'Youth Education|GP Media': ['x_newperson1', 'st_pp', 'st_gone', 'x_newperson1'], 'Community Service|Cafe': ['st_dara'], 'nonsense': ['st_dara'] },
+  [{ id: 'x_newperson1', name: '  Sophea (coming in January)  ' }, { id: 'bad id', name: 'Nope' }, { id: 'x_noname1', name: '' }]]);
+const pl = r.body.plan || {};
+ok('Campus Leadership arranges its own campus: the quarter is saved', r.body.ok === true, JSON.stringify(r.body).slice(0, 200));
+ok('a name typed in for someone not in the app is kept, cleaned; bad ids and empty names are not', JSON.stringify(pl.extra) === JSON.stringify([{ id: 'x_newperson1', name: 'Sophea (coming in January)' }]), JSON.stringify(pl.extra));
+ok('… and sits in the arrangement like anyone; a place for an unknown id is dropped', pl.place.x_newperson1 && pl.place.x_newperson1.ministry === 'GP Media' && !pl.place.x_bad);
+ok('“not on the chart this quarter” is kept as its own place', pl.place.st_lead && pl.place.st_lead.dept === '_off');
+ok('who leads what this quarter: only people here, once each; keys that aren’t a ministry are dropped', JSON.stringify(pl.leads) === JSON.stringify({ 'Youth Education|GP Media': ['x_newperson1'], 'Community Service|Cafe': ['st_dara'] }), JSON.stringify(pl.leads));
+ok('nobody’s profile moved', JSON.stringify(mem.staff.map(x => [x.id, x.dept, x.ministry, x.leads])) === profBefore);
+r = await call('getStructure', ['dara', '1234', 'siemreap', 2027, 3]);
+ok('the next quarter starts from it — leaders and typed-in names too (students do not carry over)', r.body.plan.inherited === true && r.body.plan.leads['Youth Education|GP Media'][0] === 'x_newperson1' && r.body.plan.extra.length === 1 && JSON.stringify(r.body.plan.students) === '{}', JSON.stringify(r.body.plan).slice(0, 220));
+r = await call('saveStructurePlan', ['kosal', '1234', 'siemreap', 2027, 2, undefined, undefined]);
+ok('saving without leaders or names keeps the quarter’s own', r.body.ok && r.body.plan.extra.length === 1 && r.body.plan.leads['Community Service|Cafe'][0] === 'st_dara');
+r = await call('saveStructure', ['uriah', '1234', 'siemreap', 2027, 2]);
+const ppl = (r.body.doc && r.body.doc.people) || [];
+ok('a snapshot of the quarter carries the typed-in name and the quarter’s leaders', ppl.some(p => p.id === 'x_newperson1' && p.extra && p.ministry === 'GP Media' && p.leads[0] === 'Youth Education|GP Media') && JSON.stringify(ppl.find(p => p.id === 'st_lead').leads) === '[]' && ppl.find(p => p.id === 'st_lead').dept === '_off', JSON.stringify(ppl.map(p => [p.id, p.dept, p.ministry, p.leads])));
+r = await call('saveStructurePlan', ['kosal', '1234', 'siemreap', 2027, 2, undefined, {}, null, []]);
+ok('back to the profiles: leaders null, no names, no places', r.body.ok && r.body.plan.leads === null && r.body.plan.extra.length === 0 && JSON.stringify(r.body.plan.place) === '{}');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
