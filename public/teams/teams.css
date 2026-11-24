@@ -3740,8 +3740,8 @@ body.sbDragging, body.sbDragging * { cursor:grabbing !important; }
 .schFaceName { font-size:12.5px; font-weight:700; text-align:center; line-height:1.2; overflow-wrap:anywhere; max-width:100%; }
 .schMark { font-size:11.5px; color:var(--muted); }
 .schFace.m-p { border-color:var(--goodSoft, var(--border)); }
-.schFace.m-a { border-color:var(--bad, #c0392b); background:var(--badSoft, var(--surface)); }
-.schFace.m-a .schMark { color:var(--bad, #c0392b); font-weight:800; }
+.schFace.m-a { border-color:var(--bad); background:var(--badSoft, var(--surface)); }
+.schFace.m-a .schMark { color:var(--bad); font-weight:800; }
 .schFace.m-l { border-color:var(--amber); }
 .schFace.m-l .schMark { color:var(--amberDeep, var(--ink)); font-weight:800; }
 .schRowBtn { display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left; background:none; border:0; border-top:1px solid var(--line, var(--border)); padding:10px 0; font:inherit; color:var(--ink); cursor:pointer; }
@@ -3766,7 +3766,7 @@ body.sbDragging, body.sbDragging * { cursor:grabbing !important; }
 .schTbl td, .schTbl th { padding:6px 4px; border-top:1px solid var(--line, var(--border)); text-align:left; vertical-align:top; }
 .schTbl .num { text-align:right; white-space:nowrap; }
 .schTbl .ok { color:var(--good); font-weight:700; }
-.schTbl .bad { color:var(--bad, #c0392b); font-weight:700; }
+.schTbl .bad { color:var(--bad); font-weight:700; }
 .schOwe { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 0; border-top:1px solid var(--line, var(--border)); font-size:14px; }
 .schBars { display:flex; flex-direction:column; gap:6px; }
 .schBarRow { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,2fr) auto; gap:8px; align-items:center; font-size:13.5px; }
@@ -3789,7 +3789,7 @@ body.sbDragging, body.sbDragging * { cursor:grabbing !important; }
   body.schPrintOn header, body.schPrintOn nav.bottom, body.schPrintOn #menuRoot, body.schPrintOn .noPrint, body.schPrintOn .banner,
   body.schPrintOn .mmHead, body.schPrintOn .mmTabsBar, body.schPrintOn #schBack, body.schPrintOn #ministryBack, body.schPrintOn .a2hs, body.schPrintOn #a2hs { display:none !important; }
   body.schPrintOn main .mmPane > :not(.schPrint) { display:none !important; }
-  body.schPrintOn { background:#fff !important; }
+  body.schPrintOn { background:var(--surface) !important; }
   body.schPrintOn .schPrint { box-shadow:none !important; border:0 !important; }
 }
 .schHeadRow .btn { width:auto; padding:7px 12px; font-size:13px; }
