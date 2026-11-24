@@ -17,7 +17,19 @@
    change saves at once for that quarter. Team → Structure shows the same quarter read only (the list, and this tree). */
 
 var SB_MIN_K=0.15, SB_MAX_K=2.2;
-function sbState_(){ if(!S.sb) S.sb={ x:0, y:0, k:1, fitted:{}, trayQ:'', sheet:null, full:false, saving:0, saved:0 }; return S.sb; }
+function sbState_(){ if(!S.sb) S.sb={ x:0, y:0, k:1, fitted:{}, trayQ:'', sheet:null, full:false, saving:0, saved:0, editing:false }; return S.sb; }
+/* Which schools run in a quarter (Nov 2026, Andrew: "in Q1 we only have the GPDTS school running"): the plan's `schools`,
+   a list of Leadership Development school ministries (LD_SCHOOL_MINISTRIES); null = every school the campus has. A school
+   not running has no box that quarter; anyone placed in it waits in the tray, still placed there for a quarter it runs. */
+function sbSchoolsOn_(campus){ var LD=getDepartments(campus)['Leadership Development']||{}; return LD_SCHOOL_MINISTRIES.filter(function(m){ return !!LD[m]; }); }
+function sbRuns_(plan, m){ return LD_SCHOOL_MINISTRIES.indexOf(m)===-1 || !plan.schools || plan.schools.indexOf(m)>-1; }
+/* the students' schools (dts, dbs…) that run this quarter */
+var SB_STU_MINS={ dts:['GPDTS','DTS'], dbs:['DBS'], bcs:['BCS'], sms:['SMS'] };
+function sbStuSchools_(plan){
+  if(!plan || !plan.schools) return STRUCT_SCHOOLS_C;
+  var r=STRUCT_SCHOOLS_C.filter(function(sc){ return SB_STU_MINS[sc].some(function(m){ return plan.schools.indexOf(m)>-1; }); });
+  return r.length ? r : STRUCT_SCHOOLS_C;
+}
 function sbCanEdit_(campus){ return !!(S.me && (S.me.isAdmin || (S.me.dept===BL_DEPT && S.me.campus===campus))); }
 /* the leadership tab plans the quarter ahead by default (Andrew: "right now we're looking at the quarter one of 2027") */
 function sbQuarter_(){ var B=sbState_(); if(B.year && B.q) return { year:B.year, q:B.q }; var n=nextQuarter_(); return { year:n.year, q:n.q }; }
@@ -35,7 +47,7 @@ function sbLoad_(campus, year, q){
 function sbPlan_(campus, year, q){
   var c=S.structCache[sbKey_(campus, year, q)];
   var p=(c && c.plan) || {};
-  return { students:p.students||{}, place:p.place||{}, leads:p.leads||null, extra:p.extra||[], inherited:!!p.inherited, from:p.from||null };
+  return { students:p.students||{}, place:p.place||{}, leads:p.leads||null, extra:p.extra||[], schools:Array.isArray(p.schools) ? p.schools : null, inherited:!!p.inherited, from:p.from||null };
 }
 
 /* ---- the model: who is where this quarter ---- */
@@ -57,7 +69,9 @@ function sbModel_(campus, plan){
   };
   var boxes={}, placed={};
   var add=function(key, id){ (boxes[key]=boxes[key]||[]).push(id); placed[id]=key; };
-  var known={}; known[BL_DEPT+'|Campus Director']=1; depts.forEach(function(d){ known[BL_DEPT+'|'+d]=1; Object.keys(deps[d]||{}).forEach(function(m){ known[d+'|'+m]=1; }); });
+  var known={}, all={}; known[BL_DEPT+'|Campus Director']=1; depts.forEach(function(d){ known[BL_DEPT+'|'+d]=1; Object.keys(deps[d]||{}).forEach(function(m){ all[d+'|'+m]=1; if(sbRuns_(plan, m)) known[d+'|'+m]=1; }); });
+  Object.keys(known).forEach(function(k){ all[k]=1; });
+  var notRunning=sbSchoolsOn_(campus).filter(function(m){ return !sbRuns_(plan, m); });
   var students={};
   order.forEach(function(id){
     if(plan.students[id]){ (students[plan.students[id]]=students[plan.students[id]]||[]).push(id); placed[id]='_students'; return; }
@@ -65,7 +79,8 @@ function sbModel_(campus, plan){
     if(w.dept!=='_off' && known[key]) add(key, id);
   });
   var tray=order.filter(function(id){ return !placed[id]; });
-  return { campus:campus, deps:deps, depts:depts, people:people, order:order, boxes:boxes, students:students, tray:tray, leadsOf:leadsOf, pos:pos, placed:placed };
+  return { campus:campus, deps:deps, depts:depts, people:people, order:order, boxes:boxes, students:students, tray:tray, leadsOf:leadsOf, pos:pos, placed:placed,
+    all:all, plan:plan, notRunning:notRunning, runs:function(m){ return sbRuns_(plan, m); } };
 }
 function sbBoxName_(key){
   if(key==='_students') return t('Students this quarter');
@@ -94,12 +109,14 @@ function sbTreeHtml_(M, edit, title){
     '<div class="sbFaces">'+(dirs.length ? dirs.map(function(id){ return sbFace_(M, id, { edit:edit, from:lk, lead:true }); }).join('') : '<span class="sbEmpty">'+esc(edit ? t('Drop the directors here') : t('Nobody here yet'))+'</span>')+'</div></div></div>';
   h+='<div class="sbDepts">';
   M.depts.forEach(function(dept){
-    var dk=BL_DEPT+'|'+dept, dd=M.boxes[dk]||[], mins=Object.keys(M.deps[dept]||{});
+    var dk=BL_DEPT+'|'+dept, dd=M.boxes[dk]||[], mins=Object.keys(M.deps[dept]||{}).filter(function(m){ return M.runs(m); });
     var n=dd.length; mins.forEach(function(m){ n+=(M.boxes[dept+'|'+m]||[]).length; });
     h+='<div class="sbCol"><div class="sbNode sbDept" data-sbdept="'+esc(dept)+'">'+
       '<div class="sbHead"><span>'+(MIN_EMOJI[dept]?MIN_EMOJI[dept]+' ':'')+esc(t(dept))+'</span><span class="sbN">'+n+'</span></div>'+
       '<div class="sbDir" data-sbdrop="'+esc(dk)+'"><div class="sbSub"><span>'+esc(t('Director'))+'</span>'+sbPlus_(dk, edit)+'</div><div class="sbFaces">'+
-        (dd.length ? dd.map(function(id){ return sbFace_(M, id, { edit:edit, from:dk, lead:true }); }).join('') : '<span class="sbEmpty">'+esc(t('Nobody yet'))+'</span>')+'</div></div></div>';
+        (dd.length ? dd.map(function(id){ return sbFace_(M, id, { edit:edit, from:dk, lead:true }); }).join('') : '<span class="sbEmpty">'+esc(t('Nobody yet'))+'</span>')+'</div></div>'+
+      (M.notRunning.length && Object.keys(M.deps[dept]||{}).some(function(m){ return M.notRunning.indexOf(m)>-1; })
+        ? '<div class="sbNotRun" id="sbNotRun">'+esc(gpT('Not running this quarter: {list}',{list:M.notRunning.map(function(m){ return t(m); }).join(' · ')}))+'</div>' : '')+'</div>';
     h+='<div class="sbMins">';
     mins.forEach(function(m){
       var key=dept+'|'+m, leads=M.leadsOf(key), here=(M.boxes[key]||[]).filter(function(id){ return leads.indexOf(id)===-1; });
@@ -111,7 +128,7 @@ function sbTreeHtml_(M, edit, title){
     h+='</div></div>';
   });
   // the staff doing a school this quarter
-  var stuN=0; STRUCT_SCHOOLS_C.forEach(function(sc){ stuN+=(M.students[sc]||[]).length; });
+  var stuN=0; STRUCT_SCHOOLS_C.forEach(function(sc){ stuN+=(M.students[sc]||[]).length; });   // a student already marked stays shown
   if(stuN || edit){
     h+='<div class="sbCol"><div class="sbNode sbDept sbStu" data-sbdrop="_students"><div class="sbHead"><span>🎓 '+esc(t('Students this quarter'))+'</span><span class="sbN">'+stuN+'</span></div>'+
       (stuN ? STRUCT_SCHOOLS_C.map(function(sc){ var g=M.students[sc]||[]; return g.length ? '<div class="sbSub"><span>'+sc.toUpperCase()+' · '+g.length+'</span></div><div class="sbFaces">'+g.map(function(id){ return sbFace_(M, id, { edit:edit, from:'_students' }); }).join('')+'</div>' : ''; }).join('')
@@ -127,14 +144,16 @@ function sbBoardHtml_(campus, year, q, edit){
   var B=sbState_(), plan=sbPlan_(campus, year, q), M=sbModel_(campus, plan);
   B.cur={ campus:campus, year:year, q:q, edit:!!edit, key:sbKey_(campus, year, q) };
   var title=gpT('{campus} · Q{q} {year}',{campus:campusShort(campus), q:q, year:year});
-  var h='<div class="sbWrap'+(B.full?' full':'')+'" id="sbWrap">';
+  /* data-noptr: a drag on the board is never the app's pull to refresh (Nov 2026, Andrew: "when I move down, it refreshes the page") */
+  var h='<div class="sbWrap'+(B.full?' full':'')+(edit?' editing':'')+'" id="sbWrap" data-noptr="1">';
   h+='<div class="sbBar"><div class="sbZoom"><button type="button" class="sbZb" id="sbOut" aria-label="'+esc(t('Zoom out'))+'">−</button>'+
     '<span class="sbPct" id="sbPct">'+Math.round(B.k*100)+'%</span><button type="button" class="sbZb" id="sbIn" aria-label="'+esc(t('Zoom in'))+'">＋</button>'+
     '<button type="button" class="sbZb" id="sbFit" aria-label="'+esc(t('Fit the whole structure'))+'">⤢</button>'+
     '<button type="button" class="sbZb" id="sbFull" aria-label="'+esc(B.full ? t('Close full screen') : t('Full screen'))+'">'+(B.full?'✕':'⛶')+'</button></div>'+
-    (edit ? '<span class="sbSaved" id="sbSaved">'+esc(B.saving ? t('Saving…') : B.saved ? t('Saved ✓') : '')+'</span>' : '')+'</div>';
+    (edit ? '<span class="sbSaved" id="sbSaved">'+esc(B.saving ? t('Saving…') : B.saved ? t('Saved ✓') : '')+'</span>' : '')+
+    (B.full && B.canEdit ? sbModeHtml_() : '')+'</div>';
   h+='<div class="sbView" id="sbView"><div class="sbCanvas" id="sbCanvas" style="transform:translate('+B.x+'px,'+B.y+'px) scale('+B.k+')">'+sbTreeHtml_(M, edit, title)+'</div>'+
-    '<p class="sbHint">'+esc(edit ? t('Drag a face onto a box. Tap ＋ to add, tap a face for more.') : t('Pinch or scroll to zoom, drag to move around.'))+'</p></div>';
+    '<p class="sbHint">'+esc(edit ? t('Drag a face onto a box. Tap ＋ to add, tap a face for more.') : B.canEdit ? t('Looking only — nobody moves. Tap Edit to make changes.') : t('Pinch or scroll to zoom, drag to move around.'))+'</p></div>';
   if(edit){
     var q2=(B.trayQ||'').trim().toLowerCase();
     var list=M.order.filter(function(id){ return !q2 || String(M.people[id].name).toLowerCase().indexOf(q2)>-1; });
@@ -187,7 +206,7 @@ function sbSheetHtml_(M, sh){
   } else if(sh.kind==='school'){
     var ps=M.people[sh.id]; if(!ps) return '';
     h+='<div class="sbSheetHead"><b>'+esc(gpT('Which school is {name} doing?',{name:ps.name}))+'</b>'+close+'</div><div class="sbSchools">'+
-      STRUCT_SCHOOLS_C.map(function(sc){ return '<button type="button" class="btn ghost" data-sbschool="'+sc+'">'+sc.toUpperCase()+'</button>'; }).join('')+'</div>'+
+      sbStuSchools_(M.plan).map(function(sc){ return '<button type="button" class="btn ghost" data-sbschool="'+sc+'">'+sc.toUpperCase()+'</button>'; }).join('')+'</div>'+
       '<p class="hint">'+esc(t('For this quarter only. Their profile stays as it is.'))+'</p>';
   }
   return h+'</div>';
@@ -209,15 +228,15 @@ function sbStudentOf_(id){ var B=sbState_(), c=B.cur, plan=c ? sbPlan_(c.campus,
    profile edited later moves nobody on this chart. */
 function sbOwn_(campus, plan){
   var M=sbModel_(campus, plan), place={}, leads={};
-  M.order.forEach(function(id){ var w=M.pos(id); place[id]={ dept:w.dept||'_off', ministry:w.ministry||'' }; if(w.dept && w.dept!=='_off' && !M.placed[id]) place[id]={ dept:'_off', ministry:'' }; });
+  M.order.forEach(function(id){ var w=M.pos(id); place[id]={ dept:w.dept||'_off', ministry:w.ministry||'' }; if(w.dept && w.dept!=='_off' && !M.all[w.dept+'|'+(w.ministry||'')]) place[id]={ dept:'_off', ministry:'' }; });
   M.depts.forEach(function(d){ Object.keys(M.deps[d]||{}).forEach(function(m){ var k=d+'|'+m, l=M.leadsOf(k); if(l.length) leads[k]=l.slice(); }); });
-  return { students:Object.assign({}, plan.students), place:place, leads:leads, extra:(plan.extra||[]).slice(), inherited:false };
+  return { students:Object.assign({}, plan.students), place:place, leads:leads, extra:(plan.extra||[]).slice(), schools:plan.schools ? plan.schools.slice() : null, inherited:false };
 }
 function sbChange_(fn){
   var B=sbState_(), c=B.cur; if(!c || !c.edit) return;
   var cache=S.structCache[c.key] || (S.structCache[c.key]={ doc:null, source:'none' });
   var cur=sbPlan_(c.campus, c.year, c.q);
-  var own=(cache.plan && !cache.plan.inherited && cache.plan.leads) ? { students:Object.assign({}, cur.students), place:Object.assign({}, cur.place), leads:JSON.parse(JSON.stringify(cur.leads||{})), extra:cur.extra.slice(), inherited:false } : sbOwn_(c.campus, cur);
+  var own=(cache.plan && !cache.plan.inherited && cache.plan.leads) ? { students:Object.assign({}, cur.students), place:Object.assign({}, cur.place), leads:JSON.parse(JSON.stringify(cur.leads||{})), extra:cur.extra.slice(), schools:cur.schools ? cur.schools.slice() : null, inherited:false } : sbOwn_(c.campus, cur);
   fn(own);
   cache.plan=own;
   sbSave_();
@@ -231,7 +250,7 @@ function sbSave_(){
   _sbSaveT=setTimeout(function(){
     var cache=S.structCache[c.key]; if(!cache || !cache.plan) return;
     var p=cache.plan, n=B.saving;
-    run('saveStructurePlan',[S.auth.user,S.auth.pin,c.campus,c.year,c.q,p.students,p.place,p.leads,p.extra],function(d){
+    run('saveStructurePlan',[S.auth.user,S.auth.pin,c.campus,c.year,c.q,p.students,p.place,p.leads,p.extra,p.schools||null],function(d){
       if(B.saving!==n) return;   // a newer change is on its way
       B.saving=0;
       if(d && d.ok){ B.saved=Date.now(); if(d.doc){ cache.doc=d.doc; cache.source='saved'; } }
@@ -405,6 +424,32 @@ function bindSb_(){
   document.querySelectorAll('[data-sbschool]').forEach(function(b){ b.onclick=function(){ var id=B.sheet && B.sheet.id; B.sheet=null; if(id) sbMove_(id, '_stu:'+b.getAttribute('data-sbschool')); }; });
 }
 
+/* ---- View or Edit (Nov 2026, Andrew: "a view mode where you don't accidently move people and an edit mode") ----
+   The leadership tab opens on View: the board only moves and zooms, a face opens nobody and moves nobody. Edit brings the
+   tray, the ＋ buttons, dragging and the schools row. Kept for the visit (S.sb.editing); Team → Structure's Edit opens on it. */
+function sbModeHtml_(){
+  var on=!!sbState_().editing;
+  return '<span class="sbMode" role="group" aria-label="'+esc(t('View or edit'))+'">'+
+    '<button type="button" class="sbModeB'+(on?'':' on')+'" id="sbModeView" aria-pressed="'+(!on)+'">👁 '+esc(t('View'))+'</button>'+
+    '<button type="button" class="sbModeB'+(on?' on':'')+'" id="sbModeEdit" aria-pressed="'+on+'">✏️ '+esc(t('Edit'))+'</button></span>';
+}
+function bindSbMode_(){
+  var B=sbState_();
+  var set=function(v){ if(!!B.editing===v) return; gpTap(); B.editing=v; B.sheet=null; render(); };
+  document.querySelectorAll('#sbModeView').forEach(function(b){ b.onclick=function(){ set(false); }; });
+  document.querySelectorAll('#sbModeEdit').forEach(function(b){ b.onclick=function(){ set(true); }; });
+}
+/* The schools running this quarter: chips to tick while editing, one line while viewing. */
+function sbSchoolsHtml_(campus, plan, Q, edit){
+  var have=sbSchoolsOn_(campus); if(!have.length) return '';
+  var runs=have.filter(function(m){ return sbRuns_(plan, m); });
+  if(!edit) return '<p class="hint sbRunLine" id="sbRunLine">🎓 '+esc(gpT('Schools running in Q{q} {year}: {list}',{q:Q.q, year:Q.year, list: runs.length ? runs.map(function(m){ return t(m); }).join(' · ') : t('none')}))+'</p>';
+  return '<div class="sbRun" id="sbRun"><b>🎓 '+esc(gpT('Which schools run in Q{q} {year}?',{q:Q.q, year:Q.year}))+'</b>'+
+    '<div class="deptChips" style="margin:4px 0 0">'+have.map(function(m){ var on=runs.indexOf(m)>-1;
+      return '<button type="button" class="deptChip'+(on?' on':'')+'" data-sbrun="'+esc(m)+'" aria-pressed="'+on+'">'+(on?'✓ ':'')+esc(t(m))+'</button>'; }).join('')+'</div>'+
+    '<p class="hint" style="margin:4px 0 0">'+esc(t('A school that isn’t running has no box this quarter. Add its leaders and staff in its box once it runs.'))+'</p></div>';
+}
+
 /* ---- Campus Leadership → My Ministry → Structure ---- */
 function sbLeadHtml_(){
   var B=sbState_(), campus=B.campus || S.me.campus, Q=sbQuarter_(), now={ year:new Date().getFullYear(), q:currentQuarter_() }, nx=nextQuarter_();
@@ -420,8 +465,12 @@ function sbLeadHtml_(){
   var plan=sbPlan_(campus, Q.year, Q.q), cache=S.structCache[key];
   var own=cache.plan && !cache.plan.inherited && cache.plan.leads;
   if(!own) h+='<p class="hint sbFrom">'+esc(plan.inherited && plan.from ? gpT('Starting from the Q{q} {year} structure — your first change makes Q{q2} {year2} its own.',{q:plan.from.quarter, year:plan.from.year, q2:Q.q, year2:Q.year}) : gpT('Starting from everyone’s profile — your first change makes Q{q} {year} its own.',{q:Q.q, year:Q.year}))+'</p>';
-  h+=sbBoardHtml_(campus, Q.year, Q.q, sbCanEdit_(campus));
-  if(own && sbCanEdit_(campus)) h+='<button class="linkbtn" id="sbReset" style="margin-top:6px">'+esc(gpT('Start Q{q} {year} again from everyone’s profile',{q:Q.q, year:Q.year}))+'</button>';
+  var can=sbCanEdit_(campus), edit=can && !!B.editing;
+  B.canEdit=can;
+  if(can && !B.full) h+='<div class="sbModeRow">'+sbModeHtml_()+'<span class="sub sbModeSub">'+esc(edit ? t('Editing: drag faces, tap ＋ to add, tap a face for more.') : t('Viewing: move around and zoom — nobody can be moved by accident.'))+'</span></div>';
+  h+=sbSchoolsHtml_(campus, plan, Q, edit);
+  h+=sbBoardHtml_(campus, Q.year, Q.q, edit);
+  if(own && edit) h+='<button class="linkbtn" id="sbReset" style="margin-top:6px">'+esc(gpT('Start Q{q} {year} again from everyone’s profile',{q:Q.q, year:Q.year}))+'</button>';
   h+='<p class="hint" style="margin:8px 0 0">'+esc(t('Everyone sees this quarter’s structure under Team → Structure.'))+'</p>';
   return h;
 }
@@ -429,6 +478,16 @@ function bindSbLead_(){
   var B=sbState_();
   document.querySelectorAll('[data-sbq]').forEach(function(b){ b.onclick=function(){ gpTap(); var v=b.getAttribute('data-sbq').split('|'); B.year=Number(v[0]); B.q=Number(v[1]); B.sheet=null; render(); }; });
   document.querySelectorAll('[data-sbcampus]').forEach(function(b){ b.onclick=function(){ gpTap(); B.campus=b.getAttribute('data-sbcampus'); B.sheet=null; render(); }; });
+  bindSbMode_();
+  document.querySelectorAll('[data-sbrun]').forEach(function(b){ b.onclick=function(){
+    gpTap(); var m=b.getAttribute('data-sbrun'), c=B.cur; if(!c || !c.edit) return;
+    var have=sbSchoolsOn_(c.campus);
+    sbChange_(function(p){
+      var on=(p.schools || have).filter(function(x){ return have.indexOf(x)>-1; });
+      on = on.indexOf(m)>-1 ? on.filter(function(x){ return x!==m; }) : on.concat([m]);
+      p.schools=have.filter(function(x){ return on.indexOf(x)>-1; });   // in the campus's own order
+    });
+  }; });
   var rt=document.getElementById('sbRetry'); if(rt) rt.onclick=function(){ var Q=sbQuarter_(), campus=B.campus||S.me.campus; delete S.structError[sbKey_(campus, Q.year, Q.q)]; render(); };
   var rs=document.getElementById('sbReset');
   if(rs) rs.onclick=function(){
@@ -444,13 +503,14 @@ function bindSbLead_(){
 }
 /* Team → Structure: the same quarter as a tree, read only (opened from the list) */
 function sbTeamHtml_(campus, year, q){
+  sbState_().canEdit=false;
   return '<div class="sbTeamBar"><button class="linkbtn" id="sbTeamBack" style="text-decoration:none">← '+esc(t('The list'))+'</button></div>'+sbBoardHtml_(campus, year, q, false);
 }
 function bindSbTeam_(){
   var b=document.getElementById('sbTeamBack'); if(b) b.onclick=function(){ S.sbTeam=false; sbState_().full=false; render(); };
   var o=document.getElementById('sbTeamOpen'); if(o) o.onclick=function(){ gpTap(); S.sbTeam=true; render(); window.scrollTo(0,0); };
   var e=document.getElementById('sbTeamEdit'); if(e) e.onclick=function(){
-    gpTap(); var B=sbState_(); B.year=structYear_(); B.q=structQ_(); B.campus=S.teamCampus||S.me.campus; B.sheet=null;
+    gpTap(); var B=sbState_(); B.year=structYear_(); B.q=structQ_(); B.campus=S.teamCampus||S.me.campus; B.sheet=null; B.editing=true;
     S.view='ministry'; S.mmBrowseDept=BL_DEPT; S.mmBrowseMinistry=S.me.dept===BL_DEPT ? (S.me.ministry||'') : ''; S.lwTab='struct'; try{ lwTabKeep_('struct'); }catch(er){}
     render(); window.scrollTo(0,0);
   };

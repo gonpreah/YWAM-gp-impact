@@ -570,7 +570,20 @@ in the leadership My Ministry, and it shows in Team → Structure … profile fa
   people here, ≤8 a ministry), `cleanStructExtra_` (≤80). A later quarter starts from it, leaders and names too (`planFor_`).
   A snapshot (`saveStructure` / `structPeople_`) carries both; saving a plan for this quarter or a later one rebuilds an
   existing snapshot. **No profile is ever written.**
-- tests/test-structure.mjs (server), tests/test-structure-board-ui.mjs (mouse and touch). Khmer: docs/khmer-needed.md §135.
+- **View and Edit** (Nov 2026, Andrew: "a view mode where you don't accidently move people and an edit mode"): the tab opens on
+  **View** (`sbModeHtml_`, `#sbModeView` / `#sbModeEdit`, `S.sb.editing`, kept for the visit; in full screen the switch is in the
+  board's bar): the board only moves and zooms — no tray, no ＋, no dragging, faces open profiles. **Edit** brings them, with the
+  board outlined (`.sbWrap.editing`). Team → Structure's ✏️ Edit opens on Edit.
+- **A drag on the board is never a pull to refresh** ("when I move down, it refreshes the page"): `#sbWrap` carries `data-noptr`,
+  and `gpPullToRefresh` (rollup.js) ignores a touch that starts inside any `[data-noptr]`.
+- **Which schools run that quarter** ("in Q1, we only have the GPDTS school running"): the plan's `schools` — Leadership
+  Development school ministries (`LD_SCHOOL_MINISTRIES` / `STRUCT_SCHOOL_MINS`, `cleanStructSchools_`), null = all.
+  `saveStructurePlan(…, extra, schools)` (undefined keeps the quarter's); a later quarter starts from it (`planFor_`); a snapshot
+  carries it. While editing, `#sbRun` ticks them (`[data-sbrun]`); viewing, `#sbRunLine` names them. A school not running has
+  no box on the tree or in Team → Structure's list (`orgChartHtml_(…, schools)`), with "Not running this quarter: …"
+  (`#sbNotRun`, `.orgNotRun`); people placed in it wait in the tray and keep that place for a quarter it runs (`sbOwn_` keeps
+  them); a staff student can only pick a school that runs (`sbStuSchools_`). Its leaders and staff go in its box like any ministry.
+- tests/test-structure.mjs (server), tests/test-structure-board-ui.mjs (mouse and touch). Khmer: docs/khmer-needed.md §135, §136.
   sw.js SHELL v29.
 
 ## Outreach Teams — one record per team, not a weekly form
