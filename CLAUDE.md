@@ -2840,7 +2840,7 @@ phones to take a photo of the student … they fill out the tests on paper … t
   Discipleship / Brought to Local Church as levels (active students with that date by the week's end).
 - **Privacy (children)**: nothing of it is on the roster, a profile, getData, any boot or the preview (`school*` isn't a
   get… handler, so `demoCall` refuses it); applicants are walled out (test-applicant-walls). Tests use made-up names.
-- tests/test-school.mjs (server, 69), tests/test-school-ui.mjs (browser, 39). Khmer: docs/khmer-needed.md §137. sw.js SHELL v30.
+- tests/test-school.mjs (server, 69), tests/test-school-ui.mjs (browser, 39). Khmer: docs/khmer-needed.md §138. sw.js SHELL v30.
 
 ## Admin → Invite staff: links that let new staff straight in (Nov 2026, Andrew)
 "If I want to invite someone in the admin section … the invite link will be already pre-approved by the admin."

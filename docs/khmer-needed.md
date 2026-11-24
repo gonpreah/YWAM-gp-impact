@@ -6173,7 +6173,7 @@ The finance tool itself (public/finance.html) is English only for now — its Kh
 | Input | បញ្ចូល |
 
 
-## 137. The school tool (YDC on My Ministry, Nov 2026)
+## 138. The school tool (YDC on My Ministry, Nov 2026)
 My Ministry → YDC: Today (taking the roll) · Students · Tests · Payments · Dashboard. Used by teachers on a phone.
 "Here / Absent / Late" sit on small face tiles in the roll — very little room. "Term" was drafted as ឆមាស (semester);
 check whether the school says វគ្គ or ត្រីមាស instead. Fee words: "Sponsored — free", "A discount", "Full fee".
