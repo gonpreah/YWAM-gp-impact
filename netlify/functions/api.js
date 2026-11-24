@@ -2658,7 +2658,7 @@ function numbersKey_(campus, dept, ministry) { return campus + '|' + dept + '|' 
 function isTeamsMinistry_(dept, ministry) { return dept === TEAM_DEPT && ministry === TEAM_MIN; }
 /* Outreach Teams (the Teams Database) and Campus Leadership's own rows (OKRs and
    the Monday board, no weekly numbers) have no numbers people. */
-function numbersExempt_(dept, ministry) { return isTeamsMinistry_(dept, ministry) || dept === 'Campus Leadership' || (dept === 'Leadership Development' && ministry === 'GPDTS'); }   // GPDTS counts itself
+function numbersExempt_(dept, ministry) { return isTeamsMinistry_(dept, ministry) || dept === 'Campus Leadership' || (dept === 'Leadership Development' && ministry === 'GPDTS') || isSchoolMinistry_(dept, ministry); }   // GPDTS and the school tool (YDC) count themselves
 async function getNumbersPeople_() {
   const v = await readJSON('numbersPeople', {});
   if (!(v && typeof v === 'object' && !Array.isArray(v))) return {};
@@ -2754,7 +2754,7 @@ async function numbersStatus_(s, rows) {
   weeks.forEach(function (w) { logged[w] = {}; });
   entries.forEach(function (r) {
     if (r.campus !== s.campus || yearOf_(r) !== yr || !logged[Number(r.week)]) return;
-    if (r.by === DTS_TAG) return;   // GPDTS's pipeline counts itself; its typed numbers are what is due
+    if (r.by === DTS_TAG || r.by === SCHOOL_TAG) return;   // GPDTS's pipeline and the school tool count themselves; typed numbers are what is due
     logged[Number(r.week)][r.dept + '|' + r.ministry] = true;
   });
   const loggedFor = function (dept, ministry) {
@@ -13267,6 +13267,323 @@ function cafePos(username, pin, date, totals) {
   });
 }
 
+/* ==================== the school tool (YDC; Nov 2026, Uriah) ====================
+   "A really good software for managing a school … add students, … grades, taking roll, testing the
+   students … names, photo, keep tabs of all of their students … use their phones to take a photo of
+   the student … they fill out the tests on paper … then have they paid." One tool for a ministry that
+   runs a school — YDC now; the community schools later by adding one line to SCHOOL_TOOL (mirrored in
+   public/taxonomy.js, test-checked). Everything is set up in the app by the ministry: locations,
+   classes (a teacher, days, a time), the fee (a month or a term, each student full / a discount /
+   sponsored), the pass mark.
+   Store, per campus and ministry (the key `<campus>:<dept>|<ministry>`):
+     school:<key>      { settings, locations, classes, students, tests, payments, events }
+     schoolRoll:<key>  { rolls: { '<classId>|<date>': { classId, date, marks:{studentId:'p'|'a'|'l'}, by, at } } }
+     schthumbs:<key>   { <studentId>: '<160px jpeg base64>' } — the faces for the class grid, apart from the list
+     schphoto:<key>:<id> { data } — a student's photo (id = the student's) or a photo of marked papers
+   Who: the ministry's own people (canLogFor_ — members, leaders, its department's director) and admins
+   (who may pass another campus). Setting up: its leaders, its department's director, admins. Nothing
+   of it reaches the roster, a profile, getData or anyone else's boot. Children's details: never in a
+   test fixture with a real name.
+   The numbers count themselves (schoolSync_, 'tool:school' rows, this week year): days with classes
+   from the roll, enrolled from the students (a level), tests held and the passing rate from the tests,
+   parties and competitions from the events, salvations and baptisms by their dates, discipleship and
+   local church as levels. A number someone typed is never overwritten. */
+const SCHOOL_TOOL = {
+  'Youth Education|YDC': { metrics: { days: 'Days with Classes', enrolled: 'Youth Enrolled', tests: 'Tests Held', pass: 'Passing Rate (%)',
+    parties: 'Parties Thrown', comps: 'Competitions Held', salv: 'Salvations', bapt: 'Baptisms', disc: 'Students in Discipleship', church: 'Students Brought to Local Church' } }
+};
+const SCHOOL_TAG = 'tool:school';
+const SCHOOL_MAX = { locations: 40, classes: 80, students: 800, tests: 1500, payments: 6000, events: 400, terms: 12, papers: 6 };
+const SCHOOL_PHOTO_MAX_B64 = 400 * 1024, SCHOOL_THUMB_MAX_B64 = 40 * 1024, SCHOOL_ROLL_DAYS = 14, SCHOOL_ROLL_KEEP = 420;
+const SCHOOL_KINDS = ['settings', 'location', 'class', 'student', 'test', 'payment', 'event'];
+const SCHOOL_BLANK = { settings: {}, locations: [], classes: [], students: [], tests: [], payments: [], events: [] };
+function schoolConf_(dept, ministry) { const k = String(dept || '') + '|' + String(ministry || ''); return Object.prototype.hasOwnProperty.call(SCHOOL_TOOL, k) ? SCHOOL_TOOL[k] : null; }
+function isSchoolMinistry_(dept, ministry) { return !!schoolConf_(dept, ministry); }
+function schoolAutoMetrics_(dept, ministry) { const c = schoolConf_(dept, ministry); return c ? Object.keys(c.metrics).map(function (k) { return c.metrics[k]; }) : []; }
+function schoolKey_(campus, dept, ministry) { return campus + ':' + dept + '|' + ministry; }
+function schoolSetupOk_(s, dept, ministry) { return !!(s.isAdmin || isLeaderOf_(s, dept, ministry) || (deptOf_(s) === 'Campus Leadership' && s.ministry === dept)); }
+/* the one gate: a signed-in staff member of that ministry (or an admin, any campus) */
+async function schoolGate_(username, pin, scope) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { out: { ok: false } };
+  const sc = scope && typeof scope === 'object' ? scope : {};
+  const dept = normDept_(str_(sc.dept, 60) || '', str_(sc.ministry, 60) || ''), ministry = str_(sc.ministry, 60) || '';
+  if (!schoolConf_(dept, ministry)) return { out: { ok: false, err: 'no_school' } };
+  let campus = s.campus;
+  const asked = str_(sc.campus, 20);
+  if (asked && asked !== s.campus) { if (!s.isAdmin || CAMPUS_IDS_.indexOf(asked) === -1) return { out: { ok: false, err: 'not_authorized' } }; campus = asked; }
+  if (!(s.isAdmin || canLogFor_(s, campus, dept, ministry))) return { out: { ok: false, err: 'not_authorized' } };
+  return { s: s, campus: campus, dept: dept, ministry: ministry, key: schoolKey_(campus, dept, ministry), setup: schoolSetupOk_(s, dept, ministry) };
+}
+function schId_(p) { return p + Date.now().toString(36) + crypto.randomBytes(3).toString('hex'); }
+function schText_(v, n) { return String(v == null ? '' : v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, n); }
+function schDate_(v) { const d = isoDate_(v); if (!d) return ''; const y = Number(d.slice(0, 4)); return (y >= 1950 && y <= 2100 && dayNo_(d) != null && new Date(d + 'T00:00:00Z').toISOString().slice(0, 10) === d) ? d : ''; }
+function schMoney_(v) { if (v === '' || v == null) return null; const n = Number(v); return isFinite(n) && n >= 0 && n <= 100000 ? Math.round(n * 100) / 100 : null; }
+function schDoc_(raw) {
+  const d = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  const o = {};
+  Object.keys(SCHOOL_BLANK).forEach(function (k) { o[k] = Array.isArray(SCHOOL_BLANK[k]) ? (Array.isArray(d[k]) ? d[k] : []) : (d[k] && typeof d[k] === 'object' && !Array.isArray(d[k]) ? d[k] : {}); });
+  return o;
+}
+function schSettings_(st) {
+  st = st && typeof st === 'object' ? st : {};
+  const pm = Math.round(Number(st.passMark));
+  const fee = st.fee && typeof st.fee === 'object' ? st.fee : {};
+  return { passMark: pm >= 1 && pm <= 100 ? pm : 50,
+    fee: { amount: schMoney_(fee.amount) || 0, per: fee.per === 'term' ? 'term' : 'month' },
+    terms: (Array.isArray(st.terms) ? st.terms : []).map(function (x) {
+      const from = schDate_(x && x.from), to = schDate_(x && x.to), name = schText_(x && x.name, 40);
+      if (!name || !from || !to || to < from) return null;
+      return { id: (typeof x.id === 'string' && /^[a-z0-9]{1,24}$/.test(x.id)) ? x.id : schId_('tm'), name: name, from: from, to: to };
+    }).filter(Boolean).slice(0, SCHOOL_MAX.terms) };
+}
+const SCH_TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
+/* each kind, cleaned: `doc` is the school as it is (for references), `old` the record being changed */
+const SCH_CLEAN = {
+  location: function (r) { const name = schText_(r.name, 60); if (!name) return { err: 'name_needed' }; return { name: name, notes: schText_(r.notes, 300) }; },
+  class: function (r, doc, staff, campus) {
+    const name = schText_(r.name, 60); if (!name) return { err: 'name_needed' };
+    if (!doc.locations.some(function (l) { return l.id === r.locationId; })) return { err: 'bad_location' };
+    const t = staff.find(function (x) { return x.id === r.teacherId && x.campus === campus && x.active !== false && !isApplicant_(x); });
+    const days = (Array.isArray(r.days) ? r.days : []).map(Number).filter(function (n, i, a) { return n >= 0 && n <= 6 && Math.round(n) === n && a.indexOf(n) === i; }).sort();
+    return { name: name, locationId: r.locationId, teacherId: t ? t.id : '', teacherName: t ? '' : schText_(r.teacherName, 60), days: days,
+      time: SCH_TIME.test(String(r.time || '')) ? String(r.time) : '', end: SCH_TIME.test(String(r.end || '')) ? String(r.end) : '' };
+  },
+  student: function (r, doc, staff, campus, old) {
+    const kh = schText_(r.kh, 80), en = schText_(r.en, 80);
+    if (!kh && !en) return { err: 'name_needed' };
+    if (r.classId && !doc.classes.some(function (c) { return c.id === r.classId; })) return { err: 'bad_class' };
+    const fee = r.fee && typeof r.fee === 'object' ? r.fee : {};
+    const mode = ['full', 'discount', 'free'].indexOf(fee.mode) > -1 ? fee.mode : 'full';
+    const f = r.faith && typeof r.faith === 'object' ? r.faith : {};
+    const status = r.status === 'left' ? 'left' : 'active';
+    return { kh: kh, en: en, sex: ['m', 'f'].indexOf(r.sex) > -1 ? r.sex : '', dob: schDate_(r.dob), village: schText_(r.village, 80),
+      guardian: schText_(r.guardian, 80), guardianPhone: schText_(r.guardianPhone, 30), classId: r.classId || '',
+      start: schDate_(r.start) || (old && old.start) || baseToday_(), status: status, leftOn: status === 'left' ? (schDate_(r.leftOn) || baseToday_()) : '',
+      notes: schText_(r.notes, 1000),
+      fee: { mode: mode, amount: mode === 'discount' ? (schMoney_(fee.amount) || 0) : 0 },
+      faith: { disc: schDate_(f.disc), church: schDate_(f.church), salv: schDate_(f.salv), bapt: schDate_(f.bapt) },
+      hasPhoto: !!(old && old.hasPhoto) };
+  },
+  test: function (r, doc, staff, campus, old) {
+    const subject = schText_(r.subject, 60); if (!subject) return { err: 'subject_needed' };
+    if (!doc.classes.some(function (c) { return c.id === r.classId; })) return { err: 'bad_class' };
+    const date = schDate_(r.date); if (!date) return { err: 'bad_date' };
+    const outOf = Math.round(Number(r.outOf)); if (!(outOf >= 1 && outOf <= 1000)) return { err: 'bad_out_of' };
+    const ids = {}; doc.students.forEach(function (x) { ids[x.id] = 1; });
+    const scores = {};
+    Object.keys(r.scores && typeof r.scores === 'object' ? r.scores : {}).forEach(function (id) {
+      const v = r.scores[id]; if (!ids[id] || v === '' || v == null) return;
+      const n = Number(v); if (isFinite(n) && n >= 0 && n <= outOf) scores[id] = Math.round(n * 10) / 10;
+    });
+    return { classId: r.classId, subject: subject, date: date, outOf: outOf, scores: scores, papers: old && Array.isArray(old.papers) ? old.papers : [] };
+  },
+  payment: function (r, doc) {
+    if (!doc.students.some(function (x) { return x.id === r.studentId; })) return { err: 'bad_student' };
+    const amount = schMoney_(r.amount); if (!amount) return { err: 'bad_amount' };
+    const date = schDate_(r.date); if (!date || date > addDays_(baseToday_(), 1)) return { err: 'bad_date' };
+    const period = schText_(r.period, 24);
+    if (!(/^\d{4}-\d{2}$/.test(period) || (doc.settings.terms || []).some(function (t) { return t.id === period; }))) return { err: 'bad_period' };
+    return { studentId: r.studentId, amount: amount, date: date, method: ['cash', 'aba', 'other'].indexOf(r.method) > -1 ? r.method : 'cash', period: period, note: schText_(r.note, 200) };
+  },
+  event: function (r) {
+    const title = schText_(r.title, 80); if (!title) return { err: 'name_needed' };
+    const date = schDate_(r.date); if (!date) return { err: 'bad_date' };
+    return { title: title, date: date, kind: ['party', 'competition', 'other'].indexOf(r.kind) > -1 ? r.kind : 'other', notes: schText_(r.notes, 300) };
+  }
+};
+const SCH_LIST = { location: 'locations', class: 'classes', student: 'students', test: 'tests', payment: 'payments', event: 'events' };
+function schRollsOut_(doc) {
+  const r = doc && doc.rolls && typeof doc.rolls === 'object' && !Array.isArray(doc.rolls) ? doc.rolls : {};
+  return Object.keys(r).map(function (k) { return r[k]; }).filter(function (x) { return x && x.classId && x.date; });
+}
+async function schoolOut_(g) {
+  const doc = schDoc_(await readJSON('school:' + g.key, {}));
+  doc.settings = schSettings_(doc.settings);
+  const rolls = schRollsOut_(await readJSON('schoolRoll:' + g.key, { rolls: {} }));
+  const thumbs = await readJSON('schthumbs:' + g.key, {});
+  const ids = {}; doc.students.forEach(function (x) { ids[x.id] = 1; });
+  const th = {}; Object.keys(thumbs || {}).forEach(function (k) { if (ids[k] && typeof thumbs[k] === 'string') th[k] = thumbs[k]; });
+  return { ok: true, campus: g.campus, dept: g.dept, ministry: g.ministry, canSetup: g.setup, today: baseToday_(), data: doc, rolls: rolls, thumbs: th,
+    metrics: schoolAutoMetrics_(g.dept, g.ministry) };
+}
+async function schoolBoard(username, pin, scope) {
+  const g = await schoolGate_(username, pin, scope); if (g.out) return g.out;
+  return schoolOut_(g);
+}
+async function schoolSave(username, pin, scope, kind, rec) {
+  const g = await schoolGate_(username, pin, scope); if (g.out) return g.out;
+  if (SCHOOL_KINDS.indexOf(kind) === -1) return { ok: false, err: 'bad_kind' };
+  if ((kind === 'settings' || kind === 'location' || kind === 'class') && !g.setup) return { ok: false, err: 'not_setup' };
+  const r = rec && typeof rec === 'object' && !Array.isArray(rec) ? rec : {};
+  const staff = kind === 'class' ? await getStaff_() : [];
+  const res = await mutateKey_('school:' + g.key, {}, function (raw) {
+    const doc = schDoc_(raw); Object.keys(doc).forEach(function (k) { raw[k] = doc[k]; });
+    if (kind === 'settings') { raw.settings = Object.assign(schSettings_(Object.assign({}, schSettings_(raw.settings), r)), { by: g.s.id, at: new Date().toISOString() }); return { ok: true }; }
+    doc.settings = schSettings_(doc.settings);
+    const list = raw[SCH_LIST[kind]];
+    const id = typeof r.id === 'string' ? r.id : '';
+    const idx = id ? list.findIndex(function (x) { return x && x.id === id; }) : -1;
+    if (id && idx === -1) return { abort: true, ok: false, err: 'not_found' };
+    if (idx === -1 && list.length >= SCHOOL_MAX[SCH_LIST[kind]]) return { abort: true, ok: false, err: 'too_many' };
+    const old = idx > -1 ? list[idx] : null;
+    const c = SCH_CLEAN[kind](r, doc, staff, g.campus, old);
+    if (c.err) return { abort: true, ok: false, err: c.err };
+    const now = new Date().toISOString();
+    const row = Object.assign({ id: old ? old.id : schId_(kind.slice(0, 2)) }, c, { created: old ? old.created : now, by: old ? old.by : g.s.id, at: now, editedBy: g.s.id });
+    if (idx > -1) list[idx] = row; else list.push(row);
+    return { ok: true, id: row.id };
+  });
+  if (!res || res.ok === false) return res || { ok: false, err: 'busy' };
+  await schoolSyncSafe_(g);
+  return Object.assign(await schoolOut_(g), { saved: res.id || '' });
+}
+async function schDropBlob_(key) { try { const st = store(); if (typeof st.delete === 'function') await st.delete(key); else await st.setJSON(key, null); } catch (e) { /* the record is gone already */ } }
+async function schoolDelete(username, pin, scope, kind, id) {
+  const g = await schoolGate_(username, pin, scope); if (g.out) return g.out;
+  if (!SCH_LIST[kind]) return { ok: false, err: 'bad_kind' };
+  if ((kind === 'location' || kind === 'class') && !g.setup) return { ok: false, err: 'not_setup' };
+  let dropped = [];
+  const res = await mutateKey_('school:' + g.key, {}, function (raw) {
+    const doc = schDoc_(raw); Object.keys(doc).forEach(function (k) { raw[k] = doc[k]; });
+    const list = raw[SCH_LIST[kind]], idx = list.findIndex(function (x) { return x && x.id === id; });
+    if (idx === -1) return { abort: true, ok: false, err: 'not_found' };
+    if (kind === 'location' && raw.classes.some(function (c) { return c.locationId === id; })) return { abort: true, ok: false, err: 'in_use' };
+    if (kind === 'class' && (raw.students.some(function (x) { return x.classId === id; }) || raw.tests.some(function (x) { return x.classId === id; }))) return { abort: true, ok: false, err: 'in_use' };
+    if (kind === 'student' && raw.payments.some(function (x) { return x.studentId === id; })) return { abort: true, ok: false, err: 'in_use' };
+    if (kind === 'test') dropped = (list[idx].papers || []).slice();
+    if (kind === 'student') { dropped = [id]; raw.tests.forEach(function (t) { if (t.scores) delete t.scores[id]; }); }
+    list.splice(idx, 1);
+    return { ok: true };
+  });
+  if (!res || res.ok === false) return res || { ok: false, err: 'busy' };
+  for (const p of dropped) await schDropBlob_('schphoto:' + g.key + ':' + p);
+  if (kind === 'student') await mutateKey_('schthumbs:' + g.key, {}, function (t) { delete t[id]; return { ok: true }; });
+  await schoolSyncSafe_(g);
+  return schoolOut_(g);
+}
+/* The roll: one per class per date, saving again replaces it — so a phone that sends the same roll
+   twice (offline, then again) changes nothing. Any day in the last fortnight, never tomorrow. */
+async function schoolRoll(username, pin, scope, classId, date, marks) {
+  const g = await schoolGate_(username, pin, scope); if (g.out) return g.out;
+  const d = schDate_(date), today = baseToday_();
+  if (!d || d > today || d < addDays_(today, -SCHOOL_ROLL_DAYS)) return { ok: false, err: 'bad_date' };
+  const doc = schDoc_(await readJSON('school:' + g.key, {}));
+  if (!doc.classes.some(function (c) { return c.id === classId; })) return { ok: false, err: 'bad_class' };
+  const ids = {}; doc.students.forEach(function (x) { ids[x.id] = 1; });
+  const m = {};
+  Object.keys(marks && typeof marks === 'object' && !Array.isArray(marks) ? marks : {}).slice(0, SCHOOL_MAX.students).forEach(function (sid) {
+    if (ids[sid] && ['p', 'a', 'l'].indexOf(marks[sid]) > -1) m[sid] = marks[sid];
+  });
+  const res = await mutateKey_('schoolRoll:' + g.key, { rolls: {} }, function (raw) {
+    if (!raw.rolls || typeof raw.rolls !== 'object' || Array.isArray(raw.rolls)) raw.rolls = {};
+    const keep = addDays_(today, -SCHOOL_ROLL_KEEP);
+    Object.keys(raw.rolls).forEach(function (k) { const x = raw.rolls[k]; if (!x || !x.date || x.date < keep) delete raw.rolls[k]; });
+    const k = classId + '|' + d;
+    if (!Object.keys(m).length) delete raw.rolls[k];
+    else raw.rolls[k] = { classId: classId, date: d, marks: m, by: g.s.id, at: new Date().toISOString() };
+    return { ok: true };
+  });
+  if (!res || res.ok === false) return res || { ok: false, err: 'busy' };
+  await schoolSyncSafe_(g);
+  return schoolOut_(g);
+}
+/* Photos: a student's (kind 'student', id = the student; with its 160px thumb for the class grid)
+   or one of a test's marked papers (kind 'paper', id = the test; a new photo each time, six at most).
+   base64 null takes it off (for a paper: `photoId` names which). */
+function schB64_(v, max) { return typeof v === 'string' && v.length >= 100 && v.length <= max && /^[A-Za-z0-9+/=]+$/.test(v); }
+async function schoolPhoto(username, pin, scope, kind, id, base64, thumb, photoId) {
+  const g = await schoolGate_(username, pin, scope); if (g.out) return g.out;
+  if (kind !== 'student' && kind !== 'paper') return { ok: false, err: 'bad_kind' };
+  const remove = base64 === null;
+  if (!remove && !schB64_(base64, SCHOOL_PHOTO_MAX_B64)) return { ok: false, err: typeof base64 === 'string' && base64.length > SCHOOL_PHOTO_MAX_B64 ? 'too_large' : 'bad_file' };
+  if (kind === 'student' && !remove && !schB64_(thumb, SCHOOL_THUMB_MAX_B64)) return { ok: false, err: 'bad_file' };
+  let pid = '';
+  const res = await mutateKey_('school:' + g.key, {}, function (raw) {
+    const doc = schDoc_(raw); Object.keys(doc).forEach(function (k) { raw[k] = doc[k]; });
+    if (kind === 'student') {
+      const st = raw.students.find(function (x) { return x.id === id; });
+      if (!st) return { abort: true, ok: false, err: 'not_found' };
+      st.hasPhoto = !remove; pid = st.id; return { ok: true };
+    }
+    const t = raw.tests.find(function (x) { return x.id === id; });
+    if (!t) return { abort: true, ok: false, err: 'not_found' };
+    t.papers = Array.isArray(t.papers) ? t.papers : [];
+    if (remove) { const i = t.papers.indexOf(photoId); if (i === -1) return { abort: true, ok: false, err: 'not_found' }; t.papers.splice(i, 1); pid = photoId; return { ok: true }; }
+    if (t.papers.length >= SCHOOL_MAX.papers) return { abort: true, ok: false, err: 'too_many' };
+    pid = schId_('pp'); t.papers.push(pid); return { ok: true };
+  });
+  if (!res || res.ok === false) return res || { ok: false, err: 'busy' };
+  if (remove) await schDropBlob_('schphoto:' + g.key + ':' + pid);
+  else await writeJSON('schphoto:' + g.key + ':' + pid, { data: base64, at: new Date().toISOString(), by: g.s.id });
+  if (kind === 'student') await mutateKey_('schthumbs:' + g.key, {}, function (t) { if (remove) delete t[pid]; else t[pid] = thumb; return { ok: true }; });
+  return Object.assign(await schoolOut_(g), { photoId: pid });
+}
+async function schoolPhotoGet(username, pin, scope, id) {
+  const g = await schoolGate_(username, pin, scope); if (g.out) return g.out;
+  const doc = schDoc_(await readJSON('school:' + g.key, {}));
+  const known = doc.students.some(function (x) { return x.id === id && x.hasPhoto; }) || doc.tests.some(function (t) { return (t.papers || []).indexOf(id) > -1; });
+  if (!known) return { ok: false, err: 'not_found' };
+  const p = await readJSON('schphoto:' + g.key + ':' + id, null);
+  return p && typeof p.data === 'string' ? { ok: true, id: id, data: p.data } : { ok: false, err: 'not_found' };
+}
+/* ---- the numbers ---- */
+function schActiveOn_(st, day) { return !!st && (st.start || '') <= day && !(st.status === 'left' && st.leftOn && st.leftOn <= day); }
+async function schoolSync_(g) {
+  const conf = schoolConf_(g.dept, g.ministry); if (!conf) return false;
+  const M = conf.metrics, doc = schDoc_(await readJSON('school:' + g.key, {})), settings = schSettings_(doc.settings);
+  const rolls = schRollsOut_(await readJSON('schoolRoll:' + g.key, { rolls: {} }));
+  const yr = thisWeekYear_(), today = baseToday_(), curWk = isoWeek_(today);
+  const want = {}; Object.keys(M).forEach(function (k) { want[k] = {}; });
+  const wkOf = function (day) { return day && day <= today && weekYear_(day) === yr ? isoWeek_(day) : 0; };
+  const add = function (k, day, n) { const w = wkOf(day); if (w) want[k][w] = (want[k][w] || 0) + (n === undefined ? 1 : n); };
+  const days = {};
+  rolls.forEach(function (r) { if (r.marks && Object.keys(r.marks).length) { const w = wkOf(r.date); if (w) { days[w] = days[w] || {}; days[w][r.date] = 1; } } });
+  Object.keys(days).forEach(function (w) { want.days[w] = Object.keys(days[w]).length; });
+  const passN = {}, allN = {};
+  doc.tests.forEach(function (t) {
+    const w = wkOf(t.date); if (!w) return;
+    want.tests[w] = (want.tests[w] || 0) + 1;
+    Object.keys(t.scores || {}).forEach(function (sid) { allN[w] = (allN[w] || 0) + 1; if (Number(t.scores[sid]) / t.outOf * 100 >= settings.passMark) passN[w] = (passN[w] || 0) + 1; });
+  });
+  Object.keys(allN).forEach(function (w) { want.pass[w] = Math.round((passN[w] || 0) / allN[w] * 100); });
+  doc.events.forEach(function (e) { if (e.kind === 'party') add('parties', e.date); else if (e.kind === 'competition') add('comps', e.date); });
+  doc.students.forEach(function (st) { const f = st.faith || {}; add('salv', f.salv); add('bapt', f.bapt); });
+  const levels = { enrolled: function (st, end) { return schActiveOn_(st, end); },
+    disc: function (st, end) { return schActiveOn_(st, end) && !!(st.faith && st.faith.disc && st.faith.disc <= end); },
+    church: function (st, end) { return schActiveOn_(st, end) && !!(st.faith && st.faith.church && st.faith.church <= end); } };
+  Object.keys(levels).forEach(function (k) {
+    let seen = false;
+    for (let w = 1; w <= curWk; w++) {
+      const end = weekEndDay_(yr, w), n = doc.students.filter(function (st) { return levels[k](st, end); }).length;
+      if (n) seen = true;
+      if (seen) want[k][w] = n;
+    }
+  });
+  const rows = await getEntries_(), now = new Date().toISOString();
+  let changed = false;
+  Object.keys(M).forEach(function (k) {
+    const metric = M[k], isLevel = !!levels[k] || k === 'pass';
+    const mine = function (r) { return r.campus === g.campus && r.dept === g.dept && r.ministry === g.ministry && r.metric === metric && yearOf_(r) === yr; };
+    const weeks = {};
+    Object.keys(want[k]).forEach(function (w) { weeks[w] = 1; });
+    rows.forEach(function (r) { if (mine(r)) weeks[r.week] = 1; });
+    Object.keys(weeks).map(Number).forEach(function (w) {
+      const idx = rows.findIndex(function (r) { return mine(r) && Number(r.week) === w; });
+      const r = idx > -1 ? rows[idx] : null;
+      if (r && r.by !== SCHOOL_TAG) return;   // a number someone typed stays as it is
+      const v = want[k][w], has = v !== undefined && (isLevel || v > 0);
+      if (has) {
+        if (!r) { rows.push({ campus: g.campus, dept: g.dept, ministry: g.ministry, metric: metric, week: w, year: yr, value: v, updated: now, by: SCHOOL_TAG }); changed = true; }
+        else if (Number(r.value) !== v) { r.value = v; r.updated = now; changed = true; }
+      } else if (r) { rows.splice(idx, 1); changed = true; }
+    });
+  });
+  if (changed) await writeJSON('entries', rows);
+  return changed;
+}
+async function schoolSyncSafe_(g) { try { return await schoolSync_(g); } catch (e) { console.error('school sync', e && e.message); return false; } }
+
 /* ---------- Google Calendar (Oct 2026, Uriah: "our Google Calendar for birthdays, events, teams
    coming, guests, volunteers, speakers — integrate it into the app") ----------
    Read-only. An admin pastes each calendar's "Secret address in iCal format" once (Google
@@ -14854,6 +15171,12 @@ const HANDLERS = {
   leadPartnerDelete: function (a) { return leadPartnerDelete(a[0], a[1], a[2], a[3]); },
   basePlantSave: function (a) { return basePlantSave(a[0], a[1], a[2], a[3]); },
   cafeGet: function (a) { return cafeGet(a[0], a[1], a[2]); },
+  schoolBoard: function (a) { return schoolBoard(a[0], a[1], a[2]); },
+  schoolSave: function (a) { return schoolSave(a[0], a[1], a[2], a[3], a[4]); },
+  schoolDelete: function (a) { return schoolDelete(a[0], a[1], a[2], a[3], a[4]); },
+  schoolRoll: function (a) { return schoolRoll(a[0], a[1], a[2], a[3], a[4], a[5]); },
+  schoolPhoto: function (a) { return schoolPhoto(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]); },
+  schoolPhotoGet: function (a) { return schoolPhotoGet(a[0], a[1], a[2], a[3]); },
   cafeOpen: function (a) { return cafeOpen(a[0], a[1], a[2], a[3]); },
   cafeClose: function (a) { return cafeClose(a[0], a[1], a[2], a[3], a[4]); },
   cafeReopen: function (a) { return cafeReopen(a[0], a[1], a[2]); },

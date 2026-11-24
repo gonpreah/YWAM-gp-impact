@@ -66,6 +66,7 @@ const SERVER = [
   'test-signin-link.mjs',     // getting back in: an admin's one-time sign-in link (single use, runs out, replaced by a new one, no hash out), a PIN reset on a password account, an admin setting an email
   'test-demo.mjs',   // the preview (Look around): the app's own handlers on a made-up campus — the real store never opened, only the made-up person signs in, nothing kept
   'test-google-signin.mjs',   // signing in with Google: a Gmail written another way on the profile (capitals, dots, a +tag) still finds it, exact first; the email in the username box the same; whether Google's page-and-back way is on
+  'test-school.mjs', // the school tool (YDC): who may open it, set-up rights, every record cleaned, the roll replaced not added to, photos in their own blobs, nothing leaking, the numbers counting themselves without touching a typed one
   'test-dts-db.mjs', // GPDTS → Database: schools and what is filed under each, the policy, lectures' translator / MC / who finds the speaker, students from the portal with their 1-on-1, outreach teams' weeks counted
   'test-portal.mjs',     // YWAM GP Portal: applicant sign-up, applicants closed out of every staff handler and roster, own application only, portal access flags, timeline follows the CRM stage
   'test-portal-import.mjs', // importing applications from a spreadsheet: who may, applied on the form's day, answers cleaned and leftovers kept, nothing twice, the same email or phone skipped, a later sign-up takes it over
@@ -161,6 +162,7 @@ const BROWSER = [
   'test-home-layout-ui.mjs',  // My Home: sections in order, said once; Updates capped; annual goals folded; tiles; 320px Khmer
   'test-gcal.mjs',  // Google Calendar: admins connect by the secret iCal address (never sent back), repeats/exceptions/stays, Cambodia's clock, 30-minute cache
   'test-gcal-ui.mjs',  // the Calendar in the browser: ☰ → Calendar, Admin → Google Calendar, My Home's Coming up
+  'test-school-ui.mjs', // the school tool in the browser: set up, students with a photo, the roll online and offline, a paper test, a payment and its receipt, the report card, the dashboard, Khmer
   'test-dts-ui.mjs',   // GPDTS in the browser: its tabs, the pipeline and follow-ups due, the Database (a school, the speaker schedule, students and their profile and 1-on-1, events, the policy, an outreach team week by week, a responsibility, a resource; graduated together, potential staff), Numbers without the self-counting boxes; the portal for DTS staff (only DTS, Add a contact, Follow-ups due, Contacts with how, a lead's link and details); Admin → Portal access's Sees
   'test-app-use-ui.mjs',     // Admin → App use (bands, dots, filter, CSV, the note while the history is short) and the weekly health check-in on Tuesdays (My Home's card, the bell, the Health tab)
   'test-tasks-app-ui.mjs',  // GP Tasks as an app of its own: tasks.html opens on Tasks with one call, a two-tab bar, its own kept copy; a task added there is the main app's; the Calendar remembered; ☰ and Log out; the install card; the main app's way to it; back from Google's page on to it

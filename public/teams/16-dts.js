@@ -15,7 +15,7 @@
    outreach weeks. Server: dtsBoard / dtsMark / dtsToStaff / dtsSaveLecture / dtsDbSave / dtsDbDelete /
    dtsStudentSave / dtsSavePast (api.js, "GPDTS"). Siem Reap's GPDTS only for now (DTS_TOOL). */
 var DTS_TABS=['dtsdash','dtsdb','dtsfin'];
-function isDtsMinistry_(dept, min){ return typeof autoMetricsFor==='function' && autoMetricsFor(S.me && S.me.campus, dept, min).length>0; }
+function isDtsMinistry_(dept, min){ return dept==='Leadership Development' && typeof autoMetricsFor==='function' && autoMetricsFor(S.me && S.me.campus, dept, min).length>0; }   // (the school tool counts its own too — teams/24-school.js)
 function dtsTabs_(){ return [['dtsdash',t('Dashboard')],['dtsdb',t('Database')],['dtsfin',t('Finances')]]; }
 var DTS_COLS=[['lead','Reaching out','🌱'],['contacted','Contacted','💬'],['applied','Applied','📝'],['accepted','Accepted','✅'],['arrived','Here now','🏠'],['graduated','Graduated this year','🎓']];
 function dtsLoadHtml_(){

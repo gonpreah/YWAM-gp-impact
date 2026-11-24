@@ -75,7 +75,18 @@ var GPDTS_METRICS = ['Students Applied','Students Accepted','Students Enrolled',
 var DTS_AUTO_METRICS = ['Students Applied','Students Accepted','Students Enrolled','Students Graduated',
   'Potential Staff','Local Students Contacted','Intl Students Contacted',
   'People Heard the Gospel','Healings','Salvations','Baptisms'];
+/* The school tool (YDC, Nov 2026): a ministry that runs a school takes its roll, tests, payments and
+   students in the app (teams/24-school.js), and these metrics count themselves from it. One line a
+   ministry — the community schools later. Mirrors SCHOOL_TOOL in api.js (tests/test-school.mjs
+   compares the two): change one, change both. */
+var SCHOOL_TOOL = {
+  'Youth Education|YDC': { metrics: { days: 'Days with Classes', enrolled: 'Youth Enrolled', tests: 'Tests Held', pass: 'Passing Rate (%)',
+    parties: 'Parties Thrown', comps: 'Competitions Held', salv: 'Salvations', bapt: 'Baptisms', disc: 'Students in Discipleship', church: 'Students Brought to Local Church' } }
+};
+function schoolToolFor(dept, ministry) { var k = dept + '|' + ministry; return Object.prototype.hasOwnProperty.call(SCHOOL_TOOL, k) ? SCHOOL_TOOL[k] : null; }
 function autoMetricsFor(campus, dept, ministry) {
+  var sc = schoolToolFor(dept, ministry);
+  if (sc) return Object.keys(sc.metrics).map(function (k) { return sc.metrics[k]; });
   return campus === 'siemreap' && dept === 'Leadership Development' && ministry === 'GPDTS'
     ? DTS_AUTO_METRICS.slice() : [];
 }

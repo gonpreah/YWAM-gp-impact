@@ -2785,9 +2785,62 @@ numbers fill themselves in from using it (like Teams and Hospitality). Two so fa
 - **`toolSync_`** writes a week's totals into `entries` with `by: 'tool:lead'`/`'tool:cafe'`
   (current year). A week with nothing logged clears ONLY rows the tool wrote — a number
   someone typed by hand is never overwritten by an empty tool week.
-- Next (planned, not built): Community Schools / YDC — enrolment, attendance on each
-  student's profile, test scores, progress, who has paid → Students Enrolled, Days with
-  Classes, Passing Rate, etc.
+- YDC's school tool is built (see "The school tool" below); the community schools join it with one line in `SCHOOL_TOOL`.
+
+## The school tool — YDC runs its school on My Ministry (teams/24-school.js, Nov 2026, Uriah)
+"A really good software for managing a school … add students, … grades, taking roll, testing the students … use their
+phones to take a photo of the student … they fill out the tests on paper … then have they paid."
+- **For which ministries**: `SCHOOL_TOOL` in taxonomy.js and api.js (the same object — tests/test-school.mjs compares them):
+  `'Dept|Ministry': {metrics:{days, enrolled, tests, pass, parties, comps, salv, bapt, disc, church}}`, each a metric name
+  (a key left out is simply not counted). YDC (Youth Education) only, both campuses; a community school later is one line
+  with its own metric names (e.g. `enrolled: 'Students Enrolled'`). `autoMetricsFor` returns every one of them, so the
+  Numbers tab, `numbersProgress_` and `ministryWeekLogged_` skip them; `numbersExempt_` (no numbers people, no "numbers
+  due"), and `numbersStatus_` ignores `tool:school` rows. `isDtsMinistry_` now also checks the department, since
+  `autoMetricsFor` is no longer GPDTS's alone.
+- **Tabs** (`SCH_TABS`, in `MM_SHELL_KEYS`; `mmTabsFor_` → `schTabs_`): **Today · Students · Tests · Payments · Dashboard**,
+  then Tasks · OKRs — no Numbers tab. Pages inside a tab (`S.schPage`: setup, form, student:<id>, report:<id>,
+  receipt:<id>) have one ← Back (`#schBack`); a tab tap clears them. One `schoolBoard` per open (`S.sch`, keyed by
+  dept|ministry); every write answers with the whole board.
+  - **Set up** (`#schSetupGo`, on Dashboard, and on any tab while there are no classes — `#schNoClass`): locations, classes
+    (location, name / level, teacher from the people picker `ppickHtml_` key `sct` or a typed name, days `[data-scday]`,
+    start / end time), the fee (US$, each month or each term), the pass mark (default 50 %), terms (name, from, to).
+  - **Today** (`#schRoll`): a class (`[data-scrollclass]`, today's classes marked •), the day (`#schRollDate`, the last 14
+    days), the class's faces all **here**; a tap cycles absent → late → here (`[data-scmark]`); Save (`#schRollSave`).
+    **No connection**: the roll goes into the app's offline queue (`gpQueuePut_`, key `school:<dept|min>|<campus>|<class>|
+    <date>`), "Saved on this phone — will send when online", `#schPending`; `gpQueueFlush` sends it and adopts the answer.
+  - **Students**: search, class chips, a grid of faces (`[data-scstu]`), Left folded; ＋ Add a student (Khmer and English
+    names, class, sex, date of birth, village, guardian and phone, start, fee full / discount / sponsored, status, notes);
+    a student's page: 📷 photo (`<input capture="environment">`, shrunk to ≤480px JPEG + `photoThumbOf_`'s 160px thumb),
+    attendance %, days absent, test average, details, **Faith and life** ticks (`[data-scfaith]`: discipleship, local
+    church, salvation, baptism — each a date, today when ticked), tests, payments, 📄 **Report card** (a date range or a
+    term; `#schPrint` → `body.schPrintOn` print rules print it alone).
+  - **Tests**: ＋ New test (class, subject with recent ones offered, day, out of), each student's score typed down the list
+    (blank = absent; over the total is refused on the page and dropped by the server), 📷 photos of the marked papers (six).
+  - **Payments**: the period (a month, or a term when the fee is per term), Still owed and paid this month, **Still owes**
+    by class (`#schOwes`, Record fills in what they owe), Latest payments; a payment opens its **receipt** (print).
+  - **Dashboard**: students, attendance this month, still owed; students by location; **missed 3 classes or more in a
+    row** (to follow up); test results by month; this year's fruit; parties and competitions (events).
+- **Server** (api.js "the school tool"): `schoolBoard(user, pin, scope)`, `schoolSave(…, scope, kind, rec)` (kinds settings |
+  location | class | student | test | payment | event), `schoolDelete(…, scope, kind, id)`, `schoolRoll(…, scope, classId,
+  date, marks)`, `schoolPhoto(…, scope, 'student'|'paper', id, base64, thumb, photoId)` (null removes),
+  `schoolPhotoGet(…, scope, id)`. `scope` = {dept, ministry, campus?}. **Gate** `schoolGate_`: `canLogFor_` that ministry
+  on the caller's campus (members, other-ministry members, leaders, the department's director) or an admin (any campus);
+  **set-up** (settings, locations, classes) only its leaders, the department's director, admins. Everything cleaned and
+  capped (`SCH_CLEAN`, `SCHOOL_MAX`: 40 locations, 80 classes, 800 students, 1500 tests, 6000 payments, 400 events);
+  dates real; amounts 0–100,000; a class's teacher must be active staff on that campus; a location with classes, a class
+  with students or tests, a student with payments can't be deleted (`in_use`). The roll: one per class per date — saving
+  again replaces it (so a replayed offline roll changes nothing), not tomorrow, not more than 14 days back; 420 days kept.
+- **Blobs** (key `<campus>:<dept>|<ministry>`): `school:<key>` {settings, locations, classes, students, tests, payments,
+  events} via `mutateKey_`; `schoolRoll:<key>` {rolls}; `schthumbs:<key>` {studentId: thumb}; `schphoto:<key>:<id>` {data}
+  — a student's photo (≤400 KB base64, the thumb ≤40 KB) or a paper photo; the list holds only `hasPhoto` / paper ids.
+- **The numbers** (`schoolSync_` after every write; `tool:school` rows in `entries`, this week year, never over a typed
+  row, its own rows taken away when nothing holds them): Days with Classes = days with a roll in the week; Youth Enrolled =
+  active students at the week's end (a level); Tests Held and Passing Rate (%) from that week's tests (scores at or over
+  the pass mark); Parties Thrown / Competitions Held from the events; Salvations / Baptisms by their dates; Students in
+  Discipleship / Brought to Local Church as levels (active students with that date by the week's end).
+- **Privacy (children)**: nothing of it is on the roster, a profile, getData, any boot or the preview (`school*` isn't a
+  get… handler, so `demoCall` refuses it); applicants are walled out (test-applicant-walls). Tests use made-up names.
+- tests/test-school.mjs (server, 69), tests/test-school-ui.mjs (browser, 39). Khmer: docs/khmer-needed.md §137. sw.js SHELL v30.
 
 ## Admin → Invite staff: links that let new staff straight in (Nov 2026, Andrew)
 "If I want to invite someone in the admin section … the invite link will be already pre-approved by the admin."
