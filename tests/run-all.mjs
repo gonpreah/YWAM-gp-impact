@@ -89,6 +89,7 @@ const SERVER = [
 ];
 
 const BROWSER = [
+  'test-fin2-frame-ui.mjs',  // the finance tool in My Ministry is one page with the app: the frame as tall as the page, the bar sticks, sheets on screen
   'test-fin2-page.mjs',      // the finance tool in Impact: loads from the server, saves, a clash shows the newer copy, leadership read-only, the demo's entries brought in
   'test-ux-ui.mjs',            // ☀️ Today on My Home, 🔍 search from the header, the app's own Yes / Cancel sheet, Undo on a deleted task
   'test-game-ui.mjs',          // the week's board on the page: My Home's line, Team → This week, Khmer
