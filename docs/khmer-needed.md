@@ -6172,7 +6172,7 @@ The finance tool itself (public/finance.html) is English only for now — its Kh
 |---|---|
 | Input | បញ្ចូល |
 
-## 137. The Worship rota (My Ministry → Worship, ☰ → Worship rota, Nov 2026)
+## 139. The Worship rota (My Ministry → Worship, ☰ → Worship rota, Nov 2026)
 Youth Education › Worship plans its four weekly services: who leads, sings and plays, the setlist, and after each service whether it happened and how many came. Tabs: This week · Rota · Team · Songs · Dashboard. "Filled" and the week strip labels have very little room. Role names (Worship leader, Vocals, Keys…) sit in a narrow column. "You’re on {role} — {service}" is one line on My Home's card; {service} is the service's own name as the team typed it (English). Draft translations by Claude.
 
 | English | Khmer (draft) |

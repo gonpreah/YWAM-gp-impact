@@ -2829,7 +2829,7 @@ kept flexible: services and roles are settings, not code.
   Uploaded to Social Media (our own songs, in the week each day falls). Salvations stays typed. `WORSHIP_AUTO` (api.js) =
   `WORSHIP_AUTO_METRICS` (taxonomy.js, `autoMetricsFor` — both campuses; `isDtsMinistry_` now checks GPDTS by name);
   `numbersStatus_` skips `tool:worship` rows like `tool:dts`, so "numbers due" waits on the typed Salvations.
-- tests/test-worship.mjs (server), tests/test-worship-ui.mjs. Khmer: docs/khmer-needed.md §137. sw.js SHELL v30.
+- tests/test-worship.mjs (server), tests/test-worship-ui.mjs. Khmer: docs/khmer-needed.md §139. sw.js SHELL v30.
 
 ## Admin → Invite staff: links that let new staff straight in (Nov 2026, Andrew)
 "If I want to invite someone in the admin section … the invite link will be already pre-approved by the admin."
