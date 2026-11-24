@@ -267,7 +267,7 @@ function bindDts_(){
   };
   var ld=document.getElementById('dtsLectDel');
   if(ld) ld.onclick=function(){
-    if(!S.dtsLect || !confirm(t('Delete this lecture?'))) return;
+    if(!S.dtsLect || !gpAsk_(t('Delete this lecture?'))) return;
     run('dtsDeleteLecture',[S.auth.user,S.auth.pin,S.dtsLect.id],function(d){
       if(d && d.ok){ S.dts.lectures=d.lectures; S.dtsLect=null; showMsg(t('Deleted')); } else showMsg(t('Could not delete'));
       render();
@@ -278,7 +278,7 @@ function bindDts_(){
   // the staff pipeline
   document.querySelectorAll('[data-dtstostaff]').forEach(function(b){ b.onclick=function(){
     var id=b.getAttribute('data-dtstostaff'), x=dtsStudent_(id); if(!x) return;
-    if(!confirm(gpT('Start {name}’s staff application? Their portal sign-in will open the staff application, and HR takes it from there.',{name:x.name}))) return;
+    if(!gpAsk_(gpT('Start {name}’s staff application? Their portal sign-in will open the staff application, and HR takes it from there.',{name:x.name}))) return;
     S.dtsBusy=true; b.disabled=true;
     run('dtsToStaff',[S.auth.user,S.auth.pin,[id]],function(d){
       S.dtsBusy=false;
@@ -304,7 +304,7 @@ function bindDts_(){
     }, function(){ S.dtsBusy=false; showMsg(t('Connection problem — try again.')); render(); });
   };
   var ps=document.getElementById('dtsPastSave'); if(ps) ps.onclick=function(){ savePast(); };
-  var pd=document.getElementById('dtsPastDel'); if(pd) pd.onclick=function(){ if(confirm(t('Delete this year’s numbers?'))) savePast(null); };
+  var pd=document.getElementById('dtsPastDel'); if(pd) pd.onclick=function(){ if(gpAsk_(t('Delete this year’s numbers?'))) savePast(null); };
   bindDtsDb_();
   bindDtsFin_();
   gpSelSearch_(document.getElementById('main'));
@@ -583,6 +583,9 @@ function dtsStuHtml_(x, sch){
   var schools=dtsDb_().schools||[];
   h+='<label class="f" for="dtsStuSchool">🏫 '+esc(t('School'))+'</label><select id="dtsStuSchool">'+schools.map(function(s){ return '<option value="'+esc(s.id)+'"'+(x.schoolId===s.id?' selected':'')+'>'+esc(dtsSchoolName_(s))+'</option>'; }).join('')+
     (x.schoolId ? '' : '<option value="" selected>'+esc(t('— not in a school yet —'))+'</option>')+'</select>';
+  /* the day they arrive (Nov 2026): SR Hospitality books their bed from it; the weekly schedules offer them from it */
+  h+='<label class="f" for="dtsStuArrive">🛬 '+esc(t('Arriving'))+'</label><input type="date" id="dtsStuArrive" value="'+esc(x.arrive||'')+'">'+
+    '<p class="hint" style="margin:4px 0 0">'+esc(t('For SR Hospitality’s beds and the weekly schedules. Empty: from the day the school starts.'))+'</p>';
   if(x.arrived) h+='<div class="dtsBtns"><button class="dtsStaff'+(x.potentialStaff?' on':'')+'" data-dtsstaff="'+esc(x.id)+'" aria-pressed="'+!!x.potentialStaff+'">⭐ <span>'+esc(t('Potential staff'))+'</span></button>'+
     (x.graduated ? '<span class="rowSub">🎓 '+esc(gpT('Graduated {date}',{date:fmtDayShort_(x.graduated)}))+' · <button class="linkbtn inline" data-dtsungrad="'+esc(x.id)+'">'+esc(t('Undo'))+'</button></span>' : '')+'</div>'+dtsPipeLine_(x);
   return h+'</div>';
@@ -848,7 +851,7 @@ function bindDtsDb_(){
   on('dtsSchoolSave', function(){ keepSchool(); var f=S.dtsSchoolEdit;
     if(!(Number(f.year)>=2000) || !String(f.name||'').trim()){ showMsg(t('Give the school a year and a name.')); return; }
     dtsDbSave_('school', f, t('Saved'), function(d){ S.dtsSchool=d.id; S.dtsDbYear=String(f.year); S.dtsSchoolEdit=null; S.dtsPickOpen=false; dtsRefresh_(); }); });
-  on('dtsSchoolDel', function(){ var f=S.dtsSchoolEdit; if(!f || !confirm(gpT('Delete {school}?',{school:dtsSchoolName_(f)}))) return; dtsDbDel_('school', f.id, function(){ S.dtsSchoolEdit=null; S.dtsSchool=''; }); });
+  on('dtsSchoolDel', function(){ var f=S.dtsSchoolEdit; if(!f || !gpAsk_(gpT('Delete {school}?',{school:dtsSchoolName_(f)}))) return; dtsDbDel_('school', f.id, function(){ S.dtsSchoolEdit=null; S.dtsSchool=''; }); });
   all('[data-dtssec]', function(b){ S.dtsSec=b.getAttribute('data-dtssec'); S.dtsPickOpen=false; dtsCloseForms_(); render(); window.scrollTo(0,0); });
   /* one way back: out of whatever is open (a student, a team, a form), then to the tiles */
   on('dtsHome', function(){
@@ -879,6 +882,7 @@ function bindDtsDb_(){
   if(ooIn){ ooIn.oninput=function(){ S.dtsOoType=ooIn.value; }; ooIn.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); ooSave(); } }; }
   on('dtsStuOOSave', ooSave);
   var ss=document.getElementById('dtsStuSchool'); if(ss) ss.onchange=function(){ if(ss.value) dtsStuSave_(S.dtsStu, { schoolId:ss.value }); };
+  var sa=document.getElementById('dtsStuArrive'); if(sa) sa.onchange=function(){ if(!sa.value || /^\d{4}-\d{2}-\d{2}$/.test(sa.value)) dtsStuSave_(S.dtsStu, { arrive:sa.value }); };
   all('[data-dtsplace]', function(b){ dtsStuSave_(b.getAttribute('data-dtsplace'), { schoolId:S.dtsSchool }); });
   // events
   on('dtsEvAdd', function(){ S.dtsEv={ title:'', date:'', end:'', notes:'', schoolId:S.dtsSchool }; render(); var n=document.getElementById('de_title'); if(n) n.focus(); });
@@ -886,7 +890,7 @@ function bindDtsDb_(){
   document.querySelectorAll('[data-de]').forEach(function(el){ el.oninput=el.onchange=function(){ if(S.dtsEv) S.dtsEv[el.getAttribute('data-de')]=el.value; }; });
   on('dtsEvCancel', function(){ S.dtsEv=null; render(); });
   on('dtsEvSave', function(){ var f=S.dtsEv; if(!String(f.title||'').trim() || !f.date){ showMsg(t('Give the event a name and a day.')); return; } dtsDbSave_('event', f, t('Saved'), function(){ S.dtsEv=null; }); });
-  on('dtsEvDel', function(){ if(S.dtsEv && confirm(t('Delete this event?'))) dtsDbDel_('event', S.dtsEv.id, function(){ S.dtsEv=null; }); });
+  on('dtsEvDel', function(){ if(S.dtsEv && gpAsk_(t('Delete this event?'))) dtsDbDel_('event', S.dtsEv.id, function(){ S.dtsEv=null; }); });
   // the policy
   on('dtsPolEdit', function(){ S.dtsPol=dtsDb_().policy||''; render(); });
   on('dtsPolCancel', function(){ S.dtsPol=null; render(); });
@@ -911,7 +915,7 @@ function bindDtsDb_(){
     document.querySelectorAll('[data-dtwp]').forEach(function(sp){ var w=dtsStopOfWeek_(st, Number(sp.getAttribute('data-dtwp'))); sp.textContent=w ? '📍 '+w : ''; }); }; });
   on('dtsCopyShort', function(){ dtsKeepTeam_(); var f=S.dtsTeam; f.long.leaders=(f.short.leaders||[]).slice(); f.long.others=f.short.others||''; f.long.students=(f.short.students||[]).slice(); render(); });
   on('dtsTeamSave', function(){ dtsKeepTeam_(); var f=S.dtsTeam; if(!String(f.name||'').trim()){ showMsg(t('Give the team a name.')); return; } dtsDbSave_('team', f, t('Saved'), function(){ S.dtsTeam=null; }); });
-  on('dtsTeamDel', function(){ if(S.dtsTeam && confirm(t('Delete this team and its numbers?'))) dtsDbDel_('team', S.dtsTeam.id, function(){ S.dtsTeam=null; }); });
+  on('dtsTeamDel', function(){ if(S.dtsTeam && gpAsk_(t('Delete this team and its numbers?'))) dtsDbDel_('team', S.dtsTeam.id, function(){ S.dtsTeam=null; }); });
   // responsibilities
   on('dtsRespAdd', function(){ S.dtsResp={ when:'before', title:'', notes:'', staff:[], done:false, schoolId:S.dtsSchool }; render(); var n=document.getElementById('dr_title'); if(n) n.focus(); });
   document.querySelectorAll('[data-dtsrespitem]').forEach(function(d){ d.ontoggle=function(){ (S.dtsRespOpen=S.dtsRespOpen||{})[d.getAttribute('data-dtsrespitem')]=d.open; }; });
@@ -922,14 +926,14 @@ function bindDtsDb_(){
   document.querySelectorAll('[data-drstaff]').forEach(function(c){ c.onchange=function(){ keepResp(); var y=window.scrollY; render(); var dd=document.querySelector('#dtsRespForm details'); if(dd) dd.open=true; window.scrollTo(0,y); }; });
   on('dtsRespCancel', function(){ S.dtsResp=null; render(); });
   on('dtsRespSave', function(){ keepResp(); if(!String(S.dtsResp.title||'').trim()){ showMsg(t('Say what the responsibility is.')); return; } dtsDbSave_('resp', S.dtsResp, t('Saved'), function(){ S.dtsResp=null; }); });
-  on('dtsRespDel', function(){ if(S.dtsResp && confirm(t('Delete this responsibility?'))) dtsDbDel_('resp', S.dtsResp.id, function(){ S.dtsResp=null; }); });
+  on('dtsRespDel', function(){ if(S.dtsResp && gpAsk_(t('Delete this responsibility?'))) dtsDbDel_('resp', S.dtsResp.id, function(){ S.dtsResp=null; }); });
   // resources
   on('dtsResAdd', function(){ S.dtsRes={ title:'', url:'', notes:'', schoolId:S.dtsSchool }; render(); var n=document.getElementById('dres_title'); if(n) n.focus(); });
   all('[data-dtsres]', function(b){ var r=dtsIn_(dtsDb_().resources).filter(function(x){ return x.id===b.getAttribute('data-dtsres'); })[0]; if(r){ S.dtsRes=Object.assign({}, r); render(); } });
   var keepRes=function(){ var f=S.dtsRes; if(!f) return; ['title','url','notes'].forEach(function(k){ var el=document.getElementById('dres_'+k); if(el) f[k]=el.value; }); };
   on('dtsResCancel', function(){ S.dtsRes=null; render(); });
   on('dtsResSave', function(){ keepRes(); var f=S.dtsRes; if(!String(f.title||'').trim()){ showMsg(t('Give it a name.')); return; } if(f.url && !/^https?:\/\//i.test(f.url)){ showMsg(t('A link starts with https://')); return; } dtsDbSave_('resource', f, t('Saved'), function(){ S.dtsRes=null; }); });
-  on('dtsResDel', function(){ if(S.dtsRes && confirm(t('Delete this resource?'))) dtsDbDel_('resource', S.dtsRes.id, function(){ S.dtsRes=null; }); });
+  on('dtsResDel', function(){ if(S.dtsRes && gpAsk_(t('Delete this resource?'))) dtsDbDel_('resource', S.dtsRes.id, function(){ S.dtsRes=null; }); });
 }
 function dtsCloseForms_(){ S.dtsLect=null; S.dtsEv=null; S.dtsTeam=null; S.dtsResp=null; S.dtsRes=null; S.dtsStu=null; S.dtsStuEdit=null; S.dtsPol=null; }
 
@@ -1192,7 +1196,7 @@ function bindDtsFin_(){
   };
   var dl=document.getElementById('dtsFinDel');
   if(dl) dl.onclick=function(){
-    var f=S.dtsFinForm; if(!f || !f.id || !confirm(t('Delete this entry?'))) return;
+    var f=S.dtsFinForm; if(!f || !f.id || !gpAsk_(t('Delete this entry?'))) return;
     S.dtsBusy=true; render();
     run('dtsFinDelete',[S.auth.user,S.auth.pin,f.id],function(r){ dtsFinPut_(r, t('Deleted')); render(); }, function(){ S.dtsBusy=false; showMsg(t('Connection problem — try again.')); render(); });
   };
@@ -1445,7 +1449,7 @@ function bindDtsBud_(){
   if(ld) ld.onclick=function(){
     var f=S.dtsBudEdit, b=dtsBud_(); if(!f || !b) return;
     var used=dtsFinIn_('lecture','expense').filter(function(e){ return e.lineId===f.id; }).length;
-    if(!confirm(used ? gpT('Delete this line? Its {n} expenses will show as not on a line.',{n:used}) : t('Delete this line?'))) return;
+    if(!gpAsk_(used ? gpT('Delete this line? Its {n} expenses will show as not on a line.',{n:used}) : t('Delete this line?'))) return;
     var c=dtsBudCopy_(b); c.lines=c.lines.filter(function(l){ return l.id!==f.id; });
     dtsBudSave_(c, t('Deleted'), function(){ S.dtsBudEdit=null; });
   };
@@ -1470,7 +1474,7 @@ function bindDtsBud_(){
     };
   });
   var rm=document.getElementById('dtsBudRemove');
-  if(rm) rm.onclick=function(){ if(!confirm(t('Remove this school’s budget? The expenses stay.'))) return; dtsBudSave_(null, t('Deleted'), function(){ S.dtsBudEdit=null; S.dtsBudSet=null; }); };
+  if(rm) rm.onclick=function(){ if(!gpAsk_(t('Remove this school’s budget? The expenses stay.'))) return; dtsBudSave_(null, t('Deleted'), function(){ S.dtsBudEdit=null; S.dtsBudSet=null; }); };
   var cv=document.getElementById('dtsBudCsv');
   if(cv) cv.onclick=function(){
     var B=dtsBudCalc_(), sch=dtsCurSchool_(); if(!B) return;

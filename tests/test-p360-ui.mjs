@@ -95,8 +95,8 @@ const go = async (page) => { await page.evaluate(() => { S.view = 'p360'; S.p3Su
 /* ---------- 1. starting one ---------- */
 {
   const { ctx, page } = await open('mark');
-  ok('My Home has a 360 reviews tile', /360 reviews/.test(await page.$eval('#p3Tile', (e) => e.innerText)));
-  await page.click('#p3Tile'); await page.waitForTimeout(900);
+  ok('My Home has no 360 tile while nothing waits — it is in ☰', !(await page.$('#p3Tile')));
+  await page.evaluate(() => { S.menuOpen = true; renderMenu(); }); await page.click('#menuRoot [data-menu-item="p360"]'); await page.waitForTimeout(900);
   ok('the page says plainly how it stays anonymous', /How it stays anonymous/i.test(await main(page)) && /never who/.test(await main(page)));
   await page.click('#p3New'); await page.waitForTimeout(400);
   ok('starting one: under three picked, it says how many more', /Pick 3 more/.test(await page.$eval('#p3Send', (e) => e.innerText)) && await page.$eval('#p3Send', (e) => e.disabled));
@@ -188,6 +188,37 @@ ok('a board member answers from their own board login', p3()[0].answers.length =
   ok('… and sees the results and the plan, read-only', /shared with you — read-only/.test(txt) && (await page.$$('.p3Row')).length === 9 && /Answer emails within two days/.test(txt) && !(await page.$('#p3ActAdd')) && !(await page.$('#p3Delete')) && !(await page.$('#p3RevSave')));
   await ctx.close();
 }
+/* ---------- asking more people after it has closed ---------- */
+{
+  mem.staff.push(mk({ id: 'st6', name: 'Eve Tan', username: 'eve', email: 'e@e.com' }), mk({ id: 'st7', name: 'Fay Ung', username: 'fay', email: 'f@e.com' }));
+  const { ctx, page } = await open('mark');
+  await go(page); await page.click('[data-p3open]'); await page.waitForTimeout(900);
+  ok('a closed review offers to ask more people', !!(await page.$('#p3More')) && /Want more input\?/.test(await main(page)));
+  await page.click('#p3More'); await page.waitForTimeout(300);
+  let txt = await main(page);
+  ok('the form says why the new answers are kept apart', /Ask more people/.test(txt) && /kept apart/.test(await page.$eval('#p3MoreWhy', (e) => e.innerText)));
+  ok('… and wants three new people', /Pick 3 more/.test(await page.$eval('#p3MoreSend', (e) => e.innerText)) && await page.$eval('#p3MoreSend', (e) => e.disabled));
+  const list = await page.$eval('.p3PeopleList', (e) => e.innerText);
+  ok('… from people not asked yet', /Di Sok/.test(list) && /Eve Tan/.test(list) && !/Ann Lee/.test(list) && !/Bo Chan/.test(list));
+  for (const id of ['st5', 'st6', 'st7']) { await page.click('[data-p3add="' + id + '"]'); await page.waitForTimeout(80); }
+  ok('three picked: it can be sent', /Ask these 3/.test(await page.$eval('#p3MoreSend', (e) => e.innerText)) && !(await page.$eval('#p3MoreSend', (e) => e.disabled)));
+  ok('the form fits the phone', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+  await page.click('#p3MoreSend'); await page.waitForSelector('#p3Gather', { timeout: 8000 });
+  ok('sent: seven asked now, open again', p3()[0].reviewers.length === 7 && p3()[0].status === 'open' && /Open again for more people/i.test(await main(page)));
+  ok('… the results as they were, and the plan still there', (await page.$$('.p3Row')).length === 9 && /Prays with us/.test(await main(page)) && /Answer emails within/.test(await main(page)));
+  await page.screenshot({ path: OUT + '/p360-more.png', fullPage: true });
+  await ctx.close();
+  const a2 = await answer('di', null, { faith: 1, vision: 1 }, 'ONLY-DI-SAID-THIS');
+  ok('a new person sees it and answers', a2.n === 1 && a2.left === 0 && p3()[0].more.answers.length === 1 && p3()[0].answers.length === 3);
+  const b = await open('mark');
+  await go(b.page); await b.page.click('[data-p3open]'); await b.page.waitForTimeout(900);
+  ok('their answer is not in the results yet', !/ONLY-DI-SAID-THIS/.test(await main(b.page)));
+  await b.page.click('#p3Close'); await b.page.waitForSelector('#p3Held', { timeout: 8000 });
+  txt = await main(b.page);
+  ok('closed again with one new answer: it waits, and the page says so', /1 new answer is waiting/.test(txt) && !/ONLY-DI-SAID-THIS/.test(txt) && (await b.page.$$('.p3Row')).length === 9 && !!(await b.page.$('#p3More')));
+  await b.ctx.close();
+}
+
 {
   const sm = await open('di', { small: true });
   await sm.page.evaluate(() => { S.view = 'p360'; S.p3Sub = 'new'; S.p3Draft = null; S.p3 = null; render(); }); await sm.page.waitForTimeout(900);

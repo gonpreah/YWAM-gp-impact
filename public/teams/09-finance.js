@@ -630,7 +630,7 @@ function bindFinQr_(){
     var r=(F.qboReports||[]).filter(function(x){ return x.id===b.getAttribute('data-qredit'); })[0]; if(!r) return;
     gpTap(); S.qrForm={ id:r.id, type:r.type, period:r.period||'last_month', cols:r.cols||'Total', basis:r.basis||'Cash', campusOnly:!!r.campusOnly, share:!!r.share, name:r.name||'' }; render(); }; });
   document.querySelectorAll('[data-qrdel]').forEach(function(b){ b.onclick=function(){
-    if(S.busy || !confirm(t('Take this report out? It stops coming in, and leadership won’t see it.'))) return;
+    if(S.busy || !gpAsk_(t('Take this report out? It stops coming in, and leadership won’t see it.'))) return;
     S.busy=true; var id=b.getAttribute('data-qrdel');
     run('qboReportRemove',[S.auth.user,S.auth.pin,id],function(d){ S.busy=false; if(finPut_(d)){ delete S.qrData[id]; if(S.qrOpen===id) S.qrOpen=null; showMsg(t('Removed')); } else showMsg(finFail_(d)); render(); },
       function(){ S.busy=false; showMsg(t('No connection — try again when you are online.')); }); }; });
@@ -754,7 +754,7 @@ function bindFinance_(){
     run('qboSetFilter',[S.auth.user,S.auth.pin,v[0]||'',v[1]||''],function(d){ S.busy=false; if(finPut_(d)) showMsg(d.synced ? t('Brought in from QuickBooks') : finQboErr_(d.syncErr)); else showMsg(finQboErr_(d && d.err)); render(); },
       function(){ S.busy=false; showMsg(t('No connection — try again when you are online.')); render(); }); };
   var qo=document.getElementById('finQboOff'); if(qo) qo.onclick=function(){
-    if(S.busy || !confirm(t('Disconnect QuickBooks? What it already brought in stays; nothing new comes in until it’s connected again.'))) return;
+    if(S.busy || !gpAsk_(t('Disconnect QuickBooks? What it already brought in stays; nothing new comes in until it’s connected again.'))) return;
     S.busy=true;
     run('qboDisconnect',[S.auth.user,S.auth.pin],function(d){ S.busy=false; if(finPut_(d)) showMsg(t('Disconnected')); else showMsg(finFail_(d)); render(); },
       function(){ S.busy=false; showMsg(t('No connection — try again when you are online.')); }); };
@@ -773,7 +773,7 @@ function bindFinance_(){
     if(S.busy) return;
     var it=S.finPending.filter(function(x){ return x.id===b.getAttribute('data-finsave'); })[0]; if(!it) return;
     var P=it.parsed, data;
-    if((P.checks||[]).some(function(c){ return !c.ok; }) && !confirm(t('Some totals don’t match the report. Save it anyway?'))) return;
+    if((P.checks||[]).some(function(c){ return !c.ok; }) && !gpAsk_(t('Some totals don’t match the report. Save it anyway?'))) return;
     if(P.kind==='pl'){ data={ months:{} }; P.months.forEach(function(k){ data.months[k]={ cash: it.cash[k]==null || isNaN(it.cash[k]) ? null : it.cash[k], lines:P.lines.map(function(l){ return { sec:l.sec, code:l.code, name:l.name, parent:l.parent, amt: l.amt[k]==null ? null : l.amt[k] }; }) }; }); }
     else if(P.kind==='burn') data={ year:it.year, sections:P.sections };
     else { if(!P.asOf){ showMsg(t('The report needs its date.')); return; } data={ asOf:P.asOf, cols:P.cols, rows:P.rows }; }
@@ -788,7 +788,7 @@ function bindFinance_(){
     run('finSetCash',[S.auth.user,S.auth.pin,inp.getAttribute('data-fincashsaved'), inp.value==='' ? null : Number(inp.value)],function(d){ if(finPut_(d)){ S.finAheadEdit=null; showMsg(t('Saved')); } else showMsg(finFail_(d)); render(); }); }; });
   document.querySelectorAll('[data-findel]').forEach(function(b){ b.onclick=function(){
     var v=b.getAttribute('data-findel').split('|');
-    if(!confirm(t('Take this report out? Its numbers and its PDF go, and leadership won’t see them.'))) return;
+    if(!gpAsk_(t('Take this report out? Its numbers and its PDF go, and leadership won’t see them.'))) return;
     run('finDelete',[S.auth.user,S.auth.pin,v[0],v[1]],function(d){ if(finPut_(d)) showMsg(t('Removed')); else showMsg(finFail_(d)); render(); }); }; });
   document.querySelectorAll('[data-finmatch]').forEach(function(sel){ sel.onchange=function(){
     run('finMatchName',[S.auth.user,S.auth.pin,sel.getAttribute('data-finmatch'),sel.value],function(d){ if(finPut_(d)) showMsg(t('Saved')); else showMsg(finFail_(d)); render(); }); }; });

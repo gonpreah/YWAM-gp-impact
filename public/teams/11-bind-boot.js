@@ -28,7 +28,7 @@ function fillMinistrySelect(selId, campusSelId, deptSelId, current, curKind){
     return;
   }
   keep=keep.split('#')[0];
-  sel.innerHTML='<option value="">— none yet —</option>'+list.map(function(m){
+  sel.innerHTML='<option value="">'+esc(t('— none yet —'))+'</option>'+list.map(function(m){
     return '<option value="'+esc(m)+'"'+(keep===m?' selected':'')+'>'+esc(t(m))+'</option>';
   }).join('');
 }
@@ -298,6 +298,7 @@ function bindAway(){
   var mb=document.getElementById('ministryBack');
   if(mb) mb.onclick=function(){ S.view='week'; render(); };
   var db=document.getElementById('dashToBase'); if(db) db.onclick=function(){ gpTap(); S.view='base'; render(); window.scrollTo(0,0); };
+  document.querySelectorAll('[data-tobase]').forEach(function(b){ b.onclick=function(){ gpTap(); S.view='base'; render(); window.scrollTo(0,0); }; });
   var gm=document.getElementById('goMinistryFromMe');
   if(gm) gm.onclick=function(){ gpTap(); S.view='ministry'; S.mmTab='ministry'; render(); };
   document.querySelectorAll('[data-gohealth]').forEach(function(b){ b.onclick=function(){ gpTap(); S.view='health'; if(b.getAttribute('data-gohealth')==='open'){ S.healthWeek=thisWeek(); S.weekForm=thisWeek(); } render(); window.scrollTo(0,0); }; });
@@ -422,7 +423,7 @@ function bindAway(){
     var tdb=document.getElementById('teamDeleteBtn');
     if(tdb) tdb.onclick=function(){
       if(S.busy || !S.teamForm || !S.teamForm.id) return;
-      if(!confirm(gpT('Delete “{team}”? Its numbers come out of the dashboards too.',{team:S.teamForm.name}))) return;
+      if(!gpAsk_(gpT('Delete “{team}”? Its numbers come out of the dashboards too.',{team:S.teamForm.name}))) return;
       S.busy=true;
       run('deleteTeamTrip',[S.auth.user,S.auth.pin,S.teamForm.id],function(d){
         S.busy=false;
@@ -531,6 +532,7 @@ function bindAway(){
     if(gse) gse.onclick=function(){ gpTap(); schedOpen_(gse.getAttribute('data-schedkind-edit'), true, 'ministry'); };
     var gho=document.getElementById('goHosp');
     if(gho) gho.onclick=function(){ gpTap(); S.view='hosp'; render(); };
+    if(typeof bindHospNews_==='function') bindHospNews_();   // SR Hospitality's changes on My Ministry: Got it / Open
   }
   var tdbk=document.getElementById('teamsDbBack');
   if(tdbk) tdbk.onclick=function(){ S.view='ministry'; render(); };
@@ -539,6 +541,8 @@ function bindAway(){
   });
   bindHr();
   if(S.view==='library') bindLibrary_();
+  document.querySelectorAll('[data-prlib]').forEach(function(b){ b.onclick=function(){ gpTap(); var v=b.getAttribute('data-prlib').split('|');
+    S.view='library'; S.libBook=v[0]; S.libStep=null; S.libDone=null; if(S.ln){ S.ln.open=v[1]||''; delete S.ln.cache[v[0]]; } libLoad_(); render(); window.scrollTo(0,0); }; });
   if(S.view==='ministry'){ bindLw_(); bindCafe_(); bindLeadTools_(); bindFinance_(); bindDts_(); }
   if(S.view==='required') bindReqSign_();
   if(S.guest) bindGuest_();
@@ -546,6 +550,7 @@ function bindAway(){
   bindReqRows_();
   ['libHomeTile','personBooks','profBooks'].forEach(function(id){ var b=document.getElementById(id); if(b) b.onclick=function(){ gpTap(); libOpen_(); }; });
   var pmc=document.getElementById('profMyContract'); if(pmc) pmc.onclick=function(){ gpTap(); openMyContract_(); };
+  bindInstallCard_();
   if(S.view==='admin' && (S.adminSub==='groups' || S.adminSub==='leaving')) bindAdminGroups_();
   if(S.view==='admin' && S.adminSub==='board') bindAdminBoard_();
   if(S.view==='admin' && S.adminSub==='reminders') bindAdminReminders_();
@@ -558,6 +563,7 @@ function bindAway(){
   bindPrayer_();
   bindP360_();
   bindTests_();
+  bindLibPlus_();
   bindHosp();
   if(S.view==='ministry') bindLead_();
   if(typeof dutyHtml==='function') bindSched_();
@@ -668,7 +674,7 @@ function bindHome(){
       run('getMenteeLogs',[S.auth.user,S.auth.pin,id],function(d){
         if(d.ok){
           S.view='mentor'; S.mentee=d.mentee; S.menteeWeek=null; S.menteeLogs=d.logs; S.menteeGoals=d.goals||[];
-          S.menteeProfile=d.profile; S.menteeCheckins=d.checkins||[]; S.menteeSupport=d.support||null;
+          S.menteeProfile=d.profile; S.menteeCheckins=d.checkins||[]; S.menteeSupport=d.support||null; S.menteeLib=d.library||null;
           S.menteeHabits=d.habits||[]; S.menteeMinistry=d.ministry||null; S.menteeTrips=d.trips||null; S.menteeSmart=d.smartGoals||[];
           render();
         }
@@ -1126,7 +1132,26 @@ function bindHome(){
   });
 }
 
+/* A field's label is tied to its field (Nov 2026): most forms write a label and then the box, with nothing
+   joining the two — so tapping the label did nothing and a screen reader read a box with no name. */
+function gpLabelFix_(){
+  var ls=document.querySelectorAll('#main label.f, #main label.fieldLabel');
+  for(var i=0;i<ls.length;i++){
+    var l=ls[i]; if(l.htmlFor || l.querySelector('input,select,textarea')) continue;
+    var n=l.nextElementSibling; while(n && n.classList && n.classList.contains('hint')) n=n.nextElementSibling;
+    if(n && !/^(INPUT|SELECT|TEXTAREA)$/.test(n.tagName)) n=n.querySelector ? n.querySelector('input:not([type=hidden]),select,textarea') : null;
+    if(!n) continue;
+    if(!n.id) n.id='gpf'+i;
+    l.htmlFor=n.id;
+  }
+}
 function bind(){
+  try{ gpLabelFix_(); }catch(e){}
+  bindUx_();
+  bindSetup_();   // a new account's first steps (22-setup.js)
+  bindAwaiting_();
+  bindDemo_();
+  bindGame_();
   /* Who's here: Base's "On campus now" loads the count; the page loads team photos */
   if((S.view==='base' || S.view==='week') && !S.guest && !S.board && !S.student && S.me) whosHereLoad_();   // Base and My Home show the count
   [['goWhosHere','base'],['goWhosHereHome','week']].forEach(function(x){ var b=document.getElementById(x[0]); if(b) b.onclick=function(){ gpTap(); S.whosFrom=x[1]; S.view='whoshere'; render(); window.scrollTo(0,0); whosHereLoad_(true); }; });
@@ -1157,8 +1182,10 @@ function bind(){
   bindCalendar_();
   if(S.view==='admin' && S.adminSub==='gcal') bindAdminGcal_();
   /* GP Tasks: the page and its buttons */
-  bindGpTasks_();
+  bindGpTasks_(); bindVoice_();
   bindPeoplePick_();   // every people picker with a search box on the page (12-tasks.js)
+  if(S.view==='ministry' && typeof bindSbLead_==='function' && document.querySelector('#sbWrap, [data-sbq]')) bindSbLead_();   // Campus Leadership → Structure, the whiteboard (23-structure.js)
+  if(!document.getElementById('sbWrap')) document.body.classList.remove('sbFullOn');
   bindKhmer_();   // Learn Khmer (15-khmer.js)
   [['goGpTasks','week']].forEach(function(x){ var b=document.getElementById(x[0]); if(b) b.onclick=function(){ gpTap(); gptOpenPage_(x[1]); }; });
   document.querySelectorAll('[data-gogptasks]').forEach(function(b){ b.onclick=function(){ gpTap(); S.bellOpen=false; gptOpenPage_('week'); }; });
@@ -1329,7 +1356,7 @@ function bind(){
   if(wst) wst.onclick=function(){ S.weekForm=Number(S.healthWeek||thisWeek()); render(); };
   var wcl=document.getElementById('weekClear');
   if(wcl) wcl.onclick=function(){
-    if(!confirm(t('Clear this week’s check-in?'))) return;
+    if(!gpAsk_(t('Clear this week’s check-in?'))) return;
     weekClear();
   };
 
@@ -1379,7 +1406,7 @@ function bind(){
   if(oan) oan.onclick=function(){ var p=S.okrAdminPick||{}; if(!p.campus || !p.dept) return; S.okrAdmin={ campus:p.campus, dept:p.dept }; S.okrEditId=null; S.okrForm=true; render(); var f=document.getElementById('okrForm'); if(f) f.scrollIntoView({behavior:'smooth', block:'start'}); };
   document.querySelectorAll('[data-okr-del]').forEach(function(b){
     b.onclick=function(){
-      if(!confirm(t('Delete this objective?'))) return;
+      if(!gpAsk_(t('Delete this objective?'))) return;
       okrDelete(b.getAttribute('data-okr-del'));
     };
   });
@@ -1406,7 +1433,7 @@ function bind(){
     b.onclick=function(){
       var parts=b.getAttribute('data-okr-count').split('|'), o=okrFind_(parts[0]), kr=o && o.krs[Number(parts[1])];
       if(!kr) return;
-      var v = prompt(t('How many so far?'), String(Number(kr.current)||0));
+      var v = gpAskText_(t('How many so far?'), String(Number(kr.current)||0));
       if(v===null || v.trim()==='' || isNaN(Number(v))) return;
       okrSetCount(parts[0], Number(parts[1]), Number(v));
     };
@@ -1484,7 +1511,7 @@ function bind(){
   document.querySelectorAll('[data-smartdel]').forEach(function(b){
     b.onclick=function(){
       if(S.busy) return;
-      if(!confirm(t('Delete this goal? Its tasks stay under Other tasks.'))) return;
+      if(!gpAsk_(t('Delete this goal? Its tasks stay under Other tasks.'))) return;
       S.busy=true;
       run('deleteSmartGoal',[S.auth.user,S.auth.pin,b.getAttribute('data-smartdel')],function(r){
         S.busy=false;
@@ -1529,7 +1556,7 @@ function bind(){
   document.querySelectorAll('[data-stepdel]').forEach(function(b){
     b.onclick=function(){
       var parts=b.getAttribute('data-stepdel').split('|'), g=goalById_(parts[0]); if(!g) return;
-      if(!confirm(t('Remove this step?'))) return;
+      if(!gpAsk_(t('Remove this step?'))) return;
       var p=goalPayload_(g);
       p.steps=p.steps.filter(function(st){ return st.id!==parts[1]; });
       smartSend_(p);
@@ -1610,14 +1637,14 @@ function bind(){
   var tkd=document.getElementById('tkDeleteBtn');
   if(tkd) tkd.onclick=function(){
     if(!S.taskEdit) return;
-    if(!confirm(t('Delete this task?'))) return;
+    if(!gpAsk_(t('Delete this task?'))) return;
     taskSend_('deleteTask', [S.taskEdit], function(){ S.taskEdit=null; S.taskEditDraft=null; });
   };
   var tdt=document.getElementById('tasksDoneToggle');
   if(tdt) tdt.onclick=function(){ gpTap(); S.tasksDoneOpen=!S.tasksDoneOpen; render(); };
   var tcd=document.getElementById('tasksClearDone');
   if(tcd) tcd.onclick=function(){
-    if(!confirm(t('Clear all completed tasks?'))) return;
+    if(!gpAsk_(t('Clear all completed tasks?'))) return;
     taskSend_('clearDoneTasks', [], function(){ S.tasksDoneOpen=false; });
   };
 
@@ -1640,10 +1667,11 @@ function bind(){
   // login
   var lb=document.getElementById('loginBtn');
   var ggl=document.getElementById('googleLogin'); if(ggl) ggl.onclick=function(){ gglGo_('login'); };
-  var ggs=document.getElementById('googleSignup'); if(ggs) ggs.onclick=function(){ gglGo_('login'); };
+  var ggs=document.getElementById('googleSignup'); if(ggs) ggs.onclick=function(){ gglGo_('signup'); };
   var ggk=document.getElementById('linkGoogle'); if(ggk) ggk.onclick=function(){ gglGo_('link'); };
   var ggsg=document.getElementById('gglStepGo'); if(ggsg) ggsg.onclick=function(){ gglGo_('link'); };
   var ggso=document.getElementById('gglStepOut'); if(ggso) ggso.onclick=function(){ logout(); };
+  var ggsl=document.getElementById('gglStepLater'); if(ggsl) ggsl.onclick=function(){ S.linkSignIn=false; render(); };
   var spl=document.getElementById('showPinLogin'); if(spl) spl.onclick=function(){ S.pinLogin=true; render(); };
   var hpl=document.getElementById('hidePinLogin'); if(hpl) hpl.onclick=function(){ S.pinLogin=false; render(); };
   // when Google doesn't work (07-health-leave.js): the help box, and the "no profile for that Google account" choice
@@ -1653,7 +1681,7 @@ function bind(){
   var gsk=document.getElementById('gglSkip'); if(gsk) gsk.onclick=function(){ lsSet('gp-ggl-skip', String(new Date().toDateString())); S.gglHelp=null; render(); };
   var ghp=document.getElementById('gglHaveProfile'); if(ghp) ghp.onclick=function(){ S.pinLogin=true; render(); var u=document.getElementById('li_user'); if(u) u.focus(); };
   var goa=document.getElementById('gglOtherAccount'); if(goa) goa.onclick=function(){ S.gglNew=null; gglGo_('login'); };
-  var gin=document.getElementById('gglImNew'); if(gin) gin.onclick=function(){ var g=S.gglNew||{}; S.regMode=true; S.regGoogle={ token:g.token, email:g.email||'', name:g.name||'' }; S.gglNew=null; render(); showMsg(t('Welcome! Make your profile — no username or PIN needed.')); };
+  var gin=document.getElementById('gglImNew'); if(gin) gin.onclick=function(){ var g=S.gglNew||{}; S.regMode=true; S.regGoogle={ token:g.token, email:g.email||'', name:g.name||'' }; S.gglNew=null; render(); };
   if(lb) lb.onclick=function(){
     var u=document.getElementById('li_user').value.trim();
     var pin=document.getElementById('li_pin').value;
@@ -1681,62 +1709,53 @@ function bind(){
         /* not staff — perhaps a member of the advisory board, with their own sign-in */
         run('boardLogin',[u,pin],function(b){
           if(b && b.ok){ boardEnter_(b.member, {user:u,pin:pin}); return; }
-          lb.disabled=false; lb.textContent='Log in'; showMsg('Wrong username or PIN');
+          lb.disabled=false; lb.textContent=t('Log in'); showMsg('Wrong username or PIN');
         });
       }
       else {
-        lb.disabled=false; lb.textContent='Log in';
+        lb.disabled=false; lb.textContent=t('Log in');
         if(d.err==='applicant'){ showMsg(t('That is a portal account — opening the YWAM GP Portal.')); setTimeout(function(){ location.href='portal.html'; }, 900); return; }
         showMsg(d.err==='pending' ? 'Your account is waiting on approval from a base leader.' : 'Wrong username or PIN');
       }
     });
   };
-  var toReg=document.getElementById('toReg'); if(toReg) toReg.onclick=function(){ if(gpTasksApp_()){ location.href='teams.html?reg=1'; return; } S.regMode=true; if(!S.roster.length){ run('teamRoster',[],function(r){S.roster=Array.isArray(r)?r:[];render();}); } else render(); };
-  var toLogin=document.getElementById('toLogin'); if(toLogin) toLogin.onclick=function(){ S.regMode=false; S.regGoogle=null; S.gglNew=null; render(); };
+  var toReg=document.getElementById('toReg'); if(toReg) toReg.onclick=function(){ if(gpTasksApp_()){ location.href='teams.html?reg=1'; return; } S.regMode=true; render(); };
+  var toLogin=document.getElementById('toLogin'); if(toLogin) toLogin.onclick=function(){ S.regMode=false; S.regGoogle=null; S.regPin=false; S.gglNew=null; render(); };
 
-  // register
+  // register — only a name with Google; with a PIN, the name, email, username and PIN (registerHtml)
+  var rpw=document.getElementById('regPinWay'); if(rpw) rpw.onclick=function(){ S.regPin=true; render(); };
+  var rgw=document.getElementById('regGoogleWay'); if(rgw) rgw.onclick=function(){ S.regPin=false; render(); };
+  var rog=document.getElementById('regOtherGoogle'); if(rog) rog.onclick=function(){ S.regGoogle=null; gglGo_('signup'); };
   var rb=document.getElementById('regBtn');
   if(rb) rb.onclick=function(){
-    var gg=S.regGoogle, val=function(id){ var el=document.getElementById(id); return el ? el.value.trim() : ''; };
+    var gg=S.regGoogle, inv=S.regPrefill||{}, val=function(id){ var el=document.getElementById(id); return el ? el.value.trim() : ''; };
     var payload={
       name:val('r_name'),
       email:gg ? gg.email : val('r_email'),
       username:gg ? '' : val('r_user'),
       pin:gg ? '' : val('r_pin'),
       googleToken:gg ? gg.token : undefined,
-      campus:document.getElementById('r_campus').value,
-      dept:document.getElementById('r_dept').value,
-      ministry:minSelValue_('r_ministry','r_dept').ministry,
-      cdKind:minSelValue_('r_ministry','r_dept').cdKind,
-      role:document.getElementById('r_role').value.trim(),
-      staffType:document.getElementById('r_type').value,
-      country:countryValue('r_country'),
-      mentorId:document.getElementById('r_mentor').value,
-      phone:document.getElementById('r_phone').value.trim(),
-      joined:document.getElementById('r_joined').value.trim()
+      campus:inv.campus||'', dept:inv.dept||'', ministry:inv.ministry||'',   // an invite link's, if any: the setup steps start from them
+      invite:(S.regInvite && S.regInvite.info) ? S.regInvite.token : undefined   // an admin's invite: in at once
     };
-    if(!payload.name){ showMsg('Add your name'); return; }
+    if(!payload.name){ showMsg(t('Add your name')); return; }
     if(!gg){
-      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)){ showMsg('Add a real email address'); return; }
-      if(!/^[a-z0-9._-]{2,20}$/.test(payload.username.toLowerCase())){ showMsg('Username: lowercase letters/numbers, 2–20'); return; }
-      if(!/^\d{4}$/.test(payload.pin)){ showMsg('PIN must be 4 digits'); return; }
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)){ showMsg(t('Add a real email address')); return; }
+      if(!/^[a-z0-9._-]{2,20}$/.test(payload.username.toLowerCase())){ showMsg(t('Username: lowercase letters/numbers, 2–20')); return; }
+      if(!/^\d{4}$/.test(payload.pin)){ showMsg(t('PIN must be 4 digits')); return; }
     }
     rb.disabled=true; rb.textContent='…';
     run('staffRegister',[payload],function(d){
-      if(d.ok && d.pending){
-        // Campus Leadership only — every other department signs in right away.
-        // There is no session to start: a base leader has to approve first.
-        rb.disabled=false; rb.textContent='Create profile'; S.regMode=false;
-        showMsg(t('Thanks! An admin will look at your account — you can sign in once it is approved.'));
-        render();
-      } else if(d.ok){ S.auth={user:d.user||payload.username.toLowerCase(),pin:d.token||payload.pin}; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; afterLogin(); showMsg('Profile created — add a photo!'); S.view='profile'; render(); }
+      /* signed in straight away: the setup questions now, the rest of the app once an admin says yes (22-setup.js) */
+      if(d.ok){ gpInviteDrop_(); S.auth={user:d.user||payload.username.toLowerCase(),pin:d.token||payload.pin}; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; S.regPin=false; S.setup=null; afterLogin(); }
+      else if(/^invite_/.test(d.err||'')){ rb.disabled=false; rb.textContent=t('Create my profile'); if(S.regInvite){ S.regInvite.info=null; S.regInvite.err=d.err.slice(7); } try { sessionStorage.removeItem('gp-invite'); } catch(e){} render(); }
       else {
-        rb.disabled=false; rb.textContent='Create profile';
-        showMsg(d.err==='taken' ? 'That username is taken'
-          : d.err==='email_taken' ? 'There’s already a profile with that email'
-          : d.err==='bad_email' || d.err==='email_required' ? 'Add a real email address'
+        rb.disabled=false; rb.textContent=t('Create my profile');
+        showMsg(d.err==='taken' ? t('That username is taken')
+          : d.err==='email_taken' ? t('There’s already a profile with that email — sign in instead.')
+          : d.err==='bad_email' || d.err==='email_required' ? t('Add a real email address')
           : d.err==='google' ? t('Google sign-in didn’t work — try again.')
-          : 'Check your details');
+          : t('Check your details'));
       }
     });
   };
@@ -1792,6 +1811,7 @@ function bind(){
     var srt=document.getElementById('structRetry');
     if(srt) srt.onclick=function(){ S.structError[sKey]=''; render(); };
     bindStructArrange_();
+    if(typeof bindSbTeam_==='function') bindSbTeam_();   // Team → Structure: the tree, read only (23-structure.js)
     var stb=document.getElementById('structStudentsBtn');
     if(stb) stb.onclick=function(){ gpTap(); if(S.structStudentsEdit===sKey){ S.structStudentsEdit=null; } else { var c0=S.structCache[sKey]; S.structStudentsDraft=Object.assign({}, (c0 && c0.plan && c0.plan.students) || {}); S.structStudentsEdit=sKey; } render(); };
     document.querySelectorAll('[data-stu]').forEach(function(sel){ sel.onchange=function(){ var id=sel.getAttribute('data-stu'); S.structStudentsDraft=S.structStudentsDraft||{}; if(sel.value) S.structStudentsDraft[id]=sel.value; else delete S.structStudentsDraft[id]; }; });
@@ -1825,7 +1845,7 @@ function bind(){
       run('getMenteeLogs',[S.auth.user,S.auth.pin,id],function(d){
         if(d.ok){
           S.mentee=d.mentee; S.menteeWeek=null; S.menteeLogs=d.logs; S.menteeGoals=d.goals||[];
-          S.menteeProfile=d.profile; S.menteeCheckins=d.checkins||[]; S.menteeSupport=d.support||null;
+          S.menteeProfile=d.profile; S.menteeCheckins=d.checkins||[]; S.menteeSupport=d.support||null; S.menteeLib=d.library||null;
           S.menteeHabits=d.habits||[]; S.menteeMinistry=d.ministry||null; S.menteeTrips=d.trips||null; S.menteeSmart=d.smartGoals||[];
           render();
         }
@@ -1944,7 +1964,7 @@ function bind(){
       debt:S.profile&&S.profile.debt?true:false
     };
     var pk=minSelValue_('p_ministry','p_dept'); if(pk.cdKind!==undefined) payload.cdKind=pk.cdKind;
-    sp.disabled=true; sp.textContent='Saving…';
+    sp.disabled=true; sp.textContent=t('Saving…');
     run('updateProfile',[S.auth.user,S.auth.pin,payload],function(d){
       if(d.ok){
         // merged, not replaced: updateProfile sends the public card, which has no
@@ -1957,7 +1977,7 @@ function bind(){
         run('teamRoster',[S.auth.user,S.auth.pin],function(r){S.roster=Array.isArray(r)?r:[];render();});
       }
       else {
-        sp.disabled=false; sp.textContent='Save profile';
+        sp.disabled=false; sp.textContent=t('Save profile');
         showMsg(d && d.err==='email_taken' ? 'There’s already a profile with that email'
           : d && d.err==='bad_email' ? 'That doesn’t look like a real email address'
           : 'Could not save');
@@ -2028,7 +2048,7 @@ function refreshAll(){
    ?fresh). If the page itself came from the offline copy (the worker leaves a
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
-var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
+var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/20-game.js','teams/21-voice.js','teams/22-setup.js','teams/23-structure.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
 if(gpTasksApp_()) GP_VER_FILES=['tasks.html'].concat(GP_VER_FILES.slice(1), ['teams/12-tasks.js','teams/13-calendar.js']);   // the tasks app's page is tasks.html
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){
@@ -2161,4 +2181,6 @@ gpInstallPrompt();
   } catch(e){}
 })();
 /* back from Google's page: take the token out of the address before anything else reads it (or, for the tasks app, go on to it) */
-if(gglRedirectTake_()!=='away'){ boot(); gglRedirectFinish_(); }
+/* and an admin's one-time sign-in link (?signin=) signs them in instead of the boot */
+var _signLink=signLinkTake_();
+if(gglRedirectTake_()!=='away'){ if(_signLink) signLinkUse_(_signLink); else { boot(); gglRedirectFinish_(); } }

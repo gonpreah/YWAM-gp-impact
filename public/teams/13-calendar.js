@@ -55,9 +55,11 @@ function calLoad_(){
     function(){ S.calLoading=false; S.cal={ ok:false }; if(S.view==='calendar') render(); });
 }
 function calHomeLoad_(){
+  if(S.calHome && S.calHome.day!==todayStr()) S.calHome=null;   // a new day (the app left open overnight): ask again
   if(S.calHome || S.calHomeLoading || S.student || S.guest || S.board) return; S.calHomeLoading=true;
-  run('getCalendar',[S.auth.user,S.auth.pin,todayStr(),7],function(d){ S.calHomeLoading=false; S.calHome=(d && d.ok) ? d : { ok:false }; if(S.view==='week') render(); },
-    function(){ S.calHomeLoading=false; S.calHome={ ok:false }; });
+  var day=todayStr();
+  run('getCalendar',[S.auth.user,S.auth.pin,day,7],function(d){ S.calHomeLoading=false; S.calHome=(d && d.ok) ? d : { ok:false }; S.calHome.day=day; if(S.view==='week') render(); },
+    function(){ S.calHomeLoading=false; S.calHome={ ok:false, day:day }; });
 }
 /* GP Tasks with a day on them, as things on the calendar, in their list's colour */
 /* which tasks are on your calendar (Andrew, Oct 2026: "not other people's or every ministry's — your own,
@@ -173,9 +175,20 @@ function calendarHtml_(){
   return h+'<div class="card calList">'+calListHtml_(list)+'</div>';
 }
 /* My Home: the next seven days, a few at a time — events, and tasks with a day */
+/* Coming up moves on (Nov 2026, Andrew: "once the day has passed, just move on to the next thing — right now it's still
+   on the teams"): only what starts today or later — a team's stay that began on an earlier day is not "coming up", and the
+   server sends it with its first day — and today's timed things drop off once they have ended. */
+function calHomeUpcoming_(ev, today){
+  var now=new Date(), hm=('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2);
+  return ev.filter(function(e){
+    if(e.date<today) return false;
+    if(e.date===today && !e.allDay && !e.task){ var end=e.endTime || e.time; if(end && end<hm) return false; }
+    return true;
+  });
+}
 function calHomeCardHtml_(){
   calHomeLoad_();
-  var C=S.calHome, today=todayStr(), ev=calAllEvents_(C, today, calAddDays_(today, 6));
+  var C=S.calHome, today=todayStr(), ev=calHomeUpcoming_(calAllEvents_(C, today, calAddDays_(today, 6)), today);
   if(!(C && C.ok && C.connected) && !ev.length) return '';
   ev=ev.slice(0, 5);
   return '<h3 id="sec-cal">'+gptIc_('calendar')+' '+esc(t('Coming up'))+'</h3><div class="card calHome">'+
@@ -280,11 +293,11 @@ function bindAdminGcal_(){
   document.querySelectorAll('[data-kindkeys]').forEach(function(inp){ inp.onchange=function(){ saveKind({ id:inp.getAttribute('data-kindkeys'), keywords:inp.value }, t('Saved')); }; });
   var ka=document.getElementById('gcKindAdd'); if(ka) ka.onclick=function(){ gpTap(); saveKind({ name:t('New kind'), color:'grey', keywords:[] }); };
   document.querySelectorAll('[data-kindrm]').forEach(function(b){ b.onclick=function(){
-    if(!window.confirm(t('Remove this kind? Its events become plain Events.'))) return;
+    if(!gpAsk_(t('Remove this kind? Its events become plain Events.'))) return;
     run('adminGcal',[S.auth.user,S.auth.pin,{ kindRemove:b.getAttribute('data-kindrm') }],function(d){ if(d && d.ok){ S.gcalAdmin=d; S.cal=null; S.calHome=null; showMsg(t('Removed')); } render(); });
   }; });
   document.querySelectorAll('[data-gcalrm]').forEach(function(b){ b.onclick=function(){
-    if(!window.confirm(t('Remove this calendar from the app?'))) return;
+    if(!gpAsk_(t('Remove this calendar from the app?'))) return;
     run('adminGcal',[S.auth.user,S.auth.pin,{ remove:b.getAttribute('data-gcalrm') }],function(d){ if(d && d.ok){ S.gcalAdmin=d; S.cal=null; S.calHome=null; showMsg(t('Removed')); } render(); });
   }; });
 }

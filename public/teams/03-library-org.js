@@ -73,12 +73,10 @@ function aboutMeHtml_(){
       ? homeTile_('gsSeeMine', '💪', t('Strengths'), '<span class="sChips homeTileChips">'+g.top.map(function(id,i){ return gsChipHtml(id,i+1); }).join('')+'</span>')
       : homeTile_('gsStart', '💪', t('Strengths'), esc(t('Find your top 5 strengths')));
   }
-  if(!S.student) tiles += homeTile_('testsTile', '🧪', t('Tests'), esc(t('Gifts, language, couple check-up')));
-  var ss=S.supSum;
-  if(!S.student) tiles += homeTile_('supTile', '💰', t('Support raising'), esc(ss && ss.goal ? gpT('${n} of ${goal} a month',{n:fmt(ss.pledged), goal:fmt(ss.goal)}) : t('Your partners and monthly goal')));
-  if(!S.student) tiles += p3TileHtml_();
-  var nb=libBooksRead_();
-  tiles += homeTile_('libHomeTile', '📚', t('Library'), esc(nb ? gpT('{n} books read',{n:nb}) : t('Ten-minute reads')));
+  /* Just who you are (Nov 2026, Andrew: "too much to see"): Tests, Support raising and the Library are quick apps
+     and in ☰ now, not tiles here too. 360 reviews shows only while something waits on you. */
+  var G3=S.p3Glance;
+  if(!S.student && G3 && (G3.asked || G3.reviewDue)) tiles += p3TileHtml_();
   return '<h3 id="sec-ptype">🧭 '+esc(t('About me'))+'</h3><div class="homeTiles" id="sec-strengths">'+tiles+'</div>';
 }
 var PCHEV='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--faint);flex:0 0 auto"><path d="M9 6l6 6-6 6"/></svg>';
@@ -810,24 +808,35 @@ function libraryHtml(){
     S.libBook=null; S.libStep=null;
   }
   if(libLang_()==='km' && typeof GP_LIBRARY_KM==='undefined' && !S.libKmError) libLoadKm_();   // so Khmer names show on the shelves
+  if(S.libPlan){ var plan=(GP_LIBRARY.plans||[]).filter(function(x){ return x.id===S.libPlan; })[0]; if(plan) return libPlanPageHtml_(plan); S.libPlan=null; }
   var read=libRead_(), prog=libProg_(), books=GP_LIBRARY.books, picks=libPicks_();
   if(S.libShelf==='start' && !picks.length) S.libShelf='all';
   var readN=books.filter(function(x){ return read[x.id]; }).length;
   var h=back+'<h2>📚 '+esc(t('Library'))+'</h2>'+
     '<p class="sub">'+esc(t('Ten-minute reads of the best books on leading, culture, habits and creativity, and the YWAM classics — the big ideas, made for us.'))+'</p>'+
     '<div class="libProgress"><b>'+readN+'</b> / '+books.length+' '+esc(t('read'))+'<span class="libProgressBar"><span style="width:'+Math.round(readN/Math.max(1,books.length)*100)+'%"></span></span></div>'+
-    '<div class="libShelves">'+[{id:'all', name:'All'}].concat(picks.length ? [{id:'start', name:'Start here', emoji:'⭐'}] : [], libShelvesShown_()).map(function(sh){
+    libFindHtml_();
+  if(String(S.libQ||'').trim()){   // searching: the matches and nothing else
+    var hits=libMatches_(S.libQ);
+    return h+'<div id="libFindOut">'+(hits.length ? '<div class="libGrid">'+hits.map(function(b){ return libTileHtml_(b, read, prog); }).join('')+'</div>'
+      : '<p class="sub">'+esc(t('No book matches that. Try a topic like marriage, habits or prayer.'))+'</p>')+'</div>';
+  }
+  if(S.libShelf==='all') h+=libMonthHtml_(read)+libRecsHtml_();   // the month's book and what was recommended lead; the books come next
+  h+='<div class="libShelves">'+[{id:'all', name:'All'}].concat(picks.length ? [{id:'start', name:'Start here', emoji:'⭐'}] : [], libShelvesShown_()).map(function(sh){
       return '<button class="libShelfBtn'+(S.libShelf===sh.id?' on':'')+'" data-libshelf="'+esc(sh.id)+'"'+(sh.color&&S.libShelf===sh.id?' style="background:'+sh.color+';border-color:'+sh.color+'"':'')+'>'+(sh.emoji?sh.emoji+' ':'')+esc(t(sh.name))+'</button>';
-    }).join('')+'</div>';
+    }).join('')+'</div>'+libTagsRowHtml_();
   if(S.libShelf==='all'){
     var going=books.filter(function(x){ return prog[x.id] && !read[x.id]; });
     if(going.length) h+=libRowHtml_('📖 '+esc(t('Continue reading')), going, read, prog);
     if(picks.length) h+=libRowHtml_('⭐ '+esc(t('Start here')), picks, read, prog, 'start');
+    h+=libMineHtml_(read)+libPlansHtml_(read)+lnFeedHtml_();
     libShelvesShown_().forEach(function(sh){
       h+=libRowHtml_((sh.emoji?sh.emoji+' ':'')+esc(t(sh.name)), books.filter(function(x){ return x.shelf===sh.id; }), read, prog, sh.id);
     });
+    h+=libTeamHtml_();
   } else {
-    var shown = S.libShelf==='start' ? picks : books.filter(function(x){ return x.shelf===S.libShelf; });
+    var tagId = S.libShelf.indexOf('tag:')===0 ? S.libShelf.slice(4) : '';
+    var shown = S.libShelf==='start' ? picks : tagId ? books.filter(function(x){ return (x.tags||[]).indexOf(tagId)>-1; }) : books.filter(function(x){ return x.shelf===S.libShelf; });
     if(S.libShelf==='start') h+='<p class="sub libStartNote">'+esc(gpT('{n} books to read first for leading at YWAM GP: culture, teams, hard conversations, vision, systems and getting things done.',{n:picks.length}))+'</p>';
     h+='<div class="libGrid">'+shown.map(function(b){ return libTileHtml_(b, read, prog); }).join('')+'</div>';
   }
@@ -840,15 +849,19 @@ function libBookHtml_(b){
     '<span class="libShelfTag">'+(sh.emoji||'')+' '+esc(t(sh.name))+'</span>'+(b.original?' <span class="libShelfTag">✨ '+esc(t('Original GP guide'))+'</span>':'')+
     '<h2 class="libTitle">'+esc(libTitle_(b))+'</h2><div class="libAuthor">'+esc(libAuthor_(b))+(b.year?' · '+b.year:'')+'</div>'+
     '<div class="libVibe">'+esc(T.vibe)+'</div>'+
-    '<div class="libStats"><span>⏱ '+esc(gpT('{n}-minute read',{n:b.mins||5}))+'</span><span>💡 '+esc(gpT('{n} key ideas',{n:b.insights.length}))+'</span>'+(read?'<span>✓ '+esc(t('Read'))+'</span>':'')+'</div></div>';
+    '<div class="libStats"><span>⏱ '+esc(gpT('{n}-minute read',{n:b.mins||5}))+'</span><span>💡 '+esc(gpT('{n} key ideas',{n:b.insights.length}))+'</span>'+(read?'<span>✓ '+esc(t('Read'))+'</span>':'')+'</div>'+
+    '<div class="libBookTags">'+libBookTagsHtml_(b)+'</div></div>';
+  h=libDoneCardHtml_(b)+h;
   h+='<button class="btn libCta" id="libStart" style="background:'+sh.color+';border-color:'+sh.color+'">'+
     esc(at && !read ? gpT('Continue — key idea {n}',{n:Math.min(at, b.insights.length)}) : read ? t('Read again') : '▶ '+t('Start reading'))+'</button>'+
     (libAudioOk_() ? '<button class="btn ghost libListenCta" id="libListenStart">🎧 '+esc(t('Listen'))+'</button>' : '');
+  h+=libBookExtrasHtml_(b);
   h+='<div class="libSec'+(T.km?' libKm':'')+'"><h3>'+esc(t('What’s it about?'))+'</h3>'+libParas_(T.bigIdea)+'</div>';
   h+='<div class="libSec'+(T.km?' libKm':'')+'"><h3>'+esc(t('What’s inside'))+'</h3><div class="libInside">'+T.insights.map(function(x, k){
     return '<button class="libInsideItem" data-libstep="'+(k+1)+'"><span class="libInsightNum" style="background:'+sh.color+'">'+(k+1)+'</span><span>'+esc(x.emoji||'')+' '+esc(x.title)+'</span><span class="libInsideGo">›</span></button>';
   }).join('')+'</div></div>';
   h+='<div class="card libForUs'+(T.km?' libKm':'')+'" style="border-left-color:'+sh.color+'"><div class="libKicker">🌏 '+esc(t('For us at YWAM GP'))+'</div>'+libParas_(T.forUs)+'</div>';
+  h+=lnBookHtml_(b);   // 💬 notes and highlights (18-library-plus.js)
   h+='<div class="btnRow" style="margin-top:14px">'+
     '<button class="btn ghost" id="libMarkRead" data-libid="'+esc(b.id)+'">'+esc(read ? '✓ '+t('Read') : t('Mark as read'))+'</button>'+
     (next && next!==b ? '<button class="btn ghost" data-libbook="'+esc(next.id)+'">'+esc(t('Next book'))+' →</button>' : '')+'</div>';
@@ -1060,19 +1073,19 @@ function libGo_(step){
   /* "Swipe to turn the page": the first three times a book is opened, never again after a first swipe */
   if(was==null){ var seen=Number(lsGet('gp-lib-swipehint'))||0; S.libHint = seen<3; if(S.libHint) lsSet('gp-lib-swipehint', String(seen+1)); }
   else S.libHint=false;
-  if(!libRead_()[b.id]) libSetProg_(b.id, S.libStep);
+  if(!libRead_()[b.id]){ libSetProg_(b.id, S.libStep); lsSet('gp-lib-last', JSON.stringify({ id:b.id, title:b.title, step:S.libStep, total:b.insights.length+2 })); }   // My Home's "Continue" line
   render(); window.scrollTo(0,0);
 }
 function bindLibrary_(){
   var lb=document.getElementById('libBack');
-  if(lb) lb.onclick=function(){ gpTap(); if(S.libBook){ S.libBook=null; S.libStep=null; render(); } else if(S.libShelf!=='all'){ S.libShelf='all'; render(); } else { S.view='week'; render(); } window.scrollTo(0,0); };
+  if(lb) lb.onclick=function(){ gpTap(); if(S.libBook){ S.libBook=null; S.libStep=null; S.libDone=null; S.libRecOpen=false; render(); } else if(S.libShelf!=='all'){ S.libShelf='all'; render(); } else { S.view='week'; render(); } window.scrollTo(0,0); };
   var lr=document.getElementById('libRetry');
   if(lr) lr.onclick=function(){ libLoad_(); render(); };
   libLiveCovers_(); libFitTitles_();
   var onChip=document.querySelector('.libShelfBtn.on');   // the chosen shelf's chip in view, without moving the page
   if(onChip && onChip.parentNode) onChip.parentNode.scrollLeft=Math.max(0, onChip.offsetLeft-onChip.parentNode.offsetLeft-24);
   document.querySelectorAll('[data-libshelf]').forEach(function(b){ b.onclick=function(){ gpTap(); S.libShelf=b.getAttribute('data-libshelf'); render(); if(b.classList.contains('libSeeAll')) window.scrollTo(0,0); }; });
-  document.querySelectorAll('[data-libbook]').forEach(function(b){ b.onclick=function(){ gpTap(); S.libBook=b.getAttribute('data-libbook'); S.libStep=null; render(); window.scrollTo(0,0); }; });
+  document.querySelectorAll('[data-libbook]').forEach(function(b){ b.onclick=function(){ gpTap(); S.libBook=b.getAttribute('data-libbook'); S.libStep=null; S.libDone=null; S.libRecOpen=false; S.libPlan=null; S.libQ=''; render(); window.scrollTo(0,0); }; });
   document.querySelectorAll('[data-libstep]').forEach(function(b){ b.onclick=function(){ gpTap(); libGo_(+b.getAttribute('data-libstep')); }; });
   libAudioBind_();
   var st=document.getElementById('libStart');
@@ -1084,7 +1097,7 @@ function bindLibrary_(){
   var pv=document.getElementById('libPrev'), nx=document.getElementById('libNext'), fin=document.getElementById('libFinish');
   if(pv) pv.onclick=function(){ gpTap(); libGo_(S.libStep-1); };
   if(nx) nx.onclick=function(){ gpTap(); libGo_(S.libStep+1); };
-  if(fin) fin.onclick=function(){ gpTap(); libSetRead_(S.libBook, true); libSetProg_(S.libBook, 0); S.libStep=null; render(); window.scrollTo(0,0); };
+  if(fin) fin.onclick=function(){ gpTap(); libFinish_(S.libBook); };
   var hint=document.getElementById('libSwipeHint');
   if(hint){ var gone=function(){ S.libHint=false; hint.classList.add('out'); };
     setTimeout(gone, 3600); var rr=document.getElementById('libReader'); if(rr) rr.addEventListener('touchstart', gone, { once:true, passive:true }); }
@@ -1144,7 +1157,7 @@ function libPush_(){
 }
 function libBooksRead_(){ return Object.keys(libRead_()).length; }
 /* The tally, wherever it shows — tap it and the Library opens. */
-function libOpen_(){ S.view='library'; S.libBook=null; S.libStep=null; S.libShelf='all'; libLoad_(); render(); window.scrollTo(0,0); }
+function libOpen_(){ S.view='library'; S.libBook=null; S.libStep=null; S.libShelf='all'; S.libPlan=null; S.libQ=''; S.libDone=null; libLoad_(); render(); window.scrollTo(0,0); }
 
 /* ==================== required: papers every staff member signs ====================
    What every profile must have done (Uriah, Oct 2026): the Child Protection
@@ -1437,7 +1450,7 @@ function bindReqHr_(){
   };
   document.querySelectorAll('[data-reqdel]').forEach(function(b){ b.onclick=function(){
     var d=reqDocById_(b.getAttribute('data-reqdel')); if(!d) return;
-    if(!confirm(gpT('Remove “{title}”? It will no longer be asked of anyone.',{title:d.title}))) return;
+    if(!gpAsk_(gpT('Remove “{title}”? It will no longer be asked of anyone.',{title:d.title}))) return;
     run('reqDocDelete',[S.auth.user,S.auth.pin,d.id],done);
   }; });
   document.querySelectorAll('[data-reqfilter]').forEach(function(b){ b.onclick=function(){ S.reqFilter=b.getAttribute('data-reqfilter'); render(); }; });
@@ -1464,7 +1477,10 @@ function gpGuestMe_(){
   return { id:'guest', name:t('Guest'), username:'', campus: lsGet('gp-guest-campus') || 'siemreap', dept:'', ministry:'', role:'',
     photo:'', staffType:'campus', country:'—', ministries:[], leads:[], guest:true };
 }
-function gpEnterGuest_(){
+/* Looking around opens the preview now — the app on a made-up campus (22-setup.js); this plain guest tour is what
+   shows if the preview can't load */
+function gpEnterGuest_(){ gpEnterDemo_(); }
+function gpEnterGuestPlain_(){
   lsSet(GUEST_KEY, '1');
   S.guest=true; S.me=gpGuestMe_(); S.profile={}; S.auth={ user:'', pin:'' }; S.regMode=false;
   S.view='week'; S.roster=[]; S.required=null; S.reqDocs=[];
@@ -1490,6 +1506,7 @@ function gpGuestCampusHtml_(){
     return '<button class="campusBtn'+(S.me.campus===c.id?' on':'')+'" data-guestcampus="'+esc(c.id)+'">'+esc(t(c.short))+'</button>'; }).join('')+'</div>';
 }
 function gpLeaveGuest_(toRegister){
+  if(S.demo){ gpLeaveDemo_(toRegister); return; }
   lsDel(GUEST_KEY);
   S.guest=false; S.me=null; S.base=null; S.regMode=!!toRegister; S.menuOpen=false; S.view='week';
   renderMenu(); render(); window.scrollTo(0,0);
@@ -1873,7 +1890,8 @@ function prayerHtml_(){
   list.forEach(function(p){
     h+='<div class="card prCard'+(p.answered?' answered':'')+'"><div class="prHead">'+avatarHtml(p,'sm')+'<span class="prWho"><b>'+esc(p.mine ? t('You') : p.name)+'</b>'+
       '<small>'+esc(prAgo_(p.created))+' · '+esc(p.scope==='mentor' ? t('only their mentor') : p.scope==='all' ? t('all of YWAM GP') : t(campusName(p.campus)))+'</small></span></div>'+
-      '<p class="prText">'+esc(p.text)+'</p>';
+      '<p class="prText">'+esc(p.text)+'</p>'+
+      (p.lib && p.lib.bookId ? '<button class="linkbtn prLib" data-prlib="'+esc(p.lib.bookId+'|'+(p.lib.noteId||''))+'">📚 '+esc(gpT('From “{title}”',{title:p.lib.title||''}))+'</button>' : '');
     if(p.answered) h+='<div class="prAnswered">🎉 '+esc(gpT('Answered {date}',{date:teamDate_(p.answered)}))+(p.answerNote ? '<div>'+esc(p.answerNote)+'</div>' : '')+'</div>';
     h+='<div class="prActs">';
     if(!p.mine) h+='<button class="btn '+(p.iPrayed?'':'ghost ')+'small" data-prpray="'+esc(p.id)+'" data-on="'+(p.iPrayed?'0':'1')+'">🙏 '+esc(p.iPrayed ? t('I prayed') : t('Pray'))+(p.prayedN ? ' · '+p.prayedN : '')+'</button>';
@@ -1910,7 +1928,7 @@ function bindPrayer_(){
   var a=document.getElementById('prAnsSave');
   if(a) a.onclick=function(){ var id=S.prAnswering; S.prAnswering=null; run('answerPrayer',[S.auth.user,S.auth.pin,id,(document.getElementById('prNote')||{}).value||''],function(d){ if(done(d)) showMsg(t('Praise God!')); }); };
   document.querySelectorAll('[data-prundo]').forEach(function(b){ b.onclick=function(){ run('answerPrayer',[S.auth.user,S.auth.pin,b.getAttribute('data-prundo'),'',true],done); }; });
-  document.querySelectorAll('[data-prdel]').forEach(function(b){ b.onclick=function(){ if(!confirm(t('Delete this request?'))) return; run('deletePrayer',[S.auth.user,S.auth.pin,b.getAttribute('data-prdel')],done); }; });
+  document.querySelectorAll('[data-prdel]').forEach(function(b){ b.onclick=function(){ if(!gpAsk_(t('Delete this request?'))) return; run('deletePrayer',[S.auth.user,S.auth.pin,b.getAttribute('data-prdel')],done); }; });
 }
 
 /* ==================== Support raising (My Home → Support raising) ====================
@@ -2160,7 +2178,7 @@ function bindSupport_(){
     supSave_(c, t('Saved'));
   });
   on('supDel', function(){
-    if(!confirm(t('Remove this partner?'))) return;
+    if(!gpAsk_(t('Remove this partner?'))) return;
     var c=copy(); c.partners=c.partners.filter(function(x){ return x.id!==S.supEdit; }); supSave_(c, t('Removed'));
   });
   on('supGSave', function(){
@@ -2174,7 +2192,7 @@ function bindSupport_(){
     supSave_(c, t('Saved'));
   });
   on('supGDel', function(){
-    if(!confirm(t('Take them off the list of people you support?'))) return;
+    if(!gpAsk_(t('Take them off the list of people you support?'))) return;
     var c=copy(); c.giving=c.giving.filter(function(y){ return y.id!==S.supGEdit; }); supSave_(c, t('Removed'));
   });
   var f=document.getElementById('supFile'); if(f) f.onchange=function(){ if(f.files && f.files[0]) supReadFile_(f.files[0]); f.value=''; };
@@ -2237,6 +2255,8 @@ function remindersCardHtml_(){
     (mentor ? box('remOne', pr.oneonone!==false, t('When my 1-on-1s with a mentee are behind (Mondays)')) : '')+
     (S.me.isAdmin ? box('remAdmin', pr.admin!==false, t('When sign-ups are waiting for approval')) : '')+
     ((S.me.isAdmin || S.me.hr) ? box('remHr', pr.hr!==false, t('When contracts end soon (Mondays)')) : '')+
+    box('remRead', pr.reading!==false, t('A weekly nudge to read ten minutes'))+
+    '<label class="f" for="remReadDay">'+esc(t('Reading day'))+'</label><select id="remReadDay">'+['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].map(function(d, i){ return '<option value="'+i+'"'+((pr.readDay==null?6:pr.readDay)===i?' selected':'')+'>'+esc(t(d))+'</option>'; }).join('')+'</select>'+
     '<div class="kmrActs"><button class="btn ghost" id="remTest">'+esc(t('Send me a test'))+'</button><button class="btn ghost" id="remOff">'+esc(t('Turn off'))+'</button></div></div>';
   return h;
 }
@@ -2246,6 +2266,7 @@ function remSavePrefs_(){
   pr.hour=Number((document.getElementById('remHour')||{}).value)||pr.hour||19;
   pr.daily=g('remDaily', pr.daily!==false); pr.oneonone=g('remOne', pr.oneonone!==false);
   pr.admin=g('remAdmin', pr.admin!==false); pr.hr=g('remHr', pr.hr!==false); pr.alerts=g('remAlerts', pr.alerts!==false);
+  pr.reading=g('remRead', pr.reading!==false); var rdEl=document.getElementById('remReadDay'); if(rdEl) pr.readDay=Number(rdEl.value);
   S.push.prefs=pr;
   run('savePushPrefs',[S.auth.user,S.auth.pin,pr],function(d){ if(d && d.ok){ S.push.prefs=d.prefs; showMsg(t('Saved')); } else showMsg(t('Could not save')); });
 }
@@ -2539,7 +2560,7 @@ function bindAdminBoard_(){
   };
   var del=document.getElementById('bdDelete');
   if(del) del.onclick=function(){
-    if(!confirm(t('Remove this person from the advisory board?'))) return;
+    if(!gpAsk_(t('Remove this person from the advisory board?'))) return;
     run('adminDeleteBoardMember',[S.auth.user,S.auth.pin,ed.id],function(d){ if(d && d.ok){ S.adminBoard=d; S.adminBoardEdit=null; S.org=null; render(); } });
   };
 }

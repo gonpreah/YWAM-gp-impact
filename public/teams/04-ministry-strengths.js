@@ -32,19 +32,19 @@ S.lw=null; S.lwWeek=null; S.lwLoading=false; S.lwForm=null; S.lwTab=lwTabKept_()
    Every role opens on Overview each time the app is opened; a tab chosen stays only for
    that visit (sessionStorage), so the page always starts where the role's work is. */
 var LW_ROLES={
-  icd:{ tabs:['base','okrs','week','board','money'], focus:'Vision, partners and new bases', tiles:['partners','plants','money','leaders'],
+  icd:{ tabs:['base','okrs','week','board','struct','money'], focus:'Vision, partners and new bases', tiles:['partners','plants','money','leaders'],
     kinds:['partner','church','base','oneonone','teaching','gospel','meeting','deptmeeting'] },
-  ncd:{ tabs:['base','okrs','board','week','money'], focus:'The staff and the week’s rhythm', tiles:['away','oneonones','numbers','tues'],
+  ncd:{ tabs:['base','okrs','board','week','struct','money'], focus:'The staff and the week’s rhythm', tiles:['away','oneonones','numbers','tues'],
     kinds:['oneonone','meeting','deptmeeting','church','gospel','teaching','partner','base'] },
-  dept:{ tabs:['base','okrs','board','week','money'], focus:'Your department: its ministries, leaders and numbers', tiles:[],
+  dept:{ tabs:['base','okrs','board','week','struct','money'], focus:'Your department: its ministries, leaders and numbers', tiles:[],
     kinds:['deptmeeting','oneonone','meeting','teaching','gospel','partner','church','base'] },
-  cd:{ tabs:['base','okrs','week','board','money'], focus:'', tiles:['leaders','numbers','tues','money'], kinds:[] }
+  cd:{ tabs:['base','okrs','week','board','struct','money'], focus:'', tiles:['leaders','numbers','tues','money'], kinds:[] }
 };
 function lwRole_(){
   var tt=typeof orgTitleOf_==='function' ? orgTitleOf_(S.me) : '';
   return tt==='International Campus Director' ? 'icd' : tt==='National Campus Director' ? 'ncd' : /^Director of /.test(tt) ? 'dept' : 'cd';
 }
-function lwTabKept_(){ try{ var v=sessionStorage.getItem('gp-lw-tab'); return ['base','okrs','week','board','money'].indexOf(v)>-1 ? v : null; }catch(e){ return null; } }
+function lwTabKept_(){ try{ var v=sessionStorage.getItem('gp-lw-tab'); return ['base','okrs','week','board','struct','money'].indexOf(v)>-1 ? v : null; }catch(e){ return null; } }
 function lwTabKeep_(v){ try{ sessionStorage.setItem('gp-lw-tab', v); }catch(e){} }
 /* The tab to show: the one chosen this visit, else the role's first. */
 function lwTabNow_(){ var R=LW_ROLES[lwRole_()]; return R.tabs.indexOf(S.lwTab)>-1 ? S.lwTab : R.tabs[0]; }
@@ -187,12 +187,12 @@ function bindLw_(){
   document.querySelectorAll('[data-lwconnect]').forEach(function(b){ b.onclick=function(){ gpTap(); var id=b.getAttribute('data-lwconnect'), p=S.lw.partners.filter(function(x){ return x.id===id; })[0]||{};
     var ds=lwDatesOf_(S.lwWeek).filter(function(d){ return d<=todayStr(); });
     call('leadLogAdd',[{ kind:'partner', who:id, whoName:p.name||'', date: ds.indexOf(todayStr())>-1 ? todayStr() : ds[ds.length-1] }]); }; });
-  document.querySelectorAll('[data-lwpdel]').forEach(function(b){ b.onclick=function(){ if(!confirm(t('Remove this partner from your list?'))) return; call('leadPartnerDelete',[b.getAttribute('data-lwpdel'), S.lwWeek]); }; });
+  document.querySelectorAll('[data-lwpdel]').forEach(function(b){ b.onclick=function(){ if(!gpAsk_(t('Remove this partner from your list?'))) return; call('leadPartnerDelete',[b.getAttribute('data-lwpdel'), S.lwWeek]); }; });
   var pa=document.getElementById('lwPAdd'); if(pa) pa.onclick=function(){ var n=document.getElementById('lwPName'), o=document.getElementById('lwPOrg');
     if(!String(n.value).trim()){ showMsg(t('Type their name.')); return; } call('leadPartnerSave',[{ name:n.value, org:o.value }, S.lwWeek]); };
   document.querySelectorAll('[data-lwplant]').forEach(function(sel){ sel.onchange=function(){ var p=S.lw.plants.filter(function(x){ return x.id===sel.getAttribute('data-lwplant'); })[0];
     call('basePlantSave',[Object.assign({}, p, { stage:sel.value }), S.lwWeek]); }; });
-  document.querySelectorAll('[data-lwplantdel]').forEach(function(b){ b.onclick=function(){ if(!confirm(t('Remove this from the list?'))) return; call('basePlantSave',[{ id:b.getAttribute('data-lwplantdel'), remove:true }, S.lwWeek]); }; });
+  document.querySelectorAll('[data-lwplantdel]').forEach(function(b){ b.onclick=function(){ if(!gpAsk_(t('Remove this from the list?'))) return; call('basePlantSave',[{ id:b.getAttribute('data-lwplantdel'), remove:true }, S.lwWeek]); }; });
   var ba=document.getElementById('lwBAdd'); if(ba) ba.onclick=function(){ var n=document.getElementById('lwBName'), pl=document.getElementById('lwBPlace');
     if(!String(n.value).trim()){ showMsg(t('Type a name.')); return; } call('basePlantSave',[{ name:n.value, place:pl.value, stage:'praying' }, S.lwWeek]); };
   document.querySelectorAll('[data-lwtab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.lwTab=b.getAttribute('data-lwtab'); lwTabKeep_(S.lwTab); render(); }; });
@@ -355,7 +355,7 @@ function bindCafe_(){
   var cl=document.getElementById('cafeClear'); if(cl) cl.onclick=function(){ S.cafeOrder={}; render(); };
   var ch=document.getElementById('cafeCharge'); if(ch) ch.onclick=function(){ var items=Object.keys(S.cafeOrder).map(function(id){ return { id:id, qty:S.cafeOrder[id] }; });
     call('cafeSale',[S.cafeDate, items], function(){ S.cafeOrder={}; gpTap(); showMsg(t('Sold')); }); };
-  document.querySelectorAll('[data-cafevoid]').forEach(function(b){ b.onclick=function(){ if(!confirm(t('Undo this order?'))) return; call('cafeVoid',[S.cafeDate, b.getAttribute('data-cafevoid')]); }; });
+  document.querySelectorAll('[data-cafevoid]').forEach(function(b){ b.onclick=function(){ if(!gpAsk_(t('Undo this order?'))) return; call('cafeVoid',[S.cafeDate, b.getAttribute('data-cafevoid')]); }; });
   document.querySelectorAll('[data-cafecount]').forEach(function(b){ b.onclick=function(){ gpTap(); var v=b.getAttribute('data-cafecount').split('|'); call('cafeCount',[S.cafeDate, v[0], Number(v[1])]); }; });
   var ea=document.getElementById('cafeExpAdd'); if(ea) ea.onclick=function(){ var a=document.getElementById('cafeExpAmt'), n=document.getElementById('cafeExpNote');
     if(!(Number(a.value)>0)){ showMsg(t('Type the amount.')); return; } call('cafeExpense',[S.cafeDate, Number(a.value), n.value, null]); };
@@ -985,10 +985,11 @@ function homeHtml(){
   var h=miniDashboardHtml();
   h+=gpQueueBannerHtml_();
   h+=phaseBanner(phase, wk);
-  h += checkinTueHtml_();   // Tuesday: the weekly health check-in, at the staff meeting
+  /* Tuesday's check-in is the slide-down reminder and the bell now, not a card here (Andrew, Nov 2026) */
   h += f30CardHtml_();
+  /* 📚 Reading is a row in the summary card now (libHeroRowHtml_, Andrew, Nov 2026: "make it small") */
   h += goalsCardHtml(goalsViewWeek());
-  h += habitsCardHtml();
+  h += '<span id="homeHabits" class="homeAnchor"></span>'+habitsCardHtml();
   h += annualGoalsHtml();
   h += calHomeCardHtml_();   // 📅 Coming up: the campus's Google Calendar, the next seven days
   h += mentorshipCardHtml();
@@ -1127,7 +1128,7 @@ function habitsCardHtml(){
 
   var h='<h3 id="sec-habits">✅ '+esc(t('Habits'))+'</h3>'+
     '<div class="card"><div class="goalCardHead"><span class="goalCardTitle">'+esc(t('Habit Tracker'))+'</span>'+
-    '<span class="goalCardDate">'+esc(today)+'</span></div>';
+    '<span class="goalCardDate">'+esc(fmtDateShort_(today))+'</span></div>';
   if(S.habitEdit) return h+habitPickerHtml_(all)+'</div>';
 
   h+='<div class="row" style="border:0;padding-top:0">'+
@@ -1517,7 +1518,7 @@ function kpiCardHtml(wk){
   if(!S.me.ministry){
     return '<div class="card"><p class="sub" style="margin:4px 0 10px">'+
       'Set your ministry on the Profile tab and your team’s KPIs will show up here, ready to log.</p>'+
-      '<button class="btn ghost" id="goProfile">Choose my ministry</button></div>';
+      '<button class="btn ghost" id="goProfile">'+esc(t('Choose my ministry'))+'</button></div>';
   }
   var auto=autoMetricsFor(S.me.campus, S.me.dept, S.me.ministry);   // counted from the pipeline, never typed (GPDTS)
   var metrics=metricsFor(S.me.campus, S.me.dept, S.me.ministry).filter(function(m){ return auto.indexOf(m)===-1; });
@@ -1583,7 +1584,7 @@ function kpiCardHtml(wk){
         '<button class="hpBox'+(on?' on':'')+'" data-kpipin="'+esc(metric)+'">'+(on?'★':'')+'</button>'+
         '<span class="hpLabel">'+esc(t(metric))+'</span></div>';
     });
-    return h+'<button class="btn" id="saveKpiPins" style="margin-top:12px">Done</button></div>';
+    return h+'<button class="btn" id="saveKpiPins" style="margin-top:12px">'+esc(t('Done'))+'</button></div>';
   }
 
   /* ---- what happened today / what is true of the whole week ----

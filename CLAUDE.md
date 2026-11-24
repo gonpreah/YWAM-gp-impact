@@ -55,7 +55,7 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   (personality, Library, papers, guest, YWAM GP & the board, report, first 30 days, prayer,
   support raising, reminders, Khmer review) · `04-ministry-strengths.js` · `05-admin-hr.js` ·
   `06-numbers-contract.js` · `07-health-leave.js` · `08-team-profile.js` · `09-finance.js`
-  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app). `finance.js` (public/,
+  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app); later ones (12-tasks … 18-library-plus) load before 11. `finance.js` (public/,
   shared like taxonomy.js) reads the reports; `vendor/pdfjs/` is pdf.js, loaded on demand. **One global scope**, exactly as when it was one inline
   script: any function may call any other, but code that RUNS while a file loads (not
   inside a function) may only use what that file or an earlier one defines. Add new code to
@@ -537,6 +537,42 @@ someone leaves. An earlier version had hand-editable team boxes; it read as mess
 removed — don't bring the editor back. `test-org-chart.mjs` (browser) and
 `test-structure.mjs` (server) cover it.
 
+## The structure whiteboard (teams/23-structure.js, Nov 2026, Andrew)
+"Every quarter we restructure everything … a whiteboard view … zoom in and out … a tree graph of the whole structure … a plus
+sign in each ministry and department … add people's names and who the leader is … not synced into our staff profile … edited
+in the leadership My Ministry, and it shows in Team → Structure … profile faces … click and drag … smooth on mobile and desktop."
+- **Where**: Campus Leadership's My Ministry row has a **Structure** tab (`struct` in every `LW_ROLES` tab list, `sbLeadHtml_` /
+  `bindSbLead_`): the quarter ahead by default, with this quarter beside it (`[data-sbq]`, `S.sb.year/q`); an admin also picks the
+  campus (`[data-sbcampus]`). **Team → Structure** shows the same quarter read only: the list (`orgChartHtml_` now takes the
+  quarter's `leads` and `extra`; a typed-in name is a `.orgPerson.extra` span, not a link) and **🗺️ See it as a tree**
+  (`#sbTeamOpen` → `S.sbTeam`, `sbTeamHtml_`, ← The list); **✏️ Edit Qn yyyy** (`#sbTeamEdit`, `sbCanEdit_`) opens the tab on that
+  quarter. The old admin **Arrange** mode is gone from Team (its code, `bindStructArrange_`, is left unused).
+- **The tree** (`sbModel_` → `sbTreeHtml_`, plain HTML laid out by CSS, connectors drawn with borders): the campus, then
+  Campus Leadership (`Campus Leadership|Campus Director`), a column per department with its **Director** spot
+  (`Campus Leadership|<dept>`) and its ministries under it — the leader(s) first with 👑, then the people, all as faces
+  (`sbFace_`, `avatarHtml`) — then 🎓 Students this quarter; read only, anyone not on the chart shows in "Not placed yet".
+- **Pan and zoom** (`bindSb_`, `S.sb = {x, y, k}`, a CSS transform on `#sbCanvas`, nothing re-rendered while moving): one finger
+  or the mouse moves it, two fingers pinch (every pointer is counted in a capture listener, so a pinch that starts on a face is
+  a pinch — the face drag stands down, `B.pinch`), the wheel zooms round the pointer (a trackpad pinch too), − / ＋ / ⤢ fit /
+  ⛶ full screen (`.sbWrap.full`, `body.sbFullOn` hides the bottom bar). It opens readable on a phone (`sbFit_(true)`: ≥45%, the
+  top of the tree), ⤢ shows it all.
+- **Editing** (Campus Leadership on their campus, admins anywhere — `structEditor_` on the server, `sbCanEdit_` on the page): drag
+  a face (from the chart or the **tray** under it — everyone, those not on the chart first, a search box) onto a box
+  (`[data-sbdrop]`: a ministry, a director spot, Campus Leadership, Students → asks the school, the tray → off the chart);
+  ＋ on a box (`[data-sbbox]`) opens a sheet: its people with **Make leader** / ✕, Add people (the people picker, key `sb`), and
+  **Someone not in the app yet** (a typed name, `x_…`); a tap on a face opens them: make / not the leader, Move to (any box, a
+  school, off), take off the chart, rename or remove a typed name. Each change saves at once (`sbChange_` → `sbSave_`, 450 ms,
+  `#sbSaved`). The first change makes the quarter its own (`sbOwn_`: everyone where they stand, the leaders as they are), so a
+  profile edited later moves nobody; "Start Qn again from everyone's profile" (`#sbReset`) clears it.
+- **Store**: the quarter's row in `structurePlans` gains `leads` ({"Dept|Ministry": [ids]}, null = the profiles') and `extra`
+  ([{id:'x_…', name}]), and a place may be `{dept:'_off'}` (off the chart). `saveStructurePlan(user, pin, campus, year, q,
+  students, place, leads, extra)` — Campus Leadership of that campus or an admin (was admins only); `cleanStructLeads_` (only
+  people here, ≤8 a ministry), `cleanStructExtra_` (≤80). A later quarter starts from it, leaders and names too (`planFor_`).
+  A snapshot (`saveStructure` / `structPeople_`) carries both; saving a plan for this quarter or a later one rebuilds an
+  existing snapshot. **No profile is ever written.**
+- tests/test-structure.mjs (server), tests/test-structure-board-ui.mjs (mouse and touch). Khmer: docs/khmer-needed.md §135.
+  sw.js SHELL v29.
+
 ## Outreach Teams — one record per team, not a weekly form
 Outreach Teams (Community Service) doesn't log week by week: a team comes for a stretch
 and its numbers are gathered once, when it leaves. So picking it on My Ministry shows a
@@ -651,6 +687,53 @@ quietest bucket named), Requests, Calendar, Bookings, Rooms.
   falling back to the room style (couple rooms green); a taken bed is filled solid with white
   text, a free one tinted with a coloured border, each with ♂ / ♀ / 👪; rooms carry a coloured
   style tag (`hospStyleTag_`).
+
+## SR Hospitality, cleaned up (Nov 2026, Andrew: "clean up some things and make it easy and clear to see")
+- **The Overview leads with what needs you** (`hospAttnHtml_`): the change cards (below), then `#hospAttn` "Needs you" —
+  teams cancelled with beds still booked, requests waiting for beds, bookings in the next 14 days with beds to pick
+  (each a row that goes where it's done) or "Nothing waiting" — then `#hospWeek` "The next 7 days" (arriving / leaving,
+  names and dates). The tiles and "How full we are" follow.
+- **A room can fit more than its beds** ("the apartment … a bunch of girls"): the room form's **How many people can sleep
+  here?** (`#hrFit`) adds extra spaces past the beds — beds `{label:'+1', spot:true}` (kept by `cleanHospRoom_`), dashed,
+  booked, counted and moved exactly like beds; lowering it takes spaces off, never real beds. The room list says
+  "4 beds + 2 extra · fits 6".
+- **The Beds tab** (was Calendar; `data-hosptab="cal"`) opens on **Free beds** (`hospFreeHtml_`, `#hospFree`, `S.hospCalMode`
+  'free' | 'board' | 'cal'): every room down the side, 14 nights across (‹ › a week, `S.hospFreeFrom`), each box that room's
+  free beds that night (`.hospFreeCell` f-all / f-some / f-none), the whole base on top (cap − held) and "Booked, no bed yet"
+  under it; a tap (`[data-hospfreeday]`) opens the bed board on that night. The **bed board** now reads: the date picker,
+  "Night of Wed 14 Oct" with "n in a bed · m beds free" (`.hospNightHead`), who arrives / leaves that morning
+  (`#hospComeGo`), free beds by kind of room (`#hospFreeBy`), "Only rooms with a free bed" (`#hospBoardOnlyFree`,
+  `S.hospBoardFree`) and each room's "3 of 4 free".
+- **A team's new dates move its booking** (api.js `hospTripMoved_`, from `syncTeamTrip_` — the portal, the team or staff —
+  and `saveTeamTrip` — the Teams Database): the booking's first night and leaving day shift by as much as the team's did,
+  and a named bed someone else holds on the new nights comes off it (`dropped`, to pick again). A team not booked yet is
+  noted too. Each is a line in `changes` on `hosp:<campus>` (`hospNote_`, 60 kept; a run of changes within 30 minutes is one
+  line, and changed back it goes) — shown on SR Hospitality's Overview (`#hospChanges`), on the Hospitality ministry's My
+  Ministry page (`#hospNews`, from the boot's `hospNews` for `canHosp_` staff, `mmTop`) and in the bell (`data-gohosp`), until
+  someone taps **Got it** (`hospChangeDone(user, pin, id | 'all')`, `bindHospNews_`).
+- **Someone who leaves leaves SR Hospitality** (`hospPersonLeft_` from hrArchive, hrArchiveMany, adminSetActive(false) and
+  adminDeleteStaff): their resident booking (staff / student / volunteer — never a team or guest), by `staffId` (staff beds
+  set by name now carry it) or by their name, ends today (or goes, if it starts today or later); in a family booking only
+  their bed comes off. Not by name for a sign-up never let in, or when someone still here shares the name. A change card
+  says which beds came free. The same moment `staffLeftCleanup_` clears their mentees' mentor and takes them off open GP
+  Tasks and shared lists.
+- tests/test-hospitality.mjs (server), tests/test-hospitality-page.mjs. Khmer: docs/khmer-needed.md §129.
+- **A school is a group, like a team** (Nov 2026, Andrew: "treating the schools as a team … the hospitality team also knows …
+  there is a DTS group that they need to book"): `schoolGroups_(campus)` — each DTS school with dates (`dtsDb`) and its
+  students accepted or here (m / f from the application, each with the day they arrive — `dts.arrive`, set on the student's
+  GPDTS record, `#dtsStuArrive` → `dtsStudentSave {arrive}`), and how many still applying. `hospRequests_` lists it
+  (`kind:'school'`, `schoolId`, key `sc:<id>`, from the earliest arrival to the morning after the school's last day,
+  `booked` = its booking's beds); Book beds makes a student booking with `schoolId` (one per school) and the students named.
+  Accepted after it was booked: the card says "n more students than beds booked" with **Add beds for the new students**
+  (`[data-hospschoolup]`), and Needs you lists it. Khmer §130.
+- **The weekly schedules know who is here, day by day** (`dutyPeople_`): groups in a set order with `kind` — staff, each team,
+  each school (`school_<id>`), students, volunteers, guests & speakers, names typed before — and `days` for a team or school
+  here part of the week; getDuty adds `here[name]` (the days someone is here when not all week — a team leaving Wednesday is
+  Sun–Tue) and `awayDays`. A new week copied from last week keeps only this week's names (`dutyKeepOnly_`, `removed`). The
+  editor (07-health-leave.js) leads with **Who is here this week** (`#schedWeekNote`: counts, who leaves / arrives midweek, who
+  came off the copy, who is on leave, names on a day they aren't here); those names are red in the schedule (duty.js
+  `o.flag`, `[data-dwarn]`); the picker won't offer someone for a day they aren't here (`.hospChip.nothere`) and folds names
+  typed before (`#schedExtrasBtn`). tests/test-duty.mjs, test-duty-page.mjs.
 
 ## The hamburger menu, by role
 `renderMenu` draws sections, and leaves out a section with nothing in it:
@@ -919,10 +1002,56 @@ school's home.
     on**: `GP_GOOGLE_REDIRECT=on` in Netlify (`googleRedirect_` → `portalAuthConfig.redirect` and the boot's
     `googleRedirect`), after adding `https://impact.gonpreah.org/teams.html` to the OAuth client's **Authorized
     redirect URIs** in Google Cloud — without that Google would show its error page.
+- **Getting back in without email** (Nov 2026, Uriah: "I can't see the full email in the account on my admin dashboard
+  … I don't want people getting logged out and stuck"). The app sends no email, so recovery goes through an admin:
+  - Admin → a person shows the whole email on its own wrapping line with Copy (`#admEmail`, `[data-admincopy]`,
+    `gpCopyText_`) and how they sign in (`#admSignIn`); Edit profile has an **Email** box (`#adm_email` →
+    `adminUpdateStaff {email}`) — the email Continue with Google finds a profile by.
+  - **Sign-in link** (`[data-adminsignlink]` → `adminSignInLink(user, pin, staffId)`, admins only; not for applicants
+    or archived people): `teams.html?signin=<48 hex>` to copy or share (`#admSignLinkUrl`, `S.adminSignLink`). Kept only
+    as a hash (`signInLink {hash, salt, exp, by, at}` on the staff record; `adminStaffOut_` sends just `{exp}`), good
+    for `SIGNIN_LINK_HOURS` (72), one use, a new one replaces the old. The page takes it out of the address before boot
+    (`signLinkTake_` / `signLinkUse_`, 07-health-leave.js) → `staffUseSignInLink(token)` (public): signs them in with a
+    device token, lifts the lockout, then the connect-Google step shows with **Not now** (`S.linkSignIn`,
+    `#gglStepLater`). `expired` / `pending` / anything else is said on the sign-in screen, which now ends with
+    "Can't get in? Message an admin…" (`#loginStuck`).
+  - **A PIN reset now works on a password account**: `credOk_` checks only the password when there is one, so
+    `adminResetPin` drops `secretHash` / `secretSalt` (the admin is replacing a forgotten password).
+  - tests/test-signin-link.mjs (server), tests/test-signin-link-ui.mjs. Khmer: docs/khmer-needed.md §119.
 - **Who isn't on Google yet** (Nov 2026, Andrew): Admin → Accounts has an "Everyone · n / Not on Google yet · n"
   chip row under the campus chips (`#adminGglRow`, `[data-adminggl]`, `S.adminGgl`): the active, unarchived accounts
   with no Google account connected (`adminStaffOut_` carries `google` — true once `google.sub` is set — and
   `signIn`, never the Google id), each row tagged 🔑 PIN only. tests/test-admin-select.mjs, test-google-signin.mjs.
+- **Making an account is Google and a name; the rest comes after the admin's yes** (Nov 2026, Andrew: "make it simple,
+  just … your Gmail and … your name. And then once … it's been approved by the admin, then it'll go over the steps …
+  what ministry are you in and what kind of campus staff are you and did you fill out your staff contract"):
+  - `registerHtml` (07-health-leave.js) is **Sign up with Google** (`#googleSignup` → `gglGo_('signup')`; a Google
+    account with no profile goes straight to the name, `#regGoogle` + `#r_name`, not the "do you already have one?"
+    choice) — or, with Google off or "No Google account?" (`#regPinWay`, `S.regPin`), name, email, username and PIN.
+    Nothing else is asked; an invite link's campus / department / ministry ride along unseen. Then a thank-you
+    (`regDoneHtml_`, `#regDone`, `S.regDone`).
+  - `staffRegister` marks every new account `setupTodo` and `awaiting` (and drops a campus that isn't one); `selfStaff_`
+    carries `setupTodo` on their own card only. Admin → Approvals shows the email and, until they answer, "They choose
+    their campus and ministry once you say yes".
+  - **Signed in at once, locked until approved** (Andrew, the same day: "it will log them into the app … you put in all
+    the information … but you still can't access the other parts of the app until the admin approves"):
+    `staffRegister`, `staffLoginGoogle` and `staffLogin` answer an `awaiting` account with a session (`awaitingOut_`); only
+    `getMyBoot` / `getTasksBoot` (`awaitingBoot_`: their card, the public roster for the mentor pick, nothing else),
+    `updateProfile` (no mentor push while waiting) take it, through `verifyAwaiting_` — every other handler still refuses
+    an inactive account. `adminSetActive(…, true)` deletes `awaiting`, so an account switched off later has no way in.
+    The page (`applyBoot` → `S.awaiting`): the steps, then the waiting page (`awaitingHtml_`, `#awaiting`: thank you,
+    their answers, `#awaitEdit` Change my answers, `#awaitCheck` Check again → a fresh boot, `#awaitOut`); no bar, menu,
+    bell, slide-downs or points. The tasks app says to open the main app.
+  - **Set up my profile** (`teams/22-setup.js`, `setupWanted_` / `setupHtml_` / `bindSetup_`, `#setup[data-sustep]`):
+    right after sign-up (and for any account with `setupTodo`), in place of the app (no bottom bar, header only the language) — a welcome, then
+    `SU_STEPS` one a screen with a bar and Back: campus (`[data-sucampus]`, a tap goes on), department + ministry + role
+    (`#su_dept`, `#su_ministry`, `#su_role`; Campus Leadership still waits for an admin), kind of staff
+    (`[data-sukind]`), home country (`#su_country`), mentor (`#su_mentor`, this campus first, "choose later"), and the
+    staff contract — "Have you signed it with HR?" (`[data-sucontract]`; Not yet → tell HR, who fill it out with you)
+    with the Child Protection Agreement and papers pointed to My contract. Nothing is saved until **Finish**: one
+    `updateProfile` with `setupDone` (which deletes `setupTodo`); while waiting, the waiting page; else "You're all set!" with Add a photo / Sign my
+    papers / Go to My Home (`[data-sudone]` → `afterLogin()`, a fresh boot on their campus). The tasks app says to
+    finish in the main app (`setupTaHtml_`). tests/test-signup-setup-ui.mjs. Khmer: docs/khmer-needed.md §123.
 - **Every new account waits for an admin** (Andrew: "admin will receive an approval whether they accept
   them or deny them"): `staffRegister` makes every sign-up pending (it used to be Campus Leadership only),
   pushes each admin at once (`pushNow_` 'signup' → `teams.html?view=approvals`), and Admin → Approvals has
@@ -974,7 +1103,7 @@ before changing a rule, and change it in the same commit.**
   card, own reports), leadership's old dashboard (incl. the money ahead and the DTS lecture-fees card) and The
   numbers. getFinance / QuickBooks' nightly sync still run. tests/test-finance-ui.mjs and test-qbo-ui.mjs were
   retired with the screens; test-finance.mjs / test-qbo.mjs (server) stay.
-- **Khmer**: the tab label is in PENDING_KM (§108); the finance tool's own text is English only so far.
+- **Khmer**: the tab label is in PENDING_KM (§136); the finance tool's own text is English only so far.
 - Tests: tests/test-fin2.mjs (server), tests/test-fin2-page.mjs (the page, real api.js).
 
 ## Finances: the office's three reports, and leadership's dashboard (Oct 2026) — no longer shown (see above)
@@ -1176,8 +1305,8 @@ volunteers, guests, speakers (names from `people` / `bedNames`, else the booking
 tests/test-whos-here-ui.mjs.
 
 - **Capacity** (`beds`, `capacity` in getWhosHere): SR Hospitality's beds booked tonight (every booking,
-  `max(count, bedIds)`) over its beds not marked out — "· 72% full" next to On campus now on Base and
-  My Home, and "46 of 64 beds filled" on Who's here. No rooms set up → nothing shown.
+  `max(count, bedIds)`) over its beds not marked out — "· 72% full" next to On campus now on Base (not My Home
+  since Nov 2026), and "46 of 64 beds filled" on Who's here. No rooms set up → nothing shown.
 - **My Home's card** has no big "Go to My Health" button: the My Health and Mentor rows carry a small ›
   (`.heroGo`) and open their pages; On campus now sits under the base's figures (`#goWhosHereHome`).
 ## The bottom bar (Oct 2026)
@@ -1190,7 +1319,33 @@ Team · Health · Library. Five tabs stay on one line down to 320px; where the f
 too long for a tab, `navLabel_` uses a short one kept as 'Tab: <English>' in km.js
 (My Ministry → ការបម្រើ), and test-khmer checks no label overflows.
 
+**On an iPad** (Nov 2026, Uriah: "more iPad friendly"; end of teams.css): a phone is unchanged. From 700px wide
+(an iPad held upright) the page is 760px wide and the five tabs sit together in the middle of the bar; from 900px
+(an iPad on its side, a computer) the bar is a **rail down the left edge** (`nav.bottom` turned to a column, body
+`padding-left` 96px, the open tab on a tint), the page up to 900px, the round ＋ lower — and the rail stays up while
+typing (`body.kbOpen` only hides the phone bar). The same `nav.bottom button[data-tab]`, so nothing else changed.
+tests/test-bottom-bar.mjs §3.
+
 ## My Home — the layout (reorganised Oct 2026)
+**Made simpler, Nov 2026 (Andrew: "I don't want it to be too much to see … like the widgets on an iPhone … if the
+leave form is already in there, why is it on twice?")** — each thing is on My Home once:
+- **The dark card** (arranged by each person since Nov 2026 — see "My Home's dashboard card, arranged like a phone's Home
+  Screen") is: the quick apps (the dock), then **four widgets in one row** (`heroWidgetsHtml_`,
+  `.heroWidgets`, `.heroW`): Goals (this week's done/written, `data-jump="sec-goals"`), Habits (today's,
+  `data-jump="sec-habits"`), Health (`#goMyHealth`, the weekly check-in score), Tasks (`#goGpTasks`, the Inbox's red
+  number, else the open count, quiet) — three when GP Tasks hasn't loaded; then this week's chores / cooking line,
+  the 📚 reading row, and the base at a glance with **On campus** as its fourth figure (`#goWhosHereHome` inside
+  `.homeBaseRow.four`; the figures are `[data-tobase]` buttons, the campus name `#dashToBase`).
+- **Gone from the card**: the goals' list (the Weekly Goals card is right below), WEEK n / DAY STREAK (the streak is
+  on the line above the card, `#gameHome`), the habits' best streak, the Mentor row (the Mentorship card below), the
+  personal days off + Request time off (the Leave page has them, and Leave is a quick app), the separate On campus row
+  and its "% full" (Who's here has it).
+- **About me** is only Personality and Strengths, plus 360 reviews while something waits on you (feedback to give, a
+  plan's review due). Tests, Support raising and the Library left as tiles — they are quick apps and in ☰ (Support
+  raising joined ☰'s first group for that, `support`).
+- tests/test-home-layout-ui.mjs holds it. Khmer §120.
+
+The October layout, for history (the parts above replace what they name):
 `homeHtml` in this order, each idea said once: the **large summary card** (kept large on
 purpose, with the background photo / colour option behind ⚙️ — it opens right under the
 greeting, above the card, with a Done button: goals and their list,
@@ -1325,6 +1480,14 @@ Cambodia time (`impTime_`). Name = first + last, else the Latin-letters name.
 - **The sheet never goes in the repo** — it holds people's phones, guardians and health. Tests use made-up rows.
   tests/test-portal-import.mjs (server), tests/test-portal-import-ui.mjs. Khmer: docs/khmer-needed.md §93.
 
+## Opening a file in the portal: a sheet, not a new tab (Nov 2026)
+A team couldn't open its letter of invitation. `openDataUrl_` (portal.html) used to open the file in a new tab once
+`portalGetDoc` had answered — no longer the tap that asked, so iPhone Safari, a Home Screen app and Messenger's browser
+quietly blocked it. Now every file (documents, the e-visa supporting documents, signed PDFs, the gallery) comes up in a
+sheet (`#fileSheet`): an image preview, **Open** and **⬇ Download** as real links to a blob URL (`#fileOpen`,
+`#fileDownload` with the name), **📤 Share or save to Files** where the phone can share files (`#fileShare`), and what to do
+when it still won't open. tests/test-portal-page.mjs. Khmer §126.
+
 ## Documents: every file at once (portal staff, Oct 2026)
 On a record's Documents tab, a kind with more than one file (passports above all) has **👁 View all n**
 — one full-screen page (`P.docGallery`, `#docGallery`, `docGalleryHtml_`) with every picture shown and
@@ -1403,7 +1566,12 @@ names, a `span` row (Pray – Announcements) has one `cells['row|all']`, `off` d
   in `test-portal-page.mjs`.
 
 ## Admin — a home menu, one page per tool, one page per person
-`adminHtml` routes on `S.adminSub`: `home` (a card per tool, `ADMIN_SUBS`, with counts on
+**In sections** (Nov 2026, Andrew: "a lot going on there … categorizing them into sections … easy to navigate"): the home
+(`adminHomeHtml_`) is a "waiting for you" row first (`#adminDue`: approvals and leave waiting, only when there are any,
+else "Nothing is waiting on you."), then `ADMIN_SECS` — People · Students & applications · Ministries & numbers ·
+Messages & settings (`.adminSecHead`, `[data-adminsec]`) — each tool a row with one short line (`ADMIN_SUBS[].sec`), the
+backup line last. Tool ids and `[data-adminsub]` are unchanged.
+`adminHtml` routes on `S.adminSub`: `home` (a row per tool, `ADMIN_SUBS`, with counts on
 Accounts, Approvals and Mentors), `accounts`, `approvals`, `mentors` (`adminMentorsHtml_`:
 one campus at a time via `data-adminmentorcampus` chips opening on the admin's own, one card
 per mentor with their people, `Waiting` until accepted, then everyone with no mentor —
@@ -1533,12 +1701,28 @@ forms, documents and references follow.
   "Signing up with Google" when `P.gtoken`), `signIn_`, `savePassword_` (the dashboard's contact
   card shows how you sign in and Change password). There is no email sending, so a forgotten
   password is reset by a portal admin on Accounts.
+- **Install this app, in Profile & settings** (Nov 2026, Uriah). The bar under the header
+  (`gpInstallPrompt`, rollup.js) goes for good once ✕'d (`gp-install-dismissed`); the card
+  under My contract (`gpInstallCardHtml_`, 08-team-profile.js) stays until the app is
+  installed and isn't shown when it's opened from the Home Screen (`gpStandalone_`). Where
+  the browser offers its own prompt (`beforeinstallprompt`, kept as `_gpInstallEvt`) the
+  button opens it, and an accepted install (or `appinstalled`) turns the card into
+  "Installed — open YWAM GP from your Home Screen". Otherwise it unfolds the steps: iPhone /
+  iPad Share → Add to Home Screen → Add; elsewhere the browser's ⋮ menu → Install app.
+  GP Tasks keeps its own (12-tasks.js). tests/test-install-card-ui.mjs.
 - **The portal installs as an app**: `portal-manifest.json` (its own `id`/`start_url`), the same
   `sw.js` (portal.html, its manifest and outreach-guide.js are in the shell, `gp-shell-v2`),
   `installCardHtml_` on the dashboard (the browser's install prompt where there is one, the
   Share → Add to Home Screen hint on iPhone, dismissable, gone once installed). The portal is
   meant to be the first door into the community — an account a student keeps through their
   time here; staff / volunteer applications from inside it (landing in HR) are the next step.
+  **Its own icon** (Nov 2026, Andrew: "just like the GP Tasks and calendar, the same for the GP portal, and the icon
+  fits it"): an open door on the portal's black with the YWAM GP spark, in the GP Tasks icon's flat style —
+  `portal-180.png` (apple-touch-icon), `portal-512.png`, `portal-maskable-512.png` (art shrunk into the safe circle),
+  drawn by `scripts/portal-icon.py` (Pillow; `python3 scripts/portal-icon.py public`). The staff side shows the install
+  card too (`installCardHtml_(true)` at the top of `crmHtml_`, worded for staff), and the YWAM GP app's ☰ → Applications
+  has **The Portal on your phone** (`portalapp` → `gpPortalAppOpen_`, end of 12-tasks.js: the link, the steps, Copy /
+  Open the Portal) for anyone with portal access. tests/test-gp-tasks-week-ui.mjs.
 - **The portal as a tool (Oct 2026)**: an applicant's dashboard has four tabs on top
   (`applicantNavHtml_`, `P.aview`): 📋 Application (`meHtml_`), 👥 Meet our team
   (`portalMeetTeam` — the campus's campus-staff **and YAP as one list, "YWAM <Campus> Campus
@@ -1699,6 +1883,15 @@ forms, documents and references follow.
   its documents opening for that record's campus (`[data-ascampus]`). On other applicants, the Visa
   ticks under Documents have "See their e-visa guide as they see it" (`#seeVisa`, `P.seeVisa`) showing
   `visaCardHtml_` as it is for them at their stage.
+- **☰ in the top-right corner, Sign out inside it (Nov 2026, Andrew: "move that hamburger menu … in the top right corner like in
+  the impact app … put the sign out button in the menu … make navigating through the portal easy")**: signed in, the header is
+  the language and ☰ (`#navMenu`, `.hbtn.icon.menuBtn`) for staff, admins and applicants alike; the old bar under the header
+  (`#staffNav`) is gone — each page's own heading says where you are. The drawer (`menuDrawerHtml_`, still `#staffMenu`, drawn
+  for anyone signed in) holds the staff groups (`staffMenuItems_`) or an applicant's tabs (`[data-amenu]`; a student has none),
+  then **Sign out** (`#outBtn`) last, in `.menuFoot`. Signing out closes it. The applicant tab row is a real grid now (a later
+  `.staffNav` rule had made it wrap 5 + 1), three to a row on a phone; the staff side's kinds of application (`.whatTabs`) four
+  to a row on a phone. **🔥 GPDTS on My Ministry** (`#toGpdts`) shows only on the DTS tab (`P.what==='dts'`).
+  The older notes below describe the bar as it was.
 - **Staff side bar and menu (Oct 2026)**: above the bar, a small text link "← Go back to GP Home"
   (`#toGpApp`, `.gpHomeLink` — Uriah kept tapping the old ‹ button by mistake); the bar is one ☰ button
   that says where you are and nothing else — the three lines and the page's name (`staffNavHtml_`,
@@ -1905,6 +2098,16 @@ forms, documents and references follow.
   staff account (a record whose `staffId` is real staff loses only the record). The panel's
   "Delete this account and application" asks for the name to be typed back. Applicant
   accounts are not in Admin → Accounts, so this is their one delete.
+- **A team's next steps (Nov 2026, Andrew: "fix the flow of the portal … for teams in specific. It's a bit confusing")**: the
+  timeline marks one step "current" — often one that waits on us (the 1st call) — so leaders couldn't tell passports, names and
+  photos and flights could go in already, and the places to do them were far down the page. Once applied, a team's top card has
+  **Your next steps** (`teamTodo_` / `teamTodoHtml_`, `#teamTodo`, `[data-todo]`): passports and flights with their own ⬆ Upload
+  (the Documents card's `data-docup` input), names and photos (`[data-teamgo="members"]` opens Your team members), the e-visas
+  once open (`#visaHowGo` lives here now), getting ready to travel (`[data-teamgo="legal"]` / `"guide"`), and after arrival the
+  team's numbers (`data-aview="metrics"`; "Keep … up to date" once some are in); then **Waiting on us** (`[data-wait]`: the 1st
+  call, the letter once their documents are in, the 2nd call). A step in the list carries **Do it now ↑** in the timeline
+  (`.stepNow`, `data-teamgo="todo:<step>"`). A team's cards after applying go members / documents / legal first, then the guide
+  and the form (`restH+guideH+formH` in `meHtml_`). Khmer: docs/khmer-needed.md §134.
 - **A team has its own stages and journey.**
   - **Stages** (`TEAM_STAGES`): new → applied → call1 (1st call) → docs (awaiting documents)
     → call2 (2nd call, cultural orientation) → practical → arrived. There is no interview.
@@ -1918,12 +2121,33 @@ forms, documents and references follow.
   - Each step carries `who` ('you' or 'us') and either `auto` (it ticks itself when its
     document is on the record) or `tick` (a staff checkbox through
     `portalTeamStep(user, pin, candId, step, done)`, for call1 / call2 / arrived).
+  - **Staff can tick a document step by hand** (Nov 2026, Andrew: a team couldn't open its letter of invitation —
+    "a manual thing where our staff … can just manually mark … flight, letter of invitation"): `TEAM_MARKS` (passports,
+    photo, flights, invitation, evisa) joined `TEAM_TICKS`, so `portalTeamStep` sets `c.portal.team[step]` (logged "… —
+    marked by staff"). A mark counts exactly as the upload would (`teamMarked_` in `teamDocsIn_`, `teamVisaDone_`,
+    `visaOpen_`, `teamFlightsIn_`): the step, the stage moving on, the Teams Database's pending, the e-visa guide opening.
+    Steps carry `mark`, `marked` and `byDoc`; the staff record shows a tick on a document step while nothing has ticked
+    it or once staff did ("ticked by staff"), and the plain ✓ once a file is in. Rooms stays SR Hospitality's.
+  - **Show them the e-visa steps now** (Nov 2026, Andrew: "some teams … need to apply as soon as possible but don't have all
+    the information yet … a little checkbox that makes the steps for the e-visa process appear"): a staff tick under Team
+    steps (`visaEarlyHtml_`, `#visaEarly`, `[data-visaflag="early"]`; for an individual it sits in the Visa part) →
+    `portalSetVisaFlags {early}` (logged; `no_visa` for someone from Cambodia) → `visa.early`. `visaOpen_` is then true:
+    the guide, the supporting documents and the e-visa upload (`teamDocsIn_` on the page) open before the letter and the
+    documents are in; the steps and the stage stay where they are. Without a letter yet the guide says it will come
+    (`#visaNoLetter`). Hidden once the letter is in (the steps are open anyway). Khmer §127.
+  - **A button to them at the top** (Nov 2026, Andrew: the Norway team couldn't find them, folded under step 8): while a
+    team's e-visa steps are open and its e-visas aren't all in (`visaGoWanted_`), the hero's line says so — "Your letter of
+    invitation is in…", or, opened early with no letter yet (`letterIn_`), "You can start your e-visas now … your letter of
+    invitation will follow" — with **🛂 How to apply for your e-visa online →** (`#visaHowGo`), which opens the fold and
+    scrolls to it. Khmer §128.
   - **The stage follows the steps forward on its own** (`teamAutoStage_`, run after a tick
     and after every upload): call1 done → docs; passports + photo + flights in and the
     e-visas approved → call2; call2 done → practical. It never moves back; unticking Arrived
     returns the team to practical. Every move is logged.
   - On the team's side, the visa card and the letter and e-visa uploads stay hidden until
-    passports, photo and flights are in. Portal staff get `teamStages` for the stage picker
+    passports, photo and flights are in — or until the e-visa steps are open (`app.visaOpen`: the letter
+    uploaded, or staff opened them early), so a team still missing a photo finds the letter under Documents
+    (Nov 2026, the Rogaland team). Portal staff get `teamStages` for the stage picker
     and for the Teams tab's chips and tiles. The GP app's HR page uses `TEAM_CAND_STAGES`
     for a team.
 - **A team application is a team in the Teams Database** (`syncTeamTrip_`, linked by
@@ -2217,7 +2441,250 @@ leading at YWAM GP (culture, teams, hard conversations, vision, systems, executi
   phone's only (localStorage). To add a book, add an object to `GP_LIBRARY.books`;
   tests/test-library.mjs checks the shape.
 
-## Looking around without an account (teams.html guest mode, Oct 2026)
+## The Library, read together (teams/18-library-plus.js, Nov 2026, Uriah: "improvements that will motivate our team to read")
+All of it rides on the boot's `lib` (`libOut_`; `libClub` is in BOOT_KEYS) — no extra call on open. Guests and students get
+none of it (`libOn_()`).
+- **Book of the month** (Campus Leadership or an admin, on a book's page: `#libMonthSet` / `#libMonthClear` →
+  `libSetMonth(bookId, title, note)`; blob `libClub.month[campus]` = {ym, bookId, title, note, by}; a new month clears it):
+  the Library leads with it (`libMonthHtml_`, `#libMonth`, "n of N at {campus} have read it" — a count, no names), My Home's
+  Reading card names it, and the campus's phones hear of it (`libMonthNew`).
+- **Reading plans** (`GP_LIBRARY.plans`: new-staff, pre-marriage, marriage, new-leader, hearing-god, habits; `end:'couple'`
+  ends in the couple check-up): a row on the home (`#libPlans`), a page per plan (`S.libPlan`, the next book marked), Start /
+  Stop (`libSaveMine {plan:{id,on}}`; on the phone too, `gp-lib-plans`). **A mentor (or Campus Leadership) gives one**
+  from the mentee's page (`libMenteeHtml_`, `#libMentee`, `libGivePlan`; pushed `libPlan`); a given plan has no Stop.
+  The mentor's card shows books this year, the goal and each plan's progress (`getMenteeLogs.library`) — never the notes.
+- **Finishing a book** (`libFinish_` from the reader's Done): confetti and a card on the book's page (`libDoneCardHtml_`,
+  `#libDone`) — any new badge, "What is one thing you will do?" (`#libTakeText`, ≤400, kept as `lib.notes[bookId]`, shown
+  after as "My one thing"; a tick puts it on this week's goals), once only "Show the books I finish to my campus?", and
+  what to read next (`libSuggest_`: the plan's next book, then shared topics).
+- **Read together**: the campus feed (`#libFeed`, the last 60 days, only people who said yes — `lib.share`, off until
+  asked; the tick sits under the feed), Read the most (`#libTop`, counts only), and **Recommend to a teammate**
+  (`#libRecOpen`, the people picker, a note; `libRecommend`, five a day, pushed `libRec`; shown in their Library
+  `#libRecs` and My Home's card until cleared, `libRecDone`).
+- **My reading** (`libMineHtml_`, `#libMine`, below Start here so covers stay on the first screen): books this year, a
+  goal for the year (6 / 12 / 24 / 52, `lib.goal`), weeks in a row with a book finished (`libWeekStreak_`), badges
+  (`libBadges_`: first book, 5 / 10 / 25 / all, a shelf finished, a plan finished).
+- **Finding a book**: a search box (`#libFind`, title / author / topic, results in `#libFindOut`, typing kept) and topic
+  chips (`GP_LIBRARY.tags`, every book has `tags`; `S.libShelf='tag:<id>'`); a book's page lists its topics.
+- **My Home** (`libHomeCardHtml_`, `#libHome`, above About me): carry on with the book you were in (`gp-lib-last`), this
+  month's book, a recommendation waiting. `teams.html?view=library` opens the Library.
+- **The weekly nudge** (Profile → Reminders: `#remRead`, `#remReadDay`; `push.reading`, `push.readDay`, Saturday by
+  default): on that day the daily reminder adds the month's book if unread (`libMonth`), else a ten-minute read (`libRead`).
+- New Library sections use `.libHead2` / `.libScroll`, never `.libSecHead` / `.libRow` — test-library-ui counts those as
+  shelves. tests/test-library-club.mjs (server), tests/test-library-club-ui.mjs. Khmer: docs/khmer-needed.md §109.
+
+## The Library: highlights, notes and talking about them (end of teams/18-library-plus.js, Nov 2026, Andrew)
+"Like the Bible app … highlight things you like … write a note … private, or public for everyone in our base … comment on it,
+like it … ask for prayer — private, public, or just to your mentor."
+- **Sentences, not whole paragraphs** (Nov 2026, Andrew: "highlight specific sentences … and then from there you can put a
+  note on that"): `lnSplit_` cuts each paragraph once into `span.lnS[data-lns=k]` (after . ! ? ។ ៕ and any closing quote,
+  before a space; a sentence crossing bold or italics is several spans with one k). A tap picks a sentence; more taps in
+  the paragraph stretch the pick over the sentences between (a tap on an end lets it go); a tap on a sentence I marked
+  picks what I marked (`lnSelect_`). The pick is underlined (`.lnSelS`), a colour paints just its spans (`.lnHlS`) and
+  then lets the pick go. A row carries `s` / `e` (the sentences; `libNoteSave` matches on them, -1 or absent = the whole
+  paragraph, as rows made before; `lnOut_` sends them), so one paragraph can hold several highlights and notes of mine.
+  `lnRange_`, `lnSame_`, `lnSpans_`; tests in test-lib-notes(-ui).mjs. Khmer §122.
+- **In the reader** every paragraph can be tapped (`lnDecorate_` numbers `.libReaderBody` p / li in page order, outside
+  `.fightOv`: `data-lnp`; a row's place is bookId + step + p + the language read): a bar comes up (`#lnBar`) with four
+  colours (`LN_COLORS`), 📝 Note (`#lnNoteBtn`) and 💬 n when others wrote there (`#lnParaBtn`). My highlights are drawn in
+  their colour (`.lnHl-<colour>`, rgba, both themes); my note shows 📝, others' 💬 n. The bar and the sheet are drawn into
+  `#lnRoot` (outside #main) by `lnDraw_` without a render, so the page never turns and typing is kept (`S.ln.draft`, `S.ln.cmt`).
+- **The note** (`#lnSheet`, mode edit): the words (≤1000), who sees it — 🔒 Only me · 🤝 My mentor (only with an approved
+  mentor) · 👥 Everyone at the campus — and 🙏 Ask for prayer (not for Only me). A conversation (mode thread): ❤️, comments
+  (≤500), 🙏 I prayed; my own note shows the counts, not buttons. The book's page lists them (`lnBookHtml_`, `#lnBook`: the
+  campus's, then Mine, each with "Read it in the book"); the Library's home has **What encouraged us** (`lnFeedHtml_`,
+  `#lnFeed`, the boot's `lib.notesFeed`: the newest 8 shared with me in 60 days, short). One `libNotes` call per book opened.
+- **Server** (api.js "highlights, notes"): blob `libHl` (in BOOT_KEYS) = [{id, staffId, campus, bookId, title, lang, step, p,
+  quote, color, note, vis, prayerId, likes, comments:[{id, staffId, text, at}], at, edited}], one row per person per
+  paragraph. `libNotes(bookId)`, `libNoteSave(rec)` (no colour and no words → the row goes; a shared row needs words;
+  `no_mentor`; back to private drops its likes and comments), `libNoteDelete` (owner, or an admin for a campus note),
+  `libNoteLike`, `libNoteComment` (push `libComment` to the owner; 60 a day), `libNoteUncomment` (writer, note owner, or
+  admin), `libNotePray`. **Who sees a row** (`lnCanSee_`): its owner; vis campus → active staff on its campus; vis mentor
+  → the owner's approved mentor (push `libMentorNote` / `libMentorPray`). Never applicants, students, guests or the board;
+  nothing of it on the roster, a profile or the week's board.
+- **A prayer request is a real one**: asking for prayer writes a `prayers` row (scope campus or mentor, `lib: {bookId,
+  title, noteId}`), so it is on ☰ → Prayer too ("📚 From “title”", `[data-prlib]` opens the note) and "I prayed" is one
+  count in both places; taking prayer off, going private or deleting the note takes the request down.
+- `?view=library&book=<id>&note=<id>` (the pushes' link) opens the book with that note's conversation (`S.ln.open`).
+- tests/test-lib-notes.mjs (server), tests/test-lib-notes-ui.mjs. Khmer: docs/khmer-needed.md §114.
+
+## The look-through of Nov 2026 (Uriah: "look through the app to see ways you can improve the experience and debug anything")
+Every screen was opened at 320px, in English and Khmer, light and dark, looking for script errors, anything wider than
+the phone, and English left in Khmer. What it found, and the rules that came out of it (tests/test-polish-ui.mjs):
+- **Words written straight into the markup never reach Khmer.** Profile & settings and Create my profile had ~45 labels,
+  buttons and placeholders as plain English (`<label class="f">Full name</label>`), though many were in the dictionary.
+  All go through `t()` now. `showMsg(text)` passes its text through `t()` itself, so a pop-up written in English shows in
+  Khmer when the dictionary has it (its parameter was called `t`, which hid the translator inside it). Khmer: §110.
+- **A date box has its own minimum width**: two side by side ran off a 320px phone (`.dateRow input { min-width:0 }`,
+  stacked under 360px). Learn Khmer's three areas scroll in their own row instead of widening the page.
+- **Under 360px the header is one row** (smaller logo, gaps and buttons); the ☰ used to drop to a second row.
+- **On a dark card use the on-dark tokens**: the holiday names on the leave page's allowance card were `--ink` on
+  near-black (`.allowCard .holidayNote`). test-theme had no holidays in its fixture, so it never saw them.
+- **A label is tied to its field** (`gpLabelFix_` at the top of `bind()`): `label.f` / `label.fieldLabel` get `for` their
+  next box, so tapping the label focuses it and a screen reader reads a name. The leave tick is `role="checkbox"`.
+- **Adding Khmer by script: write to the `var PENDING_KM = {…};` line, by name.** In km.js the `};` just before the
+  "Reviewed last" comment closes REVIEWED_KM, not PENDING_KM — a script that appended there put ~165 unread drafts in
+  the reviewed dictionary (caught before it merged; REVIEWED_KM must stay exactly what a native speaker has read).
+- **Every test file must be in run-all.mjs's SERVER or BROWSER list.** Eight were in neither, so CI never ran them; the
+  runner's pre-flight now fails when a `tests/test-*.mjs` is in neither list.
+
+## Search, and the app's own "are you sure?" (teams/19-ux.js, Nov 2026, Uriah: "build 1, 2 and 5")
+- **No Today card on My Home** (Nov 2026, Andrew: "let's get rid of that"): the ☀️ Today list that sat above the
+  summary card was taken out; the bell and each page's own cards say what is waiting.
+- **🔍 Search** (`#findBtn` in the header, first; `gpFindOpen_` → `#findRoot`, a full-screen layer drawn by
+  `gpFindDraw_` without a render, so the box keeps its focus): pages, people, ministries, books. **Pages are read off
+  the bottom bar and the ☰ menu themselves** (`gpFindPages_` renders the menu, reads its items, and opens one by
+  clicking it) — so search can never offer a page the person's role doesn't have; a few deeper pages are added by hand
+  (My contract, Mentorship, Goals & Tasks, Support raising, Who's here). `FIND_WORDS` gives each page other words
+  ("holiday" → Leave Request). People are the roster (→ `staffProfile`, Team); ministries are `mmOptions_()` (only
+  yours, or the campus's for an admin); books join once library.js has loaded (it starts loading when search opens).
+  Enter opens the first result, Esc closes. Not for guests, students or the board.
+- **gpAsk_(msg) / gpAskText_(msg, default) replace confirm() and prompt()** — 65 places. The handlers are written
+  around a box that stops the page (`if(!confirm(…)) return; …`), and a sheet can't stop the page, so: the first
+  call opens the sheet (`#askRoot`, `#askMsg`, `#askYes`, `#askNo`, `#askBox`) and answers no; Yes sends the same
+  click / change / key to the same element again with the answer remembered (`_gpAsk.passed`), and the handler runs
+  again from the top and carries on. **So anything a handler does before its question must be safe to do twice.**
+  Outside a tap (a server answer coming back — no `window.event`) the browser's own box is still used; so it is under
+  a test browser unless `localStorage['gp-ask-test']` is set, because every older test answers those boxes already.
+  Three "copy this link" prompts (the clipboard's fallback) are left as they were. Never write a new `confirm(`.
+- **The slide-down reminder** (Nov 2026, Andrew: "a small notification slides down from the top like on a smartphone …
+  swipe up and it's just in your notification bell … tap it and you can finish that one thing"; `gpBanner*`, end of
+  19-ux.js, `#gpBanner`, `#gpBanMsg`, `#gpBanX`): the bell's own items (`visibleNotifItems_`, not `bellOnly`), one at a
+  time, newest first, each once a day (`gp-banner-seen` = {key: date}, today's only), the first ~4 s after the app is up
+  and then at most one a minute; it stays 9 s, or goes with ✕ or a swipe up — and stays in the bell (nothing is
+  cleared). A tap opens the bell and, when the item has exactly one action (Answer it, Enter them, Set them, Open),
+  presses that button — so it does just what the bell does; with two (Approve / Deny) or none, the bell stays open on
+  it. Not for guests, students, the board, a preview, the GP Tasks app, while the kept copy is up or offline, and not
+  under a test browser unless `gp-banner-test` is set (`S.bannerFirstMs` / `S.bannerGapMs` / `S.bannerShowMs`). The
+  bell gained **"Don't forget to set your three goals for this week"** (Set them → My Home), dated Monday, while this
+  week's goals are empty. `touch-action:none` on the banner is on purpose (it is a floating layer, not the page).
+- **Undo** (`gpUndo_(text, commit, undo)`, `#undoRoot`, `#undoBtn`): a deleted GP task goes at once with five seconds
+  to put it back; the delete is sent when the time is up, when the app is left, or when another starts. Under a test
+  browser without the flag it is sent at once. Only GP Tasks uses it so far.
+- tests/test-ux-ui.mjs. Khmer: docs/khmer-needed.md §111. sw.js SHELL v24.
+
+## My Home's dashboard card, arranged like a phone's Home Screen (end of teams/19-ux.js, Nov 2026, Andrew)
+"Small little app icons in the dashboard … customise it like a hotbar", then: "make the little edit button smaller in the
+corner … when you click and hold down an app, the whole dashboard would wiggle a little bit … click, drag and move things
+around … a little plus sign … add in new things … certain things we just want there by default, so you can move them around
+but you can't delete them."
+- **Three groups, each in the person's own order** (`dashLayout_`, drawn by `dashBodyHtml_` into the card from
+  `miniDashboardHtml`): the quick apps (`#qaBar`, `.qaItem[data-qa]`, `[data-qago]`; what can go there is the person's own ☰
+  menu and search, `qaCatalog_` = `gpFindPages_()` minus bottom-bar tabs and sign-out items — never a page their role doesn't
+  have; short names `QA_SHORT`), the widgets (`#dashWidgets`, `.dashItem[data-dashw]` around a `.heroW`; `dashWidget_`), and
+  the rows (`.dashRow[data-dashrow]`: `sched` this week's chores / cooking, `base` the base at a glance with On campus as its
+  fourth figure; `reading` only when added — `DASH_ROW_EXTRA`, ✕ to take it off; layouts saved before `v:2` lose it).
+- **Blocks, any way round** (Nov 2026, Andrew: "drag … the morning chores … to the very top … mix and match"): the card is
+  `#dashBlocks` > `.dashBlock[data-dashblock]` in the person's `order` (`apps`, `widgets`, `row:<id>`). Editing, a row moves
+  by itself and the apps / widgets by their grip (`.dashGrip`, `dashDrag_`'s `startOk`); an app or widget still moves
+  within its own group. Saved as `order` (≤10, `/^(apps|widgets|row:[a-z]{2,20})$/`) and `v: 2`.
+- **What came with the card stays**: the four quick apps (`DASH_LOCKED_APPS` = `QA_DEFAULT`: GP Calendar/Tasks, Library,
+  Learn Khmer, Leave — Prayer left the default in Nov 2026, Andrew; ＋ adds it), the four widgets (`DASH_W_LOCKED`: Goals, Habits, Health, Tasks) and every row can be moved,
+  never taken off — no ✕, and put back if a saved layout lacks them. What the person adds has ✕: apps from their menu, and
+  widgets from `DASH_W_EXTRA` — Days off (personal days left → Leave), Mentor (1-on-1s held this month of
+  `OO_PER_MONTH` → Mentorship), Streak (days in a row → the week's board), Books (books read against their year's goal →
+  the Library), Year goals (average % → Goals & Tasks), each opening through `data-dashgo` (`dashGo_`). Up to `QA_MAX` (10)
+  apps and `DASH_W_MAX` (8) widgets; the grid is four across and wraps.
+- **Editing**: hold anything on the card (`DASH_HOLD_MS` 450) or tap the small ✎ in its top corner (`#qaEditBtn`,
+  `.dashPencil`) → `S.qaEdit`: the card gets `.dashEditing` and everything on it wiggles (`dashWiggle`, rows a gentler
+  `dashWiggleRow`, every other one out of step; off under reduced motion); a bar on top has ＋ (`#qaAdd` → `#qaAddSheet`:
+  Widgets, then Apps, `[data-qapick="w:id" | "a:id"]`) and Done (`#qaDone`). Drag within a group to move (`dashDrag_`:
+  pointer events on the window, since moving the node can drop its pointer capture; the card is `touch-action:none` only
+  while editing). While editing, a tap on the card's things does nothing, and the tap that ends a hold never opens what was
+  held (`dashSwallow_`, a capturing click listener on the document).
+- **Saved on the staff record** as `dashLayout` `{apps, widgets, rows}` by `saveDashLayout(user, pin, layout)`
+  (well-formed ids once each, 10 / 8 / 6 at most; null = the default; the apps also as `quickApps`, which the older
+  `saveQuickApps` still writes) a moment after each change (`dashSoon_`) and at once on Done; the boot's own staff card
+  carries both, never the roster.
+- tests/test-quick-apps-ui.mjs (Playwright needs `{force:true}` to click something that is wiggling). Khmer:
+  docs/khmer-needed.md §117, §121.
+
+## The week's board (teams/20-game.js, Nov 2026, Uriah: "gamify the app … a daily driver rather than a weekly check-in thing")
+Borrowed from the GonPreah public app's leaderboard. **Nothing new is stored**: `gameBoard_(s, staff, campus)` (api.js
+"The week's board") works out, from what is already saved, each active staff member's **points for the week** (Monday
+to Sunday, Cambodia) and **day streak**, and the boot carries it as `game` (`lastSeen` and `gpTasks` joined BOOT_KEYS) —
+no extra call on open. `getGame(user, pin, campus)` reads the other campus on demand.
+- **Points** (`GAME_PTS`, sent to the page so the two can't drift; **balanced Nov 2026**, Andrew: "a book is 50 and a
+  habit 2 … make it balanced … a book a little higher than the rest"): a day the app was opened 5; a habit ticked 3 (15 a
+  day at most); weekly goals 15 for setting them + up to 25 as their average moves; a GP Task done 5 (40); a day
+  ministry numbers were entered 10 (20; never `tool:` rows); **a book finished 30 (90)** — the biggest single thing
+  (it was 25, then 50, then 30 for Andrew's balance, 50 for the rollout, and 30 again — Andrew, Nov 2026: "Let's change
+  the points for the books"); a 1-on-1 held 20 (both people); a holiday catch 5 (3 a day, below); Santa caught 5 (3 a
+  day, below).
+- **Streak bonus** (`streakMin` 3, `streakBonus` 0.2): on a day streak of 3 or more, +20% of the week's points
+  (`parts.streak`, rounded); the streak breaks → the bonus goes, back to the plain points. My Home's line says
+  "+20% streak bonus" (`#gameBonus`).
+- **The holiday catch** (Andrew: "a snowflake or a candy cane falls … tap it and get 5 points … not so often"): in the
+  season (`holidaySeason_`: 15 Nov – 6 Jan, Cambodia) the board carries `holiday: {left}`; the page (`holSchedule_` /
+  `holDrop_` / `holCatch_`, end of 20-game.js) drops a ❄️ or a drawn candy cane (`#holDrop`, `.holDrop`) across the
+  screen 1½–4 minutes in, then every 4–10 minutes, never once today's are caught. A tap → `catchHoliday(user, pin)`:
+  staff only, in season, `holidayDayCap` (3) a day, not two within 30 s (`HOLIDAY_GAP_MS`); blob `holidayCatch` =
+  {catches: {staffId: {date: n}}, last: {staffId: ms}} (in BOOT_KEYS, 60 days kept); answers with the board, and
+  My Home's line is redrawn without a render (`holRefresh_`). The page can't add points: the server holds the count.
+  Not under a test browser unless `gp-hol-test` is set (`S.holMs` / `S.holFallMs` set the timing).
+  The page can't claim a point. **The weekly health check-in gives none, on purpose** — its rows are anonymous and a
+  point would say who answered; the page says so. Don't add it.
+- **Santa** (Nov 2026, Uriah: "a little Santa Claus that flies around the screen every time you open the app … click on
+  him, you get … points"; then "make him fly pretty regularly"; end of 20-game.js, `santa*`): in the holiday season (the
+  board's `santa: {left}`) Santa and two reindeer fly across the screen (`#santaFly`, `.santaFly`, either way, `.ltr`)
+  ~3.5 s after the app opens, then every 3–6 minutes while it stays open (`SANTA_GAP_MS`, caught or missed), until
+  today's are caught; back to the front after 10 minutes away starts over with the quick first flight. A tap →
+  `catchSanta(user, pin)`: staff only, in season, **5 points, `santaDayCap` (3) a day** — 15 at most, like the snowflakes (it was 5 a day;
+  Andrew lowered it, Nov 2026) —
+  not two within a minute (server `SANTA_GAP_MS`); kept in `holidayCatch` as `santa` / `santaLast`; `parts.santa`. Waits
+  while the bell, a snowflake or the points sheet is up. Not under a test browser unless `gp-santa-test` is set
+  (`S.santaMs` / `S.santaGapMs` / `S.santaFlyMs`).
+- **The points sheet when the app opens — turned off** (Nov 2026, Andrew: "stop the pop up about the leaderboard for points";
+  `GAME_INTRO_ON=false` in 20-game.js, the code kept — set it to true to bring it back). As it was (the rollout, `gameIntroMaybe_`, `#gameIntro`; Uriah: "show the points when
+  they open the app … that kind of explains what's what"): on My Home, the first fresh boot of each day — my points,
+  streak and place (`#gameIntroMe`), then "How to earn points" with what each thing is worth (from the board's own
+  `pts`), the streak bonus, Santa and the snowflakes in season, **See this week's board** / **Let's go!**, and
+  **Don't show this when I open the app** (`#gameIntroOff`). The first time it says "Points are here!", after that "Your
+  points this week". On the phone as `gp-game-intro-v2` = {n, last, off}. The slide-down reminder and Santa wait while
+  it is open. Not under a test browser unless `gp-intro-test` is set. Khmer: docs/khmer-needed.md §118.
+- **Streak**: days in a row with any use (the same evidence as Admin → App use), ending today or yesterday.
+- **What others see**: `people` rows are exactly `{id, pts, streak, week, rank, books, booksYear}` (books finished this
+  week and this year — counts, as every profile already shows; never which book) (`week` = seven characters, 1 / 0 / -
+  for a day to come) — never what was done. `me` adds `parts` (where my points came from). **Everyone active on the campus is on the
+  board — there is no switch to step off** (Uriah, Nov 2026: "no need to put the option, leave them on"; a first
+  version had one). Admin → App use had been admins only.
+- **Ministries**: average points a person, for ministries with two or more people on the board. **📚 Readers** (the third
+  tab, `#gameBooks`): books finished this year, most first, and a button to the Library; a row on People shows 📚 n for
+  books this week.
+- **Reading is one small row in My Home's summary card** (Nov 2026, Andrew: "move that into the little dashboard … make
+  it small … a little book icon … read a book"; before that it was its own Reading card under the summary card):
+  `libHeroRowHtml_` (end of 18-library-plus.js, `#libHome`, `.libHeroRow`, after the GP Tasks row) — 📚 and one line:
+  the book you were in ("Continue: …", "n of m pages"), else "Read a book · Ten minutes · 30 points"; "💌 n" when books
+  were recommended to you. A tap (`data-libhome`) opens that book, or the Library.
+- **This month's book is a note now and then, not a fixture** (Nov 2026, Andrew: "instead of it just being stationary …
+  every now and then, like a notification … hey, read this book this month"): `libNudgeItems_` (18-library-plus.js) adds
+  bell items, so the slide-down reminder shows them and a tap ("Read it", `[data-libgo]`) opens the book — the month's book
+  while unread on one day in `LIB_NUDGE_EVERY` (3), the person's own day (`libNudgeDay_`, from their id, so a campus isn't
+  all nudged at once), dated today; and each book a teammate recommended (`💌 … recommends a book to you`, title through
+  `libNudgeTitle_`), dated when it came, until read or cleared. The phone's weekly reminder (`push.reading`) is unchanged.
+- **The page**: My Home has one line above the summary card (`gameHomeHtml_`, `#gameHome`: 🔥 streak · ⭐ points · #place,
+  the week's dots; tap → the board). **Team → 🏆 This week** (`S.teamMode='game'`, `gameTeamHtml_`): the campus together
+  first ("n of N active this week"), my three figures with "Where my points came from" folded, People / Ministries, the
+  top ten with points (my own row always shown; people with none are a count, not a list). Not for guests,
+  students, the board or a preview (`gameOn_`).
+- tests/test-game.mjs (server), tests/test-game-ui.mjs (also the holiday catch, Santa, the points sheet and the slide-down reminder). Khmer: docs/khmer-needed.md §112, §113, §118. sw.js SHELL v27 (v28: 22-setup.js).
+
+## Look around: the preview (Nov 2026, Andrew — replaces the guest tour below)
+"There's like a little area that says view it as a guest … it shows a view of the app, but none of the real data … a
+mock-up … the library [real]." The sign-in and sign-up screens have **👀 Look around first** (`#toGuest`, `gpLookHtml_`,
+not in the tasks app); `?guest=1` and `gp-app-guest` open it too (`gpEnterGuest_` → `gpEnterDemo_`, end of
+teams/22-setup.js). It is the real app, signed in as a made-up person (Dara Sok, Cafe, Siem Reap; `S.demo`, `S.auth`
+demo / 0000): **`run()` sends every call as `demoCall(fn, args)`**, and api.js runs that same handler inside `demoScope`
+(its own AsyncLocalStorage, so a nested requestScope stays inside), where `store()` is an in-memory store filled by
+`demoData_()` for that one request — twelve made-up people on both campuses, the year's numbers, check-ins, goals, habits,
+OKRs, GP Tasks, prayers. So the real store is never opened (tests/test-demo.mjs counts every touch), a "save" works within
+its request and is gone on the next, and only `demo` can sign in (everyone else's PIN is a fresh random secret). Only
+get… / list… and the everyday writes in `DEMO_WRITES` run; `DEMO_NEVER` (accounts, admin, HR, portal, QuickBooks, Google,
+voice, the tasks app's boot) never does. The page: `#demoBar` on every page (Create my profile / Log in →
+`gpLeaveDemo_`), a toast the first time something changes (`gpDemoNote_`, not for `DEMO_QUIET`), no boot cache, no
+connect-Google step. The Library is the real one. If the preview can't load, the old tour (`gpEnterGuestPlain_`) shows.
+
+## Looking around without an account (teams.html guest mode, Oct 2026 — now only the fallback)
 `teams.html?guest=1` (the log-in screen's "Look around without an account" button was removed, Nov 2026, Andrew) sets
 `gp-app-guest` (localStorage — they stay a guest on reopen until Log in / Create my
 profile). `S.guest` with a stand-in `S.me` (`gpGuestMe_`, id 'guest') and EMPTY `S.auth`:
@@ -2318,7 +2785,21 @@ numbers fill themselves in from using it (like Teams and Hospitality). Two so fa
   student's profile, test scores, progress, who has paid → Students Enrolled, Days with
   Classes, Passing Rate, etc.
 
-## Admin → Arrivals & departures
+## Admin → Invite staff: links that let new staff straight in (Nov 2026, Andrew)
+"If I want to invite someone in the admin section … the invite link will be already pre-approved by the admin."
+Admin → ✉️ Invite staff (`groups`, `adminInviteHtml_`): campus, and if wanted department and ministry; who it's for
+(`[data-grpuses]` one person · up to 10 · up to 30); how long (`[data-grpdays]` 3 / 7 / 14 / 30 days); a note → **Make the
+invite link** (`#grpMake` → `adminMakeInvite`, admins only) → `teams.html?reg=1&invite=<48 hex>` shown once (`#grpLink`,
+Copy / Share). Kept only as a hash in the `invites` blob (`{id, hash, salt, campus, dept, ministry, note, uses, used:[{staffId,
+name, at}], exp, off, by, byName, at}`, `INVITE_MAX_USES` 50, `INVITE_MAX_DAYS` 30); "Invite links" lists each with who used it
+and Turn off (`[data-grpoff]` → `adminInviteOff`). The sign-up page takes the token out of the address (`gpInviteTake_`,
+kept in sessionStorage `gp-invite` across Google's page-and-back), asks `inviteInfo` (public: where, who invited) and says
+so (`#inviteOk`, or `#inviteGone` when used / ended / off — they can still sign up and wait). `staffRegister {invite}`
+checks it again: the account is **active at once** (no `awaiting`, no admin push), in the invite's place,
+`invitedBy {inviteId, adminId}`, and the use recorded; the setup steps follow. A link is a key — anyone who has it can
+use it while it lasts. tests/test-groups-ui.mjs. Khmer §125.
+
+## Admin → Arrivals & departures (the old invite, kept for old links)
 - **Invite a new group:** pick campus, department and (optionally) ministry → one link,
   `teams.html?reg=1&campus=…&dept=…&ministry=…` (`gpInviteLink_`). It opens the
   sign-up form with those chosen and a "You're joining …" line (`gpInviteFromUrl_`,
@@ -2362,9 +2843,10 @@ numbers fill themselves in from using it (like Teams and Hospitality). Two so fa
   Mentors, Loose ends…, else Accounts.
 
 ## The weekly health check-in is on Tuesdays (Nov 2026, Andrew: "every Tuesday during our staff meeting")
-`CHECKIN_DOW` = 2 (02-goals-okrs.js, and api.js for the phone): on a Tuesday My Home has a card while this week's
-check-in isn't in (`checkinTueHtml_`, `#tueCheckin`, its button `data-gohealth="open"` opens this week's form —
-every `[data-gohealth]` handler takes `open`); the bell's nudge starts on Tuesday (it was Friday), worded for the
+`CHECKIN_DOW` = 2 (02-goals-okrs.js, and api.js for the phone): on a Tuesday, while this week's check-in isn't in, it
+slides down from the top (the slide-down reminder below — My Home's `#tueCheckin` card went, Andrew: "instead of a box
+on My Home"); its "Answer it" (`data-gohealth="open"`) opens this week's form —
+every `[data-gohealth]` handler takes `open`; the bell's nudge starts on Tuesday (it was Friday), worded for the
 staff meeting on the day itself; the Health tab says when it's done (`#checkinTueHint`); the daily phone reminder
 adds `weeklyTue` on Tuesday and `weekly` the rest of the week (`checkedIn` by survey token — nobody else learns
 who). Any day still works for answering. Same day for both campuses.
@@ -2574,6 +3056,17 @@ with quarterly reviews on progress." teams/10-review360.js; api.js "360 reviews"
   carries both (`p360ask`, and on Mondays `p360plan`).
 - **Sharing**: the person picks who else sees the results, their own answers and the plan
   (`p360Share`, ≤10; their mentor first) — read-only, never who was asked. They can delete it.
+- **Asking more people, also after it has closed** (Nov 2026, Uriah: "send it to more people to get input even after
+  it's been closed"): **＋ Ask more people** (`#p3More`, `p3MoreBtnHtml_`) on the person's own review, open or closed →
+  the picker without the people already asked (`p3MoreHtml_`, `S.p3Draft.more`, `#p3MoreSend`) → `p360AskMore(id,
+  {reviewers, due})`. An open review just gets the extra people. A closed one opens again (`gathering`, `#p3Gather`)
+  with **the results exactly as they were**: once results have been seen, new answers go to `r.more.answers` (who was
+  added: `r.more.ids`) and count only — all together — when it is closed again with at least `P360_MIN_N` of them
+  (`p360Answers_`); fewer stay waiting (`held`, `#p3Held`, "2 new answers are waiting"), and asking again keeps them.
+  So that round needs at least three new people (`moreNeed`, `too_few` + `need`); a review closed with too few answers
+  to show anything wants just one more and opens plainly. Why: the person could otherwise compare the results before
+  and after and read off what one new person said. Don't pour a later round straight into `r.answers`. Thirty people a
+  review at most (`moreRoom`). Khmer: docs/khmer-needed.md §132.
 - Store: `p360` (one list), written with `mutateKey_` (mutateStaff_'s write-and-check, for
   any key) so two answers at once can't lose one.
 - Tests: tests/test-p360.mjs (the server, anonymity), test-p360-ui.mjs (the whole journey).
@@ -3004,7 +3497,7 @@ inferred from volunteer counts.
   older than a year drop on the next new request. Not in the roster or any report.
 - tests/test-prayer-ui.mjs.
 
-## Support raising (My Home → Support raising, Oct 2026)
+## Support raising (☰ → Support raising, or a quick app; Oct 2026 — a My Home tile until Nov 2026)
 - Each staff member's ministry partners and monthly goal (US$), on their own staff record
   (`support`: { goal, partners[{ id, name, amount, freq month|year|once, status
   giving|asked|toask|paused, last, note, channel }], giving[{ id, name, amount, freq,
@@ -3303,6 +3796,16 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   (`#gtRename`, `#gtShareList`, `#gptListDelete`, …) and all items are on screen when it opens. In tests,
   close it with `page.click('#gtMenuScrim', { position: { x: 16, y: 60 } })` — the middle of the screen
   is covered by the grown item. The round ＋ is left out while the wheel is open.
+  **Inbox → This week** (Nov 2026, Andrew: "show the tasks for the current week from all of the task lists so that you
+  can see which ones overlap"): the Inbox has an **Inbox | 📅 This week · n** switch (`#gtInboxSeg`, `[data-gptweek]`,
+  `S.gptWeek`); This week (`gptWeekHtml_`, `#gtWeek`) is Monday to Sunday (`gptWeekRange_`), each day
+  (`[data-gptweekday]`; a day gone by only while something is still open on it) with the open tasks due that day from
+  every list you have as a tab (`gptLists_(null)`, leadership's filter applies) and what you were given
+  (`gptWeekTasks_`), each with its list's chip; "n tasks" on a day with two or more (amber from four), "⚠️ Same time as
+  another" when two share a time (`.gtClash`). Rows tick and open as anywhere; no grip (`gtItemHtml_(x, L, {noDrag})`).
+  **Light or dark** (Andrew: "in the GP tasks, add a light or dark option"): a 🌗 / ☀️ / 🌙 button (`gptThemeBtnHtml_`,
+  `[data-gptheme]`, `bindGptTheme_`) cycles Auto → Light → Dark — the same `gp-theme` as Profile → Appearance
+  (`applyTheme`) — beside the Calendar | Tasks toggle (`.ctRow`) and in the GP Tasks app's header (it has no Profile).
   **Arrange lists…** (`#gtArrange` → `#gtArrangeSheet`, `data-gtarr="id|±1"`): ▲ ▼ per list, saved through
   `saveGpListOrder` like dragging a tab — for the many who won't know a tab can be held and dragged.
   **The red number** (`.gtBadge`) on the Inbox tab and My Home's GP Tasks row = `gptInboxCount_()` /
@@ -3390,6 +3893,47 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   still adds); blank, they say "📅 Set date and time", and so does a task with no day in the list. The Goals & Tasks page's own ✅ Tasks (steps toward your annual
   goals) is separate and unchanged.
 - tests/test-gp-tasks.mjs (server: the rules), tests/test-gp-tasks-ui.mjs.
+
+## Talk it through → tasks (teams/21-voice.js, Nov 2026, Uriah)
+"I want to add an api link into our app especially to voice stream of consciousness into our tasks app and then have
+Claude build out tasks and calendar dates in line with our verbal processing."
+- **The page**: GP Tasks (and tasks.html) has a microphone above the round ＋ (`gvFabHtml_`, `#gvOpen`, only when the
+  boot's `voice` is true → `S.voiceOn`; not guests, students or previews). It opens a sheet (`S.gv`, `gvHtml_`,
+  `#gvSheet`): a box (`#gvText`, ≤6,000 characters) and, where the browser has SpeechRecognition (`gvRec_`),
+  **Tap to talk** (`#gvMic`, `gvListen_`: continuous, km-KH or en-US by the app's language, the words written into the
+  box without a redraw); elsewhere a hint to use the keyboard's own microphone (`#gvKeyHint` — an iPhone Home Screen app
+  usually has no SpeechRecognition). **Make my tasks** (`#gvGo`) → `voiceTasks`; the answer is a list to check
+  (`#gvItems`: tick `[data-gvon]`, title / day / time / list `[data-gvf="i|field"]`, people as chips to take off
+  `[data-gvrm]`, steps shown) and **Add n tasks** (`#gvAdd`, `gvAdd_`) saves the ticked ones through `saveGpTask`, one
+  after another, each with its own `rid`. Nothing is saved before that. A task with a day is on the Calendar like any
+  other (the campus's Google Calendar is still read-only — nothing is written to Google).
+- **The server** (api.js "Talk it through → tasks"): `voiceTasks(user, pin, text, {lang})` — staff only (`gptAuth_`),
+  40 asks a person a day (`voiceUse` blob, `VOICE_MAX`), then ONE call to Claude (`voiceAsk_`: the official
+  `@anthropic-ai/sdk`, imported only when asked; `claude-opus-5-5`, effort low, a JSON schema `VOICE_SCHEMA` through
+  `output_config.format`, the refusal fallback on; 24 s, no retries). `voiceClean_` holds the answer to what a task may
+  be: a real day from today to three years out, a time only with a day, lists and people only by the codes it was given
+  (L1…, P1… — never ids), ≤25 tasks. It answers `{tasks, note}` and writes nothing but the day's count.
+- **The key is `ANTHROPIC_API_KEY` in Netlify's environment** — never in the repo, the chat or a commit. Unset → no
+  microphone anywhere, and `voiceTasks` answers `not_set_up`. Usage is billed to that key's Anthropic account.
+- **What leaves the site**: the words said, the names of the person's own task lists, and the names of their campus's
+  active staff (so "ask Sokha" can become Sokha). The sheet says so. Never ids, usernames or anything else.
+- **Never stuck, and Khmer** (Nov 2026, Uriah: "the voice mode to tasks … just freezes" / "how it might work in Khmer
+  language"). The freeze was on the phone (no server errors): the browser's listening can start and then hang with no
+  word or end, worst in an iPhone Home Screen app. Now: no in-app mic there (`gvRec_` → the keyboard-microphone hint);
+  elsewhere a watchdog stops listening that has heard nothing in `GV_LISTEN_WAIT` (9 s) and every `onerror` ends it
+  with a message; the ask has its own `GV_ASK_WAIT` (30 s) and a late answer is ignored (`V.ask`); Cancel works while
+  it waits; `voiceTasks` is not held behind the kept copy's fresh boot (`run()`); the server answers in
+  `VOICE_WAIT_MS` (17 s), before the page's own 20 s request limit, so slow says "too long", not "no connection".
+  **I'm talking in ខ្មែរ / English** (`gvLangHtml_`, `[data-gvlang]`, `gp-gv-lang` on the phone; starts from the app's
+  language) sets the listening language (km-KH) and goes to the server as `spoke`; with Khmer the instructions add
+  `VOICE_KHMER` — Khmer days, the hour + part of the day (ម៉ោង ២ រសៀល = 14:00, កន្លះ = :30), Khmer digits, names matched
+  by sound to the Latin roster with words of respect (បង, លោកគ្រូ…) dropped, "ប្រាប់ … ឲ្យ" as giving a task. Titles stay
+  in the words they used (mixed stays mixed), the note in the app's language. On an iPhone, Apple's dictation has no
+  Khmer, so the sheet points to Gboard's microphone (`gvKmHintHtml_`). Tried on the real model with a made-up mixed
+  Khmer ramble: days, 3 pm after "2… no, 3", and both people came out right. Khmer: docs/khmer-needed.md §131.
+- tests/test-voice-tasks.mjs (server), tests/test-voice-tasks-ui.mjs; both use tests/voice-fixtures.mjs, a stand-in
+  for the SDK written into the test's own node_modules — no test calls Anthropic. Khmer: docs/khmer-needed.md §113.
+  sw.js SHELL v26.
 
 ## GP Tasks — an app of its own (tasks.html, Nov 2026, Andrew)
 "A separate app for our tasks and calendar … like a separate download for it but it's synced and linked to
@@ -3563,6 +4107,10 @@ the main app." An installable web app, like the portal — not an App Store app.
 - **teams/13-calendar.js**: ☰ → **📅 Calendar** (`S.view='calendar'`, a month at a time, day by day,
   colour per calendar, tap for details, Earlier / Later / Back to today) and **📅 Coming up** on My Home
   (the next seven days, five at most, `calHomeCardHtml_`) — nothing at all until a calendar is connected.
+  **Coming up moves on** (Nov 2026, Andrew: "once the day has passed, just move on to the next thing — right now it's
+  still on the teams"): `calHomeUpcoming_` keeps only what starts today or later (a stay that began on an earlier day —
+  which the server sends with its first day — is not "coming up") and drops today's timed things once they have ended;
+  `calHomeLoad_` asks again when the day changes (`S.calHome.day`), so an app left open overnight moves on too.
 - tests/test-gcal.mjs, tests/test-gcal-ui.mjs.- **Month view like Google Calendar (Oct 2026, redone later that month to match Google's own):**
   `S.calMonth` ('YYYY-MM'), six week rows from the Monday on or before the 1st (`calGridStart_`,
   fetched as 42 days), the ISO week number on the left (`calIsoWeek_`), **each thing a title bar

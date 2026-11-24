@@ -86,8 +86,8 @@ const goTests = async (page) => { await page.evaluate(() => { S.tests.mc = null;
 /* ---------- 1. the Tests page and the fivefold gifts ---------- */
 {
   const { ctx, page } = await open('mark');
-  ok('About me has a Tests tile', !!(await page.$('#testsTile')));
-  await page.click('#testsTile'); await page.waitForTimeout(900);
+  ok('Tests is in ☰ (and a quick app), no longer a tile on My Home', !(await page.$('#testsTile')) && !!(await page.evaluate(() => { S.menuOpen = true; renderMenu(); return !!document.querySelector('#menuRoot [data-menu-item="tests"]'); })));
+  await page.click('#menuRoot [data-menu-item="tests"]'); await page.waitForTimeout(900);
   const txt = await main(page);
   ok('the Tests page lists personality, strengths, fivefold gifts, language and the couple check-up',
     /Personality/.test(txt) && /Strengths/.test(txt) && /Fivefold gifts/.test(txt) && /Language level test/.test(txt) && /Couple check-up/.test(txt));

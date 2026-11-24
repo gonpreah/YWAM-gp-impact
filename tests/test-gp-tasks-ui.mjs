@@ -269,7 +269,7 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
   const { ctx, page } = await open('kanha');
   const bell = await page.evaluate(() => notifItems_().map(i => i.text).join(' | '));
   ok('Kanha\'s bell: Cora gave you a task', /Cora gave you a task: Order milk/.test(bell), bell);
-  ok('… and My Home says 2 open (milk and cups)', /GP Tasks\s*2/.test(await page.$eval('#goGpTasks', e => e.innerText)));
+  ok('… and My Home’s Tasks widget says 2 open (milk and cups)', /^\s*2\s*Tasks/.test(await page.$eval('#goGpTasks', e => e.innerText)), await page.$eval('#goGpTasks', e => e.innerText));
   await page.click('#goGpTasks'); await page.waitForTimeout(800);
   const mt = await page.$eval('.gtList', e => e.innerText);
   ok('Kanha\'s Inbox: what she was given, each with where it is from', /Inbox/.test(mt) && /Order milk/.test(mt) && /Restock cups/.test(mt) && /Cafe jobs/.test(mt) && /drag a task onto one of your lists/.test(mt), mt.slice(0, 300));

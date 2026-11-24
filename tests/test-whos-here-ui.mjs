@@ -125,8 +125,8 @@ const call = async (fn, args) => { const r = await api.default({ method: 'POST',
 {
   const { ctx, page } = await open('sreilea');
   await page.waitForTimeout(600);
-  ok('My Home shows the beds-filled % next to it', /75% full/.test(await page.$eval('#goWhosHereHome', e => e.innerText).catch(() => '')));
-  ok('My Home shows how many are on campus now', await page.evaluate(() => S.view === 'week') && /On campus now\s*8/.test(await page.$eval('#goWhosHereHome', e => e.innerText).catch(() => 'none')), await page.$eval('#goWhosHereHome', e => e.innerText).catch(() => 'none'));
+  ok('My Home leaves the beds-filled % to Who’s here (a short figure only)', !/% full/.test(await page.$eval('#goWhosHereHome', e => e.innerText).catch(() => '%')));
+  ok('My Home shows how many are on campus now, as the base strip’s fourth figure', await page.evaluate(() => S.view === 'week') && !!(await page.$('.homeBaseRow.four #goWhosHereHome')) && /8\s*On campus/.test(await page.$eval('#goWhosHereHome', e => e.innerText).catch(() => 'none')), await page.$eval('#goWhosHereHome', e => e.innerText).catch(() => 'none'));
   await page.click('#goWhosHereHome'); await page.waitForTimeout(900);
   ok('… tap it: Who\'s here, with ← My Home', /8 people on campus/.test(await page.$eval('#main', e => e.innerText)) && /My Home/.test(await page.$eval('#whosBack', e => e.innerText)));
   await page.click('#whosBack'); await page.waitForTimeout(400);

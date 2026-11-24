@@ -50,7 +50,8 @@ const TEAM_STEPS = (current) => {
   const defs = [['account', 'you'], ['form', 'you', 'auto'], ['call1', 'us', 'tick'], ['passports', 'you', 'auto', 'docs'], ['photo', 'you', 'auto', 'docs'], ['flights', 'you', 'auto', 'docs'],
     ['invitation', 'us', 'auto', 'visa'], ['evisa', 'you', 'auto', 'visa'], ['rooms', 'us', 'auto'], ['call2', 'us', 'tick'], ['practical', 'you'], ['arrived', 'us', 'tick']];
   const ci = defs.findIndex(d => d[0] === current);
-  return defs.map(([id, who, kind, group], i) => ({ id, who, group, tick: kind === 'tick' || undefined, auto: kind === 'auto' || undefined, done: i < ci, state: i < ci ? 'done' : i === ci ? 'current' : 'todo' }));
+  const MARK = ['passports', 'photo', 'flights', 'invitation', 'evisa'];
+  return defs.map(([id, who, kind, group], i) => ({ id, who, group, tick: kind === 'tick' || undefined, auto: kind === 'auto' || undefined, mark: MARK.includes(id) || undefined, byDoc: (MARK.includes(id) && i < ci) || undefined, done: i < ci, state: i < ci ? 'done' : i === ci ? 'current' : 'todo' }));
 };
 const FORM = { key: 'dts', title: { en: 'DTS application', km: 'ពាក្យសុំ DTS' }, sections: [
   { id: 'about', title: { en: 'About you', km: 'អំពីអ្នក' }, help: { en: '', km: '' }, questions: [
@@ -298,6 +299,8 @@ async function open(viewport, query, seed) {
     } else if (b.fn === 'portalUpdateAccount') {
       const p = b.args[3]; ACCOUNTS = ACCOUNTS.map(a => a.id === b.args[2] ? { ...a, name: p.name, username: p.username, email: p.email, phone: p.phone, messenger: p.messenger, country: p.country } : a);
       out = { ok: true, account: ACCOUNTS.find(a => a.id === b.args[2]) };
+    } else if (b.fn === 'portalTeamStep' && b.args[3] === 'flights') {
+      CANDS = CANDS.map(x => x.id === b.args[2] ? { ...x, steps: x.steps.map(st => st.id === 'flights' ? { ...st, done: !!b.args[4], marked: !!b.args[4], state: b.args[4] ? 'done' : 'todo' } : st) } : x); out = { ok: true, candidate: CANDS.find(x => x.id === b.args[2]) };
     } else if (b.fn === 'portalTeamStep') {
       CANDS = CANDS.map(x => x.id === b.args[2] ? { ...x, stage: b.args[3] === 'call1' ? 'docs' : x.stage, steps: TEAM_STEPS(b.args[3] === 'call1' ? 'passports' : 'call1') } : x); out = { ok: true, candidate: CANDS.find(x => x.id === b.args[2]) };
     } else if (b.fn === 'portalStaffSyncTeam') {
@@ -406,6 +409,10 @@ async function open(viewport, query, seed) {
   ok('the form card invites them to fill out the application', !!(await page.$('#openForm')) && /Fill out my application/.test(await page.$eval('#openForm', e => e.textContent)));
   ok('and the top of the dashboard says the next step is sending it in', /Next: send in your application/.test(await page.$eval('#applyNext', e => e.textContent)) && !!(await page.$('#openFormTop')));
   ok('an applicant has no staff bar and no link into the GP app', !(await page.$('#staffNav')) && !(await page.$('#toGpApp')));
+  await page.click('#navMenu'); await page.waitForSelector('#staffMenu');
+  const smenu = await page.evaluate(() => ({ items: [...document.querySelectorAll('#staffMenu .menuItem')].map(b => b.id || b.getAttribute('data-amenu')), staff: !!document.querySelector('#staffMenu #navCrm') }));
+  ok('a student’s ☰ (top right) holds Sign out, and nothing of the staff side', JSON.stringify(smenu.items) === '["outBtn"]' && !smenu.staff, JSON.stringify(smenu));
+  await page.click('#menuClose'); await page.waitForTimeout(150);
   await page.click('#openFormTop');
   await page.waitForSelector('#formSubmit, #formNext', { timeout: 5000 });
   ok('the top button opens the application too', /Section 1 of/.test(await page.$eval('#main', e => e.textContent)));
@@ -532,7 +539,8 @@ async function open(viewport, query, seed) {
   await page.evaluate(() => { window.__opened = []; window.open = (u) => { window.__opened.push(u); return null; }; HTMLAnchorElement.prototype.click = function(){ window.__opened.push(this.href); }; });
   await page.click('#visaHow [data-visadoc="vd1"]'); await page.waitForTimeout(400);
   const gets = sent.filter(b => b.fn === 'portalVisaDocGet');
-  ok('a supporting document comes in its parts and opens', gets.length === 2 && gets[0].args[4] === 0 && gets[1].args[4] === 1 && (await page.evaluate(() => window.__opened.length)) === 1, JSON.stringify(gets.map(g => g.args.slice(2))));
+  ok('a supporting document comes in its parts and opens — in the file sheet, its Open a real link (Nov 2026)', gets.length === 2 && gets[0].args[4] === 0 && gets[1].args[4] === 1 && !!(await page.$('#fileSheet a#fileOpen[href^="blob:"]')), JSON.stringify(gets.map(g => g.args.slice(2))));
+  await page.click('#fileClose'); await page.waitForTimeout(150);
   ok('it stays open after a re-render', await page.$eval('#visaHow', d => d.open));
   const docs = await page.$('details#myDocs');
   ok('Documents folds, with a summary of what is in — folded when nothing is missing', !!docs && !(await page.$eval('#myDocs', d => d.open)) && /2 of 3 in|All in/.test(await page.$eval('#myDocs summary', e => e.textContent)), await page.$eval('#myDocs summary', e => e.textContent));
@@ -541,7 +549,57 @@ async function open(viewport, query, seed) {
   ok('… and opens to the list', await page.$eval('#teamMembers', d => d.open) && !!(await page.$('#editMembers')));
   const rooms = await page.$eval('[data-step="rooms"]', e => ({ cls: e.className, txt: e.innerText }));
   ok('Rooms booked is ticked, with how many beds and the nights SR Hospitality booked', /done/.test(rooms.cls) && /Rooms booked/.test(rooms.txt) && /12 beds · 10 Jan 2027 – 20 Jan 2027/.test(rooms.txt), JSON.stringify(rooms));
+  /* Nov 2026 (the Rogaland team couldn't see its letter): with a photo still to come, the letter staff posted is still under Documents */
+  const docKinds = await page.evaluate(() => {
+    const app = P.boot.application, keep = app.steps;
+    app.steps = keep.map(st => st.id === 'photo' ? { ...st, done: false, state: 'todo' } : st);
+    render(); const p = document.querySelector('#myDocs'); if (p) p.open = true;
+    const open = [...document.querySelectorAll('#myDocs [data-dockind]')].map(e => e.getAttribute('data-dockind'));
+    app.visaOpen = false; render();
+    const shut = [...document.querySelectorAll('#myDocs [data-dockind]')].map(e => e.getAttribute('data-dockind'));
+    app.visaOpen = true; app.steps = keep; render();
+    return { open, shut };
+  });
+  ok('a photo still missing: the letter of invitation and the e-visa upload are under Documents once the e-visa steps are open', docKinds.open.includes('invitation') && docKinds.open.includes('evisa'), JSON.stringify(docKinds));
+  ok('… and not before (nothing there yet for them)', !docKinds.shut.includes('invitation') && !docKinds.shut.includes('evisa'), JSON.stringify(docKinds));
   ok('no sideways scroll on a phone', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+  /* Nov 2026 (Andrew: the Norway team couldn't find the e-visa steps, folded under step 8): a button at the top */
+  ok('the top of the page says the letter is in and has a button to the e-visa steps', /Your letter of invitation is in/.test(await page.$eval('.card.hero', e => e.textContent)) && !!(await page.$('.card.hero #visaHowGo')));
+  if (await page.$eval('#visaHow', d => d.open)) { await page.click('#visaHow summary'); await page.waitForTimeout(200); }
+  await page.click('#visaHowGo'); await page.waitForTimeout(700);
+  ok('… which opens How to apply for your e-visa online and brings it into view', await page.$eval('#visaHow', d => d.open) && await page.$eval('#visaHow', d => { const r = d.getBoundingClientRect(); return r.top >= -2 && r.top < window.innerHeight; }));
+  ok('opened early, before the letter, the top says they can start now and the letter will follow', await page.evaluate(() => /You can start your e-visas now/.test(statusNote_({ type: 'team', visaOpen: true, status: 'docs', visa: { early: '2026-11-20' }, docs: [], steps: [{ id: 'invitation', done: false }, { id: 'evisa', done: false }] }))
+    && !/letter of invitation is in/.test(statusNote_({ type: 'team', visaOpen: true, status: 'docs', visa: { early: '2026-11-20' }, docs: [], steps: [{ id: 'invitation', done: false }, { id: 'evisa', done: false }] }))
+    && visaGoHtml_({ type: 'team', visaOpen: false, status: 'docs', steps: [{ id: 'evisa', done: false }] }) === ''));
+  ok('Your next steps sits in the top card: here, apply for the e-visas, with the button to the steps', !!(await page.$('.card.hero #teamTodo [data-todo="evisa"] #visaHowGo')));
+  /* Nov 2026 (Andrew: "fix the flow … for teams"): just applied, the 1st call still to come — the top says what they can do already */
+  const early = await page.evaluate(() => {
+    const app = P.boot.application, keep = { steps: app.steps, visaOpen: app.visaOpen, docs: app.docs, stage: app.stage };
+    app.steps = app.steps.map((st, i) => ['account', 'form'].includes(st.id) ? { ...st, done: true, state: 'done' } : { ...st, done: false, state: st.id === 'call1' ? 'current' : 'todo' });
+    app.visaOpen = false; app.docs = [{ id: 'pd_p', kind: 'passports', name: 'passports.pdf', mime: 'application/pdf' }]; app.stage = 'applied';
+    render();
+    const out = {
+      todo: [...document.querySelectorAll('.card.hero [data-todo]')].map(e => e.getAttribute('data-todo')),
+      wait: [...document.querySelectorAll('.card.hero [data-wait]')].map(e => e.getAttribute('data-wait')),
+      waitText: (document.querySelector('[data-wait="call1"]') || {}).textContent || '',
+      uploads: [...document.querySelectorAll('#teamTodo input[data-docup]')].map(e => e.getAttribute('data-docup')),
+      passExtra: (document.querySelector('[data-todo="passports"] .todoExtra') || {}).textContent || '',
+      now: [...document.querySelectorAll('#timeline .stepNow')].map(e => e.closest('[data-step]').getAttribute('data-step')),
+      current: (document.querySelector('#timeline .step.current') || {}).getAttribute ? document.querySelector('#timeline .step.current').getAttribute('data-step') : '',
+      order: [...document.querySelectorAll('#main .card[id], #main details.card[id]')].map(e => e.id)
+    };
+    Object.assign(app, keep);
+    return out;
+  });
+  ok('… what is theirs to do: passports, names and photos, flights', JSON.stringify(early.todo) === '["passports","photo","flights"]', JSON.stringify(early));
+  ok('… and what waits on us: the 1st call, on their messaging app', JSON.stringify(early.wait) === '["call1"]' && /1st call: we will message you on/.test(early.waitText));
+  ok('… passports and flights upload right there; passports says how many files are in', JSON.stringify(early.uploads) === '["passports","flights"]' && /1 file in/.test(early.passExtra), JSON.stringify(early));
+  ok('the timeline still marks the 1st call as where things are, and the steps they can do now say “Do it now”', early.current === 'call1' && JSON.stringify(early.now) === '["passports","photo","flights"]', JSON.stringify(early));
+  ok('once applied, a team’s team members and documents come before the guide and the form', early.order.indexOf('teamMembers') > -1 && early.order.indexOf('teamMembers') < early.order.indexOf('guideCard') && early.order.indexOf('myDocs') < early.order.indexOf('formCard'), early.order.join(','));
+  await page.evaluate(() => { const app = P.boot.application; app._keep = app.steps; app.steps = app.steps.map(st => st.id === 'photo' ? { ...st, done: false, state: 'todo' } : st); P.fold = {}; render(); });
+  await page.click('[data-teamgo="members"]'); await page.waitForTimeout(500);
+  ok('“Open my team” opens Your team members', await page.$eval('#teamMembers', d => d.open));
+  await page.evaluate(() => { const app = P.boot.application; app.steps = app._keep; render(); });
   await ctx.close();
 }
 
@@ -650,8 +708,15 @@ async function open(viewport, query, seed) {
   const ups = sent.filter(b => b.fn === 'portalUploadDoc');
   ok('choosing two files uploads both, one call each, as passports, and lists them', ups.length === 2 && ups.every(u => u.args[2] === 'passports' && u.args[4] === 'application/pdf' && u.args.length === 6) && ups[0].args[3] === 'passports.pdf' && Buffer.from(ups[0].args[5], 'base64').toString() === '%PDF-1.4 fake' && /2 files/.test(await page.$eval('[data-dockind="passports"]', e => e.textContent)));
   await page.click('[data-dockind="passports"] [data-docopen]');
-  await page.waitForTimeout(300);
+  await page.waitForSelector('#fileSheet', { timeout: 5000 });
   ok('Open fetches that file', sent.some(b => b.fn === 'portalGetDoc'));
+  /* Nov 2026: a team couldn't open its letter of invitation — a new tab opened after the download is blocked on
+     iPhones and in Messenger, so the file now comes up in a sheet whose buttons are real taps on real links */
+  const fs1 = await page.evaluate(() => { const o = document.getElementById('fileOpen'), d = document.getElementById('fileDownload'); return { open: o && o.tagName === 'A' && /^blob:/.test(o.href) && o.target === '_blank', dl: d && /^blob:/.test(d.href) && d.getAttribute('download') }; });
+  ok('… and shows it in a sheet: Open and Download are real links to the file, the name kept', fs1.open && fs1.dl === 'passports.pdf', JSON.stringify(fs1));
+  ok('… which says what to do when it still won’t open', /Share and save it to Files/.test(await page.$eval('#fileSheet', e => e.textContent)));
+  await page.click('#fileClose'); await page.waitForTimeout(150);
+  ok('… and closes', !(await page.$('#fileSheet')));
   page.once('dialog', d => d.accept());
   await page.click('[data-dockind="passports"] [data-docdel]');
   await page.waitForFunction(() => document.querySelectorAll('[data-dockind="passports"] .docList li').length === 1, null, { timeout: 5000 });
@@ -682,7 +747,7 @@ async function open(viewport, query, seed) {
   await page.fill('#l_pw', 'secret123'); await page.keyboard.press('Enter');
   await page.waitForSelector('#statusPill');
   ok('an applicant signs in with her email and password and lands on her dashboard, which says how she signs in', /Email and password/.test(await page.$eval('#main', e => e.textContent)) && !!(await page.$('#changePw')));
-  await page.click('#outBtn'); await page.waitForTimeout(150);
+  await page.click('#navMenu'); await page.click('#outBtn'); await page.waitForTimeout(150);
   await page.click('#toPinLogin'); await page.waitForTimeout(100);
   ok('the username-and-PIN door is for staff and older accounts', !!(await page.$('#l_user')) && /YWAM staff sign in with their My YWAM GP username and PIN/.test(await page.$eval('#main', e => e.textContent)));
   await page.fill('#l_user', 'bopha'); await page.fill('#l_pin', '1234'); await page.click('#pinLoginBtn');
@@ -823,7 +888,7 @@ async function open(viewport, query, seed) {
   ok('… and says when nothing matches', /Nothing in the answers matches/.test(await page.$eval('#ansBody', e => e.textContent)));
   await page.fill('#ansQ', ''); await page.waitForTimeout(80);
   await ptab(page, 'docs'); pan = await page.$eval('#panel', e => e.textContent);
-  ok('and the visa ticks for an international applicant', (await page.$$eval('[data-visaflag]', c => c.map(x => x.getAttribute('data-visaflag')).join(','))) === 'flightsConfirmed,invitationSent');
+  ok('and the visa ticks for an international applicant', (await page.$$eval('[data-visaflag]', c => c.map(x => x.getAttribute('data-visaflag')).join(','))) === 'early,flightsConfirmed,invitationSent');   // early: Show them the e-visa steps now (Nov 2026)
   await page.click('#seeVisa'); await page.waitForTimeout(150);
   ok('"See their e-visa guide as they see it" shows the applicant’s visa card, as it is for them right now', !!(await page.$('.asSeen')) && /As they see it/.test(await page.$eval('.asSeen', e => e.textContent)) && /(Your e-visa, step by step|You will need a visa for Cambodia)/.test(await page.$eval('.asSeen', e => e.textContent)), await page.$eval('.asSeen', e => e.textContent.slice(0, 120)));
   await page.click('#seeVisa'); await page.waitForTimeout(100);
@@ -867,7 +932,7 @@ async function open(viewport, query, seed) {
   const { ctx, page } = await open({ width: 1280, height: 900 }, '', () => localStorage.setItem('gp-portal', JSON.stringify({ user: 'sina', pin: '1234' })));
   await page.waitForSelector('.trow');
   await page.click('#navMenu'); await page.waitForSelector('#staffMenu');
-  ok('a portal admin finds Forms under Admin access in the ☰ menu, apart from Staff access', !!(await page.$('#toForms')) && /Staff access/.test(await page.$eval('#staffMenu', e => e.textContent)) && /Admin access/.test(await page.$eval('#staffMenu', e => e.textContent)) && (await page.$$eval('#staffMenu .menuGroup', g => g.map(x => [...x.querySelectorAll('button')].map(b => b.id).join(',')).join('|'))) === 'navCrm|toPreview,toLink,toImport|toForms,toAccounts,toTeam,toResources,toLegal,toVisaInfo,toAccess');
+  ok('a portal admin finds Forms under Admin access in the ☰ menu, apart from Staff access', !!(await page.$('#toForms')) && /Staff access/.test(await page.$eval('#staffMenu', e => e.textContent)) && /Admin access/.test(await page.$eval('#staffMenu', e => e.textContent)) && (await page.$$eval('#staffMenu .menuGroup', g => g.map(x => [...x.querySelectorAll('button')].map(b => b.id).join(',')).join('|'))) === 'navCrm|toPreview,toLink,toImport|toForms,toAccounts,toTeam,toResources,toLegal,toVisaInfo,toAccess|outBtn');
   await page.click('#toVisaInfo'); await page.waitForSelector('#vi_org');
   ok('☰ → E-visa info: the details the e-visa form asks, filled in', await page.$eval('#vi_org', i => i.value) === 'Example Org' && await page.$eval('#vi_email', i => i.value) === 'visa@example.org' && /defaults/.test(await page.$eval('#main', e => e.textContent)));
   await page.fill('#vi_phone', '+855 11 111 111'); await page.fill('#vi_extra', 'Bring two photos');
@@ -1057,6 +1122,13 @@ async function open(viewport, query, seed) {
   await page.waitForSelector('#applicantNav');
   const tabs = await page.$$eval('#applicantNav [data-aview]', bs => bs.map(b => b.getAttribute('data-aview') + (b.classList.contains('on') ? '*' : '')));
   ok('a team has six tabs on top: Application (open), Our team, Strengths, Metrics, Schedule, Resources — icons over short labels, none squashed', tabs.join() === 'status*,team,strengths,metrics,schedule,resources' && await page.$$eval('#applicantNav .aLabel', ls => ls.every(l => l.scrollWidth <= l.clientWidth + 1)), tabs.join());
+  ok('… on a phone, an even three by two — no tab left alone on a row (Resources used to drop to a row of its own)', await page.$$eval('#applicantNav [data-aview]', bs => { const rows = {}; bs.forEach(b => { const t = Math.round(b.getBoundingClientRect().top); rows[t] = (rows[t] || 0) + 1; }); return Object.values(rows).join() === '3,3'; }));
+  await page.click('#navMenu'); await page.waitForSelector('#staffMenu');
+  const amenu = await page.evaluate(() => ({ items: [...document.querySelectorAll('#staffMenu [data-amenu]')].map(b => b.getAttribute('data-amenu')), last: [...document.querySelectorAll('#staffMenu .menuItem')].pop().id, staff: !!document.querySelector('#staffMenu #navCrm') }));
+  ok('a team’s ☰ (top right) has the same six pages and Sign out, nothing of the staff side', amenu.items.join() === 'status,team,strengths,metrics,schedule,resources' && amenu.last === 'outBtn' && !amenu.staff, JSON.stringify(amenu));
+  await page.click('#staffMenu [data-amenu="resources"]'); await page.waitForTimeout(400);
+  ok('… a page in it opens and the menu closes', !(await page.$('#staffMenu')) && await page.$eval('#applicantNav [data-aview="resources"]', b => b.classList.contains('on')));
+  await page.click('#applicantNav [data-aview="status"]'); await page.waitForTimeout(300);
   await page.click('[data-aview="metrics"]'); await page.waitForTimeout(200);
   ok('Team metrics has its own tab; before arrival it says the numbers open on arrival', /Team metrics/.test(await page.$eval('#main h2', e => e.textContent)) && /open on arrival/.test(await page.$eval('#main', e => e.textContent)) && !(await page.$('#teamNumbers')));
   /* 👥 */
@@ -1548,9 +1620,14 @@ async function open(viewport, query, seed) {
   ok('staff upload the letter of invitation themselves', /You send this/.test(await page.$eval('[data-dockind="invitation"]', e => e.textContent)) && !!(await page.$('[data-docup="invitation"]')));
   await ptab(page, 'overview');
   ok('the record shows the team’s steps with what is next', /Next: 1st call — getting to know each other · on us/.test(await page.$eval('#teamNext', e => e.textContent)));
-  ok('staff tick the steps done outside the portal; the ones the portal sees tick themselves', (await page.$$eval('[data-teamstep]', c => c.map(x => x.getAttribute('data-teamstep')).join(','))) === 'call1,call2,arrived' && /ticks when they upload it/.test(await page.$eval('.flowList', e => e.textContent)));
-  ok('no separate visa ticks for a team', !(await page.$('[data-visaflag]')));
-  ok('every team step has 👁', (await page.$$eval('[data-seestep]', b => b.length)) === (await page.$$eval('.flowList li', b => b.length)) && /Tap 👁 on a step/.test(await page.$eval('.flowList + .hint', e => e.textContent)));
+  ok('staff tick the steps done outside the portal; the document steps tick themselves on an upload — or staff tick them (Nov 2026)', (await page.$$eval('[data-teamstep]', c => c.map(x => x.getAttribute('data-teamstep')).join(','))) === 'call1,passports,photo,flights,invitation,evisa,call2,arrived' && /ticks when they upload it — or tick it here/.test(await page.$eval('.flowList', e => e.textContent)));
+  ok('no separate visa ticks for a team — only “Show them the e-visa steps now”, in Team steps (Nov 2026)', (await page.$$eval('[data-visaflag]', c => c.map(x => x.getAttribute('data-visaflag')).join(','))) === 'early' && !!(await page.$('.flowList #visaEarly')));
+  ok('every team step has 👁', (await page.$$eval('[data-seestep]', b => b.length)) === (await page.$$eval('.flowList li:not(.visaEarly)', b => b.length)) && /Tap 👁 on a step/.test(await page.$eval('.flowList + .hint', e => e.textContent)));
+  await page.check('[data-visaflag="early"]'); await page.waitForTimeout(400);
+  const ve = sent.filter(b => b.fn === 'portalSetVisaFlags').pop();
+  ok('ticking it opens the e-visa steps for the team, through portalSetVisaFlags', ve && ve.args[2] === 'cd_team' && ve.args[3].early === true && await page.$eval('[data-visaflag="early"]', c => c.checked) && /they can see how to apply/.test(await page.$eval('#visaEarly', e => e.textContent)));
+  ok('… so the team’s documents card offers the e-visa upload before the rest is in', await page.evaluate(() => teamDocsIn_({ visa: { early: '2026-11-20' }, steps: [{ id: 'passports', done: false }] }) === true && teamDocsIn_({ visa: {}, steps: [{ id: 'passports', done: false }] }) === false));
+  await page.uncheck('[data-visaflag="early"]'); await page.waitForTimeout(400);
   await page.click('[data-seestep="evisa"]'); await page.waitForTimeout(150);
   ok('👁 on the e-visa step shows it exactly as the team sees it: the step, its note about the letter of invitation', !!(await page.$('.asSeen .step[data-step="evisa"]')) && /As the team sees it/.test(await page.$eval('.asSeen', e => e.textContent)) && /E-visas approved/.test(await page.$eval('.asSeen', e => e.textContent)) && /How to apply for your e-visa online/.test(await page.$eval('.asSeen', e => e.textContent)), await page.$eval('.asSeen', e => e.textContent.slice(0, 160)));
   await ptab(page, 'docs');
@@ -1597,6 +1674,11 @@ async function open(viewport, query, seed) {
   const ts = sent.filter(b => b.fn === 'portalTeamStep').pop();
   ok('ticking the 1st call goes through portalTeamStep', ts && ts.args[2] === 'cd_team' && ts.args[3] === 'call1' && ts.args[4] === true, JSON.stringify(ts && ts.args.slice(2)));
   ok('and the record moves on to the documents', /Next: Passport copies for the whole team · waiting on the team/.test(await page.$eval('#teamNext', e => e.textContent)));
+  /* Nov 2026: staff can tick a document step by hand — the flights, the letter of invitation… sent another way */
+  ok('each document step not yet in has its own tick for staff', (await page.$$eval('.flowList [data-teamstep]', cs => cs.map(c => c.getAttribute('data-teamstep')))).join(',') === 'call1,passports,photo,flights,invitation,evisa,call2,arrived', (await page.$$eval('.flowList [data-teamstep]', cs => cs.map(c => c.getAttribute('data-teamstep')))).join(','));
+  await page.check('[data-teamstep="flights"]'); await page.waitForTimeout(400);
+  const tf = sent.filter(b => b.fn === 'portalTeamStep').pop();
+  ok('ticking Flights goes through portalTeamStep, and says staff ticked it', tf && tf.args[3] === 'flights' && tf.args[4] === true && /ticked by staff/.test(await page.$eval('[data-teamstep="flights"]', e => e.closest('li').textContent)));
   await ptab(page, 'docs');
   ok('the names-and-photos document has no upload on the record either: it lists files that came the old way and points to the roster', !(await page.$('[data-docup="photo"]')) && /team\.pdf/.test(await page.$eval('[data-dockind="photo"]', e => e.textContent)) && /Member Two\.png/.test(await page.$eval('[data-dockind="photo"]', e => e.textContent)) && /put each one on a person under Team members/.test(await page.$eval('[data-dockind="photo"]', e => e.textContent)) && !!(await page.$('[data-docup="passports"]')));
   await ptab(page, 'people');
@@ -1645,13 +1727,18 @@ async function open(viewport, query, seed) {
   await page.waitForSelector('.trow');
   const bar = await page.evaluate(() => ({
     header: [...document.querySelectorAll('#hbtns button')].map(b => b.id),
-    nav: [...document.querySelectorAll('#staffNav button')].map(b => b.id),
-    inView: [...document.querySelectorAll('#staffNav button, #hbtns button')].every(b => { const r = b.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 0.5; }),
+    navBar: !!document.querySelector('#staffNav'),
+    menuBtn: (() => { const r = document.querySelector('#navMenu').getBoundingClientRect(); return { right: r.right, top: r.top, W: innerWidth }; })(),
+    inView: [...document.querySelectorAll('#hbtns button')].every(b => { const r = b.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 0.5; }),
     noScroll: document.documentElement.scrollWidth <= innerWidth + 1
   }));
-  ok('on a phone the header keeps only language and Sign out', JSON.stringify(bar.header) === JSON.stringify(['langBtn', 'outBtn']), JSON.stringify(bar.header));
-  ok('the bar is one ☰ button that says where you are — Applications when the portal opens', JSON.stringify(bar.nav) === JSON.stringify(['navMenu']) && /Applications/.test(await page.$eval('#navMenu', b => b.textContent)) && !(await page.$('#staffMenu')), JSON.stringify(bar.nav));
-  ok('the way back to the GP app is small text on its own line, not a button beside the menu', await page.$eval('#toGpApp', a => a.tagName === 'A' && a.getAttribute('href') === 'teams.html' && /Go back to GP Home/.test(a.textContent) && !a.closest('#staffNav') && a.getBoundingClientRect().bottom <= document.querySelector('#staffNav').getBoundingClientRect().top));
+  /* Nov 2026 (Andrew): ☰ in the top-right corner, as in the GP app, and Sign out inside it */
+  ok('on a phone the header is the language and ☰, in the top-right corner — no Sign out button there', JSON.stringify(bar.header) === JSON.stringify(['langBtn', 'navMenu']) && bar.menuBtn.W - bar.menuBtn.right < 24 && bar.menuBtn.top < 40, JSON.stringify(bar));
+  ok('the kinds of application sit four to a row on a phone — two even rows, all on screen', await page.$$eval('.whatTab', bs => { const rows = {}; bs.forEach(b => { const t = Math.round(b.getBoundingClientRect().top); rows[t] = (rows[t] || 0) + 1; }); return Object.values(rows).join() === '4,4' && bs.every(b => { const r = b.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 0.5 && b.scrollWidth <= b.clientWidth + 1; }); }));
+  const gp = await page.evaluate(() => { P.boot.gpdts = true; P.what = ''; render(); const all = !!document.querySelector('#toGpdts'); P.what = 'dts'; render(); const dts = !!document.querySelector('#toGpdts'); P.what = ''; delete P.boot.gpdts; render(); return { all, dts }; });
+  ok('the GPDTS button shows only on the DTS tab', !gp.all && gp.dts, JSON.stringify(gp));
+  ok('no menu bar under the header any more; the page has its own heading', !bar.navBar && /Applications/.test(await page.$eval('#main h1', e => e.textContent)) && !(await page.$('#staffMenu')));
+  ok('the way back to the GP app is small text on its own line', await page.$eval('#toGpApp', a => a.tagName === 'A' && a.getAttribute('href') === 'teams.html' && /Go back to GP Home/.test(a.textContent)));
   await page.click('#navMenu'); await page.waitForSelector('#staffMenu'); await page.waitForTimeout(350);
   ok('☰ opens the menu as a panel on the side, over the page, with a backdrop', await page.$eval('#staffMenu', m => { const r = m.getBoundingClientRect(), cs = getComputedStyle(m); return cs.position === 'fixed' && Math.abs(r.right - innerWidth) < 1 && r.top === 0 && r.width < innerWidth; }) && !!(await page.$('#menuScrim')) && await page.evaluate(() => document.body.classList.contains('menuOn')), JSON.stringify(await page.$eval('#staffMenu', m => { const r = m.getBoundingClientRect(); return { pos: getComputedStyle(m).position, r: [r.left, r.top, r.right, r.width], w: innerWidth }; })));
   await page.click('#menuScrim', { position: { x: 10, y: 400 } }); await page.waitForTimeout(150);
@@ -1660,16 +1747,22 @@ async function open(viewport, query, seed) {
   ok('… and so does Esc', !(await page.$('#staffMenu')));
   await page.click('#navMenu'); await page.waitForSelector('#menuClose'); await page.click('#menuClose'); await page.waitForTimeout(150);
   ok('… and ✕', !(await page.$('#staffMenu')));
+  await page.click('#navMenu'); await page.waitForSelector('#staffMenu');
+  ok('Sign out is the last thing in the menu', await page.$eval('#staffMenu', m => { const b = [...m.querySelectorAll('.menuItem')]; return b[b.length - 1].id === 'outBtn' && /Sign out/.test(b[b.length - 1].textContent); }));
+  await page.click('#menuClose'); await page.waitForTimeout(150);
   ok('every button is fully on screen, nothing scrolls sideways', bar.inView && bar.noScroll && await page.$eval('#toGpApp', a => { const r = a.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 0.5; }));
   if(!(await page.$('#toPreview'))){ await page.click('#navMenu'); await page.waitForSelector('#toPreview'); }
   await page.click('#toPreview');
   await page.waitForSelector('#pvFrame');
-  ok('the ☰ button says where you are (and the menu closes)', /View as applicant/.test(await page.$eval('#navMenu', b => b.textContent)) && !(await page.$('#staffMenu')) && !(await page.$('#navCrm')));
+  ok('the menu closes and the page is View as applicant', !(await page.$('#staffMenu')) && !(await page.$('#navCrm')));
+  await page.click('#navMenu'); await page.waitForSelector('#toPreview');
+  ok('… marked as where you are in the menu', await page.$eval('#toPreview', b => b.classList.contains('on')));
+  await page.click('#menuClose'); await page.waitForTimeout(150);
   await page.click('#navMenu'); await page.waitForSelector('#navCrm');
   ok('Applications is the first thing in the menu', await page.$eval('#staffMenu .menuItem', b => b.id) === 'navCrm');
   await page.click('#navCrm');
   await page.waitForSelector('.trow');
-  ok('… and takes you back to the list', /Applications/.test(await page.$eval('#navMenu', b => b.textContent)) && !(await page.$('#staffMenu')));
+  ok('… and takes you back to the list', /Applications/.test(await page.$eval('#main h1', e => e.textContent)) && !(await page.$('#staffMenu')));
   await ctx.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {});
   if(!(await page.$('#toLink'))){ await page.click('#navMenu'); await page.waitForSelector('#toLink'); }
   await page.click('#toLink');

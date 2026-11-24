@@ -108,10 +108,10 @@ async function goMyc(page) {
   ok('… the Child Protection Agreement and the contract further down the same page', /Child Protection Agreement/.test(await page.$eval('#mycLegal', e => e.innerText)) && /No contract on file yet/.test(await page.$eval('#main', e => e.innerText)));
   await page.click('#mycBack'); await page.waitForSelector('#profMyContract');
   ok('← from My contract goes back to Profile & settings', await page.evaluate(() => S.view === 'profile'));
-  await page.click('nav.bottom [data-tab="week"]'); await page.waitForSelector('#libHomeTile');
-  ok('About me has the Library with the books read, from the account', /2 books read/.test(await page.$eval('#libHomeTile', e => e.innerText)));
+  await page.waitForSelector('#profBooks');
+  ok('Profile has the Library with the books read, from the account', /2 books read/.test(await page.$eval('#profBooks', e => e.innerText)));
   await page.screenshot({ path: OUT + '/home.png' });
-  await page.click('#libHomeTile'); await page.waitForTimeout(900);
+  await page.click('#profBooks'); await page.waitForTimeout(900);
   ok('tapping it opens the Library', await page.evaluate(() => S.view === 'library') && /\b2\s*\/\s*\d+\s*read/.test(await page.$eval('.libProgress', e => e.innerText)));
   await page.click('.libRow [data-libbook="deep-work"]'); await page.waitForTimeout(300);
   await page.click('#libMarkRead'); await page.waitForTimeout(900);

@@ -78,6 +78,87 @@ var GP_LIBRARY = {
   "plum": "#6B4FA0",
   "laterite": "#A4572A"
  },
+ "tags": [{"id":"lead","name":"Leadership","emoji":"🧭"},{"id":"teams","name":"Teams","emoji":"🤝"},{"id":"conflict","name":"Conflict","emoji":"🕊️"},{"id":"comm","name":"Communication","emoji":"💬"},{"id":"habits","name":"Habits","emoji":"🔁"},{"id":"focus","name":"Focus & time","emoji":"🎯"},{"id":"growth","name":"Personal growth","emoji":"🌱"},{"id":"vision","name":"Vision","emoji":"🔭"},{"id":"money","name":"Money","emoji":"💵"},{"id":"create","name":"Creativity","emoji":"💡"},{"id":"faith","name":"Faith","emoji":"✝️"},{"id":"prayer","name":"Prayer","emoji":"🙏"},{"id":"mission","name":"Mission","emoji":"🌏"},{"id":"culture","name":"Culture","emoji":"🌉"},{"id":"marriage","name":"Marriage","emoji":"💍"},{"id":"parenting","name":"Parenting","emoji":"👶"}],
+ "plans": [
+  {
+   "id": "new-staff",
+   "name": "New at YWAM GP",
+   "emoji": "🌱",
+   "desc": "Start here in your first month: our values, keeping each other safe, working across cultures, and one YWAM classic.",
+   "books": [
+    "fight-our-values",
+    "keeping-each-other-safe",
+    "working-well-with-cambodians",
+    "working-well-with-westerners",
+    "is-that-really-you-god"
+   ]
+  },
+  {
+   "id": "pre-marriage",
+   "name": "Getting ready for marriage",
+   "emoji": "💍",
+   "desc": "For couples preparing to marry. Read each one, talk about it together, then take the couple check-up.",
+   "books": [
+    "things-i-wish-id-known-before-we-got-married",
+    "the-5-love-languages",
+    "the-meaning-of-marriage",
+    "boundaries-in-marriage"
+   ],
+   "end": "couple"
+  },
+  {
+   "id": "marriage",
+   "name": "A stronger marriage",
+   "emoji": "❤️",
+   "desc": "For married couples: what research and Scripture say about a marriage that lasts.",
+   "books": [
+    "the-seven-principles-for-making-marriage-work",
+    "sacred-marriage",
+    "the-5-love-languages",
+    "boundaries-in-marriage"
+   ],
+   "end": "couple"
+  },
+  {
+   "id": "new-leader",
+   "name": "Leading a team",
+   "emoji": "🧭",
+   "desc": "For anyone who leads a ministry: trust, clarity, hard conversations and getting things done.",
+   "books": [
+    "the-five-dysfunctions-of-a-team",
+    "the-advantage",
+    "crucial-conversations",
+    "extreme-ownership",
+    "the-4-disciplines-of-execution",
+    "lead-like-jesus"
+   ]
+  },
+  {
+   "id": "hearing-god",
+   "name": "Walking with God",
+   "emoji": "🙏",
+   "desc": "YWAM’s foundations: hearing God’s voice, knowing the Father, prayer and making Jesus Lord.",
+   "books": [
+    "is-that-really-you-god",
+    "the-father-heart-of-god",
+    "intimate-friendship-with-god",
+    "making-jesus-lord",
+    "intercession-thrilling-and-fulfilling"
+   ]
+  },
+  {
+   "id": "habits",
+   "name": "Better habits",
+   "emoji": "🔁",
+   "desc": "Small daily changes that add up: how habits form, how to keep them, and how to focus.",
+   "books": [
+    "atomic-habits",
+    "the-power-of-habit",
+    "the-compound-effect",
+    "deep-work"
+   ]
+  }
+ ],
  "startHere": [
   "the-21-irrefutable-laws-of-leadership",
   "the-7-habits-of-highly-effective-people",
@@ -93,6 +174,7 @@ var GP_LIBRARY = {
  "books": [
   {
    "id": "developing-the-leader-within-you",
+   "tags": ["lead","growth"],
    "title": "Developing the Leader Within You",
    "author": "John C. Maxwell",
    "year": 1993,
@@ -167,6 +249,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "first-break-all-the-rules",
+   "tags": ["lead","teams"],
    "title": "First, Break All the Rules",
    "author": "Marcus Buckingham & Curt Coffman",
    "year": 1999,
@@ -242,6 +325,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "good-to-great",
+   "tags": ["lead","vision"],
    "title": "Good to Great",
    "author": "Jim Collins",
    "year": 2001,
@@ -317,6 +401,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "never-split-the-difference",
+   "tags": ["comm","conflict"],
    "title": "Never Split the Difference",
    "author": "Chris Voss (with Tahl Raz)",
    "year": 2016,
@@ -397,6 +482,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "predictable-success",
+   "tags": ["lead","vision"],
    "title": "Predictable Success",
    "author": "Les McKeown",
    "year": 2010,
@@ -471,6 +557,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-4-disciplines-of-execution",
+   "tags": ["focus","teams"],
    "title": "The 4 Disciplines of Execution",
    "author": "Chris McChesney, Sean Covey & Jim Huling",
    "year": 2012,
@@ -547,6 +634,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "thou-shall-prosper",
+   "tags": ["money","growth"],
    "title": "Thou Shall Prosper",
    "author": "Rabbi Daniel Lapin",
    "year": 2002,
@@ -620,6 +708,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-e-myth-revisited",
+   "tags": ["lead","focus"],
    "title": "The E-Myth Revisited",
    "author": "Michael E. Gerber",
    "year": 1995,
@@ -694,6 +783,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-tipping-point",
+   "tags": ["comm","vision"],
    "title": "The Tipping Point",
    "author": "Malcolm Gladwell",
    "year": 2000,
@@ -768,6 +858,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-21-irrefutable-laws-of-leadership",
+   "tags": ["lead","growth"],
    "title": "The 21 Irrefutable Laws of Leadership",
    "author": "John C. Maxwell",
    "year": 1998,
@@ -849,6 +940,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "how-to-win-friends-and-influence-people",
+   "tags": ["comm","teams"],
    "title": "How to Win Friends & Influence People",
    "author": "Dale Carnegie",
    "year": 1936,
@@ -923,6 +1015,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "extreme-ownership",
+   "tags": ["lead","teams"],
    "title": "Extreme Ownership",
    "author": "Jocko Willink & Leif Babin",
    "year": 2015,
@@ -998,6 +1091,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "thanks-for-the-feedback",
+   "tags": ["comm","growth"],
    "title": "Thanks for the Feedback",
    "author": "Douglas Stone & Sheila Heen",
    "year": 2014,
@@ -1072,6 +1166,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-five-dysfunctions-of-a-team",
+   "tags": ["teams","conflict"],
    "title": "The Five Dysfunctions of a Team",
    "author": "Patrick Lencioni",
    "year": 2002,
@@ -1146,6 +1241,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "emotional-intelligence",
+   "tags": ["growth","comm"],
    "title": "Emotional Intelligence",
    "author": "Daniel Goleman",
    "year": 1995,
@@ -1221,6 +1317,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "leaders-eat-last",
+   "tags": ["lead","teams"],
    "title": "Leaders Eat Last",
    "author": "Simon Sinek",
    "year": 2014,
@@ -1296,6 +1393,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "lean-in",
+   "tags": ["lead","growth"],
    "title": "Lean In",
    "author": "Sheryl Sandberg",
    "year": 2013,
@@ -1371,6 +1469,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "start-with-why",
+   "tags": ["vision","lead"],
    "title": "Start with Why",
    "author": "Simon Sinek",
    "year": 2009,
@@ -1446,6 +1545,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "boundaries",
+   "tags": ["growth","conflict"],
    "title": "Boundaries",
    "author": "Henry Cloud & John Townsend",
    "year": 1992,
@@ -1520,6 +1620,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-power-of-moments",
+   "tags": ["create","teams"],
    "title": "The Power of Moments",
    "author": "Chip Heath & Dan Heath",
    "year": 2017,
@@ -1589,6 +1690,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-advantage",
+   "tags": ["teams","lead"],
    "title": "The Advantage",
    "author": "Patrick Lencioni",
    "year": 2012,
@@ -1664,6 +1766,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "multipliers",
+   "tags": ["lead","teams"],
    "title": "Multipliers",
    "author": "Liz Wiseman (with Greg McKeown)",
    "year": 2010,
@@ -1739,6 +1842,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "crucial-conversations",
+   "tags": ["conflict","comm"],
    "title": "Crucial Conversations",
    "author": "Kerry Patterson, Joseph Grenny, Ron McMillan & Al Switzler",
    "year": 2002,
@@ -1813,6 +1917,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-ideal-team-player",
+   "tags": ["teams","growth"],
    "title": "The Ideal Team Player",
    "author": "Patrick Lencioni",
    "year": 2016,
@@ -1888,6 +1993,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "atomic-habits",
+   "tags": ["habits","growth"],
    "title": "Atomic Habits",
    "author": "James Clear",
    "year": 2018,
@@ -1963,6 +2069,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "decisive",
+   "tags": ["focus","lead"],
    "title": "Decisive",
    "author": "Chip Heath & Dan Heath",
    "year": 2013,
@@ -2038,6 +2145,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "drive",
+   "tags": ["habits","teams"],
    "title": "Drive",
    "author": "Daniel H. Pink",
    "year": 2009,
@@ -2113,6 +2221,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "getting-things-done",
+   "tags": ["focus","habits"],
    "title": "Getting Things Done",
    "author": "David Allen",
    "year": 2001,
@@ -2187,6 +2296,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "grit",
+   "tags": ["habits","growth"],
    "title": "Grit",
    "author": "Angela Duckworth",
    "year": 2016,
@@ -2262,6 +2372,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "mindset",
+   "tags": ["growth","habits"],
    "title": "Mindset",
    "author": "Carol S. Dweck",
    "year": 2006,
@@ -2337,6 +2448,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "rich-dad-poor-dad",
+   "tags": ["money"],
    "title": "Rich Dad Poor Dad",
    "author": "Robert T. Kiyosaki",
    "year": 1997,
@@ -2412,6 +2524,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "think-like-a-freak",
+   "tags": ["create","focus"],
    "title": "Think Like a Freak",
    "author": "Steven D. Levitt & Stephen J. Dubner",
    "year": 2014,
@@ -2487,6 +2600,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "lead-like-jesus",
+   "tags": ["lead","faith"],
    "title": "Lead Like Jesus",
    "author": "Ken Blanchard & Phil Hodges",
    "year": 2005,
@@ -2560,6 +2674,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-4-hour-workweek",
+   "tags": ["focus","money"],
    "title": "The 4-Hour Workweek",
    "author": "Tim Ferriss",
    "year": 2007,
@@ -2634,6 +2749,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-7-habits-of-highly-effective-people",
+   "tags": ["habits","growth"],
    "title": "The 7 Habits of Highly Effective People",
    "author": "Stephen R. Covey",
    "year": 1989,
@@ -2708,6 +2824,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-compound-effect",
+   "tags": ["habits","growth"],
    "title": "The Compound Effect",
    "author": "Darren Hardy",
    "year": 2010,
@@ -2778,6 +2895,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-power-of-habit",
+   "tags": ["habits"],
    "title": "The Power of Habit",
    "author": "Charles Duhigg",
    "year": 2012,
@@ -2853,6 +2971,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "deep-work",
+   "tags": ["focus","habits"],
    "title": "Deep Work",
    "author": "Cal Newport",
    "year": 2016,
@@ -2928,6 +3047,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-psychology-of-money",
+   "tags": ["money","growth"],
    "title": "The Psychology of Money",
    "author": "Morgan Housel",
    "year": 2020,
@@ -3003,6 +3123,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "made-to-stick",
+   "tags": ["comm","create"],
    "title": "Made to Stick",
    "author": "Chip Heath & Dan Heath",
    "year": 2007,
@@ -3078,6 +3199,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "purple-cow",
+   "tags": ["create","vision"],
    "title": "Purple Cow",
    "author": "Seth Godin",
    "year": 2003,
@@ -3153,6 +3275,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "switch-on-your-brain",
+   "tags": ["growth","faith"],
    "title": "Switch On Your Brain",
    "author": "Dr. Caroline Leaf",
    "year": 2013,
@@ -3222,6 +3345,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "building-a-storybrand",
+   "tags": ["comm","create"],
    "title": "Building a StoryBrand",
    "author": "Donald Miller",
    "year": 2017,
@@ -3297,6 +3421,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-war-of-art",
+   "tags": ["create","habits"],
    "title": "The War of Art",
    "author": "Steven Pressfield",
    "year": 2002,
@@ -3366,6 +3491,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "working-well-with-westerners",
+   "tags": ["culture","teams"],
    "title": "Working Well with Westerners",
    "author": "GP Library",
    "year": 2026,
@@ -3450,6 +3576,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "working-well-with-cambodians",
+   "tags": ["culture","teams"],
    "title": "Working Well with Cambodians",
    "author": "GP Library",
    "year": 2026,
@@ -3534,6 +3661,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "fight-our-values",
+   "tags": ["faith","culture"],
    "title": "FIGHT: Our Values",
    "overview": "fight",
    "author": "GP Library",
@@ -3625,6 +3753,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "keeping-each-other-safe",
+   "tags": ["teams","culture"],
    "title": "Keeping Each Other Safe",
    "author": "GP Library",
    "year": 2026,
@@ -3704,6 +3833,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "is-that-really-you-god",
+   "tags": ["faith","prayer","mission"],
    "title": "Is That Really You, God?",
    "author": "Loren Cunningham with Janice Rogers",
    "year": 1984,
@@ -3777,6 +3907,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "making-jesus-lord",
+   "tags": ["faith","growth"],
    "title": "Making Jesus Lord",
    "author": "Loren Cunningham",
    "year": 1988,
@@ -3850,6 +3981,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "daring-to-live-on-the-edge",
+   "tags": ["faith","money","mission"],
    "title": "Daring to Live on the Edge",
    "author": "Loren Cunningham",
    "year": 1991,
@@ -3924,6 +4056,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "intimate-friendship-with-god",
+   "tags": ["faith","prayer"],
    "title": "Intimate Friendship with God",
    "author": "Joy Dawson",
    "year": 1986,
@@ -4002,6 +4135,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "intercession-thrilling-and-fulfilling",
+   "tags": ["prayer","faith"],
    "title": "Intercession, Thrilling and Fulfilling",
    "author": "Joy Dawson",
    "year": 1997,
@@ -4080,6 +4214,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-father-heart-of-god",
+   "tags": ["faith","growth"],
    "title": "The Father Heart of God",
    "author": "Floyd McClung",
    "year": 1985,
@@ -4158,6 +4293,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "spiritual-warfare-for-every-christian",
+   "tags": ["faith","prayer"],
    "title": "Spiritual Warfare for Every Christian",
    "author": "Dean Sherman",
    "year": 1990,
@@ -4237,6 +4373,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "discipling-nations",
+   "tags": ["mission","vision"],
    "title": "Discipling Nations",
    "author": "Darrow L. Miller with Stan Guthrie",
    "year": 1998,
@@ -4311,6 +4448,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-book-that-transforms-nations",
+   "tags": ["mission","faith"],
    "title": "The Book That Transforms Nations",
    "author": "Loren Cunningham with Janice Rogers",
    "year": 2007,
@@ -4389,6 +4527,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "why-not-women",
+   "tags": ["lead","mission"],
    "title": "Why Not Women?",
    "author": "Loren Cunningham and David Joel Hamilton",
    "year": 2000,
@@ -4467,6 +4606,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "things-i-wish-id-known-before-we-got-married",
+   "tags": ["marriage","comm"],
    "title": "Things I Wish I'd Known Before We Got Married",
    "author": "Gary Chapman",
    "year": 2010,
@@ -4545,6 +4685,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-meaning-of-marriage",
+   "tags": ["marriage","faith"],
    "title": "The Meaning of Marriage",
    "author": "Timothy Keller with Kathy Keller",
    "year": 2011,
@@ -4623,6 +4764,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "sacred-marriage",
+   "tags": ["marriage","faith"],
    "title": "Sacred Marriage",
    "author": "Gary Thomas",
    "year": 2000,
@@ -4701,6 +4843,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-seven-principles-for-making-marriage-work",
+   "tags": ["marriage","conflict"],
    "title": "The Seven Principles for Making Marriage Work",
    "author": "John M. Gottman and Nan Silver",
    "year": 1999,
@@ -4779,6 +4922,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "the-5-love-languages",
+   "tags": ["marriage","comm"],
    "title": "The 5 Love Languages: The Secret to Love that Lasts",
    "author": "Gary Chapman",
    "year": 1992,
@@ -4857,6 +5001,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "boundaries-in-marriage",
+   "tags": ["marriage","conflict"],
    "title": "Boundaries in Marriage",
    "author": "Henry Cloud & John Townsend",
    "year": 1999,
@@ -4930,6 +5075,7 @@ var GP_LIBRARY = {
   },
   {
    "id": "growing-kids-gods-way",
+   "tags": ["parenting","faith"],
    "title": "Growing Kids God's Way",
    "author": "Gary & Anne Marie Ezzo",
    "shelf": "family",

@@ -93,13 +93,13 @@ mem.survey = [
   Object.assign(ans('tok_a3', WK), { source: '' })            // an old row the daily roll-up wrote
 ];
 mem.dailyLogs = [{ staffId: 'a3', date: NOW, week: WK, langHours: 3, minHours: 2, workout: true, quietTime: false, bible: true, habits: { bible: true } }];
-const hero = page => page.$eval('[data-gohealth]', e => e.innerText.replace(/\s+/g, ' ').trim()).catch(() => '');
+const hero = page => page.$eval('.myHero [data-gohealth]', e => e.innerText.replace(/\s+/g, ' ').trim()).catch(() => '');
 const card = hero;   // My Home's health lives on the summary card now (Oct 2026)
 
 {
   const { ctx, page } = await open('anow');
   const hv = await hero(page);
-  ok('answered this week: the summary card shows this week’s weekly score', /My Health 9\.4\/10/.test(hv), hv);
+  ok('answered this week: the summary card shows this week’s weekly score', /9\.4\s*Health/.test(hv), hv);
   const main = await page.$eval('#main', e => e.innerText);
   ok('no “This week” totals from daily logging', !/Language hrs|Workout days|Quiet-time days/.test(main));
   ok('no days-logged count, and no daily check-in', !/days logged|log a day|Daily check-in/i.test(main) && !(await page.$('#moreToday, #saveDayBtn')));
@@ -113,13 +113,13 @@ const card = hero;   // My Home's health lives on the summary card now (Oct 2026
   mem.survey = mem.survey.map(r => r.device === 'tok_a2' ? Object.assign({}, r, { clarity: 5 }) : r);
   const { ctx, page } = await open('alast');
   const hv = await hero(page);
-  ok('only last week answered: last week’s score until this week is answered', /My Health \d\.\d\/10/.test(hv), hv);
+  ok('only last week answered: last week’s score until this week is answered', /\d\.\d\s*Health/.test(hv), hv);
   await ctx.close();
 }
 {
   const { ctx, page } = await open('adaily');
   const hv = await hero(page);
-  ok('a week only rolled up from days shows no score', /My Health —\/10/.test(hv) && !/\d\.\d/.test(hv), hv);
+  ok('a week only rolled up from days shows no score', /—\s*Health/.test(hv) && !/\d\.\d/.test(hv), hv);
   const before = JSON.stringify(mem.survey);
   await page.click('[data-habit="quietTime"]'); await page.waitForTimeout(1200);
   ok('tapping a habit saves the day', mem.dailyLogs.some(l => l.staffId === 'a3' && l.habits && l.habits.quietTime), JSON.stringify(mem.dailyLogs.filter(l => l.staffId === 'a3')));

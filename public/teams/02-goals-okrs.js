@@ -498,8 +498,8 @@ function phaseBanner(phase, wk){
   var rec=goalsForWeek(wk);
   var hasGoals=!!(rec && rec.items.some(function(i){return i.text;}));
   if(phase==='plan' && !hasGoals)
-    return '<div class="banner big">🎯 <strong>Start of the week.</strong> Pick the three things that matter for week '+wk+'.'+
-      ' <button class="linkbtn inline" id="jumpGoals">Set them now</button></div>';
+    return '<div class="banner big">🎯 <strong>'+esc(t('Start of the week.'))+'</strong> Pick the three things that matter for week '+wk+'.'+
+      ' <button class="linkbtn inline" id="jumpGoals">'+esc(t('Set them now'))+'</button></div>';
   /* No end-of-week "Log today" banner: there is no daily check-in any more —
      the weekly health check-in is the one thing to fill in. Goals-incomplete
      lives in the bell. */
@@ -1211,7 +1211,7 @@ function ooHistRowHtml_(o){
     (fu.length ? '<div class="ooTodo" style="color:var(--faint)">'+esc(gpT('{done} of {n} follow-ups done',{done:done, n:fu.length}))+'</div>' : '')+
     '</span><span class="ooChev">›</span></button>';
 }
-function fmtDateShort_(iso){ var d=new Date(String(iso).slice(0,10)+'T00:00:00'); return isNaN(d) ? String(iso||'') : d.toLocaleDateString(LANG==='km'?'km-KH':'en-GB', { day:'numeric', month:'short', year:'numeric' }); }
+/* fmtDateShort_ lives in 04-ministry-strengths.js (a second copy here was always overridden by it) */
 /* On a mentee's page: this month's count, then their whole 1-on-1 history —
    what's still to happen first, then every one held, newest first. */
 function ooMenteeSectionHtml_(m){
@@ -1388,7 +1388,6 @@ function bindOneOnOne_(){
    photo-backed cards already use for contrast rather than text color. */
 function miniDashboardHtml(){
   var wk=thisWeek();
-  var st=graceStreak(function(){return true;});
   var rec=goalsForWeek(wk);
   var written=(rec && rec.items ? rec.items : []).filter(function(i){return i && i.text;});
   var goalsDone=written.filter(function(i){return goalItemPct(i)>=100;}).length;
@@ -1397,20 +1396,9 @@ function miniDashboardHtml(){
   var log=logForDate(todayStr());
   var habitsDone=list.filter(function(hb){return habitDoneToday(hb, log);}).length;
   var habitsPct=list.length ? Math.round(habitsDone/list.length*100) : 0;
-  var year=String(new Date().getFullYear());
-  var yt=(S.trips && S.trips.totals && S.trips.totals[year]) || {personal:0};
-  var cap=(S.trips && S.trips.ptoCap) || 30;
-  var ptoLeft=Math.max(0, cap-yt.personal);
   var HH=homeHealth_();   // the weekly check-in only: this week's, or last week's until it is answered
   var score=HH.score;
   var healthPct=score!==null?Math.round(score*10):0;
-  var prevScore=HH.prevScore;
-  var healthTrend=(score!==null&&prevScore!==null)?trendBadge(pctChange(prevScore,score),true):'';
-  var mentorId=S.me.mentorId||'';
-  var mentorRec=mentorId?personOf(mentorId):null;
-  var mentorName=mentorId?(mentorRec?mentorRec.name:nameOf(mentorId)):'';
-  var mentorPct=mentorId?100:0;
-  var bestRun=myHabits().reduce(function(m,hb){ return hb.perWeek ? m : Math.max(m, habitBest(hb)); }, 0);   // days; a times-a-week habit's best is in weeks
 
   var p=S.profile||{};
   var color=p.dashboardColor||'';
@@ -1431,6 +1419,7 @@ function miniDashboardHtml(){
       '<button class="dashSettingBtn'+(open?' on':'')+'" id="dashCustomizeBtn" aria-pressed="'+(open?'true':'false')+'" aria-label="'+esc(t('Customize dashboard'))+'">'+
         '<span class="ic">⚙️</span></button>'+
     '</div>';
+  h+=gameHomeHtml_();   // my streak, points and place this week — tap for the board (20-game.js)
 
   /* ⚙️ opens the colour / photo options right here, under the greeting —
      below the card (where they were) they opened off the bottom of a phone's
@@ -1466,34 +1455,8 @@ function miniDashboardHtml(){
      the big streak number read as an afterthought in the middle of the card. */
   h+='<div class="hero myHero'+(custom?' custom':'')+'"'+
     (custom?' style="'+(color?'background-color:'+esc(color)+';':'')+(bg?'background-image:url(\''+esc(bg)+'\');':'')+'"':'')+'>'+
-    '<button class="heroRow'+(written.length?' withList':'')+'" data-jump="sec-goals">'+gpRingHtml(goalsPct,'sm',t('Weekly Goals'))+
-      '<div class="heroTrend">'+esc(t('Weekly Goals'))+' <b class="heroFig">'+goalsDone+'</b>/'+written.length+'</div>'+
-      (written.length?'<div class="heroGoalsPreview">'+written.map(function(g){
-        return '<div><span class="heroGoalDot" style="background:'+gpRingColor(goalItemPct(g))+'"></span>'+esc(g.text)+'</div>';
-      }).join('')+'</div>':'')+
-    '</button>'+
-    (typeof dutyHtml==='function' ? schedHomeHtml_() : '')+
-    '<div class="heroDivider"></div>'+
-    '<div class="heroLabel">'+esc(t('WEEK'))+' '+wk+'</div>'+
-    '<div class="heroNum" data-count="'+st+'">0</div>'+
-    '<div class="heroLabel" style="letter-spacing:2px">'+esc(t('DAY STREAK'))+'</div>'+
-    '<button class="heroRow" data-jump="sec-habits">'+gpRingHtml(habitsPct,'sm',t('Habits Today'))+
-      '<div class="heroTrend">'+esc(t('Habits Today'))+' <b class="heroFig">'+habitsDone+'</b>/'+list.length+
-      (bestRun>0?'</div><div class="heroSubtext">🔥 '+esc(gpT('best {n}d streak',{n:bestRun}))+'</div>':'</div>')+'</button>'+
-    /* a small › on the row itself opens the page (Uriah: no big button under them) */
-    '<button class="heroRow heroRowGo" id="goMyHealth" data-gohealth="1" aria-label="'+esc(t('Go to My Health'))+'">'+gpRingHtml(healthPct,'sm',t('My Health'))+
-      '<div class="heroTrend">'+esc(t('My Health'))+' <b class="heroFig">'+(score!==null?score.toFixed(1):'—')+'</b>/10 '+healthTrend+'</div><span class="heroGo" aria-hidden="true">›</span></button>'+
-    '<button class="heroRow heroRowGo" id="goMentorship" data-gomentorship="1" aria-label="'+esc(t('Mentorship'))+'">'+gpRingHtml(mentorPct,'sm',t('Mentor'))+
-      '<div class="heroTrend">'+esc(t('Mentor'))+' <b class="heroFig">'+(mentorId?esc(mentorName):esc(t('Not set')))+'</b></div><span class="heroGo" aria-hidden="true">›</span></button>'+
-    gptHomeRowHtml_()+
-    '<div class="heroSub">'+
-      '<div class="heroSubRow">'+
-        '<span class="heroSubLabel">'+esc(t('PERSONAL DAYS OFF LEFT'))+'</span>'+
-        '<span class="heroSubNum">'+ptoLeft+'</span>'+
-        '<button class="heroSubBtn" id="goLeaveFromMe">🌴 '+esc(t('Request time off'))+'</button>'+
-      '</div>'+
-    '</div>'+
-    homeBaseHtml_()+
+    /* the quick apps, the widgets and the rows, each in the person's own order (19-ux.js, dashBodyHtml_) */
+    dashBodyHtml_({ goalsPct:goalsPct, goalsDone:goalsDone, goalsN:written.length, habitsPct:habitsPct, habitsDone:habitsDone, habitsN:list.length, healthPct:healthPct, score:score })+
   '</div>';
   h+=contractNoticeHtml_();
 
@@ -1503,29 +1466,28 @@ function miniDashboardHtml(){
 /* The base at a glance, at the foot of My Home's card (Base itself is in the
    menu now): the staff, the base's health score and salvations this year —
    the same figures, from the same rollup, as Base's own hero. Tap → Base. */
+/* The summary card, made simpler (Nov 2026, Andrew: "I don't want it to be too much to see … like the widgets on
+   an iPhone"): each thing is on My Home once. Its quick apps, widgets and rows are drawn and arranged in 19-ux.js
+   (dashBodyHtml_); the goals' list, habits, mentor and annual goals have their sections below. */
 function homeBaseHtml_(){
   if(!S.me || !S.me.campus) return '';
   /* Drawn before the base's figures arrive too, with a dash for each — so the card is
      its full size from the first moment and doesn't grow when they land. */
   var R=S.base ? baseR() : null, ids=[S.me.campus];
   var staff=R ? R.totalStaff(ids) : null, hs=R ? R.healthScore(ids) : null, salv=R ? R.headlineFor(ids,'Salvations') : null;
+  /* who is on campus right now is the fourth figure (Who's here), not a row of its own */
+  var W=(S.guest || S.board || S.student) ? false : (S.whosHere && S.whosFor===(S.me.campus||'') ? S.whosHere : null);
+  var cell=function(v, label){ return '<button class="homeBaseCell" data-tobase="1"><b>'+v+'</b>'+esc(label)+'</button>'; };
   return '<div class="heroDivider"></div>'+
-    '<button class="homeBase" id="dashToBase">'+
-      '<span class="homeBaseHead"><span>🏠 '+esc(t(campusName(S.me.campus)))+'</span><span class="homeBaseGo">'+esc(t('Base'))+' →</span></span>'+
-      '<span class="homeBaseRow">'+
-        '<span><b>'+(staff===null?'—':staff)+'</b>'+esc(t('Staff'))+'</span>'+
-        '<span><b>'+(hs===null?'—':hs.toFixed(1))+'</b>'+esc(t('Base health'))+'</span>'+
-        '<span><b>'+(salv===null?'—':fmt(salv))+'</b>'+esc(t('Salvations'))+'</span>'+
+    '<div class="homeBase">'+
+      '<button class="homeBaseHead" id="dashToBase"><span>🏠 '+esc(t(campusName(S.me.campus)))+'</span><span class="homeBaseGo">'+esc(t('Base'))+' →</span></button>'+
+      '<span class="homeBaseRow'+(W===false?'':' four')+'">'+
+        cell(staff===null?'—':staff, t('Staff'))+
+        cell(hs===null?'—':hs.toFixed(1), t('Base health'))+
+        cell(salv===null?'—':fmt(salv), t('Salvations'))+
+        (W===false ? '' : '<button class="homeBaseCell homeWhos" id="goWhosHereHome"><b class="homeWhosN">'+(W && W.count!=null ? W.count : '—')+'</b>'+esc(t('On campus'))+'</button>')+
       '</span>'+
-    '</button>'+
-    /* who is on campus right now (Who's here), the same count as Base's */
-    (S.guest || S.board || S.student ? '' : (function(){
-      var W=S.whosHere && S.whosFor===(S.me.campus||'') ? S.whosHere : null;
-      return '<button class="homeBase homeWhos" id="goWhosHereHome">'+
-        '<span class="homeBaseHead"><span>👥 '+esc(t('On campus now'))+' <b class="homeWhosN">'+(W ? W.count : '—')+'</b>'+
-          (W && W.capacity!=null ? ' <span class="whoCap">· '+esc(gpT('{n}% full',{n:W.capacity}))+'</span>' : '')+'</span>'+
-        '<span class="homeBaseGo">'+esc(t('Who’s here'))+' →</span></span></button>';
-    })());
+    '</div>';
 }
 /* Recent updates for the personal dashboard — leave decisions on my own
    requests, a mentee's leave request waiting on me, and 1-on-1 activity.
@@ -1605,6 +1567,17 @@ function notifItems_(){
         actions:'<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-gohealth="open">'+esc(t('Answer it'))+'</button>' });
     }
   }
+  /* This week's goals not set yet (Nov 2026, Andrew: "don't forget your goals") — dated this week's Monday, so a
+     Clear holds for the week and it comes back next Monday while they are still not set. */
+  if(S.me && !S.student){
+    var sgwk=thisWeek(), sgrec=goalsForWeek(sgwk);
+    if(!(sgrec && (sgrec.items||[]).some(function(i){ return i && i.text; }))){
+      items.push({ when:isoDateOf_(new Date(weekBounds_(sgwk).from)), text:t('Don’t forget to set your three goals for this week'),
+        actions:'<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-jumpgoals="1">'+esc(t('Set them'))+'</button>' });
+    }
+  }
+  /* this month's book now and then, and a teammate's recommendation (18-library-plus.js) */
+  if(S.me && !S.student && typeof libNudgeItems_==='function') libNudgeItems_().forEach(function(it){ items.push(it); });
   /* End of the week, goals not all the way there — used to be a big banner
      inline on My Home; it's a bell item instead now so the page isn't
      stacking two "end of the week" banners at once. Same Friday-dated
@@ -1637,6 +1610,12 @@ function notifItems_(){
     if(S.hrDue) items.push({ when:todayStr()+'T23:59:59.000Z', text: S.hrDue===1 ? t('1 staff contract is due for renewal') : gpT('{n} staff contracts are due for renewal',{n:S.hrDue}), actions:hrBtn });
     if(S.hrFollowUps) items.push({ when:todayStr()+'T23:59:58.000Z', text: S.hrFollowUps===1 ? t('1 candidate follow-up is due') : gpT('{n} candidate follow-ups are due',{n:S.hrFollowUps}), actions:hrBtn });
   }
+  /* SR Hospitality (the Hospitality ministry and admins): a team's dates changed and its booking moved,
+     or someone left and their bed came free — each until someone taps Got it there (Nov 2026). */
+  (S.hospNews||[]).forEach(function(c){
+    items.push({ when:c.at, text: c.kind==='left' ? gpT('SR Hospitality: {name} has left — their bed is free',{name:c.name}) : gpT('SR Hospitality: {name} has new dates, {range}',{name:c.name, range:hospRangeOf_(c.now)}),
+      actions:'<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-gohosp="1">'+esc(t('Open'))+'</button>' });
+  });
   /* The nightly backup (admins): only when a night was missed or the last run
      failed — dated today, so Clear holds until tomorrow and it comes back while
      it is still not running. */
@@ -1716,14 +1695,7 @@ function clearNotifications(){
 /* ---- The weekly health check-in is on Tuesdays, at the staff meeting (Nov 2026, Andrew: "we want to move to
    every Tuesday during our staff meeting") ----
    CHECKIN_DOW (0 Sunday … 6 Saturday; api.js has its own for the phone reminder): the bell's nudge starts that
-   day, My Home shows a card on the day itself while this week's isn't in (checkinTueHtml_, #tueCheckin — it opens
-   the form), and the Health tab says when it is done (#checkinTueHint). Any day still works. */
+   day — on the day itself as the slide-down reminder (19-ux.js) — while this week's isn't in, and the Health tab says when it is done (#checkinTueHint). Any day still works. */
 var CHECKIN_DOW=2;
 function checkinDayOf_(wk){ var d=new Date(weekBounds_(wk).from); d.setDate(d.getDate()+((CHECKIN_DOW+6)%7)); return d; }
 function checkinIsToday_(){ return new Date().getDay()===CHECKIN_DOW; }
-function checkinTueHtml_(){
-  if(!S.me || S.guest || S.student || S.board || !checkinIsToday_() || myWeekRow(thisWeek())) return '';
-  return '<div class="card tueCheckin" id="tueCheckin"><div class="tueCheckinHead">💚 <b>'+esc(t('It’s Tuesday — check-in day'))+'</b></div>'+
-    '<p class="hint" style="margin:4px 0 10px">'+esc(t('Answer your weekly health check-in during the staff meeting. It takes about two minutes, and only you and your mentor see your answers.'))+'</p>'+
-    '<button class="btn" data-gohealth="open" id="tueCheckinGo">'+esc(t('Answer it now'))+'</button></div>';
-}

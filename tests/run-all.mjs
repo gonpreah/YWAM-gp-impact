@@ -16,6 +16,11 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 const SERVER = [
+  'test-tests.mjs',          // Tests: the fivefold gifts are scored on the server; the couple check-up is only ever sent to the two partners and their counsellor
+  'test-library-club.mjs',   // the Library, read together: book of the month, plans, notes, sharing only with a yes, recommendations, who may give a plan
+  'test-lib-notes.mjs',      // the Library's highlights and notes: who sees them (me / my mentor / my campus), likes, comments, prayer requests
+  'test-game.mjs',   // the week's board: points and streaks from what is stored, what others see, the doors
+  'test-photo-thumbs.mjs',   // lists carry the small copy of a photo; the owner and a person's page the full one
   'test-library.mjs',   // the Library's books: every field, shelves, unique ids, valid ISBNs, no quotations
   'test-required.mjs',  // books read on your account; the papers everyone signs, who sees what, versions, the contract
   'test-ministry-tools.mjs', // Campus Leadership "My week" and the Cafe tool fill their weekly numbers; who may use them; server-side prices
@@ -58,6 +63,8 @@ const SERVER = [
   'test-portal-outcome.mjs',  // the portal: Cancelled / Rejected from the stage list close an application into the archive (stage kept, logged, reopenable); a portal admin renames an application, its account and a team's name
   'test-app-use.mjs',        // Admin → App use: the days each person opened the app (once a day, 90 kept) and saved a habit; admins only; only dates; the campus's active staff
   'test-tasks-app.mjs',      // GP Tasks as an app of its own: getTasksBoot is its one call (who you are, the roster, the tasks, the month only when asked, nothing of the main page); tasks.html is built from teams.html; its manifest, icons, the worker and the deploy
+  'test-signin-link.mjs',     // getting back in: an admin's one-time sign-in link (single use, runs out, replaced by a new one, no hash out), a PIN reset on a password account, an admin setting an email
+  'test-demo.mjs',   // the preview (Look around): the app's own handlers on a made-up campus — the real store never opened, only the made-up person signs in, nothing kept
   'test-google-signin.mjs',   // signing in with Google: a Gmail written another way on the profile (capitals, dots, a +tag) still finds it, exact first; the email in the username box the same; whether Google's page-and-back way is on
   'test-dts-db.mjs', // GPDTS → Database: schools and what is filed under each, the policy, lectures' translator / MC / who finds the speaker, students from the portal with their 1-on-1, outreach teams' weeks counted
   'test-portal.mjs',     // YWAM GP Portal: applicant sign-up, applicants closed out of every staff handler and roster, own application only, portal access flags, timeline follows the CRM stage
@@ -78,13 +85,24 @@ const SERVER = [
   'test-gpstrengths.mjs', // the free GP Strengths test: content, fair pairs, server scoring, who sees what
   'test-staff-email.mjs', // one profile per email; adminMergeStaff cleans up a real duplicate
   'test-overscroll-behavior.mjs', // none of the three pages' html/body may go back to overscroll-behavior:none (confirmed live: it disabled scrolling entirely on real desktop Chrome)
+  'test-voice-tasks.mjs',  // Talk it through → tasks (server): off without the key, what is sent to Claude, the answer held to real days / lists / people, nothing saved, the day's limit
 ];
 
 const BROWSER = [
   'test-fin2-page.mjs',      // the finance tool in Impact: loads from the server, saves, a clash shows the newer copy, leadership read-only, the demo's entries brought in
+  'test-ux-ui.mjs',            // ☀️ Today on My Home, 🔍 search from the header, the app's own Yes / Cancel sheet, Undo on a deleted task
+  'test-game-ui.mjs',          // the week's board on the page: My Home's line, Team → This week, Khmer
+  'test-quick-apps-ui.mjs',    // My Home's dashboard: hold or ✎ to edit, wiggle, drag, ＋ widgets and apps; saveDashLayout
+  'test-structure-board-ui.mjs', // the structure whiteboard: Campus Leadership arranges a quarter (drag faces, leaders, typed-in names), pinch and pan, Team → Structure shows it
+  'test-polish-ui.mjs',        // a 320px phone and Khmer: profile / sign-up labels and pop-ups in Khmer, leave dates, Learn Khmer and the header fit, holiday names readable
+  'test-library-club-ui.mjs',  // the Library, read together, on the page: search, topics, a plan, finishing a book, the month's book, recommending, a mentor's plan
+  'test-lib-notes-ui.mjs',  // the Library's highlights and notes on the page: tap a paragraph, highlight, note, share, like, comment, pray
+  'test-tests-ui.mjs',         // ☰ → Tests: the fivefold gifts, the couple check-up from start to results, who sees it
+  'test-photo-thumbs-ui.mjs',  // an upload makes the small copy; an old photo gets one after a good boot
+  'test-khmer-learn-ui.mjs',   // Learn Khmer: the data, cards / quiz / match, readings, the game, grammar, the level test
   'test-library-ui.mjs',  // Menu → Library: loads when opened, covers or drawn ones, shelves, book page, read ticks, Khmer, retry
   'test-library-audio-ui.mjs', // 🎧 reads the screen aloud (phone's voice stood in), turns the page, ⏸, speed kept, stops on close, Khmer needs a Khmer voice
-  'test-guest-ui.mjs',    // Look around without an account: the tour, the whole Library, Base (counts, no names), Team/Health locked, no credentials ever sent
+  'test-guest-ui.mjs',    // Look around without an account: the preview — the app itself on a made-up campus, the real Library, the real store untouched, no credentials ever sent
   'test-required-ui.mjs', // books-read tally, "Finish your profile", read + sign with a drawn signature, admin view, HR → Required
   'test-ministry-tools-ui.mjs', // My week: log, partners, reflection, base plants; Cafe: open, till, counters, expenses, rota, close, set up; Khmer at 320px
   'test-p360-ui.mjs',        // 360 reviews on the page: start with quick picks, answer (a board login too), close, results, plan from a growth area, the quarter's review, share
@@ -145,9 +163,13 @@ const BROWSER = [
   'test-dts-ui.mjs',   // GPDTS in the browser: its tabs, the pipeline and follow-ups due, the Database (a school, the speaker schedule, students and their profile and 1-on-1, events, the policy, an outreach team week by week, a responsibility, a resource; graduated together, potential staff), Numbers without the self-counting boxes; the portal for DTS staff (only DTS, Add a contact, Follow-ups due, Contacts with how, a lead's link and details); Admin → Portal access's Sees
   'test-app-use-ui.mjs',     // Admin → App use (bands, dots, filter, CSV, the note while the history is short) and the weekly health check-in on Tuesdays (My Home's card, the bell, the Health tab)
   'test-tasks-app-ui.mjs',  // GP Tasks as an app of its own: tasks.html opens on Tasks with one call, a two-tab bar, its own kept copy; a task added there is the main app's; the Calendar remembered; ☰ and Log out; the install card; the main app's way to it; back from Google's page on to it
+  'test-signin-link-ui.mjs',  // getting back in: the whole email on Admin → a person, an Email box, Make a sign-in link; opening it signs them in and asks for Google with Not now; a bad link says so; the sign-in screen says to ask an admin
+  'test-signup-setup-ui.mjs', // making an account is Google and a name; after an admin's yes, "Set up my profile" asks campus, ministry, kind of staff, country, mentor and the staff contract, one a screen
   'test-google-signin-ui.mjs', // signing in with Google made smoother: no profile for that Google account → connect it to theirs (no duplicate sign-up); Google won't open → help, the PIN, continue for today; inside Messenger → open in Chrome / copy the link; Google's page and back on an iPhone Home Screen app
   'test-gp-tasks.mjs',  // GP Tasks: ministry/department/personal lists, who sees and changes what, requests, Campus Leadership, the filter, board cards
   'test-gp-tasks-ui.mjs',  // GP Tasks in the browser: lists, Enter to add, day/time/person, the bell, asking another ministry, My Ministry's tab, the board card
+  'test-gp-tasks-week-ui.mjs',  // GP Tasks: light / dark, the Inbox's This week across every list; the Portal as an app with its own icon
+  'test-voice-tasks-ui.mjs',  // Talk it through → tasks: the microphone, the words sent once, the tasks to check, Add, a phone that can't listen, Khmer
   'test-students.mjs',  // students: profiles from SR Hospitality, invite + Google join, the student door (own data only), LD-only mentors
   'test-student-app-ui.mjs',  // the student GP app: staff Students page + invite, portal Go to GP app, student mode tabs/home/menu, mentor accept
   'test-team-personality-ui.mjs',  // Team → Personalities: the team's mix from shared types only, by campus / department / ministry
@@ -156,6 +178,7 @@ const BROWSER = [
   'test-loose-ends-ui.mjs',  // Admin → Loose ends: each list, taps through, the other campus, before 30 days of counting
   'test-fast-open-ui.mjs',  // the kept copy draws at once, calls held until the fresh boot, a refused PIN
   'test-load-fast-ui.mjs',   // files named by version (stamp-assets) and kept by sw.js: a reopen fetches none it has; a release only what changed; the card eases, no jump
+  'test-install-card-ui.mjs',   // Profile & settings → Install this app: the browser's prompt, iPhone's steps, gone once installed
   'test-offline-open-ui.mjs',  // opening with no connection: the kept page and boot, ministry numbers queued and merged
   'test-backup-real.mjs',  // the backup against the real @netlify/blobs (needs npm install; no browser)
   'test-backup-ui.mjs',  // Admin home's "Last backup", the bell when a night is missed
@@ -181,6 +204,17 @@ const BROWSER = [
   'audit-allviews.mjs',     // every screen, no console errors
   'check-nav.mjs',          // the bottom tabs do not wrap at 320px
 ];
+
+/* Pre-flight: every test file is in one of the two lists. Eight were not (Nov 2026) — written, passing on the
+   machine that wrote them, and never run again by anyone, CI included. */
+{
+  const listed = new Set(SERVER.concat(BROWSER));
+  const lost = fs.readdirSync(HERE).filter((f) => /^test-.*\.mjs$/.test(f) && !listed.has(f));
+  if (lost.length) {
+    console.log('FAIL test files that are in neither SERVER nor BROWSER, so nothing runs them:\n  ' + lost.join('\n  '));
+    process.exit(1);
+  }
+}
 
 /* Pre-flight: no test may hardcode one machine's browser.
    Five files did exactly that — executablePath:'/opt/pw-browsers/chromium' — and

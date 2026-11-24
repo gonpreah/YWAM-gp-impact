@@ -14,6 +14,7 @@
    hand-draw and nothing to fall out of date. Tap anyone to open them. */
 function orgPersonChip_(p, lead){
   var title=orgTitleOf_(p);
+  if(p.extra) return '<span class="orgPerson extra'+(lead?' lead':'')+'">'+avatarHtml(p,'sm')+'<span>'+(lead?'👑 ':'')+esc(p.name)+'</span></span>';   // a name typed in on the structure whiteboard
   return '<button class="orgPerson'+(lead?' lead':'')+'" '+(S.orgArranging ? 'data-arrange' : 'data-person')+'="'+esc(p.id)+'">'+avatarHtml(p,'sm')+
     '<span>'+(lead?'👑 ':'')+esc(p.name)+(title ? '<small class="orgChipTitle">'+esc(orgTitleText_(title))+'</small>' : '')+'</span></button>';
 }
@@ -57,9 +58,13 @@ function orgStructureHtml_(campus){
       h+='<button class="btn ghost" id="structStudentsBtn" style="margin:0 0 10px 8px;width:auto;padding:9px 14px">🎓 '+esc(gpT('Students in Q{q} {year}',{q:q, year:year}))+(stuN?' · '+stuN:'')+'</button>';
       if(S.structStudentsEdit===key) h+=structStudentsEditorHtml_(campus, q, year);
     }
-    var place=(c && c.plan && c.plan.place) || {}, arranging=S.me.isAdmin && S.structArrange===key;
+    var place=(c && c.plan && c.plan.place) || {}, arranging=false;
     S.structCtx={ campus:campus, year:year, q:q, key:key };
-    if(S.me.isAdmin && !arranging) h+='<button class="btn ghost" id="structArrangeBtn" style="margin:0 0 10px 8px;width:auto;padding:9px 14px">✏️ '+esc(gpT('Arrange Q{q} {year}',{q:q, year:year}))+'</button>';
+    /* Nov 2026 (Andrew): the structure is arranged on Campus Leadership's whiteboard (teams/23-structure.js) — here it is
+       shown, as this list or as the same tree */
+    if(S.sbTeam && typeof sbTeamHtml_==='function') return h+sbTeamHtml_(campus, year, q);
+    h+='<div class="sbTeamBtns"><button class="btn ghost" id="sbTeamOpen">🗺️ '+esc(t('See it as a tree'))+'</button>'+
+      (typeof sbCanEdit_==='function' && sbCanEdit_(campus) ? '<button class="btn ghost" id="sbTeamEdit">✏️ '+esc(gpT('Edit Q{q} {year}',{q:q, year:year}))+'</button>' : '')+'</div>';
     if(c && c.plan && c.plan.inherited && c.plan.from) h+='<p class="hint" style="margin:0 0 8px">'+esc(gpT('Starting from the Q{q} {year} arrangement.',{q:c.plan.from.quarter, year:c.plan.from.year}))+'</p>';
     if(arranging){
       h+='<div class="arrangeBar" id="arrangeBar"><div><b>✏️ '+esc(gpT('Arranging Q{q} {year}',{q:q, year:year}))+'</b><p class="hint" style="margin:2px 0 0">'+
@@ -68,7 +73,7 @@ function orgStructureHtml_(campus){
         '<button class="btn small" id="structArrangeDone">'+esc(t('Done'))+'</button></div></div>';
       if(S.structMove) h+=structMoveHtml_(campus, S.structMove, place, stu);
     }
-    return h+orgChartHtml_(campus, S.roster, stu, place, arranging);
+    return h+orgChartHtml_(campus, S.roster, stu, place, arranging, c && c.plan ? c.plan.leads : null, c && c.plan ? c.plan.extra : null);
   }
   if(S.structError[key]) return h+'<div class="card"><p class="sub" style="margin:0 0 8px">⚠️ '+esc(t('Couldn’t load this quarter.'))+'</p><p class="hint" style="margin:0 0 8px;overflow-wrap:anywhere">'+esc(S.structError[key])+'</p><button class="btn ghost" id="structRetry" style="margin-top:0">'+esc(t('Try again'))+'</button></div>';
   if(!c) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
@@ -117,7 +122,7 @@ function bindStructArrange_(){
   if(ad) ad.onclick=function(){ S.structArrange=null; S.structMove=null; render(); };
   var ar=document.getElementById('structArrangeReset');
   if(ar) ar.onclick=function(){
-    if(!confirm(t('Put everyone back where their profile says, for this quarter?'))) return;
+    if(!gpAsk_(t('Put everyone back where their profile says, for this quarter?'))) return;
     var ctx=S.structCtx, c=S.structCache[ctx.key]||{ doc:null, source:'none' };
     run('saveStructurePlan',[S.auth.user,S.auth.pin,ctx.campus,ctx.year,ctx.q, undefined, {}],function(d){ if(d && d.ok){ c.plan=d.plan; if(d.doc){ c.doc=d.doc; c.source='saved'; } S.structCache[ctx.key]=c; showMsg(t('Back to profiles')); } else showMsg(t('Could not save')); render(); });
   };
@@ -163,11 +168,16 @@ function structStudentsEditorHtml_(campus, q, year){
     }).join('')+
     '<button class="btn" id="structStudentsSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="structStudentsCancel">'+esc(t('Cancel'))+'</button></div>';
 }
-function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging){
+function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging, planLeads, extras){
   /* The chart is the base's structure for the quarter, which can differ from
-     what a profile says: placeMap (the quarter's arrangement) wins. */
-  var everyone=(roster||S.roster).filter(function(p){ return p.campus===campus && p.kind!=='applicant'; }).map(function(p){
-    var pl=placeMap && placeMap[p.id]; return pl ? Object.assign({}, p, { dept:pl.dept, ministry:pl.ministry }) : p; });
+     what a profile says: placeMap (the quarter's arrangement) wins, and so do the quarter's leaders (planLeads) and the
+     names typed in on the whiteboard (extras) — Nov 2026. */
+  var base=(roster||S.roster).filter(function(p){ return p.campus===campus && p.kind!=='applicant'; });
+  (extras||[]).forEach(function(x){ base=base.concat([{ id:x.id, name:x.name, campus:campus, dept:'_off', ministry:'', extra:true, leads:[] }]); });
+  var everyone=base.map(function(p){
+    var pl=placeMap && placeMap[p.id], o=pl ? Object.assign({}, p, { dept:pl.dept, ministry:pl.ministry }) : p;
+    if(planLeads) o=Object.assign({}, o, { leads:Object.keys(planLeads).filter(function(k){ return planLeads[k].indexOf(p.id)>-1; }) });
+    return o; });
   S.orgArranging = !!arranging;
   /* Staff doing a school this quarter (the quarter's plan, or a snapshot's
      own "student" mark) sit in a Students box, not their ministry. */
@@ -245,7 +255,7 @@ function teamHtml(){
      used to stack both campuses stacked at once, which read as one long list
      rather than "which base am I looking at right now". Defaults to your own
      campus, since that's whose team you open this tab to see. */
-  var mode = S.teamMode==='org' ? 'org' : (S.teamMode==='str' && gsOK() ? 'str' : (S.teamMode==='pers' && pOK() ? 'pers' : 'dir'));
+  var mode = (S.teamMode==='game' && gameOn_()) ? 'game' : S.teamMode==='org' ? 'org' : (S.teamMode==='str' && gsOK() ? 'str' : (S.teamMode==='pers' && pOK() ? 'pers' : 'dir'));
   /* Besides the two campuses, every view has YWAM GP's leadership team and the
      Advisory Board (teamOrgScope_) — in Structure, YWAM GP is the whole chart. */
   var campus = S.teamCampus || (S.me && S.me.campus) || CAMPUSES[0].id;
@@ -256,9 +266,11 @@ function teamHtml(){
     mentorEntryHtml();
   h+='<div class="campusSeg teamModeSeg">'+
     '<button class="campusBtn'+(mode==='dir'?' on':'')+'" data-teammode="dir">👥 '+esc(t('Directory'))+'</button>'+
+    (gameOn_()?'<button class="campusBtn'+(mode==='game'?' on':'')+'" data-teammode="game">🏆 '+esc(t('This week'))+'</button>':'')+
     '<button class="campusBtn'+(mode==='org'?' on':'')+'" data-teammode="org">🧭 '+esc(t('Structure'))+'</button>'+
     (gsOK()?'<button class="campusBtn'+(mode==='str'?' on':'')+'" data-teammode="str">💪 '+esc(t('Strengths'))+'</button>':'')+
     (pOK()?'<button class="campusBtn'+(mode==='pers'?' on':'')+'" data-teammode="pers">🧩 '+esc(t('Personalities'))+'</button>':'')+'</div>';
+  if(mode==='game') return h+'<p class="sub">'+esc(t('Who is using the app this week: points for the small daily things, and days in a row.'))+'</p>'+gameTeamHtml_();
   h+='<p class="sub">'+esc(mode==='org' ? t('Departments and ministries, and who is in each this quarter.') :
     mode==='str' ? t('Who on the base has which strengths, from the Top 5s people have shared.') :
     mode==='pers' ? t('The team’s mix of personality types, from the types people have shared.') :
@@ -444,6 +456,7 @@ function mentorHtml(){
     h+='<div class="banner">🔒 Shared with you as '+esc(m.name.split(' ')[0])+'\u2019s mentor. Hold it with care and prayer — this is trust, not surveillance.</div>';
     if(S.menteeProfile && S.menteeProfile.debt) h+='<div class="banner">💰 Currently carrying staff debt.</div>';
     h+=supMentorCardHtml_(S.menteeSupport, m);
+    h+=libMenteeHtml_(m);
     h+=ooMenteeSectionHtml_(m);
 
     /* Any week, not just the latest: a picker at the top, and every section
@@ -546,7 +559,7 @@ function mentorHtml(){
     var mg=(S.menteeGoals||[]).filter(function(g){ return g.items.some(function(i){return i.text;}); });
     h+='<h3>🎯 Weekly goals</h3>';
     if(!mg.length){
-      h+='<div class="card"><p class="sub" style="margin:6px 0">No goals written yet.</p></div>';
+      h+='<div class="card"><p class="sub" style="margin:6px 0">'+esc(t('No goals written yet.'))+'</p></div>';
     } else {
       var scored=mg.filter(function(g){ return g.pct!==null; });
       var avg=scored.length ? Math.round(scored.reduce(function(a,g){return a+g.pct;},0)/scored.length) : null;
@@ -749,6 +762,52 @@ function myPositionsHtml_(){
     rows.map(function(r){ return '<div class="myPos"><span>'+r[0]+'</span><span><b>'+esc(r[1])+'</b><small>'+esc(r[2])+'</small></span></div>'; }).join('')+
     '<p class="hint" style="margin:6px 0 0">'+esc(t('Your campus role you change below. YWAM GP places and the Advisory Board are set by an admin, on your account.'))+'</p></div>';
 }
+/* ---------- Install this app (Profile & settings, Nov 2026) ----------
+   Uriah: an "install this app" button here. The bar under the header (gpInstallPrompt in
+   rollup.js) goes for good once its ✕ is tapped, and then there was no way back to it; this
+   card stays until the app is installed — opened from the Home Screen it isn't shown at all.
+   Where the browser offers its own install prompt (Chrome and Edge on Android and computers)
+   the button opens that; elsewhere it shows the steps: on an iPhone or iPad, Share → Add to
+   Home Screen; anywhere else, the browser's menu → Install app / Add to Home screen. */
+var _gpInstallEvt=null, _gpInstalled=false;
+window.addEventListener('beforeinstallprompt', function(e){
+  if(gpTasksApp_()) return;   // GP Tasks has its own (12-tasks.js)
+  e.preventDefault(); _gpInstallEvt=e;
+  if(S.me && S.view==='profile') render();
+});
+window.addEventListener('appinstalled', function(){ _gpInstalled=true; _gpInstallEvt=null; if(S.me && S.view==='profile') render(); });
+function gpStandalone_(){ try { return !!((window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true); } catch(e){ return false; } }
+function gpIOS_(){ var ua=navigator.userAgent||''; return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1); }
+function gpInstallCardHtml_(){
+  if(gpStandalone_() || gpTasksApp_()) return '';
+  if(_gpInstalled) return '<div class="card profInstall"><p class="sub" style="margin:0">✓ '+esc(t('Installed — open YWAM GP from your Home Screen.'))+'</p></div>';
+  var h='<button class="card profMyc" id="profInstall"><span class="profMycIc">📲</span><span class="profMycTxt"><b>'+esc(t('Install this app'))+'</b>'+
+    '<span class="pmeta">'+esc(t('Open YWAM GP from your Home Screen, full screen, like any other app.'))+'</span></span><span class="profMycGo">'+(S.installHelp?'⌄':'›')+'</span></button>';
+  if(S.installHelp && !_gpInstallEvt){
+    h+='<div class="card profInstallHelp" id="profInstallHelp">'+(gpIOS_() ?
+      '<ol class="installSteps"><li>'+esc(t('Tap the Share button — the square with an arrow pointing up (at the bottom of Safari, or by the address bar).'))+'</li>'+
+        '<li>'+esc(t('Scroll down and tap “Add to Home Screen”.'))+'</li><li>'+esc(t('Tap “Add”. YWAM GP is now on your Home Screen.'))+'</li></ol>' :
+      '<ol class="installSteps"><li>'+esc(t('Open your browser’s menu — the ⋮ at the top right.'))+'</li>'+
+        '<li>'+esc(t('Tap “Install app” or “Add to Home screen”.'))+'</li><li>'+esc(t('Tap “Install”. YWAM GP is now on your Home Screen.'))+'</li></ol>')+
+      '</div>';
+  }
+  return h;
+}
+function bindInstallCard_(){
+  var b=document.getElementById('profInstall'); if(!b) return;
+  b.onclick=function(){
+    gpTap();
+    if(_gpInstallEvt){
+      var ev=_gpInstallEvt;
+      try {
+        ev.prompt();
+        ev.userChoice.then(function(c){ _gpInstallEvt=null; if(c && c.outcome==='accepted'){ _gpInstalled=true; showMsg(t('Installed')); } render(); }, function(){});
+      } catch(e){ _gpInstallEvt=null; S.installHelp=true; render(); }
+      return;
+    }
+    S.installHelp=!S.installHelp; render();
+  };
+}
 function profileHtml(){
   var p=S.profile||{};
   var opts=S.roster.filter(function(x){return x.id!==S.me.id;}).map(function(x){
@@ -758,24 +817,25 @@ function profileHtml(){
   /* My contract lives here now (Oct 2026, Uriah) — the contract, start dates and the papers to sign */
   h+='<button class="card profMyc" id="profMyContract"><span class="profMycIc">📄</span><span class="profMycTxt"><b>'+esc(t('My contract'))+'</b>'+
     '<span class="pmeta">'+esc(t('Your contract, when you started, and the papers every staff member signs'))+'</span></span><span class="profMycGo">›</span></button>';
+  h+=gpInstallCardHtml_();   // until the app is installed
   h+='<div class="card"><div class="pcard">'+avatarHtml(S.me,'lg')+
-     '<div><button class="btn ghost" id="photoBtn" style="width:auto;margin:0;padding:9px 14px">'+(S.me.photo?'Change photo':'Add photo')+'</button>'+
+     '<div><button class="btn ghost" id="photoBtn" style="width:auto;margin:0;padding:9px 14px">'+esc(S.me.photo?t('Change photo'):t('Add photo'))+'</button>'+
      '<input type="file" accept="image/*" id="photoInput" style="display:none"></div></div>'+
      '<button class="libTally" id="profBooks">📚 '+esc(gpT('{n} books read',{n:libBooksRead_()}))+' · '+esc(t('Library'))+' →</button></div>';
   h+=reqProfileCardHtml_();
   h+=myPositionsHtml_();
   h+='<div class="card">'+
-    '<label class="f">Full name</label><input type="text" id="p_name" value="'+esc(S.me.name)+'">'+
-    '<label class="f">Email</label><input type="email" id="p_email" value="'+esc(p.email||'')+'" placeholder="you@example.com">'+
-    '<div class="hint">One profile per email — this is what stops a duplicate sign-up.</div>'+
-    '<label class="f">Campus</label><select id="p_campus">'+CAMPUSES.map(function(c){return '<option value="'+c.id+'"'+(S.me.campus===c.id?' selected':'')+'>'+c.name+'</option>';}).join('')+'</select>'+
+    '<label class="f">'+esc(t('Full name'))+'</label><input type="text" id="p_name" value="'+esc(S.me.name)+'">'+
+    '<label class="f">'+esc(t('Email'))+'</label><input type="email" id="p_email" value="'+esc(p.email||'')+'" placeholder="you@example.com">'+
+    '<div class="hint">'+esc(t('One profile per email — this is what stops a duplicate sign-up.'))+'</div>'+
+    '<label class="f">'+esc(t('Campus'))+'</label><select id="p_campus">'+CAMPUSES.map(function(c){return '<option value="'+c.id+'"'+(S.me.campus===c.id?' selected':'')+'>'+c.name+'</option>';}).join('')+'</select>'+
     cltRequestBannerHtml_()+
     '<label class="f">'+esc(t('Main department'))+'</label><select id="p_dept">'+deptsFor(S.me.campus).map(function(d){return '<option value="'+esc(d)+'"'+(S.me.dept===d?' selected':'')+'>'+esc(t(d))+'</option>';}).join('')+'</select>'+
     '<label class="f">'+esc(t('Main ministry'))+'</label><select id="p_ministry"></select><div class="hint">'+esc(t('The one My Ministry opens on.'))+'</div>'+
     '<label class="f">'+esc(t('Other ministries I’m part of'))+'</label>'+
     '<div class="hint" style="margin:0 0 6px">'+esc(t('Tick every other ministry you serve in. You see and enter numbers for your main ministry and these.'))+'</div>'+
     '<div class="leadsPick" id="p_ministries">'+leadsPickHtml_(S.me.campus, S.me.ministries||[], 'data-pmin', S.me.dept+'|'+(S.me.ministry||''))+'</div>'+
-    '<label class="f">Role / team</label><input type="text" id="p_role" value="'+esc(S.me.role)+'">'+
+    '<label class="f">'+esc(t('Role / team'))+'</label><input type="text" id="p_role" value="'+esc(S.me.role)+'">'+
     staffTypeFieldHtml('p_type', S.me.staffType||'')+
     '<label class="f">'+esc(t('Male or female'))+'</label><select id="p_sex">'+
       '<option value="">'+esc(t('— choose —'))+'</option>'+
@@ -783,13 +843,13 @@ function profileHtml(){
       '<option value="male"'+((p.sex||'')==='male'?' selected':'')+'>'+esc(t('Male'))+'</option></select>'+
       '<div class="hint">'+esc(t('Used for your personality character.'))+'</div>'+
     countryFieldHtml('p_country', S.me.country||'')+
-    '<label class="f">My mentor <span class="lock">🔒 sees my private check-ins</span></label><select id="p_mentor"><option value="">— none —</option>'+opts+'</select>'+
-    (p.mentorStatus==='pending' ? '<div class="hint">⏳ Waiting for them to accept</div>' : p.mentorStatus==='approved' ? '<div class="hint">✓ Accepted — they can see your private check-ins</div>' : '')+
-    '<label class="f">Phone</label><input type="tel" id="p_phone" value="'+esc(p.phone||'')+'">'+
+    '<label class="f">'+esc(t('My mentor'))+' <span class="lock">🔒 '+esc(t('sees my private check-ins'))+'</span></label><select id="p_mentor"><option value="">'+esc(t('— none —'))+'</option>'+opts+'</select>'+
+    (p.mentorStatus==='pending' ? '<div class="hint">⏳ '+esc(t('Waiting for them to accept'))+'</div>' : p.mentorStatus==='approved' ? '<div class="hint">✓ '+esc(t('Accepted — they can see your private check-ins'))+'</div>' : '')+
+    '<label class="f">'+esc(t('Phone'))+'</label><input type="tel" id="p_phone" value="'+esc(p.phone||'')+'">'+
     '<label class="f">'+esc(t('Year I started with YWAM GP'))+' <span class="hint" style="display:inline">'+esc(t('(not your DTS year)'))+'</span></label><input type="number" id="p_joined" value="'+esc(p.joined||'')+'">'+
-    '<label class="f">Staff debt <span class="lock">🔒 private</span></label><div class="seg" style="max-width:220px">'+
-      '<button id="debtY" class="'+(p.debt?'on bad':'')+'">Yes</button><button id="debtN" class="'+(!p.debt?'on':'')+'">No</button></div>'+
-    '<button class="btn" id="saveProfBtn">Save profile</button></div>';
+    '<label class="f">'+esc(t('Staff debt'))+' <span class="lock">🔒 '+esc(t('private'))+'</span></label><div class="seg" style="max-width:220px">'+
+      '<button id="debtY" class="'+(p.debt?'on bad':'')+'">'+esc(t('Yes'))+'</button><button id="debtN" class="'+(!p.debt?'on':'')+'">'+esc(t('No'))+'</button></div>'+
+    '<button class="btn" id="saveProfBtn">'+esc(t('Save profile'))+'</button></div>';
   gglCfg_();
   var sk=S.me && S.me.signIn, gOn=!!(S.me && S.me.google);
   h+='<div class="card" id="signInCard"><label class="f">'+esc(t('How you sign in'))+'</label>'+
@@ -797,8 +857,8 @@ function profileHtml(){
       : '<p class="sub" style="margin:0 0 8px">'+esc(sk==='password' ? t('With your email and password.') : t('With your username and PIN.'))+'</p>'+
         (gglOn_() ? '<p class="hint" style="margin:0 0 8px">'+esc(t('Sign in with Google from now on — quicker, and nothing to remember. The Google account you connect becomes this profile’s.'))+'</p>'+gglBtnHtml_('linkGoogle', t('Sign in with Google from now on')) : ''))+
     '</div>';
-  if(sk!=='password') h+='<div class="card"><label class="f">Change PIN</label><input type="password" id="p_newpin" inputmode="numeric" maxlength="4" placeholder="new 4-digit PIN">'+
-     '<button class="btn ghost" id="pinBtn">Update PIN</button></div>';
+  if(sk!=='password') h+='<div class="card"><label class="f">'+esc(t('Change PIN'))+'</label><input type="password" id="p_newpin" inputmode="numeric" maxlength="4" placeholder="'+esc(t('new 4-digit PIN'))+'">'+
+     '<button class="btn ghost" id="pinBtn">'+esc(t('Update PIN'))+'</button></div>';
   h+=remindersCardHtml_();
   /* Three states, not a switch: "Auto" is the default and the one most people
      want, because it follows what their phone already does at night. */
@@ -823,7 +883,7 @@ function profileHtml(){
       '<div class="numIn"><input type="password" id="p_admincode" placeholder="'+esc(t('Admin code'))+'">'+
       '<button class="btn ghost" style="margin:0;width:auto;padding:9px 14px" id="p_adminunlock">'+esc(t('Unlock'))+'</button></div></div>';
   }
-  h+='<button class="danger" id="logoutBtn" style="width:100%">Log out</button>';
+  h+='<button class="danger" id="logoutBtn" style="width:100%">'+esc(t('Log out'))+'</button>';
   h+='<footer>✦ Every number is a person.</footer>';
   return h;
 }

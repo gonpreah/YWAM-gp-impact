@@ -65,6 +65,72 @@ function schedLoad_(kind, week, edit){
     render();
   }, function(e){ S.schedLoading=null; S.schedErr=(e && e.message) || t('Connection problem — try again.'); render(); });
 }
+/* ---- who is here this week, day by day (Nov 2026, Andrew: "make sure the names show up according to that
+   week … if a team leaves earlier that week … notify … there's no room for mistakes") ----
+   getDuty sends the week's names in groups (staff, each team, each school, students, volunteers, guests and
+   speakers, names typed before), `here[name]` the days of the week someone is here when it isn't all of them,
+   and `awayDays[name]` a staff member's days on leave. From those: the week's note above the schedule (who comes
+   and goes, who was taken off last week's copy, names on a day they aren't here), red names in the schedule,
+   and a picker that won't offer someone for a day they aren't here. */
+var DUTY_DAY_IDS=['sun','mon','tue','wed','thu','fri','sat'];
+var SCHED_GROUP_ICON={ staff:'🏠', team:'👥', school:'🎓', students:'🎓', volunteers:'🤝', guests:'🧳', extras:'✍️' };
+function schedDayName_(i){ return t(DUTY_DAY_SHORT[DUTY_DAY_IDS[i]]); }
+/* the days (0 Sun … 6 Sat) `n` is here this week; null when they aren't here at all */
+function schedDaysOf_(d, n){
+  if(!(d.people||[]).some(function(g){ return g.names.indexOf(n)>-1; })) return null;
+  var days=(d.here||{})[n] ? d.here[n].slice() : [0,1,2,3,4,5,6], off=(d.awayDays||{})[n]||[];
+  return days.filter(function(i){ return off.indexOf(i)===-1; });
+}
+/* "Leaves Wed" · "Arrives Thu" · "Here Mon, Tue" */
+function schedPartWords_(days){
+  if(!days || !days.length || days.length===7) return '';
+  var a=days[0], b=days[days.length-1];
+  if(a===0 && days.length===b+1) return gpT('Leaves {day}',{day:schedDayName_(b+1)});
+  if(b===6 && days.length===7-a) return gpT('Arrives {day}',{day:schedDayName_(a)});
+  return gpT('Here {days}',{days:days.map(schedDayName_).join(', ')});
+}
+/* why a name in a cell needs a look: not here that day (the cooking), not here all week (the morning chores) */
+function schedFlag_(d, s){
+  return function(n, key){
+    var days=schedDaysOf_(d, n);
+    if(days===null) return t('Not here this week');
+    if(days.length===7) return '';
+    var p=String(key||'').split('|');
+    if(s.layout==='grid'){
+      var row=s.rows.filter(function(r){ return r.id===p[0]; })[0];
+      var on=p[1]==='all' ? s.days.filter(function(dd){ return ((row && row.off)||[]).indexOf(dd)===-1; }) : [p[1]];
+      var miss=on.filter(function(dd){ return days.indexOf(DUTY_DAY_IDS.indexOf(dd))===-1; });
+      return miss.length ? gpT('Not here {days}',{days:miss.map(function(dd){ return t(DUTY_DAY_SHORT[dd]); }).join(', ')}) : '';
+    }
+    return schedPartWords_(days);
+  };
+}
+function schedWarnings_(d, s){
+  var flag=schedFlag_(d, s), out=[];
+  var look=function(list, key){ (list||[]).forEach(function(n){ var why=flag(n, key); if(why) out.push({ name:n, key:key, why:why }); }); };
+  if(s.layout==='grid') Object.keys(s.cells||{}).forEach(function(k){ look(s.cells[k], k); });
+  else (s.sections||[]).forEach(function(sec){ (sec.rows||[]).forEach(function(r){ look(r.people, sec.id+'|'+r.id); }); });
+  return out;
+}
+function schedWeekNoteHtml_(d, s){
+  var lines=[];
+  (d.people||[]).forEach(function(g){
+    if((g.kind==='team' || g.kind==='school') && g.days) lines.push('<li>'+(SCHED_GROUP_ICON[g.kind]||'')+' <b>'+esc(g.label)+'</b> · '+esc(schedPartWords_(g.days))+'</li>');
+  });
+  var part=Object.keys(d.here||{}).filter(function(n){ return !(d.people||[]).some(function(g){ return g.days && g.names.indexOf(n)>-1; }); });
+  if(part.length) lines.push('<li>🗓️ '+esc(t('Here part of the week'))+': '+part.slice(0,12).map(function(n){ return esc(n)+' <small>('+esc(schedPartWords_(d.here[n]))+')</small>'; }).join(', ')+(part.length>12?' …':'')+'</li>');
+  var aw=Object.keys(d.away||{});
+  if(aw.length) lines.push('<li>🏖 '+esc(t('On leave part of the week'))+': '+aw.map(function(n){ return esc(n)+' <small>('+esc(d.away[n])+')</small>'; }).join(', ')+'</li>');
+  if((d.removed||[]).length) lines.push('<li id="schedRemoved">↩️ '+esc(gpT('Taken off last week’s copy — not here this week: {names}',{names:d.removed.join(', ')}))+'</li>');
+  var bad=schedWarnings_(d, s);
+  var h='<div class="card slim schedWeekNote" id="schedWeekNote"><b>📅 '+esc(t('Who is here this week'))+'</b>';
+  h+='<div class="schedWho">'+(d.people||[]).filter(function(g){ return g.kind!=='extras'; }).map(function(g){ return '<span class="teamStat">'+(SCHED_GROUP_ICON[g.kind]||'')+' '+esc(t(g.label))+' <b>'+g.names.length+'</b></span>'; }).join('')+'</div>';
+  if(lines.length) h+='<ul class="schedNoteList">'+lines.join('')+'</ul>';
+  if(bad.length) h+='<div class="schedBad" id="schedBad">⚠️ '+esc(gpT(bad.length===1?'{n} name is on a day they aren’t here — marked in red':'{n} names are on days they aren’t here — marked in red',{n:bad.length}))+
+    '<div class="rowSub">'+bad.slice(0,6).map(function(x){ return esc(x.name)+' · '+esc(schedCellTitle_(s, x.key))+' — '+esc(x.why); }).join('<br>')+(bad.length>6?'<br>…':'')+'</div></div>';
+  else if(!lines.length) h+='<p class="sub" style="margin:4px 0 0">✓ '+esc(t('Everyone on the list is here all week.'))+'</p>';
+  return h+'</div>';
+}
 function schedHtml(){
   var kind=schedKind_(S.schedKind)[0], week=S.schedWeek || dutyWeekOf(), edit=!!S.schedEdit;
   var h='<button class="linkbtn" id="schedBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(S.schedFrom==='ministry' ? t('My Ministry') : t('My Home'))+'</button>';
@@ -113,8 +179,9 @@ function schedHtml(){
   h+='<div class="schedState '+(s.published?'pub':'draft')+'" id="schedState">'+(s.published ? '✅ '+esc(t('Published — everyone can see it')) : '📝 '+esc(t('Draft — only your team can see it')))+
     (d.isNew ? '<span class="rowSub" style="display:block">'+esc(d.from ? gpT('Started as a copy of the week of {date} — change what is different.',{date:hospDate_(d.from)}) : t('Started from the usual rows — tap a box to put people in it.'))+'</span>' : '')+
     (S.schedDirty ? '<span class="rowSub" style="display:block">● '+esc(t('Changes not saved yet'))+'</span>' : '')+'</div>';
+  h+=schedWeekNoteHtml_(d, s);
   h+='<div class="schedTools"><button class="btn ghost small" id="schedRowsBtn">'+esc(S.schedRows ? t('Done changing rows') : (s.layout==='grid' ? t('Change rows and days') : t('Change places')))+'</button></div>';
-  h+= S.schedRows ? schedRowsHtml_(s) : dutyHtml(s, { t:t, esc:esc, edit:true });
+  h+= S.schedRows ? schedRowsHtml_(s) : dutyHtml(s, { t:t, esc:esc, edit:true, flag:schedFlag_(d, s) });
   h+='<label class="f">'+esc(t('Notes'))+'</label><textarea id="schedNotes" rows="2" maxlength="1000">'+esc(s.notes||'')+'</textarea>';
   h+='<div class="schedActions">'+
     (s.published
@@ -152,7 +219,9 @@ function schedPickerHtml_(d, s){
      name that has one steps out of the list until everyone has one, unless
      "Show everyone" is on. */
   var counts=schedAssignCounts_(s), chores=s.layout!=='grid';
-  var all=[]; (d.people||[]).forEach(function(g){ g.names.forEach(function(n){ if(all.indexOf(n)===-1) all.push(n); }); });
+  /* a box of the cooking is one day (or all week): someone not here that day isn't offered for it */
+  var kp=key.split('|'), dayIdx=s.layout==='grid' && kp[1]!=='all' ? DUTY_DAY_IDS.indexOf(kp[1]) : -1;
+  var all=[]; (d.people||[]).forEach(function(g){ if(g.kind!=='extras') g.names.forEach(function(n){ if(all.indexOf(n)===-1) all.push(n); }); });
   var placed=all.filter(function(n){ return counts[n]>0; }).length, everyone=all.length>0 && placed>=all.length;
   var hide = chores && !everyone && !S.schedShowAll;
   if(chores && all.length) h+='<div class="schedAssigned" id="schedAssigned">'+esc(everyone ? t('Everyone has a chore — the numbers show who has more than one.') : gpT('{placed} of {n} have a chore',{placed:placed, n:all.length}))+
@@ -161,12 +230,16 @@ function schedPickerHtml_(d, s){
   (d.people||[]).forEach(function(g){
     var names=g.names.filter(function(n){ return (!q || n.toLowerCase().indexOf(q)>-1) && (!hide || !counts[n] || cur.indexOf(n)>-1); });
     if(!names.length) return;
-    /* the ones with the least first — the next name to call */
-    names=names.slice().sort(function(a,b){ return (counts[a]||0)-(counts[b]||0); });
-    h+='<div class="schedGroupLabel">'+esc(t(g.label))+'</div><div class="chips" style="margin-top:2px">'+names.map(function(n){
-      var aw=(d.away||{})[n], c=counts[n]||0;
-      return '<button class="hospChip'+(cur.indexOf(n)>-1?' on':'')+'" data-dpick="'+esc(n)+'" data-dcount="'+c+'"'+(aw?' title="'+esc(gpT('On leave: {days}',{days:aw}))+'"':'')+'>'+esc(n)+
-        ' <small class="schedN'+(c?'':' zero')+'" aria-label="'+esc(gpT('{n} this week',{n:c}))+'">'+c+'</small>'+(aw?' <small class="schedAway">'+esc(gpT('away {days}',{days:aw}))+'</small>':'')+'</button>'; }).join('')+'</div>';
+    // names typed before (not staff, not booked in, not on a team) wait behind a fold unless searched for
+    if(g.kind==='extras' && !q && !S.schedExtrasOpen){ h+='<button class="linkbtn inline schedExtrasBtn" id="schedExtrasBtn">✍️ '+esc(gpT('Names typed before ({n})',{n:names.length}))+' ›</button>'; return; }
+    var here=function(n){ var dd=schedDaysOf_(d, n); return dayIdx<0 || !dd || dd.indexOf(dayIdx)>-1; };
+    /* here that day first, then the ones with the least — the next name to call */
+    names=names.slice().sort(function(a,b){ return (here(b)?1:0)-(here(a)?1:0) || (counts[a]||0)-(counts[b]||0); });
+    h+='<div class="schedGroupLabel">'+(SCHED_GROUP_ICON[g.kind] ? SCHED_GROUP_ICON[g.kind]+' ' : '')+esc(t(g.label))+(g.days?' <small class="schedGroupWhen">· '+esc(schedPartWords_(g.days))+'</small>':'')+'</div><div class="chips" style="margin-top:2px">'+names.map(function(n){
+      var aw=(d.away||{})[n], c=counts[n]||0, dd=schedDaysOf_(d, n), ok=here(n) || cur.indexOf(n)>-1, part=dd && !g.days ? schedPartWords_((d.here||{})[n]) : '';
+      return '<button class="hospChip'+(cur.indexOf(n)>-1?' on':'')+(ok?'':' nothere')+'" data-dpick="'+esc(n)+'" data-dcount="'+c+'"'+(ok?'':' disabled')+(aw?' title="'+esc(gpT('On leave: {days}',{days:aw}))+'"':'')+'>'+esc(n)+
+        ' <small class="schedN'+(c?'':' zero')+'" aria-label="'+esc(gpT('{n} this week',{n:c}))+'">'+c+'</small>'+(aw?' <small class="schedAway">'+esc(gpT('away {days}',{days:aw}))+'</small>':'')+
+        (part?' <small class="schedAway">'+esc(part)+'</small>':'')+(ok?'':' <small class="schedAway">'+esc(gpT('not here {day}',{day:schedDayName_(dayIdx)}))+'</small>')+'</button>'; }).join('')+'</div>';
   });
   return h+'</div></div>';
 }
@@ -214,11 +287,11 @@ function bindSched_(){
   var d=S.schedData, s=d && d.sched;
   var mark=function(){ S.schedDirty=true; };
   var bk=document.getElementById('schedBack');
-  if(bk) bk.onclick=function(){ if(S.schedDirty && !confirm(t('Leave without saving your changes?'))) return; S.schedEdit=false; S.schedPick=null; S.view=S.schedFrom==='ministry'?'ministry':'week'; render(); };
+  if(bk) bk.onclick=function(){ if(S.schedDirty && !gpAsk_(t('Leave without saving your changes?'))) return; S.schedEdit=false; S.schedPick=null; S.view=S.schedFrom==='ministry'?'ministry':'week'; render(); };
   document.querySelectorAll('[data-schedkind]').forEach(function(b){ b.onclick=function(){
-    if(S.schedDirty && !confirm(t('Leave without saving your changes?'))) return;
+    if(S.schedDirty && !gpAsk_(t('Leave without saving your changes?'))) return;
     gpTap(); S.schedKind=b.getAttribute('data-schedkind'); S.schedPick=null; S.schedRows=false; S.schedDirty=false; render(); }; });
-  var wk=function(n){ if(S.schedDirty && !confirm(t('Leave without saving your changes?'))) return; S.schedWeek=dutyAddDays(S.schedWeek||dutyWeekOf(), n); S.schedPick=null; S.schedDirty=false; render(); };
+  var wk=function(n){ if(S.schedDirty && !gpAsk_(t('Leave without saving your changes?'))) return; S.schedWeek=dutyAddDays(S.schedWeek||dutyWeekOf(), n); S.schedPick=null; S.schedDirty=false; render(); };
   var sp=document.getElementById('schedPrev'); if(sp) sp.onclick=function(){ gpTap(); wk(-7); };
   var sn=document.getElementById('schedNext'); if(sn) sn.onclick=function(){ gpTap(); wk(7); };
   var stw=document.getElementById('schedThis'); if(stw) stw.onclick=function(){ gpTap(); S.schedWeek=null; S.schedDirty=false; render(); };
@@ -226,7 +299,7 @@ function bindSched_(){
   var se=document.getElementById('schedEditBtn'); if(se) se.onclick=function(){ gpTap(); S.schedEdit=true; render(); };
   document.querySelectorAll('[data-schedonly]').forEach(function(b){ b.onclick=function(){ gpTap(); S.schedOnlyMine=b.getAttribute('data-schedonly')==='1'; render(); }; });
   var sdt=document.getElementById('schedDetails'); if(sdt) sdt.onclick=function(){ gpTap(); S.schedDetails=!S.schedDetails; render(); };
-  var sde=document.getElementById('schedDoneEdit'); if(sde) sde.onclick=function(){ if(S.schedDirty && !confirm(t('Leave without saving your changes?'))) return; S.schedEdit=false; S.schedPick=null; S.schedRows=false; S.schedDirty=false; S.schedData=null; render(); };
+  var sde=document.getElementById('schedDoneEdit'); if(sde) sde.onclick=function(){ if(S.schedDirty && !gpAsk_(t('Leave without saving your changes?'))) return; S.schedEdit=false; S.schedPick=null; S.schedRows=false; S.schedDirty=false; S.schedData=null; render(); };
   var sh=document.getElementById('schedShare');
   if(sh) sh.onclick=function(){
     var k=schedKind_(s.kind);
@@ -243,6 +316,7 @@ function bindSched_(){
   var pd=document.getElementById('schedPickDone'); if(pd) pd.onclick=closePick;
   var ssa=document.getElementById('schedShowAll'); if(ssa) ssa.onclick=function(){ gpTap(); S.schedShowAll=!S.schedShowAll; render(); };
   var toggle=function(n){ var l=schedCellNames_(s, S.schedPick), i=l.indexOf(n); if(i>-1) l.splice(i,1); else l.push(n); mark(); };
+  var sxb=document.getElementById('schedExtrasBtn'); if(sxb) sxb.onclick=function(){ gpTap(); S.schedExtrasOpen=true; render(); };
   document.querySelectorAll('[data-dpick]').forEach(function(b){ b.onclick=function(){ gpTap(); toggle(b.getAttribute('data-dpick')); render(); }; });
   document.querySelectorAll('[data-dunpick]').forEach(function(b){ b.onclick=function(){ gpTap(); toggle(b.getAttribute('data-dunpick')); render(); }; });
   var sq=document.getElementById('schedQ');
@@ -275,14 +349,14 @@ function bindSched_(){
     if(i>-1){ if(s.days.length<2) return; s.days.splice(i,1); } else { s.days.push(dd); s.days.sort(function(a,c){ return DUTY_DAY_ORDER_.indexOf(a)-DUTY_DAY_ORDER_.indexOf(c); }); } mark(); render(); }; });
   document.querySelectorAll('[data-srowup]').forEach(function(b){ b.onclick=function(){ move(s.rows, Number(b.getAttribute('data-srowup')), -1); }; });
   document.querySelectorAll('[data-srowdown]').forEach(function(b){ b.onclick=function(){ move(s.rows, Number(b.getAttribute('data-srowdown')), 1); }; });
-  document.querySelectorAll('[data-srowdel]').forEach(function(b){ b.onclick=function(){ var i=Number(b.getAttribute('data-srowdel')); if(!confirm(gpT('Remove “{name}”?',{name:s.rows[i].label}))) return; s.rows.splice(i,1); mark(); render(); }; });
+  document.querySelectorAll('[data-srowdel]').forEach(function(b){ b.onclick=function(){ var i=Number(b.getAttribute('data-srowdel')); if(!gpAsk_(gpT('Remove “{name}”?',{name:s.rows[i].label}))) return; s.rows.splice(i,1); mark(); render(); }; });
   var ra=document.getElementById('schedRowAdd'); if(ra) ra.onclick=function(){ s.rows.push({ id:rid('r'), label:t('New row'), km:'', time:'', span:false, off:[] }); mark(); render(); };
   var at=function(v){ var p=v.split('|'); return { sec:s.sections[Number(p[0])], i:Number(p[1]) }; };
   document.querySelectorAll('[data-ssec]').forEach(function(inp){ inp.oninput=function(){ s.sections[Number(inp.getAttribute('data-ssec'))][inp.getAttribute('data-sf')]=inp.value; mark(); }; });
   document.querySelectorAll('[data-splace]').forEach(function(inp){ inp.oninput=function(){ var x=at(inp.getAttribute('data-splace')); x.sec.rows[x.i][inp.getAttribute('data-sf')]=inp.value; mark(); }; });
   document.querySelectorAll('[data-splaceup]').forEach(function(b){ b.onclick=function(){ var x=at(b.getAttribute('data-splaceup')); move(x.sec.rows, x.i, -1); }; });
   document.querySelectorAll('[data-splacedown]').forEach(function(b){ b.onclick=function(){ var x=at(b.getAttribute('data-splacedown')); move(x.sec.rows, x.i, 1); }; });
-  document.querySelectorAll('[data-splacedel]').forEach(function(b){ b.onclick=function(){ var x=at(b.getAttribute('data-splacedel')); if(!confirm(gpT('Remove “{name}”?',{name:x.sec.rows[x.i].place}))) return; x.sec.rows.splice(x.i,1); mark(); render(); }; });
+  document.querySelectorAll('[data-splacedel]').forEach(function(b){ b.onclick=function(){ var x=at(b.getAttribute('data-splacedel')); if(!gpAsk_(gpT('Remove “{name}”?',{name:x.sec.rows[x.i].place}))) return; x.sec.rows.splice(x.i,1); mark(); render(); }; });
   document.querySelectorAll('[data-splaceadd]').forEach(function(b){ b.onclick=function(){ s.sections[Number(b.getAttribute('data-splaceadd'))].rows.push({ id:rid('c'), place:t('New place'), km:'', duty:'', people:[] }); mark(); render(); }; });
   var sa=document.getElementById('schedSecAdd'); if(sa) sa.onclick=function(){ s.sections.push({ id:rid('s'), title:t('New section'), km:'', rows:[] }); mark(); render(); };
   // save
@@ -298,7 +372,7 @@ function bindSched_(){
   };
   var sv=document.getElementById('schedSave'); if(sv) sv.onclick=function(){ save('save', sv, t('Saved')); };
   var pb=document.getElementById('schedPub'); if(pb) pb.onclick=function(){ save('publish', pb, t('Published — everyone can see it now')); };
-  var up=document.getElementById('schedUnpub'); if(up) up.onclick=function(){ if(!confirm(t('Take this schedule down? Only your team will see it until you publish it again.'))) return; save('unpublish', up, t('Taken down')); };
+  var up=document.getElementById('schedUnpub'); if(up) up.onclick=function(){ if(!gpAsk_(t('Take this schedule down? Only your team will see it until you publish it again.'))) return; save('unpublish', up, t('Taken down')); };
 }
 var DUTY_DAY_ORDER_=['sun','mon','tue','wed','thu','fri','sat'];
 function schedOpen_(kind, edit, from){
@@ -752,7 +826,7 @@ function bindLead_(){
     if(sv) sv.onclick=function(){ if(!(f.title||'').trim()){ showMsg(t('Give the card a title first.')); return; } save(f, f.id ? t('Card saved') : t('Card added'), function(){ S.leadForm=null; }); };
     var dl=document.getElementById('leadDelete');
     if(dl) dl.onclick=function(){
-      if(!confirm(gpT('Delete “{name}”?',{name:f.title}))) return;
+      if(!gpAsk_(gpT('Delete “{name}”?',{name:f.title}))) return;
       if(S.busy) return; S.busy=true;
       run('deleteLeadCard',[S.auth.user,S.auth.pin,f.id],function(d){ S.busy=false; if(d && d.ok){ S.lead=d; S.leadForm=null; showMsg(t('Card deleted')); } else showMsg(t('Could not save')); render(); });
     };
@@ -956,6 +1030,26 @@ function gglRedirectGo_(mode){
 }
 /* coming back from Google's page: the token is in the address's #… — taken out at once (the address is
    tidied before anything else), checked against the state we left, and finished once the page is up */
+/* teams.html?signin=<token> — an admin's one-time sign-in link (Admin → a person → Sign-in link), for someone
+   locked out: taken out of the address before anything else reads it, then spent once (staffUseSignInLink) */
+function signLinkTake_(){
+  var tok=''; try { tok=new URLSearchParams(location.search||'').get('signin')||''; } catch(e){}
+  if(!tok) return '';
+  try { var u=new URLSearchParams(location.search); u.delete('signin'); var q=u.toString(); history.replaceState(null, '', location.pathname+(q?'?'+q:'')+location.hash); } catch(e){}
+  return tok;
+}
+function signLinkUse_(tok){
+  var bad=function(msg){ boot(); showMsg(msg); };
+  run('staffUseSignInLink',[tok],function(d){
+    if(d && d.ok && d.token){
+      S.auth={ user:d.user, pin:d.token }; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.linkSignIn=true;
+      afterLogin(); showMsg(t('You’re signed in.')); return;
+    }
+    bad(d && d.err==='expired' ? t('That sign-in link has run out. Ask an admin for a new one.')
+      : d && d.err==='pending' ? gglErrWord_('pending')
+      : t('That sign-in link was already used, or isn’t right. Ask an admin for a new one.'));
+  }, function(){ bad(t('No connection — open the link again when you are online.')); });
+}
 function gglRedirectTake_(){
   var h=''; try { h=String(location.hash||''); } catch(e){}
   if(!/[#&](access_token|error)=/.test(h)) return;
@@ -1006,6 +1100,7 @@ function gglCred_(resp){
     if(d && d.ok){ S.auth={ user:d.user, pin:d.token }; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; S.gglNew=null; afterLogin(); return; }
     /* a Google account no profile has yet: most often the person picked another Gmail than the one on their
        profile — so ask before making a new profile (that made duplicate sign-ups waiting on an admin) */
+    if(d && d.err==='new' && _ggl.mode==='signup'){ S.regMode=true; S.regGoogle={ token:tok, email:d.email||'', name:d.name||'' }; S.gglNew=null; render(); return; }   // they came to make a profile: just their name now
     if(d && d.err==='new'){ S.gglNew={ token:tok, email:d.email||'', name:d.name||'' }; S.pinLogin=false; render(); return; }
     if(d && d.err==='applicant'){ showMsg(t('That is a portal account — opening the YWAM GP Portal.')); setTimeout(function(){ location.href='portal.html'; }, 900); return; }
     showMsg(gglErrWord_(d && d.err));
@@ -1031,19 +1126,20 @@ function gglNewHtml_(){
    it (staffLinkGoogle swaps the PIN session for a Google one) — or log out. */
 function gglStepWanted_(){
   if(lsGet('gp-ggl-skip')===String(new Date().toDateString())) return false;   // Google wouldn't work on this phone today: asked again tomorrow
-  return !!(gglOn_() && S.me && S.auth && !S.guest && !S.board && !S.student && !S.stuPreview && !S.bootStale && !S.offlineSince &&
-    /^\d{4}$/.test(String(S.auth.pin||'')) && !S.me.google);
+  return !!(gglOn_() && S.me && S.auth && !S.guest && !S.board && !S.student && !S.stuPreview && !S.bootStale && !S.offlineSince && !S.awaiting && !S.me.setupTodo && !S.demo &&
+    (/^\d{4}$/.test(String(S.auth.pin||'')) || S.linkSignIn) && !S.me.google);
 }
 function gglStepHtml_(){
   return '<div class="card gglStep" id="gglStep"><h2 style="margin-top:0">🔐 '+esc(t('From now on, sign in with Google'))+'</h2>'+
     '<p class="sub">'+esc(t('We are moving everyone off usernames and PINs. Connect your Google account once — next time, just tap Continue with Google.'))+'</p>'+
     ((S.profile && S.profile.email) ? '<p class="hint">'+esc(gpT('Use the Google account for {email} if you can.',{email:S.profile.email}))+'</p>' : '')+
     gglBtnHtml_('gglStepGo', t('Connect my Google account'))+gglHelpHtml_('step')+
+    (S.linkSignIn ? '<button class="btn ghost" id="gglStepLater">'+esc(t('Not now — go to the app'))+'</button>' : '')+
     '<button class="linkbtn" id="gglStepOut">'+esc(t('Log out'))+'</button></div>';
 }
 /* the tasks app (tasks.html) says what it is: the same YWAM GP account, just the tasks and the calendar */
 function loginHeadHtml_(){
-  return gpTasksApp_() ? '<h2 id="taLoginHead">'+esc(t('GP Tasks'))+'</h2><p class="sub" style="margin-bottom:2px">'+esc(t('Your tasks and the campus calendar. Sign in with your YWAM GP account — the same one as the main app.'))+'</p>' : '<h2>Welcome back</h2>';
+  return gpTasksApp_() ? '<h2 id="taLoginHead">'+esc(t('GP Tasks'))+'</h2><p class="sub" style="margin-bottom:2px">'+esc(t('Your tasks and the campus calendar. Sign in with your YWAM GP account — the same one as the main app.'))+'</p>' : '<h2>'+esc(t('Welcome back'))+'</h2>';
 }
 function loginHtml(){
   gglCfg_();
@@ -1052,15 +1148,21 @@ function loginHtml(){
   if(gglOn_() && !S.pinLogin) return loginHeadHtml_()+'<p class="sub">'+esc(t('Sign in with your Google account.'))+'</p>'+
     '<div class="card">'+gglBtnHtml_('googleLogin', t('Continue with Google'))+gglHelpHtml_('login')+
     '<button class="linkbtn" id="showPinLogin">'+esc(t('First time with Google? Sign in once with your username and PIN to connect it'))+'</button>'+
-    '<button class="linkbtn" id="toReg">New here? Create my profile</button></div>';
+    '<button class="linkbtn" id="toReg">New here? Create my profile</button>'+gpLookHtml_()+loginStuckHtml_()+'</div>';
   return loginHeadHtml_()+'<p class="sub">'+esc(gglOn_() ? t('Sign in once with your username and PIN — then connect your Google account.') : 'Log in with your username and 4-digit PIN.')+'</p>'+
     '<div class="card">'+
     (gglOn_() ? '<button class="linkbtn" id="hidePinLogin" style="margin-top:0">← '+esc(t('Continue with Google instead'))+'</button>' : '')+
     (S.gglNew ? '<p class="gglJoin" id="gglJoin">🔗 '+esc(gpT('Sign in once with your username and PIN — {email} is then connected to your profile, and next time Continue with Google is all you need.',{email:S.gglNew.email}))+'</p>' : '')+
-    '<label class="f">'+esc(t('Username or email'))+'</label><input type="text" id="li_user" autocapitalize="none" placeholder="e.g. sokha">'+
+    '<label class="f">'+esc(t('Username or email'))+'</label><input type="text" id="li_user" autocapitalize="none" placeholder="'+esc(t('e.g. sokha'))+'">'+
     '<label class="f">'+esc(t('PIN or password'))+'</label><input type="password" id="li_pin" maxlength="200" placeholder="••••">'+
-    '<button class="btn" id="loginBtn">Log in</button>'+
-    '<button class="linkbtn" id="toReg">New here? Create my profile</button></div>';
+    '<button class="btn" id="loginBtn">'+esc(t('Log in'))+'</button>'+
+    '<button class="linkbtn" id="toReg">New here? Create my profile</button>'+gpLookHtml_()+loginStuckHtml_()+'</div>';
+}
+/* the preview (22-setup.js) — not in the tasks app, which is for staff */
+function gpLookHtml_(){ return gpTasksApp_() ? '' : '<button class="linkbtn" id="toGuest">👀 '+esc(t('Look around first — a preview with made-up people and numbers'))+'</button>'; }
+/* locked out, forgot the PIN, Google picks the wrong account: there is no email to send, so an admin sends a link */
+function loginStuckHtml_(){
+  return '<p class="hint" id="loginStuck" style="margin:12px 0 0">🆘 '+esc(t('Can’t get in? Message an admin on Telegram or WhatsApp — they can send you a link that signs you straight in, or set a new PIN.'))+'</p>';
 }
 /*  Two facts the base counts people by: what kind of staff you are, and where you
     are from. Asked when a profile is created and changed from Profile & settings
@@ -1114,35 +1216,37 @@ function bindCountryOther(){
   });
 }
 
+/* Making an account is two things (Nov 2026, Andrew: "make it simple, just … logging in with your Gmail and
+   entering in your name … so that it's not just overwhelming with a bunch of questions"): Google — or, where
+   Google is off or someone has no Google account, an email, username and PIN — and a name. Everything else
+   (campus, ministry, kind of staff, country, mentor, papers) is asked step by step once an admin has said yes
+   (22-setup.js). An invite link's campus / department / ministry ride along unseen and start those steps off. */
 function registerHtml(){
   gglCfg_();
-  var inv = S.regPrefill, gg = S.regGoogle;
-  var opts = S.roster.map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.name)+' · '+esc(p.dept)+'</option>'; }).join('');
-  return '<h2>Create my profile</h2><p class="sub">Pick a username and a 4-digit PIN you\u2019ll remember. You can add a photo right after.</p>'+
-    (inv ? '<div class="banner" id="inviteBanner">👋 '+esc(gpT('You’re joining {where}. Check it below, then make your profile.',{where:[inv.ministry?t(inv.ministry):'', inv.dept?t(inv.dept):'', campusName(inv.campus)].filter(Boolean).join(' · ')}))+'</div>' : '')+
-    '<div class="card">'+
-    (gg ? '<div class="banner" id="regGoogle">'+esc(gpT('Signing up with Google as {email} — no username or PIN to remember.',{email:gg.email}))+'</div>'
-        : (gglOn_() ? gglBtnHtml_('googleSignup', t('Sign up with Google'))+'<div class="orLine"><span>'+esc(t('or'))+'</span></div>' : ''))+
-    '<label class="f">Full name</label><input type="text" id="r_name" placeholder="Your name" value="'+esc(gg ? gg.name : '')+'">'+
-    (gg ? '' :
-    '<label class="f">Email</label><input type="email" id="r_email" autocapitalize="none" placeholder="you@example.com">'+
-    '<div class="hint">One profile per email \u2014 this is what stops a duplicate sign-up.</div>'+
-    '<label class="f">Username</label><input type="text" id="r_user" autocapitalize="none" placeholder="lowercase, no spaces"><div class="hint">Letters, numbers, . _ - (2\u201320 chars)</div>'+
-    '<label class="f">PIN (4 digits)</label><input type="password" id="r_pin" inputmode="numeric" maxlength="4" placeholder="••••">')+
-    '<label class="f">Campus</label><select id="r_campus">'+CAMPUSES.map(function(c){return '<option value="'+c.id+'"'+(inv && inv.campus===c.id?' selected':'')+'>'+c.name+'</option>';}).join('')+'</select>'+
-    '<label class="f">Department</label><select id="r_dept">'+deptsFor(inv ? inv.campus : 'poipet').map(function(d){return '<option value="'+esc(d)+'"'+(inv && inv.dept===d?' selected':'')+'>'+esc(t(d))+'</option>';}).join('')+'</select>'+
-    '<label class="f">Ministry</label><select id="r_ministry"></select><div class="hint">This is what puts your team’s KPIs on your home page.</div>'+
-    '<label class="f">Role / team</label><input type="text" id="r_role" placeholder="e.g. Cafe barista, DTS staff">'+
-    staffTypeFieldHtml('r_type','')+
-    countryFieldHtml('r_country','')+
-    '<label class="f">My mentor <span class="lock">🔒 sees my private check-ins</span></label><select id="r_mentor"><option value="">— choose later —</option>'+opts+'</select>'+
-    '<label class="f">Phone (optional)</label><input type="tel" id="r_phone" placeholder="">'+
-    '<label class="f">'+esc(t('Year I started with YWAM GP (optional)'))+'</label><input type="number" id="r_joined" placeholder="2024">'+
-    '<button class="btn" id="regBtn">Create profile</button>'+
-    '<button class="linkbtn" id="toLogin">I already have a profile</button></div>';
+  var inv = S.regPrefill, gg = S.regGoogle, pinWay = !gg && (!gglOn_() || S.regPin);
+  var ri=S.regInvite, invBanner;
+  if(ri && ri.info) invBanner='<div class="banner" id="inviteOk">✉️ '+esc(gpT('{name} invited you to join {where}. Sign up and you’re in — no waiting for approval.',{name:ri.info.byName || t('An admin'), where:[ri.info.ministry?t(ri.info.ministry):'', ri.info.dept?t(ri.info.dept):'', campusName(ri.info.campus)].filter(Boolean).join(' · ')}))+'</div>';
+  else if(ri && ri.err) invBanner='<div class="banner" id="inviteGone">⚠️ '+esc(ri.err==='used' ? t('This invite link has already been used.') : ri.err==='expired' ? t('This invite link has run out.') : ri.err==='off' ? t('This invite link was turned off.') : t('This invite link doesn’t work.'))+' '+esc(t('You can still sign up — an admin will then approve you.'))+'</div>';
+  else invBanner = inv ? '<div class="banner" id="inviteBanner">👋 '+esc(gpT('You’re joining {where}.',{where:[inv.ministry?t(inv.ministry):'', inv.dept?t(inv.dept):'', campusName(inv.campus)].filter(Boolean).join(' · ')}))+'</div>' : '';
+  var h='<h2>'+esc(t('Create my profile'))+'</h2><p class="sub" id="regSub">'+esc(t('Just your Google account and your name — then a few short questions in the app.'))+'</p>'+invBanner+'<div class="card">';
+  if(gg){
+    h+='<div class="banner" id="regGoogle">✅ '+esc(gpT('Signing up with Google as {email}.',{email:gg.email}))+'</div>'+
+      '<label class="f">'+esc(t('Your name'))+'</label><input type="text" id="r_name" autocomplete="name" placeholder="'+esc(t('First and last name'))+'" value="'+esc(gg.name||'')+'">'+
+      '<button class="btn" id="regBtn">'+esc(t('Create my profile'))+'</button>'+
+      '<button class="linkbtn" id="regOtherGoogle">'+esc(t('Use a different Google account'))+'</button>';
+  } else if(!pinWay){
+    h+=gglBtnHtml_('googleSignup', t('Sign up with Google'))+gglHelpHtml_('login')+
+      '<button class="linkbtn" id="regPinWay">'+esc(t('No Google account? Use a username and PIN'))+'</button>';
+  } else {
+    h+=(gglOn_() ? '<button class="linkbtn" id="regGoogleWay" style="margin-top:0">← '+esc(t('Sign up with Google instead'))+'</button>' : '')+
+      '<label class="f">'+esc(t('Your name'))+'</label><input type="text" id="r_name" autocomplete="name" placeholder="'+esc(t('First and last name'))+'">'+
+      '<label class="f">'+esc(t('Email'))+'</label><input type="email" id="r_email" autocapitalize="none" placeholder="you@example.com">'+
+      '<label class="f">'+esc(t('Username'))+'</label><input type="text" id="r_user" autocapitalize="none" placeholder="'+esc(t('lowercase, no spaces'))+'"><div class="hint">'+esc(t('Letters, numbers, . _ - (2–20 chars)'))+'</div>'+
+      '<label class="f">'+esc(t('PIN (4 digits)'))+'</label><input type="password" id="r_pin" inputmode="numeric" maxlength="4" placeholder="••••">'+
+      '<button class="btn" id="regBtn">'+esc(t('Create my profile'))+'</button>';
+  }
+  return h+'<button class="linkbtn" id="toLogin">'+esc(t('I already have a profile'))+'</button>'+gpLookHtml_()+'</div>';
 }
-
-
 /* ---------- me ---------- */
 /* Me is the looking-back page: streaks, this week's totals, recent days,
    settings. Home already greets you and carries today's actions, so the
@@ -2264,8 +2368,8 @@ function leaveHtml(){
 
   h+='<h3>'+esc(t('New Request'))+'</h3><div class="card">';
   h+='<div class="field"><label class="fieldLabel">'+esc(t('Leave Dates'))+'</label>'+
-     '<div class="dateRow"><input type="date" id="lv_from" value="'+esc(draft.from||'')+'">'+
-     '<input type="date" id="lv_to" value="'+esc(draft.to||'')+'"></div></div>';
+     '<div class="dateRow"><input type="date" id="lv_from" aria-label="'+esc(t('First day'))+'" value="'+esc(draft.from||'')+'">'+
+     '<input type="date" id="lv_to" aria-label="'+esc(t('Last day'))+'" value="'+esc(draft.to||'')+'"></div></div>';
   h+='<div class="workDaysLine"><b>'+draftWorkDays+'</b> '+esc(t('work days requested (Mon–Fri)'))+'</div>';
   if(draft.from && draft.to && draft.to>=draft.from){
     var hol=leaveHolidaySet_(d.holidays), inside=[];
@@ -2296,9 +2400,9 @@ function leaveHtml(){
 
   h+='<div class="noticeNote">'+esc(t('In-country leave needs at least 1 week notice · out-of-country leave needs at least 1 month notice.'))+'</div>';
 
-  h+='<div class="ackRow"><button type="button" class="ackBox'+(draft.ack?' on':'')+'" id="lv_ack">'+
+  h+='<div class="ackRow"><button type="button" class="ackBox'+(draft.ack?' on':'')+'" id="lv_ack" role="checkbox" aria-checked="'+(draft.ack?'true':'false')+'" aria-labelledby="lv_ackText">'+
      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>'+
-     '<span>'+esc(t('I understand the 6-week (30-day) allowance for personal time off.'))+'</span></div>';
+     '<span id="lv_ackText">'+esc(t('I understand the 6-week (30-day) allowance for personal time off.'))+'</span></div>';
 
   var mentor = (S.me.mentorId && S.me.mentorStatus==='approved') ? personOf(S.me.mentorId) : null;
   var submitLabel = mentor ? gpT('Send to {name} for Approval',{name:mentor.name}) : t('Save this request');

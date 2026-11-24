@@ -114,6 +114,7 @@ function p3Picks_(){
 function p3NewHtml_(){
   var D=S.p3Draft || (S.p3Draft={ title:gpT('360 review · {month}',{month:t(MONTH_SHORT[new Date().getMonth()])+' '+new Date().getFullYear()}), due:(function(){ var d=new Date(); d.setDate(d.getDate()+14); return calIso_(d); })(), note:'', picked:{}, q:'' });
   var n=Object.keys(D.picked).length, min=(S.p3 && S.p3.minN) || 3, people=p3People_();
+  if(D.more) return p3MoreHtml_(D, people);
   var h='<h2>🪞 '+esc(t('Start a 360 review'))+'</h2><div class="card">'+
     '<label class="f" for="p3Title">'+esc(t('What to call it'))+'</label><input type="text" id="p3Title" maxlength="80" value="'+esc(D.title)+'">'+
     '<label class="f" for="p3Due">'+esc(t('Answers until'))+'</label><input type="date" id="p3Due" value="'+esc(D.due)+'" min="'+todayStr()+'">'+
@@ -131,6 +132,38 @@ function p3NewHtml_(){
     : '<p class="sub" style="margin:0">'+esc(t('Nobody else matches.'))+'</p>')+'</div>';
   return h+'<button class="btn" id="p3Send"'+(n<min||S.p3Busy?' disabled':'')+'>'+esc(n<min ? gpT('Pick {n} more',{n:min-n}) : gpT('Ask these {n}',{n:n}))+'</button>'+
     '<button class="linkbtn" id="p3Cancel">'+esc(t('Cancel'))+'</button>';
+}
+
+/* Ask more people for a review already sent — also after it has closed (Nov 2026). The same picker, without
+   the people already asked. Once results have been seen the server wants at least three new people, and
+   keeps their answers apart until three are in (api.js p360Answers_). */
+function p3MoreHtml_(D, people){
+  var R=S.p3R || {}, asked={}; (R.reviewers||[]).forEach(function(p){ asked[p.id]=1; });
+  people=people.filter(function(p){ return !asked[p.id]; });
+  var n=Object.keys(D.picked).length, min=R.moreNeed||1, room=R.moreRoom==null ? 30 : R.moreRoom;
+  var h='<h2>🪞 '+esc(t('Ask more people'))+'</h2><p class="sub" id="p3MoreFor">'+esc(R.title||'')+'</p>'+
+    '<div class="card"><p class="hint" style="margin:0 0 8px" id="p3MoreWhy">'+esc(R.results
+      ? gpT('You have already seen the results, so the new answers are kept apart and added all together once at least {n} new people have answered. That way nobody’s answer can be picked out.',{n:(S.p3 && S.p3.minN) || R.minN || 3})
+      : t('They get the same questions. You’ll never see who has answered.'))+'</p>'+
+    '<label class="f" for="p3Due">'+esc(t('Answers until'))+'</label><input type="date" id="p3Due" value="'+esc(D.due)+'" min="'+todayStr()+'"></div>';
+  h+='<h3>'+esc(t('Who else to ask'))+' <small>· '+n+'</small></h3>'+
+    '<div class="deptChips">'+p3Picks_().map(function(p){ var ids=p[2].filter(function(id){ return !asked[id]; }); if(!ids.length) return '';
+      var all=ids.every(function(id){ return D.picked[id]; });
+      return '<button class="deptChip'+(all?' on':'')+'" data-p3pick="'+p[0]+'">'+(all?'✓ ':'＋ ')+esc(p[1])+' · '+ids.length+'</button>'; }).join('')+'</div>';
+  var picked=people.filter(function(p){ return D.picked[p.id]; });
+  if(picked.length) h+='<div class="p3Picked">'+picked.map(function(p){ return '<button class="p3Chip" data-p3unpick="'+esc(p.id)+'">'+esc(p.name)+' ×</button>'; }).join('')+'</div>';
+  h+='<input type="search" id="p3Search" placeholder="'+esc(t('Search for someone'))+'" value="'+esc(D.q)+'">';
+  var q=String(D.q||'').toLowerCase(), shown=people.filter(function(p){ return !D.picked[p.id] && (!q || p.name.toLowerCase().indexOf(q)>-1); }).slice(0, q ? 40 : 12);
+  h+='<div class="card p3PeopleList">'+(shown.length ? shown.map(function(p){
+      return '<button class="p3Person" data-p3add="'+esc(p.id)+'">'+avatarHtml(p.p,'sm')+'<span><b>'+esc(p.name)+'</b><small>'+esc(p.sub)+'</small></span><span class="p3Plus">＋</span></button>'; }).join('')
+    : '<p class="sub" style="margin:0">'+esc(t('Nobody else matches.'))+'</p>')+'</div>';
+  var bad=n<min || n>room || S.p3Busy;
+  return h+'<button class="btn" id="p3MoreSend"'+(bad?' disabled':'')+'>'+esc(n<min ? gpT('Pick {n} more',{n:min-n}) : n>room ? gpT('That is too many — {n} more at most',{n:room}) : gpT('Ask these {n}',{n:n}))+'</button>'+
+    '<button class="linkbtn" id="p3MoreCancel">'+esc(t('Cancel'))+'</button>';
+}
+function p3MoreBtnHtml_(R){
+  if(!R.mine || R.moreRoom===0) return '';
+  return '<button class="btn ghost" id="p3More" style="margin:8px 0 0">＋ '+esc(t('Ask more people'))+'</button>';
 }
 
 /* ---------- give feedback (or your own answers, self=true) ---------- */
@@ -162,7 +195,14 @@ function p3ViewHtml_(){
   if(S.p3Sub==='view' && S.p3SelfOpen) return p3AnswerHtml_(R, true);
   var h='<h2>🪞 '+esc(R.title)+'</h2>';
   if(!R.mine) h+='<p class="sub">'+esc(gpT('{name}’s review, shared with you — read-only.',{name:R.subject.name}))+'</p>';
-  if(!R.closed){
+  if(!R.closed && R.gathering){
+    h+='<div class="card" id="p3Gather"><div class="mentorLabel">📨 '+esc(t('Open again for more people'))+'</div>'+
+      '<p class="sub" style="margin:0 0 8px">'+esc(gpT('{a} of {n} have answered in all{until}. The results below are as they were — the new answers are added when you close it, once at least {m} new people have answered.',
+        {a:R.answered, n:R.asked, m:R.minN, until:R.due ? ' · '+gpT('until {date}',{date:p3Date_(R.due)}) : ''}))+'</p>'+
+      (R.reviewers ? '<details class="pulseMore"><summary>'+esc(gpT('Who you asked · {n}',{n:R.reviewers.length}))+'</summary><p class="sub" style="margin:6px 0 0">'+esc(R.reviewers.map(function(p){ return p.name; }).join(', '))+'</p></details>' : '')+
+      (R.mine ? '<button class="btn" id="p3Close" style="margin:8px 0 0"'+(S.p3Busy?' disabled':'')+'>'+esc(t('Close it and add the new answers'))+'</button>'+p3MoreBtnHtml_(R) : '')+'</div>';
+    if(R.results) h+=p3ResultsHtml_(R);
+  } else if(!R.closed){
     var pct=R.asked ? Math.round(R.answered/R.asked*100) : 0;
     h+='<div class="card"><div class="pBar"><div class="pBarTop"><b>'+esc(gpT('{a} of {n} answered',{a:R.answered, n:R.asked}))+'</b><span>'+esc(R.due ? gpT('until {date}',{date:p3Date_(R.due)}) : '')+'</span></div>'+
       '<div class="pTrack"><div class="pFill" style="left:0;width:'+pct+'%;background:var(--accent)"></div></div></div>'+
@@ -172,12 +212,16 @@ function p3ViewHtml_(){
       h+='<div class="card"><div class="mentorLabel">🙋 '+esc(t('Your own answers'))+'</div>'+
         '<p class="sub" style="margin:0 0 8px">'+esc(R.self ? t('Done — they show next to everyone else’s in the results.') : t('Answer the same questions about yourself, to set beside what others say.'))+'</p>'+
         '<button class="btn ghost" id="p3SelfOpen" style="margin:0">'+esc(R.self ? t('Change my answers') : t('Answer about myself'))+'</button></div>';
-      h+='<button class="btn" id="p3Close"'+(S.p3Busy?' disabled':'')+'>'+esc(t('Close it and see the results'))+'</button>';
+      h+='<button class="btn" id="p3Close"'+(S.p3Busy?' disabled':'')+'>'+esc(t('Close it and see the results'))+'</button>'+p3MoreBtnHtml_(R);
     }
   } else if(!R.results){
-    h+='<div class="card"><p class="sub" style="margin:0">'+esc(gpT('Closed with {a} answers. Fewer than {n} can’t be shown without people being able to work out who said what — start a new one and ask a few more people.',{a:R.answered, n:R.minN}))+'</p></div>';
-  } else h+=p3ResultsHtml_(R);
-  if(R.closed && R.results) h+=p3PlanHtml_(R);
+    h+='<div class="card"><p class="sub" style="margin:0">'+esc(gpT('Closed with {a} answers. Fewer than {n} can’t be shown without people being able to work out who said what — ask a few more people.',{a:R.answered, n:R.minN}))+'</p>'+p3MoreBtnHtml_(R)+'</div>';
+  } else {
+    if(R.mine) h+='<div class="card" id="p3MoreCard">'+(R.held ? '<p class="sub" id="p3Held" style="margin:0">'+esc(gpT(R.held===1 ? '1 new answer is waiting. It is added once at least {n} new people have answered — ask a few more.' : '{a} new answers are waiting. They are added once at least {n} new people have answered — ask a few more.',{a:R.held, n:R.minN}))+'</p>'
+      : '<p class="sub" style="margin:0">'+esc(t('Want more input? You can ask more people, even now it has closed.'))+'</p>')+p3MoreBtnHtml_(R)+'</div>';
+    h+=p3ResultsHtml_(R);
+  }
+  if(R.results && (R.closed || R.gathering)) h+=p3PlanHtml_(R);
   if(R.mine) h+=p3ShareHtml_(R);
   if(R.mine) h+='<button class="linkbtn" id="p3Delete" style="color:var(--bad)">'+esc(t('Delete this review'))+'</button>';
   return h;
@@ -306,7 +350,7 @@ function bindP360_(){
   document.querySelectorAll('[data-p3open]').forEach(function(b){ b.onclick=function(){ gpTap(); p3Open_(b.getAttribute('data-p3open')); }; });
   document.querySelectorAll('[data-p3answer]').forEach(function(b){ b.onclick=function(){ gpTap(); S.p3Sub='answer'; S.p3Id=b.getAttribute('data-p3answer'); S.p3Ans=null; render(); window.scrollTo(0,0); }; });
   document.querySelectorAll('[data-p3decline]').forEach(function(b){ b.onclick=function(){
-    if(!confirm(t('Let them know you won’t be giving feedback this time?'))) return;
+    if(!gpAsk_(t('Let them know you won’t be giving feedback this time?'))) return;
     run('p360Decline', p3Auth_().concat([b.getAttribute('data-p3decline')]), function(d){ if(d && d.ok){ S.p3=null; render(); } else showMsg(t('Could not save')); }); }; });
   /* starting one */
   var D=S.p3Draft;
@@ -315,9 +359,18 @@ function bindP360_(){
     ['p3Title','p3Due','p3NoteIn'].forEach(function(id){ var el=document.getElementById(id); if(el) el.oninput=keep; });
     var sr=document.getElementById('p3Search'); if(sr) sr.oninput=function(){ keep(); D.q=sr.value; var pos=sr.selectionStart; render(); var s2=document.getElementById('p3Search'); if(s2){ s2.focus(); try { s2.setSelectionRange(pos, pos); } catch(e){} } };
     document.querySelectorAll('[data-p3pick]').forEach(function(b){ b.onclick=function(){ keep(); var p=p3Picks_().filter(function(x){ return x[0]===b.getAttribute('data-p3pick'); })[0]; if(!p) return;
-      var all=p[2].every(function(id){ return D.picked[id]; }); p[2].forEach(function(id){ if(all) delete D.picked[id]; else D.picked[id]=1; }); render(); }; });
+      var asked={}; if(D.more) ((S.p3R||{}).reviewers||[]).forEach(function(x){ asked[x.id]=1; });
+      var ids=p[2].filter(function(id){ return !asked[id]; });
+      var all=ids.every(function(id){ return D.picked[id]; }); ids.forEach(function(id){ if(all) delete D.picked[id]; else D.picked[id]=1; }); render(); }; });
     document.querySelectorAll('[data-p3add]').forEach(function(b){ b.onclick=function(){ keep(); D.picked[b.getAttribute('data-p3add')]=1; render(); }; });
     document.querySelectorAll('[data-p3unpick]').forEach(function(b){ b.onclick=function(){ keep(); delete D.picked[b.getAttribute('data-p3unpick')]; render(); }; });
+    on('p3MoreCancel', function(){ S.p3Draft=null; S.p3Sub='view'; render(); window.scrollTo(0,0); });
+    on('p3MoreSend', function(){ keep(); if(S.p3Busy) return; S.p3Busy=true; var n=Object.keys(D.picked).length;
+      run('p360AskMore', p3Auth_().concat([D.more, { due:D.due, reviewers:Object.keys(D.picked) }]), function(d){
+        S.p3Busy=false;
+        if(d && d.ok){ S.p3Draft=null; S.p3=null; S.p3R=d.review; S.p3Sub='view'; showMsg(gpT('Sent to {n} people',{n:n})); render(); window.scrollTo(0,0); }
+        else { showMsg(d && d.err==='too_few' ? gpT('Pick at least {n} new people.',{n:d.need||3}) : d && d.err==='bad_date' ? t('Pick a date from today on.') : d && d.err==='too_many' ? t('That is too many people for one review.') : t('Could not save')); render(); }
+      }, function(){ S.p3Busy=false; showMsg(t('No connection — try again when you are online.')); render(); }); });
     on('p3Send', function(){ keep(); if(S.p3Busy) return; S.p3Busy=true;
       run('p360Create', p3Auth_().concat([{ title:D.title, due:D.due, note:D.note, reviewers:Object.keys(D.picked) }]), function(d){
         S.p3Busy=false;
@@ -336,7 +389,7 @@ function bindP360_(){
     on('p3AnsSend', function(){
       var id=this.getAttribute('data-p3id'), o=pack();
       if(!P3_Q.some(function(q){ return o.ratings[q[0]]; }) && !P3_TEXTS.some(function(x){ return String(o[x[0]]).trim(); })){ showMsg(t('Answer at least one question first.')); return; }
-      if(!confirm(t('Send your feedback? Once sent it can’t be changed.'))) return;
+      if(!gpAsk_(t('Send your feedback? Once sent it can’t be changed.'))) return;
       if(S.p3Busy) return; S.p3Busy=true;
       run('p360Answer', p3Auth_().concat([id, o]), function(d){ S.p3Busy=false;
         if(d && d.ok){ S.p3Ans=null; showMsg(t('Thank you — sent anonymously')); p3Home_(); }
@@ -349,10 +402,11 @@ function bindP360_(){
   /* a review */
   var R=S.p3R; if(!R || S.p3Sub!=='view') return;
   on('p3SelfOpen', function(){ S.p3SelfOpen=true; S.p3Ans=null; render(); window.scrollTo(0,0); });
+  on('p3More', function(){ gpTap(); S.p3Draft={ more:R.id, title:'', note:'', due:(function(){ var d=new Date(); d.setDate(d.getDate()+14); return calIso_(d); })(), picked:{}, q:'' }; S.p3Sub='new'; render(); window.scrollTo(0,0); });
   on('p3Close', function(){
-    if(!confirm(R.answered < R.minN ? gpT('Only {a} have answered — with fewer than {n} the results can’t be shown. Close it anyway?',{a:R.answered, n:R.minN}) : t('Close it now? Nobody else can answer after this.'))) return;
+    if(!gpAsk_(R.gathering ? t('Close it now? Nobody else can answer after this.') : R.answered < R.minN ? gpT('Only {a} have answered — with fewer than {n} the results can’t be shown. Close it anyway?',{a:R.answered, n:R.minN}) : t('Close it now? Nobody else can answer after this.'))) return;
     S.p3Busy=true; run('p360Close', p3Auth_().concat([R.id]), function(d){ p3Put_(d, t('Closed')); render(); window.scrollTo(0,0); }); });
-  on('p3Delete', function(){ if(!confirm(t('Delete this review, its results and its plan? This can’t be undone.'))) return;
+  on('p3Delete', function(){ if(!gpAsk_(t('Delete this review, its results and its plan? This can’t be undone.'))) return;
     run('p360Delete', p3Auth_().concat([R.id]), function(d){ if(d && d.ok){ showMsg(t('Deleted')); p3Home_(); } else showMsg(t('Could not save')); }); });
   var plan=function(list, msg){ S.p3Busy=true; run('p360SavePlan', p3Auth_().concat([R.id, list]), function(d){ if(p3Put_(d, msg)) S.p3PlanEdit=null; render(); }); };
   on('p3ActAdd', function(){ S.p3PlanEdit={ id:'new', area:'', what:'', measure:'', by:'' }; render(); var w=document.getElementById('p3ActWhat'); if(w) w.focus(); });
@@ -364,7 +418,7 @@ function bindP360_(){
     on('p3ActSave', function(){ grab(); if(!String(E.what).trim()){ showMsg(t('Say what you’ll do')); return; }
       var list=R.plan.actions.slice(); if(E.id==='new') list.push({ area:E.area, what:E.what, measure:E.measure, by:E.by }); else list=list.map(function(a){ return a.id===E.id ? E : a; });
       plan(list, t('Saved')); });
-    on('p3ActDel', function(){ if(!confirm(t('Remove this action?'))) return; plan(R.plan.actions.filter(function(a){ return a.id!==E.id; }), t('Removed')); });
+    on('p3ActDel', function(){ if(!gpAsk_(t('Remove this action?'))) return; plan(R.plan.actions.filter(function(a){ return a.id!==E.id; }), t('Removed')); });
   }
   var RV=S.p3Rev;
   document.querySelectorAll('[data-p3st]').forEach(function(b){ b.onclick=function(){ var v=b.getAttribute('data-p3st').split('|'); RV.items[v[0]]=RV.items[v[0]]||{ note:'' }; RV.items[v[0]].status=v[1];

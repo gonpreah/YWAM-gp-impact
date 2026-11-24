@@ -36,12 +36,30 @@ var GPT_SVG=(function(){
 function gptIc_(k, cls){ return '<span class="gtIc'+(cls?' '+cls:'')+'" aria-hidden="true">'+GPT_SVG[k]+'</span>'; }
 /* GP Calendar/Tasks is one place (Uriah, Oct 2026): the calendar opens first, with a Tasks tab on top */
 var CAL_PALETTE=['blue','green','amber','pink','purple','teal','red','orange','indigo','brown','grey','lime','lavender','sky','mint','rose'];
+/* Light or dark (Nov 2026, Andrew: "in the GP tasks, add a light or dark option"): one button, Auto → Light → Dark,
+   the same choice as Profile & settings → Appearance (gp-theme, applyTheme). On GP Tasks' top row in the YWAM GP app,
+   and in the GP Tasks app's header (it has no Profile page). */
+function gptThemeWord_(v, long){ return [t('Light'), t('Dark'), long ? t('Auto — follows your phone') : t('Auto')][['light','dark'].indexOf(v)>-1 ? ['light','dark'].indexOf(v) : 2]; }
+function gptThemeNow_(){ var v=savedTheme(); return v || 'auto'; }
+function gptThemeBtnHtml_(cls){
+  var v=gptThemeNow_(), ic = v==='dark' ? '🌙' : v==='light' ? '☀️' : '🌗';
+  return '<button class="'+(cls||'gtTheme')+'" data-gptheme="1" aria-label="'+esc(gpT('Appearance: {mode}',{mode: gptThemeWord_(v, false)}))+'">'+ic+'</button>';
+}
+function bindGptTheme_(){
+  document.querySelectorAll('[data-gptheme]').forEach(function(b){ b.onclick=function(){
+    gpTap(); var v=gptThemeNow_(), nx = v==='auto' ? 'light' : v==='light' ? 'dark' : '';
+    applyTheme(nx);
+    showMsg(gpT('Appearance: {mode}',{mode: gptThemeWord_(nx, true)}));
+    render();
+  }; });
+}
 function ctSegHtml_(on){
   if(gpTasksApp_()) return '';   // the tasks app has Tasks and Calendar in its bottom bar
-  return '<div class="ctSeg" role="tablist"><button class="ctTab'+(on==='calendar'?' on':'')+'" data-cttab="calendar" role="tab">'+gptIc_('calendar')+' '+esc(t('Calendar'))+'</button>'+
-    '<button class="ctTab'+(on==='tasks'?' on':'')+'" data-cttab="tasks" role="tab">'+gptIc_('tasks')+' '+esc(t('Tasks'))+gptBadge_(S.gpTaskInfo ? S.gpTaskInfo.inbox : 0)+'</button></div>';
+  return '<div class="ctRow"><div class="ctSeg" role="tablist"><button class="ctTab'+(on==='calendar'?' on':'')+'" data-cttab="calendar" role="tab">'+gptIc_('calendar')+' '+esc(t('Calendar'))+'</button>'+
+    '<button class="ctTab'+(on==='tasks'?' on':'')+'" data-cttab="tasks" role="tab">'+gptIc_('tasks')+' '+esc(t('Tasks'))+gptBadge_(S.gpTaskInfo ? S.gpTaskInfo.inbox : 0)+'</button></div>'+gptThemeBtnHtml_()+'</div>';
 }
 function bindCtSeg_(){
+  bindGptTheme_();
   document.querySelectorAll('[data-cttab]').forEach(function(b){ b.onclick=function(){
     var to=b.getAttribute('data-cttab'); if(to===S.view) return; gpTap();
     if(to==='tasks'){ S.gptPageScope=null; S.gptFrom=S.gptFrom==='ministry' ? 'week' : S.gptFrom; S.view='tasks'; }
@@ -190,6 +208,8 @@ function gptPageHtml_(scope, embedded){
   /* add: the round ＋ on the page; inside My Ministry, a plain row */
   var canAdd=L.canEdit || L.scope!=='personal';
   if(canAdd && !S.gtMenu) h+='<button class="gtFab" id="gtAdd" aria-label="'+esc(L && !L.canEdit ? gpT('Ask {name} for help',{name:t(L.ministry||L.dept)}) : t('Add a task'))+'">'+GPT_SVG.plus+'</button>';
+  if(canAdd) h+=gvFabHtml_();   // talk it through (21-voice.js)
+  if(S.gv) h+=gvHtml_();
   if(S.gtNew) h+=gtNewHtml_();
   if(S.gptOpen) h+=gtDetailHtml_();
   return h;
@@ -277,6 +297,12 @@ function gtListHtml_(L){
   var ids=gptLists_(S.gptScope).map(function(x){ return x.id; }), at=ids.indexOf(L.id);
   var nav = ids.length>1 ? '<span class="gtListNav"><button class="weekArrow" id="gtPrevList"'+(at>0?'':' disabled')+' aria-label="'+esc(t('Previous list'))+'">‹</button><button class="weekArrow" id="gtNextList"'+(at<ids.length-1?'':' disabled')+' aria-label="'+esc(t('Next list'))+'">›</button></span>' : '';
   var h='<div class="gtList'+(S.gtSlide ? ' gtSlide'+S.gtSlide : '')+'"><div class="gtListHead"><div class="gtListHeadTxt"><b>'+gptKindIc_(L)+esc(gptChipName_(L))+gptColorDot_(L)+'</b><span>'+esc(gptListLabel_(L))+'</span></div>'+nav+'</div>';
+  if(gptIsMain_(L) && !S.gptScope){
+    var wkN=gptWeekTasks_().length;
+    h+='<div class="campusSeg gtInboxSeg" id="gtInboxSeg"><button class="campusBtn'+(S.gptWeek?'':' on')+'" data-gptweek="0">'+esc(t('Inbox'))+'</button>'+
+      '<button class="campusBtn'+(S.gptWeek?' on':'')+'" data-gptweek="1">📅 '+esc(t('This week'))+(wkN ? ' · '+wkN : '')+'</button></div>';
+    if(S.gptWeek) return h+gptWeekHtml_(L)+'</div>';
+  }
   if(!open.length) h+='<div class="gtEmpty small"><div class="gtEmptyIc">'+GPT_SVG.tasks+'</div><p>'+esc(t('No tasks yet.'))+'</p></div>';
   /* small dividers by day (Andrew, Oct 2026: "like today, tomorrow, and then the date and day, like in
      Google Tasks") — a list with no dates at all stays plain */
@@ -287,9 +313,39 @@ function gtListHtml_(L){
     (S.gptDoneOpen ? '<div class="gtDone">'+done.map(function(x){ return gtItemHtml_(x, L); }).join('')+'</div>'+(L.canEdit ? '<button class="linkbtn inline" id="gptClearDone">'+esc(t('Clear completed'))+'</button>' : '') : '');
   return h+'</div>';
 }
+/* ---- The Inbox's "This week" (Nov 2026, Andrew: "show the tasks for the current week from all of the task lists so
+   that you can see which ones overlap"): Monday to Sunday, every day of it, with the open tasks due that day from every
+   list you have as a tab (gptLists_ — your Inbox, your lists, shared ones, your ministries'; leadership's filter
+   applies) and what you were given. Each says which list it is in; a day with two or more says how many, and two at the
+   same time are marked. Rows open and tick as anywhere; nothing is dragged here. ---- */
+function gptWeekRange_(){
+  var d=new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()-((d.getDay()+6)%7));
+  var out=[]; for(var i=0;i<7;i++){ var x=new Date(d); x.setDate(d.getDate()+i); out.push(x.getFullYear()+'-'+('0'+(x.getMonth()+1)).slice(-2)+'-'+('0'+x.getDate()).slice(-2)); }
+  return out;
+}
+function gptWeekTasks_(){
+  var G=S.gpt; if(!G) return [];
+  var days=gptWeekRange_(), ids={}; gptLists_(null).forEach(function(L){ ids[L.id]=1; });
+  return G.tasks.filter(function(x){ return !x.done && x.status!=='declined' && x.due && x.due>=days[0] && x.due<=days[6] && (ids[x.listId] || gptGiven_(x)); });
+}
+function gptWeekHtml_(L){
+  var days=gptWeekRange_(), all=gptWeekTasks_(), today=todayStr();
+  var h='<p class="pmeta gtWeekNote">'+esc(t('Every list’s tasks for this week, day by day — so you can see where they pile up.'))+'</p><div class="gtWeek" id="gtWeek">';
+  days.forEach(function(d){
+    var items=all.filter(function(x){ return x.due===d; }).sort(function(a,b){ return String(a.time||'99').localeCompare(String(b.time||'99')) || String(a.title).localeCompare(String(b.title)); });
+    if(d<today && !items.length) return;   // a day gone by with nothing left on it
+    var times={}; items.forEach(function(x){ if(x.time) times[x.time]=(times[x.time]||0)+1; });
+    h+='<div class="gtDay'+(d<today?' late':'')+(d===today?' today':'')+'" data-gptweekday="'+esc(d)+'">'+esc(gptDayLabel_(d))+
+      (items.length>1 ? ' <span class="gtDayN'+(items.length>=4?' many':'')+'">'+esc(gpT('{n} tasks',{n:items.length}))+'</span>' : '')+'</div>';
+    if(!items.length){ h+='<p class="pmeta gtWeekFree">'+esc(t('Nothing due'))+'</p>'; return; }
+    h+=items.map(function(x){ return gtItemHtml_(x, L, { noDrag:true, clash: !!(x.time && times[x.time]>1) }); }).join('');
+  });
+  return h+'</div>';
+}
 /* one task: its row, its subtasks under it, and a request's answer buttons */
-function gtItemHtml_(x, L){
-  var req=x.status==='request', dec=x.status==='declined', canDrag=L && L.canEdit && !req && !dec && !x.done && (x.listId===L.id || L.scope==='personal');
+function gtItemHtml_(x, L, opt){
+  opt=opt||{};
+  var req=x.status==='request', dec=x.status==='declined', canDrag=!opt.noDrag && L && L.canEdit && !req && !dec && !x.done && (x.listId===L.id || L.scope==='personal');
   var showList=x.listId!==L.id, SL=showList ? gptListById_(x.listId) : L;   // the list it is really in
   var chips=[];
   if(x.due) chips.push('<span class="gtChip'+(gptOverdue_(x)?' late':'')+'">'+GPT_SVG.clock+esc(gptWhen_(x))+'</span>');
@@ -298,6 +354,7 @@ function gtItemHtml_(x, L){
   if(showList && SL) chips.push('<span class="gtChip list">'+gptIc_(SL.scope==='personal' ? 'person' : 'team')+esc(gptChipName_(SL))+'</span>');
   if(req) chips.push('<span class="gtChip req">'+esc(x.by===S.me.id ? gpT('Asked — waiting for {name}',{name:t((SL&&(SL.ministry||SL.dept))||'')}) : t('Request'))+'</span>');
   if(dec) chips.push('<span class="gtChip late">'+esc(t('They can’t take it on'))+'</span>');
+  if(opt.clash) chips.push('<span class="gtChip late gtClash">⚠️ '+esc(t('Same time as another'))+'</span>');
   var subs=x.subs||[], subsDone=subs.filter(function(s){ return s.done; }).length;
   if(subs.length && x.done) chips.push('<span class="gtChip">'+GPT_SVG.sub+subsDone+'/'+subs.length+'</span>');
   var answer = req && L && x.by!==S.me.id && (L.mine || x.assignees.indexOf(S.me.id)>-1 || (S.gpt.canAll && !L.onlyAssigned));
@@ -548,14 +605,15 @@ function bindGpTasks_(){
     run('saveGpListOrder',[S.auth.user,S.auth.pin,ids],function(d){ if(d && d.ok) gptTake_(d); }); }; });
   var L0=S.gptList ? gptListById_(S.gptList) : null;
   var saveList=function(payload, msg, after){ run('saveGpTaskList',[S.auth.user,S.auth.pin,payload],function(d){ if(d && d.ok){ gptTake_(d); if(after) after(d); if(msg) showMsg(msg); } else showMsg(t('Could not save')); render(); }); };
-  on('gtRename', function(){ S.gtMenu=false; var v=window.prompt(t('Rename list'), L0.title); if(v && v.trim()) saveList({ id:L0.id, title:v.trim() }, t('Saved')); else render(); });
+  on('gtRename', function(){ S.gtMenu=false; var v=gpAskText_(t('Rename list'), L0.title); if(v && v.trim()) saveList({ id:L0.id, title:v.trim() }, t('Saved')); else render(); });
   on('gtColor', function(){ S.gtMenu=false; S.gtColorFor=L0.id; render(); });
   on('gtShareList', function(){ S.gtMenu=false; S.gtShareFor=L0.id; S.ppick.share={ q:'' }; render(); var x=document.querySelector('[data-ppickq="share"]'); if(x) x.focus(); });
   on('gtShareScrim', function(){ S.gtShareFor=null; render(); });
   on('gtColorScrim', function(){ S.gtColorFor=null; render(); });
   document.querySelectorAll('[data-gtcolor]').forEach(function(b){ b.onclick=function(){ gpTap(); var id=S.gtColorFor; S.gtColorFor=null; saveList({ id:id, color:b.getAttribute('data-gtcolor') }, t('Saved')); }; });
   bindCtSeg_();
-  on('gptListDelete', function(){ S.gtMenu=false; if(!window.confirm(gpT('Delete “{title}” and all its tasks?',{title:L0.title}))){ render(); return; }
+  document.querySelectorAll('[data-gptweek]').forEach(function(b){ b.onclick=function(){ gpTap(); S.gptWeek=b.getAttribute('data-gptweek')==='1'; render(); }; });
+  on('gptListDelete', function(){ S.gtMenu=false; if(!gpAsk_(gpT('Delete “{title}” and all its tasks?',{title:L0.title}))){ render(); return; }
     saveList({ id:L0.id, remove:true }, t('List deleted'), function(){ S.gptList=null; }); });
   on('gptAskBtn', function(){ gpTap(); S.gtMenu=false; S.gptAsk={ min:'', title:'', due:'', find:'' }; render(); });
   on('gptFilterBtn', function(){ S.gtMenu=false; S.gptFilterOpen=true; S.gptFilterDraft=S.gpt.filter ? S.gpt.filter.keys.slice() : []; render(); });
@@ -676,8 +734,15 @@ function bindGpTasks_(){
     on('gptSave', function(){ saveOpen(true); });
     on('gptClose', function(){ saveOpen(true); });   // ← keeps what you changed, like Google Tasks
     on('gtDetScrim', function(){ saveOpen(true); });
-    on('gptDelete', function(){ if(!window.confirm(t('Delete this task?'))) return;
-      run('deleteGpTask',[S.auth.user,S.auth.pin,D.id],function(d){ if(d && d.ok){ gptTake_(d); S.gptOpen=null; S.gptDraft=null; showMsg(t('Deleted')); } else showMsg(t('Could not save')); render(); }); });
+    /* No "are you sure?" (Nov 2026): the task goes at once, with a few seconds to put it back (gpUndo_). */
+    on('gptDelete', function(){
+      var G=S.gpt, id=D.id, at=G ? G.tasks.findIndex(function(x){ return x.id===id; }) : -1, was=at>-1 ? G.tasks[at] : null;
+      if(was){ G.tasks.splice(at, 1); }
+      S.gptOpen=null; S.gptDraft=null; render();
+      gpUndo_(t('Task deleted'), function(){
+        run('deleteGpTask',[S.auth.user,S.auth.pin,id],function(d){ if(d && d.ok){ gptTake_(d); showMsg(t('Deleted')); } else showMsg(t('Could not save')); render(); });
+      }, function(){ if(was && S.gpt===G){ G.tasks.splice(Math.min(at, G.tasks.length), 0, was); } else { S.gpt=null; } render(); });
+    });
   }
 }
 function gtSaveNew_(){
@@ -777,7 +842,7 @@ function bindPpickItems_(){ document.querySelectorAll('[data-ppickit]').forEach(
    sheet with the link and the steps. Same account, same tasks: nothing to set up but the icon. */
 var _gpTaPrompt=null;
 window.addEventListener('beforeinstallprompt', function(e){ if(!gpTasksApp_()) return; e.preventDefault(); _gpTaPrompt=e; if(S.me && S.view==='tasks') render(); });
-function gpStandalone_(){ try { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true; } catch(e){ return false; } }
+/* gpStandalone_ is in 08-team-profile.js */
 function gpIos_(){ var u=navigator.userAgent||''; return /iPhone|iPad|iPod/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints>1); }
 function gtAppUrl_(){ try { return location.origin+location.pathname.replace(/[^\/]*$/, '')+'tasks.html'; } catch(e){ return 'https://impact.gonpreah.org/tasks.html'; } }
 function gpTaInstallHtml_(){
@@ -800,4 +865,25 @@ function gtGetAppHtml_(){
       '<li>'+esc(ios ? t('Tap the Share button, then “Add to Home Screen”.') : t('In the menu (⋮), tap “Install app” or “Add to Home screen”.'))+'</li>'+
       '<li>'+esc(t('Open GP Tasks and sign in with Google, as you do here.'))+'</li></ol>'+
     '<div class="gtGetBtns"><button class="btn" id="gtGetAppCopy">'+esc(t('Copy the link'))+'</button><a class="btn ghost" id="gtGetAppOpen" href="'+esc(url)+'" target="_blank" rel="noopener">'+esc(t('Open GP Tasks'))+'</a></div></div>';
+}
+
+/* ---- The Portal, an app of its own (Nov 2026, Andrew: "just like the GP Tasks and calendar, the same for the GP portal,
+   and the icon fits it"): portal.html already installs (portal-manifest.json) — now with its own icon, an open door on the
+   portal's black (portal-180.png, portal-512.png, portal-maskable-512.png; scripts/portal-icon.py draws them). ☰ →
+   Applications → "The Portal on your phone" opens this sheet: the link and the two steps. ---- */
+function gpPortalUrl_(){ try { return location.origin+location.pathname.replace(/[^\/]*$/, '')+'portal.html'; } catch(e){ return 'https://impact.gonpreah.org/portal.html'; } }
+function gpPortalAppOpen_(){
+  var url=gpPortalUrl_(), ios=gpIos_();
+  var root=document.getElementById('portalAppRoot'); if(!root){ root=document.createElement('div'); root.id='portalAppRoot'; document.body.appendChild(root); }
+  root.innerHTML='<div class="scrim" id="portalAppScrim" style="z-index:74"></div><div class="gtSheet" id="portalAppSheet" role="dialog" style="z-index:75">'+
+    '<div class="gtSheetHead"><img src="portal-180.png" alt="" class="portalAppIc"><b>'+esc(t('The Portal, an app of its own'))+'</b></div>'+
+    '<p class="hint" style="margin:0">'+esc(t('The applications, one tap from your Home Screen, with their own icon. The same portal as here.'))+'</p>'+
+    '<ol class="gtGetSteps"><li>'+esc(ios ? t('Open this link in Safari:') : t('Open this link in Chrome:'))+'<div class="gtGetUrl" id="portalAppUrl">'+esc(url)+'</div></li>'+
+      '<li>'+esc(ios ? t('Tap the Share button, then “Add to Home Screen”.') : t('In the menu (⋮), tap “Install app” or “Add to Home screen”.'))+'</li>'+
+      '<li>'+esc(t('Open the Portal and sign in with Google, as you do here.'))+'</li></ol>'+
+    '<div class="gtGetBtns"><button class="btn" id="portalAppCopy">'+esc(t('Copy the link'))+'</button><a class="btn ghost" id="portalAppGo" href="'+esc(url)+'" target="_blank" rel="noopener">'+esc(t('Open the Portal'))+'</a></div></div>';
+  var shut=function(){ root.innerHTML=''; };
+  document.getElementById('portalAppScrim').onclick=shut;
+  document.getElementById('portalAppGo').onclick=function(){ setTimeout(shut, 300); };
+  document.getElementById('portalAppCopy').onclick=function(){ try { if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(url).then(function(){ showMsg(t('Link copied — paste it into your browser')); }, function(){ prompt(t('Copy this link'), url); }); return; } } catch(e){} try { prompt(t('Copy this link'), url); } catch(e){} };
 }
