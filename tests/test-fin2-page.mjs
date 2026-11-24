@@ -82,6 +82,8 @@ let { ctx, page } = await open('bopha', '?embed=1&view=input');
 ok('it loads from the server (fin2Get)', sent.indexOf('fin2Get') > -1);
 ok('no draft bar, no header of its own, no tab row inside My Ministry', await page.evaluate(() => getComputedStyle(document.querySelector('.draftBar')).display === 'none' && getComputedStyle(document.querySelector('nav.tabs')).display === 'none'));
 ok('it opens on Input (?view=input)', await page.evaluate(() => S.tab === 'input') && !!(await page.$('#inBalances')));
+ok('with no A/R Ageing report yet, no “Invalid Date” anywhere', !/Invalid Date/.test(await page.evaluate(() => { S.tab = 'dash'; render(); return document.body.innerText; })));
+await page.evaluate(() => { S.tab = 'input'; render(); });
 ok('no sample amounts or names', await page.evaluate(() => ALLOC.every(g => g.items.every(it => it[1] === 0)) && DEBT.people.length === 0 && !/Sample Person/.test(document.body.innerText)));
 ok('the office can bring in the demo’s entries', !!(await page.$('#inImport')));
 

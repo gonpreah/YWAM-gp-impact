@@ -700,11 +700,26 @@ function finReportsHtml_(){
    scrolls on its own and is sized to the screen below it, so the page's sticky bar works. */
 function fin2FrameHtml_(view){
   var src='finance.html?embed=1&view='+(view==='input'?'input':'dash')+(S.me && S.me.isAdmin && S.me.campus ? '&campus='+encodeURIComponent(S.me.campus) : '');
-  return '<iframe class="fin2Frame" id="fin2Frame" src="'+esc(src)+'" title="'+esc(t('Finances'))+'"></iframe>';
+  return '<iframe class="fin2Frame" id="fin2Frame" scrolling="no" src="'+esc(src)+'" title="'+esc(t('Finances'))+'"></iframe>';
 }
+/* One page with the app (Nov 2026: "it does not act as one single page"): the frame is as tall as the
+   finance page says it is (it posts {gpFin:'h'}), so My Ministry scrolls the two together; as the app
+   scrolls, the frame is told which part of it is on screen ({gpFin:'view', top, h}) so its sticky bar,
+   pop-up sheets, toasts and "Saved" stay where they can be seen. */
+var _fin2H=0, _fin2Raf=0;
+function fin2FrameView_(){ var f=document.getElementById('fin2Frame'); if(!f || !f.contentWindow) return;
+  var r=f.getBoundingClientRect(), nav=document.querySelector('nav.bottom'), navH=(nav && !nav.classList.contains('hidden')) ? nav.offsetHeight : 0;
+  var visTop=Math.max(0, r.top), visBot=Math.min(window.innerHeight-navH, r.bottom);
+  try { f.contentWindow.postMessage({ gpFin:'view', top:Math.round(visTop-r.top), h:Math.round(Math.max(0, visBot-visTop)) }, location.origin); } catch(e){} }
 function fin2FrameSize_(){ var f=document.getElementById('fin2Frame'); if(!f) return;
-  var nav=document.querySelector('nav.bottom'), top=f.getBoundingClientRect().top+window.scrollY, below=nav ? nav.offsetHeight : 0;
-  f.style.height=Math.max(420, window.innerHeight-Math.max(0, top-window.scrollY)-below-8)+'px'; }
+  var nav=document.querySelector('nav.bottom'), navH=nav ? nav.offsetHeight : 0;
+  f.style.height=Math.max(_fin2H || 0, 300)+'px';
+  f.style.minHeight=Math.max(300, window.innerHeight-navH-Math.max(0, f.getBoundingClientRect().top))+'px';   // room for a pop-up even when the page is short
+  fin2FrameView_(); }
+window.addEventListener('message', function(e){ var f=document.getElementById('fin2Frame');
+  if(!f || e.source!==f.contentWindow || e.origin!==location.origin || !e.data || e.data.gpFin!=='h') return;
+  _fin2H=+e.data.h||0; fin2FrameSize_(); });
+window.addEventListener('scroll', function(){ if(_fin2Raf) return; _fin2Raf=requestAnimationFrame(function(){ _fin2Raf=0; fin2FrameView_(); }); }, { passive:true });
 window.addEventListener('resize', fin2FrameSize_);
 /* The Finances office's page on My Ministry: the reports, what leadership sees, and the usual numbers. */
 function finMinistryTabsHtml_(){

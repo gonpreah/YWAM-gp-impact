@@ -36,6 +36,19 @@ button{ font:inherit; color:inherit; }
    own; inside My Ministry (?embed=1) no tab row either (the app shows Dashboard · Input · Tasks · OKRs) */
 body.app .draftBar, body.app header.app, body.app .mmHead, body.app .tab[data-tab="tasks"], body.app .tab[data-tab="okrs"]{ display:none; }
 body.embed nav.tabs{ display:none; }
+/* inside My Ministry the frame is as tall as the page, so the app scrolls the two as one. The app says
+   which part of the frame is on screen (--vt: its top, --vh: its height), and what floated over the
+   screen is placed there instead: the pop-up sheet, its backdrop, the toast, "Saved"; the "Reports as of"
+   bar is kept at the top of the screen by the page (finStick_). Screen-height sizes use --vh too. */
+html.embed, body.embed{ overflow:hidden; }
+body.embed .scrim{ position:absolute; inset:auto 0 auto 0; top:var(--vt,0px); height:var(--vh,100vh); }
+body.embed .sheet{ position:absolute; bottom:auto; top:calc(var(--vt,0px) + var(--vh,100vh)); transform:translateY(5%); max-height:calc(var(--vh,100vh) * .85); }
+body.embed.sheetOn .sheet{ transform:translateY(-100%); }
+body.embed .toast{ position:absolute; bottom:auto; top:calc(var(--vt,0px) + var(--vh,100vh) - 70px); }
+body.embed .finSave{ position:absolute; bottom:auto; top:calc(var(--vt,0px) + var(--vh,100vh) - 46px); }
+body.embed .inDay{ position:relative; top:auto; }
+body.embed .ledWrap{ max-height:calc(var(--vh,100vh) * .7); }
+body.embed .gridWrap{ max-height:calc(var(--vh,100vh) * .6); }
 body.ro .tab[data-tab="input"]{ display:none; }
 .finSave{ position:fixed; left:12px; bottom:12px; z-index:60; font-size:12.5px; padding:6px 12px; border-radius:999px; background:var(--surface); border:1px solid var(--line); box-shadow:0 2px 8px rgba(0,0,0,.08); color:var(--muted); cursor:default; }
 .finSave.bad{ color:#fff; background:var(--bad); border-color:var(--bad); cursor:pointer; }
@@ -622,7 +635,7 @@ var DEBT = { asOf:'2026-11-23', src:'A/R Ageing Summary · uploaded 23 Nov 2026'
 ] };
 if(window.GP_FIN_APP){   /* Impact: no sample amounts or names — only what the office enters */
   ALLOC.forEach(function(g){ g.prev=0; g.items.forEach(function(it){ it[1]=0; }); });
-  DEBT.people=[]; DEBT.asOf=TODAY; DEBT.src='No A/R Ageing report attached yet'; }
+  DEBT.people=[]; DEBT.asOf=new Date(Date.now()+7*3600e3).toISOString().slice(0,10); DEBT.src=''; }   /* TODAY isn't set yet this early, so the day is worked out here */
 /* buckets, as the office's report heads them: Current · 1 month · 2 months · 3 months · Over 3 months.
    "2 months or older" = the 2 months, 3 months and Over 3 months columns. */
 var DEBT_COLS=['Current','1 Month','2 Months','3 Months','3+ Months'], DEBT_OLD_FROM=2;
@@ -632,7 +645,7 @@ ALLOC.forEach(function(a){ a.amt=a.items.reduce(function(s,i){ return s+i[1]; },
 /* ---- helpers ---- */
 var S = { tab:'dash', open:null };
 var APP=!!window.GP_FIN_APP, QS=new URLSearchParams(location.search);
-if(APP){ document.body.classList.add('app'); if(QS.get('embed')) document.body.classList.add('embed'); if(QS.get('view')==='input') S.tab='input';
+if(APP){ document.body.classList.add('app'); if(QS.get('embed')){ document.body.classList.add('embed'); document.documentElement.classList.add('embed'); } if(QS.get('view')==='input') S.tab='input';
   try { var th=localStorage.getItem('gp-theme'); if(th==='dark' || (!th && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.dataset.theme='dark'; } catch(e){} }
 function money(n, cents){ var s=Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:cents?2:0, maximumFractionDigits:cents?2:0}); return (n<0?'−$':'$')+s; }
 function date(iso){ var d=new Date(iso+'T00:00:00'); return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
@@ -2135,7 +2148,7 @@ function debtHtml(){
   var owing=P.filter(function(p){ return p.tot>0; }), late=P.filter(function(p){ return p.old>0; }).sort(function(a,b){ return b.old-a.old; });
   var pct=tot ? Math.round(old/tot*100) : 0;
   var h='<section class="sec" id="debt"><div class="secHead"><h2>💳 Staff debt</h2><button class="more" data-sheet="debt">Details ›</button></div>'+
-    '<p class="hint">From the '+esc(DEBT.src)+' · as of '+date(DEBT.asOf)+'</p>'+
+    '<p class="hint">'+(DEBT.src ? 'From the '+esc(DEBT.src)+' · as of '+date(DEBT.asOf) : 'No A/R Ageing report attached yet — add one on the Input tab')+'</p>'+
     '<div class="dTiles"><div class="dTile"><div class="dl">Total outstanding</div><div class="dv">'+money(tot)+'</div><div class="ds">'+owing.length+' people owe money</div></div>'+
     '<div class="dTile late"><div class="dl">2 months or older</div><div class="dv">'+money(old)+'</div><div class="ds">'+late.length+' people · '+pct+'% of the total</div></div></div>'+
     '<div class="dMeter" role="img" aria-label="'+pct+'% of staff debt is 2 months or older"><span style="width:'+pct+'%"></span></div>'+
@@ -2328,7 +2341,7 @@ function nextHtml(){
   return '<section class="sec"><p class="hint" style="margin:0">Next on the dashboard: the other reports (Profit and Loss, Burn Rate…) — each a short summary here, with its details a tap away.</p></section>';
 }
 function soon(icon, title, line){ return '<div class="soon"><div class="big">'+icon+'</div><h3>'+title+'</h3><div>'+line+'</div></div>'; }
-function render(){ setTimeout(function(){ if(S.editGo){ var el=document.getElementById(S.editGo); S.editGo=null; if(el) el.scrollIntoView({ block:'start', behavior:'smooth' }); } }, 30);
+function render(){ if(window.GP_FIN_APP) setTimeout(function(){ finStick_(); finTell_(); }, 0); setTimeout(function(){ if(S.editGo){ var el=document.getElementById(S.editGo); S.editGo=null; if(el) el.scrollIntoView({ block:'start', behavior:'smooth' }); } }, 30);
   var p=document.getElementById('pane');
   if(S.tab==='dash'){ var undo=viewApply_(); S.liveDraw=isLive_();
     try { p.innerHTML = (!isLive_() && !reportDays_().length)
@@ -2859,6 +2872,22 @@ function importDemo_(){ var ta=document.getElementById('impText'), txt=ta?ta.val
   resetState_(); loadState_(o.state); refreshBal_(); keep_();
   S.impAsk=false; S.impErr=''; S.impTxt=''; (S.foldOpen=S.foldOpen||{}).imp=false; render(); toast('Brought in — saving to Impact'); }
 document.addEventListener('click', function(e){ if(e.target.id==='impGo') importDemo_(); });
+/* ---- Inside My Ministry (?embed=1): one page with the app ----
+   The page tells the app how tall it is (the app makes the frame that tall, so nothing scrolls on its
+   own), and the app tells the page which part of it is on screen as it scrolls. */
+var EMBED=APP && !!QS.get('embed'), FV={ top:0, h:0 };
+function finTell_(){ if(!EMBED || window.parent===window) return; try { window.parent.postMessage({ gpFin:'h', h:Math.ceil(document.body.scrollHeight) }, location.origin); } catch(e){} }
+function finStick_(){ if(!EMBED) return; var b=document.querySelector('.inDay'); if(!b) return;
+  var cur=parseFloat(b.dataset.ty||'0'), r=b.getBoundingClientRect(), natural=r.top+window.scrollY-cur, box=b.parentElement.getBoundingClientRect();
+  var end=box.bottom+window.scrollY-natural-r.height, ty=Math.max(0, Math.min(FV.top-natural, end));
+  b.dataset.ty=ty; b.style.transform=ty ? 'translateY('+ty+'px)' : ''; }
+if(EMBED){
+  window.addEventListener('message', function(e){ if(e.origin!==location.origin || !e.data || e.data.gpFin!=='view') return;
+    FV.top=Math.max(0, +e.data.top||0); FV.h=Math.max(200, +e.data.h||0);
+    var r=document.documentElement.style; r.setProperty('--vt', FV.top+'px'); r.setProperty('--vh', FV.h+'px'); finStick_(); });
+  try { new ResizeObserver(function(){ finTell_(); finStick_(); }).observe(document.body); } catch(e){ setInterval(finTell_, 1000); }
+  window.addEventListener('load', finTell_);
+}
 refreshBal_();
 if(APP) finBoot_(); else render();
 </script>

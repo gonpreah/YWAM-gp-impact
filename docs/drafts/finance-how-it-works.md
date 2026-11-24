@@ -291,6 +291,9 @@ Balances for 20 Nov saved: ABA $10,000 · US $0 · Cash $1,000 → total $11,000
   No sample numbers. The Finances office edits; Campus Leadership sees the Dashboard only. History (undo) stays
   on each device. **📥 Bring in entries from the demo** on Input replaces this campus's document with the
   pasted copy (Undo puts it back).
+- **Inside My Ministry it is one page with the app**: the frame is as tall as the page, so the app's tabs and
+  the finance page scroll together; the "Reports as of" bar still sticks to the top of the screen and pop-ups open
+  on screen.
 - Real reports and names never go in the repository.
 
 ## 7. Agreed, not built yet (23 Nov 2026)

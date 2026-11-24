@@ -1091,9 +1091,13 @@ before changing a rule, and change it in the same commit.**
   (the two are different websites, so the entries travel as pasted text).
 - **Where it shows**: My Ministry → Skills Training › Finances for the office (`finCanEditClient_`): tabs
   **Dashboard · Input** (`fdash` / `finput`, `data-fintab`) then the app's own Tasks · OKRs; Campus Leadership's
-  **Finances** tab (`lwt==='money'`) shows the Dashboard read-only. Both are an iframe (`fin2FrameHtml_` /
-  `fin2FrameSize_` in teams/09-finance.js, `?embed=1&view=dash|input`), sized to the screen below it and
-  scrolling on its own so the page's sticky bar works. It reads the app's sign-in (`gp-staff`).
+  **Finances** tab (`lwt==='money'`) shows the Dashboard read-only. Both are an iframe (`fin2FrameHtml_` in
+  teams/09-finance.js, `?embed=1&view=dash|input`) that is **one page with the app** (Nov 2026: "it does not act as
+  one single page"): the page posts its height (`{gpFin:'h'}`) and the frame is made that tall (`fin2FrameSize_`), so
+  nothing scrolls inside it; as the app scrolls it tells the page which part is on screen (`{gpFin:'view', top, h}`,
+  `fin2FrameView_`) — the page keeps its "Reports as of" bar at the top of the screen (`finStick_`) and places its
+  sheets, backdrop, toasts and "Saved" there (`body.embed` rules on `--vt` / `--vh`). It reads the app's sign-in
+  (`gp-staff`). tests/test-fin2-frame-ui.mjs.
 - **Server** (api.js "The finance tool"): one document per campus, `fin2:<campus>` = {rev, state, at, by, byName};
   `fin2Get` (finCanView_; the office also gets the campus staff, to link staff-debt names) and
   `fin2Save(user, pin, campus, state, rev)` (finCanEdit_; only the keys in `FIN2_KEYS`; ≤3 MB; a save from an
