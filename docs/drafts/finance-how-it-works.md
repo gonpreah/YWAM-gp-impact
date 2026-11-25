@@ -275,7 +275,7 @@ Income.
   marked estimated. The balance, its share of the total liquid assets (`ledgerLiquid_` on the same lines), the
   profit and loss and the comparison all follow the switch.
 - **Time filter** on top (`MN_PERIODS`, `mnPeriod_`): This week (Monday to today) · This month · Last week ·
-  Last month · Year to date · All time · Custom (from / to). Each is compared with the period before it: this
+  Last month · Year to date · All time · Custom (from / to); it opens on Year to date. Each is compared with the period before it: this
   week / this month / year to date with the **same days** of last week / last month / last year (so a part
   period isn't set against a whole one); last week and last month with the one before; custom with the same
   number of days just before; all time with nothing.

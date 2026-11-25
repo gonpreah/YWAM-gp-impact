@@ -2634,7 +2634,7 @@ function soon(icon, title, line){ return '<div class="soon"><div class="big">'+i
    internal transfers and Financial tools move the balance but are not income or expenses, so
    they are shown apart. All lines count — this is Live, not only what is approved. */
 var MN_PERIODS=[['week','This week'],['month','This month'],['lastweek','Last week'],['lastmonth','Last month'],['ytd','Year to date'],['all','All time'],['custom','Custom']];
-function mnS_(){ return S.mn||(S.mn={ per:'month', sel:null, pick:false, list:false }); }
+function mnS_(){ return S.mn||(S.mn={ per:'ytd', sel:null, pick:false, list:false }); }
 function mnD_(s){ return new Date(s+'T00:00:00'); }
 function mnS2_(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function mnAdd_(s, n){ var d=mnD_(s); d.setDate(d.getDate()+n); return mnS2_(d); }
