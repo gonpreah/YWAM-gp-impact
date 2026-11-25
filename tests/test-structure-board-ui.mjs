@@ -77,7 +77,10 @@ async function open(user, vw, touch) {
   await page.waitForTimeout(600);
   return { ctx, page };
 }
-const openBoard = async (page) => { await page.evaluate(() => { S.view = 'ministry'; S.lwTab = 'struct'; render(); }); await page.waitForSelector('#sbWrap', { timeout: 8000 }); await page.waitForTimeout(400); await page.$eval('#sbView', v => v.scrollIntoView({ block: 'start' })); await page.waitForTimeout(150); };
+/* it opens on View (Nov 2026); most checks below edit, so they switch to Edit first */
+const openBoard = async (page, edit = true) => { await page.evaluate(() => { S.view = 'ministry'; S.lwTab = 'struct'; render(); }); await page.waitForSelector('#sbWrap', { timeout: 8000 }); await page.waitForTimeout(400);
+  if (edit && await page.$('#sbModeEdit:not(.on)')) { await page.click('#sbModeEdit'); await page.waitForSelector('#sbTray'); await page.waitForTimeout(200); }
+  await page.$eval('#sbView', v => v.scrollIntoView({ block: 'start' })); await page.waitForTimeout(150); };
 // bring a box into the middle of the view
 const centerOn = (page, sel) => page.evaluate((sel) => { const v = document.getElementById('sbView').getBoundingClientRect(), b = document.querySelector(sel).getBoundingClientRect();
   S.sb.x += (v.left + v.width / 2) - (b.left + b.width / 2); S.sb.y += (v.top + v.height * 0.4) - (b.top + b.height / 2); sbApply_(); }, sel);
@@ -227,6 +230,61 @@ const settle = (page) => page.waitForTimeout(1100);
   const x0 = await page.evaluate(() => S.sb.x), vb = await page.$eval('#sbView', v => { const r = v.getBoundingClientRect(); return { x: r.right - 12, y: r.top + 60 }; });
   await T('touchStart', [[vb.x, vb.y]]); for (let i = 1; i <= 5; i++) await T('touchMove', [[vb.x - i * 12, vb.y + i * 4]]); await T('touchEnd', []);
   ok('one finger on the board itself moves it', await page.evaluate(x => S.sb.x < x - 30, x0));
+  await ctx.close();
+}
+
+/* ---------- 4. View and Edit, the schools running in the quarter, and a drag on the board is never a pull to refresh ---------- */
+{
+  const { ctx, page } = await open('mark', 390, true);
+  await page.evaluate(() => { window.__ptr = 0; window.gpPullRefresh_ = function(){ window.__ptr++; return Promise.resolve(); }; window.scrollTo(0, 0); });
+  await openBoard(page, false);
+  await page.evaluate(() => window.scrollTo(0, 0)); await page.waitForTimeout(150);
+  ok('the board opens on View: no tray, no ＋, nobody can be picked up', await page.$('#sbModeView.on') !== null && !(await page.$('#sbTray')) && !(await page.$('.sbPlus')) && !(await page.$('[data-sbp]')) && !(await page.$('#sbRun')));
+  if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/sb-view.png' });
+  ok('… and says so', /nobody can be moved by accident/.test(await page.$eval('.sbModeRow', e => e.innerText)));
+  const cdp = await ctx.newCDPSession(page);
+  const T = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map((p, i) => ({ x: p[0], y: p[1], id: i })) });
+  const swipeDown = async (x, y) => { await T('touchStart', [[x, y]]); for (let i = 1; i <= 12; i++) await T('touchMove', [[x, y + i * 20]]); await T('touchEnd', []); await page.waitForTimeout(500); };
+  const before = JSON.stringify(planOf() || null);
+  const vb = await page.$eval('#sbView', v => { const r = v.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + 20, top: r.top }; });
+  const y0 = await page.evaluate(() => S.sb.y);
+  await swipeDown(vb.x, vb.y);
+  ok('a finger dragged down the board moves the board, and is not a pull to refresh', await page.evaluate(y => S.sb.y > y + 100, y0) && await page.evaluate(() => window.__ptr) === 0 && await page.evaluate(() => S.view === 'ministry'), 'top ' + Math.round(vb.top) + ' ptr ' + await page.evaluate(() => window.__ptr));
+  const face = await page.$eval('#sbTree [data-person]', e => { const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, id: e.getAttribute('data-person') }; }).catch(() => null);
+  if (face && face.y > vb.top && face.y < vb.top + 300) await swipeDown(face.x, face.y);
+  ok('dragging a face in View moves nobody', JSON.stringify(planOf() || null) === before && await page.evaluate(() => S.view === 'ministry'));
+  const hd = await center(page, '.sbTop h3');
+  await swipeDown(hd.x, hd.y);
+  ok('(the same pull above the board still refreshes the page)', await page.evaluate(() => window.__ptr) === 1, String(await page.evaluate(() => window.__ptr)));
+
+  await page.click('#sbModeEdit'); await page.waitForSelector('#sbTray');
+  ok('Edit brings the tray, ＋ and the schools to tick', await page.$('#sbModeEdit.on') !== null && await page.$('.sbPlus') !== null && await page.$('#sbRun') !== null && await page.$('#sbWrap.editing') !== null);
+  const all = await page.$$eval('[data-sbrun]', bs => bs.map(b => b.getAttribute('data-sbrun') + (b.classList.contains('on') ? '+' : '')));
+  ok('every school the campus has, all running until said otherwise', JSON.stringify(all) === JSON.stringify(['GPDTS+', 'DBS+', 'SMS+', 'BCS+', 'SOMD+']), JSON.stringify(all));
+  for (const m of ['DBS', 'SMS', 'BCS', 'SOMD']) { await page.click('[data-sbrun="' + m + '"]'); await page.waitForTimeout(120); }
+  await settle(page);
+  ok('ticking off the others: only GPDTS runs that quarter', JSON.stringify(planOf().schools) === '["GPDTS"]', JSON.stringify(planOf().schools));
+  ok('… the tree has a GPDTS box and none for the others, and says which aren’t running', await page.$('[data-sbdrop="Leadership Development|GPDTS"]') !== null && !(await page.$('[data-sbdrop="Leadership Development|DBS"]')) && /DBS · SMS · BCS · SOMD/.test(await page.$eval('#sbNotRun', e => e.textContent)));
+  await centerOn(page, '[data-sbdrop="Leadership Development|GPDTS"]');
+  if (process.env.GP_SHOT) { await page.$eval('#sbRun', e => e.scrollIntoView({ block: 'start' })); await page.waitForTimeout(150); await page.screenshot({ path: process.env.GP_SHOT + '/sb-edit.png' }); }
+  await page.click('[data-sbbox="Leadership Development|GPDTS"]'); await page.waitForSelector('#sbSheet');
+  await page.fill('#sbSheet [data-ppickq="sb"]', 'Ed'); await page.waitForTimeout(150);
+  await page.click('#sbSheet [data-ppickit="sb|st6"]'); await settle(page);
+  await page.click('#sbSheet [data-sblead="Leadership Development|GPDTS|st6"]'); await settle(page);
+  ok('the school’s leader and staff go in its box', planOf().place.st6 && planOf().place.st6.ministry === 'GPDTS' && JSON.stringify(planOf().leads['Leadership Development|GPDTS']) === '["st6"]', JSON.stringify(planOf().place.st6));
+  await page.click('#sbSheetClose'); await page.waitForTimeout(200);
+  await page.evaluate(() => { sbState_().sheet = { kind: 'school', id: 'st4' }; render(); }); await page.waitForSelector('#sbSheet');
+  ok('a staff member doing a school that quarter can only pick a school that runs', JSON.stringify(await page.$$eval('[data-sbschool]', bs => bs.map(b => b.getAttribute('data-sbschool')))) === '["dts"]');
+  await page.click('#sbSheetClose'); await page.waitForTimeout(200);
+  await page.click('#sbModeView'); await page.waitForTimeout(300);
+  ok('back to View: one line says which schools run', /Schools running in Q\d \d{4}: GPDTS$/.test((await page.$eval('#sbRunLine', e => e.textContent)).trim()) && !(await page.$('#sbTray')));
+  await page.evaluate((n) => { S.view = 'team'; S.teamMode = 'org'; S.teamCampus = 'siemreap'; S.structYear = n.year; S.structQ = n.q; S.sbTeam = false; render(); }, NEXT);
+  await page.waitForSelector('.orgChart', { timeout: 8000 });
+  ok('Team → Structure’s list follows: GPDTS with its leader, no box for a school not running', await page.$('[data-orgmin="Leadership Development|GPDTS"]') !== null && !(await page.$('[data-orgmin="Leadership Development|DBS"]')) && /Ed Pou/.test(await page.$eval('[data-orgmin="Leadership Development|GPDTS"]', e => e.innerText)) && await page.$('.orgNotRun') !== null);
+  const nq = NEXT.q === 4 ? { year: NEXT.year + 1, q: 1 } : { year: NEXT.year, q: NEXT.q + 1 };
+  const later = await page.evaluate((n) => new Promise(res => run('getStructure', [S.auth.user, S.auth.pin, 'siemreap', n.year, n.q], res, () => res(null))), nq);
+  ok('the quarter after starts from the same schools', later && later.plan && JSON.stringify(later.plan.schools) === '["GPDTS"]', JSON.stringify(later && later.plan && later.plan.schools));
+  ok('profiles are still never touched', JSON.stringify(mem.staff.map(s => [s.id, s.dept, s.ministry, s.leads])) === profBefore);
   await ctx.close();
 }
 

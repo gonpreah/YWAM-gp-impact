@@ -1874,7 +1874,8 @@ function prAgo_(iso){
   return d<=0 ? t('today') : d===1 ? t('yesterday') : gpT('{n} days ago',{n:d});
 }
 function prayerHtml_(){
-  var h='<h2>🙏 '+esc(t('Prayer'))+'</h2><p class="sub">'+esc(t('Carry each other’s burdens. Share a request, and pray for each other’s.'))+'</p>';
+  var h='<h2>🙏 '+esc(t('Prayer'))+'</h2><p class="sub">'+esc(t('Carry each other’s burdens. Share a request, and pray for each other’s.'))+'</p>'+
+    '<button class="linkbtn" id="prToIcp" style="text-align:left;padding-left:0">🙏 '+esc(t('Send a need to Wednesday intercession'))+' ›</button>';
   if(!S.pr){ prLoad_(); return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.prErr||t('Loading…'))+'</p></div>'; }
   var canMentor=!!(S.me.mentorId && S.profile && S.profile.mentorStatus==='approved');
   h+='<div class="card"><label class="f" for="prText">'+esc(t('Ask for prayer'))+'</label>'+

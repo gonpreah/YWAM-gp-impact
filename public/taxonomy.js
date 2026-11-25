@@ -75,6 +75,9 @@ var GPDTS_METRICS = ['Students Applied','Students Accepted','Students Enrolled',
 var DTS_AUTO_METRICS = ['Students Applied','Students Accepted','Students Enrolled','Students Graduated',
   'Potential Staff','Local Students Contacted','Intl Students Contacted',
   'People Heard the Gospel','Healings','Salvations','Baptisms'];
+/* Intercession (both campuses, Nov 2026): its Wednesdays and fast gatherings count these four
+   (api.js "Intercession", ICP_METRICS — keep the two lists the same); Director Weekly Score is typed. */
+var ICP_AUTO_METRICS = ['Prayer Meetings Held','Prayer Hours Covered','Ministries Covered in Prayer','Answered-Prayer Testimonies'];
 /* The school tool (YDC, Nov 2026): a ministry that runs a school takes its roll, tests, payments and
    students in the app (teams/24-school.js), and these metrics count themselves from it. One line a
    ministry — the community schools later. Mirrors SCHOOL_TOOL in api.js (tests/test-school.mjs
@@ -85,6 +88,7 @@ var SCHOOL_TOOL = {
 };
 function schoolToolFor(dept, ministry) { var k = dept + '|' + ministry; return Object.prototype.hasOwnProperty.call(SCHOOL_TOOL, k) ? SCHOOL_TOOL[k] : null; }
 function autoMetricsFor(campus, dept, ministry) {
+  if (dept === 'Youth Education' && ministry === 'Intercession') return ICP_AUTO_METRICS.slice();
   var sc = schoolToolFor(dept, ministry);
   if (sc) return Object.keys(sc.metrics).map(function (k) { return sc.metrics[k]; });
   return campus === 'siemreap' && dept === 'Leadership Development' && ministry === 'GPDTS'
