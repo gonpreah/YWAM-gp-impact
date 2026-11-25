@@ -75,6 +75,18 @@ Income.
 - The words are kept on every entry added from that file (`impNote`) and show at the end of its memo in the
   Detailed breakdown ("Import: …"). Once every line is added, the box empties for the next file.
 
+### 📥 Bulk import — lines already in an approved total (25 Nov 2026)
+- A month imported in one go can hold lines already counted in an approved report (e.g. everything on or before
+  the 16th). Tick **Some of these lines are already in an approved total** (shown once something is approved) and
+  pick the approved day; each line dated on or before it is tagged "✅ in the … approved report", and when added
+  it goes into that day's approved report (`bulkPre_` → `addToApproved_(x, kind, day, noFunds)`, `x.preApproved`).
+- So it **doesn't move the bank or cash** (approved and on or before the balances → inside them, section 4) but it
+  **does count in the income and expenses** (the profit and loss, the Ministries tab, the Approved view).
+- **The allocations — asked every time** ("Had the 16 Nov allocations already taken them off?"; Add waits for an
+  answer): **Yes** → that day's approved category balances are left as they are; **No** → the lines come off them
+  too (as the single-entry "Add it to the approved report as well" tick always does). Either way the live
+  category amounts move, as for any income or expense.
+
 ### 🔁 Internal transfers (`TRANSFERS`)
 - **Fund → fund:** one fund down, the other up, at once. Accounts and the totals don't change.
 - **Account → account:** one account down, the other up, in the Live estimate. Funds and the
