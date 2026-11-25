@@ -707,18 +707,45 @@ function fin2FrameHtml_(view){
    scrolls, the frame is told which part of it is on screen ({gpFin:'view', top, h}) so its sticky bar,
    pop-up sheets, toasts and "Saved" stay where they can be seen. */
 var _fin2H=0, _fin2Raf=0;
+/* What the app's bar covers at the bottom of the screen. On a phone it is the bar along the bottom; from
+   900px wide (an iPad on its side, a computer) the same bar is a rail down the left edge (teams.css) and
+   covers none of the bottom — counting its height there made the visible part of the page 0px tall, so
+   pop-ups had no room and the breakdown showed one row (Nov 2026). */
+function fin2NavH_(){ var nav=document.querySelector('nav.bottom'); if(!nav || nav.classList.contains('hidden') || !nav.offsetHeight) return 0;
+  var r=nav.getBoundingClientRect(); if(r.width < window.innerWidth*0.6 || r.top < window.innerHeight/2) return 0;
+  return Math.max(0, window.innerHeight-r.top); }
 function fin2FrameView_(){ var f=document.getElementById('fin2Frame'); if(!f || !f.contentWindow) return;
-  var r=f.getBoundingClientRect(), nav=document.querySelector('nav.bottom'), navH=(nav && !nav.classList.contains('hidden')) ? nav.offsetHeight : 0;
-  var visTop=Math.max(0, r.top), visBot=Math.min(window.innerHeight-navH, r.bottom);
-  try { f.contentWindow.postMessage({ gpFin:'view', top:Math.round(visTop-r.top), h:Math.round(Math.max(0, visBot-visTop)) }, location.origin); } catch(e){} }
+  var r=f.getBoundingClientRect(), navH=fin2NavH_(), hdr=document.querySelector('header'), hdrH=0;
+  if(hdr){ var hr=hdr.getBoundingClientRect(), pos=getComputedStyle(hdr).position; if((pos==='fixed' || pos==='sticky') && hr.bottom>0) hdrH=hr.bottom; }
+  var visTop=Math.max(hdrH, r.top), visBot=Math.min(window.innerHeight-navH, r.bottom);
+  fin2Clip_();
+  try { f.contentWindow.postMessage({ gpFin:'view', top:Math.round(Math.max(0, visTop-r.top)), h:Math.round(Math.max(0, visBot-visTop)), sh:Math.round(Math.max(200, window.innerHeight-navH-hdrH)) }, location.origin); } catch(e){} }
 function fin2FrameSize_(){ var f=document.getElementById('fin2Frame'); if(!f) return;
-  var nav=document.querySelector('nav.bottom'), navH=nav ? nav.offsetHeight : 0;
+  var navH=fin2NavH_();
   f.style.height=Math.max(_fin2H || 0, 300)+'px';
   f.style.minHeight=Math.max(300, window.innerHeight-navH-Math.max(0, f.getBoundingClientRect().top))+'px';   // room for a pop-up even when the page is short
   fin2FrameView_(); }
 window.addEventListener('message', function(e){ var f=document.getElementById('fin2Frame');
-  if(!f || e.source!==f.contentWindow || e.origin!==location.origin || !e.data || e.data.gpFin!=='h') return;
+  if(!f || e.source!==f.contentWindow || e.origin!==location.origin || !e.data) return;
+  if(e.data.gpFin==='sheet'){ fin2Dim_(!!e.data.on); return; }
+  if(e.data.gpFin!=='h') return;
   _fin2H=+e.data.h||0; fin2FrameSize_(); });
+/* A pop-up open in the finance page: the page darkens its own frame, the app darkens the rest of the
+   screen (header, the rail or bottom bar, the sides on a computer) with the same colour; a tap there closes it. */
+/* raised above the dim, the frame is cut to the part of it on the screen — the rest of it (below the bottom
+   bar, above the top) would otherwise show over the app */
+function fin2Clip_(){ var f=document.getElementById('fin2Frame'); if(!f || !f.classList.contains('fin2Up')) return;
+  var r=f.getBoundingClientRect(), bot=window.innerHeight-fin2NavH_();
+  f.style.clipPath='inset('+Math.round(Math.max(0, -r.top))+'px 0 '+Math.round(Math.max(0, r.bottom-bot))+'px 0)'; }
+function fin2Dim_(on){ var d=document.getElementById('fin2Dim'), f=document.getElementById('fin2Frame');
+  if(!on){ if(d) d.remove(); if(f){ f.classList.remove('fin2Up'); f.style.clipPath=''; } return; }
+  if(!f) return;
+  if(!d){ d=document.createElement('div'); d.id='fin2Dim'; d.className='fin2Dim'; document.body.appendChild(d);
+    d.addEventListener('click', function(){ var fr=document.getElementById('fin2Frame'); try { fr.contentWindow.postMessage({ gpFin:'close' }, location.origin); } catch(e){} fin2Dim_(false); }); }
+  f.classList.add('fin2Up'); fin2Clip_();
+  /* the app redrawn under it (another tab, another page) takes the frame away: the dim goes with it */
+  clearInterval(fin2Dim_.t); fin2Dim_.t=setInterval(function(){ var fr=document.getElementById('fin2Frame');
+    if(!fr || !fr.classList.contains('fin2Up') || !document.getElementById('fin2Dim')){ clearInterval(fin2Dim_.t); fin2Dim_(false); } }, 400); }
 window.addEventListener('scroll', function(){ if(_fin2Raf) return; _fin2Raf=requestAnimationFrame(function(){ _fin2Raf=0; fin2FrameView_(); }); }, { passive:true });
 window.addEventListener('resize', fin2FrameSize_);
 /* The Finances office's page on My Ministry: the reports, what leadership sees, and the usual numbers. */

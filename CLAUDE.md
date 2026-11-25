@@ -1155,7 +1155,12 @@ before changing a rule, and change it in the same commit.**
   nothing scrolls inside it; as the app scrolls it tells the page which part is on screen (`{gpFin:'view', top, h}`,
   `fin2FrameView_`) — the page keeps its "Reports as of" bar at the top of the screen (`finStick_`) and places its
   sheets, backdrop, toasts and "Saved" there (`body.embed` rules on `--vt` / `--vh`). It reads the app's sign-in
-  (`gp-staff`). tests/test-fin2-frame-ui.mjs.
+  (`gp-staff`). **On a computer too** (Nov 2026: "the desktop version has some glitches"): the app's bar is a left
+  rail from 900px, so only a bar along the bottom is counted (`fin2NavH_` — counting the rail made the visible part
+  0px: pop-ups had no room and the breakdown showed one row); the screen's height goes as `sh` (`--sh`, the table
+  boxes); a pop-up dims the whole app (`{gpFin:'sheet'}` → `#fin2Dim`, `.fin2Up` frame cut to the screen by
+  `fin2Clip_`; a tap closes it); the page is 800px wide from 780px; "✓ Saved" goes after 2½ s.
+  tests/test-fin2-frame-ui.mjs (phone, 1440×900, 1024×768).
 - **Server** (api.js "The finance tool"): one document per campus, `fin2:<campus>` = {rev, state, at, by, byName};
   `fin2Get` (finCanView_; the office also gets the campus staff, to link staff-debt names) and
   `fin2Save(user, pin, campus, state, rev)` (finCanEdit_; only the keys in `FIN2_KEYS`; ≤3 MB; a save from an
