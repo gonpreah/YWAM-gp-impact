@@ -55,7 +55,7 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   (personality, Library, papers, guest, YWAM GP & the board, report, first 30 days, prayer,
   support raising, reminders, Khmer review) · `04-ministry-strengths.js` · `05-admin-hr.js` ·
   `06-numbers-contract.js` · `07-health-leave.js` · `08-team-profile.js` · `09-finance.js`
-  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app); later ones (12-tasks … 18-library-plus) load before 11. `finance.js` (public/,
+  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app); later ones (12-tasks … 27-meeting) load before 11. `finance.js` (public/,
   shared like taxonomy.js) reads the reports; `vendor/pdfjs/` is pdf.js, loaded on demand. **One global scope**, exactly as when it was one inline
   script: any function may call any other, but code that RUNS while a file loads (not
   inside a function) may only use what that file or an earlier one defines. Add new code to
@@ -569,7 +569,7 @@ in the leadership My Ministry, and it shows in Team → Structure … profile fa
   students, place, leads, extra)` — Campus Leadership of that campus or an admin (was admins only); `cleanStructLeads_` (only
   people here, ≤8 a ministry), `cleanStructExtra_` (≤80). A later quarter starts from it, leaders and names too (`planFor_`).
   A snapshot (`saveStructure` / `structPeople_`) carries both; saving a plan for this quarter or a later one rebuilds an
-  existing snapshot. **No profile is ever written.**
+  existing snapshot. A plan writes no profile until its quarter is made live (below).
 - **View and Edit** (Nov 2026, Andrew: "a view mode where you don't accidently move people and an edit mode"): the tab opens on
   **View** (`sbModeHtml_`, `#sbModeView` / `#sbModeEdit`, `S.sb.editing`, kept for the visit; in full screen the switch is in the
   board's bar): the board only moves and zooms — no tray, no ＋, no dragging, faces open profiles. **Edit** brings them, with the
@@ -583,8 +583,46 @@ in the leadership My Ministry, and it shows in Team → Structure … profile fa
   no box on the tree or in Team → Structure's list (`orgChartHtml_(…, schools)`), with "Not running this quarter: …"
   (`#sbNotRun`, `.orgNotRun`); people placed in it wait in the tray and keep that place for a quarter it runs (`sbOwn_` keeps
   them); a staff student can only pick a school that runs (`sbStuSchools_`). Its leaders and staff go in its box like any ministry.
-- tests/test-structure.mjs (server), tests/test-structure-board-ui.mjs (mouse and touch). Khmer: docs/khmer-needed.md §135, §137.
-  sw.js SHELL v29.
+- **In more than one ministry** (Nov 2026, Uriah: "some people will have 2 ministry jobs … access to both of those ministry
+  pages"): the plan's `also` = {staffId: ['Dept|Ministry', …]} (`cleanStructAlso_`: never the main place, never a Campus
+  Leadership row, nobody off the chart or a student, ≤ `STRUCT_ALSO_MAX` 4; null = the profiles' `ministries`; the server has
+  no taxonomy, so the page offers only real ministries; `saveStructurePlan`'s 11th argument; inherited by `planFor_`; a
+  snapshot person carries `also`). The person sheet's "Their ministries this quarter" (`sbAlsoHtml_`, `#sbAlso`): ⭐ the main
+  one (`#sbMainTag`), each other with **Make this their main ministry** (`[data-sbmain="key|id"]`, the two swap) and ×
+  (`[data-sbalsorm]`), and **Also serves in…** (`#sbAlsoSel` / `#sbAlsoAdd`). The tree (`M.alsoOf`, `M.alsoBoxes`) and Team →
+  Structure's list (`orgChartHtml_(…, alsoMap)`) show them in each box, the second face dashed with an "also" tag
+  (`.sbFace.also`, `.orgPerson.also`) and counted apart ("2 +1"). Dragging moves the MAIN place only; leading a second
+  ministry leaves the main one where it is.
+- **Make a quarter live → profiles** (Nov 2026, Uriah: "move people around … and for that to automatically change in their
+  profile"; this replaces Andrew's "not synced into our staff profile"). `applyStructure(user, pin, campus, year, q, {dry})`
+  (`structEditor_`; a quarter already over → `past_quarter`): `structApplyRows_` lays the plan over the campus's active staff —
+  main place → `dept` + `ministry` (`cdKind` kept only for someone who stays Campus Director), `also` → `ministries`
+  (through `cleanMinistries_`), the plan's leaders → `leads` (Campus Leadership's own keys kept; every other key is the
+  plan's) — in ONE `mutateStaff_` write, marks the plan `live: {at, by}`, rebuilds the snapshot (`structSnapFollow_`) and tells
+  each person on their phone (`structTell_` → `pushNow_`, `structServe` / `structServeLead` in `PUSH_TEXT`). **Left alone**:
+  anyone off the chart, staff who are students that quarter, typed-in names, a place with no ministry, and everything else
+  on a profile. **Into Campus Leadership by a non-admin is not written**: it becomes the person's `cltRequest` (`by:
+  'structure'`, Admin → Approvals) and nothing else of theirs changes; an admin's apply writes it. `dry` (and `diff` on
+  `getStructure` / `saveStructurePlan` for whoever may edit) is the same code on a copy: `{changes: [{id, name, from, to,
+  waits, alsoAdd, alsoDrop, leadAdd, leadDrop, now}], waiting}`. **Once THIS quarter is live, `saveStructurePlan` applies
+  what that save changed** (only the people it moved — `applied` in the answer — so a profile its owner edited is not swept
+  back by someone else's move; that shows as drift). A later quarter writes nothing until someone taps the button (it may be
+  made live early; changes after that wait for Apply again until it starts). Back to "everyone's profile" clears `live`.
+  The page (`sbLiveHtml_`, `#sbLive[data-sblive=off|live|drift]`, above the board in View and Edit): "n people's profiles would
+  change" + **Make Qn yyyy live** (`#sbLiveBtn`) → a sheet listing each change (`sbLiveSheetHtml_`, `#sbLiveList`,
+  `sbChangeText_`, `#sbLiveEarly` for a quarter not started) → `#sbLiveConfirm`; live: "changes here update profiles
+  straight away"; drift: "n profiles differ from this structure" with See / Apply again (`#sbLiveSee`, `#sbLiveAgain`).
+  The line follows each save without a redraw (`sbLiveRefresh_`); the roster on the phone follows (`sbPatchRoster_`).
+  **The bell**: the boot's `structReady` (`structReady_`, Campus Leadership only; `structurePlans` is in BOOT_KEYS) while this
+  quarter has an arrangement of its own that isn't live → "Q1's structure is ready — make it live" (`sbNotifItems_`,
+  `[data-gostruct]`, `bindGoStruct_`).
+- **My Ministry for someone in 2–4 ministries of their own** (`mmMineHtml_`, `#mmMine`, under the header): a slim row of
+  pills, the open one marked, the main one tagged (`[data-mmgo="Dept|Min"]` — not `data-mmpick`; Switch ▾ stays). Only
+  main / member / leader options count, never what an admin or director can merely open. Profile → My positions says
+  "Main: … · Also: …" (`#myPosMin`). Every tool already let a second ministry in (`canLogFor_` / `memberOf_` on the server,
+  `ministries` in each client gate).
+- tests/test-structure.mjs (server), tests/test-structure-board-ui.mjs (mouse and touch; the second ministry, making a
+  quarter live, the bell, the pills). Khmer: docs/khmer-needed.md §135, §137, §141. sw.js SHELL v29.
 
 ## Outreach Teams — one record per team, not a weekly form
 Outreach Teams (Community Service) doesn't log week by week: a team comes for a stretch
@@ -1359,6 +1397,72 @@ week strip / input: two tabs.
 - **The Overview is the dashboard**: its tiles lead with **🎯 Q OKRs %** (mean `objProgress` of
   leadership's objectives this quarter, with a bar; opens the OKRs tab) and **📋 Board · open cards**
   (opens the Board) — `.lbNav`, `#lbOkrTile`, `#lbBoardTile` — then the role's own tiles.
+## The leadership meeting (teams/27-meeting.js, Nov 2026, Uriah)
+"We want to move more to an EOS-style leadership meeting, and still use our Kanban board … we need a little more training
+to do the meeting well … who's going to lead the Tuesday morning leadership meeting, topics and all that … where everyone is
+clear on their departments … rocks." A weekly 90-minute meeting in seven parts, built ON the board, its tasks and the
+Tuesday schedule — nothing of those was replaced.
+- **Where**: Campus Leadership → Board → **Meeting** (`S.leadTab='meet'`, the first of `[data-leadtab]` meet · board · tues ·
+  notes; the Board tab still opens on the Kanban — every older test lands there). `leadMeetHtml_` / `bindMeeting_`
+  (`#leadMeet`). One `getLeadMeeting` when it opens (→ `S.meet`, and `S.lead` from its `board`, so `bindLead_` asks nothing
+  more); nothing on the boot. The Overview has a way in under its tiles (`#lbMeetGo`, `lmOverviewHtml_`: "Next meeting ·
+  {day} {date}", who leads; `#lbOkrTile` / `#lbBoardTile` untouched).
+- **The page, no meeting running**: the head (`.lmHead`: next date, "Led by" from the schedule or `#lmPlanWho`, **▶ Start the
+  meeting** `#lmStart`, `#lmSetOpen`), the folded guide (`#lmGuide`: the seven parts, "Rules of thumb" `LM_GUIDE`), one line
+  to add an issue from anywhere (`#lmIssueText` / `#lmIssueAdd` → `lmDrop_` → `saveLeadCard` into the first column), then
+  `[data-lmsec]` score · rocks · headlines · todos · past (`S.mt.sec`), and the fine print (`#lmFine`).
+- **The meeting day is a setting** (`#lmSettings`: `#lmSetDay`, `[data-lmsetmin]`, `#lmSetSave` → `saveLeadMeetSettings {day,
+  minutes}`): `meetDay` (0–6, Tuesday = 2 by default) lives on the **board doc** (`getLeadDoc_`, `leadOut_`) because the
+  schedule does; `saveLeadTuesday` takes only that weekday; changing it moves the weeks still to come onto the new weekday in
+  the same Monday–Sunday week. The "Tuesday" tab's label, its eight dates (`leadTuesdays_`, `leadMeetDay_`, `leadDayDate_`
+  in 04) and the Overview's card follow it; on Tuesday the reviewed Khmer strings are used as before.
+- **Scorecard** (`#lmScore`, `lmScoreHtml_`): up to 15 weekly numbers — name, owner (ppick `lmso`), goal with ≥ / ≤, and
+  typed by hand (`[data-lmval="id|YYYY-W"]`, saved on change) or **linked to a ministry's metric** (`[data-lmsrc="metric"]`,
+  `[data-lmsf="dept|ministry|metric"]`; read from `entries` through `withTeamRows_` and `yearOf_`, this campus, never a
+  `SENSITIVE` metric). Thirteen weeks newest first (`.lmWk`, `on` / `off` with ✓ / ✗ in `.lmMark`, so colour isn't the only
+  sign). In the meeting: last week's number, "On track" / "Off track", and `[data-lmscoredrop]`.
+- **Rocks** (`#lmRocks`): the quarter's priorities by person, the team's first (`[data-lmrockowner]`, owner '' = the whole
+  team), this quarter or the next (`[data-lmrq]`; the app's 13-week quarters, `meetQ_`), an optional OKR objective (its
+  progress bar), status `[data-lmrockst="id|on|off|done"]`, a note; off track → `[data-lmrockdrop]`. Rocks sit beside OKRs.
+- **Headlines** (`#lmHeads`): good / hard (`[data-lmhk]`), one line, anyone on the team, all week; read in the meeting and
+  archived into its record.
+- **To-dos** are the board's little tasks (`lmTodoWeek_`, mirrored by the server's `meetTodoStats_`: done since the last
+  meeting, or open and due by today; an undated open one once older than that meeting; never one made in the meeting going
+  on): tick (`[data-lmtick]` → `saveLeadTask`), "n of m done" against 90% (`#lmTodoPct`), **Carry it on a week**
+  (`[data-lmcarry]`: due + 7, and `run.carried` keeps it counted as not done) or drop to Issues. A new one
+  (`[data-lmtodoin]` / `[data-lmtodoadd]`, owner ppick) → `leadMeetTodo` → `saveLeadTask` on the issue's card, else on the
+  meeting's own card ("Meeting to-dos", `todoCard`, never in the first column), due in seven days — so it is in the
+  Leadership team's GP Tasks list, that person's Inbox and the calendar.
+- **Running it** (`#lmRun[data-lmpartnow]`, `lmRunHtml_`): one part a screen — `LM_PARTS` checkin 5 · score 5 · rocks 5 ·
+  headlines 5 · todos 5 · issues 60 · wrap 5 (minutes editable). A sticky bar: "Part n of 7", two clocks (`#lmPartClock`,
+  `#lmTotalClock`, `lmTick_` every second with no render; `.over` = amber, never blocks), the seven dots (`[data-lmpart]`),
+  "Led by …", **Check again** (`#lmRefresh`), two coaching lines (`.lmDo` / `.lmDont`, `LM_INFO`), `#lmBack` / `#lmNext`,
+  `#lmEnd` on the last, `#lmCancel` (gpAsk_; no record). The state is on the server (`run`), so another phone shows the same
+  part on opening, on Check again, and when it comes back to the front — no polling, no sockets. Quick taps (who is here
+  `[data-lmhere]`, the ranking) go through `lmPatch_`: shown at once, sent together 350 ms later.
+- **Issues** are the Kanban's first column: tap up to three to rank them (`[data-lmrank]`, `.lmRank`, `run.top`), the day's
+  schedule topics offered as issues (`[data-lmtopic]`), **Work on number 1** (`#lmWork`) → `#lmIds`: Identify (`#lmIdentify`),
+  Discuss, Solve (`#lmDecision`, to-dos for that card) → `#lmSolve` → `leadMeetSolve`: "❓ issue / ✅ date — decision" is
+  appended to the card's notes and the card moves to the finished column through `saveLeadCard`. `#lmIssueBack` leaves it.
+- **Wrap up** (`#lmWrap`): the new to-dos, "What do we need to tell our teams?" (`#lmMsgText`, `run.messages`), a 1–10 rating
+  each (`[data-lmrate]`; your own, or everyone's for whoever leads or started it, or an admin), `#lmAvg`. **End** writes the
+  record: date, leader, who was there, minutes per part, to-dos done %, issues solved with decisions, new to-dos, headlines,
+  messages, ratings and average. **Past meetings** (`#lmPast`, `.lmPastItem`, `#lmTrend` — the last twelve averages).
+- **Server** (api.js "the leadership meeting"; `leadAuth_` = `canLead_`, so applicants and everyone outside Campus
+  Leadership are refused): blob `leadMeet:<campus>` = {minutes, score, rocks, headlines, todoCard, run, past} written with
+  `mutateKey_` (`meetMutate_`). `getLeadMeeting`, `saveLeadMeetSettings`, `saveLeadScore` / `deleteLeadScore` /
+  `saveLeadScoreValue(id, 'YYYY-W', value)`, `saveLeadRock` / `deleteLeadRock`, `saveLeadHeadline` / `deleteLeadHeadline`,
+  `leadMeetStart` (one at a time; a second Start joins), `leadMeetUpdate({part, present, leader, top, issue, identify,
+  carried, messages, rating, ratings})`, `leadMeetTodo`, `leadMeetSolve`, `leadMeetEnd({cancel})`. Each answers with the
+  whole meeting (`meetOut_`; `board` too when it changed the board). In the preview (`demoCall`) only `getLeadMeeting` runs,
+  and the made-up person isn't in leadership.
+- **Training, in our own words**: the guide, the coaching lines and the rules of thumb are YWAM GP's own. "EOS" and "Level 10
+  Meeting" are trademarks of EOS Worldwide and their materials are copyrighted — never paste any of it in; on screen it is
+  the "Leadership meeting", and `#lmFine` says it follows the widely used "Level 10" format and isn't affiliated. Keep it.
+- Drafts are in `S.mt.d` (`[data-lmd]`), forms in `S.mt.scoreForm` / `rockForm` / `set`: typing survives every redraw.
+- tests/test-lead-meeting.mjs (server), tests/test-lead-meeting-ui.mjs (the real api.js: set up, a whole meeting on two
+  phones, Khmer, 320px, a wide screen). Khmer: docs/khmer-needed.md §142. sw.js SHELL v33.
+
 ## Who's here (Oct 2026, Uriah)
 Base's hero has **🏠 On campus now · N** (`#goWhosHere`, loaded by `whosHereLoad_` when Base
 opens, kept 5 min) → the **Who's here** page (`S.view='whoshere'`, `whosHereHtml_`). Server:

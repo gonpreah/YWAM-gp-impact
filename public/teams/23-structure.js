@@ -7,7 +7,8 @@
    director(s) and its ministries, each ministry with its leader(s) 👑 and its people, then the staff who are students this
    quarter. Everyone is a face. The quarter's plan (getStructure / saveStructurePlan, the 'structurePlans' blob) holds where
    each person sits (`place`), who leads what (`leads`), names typed in for people not in the app (`extra`) and the students
-   (`students`) — never anyone's profile. A quarter with no plan of its own starts from the latest earlier one, else from
+   (`students`) and the other ministries someone also serves in (`also`). It is not anyone's profile until the quarter is
+   made live (see "Make a quarter live" below): then the arrangement is written to the profiles. A quarter with no plan of its own starts from the latest earlier one, else from
    the profiles; the first change makes the whole arrangement the quarter's own (sbOwn_), so a profile edited later moves
    nobody.
 
@@ -16,7 +17,7 @@
    box, tap ＋ on a box to add people or a name, tap a face to make them the leader, move them or take them off. Each
    change saves at once for that quarter. Team → Structure shows the same quarter read only (the list, and this tree). */
 
-var SB_MIN_K=0.15, SB_MAX_K=2.2;
+var SB_MIN_K=0.15, SB_MAX_K=2.2, SB_ALSO_MAX=4;
 function sbState_(){ if(!S.sb) S.sb={ x:0, y:0, k:1, fitted:{}, trayQ:'', sheet:null, full:false, saving:0, saved:0, editing:false }; return S.sb; }
 /* Which schools run in a quarter (Nov 2026, Andrew: "in Q1 we only have the GPDTS school running"): the plan's `schools`,
    a list of Leadership Development school ministries (LD_SCHOOL_MINISTRIES); null = every school the campus has. A school
@@ -40,14 +41,15 @@ function sbLoad_(campus, year, q){
   S.structLoading[key]=true;
   run('getStructure',[S.auth.user,S.auth.pin,campus,year,q],function(d){
     S.structLoading[key]=false;
-    if(d && d.ok) S.structCache[key]={ doc:d.doc, source:d.source, plan:d.plan }; else S.structError[key]=(d && d.err) || t('The server answered without the saved structure.');
+    if(d && d.ok) S.structCache[key]={ doc:d.doc, source:d.source, plan:d.plan, diff:d.diff||null }; else S.structError[key]=(d && d.err) || t('The server answered without the saved structure.');
     render();
   }, function(e){ S.structLoading[key]=false; S.structError[key]=String((e && e.message) || t('Connection problem — try again.')); render(); });
 }
 function sbPlan_(campus, year, q){
   var c=S.structCache[sbKey_(campus, year, q)];
   var p=(c && c.plan) || {};
-  return { students:p.students||{}, place:p.place||{}, leads:p.leads||null, extra:p.extra||[], schools:Array.isArray(p.schools) ? p.schools : null, inherited:!!p.inherited, from:p.from||null };
+  return { students:p.students||{}, place:p.place||{}, leads:p.leads||null, extra:p.extra||[], schools:Array.isArray(p.schools) ? p.schools : null,
+    also:(p.also && typeof p.also==='object') ? p.also : null, live:p.live||null, inherited:!!p.inherited, from:p.from||null };
 }
 
 /* ---- the model: who is where this quarter ---- */
@@ -57,7 +59,7 @@ function sbModel_(campus, plan){
   (S.roster||[]).forEach(function(p){
     if(p.campus!==campus || p.kind==='applicant') return;
     people[p.id]={ id:p.id, name:p.name, photo:p.photo, avatar:p.avatar, real:true,
-      prof:{ dept:p.dept==='Base Director' ? BL_DEPT : (p.dept||''), ministry:p.ministry||'' }, profLeads:(p.leads||[]).slice() };
+      prof:{ dept:p.dept==='Base Director' ? BL_DEPT : (p.dept||''), ministry:p.ministry||'' }, profLeads:(p.leads||[]).slice(), profAlso:(p.ministries||[]).slice() };
     order.push(p.id);
   });
   (plan.extra||[]).forEach(function(x){ people[x.id]={ id:x.id, name:x.name, extra:true, prof:{ dept:'_off', ministry:'' }, profLeads:[] }; order.push(x.id); });
@@ -79,7 +81,18 @@ function sbModel_(campus, plan){
     if(w.dept!=='_off' && known[key]) add(key, id);
   });
   var tray=order.filter(function(id){ return !placed[id]; });
-  return { campus:campus, deps:deps, depts:depts, people:people, order:order, boxes:boxes, students:students, tray:tray, leadsOf:leadsOf, pos:pos, placed:placed,
+  /* the other ministries someone serves in this quarter (Nov 2026, Uriah: "some people will have 2 ministry jobs"): the
+     plan's `also` when it has its own, else their profile's — never their main place, never a Campus Leadership row.
+     `any` keeps a school that isn't running this quarter (for the plan), without it only boxes on the chart. */
+  var alsoOf=function(id, any){
+    var p=people[id]; if(!p || plan.students[id]) return [];
+    var w=pos(id), main=w.dept+'|'+(w.ministry||''); if(w.dept==='_off') return [];
+    var list=plan.also ? (plan.also[id]||[]) : (p.profAlso||[]);
+    return list.filter(function(k, i){ return k!==main && k.indexOf(BL_DEPT+'|')!==0 && (any ? all[k] : known[k]) && list.indexOf(k)===i; }).slice(0, SB_ALSO_MAX);
+  };
+  var alsoBoxes={};
+  order.forEach(function(id){ if(!placed[id] || placed[id]==='_students') return; alsoOf(id).forEach(function(k){ (alsoBoxes[k]=alsoBoxes[k]||[]).push(id); }); });
+  return { campus:campus, deps:deps, depts:depts, people:people, order:order, boxes:boxes, students:students, tray:tray, leadsOf:leadsOf, pos:pos, placed:placed, alsoOf:alsoOf, alsoBoxes:alsoBoxes, known:known,
     all:all, plan:plan, notRunning:notRunning, runs:function(m){ return sbRuns_(plan, m); } };
 }
 function sbBoxName_(key){
@@ -96,9 +109,10 @@ function sbFace_(M, id, o){
   var p=M.people[id]; if(!p) return '';
   var first=String(p.name||'').split(/\s+/)[0];
   var attr = o.edit ? ' data-sbp="'+esc(id)+'"'+(o.from?' data-sbfrom="'+esc(o.from)+'"':'') : (p.real && !o.noOpen ? ' data-person="'+esc(id)+'"' : '');
-  return '<button type="button" class="sbFace'+(o.lead?' lead':'')+(p.extra?' extra':'')+'"'+attr+' title="'+esc(p.name)+(o.lead?' · '+esc(t('Leader')):'')+'">'+
+  /* o.also: this is their second ministry — the face is marked so nobody counts them twice */
+  return '<button type="button" class="sbFace'+(o.lead?' lead':'')+(p.extra?' extra':'')+(o.also?' also':'')+'"'+attr+(o.also?' data-sbalso="1"':'')+' title="'+esc(p.name)+(o.lead?' · '+esc(t('Leader')):'')+(o.also?' · '+esc(t('also serves here')):'')+'">'+
     '<span class="sbFaceImg">'+avatarHtml(p,'sm')+(o.lead?'<span class="sbCrown" aria-hidden="true">👑</span>':'')+'</span>'+
-    '<span class="sbFaceName">'+esc(first)+'</span></button>';
+    '<span class="sbFaceName">'+esc(first)+'</span>'+(o.also?'<span class="sbAlsoTag">'+esc(t('also'))+'</span>':'')+'</button>';
 }
 function sbPlus_(key, edit){ return edit ? '<button type="button" class="sbPlus" data-sbbox="'+esc(key)+'" aria-label="'+esc(gpT('Add to {box}',{box:sbBoxName_(key)}))+'">＋</button>' : ''; }
 function sbTreeHtml_(M, edit, title){
@@ -121,9 +135,11 @@ function sbTreeHtml_(M, edit, title){
     mins.forEach(function(m){
       var key=dept+'|'+m, leads=M.leadsOf(key), here=(M.boxes[key]||[]).filter(function(id){ return leads.indexOf(id)===-1; });
       var all=leads.length+here.length;
-      h+='<div class="sbNode sbMin'+(all?'':' bare')+'" data-sbdrop="'+esc(key)+'"><div class="sbHead"><span>'+(MIN_EMOJI[m]?MIN_EMOJI[m]+' ':'')+esc(t(m))+'</span>'+
-        '<span class="sbHeadR"><span class="sbN">'+(all||'—')+'</span>'+sbPlus_(key, edit)+'</span></div>'+
-        (all ? '<div class="sbFaces">'+leads.map(function(id){ return sbFace_(M, id, { edit:edit, from:key, lead:true }); }).join('')+here.map(function(id){ return sbFace_(M, id, { edit:edit, from:key }); }).join('')+'</div>' : '')+'</div>';
+      var also=(M.alsoBoxes[key]||[]).filter(function(id){ return leads.indexOf(id)===-1; }), isAlso=function(id){ return M.placed[id]!==key && (M.alsoBoxes[key]||[]).indexOf(id)>-1; };
+      h+='<div class="sbNode sbMin'+(all||also.length?'':' bare')+'" data-sbdrop="'+esc(key)+'"><div class="sbHead"><span>'+(MIN_EMOJI[m]?MIN_EMOJI[m]+' ':'')+esc(t(m))+'</span>'+
+        '<span class="sbHeadR"><span class="sbN">'+(all||(also.length?'0':'—'))+(also.length?' <span class="sbNAlso">+'+also.length+'</span>':'')+'</span>'+sbPlus_(key, edit)+'</span></div>'+
+        (all||also.length ? '<div class="sbFaces">'+leads.map(function(id){ return sbFace_(M, id, { edit:edit, from:key, lead:true, also:isAlso(id) }); }).join('')+here.map(function(id){ return sbFace_(M, id, { edit:edit, from:key }); }).join('')+
+          also.map(function(id){ return sbFace_(M, id, { edit:edit, from:key, also:true }); }).join('')+'</div>' : '')+'</div>';
     });
     h+='</div></div>';
   });
@@ -179,10 +195,12 @@ function sbSheetHtml_(M, sh){
     var inBox=(M.boxes[key]||[]).slice(); leads.forEach(function(id){ if(inBox.indexOf(id)===-1) inBox.unshift(id); });
     inBox.sort(function(a,b){ return (leads.indexOf(b)>-1)-(leads.indexOf(a)>-1); });
     h+='<div class="sbSheetHead"><b>'+esc(sbBoxName_(key))+'</b>'+close+'</div>';
-    h+=inBox.length ? '<div class="sbRows">'+inBox.map(function(id){ var p=M.people[id], L=leads.indexOf(id)>-1;
-        return '<div class="sbRow">'+avatarHtml(p,'sm')+'<span class="sbRowName">'+esc(p.name)+(p.extra?' <span class="hint">· '+esc(t('typed in'))+'</span>':'')+'</span>'+
+    var alsoIn=(M.alsoBoxes[key]||[]).slice(); alsoIn.forEach(function(id){ if(inBox.indexOf(id)===-1) inBox.push(id); });
+    h+=inBox.length ? '<div class="sbRows">'+inBox.map(function(id){ var p=M.people[id], L=leads.indexOf(id)>-1, A=alsoIn.indexOf(id)>-1 && M.placed[id]!==key;
+        return '<div class="sbRow">'+avatarHtml(p,'sm')+'<span class="sbRowName">'+esc(p.name)+(p.extra?' <span class="hint">· '+esc(t('typed in'))+'</span>':'')+(A?' <span class="sbAlsoTag">'+esc(t('also'))+'</span>':'')+'</span>'+
           (isMin ? '<button type="button" class="sbLeadBtn'+(L?' on':'')+'" data-sblead="'+esc(key)+'|'+esc(id)+'">'+(L?'👑 '+esc(t('Leader')):esc(t('Make leader')))+'</button>' : '')+
-          '<button type="button" class="gptX" data-sbout="'+esc(id)+'" aria-label="'+esc(gpT('Take {name} out',{name:p.name}))+'">×</button></div>'; }).join('')+'</div>'
+          (A ? '<button type="button" class="gptX" data-sbalsorm="'+esc(key)+'|'+esc(id)+'" aria-label="'+esc(gpT('{name} no longer also serves here',{name:p.name}))+'">×</button>'
+             : '<button type="button" class="gptX" data-sbout="'+esc(id)+'" aria-label="'+esc(gpT('Take {name} out',{name:p.name}))+'">×</button>')+'</div>'; }).join('')+'</div>'
       : '<p class="sub" style="margin:4px 0 10px">'+esc(t('Nobody here yet.'))+'</p>';
     var cand=M.order.filter(function(id){ return inBox.indexOf(id)===-1; }).map(function(id){ var p=M.people[id], w=M.placed[id];
       return { id:id, name:p.name, sub: w==='_students' ? t('Student') : w ? sbBoxName_(w) : t('Not on the chart'), first: !w, group: !w ? t('Not on the chart yet') : t('Everyone else') }; });
@@ -199,6 +217,7 @@ function sbSheetHtml_(M, sh){
     if(isMin2) h+='<button type="button" class="btn ghost" data-sblead="'+esc(w)+'|'+esc(sh.id)+'">'+(L2 ? esc(t('Not the leader')) : '👑 '+esc(gpT('Make leader of {min}',{min:sbBoxName_(w)})))+'</button>';
     h+='<label class="f" for="sbMoveSel">'+esc(t('Move to'))+'</label><select id="sbMoveSel">'+sbTargetsHtml_(M, w)+'</select>'+
       '<button type="button" class="btn" id="sbMoveGo" data-sbid="'+esc(sh.id)+'">'+esc(t('Move'))+'</button>';
+    if(w!=='_off' && w!=='_students') h+=sbAlsoHtml_(M, sh.id, w);
     if(w!=='_off') h+='<button type="button" class="btn ghost" data-sbout="'+esc(sh.id)+'">'+esc(t('Take off the chart this quarter'))+'</button>';
     if(p.extra) h+='<div class="sbAdd"><div class="eyebrow">'+esc(t('Typed-in name'))+'</div><div class="sbNewRow"><input type="text" id="sbRename" maxlength="60" value="'+esc(p.name)+'">'+
       '<button type="button" class="btn small" id="sbRenameGo" data-sbid="'+esc(sh.id)+'">'+esc(t('Save'))+'</button></div>'+
@@ -210,6 +229,27 @@ function sbSheetHtml_(M, sh){
       '<p class="hint">'+esc(t('For this quarter only. Their profile stays as it is.'))+'</p>';
   }
   return h+'</div>';
+}
+/* One person's ministries on the sheet: which is the main one (where their profile's ministry goes, the one My Ministry
+   opens on) and the others they also serve in — add one, take one off, or make one of them the main (the two swap). */
+function sbAlsoHtml_(M, id, main){
+  var list=M.alsoOf(id), mainBL=main.indexOf(BL_DEPT+'|')===0;
+  var h='<div class="sbAdd sbAlso" id="sbAlso"><div class="eyebrow">'+esc(t('Their ministries this quarter'))+'</div>'+
+    '<div class="sbRow sbAlsoRow"><span class="sbRowName">⭐ '+esc(sbBoxName_(main))+'</span><span class="sbMainTag" id="sbMainTag">'+esc(t('Main ministry'))+'</span></div>';
+  h+=list.map(function(k){
+    return '<div class="sbRow sbAlsoRow" data-sbalsorow="'+esc(k)+'"><span class="sbRowName">'+esc(sbBoxName_(k))+' <span class="sbAlsoTag">'+esc(t('also'))+'</span></span>'+
+      (mainBL ? '' : '<button type="button" class="sbLeadBtn" data-sbmain="'+esc(k)+'|'+esc(id)+'">'+esc(t('Make this their main ministry'))+'</button>')+
+      '<button type="button" class="gptX" data-sbalsorm="'+esc(k)+'|'+esc(id)+'" aria-label="'+esc(gpT('No longer also in {min}',{min:sbBoxName_(k)}))+'">×</button></div>'; }).join('');
+  if(list.length<SB_ALSO_MAX){
+    var opts='';
+    M.depts.forEach(function(d){
+      var ms=Object.keys(M.deps[d]||{}).filter(function(m){ var k=d+'|'+m; return M.known[k] && k!==main && list.indexOf(k)===-1; });
+      if(ms.length) opts+='<optgroup label="'+esc(t(d))+'">'+ms.map(function(m){ return '<option value="'+esc(d+'|'+m)+'">'+esc(t(m))+'</option>'; }).join('')+'</optgroup>';
+    });
+    h+='<label class="f" for="sbAlsoSel">'+esc(t('Also serves in…'))+'</label><div class="sbNewRow"><select id="sbAlsoSel"><option value="">'+esc(t('Choose a ministry'))+'</option>'+opts+'</select>'+
+      '<button type="button" class="btn small" id="sbAlsoAdd" data-sbid="'+esc(id)+'">'+esc(t('Add'))+'</button></div>';
+  }
+  return h+'<p class="hint" style="margin:4px 0 0">'+esc(t('They get both ministries’ pages on My Ministry. Dragging their face moves the main one.'))+'</p></div>';
 }
 function sbTargetsHtml_(M, cur){
   var opt=function(k, label){ return '<option value="'+esc(k)+'"'+(k===cur?' selected':'')+'>'+esc(label)+'</option>'; };
@@ -230,13 +270,16 @@ function sbOwn_(campus, plan){
   var M=sbModel_(campus, plan), place={}, leads={};
   M.order.forEach(function(id){ var w=M.pos(id); place[id]={ dept:w.dept||'_off', ministry:w.ministry||'' }; if(w.dept && w.dept!=='_off' && !M.all[w.dept+'|'+(w.ministry||'')]) place[id]={ dept:'_off', ministry:'' }; });
   M.depts.forEach(function(d){ Object.keys(M.deps[d]||{}).forEach(function(m){ var k=d+'|'+m, l=M.leadsOf(k); if(l.length) leads[k]=l.slice(); }); });
-  return { students:Object.assign({}, plan.students), place:place, leads:leads, extra:(plan.extra||[]).slice(), schools:plan.schools ? plan.schools.slice() : null, inherited:false };
+  return { students:Object.assign({}, plan.students), place:place, leads:leads, extra:(plan.extra||[]).slice(), schools:plan.schools ? plan.schools.slice() : null, also:sbAlsoAll_(M), live:plan.live||null, inherited:false };
+}
+function sbAlsoAll_(M){ var also={}; M.order.forEach(function(id){ var a=M.alsoOf(id, true); if(a.length) also[id]=a; }); return also;
 }
 function sbChange_(fn){
   var B=sbState_(), c=B.cur; if(!c || !c.edit) return;
   var cache=S.structCache[c.key] || (S.structCache[c.key]={ doc:null, source:'none' });
   var cur=sbPlan_(c.campus, c.year, c.q);
-  var own=(cache.plan && !cache.plan.inherited && cache.plan.leads) ? { students:Object.assign({}, cur.students), place:Object.assign({}, cur.place), leads:JSON.parse(JSON.stringify(cur.leads||{})), extra:cur.extra.slice(), schools:cur.schools ? cur.schools.slice() : null, inherited:false } : sbOwn_(c.campus, cur);
+  var own=(cache.plan && !cache.plan.inherited && cache.plan.leads) ? { students:Object.assign({}, cur.students), place:Object.assign({}, cur.place), leads:JSON.parse(JSON.stringify(cur.leads||{})), extra:cur.extra.slice(), schools:cur.schools ? cur.schools.slice() : null,
+    also:cur.also ? JSON.parse(JSON.stringify(cur.also)) : sbAlsoAll_(sbModel_(c.campus, cur)), live:cur.live||null, inherited:false } : sbOwn_(c.campus, cur);
   fn(own);
   cache.plan=own;
   sbSave_();
@@ -250,25 +293,31 @@ function sbSave_(){
   _sbSaveT=setTimeout(function(){
     var cache=S.structCache[c.key]; if(!cache || !cache.plan) return;
     var p=cache.plan, n=B.saving;
-    run('saveStructurePlan',[S.auth.user,S.auth.pin,c.campus,c.year,c.q,p.students,p.place,p.leads,p.extra,p.schools||null],function(d){
+    run('saveStructurePlan',[S.auth.user,S.auth.pin,c.campus,c.year,c.q,p.students,p.place,p.leads,p.extra,p.schools||null,p.also||null],function(d){
+      if(d && d.ok && d.applied && d.applied.length) sbPatchRoster_(d.applied);   // a live quarter: those profiles changed just now
       if(B.saving!==n) return;   // a newer change is on its way
       B.saving=0;
-      if(d && d.ok){ B.saved=Date.now(); if(d.doc){ cache.doc=d.doc; cache.source='saved'; } }
+      if(d && d.ok){ B.saved=Date.now(); if(d.doc){ cache.doc=d.doc; cache.source='saved'; } if(d.diff) cache.diff=d.diff; if(cache.plan && d.plan) cache.plan.live=d.plan.live||null; }
       else showMsg(d && d.err==='not_authorized' ? t('Only Campus Leadership and admins can change the structure.') : t('Could not save'));
+      if(d && d.ok && d.applied && d.applied.length) showMsg(d.applied.length===1 ? gpT('{name}’s profile is updated',{name:d.applied[0].name}) : gpT('{n} profiles updated',{n:d.applied.length}));
+      sbLiveRefresh_();
       var el=document.getElementById('sbSaved'); if(el) el.textContent = d && d.ok ? t('Saved ✓') : '';
     }, function(){ B.saving=0; showMsg(t('Connection problem — try again.')); var el=document.getElementById('sbSaved'); if(el) el.textContent=''; });
   }, 450);
 }
-function sbDropLeads_(p, id, except){ Object.keys(p.leads||{}).forEach(function(k){ if(k===except) return; p.leads[k]=p.leads[k].filter(function(x){ return x!==id; }); if(!p.leads[k].length) delete p.leads[k]; }); }
+function sbDropLeads_(p, id, except){ var keep=(p.also && p.also[id]) || []; Object.keys(p.leads||{}).forEach(function(k){ if(k===except || keep.indexOf(k)>-1) return; p.leads[k]=p.leads[k].filter(function(x){ return x!==id; }); if(!p.leads[k].length) delete p.leads[k]; }); }
 function sbMove_(id, target){
   if(!target) return;
   if(target==='_students'){ sbState_().sheet={ kind:'school', id:id }; render(); return; }
+  var c0=S.sb && S.sb.cur, M0=c0 ? sbModel_(c0.campus, sbPlan_(c0.campus, c0.year, c0.q)) : null;
+  if(M0 && M0.placed[id]===target) return;   // already their main place (a second-ministry face dropped back on it)
   sbChange_(function(p){
     delete p.students[id];
-    if(target.indexOf('_stu:')===0){ p.students[id]=target.slice(5); p.place[id]={ dept:'_off', ministry:'' }; sbDropLeads_(p, id); return; }
-    if(target==='_off'){ p.place[id]={ dept:'_off', ministry:'' }; sbDropLeads_(p, id); return; }
+    if(target.indexOf('_stu:')===0){ p.students[id]=target.slice(5); p.place[id]={ dept:'_off', ministry:'' }; if(p.also) delete p.also[id]; sbDropLeads_(p, id); return; }
+    if(target==='_off'){ p.place[id]={ dept:'_off', ministry:'' }; if(p.also) delete p.also[id]; sbDropLeads_(p, id); return; }
     var i=target.indexOf('|');
     p.place[id]={ dept:target.slice(0,i), ministry:target.slice(i+1) };
+    if(p.also && p.also[id]){ p.also[id]=p.also[id].filter(function(k){ return k!==target; }); if(!p.also[id].length) delete p.also[id]; }   // their second ministry became the main one
     sbDropLeads_(p, id, target);   // a leader moved elsewhere no longer leads where they were
   });
   var M=S.sb && S.sb.cur ? sbModel_(S.sb.cur.campus, sbPlan_(S.sb.cur.campus, S.sb.cur.year, S.sb.cur.q)) : null;
@@ -282,8 +331,40 @@ function sbToggleLead_(key, id){
     p.leads=p.leads||{};
     var l=p.leads[key]||[];
     if(l.indexOf(id)>-1){ l=l.filter(function(x){ return x!==id; }); }
+    else if(p.also && (p.also[id]||[]).indexOf(key)>-1){ l=l.concat([id]).slice(0, 8); }   // leading their second ministry: the main one stays
     else { l=l.concat([id]).slice(0, 8); delete p.students[id]; p.place[id]={ dept:key.slice(0, key.indexOf('|')), ministry:key.slice(key.indexOf('|')+1) }; sbDropLeads_(p, id, key); }
     if(l.length) p.leads[key]=l; else delete p.leads[key];
+  });
+}
+/* a second ministry: add it, take it off, or make it the main one (the two swap) */
+function sbAlsoAdd_(id, key){
+  if(!key) return;
+  sbChange_(function(p){ p.also=p.also||{}; var l=p.also[id]||[]; if(l.indexOf(key)===-1 && l.length<SB_ALSO_MAX) p.also[id]=l.concat([key]); });
+}
+function sbAlsoRm_(id, key){
+  sbChange_(function(p){
+    if(!p.also || !p.also[id]) return;
+    p.also[id]=p.also[id].filter(function(k){ return k!==key; }); if(!p.also[id].length) delete p.also[id];
+    if(p.leads && p.leads[key]){ p.leads[key]=p.leads[key].filter(function(x){ return x!==id; }); if(!p.leads[key].length) delete p.leads[key]; }
+  });
+}
+function sbMakeMain_(id, key){
+  sbChange_(function(p){
+    var old=p.place[id], oldKey=old && old.dept!=='_off' ? old.dept+'|'+(old.ministry||'') : '', i=key.indexOf('|');
+    p.also=p.also||{};
+    var l=(p.also[id]||[]).filter(function(k){ return k!==key; });
+    if(oldKey && old.ministry && oldKey.indexOf(BL_DEPT+'|')!==0) l.unshift(oldKey);
+    p.place[id]={ dept:key.slice(0,i), ministry:key.slice(i+1) };
+    if(l.length) p.also[id]=l.slice(0, SB_ALSO_MAX); else delete p.also[id];
+  });
+}
+/* A live quarter changed someone's profile: the roster on this phone follows (and my own card, if it was me). */
+function sbPatchRoster_(changes){
+  (changes||[]).forEach(function(ch){
+    if(!ch || !ch.now) return;
+    var set=function(o){ o.dept=ch.now.dept; o.ministry=ch.now.ministry; o.ministries=(ch.now.ministries||[]).slice(); o.leads=(ch.now.leads||[]).slice(); };
+    (S.roster||[]).forEach(function(p){ if(p.id===ch.id) set(p); });
+    if(S.me && S.me.id===ch.id) set(S.me);
   });
 }
 function sbNewName_(name, key){
@@ -416,6 +497,9 @@ function bindSb_(){
   on('sbScrim', shut); on('sbSheetClose', shut);
   document.querySelectorAll('[data-sblead]').forEach(function(b){ b.onclick=function(){ gpTap(); var v2=b.getAttribute('data-sblead'), i=v2.lastIndexOf('|'); sbToggleLead_(v2.slice(0,i), v2.slice(i+1)); }; });
   document.querySelectorAll('[data-sbout]').forEach(function(b){ b.onclick=function(){ gpTap(); var id=b.getAttribute('data-sbout'); if(B.sheet && B.sheet.kind==='person') B.sheet=null; sbMove_(id, '_off'); }; });
+  document.querySelectorAll('[data-sbalsorm]').forEach(function(b){ b.onclick=function(){ gpTap(); var v2=b.getAttribute('data-sbalsorm'), i=v2.lastIndexOf('|'); sbAlsoRm_(v2.slice(i+1), v2.slice(0,i)); }; });
+  document.querySelectorAll('[data-sbmain]').forEach(function(b){ b.onclick=function(){ gpTap(); var v2=b.getAttribute('data-sbmain'), i=v2.lastIndexOf('|'); sbMakeMain_(v2.slice(i+1), v2.slice(0,i)); }; });
+  on('sbAlsoAdd', function(){ var sel=document.getElementById('sbAlsoSel'); if(!sel || !sel.value){ if(sel) sel.focus(); return; } gpTap(); sbAlsoAdd_(this.getAttribute('data-sbid'), sel.value); });
   on('sbMoveGo', function(){ var sel=document.getElementById('sbMoveSel'), id=this.getAttribute('data-sbid'); if(!sel) return; B.sheet=null; sbMove_(id, sel.value); });
   on('sbNewAdd', function(){ var inp=document.getElementById('sbNewName'), key=this.getAttribute('data-sbnewkey'); if(!inp || !inp.value.trim()){ if(inp) inp.focus(); return; } sbNewName_(inp.value, key); });
   var nn=document.getElementById('sbNewName'); if(nn) nn.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); var b2=document.getElementById('sbNewAdd'); if(b2) b2.click(); } };
@@ -455,7 +539,7 @@ function sbLeadHtml_(){
   var B=sbState_(), campus=B.campus || S.me.campus, Q=sbQuarter_(), now={ year:new Date().getFullYear(), q:currentQuarter_() }, nx=nextQuarter_();
   if(!S.me.isAdmin) campus=S.me.campus;
   var h='<div class="sbTop"><div><h3 style="margin:0">🗺️ '+esc(t('The structure'))+'</h3><p class="sub" style="margin:2px 0 0">'+
-    esc(t('Who is in which department and ministry this quarter, and who leads. Only on this chart — nobody’s profile changes.'))+'</p></div></div>';
+    esc(t('Who is in which department and ministry this quarter, and who leads. Make the quarter live and it becomes everyone’s profile.'))+'</p></div></div>';
   h+='<div class="sbPick"><div class="deptChips" style="margin:0">'+[[now.year, now.q, t('now')],[nx.year, nx.q, t('next')]].map(function(x){
     var on=x[0]===Q.year && x[1]===Q.q; return '<button class="deptChip'+(on?' on':'')+'" data-sbq="'+x[0]+'|'+x[1]+'">Q'+x[1]+' '+x[0]+' · '+esc(x[2])+'</button>'; }).join('')+'</div>'+
     (S.me.isAdmin ? '<div class="deptChips" style="margin:0">'+CAMPUSES.map(function(c){ return '<button class="deptChip'+(c.id===campus?' on':'')+'" data-sbcampus="'+esc(c.id)+'">'+esc(t(c.short))+'</button>'; }).join('')+'</div>' : '')+'</div>';
@@ -468,8 +552,10 @@ function sbLeadHtml_(){
   var can=sbCanEdit_(campus), edit=can && !!B.editing;
   B.canEdit=can;
   if(can && !B.full) h+='<div class="sbModeRow">'+sbModeHtml_()+'<span class="sub sbModeSub">'+esc(edit ? t('Editing: drag faces, tap ＋ to add, tap a face for more.') : t('Viewing: move around and zoom — nobody can be moved by accident.'))+'</span></div>';
+  if(can) h+=sbLiveHtml_(campus, Q);
   h+=sbSchoolsHtml_(campus, plan, Q, edit);
   h+=sbBoardHtml_(campus, Q.year, Q.q, edit);
+  if(can && B.liveOpen) h+=sbLiveSheetHtml_(campus, Q);
   if(own && edit) h+='<button class="linkbtn" id="sbReset" style="margin-top:6px">'+esc(gpT('Start Q{q} {year} again from everyone’s profile',{q:Q.q, year:Q.year}))+'</button>';
   h+='<p class="hint" style="margin:8px 0 0">'+esc(t('Everyone sees this quarter’s structure under Team → Structure.'))+'</p>';
   return h;
@@ -494,12 +580,118 @@ function bindSbLead_(){
     var c=B.cur; if(!c) return;
     if(!gpAsk_(t('Put everyone back where their profile says for this quarter? Names typed in stay off the chart.'))) return;
     var cache=S.structCache[c.key]; if(!cache) return;
-    cache.plan={ students:{}, place:{}, leads:null, extra:(cache.plan && cache.plan.extra)||[], inherited:false };
+    var keepSchools=(cache.plan && Array.isArray(cache.plan.schools)) ? cache.plan.schools : null;
+    cache.plan={ students:{}, place:{}, leads:null, extra:(cache.plan && cache.plan.extra)||[], schools:keepSchools, also:null, live:null, inherited:false };
     B.saving++;
-    run('saveStructurePlan',[S.auth.user,S.auth.pin,c.campus,c.year,c.q,{},{},null,cache.plan.extra],function(d){ B.saving=0; if(d && d.ok){ cache.plan=d.plan; if(d.doc){ cache.doc=d.doc; cache.source='saved'; } B.fitted={}; showMsg(t('Back to profiles')); } else showMsg(t('Could not save')); render(); },
+    run('saveStructurePlan',[S.auth.user,S.auth.pin,c.campus,c.year,c.q,{},{},null,cache.plan.extra,keepSchools,null],function(d){ B.saving=0; if(d && d.ok){ cache.plan=d.plan; if(d.diff) cache.diff=d.diff; if(d.doc){ cache.doc=d.doc; cache.source='saved'; } B.fitted={}; showMsg(t('Back to profiles')); } else showMsg(t('Could not save')); render(); },
       function(){ B.saving=0; showMsg(t('Connection problem — try again.')); render(); });
   };
+  bindSbLive_();
   bindSb_();
+}
+
+/* ---- Make a quarter live: the arrangement becomes people's profiles (Nov 2026, Uriah) ----
+   "Really easy every quarter for anyone in the campus leadership roles to move people around … and for that to
+   automatically change in their profile." One line above the board says where the quarter stands, with one button:
+   not live — "n people's profiles would change" → Make Qn yyyy live → a sheet listing each change → Confirm
+   (applyStructure); live — "changes here update profiles straight away" (this quarter: saveStructurePlan applies what
+   changed); a profile someone edited since — "n profiles differ" with See / Apply again. The list of changes is the
+   server's (`diff` on getStructure and on every save), so the page never works a profile out by itself. */
+function sbIsNow_(Q){ return Q.year===new Date().getFullYear() && Q.q===currentQuarter_(); }
+function sbKeyShort_(key){
+  var i=String(key||'').indexOf('|'), d=i>-1 ? key.slice(0,i) : '', m=i>-1 ? key.slice(i+1) : '';
+  if(d===BL_DEPT) return m==='Campus Director' ? t('Campus Director') : gpT('Director of {dept}',{dept:t(m)});
+  return m ? t(m) : d ? t(d) : '—';
+}
+function sbChangeText_(ch){
+  var parts=[];
+  if(ch.waits) parts.push(gpT('waits for an admin: {title}',{title:sbKeyShort_(ch.waits)}));
+  if(ch.to) parts.push(sbKeyShort_(ch.from)+' → '+sbKeyShort_(ch.to));
+  (ch.alsoAdd||[]).forEach(function(k){ parts.push('+ '+gpT('also {min}',{min:sbKeyShort_(k)})); });
+  (ch.alsoDrop||[]).forEach(function(k){ parts.push(gpT('no longer also {min}',{min:sbKeyShort_(k)})); });
+  (ch.leadAdd||[]).forEach(function(k){ parts.push('👑 '+gpT('now leads {min}',{min:sbKeyShort_(k)})); });
+  (ch.leadDrop||[]).forEach(function(k){ parts.push(gpT('no longer leads {min}',{min:sbKeyShort_(k)})); });
+  return parts.join(' · ');
+}
+function sbLiveHtml_(campus, Q){
+  var c=S.structCache[sbKey_(campus, Q.year, Q.q)], diff=c && c.diff; if(!diff) return '';
+  var plan=c.plan||{}, n=(diff.changes||[]).length, w=(diff.waiting||[]).length, now=sbIsNow_(Q), B=sbState_();
+  var waitTxt=w ? ' · '+(w===1 ? t('1 move into Campus Leadership is waiting for an admin') : gpT('{n} moves into Campus Leadership are waiting for an admin',{n:w})) : '';
+  var h='<div class="sbLive'+(plan.live?(n?' drift':' on'):'')+'" id="sbLive" data-sblive="'+(plan.live?(n?'drift':'live'):'off')+'">';
+  if(plan.live && !n){
+    h+='<p class="sbLiveLine" id="sbLiveLine">✅ '+esc(now ? gpT('Q{q} {year} is live — changes here update profiles straight away.',{q:Q.q, year:Q.year}) : gpT('Q{q} {year} is live — profiles match it. A change before it starts waits for Apply again.',{q:Q.q, year:Q.year}))+esc(waitTxt)+'</p>';
+  } else if(plan.live){
+    h+='<p class="sbLiveLine" id="sbLiveLine">⚠️ '+esc(n===1 ? t('1 profile differs from this structure') : gpT('{n} profiles differ from this structure',{n:n}))+esc(waitTxt)+'</p>'+
+      '<div class="sbLiveBtns"><button type="button" class="btn ghost small" id="sbLiveSee">'+esc(t('See'))+'</button><button type="button" class="btn small" id="sbLiveAgain">'+esc(t('Apply again'))+'</button></div>';
+  } else {
+    h+='<p class="sbLiveLine" id="sbLiveLine">'+esc(n ? (n===1 ? t('1 person’s profile would change') : gpT('{n} people’s profiles would change',{n:n})) : t('Everyone’s profile already matches this structure.'))+esc(waitTxt)+'</p>'+
+      '<div class="sbLiveBtns"><button type="button" class="btn small" id="sbLiveBtn"'+(B.liveBusy?' disabled':'')+'>'+esc(gpT('Make Q{q} {year} live',{q:Q.q, year:Q.year}))+'</button></div>';
+  }
+  return h+'</div>';
+}
+function sbLiveSheetHtml_(campus, Q){
+  var c=S.structCache[sbKey_(campus, Q.year, Q.q)], diff=(c && c.diff) || { changes:[], waiting:[] }, plan=(c && c.plan) || {}, B=sbState_();
+  var n=diff.changes.length, now=sbIsNow_(Q);
+  var h='<div class="sbScrim" id="sbLiveScrim"></div><div class="sbSheet gtSheet sbLiveSheet" id="sbLiveSheet" role="dialog" aria-modal="true">'+
+    '<div class="sbSheetHead"><b>'+esc(plan.live ? gpT('Profiles that differ from Q{q} {year}',{q:Q.q, year:Q.year}) : gpT('Make Q{q} {year} live',{q:Q.q, year:Q.year}))+'</b>'+
+    '<button type="button" class="hbtn sbClose" id="sbLiveClose" aria-label="'+esc(t('Close'))+'">✕</button></div>';
+  h+='<p class="sub" style="margin:0 0 8px">'+esc(n ? t('These profiles change to match the structure. Each person is told. Nothing else on a profile changes.') : t('Nobody’s profile changes now.'))+'</p>';
+  if(!now && !plan.live) h+='<p class="hint sbLiveEarly" id="sbLiveEarly">'+esc(gpT('Q{q} {year} hasn’t started yet — profiles change today, not on its first day.',{q:Q.q, year:Q.year}))+'</p>';
+  if(n) h+='<ul class="sbLiveList" id="sbLiveList">'+diff.changes.map(function(ch){ return '<li data-sbchange="'+esc(ch.id)+'"><b>'+esc(ch.name)+'</b><span>'+esc(sbChangeText_(ch))+'</span></li>'; }).join('')+'</ul>';
+  if((diff.waiting||[]).length) h+='<p class="hint" id="sbLiveWaiting">'+esc(t('Already waiting for an admin (Admin → Approvals):'))+' '+diff.waiting.map(function(x){ return esc(x.name)+' — '+esc(sbKeyShort_(x.waits)); }).join(' · ')+'</p>';
+  h+='<p class="hint">'+esc(t('Left as they are: anyone off the chart, staff who are students this quarter, and names typed in.'))+'</p>';
+  h+='<button type="button" class="btn" id="sbLiveConfirm"'+(B.liveBusy?' disabled':'')+'>'+esc(B.liveBusy ? t('Saving…') : plan.live ? t('Apply again') : now ? t('Confirm — from now on, changes here update profiles') : t('Confirm'))+'</button>'+
+    '<button type="button" class="btn ghost" id="sbLiveCancel">'+esc(t('Cancel'))+'</button>';
+  return h+'</div>';
+}
+/* the line follows a save's answer without a redraw (someone may be mid-drag) */
+function sbLiveRefresh_(){
+  var el=document.getElementById('sbLive'), B=sbState_(), c=B.cur; if(!el || !c) return;
+  var tmp=document.createElement('div'); tmp.innerHTML=sbLiveHtml_(c.campus, { year:c.year, q:c.q });
+  if(tmp.firstChild){ el.parentNode.replaceChild(tmp.firstChild, el); bindSbLive_(); }
+}
+function sbApplyLive_(){
+  var B=sbState_(), c=B.cur; if(!c || B.liveBusy) return;
+  if(B.saving){ showMsg(t('Still saving — try again in a moment.')); return; }
+  var cache=S.structCache[c.key]; if(!cache) return;
+  B.liveBusy=true; render();
+  run('applyStructure',[S.auth.user,S.auth.pin,c.campus,c.year,c.q,{}],function(d){
+    B.liveBusy=false;
+    if(d && d.ok){
+      cache.plan=d.plan; cache.diff=d.diff || { changes:[], waiting:[] }; if(d.doc){ cache.doc=d.doc; cache.source='saved'; }
+      sbPatchRoster_(d.changes); B.liveOpen=false;
+      if(sbIsNow_({ year:c.year, q:c.q }) && c.campus===S.me.campus) S.structReady=null;
+      var n=(d.changes||[]).filter(function(x){ return !x.waits; }).length;
+      showMsg(gpT('Q{q} {year} is live',{q:c.q, year:c.year})+(n ? ' — '+(n===1 ? t('1 profile updated') : gpT('{n} profiles updated',{n:n})) : ''));
+    } else showMsg(d && d.err==='not_authorized' ? t('Only Campus Leadership and admins can change the structure.') : d && d.err==='past_quarter' ? t('That quarter is over.') : d && d.err==='busy' ? t('Someone else is saving — try again.') : t('Could not save'));
+    render();
+  }, function(){ B.liveBusy=false; showMsg(t('Connection problem — try again.')); render(); });
+}
+function bindSbLive_(){
+  var B=sbState_(), on=function(id, fn){ var el=document.getElementById(id); if(el) el.onclick=fn; };
+  var open=function(){ gpTap(); if(B.saving){ showMsg(t('Still saving — try again in a moment.')); return; } B.liveOpen=true; B.sheet=null; render(); };
+  var shut=function(){ B.liveOpen=false; render(); };
+  on('sbLiveBtn', open); on('sbLiveSee', open);
+  on('sbLiveAgain', function(){ if(!gpAsk_(t('Change these profiles back to match the structure? Each person is told.'))) return; sbApplyLive_(); });
+  on('sbLiveScrim', shut); on('sbLiveClose', shut); on('sbLiveCancel', shut);
+  on('sbLiveConfirm', function(){ gpTap(); sbApplyLive_(); });
+}
+/* Campus Leadership's bell, from this quarter's first day until it is live (the boot's `structReady`) */
+function sbNotifItems_(){
+  var r=S.structReady; if(!r || !S.me || S.student || S.guest || S.board || !sbCanEdit_(S.me.campus)) return [];
+  return [{ when:todayStr(), text:'🗺️ '+gpT('Q{q}’s structure is ready — make it live',{q:r.q}),
+    actions:'<button class="linkbtn" style="width:auto;margin:0;padding:6px 10px" data-gostruct="'+r.year+'|'+r.q+'">'+esc(t('Open'))+'</button>' }];
+}
+function sbOpenTab_(campus, year, q, editing){
+  var B=sbState_(); B.year=year; B.q=q; B.campus=campus||S.me.campus; B.sheet=null; B.liveOpen=false; B.editing=!!editing;
+  S.view='ministry'; S.mentee=null; S.person=null; S.mmTab='ministry'; S.mmBrowseDept=BL_DEPT; S.mmBrowseMinistry=S.me.dept===BL_DEPT ? blMyKey_() : ''; S.lwTab='struct'; try{ lwTabKeep_('struct'); }catch(er){}
+  render(); window.scrollTo(0,0);
+}
+function bindGoStruct_(sel){
+  document.querySelectorAll(sel).forEach(function(b){ b.onclick=function(){
+    gpTap(); var v=String(b.getAttribute('data-gostruct')||'').split('|'); S.bellOpen=false; if(typeof renderNotifPanel==='function') renderNotifPanel();
+    sbOpenTab_(S.me.campus, Number(v[0])||new Date().getFullYear(), Number(v[1])||currentQuarter_(), false);
+  }; });
 }
 /* Team → Structure: the same quarter as a tree, read only (opened from the list) */
 function sbTeamHtml_(campus, year, q){

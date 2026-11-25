@@ -511,6 +511,9 @@ function bindAway(){
     var bindMmPick=function(){ document.querySelectorAll('[data-mmpick]').forEach(function(b){
       b.onclick=function(){ var v=b.getAttribute('data-mmpick'), i=v.lastIndexOf('|'); gpTap(); S.mmBrowseDept=v.slice(0,i); S.mmBrowseMinistry=v.slice(i+1); S.mmPickOpen=false; S.mmPickQ=''; S.mmTab='ministry'; S.mmTabTouched=false; render(); window.scrollTo(0,0); }; }); };
     bindMmPick();
+    /* the slim row of your own ministries under the header (2–4 of them): one tap, no sheet */
+    document.querySelectorAll('[data-mmgo]').forEach(function(b){
+      b.onclick=function(){ var v=b.getAttribute('data-mmgo'), i=v.lastIndexOf('|'); gpTap(); S.mmBrowseDept=v.slice(0,i); S.mmBrowseMinistry=v.slice(i+1); S.mmPickOpen=false; S.mmPickQ=''; S.mmTab='ministry'; S.mmTabTouched=false; render(); window.scrollTo(0,0); }; });
     document.querySelectorAll('[data-mmpick-none]').forEach(function(b){
     });
     var mbd=document.getElementById('mmBrowseDeptSel');
@@ -567,7 +570,7 @@ function bindAway(){
   bindTests_();
   bindLibPlus_();
   bindHosp();
-  if(S.view==='ministry') bindLead_();
+  if(S.view==='ministry'){ bindLead_(); bindMeeting_(); }   // the board, and the weekly leadership meeting on it (27-meeting.js)
   if(typeof dutyHtml==='function') bindSched_();
 
   if(!S.leaveDraft) S.leaveDraft={from:'',to:'',type:'',reason:'',coverage:'',ack:false};
@@ -1186,6 +1189,7 @@ function bind(){
   /* GP Tasks: the page and its buttons */
   bindGpTasks_(); bindVoice_();
   bindPeoplePick_();   // every people picker with a search box on the page (12-tasks.js)
+  if(typeof bindGoStruct_==='function') bindGoStruct_('#main [data-gostruct]');   // "Q1's structure is ready — make it live" (23-structure.js)
   if(S.view==='ministry' && typeof bindSbLead_==='function' && document.querySelector('#sbWrap, [data-sbq]')) bindSbLead_();   // Campus Leadership → Structure, the whiteboard (23-structure.js)
   if(!document.getElementById('sbWrap')) document.body.classList.remove('sbFullOn');
   bindKhmer_();   // Learn Khmer (15-khmer.js)
@@ -1792,7 +1796,7 @@ function bind(){
       S.structLoading[sKey]=true;
       run('getStructure',[S.auth.user,S.auth.pin,sCampus,sYear,sQ],function(d){
         S.structLoading[sKey]=false;
-        if(d && d.ok) S.structCache[sKey]={ doc:d.doc, source:d.source, plan:d.plan }; else S.structError[sKey]=(d && d.err) || t('The server answered without the saved structure.');
+        if(d && d.ok) S.structCache[sKey]={ doc:d.doc, source:d.source, plan:d.plan, diff:d.diff||null }; else S.structError[sKey]=(d && d.err) || t('The server answered without the saved structure.');
         render();
       }, function(e){ S.structLoading[sKey]=false; S.structError[sKey]=(e && e.message) || t('Connection problem — try again.'); render(); });
     }
@@ -1801,7 +1805,7 @@ function bind(){
       S.structLoading[sKey]=true;
       run('getStructure',[S.auth.user,S.auth.pin,sCampus,sYear,sQ],function(d){
         S.structLoading[sKey]=false;
-        S.structCache[sKey] = (d && d.ok) ? { doc:d.doc, source:d.source, plan:d.plan } : { doc:null, source:'none' };
+        S.structCache[sKey] = (d && d.ok) ? { doc:d.doc, source:d.source, plan:d.plan, diff:d.diff||null } : { doc:null, source:'none' };
         render();
       }, function(e){ S.structLoading[sKey]=false; S.structCache[sKey]={ doc:null, source:'none' }; render(); });
     }
@@ -2050,7 +2054,7 @@ function refreshAll(){
    ?fresh). If the page itself came from the offline copy (the worker leaves a
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
-var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/20-game.js','teams/21-voice.js','teams/22-setup.js','teams/23-structure.js','teams/24-school.js','teams/25-intercession.js','teams/26-worship.js','teams/24-school.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
+var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/20-game.js','teams/21-voice.js','teams/22-setup.js','teams/23-structure.js','teams/24-school.js','teams/25-intercession.js','teams/26-worship.js','teams/27-meeting.js','teams/24-school.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
 if(gpTasksApp_()) GP_VER_FILES=['tasks.html'].concat(GP_VER_FILES.slice(1), ['teams/12-tasks.js','teams/13-calendar.js']);   // the tasks app's page is tasks.html
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){

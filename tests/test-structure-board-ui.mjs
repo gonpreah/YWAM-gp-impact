@@ -1,6 +1,7 @@
 /* The structure whiteboard (teams/23-structure.js, Nov 2026, Andrew): Campus Leadership arranges a quarter on My Ministry →
    Structure — a tree to pan and zoom, faces to drag from the tray onto a ministry, ＋ to add people or a typed-in name, a tap
-   to make someone the leader or move them — saved for that quarter only, never into a profile; Team → Structure shows it,
+   to make someone the leader or move them — saved for that quarter only, never into a profile until the quarter is made
+   live (the last blocks: a second ministry, Make Qn live, the bell, My Ministry's pills); Team → Structure shows it,
    as the list and as the same tree, read only. Against the real api.js. Made-up people. */
 import { REPO, PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
 import { chromium } from 'playwright';
@@ -286,6 +287,126 @@ const settle = (page) => page.waitForTimeout(1100);
   ok('the quarter after starts from the same schools', later && later.plan && JSON.stringify(later.plan.schools) === '["GPDTS"]', JSON.stringify(later && later.plan && later.plan.schools));
   ok('profiles are still never touched', JSON.stringify(mem.staff.map(s => [s.id, s.dept, s.ministry, s.leads])) === profBefore);
   await ctx.close();
+}
+
+
+/* ---------- a second ministry on the board, and the quarter made live (Nov 2026, Uriah) ---------- */
+const THIS = { year: now.getUTCFullYear(), q: cq };
+const planNow = () => (mem.structurePlans || []).find(r => r.campus === 'siemreap' && Number(r.year) === THIS.year && Number(r.quarter) === THIS.q);
+const prof = id => mem.staff.find(s => s.id === id);
+const openNow = async (page) => { await openBoard(page, false); await page.click('[data-sbq="' + THIS.year + '|' + THIS.q + '"]'); await page.waitForSelector('#sbLive', { timeout: 8000 }); await page.waitForTimeout(300);
+  if (await page.$('#sbModeEdit:not(.on)')) { await page.click('#sbModeEdit'); await page.waitForSelector('#sbTray'); await page.waitForTimeout(200); } };
+const personSheet = async (page, id) => { await page.evaluate((id) => { sbState_().sheet = { kind: 'person', id: id }; render(); }, id); await page.waitForSelector('#sbSheet'); };
+{
+  const before = JSON.stringify(mem.staff.map(s => [s.id, s.dept, s.ministry, s.ministries || null, s.leads || null]));
+  const { ctx, page } = await open('mark');
+  await openNow(page);
+  ok('above the board: where the quarter stands, and one button', await page.$eval('#sbLive', e => e.getAttribute('data-sblive')) === 'off' && /already matches/.test(await page.$eval('#sbLiveLine', e => e.textContent)) && /Make Q\d \d{4} live/.test(await page.$eval('#sbLiveBtn', e => e.textContent)));
+  ok('the tab no longer says nobody’s profile changes', !/nobody’s profile changes/i.test(await page.$eval('.sbTop', e => e.innerText)));
+  await personSheet(page, 'st3');
+  ok('a person’s sheet names their main ministry', /GP Media/.test(await page.$eval('#sbAlso .sbAlsoRow', e => e.innerText)) && /Main ministry/.test(await page.$eval('#sbMainTag', e => e.textContent)));
+  const optsA = await page.$$eval('#sbAlsoSel option', os => os.map(o => o.value));
+  ok('“Also serves in…” offers the campus’s ministries: not the main one, never a Campus Leadership row', optsA.includes('Community Service|Cafe') && !optsA.includes('Youth Education|GP Media') && !optsA.some(v => v.indexOf('Campus Leadership|') === 0), optsA.length + ' options');
+  await page.selectOption('#sbAlsoSel', 'Community Service|Cafe'); await page.click('#sbAlsoAdd'); await settle(page);
+  ok('adding a second ministry is saved on the quarter', planNow() && JSON.stringify(planNow().also.st3) === '["Community Service|Cafe"]' && planNow().place.st3.ministry === 'GP Media', JSON.stringify(planNow() && planNow().also));
+  ok('… the sheet lists it, with “Make this their main ministry”', await page.$('[data-sbalsorow="Community Service|Cafe"] [data-sbmain]') !== null);
+  await page.click('#sbSheetClose'); await page.waitForTimeout(200);
+  const two = await page.evaluate(() => ({ main: [...document.querySelectorAll('#sbTree [data-sbdrop="Youth Education|GP Media"] [data-sbp="st3"]')].map(f => f.classList.contains('also')),
+    second: [...document.querySelectorAll('#sbTree [data-sbdrop="Community Service|Cafe"] [data-sbp="st3"]')].map(f => f.classList.contains('also') && !!f.querySelector('.sbAlsoTag')),
+    n: document.querySelector('#sbTree [data-sbdrop="Community Service|Cafe"] .sbN').textContent.replace(/\s+/g, ' ').trim() }));
+  ok('the tree shows them in both boxes — the second face marked “also”, and not counted in that box', JSON.stringify(two.main) === '[false]' && JSON.stringify(two.second) === '[true]' && two.n === '2 +1', JSON.stringify(two));
+  ok('the line says one profile would change — and nothing has', /1 person’s profile would change/.test(await page.$eval('#sbLiveLine', e => e.textContent)) && JSON.stringify(mem.staff.map(s => [s.id, s.dept, s.ministry, s.ministries || null, s.leads || null])) === before);
+  // dragging the second face back onto their main box changes nothing; dragging it elsewhere moves the MAIN place
+  await centerOn(page, '[data-sbdrop="Community Service|Cafe"]');
+  await personSheet(page, 'st3');
+  await page.click('[data-sbmain="Community Service|Cafe|st3"]'); await settle(page);
+  ok('“Make this their main ministry” swaps the two', planNow().place.st3.ministry === 'Cafe' && JSON.stringify(planNow().also.st3) === '["Youth Education|GP Media"]', JSON.stringify([planNow().place.st3, planNow().also]));
+  await page.click('#sbSheetClose'); await page.waitForTimeout(200);
+  await personSheet(page, 'st4');
+  await page.selectOption('#sbMoveSel', 'Campus Leadership|Skills Training'); await page.click('#sbMoveGo'); await settle(page);
+  ok('(Cy is put on the Director spot of Skills Training)', planNow().place.st4.dept === 'Campus Leadership');
+  await ctx.close();
+}
+{
+  // the next time Campus Leadership opens the app: the bell
+  const { ctx, page } = await open('mark');
+  ok('the boot says this quarter is arranged and not live', await page.evaluate(() => !!S.structReady && S.structReady.q) === THIS.q);
+  await page.click('#bellBtn'); await page.waitForSelector('#notifRoot [data-gostruct]', { timeout: 5000 });
+  ok('the bell: “Q’s structure is ready — make it live”', /structure is ready — make it live/.test(await page.$eval('#notifRoot', e => e.innerText)));
+  await page.click('#notifRoot [data-gostruct]'); await page.waitForSelector('#sbLive', { timeout: 8000 });
+  ok('… opens the Structure tab on this quarter', await page.$eval('[data-sbq].on', b => b.getAttribute('data-sbq')) === THIS.year + '|' + THIS.q);
+  const other = await open('ann');
+  ok('nobody outside Campus Leadership gets it', await other.page.evaluate(() => !S.structReady && !notifItems_().some(i => /structure is ready/.test(i.text))));
+  await other.ctx.close();
+  ok('two profiles would change', /2 people’s profiles would change/.test(await page.$eval('#sbLiveLine', e => e.textContent)), await page.$eval('#sbLiveLine', e => e.textContent));
+  await page.click('#sbLiveBtn'); await page.waitForSelector('#sbLiveSheet');
+  const rows = await page.$$eval('#sbLiveList li', ls => ls.map(l => l.getAttribute('data-sbchange') + ': ' + l.innerText.replace(/\s+/g, ' ')));
+  ok('the sheet lists each change in plain words', rows.length === 2 && rows.some(r => /^st3: Bo Chan GP Media → Cafe · \+ also GP Media$/.test(r)) && rows.some(r => /^st4: Cy Ros waits for an admin: Director of Skills Training$/.test(r)), JSON.stringify(rows));
+  ok('… no “hasn’t started yet” for this quarter, and it says who is left alone', !(await page.$('#sbLiveEarly')) && /off the chart/.test(await page.$eval('#sbLiveSheet', e => e.innerText)));
+  ok('… on a phone the sheet fits', await page.evaluate(() => document.scrollingElement.scrollWidth <= window.innerWidth + 1));
+  if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/sb-live-sheet.png' });
+  ok('nothing is written before Confirm', prof('st3').ministry === 'GP Media' && !planNow().live);
+  await page.click('#sbLiveConfirm'); await page.waitForSelector('#sbLive[data-sblive="live"]', { timeout: 8000 });
+  ok('Confirm: the main ministry and the other one are on the profile', prof('st3').dept === 'Community Service' && prof('st3').ministry === 'Cafe' && JSON.stringify(prof('st3').ministries) === '["Youth Education|GP Media"]', JSON.stringify([prof('st3').dept, prof('st3').ministry, prof('st3').ministries]));
+  ok('… the move into Campus Leadership waits for an admin (the editor is not one)', prof('st4').dept === 'Skills Training' && prof('st4').cltRequest && prof('st4').cltRequest.ministry === 'Skills Training');
+  ok('… the plan is live and the line says changes now update profiles', !!planNow().live && /is live — changes here update profiles straight away/.test(await page.$eval('#sbLiveLine', e => e.textContent)) && /1 move into Campus Leadership is waiting/.test(await page.$eval('#sbLiveLine', e => e.textContent)));
+  ok('… this phone’s roster follows, and the bell item is gone', await page.evaluate(() => S.roster.find(p => p.id === 'st3').ministry === 'Cafe' && !S.structReady && !notifItems_().some(i => /structure is ready/.test(i.text))));
+  // live: a change on the board is the profile at once
+  await page.click('#sbModeEdit'); await page.waitForSelector('#sbTray');
+  await personSheet(page, 'st6');
+  await page.selectOption('#sbAlsoSel', 'Youth Education|GP Media'); await page.click('#sbAlsoAdd'); await settle(page);
+  ok('once live, a change on the board updates the profile straight away', JSON.stringify(prof('st6').ministries) === '["Youth Education|GP Media"]' && prof('st6').ministry === 'Cafe', JSON.stringify(prof('st6').ministries));
+  await page.click('#sbSheetClose'); await page.waitForTimeout(200);
+  // Team → Structure's list shows a second ministry too
+  await page.evaluate((n) => { S.view = 'team'; S.teamMode = 'org'; S.teamCampus = 'siemreap'; S.structYear = n.year; S.structQ = n.q; S.sbTeam = false; render(); }, THIS);
+  await page.waitForSelector('.orgChart', { timeout: 8000 });
+  const lst = await page.evaluate(() => ({ media: [...document.querySelectorAll('[data-orgmin="Youth Education|GP Media"] .orgPerson')].map(p => p.getAttribute('data-person') + (p.classList.contains('also') ? '~' : '')),
+    cafe: [...document.querySelectorAll('[data-orgmin="Community Service|Cafe"] .orgPerson')].map(p => p.getAttribute('data-person') + (p.classList.contains('also') ? '~' : '')), n: document.querySelector('[data-orgmin="Youth Education|GP Media"] .orgMinN').textContent }));
+  ok('Team → Structure’s list shows them in each ministry, the second marked “also”', JSON.stringify(lst.media.sort()) === '["st3~","st6~"]' && lst.cafe.includes('st3') && lst.cafe.includes('st6') && lst.n === '0 +2' && await page.$('[data-orgmin="Youth Education|GP Media"] .orgAlsoTag') !== null, JSON.stringify(lst));
+  // someone edits their own profile: it differs
+  Object.assign(prof('st3'), { dept: 'Youth Education', ministry: 'GP Media', ministries: [] });
+  await page.evaluate(() => { S.structCache = {}; }); await openNow(page);
+  ok('a profile edited since: “1 profile differs from this structure”, with See and Apply again', await page.$eval('#sbLive', e => e.getAttribute('data-sblive')) === 'drift' && /1 profile differs from this structure/.test(await page.$eval('#sbLiveLine', e => e.textContent)) && await page.$('#sbLiveSee') !== null);
+  await page.click('#sbLiveSee'); await page.waitForSelector('#sbLiveSheet');
+  ok('See lists it', /Bo Chan/.test(await page.$eval('#sbLiveList', e => e.innerText)));
+  await page.click('#sbLiveCancel'); await page.waitForTimeout(200);
+  await page.click('#sbLiveAgain'); await page.waitForSelector('#sbLive[data-sblive="live"]', { timeout: 8000 });
+  ok('Apply again puts the profile back', prof('st3').ministry === 'Cafe' && JSON.stringify(prof('st3').ministries) === '["Youth Education|GP Media"]');
+  // the next quarter: made live early, it says so
+  await page.click('[data-sbq="' + NEXT.year + '|' + NEXT.q + '"]'); await page.waitForSelector('#sbLive[data-sblive="off"]', { timeout: 8000 });
+  await page.click('#sbLiveBtn'); await page.waitForSelector('#sbLiveSheet');
+  ok('a quarter that hasn’t started says profiles would change today', await page.$('#sbLiveEarly') !== null);
+  await page.click('#sbLiveCancel'); await page.waitForTimeout(150);
+  ok('… and nothing was written for it', !planOf().live);
+  // start again from everyone's profile clears live
+  await page.click('[data-sbq="' + THIS.year + '|' + THIS.q + '"]'); await page.waitForSelector('#sbReset', { timeout: 8000 });
+  await page.click('#sbReset'); await page.waitForSelector('#sbLive[data-sblive="off"]', { timeout: 8000 });
+  ok('“Start again from everyone’s profile” still works and the quarter is no longer live', !planNow().live && Object.keys(planNow().place).length === 0 && prof('st3').ministry === 'Cafe');
+  await ctx.close();
+}
+
+/* ---------- My Ministry for someone in two ministries: the row of pills ---------- */
+{
+  Object.assign(prof('st4'), { ministries: ['Community Service|Cafe'] }); delete prof('st4').cltRequest;
+  const { ctx, page } = await open('cy', 320);
+  await page.evaluate(() => { S.view = 'ministry'; render(); }); await page.waitForSelector('#mmMine', { timeout: 8000 });
+  const pills = await page.$$eval('#mmMine [data-mmgo]', bs => bs.map(b => b.getAttribute('data-mmgo') + (b.classList.contains('on') ? '*' : '') + (b.querySelector('small') ? ' (' + b.querySelector('small').textContent + ')' : '')));
+  ok('in two ministries: one slim row names both, the open one marked, the main one said', JSON.stringify(pills) === JSON.stringify(['Skills Training|Hospitality* (main)', 'Community Service|Cafe']), JSON.stringify(pills));
+  ok('Switch ▾ is still there, and the row fits a 320px phone', await page.$('#mmSwitch') !== null && await page.evaluate(() => document.scrollingElement.scrollWidth <= window.innerWidth + 1));
+  await page.click('[data-mmgo="Community Service|Cafe"]'); await page.waitForTimeout(900);
+  ok('a tap opens the other ministry — its name, “One of your ministries”, the pill marked', /Cafe/.test(await page.$eval('.mmBannerName', e => e.textContent)) && /One of your ministries/.test(await page.$eval('.mmBannerNote', e => e.textContent)) && await page.$('[data-mmgo="Community Service|Cafe"].on') !== null);
+  ok('… with that ministry’s own tool tabs (the Cafe’s), and the server lets them in', (await page.$$('[data-cafetab]')).length >= 4 && await page.evaluate(() => !!S.cafe && !S.cafeErr), await page.evaluate(() => String(S.cafeErr || '')));
+  if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/mm-pills.png' });
+  await page.click('#mmSwitch'); await page.waitForSelector('[data-mmpick="Skills Training|Hospitality"]');
+  await page.click('[data-mmpick="Skills Training|Hospitality"]'); await page.waitForTimeout(400);
+  ok('Switch ▾ works as before', /Hospitality/.test(await page.$eval('.mmBannerName', e => e.textContent)) && await page.$('[data-mmgo="Skills Training|Hospitality"].on') !== null);
+  await page.evaluate(() => { S.view = 'profile'; render(); }); await page.waitForSelector('#myPosMin', { timeout: 8000 });
+  ok('Profile → My positions says it plainly: “Main: … · Also: …”', /Main: Hospitality/.test(await page.$eval('#myPosMin', e => e.innerText)) && /Also: Cafe/.test(await page.$eval('#myPosMin', e => e.innerText)), await page.$eval('#myPosMin', e => e.innerText));
+  await ctx.close();
+  const one = await open('pich');
+  await one.page.evaluate(() => { S.view = 'ministry'; render(); }); await one.page.waitForSelector('#mmBanner');
+  ok('someone in one ministry has no such row', !(await one.page.$('#mmMine')));
+  await one.ctx.close();
 }
 
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));

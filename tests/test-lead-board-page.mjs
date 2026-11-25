@@ -90,7 +90,7 @@ console.log('=== the OKRs: a tile on the dashboard, a tab of their own (Oct 2026
 const { ctx, page, errors, sent, board } = await open(DEE);
 ok('My Ministry opens on Campus Leadership, on the Board tab kept from last time', /Campus Leadership/.test(await page.$eval('#mmBanner', e => e.textContent)) && !!(await page.$('.lwSeg [data-lwtab="board"].on')));
 ok('no weekly numbers: no week strip, no number boxes', !(await page.$('#mmWeekCard')) && !(await page.$('#kpiInputBtn')) && !(await page.$('.wkStrip')));
-ok('the Board tab is Board, Tuesday and Notes — the OKRs aren\'t in it twice', (await page.$$eval('[data-leadtab]', b => b.map(x => x.getAttribute('data-leadtab')).join())) === 'board,tues,notes');
+ok('the Board tab is Meeting, Board, Tuesday and Notes — the OKRs aren\'t in it twice — and it still opens on the board', (await page.$$eval('[data-leadtab]', b => b.map(x => x.getAttribute('data-leadtab')).join())) === 'meet,board,tues,notes' && !!(await page.$('[data-leadtab="board"].on')));
 await page.click('.lwSeg [data-lwtab="base"]'); await page.waitForTimeout(500);
 ok('the dashboard\'s OKR tile: this quarter\'s progress, 25%', /25%/.test(await page.$eval('#lbOkrTile', e => e.textContent)));
 await page.click('#lbOkrTile'); await page.waitForTimeout(500);

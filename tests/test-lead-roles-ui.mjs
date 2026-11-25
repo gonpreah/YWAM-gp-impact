@@ -108,7 +108,7 @@ const firstKinds = async (p) => { await p.click('[data-lwtab="week"]'); await p.
   await page.click('#lbOkrTile'); await page.waitForTimeout(400);
   ok('tapping OKRs opens the OKRs tab — the OKRs page itself', (await tabOn(page)) === 'okrs' && /OKRs/.test(await page.$eval('#main', (e) => e.innerText)));
   await page.click('[data-lwtab="board"]'); await page.waitForTimeout(400);
-  ok('the Board tab: Board, Tuesday, Notes — OKRs aren’t in it twice', (await page.$$eval('[data-leadtab]', (b) => b.map((x) => x.getAttribute('data-leadtab')).join())) === 'board,tues,notes');
+  ok('the Board tab: Meeting, Board, Tuesday, Notes — OKRs aren’t in it twice', (await page.$$eval('[data-leadtab]', (b) => b.map((x) => x.getAttribute('data-leadtab')).join())) === 'meet,board,tues,notes');
   await page.click('[data-lwtab="base"]'); await page.waitForTimeout(400);
   await page.screenshot({ path: OUT + '/1-international.png' });
   /* Who leads what: ＋ by a ministry opens a people search; a pick makes them its leader */

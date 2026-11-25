@@ -892,6 +892,7 @@ function applyBoot(d, fromCache){
   S.hrDue = (d.hrDue===undefined) ? null : d.hrDue;
   S.backup = d.backup || null;   // admins only: the nightly backup's last run
   S.numbers = d.numbers || null;
+  S.structReady = d.structReady || null;   // Campus Leadership: this quarter's structure is arranged and not live yet (23-structure.js)
   S.fast = d.fast || null;   // the campus's fast, running or coming (25-intercession.js): the bell and ☰
   S.hospNews = d.hospNews || null;   // SR Hospitality: a team's new dates, someone who left (06-numbers-contract.js hospChangesHtml_)
   S.pulse = {}; S.staffDebt = null;
@@ -987,6 +988,7 @@ function logout(){
   S.mmPeriod='quarter'; S.teamTrips={}; S.teamLoading={}; S.teamError={}; S.teamForm=null;
   S.hosp=null; S.hospLoading=false; S.hospError=''; S.hospForm=null; S.hospBedPick=null; S.hospRoom=null; S.hospBld=null; S.hospMove=null;
   S.lead=null; S.leadErr=''; S.leadForm=null; S.leadLoading=false; S.leadEdit=null;
+  S.meet=null; S.meetErr=''; S.meetLoading=false; S.meetBusy=false; S.meetPend=null; S.mt=null;   // the leadership meeting (27-meeting.js)
   S.worship=null; S.ws=null; S.sched=null; S.schedError=''; S.schedData=null; S.schedEdit=false; S.schedPick=null; S.schedDirty=false;
   S.hrStaff=null; S.hrLoading=false; S.hrError=''; S.hrSub='home'; S.hrPersonId=null; S.hrSearch=''; S.hrContractForm=null; S.hrArchiveDraft=null; S.hrDue=null; S.hrFollowUps=null; S.hrTab='staff';
   S.cands=null; S.candsLoading=false; S.candsError=''; S.candForm=null; S.candPersonId=null; S.candNoteDraft='';
@@ -1292,6 +1294,7 @@ function renderNotifPanel(){
   document.querySelectorAll('#notifRoot [data-gohealth]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='health'; if(b.getAttribute('data-gohealth')==='open'){ S.healthWeek=thisWeek(); S.weekForm=thisWeek(); } render(); };
   });
+  if(typeof bindGoStruct_==='function') bindGoStruct_('#notifRoot [data-gostruct]');   // this quarter's structure, ready to make live (23-structure.js)
   if(typeof bindGoFast_==='function') bindGoFast_('#notifRoot [data-gofast]');   // the fast (25-intercession.js)
   document.querySelectorAll('#notifRoot [data-jumpgoals]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='week'; render(); };
