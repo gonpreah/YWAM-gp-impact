@@ -493,7 +493,8 @@ button.tick.done{ background:var(--good); }
 .mnPickBtn.on .chev{ transform:rotate(180deg); }
 .mnGrp{ margin-top:10px; }
 .mnGrpHead{ display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13.5px; }
-.mnGrpHead b{ flex:1; }
+.mnGrpName{ flex:1; display:flex; align-items:center; gap:8px; background:none; border:0; padding:4px 0; font:inherit; color:var(--ink); text-align:left; cursor:pointer; }
+.mnGrpName.on b{ color:var(--accent); }
 .mnOtherHead{ margin-top:14px; padding-top:10px; border-top:1px solid var(--line); font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; }
 .mnShare{ margin-top:12px; grid-template-columns:repeat(2,minmax(0,1fr)); }
 .mnIn{ color:var(--good); }
@@ -2463,7 +2464,7 @@ function mnPickerHtml_(sel){ var M=mnS_();
   h+='<div class="ledPanel mnPanel" id="mnPanel"><div class="ledPanelHead"><b>Which allocations?</b><button class="btn" id="mnPickDone">Done</button></div>';
   mnGroups_().forEach(function(g, gi){ var ks=g.items.map(function(it){ return g.id+'|'+it[0]; }), all=ks.every(function(k){ return sel.indexOf(k)>=0; });
     if(gi===1) h+='<div class="mnOtherHead">Other allocations</div>';
-    h+='<div class="mnGrp"><div class="mnGrpHead"><span class="sw" style="background:var('+g.c+')"></span><b>'+esc(g.name)+'</b>'+(ks.length>1?'<button class="histLink" data-mngrp="'+g.id+'">'+(all?'Only one':'All '+ks.length)+'</button>':'')+'</div><div class="ledChips">'+
+    h+='<div class="mnGrp"><div class="mnGrpHead"><button class="mnGrpName'+(all?' on':'')+'" data-mngrp="'+g.id+'" aria-pressed="'+all+'" title="'+(all&&ks.length>1?'Only one':'Pick all of '+esc(g.name))+'"><span class="sw" style="background:var('+g.c+')"></span><b>'+esc(g.name)+'</b></button>'+(ks.length>1?'<button class="histLink" data-mngrp="'+g.id+'">'+(all?'Only one':'All '+ks.length)+'</button>':'')+'</div><div class="ledChips">'+
       ks.map(function(k){ return '<button class="ledChip'+(sel.indexOf(k)>=0?' on':'')+'" data-mnk="'+esc(k)+'">'+esc(mnName_(k))+'</button>'; }).join('')+'</div></div>'; });
   return h+'<p class="hint" style="margin:8px 0 0">Tap to add one or take it away — everything picked is added together. “All” picks a whole category.</p></div></div>'; }
 function minsHtml_(){ var M=mnS_(), P=mnPeriod_(), sel=mnSel_(), labs=sel.map(fundLabel_), live=isLive_(), days=reportDays_(), L=ledgerLines_();
