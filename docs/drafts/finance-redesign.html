@@ -489,6 +489,7 @@ button.tick.done{ background:var(--good); }
 .mnPickBtn b{ font-size:17px; }
 .mnPickBtn.on .chev{ transform:rotate(180deg); }
 .mnGrp{ margin-top:10px; }
+.mnPanelBtns{ display:flex; gap:6px; }
 .mnGrpHead{ display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13.5px; }
 .mnGrpName{ flex:1; display:flex; align-items:center; gap:8px; background:none; border:0; padding:4px 0; font:inherit; color:var(--ink); text-align:left; cursor:pointer; }
 .mnGrpName.on b{ color:var(--accent); }
@@ -2428,10 +2429,10 @@ function mnRange_(P){ return P.from ? (P.from===P.to ? date(P.from) : date(P.fro
 function mnGroups_(){ var g=ALLOC.slice(), i=g.map(function(a){ return a.id; }).indexOf('min'); if(i>0){ var m=g.splice(i,1)[0]; g.unshift(m); } return g; }
 function mnSel_(){ var M=mnS_(), keys=fundList_().map(function(f){ return f.k; });
   var sel=(M.sel||[]).filter(function(k){ return keys.indexOf(k)>=0; });
-  if(!sel.length){ var g=mnGroups_()[0]; sel=g && g.items.length ? [g.id+'|'+g.items[0][0]] : keys.slice(0,1); }
+  if(!sel.length && !M.cleared){ var g=mnGroups_()[0]; sel=g && g.items.length ? [g.id+'|'+g.items[0][0]] : keys.slice(0,1); }
   return sel; }
 function mnName_(k){ var f=fundOf_(k); return f ? f.name : fundNm_(k); }
-function mnSelName_(sel){ if(sel.length===1) return mnName_(sel[0]);
+function mnSelName_(sel){ if(!sel.length) return 'Nothing picked'; if(sel.length===1) return mnName_(sel[0]);
   var whole=ALLOC.filter(function(g){ return g.items.length>1 && g.items.every(function(it){ return sel.indexOf(g.id+'|'+it[0])>=0; }) && sel.length===g.items.length; })[0];
   return whole ? 'All of '+whole.name : sel.length+' allocations'; }
 /* income and expenses of some categories between two days, from the breakdown */
@@ -2458,12 +2459,12 @@ function mnKinds_(by, total, cls){ var ks=Object.keys(by).filter(function(k){ re
 function mnPickerHtml_(sel){ var M=mnS_();
   var h='<div class="mnPick"><button class="mnPickBtn'+(M.pick?' on':'')+'" id="mnPickBtn" aria-expanded="'+!!M.pick+'"><span><small>Showing</small><b>'+esc(mnSelName_(sel))+'</b></span><span class="chev">▾</span></button>';
   if(!M.pick) return h+'</div>';
-  h+='<div class="ledPanel mnPanel" id="mnPanel"><div class="ledPanelHead"><b>Which allocations?</b><button class="btn" id="mnPickDone">Done</button></div>';
+  h+='<div class="ledPanel mnPanel" id="mnPanel"><div class="ledPanelHead"><b>Which allocations?</b><span class="mnPanelBtns">'+(sel.length>1?'<button class="btn ghost" id="mnClear">Clear all</button>':'')+'<button class="btn" id="mnPickDone">Done</button></span></div>';
   mnGroups_().forEach(function(g, gi){ var ks=g.items.map(function(it){ return g.id+'|'+it[0]; }), all=ks.every(function(k){ return sel.indexOf(k)>=0; });
     if(gi===1) h+='<div class="mnOtherHead">Other allocations</div>';
     h+='<div class="mnGrp"><div class="mnGrpHead"><button class="mnGrpName'+(all?' on':'')+'" data-mngrp="'+g.id+'" aria-pressed="'+all+'" title="'+(all&&ks.length>1?'Only one':'Pick all of '+esc(g.name))+'"><span class="sw" style="background:var('+g.c+')"></span><b>'+esc(g.name)+'</b></button>'+(ks.length>1?'<button class="histLink" data-mngrp="'+g.id+'">'+(all?'Only one':'All '+ks.length)+'</button>':'')+'</div><div class="ledChips">'+
       ks.map(function(k){ return '<button class="ledChip'+(sel.indexOf(k)>=0?' on':'')+'" data-mnk="'+esc(k)+'">'+esc(mnName_(k))+'</button>'; }).join('')+'</div></div>'; });
-  return h+'<p class="hint" style="margin:8px 0 0">Tap to add one or take it away — everything picked is added together. “All” picks a whole category.</p></div></div>'; }
+  return h+'<p class="hint" style="margin:8px 0 0">Tap to add one or take it away — everything picked is added together. A category’s name or “All” picks all of it; Clear all starts again.</p></div></div>'; }
 function minsHtml_(){ var M=mnS_(), P=mnPeriod_(), sel=mnSel_(), labs=sel.map(fundLabel_), live=isLive_(), days=reportDays_(), L=ledgerLines_();
   /* the same ✅ Approved / 📡 Live switch as the Dashboard (one setting, S.dashMode): Approved counts only
      lines in an approved report — the fully checked picture; Live every line entered — the newest */
@@ -2475,6 +2476,7 @@ function minsHtml_(){ var M=mnS_(), P=mnPeriod_(), sel=mnSel_(), labs=sel.map(fu
   h+='<section class="sec mnTop"><div class="mnPers" role="tablist">'+MN_PERIODS.map(function(p){ return '<button class="'+(M.per===p[0]?'on':'')+'" data-mnper="'+p[0]+'">'+p[1]+'</button>'; }).join('')+'</div>';
   if(M.per==='custom') h+='<div class="mnCustom"><label>From <input type="date" id="mnFrom" value="'+P.from+'" max="'+TODAY+'"></label><label>To <input type="date" id="mnTo" value="'+P.to+'" max="'+TODAY+'"></label></div>';
   h+='<p class="mnRange">📅 '+mnRange_(P)+'</p>'+mnPickerHtml_(sel)+'</section>';
+  if(!sel.length) return h+'<section class="sec"><div class="emptyApproved"><b>Nothing picked.</b><br>Choose one or more allocations above to see their balance and profit and loss.</div></section>';
   /* the balance: what of the total liquid assets is theirs, on the period's last day */
   var bal=mnBal_(L, labs, P.to), liq=ledgerLiquid_(L, P.to).total, before=P.from ? mnBal_(L, labs, mnAdd_(P.from,-1)) : 0, moved=Math.round((bal-before)*100)/100;
   var whole=Math.floor(Math.abs(bal)), cents=Math.round((Math.abs(bal)-whole)*100);
@@ -2498,14 +2500,15 @@ function minsHtml_(){ var M=mnS_(), P=mnPeriod_(), sel=mnSel_(), labs=sel.map(fu
   if(sel.length>1) h+='<section class="sec" id="mnEach"><div class="secHead"><h2>Each one</h2></div><table class="mnEach"><tr><th>Allocation</th><th class="r">Balance</th><th class="r">Income</th><th class="r">Expenses</th></tr>'+
     sel.map(function(k, i){ var p1=mnPL_(L, [labs[i]], P.from, P.to); return '<tr><td>'+esc(mnName_(k))+'</td><td class="r">'+mnSg_(mnBal_(L, [labs[i]], P.to))+'</td><td class="r">'+money(p1.inc,true)+'</td><td class="r">'+money(p1.exp,true)+'</td></tr>'; }).join('')+'</table></section>';
   return h+'<section class="sec"><p class="hint" style="margin:0">'+(live ? '📡 Everything entered counts here, approved or not' : '✅ Only lines in an approved report count here')+' — the same lines as the Detailed breakdown on the Input tab.</p></section>'; }
-document.addEventListener('click', function(e){ var M=mnS_(), t=e.target.closest && e.target.closest('[data-mnper],[data-mnk],[data-mngrp],#mnPickBtn,#mnPickDone,#mnList'); if(!t) return;
+document.addEventListener('click', function(e){ var M=mnS_(), t=e.target.closest && e.target.closest('[data-mnper],[data-mnk],[data-mngrp],#mnPickBtn,#mnPickDone,#mnList,#mnClear'); if(!t) return;
   if(t.dataset.mnper){ M.per=t.dataset.mnper; if(M.per==='custom' && !M.from){ M.from=mnMonthStart_(TODAY); M.to=TODAY; } }
   else if(t.id==='mnPickBtn') M.pick=!M.pick;
   else if(t.id==='mnPickDone') M.pick=false;
   else if(t.id==='mnList') M.list=!M.list;
-  else if(t.dataset.mnk){ var k=t.dataset.mnk, sel=mnSel_().slice(), i=sel.indexOf(k); if(i>=0){ if(sel.length>1) sel.splice(i,1); } else sel.push(k); M.sel=sel; }
+  else if(t.dataset.mnk){ var k=t.dataset.mnk, sel=mnSel_().slice(), i=sel.indexOf(k); if(i>=0) sel.splice(i,1); else sel.push(k); M.sel=sel; M.cleared=!sel.length; }
   else if(t.dataset.mngrp){ var g=ALLOC.filter(function(a){ return a.id===t.dataset.mngrp; })[0], ks=g.items.map(function(it){ return g.id+'|'+it[0]; }), cur=mnSel_();
-    M.sel = ks.every(function(k){ return cur.indexOf(k)>=0; }) && cur.length===ks.length ? [ks[0]] : ks; }
+    M.sel = ks.every(function(k){ return cur.indexOf(k)>=0; }) && cur.length===ks.length ? [ks[0]] : ks; M.cleared=false; }
+  else if(t.id==='mnClear'){ M.sel=[]; M.cleared=true; }
   render(); });
 document.addEventListener('change', function(e){ if(e.target.id!=='mnFrom' && e.target.id!=='mnTo') return; var M=mnS_(); if(!e.target.value) return;
   M[e.target.id==='mnFrom'?'from':'to']=e.target.value; render(); });
