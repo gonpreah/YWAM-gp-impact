@@ -64,7 +64,7 @@ const browser = await chromium.launch({ executablePath: CHROMIUM });
 const errors = [];
 async function open(user, opts) {
   opts = opts || {};
-  const ctx = await browser.newContext({ ...devices['iPhone 13'], timezoneId: 'Asia/Phnom_Penh' });
+  const ctx = await browser.newContext(opts.vp ? { viewport: opts.vp, timezoneId: 'Asia/Phnom_Penh' } : { ...devices['iPhone 13'], timezoneId: 'Asia/Phnom_Penh' });
   const page = await ctx.newPage();
   if (opts.at) await page.clock.setFixedTime(opts.at);
   page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
@@ -110,6 +110,39 @@ const fr = async page => { const h = await page.$('#fin2Frame'); return h.conten
   const sh = await page.evaluate(() => { const fe = document.getElementById('fin2Frame'), s = fe.contentDocument.getElementById('sheet'), r = s.getBoundingClientRect(), fr = fe.getBoundingClientRect(); return { top: Math.round(fr.top + r.top), bottom: Math.round(fr.top + r.bottom), vh: innerHeight }; });
   ok('a pop-up sheet opens on the screen', sh.top >= 0 && sh.bottom <= sh.vh + 2 && sh.bottom > sh.vh - 160, JSON.stringify(sh));
   await page.screenshot({ path: '/tmp/fin2-frame.png' }).catch(() => {});
+  ok('a pop-up dims the app around the frame too', await page.evaluate(() => !!document.getElementById('fin2Dim') && document.getElementById('fin2Frame').classList.contains('fin2Up')));
+  const clip = await page.evaluate(() => { const fe = document.getElementById('fin2Frame'), r = fe.getBoundingClientRect(), nav = document.querySelector('nav.bottom').getBoundingClientRect(), m = /inset\((\d+)px 0px (\d+)px/.exec(fe.style.clipPath) || []; return { bottom: Math.round(r.bottom - (+m[2] || 0)), navTop: Math.round(nav.top) }; });
+  ok('… and on a phone the raised frame stops at the bottom bar', clip.bottom <= clip.navTop + 1, JSON.stringify(clip));
+  await page.click('#fin2Dim', { position: { x: 60, y: (await page.evaluate(() => innerHeight)) - 30 } }); await page.waitForTimeout(400);
+  ok('a tap on the dim closes the pop-up', await f.evaluate(() => !document.body.classList.contains('sheetOn')) && await page.evaluate(() => !document.getElementById('fin2Dim')));
+  await ctx.close();
+}
+/* a computer: the app's bar is a rail down the left (teams.css, from 900px) — it covers none of the bottom.
+   Counting its height made the visible part 0px tall: pop-ups had no room, the breakdown showed one row. */
+for (const vp of [{ width: 1440, height: 900 }, { width: 1024, height: 768 }]) {
+  const { ctx, page } = await open('finance', { vp });
+  await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(1500);
+  if (!(await page.$('#fin2Frame'))) { await page.click('#mmSwitch').catch(() => {}); await page.click('[data-mmpick="Skills Training|Finances"]').catch(() => {}); await page.waitForTimeout(1200); }
+  await page.click('.mmTabs [data-fintab="finput"]'); await page.waitForTimeout(2500);
+  const f = await fr(page); await f.waitForSelector('#inBalances', { timeout: 10000 }); await page.waitForTimeout(600);
+  const w = vp.width + '×' + vp.height;
+  const v = await f.evaluate(() => { const st = document.documentElement.style; return { vh: parseFloat(st.getPropertyValue('--vh')), sh: parseFloat(st.getPropertyValue('--sh')) }; });
+  ok(w + ': the page knows how much of it is on screen', v.vh > 300 && v.sh >= vp.height - 80, JSON.stringify(v));
+  const lw = await f.evaluate(() => { const d = document.createElement('div'); d.className = 'ledWrap'; document.querySelector('main').appendChild(d); const m = parseFloat(getComputedStyle(d).maxHeight); d.remove(); return m; });
+  ok(w + ': the breakdown’s box is most of the screen tall, not one row', lw > vp.height * 0.6, String(lw));
+  ok(w + ': the page uses the width (not phone width)', await f.evaluate(() => document.querySelector('main').getBoundingClientRect().width > 700));
+  await page.mouse.move(vp.width / 2, vp.height - 200); await page.mouse.wheel(0, 700); await page.waitForTimeout(500);
+  ok(w + ': the mouse wheel over the finance page scrolls the app', await page.evaluate(() => scrollY > 500));
+  await f.evaluate(() => ihOpen_()); await page.waitForTimeout(500);
+  const sh = await page.evaluate(() => { const fe = document.getElementById('fin2Frame'), s = fe.contentDocument.getElementById('sheet'), r = s.getBoundingClientRect(), fr = fe.getBoundingClientRect(); return { top: Math.round(fr.top + r.top), bottom: Math.round(fr.top + r.bottom), vh: innerHeight }; });
+  ok(w + ': a pop-up opens at the bottom of the screen', sh.top > 0 && sh.bottom <= sh.vh + 2 && sh.bottom > sh.vh - 40, JSON.stringify(sh));
+  ok(w + ': … with the whole screen dimmed, not only the frame', await page.evaluate(() => { const d = document.getElementById('fin2Dim'); if (!d) return false; const r = d.getBoundingClientRect(); return r.width >= innerWidth - 1 && r.height >= innerHeight - 1; }));
+  await f.evaluate(() => closeSheet()); await page.waitForTimeout(300);
+  ok(w + ': the dim goes when the pop-up closes', await page.evaluate(() => !document.getElementById('fin2Dim')));
+  await f.evaluate(() => { FIN.rev = FIN.rev || 1; finStatus_(); });
+  const s0 = await f.evaluate(() => document.getElementById('finSave').textContent);
+  await page.waitForTimeout(2900);
+  ok(w + ': “Saved” shows for a moment, then goes', s0 === '✓ Saved' && await f.evaluate(() => document.getElementById('finSave').textContent === ''), s0);
   await ctx.close();
 }
 {

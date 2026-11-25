@@ -294,6 +294,12 @@ Balances for 20 Nov saved: ABA $10,000 · US $0 · Cash $1,000 → total $11,000
 - **Inside My Ministry it is one page with the app**: the frame is as tall as the page, so the app's tabs and
   the finance page scroll together; the "Reports as of" bar still sticks to the top of the screen and pop-ups open
   on screen.
+  - **Phone and computer alike** (25 Nov 2026): on a computer the app's bar is a rail down the left, so it covers
+    none of the bottom — the app only counts a bar that sits along the bottom (`fin2NavH_`). The app also sends the
+    screen's height (`sh` → `--sh`), which sizes the breakdown and grid boxes (not the part of the page showing,
+    which changes as you scroll). A pop-up open: the app dims the rest of its screen too (`{gpFin:'sheet'}` →
+    `#fin2Dim`; a tap there closes it), raising the frame and cutting it to the part on screen so it never covers the
+    phone's bottom bar. From 780px wide the page is 800px wide instead of phone width. "✓ Saved" shows for 2½ s.
 - Real reports and names never go in the repository.
 
 ## 7. Agreed, not built yet (23 Nov 2026)

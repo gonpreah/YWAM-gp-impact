@@ -3069,7 +3069,9 @@ details.dtsPick input.gpSelBox { margin:6px 0 4px; }
 .mcItem.strength { border-left:3px solid var(--good); padding-left:8px; }
 .mcTalk { margin-top:8px; padding:8px 10px; border-radius:10px; background:var(--accentSoft); font-size:13.5px; color:var(--ink); }
 /* the finance tool inside My Ministry (teams/09-finance.js fin2FrameHtml_) */
-.fin2Frame{ display:block; width:100%; height:70vh; border:0; background:var(--bg); overflow:hidden; }   /* as tall as the page inside it — one page, one scroll (fin2FrameSize_) */
+.fin2Frame{ display:block; width:100%; height:70vh; border:0; background:var(--bg); overflow:hidden; }
+.fin2Dim{ position:fixed; inset:0; background:rgba(23,21,15,.45); z-index:200; }
+.fin2Frame.fin2Up{ position:relative; z-index:201; }   /* as tall as the page inside it — one page, one scroll (fin2FrameSize_) */
 
 /* ---- the Library, read together (teams/18-library-plus.js, Nov 2026) ---- */
 .libFind { margin:10px 0; }
