@@ -395,7 +395,10 @@ function leadScopeDepts_(){
   return all.indexOf(S.me.ministry)>-1 ? [S.me.ministry] : all;
 }
 function leadIsDirector_(){ return !!(S.me && (S.me.ministry==='Campus Director' || S.me.isAdmin)); }
-function leadTuesdays_(n){ var d=new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()+((2-d.getDay()+7)%7)); var out=[]; for(var i=0;i<n;i++){ out.push(calIso_(d)); d.setDate(d.getDate()+7); } return out; }
+/* the meeting's day: Tuesday unless the team changed it (Board → Meeting → Meeting day and minutes) */
+function leadMeetDay_(){ var v=S.lead && S.lead.meetDay, n=Number(v); return (v!=null && v!=='' && n>=0 && n<=6) ? n : 2; }
+function leadDayDate_(date){ var day=leadMeetDay_(); return day===2 ? gpT('Tuesday {date}',{date:hospDate_(date)}) : t(['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][day])+' '+hospDate_(date); }
+function leadTuesdays_(n){ var d=new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()+((leadMeetDay_()-d.getDay()+7)%7)); var out=[]; for(var i=0;i<n;i++){ out.push(calIso_(d)); d.setDate(d.getDate()+7); } return out; }
 function leadTuesFor_(date){ return ((S.lead && S.lead.tues) || []).filter(function(x){ return x.date===date; })[0] || null; }
 function leadTuesWho_(p){ return p ? (p.id ? staffName_(p.id) : p.name) : ''; }
 function leadBaseHtml_(pulse){
@@ -432,7 +435,7 @@ function leadBaseHtml_(pulse){
     board:'<button class="mmTile lbTileBtn lbNav" data-lwtab="board" id="lbBoardTile"><div class="mmTileName">📋 '+esc(t('Board'))+'</div><div class="mmTileNum">'+(openCards===null ? '…' : openCards)+'</div><div class="mmTileSub">'+esc(t('open cards'))+'</div></button>',
     leaders:'<a class="mmTile" href="#lbLeaders"><div class="mmTileName">👑 '+esc(t('Clear leaders'))+'</div><div class="mmTileNum">'+(rows.length-none.length)+' / '+rows.length+'</div></a>',
     numbers:'<a class="mmTile" href="#lbPulse"><div class="mmTileName">📊 '+esc(t('Numbers in'))+'</div><div class="mmTileNum">'+(pulseIn && ofN ? inN+' / '+ofN : '…')+'</div></a>',
-    tues:'<a class="mmTile" href="#lbTues"><div class="mmTileName">🎤 '+esc(gpT('Tuesday {date}',{date:hospDate_(next)}))+'</div><div class="mmTileNum lbTileWho">'+esc(leadTuesWho_(tr && tr.facilitator) || '—')+'</div></a>',
+    tues:'<a class="mmTile" href="#lbTues"><div class="mmTileName">🎤 '+esc(leadDayDate_(next))+'</div><div class="mmTileNum lbTileWho">'+esc(leadTuesWho_(tr && tr.facilitator) || '—')+'</div></a>',
     money:'<button class="mmTile lbTileBtn" data-lwtab="money"><div class="mmTileName">💵 '+esc(t('Money ahead'))+'</div><div class="mmTileNum lbTileWho'+(pj && pj.short?' lbNone':'')+'">'+esc(!pj ? '…' : pj.short ? gpT('short in {month}',{month:lmMonthName_(pj.short)}) : lmMoney_(pj.end))+'</div></button>',
     partners:'<button class="mmTile lbTileBtn" data-lwtab="week"><div class="mmTileName">🙏 '+esc(t('Partners to reach'))+'</div><div class="mmTileNum'+(due?' lbNone':'')+'">'+(due===null ? '…' : L.partners.length ? due+' / '+L.partners.length : '—')+'</div></button>',
     plants:'<'+(V?'div':'button')+' class="mmTile lbTileBtn"'+(V?'':' data-lwtab="week"')+'><div class="mmTileName">🌱 '+esc(t('Base Plants in Planning'))+'</div><div class="mmTileNum">'+(plans===null ? (S.lwErr ? '—' : '…') : plans)+'</div></'+(V?'div':'button')+'>',
@@ -440,6 +443,7 @@ function leadBaseHtml_(pulse){
     oneonones:'<a class="mmTile" href="#lbPulse"><div class="mmTileName">🤝 '+esc(t('1-on-1s this month'))+'</div><div class="mmTileNum">'+(pulseIn ? ones : '…')+'</div></a>'
   };
   if(tiles.length) h+='<div class="mmGrid lbGlance">'+tiles.map(function(k){ return TILE[k]; }).join('')+'</div>';
+  if(!V && typeof lmOverviewHtml_==='function') h+=lmOverviewHtml_();   // the way in to the weekly leadership meeting (teams/27-meeting.js)
   /* Clear leaders: the ones without, a line per department; who leads what folded. */
   h+='<div class="card" id="lbLeaders"><div class="goalCardTitle" style="margin-bottom:6px">👑 '+esc(t('Clear leaders'))+'</div>'+
     '<p class="lbBig"><b>'+(rows.length-none.length)+' / '+rows.length+'</b> '+esc(t('ministries have a clear leader'))+'</p>';
@@ -459,13 +463,13 @@ function leadBaseHtml_(pulse){
           onPick:function(id){ lbSetLeader_(r.dept, r.min, id, true); }, onRemove:function(id){ lbSetLeader_(r.dept, r.min, id, false); } })+'</div>' : ''); }).join('')+
     '<p class="hint" style="margin:6px 0 0">'+esc(canSet ? t('Tap ＋ by a ministry to name its leader. It is the same leader as on their profile in Admin.') : t('A leader is set on each person’s profile by an admin.'))+'</p></details></div>';
   /* Tuesday morning. */
-  h+='<div class="card" id="lbTues"><div class="goalCardTitle" style="margin-bottom:6px">🎤 '+esc(gpT('Tuesday {date}',{date:hospDate_(next)}))+'</div>';
+  h+='<div class="card" id="lbTues"><div class="goalCardTitle" style="margin-bottom:6px">🎤 '+esc(leadDayDate_(next))+'</div>';
   if(!S.lead) h+='<p class="sub" style="margin:0">'+esc(S.leadErr || t('Loading…'))+'</p>';
   else {
     h+='<div class="lbWho"><span>'+esc(t('Facilitating'))+'</span><b>'+esc(leadTuesWho_(tr && tr.facilitator) || t('Nobody yet'))+'</b></div>'+
       '<div class="lbWho"><span>'+esc(t('Translating'))+'</span><b>'+esc(leadTuesWho_(tr && tr.translator) || t('Nobody yet'))+'</b></div>';
     h+=leadTueListsHtml_(tr);
-    h+='<button class="btn ghost" id="lbGoTues" style="margin-top:8px">'+esc(t('Plan the Tuesdays'))+'</button>';
+    h+='<button class="btn ghost" id="lbGoTues" style="margin-top:8px">'+esc(leadMeetDay_()===2 ? t('Plan the Tuesdays') : t('Plan who leads'))+'</button>';
   }
   h+='</div>';
   /* Each department's pulse last: one open for an overseer, folded for the Director. */
@@ -489,11 +493,11 @@ function leadTueListsHtml_(r){
 function leadTuesHtml_(){
   var h='<div id="leadTues">';
   if(!S.lead) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.leadErr || t('Loading…'))+'</p></div></div>';
-  h+='<p class="sub">'+esc(t('The Tuesday morning meeting: who facilitates, who translates, the topics to hit and the announcements.'))+'</p>';
+  h+='<p class="sub">'+esc(leadMeetDay_()===2 ? t('The Tuesday morning meeting: who facilitates, who translates, the topics to hit and the announcements.') : t('The weekly meeting: who facilitates, who translates, the topics to hit and the announcements.'))+'</p>';
   leadTuesdays_(8).forEach(function(date, i){
     var r=leadTuesFor_(date), open=S.ltOpen===date, fac=leadTuesWho_(r && r.facilitator), tr=leadTuesWho_(r && r.translator);
     h+='<div class="card leadTue'+(i===0?' next':'')+'"><button class="leadTueHead" data-ltopen="'+date+'" aria-expanded="'+open+'">'+
-      '<span class="leadTueDate">'+esc(gpT('Tuesday {date}',{date:hospDate_(date)}))+(i===0?' <span class="leadTueNext">'+esc(t('next'))+'</span>':'')+'</span>'+
+      '<span class="leadTueDate">'+esc(leadDayDate_(date))+(i===0?' <span class="leadTueNext">'+esc(t('next'))+'</span>':'')+'</span>'+
       '<span class="leadTueWho">🎤 '+esc(fac || '—')+' · 🗣️ '+esc(tr || '—')+(r && r.topics.length ? ' · 📌 '+r.topics.length : '')+(r && (r.announcements||[]).length ? ' · 📣 '+r.announcements.length : '')+'</span></button>';
     if(open) h+=leadTueFormHtml_(date, r);
     else h+=leadTueListsHtml_(r);

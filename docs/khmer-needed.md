@@ -6172,6 +6172,181 @@ The finance tool itself (public/finance.html) is English only for now — its Kh
 |---|---|
 | Input | បញ្ចូល |
 
+## 142. The leadership meeting (My Ministry → Campus Leadership → Board → Meeting, Nov 2026)
+Campus Leadership's weekly meeting, run one part a screen with a clock: Check-in · Scorecard · Rocks · Headlines · To-dos · Issues · Wrap up. "Rocks" (ថ្មធំ) are the quarter's three to seven priorities; the "scorecard" (តារាងលេខ) is five to fifteen weekly numbers; "issues" (បញ្ហា) are anything in the way; a "to-do" is a seven-day action. The tab labels and the part names have little room. The two lines under each part's title are coaching — what to do (✓) and what not to do (✗) — and the "Rules of thumb" are training for the team, so their tone matters: plain and kind, not bossy. The line about “Level 10” is fine print about a trademark and must keep “Level 10” and “EOS Worldwide” in Latin letters.
+
+| English | Khmer (draft) |
+|---|---|
+| Meeting | កិច្ចប្រជុំ |
+| Leadership meeting | កិច្ចប្រជុំថ្នាក់ដឹកនាំ |
+| Who leads each week | អ្នកដឹកនាំកិច្ចប្រជុំរៀងរាល់សប្តាហ៍ |
+| Plan who leads | រៀបចំថាអ្នកណាដឹកនាំ |
+| The weekly meeting: who facilitates, who translates, the topics to hit and the announcements. | កិច្ចប្រជុំប្រចាំសប្តាហ៍៖ អ្នកណាដឹកនាំ អ្នកណាបកប្រែ ប្រធានបទដែលត្រូវនិយាយ និងសេចក្តីប្រកាស។ |
+| The leadership meeting is for Campus Leadership. | កិច្ចប្រជុំថ្នាក់ដឹកនាំគឺសម្រាប់ថ្នាក់ដឹកនាំសាខា។ |
+| Next meeting · {day} {date} | កិច្ចប្រជុំបន្ទាប់ · {day} {date} |
+| Nobody is down to lead yet | មិនទាន់មានអ្នកដឹកនាំនៅឡើយ |
+| {n} minutes · seven parts · one screen each, with a clock | {n} នាទី · ប្រាំពីរផ្នែក · មួយផ្នែកមួយអេក្រង់ មាននាឡិកា |
+| Start the meeting | ចាប់ផ្តើមកិច្ចប្រជុំ |
+| Meeting day and minutes | ថ្ងៃប្រជុំ និងចំនួននាទី |
+| Something in the way? Add it to the issues list | មានអ្វីរាំងផ្លូវ? បន្ថែមទៅក្នុងបញ្ជីបញ្ហា |
+| An issue, a question, an idea… | បញ្ហា សំណួរ ឬគំនិត… |
+| {n} on the issues list — the first column of the board. | {n} ក្នុងបញ្ជីបញ្ហា — ជួរទីមួយនៃក្តារ។ |
+| Already on the issues list. | មានក្នុងបញ្ជីបញ្ហារួចហើយ។ |
+| On the issues list. | បានដាក់ក្នុងបញ្ជីបញ្ហា។ |
+| Scorecard | តារាងលេខ |
+| Rocks | ថ្មធំ |
+| Headlines | ដំណឹងខ្លីៗ |
+| To-dos | កិច្ចការត្រូវធ្វើ |
+| Issues | បញ្ហា |
+| Wrap up | បិទកិច្ចប្រជុំ |
+| Past meetings | កិច្ចប្រជុំកន្លងមក |
+| This follows the widely used “Level 10” weekly meeting format. YWAM GP is not affiliated with or endorsed by EOS Worldwide. | នេះធ្វើតាមទម្រង់កិច្ចប្រជុំប្រចាំសប្តាហ៍ “Level 10” ដែលគេប្រើទូទៅ។ YWAM GP មិនមានទំនាក់ទំនងជាមួយ ហើយក៏មិនត្រូវបានគាំទ្រដោយ EOS Worldwide ទេ។ |
+| How this meeting works | របៀបដំណើរការកិច្ចប្រជុំនេះ |
+| Ninety minutes, the same seven parts every week. The first five are quick reports; the sixth is where the work is done. | កៅសិបនាទី ប្រាំពីរផ្នែកដដែលរៀងរាល់សប្តាហ៍។ ប្រាំផ្នែកដំបូងជារបាយការណ៍ខ្លីៗ ហើយផ្នែកទីប្រាំមួយជាកន្លែងធ្វើការពិតប្រាកដ។ |
+| Rules of thumb | ក្បួនងាយចាំ |
+| We meet every | យើងប្រជុំរៀងរាល់ថ្ងៃ |
+| The plan of who leads follows this day. Weeks already planned move to it. | ផែនការអ្នកដឹកនាំទៅតាមថ្ងៃនេះ។ សប្តាហ៍ដែលបានរៀបចំរួចនឹងប្តូរមកថ្ងៃនេះ។ |
+| Minutes for each part | នាទីសម្រាប់ផ្នែកនីមួយៗ |
+| W{n} | ស.{n} |
+| Off track | មិនដើរតាមផែនការ |
+| No number yet | មិនទាន់មានលេខ |
+| No goal yet | មិនទាន់មានគោលដៅ |
+| Goal {sign} {n} | គោលដៅ {sign} {n} |
+| Drop it to Issues | ដាក់ទៅបញ្ជីបញ្ហា |
+| Five to fifteen numbers you can count every week. Each has one owner and a goal. Thirteen weeks, the newest first. | លេខប្រាំទៅដប់ប្រាំដែលអាចរាប់បានរៀងរាល់សប្តាហ៍។ លេខនីមួយៗមានម្ចាស់ម្នាក់ និងគោលដៅមួយ។ ដប់បីសប្តាហ៍ ថ្មីបំផុតនៅមុខគេ។ |
+| No numbers on the scorecard yet. | មិនទាន់មានលេខក្នុងតារាងលេខនៅឡើយ។ |
+| Add a number | បន្ថែមលេខ |
+| What do we count? | យើងរាប់អ្វី? |
+| e.g. 1-on-1s held this week | ឧ. ការជួបមួយទល់មួយក្នុងសប្តាហ៍នេះ |
+| At least or at most | យ៉ាងតិច ឬយ៉ាងច្រើន |
+| At least (≥) | យ៉ាងតិច (≥) |
+| At most (≤) | យ៉ាងច្រើន (≤) |
+| a number | លេខ |
+| Where does the number come from? | លេខនេះបានមកពីណា? |
+| We type it each week | យើងវាយបញ្ចូលរៀងរាល់សប្តាហ៍ |
+| A ministry’s number | លេខរបស់កិច្ចការបម្រើមួយ |
+| — department — | — ផ្នែក — |
+| — ministry — | — កិច្ចការបម្រើ — |
+| Which number | លេខមួយណា |
+| — which number — | — លេខមួយណា — |
+| It fills itself in from what that ministry enters each week. | វាបំពេញដោយខ្លួនឯងពីអ្វីដែលកិច្ចការបម្រើនោះបញ្ចូលរៀងរាល់សប្តាហ៍។ |
+| Take it off the scorecard | ដកចេញពីតារាងលេខ |
+| The three to seven things that must get done this quarter — each person’s, and the team’s. Rocks sit beside the OKRs; they don’t replace them. | រឿងបីទៅប្រាំពីរដែលត្រូវតែធ្វើឲ្យហើយក្នុងត្រីមាសនេះ — របស់ម្នាក់ៗ និងរបស់ក្រុម។ ថ្មធំនៅក្បែរ OKRs មិនមែនជំនួស OKRs ទេ។ |
+| This quarter · Q{q} {year} | ត្រីមាសនេះ · Q{q} {year} |
+| Next · Q{q} {year} | បន្ទាប់ · Q{q} {year} |
+| No rocks for Q{q} yet. | មិនទាន់មានថ្មធំសម្រាប់ Q{q} នៅឡើយ។ |
+| Someone who has left | អ្នកដែលបានចាកចេញ |
+| The whole team | ក្រុមទាំងមូល |
+| {d} of {n} on track | {d} ក្នុងចំណោម {n} ដើរតាមផែនការ |
+| Add a rock | បន្ថែមថ្មធំ |
+| The rock | ថ្មធំ |
+| e.g. The new dorm is open by the end of the quarter | ឧ. អន្តេវាសិកដ្ឋានថ្មីបើកនៅចុងត្រីមាស |
+| Whose is it? | ជារបស់អ្នកណា? |
+| Type a name — or leave empty for the whole team | វាយឈ្មោះ — ឬទុកចំហសម្រាប់ក្រុមទាំងមូល |
+| Nobody picked: it is the whole team’s rock. | មិនបានជ្រើសនរណាទេ៖ វាជាថ្មធំរបស់ក្រុមទាំងមូល។ |
+| A short note (optional) | កំណត់ចំណាំខ្លី (មិនចាំបាច់) |
+| What done looks like, or where it stands | ពេលធ្វើហើយមើលទៅយ៉ាងណា ឬឥឡូវដល់ណាហើយ |
+| Delete this rock | លុបថ្មធំនេះ |
+| Delete this rock? | លុបថ្មធំនេះឬ? |
+| One line of good or hard news about our staff or the people we serve. Add them through the week; they are read at the meeting and kept with it. | ដំណឹងល្អ ឬដំណឹងពិបាកមួយបន្ទាត់អំពីបុគ្គលិករបស់យើង ឬមនុស្សដែលយើងបម្រើ។ បន្ថែមពេញមួយសប្តាហ៍ ហើយនឹងត្រូវអានក្នុងកិច្ចប្រជុំ និងរក្សាទុកជាមួយកិច្ចប្រជុំនោះ។ |
+| No headlines yet this week. | សប្តាហ៍នេះមិនទាន់មានដំណឹងខ្លីៗទេ។ |
+| Good news | ដំណឹងល្អ |
+| Hard news | ដំណឹងពិបាក |
+| A headline, in one line | ដំណឹងមួយ ក្នុងមួយបន្ទាត់ |
+| A to-do: one action, one person, seven days | កិច្ចការមួយ៖ ទង្វើមួយ មនុស្សម្នាក់ ប្រាំពីរថ្ងៃ |
+| A to-do is one action for one person, due in seven days. These are the tasks on the board’s cards — the same ones as in GP Tasks. | កិច្ចការត្រូវធ្វើគឺទង្វើមួយសម្រាប់មនុស្សម្នាក់ ត្រូវហើយក្នុងប្រាំពីរថ្ងៃ។ ទាំងនេះជាកិច្ចការនៅលើកាតរបស់ក្តារ — ដូចគ្នានឹងក្នុង GP Tasks។ |
+| Last week’s to-dos | កិច្ចការត្រូវធ្វើពីសប្តាហ៍មុន |
+| {d} of {n} done | ធ្វើហើយ {d} ក្នុងចំណោម {n} |
+| We aim for nine in ten done. | យើងចង់ឲ្យធ្វើហើយប្រាំបួនក្នុងដប់។ |
+| Nothing was due this week. | សប្តាហ៍នេះគ្មានអ្វីដល់ពេលកំណត់ទេ។ |
+| Carry it on a week | បន្តមួយសប្តាហ៍ទៀត |
+| Carried on a week. | បានបន្តមួយសប្តាហ៍ទៀត។ |
+| {n} more are not due yet. | {n} ទៀតមិនទាន់ដល់ពេលកំណត់ទេ។ |
+| A new to-do | កិច្ចការថ្មី |
+| It lands in that person’s GP Tasks, due in seven days. | វានឹងចូលក្នុង GP Tasks របស់អ្នកនោះ ត្រូវហើយក្នុងប្រាំពីរថ្ងៃ។ |
+| No meetings on record yet. End a meeting and it is kept here. | មិនទាន់មានកិច្ចប្រជុំកត់ត្រាទុកទេ។ ពេលបញ្ចប់កិច្ចប្រជុំមួយ វានឹងរក្សាទុកនៅទីនេះ។ |
+| How we rated our meetings | របៀបដែលយើងដាក់ពិន្ទុកិច្ចប្រជុំរបស់យើង |
+| There | មានវត្តមាន |
+| {n} of {m} minutes | {n} ក្នុងចំណោម {m} នាទី |
+| Issues solved | បញ្ហាដែលបានដោះស្រាយ |
+| New to-dos | កិច្ចការថ្មី |
+| To tell our teams | ត្រូវប្រាប់ក្រុមរបស់យើង |
+| Part {n} of {m} | ផ្នែកទី {n} ក្នុងចំណោម {m} |
+| This part | ផ្នែកនេះ |
+| The whole meeting | កិច្ចប្រជុំទាំងមូល |
+| End the meeting | បញ្ចប់កិច្ចប្រជុំ |
+| Next: {part} | បន្ទាប់៖ {part} |
+| Started by mistake? Cancel this meeting | ចាប់ផ្តើមដោយច្រឡំ? បោះបង់កិច្ចប្រជុំនេះ |
+| Who is here? | អ្នកណាមានវត្តមាន? |
+| The issue on the table | បញ្ហាដែលកំពុងពិភាក្សា |
+| Identify | កំណត់ |
+| What is the real issue underneath? One sentence. | បញ្ហាពិតប្រាកដនៅពីក្រោមគឺអ្វី? មួយប្រយោគ។ |
+| The real issue is… | បញ្ហាពិតប្រាកដគឺ… |
+| Discuss | ពិភាក្សា |
+| Everyone says what they think, once. No repeating, no side roads. | ម្នាក់ៗនិយាយអ្វីដែលខ្លួនគិត ម្តងគត់។ កុំនិយាយដដែលៗ កុំចេញក្រៅរឿង។ |
+| Solve | ដោះស្រាយ |
+| Decide. Write the decision, and a to-do for whoever acts on it. | សម្រេចចិត្ត។ សរសេរការសម្រេចចិត្ត និងកិច្ចការមួយសម្រាប់អ្នកដែលត្រូវធ្វើ។ |
+| We decided… | យើងបានសម្រេចថា… |
+| Solved — write it on the card | ដោះស្រាយហើយ — សរសេរលើកាត |
+| Not today — back to the list | មិនមែនថ្ងៃនេះទេ — ត្រឡប់ទៅបញ្ជី |
+| The issues list | បញ្ជីបញ្ហា |
+| {n} picked of 3 | បានជ្រើស {n} ក្នុងចំណោម 3 |
+| Tap the three that matter most, in order. Then work on number 1. | ចុចលើបញ្ហាបីដែលសំខាន់បំផុត តាមលំដាប់។ រួចធ្វើការលើលេខ 1។ |
+| Nothing on the issues list. Add what is in the way. | គ្មានអ្វីក្នុងបញ្ជីបញ្ហាទេ។ បន្ថែមអ្វីដែលរាំងផ្លូវ។ |
+| From today’s topics | ពីប្រធានបទថ្ងៃនេះ |
+| Work on number 1: {title} | ធ្វើការលើលេខ 1៖ {title} |
+| Solved today · {n} | ដោះស្រាយថ្ងៃនេះ · {n} |
+| New to-dos · {n} | កិច្ចការថ្មី · {n} |
+| None yet. Read back who is doing what. | មិនទាន់មានទេ។ អានឡើងវិញថាអ្នកណាធ្វើអ្វី។ |
+| What do we need to tell our teams? | យើងត្រូវប្រាប់អ្វីដល់ក្រុមរបស់យើង? |
+| One message, in one line | សារមួយ ក្នុងមួយបន្ទាត់ |
+| Rate the meeting, 1 to 10 | ដាក់ពិន្ទុកិច្ចប្រជុំ ពី 1 ដល់ 10 |
+| Average {n} | មធ្យម {n} |
+| Did we start and end on time, stay on track, and solve what mattered? Under 8: say in a sentence what would make it better. | តើយើងចាប់ផ្តើម និងបញ្ចប់ទាន់ម៉ោង មិនចេញក្រៅរឿង ហើយដោះស្រាយអ្វីដែលសំខាន់ឬទេ? ក្រោម 8៖ សូមនិយាយមួយប្រយោគថាអ្វីនឹងធ្វើឲ្យវាប្រសើរជាង។ |
+| Write the issue first. | សូមសរសេរបញ្ហាជាមុនសិន។ |
+| Pick the department, the ministry and the number. | សូមជ្រើសផ្នែក កិច្ចការបម្រើ និងលេខ។ |
+| Take this number off the scorecard? Its weeks of numbers go with it. | ដកលេខនេះចេញពីតារាងលេខឬ? លេខប្រចាំសប្តាហ៍របស់វានឹងបាត់ទៅជាមួយ។ |
+| Scorecard: {name} | តារាងលេខ៖ {name} |
+| Rock off track: {title} | ថ្មធំមិនដើរតាមផែនការ៖ {title} |
+| Not done: {text} | មិនទាន់ធ្វើ៖ {text} |
+| Write the to-do first. | សូមសរសេរកិច្ចការជាមុនសិន។ |
+| Meeting to-dos | កិច្ចការពីកិច្ចប្រជុំ |
+| Added — it is in their GP Tasks. | បានបន្ថែម — វានៅក្នុង GP Tasks របស់ពួកគេ។ |
+| A meeting is already going — you’ve joined it. | កិច្ចប្រជុំមួយកំពុងដំណើរការ — អ្នកបានចូលរួមហើយ។ |
+| Checking… | កំពុងពិនិត្យ… |
+| Cancel this meeting? Nothing is recorded. The to-dos and cards already made stay. | បោះបង់កិច្ចប្រជុំនេះឬ? គ្មានអ្វីត្រូវបានកត់ត្រាទេ។ កិច្ចការ និងកាតដែលបានបង្កើតរួចនៅដដែល។ |
+| Meeting ended — it is in Past meetings. | កិច្ចប្រជុំបានបញ្ចប់ — វានៅក្នុងកិច្ចប្រជុំកន្លងមក។ |
+| Three at a time. Tap one to take it off first. | បីក្នុងមួយពេល។ សូមចុចលើមួយដើម្បីដកចេញសិន។ |
+| Write the decision first. | សូមសរសេរការសម្រេចចិត្តជាមុនសិន។ |
+| Solved. On to the next. | ដោះស្រាយហើយ។ ទៅបញ្ហាបន្ទាប់។ |
+| That’s the most this list can hold. | បញ្ជីនេះពេញហើយ។ |
+| The meeting has already ended. | កិច្ចប្រជុំបានបញ្ចប់រួចហើយ។ |
+| This number fills itself in. | លេខនេះបំពេញដោយខ្លួនឯង។ |
+| Type a number. | សូមវាយលេខ។ |
+| One piece of good news each — one from home, one from the work. Half a minute a person. | ម្នាក់ៗចែករំលែកដំណឹងល្អ — មួយពីផ្ទះ មួយពីការងារ។ កន្លះនាទីម្នាក់។ |
+| No updates and no problems yet. This part is only for arriving. | កុំទាន់រាយការណ៍ ឬលើកបញ្ហា។ ផ្នែកនេះគ្រាន់តែសម្រាប់មកជួបជុំគ្នា។ |
+| Read each number and say only “on track” or “off track”. | អានលេខនីមួយៗ ហើយនិយាយតែ “ដើរតាមផែនការ” ឬ “មិនដើរតាមផែនការ”។ |
+| No explaining and no fixing here. If a number is off, drop it to Issues and keep going. | កុំពន្យល់ ហើយកុំដោះស្រាយនៅទីនេះ។ បើលេខណាមិនដល់គោលដៅ សូមដាក់ទៅបញ្ជីបញ្ហា រួចបន្តទៅមុខ។ |
+| Each owner says “on track” or “off track” for each of their rocks. | ម្ចាស់ម្នាក់ៗនិយាយថា “ដើរតាមផែនការ” ឬ “មិនដើរតាមផែនការ” សម្រាប់ថ្មធំនីមួយៗរបស់ខ្លួន។ |
+| No stories. A rock that is off track goes to Issues. | កុំរៀបរាប់វែង។ ថ្មធំដែលមិនដើរតាមផែនការ ត្រូវដាក់ទៅបញ្ជីបញ្ហា។ |
+| One line each: good news or hard news about our staff and the people we serve. | ម្នាក់មួយបន្ទាត់៖ ដំណឹងល្អ ឬដំណឹងពិបាកអំពីបុគ្គលិករបស់យើង និងមនុស្សដែលយើងបម្រើ។ |
+| If a headline needs a conversation, drop it to Issues. | បើដំណឹងណាត្រូវការពិភាក្សា សូមដាក់ទៅបញ្ជីបញ្ហា។ |
+| Go down last week’s list: done, or not done. We aim for nine in ten done. | មើលបញ្ជីសប្តាហ៍មុនម្តងមួយៗ៖ ធ្វើហើយ ឬមិនទាន់ធ្វើ។ យើងចង់ឲ្យធ្វើហើយប្រាំបួនក្នុងដប់។ |
+| No reasons needed. Not done: carry it on a week, or drop it to Issues. | មិនចាំបាច់ប្រាប់ហេតុផលទេ។ មិនទាន់ធ្វើ៖ បន្តមួយសប្តាហ៍ទៀត ឬដាក់ទៅបញ្ជីបញ្ហា។ |
+| Pick the three that matter most. Then one at a time: name the real issue, talk it through, decide. | ជ្រើសបញ្ហាបីដែលសំខាន់បំផុត។ រួចម្តងមួយៗ៖ ប្រាប់បញ្ហាពិតប្រាកដ ពិភាក្សា ហើយសម្រេចចិត្ត។ |
+| Don’t start at the top of the list, and don’t work on three at once. One issue, one decision, then the next. | កុំចាប់ផ្តើមពីលើគេក្នុងបញ្ជី ហើយកុំធ្វើបីក្នុងពេលតែមួយ។ បញ្ហាមួយ ការសម្រេចចិត្តមួយ រួចទៅបញ្ហាបន្ទាប់។ |
+| Read back the new to-dos, agree what to tell our teams, and each rate the meeting from 1 to 10. | អានកិច្ចការថ្មីឡើងវិញ ព្រមព្រៀងគ្នាថាត្រូវប្រាប់អ្វីដល់ក្រុមរបស់យើង ហើយម្នាក់ៗដាក់ពិន្ទុកិច្ចប្រជុំពី 1 ដល់ 10។ |
+| End on time, even with issues left. They wait on the list for next week. | បញ្ចប់ទាន់ម៉ោង ទោះនៅសល់បញ្ហាក៏ដោយ។ វានៅរង់ចាំក្នុងបញ្ជីសម្រាប់សប្តាហ៍ក្រោយ។ |
+| Same day, same time, every week. Put it in the calendar once and guard it. | ថ្ងៃដដែល ម៉ោងដដែល រៀងរាល់សប្តាហ៍។ ដាក់ក្នុងប្រតិទិនម្តង ហើយការពារពេលនោះ។ |
+| Start on time and end on time, whoever is missing. | ចាប់ផ្តើមទាន់ម៉ោង និងបញ្ចប់ទាន់ម៉ោង ទោះខ្វះនរណាក៏ដោយ។ |
+| One person leads and keeps the clock. The leader moves the meeting on; they don’t have to have the answers. | មនុស្សម្នាក់ដឹកនាំ និងមើលម៉ោង។ អ្នកដឹកនាំជំរុញកិច្ចប្រជុំទៅមុខ មិនចាំបាច់មានចម្លើយទាំងអស់ទេ។ |
+| The first parts are reporting, kept short. Most of the meeting is for solving issues. | ផ្នែកដំបូងៗជាការរាយការណ៍ ធ្វើឲ្យខ្លី។ កិច្ចប្រជុំភាគច្រើនគឺសម្រាប់ដោះស្រាយបញ្ហា។ |
+| A scorecard number is something you can count every week that tells you early how things are going. Each has one owner and a goal. | លេខក្នុងតារាងលេខគឺជាអ្វីដែលអាចរាប់បានរៀងរាល់សប្តាហ៍ ដែលប្រាប់យើងឲ្យដឹងមុនថាការងារដើរយ៉ាងណា។ លេខនីមួយៗមានម្ចាស់ម្នាក់ និងគោលដៅមួយ។ |
+| A rock is one of the three to seven things that must get done this quarter. Each has one owner. Everyone knows everyone’s rocks. | ថ្មធំគឺជារឿងមួយក្នុងចំណោមបីទៅប្រាំពីរដែលត្រូវតែធ្វើឲ្យហើយក្នុងត្រីមាសនេះ។ នីមួយៗមានម្ចាស់ម្នាក់។ គ្រប់គ្នាដឹងពីថ្មធំរបស់គ្រប់គ្នា។ |
+| A to-do is one small action for one person, due in seven days. | កិច្ចការត្រូវធ្វើគឺទង្វើតូចមួយសម្រាប់មនុស្សម្នាក់ ត្រូវហើយក្នុងប្រាំពីរថ្ងៃ។ |
+| An issue is anything in the way: a problem, a question, an idea. Add it to the list the moment you think of it, any day of the week. | បញ្ហាគឺអ្វីក៏ដោយដែលរាំងផ្លូវ៖ បញ្ហា សំណួរ ឬគំនិត។ បន្ថែមទៅក្នុងបញ្ជីភ្លាមៗពេលនឹកឃើញ ថ្ងៃណាក៏បាន។ |
+| To solve an issue: say the real issue in one sentence, let everyone speak once, then decide and write down who does what. | ដើម្បីដោះស្រាយបញ្ហា៖ និយាយបញ្ហាពិតប្រាកដក្នុងមួយប្រយោគ ឲ្យម្នាក់ៗនិយាយម្តង រួចសម្រេចចិត្ត ហើយសរសេរថាអ្នកណាធ្វើអ្វី។ |
+
 ## 140. The Worship rota (My Ministry → Worship, ☰ → Worship rota, Nov 2026)
 Youth Education › Worship plans its four weekly services: who leads, sings and plays, the setlist, and after each service whether it happened and how many came. Tabs: This week · Rota · Team · Songs · Dashboard. "Filled" and the week strip labels have very little room. Role names (Worship leader, Vocals, Keys…) sit in a narrow column. "You’re on {role} — {service}" is one line on My Home's card; {service} is the service's own name as the team typed it (English). Draft translations by Claude.
 

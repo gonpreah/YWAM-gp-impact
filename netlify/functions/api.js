@@ -8101,10 +8101,11 @@ async function getLeadDoc_(campus) {
     standing: Array.isArray(d.standing) ? d.standing : JSON.parse(JSON.stringify(LEAD_DEFAULT.standing)),
     cards: Array.isArray(d.cards) ? d.cards : [],
     notes: Array.isArray(d.notes) ? d.notes : [],
-    tues: Array.isArray(d.tues) ? d.tues : []
+    tues: Array.isArray(d.tues) ? d.tues : [],
+    meetDay: meetDay_(d.meetDay)   // the leadership meeting's weekday (0 Sunday … 6 Saturday; Tuesday unless changed)
   };
 }
-function leadOut_(campus, d, extra) { return Object.assign({ ok: true, campus: campus, cols: d.cols, areas: d.areas, standing: d.standing, cards: d.cards, notes: d.notes, tues: d.tues || [] }, extra || {}); }
+function leadOut_(campus, d, extra) { return Object.assign({ ok: true, campus: campus, cols: d.cols, areas: d.areas, standing: d.standing, cards: d.cards, notes: d.notes, tues: d.tues || [], meetDay: meetDay_(d.meetDay) }, extra || {}); }
 async function getLeadBoard(username, pin) {
   const a = await leadAuth_(username, pin); if (a.out) return a.out;
   return leadOut_(a.campus, await getLeadDoc_(a.campus));
@@ -8280,6 +8281,374 @@ async function saveLeadSettings(username, pin, settings) {
   d.cols = cols; d.areas = areas; d.standing = standing;
   await writeJSON(leadKey_(a.campus), d);
   return leadOut_(a.campus, d);
+}
+
+/* ==================== the leadership meeting (Nov 2026, Uriah) ====================
+   "We want to move more to an EOS-style leadership meeting, and still use our Kanban board …
+   who's going to lead the Tuesday morning leadership meeting, topics and all that … where
+   everyone is clear on their departments … rocks."
+   A weekly 90-minute meeting in seven parts, built ON the board above, not beside it:
+     - the issues list IS the board's first column (saveLeadCard);
+     - the to-dos ARE the board's little tasks, and so GP Tasks (saveLeadTask → gptFromLeadTask_);
+     - who leads comes from the meeting-day schedule (saveLeadTuesday; `meetDay` on the board doc
+       says which weekday that is — 2, Tuesday, unless changed).
+   What is new lives in its own blob, leadMeet:<campus> (mutateKey_):
+     minutes   {checkin, score, rocks, headlines, todos, issues, wrap} — the agenda's lengths
+     score     the scorecard: [{id, name, owner, goal, dir 'gte'|'lte', src 'manual'|'metric',
+               metric {dept, ministry, metric}, vals {'YYYY-W': n}}] — a linked one reads `entries`
+     rocks     [{id, title, owner ('' = the team's), year, q, okrId, status on|off|done, note}]
+     headlines [{id, text, kind good|hard, by, at}] — archived with the meeting they were read in
+     todoCard  the board card that holds to-dos made in a meeting but not under an issue
+     run       the meeting going on now, or null: {date, startedAt, by, leader, part, partAt,
+               spent {part: seconds}, present, top (the three issues picked), issue, identify,
+               solved, todos, carried (to-dos moved on a week: still not done), messages, ratings} — on the server, so every phone shows the same part
+     past      the records, newest last (MEET_MAX.past kept)
+   Campus Leadership on the campus and admins (leadAuth_) read and write all of it; nobody else. */
+const MEET_PARTS = ['checkin', 'score', 'rocks', 'headlines', 'todos', 'issues', 'wrap'];
+const MEET_MINUTES = { checkin: 5, score: 5, rocks: 5, headlines: 5, todos: 5, issues: 60, wrap: 5 };
+const MEET_MAX = { score: 15, rocks: 400, rocksEach: 10, headlines: 40, past: 120, messages: 12, solved: 30, present: 40, todos: 40, vals: 80 };
+const MEET_WEEKS = 13, MEET_ROCK_STATUS = ['on', 'off', 'done'];
+function meetKey_(campus) { return 'leadMeet:' + campus; }
+function meetId_(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function meetDay_(v) { const n = Number(v); return (v !== '' && v != null && Number.isInteger(n) && n >= 0 && n <= 6) ? n : 2; }
+function meetMinutes_(m) {
+  const out = {}; m = m && typeof m === 'object' ? m : {};
+  MEET_PARTS.forEach(function (k) { const n = finiteNum_(m[k], 1, 180); out[k] = n == null ? MEET_MINUTES[k] : Math.round(n); });
+  return out;
+}
+/* put a stored doc into shape, in place (mutateKey_ hands the raw value) */
+function meetFix_(d) {
+  d.minutes = meetMinutes_(d.minutes);
+  ['score', 'rocks', 'headlines', 'past'].forEach(function (k) { if (!Array.isArray(d[k])) d[k] = []; });
+  d.run = d.run && typeof d.run === 'object' && !Array.isArray(d.run) ? d.run : null;
+  d.todoCard = typeof d.todoCard === 'string' ? d.todoCard : '';
+  return d;
+}
+async function getMeetDoc_(campus) { return meetFix_(await readJSON(meetKey_(campus), {})); }
+/* the app's quarter of a week: 13-week blocks, like the roll-up's qOf */
+function meetQ_(week) { return Math.min(4, Math.floor((Number(week) - 1) / 13) + 1); }
+function meetNow_() { const today = baseToday_(), wk = isoWeek_(today), yr = weekYear_(today); return { today: today, week: wk, year: yr, q: meetQ_(wk) }; }
+/* this week and the twelve before it, newest first; a week belongs to a week year */
+function meetWeeks_() {
+  const n = meetNow_(), out = []; let y = n.year, w = n.week;
+  for (let i = 0; i < MEET_WEEKS; i++) { out.push({ year: y, week: w, key: y + '-' + w }); w--; if (w < 1) { w = 52; y--; } }
+  return out;
+}
+async function meetCampusIds_(campus) {
+  const ids = {};
+  (await getStaff_()).forEach(function (p) { if (p.campus === campus && p.active !== false && !p.archived && !isApplicant_(p)) ids[p.id] = p.name || ''; });
+  return ids;
+}
+/* what a to-do week looks like: done since the last meeting, or still open and due by today
+   (an open one with no day counts once it is older than that meeting) — never one made in the
+   meeting going on. Mirrored on the page (lmTodoWeek_). */
+function meetTodoStats_(lead, since, today, skip, carried) {
+  let done = 0, total = 0;
+  (lead.cards || []).forEach(function (c) { (c.tasks || []).forEach(function (tk) {
+    if (!tk || (skip || []).indexOf(tk.id) > -1) return;
+    if (tk.done) { if (String(tk.doneAt || '') >= since) { done++; total++; } }
+    else if ((carried || []).indexOf(tk.id) > -1 || (tk.due ? tk.due <= today : String(tk.created || '') < since)) total++;   // carried on a week in this meeting is still not done
+  }); });
+  return { done: done, total: total, pct: total ? Math.round(done / total * 100) : null };
+}
+function meetSince_(d) {
+  const last = d.past.length ? d.past[d.past.length - 1] : null;
+  return (last && last.endedAt) || new Date(Date.now() - 7 * 86400000).toISOString();
+}
+async function meetOut_(campus, d, extra) {
+  const weeks = meetWeeks_();
+  let idx = null;
+  if (d.score.some(function (m) { return m.src === 'metric'; })) {
+    idx = {};
+    (await withTeamRows_(await getEntries_())).forEach(function (r) {
+      if (r.campus !== campus || SENSITIVE.indexOf(r.metric) > -1) return;
+      const v = Number(r.value); if (isNaN(v)) return;
+      const k = normDept_(r.dept, r.ministry) + '|' + r.ministry + '|' + r.metric + '|' + yearOf_(r) + '-' + Number(r.week);
+      idx[k] = (idx[k] || 0) + v;
+    });
+  }
+  const score = d.score.map(function (m) {
+    const vals = {};
+    weeks.forEach(function (w) {
+      let v = null;
+      if (m.src === 'metric' && m.metric) { const k = m.metric.dept + '|' + m.metric.ministry + '|' + m.metric.metric + '|' + w.key; v = k in idx ? idx[k] : null; }
+      else if (m.vals && m.vals[w.key] != null) v = Number(m.vals[w.key]);
+      vals[w.key] = v;
+    });
+    return { id: m.id, name: m.name, owner: m.owner || '', goal: m.goal == null ? null : m.goal, dir: m.dir === 'lte' ? 'lte' : 'gte', src: m.src === 'metric' ? 'metric' : 'manual', metric: m.metric || null, vals: vals };
+  });
+  const n = meetNow_();
+  return Object.assign({ ok: true, campus: campus, now: new Date().toISOString(), week: n.week, year: n.year, q: n.q, weeks: weeks, minutes: d.minutes, parts: MEET_PARTS,
+    score: score, rocks: d.rocks, headlines: d.headlines, run: d.run, past: d.past, todoSince: meetSince_(d), todoCard: d.todoCard }, extra || {});
+}
+/* One load for the Meeting tab: the meeting, and the board it stands on. */
+async function getLeadMeeting(username, pin) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  return meetOut_(a.campus, await getMeetDoc_(a.campus), { board: leadOut_(a.campus, await getLeadDoc_(a.campus)) });
+}
+async function meetMutate_(a, fn, extra) {
+  const r = await mutateKey_(meetKey_(a.campus), {}, function (d) { meetFix_(d); const x = fn(d); return x && x.abort ? x : Object.assign({ ok: true }, x || {}); });
+  if (!r || !r.ok) return r || { ok: false };
+  return meetOut_(a.campus, await getMeetDoc_(a.campus), Object.assign({}, r, extra || {}));
+}
+/* The meeting's day and the agenda's minutes. The day is the board's (`meetDay`): the schedule of
+   who leads lives there. Changing it moves the weeks still to come onto the new weekday, in the
+   same Monday-to-Sunday week; the past stays as it was. */
+async function saveLeadMeetSettings(username, pin, x) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  x = x && typeof x === 'object' ? x : {};
+  const lead = await getLeadDoc_(a.campus);
+  if (x.day != null && x.day !== '') {
+    const n = Number(x.day);
+    if (!Number.isInteger(n) || n < 0 || n > 6) return { ok: false, err: 'bad_day' };
+    if (n !== lead.meetDay) {
+      const today = baseToday_(), have = {};
+      lead.tues.forEach(function (t) { have[t.date] = 1; });
+      lead.tues.forEach(function (t) {
+        if (t.date < today) return;
+        const dow = new Date(t.date + 'T12:00:00Z').getUTCDay();
+        const to = addDays_(t.date, ((n + 6) % 7) - ((dow + 6) % 7));
+        if (to === t.date || have[to]) return;
+        delete have[t.date]; have[to] = 1; t.date = to;
+      });
+      lead.tues.sort(function (p, q) { return p.date < q.date ? -1 : 1; });
+      lead.meetDay = n;
+      await writeJSON(leadKey_(a.campus), lead);
+    }
+  }
+  return meetMutate_(a, function (d) { if (x.minutes && typeof x.minutes === 'object') d.minutes = meetMinutes_(Object.assign({}, d.minutes, x.minutes)); }, { board: leadOut_(a.campus, lead) });
+}
+/* ---- the scorecard ---- */
+async function saveLeadScore(username, pin, x) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  x = x && typeof x === 'object' ? x : {};
+  const name = dutyText_(x.name, 80); if (!name) return { ok: false, err: 'bad_name' };
+  const ids = await meetCampusIds_(a.campus);
+  const owner = typeof x.owner === 'string' && ids[x.owner] != null ? x.owner : '';
+  const goal = (x.goal === '' || x.goal == null) ? null : finiteNum_(x.goal, -1e9, 1e9);
+  let metric = null;
+  if (x.src === 'metric') {
+    const m = x.metric && typeof x.metric === 'object' ? x.metric : {};
+    const ministry = dutyText_(m.ministry, 80), mt = dutyText_(m.metric, 80), dept = normDept_(dutyText_(m.dept, 80), ministry);
+    if (!dept || !ministry || !mt || SENSITIVE.indexOf(mt) > -1) return { ok: false, err: 'bad_metric' };
+    metric = { dept: dept, ministry: ministry, metric: mt };
+  }
+  return meetMutate_(a, function (d) {
+    const id = dutyText_(x.id, 40), i = id ? d.score.findIndex(function (m) { return m.id === id; }) : -1;
+    if (id && i === -1) return { abort: true, ok: false, err: 'not_found' };
+    if (i === -1 && d.score.length >= MEET_MAX.score) return { abort: true, ok: false, err: 'too_many' };
+    const prev = i > -1 ? d.score[i] : null;
+    const rec = { id: prev ? prev.id : meetId_('sc_'), name: name, owner: owner, goal: goal, dir: x.dir === 'lte' ? 'lte' : 'gte',
+      src: metric ? 'metric' : 'manual', metric: metric, vals: (prev && prev.vals) || {}, by: a.s.id, updated: new Date().toISOString() };
+    if (i > -1) d.score[i] = rec; else d.score.push(rec);
+    return { saved: rec.id };
+  });
+}
+async function deleteLeadScore(username, pin, id) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  return meetMutate_(a, function (d) {
+    const n = d.score.length; d.score = d.score.filter(function (m) { return m.id !== id; });
+    if (d.score.length === n) return { abort: true, ok: false, err: 'not_found' };
+  });
+}
+/* a week's number, typed by hand — only for a measurable that isn't linked, and only for the
+   thirteen weeks on show; '' takes it away */
+async function saveLeadScoreValue(username, pin, id, key, value) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  if (!meetWeeks_().some(function (w) { return w.key === key; })) return { ok: false, err: 'bad_week' };
+  const clear = value === '' || value == null, v = clear ? null : finiteNum_(String(value).replace(/,/g, ''), -1e9, 1e9);
+  if (!clear && v == null) return { ok: false, err: 'bad_value' };
+  return meetMutate_(a, function (d) {
+    const m = d.score.find(function (s) { return s.id === id; });
+    if (!m) return { abort: true, ok: false, err: 'not_found' };
+    if (m.src === 'metric') return { abort: true, ok: false, err: 'linked' };
+    m.vals = m.vals && typeof m.vals === 'object' ? m.vals : {};
+    if (clear) delete m.vals[key]; else m.vals[key] = v;
+    const keys = Object.keys(m.vals).sort(function (p, q) { const x = p.split('-').map(Number), y = q.split('-').map(Number); return (x[0] - y[0]) || (x[1] - y[1]); });
+    keys.slice(0, Math.max(0, keys.length - MEET_MAX.vals)).forEach(function (k) { delete m.vals[k]; });
+  });
+}
+/* ---- rocks: the quarter's few priorities, each person's and the team's ---- */
+async function saveLeadRock(username, pin, x) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  x = x && typeof x === 'object' ? x : {};
+  const title = dutyText_(x.title, 120); if (!title) return { ok: false, err: 'bad_title' };
+  const ids = await meetCampusIds_(a.campus), n = meetNow_();
+  const owner = typeof x.owner === 'string' && ids[x.owner] != null ? x.owner : '';
+  const next = n.q === 4 ? { year: n.year + 1, q: 1 } : { year: n.year, q: n.q + 1 };
+  return meetMutate_(a, function (d) {
+    const id = dutyText_(x.id, 40), i = id ? d.rocks.findIndex(function (r) { return r.id === id; }) : -1;
+    if (id && i === -1) return { abort: true, ok: false, err: 'not_found' };
+    const prev = i > -1 ? d.rocks[i] : null;
+    let year = Number(x.year), q = Number(x.q);
+    const okQ = (year === n.year && q === n.q) || (year === next.year && q === next.q) || (prev && year === prev.year && q === prev.q);
+    if (!okQ) { if (prev) { year = prev.year; q = prev.q; } else { year = n.year; q = n.q; } }
+    if (!prev || prev.owner !== owner || prev.year !== year || prev.q !== q) {
+      if (d.rocks.filter(function (r) { return r !== prev && r.owner === owner && r.year === year && r.q === q; }).length >= MEET_MAX.rocksEach) return { abort: true, ok: false, err: 'too_many' };
+    }
+    const now = new Date().toISOString();
+    const rec = Object.assign({}, prev || {}, { id: prev ? prev.id : meetId_('rk_'), title: title, owner: owner, year: year, q: q, okrId: dutyText_(x.okrId, 60),
+      status: MEET_ROCK_STATUS.indexOf(x.status) > -1 ? x.status : 'on', note: dutyText_(x.note, 300), updated: now, updatedBy: a.s.id });
+    if (!prev) { rec.created = now; rec.by = a.s.id; }
+    if (i > -1) d.rocks[i] = rec; else d.rocks.push(rec);
+    if (d.rocks.length > MEET_MAX.rocks) d.rocks.splice(0, d.rocks.length - MEET_MAX.rocks);
+    return { saved: rec.id };
+  });
+}
+async function deleteLeadRock(username, pin, id) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  return meetMutate_(a, function (d) {
+    const n = d.rocks.length; d.rocks = d.rocks.filter(function (r) { return r.id !== id; });
+    if (d.rocks.length === n) return { abort: true, ok: false, err: 'not_found' };
+  });
+}
+/* ---- headlines: a line of good or hard news, added through the week ---- */
+async function saveLeadHeadline(username, pin, x) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  x = x && typeof x === 'object' ? x : {};
+  const text = dutyText_(x.text, 200); if (!text) return { ok: false, err: 'bad_text' };
+  return meetMutate_(a, function (d) {
+    if (d.headlines.length >= MEET_MAX.headlines) return { abort: true, ok: false, err: 'too_many' };
+    d.headlines.push({ id: meetId_('hl_'), text: text, kind: x.kind === 'hard' ? 'hard' : 'good', by: a.s.id, at: new Date().toISOString() });
+  });
+}
+async function deleteLeadHeadline(username, pin, id) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  return meetMutate_(a, function (d) {
+    const n = d.headlines.length; d.headlines = d.headlines.filter(function (h) { return h.id !== id; });
+    if (d.headlines.length === n) return { abort: true, ok: false, err: 'not_found' };
+  });
+}
+/* ---- running it ---- */
+function meetSpend_(run, nowMs) {
+  const k = MEET_PARTS[run.part] || MEET_PARTS[0], t0 = Date.parse(run.partAt) || nowMs;
+  run.spent = run.spent && typeof run.spent === 'object' ? run.spent : {};
+  run.spent[k] = Math.round((Number(run.spent[k]) || 0) + Math.max(0, Math.min(6 * 3600, (nowMs - t0) / 1000)));
+  run.partAt = new Date(nowMs).toISOString();
+}
+/* Start the meeting. One at a time on a campus: a second Start joins the one going on. Who leads
+   is the day's facilitator on the schedule when one is set, else whoever started it. */
+async function leadMeetStart(username, pin) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  const lead = await getLeadDoc_(a.campus), today = baseToday_();
+  const row = lead.tues.filter(function (t) { return t.date === today; })[0], fac = row && row.facilitator;
+  return meetMutate_(a, function (d) {
+    if (d.run) return { already: true };
+    const now = new Date().toISOString();
+    d.run = { date: today, startedAt: now, by: a.s.id, leader: fac ? { id: fac.id || '', name: fac.name || '' } : { id: a.s.id, name: '' },
+      part: 0, partAt: now, spent: {}, present: [a.s.id], top: [], issue: '', identify: '', solved: [], todos: [], messages: [], ratings: {} };
+  });
+}
+/* Move it on, and everything the meeting keeps as it goes. Only the keys sent are changed. */
+async function leadMeetUpdate(username, pin, x) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  x = x && typeof x === 'object' ? x : {};
+  const ids = await meetCampusIds_(a.campus);
+  return meetMutate_(a, function (d) {
+    const r = d.run; if (!r) return { abort: true, ok: false, err: 'no_meeting' };
+    if (x.part != null) {
+      const p = Number(x.part);
+      if (!Number.isInteger(p) || p < 0 || p >= MEET_PARTS.length) return { abort: true, ok: false, err: 'bad_part' };
+      if (p !== r.part) { meetSpend_(r, Date.now()); r.part = p; }
+    }
+    if (Array.isArray(x.present)) r.present = x.present.filter(function (id, i, arr) { return typeof id === 'string' && ids[id] != null && arr.indexOf(id) === i; }).slice(0, MEET_MAX.present);
+    if (x.leader && typeof x.leader === 'object') {
+      const id = typeof x.leader.id === 'string' && ids[x.leader.id] != null ? x.leader.id : '', name = id ? '' : dutyText_(x.leader.name, 60);
+      if (id || name) r.leader = { id: id, name: name };
+    }
+    if (Array.isArray(x.top)) r.top = x.top.filter(function (id, i, arr) { return typeof id === 'string' && id && id.length <= 60 && arr.indexOf(id) === i; }).slice(0, 3);
+    if (typeof x.issue === 'string') { if (x.issue !== r.issue) r.identify = ''; r.issue = x.issue.slice(0, 60); }
+    if (typeof x.identify === 'string') r.identify = dutyText_(x.identify, 300);
+    if (Array.isArray(x.carried)) r.carried = x.carried.filter(function (id, i, arr) { return typeof id === 'string' && id && id.length <= 60 && arr.indexOf(id) === i; }).slice(0, MEET_MAX.todos);
+    if (Array.isArray(x.messages)) r.messages = x.messages.map(function (m) { return dutyText_(m, 200); }).filter(Boolean).slice(0, MEET_MAX.messages);
+    /* a rating: your own; whoever leads or started the meeting (or an admin) may enter everyone's */
+    const all = a.s.isAdmin || r.by === a.s.id || (r.leader && r.leader.id === a.s.id);
+    const rate = function (id, v) {
+      if (ids[id] == null || (!all && id !== a.s.id)) return;
+      if (v === '' || v == null) { delete r.ratings[id]; return; }
+      const n = finiteNum_(v, 1, 10); if (n != null) r.ratings[id] = Math.round(n);
+    };
+    r.ratings = r.ratings && typeof r.ratings === 'object' ? r.ratings : {};
+    if ('rating' in x) rate(a.s.id, x.rating);
+    if (x.ratings && typeof x.ratings === 'object') Object.keys(x.ratings).slice(0, MEET_MAX.present).forEach(function (id) { rate(id, x.ratings[id]); });
+  });
+}
+/* A to-do: a seven-day action for one person. It is a task on the board — under the issue it came
+   from (cardId), else on the meeting's own "to-dos" card — saved through saveLeadTask, so it is in
+   the Leadership team's GP Tasks list, that person's Inbox and their calendar like any other. */
+async function leadMeetTodo(username, pin, x) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  x = x && typeof x === 'object' ? x : {};
+  const text = dutyText_(x.text, 200); if (!text) return { ok: false, err: 'bad_task' };
+  const lead = await getLeadDoc_(a.campus), meet = await getMeetDoc_(a.campus);
+  const has = function (id) { return !!id && lead.cards.some(function (c) { return c.id === id; }); };
+  let cardId = has(x.cardId) ? x.cardId : has(meet.todoCard) ? meet.todoCard : '', made = '';
+  if (!cardId) {
+    const col = lead.cols.filter(function (c, i) { return i > 0 && !c.done; })[0] || lead.cols.filter(function (c, i) { return i > 0; })[0] || lead.cols[0];
+    const c = await saveLeadCard(username, pin, { title: dutyText_(x.cardTitle, 80) || 'Meeting to-dos', type: 'project', col: col.id });
+    if (!c || !c.ok) return c || { ok: false };
+    cardId = made = c.saved.id;
+  }
+  const ids = await meetCampusIds_(a.campus);
+  const r = await saveLeadTask(username, pin, cardId, { text: text, owner: typeof x.owner === 'string' && ids[x.owner] != null ? x.owner : '',
+    due: isoDate_(x.due) || addDays_(baseToday_(), 7), meeting: meet.run ? meet.run.date : '' });
+  if (!r || !r.ok) return r || { ok: false };
+  return meetMutate_(a, function (d) {
+    if (made) d.todoCard = made;
+    if (d.run) { d.run.todos = (Array.isArray(d.run.todos) ? d.run.todos : []).concat([r.saved.id]).slice(-MEET_MAX.todos); }
+  }, { board: r, todo: r.saved.id });
+}
+/* Solve an issue: the decision is written on its card and the card goes to the finished column —
+   through saveLeadCard, so a card that is also a department's task is ticked there too. */
+async function leadMeetSolve(username, pin, x) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  x = x && typeof x === 'object' ? x : {};
+  const decision = dutyText_(x.decision, 600); if (!decision) return { ok: false, err: 'bad_decision' };
+  const issue = dutyText_(x.issue, 300);
+  const lead = await getLeadDoc_(a.campus), card = lead.cards.find(function (c) { return c.id === x.cardId; });
+  if (!card) return { ok: false, err: 'not_found' };
+  const doneCol = lead.cols.filter(function (c) { return c.done; })[0];
+  const add = (issue ? '❓ ' + issue + '\n' : '') + '✅ ' + baseToday_() + ' — ' + decision;
+  const old = String(card.notes || '').slice(0, Math.max(0, 2000 - add.length - 2));
+  const r = await saveLeadCard(username, pin, Object.assign({}, card, { notes: (old ? old + '\n\n' : '') + add, col: doneCol ? doneCol.id : card.col }));
+  if (!r || !r.ok) return r || { ok: false };
+  return meetMutate_(a, function (d) {
+    const run = d.run; if (!run) return;
+    run.solved = (Array.isArray(run.solved) ? run.solved : []).filter(function (s) { return s.id !== card.id; }).concat([{ id: card.id, title: card.title, decision: decision }]).slice(-MEET_MAX.solved);
+    run.top = (run.top || []).filter(function (id) { return id !== card.id; });
+    if (run.issue === card.id) { run.issue = ''; run.identify = ''; }
+  }, { board: r });
+}
+/* End it: the record is written and the headlines go into it. {cancel:true} drops the meeting
+   with no record (started by mistake); the headlines stay for the real one. */
+async function leadMeetEnd(username, pin, x) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  x = x && typeof x === 'object' ? x : {};
+  const lead = await getLeadDoc_(a.campus), names = {};
+  (await getStaff_()).forEach(function (p) { names[p.id] = p.name || ''; });
+  const who = function (id) { return { id: id, name: names[id] || '' }; };
+  return meetMutate_(a, function (d) {
+    const r = d.run; if (!r) return { abort: true, ok: false, err: 'no_meeting' };
+    if (x.cancel) { d.run = null; return { cancelled: true }; }
+    const nowMs = Date.now(), since = meetSince_(d);
+    meetSpend_(r, nowMs);
+    const mins = {}; let total = 0;
+    MEET_PARTS.forEach(function (k) { mins[k] = Math.round((Number(r.spent[k]) || 0) / 60); total += Number(r.spent[k]) || 0; });
+    const tasks = {}; lead.cards.forEach(function (c) { (c.tasks || []).forEach(function (tk) { tasks[tk.id] = tk; }); });
+    const ratings = Object.keys(r.ratings || {}).map(function (id) { return { id: id, name: names[id] || '', n: r.ratings[id] }; });
+    const rec = { id: meetId_('mt_'), date: r.date, startedAt: r.startedAt, endedAt: new Date(nowMs).toISOString(),
+      leader: r.leader && r.leader.id ? who(r.leader.id) : { id: '', name: (r.leader && r.leader.name) || '' },
+      present: (r.present || []).map(who), mins: mins, total: Math.round(total / 60), planned: MEET_PARTS.reduce(function (s, k) { return s + d.minutes[k]; }, 0),
+      todo: meetTodoStats_(lead, since, baseToday_(), r.todos, r.carried),
+      solved: (r.solved || []).map(function (s) { return { title: s.title, decision: s.decision }; }),
+      newTodos: (r.todos || []).map(function (id) { const tk = tasks[id]; return tk ? { text: tk.text, owner: names[tk.owner] || '', due: tk.due || '' } : null; }).filter(Boolean),
+      headlines: d.headlines.map(function (h) { return { text: h.text, kind: h.kind, by: names[h.by] || '' }; }),
+      messages: (r.messages || []).slice(), ratings: ratings,
+      avg: ratings.length ? Math.round(ratings.reduce(function (s, q) { return s + q.n; }, 0) / ratings.length * 10) / 10 : null, by: a.s.id };
+    d.past.push(rec); if (d.past.length > MEET_MAX.past) d.past.splice(0, d.past.length - MEET_MAX.past);
+    d.headlines = []; d.run = null;
+    return { ended: rec.id };
+  });
 }
 
 /* ==================== human resources ====================
@@ -15112,11 +15481,12 @@ async function saveLeadTuesday(username, pin, m) {
   const a = await leadAuth_(username, pin); if (a.out) return a.out;
   const x = m && typeof m === 'object' ? m : {};
   const date = isoDate_(x.date);
-  if (!date || new Date(date + 'T12:00:00Z').getUTCDay() !== 2) return { ok: false, err: 'bad_date' };
+  if (!date) return { ok: false, err: 'bad_date' };
   /* who can be picked: the leadership team (Campus Leadership on this campus) — and whoever
      was already set for this Tuesday, so editing the topics never drops an earlier pick */
   const ids = {}; (await getStaff_()).forEach(function (p) { if (p.campus === a.campus && p.active !== false && !isApplicant_(p) && deptOf_(p) === LEADERSHIP_DEPT) ids[p.id] = 1; });
   const d = await getLeadDoc_(a.campus);
+  if (new Date(date + 'T12:00:00Z').getUTCDay() !== d.meetDay) return { ok: false, err: 'bad_date' };   // the meeting's own weekday (Tuesday unless changed)
   const prev = d.tues.filter(function (t) { return t.date === date; })[0];
   if (prev) ['facilitator', 'translator'].forEach(function (k) { if (prev[k] && prev[k].id) ids[prev[k].id] = 1; });
   const lines = function (v, max) { return (Array.isArray(v) ? v : []).map(function (t) { return str_(t, max); }).filter(Boolean).slice(0, 15); };
@@ -15941,6 +16311,20 @@ const HANDLERS = {
   saveLeadCard: function (a) { return saveLeadCard(a[0], a[1], a[2]); },
   deleteLeadCard: function (a) { return deleteLeadCard(a[0], a[1], a[2]); },
   saveLeadSettings: function (a) { return saveLeadSettings(a[0], a[1], a[2]); },
+  getLeadMeeting: function (a) { return getLeadMeeting(a[0], a[1]); },
+  saveLeadMeetSettings: function (a) { return saveLeadMeetSettings(a[0], a[1], a[2]); },
+  saveLeadScore: function (a) { return saveLeadScore(a[0], a[1], a[2]); },
+  deleteLeadScore: function (a) { return deleteLeadScore(a[0], a[1], a[2]); },
+  saveLeadScoreValue: function (a) { return saveLeadScoreValue(a[0], a[1], a[2], a[3], a[4]); },
+  saveLeadRock: function (a) { return saveLeadRock(a[0], a[1], a[2]); },
+  deleteLeadRock: function (a) { return deleteLeadRock(a[0], a[1], a[2]); },
+  saveLeadHeadline: function (a) { return saveLeadHeadline(a[0], a[1], a[2]); },
+  deleteLeadHeadline: function (a) { return deleteLeadHeadline(a[0], a[1], a[2]); },
+  leadMeetStart: function (a) { return leadMeetStart(a[0], a[1]); },
+  leadMeetUpdate: function (a) { return leadMeetUpdate(a[0], a[1], a[2]); },
+  leadMeetTodo: function (a) { return leadMeetTodo(a[0], a[1], a[2]); },
+  leadMeetSolve: function (a) { return leadMeetSolve(a[0], a[1], a[2]); },
+  leadMeetEnd: function (a) { return leadMeetEnd(a[0], a[1], a[2]); },
   saveLeadTask: function (a) { return saveLeadTask(a[0], a[1], a[2], a[3]); },
   deleteLeadTask: function (a) { return deleteLeadTask(a[0], a[1], a[2], a[3]); },
   saveLeadNote: function (a) { return saveLeadNote(a[0], a[1], a[2]); },

@@ -55,7 +55,7 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   (personality, Library, papers, guest, YWAM GP & the board, report, first 30 days, prayer,
   support raising, reminders, Khmer review) · `04-ministry-strengths.js` · `05-admin-hr.js` ·
   `06-numbers-contract.js` · `07-health-leave.js` · `08-team-profile.js` · `09-finance.js`
-  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app); later ones (12-tasks … 18-library-plus) load before 11. `finance.js` (public/,
+  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app); later ones (12-tasks … 27-meeting) load before 11. `finance.js` (public/,
   shared like taxonomy.js) reads the reports; `vendor/pdfjs/` is pdf.js, loaded on demand. **One global scope**, exactly as when it was one inline
   script: any function may call any other, but code that RUNS while a file loads (not
   inside a function) may only use what that file or an earlier one defines. Add new code to
@@ -1359,6 +1359,72 @@ week strip / input: two tabs.
 - **The Overview is the dashboard**: its tiles lead with **🎯 Q OKRs %** (mean `objProgress` of
   leadership's objectives this quarter, with a bar; opens the OKRs tab) and **📋 Board · open cards**
   (opens the Board) — `.lbNav`, `#lbOkrTile`, `#lbBoardTile` — then the role's own tiles.
+## The leadership meeting (teams/27-meeting.js, Nov 2026, Uriah)
+"We want to move more to an EOS-style leadership meeting, and still use our Kanban board … we need a little more training
+to do the meeting well … who's going to lead the Tuesday morning leadership meeting, topics and all that … where everyone is
+clear on their departments … rocks." A weekly 90-minute meeting in seven parts, built ON the board, its tasks and the
+Tuesday schedule — nothing of those was replaced.
+- **Where**: Campus Leadership → Board → **Meeting** (`S.leadTab='meet'`, the first of `[data-leadtab]` meet · board · tues ·
+  notes; the Board tab still opens on the Kanban — every older test lands there). `leadMeetHtml_` / `bindMeeting_`
+  (`#leadMeet`). One `getLeadMeeting` when it opens (→ `S.meet`, and `S.lead` from its `board`, so `bindLead_` asks nothing
+  more); nothing on the boot. The Overview has a way in under its tiles (`#lbMeetGo`, `lmOverviewHtml_`: "Next meeting ·
+  {day} {date}", who leads; `#lbOkrTile` / `#lbBoardTile` untouched).
+- **The page, no meeting running**: the head (`.lmHead`: next date, "Led by" from the schedule or `#lmPlanWho`, **▶ Start the
+  meeting** `#lmStart`, `#lmSetOpen`), the folded guide (`#lmGuide`: the seven parts, "Rules of thumb" `LM_GUIDE`), one line
+  to add an issue from anywhere (`#lmIssueText` / `#lmIssueAdd` → `lmDrop_` → `saveLeadCard` into the first column), then
+  `[data-lmsec]` score · rocks · headlines · todos · past (`S.mt.sec`), and the fine print (`#lmFine`).
+- **The meeting day is a setting** (`#lmSettings`: `#lmSetDay`, `[data-lmsetmin]`, `#lmSetSave` → `saveLeadMeetSettings {day,
+  minutes}`): `meetDay` (0–6, Tuesday = 2 by default) lives on the **board doc** (`getLeadDoc_`, `leadOut_`) because the
+  schedule does; `saveLeadTuesday` takes only that weekday; changing it moves the weeks still to come onto the new weekday in
+  the same Monday–Sunday week. The "Tuesday" tab's label, its eight dates (`leadTuesdays_`, `leadMeetDay_`, `leadDayDate_`
+  in 04) and the Overview's card follow it; on Tuesday the reviewed Khmer strings are used as before.
+- **Scorecard** (`#lmScore`, `lmScoreHtml_`): up to 15 weekly numbers — name, owner (ppick `lmso`), goal with ≥ / ≤, and
+  typed by hand (`[data-lmval="id|YYYY-W"]`, saved on change) or **linked to a ministry's metric** (`[data-lmsrc="metric"]`,
+  `[data-lmsf="dept|ministry|metric"]`; read from `entries` through `withTeamRows_` and `yearOf_`, this campus, never a
+  `SENSITIVE` metric). Thirteen weeks newest first (`.lmWk`, `on` / `off` with ✓ / ✗ in `.lmMark`, so colour isn't the only
+  sign). In the meeting: last week's number, "On track" / "Off track", and `[data-lmscoredrop]`.
+- **Rocks** (`#lmRocks`): the quarter's priorities by person, the team's first (`[data-lmrockowner]`, owner '' = the whole
+  team), this quarter or the next (`[data-lmrq]`; the app's 13-week quarters, `meetQ_`), an optional OKR objective (its
+  progress bar), status `[data-lmrockst="id|on|off|done"]`, a note; off track → `[data-lmrockdrop]`. Rocks sit beside OKRs.
+- **Headlines** (`#lmHeads`): good / hard (`[data-lmhk]`), one line, anyone on the team, all week; read in the meeting and
+  archived into its record.
+- **To-dos** are the board's little tasks (`lmTodoWeek_`, mirrored by the server's `meetTodoStats_`: done since the last
+  meeting, or open and due by today; an undated open one once older than that meeting; never one made in the meeting going
+  on): tick (`[data-lmtick]` → `saveLeadTask`), "n of m done" against 90% (`#lmTodoPct`), **Carry it on a week**
+  (`[data-lmcarry]`: due + 7, and `run.carried` keeps it counted as not done) or drop to Issues. A new one
+  (`[data-lmtodoin]` / `[data-lmtodoadd]`, owner ppick) → `leadMeetTodo` → `saveLeadTask` on the issue's card, else on the
+  meeting's own card ("Meeting to-dos", `todoCard`, never in the first column), due in seven days — so it is in the
+  Leadership team's GP Tasks list, that person's Inbox and the calendar.
+- **Running it** (`#lmRun[data-lmpartnow]`, `lmRunHtml_`): one part a screen — `LM_PARTS` checkin 5 · score 5 · rocks 5 ·
+  headlines 5 · todos 5 · issues 60 · wrap 5 (minutes editable). A sticky bar: "Part n of 7", two clocks (`#lmPartClock`,
+  `#lmTotalClock`, `lmTick_` every second with no render; `.over` = amber, never blocks), the seven dots (`[data-lmpart]`),
+  "Led by …", **Check again** (`#lmRefresh`), two coaching lines (`.lmDo` / `.lmDont`, `LM_INFO`), `#lmBack` / `#lmNext`,
+  `#lmEnd` on the last, `#lmCancel` (gpAsk_; no record). The state is on the server (`run`), so another phone shows the same
+  part on opening, on Check again, and when it comes back to the front — no polling, no sockets. Quick taps (who is here
+  `[data-lmhere]`, the ranking) go through `lmPatch_`: shown at once, sent together 350 ms later.
+- **Issues** are the Kanban's first column: tap up to three to rank them (`[data-lmrank]`, `.lmRank`, `run.top`), the day's
+  schedule topics offered as issues (`[data-lmtopic]`), **Work on number 1** (`#lmWork`) → `#lmIds`: Identify (`#lmIdentify`),
+  Discuss, Solve (`#lmDecision`, to-dos for that card) → `#lmSolve` → `leadMeetSolve`: "❓ issue / ✅ date — decision" is
+  appended to the card's notes and the card moves to the finished column through `saveLeadCard`. `#lmIssueBack` leaves it.
+- **Wrap up** (`#lmWrap`): the new to-dos, "What do we need to tell our teams?" (`#lmMsgText`, `run.messages`), a 1–10 rating
+  each (`[data-lmrate]`; your own, or everyone's for whoever leads or started it, or an admin), `#lmAvg`. **End** writes the
+  record: date, leader, who was there, minutes per part, to-dos done %, issues solved with decisions, new to-dos, headlines,
+  messages, ratings and average. **Past meetings** (`#lmPast`, `.lmPastItem`, `#lmTrend` — the last twelve averages).
+- **Server** (api.js "the leadership meeting"; `leadAuth_` = `canLead_`, so applicants and everyone outside Campus
+  Leadership are refused): blob `leadMeet:<campus>` = {minutes, score, rocks, headlines, todoCard, run, past} written with
+  `mutateKey_` (`meetMutate_`). `getLeadMeeting`, `saveLeadMeetSettings`, `saveLeadScore` / `deleteLeadScore` /
+  `saveLeadScoreValue(id, 'YYYY-W', value)`, `saveLeadRock` / `deleteLeadRock`, `saveLeadHeadline` / `deleteLeadHeadline`,
+  `leadMeetStart` (one at a time; a second Start joins), `leadMeetUpdate({part, present, leader, top, issue, identify,
+  carried, messages, rating, ratings})`, `leadMeetTodo`, `leadMeetSolve`, `leadMeetEnd({cancel})`. Each answers with the
+  whole meeting (`meetOut_`; `board` too when it changed the board). In the preview (`demoCall`) only `getLeadMeeting` runs,
+  and the made-up person isn't in leadership.
+- **Training, in our own words**: the guide, the coaching lines and the rules of thumb are YWAM GP's own. "EOS" and "Level 10
+  Meeting" are trademarks of EOS Worldwide and their materials are copyrighted — never paste any of it in; on screen it is
+  the "Leadership meeting", and `#lmFine` says it follows the widely used "Level 10" format and isn't affiliated. Keep it.
+- Drafts are in `S.mt.d` (`[data-lmd]`), forms in `S.mt.scoreForm` / `rockForm` / `set`: typing survives every redraw.
+- tests/test-lead-meeting.mjs (server), tests/test-lead-meeting-ui.mjs (the real api.js: set up, a whole meeting on two
+  phones, Khmer, 320px, a wide screen). Khmer: docs/khmer-needed.md §142. sw.js SHELL v33.
+
 ## Who's here (Oct 2026, Uriah)
 Base's hero has **🏠 On campus now · N** (`#goWhosHere`, loaded by `whosHereLoad_` when Base
 opens, kept 5 min) → the **Who's here** page (`S.view='whoshere'`, `whosHereHtml_`). Server:

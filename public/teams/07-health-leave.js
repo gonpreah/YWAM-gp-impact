@@ -425,12 +425,14 @@ function leadNextMonday_(){ var d=new Date(); d.setHours(12,0,0,0); var add=(8-d
 function leadSectionHtml_(){
   /* OKRs are their own tab now (beside My department, Board, My week, Finances) — the board
      keeps the meeting board, Tuesday and the notes */
-  var tab=S.leadTab==='notes' || S.leadTab==='tues' ? S.leadTab : 'board';
+  var tab=S.leadTab==='notes' || S.leadTab==='tues' || S.leadTab==='meet' ? S.leadTab : 'board';
+  var day=typeof lmDay_==='function' ? lmDay_() : 2;   // the meeting's weekday is a setting now (teams/27-meeting.js); Tuesday unless changed
   var h='<div class="leadFilters leadTabs" role="tablist">'+
+    '<button class="leadSeg'+(tab==='meet'?' on':'')+'" role="tab" data-leadtab="meet" title="'+esc(t('Leadership meeting'))+'">▶ '+esc(t('Meeting'))+'</button>'+
     '<button class="leadSeg'+(tab==='board'?' on':'')+'" role="tab" data-leadtab="board" title="'+esc(t('Monday meetings'))+'">🗂️ '+esc(t('Board'))+'</button>'+
-    '<button class="leadSeg'+(tab==='tues'?' on':'')+'" role="tab" data-leadtab="tues" title="'+esc(t('Tuesday morning meeting'))+'">🎤 '+esc(t('Tuesday'))+'</button>'+
+    '<button class="leadSeg'+(tab==='tues'?' on':'')+'" role="tab" data-leadtab="tues" title="'+esc(day===2 ? t('Tuesday morning meeting') : t('Who leads each week'))+'">🎤 '+esc(day===2 ? t('Tuesday') : t(LM_DAYS[day]))+'</button>'+
     '<button class="leadSeg'+(tab==='notes'?' on':'')+'" role="tab" data-leadtab="notes" title="'+esc(t('Meeting notes'))+'">📝 '+esc(t('Notes'))+'</button></div>';
-  return h+(tab==='notes' ? leadNotesHtml_() : tab==='tues' ? leadTuesHtml_() : leadBoardHtml_());
+  return h+(tab==='meet' ? leadMeetHtml_() : tab==='notes' ? leadNotesHtml_() : tab==='tues' ? leadTuesHtml_() : leadBoardHtml_());
 }
 function leadCardsFor_(okrId){ return ((S.lead && S.lead.cards) || []).filter(function(c){ return c.okrId===okrId; }); }
 function leadOkrDashHtml_(){
@@ -748,7 +750,7 @@ function bindLead_(){
   document.querySelectorAll('[data-leadtab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.leadTab=b.getAttribute('data-leadtab'); render(); }; });
   document.querySelectorAll('#leadGoOkr').forEach(function(b){ b.onclick=function(){ gpTap(); S.mmTab='okr'; S.lwTab='okrs'; lwTabKeep_('okrs'); render(); window.scrollTo(0,0); }; });
   document.querySelectorAll('[data-leadobjcards]').forEach(function(b){ b.onclick=function(){ gpTap(); S.leadTab='board'; S.leadFilter='all'; render(); }; });
-  if((document.getElementById('leadBoard') || document.getElementById('leadOkrs') || document.getElementById('leadNotes') || document.getElementById('leadTues') || document.getElementById('leadBase')) && !S.lead && !S.leadLoading && !S.leadErr){
+  if((document.getElementById('leadBoard') || document.getElementById('leadOkrs') || document.getElementById('leadNotes') || document.getElementById('leadTues') || document.getElementById('leadBase')) && !document.getElementById('leadMeet') && !S.lead && !S.leadLoading && !S.leadErr){
     S.leadLoading=true;
     run('getLeadBoard',[S.auth.user,S.auth.pin],function(d){ S.leadLoading=false; if(d && d.ok) S.lead=d; else S.leadErr=(d && d.err==='not_authorized') ? t('The meeting board is for Campus Leadership.') : t('Could not load'); render(); },
       function(e){ S.leadLoading=false; S.leadErr=(e && e.message) || t('Connection problem — try again.'); render(); });

@@ -987,6 +987,7 @@ function logout(){
   S.mmPeriod='quarter'; S.teamTrips={}; S.teamLoading={}; S.teamError={}; S.teamForm=null;
   S.hosp=null; S.hospLoading=false; S.hospError=''; S.hospForm=null; S.hospBedPick=null; S.hospRoom=null; S.hospBld=null; S.hospMove=null;
   S.lead=null; S.leadErr=''; S.leadForm=null; S.leadLoading=false; S.leadEdit=null;
+  S.meet=null; S.meetErr=''; S.meetLoading=false; S.meetBusy=false; S.meetPend=null; S.mt=null;   // the leadership meeting (27-meeting.js)
   S.worship=null; S.ws=null; S.sched=null; S.schedError=''; S.schedData=null; S.schedEdit=false; S.schedPick=null; S.schedDirty=false;
   S.hrStaff=null; S.hrLoading=false; S.hrError=''; S.hrSub='home'; S.hrPersonId=null; S.hrSearch=''; S.hrContractForm=null; S.hrArchiveDraft=null; S.hrDue=null; S.hrFollowUps=null; S.hrTab='staff';
   S.cands=null; S.candsLoading=false; S.candsError=''; S.candForm=null; S.candPersonId=null; S.candNoteDraft='';
