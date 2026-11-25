@@ -3729,6 +3729,43 @@ body.sbDragging, body.sbDragging * { cursor:grabbing !important; }
 .sbSchools .btn { margin:0; }
 @media (prefers-reduced-motion: reduce) { .sbZb:active { transform:none; } }
 
+/* ---------- Intercession: Wednesdays, prayer needs and the fast (teams/25-intercession.js) ---------- */
+.icpHead { font-size:15px; margin:14px 0 8px; }
+.icpWed.empty { opacity:.85; }
+.icpWedTop { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:4px; }
+.icpTag { font-size:11.5px; border:1px solid var(--border2); border-radius:999px; padding:1px 8px; color:var(--muted); }
+.icpTag.ok { border-color:var(--good); color:var(--good); }
+.icpLine { font-size:13.5px; margin:3px 0; overflow-wrap:anywhere; }
+.icpChips { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0; }
+.icpChip { font-size:12px; background:var(--bg); border:1px solid var(--border); border-radius:999px; padding:3px 9px; }
+.icpChip.other { border-style:dashed; }
+.icpTes, .icpTesRow { font-size:13px; margin:4px 0; overflow-wrap:anywhere; }
+.icpRow { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
+.icpRow > input { flex:1 1 160px; min-width:0; }
+.icpRow label { flex:1 1 120px; min-width:0; font-size:12.5px; color:var(--muted); }
+.icpRow label input { width:100%; }
+.icpMinDept { font-size:12px; font-weight:700; color:var(--muted); margin:10px 0 2px; }
+.icpMinPick summary, .icpPast summary { cursor:pointer; font-size:13.5px; padding:6px 0; }
+.icpPriv { display:flex; align-items:center; gap:6px; font-size:13px; margin:8px 0; }
+.icpNeed { border-top:1px solid var(--line); padding:8px 0; }
+.icpNeed:first-of-type { border-top:0; }
+.icpNeed.done .icpNeedText { color:var(--muted); }
+.icpNeedText { font-size:14px; overflow-wrap:anywhere; }
+.icpNeedMeta { font-size:12px; color:var(--faint); margin-top:2px; overflow-wrap:anywhere; }
+.icpToday { background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin:8px 0; overflow-wrap:anywhere; }
+.fastDays { display:grid; grid-template-columns:repeat(auto-fill, minmax(36px, 1fr)); gap:6px; margin:6px 0 10px; }
+.fastDay { min-width:0; height:36px; border-radius:10px; border:1.5px solid var(--border2); background:var(--bg); color:var(--ink); font-family:inherit; font-size:13px; cursor:pointer; }
+.fastDay.on { background:var(--accent); border-color:var(--accent); color:var(--accentInk); font-weight:700; }
+.fastDay.now { box-shadow:0 0 0 2px var(--amber) inset; }
+.fastDay:disabled { opacity:.4; cursor:default; }
+.fastPlanRow { display:flex; gap:8px; font-size:13px; padding:4px 0; overflow-wrap:anywhere; }
+.fastPlanRow.now { font-weight:700; }
+.fastPlanN { flex:0 0 26px; text-align:right; color:var(--faint); font-variant-numeric:tabular-nums; }
+.fastPlanEditRow { display:flex; gap:8px; padding:6px 0; border-top:1px solid var(--line); }
+.fastPlanFields { flex:1; min-width:0; display:grid; gap:4px; }
+.fastPlanFields input { min-width:0; }
+.fastGRow { display:grid; grid-template-columns:1fr 1fr; gap:6px; align-items:center; padding:8px 0; border-top:1px solid var(--line); }
+.fastGRow > * { min-width:0; }
 /* The structure whiteboard: View / Edit, and the schools running this quarter (Nov 2026, Andrew) */
 .sbModeRow { display:flex; align-items:center; flex-wrap:wrap; gap:6px 10px; margin:0 0 8px; }
 .sbModeSub { font-size:13px; margin:0; flex:1 1 180px; min-width:0; }

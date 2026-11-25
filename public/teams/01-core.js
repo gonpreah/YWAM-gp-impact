@@ -891,6 +891,7 @@ function applyBoot(d, fromCache){
   S.hrDue = (d.hrDue===undefined) ? null : d.hrDue;
   S.backup = d.backup || null;   // admins only: the nightly backup's last run
   S.numbers = d.numbers || null;
+  S.fast = d.fast || null;   // the campus's fast, running or coming (25-intercession.js): the bell and ☰
   S.hospNews = d.hospNews || null;   // SR Hospitality: a team's new dates, someone who left (06-numbers-contract.js hospChangesHtml_)
   S.pulse = {}; S.staffDebt = null;
   S.hrFollowUps = (d.hrFollowUps===undefined) ? null : d.hrFollowUps;
@@ -1105,6 +1106,7 @@ function render(){
   else if(S.view==='report') m.innerHTML=boardReportHtml_();
   else if(S.view==='support') m.innerHTML=supportHtml_();
   else if(S.view==='prayer') m.innerHTML=prayerHtml_();
+  else if(S.view==='icp') m.innerHTML=icpPageHtml_();   // Wednesday intercession and the fast, for everyone (25-intercession.js)
   else if(S.view==='khmer') m.innerHTML=khmerHtml_();
   else if(S.view==='p360') m.innerHTML=p360Html_();
   else if(S.view==='tests') m.innerHTML=testsHtml_();
@@ -1287,6 +1289,7 @@ function renderNotifPanel(){
   document.querySelectorAll('#notifRoot [data-gohealth]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='health'; if(b.getAttribute('data-gohealth')==='open'){ S.healthWeek=thisWeek(); S.weekForm=thisWeek(); } render(); };
   });
+  if(typeof bindGoFast_==='function') bindGoFast_('#notifRoot [data-gofast]');   // the fast (25-intercession.js)
   document.querySelectorAll('#notifRoot [data-jumpgoals]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='week'; render(); };
   });
@@ -1373,6 +1376,7 @@ function renderMenu(){
   IC.openapp=IC.base;
   IC.portalapp='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M10 18h4"/><path d="M12 6v6M9.5 9.5 12 12l2.5-2.5"/></svg>';
   IC.applogout=IC.profile;
+  IC.fast=IC.prayer;
   IC.support='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z"/><path d="M12 8.5v6M9.5 11.5h5"/></svg>';
   var sections= gpTasksApp_() ? [
     { title:'', items:[it('tasks', t('Tasks')), it('calendar', t('Calendar'))] },
@@ -1386,7 +1390,7 @@ function renderMenu(){
   ] : S.guest ? [
     { title:'', items:[it('library', t('Library')), it('guestreg', t('Create my profile')), it('guestlogin', t('Log in'))] }
   ] : [
-    { title:'', items:[it('base', t('Base')), it('caltasks', t('GP Calendar/Tasks')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer')), it('p360', t('360 reviews')), it('tests', t('Tests')), it('leave', t('Leave Request')), it('library', t('Library'))].concat(S.student ? [] : [it('support', t('Support raising'))]) },
+    { title:'', items:[it('base', t('Base')), it('caltasks', t('GP Calendar/Tasks')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer'))].concat(S.fast ? [it('fast', S.fast.title)] : [], [ it('p360', t('360 reviews')), it('tests', t('Tests')), it('leave', t('Leave Request')), it('library', t('Library'))], S.student ? [] : [it('support', t('Support raising'))]) },
     { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : [], canStudentsClient_() ? [it('students', t('Students'))] : []) },
     { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal')), it('portalapp', t('The Portal on your phone'))] : [] },
     { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : [], kmrCan_() ? [it('kmreview', t('Khmer review'))] : []) },
@@ -1422,6 +1426,7 @@ function renderMenu(){
       else if(id==='applogout'){ logout(); }
       else if(id==='calendar' || id==='caltasks'){ S.view='calendar'; S.cal=null; S.calFrom=null; render(); window.scrollTo(0,0); }
       else if(id==='prayer'){ S.view='prayer'; S.pr=null; render(); window.scrollTo(0,0); }
+      else if(id==='fast'){ icpOpen_('fast'); }
       else if(id==='khmer'){ khOpen_(); }
       else if(id==='p360'){ S.view='p360'; S.p3Sub='home'; S.p3=null; render(); window.scrollTo(0,0); }
       else if(id==='tests'){ S.tests.mc=null; testsOpen_('home'); }
