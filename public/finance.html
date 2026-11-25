@@ -2432,7 +2432,8 @@ function mnRange_(P){ return P.from ? (P.from===P.to ? date(P.from) : date(P.fro
 /* which sub-categories are picked: ministries first; to start, the first ministry */
 function mnGroups_(){ var g=ALLOC.slice(), i=g.map(function(a){ return a.id; }).indexOf('min'); if(i>0){ var m=g.splice(i,1)[0]; g.unshift(m); } return g; }
 function mnSel_(){ var M=mnS_(), keys=fundList_().map(function(f){ return f.k; });
-  var sel=(M.sel||[]).filter(function(k){ return keys.indexOf(k)>=0; });
+  /* opens on Office/General (else the first allocation); once the picks are changed — even to none — they stay */
+  var sel=(M.sel==null ? (keys.indexOf('adm|Office/General')>=0 ? ['adm|Office/General'] : keys.slice(0,1)) : M.sel).filter(function(k){ return keys.indexOf(k)>=0; });
   return sel; }
 function mnName_(k){ var f=fundOf_(k); return f ? f.name : fundNm_(k); }
 function mnSelName_(sel){ if(!sel.length) return 'Nothing selected yet'; if(sel.length===1) return mnName_(sel[0]);
