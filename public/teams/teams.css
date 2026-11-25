@@ -3766,3 +3766,17 @@ body.sbDragging, body.sbDragging * { cursor:grabbing !important; }
 .fastPlanFields input { min-width:0; }
 .fastGRow { display:grid; grid-template-columns:1fr 1fr; gap:6px; align-items:center; padding:8px 0; border-top:1px solid var(--line); }
 .fastGRow > * { min-width:0; }
+/* The structure whiteboard: View / Edit, and the schools running this quarter (Nov 2026, Andrew) */
+.sbModeRow { display:flex; align-items:center; flex-wrap:wrap; gap:6px 10px; margin:0 0 8px; }
+.sbModeSub { font-size:13px; margin:0; flex:1 1 180px; min-width:0; }
+.sbMode { display:inline-flex; padding:3px; border-radius:999px; background:var(--surface2); border:1px solid var(--border); flex:0 0 auto; }
+.sbModeB { border:0; background:none; color:var(--ink); font:inherit; font-size:14px; font-weight:600; padding:6px 12px; border-radius:999px; cursor:pointer; white-space:nowrap; }
+.sbModeB.on { background:var(--headerBg); color:var(--onDark); }
+.sbBar .sbMode { margin-left:auto; }
+.sbBar .sbModeB { padding:5px 10px; font-size:13px; }
+.sbWrap.editing { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset; }
+.sbWrap.editing.full { box-shadow:none; }
+.sbRun { margin:0 0 8px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--rLg, 14px); background:var(--surface); }
+.sbRunLine { margin:0 0 8px; }
+.sbNotRun { margin:6px 8px 4px; font-size:11px; color:var(--muted); line-height:1.3; }
+

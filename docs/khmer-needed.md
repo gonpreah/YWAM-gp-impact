@@ -6172,7 +6172,7 @@ The finance tool itself (public/finance.html) is English only for now — its Kh
 |---|---|
 | Input | បញ្ចូល |
 
-## 137. Intercession: Wednesdays, prayer needs and the fast (Nov 2026)
+## 138. Intercession: Wednesdays, prayer needs and the fast (Nov 2026)
 Youth Education › Intercession on My Ministry (Wednesdays · 21-day fast · Requests · Dashboard), the page for everyone ("Wednesday intercession", from ☰ → Prayer and search), the fast in ☰ and the bell. Check first the privacy promise about who fasts ("Only you see that you joined…") and the health note. "Wednesdays", "21-day fast" and "Dashboard" are tab labels (very little room). Fasting is ការតមអាហារ; intercession ការអធិស្ឋានអង្វរ. The 21 themes of the fast template are in public/teams/25-intercession.js (ICP_FAST_TPL), English and Khmer side by side — please read those too.
 
 | English | Khmer (draft) |
@@ -6291,3 +6291,18 @@ Youth Education › Intercession on My Ministry (Wednesdays · 21-day fast · Re
 | Partial fast (Daniel fast) | តមអាហារដោយផ្នែក (តមបែបដានីយ៉ែល) |
 | One meal a day | ញ៉ាំអាហារមួយពេលក្នុងមួយថ្ងៃ |
 | Media and social media | ប្រព័ន្ធផ្សព្វផ្សាយ និងបណ្តាញសង្គម |
+## 137. The structure whiteboard: View / Edit, and the schools running each quarter (My Ministry → Structure)
+
+The View / Edit switch above the board, the line under it, and the row of schools to tick while editing. "View" and "Edit" reuse existing words.
+
+| English | Khmer (draft) |
+|---|---|
+| Looking only — nobody moves. Tap Edit to make changes. | មើលប៉ុណ្ណោះ — គ្មាននរណាម្នាក់ត្រូវបានផ្លាស់ទីទេ។ ចុច កែសម្រួល ដើម្បីធ្វើការផ្លាស់ប្តូរ។ |
+| View or edit | មើល ឬកែសម្រួល |
+| none | គ្មាន |
+| Which schools run in Q{q} {year}? | តើសាលាណាខ្លះដំណើរការនៅ Q{q} {year}? |
+| Editing: drag faces, tap ＋ to add, tap a face for more. | កំពុងកែសម្រួល៖ អូសមុខមនុស្ស ចុច ＋ ដើម្បីបន្ថែម ចុចមុខមនុស្សដើម្បីមើលបន្ថែម។ |
+| Viewing: move around and zoom — nobody can be moved by accident. | កំពុងមើល៖ រំកិល និងពង្រីកបាន — គ្មាននរណាម្នាក់ត្រូវបានផ្លាស់ទីដោយចៃដន្យទេ។ |
+| Not running this quarter: {list} | មិនដំណើរការក្នុងត្រីមាសនេះ៖ {list} |
+| Schools running in Q{q} {year}: {list} | សាលាដែលដំណើរការនៅ Q{q} {year}៖ {list} |
+| A school that isn’t running has no box this quarter. Add its leaders and staff in its box once it runs. | សាលាដែលមិនដំណើរការ គ្មានប្រអប់ក្នុងត្រីមាសនេះទេ។ បន្ថែមអ្នកដឹកនាំ និងបុគ្គលិករបស់វានៅក្នុងប្រអប់របស់វា នៅពេលវាដំណើរការ។ |

@@ -6335,10 +6335,11 @@ async function getPlans_() { return readJSON('structurePlans', []); }
    arrangement (students never carry over; they are per quarter). */
 function planFor_(plans, campus, y, q) {
   const p = plans.find(function (r) { return r.campus === campus && Number(r.year) === y && Number(r.quarter) === q; });
-  if (p) return { students: p.students || {}, place: p.place || {}, leads: p.leads || null, extra: p.extra || [], inherited: false };
+  if (p) return { students: p.students || {}, place: p.place || {}, leads: p.leads || null, extra: p.extra || [], schools: Array.isArray(p.schools) ? p.schools : null, inherited: false };
   const earlier = plans.filter(function (r) { return r.campus === campus && r.place && Object.keys(r.place).length && (Number(r.year) * 10 + Number(r.quarter)) < y * 10 + q; })
     .sort(function (a, b) { return (Number(b.year) * 10 + Number(b.quarter)) - (Number(a.year) * 10 + Number(a.quarter)); })[0];
   return { students: {}, place: (earlier && earlier.place) || {}, leads: (earlier && earlier.leads) || null, extra: (earlier && earlier.extra) || [],
+    schools: earlier && Array.isArray(earlier.schools) ? earlier.schools : null,
     inherited: !!earlier, from: earlier ? { year: Number(earlier.year), quarter: Number(earlier.quarter) } : null };
 }
 function cleanPlace_(place, here) {
@@ -6358,6 +6359,14 @@ function cleanPlace_(place, here) {
    `extra` = [{id:'x_…', name}] — someone not in the app yet (a new staff member coming in Q1); they sit in `place` and `leads`
    like anyone. */
 const STRUCT_OFF = '_off', STRUCT_EXTRA_MAX = 80, STRUCT_LEAD_MAX = 8;
+/* Which Leadership Development schools run that quarter (Nov 2026, Andrew: "in Q1, we only have the GPDTS school
+   running"): a list of school ministries, or null = every school. A school not running has no box on the chart that
+   quarter; where people were placed is kept for a quarter it runs. */
+const STRUCT_SCHOOL_MINS = ['GPDTS', 'DTS', 'DBS', 'SMS', 'BCS', 'SOMD'];
+function cleanStructSchools_(schools) {
+  if (!Array.isArray(schools)) return null;
+  return STRUCT_SCHOOL_MINS.filter(function (m) { return schools.indexOf(m) > -1; });
+}
 function cleanStructExtra_(extra) {
   const out = [], seen = {};
   (Array.isArray(extra) ? extra : []).forEach(function (x) {
@@ -6402,7 +6411,7 @@ async function getStructure(username, pin, campus, year, quarter) {
   const found = structFind_(await getStructures_(), campus, y, q);
   return { ok: true, campus: campus, year: y, quarter: q, doc: structPeopleOnly_(found.doc, await getStaff_()), source: found.source, plan: planFor_(await getPlans_(), campus, y, q) };
 }
-async function saveStructurePlan(username, pin, campus, year, quarter, students, place, leads, extra) {
+async function saveStructurePlan(username, pin, campus, year, quarter, students, place, leads, extra, schools) {
   campus = str_(campus, 40);
   const admin = await structEditor_(username, pin, campus);
   if (!admin) return { ok: false, err: 'not_authorized' };
@@ -6426,7 +6435,8 @@ async function saveStructurePlan(username, pin, campus, year, quarter, students,
   const placeClean = place === undefined || place === null ? cleanPlace_(before.place, hereAll) : cleanPlace_(place, hereAll);
   const studentsClean = students === undefined || students === null ? before.students : clean;
   const leadsClean = leads === undefined ? cleanStructLeads_(before.leads, hereAll) : cleanStructLeads_(leads, hereAll);
-  const rec = { campus: campus, year: y, quarter: q, students: studentsClean, place: placeClean, leads: leadsClean, extra: extraClean, savedAt: new Date().toISOString(), savedBy: admin.id };
+  const schoolsClean = schools === undefined ? cleanStructSchools_(before.schools) : cleanStructSchools_(schools);
+  const rec = { campus: campus, year: y, quarter: q, students: studentsClean, place: placeClean, leads: leadsClean, extra: extraClean, schools: schoolsClean, savedAt: new Date().toISOString(), savedBy: admin.id };
   if (idx > -1) plans[idx] = rec; else plans.push(rec);
   await writeJSON('structurePlans', plans);
   // a snapshot already saved for that quarter follows
@@ -6435,6 +6445,7 @@ async function saveStructurePlan(username, pin, campus, year, quarter, students,
   if (snap && y * 10 + q >= currentYear_() * 10 + currentQuarter_()) {
     // this quarter or a later one: the snapshot is the arrangement as it now stands
     snap.people = structPeople_(staff, campus, rec);
+    snap.schools = schoolsClean;
     await writeJSON('structure', rows);
   } else if (snap) {
     const byId = {}; staff.forEach(function (r) { byId[r.id] = r; });
@@ -6447,7 +6458,7 @@ async function saveStructurePlan(username, pin, campus, year, quarter, students,
     });
     await writeJSON('structure', rows);
   }
-  return { ok: true, campus: campus, year: y, quarter: q, plan: { students: studentsClean, place: placeClean, leads: leadsClean, extra: extraClean, inherited: false }, doc: snap ? structPeopleOnly_(snap, staff) : null };
+  return { ok: true, campus: campus, year: y, quarter: q, plan: { students: studentsClean, place: placeClean, leads: leadsClean, extra: extraClean, schools: schoolsClean, inherited: false }, doc: snap ? structPeopleOnly_(snap, staff) : null };
 }
 /* The people of a snapshot: the campus's staff where the quarter's arrangement puts them (else their profile), who leads
    what that quarter (else the profiles'), and the names typed in on the whiteboard. */
@@ -6467,7 +6478,7 @@ async function saveStructure(username, pin, campus, year, quarter) {
   if (y == null || q == null) return { ok: false, err: 'bad_quarter' };
   const plan = planFor_(await getPlans_(), campus, y, q);
   const people = structPeople_(await getStaff_(), campus, plan);
-  const rec = { campus: campus, year: y, quarter: q, people: people, savedAt: new Date().toISOString(), savedBy: admin.id };
+  const rec = { campus: campus, year: y, quarter: q, people: people, schools: plan.schools || null, savedAt: new Date().toISOString(), savedBy: admin.id };
   const rows = await getStructures_();
   const idx = rows.findIndex(function (r) { return r.campus === campus && Number(r.year) === y && Number(r.quarter) === q; });
   if (idx > -1) rows[idx] = rec; else rows.push(rec);
@@ -15088,7 +15099,7 @@ const HANDLERS = {
   adminDecideTrip: function (a) { return adminDecideTrip(a[0], a[1], a[2], a[3]); },
   adminSaveHolidays: function (a) { return adminSaveHolidays(a[0], a[1], a[2]); },
   saveStructure: function (a) { return saveStructure(a[0], a[1], a[2], a[3], a[4]); },
-  saveStructurePlan: function (a) { return saveStructurePlan(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8]); },
+  saveStructurePlan: function (a) { return saveStructurePlan(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]); },
   hrCandidates: function (a) { return hrCandidates(a[0], a[1]); },
   hrSaveCandidate: function (a) { return hrSaveCandidate(a[0], a[1], a[2]); },
   hrCandidateNote: function (a) { return hrCandidateNote(a[0], a[1], a[2], a[3]); },

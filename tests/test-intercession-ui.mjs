@@ -89,7 +89,7 @@ const wide = p => p.evaluate(() => document.documentElement.scrollWidth <= windo
   await page.fill('#icpCame', '14'); await page.fill('#icpHours', '1.5');
   await page.fill('#icpTes', 'Rain for the farms'); await page.click('#icpTesAdd'); await page.waitForTimeout(200);
   await page.click('#icpSave'); await page.waitForTimeout(1500);
-  ok('saved: the card says held, with the testimony', !(await page.$('#icpForm')) && /Rain for the farms/.test(await page.$eval('#icpPast', e => e.textContent)) && !(await page.$('#icpAskHeld')));
+  ok('saved: the card says held, with the testimony', !(await page.$('#icpForm')) && /Rain for the farms/.test(await page.$eval('#main', e => e.textContent)) && !(await page.$('#icpAskHeld')));
   ok('the numbers fill themselves in: 1 meeting, 1.5 hours, 2 ministries, 1 testimony',
     ent('Prayer Meetings Held')?.value === 1 && ent('Prayer Hours Covered')?.value === 1.5 && ent('Ministries Covered in Prayer')?.value === 2 && ent('Answered-Prayer Testimonies')?.value === 1);
   /* plan the next one, copying last week's */
