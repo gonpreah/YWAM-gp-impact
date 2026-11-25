@@ -59,6 +59,33 @@ Income.
 - **Funds:** that one fund goes down at once.
 - **Accounts:** takes off the chosen account in the Live estimate.
 
+### 📥 Bulk import — a QuickBooks Profit and Loss Detail, and a mix of places (25 Nov 2026)
+- **These lines are from** has **A mix of places — each line says which account** (`mix`): no one account for the
+  whole file; each line's own account column is used.
+- **A Profit and Loss Detail** (QuickBooks: Transaction date · Transaction type · Number · Name · Location · Class
+  full name · Description · Item split account · Amount · Balance) is recognised by its Income / Expenses
+  sections (`bulkFromSheet_` → `isPL`). It is read as a mix of places unless an account was picked on purpose
+  (`S.bulkSrcSet`). For each line (`bulkGuess_`, `t.qbSec`):
+  - **income or expense** from the section it sits in (every amount is positive there; a negative one goes the
+    other way);
+  - **the kind** from the account heading above it: an expense by its account number (`expFromHead_`: 50500 Food,
+    53200 Supplies, 54000 → Honorarium, 57000 Vehicle Expenses…, else by the heading's words); income from the
+    class and heading words (45100 Lecture Contribution with a BCS / SMS class → School contributions — Other
+    schools; DTS / DBS / SOMD → theirs);
+  - **the account** from Item split account (ABA → ABA bank, Cash on Hand → Cash, **Sub Splash** or US Bank → US
+    bank);
+  - **the category** from the class (`classFund_`): the one picked for that class before (`EXP_MAP['class:…']`),
+    else a school named in it (DTS, DBS, SOMD; **BCS, SMS or "school" → Other Schools**), else the class's words.
+    **Picking a category for a line with a class remembers it** for next time and gives every other line of that
+    class in the file the same (unless set by hand), with a toast saying how many.
+  - **A Journal Entry** is never guessed: it waits, tagged "📓 journal entry — check it", until the office says
+    whether it is income, an expense or a transfer (the description box doesn't decide it either).
+- The "Total for …" lines are QuickBooks' own sums: each account's lines are checked against them, "✓ Every account
+  adds up to QuickBooks' own total" or what doesn't match.
+- **Dates written as text** follow the file's day/month order, decided from all its dates (the reading where they sit
+  closest together, none in the future) and flippable with "Read them the other way" — not always QuickBooks'
+  MM/DD (the Poipet export is DD/MM). Dates stored as real spreadsheet dates are read as they are.
+
 ### 📥 Bulk import — describing what is imported (25 Nov 2026)
 - Under "These lines are from" there is **Describe what you're importing** (optional, `S.bulkNote`), e.g. "This
   import is the ABA expenses from the class Admin in QBO — this corresponds to Office/General in our system".
