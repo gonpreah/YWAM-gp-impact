@@ -176,5 +176,124 @@ ok('null puts every school back', r.body.ok && r.body.plan.schools === null);
 r = await call('saveStructurePlan', ['dara', '1234', 'siemreap', 2027, 1, undefined, undefined, undefined, undefined, ['GPDTS']]);
 ok('only Campus Leadership and admins can set them', r.body.ok === false && r.body.err === 'not_authorized');
 
+
+console.log('\n=== a person in more than one ministry; a quarter made live → profiles (Nov 2026, Uriah) ===');
+const NOWD = new Date(), CY = NOWD.getUTCFullYear(), CQ = Math.floor(NOWD.getUTCMonth() / 3) + 1;
+const NXT = CQ === 4 ? [CY + 1, 1] : [CY, CQ + 1], PREV = CQ === 1 ? [CY - 1, 4] : [CY, CQ - 1];
+mem.staff.push(
+  withPin({ id: 'pp_cl', name: 'Vanna Keo', username: 'vanna', campus: 'poipet', dept: 'Campus Leadership', ministry: 'Community Service', active: true }),
+  withPin({ id: 'pp_cd', name: 'Chan Dy', username: 'chan', campus: 'poipet', dept: 'Campus Leadership', ministry: 'Campus Director', cdKind: 'national', active: true, leads: ['Campus Leadership|Campus Director'] }),
+  withPin({ id: 'pp_a', name: 'Rith Sam', username: 'rith', campus: 'poipet', dept: 'Community Service', ministry: 'Cafe', active: true, leads: ['Community Service|Cafe'], mentorId: 'pp_b', mentorStatus: 'approved', staffType: 'campus', role: 'Barista', hr: true, country: 'Cambodia', phone: '012 000 000' }),
+  withPin({ id: 'pp_b', name: 'Maly Ouk', username: 'maly', campus: 'poipet', dept: 'Community Service', ministry: 'Cafe', active: true, ministries: ['Youth Education|YDC'] }),
+  withPin({ id: 'pp_c', name: 'Sokun Im', username: 'sokun', campus: 'poipet', dept: 'Youth Education', ministry: 'YDC', active: true }),
+  withPin({ id: 'pp_d', name: 'Nita Pen', username: 'nita', campus: 'poipet', dept: 'Youth Education', ministry: 'YDC', active: true, leads: ['Youth Education|YDC'] }),
+  withPin({ id: 'pp_e', name: 'Pich Lay', username: 'pich', campus: 'poipet', dept: 'Youth Education', ministry: 'YDC', active: true }),
+);
+const prof = id => mem.staff.find(x => x.id === id);
+const core = () => JSON.stringify(mem.staff.filter(x => x.campus === 'poipet').map(x => [x.id, x.dept, x.ministry, x.ministries || null, x.leads || null, x.cltRequest ? x.cltRequest.ministry : null, x.cdKind || '']));
+const PLACE = {
+  pp_cl: { dept: 'Campus Leadership', ministry: 'Community Service' }, pp_cd: { dept: 'Campus Leadership', ministry: 'Campus Director' },
+  pp_a: { dept: 'Youth Education', ministry: 'YDC' }, pp_b: { dept: 'Community Service', ministry: 'Cafe' },
+  pp_c: { dept: 'Campus Leadership', ministry: 'Youth Education' }, pp_d: { dept: '_off', ministry: '' }, pp_e: { dept: '_off', ministry: '' },
+  st_pp: { dept: 'Community Service', ministry: 'Cafe' }, x_typed001: { dept: 'Community Service', ministry: 'Cafe' },
+};
+const LEADS = { 'Youth Education|YDC': ['pp_a'], 'Community Service|Cafe': ['pp_b', 'x_typed001'] };
+const ALSO_A = ['Community Service|Cafe', 'Youth Education|Worship', 'Youth Education|GP Media', 'Skills Training|Culinary'];
+const ALSO = {
+  pp_a: ['Community Service|Cafe', 'Youth Education|YDC', 'Campus Leadership|Youth Education', 'nonsense', 'Community Service|Cafe', 'Youth Education|Worship', 'Youth Education|GP Media', 'Skills Training|Culinary', 'Skills Training|Hospitality'],
+  pp_b: [], pp_d: ['Community Service|Cafe'], pp_e: ['Community Service|Cafe'], st_gone: ['Community Service|Cafe'], st_dara: ['Community Service|Cafe'],
+};
+const before0 = core();
+r = await call('saveStructurePlan', ['vanna', '1234', 'poipet', CY, CQ, { pp_e: 'dts' }, PLACE, LEADS, [{ id: 'x_typed001', name: 'Coming Soon' }], null, ALSO]);
+ok('the quarter’s plan keeps who also serves where: never the main place, never a Campus Leadership row, once each, four at most; nobody off the chart, no student, nobody from elsewhere',
+  r.body.ok && JSON.stringify(r.body.plan.also) === JSON.stringify({ pp_a: ['Community Service|Cafe', 'Youth Education|Worship', 'Youth Education|GP Media', 'Skills Training|Culinary'] }), JSON.stringify(r.body.plan && r.body.plan.also));
+ok('a plan that is not live writes no profile', core() === before0 && !r.body.plan.live && r.body.applied.length === 0);
+ok('… and whoever arranges it hears what making it live would change', r.body.diff && r.body.diff.changes.length === 3, JSON.stringify(r.body.diff && r.body.diff.changes.map(c => c.id)));
+r = await call('getStructure', ['maly', '1234', 'poipet', CY, CQ]);
+ok('an ordinary staff member reads the plan (with also) but gets no list of changes', r.body.ok && r.body.plan.also.pp_a.length === 4 && r.body.diff === undefined);
+r = await call('getStructure', ['vanna', '1234', 'poipet', NXT[0], NXT[1]]);
+ok('the next quarter starts from it — the other ministries too — and is not live', r.body.plan.inherited === true && r.body.plan.also.pp_a.length === 4 && r.body.plan.live === null);
+
+r = await call('applyStructure', ['maly', '1234', 'poipet', CY, CQ, { dry: true }]);
+ok('an ordinary staff member cannot make a quarter live, nor look', r.body.ok === false && r.body.err === 'not_authorized');
+r = await call('applyStructure', ['kosal', '1234', 'poipet', CY, CQ, {}]);
+ok('nor Campus Leadership of the other campus', r.body.ok === false && r.body.err === 'not_authorized' && core() === before0);
+r = await call('applyStructure', ['vanna', '1234', 'poipet', PREV[0], PREV[1], {}]);
+ok('a quarter already over is refused', r.body.ok === false && r.body.err === 'past_quarter');
+r = await call('applyStructure', ['vanna', '1234', 'poipet', CY, 7, {}]);
+ok('and a quarter that is not one', r.body.ok === false && r.body.err === 'bad_quarter');
+
+r = await call('applyStructure', ['vanna', '1234', 'poipet', CY, CQ, { dry: true }]);
+const dry = r.body.changes || [], byC = id => dry.find(c => c.id === id);
+ok('a look first lists the changes and writes nothing', r.body.ok && r.body.dry === true && core() === before0 && !mem.structurePlans.find(p => p.campus === 'poipet' && p.year === CY && p.quarter === CQ).live, JSON.stringify(dry));
+ok('… the main move, the other ministries and the leading, per person', byC('pp_a') && byC('pp_a').from === 'Community Service|Cafe' && byC('pp_a').to === 'Youth Education|YDC' && byC('pp_a').alsoAdd.length === 4 &&
+  JSON.stringify(byC('pp_a').leadAdd) === '["Youth Education|YDC"]' && JSON.stringify(byC('pp_a').leadDrop) === '["Community Service|Cafe"]' &&
+  byC('pp_b') && !byC('pp_b').to && JSON.stringify(byC('pp_b').alsoDrop) === '["Youth Education|YDC"]' && JSON.stringify(byC('pp_b').leadAdd) === '["Community Service|Cafe"]', JSON.stringify([byC('pp_a'), byC('pp_b')]));
+ok('… a move into Campus Leadership by someone who is not an admin waits for one', byC('pp_c') && byC('pp_c').waits === 'Campus Leadership|Youth Education' && !byC('pp_c').to);
+ok('… nobody off the chart, no student, no typed-in name, nobody whose profile already matches', !byC('pp_d') && !byC('pp_e') && !byC('x_typed001') && !byC('pp_cl') && !byC('pp_cd') && !byC('st_pp') && dry.length === 3, dry.map(c => c.id).join(','));
+
+const keep = id => { const x = { ...prof(id) }; ['dept', 'ministry', 'ministries', 'leads', 'updated', 'cltRequest'].forEach(k => delete x[k]); return JSON.stringify(x); };
+const keepA = keep('pp_a'), keepC = keep('pp_c'), wholeD = JSON.stringify(prof('pp_d')), wholeE = JSON.stringify(prof('pp_e')), wholeCd = JSON.stringify(prof('pp_cd')), sr = JSON.stringify(mem.staff.filter(x => x.campus === 'siemreap'));
+r = await call('applyStructure', ['vanna', '1234', 'poipet', CY, CQ, {}]);
+ok('made live: the changes come back', r.body.ok && r.body.changes.length === 3 && r.body.plan.live && r.body.plan.live.by === 'pp_cl', JSON.stringify(r.body).slice(0, 300));
+ok('the main place is the profile’s department and ministry', prof('pp_a').dept === 'Youth Education' && prof('pp_a').ministry === 'YDC');
+ok('the other ministries are the profile’s `ministries`', JSON.stringify(prof('pp_a').ministries) === JSON.stringify(['Community Service|Cafe', 'Youth Education|Worship', 'Youth Education|GP Media', 'Skills Training|Culinary']) && JSON.stringify(prof('pp_b').ministries) === '[]', JSON.stringify([prof('pp_a').ministries, prof('pp_b').ministries]));
+ok('who leads what is the profile’s `leads`', JSON.stringify(prof('pp_a').leads) === '["Youth Education|YDC"]' && JSON.stringify(prof('pp_b').leads) === '["Community Service|Cafe"]');
+ok('nothing else on a profile changed — mentor, kind of staff, role, HR, PIN…', keep('pp_a') === keepA, keep('pp_a'));
+ok('the one moved into Campus Leadership keeps their department: it is a request for an admin', prof('pp_c').dept === 'Youth Education' && prof('pp_c').ministry === 'YDC' && prof('pp_c').cltRequest && prof('pp_c').cltRequest.ministry === 'Youth Education' && keep('pp_c') === keepC, JSON.stringify(prof('pp_c').cltRequest));
+ok('off the chart, a student: their whole profile untouched (a leader key the plan dropped included)', JSON.stringify(prof('pp_d')) === wholeD && JSON.stringify(prof('pp_e')) === wholeE);
+ok('someone who stays Campus Director keeps their title and their Campus Leadership key', JSON.stringify(prof('pp_cd')) === wholeCd);
+ok('the other campus is untouched', JSON.stringify(mem.staff.filter(x => x.campus === 'siemreap')) === sr);
+ok('the plan is marked live', !!mem.structurePlans.find(p => p.campus === 'poipet' && p.year === CY && p.quarter === CQ).live);
+ok('what is still to do: nothing new, one waiting for an admin', r.body.diff.changes.length === 0 && r.body.diff.waiting.length === 1 && r.body.diff.waiting[0].id === 'pp_c', JSON.stringify(r.body.diff));
+r = await call('applyStructure', ['vanna', '1234', 'poipet', CY, CQ, {}]);
+ok('again changes nothing', r.body.ok && r.body.changes.length === 0);
+r = await call('adminListStaff', ['uriah', '1234']);
+ok('Admin → Approvals sees the move into Campus Leadership', r.body.staff.find(x => x.id === 'pp_c').cltRequest.ministry === 'Youth Education');
+r = await call('getMyBoot', ['maly', '1234']);
+ok('someone given a ministry here has it on their own card', r.body.ok && JSON.stringify(r.body.staff.leads) === '["Community Service|Cafe"]');
+
+console.log('\n=== live, then edited: this quarter’s board is the profiles ===');
+r = await call('saveStructure', ['uriah', '1234', 'poipet', CY, CQ]);
+ok('a snapshot of the quarter carries the other ministries', JSON.stringify(r.body.doc.people.find(p => p.id === 'pp_a').also) === JSON.stringify(prof('pp_a').ministries) && !r.body.doc.people.find(p => p.id === 'pp_b').also);
+// Rith edits his own profile; then an unrelated change on the board
+r = await call('updateProfile', ['rith', '1234', { dept: 'Community Service', ministry: 'Cafe' }]);
+ok('(Rith moves himself back on his own profile)', prof('pp_a').ministry === 'Cafe');
+r = await call('saveStructurePlan', ['vanna', '1234', 'poipet', CY, CQ, { pp_e: 'dts' }, { ...PLACE, pp_b: { dept: 'Youth Education', ministry: 'YDC' } }, { 'Youth Education|YDC': ['pp_a'], 'Community Service|Cafe': ['x_typed001'] }, [{ id: 'x_typed001', name: 'Coming Soon' }], null, { pp_a: ALSO_A, pp_b: ['Community Service|Cafe'] }]);
+ok('a change on a live board is on the profile at once', r.body.ok && prof('pp_b').dept === 'Youth Education' && prof('pp_b').ministry === 'YDC' && JSON.stringify(prof('pp_b').ministries) === '["Community Service|Cafe"]' && JSON.stringify(prof('pp_b').leads) === '[]', JSON.stringify(prof('pp_b')));
+ok('… and the answer says who', r.body.applied.some(c => c.id === 'pp_b') && r.body.plan.live);
+ok('… the saved snapshot follows', mem.structure.find(x => x.campus === 'poipet' && x.year === CY && x.quarter === CQ).people.find(p => p.id === 'pp_b').ministry === 'YDC');
+r = await call('saveStructurePlan', ['vanna', '1234', 'poipet', CY, CQ, { pp_e: 'dts' }, { ...PLACE, pp_b: { dept: 'Youth Education', ministry: 'YDC' }, st_pp: { dept: 'Youth Education', ministry: 'YDC' } }, { 'Youth Education|YDC': ['pp_a'], 'Community Service|Cafe': ['x_typed001'] }, [{ id: 'x_typed001', name: 'Coming Soon' }], null, { pp_a: ALSO_A, pp_b: ['Community Service|Cafe'] }]);
+ok('a change for someone else does not sweep back a profile its owner edited', prof('st_pp').ministry === 'YDC' && prof('pp_a').ministry === 'Cafe' && r.body.applied.length === 1);
+ok('… it is counted as a profile that differs', r.body.diff.changes.length === 1 && r.body.diff.changes[0].id === 'pp_a' && r.body.diff.changes[0].to === 'Youth Education|YDC');
+r = await call('applyStructure', ['vanna', '1234', 'poipet', CY, CQ, {}]);
+ok('Apply again puts it right', r.body.ok && r.body.changes.length === 1 && prof('pp_a').ministry === 'YDC' && JSON.stringify(prof('pp_a').ministries) === JSON.stringify(ALSO_A), JSON.stringify(prof('pp_a').ministries));
+// an admin makes it live: Campus Leadership is written directly
+r = await call('applyStructure', ['uriah', '1234', 'poipet', CY, CQ, {}]);
+ok('an admin’s apply moves the one waiting straight into Campus Leadership, and the request is gone', r.body.ok && prof('pp_c').dept === 'Campus Leadership' && prof('pp_c').ministry === 'Youth Education' && !prof('pp_c').cltRequest, JSON.stringify(prof('pp_c')));
+r = await call('saveStructurePlan', ['uriah', '1234', 'poipet', CY, CQ, undefined, { ...PLACE, pp_b: { dept: 'Youth Education', ministry: 'YDC' }, st_pp: { dept: 'Youth Education', ministry: 'YDC' }, pp_cd: { dept: 'Community Service', ministry: 'Cafe' }, pp_c: { dept: 'Campus Leadership', ministry: 'Campus Director' } }]);
+ok('leaving the Campus Director row drops the International / National title; moving within Campus Leadership needs nobody', prof('pp_cd').dept === 'Community Service' && prof('pp_cd').cdKind === '' && JSON.stringify(prof('pp_cd').leads) === '["Campus Leadership|Campus Director"]' && prof('pp_c').ministry === 'Campus Director', JSON.stringify(prof('pp_cd')));
+
+console.log('\n=== a later quarter writes nothing until someone makes it live ===');
+const c1 = core();
+r = await call('saveStructurePlan', ['vanna', '1234', 'poipet', NXT[0], NXT[1], {}, { pp_a: { dept: 'Community Service', ministry: 'Cafe' }, pp_b: { dept: 'Community Service', ministry: 'Cafe' } }, {}, [], null, { pp_a: ['Youth Education|YDC'] }]);
+ok('arranging next quarter moves no profile', r.body.ok && core() === c1 && !r.body.plan.live && r.body.applied.length === 0 && r.body.diff.changes.length >= 2);
+r = await call('applyStructure', ['vanna', '1234', 'poipet', NXT[0], NXT[1], {}]);
+ok('made live early, it does', r.body.ok && prof('pp_a').ministry === 'Cafe' && JSON.stringify(prof('pp_a').ministries) === '["Youth Education|YDC"]' && JSON.stringify(prof('pp_a').leads) === '[]' && r.body.plan.live);
+const c2 = core();
+r = await call('saveStructurePlan', ['vanna', '1234', 'poipet', NXT[0], NXT[1], {}, { pp_a: { dept: 'Youth Education', ministry: 'YDC' }, pp_b: { dept: 'Community Service', ministry: 'Cafe' } }, {}, [], null, {}]);
+ok('but a later change to a quarter that has not started waits for Apply again', r.body.ok && core() === c2 && r.body.plan.live && r.body.diff.changes.some(c => c.id === 'pp_a'));
+r = await call('saveStructurePlan', ['vanna', '1234', 'poipet', NXT[0], NXT[1], {}, {}, null, [], null, null]);
+ok('“start again from everyone’s profile” clears live', r.body.ok && !r.body.plan.live && r.body.plan.also === null && r.body.diff.changes.length === 0);
+
+console.log('\n=== Campus Leadership’s bell: this quarter is arranged and not live ===');
+r = await call('getMyBoot', ['vanna', '1234']);
+ok('live already: nothing to say', r.body.ok && r.body.structReady === null, JSON.stringify(r.body.structReady));
+mem.structurePlans = mem.structurePlans.map(p => (p.campus === 'poipet' && p.year === CY && p.quarter === CQ) ? (({ live, ...rest }) => rest)(p) : p);
+r = await call('getMyBoot', ['vanna', '1234']);
+ok('arranged and not live: the boot says which quarter', r.body.structReady && r.body.structReady.year === CY && r.body.structReady.q === CQ);
+r = await call('getMyBoot', ['maly', '1234']);
+ok('never for someone outside Campus Leadership', r.body.ok && !r.body.structReady);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
