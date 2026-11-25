@@ -297,6 +297,12 @@ Income.
   (`mnPL_` → `xin` / `xout` / `xnet`). Not income or spending, so **not in the net**; they are in the transactions list
   (grey, with "→ / ← the other category") and the "Each one" table's Transfers column. A transfer between two picked
   sub-categories shows both sides, so it nets to nothing.
+- **📈 Show in the Ministries profit and loss** (25 Nov 2026): a tick on the internal transfer form (`#xfPl`, `S.xfer.pl`)
+  and on each fund-to-fund transfer in "Transfers made" (`[data-xfpltog]`, changed any time, even once approved — it only
+  changes how the Ministries tab reads it). Saved as `pl: true` on the transfer. Ticked, it is paying for something
+  (accommodation, food): in `mnPL_` it counts as **spending** for the sub-category it leaves ("🔁 To Hospitality") and
+  **income** for the one it reaches ("🔁 From Office/General"), so it is in the net and the ▲ / ▼; it leaves the grey row.
+  Unticked (the default, for accounting moves) it stays grey. Only fund-to-fund transfers can have it.
 - **Not income or expenses**: manual allocations and Financial tools move the balance only; their total for the
   period is one line under the profit and loss.
 

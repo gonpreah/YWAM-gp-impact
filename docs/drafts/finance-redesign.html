@@ -535,6 +535,8 @@ button.tick.done{ background:var(--good); }
 .mnXfRow b{ color:var(--muted); }
 .mnXfNote{ margin:4px 0 0; font-size:12px; }
 .mnXfAmt{ color:var(--muted); }
+.xfPlChk{ margin-top:10px; }
+.xfPlTog{ display:flex; align-items:center; gap:6px; margin:6px 0 0; font-size:13px; color:var(--muted); cursor:pointer; }
 .mnOut{ color:var(--bad); }
 .mnVs{ font-size:12px; font-weight:600; color:var(--muted); margin-top:4px; }
 .mnVs span{ display:block; font-weight:400; }
@@ -1372,12 +1374,14 @@ function inXferHtml_(){
     '<div><label class="f" for="xfDate">Date</label><input type="date" id="xfDate" data-xf="date" max="'+TODAY+'" value="'+esc(D.date)+'"></div></div>'+
     '<div id="xfAppr">'+approvedAskHtml_(D.date, D.incl, 'data-xfincl="1"')+'</div>'+
     '<label class="f" for="xfMemo">Memo — why</label><textarea id="xfMemo" data-xf="memo" rows="2" maxlength="300" placeholder="e.g. Kitchen ran over this month; covered from Office/General">'+esc(D.memo)+'</textarea></div>'+
+    '<label class="incChk xfPlChk"><input type="checkbox" id="xfPl" data-xfpl="1"'+(D.pl?' checked':'')+'><span><b>📈 Show in the Ministries profit and loss</b><br><small>For money that pays for something — e.g. a ministry paying for accommodation or food. It counts as spending for the one it leaves and income for the one it reaches. Leave it off for accounting moves; those stay a quiet grey line.</small></span></label>'+
     '<div id="xfPrev">'+xferPrevHtml_()+'</div>'+
     (S.xfErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.xfErr)+'</p>' : '')+
     '<div class="inBtns"><button class="btn" id="xfSave">'+(D.editing?'Save change':'Move the money')+'</button></div>';
   if(allXfers_().length) h+='<div class="xfList"><div class="dListHead">Transfers made</div>'+allXfers_().map(function(t){ var tool=isToolX_(t);
       return '<div class="xfItem"><div class="xfTop"><b>'+money(t.amt,true)+'</b><span class="dsub">'+(tool?'<span class="xfTag tool">🛠 Financial tools</span> ':'')+date(t.date)+'</span></div>'+
         '<div class="xfPath">'+esc(xferShort_(t.from))+' <span>→</span> '+esc(xferShort_(t.to))+'</div><div class="xfMemo">“'+esc(t.memo)+'”</div>'+
+        (!tool && fundOf_(t.from) && fundOf_(t.to) ? '<label class="xfPlTog"><input type="checkbox" data-xfpltog="'+t.id+'"'+(t.pl?' checked':'')+'> 📈 Show in the Ministries profit and loss</label>' : '')+
         '<div class="rowBtns">'+editBtnHtml_(tool?'tool':'xf', t)+(tool?'<button class="delBtn" data-tooldel="'+t.id+'">↩ Undo</button>':'<button class="delBtn" data-xfdel="'+t.id+'">↩ Undo this transfer</button>')+'</div></div>'; }).join('')+'</div>';
   return h+'</details>';
 }
@@ -1421,7 +1425,7 @@ function xferSave_(){
     xferSnap_(D.date); S.xfer=null; render(); toast((isTool_(D.from)?'Added ':'Removed ')+money(a,true)+(isAcct_(D.from)||isAcct_(D.to)?' ('+xferShort_(isTool_(D.from)?D.to:D.from)+')':'')+' — see Income → History → Financial tools'); return;
   }
   fundMove_(D.from, -a); fundMove_(D.to, a);
-  var tr={ id:'t'+Date.now().toString(36), at:Date.now(), date:D.date, from:D.from, to:D.to, amt:a, memo:String(D.memo).trim() }; TRANSFERS.unshift(tr); if(D.incl) addToApproved_(tr, 'xf');
+  var tr={ id:'t'+Date.now().toString(36), at:Date.now(), date:D.date, from:D.from, to:D.to, amt:a, memo:String(D.memo).trim() }; if(D.pl && fundOf_(D.from) && fundOf_(D.to)) tr.pl=true; TRANSFERS.unshift(tr); if(D.incl) addToApproved_(tr, 'xf');
   TRANSFERS.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; });
   xferSnap_(D.date); S.xfer=null; render(); toast('Moved '+money(a,true)+' to '+xferShort_(D.to));
 }
@@ -1767,7 +1771,7 @@ function startEdit_(kind, id){
     (S.flMode=S.flMode||{})[kind]='one'; (S.foldOpen=S.foldOpen||{})[kind]=true; S.editGo='in_'+kind; }
   else { if(fundOf_(x.from)) fundMove_(x.from, x.amt); if(fundOf_(x.to)) fundMove_(x.to, -x.amt);
     if(kind==='xf') TRANSFERS=TRANSFERS.filter(function(y){ return y.id!==id; }); else TOOL_XFERS=TOOL_XFERS.filter(function(y){ return y.id!==id; });
-    S.xfer={ from:x.from, to:x.to, amt:x.amt.toFixed(2), date:x.date, memo:x.memo||'', editing:x, editKind:kind }; (S.foldOpen=S.foldOpen||{}).xfer=true; S.editGo='inXfer'; }
+    S.xfer={ from:x.from, to:x.to, amt:x.amt.toFixed(2), date:x.date, memo:x.memo||'', pl:!!x.pl, editing:x, editKind:kind }; (S.foldOpen=S.foldOpen||{}).xfer=true; S.editGo='inXfer'; }
   xferSnap_(); S.tab='input'; closeSheet(); render(); toast('Editing — change it and save, or cancel');
 }
 function cancelEdit_(kind){
@@ -2679,6 +2683,9 @@ function mnPL_(L, labs, from, to){ var inc=0, exp=0, byInc={}, byExp={}, other=0
     var kind=(x.src && x.src.type) || x.type;
     if(x.type==='Income'){ inc+=x.camt; byInc[kind]=(byInc[kind]||0)+x.camt; lines.push(x); }
     else if(x.type==='Expense'){ exp-=x.camt; byExp[kind]=(byExp[kind]||0)-x.camt; lines.push(x); }
+    else if(x.type==='Internal transfer' && x.src && x.src.pl){   /* ticked "Show in the Ministries profit and loss": paying for something, so income / spending */
+      var oth=xferShort_(x.camt>0 ? x.src.from : x.src.to), k2=(x.camt>0?'🔁 From ':'🔁 To ')+oth;
+      if(x.camt>0){ inc+=x.camt; byInc[k2]=(byInc[k2]||0)+x.camt; } else { exp-=x.camt; byExp[k2]=(byExp[k2]||0)-x.camt; } lines.push(x); }
     else if(x.type==='Internal transfer'){ if(x.camt>0) xin+=x.camt; else xout-=x.camt; lines.push(x); }   /* category to category: grey, not income or spending */
     else { other+=x.camt; byOther[x.type]=(byOther[x.type]||0)+x.camt; } });
   var r=function(v){ return Math.round(v*100)/100; };
@@ -2730,12 +2737,12 @@ function minsHtml_(){ var M=mnS_(), P=mnPeriod_(), sel=mnSel_(), labs=sel.map(fu
     '<div class="dTile"><div class="dl">🧾 Expenses</div><div class="dv mnOut">'+(NA?na:money(pl.exp,true))+'</div>'+(pp?mnVs_(pl.exp, pp.exp, P, false):'')+'</div></div>'+
     '<div class="mnXf" id="mnXf"><div class="mnXfHead"><span>🔁 Internal transfers</span><b>'+(NA?na:mnSg_(pl.xnet))+'</b></div>'+
       (NA?'':'<div class="mnXfRow"><span>In from other categories <b>'+money(pl.xin,true)+'</b></span><span>Out to other categories <b>'+money(pl.xout,true)+'</b></span></div>')+
-      '<p class="mnXfNote">Money moved between categories — not income or spending, so it isn’t in the net below.</p></div>'+
+      '<p class="mnXfNote">Money moved between categories — not income or spending, so it isn’t in the net below. Transfers ticked “Show in the Ministries profit and loss” are in Income and Expenses instead (🔁 From / 🔁 To).</p></div>'+
     '<div class="mnNet '+(pl.net<0?'neg':'')+'"><span>'+(pl.net<0?'Spent more than came in':'Net')+'</span><b>'+(NA?na:mnSg_(pl.net))+'</b>'+(pp?mnVs_(pl.net, pp.net, P, true):'')+'</div>';
   h+='<div class="mnTwo"><div><div class="dListHead">Where the income came from</div>'+(NA?'<p class="hint">N/A</p>':mnKinds_(pl.byInc, pl.inc, 'in'))+'</div><div><div class="dListHead">Where the money went</div>'+(NA?'<p class="hint">N/A</p>':mnKinds_(pl.byExp, pl.exp, 'out'))+'</div></div>';
   if(Math.abs(pl.other)>0.004 || Object.keys(pl.byOther).length) h+='<p class="mnOther">🛠 Allocations and adjustments also moved it '+mnSg_(pl.other)+' — '+Object.keys(pl.byOther).map(function(k){ return esc(k.replace(' (Financial tools)',''))+' '+mnSg_(pl.byOther[k]); }).join(' · ')+'. These change the balance but aren’t income or expenses.</p>';
   if(pl.lines.length){ h+='<button class="flowDrop'+(M.list?' on':'')+'" id="mnList" aria-expanded="'+!!M.list+'"><span>'+(M.list?'Hide':'Show')+' the '+pl.lines.length+' transaction'+(pl.lines.length>1?'s':'')+'</span><span class="chev">▾</span></button>';
-    if(M.list) h+='<ul class="mnLines">'+pl.lines.map(function(x){ var memo=(x.type==='Internal transfer' ? x.memo : (x.src&&x.src.memo))||''; return '<li><div><b>'+esc(x.name||(x.src&&x.src.type)||x.type)+'</b><span>'+date(x.date)+' · '+esc((x.src&&x.src.type)||x.type)+(sel.length>1?' · '+esc(mnName_(sel[labs.indexOf(x.cat)])):'')+(memo?' · '+esc(memo):'')+(x.appr?' · ✅':'')+'</span></div><b class="'+(x.type==='Internal transfer'?'mnXfAmt':x.camt<0?'mnOut':'mnIn')+'">'+mnSg_(x.camt)+'</b></li>'; }).join('')+'</ul>'; }
+    if(M.list) h+='<ul class="mnLines">'+pl.lines.map(function(x){ var memo=(x.type==='Internal transfer' ? x.memo : (x.src&&x.src.memo))||''; return '<li><div><b>'+esc(x.name||(x.src&&x.src.type)||x.type)+'</b><span>'+date(x.date)+' · '+esc((x.src&&x.src.type)||x.type)+(x.type==='Internal transfer' && x.src && x.src.pl?' · 📈 in the profit and loss':'')+(sel.length>1?' · '+esc(mnName_(sel[labs.indexOf(x.cat)])):'')+(memo?' · '+esc(memo):'')+(x.appr?' · ✅':'')+'</span></div><b class="'+(x.type==='Internal transfer' && !(x.src&&x.src.pl)?'mnXfAmt':x.camt<0?'mnOut':'mnIn')+'">'+mnSg_(x.camt)+'</b></li>'; }).join('')+'</ul>'; }
   else if(!NA) h+='<p class="hint" style="margin-top:6px">No income or expenses for '+esc(mnSelName_(sel))+' in this period.</p>';
   h+='</section>';
   /* several picked: each one side by side */
@@ -2919,6 +2926,8 @@ document.addEventListener('change', function(e){
     br.ok=false; render(); return; }
   if(e.target.dataset && e.target.dataset.f1incl){ flOne_(e.target.dataset.f1incl).incl=e.target.checked; return; }
   if(e.target.dataset && e.target.dataset.xfincl){ S.xfer.incl=e.target.checked; return; }
+  if(e.target.dataset && e.target.dataset.xfpl){ S.xfer.pl=e.target.checked; return; }
+  if(e.target.dataset && e.target.dataset.xfpltog){ var pt=TRANSFERS.filter(function(x){ return x.id===e.target.dataset.xfpltog; })[0]; if(pt){ snap_((e.target.checked?'Took ':'Put ')+'the transfer of '+money(pt.amt,true)+(e.target.checked?' out of':' back in')+' the Ministries profit and loss'); if(e.target.checked) pt.pl=true; else delete pt.pl; keep_(); toast(e.target.checked?'📈 Now in the Ministries profit and loss':'Back to a grey internal transfer'); } return; }
   if(e.target.dataset && e.target.dataset.fincl){ flUp_(e.target.dataset.fincl).incl=e.target.checked; return; }
   if(e.target.dataset && e.target.dataset.daydone){ var dday=reportDay_(); (DAY_DONE[dday]=DAY_DONE[dday]||{})[e.target.dataset.daydone]=e.target.checked; keep_(); render(); return; }
   if(e.target.id==='xfFrom' || e.target.id==='xfTo'){ S.xfer[e.target.id==='xfFrom'?'from':'to']=e.target.value; S.xfErr=''; var oe=document.querySelector('#inXfer .inErr'); if(oe) oe.remove(); var pv=document.getElementById('xfPrev'); if(pv) pv.innerHTML=xferPrevHtml_(); return; }
