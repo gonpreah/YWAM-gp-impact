@@ -187,7 +187,13 @@ Income.
 ### 🏛 Ministries (a tab of its own, 25 Nov 2026 — in the demo only, not in Impact yet)
 - One allocation's own report — mostly the ministries, but any sub-category can be picked (`minsHtml_`, `S.mn`).
   **Everything on it is the 📒 Detailed breakdown added up** for the sub-categories picked (matched by `cat`
-  = `fundLabel_`), and it counts every line, approved or not (Live).
+  = `fundLabel_`).
+- **✅ Approved / 📡 Live** on top — the Dashboard's own switch (one setting, `S.dashMode`, so changing it on either
+  tab changes both). **Approved** counts only lines that are in an approved report (`appr` set) — the fully
+  checked picture; it says which approved day is the latest and that anything after it isn't counted yet, and with
+  nothing approved it says so and points to Live. **Live** counts every line, approved or not — the newest picture,
+  marked estimated. The balance, its share of the total liquid assets (`ledgerLiquid_` on the same lines), the
+  profit and loss and the comparison all follow the switch.
 - **Time filter** on top (`MN_PERIODS`, `mnPeriod_`): This week (Monday to today) · This month · Last week ·
   Last month · Year to date · All time · Custom (from / to). Each is compared with the period before it: this
   week / this month / year to date with the **same days** of last week / last month / last year (so a part

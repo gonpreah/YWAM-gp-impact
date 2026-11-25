@@ -2463,15 +2463,22 @@ function mnPickerHtml_(sel){ var M=mnS_();
     h+='<div class="mnGrp"><div class="mnGrpHead"><span class="sw" style="background:var('+g.c+')"></span><b>'+esc(g.name)+'</b>'+(ks.length>1?'<button class="histLink" data-mngrp="'+g.id+'">'+(all?'Only one':'All '+ks.length)+'</button>':'')+'</div><div class="ledChips">'+
       ks.map(function(k){ return '<button class="ledChip'+(sel.indexOf(k)>=0?' on':'')+'" data-mnk="'+esc(k)+'">'+esc(mnName_(k))+'</button>'; }).join('')+'</div></div>'; });
   return h+'<p class="hint" style="margin:8px 0 0">Tap to add one or take it away — everything picked is added together. “All” picks a whole category.</p></div></div>'; }
-function minsHtml_(){ var M=mnS_(), P=mnPeriod_(), sel=mnSel_(), labs=sel.map(fundLabel_), L=ledgerLines_();
-  var h='<section class="sec mnTop"><div class="mnPers" role="tablist">'+MN_PERIODS.map(function(p){ return '<button class="'+(M.per===p[0]?'on':'')+'" data-mnper="'+p[0]+'">'+p[1]+'</button>'; }).join('')+'</div>';
+function minsHtml_(){ var M=mnS_(), P=mnPeriod_(), sel=mnSel_(), labs=sel.map(fundLabel_), live=isLive_(), days=reportDays_(), L=ledgerLines_();
+  /* the same ✅ Approved / 📡 Live switch as the Dashboard (one setting, S.dashMode): Approved counts only
+     lines in an approved report — the fully checked picture; Live every line entered — the newest */
+  if(!live) L=L.filter(function(x){ return !!x.appr; });
+  var h='<div class="modeSeg" role="tablist"><button class="'+(live?'':'on')+'" data-dashmode="approved">✅ Approved</button><button class="'+(live?'on':'')+'" data-dashmode="live">📡 Live</button></div>'+
+    (live ? '<div class="liveBanner">📡 <b>Live — estimated.</b> Every entry counts, approved or not — the newest picture, not yet checked by the accountant.</div>'
+      : days.length ? '<div class="pastNote mnApprNote">✅ <b>Approved only</b> — just what is in an approved report (the latest is '+date(days[0])+')'+(P.to>days[0]?'. Anything after '+date(days[0])+' isn’t counted until it is approved.':'.')+'</div>' : '');
+  if(!live && !days.length) return h+'<section class="sec"><div class="emptyApproved"><b>Nothing approved yet.</b><br>This report fills in when “Update and approve” is tapped on the Input tab. Until then, <button class="more" data-dashmode="live" style="padding:0">📡 Live</button> shows everything entered.</div></section>';
+  h+='<section class="sec mnTop"><div class="mnPers" role="tablist">'+MN_PERIODS.map(function(p){ return '<button class="'+(M.per===p[0]?'on':'')+'" data-mnper="'+p[0]+'">'+p[1]+'</button>'; }).join('')+'</div>';
   if(M.per==='custom') h+='<div class="mnCustom"><label>From <input type="date" id="mnFrom" value="'+P.from+'" max="'+TODAY+'"></label><label>To <input type="date" id="mnTo" value="'+P.to+'" max="'+TODAY+'"></label></div>';
   h+='<p class="mnRange">📅 '+mnRange_(P)+'</p>'+mnPickerHtml_(sel)+'</section>';
   /* the balance: what of the total liquid assets is theirs, on the period's last day */
   var bal=mnBal_(L, labs, P.to), liq=ledgerLiquid_(L, P.to).total, before=P.from ? mnBal_(L, labs, mnAdd_(P.from,-1)) : 0, moved=Math.round((bal-before)*100)/100;
   var whole=Math.floor(Math.abs(bal)), cents=Math.round((Math.abs(bal)-whole)*100);
   h+='<section class="sec" id="mnBal"><div class="secHead"><h2>💰 Balance</h2></div><p class="hint">How much of the total liquid assets '+(sel.length>1?'these have':'it has')+' been allocated, on '+date(P.to)+' — from the Detailed breakdown.</p>'+
-    '<div class="liquid est"><div class="lbl">'+esc(mnSelName_(sel))+'</div><div class="num">'+(bal<0?'−':'')+money(whole)+'<span class="c">.'+String(cents).padStart(2,'0')+'</span></div>'+
+    '<div class="liquid'+(live?' est':'')+'"><div class="lbl">'+(live?'Estimated · ':'')+esc(mnSelName_(sel))+'</div><div class="num">'+(bal<0?'−':'')+money(whole)+'<span class="c">.'+String(cents).padStart(2,'0')+'</span></div>'+
     '<div class="delta"'+(moved<0?' style="color:#FF9B8F"':'')+'>'+(P.from ? (Math.abs(moved)<0.005?'No change':(moved>0?'▲ ':'▼ ')+money(Math.abs(moved),true))+' since '+date(P.from) : (liq>0.005 ? Math.round(bal/liq*1000)/10+'% of the total liquid assets' : 'No liquid assets entered yet'))+'</div></div>'+
     '<div class="accts mnShare"><div class="acct"><div class="an">Total liquid assets</div><div class="av">'+money(liq)+'</div></div><div class="acct"><div class="an">Share</div><div class="av">'+(liq>0.005?Math.round(bal/liq*1000)/10+'%':'—')+'</div></div></div></section>';
   /* the profit and loss for the period, against the period before */
@@ -2489,7 +2496,7 @@ function minsHtml_(){ var M=mnS_(), P=mnPeriod_(), sel=mnSel_(), labs=sel.map(fu
   /* several picked: each one side by side */
   if(sel.length>1) h+='<section class="sec" id="mnEach"><div class="secHead"><h2>Each one</h2></div><table class="mnEach"><tr><th>Allocation</th><th class="r">Balance</th><th class="r">Income</th><th class="r">Expenses</th></tr>'+
     sel.map(function(k, i){ var p1=mnPL_(L, [labs[i]], P.from, P.to); return '<tr><td>'+esc(mnName_(k))+'</td><td class="r">'+mnSg_(mnBal_(L, [labs[i]], P.to))+'</td><td class="r">'+money(p1.inc,true)+'</td><td class="r">'+money(p1.exp,true)+'</td></tr>'; }).join('')+'</table></section>';
-  return h+'<section class="sec"><p class="hint" style="margin:0">📡 Everything entered counts here, approved or not — the same lines as the Detailed breakdown on the Input tab.</p></section>'; }
+  return h+'<section class="sec"><p class="hint" style="margin:0">'+(live ? '📡 Everything entered counts here, approved or not' : '✅ Only lines in an approved report count here')+' — the same lines as the Detailed breakdown on the Input tab.</p></section>'; }
 document.addEventListener('click', function(e){ var M=mnS_(), t=e.target.closest && e.target.closest('[data-mnper],[data-mnk],[data-mngrp],#mnPickBtn,#mnPickDone,#mnList'); if(!t) return;
   if(t.dataset.mnper){ M.per=t.dataset.mnper; if(M.per==='custom' && !M.from){ M.from=mnMonthStart_(TODAY); M.to=TODAY; } }
   else if(t.id==='mnPickBtn') M.pick=!M.pick;
