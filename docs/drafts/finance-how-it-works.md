@@ -86,6 +86,18 @@ Income.
   closest together, none in the future) and flippable with "Read them the other way" — not always QuickBooks'
   MM/DD (the Poipet export is DD/MM). Dates stored as real spreadsheet dates are read as they are.
 
+### 📥 Bulk import — lines grouped by kind (25 Nov 2026)
+- The lines to check come in **groups**, one per kind of income or expense (`bulkGroupsHtml_`, key `bulkGroupKey_` =
+  kind + kind of income / expense — for a P&L Detail that is one per account code, e.g. "🧾 Expense · Food · 50500"),
+  plus "📓 Journal entries to check" and "❓ Not sure what they are" first, and "🔁 Transfers" last; income groups then
+  expense groups, biggest total first.
+- Each group's heading: its name, how many lines, where they go (one category, "shared out by its formula", or "n
+  categories"), how many are ticked, how many still need something, and its total. **Folded** until tapped
+  (`S.bulkOpen`; the group of a line being edited stays open).
+- **✓ Tick all** on a group ticks every complete line in it ("already in?" lines are left for a look); tapped again
+  when all are ticked, **Untick all**. Lines can still be ticked one by one inside. The "Tick every complete line" /
+  "Untick all" above still do the whole file. A line that is changed moves to its new group.
+
 ### 📥 Bulk import — describing what is imported (25 Nov 2026)
 - Under "These lines are from" there is **Describe what you're importing** (optional, `S.bulkNote`), e.g. "This
   import is the ABA expenses from the class Admin in QBO — this corresponds to Office/General in our system".
