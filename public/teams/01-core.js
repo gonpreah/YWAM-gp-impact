@@ -390,6 +390,7 @@ function gpQueueFlush(){
       if(item.fn==='saveMyWeek' && d && d.checkins) S.checkins=d.checkins;
       if(item.fn==='saveMyMinistry' && d && d.ok) S.ministry=d;
       if(item.fn==='saveMinistryFor' && d && d.ok && S.oversee) S.oversee[item.args[3]]=d;
+      if(item.fn==='schoolRoll' && typeof schAdopt_==='function') schAdopt_(d);   // a roll taken offline (teams/24-school.js)
       i++; next();
     }, function(){ _gpQueueFlushing=false; });
   }

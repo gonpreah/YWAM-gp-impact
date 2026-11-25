@@ -3729,6 +3729,70 @@ body.sbDragging, body.sbDragging * { cursor:grabbing !important; }
 .sbSchools .btn { margin:0; }
 @media (prefers-reduced-motion: reduce) { .sbZb:active { transform:none; } }
 
+/* ---- the school tool (YDC; teams/24-school.js) ---- */
+.schHeadRow { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
+.schChips { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+.schChips .chip { cursor:pointer; font:inherit; font-size:13px; font-weight:700; }
+.schChips .chip.on { background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
+.schGrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(88px, 1fr)); gap:8px; margin:8px 0; }
+.schFace { display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 4px; min-width:0; background:var(--surface); border:2px solid var(--border); border-radius:14px; font:inherit; color:var(--ink); cursor:pointer; touch-action:manipulation; }
+.schFace .schFaceImg, .schScoreRow .schFaceImg { width:56px; height:56px; border-radius:50%; object-fit:cover; }
+.schFaceName { font-size:12.5px; font-weight:700; text-align:center; line-height:1.2; overflow-wrap:anywhere; max-width:100%; }
+.schMark { font-size:11.5px; color:var(--muted); }
+.schFace.m-p { border-color:var(--goodSoft, var(--border)); }
+.schFace.m-a { border-color:var(--bad); background:var(--badSoft, var(--surface)); }
+.schFace.m-a .schMark { color:var(--bad); font-weight:800; }
+.schFace.m-l { border-color:var(--amber); }
+.schFace.m-l .schMark { color:var(--amberDeep, var(--ink)); font-weight:800; }
+.schRowBtn { display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left; background:none; border:0; border-top:1px solid var(--line, var(--border)); padding:10px 0; font:inherit; color:var(--ink); cursor:pointer; }
+.schRowBtn > span:first-child { min-width:0; overflow-wrap:anywhere; }
+.schRowRight { flex:none; font-size:12.5px; color:var(--muted); text-align:right; }
+.schStuTop { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+.schStuTop .schFaceImg { width:72px; height:72px; border-radius:50%; object-fit:cover; flex:none; }
+.schStuPhoto { width:96px; height:96px; border-radius:16px; object-fit:cover; flex:none; }
+.schStuName { font-size:18px; font-weight:800; overflow-wrap:anywhere; }
+.schPhotoBtn { display:inline-block; cursor:pointer; margin:4px 0 8px; }
+.schStats { margin:8px 0; }
+.schDl { display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 12px; margin:10px 0; font-size:14px; }
+.schDl dt { color:var(--muted); }
+.schDl dd { margin:0; overflow-wrap:anywhere; }
+.schNotes { white-space:pre-wrap; }
+.schBtnRow { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px; }
+.schBtnRow .btn { margin:0; width:auto; flex:1 1 auto; }
+.schFaithRow { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; padding:6px 0; border-top:1px solid var(--line, var(--border)); }
+.schFaithRow input[type=date] { width:auto; min-width:0; margin:0; }
+.schTick { display:flex; align-items:center; gap:8px; font-size:14px; }
+.schTbl { width:100%; border-collapse:collapse; font-size:14px; }
+.schTbl td, .schTbl th { padding:6px 4px; border-top:1px solid var(--line, var(--border)); text-align:left; vertical-align:top; }
+.schTbl .num { text-align:right; white-space:nowrap; }
+.schTbl .ok { color:var(--good); font-weight:700; }
+.schTbl .bad { color:var(--bad); font-weight:700; }
+.schOwe { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 0; border-top:1px solid var(--line, var(--border)); font-size:14px; }
+.schBars { display:flex; flex-direction:column; gap:6px; }
+.schBarRow { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,2fr) auto; gap:8px; align-items:center; font-size:13.5px; }
+.schBarRow > span:first-child { overflow-wrap:anywhere; }
+.schBar { height:10px; background:var(--banner); border-radius:999px; overflow:hidden; }
+.schBar i { display:block; height:100%; background:var(--accent); border-radius:999px; }
+.schScoreRow { display:grid; grid-template-columns:40px minmax(0,1fr) 84px auto; gap:8px; align-items:center; padding:5px 0; border-top:1px solid var(--line, var(--border)); }
+.schScoreRow .schFaceImg { width:36px; height:36px; }
+.schScoreRow input { margin:0; min-width:0; }
+.schScoreRow label { font-size:14px; overflow-wrap:anywhere; }
+.schPapers { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0; }
+.schPaper { position:relative; }
+.schPaper img { width:140px; height:auto; border-radius:10px; display:block; }
+.schPaper .gptX { position:absolute; top:4px; right:4px; }
+.schTermRow { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr) auto; gap:6px; align-items:center; margin:4px 0; }
+.schTermRow input { margin:0; min-width:0; }
+.schFold summary { cursor:pointer; margin-top:10px; font-weight:700; color:var(--muted); }
+@media (max-width:360px){ .schTermRow { grid-template-columns:1fr 1fr; } }
+@media print {
+  body.schPrintOn header, body.schPrintOn nav.bottom, body.schPrintOn #menuRoot, body.schPrintOn .noPrint, body.schPrintOn .banner,
+  body.schPrintOn .mmHead, body.schPrintOn .mmTabsBar, body.schPrintOn #schBack, body.schPrintOn #ministryBack, body.schPrintOn .a2hs, body.schPrintOn #a2hs { display:none !important; }
+  body.schPrintOn main .mmPane > :not(.schPrint) { display:none !important; }
+  body.schPrintOn { background:var(--surface) !important; }
+  body.schPrintOn .schPrint { box-shadow:none !important; border:0 !important; }
+}
+.schHeadRow .btn { width:auto; padding:7px 12px; font-size:13px; }
 /* ---------- Intercession: Wednesdays, prayer needs and the fast (teams/25-intercession.js) ---------- */
 .icpHead { font-size:15px; margin:14px 0 8px; }
 .icpWed.empty { opacity:.85; }

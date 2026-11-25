@@ -815,7 +815,7 @@ function mmTabsHtml_(tabs, cur, extraClass){
   return '<div class="gtBar mmTabsBar"><div class="gtTabs mmTabs'+(extraClass?' '+extraClass:'')+'" role="tablist">'+tabs.map(function(x){
     return '<button class="gtTab'+(cur===x[0]?' on':'')+'" '+(x[2]||'data-mmtab')+'="'+esc(x[0])+'" role="tab">'+esc(x[1])+'</button>'; }).join('')+'</div></div>';
 }
-var MM_SHELL_KEYS=['numbers','sched','tasks','okr','teams','dtsdash','dtsdb','dtsfin','icwed','icfast','icreq','icdash'];
+var MM_SHELL_KEYS=['numbers','sched','tasks','okr','teams','dtsdash','dtsdb','dtsfin','sctoday','scstu','sctest','scpay','scdash','icwed','icfast','icreq','icdash'];
 function mmTabsFor_(sel, mine, schedH){
   var out=[];
   if(sel.dept==='Community Service' && sel.min==='Cafe'){
@@ -829,6 +829,8 @@ function mmTabsFor_(sel, mine, schedH){
     out=icpTabs_(); out.push(['numbers',t('Numbers')]);   // Intercession: its Wednesdays and the fast, then Numbers for the one typed figure (teams/25-intercession.js)
   } else if(isDtsMinistry_(sel.dept, sel.min)){
     out=dtsTabs_();   // GPDTS: the school's home — every number counts itself, so no Numbers tab (teams/16-dts.js)
+  } else if(isSchoolMinistry_(sel.dept, sel.min)){
+    out=schTabs_();   // the school tool (YDC): roll, students, tests, payments — every number counts itself (teams/24-school.js)
   } else out=[['numbers',t('Numbers')]];
   if(schedH && !isTeamsMinistry_(sel.dept, sel.min)) out.push(['sched',t('Schedule')]);
   if(sel.dept==='Skills Training' && sel.min==='Hospitality' && canHospClient_()) out.push(['goHosp',t('SR Hospitality'),'id']);   // a way in, not a tab (#goHosp opens it)
@@ -907,6 +909,7 @@ function myMinistryHtml(){
   var mmTop=(sel.dept==='Skills Training' && sel.min==='Hospitality' && canHospClient_()) ? hospChangesHtml_(S.hospNews, false) : '';   // a team's new dates, someone who left (Nov 2026)
   S.mmSkip=autoMetricsFor(S.me.campus, sel.dept, sel.min);   // what counts itself (GPDTS) is not "logged" by hand
   if(DTS_TABS.indexOf(cur)>-1) pane=dtsPaneHtml_(cur);
+  else if(SCH_TABS.indexOf(cur)>-1) pane=schPaneHtml_(cur);
   else if(ICP_TABS.indexOf(cur)>-1) pane=icpPaneHtml_(cur);
   else if(cur==='okr') pane=okrTabHtml_();
   else if(cur==='tasks'){ S.gptFrom='ministry'; pane=gptPageHtml_({ dept:sel.dept, min:sel.min }, true); }

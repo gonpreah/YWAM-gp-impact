@@ -6172,6 +6172,150 @@ The finance tool itself (public/finance.html) is English only for now — its Kh
 |---|---|
 | Input | បញ្ចូល |
 
+
+## 139. The school tool (YDC on My Ministry, Nov 2026)
+My Ministry → YDC: Today (taking the roll) · Students · Tests · Payments · Dashboard. Used by teachers on a phone.
+"Here / Absent / Late" sit on small face tiles in the roll — very little room. "Term" was drafted as ឆមាស (semester);
+check whether the school says វគ្គ or ត្រីមាស instead. Fee words: "Sponsored — free", "A discount", "Full fee".
+
+| English | Khmer (draft) |
+|---|---|
+| Payments | ការបង់ប្រាក់ |
+| No class | គ្មានថ្នាក់ |
+| Add a name first. | សូមបញ្ចូលឈ្មោះជាមុនសិន។ |
+| Pick a class. | សូមជ្រើសរើសថ្នាក់។ |
+| Pick a location. | សូមជ្រើសរើសទីតាំង។ |
+| That date can’t be used. | មិនអាចប្រើកាលបរិច្ឆេទនោះបានទេ។ |
+| Say what the test is out of. | សូមប្រាប់ពិន្ទុពេញនៃការប្រឡង។ |
+| Add the subject. | សូមបញ្ចូលមុខវិជ្ជា។ |
+| Pick what the payment is for. | សូមជ្រើសរើសថាការបង់ប្រាក់នេះសម្រាប់អ្វី។ |
+| Pick a student. | សូមជ្រើសរើសសិស្ស។ |
+| That is still in use, so it can’t be deleted. | វានៅតែកំពុងប្រើ ដូច្នេះមិនអាចលុបបានទេ។ |
+| Only the ministry’s leaders can change the set-up. | មានតែអ្នកដឹកនាំកិច្ចការបម្រើប៉ុណ្ណោះ ដែលអាចកែការរៀបចំបាន។ |
+| That list is full. | បញ្ជីនោះពេញហើយ។ |
+| That photo is too large. | រូបថតនោះធំពេក។ |
+| That photo couldn’t be read. | មិនអាចអានរូបថតនោះបានទេ។ |
+| You can’t open this school. | អ្នកមិនអាចបើកសាលានេះបានទេ។ |
+| {n} roll saved on this phone — it will send when you’re online. | វត្តមាន {n} បានរក្សាទុកនៅលើទូរស័ព្ទនេះ — វានឹងផ្ញើនៅពេលអ្នកមានអ៊ីនធឺណិត។ |
+| No classes yet | មិនទាន់មានថ្នាក់នៅឡើយ |
+| Add your locations and classes first — then students, the roll and tests. | សូមបញ្ចូលទីតាំង និងថ្នាក់ជាមុនសិន — បន្ទាប់មកសិស្ស វត្តមាន និងការប្រឡង។ |
+| Ask the ministry’s leader to set up the locations and classes. | សូមសុំអ្នកដឹកនាំកិច្ចការបម្រើ ឲ្យរៀបចំទីតាំង និងថ្នាក់។ |
+| Set up the school | រៀបចំសាលា |
+| Take the roll | ស្រង់វត្តមាន |
+| No students in this class yet. | មិនទាន់មានសិស្សក្នុងថ្នាក់នេះទេ។ |
+| {p} here · {a} absent · {l} late | មក {p} · អវត្តមាន {a} · មកយឺត {l} |
+| Everyone starts as here. Tap a face: absent, then late, then here again. | ដំបូងគ្រប់គ្នាមានវត្តមាន។ ចុចលើមុខ៖ អវត្តមាន បន្ទាប់មកមកយឺត រួចមានវត្តមានវិញ។ |
+| Absent | អវត្តមាន |
+| Late | មកយឺត |
+| Save the roll again | រក្សាទុកវត្តមានម្តងទៀត |
+| Save the roll | រក្សាទុកវត្តមាន |
+| A roll is saved for this day — saving again replaces it. | វត្តមានសម្រាប់ថ្ងៃនេះបានរក្សាទុកហើយ — ការរក្សាទុកម្តងទៀតនឹងជំនួសវា។ |
+| Saved on this phone — will send when online. | បានរក្សាទុកនៅលើទូរស័ព្ទនេះ — នឹងផ្ញើនៅពេលមានអ៊ីនធឺណិត។ |
+| Roll saved ✓ | បានរក្សាទុកវត្តមាន ✓ |
+| Search a name or village | ស្វែងរកឈ្មោះ ឬភូមិ |
+| All classes | ថ្នាក់ទាំងអស់ |
+| No students yet — add the first one. | មិនទាន់មានសិស្សទេ — បន្ថែមសិស្សដំបូង។ |
+| Left the school · {n} | បានឈប់រៀន · {n} |
+| That student isn’t here any more. | សិស្សនោះលែងមាននៅទីនេះហើយ។ |
+| Take a new photo | ថតរូបថ្មី |
+| Attendance | វត្តមាន |
+| Days absent | ថ្ងៃអវត្តមាន |
+| Test average | ពិន្ទុមធ្យមនៃការប្រឡង |
+| Sex | ភេទ |
+| Date of birth | ថ្ងៃខែឆ្នាំកំណើត |
+| Village | ភូមិ |
+| Guardian’s phone | លេខទូរស័ព្ទអាណាព្យាបាល |
+| Sponsored — free | មានអ្នកឧបត្ថម្ភ — ឥតគិតថ្លៃ |
+| Discount: {amt} | បញ្ចុះតម្លៃ៖ {amt} |
+| Full fee | តម្លៃពេញ |
+| Report card | ព្រឹត្តិបត្រពិន្ទុ |
+| In discipleship | កំពុងទទួលការបង្ហាត់បង្រៀនជាសិស្ស |
+| Brought to a local church | បាននាំទៅព្រះវិហារក្នុងតំបន់ |
+| Salvation | ការសង្គ្រោះ |
+| Baptism | ពិធីជ្រមុជទឹក |
+| Faith and life | ជំនឿ និងជីវិត |
+| Salvations, baptisms, discipleship and church count in the ministry’s numbers by these dates. | ការសង្គ្រោះ ពិធីជ្រមុជទឹក ការបង្ហាត់សិស្ស និងព្រះវិហារ រាប់ក្នុងលេខរបស់កិច្ចការបម្រើតាមកាលបរិច្ឆេទទាំងនេះ។ |
+| No test scores yet. | មិនទាន់មានពិន្ទុប្រឡងទេ។ |
+| Record a payment | កត់ត្រាការបង់ប្រាក់ |
+| Receipt | បង្កាន់ដៃ |
+| No payments yet. | មិនទាន់មានការបង់ប្រាក់ទេ។ |
+| Delete this student | លុបសិស្សនេះ |
+| New test | ការប្រឡងថ្មី |
+| The students do the test on paper; type each score here. Pass mark: {pm}%. | សិស្សប្រឡងលើក្រដាស បន្ទាប់មកវាយបញ្ចូលពិន្ទុនីមួយៗនៅទីនេះ។ ពិន្ទុជាប់៖ {pm}%។ |
+| No tests yet. | មិនទាន់មានការប្រឡងទេ។ |
+| avg {a}% · {p} of {n} passed | មធ្យម {a}% · ជាប់ {p} ក្នុងចំណោម {n} |
+| No scores yet | មិនទាន់មានពិន្ទុ |
+| Set the fee in ⚙️ Set up the school to see who still owes. | កំណត់តម្លៃសិក្សានៅក្នុង ⚙️ រៀបចំសាលា ដើម្បីមើលថាអ្នកណានៅជំពាក់។ |
+| The fee isn’t set yet — the ministry’s leader sets it. | តម្លៃសិក្សាមិនទាន់កំណត់ទេ — អ្នកដឹកនាំកិច្ចការបម្រើជាអ្នកកំណត់។ |
+| Still owed | នៅជំពាក់ |
+| Paid in {month} | បានបង់ក្នុង {month} |
+| Nobody owes anything for this. | គ្មាននរណាជំពាក់សម្រាប់នេះទេ។ |
+| paid {amt} | បានបង់ {amt} |
+| Record | កត់ត្រា |
+| Latest payments | ការបង់ប្រាក់ចុងក្រោយ |
+| That payment isn’t here any more. | ការបង់ប្រាក់នោះលែងមាននៅទីនេះហើយ។ |
+| Paid on | បង់នៅថ្ងៃ |
+| Received by | ទទួលដោយ |
+| Delete this payment | លុបការបង់ប្រាក់នេះ |
+| {pct}% · here {h} of {n} days, late {l} | {pct}% · មក {h} ក្នុង {n} ថ្ងៃ មកយឺត {l} |
+| Test | ការប្រឡង |
+| Score | ពិន្ទុ |
+| Pass | ជាប់ |
+| No tests in these dates. | គ្មានការប្រឡងក្នុងកាលបរិច្ឆេទទាំងនេះទេ។ |
+| The school at a glance | សាលាដោយសង្ខេប |
+| Attendance this month | វត្តមានខែនេះ |
+| Students by location | សិស្សតាមទីតាំង |
+| Missed 3 classes or more in a row | អវត្តមាន ៣ ដងឬច្រើនជាងនេះជាប់ៗគ្នា |
+| Nobody — everyone has been coming. | គ្មាននរណាទេ — គ្រប់គ្នាបានមករៀន។ |
+| Test results this year | លទ្ធផលប្រឡងឆ្នាំនេះ |
+| The average score each month, and how many passed. | ពិន្ទុមធ្យមប្រចាំខែ និងចំនួនអ្នកជាប់។ |
+| At a local church | នៅព្រះវិហារក្នុងតំបន់ |
+| Parties | ពិធីជប់លៀង |
+| Competitions | ការប្រកួត |
+| This year’s fruit · {y} | ផលផ្លែឆ្នាំនេះ · {y} |
+| These, the days with classes, students enrolled and tests count themselves into the ministry’s numbers — nobody types them. | លេខទាំងនេះ ថ្ងៃមានថ្នាក់ សិស្សចុះឈ្មោះ និងការប្រឡង រាប់ចូលក្នុងលេខរបស់កិច្ចការបម្រើដោយខ្លួនឯង — គ្មាននរណាត្រូវវាយបញ្ចូលទេ។ |
+| Parties and competitions | ពិធីជប់លៀង និងការប្រកួត |
+| {n} classes | {n} ថ្នាក់ |
+| Add a class | បន្ថែមថ្នាក់ |
+| Add a location first. | សូមបន្ថែមទីតាំងជាមុនសិន។ |
+| Fee and pass mark | តម្លៃសិក្សា និងពិន្ទុជាប់ |
+| Fee (US$) | តម្លៃសិក្សា (ដុល្លារ) |
+| The fee is for | តម្លៃសិក្សានេះសម្រាប់ |
+| Each month | ប្រចាំខែ |
+| Each term | ប្រចាំឆមាស |
+| Pass mark (%) | ពិន្ទុជាប់ (%) |
+| Terms | ឆមាស |
+| Add a term | បន្ថែមឆមាស |
+| Edit the location | កែទីតាំង |
+| Edit the class | កែថ្នាក់ |
+| Edit the student | កែព័ត៌មានសិស្ស |
+| Test scores | ពិន្ទុប្រឡង |
+| Add a party or competition | បន្ថែមពិធីជប់លៀង ឬការប្រកួត |
+| Class name or level | ឈ្មោះថ្នាក់ ឬកម្រិត |
+| Location | ទីតាំង |
+| Teacher | គ្រូ |
+| Name in Khmer | ឈ្មោះជាភាសាខ្មែរ |
+| Name in English letters | ឈ្មោះជាអក្សរឡាតាំង |
+| Class | ថ្នាក់ |
+| Not said | មិនបានប្រាប់ |
+| A discount | បញ្ចុះតម្លៃ |
+| They pay (US$) | គេបង់ (ដុល្លារ) |
+| In the school | កំពុងរៀន |
+| Left the school | បានឈប់រៀន |
+| Left on | ឈប់នៅថ្ងៃ |
+| Take their photo once they’re saved. | ថតរូបគេ បន្ទាប់ពីរក្សាទុករួច។ |
+| Subject | មុខវិជ្ជា |
+| Out of | ពិន្ទុពេញ |
+| Scores | ពិន្ទុ |
+| Leave a box empty for someone who was absent. | ទុកប្រអប់ឲ្យទទេ សម្រាប់អ្នកដែលអវត្តមាន។ |
+| Photos of the marked papers | រូបថតក្រដាសប្រឡងដែលបានកែ |
+| For the month | សម្រាប់ខែ |
+| Party | ពិធីជប់លៀង |
+| Competition | ការប្រកួត |
+| Photo saved ✓ | បានរក្សាទុករូបថត ✓ |
+| Take this photo off? | ដករូបថតនេះចេញ? |
+| {n} scores are more than the test is out of. | ពិន្ទុ {n} លើសពិន្ទុពេញនៃការប្រឡង។ |
+| Delete this for good? | លុបនេះជាអចិន្ត្រៃយ៍? |
 ## 138. Intercession: Wednesdays, prayer needs and the fast (Nov 2026)
 Youth Education › Intercession on My Ministry (Wednesdays · 21-day fast · Requests · Dashboard), the page for everyone ("Wednesday intercession", from ☰ → Prayer and search), the fast in ☰ and the bell. Check first the privacy promise about who fasts ("Only you see that you joined…") and the health note. "Wednesdays", "21-day fast" and "Dashboard" are tab labels (very little room). Fasting is ការតមអាហារ; intercession ការអធិស្ឋានអង្វរ. The 21 themes of the fast template are in public/teams/25-intercession.js (ICP_FAST_TPL), English and Khmer side by side — please read those too.
 
