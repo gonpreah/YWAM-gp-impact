@@ -59,6 +59,22 @@ Income.
 - **Funds:** that one fund goes down at once.
 - **Accounts:** takes off the chosen account in the Live estimate.
 
+### 📥 Bulk import — describing what is imported (25 Nov 2026)
+- Under "These lines are from" there is **Describe what you're importing** (optional, `S.bulkNote`), e.g. "This
+  import is the ABA expenses from the class Admin in QBO — this corresponds to Office/General in our system".
+- The page reads three things out of the words (`bulkNoteRead_`) and says what it found under the box as you type:
+  an **account** (ABA / US bank / Cash — "us" on its own is not the US bank), **what the lines are** (expenses,
+  income or transfers — only when the words name one kind) and a **category** — the sub-category named *last*, so
+  "class Admin … corresponds to Office/General" gives Office/General (a one-item category like Savings by its own
+  name too).
+- When a file is read, what it found goes on **every line** (`bulkNoteApply_`), over the guess from that line's own
+  words: the kind (not against the line's direction — an "expenses" description never turns money-in into an
+  expense), the account for income and expenses, the category for expenses (and for income of a kind with no
+  formula), marked "suggested — from your description". Changing the words after the file is read: **Put it on
+  every line**. Lines are still ticked by hand before they're added.
+- The words are kept on every entry added from that file (`impNote`) and show at the end of its memo in the
+  Detailed breakdown ("Import: …"). Once every line is added, the box empties for the next file.
+
 ### 🔁 Internal transfers (`TRANSFERS`)
 - **Fund → fund:** one fund down, the other up, at once. Accounts and the totals don't change.
 - **Account → account:** one account down, the other up, in the Live estimate. Funds and the

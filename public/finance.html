@@ -493,6 +493,9 @@ button.tick.done{ background:var(--good); }
 .mnPickBtn.on .chev{ transform:rotate(180deg); }
 .mnGrp{ margin-top:10px; }
 .mnPanelBtns{ display:flex; gap:6px; }
+.bulkNote{ width:100%; box-sizing:border-box; font:inherit; font-size:14px; padding:9px 11px; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--ink); resize:vertical; }
+.bulkNoteRead{ font-size:12.5px; color:var(--muted); margin:6px 0 4px; }
+.bulkNoteRead b{ color:var(--good); }
 .mnNA{ color:var(--muted); }
 .mnGrpHead{ display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13.5px; }
 .mnGrpName{ flex:1; display:flex; align-items:center; gap:8px; background:none; border:0; padding:4px 0; font:inherit; color:var(--ink); text-align:left; cursor:pointer; }
@@ -966,7 +969,7 @@ function ledgerLines_(){ var L=[];
      account and no Amount — the real money left when the advance was given out. */
   EXPENSES.forEach(function(x){
     var pd=Object.keys(PUBLISHED).filter(function(d){ var P=PUBLISHED[d]; return P.ids && (P.ids.exp||[]).indexOf(x.id)>=0; }).sort()[0]||'';
-    var adv=x.src==='advance', memo=[x.type, x.memo].filter(function(v){ return v && String(v).trim(); }).join(' · ');
+    var adv=x.src==='advance', memo=[x.type, x.memo, x.impNote?'Import: '+x.impNote:''].filter(function(v){ return v && String(v).trim(); }).join(' · ');
     (x.split&&x.split.length?x.split:[{ f:'', amt:x.amt }]).forEach(function(sp){
       L.push({ date:x.date, at:x.at||0, acct:adv?'':(ACCT_KEYS[x.bank]||bankLabel_(x.bank)||''), type:'Expense', name:x.who||'', memo:memo, amt:adv?null:-sp.amt, cat:sp.f?fundLabel_(sp.f):'', camt:-sp.amt, appr:pd, src:x }); }); });
   /* income: real money into an account and into the category's "virtual bank account" — the same
@@ -974,7 +977,7 @@ function ledgerLines_(){ var L=[];
      that share, so the lines add up to the whole income). Kind of income first in the memo. */
   INCOMES.forEach(function(x){
     var pd=Object.keys(PUBLISHED).filter(function(d){ var P=PUBLISHED[d]; return P.ids && (P.ids.inc||[]).indexOf(x.id)>=0; }).sort()[0]||'';
-    var memo=[x.type, x.memo].filter(function(v){ return v && String(v).trim(); }).join(' · ');
+    var memo=[x.type, x.memo, x.impNote?'Import: '+x.impNote:''].filter(function(v){ return v && String(v).trim(); }).join(' · ');
     (x.split&&x.split.length?x.split:[{ f:'', amt:x.amt }]).forEach(function(sp){
       L.push({ date:x.date, at:x.at||0, acct:ACCT_KEYS[x.bank]||bankLabel_(x.bank)||'', type:'Income', name:x.who||'', memo:memo, amt:sp.amt, cat:sp.f?fundLabel_(sp.f):'', camt:sp.amt, appr:pd, src:x }); }); });
   /* internal transfers: two lines, the side it left (−) and the side it reached (+). Category to
@@ -983,7 +986,7 @@ function ledgerLines_(){ var L=[];
      (Category amount), + for "Add income", − for "Remove income". */
   var side=function(k, v){ return isAcct_(k) ? { acct:ACCT_KEYS[k], amt:v, cat:'', camt:null } : { acct:'', amt:null, cat:fundLabel_(k), camt:v }; };
   var xpd=function(t, kind){ return Object.keys(PUBLISHED).filter(function(d){ var P=PUBLISHED[d]; return P.ids && (P.ids[kind]||[]).indexOf(t.id)>=0; }).sort()[0]||''; };
-  TRANSFERS.forEach(function(t){ var pd=xpd(t, 'xf'), m=t.memo||'';
+  TRANSFERS.forEach(function(t){ var pd=xpd(t, 'xf'), m=[t.memo, t.impNote?'Import: '+t.impNote:''].filter(Boolean).join(' · ');
     [[t.from, -t.amt, '→ '+xferShort_(t.to)], [t.to, t.amt, '← '+xferShort_(t.from)]].forEach(function(r){ var sd=side(r[0], r[1]);
       L.push({ date:t.date, at:t.at||0, acct:sd.acct, type:'Internal transfer', name:'', memo:[r[2], m].filter(Boolean).join(' · '), amt:sd.amt, cat:sd.cat, camt:sd.camt, appr:pd, src:t }); }); });
   TOOL_XFERS.forEach(function(t){ var add=isTool_(t.from), k=add?t.to:t.from, sd=side(k, add?t.amt:-t.amt);
@@ -1900,11 +1903,41 @@ function bulkSummary_(r){
   if(r.kind==='xf') bits.push((r.from?xferShort_(r.from):'?')+' → '+(r.to?xferShort_(r.to):'?'));
   return esc(bits.filter(Boolean).join(' · '));
 }
+/* "Describe what you're importing" (25 Nov 2026): the office writes where the file came from — e.g. "the ABA
+   expenses from the class Admin in QBO, this corresponds to Office/General in our system". The page reads three
+   things out of it: an account (ABA / US bank / Cash), what the lines are (expenses / income / transfers) and a
+   category — the sub-category named last, so "class Admin … corresponds to Office/General" lands on Office/General.
+   Whatever it finds is put on every line (it wins over the guess from each line's own words); the rest is left as
+   guessed. The words themselves are kept on each entry added (impNote) and show in its memo. */
+function bulkNoteRead_(txt){ var t=String(txt||'').toLowerCase(), out={ kind:'', bank:'', fund:'' }; if(!t.trim()) return out;
+  var ex=/\bexpenses?\b|\bspending\b|\bspent\b|\bbills?\b|\bpaid\b|\bpayments? out\b/.test(t), inc=/\bincome\b|\bdeposits?\b|\bdonations?\b|\bcontributions?\b|\breceived\b|\bgiving\b/.test(t), xf=/\btransfers?\b/.test(t);
+  out.kind = xf && !ex && !inc ? 'xf' : ex && !inc ? 'exp' : inc && !ex ? 'inc' : '';
+  out.bank=bankGuess_(t.replace(/\bus\b(?! ?bank)/g,''));   /* "us" alone is a word, not the US bank */
+  var best=-1; fundList_().forEach(function(f){ var n=f.name.toLowerCase(), names=[n, n.replace(/\s*\(.*\)$/,'')];
+    if(f.g.single || f.g.items.length===1) names.push(f.g.name.toLowerCase());
+    names.forEach(function(nm){ if(nm.length<3 || nm==='other') return; var re=new RegExp('(^|[^a-z0-9])'+nm.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'($|[^a-z0-9])','g'), m;
+      while((m=re.exec(t))){ if(m.index>best){ best=m.index; out.fund=f.k; } } }); });
+  return out; }
+function bulkNoteSum_(n){ var b=[];
+  if(n.kind) b.push(BULK_KIND[n.kind]); if(n.bank) b.push((n.kind==='inc'?'into ':'out of ')+bankLabel_(n.bank)); if(n.fund) b.push((n.kind==='inc'?'→ ':'from ')+fundLabel_(n.fund));
+  return b.length ? '✓ Read from your description: <b>'+esc(b.join(' · '))+'</b>' : 'Nothing picked out of it yet — name an account (ABA, US bank, Cash), what the lines are (expenses, income) and a category (e.g. Office/General).'; }
+function bulkNoteApply_(rows, n){ var hit=0; if(!n.kind && !n.bank && !n.fund) return 0;
+  rows.forEach(function(r){ var before=JSON.stringify([r.kind, r.bank, r.fund, r.from, r.to]), d=String(r.desc||'').toLowerCase();
+    if(n.kind && n.kind!==r.kind && !(n.kind==='exp' && r.dir==='in') && !(n.kind==='inc' && r.dir==='out')){ r.kind=n.kind; r.type = n.kind==='exp' ? expGuess_(d) : n.kind==='inc' ? incGuess_(d) : ''; r.fund=''; r.hint=''; }
+    if(r.kind==='inc' || r.kind==='exp'){ if(n.bank) r.bank=n.bank;
+      if(n.fund && (r.kind==='exp' || (r.type && !(INC_RULES[r.type]||[]).length))){ r.fund=n.fund; r.hint='from your description'; } }
+    else if(r.kind==='xf' && n.bank){ if(r.dir==='in' && !r.to) r.to=n.bank; if(r.dir!=='in' && !r.from) r.from=n.bank; }
+    if(JSON.stringify([r.kind, r.bank, r.fund, r.from, r.to])!==before) hit++; });
+  return hit; }
 function inBulkHtml_(){
   var U=S.bulk, open=S.foldOpen&&S.foldOpen.bulk;
   var h='<details class="inCard fold" id="inBulk" data-fold="bulk"'+(open?' open':'')+'><summary class="foldHead"><span><b>📥 Bulk import</b><span class="dsub">'+(U?U.rows.length+' lines to check from '+esc(U.file):'Many income, expenses and transfers at once')+'</span></span><span class="chev">▾</span></summary>'+
     '<p class="inLast">For a month of mixed lines from QuickBooks or straight from the bank. Each line gets a suggestion — tick it if it’s right, or Edit it. Added lines go to 📡 Live, not the approved report.</p>'+
     '<label class="f" for="bulkSrc">These lines are from</label><select id="bulkSrc" class="bigSel">'+[['acct|aba','ABA bank statement'],['acct|us','US bank statement'],['acct|cash','Cash book'],['qbo','QuickBooks — mixed accounts'],['qbo|acct|aba','QuickBooks — ABA account only'],['qbo|acct|us','QuickBooks — US account only'],['qbo|acct|cash','QuickBooks — Cash on hand only']].map(function(o){ return '<option value="'+o[0]+'"'+((S.bulkSrc||'acct|aba')===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select>'+
+    '<label class="f" for="bulkNote">Describe what you’re importing <span class="dsub" style="display:inline">(optional)</span></label>'+
+    '<textarea id="bulkNote" class="bulkNote" rows="3" placeholder="e.g. This import is the ABA expenses from the class Admin in QBO — this corresponds to Office/General in our system">'+esc(S.bulkNote||'')+'</textarea>'+
+    '<p class="bulkNoteRead" id="bulkNoteRead">'+(String(S.bulkNote||'').trim()?bulkNoteSum_(bulkNoteRead_(S.bulkNote)):'Where is this report from, and where should it go? The account, the kind of lines and the category it names are put on every line.')+'</p>'+
+    (U && String(S.bulkNote||'').trim() ? '<button class="linkAdd" id="bulkNoteApply">Put it on every line</button>'+(S.bulkNoteMsg?' <span class="dsub" style="display:inline">'+esc(S.bulkNoteMsg)+'</span>':'') : '')+
     '<label class="inDrop" for="bulkFile" style="margin-top:10px">📎 <span><b>'+(U?'Read a different file':'Attach a PDF, Excel or CSV')+'</b><br><small>A bank statement, or a QuickBooks transaction list</small></span></label>'+
     '<input type="file" id="bulkFile" accept=".pdf,.xlsx,.csv" hidden>';
   if(S.bulkBusy) h+='<p class="inLast" style="margin-top:10px">Reading the file…</p>';
@@ -1959,6 +1992,7 @@ function bulkRead_(f){
      var all=INCOMES.concat(EXPENSES, TRANSFERS, TOOL_XFERS);
      S.bulk={ file:f.name, order:DATE_ORDER, buf:null, rows:list.map(function(t){ var g=bulkGuess_(t, src), r=Object.assign({}, t, g);
        r.dup=all.some(function(x){ return x.date===r.date && Math.abs(x.amt-r.amt)<0.005; }); r.ok=false; return r; }) };
+     S.bulk.note=String(S.bulkNote||'').trim(); bulkNoteApply_(S.bulk.rows, bulkNoteRead_(S.bulk.note)); S.bulkNoteMsg='';
      S.bulkBusy=false; S.bulkEdit=null; render(); })
    .catch(function(e){ S.bulkBusy=false; S.bulk=null; S.bulkErr = e && e.message==='no_pdfjs' ? 'Couldn’t load the PDF reader — check the connection and try again, or use the Excel export.' : e && e.message==='no_header' ? 'Couldn’t find a Date and an Amount (or Debit / Credit) column.' : e && e.message==='no_rows' ? 'Couldn’t find any lines with a date and an amount in that file.' : 'Couldn’t read that file.'; render(); });
 }
@@ -1966,16 +2000,16 @@ function bulkAdd_(){
   var U=S.bulk, list=U.rows.filter(function(r){ return r.ok && !bulkNeeds_(r).length; }); if(!list.length) return;
   snap_('Removed the '+list.length+' lines bulk-imported from '+U.file);
   list.forEach(function(r, i){ var id=Date.now().toString(36)+i, at=Date.now();
-    if(r.kind==='inc' || r.kind==='exp'){ var e={ id:r.kind[0]+id, at:at, date:r.date, amt:r.amt, type:r.type, who:'', memo:r.desc, bank:r.bank, src:'bulk', file:U.file,
+    if(r.kind==='inc' || r.kind==='exp'){ var e={ id:r.kind[0]+id, at:at, date:r.date, amt:r.amt, type:r.type, who:'', memo:r.desc, bank:r.bank, src:'bulk', file:U.file, impNote:U.note||'',
         split: r.kind==='exp' ? [{ f:r.fund, amt:r.amt }] : flSplit_('inc', r.type, r.amt, r.fund) };
       flApply_(r.kind, e, 1); FK[r.kind].list().push(e); }
-    else { var t={ id:(isTool_(r.from)||isTool_(r.to)?'f':'t')+id, at:at, date:r.date, from:r.from, to:r.to, amt:r.amt, memo:r.desc||'Bulk import', src:'bulk', file:U.file };
+    else { var t={ id:(isTool_(r.from)||isTool_(r.to)?'f':'t')+id, at:at, date:r.date, from:r.from, to:r.to, amt:r.amt, memo:r.desc||'Bulk import', src:'bulk', file:U.file, impNote:U.note||'' };
       if(fundOf_(r.from)) fundMove_(r.from, -r.amt); if(fundOf_(r.to)) fundMove_(r.to, r.amt);
       (isTool_(r.from)||isTool_(r.to) ? TOOL_XFERS : TRANSFERS).push(t); } });
   flSort_('inc'); flSort_('exp'); [TRANSFERS, TOOL_XFERS].forEach(function(L){ L.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; }); });
   xferSnap_(list.reduce(function(m,r){ return r.date>m?r.date:m; },''));
   var left=U.rows.filter(function(r){ return !(r.ok && !bulkNeeds_(r).length); });
-  S.bulk = left.length ? { file:U.file, rows:left } : null; S.bulkEdit=null; render();
+  S.bulk = left.length ? { file:U.file, rows:left, note:U.note } : null; if(!left.length){ S.bulkNote=''; S.bulkNoteMsg=''; } S.bulkEdit=null; render();
   toast('Added '+list.length+' lines to 📡 Live'+(left.length?' — '+left.length+' still to check':''));
 }
 /* ---- Input: advances — money handed out before a purchase, settled with the receipts ----
@@ -2664,6 +2698,7 @@ document.addEventListener('change', function(e){
   if(e.target.dataset && e.target.dataset.advssel){ S.advS[e.target.dataset.advssel]=e.target.value; return; }
   if(e.target.id==='bulkFile' && e.target.files[0]){ bulkRead_(e.target.files[0]); e.target.value=''; return; }
   if(e.target.id==='bulkSrc'){ S.bulkSrc=e.target.value; return; }
+  if(e.target.id==='bulkNote' && S.bulk){ render(); return; }
   if(e.target.dataset && e.target.dataset.bulkok!=null){ S.bulk.rows[+e.target.dataset.bulkok].ok=e.target.checked; render(); return; }
   if(e.target.dataset && e.target.dataset.bulkf){ var bf=e.target.dataset.bulkf.split('|'), br=S.bulk.rows[+bf[0]], v=e.target.value;
     if(bf[1]==='amt'){ var n=calc_(v); br.amt=isNaN(n)?0:Math.round(n*100)/100; } else br[bf[1]]=v;
@@ -2711,6 +2746,7 @@ document.addEventListener('focusout', function(e){ calcFinish_(e.target); });
 document.addEventListener('keydown', function(e){ if(e.key==='Enter' && e.target.dataset && e.target.dataset.catenter){ e.preventDefault(); var ce=e.target.dataset.catenter; if(ce==='@') catAddGroup_(); else if(ce==='#') catAddSub_(); else catAddItem_(ce); return; } });
 document.addEventListener('keydown', function(e){ if(e.key==='Enter' && e.target.closest && e.target.closest('.money')){ e.preventDefault(); calcFinish_(e.target); } });
 document.addEventListener('input', function(e){
+  if(e.target.id==='bulkNote'){ S.bulkNote=e.target.value; S.bulkNoteMsg=''; var nr=document.getElementById('bulkNoteRead'); if(nr) nr.innerHTML=e.target.value.trim()?bulkNoteSum_(bulkNoteRead_(e.target.value)):'Where is this report from, and where should it go? The account, the kind of lines and the category it names are put on every line.'; return; }
   if(e.target.closest && e.target.closest('.money')) calcPreview_(e.target);
   if(e.target.dataset && e.target.dataset.reportday){ var oldDay=reportDay_(); S.reportDay=e.target.value;
     /* the one-entry forms follow the day, unless their date was changed by hand */
@@ -3050,6 +3086,7 @@ function importDemo_(){ var ta=document.getElementById('impText'), txt=ta?ta.val
   resetState_(); loadState_(o.state); refreshBal_(); keep_();
   S.impAsk=false; S.impErr=''; S.impTxt=''; (S.foldOpen=S.foldOpen||{}).imp=false; render(); toast('Brought in — saving to Impact'); }
 document.addEventListener('click', function(e){ if(e.target.id==='impGo') importDemo_(); });
+document.addEventListener('click', function(e){ if(e.target.id!=='bulkNoteApply' || !S.bulk) return; S.bulk.note=String(S.bulkNote||'').trim(); var n=bulkNoteApply_(S.bulk.rows, bulkNoteRead_(S.bulk.note)); S.bulkNoteMsg=n ? 'Changed '+n+' line'+(n>1?'s':'')+' — tick the ones that are right.' : 'Every line already matched it.'; render(); });
 /* ---- Inside My Ministry (?embed=1): one page with the app ----
    The page tells the app how tall it is (the app makes the frame that tall, so nothing scrolls on its
    own), and the app tells the page which part of it is on screen as it scrolls. */
