@@ -1877,7 +1877,10 @@ function bulkFromSheet_(rows){
     out.push({ date:d, amt:Math.round(a*100)/100, dir:dir, qbType:ty, journal:/journal/.test(ty), qbHead:head, qbSec:sec, who:txt(row[c.who]),
       desc:[txt(row[c.who]), txt(row[c.desc]), txt(row[c.acct]), txt(row[c.split])].filter(Boolean).join(' · '), cls:txt(row[c.cls]), qbAcct:txt(row[c.acct]), qbSplit:txt(row[c.split]) });
   }
-  if(!out.length) throw new Error('no_rows');
+  if(!out.length){   /* say what was seen, so a file that won't read can be put right */
+    var cn=function(j){ return j==null ? 'none' : '“'+txt((rows[hdr]||[])[j])+'” (column '+String.fromCharCode(65+j)+')'; }, smp=[];
+    for(var q=hdr+1;q<rows.length && smp.length<2;q++){ var rr=rows[q]||[]; if(rr.some(function(v){ return txt(v); })) smp.push('“'+txt(rr[c.date])+'” / “'+txt(rr[c.amt!=null?c.amt:c.out])+'”'); }
+    var e=new Error('no_rows'); e.detail='Read '+rows.length+' rows. Headings on row '+(hdr+1)+': date '+cn(c.date)+', amount '+cn(c.amt!=null?c.amt:c.out)+'. First rows under them (date / amount): '+(smp.join(', ')||'none')+'.'; throw e; }
   out.isPL=isPL; out.checks=Object.keys(totals).map(function(k){ return { head:k, qb:totals[k], read:sums[k]||0, ok:Math.abs((sums[k]||0)-totals[k])<0.01 }; });
   return out;
 }
@@ -2071,7 +2074,7 @@ function bulkRead_(f){
      S.bulk.isPL=!!list.isPL; S.bulk.checks=list.checks||[];
      S.bulk.note=String(S.bulkNote||'').trim(); bulkNoteApply_(S.bulk.rows, bulkNoteRead_(S.bulk.note)); S.bulkNoteMsg='';
      S.bulkBusy=false; S.bulkEdit=null; render(); })
-   .catch(function(e){ S.bulkBusy=false; S.bulk=null; S.bulkErr = e && e.message==='no_pdfjs' ? 'Couldn’t load the PDF reader — check the connection and try again, or use the Excel export.' : e && e.message==='no_header' ? 'Couldn’t find a Date and an Amount (or Debit / Credit) column.' : e && e.message==='no_rows' ? 'Couldn’t find any lines with a date and an amount in that file.' : 'Couldn’t read that file.'; render(); });
+   .catch(function(e){ S.bulkBusy=false; S.bulk=null; S.bulkErr = e && e.message==='no_pdfjs' ? 'Couldn’t load the PDF reader — check the connection and try again, or use the Excel export.' : e && e.message==='no_header' ? 'Couldn’t find a Date and an Amount (or Debit / Credit) column.' : e && e.message==='no_rows' ? 'Couldn’t find any lines with a date and an amount in that file.'+(e.detail?' '+e.detail:'') : 'Couldn’t read that file'+(e && e.message ? ' ('+e.message+')' : '')+'.'; render(); });
 }
 function bulkAdd_(){
   var U=S.bulk, list=U.rows.filter(function(r){ return r.ok && !bulkNeeds_(r).length; }); if(!list.length) return;
