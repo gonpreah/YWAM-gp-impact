@@ -7,7 +7,7 @@
 
 /* ---------- 2. Search ---------- */
 /* Other words people type for a page. English; a page's own label (in the app's language) always matches too. */
-var FIND_WORDS={ intercession:'prayer need wednesday fast fasting', fast:'fasting prayer 21 days intercession', base:'dashboard figures numbers salvations staff', caltasks:'calendar tasks to-do todo events', ywamgp:'organisation organization board leadership structure',
+var FIND_WORDS={ worship:'music songs band rota roster worship team', intercession:'prayer need wednesday fast fasting', fast:'fasting prayer 21 days intercession', base:'dashboard figures numbers salvations staff', caltasks:'calendar tasks to-do todo events', ywamgp:'organisation organization board leadership structure',
   prayer:'pray requests', p360:'feedback review peers', tests:'personality strengths apest gifts couple marriage quiz', leave:'time off holiday vacation pto away',
   library:'books read reading summaries', sched:'cooking chores kitchen duty rota', hosp:'rooms beds bookings guests', students:'dts school', portal:'applications applicants teams',
   hr:'contracts candidates human resources', admin:'accounts approvals settings', kmreview:'translation', khmer:'language vocabulary english flashcards',

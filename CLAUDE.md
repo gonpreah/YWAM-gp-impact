@@ -754,7 +754,7 @@ quietest bucket named), Requests, Calendar, Bookings, Rooms.
   **Leave Request**, **Library** (moved here from the bottom bar, Oct 2026; Profile & settings —
   with My contract inside it, `#profMyContract` — took its place in the bar); a guest's menu
   keeps Library / Create my profile / Log in;
-- **Operations**: Weekly schedules (everyone), SR Hospitality (`canHospClient_`: the Hospitality
+- **Operations**: Weekly schedules (everyone), Worship rota (everyone), SR Hospitality (`canHospClient_`: the Hospitality
   ministry — members, leaders, the Skills Training overseer — and admins);
 - **Applications**: YWAM GP Portal (admins, portal staff / portal admins, the Outreach Teams
   leader — `S.me.portal` from the server);
@@ -2899,6 +2899,48 @@ phones to take a photo of the student … they fill out the tests on paper … t
 - **Privacy (children)**: nothing of it is on the roster, a profile, getData, any boot or the preview (`school*` isn't a
   get… handler, so `demoCall` refuses it); applicants are walled out (test-applicant-walls). Tests use made-up names.
 - tests/test-school.mjs (server, 69), tests/test-school-ui.mjs (browser, 39). Khmer: docs/khmer-needed.md §139. sw.js SHELL v30 (v31 with Intercession).
+
+## Worship: the week's rota (teams/26-worship.js, Nov 2026, Uriah)
+"Every Monday morning they do worship, Monday night they do worship, and usually for Wednesday morning intercession there's
+a worship team, and then Thursday night there's a worship team. So they need to every week have those 4 worship things filled
+out." Youth Education › Worship, both campuses. Uriah will send more about the ministry (someone designed an app for them) —
+kept flexible: services and roles are settings, not code.
+- **My Ministry tabs** (`mmTabsFor_` → `wsTabs_()`, keys in `MM_SHELL_KEYS`, `WS_TABS`, `wsPaneHtml_`): **This week** (the
+  current week as the team will live it: each service's people, setlist, notes, and once its day has come **After the service**
+  — it happened / didn't, how many came, hours practising → `worshipHeld`) · **Rota** (`#wsAhead`: this week and eight ahead
+  with filled/total and draft/published; ‹ › weeks; per service each role's people as chips, **+** opens the people picker
+  `ppickHtml_` keyed `ws.<svc>.<role>` — the team members who play that role first, approved leave that day marked "away" —
+  plus a typed guest name; "Not happening this week"; the setlist from the song library with ↑ ↓ and a note; notes; 📋 Copy
+  the week before (`worshipCopyWeek`: people, no setlists, nothing held); 📣 Publish / Take it down; **⚙️ Services and
+  roles** at the foot) · **Team** (musicians: staff or typed, the roles each plays, in training) · **Songs** (title, key, link
+  http(s) only, language, notes, "One of our own songs" with the day written / recorded / uploaded) · **Dashboard** (this week
+  year: services held, average attendance, practice hours, weeks fully filled, who served, songs used most) · Numbers (only
+  Salvations is asked; `#wsAutoHint`) · Tasks · OKRs. Every change saves at once (`wsSaveWeek_` sends the whole week).
+- **Filled** = a worship leader (role `lead`, always kept by `cleanWsRoles_`) and at least one more person; "n of N services
+  filled" leaves out services marked off. Same person twice in one service or someone away → a gpAsk_ warning, not a refusal.
+- **For everyone**: ☰ → Operations → **Worship rota** (`S.view='worship'`, `wsPageHtml_`, any week ‹ ›, published weeks
+  only; the team gets "Open on My Ministry"); search finds it (`FIND_WORDS.worship`). My Home's card: a line in the chores /
+  cooking row (`wsHomeHtml_` inside `schedHomeHtml_`, `#wsMine`, "🎵 You're on Keys — Monday night worship", →
+  `[data-goworship]`); the bell the day before and on the day (`wsNotifItems_`, so the slide-down shows it). Both from the
+  boot's `worship = {mine, canEdit}` (`worshipMine_`: published services in the next eight days with me on them, by id or my
+  name typed) — no extra call; `worshipWeeks:poipet` / `worshipWeeks:siemreap` are in BOOT_KEYS. No push yet.
+- **Server** ("Worship" in api.js, after the Cafe): `worship:<campus>` = {settings:{services:[{id,name,day 1 Mon…7 Sun,time,
+  place,roles}], roles:[{id,name,many}]}, team, songs}; `worshipWeeks:<campus>` = {weeks:{Monday: {published, services:[…,
+  slots:{role:[{id?,name}]}, setlist, notes, off, held, count, practice], roleNames, …}}}, 60 kept, written with `mutateKey_`.
+  A week holds its own services (settings change only weeks not made yet). Defaults `WS_SERVICES_DEFAULT` / `WS_ROLES_DEFAULT`.
+  Handlers `worshipBoard` (team: everything incl. `away` and `dash`; anyone else on the campus: the week only once published),
+  `worshipSaveWeek(week, data, save|publish|unpublish)`, `worshipCopyWeek`, `worshipHeld(week, svcId, {held,count,practice})`
+  (not before the service's day), `worshipSaveSettings`, `worshipSaveSong`, `worshipSaveTeam`. Rights: `canWorship_` =
+  `canLogFor_` Youth Education|Worship (members, other-ministry members, leaders, the Youth Education director, admins) —
+  settings too. Weeks up to 8 ahead (`bad_week` beyond). People by id must be active staff on the campus, else only the typed
+  name stays; a single role takes one person, a "several people" role up to 8.
+- **The numbers count themselves** (`wsSync_` after every change, rows `by:'tool:worship'`, never over a typed row —
+  `wsToolSync_`; the week year of the Monday): Worship Nights Hosted (services held), Attendance at Gatherings (sum of counts),
+  Hours Spent Practicing, Musicians in Training (a level, the team's "in training" count, this week), Songs Written / Recorded /
+  Uploaded to Social Media (our own songs, in the week each day falls). Salvations stays typed. `WORSHIP_AUTO` (api.js) =
+  `WORSHIP_AUTO_METRICS` (taxonomy.js, `autoMetricsFor` — both campuses; `isDtsMinistry_` now checks GPDTS by name);
+  `numbersStatus_` skips `tool:worship` rows like `tool:dts`, so "numbers due" waits on the typed Salvations.
+- tests/test-worship.mjs (server), tests/test-worship-ui.mjs. Khmer: docs/khmer-needed.md §140. sw.js SHELL v32 (with the school tool and Intercession).
 
 ## Admin → Invite staff: links that let new staff straight in (Nov 2026, Andrew)
 "If I want to invite someone in the admin section … the invite link will be already pre-approved by the admin."

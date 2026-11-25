@@ -87,7 +87,13 @@ var SCHOOL_TOOL = {
     parties: 'Parties Thrown', comps: 'Competitions Held', salv: 'Salvations', bapt: 'Baptisms', disc: 'Students in Discipleship', church: 'Students Brought to Local Church' } }
 };
 function schoolToolFor(dept, ministry) { var k = dept + '|' + ministry; return Object.prototype.hasOwnProperty.call(SCHOOL_TOOL, k) ? SCHOOL_TOOL[k] : null; }
+/* Worship's rota counts these (Nov 2026; "Worship" in api.js, WORSHIP_AUTO — keep the two lists the same):
+   services held, attendance, practice hours, musicians in training, and our own songs written, recorded and
+   uploaded. Salvations stays typed on the Numbers tab. Both campuses. */
+var WORSHIP_AUTO_METRICS = ['Worship Nights Hosted','Attendance at Gatherings','Musicians in Training','Hours Spent Practicing',
+  'Songs Written','Songs Recorded','Songs Uploaded to Social Media'];
 function autoMetricsFor(campus, dept, ministry) {
+  if (dept === 'Youth Education' && ministry === 'Worship') return WORSHIP_AUTO_METRICS.slice();
   if (dept === 'Youth Education' && ministry === 'Intercession') return ICP_AUTO_METRICS.slice();
   var sc = schoolToolFor(dept, ministry);
   if (sc) return Object.keys(sc.metrics).map(function (k) { return sc.metrics[k]; });

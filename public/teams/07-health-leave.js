@@ -45,8 +45,9 @@ function schedAssignCounts_(s){
 function schedHomeHtml_(){
   var d=S.sched, me=schedMyName_();
   var ch=(d && d.now && d.now.chores) ? dutyMine(d.now.chores, me, t) : [], ck=(d && d.now && d.now.kitchen) ? dutyMine(d.now.kitchen, me, t) : [];
-  if(!ch.length && !ck.length) return '<span id="schedHome" hidden></span>';   // still there, so this week's schedules get loaded (bind)
-  var h='<div class="heroSched" id="schedHome">';
+  var wsH=typeof wsHomeHtml_==='function' ? wsHomeHtml_() : '';   // 🎵 the worship services I'm on (26-worship.js)
+  if(!ch.length && !ck.length && !wsH) return '<span id="schedHome" hidden></span>';   // still there, so this week's schedules get loaded (bind)
+  var h='<div class="heroSched" id="schedHome">'+wsH;
   if(ch.length) h+='<button class="heroSchedMine" data-schedopen="chores" id="schedMineChore">🧹 '+esc(gpT(ch.length===1?'Your chore: {what}':'Your chores: {what}',{what:ch.join(', ')}))+' ›</button>';
   if(ck.length) h+='<button class="heroSchedMine" data-schedopen="kitchen" id="schedMineCook">🍲 '+esc(ck.length<=2 ? gpT('Cooking: {what}',{what:ck.join(', ')}) : gpT('You have {n} cooking duties this week',{n:ck.length}))+' ›</button>';
   return h+'</div>';

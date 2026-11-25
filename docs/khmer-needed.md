@@ -6172,6 +6172,109 @@ The finance tool itself (public/finance.html) is English only for now — its Kh
 |---|---|
 | Input | បញ្ចូល |
 
+## 140. The Worship rota (My Ministry → Worship, ☰ → Worship rota, Nov 2026)
+Youth Education › Worship plans its four weekly services: who leads, sings and plays, the setlist, and after each service whether it happened and how many came. Tabs: This week · Rota · Team · Songs · Dashboard. "Filled" and the week strip labels have very little room. Role names (Worship leader, Vocals, Keys…) sit in a narrow column. "You’re on {role} — {service}" is one line on My Home's card; {service} is the service's own name as the team typed it (English). Draft translations by Claude.
+
+| English | Khmer (draft) |
+|---|---|
+| Worship rota | កាលវិភាគក្រុមថ្វាយបង្គំ |
+| Services held, attendance, practice hours, musicians in training and our own songs count themselves from the rota. Enter the rest here. | កម្មវិធីដែលបានធ្វើ ចំនួនអ្នកចូលរួម ម៉ោងហាត់ តន្ត្រីករកំពុងហ្វឹកហាត់ និងបទចម្រៀងផ្ទាល់ខ្លួនរបស់យើង រាប់ដោយខ្លួនឯងពីកាលវិភាគ។ សូមបញ្ចូលលេខដែលនៅសល់នៅទីនេះ។ |
+| Songs | បទចម្រៀង |
+| The worship rota is for the worship team. | កាលវិភាគក្រុមថ្វាយបង្គំគឺសម្រាប់ក្រុមថ្វាយបង្គំ។ |
+| Couldn’t load the worship rota. | មិនអាចបើកកាលវិភាគក្រុមថ្វាយបង្គំបានទេ។ |
+| {n} of {total} services filled | កម្មវិធី {n} ក្នុងចំណោម {total} មានអ្នកបម្រើគ្រប់ហើយ |
+| Not this week | មិនមានសប្តាហ៍នេះ |
+| Filled | គ្រប់ហើយ |
+| Setlist | បញ្ជីបទចម្រៀង |
+| After the service | ក្រោយកម្មវិធី |
+| It happened | បានធ្វើ |
+| It didn’t happen | មិនបានធ្វើ |
+| How many came | មានមនុស្សមកប៉ុន្មាននាក់ |
+| Hours practising (optional) | ម៉ោងហាត់ (មិនចាំបាច់) |
+| Published — the campus can see it | បានផ្សាយ — មនុស្សទាំងអស់នៅមូលដ្ឋានអាចមើលឃើញ |
+| Draft — only the worship team sees it | សេចក្តីព្រាង — មានតែក្រុមថ្វាយបង្គំទេដែលមើលឃើញ |
+| The week of {date} | សប្តាហ៍ចាប់ពី {date} |
+| Nobody is on this week yet. Fill it in on the Rota tab. | មិនទាន់មាននរណាម្នាក់នៅសប្តាហ៍នេះទេ។ សូមបំពេញនៅផ្ទាំង កាលវិភាគ។ |
+| Edit this week’s rota | កែកាលវិភាគសប្តាហ៍នេះ |
+| Services held, how many came and practice hours fill in Worship’s numbers by themselves. | កម្មវិធីដែលបានធ្វើ ចំនួនអ្នកមក និងម៉ោងហាត់ បំពេញលេខរបស់ក្រុមថ្វាយបង្គំដោយខ្លួនឯង។ |
+| Plays {role} | លេង {role} |
+| Worship team | ក្រុមថ្វាយបង្គំ |
+| away that day | មិននៅថ្ងៃនោះ |
+| Not happening this week | មិនមានសប្តាហ៍នេះទេ |
+| Or type a guest’s name | ឬវាយឈ្មោះភ្ញៀវ |
+| Note for the team | កំណត់ចំណាំសម្រាប់ក្រុម |
+| ＋ Add a song from the library | ＋ បន្ថែមបទចម្រៀងពីបណ្ណាល័យបទចម្រៀង |
+| Add songs on the Songs tab, then pick them here. | បន្ថែមបទចម្រៀងនៅផ្ទាំង បទចម្រៀង រួចជ្រើសរើសវានៅទីនេះ។ |
+| Notes for the team | កំណត់ចំណាំសម្រាប់ក្រុម |
+| Published | បានផ្សាយ |
+| Draft | សេចក្តីព្រាង |
+| Week of {date} | សប្តាហ៍ចាប់ពី {date} |
+| That week is too far ahead — plan up to eight weeks at a time. | សប្តាហ៍នោះឆ្ងាយពេក — រៀបចំបានរហូតដល់ប្រាំបីសប្តាហ៍ម្តង។ |
+| Copy the week of {date} | ចម្លងសប្តាហ៍ចាប់ពី {date} |
+| Publish this week | ផ្សាយសប្តាហ៍នេះ |
+| Every change is saved as you go. Until it is published only the worship team sees the week. | រាល់ការផ្លាស់ប្តូរត្រូវបានរក្សាទុកភ្លាមៗ។ រហូតដល់វាត្រូវបានផ្សាយ មានតែក្រុមថ្វាយបង្គំទេដែលមើលឃើញសប្តាហ៍នេះ។ |
+| Services and roles | កម្មវិធី និងតួនាទី |
+| The services each week starts with, and the roles on them | កម្មវិធីដែលសប្តាហ៍នីមួយៗចាប់ផ្តើមជាមួយ និងតួនាទីក្នុងកម្មវិធីទាំងនោះ |
+| Services | កម្មវិធី |
+| Remove this service | ដកកម្មវិធីនេះចេញ |
+| Add a service | បន្ថែមកម្មវិធី |
+| Roles | តួនាទី |
+| several people | មនុស្សច្រើននាក់ |
+| Add a role | បន្ថែមតួនាទី |
+| Changes apply to weeks not started yet. A week already made keeps its own services. | ការផ្លាស់ប្តូរប្រើសម្រាប់សប្តាហ៍ដែលមិនទាន់បានចាប់ផ្តើម។ សប្តាហ៍ដែលបានធ្វើរួច រក្សាកម្មវិធីរបស់វាដដែល។ |
+| The ministry’s musicians and the roles each can play. The ones who play a role come first when you fill it. | តន្ត្រីកររបស់កិច្ចការបម្រើ និងតួនាទីដែលម្នាក់ៗអាចលេងបាន។ អ្នកដែលលេងតួនាទីមួយនឹងបង្ហាញមុនគេ ពេលអ្នកបំពេញវា។ |
+| in training | កំពុងហ្វឹកហាត់ |
+| Nobody on the team yet. | មិនទាន់មាននរណាម្នាក់នៅក្នុងក្រុមទេ។ |
+| {n} in training — Musicians in Training counts itself from this list. | {n} នាក់កំពុងហ្វឹកហាត់ — តន្ត្រីករកំពុងហ្វឹកហាត់ រាប់ដោយខ្លួនឯងពីបញ្ជីនេះ។ |
+| Recorded | បានថត |
+| Written | បានសរសេរ |
+| Our own song | បទចម្រៀងផ្ទាល់ខ្លួនរបស់យើង |
+| Add a song | បន្ថែមបទចម្រៀង |
+| Find a song | ស្វែងរកបទចម្រៀង |
+| No songs yet. Add the ones the team plays. | មិនទាន់មានបទចម្រៀងទេ។ សូមបន្ថែមបទដែលក្រុមលេង។ |
+| Songs of our own: when one is written, recorded or uploaded, Worship’s song numbers count it in that week. | បទចម្រៀងផ្ទាល់ខ្លួនរបស់យើង៖ ពេលបទមួយត្រូវបានសរសេរ ថត ឬដាក់ឡើង លេខបទចម្រៀងរបស់ក្រុមថ្វាយបង្គំរាប់វានៅសប្តាហ៍នោះ។ |
+| Key | គន្លឹះភ្លេង |
+| Link to chords, lyrics or a video | តំណទៅអាកដ ទំនុកច្រៀង ឬវីដេអូ |
+| One of our own songs | ជាបទចម្រៀងផ្ទាល់ខ្លួនរបស់យើង |
+| Services held | កម្មវិធីដែលបានធ្វើ |
+| Average attendance | ចំនួនអ្នកចូលរួមជាមធ្យម |
+| Practice hours | ម៉ោងហាត់ |
+| Weeks fully filled | សប្តាហ៍ដែលមានអ្នកបម្រើគ្រប់ |
+| Who served | អ្នកដែលបានបម្រើ |
+| {n} times | {n} ដង |
+| Nobody yet this year. | មិនទាន់មាននរណាម្នាក់នៅឆ្នាំនេះទេ។ |
+| Songs used most | បទចម្រៀងដែលប្រើច្រើនជាងគេ |
+| No setlists yet this year. | មិនទាន់មានបញ្ជីបទចម្រៀងនៅឆ្នាំនេះទេ។ |
+| This week’s worship rota isn’t out yet. | កាលវិភាគក្រុមថ្វាយបង្គំសប្តាហ៍នេះមិនទាន់ចេញនៅឡើយទេ។ |
+| Open on My Ministry | បើកនៅក្នុង ការបម្រើរបស់ខ្ញុំ |
+| You’re on {role} — {service} | អ្នកនៅលើ {role} — {service} |
+| You’re on {n} worship services this week | អ្នកបម្រើក្នុងកម្មវិធីថ្វាយបង្គំ {n} នៅសប្តាហ៍នេះ |
+| Today: you’re on {role} — {service} | ថ្ងៃនេះ៖ អ្នកនៅលើ {role} — {service} |
+| Tomorrow: you’re on {role} — {service} | ថ្ងៃស្អែក៖ អ្នកនៅលើ {role} — {service} |
+| That week is already published. | សប្តាហ៍នោះត្រូវបានផ្សាយរួចហើយ។ |
+| They are on the team already. | ពួកគេនៅក្នុងក្រុមរួចហើយ។ |
+| Give the song a title. | សូមដាក់ចំណងជើងបទចម្រៀង។ |
+| That service hasn’t happened yet. | កម្មវិធីនោះមិនទាន់បានធ្វើនៅឡើយទេ។ |
+| Check the numbers. | សូមពិនិត្យលេខឡើងវិញ។ |
+| Keep at least one service. | សូមរក្សាទុកកម្មវិធីយ៉ាងហោចណាស់មួយ។ |
+| {name} is already on {service}. Add them here too? | {name} មាននៅក្នុង {service} រួចហើយ។ បន្ថែមគាត់នៅទីនេះដែរឬ? |
+| {name} is away that day. Add them anyway? | {name} មិននៅថ្ងៃនោះទេ។ នៅតែបន្ថែមគាត់ឬ? |
+| Take this week down? The campus won’t see it until it is published again. | ដកសប្តាហ៍នេះចេញ? មូលដ្ឋាននឹងមិនឃើញវាទេ រហូតដល់វាត្រូវបានផ្សាយម្តងទៀត។ |
+| Remove this service? Weeks already made keep it. | ដកកម្មវិធីនេះចេញ? សប្តាហ៍ដែលបានធ្វើរួចនៅរក្សាវាដដែល។ |
+| New service | កម្មវិធីថ្មី |
+| New role | តួនាទីថ្មី |
+| Saved. | បានរក្សាទុក។ |
+| Take {name} off the worship team? | ដក {name} ចេញពីក្រុមថ្វាយបង្គំ? |
+| Remove this song from the library? | ដកបទចម្រៀងនេះចេញពីបណ្ណាល័យបទចម្រៀង? |
+| Worship leader | អ្នកដឹកនាំថ្វាយបង្គំ |
+| Vocals | អ្នកច្រៀង |
+| Keys | ក្តារចុច |
+| Acoustic guitar | ហ្គីតាសូរស័ព្ទ |
+| Electric guitar | ហ្គីតាអគ្គិសនី |
+| Bass | បាស |
+| Drums | ស្គរ |
+| Sound | សំឡេង |
+| Slides/projection | ស្លាយ/ម៉ាស៊ីនបញ្ចាំង |
 
 ## 139. The school tool (YDC on My Ministry, Nov 2026)
 My Ministry → YDC: Today (taking the roll) · Students · Tests · Payments · Dashboard. Used by teachers on a phone.

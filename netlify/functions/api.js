@@ -2754,7 +2754,7 @@ async function numbersStatus_(s, rows) {
   weeks.forEach(function (w) { logged[w] = {}; });
   entries.forEach(function (r) {
     if (r.campus !== s.campus || yearOf_(r) !== yr || !logged[Number(r.week)]) return;
-    if (r.by === DTS_TAG || r.by === SCHOOL_TAG || r.by === ICP_TAG) return;   // GPDTS's pipeline, the school tool and Intercession's tool count themselves; typed numbers are what is due
+    if (r.by === DTS_TAG || r.by === SCHOOL_TAG || r.by === ICP_TAG || r.by === WORSHIP_TAG) return;   // GPDTS's pipeline, the school tool, Intercession's tool and the Worship rota count themselves; typed numbers are what is due
     logged[Number(r.week)][r.dept + '|' + r.ministry] = true;
   });
   const loggedFor = function (dept, ministry) {
@@ -6196,7 +6196,7 @@ async function getTasksBoot(username, pin, calFrom) {
 }
 
 const BOOT_KEYS = ['libClub', 'entries', 'survey', 'okrs', 'dailyLogs', 'goals', 'holidays', 'smartGoals', 'broadcasts',
-  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks', 'holidayCatch', 'libHl'];
+  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks', 'holidayCatch', 'libHl', 'worshipWeeks:poipet', 'worshipWeeks:siemreap'];
 async function awaitingBoot_(username, pin) {
   const w = await verifyAwaiting_(username, pin);
   if (!w) return null;
@@ -6294,6 +6294,7 @@ async function getMyBoot(username, pin) {
     push: await part(async function () { const k = await pushKeys_(); return k ? { key: k.pub, prefs: pushPrefsOf_(s) } : null; }),   // reminders: the app's public key and your times
     backup: s.isAdmin ? await part(backupStatus_) : null,
     hospNews: canHosp_(s) ? await part(function () { return hospNews_(s.campus); }) : null,
+    worship: await part(async function () { return { mine: await worshipMine_(s), canEdit: canWorship_(s) }; }),   // the Worship rota: the services I'm on in the next eight days (teams/26-worship.js)   // SR Hospitality: a team's new dates, someone who left
     fast: await part(function () { return fastGlance_(s); }),   // the campus's fast, running or coming (Intercession): the bell and ☰   // SR Hospitality: a team's new dates, someone who left
     // the roster is already top-level above; no need to ship it twice in one response
     base: base ? Object.assign({}, base, { roster: undefined }) : null
@@ -13292,6 +13293,420 @@ function cafePos(username, pin, date, totals) {
   });
 }
 
+/* ---------- Worship: the week's rota (Nov 2026, Uriah: "every Monday morning they do worship, Monday night
+   they do worship, and usually for Wednesday morning intercession there's a worship team, and then Thursday
+   night there's a worship team. So they need to every week have those 4 worship things filled out") ----------
+   Youth Education › Worship, both campuses. Two blobs a campus:
+   - worship:<campus> = { settings: { services:[{id, name, day 1 Mon … 7 Sun, time, place, roles:[roleIds]}],
+     roles:[{id, name, many}] }, team:[{id, staffId?, name, roles, training}], songs:[{id, title, key, link, lang,
+     notes, own:{ written, recorded, uploaded } | null}] };
+   - worshipWeeks:<campus> = { weeks: { 'YYYY-MM-DD' (the Monday): { published, publishedAt, updated, updatedBy,
+     roleNames, services:[{ id, name, day, time, place, roles, off, slots:{ roleId:[{id?, name}] },
+     setlist:[{songId, note}], notes, held, count, practice }] } } } — 60 weeks kept. A week holds its own
+     services, so changing the settings never rewrites a week already made.
+   The ministry's people (canLogFor_: members, leaders, the Youth Education director) and admins make it; any
+   active staff member on the campus reads a published week. The numbers follow (wsSync_, rows by:'tool:worship',
+   never over a typed row): services held, attendance, practice hours, musicians in training (a level, this week)
+   and our own songs written / recorded / uploaded in the week each was. Salvations stays typed. */
+const WORSHIP_DEPT = 'Youth Education', WORSHIP_MIN = 'Worship', WORSHIP_TAG = 'tool:worship';
+/* the metrics the tool counts — mirrored by WORSHIP_AUTO_METRICS in public/taxonomy.js (tests/test-worship.mjs) */
+const WORSHIP_AUTO = ['Worship Nights Hosted', 'Attendance at Gatherings', 'Musicians in Training', 'Hours Spent Practicing',
+  'Songs Written', 'Songs Recorded', 'Songs Uploaded to Social Media'];
+const WS_MAX = { services: 8, roles: 16, people: 8, setlist: 15, songs: 400, team: 80, weeks: 60, ahead: 8 };
+const WS_ROLES_DEFAULT = [
+  { id: 'lead', name: 'Worship leader', many: false }, { id: 'vocals', name: 'Vocals', many: true },
+  { id: 'keys', name: 'Keys', many: false }, { id: 'acoustic', name: 'Acoustic guitar', many: false },
+  { id: 'electric', name: 'Electric guitar', many: false }, { id: 'bass', name: 'Bass', many: false },
+  { id: 'drums', name: 'Drums', many: false }, { id: 'sound', name: 'Sound', many: false },
+  { id: 'slides', name: 'Slides/projection', many: false }
+];
+const WS_ALL_ROLES = WS_ROLES_DEFAULT.map(function (r) { return r.id; });
+const WS_SERVICES_DEFAULT = [
+  { id: 'monam', name: 'Monday morning worship', day: 1, time: '07:30', place: '', roles: WS_ALL_ROLES },
+  { id: 'monpm', name: 'Monday night worship', day: 1, time: '19:00', place: '', roles: WS_ALL_ROLES },
+  { id: 'wedam', name: 'Wednesday morning intercession', day: 3, time: '07:30', place: '', roles: WS_ALL_ROLES },
+  { id: 'thupm', name: 'Thursday night worship', day: 4, time: '19:00', place: '', roles: WS_ALL_ROLES }
+];
+function canWorship_(s) { return !!(s && !isApplicant_(s) && canLogFor_(s, s.campus, WORSHIP_DEPT, WORSHIP_MIN)); }
+function wsText_(v, n) { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, n); }
+function wsLong_(v, n) { return String(v == null ? '' : v).replace(/\r/g, '').replace(/\n{3,}/g, '\n\n').trim().slice(0, n); }
+function wsId_(v, used, p) {
+  let id = String(v == null ? '' : v).replace(/[^a-z0-9_-]/gi, '').slice(0, 24);
+  if (!id || used[id]) { let i = 1; do { id = p + (i++); } while (used[id]); }
+  used[id] = 1; return id;
+}
+function wsTime_(v) { const m = /^(\d{1,2}):(\d{2})$/.exec(String(v || '').trim()); return m && Number(m[1]) < 24 && Number(m[2]) < 60 ? ('0' + Number(m[1])).slice(-2) + ':' + m[2] : ''; }
+function wsLink_(v) { const s = String(v == null ? '' : v).trim(); return /^https?:\/\/[^\s<>"']{3,}$/i.test(s) && s.length <= 400 ? s : ''; }
+/* the Monday a date's week starts on; '' for anything that isn't a date */
+function wsMonday_(v) {
+  const d = isoDate_(v); if (!d || isNaN(Date.parse(d + 'T00:00:00Z'))) return '';
+  return addDays_(d, -((new Date(d + 'T00:00:00Z').getUTCDay() + 6) % 7));
+}
+function wsThisMonday_() { return wsMonday_(baseToday_()); }
+function wsDate_(monday, day) { return addDays_(monday, (Number(day) || 1) - 1); }
+function cleanWsRoles_(raw) {
+  const used = {}, out = [];
+  (Array.isArray(raw) ? raw : []).slice(0, WS_MAX.roles).forEach(function (r) {
+    r = r && typeof r === 'object' ? r : {};
+    const name = wsText_(r.name, 40); if (!name) return;
+    out.push({ id: wsId_(r.id, used, 'r'), name: name, many: !!r.many });
+  });
+  if (!out.some(function (r) { return r.id === 'lead'; })) out.unshift({ id: 'lead', name: 'Worship leader', many: false });   // a service is filled around its worship leader
+  return out.slice(0, WS_MAX.roles);
+}
+function cleanWsService_(r, used, roleIds) {
+  r = r && typeof r === 'object' ? r : {};
+  const name = wsText_(r.name, 60); if (!name) return null;
+  const day = finiteNum_(r.day, 1, 7);
+  const roles = (Array.isArray(r.roles) ? r.roles : []).filter(function (x, i, a) { return roleIds.indexOf(x) > -1 && a.indexOf(x) === i; });
+  return { id: wsId_(r.id, used, 's'), name: name, day: day ? Math.round(day) : 1, time: wsTime_(r.time), place: wsText_(r.place, 60),
+    roles: roles.length ? roles : roleIds.slice() };
+}
+function cleanWsSettings_(raw) {
+  raw = raw && typeof raw === 'object' ? raw : {};
+  const roles = cleanWsRoles_(raw.roles), ids = roles.map(function (r) { return r.id; }), used = {};
+  const services = (Array.isArray(raw.services) ? raw.services : []).slice(0, WS_MAX.services)
+    .map(function (x) { return cleanWsService_(x, used, ids); }).filter(Boolean);
+  return { roles: roles, services: services };
+}
+async function wsDoc_(campus) {
+  const d = await readJSON('worship:' + campus, {});
+  const settings = d.settings && typeof d.settings === 'object' ? cleanWsSettings_(d.settings)
+    : { roles: copy_(WS_ROLES_DEFAULT), services: copy_(WS_SERVICES_DEFAULT) };
+  return { settings: settings, team: Array.isArray(d.team) ? d.team : [], songs: Array.isArray(d.songs) ? d.songs : [] };
+}
+async function wsWeeks_(campus) {
+  const d = await readJSON('worshipWeeks:' + campus, {});
+  return d.weeks && typeof d.weeks === 'object' && !Array.isArray(d.weeks) ? d.weeks : {};
+}
+/* the people of the campus who can be put on a service: active staff, never applicants */
+async function wsStaff_(campus) {
+  return (await getStaff_()).filter(function (r) { return r && r.active && !r.archived && !isApplicant_(r) && r.campus === campus; });
+}
+function wsPerson_(p, byId) {
+  p = p && typeof p === 'object' ? p : { name: p };
+  const id = String(p.id || '');
+  if (id && byId[id]) return { id: id, name: wsText_(byId[id].name, 60) };
+  const name = wsText_(p.name, 60);
+  return name ? { name: name } : null;
+}
+function wsPeople_(list, byId, cap) {
+  const out = [], seen = {};
+  (Array.isArray(list) ? list : []).forEach(function (x) {
+    const p = wsPerson_(x, byId); if (!p) return;
+    const k = p.id ? 'i:' + p.id : 'n:' + p.name.toLowerCase();
+    if (seen[k] || out.length >= cap) return;
+    seen[k] = 1; out.push(p);
+  });
+  return out;
+}
+/* a week's services as the page sent them, kept to shape; held / count / practice are worshipHeld's alone */
+function cleanWsWeek_(raw, settings, byId, songIds, prev) {
+  raw = raw && typeof raw === 'object' ? raw : {};
+  const roleIds = settings.roles.map(function (r) { return r.id; }), many = {};
+  settings.roles.forEach(function (r) { many[r.id] = r.many; });
+  const used = {}, prevSvc = {};
+  ((prev && prev.services) || []).forEach(function (x) { prevSvc[x.id] = x; });
+  const services = (Array.isArray(raw.services) ? raw.services : []).slice(0, WS_MAX.services).map(function (x) {
+    const svc = cleanWsService_(x, used, roleIds); if (!svc) return null;
+    const src = x.slots && typeof x.slots === 'object' ? x.slots : {}, slots = {};
+    svc.roles.forEach(function (rid) { const ppl = wsPeople_(src[rid], byId, many[rid] ? WS_MAX.people : 1); if (ppl.length) slots[rid] = ppl; });
+    const seenSong = {};
+    svc.off = !!x.off;
+    svc.slots = slots;
+    svc.setlist = (Array.isArray(x.setlist) ? x.setlist : []).map(function (it) {
+      const id = String((it && it.songId) || '');
+      if (!songIds[id] || seenSong[id]) return null;
+      seenSong[id] = 1; return { songId: id, note: wsText_(it.note, 120) };
+    }).filter(Boolean).slice(0, WS_MAX.setlist);
+    svc.notes = wsLong_(x.notes, 600);
+    const pv = prevSvc[svc.id] || {};
+    svc.held = pv.held === true || pv.held === false ? pv.held : null;
+    svc.count = pv.count == null ? null : pv.count; svc.practice = pv.practice == null ? null : pv.practice;
+    return svc;
+  }).filter(Boolean);
+  const roleNames = {}; settings.roles.forEach(function (r) { roleNames[r.id] = r.name; });
+  return { services: services, notes: wsLong_(raw.notes, 600), roleNames: roleNames };
+}
+/* a week nobody has made yet: the settings' services, nobody on them */
+function wsFresh_(settings) {
+  const roleNames = {}; settings.roles.forEach(function (r) { roleNames[r.id] = r.name; });
+  return { published: false, notes: '', roleNames: roleNames, services: settings.services.map(function (x) {
+    return Object.assign(copy_(x), { off: false, slots: {}, setlist: [], notes: '', held: null, count: null, practice: null }); }) };
+}
+/* filled: it has a worship leader and at least one more person; a service marked "not this week" doesn't count */
+function wsFilled_(svc) {
+  if (!svc || svc.off) return false;
+  const slots = svc.slots || {};
+  const others = Object.keys(slots).filter(function (k) { return k !== 'lead'; }).reduce(function (a, k) { return a + (slots[k] || []).length; }, 0);
+  return (slots.lead || []).length > 0 && others > 0;
+}
+function wsFill_(rec) {
+  const on = (rec.services || []).filter(function (x) { return !x.off; });
+  return { filled: on.filter(wsFilled_).length, total: on.length };
+}
+function wsWeekOut_(rec, week, songs) {
+  if (!rec) return null;
+  const byId = {}; (songs || []).forEach(function (s) { byId[s.id] = s; });
+  const out = copy_(rec); out.week = week;
+  out.services.forEach(function (x) {
+    x.date = wsDate_(week, x.day);
+    x.setlist = (x.setlist || []).map(function (it) { const s = byId[it.songId];
+      return s ? Object.assign({}, it, { title: s.title, key: s.key || '', link: s.link || '', lang: s.lang || '' }) : null; }).filter(Boolean);
+  });
+  const f = wsFill_(rec); out.filled = f.filled; out.total = f.total;
+  return out;
+}
+/* who is on approved leave on each day of the week: { staffId: [dates] } */
+async function wsAway_(campus, monday) {
+  const ids = {}; (await wsStaff_(campus)).forEach(function (r) { ids[r.id] = 1; });
+  const days = []; for (let i = 0; i < 7; i++) days.push(addDays_(monday, i));
+  const out = {};
+  (await getTrips_()).forEach(function (r) {
+    if (!r || !ids[r.staffId] || !(r.status === 'approved' || r.status === 'noted') || !isDate_(r.from) || !isDate_(r.to)) return;
+    days.forEach(function (d) { if (r.from <= d && d <= r.to) { (out[r.staffId] = out[r.staffId] || []); if (out[r.staffId].indexOf(d) === -1) out[r.staffId].push(d); } });
+  });
+  return out;
+}
+/* ---- the numbers ---- */
+async function wsToolSync_(campus, week, vals, yr) {
+  const rows = await getEntries_();
+  const keep = {};
+  Object.keys(vals).forEach(function (m) {
+    if (vals[m] !== null) {
+      const had = rows.find(function (r) { return r.campus === campus && r.dept === WORSHIP_DEPT && r.ministry === WORSHIP_MIN && r.metric === m &&
+        String(r.week) === String(week) && yearOf_(r) === yr; });
+      if (had && had.by !== WORSHIP_TAG) return;   // someone typed it: theirs stays
+    }
+    keep[m] = vals[m];
+  });
+  if (Object.keys(keep).length) await toolSync_(campus, WORSHIP_DEPT, WORSHIP_MIN, week, keep, WORSHIP_TAG, yr);
+}
+async function wsSync_(campus, monday) {
+  monday = wsMonday_(monday); if (!monday) return;
+  const yr = weekYear_(monday), wk = isoWeek_(monday), end = addDays_(monday, 6);
+  const rec = (await wsWeeks_(campus))[monday], doc = await wsDoc_(campus);
+  const svcs = rec ? rec.services.filter(function (x) { return !x.off; }) : [];
+  const answered = svcs.filter(function (x) { return x.held === true || x.held === false; }), held = svcs.filter(function (x) { return x.held === true; });
+  const counted = held.filter(function (x) { return x.count != null; }), practiced = svcs.filter(function (x) { return x.practice != null; });
+  const r1 = function (n) { return Math.round(n * 10) / 10; };
+  const vals = {
+    'Worship Nights Hosted': answered.length ? held.length : null,
+    'Attendance at Gatherings': counted.length ? counted.reduce(function (a, x) { return a + (Number(x.count) || 0); }, 0) : null,
+    'Hours Spent Practicing': practiced.length ? r1(practiced.reduce(function (a, x) { return a + (Number(x.practice) || 0); }, 0)) : null
+  };
+  [['written', 'Songs Written'], ['recorded', 'Songs Recorded'], ['uploaded', 'Songs Uploaded to Social Media']].forEach(function (p) {
+    const n = doc.songs.filter(function (s) { const d = s.own && s.own[p[0]]; return d && d >= monday && d <= end; }).length;
+    vals[p[1]] = n || null;
+  });
+  if (monday === wsThisMonday_()) vals['Musicians in Training'] = doc.team.length ? doc.team.filter(function (m) { return m.training; }).length : null;   // a level: the team as it is now
+  await wsToolSync_(campus, wk, vals, yr);
+}
+/* ---- the year at a glance (the Dashboard tab) ---- */
+function wsDash_(weeks, songs, today) {
+  const yr = weekYear_(today), titles = {};
+  songs.forEach(function (s) { titles[s.id] = s.title; });
+  let held = 0, counted = 0, people = 0, practice = 0, pubWeeks = 0, fullWeeks = 0;
+  const served = {}, used = {};
+  Object.keys(weeks).sort().forEach(function (w) {
+    if (weekYear_(w) !== yr || w > today) return;
+    const rec = weeks[w];
+    if (rec.published) { pubWeeks++; const f = wsFill_(rec); if (f.total && f.filled === f.total) fullWeeks++; }
+    (rec.services || []).forEach(function (x) {
+      if (x.off || wsDate_(w, x.day) > today) return;
+      if (x.held === true) { held++; if (x.count != null) { counted++; people += Number(x.count) || 0; } }
+      if (x.practice != null) practice += Number(x.practice) || 0;
+      if (x.held === false || !(rec.published || x.held === true)) return;
+      Object.keys(x.slots || {}).forEach(function (rid) { (x.slots[rid] || []).forEach(function (p) {
+        const k = p.id ? 'i:' + p.id : 'n:' + p.name.toLowerCase();
+        (served[k] = served[k] || { id: p.id || '', name: p.name, n: 0 }).n++; }); });
+      (x.setlist || []).forEach(function (it) { if (titles[it.songId]) used[it.songId] = (used[it.songId] || 0) + 1; });
+    });
+  });
+  return { year: yr, held: held, avg: counted ? Math.round(people / counted) : null, practice: Math.round(practice * 10) / 10,
+    weeks: pubWeeks, fullWeeks: fullWeeks,
+    served: Object.keys(served).map(function (k) { return served[k]; }).sort(function (a, b) { return b.n - a.n || a.name.localeCompare(b.name); }).slice(0, 40),
+    songs: Object.keys(used).map(function (id) { return { songId: id, title: titles[id], n: used[id] }; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 10) };
+}
+async function wsAuth_(username, pin, edit) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { out: { ok: false } };
+  const can = canWorship_(s);
+  if (edit && !can) return { out: { ok: false, err: 'not_authorized' } };
+  return { s: s, campus: s.campus, can: can };
+}
+function wsWeekOk_(monday) { return !!monday && monday <= addDays_(wsThisMonday_(), 7 * WS_MAX.ahead); }
+/* One week. The ministry's people get everything they work with: the week (or a fresh one from the settings),
+   the settings, the team, the songs, the weeks ahead with how full each is, who is away, and the year's
+   dashboard. Anyone else on the campus gets the week only once it is published. */
+async function worshipBoard(username, pin, week) {
+  const a = await wsAuth_(username, pin, false); if (a.out) return a.out;
+  const monday = wsMonday_(week) || wsThisMonday_(), thisMon = wsThisMonday_();
+  const doc = await wsDoc_(a.campus), weeks = await wsWeeks_(a.campus), rec = weeks[monday] || null;
+  const base = { ok: true, week: monday, thisWeek: thisMon, canEdit: a.can, roles: doc.settings.roles };
+  if (!a.can) return Object.assign(base, { rec: rec && rec.published ? wsWeekOut_(rec, monday, doc.songs) : null });
+  const ahead = [];
+  for (let i = 0; i <= WS_MAX.ahead; i++) {
+    const w = addDays_(thisMon, 7 * i), r = weeks[w], f = r ? wsFill_(r) : { filled: 0, total: doc.settings.services.length };
+    ahead.push({ week: w, made: !!r, published: !!(r && r.published), filled: f.filled, total: f.total });
+  }
+  const prev = Object.keys(weeks).filter(function (w) { return w < monday; }).sort().pop() || '';
+  return Object.assign(base, {
+    rec: wsWeekOut_(rec || wsFresh_(doc.settings), monday, doc.songs), isNew: !rec, prevWeek: prev,
+    canWrite: wsWeekOk_(monday), settings: doc.settings, team: doc.team, songs: doc.songs, ahead: ahead,
+    away: await wsAway_(a.campus, monday), dash: wsDash_(weeks, doc.songs, baseToday_())
+  });
+}
+async function wsWriteWeek_(campus, monday, fn) {
+  return mutateKey_('worshipWeeks:' + campus, {}, function (d) {
+    d.weeks = d.weeks && typeof d.weeks === 'object' && !Array.isArray(d.weeks) ? d.weeks : {};
+    const r = fn(d.weeks); if (r && r.err) return { abort: true, ok: false, err: r.err };
+    Object.keys(d.weeks).sort().reverse().slice(WS_MAX.weeks).forEach(function (w) { delete d.weeks[w]; });
+    return { ok: true };
+  });
+}
+/* action: 'save' keeps it as it is (a draft stays a draft), 'publish' shows it to the campus, 'unpublish' takes it down */
+async function worshipSaveWeek(username, pin, week, data, action) {
+  const a = await wsAuth_(username, pin, true); if (a.out) return a.out;
+  const monday = wsMonday_(week); if (!wsWeekOk_(monday)) return { ok: false, err: 'bad_week' };
+  const doc = await wsDoc_(a.campus), byId = {}, songIds = {};
+  (await wsStaff_(a.campus)).forEach(function (r) { byId[r.id] = r; });
+  doc.songs.forEach(function (s) { songIds[s.id] = 1; });
+  const now = new Date().toISOString();
+  const res = await wsWriteWeek_(a.campus, monday, function (weeks) {
+    const prev = weeks[monday] || null, rec = cleanWsWeek_(data, doc.settings, byId, songIds, prev);
+    rec.published = action === 'publish' ? true : action === 'unpublish' ? false : !!(prev && prev.published);
+    rec.publishedAt = rec.published ? ((prev && prev.published && prev.publishedAt) || now) : null;
+    rec.updated = now; rec.updatedBy = a.s.id;
+    weeks[monday] = rec;
+  });
+  if (res && res.ok === false) return res;
+  await wsSync_(a.campus, monday);
+  return worshipBoard(username, pin, monday);
+}
+/* a week started from the latest week before it: the same services and people, no setlists, nothing held */
+async function worshipCopyWeek(username, pin, week) {
+  const a = await wsAuth_(username, pin, true); if (a.out) return a.out;
+  const monday = wsMonday_(week); if (!wsWeekOk_(monday)) return { ok: false, err: 'bad_week' };
+  const now = new Date().toISOString();
+  const res = await wsWriteWeek_(a.campus, monday, function (weeks) {
+    if (weeks[monday] && weeks[monday].published) return { err: 'published' };
+    const prev = Object.keys(weeks).filter(function (w) { return w < monday; }).sort().pop();
+    if (!prev) return { err: 'nothing_before' };
+    const rec = copy_(weeks[prev]);
+    rec.services.forEach(function (x) { x.setlist = []; x.notes = ''; x.held = null; x.count = null; x.practice = null; });
+    rec.notes = ''; rec.published = false; rec.publishedAt = null; rec.updated = now; rec.updatedBy = a.s.id; rec.from = prev;
+    weeks[monday] = rec;
+  });
+  if (res && res.ok === false) return res;
+  await wsSync_(a.campus, monday);
+  return worshipBoard(username, pin, monday);
+}
+/* after a service: did it happen, how many came, the hours practising for it */
+async function worshipHeld(username, pin, week, svcId, info) {
+  const a = await wsAuth_(username, pin, true); if (a.out) return a.out;
+  const monday = wsMonday_(week); if (!wsWeekOk_(monday)) return { ok: false, err: 'bad_week' };
+  const x = info && typeof info === 'object' ? info : {}, blank = function (v) { return v === '' || v == null; };
+  const count = blank(x.count) ? null : finiteNum_(x.count, 0, 5000), practice = blank(x.practice) ? null : finiteNum_(x.practice, 0, 200);
+  if ((!blank(x.count) && count == null) || (!blank(x.practice) && practice == null)) return { ok: false, err: 'bad_number' };
+  const doc = await wsDoc_(a.campus), today = baseToday_(), now = new Date().toISOString();
+  const res = await wsWriteWeek_(a.campus, monday, function (weeks) {
+    if (!weeks[monday]) weeks[monday] = Object.assign(wsFresh_(doc.settings), { updated: now, updatedBy: a.s.id });
+    const svc = weeks[monday].services.find(function (s) { return s.id === String(svcId || ''); });
+    if (!svc) return { err: 'not_found' };
+    if (wsDate_(monday, svc.day) > today) return { err: 'not_yet' };
+    svc.held = x.held === true ? true : x.held === false ? false : null;
+    svc.count = svc.held === true && count != null ? Math.round(count) : null;
+    svc.practice = practice == null ? null : Math.round(practice * 10) / 10;
+    svc.heldBy = a.s.id; svc.heldAt = now;
+  });
+  if (res && res.ok === false) return res;
+  await wsSync_(a.campus, monday);
+  return worshipBoard(username, pin, monday);
+}
+async function wsWriteDoc_(campus, fn) {
+  return mutateKey_('worship:' + campus, {}, function (d) {
+    if (!d.settings || typeof d.settings !== 'object') d.settings = { roles: copy_(WS_ROLES_DEFAULT), services: copy_(WS_SERVICES_DEFAULT) };
+    if (!Array.isArray(d.team)) d.team = [];
+    if (!Array.isArray(d.songs)) d.songs = [];
+    const r = fn(d); if (r && r.err) return { abort: true, ok: false, err: r.err };
+    return Object.assign({ ok: true }, r || {});
+  });
+}
+/* the services and the roles, for weeks not made yet */
+async function worshipSaveSettings(username, pin, settings, week) {
+  const a = await wsAuth_(username, pin, true); if (a.out) return a.out;
+  const clean = cleanWsSettings_(settings);
+  if (!clean.services.length) return { ok: false, err: 'no_services' };
+  const res = await wsWriteDoc_(a.campus, function (d) { d.settings = clean; });
+  if (res && res.ok === false) return res;
+  return worshipBoard(username, pin, week);
+}
+function wsDay_(v) { const d = isoDate_(v); return d && !isNaN(Date.parse(d + 'T00:00:00Z')) && d <= addDays_(baseToday_(), 1) ? d : ''; }
+/* a song for the library; `own` for a song of ours, with the day it was written, recorded and uploaded */
+async function worshipSaveSong(username, pin, song, week) {
+  const a = await wsAuth_(username, pin, true); if (a.out) return a.out;
+  const p = song && typeof song === 'object' ? song : {};
+  const touched = [];
+  const res = await wsWriteDoc_(a.campus, function (d) {
+    const i = p.id ? d.songs.findIndex(function (x) { return x.id === p.id; }) : -1;
+    if (p.id && i === -1) return { err: 'not_found' };
+    const was = i > -1 ? d.songs[i] : null;
+    if (was && was.own) ['written', 'recorded', 'uploaded'].forEach(function (k) { if (was.own[k]) touched.push(was.own[k]); });
+    if (p.remove) { d.songs.splice(i, 1); return; }
+    const title = wsText_(p.title, 80); if (!title) return { err: 'no_title' };
+    if (!was && d.songs.length >= WS_MAX.songs) return { err: 'too_many' };
+    const o = p.own && typeof p.own === 'object' ? p.own : null;
+    const rec = { id: was ? was.id : toolId_('sg'), title: title, key: wsText_(p.key, 12), link: wsLink_(p.link), lang: p.lang === 'km' || p.lang === 'en' ? p.lang : '',
+      notes: wsLong_(p.notes, 500), own: o ? { written: wsDay_(o.written), recorded: wsDay_(o.recorded), uploaded: wsDay_(o.uploaded) } : null,
+      by: was ? was.by : a.s.id, updated: new Date().toISOString() };
+    if (rec.own) ['written', 'recorded', 'uploaded'].forEach(function (k) { if (rec.own[k]) touched.push(rec.own[k]); });
+    if (i > -1) d.songs[i] = rec; else d.songs.push(rec);
+  });
+  if (res && res.ok === false) return res;
+  const mons = touched.map(wsMonday_).filter(function (m, i, arr) { return m && arr.indexOf(m) === i; });
+  for (const m of mons) await wsSync_(a.campus, m);
+  return worshipBoard(username, pin, week);
+}
+/* the ministry's musicians: staff or a typed name, the roles they can play, in training */
+async function worshipSaveTeam(username, pin, member, week) {
+  const a = await wsAuth_(username, pin, true); if (a.out) return a.out;
+  const p = member && typeof member === 'object' ? member : {};
+  const doc = await wsDoc_(a.campus), roleIds = doc.settings.roles.map(function (r) { return r.id; }), byId = {};
+  (await wsStaff_(a.campus)).forEach(function (r) { byId[r.id] = r; });
+  const res = await wsWriteDoc_(a.campus, function (d) {
+    const i = p.id ? d.team.findIndex(function (x) { return x.id === p.id; }) : -1;
+    if (p.id && i === -1) return { err: 'not_found' };
+    if (p.remove) { d.team.splice(i, 1); return; }
+    const who = wsPerson_({ id: p.staffId, name: p.name }, byId); if (!who) return { err: 'no_name' };
+    const dup = d.team.some(function (x, j) { return j !== i && (who.id ? x.staffId === who.id : (!x.staffId && String(x.name).toLowerCase() === who.name.toLowerCase())); });
+    if (dup) return { err: 'already' };
+    if (i === -1 && d.team.length >= WS_MAX.team) return { err: 'too_many' };
+    const rec = { id: i > -1 ? d.team[i].id : toolId_('wm'), staffId: who.id || '', name: who.name,
+      roles: (Array.isArray(p.roles) ? p.roles : []).filter(function (x, k, arr) { return roleIds.indexOf(x) > -1 && arr.indexOf(x) === k; }), training: !!p.training };
+    if (i > -1) d.team[i] = rec; else d.team.push(rec);
+  });
+  if (res && res.ok === false) return res;
+  await wsSync_(a.campus, wsThisMonday_());
+  return worshipBoard(username, pin, week);
+}
+/* For My Home and the bell: the published services in the next eight days with this person on them —
+   by their id, or a typed name that is theirs. */
+async function worshipMine_(s) {
+  const weeks = await wsWeeks_(s.campus), today = baseToday_(), until = addDays_(today, 7), mon = wsThisMonday_(), out = [];
+  const me = String(s.name || '').trim().toLowerCase();
+  [mon, addDays_(mon, 7)].forEach(function (w) {
+    const rec = weeks[w]; if (!rec || !rec.published) return;
+    (rec.services || []).forEach(function (x) {
+      const date = wsDate_(w, x.day); if (x.off || date < today || date > until) return;
+      const roles = Object.keys(x.slots || {}).filter(function (rid) { return (x.slots[rid] || []).some(function (p) { return p.id ? p.id === s.id : (me && p.name.toLowerCase() === me); }); });
+      if (roles.length) out.push({ week: w, date: date, svc: x.id, name: x.name, time: x.time || '', place: x.place || '',
+        roles: roles.map(function (rid) { return (rec.roleNames || {})[rid] || rid; }) });
+    });
+  });
+  return out.sort(function (a, b) { return (a.date + a.time) < (b.date + b.time) ? -1 : 1; });
+}
+
 /* ==================== the school tool (YDC; Nov 2026, Uriah) ====================
    "A really good software for managing a school … add students, … grades, taking roll, testing the
    students … names, photo, keep tabs of all of their students … use their phones to take a photo of
@@ -15237,6 +15652,13 @@ const HANDLERS = {
   getTasksBoot: function (a) { return getTasksBoot(a[0], a[1], a[2]); },
   libAudioIndex: function () { return libAudioIndex(); },
   cafePos: function (a) { return cafePos(a[0], a[1], a[2], a[3]); },
+  worshipBoard: function (a) { return worshipBoard(a[0], a[1], a[2]); },
+  worshipSaveWeek: function (a) { return worshipSaveWeek(a[0], a[1], a[2], a[3], a[4]); },
+  worshipCopyWeek: function (a) { return worshipCopyWeek(a[0], a[1], a[2]); },
+  worshipHeld: function (a) { return worshipHeld(a[0], a[1], a[2], a[3], a[4]); },
+  worshipSaveSettings: function (a) { return worshipSaveSettings(a[0], a[1], a[2], a[3]); },
+  worshipSaveSong: function (a) { return worshipSaveSong(a[0], a[1], a[2], a[3]); },
+  worshipSaveTeam: function (a) { return worshipSaveTeam(a[0], a[1], a[2], a[3]); },
   saveLeadTuesday: function (a) { return saveLeadTuesday(a[0], a[1], a[2]); },
   finProjGet: function (a) { return finProjGet(a[0], a[1]); },
   finProjSave: function (a) { return finProjSave(a[0], a[1], a[2]); },
