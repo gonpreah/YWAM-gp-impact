@@ -6172,7 +6172,7 @@ The finance tool itself (public/finance.html) is English only for now — its Kh
 |---|---|
 | Input | បញ្ចូល |
 
-## 139. The Worship rota (My Ministry → Worship, ☰ → Worship rota, Nov 2026)
+## 140. The Worship rota (My Ministry → Worship, ☰ → Worship rota, Nov 2026)
 Youth Education › Worship plans its four weekly services: who leads, sings and plays, the setlist, and after each service whether it happened and how many came. Tabs: This week · Rota · Team · Songs · Dashboard. "Filled" and the week strip labels have very little room. Role names (Worship leader, Vocals, Keys…) sit in a narrow column. "You’re on {role} — {service}" is one line on My Home's card; {service} is the service's own name as the team typed it (English). Draft translations by Claude.
 
 | English | Khmer (draft) |
@@ -6275,3 +6275,281 @@ Youth Education › Worship plans its four weekly services: who leads, sings and
 | Drums | ស្គរ |
 | Sound | សំឡេង |
 | Slides/projection | ស្លាយ/ម៉ាស៊ីនបញ្ចាំង |
+
+## 139. The school tool (YDC on My Ministry, Nov 2026)
+My Ministry → YDC: Today (taking the roll) · Students · Tests · Payments · Dashboard. Used by teachers on a phone.
+"Here / Absent / Late" sit on small face tiles in the roll — very little room. "Term" was drafted as ឆមាស (semester);
+check whether the school says វគ្គ or ត្រីមាស instead. Fee words: "Sponsored — free", "A discount", "Full fee".
+
+| English | Khmer (draft) |
+|---|---|
+| Payments | ការបង់ប្រាក់ |
+| No class | គ្មានថ្នាក់ |
+| Add a name first. | សូមបញ្ចូលឈ្មោះជាមុនសិន។ |
+| Pick a class. | សូមជ្រើសរើសថ្នាក់។ |
+| Pick a location. | សូមជ្រើសរើសទីតាំង។ |
+| That date can’t be used. | មិនអាចប្រើកាលបរិច្ឆេទនោះបានទេ។ |
+| Say what the test is out of. | សូមប្រាប់ពិន្ទុពេញនៃការប្រឡង។ |
+| Add the subject. | សូមបញ្ចូលមុខវិជ្ជា។ |
+| Pick what the payment is for. | សូមជ្រើសរើសថាការបង់ប្រាក់នេះសម្រាប់អ្វី។ |
+| Pick a student. | សូមជ្រើសរើសសិស្ស។ |
+| That is still in use, so it can’t be deleted. | វានៅតែកំពុងប្រើ ដូច្នេះមិនអាចលុបបានទេ។ |
+| Only the ministry’s leaders can change the set-up. | មានតែអ្នកដឹកនាំកិច្ចការបម្រើប៉ុណ្ណោះ ដែលអាចកែការរៀបចំបាន។ |
+| That list is full. | បញ្ជីនោះពេញហើយ។ |
+| That photo is too large. | រូបថតនោះធំពេក។ |
+| That photo couldn’t be read. | មិនអាចអានរូបថតនោះបានទេ។ |
+| You can’t open this school. | អ្នកមិនអាចបើកសាលានេះបានទេ។ |
+| {n} roll saved on this phone — it will send when you’re online. | វត្តមាន {n} បានរក្សាទុកនៅលើទូរស័ព្ទនេះ — វានឹងផ្ញើនៅពេលអ្នកមានអ៊ីនធឺណិត។ |
+| No classes yet | មិនទាន់មានថ្នាក់នៅឡើយ |
+| Add your locations and classes first — then students, the roll and tests. | សូមបញ្ចូលទីតាំង និងថ្នាក់ជាមុនសិន — បន្ទាប់មកសិស្ស វត្តមាន និងការប្រឡង។ |
+| Ask the ministry’s leader to set up the locations and classes. | សូមសុំអ្នកដឹកនាំកិច្ចការបម្រើ ឲ្យរៀបចំទីតាំង និងថ្នាក់។ |
+| Set up the school | រៀបចំសាលា |
+| Take the roll | ស្រង់វត្តមាន |
+| No students in this class yet. | មិនទាន់មានសិស្សក្នុងថ្នាក់នេះទេ។ |
+| {p} here · {a} absent · {l} late | មក {p} · អវត្តមាន {a} · មកយឺត {l} |
+| Everyone starts as here. Tap a face: absent, then late, then here again. | ដំបូងគ្រប់គ្នាមានវត្តមាន។ ចុចលើមុខ៖ អវត្តមាន បន្ទាប់មកមកយឺត រួចមានវត្តមានវិញ។ |
+| Absent | អវត្តមាន |
+| Late | មកយឺត |
+| Save the roll again | រក្សាទុកវត្តមានម្តងទៀត |
+| Save the roll | រក្សាទុកវត្តមាន |
+| A roll is saved for this day — saving again replaces it. | វត្តមានសម្រាប់ថ្ងៃនេះបានរក្សាទុកហើយ — ការរក្សាទុកម្តងទៀតនឹងជំនួសវា។ |
+| Saved on this phone — will send when online. | បានរក្សាទុកនៅលើទូរស័ព្ទនេះ — នឹងផ្ញើនៅពេលមានអ៊ីនធឺណិត។ |
+| Roll saved ✓ | បានរក្សាទុកវត្តមាន ✓ |
+| Search a name or village | ស្វែងរកឈ្មោះ ឬភូមិ |
+| All classes | ថ្នាក់ទាំងអស់ |
+| No students yet — add the first one. | មិនទាន់មានសិស្សទេ — បន្ថែមសិស្សដំបូង។ |
+| Left the school · {n} | បានឈប់រៀន · {n} |
+| That student isn’t here any more. | សិស្សនោះលែងមាននៅទីនេះហើយ។ |
+| Take a new photo | ថតរូបថ្មី |
+| Attendance | វត្តមាន |
+| Days absent | ថ្ងៃអវត្តមាន |
+| Test average | ពិន្ទុមធ្យមនៃការប្រឡង |
+| Sex | ភេទ |
+| Date of birth | ថ្ងៃខែឆ្នាំកំណើត |
+| Village | ភូមិ |
+| Guardian’s phone | លេខទូរស័ព្ទអាណាព្យាបាល |
+| Sponsored — free | មានអ្នកឧបត្ថម្ភ — ឥតគិតថ្លៃ |
+| Discount: {amt} | បញ្ចុះតម្លៃ៖ {amt} |
+| Full fee | តម្លៃពេញ |
+| Report card | ព្រឹត្តិបត្រពិន្ទុ |
+| In discipleship | កំពុងទទួលការបង្ហាត់បង្រៀនជាសិស្ស |
+| Brought to a local church | បាននាំទៅព្រះវិហារក្នុងតំបន់ |
+| Salvation | ការសង្គ្រោះ |
+| Baptism | ពិធីជ្រមុជទឹក |
+| Faith and life | ជំនឿ និងជីវិត |
+| Salvations, baptisms, discipleship and church count in the ministry’s numbers by these dates. | ការសង្គ្រោះ ពិធីជ្រមុជទឹក ការបង្ហាត់សិស្ស និងព្រះវិហារ រាប់ក្នុងលេខរបស់កិច្ចការបម្រើតាមកាលបរិច្ឆេទទាំងនេះ។ |
+| No test scores yet. | មិនទាន់មានពិន្ទុប្រឡងទេ។ |
+| Record a payment | កត់ត្រាការបង់ប្រាក់ |
+| Receipt | បង្កាន់ដៃ |
+| No payments yet. | មិនទាន់មានការបង់ប្រាក់ទេ។ |
+| Delete this student | លុបសិស្សនេះ |
+| New test | ការប្រឡងថ្មី |
+| The students do the test on paper; type each score here. Pass mark: {pm}%. | សិស្សប្រឡងលើក្រដាស បន្ទាប់មកវាយបញ្ចូលពិន្ទុនីមួយៗនៅទីនេះ។ ពិន្ទុជាប់៖ {pm}%។ |
+| No tests yet. | មិនទាន់មានការប្រឡងទេ។ |
+| avg {a}% · {p} of {n} passed | មធ្យម {a}% · ជាប់ {p} ក្នុងចំណោម {n} |
+| No scores yet | មិនទាន់មានពិន្ទុ |
+| Set the fee in ⚙️ Set up the school to see who still owes. | កំណត់តម្លៃសិក្សានៅក្នុង ⚙️ រៀបចំសាលា ដើម្បីមើលថាអ្នកណានៅជំពាក់។ |
+| The fee isn’t set yet — the ministry’s leader sets it. | តម្លៃសិក្សាមិនទាន់កំណត់ទេ — អ្នកដឹកនាំកិច្ចការបម្រើជាអ្នកកំណត់។ |
+| Still owed | នៅជំពាក់ |
+| Paid in {month} | បានបង់ក្នុង {month} |
+| Nobody owes anything for this. | គ្មាននរណាជំពាក់សម្រាប់នេះទេ។ |
+| paid {amt} | បានបង់ {amt} |
+| Record | កត់ត្រា |
+| Latest payments | ការបង់ប្រាក់ចុងក្រោយ |
+| That payment isn’t here any more. | ការបង់ប្រាក់នោះលែងមាននៅទីនេះហើយ។ |
+| Paid on | បង់នៅថ្ងៃ |
+| Received by | ទទួលដោយ |
+| Delete this payment | លុបការបង់ប្រាក់នេះ |
+| {pct}% · here {h} of {n} days, late {l} | {pct}% · មក {h} ក្នុង {n} ថ្ងៃ មកយឺត {l} |
+| Test | ការប្រឡង |
+| Score | ពិន្ទុ |
+| Pass | ជាប់ |
+| No tests in these dates. | គ្មានការប្រឡងក្នុងកាលបរិច្ឆេទទាំងនេះទេ។ |
+| The school at a glance | សាលាដោយសង្ខេប |
+| Attendance this month | វត្តមានខែនេះ |
+| Students by location | សិស្សតាមទីតាំង |
+| Missed 3 classes or more in a row | អវត្តមាន ៣ ដងឬច្រើនជាងនេះជាប់ៗគ្នា |
+| Nobody — everyone has been coming. | គ្មាននរណាទេ — គ្រប់គ្នាបានមករៀន។ |
+| Test results this year | លទ្ធផលប្រឡងឆ្នាំនេះ |
+| The average score each month, and how many passed. | ពិន្ទុមធ្យមប្រចាំខែ និងចំនួនអ្នកជាប់។ |
+| At a local church | នៅព្រះវិហារក្នុងតំបន់ |
+| Parties | ពិធីជប់លៀង |
+| Competitions | ការប្រកួត |
+| This year’s fruit · {y} | ផលផ្លែឆ្នាំនេះ · {y} |
+| These, the days with classes, students enrolled and tests count themselves into the ministry’s numbers — nobody types them. | លេខទាំងនេះ ថ្ងៃមានថ្នាក់ សិស្សចុះឈ្មោះ និងការប្រឡង រាប់ចូលក្នុងលេខរបស់កិច្ចការបម្រើដោយខ្លួនឯង — គ្មាននរណាត្រូវវាយបញ្ចូលទេ។ |
+| Parties and competitions | ពិធីជប់លៀង និងការប្រកួត |
+| {n} classes | {n} ថ្នាក់ |
+| Add a class | បន្ថែមថ្នាក់ |
+| Add a location first. | សូមបន្ថែមទីតាំងជាមុនសិន។ |
+| Fee and pass mark | តម្លៃសិក្សា និងពិន្ទុជាប់ |
+| Fee (US$) | តម្លៃសិក្សា (ដុល្លារ) |
+| The fee is for | តម្លៃសិក្សានេះសម្រាប់ |
+| Each month | ប្រចាំខែ |
+| Each term | ប្រចាំឆមាស |
+| Pass mark (%) | ពិន្ទុជាប់ (%) |
+| Terms | ឆមាស |
+| Add a term | បន្ថែមឆមាស |
+| Edit the location | កែទីតាំង |
+| Edit the class | កែថ្នាក់ |
+| Edit the student | កែព័ត៌មានសិស្ស |
+| Test scores | ពិន្ទុប្រឡង |
+| Add a party or competition | បន្ថែមពិធីជប់លៀង ឬការប្រកួត |
+| Class name or level | ឈ្មោះថ្នាក់ ឬកម្រិត |
+| Location | ទីតាំង |
+| Teacher | គ្រូ |
+| Name in Khmer | ឈ្មោះជាភាសាខ្មែរ |
+| Name in English letters | ឈ្មោះជាអក្សរឡាតាំង |
+| Class | ថ្នាក់ |
+| Not said | មិនបានប្រាប់ |
+| A discount | បញ្ចុះតម្លៃ |
+| They pay (US$) | គេបង់ (ដុល្លារ) |
+| In the school | កំពុងរៀន |
+| Left the school | បានឈប់រៀន |
+| Left on | ឈប់នៅថ្ងៃ |
+| Take their photo once they’re saved. | ថតរូបគេ បន្ទាប់ពីរក្សាទុករួច។ |
+| Subject | មុខវិជ្ជា |
+| Out of | ពិន្ទុពេញ |
+| Scores | ពិន្ទុ |
+| Leave a box empty for someone who was absent. | ទុកប្រអប់ឲ្យទទេ សម្រាប់អ្នកដែលអវត្តមាន។ |
+| Photos of the marked papers | រូបថតក្រដាសប្រឡងដែលបានកែ |
+| For the month | សម្រាប់ខែ |
+| Party | ពិធីជប់លៀង |
+| Competition | ការប្រកួត |
+| Photo saved ✓ | បានរក្សាទុករូបថត ✓ |
+| Take this photo off? | ដករូបថតនេះចេញ? |
+| {n} scores are more than the test is out of. | ពិន្ទុ {n} លើសពិន្ទុពេញនៃការប្រឡង។ |
+| Delete this for good? | លុបនេះជាអចិន្ត្រៃយ៍? |
+## 138. Intercession: Wednesdays, prayer needs and the fast (Nov 2026)
+Youth Education › Intercession on My Ministry (Wednesdays · 21-day fast · Requests · Dashboard), the page for everyone ("Wednesday intercession", from ☰ → Prayer and search), the fast in ☰ and the bell. Check first the privacy promise about who fasts ("Only you see that you joined…") and the health note. "Wednesdays", "21-day fast" and "Dashboard" are tab labels (very little room). Fasting is ការតមអាហារ; intercession ការអធិស្ឋានអង្វរ. The 21 themes of the fast template are in public/teams/25-intercession.js (ICP_FAST_TPL), English and Khmer side by side — please read those too.
+
+| English | Khmer (draft) |
+|---|---|
+| Send a need to Wednesday intercession | ផ្ញើតម្រូវការអធិស្ឋានទៅការអធិស្ឋានអង្វរថ្ងៃពុធ |
+| Prayer meetings, prayer hours, ministries covered and testimonies count themselves from the Wednesdays and the fast — enter the director’s weekly score here. | ការប្រជុំអធិស្ឋាន ម៉ោងអធិស្ឋាន កិច្ចការបម្រើដែលបានអធិស្ឋានឲ្យ និងទីបន្ទាល់ រាប់ដោយខ្លួនឯងពីថ្ងៃពុធ និងការតមអាហារ — សូមបញ្ចូលពិន្ទុប្រចាំសប្តាហ៍របស់នាយកនៅទីនេះ។ |
+| Wednesday intercession | ការអធិស្ឋានអង្វរថ្ងៃពុធ |
+| Wednesdays | ថ្ងៃពុធ |
+| 21-day fast | ការតមអាហារ ២១ ថ្ងៃ |
+| Couldn’t load intercession. | មិនអាចផ្ទុកការអធិស្ឋានអង្វរបានទេ។ |
+| How was Wednesday {date}? | ថ្ងៃពុធ {date} យ៉ាងម៉េចដែរ? |
+| Say if it happened, how many came and how long — the ministry’s numbers count themselves from it. | ប្រាប់ថាវាបានធ្វើឬអត់ មានប៉ុន្មាននាក់មក និងរយៈពេលប៉ុន្មាន — លេខរបស់កិច្ចការបម្រើរាប់ដោយខ្លួនឯងពីវា។ |
+| Record it | កត់ត្រាវា |
+| The next Wednesdays | ថ្ងៃពុធខាងមុខ |
+| Earlier Wednesdays ({n}) | ថ្ងៃពុធមុនៗ ({n}) |
+| Didn’t happen | មិនបានធ្វើ |
+| Worship: {who} | ការថ្វាយបង្គំ៖ {who} |
+| {n} came | {n} នាក់បានមក |
+| {n} h | {n} ម៉ោង |
+| Not planned yet | មិនទាន់បានរៀបចំផែនការនៅឡើយ |
+| {n} prayer needs sent for this day | តម្រូវការអធិស្ឋាន {n} ត្រូវបានផ្ញើសម្រាប់ថ្ងៃនេះ |
+| Plan it | រៀបចំផែនការ |
+| Copy the plan from {date} | ចម្លងផែនការពី {date} |
+| Who leads | អ្នកណាដឹកនាំ |
+| …or type a name (a guest) | …ឬវាយឈ្មោះ (ភ្ញៀវ) |
+| Focus or theme | ចំណុចផ្តោត ឬប្រធានបទ |
+| Scripture (the reference) | បទគម្ពីរ (ឯកសារយោង) |
+| e.g. Isaiah 62:6-7 | ឧ. អេសាយ ៦២:៦-៧ |
+| Worship team | ក្រុមថ្វាយបង្គំ |
+| Ministries we pray for | កិច្ចការបម្រើដែលយើងអធិស្ឋានឲ្យ |
+| {n} chosen | បានជ្រើស {n} |
+| Other needs | តម្រូវការផ្សេងទៀត |
+| e.g. rain for the farmers | ឧ. ភ្លៀងសម្រាប់កសិករ |
+| {n} prayer needs sent for this day — see Requests | តម្រូវការអធិស្ឋាន {n} ត្រូវបានផ្ញើសម្រាប់ថ្ងៃនេះ — មើលសំណើ |
+| Did it happen? | តើវាបានធ្វើឬទេ? |
+| How many came | មានប៉ុន្មាននាក់មក |
+| How long (hours) | រយៈពេល (ម៉ោង) |
+| Answered-prayer testimonies | ទីបន្ទាល់អំពីការអធិស្ឋានដែលបានឆ្លើយតប |
+| What did God do? | តើព្រះបានធ្វើអ្វីខ្លះ? |
+| Remove this plan | ដកផែនការនេះចេញ |
+| Send a prayer need to Wednesday intercession | ផ្ញើតម្រូវការអធិស្ឋានទៅការអធិស្ឋានអង្វរថ្ងៃពុធ |
+| What should we pray for? | តើយើងគួរអធិស្ឋានឲ្យអ្វី? |
+| For which ministry (optional) | សម្រាប់កិច្ចការបម្រើណា (ស្រេចចិត្ត) |
+| Not for one ministry | មិនមែនសម្រាប់កិច្ចការបម្រើតែមួយ |
+| For which Wednesday | សម្រាប់ថ្ងៃពុធណា |
+| The next Wednesday — {date} | ថ្ងៃពុធខាងមុខ — {date} |
+| Only the intercession team sees it | មានតែក្រុមអធិស្ឋានអង្វរទេដែលឃើញវា |
+| To share a request with everyone and see who prays, use Prayer. | ដើម្បីចែករំលែកសំណើជាមួយគ្រប់គ្នា ហើយឃើញអ្នកដែលអធិស្ឋាន សូមប្រើ ការអធិស្ឋាន។ |
+| Prayed | បានអធិស្ឋាន |
+| Needs I sent | តម្រូវការដែលខ្ញុំបានផ្ញើ |
+| Waiting to be prayed for · {n} | កំពុងរង់ចាំការអធិស្ឋាន · {n} |
+| No prayer needs waiting. Anyone on staff can send one from ☰ → Prayer. | គ្មានតម្រូវការអធិស្ឋានកំពុងរង់ចាំទេ។ បុគ្គលិកណាក៏អាចផ្ញើបានពី ☰ → ការអធិស្ឋាន។ |
+| Prayed for and answered ({n}) | បានអធិស្ឋាន និងបានឆ្លើយតប ({n}) |
+| Starts {date} | ចាប់ផ្តើម {date} |
+| Ended {date} | បានបញ្ចប់ {date} |
+| Day {n} of {days} | ថ្ងៃទី {n} នៃ {days} |
+| Today’s focus | ចំណុចផ្តោតថ្ងៃនេះ |
+| Day 1’s focus | ចំណុចផ្តោតថ្ងៃទី ១ |
+| Praying together today | អធិស្ឋានជាមួយគ្នាថ្ងៃនេះ |
+| Join the fast — what kind of fast? | ចូលរួមការតមអាហារ — តមបែបណា? |
+| Anyone with a health condition, or who is pregnant or nursing, should choose a partial fast or ask a doctor first. | អ្នកដែលមានបញ្ហាសុខភាព ឬកំពុងមានផ្ទៃពោះ ឬបំបៅកូន គួរជ្រើសរើសការតមដោយផ្នែក ឬសួរគ្រូពេទ្យជាមុនសិន។ |
+| Only you see that you joined and what you chose. The intercession team sees how many, never who. | មានតែអ្នកទេដែលឃើញថាអ្នកបានចូលរួម និងអ្វីដែលអ្នកបានជ្រើស។ ក្រុមអធិស្ឋានអង្វរឃើញតែចំនួន មិនដែលឃើញថាជានរណាទេ។ |
+| You joined: {kind} | អ្នកបានចូលរួម៖ {kind} |
+| Leave the fast | ចាកចេញពីការតមអាហារ |
+| Days done · {n} of {days} | ថ្ងៃដែលបានធ្វើ · {n} នៃ {days} |
+| Day {n} | ថ្ងៃទី {n} |
+| Every day’s focus | ចំណុចផ្តោតរាល់ថ្ងៃ |
+| Praying together | អធិស្ឋានជាមួយគ្នា |
+| Plan a fast | រៀបចំការតមអាហារ |
+| No fast planned yet. Plan one — a 21-day fast and prayer in January, or any length from 7 to 40 days — and everyone on the campus can join it. | មិនទាន់មានការតមអាហារដែលបានរៀបចំនៅឡើយ។ សូមរៀបចំមួយ — ការតមអាហារ និងអធិស្ឋាន ២១ ថ្ងៃនៅខែមករា ឬរយៈពេលពី ៧ ដល់ ៤០ ថ្ងៃ — ហើយគ្រប់គ្នានៅមូលដ្ឋានអាចចូលរួមបាន។ |
+| Joined | បានចូលរួម |
+| Prayed today | បានអធិស្ឋានថ្ងៃនេះ |
+| Days ticked | ថ្ងៃដែលបានគូស |
+| Gatherings held | ការជួបជុំដែលបានធ្វើ |
+| Edit the fast | កែសម្រួលការតមអាហារ |
+| 21-day fast and prayer | ការតមអាហារ និងអធិស្ឋាន ២១ ថ្ងៃ |
+| How many days | ប៉ុន្មានថ្ងៃ |
+| Theme | ប្រធានបទ |
+| Each day’s focus | ចំណុចផ្តោតនៃថ្ងៃនីមួយៗ |
+| Fill in our 21 themes | បំពេញប្រធានបទ ២១ របស់យើង |
+| Focus | ចំណុចផ្តោត |
+| A note (optional) | កំណត់ចំណាំ (ស្រេចចិត្ត) |
+| Hours | ម៉ោង |
+| Add a gathering | បន្ថែមការជួបជុំ |
+| One every day | មួយរាល់ថ្ងៃ |
+| Wednesdays held | ថ្ងៃពុធដែលបានធ្វើ |
+| Average attendance | ចំនួនអ្នកចូលរួមជាមធ្យម |
+| Prayer hours | ម៉ោងអធិស្ឋាន |
+| Ministries covered | កិច្ចការបម្រើដែលបានអធិស្ឋានឲ្យ |
+| Testimonies | ទីបន្ទាល់ |
+| Needs answered | តម្រូវការដែលបានឆ្លើយតប |
+| This year · {year} | ឆ្នាំនេះ · {year} |
+| Prayer meetings, prayer hours, ministries covered and testimonies count themselves from the Wednesdays and the fast’s gatherings. Only the director’s weekly score is typed, on Numbers. | ការប្រជុំអធិស្ឋាន ម៉ោងអធិស្ឋាន កិច្ចការបម្រើដែលបានអធិស្ឋានឲ្យ និងទីបន្ទាល់ រាប់ដោយខ្លួនឯងពីថ្ងៃពុធ និងការជួបជុំនៃការតមអាហារ។ មានតែពិន្ទុប្រចាំសប្តាហ៍របស់នាយកទេដែលត្រូវវាយបញ្ចូល នៅលើ លេខ។ |
+| Every Wednesday the intercession team prays for the base and its ministries. Send them a need, and join the fast when there is one. | រៀងរាល់ថ្ងៃពុធ ក្រុមអធិស្ឋានអង្វរអធិស្ឋានឲ្យមូលដ្ឋាន និងកិច្ចការបម្រើរបស់វា។ សូមផ្ញើតម្រូវការទៅពួកគេ ហើយចូលរួមការតមអាហារនៅពេលមាន។ |
+| Open Intercession on My Ministry | បើកការអធិស្ឋានអង្វរនៅលើកិច្ចការបម្រើរបស់ខ្ញុំ |
+| The next Wednesday | ថ្ងៃពុធខាងមុខ |
+| Day {n} of {title}: {focus} | ថ្ងៃទី {n} នៃ {title}៖ {focus} |
+| {title} starts {date} — join in | {title} ចាប់ផ្តើម {date} — សូមចូលរួម |
+| {title} is on — join in | {title} កំពុងប្រព្រឹត្តទៅ — សូមចូលរួម |
+| Only the intercession team can change this. | មានតែក្រុមអធិស្ឋានអង្វរទេដែលអាចផ្លាស់ប្តូរវាបាន។ |
+| Give the fast a title. | សូមដាក់ចំណងជើងឲ្យការតមអាហារ។ |
+| A fast is 7 to 40 days. | ការតមអាហារមានរយៈពេលពី ៧ ដល់ ៤០ ថ្ងៃ។ |
+| Check the date. | សូមពិនិត្យកាលបរិច្ឆេទ។ |
+| Write the need first. | សូមសរសេរតម្រូវការជាមុនសិន។ |
+| This fast has ended. | ការតមអាហារនេះបានបញ្ចប់ហើយ។ |
+| Copied — change what you need | បានចម្លង — សូមកែអ្វីដែលអ្នកត្រូវការ |
+| Remove this Wednesday’s plan? | ដកផែនការថ្ងៃពុធនេះចេញ? |
+| Sent to the intercession team 🙏 | បានផ្ញើទៅក្រុមអធិស្ឋានអង្វរ 🙏 |
+| How was it answered? (optional) | តើវាត្រូវបានឆ្លើយតបយ៉ាងដូចម្តេច? (ស្រេចចិត្ត) |
+| Delete this prayer need? | លុបតម្រូវការអធិស្ឋាននេះ? |
+| You joined the fast 🙏 | អ្នកបានចូលរួមការតមអាហារ 🙏 |
+| Leave the fast? Your ticked days go too. | ចាកចេញពីការតមអាហារ? ថ្ងៃដែលអ្នកបានគូសក៏នឹងបាត់ដែរ។ |
+| Delete this fast? Everyone who joined it is taken off too. | លុបការតមអាហារនេះ? អ្នកដែលបានចូលរួមក៏ត្រូវដកចេញដែរ។ |
+| Replace the days you have filled in with our themes? | ជំនួសថ្ងៃដែលអ្នកបានបំពេញដោយប្រធានបទរបស់យើង? |
+| Full fast | តមអាហារទាំងស្រុង |
+| Partial fast (Daniel fast) | តមអាហារដោយផ្នែក (តមបែបដានីយ៉ែល) |
+| One meal a day | ញ៉ាំអាហារមួយពេលក្នុងមួយថ្ងៃ |
+| Media and social media | ប្រព័ន្ធផ្សព្វផ្សាយ និងបណ្តាញសង្គម |
+## 137. The structure whiteboard: View / Edit, and the schools running each quarter (My Ministry → Structure)
+
+The View / Edit switch above the board, the line under it, and the row of schools to tick while editing. "View" and "Edit" reuse existing words.
+
+| English | Khmer (draft) |
+|---|---|
+| Looking only — nobody moves. Tap Edit to make changes. | មើលប៉ុណ្ណោះ — គ្មាននរណាម្នាក់ត្រូវបានផ្លាស់ទីទេ។ ចុច កែសម្រួល ដើម្បីធ្វើការផ្លាស់ប្តូរ។ |
+| View or edit | មើល ឬកែសម្រួល |
+| none | គ្មាន |
+| Which schools run in Q{q} {year}? | តើសាលាណាខ្លះដំណើរការនៅ Q{q} {year}? |
+| Editing: drag faces, tap ＋ to add, tap a face for more. | កំពុងកែសម្រួល៖ អូសមុខមនុស្ស ចុច ＋ ដើម្បីបន្ថែម ចុចមុខមនុស្សដើម្បីមើលបន្ថែម។ |
+| Viewing: move around and zoom — nobody can be moved by accident. | កំពុងមើល៖ រំកិល និងពង្រីកបាន — គ្មាននរណាម្នាក់ត្រូវបានផ្លាស់ទីដោយចៃដន្យទេ។ |
+| Not running this quarter: {list} | មិនដំណើរការក្នុងត្រីមាសនេះ៖ {list} |
+| Schools running in Q{q} {year}: {list} | សាលាដែលដំណើរការនៅ Q{q} {year}៖ {list} |
+| A school that isn’t running has no box this quarter. Add its leaders and staff in its box once it runs. | សាលាដែលមិនដំណើរការ គ្មានប្រអប់ក្នុងត្រីមាសនេះទេ។ បន្ថែមអ្នកដឹកនាំ និងបុគ្គលិករបស់វានៅក្នុងប្រអប់របស់វា នៅពេលវាដំណើរការ។ |

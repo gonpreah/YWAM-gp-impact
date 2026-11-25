@@ -570,7 +570,20 @@ in the leadership My Ministry, and it shows in Team → Structure … profile fa
   people here, ≤8 a ministry), `cleanStructExtra_` (≤80). A later quarter starts from it, leaders and names too (`planFor_`).
   A snapshot (`saveStructure` / `structPeople_`) carries both; saving a plan for this quarter or a later one rebuilds an
   existing snapshot. **No profile is ever written.**
-- tests/test-structure.mjs (server), tests/test-structure-board-ui.mjs (mouse and touch). Khmer: docs/khmer-needed.md §135.
+- **View and Edit** (Nov 2026, Andrew: "a view mode where you don't accidently move people and an edit mode"): the tab opens on
+  **View** (`sbModeHtml_`, `#sbModeView` / `#sbModeEdit`, `S.sb.editing`, kept for the visit; in full screen the switch is in the
+  board's bar): the board only moves and zooms — no tray, no ＋, no dragging, faces open profiles. **Edit** brings them, with the
+  board outlined (`.sbWrap.editing`). Team → Structure's ✏️ Edit opens on Edit.
+- **A drag on the board is never a pull to refresh** ("when I move down, it refreshes the page"): `#sbWrap` carries `data-noptr`,
+  and `gpPullToRefresh` (rollup.js) ignores a touch that starts inside any `[data-noptr]`.
+- **Which schools run that quarter** ("in Q1, we only have the GPDTS school running"): the plan's `schools` — Leadership
+  Development school ministries (`LD_SCHOOL_MINISTRIES` / `STRUCT_SCHOOL_MINS`, `cleanStructSchools_`), null = all.
+  `saveStructurePlan(…, extra, schools)` (undefined keeps the quarter's); a later quarter starts from it (`planFor_`); a snapshot
+  carries it. While editing, `#sbRun` ticks them (`[data-sbrun]`); viewing, `#sbRunLine` names them. A school not running has
+  no box on the tree or in Team → Structure's list (`orgChartHtml_(…, schools)`), with "Not running this quarter: …"
+  (`#sbNotRun`, `.orgNotRun`); people placed in it wait in the tray and keep that place for a quarter it runs (`sbOwn_` keeps
+  them); a staff student can only pick a school that runs (`sbStuSchools_`). Its leaders and staff go in its box like any ministry.
+- tests/test-structure.mjs (server), tests/test-structure-board-ui.mjs (mouse and touch). Khmer: docs/khmer-needed.md §135, §137.
   sw.js SHELL v29.
 
 ## Outreach Teams — one record per team, not a weekly form
@@ -946,6 +959,51 @@ school's home.
   `isPortalAdmin_`): the person's name and their applicant account's (never a staff member's), a team's team
   name (its application's answer), logged, the Teams Database following. tests/test-portal-outcome.mjs.
 - Tests: tests/test-dts.mjs (server), tests/test-dts-ui.mjs (GPDTS page, portal, Google, Admin).
+
+## Intercession on My Ministry — Wednesdays and the fast (teams/25-intercession.js, Nov 2026, Uriah)
+"For intercession, we only do it once a week, every Wednesday … but it would be great for them to also plan like a
+January 21-day fast and prayer as well." Youth Education › Intercession, both campuses. Tabs **Wednesdays · 21-day fast ·
+Requests · Dashboard** (`ICP_TABS` icwed / icfast / icreq / icdash, in `MM_SHELL_KEYS`, `mmTabsFor_` via `isIcpMinistry_`)
+then Numbers · Tasks · OKRs. One `getIntercession` load per open (`S.icp`).
+- **Wednesdays** (`icpWedsHtml_`): "How was Wednesday …?" (`#icpAskHeld`) while the last one isn't recorded, the next 8
+  Wednesdays (Cambodia's calendar), earlier ones folded (`#icpPast`). A plan (`icpWedFormHtml_`, `#icpForm`, draft in
+  `S.icpDraft`, kept across redraws by `icpKeep_`): who leads (the people picker, key `icpl`, or a typed guest name), focus,
+  scripture **reference only**, worship team (a plain line — **the hook for the Worship tool**, being built separately),
+  the campus's ministries prayed for (`[data-icpmin]`), other needs, notes; "Copy the plan from {date}" (`#icpCopyLast`).
+  Once the day has come: held yes / no (`[data-icpheld]`), how many came, hours, answered-prayer testimonies.
+- **Prayer needs**: any staff member sends one for a Wednesday (the next by default) from **Wednesday intercession**
+  (`S.view='icp'`, `icpPageHtml_`: the next Wednesday read-only, the send form, "Needs I sent", the fast) — reached from
+  ☰ → Prayer (`#prToIcp`) and search (`intercession`); it points back to Prayer for requests meant for everyone. A need:
+  text, ministry, private to the team or not. The team marks it prayed / answered (with a line) on Requests. Others see
+  shared needs without the sender's name, and their own.
+- **The fast** (`icpFastTabHtml_`, `fastFormHtml_`): title, first day, 7–40 days, theme, each day's focus + reference + note —
+  **📋 Fill in our 21 themes** (`ICP_FAST_TPL`: our own wording, English and Khmer side by side, references only) — and
+  prayer gatherings (day, time, place, leader; held + hours once the day has come; "One every day"). Staff see it while it
+  runs or starts within 45 days (`fastCurrent_`): **☰ item** with the fast's title (`fast`), **search**, the **bell**
+  (`fastNotifItems_`: an invitation from 14 days before; for those who joined, the day's focus until they tick it;
+  `[data-gofast]`, `bindGoFast_`, so the slide-down presses it), and the daily phone reminder (`fastDay` in `PUSH_TEXT`,
+  with `p.daily`). Joining picks a kind (`FAST_KINDS`: full, partial / Daniel, one meal a day, media, other — no medical
+  advice; one line says anyone with a health condition, pregnant or nursing should choose a partial fast or ask a
+  doctor), then the days are ticked (`.fastDay`, not ahead of today). **Who fasts and how is private**: the team gets
+  counts only (joined, prayed today, days ticked) — tests/test-intercession.mjs checks no id, name or kind leaves.
+- **Server** (api.js "Intercession"): `icp:<campus>` = {weds: {date: plan}, needs}; `fast:<campus>` = {fasts (8 kept)};
+  `fastJoin:<campus>` = {fastId: {staffId: {kind, ticks}}} — apart, so the plan is read without the people. All written
+  with `mutateKey_`. Handlers `getIntercession`, `intercessionSaveWed(date, rec|null)`, `intercessionNeedSend`,
+  `intercessionNeedMark(id, open|prayed|answered, answer)`, `intercessionNeedDelete` (sender or team), `fastSave`,
+  `fastDelete` (joins go too), `fastJoin(fastId, kind|'')`, `fastTick(fastId, day, done)`. Rights: writing plans, needs'
+  status and the fast — `canIcp_` = `canLogFor_` Youth Education|Intercession (members incl. old Community Service rows,
+  leaders, the Youth Education director, admins); reading, sending, joining — any active staff on the campus; applicants
+  never. Ten needs a person a day. The boot carries `fast` (`fastGlance_`, two reads only) → `S.fast`; no new call on open.
+- **The numbers count themselves** (`icpSyncDates_` after every change, `toolSync_` tag `tool:intercession`, per the week
+  and week year of each date): Prayer Meetings Held (Wednesdays held + fast gatherings held), Prayer Hours Covered (their
+  hours), Ministries Covered in Prayer (distinct: the held Wednesday's ministries and its needs prayed for / answered),
+  Answered-Prayer Testimonies. **Never over a typed row** (a metric with a row not by the tool is left out of that week).
+  `ICP_AUTO_METRICS` (taxonomy.js, `autoMetricsFor`) = `ICP_METRICS` (api.js) — test-checked; so Numbers asks only for
+  **Director Weekly Score (1-10)**, which stays typed (not `numbersExempt_`; `numbersStatus_` ignores `tool:intercession`
+  rows, so the reminders wait on the score). `isDtsMinistry_` now names GPDTS itself (autoMetricsFor is no longer GPDTS's
+  alone). Dashboard (`dash` on the answer): Wednesdays held, average attendance, hours, ministries, testimonies, needs
+  answered, each fast's counts, the testimonies.
+- tests/test-intercession.mjs (server), tests/test-intercession-ui.mjs. Khmer: docs/khmer-needed.md §138. sw.js SHELL v30.
 
 ## Signing in to the GP app with Google; every new account approved (Nov 2026, Andrew)
 - **Continue with Google** (`07-health-leave.js`: `_ggl`, `gglBtnHtml_`, `gglGo_`, `gglCred_` — the portal's
@@ -2785,9 +2843,62 @@ numbers fill themselves in from using it (like Teams and Hospitality). Two so fa
 - **`toolSync_`** writes a week's totals into `entries` with `by: 'tool:lead'`/`'tool:cafe'`
   (current year). A week with nothing logged clears ONLY rows the tool wrote — a number
   someone typed by hand is never overwritten by an empty tool week.
-- Next (planned, not built): Community Schools / YDC — enrolment, attendance on each
-  student's profile, test scores, progress, who has paid → Students Enrolled, Days with
-  Classes, Passing Rate, etc.
+- YDC's school tool is built (see "The school tool" below); the community schools join it with one line in `SCHOOL_TOOL`.
+
+## The school tool — YDC runs its school on My Ministry (teams/24-school.js, Nov 2026, Uriah)
+"A really good software for managing a school … add students, … grades, taking roll, testing the students … use their
+phones to take a photo of the student … they fill out the tests on paper … then have they paid."
+- **For which ministries**: `SCHOOL_TOOL` in taxonomy.js and api.js (the same object — tests/test-school.mjs compares them):
+  `'Dept|Ministry': {metrics:{days, enrolled, tests, pass, parties, comps, salv, bapt, disc, church}}`, each a metric name
+  (a key left out is simply not counted). YDC (Youth Education) only, both campuses; a community school later is one line
+  with its own metric names (e.g. `enrolled: 'Students Enrolled'`). `autoMetricsFor` returns every one of them, so the
+  Numbers tab, `numbersProgress_` and `ministryWeekLogged_` skip them; `numbersExempt_` (no numbers people, no "numbers
+  due"), and `numbersStatus_` ignores `tool:school` rows. `isDtsMinistry_` now also checks the department, since
+  `autoMetricsFor` is no longer GPDTS's alone.
+- **Tabs** (`SCH_TABS`, in `MM_SHELL_KEYS`; `mmTabsFor_` → `schTabs_`): **Today · Students · Tests · Payments · Dashboard**,
+  then Tasks · OKRs — no Numbers tab. Pages inside a tab (`S.schPage`: setup, form, student:<id>, report:<id>,
+  receipt:<id>) have one ← Back (`#schBack`); a tab tap clears them. One `schoolBoard` per open (`S.sch`, keyed by
+  dept|ministry); every write answers with the whole board.
+  - **Set up** (`#schSetupGo`, on Dashboard, and on any tab while there are no classes — `#schNoClass`): locations, classes
+    (location, name / level, teacher from the people picker `ppickHtml_` key `sct` or a typed name, days `[data-scday]`,
+    start / end time), the fee (US$, each month or each term), the pass mark (default 50 %), terms (name, from, to).
+  - **Today** (`#schRoll`): a class (`[data-scrollclass]`, today's classes marked •), the day (`#schRollDate`, the last 14
+    days), the class's faces all **here**; a tap cycles absent → late → here (`[data-scmark]`); Save (`#schRollSave`).
+    **No connection**: the roll goes into the app's offline queue (`gpQueuePut_`, key `school:<dept|min>|<campus>|<class>|
+    <date>`), "Saved on this phone — will send when online", `#schPending`; `gpQueueFlush` sends it and adopts the answer.
+  - **Students**: search, class chips, a grid of faces (`[data-scstu]`), Left folded; ＋ Add a student (Khmer and English
+    names, class, sex, date of birth, village, guardian and phone, start, fee full / discount / sponsored, status, notes);
+    a student's page: 📷 photo (`<input capture="environment">`, shrunk to ≤480px JPEG + `photoThumbOf_`'s 160px thumb),
+    attendance %, days absent, test average, details, **Faith and life** ticks (`[data-scfaith]`: discipleship, local
+    church, salvation, baptism — each a date, today when ticked), tests, payments, 📄 **Report card** (a date range or a
+    term; `#schPrint` → `body.schPrintOn` print rules print it alone).
+  - **Tests**: ＋ New test (class, subject with recent ones offered, day, out of), each student's score typed down the list
+    (blank = absent; over the total is refused on the page and dropped by the server), 📷 photos of the marked papers (six).
+  - **Payments**: the period (a month, or a term when the fee is per term), Still owed and paid this month, **Still owes**
+    by class (`#schOwes`, Record fills in what they owe), Latest payments; a payment opens its **receipt** (print).
+  - **Dashboard**: students, attendance this month, still owed; students by location; **missed 3 classes or more in a
+    row** (to follow up); test results by month; this year's fruit; parties and competitions (events).
+- **Server** (api.js "the school tool"): `schoolBoard(user, pin, scope)`, `schoolSave(…, scope, kind, rec)` (kinds settings |
+  location | class | student | test | payment | event), `schoolDelete(…, scope, kind, id)`, `schoolRoll(…, scope, classId,
+  date, marks)`, `schoolPhoto(…, scope, 'student'|'paper', id, base64, thumb, photoId)` (null removes),
+  `schoolPhotoGet(…, scope, id)`. `scope` = {dept, ministry, campus?}. **Gate** `schoolGate_`: `canLogFor_` that ministry
+  on the caller's campus (members, other-ministry members, leaders, the department's director) or an admin (any campus);
+  **set-up** (settings, locations, classes) only its leaders, the department's director, admins. Everything cleaned and
+  capped (`SCH_CLEAN`, `SCHOOL_MAX`: 40 locations, 80 classes, 800 students, 1500 tests, 6000 payments, 400 events);
+  dates real; amounts 0–100,000; a class's teacher must be active staff on that campus; a location with classes, a class
+  with students or tests, a student with payments can't be deleted (`in_use`). The roll: one per class per date — saving
+  again replaces it (so a replayed offline roll changes nothing), not tomorrow, not more than 14 days back; 420 days kept.
+- **Blobs** (key `<campus>:<dept>|<ministry>`): `school:<key>` {settings, locations, classes, students, tests, payments,
+  events} via `mutateKey_`; `schoolRoll:<key>` {rolls}; `schthumbs:<key>` {studentId: thumb}; `schphoto:<key>:<id>` {data}
+  — a student's photo (≤400 KB base64, the thumb ≤40 KB) or a paper photo; the list holds only `hasPhoto` / paper ids.
+- **The numbers** (`schoolSync_` after every write; `tool:school` rows in `entries`, this week year, never over a typed
+  row, its own rows taken away when nothing holds them): Days with Classes = days with a roll in the week; Youth Enrolled =
+  active students at the week's end (a level); Tests Held and Passing Rate (%) from that week's tests (scores at or over
+  the pass mark); Parties Thrown / Competitions Held from the events; Salvations / Baptisms by their dates; Students in
+  Discipleship / Brought to Local Church as levels (active students with that date by the week's end).
+- **Privacy (children)**: nothing of it is on the roster, a profile, getData, any boot or the preview (`school*` isn't a
+  get… handler, so `demoCall` refuses it); applicants are walled out (test-applicant-walls). Tests use made-up names.
+- tests/test-school.mjs (server, 69), tests/test-school-ui.mjs (browser, 39). Khmer: docs/khmer-needed.md §139. sw.js SHELL v30 (v31 with Intercession).
 
 ## Worship: the week's rota (teams/26-worship.js, Nov 2026, Uriah)
 "Every Monday morning they do worship, Monday night they do worship, and usually for Wednesday morning intercession there's
@@ -2829,7 +2940,7 @@ kept flexible: services and roles are settings, not code.
   Uploaded to Social Media (our own songs, in the week each day falls). Salvations stays typed. `WORSHIP_AUTO` (api.js) =
   `WORSHIP_AUTO_METRICS` (taxonomy.js, `autoMetricsFor` — both campuses; `isDtsMinistry_` now checks GPDTS by name);
   `numbersStatus_` skips `tool:worship` rows like `tool:dts`, so "numbers due" waits on the typed Salvations.
-- tests/test-worship.mjs (server), tests/test-worship-ui.mjs. Khmer: docs/khmer-needed.md §139. sw.js SHELL v30.
+- tests/test-worship.mjs (server), tests/test-worship-ui.mjs. Khmer: docs/khmer-needed.md §140. sw.js SHELL v32 (with the school tool and Intercession).
 
 ## Admin → Invite staff: links that let new staff straight in (Nov 2026, Andrew)
 "If I want to invite someone in the admin section … the invite link will be already pre-approved by the admin."

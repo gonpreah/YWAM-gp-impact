@@ -306,7 +306,7 @@ function bindAway(){
   if(dth) dth.onclick=function(){ gpTap(); S.view='health'; render(); };
 
   document.querySelectorAll('[data-mmtab]').forEach(function(b){
-    b.onclick=function(){ gpTap(); S.mmTab=b.getAttribute('data-mmtab'); S.mmTabTouched=true; if(b.closest('.mmTabs') && typeof mmTabKeep_==='function') mmTabKeep_(S.mmTab); render(); };
+    b.onclick=function(){ gpTap(); S.mmTab=b.getAttribute('data-mmtab'); S.mmTabTouched=true; S.schPage=null; S.schForm=null; if(b.closest('.mmTabs') && typeof mmTabKeep_==='function') mmTabKeep_(S.mmTab); render(); };
   });
   /* The metric form is folded away until asked for — the page opens on the
      dashboard and the week's status, and this one button is how you get to
@@ -489,7 +489,7 @@ function bindAway(){
     // The picked ministry, if it isn't your own, loads lazily the first time
     // it's picked — cached in S.oversee by ministry name until logout.
     var bDept=S.mmBrowseDept, bMin=S.mmBrowseMinistry;
-    if(bDept && bMin && bDept!==BL_DEPT && !(bDept===S.me.dept && bMin===S.me.ministry) && !isTeamsMinistry_(bDept,bMin) && !isDtsMinistry_(bDept,bMin) &&
+    if(bDept && bMin && bDept!==BL_DEPT && !(bDept===S.me.dept && bMin===S.me.ministry) && !isTeamsMinistry_(bDept,bMin) && !isDtsMinistry_(bDept,bMin) && !isSchoolMinistry_(bDept,bMin) &&
        !S.oversee[bMin] && !S.ovLoading[bMin] && !S.ovError[bMin]){
       S.ovLoading[bMin]=true; S.ovError[bMin]='';
       run('getMinistryFor',[S.auth.user,S.auth.pin,bDept,bMin],function(d){
@@ -543,7 +543,8 @@ function bindAway(){
   if(S.view==='library') bindLibrary_();
   document.querySelectorAll('[data-prlib]').forEach(function(b){ b.onclick=function(){ gpTap(); var v=b.getAttribute('data-prlib').split('|');
     S.view='library'; S.libBook=v[0]; S.libStep=null; S.libDone=null; if(S.ln){ S.ln.open=v[1]||''; delete S.ln.cache[v[0]]; } libLoad_(); render(); window.scrollTo(0,0); }; });
-  if(S.view==='ministry'){ bindLw_(); bindCafe_(); bindLeadTools_(); bindFinance_(); bindDts_(); }
+  if(S.view==='ministry'){ bindLw_(); bindCafe_(); bindLeadTools_(); bindFinance_(); bindDts_(); bindSchool_(); }
+  bindIcp_();   // Intercession: its My Ministry tabs, the page for everyone, the fast (25-intercession.js)
   bindWorship_();   // the Worship rota: My Ministry's tabs, ☰ → Worship rota, My Home's line (26-worship.js)
   if(S.view==='required') bindReqSign_();
   if(S.guest) bindGuest_();
@@ -2049,7 +2050,7 @@ function refreshAll(){
    ?fresh). If the page itself came from the offline copy (the worker leaves a
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
-var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/20-game.js','teams/21-voice.js','teams/22-setup.js','teams/23-structure.js','teams/26-worship.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
+var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/20-game.js','teams/21-voice.js','teams/22-setup.js','teams/23-structure.js','teams/24-school.js','teams/25-intercession.js','teams/26-worship.js','teams/24-school.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
 if(gpTasksApp_()) GP_VER_FILES=['tasks.html'].concat(GP_VER_FILES.slice(1), ['teams/12-tasks.js','teams/13-calendar.js']);   // the tasks app's page is tasks.html
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){

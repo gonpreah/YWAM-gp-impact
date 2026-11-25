@@ -175,6 +175,10 @@ console.log('=== the page ===');
   await page.click('#khDone'); await page.waitForTimeout(300);
   ok('… the list says every word is known, with three crowns', /6 words · 6 known/.test(await main(page)) && (await page.$$eval('.khRow.known', r => r.length)) === 6 && (await page.$$eval('h2 .khCrowns span.on', c => c.length)) === 3);
   ok('… List master earned, and the list-mastered bonus', await page.evaluate(() => !!JSON.parse(localStorage.getItem('gp-kh-game')).badges.list));
+  /* the sets above pick words at random, so whether a missed word was later got right (and so
+     isn't due today) is chance: make sure one word is still "still learning" for the daily mix */
+  await page.evaluate(() => { const P = JSON.parse(localStorage.getItem('gp-kh-progress') || '{}'), k = Object.keys(P);
+    if (!k.some(x => P[x].b === 0)) { const w = k.find(x => P[x].b < 2) || k.find(x => P[x].b < 3); if (w) { P[w] = { b: 0, t: Date.now() }; localStorage.setItem('gp-kh-progress', JSON.stringify(P)); } } });
   await page.click('#khBack'); await page.waitForTimeout(200); await page.click('#khBack'); await page.waitForTimeout(400);
   const home2 = await main(page);
   ok('back home: what you know counted, and a daily mix to practise', /[1-9]\d* of \d+ words known/.test(home2) && !!(await page.$('#khDaily')), home2.slice(0, 200));

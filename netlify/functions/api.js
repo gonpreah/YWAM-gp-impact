@@ -2658,7 +2658,7 @@ function numbersKey_(campus, dept, ministry) { return campus + '|' + dept + '|' 
 function isTeamsMinistry_(dept, ministry) { return dept === TEAM_DEPT && ministry === TEAM_MIN; }
 /* Outreach Teams (the Teams Database) and Campus Leadership's own rows (OKRs and
    the Monday board, no weekly numbers) have no numbers people. */
-function numbersExempt_(dept, ministry) { return isTeamsMinistry_(dept, ministry) || dept === 'Campus Leadership' || (dept === 'Leadership Development' && ministry === 'GPDTS'); }   // GPDTS counts itself
+function numbersExempt_(dept, ministry) { return isTeamsMinistry_(dept, ministry) || dept === 'Campus Leadership' || (dept === 'Leadership Development' && ministry === 'GPDTS') || isSchoolMinistry_(dept, ministry); }   // GPDTS and the school tool (YDC) count themselves
 async function getNumbersPeople_() {
   const v = await readJSON('numbersPeople', {});
   if (!(v && typeof v === 'object' && !Array.isArray(v))) return {};
@@ -2754,7 +2754,7 @@ async function numbersStatus_(s, rows) {
   weeks.forEach(function (w) { logged[w] = {}; });
   entries.forEach(function (r) {
     if (r.campus !== s.campus || yearOf_(r) !== yr || !logged[Number(r.week)]) return;
-    if (r.by === DTS_TAG || r.by === WORSHIP_TAG) return;   // GPDTS's pipeline and the Worship rota count themselves; the typed numbers are what is due
+    if (r.by === DTS_TAG || r.by === SCHOOL_TAG || r.by === ICP_TAG || r.by === WORSHIP_TAG) return;   // GPDTS's pipeline, the school tool, Intercession's tool and the Worship rota count themselves; typed numbers are what is due
     logged[Number(r.week)][r.dept + '|' + r.ministry] = true;
   });
   const loggedFor = function (dept, ministry) {
@@ -5805,6 +5805,7 @@ const PUSH_TEXT = {
   title: { en: 'My YWAM GP', km: 'My YWAM GP' },
   weeklyTue: { en: 'It’s Tuesday — answer your weekly health check-in at the staff meeting.', km: 'ថ្ងៃនេះជាថ្ងៃអង្គារ — សូមឆ្លើយការពិនិត្យសុខភាពប្រចាំសប្តាហ៍របស់អ្នក ក្នុងពេលប្រជុំបុគ្គលិក។' },
   weekly: { en: 'Your weekly health check-in for this week isn’t in yet.', km: 'ការពិនិត្យសុខភាពប្រចាំសប្តាហ៍របស់អ្នកសម្រាប់សប្តាហ៍នេះ មិនទាន់មាននៅឡើយទេ។' },
+  fastDay: { en: 'Day {n} of {title}: {focus}', km: 'ថ្ងៃទី {n} នៃ {title}៖ {focus}' },
   daily: { en: 'Your check-in for today isn’t in yet.', km: 'ការរាយការណ៍ប្រចាំថ្ងៃរបស់អ្នកសម្រាប់ថ្ងៃនេះ មិនទាន់មាននៅឡើយទេ។' },
   oneonone: { en: '{n} of 2 1-on-1s with {name} this month.', km: 'ជួបមួយទល់មួយជាមួយ {name} បាន {n} ក្នុងចំណោម 2 ដងក្នុងខែនេះ។' },
   signup: { en: '{name} made a GP app account — approve or decline it in Admin.', km: '{name} បានបង្កើតគណនីកម្មវិធី GP — សូមអនុម័ត ឬបដិសេធនៅក្នុងផ្នែកអ្នកគ្រប់គ្រង។' },
@@ -6019,6 +6020,12 @@ function reminderItems_(s, ctx) {
     if (asked) out.push({ key: 'p360ask', params: { n: asked } });
     if (ctx.monday && ctx.p360.some(function (r) { return r.subjectId === s.id && r.plan && r.plan.actions && r.plan.actions.length && !(r.plan.reviews || {})[ctx.quarter]; })) out.push({ key: 'p360plan', params: { q: ctx.quarter.replace('-Q', ' Q') } });
   }
+  /* the campus's fast, for those who joined it: the day's focus, until they tick the day */
+  const fc = ctx.fasts && ctx.fasts[s.campus], fm = fc && fc.joins[s.id];
+  if (p.daily && fm && (fm.ticks || []).indexOf(fc.n) === -1) {
+    const fp = (fc.fast.plan || [])[fc.n - 1] || {};
+    out.push({ key: 'fastDay', params: { n: fc.n, title: fc.fast.title, focus: fp.focus || fc.fast.theme || '' } });
+  }
   /* the Library, once a week on the day they chose: this month's book while they haven't read it, else a plain nudge */
   if (p.reading && ctx.dow === p.readDay) {
     const m = ((ctx.club || {}).month || {})[s.campus];
@@ -6056,6 +6063,12 @@ async function runReminders(now) {
       tuesday: dow === CHECKIN_DOW, checkinDue: dow === 0 || dow >= CHECKIN_DOW, checkedIn: checkedIn,
       waiting: staff.filter(function (r) { return (!r.active && !r.archived) || (r.active && r.cltRequest); }).length,
       hrDue: hrDueCount_(staff), p360: await readJSON('p360', []), quarter: p360Quarter_(today), dow: dow, club: await readJSON('libClub', {}) };
+    /* a fast running on a campus: those who joined hear the day's focus with the daily reminder (Intercession) */
+    ctx.fasts = {};
+    for (const c of staff.map(function (r) { return r.campus; }).filter(function (c, i, a) { return c && a.indexOf(c) === i; })) {
+      const f = fastCurrent_((await fastDoc_(c)).fasts, today);
+      if (f && fastState_(f, today) === 'running') ctx.fasts[c] = { fast: f, n: fastDayNo_(f, today), joins: (await readJSON('fastJoin:' + c, {}))[f.id] || {} };
+    }
     let sent = 0, people = 0, gone = [];
     for (const s of staff) {
       if (s.active === false || s.archived) continue;
@@ -6282,6 +6295,7 @@ async function getMyBoot(username, pin) {
     backup: s.isAdmin ? await part(backupStatus_) : null,
     hospNews: canHosp_(s) ? await part(function () { return hospNews_(s.campus); }) : null,
     worship: await part(async function () { return { mine: await worshipMine_(s), canEdit: canWorship_(s) }; }),   // the Worship rota: the services I'm on in the next eight days (teams/26-worship.js)   // SR Hospitality: a team's new dates, someone who left
+    fast: await part(function () { return fastGlance_(s); }),   // the campus's fast, running or coming (Intercession): the bell and ☰   // SR Hospitality: a team's new dates, someone who left
     // the roster is already top-level above; no need to ship it twice in one response
     base: base ? Object.assign({}, base, { roster: undefined }) : null
   };
@@ -6322,10 +6336,11 @@ async function getPlans_() { return readJSON('structurePlans', []); }
    arrangement (students never carry over; they are per quarter). */
 function planFor_(plans, campus, y, q) {
   const p = plans.find(function (r) { return r.campus === campus && Number(r.year) === y && Number(r.quarter) === q; });
-  if (p) return { students: p.students || {}, place: p.place || {}, leads: p.leads || null, extra: p.extra || [], inherited: false };
+  if (p) return { students: p.students || {}, place: p.place || {}, leads: p.leads || null, extra: p.extra || [], schools: Array.isArray(p.schools) ? p.schools : null, inherited: false };
   const earlier = plans.filter(function (r) { return r.campus === campus && r.place && Object.keys(r.place).length && (Number(r.year) * 10 + Number(r.quarter)) < y * 10 + q; })
     .sort(function (a, b) { return (Number(b.year) * 10 + Number(b.quarter)) - (Number(a.year) * 10 + Number(a.quarter)); })[0];
   return { students: {}, place: (earlier && earlier.place) || {}, leads: (earlier && earlier.leads) || null, extra: (earlier && earlier.extra) || [],
+    schools: earlier && Array.isArray(earlier.schools) ? earlier.schools : null,
     inherited: !!earlier, from: earlier ? { year: Number(earlier.year), quarter: Number(earlier.quarter) } : null };
 }
 function cleanPlace_(place, here) {
@@ -6345,6 +6360,14 @@ function cleanPlace_(place, here) {
    `extra` = [{id:'x_…', name}] — someone not in the app yet (a new staff member coming in Q1); they sit in `place` and `leads`
    like anyone. */
 const STRUCT_OFF = '_off', STRUCT_EXTRA_MAX = 80, STRUCT_LEAD_MAX = 8;
+/* Which Leadership Development schools run that quarter (Nov 2026, Andrew: "in Q1, we only have the GPDTS school
+   running"): a list of school ministries, or null = every school. A school not running has no box on the chart that
+   quarter; where people were placed is kept for a quarter it runs. */
+const STRUCT_SCHOOL_MINS = ['GPDTS', 'DTS', 'DBS', 'SMS', 'BCS', 'SOMD'];
+function cleanStructSchools_(schools) {
+  if (!Array.isArray(schools)) return null;
+  return STRUCT_SCHOOL_MINS.filter(function (m) { return schools.indexOf(m) > -1; });
+}
 function cleanStructExtra_(extra) {
   const out = [], seen = {};
   (Array.isArray(extra) ? extra : []).forEach(function (x) {
@@ -6389,7 +6412,7 @@ async function getStructure(username, pin, campus, year, quarter) {
   const found = structFind_(await getStructures_(), campus, y, q);
   return { ok: true, campus: campus, year: y, quarter: q, doc: structPeopleOnly_(found.doc, await getStaff_()), source: found.source, plan: planFor_(await getPlans_(), campus, y, q) };
 }
-async function saveStructurePlan(username, pin, campus, year, quarter, students, place, leads, extra) {
+async function saveStructurePlan(username, pin, campus, year, quarter, students, place, leads, extra, schools) {
   campus = str_(campus, 40);
   const admin = await structEditor_(username, pin, campus);
   if (!admin) return { ok: false, err: 'not_authorized' };
@@ -6413,7 +6436,8 @@ async function saveStructurePlan(username, pin, campus, year, quarter, students,
   const placeClean = place === undefined || place === null ? cleanPlace_(before.place, hereAll) : cleanPlace_(place, hereAll);
   const studentsClean = students === undefined || students === null ? before.students : clean;
   const leadsClean = leads === undefined ? cleanStructLeads_(before.leads, hereAll) : cleanStructLeads_(leads, hereAll);
-  const rec = { campus: campus, year: y, quarter: q, students: studentsClean, place: placeClean, leads: leadsClean, extra: extraClean, savedAt: new Date().toISOString(), savedBy: admin.id };
+  const schoolsClean = schools === undefined ? cleanStructSchools_(before.schools) : cleanStructSchools_(schools);
+  const rec = { campus: campus, year: y, quarter: q, students: studentsClean, place: placeClean, leads: leadsClean, extra: extraClean, schools: schoolsClean, savedAt: new Date().toISOString(), savedBy: admin.id };
   if (idx > -1) plans[idx] = rec; else plans.push(rec);
   await writeJSON('structurePlans', plans);
   // a snapshot already saved for that quarter follows
@@ -6422,6 +6446,7 @@ async function saveStructurePlan(username, pin, campus, year, quarter, students,
   if (snap && y * 10 + q >= currentYear_() * 10 + currentQuarter_()) {
     // this quarter or a later one: the snapshot is the arrangement as it now stands
     snap.people = structPeople_(staff, campus, rec);
+    snap.schools = schoolsClean;
     await writeJSON('structure', rows);
   } else if (snap) {
     const byId = {}; staff.forEach(function (r) { byId[r.id] = r; });
@@ -6434,7 +6459,7 @@ async function saveStructurePlan(username, pin, campus, year, quarter, students,
     });
     await writeJSON('structure', rows);
   }
-  return { ok: true, campus: campus, year: y, quarter: q, plan: { students: studentsClean, place: placeClean, leads: leadsClean, extra: extraClean, inherited: false }, doc: snap ? structPeopleOnly_(snap, staff) : null };
+  return { ok: true, campus: campus, year: y, quarter: q, plan: { students: studentsClean, place: placeClean, leads: leadsClean, extra: extraClean, schools: schoolsClean, inherited: false }, doc: snap ? structPeopleOnly_(snap, staff) : null };
 }
 /* The people of a snapshot: the campus's staff where the quarter's arrangement puts them (else their profile), who leads
    what that quarter (else the profiles'), and the names typed in on the whiteboard. */
@@ -6454,7 +6479,7 @@ async function saveStructure(username, pin, campus, year, quarter) {
   if (y == null || q == null) return { ok: false, err: 'bad_quarter' };
   const plan = planFor_(await getPlans_(), campus, y, q);
   const people = structPeople_(await getStaff_(), campus, plan);
-  const rec = { campus: campus, year: y, quarter: q, people: people, savedAt: new Date().toISOString(), savedBy: admin.id };
+  const rec = { campus: campus, year: y, quarter: q, people: people, schools: plan.schools || null, savedAt: new Date().toISOString(), savedBy: admin.id };
   const rows = await getStructures_();
   const idx = rows.findIndex(function (r) { return r.campus === campus && Number(r.year) === y && Number(r.quarter) === q; });
   if (idx > -1) rows[idx] = rec; else rows.push(rec);
@@ -13682,6 +13707,680 @@ async function worshipMine_(s) {
   return out.sort(function (a, b) { return (a.date + a.time) < (b.date + b.time) ? -1 : 1; });
 }
 
+/* ==================== the school tool (YDC; Nov 2026, Uriah) ====================
+   "A really good software for managing a school … add students, … grades, taking roll, testing the
+   students … names, photo, keep tabs of all of their students … use their phones to take a photo of
+   the student … they fill out the tests on paper … then have they paid." One tool for a ministry that
+   runs a school — YDC now; the community schools later by adding one line to SCHOOL_TOOL (mirrored in
+   public/taxonomy.js, test-checked). Everything is set up in the app by the ministry: locations,
+   classes (a teacher, days, a time), the fee (a month or a term, each student full / a discount /
+   sponsored), the pass mark.
+   Store, per campus and ministry (the key `<campus>:<dept>|<ministry>`):
+     school:<key>      { settings, locations, classes, students, tests, payments, events }
+     schoolRoll:<key>  { rolls: { '<classId>|<date>': { classId, date, marks:{studentId:'p'|'a'|'l'}, by, at } } }
+     schthumbs:<key>   { <studentId>: '<160px jpeg base64>' } — the faces for the class grid, apart from the list
+     schphoto:<key>:<id> { data } — a student's photo (id = the student's) or a photo of marked papers
+   Who: the ministry's own people (canLogFor_ — members, leaders, its department's director) and admins
+   (who may pass another campus). Setting up: its leaders, its department's director, admins. Nothing
+   of it reaches the roster, a profile, getData or anyone else's boot. Children's details: never in a
+   test fixture with a real name.
+   The numbers count themselves (schoolSync_, 'tool:school' rows, this week year): days with classes
+   from the roll, enrolled from the students (a level), tests held and the passing rate from the tests,
+   parties and competitions from the events, salvations and baptisms by their dates, discipleship and
+   local church as levels. A number someone typed is never overwritten. */
+const SCHOOL_TOOL = {
+  'Youth Education|YDC': { metrics: { days: 'Days with Classes', enrolled: 'Youth Enrolled', tests: 'Tests Held', pass: 'Passing Rate (%)',
+    parties: 'Parties Thrown', comps: 'Competitions Held', salv: 'Salvations', bapt: 'Baptisms', disc: 'Students in Discipleship', church: 'Students Brought to Local Church' } }
+};
+const SCHOOL_TAG = 'tool:school';
+const SCHOOL_MAX = { locations: 40, classes: 80, students: 800, tests: 1500, payments: 6000, events: 400, terms: 12, papers: 6 };
+const SCHOOL_PHOTO_MAX_B64 = 400 * 1024, SCHOOL_THUMB_MAX_B64 = 40 * 1024, SCHOOL_ROLL_DAYS = 14, SCHOOL_ROLL_KEEP = 420;
+const SCHOOL_KINDS = ['settings', 'location', 'class', 'student', 'test', 'payment', 'event'];
+const SCHOOL_BLANK = { settings: {}, locations: [], classes: [], students: [], tests: [], payments: [], events: [] };
+function schoolConf_(dept, ministry) { const k = String(dept || '') + '|' + String(ministry || ''); return Object.prototype.hasOwnProperty.call(SCHOOL_TOOL, k) ? SCHOOL_TOOL[k] : null; }
+function isSchoolMinistry_(dept, ministry) { return !!schoolConf_(dept, ministry); }
+function schoolAutoMetrics_(dept, ministry) { const c = schoolConf_(dept, ministry); return c ? Object.keys(c.metrics).map(function (k) { return c.metrics[k]; }) : []; }
+function schoolKey_(campus, dept, ministry) { return campus + ':' + dept + '|' + ministry; }
+function schoolSetupOk_(s, dept, ministry) { return !!(s.isAdmin || isLeaderOf_(s, dept, ministry) || (deptOf_(s) === 'Campus Leadership' && s.ministry === dept)); }
+/* the one gate: a signed-in staff member of that ministry (or an admin, any campus) */
+async function schoolGate_(username, pin, scope) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { out: { ok: false } };
+  const sc = scope && typeof scope === 'object' ? scope : {};
+  const dept = normDept_(str_(sc.dept, 60) || '', str_(sc.ministry, 60) || ''), ministry = str_(sc.ministry, 60) || '';
+  if (!schoolConf_(dept, ministry)) return { out: { ok: false, err: 'no_school' } };
+  let campus = s.campus;
+  const asked = str_(sc.campus, 20);
+  if (asked && asked !== s.campus) { if (!s.isAdmin || CAMPUS_IDS_.indexOf(asked) === -1) return { out: { ok: false, err: 'not_authorized' } }; campus = asked; }
+  if (!(s.isAdmin || canLogFor_(s, campus, dept, ministry))) return { out: { ok: false, err: 'not_authorized' } };
+  return { s: s, campus: campus, dept: dept, ministry: ministry, key: schoolKey_(campus, dept, ministry), setup: schoolSetupOk_(s, dept, ministry) };
+}
+function schId_(p) { return p + Date.now().toString(36) + crypto.randomBytes(3).toString('hex'); }
+function schText_(v, n) { return String(v == null ? '' : v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, n); }
+function schDate_(v) { const d = isoDate_(v); if (!d) return ''; const y = Number(d.slice(0, 4)); return (y >= 1950 && y <= 2100 && dayNo_(d) != null && new Date(d + 'T00:00:00Z').toISOString().slice(0, 10) === d) ? d : ''; }
+function schMoney_(v) { if (v === '' || v == null) return null; const n = Number(v); return isFinite(n) && n >= 0 && n <= 100000 ? Math.round(n * 100) / 100 : null; }
+function schDoc_(raw) {
+  const d = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  const o = {};
+  Object.keys(SCHOOL_BLANK).forEach(function (k) { o[k] = Array.isArray(SCHOOL_BLANK[k]) ? (Array.isArray(d[k]) ? d[k] : []) : (d[k] && typeof d[k] === 'object' && !Array.isArray(d[k]) ? d[k] : {}); });
+  return o;
+}
+function schSettings_(st) {
+  st = st && typeof st === 'object' ? st : {};
+  const pm = Math.round(Number(st.passMark));
+  const fee = st.fee && typeof st.fee === 'object' ? st.fee : {};
+  return { passMark: pm >= 1 && pm <= 100 ? pm : 50,
+    fee: { amount: schMoney_(fee.amount) || 0, per: fee.per === 'term' ? 'term' : 'month' },
+    terms: (Array.isArray(st.terms) ? st.terms : []).map(function (x) {
+      const from = schDate_(x && x.from), to = schDate_(x && x.to), name = schText_(x && x.name, 40);
+      if (!name || !from || !to || to < from) return null;
+      return { id: (typeof x.id === 'string' && /^[a-z0-9]{1,24}$/.test(x.id)) ? x.id : schId_('tm'), name: name, from: from, to: to };
+    }).filter(Boolean).slice(0, SCHOOL_MAX.terms) };
+}
+const SCH_TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
+/* each kind, cleaned: `doc` is the school as it is (for references), `old` the record being changed */
+const SCH_CLEAN = {
+  location: function (r) { const name = schText_(r.name, 60); if (!name) return { err: 'name_needed' }; return { name: name, notes: schText_(r.notes, 300) }; },
+  class: function (r, doc, staff, campus) {
+    const name = schText_(r.name, 60); if (!name) return { err: 'name_needed' };
+    if (!doc.locations.some(function (l) { return l.id === r.locationId; })) return { err: 'bad_location' };
+    const t = staff.find(function (x) { return x.id === r.teacherId && x.campus === campus && x.active !== false && !isApplicant_(x); });
+    const days = (Array.isArray(r.days) ? r.days : []).map(Number).filter(function (n, i, a) { return n >= 0 && n <= 6 && Math.round(n) === n && a.indexOf(n) === i; }).sort();
+    return { name: name, locationId: r.locationId, teacherId: t ? t.id : '', teacherName: t ? '' : schText_(r.teacherName, 60), days: days,
+      time: SCH_TIME.test(String(r.time || '')) ? String(r.time) : '', end: SCH_TIME.test(String(r.end || '')) ? String(r.end) : '' };
+  },
+  student: function (r, doc, staff, campus, old) {
+    const kh = schText_(r.kh, 80), en = schText_(r.en, 80);
+    if (!kh && !en) return { err: 'name_needed' };
+    if (r.classId && !doc.classes.some(function (c) { return c.id === r.classId; })) return { err: 'bad_class' };
+    const fee = r.fee && typeof r.fee === 'object' ? r.fee : {};
+    const mode = ['full', 'discount', 'free'].indexOf(fee.mode) > -1 ? fee.mode : 'full';
+    const f = r.faith && typeof r.faith === 'object' ? r.faith : {};
+    const status = r.status === 'left' ? 'left' : 'active';
+    return { kh: kh, en: en, sex: ['m', 'f'].indexOf(r.sex) > -1 ? r.sex : '', dob: schDate_(r.dob), village: schText_(r.village, 80),
+      guardian: schText_(r.guardian, 80), guardianPhone: schText_(r.guardianPhone, 30), classId: r.classId || '',
+      start: schDate_(r.start) || (old && old.start) || baseToday_(), status: status, leftOn: status === 'left' ? (schDate_(r.leftOn) || baseToday_()) : '',
+      notes: schText_(r.notes, 1000),
+      fee: { mode: mode, amount: mode === 'discount' ? (schMoney_(fee.amount) || 0) : 0 },
+      faith: { disc: schDate_(f.disc), church: schDate_(f.church), salv: schDate_(f.salv), bapt: schDate_(f.bapt) },
+      hasPhoto: !!(old && old.hasPhoto) };
+  },
+  test: function (r, doc, staff, campus, old) {
+    const subject = schText_(r.subject, 60); if (!subject) return { err: 'subject_needed' };
+    if (!doc.classes.some(function (c) { return c.id === r.classId; })) return { err: 'bad_class' };
+    const date = schDate_(r.date); if (!date) return { err: 'bad_date' };
+    const outOf = Math.round(Number(r.outOf)); if (!(outOf >= 1 && outOf <= 1000)) return { err: 'bad_out_of' };
+    const ids = {}; doc.students.forEach(function (x) { ids[x.id] = 1; });
+    const scores = {};
+    Object.keys(r.scores && typeof r.scores === 'object' ? r.scores : {}).forEach(function (id) {
+      const v = r.scores[id]; if (!ids[id] || v === '' || v == null) return;
+      const n = Number(v); if (isFinite(n) && n >= 0 && n <= outOf) scores[id] = Math.round(n * 10) / 10;
+    });
+    return { classId: r.classId, subject: subject, date: date, outOf: outOf, scores: scores, papers: old && Array.isArray(old.papers) ? old.papers : [] };
+  },
+  payment: function (r, doc) {
+    if (!doc.students.some(function (x) { return x.id === r.studentId; })) return { err: 'bad_student' };
+    const amount = schMoney_(r.amount); if (!amount) return { err: 'bad_amount' };
+    const date = schDate_(r.date); if (!date || date > addDays_(baseToday_(), 1)) return { err: 'bad_date' };
+    const period = schText_(r.period, 24);
+    if (!(/^\d{4}-\d{2}$/.test(period) || (doc.settings.terms || []).some(function (t) { return t.id === period; }))) return { err: 'bad_period' };
+    return { studentId: r.studentId, amount: amount, date: date, method: ['cash', 'aba', 'other'].indexOf(r.method) > -1 ? r.method : 'cash', period: period, note: schText_(r.note, 200) };
+  },
+  event: function (r) {
+    const title = schText_(r.title, 80); if (!title) return { err: 'name_needed' };
+    const date = schDate_(r.date); if (!date) return { err: 'bad_date' };
+    return { title: title, date: date, kind: ['party', 'competition', 'other'].indexOf(r.kind) > -1 ? r.kind : 'other', notes: schText_(r.notes, 300) };
+  }
+};
+const SCH_LIST = { location: 'locations', class: 'classes', student: 'students', test: 'tests', payment: 'payments', event: 'events' };
+function schRollsOut_(doc) {
+  const r = doc && doc.rolls && typeof doc.rolls === 'object' && !Array.isArray(doc.rolls) ? doc.rolls : {};
+  return Object.keys(r).map(function (k) { return r[k]; }).filter(function (x) { return x && x.classId && x.date; });
+}
+async function schoolOut_(g) {
+  const doc = schDoc_(await readJSON('school:' + g.key, {}));
+  doc.settings = schSettings_(doc.settings);
+  const rolls = schRollsOut_(await readJSON('schoolRoll:' + g.key, { rolls: {} }));
+  const thumbs = await readJSON('schthumbs:' + g.key, {});
+  const ids = {}; doc.students.forEach(function (x) { ids[x.id] = 1; });
+  const th = {}; Object.keys(thumbs || {}).forEach(function (k) { if (ids[k] && typeof thumbs[k] === 'string') th[k] = thumbs[k]; });
+  return { ok: true, campus: g.campus, dept: g.dept, ministry: g.ministry, canSetup: g.setup, today: baseToday_(), data: doc, rolls: rolls, thumbs: th,
+    metrics: schoolAutoMetrics_(g.dept, g.ministry) };
+}
+async function schoolBoard(username, pin, scope) {
+  const g = await schoolGate_(username, pin, scope); if (g.out) return g.out;
+  return schoolOut_(g);
+}
+async function schoolSave(username, pin, scope, kind, rec) {
+  const g = await schoolGate_(username, pin, scope); if (g.out) return g.out;
+  if (SCHOOL_KINDS.indexOf(kind) === -1) return { ok: false, err: 'bad_kind' };
+  if ((kind === 'settings' || kind === 'location' || kind === 'class') && !g.setup) return { ok: false, err: 'not_setup' };
+  const r = rec && typeof rec === 'object' && !Array.isArray(rec) ? rec : {};
+  const staff = kind === 'class' ? await getStaff_() : [];
+  const res = await mutateKey_('school:' + g.key, {}, function (raw) {
+    const doc = schDoc_(raw); Object.keys(doc).forEach(function (k) { raw[k] = doc[k]; });
+    if (kind === 'settings') { raw.settings = Object.assign(schSettings_(Object.assign({}, schSettings_(raw.settings), r)), { by: g.s.id, at: new Date().toISOString() }); return { ok: true }; }
+    doc.settings = schSettings_(doc.settings);
+    const list = raw[SCH_LIST[kind]];
+    const id = typeof r.id === 'string' ? r.id : '';
+    const idx = id ? list.findIndex(function (x) { return x && x.id === id; }) : -1;
+    if (id && idx === -1) return { abort: true, ok: false, err: 'not_found' };
+    if (idx === -1 && list.length >= SCHOOL_MAX[SCH_LIST[kind]]) return { abort: true, ok: false, err: 'too_many' };
+    const old = idx > -1 ? list[idx] : null;
+    const c = SCH_CLEAN[kind](r, doc, staff, g.campus, old);
+    if (c.err) return { abort: true, ok: false, err: c.err };
+    const now = new Date().toISOString();
+    const row = Object.assign({ id: old ? old.id : schId_(kind.slice(0, 2)) }, c, { created: old ? old.created : now, by: old ? old.by : g.s.id, at: now, editedBy: g.s.id });
+    if (idx > -1) list[idx] = row; else list.push(row);
+    return { ok: true, id: row.id };
+  });
+  if (!res || res.ok === false) return res || { ok: false, err: 'busy' };
+  await schoolSyncSafe_(g);
+  return Object.assign(await schoolOut_(g), { saved: res.id || '' });
+}
+async function schDropBlob_(key) { try { const st = store(); if (typeof st.delete === 'function') await st.delete(key); else await st.setJSON(key, null); } catch (e) { /* the record is gone already */ } }
+async function schoolDelete(username, pin, scope, kind, id) {
+  const g = await schoolGate_(username, pin, scope); if (g.out) return g.out;
+  if (!SCH_LIST[kind]) return { ok: false, err: 'bad_kind' };
+  if ((kind === 'location' || kind === 'class') && !g.setup) return { ok: false, err: 'not_setup' };
+  let dropped = [];
+  const res = await mutateKey_('school:' + g.key, {}, function (raw) {
+    const doc = schDoc_(raw); Object.keys(doc).forEach(function (k) { raw[k] = doc[k]; });
+    const list = raw[SCH_LIST[kind]], idx = list.findIndex(function (x) { return x && x.id === id; });
+    if (idx === -1) return { abort: true, ok: false, err: 'not_found' };
+    if (kind === 'location' && raw.classes.some(function (c) { return c.locationId === id; })) return { abort: true, ok: false, err: 'in_use' };
+    if (kind === 'class' && (raw.students.some(function (x) { return x.classId === id; }) || raw.tests.some(function (x) { return x.classId === id; }))) return { abort: true, ok: false, err: 'in_use' };
+    if (kind === 'student' && raw.payments.some(function (x) { return x.studentId === id; })) return { abort: true, ok: false, err: 'in_use' };
+    if (kind === 'test') dropped = (list[idx].papers || []).slice();
+    if (kind === 'student') { dropped = [id]; raw.tests.forEach(function (t) { if (t.scores) delete t.scores[id]; }); }
+    list.splice(idx, 1);
+    return { ok: true };
+  });
+  if (!res || res.ok === false) return res || { ok: false, err: 'busy' };
+  for (const p of dropped) await schDropBlob_('schphoto:' + g.key + ':' + p);
+  if (kind === 'student') await mutateKey_('schthumbs:' + g.key, {}, function (t) { delete t[id]; return { ok: true }; });
+  await schoolSyncSafe_(g);
+  return schoolOut_(g);
+}
+/* The roll: one per class per date, saving again replaces it — so a phone that sends the same roll
+   twice (offline, then again) changes nothing. Any day in the last fortnight, never tomorrow. */
+async function schoolRoll(username, pin, scope, classId, date, marks) {
+  const g = await schoolGate_(username, pin, scope); if (g.out) return g.out;
+  const d = schDate_(date), today = baseToday_();
+  if (!d || d > today || d < addDays_(today, -SCHOOL_ROLL_DAYS)) return { ok: false, err: 'bad_date' };
+  const doc = schDoc_(await readJSON('school:' + g.key, {}));
+  if (!doc.classes.some(function (c) { return c.id === classId; })) return { ok: false, err: 'bad_class' };
+  const ids = {}; doc.students.forEach(function (x) { ids[x.id] = 1; });
+  const m = {};
+  Object.keys(marks && typeof marks === 'object' && !Array.isArray(marks) ? marks : {}).slice(0, SCHOOL_MAX.students).forEach(function (sid) {
+    if (ids[sid] && ['p', 'a', 'l'].indexOf(marks[sid]) > -1) m[sid] = marks[sid];
+  });
+  const res = await mutateKey_('schoolRoll:' + g.key, { rolls: {} }, function (raw) {
+    if (!raw.rolls || typeof raw.rolls !== 'object' || Array.isArray(raw.rolls)) raw.rolls = {};
+    const keep = addDays_(today, -SCHOOL_ROLL_KEEP);
+    Object.keys(raw.rolls).forEach(function (k) { const x = raw.rolls[k]; if (!x || !x.date || x.date < keep) delete raw.rolls[k]; });
+    const k = classId + '|' + d;
+    if (!Object.keys(m).length) delete raw.rolls[k];
+    else raw.rolls[k] = { classId: classId, date: d, marks: m, by: g.s.id, at: new Date().toISOString() };
+    return { ok: true };
+  });
+  if (!res || res.ok === false) return res || { ok: false, err: 'busy' };
+  await schoolSyncSafe_(g);
+  return schoolOut_(g);
+}
+/* Photos: a student's (kind 'student', id = the student; with its 160px thumb for the class grid)
+   or one of a test's marked papers (kind 'paper', id = the test; a new photo each time, six at most).
+   base64 null takes it off (for a paper: `photoId` names which). */
+function schB64_(v, max) { return typeof v === 'string' && v.length >= 100 && v.length <= max && /^[A-Za-z0-9+/=]+$/.test(v); }
+async function schoolPhoto(username, pin, scope, kind, id, base64, thumb, photoId) {
+  const g = await schoolGate_(username, pin, scope); if (g.out) return g.out;
+  if (kind !== 'student' && kind !== 'paper') return { ok: false, err: 'bad_kind' };
+  const remove = base64 === null;
+  if (!remove && !schB64_(base64, SCHOOL_PHOTO_MAX_B64)) return { ok: false, err: typeof base64 === 'string' && base64.length > SCHOOL_PHOTO_MAX_B64 ? 'too_large' : 'bad_file' };
+  if (kind === 'student' && !remove && !schB64_(thumb, SCHOOL_THUMB_MAX_B64)) return { ok: false, err: 'bad_file' };
+  let pid = '';
+  const res = await mutateKey_('school:' + g.key, {}, function (raw) {
+    const doc = schDoc_(raw); Object.keys(doc).forEach(function (k) { raw[k] = doc[k]; });
+    if (kind === 'student') {
+      const st = raw.students.find(function (x) { return x.id === id; });
+      if (!st) return { abort: true, ok: false, err: 'not_found' };
+      st.hasPhoto = !remove; pid = st.id; return { ok: true };
+    }
+    const t = raw.tests.find(function (x) { return x.id === id; });
+    if (!t) return { abort: true, ok: false, err: 'not_found' };
+    t.papers = Array.isArray(t.papers) ? t.papers : [];
+    if (remove) { const i = t.papers.indexOf(photoId); if (i === -1) return { abort: true, ok: false, err: 'not_found' }; t.papers.splice(i, 1); pid = photoId; return { ok: true }; }
+    if (t.papers.length >= SCHOOL_MAX.papers) return { abort: true, ok: false, err: 'too_many' };
+    pid = schId_('pp'); t.papers.push(pid); return { ok: true };
+  });
+  if (!res || res.ok === false) return res || { ok: false, err: 'busy' };
+  if (remove) await schDropBlob_('schphoto:' + g.key + ':' + pid);
+  else await writeJSON('schphoto:' + g.key + ':' + pid, { data: base64, at: new Date().toISOString(), by: g.s.id });
+  if (kind === 'student') await mutateKey_('schthumbs:' + g.key, {}, function (t) { if (remove) delete t[pid]; else t[pid] = thumb; return { ok: true }; });
+  return Object.assign(await schoolOut_(g), { photoId: pid });
+}
+async function schoolPhotoGet(username, pin, scope, id) {
+  const g = await schoolGate_(username, pin, scope); if (g.out) return g.out;
+  const doc = schDoc_(await readJSON('school:' + g.key, {}));
+  const known = doc.students.some(function (x) { return x.id === id && x.hasPhoto; }) || doc.tests.some(function (t) { return (t.papers || []).indexOf(id) > -1; });
+  if (!known) return { ok: false, err: 'not_found' };
+  const p = await readJSON('schphoto:' + g.key + ':' + id, null);
+  return p && typeof p.data === 'string' ? { ok: true, id: id, data: p.data } : { ok: false, err: 'not_found' };
+}
+/* ---- the numbers ---- */
+function schActiveOn_(st, day) { return !!st && (st.start || '') <= day && !(st.status === 'left' && st.leftOn && st.leftOn <= day); }
+async function schoolSync_(g) {
+  const conf = schoolConf_(g.dept, g.ministry); if (!conf) return false;
+  const M = conf.metrics, doc = schDoc_(await readJSON('school:' + g.key, {})), settings = schSettings_(doc.settings);
+  const rolls = schRollsOut_(await readJSON('schoolRoll:' + g.key, { rolls: {} }));
+  const yr = thisWeekYear_(), today = baseToday_(), curWk = isoWeek_(today);
+  const want = {}; Object.keys(M).forEach(function (k) { want[k] = {}; });
+  const wkOf = function (day) { return day && day <= today && weekYear_(day) === yr ? isoWeek_(day) : 0; };
+  const add = function (k, day, n) { const w = wkOf(day); if (w) want[k][w] = (want[k][w] || 0) + (n === undefined ? 1 : n); };
+  const days = {};
+  rolls.forEach(function (r) { if (r.marks && Object.keys(r.marks).length) { const w = wkOf(r.date); if (w) { days[w] = days[w] || {}; days[w][r.date] = 1; } } });
+  Object.keys(days).forEach(function (w) { want.days[w] = Object.keys(days[w]).length; });
+  const passN = {}, allN = {};
+  doc.tests.forEach(function (t) {
+    const w = wkOf(t.date); if (!w) return;
+    want.tests[w] = (want.tests[w] || 0) + 1;
+    Object.keys(t.scores || {}).forEach(function (sid) { allN[w] = (allN[w] || 0) + 1; if (Number(t.scores[sid]) / t.outOf * 100 >= settings.passMark) passN[w] = (passN[w] || 0) + 1; });
+  });
+  Object.keys(allN).forEach(function (w) { want.pass[w] = Math.round((passN[w] || 0) / allN[w] * 100); });
+  doc.events.forEach(function (e) { if (e.kind === 'party') add('parties', e.date); else if (e.kind === 'competition') add('comps', e.date); });
+  doc.students.forEach(function (st) { const f = st.faith || {}; add('salv', f.salv); add('bapt', f.bapt); });
+  const levels = { enrolled: function (st, end) { return schActiveOn_(st, end); },
+    disc: function (st, end) { return schActiveOn_(st, end) && !!(st.faith && st.faith.disc && st.faith.disc <= end); },
+    church: function (st, end) { return schActiveOn_(st, end) && !!(st.faith && st.faith.church && st.faith.church <= end); } };
+  Object.keys(levels).forEach(function (k) {
+    let seen = false;
+    for (let w = 1; w <= curWk; w++) {
+      const end = weekEndDay_(yr, w), n = doc.students.filter(function (st) { return levels[k](st, end); }).length;
+      if (n) seen = true;
+      if (seen) want[k][w] = n;
+    }
+  });
+  const rows = await getEntries_(), now = new Date().toISOString();
+  let changed = false;
+  Object.keys(M).forEach(function (k) {
+    const metric = M[k], isLevel = !!levels[k] || k === 'pass';
+    const mine = function (r) { return r.campus === g.campus && r.dept === g.dept && r.ministry === g.ministry && r.metric === metric && yearOf_(r) === yr; };
+    const weeks = {};
+    Object.keys(want[k]).forEach(function (w) { weeks[w] = 1; });
+    rows.forEach(function (r) { if (mine(r)) weeks[r.week] = 1; });
+    Object.keys(weeks).map(Number).forEach(function (w) {
+      const idx = rows.findIndex(function (r) { return mine(r) && Number(r.week) === w; });
+      const r = idx > -1 ? rows[idx] : null;
+      if (r && r.by !== SCHOOL_TAG) return;   // a number someone typed stays as it is
+      const v = want[k][w], has = v !== undefined && (isLevel || v > 0);
+      if (has) {
+        if (!r) { rows.push({ campus: g.campus, dept: g.dept, ministry: g.ministry, metric: metric, week: w, year: yr, value: v, updated: now, by: SCHOOL_TAG }); changed = true; }
+        else if (Number(r.value) !== v) { r.value = v; r.updated = now; changed = true; }
+      } else if (r) { rows.splice(idx, 1); changed = true; }
+    });
+  });
+  if (changed) await writeJSON('entries', rows);
+  return changed;
+}
+async function schoolSyncSafe_(g) { try { return await schoolSync_(g); } catch (e) { console.error('school sync', e && e.message); return false; } }
+/* ---------- Intercession (Nov 2026, Uriah) ----------
+   "For intercession, we only do it once a week, every Wednesday … but it would be great for
+   them to also plan like a January 21-day fast and prayer as well." Youth Education › Intercession
+   on both campuses. Three things, kept per campus:
+     icp:<campus>      { weds: { 'YYYY-MM-DD' (a Wednesday): plan }, needs: [prayer needs] }
+                       a plan: who leads (a staff id, or a typed name), the focus, the ministries and
+                       needs prayed for, a scripture reference (a reference only, never the text), the
+                       worship team (a line for now — the Worship tool will fill it later), notes; after
+                       it: held, how many came, how long, answered-prayer testimonies.
+     fast:<campus>     { fasts: [ { id, title, start, days 7–40, theme, plan:[{focus, ref, note}],
+                       gatherings:[{id, day, time, place, leader, held, hours}] } ] }
+     fastJoin:<campus> { <fastId>: { <staffId>: { kind, ticks:[day numbers], at } } } — kept apart, so
+                       the plan can be read without the people. Who fasts, and how, never leaves the
+                       server except to that person: the ministry sees counts only.
+   The plans and the fast: the ministry's people (canLogFor_ — members, leaders, the Youth Education
+   director) and admins. Reading them, sending a need and joining the fast: any active staff member on
+   the campus. Prayer Meetings Held, Prayer Hours Covered, Ministries Covered in Prayer and
+   Answered-Prayer Testimonies count themselves (toolSync_, 'tool:intercession') for the week of each
+   Wednesday and fast gathering held; Director Weekly Score (1-10) is still typed. */
+const ICP_DEPT = 'Youth Education', ICP_MIN = 'Intercession', ICP_TAG = 'tool:intercession';
+const ICP_WEDS_KEPT = 120, ICP_NEEDS_MAX = 400, ICP_NEED_DAY = 10, ICP_TESTIMONIES = 20;
+const FAST_KINDS = ['full', 'partial', 'meal', 'media', 'other'];
+const FAST_MIN_DAYS = 7, FAST_MAX_DAYS = 40, FAST_KEEP = 8, FAST_SHOW_AHEAD = 45, FAST_GATHERINGS = 80;
+const ICP_METRICS = { meetings: 'Prayer Meetings Held', hours: 'Prayer Hours Covered', mins: 'Ministries Covered in Prayer', testimonies: 'Answered-Prayer Testimonies' };
+function canIcp_(s) { return !!(s && s.active !== false && canLogFor_(s, s.campus, ICP_DEPT, ICP_MIN)); }
+function icpText_(v, n) { return String(v == null ? '' : v).replace(/\r/g, '').trim().slice(0, n); }
+function icpLine_(v, n) { return icpText_(v, n).replace(/\s*\n\s*/g, ' '); }
+function isWednesday_(d) { const t = Date.parse(String(d || '') + 'T00:00:00Z'); return !isNaN(t) && new Date(t).getUTCDay() === 3; }
+function nextWednesday_(today) { let d = today; for (let i = 0; i < 7 && !isWednesday_(d); i++) d = addDays_(d, 1); return d; }
+async function icpDoc_(campus) {
+  const v = await readJSON('icp:' + campus, {});
+  return { weds: v && v.weds && typeof v.weds === 'object' && !Array.isArray(v.weds) ? v.weds : {}, needs: Array.isArray(v && v.needs) ? v.needs : [] };
+}
+async function fastDoc_(campus) {
+  const v = await readJSON('fast:' + campus, {});
+  return { fasts: Array.isArray(v && v.fasts) ? v.fasts : [] };
+}
+function icpMins_(list) {
+  const out = [];
+  (Array.isArray(list) ? list : []).forEach(function (k) {
+    const s = str_(k, 160); if (!s || !/^[^|]+\|[^|]+$/.test(s)) return;
+    const n = normKey_(s, 2); if (out.indexOf(n) === -1 && out.length < 30) out.push(n);
+  });
+  return out;
+}
+function icpHours_(v) { if (v === '' || v == null) return null; const n = finiteNum_(v, 0, 24); return n == null ? null : Math.round(n * 4) / 4; }
+/* a Wednesday's plan, cleaned: a leader on the campus by id, else a typed name */
+function icpCleanWed_(rec, date, staffRows, campus, today, old) {
+  const r = rec && typeof rec === 'object' ? rec : {};
+  const lid = str_(r.leaderId, 60), who = lid ? staffRows.find(function (x) { return x.id === lid && x.active && x.campus === campus && !isApplicant_(x); }) : null;
+  const past = date <= today;
+  const held = past && (r.held === true || r.held === false) ? r.held : null;
+  const came = held && r.came !== '' && r.came != null ? finiteNum_(r.came, 0, 2000) : null;
+  const tes = (Array.isArray(r.testimonies) ? r.testimonies : []).map(function (x) {
+    const text = icpText_(x && x.text, 400); if (!text) return null;
+    const id = str_(x && x.id, 40);
+    return { id: id && /^[a-z0-9]+$/i.test(id) ? id : toolId_('it'), text: text };
+  }).filter(Boolean).slice(0, ICP_TESTIMONIES);
+  return {
+    date: date,
+    leaderId: who ? who.id : '', leaderName: who ? (who.name || '') : icpLine_(r.leaderName, 80),
+    focus: icpLine_(r.focus, 200), scripture: icpLine_(r.scripture, 120), worship: icpLine_(r.worship, 200),
+    mins: icpMins_(r.mins), items: (Array.isArray(r.items) ? r.items : []).map(function (x) { return icpLine_(x, 120); }).filter(Boolean).slice(0, 20),
+    notes: icpText_(r.notes, 1500),
+    held: held, came: came == null ? null : Math.round(came), hours: held ? icpHours_(r.hours) : null, testimonies: held === false ? [] : tes,
+    by: (old && old.by) || '', at: new Date().toISOString()
+  };
+}
+function fastEnd_(f) { return addDays_(f.start, f.days - 1); }   // the last day
+function fastDayNo_(f, today) { const a = dayNo_(f.start), b = dayNo_(today); return (a == null || b == null) ? 0 : b - a + 1; }
+function fastState_(f, today) { return today < f.start ? 'coming' : today > fastEnd_(f) ? 'ended' : 'running'; }
+/* the fast staff see: the one running, else the soonest one starting within FAST_SHOW_AHEAD days */
+function fastCurrent_(fasts, today) {
+  const run = fasts.filter(function (f) { return fastState_(f, today) === 'running'; }).sort(function (a, b) { return a.start < b.start ? 1 : -1; })[0];
+  if (run) return run;
+  return fasts.filter(function (f) { return f.start > today && (dayNo_(f.start) - dayNo_(today)) <= FAST_SHOW_AHEAD; })
+    .sort(function (a, b) { return a.start < b.start ? -1 : 1; })[0] || null;
+}
+function cleanFast_(rec, today, old) {
+  const r = rec && typeof rec === 'object' ? rec : {};
+  const title = icpLine_(r.title, 100); if (!title) return { err: 'no_title' };
+  const start = isoDate_(r.start); if (!start) return { err: 'bad_date' };
+  const a = dayNo_(start), b = dayNo_(today);
+  if (a < b - 60 || a > b + 400) return { err: 'bad_date' };
+  const days = finiteNum_(r.days, FAST_MIN_DAYS, FAST_MAX_DAYS); if (days == null || Math.round(days) !== days) return { err: 'bad_days' };
+  const plan = [];
+  for (let i = 0; i < days; i++) {
+    const p = (Array.isArray(r.plan) ? r.plan : [])[i] || {};
+    plan.push({ focus: icpLine_(p.focus, 120), ref: icpLine_(p.ref, 80), note: icpText_(p.note, 400) });
+  }
+  const gatherings = (Array.isArray(r.gatherings) ? r.gatherings : []).map(function (g) {
+    const day = finiteNum_(g && g.day, 1, days); if (day == null || Math.round(day) !== day) return null;
+    const time = /^([01]\d|2[0-3]):[0-5]\d$/.test(String(g.time || '')) ? g.time : '';
+    const date = addDays_(start, day - 1), held = date <= today && (g.held === true || g.held === false) ? g.held : null;
+    const id = str_(g.id, 40);
+    return { id: id && /^[a-z0-9]+$/i.test(id) ? id : toolId_('fg'), day: day, time: time, place: icpLine_(g.place, 80), leader: icpLine_(g.leader, 80),
+      held: held, hours: held ? icpHours_(g.hours) : null };
+  }).filter(Boolean).slice(0, FAST_GATHERINGS).sort(function (x, y) { return x.day - y.day || (x.time < y.time ? -1 : x.time > y.time ? 1 : 0); });
+  return { fast: { id: (old && old.id) || toolId_('fa'), title: title, start: start, days: days, theme: icpLine_(r.theme, 200), plan: plan, gatherings: gatherings,
+    by: (old && old.by) || '', at: new Date().toISOString() } };
+}
+/* The week a date is in, as week + its week year; and that week's numbers, worked out again from
+   every Wednesday and fast gathering held in it. */
+async function icpSyncDates_(campus, dates) {
+  const seen = {}, weeks = [];
+  dates.filter(Boolean).forEach(function (d) {
+    const wk = isoWeek_(d), yr = weekYear_(d); if (!wk || !yr) return;
+    const k = yr + '|' + wk; if (!seen[k]) { seen[k] = 1; weeks.push({ wk: wk, yr: yr }); }
+  });
+  if (!weeks.length) return;
+  const doc = await icpDoc_(campus), fd = await fastDoc_(campus), rows = await getEntries_();
+  for (const w of weeks) {
+    const inWeek = function (d) { return isoWeek_(d) === w.wk && weekYear_(d) === w.yr; };
+    let meetings = 0, hours = 0, tes = 0; const mins = {};
+    Object.keys(doc.weds).forEach(function (d) {
+      const x = doc.weds[d]; if (!x || x.held !== true || !inWeek(d)) return;
+      meetings++; hours += Number(x.hours) || 0; tes += (x.testimonies || []).length;
+      (x.mins || []).forEach(function (m) { mins[m] = 1; });
+      doc.needs.forEach(function (n) { if (n.wed === d && n.ministry && (n.status === 'prayed' || n.status === 'answered')) mins[n.ministry] = 1; });
+    });
+    fd.fasts.forEach(function (f) {
+      (f.gatherings || []).forEach(function (g) {
+        if (g.held !== true || !inWeek(addDays_(f.start, g.day - 1))) return;
+        meetings++; hours += Number(g.hours) || 0;
+      });
+    });
+    const any = meetings > 0, vals = {};
+    vals[ICP_METRICS.meetings] = any ? meetings : null;
+    vals[ICP_METRICS.hours] = any ? Math.round(hours * 100) / 100 : null;
+    vals[ICP_METRICS.mins] = any ? Object.keys(mins).length : null;
+    vals[ICP_METRICS.testimonies] = any ? tes : null;
+    /* a number someone typed for that week stays as it is — the tool only writes over its own rows */
+    Object.keys(vals).forEach(function (m) {
+      const had = rows.find(function (r) { return r.campus === campus && r.dept === ICP_DEPT && r.ministry === ICP_MIN && r.metric === m &&
+        String(r.week) === String(w.wk) && yearOf_(r) === w.yr; });
+      if (had && had.by !== ICP_TAG) delete vals[m];
+    });
+    await toolSync_(campus, ICP_DEPT, ICP_MIN, w.wk, vals, ICP_TAG, w.yr);
+  }
+}
+function icpNeedOut_(n, s, full) {
+  const o = { id: n.id, text: n.text, ministry: n.ministry || '', wed: n.wed, status: n.status, answer: n.answer || '', private: !!n.private, mine: n.byId === s.id, at: n.at };
+  if (full || n.byId === s.id) o.byName = n.byName || '';
+  return o;
+}
+function icpWedOut_(w, full) {
+  const o = { date: w.date, leaderId: w.leaderId || '', leaderName: w.leaderName || '', focus: w.focus || '', scripture: w.scripture || '', worship: w.worship || '',
+    mins: w.mins || [], items: w.items || [], held: w.held === true ? true : w.held === false ? false : null, testimonies: w.testimonies || [] };
+  if (full) { o.notes = w.notes || ''; o.came = w.came == null ? null : w.came; o.hours = w.hours == null ? null : w.hours; }
+  return o;
+}
+function fastCounts_(f, joins, today) {
+  const j = joins || {}, n = fastDayNo_(f, today), ids = Object.keys(j);
+  let ticks = 0, todayN = 0;
+  ids.forEach(function (id) { const t = (j[id] && j[id].ticks) || []; ticks += t.length; if (t.indexOf(n) > -1) todayN++; });
+  return { joined: ids.length, today: todayN, ticks: ticks };
+}
+function fastMine_(joins, s) { const m = joins && joins[s.id]; return m ? { kind: m.kind, ticks: (m.ticks || []).slice() } : null; }
+function fastOut_(f, today) {
+  return { id: f.id, title: f.title, start: f.start, days: f.days, end: fastEnd_(f), theme: f.theme || '', plan: f.plan || [], gatherings: f.gatherings || [],
+    state: fastState_(f, today), day: fastDayNo_(f, today) };
+}
+async function icpAnswer_(s) {
+  const today = baseToday_(), full = canIcp_(s);
+  const doc = await icpDoc_(s.campus), fd = await fastDoc_(s.campus), joins = await readJSON('fastJoin:' + s.campus, {});
+  const weds = Object.keys(doc.weds).sort().reverse().map(function (d) { return icpWedOut_(doc.weds[d], full); });
+  const needs = doc.needs.filter(function (n) { return full || n.byId === s.id || !n.private; })
+    .map(function (n) { return icpNeedOut_(n, s, full); }).sort(function (a, b) { return a.at < b.at ? 1 : -1; });
+  const cur = fastCurrent_(fd.fasts, today);
+  const fasts = (full ? fd.fasts : (cur ? [cur] : [])).slice().sort(function (a, b) { return a.start < b.start ? 1 : -1; }).map(function (f) {
+    const o = fastOut_(f, today);
+    o.mine = fastMine_(joins[f.id], s);
+    if (full) o.counts = fastCounts_(f, joins[f.id], today);   // counts, never who
+    return o;
+  });
+  const out = { ok: true, canEdit: full, campus: s.campus, today: today, nextWed: nextWednesday_(today), weds: weds, needs: needs, fasts: fasts, current: cur ? cur.id : '' };
+  if (full) {
+    const yr = today.slice(0, 4), wy = weds.filter(function (w) { return w.date.slice(0, 4) === yr; }), held = wy.filter(function (w) { return w.held === true; });
+    const came = held.filter(function (w) { return w.came != null; }), mins = {};
+    held.forEach(function (w) { w.mins.forEach(function (m) { mins[m] = 1; }); });
+    let ghours = 0, gheld = 0;
+    fd.fasts.forEach(function (f) { (f.gatherings || []).forEach(function (g) { if (g.held === true && addDays_(f.start, g.day - 1).slice(0, 4) === yr) { gheld++; ghours += Number(g.hours) || 0; } }); });
+    out.dash = { year: yr, wedsHeld: held.length, wedsPlanned: wy.length,
+      avgCame: came.length ? Math.round(came.reduce(function (a, w) { return a + w.came; }, 0) / came.length * 10) / 10 : null,
+      hours: Math.round((held.reduce(function (a, w) { return a + (Number(w.hours) || 0); }, 0) + ghours) * 100) / 100,
+      gatheringsHeld: gheld, ministries: Object.keys(mins).length,
+      testimonies: held.reduce(function (a, w) { return a + w.testimonies.length; }, 0),
+      needs: doc.needs.filter(function (n) { return String(n.at || '').slice(0, 4) === yr; }).length,
+      answered: doc.needs.filter(function (n) { return n.status === 'answered' && String(n.at || '').slice(0, 4) === yr; }).length };
+  }
+  return out;
+}
+async function icpStaff_(username, pin, edit) {
+  const s = await verifyStaff_(username, pin);
+  if (!s || s.active === false) return { err: { ok: false } };
+  if (!s.campus) return { err: { ok: false, err: 'no_campus' } };
+  if (edit && !canIcp_(s)) return { err: { ok: false, err: 'not_authorized' } };
+  return { s: s };
+}
+async function getIntercession(username, pin) {
+  const a = await icpStaff_(username, pin, false); if (a.err) return a.err;
+  return icpAnswer_(a.s);
+}
+/* one Wednesday: rec null takes it off */
+async function intercessionSaveWed(username, pin, date, rec) {
+  const a = await icpStaff_(username, pin, true); if (a.err) return a.err;
+  const s = a.s, d = isoDate_(date), today = baseToday_();
+  if (!d || !isWednesday_(d)) return { ok: false, err: 'not_wednesday' };
+  if (dayNo_(d) < dayNo_(today) - 400 || dayNo_(d) > dayNo_(today) + 180) return { ok: false, err: 'bad_date' };
+  const rows = await getStaff_();
+  const res = await mutateKey_('icp:' + s.campus, {}, function (doc) {
+    if (!doc.weds || typeof doc.weds !== 'object' || Array.isArray(doc.weds)) doc.weds = {};
+    if (!Array.isArray(doc.needs)) doc.needs = [];
+    if (rec === null) { delete doc.weds[d]; return { ok: true }; }
+    const w = icpCleanWed_(rec, d, rows, s.campus, today, doc.weds[d]);
+    if (!w.by) w.by = s.id;
+    doc.weds[d] = w;
+    Object.keys(doc.weds).sort().reverse().slice(ICP_WEDS_KEPT).forEach(function (k) { delete doc.weds[k]; });
+    return { ok: true };
+  });
+  if (!res || res.ok === false) return res || { ok: false, err: 'busy' };
+  await icpSyncDates_(s.campus, [d]);
+  return icpAnswer_(s);
+}
+/* anyone on the campus: a prayer need for a Wednesday (the next one unless they pick a later one) */
+async function intercessionNeedSend(username, pin, need) {
+  const a = await icpStaff_(username, pin, false); if (a.err) return a.err;
+  const s = a.s, n = need && typeof need === 'object' ? need : {}, today = baseToday_();
+  const text = icpText_(n.text, 500); if (!text) return { ok: false, err: 'empty' };
+  const ministry = n.ministry ? icpMins_([n.ministry])[0] || '' : '';
+  let wed = isoDate_(n.wed);
+  if (!wed || !isWednesday_(wed) || wed < today || dayNo_(wed) > dayNo_(today) + 60) wed = nextWednesday_(today);
+  const res = await mutateKey_('icp:' + s.campus, {}, function (doc) {
+    if (!doc.weds || typeof doc.weds !== 'object' || Array.isArray(doc.weds)) doc.weds = {};
+    if (!Array.isArray(doc.needs)) doc.needs = [];
+    if (doc.needs.filter(function (x) { return x.byId === s.id && String(x.at || '').slice(0, 10) === new Date().toISOString().slice(0, 10); }).length >= ICP_NEED_DAY) return { abort: true, ok: false, err: 'too_many' };
+    doc.needs.push({ id: toolId_('in'), text: text, ministry: ministry, wed: wed, private: !!n.private, byId: s.id, byName: s.name || '', status: 'open', answer: '', at: new Date().toISOString() });
+    if (doc.needs.length > ICP_NEEDS_MAX) {   // the oldest prayed-for or answered ones go first
+      const done = doc.needs.filter(function (x) { return x.status !== 'open'; }).sort(function (x, y) { return x.at < y.at ? -1 : 1; });
+      const drop = {}; done.slice(0, doc.needs.length - ICP_NEEDS_MAX).forEach(function (x) { drop[x.id] = 1; });
+      doc.needs = doc.needs.filter(function (x) { return !drop[x.id]; }).slice(-ICP_NEEDS_MAX);
+    }
+    return { ok: true };
+  });
+  if (!res || res.ok === false) return res || { ok: false, err: 'busy' };
+  return icpAnswer_(s);
+}
+async function intercessionNeedMark(username, pin, id, status, answer) {
+  const a = await icpStaff_(username, pin, true); if (a.err) return a.err;
+  const s = a.s;
+  if (['open', 'prayed', 'answered'].indexOf(status) === -1) return { ok: false, err: 'bad_status' };
+  let wed = '';
+  const res = await mutateKey_('icp:' + s.campus, {}, function (doc) {
+    const n = (Array.isArray(doc.needs) ? doc.needs : []).find(function (x) { return x.id === id; });
+    if (!n) return { abort: true, ok: false, err: 'not_found' };
+    n.status = status; n.answer = status === 'answered' ? icpText_(answer, 300) : ''; n.doneAt = status === 'open' ? '' : new Date().toISOString(); n.doneBy = status === 'open' ? '' : s.id;
+    wed = n.wed; return { ok: true };
+  });
+  if (!res || res.ok === false) return res || { ok: false, err: 'busy' };
+  await icpSyncDates_(s.campus, [wed]);
+  return icpAnswer_(s);
+}
+async function intercessionNeedDelete(username, pin, id) {
+  const a = await icpStaff_(username, pin, false); if (a.err) return a.err;
+  const s = a.s, full = canIcp_(s);
+  let wed = '';
+  const res = await mutateKey_('icp:' + s.campus, {}, function (doc) {
+    const list = Array.isArray(doc.needs) ? doc.needs : [], n = list.find(function (x) { return x.id === id; });
+    if (!n) return { abort: true, ok: false, err: 'not_found' };
+    if (!full && n.byId !== s.id) return { abort: true, ok: false, err: 'not_authorized' };
+    wed = n.wed; doc.needs = list.filter(function (x) { return x.id !== id; }); return { ok: true };
+  });
+  if (!res || res.ok === false) return res || { ok: false, err: 'busy' };
+  await icpSyncDates_(s.campus, [wed]);
+  return icpAnswer_(s);
+}
+function fastDates_(f) { return f ? (f.gatherings || []).map(function (g) { return addDays_(f.start, g.day - 1); }) : []; }
+async function fastSave(username, pin, rec) {
+  const a = await icpStaff_(username, pin, true); if (a.err) return a.err;
+  const s = a.s, today = baseToday_(), id = rec && str_(rec.id, 40);
+  let before = null, after = null;
+  const res = await mutateKey_('fast:' + s.campus, {}, function (doc) {
+    if (!Array.isArray(doc.fasts)) doc.fasts = [];
+    const i = id ? doc.fasts.findIndex(function (f) { return f.id === id; }) : -1;
+    if (id && i === -1) return { abort: true, ok: false, err: 'not_found' };
+    const c = cleanFast_(rec, today, i > -1 ? doc.fasts[i] : null);
+    if (c.err) return { abort: true, ok: false, err: c.err };
+    if (!c.fast.by) c.fast.by = s.id;
+    before = i > -1 ? doc.fasts[i] : null; after = c.fast;
+    if (i > -1) doc.fasts[i] = c.fast; else doc.fasts.push(c.fast);
+    doc.fasts = doc.fasts.sort(function (x, y) { return x.start < y.start ? 1 : -1; }).slice(0, FAST_KEEP);
+    return { ok: true };
+  });
+  if (!res || res.ok === false) return res || { ok: false, err: 'busy' };
+  await icpSyncDates_(s.campus, fastDates_(before).concat(fastDates_(after)));
+  return Object.assign(await icpAnswer_(s), { saved: after.id });
+}
+async function fastDelete(username, pin, id) {
+  const a = await icpStaff_(username, pin, true); if (a.err) return a.err;
+  const s = a.s; let gone = null;
+  const res = await mutateKey_('fast:' + s.campus, {}, function (doc) {
+    const list = Array.isArray(doc.fasts) ? doc.fasts : [];
+    gone = list.find(function (f) { return f.id === id; });
+    if (!gone) return { abort: true, ok: false, err: 'not_found' };
+    doc.fasts = list.filter(function (f) { return f.id !== id; }); return { ok: true };
+  });
+  if (!res || res.ok === false) return res || { ok: false, err: 'busy' };
+  await mutateKey_('fastJoin:' + s.campus, {}, function (j) { delete j[id]; return { ok: true }; });
+  await icpSyncDates_(s.campus, fastDates_(gone));
+  return icpAnswer_(s);
+}
+/* joining is each person's own: the kind of fast they chose, and the days they ticked */
+async function fastJoin(username, pin, fastId, kind) {
+  const a = await icpStaff_(username, pin, false); if (a.err) return a.err;
+  const s = a.s, today = baseToday_();
+  const f = (await fastDoc_(s.campus)).fasts.find(function (x) { return x.id === fastId; });
+  if (!f) return { ok: false, err: 'not_found' };
+  if (kind && FAST_KINDS.indexOf(kind) === -1) return { ok: false, err: 'bad_kind' };
+  if (kind && fastState_(f, today) === 'ended') return { ok: false, err: 'ended' };
+  const res = await mutateKey_('fastJoin:' + s.campus, {}, function (j) {
+    if (!j[fastId] || typeof j[fastId] !== 'object') j[fastId] = {};
+    if (!kind) delete j[fastId][s.id];
+    else j[fastId][s.id] = { kind: kind, ticks: ((j[fastId][s.id] || {}).ticks || []).slice(), at: new Date().toISOString() };
+    return { ok: true };
+  });
+  if (!res || res.ok === false) return res || { ok: false, err: 'busy' };
+  return icpAnswer_(s);
+}
+async function fastTick(username, pin, fastId, day, done) {
+  const a = await icpStaff_(username, pin, false); if (a.err) return a.err;
+  const s = a.s, today = baseToday_();
+  const f = (await fastDoc_(s.campus)).fasts.find(function (x) { return x.id === fastId; });
+  if (!f) return { ok: false, err: 'not_found' };
+  const n = finiteNum_(day, 1, f.days);
+  if (n == null || Math.round(n) !== n || n > fastDayNo_(f, today)) return { ok: false, err: 'bad_day' };
+  const res = await mutateKey_('fastJoin:' + s.campus, {}, function (j) {
+    const m = j[fastId] && j[fastId][s.id];
+    if (!m) return { abort: true, ok: false, err: 'not_joined' };
+    const t = (m.ticks || []).filter(function (x) { return x !== n; });
+    if (done) t.push(n);
+    m.ticks = t.sort(function (x, y) { return x - y; }); return { ok: true };
+  });
+  if (!res || res.ok === false) return res || { ok: false, err: 'busy' };
+  return icpAnswer_(s);
+}
+/* For My Home's bell and ☰: the campus's fast, if one is running or coming soon, with my own part —
+   a tiny summary in the boot instead of a call on every open. */
+async function fastGlance_(s) {
+  if (!s || !s.campus) return null;
+  const today = baseToday_(), f = fastCurrent_((await fastDoc_(s.campus)).fasts, today);
+  if (!f) return null;
+  const n = fastDayNo_(f, today), p = (f.plan || [])[Math.max(0, Math.min(f.days, n) - 1)] || {};
+  const joins = await readJSON('fastJoin:' + s.campus, {});
+  return { id: f.id, title: f.title, theme: f.theme || '', start: f.start, days: f.days, state: fastState_(f, today), day: n, today: today,
+    focus: p.focus || '', ref: p.ref || '', gatherToday: (f.gatherings || []).filter(function (g) { return g.day === n; }).map(function (g) { return { time: g.time, place: g.place }; }),
+    mine: fastMine_(joins[f.id], s) };
+}
+
 /* ---------- Google Calendar (Oct 2026, Uriah: "our Google Calendar for birthdays, events, teams
    coming, guests, volunteers, speakers — integrate it into the app") ----------
    Read-only. An admin pastes each calendar's "Secret address in iCal format" once (Google
@@ -15138,7 +15837,7 @@ const HANDLERS = {
   adminDecideTrip: function (a) { return adminDecideTrip(a[0], a[1], a[2], a[3]); },
   adminSaveHolidays: function (a) { return adminSaveHolidays(a[0], a[1], a[2]); },
   saveStructure: function (a) { return saveStructure(a[0], a[1], a[2], a[3], a[4]); },
-  saveStructurePlan: function (a) { return saveStructurePlan(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8]); },
+  saveStructurePlan: function (a) { return saveStructurePlan(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]); },
   hrCandidates: function (a) { return hrCandidates(a[0], a[1]); },
   hrSaveCandidate: function (a) { return hrSaveCandidate(a[0], a[1], a[2]); },
   hrCandidateNote: function (a) { return hrCandidateNote(a[0], a[1], a[2], a[3]); },
@@ -15276,6 +15975,12 @@ const HANDLERS = {
   leadPartnerDelete: function (a) { return leadPartnerDelete(a[0], a[1], a[2], a[3]); },
   basePlantSave: function (a) { return basePlantSave(a[0], a[1], a[2], a[3]); },
   cafeGet: function (a) { return cafeGet(a[0], a[1], a[2]); },
+  schoolBoard: function (a) { return schoolBoard(a[0], a[1], a[2]); },
+  schoolSave: function (a) { return schoolSave(a[0], a[1], a[2], a[3], a[4]); },
+  schoolDelete: function (a) { return schoolDelete(a[0], a[1], a[2], a[3], a[4]); },
+  schoolRoll: function (a) { return schoolRoll(a[0], a[1], a[2], a[3], a[4], a[5]); },
+  schoolPhoto: function (a) { return schoolPhoto(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]); },
+  schoolPhotoGet: function (a) { return schoolPhotoGet(a[0], a[1], a[2], a[3]); },
   cafeOpen: function (a) { return cafeOpen(a[0], a[1], a[2], a[3]); },
   cafeClose: function (a) { return cafeClose(a[0], a[1], a[2], a[3], a[4]); },
   cafeReopen: function (a) { return cafeReopen(a[0], a[1], a[2]); },
@@ -15284,6 +15989,15 @@ const HANDLERS = {
   cafeCount: function (a) { return cafeCount(a[0], a[1], a[2], a[3], a[4]); },
   cafeExpense: function (a) { return cafeExpense(a[0], a[1], a[2], a[3], a[4], a[5]); },
   cafeSaveSettings: function (a) { return cafeSaveSettings(a[0], a[1], a[2], a[3]); },
+  getIntercession: function (a) { return getIntercession(a[0], a[1]); },
+  intercessionSaveWed: function (a) { return intercessionSaveWed(a[0], a[1], a[2], a[3]); },
+  intercessionNeedSend: function (a) { return intercessionNeedSend(a[0], a[1], a[2]); },
+  intercessionNeedMark: function (a) { return intercessionNeedMark(a[0], a[1], a[2], a[3], a[4]); },
+  intercessionNeedDelete: function (a) { return intercessionNeedDelete(a[0], a[1], a[2]); },
+  fastSave: function (a) { return fastSave(a[0], a[1], a[2]); },
+  fastDelete: function (a) { return fastDelete(a[0], a[1], a[2]); },
+  fastJoin: function (a) { return fastJoin(a[0], a[1], a[2], a[3]); },
+  fastTick: function (a) { return fastTick(a[0], a[1], a[2], a[3], a[4]); },
   qboConnect: function (a) { return qboConnect(a[0], a[1], a[2]); },
   qboSyncNow: function (a) { return qboSyncNow(a[0], a[1], a[2]); },
   qboSetFilter: function (a) { return qboSetFilter(a[0], a[1], a[2], a[3], a[4]); },

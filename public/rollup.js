@@ -1134,6 +1134,8 @@ function gpPullToRefresh(onRefresh, opts){
   document.addEventListener('touchstart', function(e){
     if(busy || e.touches.length !== 1 || window.scrollY > 0) return;
     if(document.getElementById('ddOverlay')) return;     // the drill sheet is open
+    // A board that moves under the finger (the structure whiteboard) is never a pull to refresh.
+    if(e.target && e.target.closest && e.target.closest('[data-noptr]')) return;
     // Don't hijack the gesture while someone is typing or picking something.
     var a = document.activeElement;
     if(a && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) return;
