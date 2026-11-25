@@ -1170,6 +1170,9 @@ before changing a rule, and change it in the same commit.**
   card, own reports), leadership's old dashboard (incl. the money ahead and the DTS lecture-fees card) and The
   numbers. getFinance / QuickBooks' nightly sync still run. tests/test-finance-ui.mjs and test-qbo-ui.mjs were
   retired with the screens; test-finance.mjs / test-qbo.mjs (server) stay.
+- **🏛 Ministries** (Nov 2026, in the demo only — hidden in Impact by `body.app`): one allocation's own report — a time
+  filter, a picker (ministries first), its balance and its profit and loss against the period before, all the Detailed
+  breakdown added up (`minsHtml_`, `mnPeriod_`, `mnPL_`); see finance-how-it-works.md §2.
 - **Khmer**: the tab label is in PENDING_KM (§136); the finance tool's own text is English only so far.
 - Tests: tests/test-fin2.mjs (server), tests/test-fin2-page.mjs (the page, real api.js).
 

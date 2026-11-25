@@ -31,7 +31,7 @@ body{ font-family:'Kantumruy Pro','Hanken Grotesk',system-ui,sans-serif; font-si
 button{ font:inherit; color:inherit; }
 /* in Impact (window.GP_FIN_APP, public/finance.html — built from this file): no draft bar, no header of its
    own; inside My Ministry (?embed=1) no tab row either (the app shows Dashboard · Input · Tasks · OKRs) */
-body.app .draftBar, body.app header.app, body.app .mmHead, body.app .tab[data-tab="tasks"], body.app .tab[data-tab="okrs"]{ display:none; }
+body.app .draftBar, body.app header.app, body.app .mmHead, body.app .tab[data-tab="tasks"], body.app .tab[data-tab="okrs"], body.app .tab[data-tab="mins"]{ display:none; }   /* Ministries: in the demo only for now (25 Nov 2026) */
 body.embed nav.tabs{ display:none; }
 /* inside My Ministry the frame is as tall as the page, so the app scrolls the two as one. The app says
    which part of the frame is on screen (--vt: its top, --vh: its height), and what floated over the
@@ -476,6 +476,55 @@ button.tick.done{ background:var(--good); }
 .ledChip span{ color:var(--muted); font-size:12px; }
 .ledChip.on{ background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
 .ledChip.on span{ color:inherit; opacity:.8; }
+/* Ministries: each allocation's own report */
+.mnPers{ display:flex; flex-wrap:wrap; gap:6px; }
+.mnPers button{ border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:6px 12px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+.mnPers button.on{ background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
+.mnCustom{ display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+.mnCustom label{ font-size:13px; color:var(--muted); font-weight:600; display:flex; align-items:center; gap:6px; }
+.mnCustom input{ font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); min-width:0; }
+.mnRange{ font-size:13px; color:var(--muted); margin:10px 0; }
+.mnPickBtn{ width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 14px; cursor:pointer; text-align:left; color:var(--ink); font:inherit; }
+.mnPickBtn small{ display:block; font-size:11.5px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
+.mnPickBtn b{ font-size:17px; }
+.mnPickBtn.on .chev{ transform:rotate(180deg); }
+.mnGrp{ margin-top:10px; }
+.mnGrpHead{ display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13.5px; }
+.mnGrpHead b{ flex:1; }
+.mnOtherHead{ margin-top:14px; padding-top:10px; border-top:1px solid var(--line); font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; }
+.mnShare{ margin-top:12px; grid-template-columns:repeat(2,minmax(0,1fr)); }
+.mnIn{ color:var(--good); }
+.mnOut{ color:var(--bad); }
+.mnVs{ font-size:12px; font-weight:600; color:var(--muted); margin-top:4px; }
+.mnVs span{ display:block; font-weight:400; }
+.mnVs.up{ color:var(--good); }
+.mnVs.down{ color:var(--bad); }
+.mnNet{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; margin:10px 0 4px; padding:12px 14px; border-radius:14px; background:var(--surface2); }
+.mnNet > span{ flex:1; font-weight:600; }
+.mnNet > b{ font-size:22px; font-variant-numeric:tabular-nums; }
+.mnNet.neg > b{ color:var(--bad); }
+.mnNet .mnVs{ flex-basis:100%; margin:0; }
+.mnTwo{ display:grid; grid-template-columns:minmax(0,1fr); gap:0 20px; }
+@media (min-width:640px){ .mnTwo{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.mnKinds{ list-style:none; margin:0; padding:0; }
+.mnKinds li{ padding:6px 0; border-bottom:1px dashed var(--line); }
+.mnKRow{ display:flex; justify-content:space-between; gap:10px; font-size:13.5px; }
+.mnKRow span{ min-width:0; overflow-wrap:anywhere; }
+.mnKRow b{ white-space:nowrap; font-variant-numeric:tabular-nums; }
+.mnKBar{ height:5px; border-radius:999px; background:var(--surface2); margin-top:4px; overflow:hidden; }
+.mnKBar span{ display:block; height:100%; border-radius:999px; }
+.mnKBar .in{ background:var(--good); }
+.mnKBar .out{ background:var(--bad); }
+.mnOther{ font-size:12.5px; color:var(--muted); margin:12px 0 4px; }
+.mnLines{ list-style:none; margin:6px 0 0; padding:0; }
+.mnLines li{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:9px 0; border-bottom:1px solid var(--line); font-size:13.5px; }
+.mnLines li div{ min-width:0; }
+.mnLines li span{ display:block; font-size:12px; color:var(--muted); overflow-wrap:anywhere; }
+.mnLines li > b{ white-space:nowrap; font-variant-numeric:tabular-nums; }
+.mnEach{ width:100%; border-collapse:collapse; font-size:13.5px; }
+.mnEach th{ text-align:left; font-size:12px; color:var(--muted); font-weight:600; padding:6px 0; border-bottom:1px solid var(--line); }
+.mnEach td{ padding:8px 0; border-bottom:1px dashed var(--line); }
+.mnEach .r{ text-align:right; padding-left:10px; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .ledActive{ margin-top:8px; font-size:13px; color:var(--muted); }
 .ledActive b{ color:var(--ink); font-weight:600; }
 .ledTbl{ width:100%; min-width:1040px; border-collapse:collapse; font-size:13.5px; }
@@ -578,6 +627,7 @@ body.sheetOn .sheet{ transform:none; visibility:visible; transition:transform .2
   <nav class="tabs" role="tablist">
     <button class="tab on" data-tab="dash" role="tab">Dashboard</button>
     <button class="tab" data-tab="input" role="tab">Input</button>
+    <button class="tab" data-tab="mins" role="tab">Ministries</button>
     <button class="tab" data-tab="tasks" role="tab">Tasks</button>
     <button class="tab" data-tab="okrs" role="tab">OKRs</button>
   </nav>
@@ -2344,6 +2394,113 @@ function nextHtml(){
   return '<section class="sec"><p class="hint" style="margin:0">Next on the dashboard: the other reports (Profit and Loss, Burn Rate…) — each a short summary here, with its details a tap away.</p></section>';
 }
 function soon(icon, title, line){ return '<div class="soon"><div class="big">'+icon+'</div><h3>'+title+'</h3><div>'+line+'</div></div>'; }
+/* ---- Ministries: each ministry's (or any allocation's) own report — 25 Nov 2026 ----
+   Everything here is the 📒 Detailed breakdown added up for the categories picked (a line's
+   `cat` is fundLabel_ of its sub-category): the balance is every Category amount up to the day
+   (ledgerCats_), the profit and loss is the Income and Expense lines in the period. Allocations,
+   internal transfers and Financial tools move the balance but are not income or expenses, so
+   they are shown apart. All lines count — this is Live, not only what is approved. */
+var MN_PERIODS=[['week','This week'],['month','This month'],['lastweek','Last week'],['lastmonth','Last month'],['ytd','Year to date'],['all','All time'],['custom','Custom']];
+function mnS_(){ return S.mn||(S.mn={ per:'month', sel:null, pick:false, list:false }); }
+function mnD_(s){ return new Date(s+'T00:00:00'); }
+function mnS2_(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function mnAdd_(s, n){ var d=mnD_(s); d.setDate(d.getDate()+n); return mnS2_(d); }
+function mnMonday_(s){ var d=mnD_(s), w=(d.getDay()+6)%7; d.setDate(d.getDate()-w); return mnS2_(d); }
+function mnMonthStart_(s, back){ var d=mnD_(s); d.setDate(1); d.setMonth(d.getMonth()-(back||0)); return mnS2_(d); }
+function mnMonthEnd_(s){ var d=mnD_(s); d.setMonth(d.getMonth()+1, 0); return mnS2_(d); }
+function mnDays_(a, b){ return Math.round((mnD_(b)-mnD_(a))/864e5)+1; }
+/* the same day in the month before (the 31st becomes the month's last day) */
+function mnSameDayBack_(s, months){ var d=mnD_(s), day=d.getDate(); d.setDate(1); d.setMonth(d.getMonth()-months); var last=new Date(d.getFullYear(), d.getMonth()+1, 0).getDate(); d.setDate(Math.min(day, last)); return mnS2_(d); }
+function mnMonthName_(s){ return mnD_(s).toLocaleDateString('en-GB',{ month:'long', year:'numeric' }); }
+/* the period picked, and the one it is compared with */
+function mnPeriod_(){ var M=mnS_(), t=TODAY, from, to, pf=null, pt=null, vs='';
+  if(M.per==='week'){ from=mnMonday_(t); to=t; pf=mnAdd_(from,-7); pt=mnAdd_(to,-7); vs='the same days last week'; }
+  else if(M.per==='lastweek'){ to=mnAdd_(mnMonday_(t),-1); from=mnAdd_(to,-6); pf=mnAdd_(from,-7); pt=mnAdd_(to,-7); vs='the week before'; }
+  else if(M.per==='month'){ from=mnMonthStart_(t); to=t; pf=mnMonthStart_(t,1); pt=mnSameDayBack_(t,1); vs='the same days last month'; }
+  else if(M.per==='lastmonth'){ from=mnMonthStart_(t,1); to=mnMonthEnd_(from); pf=mnMonthStart_(t,2); pt=mnMonthEnd_(pf); vs=mnMonthName_(pf); }
+  else if(M.per==='ytd'){ from=t.slice(0,4)+'-01-01'; to=t; pf=(+t.slice(0,4)-1)+'-01-01'; pt=mnSameDayBack_(t,12); vs='the same days last year'; }
+  else if(M.per==='custom'){ from=M.from||mnMonthStart_(t); to=M.to||t; if(to<from){ var x=from; from=to; to=x; } var n=mnDays_(from,to); pt=mnAdd_(from,-1); pf=mnAdd_(pt,-(n-1)); vs='the '+n+' day'+(n>1?'s':'')+' before'; }
+  else { from=''; to=t; }
+  return { from:from, to:to, pf:pf, pt:pt, vs:vs }; }
+function mnRange_(P){ return P.from ? (P.from===P.to ? date(P.from) : date(P.from)+' – '+date(P.to)) : 'Everything up to '+date(P.to); }
+/* which sub-categories are picked: ministries first; to start, the first ministry */
+function mnGroups_(){ var g=ALLOC.slice(), i=g.map(function(a){ return a.id; }).indexOf('min'); if(i>0){ var m=g.splice(i,1)[0]; g.unshift(m); } return g; }
+function mnSel_(){ var M=mnS_(), keys=fundList_().map(function(f){ return f.k; });
+  var sel=(M.sel||[]).filter(function(k){ return keys.indexOf(k)>=0; });
+  if(!sel.length){ var g=mnGroups_()[0]; sel=g && g.items.length ? [g.id+'|'+g.items[0][0]] : keys.slice(0,1); }
+  return sel; }
+function mnName_(k){ var f=fundOf_(k); return f ? f.name : fundNm_(k); }
+function mnSelName_(sel){ if(sel.length===1) return mnName_(sel[0]);
+  var whole=ALLOC.filter(function(g){ return g.items.length>1 && g.items.every(function(it){ return sel.indexOf(g.id+'|'+it[0])>=0; }) && sel.length===g.items.length; })[0];
+  return whole ? 'All of '+whole.name : sel.length+' allocations'; }
+/* income and expenses of some categories between two days, from the breakdown */
+function mnPL_(L, labs, from, to){ var inc=0, exp=0, byInc={}, byExp={}, other=0, byOther={}, lines=[];
+  L.forEach(function(x){ if(x.camt==null || labs.indexOf(x.cat)<0) return; if((from && x.date<from) || x.date>to) return;
+    var kind=(x.src && x.src.type) || x.type;
+    if(x.type==='Income'){ inc+=x.camt; byInc[kind]=(byInc[kind]||0)+x.camt; lines.push(x); }
+    else if(x.type==='Expense'){ exp-=x.camt; byExp[kind]=(byExp[kind]||0)-x.camt; lines.push(x); }
+    else { other+=x.camt; byOther[x.type]=(byOther[x.type]||0)+x.camt; } });
+  var r=function(v){ return Math.round(v*100)/100; };
+  return { inc:r(inc), exp:r(exp), net:r(inc-exp), byInc:byInc, byExp:byExp, other:r(other), byOther:byOther, lines:lines }; }
+function mnBal_(L, labs, day){ var by={}; L.forEach(function(x){ if(x.camt==null || x.date>day) return; by[x.cat]=(by[x.cat]||0)+x.camt; });
+  return Math.round(labs.reduce(function(s2,l){ return s2+(by[l]||0); },0)*100)/100; }
+function mnSg_(v){ return (v<0?'−':'')+money(Math.abs(v),true); }
+/* "▲ $120 more than the same days last month" — good is green: more income, less spending */
+function mnVs_(now, before, P, upGood){ if(!P.pf) return '';
+  var d=Math.round((now-before)*100)/100, cls=Math.abs(d)<0.005?'':((d>0)===upGood?'up':'down');
+  var pct=Math.abs(before)>0.005 ? ' ('+(d>0?'+':'−')+Math.round(Math.abs(d)/Math.abs(before)*100)+'%)' : '';
+  return '<div class="mnVs '+cls+'">'+(Math.abs(d)<0.005 ? 'Same as '+esc(P.vs) : (d>0?'▲ ':'▼ ')+money(Math.abs(d),true)+pct+' vs '+esc(P.vs))+'<span>'+money(before,true)+' then</span></div>'; }
+function mnKinds_(by, total, cls){ var ks=Object.keys(by).filter(function(k){ return Math.abs(by[k])>0.004; }).sort(function(a,b){ return by[b]-by[a]; });
+  if(!ks.length) return '<p class="hint">None in this period.</p>';
+  return '<ul class="mnKinds">'+ks.map(function(k){ var p=total>0?Math.max(2,Math.round(by[k]/total*100)):0;
+    return '<li><div class="mnKRow"><span>'+esc(k)+'</span><b>'+money(by[k],true)+'</b></div><div class="mnKBar"><span class="'+cls+'" style="width:'+p+'%"></span></div></li>'; }).join('')+'</ul>'; }
+function mnPickerHtml_(sel){ var M=mnS_();
+  var h='<div class="mnPick"><button class="mnPickBtn'+(M.pick?' on':'')+'" id="mnPickBtn" aria-expanded="'+!!M.pick+'"><span><small>Showing</small><b>'+esc(mnSelName_(sel))+'</b></span><span class="chev">▾</span></button>';
+  if(!M.pick) return h+'</div>';
+  h+='<div class="ledPanel mnPanel" id="mnPanel"><div class="ledPanelHead"><b>Which allocations?</b><button class="btn" id="mnPickDone">Done</button></div>';
+  mnGroups_().forEach(function(g, gi){ var ks=g.items.map(function(it){ return g.id+'|'+it[0]; }), all=ks.every(function(k){ return sel.indexOf(k)>=0; });
+    if(gi===1) h+='<div class="mnOtherHead">Other allocations</div>';
+    h+='<div class="mnGrp"><div class="mnGrpHead"><span class="sw" style="background:var('+g.c+')"></span><b>'+esc(g.name)+'</b>'+(ks.length>1?'<button class="histLink" data-mngrp="'+g.id+'">'+(all?'Only one':'All '+ks.length)+'</button>':'')+'</div><div class="ledChips">'+
+      ks.map(function(k){ return '<button class="ledChip'+(sel.indexOf(k)>=0?' on':'')+'" data-mnk="'+esc(k)+'">'+esc(mnName_(k))+'</button>'; }).join('')+'</div></div>'; });
+  return h+'<p class="hint" style="margin:8px 0 0">Tap to add one or take it away — everything picked is added together. “All” picks a whole category.</p></div></div>'; }
+function minsHtml_(){ var M=mnS_(), P=mnPeriod_(), sel=mnSel_(), labs=sel.map(fundLabel_), L=ledgerLines_();
+  var h='<section class="sec mnTop"><div class="mnPers" role="tablist">'+MN_PERIODS.map(function(p){ return '<button class="'+(M.per===p[0]?'on':'')+'" data-mnper="'+p[0]+'">'+p[1]+'</button>'; }).join('')+'</div>';
+  if(M.per==='custom') h+='<div class="mnCustom"><label>From <input type="date" id="mnFrom" value="'+P.from+'" max="'+TODAY+'"></label><label>To <input type="date" id="mnTo" value="'+P.to+'" max="'+TODAY+'"></label></div>';
+  h+='<p class="mnRange">📅 '+mnRange_(P)+'</p>'+mnPickerHtml_(sel)+'</section>';
+  /* the balance: what of the total liquid assets is theirs, on the period's last day */
+  var bal=mnBal_(L, labs, P.to), liq=ledgerLiquid_(L, P.to).total, before=P.from ? mnBal_(L, labs, mnAdd_(P.from,-1)) : 0, moved=Math.round((bal-before)*100)/100;
+  var whole=Math.floor(Math.abs(bal)), cents=Math.round((Math.abs(bal)-whole)*100);
+  h+='<section class="sec" id="mnBal"><div class="secHead"><h2>💰 Balance</h2></div><p class="hint">How much of the total liquid assets '+(sel.length>1?'these have':'it has')+' been allocated, on '+date(P.to)+' — from the Detailed breakdown.</p>'+
+    '<div class="liquid est"><div class="lbl">'+esc(mnSelName_(sel))+'</div><div class="num">'+(bal<0?'−':'')+money(whole)+'<span class="c">.'+String(cents).padStart(2,'0')+'</span></div>'+
+    '<div class="delta"'+(moved<0?' style="color:#FF9B8F"':'')+'>'+(P.from ? (Math.abs(moved)<0.005?'No change':(moved>0?'▲ ':'▼ ')+money(Math.abs(moved),true))+' since '+date(P.from) : (liq>0.005 ? Math.round(bal/liq*1000)/10+'% of the total liquid assets' : 'No liquid assets entered yet'))+'</div></div>'+
+    '<div class="accts mnShare"><div class="acct"><div class="an">Total liquid assets</div><div class="av">'+money(liq)+'</div></div><div class="acct"><div class="an">Share</div><div class="av">'+(liq>0.005?Math.round(bal/liq*1000)/10+'%':'—')+'</div></div></div></section>';
+  /* the profit and loss for the period, against the period before */
+  var pl=mnPL_(L, labs, P.from, P.to), pp=P.pf ? mnPL_(L, labs, P.pf, P.pt) : null;
+  h+='<section class="sec" id="mnPL"><div class="secHead"><h2>📈 Profit and loss</h2></div><p class="hint">'+mnRange_(P)+(pp?' · compared with '+esc(P.vs)+' ('+date(P.pf)+(P.pf!==P.pt?' – '+date(P.pt):'')+')':'')+'.</p>'+
+    '<div class="dTiles mnTiles"><div class="dTile"><div class="dl">💵 Income</div><div class="dv mnIn">'+money(pl.inc,true)+'</div>'+(pp?mnVs_(pl.inc, pp.inc, P, true):'')+'</div>'+
+    '<div class="dTile"><div class="dl">🧾 Expenses</div><div class="dv mnOut">'+money(pl.exp,true)+'</div>'+(pp?mnVs_(pl.exp, pp.exp, P, false):'')+'</div></div>'+
+    '<div class="mnNet '+(pl.net<0?'neg':'')+'"><span>'+(pl.net<0?'Spent more than came in':'Net')+'</span><b>'+mnSg_(pl.net)+'</b>'+(pp?mnVs_(pl.net, pp.net, P, true):'')+'</div>';
+  h+='<div class="mnTwo"><div><div class="dListHead">Where the income came from</div>'+mnKinds_(pl.byInc, pl.inc, 'in')+'</div><div><div class="dListHead">Where the money went</div>'+mnKinds_(pl.byExp, pl.exp, 'out')+'</div></div>';
+  if(Math.abs(pl.other)>0.004 || Object.keys(pl.byOther).length) h+='<p class="mnOther">🔁 Allocations, transfers and adjustments also moved it '+mnSg_(pl.other)+' — '+Object.keys(pl.byOther).map(function(k){ return esc(k.replace(' (Financial tools)',''))+' '+mnSg_(pl.byOther[k]); }).join(' · ')+'. These change the balance but aren’t income or expenses.</p>';
+  if(pl.lines.length){ h+='<button class="flowDrop'+(M.list?' on':'')+'" id="mnList" aria-expanded="'+!!M.list+'"><span>'+(M.list?'Hide':'Show')+' the '+pl.lines.length+' transaction'+(pl.lines.length>1?'s':'')+'</span><span class="chev">▾</span></button>';
+    if(M.list) h+='<ul class="mnLines">'+pl.lines.map(function(x){ var memo=(x.src&&x.src.memo)||''; return '<li><div><b>'+esc(x.name||(x.src&&x.src.type)||x.type)+'</b><span>'+date(x.date)+' · '+esc((x.src&&x.src.type)||x.type)+(sel.length>1?' · '+esc(mnName_(sel[labs.indexOf(x.cat)])):'')+(memo?' · '+esc(memo):'')+(x.appr?' · ✅':'')+'</span></div><b class="'+(x.camt<0?'mnOut':'mnIn')+'">'+mnSg_(x.camt)+'</b></li>'; }).join('')+'</ul>'; }
+  else h+='<p class="hint" style="margin-top:6px">No income or expenses for '+esc(mnSelName_(sel))+' in this period.</p>';
+  h+='</section>';
+  /* several picked: each one side by side */
+  if(sel.length>1) h+='<section class="sec" id="mnEach"><div class="secHead"><h2>Each one</h2></div><table class="mnEach"><tr><th>Allocation</th><th class="r">Balance</th><th class="r">Income</th><th class="r">Expenses</th></tr>'+
+    sel.map(function(k, i){ var p1=mnPL_(L, [labs[i]], P.from, P.to); return '<tr><td>'+esc(mnName_(k))+'</td><td class="r">'+mnSg_(mnBal_(L, [labs[i]], P.to))+'</td><td class="r">'+money(p1.inc,true)+'</td><td class="r">'+money(p1.exp,true)+'</td></tr>'; }).join('')+'</table></section>';
+  return h+'<section class="sec"><p class="hint" style="margin:0">📡 Everything entered counts here, approved or not — the same lines as the Detailed breakdown on the Input tab.</p></section>'; }
+document.addEventListener('click', function(e){ var M=mnS_(), t=e.target.closest && e.target.closest('[data-mnper],[data-mnk],[data-mngrp],#mnPickBtn,#mnPickDone,#mnList'); if(!t) return;
+  if(t.dataset.mnper){ M.per=t.dataset.mnper; if(M.per==='custom' && !M.from){ M.from=mnMonthStart_(TODAY); M.to=TODAY; } }
+  else if(t.id==='mnPickBtn') M.pick=!M.pick;
+  else if(t.id==='mnPickDone') M.pick=false;
+  else if(t.id==='mnList') M.list=!M.list;
+  else if(t.dataset.mnk){ var k=t.dataset.mnk, sel=mnSel_().slice(), i=sel.indexOf(k); if(i>=0){ if(sel.length>1) sel.splice(i,1); } else sel.push(k); M.sel=sel; }
+  else if(t.dataset.mngrp){ var g=ALLOC.filter(function(a){ return a.id===t.dataset.mngrp; })[0], ks=g.items.map(function(it){ return g.id+'|'+it[0]; }), cur=mnSel_();
+    M.sel = ks.every(function(k){ return cur.indexOf(k)>=0; }) && cur.length===ks.length ? [ks[0]] : ks; }
+  render(); });
+document.addEventListener('change', function(e){ if(e.target.id!=='mnFrom' && e.target.id!=='mnTo') return; var M=mnS_(); if(!e.target.value) return;
+  M[e.target.id==='mnFrom'?'from':'to']=e.target.value; render(); });
 function render(){ if(window.GP_FIN_APP) setTimeout(function(){ finStick_(); finTell_(); }, 0); setTimeout(function(){ if(S.editGo){ var el=document.getElementById(S.editGo); S.editGo=null; if(el) el.scrollIntoView({ block:'start', behavior:'smooth' }); } }, 30);
   var p=document.getElementById('pane');
   if(S.tab==='dash'){ var undo=viewApply_(); S.liveDraw=isLive_();
@@ -2351,6 +2508,7 @@ function render(){ if(window.GP_FIN_APP) setTimeout(function(){ finStick_(); fin
       ? asOfBarHtml_()+'<section class="sec"><div class="emptyApproved"><b>Nothing approved yet.</b><br>Numbers reach this view when “Update and approve” is tapped on the Input tab. Until then, <button class="more" data-dashmode="live" style="padding:0">📡 Live</button> shows everything entered.</div></section>'+debtHtml()+advDashHtml_()
       : asOfBarHtml_()+balancesHtml()+allocHtml()+debtHtml()+advDashHtml_()+flowHtml('inc')+flowHtml('exp')+nextHtml(); } finally { S.liveDraw=false; undo(); } }
   else if(S.tab==='input') p.innerHTML=inputHtml();
+  else if(S.tab==='mins') p.innerHTML=minsHtml_();
   else if(S.tab==='tasks') p.innerHTML=soon('✅','Tasks','The Finances office’s GP Tasks list — as on every ministry.');
   else p.innerHTML=soon('🎯','OKRs','Kept exactly as it is in the current app — the Finances office’s OKRs and the Leadership OKRs, no changes.');
   document.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('on', b.dataset.tab===S.tab); });

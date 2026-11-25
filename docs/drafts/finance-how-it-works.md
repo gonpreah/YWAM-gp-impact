@@ -184,6 +184,28 @@ Income.
   home than there is.
 - Everything that moves money is in it (advances are their own report and move nothing).
 
+### 🏛 Ministries (a tab of its own, 25 Nov 2026 — in the demo only, not in Impact yet)
+- One allocation's own report — mostly the ministries, but any sub-category can be picked (`minsHtml_`, `S.mn`).
+  **Everything on it is the 📒 Detailed breakdown added up** for the sub-categories picked (matched by `cat`
+  = `fundLabel_`), and it counts every line, approved or not (Live).
+- **Time filter** on top (`MN_PERIODS`, `mnPeriod_`): This week (Monday to today) · This month · Last week ·
+  Last month · Year to date · All time · Custom (from / to). Each is compared with the period before it: this
+  week / this month / year to date with the **same days** of last week / last month / last year (so a part
+  period isn't set against a whole one); last week and last month with the one before; custom with the same
+  number of days just before; all time with nothing.
+- **Picker** (`mnPickerHtml_`): Ministry budgets first, then "Other allocations". Tap to add or take one away;
+  "All n" picks a whole category. Several picked are added together, with an "Each one" table under the report.
+  Starts on the first ministry.
+- **💰 Balance**: every Category amount of those sub-categories up to the period's last day (as `ledgerCats_`),
+  how it moved since the period's first day, and its share of the total liquid assets that day
+  (`ledgerLiquid_`).
+- **📈 Profit and loss**: Income = their Income lines' Category amounts in the period; Expenses = their Expense
+  lines' (shown as a positive number); Net = income − expenses; each with ▲ / ▼ against the period before (green
+  when income rises or spending falls). Then where the income came from and where the money went, by kind
+  of income / expense, and the transactions themselves (folded).
+- **Not income or expenses**: manual allocations, internal transfers and Financial tools move the balance only;
+  their total for the period is one line under the profit and loss.
+
 ---
 
 ## 3. Approved and Live
