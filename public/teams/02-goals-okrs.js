@@ -1581,6 +1581,7 @@ function notifItems_(){
   if(S.me && !S.student && typeof libNudgeItems_==='function') libNudgeItems_().forEach(function(it){ items.push(it); });
   /* the campus's fast: the day's focus for those who joined, an invitation for the rest (25-intercession.js) */
   if(S.me && !S.student && typeof fastNotifItems_==='function') fastNotifItems_().forEach(function(it){ items.push(it); });
+  if(S.me && !S.student && typeof sbNotifItems_==='function') sbNotifItems_().forEach(function(it){ items.push(it); });
   /* End of the week, goals not all the way there — used to be a big banner
      inline on My Home; it's a bell item instead now so the page isn't
      stacking two "end of the week" banners at once. Same Friday-dated

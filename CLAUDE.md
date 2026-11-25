@@ -569,7 +569,7 @@ in the leadership My Ministry, and it shows in Team → Structure … profile fa
   students, place, leads, extra)` — Campus Leadership of that campus or an admin (was admins only); `cleanStructLeads_` (only
   people here, ≤8 a ministry), `cleanStructExtra_` (≤80). A later quarter starts from it, leaders and names too (`planFor_`).
   A snapshot (`saveStructure` / `structPeople_`) carries both; saving a plan for this quarter or a later one rebuilds an
-  existing snapshot. **No profile is ever written.**
+  existing snapshot. A plan writes no profile until its quarter is made live (below).
 - **View and Edit** (Nov 2026, Andrew: "a view mode where you don't accidently move people and an edit mode"): the tab opens on
   **View** (`sbModeHtml_`, `#sbModeView` / `#sbModeEdit`, `S.sb.editing`, kept for the visit; in full screen the switch is in the
   board's bar): the board only moves and zooms — no tray, no ＋, no dragging, faces open profiles. **Edit** brings them, with the
@@ -583,8 +583,46 @@ in the leadership My Ministry, and it shows in Team → Structure … profile fa
   no box on the tree or in Team → Structure's list (`orgChartHtml_(…, schools)`), with "Not running this quarter: …"
   (`#sbNotRun`, `.orgNotRun`); people placed in it wait in the tray and keep that place for a quarter it runs (`sbOwn_` keeps
   them); a staff student can only pick a school that runs (`sbStuSchools_`). Its leaders and staff go in its box like any ministry.
-- tests/test-structure.mjs (server), tests/test-structure-board-ui.mjs (mouse and touch). Khmer: docs/khmer-needed.md §135, §137.
-  sw.js SHELL v29.
+- **In more than one ministry** (Nov 2026, Uriah: "some people will have 2 ministry jobs … access to both of those ministry
+  pages"): the plan's `also` = {staffId: ['Dept|Ministry', …]} (`cleanStructAlso_`: never the main place, never a Campus
+  Leadership row, nobody off the chart or a student, ≤ `STRUCT_ALSO_MAX` 4; null = the profiles' `ministries`; the server has
+  no taxonomy, so the page offers only real ministries; `saveStructurePlan`'s 11th argument; inherited by `planFor_`; a
+  snapshot person carries `also`). The person sheet's "Their ministries this quarter" (`sbAlsoHtml_`, `#sbAlso`): ⭐ the main
+  one (`#sbMainTag`), each other with **Make this their main ministry** (`[data-sbmain="key|id"]`, the two swap) and ×
+  (`[data-sbalsorm]`), and **Also serves in…** (`#sbAlsoSel` / `#sbAlsoAdd`). The tree (`M.alsoOf`, `M.alsoBoxes`) and Team →
+  Structure's list (`orgChartHtml_(…, alsoMap)`) show them in each box, the second face dashed with an "also" tag
+  (`.sbFace.also`, `.orgPerson.also`) and counted apart ("2 +1"). Dragging moves the MAIN place only; leading a second
+  ministry leaves the main one where it is.
+- **Make a quarter live → profiles** (Nov 2026, Uriah: "move people around … and for that to automatically change in their
+  profile"; this replaces Andrew's "not synced into our staff profile"). `applyStructure(user, pin, campus, year, q, {dry})`
+  (`structEditor_`; a quarter already over → `past_quarter`): `structApplyRows_` lays the plan over the campus's active staff —
+  main place → `dept` + `ministry` (`cdKind` kept only for someone who stays Campus Director), `also` → `ministries`
+  (through `cleanMinistries_`), the plan's leaders → `leads` (Campus Leadership's own keys kept; every other key is the
+  plan's) — in ONE `mutateStaff_` write, marks the plan `live: {at, by}`, rebuilds the snapshot (`structSnapFollow_`) and tells
+  each person on their phone (`structTell_` → `pushNow_`, `structServe` / `structServeLead` in `PUSH_TEXT`). **Left alone**:
+  anyone off the chart, staff who are students that quarter, typed-in names, a place with no ministry, and everything else
+  on a profile. **Into Campus Leadership by a non-admin is not written**: it becomes the person's `cltRequest` (`by:
+  'structure'`, Admin → Approvals) and nothing else of theirs changes; an admin's apply writes it. `dry` (and `diff` on
+  `getStructure` / `saveStructurePlan` for whoever may edit) is the same code on a copy: `{changes: [{id, name, from, to,
+  waits, alsoAdd, alsoDrop, leadAdd, leadDrop, now}], waiting}`. **Once THIS quarter is live, `saveStructurePlan` applies
+  what that save changed** (only the people it moved — `applied` in the answer — so a profile its owner edited is not swept
+  back by someone else's move; that shows as drift). A later quarter writes nothing until someone taps the button (it may be
+  made live early; changes after that wait for Apply again until it starts). Back to "everyone's profile" clears `live`.
+  The page (`sbLiveHtml_`, `#sbLive[data-sblive=off|live|drift]`, above the board in View and Edit): "n people's profiles would
+  change" + **Make Qn yyyy live** (`#sbLiveBtn`) → a sheet listing each change (`sbLiveSheetHtml_`, `#sbLiveList`,
+  `sbChangeText_`, `#sbLiveEarly` for a quarter not started) → `#sbLiveConfirm`; live: "changes here update profiles
+  straight away"; drift: "n profiles differ from this structure" with See / Apply again (`#sbLiveSee`, `#sbLiveAgain`).
+  The line follows each save without a redraw (`sbLiveRefresh_`); the roster on the phone follows (`sbPatchRoster_`).
+  **The bell**: the boot's `structReady` (`structReady_`, Campus Leadership only; `structurePlans` is in BOOT_KEYS) while this
+  quarter has an arrangement of its own that isn't live → "Q1's structure is ready — make it live" (`sbNotifItems_`,
+  `[data-gostruct]`, `bindGoStruct_`).
+- **My Ministry for someone in 2–4 ministries of their own** (`mmMineHtml_`, `#mmMine`, under the header): a slim row of
+  pills, the open one marked, the main one tagged (`[data-mmgo="Dept|Min"]` — not `data-mmpick`; Switch ▾ stays). Only
+  main / member / leader options count, never what an admin or director can merely open. Profile → My positions says
+  "Main: … · Also: …" (`#myPosMin`). Every tool already let a second ministry in (`canLogFor_` / `memberOf_` on the server,
+  `ministries` in each client gate).
+- tests/test-structure.mjs (server), tests/test-structure-board-ui.mjs (mouse and touch; the second ministry, making a
+  quarter live, the bell, the pills). Khmer: docs/khmer-needed.md §135, §137, §141. sw.js SHELL v29.
 
 ## Outreach Teams — one record per team, not a weekly form
 Outreach Teams (Community Service) doesn't log week by week: a team comes for a stretch

@@ -511,6 +511,9 @@ function bindAway(){
     var bindMmPick=function(){ document.querySelectorAll('[data-mmpick]').forEach(function(b){
       b.onclick=function(){ var v=b.getAttribute('data-mmpick'), i=v.lastIndexOf('|'); gpTap(); S.mmBrowseDept=v.slice(0,i); S.mmBrowseMinistry=v.slice(i+1); S.mmPickOpen=false; S.mmPickQ=''; S.mmTab='ministry'; S.mmTabTouched=false; render(); window.scrollTo(0,0); }; }); };
     bindMmPick();
+    /* the slim row of your own ministries under the header (2–4 of them): one tap, no sheet */
+    document.querySelectorAll('[data-mmgo]').forEach(function(b){
+      b.onclick=function(){ var v=b.getAttribute('data-mmgo'), i=v.lastIndexOf('|'); gpTap(); S.mmBrowseDept=v.slice(0,i); S.mmBrowseMinistry=v.slice(i+1); S.mmPickOpen=false; S.mmPickQ=''; S.mmTab='ministry'; S.mmTabTouched=false; render(); window.scrollTo(0,0); }; });
     document.querySelectorAll('[data-mmpick-none]').forEach(function(b){
     });
     var mbd=document.getElementById('mmBrowseDeptSel');
@@ -1186,6 +1189,7 @@ function bind(){
   /* GP Tasks: the page and its buttons */
   bindGpTasks_(); bindVoice_();
   bindPeoplePick_();   // every people picker with a search box on the page (12-tasks.js)
+  if(typeof bindGoStruct_==='function') bindGoStruct_('#main [data-gostruct]');   // "Q1's structure is ready — make it live" (23-structure.js)
   if(S.view==='ministry' && typeof bindSbLead_==='function' && document.querySelector('#sbWrap, [data-sbq]')) bindSbLead_();   // Campus Leadership → Structure, the whiteboard (23-structure.js)
   if(!document.getElementById('sbWrap')) document.body.classList.remove('sbFullOn');
   bindKhmer_();   // Learn Khmer (15-khmer.js)
@@ -1792,7 +1796,7 @@ function bind(){
       S.structLoading[sKey]=true;
       run('getStructure',[S.auth.user,S.auth.pin,sCampus,sYear,sQ],function(d){
         S.structLoading[sKey]=false;
-        if(d && d.ok) S.structCache[sKey]={ doc:d.doc, source:d.source, plan:d.plan }; else S.structError[sKey]=(d && d.err) || t('The server answered without the saved structure.');
+        if(d && d.ok) S.structCache[sKey]={ doc:d.doc, source:d.source, plan:d.plan, diff:d.diff||null }; else S.structError[sKey]=(d && d.err) || t('The server answered without the saved structure.');
         render();
       }, function(e){ S.structLoading[sKey]=false; S.structError[sKey]=(e && e.message) || t('Connection problem — try again.'); render(); });
     }
@@ -1801,7 +1805,7 @@ function bind(){
       S.structLoading[sKey]=true;
       run('getStructure',[S.auth.user,S.auth.pin,sCampus,sYear,sQ],function(d){
         S.structLoading[sKey]=false;
-        S.structCache[sKey] = (d && d.ok) ? { doc:d.doc, source:d.source, plan:d.plan } : { doc:null, source:'none' };
+        S.structCache[sKey] = (d && d.ok) ? { doc:d.doc, source:d.source, plan:d.plan, diff:d.diff||null } : { doc:null, source:'none' };
         render();
       }, function(e){ S.structLoading[sKey]=false; S.structCache[sKey]={ doc:null, source:'none' }; render(); });
     }

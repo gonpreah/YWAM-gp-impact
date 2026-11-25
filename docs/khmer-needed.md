@@ -6553,3 +6553,56 @@ The View / Edit switch above the board, the line under it, and the row of school
 | Not running this quarter: {list} | មិនដំណើរការក្នុងត្រីមាសនេះ៖ {list} |
 | Schools running in Q{q} {year}: {list} | សាលាដែលដំណើរការនៅ Q{q} {year}៖ {list} |
 | A school that isn’t running has no box this quarter. Add its leaders and staff in its box once it runs. | សាលាដែលមិនដំណើរការ គ្មានប្រអប់ក្នុងត្រីមាសនេះទេ។ បន្ថែមអ្នកដឹកនាំ និងបុគ្គលិករបស់វានៅក្នុងប្រអប់របស់វា នៅពេលវាដំណើរការ។ |
+
+## 141. The structure made live, and a second ministry (My Ministry → Structure, Team → Structure, My Ministry, Nov 2026)
+Campus Leadership arranges a quarter on the whiteboard; "Make Q1 2027 live" turns it into people's profiles. "live" here means "in use / in force now" — the word wants checking first, it is on the button. A person can serve in a second ministry: the tiny tag "also" sits under a face (about 40px wide) and beside a name, and "main" sits inside a small pill on My Ministry — both have almost no room. "{from} → {to}" lines in the list of changes use ministry names. "Q{q}’s structure is ready — make it live" is a bell line. Two phone notifications (in api.js PUSH_TEXT, not km.js): "From Q{q} {year} you serve in {where}. Open My Ministry." and "… and lead {lead}." Draft translations by Claude.
+
+| English | Khmer (draft) |
+|---|---|
+| Your ministries | កិច្ចការបម្រើរបស់អ្នក |
+| main | ចម្បង |
+| also | ផងដែរ |
+| also serves here | បម្រើនៅទីនេះផងដែរ |
+| Main: {main} | ចម្បង៖ {main} |
+| Also: {list} | ផងដែរ៖ {list} |
+| Their ministries this quarter | កិច្ចការបម្រើរបស់ពួកគេក្នុងត្រីមាសនេះ |
+| Also serves in… | បម្រើផងដែរនៅ… |
+| Choose a ministry | ជ្រើសរើសកិច្ចការបម្រើ |
+| Make this their main ministry | ធ្វើឲ្យនេះជាកិច្ចការបម្រើចម្បងរបស់ពួកគេ |
+| No longer also in {min} | លែងបម្រើនៅ {min} ផងដែរ |
+| {name} no longer also serves here | {name} លែងបម្រើនៅទីនេះផងដែរ |
+| They get both ministries’ pages on My Ministry. Dragging their face moves the main one. | ពួកគេមានទំព័រកិច្ចការបម្រើទាំងពីរនៅក្នុង កិច្ចការបម្រើរបស់ខ្ញុំ។ ការអូសមុខរបស់ពួកគេ ផ្លាស់ទីកិច្ចការបម្រើចម្បង។ |
+| Who is in which department and ministry this quarter, and who leads. Make the quarter live and it becomes everyone’s profile. | នរណានៅផ្នែក និងកិច្ចការបម្រើណាក្នុងត្រីមាសនេះ ហើយនរណាដឹកនាំ។ ពេលដាក់ត្រីមាសនេះឲ្យប្រើ វានឹងក្លាយជាប្រវត្តិរូបរបស់អ្នករាល់គ្នា។ |
+| Make Q{q} {year} live | ដាក់ Q{q} {year} ឲ្យប្រើ |
+| Q{q} {year} is live | Q{q} {year} កំពុងប្រើហើយ |
+| Q{q} {year} is live — changes here update profiles straight away. | Q{q} {year} កំពុងប្រើហើយ — ការផ្លាស់ប្តូរនៅទីនេះ កែប្រវត្តិរូបភ្លាមៗ។ |
+| Q{q} {year} is live — profiles match it. A change before it starts waits for Apply again. | Q{q} {year} កំពុងប្រើហើយ — ប្រវត្តិរូបត្រូវនឹងវា។ ការផ្លាស់ប្តូរមុនពេលវាចាប់ផ្តើម រង់ចាំការចុច អនុវត្តម្តងទៀត។ |
+| Q{q} {year} hasn’t started yet — profiles change today, not on its first day. | Q{q} {year} មិនទាន់ចាប់ផ្តើមទេ — ប្រវត្តិរូបផ្លាស់ប្តូរថ្ងៃនេះ មិនមែននៅថ្ងៃដំបូងរបស់វាទេ។ |
+| Q{q}’s structure is ready — make it live | រចនាសម្ព័ន្ធ Q{q} រួចរាល់ហើយ — សូមដាក់ឲ្យប្រើ |
+| 1 person’s profile would change | ប្រវត្តិរូបរបស់មនុស្ស ១ នាក់នឹងផ្លាស់ប្តូរ |
+| {n} people’s profiles would change | ប្រវត្តិរូបរបស់មនុស្ស {n} នាក់នឹងផ្លាស់ប្តូរ |
+| Everyone’s profile already matches this structure. | ប្រវត្តិរូបរបស់អ្នករាល់គ្នាត្រូវនឹងរចនាសម្ព័ន្ធនេះរួចហើយ។ |
+| 1 profile differs from this structure | ប្រវត្តិរូប ១ ខុសពីរចនាសម្ព័ន្ធនេះ |
+| {n} profiles differ from this structure | ប្រវត្តិរូប {n} ខុសពីរចនាសម្ព័ន្ធនេះ |
+| Profiles that differ from Q{q} {year} | ប្រវត្តិរូបដែលខុសពី Q{q} {year} |
+| Apply again | អនុវត្តម្តងទៀត |
+| Confirm | បញ្ជាក់ |
+| Confirm — from now on, changes here update profiles | បញ្ជាក់ — ចាប់ពីពេលនេះ ការផ្លាស់ប្តូរនៅទីនេះកែប្រវត្តិរូប |
+| These profiles change to match the structure. Each person is told. Nothing else on a profile changes. | ប្រវត្តិរូបទាំងនេះផ្លាស់ប្តូរឲ្យត្រូវនឹងរចនាសម្ព័ន្ធ។ ម្នាក់ៗនឹងទទួលដំណឹង។ គ្មានអ្វីផ្សេងទៀតនៅលើប្រវត្តិរូបផ្លាស់ប្តូរទេ។ |
+| Nobody’s profile changes now. | គ្មានប្រវត្តិរូបរបស់នរណាម្នាក់ផ្លាស់ប្តូរឥឡូវនេះទេ។ |
+| Left as they are: anyone off the chart, staff who are students this quarter, and names typed in. | ទុកដដែល៖ អ្នកដែលមិននៅលើតារាង បុគ្គលិកដែលជាសិស្សក្នុងត្រីមាសនេះ និងឈ្មោះដែលបានវាយបញ្ចូល។ |
+| Already waiting for an admin (Admin → Approvals): | កំពុងរង់ចាំអ្នកគ្រប់គ្រងរួចហើយ (អ្នកគ្រប់គ្រង → ការអនុម័ត)៖ |
+| 1 move into Campus Leadership is waiting for an admin | ការផ្លាស់ចូលថ្នាក់ដឹកនាំសាខា ១ កំពុងរង់ចាំអ្នកគ្រប់គ្រង |
+| {n} moves into Campus Leadership are waiting for an admin | ការផ្លាស់ចូលថ្នាក់ដឹកនាំសាខា {n} កំពុងរង់ចាំអ្នកគ្រប់គ្រង |
+| Change these profiles back to match the structure? Each person is told. | ប្តូរប្រវត្តិរូបទាំងនេះឲ្យត្រូវនឹងរចនាសម្ព័ន្ធវិញ? ម្នាក់ៗនឹងទទួលដំណឹង។ |
+| waits for an admin: {title} | រង់ចាំអ្នកគ្រប់គ្រង៖ {title} |
+| also {min} | {min} ផងដែរ |
+| no longer also {min} | លែងនៅ {min} ផងដែរ |
+| now leads {min} | ឥឡូវដឹកនាំ {min} |
+| no longer leads {min} | លែងដឹកនាំ {min} |
+| {name}’s profile is updated | ប្រវត្តិរូបរបស់ {name} ត្រូវបានកែហើយ |
+| 1 profile updated | បានកែប្រវត្តិរូប ១ |
+| {n} profiles updated | បានកែប្រវត្តិរូប {n} |
+| Still saving — try again in a moment. | កំពុងរក្សាទុកនៅឡើយ — សូមព្យាយាមម្តងទៀតបន្តិចទៀត។ |
+| Someone else is saving — try again. | មានអ្នកផ្សេងកំពុងរក្សាទុក — សូមព្យាយាមម្តងទៀត។ |
+| That quarter is over. | ត្រីមាសនោះបានកន្លងផុតហើយ។ |
