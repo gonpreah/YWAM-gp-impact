@@ -531,6 +531,13 @@ button.tick.done{ background:var(--good); }
 .mnOtherHead{ margin-top:14px; padding-top:10px; border-top:1px solid var(--line); font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; }
 .mnShare{ margin-top:12px; grid-template-columns:repeat(2,minmax(0,1fr)); }
 .mnIn{ color:var(--good); }
+.mnXf{ margin:10px 0 0; padding:10px 12px; border-radius:12px; background:var(--surface2); color:var(--muted); }
+.mnXfHead{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; font-weight:700; }
+.mnXfHead b{ font-size:18px; color:var(--muted); }
+.mnXfRow{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 12px; margin-top:4px; font-size:13px; }
+.mnXfRow b{ color:var(--muted); }
+.mnXfNote{ margin:4px 0 0; font-size:12px; }
+.mnXfAmt{ color:var(--muted); }
 .mnOut{ color:var(--bad); }
 .mnVs{ font-size:12px; font-weight:600; color:var(--muted); margin-top:4px; }
 .mnVs span{ display:block; font-weight:400; }
@@ -2670,14 +2677,15 @@ function mnSelName_(sel){ if(!sel.length) return 'Nothing selected yet'; if(sel.
   var whole=ALLOC.filter(function(g){ return g.items.length>1 && g.items.every(function(it){ return sel.indexOf(g.id+'|'+it[0])>=0; }) && sel.length===g.items.length; })[0];
   return whole ? 'All of '+whole.name : sel.length+' allocations'; }
 /* income and expenses of some categories between two days, from the breakdown */
-function mnPL_(L, labs, from, to){ var inc=0, exp=0, byInc={}, byExp={}, other=0, byOther={}, lines=[];
+function mnPL_(L, labs, from, to){ var inc=0, exp=0, byInc={}, byExp={}, other=0, byOther={}, lines=[], xin=0, xout=0;
   L.forEach(function(x){ if(x.camt==null || labs.indexOf(x.cat)<0) return; if((from && x.date<from) || x.date>to) return;
     var kind=(x.src && x.src.type) || x.type;
     if(x.type==='Income'){ inc+=x.camt; byInc[kind]=(byInc[kind]||0)+x.camt; lines.push(x); }
     else if(x.type==='Expense'){ exp-=x.camt; byExp[kind]=(byExp[kind]||0)-x.camt; lines.push(x); }
+    else if(x.type==='Internal transfer'){ if(x.camt>0) xin+=x.camt; else xout-=x.camt; lines.push(x); }   /* category to category: grey, not income or spending */
     else { other+=x.camt; byOther[x.type]=(byOther[x.type]||0)+x.camt; } });
   var r=function(v){ return Math.round(v*100)/100; };
-  return { inc:r(inc), exp:r(exp), net:r(inc-exp), byInc:byInc, byExp:byExp, other:r(other), byOther:byOther, lines:lines }; }
+  return { inc:r(inc), exp:r(exp), net:r(inc-exp), byInc:byInc, byExp:byExp, other:r(other), byOther:byOther, lines:lines, xin:r(xin), xout:r(xout), xnet:r(xin-xout) }; }
 function mnBal_(L, labs, day){ var by={}; L.forEach(function(x){ if(x.camt==null || x.date>day) return; by[x.cat]=(by[x.cat]||0)+x.camt; });
   return Math.round(labs.reduce(function(s2,l){ return s2+(by[l]||0); },0)*100)/100; }
 function mnSg_(v){ return (v<0?'−':'')+money(Math.abs(v),true); }
@@ -2723,16 +2731,19 @@ function minsHtml_(){ var M=mnS_(), P=mnPeriod_(), sel=mnSel_(), labs=sel.map(fu
   h+='<section class="sec" id="mnPL"><div class="secHead"><h2>📈 Profit and loss</h2></div><p class="hint">'+mnRange_(P)+(pp?' · compared with '+esc(P.vs)+' ('+date(P.pf)+(P.pf!==P.pt?' – '+date(P.pt):'')+')':'')+'.</p>'+
     '<div class="dTiles mnTiles"><div class="dTile"><div class="dl">💵 Income</div><div class="dv mnIn">'+(NA?na:money(pl.inc,true))+'</div>'+(pp?mnVs_(pl.inc, pp.inc, P, true):'')+'</div>'+
     '<div class="dTile"><div class="dl">🧾 Expenses</div><div class="dv mnOut">'+(NA?na:money(pl.exp,true))+'</div>'+(pp?mnVs_(pl.exp, pp.exp, P, false):'')+'</div></div>'+
+    '<div class="mnXf" id="mnXf"><div class="mnXfHead"><span>🔁 Internal transfers</span><b>'+(NA?na:mnSg_(pl.xnet))+'</b></div>'+
+      (NA?'':'<div class="mnXfRow"><span>In from other categories <b>'+money(pl.xin,true)+'</b></span><span>Out to other categories <b>'+money(pl.xout,true)+'</b></span></div>')+
+      '<p class="mnXfNote">Money moved between categories — not income or spending, so it isn’t in the net below.</p></div>'+
     '<div class="mnNet '+(pl.net<0?'neg':'')+'"><span>'+(pl.net<0?'Spent more than came in':'Net')+'</span><b>'+(NA?na:mnSg_(pl.net))+'</b>'+(pp?mnVs_(pl.net, pp.net, P, true):'')+'</div>';
   h+='<div class="mnTwo"><div><div class="dListHead">Where the income came from</div>'+(NA?'<p class="hint">N/A</p>':mnKinds_(pl.byInc, pl.inc, 'in'))+'</div><div><div class="dListHead">Where the money went</div>'+(NA?'<p class="hint">N/A</p>':mnKinds_(pl.byExp, pl.exp, 'out'))+'</div></div>';
-  if(Math.abs(pl.other)>0.004 || Object.keys(pl.byOther).length) h+='<p class="mnOther">🔁 Allocations, transfers and adjustments also moved it '+mnSg_(pl.other)+' — '+Object.keys(pl.byOther).map(function(k){ return esc(k.replace(' (Financial tools)',''))+' '+mnSg_(pl.byOther[k]); }).join(' · ')+'. These change the balance but aren’t income or expenses.</p>';
+  if(Math.abs(pl.other)>0.004 || Object.keys(pl.byOther).length) h+='<p class="mnOther">🛠 Allocations and adjustments also moved it '+mnSg_(pl.other)+' — '+Object.keys(pl.byOther).map(function(k){ return esc(k.replace(' (Financial tools)',''))+' '+mnSg_(pl.byOther[k]); }).join(' · ')+'. These change the balance but aren’t income or expenses.</p>';
   if(pl.lines.length){ h+='<button class="flowDrop'+(M.list?' on':'')+'" id="mnList" aria-expanded="'+!!M.list+'"><span>'+(M.list?'Hide':'Show')+' the '+pl.lines.length+' transaction'+(pl.lines.length>1?'s':'')+'</span><span class="chev">▾</span></button>';
-    if(M.list) h+='<ul class="mnLines">'+pl.lines.map(function(x){ var memo=(x.src&&x.src.memo)||''; return '<li><div><b>'+esc(x.name||(x.src&&x.src.type)||x.type)+'</b><span>'+date(x.date)+' · '+esc((x.src&&x.src.type)||x.type)+(sel.length>1?' · '+esc(mnName_(sel[labs.indexOf(x.cat)])):'')+(memo?' · '+esc(memo):'')+(x.appr?' · ✅':'')+'</span></div><b class="'+(x.camt<0?'mnOut':'mnIn')+'">'+mnSg_(x.camt)+'</b></li>'; }).join('')+'</ul>'; }
+    if(M.list) h+='<ul class="mnLines">'+pl.lines.map(function(x){ var memo=(x.type==='Internal transfer' ? x.memo : (x.src&&x.src.memo))||''; return '<li><div><b>'+esc(x.name||(x.src&&x.src.type)||x.type)+'</b><span>'+date(x.date)+' · '+esc((x.src&&x.src.type)||x.type)+(sel.length>1?' · '+esc(mnName_(sel[labs.indexOf(x.cat)])):'')+(memo?' · '+esc(memo):'')+(x.appr?' · ✅':'')+'</span></div><b class="'+(x.type==='Internal transfer'?'mnXfAmt':x.camt<0?'mnOut':'mnIn')+'">'+mnSg_(x.camt)+'</b></li>'; }).join('')+'</ul>'; }
   else if(!NA) h+='<p class="hint" style="margin-top:6px">No income or expenses for '+esc(mnSelName_(sel))+' in this period.</p>';
   h+='</section>';
   /* several picked: each one side by side */
-  if(sel.length>1) h+='<section class="sec" id="mnEach"><div class="secHead"><h2>Each one</h2></div><table class="mnEach"><tr><th>Allocation</th><th class="r">Balance</th><th class="r">Income</th><th class="r">Expenses</th></tr>'+
-    sel.map(function(k, i){ var p1=mnPL_(L, [labs[i]], P.from, P.to); return '<tr><td>'+esc(mnName_(k))+'</td><td class="r">'+mnSg_(mnBal_(L, [labs[i]], P.to))+'</td><td class="r">'+money(p1.inc,true)+'</td><td class="r">'+money(p1.exp,true)+'</td></tr>'; }).join('')+'</table></section>';
+  if(sel.length>1) h+='<section class="sec" id="mnEach"><div class="secHead"><h2>Each one</h2></div><table class="mnEach"><tr><th>Allocation</th><th class="r">Balance</th><th class="r">Income</th><th class="r">Expenses</th><th class="r mnXfAmt">Transfers</th></tr>'+
+    sel.map(function(k, i){ var p1=mnPL_(L, [labs[i]], P.from, P.to); return '<tr><td>'+esc(mnName_(k))+'</td><td class="r">'+mnSg_(mnBal_(L, [labs[i]], P.to))+'</td><td class="r">'+money(p1.inc,true)+'</td><td class="r">'+money(p1.exp,true)+'</td><td class="r mnXfAmt">'+mnSg_(p1.xnet)+'</td></tr>'; }).join('')+'</table></section>';
   return h+'<section class="sec"><p class="hint" style="margin:0">'+(live ? '📡 Everything entered counts here, approved or not' : '✅ Only lines in an approved report count here')+' — the same lines as the Detailed breakdown on the Input tab.</p></section>'; }
 document.addEventListener('click', function(e){ var M=mnS_(), t=e.target.closest && e.target.closest('[data-mnper],[data-mnk],[data-mngrp],#mnPickBtn,#mnPickDone,#mnList,#mnClear'); if(!t) return;
   if(t.dataset.mnper){ M.per=t.dataset.mnper; if(M.per==='custom' && !M.from){ M.from=mnMonthStart_(TODAY); M.to=TODAY; } }

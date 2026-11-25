@@ -292,8 +292,13 @@ Income.
   lines' (shown as a positive number); Net = income − expenses; each with ▲ / ▼ against the period before (green
   when income rises or spending falls). Then where the income came from and where the money went, by kind
   of income / expense, and the transactions themselves (folded).
-- **Not income or expenses**: manual allocations, internal transfers and Financial tools move the balance only;
-  their total for the period is one line under the profit and loss.
+- **🔁 Internal transfers** (25 Nov 2026), in grey under Income and Expenses (`#mnXf`): the period's Internal transfer
+  lines of those sub-categories — in from other categories, out to other categories, and the difference
+  (`mnPL_` → `xin` / `xout` / `xnet`). Not income or spending, so **not in the net**; they are in the transactions list
+  (grey, with "→ / ← the other category") and the "Each one" table's Transfers column. A transfer between two picked
+  sub-categories shows both sides, so it nets to nothing.
+- **Not income or expenses**: manual allocations and Financial tools move the balance only; their total for the
+  period is one line under the profit and loss.
 
 ---
 
