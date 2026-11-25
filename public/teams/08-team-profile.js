@@ -12,14 +12,16 @@
    their profiles (department, ministry, ministry leads), so moving someone
    is editing their profile in Admin — one source of truth, nothing to
    hand-draw and nothing to fall out of date. Tap anyone to open them. */
-function orgPersonChip_(p, lead){
+function orgPersonChip_(p, lead, also){
   var title=orgTitleOf_(p);
-  if(p.extra) return '<span class="orgPerson extra'+(lead?' lead':'')+'">'+avatarHtml(p,'sm')+'<span>'+(lead?'👑 ':'')+esc(p.name)+'</span></span>';   // a name typed in on the structure whiteboard
-  return '<button class="orgPerson'+(lead?' lead':'')+'" '+(S.orgArranging ? 'data-arrange' : 'data-person')+'="'+esc(p.id)+'">'+avatarHtml(p,'sm')+
-    '<span>'+(lead?'👑 ':'')+esc(p.name)+(title ? '<small class="orgChipTitle">'+esc(orgTitleText_(title))+'</small>' : '')+'</span></button>';
+  /* also: this is their second ministry (Nov 2026) — marked, so nobody counts them twice */
+  var tag=also ? ' <small class="orgAlsoTag">'+esc(t('also'))+'</small>' : '';
+  if(p.extra) return '<span class="orgPerson extra'+(lead?' lead':'')+(also?' also':'')+'">'+avatarHtml(p,'sm')+'<span>'+(lead?'👑 ':'')+esc(p.name)+tag+'</span></span>';   // a name typed in on the structure whiteboard
+  return '<button class="orgPerson'+(lead?' lead':'')+(also?' also':'')+'" '+(S.orgArranging ? 'data-arrange' : 'data-person')+'="'+esc(p.id)+'">'+avatarHtml(p,'sm')+
+    '<span>'+(lead?'👑 ':'')+esc(p.name)+tag+(title && !also ? '<small class="orgChipTitle">'+esc(orgTitleText_(title))+'</small>' : '')+'</span></button>';
 }
-function orgPeople_(list, leads){
-  return '<div class="orgPeople">'+list.map(function(p){ return orgPersonChip_(p, leads.indexOf(p)>-1); }).join('')+'</div>';
+function orgPeople_(list, leads, also){
+  return '<div class="orgPeople">'+list.map(function(p){ return orgPersonChip_(p, leads.indexOf(p)>-1, !!also && also.indexOf(p)>-1); }).join('')+'</div>';
 }
 /* Which quarter is on screen, and what the chart is drawn from: the live
    roster for the current quarter, a saved snapshot for any other (or the
@@ -73,7 +75,7 @@ function orgStructureHtml_(campus){
         '<button class="btn small" id="structArrangeDone">'+esc(t('Done'))+'</button></div></div>';
       if(S.structMove) h+=structMoveHtml_(campus, S.structMove, place, stu);
     }
-    return h+orgChartHtml_(campus, S.roster, stu, place, arranging, c && c.plan ? c.plan.leads : null, c && c.plan ? c.plan.extra : null, c && c.plan ? c.plan.schools : null);
+    return h+orgChartHtml_(campus, S.roster, stu, place, arranging, c && c.plan ? c.plan.leads : null, c && c.plan ? c.plan.extra : null, c && c.plan ? c.plan.schools : null, c && c.plan ? c.plan.also : null);
   }
   if(S.structError[key]) return h+'<div class="card"><p class="sub" style="margin:0 0 8px">⚠️ '+esc(t('Couldn’t load this quarter.'))+'</p><p class="hint" style="margin:0 0 8px;overflow-wrap:anywhere">'+esc(S.structError[key])+'</p><button class="btn ghost" id="structRetry" style="margin-top:0">'+esc(t('Try again'))+'</button></div>';
   if(!c) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
@@ -168,7 +170,7 @@ function structStudentsEditorHtml_(campus, q, year){
     }).join('')+
     '<button class="btn" id="structStudentsSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="structStudentsCancel">'+esc(t('Cancel'))+'</button></div>';
 }
-function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging, planLeads, extras, schools){
+function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging, planLeads, extras, schools, alsoMap){
   /* schools: the Leadership Development schools running that quarter (null = all) — the others have no box (Nov 2026) */
   var runs=function(m){ return !Array.isArray(schools) || LD_SCHOOL_MINISTRIES.indexOf(m)===-1 || schools.indexOf(m)>-1; };
   /* The chart is the base's structure for the quarter, which can differ from
@@ -179,6 +181,8 @@ function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging, planLea
   var everyone=base.map(function(p){
     var pl=placeMap && placeMap[p.id], o=pl ? Object.assign({}, p, { dept:pl.dept, ministry:pl.ministry }) : p;
     if(planLeads) o=Object.assign({}, o, { leads:Object.keys(planLeads).filter(function(k){ return planLeads[k].indexOf(p.id)>-1; }) });
+    /* the other ministries they serve in: the quarter's (alsoMap), a snapshot's own (`also`), else their profile's */
+    o=Object.assign({}, o, { alsoIn: (alsoMap ? (alsoMap[p.id]||[]) : (p.also || p.ministries || [])).filter(function(k){ return k!==o.dept+'|'+(o.ministry||'') && String(k).indexOf(BL_DEPT+'|')!==0; }) });
     return o; });
   S.orgArranging = !!arranging;
   /* Staff doing a school this quarter (the quarter's plan, or a snapshot's
@@ -222,9 +226,10 @@ function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging, planLea
       var members=here.filter(function(p){ return p.dept===dept && p.ministry===min && leads.indexOf(p)===-1; });
       var all=leads.concat(members);
       all.forEach(function(p){ placed[p.id]=1; });
-      h+='<div class="orgMin'+(all.length?'':' bare')+'" data-orgmin="'+esc(key)+'"'+(arranging?' data-drop="'+esc(key)+'"':'')+'><div class="orgMinHead"><span>'+(MIN_EMOJI[min]?MIN_EMOJI[min]+' ':'')+esc(t(min))+'</span>'+
-        '<span class="orgMinN">'+(all.length||'—')+'</span></div>'+
-        (all.length ? orgPeople_(all, leads) : '')+'</div>';
+      var alsoHere=here.filter(function(p){ return p.dept!=='_off' && (p.alsoIn||[]).indexOf(key)>-1 && all.indexOf(p)===-1; });
+      h+='<div class="orgMin'+(all.length||alsoHere.length?'':' bare')+'" data-orgmin="'+esc(key)+'"'+(arranging?' data-drop="'+esc(key)+'"':'')+'><div class="orgMinHead"><span>'+(MIN_EMOJI[min]?MIN_EMOJI[min]+' ':'')+esc(t(min))+'</span>'+
+        '<span class="orgMinN">'+(all.length||(alsoHere.length?'0':'—'))+(alsoHere.length?' +'+alsoHere.length:'')+'</span></div>'+
+        (all.length||alsoHere.length ? orgPeople_(all.concat(alsoHere), leads, alsoHere) : '')+'</div>';
     });
     h+='</div>'+(off.length ? '<p class="hint orgNotRun" style="margin:6px 0 0">'+esc(gpT('Not running this quarter: {list}',{list:off.map(function(m){ return t(m); }).join(' · ')}))+'</p>' : '')+'</div>';
   });
@@ -757,11 +762,14 @@ function myPositionsHtml_(){
   var me=S.me, O=S.org||{}, rows=[];
   var title=orgTitleOf_(me);
   rows.push(['🧭', title ? orgTitleText_(title) : (t(me.ministry||me.dept||'')), t(campusName(me.campus))]);
+  /* in more than one ministry: which is the main one, and the others — said plainly (Nov 2026) */
+  var others=(me.ministries||[]).map(function(k){ return String(k).split('|'); }).filter(function(x){ return x.length===2 && x[1] && !(x[0]===me.dept && x[1]===me.ministry); });
+  if(others.length) rows.push(['🤝', gpT('Main: {main}',{main:title ? orgTitleText_(title) : t(me.ministry||me.dept||'')}), gpT('Also: {list}',{list:others.map(function(x){ return t(x[1]); }).join(' · ')}), 'myPosMin']);
   (me.leads||[]).forEach(function(k){ var x=k.split('|'); rows.push(['👑', gpT('Leads {ministry}',{ministry:t(x[1]||'')}), t(x[0]||'')]); });
   (O.gp||[]).filter(function(g){ return g.id===me.id; }).forEach(function(g){ rows.push(['🌏', gpRoleLabel_(g.gpRole), t('YWAM GP leadership team')]); });
   (O.board||[]).filter(function(b){ return b.staffId===me.id; }).forEach(function(b){ rows.push(['🛡️', t(b.role), t('YWAM GP Advisory Board')]); });
   return '<div class="card"><div class="goalCardTitle" style="margin-bottom:4px">'+esc(t('My positions'))+'</div>'+
-    rows.map(function(r){ return '<div class="myPos"><span>'+r[0]+'</span><span><b>'+esc(r[1])+'</b><small>'+esc(r[2])+'</small></span></div>'; }).join('')+
+    rows.map(function(r){ return '<div class="myPos"'+(r[3]?' id="'+r[3]+'"':'')+'><span>'+r[0]+'</span><span><b>'+esc(r[1])+'</b><small>'+esc(r[2])+'</small></span></div>'; }).join('')+
     '<p class="hint" style="margin:6px 0 0">'+esc(t('Your campus role you change below. YWAM GP places and the Advisory Board are set by an admin, on your account.'))+'</p></div>';
 }
 /* ---------- Install this app (Profile & settings, Nov 2026) ----------

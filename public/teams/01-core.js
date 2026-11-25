@@ -892,6 +892,7 @@ function applyBoot(d, fromCache){
   S.hrDue = (d.hrDue===undefined) ? null : d.hrDue;
   S.backup = d.backup || null;   // admins only: the nightly backup's last run
   S.numbers = d.numbers || null;
+  S.structReady = d.structReady || null;   // Campus Leadership: this quarter's structure is arranged and not live yet (23-structure.js)
   S.fast = d.fast || null;   // the campus's fast, running or coming (25-intercession.js): the bell and ☰
   S.hospNews = d.hospNews || null;   // SR Hospitality: a team's new dates, someone who left (06-numbers-contract.js hospChangesHtml_)
   S.pulse = {}; S.staffDebt = null;
@@ -1293,6 +1294,7 @@ function renderNotifPanel(){
   document.querySelectorAll('#notifRoot [data-gohealth]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='health'; if(b.getAttribute('data-gohealth')==='open'){ S.healthWeek=thisWeek(); S.weekForm=thisWeek(); } render(); };
   });
+  if(typeof bindGoStruct_==='function') bindGoStruct_('#notifRoot [data-gostruct]');   // this quarter's structure, ready to make live (23-structure.js)
   if(typeof bindGoFast_==='function') bindGoFast_('#notifRoot [data-gofast]');   // the fast (25-intercession.js)
   document.querySelectorAll('#notifRoot [data-jumpgoals]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.bellOpen=false; S.view='week'; render(); };

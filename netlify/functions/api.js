@@ -5805,6 +5805,8 @@ const PUSH_TEXT = {
   title: { en: 'My YWAM GP', km: 'My YWAM GP' },
   weeklyTue: { en: 'It’s Tuesday — answer your weekly health check-in at the staff meeting.', km: 'ថ្ងៃនេះជាថ្ងៃអង្គារ — សូមឆ្លើយការពិនិត្យសុខភាពប្រចាំសប្តាហ៍របស់អ្នក ក្នុងពេលប្រជុំបុគ្គលិក។' },
   weekly: { en: 'Your weekly health check-in for this week isn’t in yet.', km: 'ការពិនិត្យសុខភាពប្រចាំសប្តាហ៍របស់អ្នកសម្រាប់សប្តាហ៍នេះ មិនទាន់មាននៅឡើយទេ។' },
+  structServe: { en: 'From Q{q} {year} you serve in {where}. Open My Ministry.', km: 'ចាប់ពីត្រីមាសទី {q} ឆ្នាំ {year} អ្នកបម្រើនៅ {where}។ សូមបើក កិច្ចការបម្រើរបស់ខ្ញុំ។' },
+  structServeLead: { en: 'From Q{q} {year} you serve in {where} and lead {lead}. Open My Ministry.', km: 'ចាប់ពីត្រីមាសទី {q} ឆ្នាំ {year} អ្នកបម្រើនៅ {where} ហើយដឹកនាំ {lead}។ សូមបើក កិច្ចការបម្រើរបស់ខ្ញុំ។' },
   fastDay: { en: 'Day {n} of {title}: {focus}', km: 'ថ្ងៃទី {n} នៃ {title}៖ {focus}' },
   daily: { en: 'Your check-in for today isn’t in yet.', km: 'ការរាយការណ៍ប្រចាំថ្ងៃរបស់អ្នកសម្រាប់ថ្ងៃនេះ មិនទាន់មាននៅឡើយទេ។' },
   oneonone: { en: '{n} of 2 1-on-1s with {name} this month.', km: 'ជួបមួយទល់មួយជាមួយ {name} បាន {n} ក្នុងចំណោម 2 ដងក្នុងខែនេះ។' },
@@ -6196,7 +6198,7 @@ async function getTasksBoot(username, pin, calFrom) {
 }
 
 const BOOT_KEYS = ['libClub', 'entries', 'survey', 'okrs', 'dailyLogs', 'goals', 'holidays', 'smartGoals', 'broadcasts',
-  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks', 'holidayCatch', 'libHl', 'worshipWeeks:poipet', 'worshipWeeks:siemreap'];
+  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks', 'holidayCatch', 'libHl', 'worshipWeeks:poipet', 'worshipWeeks:siemreap', 'structurePlans'];
 async function awaitingBoot_(username, pin) {
   const w = await verifyAwaiting_(username, pin);
   if (!w) return null;
@@ -6293,6 +6295,7 @@ async function getMyBoot(username, pin) {
     kmFixes: await part(async function () { return kmFixesOf_(await getKmReview_()); }),   // a Khmer reviewer's corrections, live for everyone
     push: await part(async function () { const k = await pushKeys_(); return k ? { key: k.pub, prefs: pushPrefsOf_(s) } : null; }),   // reminders: the app's public key and your times
     backup: s.isAdmin ? await part(backupStatus_) : null,
+    structReady: canLead_(s) ? await part(function () { return structReady_(s); }) : null,   // this quarter's structure is arranged and not live yet (the bell, 23-structure.js)
     hospNews: canHosp_(s) ? await part(function () { return hospNews_(s.campus); }) : null,
     worship: await part(async function () { return { mine: await worshipMine_(s), canEdit: canWorship_(s) }; }),   // the Worship rota: the services I'm on in the next eight days (teams/26-worship.js)   // SR Hospitality: a team's new dates, someone who left
     fast: await part(function () { return fastGlance_(s); }),   // the campus's fast, running or coming (Intercession): the bell and ☰   // SR Hospitality: a team's new dates, someone who left
@@ -6336,11 +6339,13 @@ async function getPlans_() { return readJSON('structurePlans', []); }
    arrangement (students never carry over; they are per quarter). */
 function planFor_(plans, campus, y, q) {
   const p = plans.find(function (r) { return r.campus === campus && Number(r.year) === y && Number(r.quarter) === q; });
-  if (p) return { students: p.students || {}, place: p.place || {}, leads: p.leads || null, extra: p.extra || [], schools: Array.isArray(p.schools) ? p.schools : null, inherited: false };
+  if (p) return { students: p.students || {}, place: p.place || {}, leads: p.leads || null, extra: p.extra || [], schools: Array.isArray(p.schools) ? p.schools : null,
+    also: p.also && typeof p.also === 'object' ? p.also : null, live: p.live || null, inherited: false };
   const earlier = plans.filter(function (r) { return r.campus === campus && r.place && Object.keys(r.place).length && (Number(r.year) * 10 + Number(r.quarter)) < y * 10 + q; })
     .sort(function (a, b) { return (Number(b.year) * 10 + Number(b.quarter)) - (Number(a.year) * 10 + Number(a.quarter)); })[0];
   return { students: {}, place: (earlier && earlier.place) || {}, leads: (earlier && earlier.leads) || null, extra: (earlier && earlier.extra) || [],
     schools: earlier && Array.isArray(earlier.schools) ? earlier.schools : null,
+    also: (earlier && earlier.also && typeof earlier.also === 'object') ? earlier.also : null, live: null,
     inherited: !!earlier, from: earlier ? { year: Number(earlier.year), quarter: Number(earlier.quarter) } : null };
 }
 function cleanPlace_(place, here) {
@@ -6389,6 +6394,174 @@ function cleanStructLeads_(leads, here) {
   });
   return out;
 }
+/* A person in more than one ministry that quarter (Nov 2026, Uriah: "some people will have 2 ministry jobs"): `also` =
+   {staffId: ['Dept|Ministry', …]} — the ministries they serve in besides their main place. Never the main place itself,
+   never a Campus Leadership row (that one waits for an admin), never for someone off the chart or a student that quarter,
+   ≤ STRUCT_ALSO_MAX each. null = what the profiles say (`ministries`). The server has no copy of the taxonomy, so the
+   page offers only real ministries and this keeps the shape. */
+const STRUCT_ALSO_MAX = 4;
+function cleanStructAlso_(also, here, place, students, byId) {
+  if (also === null || also === undefined || typeof also !== 'object' || Array.isArray(also)) return null;
+  const out = {};
+  Object.keys(also).slice(0, 600).forEach(function (id) {
+    if (!here[id] || (students && students[id])) return;
+    const pl = place && place[id], r = byId && byId[id];
+    if (pl && pl.dept === STRUCT_OFF) return;
+    const main = pl ? pl.dept + '|' + (pl.ministry || '') : r ? r.dept + '|' + (r.ministry || '') : '';
+    const list = [];
+    (Array.isArray(also[id]) ? also[id] : []).forEach(function (k) {
+      const raw = str_(k, 160);
+      if (!raw || raw.split('|').length !== 2) return;
+      const key = normKey_(raw, 2), p = key.split('|');
+      if (!p[0] || !p[1] || p[0] === LEADERSHIP_DEPT || p[0] === STRUCT_OFF || key === main || list.indexOf(key) > -1) return;
+      list.push(key);
+    });
+    if (list.length) out[id] = list.slice(0, STRUCT_ALSO_MAX);
+  });
+  return out;
+}
+/* the other ministries someone serves in that quarter: the plan's when it has its own, else their profile's */
+function structAlsoOf_(plan, r) {
+  if (plan && plan.also) return plan.also[r.id] || [];
+  return ministriesOf_(r).filter(function (k) { return k.split('|')[0] !== LEADERSHIP_DEPT && k !== r.dept + '|' + (r.ministry || ''); }).slice(0, STRUCT_ALSO_MAX);
+}
+
+/* ---- a quarter's structure made live: the arrangement becomes people's profiles (Nov 2026, Uriah) ----
+   "Really easy every quarter for anyone in the campus leadership roles to move people around … and for that to
+   automatically change in their profile." structApplyRows_ lays one quarter's plan over the staff rows it is given and
+   says what it changed — the same code for a look first (on a copy) and for the write (inside mutateStaff_).
+   For each active staff member of the campus: their main place → dept + ministry, the plan's `also` → ministries,
+   the plan's leaders → leads (Campus Leadership's own keys are kept — the board has no leaders for those rows).
+   Left alone: anyone off the chart, a student that quarter, a place with no ministry, names typed in, and everything
+   else on a profile. A move INTO Campus Leadership by someone who is not an admin is not written: it becomes the
+   person's cltRequest, as when they ask themselves (updateProfile), and waits in Admin → Approvals. */
+function structSameSet_(a, b) { return a.length === b.length && a.every(function (k) { return b.indexOf(k) > -1; }); }
+function structApplyRows_(rows, campus, plan, isAdmin, only) {
+  const place = plan.place || {}, students = plan.students || {}, leads = plan.leads, also = plan.also;
+  const changes = [], waiting = [], now = new Date().toISOString();
+  rows.forEach(function (rec) {
+    if (!rec || !rec.active || rec.archived || isApplicant_(rec) || rec.campus !== campus) return;
+    if (only && !only[rec.id]) return;
+    if (students[rec.id]) return;
+    const pl = place[rec.id];
+    if (pl && pl.dept === STRUCT_OFF) return;
+    const ch = { id: rec.id, name: rec.name, from: (rec.dept || '') + '|' + (rec.ministry || ''), to: '', waits: '', alsoAdd: [], alsoDrop: [], leadAdd: [], leadDrop: [] };
+    const want = pl && pl.dept && pl.ministry ? { dept: normDept_(pl.dept, pl.ministry), ministry: normMinistry_(pl.dept, pl.ministry) } : null;
+    if (want && (want.dept !== rec.dept || want.ministry !== (rec.ministry || ''))) {
+      if (want.dept === LEADERSHIP_DEPT && deptOf_(rec) !== LEADERSHIP_DEPT && !isAdmin) {
+        const w = { id: rec.id, name: rec.name, waits: LEADERSHIP_DEPT + '|' + want.ministry };
+        if (rec.cltRequest && rec.cltRequest.ministry === want.ministry) { waiting.push(w); return; }   // already asked: nothing new
+        rec.cltRequest = { ministry: want.ministry, cdKind: '', at: now, by: 'structure' };
+        rec.updated = now;
+        ch.waits = w.waits; changes.push(ch);
+        return;   // the rest of their profile waits with it
+      }
+      rec.dept = want.dept; rec.ministry = want.ministry;
+      if (rec.cdKind && !(rec.dept === LEADERSHIP_DEPT && rec.ministry === 'Campus Director')) rec.cdKind = '';
+      if (rec.cltRequest) delete rec.cltRequest;
+      ch.to = rec.dept + '|' + rec.ministry;
+    } else if (want && rec.cltRequest && rec.cltRequest.by === 'structure') {
+      delete rec.cltRequest;   // the board asked for it and the board took it back
+      ch.unasked = true;
+    }
+    const main = (rec.dept || '') + '|' + (rec.ministry || '');
+    const curMin = ministriesOf_(rec);
+    let wantMin = also ? cleanMinistries_((also[rec.id] || []).concat(curMin.filter(function (k) { return k.split('|')[0] === LEADERSHIP_DEPT; })), rec) : cleanMinistries_(curMin, rec);
+    if (deptOf_(rec) !== LEADERSHIP_DEPT) wantMin = wantMin.filter(function (k) { return k.split('|')[0] !== LEADERSHIP_DEPT; });
+    if (!structSameSet_(curMin, wantMin)) {
+      ch.alsoAdd = wantMin.filter(function (k) { return curMin.indexOf(k) === -1; });
+      ch.alsoDrop = curMin.filter(function (k) { return wantMin.indexOf(k) === -1 && k !== main; });
+      rec.ministries = wantMin;
+      ch.min = true;
+    }
+    if (leads) {
+      const cur = leadsOf_(rec);
+      const wantL = cur.filter(function (k) { return k.split('|')[0] === LEADERSHIP_DEPT; });
+      Object.keys(leads).forEach(function (k) { if (k.split('|')[0] !== LEADERSHIP_DEPT && leads[k].indexOf(rec.id) > -1 && wantL.indexOf(k) === -1) wantL.push(k); });
+      if (!structSameSet_(cur, wantL)) {
+        ch.leadAdd = wantL.filter(function (k) { return cur.indexOf(k) === -1; });
+        ch.leadDrop = cur.filter(function (k) { return wantL.indexOf(k) === -1; });
+        rec.leads = cleanLeads_(wantL);
+      }
+    }
+    if (!(ch.to || ch.min || ch.unasked || ch.leadAdd.length || ch.leadDrop.length)) return;
+    delete ch.min; delete ch.unasked;
+    rec.updated = now;
+    ch.now = { dept: rec.dept, ministry: rec.ministry || '', ministries: ministriesOf_(rec).slice(), leads: leadsOf_(rec).slice() };
+    changes.push(ch);
+  });
+  return { changes: changes, waiting: waiting };
+}
+/* what a look-first says to whoever may edit that campus's quarter (the page's "n profiles would change") */
+function structDiff_(staff, campus, plan, editor) {
+  const r = structApplyRows_(copy_(staff), campus, plan, !!(editor && editor.isAdmin));
+  return { changes: r.changes, waiting: r.waiting };
+}
+/* Tell each person whose ministry, other ministries or leading changed — the bell on their phone. Never throws. */
+async function structTell_(changes, y, q) {
+  for (const ch of changes) {
+    if (ch.waits || !ch.now) continue;
+    const name = function (k) { return k.slice(k.indexOf('|') + 1); };
+    const n = ch.now, mins = [n.ministry || n.dept].concat(n.ministries.filter(function (k) { return k.split('|')[0] !== LEADERSHIP_DEPT; }).map(name));
+    const leadsNow = n.leads.filter(function (k) { return k.split('|')[0] !== LEADERSHIP_DEPT; }).map(name);
+    const lead = ch.leadAdd.length && leadsNow.length;
+    const join = function (list, lang) { return list.length < 2 ? list.join('') : list.slice(0, -1).join(', ') + (lang === 'km' ? ' និង ' : ' and ') + list[list.length - 1]; };
+    await pushNow_(ch.id, lead ? 'structServeLead' : 'structServe', function (lang) { return { q: q, year: y, where: join(mins, lang), lead: join(leadsNow, lang) }; }, 'teams.html?view=ministry');
+  }
+}
+/* the quarter's saved snapshot follows the arrangement (this quarter or a later one) */
+async function structSnapFollow_(campus, y, q, rec, staff) {
+  const rows = await getStructures_();
+  const snap = rows.find(function (r) { return r.campus === campus && Number(r.year) === y && Number(r.quarter) === q; });
+  if (!snap || y * 10 + q < currentYear_() * 10 + currentQuarter_()) return snap || null;
+  snap.people = structPeople_(staff, campus, rec);
+  snap.schools = rec.schools || null;
+  await writeJSON('structure', rows);
+  return snap;
+}
+function structPlanOut_(rec) {
+  return { students: rec.students || {}, place: rec.place || {}, leads: rec.leads || null, extra: rec.extra || [], schools: Array.isArray(rec.schools) ? rec.schools : null,
+    also: rec.also || null, live: rec.live || null, inherited: false };
+}
+/* applyStructure(user, pin, campus, year, q, {dry}) — the same right as arranging the quarter. dry: the list of changes
+   and nothing written. Otherwise ONE write of the staff list, the plan marked `live: {at, by}` (an inherited
+   arrangement becomes the quarter's own), its snapshot rebuilt, and each person told. A quarter already over is refused. */
+async function applyStructure(username, pin, campus, year, quarter, opts) {
+  campus = str_(campus, 40);
+  const ed = await structEditor_(username, pin, campus);
+  if (!ed) return { ok: false, err: 'not_authorized' };
+  campus = campus || ed.campus;
+  if (CAMPUS_IDS_.indexOf(campus) === -1) return { ok: false, err: 'bad_campus' };
+  const y = finiteNum_(year, 2020, 2100), q = finiteNum_(quarter, 1, 4);
+  if (y == null || q == null) return { ok: false, err: 'bad_quarter' };
+  if (y * 10 + q < currentYear_() * 10 + currentQuarter_()) return { ok: false, err: 'past_quarter' };
+  const plan = planFor_(await getPlans_(), campus, y, q);
+  if (opts && opts.dry) return Object.assign({ ok: true, dry: true, live: plan.live || null }, structDiff_(await getStaff_(), campus, plan, ed));
+  const res = await mutateStaff_(function (rows) {
+    const r = structApplyRows_(rows, campus, plan, !!ed.isAdmin);
+    return r.changes.length ? { ok: true, changes: r.changes, waiting: r.waiting } : { abort: true, ok: true, changes: [], waiting: r.waiting };
+  });
+  if (!res || !res.ok) return res || { ok: false };
+  const plans = await getPlans_();
+  const idx = plans.findIndex(function (r) { return r.campus === campus && Number(r.year) === y && Number(r.quarter) === q; });
+  const rec = idx > -1 ? plans[idx] : { campus: campus, year: y, quarter: q, students: plan.students, place: plan.place, leads: plan.leads, extra: plan.extra, schools: plan.schools, also: plan.also, savedAt: new Date().toISOString(), savedBy: ed.id };
+  rec.live = { at: new Date().toISOString(), by: ed.id };
+  if (idx > -1) plans[idx] = rec; else plans.push(rec);
+  await writeJSON('structurePlans', plans);
+  const staff = await getStaff_();
+  const snap = await structSnapFollow_(campus, y, q, rec, staff);
+  await structTell_(res.changes, y, q);
+  return { ok: true, campus: campus, year: y, quarter: q, changes: res.changes, waiting: res.waiting, plan: structPlanOut_(rec),
+    diff: structDiff_(staff, campus, rec, ed), doc: snap ? structPeopleOnly_(snap, staff) : null };
+}
+/* Campus Leadership's bell (the boot): this quarter has an arrangement of its own that nobody has made live yet. */
+async function structReady_(s) {
+  if (!canLead_(s) || CAMPUS_IDS_.indexOf(s.campus) === -1) return null;
+  const y = currentYear_(), q = currentQuarter_();
+  const p = (await getPlans_()).find(function (r) { return r.campus === s.campus && Number(r.year) === y && Number(r.quarter) === q; });
+  if (!p || p.live || !p.place || !Object.keys(p.place).length) return null;
+  return { year: y, q: q };
+}
 /* Who may arrange a campus's quarter: an admin (any campus), or Campus Leadership on that campus. */
 async function structEditor_(username, pin, campus) {
   const s = await verifyStaff_(username, pin);
@@ -6410,9 +6583,13 @@ async function getStructure(username, pin, campus, year, quarter) {
   const y = finiteNum_(year, 2020, 2100) || currentYear_();
   const q = finiteNum_(quarter, 1, 4) || currentQuarter_();
   const found = structFind_(await getStructures_(), campus, y, q);
-  return { ok: true, campus: campus, year: y, quarter: q, doc: structPeopleOnly_(found.doc, await getStaff_()), source: found.source, plan: planFor_(await getPlans_(), campus, y, q) };
+  const plan = planFor_(await getPlans_(), campus, y, q), staff = await getStaff_();
+  const out = { ok: true, campus: campus, year: y, quarter: q, doc: structPeopleOnly_(found.doc, staff), source: found.source, plan: plan };
+  // whoever may arrange this quarter also hears what making it live would change on people's profiles
+  if (canLead_(s) && (s.isAdmin || campus === s.campus) && y * 10 + q >= currentYear_() * 10 + currentQuarter_()) out.diff = structDiff_(staff, campus, plan, s);
+  return out;
 }
-async function saveStructurePlan(username, pin, campus, year, quarter, students, place, leads, extra, schools) {
+async function saveStructurePlan(username, pin, campus, year, quarter, students, place, leads, extra, schools, also) {
   campus = str_(campus, 40);
   const admin = await structEditor_(username, pin, campus);
   if (!admin) return { ok: false, err: 'not_authorized' };
@@ -6437,19 +6614,43 @@ async function saveStructurePlan(username, pin, campus, year, quarter, students,
   const studentsClean = students === undefined || students === null ? before.students : clean;
   const leadsClean = leads === undefined ? cleanStructLeads_(before.leads, hereAll) : cleanStructLeads_(leads, hereAll);
   const schoolsClean = schools === undefined ? cleanStructSchools_(before.schools) : cleanStructSchools_(schools);
-  const rec = { campus: campus, year: y, quarter: q, students: studentsClean, place: placeClean, leads: leadsClean, extra: extraClean, schools: schoolsClean, savedAt: new Date().toISOString(), savedBy: admin.id };
+  const byId = {}; staff.forEach(function (r) { byId[r.id] = r; });
+  const alsoClean = cleanStructAlso_(also === undefined ? before.also : also, hereAll, placeClean, studentsClean, byId);
+  const rec = { campus: campus, year: y, quarter: q, students: studentsClean, place: placeClean, leads: leadsClean, extra: extraClean, schools: schoolsClean, also: alsoClean, savedAt: new Date().toISOString(), savedBy: admin.id };
+  /* a quarter made live stays live through later changes; put back to "everyone's profile" (no places, no leaders, no
+     other ministries of its own) it is an ordinary quarter again */
+  const reset = !Object.keys(placeClean).length && leadsClean === null && alsoClean === null;
+  if (idx > -1 && plans[idx].live && !reset) rec.live = plans[idx].live;
   if (idx > -1) plans[idx] = rec; else plans.push(rec);
   await writeJSON('structurePlans', plans);
+  /* THIS quarter, live: what just changed on the board is people's profile at once. Only the people this save moved —
+     a profile someone edited themselves is not swept back by an unrelated change. A later quarter never writes a
+     profile until someone makes it live. */
+  let applied = [], staffNow = staff;
+  if (rec.live && y === currentYear_() && q === currentQuarter_()) {
+    const sig = function (p, id) {
+      return JSON.stringify([p.place && p.place[id] || null, p.also ? (p.also[id] || []) : null, (p.students || {})[id] || '',
+        p.leads ? Object.keys(p.leads).filter(function (k) { return p.leads[k].indexOf(id) > -1; }).sort() : null]);
+    };
+    const only = {}; let any = false;
+    Object.keys(here).forEach(function (id) { if (sig(before, id) !== sig(rec, id)) { only[id] = 1; any = true; } });
+    if (any) {
+      const res = await mutateStaff_(function (rws) {
+        const r = structApplyRows_(rws, campus, rec, !!admin.isAdmin, only);
+        return r.changes.length ? { ok: true, changes: r.changes } : { abort: true, ok: true, changes: [] };
+      });
+      if (res && res.ok && res.changes.length) { applied = res.changes; staffNow = await getStaff_(); await structTell_(applied, y, q); }
+    }
+  }
   // a snapshot already saved for that quarter follows
   const rows = await getStructures_();
   const snap = rows.find(function (r) { return r.campus === campus && Number(r.year) === y && Number(r.quarter) === q; });
   if (snap && y * 10 + q >= currentYear_() * 10 + currentQuarter_()) {
     // this quarter or a later one: the snapshot is the arrangement as it now stands
-    snap.people = structPeople_(staff, campus, rec);
+    snap.people = structPeople_(staffNow, campus, rec);
     snap.schools = schoolsClean;
     await writeJSON('structure', rows);
   } else if (snap) {
-    const byId = {}; staff.forEach(function (r) { byId[r.id] = r; });
     snap.people = snap.people.map(function (p) {
       const o = Object.assign({}, p), r = byId[p.id];
       if (studentsClean[p.id]) o.student = studentsClean[p.id]; else delete o.student;
@@ -6459,7 +6660,9 @@ async function saveStructurePlan(username, pin, campus, year, quarter, students,
     });
     await writeJSON('structure', rows);
   }
-  return { ok: true, campus: campus, year: y, quarter: q, plan: { students: studentsClean, place: placeClean, leads: leadsClean, extra: extraClean, schools: schoolsClean, inherited: false }, doc: snap ? structPeopleOnly_(snap, staff) : null };
+  const out = { ok: true, campus: campus, year: y, quarter: q, plan: structPlanOut_(rec), doc: snap ? structPeopleOnly_(snap, staffNow) : null, applied: applied };
+  if (y * 10 + q >= currentYear_() * 10 + currentQuarter_()) out.diff = structDiff_(staffNow, campus, rec, admin);
+  return out;
 }
 /* The people of a snapshot: the campus's staff where the quarter's arrangement puts them (else their profile), who leads
    what that quarter (else the profiles'), and the names typed in on the whiteboard. */
@@ -6467,8 +6670,11 @@ function structPeople_(staff, campus, plan) {
   const place = plan.place || {}, students = plan.students || {}, leads = plan.leads;
   const leadsFor = function (id, own) { if (!leads) return own; return Object.keys(leads).filter(function (k) { return leads[k].indexOf(id) > -1; }); };
   const people = staff.filter(function (r) { return r.active && !r.archived && !isApplicant_(r) && r.campus === campus; })
-    .map(function (r) { const pl = place[r.id]; const o = { id: r.id, name: r.name, dept: pl ? pl.dept : r.dept, ministry: pl ? pl.ministry : (r.ministry || ''), role: r.role || '', leads: leadsFor(r.id, leadsOf_(r)), photo: '' }; if (students[r.id]) o.student = students[r.id]; return o; });
-  (plan.extra || []).forEach(function (x) { const pl = place[x.id] || { dept: STRUCT_OFF, ministry: '' }; people.push({ id: x.id, name: x.name, dept: pl.dept, ministry: pl.ministry, role: '', leads: leadsFor(x.id, []), photo: '', extra: true }); });
+    .map(function (r) { const pl = place[r.id]; const o = { id: r.id, name: r.name, dept: pl ? pl.dept : r.dept, ministry: pl ? pl.ministry : (r.ministry || ''), role: r.role || '', leads: leadsFor(r.id, leadsOf_(r)), photo: '' };
+      const al = structAlsoOf_(plan, r).filter(function (k) { return k !== o.dept + '|' + o.ministry; }); if (al.length && o.dept !== STRUCT_OFF && !students[r.id]) o.also = al;
+      if (students[r.id]) o.student = students[r.id]; return o; });
+  (plan.extra || []).forEach(function (x) { const pl = place[x.id] || { dept: STRUCT_OFF, ministry: '' }; const o = { id: x.id, name: x.name, dept: pl.dept, ministry: pl.ministry, role: '', leads: leadsFor(x.id, []), photo: '', extra: true };
+    if (plan.also && plan.also[x.id] && pl.dept !== STRUCT_OFF) o.also = plan.also[x.id]; people.push(o); });
   return people.slice(0, STRUCT_MAX);
 }
 async function saveStructure(username, pin, campus, year, quarter) {
@@ -16207,7 +16413,8 @@ const HANDLERS = {
   adminDecideTrip: function (a) { return adminDecideTrip(a[0], a[1], a[2], a[3]); },
   adminSaveHolidays: function (a) { return adminSaveHolidays(a[0], a[1], a[2]); },
   saveStructure: function (a) { return saveStructure(a[0], a[1], a[2], a[3], a[4]); },
-  saveStructurePlan: function (a) { return saveStructurePlan(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]); },
+  saveStructurePlan: function (a) { return saveStructurePlan(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10]); },
+  applyStructure: function (a) { return applyStructure(a[0], a[1], a[2], a[3], a[4], a[5]); },
   hrCandidates: function (a) { return hrCandidates(a[0], a[1]); },
   hrSaveCandidate: function (a) { return hrSaveCandidate(a[0], a[1], a[2]); },
   hrCandidateNote: function (a) { return hrCandidateNote(a[0], a[1], a[2], a[3]); },

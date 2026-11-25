@@ -809,6 +809,18 @@ function mmHeadHtml_(opts, sel, mine){
     '<div class="mmHeadRow"><span class="mmBannerEmoji">'+emoji+'</span><div class="mmHeadText"><div class="mmBannerName">'+esc(name)+'</div><div class="rowSub">'+sub+(note ? '<span class="mmBannerNote">'+esc(note)+'</span>' : '')+'</div></div>'+
     (opts.length>1 ? '<button class="mmSwitch" id="mmSwitch" aria-haspopup="dialog">'+esc(t('Switch'))+' ▾</button>' : '')+'</div></div>';
 }
+/* In two to four ministries of your own (Nov 2026, Uriah: "some people will have 2 ministry jobs … there needs to be
+   some clarity around that"): one slim row under the header naming them, the open one marked, a tap opens the other.
+   Only the ministries that are yours — main, the others on your profile, any you lead — never the ones an admin or a
+   director can merely open; Switch ▾ stays for those. Its own attribute (data-mmgo), so Switch ▾'s rows are untouched. */
+function mmMineHtml_(opts, sel){
+  var own=opts.filter(function(o){ return o.role==='main' || o.role==='member' || o.role==='leader'; });
+  if(own.length<2 || own.length>4) return '';
+  return '<div class="mmMine" id="mmMine" role="group" aria-label="'+esc(t('Your ministries'))+'"><span class="mmMineLbl">'+esc(t('Your ministries'))+'</span>'+
+    own.map(function(o){ var on=o.dept===sel.dept && o.min===sel.min;
+      return '<button type="button" class="mmMinePill'+(on?' on':'')+'" data-mmgo="'+esc(o.dept)+'|'+esc(o.min)+'" aria-pressed="'+on+'">'+(o.dept===BL_DEPT ? '🧭 '+esc(t('Campus Leadership')) : mmOptionLabel_(o))+
+        (o.role==='main' ? ' <small>'+esc(t('main'))+'</small>' : '')+'</button>'; }).join('')+'</div>';
+}
 /* the one row of tabs: [key, label, attr] — most keys are data-mmtab; a tool's own keys keep their
    own attribute (data-cafetab, data-fintab) so the tool's handlers work as before */
 function mmTabsHtml_(tabs, cur, extraClass){
@@ -865,7 +877,7 @@ function myMinistryHtml(){
   if(leadRow && S.mmTab==='okr'){ S.lwTab='okrs'; S.mmTab='ministry'; }
   S.mmBrowseDept=sel.dept; S.mmBrowseMinistry=sel.min;
   var mine = selMine;
-  h+='<div class="mmPage">'+mmHeadHtml_(opts, sel, mine)+mmPickerHtml_(opts, sel);
+  h+='<div class="mmPage">'+mmHeadHtml_(opts, sel, mine)+mmMineHtml_(opts, sel)+mmPickerHtml_(opts, sel);
   // Campus Leadership: its OKRs and the Monday meeting board, no weekly numbers (hidden for now)
   S.leadShown = sel.dept===BL_DEPT;
   if(S.leadShown){

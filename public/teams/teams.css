@@ -3990,3 +3990,32 @@ body.sbDragging, body.sbDragging * { cursor:grabbing !important; }
   .lmRunTitle { font-size:30px; } .lmClock { font-size:17px; padding:5px 12px; } .lmCoach p { font-size:17px; } .lmDot { height:40px; font-size:18px; }
   .lmWeeks { flex-wrap:wrap; overflow:visible; }
 }
+
+/* ---- a second ministry, and a quarter made live (Nov 2026) ---- */
+.sbFace.also .avatar { box-shadow:none; outline:2px dashed var(--muted); outline-offset:1px; opacity:.85; }
+.sbFace.also.lead .avatar { outline-color:var(--amber); }
+.sbAlsoTag, .orgAlsoTag { display:inline-block; padding:0 5px; border:1px dashed var(--muted); border-radius:999px; font-size:9.5px; font-weight:700; line-height:1.5; color:var(--muted); text-transform:lowercase; white-space:nowrap; }
+.sbFace .sbAlsoTag { margin-top:-1px; }
+.sbNAlso { font-weight:600; color:var(--muted); }
+.orgPerson.also .avatar { outline:2px dashed var(--muted); outline-offset:1px; opacity:.85; }
+.orgPerson.also > span { color:var(--muted); }
+.sbAlso .sbAlsoRow { flex-wrap:wrap; gap:6px 8px; }
+.sbAlso .sbRowName { flex:1 1 140px; min-width:0; }
+.sbMainTag { flex:0 0 auto; padding:3px 9px; border-radius:999px; background:var(--accent); color:var(--accentInk); font-size:11.5px; font-weight:700; }
+.sbAlso select { flex:1 1 auto; min-width:0; }
+.sbLive { display:flex; align-items:center; flex-wrap:wrap; gap:6px 10px; margin:0 0 10px; padding:9px 12px; border:1.5px solid var(--border); border-radius:12px; background:var(--surface); }
+.sbLive.on { border-color:var(--good); }
+.sbLive.drift { border-color:var(--amber); }
+.sbLiveLine { flex:1 1 200px; min-width:0; margin:0; font-size:13.5px; font-weight:600; color:var(--ink); }
+.sbLiveBtns { display:flex; flex-wrap:wrap; gap:6px; }
+.sbLiveBtns .btn { width:auto; margin:0; }
+.sbLiveList { list-style:none; margin:0 0 10px; padding:0; max-height:46vh; overflow:auto; -webkit-overflow-scrolling:touch; }
+.sbLiveList li { display:flex; flex-direction:column; gap:1px; padding:7px 0; border-bottom:1px solid var(--border); font-size:13.5px; color:var(--ink); }
+.sbLiveList li span { color:var(--muted); font-size:13px; overflow-wrap:anywhere; }
+.sbLiveEarly { color:var(--ink); font-weight:600; }
+.mmMine { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin:-4px 0 10px; }
+.mmMineLbl { font-size:12px; font-weight:700; color:var(--muted); margin-right:2px; }
+.mmMinePill { border:1px solid var(--border2); background:var(--surface); color:var(--ink); border-radius:999px; padding:6px 11px; font:inherit; font-size:13px; font-weight:700; cursor:pointer; max-width:100%; }
+.mmMinePill.on { background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
+.mmMinePill small { font-weight:600; color:var(--muted); }
+.mmMinePill.on small { color:inherit; }
