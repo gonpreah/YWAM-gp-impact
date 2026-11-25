@@ -501,6 +501,15 @@ button.tick.done{ background:var(--good); }
 .bulkPre .bulkNoteRead b{ color:var(--ink); }
 .bulkPreSeg{ margin:4px 0 0; background:var(--surface); border:1px solid var(--line); }
 .bulkPreSeg button.on{ background:var(--accent); color:var(--accentInk); }
+.bulkPreSum{ margin:12px 0 4px; padding:10px 12px; border-radius:10px; background:var(--surface2); border:1px solid var(--line); }
+.bulkPreSum .preTbl{ width:100%; border-collapse:collapse; margin:6px 0 2px; font-size:14px; }
+.bulkPreSum .preTbl td{ padding:3px 0; } .bulkPreSum .preTbl td.r{ text-align:right; }
+.bulkPreSum .preTot td{ border-top:1px solid var(--line); font-weight:700; }
+.bulkPreSum .preLine{ margin:6px 0 0; font-size:14px; } .bulkPreSum .preOk{ color:var(--good); }
+.bulkPreSum .preGap{ margin:8px 0 0; padding:8px 10px; border-radius:8px; background:var(--amberSoft, rgba(255,179,35,.16)); font-size:14px; }
+.bulkPreSum .preGap select{ width:100%; }
+.amendLink{ padding:0 4px; font-size:13px; }
+.amendList div{ margin-top:4px; } .amendList small{ display:block; margin-top:4px; }
 .bulkGrp{ border-bottom:1px solid var(--line); }
 .bulkGrpHead{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; padding:8px 0; }
 .bulkGrpBtn{ flex:1 1 260px; min-width:0; display:flex; align-items:center; gap:10px; background:none; border:0; padding:4px 0; text-align:left; cursor:pointer; color:var(--ink); font:inherit; }
@@ -1961,40 +1970,99 @@ function bulkSummary_(r){
    category — the sub-category named last, so "class Admin … corresponds to Office/General" lands on Office/General.
    Whatever it finds is put on every line (it wins over the guess from each line's own words); the rest is left as
    guessed. The words themselves are kept on each entry added (impNote) and show in its memo. */
-/* "Already in an approved total" (25 Nov 2026): a month imported in one go can hold lines the office already
-   counted in an approved report — e.g. everything on or before the 16th. Ticked, with that day picked, each line
-   dated on or before it is put in that day's approved report as it is added (addToApproved_): approved and on or
-   before the balances, it is taken to be inside the bank and cash already, so it doesn't move them; it does count
-   in the income and expenses (the profit and loss, the Ministries tab). The allocations: the office says each time
-   whether that day's allocations already took these lines off (then they are left alone) or not (then the lines
-   come off that day's approved category balances too). */
+/* "Already in an approved total" (25 Nov 2026, asked again the same day): a month imported in one go can hold lines
+   dated on or before an approved day (e.g. the 16th). Ticked, with that day picked, each such line joins that day's
+   approved report as it is added, and two questions say what it does to that report:
+   1. Should they change its approved total liquid assets? No by default — the balances typed for that day already hold
+      them, so ABA, US and Cash stay as approved (and in Live, an approved line on or before the balances is inside them).
+      Yes: each account moves by the lines, shown old → new, and the Add button becomes "Approve adjustments to … total
+      liquid assets": that day's approved balances and the matching balances entry change.
+   2. What happens to its approved allocations? Change them (default — a ministry spent or received money without
+      saying): each category moves by its lines. Leave them: the allocations already had them — then a fix line (or not)
+      keeps the categories as approved, as before.
+   Then the day as it would be: allocated against total liquid assets. When they don't match (No + Change always leaves
+   a gap the size of the lines), it says so and offers one adjustment, dated that day and in its report, that puts the
+   difference into (or takes it out of) a category the office picks. Every such change is kept on the day as an
+   amendment (P.amend), shown in the Approved view as "amended". */
 function bulkPreOn_(){ return !!(S.bulkPre && S.bulkPre.on && S.bulkPre.day && PUBLISHED[S.bulkPre.day]); }
 function bulkPreIn_(r){ return bulkPreOn_() && r.date && r.date<=S.bulkPre.day; }
-function bulkPre_(x, kind, U){ var B=U.pre; if(!B || !B.day || !x.date || x.date>B.day || !PUBLISHED[B.day]) return false; addToApproved_(x, kind, B.day, B.alloc==='done'); x.preApproved=B.day;
-  if(B.alloc==='done' && B.fix && (kind==='inc' || kind==='exp')){ var sg=kind==='inc'?1:-1; (x.split||[]).forEach(function(sp){ if(sp.f) B.moved[sp.f]=Math.round(((B.moved[sp.f]||0)+sg*sp.amt)*100)/100; }); }
+function preR2_(n){ return Math.round(n*100)/100; }
+var PRE_ACCT={ 'acct|aba':'aba', 'acct|us':'us', 'acct|cash':'cash' };
+/* what the ticked lines on or before the day would do to it */
+function bulkPreFx_(U){ var B=S.bulkPre, out={ n:0, acct:{ aba:0, us:0, cash:0 }, alloc:0 }; if(!U || !bulkPreOn_()) return out;
+  U.rows.forEach(function(r){ if(!r.ok || bulkNeeds_(r).length || !bulkPreIn_(r)) return; out.n++;
+    if(r.kind==='inc' || r.kind==='exp'){ var sg=r.kind==='inc'?1:-1, a=PRE_ACCT[r.bank]; if(a) out.acct[a]+=sg*r.amt;
+      var sp = r.kind==='exp' ? [{ f:r.fund, amt:r.amt }] : flSplit_('inc', r.type, r.amt, r.fund); sp.forEach(function(x){ if(x.f && fundOf_(x.f)) out.alloc+=sg*x.amt; }); }
+    else { if(PRE_ACCT[r.from]) out.acct[PRE_ACCT[r.from]]-=r.amt; if(PRE_ACCT[r.to]) out.acct[PRE_ACCT[r.to]]+=r.amt;
+      if(r.from===TOOL_ADD && fundOf_(r.to)) out.alloc+=r.amt; if(r.to===TOOL_REMOVE && fundOf_(r.from)) out.alloc-=r.amt; } });
+  Object.keys(out.acct).forEach(function(k){ out.acct[k]=preR2_(out.acct[k]); }); out.alloc=preR2_(out.alloc); return out; }
+function preAllocOf_(P){ return preR2_(Object.keys(P.groups||{}).reduce(function(s2,g){ return s2+(P.groups[g]||[]).reduce(function(t,x){ return t+x[1]; },0); },0)); }
+function preLiqOf_(P){ return P.bal ? preR2_(P.bal.aba+P.bal.us+P.bal.cash) : null; }
+/* the day before and after: liquid assets, allocated, and the gap between them */
+function bulkPreDay_(U){ var B=S.bulkPre, P=PUBLISHED[B.day], fx=bulkPreFx_(U), liq0=preLiqOf_(P), al0=preAllocOf_(P);
+  var dl = B.liq==='yes' && P.bal ? preR2_(fx.acct.aba+fx.acct.us+fx.acct.cash) : 0, da = B.alloc==='change' ? fx.alloc : 0;
+  var liq1 = liq0==null ? null : preR2_(liq0+dl), al1=preR2_(al0+da);
+  return { P:P, fx:fx, liq0:liq0, liq1:liq1, al0:al0, al1:al1, gap: liq1==null ? null : preR2_(liq1-al1) }; }
+function bulkPre_(x, kind, U){ var B=U.pre; if(!B || !B.day || !x.date || x.date>B.day || !PUBLISHED[B.day]) return false; addToApproved_(x, kind, B.day, B.alloc!=='change'); x.preApproved=B.day;
+  if(B.alloc==='leave' && B.fix && (kind==='inc' || kind==='exp')){ var sg=kind==='inc'?1:-1; (x.split||[]).forEach(function(sp){ if(sp.f) B.moved[sp.f]=preR2_((B.moved[sp.f]||0)+sg*sp.amt); }); }
+  if(kind==='inc' || kind==='exp'){ var a=PRE_ACCT[x.bank], sg2=kind==='inc'?1:-1; if(a) B.acct.push({ a:a, d:sg2*x.amt, date:x.date }); }
+  else { if(PRE_ACCT[x.from]) B.acct.push({ a:PRE_ACCT[x.from], d:-x.amt, date:x.date }); if(PRE_ACCT[x.to]) B.acct.push({ a:PRE_ACCT[x.to], d:x.amt, date:x.date }); }
   return true; }
 /* the fix lines: the allocations already had these taken off, so each sub-category they moved gets one Financial
    tools adjustment back — dated the approved day and in its report — and its balance stays as approved */
-function bulkFix_(U){ var B=U.pre; if(!B || B.alloc!=='done' || !B.fix) return 0; var n=0;
+function bulkFix_(U){ var B=U.pre; if(!B || B.alloc!=='leave' || !B.fix) return 0; var n=0;
   Object.keys(B.moved).forEach(function(f, i){ var d=B.moved[f]; if(Math.abs(d)<0.005 || !fundOf_(f)) return; var amt=Math.abs(d), up=d<0;
     var tx={ id:'f'+Date.now().toString(36)+'x'+i, at:Date.now(), date:B.day, from:up?TOOL_ADD:f, to:up?f:TOOL_REMOVE, amt:amt, src:'bulkfix', file:U.file,
       memo:'Fix line — the '+date(B.day)+' allocations already had these taken off (imported from '+U.file+')' };
     fundMove_(f, up?amt:-amt); TOOL_XFERS.push(tx); addToApproved_(tx, 'tool', B.day, true); n++; });
-  TOOL_XFERS.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; }); return n; }
+  return n; }
+/* Yes to question 1: that day's approved balances move by the lines, and so does its balances entry (only by the lines
+   dated on or before it — later ones already count on top of it in Live) */
+function bulkPreLiq_(U){ var B=U.pre, P=B && PUBLISHED[B.day]; if(!B || B.liq!=='yes' || !P || !P.bal || !B.acct.length) return null;
+  var tot={ aba:0, us:0, cash:0 }, row=BAL_DAYS.filter(function(r){ return r.asOf===P.bal.asOf; })[0];
+  B.acct.forEach(function(m){ tot[m.a]+=m.d; if(row && m.date<=row.asOf) row[m.a]=preR2_(row[m.a]+m.d); });
+  Object.keys(tot).forEach(function(k){ tot[k]=preR2_(tot[k]); P.bal[k]=preR2_(P.bal[k]+tot[k]); }); refreshBal_(); return tot; }
+/* the one-tap gap fix: one adjustment that day, in its report, into (or out of) the category picked */
+function bulkGap_(U, gap){ var B=U.pre; if(!B || !B.gapTo || !fundOf_(B.gapTo) || gap==null || Math.abs(gap)<0.005) return null; var amt=Math.abs(gap), up=gap>0;
+  var tx={ id:'f'+Date.now().toString(36)+'g', at:Date.now(), date:B.day, from:up?TOOL_ADD:B.gapTo, to:up?B.gapTo:TOOL_REMOVE, amt:amt, src:'bulkgap', file:U.file,
+    memo:'So the '+date(B.day)+' allocations add up to its total liquid assets (bulk import from '+U.file+')' };
+  fundMove_(B.gapTo, up?amt:-amt); TOOL_XFERS.push(tx); addToApproved_(tx, 'tool', B.day, false); return { f:B.gapTo, amt:preR2_(gap) }; }
 function bulkPreHtml_(U){ var days=reportDays_(); if(!days.length) return '';
-  var B=S.bulkPre||(S.bulkPre={ on:false, day:days[0], alloc:'' }); if(days.indexOf(B.day)<0) B.day=days[0];
-  var n=U ? U.rows.filter(bulkPreIn_).length : 0;
-  var h='<label class="incChk bulkPreChk"><input type="checkbox" id="bulkPreOn"'+(B.on?' checked':'')+'><span><b>Some of these lines are already in an approved total</b><br><small>e.g. everything on or before the 16th was in that day’s approved report</small></span></label>';
+  var B=S.bulkPre||(S.bulkPre={ on:false, day:days[0], liq:'no', alloc:'change', fix:'fix', gapTo:'' }); if(days.indexOf(B.day)<0) B.day=days[0];
+  var n=U ? U.rows.filter(bulkPreIn_).length : 0, P=PUBLISHED[B.day], d=date(B.day);
+  var h='<label class="incChk bulkPreChk"><input type="checkbox" id="bulkPreOn"'+(B.on?' checked':'')+'><span><b>Some of these lines are on or before an approved day</b><br><small>e.g. everything on or before the 16th — they go in that day’s approved report, and you say what they change</small></span></label>';
   if(!B.on) return h;
-  h+='<div class="bulkPre"><label class="f" for="bulkPreDay">Lines dated on or before</label><select id="bulkPreDay" class="bigSel">'+days.map(function(d){ return '<option value="'+d+'"'+(d===B.day?' selected':'')+'>'+date(d)+' — approved</option>'; }).join('')+'</select>'+
-    '<p class="bulkNoteRead">They go in the '+date(B.day)+' approved report: they count in the income and expenses, but <b>don’t change the bank or cash</b> — those balances already hold them.'+(U?' <b>'+n+' of '+U.rows.length+' line'+(U.rows.length>1?'s':'')+'</b> '+(n===1?'is':'are')+' on or before '+date(B.day)+'.':'')+'</p>'+
-    '<label class="f">Had the '+date(B.day)+' allocations already taken them off?</label>'+
-    '<div class="seg bulkPreSeg"><button class="'+(B.alloc==='done'?'on':'')+'" data-bulkprealloc="done">Yes — leave the allocations</button><button class="'+(B.alloc==='take'?'on':'')+'" data-bulkprealloc="take">No — take them off too</button></div>'+
-    (B.alloc==='done' ? '<label class="f" style="margin-top:10px">Then these would take them off the categories a second time. Keep them as approved?</label>'+
-      '<div class="seg bulkPreSeg"><button class="'+(B.fix==='fix'?'on':'')+'" data-bulkprefix="fix">Yes — write a fix line</button><button class="'+(B.fix==='none'?'on':'')+'" data-bulkprefix="none">No — let them go down</button></div>'+
-      '<p class="bulkNoteRead">'+(B.fix==='fix' ? 'A Financial tools adjustment for each category, dated '+date(B.day)+' and in its approved report, adds back what these lines take off — the expenses still show, the category balances stay as approved.' : B.fix==='none' ? 'The categories go down by these lines in 📡 Live; the '+date(B.day)+' approved allocations stay as they were.' : 'A fix line is a Financial tools adjustment that puts back what these lines take off each category.')+'</p>' : '')+
-    (!B.alloc || (B.alloc==='done' && !B.fix) ? '<p class="inErr" style="margin:4px 0 0">'+(B.alloc?'Pick one of these too before adding.':'Pick one before adding.')+'</p>' : '')+'</div>';
+  var seg=function(attr, val, opts){ return '<div class="seg bulkPreSeg">'+opts.map(function(o){ return '<button class="'+(val===o[0]?'on':'')+'" data-'+attr+'="'+o[0]+'">'+o[1]+'</button>'; }).join('')+'</div>'; };
+  h+='<div class="bulkPre"><label class="f" for="bulkPreDay">Lines dated on or before</label><select id="bulkPreDay" class="bigSel">'+days.map(function(x){ return '<option value="'+x+'"'+(x===B.day?' selected':'')+'>'+date(x)+' — approved</option>'; }).join('')+'</select>'+
+    (U?'<p class="bulkNoteRead"><b>'+n+' of '+U.rows.length+' line'+(U.rows.length>1?'s':'')+'</b> '+(n===1?'is':'are')+' on or before '+d+'. They count in that day’s income and expenses (the profit and loss, Ministries).</p>':'')+
+    '<label class="f" style="margin-top:10px">1. Should they change the '+d+' approved total liquid assets?</label>'+
+    seg('bulkpreliq', B.liq, [['no','No — keep them as approved'],['yes','Yes — adjust them']])+
+    '<p class="bulkNoteRead">'+(B.liq==='yes' ? (P && P.bal ? 'ABA, US and Cash move by these lines — see what they become at the bottom. <b>Only if the balances typed for '+d+' didn’t hold them yet</b> (e.g. receipts spent after the cash was counted); if they came from the statement and the cash count, these lines would be counted twice.' : '⚠️ No balances were approved for '+d+', so there is nothing to adjust.') : 'The balances typed for '+d+' already hold these lines, so ABA, US and Cash stay as approved.')+'</p>'+
+    '<label class="f" style="margin-top:10px">2. What happens to the '+d+' approved allocations?</label>'+
+    seg('bulkprealloc', B.alloc, [['change','Change them'],['leave','Leave them']])+
+    '<p class="bulkNoteRead">'+(B.alloc==='change' ? 'Each category moves by its lines — e.g. a ministry spent or received money that wasn’t in the allocations yet.' : 'The '+d+' allocations already had these lines.')+'</p>'+
+    (B.alloc==='leave' ? '<label class="f" style="margin-top:6px">Then in 📡 Live they would come off the categories a second time. Keep the categories as approved?</label>'+
+      seg('bulkprefix', B.fix, [['fix','Yes — write a fix line'],['none','No — let them go down']])+
+      '<p class="bulkNoteRead">'+(B.fix==='fix' ? 'A Financial tools adjustment for each category, dated '+d+' and in its approved report, adds back what these lines take off.' : 'The categories go down by these lines in 📡 Live; the '+d+' approved allocations stay as they were.')+'</p>' : '')+'</div>';
   return h; }
+/* at the bottom, by the button: the day as it would be, and the gap fix */
+function bulkPreSumHtml_(U){ if(!bulkPreOn_() || !U) return ''; var B=S.bulkPre, X=bulkPreDay_(U), d=date(B.day); if(!X.fx.n) return '';
+  var nm={ aba:'ABA bank', us:'US bank', cash:'Cash on hand' }, ar=function(a,b){ return a===b ? money(a,true) : money(a,true)+' → <b>'+money(b,true)+'</b>'; };
+  var h='<div class="bulkPreSum" id="bulkPreSum"><b>'+d+', approved — after this import</b>';
+  if(B.liq==='yes' && X.P.bal) h+='<table class="preTbl">'+['aba','us','cash'].map(function(k){ return '<tr><td>'+nm[k]+'</td><td class="r">'+ar(X.P.bal[k], preR2_(X.P.bal[k]+X.fx.acct[k]))+'</td></tr>'; }).join('')+
+      '<tr class="preTot"><td>Total liquid assets</td><td class="r">'+ar(X.liq0, X.liq1)+'</td></tr></table>';
+  else h+='<p class="preLine">Total liquid assets: '+(X.liq0==null?'— (no balances approved)':money(X.liq0,true)+' — unchanged')+'</p>';
+  var pct = X.liq1 ? Math.round(X.al1/X.liq1*1000)/10 : null;
+  h+='<p class="preLine">Allocated: '+ar(X.al0, X.al1)+(pct!=null?' · <b>'+pct+'%</b> of total liquid assets':'')+'</p>';
+  if(X.gap!=null && Math.abs(X.gap)>=0.005){
+    h+='<div class="preGap" id="bulkPreGap">⚠️ <b>The allocations aren’t 100%</b> — '+(X.gap>0 ? money(X.gap,true)+' of the total liquid assets has no category.' : 'they come to '+money(-X.gap,true)+' more than the total liquid assets.')+
+      ' That’s fine to leave, and you can add an internal transfer later — or fix it here:'+
+      '<label class="f" for="bulkGapTo" style="margin-top:6px">'+(X.gap>0?'Put the '+money(X.gap,true)+' into':'Take the '+money(-X.gap,true)+' out of')+'</label>'+fundSelect_('bulkGapTo', B.gapTo||'', 'Category for the difference')+
+      '<p class="bulkNoteRead" style="margin:4px 0 0">'+(B.gapTo ? 'One Financial tools adjustment, dated '+d+' and in its approved report. Then allocated = total liquid assets.' : 'Leave it on “Pick a fund” to keep the gap.')+'</p></div>';
+  } else if(X.gap!=null) h+='<p class="preLine preOk">✓ Allocated is 100% of the total liquid assets.</p>';
+  return h+'</div>'; }
+function bulkPreBtn_(U, n){ if(bulkPreOn_() && S.bulkPre.liq==='yes' && PUBLISHED[S.bulkPre.day].bal && bulkPreFx_(U).n) return 'Approve adjustments to '+date(S.bulkPre.day)+' total liquid assets · add '+n+' line'+(n>1?'s':'');
+  return 'Add '+n+' ticked to 📡 Live'; }
 function bulkNoteRead_(txt){ var t=String(txt||'').toLowerCase(), out={ kind:'', bank:'', fund:'' }; if(!t.trim()) return out;
   var ex=/\bexpenses?\b|\bspending\b|\bspent\b|\bbills?\b|\bpaid\b|\bpayments? out\b/.test(t), inc=/\bincome\b|\bdeposits?\b|\bdonations?\b|\bcontributions?\b|\breceived\b|\bgiving\b/.test(t), xf=/\btransfers?\b/.test(t);
   out.kind = xf && !ex && !inc ? 'xf' : ex && !inc ? 'exp' : inc && !ex ? 'inc' : '';
@@ -2041,7 +2109,7 @@ function inBulkHtml_(){
   h+=bulkGroupsHtml_(R);
   h+='<div class="bulkTot">Ticked: '+ticked.length+' · income '+money(tot('inc'),true)+' · expenses '+money(tot('exp'),true)+' · transfers '+money(tot('xf'),true)+'</div>'+
     (S.bulkSaveErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.bulkSaveErr)+'</p>' : '')+
-    '<div class="inBtns"><button class="btn" id="bulkAdd"'+(ticked.length && !(bulkPreOn_() && (!S.bulkPre.alloc || (S.bulkPre.alloc==='done' && !S.bulkPre.fix)))?'':' disabled')+'>Add '+ticked.length+' ticked to 📡 Live</button><button class="btn ghost" id="bulkCancel">Cancel</button></div>';
+    bulkPreSumHtml_(U)+'<div class="inBtns"><button class="btn" id="bulkAdd"'+(ticked.length?'':' disabled')+'>'+bulkPreBtn_(U, ticked.length)+'</button><button class="btn ghost" id="bulkCancel">Cancel</button></div>';
   return h+'</details>';
 }
 function bulkRowHtml_(r, i){ var need=bulkNeeds_(r), ed=S.bulkEdit===i;
@@ -2114,9 +2182,8 @@ function bulkRead_(f){
 }
 function bulkAdd_(){
   var U=S.bulk, list=U.rows.filter(function(r){ return r.ok && !bulkNeeds_(r).length; }); if(!list.length) return;
-  if(bulkPreOn_() && !S.bulkPre.alloc) return;
-  if(bulkPreOn_() && S.bulkPre.alloc==='done' && !S.bulkPre.fix) return;
-  U.pre = bulkPreOn_() ? { day:S.bulkPre.day, alloc:S.bulkPre.alloc, fix:S.bulkPre.alloc==='done' && S.bulkPre.fix==='fix', moved:{} } : null;
+  var X0 = bulkPreOn_() ? bulkPreDay_(U) : null;
+  U.pre = bulkPreOn_() ? { day:S.bulkPre.day, liq:S.bulkPre.liq, alloc:S.bulkPre.alloc, fix:S.bulkPre.alloc==='leave' && S.bulkPre.fix==='fix', gapTo:S.bulkPre.gapTo||'', moved:{}, acct:[] } : null;
   snap_('Removed the '+list.length+' lines bulk-imported from '+U.file);
   list.forEach(function(r, i){ var id=Date.now().toString(36)+i, at=Date.now();
     if(r.kind==='inc' || r.kind==='exp'){ var e={ id:r.kind[0]+id, at:at, date:r.date, amt:r.amt, type:r.type, who:'', memo:r.desc, bank:r.bank, src:'bulk', file:U.file, impNote:U.note||'',
@@ -2126,12 +2193,14 @@ function bulkAdd_(){
       if(fundOf_(r.from)) fundMove_(r.from, -r.amt); if(fundOf_(r.to)) fundMove_(r.to, r.amt);
       bulkPre_(t, isTool_(r.from)||isTool_(r.to) ? 'tool' : 'xf', U);
       (isTool_(r.from)||isTool_(r.to) ? TOOL_XFERS : TRANSFERS).push(t); } });
-  var nFix=bulkFix_(U);
+  var nFix=bulkFix_(U), liqT=bulkPreLiq_(U), gapT = X0 ? bulkGap_(U, X0.gap) : null, nPre=0;
+  if(U.pre){ nPre=list.filter(function(r){ return r.date && r.date<=U.pre.day; }).length;
+    if(nPre){ var Pd=PUBLISHED[U.pre.day]; (Pd.amend=Pd.amend||[]).push({ at:Date.now(), file:U.file, n:nPre, liq:liqT, alloc:U.pre.alloc==='change' ? X0.fx.alloc : 0, gap:gapT, fix:nFix }); } }
   flSort_('inc'); flSort_('exp'); [TRANSFERS, TOOL_XFERS].forEach(function(L){ L.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; }); });
   xferSnap_(list.reduce(function(m,r){ return r.date>m?r.date:m; },''));
   var left=U.rows.filter(function(r){ return !(r.ok && !bulkNeeds_(r).length); });
   S.bulk = left.length ? { file:U.file, rows:left, note:U.note } : null; if(!left.length){ S.bulkNote=''; S.bulkNoteMsg=''; S.bulkPre=null; } S.bulkEdit=null; render();
-  toast('Added '+list.length+' lines to 📡 Live'+(nFix?' and '+nFix+' fix line'+(nFix>1?'s':'')+' (Financial tools)':'')+(left.length?' — '+left.length+' still to check':''));
+  toast('Added '+list.length+' lines to 📡 Live'+(nPre?' — '+nPre+' in the '+date(U.pre.day)+' approved report'+(liqT?', its liquid assets adjusted':'')+(gapT?', the gap put into '+fundNm_(gapT.f):''):'')+(nFix?' and '+nFix+' fix line'+(nFix>1?'s':''):'')+(left.length?' — '+left.length+' still to check':''));
 }
 /* ---- Input: advances — money handed out before a purchase, settled with the receipts ----
    They are their own report: giving, settling and bringing money back move no account and no
@@ -2546,7 +2615,13 @@ function asOfBarHtml_(){
   }
   h+='<div class="asOfBar"><label for="viewDay">📅 Reports as of</label>'+(days.length ? sel('viewDay', days, cur, latest) : '<b>—</b>')+
     (days.length && BAL.asOf && ALLOC_ASOF!==BAL.asOf ? '<span class="warn">· allocations as of '+date(ALLOC_ASOF)+'</span>' : '')+
+    (cur && PUBLISHED[cur] && (PUBLISHED[cur].amend||[]).length ? '<button class="more amendLink" id="amendOpen">✏️ amended '+date(new Date(PUBLISHED[cur].amend.slice(-1)[0].at).toISOString().slice(0,10))+'</button>' : '')+
     '<span class="sep">·</span><label for="viewDebtDay">💳 Staff debt as of</label>'+sel('viewDebtDay', dd, dcur, dd[0])+'</div>';
+  var Pa=cur && PUBLISHED[cur]; if(S.amendOpen && Pa && (Pa.amend||[]).length) h+='<div class="pastNote amendList" id="amendList"><b>✏️ '+date(cur)+' was changed after it was approved</b>'+Pa.amend.map(function(m){
+      return '<div>'+date(new Date(m.at).toISOString().slice(0,10))+' · '+m.n+' line'+(m.n>1?'s':'')+' imported from '+esc(m.file||'a file')+
+        (m.liq ? ' · liquid assets '+(m.liq.aba+m.liq.us+m.liq.cash<0?'−':'+')+money(Math.abs(m.liq.aba+m.liq.us+m.liq.cash),true) : ' · liquid assets unchanged')+
+        (m.alloc ? ' · allocations '+(m.alloc<0?'−':'+')+money(Math.abs(m.alloc),true) : '')+(m.fix ? ' · '+m.fix+' fix line'+(m.fix>1?'s':'') : '')+
+        (m.gap ? ' · '+money(Math.abs(m.gap.amt),true)+(m.gap.amt>0?' into ':' out of ')+esc(fundNm_(m.gap.f)) : '')+'</div>'; }).join('')+'<small>Undo it from 🕘 History.</small></div>';
   if(S.pendDay) h+='<div class="pastNote" style="background:var(--accentSoft);color:var(--ink)">✏️ '+date(S.pendDay)+' is being entered — not approved yet (see 📡 Live).</div>';
   if((cur && cur!==latest) || (dcur && dcur!==dd[0]) || advRef_()!==TODAY) h+='<div class="pastNote">🕘 You’re looking at an earlier day. <button class="more" id="viewLatest" style="padding:0">Back to the latest</button></div>';
   return h;
@@ -2820,7 +2895,8 @@ document.addEventListener('change', function(e){
   if(e.target.id==='bulkFile' && e.target.files[0]){ bulkRead_(e.target.files[0]); e.target.value=''; return; }
   if(e.target.id==='bulkSrc'){ S.bulkSrc=e.target.value; S.bulkSrcSet=true; return; }
   if(e.target.id==='bulkNote' && S.bulk){ render(); return; }
-  if(e.target.id==='bulkPreOn'){ (S.bulkPre=S.bulkPre||{ day:reportDays_()[0], alloc:'' }).on=e.target.checked; render(); return; }
+  if(e.target.id==='bulkPreOn'){ (S.bulkPre=S.bulkPre||{ day:reportDays_()[0], liq:'no', alloc:'change', fix:'fix', gapTo:'' }).on=e.target.checked; render(); return; }
+  if(e.target.id==='bulkGapTo' && S.bulkPre){ S.bulkPre.gapTo=e.target.value; render(); return; }
   if(e.target.id==='bulkPreDay'){ S.bulkPre.day=e.target.value; render(); return; }
   if(e.target.dataset && e.target.dataset.bulkok!=null){ S.bulk.rows[+e.target.dataset.bulkok].ok=e.target.checked; render(); return; }
   if(e.target.dataset && e.target.dataset.bulkf){ var bf=e.target.dataset.bulkf.split('|'), br=S.bulk.rows[+bf[0]], v=e.target.value;
@@ -2942,6 +3018,7 @@ document.addEventListener('click', function(e){
   if(e.target.id==='bulkTickAll' && S.bulk){ S.bulk.rows.forEach(function(r){ if(!bulkNeeds_(r).length && !r.dup) r.ok=true; }); render(); return; }
   if(e.target.id==='bulkUntick' && S.bulk){ S.bulk.rows.forEach(function(r){ r.ok=false; }); render(); return; }
   if(e.target.id==='bulkAdd'){ bulkAdd_(); return; }
+  if(e.target.id==='amendOpen'){ S.amendOpen=!S.amendOpen; render(); return; }
   if(e.target.id==='bulkCancel'){ S.bulk=null; S.bulkEdit=null; render(); return; }
   var be=e.target.closest && e.target.closest('[data-bulkedit]'); if(be){ S.bulkEdit=+be.dataset.bulkedit; render(); return; }
   var bd=e.target.closest && e.target.closest('[data-bulkdone]'); if(bd){ var dr=S.bulk.rows[+bd.dataset.bulkdone]; S.bulkEdit=null; if(!bulkNeeds_(dr).length) dr.ok=true; render(); return; }
@@ -3217,7 +3294,7 @@ function importDemo_(){ var ta=document.getElementById('impText'), txt=ta?ta.val
   resetState_(); loadState_(o.state); refreshBal_(); keep_();
   S.impAsk=false; S.impErr=''; S.impTxt=''; (S.foldOpen=S.foldOpen||{}).imp=false; render(); toast('Brought in — saving to Impact'); }
 document.addEventListener('click', function(e){ if(e.target.id==='impGo') importDemo_(); });
-document.addEventListener('click', function(e){ var pa=e.target.closest && e.target.closest('[data-bulkprealloc]'); if(pa && S.bulkPre){ S.bulkPre.alloc=pa.dataset.bulkprealloc; render(); } var pf=e.target.closest && e.target.closest('[data-bulkprefix]'); if(pf && S.bulkPre){ S.bulkPre.fix=pf.dataset.bulkprefix; render(); } });
+document.addEventListener('click', function(e){ var pa=e.target.closest && e.target.closest('[data-bulkprealloc]'); if(pa && S.bulkPre){ S.bulkPre.alloc=pa.dataset.bulkprealloc; render(); } var pl=e.target.closest && e.target.closest('[data-bulkpreliq]'); if(pl && S.bulkPre){ S.bulkPre.liq=pl.dataset.bulkpreliq; render(); } var pf=e.target.closest && e.target.closest('[data-bulkprefix]'); if(pf && S.bulkPre){ S.bulkPre.fix=pf.dataset.bulkprefix; render(); } });
 document.addEventListener('click', function(e){ if(e.target.id!=='bulkNoteApply' || !S.bulk) return; S.bulk.note=String(S.bulkNote||'').trim(); var n=bulkNoteApply_(S.bulk.rows, bulkNoteRead_(S.bulk.note)); S.bulkNoteMsg=n ? 'Changed '+n+' line'+(n>1?'s':'')+' — tick the ones that are right.' : 'Every line already matched it.'; render(); });
 /* ---- Inside My Ministry (?embed=1): one page with the app ----
    The page tells the app how tall it is (the app makes the frame that tall, so nothing scrolls on its

@@ -114,24 +114,30 @@ Income.
 - The words are kept on every entry added from that file (`impNote`) and show at the end of its memo in the
   Detailed breakdown ("Import: …"). Once every line is added, the box empties for the next file.
 
-### 📥 Bulk import — lines already in an approved total (25 Nov 2026)
-- A month imported in one go can hold lines already counted in an approved report (e.g. everything on or before
-  the 16th). Tick **Some of these lines are already in an approved total** (shown once something is approved) and
-  pick the approved day; each line dated on or before it is tagged "✅ in the … approved report", and when added
-  it goes into that day's approved report (`bulkPre_` → `addToApproved_(x, kind, day, noFunds)`, `x.preApproved`).
-- So it **doesn't move the bank or cash** (approved and on or before the balances → inside them, section 4) but it
-  **does count in the income and expenses** (the profit and loss, the Ministries tab, the Approved view).
-- **The allocations — asked every time** ("Had the 16 Nov allocations already taken them off?"; Add waits for an
-  answer): **Yes** → that day's approved category balances are left as they are; **No** → the lines come off them
-  too (as the single-entry "Add it to the approved report as well" tick always does).
-- **After Yes, a second question** — the lines would take the money off the categories a second time (the live
-  category amounts move, as for any income or expense). **Write a fix line** (`bulkFix_`): for each sub-category
-  the marked lines moved, one Financial tools adjustment ("Add income" to it for expenses, "Remove income" for
-  income), dated the approved day, in its approved report (funds left as they were), memo "Fix line — the …
-  allocations already had these taken off (imported from …)", `src:'bulkfix'`. The expenses still show in the
-  income and expenses; the category balances stay as approved; the breakdown's check doesn't move. **Let them go
-  down**: no fix line — the categories go down in Live and the check shows the difference. Add waits for this
-  answer too. Lines after the approved day are never fixed — they are new spending.
+### 📥 Bulk import — lines on or before an approved day (25 Nov 2026, redone the same day)
+- A month imported in one go can hold lines dated on or before an approved day (e.g. the 16th). Tick **Some of these
+  lines are on or before an approved day** (shown once something is approved) and pick the day; each such line is
+  tagged "✅ in the … approved report" and, when added, goes into that day's approved report (`bulkPre_` →
+  `addToApproved_`, `x.preApproved`) — so it always **counts in the income and expenses** (profit and loss, Ministries).
+  Two questions (`S.bulkPre = {on, day, liq, alloc, fix, gapTo}`), both with a default, so Add never waits:
+- **1. Should they change the 16 Nov approved total liquid assets?** **No** (default): the balances typed for that day
+  already hold them — ABA, US and Cash stay as approved, and in Live an approved line on or before the balances is
+  inside them (section 4). **Yes**: the bottom box shows each account old → new and the total, the Add button reads
+  **Approve adjustments to 16 Nov total liquid assets · add n lines**, and adding moves that day's approved balances
+  (`P.bal`) and its balances entry (`BAL_DAYS`, only by lines dated on or before it — later ones already count on top in
+  Live) (`bulkPreLiq_`). The page warns that Yes counts lines twice if the balances came from the statement / cash count.
+- **2. What happens to the 16 Nov approved allocations?** **Change them** (default — a ministry spent or received money
+  that wasn't in the allocations): each category moves by its lines, in that day's approved groups and in Live.
+  **Leave them**: the allocations already had them; then **write a fix line** (default, `bulkFix_`: one Financial tools
+  adjustment per sub-category, dated the day, in its report, funds left as approved, `src:'bulkfix'`) or **let them go
+  down** in Live. Lines after the approved day are never touched — they are new spending.
+- **Is it still 100%?** The bottom box (`bulkPreSumHtml_`, `bulkPreDay_`) shows the day as it would be: total liquid
+  assets, allocated, and allocated as a % of it. When they differ (No + Change them always leaves a gap the size of the
+  lines) it says so — fine to leave, or **Put the $X into / Take the $X out of [category]** (`bulkGapTo`): one Financial
+  tools adjustment dated the day, in its report, moving the category there and in Live (`bulkGap_`, `src:'bulkgap'`).
+- **Amendments**: every import that changed an approved day is kept on it (`P.amend: [{at, file, n, liq, alloc, gap,
+  fix}]`); the Approved view's "Reports as of" bar shows **✏️ amended {date}**, which opens the list (`#amendList`).
+  The whole import is one 🕘 History entry, so Undo takes all of it back.
 
 ### 🔁 Internal transfers (`TRANSFERS`)
 - **Fund → fund:** one fund down, the other up, at once. Accounts and the totals don't change.
