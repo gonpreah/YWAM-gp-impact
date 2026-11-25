@@ -84,8 +84,15 @@ Income.
   **does count in the income and expenses** (the profit and loss, the Ministries tab, the Approved view).
 - **The allocations — asked every time** ("Had the 16 Nov allocations already taken them off?"; Add waits for an
   answer): **Yes** → that day's approved category balances are left as they are; **No** → the lines come off them
-  too (as the single-entry "Add it to the approved report as well" tick always does). Either way the live
-  category amounts move, as for any income or expense.
+  too (as the single-entry "Add it to the approved report as well" tick always does).
+- **After Yes, a second question** — the lines would take the money off the categories a second time (the live
+  category amounts move, as for any income or expense). **Write a fix line** (`bulkFix_`): for each sub-category
+  the marked lines moved, one Financial tools adjustment ("Add income" to it for expenses, "Remove income" for
+  income), dated the approved day, in its approved report (funds left as they were), memo "Fix line — the …
+  allocations already had these taken off (imported from …)", `src:'bulkfix'`. The expenses still show in the
+  income and expenses; the category balances stay as approved; the breakdown's check doesn't move. **Let them go
+  down**: no fix line — the categories go down in Live and the check shows the difference. Add waits for this
+  answer too. Lines after the approved day are never fixed — they are new spending.
 
 ### 🔁 Internal transfers (`TRANSFERS`)
 - **Fund → fund:** one fund down, the other up, at once. Accounts and the totals don't change.
