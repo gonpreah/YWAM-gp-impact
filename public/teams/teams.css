@@ -3930,4 +3930,5 @@ body.sbDragging, body.sbDragging * { cursor:grabbing !important; }
 .mmMineLbl { font-size:12px; font-weight:700; color:var(--muted); margin-right:2px; }
 .mmMinePill { border:1px solid var(--border2); background:var(--surface); color:var(--ink); border-radius:999px; padding:6px 11px; font:inherit; font-size:13px; font-weight:700; cursor:pointer; max-width:100%; }
 .mmMinePill.on { background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
-.mmMinePill small { font-weight:600; opacity:.8; }
+.mmMinePill small { font-weight:600; color:var(--muted); }
+.mmMinePill.on small { color:inherit; }
