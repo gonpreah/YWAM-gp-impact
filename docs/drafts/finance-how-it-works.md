@@ -200,9 +200,10 @@ Income.
   period isn't set against a whole one); last week and last month with the one before; custom with the same
   number of days just before; all time with nothing.
 - **Picker** (`mnPickerHtml_`): Ministry budgets first, then "Other allocations". Tap to add or take one away;
-  "All n" — or tapping the category's name — picks a whole category (tapped again: just its first one). **Clear all** (shown when two or more are picked) empties the picks, so the
-  report says "Nothing picked" until one is chosen; taking away the last one does the same. Several picked are added together, with an "Each one" table under the report.
-  Starts on the first ministry.
+  "All n" — or tapping the category's name — picks a whole category (tapped again: just its first one). **Clear all** (shown when two or more are picked) empties the picks, back to
+  "Nothing selected yet" and N/A; taking away the last one does the same. Several picked are added together, with an "Each one" table under the report.
+  **Starts with nothing selected**: "Showing" says "Nothing selected yet" and every figure reads **N/A** (the
+  total liquid assets still shows — it is the base's, not a ministry's) until one is picked.
 - **💰 Balance**: every Category amount of those sub-categories up to the period's last day (as `ledgerCats_`),
   how it moved since the period's first day, and its share of the total liquid assets that day
   (`ledgerLiquid_`).

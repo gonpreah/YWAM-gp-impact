@@ -490,6 +490,7 @@ button.tick.done{ background:var(--good); }
 .mnPickBtn.on .chev{ transform:rotate(180deg); }
 .mnGrp{ margin-top:10px; }
 .mnPanelBtns{ display:flex; gap:6px; }
+.mnNA{ color:var(--muted); }
 .mnGrpHead{ display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13.5px; }
 .mnGrpName{ flex:1; display:flex; align-items:center; gap:8px; background:none; border:0; padding:4px 0; font:inherit; color:var(--ink); text-align:left; cursor:pointer; }
 .mnGrpName.on b{ color:var(--accent); }
@@ -2429,10 +2430,9 @@ function mnRange_(P){ return P.from ? (P.from===P.to ? date(P.from) : date(P.fro
 function mnGroups_(){ var g=ALLOC.slice(), i=g.map(function(a){ return a.id; }).indexOf('min'); if(i>0){ var m=g.splice(i,1)[0]; g.unshift(m); } return g; }
 function mnSel_(){ var M=mnS_(), keys=fundList_().map(function(f){ return f.k; });
   var sel=(M.sel||[]).filter(function(k){ return keys.indexOf(k)>=0; });
-  if(!sel.length && !M.cleared){ var g=mnGroups_()[0]; sel=g && g.items.length ? [g.id+'|'+g.items[0][0]] : keys.slice(0,1); }
   return sel; }
 function mnName_(k){ var f=fundOf_(k); return f ? f.name : fundNm_(k); }
-function mnSelName_(sel){ if(!sel.length) return 'Nothing picked'; if(sel.length===1) return mnName_(sel[0]);
+function mnSelName_(sel){ if(!sel.length) return 'Nothing selected yet'; if(sel.length===1) return mnName_(sel[0]);
   var whole=ALLOC.filter(function(g){ return g.items.length>1 && g.items.every(function(it){ return sel.indexOf(g.id+'|'+it[0])>=0; }) && sel.length===g.items.length; })[0];
   return whole ? 'All of '+whole.name : sel.length+' allocations'; }
 /* income and expenses of some categories between two days, from the breakdown */
@@ -2476,25 +2476,25 @@ function minsHtml_(){ var M=mnS_(), P=mnPeriod_(), sel=mnSel_(), labs=sel.map(fu
   h+='<section class="sec mnTop"><div class="mnPers" role="tablist">'+MN_PERIODS.map(function(p){ return '<button class="'+(M.per===p[0]?'on':'')+'" data-mnper="'+p[0]+'">'+p[1]+'</button>'; }).join('')+'</div>';
   if(M.per==='custom') h+='<div class="mnCustom"><label>From <input type="date" id="mnFrom" value="'+P.from+'" max="'+TODAY+'"></label><label>To <input type="date" id="mnTo" value="'+P.to+'" max="'+TODAY+'"></label></div>';
   h+='<p class="mnRange">📅 '+mnRange_(P)+'</p>'+mnPickerHtml_(sel)+'</section>';
-  if(!sel.length) return h+'<section class="sec"><div class="emptyApproved"><b>Nothing picked.</b><br>Choose one or more allocations above to see their balance and profit and loss.</div></section>';
+  var NA=!sel.length, na='<span class="mnNA">N/A</span>';   /* nothing selected: every figure reads N/A until one is picked */
   /* the balance: what of the total liquid assets is theirs, on the period's last day */
   var bal=mnBal_(L, labs, P.to), liq=ledgerLiquid_(L, P.to).total, before=P.from ? mnBal_(L, labs, mnAdd_(P.from,-1)) : 0, moved=Math.round((bal-before)*100)/100;
   var whole=Math.floor(Math.abs(bal)), cents=Math.round((Math.abs(bal)-whole)*100);
   h+='<section class="sec" id="mnBal"><div class="secHead"><h2>💰 Balance</h2></div><p class="hint">How much of the total liquid assets '+(sel.length>1?'these have':'it has')+' been allocated, on '+date(P.to)+' — from the Detailed breakdown.</p>'+
-    '<div class="liquid'+(live?' est':'')+'"><div class="lbl">'+(live?'Estimated · ':'')+esc(mnSelName_(sel))+'</div><div class="num">'+(bal<0?'−':'')+money(whole)+'<span class="c">.'+String(cents).padStart(2,'0')+'</span></div>'+
-    '<div class="delta"'+(moved<0?' style="color:#FF9B8F"':'')+'>'+(P.from ? (Math.abs(moved)<0.005?'No change':(moved>0?'▲ ':'▼ ')+money(Math.abs(moved),true))+' since '+date(P.from) : (liq>0.005 ? Math.round(bal/liq*1000)/10+'% of the total liquid assets' : 'No liquid assets entered yet'))+'</div></div>'+
-    '<div class="accts mnShare"><div class="acct"><div class="an">Total liquid assets</div><div class="av">'+money(liq)+'</div></div><div class="acct"><div class="an">Share</div><div class="av">'+(liq>0.005?Math.round(bal/liq*1000)/10+'%':'—')+'</div></div></div></section>';
+    '<div class="liquid'+(live?' est':'')+'"><div class="lbl">'+(live?'Estimated · ':'')+esc(mnSelName_(sel))+'</div><div class="num">'+(NA?'N/A':(bal<0?'−':'')+money(whole)+'<span class="c">.'+String(cents).padStart(2,'0')+'</span>')+'</div>'+
+    '<div class="delta"'+(moved<0&&!NA?' style="color:#FF9B8F"':'')+'>'+(NA ? '<span style="color:var(--onDarkFaint)">Pick allocations above to see their balance</span>' : P.from ? (Math.abs(moved)<0.005?'No change':(moved>0?'▲ ':'▼ ')+money(Math.abs(moved),true))+' since '+date(P.from) : (liq>0.005 ? Math.round(bal/liq*1000)/10+'% of the total liquid assets' : 'No liquid assets entered yet'))+'</div></div>'+
+    '<div class="accts mnShare"><div class="acct"><div class="an">Total liquid assets</div><div class="av">'+money(liq)+'</div></div><div class="acct"><div class="an">Share</div><div class="av">'+(NA?na:liq>0.005?Math.round(bal/liq*1000)/10+'%':'—')+'</div></div></div></section>';
   /* the profit and loss for the period, against the period before */
-  var pl=mnPL_(L, labs, P.from, P.to), pp=P.pf ? mnPL_(L, labs, P.pf, P.pt) : null;
+  var pl=mnPL_(L, labs, P.from, P.to), pp=P.pf && !NA ? mnPL_(L, labs, P.pf, P.pt) : null;
   h+='<section class="sec" id="mnPL"><div class="secHead"><h2>📈 Profit and loss</h2></div><p class="hint">'+mnRange_(P)+(pp?' · compared with '+esc(P.vs)+' ('+date(P.pf)+(P.pf!==P.pt?' – '+date(P.pt):'')+')':'')+'.</p>'+
-    '<div class="dTiles mnTiles"><div class="dTile"><div class="dl">💵 Income</div><div class="dv mnIn">'+money(pl.inc,true)+'</div>'+(pp?mnVs_(pl.inc, pp.inc, P, true):'')+'</div>'+
-    '<div class="dTile"><div class="dl">🧾 Expenses</div><div class="dv mnOut">'+money(pl.exp,true)+'</div>'+(pp?mnVs_(pl.exp, pp.exp, P, false):'')+'</div></div>'+
-    '<div class="mnNet '+(pl.net<0?'neg':'')+'"><span>'+(pl.net<0?'Spent more than came in':'Net')+'</span><b>'+mnSg_(pl.net)+'</b>'+(pp?mnVs_(pl.net, pp.net, P, true):'')+'</div>';
-  h+='<div class="mnTwo"><div><div class="dListHead">Where the income came from</div>'+mnKinds_(pl.byInc, pl.inc, 'in')+'</div><div><div class="dListHead">Where the money went</div>'+mnKinds_(pl.byExp, pl.exp, 'out')+'</div></div>';
+    '<div class="dTiles mnTiles"><div class="dTile"><div class="dl">💵 Income</div><div class="dv mnIn">'+(NA?na:money(pl.inc,true))+'</div>'+(pp?mnVs_(pl.inc, pp.inc, P, true):'')+'</div>'+
+    '<div class="dTile"><div class="dl">🧾 Expenses</div><div class="dv mnOut">'+(NA?na:money(pl.exp,true))+'</div>'+(pp?mnVs_(pl.exp, pp.exp, P, false):'')+'</div></div>'+
+    '<div class="mnNet '+(pl.net<0?'neg':'')+'"><span>'+(pl.net<0?'Spent more than came in':'Net')+'</span><b>'+(NA?na:mnSg_(pl.net))+'</b>'+(pp?mnVs_(pl.net, pp.net, P, true):'')+'</div>';
+  h+='<div class="mnTwo"><div><div class="dListHead">Where the income came from</div>'+(NA?'<p class="hint">N/A</p>':mnKinds_(pl.byInc, pl.inc, 'in'))+'</div><div><div class="dListHead">Where the money went</div>'+(NA?'<p class="hint">N/A</p>':mnKinds_(pl.byExp, pl.exp, 'out'))+'</div></div>';
   if(Math.abs(pl.other)>0.004 || Object.keys(pl.byOther).length) h+='<p class="mnOther">🔁 Allocations, transfers and adjustments also moved it '+mnSg_(pl.other)+' — '+Object.keys(pl.byOther).map(function(k){ return esc(k.replace(' (Financial tools)',''))+' '+mnSg_(pl.byOther[k]); }).join(' · ')+'. These change the balance but aren’t income or expenses.</p>';
   if(pl.lines.length){ h+='<button class="flowDrop'+(M.list?' on':'')+'" id="mnList" aria-expanded="'+!!M.list+'"><span>'+(M.list?'Hide':'Show')+' the '+pl.lines.length+' transaction'+(pl.lines.length>1?'s':'')+'</span><span class="chev">▾</span></button>';
     if(M.list) h+='<ul class="mnLines">'+pl.lines.map(function(x){ var memo=(x.src&&x.src.memo)||''; return '<li><div><b>'+esc(x.name||(x.src&&x.src.type)||x.type)+'</b><span>'+date(x.date)+' · '+esc((x.src&&x.src.type)||x.type)+(sel.length>1?' · '+esc(mnName_(sel[labs.indexOf(x.cat)])):'')+(memo?' · '+esc(memo):'')+(x.appr?' · ✅':'')+'</span></div><b class="'+(x.camt<0?'mnOut':'mnIn')+'">'+mnSg_(x.camt)+'</b></li>'; }).join('')+'</ul>'; }
-  else h+='<p class="hint" style="margin-top:6px">No income or expenses for '+esc(mnSelName_(sel))+' in this period.</p>';
+  else if(!NA) h+='<p class="hint" style="margin-top:6px">No income or expenses for '+esc(mnSelName_(sel))+' in this period.</p>';
   h+='</section>';
   /* several picked: each one side by side */
   if(sel.length>1) h+='<section class="sec" id="mnEach"><div class="secHead"><h2>Each one</h2></div><table class="mnEach"><tr><th>Allocation</th><th class="r">Balance</th><th class="r">Income</th><th class="r">Expenses</th></tr>'+
@@ -2505,10 +2505,10 @@ document.addEventListener('click', function(e){ var M=mnS_(), t=e.target.closest
   else if(t.id==='mnPickBtn') M.pick=!M.pick;
   else if(t.id==='mnPickDone') M.pick=false;
   else if(t.id==='mnList') M.list=!M.list;
-  else if(t.dataset.mnk){ var k=t.dataset.mnk, sel=mnSel_().slice(), i=sel.indexOf(k); if(i>=0) sel.splice(i,1); else sel.push(k); M.sel=sel; M.cleared=!sel.length; }
+  else if(t.dataset.mnk){ var k=t.dataset.mnk, sel=mnSel_().slice(), i=sel.indexOf(k); if(i>=0) sel.splice(i,1); else sel.push(k); M.sel=sel; }
   else if(t.dataset.mngrp){ var g=ALLOC.filter(function(a){ return a.id===t.dataset.mngrp; })[0], ks=g.items.map(function(it){ return g.id+'|'+it[0]; }), cur=mnSel_();
-    M.sel = ks.every(function(k){ return cur.indexOf(k)>=0; }) && cur.length===ks.length ? [ks[0]] : ks; M.cleared=false; }
-  else if(t.id==='mnClear'){ M.sel=[]; M.cleared=true; }
+    M.sel = ks.every(function(k){ return cur.indexOf(k)>=0; }) && cur.length===ks.length ? [ks[0]] : ks; }
+  else if(t.id==='mnClear') M.sel=[];
   render(); });
 document.addEventListener('change', function(e){ if(e.target.id!=='mnFrom' && e.target.id!=='mnTo') return; var M=mnS_(); if(!e.target.value) return;
   M[e.target.id==='mnFrom'?'from':'to']=e.target.value; render(); });
