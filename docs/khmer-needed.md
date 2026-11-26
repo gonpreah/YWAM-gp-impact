@@ -6850,3 +6850,45 @@ Across the whole app the quarter's priorities are **Rocks** (ថ្មធំ —
 | No scoreboard numbers are set for {ministry} yet. | មិនទាន់មានលេខតារាងពិន្ទុសម្រាប់ {ministry} នៅឡើយទេ។ |
 | Set your ministry on the Profile tab and your team’s Scoreboard will show up here, ready to fill in. | កំណត់កិច្ចការបម្រើរបស់អ្នកនៅផ្ទាំងប្រវត្តិរូប នោះតារាងពិន្ទុរបស់ក្រុមអ្នកនឹងបង្ហាញនៅទីនេះ រួចរាល់សម្រាប់បំពេញ។ |
 | Scorecard (now reads as Scoreboard) | តារាងពិន្ទុ |
+## 146. The structure board: main job and second job; a mentee's own 1-on-1s (My Ministry → Structure, Mentorship, Nov 2026)
+On the structure whiteboard a face dropped on a ministry asks, in a small box right there, "Main job here" (moves the person) or "Second job here" (they keep their main ministry and also serve here — the dashed face). "job" here is the ministry someone serves in, not paid work; if កិច្ចការបម្រើ reads better than ការងារ, use it everywhere in this section. "admin" is a tiny tag under a face (about 40px wide) — it must stay very short. "Let go" = lift your finger / release the mouse. The toasts are on screen for a few seconds. On Mentorship, one quiet line under a person I mentor says how many 1-on-1s THEY have held this month with the people they mentor; the long sentence is a privacy promise (only the count is shown, never what was said) — check that one first.
+
+| English | Khmer (draft) |
+|---|---|
+| Waits for an admin | រង់ចាំអ្នកគ្រប់គ្រង |
+| admin | អ្នកគ្រប់គ្រង |
+| You’re looking only, so nobody moves. To move people, switch to Edit. | អ្នកកំពុងមើលតែប៉ុណ្ណោះ ដូច្នេះគ្មាននរណាផ្លាស់ទីទេ។ ដើម្បីផ្លាស់ទីមនុស្ស សូមប្តូរទៅ កែសម្រួល។ |
+| Switch to Edit | ប្តូរទៅ កែសម្រួល |
+| They get both ministries’ pages on My Ministry. Drag their solid face to move the main job, the dashed one to move the second. | ពួកគេមានទំព័រកិច្ចការបម្រើទាំងពីរនៅក្នុង កិច្ចការបម្រើរបស់ខ្ញុំ។ អូសមុខបន្ទាត់ជាប់របស់ពួកគេ ដើម្បីផ្លាស់ទីការងារចម្បង ហើយអូសមុខបន្ទាត់ដាច់ៗ ដើម្បីផ្លាស់ទីការងារទីពីរ។ |
+| {name} is on the chart as {box}. Their profile changes only once an admin says yes (Admin → Approvals). | {name} នៅលើតារាងជា {box} ហើយ។ ប្រវត្តិរូបរបស់ពួកគេនឹងផ្លាស់ប្តូរ លុះត្រាតែអ្នកគ្រប់គ្រងយល់ព្រម (អ្នកគ្រប់គ្រង → ការអនុម័ត)។ |
+| They already oversee this ministry as the department’s Director. | ពួកគេមើលការខុសត្រូវលើកិច្ចការបម្រើនេះរួចហើយ ក្នុងនាមជានាយកផ្នែក។ |
+| This is already their second job. | នេះជាការងារទីពីររបស់ពួកគេរួចហើយ។ |
+| They already have {n} second jobs. | ពួកគេមានការងារទីពីរ {n} រួចហើយ។ |
+| {box} is already {name}’s main job | {box} ជាការងារចម្បងរបស់ {name} រួចហើយ |
+| {name} no longer also serves in {box} | {name} លែងបម្រើនៅ {box} ផងដែរហើយ |
+| {name}’s second job moved to {box} | ការងារទីពីររបស់ {name} បានផ្លាស់ទីទៅ {box} |
+| {name} in {box} | {name} នៅ {box} |
+| Main job here | ការងារចម្បងនៅទីនេះ |
+| moves from {box} | ផ្លាស់ចេញពី {box} |
+| Second job here | ការងារទីពីរនៅទីនេះ |
+| stays in {box} too | នៅ {box} ដដែលផងដែរ |
+| Let go on a ministry, a Director spot or the row of faces below. | សូមលែងនៅលើកិច្ចការបម្រើ កន្លែងនាយក ឬជួរមុខមនុស្សខាងក្រោម។ |
+| {name} also serves in {box} now | ឥឡូវ {name} បម្រើនៅ {box} ផងដែរ |
+| Their 1-on-1s this month: {held} held with their 1 person | ការជួបមួយទល់មួយរបស់ពួកគេខែនេះ៖ បានជួប {held} ដង ជាមួយមនុស្ស ១ នាក់របស់ពួកគេ |
+| Their 1-on-1s this month: {held} held with {met} of {n} people | ការជួបមួយទល់មួយរបស់ពួកគេខែនេះ៖ បានជួប {held} ដង ជាមួយ {met} នាក់ ក្នុងចំណោម {n} នាក់ |
+| {name}’s own 1-on-1s this month | ការជួបមួយទល់មួយផ្ទាល់របស់ {name} ខែនេះ |
+| The people {name} mentors, and the 1-on-1s {name} has held with each this month. Only the count — what they talked about stays between the two of them. | មនុស្សដែល {name} ណែនាំ និងចំនួនការជួបមួយទល់មួយដែល {name} បានជួបជាមួយម្នាក់ៗក្នុងខែនេះ។ មានតែចំនួនប៉ុណ្ណោះ — អ្វីដែលពួកគេបាននិយាយគ្នា នៅរវាងពួកគេទាំងពីរ។ |
+| {n} of {target} ✓ | {n} ក្នុងចំណោម {target} ✓ |
+| {n} of {target} | {n} ក្នុងចំណោម {target} |
+## 143. The structure whiteboard: changes wait for Apply again, and the SR Ministries group (My Ministry → Structure)
+
+The line above the board once a quarter is live, the question before Apply again, and the heading the board puts over Sry Noi, LTN and Ponlork Hope.
+
+| English | Khmer (draft) |
+|---|---|
+| Q{q} {year} is live — profiles match it. A change on the board waits until you tap Apply again. | Q{q} {year} ដំណើរការហើយ — ប្រវត្តិរូបត្រូវគ្នានឹងវា។ ការផ្លាស់ប្តូរលើក្តារ រង់ចាំរហូតដល់អ្នកចុច អនុវត្តម្តងទៀត។ |
+| Update these profiles to match the structure? Each person is told. | ធ្វើបច្ចុប្បន្នភាពប្រវត្តិរូបទាំងនេះ ឲ្យត្រូវនឹងរចនាសម្ព័ន្ធឬ? ម្នាក់ៗនឹងត្រូវបានប្រាប់។ |
+| SR Ministries | កិច្ចការបម្រើ SR |
+| Stays in {box} | នៅតែក្នុង {box} |
+| Also serves here | បម្រើនៅទីនេះផងដែរ |
+| For someone in two ministries: they keep their main one and serve here too. | សម្រាប់អ្នកដែលនៅក្នុងកិច្ចការបម្រើពីរ៖ ពួកគេរក្សាកិច្ចការបម្រើចម្បងរបស់ពួកគេ ហើយបម្រើនៅទីនេះផងដែរ។ |

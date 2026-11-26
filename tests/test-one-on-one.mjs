@@ -201,6 +201,49 @@ ok('the mentee still sees their own', r.body.oneOnOnes[0].prep.helpWith === 'sec
 r = await call('saveOneOnOneNotes', ['andrew', '1234', 'oo4', 'rewrite', [], '']);
 ok('… and the former mentor cannot change the notes', r.body.ok === false && mem.oneOnOnes[0].notes === 'private');
 
+/* ---- how my mentees are doing with THEIR 1-on-1s (Nov 2026, Uriah) ---- */
+{
+  for (const k of Object.keys(mem)) delete mem[k];
+  const P = (o) => ({ campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', role: 'Staff', active: true, ...o, pinSalt: o.id, pinHash: mkHash('1234', o.id) });
+  const A = (id, name, username, mentorId, more) => P({ id, name, username, mentorId, mentorStatus: 'approved', ...(more || {}) });
+  mem.staff = [
+    P({ id: 'top', name: 'Tola Top', username: 'tola' }),
+    A('mid', 'Maly Mid', 'maly', 'top'), A('solo', 'Sina Solo', 'sina', 'top'),
+    A('a1', 'Ary One', 'ary', 'mid'), A('a2', 'Bora Two', 'bora', 'mid'), A('a3', 'Chea Three', 'chea', 'mid'),
+    P({ id: 'a4', name: 'Dy Pending', username: 'dy', mentorId: 'mid', mentorStatus: 'pending' }),
+    A('a5', 'Ek Gone', 'ek', 'mid', { active: false }),
+    P({ id: 'out', name: 'Oun Outside', username: 'oun' })
+  ];
+  const today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10), month = today.slice(0, 7);
+  const lastMonth = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 2, 15)).toISOString().slice(0, 10);
+  const row = (id, from, to, menteeId, status, heldOn) => ({ id, fromId: from, toId: to, menteeId, status, heldOn: heldOn || '', created: today + 'T01:00:00.000Z',
+    prep: { helpWith: 'SECRET-PREP' }, notes: 'SECRET-NOTES', followUps: [{ text: 'SECRET-FOLLOW', done: false }] });
+  mem.oneOnOnes = [
+    row('o1', 'mid', 'a1', 'a1', 'held', month + '-01'), row('o2', 'a1', 'mid', 'a1', 'held', today),   // two with Ary, whoever asked
+    row('o3', 'mid', 'a2', 'a2', 'held', today),                                                        // one with Bora
+    row('o4', 'mid', 'a3', 'a3', 'held', lastMonth),                                                    // last month: not this month's
+    row('o5', 'mid', 'a3', 'a3', 'accepted'),                                                           // not held yet
+    row('o6', 'top', 'mid', 'mid', 'held', today),                                                      // Maly's own with her mentor: not "theirs"
+    row('o7', 'out', 'a2', 'a2', 'held', today)                                                         // someone else's with Bora
+  ];
+  let r = await call('getMyMentees', ['tola', '1234']);
+  const mid = r.body.mentees.find(m => m.id === 'mid'), solo = r.body.mentees.find(m => m.id === 'solo');
+  ok('a mentee who mentors others comes with this month’s count for each of THEIR approved, active mentees', r.body.ok && mid.oo && mid.oo.held === 3 && mid.oo.met === 2 && JSON.stringify(mid.oo.people) === JSON.stringify([{ id: 'a1', name: 'Ary', held: 2 }, { id: 'a2', name: 'Bora', held: 1 }, { id: 'a3', name: 'Chea', held: 0 }]), JSON.stringify(mid.oo));
+  ok('first names and counts only — never a check-in, a note or a follow-up', !/SECRET/.test(JSON.stringify(r.body)) && Object.keys(mid.oo.people[0]).sort().join() === 'held,id,name');
+  ok('a mentee who mentors nobody has nothing extra', solo && !('oo' in solo));
+  r = await call('getMyBoot', ['tola', '1234']);
+  ok('it rides on the boot’s mentees — no new call on open', r.body.ok && r.body.mentees.find(m => m.id === 'mid').oo.held === 3 && !/SECRET-(PREP|NOTES|FOLLOW)/.test(JSON.stringify(r.body.mentees)));
+  r = await call('getMyMentees', ['oun', '1234']);
+  ok('someone who is not their mentor gets none of it', r.body.ok && r.body.mentees.length === 0);
+  r = await call('getMyMentees', ['maly', '1234']);
+  ok('the mentee’s own list is just her people (none of them mentors anyone)', r.body.ok && r.body.mentees.length === 3 && r.body.mentees.every(m => !m.oo));
+  mem.staff.find(x => x.id === 'mid').mentorStatus = 'pending';
+  r = await call('getMyMentees', ['tola', '1234']);
+  ok('a mentor request not yet accepted gives no counts', r.body.ok && !r.body.mentees.some(m => m.id === 'mid'));
+  r = await call('teamRoster', []);
+  ok('nothing of it on the public roster', !/"oo"/.test(JSON.stringify(r.body)));
+}
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 fs.rmSync(TMP, { recursive: true, force: true });
 process.exit(fail ? 1 : 0);
