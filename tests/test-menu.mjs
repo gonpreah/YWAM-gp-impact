@@ -61,15 +61,16 @@ async function menuOf(who) {
   await ctx.close();
   return { out, errors };
 }
-/* Language is Learn Khmer / English for everyone (Oct 2026); Khmer review sits under Admin for its reviewers */
+/* Language is Learn Khmer / English for everyone (Oct 2026); Khmer review sits under Admin for its reviewers.
+   Quarterly report (qreport, Nov 2026): Campus Leadership, admins and anyone who leads a ministry */
 const EXPECT = {
   staff: 'base caltasks ywamgp prayer p360 tests leave library support # Operations sched worship # Language khmer',
   hosp: 'base caltasks ywamgp prayer p360 tests leave library support # Operations sched worship hosp students # Language khmer',
-  hospLeader: 'base caltasks ywamgp prayer p360 tests leave library support # Operations sched worship hosp students # Language khmer',
-  teamsLeader: 'base caltasks ywamgp prayer p360 tests leave library support # Operations sched worship students # Applications portal portalapp # Language khmer',
-  cafeLeader: 'base caltasks ywamgp prayer p360 tests leave library support # Operations sched worship # Language khmer',
+  hospLeader: 'base caltasks ywamgp qreport prayer p360 tests leave library support # Operations sched worship hosp students # Language khmer',
+  teamsLeader: 'base caltasks ywamgp qreport prayer p360 tests leave library support # Operations sched worship students # Applications portal portalapp # Language khmer',
+  cafeLeader: 'base caltasks ywamgp qreport prayer p360 tests leave library support # Operations sched worship # Language khmer',
   hr: 'base caltasks ywamgp prayer p360 tests leave library support # Operations sched worship students # Admin hr # Language khmer',
-  admin: 'base caltasks ywamgp prayer p360 tests leave library support # Operations sched worship hosp students # Applications portal portalapp # Admin hr admin kmreview # Language khmer',
+  admin: 'base caltasks ywamgp qreport prayer p360 tests leave library support # Operations sched worship hosp students # Applications portal portalapp # Admin hr admin kmreview # Language khmer',
 };
 for (const k of Object.keys(EXPECT)) {
   const { out, errors } = await menuOf(WHO[k]);

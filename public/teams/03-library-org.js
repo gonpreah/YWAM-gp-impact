@@ -1772,7 +1772,7 @@ function boardReportHtml_(){
     '<p class="sub">'+esc(gpT('Each campus and YWAM GP as a whole, compared with Q{p}. Made {date}.',{p:q>0?q:4, date:teamDate_(todayStr())}))+'</p></div>';
   h+='<div class="deptChips noPrint">'+[0,1,2,3].map(function(i){
     return '<button class="deptChip'+(i===q?' on':'')+'" data-repq="'+i+'"'+(i>cur?' disabled':'')+'>Q'+(i+1)+'</button>'; }).join('')+
-    '<button class="deptChip" id="repPrint">🖨️ '+esc(t('Print or save as PDF'))+'</button></div>';
+    '<button class="deptChip" id="repPrint">🖨️ '+esc(t('Print or save as PDF'))+'</button>'+(typeof qrWayInHtml_==='function' ? qrWayInHtml_() : '')+'</div>';
   if(!S.base) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
   if(!S.org) orgLoad_();
   var R=baseR(), all=CAMPUSES.map(function(c){ return c.id; });
@@ -2461,7 +2461,7 @@ function bindKmReview_(){
 
 /* ---------- a board member's own sign-in (not staff) ---------- */
 var BOARD_KEY='gp-board';
-var BOARD_VIEWS=['ywamgp','base','report','library','p360'];   // p360: a board member answers 360 reviews
+var BOARD_VIEWS=['ywamgp','base','report','qreport','library','p360'];   // p360: a board member answers 360 reviews
 function boardEnter_(member, creds){
   lsSet(BOARD_KEY, JSON.stringify(creds));
   S.board=member; S.boardAuth=creds; S.guest=true;
