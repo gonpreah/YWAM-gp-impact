@@ -391,7 +391,10 @@ Income.
 - **📈 Profit and loss**: Income = their Income lines' Category amounts in the period; Expenses = their Expense
   lines' (shown as a positive number); Net = income − expenses; each with ▲ / ▼ against the period before (green
   when income rises or spending falls). Then where the income came from and where the money went, by kind
-  of income / expense, and the transactions themselves (folded).
+  of income / expense, and the transactions themselves (folded). **Each kind opens** (26 Nov 2026, `[data-mnkind]`,
+  `S.mn.kOpen`): tapped, a row of "Where the income came from" / "Where the money went" lists the lines behind it, with
+  how many — the incomes, the expenses, and the transfers ticked into the profit and loss ("🔁 From Office/General",
+  "🔁 To Hospitality") with their memo and the other side (`x.mnKey`, set in `mnPL_`).
 - **🔁 Internal transfers** (25 Nov 2026), in grey under Income and Expenses (`#mnXf`): the period's Internal transfer
   lines of those sub-categories — in from other categories, out to other categories, and the difference
   (`mnPL_` → `xin` / `xout` / `xnet`). Not income or spending, so **not in the net**; they are in the transactions list
