@@ -2546,7 +2546,7 @@ function rocksSeed_(d, ctx) {
     const only = Object.keys(mins);
     const dept = normDept_(o.dept);
     d.rocks.push({ id: id, campus: o.campus, dept: dept, ministry: (dept !== LEADERSHIP_DEPT && linked && only.length === 1 && only[0] !== '?') ? only[0] : '', owner: '',
-      year: year, q: q, title: full.slice(0, ROCK_MAX.title), status: pct >= 100 ? 'done' : 'on', note: lines.join('\n').slice(0, ROCK_MAX.note),
+      year: year, q: q, title: full.slice(0, ROCK_MAX.title), status: pct >= 100 ? 'done' : 'on', pct: Math.max(0, Math.min(100, Math.round(pct / 5) * 5)), note: lines.join('\n').slice(0, ROCK_MAX.note),
       by: '', at: o.updated || '', updated: o.updated || '', fromOkr: o.id });
     have[id] = 1;
   });
@@ -2632,11 +2632,22 @@ async function rockSave_(s, x, only) {
     const rec = Object.assign({}, prev || {}, { id: prev ? prev.id : meetId_('rk_'), campus: campus, dept: dept, ministry: ministry, owner: owner, year: year, q: q, title: title,
       status: ROCK_STATUS.indexOf(x.status) > -1 ? x.status : (prev ? prev.status : 'on'), note: String(x.note == null ? (prev ? prev.note || '' : '') : x.note).trim().slice(0, ROCK_MAX.note),
       updated: now, updatedBy: s.id });
+    rec.pct = rockPct_(x.pct, prev, rec.status);
     if (x.okrId !== undefined) rec.okrId = dutyText_(x.okrId, 60);   // an old link is kept; nothing shows it
     if (!prev) { rec.at = now; rec.by = s.id; }
     if (i > -1) d.rocks[i] = rec; else d.rocks.push(rec);
     return { ok: true, saved: rec.id, rocks: d.rocks };
   });
+}
+/* How far along a rock is, 0–100 in steps of 5 (Nov 2026, Andrew: "easier to input and with slider bars like we have for
+   the health check in"). Sent with a save, else kept; a rock marked done with no figure sent is 100; an old rock without
+   one reads as 100 when done, else 0 (rockPctOf_ on the page). */
+function rockPct_(v, prev, status) {
+  const n = finiteNum_(v, 0, 100);
+  if (n != null) return Math.round(n / 5) * 5;
+  if (status === 'done' && (!prev || prev.status !== 'done')) return 100;
+  const was = prev ? finiteNum_(prev.pct, 0, 100) : null;
+  return was != null ? Math.round(was) : (status === 'done' ? 100 : 0);
 }
 async function rockDelete_(s, id, only) {
   const n = meetNow_(), next = rockNext_(n);
@@ -16352,7 +16363,7 @@ async function getYwamGp(username, pin) {
   const board = (await getBoard_()).filter(function (b) { return b.active !== false; })
     .map(function (b) { return boardOut_(b, staff); }).sort(boardSort_);
   /* the board's quarter report lists each campus's rocks: title and status, nothing else (staff have them all from their boot) */
-  const rocks = v.kind === 'board' ? (await getRocks_()).map(function (r) { return { id: r.id, campus: r.campus, dept: r.dept, ministry: r.ministry || '', year: r.year, q: r.q, title: r.title, status: r.status }; }) : undefined;
+  const rocks = v.kind === 'board' ? (await getRocks_()).map(function (r) { return { id: r.id, campus: r.campus, dept: r.dept, ministry: r.ministry || '', year: r.year, q: r.q, title: r.title, status: r.status, pct: r.pct }; }) : undefined;
   return { ok: true, viewer: v.kind, me: v.kind === 'board' ? boardOut_(v.who, staff) : null, rocks: rocks,
     titles: titles, gpRoles: order, gpRolesCustom: custom,
     oversee: v.kind === 'staff' && gpTeamSees_(v.who),

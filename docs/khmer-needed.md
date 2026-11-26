@@ -6782,6 +6782,23 @@ Campus Leadership arranges a quarter on the whiteboard; "Make Q1 2027 live" turn
 | Someone else is saving — try again. | មានអ្នកផ្សេងកំពុងរក្សាទុក — សូមព្យាយាមម្តងទៀត។ |
 | That quarter is over. | ត្រីមាសនោះបានកន្លងផុតហើយ។ |
 
+## 150. Rocks with a slider; Campus Leadership tidied (My Ministry → Rocks, Campus Leadership’s Overview, My week and Board, Nov 2026)
+
+Each rock now has a 0–100% slider (“How far along”), and a team’s rocks say “{p}% done” together. On Campus Leadership’s page the next meeting is one card with “Open the meeting”; “My week” puts each kind’s count on its button and folds the reflection, partners and base plants into one line each (“None yet”, “{n} in planning”, “{n} · {d} to reach” — partners, and how many are due a contact). The Board tab says “Every meeting” instead of “Every Monday”, since the meeting day can be any day.
+
+| English | Khmer (draft) |
+|---|---|
+| Tap one as it happens. The number is this week’s, and it becomes your leadership numbers. | ចុចមួយនៅពេលវាកើតឡើង។ លេខនេះជារបស់សប្ដាហ៍នេះ ហើយវាក្លាយជាលេខដឹកនាំរបស់អ្នក។ |
+| {n} · {d} to reach | {n} · {d} នាក់ត្រូវទាក់ទង |
+| None yet | មិនទាន់មាន |
+| {n} in planning | {n} កំពុងរៀបចំផែនការ |
+| Open the meeting | បើកកិច្ចប្រជុំ |
+| Every meeting | រាល់កិច្ចប្រជុំ |
+| Every meeting’s agenda | របៀបវារៈរាល់កិច្ចប្រជុំ |
+| How far along? | ដំណើរការដល់ណាហើយ? |
+| {p}% done | រួចរាល់ {p}% |
+| The few things that must get done this quarter. Slide each one to show how far along it is, and say if it is on track. | រឿងមួយចំនួនដែលត្រូវតែធ្វើឲ្យរួចក្នុងត្រីមាសនេះ។ រំកិលនីមួយៗ ដើម្បីបង្ហាញថាវាដំណើរការដល់ណាហើយ ហើយប្រាប់ថាវាដើរត្រូវផ្លូវឬអត់។ |
+
 ## 149. The week’s board: All time (Team → 🏆 This week, My Home’s points line, Nov 2026)
 
 The fourth tab on the week’s board — every point since the board began, added up — and the line under my own figures. “All time” is a short tab label beside People, Readers and Ministries, so keep it short. {d} is a date such as “16 Nov”.

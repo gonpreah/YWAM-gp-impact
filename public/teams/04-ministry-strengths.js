@@ -34,11 +34,12 @@ S.lw=null; S.lwWeek=null; S.lwLoading=false; S.lwForm=null; S.lwTab=lwTabKept_()
 var LW_ROLES={
   icd:{ tabs:['base','okrs','week','board','struct','money'], focus:'Vision, partners and new bases', tiles:['partners','plants','money','leaders'],
     kinds:['partner','church','base','oneonone','teaching','gospel','meeting','deptmeeting'] },
-  ncd:{ tabs:['base','okrs','board','week','struct','money'], focus:'The staff and the week’s rhythm', tiles:['away','oneonones','numbers','tues'],
+  ncd:{ tabs:['base','okrs','board','week','struct','money'], focus:'The staff and the week’s rhythm', tiles:['away','oneonones','numbers','money'],
     kinds:['oneonone','meeting','deptmeeting','church','gospel','teaching','partner','base'] },
   dept:{ tabs:['base','okrs','board','week','struct','money'], focus:'Your department: its ministries, leaders and numbers', tiles:[],
     kinds:['deptmeeting','oneonone','meeting','teaching','gospel','partner','church','base'] },
-  cd:{ tabs:['base','okrs','week','board','struct','money'], focus:'', tiles:['leaders','numbers','tues','money'], kinds:[] }
+  cd:{ tabs:['base','okrs','week','board','struct','money'], focus:'', tiles:['leaders','numbers','away','money'], kinds:[] }
+  /* (Nov 2026) no "Tuesday" tile any more: the Overview's meeting card says the day and who leads, once */
 };
 function lwRole_(){
   var tt=typeof orgTitleOf_==='function' ? orgTitleOf_(S.me) : '';
@@ -72,12 +73,12 @@ function lwHtml_(){
   // the week's numbers, counted from what is logged below
   var count=function(k){ return L.log.filter(function(r){ return r.kind===k; }).reduce(function(a,r){ return a+(Number(r.qty)||1); },0); };
   var kinds=lwKindsFor_();
-  h+='<div class="lwTotals">'+kinds.map(function(k){ var n=count(k[0]);
-    return '<div class="lwTotal'+(n?' on':'')+'"><span>'+k[1]+'</span><b>'+(k[0]==='gospel'?(Math.round(n*10)/10)+'h':n)+'</b><small>'+esc(t(k[2]))+'</small></div>'; }).join('')+'</div>';
-  h+='<p class="hint" style="margin:-2px 0 12px">'+esc(t('These are your leadership numbers for the week — counted from what you log here.'))+'</p>';
-  // quick log
-  h+='<h3>➕ '+esc(t('Log something'))+'</h3><div class="lwKinds">'+kinds.map(function(k){
-    return '<button class="lwKind'+(S.lwForm&&S.lwForm.kind===k[0]?' on':'')+'" data-lwkind="'+k[0]+'"><span>'+k[1]+'</span>'+esc(t(k[2]))+'</button>'; }).join('')+'</div>';
+  /* one grid (Nov 2026, Andrew: "too much going on"): each kind is a button to log it, with the week's count on it —
+     the totals used to be a second grid of the same eight above it */
+  h+='<h3>➕ '+esc(t('Log something'))+'</h3><p class="hint" style="margin:-4px 0 10px">'+esc(t('Tap one as it happens. The number is this week’s, and it becomes your leadership numbers.'))+'</p>'+
+    '<div class="lwKinds lwTotals">'+kinds.map(function(k){ var n=count(k[0]);
+    return '<button class="lwKind'+(S.lwForm&&S.lwForm.kind===k[0]?' on':'')+(n?' has':'')+'" data-lwkind="'+k[0]+'"><span>'+k[1]+'</span><span class="lwKindName">'+esc(t(k[2]))+'</span>'+
+      '<b class="lwTotal">'+(k[0]==='gospel'?(Math.round(n*10)/10)+'h':n)+'</b></button>'; }).join('')+'</div>';
   if(S.lwForm){
     var f=S.lwForm, kk=lwKind_(f.kind);
     h+='<div class="card lwForm"><div class="lwFormHead">'+kk[1]+' <b>'+esc(t(kk[2]))+'</b></div>';
@@ -112,16 +113,18 @@ function lwHtml_(){
   // the Campus Director's three ratings for the week
   if(L.director){
     var rf=L.reflect||{};
-    h+='<h3>🌅 '+esc(t('End-of-week reflection'))+'</h3><div class="card"><p class="sub" style="margin:0 0 8px">'+esc(t('How did the week go? 1 is poor, 10 is excellent.'))+'</p>'+
+    h+='<details class="lwFold" data-lwfold="reflect"'+(lwFoldOpen_('reflect') ? ' open' : '')+'><summary><h3>🌅 '+esc(t('End-of-week reflection'))+'</h3><span class="lwFoldSub">'+esc(rf.at ? '✓ '+t('Saved') : t('Not yet'))+'</span></summary><div class="card"><p class="sub" style="margin:0 0 8px">'+esc(t('How did the week go? 1 is poor, 10 is excellent.'))+'</p>'+
       [['vision','Base vision'],['comms','Communications'],['partners','Partner relationships']].map(function(q){
         var v=rf[q[0]]||'';
         return '<div class="lwRate"><span>'+esc(t(q[1]))+'</span><div class="lwRateRow">'+[1,2,3,4,5,6,7,8,9,10].map(function(n){
           return '<button class="lwRateBtn'+(Number(v)===n?' on':'')+'" data-lwrate="'+q[0]+'|'+n+'">'+n+'</button>'; }).join('')+'</div></div>';
       }).join('')+'<input type="text" id="lwRateNote" maxlength="300" placeholder="'+esc(t('A line about the week (optional)'))+'" value="'+esc(rf.note||'')+'">'+
-      '<button class="btn" id="lwRateSave">'+esc(rf.at ? t('Update') : t('Save'))+'</button></div>';
+      '<button class="btn" id="lwRateSave">'+esc(rf.at ? t('Update') : t('Save'))+'</button></div></details>';
   }
   // partners
-  h+='<h3>🙏 '+esc(t('My partners'))+'</h3><div class="card">';
+  var dueP=L.partners.filter(function(p){ return !p.last || (new Date(todayStr()+'T00:00:00') - new Date(p.last+'T00:00:00'))/86400000>30; }).length;
+  h+='<details class="lwFold" data-lwfold="partners"'+(lwFoldOpen_('partners') ? ' open' : '')+'><summary><h3>🙏 '+esc(t('My partners'))+'</h3><span class="lwFoldSub">'+
+    esc(L.partners.length ? gpT('{n} · {d} to reach',{n:L.partners.length, d:dueP}) : t('None yet'))+'</span></summary><div class="card">';
   if(!L.partners.length) h+='<p class="sub" style="margin:0 0 8px">'+esc(t('Churches, supporters and friends of the base you keep in touch with. Add them once; tap “Connected” when you do.'))+'</p>';
   h+=L.partners.map(function(p){
     var ago = p.last ? Math.round((new Date(todayStr()+'T00:00:00') - new Date(p.last+'T00:00:00'))/86400000) : null;
@@ -130,10 +133,12 @@ function lwHtml_(){
       '<button class="btn ghost lwConnect" data-lwconnect="'+esc(p.id)+'">'+esc(t('Connected'))+'</button><button class="lwDel" data-lwpdel="'+esc(p.id)+'" aria-label="'+esc(t('Remove'))+'">×</button></div>';
   }).join('');
   h+='<div class="numIn" style="margin-top:8px"><input type="text" id="lwPName" placeholder="'+esc(t('Name'))+'"><input type="text" id="lwPOrg" placeholder="'+esc(t('Church or organisation'))+'">'+
-    '<button class="btn ghost" id="lwPAdd" style="margin:0;width:auto;padding:9px 14px">'+esc(t('Add'))+'</button></div></div>';
+    '<button class="btn ghost" id="lwPAdd" style="margin:0;width:auto;padding:9px 14px">'+esc(t('Add'))+'</button></div></div></details>';
   // base plants (Campus Director)
   if(L.director || S.me.isAdmin){
-    h+='<h3>🌱 '+esc(t('Base plants'))+'</h3><div class="card">';
+    var planning=L.plants.filter(function(p){ return p.stage!=='launched'; }).length;
+    h+='<details class="lwFold" data-lwfold="plants"'+(lwFoldOpen_('plants') ? ' open' : '')+'><summary><h3>🌱 '+esc(t('Base plants'))+'</h3><span class="lwFoldSub">'+
+      esc(L.plants.length ? gpT('{n} in planning',{n:planning}) : t('None yet'))+'</span></summary><div class="card">';
     if(!L.plants.length) h+='<p class="sub" style="margin:0 0 8px">'+esc(t('Places you are praying about or planning a new base. Those not yet launched count as Base Plants in Planning.'))+'</p>';
     h+=L.plants.map(function(p){
       return '<div class="lwPlant"><span class="lwRowText"><b>'+esc(p.name)+'</b><span>'+esc(p.place||'')+'</span></span>'+
@@ -141,14 +146,17 @@ function lwHtml_(){
         '<button class="lwDel" data-lwplantdel="'+esc(p.id)+'" aria-label="'+esc(t('Remove'))+'">×</button></div>';
     }).join('');
     h+='<div class="numIn" style="margin-top:8px"><input type="text" id="lwBName" placeholder="'+esc(t('Name, e.g. YWAM Battambang'))+'"><input type="text" id="lwBPlace" placeholder="'+esc(t('Place'))+'">'+
-      '<button class="btn ghost" id="lwBAdd" style="margin:0;width:auto;padding:9px 14px">'+esc(t('Add'))+'</button></div></div>';
+      '<button class="btn ghost" id="lwBAdd" style="margin:0;width:auto;padding:9px 14px">'+esc(t('Add'))+'</button></div></div></details>';
   }
   return h;
 }
+/* My week's folds stay as they were left, for the visit */
+function lwFoldOpen_(k){ return !!(S.lwOpen && S.lwOpen[k]); }
 function bindLw_(){
   var after=function(d){ S.lwBusy=false; if(d && d.ok){ S.lw=d; } else showMsg(t('Could not save — try again.')); render(); };
   var call=function(fn,args){ if(S.lwBusy) return; S.lwBusy=true; run(fn,[S.auth.user,S.auth.pin].concat(args),after,function(){ S.lwBusy=false; showMsg(t('No connection — try again when you are online.')); }); };
   var rt=document.getElementById('lwRetry'); if(rt) rt.onclick=function(){ S.lwErr=''; render(); };
+  document.querySelectorAll('[data-lwfold]').forEach(function(d){ d.ontoggle=function(){ (S.lwOpen=S.lwOpen||{})[d.getAttribute('data-lwfold')]=d.open; }; });
   var pv=document.getElementById('lwPrev'), nx=document.getElementById('lwNext');
   if(pv) pv.onclick=function(){ gpTap(); S.lwWeek=Math.max(1,(S.lwWeek||thisWeek())-1); S.lwForm=null; render(); };
   if(nx) nx.onclick=function(){ gpTap(); S.lwWeek=Math.min(thisWeek(),(S.lwWeek||thisWeek())+1); S.lwForm=null; render(); };
@@ -441,9 +449,21 @@ function leadBaseHtml_(pulse){
     oneonones:'<a class="mmTile" href="#lbPulse"><div class="mmTileName">🤝 '+esc(t('1-on-1s this month'))+'</div><div class="mmTileNum">'+(pulseIn ? ones : '…')+'</div></a>'
   };
   if(tiles.length) h+='<div class="mmGrid lbGlance">'+tiles.map(function(k){ return TILE[k]; }).join('')+'</div>';
-  if(!V && typeof lmOverviewHtml_==='function') h+=lmOverviewHtml_();   // the way in to the weekly leadership meeting (teams/27-meeting.js)
-  /* Clear leaders: the ones without, a line per department; who leads what folded. */
-  h+='<div class="card" id="lbLeaders"><div class="goalCardTitle" style="margin-bottom:6px">👑 '+esc(t('Clear leaders'))+'</div>'+
+  /* The next meeting, once (Nov 2026, Andrew: "too much going on"): it was here twice — a "Next meeting" line and a
+     card for the day — now one card: the day, who leads and translates, its topics, the way in and the rota. */
+  h+='<div class="card lbMeetCard" id="lbTues"><div class="goalCardTitle" style="margin-bottom:6px">🗓️ '+esc(gpT('Next meeting · {day} {date}',{day:lmDayName_(), date:hospDate_(next)}))+'</div>';
+  if(!S.lead) h+='<p class="sub" style="margin:0">'+esc(S.leadErr || t('Loading…'))+'</p>';
+  else {
+    h+='<div class="lbWho"><span>'+esc(t('Facilitating'))+'</span><b>'+esc(leadTuesWho_(tr && tr.facilitator) || t('Nobody yet'))+'</b></div>'+
+      '<div class="lbWho"><span>'+esc(t('Translating'))+'</span><b>'+esc(leadTuesWho_(tr && tr.translator) || t('Nobody yet'))+'</b></div>';
+    h+=leadTueListsHtml_(tr);
+    h+='<div class="btnRow lbMeetBtns">'+(!V ? '<button class="btn small" id="lbMeetGo">▶ '+esc(t('Open the meeting'))+'</button>' : '')+
+      '<button class="btn small ghost" id="lbGoTues">'+esc(leadMeetDay_()===2 ? t('Plan the Tuesdays') : t('Plan who leads'))+'</button></div>';
+  }
+  h+='</div>';
+  /* Clear leaders: one line, folded — the ones without a leader, a line per department, and who leads what inside. */
+  h+='<details class="card lbLeadersFold" id="lbLeaders"'+((S.lbLeadersOpen || S.lbLeadPick) ? ' open' : '')+'><summary class="goalCardTitle">👑 '+esc(t('Clear leaders'))+
+    ' <span class="lbLeadersN'+(none.length?' lbNone':'')+'">'+(rows.length-none.length)+' / '+rows.length+'</span></summary>'+
     '<p class="lbBig"><b>'+(rows.length-none.length)+' / '+rows.length+'</b> '+esc(t('ministries have a clear leader'))+'</p>';
   if(none.length){
     h+='<div class="hint" style="margin:6px 0 2px">'+esc(t('No leader yet:'))+'</div>';
@@ -459,17 +479,7 @@ function leadBaseHtml_(pulse){
         (canSet ? ' <button class="lbLeadAdd'+(picking?' on':'')+'" data-lbleadpick="'+esc(key)+'" aria-label="'+esc(t('Set the leader'))+'" aria-expanded="'+(picking?'true':'false')+'">'+(picking?'×':'＋')+'</button>' : '')+'</span></div>'+
         (picking ? '<div class="lbLeadPick">'+ppickHtml_({ key:'ml'+i, people:lbLeadPeople_(r.dept, r.min), chosen:r.leaders.map(function(p){ return p.id; }), multi:true, placeholder:t('Type a name to make them a leader'),
           onPick:function(id){ lbSetLeader_(r.dept, r.min, id, true); }, onRemove:function(id){ lbSetLeader_(r.dept, r.min, id, false); } })+'</div>' : ''); }).join('')+
-    '<p class="hint" style="margin:6px 0 0">'+esc(canSet ? t('Tap ＋ by a ministry to name its leader. It is the same leader as on their profile in Admin.') : t('A leader is set on each person’s profile by an admin.'))+'</p></details></div>';
-  /* Tuesday morning. */
-  h+='<div class="card" id="lbTues"><div class="goalCardTitle" style="margin-bottom:6px">🎤 '+esc(leadDayDate_(next))+'</div>';
-  if(!S.lead) h+='<p class="sub" style="margin:0">'+esc(S.leadErr || t('Loading…'))+'</p>';
-  else {
-    h+='<div class="lbWho"><span>'+esc(t('Facilitating'))+'</span><b>'+esc(leadTuesWho_(tr && tr.facilitator) || t('Nobody yet'))+'</b></div>'+
-      '<div class="lbWho"><span>'+esc(t('Translating'))+'</span><b>'+esc(leadTuesWho_(tr && tr.translator) || t('Nobody yet'))+'</b></div>';
-    h+=leadTueListsHtml_(tr);
-    h+='<button class="btn ghost" id="lbGoTues" style="margin-top:8px">'+esc(leadMeetDay_()===2 ? t('Plan the Tuesdays') : t('Plan who leads'))+'</button>';
-  }
-  h+='</div>';
+    '<p class="hint" style="margin:6px 0 0">'+esc(canSet ? t('Tap ＋ by a ministry to name its leader. It is the same leader as on their profile in Admin.') : t('A leader is set on each person’s profile by an admin.'))+'</p></details></details>';
   /* Each department's pulse last: one open for an overseer, folded for the Director. */
   if(pulse && many) h+='<div id="lbPulse"><details class="card lbPulseFold"'+(S.lbPulseOpen?' open':'')+'><summary class="goalCardTitle">📊 '+esc(t('Departments this week'))+'</summary>'+pulse+'</details></div>';
   return h+'</div>';
@@ -544,6 +554,7 @@ function lbSetLeader_(dept, min, id, on){
 }
 function bindLeadTools_(){
   var lf=document.getElementById('lbLeadsFold'); if(lf) lf.ontoggle=function(){ S.lbLeadsOpen=lf.open; if(!lf.open) S.lbLeadPick=null; };
+  var lo=document.getElementById('lbLeaders'); if(lo && lo.tagName==='DETAILS') lo.ontoggle=function(){ S.lbLeadersOpen=lo.open; };
   document.querySelectorAll('[data-lbleadpick]').forEach(function(b){ b.onclick=function(){ gpTap(); var k=b.getAttribute('data-lbleadpick'); S.lbLeadPick = S.lbLeadPick===k ? null : k; S.lbLeadsOpen=true; render(); var x=document.querySelector('.lbLeadPick [data-ppickq]'); if(x) x.focus(); }; });
   var gt=document.getElementById('lbGoTues'); if(gt) gt.onclick=function(){ gpTap(); S.lwTab='board'; lwTabKeep_('board'); S.leadTab='tues'; render(); window.scrollTo(0,0); };
   document.querySelectorAll('[data-ltopen]').forEach(function(b){ b.onclick=function(){ gpTap(); var d=b.getAttribute('data-ltopen'); S.ltOpen = S.ltOpen===d ? null : d; S.ltDraft=null; render(); }; });

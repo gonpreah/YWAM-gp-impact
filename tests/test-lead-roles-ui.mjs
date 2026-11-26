@@ -112,6 +112,7 @@ const firstKinds = async (p) => { await p.click('[data-lwtab="week"]'); await p.
   await page.click('[data-lwtab="base"]'); await page.waitForTimeout(400);
   await page.screenshot({ path: OUT + '/1-international.png' });
   /* Who leads what: ＋ by a ministry opens a people search; a pick makes them its leader */
+  await page.click('#lbLeaders > summary'); await page.waitForTimeout(200);   // Clear leaders is one folded line now (Nov 2026)
   await page.click('#lbLeadsFold summary'); await page.waitForTimeout(200);
   const leadKey = await page.$eval('[data-lbleadpick]', e => e.dataset.lbleadpick);
   await page.click('[data-lbleadpick="' + leadKey + '"]'); await page.waitForTimeout(300);
@@ -142,7 +143,7 @@ const firstKinds = async (p) => { await p.click('[data-lwtab="week"]'); await p.
   ok('… “The staff and the week’s rhythm”', /The staff and the week’s rhythm/.test(await focus(page)));
   ok('… Overview, Board, My week, Finances', (await tabs(page)).join() === 'base,okrs,board,week,struct,money', (await tabs(page)).join());
   const tl = await tiles(page);
-  ok('… away this week, 1-on-1s, numbers in, Tuesday', tl.length === 4 && /Away this week/.test(tl[0]) && /1-on-1s this month/.test(tl[1]) && /Numbers in/.test(tl[2]) && /Tuesday/.test(tl[3]), tl.join(' | '));
+  ok('… away this week, 1-on-1s, numbers in, the money ahead (the meeting day is the meeting card, not a tile)', tl.length === 4 && /Away this week/.test(tl[0]) && /1-on-1s this month/.test(tl[1]) && /Numbers in/.test(tl[2]) && /Money ahead/.test(tl[3]) && !tl.some((x) => /Tuesday/.test(x)), tl.join(' | '));
   await page.screenshot({ path: OUT + '/2-national.png' });
   ok('… and 1-on-1s first when logging', (await firstKinds(page)).join() === 'oneonone,meeting,deptmeeting');
   await ctx.close();
@@ -176,7 +177,7 @@ const firstKinds = async (p) => { await p.click('[data-lwtab="week"]'); await p.
   const you = await page.$eval('.orgYou', (e) => e.textContent);
   ok('picking the National Campus Director opens their board, with who holds it', /Viewing: National Campus Director · Nary Director/.test(you), you);
   const tl = await tiles(page);
-  ok('… their numbers on top: away, 1-on-1s, numbers in, Tuesday', /Away this week/.test(tl[0]) && /1-on-1s this month/.test(tl[1]), tl.join(' | '));
+  ok('… their numbers on top: away, 1-on-1s, numbers in, the money ahead', /Away this week/.test(tl[0]) && /1-on-1s this month/.test(tl[1]), tl.join(' | '));
   ok('… and their tabs, without their own week', (await tabs(page)).join() === 'base,okrs,board,struct,money');
   await page.screenshot({ path: OUT + '/5-viewing-national.png' });
   await page.click('#mmSwitch', { timeout: 1500 }).catch(() => {}); await page.waitForTimeout(250); await page.click('[data-mmpick="Campus Leadership|Youth Education"]'); await page.waitForTimeout(1500);

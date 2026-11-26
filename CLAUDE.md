@@ -1512,6 +1512,21 @@ week strip / input: two tabs.
 - **The Overview is the dashboard**: its tiles lead with **🎯 Q OKRs %** (mean `objProgress` of
   leadership's objectives this quarter, with a bar; opens the OKRs tab) and **📋 Board · open cards**
   (opens the Board) — `.lbNav`, `#lbOkrTile`, `#lbBoardTile` — then the role's own tiles.
+## Campus Leadership's page, tidied (Nov 2026, Andrew: "make it easier to navigate and use … too much going on")
+- **Every tab in sight**: the six tabs (`.mmTabs.lwSeg`) are two rows of three on a phone, one row from 700px — the last
+  one used to be cut off.
+- **Overview**: the glance tiles are a 2 × 2 grid (`.lbGlance`); **the next meeting is one card** (`#lbTues`: the day, who
+  facilitates and translates, the topics, ▶ Open the meeting `#lbMeetGo`, Plan who leads `#lbGoTues`) — it was a "Next
+  meeting" line, a card for the day and a tile for it; no role has a "Tuesday" tile now (ncd's fourth is the money
+  ahead, cd's away this week). **Clear leaders is one folded line** with its count (`details#lbLeaders`, open state
+  `S.lbLeadersOpen`; "Who leads what" folds inside it as before).
+- **My week**: one grid — each kind is a button with this week's count on it (`.lwKind .lwTotal`; the totals were a
+  second grid of the same eight); the reflection, partners and base plants fold to a line each (`details.lwFold
+  [data-lwfold]`, `S.lwOpen`, "Not yet / ✓ Saved", "n · d to reach", "n in planning").
+- **Board**: "Next meeting" names the meeting day (`leadDayDate_`), not always Monday; the standing items are "Every
+  meeting"; a new card's meeting date is the next meeting day.
+- tests: test-lead-roles-ui, test-lead-meeting-ui, test-ministry-tools-ui, test-lead-board-page. Khmer §150.
+
 ## The leadership meeting (teams/27-meeting.js, Nov 2026, Uriah)
 "We want to move more to an EOS-style leadership meeting, and still use our Kanban board … we need a little more training
 to do the meeting well … who's going to lead the Tuesday morning leadership meeting, topics and all that … where everyone is
@@ -1520,7 +1535,8 @@ Tuesday schedule — nothing of those was replaced.
 - **Where**: Campus Leadership → Board → **Meeting** (`S.leadTab='meet'`, the first of `[data-leadtab]` meet · board · tues ·
   notes; the Board tab still opens on the Kanban — every older test lands there). `leadMeetHtml_` / `bindMeeting_`
   (`#leadMeet`). One `getLeadMeeting` when it opens (→ `S.meet`, and `S.lead` from its `board`, so `bindLead_` asks nothing
-  more); nothing on the boot. The Overview has a way in under its tiles (`#lbMeetGo`, `lmOverviewHtml_`: "Next meeting ·
+  more); nothing on the boot. The Overview has a way in: its one meeting card (`#lbTues`, with `#lbMeetGo` "Open the
+  meeting" — since Nov 2026; before that a separate `lmOverviewHtml_` line: "Next meeting ·
   {day} {date}", who leads; `#lbOkrTile` / `#lbBoardTile` untouched).
 - **The page, no meeting running**: the head (`.lmHead`: next date, "Led by" from the schedule or `#lmPlanWho`, **▶ Start the
   meeting** `#lmStart`, `#lmSetOpen`), the folded guide (`#lmGuide`: the seven parts, "Rules of thumb" `LM_GUIDE`), one line
@@ -1618,7 +1634,15 @@ the source and fails if the old words or the old page code come back.
   (`rkEarlierHtml_`, `#rkEarlier`: the ones no rock came from — title and final %).
 - **Drawn one way** (`rockHtml_(r, {p, edit, meeting, drop, who, where})`): the meeting's look — `.lmRock`, three `.lmSt`
   buttons (✓ On track · ✗ Off track · ★ Done, `data-<p>st="id|on"`), Edit (`data-<p>edit`); read-only it is one badge
-  (`.rkBadge`). `p` is `rock` everywhere and `lmrock` in the meeting. A note of three lines or more folds to its first.
+  (`.rkBadge`).
+- **How far along — a slider** (Nov 2026, Andrew: "easier to input and with slider bars like we have for the health check
+  in"): a rock carries `pct` (0–100, steps of 5; `rockPct_` on the server: sent → kept to the nearest 5, not sent → kept,
+  marked done with none sent → 100; a moved objective starts at its old %). Each rock has the weekly goals' slider
+  (`.gSlide.rkSlide`, `data-<p>pct="id"`, `rkPctHtml_`; read-only a thin bar and the figure, `.rkPctRead`), bound by
+  `rkBindSliders_(p, save)` (bindRocks_ and the meeting's binder) — paints as it moves, one save on release, guarded by
+  `gpSlideGuard`. 100% makes it done; out of done goes to 90 / on track (`rkPctStatus_`). The form has the slider too
+  (`data-rkfpct`); a team's heading says "n of m on track · p% done" (`rkAvgPct_`). Old rocks without `pct` read 100 when
+  done, else 0 (`rockPctOf_`). The board's copy (`getYwamGp` rocks) carries `pct`. Khmer §150. `p` is `rock` everywhere and `lmrock` in the meeting. A note of three lines or more folds to its first.
 - **Where**: My Ministry → **Rocks** (`rocksTabHtml_(sel)`, `#rocksTab`) for every ministry and tool: This quarter / Next
   (`[data-rkq]`), the ministry's rocks (`[data-rkscope="campus|dept|ministry"]`, "n of m on track"), one line to add
   (`[data-rkadd]` + Enter or `[data-rkaddbtn]`; the owner is me), the department's own under it ("A rock for the whole
@@ -4403,10 +4427,10 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   (`'cand'`). The old selects stay in the DOM hidden (`data-lf="owner"`, `data-ltowner`, `data-cf`) so
   the forms' field readers still work. Rows: `[data-ppickit="key|id"]`, chips `[data-ppickrm="key|id"]`,
   the box `[data-ppickq="key"]`; until you type, only the `first` group shows (or the first few).
-  **A ministry's own tasks page shows everything its people are on** (Andrew, Oct 2026: "it only shows
-  a few"): the list's tasks, plus tasks in other lists given to any of its people (`team` in
-  `gtListHtml_` when `S.gptScope` is set — the department's list where board cards land, another
-  ministry's), each with a chip saying where it is from and no grip (they are ordered in their own list).
+  **A ministry's list shows only its own tasks** (Nov 2026, Andrew: "if I make a task in teams and assign it to someone,
+  it only shows it in the teams task list"; this replaces October's "a ministry's page also shows what its people were
+  given in other lists"): a task given to someone is in its own list and in that person's Inbox — never in the other
+  ministries' lists they belong to.
   **The year shows on a day outside this year** (`gptDateFmt_`): task chips, day dividers, calendar labels.
   **‹ › on the list's head** (`#gtPrevList`/`#gtNextList`, `.gtListNav`, greyed at the ends) step through
   the lists like the swipe (Andrew, Oct 2026: "the slide isn't working the best — small arrows?").

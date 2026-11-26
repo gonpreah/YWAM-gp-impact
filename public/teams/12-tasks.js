@@ -287,10 +287,10 @@ function bindGtWheel_(){
 function gtListHtml_(L){
   var G=S.gpt, mine=L.scope==='personal' && L.ownerId===S.me.id;
   /* one of your own lists: its tasks, and the tasks given to you that you keep here (unfiled ones in the Inbox) */
-  /* a ministry's own page (Andrew, Oct 2026: "it only shows a few"): also what its people were given
-     elsewhere — the department's list (board cards land there), another ministry's — each with where it is from */
-  var team = S.gptScope && L.scope!=='personal' ? (S.roster||[]).filter(function(p){ return gptInList_(L, p); }).map(function(p){ return p.id; }) : null;
-  var all=G.tasks.filter(function(x){ return x.listId===L.id ? x.status!=='declined' : (mine && gptGiven_(x) && gptFiledIn_(x)===L.id) || (team && x.status!=='declined' && x.assignees.some(function(id){ return team.indexOf(id)>-1; })); });
+  /* a ministry's list holds only its own tasks (Andrew, Nov 2026: "if I make a task in teams and assign it to someone,
+     it only shows it in the teams task list") — what its people were given in other lists is in their own Inbox, not
+     here (October's "show what its people are on elsewhere" is gone) */
+  var all=G.tasks.filter(function(x){ return x.listId===L.id ? x.status!=='declined' : (mine && gptGiven_(x) && gptFiledIn_(x)===L.id); });
   var open=all.filter(function(x){ return !x.done; }).sort(gptSortIn_(L));
   var done=all.filter(function(x){ return x.done; });
   /* ‹ › on the head step through the lists (Andrew, Oct 2026: "the slide isn't working the best — small arrows?") */
