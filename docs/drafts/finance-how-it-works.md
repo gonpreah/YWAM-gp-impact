@@ -75,8 +75,15 @@ Income.
     other way);
   - **the kind** from the account heading above it: an expense by its account number (`expFromHead_`: 50500 Food,
     53200 Supplies, 54000 → Honorarium, 57000 Vehicle Expenses…, else by the heading's words); income from the
-    class and heading words (45100 Lecture Contribution with a BCS / SMS class → School contributions — Other
-    schools; DTS / DBS / SOMD → theirs);
+    account number too (26 Nov 2026, `INC_ACCOUNTS` / `incFromHead_`, from the office's chart of accounts): 41000
+    Donation, 41950 Undesignated donations and 43000 Gifts in kind → General donations; 41100 Khmer Staff support,
+    41200 Child Sponsorship, 41500 Specified Donation, 41900 Land/Building Projects → Designated donation; 45000
+    Training and 45100 Lecture Contribution → the school in the class or memo (DTS, DBS, SOMD; else Other schools);
+    45200 Outreach Contribution → DTS outreach (or the school named); **44000 Contribution** (staff *and* team
+    contributions) → from the memo: team → Team contributions, KSS / YAP, rent, Antonia, and staff or **a pledge →
+    Staff contributions**; anything else left to pick. 44500 Staff gathering and 49500 Miscellaneous are left to pick.
+    Income groups show the account numbers their lines came from ("💵 Income · Staff contributions · 44000");
+  - **A Pledge** (QuickBooks' transaction type) with no account of its own goes **into ABA bank**;
   - **the account** from Item split account (ABA → ABA bank, Cash on Hand → Cash, **Sub Splash** or US Bank → US
     bank);
   - **the category** from the class (`classFund_`): the one picked for that class before (`EXP_MAP['class:…']`),
@@ -85,6 +92,12 @@ Income.
     class in the file the same (unless set by hand), with a toast saying how many.
   - **A Journal Entry** is never guessed: it waits, tagged "📓 journal entry — check it", until the office says
     whether it is income, an expense or a transfer (the description box doesn't decide it either).
+    "📓 Journal entries to check" has **🗑 Leave all n out** (`data-bulkgrpdrop`) — they are usually not needed in these
+    reports; "Bring them back" undoes it while the import is open (`S.bulkJOut`).
+- **The same for the rest of the group** (26 Nov 2026): changing what a line is, its kind, category, account, from or
+  to (`bulkSet_`) offers, under that line, "Do the same for the other n lines in “group”?" (`S.bulkSame`,
+  `bulkSameHtml_`) — **Yes — all n** changes every other line still in the group the line was in; **Just this one**
+  leaves them.
 - The "Total for …" lines are QuickBooks' own sums: each account's lines are checked against them, "✓ Every account
   adds up to QuickBooks' own total" or what doesn't match.
 - **Dates written as text** follow the file's day/month order, decided from all its dates (the reading where they sit
