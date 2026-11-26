@@ -370,6 +370,10 @@ Income.
   (`mnPL_` → `xin` / `xout` / `xnet`). Not income or spending, so **not in the net**; they are in the transactions list
   (grey, with "→ / ← the other category") and the "Each one" table's Transfers column. A transfer between two picked
   sub-categories shows both sides, so it nets to nothing.
+- **The transactions list's filters** (26 Nov 2026, `mnFiltHtml_` / `mnLineFilter_`, `S.mn.lf`): All / 💵 Income /
+  🧾 Expenses / 🔁 Transfers; a kind picker (the kinds of income or expense in the list, "Internal transfer"); and the
+  account — ABA bank / US bank / Cash on hand / **Other** (no account: a transfer between categories). Each with its
+  count; "Showing n of m · net …" and Clear filters.
 - **📈 Show in the Ministries profit and loss** (25 Nov 2026): a tick on the internal transfer form (`#xfPl`, `S.xfer.pl`)
   and on each fund-to-fund transfer in "Transfers made" (`[data-xfpltog]`, changed any time, even once approved — it only
   changes how the Ministries tab reads it). Saved as `pl: true` on the transfer. Ticked, it is paying for something

@@ -551,6 +551,10 @@ button.tick.done{ background:var(--good); }
 .mnXfRow b{ color:var(--muted); }
 .mnXfNote{ margin:4px 0 0; font-size:12px; }
 .mnXfAmt{ color:var(--muted); }
+.mnFilt{ margin:8px 0 4px; padding:8px 10px; border-radius:10px; background:var(--surface2); }
+.mnFRow{ display:flex; flex-wrap:wrap; gap:6px; margin:4px 0; }
+.mnFType{ width:100%; margin:4px 0; }
+.mnFSum{ margin:4px 0 0; font-size:13px; color:var(--muted); }
 .xfPlChk{ margin-top:10px; }
 .xfPlTog{ display:flex; align-items:center; gap:6px; margin:6px 0 0; font-size:13px; color:var(--muted); cursor:pointer; }
 .mnOut{ color:var(--bad); }
@@ -2866,6 +2870,22 @@ function mnPL_(L, labs, from, to){ var inc=0, exp=0, byInc={}, byExp={}, other=0
   return { inc:r(inc), exp:r(exp), net:r(inc-exp), byInc:byInc, byExp:byExp, other:r(other), byOther:byOther, lines:lines, xin:r(xin), xout:r(xout), xnet:r(xin-xout) }; }
 function mnBal_(L, labs, day){ var by={}; L.forEach(function(x){ if(x.camt==null || x.date>day) return; by[x.cat]=(by[x.cat]||0)+x.camt; });
   return Math.round(labs.reduce(function(s2,l){ return s2+(by[l]||0); },0)*100)/100; }
+/* the transactions list's filters (26 Nov 2026): Income / Expenses / Transfers, the kind of income or expense, and the
+   account it came through (ABA, US, Cash, or Other — a transfer between categories has no account) */
+function mnLineKind_(x){ return x.type==='Income' ? 'inc' : x.type==='Expense' ? 'exp' : 'xf'; }
+function mnLineType_(x){ return x.type==='Internal transfer' ? 'Internal transfer' : (x.src && x.src.type) || x.type; }
+function mnLineAcct_(x){ return x.acct==='ABA bank' ? 'aba' : x.acct==='US bank' ? 'us' : x.acct==='Cash on hand' ? 'cash' : 'other'; }
+function mnLF_(){ var M=mnS_(); return M.lf||(M.lf={ k:'all', t:'', a:'all' }); }
+function mnLineFilter_(L){ var F=mnLF_(); return L.filter(function(x){ return (F.k==='all' || mnLineKind_(x)===F.k) && (!F.t || mnLineType_(x)===F.t) && (F.a==='all' || mnLineAcct_(x)===F.a); }); }
+function mnFiltHtml_(L, n){ var F=mnLF_(), cnt=function(fn){ return L.filter(fn).length; };
+  var chip=function(attr, v, cur, label, c){ return '<button class="ledChip'+(cur===v?' on':'')+'" data-'+attr+'="'+esc(v)+'"'+(c?'':' disabled')+'>'+esc(label)+' · '+c+'</button>'; };
+  var h='<div class="mnFilt" id="mnFilt"><div class="mnFRow">'+chip('mnfk','all',F.k,'All',L.length)+chip('mnfk','inc',F.k,'💵 Income',cnt(function(x){ return mnLineKind_(x)==='inc'; }))+
+    chip('mnfk','exp',F.k,'🧾 Expenses',cnt(function(x){ return mnLineKind_(x)==='exp'; }))+chip('mnfk','xf',F.k,'🔁 Transfers',cnt(function(x){ return mnLineKind_(x)==='xf'; }))+'</div>';
+  var pool=L.filter(function(x){ return F.k==='all' || mnLineKind_(x)===F.k; }), types={}; pool.forEach(function(x){ var t=mnLineType_(x); types[t]=(types[t]||0)+1; });
+  var tk=Object.keys(types).sort(); if(tk.length>1 || F.t) h+='<select id="mnFType" class="mnFType" aria-label="Kind"><option value="">Every kind'+(F.k==='inc'?' of income':F.k==='exp'?' of expense':'')+' · '+pool.length+'</option>'+tk.map(function(t){ return '<option value="'+esc(t)+'"'+(F.t===t?' selected':'')+'>'+esc(t)+' · '+types[t]+'</option>'; }).join('')+'</select>';
+  h+='<div class="mnFRow">'+chip('mnfa','all',F.a,'Any account',L.length)+[['aba','ABA bank'],['us','US bank'],['cash','Cash on hand'],['other','Other']].map(function(a){ return chip('mnfa',a[0],F.a,a[1],cnt(function(x){ return mnLineAcct_(x)===a[0]; })); }).join('')+'</div>';
+  var tot=mnLineFilter_(L).reduce(function(s2,x){ return s2+(x.camt||0); },0);
+  return h+'<p class="mnFSum">Showing '+n+' of '+L.length+' · net '+mnSg_(Math.round(tot*100)/100)+(F.k!=='all'||F.t||F.a!=='all'?' <button class="linkAdd" id="mnFClear">Clear filters</button>':'')+'</p></div>'; }
 function mnSg_(v){ return (v<0?'−':'')+money(Math.abs(v),true); }
 /* "▲ $120 more than the same days last month" — good is green: more income, less spending */
 function mnVs_(now, before, P, upGood){ if(!P.pf) return '';
@@ -2916,13 +2936,18 @@ function minsHtml_(){ var M=mnS_(), P=mnPeriod_(), sel=mnSel_(), labs=sel.map(fu
   h+='<div class="mnTwo"><div><div class="dListHead">Where the income came from</div>'+(NA?'<p class="hint">N/A</p>':mnKinds_(pl.byInc, pl.inc, 'in'))+'</div><div><div class="dListHead">Where the money went</div>'+(NA?'<p class="hint">N/A</p>':mnKinds_(pl.byExp, pl.exp, 'out'))+'</div></div>';
   if(Math.abs(pl.other)>0.004 || Object.keys(pl.byOther).length) h+='<p class="mnOther">🛠 Allocations and adjustments also moved it '+mnSg_(pl.other)+' — '+Object.keys(pl.byOther).map(function(k){ return esc(k.replace(' (Financial tools)',''))+' '+mnSg_(pl.byOther[k]); }).join(' · ')+'. These change the balance but aren’t income or expenses.</p>';
   if(pl.lines.length){ h+='<button class="flowDrop'+(M.list?' on':'')+'" id="mnList" aria-expanded="'+!!M.list+'"><span>'+(M.list?'Hide':'Show')+' the '+pl.lines.length+' transaction'+(pl.lines.length>1?'s':'')+'</span><span class="chev">▾</span></button>';
-    if(M.list) h+='<ul class="mnLines">'+pl.lines.map(function(x){ var memo=(x.type==='Internal transfer' ? x.memo : (x.src&&x.src.memo))||''; return '<li><div><b>'+esc(x.name||(x.src&&x.src.type)||x.type)+'</b><span>'+date(x.date)+' · '+esc((x.src&&x.src.type)||x.type)+(x.type==='Internal transfer' && x.src && x.src.pl?' · 📈 in the profit and loss':'')+(sel.length>1?' · '+esc(mnName_(sel[labs.indexOf(x.cat)])):'')+(memo?' · '+esc(memo):'')+(x.appr?' · ✅':'')+'</span></div><b class="'+(x.type==='Internal transfer' && !(x.src&&x.src.pl)?'mnXfAmt':x.camt<0?'mnOut':'mnIn')+'">'+mnSg_(x.camt)+'</b></li>'; }).join('')+'</ul>'; }
+    var shownL=M.list ? mnLineFilter_(pl.lines) : [];
+    if(M.list) h+=mnFiltHtml_(pl.lines, shownL.length);
+    if(M.list) h+='<ul class="mnLines">'+shownL.map(function(x){ var memo=(x.type==='Internal transfer' ? x.memo : (x.src&&x.src.memo))||''; return '<li><div><b>'+esc(x.name||(x.src&&x.src.type)||x.type)+'</b><span>'+date(x.date)+' · '+esc((x.src&&x.src.type)||x.type)+(x.type==='Internal transfer' && x.src && x.src.pl?' · 📈 in the profit and loss':'')+(sel.length>1?' · '+esc(mnName_(sel[labs.indexOf(x.cat)])):'')+(memo?' · '+esc(memo):'')+(x.appr?' · ✅':'')+'</span></div><b class="'+(x.type==='Internal transfer' && !(x.src&&x.src.pl)?'mnXfAmt':x.camt<0?'mnOut':'mnIn')+'">'+mnSg_(x.camt)+'</b></li>'; }).join('')+'</ul>'; }
   else if(!NA) h+='<p class="hint" style="margin-top:6px">No income or expenses for '+esc(mnSelName_(sel))+' in this period.</p>';
   h+='</section>';
   /* several picked: each one side by side */
   if(sel.length>1) h+='<section class="sec" id="mnEach"><div class="secHead"><h2>Each one</h2></div><table class="mnEach"><tr><th>Allocation</th><th class="r">Balance</th><th class="r">Income</th><th class="r">Expenses</th><th class="r mnXfAmt">Transfers</th></tr>'+
     sel.map(function(k, i){ var p1=mnPL_(L, [labs[i]], P.from, P.to); return '<tr><td>'+esc(mnName_(k))+'</td><td class="r">'+mnSg_(mnBal_(L, [labs[i]], P.to))+'</td><td class="r">'+money(p1.inc,true)+'</td><td class="r">'+money(p1.exp,true)+'</td><td class="r mnXfAmt">'+mnSg_(p1.xnet)+'</td></tr>'; }).join('')+'</table></section>';
   return h+'<section class="sec"><p class="hint" style="margin:0">'+(live ? '📡 Everything entered counts here, approved or not' : '✅ Only lines in an approved report count here')+' — the same lines as the Detailed breakdown on the Input tab.</p></section>'; }
+document.addEventListener('click', function(e){ var fk=e.target.closest && e.target.closest('[data-mnfk],[data-mnfa],#mnFClear'); if(!fk) return; var F=mnLF_();
+  if(fk.id==='mnFClear'){ F.k='all'; F.t=''; F.a='all'; } else if(fk.dataset.mnfk){ F.k=fk.dataset.mnfk; F.t=''; } else F.a=fk.dataset.mnfa; render(); });
+document.addEventListener('change', function(e){ if(e.target.id!=='mnFType') return; mnLF_().t=e.target.value; render(); });
 document.addEventListener('click', function(e){ var M=mnS_(), t=e.target.closest && e.target.closest('[data-mnper],[data-mnk],[data-mngrp],#mnPickBtn,#mnPickDone,#mnList,#mnClear'); if(!t) return;
   if(t.dataset.mnper){ M.per=t.dataset.mnper; if(M.per==='custom' && !M.from){ M.from=mnMonthStart_(TODAY); M.to=TODAY; } }
   else if(t.id==='mnPickBtn') M.pick=!M.pick;
