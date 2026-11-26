@@ -6466,7 +6466,7 @@ async function getTasksBoot(username, pin, calFrom) {
 }
 
 const BOOT_KEYS = ['libClub', 'entries', 'survey', 'okrs', 'dailyLogs', 'goals', 'holidays', 'smartGoals', 'broadcasts',
-  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks', 'holidayCatch', 'libHl', 'worshipWeeks:poipet', 'worshipWeeks:siemreap', 'structurePlans', 'rocks', 'leadMeet:poipet', 'leadMeet:siemreap'];
+  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks', 'holidayCatch', 'libHl', 'worshipWeeks:poipet', 'worshipWeeks:siemreap', 'structurePlans', 'rocks', 'leadMeet:poipet', 'leadMeet:siemreap', 'qreport:poipet', 'qreport:siemreap'];
 async function awaitingBoot_(username, pin) {
   const w = await verifyAwaiting_(username, pin);
   if (!w) return null;
@@ -6567,6 +6567,7 @@ async function getMyBoot(username, pin) {
     structReady: canLead_(s) ? await part(function () { return structReady_(s); }) : null,   // this quarter's structure is arranged and not live yet (the bell, 23-structure.js)
     hospNews: canHosp_(s) ? await part(function () { return hospNews_(s.campus); }) : null,
     worship: await part(async function () { return { mine: await worshipMine_(s), canEdit: canWorship_(s) }; }),   // the Worship rota: the services I'm on in the next eight days (teams/26-worship.js)   // SR Hospitality: a team's new dates, someone who left
+    qstory: await part(function () { return qrGlance_(s); }),   // the quarterly report: ministries I lead with no story written yet (teams/29-report.js)
     fast: await part(function () { return fastGlance_(s); }),   // the campus's fast, running or coming (Intercession): the bell and ☰   // SR Hospitality: a team's new dates, someone who left
     // the roster is already top-level above; no need to ship it twice in one response
     base: base ? Object.assign({}, base, { roster: undefined }) : null
@@ -16466,7 +16467,286 @@ async function demoCall(fn, args) {
   });
 }
 
+/* ==================== The quarterly report, ministry by ministry (Nov 2026, Uriah) ====================
+   "Automatically feed information to a quarterly report that we can give to ministries and donors, the
+   government Ministry, and to donors." The board's quarter report (teams/03-library-org.js) is one page of
+   figures; this is the document behind it — a page per ministry, for three audiences, printed from
+   teams/29-report.js. ONE call per campus and quarter, getQuarterReport, gives the page:
+     - the weekly rows of that week year for the campus (and last year's, for Q1's "last quarter"), which the
+       page rolls up with rollup.js — no roll-up rule lives here;
+     - who leads each ministry (names) and how many serve in it (a count), the campus's staff as kind and
+       country only (for the Khmer / international split), and the Staff Health Score as two numbers per
+       quarter — never from fewer than QR_MIN_ANSWERS check-ins, never a row or a token;
+     - each tool's highlights for the quarter, COUNTS ONLY, each tool's blob read once (qrTools_);
+     - what the ministry wrote for the quarter (qreport:<campus>).
+   Never in it: a student's name, photo, guardian or payment, anyone's health answers, staff debt, a prayer
+   need's words, who fasts, 1-on-1s, leave, or a finance figure.
+   Who: the whole campus — its Campus Leadership, admins (any campus), and an Advisory Board member's own
+   sign-in (read only); anyone else on staff — only the ministries they are part of or lead, on their own
+   campus. Applicants never (verifyStaff_ refuses them).
+   qreport:<campus> = { 'YYYY-Qn': { letter:{text,by,byName,at}, ministries:{ 'Dept|Ministry': { highlights,
+   story, challenges, needs, by, byName, at } } } }, written with mutateKey_. */
+const QR_MIN_ANSWERS = 3, QR_TEXT_MAX = 1200, QR_LETTER_MAX = 3000, QR_YEAR_FROM = 2024;
+const QR_FIELDS = ['highlights', 'story', 'challenges', 'needs'];
+const QR_NEVER = SENSITIVE.concat(['Staff Debt ($)']);   // never in the report, whatever the audience
+const QR_HOSP_KEY = 'Skills Training|Hospitality';
+function qrWeeks_(q) { return [(q - 1) * 13 + 1, q === 4 ? 52 : q * 13]; }
+/* the quarter's first and last day: 13-week blocks of the week year; Q4 runs to the day before next year's week 1 */
+function qrRange_(year, q) {
+  const w = qrWeeks_(q), m1 = mondayOfWeek1No_(year);
+  return { from: dayOfNo_(m1 + (w[0] - 1) * 7), to: q === 4 ? dayOfNo_(mondayOfWeek1No_(year + 1) - 1) : dayOfNo_(m1 + w[1] * 7 - 1) };
+}
+function qrQuarterOf_(day) { return { year: weekYear_(day), q: meetQ_(isoWeek_(day)) }; }
+/* a year and quarter that has begun: from QR_YEAR_FROM to the quarter it is now */
+function qrAsk_(year, q) {
+  const y = Math.round(Number(year)), n = Math.round(Number(q)), now = qrQuarterOf_(baseToday_());
+  if (!(y >= QR_YEAR_FROM && y <= now.year) || !(n >= 1 && n <= 4)) return null;
+  if (y === now.year && n > now.q) return null;
+  return { year: y, q: n, id: y + '-Q' + n };
+}
+function qrText_(v, n) { return String(v == null ? '' : v).replace(/\r/g, '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, n); }
+function qrKeysOf_(s) {
+  const out = [];
+  const add = function (k) { if (k && k.split('|').length === 2 && k.indexOf('Campus Leadership|') !== 0 && out.indexOf(k) === -1) out.push(k); };
+  if (s.dept && s.ministry) add(deptOf_(s) + '|' + s.ministry);
+  ministriesOf_(s).forEach(add); leadsOf_(s).forEach(add);
+  return out;
+}
+/* what this person may open: everything on the campus, or only their own ministries */
+async function qrViewer_(username, pin, campus) {
+  const v = await verifyViewer_(username, pin);
+  if (!v) return { out: { ok: false } };
+  if (CAMPUS_IDS_.indexOf(campus) === -1) return { out: { ok: false, err: 'bad_campus' } };
+  if (v.kind === 'board') return { board: true, full: true, s: null };
+  const s = v.who;
+  if (isApplicant_(s) || s.active === false) return { out: { ok: false } };
+  if (s.isAdmin || (canLead_(s) && s.campus === campus)) return { s: s, full: true };
+  const keys = s.campus === campus ? qrKeysOf_(s) : [];
+  if (!keys.length) return { out: { ok: false, err: 'not_authorized' } };
+  return { s: s, full: false, keys: keys };
+}
+function qrMayWrite_(V, campus, key) {
+  if (!V.s || V.board) return false;
+  const p = key.split('|');
+  return !!(V.s.isAdmin || (canLead_(V.s) && V.s.campus === campus) || canLogFor_(V.s, campus, p[0], p[1]));
+}
+function qrStoryOut_(m) {
+  const o = { byName: (m && m.byName) || '', at: (m && m.at) || '' };
+  QR_FIELDS.forEach(function (f) { o[f] = (m && m[f]) || ''; });
+  return o;
+}
+async function qrDoc_(campus) {
+  const d = await readJSON('qreport:' + campus, {});
+  return d && typeof d === 'object' && !Array.isArray(d) ? d : {};
+}
+function qrHasStory_(m) { return !!(m && QR_FIELDS.some(function (f) { return m[f]; })); }
+
+/* ---- each tool's highlights for the quarter: counts, and names only of places and of visiting teams ---- */
+async function qrTools_(campus, R, want, today) {
+  const out = {}, inR = function (d) { return !!d && d >= R.from && d <= R.to && d <= today; };
+  const part = async function (key, fn) { if (!want(key)) return; try { const v = await fn(); if (v) out[key] = v; } catch (e) { console.error('quarter report', key, e && e.message); } };
+  /* the school tool: students by location, attendance, tests, the faith ticks dated in the quarter */
+  for (const key of Object.keys(SCHOOL_TOOL)) {
+    await part(key, async function () {
+      const raw = await readJSON('school:' + campus + ':' + key, null); if (!raw) return null;
+      const doc = schDoc_(raw), settings = schSettings_(doc.settings), rolls = schRollsOut_(await readJSON('schoolRoll:' + campus + ':' + key, { rolls: {} }));
+      const end = R.to < today ? R.to : today, locOf = {}, locName = {}, byLoc = {};
+      doc.locations.forEach(function (l) { locName[l.id] = l.name || ''; });
+      doc.classes.forEach(function (c) { locOf[c.id] = c.locationId || ''; });
+      const active = doc.students.filter(function (st) { return schActiveOn_(st, end); });
+      active.forEach(function (st) { const l = locOf[st.classId] || ''; byLoc[l] = (byLoc[l] || 0) + 1; });
+      let here = 0, marks = 0; const days = {};
+      rolls.forEach(function (r) { if (!inR(r.date)) return; days[r.date] = 1; Object.keys(r.marks || {}).forEach(function (id) { marks++; if (r.marks[id] !== 'a') here++; }); });
+      let tests = 0, scored = 0, passed = 0;
+      doc.tests.forEach(function (t) { if (!inR(t.date)) return; tests++;
+        Object.keys(t.scores || {}).forEach(function (id) { scored++; if (Number(t.scores[id]) / t.outOf * 100 >= settings.passMark) passed++; }); });
+      const tick = function (k) { return doc.students.filter(function (st) { return inR(st.faith && st.faith[k]); }).length; };
+      if (!doc.students.length && !doc.classes.length) return null;
+      return { kind: 'school', students: active.length, classes: doc.classes.length,
+        byLocation: Object.keys(byLoc).map(function (l) { return { name: locName[l] || '', n: byLoc[l] }; }).sort(function (a, b) { return b.n - a.n; }),
+        classDays: Object.keys(days).length, attendance: marks ? Math.round(here / marks * 100) : null,
+        tests: tests, passRate: scored ? Math.round(passed / scored * 100) : null, salvations: tick('salv'), baptisms: tick('bapt') };
+    });
+  }
+  /* Outreach Teams: the teams that left in the quarter (a team is an organisation — its name is fine to print) */
+  await part(TEAM_DEPT + '|' + TEAM_MIN, async function () {
+    const pend = await pendingTeamIds_(), seen = {};
+    const trips = (await getTeamTrips_()).filter(function (t) { return t.campus === campus && t.status !== 'cancelled' && inR(isoDate_(t.to)) && !(t.candidateId && pend[t.candidateId]); });
+    if (!trips.length) return null;
+    trips.sort(function (a, b) { return a.to < b.to ? -1 : 1; });
+    trips.forEach(function (t) { if (t.country) seen[t.country] = 1; });
+    return { kind: 'teams', teams: trips.length, people: trips.reduce(function (a, t) { return a + (Number(t.size) || 0); }, 0), countries: Object.keys(seen).sort(),
+      list: trips.slice(0, 60).map(function (t) { return { name: t.name || '', country: t.country || '', size: t.size == null ? null : Number(t.size) }; }) };
+  });
+  /* GPDTS: the outreach teams' weeks that began in the quarter */
+  if (DTS_TOOL[campus]) await part(DTS_DEPT + '|' + DTS_TOOL[campus], async function () {
+    const db = dtsDbOut_(await readJSON('dtsDb:' + campus, DTS_DB_FALLBACK)), sum = { male: 0, female: 0, salvations: 0, healings: 0, gospel: 0 }, places = {}, teams = {};
+    (db.teams || []).forEach(function (tm) { Object.keys(DTS_PHASES).forEach(function (ph) {
+      const p = tm[ph]; if (!p || !p.from) return;
+      (p.weeks || []).forEach(function (w, i) {
+        if (!inR(addDays_(p.from, i * 7))) return;
+        teams[tm.id] = 1; if (p.place) places[p.place] = 1;
+        DTS_REACH.forEach(function (k) { sum[k] += Number(w && w[k]) || 0; });
+      });
+    }); });
+    if (!Object.keys(teams).length) return null;
+    return { kind: 'dts', outreachTeams: Object.keys(teams).length, places: Object.keys(places).sort().slice(0, 20), reached: sum.male + sum.female,
+      salvations: sum.salvations, healings: sum.healings, gospel: sum.gospel };
+  });
+  /* Intercession: the Wednesdays held, and each fast that touched the quarter — how many joined, never who */
+  await part(ICP_DEPT + '|' + ICP_MIN, async function () {
+    const doc = await icpDoc_(campus), fd = await fastDoc_(campus), joins = await readJSON('fastJoin:' + campus, {});
+    let held = 0, hours = 0, tes = 0, cameN = 0, came = 0; const mins = {};
+    Object.keys(doc.weds).forEach(function (d) {
+      const x = doc.weds[d]; if (!x || x.held !== true || !inR(d)) return;
+      held++; hours += Number(x.hours) || 0; tes += (x.testimonies || []).length;
+      if (x.came != null) { cameN++; came += Number(x.came) || 0; }
+      (x.mins || []).forEach(function (m) { mins[m] = 1; });
+    });
+    let gheld = 0;
+    const fasts = [];
+    fd.fasts.forEach(function (f) {
+      if (!f || !f.start || f.start > R.to || fastEnd_(f) < R.from || f.start > today) return;
+      (f.gatherings || []).forEach(function (g) { if (g.held === true && inR(addDays_(f.start, g.day - 1))) { gheld++; hours += Number(g.hours) || 0; } });
+      const j = joins && joins[f.id]; 
+      fasts.push({ title: f.title || '', days: f.days, joined: j && typeof j === 'object' ? Object.keys(j).length : 0 });
+    });
+    if (!held && !gheld && !fasts.length) return null;
+    return { kind: 'icp', wedsHeld: held, gatheringsHeld: gheld, hours: Math.round(hours * 100) / 100, ministries: Object.keys(mins).length, testimonies: tes,
+      avgCame: cameN ? Math.round(came / cameN) : null, fasts: fasts };
+  });
+  /* Worship: services held and who came, the team in training today, our own songs written in the quarter */
+  await part(WORSHIP_DEPT + '|' + WORSHIP_MIN, async function () {
+    const weeks = await wsWeeks_(campus), doc = await wsDoc_(campus);
+    let held = 0, counted = 0, people = 0;
+    Object.keys(weeks).forEach(function (w) { ((weeks[w] && weeks[w].services) || []).forEach(function (x) {
+      if (x.off || x.held !== true || !inR(wsDate_(w, x.day))) return;
+      held++; if (x.count != null) { counted++; people += Number(x.count) || 0; }
+    }); });
+    const written = doc.songs.filter(function (s) { return inR(s.own && s.own.written); }).length;
+    if (!held && !written && !doc.team.length) return null;
+    return { kind: 'worship', held: held, avg: counted ? Math.round(people / counted) : null, team: doc.team.length,
+      training: doc.team.filter(function (m) { return m.training; }).length, songsWritten: written };
+  });
+  /* Hospitality: nights hosted for visitors (guests, speakers, teams), and the teams housed */
+  await part(QR_HOSP_KEY, async function () {
+    const stored = await readJSON(hospKey_(campus), null); if (!stored || !Array.isArray(stored.bookings)) return null;
+    const last = R.to < today ? R.to : today; let nights = 0, teams = 0, guests = 0;
+    stored.bookings.forEach(function (b) {
+      if (!b || !b.from || ['guest', 'speaker', 'team'].indexOf(b.category) === -1) return;
+      const a = b.from > R.from ? b.from : R.from, z0 = b.permanent || !b.to ? addDays_(last, 1) : b.to, z = z0 > addDays_(last, 1) ? addDays_(last, 1) : z0;   // `to` is the morning they leave
+      const n = dayNo_(z) - dayNo_(a); if (!(n > 0)) return;
+      const count = Math.max(Number(b.count) || 0, Array.isArray(b.bedIds) ? b.bedIds.length : 0, 1);
+      nights += n * count; if (b.category === 'team') teams++; else guests += count;
+    });
+    if (!nights) return null;
+    return { kind: 'hosp', guestNights: nights, teams: teams, guests: guests };
+  });
+  return out;
+}
+
+async function getQuarterReport(username, pin, campus, year, q) {
+  campus = str_(campus, 20) || '';
+  const V = await qrViewer_(username, pin, campus); if (V.out) return V.out;
+  const Q = qrAsk_(year, q); if (!Q) return { ok: false, err: 'bad_quarter' };
+  const today = baseToday_(), R = qrRange_(Q.year, Q.q), wk = qrWeeks_(Q.q);
+  const want = function (key) { return V.full || V.keys.indexOf(key) > -1; };
+  const [rows, staffAll, survey, doc] = await Promise.all([withTeamRows_(await getEntries_()), getStaff_(), V.full ? getSurvey_() : [], qrDoc_(campus)]);
+  /* the weekly rows: this week year's, and last year's when "last quarter" is its Q4 */
+  const entries = {}, prev = {};
+  rows.forEach(function (r) {
+    if (r.campus !== campus || QR_NEVER.indexOf(r.metric) > -1) return;
+    const dept = normDept_(r.dept, r.ministry), val = Number(r.value), y = yearOf_(r);
+    if (isNaN(val) || !want(dept + '|' + r.ministry)) return;
+    const into = y === Q.year ? entries : (Q.q === 1 && y === Q.year - 1 ? prev : null); if (!into) return;
+    const key = dept + '|' + r.ministry + '|' + r.metric;
+    (into[key] = into[key] || {})[String(r.week)] = val;
+  });
+  /* people: names only of who leads; everyone else is a count */
+  const staff = staffAll.filter(function (r) { return r.active && !r.archived && !isApplicant_(r) && r.campus === campus; });
+  const people = {}, depts = {};
+  const slot = function (key) { return people[key] || (people[key] = { n: 0, leaders: [] }); };
+  staff.forEach(function (r) {
+    const d = deptOf_(r), seen = {};
+    if (d && d !== 'Campus Leadership' && V.full) (depts[d] = depts[d] || { n: 0, directors: [] }).n++;
+    if (d === 'Campus Leadership' && r.ministry && r.ministry !== 'Campus Director' && V.full) (depts[r.ministry] = depts[r.ministry] || { n: 0, directors: [] }).directors.push(r.name || '');
+    [d && r.ministry ? d + '|' + r.ministry : ''].concat(ministriesOf_(r)).forEach(function (k) { if (k && !seen[k] && want(k)) { seen[k] = 1; slot(k).n++; } });
+    leadsOf_(r).forEach(function (k) { if (want(k) && slot(k).leaders.indexOf(r.name || '') === -1) slot(k).leaders.push(r.name || ''); });
+  });
+  const out = { ok: true, campus: campus, year: Q.year, q: Q.q, from: R.from, to: R.to, weeks: wk, today: today, done: R.to < today,
+    full: V.full, board: !!V.board, entries: entries, prev: Q.q === 1 ? prev : null, people: people };
+  if (V.full) {
+    out.depts = depts;
+    out.mix = staff.map(function (r) { return { campus: campus, staffType: r.staffType || '', country: r.country || '' }; });
+    /* the Staff Health Score: how many check-ins and their average — nothing under QR_MIN_ANSWERS */
+    const health = function (yr, qn) {
+      const w = qrWeeks_(qn), got = survey.filter(function (r) { return r.campus === campus && yearOf_(r) === yr && Number(r.week) >= w[0] && Number(r.week) <= w[1]; });
+      return { n: got.length, score: got.length >= QR_MIN_ANSWERS ? Math.round(got.reduce(function (a, r) { return a + compositeOf_(r); }, 0) / got.length * 10) / 10 : null };
+    };
+    out.health = { now: health(Q.year, Q.q), prev: Q.q > 1 ? health(Q.year, Q.q - 1) : health(Q.year - 1, 4), minN: QR_MIN_ANSWERS };
+  }
+  out.tools = await qrTools_(campus, R, want, today);
+  const saved = doc[Q.id] && typeof doc[Q.id] === 'object' ? doc[Q.id] : {}, sm = saved.ministries && typeof saved.ministries === 'object' ? saved.ministries : {};
+  out.stories = {};
+  Object.keys(sm).forEach(function (k) { if (want(k) && qrHasStory_(sm[k])) out.stories[k] = qrStoryOut_(sm[k]); });
+  out.letter = V.full && saved.letter && saved.letter.text ? { text: saved.letter.text, byName: saved.letter.byName || '', at: saved.letter.at || '' } : null;
+  out.can = { letter: !!(V.s && (V.s.isAdmin || (canLead_(V.s) && V.s.campus === campus))),
+    write: V.board ? [] : (V.s.isAdmin || (canLead_(V.s) && V.s.campus === campus)) ? 'all' : V.keys.filter(function (k) { return qrMayWrite_(V, campus, k); }) };
+  return out;
+}
+/* A ministry's words for the quarter (key 'Dept|Ministry'), or leadership's letter (key '@letter'). */
+async function saveQuarterStory(username, pin, campus, year, q, key, rec) {
+  campus = str_(campus, 20) || '';
+  const s = await verifyStaff_(username, pin); if (!s) return { ok: false };
+  if (CAMPUS_IDS_.indexOf(campus) === -1) return { ok: false, err: 'bad_campus' };
+  const Q = qrAsk_(year, q); if (!Q) return { ok: false, err: 'bad_quarter' };
+  const V = { s: s }, r = rec && typeof rec === 'object' ? rec : {}, now = new Date().toISOString();
+  const letter = key === '@letter';
+  let k = '';
+  if (letter) { if (!(s.isAdmin || (canLead_(s) && s.campus === campus))) return { ok: false, err: 'not_authorized' }; }
+  else {
+    const raw = str_(key, 160); if (!raw || !/^[^|]+\|[^|]+$/.test(raw)) return { ok: false, err: 'bad_ministry' };
+    k = normKey_(raw, 2);
+    if (k.indexOf('Campus Leadership|') === 0) return { ok: false, err: 'bad_ministry' };
+    if (!qrMayWrite_(V, campus, k)) return { ok: false, err: 'not_authorized' };
+  }
+  const res = await mutateKey_('qreport:' + campus, {}, function (d) {
+    const Qd = d[Q.id] && typeof d[Q.id] === 'object' ? d[Q.id] : (d[Q.id] = {});
+    if (letter) {
+      const text = qrText_(r.letter, QR_LETTER_MAX);
+      if (text) Qd.letter = { text: text, by: s.id, byName: s.name || '', at: now }; else delete Qd.letter;
+      return { ok: true, letter: Qd.letter ? { text: text, byName: s.name || '', at: now } : null };
+    }
+    if (!Qd.ministries || typeof Qd.ministries !== 'object') Qd.ministries = {};
+    const m = { by: s.id, byName: s.name || '', at: now };
+    QR_FIELDS.forEach(function (f) { m[f] = qrText_(r[f], QR_TEXT_MAX); });
+    if (qrHasStory_(m)) Qd.ministries[k] = m; else delete Qd.ministries[k];
+    return { ok: true, key: k, story: qrHasStory_(m) ? qrStoryOut_(m) : null };
+  });
+  return res || { ok: false, err: 'busy' };
+}
+/* The bell: in the last two weeks of a quarter and the first two of the next, the ministries this person leads
+   that have nothing written for it. Read with the boot (qreport:<campus> is in BOOT_KEYS) — no call of its own. */
+function qrWindow_(today) {
+  const wk = isoWeek_(today), yr = weekYear_(today), qn = meetQ_(wk), pos = wk - (qn - 1) * 13;
+  if (pos >= 12) return { year: yr, q: qn, since: dayOfNo_(mondayOfWeek1No_(yr) + ((qn - 1) * 13 + 11) * 7) };
+  if (pos <= 2) return qn === 1 ? { year: yr - 1, q: 4, since: dayOfNo_(mondayOfWeek1No_(yr - 1) + 50 * 7) }
+    : { year: yr, q: qn - 1, since: dayOfNo_(mondayOfWeek1No_(yr) + ((qn - 2) * 13 + 11) * 7) };
+  return null;
+}
+async function qrGlance_(s) {
+  if (!s || isApplicant_(s) || CAMPUS_IDS_.indexOf(s.campus) === -1) return null;
+  const W = qrWindow_(baseToday_()); if (!W) return null;
+  const mine = leadsOf_(s).filter(function (k) { return k && k.split('|').length === 2 && k.indexOf('Campus Leadership|') !== 0; });
+  if (!mine.length) return null;
+  const doc = await qrDoc_(s.campus), Qd = doc[W.year + '-Q' + W.q], sm = (Qd && Qd.ministries) || {};
+  const keys = mine.filter(function (k) { return !qrHasStory_(sm[k]); });
+  return keys.length ? { year: W.year, q: W.q, since: W.since, keys: keys } : null;
+}
+
 const HANDLERS = {
+  getQuarterReport: function (a) { return getQuarterReport(a[0], a[1], a[2], a[3], a[4]); },
+  saveQuarterStory: function (a) { return saveQuarterStory(a[0], a[1], a[2], a[3], a[4], a[5], a[6]); },
   fin2Get: function (a) { return fin2Get(a[0], a[1], a[2]); },
   fin2Save: function (a) { return fin2Save(a[0], a[1], a[2], a[3], a[4]); },
   demoCall: function (a) { return demoCall(a[0], a[1]); },

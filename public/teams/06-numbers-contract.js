@@ -800,7 +800,7 @@ function mmHeadHtml_(opts, sel, mine){
   if(leaders.length) sub+=' · 👑 '+esc(t('Led by'))+' '+leaders.map(function(p){ return esc(p.name); }).join(', ');
   var note = isBL ? '' : mine ? t('Your main ministry — you are entering its numbers') : sel.role==='member' ? t('One of your ministries — you are entering its numbers') : sel.role==='leader' ? t('You lead this ministry — you are entering its numbers') : sel.role==='admin' ? t('As an admin you can see and enter its numbers') : sel.role==='oversee' ? t('Viewing as its director') : '';
   return '<div class="mmHead'+(isBL?' leadBanner':'')+'" id="mmBanner"><div class="eyebrow">'+esc(t('My Ministry'))+'</div>'+
-    '<div class="mmHeadRow"><span class="mmBannerEmoji">'+emoji+'</span><div class="mmHeadText"><div class="mmBannerName">'+esc(name)+'</div><div class="rowSub">'+sub+(note ? '<span class="mmBannerNote">'+esc(note)+'</span>' : '')+'</div></div>'+
+    '<div class="mmHeadRow"><span class="mmBannerEmoji">'+emoji+'</span><div class="mmHeadText"><div class="mmBannerName">'+esc(name)+'</div><div class="rowSub">'+sub+(note ? '<span class="mmBannerNote">'+esc(note)+'</span>' : '')+'</div>'+(typeof qrMmLinkHtml_==='function' ? qrMmLinkHtml_(sel) : '')+'</div>'+
     (opts.length>1 ? '<button class="mmSwitch" id="mmSwitch" aria-haspopup="dialog">'+esc(t('Switch'))+' ▾</button>' : '')+'</div></div>';
 }
 /* In two to four ministries of your own (Nov 2026, Uriah: "some people will have 2 ministry jobs … there needs to be

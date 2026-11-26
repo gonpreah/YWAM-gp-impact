@@ -894,6 +894,7 @@ function applyBoot(d, fromCache){
   S.backup = d.backup || null;   // admins only: the nightly backup's last run
   S.numbers = d.numbers || null;
   S.structReady = d.structReady || null;   // Campus Leadership: this quarter's structure is arranged and not live yet (23-structure.js)
+  S.qstory = d.qstory || null;   // the quarterly report: ministries I lead with no story written yet (29-report.js)
   S.fast = d.fast || null;   // the campus's fast, running or coming (25-intercession.js): the bell and ☰
   S.hospNews = d.hospNews || null;   // SR Hospitality: a team's new dates, someone who left (06-numbers-contract.js hospChangesHtml_)
   S.pulse = {}; S.staffDebt = null;
@@ -1099,6 +1100,7 @@ function render(){
   }).join('');
   var m=document.getElementById('main');
   document.body.classList.toggle('repOn', S.view==='report');
+  document.body.classList.toggle('qrOn', S.view==='qreport');   // the quarterly report, ministry by ministry (29-report.js): its print rules
   document.body.classList.toggle('libReading', S.view==='library' && !!S.libBook && S.libStep!=null);   // not 'reading': that is the Bible-reading box's class, and its yellow, border and font leaked onto the whole page
   if(LIBA.on && !(S.view==='library' && S.libBook && S.libStep!=null)) libAudioStop_();
   if(gglStepWanted_()) m.innerHTML=gglStepHtml_();   // moving everyone to Google: once, after a PIN sign-in (07-health-leave.js)
@@ -1109,6 +1111,7 @@ function render(){
   else if(S.view==='ywamgp') m.innerHTML=ywamGpHtml();
   else if(S.view==='kmreview') m.innerHTML=kmReviewHtml();
   else if(S.view==='report') m.innerHTML=boardReportHtml_();
+  else if(S.view==='qreport') m.innerHTML=qrHtml_();
   else if(S.view==='support') m.innerHTML=supportHtml_();
   else if(S.view==='prayer') m.innerHTML=prayerHtml_();
   else if(S.view==='icp') m.innerHTML=icpPageHtml_();   // Wednesday intercession and the fast, for everyone (25-intercession.js)
@@ -1388,6 +1391,7 @@ function renderMenu(){
   IC.applogout=IC.profile;
   IC.worship='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
   IC.fast=IC.prayer;
+  IC.qreport=IC.mycontract;
   IC.support='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z"/><path d="M12 8.5v6M9.5 11.5h5"/></svg>';
   var sections= gpTasksApp_() ? [
     { title:'', items:[it('tasks', t('Tasks')), it('calendar', t('Calendar'))] },
@@ -1397,11 +1401,11 @@ function renderMenu(){
   ] : S.student ? [
     { title:'', items:[it('library', t('Library')), it('stuportal', t('My application (portal)')), it('boardlogout', t('Log out'))] }
   ] : S.board ? [
-    { title:'', items:[it('ywamgp', t('YWAM GP')), it('p360', t('360 reviews')), it('library', t('Library')), it('boardlogout', t('Log out'))] }
+    { title:'', items:[it('ywamgp', t('YWAM GP')), it('qreport', t('Quarterly report')), it('p360', t('360 reviews')), it('library', t('Library')), it('boardlogout', t('Log out'))] }
   ] : S.guest ? [
     { title:'', items:[it('library', t('Library')), it('guestreg', t('Create my profile')), it('guestlogin', t('Log in'))] }
   ] : [
-    { title:'', items:[it('base', t('Base')), it('caltasks', t('GP Calendar/Tasks')), it('ywamgp', t('YWAM GP')), it('prayer', t('Prayer'))].concat(S.fast ? [it('fast', S.fast.title)] : [], [ it('p360', t('360 reviews')), it('tests', t('Tests')), it('leave', t('Leave Request')), it('library', t('Library'))], S.student ? [] : [it('support', t('Support raising'))]) },
+    { title:'', items:[it('base', t('Base')), it('caltasks', t('GP Calendar/Tasks')), it('ywamgp', t('YWAM GP'))].concat(qrMenu_() ? [it('qreport', t('Quarterly report'))] : [], [it('prayer', t('Prayer'))], S.fast ? [it('fast', S.fast.title)] : [], [ it('p360', t('360 reviews')), it('tests', t('Tests')), it('leave', t('Leave Request')), it('library', t('Library'))], S.student ? [] : [it('support', t('Support raising'))]) },
     { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], [it('worship', t('Worship rota'))], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : [], canStudentsClient_() ? [it('students', t('Students'))] : []) },
     { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal')), it('portalapp', t('The Portal on your phone'))] : [] },
     { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : [], kmrCan_() ? [it('kmreview', t('Khmer review'))] : []) },
@@ -1453,6 +1457,7 @@ function renderMenu(){
       else if(id==='hosp'){ S.view='hosp'; render(); }
       else if(id==='sched'){ schedOpen_('kitchen', false, 'home'); }
       else if(id==='worship'){ wsOpen_(null); }
+      else if(id==='qreport'){ renderMenu(); qrOpen_({ from:S.view }); }
       else if(id==='portal'){ renderMenu(); window.open('portal.html', '_blank', 'noopener'); }
       else if(id==='portalapp'){ renderMenu(); gpPortalAppOpen_(); }
       else renderMenu();

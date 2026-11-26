@@ -6782,6 +6782,93 @@ Campus Leadership arranges a quarter on the whiteboard; "Make Q1 2027 live" turn
 | Someone else is saving — try again. | មានអ្នកផ្សេងកំពុងរក្សាទុក — សូមព្យាយាមម្តងទៀត។ |
 | That quarter is over. | ត្រីមាសនោះបានកន្លងផុតហើយ។ |
 
+## 145. The quarterly report, ministry by ministry (☰ → Quarterly report, My Ministry → This quarter’s report, Nov 2026)
+A printed document for three readers — our own ministries, donors, and the government — with a page for each ministry. Many of these are headings and table labels ON THE PRINTED REPORT, so they are read by people outside YWAM GP: please check "Report of activities", "Scorecard", "Highlights", "Prayer and needs" and the staff lines first. "Scorecard" (តារាងពិន្ទុ) is the table of a ministry's numbers for the quarter. The tick "Leave out faith numbers" is a promise about what the government's copy leaves out. The reminder under "A story" is about protecting children.
+
+| English | Khmer (draft) |
+|---|---|
+| Quarterly report | របាយការណ៍ប្រចាំត្រីមាស |
+| Ministry by ministry | តាមកិច្ចការបម្រើនីមួយៗ |
+| This quarter’s report | របាយការណ៍ត្រីមាសនេះ |
+| The quarter report | របាយការណ៍ត្រីមាស |
+| The whole report | របាយការណ៍ទាំងមូល |
+| A page for every ministry, filled in from what each ministry already records. Choose who it is for, then print it or save it as a PDF. | មួយទំព័រសម្រាប់កិច្ចការបម្រើនីមួយៗ បំពេញពីអ្វីដែលកិច្ចការបម្រើនីមួយៗបានកត់ត្រារួចហើយ។ ជ្រើសរើសថាសម្រាប់អ្នកណា រួចបោះពុម្ព ឬរក្សាទុកជា PDF។ |
+| Our ministries | កិច្ចការបម្រើរបស់យើង |
+| Donors | អ្នកឧបត្ថម្ភ |
+| Government | រដ្ឋាភិបាល |
+| Both | ទាំងពីរ |
+| For our ministries | សម្រាប់កិច្ចការបម្រើរបស់យើង |
+| For our partners and donors | សម្រាប់ដៃគូ និងអ្នកឧបត្ថម្ភរបស់យើង |
+| Report of activities | របាយការណ៍សកម្មភាព |
+| Quarterly report · Q{q} {year} | របាយការណ៍ប្រចាំត្រីមាស · ត្រីមាសទី {q} ឆ្នាំ {year} |
+| this quarter is still going | ត្រីមាសនេះមិនទាន់ចប់នៅឡើយ |
+| Made {date}. Staff numbers are as of today. | ធ្វើនៅ {date}។ ចំនួនបុគ្គលិកគិតត្រឹមថ្ងៃនេះ។ |
+| Leave out faith numbers (salvations, baptisms, gospel…) | មិនបញ្ចូលតួលេខផ្នែកជំនឿ (ការទទួលសង្គ្រោះ បុណ្យជ្រមុជទឹក ដំណឹងល្អ…) |
+| Also print each ministry’s story and its prayer and needs | បោះពុម្ពរឿង និងសេចក្តីអធិស្ឋាន និងតម្រូវការរបស់កិច្ចការបម្រើនីមួយៗផងដែរ |
+| Donors: stories first. No challenges, money, health or internal priorities. | អ្នកឧបត្ថម្ភ៖ រឿងមកមុន។ គ្មានបញ្ហាប្រឈម លុយ សុខភាព ឬអាទិភាពផ្ទៃក្នុងទេ។ |
+| Government: what we did and who we served, in Khmer unless you choose another language. Highlights only, unless you tick more. | រដ្ឋាភិបាល៖ អ្វីដែលយើងបានធ្វើ និងអ្នកដែលយើងបានបម្រើ ជាភាសាខ្មែរ លុះត្រាតែអ្នកជ្រើសភាសាផ្សេង។ មានតែចំណុចលេចធ្លោប៉ុណ្ណោះ លុះត្រាតែអ្នកគូសបន្ថែម។ |
+| Our ministries: everything — the numbers, priorities, and all four parts of each story. | កិច្ចការបម្រើរបស់យើង៖ ទាំងអស់ — តួលេខ អាទិភាព និងផ្នែកទាំងបួននៃរឿងនីមួយៗ។ |
+| Scorecard | តារាងពិន្ទុ |
+| What we count | អ្វីដែលយើងរាប់ |
+| This quarter in numbers | ត្រីមាសនេះជាតួលេខ |
+| Priorities this quarter | អាទិភាពក្នុងត្រីមាសនេះ |
+| No numbers were entered this quarter. | គ្មានតួលេខបានបញ្ចូលក្នុងត្រីមាសនេះទេ។ |
+| No ministry has people or numbers for this quarter yet. | មិនទាន់មានកិច្ចការបម្រើណាមានមនុស្ស ឬតួលេខសម្រាប់ត្រីមាសនេះនៅឡើយទេ។ |
+| Led by {names} | ដឹកនាំដោយ {names} |
+| {n} serve in this ministry | {n} នាក់បម្រើក្នុងកិច្ចការបម្រើនេះ |
+| {n} ministries | កិច្ចការបម្រើ {n} |
+| Just this ministry | តែកិច្ចការបម្រើនេះ |
+| Khmer staff | បុគ្គលិកខ្មែរ |
+| International staff | បុគ្គលិកអន្តរជាតិ |
+| Country not said yet | មិនទាន់ប្រាប់ប្រទេស |
+| Outreach teams hosted | ក្រុមចេញផ្សព្វផ្សាយដែលបានទទួល |
+| Highlights | ចំណុចលេចធ្លោ |
+| A story | រឿងមួយ |
+| Challenges | បញ្ហាប្រឈម |
+| Prayer and needs | សេចក្តីអធិស្ឋាន និងតម្រូវការ |
+| A letter from leadership | សំបុត្រពីថ្នាក់ដឹកនាំ |
+| Write this quarter’s story | សរសេររឿងសម្រាប់ត្រីមាសនេះ |
+| Change this quarter’s story | កែរឿងសម្រាប់ត្រីមាសនេះ |
+| Write the letter from leadership | សរសេរសំបុត្រពីថ្នាក់ដឹកនាំ |
+| Change the letter | កែសំបុត្រ |
+| Carry on writing — a draft is kept on this phone | សរសេរបន្ត — សេចក្តីព្រាងត្រូវបានរក្សាទុកក្នុងទូរស័ព្ទនេះ |
+| A short letter for the front of the report: what this quarter was about, and thank you. | សំបុត្រខ្លីមួយសម្រាប់ទំព័រមុខនៃរបាយការណ៍៖ ត្រីមាសនេះនិយាយអំពីអ្វី និងពាក្យអរគុណ។ |
+| One short story of a changed life. No child’s full name — change names where needed, and ask permission first. | រឿងខ្លីមួយអំពីជីវិតដែលបានផ្លាស់ប្រែ។ កុំដាក់ឈ្មោះពេញរបស់កុមារ — ប្តូរឈ្មោះបើចាំបាច់ ហើយសុំការអនុញ្ញាតជាមុនសិន។ |
+| Only our own ministries read this part. Donors and the government never see it. | មានតែកិច្ចការបម្រើរបស់យើងប៉ុណ្ណោះដែលអានផ្នែកនេះ។ អ្នកឧបត្ថម្ភ និងរដ្ឋាភិបាលមិនឃើញវាឡើយ។ |
+| What you type is kept on this phone until it is saved. | អ្វីដែលអ្នកវាយត្រូវបានរក្សាទុកក្នុងទូរស័ព្ទនេះ រហូតដល់បានរក្សាទុក។ |
+| Could not save — your words are kept on this phone. | មិនអាចរក្សាទុកបានទេ — ពាក្យរបស់អ្នកនៅរក្សាទុកក្នុងទូរស័ព្ទនេះ។ |
+| Only the ministry’s own people can write this. | មានតែមនុស្សក្នុងកិច្ចការបម្រើនេះប៉ុណ្ណោះដែលអាចសរសេរបាន។ |
+| This report is for Campus Leadership and each ministry’s own people. | របាយការណ៍នេះសម្រាប់ថ្នាក់ដឹកនាំសាខា និងមនុស្សក្នុងកិច្ចការបម្រើនីមួយៗ។ |
+| Could not load the report ({err}). | មិនអាចបើករបាយការណ៍បានទេ ({err})។ |
+| Write {ministry}’s story for Q{q} | សរសេររឿងរបស់ {ministry} សម្រាប់ត្រីមាសទី {q} |
+| Write it | សរសេរ |
+| Students enrolled | សិស្សដែលបានចុះឈ្មោះ |
+| Days with classes | ថ្ងៃដែលមានថ្នាក់រៀន |
+| Tests given | ការប្រឡងដែលបានធ្វើ |
+| Pass rate | អត្រាជាប់ |
+| New salvations | ការទទួលសង្គ្រោះថ្មី |
+| Teams hosted | ក្រុមដែលបានទទួល |
+| People who came | មនុស្សដែលបានមក |
+| Prayer gatherings in the fast | ការជួបជុំអធិស្ឋានក្នុងពេលតមអាហារ |
+| Hours in prayer | ម៉ោងអធិស្ឋាន |
+| Ministries covered in prayer | កិច្ចការបម្រើដែលបានអធិស្ឋានឲ្យ |
+| {n} joined | {n} នាក់បានចូលរួម |
+| Musicians in training | អ្នកលេងតន្ត្រីកំពុងហ្វឹកហាត់ |
+| Songs written | បទចម្រៀងដែលបាននិពន្ធ |
+| Guest nights hosted | ចំនួនយប់ដែលបានទទួលភ្ញៀវ |
+| Teams housed | ក្រុមដែលបានស្នាក់នៅ |
+| Guests and speakers | ភ្ញៀវ និងវាគ្មិន |
+| Students applied | សិស្សដែលបានដាក់ពាក្យ |
+| Students accepted | សិស្សដែលបានទទួល |
+| Students here | សិស្សដែលនៅទីនេះ |
+| Students graduated | សិស្សដែលបានបញ្ចប់ |
+| Outreach teams sent | ក្រុមចេញផ្សព្វផ្សាយដែលបានបញ្ជូន |
+| Outreach places | កន្លែងចេញផ្សព្វផ្សាយ |
+| People reached on outreach | មនុស្សដែលបានជួបពេលចេញផ្សព្វផ្សាយ |
+| Salvations on outreach | ការទទួលសង្គ្រោះពេលចេញផ្សព្វផ្សាយ |
+| Healings on outreach | ការប្រោសឲ្យជាពេលចេញផ្សព្វផ្សាយ |
+| Heard the gospel on outreach | បានឮដំណឹងល្អពេលចេញផ្សព្វផ្សាយ |
+| Customers served | អតិថិជនដែលបានបម្រើ |
 ## 144. Rocks and the Scorecard — in place of OKRs and “Numbers” (My Ministry, Team, Admin, the quarter report, Nov 2026)
 Across the whole app the quarter's priorities are **Rocks** (ថ្មធំ — the word the leadership meeting already used) and a ministry's weekly numbers page is its **Scorecard** (តារាងពិន្ទុ; the meeting's “Scorecard” was តារាងពិន្ទុ and now uses the same new word). “Scorecard”, “Rocks” and “Q{q} Rocks” are tab and tile labels with very little room. A rock is “on track” (ដើរតាមផែនការ), “off track” or “done” — the three words are buttons side by side on a phone. “On target / Off target” is a number against its weekly goal, which is a different thing from a rock being on track; please check the two read differently. “Earlier objectives” (គោលបំណងពីមុន) is the folded list of what was there before rocks.
 

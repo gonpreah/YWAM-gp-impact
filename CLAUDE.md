@@ -55,7 +55,7 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   (personality, Library, papers, guest, YWAM GP & the board, report, first 30 days, prayer,
   support raising, reminders, Khmer review) · `04-ministry-strengths.js` · `05-admin-hr.js` ·
   `06-numbers-contract.js` · `07-health-leave.js` · `08-team-profile.js` · `09-finance.js`
-  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app); later ones (12-tasks … 27-meeting) load before 11. `finance.js` (public/,
+  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app); later ones (12-tasks … 29-report) load before 11. `finance.js` (public/,
   shared like taxonomy.js) reads the reports; `vendor/pdfjs/` is pdf.js, loaded on demand. **One global scope**, exactly as when it was one inline
   script: any function may call any other, but code that RUNS while a file loads (not
   inside a function) may only use what that file or an earlier one defines. Add new code to
@@ -1581,6 +1581,90 @@ the source and fails if the old words or the old page code come back.
 - tests/test-rocks.mjs (server), tests/test-rocks-ui.mjs (the pages, Khmer, 320px, dark), test-okr-easy.mjs (the old code
   and words are gone, the data is not), test-okr-admin-view.mjs (an admin's every department), test-metric-okr-feeds.mjs
   (the goal beside the box). Khmer: docs/khmer-needed.md §144. sw.js SHELL v34.
+
+## The quarterly report, ministry by ministry (teams/29-report.js, Nov 2026, Uriah)
+The tools fill each ministry's numbers; Uriah wants all of it to "automatically feed information to a quarterly report that
+we can give to ministries and donors, the government Ministry, and to donors." The board's quarter report (above, `S.view=
+'report'`) is one page of figures; this is the document behind it: `S.view='qreport'` (`qrHtml_` / `bindReport_`, `#qrPage`).
+- **Ways in**: 📑 **Ministry by ministry** on the board's report (`#qrWayIn`, `qrWayInHtml_` — the one line added to
+  `boardReportHtml_`); ☰ → **Quarterly report** and search (`qreport`, `qrMenu_`: Campus Leadership, admins, the board's
+  sign-in, and anyone who leads a ministry); on every ministry's My Ministry header a quiet **📄 This quarter's report**
+  (`.qrMmLink`, `[data-qrmm]`, `qrMmLinkHtml_` in `mmHeadHtml_`) for whoever can open that ministry; the bell (below).
+  `qreport` is in `BOARD_VIEWS`.
+- **The choices** (`#qrPick`, `S.qr`): campus or 🌏 All of YWAM GP (`[data-qrcampus]`, admins and the board only — Campus
+  Leadership has its own campus); year (`#qrYear`, from `QR_YEAR_FROM` 2024) and quarter (`[data-qrq]`; the app's 13-week
+  quarters of the week year, a quarter still to come is disabled); **who it is for** (`[data-qraud]`): `min` Our ministries ·
+  `donor` Donors · `gov` Government (not offered to the board); **language** (`[data-qrlang]`): English · ខ្មែរ · Both.
+  Campus, audience, language and the government's "also print" tick are kept on the phone (`gp-qr`). **The faith tick is
+  never kept** — `#qrNoFaith` ("Leave out faith numbers (salvations, baptisms, gospel…)") is OFF every time until the
+  person ticks it; the app never decides that for them. Picking Government sets Khmer, which they can change.
+- **A string in a named language**: `qrD_(function(){ return t('…'); })` runs the ordinary `t()` / `gpT()` with `LANG`
+  switched for that one call (`qrIn_`), so `t()` is unchanged and tests/test-khmer.mjs still sees every string. Both = the
+  two side by side in `.qrBi` at one size (Khmer never smaller). What a ministry is for (`jobFocus`) is English only, so in
+  Khmer it prints under a small "English" tag (`.qrEnTag`) rather than a machine translation of 28 paragraphs. What people
+  typed prints as typed.
+- **The document** (`#qrDoc`): the cover (`#qrCover`: the mark on its dark coin `.qrCoin`, YWAM GP or the campus, the
+  quarter and its dates, who it is for, headline figures `qrFigures_` — staff today, the Staff Health Score (Our ministries
+  only, one campus, never under three check-ins), salvations, leadership-school students and graduates, community-school
+  students, teams hosted, each with last quarter's; Government adds Khmer / international staff from `staffBreakdown()` and
+  the locations), the campus's leadership team (from `S.org`) and **a letter from leadership** (`#qrLetter`); then a section
+  per department (`.qrDept[data-qrdept]`, taxonomy order, never Campus Leadership's own rows) and a page per ministry
+  (`.qrMin[data-qrmin="Dept|Ministry"]`, only ministries with people, numbers, a tool's data or a story): emoji and name,
+  what it is for, 👑 who leads it (names) and how many serve (a count), then
+  - **Scorecard** (`.qrScore`, `qrScoreHtml_`): every metric of the ministry — this quarter by the metric's own sum /
+    latest / average rule, last quarter with ▲/▼ (`pctChange`, `trendBadge`, direction from `LOWER_BETTER`), year to date;
+  - **This quarter in numbers** (`.qrTool`, `qrToolItems_`): what its tool counted (below);
+  - **Priorities this quarter** (`.qrPri`, Our ministries only; on the department's page, and on a ministry printed alone);
+  - what the ministry wrote (`[data-qrstory]`): Highlights · A story · Challenges · Prayer and needs.
+  Donors read the story first, then the tool's counts, then the Scorecard.
+- **Every figure is rolled up on the page with rollup.js** (`qrRolls_`: three `gpRollup` instances on the rows the server
+  sent — the year, the year cut at the quarter's last week for "year to date", and last year for Q1's "last quarter"). No
+  roll-up rule is written again, here or in api.js.
+- **`qrPrioritiesFor_(campus, dept, ministry, year, q)` is the ONE place the report reads priorities**: today the
+  department's objectives with their progress from `S.base.okrs` (this week year only — objectives carry no year). When
+  Rocks replace OKRs, change only that function. On screen the words are "Priorities this quarter" and "Scorecard".
+- **By audience**: money metrics (`($)`) only for Our ministries; Challenges only for Our ministries; Donors — story,
+  highlights, prayer and needs, no health, money or priorities; Government — highlights only, unless `#qrGovMore` adds the
+  story and prayer and needs; with the faith tick, metrics matching `QR_FAITH` and the tools' faith counts are left out.
+  `Staff Debt ($)` and the `SENSITIVE` metrics are never sent or printed (`QR_NEVER`, both sides).
+- **The tools' highlights** (api.js `qrTools_`, each tool's blob read once, counts only, by the quarter's dates up to
+  today): YDC / the school tool — active students and by location (a class's location), class days, attendance % (here or
+  late over everyone marked), tests and pass rate, salvation and baptism ticks dated in the quarter; Outreach Teams — teams
+  that left in the quarter (not cancelled, not pending): how many, people, countries, and each team's name (an
+  organisation); GPDTS — outreach teams, places, people reached, salvations, healings, heard the gospel from the Database's
+  week-by-week tables (students applied / accepted / here / graduated come from its own metrics on the page); Intercession —
+  Wednesdays and fast gatherings held, hours, ministries covered, testimonies (a count), and each fast touching the quarter
+  with how many joined; Worship — services held, average attendance, musicians in training (today), our own songs written;
+  Hospitality — nights hosted for guests, speakers and teams, teams housed; the Cafe — days open, cups, customers and gospel
+  conversations from its own metrics on the page (its days are one blob each, so they aren't read again).
+- **Server** (api.js "The quarterly report"): `getQuarterReport(user, pin, campus, year, q)` — ONE call per campus and
+  quarter: `entries` / `prev` ({'Dept|Ministry|Metric': {week: value}}, through `withTeamRows_` and `yearOf_`), `people`
+  ({key: {n, leaders:[names]}}), `depts`, `mix` (kind and country only), `health` ({now, prev}: {n, score}, null under
+  `QR_MIN_ANSWERS` 3), `tools`, `stories`, `letter`, `can` {letter, write}, `from` / `to` / `weeks` / `done`.
+  `saveQuarterStory(user, pin, campus, year, q, 'Dept|Ministry' | '@letter', rec)` — four parts of ≤1200 each (the letter
+  ≤3000), empty takes it away. Blob `qreport:<campus>` = {'YYYY-Qn': {letter:{text, by, byName, at}, ministries:{key:
+  {highlights, story, challenges, needs, by, byName, at}}}}, written with `mutateKey_`.
+- **Who** (`qrViewer_`): the whole campus — its Campus Leadership, admins (any campus), a board member's own sign-in (read
+  only, through `verifyViewer_`); anyone else on staff — only their own ministries (main, others, ones they lead) on their
+  own campus, and then no cover, mix, health or letter. Writing a ministry's story: `canLogFor_` it (its people, leader,
+  department director), Campus Leadership of the campus, an admin; the letter: Campus Leadership or an admin. Applicants,
+  students, guests and the preview never.
+- **Never in it, whatever the audience**: a student's name, photo, guardian or payment; a health answer, row or token; staff
+  debt; a prayer need's or a testimony's words; who fasts or how; 1-on-1s; leave; finance. tests/test-quarter-report.mjs
+  sweeps every answer for each of these.
+- **Writing** (`[data-qrwrite="campus|key"]` → `#qrForm`, `[data-qrf]`, `#qrSave`): the form opens on the ministry's page;
+  the story's box reminds: no child's full name, change names, ask permission. Typing is kept across redraws (`S.qr.draft`)
+  and on the phone until it is saved (`gp-qr-draft`; "Carry on writing — a draft is kept on this phone").
+- **The bell**: the boot's `qstory` (`qrGlance_`; `qreport:poipet` / `qreport:siemreap` are in BOOT_KEYS — no call on
+  open): in the last two weeks of a quarter and the first two of the next (`qrWindow_`), the ministries this person leads
+  with nothing written → "Write {ministry}'s story for Q{n}" (`qrNotifItems_`, `[data-goqr]`, one document-level listener,
+  so the slide-down reminder presses it too) → that ministry's page with the form open.
+- **Print** ("Print or save as PDF", `#qrPrint` → `window.print()`; `body.qrOn` print rules at the end of teams.css): A4
+  upright, the app hidden, black on white in either theme, a new page before each department, a ministry not split where
+  avoidable, the coin kept dark. **Just this ministry** (`[data-qronly]`, `S.qr.only`, ← The whole report `#qrAll`) prints
+  one ministry's page.
+- tests/test-quarter-report.mjs (server, 92), tests/test-quarter-report-ui.mjs (browser, 83; `QR_SHOTS=<folder>` saves
+  pictures). Khmer: docs/khmer-needed.md §145. sw.js SHELL v34.
 
 ## Who's here (Oct 2026, Uriah)
 Base's hero has **🏠 On campus now · N** (`#goWhosHere`, loaded by `whosHereLoad_` when Base
