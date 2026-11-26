@@ -698,8 +698,11 @@ function finReportsHtml_(){
    session (gp-staff) and saves to the server itself (fin2Get / fin2Save). It replaced the Reports /
    Dashboard / The numbers tabs below, which are no longer shown (their saved data stays). The frame
    scrolls on its own and is sized to the screen below it, so the page's sticky bar works. */
-function fin2FrameHtml_(view){
-  var src='finance.html?embed=1&view='+(view==='input'?'input':'dash')+(S.me && S.me.isAdmin && S.me.campus ? '&campus='+encodeURIComponent(S.me.campus) : '');
+function fin2FrameHtml_(view, campus){
+  /* `campus`: the Advisory Board reading a campus's finances (teams/30-boardroom.js) — a board member's own sign-in is
+     kept apart from a staff one (gp-board), so the page is told which to read (as=board); the server decides the rest */
+  var src='finance.html?embed=1&view='+(view==='input'?'input':'dash')+(campus ? '&campus='+encodeURIComponent(campus)+(S.board ? '&as=board' : '')
+    : (S.me && S.me.isAdmin && S.me.campus ? '&campus='+encodeURIComponent(S.me.campus) : ''));
   return '<iframe class="fin2Frame" id="fin2Frame" scrolling="no" src="'+esc(src)+'" title="'+esc(t('Finances'))+'"></iframe>';
 }
 /* One page with the app (Nov 2026: "it does not act as one single page"): the frame is as tall as the

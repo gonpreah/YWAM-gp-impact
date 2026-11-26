@@ -288,7 +288,7 @@ Balances for 20 Nov saved: ABA $10,000 · US $0 · Cash $1,000 → total $11,000
   `window.GP_FIN_APP`): on the server, one document per campus (`fin2:<campus>`, `fin2Get` / `fin2Save`), saved a
   moment after each change ("Saving…" / "✓ Saved" bottom left; "⚠️ Not saved — tap to try again" when it
   couldn't). If someone else saved first, the newer copy is shown and the last change has to be entered again.
-  No sample numbers. The Finances office edits; Campus Leadership sees the Dashboard only. History (undo) stays
+  No sample numbers. The Finances office edits; Campus Leadership sees the Dashboard only. The Advisory Board reads the Dashboard of either campus the same way (`?as=board` reads a board member's own sign-in, `gp-board`; the server never lets a board member save). History (undo) stays
   on each device. **📥 Bring in entries from the demo** on Input replaces this campus's document with the
   pasted copy (Undo puts it back).
 - **Inside My Ministry it is one page with the app**: the frame is as tall as the page, so the app's tabs and

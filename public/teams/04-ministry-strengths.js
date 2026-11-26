@@ -11,7 +11,7 @@
    api.js) — so nobody types Cups Sold or One-on-Ones Held. */
 function money_(n){ return '$'+(Number(n)||0).toFixed(2); }
 function shortTime_(iso){ var d=new Date(iso); return isNaN(d) ? '' : ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
-function staffName_(id){ var p=(S.roster||[]).filter(function(x){ return x.id===id; })[0]; return p ? p.name : (S.me && S.me.id===id ? S.me.name : ''); }
+function staffName_(id){ var p=(S.roster||[]).filter(function(x){ return x.id===id; })[0]; return p ? p.name : (S.me && S.me.id===id ? S.me.name : ((typeof bdName_==='function' && bdName_(id)) || '')); }
 
 /* ---------- Campus Leadership: My week ---------- */
 var LW_KINDS=[['oneonone','🤝','One-on-one'],['partner','🙏','Partner connection'],['church','⛪','Spoke at a church'],['base','🏠','Spoke at a YWAM base'],

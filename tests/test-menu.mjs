@@ -70,7 +70,7 @@ const EXPECT = {
   teamsLeader: 'base caltasks ywamgp qreport prayer p360 tests leave library support # Operations sched worship students # Applications portal portalapp # Language khmer',
   cafeLeader: 'base caltasks ywamgp qreport prayer p360 tests leave library support # Operations sched worship # Language khmer',
   hr: 'base caltasks ywamgp prayer p360 tests leave library support # Operations sched worship students # Admin hr # Language khmer',
-  admin: 'base caltasks ywamgp qreport prayer p360 tests leave library support # Operations sched worship hosp students # Applications portal portalapp # Admin hr admin kmreview # Language khmer',
+  admin: 'base caltasks ywamgp bdhub qreport prayer p360 tests leave library support # Operations sched worship hosp students # Applications portal portalapp # Admin hr admin kmreview # Language khmer',   // bdhub: 🛡️ Advisory Board — an admin (and a staff member on the board) opens the board's Overview and room (Nov 2026)
 };
 for (const k of Object.keys(EXPECT)) {
   const { out, errors } = await menuOf(WHO[k]);

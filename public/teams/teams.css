@@ -4177,3 +4177,42 @@ body.sbDragging, body.sbDragging * { cursor:grabbing !important; }
 .mmGlance { margin:10px 0; border-top:1px solid var(--line); padding:10px 0 0; }
 .mmGlance > summary { cursor:pointer; font-size:14px; font-weight:700; color:var(--ink); }
 .mmGlance > h3:first-of-type { margin-top:10px; }
+
+/* ---------- The Advisory Board: the big picture, the campuses, its room (teams/30-boardroom.js) ---------- */
+.bdHead { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin:0 0 10px; }
+.bdHead h2 { margin:0 0 2px; } .bdHead .sub { margin:0; overflow-wrap:anywhere; }
+.bdHead .btn { flex:0 0 auto; width:auto; margin:0; }
+.bdSeg { margin:0 0 12px; flex-wrap:wrap; }
+.bdGrid { display:grid; grid-template-columns:minmax(0,1fr); gap:0 14px; }
+@media (min-width:900px){ .bdGrid { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; } .bdAll .bdTiles { grid-template-columns:repeat(5,1fr); } }
+.bdTiles { margin:0 0 4px; }
+.bdTile { text-align:left; border:0; font:inherit; color:inherit; width:100%; }
+.bdTile.go { cursor:pointer; }
+.bdTile .pulseBig small { font-size:13px; font-weight:600; color:var(--muted); }
+.bdBlock { border-top:1px solid var(--line); padding:6px 0 4px; margin:8px 0 0; }
+.bdLine { display:flex; align-items:baseline; gap:8px; width:100%; padding:7px 0; margin:0; border:0; background:none; font:inherit; color:var(--ink); text-align:left; }
+button.bdLine { cursor:pointer; }
+.bdLineL { flex:0 1 auto; min-width:0; font-size:13.5px; font-weight:700; overflow-wrap:anywhere; }
+.bdLineV { flex:1 1 auto; min-width:0; text-align:right; font-size:13.5px; font-weight:700; overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }
+.bdLineV small { display:block; font-size:12px; font-weight:500; color:var(--muted); }
+.bdLine.on .bdLineV { color:var(--good); } .bdLine.off .bdLineV { color:var(--bad); }
+.bdLine .ooChev { flex:0 0 auto; color:var(--faint); }
+.bdSubs { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 4px; }
+.bdSub { display:inline-flex; align-items:baseline; gap:6px; max-width:100%; padding:5px 9px; margin:0; border:1px solid var(--border); border-radius:999px; background:var(--surface); font:inherit; font-size:12px; color:var(--ink); cursor:pointer; }
+.bdSub span { min-width:0; overflow-wrap:anywhere; text-align:left; } .bdSub b { font-variant-numeric:tabular-nums; white-space:nowrap; }
+.bdCampusSeg { max-width:none; margin:0 0 12px; }
+.bdRow { display:flex; align-items:center; gap:8px; width:100%; padding:10px 0; margin:0; border:0; border-top:1px solid var(--line); background:none; font:inherit; color:var(--ink); text-align:left; cursor:pointer; }
+.bdRowMain { flex:1 1 auto; min-width:0; } .bdRowMain b { display:block; font-size:14.5px; overflow-wrap:anywhere; }
+.bdRowMain small { display:block; font-size:12.5px; color:var(--muted); overflow-wrap:anywhere; margin:1px 0 0; }
+.bdRow .ooChev { flex:0 0 auto; color:var(--faint); }
+.bdTitle { margin:4px 0 10px; overflow-wrap:anywhere; }
+.bdMinHead .btn { width:auto; margin:10px 0 0; }
+.bdTable { font-size:13.5px; }
+.bdTr { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr); gap:8px; padding:6px 0; border-top:1px solid var(--line); }
+.bdTr span { min-width:0; overflow-wrap:anywhere; } .bdTr span + span { text-align:right; font-variant-numeric:tabular-nums; font-weight:700; }
+.bdTh { border-top:0; color:var(--muted); font-size:12px; } .bdTh span + span { font-weight:600; }
+.bdKan > summary { cursor:pointer; }
+.bdKanCard { padding:8px 0; border-top:1px solid var(--line); margin:6px 0 0; } .bdKanCard b { font-size:14px; overflow-wrap:anywhere; }
+#bdInvite h2 { overflow-wrap:anywhere; }
+#bdLeadGo { margin:0 0 12px; }
+@media (min-width:900px){ #bdCamp, #bdFin, #bdInvite { max-width:900px; } }

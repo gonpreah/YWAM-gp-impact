@@ -124,7 +124,7 @@ await ctx.close();
 
 /* 6. not allowed, not signed in */
 ({ ctx, page } = await open('dara', ''));
-ok('someone else is told who can open it', /Only the Finances office and Campus Leadership/.test(await page.evaluate(() => document.body.innerText)));
+ok('someone else is told who can open it', /Only the Finances office, Campus Leadership and the Advisory Board/.test(await page.evaluate(() => document.body.innerText)));
 await ctx.close();
 ({ ctx, page } = await open('', ''));
 ok('nobody signed in is sent to sign in', /Sign in to the YWAM GP app first/.test(await page.evaluate(() => document.body.innerText)));

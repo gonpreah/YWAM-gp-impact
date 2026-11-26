@@ -2819,7 +2819,8 @@ function undoLast_(){ var u=UNDO.pop(); if(!u) return; try { localStorage.setIte
    The whole document is saved a moment after each change; `rev` stops two people overwriting each
    other — a save from an older copy is refused, and the newer copy is shown instead. */
 var FIN={ rev:0, campus:'', canEdit:false, saving:false, dirty:false, again:false, err:'', t:0 };
-function finAuth_(){ try { var a=JSON.parse(localStorage.getItem('gp-staff')||'null'); return a && a.user ? a : null; } catch(e){ return null; } }
+/* ?as=board: a member of the Advisory Board with their own sign-in (the app keeps it apart from a staff one); the server lets them read, never save */
+function finAuth_(){ try { var a=JSON.parse(localStorage.getItem(QS.get('as')==='board' ? 'gp-board' : 'gp-staff')||'null'); return a && a.user ? a : null; } catch(e){ return null; } }
 function api_(fn, args){ return fetch('/.netlify/functions/api', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ fn:fn, args:args }) }).then(function(r){ return r.json(); }); }
 function finMsg_(html){ document.getElementById('pane').innerHTML='<div class="finMsg">'+html+'</div>'; }
 function finStatus_(){ var el=document.getElementById('finSave'); if(!el){ el=document.createElement('div'); el.id='finSave'; el.className='finSave'; el.onclick=function(){ if(FIN.err) finSaveNow_(); }; document.body.appendChild(el); }
@@ -2845,7 +2846,7 @@ function finBoot_(){
   var a=finAuth_(); if(!a){ finMsg_('Sign in to the YWAM GP app first, then open Finances from My Ministry.<br><br><a href="teams.html">Open the YWAM GP app</a>'); return; }
   finMsg_('Loading…');
   api_('fin2Get', [a.user, a.pin, QS.get('campus')||'']).then(function(d){
-    if(!d || !d.ok){ finMsg_(d && d.err==='not_authorized' ? 'Only the Finances office and Campus Leadership can open this.' : 'This couldn’t be opened — sign in to the YWAM GP app again.'); return; }
+    if(!d || !d.ok){ finMsg_(d && d.err==='not_authorized' ? 'Only the Finances office, Campus Leadership and the Advisory Board can open this.' : 'This couldn’t be opened — sign in to the YWAM GP app again.'); return; }
     FIN.rev=d.rev||0; FIN.campus=d.campus; FIN.canEdit=!!d.canEdit;
     SAMPLE_STAFF.length=0; (d.staff||[]).forEach(function(x){ SAMPLE_STAFF.push(x); });
     resetState_(); if(d.state) loadState_(d.state); refreshBal_();

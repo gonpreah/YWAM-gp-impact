@@ -244,7 +244,7 @@ function campusName(id){ for(var i=0;i<CAMPUSES.length;i++) if(CAMPUSES[i].id===
 // campusName() already reads "YWAM Poipet" — for a label that supplies its
 // own "YWAM" prefix (e.g. "YWAM {campus} Ministries"), this is the part after it.
 function campusShort(id){ for(var i=0;i<CAMPUSES.length;i++) if(CAMPUSES[i].id===id) return CAMPUSES[i].short; return id; }
-function nameOf(id){ for(var i=0;i<S.roster.length;i++) if(S.roster[i].id===id) return S.roster[i].name; return '—'; }
+function nameOf(id){ for(var i=0;i<S.roster.length;i++) if(S.roster[i].id===id) return S.roster[i].name; return (typeof bdName_==='function' && bdName_(id)) || '—'; }
 function personOf(id){ for(var i=0;i<S.roster.length;i++) if(S.roster[i].id===id) return S.roster[i]; return null; }
 
 function avatarHtml(person, cls){
@@ -309,6 +309,15 @@ function run(fn, args, onOk, onErr){
      go out in order the moment it lands (gpBootFresh_), or, if it fails, fall
      to the offline handling they already have. */
   if(S.bootStale && fn!=='getMyBoot' && fn!=='getTasksBoot' && fn!=='voiceTasks'){ _gpHeld.push([fn, args, onOk, onErr]); return; }
+  /* the Advisory Board's own room (teams/30-boardroom.js): the leadership team's tools sent through boardRoom, which
+     runs them on the board's own data. An answer that lands after the room was left (or entered) is let go, so the
+     board's Kanban and a campus's never end up in each other's place. */
+  if(typeof BR_FNS!=='undefined' && BR_FNS[fn]){
+    var inRoom=brOn_(), ok0=onOk, er0=onErr;
+    onOk=function(d){ if(brOn_()===inRoom && ok0) ok0(d); };
+    onErr=er0 ? function(e){ if(brOn_()===inRoom) er0(e); } : er0;
+    if(inRoom){ var ba=bdAuth_(); return run('boardRoom', [ba.user, ba.pin, fn, args.slice(2)], onOk, onErr); }
+  }
   var ctl = (typeof AbortController === 'function') ? new AbortController() : null;
   var settled = false;
   var timer = setTimeout(function(){ if(!settled && ctl) ctl.abort(); }, REQUEST_TIMEOUT_MS);
@@ -765,6 +774,7 @@ function boot(){
   try { if(String(location.search||'').indexOf('reg=1')>-1) S.regMode = true; } catch(e){}
   S.regPrefill = gpInviteFromUrl_();
   gpInviteTake_();   // an admin's invite link (?invite=…): pre-approved
+  var bdInv = !gpTasksApp_() && bdInviteTake_();   // an invite to the Advisory Board (?board=…, teams/30-boardroom.js)
   var saved = null;
   try { saved = JSON.parse(lsGet('gp-staff')||'null'); } catch(e){}
   var wantGuest = false, wantDash = false;
@@ -778,6 +788,7 @@ function boot(){
   if(gpTasksApp_()){ wantStudent=false; stu=null; wantGuest=false; wantDash=false; }   // the tasks app is for staff: a student, a guest or a board member signs in to the main app
   if(stu && stu.user && stu.pin && (wantStudent || !(saved && saved.user && saved.pin))){ gpStudentBoot_(stu); return; }
   if(wantStudent){ location.href='portal.html'; return; }
+  if(bdInv && !(saved && saved.user && saved.pin)){ render(); return; }   // not signed in as staff: the invite's own page, whatever else this phone remembers
   if(!(saved && saved.user && saved.pin) && !gpTasksApp_() && lsGet(BOARD_KEY) && boardResume_()) return;
   /* the old dashboard was public, so its links look around as a guest, on Base */
   if(!(saved && saved.user && saved.pin) && !gpTasksApp_() && (wantGuest || wantDash || lsGet(GUEST_KEY))){ gpEnterGuest_(); if(wantDash){ S.view='base'; render(); } return; }
@@ -1051,14 +1062,15 @@ function render(){
     hb.innerHTML = '<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>';   // (the old dashboard's button is gone: Look around shows Base)
     nav.classList.add('hidden');
     document.getElementById('main').innerHTML = S.demoLoading ? '<div class="loadingBox"><div class="loadCoin">'+(typeof GP_LOGO==='string' ? '<img class="loadLogo" src="'+GP_LOGO+'" alt="">' : '')+'</div><div class="loadText">'+esc(t('Opening the preview'))+'<span class="ldots"></span></div></div>'
-      : S.regMode ? registerHtml() : loginHtml();
+      : S.bdInv ? bdInviteHtml_() : S.regMode ? registerHtml() : loginHtml();
     bind();
     return;
   }
+  brSync_();   // in or out of the Advisory Board's room: its meeting and Kanban swap places with the campus's (teams/30-boardroom.js)
   if(gpTasksApp_()){ gpTaRender_(hb, nav); return; }
   var notifN = (S.guest || S.student) ? 0 : visibleNotifItems_().length;
   if(S.student && STUDENT_VIEWS.indexOf(S.view)===-1) S.view='week';
-  if(S.board){ if(BOARD_VIEWS.indexOf(S.view)===-1) S.view='ywamgp'; }
+  if(S.board){ if(BOARD_VIEWS.indexOf(S.view)===-1) S.view='bdover'; }
   else if(S.guest && GUEST_VIEWS.indexOf(S.view)===-1) S.view='week';
   hb.innerHTML = ((S.guest || S.student || S.board || S.stuPreview) ? '' : gpFindBtnHtml_())+'<button class="hbtn" id="langBtn">'+(LANG==='km'?'EN':'ខ្មែរ')+'</button>'+ ((S.guest || S.student) ? '' :
     '<button class="hbtn icon" id="bellBtn" style="position:relative" aria-label="'+esc(gpT('Notifications ({n})',{n:notifN}))+'">'+BELL_SVG+
@@ -1085,18 +1097,21 @@ function render(){
     ministry: NAV_SVG_OPEN+'<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M21 20H3"/></svg>',
     library: NAV_SVG_OPEN+'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>',
     sched: NAV_SVG_OPEN+'<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>',
+    bdover: NAV_SVG_OPEN+'<rect x="3" y="3" width="7.5" height="9" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="5.5" rx="1.5"/><rect x="13.5" y="12" width="7.5" height="9" rx="1.5"/><rect x="3" y="15.5" width="7.5" height="5.5" rx="1.5"/></svg>',
+    bdfin: NAV_SVG_OPEN+'<circle cx="12" cy="12" r="9"/><path d="M15 9.2c-.5-1-1.6-1.6-3-1.6-1.7 0-3 .9-3 2.2 0 3 6 1.5 6 4.4 0 1.4-1.300 2.2-3 2.2-1.4 0-2.600-.6-3.1-1.7"/><path d="M12 5.800v12.400"/></svg>',
+    bdroom: NAV_SVG_OPEN+'<path d="M4 20V7l8-4 8 4v13"/><path d="M9 20v-6h6v6"/><path d="M4 20h16"/></svg>',
     profile: NAV_SVG_OPEN+'<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6.5 8-6.5s7.2 2.5 8 6.5"/></svg>'
   };
   /* Oct 2026 (Uriah): My Ministry takes Base's place; Base moves to the menu, and its
      key numbers sit on My Home's card. Later in Oct: Profile (with My contract inside)
      takes the Library's place in the bar, and the Library moves to the ☰ menu. */
   var tabs=[['week','My Home'],['ministry','My Ministry'],['team','Team'+(reqN?' ('+reqN+')':'')],['health','Health'],['profile','Profile']];
-  if(S.board) tabs=[['ywamgp','YWAM GP'],['base','Campuses'],['report','Report'],['library','Library']];
+  if(S.board) tabs=[['bdover','Overview'],['bdcamp','Campuses'],['bdfin','Finances'],['bdroom','Board room'],['report','Report']];   // YWAM GP and the Library are in ☰
   else if(S.student) tabs=[['week','My Home'],['sched','Schedules'],['library','Library']];
   else if(S.guest) tabs=[['week','Look around'],['base','Base'],['team','Team'],['health','Health'],['library','Library']];
   nav.classList.remove('hidden');
   nav.innerHTML = tabs.map(function(tab){
-    return '<button class="'+(S.view===tab[0]?'on':'')+'" data-tab="'+tab[0]+'"><span class="ic">'+NAV_ICONS[tab[0]]+'</span>'+navLabel_(tab[1])+'</button>';
+    return '<button class="'+(S.view===tab[0]?'on':'')+'" data-tab="'+tab[0]+'"><span class="ic">'+(NAV_ICONS[tab[0]] || NAV_ICONS[{ bdcamp:'base' }[tab[0]]])+'</span>'+navLabel_(tab[1])+'</button>';
   }).join('');
   var m=document.getElementById('main');
   document.body.classList.toggle('repOn', S.view==='report');
@@ -1108,6 +1123,7 @@ function render(){
   else if(S.guest && S.view==='week') m.innerHTML=gpGuestHomeHtml_();
   else if(S.guest && (S.view==='team' || S.view==='health')) m.innerHTML=gpGuestLockHtml_(S.view);
   else if(S.view==='base') m.innerHTML=(S.guest ? gpGuestCampusHtml_() : '')+(S.board ? orgCampusProfileHtml_(S.me.campus) : '')+baseHtml();
+  else if(BD_VIEWS.indexOf(S.view)>-1) m.innerHTML=bdPageHtml_();   // the Advisory Board: the big picture, the campuses, finances, its own room (teams/30-boardroom.js)
   else if(S.view==='ywamgp') m.innerHTML=ywamGpHtml();
   else if(S.view==='kmreview') m.innerHTML=kmReviewHtml();
   else if(S.view==='report') m.innerHTML=boardReportHtml_();
@@ -1159,7 +1175,7 @@ function render(){
      reset scroll, so this only fires when S.view actually changed. */
   /* SR Hospitality is a desk tool as much as a phone one: on a wide screen it
      takes the width (main.wide), its cards in columns; on a phone, unchanged. */
-  m.classList.toggle('wide', S.view==='hosp' || (S.view==='ministry' && S.mmTab!=='okr' && !!S.leadShown));
+  m.classList.toggle('wide', S.view==='hosp' || (S.view==='ministry' && S.mmTab!=='okr' && !!S.leadShown) || S.view==='bdover' || S.view==='bdcamp' || S.view==='bdroom');
   if(S.view!==lastRenderedView){ window.scrollTo(0,0); lastRenderedView=S.view; }
   bind();
   gpEaseResume_();
@@ -1378,7 +1394,7 @@ function renderMenu(){
   IC.khmer='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>';
   IC.calendar='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><path d="M7.5 13.5h2M11 13.5h2M14.5 13.5h2M7.5 17h2M11 17h2"/></svg>';
   IC.ywamgp='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.8 2.6 4 5.6 4 9s-1.2 6.4-4 9c-2.8-2.6-4-5.6-4-9s1.2-6.4 4-9Z"/></svg>';
-  IC.boardlogout=IC.profile;
+  IC.boardlogout=IC.profile; IC.bdhub=IC.ywamgp;
   IC.stuportal=IC.mycontract || IC.profile;
   IC.stuexit=IC.admin || IC.stuportal;
   IC.students='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c2 1.5 4 2 6 2s4-.5 6-2v-5"/></svg>';
@@ -1401,11 +1417,11 @@ function renderMenu(){
   ] : S.student ? [
     { title:'', items:[it('library', t('Library')), it('stuportal', t('My application (portal)')), it('boardlogout', t('Log out'))] }
   ] : S.board ? [
-    { title:'', items:[it('ywamgp', t('YWAM GP')), it('qreport', t('Quarterly report')), it('p360', t('360 reviews')), it('library', t('Library')), it('boardlogout', t('Log out'))] }
+    { title:'', items:[it('bdhub', t('Overview')), it('ywamgp', t('YWAM GP')), it('base', t('Base')), it('qreport', t('Quarterly report')), it('p360', t('360 reviews')), it('library', t('Library')), it('boardlogout', t('Log out'))] }
   ] : S.guest ? [
     { title:'', items:[it('library', t('Library')), it('guestreg', t('Create my profile')), it('guestlogin', t('Log in'))] }
   ] : [
-    { title:'', items:[it('base', t('Base')), it('caltasks', t('GP Calendar/Tasks')), it('ywamgp', t('YWAM GP'))].concat(qrMenu_() ? [it('qreport', t('Quarterly report'))] : [], [it('prayer', t('Prayer'))], S.fast ? [it('fast', S.fast.title)] : [], [ it('p360', t('360 reviews')), it('tests', t('Tests')), it('leave', t('Leave Request')), it('library', t('Library'))], S.student ? [] : [it('support', t('Support raising'))]) },
+    { title:'', items:[it('base', t('Base')), it('caltasks', t('GP Calendar/Tasks')), it('ywamgp', t('YWAM GP'))].concat(bdCan_() ? [it('bdhub', '🛡️ '+t('Advisory Board'))] : [], qrMenu_() ? [it('qreport', t('Quarterly report'))] : [], [it('prayer', t('Prayer'))], S.fast ? [it('fast', S.fast.title)] : [], [ it('p360', t('360 reviews')), it('tests', t('Tests')), it('leave', t('Leave Request')), it('library', t('Library'))], S.student ? [] : [it('support', t('Support raising'))]) },
     { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], [it('worship', t('Worship rota'))], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : [], canStudentsClient_() ? [it('students', t('Students'))] : []) },
     { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal')), it('portalapp', t('The Portal on your phone'))] : [] },
     { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : [], kmrCan_() ? [it('kmreview', t('Khmer review'))] : []) },
@@ -1436,6 +1452,7 @@ function renderMenu(){
       else if(id==='library'){ S.view='library'; S.libBook=null; libLoad_(); render(); }
       else if(id==='guestreg' || id==='guestlogin'){ gpLeaveGuest_(id==='guestreg'); }
       else if(id==='ywamgp'){ S.view='ywamgp'; S.person=null; render(); window.scrollTo(0,0); }
+      else if(id==='bdhub'){ bdOpen_('bdover'); }
       else if(id==='tasks'){ if(gpTasksApp_()){ S.view='tasks'; render(); window.scrollTo(0,0); } else gptOpenPage_('week'); }
       else if(id==='openapp'){ renderMenu(); location.href='teams.html'; }
       else if(id==='applogout'){ logout(); }
