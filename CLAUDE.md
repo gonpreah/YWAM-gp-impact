@@ -2954,6 +2954,15 @@ none of it (`libOn_()`).
   month's book, a recommendation waiting. `teams.html?view=library` opens the Library.
 - **The weekly nudge** (Profile → Reminders: `#remRead`, `#remReadDay`; `push.reading`, `push.readDay`, Saturday by
   default): on that day the daily reminder adds the month's book if unread (`libMonth`), else a ten-minute read (`libRead`).
+- **A quiz after a book** (end of 18-library-plus.js, Nov 2026, Uriah: "a couple of multiple-choice questions to see if
+  they read it, and their score"): a book's `quiz` (library.js: three `{q, a:[4], c}` written from that book's own summary;
+  its Khmer `quiz` in library-km.js, same order, `c` from the English). Offered on the finish card and on a read book's page
+  (`#libQuizGo`, `libQuizBtnHtml_`): one question at a time (`#libQuiz`, `[data-libqa]`, options shuffled each try,
+  `S.libQuiz`), then "2 of 3 right" with each right answer and what was chosen; Try again / Done. Skippable, no points.
+  The best score is kept as `lib.quiz[bookId] = {best, of, at}` (`libSaveMine {quiz}`, `libQuizClean_`); the book page shows
+  "🧠 Quiz 3/3" (`#libQuizBest`), My reading and a mentor's Reading card the totals (`libQuizSumHtml_`; `getMenteeLogs.
+  library.quiz` — counts only). So far on the EOS shelf, Start here, Made at YWAM GP and Lead & grow (28 books); a book
+  without `quiz` simply has no button. tests/test-library.mjs (shape, Khmer), test-library-club(-ui).mjs.
 - New Library sections use `.libHead2` / `.libScroll`, never `.libSecHead` / `.libRow` — test-library-ui counts those as
   shelves. tests/test-library-club.mjs (server), tests/test-library-club-ui.mjs. Khmer: docs/khmer-needed.md §109.
 

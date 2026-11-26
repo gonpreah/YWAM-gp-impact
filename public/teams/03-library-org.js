@@ -849,12 +849,13 @@ function libBookHtml_(b){
     '<span class="libShelfTag">'+(sh.emoji||'')+' '+esc(t(sh.name))+'</span>'+(b.original?' <span class="libShelfTag">✨ '+esc(t('Original GP guide'))+'</span>':'')+
     '<h2 class="libTitle">'+esc(libTitle_(b))+'</h2><div class="libAuthor">'+esc(libAuthor_(b))+(b.year?' · '+b.year:'')+'</div>'+
     '<div class="libVibe">'+esc(T.vibe)+'</div>'+
-    '<div class="libStats"><span>⏱ '+esc(gpT('{n}-minute read',{n:b.mins||5}))+'</span><span>💡 '+esc(gpT('{n} key ideas',{n:b.insights.length}))+'</span>'+(read?'<span>✓ '+esc(t('Read'))+'</span>':'')+'</div>'+
+    '<div class="libStats"><span>⏱ '+esc(gpT('{n}-minute read',{n:b.mins||5}))+'</span><span>💡 '+esc(gpT('{n} key ideas',{n:b.insights.length}))+'</span>'+(read?'<span>✓ '+esc(t('Read'))+'</span>':'')+(typeof libQuizBest_==='function' && libQuizBest_(b.id) ? '<span id="libQuizBest">🧠 '+esc(gpT('Quiz {n}/{m}',{n:libQuizBest_(b.id).best, m:libQuizBest_(b.id).of}))+'</span>' : '')+'</div>'+
     '<div class="libBookTags">'+libBookTagsHtml_(b)+'</div></div>';
-  h=libDoneCardHtml_(b)+h;
+  h=libQuizHtml_(b)+libDoneCardHtml_(b)+h;
   h+='<button class="btn libCta" id="libStart" style="background:'+sh.color+';border-color:'+sh.color+'">'+
     esc(at && !read ? gpT('Continue — key idea {n}',{n:Math.min(at, b.insights.length)}) : read ? t('Read again') : '▶ '+t('Start reading'))+'</button>'+
-    (libAudioOk_() ? '<button class="btn ghost libListenCta" id="libListenStart">🎧 '+esc(t('Listen'))+'</button>' : '');
+    (libAudioOk_() ? '<button class="btn ghost libListenCta" id="libListenStart">🎧 '+esc(t('Listen'))+'</button>' : '')+
+    (typeof libQuizBtnHtml_==='function' ? libQuizBtnHtml_(b) : '');
   h+=libBookExtrasHtml_(b);
   h+='<div class="libSec'+(T.km?' libKm':'')+'"><h3>'+esc(t('What’s it about?'))+'</h3>'+libParas_(T.bigIdea)+'</div>';
   h+='<div class="libSec'+(T.km?' libKm':'')+'"><h3>'+esc(t('What’s inside'))+'</h3><div class="libInside">'+T.insights.map(function(x, k){

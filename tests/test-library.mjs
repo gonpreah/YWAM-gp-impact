@@ -52,5 +52,15 @@ const notKhmer = books.filter((b) => KM[b.id] && kmTexts(KM[b.id]).some((x) => k
 ok('… and it is Khmer, not English left in place', notKhmer.length === 0, notKhmer.map((b) => b.id).join(', '));
 const kmQuoted = books.filter((b) => KM[b.id] && kmTexts(KM[b.id]).some((x) => /[“"][^”"]{40,}[”"]/.test(x)));
 ok('… with no long quotations either', kmQuoted.length === 0, kmQuoted.map((b) => b.id).join(', '));
+/* The quiz after a book: three questions, four options, a right answer in range — and the same in Khmer. */
+const quizBad = books.filter((b) => b.quiz !== undefined && !(Array.isArray(b.quiz) && b.quiz.length === 3 && b.quiz.every((x) => str(x.q) && Array.isArray(x.a) && x.a.length === 4 &&
+  x.a.every(str) && new Set(x.a).size === 4 && Number.isInteger(x.c) && x.c >= 0 && x.c < 4)));
+ok('every quiz is three questions of four different options with one right answer', quizBad.length === 0, quizBad.map((b) => b.id).join(', '));
+const quizKm = books.filter((b) => b.quiz && !(KM[b.id] && Array.isArray(KM[b.id].quiz) && KM[b.id].quiz.length === b.quiz.length &&
+  KM[b.id].quiz.every((x, i) => str(x.q) && Array.isArray(x.a) && x.a.length === b.quiz[i].a.length && x.a.every(str) && khmerShare(x.q) > 0.6)));
+ok('… and each is in Khmer, same shape', quizKm.length === 0, quizKm.map((b) => b.id).join(', '));
+const quizzed = books.filter((b) => b.quiz);
+ok('quizzes on the EOS shelf, Start here, the GP guides and Lead & grow', ['eos', 'gp', 'lead'].every((sh) => books.filter((b) => b.shelf === sh).every((b) => b.quiz)) && start.every((id) => books.find((b) => b.id === id).quiz),
+  quizzed.length + ' of ' + books.length + ' books');
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

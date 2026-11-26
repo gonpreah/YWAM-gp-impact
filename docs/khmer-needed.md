@@ -7097,3 +7097,18 @@ Book titles and authors (library-km.js):
 | How to Be a Great Boss — Gino Wickman & René Boer | របៀបក្លាយជាប្រធានដ៏ល្អ — ជីណូ វិកមែន និង រ៉េណេ បួរ |
 | Process! — Mike Paton & Lisa González | ដំណើរការ! — ម៉ៃក៍ ផេតុន និង លីសា ហ្គនហ្សាឡេស |
 | The EOS Life — Gino Wickman | ជីវិត EOS — ជីណូ វិកមែន |
+
+The book quiz (Check what you remember, after Done — mark as read). The three questions of each book with a quiz are in library-km.js (`quiz`), Claude's translation too.
+
+| English | Khmer (draft) |
+|---|---|
+| Check what you remember | ពិនិត្យមើលអ្វីដែលអ្នកចងចាំ |
+| {n} questions | {n} សំណួរ |
+| Try the quiz again | សាកល្បងសំណួរម្តងទៀត |
+| best {n} of {m} | ល្អបំផុត {n} ក្នុងចំណោម {m} |
+| Question {n} of {m} | សំណួរទី {n} ក្នុងចំណោម {m} |
+| {n} of {m} right | ត្រូវ {n} ក្នុងចំណោម {m} |
+| Answer: {a} | ចម្លើយ៖ {a} |
+| You chose: {a} | អ្នកបានជ្រើសរើស៖ {a} |
+| Quizzes: {n} taken · {r} of {m} right | សំណួរ៖ បានធ្វើ {n} · ត្រូវ {r} ក្នុងចំណោម {m} |
+| Quiz {n}/{m} | សំណួរ {n}/{m} |

@@ -259,6 +259,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "On a mission base, most of us lead without big titles. You might lead a kitchen shift, a small group, a worship team or an outreach team for a few weeks. That is good news: influence grows through trust, faithfulness and care, not position. Jesus led this way too, by serving and by investing deeply in a few people. For Khmer and international staff, the Permission level matters a lot. People need to feel known and valued before they follow, and that takes time across languages and cultures. When we bring change to a ministry, like a new cafe schedule or a new way of running a DTS week, it helps to explain the why and to listen first, especially to people who have been here longer. Our attitude on hard days spreads quickly in a small community, for good or for bad. And a clear, shared vision helps a team remember why we wash dishes, teach classes and visit villages. Leaders who keep their word, stay calm in problems and raise up others to lead after them are building something that will last long after their own season here ends.",
    "oneLine": "Real leadership is influence, and it grows from the inside out.",
+   "quiz": [
+    {
+     "q": "How does Maxwell define leadership?",
+     "a": [
+      "A title",
+      "Influence",
+      "Being the oldest",
+      "Having the most money"
+     ],
+     "c": 1
+    },
+    {
+     "q": "What does Maxwell call the most important ingredient of leadership?",
+     "a": [
+      "Integrity",
+      "Charm",
+      "Speed",
+      "A loud voice"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What does he say is the ultimate test of leadership?",
+     "a": [
+      "Keeping everything the same",
+      "Creating positive change",
+      "Never making mistakes",
+      "Being liked by everyone"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "cobalt",
     "fg": "paper",
@@ -334,6 +366,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "On base, we often put people where there is a gap, not where they fit. Gaps are real, and sometimes we all wash dishes. But leaders can still notice what each staff member and student is naturally good at — hospitality, teaching, details, prayer, encouragement — and lean into it when planning roles for DTS, outreach teams or the cafe. The 12 questions are a great check for any ministry team. Do our new staff know what is expected? Do they have what they need? Does someone care about them as a person? Has anyone talked with them about their growth? Clear expectations and real care matter even more when Khmer and international staff work side by side with different ways of doing things. Treating each person differently also fits cross-cultural life. Some staff feel honoured by public thanks, while others would feel shy. Some learn by watching first, others by jumping in. Regular, short talks about how someone is doing can build trust better than one big review. Seeing each person's God-given design, and helping them grow in it, is a way to honour the One who made them.",
    "oneLine": "Great managers find each person's talent and build on it, instead of trying to fix them.",
+   "quiz": [
+    {
+     "q": "According to the research, what matters most for how people feel at work?",
+     "a": [
+      "Their direct manager",
+      "The size of the office",
+      "The company logo",
+      "The pay day"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What is the book's big belief about people?",
+     "a": [
+      "People change completely with training",
+      "People don't change much — build on their talent",
+      "Everyone has the same talents",
+      "Weaknesses matter most"
+     ],
+     "c": 1
+    },
+    {
+     "q": "How do great managers treat the Golden Rule?",
+     "a": [
+      "They treat everyone exactly the same",
+      "They treat each person differently, as that person needs",
+      "They ignore people",
+      "They only reward the loudest"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "paper",
     "fg": "ink",
@@ -410,6 +474,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "Collins later wrote a short follow-up for non-profits. He noted that for them the 'economic engine' is more of a resource engine — time, money and support — than profit. He also said success should be measured by how well you serve your mission, not by money. And he noticed that leaders in non-profits often have less direct power, so they must lead more by persuasion, trust and shared decisions. That fits a mission base well. The Hedgehog questions are powerful for us. What are we deeply passionate about? What can we do really well here in Cambodia? What keeps our people, volunteers and resources strong? Answering honestly may mean saying no to some good ideas. The Stockdale Paradox fits faith well: we trust God for the final outcome, and we also face hard facts honestly in prayer and planning. For Khmer and international staff, creating a safe place to share bad news and honest questions takes care and humility, especially across cultures. Humble leaders, the right people in the right seats and steady faithfulness will take a ministry further than a new idea every season.",
    "oneLine": "Greatness comes from humble leaders, the right people, honest facts, clear focus and steady discipline.",
+   "quiz": [
+    {
+     "q": "What bold claim does Collins open with?",
+     "a": [
+      "Good is the enemy of great",
+      "Money is everything",
+      "Leaders are born, not made",
+      "Technology always wins"
+     ],
+     "c": 0
+    },
+    {
+     "q": "In the bus picture, what do great leaders do first?",
+     "a": [
+      "Decide where to drive",
+      "Get the right people on the bus",
+      "Buy a bigger bus",
+      "Drive faster"
+     ],
+     "c": 1
+    },
+    {
+     "q": "What does the Flywheel show?",
+     "a": [
+      "Great change comes from one big moment",
+      "Great change comes from steady pushes that build momentum",
+      "Change is impossible",
+      "Only luck matters"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "paper",
     "fg": "berry",
@@ -491,6 +587,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "Negotiation is everywhere on a mission base — with landlords, vendors at the market, local officials, partner churches and even with each other about schedules, rooms and team plans. These tools are really about listening well, which is a deeply Christ-like skill. Jesus often answered with questions and noticed what people felt underneath their words. Across cultures, slowing down, naming feelings and asking 'how' questions can protect relationships and help everyone save face. In Khmer culture, a direct 'no' can be hard to say, so leaders may need extra patience and gentle questions to learn what someone really thinks. A 'yes' in a meeting may be polite rather than a real agreement, so it is wise to check how a plan will actually work. For international staff, it also helps to remember that a person who seems unreasonable may simply see the situation from a different place, with family needs or pressures we cannot see. With DTS students or outreach teams, a good summary that earns a sincere 'that's right' can calm a tense moment. Use these skills to understand and serve people, never to trick or pressure them.",
    "oneLine": "Make people feel truly understood first, and better agreements will follow.",
+   "quiz": [
+    {
+     "q": "What does 'tactical empathy' mean in this book?",
+     "a": [
+      "Agreeing with everything",
+      "Understanding how the other person sees the situation and feels",
+      "Being nice to win",
+      "Talking louder"
+     ],
+     "c": 1
+    },
+    {
+     "q": "What is a 'mirror'?",
+     "a": [
+      "Repeating the last one to three important words they said",
+      "Copying their clothes",
+      "Saying the opposite",
+      "Looking at them silently"
+     ],
+     "c": 0
+    },
+    {
+     "q": "Which words does Voss say matter most to hear?",
+     "a": [
+      "You're right",
+      "Yes",
+      "That's right",
+      "Maybe"
+     ],
+     "c": 2
+    }
+   ],
    "cover": {
     "bg": "ink",
     "fg": "paper",
@@ -567,6 +695,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "A mission base has many small 'organizations' inside it: a new cafe, a long-running DTS, an outreach that just started, a community project that has run for years. Each may be in a different stage, so each needs a different kind of leadership. A new ministry may need freedom and quick tries. A growing one may need simple systems, like clear roles and a basic budget. An older one may need fresh vision so it does not become a treadmill of forms and meetings. Because staff change often, a team can also fall back into Whitewater when key people leave, and that is normal too. Visionaries, doers and system-builders on our teams often frustrate each other, especially across cultures, where people show their ideas and concerns in different ways. Some staff may see a problem clearly but wait to be asked, because speaking up to a leader can feel rude. Leaders can learn to be Synergists by inviting every voice and putting our shared calling first. Valuing each style, and asking God for unity, helps us grow without losing the life and passion that started the work in the first place.",
    "oneLine": "Know your team's stage of growth, and balance vision, action and structure to stay healthy.",
+   "quiz": [
+    {
+     "q": "What is McKeown's main claim about growth?",
+     "a": [
+      "Growth is random",
+      "Organizations move through predictable stages",
+      "Only big teams grow",
+      "Growth always ends in failure"
+     ],
+     "c": 1
+    },
+    {
+     "q": "What is the stage called where things get messy, like a small boat in rough water?",
+     "a": [
+      "Fun",
+      "Whitewater",
+      "Treadmill",
+      "Early Struggle"
+     ],
+     "c": 1
+    },
+    {
+     "q": "Which role does he say is key to staying in Predictable Success?",
+     "a": [
+      "The Synergist",
+      "The Visionary alone",
+      "The Processor alone",
+      "Nobody — it lasts by itself"
+     ],
+     "c": 0
+    }
+   ],
    "cover": {
     "bg": "blue",
     "fg": "paper",
@@ -642,6 +802,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "Base life is a strong whirlwind: guests arriving, meals, worship, school schedules, visa runs, sickness and surprises. Many good plans start at a staff meeting and are forgotten a month later. 4DX offers a gentle structure. If your ministry has a big goal, such as more Khmer leaders trained, a stronger cafe or better follow-up after outreach, pick one. Choose a few simple actions you can control, and check in weekly for twenty minutes. A whiteboard scoreboard in the office can bring Khmer and international staff together around one clear win, even with limited shared language, because everyone can see the progress. Letting each person choose their own weekly commitment also shows respect, instead of only giving orders from the top. In a DTS or school, the same idea can help students build a habit, like daily Bible reading or language practice. Expect the first weeks to feel slow, and be patient with each other. Keep it humble. Goals are tools to serve people well, not a way to measure anyone's worth, and we still pray, rest and trust God with the results.",
    "oneLine": "Pick one big goal, track the actions that drive it, keep score and check in every week.",
+   "quiz": [
+    {
+     "q": "What do the authors call the urgent daily work that eats our time?",
+     "a": [
+      "The whirlwind",
+      "The flywheel",
+      "The treadmill",
+      "The tipping point"
+     ],
+     "c": 0
+    },
+    {
+     "q": "How many Wildly Important Goals should a team choose?",
+     "a": [
+      "One, or at most two",
+      "Ten",
+      "As many as possible",
+      "None"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What is a lead measure?",
+     "a": [
+      "The final result, like income",
+      "An action you can influence that drives the result",
+      "A measure of how tall the leader is",
+      "A yearly report"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "paper",
     "fg": "ink",
@@ -718,6 +910,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "On a mission base we can feel awkward about money. Some of us run a cafe, a guesthouse or a small business, and many of us live on support from churches and friends. This book helps us see both as relational and honourable. Serving guests with excellence is ministry, not a distraction from it. A fair price, a clean table and a warm welcome all show care. Partners who give are real relationships to care for, not just bank deposits, so thank them, update them and pray for them. Leaders can practise being consistent and keeping their word, which matters even more when Khmer and international staff come from different cultures and are still learning to trust each other. Knowing our money, keeping simple records and giving generously from what we have, even when support is small, protects us from fear and secret worry. Lapin writes from a Jewish view, and we read him through our faith in Jesus. Still, Khmer and international staff alike can learn to handle money with honesty, generosity and joy, trusting God as the true provider.",
    "oneLine": "Serve people well, keep your word, give generously, and money becomes a tool for good.",
+   "quiz": [
+    {
+     "q": "How does Lapin describe money?",
+     "a": [
+      "As something dirty",
+      "As a kind of thank-you note for serving someone",
+      "As a game of luck",
+      "As the goal of life"
+     ],
+     "c": 1
+    },
+    {
+     "q": "How much does he teach giving away?",
+     "a": [
+      "Nothing",
+      "About a tenth",
+      "Half",
+      "Everything"
+     ],
+     "c": 1
+    },
+    {
+     "q": "Why does he say making money is a team sport?",
+     "a": [
+      "It always happens between people",
+      "Only teams may earn",
+      "Because of football",
+      "It needs no one else"
+     ],
+     "c": 0
+    }
+   ],
    "cover": {
     "bg": "laterite",
     "fg": "paper",
@@ -793,6 +1017,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "Our cafe, guesthouse, school office and kitchen all run better with simple systems. Staff come and go every few months, so if knowledge lives only in one person's head, it leaves with them. Written checklists in English and Khmer, with pictures where helpful, help new staff and volunteers serve well from day one. An org chart of roles, not names, shows which jobs are empty and who is carrying too much. Thinking like Gerber's Entrepreneur also helps: before starting a new ministry, ask who we are serving and what they truly need, not only what we enjoy doing. Small details, like a clean entrance, a warm greeting and clear signs, tell guests and neighbours that they matter. Good systems also free leaders to think, pray and plan instead of putting out fires all day. This is not about being cold or businesslike. Good systems are a form of love: they protect people from burnout and make it easier for the next team to carry the work forward. Build so the ministry can thrive long after you leave.",
    "oneLine": "Build simple systems so your work can thrive without you holding it all.",
+   "quiz": [
+    {
+     "q": "What is the great myth Gerber describes?",
+     "a": [
+      "That small businesses never fail",
+      "That someone good at a skill will be good at running a business of it",
+      "That money grows on trees",
+      "That customers don't matter"
+     ],
+     "c": 1
+    },
+    {
+     "q": "Which are the three people inside every business owner?",
+     "a": [
+      "Entrepreneur, Manager, Technician",
+      "Teacher, Student, Parent",
+      "Buyer, Seller, Banker",
+      "Leader, Follower, Critic"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What does 'build it like a franchise' mean?",
+     "a": [
+      "You must sell franchises",
+      "Build it so it works by simple systems anyone can follow",
+      "Copy another company",
+      "Open many shops at once"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "paper",
     "fg": "berry",
@@ -868,6 +1124,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "When we want a new value or habit to spread on base, like prayer, hospitality or cleaning up together, we can think like Gladwell. Who are the trusted people, Khmer and international, that others listen to? Win them first. They will translate the idea into words and examples that fit their friends. How can we make the message simple and sticky in both languages, maybe with a picture, a short phrase people repeat, or a clear next step with a time and place? Is our shared space saying the right thing about who we are?\n\nIn DTS and on outreach, small groups of people who really know each other spread faith and love more naturally than big meetings. As our base grows, family groups and small teams help everyone stay known. Our light friendships with local churches, neighbours and other ministries matter too, because they carry good news to places our own team cannot reach. And in a village or at the cafe, the right setting can open hearts.\n\nWe do not control the results. Only God can change a heart. But small, faithful steps by the right people, in the right place, can bring real change in a team or a community.",
    "oneLine": "The right people, a sticky message and the right setting can tip small ideas into big change.",
+   "quiz": [
+    {
+     "q": "Gladwell says social change often works like what?",
+     "a": [
+      "A flu or epidemic",
+      "A machine",
+      "A river",
+      "A ladder"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What is the Law of the Few?",
+     "a": [
+      "A small group of people does most of the spreading",
+      "Few ideas ever spread",
+      "Small teams are always best",
+      "Only leaders matter"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What is the Stickiness Factor about?",
+     "a": [
+      "Glue for posters",
+      "A message people remember and act on",
+      "Staying in one place",
+      "Long meetings"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "paper",
     "fg": "ink",
@@ -948,6 +1236,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "On a YWAM base, many of us lead small teams for a short time, like a DTS outreach team, a ministry shift or a cafe crew. These laws remind us that leadership is about influence, trust and serving, which fits the way Jesus led. He had no official title, yet he changed the world through twelve people he trained.\n\nThe laws also help in practical ways. Before an outreach, good navigation means planning well and listening to those who have gone before, especially Khmer staff who know the language, the culture and the roads. When a team is tired, a small early win can bring back momentum. When the calendar is full, the Law of Priorities helps us ask what only we can do, and what we could hand to someone else.\n\nWhen we connect with hearts, give power away and raise up Khmer and international leaders to replace us, the work keeps growing even after we move on. Staff come and go often in missions, so this matters even more for us. The question for each of us is simple: who am I training right now?",
    "oneLine": "Leadership is influence built on trust, and its best fruit is new leaders.",
+   "quiz": [
+    {
+     "q": "What does the Law of the Lid say?",
+     "a": [
+      "Your leadership ability sets the limit on how effective you and your team can be",
+      "Always keep a lid on your feelings",
+      "Leaders should hide their plans",
+      "Teams have no limits"
+     ],
+     "c": 0
+    },
+    {
+     "q": "Which comes first, according to the Law of Buy-In?",
+     "a": [
+      "People buy into the vision first",
+      "People buy into the leader first, then the vision",
+      "People buy into the money first",
+      "Nobody buys in"
+     ],
+     "c": 1
+    },
+    {
+     "q": "Why do leaders who develop other leaders grow faster?",
+     "a": [
+      "They work longer hours",
+      "Every new leader multiplies the growth",
+      "They avoid people",
+      "They hire only experts"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "ink",
     "fg": "paper",
@@ -1100,6 +1420,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "On a mission base it is easy to blame the schedule, the heat, the budget or 'other teams'. Ownership sounds like this: the outreach plan failed, that is on me, and here is how we fix it. It is close to what the Bible calls confession, and it builds trust fast. Nobody has to defend themselves, so everyone can focus on fixing the problem.\n\nCover and Move reminds every ministry, from DTS to the cafe to community work, that we are one team, not competitors. Simple plans matter even more when we work in two languages. And because staff change often, Decentralized Command matters: train Khmer and international leaders to understand the 'why', so they can make good decisions without waiting for you.\n\nGood planning and honest debriefs can help our outreaches and events grow better every year. A short, kind talk after each one, about what went well and what to change, is a gift to the next team.\n\nOf course, we are not soldiers, and our mission is about love, not war. But taking responsibility, staying humble and serving the team fit well with following Jesus, who served others and carried what was not his own fault.",
    "oneLine": "Leaders take responsibility for everything, so their teams can win.",
+   "quiz": [
+    {
+     "q": "When something goes wrong, what does an extreme-ownership leader say?",
+     "a": [
+      "It's the team's fault",
+      "This is on me",
+      "It was bad luck",
+      "Nobody could have known"
+     ],
+     "c": 1
+    },
+    {
+     "q": "What is the lesson of the boat crews in SEAL training?",
+     "a": [
+      "There are no bad teams, only bad leaders",
+      "Bigger crews always win",
+      "Boats are dangerous",
+      "Leaders should row alone"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What is the big idea of the last chapter?",
+     "a": [
+      "Discipline equals freedom",
+      "Rules are pointless",
+      "Sleep is weakness",
+      "Freedom means no plans"
+     ],
+     "c": 0
+    }
+   ],
    "cover": {
     "bg": "ink",
     "fg": "marigold",
@@ -1251,6 +1603,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "In many cultures, including Khmer culture, open disagreement can feel rude, so artificial harmony is a real temptation on our base. People may smile and agree in a meeting, then share their real thoughts later with friends. International staff can fall into it too, because they do not want to seem pushy. Leaders can make it safer by being vulnerable first, by asking quieter people for their view one by one, and by thanking people who disagree respectfully.\n\nThe personal histories exercise works well with DTS teams, outreach teams and new staff, and it helps Khmer and international staff see each other as people, not just roles. At the end of staff meetings, asking 'What did we decide, and who will tell whom?' can save a lot of confusion between ministries.\n\nAccountability can feel hard in a community of friends and volunteers. But gently keeping our promises to each other is part of loving one another well. And remember: everyone's first team is the whole base and its mission, not just their own ministry. When the cafe, the school and the outreach teams cheer for each other's results, the whole base grows stronger, and we show the unity Jesus prayed for.",
    "oneLine": "Build trust first; it opens the door to honest debate, real commitment, accountability and results.",
+   "quiz": [
+    {
+     "q": "What sits at the bottom of the pyramid?",
+     "a": [
+      "Absence of trust",
+      "Inattention to results",
+      "Too many meetings",
+      "Lack of money"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What is 'artificial harmony'?",
+     "a": [
+      "Real peace in a team",
+      "When nobody disagrees out loud, though problems are real",
+      "Singing together",
+      "A healthy debate"
+     ],
+     "c": 1
+    },
+    {
+     "q": "What tool does Lencioni suggest for building trust?",
+     "a": [
+      "Share personal histories",
+      "Hide your mistakes",
+      "Work alone",
+      "Avoid conflict"
+     ],
+     "c": 0
+    }
+   ],
    "cover": {
     "bg": "paper",
     "fg": "ink",
@@ -1554,6 +1938,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "YWAM has a strong why: to know God and to make Him known. But busy days on a base can make it fuzzy. Cleaning, cooking, paperwork and fixing the water pump can feel far from the mission. When we explain the why first, to DTS students, new staff or local partners, these tasks become part of the story. A meal cooked for students is part of making God known. Use the celery test before starting a new project: does it truly fit our calling here in Cambodia? It is fine to say no to good ideas that belong to someone else. Make sure every ministry, in Siem Reap and Poipet, can say its why in simple words, in both Khmer and English. Dreamers and builders need each other, and both are gifts to a team. When new staff arrive, tell the story of why YWAM GP began, and keep telling it. And remember that our deepest why is not our own idea. It comes from God's love for the people of Cambodia. People who share that belief will carry it further than any plan.",
    "oneLine": "Start with your purpose; it is what inspires people to follow.",
+   "quiz": [
+    {
+     "q": "What is at the centre of the Golden Circle?",
+     "a": [
+      "What",
+      "How",
+      "Why",
+      "Who"
+     ],
+     "c": 2
+    },
+    {
+     "q": "What are the two ways to get people to act?",
+     "a": [
+      "Manipulate them or inspire them",
+      "Pay them or fire them",
+      "Shout or whisper",
+      "Ask or wait"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What does the celery test help you do?",
+     "a": [
+      "Choose healthy food",
+      "Make decisions that fit your why",
+      "Plan a dinner party",
+      "Count your money"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "paper",
     "fg": "ink",
@@ -1630,6 +2046,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "On a mission base, the needs never stop. Someone always needs a ride, a meal, a talk or an extra hand, and it is easy to feel guilty for resting or saying no. Some of us grew up in cultures where saying no to an elder or leader feels impossible, and a direct no can feel rude. Others say no too quickly and keep everyone outside the fence. Staff from different cultures can learn from each other here: some know how to say no gently and with respect, and others know how to say it clearly. Talk as a team about what healthy boundaries look like, such as days off, sleep, family time and quiet evenings, so nobody has to fight for them alone. Leaders can protect their staff's limits instead of testing them, and show healthy rest in their own lives. In DTS, help students learn the difference between a boulder and a backpack, and to give their yes freely, not out of fear. Serving out of overflow lasts longer than serving out of exhaustion.",
    "oneLine": "Own your life, help with the boulders, and let love — not guilt — drive your yes.",
+   "quiz": [
+    {
+     "q": "What picture do the authors use for your life?",
+     "a": [
+      "A yard with a fence around it",
+      "A busy road",
+      "A locked prison",
+      "An open ocean"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What is the difference between boulders and backpacks?",
+     "a": [
+      "Boulders are too heavy to carry alone; backpacks are each person's own load",
+      "There is no difference",
+      "Backpacks are heavier",
+      "Boulders are for children"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What is the law of motivation?",
+     "a": [
+      "Money first, service second",
+      "Freedom first, service second",
+      "Help only to be liked",
+      "Never help anyone"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "teal",
     "fg": "paper",
@@ -1775,6 +2223,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "A YWAM base can have many ministries, each doing good work but not always pulling in the same direction. The cafe, the schools, community service and outreach can each become their own little world. Lencioni would say that leaders must see the base leadership as their first team.\n\nClarity helps everyone, especially staff working in a second language. Simple, repeated messages beat long, clever ones. A short playbook in both Khmer and English, with our purpose, values and current focus, could help new staff and students settle in faster.\n\nLeaders from different cultures may avoid conflict in different ways, so building trust is step one. Make room for honest disagreement in leadership meetings, in ways that feel safe for Khmer and international leaders alike. Sometimes that means asking for views one by one, or giving time to think before deciding.\n\nAsk your leaders the six questions together, and pray over the answers. Then choose one rallying cry for the season, like preparing well for the next DTS. Repeat it in base meetings, staff devotions and team check-ins. When the leadership team is united, the whole base feels safer and more peaceful, and our work becomes a clearer picture of the unity Jesus prayed for.",
    "oneLine": "Get your leaders united, get clear, say it again and again, and build it into how you work.",
+   "quiz": [
+    {
+     "q": "What does Lencioni say beats being smart?",
+     "a": [
+      "Being healthy as an organization",
+      "Being bigger",
+      "Having more money",
+      "Better technology"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What is the first discipline?",
+     "a": [
+      "Build a cohesive leadership team",
+      "Hire a consultant",
+      "Write a long report",
+      "Cut costs"
+     ],
+     "c": 0
+    },
+    {
+     "q": "Why should leaders overcommunicate clarity?",
+     "a": [
+      "People need to hear a message many times",
+      "To fill the time",
+      "Because nobody listens anyway",
+      "To show off"
+     ],
+     "c": 0
+    }
+   ],
    "cover": {
     "bg": "cobalt",
     "fg": "paper",
@@ -1927,6 +2407,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "Across cultures, crucial conversations look different. Many Khmer staff prefer indirect, private conversations that protect face, while some international staff are very direct. Neither is wrong, but each can make the other feel unsafe. Choose the right setting, start with respect, and maybe use a trusted go-between when that fits.\n\nSilence can look like agreement when it is not. A smile and a nod may mean I hear you, not I agree. So gently check understanding, especially when people are speaking in a second language. Ask open questions and give time, rather than asking if everyone agrees.\n\nIn DTS and on outreach teams, tension often builds quietly, over small things like chores, money or schedules. Name it early and kindly, before it grows. Leaders can model this by inviting feedback on their own leadership.\n\nCheck your stories before you act on them, especially across cultures. What looks rude in one culture may be normal in another. Ask why a good person might act this way. And after a hard conversation, agree clearly on who will do what, so good talk becomes real change.\n\nSpeaking the truth in love, as Paul writes in Ephesians, is exactly what this book is trying to teach. Pray before a crucial conversation, and go in with a soft heart.",
    "oneLine": "Make it safe, check your story, and keep talking honestly when it matters most.",
+   "quiz": [
+    {
+     "q": "What makes a conversation crucial?",
+     "a": [
+      "High stakes, differing opinions and strong emotions",
+      "It is long",
+      "It happens at work",
+      "It has many people"
+     ],
+     "c": 0
+    },
+    {
+     "q": "Who is the only person you can really control?",
+     "a": [
+      "Your boss",
+      "Yourself",
+      "The other person",
+      "Your team"
+     ],
+     "c": 1
+    },
+    {
+     "q": "What does 'master your stories' mean?",
+     "a": [
+      "Tell better jokes",
+      "Check the story you tell yourself about what you saw",
+      "Write a book",
+      "Never listen to others"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "cobalt",
     "fg": "paper",
@@ -2834,6 +3346,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "A YWAM base is a picture of interdependence: Khmer and international staff from many cultures sharing a mission, a kitchen and a schedule. Covey reminds us that this only works when each of us also leads ourselves well, so the private victory comes first: keeping small promises, planning our week and staying close to God. Habit 5 is gold here, because so many misunderstandings come from language and culture, not bad hearts. Before you correct a teammate, try to understand what they meant and what their culture expects. Make deposits in each other's emotional bank account, like keeping your word, learning someone's story and apologizing quickly. Look for win-win when teams disagree, and value different cultural views as a way to find a better third option. Covey wrote for everyone, but much of this sounds like Jesus: serve, listen, keep your promises, and take time to be renewed by God. Try weekly planning around your roles in ministry, such as staff member, small group leader, friend and learner. Protect time for prayer, rest and friendship before the urgent things fill your week. Small changes from the inside out can bless a whole team.",
    "oneLine": "Lead yourself from the inside out, then work with others in trust, and keep renewing yourself.",
+   "quiz": [
+    {
+     "q": "What is Habit 1?",
+     "a": [
+      "Be proactive",
+      "Think win-win",
+      "Sharpen the saw",
+      "Synergize"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What does Habit 5 ask you to do first?",
+     "a": [
+      "Speak first",
+      "Seek first to understand",
+      "Win first",
+      "Plan first"
+     ],
+     "c": 1
+    },
+    {
+     "q": "What is the emotional bank account a picture of?",
+     "a": [
+      "Saving money",
+      "Trust in a relationship",
+      "A real bank",
+      "Paying bills"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "teal",
     "fg": "paper",
@@ -3586,6 +4130,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "YWAM GP is a picture of Revelation 7:9: people from every nation and language, worshipping God together. That happens when we honour one another and learn each other's language of love. Romans 12 asks us to outdo one another in showing honour. Across cultures, that means learning what honour looks like for the other person.\n\nYour Khmer ways are not something to fix. Your patience, respect, loyalty, peacemaking and warm hospitality bless this base every day, and Westerners need them. You also understand Cambodia, its language and its people in a way they may never fully understand. You do not need to become Western. You only need to understand them, and help them understand you.\n\nAt YWAM GP this happens in small moments: a clear answer in a staff meeting, a private talk after a mistake, a message before you go home for a funeral, a kind word about hugs and the sampeah. Each one builds trust.\n\nRemember: these are tendencies, not rules. Every person is different, so ask, listen and stay curious. When something confuses you, believe the best and ask a friend. In meetings, on outreach and in the cafe, we learn this together, as one family in Christ.",
    "oneLine": "Understand their ways, keep your own, and build a bridge of love.",
+   "quiz": [
+    {
+     "q": "In Khmer, what does baat or chas often mean?",
+     "a": [
+      "I promise to do it",
+      "I heard you",
+      "I disagree",
+      "I am angry"
+     ],
+     "c": 1
+    },
+    {
+     "q": "What does the guide encourage Khmer staff to do when they need help?",
+     "a": [
+      "Solve everything alone",
+      "Ask for help early",
+      "Wait until it is too late",
+      "Leave the team"
+     ],
+     "c": 1
+    },
+    {
+     "q": "How do many Westerners see feedback?",
+     "a": [
+      "As an attack on the person",
+      "As being about the work, not the person",
+      "As a reason to leave",
+      "As rude and forbidden"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "laterite",
     "fg": "paper",
@@ -3671,6 +4247,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "At YWAM GP, Khmer and Western staff serve side by side in every ministry. Many Khmer staff already move between two cultures every day, and often adjust to us more than we adjust to them. They speak our language, eat our food at team meals and forgive our mistakes. We can honour that by learning too: some Khmer language, eating together, asking good questions, keeping our anger soft and letting Khmer leaders lead.\n\nRemember that these patterns are tendencies, not rules. Your teammate is a person first, not a culture. Some Khmer friends will be more direct than you, and some Westerners more quiet. When you are unsure, ask with humility. A good question, like 'How would this look in your family?', is often better than a good guess.\n\nPhilippians 2 tells us to value others above ourselves, and Jesus himself came as a servant. That is the posture of a guest. We are guests in Cambodia, and also brothers and sisters. Revelation 7:9 shows people from every nation and language worshipping God together. That is our family. Let us honour one another, protect each other's face and learn each other's language of love.",
    "oneLine": "Come as a learner, protect people's face, and let trust and Khmer leaders grow.",
+   "quiz": [
+    {
+     "q": "What is 'face' (មុខមាត់) in Cambodia?",
+     "a": [
+      "A person's dignity and good name in front of others",
+      "A kind of photo",
+      "Only a person's looks",
+      "A greeting"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What does kraeng chet mean?",
+     "a": [
+      "Speaking loudly",
+      "Holding back so you do not burden or upset someone",
+      "Being late",
+      "Telling a joke"
+     ],
+     "c": 1
+    },
+    {
+     "q": "According to the guide, how do many Khmer build trust?",
+     "a": [
+      "Through tasks first",
+      "Relationship first, then work grows from it",
+      "Only through money",
+      "By avoiding people"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "teal",
     "fg": "paper",
@@ -3762,6 +4370,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "YWAM GP is a YWAM base in Cambodia where Khmer and international staff live, work and worship together. We run DTS and send outreach teams. We serve through community schools, the cafe, youth work and hospitality for visiting teams. Many of us live by faith and raise our own support. In a life like this, it is easy to drift: to get tired, to work alone, to protect our own corner, or to hide our struggles. FIGHT gives us a shared language to stay on course, in English or in Khmer.\n\nBefore each 1-on-1, staff rate themselves on the five values, from 1 to 5. It is not a test. Only you and your mentor see it. It helps you notice where you are growing and where you feel stuck, so your mentor can ask good questions, pray with you and help you take one next step.\n\nStudents see our values more than they hear them. When staff are on time, open about their struggles, generous with visitors and full of hope on a hard outreach, students learn what following Jesus looks like. So celebrate these values in each other, and give grace when we fall short.",
    "oneLine": "We fight the good fight together, not to earn God's love, but because we already have it.",
+   "quiz": [
+    {
+     "q": "Which value comes first in FIGHT?",
+     "a": [
+      "Faithful",
+      "Generous",
+      "Humble",
+      "Tenacious"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What does 'nation over location' sit under?",
+     "a": [
+      "Innovative",
+      "Generous",
+      "Humble",
+      "Faithful"
+     ],
+     "c": 1
+    },
+    {
+     "q": "Why do we fight the good fight, according to the guide?",
+     "a": [
+      "To earn God's love",
+      "Because we already have God's love",
+      "To win against people",
+      "To be famous"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "marigold",
     "fg": "ink",
@@ -3843,6 +4483,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "YWAM GP exists to make Jesus known and to bless Cambodia. That includes the most vulnerable people. Again and again in the Bible, God says that he defends the weak, the orphan and the foreigner. Jesus welcomed children when others sent them away (Mark 10:14). He also gave a very serious warning to anyone who causes a child to stumble (Matthew 18:6). Children and vulnerable people matter to God, so they must matter to us.\n\nWe are also called to live in the light. 1 John 1 says that God is light, and that we walk in the light together. Ephesians 5:11 tells us not to take part in deeds of darkness, but to bring them into the open. Hiding harm to protect the good name of a ministry is not faithful. It is darkness. A healthy community brings things into the light, gently and wisely.\n\nThis does not mean we live in fear or suspect each other. It means we love each other enough to build safe habits, to listen and to act. Khmer and international, staff and students, leaders and volunteers: we keep each other safe, together.",
    "oneLine": "Notice, listen and speak up early: keeping each other safe is how we love.",
+   "quiz": [
+    {
+     "q": "What does safeguarding mean?",
+     "a": [
+      "Taking care that no one in our community is harmed, and acting quickly when someone is",
+      "Locking every door",
+      "Only checking passports",
+      "Keeping secrets"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What is grooming?",
+     "a": [
+      "Cleaning a room",
+      "Slowly building trust with a child or vulnerable person in order to harm them",
+      "Teaching good manners",
+      "A haircut"
+     ],
+     "c": 1
+    },
+    {
+     "q": "If someone is in serious danger right now, what should you do?",
+     "a": [
+      "Wait and see",
+      "Act first — get them to a safe place",
+      "Post about it online",
+      "Ask them to keep quiet"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "teal",
     "fg": "paper",
@@ -5235,6 +5907,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "YWAM GP's leadership now runs its weekly leadership meeting in an EOS way, and the app already carries the tools. Rocks are on My Ministry, each ministry has a Scorecard of weekly numbers, and the leadership board has Headlines, Issues and To-dos. This book is the best first read for anyone who hears these words and wonders what they mean for them. A ministry team could read it together over two weeks and talk about one question each time: what is my part? For a Khmer staff member, the idea of bringing an issue openly to a leader may feel uncomfortable, because in our culture we often avoid making the leader lose face. EOS gives a safe, agreed place for that: the Issues List. It is not rude to put something there. It is how the team serves each other. For international staff, the book is a reminder that the tools are for clarity and care, not for control. Read it, then ask your ministry leader which Rocks and numbers belong to you.",
    "oneLine": "EOS gives everyone on the team clarity on the vision, their seat, their Rocks, their number and how issues get solved.",
+   "quiz": [
+    {
+     "q": "What is a Rock?",
+     "a": [
+      "A priority to finish in the next ninety days",
+      "A rule that never changes",
+      "A long-term ten-year dream",
+      "A daily task that repeats"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What does GWC stand for?",
+     "a": [
+      "Goals, Work, Calendar",
+      "Grow, Wait, Change",
+      "Get it, Want it, Capacity to do it",
+      "Give, Welcome, Care"
+     ],
+     "c": 2
+    },
+    {
+     "q": "What should you do with something that bothers you?",
+     "a": [
+      "Keep quiet so nobody loses face",
+      "Put it on the Issues List",
+      "Complain to a friend",
+      "Wait until it goes away"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "teal",
     "fg": "paper",
@@ -5309,6 +6013,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "YWAM GP's leadership team has chosen to work in an EOS way, so this is the book behind much of what you see in the app. The Rocks on My Ministry are EOS Rocks. Each ministry's Scorecard is the weekly numbers Wickman describes. The leadership board's meeting with Headlines, Issues and To-dos follows the shape of his weekly meeting. Reading Traction helps you understand why these tools exist and how they fit together. A ministry is not a business, and our purpose is the Great Commission, not profit. But the six components fit us well. We need a shared vision rooted in God's call, people who share YWAM GP's values (our FIGHT values work like Wickman's core values), honest numbers about the lives we touch, a safe place to raise issues, clear ways of doing our main work, and steady weekly follow-through. Ministry leaders could read this book with their team and ask one question per component: where are we strong, and where are we weak?",
    "oneLine": "Strengthen six parts of your organization, vision, people, data, issues, process and traction, with a few simple tools used every week.",
+   "quiz": [
+    {
+     "q": "How many key components of an organization does the book describe?",
+     "a": [
+      "Three",
+      "Four",
+      "Six",
+      "Ten"
+     ],
+     "c": 2
+    },
+    {
+     "q": "What does IDS stand for?",
+     "a": [
+      "Identify, Discuss, Solve",
+      "Ideas, Decisions, Steps",
+      "Invite, Delegate, Support",
+      "Imagine, Design, Start"
+     ],
+     "c": 0
+    },
+    {
+     "q": "How should core processes be written down?",
+     "a": [
+      "As a thick manual with every detail",
+      "Only the key steps, the twenty percent that bring most results",
+      "Not at all — each person does it their own way",
+      "Only by the leader, alone"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "ink",
     "fg": "paper",
@@ -5383,6 +6119,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "Get a Grip is the friendliest way into EOS for YWAM GP's ministry leaders who prefer stories to manuals. Our leadership team is learning these tools now, and the story shows what that learning can really feel like: slow at first, uncomfortable at times, and worth it. Many of the struggles in the book fit a ministry well. We can be polite in meetings and quiet about real problems, especially across cultures where saying no to a leader feels disrespectful. We can carry too many priorities because every need feels urgent. We can avoid hard conversations about someone in the wrong role because we love them. The book shows a kind way through all of these. A ministry team could read one or two chapters a week and ask: where do we see ourselves in this story? The app's Rocks, Scorecard and the leadership meeting's Issues and To-dos are the same tools the characters learn, so you can try each one as you read.",
    "oneLine": "Through honesty, a shared vision, clear seats, Rocks, numbers and a weekly meeting, a tired team learns to lead together again.",
+   "quiz": [
+    {
+     "q": "How is this book written?",
+     "a": [
+      "As a story about a struggling leadership team",
+      "As a list of rules",
+      "As a book of quotes",
+      "As a workbook of forms"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What does the book say is the foundation for every other tool?",
+     "a": [
+      "A bigger budget",
+      "Leaders being honest with each other",
+      "Hiring more people",
+      "A new office"
+     ],
+     "c": 1
+    },
+    {
+     "q": "What is a common mistake the leaders make with their first Rocks?",
+     "a": [
+      "They choose none at all",
+      "They choose too many, and some are vague",
+      "They finish them all in one week",
+      "They let the outside guide choose them"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "blue",
     "fg": "paper",
@@ -5456,6 +6224,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "YWAM GP has many visionary leaders: people who see a need, hear from God, and start something new. We also have quiet, faithful people who make things actually work. Rocket Fuel helps us honour both gifts. In a ministry setting, the Visionary might be a campus director or a ministry founder, and the Integrator might be the person who runs the weekly leadership meeting, follows up Rocks, and keeps the Scorecard honest. Leaders could use this book to talk about how their own teams are shaped. Who carries the vision? Who carries the follow-through? Are those people working together, or pulling in different directions? The five rules fit ministry well, especially no end runs and settling disagreements privately. Across cultures, this matters even more: Khmer staff may feel caught between two leaders who give different directions. Leaders agreeing first, then speaking with one voice, is a real gift to the whole team. This book does not set any roles at YWAM GP; it gives leaders a helpful way to think and talk.",
    "oneLine": "A Visionary dreams and an Integrator delivers; with clear roles, five simple rules and real respect, together they are rocket fuel.",
+   "quiz": [
+    {
+     "q": "What does the Integrator do?",
+     "a": [
+      "Makes the vision happen day to day and holds people accountable",
+      "Only dreams up new ideas",
+      "Raises all the money alone",
+      "Avoids the leadership team"
+     ],
+     "c": 0
+    },
+    {
+     "q": "Which of these is one of the five rules for the pair?",
+     "a": [
+      "The Visionary always has the last word",
+      "No end runs — don't go around each other",
+      "Meet only once a year",
+      "Disagree in front of the team"
+     ],
+     "c": 1
+    },
+    {
+     "q": "How often do the authors suggest the two meet to stay on the same page?",
+     "a": [
+      "Every day",
+      "About once a month",
+      "Once a year",
+      "Never — it wastes time"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "marigold",
     "fg": "ink",
@@ -5530,6 +6330,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "At YWAM GP many people lead others without ever being trained for it. A ministry leader may lead volunteers, students, Khmer and international staff, all at once. This book gives a simple, practical picture of what good leading and managing look like, and it fits the tools YWAM GP's leadership is using now. Clear expectations connect to each person's Rocks and their Scorecard numbers. The meeting rhythm fits the weekly leadership meeting and ministry meetings. The quarterly conversation fits naturally beside the mentoring 1-on-1s many of us already have: a mentor's 1-on-1 cares for the whole person, while a boss's quarterly conversation is about the work, values and the seat. Across cultures, the book's call for clear, two-way expectations is especially helpful. Khmer staff may not say when something is unclear; international leaders may assume they were understood. Writing expectations down together, and asking what each person needs from you, prevents a lot of hurt. Try one practice at a time and talk about it with your own leader.",
    "oneLine": "Lead by giving direction, tools and freedom; manage with clear expectations, steady meetings and honest quarterly talks; together that is accountability.",
+   "quiz": [
+    {
+     "q": "What simple formula does the book start with?",
+     "a": [
+      "Leadership plus management equals accountability",
+      "Hard work equals success",
+      "Rules plus control equals results",
+      "More meetings equal more trust"
+     ],
+     "c": 0
+    },
+    {
+     "q": "What is a clarity break?",
+     "a": [
+      "A holiday with your team",
+      "Regular time alone, away from busyness, to think",
+      "A break between two meetings",
+      "A day with no rules"
+     ],
+     "c": 1
+    },
+    {
+     "q": "What is a quarterly conversation?",
+     "a": [
+      "A formal yearly review",
+      "An informal, honest two-way talk every ninety days",
+      "A speech to the whole team",
+      "A written warning"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "berry",
     "fg": "paper",
@@ -5602,6 +6434,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "YWAM GP is growing, with two campuses, many ministries, students, teams and guests coming and going all the time. Much of our work still lives in a few people's heads. When they travel, go on break or move on, the work suffers and new staff feel lost. Process! offers a simple, gentle way to change that. Think of the work that repeats: welcoming a new staff member, hosting an outreach team, running a school, handling money, entering a ministry's weekly numbers, keeping our people safe. Some of this already has clear steps; much does not. A ministry could choose one core process this quarter as a Rock, write it simply with the people who do it, and keep one number for it on their Scorecard. Writing processes in plain English and Khmer also helps across cultures, because spoken instructions are easy to misunderstand. Clear steps are a way of caring for the people who come after us. The book does not set YWAM GP's processes; it shows how a team can write its own.",
    "oneLine": "Name a few core processes, write down only the key steps, help everyone follow them and keep improving; that discipline sets a team free.",
+   "quiz": [
+    {
+     "q": "What do the authors say discipline and consistency do?",
+     "a": [
+      "They set you free",
+      "They kill creativity",
+      "They make work boring",
+      "They only help big companies"
+     ],
+     "c": 0
+    },
+    {
+     "q": "Roughly how many core processes do most organizations have?",
+     "a": [
+      "One",
+      "Between five and ten",
+      "About thirty",
+      "Over a hundred"
+     ],
+     "c": 1
+    },
+    {
+     "q": "What does 'followed by all' mean?",
+     "a": [
+      "Only new people follow the process",
+      "Everyone, leaders too, follows the process",
+      "Leaders follow, others may choose",
+      "Nobody needs to follow it once it is written"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "paper",
     "fg": "ink",
@@ -5675,6 +6539,38 @@ var GP_LIBRARY = {
    ],
    "forUs": "Ministry life at YWAM GP can easily swallow everything. We live on base, the needs never stop, and serving God can make it feel wrong to rest. The EOS Life is a business book, and some of its goals, like making money, do not fit us in the same way: we live on support and serve as volunteers. But its main message fits our calling well. God does not want his people to burn out. Jesus withdrew to quiet places to pray, and the Sabbath is a gift, not a rule to escape. Read this book with your own faith in mind. Doing what you love can mean serving in your gifts. People you love means a team that shares our FIGHT values. Making a difference is our whole reason for being here. Time for other passions means family, friendships and rest. Leaders could use the weekly clarity break as a time of prayer and planning, and talk with their mentor about the gaps between their life now and the life God is calling them to.",
    "oneLine": "The point of good systems is a good life: do what you love, with people you love, making a difference, with time for rest and family.",
+   "quiz": [
+    {
+     "q": "Which is one of the five parts of the life the book describes?",
+     "a": [
+      "Doing what you love",
+      "Working every weekend",
+      "Owning a big company",
+      "Never asking for help"
+     ],
+     "c": 0
+    },
+    {
+     "q": "Why does Wickman say leaders must delegate?",
+     "a": [
+      "To avoid all hard work",
+      "You cannot live this life trying to do everything yourself",
+      "Because rules say so",
+      "So the leader can leave the team"
+     ],
+     "c": 1
+    },
+    {
+     "q": "What does the book say about rest?",
+     "a": [
+      "It is laziness",
+      "It is wisdom — leaders who rest well usually lead better",
+      "Only for old people",
+      "It should wait until retirement"
+     ],
+     "c": 1
+    }
+   ],
    "cover": {
     "bg": "laterite",
     "fg": "paper",
