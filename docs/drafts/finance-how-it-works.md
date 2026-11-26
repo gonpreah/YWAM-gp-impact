@@ -106,7 +106,7 @@ Income.
     out" for any it couldn't read. Each line has **✓ Approve** (ticks it; if something is still missing, its edit
     opens), **✗ Leave out** and Edit; each group has **✓ Approve all** and **🗑 Leave all n out**; "Bring them back"
     puts left-out ones back while the import is open. A journal entry that won't be income or an expense by itself —
-    account N/A (Financial tools), or a transfer touching a category — has **📈 Show in the Ministries profit and loss**
+    admin, or a transfer touching a category — has **📈 Show in the Ministries profit and loss**
     (`bulkPlAble_`, `[data-bulkpl]`; the group has "📈 All n in the profit and loss"); the adjustment or transfer it
     becomes carries `pl`, so it counts as income or spending there. **Tick every complete line** skips journal entries, and the
     description box doesn't change them.
