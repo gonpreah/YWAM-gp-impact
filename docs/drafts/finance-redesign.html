@@ -504,6 +504,9 @@ button.tick.done{ background:var(--good); }
 .bulkMix{ margin:6px 0 2px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
 .bulkRow .rowBtns{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
 .bulkRow .jYes{ color:var(--good); }
+.bulkAsk{ margin:12px 0 6px; padding:12px 14px; border-radius:12px; border:2px solid var(--amberDeep); background:color-mix(in srgb, var(--amber, #FFB323) 14%, var(--surface)); }
+.bulkAsk p{ margin:6px 0 10px; font-size:14px; }
+.bulkAskBtns{ display:flex; flex-direction:column; gap:8px; }
 .bulkJBack{ margin:6px 0; font-size:13px; color:var(--muted); }
 .bulkPreSum{ margin:12px 0 4px; padding:10px 12px; border-radius:10px; background:var(--surface2); border:1px solid var(--line); }
 .bulkPreSum .preTbl{ width:100%; border-collapse:collapse; margin:6px 0 2px; font-size:14px; }
@@ -2132,6 +2135,11 @@ function bulkPreSumHtml_(U){ if(!bulkPreOn_() || !U) return ''; var B=S.bulkPre,
       '<p class="bulkNoteRead" style="margin:4px 0 0">'+(B.gapTo ? 'One Financial tools adjustment, dated '+d+' and in its approved report. Then allocated = total liquid assets.' : 'Leave it on “Pick a fund” to keep the gap.')+'</p></div>';
   } else if(X.gap!=null) h+='<p class="preLine preOk">✓ Allocated is 100% of the total liquid assets.</p>';
   return h+'</div>'; }
+/* the question that comes up by itself when a file has lines on or before the latest approved day */
+function bulkAskHtml_(U){ var A=U.ask, d=date(A.day);
+  return '<div class="bulkAsk" id="bulkAsk" role="alertdialog" aria-labelledby="bulkAskT"><b id="bulkAskT">⚠️ '+A.n+' of these '+U.rows.length+' lines '+(A.n===1?'is':'are')+' on or before '+d+' — already approved.</b>'+
+    '<p>Do you want to continue? Lines on or before an approved day go into that day’s approved report, and you’ll be asked what they should change there.</p>'+
+    '<div class="bulkAskBtns"><button class="btn" id="bulkAskYes">Yes — continue</button>'+(A.n<U.rows.length?'<button class="btn ghost" id="bulkAskDrop">Leave those '+A.n+' out, keep the rest</button>':'')+'<button class="btn ghost" id="bulkAskNo">No — stop this import</button></div></div>'; }
 function bulkPreBtn_(U, n){ if(bulkPreOn_() && S.bulkPre.liq==='yes' && PUBLISHED[S.bulkPre.day].bal && bulkPreFx_(U).n) return 'Approve adjustments to '+date(S.bulkPre.day)+' total liquid assets · add '+n+' line'+(n>1?'s':'');
   return 'Add '+n+' ticked to 📡 Live'; }
 /* the description, read more closely (26 Nov 2026: "say it's a mix of categories … office and kitchen, or DTS and DBS"):
@@ -2220,6 +2228,7 @@ function inBulkHtml_(){
     (U.isPL ? '<br>📊 Read as a QuickBooks <b>Profit and Loss Detail</b>: income or expense from its section, the kind from each account heading, the account from the split account'+(S.bulkSrc==='mix'?'':' (but you picked one account for every line above)')+', the category from the class.'+
       ((U.checks||[]).length ? (bad.length ? '<br><span style="color:var(--bad)">⚠️ Doesn’t match QuickBooks’ totals: '+bad.map(function(x){ return esc(x.head)+' read '+money(x.read,true)+', QuickBooks '+money(x.qb,true); }).join(' · ')+'</span>' : '<br>✓ Every account adds up to QuickBooks’ own total ('+U.checks.length+' checked).') : '') : '')+'</div>'+
     '<div class="bulkTools"><button class="linkAdd" id="bulkTickAll">✓ Tick every complete line (not journal entries)</button><button class="linkAdd" id="bulkUntick">Untick all</button></div>';
+  if(U.ask) return h+bulkAskHtml_(U)+'<div class="inBtns"><button class="btn ghost" id="bulkCancel">Cancel</button></div></details>';
   h+=bulkGroupsHtml_(R);
   h+='<div class="bulkTot">Ticked: '+ticked.length+' · income '+money(tot('inc'),true)+' · expenses '+money(tot('exp'),true)+' · transfers '+money(tot('xf'),true)+'</div>'+
     (S.bulkSaveErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.bulkSaveErr)+'</p>' : '')+
@@ -2308,7 +2317,11 @@ function bulkRead_(f){
        r.dup=all.some(function(x){ return x.date===r.date && Math.abs(x.amt-r.amt)<0.005; }); r.ok=false; return r; }) };
      S.bulk.isPL=!!list.isPL; S.bulk.checks=list.checks||[];
      S.bulk.note=String(S.bulkNote||'').trim(); bulkNoteApply_(S.bulk.rows, bulkNoteRead_(S.bulk.note)); S.bulkNoteMsg='';
-     S.bulkBusy=false; S.bulkEdit=null; S.bulkEditKey=null; S.bulkSame=null; S.bulkJOut=null; render(); })
+     /* lines on or before the latest approved day: ask straight away, without the tick (26 Nov 2026) */
+     var apd=approvedDay_(), nOld=apd ? S.bulk.rows.filter(function(r){ return r.date && r.date<=apd; }).length : 0;
+     S.bulk.ask = nOld && !(S.bulkPre && S.bulkPre.on) ? { day:apd, n:nOld } : null;
+     S.bulkBusy=false; S.bulkEdit=null; S.bulkEditKey=null; S.bulkSame=null; S.bulkJOut=null; render();
+     var ak=document.getElementById('bulkAsk'); if(ak && ak.scrollIntoView) ak.scrollIntoView({ block:'center' }); })
    .catch(function(e){ S.bulkBusy=false; S.bulk=null; S.bulkErr = e && e.message==='no_pdfjs' ? 'Couldn’t load the PDF reader — check the connection and try again, or use the Excel export.' : e && e.message==='no_header' ? 'Couldn’t find a Date and an Amount (or Debit / Credit) column.' : e && e.message==='no_rows' ? 'Couldn’t find any lines with a date and an amount in that file.'+(e.detail?' '+e.detail:'') : 'Couldn’t read that file'+(e && e.message ? ' ('+e.message+')' : '')+'.'; render(); });
 }
 function bulkAdd_(){
@@ -3176,6 +3189,9 @@ document.addEventListener('click', function(e){
   if(e.target.id==='bulkUntick' && S.bulk){ S.bulk.rows.forEach(function(r){ r.ok=false; }); render(); return; }
   if(e.target.id==='bulkAdd'){ bulkAdd_(); return; }
   if(e.target.id==='amendOpen'){ S.amendOpen=!S.amendOpen; render(); return; }
+  if(e.target.id==='bulkAskYes' && S.bulk && S.bulk.ask){ var days0=reportDays_(); S.bulkPre=Object.assign({ liq:'no', alloc:'change', fix:'fix', gapTo:'' }, S.bulkPre||{}, { on:true, day:S.bulk.ask.day }); if(days0.indexOf(S.bulkPre.day)<0) S.bulkPre.day=days0[0]; S.bulk.ask=null; render(); var bp=document.getElementById('bulkPreOn'); if(bp && bp.scrollIntoView) bp.scrollIntoView({ block:'start' }); return; }
+  if(e.target.id==='bulkAskDrop' && S.bulk && S.bulk.ask){ var ad=S.bulk.ask.day, n0=S.bulk.rows.length; S.bulk.rows=S.bulk.rows.filter(function(r){ return !(r.date && r.date<=ad); }); S.bulk.ask=null; render(); toast('Left out '+(n0-S.bulk.rows.length)+' lines on or before '+date(ad)); return; }
+  if(e.target.id==='bulkAskNo'){ S.bulk=null; S.bulkEdit=null; S.bulkEditKey=null; S.bulkSame=null; S.bulkJOut=null; render(); toast('Import stopped — nothing was added'); return; }
   if(e.target.id==='bulkCancel'){ S.bulk=null; S.bulkEdit=null; S.bulkEditKey=null; S.bulkSame=null; S.bulkJOut=null; render(); return; }
   if(e.target.id==='bulkSameAll' && S.bulkSame && S.bulk){ var SB=S.bulkSame, list2=bulkSameOthers_(SB);
     list2.forEach(function(o){ BULK_SAME_ORDER.forEach(function(f){ if(SB.ch[f] && o[f]!==SB.ch[f]) bulkSet_(o, f, SB.ch[f]); }); });

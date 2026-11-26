@@ -173,6 +173,11 @@ Income.
   lines are on or before an approved day** (shown once something is approved) and pick the day; each such line is
   tagged "✅ in the … approved report" and, when added, goes into that day's approved report (`bulkPre_` →
   `addToApproved_`, `x.preApproved`) — so it always **counts in the income and expenses** (profit and loss, Ministries).
+- **It asks by itself** (26 Nov 2026): when a file (PDF, Excel or CSV) is read and any line is dated on or before the
+  latest approved day, and the tick isn't on yet, the lines are held back behind "⚠️ n of these m lines are on or
+  before 16 Nov — already approved. Do you want to continue?" (`S.bulk.ask`, `bulkAskHtml_`, `#bulkAsk`): **Yes —
+  continue** turns the tick on with that day (the two questions below show); **Leave those n out, keep the rest**
+  (when some are later); **No — stop this import** (nothing added).
   Two questions (`S.bulkPre = {on, day, liq, alloc, fix, gapTo}`), both with a default, so Add never waits:
 - **1. Should they change the 16 Nov approved total liquid assets?** **No** (default): the balances typed for that day
   already hold them — ABA, US and Cash stay as approved, and in Live an approved line on or before the balances is
