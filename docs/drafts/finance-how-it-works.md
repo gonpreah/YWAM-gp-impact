@@ -105,7 +105,10 @@ Income.
     entries sit in their own groups first: **📓 Journal entries — income / expenses / transfers**, and "— not worked
     out" for any it couldn't read. Each line has **✓ Approve** (ticks it; if something is still missing, its edit
     opens), **✗ Leave out** and Edit; each group has **✓ Approve all** and **🗑 Leave all n out**; "Bring them back"
-    puts left-out ones back while the import is open. **Tick every complete line** skips journal entries, and the
+    puts left-out ones back while the import is open. A journal entry that won't be income or an expense by itself —
+    account N/A (Financial tools), or a transfer touching a category — has **📈 Show in the Ministries profit and loss**
+    (`bulkPlAble_`, `[data-bulkpl]`; the group has "📈 All n in the profit and loss"); the adjustment or transfer it
+    becomes carries `pl`, so it counts as income or spending there. **Tick every complete line** skips journal entries, and the
     description box doesn't change them.
     **A journal entry's account can be N/A** (26 Nov 2026) — often it moved money between QuickBooks accounts, not in a
     bank. One worked out as income or an expense with no bank in its split account starts on N/A (the account picker
@@ -197,11 +200,13 @@ Income.
   **Approve adjustments to 16 Nov total liquid assets · add n lines**, and adding moves that day's approved balances
   (`P.bal`) and its balances entry (`BAL_DAYS`, only by lines dated on or before it — later ones already count on top in
   Live) (`bulkPreLiq_`). The page warns that Yes counts lines twice if the balances came from the statement / cash count.
-- **2. What happens to the 16 Nov approved allocations?** **Change them** (default — a ministry spent or received money
-  that wasn't in the allocations): each category moves by its lines, in that day's approved groups and in Live.
-  **Leave them**: the allocations already had them; then **write a fix line** (default, `bulkFix_`: one Financial tools
+- **2. What happens to the 16 Nov approved allocations?** **Leave them** is the default (26 Nov 2026; it was Change
+  them): the allocations already had them; then **write a fix line** (also the default, `bulkFix_`: one Financial tools
   adjustment per sub-category, dated the day, in its report, funds left as approved, `src:'bulkfix'`) or **let them go
-  down** in Live. Lines after the approved day are never touched — they are new spending.
+  down** in Live. **Change them** (a ministry spent or received money that wasn't in the allocations): each category
+  moves by its lines, in that day's approved groups and in Live. Lines after the approved day are never touched — they
+  are new spending. So by default (No · Leave them · Yes — write a fix line) lines on or before the day change only the
+  income and expenses: no bank, no approved allocation, no Live category.
 - **Is it still 100%?** The bottom box (`bulkPreSumHtml_`, `bulkPreDay_`) shows the day as it would be: total liquid
   assets, allocated, and allocated as a % of it. When they differ (No + Change them always leaves a gap the size of the
   lines) it says so — fine to leave, or **Put the $X into / Take the $X out of [category]** (`bulkGapTo`): one Financial
