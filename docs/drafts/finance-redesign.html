@@ -1582,7 +1582,9 @@ function flOne_(k){ S.fl1=S.fl1||{}; return S.fl1[k]||(S.fl1[k]={ date:reportDay
 /* which account the money went into (income) or came out of (an expense) */
 var BANK_OPTS=[['acct|aba','ABA bank'],['acct|cash','Cash on hand'],['acct|us','US bank']];
 function bankSelect_(id, val, attr, first){ return '<select id="'+id+'" '+attr+'><option value="">'+(first||'— Pick the account —')+'</option>'+BANK_OPTS.map(function(o){ return '<option value="'+o[0]+'"'+(val===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select>'; }
-function bankLabel_(k){ var o=BANK_OPTS.filter(function(x){ return x[0]===k; })[0]; return o?o[1]:''; }
+function bankLabel_(k){ if(k==='na') return 'N/A (Financial tools)'; var o=BANK_OPTS.filter(function(x){ return x[0]===k; })[0]; return o?o[1]:''; }
+/* a journal entry's account may be N/A: no money moved in a bank, so it is written up as a Financial tools adjustment */
+function bulkBankSel_(r, id, attr){ var h=bankSelect_(id, r.bank, attr); return r.journal ? h.replace('</select>', '<option value="na"'+(r.bank==='na'?' selected':'')+'>N/A — no account (Financial tools)</option></select>') : h; }
 /* a QuickBooks bank column ("Deposit to", "Payment account"…) → one of the three */
 function bankGuess_(t){ t=String(t||'').toLowerCase(); if(!t) return ''; if(/\baba\b|advanced bank/.test(t)) return 'acct|aba'; if(/cash on hand|petty cash|cash box|\bcash\b/.test(t)) return 'acct|cash'; if(/sub ?splash|\bus\b|\busd? bank|usa|united states|chase|wells|boa|bank of america|us bank|american/.test(t)) return 'acct|us'; return ''; }
 function flOneHtml_(k){
@@ -1970,6 +1972,7 @@ function bulkGuess_(t, src){
   /* a journal entry (26 Nov 2026): worked out like any line — its P&L section and account, or its accounts and words —
      but it stays a journal entry: it sits in its own groups and waits for the office to approve it or leave it out */
   if(t.journal){ var gj=bulkGuess_(Object.assign({}, t, { journal:false }), src);
+    if((gj.kind==='inc' || gj.kind==='exp') && !gj.bank) gj.bank='na';   /* no bank: an internal move — written up as a Financial tools adjustment */
     gj.hint = gj.kind ? 'journal entry — worked out from its '+(t.qbSec?'section and account':'accounts and words')+'; approve it or leave it out' : 'journal entry — check what it really is'; return gj; }
   var acc = /^acct\|/.test(src) ? src : /^qbo\|/.test(src) ? src.slice(4) : '';
   /* mixed QuickBooks: the bank is whichever account column names one */
@@ -2278,10 +2281,10 @@ function bulkEditHtml_(r, i){
     '<div><label class="f" for="'+p+'desc">Description</label><input type="text" id="'+p+'desc" '+sel('desc')+' value="'+esc(r.desc||'')+'"></div></div>';
   if(r.kind==='inc') h+='<label class="f">Kind of income</label>'+flTypeSelect_('inc', sel('type'), r.type, '— Kind of income —')+
     (r.type && !(INC_RULES[r.type]||[]).length ? '<label class="f">Which fund (no formula)</label>'+fundSelect_(p+'fund', r.fund, 'Fund').replace('<select ','<select '+sel('fund')+' ') : '')+
-    '<label class="f">Went into</label>'+bankSelect_(p+'bank', r.bank, sel('bank'));
+    '<label class="f">Went into</label>'+bulkBankSel_(r, p+'bank', sel('bank'));
   if(r.kind==='exp') h+='<label class="f">What it was for</label>'+flTypeSelect_('exp', sel('type'), r.type, '— What it was for —')+
     '<label class="f">Paid from — which category</label>'+fundSelect_(p+'fund', r.fund, 'Category').replace('<select ','<select '+sel('fund')+' ').replace('— Pick a fund —','— Pick the category —')+
-    '<label class="f">Paid out of</label>'+bankSelect_(p+'bank', r.bank, sel('bank'));
+    '<label class="f">Paid out of</label>'+bulkBankSel_(r, p+'bank', sel('bank'));
   if(r.kind==='xf') h+='<label class="f">From</label>'+fundSelect_(p+'from', r.from, 'From', TOOL_ADD, true).replace('<select ','<select '+sel('from')+' ')+
     '<label class="f">To</label>'+fundSelect_(p+'to', r.to, 'To', TOOL_REMOVE, true).replace('<select ','<select '+sel('to')+' ');
   return h+bulkSameHtml_(i)+'<div class="inBtns" style="margin-top:8px"><button class="btn" data-bulkdone="'+i+'">Done</button><button class="linkAdd" data-bulkdrop="'+i+'">Leave this line out</button></div></div>';
@@ -2314,7 +2317,13 @@ function bulkAdd_(){
   U.pre = bulkPreOn_() ? { day:S.bulkPre.day, liq:S.bulkPre.liq, alloc:S.bulkPre.alloc, fix:S.bulkPre.alloc==='leave' && S.bulkPre.fix==='fix', gapTo:S.bulkPre.gapTo||'', moved:{}, acct:[] } : null;
   snap_('Removed the '+list.length+' lines bulk-imported from '+U.file);
   list.forEach(function(r, i){ var id=Date.now().toString(36)+i, at=Date.now();
-    if(r.kind==='inc' || r.kind==='exp'){ var e={ id:r.kind[0]+id, at:at, date:r.date, amt:r.amt, type:r.type, who:'', memo:r.desc, bank:r.bank, src:'bulk', file:U.file, impNote:U.note||'',
+    if((r.kind==='inc' || r.kind==='exp') && r.bank==='na'){   /* a journal entry with no account: Financial tools — "Add income" to each fund it reaches, "Remove income" from what it pays */
+      var parts = r.kind==='exp' ? [{ f:r.fund, amt:r.amt }] : flSplit_('inc', r.type, r.amt, r.fund);
+      parts.forEach(function(sp, pi){ if(!sp.f || !fundOf_(sp.f) || !(sp.amt>0)) return; var up=r.kind==='inc';
+        var tj={ id:'f'+id+'j'+pi, at:at, date:r.date, from:up?TOOL_ADD:sp.f, to:up?sp.f:TOOL_REMOVE, amt:Math.round(sp.amt*100)/100, src:'bulk', file:U.file, impNote:U.note||'', journal:true,
+          memo:[r.desc, 'journal entry — '+(r.type||(up?'income':'expense'))+', no account'].filter(Boolean).join(' · ') };
+        fundMove_(sp.f, up?tj.amt:-tj.amt); bulkPre_(tj, 'tool', U); TOOL_XFERS.push(tj); }); }
+    else if(r.kind==='inc' || r.kind==='exp'){ var e={ id:r.kind[0]+id, at:at, date:r.date, amt:r.amt, type:r.type, who:'', memo:r.desc, bank:r.bank, src:'bulk', file:U.file, impNote:U.note||'',
         split: r.kind==='exp' ? [{ f:r.fund, amt:r.amt }] : flSplit_('inc', r.type, r.amt, r.fund) };
       flApply_(r.kind, e, 1); FK[r.kind].list().push(e); bulkPre_(e, r.kind, U); }
     else { var t={ id:(isTool_(r.from)||isTool_(r.to)?'f':'t')+id, at:at, date:r.date, from:r.from, to:r.to, amt:r.amt, memo:r.desc||'Bulk import', src:'bulk', file:U.file, impNote:U.note||'' };

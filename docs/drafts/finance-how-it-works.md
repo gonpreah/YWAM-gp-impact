@@ -107,6 +107,12 @@ Income.
     opens), **✗ Leave out** and Edit; each group has **✓ Approve all** and **🗑 Leave all n out**; "Bring them back"
     puts left-out ones back while the import is open. **Tick every complete line** skips journal entries, and the
     description box doesn't change them.
+    **A journal entry's account can be N/A** (26 Nov 2026) — often it moved money between QuickBooks accounts, not in a
+    bank. One worked out as income or an expense with no bank in its split account starts on N/A (the account picker
+    has "N/A — no account (Financial tools)", journal entries only). Added, an N/A one is **written up as Financial
+    tools**, not as income or an expense: income → "Add income" to each fund its kind's formula (or its fund) reaches;
+    an expense → "Remove income" from its category; memo "… · journal entry — {kind}, no account", `journal: true`. So
+    it moves the categories and no bank, and it isn't in the profit and loss.
     "📓 Journal entries to check" has **🗑 Leave all n out** (`data-bulkgrpdrop`) — they are usually not needed in these
     reports; "Bring them back" undoes it while the import is open (`S.bulkJOut`).
 - **A line stays put while it is being edited** (26 Nov 2026): it stays in the group it was in when ✏️ Edit was tapped
