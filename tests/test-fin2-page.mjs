@@ -107,11 +107,26 @@ ok('… and it says so', /Someone else saved first/.test(await page.evaluate(() 
 const demo = { gpFinDemo: 1, state: { bal: [{ asOf: '2026-11-16', aba: 1, us: 2, cash: 3, at: 1 }], incomes: [], expenses: [] } };
 await page.click('#inImport summary'); await page.fill('#impText', 'not it'); await page.click('#impGo');
 ok('text that isn’t the demo’s is refused', /isn’t the text the demo copies/.test(await page.$eval('#inImport', e => e.innerText)));
+/* 4a. adding only what's new (26 Nov 2026): nothing twice */
+const inc = (id, date, amt) => ({ id, at: 1, date, amt, type: 'Staff contributions', who: '', memo: 'm', bank: 'acct|aba', split: [{ f: 'adm|Office/General', amt }] });
+const day0 = await page.evaluate(() => BAL_DAYS[0].asOf), dayNew = day0 === '2026-11-18' ? '2026-11-17' : '2026-11-18';
+const more = { gpFinDemo: 1, state: { bal: [{ asOf: day0, aba: 1, us: 2, cash: 3, at: 1 }, { asOf: dayNew, aba: 7, us: 8, cash: 9, at: 1 }], incomes: [inc('dA', '2026-11-10', 25), inc('dB', '2026-11-11', 30)], expenses: [] } };
+await page.fill('#impText', JSON.stringify(more)); await page.click('#impCheck');
+const plan = await page.$eval('#impPlan', e => e.innerText);
+ok('Check what’s new lists what Impact doesn’t have', /2 new entries/.test(plan) && /1 balances day/.test(plan) && /differ — Impact’s are kept/.test(plan), plan.replace(/\n/g, ' | '));
+await page.click('#impAdd'); await page.waitForTimeout(1500);
+ok('Add brings in only the new, and saves', await page.evaluate(() => INCOMES.length === 2 && BAL_DAYS.length === 2 && BAL_DAYS.some(r => r.cash === 999)) && doc().state.incomes.length === 2);
+const rev0 = doc().rev;
+await page.click('#inImport summary').catch(() => {}); if (!(await page.evaluate(() => document.getElementById('inImport').open))) await page.click('#inImport summary');
+await page.fill('#impText', JSON.stringify(more)); await page.click('#impCheck');
+ok('the same paste again adds nothing — no double entries', /Nothing new/.test(await page.$eval('#impPlan', e => e.innerText)) && await page.evaluate(() => INCOMES.length === 2));
+await page.click('#impCancel');
+/* 4b. replace everything, still there behind a second tap */
 await page.fill('#impText', JSON.stringify(demo)); await page.click('#impGo');
-ok('with entries already here, it asks first', /replaces what is here/.test(await page.$eval('#impGo', e => e.textContent)));
+ok('with entries already here, it asks first', /replaces everything/.test(await page.$eval('#impGo', e => e.textContent)));
 await page.click('#impGo'); await page.waitForTimeout(1500);
-ok('the demo’s entries are brought in and saved', await page.evaluate(() => BAL_DAYS.length === 1 && BAL_DAYS[0].aba === 1) && doc().rev === 6 && doc().state.bal[0].aba === 1);
-await page.click('#undoLast'); await page.click('#undoLast'); await page.waitForTimeout(1500);
+ok('the demo’s entries are brought in and saved', await page.evaluate(() => BAL_DAYS.length === 1 && BAL_DAYS[0].aba === 1) && doc().rev === rev0 + 1 && doc().state.bal[0].aba === 1);
+await page.click('#undoLast'); await page.click('#undoLast'); await page.waitForTimeout(800); await page.click('#undoLast'); await page.click('#undoLast'); await page.waitForTimeout(1500);
 ok('Undo puts back what was there', await page.evaluate(() => BAL_DAYS[0].cash === 999) && doc().state.bal[0].cash === 999);
 await ctx.close();
 

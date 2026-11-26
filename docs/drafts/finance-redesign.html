@@ -510,6 +510,9 @@ button.tick.done{ background:var(--good); }
 .bulkDupOf{ margin:6px 0 0; padding:6px 8px; border-radius:8px; background:var(--surface2); font-size:13px; color:var(--muted); }
 .bulkDupOf b{ color:var(--ink); }
 .bulkDupChk{ margin:8px 0 4px; }
+.impPlan{ margin:10px 0 0; padding:10px 12px; border-radius:10px; background:var(--surface2); }
+.impKind{ margin:6px 0; } .impKind summary{ cursor:pointer; font-size:14px; }
+.impList{ list-style:none; margin:4px 0 0; padding:0; font-size:13px; } .impList li{ display:flex; justify-content:space-between; gap:8px; padding:3px 0; border-top:1px solid var(--line); }
 .bulkJBack{ margin:6px 0; font-size:13px; color:var(--muted); }
 .bulkPreSum{ margin:12px 0 4px; padding:10px 12px; border-radius:10px; background:var(--surface2); border:1px solid var(--line); }
 .bulkPreSum .preTbl{ width:100%; border-collapse:collapse; margin:6px 0 2px; font-size:14px; }
@@ -3798,23 +3801,94 @@ function demoCopyOut_(){ var txt=JSON.stringify({ gpFinDemo:1, at:new Date().toI
     var el=document.getElementById('sheet'); el.innerHTML=h; document.body.classList.add('sheetOn'); document.getElementById('sx').onclick=closeSheet;
     document.getElementById('demoOutCopy').onclick=function(){ var ta=document.getElementById('demoOut'); ta.select(); try { document.execCommand('copy'); done(); } catch(e){} }; };
   try { if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function(){ done(); show(); }, show); else show(); } catch(e){ show(); } }
+/* (26 Nov 2026: "paste in our entries … it analyses and adds anything new without making any double entries") — the
+   paste is ADDED to what is in Impact by default: Check what's new (impPlan_) works out, kind by kind, what Impact doesn't
+   have yet, shows it, and Add brings in only that (impMerge_). Replace everything is still there, behind a second tap.
+   Already there = the same id (it came from here before), or the same thing typed twice: same day, amount and kind / bank
+   (transfers: from and to; advances: who and category), counted, so two real $5 pledges on one day both stay. */
+var IMP_KINDS=[['inc','💵 Income','incomes'],['exp','🧾 Expenses','expenses'],['xf','🔁 Internal transfers','transfers'],['tool','🛠 Financial tools','toolXfers'],['adv','🤝 Advances','advances']];
+function impList_(k){ return k==='inc'?INCOMES : k==='exp'?EXPENSES : k==='xf'?TRANSFERS : k==='tool'?TOOL_XFERS : ADVANCES; }
+function impKey_(k, x){ var a=(+x.amt||0).toFixed(2); if(k==='inc' || k==='exp') return [x.date, a, x.type||'', x.bank||''].join('|');
+  if(k==='adv') return [x.date, a, String(x.who||'').toLowerCase().trim(), x.fund||''].join('|'); return [x.date, a, x.from||'', x.to||''].join('|'); }
+function impPlan_(st){ var P={ add:{}, same:0, dup:0, bal:[], balClash:[], debt:[], debtNew:null, funds:[], types:0, maps:0, alloc:[], allocSkip:0, total:0 };
+  IMP_KINDS.forEach(function(K){ var k=K[0], mine=impList_(k), theirs=Array.isArray(st[K[2]]) ? st[K[2]] : [], ids={}, cnt={};
+    mine.forEach(function(x){ ids[x.id]=1; var key=impKey_(k, x); cnt[key]=(cnt[key]||0)+1; });
+    var add=[]; theirs.forEach(function(x){ if(!x || !x.date || !(+x.amt>0)) return; if(x.id && ids[x.id]){ P.same++; var key0=impKey_(k, x); if(cnt[key0]) cnt[key0]--; return; }
+      var key=impKey_(k, x); if(cnt[key]){ cnt[key]--; P.dup++; return; } add.push(x); });
+    P.add[k]=add; P.total+=add.length; });
+  /* balances: a day Impact doesn't have; the same day with other numbers is left as Impact has it */
+  var bd={}; BAL_DAYS.forEach(function(r){ bd[r.asOf]=r; });
+  (Array.isArray(st.bal)?st.bal:[]).forEach(function(r){ if(!r || !r.asOf) return; var m=bd[r.asOf]; if(!m) P.bal.push(r); else if(['aba','us','cash'].some(function(x){ return Math.abs((+m[x]||0)-(+r[x]||0))>=0.005; })) P.balClash.push(r.asOf); });
+  /* staff debt reports by day, and a newer current one */
+  var dh={}; DEBT_HIST.forEach(function(r){ dh[r.asOf]=1; }); (Array.isArray(st.debtHist)?st.debtHist:[]).forEach(function(r){ if(r && r.asOf && !r.sample && !dh[r.asOf]) P.debt.push(r); });
+  if(st.debt && st.debt.asOf && Array.isArray(st.debt.people) && st.debt.people.length && (!DEBT.asOf || st.debt.asOf>DEBT.asOf || !(DEBT.people||[]).length)) P.debtNew=st.debt;
+  /* categories made in the demo that Impact doesn't have (they start at $0; the entries then move them) */
+  (Array.isArray(st.struct)?st.struct:[]).forEach(function(c){ var g=ALLOC.filter(function(x){ return x.id===c.id; })[0];
+    (c.items||[]).forEach(function(n){ if(!g || !g.items.some(function(it){ return it[0]===n; })) P.funds.push({ g:c, n:n }); }); });
+  /* allocations saved by hand in the demo: their change is laid on; the first one ("from nothing") only into an Impact with none */
+  var ma={}; MANUAL_ALLOCS.forEach(function(m){ ma[m.id]=1; });
+  (Array.isArray(st.manualAllocs)?st.manualAllocs:[]).forEach(function(m){ if(!m || !m.id || ma[m.id] || !m.after) return; if(!m.before && MANUAL_ALLOCS.length){ P.allocSkip++; return; } P.alloc.push(m); });
+  (Array.isArray(st.incTypes)?st.incTypes:[]).forEach(function(t){ if(INC_TYPES.indexOf(t)<0) P.types++; }); (Array.isArray(st.expTypes)?st.expTypes:[]).forEach(function(t){ if(EXP_TYPES.indexOf(t)<0) P.types++; });
+  P.n = P.total + P.bal.length + P.debt.length + (P.debtNew?1:0) + P.alloc.length;
+  return P; }
+function impMerge_(st, P){
+  /* categories and kinds first, so every entry has somewhere to go */
+  P.funds.forEach(function(x){ var g=ALLOC.filter(function(a){ return a.id===x.g.id; })[0];
+    if(!g){ g={ id:x.g.id, name:x.g.name, eg:x.g.eg||'', c:x.g.c||'--al5', dark:!!x.g.dark, single:!!x.g.single, note:x.g.note||'', prev:0, items:[], amt:0 }; ALLOC.push(g); }
+    if(!g.items.some(function(it){ return it[0]===x.n; })) g.items.push([x.n, 0]); });
+  (st.incTypes||[]).forEach(function(t){ if(INC_TYPES.indexOf(t)<0){ INC_TYPES.push(t); if(st.incRules && st.incRules[t] && !INC_RULES[t]) INC_RULES[t]=st.incRules[t]; } });
+  (st.expTypes||[]).forEach(function(t){ if(EXP_TYPES.indexOf(t)<0) EXP_TYPES.splice(Math.max(0, EXP_TYPES.length-1), 0, t); });
+  [[st.incMap, INC_MAP],[st.expMap, EXP_MAP],[st.links, DEBT_LINKS]].forEach(function(m){ if(m[0] && typeof m[0]==='object') Object.keys(m[0]).forEach(function(key){ if(!(key in m[1])) m[1][key]=m[0][key]; }); });
+  /* the entries, each moving its categories as if typed here */
+  var c=function(x){ return JSON.parse(JSON.stringify(x)); }, ids={}; IMP_KINDS.forEach(function(K){ impList_(K[0]).forEach(function(x){ ids[x.id]=1; }); });
+  IMP_KINDS.forEach(function(K){ var k=K[0]; (P.add[k]||[]).forEach(function(x0){ var x=c(x0); if(!x.id || ids[x.id]) x.id=(k==='inc'?'i':k==='exp'?'e':k==='adv'?'v':k==='tool'?'f':'t')+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+      ids[x.id]=1; x.fromDemo=true; delete x.addedTo; delete x.preApproved;
+      if(k==='inc' || k==='exp'){ if(!Array.isArray(x.split)) x.split=[{ f:'', amt:x.amt }]; flApply_(k, x, 1); FK[k].list().push(x); }
+      else if(k==='xf' || k==='tool'){ if(fundOf_(x.from)) fundMove_(x.from, -x.amt); if(fundOf_(x.to)) fundMove_(x.to, x.amt); impList_(k).push(x); }
+      else ADVANCES.push(x); }); });
+  P.alloc.forEach(function(m){ var before=m.before||{}; Object.keys(m.after).forEach(function(gid){ (m.after[gid]||[]).forEach(function(it){ var was=((before[gid]||[]).filter(function(y){ return y[0]===it[0]; })[0]||[0,0])[1]; var d=(+it[1]||0)-(+was||0);
+      if(Math.abs(d)>=0.005 && fundOf_(gid+'|'+it[0])) fundMove_(gid+'|'+it[0], d); }); }); MANUAL_ALLOCS.push(c(m)); });
+  P.bal.forEach(function(r){ BAL_DAYS.push(c(r)); }); refreshBal_();
+  P.debt.forEach(function(r){ DEBT_HIST.push(c(r)); }); DEBT_HIST.sort(function(x,y){ return x.asOf<y.asOf?1:-1; });
+  if(P.debtNew){ DEBT.asOf=P.debtNew.asOf; DEBT.people=c(P.debtNew.people); DEBT.file=P.debtNew.file||''; DEBT.src=P.debtNew.src||DEBT.src; }
+  flSort_('inc'); flSort_('exp'); [TRANSFERS, TOOL_XFERS].forEach(function(L){ L.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; }); }); ADVANCES.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; });
+  ALLOC.forEach(function(g){ g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); }); }
+function impPlanHtml_(P){ if(!P.n && !P.funds.length && !P.types) return '<div class="impPlan" id="impPlan"><b>✓ Nothing new</b> — everything in it is already in Impact ('+P.same+' the same, '+P.dup+' typed in both). Nothing to add. <button class="linkAdd" id="impCancel">OK</button></div>';
+  var rows=IMP_KINDS.filter(function(K){ return (P.add[K[0]]||[]).length; }).map(function(K){ var L=P.add[K[0]], t=L.reduce(function(s2,x){ return s2+(+x.amt||0); },0);
+    return '<details class="impKind"><summary><b>'+K[1]+'</b> · '+L.length+' new · '+money(t,true)+'</summary><ul class="impList">'+L.slice(0,40).map(function(x){ return '<li><span>'+date(x.date)+' · '+esc(x.type || (x.from ? xferShort_(x.from)+' → '+xferShort_(x.to) : x.who||''))+(x.memo?' · '+esc(String(x.memo).slice(0,50)):'')+'</span><b>'+money(x.amt,true)+'</b></li>'; }).join('')+(L.length>40?'<li class="dsub">… and '+(L.length-40)+' more</li>':'')+'</ul></details>'; }).join('');
+  var more=[P.bal.length?P.bal.length+' balances day'+(P.bal.length>1?'s':''):'', P.debt.length?P.debt.length+' staff debt report'+(P.debt.length>1?'s':''):'', P.debtNew?'the newer staff debt ('+date(P.debtNew.asOf)+')':'', P.alloc.length?P.alloc.length+' allocation change'+(P.alloc.length>1?'s':''):'', P.funds.length?P.funds.length+' new categor'+(P.funds.length>1?'ies':'y')+' ($0, then the entries move them)':'', P.types?P.types+' new kind'+(P.types>1?'s':''):''].filter(Boolean);
+  return '<div class="impPlan" id="impPlan"><b>What’s new in the paste</b><p class="bulkNoteRead">'+P.total+' new entr'+(P.total===1?'y':'ies')+' · '+P.same+' already in Impact · '+P.dup+' typed in both (left out, so nothing is doubled)</p>'+rows+
+    (more.length?'<p class="bulkNoteRead">Also: '+esc(more.join(' · '))+'.</p>':'')+
+    (P.balClash.length?'<p class="bulkNoteRead">⚠️ Balances for '+esc(P.balClash.map(date).join(', '))+' differ — Impact’s are kept.</p>':'')+
+    (P.allocSkip?'<p class="bulkNoteRead">The demo’s first allocations aren’t brought in — Impact already has its own.</p>':'')+
+    '<p class="bulkNoteRead">New entries go into 📡 Live, not any approved report. Undo takes the whole thing back.</p>'+
+    '<div class="inBtns"><button class="btn" id="impAdd">Add '+P.n+' new</button><button class="btn ghost" id="impCancel">Cancel</button></div></div>'; }
 function inImportHtml_(){
   if(!APP || !FIN.canEdit) return '';
   var open=S.foldOpen&&S.foldOpen.imp;
-  return '<details class="inCard fold" id="inImport" data-fold="imp"'+(open?' open':'')+'><summary class="foldHead"><span><b>📥 Bring in entries from the demo</b><span class="dsub">Everything entered in the preview, in one go</span></span><span class="foldR"><span class="chev">▾</span></span></summary>'+
-    '<p class="inLast">In the demo, tap <b>📤 Copy my entries for Impact</b> at the top, then paste it here. It <b>replaces</b> what is in Impact for this campus now — Undo puts it back.</p>'+
+  return '<details class="inCard fold" id="inImport" data-fold="imp"'+(open?' open':'')+'><summary class="foldHead"><span><b>📥 Bring in entries from the demo</b><span class="dsub">Adds only what is new — nothing twice</span></span><span class="foldR"><span class="chev">▾</span></span></summary>'+
+    '<p class="inLast">In the demo, tap <b>📤 Copy my entries for Impact</b> at the top, then paste it here. <b>Check what’s new</b> shows what Impact doesn’t have yet; nothing is added until you say so, and nothing already here is added twice.</p>'+
     '<textarea id="impText" style="width:100%;height:120px;font:12px monospace" placeholder="Paste here">'+esc(S.impTxt||'')+'</textarea>'+
     (S.impErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.impErr)+'</p>' : '')+
-    '<div class="inBtns"><button class="btn'+(S.impAsk?' warn':'')+'" id="impGo">'+(S.impAsk?'Tap again — this replaces what is here':'Bring them in')+'</button></div></details>'; }
-function importDemo_(){ var ta=document.getElementById('impText'), txt=ta?ta.value.trim():'', o=null;
+    (S.impPlan ? impPlanHtml_(S.impPlan) : '<div class="inBtns"><button class="btn" id="impCheck">Check what’s new</button></div>')+
+    '<p class="bulkNoteRead" style="margin-top:10px"><button class="linkAdd" id="impGo">'+(S.impAsk?'Tap again — this replaces everything in Impact for this campus':'Or replace everything here with the paste')+'</button></p></details>'; }
+function impParse_(){ var ta=document.getElementById('impText'), txt=ta?ta.value.trim():'', o=null; S.impTxt=txt;
   try { o=JSON.parse(txt); } catch(e){}
-  if(!o || o.gpFinDemo!==1 || !o.state || typeof o.state!=='object'){ S.impErr='That isn’t the text the demo copies — tap 📤 in the demo again and paste all of it.'; S.impAsk=false; S.impTxt=txt; render(); return; }
+  if(!o || o.gpFinDemo!==1 || !o.state || typeof o.state!=='object'){ S.impErr='That isn’t the text the demo copies — tap 📤 in the demo again and paste all of it.'; S.impAsk=false; S.impPlan=null; render(); return null; }
+  S.impErr=''; return o; }
+function importCheck_(){ var o=impParse_(); if(!o) return; S.impSt=o.state; S.impPlan=impPlan_(o.state); S.impAsk=false; render(); }
+function importAdd_(){ if(!S.impSt) return; var P=impPlan_(S.impSt);   /* worked out again, against Impact as it is now */
+  if(!P.n && !P.funds.length && !P.types){ S.impPlan=P; render(); return; }
+  snap_('Took back the '+P.n+' entries brought in from the demo'); impMerge_(S.impSt, P); xferSnap_(); keep_();
+  S.impPlan=null; S.impSt=null; S.impTxt=''; S.impErr=''; (S.foldOpen=S.foldOpen||{}).imp=false; render(); toast('Added '+P.n+' new — nothing doubled · saving to Impact'); }
+function importDemo_(){ var o=impParse_(); if(!o) return;
   var has=BAL_DAYS.length || INCOMES.length || EXPENSES.length || TRANSFERS.length || MANUAL_ALLOCS.length;
-  if(has && !S.impAsk){ S.impAsk=true; S.impErr=''; S.impTxt=txt; render(); return; }
+  if(has && !S.impAsk){ S.impAsk=true; S.impPlan=null; render(); return; }
   snap_('Put back what was in Impact before the demo’s entries');
   resetState_(); loadState_(o.state); refreshBal_(); keep_();
-  S.impAsk=false; S.impErr=''; S.impTxt=''; (S.foldOpen=S.foldOpen||{}).imp=false; render(); toast('Brought in — saving to Impact'); }
-document.addEventListener('click', function(e){ if(e.target.id==='impGo') importDemo_(); });
+  S.impAsk=false; S.impErr=''; S.impTxt=''; S.impPlan=null; (S.foldOpen=S.foldOpen||{}).imp=false; render(); toast('Brought in — saving to Impact'); }
+document.addEventListener('click', function(e){ if(e.target.id==='impGo') importDemo_(); else if(e.target.id==='impCheck') importCheck_(); else if(e.target.id==='impAdd') importAdd_(); else if(e.target.id==='impCancel'){ S.impPlan=null; S.impSt=null; render(); } });
+document.addEventListener('input', function(e){ if(e.target.id==='impText' && S.impPlan){ S.impPlan=null; S.impSt=null; S.impTxt=e.target.value; var pl=document.getElementById('impPlan'); if(pl) pl.outerHTML='<div class="inBtns"><button class="btn" id="impCheck">Check what’s new</button></div>'; } });
 document.addEventListener('click', function(e){ var q=e.target.closest && e.target.closest('[data-xfpreliq],[data-xfprealloc],[data-xfprefix]'); if(!q || !S.xfer) return; var Q=S.xfer.pre=S.xfer.pre||{ liq:'no', alloc:'change', gapTo:'' };
   if(q.dataset.xfpreliq) Q.liq=q.dataset.xfpreliq; else if(q.dataset.xfprefix) Q.fix=q.dataset.xfprefix; else Q.alloc=q.dataset.xfprealloc; var xa=document.getElementById('xfAppr'); if(xa) xa.innerHTML=xferPreHtml_(); });
 document.addEventListener('click', function(e){ var pa=e.target.closest && e.target.closest('[data-bulkprealloc]'); if(pa && S.bulkPre){ S.bulkPre.alloc=pa.dataset.bulkprealloc; render(); } var pl=e.target.closest && e.target.closest('[data-bulkpreliq]'); if(pl && S.bulkPre){ S.bulkPre.liq=pl.dataset.bulkpreliq; render(); } var pf=e.target.closest && e.target.closest('[data-bulkprefix]'); if(pf && S.bulkPre){ S.bulkPre.fix=pf.dataset.bulkprefix; render(); } });

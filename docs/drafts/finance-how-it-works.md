@@ -606,3 +606,22 @@ those and match the Dashboard's Live figures today.
    follow.
 5. Can it still be undone on its own from History?
 6. Update this file in the same commit.
+
+## Bringing the demo's entries into Impact — adding only what is new (26 Nov 2026)
+- Input → 📥 Bring in entries from the demo: paste the demo's 📤 text, then **Check what's new** (`impPlan_`). Nothing
+  changes until **Add n new** (`impMerge_`).
+- **Already in Impact** (left out): the same id — it came over before — or the same thing typed in both places: same
+  day, amount, kind and bank (income / expenses), same day, amount, from and to (transfers, Financial tools), same day,
+  amount, who and category (advances). These are **counted**: two $5 pledges on one day in the paste and one in Impact
+  → one is added.
+- **Added**: the new entries, each moving its categories exactly as if typed here (income by its split, expenses,
+  transfers, Financial tools), into 📡 Live — never into an approved report (`addedTo` / `preApproved` dropped); new
+  balances days (a day Impact already has with different numbers keeps Impact's, and the check says so); staff debt
+  reports for days Impact lacks, and the paste's current staff debt when it is newer; allocations saved by hand that
+  Impact lacks — their change laid on the categories (the demo's very first "from nothing" one only into an Impact with
+  none); categories and kinds the demo made (categories at $0, before the entries move them); remembered answers and
+  staff-debt links Impact doesn't have. Approvals are never brought over.
+- One 🕘 History step undoes all of it. Pasting the same text again finds nothing new.
+- **Replace everything** is still there ("Or replace everything here with the paste", a second tap to be sure).
+- tests/test-fin2-page.mjs §4.
+

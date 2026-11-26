@@ -1233,7 +1233,12 @@ before changing a rule, and change it in the same commit.**
   numbers / names and the draft bar, use Impact's own fonts and pdf.js, and today on Cambodia's clock.
   tests/test-fin2-page.mjs fails while it is out of date. The demo keeps working as it was (its data in the
   browser) and has **📤 Copy my entries for Impact**; Input in Impact has **📥 Bring in entries from the demo**
-  (the two are different websites, so the entries travel as pasted text).
+  (the two are different websites, so the entries travel as pasted text). Since 26 Nov 2026 it **adds only what is
+  new**: **Check what's new** (`impPlan_`) lists, kind by kind, what Impact doesn't have — an entry with the same id, or
+  the same day, amount and kind / bank (transfers: from / to; counted, so two real $5 pledges both stay), is already
+  there — plus new balances days (a day Impact has with other numbers keeps Impact's), staff debt reports, allocation
+  changes and new categories; **Add n new** (`impMerge_`) brings in just that, each entry moving its categories as if
+  typed, into 📡 Live, one 🕘 History step. Replace everything is still there behind a second tap.
 - **Where it shows**: My Ministry → Skills Training › Finances for the office (`finCanEditClient_`): tabs
   **Dashboard · Ministries · Input** (`fdash` / `fmins` / `finput`, `data-fintab`) then the app's own Tasks · OKRs; Campus
   Leadership's **Finances** tab (`lwt==='money'`) shows the Dashboard or Ministries read-only. Both are an iframe
