@@ -83,6 +83,12 @@ Income.
     contributions) → from the memo: team → Team contributions, KSS / YAP, rent, Antonia, and staff or **a pledge →
     Staff contributions**; anything else left to pick. 44500 Staff gathering and 49500 Miscellaneous are left to pick.
     Income groups show the account numbers their lines came from ("💵 Income · Staff contributions · 44000");
+    **Office income** (a kind of its own since 26 Nov 2026, 100% to Office/General — any legal income): anything whose
+    words or account say **interest** or **tax** (whole word, so not "taxi"). **Guest** income is part of teams → Team
+    contributions. A line whose **name is one of our staff** (`isStaffName_`: the campus staff list, or a spelling linked
+    on Staff debt) and that is otherwise unclear (44000 Contribution, no kind found) → Staff contributions. An account
+    heading with no number ("Guest Income") is read as a heading too; QuickBooks' "Total for Income" is no longer
+    checked as if it were an account.
   - **A Pledge** (QuickBooks' transaction type) with no account of its own goes **into ABA bank**;
   - **the account** from Item split account (ABA → ABA bank, Cash on Hand → Cash, **Sub Splash** or US Bank → US
     bank);

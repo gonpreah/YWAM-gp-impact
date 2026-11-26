@@ -1272,7 +1272,7 @@ function inDebtSave_(){
 }
 /* ---- Input: the income formula — each kind of income shared out to the funds by percent ----
    A fund is "allocation id|fund name" (by name, so reordering funds never breaks a formula). */
-var INC_TYPES=['Staff contributions','Team contributions','School contributions — DTS','School contributions — DTS outreach','School contributions — DBS','School contributions — SOMD','School contributions — Other schools','General donations','Ministry rent','KSS & YAP','Antonia','Designated donation'];
+var INC_TYPES=['Staff contributions','Team contributions','School contributions — DTS','School contributions — DTS outreach','School contributions — DBS','School contributions — SOMD','School contributions — Other schools','General donations','Ministry rent','KSS & YAP','Antonia','Designated donation','Office income'];
 var INC_TYPES_BASE=INC_TYPES.slice();
 var INC_TYPE_RENAMES={ 'Teams':'Team contributions', 'Donations':'General donations' };   /* old names → new, for anything already saved */
 var INC_TYPES_GONE=['Other income'];
@@ -1286,7 +1286,8 @@ var INC_RULES={
   'School contributions — Other schools':[{ f:'min|Other Schools', p:100 }],
   'KSS & YAP':[{ f:'des|KSS & YAP', p:100 }],
   'Antonia':[{ f:'des|Other Base Payable (Antonia)', p:100 }],
-  'Designated donation':[{ f:'des|Other', p:100 }]
+  'Designated donation':[{ f:'des|Other', p:100 }],
+  'Office income':[{ f:'adm|Office/General', p:100 }]   /* legal / office income: interest, tax refunds (26 Nov 2026) */
 };
 function fundList_(){ var out=[]; ALLOC.forEach(function(g){ g.items.forEach(function(it){ out.push({ k:g.id+'|'+it[0], g:g, name:it[0] }); }); }); return out; }
 function fundOf_(k){ return fundList_().filter(function(f){ return f.k===k; })[0]; }
@@ -1488,15 +1489,22 @@ var INC_ACCOUNTS=[[41000,'Donation','General donations'],[41100,'Khmer Staff sup
   [45100,'Lecture Contribution','@school'],[45200,'Outreach Contribution','@outreach'],[49500,'Miscellanous Income','']];
 var INC_NUM={}; INC_ACCOUNTS.forEach(function(x){ INC_NUM[x[0]]=x; });
 function incSchool_(t){ var g=incGuess_(t); return /^School contributions/.test(g) ? g : 'School contributions — Other schools'; }
-function incFromHead_(h, words, pledge){ var m=/^(\d{4,6})\s+(.+)$/.exec(String(h||'')); if(!m) return ''; var a=INC_NUM[+m[1]]; if(!a) return incGuess_(m[2]);
-  var w=String(words||'').toLowerCase();
+/* a name in the file that is one of our staff (the staff list, or a spelling linked before) */
+function isStaffName_(who){ var n=String(who||'').toLowerCase().replace(/\s+/g,' ').trim(); if(n.length<3) return false;
+  if(DEBT_LINKS[who] && DEBT_LINKS[who]!=='none') return true;
+  return SAMPLE_STAFF.some(function(x){ var s2=String(x.name||'').toLowerCase().replace(/\s+/g,' ').trim(); return s2 && (s2===n || (s2.length>=5 && (n.indexOf(s2)>=0 || s2.indexOf(n)>=0) && n.indexOf(' ')>0)); }); }
+function incFromHead_(h, words, pledge, who){ var m=/^(\d{4,6})\s+(.+)$/.exec(String(h||'')); if(!m) return ''; var w=String(words||'').toLowerCase();
+  if(/interest|\btax(es)?\b/.test(w+' '+m[2].toLowerCase())) return 'Office income';
+  var a=INC_NUM[+m[1]]; if(!a){ var g0=incGuess_(m[2]); return g0 || (isStaffName_(who) ? 'Staff contributions' : ''); }
   if(a[2]==='@school') return incSchool_(w);
   if(a[2]==='@outreach'){ var g=incGuess_(w); return /DTS/.test(g) || !/^School/.test(g) ? 'School contributions — DTS outreach' : g; }
-  if(a[2]==='@contribution'){ if(/\bteams?\b|outreach team|mission team/.test(w)) return 'Team contributions'; if(/kss|yap/.test(w)) return 'KSS & YAP'; if(/\brent\b/.test(w)) return 'Ministry rent';
-    if(/antonia/.test(w)) return 'Antonia'; if(pledge || /staff|pledge/.test(w)) return 'Staff contributions'; return ''; }
+  if(a[2]==='@contribution'){ if(/\bteams?\b|outreach team|mission team|\bguests?\b/.test(w)) return 'Team contributions'; if(/kss|yap/.test(w)) return 'KSS & YAP'; if(/\brent\b/.test(w)) return 'Ministry rent';
+    if(/antonia/.test(w)) return 'Antonia'; if(pledge || /staff|pledge/.test(w) || isStaffName_(who)) return 'Staff contributions'; return ''; }
   return a[2] || ''; }
 function incGuess_(txt){
   var t=String(txt||'').toLowerCase();
+  if(/interest|\btax(es)?\b/.test(t)) return 'Office income';   /* any legal income: bank interest, tax */
+  if(/\bguests?\b/.test(t)) return 'Team contributions';   /* guest income is part of teams */
   if(/outreach/.test(t) && /dts/.test(t)) return 'School contributions — DTS outreach';
   if(/\bdts\b/.test(t)) return 'School contributions — DTS';
   if(/\bdbs\b/.test(t)) return 'School contributions — DBS';
@@ -1908,14 +1916,15 @@ function bulkFromSheet_(rows){
   /* a QuickBooks Profit and Loss Detail (Nov 2026): the lines sit under account headings ("50500 Food") inside
      Income / Expenses sections, every amount positive — the section says which way it went. The heading names the
      kind of income or expense; "Total for …" lines are QuickBooks' own sums, checked against what was read. */
-  var out=[], sec='', head='', totals={}, sums={}, isPL=false;
+  var out=[], sec='', head='', totals={}, sums={}, seenH={}, isPL=false;
   for(var r2=hdr+1;r2<rows.length;r2++){ var row=rows[r2]||[], d=typeof row[c.date]==='number' ? xlDate_(row[c.date]) : anyDate_(txt(row[c.date]));   /* a date written as text follows this file's day/month order (decided from all its dates, flippable) — not always QuickBooks' MM/DD */
     if(!d){ var lab=txt(row[0]) || (c.date!==0 ? '' : txt(row[1]));
       if(lab){ var ll=lab.toLowerCase(), tm=/^total for (.+?)( with sub-accounts)?$/i.exec(lab);
         if(tm){ if(!tm[2]){ var tv=typeof row[c.amt]==='number'?row[c.amt]:anyAmt_(row[c.amt]); if(!isNaN(tv)) totals[tm[1].trim()]=Math.round(tv*100)/100; } }
         else if(/^(income|other income)$/.test(ll)){ sec='in'; head=''; isPL=true; }
         else if(/^(expenses?|other expenses?|cost of goods sold)$/.test(ll)){ sec='out'; head=''; isPL=true; }
-        else if(/^\d{4,6}\s+\S/.test(lab)) head=lab; }
+        else if(/^\d{4,6}\s+\S/.test(lab)){ head=lab; seenH[lab]=1; }
+        else if(sec && !/^(gross profit|net (operating |other )?income|net earnings|total\b)/.test(ll)){ head=lab; seenH[lab]=1; } }   /* an account with no number ("Guest Income") */
       continue; }
     var num=function(v){ return typeof v==='number' ? v : anyAmt_(v); }, a=null, dir='';
     if(c.out!=null || c.inn!=null){ var o=num(row[c.out]), n=num(row[c.inn]); if(!isNaN(o) && o){ a=Math.abs(o); dir='out'; } else if(!isNaN(n) && n){ a=Math.abs(n); dir='in'; } }
@@ -1929,7 +1938,7 @@ function bulkFromSheet_(rows){
     var cn=function(j){ return j==null ? 'none' : '“'+txt((rows[hdr]||[])[j])+'” (column '+String.fromCharCode(65+j)+')'; }, smp=[];
     for(var q=hdr+1;q<rows.length && smp.length<2;q++){ var rr=rows[q]||[]; if(rr.some(function(v){ return txt(v); })) smp.push('“'+txt(rr[c.date])+'” / “'+txt(rr[c.amt!=null?c.amt:c.out])+'”'); }
     var e=new Error('no_rows'); e.detail='Read '+rows.length+' rows. Headings on row '+(hdr+1)+': date '+cn(c.date)+', amount '+cn(c.amt!=null?c.amt:c.out)+'. First rows under them (date / amount): '+(smp.join(', ')||'none')+'.'; throw e; }
-  out.isPL=isPL; out.checks=Object.keys(totals).map(function(k){ return { head:k, qb:totals[k], read:sums[k]||0, ok:Math.abs((sums[k]||0)-totals[k])<0.01 }; });
+  out.isPL=isPL; out.checks=Object.keys(totals).filter(function(k){ return seenH[k]; }).map(function(k){ return { head:k, qb:totals[k], read:sums[k]||0, ok:Math.abs((sums[k]||0)-totals[k])<0.01 }; });
   return out;
 }
 /* a first guess for each line; blank where it can't tell */
@@ -1963,11 +1972,11 @@ function bulkGuess_(t, src){
     return g; }
   if(t.qbSec && !/transfer/.test(qb)){   /* a Profit and Loss Detail: the section and the heading say it all */
     g.bank=acc; var cf=classFund_(t.cls);
-    if(t.dir==='in'){ g.kind='inc'; g.type=/^\d{4,6}\s/.test(t.qbHead||'') ? incFromHead_(t.qbHead, [t.cls, d].join(' '), /pledge/.test(qb)) : incGuess_([t.cls, t.qbHead, d].join(' ')); if(g.type && !(INC_RULES[g.type]||[]).length && cf.f){ g.fund=cf.f; g.hint=cf.why; } return g; }
+    if(t.dir==='in'){ g.kind='inc'; g.type=/^\d{4,6}\s/.test(t.qbHead||'') ? incFromHead_(t.qbHead, [t.cls, d].join(' '), /pledge/.test(qb), t.who) : (incGuess_([t.cls, t.qbHead, d].join(' ')) || (isStaffName_(t.who) ? 'Staff contributions' : '')); if(g.type && !(INC_RULES[g.type]||[]).length && cf.f){ g.fund=cf.f; g.hint=cf.why; } return g; }
     g.kind='exp'; g.type=expFromHead_(t.qbHead)||expGuess_(d); if(g.type==='Not sure') g.type='';
     if(cf.f){ g.fund=cf.f; g.hint=cf.why; } else { var w2=fundInWords_(d); if(w2){ g.fund=w2; g.hint='from the words'; } }
     return g; }
-  if(/deposit|sales receipt|payment|receive/.test(qb) || t.dir==='in'){ g.kind='inc'; g.type=incGuess_(d); g.bank=acc; if(g.type && !(INC_RULES[g.type]||[]).length){ var wf=fundInWords_(d); if(wf){ g.fund=wf; g.hint='from the words'; } } return g; }
+  if(/deposit|sales receipt|payment|receive/.test(qb) || t.dir==='in'){ g.kind='inc'; g.type=incGuess_(d) || (isStaffName_(t.who) ? 'Staff contributions' : ''); g.bank=acc; if(g.type && !(INC_RULES[g.type]||[]).length){ var wf=fundInWords_(d); if(wf){ g.fund=wf; g.hint='from the words'; } } return g; }
   if(/expense|bill|check|cheque|purchase/.test(qb) || t.dir==='out'){ g.kind='exp'; g.type=expGuess_(d); g.bank=acc;
     if(t.cls){ var cf2=classFund_(t.cls); g.fund=cf2.f; if(cf2.f) g.hint=cf2.why; }
     if(!g.fund){ var w=fundInWords_(d); if(w){ g.fund=w; g.hint='from the words'; } else if(EXP_HINT[g.type]){ g.fund=EXP_HINT[g.type]; g.hint='usual for '+g.type; } }
