@@ -32,6 +32,14 @@ Income.
 
 ## 2. Each part, what it changes
 
+### 🔍 Search (top of Input, 26 Nov 2026)
+- A fold of its own above everything else (`inSearchHtml_`, `S.srch`): words (memo, name, kind, category, account, file,
+  the import description — every word must be there), from / to dates, an amount (exact, or the digits it starts with:
+  "134" finds $13,463.11), what it is (income, expense, transfer, Financial tools), the kind, the account (ABA, US, Cash,
+  no bank) and the category (`srMatch_`). Results update as you type (`#srOut`), newest first, 60 at most, with their
+  income − expenses. Each has **✏️ Edit** — the same edit as in the lists (`editBtnHtml_` → `startEdit_`: the entry
+  comes off and its form opens filled in) — or **✅ Approved**, which can't be edited. Clear the search empties it.
+
 ### 🏦 Balances
 - One entry per day: ABA, US bank, Cash, for the **Reports as of** day. Saving the same day again
   replaces it (`BAL_DAYS`, newest first; `at` = when it was saved).

@@ -558,6 +558,18 @@ button.tick.done{ background:var(--good); }
 .mnKN{ font-size:11px; color:var(--muted); font-weight:600; margin-left:4px; }
 .mnKinds li.on .mnKRow span{ font-weight:700; }
 .mnKLines{ margin:6px 0 10px; padding-left:10px; border-left:3px solid var(--line); }
+.srQ{ width:100%; margin:4px 0 8px; }
+.srGrid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.srGrid label, .srCat{ display:flex; flex-direction:column; gap:3px; font-size:12.5px; color:var(--muted); font-weight:600; }
+.srGrid input, .srGrid select, .srCat select{ width:100%; min-width:0; }
+.srCat{ margin:8px 0 6px; }
+.srSum{ margin:8px 0 4px; font-size:13px; color:var(--muted); }
+.srList{ list-style:none; margin:0; padding:0; }
+.srList li{ padding:9px 0; border-top:1px solid var(--line); }
+.srTop{ display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; }
+.srWhat{ font-size:13.5px; margin-top:2px; }
+.srMemo{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+.srList .rowBtns{ margin-top:4px; }
 .mnPlBtn{ display:inline-block; margin-top:4px; border:1px solid var(--line); background:var(--surface); color:var(--muted); border-radius:999px; padding:3px 10px; font-size:12px; font-weight:700; cursor:pointer; }
 .mnPlBtn.on{ border-color:var(--accent); color:var(--accent); background:var(--accentSoft); }
 .mnNotIn{ display:inline-block; margin-top:4px; font-size:12px; color:var(--muted); }
@@ -808,6 +820,47 @@ function inMoney_(v){ return v==null||v==='' ? '' : Number(v).toFixed(2); }
 /* today on the base's clock (Cambodia, UTC+7); the demo keeps the day it was drawn for */
 var TODAY=window.GP_FIN_APP ? new Date(Date.now()+7*3600e3).toISOString().slice(0,10) : '2026-11-23', ALLOC_ASOF=window.GP_FIN_APP ? TODAY : '2026-11-20';
 function reportDay_(){ return S.reportDay || TODAY; }
+/* ---- Input: 🔍 Search (26 Nov 2026) — find an entry by words, dates, amount, what it is, its kind, category or
+   account; each result has ✏️ Edit (or ✅ Approved, which can't be edited) ---- */
+var SR_KIND={ inc:'💵 Income', exp:'🧾 Expense', xf:'🔁 Transfer', tool:'🛠 Financial tools' };
+function srS_(){ return S.srch||(S.srch={ q:'', from:'', to:'', amt:'', kind:'', type:'', cat:'', acct:'' }); }
+function srAll_(){ var out=[]; INCOMES.forEach(function(x){ out.push({ k:'inc', x:x }); }); EXPENSES.forEach(function(x){ out.push({ k:'exp', x:x }); });
+  TRANSFERS.forEach(function(x){ out.push({ k:'xf', x:x }); }); TOOL_XFERS.forEach(function(x){ out.push({ k:'tool', x:x }); }); return out; }
+function srCats_(e){ var x=e.x; return e.k==='inc'||e.k==='exp' ? (x.split||[]).map(function(sp){ return sp.f; }).filter(Boolean) : [x.from, x.to].filter(function(k){ return fundOf_(k) || /\|/.test(k||''); }); }
+function srAcct_(e){ var x=e.x; return e.k==='inc'||e.k==='exp' ? [x.bank||'na'] : [x.from, x.to].filter(isAcct_); }
+function srText_(e){ var x=e.x; return [x.memo, x.who, x.type, x.file, x.impNote, x.cls, SR_KIND[e.k], (e.k==='inc'||e.k==='exp')?bankLabel_(x.bank):'', e.k==='xf'||e.k==='tool' ? xferShort_(x.from)+' '+xferShort_(x.to) : '']
+  .concat(srCats_(e).map(fundNm_)).filter(Boolean).join(' ').toLowerCase(); }
+function srMatch_(){ var F=srS_(), q=F.q.toLowerCase().trim(), words=q?q.split(/\s+/):[], amtQ=String(F.amt||'').replace(/[$,\s]/g,'');
+  return srAll_().filter(function(e){ var x=e.x;
+    if(F.kind && e.k!==F.kind) return false; if(F.from && x.date<F.from) return false; if(F.to && x.date>F.to) return false;
+    if(F.type && x.type!==F.type) return false; if(F.cat && srCats_(e).indexOf(F.cat)<0) return false;
+    if(F.acct && srAcct_(e).indexOf(F.acct)<0) return false;
+    if(amtQ){ var n=parseFloat(amtQ); if(isNaN(n)) return false; var st=x.amt.toFixed(2); if(!(Math.abs(x.amt-n)<0.005 || st.indexOf(amtQ)===0)) return false; }
+    if(words.length){ var t=srText_(e); if(!words.every(function(w){ return t.indexOf(w)>=0; })) return false; }
+    return true; }).sort(function(a,b){ return a.x.date<b.x.date?1:a.x.date>b.x.date?-1:((b.x.at||0)-(a.x.at||0)); }); }
+function srOn_(){ var F=srS_(); return !!(F.q.trim()||F.from||F.to||F.amt||F.kind||F.type||F.cat||F.acct); }
+function srOutHtml_(){ if(!srOn_()) return '<p class="hint" style="margin:8px 0 0">Type or pick anything above — the entries that might match show here.</p>';
+  var R=srMatch_(), MAX=60, tot=R.reduce(function(s2,e){ return s2+(e.k==='exp'?-e.x.amt:e.k==='inc'?e.x.amt:0); },0);
+  if(!R.length) return '<p class="hint" style="margin:8px 0 0">Nothing matches. Try fewer words, or clear a filter.</p>';
+  return '<p class="srSum">'+R.length+' match'+(R.length>1?'es':'')+(R.length>MAX?' — the newest '+MAX+' shown':'')+'</p><ul class="srList">'+R.slice(0,MAX).map(function(e){ var x=e.x;
+    var what = e.k==='inc'||e.k==='exp' ? esc(x.type||'')+((x.split||[]).length ? ' · '+(e.k==='inc'?'→ ':'from ')+esc((x.split||[]).map(function(sp){ return sp.f?fundNm_(sp.f):'no category'; }).join(', ')) : '')+(x.bank?' · '+(e.k==='inc'?'into ':'out of ')+esc(bankLabel_(x.bank)):'')
+      : esc(xferShort_(x.from))+' → '+esc(xferShort_(x.to));
+    return '<li><div class="srTop"><b class="'+(e.k==='exp'?'mnOut':e.k==='inc'?'mnIn':'mnXfAmt')+'">'+(e.k==='exp'?'−':'')+money(x.amt,true)+'</b><span class="dsub" style="display:inline">'+date(x.date)+' · '+SR_KIND[e.k]+(x.journal?' · 📓':'')+'</span></div>'+
+      '<div class="srWhat">'+what+'</div>'+((x.who||x.memo)?'<div class="srMemo">'+esc([x.who, x.memo].filter(Boolean).join(' · '))+'</div>':'')+
+      '<div class="rowBtns">'+editBtnHtml_(e.k, x)+'</div></li>'; }).join('')+'</ul>'+(tot?'<p class="srSum">Income − expenses of these: '+mnSg_(Math.round(tot*100)/100)+'</p>':''); }
+function inSearchHtml_(){ var F=srS_(), open=S.foldOpen&&S.foldOpen.search;
+  var types=[]; if(!F.kind || F.kind==='inc') types=types.concat(INC_TYPES); if(!F.kind || F.kind==='exp') types=types.concat(EXP_TYPES.filter(function(t){ return types.indexOf(t)<0; }));
+  var opt=function(v, l, cur){ return '<option value="'+esc(v)+'"'+(cur===v?' selected':'')+'>'+esc(l)+'</option>'; };
+  var h='<details class="inCard fold" id="inSearch" data-fold="search"'+(open?' open':'')+'><summary class="foldHead"><span><b>🔍 Search</b><span class="dsub">Find any entry — to look at it or edit it</span></span><span class="chev">▾</span></summary>';
+  h+='<input type="search" class="srQ" id="srQ" data-srch="q" placeholder="Words — a memo, a name, a kind, a category…" value="'+esc(F.q)+'" autocomplete="off">'+
+    '<div class="srGrid"><label>From <input type="date" data-srch="from" value="'+esc(F.from)+'"></label><label>To <input type="date" data-srch="to" value="'+esc(F.to)+'"></label>'+
+    '<label>Amount <input type="text" inputmode="decimal" data-srch="amt" placeholder="e.g. 134 or 13463.11" value="'+esc(F.amt)+'"></label>'+
+    '<label>What it is <select data-srch="kind">'+opt('', 'Anything', F.kind)+Object.keys(SR_KIND).map(function(k){ return opt(k, SR_KIND[k], F.kind); }).join('')+'</select></label>'+
+    '<label>Kind <select data-srch="type">'+opt('', 'Any kind', F.type)+types.map(function(t){ return opt(t, t, F.type); }).join('')+'</select></label>'+
+    '<label>Account <select data-srch="acct">'+opt('', 'Any account', F.acct)+[['acct|aba','ABA bank'],['acct|us','US bank'],['acct|cash','Cash on hand'],['na','No bank']].map(function(a){ return opt(a[0], a[1], F.acct); }).join('')+'</select></label></div>'+
+    '<label class="srCat">Category '+fundSelect_('srCat', F.cat, 'Category').replace('<select ','<select data-srch="cat" ').replace('— Pick a fund —','Any category')+'</label>'+
+    '<button class="linkAdd" id="srClear">Clear the search</button><div id="srOut">'+srOutHtml_()+'</div>';
+  return h+'</details>'; }
 function inDayHtml_(){
   var d=reportDay_();
   return '<div class="inCard inDay" id="inDay"><div class="inDayRow"><label for="inReportDay">📅 Reports as of</label>'+
@@ -827,7 +880,7 @@ function inputHtml(){
     return '<div class="inRow"><label for="inB_'+id+'">'+label+'<span class="ls">'+sub+'</span></label>'+
       '<div class="money"><span>$</span><input id="inB_'+id+'" data-inbal="'+id+'" type="text" inputmode="text" autocomplete="off" spellcheck="false" enterkeyhint="done" placeholder="'+(B.none?'0.00':inMoney_(a.amt))+'" value="'+esc(D[id])+'"></div>'+
       '<div class="inWas">'+(B.none?'Nothing entered yet':'Last time: '+money(a.amt,true)+' on '+date(B.asOf))+'</div></div>'; };
-  var h=inDayHtml_()+inImportHtml_()+'<details class="inCard fold" id="inBalances" data-fold="bal"'+(S.foldOpen&&S.foldOpen.bal?' open':'')+'><summary class="foldHead"><span><b>🏦 Balances</b><span class="dsub">'+(B.none?'Nothing entered yet':date(B.asOf)+' · '+money(total(),true))+'</span></span><span class="foldR"><button class="histLink" data-hist="bal">🕘 History</button><span class="chev">▾</span></span></summary>'+
+  var h=inSearchHtml_()+inDayHtml_()+inImportHtml_()+'<details class="inCard fold" id="inBalances" data-fold="bal"'+(S.foldOpen&&S.foldOpen.bal?' open':'')+'><summary class="foldHead"><span><b>🏦 Balances</b><span class="dsub">'+(B.none?'Nothing entered yet':date(B.asOf)+' · '+money(total(),true))+'</span></span><span class="foldR"><button class="histLink" data-hist="bal">🕘 History</button><span class="chev">▾</span></span></summary>'+
     '<p class="inLast">'+(B.none?'No balances entered yet.':'Last entered for '+date(B.asOf)+'.')+' Type what is in each account on the “Reports as of” day — saving the same day again replaces it.</p>'+
     '<p class="inTip">🧮 Boxes do simple sums: type <b>500-30</b> or <b>5*6</b> and it works it out.</p>'+
     row('aba','ABA bank','Cambodia · US$ account')+row('us','US bank','United States')+row('cash','Cash on hand','the cash box, counted')+
@@ -3038,6 +3091,12 @@ function minsHtml_(){ var M=mnS_(), P=mnPeriod_(), sel=mnSel_(), labs=sel.map(fu
 document.addEventListener('click', function(e){ var fk=e.target.closest && e.target.closest('[data-mnfk],[data-mnfa],[data-mnfp],#mnFClear'); if(!fk) return; var F=mnLF_();
   if(fk.id==='mnFClear'){ F.k='all'; F.t=''; F.a='all'; F.p='all'; } else if(fk.dataset.mnfk){ F.k=fk.dataset.mnfk; F.t=''; } else if(fk.dataset.mnfp) F.p=fk.dataset.mnfp; else F.a=fk.dataset.mnfa; render(); });
 /* put a transfer or adjustment in the Ministries profit and loss, or take it out — right from the list */
+function srUpd_(e){ var k=e.target.dataset && e.target.dataset.srch; if(!k) return; var F=srS_(); F[k]=e.target.value; if(k==='kind') F.type='';
+  if(k==='q' || k==='amt'){ var o=document.getElementById('srOut'); if(o) o.innerHTML=srOutHtml_(); return; }
+  render(); }
+document.addEventListener('input', function(e){ if(e.target.dataset && (e.target.dataset.srch==='q' || e.target.dataset.srch==='amt')) srUpd_(e); });
+document.addEventListener('change', function(e){ if(e.target.dataset && e.target.dataset.srch && e.target.dataset.srch!=='q' && e.target.dataset.srch!=='amt') srUpd_(e); });
+document.addEventListener('click', function(e){ if(e.target.id!=='srClear') return; S.srch=null; render(); });
 document.addEventListener('click', function(e){ var b=e.target.closest && e.target.closest('[data-mnkind]'); if(!b) return; var M=mnS_(), k=b.dataset.mnkind; M.kOpen=M.kOpen||{}; M.kOpen[k]=!M.kOpen[k]; render(); });
 document.addEventListener('click', function(e){ var b=e.target.closest && e.target.closest('[data-mnpl]'); if(!b) return; var id=b.dataset.mnpl, t=TRANSFERS.concat(TOOL_XFERS).filter(function(x){ return x.id===id; })[0]; if(!t) return;
   var on=!t.pl; snap_((on?'Took ':'Put ')+money(t.amt,true)+' '+(isToolX_(t)?'(Financial tools)':'transfer')+(on?' out of':' back in')+' the Ministries profit and loss'); if(on) t.pl=true; else delete t.pl; keep_(); render(); toast(on?'📈 Now in the profit and loss':'Taken out of the profit and loss'); });
