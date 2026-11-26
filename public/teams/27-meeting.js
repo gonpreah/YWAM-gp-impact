@@ -69,7 +69,6 @@ function lmOn_(m, v){ if(v==null || m.goal==null) return null; return m.dir==='l
 function lmGoalText_(m){ var sign=m.dir==='lte' ? '≤' : '≥'; return m.goal==null ? t('No goal yet') : gpT('Goal {sign} {n}',{sign:sign, n:lmNum_(m.goal)}); }
 function lmQ_(which){ var M=lmM_(); if(which!=='next') return { year:M.year, q:M.q }; return M.q===4 ? { year:M.year+1, q:1 } : { year:M.year, q:M.q+1 }; }
 function lmRocks_(which){ var Q=lmQ_(which); return (lmM_().rocks||[]).filter(function(r){ return r.year===Q.year && r.q===Q.q; }); }
-function lmOkr_(id){ return id ? ((S.base && S.base.okrs) || []).filter(function(o){ return o.id===id; })[0] : null; }
 function lmClock_(secs){ secs=Math.max(0, Math.round(secs)); var m=Math.floor(secs/60), s=secs%60; return m+':'+(s<10?'0':'')+s; }
 function lmNowMs_(){ return Date.now()-(S.meetSkew||0); }
 /* last week's to-dos — the server's meetTodoStats_, mirrored: done since the last meeting, or still open
@@ -100,7 +99,7 @@ function lmApply_(d){
   if(d.board && d.board.ok!==false && Array.isArray(d.board.cards)){ S.lead=d.board; S.leadErr=''; }
   var m=Object.assign({}, d); delete m.board;
   ['score','rocks','headlines','past','weeks'].forEach(function(k){ if(!Array.isArray(m[k])) m[k]=[]; });
-  m.minutes=m.minutes||{}; S.meet=m;
+  m.minutes=m.minutes||{}; S.meet=m; rocksFromMeet_(m);   // leadership's rocks are the app's rocks (teams/28-rocks.js)
   if(S.meetPend && m.run) Object.assign(m.run, S.meetPend);   // taps not sent yet stay on screen
   if(d.now) S.meetSkew=Date.now()-Date.parse(d.now);
 }
@@ -190,7 +189,7 @@ function lmSettingsHtml_(){
   return h+'<div class="btnRow" style="margin-top:10px"><button class="btn" id="lmSetSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="lmSetCancel">'+esc(t('Cancel'))+'</button></div></div>';
 }
 
-/* ---------- the scorecard ---------- */
+/* ---------- the scorecard (its ids keep "score") ---------- */
 function lmScoreRowHtml_(m, meeting){
   var M=lmM_(), wks=M.weeks, h='<div class="card slim lmScoreRow" data-lmscore="'+esc(m.id)+'"><div class="lmRowHead"><div style="min-width:0"><b class="lmName">'+esc(m.name)+'</b>'+
     '<div class="rowSub">'+(m.owner ? '👤 '+esc(lmFirst_(m.owner))+' · ' : '')+esc(lmGoalText_(m))+(m.src==='metric' && m.metric ? ' · 🔗 '+esc(t(m.metric.ministry)+' › '+t(m.metric.metric)) : '')+'</div></div>'+
@@ -242,21 +241,13 @@ function lmScoreFormHtml_(){
 }
 
 /* ---------- rocks ---------- */
-var LM_ROCK_ST=[['on','On track'],['off','Off track'],['done','Done']];
-function lmRockHtml_(r, meeting){
-  var o=lmOkr_(r.okrId), p=o ? baseR().objProgress(o) : null;
-  var h='<div class="lmRock '+esc(r.status)+'" data-lmrock="'+esc(r.id)+'"><div class="lmRowHead"><div style="min-width:0"><b class="lmName">'+esc(r.title)+'</b>'+(r.note ? '<div class="rowSub">'+esc(r.note)+'</div>' : '')+'</div>'+
-    (meeting ? '' : '<button class="linkbtn inline" data-lmrockedit="'+esc(r.id)+'">'+esc(t('Edit'))+'</button>')+'</div>';
-  if(o) h+='<div class="lmRockOkr">🎯 '+esc(o.objective)+' · <b>'+p+'%</b><div class="leadBar sm"><div style="width:'+p+'%;background:'+gpRingColor(p)+'"></div></div></div>';
-  h+='<div class="lmStRow" role="group" aria-label="'+esc(t('Status'))+'">'+LM_ROCK_ST.map(function(s){ return '<button class="lmSt '+s[0]+(r.status===s[0]?' sel':'')+'" data-lmrockst="'+esc(r.id)+'|'+s[0]+'" aria-pressed="'+(r.status===s[0])+'">'+(s[0]==='on'?'✓ ':s[0]==='off'?'✗ ':'★ ')+esc(t(s[1]))+'</button>'; }).join('')+
-    (r.status==='off' ? '<button class="hospChip" data-lmrockdrop="'+esc(r.id)+'">🧩 '+esc(t('Drop it to Issues'))+'</button>' : '')+'</div>';
-  return h+'</div>';
-}
+/* a rock is drawn the one way the whole app draws it (rockHtml_, teams/28-rocks.js), with the meeting's own attributes */
+function lmRockHtml_(r, meeting){ return rockHtml_(r, { p:'lmrock', edit:true, meeting:meeting, drop:true }); }
 function lmRocksHtml_(meeting){
   var T=lmT_(), which=meeting ? 'now' : (T.rockQ==='next' ? 'next' : 'now'), Q=lmQ_(which), rocks=lmRocks_(which), h='<div id="lmRocks">';
   if(!meeting){
     var N=lmQ_('next'), C=lmQ_('now');
-    h+='<p class="sub">'+esc(t('The three to seven things that must get done this quarter — each person’s, and the team’s. Rocks sit beside the OKRs; they don’t replace them.'))+'</p>'+
+    h+='<p class="sub">'+esc(t('The three to seven things that must get done this quarter — each person’s, and the team’s. Every ministry has its own rocks too, on its Rocks tab.'))+'</p>'+
       '<div class="leadFilters"><button class="leadSeg'+(which==='now'?' on':'')+'" data-lmrq="now">'+esc(gpT('This quarter · Q{q} {year}',{q:C.q, year:C.year}))+'</button>'+
       '<button class="leadSeg'+(which==='next'?' on':'')+'" data-lmrq="next">'+esc(gpT('Next · Q{q} {year}',{q:N.q, year:N.year}))+'</button></div>';
   }
@@ -275,15 +266,11 @@ function lmRocksHtml_(meeting){
   return h+'</div>';
 }
 function lmRockFormHtml_(){
-  var f=lmT_().rockForm, objs=((S.base && S.base.okrs) || []).filter(function(o){ return o.campus===S.me.campus && Number(o.quarter)===Number(f.q); });
-  var known=!f.okrId || objs.some(function(o){ return o.id===f.okrId; });
+  var f=lmT_().rockForm;
   var h='<div class="card" id="lmRockForm"><label class="f" style="margin-top:0">'+esc(t('The rock'))+'</label><input type="text" data-lmrf="title" maxlength="120" value="'+esc(f.title||'')+'" placeholder="'+esc(t('e.g. The new dorm is open by the end of the quarter'))+'">'+
     '<label class="f">'+esc(t('Whose is it?'))+'</label>'+ppickHtml_({ key:'lmro', people:lmTeam_(), chosen:f.owner ? [f.owner] : [], multi:false, open:true, placeholder:t('Type a name — or leave empty for the whole team'),
       onPick:function(id){ lmT_().rockForm.owner=id; render(); }, onRemove:function(){ lmT_().rockForm.owner=''; render(); } })+
     (f.owner ? '' : '<p class="hint" style="margin:4px 0 0">🤝 '+esc(t('Nobody picked: it is the whole team’s rock.'))+'</p>')+
-    '<label class="f">'+esc(t('Moves forward which OKR?'))+'</label><select data-lmrf="okrId"><option value="">'+esc(t('— none —'))+'</option>'+
-    objs.map(function(o){ return '<option value="'+esc(o.id)+'"'+(f.okrId===o.id?' selected':'')+'>'+esc(o.objective+(o.dept && o.dept!==BL_DEPT ? ' · '+t(o.dept) : ''))+'</option>'; }).join('')+
-    (known ? '' : '<option value="'+esc(f.okrId)+'" selected>'+esc(t('An earlier quarter’s objective'))+'</option>')+'</select>'+
     '<label class="f">'+esc(t('A short note (optional)'))+'</label><input type="text" data-lmrf="note" maxlength="300" value="'+esc(f.note||'')+'" placeholder="'+esc(t('What done looks like, or where it stands'))+'">'+
     '<div class="btnRow" style="margin-top:10px"><button class="btn" id="lmRockSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="lmRockCancel">'+esc(t('Cancel'))+'</button></div>';
   if(f.id) h+='<button class="linkbtn teamDelete" id="lmRockDel">'+esc(t('Delete this rock'))+'</button>';
@@ -491,7 +478,7 @@ function bindMeeting_(){
     lmDrop_(gpT('Scorecard: {name}',{name:m.name}), lmGoalText_(m)+' · '+gpT('W{n}',{n:w.week})+': '+lmNum_(v)); });
   /* rocks */
   on('[data-lmrq]', function(b){ T.rockQ=b.getAttribute('data-lmrq'); T.rockForm=null; render(); });
-  id('lmRockAdd', function(){ var Q=lmQ_(T.rockQ); T.rockForm={ id:'', title:'', owner:'', okrId:'', note:'', status:'on', year:Q.year, q:Q.q }; render(); });
+  id('lmRockAdd', function(){ var Q=lmQ_(T.rockQ); T.rockForm={ id:'', title:'', owner:'', note:'', status:'on', year:Q.year, q:Q.q }; render(); });
   var rockOf=function(rid){ return (M.rocks||[]).filter(function(x){ return x.id===rid; })[0]; };
   on('[data-lmrockedit]', function(b){ var r=rockOf(b.getAttribute('data-lmrockedit')); if(r){ T.rockForm={ id:r.id, title:r.title, owner:r.owner||'', okrId:r.okrId||'', note:r.note||'', status:r.status, year:r.year, q:r.q }; render(); } });
   root.querySelectorAll('[data-lmrf]').forEach(function(el){ var k=el.getAttribute('data-lmrf'); var set=function(){ if(T.rockForm) T.rockForm[k]=el.value; }; if(el.tagName==='SELECT') el.onchange=set; else el.oninput=set; });

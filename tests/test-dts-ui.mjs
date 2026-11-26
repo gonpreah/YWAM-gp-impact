@@ -102,7 +102,7 @@ await p.goto(`http://localhost:${PORT}/teams.html`); await p.waitForSelector('na
 await p.waitForTimeout(600);
 await p.click('nav.bottom [data-tab="ministry"]'); await p.waitForTimeout(800);
 const tabs = await p.$$eval('.mmTabs .gtTab', b => b.map(x => x.getAttribute('data-mmtab')));
-ok('GPDTS has five tabs: Dashboard, Database, Finances, Tasks, OKRs — no Numbers tab', JSON.stringify(tabs) === '["dtsdash","dtsdb","dtsfin","tasks","okr"]', JSON.stringify(tabs));
+ok('GPDTS has five tabs: Dashboard, Database, Finances, Tasks, Rocks — no Scorecard tab', JSON.stringify(tabs) === '["dtsdash","dtsdb","dtsfin","tasks","okr"]', JSON.stringify(tabs));
 ok('the Dashboard ends with the school’s finances: lecture budget, received, spent, left; outreach received', (await p.$eval('#dtsPane, #main', e => e.querySelector('.card:last-of-type') ? 1 : 1)) && !!(await p.$('#dtsFinDash')) &&
   /Budget\s*\$2,620/.test(await p.$eval('#dtsFinDash', e => e.innerText)) && /Left in the budget\s*\$2,620/.test(await p.$eval('#dtsFinDash', e => e.innerText)), await p.$eval('#dtsFinDash', e => e.innerText.replace(/\n/g, ' / ')));
 ok('it opens on the Dashboard: where everyone is', !!(await p.$('#dtsPipe')) && /Reaching out/.test(await p.$eval('#dtsPipe', e => e.textContent)));

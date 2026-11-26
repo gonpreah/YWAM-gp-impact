@@ -85,7 +85,7 @@ const noSideways = p => p.evaluate(() => document.documentElement.scrollWidth <=
 {
   const { ctx, page } = await open('lina');
   const tabs = await page.$$eval('.mmTabs .gtTab', b => b.map(x => x.textContent));
-  ok('YDC’s tabs: Today · Students · Tests · Payments · Dashboard · Tasks · OKRs — no Numbers', tabs.join() === 'Today,Students,Tests,Payments,Dashboard,Tasks,OKRs', tabs.join());
+  ok('YDC’s tabs: Today · Students · Tests · Payments · Dashboard · Tasks · Rocks — no Scorecard tab (every number counts itself)', tabs.join() === 'Today,Students,Tests,Payments,Dashboard,Tasks,Rocks', tabs.join());
   ok('with no classes yet, Today says to set up', !!(await page.$('#schNoClass')) && !!(await page.$('#schSetupGo')));
   await page.click('#schSetupGo'); await wait(page, 400);
   await page.click('#schAddLoc'); await wait(page, 300);

@@ -206,9 +206,10 @@ ok('… and after “Check again”, the part Dee moved on to', (await two.page.
 
 console.log('=== rocks, headlines, to-dos ===');
 await two.page.click('[data-lmrockst$="|off"]:not([data-lmrockst^="x"])').catch(() => {});
-const rockO = mem['leadMeet:siemreap'].rocks.find(r => r.owner === 'st_o');
+/* leadership's rocks live in the app's one rocks store now (dept Campus Leadership, no ministry) */
+const rockO = mem.rocks.rocks.find(r => r.owner === 'st_o');
 await two.page.click(`[data-lmrockst="${rockO.id}|off"]`).catch(() => {}); await wait(two.page, 800);
-ok('an owner says off track on their own phone', mem['leadMeet:siemreap'].rocks.find(r => r.id === rockO.id).status === 'off');
+ok('an owner says off track on their own phone', mem.rocks.rocks.find(r => r.id === rockO.id).status === 'off');
 await two.ctx.close();
 await page.click('#lmRefresh'); await wait(page, 900);
 ok('… Dee sees it, with “Drop it to Issues”', !!(await page.$(`[data-lmrockdrop="${rockO.id}"]`)) && !!(await page.$(`[data-lmrockst="${rockO.id}|off"].sel`)));

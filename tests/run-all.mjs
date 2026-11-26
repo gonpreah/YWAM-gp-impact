@@ -37,6 +37,8 @@ const SERVER = [
   'test-boot.mjs',       // getMyBoot: one call per page open
   'test-week-auth.mjs',  // weekly health: anonymity + mentor visibility
   'test-okr-auth.mjs',   // OKR writes stay inside your campus + department
+  'test-okr-easy.mjs',   // (was the OKR editor) the OKR pages are gone from the page's code and its words; the stored objectives and their handlers stay
+  'test-rocks.mjs',      // Rocks: who writes which (campus and department from the staff record), every staff member reads; objectives and the meeting's rocks move across once; the Scorecard's goals
   'test-year.mjs',       // weeks belong to a year; writing numbers needs a name
   'test-week-year.mjs',  // 28–31 Dec 2026 are week 1 of 2027: both pages and the server agree, and a week 1 saved then lands in 2027
   'test-read-your-writes.mjs', // a save answers with what it saved, not a stale read
@@ -200,13 +202,13 @@ const BROWSER = [
   'test-ministry-kpis.mjs', // the ministry's whole log form on My week: which card, and carry-forward
   'test-mentor-health.mjs', // a mentor sees a mentee by name
   'test-mentor-weeks.mjs',  // a mentor can look back at any week: picker, check-in, habits, goals, logs
-  'test-okr-easy.mjs',      // OKRs the SugarOKR way: all on one page, a slider or count per key result, headings, Paste OKRs
+  'test-rocks-ui.mjs',      // Rocks and the Scorecard on the page: a ministry's Rocks tab (add in a line, on / off / done, a note, next quarter), the Scorecard with goals and ✓ / ✗, Campus Leadership and its meeting, a teammate's page, Khmer, 320px, dark
   'test-notif-bell-actions.mjs', // an action button drawn in the bell drawer actually works, not just the inline card
-  'test-okr-admin-view.mjs', // admin sees every department's OKRs, collapsed, read-only; non-admin sees none of it
+  'test-okr-admin-view.mjs', // (was the admin's OKR view) an admin sees every department's rocks on both campuses, folded, and changes or adds any; a non-admin sees none of it
   'test-ministry-browse.mjs', // My Ministry's "jump to any ministry" picker: admin authorization, and Save Week uses the browsed ministry's own dept
   'test-personal-metrics-cadence.mjs', // Campus Leadership personal figures move to the weekly card; Total Staff/Staff Debt get their own Department Headcount section
   'test-metric-cadence.mjs', // admin-only monthly/quarterly cadence per metric; the monthly/quarterly section writes to its own anchor week
-  'test-metric-okr-feeds.mjs', // a metric's own row shows which OKR(s) it feeds, scoped to its own campus
+  'test-metric-okr-feeds.mjs', // (was “feeds an objective”) the box a number is typed in says the weekly goal it is held against, its own ministry's only
   'test-pull-jitter.mjs', // a scroll-down swipe's initial settling jitter must not get mistaken for a pull-to-refresh and cancel native scrolling
   'audit-load.mjs',         // one function invocation per page open
   'audit-paint.mjs',        // first paint even with the font CDN hanging

@@ -1,9 +1,11 @@
-/* An OKR's key result already links FROM the objective TO a live KPI
-   (kr.metricKey, read by krProgress() in rollup.js). This is the reverse
-   question, asked from the metric's own row on My Ministry: does typing
-   this number move anything? metricOkrNote_() answers it by scanning
-   S.base.okrs for a key result whose metricKey matches dept|ministry|metric,
-   scoped to the metric's own campus. */
+/* Beside the box a number is typed in, My Ministry says what the number is held against.
+
+   Until Nov 2026 that line said which OKR objective the number fed (metricOkrNote_). The app moved
+   from OKRs to rocks, which have no numbers behind them, so the question "does typing this number
+   move anything?" is now answered by the Scorecard: the ministry's weekly goal for that number
+   (metricGoalNote_ in teams/04-ministry-strengths.js, from sbdGoals_). Scoped to the number's own
+   campus and ministry — another campus's goal for the same number must not show. (The file keeps
+   its old name; it is the same row of the same form.) */
 import { PUBLIC, CHROMIUM } from './env.mjs';
 import { chromium } from 'playwright';
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
@@ -18,22 +20,17 @@ const srv = http.createServer((q, res) => {
 await new Promise(res => srv.listen(4420, res));
 
 const ME = { id: 'st1', name: 'Sokha', username: 'sokha', campus: 'poipet', dept: 'Community Service', ministry: 'Cafe', role: '', photo: '', mentorId: '', isAdmin: false };
-const OKRS = [
-  // Two objectives on the same metric, so the "feeds N objectives" plural path is exercised too.
-  { id: 'o1', campus: 'poipet', quarter: 1, dept: 'Community Service', objective: 'Grow our outreach footprint',
-    krs: [{ text: 'Sell more coffee', metricKey: 'Community Service|Cafe|Cups Sold', target: 10, manual: 0 }] },
-  { id: 'o2', campus: 'poipet', quarter: 1, dept: 'Community Service', objective: 'Deepen local partnerships',
-    krs: [{ text: 'Coffee as a proxy for reach', metricKey: 'Community Service|Cafe|Cups Sold', target: 5, manual: 0 }] },
-  // Different campus, same dept/ministry/metric — must NOT count.
-  { id: 'o3', campus: 'siemreap', quarter: 1, dept: 'Community Service', objective: 'Siem Reap outreach growth',
-    krs: [{ text: 'Their own coffee KR', metricKey: 'Community Service|Cafe|Cups Sold', target: 5, manual: 0 }] }
+const GOALS = [
+  { campus: 'poipet', dept: 'Community Service', ministry: 'Cafe', hidden: [], custom: [], cadence: {}, goals: { 'Cups Sold': { goal: 150, dir: 'gte' }, 'Weekly Expenses ($)': { goal: 80, dir: 'lte' } } },
+  // a different campus, the same department / ministry / number — must NOT show
+  { campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', hidden: [], custom: [], cadence: {}, goals: { 'Salvations': { goal: 3, dir: 'gte' } } }
 ];
 const MINISTRY = { ok: true, campus: 'poipet', dept: 'Community Service', ministry: 'Cafe', entries: {}, prev: {}, daily: {}, pins: [] };
 const BOOT = {
   ok: true, staff: ME, profile: { email: 'x@example.com' }, roster: [ME], logs: [], habits: null,
   mentees: [], mentorRequests: [], goals: [], checkins: [], ministry: MINISTRY,
   trips: { ok: true, trips: [], totals: {}, ptoCap: 30 }, tripRequests: [], oneOnOnes: [],
-  base: { leader: false, entries: { poipet: {} }, okrs: OKRS, survey: [], roster: [] }
+  base: { leader: false, entries: { poipet: {} }, okrs: [], survey: [], roster: [], metricOverrides: GOALS }, rocks: []
 };
 
 const b = await chromium.launch({ executablePath: CHROMIUM });
@@ -78,10 +75,12 @@ const rows = await p.evaluate(() => {
   return out;
 });
 
-ok('Cups Sold shows it feeds 2 objectives (same-campus KRs only)',
-  /feeds/.test(rows['Cups Sold'] || '') && /2/.test(rows['Cups Sold'] || ''), rows['Cups Sold']);
-ok('an unlinked metric (Salvations) shows no "feeds" note',
-  rows['Salvations'] !== undefined && !/feeds/.test(rows['Salvations']), rows['Salvations']);
+ok('Cups Sold shows its weekly goal (≥ 150)', /goal ≥ 150/.test(rows['Cups Sold'] || ''), rows['Cups Sold']);
+ok('a number with no goal on this campus (Salvations) shows none — the other campus’s goal is not ours',
+  rows['Salvations'] !== undefined && !/goal/.test(rows['Salvations']), rows['Salvations']);
+ok('nothing says “feeds” an objective any more', !Object.values(rows).some(v => /feeds|objective/i.test(v)));
+const wkRows = await p.evaluate(() => [...document.querySelectorAll('#main .row')].filter(r => /Weekly Expenses/.test(r.textContent)).map(r => r.textContent));
+ok('a weekly figure says its goal too, the right way round (≤ $80)', wkRows.some(x => /goal ≤ \$?80/.test(x)), wkRows.join(' | ').slice(0, 200));
 
 ok('no console/page errors', errs.length === 0, errs.slice(0, 3).join(' | '));
 
