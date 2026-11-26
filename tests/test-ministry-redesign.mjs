@@ -1,4 +1,4 @@
-/* My Ministry, redesigned: one page with two tabs (Numbers / OKRs), a
+/* My Ministry, redesigned: one page with two tabs (the Scoreboard — it was Numbers — and Rocks — it was OKRs), a
    dashboard of the ministry's own figures, a week strip that shows which
    weeks have nothing logged, one button that unfolds the whole metric form,
    the person's own four numbers, and an editor only a leader sees.
@@ -84,7 +84,7 @@ console.log('=== the leader’s page ===');
     personal: document.querySelectorAll('[data-personal]').length,
     overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
   }));
-  ok('one row of tabs for the ministry — Numbers, Tasks, OKRs among them — and it opens where it was left (the numbers)', JSON.stringify(s.tabs) === '["numbers","tasks","okr"]' && !!(await page.$('.mmTabs .gtTab.on[data-mmtab="numbers"]')), JSON.stringify(s.tabs));
+  ok('one row of tabs for the ministry — Scoreboard, Tasks, Rocks among them — and it opens where it was left (the numbers)', JSON.stringify(s.tabs) === '["numbers","tasks","okr"]' && !!(await page.$('.mmTabs .gtTab.on[data-mmtab="numbers"]')), JSON.stringify(s.tabs));
   ok('the dashboard shows the ministry’s own metrics as tiles', s.tiles === 6, s.tiles);
   /* This week is in the current quarter by definition, so a count logged
      this week must show a real quarter total — "—" here meant the quarter
@@ -132,8 +132,8 @@ console.log('=== the leader’s page ===');
 
   await page.click('[data-mmtab="okr"]');
   await page.waitForTimeout(500);
-  const okr = await page.evaluate(() => ({ newBtn: !!document.querySelector('#okrNewBtn'), form: !!document.querySelector('#kpiDayCard'), h3: document.querySelector('#main h3').textContent }));
-  ok('the OKR tab shows the OKR editor entry', okr.newBtn && /OKR/.test(okr.h3), okr.h3);
+  const okr = await page.evaluate(() => ({ add: !!document.querySelector('#rocksTab [data-rkadd]'), form: !!document.querySelector('#kpiDayCard'), h3: document.querySelector('#main h3').textContent, old: !!document.querySelector('#okrNewBtn, #okrPasteBtn') }));
+  ok('the Rocks tab shows the quarter’s rocks with a line to add one — no OKR editor', okr.add && /Rocks/.test(okr.h3) && !okr.old, okr.h3);
   ok('and none of the numbers form', !okr.form);
   ok('no console/page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
   await ctx.close();
@@ -148,12 +148,12 @@ console.log('\n=== an ordinary member ===');
   ok('a member gets no “Edit what we track” at all', !s.editor);
   ok('but can still open the form and log', s.btn);
   ok('and sees no personal numbers either', s.personal === 0);
-  // the OKR entry card on My Home lands on the OKR tab of the same page
+  // the Rocks tab is a tap from the Scoreboard on the same page
   await page.click('#ministryBack');
   await page.waitForTimeout(400);
-  await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(400); await page.click('[data-mmtab="okr"]');   // OKRs: My Ministry's second tab
+  await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(400); await page.click('[data-mmtab="okr"]');   // Rocks (key 'okr')
   await page.waitForTimeout(500);
-  ok('the OKRs card on My Home opens My Ministry on its OKRs tab, the Numbers tab a tap away', await page.evaluate(() => S.view === 'ministry' && S.mmTab === 'okr' && !!document.querySelector('.mmTabs .gtTab.on[data-mmtab="okr"]') && !!document.querySelector('.mmTabs [data-mmtab="numbers"]')));
+  ok('My Ministry on its Rocks tab, the Scoreboard tab a tap away', await page.evaluate(() => S.view === 'ministry' && S.mmTab === 'okr' && !!document.querySelector('.mmTabs .gtTab.on[data-mmtab="okr"]') && !!document.querySelector('.mmTabs [data-mmtab="numbers"]')));
   ok('no console/page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
   await ctx.close();
 }

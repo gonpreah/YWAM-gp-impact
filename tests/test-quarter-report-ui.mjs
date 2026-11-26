@@ -152,7 +152,7 @@ const KH = /[ក-៿]/;
   ok('… and its story, all four parts for our own ministries', /Forty new readers/.test(ydc) && /Bopha/.test(ydc) && /CHALLENGETEXT/.test(ydc) && /Pray for the new class/.test(ydc));
   ok('Outreach Teams: the team that left, by name', /Teams hosted\s+1/.test(await minText(page, 'Community Service|Outreach Teams')) && /Team Fjord \(Norway\) · 12 people/.test(await minText(page, 'Community Service|Outreach Teams')));
   const ye = await page.$eval('.qrDept[data-qrdept="Youth Education"]', e => e.innerText);
-  ok('Priorities this quarter on the department’s page (never called OKRs)', /Priorities this quarter/i.test(ye) && /Open a second YDC class/.test(ye) && /40%/.test(ye) && !/OKR/.test(t));
+  ok('Priorities this quarter on the department’s page (never called OKRs)', /Priorities this quarter/i.test(ye) && /Open a second YDC class/.test(ye) && /On track/i.test(ye) && !/OKR/.test(t));
   ok('nothing private on the page: no student, guardian, debt or token', !/Testchild|Secretname|Staff Debt|987654|tok_/.test(t));
   ok('it fits the phone', await wide(page));
   await shot(await page.$('.qrMin[data-qrmin="' + YDC + '"]'), 'qr-ministry-390.png');

@@ -109,16 +109,12 @@ function qrMetricShown_(metric){
   return true;
 }
 
-/* THE ONE PLACE this report reads a ministry's priorities for the quarter.
-   Today: the department's objectives with their progress, from the data the page already has (S.base.okrs,
-   which carry a quarter but no year — so only this week year's). `ministry` is passed but not used yet.
-   WHEN ROCKS REPLACE OKRS: change only this function, to return that ministry's (or department's) rocks as
-   [{ text, pct }] — pct 0–100, or null where a rock is simply on / off track. */
+/* THE ONE PLACE this report reads a ministry's priorities for the quarter: its rocks (28-rocks.js), with where each stands.
+   A ministry's page gets that ministry's; a department's page (ministry null) the department's own. */
 function qrPrioritiesFor_(campus, dept, ministry, year, q){
-  if(Number(year)!==thisWeekYear() || !S.base) return [];
-  var R=baseR();
-  return ((S.base.okrs)||[]).filter(function(o){ return o.campus===campus && o.dept===dept && Number(o.quarter)===Number(q); })
-    .map(function(o){ return { text:o.objective, pct:R.objProgress(o) }; });
+  if(typeof rocksAll_!=='function') return [];
+  return rocksAll_().filter(function(r){ return r.campus===campus && r.dept===dept && (r.ministry||'')===(ministry||'') && Number(r.year)===Number(year) && Number(r.q)===Number(q); })
+    .map(function(r){ return { text:r.title, st:r.status||'on' }; });
 }
 
 /* ---------- drafts: what is typed stays on the phone until it is sent ---------- */
@@ -275,16 +271,17 @@ function qrMinHtml_(c, dept, min, metrics, X){
   var tool=qrBlock_('qrTool', qrD_(function(){ return t('This quarter in numbers'); }), qrToolItems_(c, dept, min, X));
   var story=editing ? qrFormHtml_(c, key) : qrStoryHtml_(st)+(qrMayWrite_(d, key) ? qrWriteBtn_(c, key, !!st) : '');
   var pri='';
-  if(Q.aud==='min' && Q.only){   // on the whole report they are printed once, on the department's page
+  if(Q.aud==='min'){   // the ministry's own rocks; printed alone, its department's too (on the whole report those are on the department's page)
     var list=qrPrioritiesFor_(c, dept, min, Q.year, Q.q);
-    pri=qrBlock_('qrPri', qrD_(function(){ return t('Priorities this quarter'); }), qrPriList_(list));
+    if(Q.only) list=list.concat(qrPrioritiesFor_(c, dept, null, Q.year, Q.q));
+    if(list.length) pri=qrBlock_('qrPri', qrD_(function(){ return t('Priorities this quarter'); }), qrPriList_(list));
   }
   h+=Q.aud==='donor' ? story+tool+score : score+tool+pri+story;
   if(!Q.only) h+='<button class="linkbtn noPrint qrOnlyBtn" data-qronly="'+esc(c+'|'+key)+'">📄 '+esc(t('Just this ministry'))+'</button>';
   return h+'</section>';
 }
 function qrPriList_(list){
-  return list.length ? '<ul class="qrPriList">'+list.map(function(x){ return '<li><span>'+esc(x.text)+'</span>'+(x.pct===null || x.pct===undefined ? '' : '<b>'+x.pct+'%</b>')+'</li>'; }).join('')+'</ul>' : '';
+  return list.length ? '<ul class="qrPriList">'+list.map(function(x){ return '<li><span>'+esc(x.text)+'</span>'+'<b>'+esc(rkMark_(x.st)+rkStName_(x.st))+'</b>'+'</li>'; }).join('')+'</ul>' : '';
 }
 
 /* ---------- the cover and a campus's own first page ---------- */

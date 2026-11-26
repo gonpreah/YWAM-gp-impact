@@ -253,25 +253,27 @@ ok('Admin → Approvals sees the move into Campus Leadership', r.body.staff.find
 r = await call('getMyBoot', ['maly', '1234']);
 ok('someone given a ministry here has it on their own card', r.body.ok && JSON.stringify(r.body.staff.leads) === '["Community Service|Cafe"]');
 
-console.log('\n=== live, then edited: this quarter’s board is the profiles ===');
+console.log('\n=== live, then edited: a change on the board waits for Apply again (Nov 2026, Andrew) ===');
 r = await call('saveStructure', ['uriah', '1234', 'poipet', CY, CQ]);
 ok('a snapshot of the quarter carries the other ministries', JSON.stringify(r.body.doc.people.find(p => p.id === 'pp_a').also) === JSON.stringify(prof('pp_a').ministries) && !r.body.doc.people.find(p => p.id === 'pp_b').also);
 // Rith edits his own profile; then an unrelated change on the board
 r = await call('updateProfile', ['rith', '1234', { dept: 'Community Service', ministry: 'Cafe' }]);
 ok('(Rith moves himself back on his own profile)', prof('pp_a').ministry === 'Cafe');
 r = await call('saveStructurePlan', ['vanna', '1234', 'poipet', CY, CQ, { pp_e: 'dts' }, { ...PLACE, pp_b: { dept: 'Youth Education', ministry: 'YDC' } }, { 'Youth Education|YDC': ['pp_a'], 'Community Service|Cafe': ['x_typed001'] }, [{ id: 'x_typed001', name: 'Coming Soon' }], null, { pp_a: ALSO_A, pp_b: ['Community Service|Cafe'] }]);
-ok('a change on a live board is on the profile at once', r.body.ok && prof('pp_b').dept === 'Youth Education' && prof('pp_b').ministry === 'YDC' && JSON.stringify(prof('pp_b').ministries) === '["Community Service|Cafe"]' && JSON.stringify(prof('pp_b').leads) === '[]', JSON.stringify(prof('pp_b')));
-ok('… and the answer says who', r.body.applied.some(c => c.id === 'pp_b') && r.body.plan.live);
-ok('… the saved snapshot follows', mem.structure.find(x => x.campus === 'poipet' && x.year === CY && x.quarter === CQ).people.find(p => p.id === 'pp_b').ministry === 'YDC');
+const pbBefore = JSON.stringify(prof('pp_b'));
+ok('a change on a live board writes no profile', r.body.ok && JSON.stringify(prof('pp_b')) === pbBefore && r.body.applied.length === 0 && r.body.plan.live, JSON.stringify(prof('pp_b')));
+ok('… it shows as profiles that differ, to apply with the button', r.body.diff.changes.some(c => c.id === 'pp_b' && c.to === 'Youth Education|YDC') && r.body.diff.changes.some(c => c.id === 'pp_a'), JSON.stringify(r.body.diff.changes.map(c => c.id)));
+ok('… the saved snapshot follows the board', mem.structure.find(x => x.campus === 'poipet' && x.year === CY && x.quarter === CQ).people.find(p => p.id === 'pp_b').ministry === 'YDC');
 r = await call('saveStructurePlan', ['vanna', '1234', 'poipet', CY, CQ, { pp_e: 'dts' }, { ...PLACE, pp_b: { dept: 'Youth Education', ministry: 'YDC' }, st_pp: { dept: 'Youth Education', ministry: 'YDC' } }, { 'Youth Education|YDC': ['pp_a'], 'Community Service|Cafe': ['x_typed001'] }, [{ id: 'x_typed001', name: 'Coming Soon' }], null, { pp_a: ALSO_A, pp_b: ['Community Service|Cafe'] }]);
-ok('a change for someone else does not sweep back a profile its owner edited', prof('st_pp').ministry === 'YDC' && prof('pp_a').ministry === 'Cafe' && r.body.applied.length === 1);
-ok('… it is counted as a profile that differs', r.body.diff.changes.length === 1 && r.body.diff.changes[0].id === 'pp_a' && r.body.diff.changes[0].to === 'Youth Education|YDC');
+ok('another change on the board still writes nothing', prof('st_pp').ministry !== 'YDC' && prof('pp_a').ministry === 'Cafe' && r.body.applied.length === 0);
 r = await call('applyStructure', ['vanna', '1234', 'poipet', CY, CQ, {}]);
-ok('Apply again puts it right', r.body.ok && r.body.changes.length === 1 && prof('pp_a').ministry === 'YDC' && JSON.stringify(prof('pp_a').ministries) === JSON.stringify(ALSO_A), JSON.stringify(prof('pp_a').ministries));
+ok('Apply again writes them all at once', r.body.ok && r.body.changes.length >= 3 && prof('pp_a').ministry === 'YDC' && JSON.stringify(prof('pp_a').ministries) === JSON.stringify(ALSO_A) && prof('pp_b').ministry === 'YDC' && JSON.stringify(prof('pp_b').ministries) === '["Community Service|Cafe"]' && prof('st_pp').ministry === 'YDC', JSON.stringify(r.body.changes.map(c => c.id)));
 // an admin makes it live: Campus Leadership is written directly
 r = await call('applyStructure', ['uriah', '1234', 'poipet', CY, CQ, {}]);
 ok('an admin’s apply moves the one waiting straight into Campus Leadership, and the request is gone', r.body.ok && prof('pp_c').dept === 'Campus Leadership' && prof('pp_c').ministry === 'Youth Education' && !prof('pp_c').cltRequest, JSON.stringify(prof('pp_c')));
 r = await call('saveStructurePlan', ['uriah', '1234', 'poipet', CY, CQ, undefined, { ...PLACE, pp_b: { dept: 'Youth Education', ministry: 'YDC' }, st_pp: { dept: 'Youth Education', ministry: 'YDC' }, pp_cd: { dept: 'Community Service', ministry: 'Cafe' }, pp_c: { dept: 'Campus Leadership', ministry: 'Campus Director' } }]);
+ok('(the save itself writes no profile)', prof('pp_cd').dept === 'Campus Leadership' && r.body.applied.length === 0);
+r = await call('applyStructure', ['uriah', '1234', 'poipet', CY, CQ, {}]);
 ok('leaving the Campus Director row drops the International / National title; moving within Campus Leadership needs nobody', prof('pp_cd').dept === 'Community Service' && prof('pp_cd').cdKind === '' && JSON.stringify(prof('pp_cd').leads) === '["Campus Leadership|Campus Director"]' && prof('pp_c').ministry === 'Campus Director', JSON.stringify(prof('pp_cd')));
 
 console.log('\n=== a later quarter writes nothing until someone makes it live ===');
@@ -294,6 +296,42 @@ r = await call('getMyBoot', ['vanna', '1234']);
 ok('arranged and not live: the boot says which quarter', r.body.structReady && r.body.structReady.year === CY && r.body.structReady.q === CQ);
 r = await call('getMyBoot', ['maly', '1234']);
 ok('never for someone outside Campus Leadership', r.body.ok && !r.body.structReady);
+
+console.log('\n=== Campus Leadership is on the chart once (Nov 2026, Uriah: "the director of one department is in every single ministry") ===');
+{
+  const CS = 'Community Service', FY = CY + 2;   // a quarter of its own, well ahead
+  mem.staff = [
+    withPin({ id: 'ad', name: 'Adam Admin', username: 'adam', campus: 'siemreap', dept: 'Campus Leadership', ministry: 'Campus Director', active: true, isAdmin: true }),
+    withPin({ id: 'bo', name: 'Boss Hill', username: 'boss', campus: 'siemreap', dept: 'Campus Leadership', ministry: 'Campus Director', active: true, ministries: [CS + '|Cafe'] }),
+    withPin({ id: 'di', name: 'Dana Direct', username: 'dana', campus: 'siemreap', dept: 'Campus Leadership', ministry: CS, active: true,
+      ministries: [CS + '|Cafe', CS + '|LTN', 'Youth Education|Worship'], leads: [CS + '|Cafe'] }),
+    withPin({ id: 're', name: 'Rey Regular', username: 'rey', campus: 'siemreap', dept: CS, ministry: 'Cafe', active: true, ministries: ['Youth Education|Worship'] }),
+  ];
+  mem.structurePlans = []; mem.structure = [];
+  r = await call('saveStructure', ['adam', '1234', 'siemreap', FY, 1]);
+  const snap = id => r.body.doc.people.find(p => p.id === id);
+  ok('from profiles: a director is not put in a ministry because their profile lists it; anyone else still is', r.body.ok && !snap('di').also && !snap('bo').also && JSON.stringify(snap('re').also) === JSON.stringify(['Youth Education|Worship']), JSON.stringify([snap('di').also, snap('bo').also, snap('re').also]));
+  const place = { ad: { dept: 'Campus Leadership', ministry: 'Campus Director' }, bo: { dept: 'Campus Leadership', ministry: 'Campus Director' }, di: { dept: 'Campus Leadership', ministry: CS }, re: { dept: CS, ministry: 'Cafe' } };
+  r = await call('saveStructurePlan', ['boss', '1234', 'siemreap', FY, 1, {}, place, { [CS + '|Cafe']: ['di'] }, [], null, { di: [CS + '|LTN', 'Skills Training|Hospitality'], re: ['Youth Education|Worship'] }]);
+  ok('the quarter’s own second jobs: a Director’s second job in the department they direct is never on the chart; one in another department is',
+    r.body.ok && JSON.stringify(snap('di').also) === JSON.stringify(['Skills Training|Hospitality']), JSON.stringify(snap('di').also));
+  ok('“n profiles would change” does not count a director for the ministries on their profile', r.body.diff.changes.length === 1 && r.body.diff.changes[0].id === 'di' && JSON.stringify(r.body.diff.changes[0].alsoAdd) === JSON.stringify(['Skills Training|Hospitality']) && r.body.diff.changes[0].alsoDrop.length === 0, JSON.stringify(r.body.diff.changes));
+  r = await call('applyStructure', ['boss', '1234', 'siemreap', FY, 1, {}]);
+  const di = () => mem.staff.find(x => x.id === 'di'), bo = () => mem.staff.find(x => x.id === 'bo');
+  ok('made live: the board only ever ADDS a ministry page to someone in Campus Leadership — nothing they had is taken away',
+    r.body.ok && [CS + '|Cafe', CS + '|LTN', 'Youth Education|Worship', 'Skills Training|Hospitality'].every(k => di().ministries.indexOf(k) > -1) && JSON.stringify(bo().ministries) === JSON.stringify([CS + '|Cafe']) && JSON.stringify(di().leads) === JSON.stringify([CS + '|Cafe']), JSON.stringify([di().ministries, bo().ministries, di().leads]));
+  ok('… and afterwards nobody “differs”', r.body.diff.changes.length === 0, JSON.stringify(r.body.diff.changes));
+  r = await call('saveStructurePlan', ['boss', '1234', 'siemreap', FY, 1, {}, place, {}, [], null, {}]);
+  ok('second jobs and leading taken off the board for everyone: a director loses the leading, never a ministry page; the regular staff member loses the second job', r.body.ok && r.body.diff.changes.map(c => c.id).sort().join() === 'di,re' && r.body.diff.changes.find(c => c.id === 'di').alsoDrop.length === 0 && JSON.stringify(r.body.diff.changes.find(c => c.id === 're').alsoDrop) === JSON.stringify(['Youth Education|Worship']), JSON.stringify(r.body.diff.changes));
+  r = await call('getMinistryFor', ['dana', '1234', CS, 'LTN']);
+  ok('a Director reaches every ministry of their department whatever the chart says', r.body && r.body.ok !== false && r.body.err !== 'not_authorized', JSON.stringify(r.body).slice(0, 80));
+  mem.staff.find(x => x.id === 'di').ministries = [];
+  r = await call('getMinistryFor', ['dana', '1234', CS, 'Sry Noi']);
+  ok('… even with nothing on their profile (the overseer’s right)', r.body && r.body.err !== 'not_authorized', JSON.stringify(r.body).slice(0, 80));
+  /* a Director moved to a ministry is an ordinary member again: the plan's second jobs are theirs exactly */
+  r = await call('saveStructurePlan', ['adam', '1234', 'siemreap', FY, 1, {}, Object.assign({}, place, { di: { dept: CS, ministry: 'LTN' } }), {}, [], null, { di: [CS + '|Cafe'] }]);
+  ok('moved out of Campus Leadership into a ministry, a second job in that department shows again', r.body.ok && JSON.stringify(snap('di').also) === JSON.stringify([CS + '|Cafe']) && snap('di').ministry === 'LTN', JSON.stringify(snap('di')));
+}
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

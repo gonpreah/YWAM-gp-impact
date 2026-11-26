@@ -51,7 +51,7 @@ var S = {
   structEdit:false, structEditNode:null, structDraft:null, structAddTitle:'', structAddParent:'',
   adminMetricCampus:'', adminMetricDept:'', adminMetricMinistry:'',
   trips:null, tripRequests:[], leaveDraft:null, oneOnOnes:[], broadcasts:[],
-  baseDept:null, okrForm:false, okrEditId:null, okrPaste:false, okrPasteParsed:null, okrPasteText:'', teamCampus:null,
+  baseDept:null, teamCampus:null,
   healthWeek:null, weekForm:null, weekDraftFor:null, weekJustSaved:null,
   healthScope:'week', healthQuarter:null, healthYear:null, healthMonth:null, baseByYear:{}, srScope:'quarter', srQuarter:null, srMonth:null, srOpenQ:null,
   baseAcc:{salv:false, ld:false, cs:false, out:false, church:false, gospel:false, media:false, baseKpi:false, health:false, explorer:false},
@@ -73,7 +73,7 @@ var S = {
   adminStaff:null, adminLoading:false, adminAcc:{}, adminEditId:null, adminEditDraft:null, adminPinDraft:{}, adminSignLink:null, adminCode:'', adminCampusTab:null, adminSub:null, adminPersonId:null, adminSearch:'', adminMentorCampus:null, adminPortalCampus:null, adminLeave:null, adminLeaveLoading:false, adminLeaveError:'', adminLeaveCampus:null, adminLeaveYear:null, adminLeavePast:false, broadcastDraft:'',
   hrStaff:null, hrLoading:false, hrError:'', hrSub:'home', hrPersonId:null, hrSearch:'', hrCampusTab:null, hrShowArchived:false, hrContractForm:null, hrArchiveDraft:null, hrDue:null, hrFollowUps:null, hrTab:'staff',
   cands:null, candsLoading:false, candsError:'', candStage:'', candType:'', candSearch:'', candShowArchived:false, candForm:null, candPersonId:null, candNoteDraft:'',
-  adminOkrAcc:{},
+  adminRockAcc:{},
   /* The "jump to any ministry" picker on My Ministry — admin can pick any
      department/ministry on their campus; everyone else's options resolve to
      just the one they work in (see myMinistryBrowseHtml_). */
@@ -260,10 +260,10 @@ function avatarHtml(person, cls){
   return '<div class="avatar '+cls+' ph">'+esc(initials(person?person.name:'')) +'</div>';
 }
 
-function showMsg(text){
+function showMsg(text, ms){
   /* A message written as plain English still shows in Khmer when the dictionary has it. */
   var m=document.getElementById('msg'); m.textContent=t(String(text==null?'':text)); m.classList.add('show');
-  clearTimeout(m._t); m._t=setTimeout(function(){ m.classList.remove('show'); }, 2200);
+  clearTimeout(m._t); m._t=setTimeout(function(){ m.classList.remove('show'); }, ms||2200);
 }
 
 /* A request that never answers used to leave S.busy true forever, which killed
@@ -886,6 +886,7 @@ function applyBoot(d, fromCache){
   S.tripRequests = d.tripRequests || [];
   if(d.ministry) S.ministry = d.ministry;
   if(d.org && d.org.ok) S.org = d.org;   // titles, YWAM GP roles, the advisory board
+  if(Array.isArray(d.rocks)) S.rocks = d.rocks;   // the quarter's priorities, every team's (teams/28-rocks.js)
   if(d.kmFixes) gpKmFixes_(d.kmFixes);    // a Khmer reviewer's corrections (Khmer review)
   S.push = d.push || null;                 // reminders: the app's public key and your times (null = not set up)
   S.personal = d.personal || null;
@@ -893,7 +894,7 @@ function applyBoot(d, fromCache){
   S.backup = d.backup || null;   // admins only: the nightly backup's last run
   S.numbers = d.numbers || null;
   S.structReady = d.structReady || null;   // Campus Leadership: this quarter's structure is arranged and not live yet (23-structure.js)
-  S.qstory = d.qstory || null;   // the quarterly report: ministries I lead with no story written yet (28-report.js)
+  S.qstory = d.qstory || null;   // the quarterly report: ministries I lead with no story written yet (29-report.js)
   S.fast = d.fast || null;   // the campus's fast, running or coming (25-intercession.js): the bell and ☰
   S.hospNews = d.hospNews || null;   // SR Hospitality: a team's new dates, someone who left (06-numbers-contract.js hospChangesHtml_)
   S.pulse = {}; S.staffDebt = null;
@@ -1099,7 +1100,7 @@ function render(){
   }).join('');
   var m=document.getElementById('main');
   document.body.classList.toggle('repOn', S.view==='report');
-  document.body.classList.toggle('qrOn', S.view==='qreport');   // the quarterly report, ministry by ministry (28-report.js): its print rules
+  document.body.classList.toggle('qrOn', S.view==='qreport');   // the quarterly report, ministry by ministry (29-report.js): its print rules
   document.body.classList.toggle('libReading', S.view==='library' && !!S.libBook && S.libStep!=null);   // not 'reading': that is the Bible-reading box's class, and its yellow, border and font leaked onto the whole page
   if(LIBA.on && !(S.view==='library' && S.libBook && S.libStep!=null)) libAudioStop_();
   if(gglStepWanted_()) m.innerHTML=gglStepHtml_();   // moving everyone to Google: once, after a PIN sign-in (07-health-leave.js)
@@ -1135,7 +1136,7 @@ function render(){
   else if(S.view==='hosp') m.innerHTML=hospHtml();
   else if(S.view==='sched') m.innerHTML=schedHtml();
   else if(S.view==='worship') m.innerHTML=wsPageHtml_();
-  /* OKRs live on My Ministry's second tab now — anything still pointing at
+  /* Rocks (they replaced the OKRs) live on a My Ministry tab — anything still pointing at
      the old view lands there rather than on a page that no longer exists. */
   else if(S.view==='okr'){ S.view='ministry'; S.mmTab='okr'; m.innerHTML=myMinistryHtml(); }
   else if(S.view==='admin') m.innerHTML=adminHtml();

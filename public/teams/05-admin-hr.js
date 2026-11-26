@@ -252,8 +252,7 @@ function adminHomeHtml_(){
    active), ministries with no numbers for three weeks or more, people who have
    not opened the app in 30 days (once 30 days of counting exist), people with
    no department or ministry, people with no mentor, and this quarter's
-   objectives nobody has edited in 30 days (not ones fed by a ministry's
-   numbers — those move on their own). Reloaded each visit. */
+   rocks nobody has updated in 30 days (until Nov 2026: objectives). Reloaded each visit. */
 S.adminLoose=null; S.adminLooseLoading=false;
 var LOOSE_SHOW = 5;   // a long list shows its first five; the rest fold away
 function looseDays_(a, b){ return Math.round((Date.parse(a+'T00:00:00Z')-Date.parse(b+'T00:00:00Z'))/864e5); }
@@ -409,11 +408,11 @@ function adminLooseHtml_(){
     r5.length ? '<button class="linkbtn" style="width:auto;margin-top:6px" data-adminsub="mentors">'+esc(t('Open Mentors'))+'</button>' : '');
   total+=r5.length;
 
-  // 6. objectives nobody has edited in 30 days
-  var r6=(L.objectives||[]).filter(function(o){
-    return o.campus===C && !o.fed && (!o.updated || looseDays_(L.today, o.updated.slice(0,10))>=30);
-  }).map(function(o){ return esc(o.objective)+'<div class="rowSub">'+esc(t(o.dept))+' · '+esc(o.updated ? gpT('last edited {date}',{date:looseDay_(o.updated.slice(0,10))}) : t('never edited'))+'</div>'; });
-  out+=looseSection_('🎯', gpT('Q{q} objectives nobody has touched in 30 days',{q:L.quarter}), t('Ones fed by a ministry’s numbers move by themselves and are not listed.'), r6);
+  // 6. this quarter's rocks nobody has updated in 30 days (done ones are finished, not forgotten)
+  var r6=(L.rocks||[]).filter(function(o){
+    return o.campus===C && (!o.updated || looseDays_(L.today, o.updated.slice(0,10))>=30);
+  }).map(function(o){ return esc(o.title)+'<div class="rowSub">'+esc(t(o.dept))+(o.ministry ? ' › '+esc(t(o.ministry)) : '')+' · '+esc(o.updated ? gpT('last updated {date}',{date:looseDay_(o.updated.slice(0,10))}) : t('never updated'))+'</div>'; });
+  out+=looseSection_('🪨', gpT('Q{q} rocks nobody has updated in 30 days',{q:L.quarter}), t('A rock should be looked at every week: on track, off track or done.'), r6);
   total+=r6.length;
 
   // 7. the YWAM GP structure: Campus Directors with no International / National, and empty YWAM GP places
@@ -1968,8 +1967,8 @@ function bindAdmin(){
    custom metric's name carries its own aggregation the same way every
    built-in one already does — "(1-10)" for a score, "(%)" for a percentage,
    plain otherwise for a running total — so modeOf() in taxonomy.js picks it
-   up with no extra code, and it shows up on the GP Dashboard, the OKR metric
-   picker, everywhere getDepartments() is read, the moment it's saved. */
+   up with no extra code, and it shows up on Base, the Scoreboard,
+   everywhere getDepartments() is read, the moment it's saved. */
 function metricOverrideFor_(campus, dept, ministry){
   var rec = ((S.base && S.base.metricOverrides) || []).find(function(r){
     return r.campus===campus && r.dept===dept && r.ministry===ministry;

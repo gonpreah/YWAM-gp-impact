@@ -55,7 +55,7 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   (personality, Library, papers, guest, YWAM GP & the board, report, first 30 days, prayer,
   support raising, reminders, Khmer review) · `04-ministry-strengths.js` · `05-admin-hr.js` ·
   `06-numbers-contract.js` · `07-health-leave.js` · `08-team-profile.js` · `09-finance.js`
-  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app); later ones (12-tasks … 28-report) load before 11. `finance.js` (public/,
+  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app); later ones (12-tasks … 29-report) load before 11. `finance.js` (public/,
   shared like taxonomy.js) reads the reports; `vendor/pdfjs/` is pdf.js, loaded on demand. **One global scope**, exactly as when it was one inline
   script: any function may call any other, but code that RUNS while a file loads (not
   inside a function) may only use what that file or an earlier one defines. Add new code to
@@ -75,6 +75,7 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   then the hero, salvations by department, both school groups, outreach, churches, the
   gospel totals, media, base health and the department explorer. A test asserts Base and
   the dashboard render the same section list, so the two can't quietly drift apart.
+  *(Replaced, Nov 2026 — OKRs became **Rocks**, the Numbers tab the **Scoreboard**; see "Rocks and the Scoreboard". The OKR notes below, down to "A teammate's page has no controls at all", are history: that page code is deleted.)*
   **OKRs belong to a person, not to a tab.** `okrSectionHtml(who, mine)` renders one
   person's objectives, framed as a job description: that ministry's focus (from
   `jobfocus.js`) on a black card, then the objectives for **their department** — the only
@@ -316,6 +317,7 @@ Three rules hold it together:
   and the daily roll-up owns any metric it touches, so the two would fight over the
   same weekly cell. `test-ministry-kpis.mjs` asserts the split from both sides.
 
+*(Nov 2026: no screen shows key results any more — `krProgress` / `objProgress` remain in rollup.js for the folded "Earlier objectives" list; `gpKrWarnHtml` / `gpKrTargetNote` have no caller.)*
 **A key result says when its own target is wrong.** `krProgress()` caps the
 percentage at 100 — nothing prints "7668% complete" any more — and returns the
 uncapped figure as `raw`, because the cap alone turns a bad target into a full bar
@@ -353,6 +355,7 @@ history is orphaned (`test-numbers-people.mjs` §5 covers the move).
   (`mmPickerHtml_`, `S.mmPickOpen`, `#mmPickScrim`, `.mmPickList`, grouped by department, a search
   `#mmPickFind` when there are more than 8, `data-mmpick="dept|min"` rows, the current one `.on`).
   No chips, no Department/Ministry selects any more.
+- *(Nov 2026: the tabs read **Scoreboard** for Numbers and **Rocks** for OKRs; the keys `numbers` / `okr` are unchanged.)*
 - **One row of tabs per ministry** (`mmTabsHtml_` → `.gtBar.mmTabsBar .gtTabs.mmTabs .gtTab`,
   `mmTabsFor_`): most ministries Numbers · (Schedule) · Tasks · OKRs; the Cafe Today · Till · Rota ·
   Week (· Set up) · Numbers · Tasks · OKRs — its own keys keep `data-cafetab` so `cafeHtml_(true)`
@@ -498,6 +501,7 @@ Uriah: YWAM GP is YWAM Poipet, YWAM Siem Reap, **YWAM GP** (the organisation) an
 - **Filling it in**: Admin → Loose ends has "The YWAM GP structure isn't filled in" — each
   campus's Campus Directors with no International / National chosen, and every YWAM GP place
   nobody holds. Admins also get a banner on the YWAM GP page with the count and a link there.
+- *(Nov 2026: the report's last part is each campus's **rocks** with where each stands, `rkReportHtml_`.)*
 - **The quarter report** (`S.view='report'`; the board's **Report** tab, and "The quarter
   report the board sees" on the YWAM GP page for Campus Leadership and admins;
   `boardReportHtml_`): YWAM GP as a whole and each campus for one quarter of this year, each
@@ -591,8 +595,36 @@ in the leadership My Ministry, and it shows in Team → Structure … profile fa
   one (`#sbMainTag`), each other with **Make this their main ministry** (`[data-sbmain="key|id"]`, the two swap) and ×
   (`[data-sbalsorm]`), and **Also serves in…** (`#sbAlsoSel` / `#sbAlsoAdd`). The tree (`M.alsoOf`, `M.alsoBoxes`) and Team →
   Structure's list (`orgChartHtml_(…, alsoMap)`) show them in each box, the second face dashed with an "also" tag
-  (`.sbFace.also`, `.orgPerson.also`) and counted apart ("2 +1"). Dragging moves the MAIN place only; leading a second
-  ministry leaves the main one where it is.
+  (`.sbFace.also`, `.orgPerson.also`) and counted apart ("2 +1"). Leading a second ministry leaves the main one where it is.
+- **A dragged person lands; main job or second job; nobody on the board too much** (Nov 2026, Uriah: "if I grab them and move
+  them, they don't drop into the new thing … assign first / primary, secondary jobs … the director of one department is in every
+  single ministry. I don't want that"). What was wrong: the tab opens on View, where a grabbed face did nothing at all; a
+  Director was drawn dashed in up to four ministries (their profile's `ministries`, which directors tick to reach those pages,
+  and their `leads`) and dragging one of THOSE faces moved their main place while the grabbed face stayed; a face dragged from
+  the tray towards a box more to the side than up never left the tray; a non-admin's move into Campus Leadership looked done
+  ("profile is updated") while it waited for an admin.
+  - **One face each** (`M.boxFaces(key)` → `{solid, also, leads}`; the list: `orgChartHtml_`): solid at the main job; dashed
+    for a second job chosen on the board, and for someone who leads a ministry from another one (dashed + 👑); never both in
+    one box. **Campus Leadership is on the chart once**: a department's Director is never in that department's ministries
+    (`structOversees_`, page and api.js), and nobody in Campus Leadership is in a ministry because their profile lists it or
+    because they lead it (`alsoOf`, `structAlsoOf_(plan, r, dept, ministry)`) — only an explicit `also` in another
+    department shows. The ＋ sheet still lists a box's leaders, a director included.
+  - **The board only ADDS a ministry page to someone in Campus Leadership** (`structApplyRows_`): making a quarter live never
+    drops a director's `ministries` (so no access is lost and they never show as "differs"); a department's overseer reaches
+    their ministries through `canLogFor_` anyway. A director moved into a ministry is an ordinary member again.
+  - **The chooser** (`sbDropped_` → `S.sb.drop`, `sbDropHtml_`, `#sbDrop` where the face was let go): a solid face on a
+    ministry, when they have a main job elsewhere → **⭐ Main job here** (`#sbDropMain` → `sbMove_`, which also takes them off
+    the old ministry's leaders) / **Second job here** (`#sbDropAlso` → `sbAlsoAdd_`; left out with the reason `#sbDropWhy`
+    when it can't be: they direct that department, it is already their second job, or they have `SB_ALSO_MAX`) / Cancel
+    (`#sbDropCancel`, `#sbDropScrim`). No place yet → lands as main, no question; a Director spot, Campus Leadership,
+    Students and the tray as before. **A dashed face is that second job**: on another ministry it moves there
+    (`sbAlsoMove_`), on the tray it comes off (`sbAlsoRm_`); the main job stays.
+  - **Never silent**: View mode + a drag on a face → `#sbNudge` with **Switch to Edit** (`sbNudge_`; View stays the
+    default); a drop is taken by the box under the pointer or a ministry within 26px (`sbDropAt_`), and a miss says where a
+    face can go; a tray drag's direction is decided once, and only a finger that sets off sideways scrolls the row; into
+    Campus Leadership by a non-admin says so at the drop (6.5 s — `showMsg(text, ms)`) and the face keeps ⏳ (`sbWaits_`,
+    `[data-sbwait]`); the save's "profile is updated" no longer counts a move that waits.
+  - Khmer §146. tests/test-structure.mjs, test-structure-board-ui.mjs (a leader and a Director landing, mouse and touch).
 - **Make a quarter live → profiles** (Nov 2026, Uriah: "move people around … and for that to automatically change in their
   profile"; this replaces Andrew's "not synced into our staff profile"). `applyStructure(user, pin, campus, year, q, {dry})`
   (`structEditor_`; a quarter already over → `past_quarter`): `structApplyRows_` lays the plan over the campus's active staff —
@@ -621,8 +653,21 @@ in the leadership My Ministry, and it shows in Team → Structure … profile fa
   main / member / leader options count, never what an admin or director can merely open. Profile → My positions says
   "Main: … · Also: …" (`#myPosMin`). Every tool already let a second ministry in (`canLogFor_` / `memberOf_` on the server,
   `ministries` in each client gate).
+- **Nothing on the board reaches a profile except through the button** (Nov 2026, Andrew: "make sure what's edited and changed
+  there doesn't affect anything else"; this replaces Uriah's "once THIS quarter is live, saveStructurePlan applies what that save
+  changed" above): `saveStructurePlan` never writes a profile (`applied` is always []). After a quarter is live, a change on the
+  board shows as `diff` — "n profiles differ from this structure" with See / **Apply again** — and only `applyStructure` writes,
+  after the list is shown. The live line says so ("A change on the board waits until you tap Apply again").
+- **SR Ministries** (Nov 2026, Andrew: "put Srey Noi, LTN and Ponlork Hope into one ministry named SR ministries … sub
+  categories"): `SB_GROUPS` (23-structure.js) draws Sry Noi, LTN and Ponlork School under one heading in Community Service
+  (`[data-sbgroup="srmin"]`, `.sbGroup`, `sbMinBoxHtml_`), the board calling Ponlork School "Ponlork Hope" (`sbMinName_`, also in
+  `sbBoxName_`). **Only how the board draws them**: each is still its own ministry — its numbers, profiles, tasks, its own drop
+  box — and taxonomy.js is unchanged. Team → Structure's list is unchanged.
+- **Also serves here** (Nov 2026, Andrew: "put people in multiple ministries"): a ministry's ＋ sheet has a second picker
+  (`#sbAddAlso`, people picker key `sbalso`) of people placed elsewhere — a pick adds the ministry as their "also"
+  (`sbAlsoAdd_`), their main place unchanged.
 - tests/test-structure.mjs (server), tests/test-structure-board-ui.mjs (mouse and touch; the second ministry, making a
-  quarter live, the bell, the pills). Khmer: docs/khmer-needed.md §135, §137, §141. sw.js SHELL v29.
+  quarter live, the bell, the pills, SR Ministries, Also serves here). Khmer: docs/khmer-needed.md §135, §137, §141, §143. sw.js SHELL v29.
 
 ## Outreach Teams — one record per team, not a weekly form
 Outreach Teams (Community Service) doesn't log week by week: a team comes for a stretch
@@ -1155,6 +1200,7 @@ then Numbers · Tasks · OKRs. One `getIntercession` load per open (`S.icp`).
   accepted application is HR's yes and does not wait.
 
 ## Campus Leadership: the department pulse, the Director's quarter, staff debt from Finance
+- *(Nov 2026: the pulse's "OKR progress" tile is **Rocks** — on track / all, `rkPulse_`.)*
 - **Department pulse** (`pulseCardHtml_` ← `getDeptPulse`): a department leader's own
   page leads with six figures and nothing to type — numbers in on time (numbers
   people), staff and who is away this week (approved/noted leave; names and dates,
@@ -1365,6 +1411,7 @@ has no such connection; this is Online only.)
   queries) for one made-up company.
 
 ## Campus Leadership on My Ministry: OKRs and the Monday meeting board
+*(Nov 2026: the OKR parts here are replaced by Rocks — the tab `okrs` is **Rocks** (`rocksTabHtml_`), `#lbOkrTile` reads "n/m on track", the notes' line is `leadRocksLineHtml_` (`#leadNoteRocks`), `leadOkrDashHtml_` is `leadRocksDashHtml_`, and a card's `okrId` is kept but no longer shown or picked. See "Rocks and the Scoreboard".)*
 Campus Leadership doesn't log weekly numbers (hidden for now). Its own row in the picker
 ("🧭 Campus Leadership", where My Ministry opens for anyone in Campus Leadership —
 `mmSelected_` defaults to your own row) renders `leadSectionHtml_` instead of the dashboard /
@@ -1462,8 +1509,80 @@ Tuesday schedule — nothing of those was replaced.
 - Drafts are in `S.mt.d` (`[data-lmd]`), forms in `S.mt.scoreForm` / `rockForm` / `set`: typing survives every redraw.
 - tests/test-lead-meeting.mjs (server), tests/test-lead-meeting-ui.mjs (the real api.js: set up, a whole meeting on two
   phones, Khmer, 320px, a wide screen). Khmer: docs/khmer-needed.md §142. sw.js SHELL v33.
+- **Since the whole app moved to rocks (the next section)**: the meeting's "Scorecard" reads **Scoreboard** (ids keep `score`);
+  its rocks ARE the app's rocks for dept Campus Leadership with no ministry — `saveLeadRock` / `deleteLeadRock` write the one
+  `rocks` store (`leadMeet:<campus>.rocks` is left as it was and no longer read once the store is seeded), `lmRockHtml_` is
+  `rockHtml_` with the `lmrock` prefix, and the rock form no longer asks "Moves forward which OKR?".
 
-## The quarterly report, ministry by ministry (teams/28-report.js, Nov 2026, Uriah)
+## Rocks and the Scoreboard (teams/28-rocks.js, Nov 2026, Uriah)
+"I'm going to move OKRs to rocks. And we're going to move the KPI and numbers things to scoreboard across our whole thing, as
+the OKRs are too complicated. Across the whole app we're going to move away from OKRs and move to rocks and scoreboard."
+**Words**: on screen there are no OKRs, objectives or key results (but the folded "Earlier objectives"), no "KPI"; the
+quarter's priorities are **Rocks** (ថ្មធំ), a ministry's weekly numbers page is its **Scoreboard** (តារាងពិន្ទុ). A single figure
+is still a number (or a metric, in the editor). Code names, blob keys and handlers kept their names: the tab keys are still
+`okr` / `okrs` / `numbers`, the tile `#lbOkrTile`, `S.view==='okr'` still lands on the tab. tests/test-okr-easy.mjs reads
+the source and fails if the old words or the old page code come back.
+- **A rock**: `{id, campus, dept, ministry ('' = the department's, or leadership's own), owner (staff id, '' = the team's),
+  year, q, title (≤120), status on|off|done, note (≤1200), by, at, updated, updatedBy, fromOkr?, fromLead?}`. Quarters are the
+  app's 13-week quarters of the week year (`meetQ_`, `rkQ_`); this quarter and the next can be written, an earlier one is
+  history (`err:'past'`, admins too). "On track" counts everything not off.
+- **One store for the whole base**: blob `rocks` = `{rocks, seeded}`, `mutateKey_` (`rocksMutate_`). `saveRock(user, pin, x)` /
+  `deleteRock(user, pin, id)` answer `{ok, saved, rocks}` (every rock). In `BOOT_KEYS` with `leadMeet:<campus>`.
+- **Who reads**: every staff member, every rock on both campuses — the boot's `rocks` (`S.rocks`, `rocksAll_()`). **Not in
+  the public `getData`** (it answers anyone on the internet; objectives were in it, but rocks carry notes and owners, and
+  the meeting's rocks were never public). A board member gets `{id, campus, dept, ministry, year, q, title, status}` in
+  `getYwamGp` (`S.org.rocks`) for the quarter report. Applicants, students, guests: none.
+- **Who writes** (`canWriteRock_`, mirrored by `rkCanWrite_` only to decide what to draw): an admin any; Campus Leadership
+  their campus's leadership rocks; anyone their own campus + department's (a ministry's or the department's — as objectives
+  were); a ministry's people (main or other), its leader and its department's director that ministry's (`canLogFor_`). The
+  campus and department are checked against the **staff record**: a new rock with no place named is the caller's own, a
+  payload naming another is refused, and an existing rock stays where it is (its place is never taken from the payload).
+  Ten a person a team a quarter (`ROCK_MAX.each`).
+- **What was there before is moved once and never deleted** (`rocksSeed_`, `ROCKS_START` = 2026 Q4, the quarter the app
+  moved in): each objective of that quarter (and one written since it began for Q1 2027) is a rock `rk_o_<objective id>` in
+  the same campus + department — a ministry's only when every linked key result read that one ministry — status done at
+  100%, else on track, its key results as lines of the note ("• text — 60%", by `okrKrPct_`, the server's copy of
+  `krProgress` with `modeOf_` / `LATEST_SET_` mirroring taxonomy.js; test-rocks checks the copy). The leadership meeting's
+  own rocks come across with their ids. **Until the first write this is worked out on every read and nothing is stored**
+  (a page open writes no blob — test-boot); the first `saveRock` / `saveLeadRock` stores it inside the same `mutateKey_`
+  and sets `seeded`, so two phones at once make nothing twice, and a moved rock deleted later stays deleted. The `okrs`
+  blob and `leadMeet.rocks` are untouched; `getData` still sends `okrs`, shown read-only as **Earlier objectives**
+  (`rkEarlierHtml_`, `#rkEarlier`: the ones no rock came from — title and final %).
+- **Drawn one way** (`rockHtml_(r, {p, edit, meeting, drop, who, where})`): the meeting's look — `.lmRock`, three `.lmSt`
+  buttons (✓ On track · ✗ Off track · ★ Done, `data-<p>st="id|on"`), Edit (`data-<p>edit`); read-only it is one badge
+  (`.rkBadge`). `p` is `rock` everywhere and `lmrock` in the meeting. A note of three lines or more folds to its first.
+- **Where**: My Ministry → **Rocks** (`rocksTabHtml_(sel)`, `#rocksTab`) for every ministry and tool: This quarter / Next
+  (`[data-rkq]`), the ministry's rocks (`[data-rkscope="campus|dept|ministry"]`, "n of m on track"), one line to add
+  (`[data-rkadd]` + Enter or `[data-rkaddbtn]`; the owner is me), the department's own under it ("A rock for the whole
+  department", `[data-rkaddopen]`), a rock's form in its place (`#rkForm`: title, owner by the people picker `rko`, note,
+  `#rkSave`, `#rkDel` through gpAsk_). Campus Leadership's tab: leadership's rocks by person, the team's first
+  (`rkLeadGroupsHtml_`) — the same ones the meeting shows — and for a department's director that department's. Everyone
+  outside leadership: **Leadership's rocks** to read (`#leadRocks`, `[data-leadrocks]`). Admins: **Every department's
+  rocks**, both campuses, folded (`#adminRocks`, `S.adminRockAcc`, `#rkAdmCampus` / `#rkAdmDept` / `#rkAdmTitle` /
+  `#rkAdmAdd`). A teammate's page: `rocksPersonHtml_` (their focus, their own rocks, their ministry's). Leadership's
+  Overview tile (`rkLeadTile_`), the department pulse (`rkPulse_`: "3 / 4 on track"), the meeting notes' line
+  (`leadRocksLineHtml_`), the quarter report (`rkReportHtml_`; a quarter from before rocks shows the objectives it had),
+  Admin → Loose ends (this quarter's open rocks not updated in 30 days — `adminLooseEnds.rocks`). Drafts are in `S.rk`
+  (typing survives a redraw).
+- **The Scoreboard** (the tab key is still `numbers`): on top, the board (`scoreBoardHtml_`, `#scoreBoard`): "n of m on
+  target this week" (`#sbdHeadline`), each number (`[data-sbdrow]`: those with a goal first, then those with figures; six
+  shown, `#sbdAll`) with its goal ("≥ 150"), the week's figure and ✓ / ✗ / – (`.sbdMark`, with an aria-label — never colour
+  alone), and thirteen weeks of marks (`.sbdC`, the page's week last); a number with no goal shows its figure and ▲/▼ as
+  before. Then the week card and the boxes as they were; the Month · Quarter · Year tiles are folded under `#mmGlance`
+  (tests open it first). GPDTS, the YDC school tool and the Finances office still have no numbers tab.
+- **A weekly goal per number**: `#sbdEdit` (whoever may edit the metric list, `canEditMetrics_`) → a direction and a box a
+  number (`[data-sbddir]`, `[data-sbdgoal]`; "at most" by default for `LOWER_BETTER` numbers), `#sbdSave` →
+  `saveMetricGoals(user, pin, campus, dept, ministry, {metric: {goal, dir}})`: the whole map, kept as `goals` on the
+  ministry's `metricOverrides` row (so it rides `getData`; `saveMetricOverrides` keeps it, `renameCustomMetric` moves it),
+  ≤60, a goal outside `kpiRange_` named in `rejected`. The box a number is typed in says "🎯 goal ≥ 150"
+  (`metricGoalNote_` — it used to say which objective the number fed).
+- Weekly goals' link reads "Link to a scoreboard number" (`metricLinkOptions_`). help.html is the "Ministry Scoreboard
+  Guide" in its title and heading; its per-number lines are unchanged (their Khmer is keyed by the English).
+- tests/test-rocks.mjs (server), tests/test-rocks-ui.mjs (the pages, Khmer, 320px, dark), test-okr-easy.mjs (the old code
+  and words are gone, the data is not), test-okr-admin-view.mjs (an admin's every department), test-metric-okr-feeds.mjs
+  (the goal beside the box). Khmer: docs/khmer-needed.md §144. sw.js SHELL v34.
+
+## The quarterly report, ministry by ministry (teams/29-report.js, Nov 2026, Uriah)
 The tools fill each ministry's numbers; Uriah wants all of it to "automatically feed information to a quarterly report that
 we can give to ministries and donors, the government Ministry, and to donors." The board's quarter report (above, `S.view=
 'report'`) is one page of figures; this is the document behind it: `S.view='qreport'` (`qrHtml_` / `bindReport_`, `#qrPage`).
@@ -3202,6 +3321,7 @@ adds `weeklyTue` on Tuesday and `weekly` the rest of the week (`checkedIn` by su
 who). Any day still works for answering. Same day for both campuses.
 
 ## Admin → Loose ends
+*(Nov 2026: the objectives line is now "Q{q} rocks nobody has updated in 30 days" — `adminLooseEnds.rocks`, this quarter's rocks that aren't done.)*
 One page of the small gaps that quietly make the base's totals wrong, one campus at
 a time (`adminLooseHtml_`), each row a tap away from the person (Admin → person) or
 the ministry (My Ministry): ministries with nobody set to enter numbers or someone
@@ -3341,6 +3461,7 @@ copy of anything.
   `api.js`), same fail-closed shape. A Campus Leadership account spends it on itself once
   (Profile & settings → Admin access) or an existing admin spends it on someone else
   (the Admin screen) — `grantAdmin` only ever promotes a Campus Leadership account.
+- *(Nov 2026: no screen writes objectives any more — rocks replaced them, and `canWriteRock_` carries the same campus-and-department-from-the-record rule. `saveObjective` / `deleteObjective` and this rule stay for anything old.)*
 - **OKR writes have two doors** (`okrWriter_`): the leader code writes any objective, and
   a signed-in staff member (username + PIN) writes **their own campus and department
   only**. Two things make that a real boundary rather than a hopeful one — the campus and
@@ -3547,6 +3668,13 @@ also carries `menteeId`, the mentee's `prep`, and once it happened `heldOn`, `no
   only once accepted. The boot's own staff card now carries `mentorStatus` (the page read `S.me.mentorStatus`, which
   was only on the profile: every 1-on-1 with one's own mentor also showed in the top "Asking you" list, and Leave said
   "Save this request" instead of "Send to {mentor} for Approval"). Khmer §107.
+- **How the people I mentor are doing with THEIR 1-on-1s** (Nov 2026, Uriah: "how many one-on-ones have they done and
+  logged this month?"): `getMyMentees` (so the boot's `mentees` — no new call) gives a mentee who mentors other people
+  `oo` = {held, met, people: [{id, name (first name), held}]} — their approved, active mentees and the 1-on-1s held with
+  each this month (Cambodia's calendar, `heldOn`, the mentee as the mentor). Mentorship's row says "Their 1-on-1s this
+  month: 3 held with 2 of 4 people" (`ooTheirsLineHtml_`, `[data-ootheirs]`); the mentee's page lists each first name with
+  ●○ of 2 (`ooTheirsListHtml_`, `#ooTheirs`, `[data-ootheirsrow]`). Nothing for a mentee who mentors nobody. Counts and
+  first names only, to that mentee's own approved mentor — never a check-in, a note or a follow-up. Khmer §146.
 - **Two a month** (`OO_PER_MONTH`), counted by `heldOn`: ●○ dots on My Home's Mentorship
   card (each mentee, and your own), on the Mentor page and on a mentee's page (which also
   lists their 1-on-1s). The monthly health question "2 one-on-ones?" shows the count.
@@ -4026,6 +4154,7 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
 `getFullYear()`: on 30 December 2026 `weekOf` is 1 and the year is 2027.
 - **Structure: the next quarter can be saved early** (`nextQuarter_`, `structIsNext_`, `structIsLive_` in teams.html): it shows the live chart like the current quarter, with "Save Q{n} {year} structure early" for admins, so the base can set up a quarter while planning it a couple of weeks ahead. Q4's next is Q1 of next year (the year picker then offers next year). The server already took any quarter from an admin.
 - **Structure: staff who are students for a quarter** (`saveStructurePlan`, blob `structurePlans`, one row per campus / year / quarter: `students: {staffId: 'dts'|'dbs'|'bcs'|'sms'}`): set by an admin from Structure on the current or next quarter ("🎓 Students in Q4 2026"), for that quarter only — profiles are untouched. The chart moves them out of their ministry into a "Students this quarter" box by school; `saveStructure` writes `student` onto each snapshot person, and changing the plan updates a snapshot already saved. `getStructure` answers with `plan`. Portal applicant accounts are never on the chart: `saveStructure` skips them and `structPeopleOnly_` drops them from snapshots saved before that rule.
+- *(Nov 2026: now "Leadership's rocks" — `leadershipRocksHtml_`, `#leadRocks`, `[data-leadrocks="<campus>"]` — and "Every department's rocks" for admins, `rkAdminHtml_`.)*
 - **Leadership OKRs for everyone (Oct 2026, Uriah)**: the OKR tab of My Ministry shows a read-only
   "🧭 Leadership OKRs" section (`leadershipOkrsHtml_`, `#leadOkrs`, `[data-leadokrs="<campus>"]`):
   Campus Leadership's objectives for this quarter, your campus first, drawn with

@@ -1733,7 +1733,7 @@ function bindOrg_(){
    and YWAM GP as a whole, for one quarter of this year against the one before — staff
    today, the health score (only from three check-ins or more, the same rule as
    department health), salvations, students in the leadership and community schools,
-   and each campus's objectives with how far along they are. Only figures the board
+   and each campus's rocks with where each stands. Only figures the board
    already sees on Campuses (the public getData), the roster's counts and the org's
    leadership teams: no names beyond the leaders, nothing private. Campus Leadership
    and admins open it from the YWAM GP page, to see what the board sees. */
@@ -1784,10 +1784,11 @@ function boardReportHtml_(){
     if(oc && oc.clt.length) h+='<div class="repSub">'+esc(t('Campus Leadership Team'))+'</div><div class="repLeaders">'+
       oc.clt.map(function(p){ return '<div>'+esc(p.name)+' <small>'+esc(orgTitleText_(p.title))+'</small></div>'; }).join('')+'</div>';
     var objs=((S.base && S.base.okrs)||[]).filter(function(o){ return o.campus===c.id && Number(o.quarter)===q+1; });
-    h+='<div class="repSub">'+esc(gpT('Objectives for Q{q}',{q:q+1}))+(objs.length ? ' · '+esc(gpT('{n}% along on average',{n:Math.round(objs.reduce(function(a,o){ return a+R.objProgress(o); },0)/objs.length)})) : '')+'</div>';
-    h+=objs.length ? objs.map(function(o){ var pc=R.objProgress(o);
-        return '<div class="repObj"><span>'+esc(o.objective)+'<small>'+esc(t(o.dept))+'</small></span><b>'+pc+'%</b></div>'; }).join('')
-      : '<div class="repEmpty">'+esc(t('None set for this quarter.'))+'</div>';
+    /* the quarter's rocks with where each stands; a quarter from before rocks shows the objectives it had */
+    var rocksQ=rocksAll_().filter(function(r){ return r.campus===c.id && r.year===thisWeekYear() && r.q===q+1; });
+    if(rocksQ.length || !objs.length) h+=rkReportHtml_(c.id, thisWeekYear(), q+1);
+    else h+='<div class="repSub">'+esc(gpT('Earlier objectives · Q{q}',{q:q+1}))+'</div>'+objs.map(function(o){ var pc=R.objProgress(o);
+        return '<div class="repObj"><span>'+esc(o.objective)+'<small>'+esc(t(o.dept))+'</small></span><b>'+pc+'%</b></div>'; }).join('');
     h+='</div>';
   });
   h+='</div><p class="hint">'+esc(t('Health is shown only from three check-ins or more, so nobody’s answers can be picked out. Staff numbers are as of today.'))+'</p>';

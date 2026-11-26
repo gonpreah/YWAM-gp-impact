@@ -103,12 +103,12 @@ const firstKinds = async (p) => { await p.click('[data-lwtab="week"]'); await p.
   ok('… partners to reach, base plants, money ahead, clear leaders', tl.length === 4 && /Partners to reach/.test(tl[0]) && /Base Plants in Planning/.test(tl[1]) && /Money ahead/.test(tl[2]) && /Clear leaders/.test(tl[3]), tl.join(' | '));
   const nums = await page.$$eval('.lbGlance .mmTile:not(.lbNav) .mmTileNum', (e) => e.map((x) => x.textContent));
   ok('… counted from their own partners and plants', nums[0] === '2 / 2' && nums[1] === '1', nums.join(' | '));
-  ok('the dashboard leads with this quarter’s OKR progress and the board', !!(await page.$('.lbGlance #lbOkrTile')) && !!(await page.$('.lbGlance #lbBoardTile')));
-  ok('no Numbers / OKRs switch on top of a leadership row', !(await page.$('[data-mmtab]')));
+  ok('the dashboard leads with this quarter’s rocks and the board', !!(await page.$('.lbGlance #lbOkrTile')) && !!(await page.$('.lbGlance #lbBoardTile')));
+  ok('no Scoreboard / Rocks switch on top of a leadership row', !(await page.$('[data-mmtab]')));
   await page.click('#lbOkrTile'); await page.waitForTimeout(400);
-  ok('tapping OKRs opens the OKRs tab — the OKRs page itself', (await tabOn(page)) === 'okrs' && /OKRs/.test(await page.$eval('#main', (e) => e.innerText)));
+  ok('tapping Rocks opens the Rocks tab — leadership’s rocks', (await tabOn(page)) === 'okrs' && !!(await page.$('#rocksTab')) && /Rocks/.test(await page.$eval('#main', (e) => e.innerText)) && !/OKR/.test(await page.$eval('#main', (e) => e.innerText)));
   await page.click('[data-lwtab="board"]'); await page.waitForTimeout(400);
-  ok('the Board tab: Meeting, Board, Tuesday, Notes — OKRs aren’t in it twice', (await page.$$eval('[data-leadtab]', (b) => b.map((x) => x.getAttribute('data-leadtab')).join())) === 'meet,board,tues,notes');
+  ok('the Board tab: Meeting, Board, Tuesday, Notes — the rocks aren’t in it twice', (await page.$$eval('[data-leadtab]', (b) => b.map((x) => x.getAttribute('data-leadtab')).join())) === 'meet,board,tues,notes');
   await page.click('[data-lwtab="base"]'); await page.waitForTimeout(400);
   await page.screenshot({ path: OUT + '/1-international.png' });
   /* Who leads what: ＋ by a ministry opens a people search; a pick makes them its leader */
@@ -153,7 +153,7 @@ const firstKinds = async (p) => { await p.click('[data-lwtab="week"]'); await p.
   const { ctx, page } = await open('chea');
   ok('Director of Community Service: opens on their department', (await tabOn(page)) === 'base' && /My department/.test(await page.$eval('.lwSeg .gtTab.on', (b) => b.textContent)));
   ok('… “Your department: its ministries, leaders and numbers”', /Your department/.test(await focus(page)));
-  ok('… their department’s week at the top, no whole-base numbers (only the OKR and Board tiles)', (await tiles(page)).length === 0 && !!(await page.$('#lbOkrTile')) && /Community Service this week/.test(await page.$eval('#leadBase', (e) => e.innerText)) && !/Youth Education this week/.test(await page.$eval('#leadBase', (e) => e.innerText)));
+  ok('… their department’s week at the top, no whole-base numbers (only the Rocks and Board tiles)', (await tiles(page)).length === 0 && !!(await page.$('#lbOkrTile')) && /Community Service this week/.test(await page.$eval('#leadBase', (e) => e.innerText)) && !/Youth Education this week/.test(await page.$eval('#leadBase', (e) => e.innerText)));
   await page.screenshot({ path: OUT + '/3-department.png' });
   ok('… and department meetings first when logging', (await firstKinds(page)).join() === 'deptmeeting,oneonone,meeting');
   await ctx.close();
