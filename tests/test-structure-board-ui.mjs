@@ -555,6 +555,22 @@ const personSheet = async (page, id) => { await page.evaluate((id) => { sbState_
   await ph.ctx.close();
 }
 
+/* ---- someone whose job is YWAM GP itself (gpHome): on the campus's staff, on none of its board ---- */
+{
+  mem.staff.push(mk({ id: 'gw', name: 'Gwen Home', username: 'gwen', email: 'gw@e.com', dept: '', ministry: '', gpHome: true, gpRoles: ['campuses'], gpRole: 'campuses' }));
+  const g = await open('boss', 1100);
+  await openBoard(g.page);
+  ok('the board has no face for her — not in a box, not in the tray', await g.page.$('#sbWrap [data-sbp="gw"], #sbWrap [data-person="gw"]') === null && await g.page.$('#sbTray') !== null);
+  ok('… and she is not counted as “not on the chart yet”', !/Gwen/.test(await g.page.$eval('#sbTray', e => e.innerText)));
+  ok('one quiet line under the board says she lives here and works for YWAM GP', /YWAM GP team living here/.test(await g.page.$eval('[data-orggphere="siemreap"]', e => e.innerText)) && /Gwen Home/.test(await g.page.$eval('[data-orggphere="siemreap"]', e => e.innerText)));
+  await g.page.evaluate(() => { S.view = 'team'; S.person = null; S.teamMode = 'org'; S.teamCampus = 'siemreap'; S.sbTeam = false; render(); }); await g.page.waitForTimeout(900);
+  const chart = await g.page.$eval('#main', e => e.innerText);
+  ok('Team → Structure’s list: not in a box, never “Not placed yet”', await g.page.$('.orgChart [data-person="gw"]') === null && !/Not placed yet/.test(chart) && /YWAM GP team living here:\s*Gwen Home/.test(chart), chart.slice(-260).replace(/\n/g, ' | '));
+  await g.page.click('[data-gogpchart]'); await g.page.waitForTimeout(700);
+  ok('… and the line opens the YWAM GP chart, where she is', await g.page.evaluate(() => S.teamCampus === 'ywamgp' && S.teamMode === 'org') && /Gwen Home/.test(await g.page.$eval('.orgGpChart', e => e.innerText)) && /lives in Siem Reap/.test(await g.page.$eval('.orgGpChart', e => e.innerText)));
+  await g.ctx.close();
+}
+
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 await browser.close(); srv.close();
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

@@ -315,5 +315,59 @@ const ovText = JSON.stringify(await asBoard('getBoardOverview', BEA));
 ok('the Overview is counts and names only: no email, phone, photo data of staff, no survey row', !/@example\.org|@gmail\.com/.test(ovText.replace(/"members":\[.*?\]/, '')) && ovText.indexOf('lonely') === -1 && ovText.indexOf('device') === -1);
 ok('staff debt: the board gets what Campus Leadership gets from the finance tool — which names who owes', JSON.stringify(await asBoard('fin2Get', BEA.concat(['siemreap']))).indexOf('Debtor Dan') > -1 && JSON.stringify(await call('fin2Get', ADA.concat(['siemreap']))).indexOf('Debtor Dan') > -1 && ovText.indexOf('Debtor Dan') === -1);
 
+/* ==================== 6. YWAM GP's own team (gpTeamSees_): the same reading, and nothing more ====================
+   Someone whose job is YWAM GP (gpHome) is staff, so much is theirs anyway. What this checks is what the flag ADDS:
+   every handler is called as Gia (gpHome, not an admin) and as Tia, her twin in everything but the flag and the role,
+   each call from the same store. Gia may answer ok where Tia doesn't only on the oversight reads, and may change the
+   store where Tia can't only through YWAM GP's own rocks. */
+mem.staff.push(
+  withPin({ id: 'st_gia', name: 'Gia Gphome', username: 'gia', email: 'gia@example.org', dept: '', ministry: '', gpHome: true, gpRoles: ['campuses'], gpRole: 'campuses', staffType: 'campus', country: 'Cambodia', surveyToken: 'tok-gia' }),
+  withPin({ id: 'st_tia', name: 'Tia Twin', username: 'tia', email: 'tia@example.org', dept: '', ministry: '', staffType: 'campus', country: 'Cambodia', surveyToken: 'tok-tia' }));
+mem.rocks.rocks.push({ id: 'rk_gp', campus: 'gp', dept: 'YWAM GP', ministry: '', owner: 'st_gia', year: YEAR, q: Math.min(4, Math.floor((wk - 1) / 13) + 1), title: 'YWAM GP rock', status: 'on', note: '' });
+const GIA = ['gia', '1234'], TIA = ['tia', '1234'];
+const gov = await call('getBoardOverview', GIA);
+ok('someone whose job is YWAM GP reads the big picture: both campuses', gov.ok && gov.campuses.siemreap && gov.campuses.poipet && gov.me.member === false);
+ok('… and counts in the staff number of the campus they live on', gov.campuses.siemreap.staff === mem.staff.filter(x => x.campus === 'siemreap' && x.active && x.kind !== 'applicant').length && gov.names.st_gia === 'Gia Gphome');
+ok('… each leadership team, the finances and the quarterly report of either campus, to read', (await call('getBoardLeadership', GIA.concat(['poipet']))).ok && (await call('fin2Get', GIA.concat(['poipet']))).canEdit === false && (await call('getQuarterReport', GIA.concat(['poipet', YEAR, 4]))).ok);
+ok('her twin without the flag reads none of it', (await call('getBoardOverview', TIA)).err === 'not_authorized' && (await call('getBoardLeadership', TIA.concat(['poipet']))).ok !== true && (await call('fin2Get', TIA.concat(['poipet']))).ok !== true);
+ok('the Board room is not hers', (await call('boardRoom', GIA.concat(['getLeadBoard', []]))).err === 'not_authorized' && (await call('boardRoom', GIA.concat(['saveLeadRock', [{ title: 'sneak' }]]))).err === 'not_authorized');
+{
+  const frozen = JSON.stringify(mem), put = () => { const o = JSON.parse(frozen); for (const k of Object.keys(mem)) delete mem[k]; Object.assign(mem, o); };
+  const changed = () => { const o = JSON.parse(frozen); return [...new Set(Object.keys(o).concat(Object.keys(mem)))].filter(k => k !== 'loginThrottle' && k !== 'lastSeen' && JSON.stringify(o[k]) !== JSON.stringify(mem[k])).sort(); };
+  const GP_READS = new Set(['getBoardOverview', 'getBoardLeadership', 'fin2Get', 'getQuarterReport']);
+  const GP_WRITES = new Set(['saveRock', 'deleteRock']);
+  const gpTries = tries.concat([['rk_gp'], [{ id: 'rk_gp', title: 'YWAM GP rock', status: 'done' }], [{ campus: 'gp', dept: 'YWAM GP', title: 'x' }], ['siemreap', YEAR, 4], ['poipet']]);
+  const moreOk = [], moreWrites = [], gpSeen = [], campusTouched = [];
+  let rocksWrites = 0;
+  for (const fn of names) {
+    for (const extra of gpTries) {
+      put(); const rg = await call0(fn, GIA.concat(extra)); const cg = changed();
+      put(); const rt = await call0(fn, TIA.concat(extra)); const ct = changed();
+      if (GP_READS.has(fn) || fn === 'getYwamGp') gpSeen.push([fn, JSON.stringify(rg || '')]);
+      if (rg && rg.ok === true && !(rt && rt.ok === true) && !GP_READS.has(fn) && !GP_WRITES.has(fn)) moreOk.push(fn);
+      const extraKeys = cg.filter(k => ct.indexOf(k) === -1);
+      if (extraKeys.length) {
+        if (GP_WRITES.has(fn) && extraKeys.join() === 'rocks') rocksWrites++; else moreWrites.push(fn + '→' + extraKeys.join('+'));
+      }
+      if (GP_WRITES.has(fn) && cg.indexOf('rocks') > -1) {   // whatever she wrote there, no campus's rock moved
+        const b = JSON.parse(frozen).rocks.rocks.filter(x => x.campus !== 'gp'), n = (mem.rocks.rocks || []).filter(x => x.campus !== 'gp');
+        if (JSON.stringify(b) !== JSON.stringify(n)) campusTouched.push(fn);
+      }
+    }
+  }
+  put();
+  ok('every handler was tried as her and as her twin, each from the same store', names.length > 250, names.length + ' × ' + gpTries.length);
+  ok('the flag opens nothing but the oversight reads (and her own YWAM GP rocks)', moreOk.length === 0, [...new Set(moreOk)].join(', '));
+  ok('the flag lets her change nothing her twin couldn’t — but YWAM GP’s own rocks', moreWrites.length === 0, [...new Set(moreWrites)].join(', '));
+  ok('… which she does write', rocksWrites > 0, String(rocksWrites));
+  ok('… and never a campus’s rock by it', campusTouched.length === 0, campusTouched.join(', '));
+  const gleaks = [];
+  gpSeen.forEach(([fn, text]) => { MARK.forEach(m => { if (text.indexOf(m) > -1) gleaks.push(fn + ' [' + m + ']'); }); });
+  ok('what the oversight sends her (' + gpSeen.length + ' answers) holds nothing the board is never sent', gleaks.length === 0 && gpSeen.length > 40, [...new Set(gleaks)].join(', '));
+  const gcred = gpSeen.filter(([fn, text]) => /"pinHash"|"pinSalt"|"secretHash"|"tokens":\[|"surveyToken"|"hash":|tok-gia|tok-tia/.test(text)).map(x => x[0]);
+  ok('… and no PIN, password or token material', gcred.length === 0, [...new Set(gcred)].join(', '));
+}
+ok('she is still signed in, still not an admin, still on Siem Reap’s staff', (await call('getBoardOverview', GIA)).ok === true && !mem.staff.find(x => x.id === 'st_gia').isAdmin && mem.staff.find(x => x.id === 'st_gia').campus === 'siemreap');
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

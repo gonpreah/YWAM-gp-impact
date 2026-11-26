@@ -167,7 +167,7 @@ function bindStructArrange_(){
 }
 function structStudentsEditorHtml_(campus, q, year){
   var draft=S.structStudentsDraft||{};
-  var people=S.roster.filter(function(p){ return p.campus===campus && p.kind!=='applicant'; }).slice().sort(function(a,b){ return a.name<b.name?-1:a.name>b.name?1:0; });
+  var people=S.roster.filter(function(p){ return p.campus===campus && p.kind!=='applicant' && !p.gpHome; }).slice().sort(function(a,b){ return a.name<b.name?-1:a.name>b.name?1:0; });
   return '<div class="card" id="structStudentsCard"><h3 style="margin-top:0">🎓 '+esc(gpT('Who is a student in Q{q} {year}?',{q:q, year:year}))+'</h3>'+
     '<p class="sub">'+esc(t('Pick the school for anyone doing one this quarter. It is for this quarter only — their profile stays as it is.'))+'</p>'+
     people.map(function(p){
@@ -182,7 +182,7 @@ function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging, planLea
   /* The chart is the base's structure for the quarter, which can differ from
      what a profile says: placeMap (the quarter's arrangement) wins, and so do the quarter's leaders (planLeads) and the
      names typed in on the whiteboard (extras) — Nov 2026. */
-  var base=(roster||S.roster).filter(function(p){ return p.campus===campus && p.kind!=='applicant'; });
+  var base=(roster||S.roster).filter(function(p){ return p.campus===campus && p.kind!=='applicant' && !p.gpHome; });   // gpHome: their job is YWAM GP — staff of this campus, on none of its chart
   (extras||[]).forEach(function(x){ base=base.concat([{ id:x.id, name:x.name, campus:campus, dept:'_off', ministry:'', extra:true, leads:[] }]); });
   var everyone=base.map(function(p){
     var pl=placeMap && placeMap[p.id], o=pl ? Object.assign({}, p, { dept:pl.dept, ministry:pl.ministry }) : p;
@@ -261,9 +261,18 @@ function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging, planLea
     h+='<div class="orgLevelLabel">'+esc(t('Not placed yet'))+' · '+unplaced.length+'</div>'+
       '<div class="orgBox loose"><p class="hint" style="margin:0 0 6px">'+esc(t('Their profile names a department or ministry that isn’t on this campus’s chart.'))+'</p>'+orgPeople_(unplaced, [])+'</div>';
   }
+  h+=orgGpHereHtml_(campus);
   h+='<p class="hint" style="margin:12px 0 0;text-align:center">'+esc(t('This chart is the base’s structure for the quarter. It can differ from what people have on their profile.'))+'</p>';
   S.orgArranging=false;
   return h+'</div>';
+}
+/* Under a campus's chart: the people who live here and whose job is YWAM GP itself — counted in this campus's staff,
+   on none of its chart. One quiet line, opening the YWAM GP chart. */
+function orgGpHereHtml_(campus){
+  var who=(S.roster||[]).filter(function(p){ return p.campus===campus && p.gpHome && p.kind!=='applicant'; }).sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); });
+  if(!who.length) return '';
+  return '<p class="hint orgGpHere" data-orggphere="'+esc(campus)+'" style="margin:12px 0 0">🌏 '+esc(t('YWAM GP team living here:'))+' '+
+    who.map(function(p){ return '<b>'+esc(p.name)+'</b>'; }).join(', ')+' · <button class="linkbtn inline" data-gogpchart style="width:auto;padding:0">'+esc(t('See the YWAM GP chart'))+' ›</button></p>';
 }
 
 /* ---------- team directory ---------- */
@@ -315,9 +324,20 @@ function teamHtml(){
   if(here.length){
     // group by department, then ministry inside it
     var byDept={};
-    here.forEach(function(p){ (byDept[p.dept||'—']=byDept[p.dept||'—']||[]).push(p); });
+    /* someone whose job is YWAM GP itself is on this campus's staff (they live here) under a heading of their own, last */
+    var GPH='\uffffYWAM GP';
+    here.forEach(function(p){ var k=gpHomeIs_(p) ? GPH : (p.dept||'—'); (byDept[k]=byDept[k]||[]).push(p); });
     Object.keys(byDept).sort().forEach(function(dept){
       var people=byDept[dept];
+      if(dept===GPH){
+        h+='<div class="deptBlock" id="dirGpHome"><div class="deptHead">🌏 '+esc(t('YWAM GP'))+'<span class="deptN">'+people.length+'</span></div>'+
+          '<div class="minLabel">'+esc(t('Their job is YWAM GP itself. They live here, so they count in this campus’s staff.'))+'</div><div class="dir">';
+        people.forEach(function(p){
+          h+='<div class="dircard" data-person="'+esc(p.id)+'">'+avatarHtml(p)+'<div class="pname">'+esc(p.name)+'</div>'+
+            '<div class="pmeta">'+esc(gpRolesOfPerson_(p.id).join(', '))+'</div>'+ptChipHtml(p)+'</div>';
+        });
+        h+='</div></div>'; return;
+      }
       h+='<div class="deptBlock"><div class="deptHead">'+(MIN_EMOJI[dept]||'')+' '+esc(t(dept))+
          '<span class="deptN">'+people.length+'</span></div>';
       var byMin={};
@@ -354,8 +374,8 @@ function personHtml(){
     ((S.org&&S.org.gp)||[]).filter(function(x){ return x.id===p.id; }).map(function(g){ return '<div class="pmeta orgPersonTitle">🌏 '+esc(gpRoleLabel_(g.gpRole))+'</div>'; }).join('')+   // every YWAM GP place they hold
     (function(){ var b=((S.org&&S.org.board)||[]).filter(function(x){ return x.staffId===p.id; })[0]; return b ? '<div class="pmeta orgPersonTitle">🛡️ '+esc(t(b.role))+' · '+esc(t('YWAM GP Advisory Board'))+'</div>' : ''; })()+
     (p.role?'<div class="pmeta">'+esc(t(p.role))+'</div>':'')+
-    '<div class="pmeta">'+esc(t(p.dept))+(p.ministry?' · '+esc(t(p.ministry)):'')+'</div>'+
-    '<div class="pmeta">'+esc(t(campusName(p.campus)))+'</div></div></div>';
+    (gpHomeIs_(p) ? '<div class="pmeta" id="personGpHome">'+esc(gpHomeLine_(p))+'</div>' : '<div class="pmeta">'+esc(t(p.dept))+(p.ministry?' · '+esc(t(p.ministry)):'')+'</div>')+
+    '<div class="pmeta">'+esc(gpHomeIs_(p) ? gpT('lives in {campus}',{campus:t(campusShort(p.campus))}) : t(campusName(p.campus)))+'</div></div></div>';
   var a=d.activity||{};
   if(a.daysLogged){
     h+='<div class="chips" style="margin-top:12px">'+
@@ -773,7 +793,8 @@ function applyTheme(v){
 function myPositionsHtml_(){
   var me=S.me, O=S.org||{}, rows=[];
   var title=orgTitleOf_(me);
-  rows.push(['🧭', title ? orgTitleText_(title) : (t(me.ministry||me.dept||'')), t(campusName(me.campus))]);
+  if(gpHomeIs_(me)) rows.push(['🌏', t('YWAM GP'), gpT('Your job is YWAM GP itself. You are on {campus}’s staff, where you live.',{campus:t(campusName(me.campus))}), 'myPosGpHome']);
+  else rows.push(['🧭', title ? orgTitleText_(title) : (t(me.ministry||me.dept||'')), t(campusName(me.campus))]);
   /* in more than one ministry: which is the main one, and the others — said plainly (Nov 2026) */
   var others=(me.ministries||[]).map(function(k){ return String(k).split('|'); }).filter(function(x){ return x.length===2 && x[1] && !(x[0]===me.dept && x[1]===me.ministry); });
   if(others.length) rows.push(['🤝', gpT('Main: {main}',{main:title ? orgTitleText_(title) : t(me.ministry||me.dept||'')}), gpT('Also: {list}',{list:others.map(function(x){ return t(x[1]); }).join(' · ')}), 'myPosMin']);
@@ -851,12 +872,13 @@ function profileHtml(){
     '<label class="f">'+esc(t('Email'))+'</label><input type="email" id="p_email" value="'+esc(p.email||'')+'" placeholder="you@example.com">'+
     '<div class="hint">'+esc(t('One profile per email — this is what stops a duplicate sign-up.'))+'</div>'+
     '<label class="f">'+esc(t('Campus'))+'</label><select id="p_campus">'+CAMPUSES.map(function(c){return '<option value="'+c.id+'"'+(S.me.campus===c.id?' selected':'')+'>'+c.name+'</option>';}).join('')+'</select>'+
+    (gpHomeIs_(S.me) ? '<p class="hint" id="profGpHome" style="margin:10px 0 0">🌏 '+esc(gpT('{where}. Your job is YWAM GP itself, so there is no campus ministry to choose. An admin sets this on your account.',{where:gpHomeLine_(S.me)}))+'</p><div hidden>' : '<div>')+
     cltRequestBannerHtml_()+
     '<label class="f">'+esc(t('Main department'))+'</label><select id="p_dept">'+deptsFor(S.me.campus).map(function(d){return '<option value="'+esc(d)+'"'+(S.me.dept===d?' selected':'')+'>'+esc(t(d))+'</option>';}).join('')+'</select>'+
     '<label class="f">'+esc(t('Main ministry'))+'</label><select id="p_ministry"></select><div class="hint">'+esc(t('The one My Ministry opens on.'))+'</div>'+
     '<label class="f">'+esc(t('Other ministries I’m part of'))+'</label>'+
     '<div class="hint" style="margin:0 0 6px">'+esc(t('Tick every other ministry you serve in. You see and enter numbers for your main ministry and these.'))+'</div>'+
-    '<div class="leadsPick" id="p_ministries">'+leadsPickHtml_(S.me.campus, S.me.ministries||[], 'data-pmin', S.me.dept+'|'+(S.me.ministry||''))+'</div>'+
+    '<div class="leadsPick" id="p_ministries">'+leadsPickHtml_(S.me.campus, S.me.ministries||[], 'data-pmin', S.me.dept+'|'+(S.me.ministry||''))+'</div></div>'+
     '<label class="f">'+esc(t('Role / team'))+'</label><input type="text" id="p_role" value="'+esc(S.me.role)+'">'+
     staffTypeFieldHtml('p_type', S.me.staffType||'')+
     '<label class="f">'+esc(t('Male or female'))+'</label><select id="p_sex">'+

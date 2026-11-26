@@ -333,5 +333,40 @@ console.log('\n=== Campus Leadership is on the chart once (Nov 2026, Uriah: "the
   ok('moved out of Campus Leadership into a ministry, a second job in that department shows again', r.body.ok && JSON.stringify(snap('di').also) === JSON.stringify([CS + '|Cafe']) && snap('di').ministry === 'LTN', JSON.stringify(snap('di')));
 }
 
+/* ---- someone whose job is YWAM GP itself (gpHome, Nov 2026): staff of the campus, on none of its chart ---- */
+{
+  const CS = 'Community Service', Y = CY, Q = CQ;
+  mem.staff = [
+    withPin({ id: 'ad', name: 'Adam Admin', username: 'adam', campus: 'siemreap', dept: 'Campus Leadership', ministry: 'Campus Director', active: true, isAdmin: true }),
+    withPin({ id: 'cl', name: 'Cleo Lead', username: 'cleo', campus: 'siemreap', dept: 'Campus Leadership', ministry: CS, active: true }),
+    withPin({ id: 'gh', name: 'Gwen Home', username: 'gwen', campus: 'siemreap', dept: 'Campus Leadership', ministry: 'Campus Director', cdKind: 'national', active: true, leads: [CS + '|Cafe'], ministries: [CS + '|LTN'] }),
+    withPin({ id: 're', name: 'Rey Regular', username: 'rey', campus: 'siemreap', dept: CS, ministry: 'Cafe', active: true }),
+  ];
+  mem.structurePlans = []; mem.structure = [];
+  r = await call('adminUpdateStaff', ['adam', '1234', 'gh', { gpRoles: ['campuses'], gpHome: true }]);
+  ok('(set up) Gwen now works for YWAM GP and lives in Siem Reap', r.body.ok && mem.staff.find(x => x.id === 'gh').gpHome === true && mem.staff.find(x => x.id === 'gh').campus === 'siemreap');
+  const gwen = () => JSON.stringify(mem.staff.find(x => x.id === 'gh'));
+  const was = gwen();
+  r = await call('saveStructure', ['adam', '1234', 'siemreap', Y, Q]);
+  ok('a snapshot of the campus chart leaves her out', r.body.ok && !r.body.doc.people.some(p => p.id === 'gh') && r.body.doc.people.length === 3, r.body.doc.people.map(p => p.id).join());
+  r = await call('saveStructurePlan', ['cleo', '1234', 'siemreap', Y, Q, { gh: 'dts' },
+    { gh: { dept: CS, ministry: 'Cafe' }, re: { dept: CS, ministry: 'LTN' } }, { [CS + '|Cafe']: ['gh', 're'] }, [], null, { gh: [CS + '|Cafe'] }]);
+  const pl = r.body.plan;
+  ok('the quarter’s plan cannot place her, make her a student, a leader or a second job', r.body.ok && !pl.place.gh && pl.place.re && !pl.students.gh && JSON.stringify(pl.leads) === JSON.stringify({ [CS + '|Cafe']: ['re'] }) && !(pl.also || {}).gh, JSON.stringify(pl));
+  ok('… its snapshot follows without her', !r.body.doc.people.some(p => p.id === 'gh'));
+  ok('… and she is not among the profiles that differ', r.body.diff.changes.every(c => c.id !== 'gh') && r.body.diff.changes.some(c => c.id === 're'));
+  /* a plan row written before she moved still names her */
+  mem.structurePlans[0].place.gh = { dept: CS, ministry: 'Cafe' }; mem.structurePlans[0].leads[CS + '|Cafe'].push('gh');
+  r = await call('applyStructure', ['cleo', '1234', 'siemreap', Y, Q, { dry: true }]);
+  ok('a look first never lists her, even from a plan that still names her', r.body.ok && r.body.changes.every(c => c.id !== 'gh') && r.body.waiting.every(c => c.id !== 'gh'));
+  r = await call('applyStructure', ['cleo', '1234', 'siemreap', Y, Q]);
+  ok('making the quarter live moves the others and never her', r.body.ok && mem.staff.find(x => x.id === 're').ministry === 'LTN' && gwen() === was, gwen());
+  ok('… no request to join Campus Leadership appears for her either', !mem.staff.find(x => x.id === 'gh').cltRequest);
+  r = await call('getStructure', ['cleo', '1234', 'siemreap', Y, Q]);
+  ok('nothing drifts because of her', r.body.ok && r.body.diff.changes.every(c => c.id !== 'gh') && !r.body.doc.people.some(p => p.id === 'gh'));
+  ok('she is still staff of Siem Reap: on the roster there', (await call('teamRoster', ['rey', '1234'])).body.some(p => p.id === 'gh' && p.campus === 'siemreap' && p.gpHome === true));
+  ok('and cannot arrange the campus’s structure any more', (await call('saveStructurePlan', ['gwen', '1234', 'siemreap', Y, Q, {}, {}, null, [], null, null])).body.err === 'not_authorized');
+}
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
