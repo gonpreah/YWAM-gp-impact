@@ -68,7 +68,8 @@ Income.
 
 ### 📥 Bulk import — a QuickBooks Profit and Loss Detail, and a mix of places (25 Nov 2026)
 - **These lines are from** has **A mix of places — each line says which account** (`mix`): no one account for the
-  whole file; each line's own account column is used.
+  whole file; each line's own account column is used. **It is the default** (26 Nov 2026); pick a bank statement or the cash book
+  when every line in the file is from that one account.
 - **A Profit and Loss Detail** (QuickBooks: Transaction date · Transaction type · Number · Name · Location · Class
   full name · Description · Item split account · Amount · Balance) is recognised by its Income / Expenses
   sections (`bulkFromSheet_` → `isPL`). It is read as a mix of places unless an account was picked on purpose

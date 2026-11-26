@@ -2000,7 +2000,7 @@ var BULK_KIND={ inc:'💵 Income', exp:'🧾 Expense', xf:'🔁 Transfer' };
 /* one field of a bulk line changed — what follows from it */
 function bulkSet_(br, f, v){
   if(f==='amt'){ var n=calc_(v); br.amt=isNaN(n)?0:Math.round(n*100)/100; } else br[f]=v;
-  if(f==='kind'){ br.type=''; br.fund=''; if(v!=='xf'){ br.bank=br.bank||(/^acct\|/.test(S.bulkSrc||'acct|aba')?(S.bulkSrc||'acct|aba'):''); } else { br.from=br.from||(/^acct\|/.test(S.bulkSrc||'acct|aba')?(S.bulkSrc||'acct|aba'):''); } }
+  if(f==='kind'){ br.type=''; br.fund=''; if(v!=='xf'){ br.bank=br.bank||(/^acct\|/.test(S.bulkSrc||'mix')?(S.bulkSrc||'mix'):''); } else { br.from=br.from||(/^acct\|/.test(S.bulkSrc||'mix')?(S.bulkSrc||'mix'):''); } }
   if(f==='type' && br.kind==='inc') br.fund='';
   if(f==='fund' || f==='kind') br.hint='';
   if(f==='type' && br.kind==='exp' && (!br.fund || br.hint)){ br.fund=EXP_HINT[v]||''; br.hint=br.fund?'usual for '+v:''; }
@@ -2147,7 +2147,7 @@ function inBulkHtml_(){
   var U=S.bulk, open=S.foldOpen&&S.foldOpen.bulk;
   var h='<details class="inCard fold" id="inBulk" data-fold="bulk"'+(open?' open':'')+'><summary class="foldHead"><span><b>📥 Bulk import</b><span class="dsub">'+(U?U.rows.length+' lines to check from '+esc(U.file):'Many income, expenses and transfers at once')+'</span></span><span class="chev">▾</span></summary>'+
     '<p class="inLast">For a month of mixed lines from QuickBooks or straight from the bank. Each line gets a suggestion — tick it if it’s right, or Edit it. Added lines go to 📡 Live, not the approved report.</p>'+
-    '<label class="f" for="bulkSrc">These lines are from</label><select id="bulkSrc" class="bigSel">'+[['acct|aba','ABA bank statement'],['acct|us','US bank statement'],['acct|cash','Cash book'],['mix','A mix of places — each line says which account'],['qbo','QuickBooks — mixed accounts'],['qbo|acct|aba','QuickBooks — ABA account only'],['qbo|acct|us','QuickBooks — US account only'],['qbo|acct|cash','QuickBooks — Cash on hand only']].map(function(o){ return '<option value="'+o[0]+'"'+((S.bulkSrc||'acct|aba')===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select>'+
+    '<label class="f" for="bulkSrc">These lines are from</label><select id="bulkSrc" class="bigSel">'+[['acct|aba','ABA bank statement'],['acct|us','US bank statement'],['acct|cash','Cash book'],['mix','A mix of places — each line says which account'],['qbo','QuickBooks — mixed accounts'],['qbo|acct|aba','QuickBooks — ABA account only'],['qbo|acct|us','QuickBooks — US account only'],['qbo|acct|cash','QuickBooks — Cash on hand only']].map(function(o){ return '<option value="'+o[0]+'"'+((S.bulkSrc||'mix')===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select>'+
     '<label class="f" for="bulkNote">Describe what you’re importing <span class="dsub" style="display:inline">(optional)</span></label>'+
     '<textarea id="bulkNote" class="bulkNote" rows="3" placeholder="e.g. This import is the ABA expenses from the class Admin in QBO — this corresponds to Office/General in our system">'+esc(S.bulkNote||'')+'</textarea>'+
     '<p class="bulkNoteRead" id="bulkNoteRead">'+(String(S.bulkNote||'').trim()?bulkNoteSum_(bulkNoteRead_(S.bulkNote)):'Where is this report from, and where should it go? The account, the kind of lines and the category it names are put on every line.')+'</p>'+
@@ -2233,7 +2233,7 @@ function pickDateOrder_(samples){
 }
 function bulkRead_(f){
   S.bulkErr=''; S.bulkBusy=true; S.bulkFileObj=f; render();
-  var isPdf=/\.pdf$/i.test(f.name), src=S.bulkSrc||'acct|aba';
+  var isPdf=/\.pdf$/i.test(f.name), src=S.bulkSrc||'mix';
   var decide=function(cells){ var sm=cells.filter(function(t){ return /^\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}$/.test(String(t).trim()); }); DATE_ORDER = S.bulkOrder || pickDateOrder_(sm); };
   f.arrayBuffer().then(function(buf){ return isPdf ? pdfRows_(buf).then(function(rows){ decide([].concat.apply([], rows.map(function(r){ return r.map(function(w){ return w.s; }); }))); return bulkFromPdfRows_(rows); })
       : (/\.csv$/i.test(f.name) ? Promise.resolve(csvRows_(new TextDecoder().decode(buf))) : xlsxRows_(buf)).then(function(rows){ decide([].concat.apply([], rows.map(function(r){ return (r||[]).map(function(v){ return v==null?'':String(v); }); }))); return bulkFromSheet_(rows); }); })
