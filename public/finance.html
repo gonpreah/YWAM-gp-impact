@@ -704,8 +704,8 @@ function refreshBal_(){
 var ALLOC_PREV_ASOF=window.GP_FIN_APP ? '' : '2026-11-13';
 var ALLOC_HIST=[], DEBT_HIST=[];   /* one saved entry per day, newest first */
 var ALLOC = [   /* the six allocations and their sub-funds, as the Finances office keeps them — SAMPLE amounts */
-  { id:'adm', prev:8690.1, name:'Admin / Operational', eg:'office/general, kitchen, hospitality, technical, building', c:'--al1', dark:false,
-    items:[['Office/General',1121.15],['Kitchen',2400],['Hospitality',1850],['Technical',1200],['Building',2600],['Other',650]], note:'The day-to-day cost of running the base.' },
+  { id:'adm', prev:8690.1, name:'Admin / Operational', eg:'office/general, kitchen, hospitality, technical, building, teams', c:'--al1', dark:false,
+    items:[['Office/General',1121.15],['Kitchen',2400],['Hospitality',1850],['Technical',1200],['Building',2600],['Teams',0],['Other',650]], note:'The day-to-day cost of running the base.' },
   { id:'fund', prev:9000, name:'Funds', eg:'LT Fund, Development, Training, Other', c:'--al2', dark:false,
     items:[['Leadership team fund (LT Fund)',4000],['Development fund',2500],['Training fund',1800],['Other',700]], note:'The base’s standing funds, each kept for its own purpose.' },
   { id:'min', prev:23050, name:'Ministry budgets', eg:'DTS, DBS, SOMD, schools, music, media, YDC, Community Night', c:'--al3', dark:true,
@@ -3223,6 +3223,10 @@ function loadState_(k){ if(!k) return;
     ALLOC.length=0; k.struct.forEach(function(c){ var g={ id:c.id, name:c.name, eg:c.eg||'', c:c.c, dark:!!c.dark, single:!!c.single, note:c.note||'', prev:wasPrev[c.id]||0,
       items:(c.items||[]).map(function(n){ return [n, was[c.id+'|'+n]||0]; }) }; g.amt=g.items.reduce(function(s2,it){ return s2+it[1]; },0); ALLOC.push(g); }); }
   if(Array.isArray(k.deletedFunds)) DELETED_FUNDS=k.deletedFunds;
+  /* categories added later (Teams under Admin / Operational, 26 Nov 2026) join a saved structure once, before its "Other" — unless deleted */
+  [['adm','Teams']].forEach(function(nw){ var g=ALLOC.filter(function(a){ return a.id===nw[0]; })[0]; if(!g || g.items.some(function(it){ return it[0]===nw[1]; })) return;
+    if(DELETED_FUNDS.some(function(d){ return d.gid===nw[0] && d.name===nw[1]; })) return;
+    var oi=g.items.map(function(it){ return it[0]; }).indexOf('Other'); g.items.splice(oi<0?g.items.length:oi, 0, [nw[1], 0]); });
   if(Array.isArray(k.manualAllocs)) MANUAL_ALLOCS=k.manualAllocs;
   else {   /* saved before manual allocations were kept: the first allocations saved become the first one — the approved day's if there is one */
     var pdays=Object.keys(k.published||{}).filter(function(d){ return k.published[d] && k.published[d].groups; }).sort(), real=(k.alHist||[]).filter(function(r){ return !r.sample; }).sort(function(x,y){ return x.asOf<y.asOf?-1:1; });

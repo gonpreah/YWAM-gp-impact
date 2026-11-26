@@ -201,6 +201,8 @@ Income.
 ### 🗂 Category list
 - The list of categories and sub-categories everything else uses. A sub-category's key is
   `category|name` (e.g. `adm|Kitchen`).
+- **Teams** (`adm|Teams`, under Admin / Operational, before Other) was added 26 Nov 2026. A saved list from before gets
+  it once, at $0, on load — unless it was deleted (Category list → deleted). Add another this way in the same list.
 - **Rename / move:** the key changes, and everything that pointed at it follows — formulas,
   incomes, expenses, transfers, Financial tools, advances, remembered import answers, the
   saved allocation days and the approved days (`catRekey_`).
