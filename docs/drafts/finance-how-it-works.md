@@ -54,7 +54,8 @@ Income.
 - **The Dashboard's Income allocation** (`flowHtml('inc')`) opens on **2026 so far** (26 Nov 2026; `S.flowPer.inc='ytd'`)
   — the year up to the report day. Also: the report day's month (with ▲ / ▼ against the month before) and **Custom**
   (from / to, `S.flowRange`, `flowRange_`: starts on the 1st of the month, never past the report day; no comparison).
-  Details › follows the same choice. Expense allocation has the same three and still opens on the month.
+  Details › follows the same choice. **Expense allocation is the same choice**: picking a period (or a custom range)
+  on either moves both (`S.flowPer.inc` = `S.flowPer.exp`, one `S.flowRange.both`).
 
 ### 🧾 Expenses
 - Each expense has a kind (the QuickBooks account list, plus Honorarium 54000 and Not sure),

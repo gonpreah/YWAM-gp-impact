@@ -2480,9 +2480,9 @@ var FLOW_MONTH='November 2026', FLOW_PREV='October 2026';
 /* year to date: the same shares, bigger — sample */
 Object.keys(FLOW).forEach(function(kind){ var F=FLOW[kind]; F.ytd={};
   Object.keys(F.by).forEach(function(k){ var o={}; Object.keys(F.by[k].by).forEach(function(c){ o[c]=Math.round(F.by[k].by[c]*(9.4+(c.length%4)*0.6)); }); F.ytd[k]={ by:o }; }); });
-S.flowPer={ inc:'ytd' }; S.flowOpen={}; S.flowList={}; S.flowRange={};   /* income allocation opens on "2026 so far" (26 Nov 2026) */
+S.flowPer={ inc:'ytd', exp:'ytd' }; S.flowOpen={}; S.flowList={}; S.flowRange={};   /* income and expense allocation open on "2026 so far" and move together (26 Nov 2026) */
 /* Custom: from / to, kept per kind; starts as the first of this month to the report day */
-function flowRange_(kind){ var r=flowRef_(), c=S.flowRange[kind]||(S.flowRange[kind]={ from:r.slice(0,7)+'-01', to:r });
+function flowRange_(kind){ var r=flowRef_(), c=S.flowRange.both||(S.flowRange.both={ from:r.slice(0,7)+'-01', to:r });   /* one range for income and expenses */
   var to=c.to>r?r:c.to, from=c.from>to?to:c.from; return { from:from, to:to }; }
 function flowPerLbl_(kind){ var m=S.flowPer[kind]; if(m==='custom'){ var c=flowRange_(kind); return date(c.from)+(c.from!==c.to?' – '+date(c.to):''); } return m==='ytd' ? flowYtdLabel_(kind) : flowMonth_(kind); }
 function flowOf_(kind, id){ var F=FLOW[kind], src=flowLive_(kind) ? flowLiveOf_(kind, id, S.flowPer[kind]||'month') : (S.flowPer[kind]==='ytd'?F.ytd:F.by)[id], by=src?src.by:{}, tot=0;
@@ -2771,7 +2771,7 @@ document.addEventListener('click', function(e){ var M=mnS_(), t=e.target.closest
   else if(t.id==='mnClear') M.sel=[];
   render(); });
 document.addEventListener('change', function(e){ var fk=e.target.dataset && (e.target.dataset.flowfrom||e.target.dataset.flowto); if(!fk || !e.target.value) return;
-  var c=S.flowRange[fk]=flowRange_(fk); c[e.target.dataset.flowfrom?'from':'to']=e.target.value; if(c.from>c.to){ if(e.target.dataset.flowfrom) c.to=c.from; else c.from=c.to; }
+  var c=S.flowRange.both=flowRange_(fk); c[e.target.dataset.flowfrom?'from':'to']=e.target.value; if(c.from>c.to){ if(e.target.dataset.flowfrom) c.to=c.from; else c.from=c.to; }
   render(); if(document.body.classList.contains('sheetOn')) sheet(FLOW[fk].id); });
 document.addEventListener('change', function(e){ if(e.target.id!=='mnFrom' && e.target.id!=='mnTo') return; var M=mnS_(); if(!e.target.value) return;
   M[e.target.id==='mnFrom'?'from':'to']=e.target.value; render(); });
@@ -3127,7 +3127,7 @@ document.addEventListener('click', function(e){
     if(t.classList.contains('alSeg')){ S.flowList[fp[0]]=true; S.flowOpen[fp[0]]=fp[1]; }   /* a colour opens the list on its own row */
     else S.flowOpen[fp[0]] = S.flowOpen[fp[0]]===fp[1] ? null : fp[1];
     render(); }
-  else if(t.dataset.flowper){ var pp=t.dataset.flowper.split('|'); S.flowPer[pp[0]]=pp[1]; render(); if(document.body.classList.contains('sheetOn')) sheet(FLOW[pp[0]].id); }
+  else if(t.dataset.flowper){ var pp=t.dataset.flowper.split('|'); S.flowPer.inc=S.flowPer.exp=pp[1];   /* the two move together */ render(); if(document.body.classList.contains('sheetOn')) sheet(FLOW[pp[0]].id); }
   else if(t.dataset.al && !t.closest('.alRow')){ if(S.open===t.dataset.al && S.alList){ S.open=null; } else { S.alList=true; S.open=t.dataset.al; } render(); }   /* a second tap on the same colour lets it go */
   else if(t.dataset.al){ S.open = S.open===t.dataset.al ? null : t.dataset.al; render(); }
   else if(t.dataset.sheet) sheet(t.dataset.sheet);
