@@ -415,8 +415,8 @@ Income.
   `S.mn.kOpen`): tapped, a row of "Where the income came from" / "Where the money went" lists the lines behind it, with
   how many — the incomes, the expenses, and the transfers ticked into the profit and loss ("🔁 From Office/General",
   "🔁 To Hospitality") with their memo and the other side (`x.mnKey`, set in `mnPL_`).
-- **🔁 Internal transfers & adjustments** (25 Nov 2026; widened 26 Nov 2026), in grey under Income and Expenses
-  (`#mnXf`): **everything of those sub-categories not in the profit and loss** — transfers between ministries without the
+- **🔁 Internal transfers & adjustments** (25 Nov 2026; widened 26 Nov 2026), in grey
+  (`#mnXf`, below "Where the income came from / where the money went"): **everything of those sub-categories not in the profit and loss** — transfers between ministries without the
   📈 tick, journal entries, Financial tools (the fix lines and gap fixes that keep the approved and live allocations
   right among them) and manual allocations — as In, Out and In − out (`mnPL_` → `xin` / `xout` / `xnet`). Not in the
   net. **Tapped, it opens as its own in and out** (`#mnXfBtn`, `S.mn.xfOpen`): Came in / Went out, grouped
