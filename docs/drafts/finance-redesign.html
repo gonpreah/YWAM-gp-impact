@@ -1392,14 +1392,14 @@ function inXferHtml_(){
     '<div><label class="f" for="xfDate">Date</label><input type="date" id="xfDate" data-xf="date" max="'+TODAY+'" value="'+esc(D.date)+'"></div></div>'+
     '<div id="xfAppr">'+xferPreHtml_()+'</div>'+
     '<label class="f" for="xfMemo">Memo — why</label><textarea id="xfMemo" data-xf="memo" rows="2" maxlength="300" placeholder="e.g. Kitchen ran over this month; covered from Office/General">'+esc(D.memo)+'</textarea></div>'+
-    '<label class="incChk xfPlChk"><input type="checkbox" id="xfPl" data-xfpl="1"'+(D.pl?' checked':'')+'><span><b>📈 Show in the Ministries profit and loss</b><br><small>For money that pays for something — e.g. a ministry paying for accommodation or food. It counts as spending for the one it leaves and income for the one it reaches. Leave it off for accounting moves; those stay a quiet grey line.</small></span></label>'+
+    '<label class="incChk xfPlChk"><input type="checkbox" id="xfPl" data-xfpl="1"'+(D.pl?' checked':'')+'><span><b>📈 Show in the Ministries profit and loss</b><br><small>For money that pays for something — e.g. a ministry paying for accommodation or food. It counts as spending for the category it leaves and income for the one it reaches (for a Financial tools adjustment: Add income = income, Remove income = spending). Leave it off for accounting moves; those stay a quiet grey line.</small></span></label>'+
     '<div id="xfPrev">'+xferPrevHtml_()+'</div>'+
     (S.xfErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.xfErr)+'</p>' : '')+
     '<div class="inBtns"><button class="btn" id="xfSave">'+(D.editing?'Save change':'Move the money')+'</button></div>';
   if(allXfers_().length) h+='<div class="xfList"><div class="dListHead">Transfers made</div>'+allXfers_().map(function(t){ var tool=isToolX_(t);
       return '<div class="xfItem"><div class="xfTop"><b>'+money(t.amt,true)+'</b><span class="dsub">'+(tool?'<span class="xfTag tool">🛠 Financial tools</span> ':'')+date(t.date)+'</span></div>'+
         '<div class="xfPath">'+esc(xferShort_(t.from))+' <span>→</span> '+esc(xferShort_(t.to))+'</div><div class="xfMemo">“'+esc(t.memo)+'”</div>'+
-        (!tool && fundOf_(t.from) && fundOf_(t.to) ? '<label class="xfPlTog"><input type="checkbox" data-xfpltog="'+t.id+'"'+(t.pl?' checked':'')+'> 📈 Show in the Ministries profit and loss</label>' : '')+
+        ((!tool && fundOf_(t.from) && fundOf_(t.to)) || (tool && (fundOf_(t.from) || fundOf_(t.to)) && !/fix|gap/.test(t.src||'')) ? '<label class="xfPlTog"><input type="checkbox" data-xfpltog="'+t.id+'"'+(t.pl?' checked':'')+'> 📈 Show in the Ministries profit and loss</label>' : '')+
         '<div class="rowBtns">'+editBtnHtml_(tool?'tool':'xf', t)+(tool?'<button class="delBtn" data-tooldel="'+t.id+'">↩ Undo</button>':'<button class="delBtn" data-xfdel="'+t.id+'">↩ Undo this transfer</button>')+'</div></div>'; }).join('')+'</div>';
   return h+'</details>';
 }
@@ -1486,7 +1486,7 @@ function xferSave_(){
   if(!D.editing) snap_(isTool_(D.from) ? 'Undid adding '+money(a,true)+' to '+xferShort_(D.to)+' (Financial tools)' : isTool_(D.to) ? 'Undid removing '+money(a,true)+' from '+xferShort_(D.from)+' (Financial tools)' : 'Undid the transfer of '+money(a,true)+' from '+xferShort_(D.from)+' to '+xferShort_(D.to));
   if(isTool_(D.from) || isTool_(D.to)){
     if(!isTool_(D.from)) fundMove_(D.from, -a); if(!isTool_(D.to)) fundMove_(D.to, a);
-    var tx={ id:'f'+Date.now().toString(36), at:Date.now(), date:D.date, from:D.from, to:D.to, amt:a, memo:String(D.memo).trim() }; TOOL_XFERS.unshift(tx); if(xferPreDay_()) xferPreApply_(tx, 'tool');
+    var tx={ id:'f'+Date.now().toString(36), at:Date.now(), date:D.date, from:D.from, to:D.to, amt:a, memo:String(D.memo).trim() }; if(D.pl && (fundOf_(D.from) || fundOf_(D.to))) tx.pl=true; TOOL_XFERS.unshift(tx); if(xferPreDay_()) xferPreApply_(tx, 'tool');
     TOOL_XFERS.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; });
     xferSnap_(D.date); S.xfer=null; render(); toast((isTool_(D.from)?'Added ':'Removed ')+money(a,true)+(isAcct_(D.from)||isAcct_(D.to)?' ('+xferShort_(isTool_(D.from)?D.to:D.from)+')':'')+' — see Income → History → Financial tools'); return;
   }
@@ -2909,6 +2909,9 @@ function mnPL_(L, labs, from, to){ var inc=0, exp=0, byInc={}, byExp={}, other=0
     else if(x.type==='Internal transfer' && x.src && x.src.pl){   /* ticked "Show in the Ministries profit and loss": paying for something, so income / spending */
       var oth=xferShort_(x.camt>0 ? x.src.from : x.src.to), k2=(x.camt>0?'🔁 From ':'🔁 To ')+oth;
       if(x.camt>0){ inc+=x.camt; byInc[k2]=(byInc[k2]||0)+x.camt; } else { exp-=x.camt; byExp[k2]=(byExp[k2]||0)-x.camt; } lines.push(x); }
+    else if(x.type==='Adjustment (Financial tools)' && x.src && x.src.pl){   /* a Financial tools adjustment ticked into the profit and loss */
+      var k3=x.camt>0 ? '🛠 Added (Financial tools)' : '🛠 Removed (Financial tools)';
+      if(x.camt>0){ inc+=x.camt; byInc[k3]=(byInc[k3]||0)+x.camt; } else { exp-=x.camt; byExp[k3]=(byExp[k3]||0)-x.camt; } lines.push(x); }
     else if(x.type==='Internal transfer'){ if(x.camt>0) xin+=x.camt; else xout-=x.camt; lines.push(x); }   /* category to category: grey, not income or spending */
     else { other+=x.camt; byOther[x.type]=(byOther[x.type]||0)+x.camt; } });
   var r=function(v){ return Math.round(v*100)/100; };
@@ -2917,7 +2920,7 @@ function mnBal_(L, labs, day){ var by={}; L.forEach(function(x){ if(x.camt==null
   return Math.round(labs.reduce(function(s2,l){ return s2+(by[l]||0); },0)*100)/100; }
 /* the transactions list's filters (26 Nov 2026): Income / Expenses / Transfers, the kind of income or expense, and the
    account it came through (ABA, US, Cash, or Other — a transfer between categories has no account) */
-function mnLineKind_(x){ return x.type==='Income' ? 'inc' : x.type==='Expense' ? 'exp' : 'xf'; }
+function mnLineKind_(x){ if(x.src && x.src.pl && x.camt!=null) return x.camt>0 ? 'inc' : 'exp'; return x.type==='Income' ? 'inc' : x.type==='Expense' ? 'exp' : 'xf'; }
 function mnLineType_(x){ return x.type==='Internal transfer' ? 'Internal transfer' : (x.src && x.src.type) || x.type; }
 function mnLineAcct_(x){ return x.acct==='ABA bank' ? 'aba' : x.acct==='US bank' ? 'us' : x.acct==='Cash on hand' ? 'cash' : 'other'; }
 function mnLF_(){ var M=mnS_(); return M.lf||(M.lf={ k:'all', t:'', a:'all' }); }
@@ -2983,7 +2986,7 @@ function minsHtml_(){ var M=mnS_(), P=mnPeriod_(), sel=mnSel_(), labs=sel.map(fu
   if(pl.lines.length){ h+='<button class="flowDrop'+(M.list?' on':'')+'" id="mnList" aria-expanded="'+!!M.list+'"><span>'+(M.list?'Hide':'Show')+' the '+pl.lines.length+' transaction'+(pl.lines.length>1?'s':'')+'</span><span class="chev">▾</span></button>';
     var shownL=M.list ? mnLineFilter_(pl.lines) : [];
     if(M.list) h+=mnFiltHtml_(pl.lines, shownL.length);
-    if(M.list) h+='<ul class="mnLines">'+shownL.map(function(x){ var memo=(x.type==='Internal transfer' ? x.memo : (x.src&&x.src.memo))||''; return '<li><div><b>'+esc(x.name||(x.src&&x.src.type)||x.type)+'</b><span>'+date(x.date)+' · '+esc((x.src&&x.src.type)||x.type)+(x.type==='Internal transfer' && x.src && x.src.pl?' · 📈 in the profit and loss':'')+(sel.length>1?' · '+esc(mnName_(sel[labs.indexOf(x.cat)])):'')+(memo?' · '+esc(memo):'')+(x.appr?' · ✅':'')+'</span></div><b class="'+(x.type==='Internal transfer' && !(x.src&&x.src.pl)?'mnXfAmt':x.camt<0?'mnOut':'mnIn')+'">'+mnSg_(x.camt)+'</b></li>'; }).join('')+'</ul>'; }
+    if(M.list) h+='<ul class="mnLines">'+shownL.map(function(x){ var memo=(x.type==='Internal transfer' ? x.memo : (x.src&&x.src.memo))||''; return '<li><div><b>'+esc(x.name||(x.src&&x.src.type)||x.type)+'</b><span>'+date(x.date)+' · '+esc((x.src&&x.src.type)||x.type)+(x.src && x.src.pl?' · 📈 in the profit and loss':'')+(sel.length>1?' · '+esc(mnName_(sel[labs.indexOf(x.cat)])):'')+(memo?' · '+esc(memo):'')+(x.appr?' · ✅':'')+'</span></div><b class="'+(x.type==='Internal transfer' && !(x.src&&x.src.pl)?'mnXfAmt':x.camt<0?'mnOut':'mnIn')+'">'+mnSg_(x.camt)+'</b></li>'; }).join('')+'</ul>'; }
   else if(!NA) h+='<p class="hint" style="margin-top:6px">No income or expenses for '+esc(mnSelName_(sel))+' in this period.</p>';
   h+='</section>';
   /* several picked: each one side by side */
@@ -3176,7 +3179,7 @@ document.addEventListener('change', function(e){
   if(e.target.dataset && e.target.dataset.xfincl){ S.xfer.incl=e.target.checked; return; }
   if(e.target.id==='xfGapTo' && S.xfer){ (S.xfer.pre=S.xfer.pre||{ liq:'no', alloc:'change' }).gapTo=e.target.value; var xa3=document.getElementById('xfAppr'); if(xa3) xa3.innerHTML=xferPreHtml_(); return; }
   if(e.target.dataset && e.target.dataset.xfpl){ S.xfer.pl=e.target.checked; return; }
-  if(e.target.dataset && e.target.dataset.xfpltog){ var pt=TRANSFERS.filter(function(x){ return x.id===e.target.dataset.xfpltog; })[0]; if(pt){ snap_((e.target.checked?'Took ':'Put ')+'the transfer of '+money(pt.amt,true)+(e.target.checked?' out of':' back in')+' the Ministries profit and loss'); if(e.target.checked) pt.pl=true; else delete pt.pl; keep_(); toast(e.target.checked?'📈 Now in the Ministries profit and loss':'Back to a grey internal transfer'); } return; }
+  if(e.target.dataset && e.target.dataset.xfpltog){ var pt=TRANSFERS.concat(TOOL_XFERS).filter(function(x){ return x.id===e.target.dataset.xfpltog; })[0]; if(pt){ snap_((e.target.checked?'Took ':'Put ')+'the transfer of '+money(pt.amt,true)+(e.target.checked?' out of':' back in')+' the Ministries profit and loss'); if(e.target.checked) pt.pl=true; else delete pt.pl; keep_(); toast(e.target.checked?'📈 Now in the Ministries profit and loss':'Back to a grey internal transfer'); } return; }
   if(e.target.dataset && e.target.dataset.fincl){ flUp_(e.target.dataset.fincl).incl=e.target.checked; return; }
   if(e.target.dataset && e.target.dataset.daydone){ var dday=reportDay_(); (DAY_DONE[dday]=DAY_DONE[dday]||{})[e.target.dataset.daydone]=e.target.checked; keep_(); render(); return; }
   if(e.target.id==='xfFrom' || e.target.id==='xfTo'){ S.xfer[e.target.id==='xfFrom'?'from':'to']=e.target.value; S.xfErr=''; var oe=document.querySelector('#inXfer .inErr'); if(oe) oe.remove(); var pv=document.getElementById('xfPrev'); if(pv) pv.innerHTML=xferPrevHtml_(); var xa2=document.getElementById('xfAppr'); if(xa2) xa2.innerHTML=xferPreHtml_(); return; }

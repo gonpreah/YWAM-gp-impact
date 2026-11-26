@@ -392,7 +392,11 @@ Income.
   changes how the Ministries tab reads it). Saved as `pl: true` on the transfer. Ticked, it is paying for something
   (accommodation, food): in `mnPL_` it counts as **spending** for the sub-category it leaves ("🔁 To Hospitality") and
   **income** for the one it reaches ("🔁 From Office/General"), so it is in the net and the ▲ / ▼; it leaves the grey row.
-  Unticked (the default, for accounting moves) it stays grey. Only fund-to-fund transfers can have it.
+  Unticked (the default, for accounting moves) it stays grey. **A Financial tools adjustment on a category can have it
+  too** (26 Nov 2026 — the tick on the form was ignored for those before): Add income counts as income ("🛠 Added
+  (Financial tools)"), Remove income as spending ("🛠 Removed"); fix lines and gap fixes never offer it. With the tick,
+  the transactions list's Income / Expenses filters count it on that side. In ✅ Approved, as for everything, only once
+  it is in an approved report.
 - **Not income or expenses**: manual allocations and Financial tools move the balance only; their total for the
   period is one line under the profit and loss.
 
