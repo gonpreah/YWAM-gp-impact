@@ -2036,7 +2036,8 @@ function bulkGuess_(t, src){
   /* a journal entry (26 Nov 2026): worked out like any line — its P&L section and account, or its accounts and words —
      but it stays a journal entry: it sits in its own groups and waits for the office to approve it or leave it out */
   if(t.journal){ var gj=bulkGuess_(Object.assign({}, t, { journal:false }), src);
-    if((gj.kind==='inc' || gj.kind==='exp') && !gj.bank) gj.bank='na';   /* no bank: an internal move — written up as a Financial tools adjustment */
+    if((gj.kind==='inc' || gj.kind==='exp') && !gj.bank) gj.bank='na';
+    if(gj.kind==='inc' || gj.kind==='exp' || gj.kind==='admin'){ var cj=classFund_(t.cls); if(cj.f){ gj.fund=cj.f; } else if(!gj.fund) gj.fund = gj.kind==='admin' ? '' : 'na'; }   /* no bank: an internal move — written up as a Financial tools adjustment */
     gj.hint = gj.kind ? 'journal entry — worked out from its '+(t.qbSec?'section and account':'accounts and words')+'; approve it or leave it out' : 'journal entry — check what it really is'; return gj; }
   var acc = /^acct\|/.test(src) ? src : /^qbo\|/.test(src) ? src.slice(4) : '';
   /* mixed QuickBooks: the bank is whichever account column names one */
@@ -2062,12 +2063,18 @@ function bulkGuess_(t, src){
     return g; }
   return g;
 }
+/* every journal entry is from a category (26 Nov 2026): its class's, picked by hand, or N/A (no category — income
+   then follows its kind's formula). A category on journal income takes it all, formula or not. */
+function bulkJCatSel_(r, id, attr, label){ var h=fundSelect_(id, r.fund==='na'?'':r.fund, label).replace('<select ','<select '+attr+' ').replace('— Pick a fund —','— Pick the category —');
+  return h.replace('</option>', '</option><option value="na"'+(r.fund==='na'?' selected':'')+'>N/A — no category'+(r.kind==='inc'?' (follows its formula)':'')+'</option>'); }
+function bulkJCatName_(r){ return r.fund==='na' ? 'no category (N/A)' : r.fund ? fundNm_(r.fund) : ''; }
 function bulkAdminDir_(r){ return r.adir || (r.dir==='out' ? 'remove' : 'add'); }
 function bulkNeeds_(r){
   var n=[];
   if(!r.date) n.push('date'); if(!(r.amt>0)) n.push('amount'); if(!r.kind){ n.push(r.journal ? 'what this journal entry really is (income, expense or transfer)' : 'income, expense or transfer'); return n; }
-  if(r.kind==='inc'){ if(!r.type) n.push('kind of income'); else if(!(INC_RULES[r.type]||[]).length && !r.fund) n.push('fund'); if(!r.bank) n.push('account'); }
-  if(r.kind==='exp'){ if(!r.type) n.push('what it was for'); if(!r.fund) n.push('category'); if(!r.bank) n.push('account'); }
+  if(r.journal && (r.kind==='inc' || r.kind==='exp') && !r.fund) n.push('category (or N/A)');
+  if(r.kind==='inc'){ if(!r.type) n.push('kind of income'); else if(!r.journal && !(INC_RULES[r.type]||[]).length && !r.fund) n.push('fund'); else if(r.journal && r.fund==='na' && !(INC_RULES[r.type]||[]).length) n.push('a category — this kind has no formula'); if(!r.bank) n.push('account'); }
+  if(r.kind==='exp'){ if(!r.type) n.push('what it was for'); if(!r.fund && !r.journal) n.push('category'); if(!r.bank) n.push('account'); }
   if(r.kind==='admin'){ if(!r.fund) n.push('category'); }
   if(r.kind==='xf'){ if(!r.from) n.push('from'); if(!r.to) n.push('to'); if(r.from && r.from===r.to) n.push('two different sides');
     if((isAcct_(r.from) && fundOf_(r.to)) || (isAcct_(r.to) && fundOf_(r.from))) n.push('not bank ↔ fund'); if(isTool_(r.from) && isTool_(r.to)) n.push('one real side'); }
@@ -2077,8 +2084,8 @@ var BULK_KIND={ inc:'💵 Income', exp:'🧾 Expense', xf:'🔁 Transfer', admin
 /* one field of a bulk line changed — what follows from it */
 function bulkSet_(br, f, v){
   if(f==='amt'){ var n=calc_(v); br.amt=isNaN(n)?0:Math.round(n*100)/100; } else br[f]=v;
-  if(f==='kind'){ br.type=''; br.fund=''; if(br.journal && (v==='inc' || v==='exp') && !br.bank) br.bank='na'; if(v!=='xf'){ br.bank=br.bank||(/^acct\|/.test(S.bulkSrc||'mix')?(S.bulkSrc||'mix'):''); } else { br.from=br.from||(/^acct\|/.test(S.bulkSrc||'mix')?(S.bulkSrc||'mix'):''); } }
-  if(f==='type' && br.kind==='inc') br.fund='';
+  if(f==='kind'){ var keepCat=br.journal && br.fund; br.type=''; br.fund = keepCat && (v==='inc' || v==='exp' || v==='admin') ? (v==='admin' && keepCat==='na' ? '' : keepCat) : ''; if(br.journal && (v==='inc' || v==='exp') && !br.bank) br.bank='na'; if(br.journal && (v==='inc' || v==='exp') && !br.fund) br.fund='na'; if(v!=='xf'){ br.bank=br.bank||(/^acct\|/.test(S.bulkSrc||'mix')?(S.bulkSrc||'mix'):''); } else { br.from=br.from||(/^acct\|/.test(S.bulkSrc||'mix')?(S.bulkSrc||'mix'):''); } }
+  if(f==='type' && br.kind==='inc' && !br.journal) br.fund='';
   if(f==='fund' || f==='kind') br.hint='';
   if(f==='type' && br.kind==='exp' && (!br.fund || br.hint)){ br.fund=EXP_HINT[v]||''; br.hint=br.fund?'usual for '+v:''; }
   br.ok=false; }
@@ -2096,8 +2103,8 @@ function bulkClose_(){ var dr=S.bulk && S.bulk.rows[S.bulkEdit]; S.bulkEdit=null
 function bulkSummary_(r){
   if(!r.kind) return '<span class="dsub">Not sure — '+money(r.amt,true)+(r.dir==='in'?' in':r.dir==='out'?' out':'')+'</span>';
   var bits=[BULK_KIND[r.kind]];
-  if(r.kind==='inc') bits.push(r.type||'?', r.fund?'→ '+(fundOf_(r.fund)||{}).name:'', r.bank?'into '+bankLabel_(r.bank):'');
-  if(r.kind==='exp') bits.push(r.type||'?', r.fund?'from '+(fundOf_(r.fund)||{}).name+(r.hint?' (suggested — '+r.hint+')':''):'', r.bank?'out of '+bankLabel_(r.bank):'');
+  if(r.kind==='inc') bits.push(r.type||'?', r.journal ? (r.fund ? 'from '+bulkJCatName_(r) : '') : r.fund?'→ '+(fundOf_(r.fund)||{}).name:'', r.bank?'into '+bankLabel_(r.bank):'');
+  if(r.kind==='exp') bits.push(r.type||'?', r.journal && r.fund==='na' ? 'from no category (N/A)' : r.fund?'from '+(fundOf_(r.fund)||{}).name+(r.hint?' (suggested — '+r.hint+')':''):'', r.bank?'out of '+bankLabel_(r.bank):'');
   if(r.kind==='xf') bits.push((r.from?xferShort_(r.from):'?')+' → '+(r.to?xferShort_(r.to):'?'));
   if(r.kind==='admin') bits.push((bulkAdminDir_(r)==='add'?'adds to ':'takes from ')+(r.fund?(fundOf_(r.fund)||{}).name||fundNm_(r.fund):'?'));
   return esc(bits.filter(Boolean).join(' · '));
@@ -2130,7 +2137,7 @@ var PRE_ACCT={ 'acct|aba':'aba', 'acct|us':'us', 'acct|cash':'cash' };
 function bulkPreFx_(U){ var B=S.bulkPre, out={ n:0, acct:{ aba:0, us:0, cash:0 }, alloc:0 }; if(!U || !bulkPreOn_()) return out;
   U.rows.forEach(function(r){ if(!r.ok || bulkNeeds_(r).length || !bulkPreIn_(r)) return; out.n++;
     if(r.kind==='inc' || r.kind==='exp'){ var sg=r.kind==='inc'?1:-1, a=PRE_ACCT[r.bank]; if(a) out.acct[a]+=sg*r.amt;
-      var sp = r.kind==='exp' ? [{ f:r.fund, amt:r.amt }] : flSplit_('inc', r.type, r.amt, r.fund); sp.forEach(function(x){ if(x.f && fundOf_(x.f)) out.alloc+=sg*x.amt; }); }
+      var sp = r.kind==='exp' ? [{ f:r.fund, amt:r.amt }] : (r.journal && r.fund && r.fund!=='na' ? [{ f:r.fund, amt:r.amt }] : flSplit_('inc', r.type, r.amt, r.fund==='na'?'':r.fund)); sp.forEach(function(x){ if(x.f && fundOf_(x.f)) out.alloc+=sg*x.amt; }); }
     else if(r.kind==='admin'){ if(fundOf_(r.fund)) out.alloc+=(bulkAdminDir_(r)==='add'?1:-1)*r.amt; }
     else { if(PRE_ACCT[r.from]) out.acct[PRE_ACCT[r.from]]-=r.amt; if(PRE_ACCT[r.to]) out.acct[PRE_ACCT[r.to]]+=r.amt;
       if(r.from===TOOL_ADD && fundOf_(r.to)) out.alloc+=r.amt; if(r.to===TOOL_REMOVE && fundOf_(r.from)) out.alloc-=r.amt; } });
@@ -2352,7 +2359,7 @@ function bulkGroupsHtml_(R){ var G={}, order=[];
   return back+'<div class="bulkList">'+order.map(function(k){ var g=G[k], rows=g.idx.map(function(i){ return R[i]; });
     var done=rows.filter(function(r){ return !bulkNeeds_(r).length; }), on=rows.filter(function(r){ return r.ok && !bulkNeeds_(r).length; }), need=rows.length-done.length;
     var funds={}; rows.forEach(function(r){ var f=r.kind==='xf' ? '' : r.fund || (r.kind==='inc' && r.type && (INC_RULES[r.type]||[]).length ? 'formula' : ''); funds[f]=1; });
-    var fk=Object.keys(funds), fl = fk.length===1 ? (fk[0]==='formula' ? 'shared out by its formula' : fk[0] ? '→ '+fundNm_(fk[0]) : '') : fk.length+' categories';
+    var fk=Object.keys(funds), fl = fk.length===1 ? (fk[0]==='formula' ? 'shared out by its formula' : fk[0]==='na' ? 'no category (N/A)' : fk[0] ? '→ '+fundNm_(fk[0]) : '') : fk.length+' categories';
     var allOn=done.length && on.length===done.length, isOpen=!!open[k];
     return '<div class="bulkGrp'+(isOpen?' open':'')+(allOn?' allOn':'')+'"><div class="bulkGrpHead"><button class="bulkGrpBtn" data-bulkgrp="'+esc(k)+'" aria-expanded="'+isOpen+'">'+
       '<span><b>'+esc(bulkGroupName_(k))+'</b><span class="dsub">'+rows.length+' line'+(rows.length>1?'s':'')+(fl?' · '+esc(fl):'')+' · '+on.length+' ticked'+(need?' · <span class="bulkGrpNeed">'+need+' need'+(need>1?'':'s')+' something</span>':'')+'</span></span>'+
@@ -2378,10 +2385,11 @@ function bulkEditHtml_(r, i){
     '<div class="xfRow"><div><label class="f" for="'+p+'amt">Amount</label><div class="money"><span>$</span><input id="'+p+'amt" type="text" '+sel('amt')+' value="'+esc(r.amt?r.amt.toFixed(2):'')+'"></div></div>'+
     '<div><label class="f" for="'+p+'desc">Description</label><input type="text" id="'+p+'desc" '+sel('desc')+' value="'+esc(r.desc||'')+'"></div></div>';
   if(r.kind==='inc') h+='<label class="f">Kind of income</label>'+flTypeSelect_('inc', sel('type'), r.type, '— Kind of income —')+
-    (r.type && !(INC_RULES[r.type]||[]).length ? '<label class="f">Which fund (no formula)</label>'+fundSelect_(p+'fund', r.fund, 'Fund').replace('<select ','<select '+sel('fund')+' ') : '')+
+    (r.journal ? '<label class="f">From which category</label>'+bulkJCatSel_(r, p+'fund', sel('fund'), 'Category') :
+     r.type && !(INC_RULES[r.type]||[]).length ? '<label class="f">Which fund (no formula)</label>'+fundSelect_(p+'fund', r.fund, 'Fund').replace('<select ','<select '+sel('fund')+' ') : '')+
     '<label class="f">Went into</label>'+bulkBankSel_(r, p+'bank', sel('bank'));
   if(r.kind==='exp') h+='<label class="f">What it was for</label>'+flTypeSelect_('exp', sel('type'), r.type, '— What it was for —')+
-    '<label class="f">Paid from — which category</label>'+fundSelect_(p+'fund', r.fund, 'Category').replace('<select ','<select '+sel('fund')+' ').replace('— Pick a fund —','— Pick the category —')+
+    '<label class="f">Paid from — which category</label>'+(r.journal ? bulkJCatSel_(r, p+'fund', sel('fund'), 'Category') : fundSelect_(p+'fund', r.fund, 'Category').replace('<select ','<select '+sel('fund')+' ').replace('— Pick a fund —','— Pick the category —'))+
     '<label class="f">Paid out of</label>'+bulkBankSel_(r, p+'bank', sel('bank'));
   if(r.kind==='admin') h+='<label class="f">Fixes which category</label>'+fundSelect_(p+'fund', r.fund, 'Category').replace('<select ','<select '+sel('fund')+' ').replace('— Pick a fund —','— Pick the category —')+
     '<label class="f">It</label><select '+sel('adir')+'><option value="add"'+(bulkAdminDir_(r)==='add'?' selected':'')+'>Adds to it (Financial tools: Add income)</option><option value="remove"'+(bulkAdminDir_(r)==='remove'?' selected':'')+'>Takes from it (Financial tools: Remove income)</option></select>'+
@@ -2427,7 +2435,7 @@ function bulkAdd_(){
         memo:[r.desc, 'journal entry — admin (fixing)'].filter(Boolean).join(' · ') };
       fundMove_(r.fund, up?r.amt:-r.amt); bulkPre_(tj, 'tool', U); TOOL_XFERS.push(tj); }
     else if(r.kind==='inc' || r.kind==='exp'){ var e={ id:r.kind[0]+id, at:at, date:r.date, amt:r.amt, type:r.type, who:'', memo:r.desc, bank:r.bank==='na'?'':r.bank, journal:!!r.journal, src:'bulk', file:U.file, impNote:U.note||'',
-        split: r.kind==='exp' ? [{ f:r.fund, amt:r.amt }] : flSplit_('inc', r.type, r.amt, r.fund) };
+        split: r.kind==='exp' ? [{ f:r.fund==='na'?'':r.fund, amt:r.amt }] : (r.journal && r.fund && r.fund!=='na' ? [{ f:r.fund, amt:r.amt }] : flSplit_('inc', r.type, r.amt, r.fund==='na'?'':r.fund)) };
       flApply_(r.kind, e, 1); FK[r.kind].list().push(e); bulkPre_(e, r.kind, U); }
     else { var t={ id:(isTool_(r.from)||isTool_(r.to)?'f':'t')+id, at:at, date:r.date, from:r.from, to:r.to, amt:r.amt, memo:r.desc||'Bulk import', src:'bulk', file:U.file, impNote:U.note||'' }; if(r.pl && bulkPlAble_(r)) t.pl=true;
       if(fundOf_(r.from)) fundMove_(r.from, -r.amt); if(fundOf_(r.to)) fundMove_(r.to, r.amt);

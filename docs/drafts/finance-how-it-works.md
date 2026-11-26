@@ -119,6 +119,12 @@ Income.
     **adds to it** or **takes from it** (`adir`, from the line's direction by default) and is saved as a Financial tools
     adjustment ("… · journal entry — admin (fixing)"): it moves the category, no bank, and isn't in the profit and loss
     unless ticked.
+    **Every journal entry is from a category** (26 Nov 2026): its class's (`classFund_`, a class picked before, or a school
+    named in it), picked by hand, or **N/A — no category** (`fund:'na'`, `bulkJCatSel_`; the default when the class says
+    nothing). Income or an expense needs one of these before it can be approved. On journal income a category takes all
+    of it, whatever the kind's formula; N/A income follows the formula (a kind with no formula then needs a category). An
+    N/A expense is saved with no category (`split [{f:''}]`): it counts as spending and moves no category. Admin always
+    needs a real category.
     "📓 Journal entries to check" has **🗑 Leave all n out** (`data-bulkgrpdrop`) — they are usually not needed in these
     reports; "Bring them back" undoes it while the import is open (`S.bulkJOut`).
 - **A line stays put while it is being edited** (26 Nov 2026): it stays in the group it was in when ✏️ Edit was tapped
