@@ -596,6 +596,12 @@ button.tick.done{ background:var(--good); }
 .mnKBar{ height:5px; border-radius:999px; background:var(--surface2); margin-top:4px; overflow:hidden; }
 .mnKBar span{ display:block; height:100%; border-radius:999px; }
 .mnKBar .in{ background:var(--good); }
+.mnKBar .xin, .mnKBar .xout{ background:var(--muted); opacity:.55; }
+.mnXfBtn{ display:block; width:100%; border:0; background:none; padding:0; text-align:left; color:inherit; font:inherit; cursor:pointer; }
+.mnXf.open .chev{ transform:rotate(180deg); }
+.mnXfTwo{ margin-top:10px; }
+.mnXfTot{ margin-top:6px; padding-top:6px; border-top:1px solid var(--line); font-size:13px; font-weight:700; text-align:right; }
+.mnXfNet{ display:flex; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:2px solid var(--line); font-weight:700; }
 .mnKBar .out{ background:var(--bad); }
 .mnOther{ font-size:12.5px; color:var(--muted); margin:12px 0 4px; }
 .mnLines{ list-style:none; margin:6px 0 0; padding:0; }
@@ -3075,7 +3081,16 @@ function mnSelName_(sel){ if(!sel.length) return 'Nothing selected yet'; if(sel.
   var whole=ALLOC.filter(function(g){ return g.items.length>1 && g.items.every(function(it){ return sel.indexOf(g.id+'|'+it[0])>=0; }) && sel.length===g.items.length; })[0];
   return whole ? 'All of '+whole.name : sel.length+' allocations'; }
 /* income and expenses of some categories between two days, from the breakdown */
-function mnPL_(L, labs, from, to){ var inc=0, exp=0, byInc={}, byExp={}, other=0, byOther={}, lines=[], xin=0, xout=0;
+/* the group a line not in the profit and loss falls under, in the grey "in and out" (26 Nov 2026) */
+function mnXfGroup_(x){ var t=x.src||{}, sr=String(t.src||'');
+  if(x.type==='Manual allocation') return '📊 Allocations';
+  if(t.journal) return '📓 Journal entries';
+  if(/fix$/.test(sr)) return '🛠 Fix lines — to match the approved report';
+  if(/gap$/.test(sr)) return '🛠 To make the allocations 100%';
+  if(x.type==='Internal transfer') return x.camt>0 ? '🔁 From '+xferShort_(t.from) : '🔁 To '+xferShort_(t.to);
+  if(x.type==='Adjustment (Financial tools)') return x.camt>0 ? '🛠 Financial tools — Add income' : '🛠 Financial tools — Remove income';
+  return x.type; }
+function mnPL_(L, labs, from, to){ var inc=0, exp=0, byInc={}, byExp={}, other=0, byOther={}, lines=[], xin=0, xout=0, byXin={}, byXout={};
   L.forEach(function(x){ if(x.camt==null || labs.indexOf(x.cat)<0) return; if((from && x.date<from) || x.date>to) return;
     var kind=(x.src && x.src.type) || x.type;
     if(x.type==='Income'){ inc+=x.camt; byInc[kind]=(byInc[kind]||0)+x.camt; lines.push(x); x.mnKey='in|'+kind; }
@@ -3086,10 +3101,11 @@ function mnPL_(L, labs, from, to){ var inc=0, exp=0, byInc={}, byExp={}, other=0
     else if(x.type==='Adjustment (Financial tools)' && x.src && x.src.pl){   /* a Financial tools adjustment ticked into the profit and loss */
       var k3=x.camt>0 ? '🛠 Added (Financial tools)' : '🛠 Removed (Financial tools)';
       if(x.camt>0){ inc+=x.camt; byInc[k3]=(byInc[k3]||0)+x.camt; } else { exp-=x.camt; byExp[k3]=(byExp[k3]||0)-x.camt; } lines.push(x); x.mnKey=(x.camt>0?'in|':'out|')+k3; }
-    else if(x.type==='Internal transfer'){ if(x.camt>0) xin+=x.camt; else xout-=x.camt; lines.push(x); }   /* category to category: grey, not income or spending */
-    else { other+=x.camt; byOther[x.type]=(byOther[x.type]||0)+x.camt; lines.push(x); } });   /* listed too, as "not in the profit and loss" */
+    else {   /* not in the profit and loss: transfers, journal entries, Financial tools (fix lines, gap fixes), allocations — the grey "in and out" */
+      var g=mnXfGroup_(x); if(x.camt>0){ xin+=x.camt; byXin[g]=(byXin[g]||0)+x.camt; x.mnKey='xin|'+g; } else { xout-=x.camt; byXout[g]=(byXout[g]||0)-x.camt; x.mnKey='xout|'+g; }
+      if(x.type!=='Internal transfer'){ other+=x.camt; byOther[x.type]=(byOther[x.type]||0)+x.camt; } lines.push(x); } });   /* listed too, as "not in the profit and loss" */
   var r=function(v){ return Math.round(v*100)/100; };
-  return { inc:r(inc), exp:r(exp), net:r(inc-exp), byInc:byInc, byExp:byExp, other:r(other), byOther:byOther, lines:lines, xin:r(xin), xout:r(xout), xnet:r(xin-xout) }; }
+  return { inc:r(inc), exp:r(exp), net:r(inc-exp), byInc:byInc, byExp:byExp, other:r(other), byOther:byOther, lines:lines, xin:r(xin), xout:r(xout), xnet:r(xin-xout), byXin:byXin, byXout:byXout }; }
 function mnBal_(L, labs, day){ var by={}; L.forEach(function(x){ if(x.camt==null || x.date>day) return; by[x.cat]=(by[x.cat]||0)+x.camt; });
   return Math.round(labs.reduce(function(s2,l){ return s2+(by[l]||0); },0)*100)/100; }
 /* the transactions list's filters (26 Nov 2026): Income / Expenses / Transfers, the kind of income or expense, and the
@@ -3124,10 +3140,10 @@ function mnVs_(now, before, P, upGood){ if(!P.pf) return '';
 function mnKinds_(by, total, cls, lines, sel, labs){ var ks=Object.keys(by).filter(function(k){ return Math.abs(by[k])>0.004; }).sort(function(a,b){ return by[b]-by[a]; });
   if(!ks.length) return '<p class="hint">None in this period.</p>'; var M=mnS_(), open=M.kOpen||{};
   return '<ul class="mnKinds">'+ks.map(function(k){ var p=total>0?Math.max(2,Math.round(by[k]/total*100)):0, key=cls+'|'+k, on=!!open[key];
-    var mine=(lines||[]).filter(function(x){ return x.mnKey===(cls==='in'?'in|':'out|')+k; });
+    var mine=(lines||[]).filter(function(x){ return x.mnKey===cls+'|'+k; });
     var h='<li class="'+(on?'on':'')+'"><button class="mnKBtn" data-mnkind="'+esc(key)+'" aria-expanded="'+on+'"><div class="mnKRow"><span>'+esc(k)+' <span class="mnKN">'+mine.length+'</span></span><b>'+money(by[k],true)+'</b></div><div class="mnKBar"><span class="'+cls+'" style="width:'+p+'%"></span></div></button>';
     if(on) h+='<ul class="mnLines mnKLines">'+mine.map(function(x){ var memo=(x.type==='Internal transfer' ? x.memo : (x.src&&x.src.memo))||'';
-      return '<li><div><b>'+(x.src && x.src.journal ? '📓 ' : '')+esc(x.name||(x.type==='Internal transfer'?'Internal transfer':x.type==='Adjustment (Financial tools)'?'Financial tools':(x.src&&x.src.type)||x.type))+'</b><span>'+date(x.date)+(sel && sel.length>1?' · '+esc(mnName_(sel[labs.indexOf(x.cat)])):'')+(memo?' · '+esc(memo):'')+(x.appr?' · ✅':'')+'</span></div><b class="'+(x.camt<0?'mnOut':'mnIn')+'">'+mnSg_(x.camt)+'</b></li>'; }).join('')+'</ul>';
+      return '<li><div><b>'+(x.src && x.src.journal ? '📓 ' : '')+esc(x.name||(x.type==='Internal transfer'?'Internal transfer':x.type==='Adjustment (Financial tools)'?'Financial tools':(x.src&&x.src.type)||x.type))+'</b><span>'+date(x.date)+(sel && sel.length>1?' · '+esc(mnName_(sel[labs.indexOf(x.cat)])):'')+(memo?' · '+esc(memo):'')+(x.appr?' · ✅':'')+'</span></div><b class="'+(cls.charAt(0)==='x'?'mnXfAmt':x.camt<0?'mnOut':'mnIn')+'">'+mnSg_(x.camt)+'</b></li>'; }).join('')+'</ul>';
     return h+'</li>'; }).join('')+'</ul>'; }
 function mnPickerHtml_(sel){ var M=mnS_();
   var h='<div class="mnPick"><button class="mnPickBtn'+(M.pick?' on':'')+'" id="mnPickBtn" aria-expanded="'+!!M.pick+'"><span><small>Showing</small><b>'+esc(mnSelName_(sel))+'</b></span><span class="chev">▾</span></button>';
@@ -3162,12 +3178,13 @@ function minsHtml_(){ var M=mnS_(), P=mnPeriod_(), sel=mnSel_(), labs=sel.map(fu
   h+='<section class="sec" id="mnPL"><div class="secHead"><h2>📈 Profit and loss</h2></div><p class="hint">'+mnRange_(P)+(pp?' · compared with '+esc(P.vs)+' ('+date(P.pf)+(P.pf!==P.pt?' – '+date(P.pt):'')+')':'')+'.</p>'+
     '<div class="dTiles mnTiles"><div class="dTile"><div class="dl">💵 Income</div><div class="dv mnIn">'+(NA?na:money(pl.inc,true))+'</div>'+(pp?mnVs_(pl.inc, pp.inc, P, true):'')+'</div>'+
     '<div class="dTile"><div class="dl">🧾 Expenses</div><div class="dv mnOut">'+(NA?na:money(pl.exp,true))+'</div>'+(pp?mnVs_(pl.exp, pp.exp, P, false):'')+'</div></div>'+
-    '<div class="mnXf" id="mnXf"><div class="mnXfHead"><span>🔁 Internal transfers</span><b>'+(NA?na:mnSg_(pl.xnet))+'</b></div>'+
-      (NA?'':'<div class="mnXfRow"><span>In from other categories <b>'+money(pl.xin,true)+'</b></span><span>Out to other categories <b>'+money(pl.xout,true)+'</b></span></div>')+
-      '<p class="mnXfNote">Money moved between categories — not income or spending, so it isn’t in the net below. Transfers ticked “Show in the Ministries profit and loss” are in Income and Expenses instead (🔁 From / 🔁 To).</p></div>'+
+    '<div class="mnXf'+(M.xfOpen?' open':'')+'" id="mnXf"><button class="mnXfBtn" id="mnXfBtn" aria-expanded="'+!!M.xfOpen+'"'+(NA?' disabled':'')+'><div class="mnXfHead"><span>🔁 Internal transfers &amp; adjustments</span><b>'+(NA?na:mnSg_(pl.xnet))+'</b></div>'+
+      (NA?'':'<div class="mnXfRow"><span>In <b>'+money(pl.xin,true)+'</b></span><span>Out <b>'+money(pl.xout,true)+'</b></span><span class="chev">▾</span></div>')+
+      '<p class="mnXfNote">Everything not in the profit and loss — transfers between ministries, journal entries, Financial tools and the fix lines that keep the approved and live allocations right. Not in the net below. Tap to see it as its own in and out.</p></button>'+
+      (M.xfOpen && !NA ? '<div class="mnTwo mnXfTwo"><div><div class="dListHead">Came in</div>'+mnKinds_(pl.byXin, pl.xin, 'xin', pl.lines, sel, labs)+'<div class="mnXfTot">In '+money(pl.xin,true)+'</div></div>'+
+        '<div><div class="dListHead">Went out</div>'+mnKinds_(pl.byXout, pl.xout, 'xout', pl.lines, sel, labs)+'<div class="mnXfTot">Out '+money(pl.xout,true)+'</div></div></div><div class="mnXfNet"><span>In − out</span><b>'+mnSg_(pl.xnet)+'</b></div>' : '')+'</div>'+
     '<div class="mnNet '+(pl.net<0?'neg':'')+'"><span>'+(pl.net<0?'Spent more than came in':'Net')+'</span><b>'+(NA?na:mnSg_(pl.net))+'</b>'+(pp?mnVs_(pl.net, pp.net, P, true):'')+'</div>';
   h+='<div class="mnTwo"><div><div class="dListHead">Where the income came from</div>'+(NA?'<p class="hint">N/A</p>':mnKinds_(pl.byInc, pl.inc, 'in', pl.lines, sel, labs))+'</div><div><div class="dListHead">Where the money went</div>'+(NA?'<p class="hint">N/A</p>':mnKinds_(pl.byExp, pl.exp, 'out', pl.lines, sel, labs))+'</div></div>';
-  if(Math.abs(pl.other)>0.004 || Object.keys(pl.byOther).length) h+='<p class="mnOther">🛠 Allocations and adjustments also moved it '+mnSg_(pl.other)+' — '+Object.keys(pl.byOther).map(function(k){ return esc(k.replace(' (Financial tools)',''))+' '+mnSg_(pl.byOther[k]); }).join(' · ')+'. These change the balance but aren’t income or expenses.</p>';
   if(pl.lines.length){ h+='<button class="flowDrop'+(M.list?' on':'')+'" id="mnList" aria-expanded="'+!!M.list+'"><span>'+(M.list?'Hide':'Show')+' the '+pl.lines.length+' transaction'+(pl.lines.length>1?'s':'')+'</span><span class="chev">▾</span></button>';
     var shownL=M.list ? mnLineFilter_(pl.lines) : [];
     if(M.list) h+=mnFiltHtml_(pl.lines, shownL.length);
@@ -3197,6 +3214,7 @@ function srEd_(e){ if(e.target.dataset && e.target.dataset.srgap && S.srD){ (S.s
 document.addEventListener('click', function(e){ var q=e.target.closest && e.target.closest('[data-srpreliq],[data-srprealloc],[data-srprefix]'); if(!q || !S.srD) return; var Q=S.srD.pre=S.srD.pre||{ liq:'no', alloc:'leave', fix:'fix', gapTo:'' };
   if(q.dataset.srpreliq) Q.liq=q.dataset.srpreliq; else if(q.dataset.srprefix) Q.fix=q.dataset.srprefix; else Q.alloc=q.dataset.srprealloc; render(); });
 document.addEventListener('input', srEd_); document.addEventListener('change', srEd_);
+document.addEventListener('click', function(e){ if(!(e.target.closest && e.target.closest('#mnXfBtn'))) return; var M=mnS_(); M.xfOpen=!M.xfOpen; render(); });
 document.addEventListener('click', function(e){ var b=e.target.closest && e.target.closest('[data-mnkind]'); if(!b) return; var M=mnS_(), k=b.dataset.mnkind; M.kOpen=M.kOpen||{}; M.kOpen[k]=!M.kOpen[k]; render(); });
 document.addEventListener('click', function(e){ var b=e.target.closest && e.target.closest('[data-mnpl]'); if(!b) return; var id=b.dataset.mnpl, t=TRANSFERS.concat(TOOL_XFERS).filter(function(x){ return x.id===id; })[0]; if(!t) return;
   var on=!t.pl; snap_((on?'Took ':'Put ')+money(t.amt,true)+' '+(isToolX_(t)?'(Financial tools)':'transfer')+(on?' out of':' back in')+' the Ministries profit and loss'); if(on) t.pl=true; else delete t.pl; keep_(); render(); toast(on?'📈 Now in the profit and loss':'Taken out of the profit and loss'); });

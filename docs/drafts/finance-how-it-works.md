@@ -415,11 +415,15 @@ Income.
   `S.mn.kOpen`): tapped, a row of "Where the income came from" / "Where the money went" lists the lines behind it, with
   how many — the incomes, the expenses, and the transfers ticked into the profit and loss ("🔁 From Office/General",
   "🔁 To Hospitality") with their memo and the other side (`x.mnKey`, set in `mnPL_`).
-- **🔁 Internal transfers** (25 Nov 2026), in grey under Income and Expenses (`#mnXf`): the period's Internal transfer
-  lines of those sub-categories — in from other categories, out to other categories, and the difference
-  (`mnPL_` → `xin` / `xout` / `xnet`). Not income or spending, so **not in the net**; they are in the transactions list
-  (grey, with "→ / ← the other category") and the "Each one" table's Transfers column. A transfer between two picked
-  sub-categories shows both sides, so it nets to nothing.
+- **🔁 Internal transfers & adjustments** (25 Nov 2026; widened 26 Nov 2026), in grey under Income and Expenses
+  (`#mnXf`): **everything of those sub-categories not in the profit and loss** — transfers between ministries without the
+  📈 tick, journal entries, Financial tools (the fix lines and gap fixes that keep the approved and live allocations
+  right among them) and manual allocations — as In, Out and In − out (`mnPL_` → `xin` / `xout` / `xnet`). Not in the
+  net. **Tapped, it opens as its own in and out** (`#mnXfBtn`, `S.mn.xfOpen`): Came in / Went out, grouped
+  (`mnXfGroup_`: 🔁 From / To each category, 📓 Journal entries, 🛠 Fix lines — to match the approved report, 🛠 To make
+  the allocations 100%, 🛠 Financial tools — Add / Remove income, 📊 Allocations), each group opening to its lines
+  (`[data-mnkind]` with `xin|` / `xout|`), with totals. (The old "Allocations and adjustments also moved it" line is part
+  of this now.) A transfer between two picked sub-categories shows both sides, so it nets to nothing.
 - **The transactions list's filters** (26 Nov 2026, `mnFiltHtml_` / `mnLineFilter_`, `S.mn.lf`): All / 💵 Income /
   🧾 Expenses / 🔁 Transfers; a kind picker (the kinds of income or expense in the list, "Internal transfer"); and the
   account — ABA bank / US bank / Cash on hand / **Other** (no account: a transfer between categories). Each with its
