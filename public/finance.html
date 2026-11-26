@@ -502,6 +502,8 @@ button.tick.done{ background:var(--good); }
 .bulkPreSeg{ margin:4px 0 0; background:var(--surface); border:1px solid var(--line); }
 .bulkPreSeg button.on{ background:var(--accent); color:var(--accentInk); }
 .bulkSame{ margin:10px 0 0; padding:10px 12px; border-radius:10px; background:var(--accentSoft); color:var(--ink); font-size:14px; }
+.bulkShow{ margin:6px 0 2px; display:flex; flex-wrap:wrap; }
+.bulkShow button{ flex:1 1 auto; font-size:12.5px; }
 .bulkJBack{ margin:6px 0; font-size:13px; color:var(--muted); }
 .bulkPreSum{ margin:12px 0 4px; padding:10px 12px; border-radius:10px; background:var(--surface2); border:1px solid var(--line); }
 .bulkPreSum .preTbl{ width:100%; border-collapse:collapse; margin:6px 0 2px; font-size:14px; }
@@ -2211,7 +2213,16 @@ function bulkGroupsHtml_(R){ var G={}, order=[];
       '<span class="bulkGrpTot">'+money(g.tot,true)+'</span><span class="chev">▾</span></button>'+
       (k==='j' ? '<button class="btn ghost bulkGrpTick bulkGrpDrop" data-bulkgrpdrop="j">🗑 Leave all '+rows.length+' out</button>' : '')+
       (done.length ? '<button class="btn'+(allOn?' ghost':'')+' bulkGrpTick" data-bulkgrptick="'+esc(k)+'">'+(allOn?'Untick all':'✓ Tick all'+(done.length<rows.length?' '+done.length:''))+'</button>' : '')+'</div>'+
-      (isOpen ? '<div class="bulkGrpRows">'+g.idx.map(function(i){ return bulkRowHtml_(R[i], i); }).join('')+'</div>' : '')+'</div>'; }).join('')+'</div>'; }
+      (isOpen ? bulkShowHtml_(g.idx.map(function(i){ return R[i]; }))+'<div class="bulkGrpRows">'+g.idx.filter(function(i){ return bulkShows_(R[i], i); }).map(function(i){ return bulkRowHtml_(R[i], i); }).join('')+'</div>' : '')+'</div>'; }).join('')+'</div>'; }
+/* an open group's filter (26 Nov 2026): Show all (default) · Show ticked · Show unticked — one setting for every group;
+   the line being edited always shows */
+function bulkTicked_(r){ return !!(r.ok && !bulkNeeds_(r).length); }
+function bulkShows_(r, i){ var m=S.bulkShow||'all'; return m==='all' || i===S.bulkEdit || (m==='on') === bulkTicked_(r); }
+function bulkShowHtml_(rows){ var m=S.bulkShow||'all', on=rows.filter(bulkTicked_).length;
+  var b=function(k, t){ return '<button class="'+(m===k?'on':'')+'" data-bulkshow="'+k+'">'+t+'</button>'; };
+  var h='<div class="seg bulkShow">'+b('all','Show all · '+rows.length)+b('on','Show ticked · '+on)+b('off','Show unticked · '+(rows.length-on))+'</div>';
+  var n=rows.filter(function(r){ var i=S.bulk.rows.indexOf(r); return bulkShows_(r, i); }).length;
+  return h+(n ? '' : '<p class="hint" style="margin:4px 0 0">'+(m==='on'?'Nothing ticked in this group yet.':'Everything in this group is ticked.')+'</p>'); }
 function bulkEditHtml_(r, i){
   var p='bk'+i+'_', sel=function(a){ return 'data-bulkf="'+i+'|'+a+'"'; };
   var h='<div class="bulkEd"><div class="xfRow"><div><label class="f" for="'+p+'kind">It is</label><select id="'+p+'kind" '+sel('kind')+'><option value="">— Not sure —</option>'+Object.keys(BULK_KIND).map(function(k){ return '<option value="'+k+'"'+(r.kind===k?' selected':'')+'>'+BULK_KIND[k]+'</option>'; }).join('')+'</select></div>'+
@@ -3114,6 +3125,7 @@ document.addEventListener('click', function(e){
     list2.forEach(function(o){ BULK_SAME_ORDER.forEach(function(f){ if(SB.ch[f] && o[f]!==SB.ch[f]) bulkSet_(o, f, SB.ch[f]); }); });
     bulkClose_(); render(); toast(list2.length+' more line'+(list2.length>1?'s':'')+' changed'); return; }
   if(e.target.id==='bulkSameNo'){ bulkClose_(); render(); return; }
+  var bsh=e.target.closest && e.target.closest('[data-bulkshow]'); if(bsh){ S.bulkShow=bsh.dataset.bulkshow; render(); return; }
   var gd=e.target.closest && e.target.closest('[data-bulkgrpdrop]'); if(gd && S.bulk){ var keepR=[], outR=[]; S.bulk.rows.forEach(function(o){ (bulkGroupKey_(o)==='j' ? outR : keepR).push(o); });
     S.bulkJOut=(S.bulkJOut||[]).concat(outR); S.bulk.rows=keepR; S.bulkEdit=null; S.bulkEditKey=null; S.bulkSame=null; render(); toast('Left out '+outR.length+' journal entr'+(outR.length>1?'ies':'y')); return; }
   if(e.target.id==='bulkJBack' && S.bulk){ S.bulk.rows=S.bulk.rows.concat(S.bulkJOut||[]); S.bulkJOut=null; S.bulkEdit=null; render(); return; }

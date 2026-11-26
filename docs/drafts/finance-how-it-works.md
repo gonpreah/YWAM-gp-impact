@@ -121,6 +121,8 @@ Income.
   kind + kind of income / expense — for a P&L Detail that is one per account code, e.g. "🧾 Expense · Food · 50500"),
   plus "📓 Journal entries to check" and "❓ Not sure what they are" first, and "🔁 Transfers" last; income groups then
   expense groups, biggest total first.
+- An open group has **Show all · n / Show ticked · n / Show unticked · n** (26 Nov 2026, `S.bulkShow`, `bulkShowHtml_`,
+  default Show all; one setting for every group; the line being edited always shows).
 - Each group's heading: its name, how many lines, where they go (one category, "shared out by its formula", or "n
   categories"), how many are ticked, how many still need something, and its total. **Folded** until tapped
   (`S.bulkOpen`; the group of a line being edited stays open).
