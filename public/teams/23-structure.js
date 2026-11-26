@@ -100,7 +100,8 @@ function sbBoxName_(key){
   if(key==='_off') return t('Not on the chart');
   var i=key.indexOf('|'), d=key.slice(0,i), m=key.slice(i+1);
   if(d===BL_DEPT) return m==='Campus Director' ? t('Campus Directors') : gpT('Director of {dept}',{dept:t(m)});
-  return t(m)+' · '+t(d);
+  var g=typeof sbGroupOf_==='function' ? sbGroupOf_(d, m) : null;
+  return g ? sbMinName_(d, m)+' · '+t(g.name) : t(m)+' · '+t(d);
 }
 
 /* ---- drawing ---- */
@@ -132,14 +133,18 @@ function sbTreeHtml_(M, edit, title){
       (M.notRunning.length && Object.keys(M.deps[dept]||{}).some(function(m){ return M.notRunning.indexOf(m)>-1; })
         ? '<div class="sbNotRun" id="sbNotRun">'+esc(gpT('Not running this quarter: {list}',{list:M.notRunning.map(function(m){ return t(m); }).join(' · ')}))+'</div>' : '')+'</div>';
     h+='<div class="sbMins">';
+    var done={};
     mins.forEach(function(m){
-      var key=dept+'|'+m, leads=M.leadsOf(key), here=(M.boxes[key]||[]).filter(function(id){ return leads.indexOf(id)===-1; });
-      var all=leads.length+here.length;
-      var also=(M.alsoBoxes[key]||[]).filter(function(id){ return leads.indexOf(id)===-1; }), isAlso=function(id){ return M.placed[id]!==key && (M.alsoBoxes[key]||[]).indexOf(id)>-1; };
-      h+='<div class="sbNode sbMin'+(all||also.length?'':' bare')+'" data-sbdrop="'+esc(key)+'"><div class="sbHead"><span>'+(MIN_EMOJI[m]?MIN_EMOJI[m]+' ':'')+esc(t(m))+'</span>'+
-        '<span class="sbHeadR"><span class="sbN">'+(all||(also.length?'0':'—'))+(also.length?' <span class="sbNAlso">+'+also.length+'</span>':'')+'</span>'+sbPlus_(key, edit)+'</span></div>'+
-        (all||also.length ? '<div class="sbFaces">'+leads.map(function(id){ return sbFace_(M, id, { edit:edit, from:key, lead:true, also:isAlso(id) }); }).join('')+here.map(function(id){ return sbFace_(M, id, { edit:edit, from:key }); }).join('')+
-          also.map(function(id){ return sbFace_(M, id, { edit:edit, from:key, also:true }); }).join('')+'</div>' : '')+'</div>';
+      if(done[m]) return;
+      /* a group of ministries shown under one heading on the whiteboard (SB_GROUPS) — its ministries stay as they are */
+      var g=sbGroupOf_(dept, m), inG=g ? g.mins.filter(function(x){ return mins.indexOf(x)>-1; }) : [];
+      if(g && inG.length>1){
+        var gn=0; inG.forEach(function(x){ done[x]=1; gn+=(M.boxes[dept+'|'+x]||[]).length; });
+        h+='<div class="sbNode sbMin sbGroup" data-sbgroup="'+esc(g.id)+'"><div class="sbHead"><span>'+(g.emoji?g.emoji+' ':'')+esc(t(g.name))+'</span><span class="sbN">'+(gn||'—')+'</span></div>'+
+          '<div class="sbMins sbGroupMins">'+inG.map(function(x){ return sbMinBoxHtml_(M, dept, x, edit); }).join('')+'</div></div>';
+        return;
+      }
+      h+=sbMinBoxHtml_(M, dept, m, edit);
     });
     h+='</div></div>';
   });
@@ -155,6 +160,23 @@ function sbTreeHtml_(M, edit, title){
   return h+'</div>';
 }
 var STRUCT_SCHOOLS_C=['dts','dbs','bcs','sms'];
+/* One ministry's box on the tree: its leader(s) 👑, its people, and anyone also serving there (dashed). */
+function sbMinBoxHtml_(M, dept, m, edit){
+  var key=dept+'|'+m, leads=M.leadsOf(key), here=(M.boxes[key]||[]).filter(function(id){ return leads.indexOf(id)===-1; });
+  var all=leads.length+here.length;
+  var also=(M.alsoBoxes[key]||[]).filter(function(id){ return leads.indexOf(id)===-1; }), isAlso=function(id){ return M.placed[id]!==key && (M.alsoBoxes[key]||[]).indexOf(id)>-1; };
+  return '<div class="sbNode sbMin'+(all||also.length?'':' bare')+'" data-sbdrop="'+esc(key)+'"><div class="sbHead"><span>'+(MIN_EMOJI[m]?MIN_EMOJI[m]+' ':'')+esc(sbMinName_(dept, m))+'</span>'+
+    '<span class="sbHeadR"><span class="sbN">'+(all||(also.length?'0':'—'))+(also.length?' <span class="sbNAlso">+'+also.length+'</span>':'')+'</span>'+sbPlus_(key, edit)+'</span></div>'+
+    (all||also.length ? '<div class="sbFaces">'+leads.map(function(id){ return sbFace_(M, id, { edit:edit, from:key, lead:true, also:isAlso(id) }); }).join('')+here.map(function(id){ return sbFace_(M, id, { edit:edit, from:key }); }).join('')+
+      also.map(function(id){ return sbFace_(M, id, { edit:edit, from:key, also:true }); }).join('')+'</div>' : '')+'</div>';
+}
+/* Ministries the whiteboard shows together under one heading (Nov 2026, Andrew: "put Srey Noi, LTN and Ponlork Hope into one
+   ministry named SR Ministries … sub categories with those 3 under them"). Only how the board draws them: each stays its own
+   ministry everywhere else — its numbers, its people's profiles, its tasks — and its own box to drop people in. A name in
+   `label` is what the board calls a ministry (Ponlork School is Ponlork Hope there). */
+var SB_GROUPS=[{ id:'srmin', name:'SR Ministries', emoji:'🏫', dept:'Community Service', mins:['Sry Noi','LTN','Ponlork School'], label:{ 'Ponlork School':'Ponlork Hope' } }];
+function sbGroupOf_(dept, m){ for(var i=0;i<SB_GROUPS.length;i++){ var g=SB_GROUPS[i]; if(g.dept===dept && g.mins.indexOf(m)>-1) return g; } return null; }
+function sbMinName_(dept, m){ var g=sbGroupOf_(dept, m); return g && g.label && g.label[m] ? g.label[m] : t(m); }
 /* the whole board: the bar, the zoomable view, and (editing) the tray of faces */
 function sbBoardHtml_(campus, year, q, edit){
   var B=sbState_(), plan=sbPlan_(campus, year, q), M=sbModel_(campus, plan);
@@ -205,6 +227,15 @@ function sbSheetHtml_(M, sh){
     var cand=M.order.filter(function(id){ return inBox.indexOf(id)===-1; }).map(function(id){ var p=M.people[id], w=M.placed[id];
       return { id:id, name:p.name, sub: w==='_students' ? t('Student') : w ? sbBoxName_(w) : t('Not on the chart'), first: !w, group: !w ? t('Not on the chart yet') : t('Everyone else') }; });
     h+='<div class="sbAdd"><div class="eyebrow">'+esc(t('Add people'))+'</div>'+ppickHtml_({ key:'sb', people:cand, placeholder:t('Type a name…'), onPick:function(id){ sbMove_(id, key); } })+'</div>';
+    /* someone in two ministries (Nov 2026, Andrew: "put people in multiple ministries"): add them here as well, keeping the
+       main ministry they have — the same "also" as Also serves in… on their own sheet */
+    if(isMin){
+      var cand2=M.order.filter(function(id){ var w=M.placed[id]; return inBox.indexOf(id)===-1 && w && w!=='_students' && w!==key && M.alsoOf(id).length<SB_ALSO_MAX; })
+        .map(function(id){ return { id:id, name:M.people[id].name, sub:gpT('Stays in {box}',{box:sbBoxName_(M.placed[id])}), group:t('Everyone else') }; });
+      if(cand2.length) h+='<div class="sbAdd" id="sbAddAlso"><div class="eyebrow">'+esc(t('Also serves here'))+'</div>'+
+        ppickHtml_({ key:'sbalso', people:cand2, placeholder:t('Type a name…'), onPick:function(id){ sbAlsoAdd_(id, key); } })+
+        '<p class="hint" style="margin:4px 0 0">'+esc(t('For someone in two ministries: they keep their main one and serve here too.'))+'</p></div>';
+    }
     h+='<div class="sbAdd"><div class="eyebrow">'+esc(t('Someone not in the app yet'))+'</div><div class="sbNewRow"><input type="text" id="sbNewName" maxlength="60" placeholder="'+esc(t('Their name'))+'">'+
       '<button type="button" class="btn small" id="sbNewAdd" data-sbnewkey="'+esc(key)+'">'+esc(t('Add'))+'</button></div>'+
       '<p class="hint" style="margin:4px 0 0">'+esc(t('For someone coming this quarter. It is only on this chart.'))+'</p></div>';
@@ -489,7 +520,7 @@ function bindSb_(){
       f.addEventListener('pointermove', move); f.addEventListener('pointerup', end); f.addEventListener('pointercancel', end);
     };
   });
-  document.querySelectorAll('[data-sbbox]').forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); gpTap(); if(S.ppick) S.ppick.sb={ q:'' }; B.sheet={ kind:'box', key:b.getAttribute('data-sbbox') }; render(); }; });
+  document.querySelectorAll('[data-sbbox]').forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); gpTap(); if(S.ppick){ S.ppick.sb={ q:'' }; S.ppick.sbalso={ q:'' }; } B.sheet={ kind:'box', key:b.getAttribute('data-sbbox') }; render(); }; });
   var tq=document.getElementById('sbTrayQ');
   if(tq) tq.oninput=function(){ B.trayQ=tq.value; var pos=tq.selectionStart; render(); var t2=document.getElementById('sbTrayQ'); if(t2){ t2.focus(); try{ t2.setSelectionRange(pos, pos); }catch(err){} } };
   // the sheet
@@ -594,8 +625,9 @@ function bindSbLead_(){
    "Really easy every quarter for anyone in the campus leadership roles to move people around … and for that to
    automatically change in their profile." One line above the board says where the quarter stands, with one button:
    not live — "n people's profiles would change" → Make Qn yyyy live → a sheet listing each change → Confirm
-   (applyStructure); live — "changes here update profiles straight away" (this quarter: saveStructurePlan applies what
-   changed); a profile someone edited since — "n profiles differ" with See / Apply again. The list of changes is the
+   (applyStructure); live — profiles match it, and a later change on the board waits until someone taps Apply again (Nov 2026,
+   Andrew: "make sure what's edited and changed there doesn't affect anything else" — nothing on the board reaches a profile
+   except through this button); a profile someone edited since, or a change on the board since, — "n profiles differ" with See / Apply again. The list of changes is the
    server's (`diff` on getStructure and on every save), so the page never works a profile out by itself. */
 function sbIsNow_(Q){ return Q.year===new Date().getFullYear() && Q.q===currentQuarter_(); }
 function sbKeyShort_(key){
@@ -619,7 +651,7 @@ function sbLiveHtml_(campus, Q){
   var waitTxt=w ? ' · '+(w===1 ? t('1 move into Campus Leadership is waiting for an admin') : gpT('{n} moves into Campus Leadership are waiting for an admin',{n:w})) : '';
   var h='<div class="sbLive'+(plan.live?(n?' drift':' on'):'')+'" id="sbLive" data-sblive="'+(plan.live?(n?'drift':'live'):'off')+'">';
   if(plan.live && !n){
-    h+='<p class="sbLiveLine" id="sbLiveLine">✅ '+esc(now ? gpT('Q{q} {year} is live — changes here update profiles straight away.',{q:Q.q, year:Q.year}) : gpT('Q{q} {year} is live — profiles match it. A change before it starts waits for Apply again.',{q:Q.q, year:Q.year}))+esc(waitTxt)+'</p>';
+    h+='<p class="sbLiveLine" id="sbLiveLine">✅ '+esc(gpT('Q{q} {year} is live — profiles match it. A change on the board waits until you tap Apply again.',{q:Q.q, year:Q.year}))+esc(waitTxt)+'</p>';
   } else if(plan.live){
     h+='<p class="sbLiveLine" id="sbLiveLine">⚠️ '+esc(n===1 ? t('1 profile differs from this structure') : gpT('{n} profiles differ from this structure',{n:n}))+esc(waitTxt)+'</p>'+
       '<div class="sbLiveBtns"><button type="button" class="btn ghost small" id="sbLiveSee">'+esc(t('See'))+'</button><button type="button" class="btn small" id="sbLiveAgain">'+esc(t('Apply again'))+'</button></div>';
@@ -640,7 +672,7 @@ function sbLiveSheetHtml_(campus, Q){
   if(n) h+='<ul class="sbLiveList" id="sbLiveList">'+diff.changes.map(function(ch){ return '<li data-sbchange="'+esc(ch.id)+'"><b>'+esc(ch.name)+'</b><span>'+esc(sbChangeText_(ch))+'</span></li>'; }).join('')+'</ul>';
   if((diff.waiting||[]).length) h+='<p class="hint" id="sbLiveWaiting">'+esc(t('Already waiting for an admin (Admin → Approvals):'))+' '+diff.waiting.map(function(x){ return esc(x.name)+' — '+esc(sbKeyShort_(x.waits)); }).join(' · ')+'</p>';
   h+='<p class="hint">'+esc(t('Left as they are: anyone off the chart, staff who are students this quarter, and names typed in.'))+'</p>';
-  h+='<button type="button" class="btn" id="sbLiveConfirm"'+(B.liveBusy?' disabled':'')+'>'+esc(B.liveBusy ? t('Saving…') : plan.live ? t('Apply again') : now ? t('Confirm — from now on, changes here update profiles') : t('Confirm'))+'</button>'+
+  h+='<button type="button" class="btn" id="sbLiveConfirm"'+(B.liveBusy?' disabled':'')+'>'+esc(B.liveBusy ? t('Saving…') : plan.live ? t('Apply again') : t('Confirm'))+'</button>'+
     '<button type="button" class="btn ghost" id="sbLiveCancel">'+esc(t('Cancel'))+'</button>';
   return h+'</div>';
 }
@@ -672,7 +704,7 @@ function bindSbLive_(){
   var open=function(){ gpTap(); if(B.saving){ showMsg(t('Still saving — try again in a moment.')); return; } B.liveOpen=true; B.sheet=null; render(); };
   var shut=function(){ B.liveOpen=false; render(); };
   on('sbLiveBtn', open); on('sbLiveSee', open);
-  on('sbLiveAgain', function(){ if(!gpAsk_(t('Change these profiles back to match the structure? Each person is told.'))) return; sbApplyLive_(); });
+  on('sbLiveAgain', function(){ if(!gpAsk_(t('Update these profiles to match the structure? Each person is told.'))) return; sbApplyLive_(); });
   on('sbLiveScrim', shut); on('sbLiveClose', shut); on('sbLiveCancel', shut);
   on('sbLiveConfirm', function(){ gpTap(); sbApplyLive_(); });
 }

@@ -6781,3 +6781,16 @@ Campus Leadership arranges a quarter on the whiteboard; "Make Q1 2027 live" turn
 | Still saving — try again in a moment. | កំពុងរក្សាទុកនៅឡើយ — សូមព្យាយាមម្តងទៀតបន្តិចទៀត។ |
 | Someone else is saving — try again. | មានអ្នកផ្សេងកំពុងរក្សាទុក — សូមព្យាយាមម្តងទៀត។ |
 | That quarter is over. | ត្រីមាសនោះបានកន្លងផុតហើយ។ |
+
+## 143. The structure whiteboard: changes wait for Apply again, and the SR Ministries group (My Ministry → Structure)
+
+The line above the board once a quarter is live, the question before Apply again, and the heading the board puts over Sry Noi, LTN and Ponlork Hope.
+
+| English | Khmer (draft) |
+|---|---|
+| Q{q} {year} is live — profiles match it. A change on the board waits until you tap Apply again. | Q{q} {year} ដំណើរការហើយ — ប្រវត្តិរូបត្រូវគ្នានឹងវា។ ការផ្លាស់ប្តូរលើក្តារ រង់ចាំរហូតដល់អ្នកចុច អនុវត្តម្តងទៀត។ |
+| Update these profiles to match the structure? Each person is told. | ធ្វើបច្ចុប្បន្នភាពប្រវត្តិរូបទាំងនេះ ឲ្យត្រូវនឹងរចនាសម្ព័ន្ធឬ? ម្នាក់ៗនឹងត្រូវបានប្រាប់។ |
+| SR Ministries | កិច្ចការបម្រើ SR |
+| Stays in {box} | នៅតែក្នុង {box} |
+| Also serves here | បម្រើនៅទីនេះផងដែរ |
+| For someone in two ministries: they keep their main one and serve here too. | សម្រាប់អ្នកដែលនៅក្នុងកិច្ចការបម្រើពីរ៖ ពួកគេរក្សាកិច្ចការបម្រើចម្បងរបស់ពួកគេ ហើយបម្រើនៅទីនេះផងដែរ។ |

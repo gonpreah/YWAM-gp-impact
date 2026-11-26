@@ -621,8 +621,21 @@ in the leadership My Ministry, and it shows in Team → Structure … profile fa
   main / member / leader options count, never what an admin or director can merely open. Profile → My positions says
   "Main: … · Also: …" (`#myPosMin`). Every tool already let a second ministry in (`canLogFor_` / `memberOf_` on the server,
   `ministries` in each client gate).
+- **Nothing on the board reaches a profile except through the button** (Nov 2026, Andrew: "make sure what's edited and changed
+  there doesn't affect anything else"; this replaces Uriah's "once THIS quarter is live, saveStructurePlan applies what that save
+  changed" above): `saveStructurePlan` never writes a profile (`applied` is always []). After a quarter is live, a change on the
+  board shows as `diff` — "n profiles differ from this structure" with See / **Apply again** — and only `applyStructure` writes,
+  after the list is shown. The live line says so ("A change on the board waits until you tap Apply again").
+- **SR Ministries** (Nov 2026, Andrew: "put Srey Noi, LTN and Ponlork Hope into one ministry named SR ministries … sub
+  categories"): `SB_GROUPS` (23-structure.js) draws Sry Noi, LTN and Ponlork School under one heading in Community Service
+  (`[data-sbgroup="srmin"]`, `.sbGroup`, `sbMinBoxHtml_`), the board calling Ponlork School "Ponlork Hope" (`sbMinName_`, also in
+  `sbBoxName_`). **Only how the board draws them**: each is still its own ministry — its numbers, profiles, tasks, its own drop
+  box — and taxonomy.js is unchanged. Team → Structure's list is unchanged.
+- **Also serves here** (Nov 2026, Andrew: "put people in multiple ministries"): a ministry's ＋ sheet has a second picker
+  (`#sbAddAlso`, people picker key `sbalso`) of people placed elsewhere — a pick adds the ministry as their "also"
+  (`sbAlsoAdd_`), their main place unchanged.
 - tests/test-structure.mjs (server), tests/test-structure-board-ui.mjs (mouse and touch; the second ministry, making a
-  quarter live, the bell, the pills). Khmer: docs/khmer-needed.md §135, §137, §141. sw.js SHELL v29.
+  quarter live, the bell, the pills, SR Ministries, Also serves here). Khmer: docs/khmer-needed.md §135, §137, §141, §143. sw.js SHELL v29.
 
 ## Outreach Teams — one record per team, not a weekly form
 Outreach Teams (Community Service) doesn't log week by week: a team comes for a stretch
