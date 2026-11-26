@@ -128,6 +128,18 @@ Income.
   closest together, none in the future) and flippable with "Read them the other way" — not always QuickBooks'
   MM/DD (the Poipet export is DD/MM). Dates stored as real spreadsheet dates are read as they are.
 
+### 📥 Bulk import — look out for duplicates (26 Nov 2026)
+- **🔍 Look out for duplicates** — a tick under the description (`#bulkDups`, `S.bulkDups`), also turned on by the words
+  ("look out for duplicates", "double entries", "already entered" — `bulkNoteRead_` → `dups`).
+- Each line read is checked against what is already entered (`bulkDupOf_` → `r.dupOf`): **same day, same amount, and
+  the same person when both have a name** — money in against the income, money out against the expenses, anything
+  against the transfers and Financial tools.
+- With it on, those lines come first in **⚠️ Possible duplicates — already entered?**, each saying what it matches
+  ("Already entered: 3 Nov · $50 · income · Staff contributions · Person A · from aba-nov.pdf"), with **✓ Input this
+  anyway** (`dupOk`: it goes back to its own group, ticked) or **🗑 Delete — already entered** (left out; "Bring them
+  back" undoes); the group has **Delete all — already entered** and **Input all anyway**. Without it, a same-day,
+  same-amount line only carries the quiet "already in?" tag and isn't ticked by Tick all, as before.
+
 ### 📥 Bulk import — lines grouped by kind (25 Nov 2026)
 - The lines to check come in **groups**, one per kind of income or expense (`bulkGroupsHtml_`, key `bulkGroupKey_` =
   kind + kind of income / expense — for a P&L Detail that is one per account code, e.g. "🧾 Expense · Food · 50500"),
