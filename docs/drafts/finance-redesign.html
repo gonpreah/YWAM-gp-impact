@@ -551,6 +551,9 @@ button.tick.done{ background:var(--good); }
 .mnFilt{ margin:8px 0 4px; padding:8px 10px; border-radius:10px; background:var(--surface2); }
 .mnFRow{ display:flex; flex-wrap:wrap; gap:6px; margin:4px 0; }
 .mnFType{ width:100%; margin:4px 0; }
+.mnPlBtn{ display:inline-block; margin-top:4px; border:1px solid var(--line); background:var(--surface); color:var(--muted); border-radius:999px; padding:3px 10px; font-size:12px; font-weight:700; cursor:pointer; }
+.mnPlBtn.on{ border-color:var(--accent); color:var(--accent); background:var(--accentSoft); }
+.mnNotIn{ display:inline-block; margin-top:4px; font-size:12px; color:var(--muted); }
 .mnFSum{ margin:4px 0 0; font-size:13px; color:var(--muted); }
 .xfPlChk{ margin-top:10px; }
 .xfPlTog{ display:flex; align-items:center; gap:6px; margin:6px 0 0; font-size:13px; color:var(--muted); cursor:pointer; }
@@ -2919,27 +2922,33 @@ function mnPL_(L, labs, from, to){ var inc=0, exp=0, byInc={}, byExp={}, other=0
       var k3=x.camt>0 ? '🛠 Added (Financial tools)' : '🛠 Removed (Financial tools)';
       if(x.camt>0){ inc+=x.camt; byInc[k3]=(byInc[k3]||0)+x.camt; } else { exp-=x.camt; byExp[k3]=(byExp[k3]||0)-x.camt; } lines.push(x); }
     else if(x.type==='Internal transfer'){ if(x.camt>0) xin+=x.camt; else xout-=x.camt; lines.push(x); }   /* category to category: grey, not income or spending */
-    else { other+=x.camt; byOther[x.type]=(byOther[x.type]||0)+x.camt; } });
+    else { other+=x.camt; byOther[x.type]=(byOther[x.type]||0)+x.camt; lines.push(x); } });   /* listed too, as "not in the profit and loss" */
   var r=function(v){ return Math.round(v*100)/100; };
   return { inc:r(inc), exp:r(exp), net:r(inc-exp), byInc:byInc, byExp:byExp, other:r(other), byOther:byOther, lines:lines, xin:r(xin), xout:r(xout), xnet:r(xin-xout) }; }
 function mnBal_(L, labs, day){ var by={}; L.forEach(function(x){ if(x.camt==null || x.date>day) return; by[x.cat]=(by[x.cat]||0)+x.camt; });
   return Math.round(labs.reduce(function(s2,l){ return s2+(by[l]||0); },0)*100)/100; }
 /* the transactions list's filters (26 Nov 2026): Income / Expenses / Transfers, the kind of income or expense, and the
    account it came through (ABA, US, Cash, or Other — a transfer between categories has no account) */
-function mnLineKind_(x){ if(x.src && x.src.pl && x.camt!=null) return x.camt>0 ? 'inc' : 'exp'; return x.type==='Income' ? 'inc' : x.type==='Expense' ? 'exp' : 'xf'; }
+function mnLineKind_(x){ if(x.src && x.src.pl && x.camt!=null) return x.camt>0 ? 'inc' : 'exp'; return x.type==='Income' ? 'inc' : x.type==='Expense' ? 'exp' : x.type==='Internal transfer' ? 'xf' : 'adj'; }
+/* in the profit and loss? income and expenses always; a transfer or Financial tools adjustment when ticked (src.pl) */
+function mnLineIn_(x){ return x.type==='Income' || x.type==='Expense' || !!(x.src && x.src.pl); }
+/* can it be put in or taken out? transfers and Financial tools adjustments (by the entry they come from) */
+function mnLineCan_(x){ return !!(x.src && x.src.id && (x.type==='Internal transfer' || x.type==='Adjustment (Financial tools)')); }
 function mnLineType_(x){ return x.type==='Internal transfer' ? 'Internal transfer' : (x.src && x.src.type) || x.type; }
 function mnLineAcct_(x){ return x.acct==='ABA bank' ? 'aba' : x.acct==='US bank' ? 'us' : x.acct==='Cash on hand' ? 'cash' : 'other'; }
-function mnLF_(){ var M=mnS_(); return M.lf||(M.lf={ k:'all', t:'', a:'all' }); }
-function mnLineFilter_(L){ var F=mnLF_(); return L.filter(function(x){ return (F.k==='all' || mnLineKind_(x)===F.k) && (!F.t || mnLineType_(x)===F.t) && (F.a==='all' || mnLineAcct_(x)===F.a); }); }
+function mnLF_(){ var M=mnS_(); return M.lf||(M.lf={ k:'all', t:'', a:'all', p:'all' }); }
+function mnLineFilter_(L){ var F=mnLF_(); return L.filter(function(x){ return (F.k==='all' || mnLineKind_(x)===F.k) && (!F.t || mnLineType_(x)===F.t) && (F.a==='all' || mnLineAcct_(x)===F.a) &&
+  (!F.p || F.p==='all' || (F.p==='in') === mnLineIn_(x)); }); }
 function mnFiltHtml_(L, n){ var F=mnLF_(), cnt=function(fn){ return L.filter(fn).length; };
   var chip=function(attr, v, cur, label, c){ return '<button class="ledChip'+(cur===v?' on':'')+'" data-'+attr+'="'+esc(v)+'"'+(c?'':' disabled')+'>'+esc(label)+' · '+c+'</button>'; };
   var h='<div class="mnFilt" id="mnFilt"><div class="mnFRow">'+chip('mnfk','all',F.k,'All',L.length)+chip('mnfk','inc',F.k,'💵 Income',cnt(function(x){ return mnLineKind_(x)==='inc'; }))+
-    chip('mnfk','exp',F.k,'🧾 Expenses',cnt(function(x){ return mnLineKind_(x)==='exp'; }))+chip('mnfk','xf',F.k,'🔁 Transfers',cnt(function(x){ return mnLineKind_(x)==='xf'; }))+'</div>';
+    chip('mnfk','exp',F.k,'🧾 Expenses',cnt(function(x){ return mnLineKind_(x)==='exp'; }))+chip('mnfk','xf',F.k,'🔁 Transfers',cnt(function(x){ return mnLineKind_(x)==='xf'; }))+chip('mnfk','adj',F.k,'🛠 Adjustments',cnt(function(x){ return mnLineKind_(x)==='adj'; }))+'</div>'+
+    '<div class="mnFRow">'+chip('mnfp','all',F.p||'all','In or not',L.length)+chip('mnfp','in',F.p,'📈 In the profit and loss',cnt(mnLineIn_))+chip('mnfp','out',F.p,'Not in it',cnt(function(x){ return !mnLineIn_(x); }))+'</div>';
   var pool=L.filter(function(x){ return F.k==='all' || mnLineKind_(x)===F.k; }), types={}; pool.forEach(function(x){ var t=mnLineType_(x); types[t]=(types[t]||0)+1; });
   var tk=Object.keys(types).sort(); if(tk.length>1 || F.t) h+='<select id="mnFType" class="mnFType" aria-label="Kind"><option value="">Every kind'+(F.k==='inc'?' of income':F.k==='exp'?' of expense':'')+' · '+pool.length+'</option>'+tk.map(function(t){ return '<option value="'+esc(t)+'"'+(F.t===t?' selected':'')+'>'+esc(t)+' · '+types[t]+'</option>'; }).join('')+'</select>';
   h+='<div class="mnFRow">'+chip('mnfa','all',F.a,'Any account',L.length)+[['aba','ABA bank'],['us','US bank'],['cash','Cash on hand'],['other','Other']].map(function(a){ return chip('mnfa',a[0],F.a,a[1],cnt(function(x){ return mnLineAcct_(x)===a[0]; })); }).join('')+'</div>';
   var tot=mnLineFilter_(L).reduce(function(s2,x){ return s2+(x.camt||0); },0);
-  return h+'<p class="mnFSum">Showing '+n+' of '+L.length+' · net '+mnSg_(Math.round(tot*100)/100)+(F.k!=='all'||F.t||F.a!=='all'?' <button class="linkAdd" id="mnFClear">Clear filters</button>':'')+'</p></div>'; }
+  return h+'<p class="mnFSum">Showing '+n+' of '+L.length+' · net '+mnSg_(Math.round(tot*100)/100)+(F.k!=='all'||F.t||F.a!=='all'||(F.p&&F.p!=='all')?' <button class="linkAdd" id="mnFClear">Clear filters</button>':'')+'</p></div>'; }
 function mnSg_(v){ return (v<0?'−':'')+money(Math.abs(v),true); }
 /* "▲ $120 more than the same days last month" — good is green: more income, less spending */
 function mnVs_(now, before, P, upGood){ if(!P.pf) return '';
@@ -2992,15 +3001,20 @@ function minsHtml_(){ var M=mnS_(), P=mnPeriod_(), sel=mnSel_(), labs=sel.map(fu
   if(pl.lines.length){ h+='<button class="flowDrop'+(M.list?' on':'')+'" id="mnList" aria-expanded="'+!!M.list+'"><span>'+(M.list?'Hide':'Show')+' the '+pl.lines.length+' transaction'+(pl.lines.length>1?'s':'')+'</span><span class="chev">▾</span></button>';
     var shownL=M.list ? mnLineFilter_(pl.lines) : [];
     if(M.list) h+=mnFiltHtml_(pl.lines, shownL.length);
-    if(M.list) h+='<ul class="mnLines">'+shownL.map(function(x){ var memo=(x.type==='Internal transfer' ? x.memo : (x.src&&x.src.memo))||''; return '<li><div><b>'+esc(x.name||(x.src&&x.src.type)||x.type)+'</b><span>'+date(x.date)+' · '+esc((x.src&&x.src.type)||x.type)+(x.src && x.src.pl?' · 📈 in the profit and loss':'')+(sel.length>1?' · '+esc(mnName_(sel[labs.indexOf(x.cat)])):'')+(memo?' · '+esc(memo):'')+(x.appr?' · ✅':'')+'</span></div><b class="'+(x.type==='Internal transfer' && !(x.src&&x.src.pl)?'mnXfAmt':x.camt<0?'mnOut':'mnIn')+'">'+mnSg_(x.camt)+'</b></li>'; }).join('')+'</ul>'; }
+    if(M.list) h+='<ul class="mnLines">'+shownL.map(function(x){ var memo=(x.type==='Internal transfer' ? x.memo : (x.src&&x.src.memo))||''; return '<li><div><b>'+(x.src && x.src.journal ? '📓 ' : '')+esc(x.name||(x.src&&x.src.type)||(x.src && x.src.journal ? 'Journal entry' : x.type))+'</b><span>'+date(x.date)+' · '+esc((x.src&&x.src.type)||x.type)+(sel.length>1?' · '+esc(mnName_(sel[labs.indexOf(x.cat)])):'')+(memo?' · '+esc(memo):'')+(x.appr?' · ✅':'')+'</span>'+
+      (mnLineCan_(x) ? '<button class="mnPlBtn'+(mnLineIn_(x)?' on':'')+'" data-mnpl="'+esc(x.src.id)+'">'+(mnLineIn_(x)?'📈 In the profit and loss — take out':'Not in the profit and loss — include')+'</button>' : (!mnLineIn_(x) ? '<span class="mnNotIn">Not in the profit and loss</span>' : ''))+
+      '</div><b class="'+(!mnLineIn_(x)?'mnXfAmt':x.camt<0?'mnOut':'mnIn')+'">'+mnSg_(x.camt)+'</b></li>'; }).join('')+'</ul>'; }
   else if(!NA) h+='<p class="hint" style="margin-top:6px">No income or expenses for '+esc(mnSelName_(sel))+' in this period.</p>';
   h+='</section>';
   /* several picked: each one side by side */
   if(sel.length>1) h+='<section class="sec" id="mnEach"><div class="secHead"><h2>Each one</h2></div><table class="mnEach"><tr><th>Allocation</th><th class="r">Balance</th><th class="r">Income</th><th class="r">Expenses</th><th class="r mnXfAmt">Transfers</th></tr>'+
     sel.map(function(k, i){ var p1=mnPL_(L, [labs[i]], P.from, P.to); return '<tr><td>'+esc(mnName_(k))+'</td><td class="r">'+mnSg_(mnBal_(L, [labs[i]], P.to))+'</td><td class="r">'+money(p1.inc,true)+'</td><td class="r">'+money(p1.exp,true)+'</td><td class="r mnXfAmt">'+mnSg_(p1.xnet)+'</td></tr>'; }).join('')+'</table></section>';
   return h+'<section class="sec"><p class="hint" style="margin:0">'+(live ? '📡 Everything entered counts here, approved or not' : '✅ Only lines in an approved report count here')+' — the same lines as the Detailed breakdown on the Input tab.</p></section>'; }
-document.addEventListener('click', function(e){ var fk=e.target.closest && e.target.closest('[data-mnfk],[data-mnfa],#mnFClear'); if(!fk) return; var F=mnLF_();
-  if(fk.id==='mnFClear'){ F.k='all'; F.t=''; F.a='all'; } else if(fk.dataset.mnfk){ F.k=fk.dataset.mnfk; F.t=''; } else F.a=fk.dataset.mnfa; render(); });
+document.addEventListener('click', function(e){ var fk=e.target.closest && e.target.closest('[data-mnfk],[data-mnfa],[data-mnfp],#mnFClear'); if(!fk) return; var F=mnLF_();
+  if(fk.id==='mnFClear'){ F.k='all'; F.t=''; F.a='all'; F.p='all'; } else if(fk.dataset.mnfk){ F.k=fk.dataset.mnfk; F.t=''; } else if(fk.dataset.mnfp) F.p=fk.dataset.mnfp; else F.a=fk.dataset.mnfa; render(); });
+/* put a transfer or adjustment in the Ministries profit and loss, or take it out — right from the list */
+document.addEventListener('click', function(e){ var b=e.target.closest && e.target.closest('[data-mnpl]'); if(!b) return; var id=b.dataset.mnpl, t=TRANSFERS.concat(TOOL_XFERS).filter(function(x){ return x.id===id; })[0]; if(!t) return;
+  var on=!t.pl; snap_((on?'Took ':'Put ')+money(t.amt,true)+' '+(isToolX_(t)?'(Financial tools)':'transfer')+(on?' out of':' back in')+' the Ministries profit and loss'); if(on) t.pl=true; else delete t.pl; keep_(); render(); toast(on?'📈 Now in the profit and loss':'Taken out of the profit and loss'); });
 document.addEventListener('change', function(e){ if(e.target.id!=='mnFType') return; mnLF_().t=e.target.value; render(); });
 document.addEventListener('click', function(e){ var M=mnS_(), t=e.target.closest && e.target.closest('[data-mnper],[data-mnk],[data-mngrp],#mnPickBtn,#mnPickDone,#mnList,#mnClear'); if(!t) return;
   if(t.dataset.mnper){ M.per=t.dataset.mnper; if(M.per==='custom' && !M.from){ M.from=mnMonthStart_(TODAY); M.to=TODAY; } }

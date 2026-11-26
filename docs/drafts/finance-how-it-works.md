@@ -392,6 +392,12 @@ Income.
   🧾 Expenses / 🔁 Transfers; a kind picker (the kinds of income or expense in the list, "Internal transfer"); and the
   account — ABA bank / US bank / Cash on hand / **Other** (no account: a transfer between categories). Each with its
   count; "Showing n of m · net …" and Clear filters.
+- **In the profit and loss or not** (26 Nov 2026): the list also holds what is *not* in the profit and loss — internal
+  transfers without the 📈 tick, Financial tools adjustments (journal entries set to N/A among them, marked 📓), manual
+  allocations — with **🛠 Adjustments** beside Transfers and a row **In or not · 📈 In the profit and loss · Not in it**
+  (`mnLineIn_`). A transfer or adjustment has a button on its row (`[data-mnpl]`, `mnLineCan_`): "Not in the profit and
+  loss — include" / "📈 In the profit and loss — take out", which sets or clears `pl` on the entry (one 🕘 History step);
+  the profit and loss above follows at once. Income and expenses are always in; manual allocations never.
 - **📈 Show in the Ministries profit and loss** (25 Nov 2026): a tick on the internal transfer form (`#xfPl`, `S.xfer.pl`)
   and on each fund-to-fund transfer in "Transfers made" (`[data-xfpltog]`, changed any time, even once approved — it only
   changes how the Ministries tab reads it). Saved as `pl: true` on the transfer. Ticked, it is paying for something
