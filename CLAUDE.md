@@ -1865,7 +1865,7 @@ tests/test-bottom-bar.mjs §3.
 leave form is already in there, why is it on twice?")** — each thing is on My Home once:
 - **The dark card** (arranged by each person since Nov 2026 — see "My Home's dashboard card, arranged like a phone's Home
   Screen") is: the quick apps (the dock), then **four widgets in one row** (`heroWidgetsHtml_`,
-  `.heroWidgets`, `.heroW`): Goals (this week's done/written, `data-jump="sec-goals"`), Habits (today's,
+  `.heroWidgets`, `.heroW`; 16px / 14px gaps, Andrew: "a bit more gaps"): Goals (this week's done/written, `data-jump="sec-goals"`), Habits (today's,
   `data-jump="sec-habits"`), Health (`#goMyHealth`, the weekly check-in score), Tasks (`#goGpTasks`, the Inbox's red
   number, else the open count, quiet) — three when GP Tasks hasn't loaded; then this week's chores / cooking line,
   the 📚 reading row, and the base at a glance with **On campus** as its fourth figure (`#goWhosHereHome` inside
@@ -3176,8 +3176,17 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   **Don't show this when I open the app** (`#gameIntroOff`). The first time it says "Points are here!", after that "Your
   points this week". On the phone as `gp-game-intro-v2` = {n, last, off}. The slide-down reminder and Santa wait while
   it is open. Not under a test browser unless `gp-intro-test` is set. Khmer: docs/khmer-needed.md §118.
+- **All time** (Nov 2026, Andrew: "can you also show an all time board?"): the fourth tab, 🏆 All time (`S.gameTab='all'`,
+  `#gameTabAll`, `#gameAllTime`), and a line on my card (`#gameMeAll`: "🏆 n points all time · #place", opens the tab) —
+  every point since the board began (`GAME_FROM` = 2026-11-16), this week included. Some evidence is kept only a while
+  (opened days 90, snowflakes and Santa 60), so a finished week is **banked**: `gameWeeks` = {weeks: {'Monday': {staffId:
+  pts}}} (in BOOT_KEYS), written only by `runGameBank` (exported, run by reminders.js every hour, everyone active on both
+  campuses, a week once) — a page open still writes nothing. Until banked, the board works a finished week out on read
+  (`gamePast_`, the newest `GAME_READ_WEEKS` 8). `gameScore_(src, people, from, today)` is one week's points (the board's
+  maths, a finished week to its Sunday); rows carry `all` and `allRank`, `me` too, the board `allTime {from, weeks}`.
+  Points only, like the week's. Khmer §149.
 - **Streak**: days in a row with any use (the same evidence as Admin → App use), ending today or yesterday.
-- **What others see**: `people` rows are exactly `{id, pts, streak, week, rank, books, booksYear}` (books finished this
+- **What others see**: `people` rows are exactly `{id, pts, streak, week, rank, books, booksYear, all, allRank}` (books finished this
   week and this year — counts, as every profile already shows; never which book) (`week` = seven characters, 1 / 0 / -
   for a day to come) — never what was done. `me` adds `parts` (where my points came from). **Everyone active on the campus is on the
   board — there is no switch to step off** (Uriah, Nov 2026: "no need to put the option, leave them on"; a first

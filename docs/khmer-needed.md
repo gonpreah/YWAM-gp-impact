@@ -6782,6 +6782,20 @@ Campus Leadership arranges a quarter on the whiteboard; "Make Q1 2027 live" turn
 | Someone else is saving — try again. | មានអ្នកផ្សេងកំពុងរក្សាទុក — សូមព្យាយាមម្តងទៀត។ |
 | That quarter is over. | ត្រីមាសនោះបានកន្លងផុតហើយ។ |
 
+## 149. The week’s board: All time (Team → 🏆 This week, My Home’s points line, Nov 2026)
+
+The fourth tab on the week’s board — every point since the board began, added up — and the line under my own figures. “All time” is a short tab label beside People, Readers and Ministries, so keep it short. {d} is a date such as “16 Nov”.
+
+| English | Khmer (draft) |
+|---|---|
+| All time | គ្រប់ពេល |
+| points all time | ពិន្ទុសរុបគ្រប់ពេល |
+| Every point since the board began on {d} — {n} weeks, this one included. | ពិន្ទុទាំងអស់ចាប់តាំងពីតារាងចាប់ផ្ដើមនៅ {d} — {n} សប្ដាហ៍ រួមទាំងសប្ដាហ៍នេះ។ |
+| Nobody has points yet. Tick a habit and be the first. | មិនទាន់មាននរណាមានពិន្ទុទេ។ គូសទម្លាប់មួយ ហើយក្លាយជាអ្នកទីមួយ។ |
+| {n} more have no points yet. | {n} នាក់ទៀតមិនទាន់មានពិន្ទុទេ។ |
+| {n} points this week | {n} ពិន្ទុសប្ដាហ៍នេះ |
+| All time keeps adding up. Each week still starts again on Monday. | ពិន្ទុគ្រប់ពេលនៅតែបូកបន្ថែមជានិច្ច។ សប្ដាហ៍នីមួយៗនៅតែចាប់ផ្ដើមឡើងវិញនៅថ្ងៃចន្ទ។ |
+
 ## 148. YWAM GP’s own job titles, and a job in YWAM GP itself (☰ → YWAM GP, Admin → a person → Positions, My Ministry, Team → Structure, Nov 2026)
 
 For admins (the job-title editor on the YWAM GP page, the “Works for YWAM GP” tick under Positions, Loose ends) and for the few people whose job is YWAM GP itself: their My Ministry page, their line on their profile, and the quiet line under a campus’s chart. “Job title” is មុខតំណែងការងារ; a title an admin types is shown as typed and is not in this list. “lives in {campus}” takes the campus’s short name (Siem Reap).
