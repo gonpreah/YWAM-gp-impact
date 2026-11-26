@@ -2005,10 +2005,16 @@ function bulkSet_(br, f, v){
   if(f==='type' && br.kind==='exp' && (!br.fund || br.hint)){ br.fund=EXP_HINT[v]||''; br.hint=br.fund?'usual for '+v:''; }
   br.ok=false; }
 var BULK_SAME_F={ kind:'what it is', type:'the kind', fund:'the category', bank:'the account', from:'from', to:'to' };
-function bulkSameHtml_(i){ var B=S.bulkSame; if(!B || B.i!==i) return '';
-  var shown = B.f==='fund'||B.f==='from'||B.f==='to' ? (isAcct_(B.v)?ACCT_KEYS[B.v]:isTool_(B.v)?TOOL_LABEL[B.v]:fundNm_(B.v)) : B.f==='bank' ? bankLabel_(B.v) : B.f==='kind' ? BULK_KIND[B.v] : B.v;
-  return '<div class="bulkSame" id="bulkSame">Do the same for the other <b>'+B.n+'</b> line'+(B.n>1?'s':'')+' in “'+esc(bulkGroupName_(B.k))+'”? — '+esc(BULK_SAME_F[B.f])+': <b>'+esc(shown)+'</b>'+
-    '<div class="inBtns" style="margin-top:6px"><button class="btn" id="bulkSameAll">Yes — all '+B.n+'</button><button class="linkAdd" id="bulkSameNo">Just this one</button></div></div>'; }
+var BULK_SAME_ORDER=['kind','type','fund','bank','from','to'];
+/* the other lines still in the group this one was in, that some change would change */
+function bulkSameOthers_(B){ var me=S.bulk.rows[B.i]; return S.bulk.rows.filter(function(o, oi){ return oi!==B.i && bulkGroupKey_(o)===B.k && Object.keys(B.ch).some(function(f){ return o[f]!==B.ch[f]; }); }); }
+function bulkSameShown_(f, v){ return f==='fund'||f==='from'||f==='to' ? (isAcct_(v)?ACCT_KEYS[v]:isTool_(v)?TOOL_LABEL[v]:fundNm_(v)) : f==='bank' ? bankLabel_(v) : f==='kind' ? BULK_KIND[v] : v; }
+function bulkSameHtml_(i){ var B=S.bulkSame; if(!B || B.i!==i || !B.ask) return ''; var n=bulkSameOthers_(B).length;
+  var what=BULK_SAME_ORDER.filter(function(f){ return B.ch[f]; }).map(function(f){ return esc(BULK_SAME_F[f])+': <b>'+esc(bulkSameShown_(f, B.ch[f]))+'</b>'; }).join(' · ');
+  return '<div class="bulkSame" id="bulkSame">Do the same for the other <b>'+n+'</b> line'+(n>1?'s':'')+' in “'+esc(bulkGroupName_(B.k))+'”? — '+what+
+    '<div class="inBtns" style="margin-top:6px"><button class="btn" id="bulkSameAll">Yes — all '+n+'</button><button class="linkAdd" id="bulkSameNo">Just this one</button></div></div>'; }
+/* close the line: it moves to its group now */
+function bulkClose_(){ var dr=S.bulk && S.bulk.rows[S.bulkEdit]; S.bulkEdit=null; S.bulkEditKey=null; S.bulkSame=null; if(dr && !bulkNeeds_(dr).length) dr.ok=true; }
 function bulkSummary_(r){
   if(!r.kind) return '<span class="dsub">Not sure — '+money(r.amt,true)+(r.dir==='in'?' in':r.dir==='out'?' out':'')+'</span>';
   var bits=[BULK_KIND[r.kind]];
@@ -2177,16 +2183,19 @@ function bulkRowHtml_(r, i){ var need=bulkNeeds_(r), ed=S.bulkEdit===i;
    Detail that is one per account code — with its count and total; folded until opened; Tick all ticks every
    complete line in it ("already in?" lines are left for a look). Journal entries and lines not worked out come
    first. A line moves group when it is changed. */
+/* where a line sits: while it is open for editing it stays in the group it was in when Edit was tapped (26 Nov 2026:
+   "do not move it until i select done") — it moves after Done (and the "do the same for all?" answer) */
+function bulkPlace_(r, i){ return i===S.bulkEdit && S.bulkEditKey ? S.bulkEditKey : bulkGroupKey_(r); }
 function bulkGroupKey_(r){ return !r.kind ? (r.journal ? 'j' : 'x') : r.kind==='xf' ? 'xf' : r.kind+'|'+(r.type||'?'); }
 function bulkGroupName_(k){ if(k==='j') return '📓 Journal entries to check'; if(k==='x') return '❓ Not sure what they are'; if(k==='xf') return '🔁 Transfers';
   var p=k.split('|'), t=k.slice(p[0].length+1); return (p[0]==='inc'?'💵 Income · ':'🧾 Expense · ')+(t==='?'?'kind not picked yet':t+(p[0]==='exp' && EXP_NUM[t] ? ' · '+EXP_NUM[t] : '')+(p[0]==='inc' && S.bulk ? bulkIncCodes_(t) : '')); }
 /* the QuickBooks income accounts a group's lines came from ("· 44000") */
 function bulkIncCodes_(t){ var c={}; S.bulk.rows.forEach(function(r){ var m=r.kind==='inc' && (r.type||'?')===t && /^(\d{4,6})\s/.exec(r.qbHead||''); if(m) c[m[1]]=1; }); var k=Object.keys(c).sort(); return k.length ? ' · '+k.join(', ') : ''; }
 function bulkGroupsHtml_(R){ var G={}, order=[];
-  R.forEach(function(r, i){ var k=bulkGroupKey_(r); if(!G[k]){ G[k]={ k:k, idx:[], tot:0 }; order.push(k); } G[k].idx.push(i); G[k].tot+=r.amt; });
+  R.forEach(function(r, i){ var k=bulkPlace_(r, i); if(!G[k]){ G[k]={ k:k, idx:[], tot:0 }; order.push(k); } G[k].idx.push(i); G[k].tot+=r.amt; });
   var rank=function(k){ return k==='j'?0 : k==='x'?1 : /^inc/.test(k)?2 : /^exp/.test(k)?3 : 4; };
   order.sort(function(a,b){ return rank(a)-rank(b) || G[b].tot-G[a].tot; });
-  var open=S.bulkOpen||(S.bulkOpen={}); if(S.bulkEdit!=null && R[S.bulkEdit]) open[bulkGroupKey_(R[S.bulkEdit])]=true;
+  var open=S.bulkOpen||(S.bulkOpen={}); if(S.bulkEdit!=null && R[S.bulkEdit]) open[bulkPlace_(R[S.bulkEdit], S.bulkEdit)]=true;
   var back = (S.bulkJOut||[]).length ? '<div class="bulkJBack">🗑 '+S.bulkJOut.length+' journal entr'+(S.bulkJOut.length>1?'ies':'y')+' left out. <button class="linkAdd" id="bulkJBack">Bring them back</button></div>' : '';
   return back+'<div class="bulkList">'+order.map(function(k){ var g=G[k], rows=g.idx.map(function(i){ return R[i]; });
     var done=rows.filter(function(r){ return !bulkNeeds_(r).length; }), on=rows.filter(function(r){ return r.ok && !bulkNeeds_(r).length; }), need=rows.length-done.length;
@@ -2234,7 +2243,7 @@ function bulkRead_(f){
        r.dup=all.some(function(x){ return x.date===r.date && Math.abs(x.amt-r.amt)<0.005; }); r.ok=false; return r; }) };
      S.bulk.isPL=!!list.isPL; S.bulk.checks=list.checks||[];
      S.bulk.note=String(S.bulkNote||'').trim(); bulkNoteApply_(S.bulk.rows, bulkNoteRead_(S.bulk.note)); S.bulkNoteMsg='';
-     S.bulkBusy=false; S.bulkEdit=null; S.bulkSame=null; S.bulkJOut=null; render(); })
+     S.bulkBusy=false; S.bulkEdit=null; S.bulkEditKey=null; S.bulkSame=null; S.bulkJOut=null; render(); })
    .catch(function(e){ S.bulkBusy=false; S.bulk=null; S.bulkErr = e && e.message==='no_pdfjs' ? 'Couldn’t load the PDF reader — check the connection and try again, or use the Excel export.' : e && e.message==='no_header' ? 'Couldn’t find a Date and an Amount (or Debit / Credit) column.' : e && e.message==='no_rows' ? 'Couldn’t find any lines with a date and an amount in that file.'+(e.detail?' '+e.detail:'') : 'Couldn’t read that file'+(e && e.message ? ' ('+e.message+')' : '')+'.'; render(); });
 }
 function bulkAdd_(){
@@ -2256,7 +2265,7 @@ function bulkAdd_(){
   flSort_('inc'); flSort_('exp'); [TRANSFERS, TOOL_XFERS].forEach(function(L){ L.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; }); });
   xferSnap_(list.reduce(function(m,r){ return r.date>m?r.date:m; },''));
   var left=U.rows.filter(function(r){ return !(r.ok && !bulkNeeds_(r).length); });
-  S.bulk = left.length ? { file:U.file, rows:left, note:U.note } : null; if(!left.length){ S.bulkNote=''; S.bulkNoteMsg=''; S.bulkPre=null; S.bulkJOut=null; } S.bulkEdit=null; S.bulkSame=null; render();
+  S.bulk = left.length ? { file:U.file, rows:left, note:U.note } : null; if(!left.length){ S.bulkNote=''; S.bulkNoteMsg=''; S.bulkPre=null; S.bulkJOut=null; } S.bulkEdit=null; S.bulkEditKey=null; S.bulkSame=null; render();
   toast('Added '+list.length+' lines to 📡 Live'+(nPre?' — '+nPre+' in the '+date(U.pre.day)+' approved report'+(liqT?', its liquid assets adjusted':'')+(gapT?', the gap put into '+fundNm_(gapT.f):''):'')+(nFix?' and '+nFix+' fix line'+(nFix>1?'s':''):'')+(left.length?' — '+left.length+' still to check':''));
 }
 /* ---- Input: advances — money handed out before a purchase, settled with the receipts ----
@@ -2980,8 +2989,9 @@ document.addEventListener('change', function(e){
       S.bulk.rows.forEach(function(o){ if(o!==br && o.cls && o.cls.toLowerCase().trim()===ck && (o.kind==='exp' || (o.kind==='inc' && o.type && !(INC_RULES[o.type]||[]).length)) && (!o.fund || o.hint)){ o.fund=v; o.hint='same class as a line you set'; o.ok=false; nn++; } });
       if(nn) toast(nn+' more line'+(nn>1?'s':'')+' of the class “'+br.cls+'” now '+(nn>1?'go':'goes')+' to '+fundNm_(v)); }
     /* the same change for the rest of the group the line was in (26 Nov 2026: "change one and be given an option to do it for all") */
-    if(BULK_SAME_F[bf[1]]){ var others=S.bulk.rows.filter(function(o){ return o!==br && bulkGroupKey_(o)===gk0 && o[bf[1]]!==v; });
-      S.bulkSame = others.length && v ? { i:+bf[0], f:bf[1], v:v, k:gk0, n:others.length } : null; }
+    if(BULK_SAME_F[bf[1]]){ var SBm=S.bulkSame && S.bulkSame.i===+bf[0] ? S.bulkSame : (S.bulkSame={ i:+bf[0], k:S.bulkEditKey||gk0, ch:{}, ask:false });
+      if(bf[1]==='kind') SBm.ch={}; if(bf[1]==='type' && br.kind==='inc') delete SBm.ch.fund;
+      if(v) SBm.ch[bf[1]]=v; else delete SBm.ch[bf[1]]; }
     render(); return; }
   if(e.target.dataset && e.target.dataset.f1incl){ flOne_(e.target.dataset.f1incl).incl=e.target.checked; return; }
   if(e.target.dataset && e.target.dataset.xfincl){ S.xfer.incl=e.target.checked; return; }
@@ -3095,16 +3105,19 @@ document.addEventListener('click', function(e){
   if(e.target.id==='bulkUntick' && S.bulk){ S.bulk.rows.forEach(function(r){ r.ok=false; }); render(); return; }
   if(e.target.id==='bulkAdd'){ bulkAdd_(); return; }
   if(e.target.id==='amendOpen'){ S.amendOpen=!S.amendOpen; render(); return; }
-  if(e.target.id==='bulkCancel'){ S.bulk=null; S.bulkEdit=null; S.bulkSame=null; S.bulkJOut=null; render(); return; }
-  if(e.target.id==='bulkSameAll' && S.bulkSame && S.bulk){ var SB=S.bulkSame, nn2=0; S.bulk.rows.forEach(function(o, oi){ if(oi!==SB.i && bulkGroupKey_(o)===SB.k && o[SB.f]!==SB.v){ bulkSet_(o, SB.f, SB.v); nn2++; } });
-    S.bulkSame=null; render(); toast(nn2+' more line'+(nn2>1?'s':'')+' changed'); return; }
-  if(e.target.id==='bulkSameNo'){ S.bulkSame=null; render(); return; }
+  if(e.target.id==='bulkCancel'){ S.bulk=null; S.bulkEdit=null; S.bulkEditKey=null; S.bulkSame=null; S.bulkJOut=null; render(); return; }
+  if(e.target.id==='bulkSameAll' && S.bulkSame && S.bulk){ var SB=S.bulkSame, list2=bulkSameOthers_(SB);
+    list2.forEach(function(o){ BULK_SAME_ORDER.forEach(function(f){ if(SB.ch[f] && o[f]!==SB.ch[f]) bulkSet_(o, f, SB.ch[f]); }); });
+    bulkClose_(); render(); toast(list2.length+' more line'+(list2.length>1?'s':'')+' changed'); return; }
+  if(e.target.id==='bulkSameNo'){ bulkClose_(); render(); return; }
   var gd=e.target.closest && e.target.closest('[data-bulkgrpdrop]'); if(gd && S.bulk){ var keepR=[], outR=[]; S.bulk.rows.forEach(function(o){ (bulkGroupKey_(o)==='j' ? outR : keepR).push(o); });
-    S.bulkJOut=(S.bulkJOut||[]).concat(outR); S.bulk.rows=keepR; S.bulkEdit=null; S.bulkSame=null; render(); toast('Left out '+outR.length+' journal entr'+(outR.length>1?'ies':'y')); return; }
+    S.bulkJOut=(S.bulkJOut||[]).concat(outR); S.bulk.rows=keepR; S.bulkEdit=null; S.bulkEditKey=null; S.bulkSame=null; render(); toast('Left out '+outR.length+' journal entr'+(outR.length>1?'ies':'y')); return; }
   if(e.target.id==='bulkJBack' && S.bulk){ S.bulk.rows=S.bulk.rows.concat(S.bulkJOut||[]); S.bulkJOut=null; S.bulkEdit=null; render(); return; }
-  var be=e.target.closest && e.target.closest('[data-bulkedit]'); if(be){ S.bulkEdit=+be.dataset.bulkedit; S.bulkSame=null; render(); return; }
-  var bd=e.target.closest && e.target.closest('[data-bulkdone]'); if(bd){ var dr=S.bulk.rows[+bd.dataset.bulkdone]; S.bulkEdit=null; S.bulkSame=null; if(!bulkNeeds_(dr).length) dr.ok=true; render(); return; }
-  var bx=e.target.closest && e.target.closest('[data-bulkdrop]'); if(bx){ S.bulk.rows.splice(+bx.dataset.bulkdrop,1); S.bulkEdit=null; S.bulkSame=null; if(!S.bulk.rows.length) S.bulk=null; render(); return; }
+  var be=e.target.closest && e.target.closest('[data-bulkedit]'); if(be){ S.bulkEdit=+be.dataset.bulkedit; S.bulkEditKey=bulkGroupKey_(S.bulk.rows[S.bulkEdit]); S.bulkSame=null; render(); return; }
+  var bd=e.target.closest && e.target.closest('[data-bulkdone]'); if(bd){ var SBd=S.bulkSame;
+    if(SBd && SBd.i===+bd.dataset.bulkdone && !SBd.ask && Object.keys(SBd.ch).length && bulkSameOthers_(SBd).length){ SBd.ask=true; render(); return; }
+    bulkClose_(); render(); return; }
+  var bx=e.target.closest && e.target.closest('[data-bulkdrop]'); if(bx){ S.bulk.rows.splice(+bx.dataset.bulkdrop,1); S.bulkEdit=null; S.bulkEditKey=null; S.bulkSame=null; if(!S.bulk.rows.length) S.bulk=null; render(); return; }
   var dt=e.target.closest && e.target.closest('[data-daytick]'); if(dt){ e.preventDefault(); e.stopPropagation(); var dday=reportDay_(), part=dt.dataset.daytick;
     (DAY_DONE[dday]=DAY_DONE[dday]||{})[part]=!(DAY_DONE[dday][part]); keep_(); render(); return; }
   var ab=e.target.closest && e.target.closest('[data-advbud]'); if(ab){ advForm_().budgeted=ab.dataset.advbud; S.advErr=''; render(); return; }

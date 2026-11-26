@@ -100,10 +100,13 @@ Income.
     whether it is income, an expense or a transfer (the description box doesn't decide it either).
     "📓 Journal entries to check" has **🗑 Leave all n out** (`data-bulkgrpdrop`) — they are usually not needed in these
     reports; "Bring them back" undoes it while the import is open (`S.bulkJOut`).
-- **The same for the rest of the group** (26 Nov 2026): changing what a line is, its kind, category, account, from or
-  to (`bulkSet_`) offers, under that line, "Do the same for the other n lines in “group”?" (`S.bulkSame`,
-  `bulkSameHtml_`) — **Yes — all n** changes every other line still in the group the line was in; **Just this one**
-  leaves them.
+- **A line stays put while it is being edited** (26 Nov 2026): it stays in the group it was in when ✏️ Edit was tapped
+  (`S.bulkEditKey`, `bulkPlace_`), whatever is changed, so it is easy to find. Changes are only collected
+  (`S.bulkSame.ch`, `bulkSet_`).
+- **Done, then the same for the rest of the group**: if what it is, its kind, category, account, from or to changed
+  and other lines in that group would change too, Done first asks under the line "Do the same for the other n lines in
+  “group”?" with every change listed — **Yes — all n** makes the same changes to them, **Just this one** doesn't. Then
+  the line closes (`bulkClose_`) and it (and any others changed) moves to its group.
 - The "Total for …" lines are QuickBooks' own sums: each account's lines are checked against them, "✓ Every account
   adds up to QuickBooks' own total" or what doesn't match.
 - **Dates written as text** follow the file's day/month order, decided from all its dates (the reading where they sit
