@@ -211,6 +211,15 @@ Income.
   The whole import is one 🕘 History entry, so Undo takes all of it back.
 
 ### 🔁 Internal transfers (`TRANSFERS`)
+- **Dated on or before the latest approved day** (26 Nov 2026 — the same options as bulk import; nothing shows for a
+  later date): the form shows "⚠️ {date} is on or before 16 Nov — already approved" (`xferPreHtml_`, `#xfPre`) and the
+  transfer goes in that approved report (`xferPreApply_` → `addToApproved_`). Only the questions that apply:
+  **Should it change the approved total liquid assets?** when a side is an account (No by default; Yes moves that day's
+  approved balances and its balances entry, shown old → new); **What happens to the approved allocations?** when a side
+  is a category (Change them — default — or Leave them: then only Live moves). Then the day as it would be — total
+  liquid assets, allocated, the % — and, when it isn't 100%, the one-tap gap fix into a category. Kept on the day as an
+  amendment ("✏️ amended", "an internal transfer"). It replaces the old "Add it to the approved report as well" tick here
+  (income and expenses keep that tick).
 - **Fund → fund:** one fund down, the other up, at once. Accounts and the totals don't change.
 - **Account → account:** one account down, the other up, in the Live estimate. Funds and the
   totals don't change.

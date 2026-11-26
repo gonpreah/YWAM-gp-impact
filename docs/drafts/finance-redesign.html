@@ -1390,7 +1390,7 @@ function inXferHtml_(){
     '<label class="f" for="xfTo">To</label>'+fundSelect_('xfTo', D.to, 'To', TOOL_REMOVE, true)+
     '<div class="xfRow"><div><label class="f" for="xfAmt">Amount</label><div class="money"><span>$</span><input id="xfAmt" data-xf="amt" type="text" inputmode="text" autocomplete="off" value="'+esc(D.amt)+'" placeholder="0.00"></div></div>'+
     '<div><label class="f" for="xfDate">Date</label><input type="date" id="xfDate" data-xf="date" max="'+TODAY+'" value="'+esc(D.date)+'"></div></div>'+
-    '<div id="xfAppr">'+approvedAskHtml_(D.date, D.incl, 'data-xfincl="1"')+'</div>'+
+    '<div id="xfAppr">'+xferPreHtml_()+'</div>'+
     '<label class="f" for="xfMemo">Memo — why</label><textarea id="xfMemo" data-xf="memo" rows="2" maxlength="300" placeholder="e.g. Kitchen ran over this month; covered from Office/General">'+esc(D.memo)+'</textarea></div>'+
     '<label class="incChk xfPlChk"><input type="checkbox" id="xfPl" data-xfpl="1"'+(D.pl?' checked':'')+'><span><b>📈 Show in the Ministries profit and loss</b><br><small>For money that pays for something — e.g. a ministry paying for accommodation or food. It counts as spending for the one it leaves and income for the one it reaches. Leave it off for accounting moves; those stay a quiet grey line.</small></span></label>'+
     '<div id="xfPrev">'+xferPrevHtml_()+'</div>'+
@@ -1403,6 +1403,46 @@ function inXferHtml_(){
         '<div class="rowBtns">'+editBtnHtml_(tool?'tool':'xf', t)+(tool?'<button class="delBtn" data-tooldel="'+t.id+'">↩ Undo</button>':'<button class="delBtn" data-xfdel="'+t.id+'">↩ Undo this transfer</button>')+'</div></div>'; }).join('')+'</div>';
   return h+'</details>';
 }
+/* a transfer dated on or before the latest approved day (26 Nov 2026: "the same options as bulk imports"): it goes in
+   that day's approved report, and the same questions say what it changes there — only those that apply:
+   1. a side that is an account (account ↔ account, or Financial tools on an account): should it change the approved
+      liquid assets? No by default; Yes moves that day's approved balances (and its balances entry);
+   2. a side that is a category: Change the approved allocations (default) or Leave them;
+   then the day as it would be — total liquid assets, allocated, the % — and the gap fix into a category. */
+function xferPreDay_(){ var D=S.xfer||{}, a=approvedDay_(); if(!a || !D.date || D.date>a) return null; return a; }
+function xferPreFx_(){ var D=S.xfer||{}, amt=calc_(D.amt), out={ acct:{ aba:0, us:0, cash:0 }, alloc:0, hasAcct:false, hasFund:false }; if(isNaN(amt) || !(amt>0)) return out;
+  if(PRE_ACCT[D.from]){ out.acct[PRE_ACCT[D.from]]-=amt; out.hasAcct=true; } if(PRE_ACCT[D.to]){ out.acct[PRE_ACCT[D.to]]+=amt; out.hasAcct=true; }
+  if(fundOf_(D.from)){ out.hasFund=true; if(isTool_(D.to)) out.alloc-=amt; } if(fundOf_(D.to)){ out.hasFund=true; if(isTool_(D.from)) out.alloc+=amt; }
+  return out; }
+function xferPreHtml_(){ var day=xferPreDay_(); if(!day) return ''; var D=S.xfer, Q=D.pre||(D.pre={ liq:'no', alloc:'change', gapTo:'' }), P=PUBLISHED[day], d=date(day), fx=xferPreFx_();
+  var seg=function(attr, val, opts){ return '<div class="seg bulkPreSeg">'+opts.map(function(o){ return '<button type="button" class="'+(val===o[0]?'on':'')+'" data-'+attr+'="'+o[0]+'">'+o[1]+'</button>'; }).join('')+'</div>'; };
+  var h='<div class="bulkPre xfPre" id="xfPre"><b>⚠️ '+date(D.date)+' is on or before '+d+' — already approved.</b><p class="bulkNoteRead">This transfer goes in the '+d+' approved report.</p>';
+  if(fx.hasAcct || !(D.from && D.to)) h+='<label class="f" style="margin-top:6px">1. Should it change the '+d+' approved total liquid assets'+(isTool_(D.from)||isTool_(D.to)?'':' (the accounts)')+'?</label>'+seg('xfpreliq', Q.liq, [['no','No — keep them as approved'],['yes','Yes — adjust them']])+
+    '<p class="bulkNoteRead">'+(Q.liq==='yes' ? (P.bal?'The approved balances move by it — see below. Only if the balances typed for '+d+' didn’t hold it yet.':'⚠️ No balances were approved for '+d+'.') : 'The balances typed for '+d+' already hold it.')+'</p>';
+  if(fx.hasFund || !(D.from && D.to)) h+='<label class="f" style="margin-top:6px">'+(fx.hasAcct||!(D.from&&D.to)?'2':'1')+'. What happens to the '+d+' approved allocations?</label>'+seg('xfprealloc', Q.alloc, [['change','Change them'],['leave','Leave them']])+
+    '<p class="bulkNoteRead">'+(Q.alloc==='change' ? 'The categories it moves change in the '+d+' approved allocations too.' : 'The '+d+' approved allocations stay as they were; it moves the categories in 📡 Live only.')+'</p>';
+  /* the day as it would be */
+  var liq0=preLiqOf_(P), al0=preAllocOf_(P), dl = Q.liq==='yes' && P.bal && fx.hasAcct ? Math.round((fx.acct.aba+fx.acct.us+fx.acct.cash)*100)/100 : 0, da = Q.alloc==='change' ? fx.alloc : 0;
+  var liq1 = liq0==null ? null : Math.round((liq0+dl)*100)/100, al1=Math.round((al0+da)*100)/100, gap = liq1==null ? null : Math.round((liq1-al1)*100)/100, ar=function(x,y){ return x===y ? money(x,true) : money(x,true)+' → <b>'+money(y,true)+'</b>'; };
+  h+='<div class="bulkPreSum" id="xfPreSum"><b>'+d+', approved — after this transfer</b>';
+  if(Q.liq==='yes' && P.bal && fx.hasAcct) h+='<table class="preTbl">'+[['aba','ABA bank'],['us','US bank'],['cash','Cash on hand']].map(function(k){ return '<tr><td>'+k[1]+'</td><td class="r">'+ar(P.bal[k[0]], Math.round((P.bal[k[0]]+fx.acct[k[0]])*100)/100)+'</td></tr>'; }).join('')+'<tr class="preTot"><td>Total liquid assets</td><td class="r">'+ar(liq0, liq1)+'</td></tr></table>';
+  else h+='<p class="preLine">Total liquid assets: '+(liq0==null?'— (no balances approved)':money(liq0,true)+' — unchanged')+'</p>';
+  var pct = liq1 ? Math.round(al1/liq1*1000)/10 : null;
+  h+='<p class="preLine">Allocated: '+ar(al0, al1)+(pct!=null?' · <b>'+pct+'%</b> of total liquid assets':'')+'</p>';
+  if(gap!=null && Math.abs(gap)>=0.005) h+='<div class="preGap" id="xfPreGap">⚠️ <b>The allocations aren’t 100%</b> — '+(gap>0 ? money(gap,true)+' of the total liquid assets has no category.' : 'they come to '+money(-gap,true)+' more than the total liquid assets.')+' That’s fine to leave — or fix it here:'+
+      '<label class="f" for="xfGapTo" style="margin-top:6px">'+(gap>0?'Put the '+money(gap,true)+' into':'Take the '+money(-gap,true)+' out of')+'</label>'+fundSelect_('xfGapTo', Q.gapTo||'', 'Category for the difference')+'</div>';
+  else if(gap!=null) h+='<p class="preLine preOk">✓ Allocated is 100% of the total liquid assets.</p>';
+  Q.gap=gap; return h+'</div></div>'; }
+/* on saving: into the approved report, the answers applied, kept as an amendment */
+function xferPreApply_(tx, kind){ var day=xferPreDay_(); if(!day) return; var D=S.xfer, Q=D.pre||{ liq:'no', alloc:'change' }, P=PUBLISHED[day], fx=xferPreFx_(), liqT=null, gapT=null;
+  addToApproved_(tx, kind, day, Q.alloc!=='change'); tx.preApproved=day;
+  if(Q.liq==='yes' && P.bal && fx.hasAcct){ var row=BAL_DAYS.filter(function(r){ return r.asOf===P.bal.asOf; })[0]; liqT={};
+    ['aba','us','cash'].forEach(function(k){ liqT[k]=fx.acct[k]; P.bal[k]=Math.round((P.bal[k]+fx.acct[k])*100)/100; if(row && tx.date<=row.asOf) row[k]=Math.round((row[k]+fx.acct[k])*100)/100; }); refreshBal_(); }
+  xferPreHtml_(); var gap=Q.gap;   /* worked out on the form as it is now */
+  if(Q.gapTo && fundOf_(Q.gapTo) && gap!=null && Math.abs(gap)>=0.005){ var amt=Math.abs(gap), up=gap>0;
+    var gt={ id:'f'+Date.now().toString(36)+'g', at:Date.now(), date:day, from:up?TOOL_ADD:Q.gapTo, to:up?Q.gapTo:TOOL_REMOVE, amt:amt, src:'xfgap', memo:'So the '+date(day)+' allocations add up to its total liquid assets (after a transfer)' };
+    fundMove_(Q.gapTo, up?amt:-amt); TOOL_XFERS.push(gt); addToApproved_(gt, 'tool', day, false); gapT={ f:Q.gapTo, amt:gap }; }
+  (P.amend=P.amend||[]).push({ at:Date.now(), file:'', xf:true, n:1, liq:liqT, alloc:Q.alloc==='change'?fx.alloc:0, gap:gapT, fix:0 }); }
 function xferGapHtml_(){
   var T=total(), A=ALLOC.reduce(function(s2,g){ return s2+g.amt; },0), gap=Math.round((T-A)*100)/100;
   if(Math.abs(gap)<0.005 || BAL.none) return '';
@@ -1438,12 +1478,12 @@ function xferSave_(){
   if(!D.editing) snap_(isTool_(D.from) ? 'Undid adding '+money(a,true)+' to '+xferShort_(D.to)+' (Financial tools)' : isTool_(D.to) ? 'Undid removing '+money(a,true)+' from '+xferShort_(D.from)+' (Financial tools)' : 'Undid the transfer of '+money(a,true)+' from '+xferShort_(D.from)+' to '+xferShort_(D.to));
   if(isTool_(D.from) || isTool_(D.to)){
     if(!isTool_(D.from)) fundMove_(D.from, -a); if(!isTool_(D.to)) fundMove_(D.to, a);
-    var tx={ id:'f'+Date.now().toString(36), at:Date.now(), date:D.date, from:D.from, to:D.to, amt:a, memo:String(D.memo).trim() }; TOOL_XFERS.unshift(tx); if(D.incl) addToApproved_(tx, 'tool');
+    var tx={ id:'f'+Date.now().toString(36), at:Date.now(), date:D.date, from:D.from, to:D.to, amt:a, memo:String(D.memo).trim() }; TOOL_XFERS.unshift(tx); if(xferPreDay_()) xferPreApply_(tx, 'tool');
     TOOL_XFERS.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; });
     xferSnap_(D.date); S.xfer=null; render(); toast((isTool_(D.from)?'Added ':'Removed ')+money(a,true)+(isAcct_(D.from)||isAcct_(D.to)?' ('+xferShort_(isTool_(D.from)?D.to:D.from)+')':'')+' — see Income → History → Financial tools'); return;
   }
   fundMove_(D.from, -a); fundMove_(D.to, a);
-  var tr={ id:'t'+Date.now().toString(36), at:Date.now(), date:D.date, from:D.from, to:D.to, amt:a, memo:String(D.memo).trim() }; if(D.pl && fundOf_(D.from) && fundOf_(D.to)) tr.pl=true; TRANSFERS.unshift(tr); if(D.incl) addToApproved_(tr, 'xf');
+  var tr={ id:'t'+Date.now().toString(36), at:Date.now(), date:D.date, from:D.from, to:D.to, amt:a, memo:String(D.memo).trim() }; if(D.pl && fundOf_(D.from) && fundOf_(D.to)) tr.pl=true; TRANSFERS.unshift(tr); if(xferPreDay_()) xferPreApply_(tr, 'xf');
   TRANSFERS.sort(function(x,y){ return x.date<y.date?1:x.date>y.date?-1:0; });
   xferSnap_(D.date); S.xfer=null; render(); toast('Moved '+money(a,true)+' to '+xferShort_(D.to));
 }
@@ -2801,7 +2841,7 @@ function asOfBarHtml_(){
     (cur && PUBLISHED[cur] && (PUBLISHED[cur].amend||[]).length ? '<button class="more amendLink" id="amendOpen">✏️ amended '+date(new Date(PUBLISHED[cur].amend.slice(-1)[0].at).toISOString().slice(0,10))+'</button>' : '')+
     '<span class="sep">·</span><label for="viewDebtDay">💳 Staff debt as of</label>'+sel('viewDebtDay', dd, dcur, dd[0])+'</div>';
   var Pa=cur && PUBLISHED[cur]; if(S.amendOpen && Pa && (Pa.amend||[]).length) h+='<div class="pastNote amendList" id="amendList"><b>✏️ '+date(cur)+' was changed after it was approved</b>'+Pa.amend.map(function(m){
-      return '<div>'+date(new Date(m.at).toISOString().slice(0,10))+' · '+m.n+' line'+(m.n>1?'s':'')+' imported from '+esc(m.file||'a file')+
+      return '<div>'+date(new Date(m.at).toISOString().slice(0,10))+' · '+(m.xf ? 'an internal transfer' : m.n+' line'+(m.n>1?'s':'')+' imported from '+esc(m.file||'a file'))+
         (m.liq ? ' · liquid assets '+(m.liq.aba+m.liq.us+m.liq.cash<0?'−':'+')+money(Math.abs(m.liq.aba+m.liq.us+m.liq.cash),true) : ' · liquid assets unchanged')+
         (m.alloc ? ' · allocations '+(m.alloc<0?'−':'+')+money(Math.abs(m.alloc),true) : '')+(m.fix ? ' · '+m.fix+' fix line'+(m.fix>1?'s':'') : '')+
         (m.gap ? ' · '+money(Math.abs(m.gap.amt),true)+(m.gap.amt>0?' into ':' out of ')+esc(fundNm_(m.gap.f)) : '')+'</div>'; }).join('')+'<small>Undo it from 🕘 History.</small></div>';
@@ -3126,11 +3166,12 @@ document.addEventListener('change', function(e){
     render(); return; }
   if(e.target.dataset && e.target.dataset.f1incl){ flOne_(e.target.dataset.f1incl).incl=e.target.checked; return; }
   if(e.target.dataset && e.target.dataset.xfincl){ S.xfer.incl=e.target.checked; return; }
+  if(e.target.id==='xfGapTo' && S.xfer){ (S.xfer.pre=S.xfer.pre||{ liq:'no', alloc:'change' }).gapTo=e.target.value; var xa3=document.getElementById('xfAppr'); if(xa3) xa3.innerHTML=xferPreHtml_(); return; }
   if(e.target.dataset && e.target.dataset.xfpl){ S.xfer.pl=e.target.checked; return; }
   if(e.target.dataset && e.target.dataset.xfpltog){ var pt=TRANSFERS.filter(function(x){ return x.id===e.target.dataset.xfpltog; })[0]; if(pt){ snap_((e.target.checked?'Took ':'Put ')+'the transfer of '+money(pt.amt,true)+(e.target.checked?' out of':' back in')+' the Ministries profit and loss'); if(e.target.checked) pt.pl=true; else delete pt.pl; keep_(); toast(e.target.checked?'📈 Now in the Ministries profit and loss':'Back to a grey internal transfer'); } return; }
   if(e.target.dataset && e.target.dataset.fincl){ flUp_(e.target.dataset.fincl).incl=e.target.checked; return; }
   if(e.target.dataset && e.target.dataset.daydone){ var dday=reportDay_(); (DAY_DONE[dday]=DAY_DONE[dday]||{})[e.target.dataset.daydone]=e.target.checked; keep_(); render(); return; }
-  if(e.target.id==='xfFrom' || e.target.id==='xfTo'){ S.xfer[e.target.id==='xfFrom'?'from':'to']=e.target.value; S.xfErr=''; var oe=document.querySelector('#inXfer .inErr'); if(oe) oe.remove(); var pv=document.getElementById('xfPrev'); if(pv) pv.innerHTML=xferPrevHtml_(); return; }
+  if(e.target.id==='xfFrom' || e.target.id==='xfTo'){ S.xfer[e.target.id==='xfFrom'?'from':'to']=e.target.value; S.xfErr=''; var oe=document.querySelector('#inXfer .inErr'); if(oe) oe.remove(); var pv=document.getElementById('xfPrev'); if(pv) pv.innerHTML=xferPrevHtml_(); var xa2=document.getElementById('xfAppr'); if(xa2) xa2.innerHTML=xferPreHtml_(); return; }
   if(e.target.id==='viewDay'){ S.viewDay=e.target.value; render(); return; }
   if(e.target.id==='viewDebtDay'){ S.viewDebtDay=e.target.value; render(); return; }
   if(e.target.id==='viewAdvDay'){ S.viewAdvDay=e.target.value; render(); return; }
@@ -3176,7 +3217,7 @@ document.addEventListener('input', function(e){
   if(e.target.dataset && e.target.dataset.adv){ advForm_()[e.target.dataset.adv]=e.target.value; return; }
   if(e.target.dataset && e.target.dataset.advs){ S.advS[e.target.dataset.advs]=e.target.value; if(S.advBigAsk && /spent|returned/.test(e.target.dataset.advs)){ S.advBigAsk=null; var bb=document.querySelector('[data-advsettlesave]'); if(bb){ bb.textContent='Save — settled'; bb.classList.remove('warn'); } var bw=document.querySelector('.bulkEd > .advWarn'); if(bw) bw.remove(); } var aS=ADVANCES.filter(function(x){ return x.id===S.advSettle; })[0], dv=document.getElementById('advDiff');
     if(aS && dv){ var sp2=calc_(S.advS.spent||'0'), rt2=calc_(S.advS.returned||'0'); dv.innerHTML=advDiffText_(aS, Math.round((aS.amt-(isNaN(sp2)?0:sp2)-(isNaN(rt2)?0:rt2))*100)/100); } return; }
-  var xk=e.target.dataset && e.target.dataset.xf; if(xk){ S.xfer[xk]=e.target.value; if(xk==='date'){ var xa=document.getElementById('xfAppr'); if(xa) xa.innerHTML=approvedAskHtml_(e.target.value, S.xfer.incl, 'data-xfincl="1"'); } if(xk==='amt'){ var pv=document.getElementById('xfPrev'); if(pv) pv.innerHTML=xferPrevHtml_(); } return; }
+  var xk=e.target.dataset && e.target.dataset.xf; if(xk){ S.xfer[xk]=e.target.value; if(xk==='date' || xk==='amt'){ var xa=document.getElementById('xfAppr'); if(xa) xa.innerHTML=xferPreHtml_(); } if(xk==='amt'){ var pv=document.getElementById('xfPrev'); if(pv) pv.innerHTML=xferPrevHtml_(); } return; }
   var rp=e.target.dataset && e.target.dataset.rulepct;
   if(rp!=null){ var rows=ruleRows_(ruleTypeCur_()); rows[+rp].p=e.target.value; var lv=document.getElementById('ruleLive'); if(lv) lv.innerHTML=ruleLiveHtml_(rows); return; }
   var ak=e.target.dataset && e.target.dataset.inal;
@@ -3535,6 +3576,8 @@ function importDemo_(){ var ta=document.getElementById('impText'), txt=ta?ta.val
   resetState_(); loadState_(o.state); refreshBal_(); keep_();
   S.impAsk=false; S.impErr=''; S.impTxt=''; (S.foldOpen=S.foldOpen||{}).imp=false; render(); toast('Brought in — saving to Impact'); }
 document.addEventListener('click', function(e){ if(e.target.id==='impGo') importDemo_(); });
+document.addEventListener('click', function(e){ var q=e.target.closest && e.target.closest('[data-xfpreliq],[data-xfprealloc]'); if(!q || !S.xfer) return; var Q=S.xfer.pre=S.xfer.pre||{ liq:'no', alloc:'change', gapTo:'' };
+  if(q.dataset.xfpreliq) Q.liq=q.dataset.xfpreliq; else Q.alloc=q.dataset.xfprealloc; var xa=document.getElementById('xfAppr'); if(xa) xa.innerHTML=xferPreHtml_(); });
 document.addEventListener('click', function(e){ var pa=e.target.closest && e.target.closest('[data-bulkprealloc]'); if(pa && S.bulkPre){ S.bulkPre.alloc=pa.dataset.bulkprealloc; render(); } var pl=e.target.closest && e.target.closest('[data-bulkpreliq]'); if(pl && S.bulkPre){ S.bulkPre.liq=pl.dataset.bulkpreliq; render(); } var pf=e.target.closest && e.target.closest('[data-bulkprefix]'); if(pf && S.bulkPre){ S.bulkPre.fix=pf.dataset.bulkprefix; render(); } });
 document.addEventListener('click', function(e){ if(e.target.id!=='bulkNoteApply' || !S.bulk) return; S.bulk.note=String(S.bulkNote||'').trim(); var n=bulkNoteApply_(S.bulk.rows, bulkNoteRead_(S.bulk.note)); S.bulkNoteMsg=n ? 'Changed '+n+' line'+(n>1?'s':'')+' — tick the ones that are right.' : 'Every line already matched it.'; render(); });
 /* ---- Inside My Ministry (?embed=1): one page with the app ----
