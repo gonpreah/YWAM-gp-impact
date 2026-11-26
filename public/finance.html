@@ -504,6 +504,7 @@ button.tick.done{ background:var(--good); }
 .bulkSame{ margin:10px 0 0; padding:10px 12px; border-radius:10px; background:var(--accentSoft); color:var(--ink); font-size:14px; }
 .bulkShow{ margin:6px 0 2px; display:flex; flex-wrap:wrap; }
 .bulkShow button{ flex:1 1 auto; font-size:12.5px; }
+.bulkMix{ margin:6px 0 2px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
 .bulkJBack{ margin:6px 0; font-size:13px; color:var(--muted); }
 .bulkPreSum{ margin:12px 0 4px; padding:10px 12px; border-radius:10px; background:var(--surface2); border:1px solid var(--line); }
 .bulkPreSum .preTbl{ width:100%; border-collapse:collapse; margin:6px 0 2px; font-size:14px; }
@@ -2128,33 +2129,76 @@ function bulkPreSumHtml_(U){ if(!bulkPreOn_() || !U) return ''; var B=S.bulkPre,
   return h+'</div>'; }
 function bulkPreBtn_(U, n){ if(bulkPreOn_() && S.bulkPre.liq==='yes' && PUBLISHED[S.bulkPre.day].bal && bulkPreFx_(U).n) return 'Approve adjustments to '+date(S.bulkPre.day)+' total liquid assets · add '+n+' line'+(n>1?'s':'');
   return 'Add '+n+' ticked to 📡 Live'; }
-function bulkNoteRead_(txt){ var t=String(txt||'').toLowerCase(), out={ kind:'', bank:'', fund:'' }; if(!t.trim()) return out;
+/* the description, read more closely (26 Nov 2026: "say it's a mix of categories … office and kitchen, or DTS and DBS"):
+   - every category it names, in order — by its name, the words in brackets ("LT Fund"), the part before a "/"
+     ("office"), or its first word ("kitchen", "hospitality"); two or more (or the word "mix") = a mix of them;
+   - "class X is / = / → / goes to / corresponds to Y": lines of the QuickBooks class X go to Y (remembered, as a
+     category picked for a class is);
+   then on each line (bulkNoteApply_): its class's category if the description gave one, else the one of the mix its own
+   words or class name, else — when only one was named — that one; anything still open shows the mix as one-tap
+   buttons on the line (r.mixOf, bulkMixHtml_). An income line picked into a ministry takes that ministry's own kind
+   of income (School contributions — DTS for DTS). */
+var NOTE_STOP={ other:1, general:1, fund:1, funds:1, base:1, payable:1, admin:1, operational:1 };
+function noteAliases_(f){ var n=f.name.toLowerCase(), out={}; var add=function(x){ x=String(x||'').trim(); if(x.length>=3 && !NOTE_STOP[x]) out[x]=1; };
+  add(n); add(n.replace(/\s*\(.*\)$/,'')); var br=/\(([^)]+)\)/.exec(n); if(br) add(br[1]); if(n.indexOf('/')>0) add(n.split('/')[0]);
+  var w=n.split(/[\s/(]+/)[0]; if(w.length>=4) add(w); if(f.g.single || f.g.items.length===1) add(f.g.name.toLowerCase());
+  return Object.keys(out); }
+function noteRe_(nm){ return new RegExp('(^|[^a-z0-9])'+nm.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'($|[^a-z0-9])','g'); }
+/* every category named in some words, in the order they come */
+function noteFunds_(t){ var hits=[]; fundList_().forEach(function(f){ var at=-1; noteAliases_(f).forEach(function(nm){ var m=noteRe_(nm).exec(t); if(m && (at<0 || m.index<at)) at=m.index; }); if(at>=0) hits.push({ k:f.k, at:at }); });
+  hits.sort(function(a,b){ return a.at-b.at; }); var seen={}; return hits.filter(function(h){ if(seen[h.k]) return false; seen[h.k]=1; return true; }).map(function(h){ return h.k; }); }
+function bulkNoteRead_(txt){ var t=String(txt||'').toLowerCase(), out={ kind:'', bank:'', fund:'', funds:[], cls:{}, mix:false }; if(!t.trim()) return out;
   var ex=/\bexpenses?\b|\bspending\b|\bspent\b|\bbills?\b|\bpaid\b|\bpayments? out\b/.test(t), inc=/\bincome\b|\bdeposits?\b|\bdonations?\b|\bcontributions?\b|\breceived\b|\bgiving\b/.test(t), xf=/\btransfers?\b/.test(t);
   out.kind = xf && !ex && !inc ? 'xf' : ex && !inc ? 'exp' : inc && !ex ? 'inc' : '';
   out.bank=bankGuess_(t.replace(/\bus\b(?! ?bank)/g,''));   /* "us" alone is a word, not the US bank */
-  var best=-1; fundList_().forEach(function(f){ var n=f.name.toLowerCase(), names=[n, n.replace(/\s*\(.*\)$/,'')];
-    if(f.g.single || f.g.items.length===1) names.push(f.g.name.toLowerCase());
-    names.forEach(function(nm){ if(nm.length<3 || nm==='other') return; var re=new RegExp('(^|[^a-z0-9])'+nm.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'($|[^a-z0-9])','g'), m;
-      while((m=re.exec(t))){ if(m.index>best){ best=m.index; out.fund=f.k; } } }); });
+  /* "class Admin is Office/General", "class Food → kitchen" */
+  t.split(/[,;\n]|\.(?:\s|$)|\band class\b/).forEach(function(ch){ var m=/\bclass(?:es)?\s+["“']?(.+?)["”']?\s*(?:=|→|->|:|\bis\b|\bare\b|\bmeans\b|\bcorresponds to\b|\bgoes to\b|\bgo to\b|\bbelongs? to\b|\bfor\b)\s*(.+)$/.exec(ch.trim()); if(!m) return;
+    var to=noteFunds_(m[2]); if(to.length===1) out.cls[m[1].replace(/\s+in (qbo|quickbooks)$/,'').trim()]=to[0]; });
+  out.funds=noteFunds_(t);
+  if(!Object.keys(out.cls).length && out.funds.length===1){ var one=/\bclass\s+["“']?([a-z0-9&/\- ]+?)["”']?(?=\s+in\s+(?:qbo|quickbooks)\b|[,.;]|\s+(?:this|which|that|=|is|corresponds|goes)\b|$)/.exec(t);
+    if(one && one[1].trim().length>=2) out.cls[one[1].trim()]=out.funds[0]; }   /* "the class Admin in QBO … corresponds to office/general" */
+  out.mix = out.funds.length>1 || (/\bmix(ed)?\b|\bboth\b|\bvarious\b/.test(t) && out.funds.length>0);
+  if(out.funds.length===1 && !out.mix) out.fund=out.funds[0];
   return out; }
 function bulkNoteSum_(n){ var b=[];
-  if(n.kind) b.push(BULK_KIND[n.kind]); if(n.bank) b.push((n.kind==='inc'?'into ':'out of ')+bankLabel_(n.bank)); if(n.fund) b.push((n.kind==='inc'?'→ ':'from ')+fundLabel_(n.fund));
-  return b.length ? '✓ Read from your description: <b>'+esc(b.join(' · '))+'</b>' : 'Nothing picked out of it yet — name an account (ABA, US bank, Cash), what the lines are (expenses, income) and a category (e.g. Office/General).'; }
-function bulkNoteApply_(rows, n){ var hit=0; if(!n.kind && !n.bank && !n.fund) return 0;
-  rows.forEach(function(r){ if(r.journal) return; var before=JSON.stringify([r.kind, r.bank, r.fund, r.from, r.to]), d=String(r.desc||'').toLowerCase();
+  if(n.kind) b.push(BULK_KIND[n.kind]); if(n.bank) b.push((n.kind==='inc'?'into ':'out of ')+bankLabel_(n.bank));
+  if(n.fund) b.push((n.kind==='inc'?'→ ':'from ')+fundLabel_(n.fund));
+  else if(n.funds.length) b.push('a mix of '+n.funds.map(fundNm_).join(', ').replace(/, ([^,]*)$/,' and $1'));
+  var cl=Object.keys(n.cls||{}).map(function(c){ return 'class “'+c+'” → '+fundNm_(n.cls[c]); });
+  if(!b.length && !cl.length) return 'Nothing picked out of it yet — name an account (ABA, US bank, Cash), what the lines are (expenses, income) and a category (e.g. Office/General), or a mix of them (e.g. “a mix of Office and Kitchen”).';
+  return '✓ Read from your description: <b>'+esc(b.concat(cl).join(' · '))+'</b>'+(!n.fund && n.funds.length ? '<br><small>Each line goes to the one its words or class name; the rest show '+esc(n.funds.map(fundNm_).join(' / '))+' as buttons to pick with one tap.</small>' : ''); }
+/* which category of the mix a line is: its class's (from the description), else the one its words or class name */
+function noteFundFor_(r, n){ var c=String(r.cls||'').toLowerCase().trim();
+  if(c){ var ck=Object.keys(n.cls||{}).filter(function(k){ return k===c || (k.length>=3 && c.indexOf(k)>=0); })[0]; if(ck) return n.cls[ck]; }
+  if(!n.funds.length) return '';
+  var named=noteFunds_([String(r.desc||''), r.cls||''].join(' ').toLowerCase()).filter(function(k){ return n.funds.indexOf(k)>=0; });
+  if(named.length===1) return named[0];
+  return n.funds.length===1 ? n.funds[0] : ''; }
+/* an income line put into a ministry takes the kind of income that goes 100% there (DTS → School contributions — DTS) */
+function incTypeForFund_(f){ return INC_TYPES.filter(function(t){ var r=INC_RULES[t]||[]; return r.length===1 && r[0].f===f && +r[0].p===100; })[0]||''; }
+function bulkPutFund_(r, f, why){ if(r.kind==='inc'){ var it=incTypeForFund_(f); if(it){ r.type=it; r.fund=''; r.hint=why; return; } if(r.type && (INC_RULES[r.type]||[]).length) return; }
+  r.fund=f; r.hint=why; }
+function bulkNoteApply_(rows, n){ var hit=0; if(!n.kind && !n.bank && !n.funds.length && !Object.keys(n.cls||{}).length) return 0;
+  Object.keys(n.cls||{}).forEach(function(c){ EXP_MAP['class:'+c]={ f:n.cls[c] }; });   /* remembered for next time */
+  rows.forEach(function(r){ if(r.journal) return; var before=JSON.stringify([r.kind, r.type, r.bank, r.fund, r.from, r.to, r.mixOf]), d=String(r.desc||'').toLowerCase();
     if(n.kind && n.kind!==r.kind && !(n.kind==='exp' && r.dir==='in') && !(n.kind==='inc' && r.dir==='out')){ r.kind=n.kind; r.type = n.kind==='exp' ? expGuess_(d) : n.kind==='inc' ? incGuess_(d) : ''; r.fund=''; r.hint=''; }
-    if(r.kind==='inc' || r.kind==='exp'){ if(n.bank) r.bank=n.bank;
-      if(n.fund && (r.kind==='exp' || (r.type && !(INC_RULES[r.type]||[]).length))){ r.fund=n.fund; r.hint='from your description'; } }
+    if(r.kind==='inc' || r.kind==='exp'){ if(n.bank) r.bank=n.bank; delete r.mixOf;
+      var f=noteFundFor_(r, n);
+      if(f) bulkPutFund_(r, f, 'from your description');
+      else if(n.funds.length>1 && !(r.fund && n.funds.indexOf(r.fund)>=0) && (r.kind==='exp' || !r.type || !(INC_RULES[r.type]||[]).length || incTypeForFund_(n.funds[0]))){ r.mixOf=n.funds.slice(); if(r.fund && n.funds.indexOf(r.fund)<0){ r.fund=''; r.hint=''; } } }
     else if(r.kind==='xf' && n.bank){ if(r.dir==='in' && !r.to) r.to=n.bank; if(r.dir!=='in' && !r.from) r.from=n.bank; }
-    if(JSON.stringify([r.kind, r.bank, r.fund, r.from, r.to])!==before) hit++; });
+    if(JSON.stringify([r.kind, r.type, r.bank, r.fund, r.from, r.to, r.mixOf])!==before){ r.ok=false; hit++; } });
   return hit; }
+/* the mix as one-tap buttons on a line still to pick */
+function bulkMixHtml_(r, i){ if(!r.mixOf || !r.mixOf.length) return ''; var cur = r.kind==='inc' && r.type ? (INC_RULES[r.type]||[]).length===1 ? INC_RULES[r.type][0].f : r.fund : r.fund;
+  return '<div class="bulkMix"><span class="dsub" style="display:inline">'+(cur && r.mixOf.indexOf(cur)>=0 ? 'From the mix:' : 'Which one?')+'</span> '+r.mixOf.map(function(f){ return '<button class="ledChip'+(cur===f?' on':'')+'" data-bulkmix="'+i+'|'+esc(f)+'">'+esc(fundNm_(f))+'</button>'; }).join('')+'</div>'; }
 function inBulkHtml_(){
   var U=S.bulk, open=S.foldOpen&&S.foldOpen.bulk;
   var h='<details class="inCard fold" id="inBulk" data-fold="bulk"'+(open?' open':'')+'><summary class="foldHead"><span><b>📥 Bulk import</b><span class="dsub">'+(U?U.rows.length+' lines to check from '+esc(U.file):'Many income, expenses and transfers at once')+'</span></span><span class="chev">▾</span></summary>'+
     '<p class="inLast">For a month of mixed lines from QuickBooks or straight from the bank. Each line gets a suggestion — tick it if it’s right, or Edit it. Added lines go to 📡 Live, not the approved report.</p>'+
     '<label class="f" for="bulkSrc">These lines are from</label><select id="bulkSrc" class="bigSel">'+[['acct|aba','ABA bank statement'],['acct|us','US bank statement'],['acct|cash','Cash book'],['mix','A mix of places — each line says which account'],['qbo','QuickBooks — mixed accounts'],['qbo|acct|aba','QuickBooks — ABA account only'],['qbo|acct|us','QuickBooks — US account only'],['qbo|acct|cash','QuickBooks — Cash on hand only']].map(function(o){ return '<option value="'+o[0]+'"'+((S.bulkSrc||'mix')===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select>'+
     '<label class="f" for="bulkNote">Describe what you’re importing <span class="dsub" style="display:inline">(optional)</span></label>'+
-    '<textarea id="bulkNote" class="bulkNote" rows="3" placeholder="e.g. This import is the ABA expenses from the class Admin in QBO — this corresponds to Office/General in our system">'+esc(S.bulkNote||'')+'</textarea>'+
+    '<textarea id="bulkNote" class="bulkNote" rows="3" placeholder="e.g. ABA expenses, a mix of Office and Kitchen — class Admin is Office/General, class Food is Kitchen">'+esc(S.bulkNote||'')+'</textarea>'+
     '<p class="bulkNoteRead" id="bulkNoteRead">'+(String(S.bulkNote||'').trim()?bulkNoteSum_(bulkNoteRead_(S.bulkNote)):'Where is this report from, and where should it go? The account, the kind of lines and the category it names are put on every line.')+'</p>'+
     (U && String(S.bulkNote||'').trim() ? '<button class="linkAdd" id="bulkNoteApply">Put it on every line</button>'+(S.bulkNoteMsg?' <span class="dsub" style="display:inline">'+esc(S.bulkNoteMsg)+'</span>':'') : '')+
     bulkPreHtml_(U)+
@@ -2182,7 +2226,7 @@ function bulkRowHtml_(r, i){ var need=bulkNeeds_(r), ed=S.bulkEdit===i;
       '<label class="bulkChk"><input type="checkbox" data-bulkok="'+i+'"'+(r.ok&&!need.length?' checked':'')+(need.length?' disabled':'')+' aria-label="Right"></label>'+
       '<div class="bulkMain"><div class="bulkTop"><b>'+money(r.amt,true)+'</b><span class="dsub" style="display:inline">'+(r.date?date(r.date):'no date')+(r.dir?(r.dir==='in'?' · in':' · out'):'')+'</span>'+(r.dup?' <span class="tag">already in?</span>':'')+(r.journal?' <span class="tag jTag">📓 journal entry — check it</span>':'')+(bulkPreIn_(r)?' <span class="tag preTag">✅ in the '+date(S.bulkPre.day)+' approved report</span>':'')+'</div>'+
       '<div class="bulkDesc">'+esc(r.desc||'—')+(r.qbHead?' <span class="dsub" style="display:inline">· '+esc(r.qbHead)+(r.cls?' · '+esc(r.cls):'')+'</span>':'')+'</div><div class="bulkGuess">'+bulkSummary_(r)+'</div>'+
-      (need.length ? '<div class="bulkNeed">Needs: '+esc(need.join(', '))+'</div>' : '')+
+      (need.length ? '<div class="bulkNeed">Needs: '+esc(need.join(', '))+'</div>' : '')+bulkMixHtml_(r, i)+
       (ed ? bulkEditHtml_(r, i) : '<button class="editBtn" data-bulkedit="'+i+'">✏️ Edit</button>')+'</div></div>'; }
 /* the lines, put together by kind (Nov 2026: "split it into income and expense per category… each one i can click
    into, look over and either tick individually or tick all"): one group per kind of income or expense — for a P&L
@@ -3125,6 +3169,7 @@ document.addEventListener('click', function(e){
     list2.forEach(function(o){ BULK_SAME_ORDER.forEach(function(f){ if(SB.ch[f] && o[f]!==SB.ch[f]) bulkSet_(o, f, SB.ch[f]); }); });
     bulkClose_(); render(); toast(list2.length+' more line'+(list2.length>1?'s':'')+' changed'); return; }
   if(e.target.id==='bulkSameNo'){ bulkClose_(); render(); return; }
+  var bmx=e.target.closest && e.target.closest('[data-bulkmix]'); if(bmx && S.bulk){ var mp=bmx.dataset.bulkmix.split('|'), mr=S.bulk.rows[+mp[0]]; if(mr){ bulkPutFund_(mr, mp.slice(1).join('|'), 'picked from the mix'); mr.ok=false; if(!bulkNeeds_(mr).length) mr.ok=true; } render(); return; }
   var bsh=e.target.closest && e.target.closest('[data-bulkshow]'); if(bsh){ S.bulkShow=bsh.dataset.bulkshow; render(); return; }
   var gd=e.target.closest && e.target.closest('[data-bulkgrpdrop]'); if(gd && S.bulk){ var keepR=[], outR=[]; S.bulk.rows.forEach(function(o){ (bulkGroupKey_(o)==='j' ? outR : keepR).push(o); });
     S.bulkJOut=(S.bulkJOut||[]).concat(outR); S.bulk.rows=keepR; S.bulkEdit=null; S.bulkEditKey=null; S.bulkSame=null; render(); toast('Left out '+outR.length+' journal entr'+(outR.length>1?'ies':'y')); return; }

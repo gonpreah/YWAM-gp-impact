@@ -143,6 +143,16 @@ Income.
   expense), the account for income and expenses, the category for expenses (and for income of a kind with no
   formula), marked "suggested — from your description". Changing the words after the file is read: **Put it on
   every line**. Lines are still ticked by hand before they're added.
+- **A mix of categories, and classes** (26 Nov 2026): `bulkNoteRead_` now finds *every* category named, in order (by
+  name, the words in brackets "LT Fund", the part before a "/" "office", or the first word "kitchen" — never "other",
+  "general"…: `noteAliases_`, `noteFunds_`). Two or more — or one with "mix", "both", "various" — is **a mix**
+  ("a mix of Office and Kitchen", "DTS and DBS income"). "**class X is / = / → / goes to / corresponds to Y**" maps
+  a QuickBooks class to a category (also the old one-sentence form "the class Admin in QBO … corresponds to
+  Office/General"); each is remembered for next time like a category picked for a class (`EXP_MAP['class:…']`). On a
+  line (`noteFundFor_`): its class's category from the description, else the one of the mix its words or class name,
+  else — when one was named — that one; anything still open gets the mix as **one-tap buttons** under the line
+  (`r.mixOf`, `bulkMixHtml_`, `[data-bulkmix]`, "Which one?"). An income line put in a ministry takes the kind of
+  income that goes 100% there (`incTypeForFund_`: DTS → School contributions — DTS).
 - The words are kept on every entry added from that file (`impNote`) and show at the end of its memo in the
   Detailed breakdown ("Import: …"). Once every line is added, the box empties for the next file.
 
