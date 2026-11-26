@@ -1647,6 +1647,8 @@ function ywamGpHtml(){
   });
   h+='</div>';
   if(S.me && S.me.isAdmin && !S.board) h+=gpRolesAdminHtml_();
+  /* YWAM GP's own rocks, for everyone to read (and for an admin or someone whose job is YWAM GP to write) */
+  if(rkCanWrite_(GP_ROCK.campus, GP_ROCK.dept, '') || rocksFor_(GP_ROCK.campus, GP_ROCK.dept, '', rkT_().q==='next' ? 'next' : 'now').length) h+=gpRocksHtml_();
   if(gpOverCan_()) h+='<button class="btn ghost" id="orgOversee" data-gooversee>🌏 '+esc(t('YWAM GP oversight — both campuses'))+'</button>';
   h+='<h3>🏠 '+esc(t('Campus leadership teams'))+'</h3>'+CAMPUSES.map(function(c){ return orgCltCardHtml_(c.id); }).join('');
   h+=orgBoardHtml_();

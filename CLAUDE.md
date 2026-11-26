@@ -521,6 +521,63 @@ Uriah: YWAM GP is YWAM Poipet, YWAM Siem Reap, **YWAM GP** (the organisation) an
   Continue with Google finds a board member's own sign-in (`staffLoginGoogle` → err `board`).
 - tests/test-ywam-gp.mjs (server, 40), tests/test-ywam-gp-ui.mjs (browser, 47).
 
+## YWAM GP's own job titles, and a job in YWAM GP itself (Nov 2026, Uriah)
+"I want to move some of our guys into YWAM GP and outside of YWAM Siem Reap, but I can't add those jobs yet in the admin. I'd
+like them still anchored in the Siem Reap staff numbers, because we live there … but not in the direct org chart, because I
+want to appoint new international and national campus directors."
+- **Job titles an admin adds** (☰ → YWAM GP → **YWAM GP job titles**, admins only: `gpRolesAdminHtml_` / `bindGpRolesAdmin_`,
+  `#gpRolesAdmin`, `#gprEn` / `#gprKm` / `#gprAdd`, a row `[data-gprrow]` with `[data-gprolename]` → `#gprEditEn` / `#gprEditKm` /
+  `#gprEditSave`, `[data-gproledel]` through gpAsk_; typing kept in `S.gpr`). The six built-in places stay. Blob `gpRolesCustom` =
+  [{id:'c_<slug>', en, km}] (≤ `GP_ROLE_CUSTOM_MAX` 20), `adminSaveGpRole(user, pin, {id?, en, km})` / `adminDeleteGpRole(user, pin,
+  id)` (admins; `exists`, `bad_title`, `too_many`). **Removing one takes it off whoever held it** — refused (`only_role` + names)
+  while it is the only YWAM GP role of someone whose job is YWAM GP. `cleanGpRoles_(list, custom)`: a write takes built-in ids
+  and titles that exist; a read (`gpRolesOf_`, called everywhere, no blob) only the id's shape, and `getYwamGp` drops any id whose
+  title is gone. `getYwamGp` sends `gpRoles` (built in, then custom) and `gpRolesCustom`; the page's `gpRolesAll_()` /
+  `gpRoleLabel_` draw both wherever the six were drawn (Positions' ticks, the YWAM GP page and chart, Team → YWAM GP directory
+  `[data-gprole]`, My positions, Loose ends). **A custom title is shown as typed** — the admin's Khmer when the app is in
+  Khmer, else the English — never through `t()`.
+- **`gpHome`: "Works for YWAM GP (not in a campus ministry)"** (Admin → a person → Positions, `#adm_gphome`; `adminUpdateStaff
+  {gpHome}`, admins only — `updateProfile` ignores it and ignores dept / ministry / cdKind / ministries for such a person;
+  `setMinistryLeader` answers `gp_home`). Needs at least one YWAM GP role (`gp_role_needed`, both sides). Ticked: `campus`
+  stays (where they live), `dept` / `ministry` / `cdKind` / `ministries` / `leads` are cleared and kept in `gpWas`, any
+  `cltRequest` goes; the form folds the campus-job fields (`.admCampusJob`). Unticked: `gpWas` comes back unless the same save
+  names another job (the form shows it again, pre-filled). `publicStaff_` carries `gpHome: true` only when true, so every
+  roster has it; `adminStaffOut_` adds `gpWas`.
+  - **Counted on their campus** exactly as before — the roster, `staffBreakdown`, who's here, the health pooling, the
+    week's board: nothing there reads a department. Team → Directory puts them under a 🌏 YWAM GP heading (`#dirGpHome`).
+  - **On no campus chart**: `structPeople_`, `saveStructurePlan`'s `here`, `structApplyRows_` (so applyStructure, the dry
+    look and `diff`), `orgChartHtml_`, the students editor and `sbModel_` (tree and tray) skip them — never "Not placed
+    yet", never moved by a quarter made live, never drift. Under each campus's chart and board: one line, "YWAM GP team
+    living here: names" (`orgGpHereHtml_`, `[data-orggphere]`, `[data-gogpchart]` → the YWAM GP chart). A snapshot saved
+    while someone was still on the chart keeps them: that quarter is history.
+  - **On YWAM GP's side**: `getYwamGp`'s `gp` rows carry `home`, each campus `gpHome` (who lives there); the page, the chart
+    and the directory say "{title} · lives in {campus}". Their page and Home read "YWAM GP · {titles}" (`gpHomeLine_`,
+    `#personGpHome`); Profile & settings says so (`#profGpHome`, `#myPosGpHome`) and hides the ministry pickers.
+  - **My Ministry is YWAM GP's page** (`gpMinistryHtml_`, `#gpMinistry`, `#gpmRoles`, tabs `[data-gpmtab]` Rocks · Tasks):
+    **YWAM GP's rocks** — the one `rocks` store with campus `'gp'`, dept `'YWAM GP'` (`GP_CAMPUS` / `GP_DEPT`, the page's
+    `GP_ROCK`), written by `gpHome` people and admins (`canWriteRock_` / `rkCanWrite_`; a rock they add with no place named
+    is YWAM GP's), read by all staff — also on the YWAM GP page (`gpRocksHtml_`, `#gpRocks`); Tasks is their own GP Tasks
+    (`gptPageHtml_(null, true)`). An admin among them has "Open a campus ministry's page" (`#gpmCampusMin`, `S.gpmAway`,
+    back by `#gpmBack`). No Scorecard, no meeting room.
+  - **Oversight** (`gpTeamSees_(s)` in api.js — a sibling of `boardSees_`, not a board seat): `gpHome` people and the
+    built-in `director` role read what the Advisory Board reads, both campuses — `overseeAuth_` (`getBoardOverview`,
+    `getBoardLeadership`), `fin2Get`, `qrViewer_`. **It gives no write anywhere and never the Board room** (`boardRoom` still
+    asks `boardSees_` or an admin). Page: `gpOverCan_()`; `bdCan_()` = `bdRoomCan_()` (the board, admins) or them; ☰ →
+    **🌏 YWAM GP oversight** (`gpover`) for those not on the board, `[data-gooversee]` on their pages; the row of tabs has no
+    Board room and `S.view='bdroom'` falls back to the Overview. tests/test-board-room.mjs §6 calls **every handler as such a
+    person and as a twin without the flag, each from the same store**: the flag may open only the four reads and change
+    only YWAM GP's rocks, and what those reads send is scanned for everything the board is never sent.
+  - **What they lose on purpose**: Campus Leadership's rights (`canLead_`, the leadership meeting and rocks, arranging
+    the structure), every ministry's page and numbers, leading a ministry. Loose ends does not list them under "No
+    department or ministry".
+- **New Campus Directors**: the freed seat is filled the usual way (Admin → a person → Department Campus Leadership, Main
+  ministry International / National Campus Director). **That pick's value is `Campus Director#national`** and Admin used to
+  save it as written — the form now splits it and sets "which one" with it, and `adminUpdateStaff` splits it too.
+  Loose ends → "The YWAM GP structure isn't filled in" lists a campus with no International or no National Campus
+  Director (`[data-loosecd]`).
+- tests/test-ywam-gp.mjs, test-ywam-gp-ui.mjs, test-structure.mjs, test-structure-board-ui.mjs, test-board-room.mjs §6,
+  test-stafftype.mjs (the headcount). Khmer: docs/khmer-needed.md §148.
+
 ## Team → Structure (the org chart)
 The Team tab has a Directory / Structure toggle (`S.teamMode`). Structure (`orgChartHtml_`)
 is the campus as **levels**, the way the Canva chart reads: **Campus Leadership** on top
