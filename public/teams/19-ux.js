@@ -77,7 +77,7 @@ function gpFindDraw_(first){
   var sec=function(title, rows){ if(rows.length) h+='<div class="findSec">'+esc(title)+'</div>'+rows.join(''); };
   var row=function(icon, main, sub, item){ flat.push(item); return '<button class="findRow" data-find="'+(flat.length-1)+'"><span class="findIc">'+icon+'</span><span class="findTxt"><b>'+esc(main)+'</b>'+(sub ? '<span>'+esc(sub)+'</span>' : '')+'</span><span class="findGo">›</span></button>'; };
   sec(F.q.trim() ? t('Pages') : t('Go to'), R.pages.map(function(p){ return row(p.icon, p.label, '', { go:p.go }); }));
-  sec(t('People'), R.people.map(function(p){ return row(avatarHtml(p,'sm'), p.name, [p.ministry ? t(p.ministry) : '', p.dept ? t(p.dept) : ''].filter(Boolean).join(' · '), { person:p.id }); }));
+  sec(t('People'), R.people.map(function(p){ return row(avatarHtml(p,'sm'), p.name, gpHomeIs_(p) ? gpHomeLine_(p) : [p.ministry ? t(p.ministry) : '', p.dept ? t(p.dept) : ''].filter(Boolean).join(' · '), { person:p.id }); }));
   sec(t('Ministries'), R.mins.map(function(o){ return row('<span class="findEmoji">'+((typeof MIN_EMOJI!=='undefined' && MIN_EMOJI[o.min]) || '📊')+'</span>', t(o.min), t(o.dept), { min:o }); }));
   sec(t('Books'), R.books.map(function(b){ return row('<span class="findEmoji">📚</span>', libTitle_(b), libAuthor_(b), { book:b.id }); }));
   if(!flat.length) h='<p class="findNone">'+esc(gpT('Nothing found for “{q}”.',{q:F.q.trim()}))+'</p>';

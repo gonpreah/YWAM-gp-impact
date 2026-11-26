@@ -1514,6 +1514,9 @@ async function adminUpdateStaff(username, pin, staffId, payload) {
     if (payload.campus !== undefined && CAMPUS_IDS_.indexOf(payload.campus) > -1) rec.campus = payload.campus;   // a real campus or nothing
     if (!home) {
       if (payload.dept !== undefined) rec.dept = normDept_(payload.dept);
+      /* the page's pick for a Campus Director is "Campus Director#national": the ministry, and which one */
+      const mPick = payload.ministry !== undefined ? String(payload.ministry == null ? '' : payload.ministry).split('#') : null;
+      if (mPick && mPick.length === 2 && CD_KINDS.indexOf(mPick[1]) > -1) { payload = Object.assign({}, payload, { ministry: mPick[0] }); if (!payload.cdKind) payload.cdKind = mPick[1]; }
       if (payload.ministry !== undefined) rec.ministry = normMinistry_(rec.dept, payload.ministry);
       rec.dept = normDept_(rec.dept, rec.ministry);   // a ministry that moved department goes where it is now
     }

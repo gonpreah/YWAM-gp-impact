@@ -395,16 +395,16 @@ function teamGpDirectoryHtml_(){
   var O=S.org, byId={};
   S.roster.forEach(function(p){ byId[p.id]=p; });
   var h='<h3>🌏 '+esc(t('YWAM GP Leadership Team'))+' <small>· '+O.gp.length+'</small></h3>';
-  GP_ROLES.forEach(function(r){
+  gpRolesAll_().forEach(function(r){
     var who=O.gp.filter(function(p){ return p.gpRole===r[0]; });
-    h+='<div class="deptBlock"><div class="deptHead">'+esc(gpRoleLabel_(r[0]))+'<span class="deptN">'+who.length+'</span></div>';
+    h+='<div class="deptBlock" data-gprole="'+esc(r[0])+'"><div class="deptHead">'+esc(r[1])+'<span class="deptN">'+who.length+'</span></div>';
     if(!who.length){ h+='<div class="minLabel">'+esc(t('Not filled yet'))+'</div></div>'; return; }
     h+='<div class="dir">';
     who.forEach(function(g){
       var p=byId[g.id]||g;
       h+='<div class="dircard" data-person="'+esc(g.id)+'">'+avatarHtml(p)+
          '<div class="pname">'+esc(p.name)+'</div>'+
-         '<div class="pmeta">'+esc(t(campusName(p.campus)))+'</div>'+(byId[g.id] ? ptChipHtml(p) : '')+'</div>';
+         '<div class="pmeta">'+esc(g.home ? gpT('lives in {campus}',{campus:t(campusShort(p.campus))}) : t(campusName(p.campus)))+'</div>'+(byId[g.id] ? ptChipHtml(p) : '')+'</div>';
     });
     h+='</div></div>';
   });
@@ -1572,7 +1572,25 @@ function orgTitleOf_(p){
 }
 /* YWAM GP's leadership team: its Director(s), and a lead for each of five areas. */
 var GP_ROLES=[['director','YWAM GP Director'],['campuses','Campuses Lead'],['leaders','Leaders Lead'],['music','Music Lead'],['media','Media Lead'],['education','Education Lead']];
-function gpRoleLabel_(id){ var r=GP_ROLES.filter(function(x){ return x[0]===id; })[0]; return r ? t(r[1]) : ''; }
+/* …and YWAM GP's own job titles, which an admin adds (Nov 2026): S.org.gpRolesCustom = [{id:'c_…', en, km}]. They are
+   shown as typed — the Khmer the admin gave when the app is in Khmer, else the English — never through t(). */
+function gpRolesCustom_(){ return (S.org && S.org.gpRolesCustom) || []; }
+function gpRoleCustomName_(c){ return (LANG==='km' && c.km) ? c.km : c.en; }
+/* every place on YWAM GP's team, as [id, label] with the label ready to show */
+function gpRolesAll_(){
+  return GP_ROLES.map(function(r){ return [r[0], t(r[1])]; }).concat(gpRolesCustom_().map(function(c){ return [c.id, gpRoleCustomName_(c)]; }));
+}
+function gpRoleLabel_(id){ var r=gpRolesAll_().filter(function(x){ return x[0]===id; })[0]; return r ? r[1] : ''; }
+/* Someone whose job is YWAM GP itself (gpHome): staff of the campus they live on, on none of its chart. */
+function gpHomeIs_(p){ return !!(p && p.gpHome); }
+function gpRolesOfPerson_(id){ return ((S.org && S.org.gp) || []).filter(function(g){ return g.id===id; }).map(function(g){ return gpRoleLabel_(g.gpRole); }).filter(Boolean); }
+/* what stands where a ministry would: "YWAM GP · New Ministries Lead" */
+function gpHomeLine_(p){ var r=gpRolesOfPerson_(p.id); return t('YWAM GP')+(r.length ? ' · '+r.join(', ') : ''); }
+/* reads both campuses as the Advisory Board does (api.js gpTeamSees_): their job is YWAM GP, or they are its Director */
+function gpOverCan_(){
+  if(!S.me || S.board || S.guest || S.student) return false;
+  return gpHomeIs_(S.me) || ((S.org && S.org.gp) || []).some(function(g){ return g.id===S.me.id && g.gpRole==='director'; });
+}
 function orgTitleText_(title){
   var m=/^Director of (.+)$/.exec(title||'');
   return m ? gpT('Director of {dept}',{dept:t(m[1])}) : t(title||'');
@@ -1617,17 +1635,19 @@ function ywamGpHtml(){
     '<div><div class="mentorName">'+esc(gpT('Welcome, {name}',{name:S.me.name}))+'</div><div class="orgRole">'+esc(t(S.me.boardRole||'Advisor'))+' · '+esc(t('YWAM GP Advisory Board'))+'</div></div></div></div>';
   h+='<h2>🌏 '+esc(t('YWAM GP'))+'</h2><p class="sub">'+esc(t('One family in four parts: YWAM Poipet, YWAM Siem Reap, YWAM GP’s own leadership, and the YWAM GP Advisory Board.'))+'</p>';
   if(!O) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
-  var empty=GP_ROLES.filter(function(r){ return !O.gp.some(function(p){ return p.gpRole===r[0]; }); }).length;
+  var empty=gpRolesAll_().filter(function(r){ return !O.gp.some(function(p){ return p.gpRole===r[0]; }); }).length;
   if(S.me && S.me.isAdmin && !S.board && empty) h+='<div class="banner" id="orgFillIn">🧩 '+esc(gpT('{n} places on the YWAM GP Leadership Team are not filled yet.',{n:empty}))+
     ' <button class="linkbtn inline" data-adminsubgo="loose" style="width:auto;padding:0">'+esc(t('See what’s missing'))+'</button></div>';
   if(S.me && !S.board && (S.me.isAdmin || S.me.dept===BL_DEPT)) h+='<button class="btn ghost" id="orgReport">📄 '+esc(t('The quarter report the board sees'))+'</button>';
   h+='<h3>✦ '+esc(t('YWAM GP leadership'))+'</h3><div class="card">';
-  GP_ROLES.forEach(function(r){
+  gpRolesAll_().forEach(function(r){
     var who=O.gp.filter(function(p){ return p.gpRole===r[0]; });
-    if(who.length) who.forEach(function(p){ h+=orgPersonRowHtml_(p, gpRoleLabel_(r[0])+' · '+t(campusName(p.campus))); });
-    else h+='<div class="orgCltRow orgOpen"><span class="orgOpenDot"></span><span class="orgCltText"><b>'+esc(gpRoleLabel_(r[0]))+'</b><small>'+esc(t('Not filled yet'))+'</small></span></div>';
+    if(who.length) who.forEach(function(p){ h+=orgPersonRowHtml_(p, r[1]+' · '+(p.home ? gpT('lives in {campus}',{campus:t(campusShort(p.campus))}) : t(campusName(p.campus)))); });
+    else h+='<div class="orgCltRow orgOpen"><span class="orgOpenDot"></span><span class="orgCltText"><b>'+esc(r[1])+'</b><small>'+esc(t('Not filled yet'))+'</small></span></div>';
   });
   h+='</div>';
+  if(S.me && S.me.isAdmin && !S.board) h+=gpRolesAdminHtml_();
+  if(gpOverCan_()) h+='<button class="btn ghost" id="orgOversee" data-gooversee>🌏 '+esc(t('YWAM GP oversight — both campuses'))+'</button>';
   h+='<h3>🏠 '+esc(t('Campus leadership teams'))+'</h3>'+CAMPUSES.map(function(c){ return orgCltCardHtml_(c.id); }).join('');
   h+=orgBoardHtml_();
   return h;
@@ -1673,10 +1693,10 @@ function ywamGpChartHtml_(){
   h+='</div><div class="orgConnector dashed"></div>';
   /* YWAM GP's leadership team */
   h+='<div class="orgLevelLabel">'+esc(t('YWAM GP leadership'))+'</div><div class="orgBox top"><div class="orgBoxTitle">🌏 '+esc(t('YWAM GP Leadership Team'))+'</div><div class="orgPeople">';
-  GP_ROLES.forEach(function(r){
+  gpRolesAll_().forEach(function(r){
     var who=O.gp.filter(function(p){ return p.gpRole===r[0]; });
-    if(who.length) who.forEach(function(p){ h+=chip(p, gpRoleLabel_(r[0])); });
-    else h+='<div class="orgPerson orgTitled orgVacant"><span class="orgOpenDot"></span><span>'+esc(gpRoleLabel_(r[0]))+'<small class="orgChipTitle">'+esc(t('Not filled yet'))+'</small></span></div>';
+    if(who.length) who.forEach(function(p){ h+=chip(p, r[1]+(p.home ? ' · '+gpT('lives in {campus}',{campus:t(campusShort(p.campus))}) : '')); });
+    else h+='<div class="orgPerson orgTitled orgVacant"><span class="orgOpenDot"></span><span>'+esc(r[1])+'<small class="orgChipTitle">'+esc(t('Not filled yet'))+'</small></span></div>';
   });
   h+='</div></div><div class="orgConnector"></div>';
   /* the campuses */
@@ -1710,7 +1730,107 @@ function orgCampusProfileHtml_(c){
   });
   return h+'</div>';
 }
+/* YWAM GP → (admins) YWAM GP job titles: the six built-in places stay; an admin adds, renames and removes the
+   organisation's own (api.js adminSaveGpRole / adminDeleteGpRole). Who holds one is ticked on their account, under
+   Positions. What is typed lives in S.gpr, so a redraw never loses it. */
+S.gpr={ edit:'', en:'', km:'', busy:false };
+function gpRolesAdminHtml_(){
+  var G=S.gpr, list=gpRolesCustom_(), O=S.org||{};
+  var h='<div class="card" id="gpRolesAdmin"><div class="mentorLabel">✏️ '+esc(t('YWAM GP job titles'))+'</div>'+
+    '<p class="hint" style="margin:0 0 8px">'+esc(t('The six places above are built in. Add YWAM GP’s own job titles here, then tick who holds each one on their account in Admin, under Positions.'))+'</p>';
+  list.forEach(function(c){
+    var n=(O.gp||[]).filter(function(g){ return g.gpRole===c.id; }).length;
+    if(G.edit===c.id){
+      h+='<div class="gprRow editing" data-gprrow="'+esc(c.id)+'"><label class="f" for="gprEditEn">'+esc(t('Job title (English)'))+'</label><input type="text" id="gprEditEn" maxlength="60" value="'+esc(G.en)+'">'+
+        '<label class="f" for="gprEditKm">'+esc(t('Job title in Khmer (optional)'))+'</label><input type="text" id="gprEditKm" maxlength="80" value="'+esc(G.km)+'">'+
+        '<div class="leaveActions"><button class="btn" id="gprEditSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="gprEditCancel">'+esc(t('Cancel'))+'</button></div></div>';
+      return;
+    }
+    h+='<div class="gprRow" data-gprrow="'+esc(c.id)+'"><div class="gprName"><b>'+esc(c.en)+'</b>'+(c.km ? '<small>'+esc(c.km)+'</small>' : '')+
+      '<small>'+esc(n ? gpT('{n} people hold it',{n:n}) : t('Not filled yet'))+'</small></div>'+
+      '<button class="linkbtn inline" data-gprolename="'+esc(c.id)+'">'+esc(t('Rename'))+'</button>'+
+      '<button class="linkbtn inline gprDel" data-gproledel="'+esc(c.id)+'">'+esc(t('Remove'))+'</button></div>';
+  });
+  if(!list.length) h+='<p class="sub" style="margin:4px 0 8px">'+esc(t('No job titles of your own yet.'))+'</p>';
+  if(!G.edit) h+='<label class="f" for="gprEn">'+esc(t('New job title (English)'))+'</label><input type="text" id="gprEn" maxlength="60" value="'+esc(G.en)+'" placeholder="'+esc(t('e.g. New Ministries Lead'))+'">'+
+    '<label class="f" for="gprKm">'+esc(t('Job title in Khmer (optional)'))+'</label><input type="text" id="gprKm" maxlength="80" value="'+esc(G.km)+'">'+
+    '<button class="btn dtsAdd" id="gprAdd" style="margin-top:10px"'+(G.busy?' disabled':'')+'>＋ '+esc(t('Add job title'))+'</button>';
+  return h+'</div>';
+}
+function gpRoleErr_(d){
+  return d && d.err==='exists' ? t('There is already a job title with that name.')
+    : d && d.err==='bad_title' ? t('Type the job title first.')
+    : d && d.err==='too_many' ? t('That is the most job titles YWAM GP can have. Remove one first.')
+    : d && d.err==='only_role' ? gpT('{names}: this is their only YWAM GP role, and YWAM GP is their job. Give them another role first.',{names:(d.names||[]).join(', ')})
+    : t('Could not save');
+}
+function bindGpRolesAdmin_(){
+  var G=S.gpr, box=document.getElementById('gpRolesAdmin');
+  document.querySelectorAll('[data-gooversee]').forEach(function(b){ b.onclick=function(){ gpTap(); gpOverOpen_(); }; });
+  if(!box) return;
+  var done=function(d){
+    G.busy=false;
+    if(d && d.ok){ G.edit=''; G.en=''; G.km=''; if(S.org) S.org.gpRolesCustom=d.gpRolesCustom||[]; render(); orgLoad_(); if(S.adminStaff) adminRefreshQuiet_(); }
+    else { showMsg(gpRoleErr_(d)); render(); }
+  };
+  [['gprEn','en'],['gprKm','km'],['gprEditEn','en'],['gprEditKm','km']].forEach(function(f){
+    var el=document.getElementById(f[0]); if(el) el.oninput=function(){ G[f[1]]=el.value; };
+  });
+  var add=document.getElementById('gprAdd');
+  if(add) add.onclick=function(){
+    if(G.busy) return;
+    if(!String(G.en||'').trim()){ showMsg(t('Type the job title first.')); return; }
+    G.busy=true; add.disabled=true;
+    run('adminSaveGpRole',[S.auth.user,S.auth.pin,{ en:G.en, km:G.km }],done,function(){ G.busy=false; showMsg(t('Could not save')); render(); });
+  };
+  box.querySelectorAll('[data-gprolename]').forEach(function(b){
+    b.onclick=function(){ var c=gpRolesCustom_().filter(function(x){ return x.id===b.getAttribute('data-gprolename'); })[0]; if(!c) return; G.edit=c.id; G.en=c.en; G.km=c.km||''; render(); };
+  });
+  var sv=document.getElementById('gprEditSave');
+  if(sv) sv.onclick=function(){
+    if(G.busy) return; G.busy=true; sv.disabled=true;
+    run('adminSaveGpRole',[S.auth.user,S.auth.pin,{ id:G.edit, en:G.en, km:G.km }],done,function(){ G.busy=false; showMsg(t('Could not save')); render(); });
+  };
+  var cn=document.getElementById('gprEditCancel'); if(cn) cn.onclick=function(){ G.edit=''; G.en=''; G.km=''; render(); };
+  box.querySelectorAll('[data-gproledel]').forEach(function(b){
+    b.onclick=function(){
+      var c=gpRolesCustom_().filter(function(x){ return x.id===b.getAttribute('data-gproledel'); })[0]; if(!c) return;
+      if(!gpAsk_(gpT('Remove the job title “{name}”? It comes off everyone who holds it.',{name:c.en}))) return;
+      run('adminDeleteGpRole',[S.auth.user,S.auth.pin,c.id],done,function(){ showMsg(t('Could not save')); });
+    };
+  });
+}
+/* My Ministry for someone whose job is YWAM GP itself (gpHome): not a campus ministry's page — YWAM GP's. Their titles,
+   YWAM GP's rocks (the one `rocks` store, campus 'gp' — written by them and admins, read by all staff), their own
+   GP Tasks, and the way to the oversight pages. No Scorecard, no meeting room. */
+function gpRocksHtml_(){
+  var T=rkT_(), which=T.q==='next' ? 'next' : 'now', Q=rkQ_(which), edit=rkCanWrite_(GP_ROCK.campus, GP_ROCK.dept, '');
+  return '<div id="gpRocks"><h3 style="margin-top:0">🪨 '+esc(gpT('Q{q} Rocks',{q:Q.q}))+'</h3>'+
+    '<p class="sub" style="margin:0 0 8px">'+esc(t('YWAM GP’s own rocks: the few things YWAM GP’s team must get done this quarter, across both campuses. Every staff member can read them.'))+'</p>'+rkQuarterSegHtml_()+
+    rkGroupHtml_({ campus:GP_ROCK.campus, dept:GP_ROCK.dept, ministry:'', rocks:rocksFor_(GP_ROCK.campus, GP_ROCK.dept, '', which), edit:edit, who:true,
+      title:'🌏 '+esc(t('YWAM GP')), empty:t('No YWAM GP rocks yet for this quarter.') })+'</div>';
+}
+function gpMinistryHtml_(canCampus){
+  var me=S.me, roles=gpRolesOfPerson_(me.id), tab=S.gpmTab==='tasks' ? 'tasks' : 'rocks';
+  var h='<div class="mmPage" id="gpMinistry"><div class="mmHead" id="mmBanner"><div class="eyebrow">'+esc(t('My Ministry'))+'</div>'+
+    '<div class="mmHeadRow"><span class="mmBannerEmoji">🌏</span><div class="mmHeadText"><div class="mmBannerName">'+esc(t('YWAM GP'))+'</div>'+
+    '<div class="rowSub" id="gpmRoles">'+esc(roles.join(' · '))+(roles.length ? ' · ' : '')+esc(gpT('lives in {campus}',{campus:t(campusShort(me.campus))}))+
+    '<span class="mmBannerNote">'+esc(t('Your job is YWAM GP itself: both campuses, not one ministry.'))+'</span></div></div></div></div>'+
+    '<button class="btn ghost" id="gpmOversee" data-gooversee>🌏 '+esc(t('YWAM GP oversight — both campuses'))+'</button>'+
+    mmTabsHtml_([['rocks', t('Rocks'), 'data-gpmtab'], ['tasks', t('Tasks'), 'data-gpmtab']], tab);
+  if(tab==='tasks'){ S.gptFrom='ministry'; h+='<div class="mmPane">'+gptPageHtml_(null, true)+'</div>'; }
+  else h+='<div class="mmPane">'+gpRocksHtml_()+'</div>';
+  if(canCampus) h+='<button class="linkbtn" id="gpmCampusMin" style="text-align:left">'+esc(t('Open a campus ministry’s page (as an admin)'))+' ›</button>';
+  return h+'</div>';
+}
 function bindOrg_(){
+  bindGpRolesAdmin_();
+  document.querySelectorAll('[data-gpmtab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.gpmTab=b.getAttribute('data-gpmtab'); render(); }; });
+  var gca=document.getElementById('gpmCampusMin'); if(gca) gca.onclick=function(){ gpTap(); S.gpmAway=true; render(); window.scrollTo(0,0); };
+  var gcb=document.getElementById('gpmBack'); if(gcb) gcb.onclick=function(){ gpTap(); S.gpmAway=false; render(); window.scrollTo(0,0); };
+  document.querySelectorAll('[data-gogpchart]').forEach(function(b){
+    b.onclick=function(){ gpTap(); S.person=null; S.view='team'; S.teamMode='org'; S.teamCampus='ywamgp'; S.sbTeam=false; render(); window.scrollTo(0,0); };
+  });
   document.querySelectorAll('[data-adminsubgo]').forEach(function(b){
     b.onclick=function(){ gpTap(); S.view='admin'; S.adminSub=b.getAttribute('data-adminsubgo'); render(); window.scrollTo(0,0); };
   });

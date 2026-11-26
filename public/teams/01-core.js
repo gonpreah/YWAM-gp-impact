@@ -1394,7 +1394,7 @@ function renderMenu(){
   IC.khmer='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>';
   IC.calendar='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><path d="M7.5 13.5h2M11 13.5h2M14.5 13.5h2M7.5 17h2M11 17h2"/></svg>';
   IC.ywamgp='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.8 2.6 4 5.6 4 9s-1.2 6.4-4 9c-2.8-2.6-4-5.6-4-9s1.2-6.4 4-9Z"/></svg>';
-  IC.boardlogout=IC.profile; IC.bdhub=IC.ywamgp;
+  IC.boardlogout=IC.profile; IC.bdhub=IC.ywamgp; IC.gpover=IC.ywamgp;
   IC.stuportal=IC.mycontract || IC.profile;
   IC.stuexit=IC.admin || IC.stuportal;
   IC.students='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c2 1.5 4 2 6 2s4-.5 6-2v-5"/></svg>';
@@ -1421,7 +1421,7 @@ function renderMenu(){
   ] : S.guest ? [
     { title:'', items:[it('library', t('Library')), it('guestreg', t('Create my profile')), it('guestlogin', t('Log in'))] }
   ] : [
-    { title:'', items:[it('base', t('Base')), it('caltasks', t('GP Calendar/Tasks')), it('ywamgp', t('YWAM GP'))].concat(bdCan_() ? [it('bdhub', '🛡️ '+t('Advisory Board'))] : [], qrMenu_() ? [it('qreport', t('Quarterly report'))] : [], [it('prayer', t('Prayer'))], S.fast ? [it('fast', S.fast.title)] : [], [ it('p360', t('360 reviews')), it('tests', t('Tests')), it('leave', t('Leave Request')), it('library', t('Library'))], S.student ? [] : [it('support', t('Support raising'))]) },
+    { title:'', items:[it('base', t('Base')), it('caltasks', t('GP Calendar/Tasks')), it('ywamgp', t('YWAM GP'))].concat(bdRoomCan_() ? [it('bdhub', '🛡️ '+t('Advisory Board'))] : gpOverCan_() ? [it('gpover', '🌏 '+t('YWAM GP oversight'))] : [], qrMenu_() ? [it('qreport', t('Quarterly report'))] : [], [it('prayer', t('Prayer'))], S.fast ? [it('fast', S.fast.title)] : [], [ it('p360', t('360 reviews')), it('tests', t('Tests')), it('leave', t('Leave Request')), it('library', t('Library'))], S.student ? [] : [it('support', t('Support raising'))]) },
     { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], [it('worship', t('Worship rota'))], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : [], canStudentsClient_() ? [it('students', t('Students'))] : []) },
     { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal')), it('portalapp', t('The Portal on your phone'))] : [] },
     { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : [], kmrCan_() ? [it('kmreview', t('Khmer review'))] : []) },
@@ -1452,7 +1452,7 @@ function renderMenu(){
       else if(id==='library'){ S.view='library'; S.libBook=null; libLoad_(); render(); }
       else if(id==='guestreg' || id==='guestlogin'){ gpLeaveGuest_(id==='guestreg'); }
       else if(id==='ywamgp'){ S.view='ywamgp'; S.person=null; render(); window.scrollTo(0,0); }
-      else if(id==='bdhub'){ bdOpen_('bdover'); }
+      else if(id==='bdhub' || id==='gpover'){ bdOpen_('bdover'); }
       else if(id==='tasks'){ if(gpTasksApp_()){ S.view='tasks'; render(); window.scrollTo(0,0); } else gptOpenPage_('week'); }
       else if(id==='openapp'){ renderMenu(); location.href='teams.html'; }
       else if(id==='applogout'){ logout(); }

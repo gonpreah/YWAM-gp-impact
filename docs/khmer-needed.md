@@ -6782,6 +6782,46 @@ Campus Leadership arranges a quarter on the whiteboard; "Make Q1 2027 live" turn
 | Someone else is saving — try again. | មានអ្នកផ្សេងកំពុងរក្សាទុក — សូមព្យាយាមម្តងទៀត។ |
 | That quarter is over. | ត្រីមាសនោះបានកន្លងផុតហើយ។ |
 
+## 148. YWAM GP’s own job titles, and a job in YWAM GP itself (☰ → YWAM GP, Admin → a person → Positions, My Ministry, Team → Structure, Nov 2026)
+
+For admins (the job-title editor on the YWAM GP page, the “Works for YWAM GP” tick under Positions, Loose ends) and for the few people whose job is YWAM GP itself: their My Ministry page, their line on their profile, and the quiet line under a campus’s chart. “Job title” is មុខតំណែងការងារ; a title an admin types is shown as typed and is not in this list. “lives in {campus}” takes the campus’s short name (Siem Reap).
+
+| English | Khmer (draft) |
+|---|---|
+| YWAM GP oversight | ការត្រួតមើលរបស់ YWAM GP |
+| YWAM GP oversight — both campuses | ការត្រួតមើលរបស់ YWAM GP — សាខាទាំងពីរ |
+| YWAM GP job titles | មុខតំណែងការងាររបស់ YWAM GP |
+| The six places above are built in. Add YWAM GP’s own job titles here, then tick who holds each one on their account in Admin, under Positions. | តួនាទីទាំងប្រាំមួយខាងលើមានស្រាប់។ សូមបន្ថែមមុខតំណែងការងារផ្ទាល់របស់ YWAM GP នៅទីនេះ រួចគូសអ្នកដែលកាន់មុខតំណែងនីមួយៗ នៅលើគណនីរបស់ពួកគេក្នុង អ្នកគ្រប់គ្រង ក្រោម តួនាទី។ |
+| Job title (English) | មុខតំណែងការងារ (ភាសាអង់គ្លេស) |
+| Job title in Khmer (optional) | មុខតំណែងការងារជាភាសាខ្មែរ (មិនចាំបាច់) |
+| {n} people hold it | មាន {n} នាក់កាន់មុខតំណែងនេះ |
+| No job titles of your own yet. | មិនទាន់មានមុខតំណែងការងារផ្ទាល់ខ្លួននៅឡើយ។ |
+| New job title (English) | មុខតំណែងការងារថ្មី (ភាសាអង់គ្លេស) |
+| e.g. New Ministries Lead | ឧ. អ្នកដឹកនាំកិច្ចការបម្រើថ្មី |
+| Add job title | បន្ថែមមុខតំណែងការងារ |
+| There is already a job title with that name. | មានមុខតំណែងការងារដែលមានឈ្មោះនេះរួចហើយ។ |
+| Type the job title first. | សូមវាយមុខតំណែងការងារជាមុនសិន។ |
+| That is the most job titles YWAM GP can have. Remove one first. | នេះជាចំនួនមុខតំណែងការងារច្រើនបំផុតដែល YWAM GP អាចមាន។ សូមដកមួយចេញជាមុនសិន។ |
+| {names}: this is their only YWAM GP role, and YWAM GP is their job. Give them another role first. | {names}៖ នេះជាតួនាទី YWAM GP តែមួយគត់របស់ពួកគេ ហើយ YWAM GP ជាការងាររបស់ពួកគេ។ សូមផ្តល់តួនាទីមួយទៀតដល់ពួកគេជាមុនសិន។ |
+| Remove the job title “{name}”? It comes off everyone who holds it. | ដកមុខតំណែងការងារ “{name}” ចេញឬ? វានឹងត្រូវដកចេញពីអ្នកទាំងអស់ដែលកាន់វា។ |
+| YWAM GP’s own rocks: the few things YWAM GP’s team must get done this quarter, across both campuses. Every staff member can read them. | ថ្មធំផ្ទាល់របស់ YWAM GP៖ កិច្ចការមួយចំនួនតូចដែលក្រុម YWAM GP ត្រូវធ្វើឲ្យហើយក្នុងត្រីមាសនេះ នៅសាខាទាំងពីរ។ បុគ្គលិកគ្រប់រូបអាចអានបាន។ |
+| No YWAM GP rocks yet for this quarter. | មិនទាន់មានថ្មធំរបស់ YWAM GP សម្រាប់ត្រីមាសនេះនៅឡើយ។ |
+| Your job is YWAM GP itself: both campuses, not one ministry. | ការងាររបស់អ្នកគឺ YWAM GP ផ្ទាល់៖ សាខាទាំងពីរ មិនមែនកិច្ចការបម្រើតែមួយទេ។ |
+| Open a campus ministry’s page (as an admin) | បើកទំព័រកិច្ចការបម្រើរបស់សាខា (ក្នុងនាមជាអ្នកគ្រប់គ្រង) |
+| nobody yet — on their account, set Department to Campus Leadership, Main ministry to Campus Director, and choose which one | មិនទាន់មាននរណាម្នាក់ — នៅលើគណនីរបស់ពួកគេ សូមកំណត់ផ្នែកជា ថ្នាក់ដឹកនាំសាខា កិច្ចការបម្រើចម្បងជា នាយកសាខា រួចជ្រើសរើសថាមួយណា |
+| A job title missing? Add it on the YWAM GP page (☰ → YWAM GP), under YWAM GP job titles. | ខ្វះមុខតំណែងការងារមួយឬ? សូមបន្ថែមវានៅលើទំព័រ YWAM GP (☰ → YWAM GP) ក្រោម មុខតំណែងការងាររបស់ YWAM GP។ |
+| Works for YWAM GP (not in a campus ministry) | ធ្វើការឲ្យ YWAM GP (មិននៅក្នុងកិច្ចការបម្រើរបស់សាខា) |
+| Tick this for someone whose job is YWAM GP itself. They stay in their campus’s staff number (where they live) and leave its org chart, so their campus seat is free for someone else. | សូមគូសនេះសម្រាប់អ្នកដែលការងាររបស់គេគឺ YWAM GP ផ្ទាល់។ ពួកគេនៅតែរាប់ក្នុងចំនួនបុគ្គលិករបស់សាខា (កន្លែងដែលពួកគេរស់នៅ) ហើយចេញពីរចនាសម្ព័ន្ធរបស់សាខា ដូច្នេះកន្លែងរបស់ពួកគេនៅសាខាទំនេរសម្រាប់អ្នកផ្សេង។ |
+| Their job is YWAM GP itself. They still count in {campus}’s staff number, because they live there — but they are off its org chart and its leadership team, and they read both campuses. Tick at least one YWAM GP role above. | ការងាររបស់ពួកគេគឺ YWAM GP ផ្ទាល់។ ពួកគេនៅតែរាប់ក្នុងចំនួនបុគ្គលិករបស់ {campus} ព្រោះពួកគេរស់នៅទីនោះ — ប៉ុន្តែពួកគេមិននៅក្នុងរចនាសម្ព័ន្ធ និងក្រុមដឹកនាំរបស់សាខានោះទេ ហើយពួកគេអាចអានព័ត៌មានសាខាទាំងពីរ។ សូមគូសតួនាទី YWAM GP យ៉ាងហោចណាស់មួយខាងលើ។ |
+| Tick at least one YWAM GP role first — a job in YWAM GP needs one. | សូមគូសតួនាទី YWAM GP យ៉ាងហោចណាស់មួយជាមុនសិន — ការងារក្នុង YWAM GP ត្រូវការតួនាទីមួយ។ |
+| Back to YWAM GP | ត្រឡប់ទៅ YWAM GP |
+| YWAM GP team living here: | ក្រុម YWAM GP ដែលរស់នៅទីនេះ៖ |
+| See the YWAM GP chart | មើលរចនាសម្ព័ន្ធ YWAM GP |
+| Their job is YWAM GP itself. They live here, so they count in this campus’s staff. | ការងាររបស់ពួកគេគឺ YWAM GP ផ្ទាល់។ ពួកគេរស់នៅទីនេះ ដូច្នេះពួកគេរាប់ក្នុងបុគ្គលិករបស់សាខានេះ។ |
+| {where}. Your job is YWAM GP itself, so there is no campus ministry to choose. An admin sets this on your account. | {where}។ ការងាររបស់អ្នកគឺ YWAM GP ផ្ទាល់ ដូច្នេះមិនមានកិច្ចការបម្រើរបស់សាខាត្រូវជ្រើសរើសទេ។ អ្នកគ្រប់គ្រងជាអ្នកកំណត់រឿងនេះនៅលើគណនីរបស់អ្នក។ |
+| Your job is YWAM GP itself. You are on {campus}’s staff, where you live. | ការងាររបស់អ្នកគឺ YWAM GP ផ្ទាល់។ អ្នកជាបុគ្គលិករបស់ {campus} ជាកន្លែងដែលអ្នករស់នៅ។ |
+| lives in {campus} | រស់នៅ {campus} |
+
 ## 147. The Advisory Board: the invite link, the big picture, and the Board room (teams.html?board=…, ☰ → Advisory Board, Admin → Advisory Board, Nov 2026)
 For the members of the YWAM GP Advisory Board — several of them are not staff and may read these on a laptop. "Advisory Board" stays ក្រុមប្រឹក្សាយោបល់ (ក្តារ is the meeting Kanban, a different thing); the board's own page is the "Board room" (បន្ទប់ក្រុមប្រឹក្សា; on the bottom bar the short បន្ទប់ប្រឹក្សា, and ទូទៅ for Overview — both must fit a narrow tab). Rocks (ថ្មធំ), Scorecard (តារាងពិន្ទុ), To-Dos (កិច្ចការត្រូវធ្វើ), Issues (បញ្ហា) and Headlines keep the words the leadership meeting uses (§142, §144). The first lines below are the invitation a new member reads before anything else, and the long line starting "The board reads what…" is a promise about privacy — please check those first. Short lines with {d} of {n} are figures on small tiles.
 

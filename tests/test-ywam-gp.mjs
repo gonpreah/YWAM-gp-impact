@@ -260,6 +260,8 @@ ok('every staff member reads YWAM GP’s rocks (their boot)', (await call('getMy
 /* new campus directors, and back again */
 r = await call('adminUpdateStaff', U.concat(['st_cafe', { dept: 'Campus Leadership', ministry: 'Campus Director', cdKind: 'national' }]));
 G = await gpOf();
+ok('the page’s one pick “Campus Director#international” is the ministry and which one — never saved as written', (await call('adminUpdateStaff', U.concat(['st_cs', { dept: 'Campus Leadership', ministry: 'Campus Director#international' }]))).body.staff.ministry === 'Campus Director' && mem.staff.find((x) => x.id === 'st_cs').cdKind === 'international');
+await call('adminUpdateStaff', U.concat(['st_cs', { dept: 'Campus Leadership', ministry: 'Community Service', cdKind: '' }]));
 ok('the free seat is given to someone else the usual way', r.body.ok && G.campuses.find((c) => c.id === 'siemreap').clt.some((p) => p.id === 'st_cafe' && p.title === 'National Campus Director'));
 r = await call('adminUpdateStaff', U.concat(['st_cafe', { gpHome: true, gpRoles: [CH] }]));
 r = await call('adminDeleteGpRole', U.concat([CH]));

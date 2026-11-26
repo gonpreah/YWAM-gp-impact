@@ -31,7 +31,12 @@ function bdT_(){ return S.bd || (S.bd={ campus:'', dept:'', min:'', sub:'', lead
 function bdAuth_(){ return (S.board && S.boardAuth) ? S.boardAuth : S.auth; }
 /* a staff member whose profile holds a seat on the board (the boot's `org` lists it) */
 function bdSeat_(){ return !!(S.me && !S.board && !S.guest && S.org && (S.org.board||[]).some(function(b){ return b.staffId && b.staffId===S.me.id; })); }
-function bdCan_(){ return !!(S.me && !S.student && !S.stuPreview && !S.demo && !S.awaiting && (S.board || (!S.guest && (bdSeat_() || S.me.isAdmin)))); }
+/* the Board room: the board's members and admins — nobody else */
+function bdRoomCan_(){ return !!(S.me && !S.student && !S.stuPreview && !S.demo && !S.awaiting && (S.board || (!S.guest && (bdSeat_() || S.me.isAdmin)))); }
+/* the oversight pages (Overview · Campuses · Finances): the board, admins — and YWAM GP's own team (gpOverCan_, api.js
+   gpTeamSees_), who read the same and are NOT on the board: no Board room for them. */
+function bdCan_(){ return bdRoomCan_() || !!(S.me && !S.student && !S.stuPreview && !S.demo && !S.awaiting && gpOverCan_()); }
+function gpOverOpen_(){ bdOpen_('bdover'); }
 function brOn_(){ return !!(S.brActive && S.me && S.view==='bdroom'); }
 function bdMembers_(){
   var O=S.bd && S.bd.ov, list=O ? O.members : ((S.org && S.org.board) || []).map(function(b){ return { id:b.staffId || b.id, name:b.name, role:b.role, photo:b.photo }; });
@@ -50,7 +55,7 @@ function bdOpen_(view){ S.menuOpen=false; S.person=null; S.view=view||'bdover'; 
 function brSync_(){
   /* an invite opened while signed in as staff: its page, once, as soon as both the boot and the invite have landed */
   var V=S.bdInv; if(V && V.info && !V.shown && S.me && !S.board && !S.guest && !S.student && !S.awaiting && !S.bootStale){ V.shown=true; S.view='bdinvite'; }
-  var want=S.view==='bdroom' && bdCan_();
+  var want=S.view==='bdroom' && bdRoomCan_();
   if(!!S.brActive===want) return;
   var st=S.brStash || (S.brStash={ room:{}, campus:{} }), leave=want ? 'campus' : 'room', enter=want ? 'room' : 'campus';
   st[leave]={}; BR_KEYS.forEach(function(k){ st[leave][k]=S[k]; });
@@ -107,12 +112,13 @@ function bdLine_(icon, label, value, go, cls){
 function bdSegHtml_(){
   if(S.board) return '';
   return '<button class="linkbtn" id="bdBackHome" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('My Home'))+'</button>'+
-    '<div class="leadFilters bdSeg" role="tablist">'+[['bdover','🌏',t('Overview')],['bdcamp','🏠',t('Campuses')],['bdfin','💵',t('Finances')],['bdroom','🛡️',t('Board room')]].map(function(x){
+    '<div class="leadFilters bdSeg" role="tablist">'+[['bdover','🌏',t('Overview')],['bdcamp','🏠',t('Campuses')],['bdfin','💵',t('Finances')]].concat(bdRoomCan_() ? [['bdroom','🛡️',t('Board room')]] : []).map(function(x){
       return '<button class="leadSeg'+(S.view===x[0]?' on':'')+'" role="tab" data-bdtab="'+x[0]+'"><span aria-hidden="true">'+x[1]+'</span> '+esc(x[2])+'</button>'; }).join('')+'</div>';
 }
 function bdPageHtml_(){
   if(S.view==='bdinvite') return bdInviteStaffHtml_();
   if(!bdCan_()) return '<div class="card"><p class="sub" style="margin:0">'+esc(t('This part is for the Advisory Board.'))+'</p></div>';
+  if(S.view==='bdroom' && !bdRoomCan_()) S.view='bdover';   // YWAM GP's own team reads the oversight pages; the Board room stays the board's
   var B=bdT_(), h=bdSegHtml_();
   if(S.view==='bdroom') return h+bdRoomHtml_();
   bdLoad_();

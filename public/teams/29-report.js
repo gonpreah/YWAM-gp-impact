@@ -38,8 +38,8 @@ function qrD_(fn){
 
 /* ---------- who, and the choices ---------- */
 function qrAuth_(){ return S.board ? S.boardAuth : S.auth; }
-function qrFull_(){ return !!(S.board || (S.me && !S.guest && !S.student && (S.me.isAdmin || S.me.dept===BL_DEPT || bdSeat_()))); }   // a staff member on the Advisory Board reads it all too
-function qrAnyCampus_(){ return !!(S.board || (S.me && (S.me.isAdmin || bdSeat_()))); }
+function qrFull_(){ return !!(S.board || (S.me && !S.guest && !S.student && (S.me.isAdmin || S.me.dept===BL_DEPT || bdSeat_() || gpOverCan_()))); }   // a staff member on the Advisory Board reads it all too
+function qrAnyCampus_(){ return !!(S.board || (S.me && (S.me.isAdmin || bdSeat_() || gpOverCan_()))); }
 function qrCan_(){ return !!(S.me && !S.student && !S.stuPreview && !S.demo && (S.board || !S.guest)); }
 /* ☰ and search: the whole report for those who may open it, and for a ministry's leader their own page */
 function qrMenu_(){ return qrCan_() && (qrFull_() || ((S.me.leads||[]).length>0)); }

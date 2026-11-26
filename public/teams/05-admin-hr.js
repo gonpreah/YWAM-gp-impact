@@ -398,7 +398,7 @@ function adminLooseHtml_(){
   total+=r3.length;
 
   // 4. no department or ministry
-  var r4=staff.filter(function(x){ return !x.dept || !x.ministry; }).map(function(x){ return loosePersonBtn_(x, !x.dept ? t('no department') : t('no ministry')); });
+  var r4=staff.filter(function(x){ return !x.gpHome && (!x.dept || !x.ministry); }).map(function(x){ return loosePersonBtn_(x, !x.dept ? t('no department') : t('no ministry')); });
   out+=looseSection_('🧭', t('No department or ministry'), t('Their numbers and check-ins count for nobody until this is set.'), r4);
   total+=r4.length;
 
@@ -418,9 +418,14 @@ function adminLooseHtml_(){
   // 7. the YWAM GP structure: Campus Directors with no International / National, and empty YWAM GP places
   var r7=staff.filter(function(x){ return x.dept===BL_DEPT && x.ministry==='Campus Director' && !x.cdKind; })
     .map(function(x){ return loosePersonBtn_(x, t('Campus Director — International or National not chosen yet')); });
-  GP_ROLES.forEach(function(r){
+  /* a campus with no International or no National Campus Director (the last one may have moved to YWAM GP) */
+  [['international','International Campus Director'],['national','National Campus Director']].forEach(function(k){
+    var has=staff.some(function(x){ return x.dept===BL_DEPT && x.ministry==='Campus Director' && x.cdKind===k[0]; });
+    if(!has) r7.push('<span data-loosecd="'+k[0]+'">'+esc(t(k[1]))+'</span><div class="rowSub">'+esc(t('nobody yet — on their account, set Department to Campus Leadership, Main ministry to Campus Director, and choose which one'))+'</div>');
+  });
+  gpRolesAll_().forEach(function(r){
     var held=(S.adminStaff||[]).some(function(x){ return x.active && !x.archived && (x.gpRoles||[x.gpRole]).indexOf(r[0])>-1; });
-    if(!held) r7.push(esc(gpRoleLabel_(r[0]))+'<div class="rowSub">'+esc(t('nobody yet — tick it on their account under Positions'))+'</div>');
+    if(!held) r7.push(esc(r[1])+'<div class="rowSub">'+esc(t('nobody yet — tick it on their account under Positions'))+'</div>');
   });
   out+=looseSection_('🌏', t('The YWAM GP structure isn’t filled in'), t('So the charts, the YWAM GP page and the board see the real picture.'), r7);
   total+=r7.length;
@@ -627,7 +632,7 @@ function adminPortalHtml_(){
     return '<div class="adminRow portalRow" data-adminrow="'+esc((x.name+' '+x.username).toLowerCase())+'">'+
       '<button class="portalWho" data-adminperson="'+esc(x.id)+'">'+avatarHtml(x,'sm')+
         '<span class="adminRowText"><span class="rowName">'+esc(x.name)+(isAdm?' <span class="hrChip active">'+esc(t('Admin'))+'</span>':'')+'</span>'+
-        '<span class="rowSub">'+esc(t(x.dept))+(x.ministry?' · '+esc(t(x.ministry)):'')+'</span>'+
+        '<span class="rowSub">'+esc(admWhere_(x))+'</span>'+
         (leadsTeams(x) && !x.portalStaff && !x.portalAdmin && !isAdm ? '<span class="rowSub" data-teamsleader>🌍 '+esc(t('Team applications — leads Outreach Teams'))+'</span>' : '')+
         '</span></button>'+portalSeesHtml_(x, hasPortal(x))+
       '<label class="portalTick"><input type="checkbox" data-portalstaff="'+esc(x.id)+'"'+((x.portalStaff||isAdm)?' checked':'')+(isAdm?' disabled':'')+'> '+esc(t('Portal staff'))+'</label>'+
@@ -706,7 +711,7 @@ function adminMentorsHtml_(){
     ].map(function(x){ return '<div class="mmTile'+(x[2]?' hot':'')+'"><div class="mmTileName">'+esc(x[0])+'</div><div class="mmTileNum">'+esc(String(x[1]))+'</div></div>'; }).join('')+'</div>';
   var row=function(x, extra){
     return '<div data-adminrow="'+esc((x.name+' '+x.username).toLowerCase())+'"><button class="adminRow" data-adminperson="'+esc(x.id)+'">'+avatarHtml(x,'sm')+
-      '<span class="adminRowText"><span class="rowName">'+esc(x.name)+'</span><span class="rowSub">'+esc(t(x.dept))+(x.ministry?' · '+esc(t(x.ministry)):'')+'</span></span>'+
+      '<span class="adminRowText"><span class="rowName">'+esc(x.name)+'</span><span class="rowSub">'+esc(admWhere_(x))+'</span></span>'+
       (extra||'')+'<span class="accChevron" style="transform:rotate(-90deg)">'+ACC_CHEVRON+'</span></button></div>';
   };
   if(!mentorIds.length && !none.length) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('No accounts yet.'))+'</p></div>';
@@ -844,7 +849,7 @@ function adminPersonHtml_(){
     (x.email ? '<div class="pmeta admEmail" id="admEmail"><span class="admEmailText">✉️ '+esc(x.email)+'</span> <button class="linkbtn inline" data-admincopy="'+esc(x.email)+'">'+esc(t('Copy'))+'</button></div>'
       : '<div class="pmeta admEmail" id="admEmail">✉️ '+esc(t('No email on this profile'))+'</div>')+
     '<div class="pmeta" id="admSignIn">'+esc(x.google ? t('Signs in with Google') : x.signIn==='password' ? t('Signs in with an email and password') : t('Signs in with a username and PIN — not on Google yet'))+'</div>'+
-    '<div class="pmeta">'+esc(campusName(x.campus))+' · '+esc(t(x.dept))+(x.ministry?' · '+esc(t(x.ministry)):'')+(x.role?' · '+esc(x.role):'')+'</div>'+
+    '<div class="pmeta">'+esc(campusName(x.campus))+' · '+esc(admWhere_(x))+(x.role?' · '+esc(x.role):'')+'</div>'+
     '</div></div>'+(chips?'<div class="teamStats">'+chips+'</div>':'')+'</div>';
   h+='<div class="card">'+adminRowBodyHtml_(x)+'</div>';
   return h;
@@ -955,7 +960,7 @@ function adminAccountsHtml_(){
     var status = x.archived ? '📦 '+t('Archived') : !x.active ? '⏳ '+t('Pending approval') : (x.isAdmin ? '🛡️ '+t('Admin') : '');
     var leadsN = (x.leads||[]).length;
     if(x.active && !x.archived && !x.google) status = (status?status+' · ':'')+'🔑 '+t('PIN only');
-    var summary = '@'+x.username+' · '+t(x.dept)+(x.ministry?' · '+t(x.ministry):'')+(status?' · '+status:'')+
+    var summary = '@'+x.username+' · '+admWhere_(x)+(status?' · '+status:'')+
       (leadsN ? ' · 👑 '+x.leads.map(function(k){ return t(k.split('|')[1]||k); }).join(', ') : '');
     var mine = !!x.id && x.id===S.me.id;
     h+='<div data-adminrow="'+esc((x.name+' '+x.username).toLowerCase())+'">'+
@@ -1039,28 +1044,30 @@ function adminRowBodyHtml_(s){
     var d = S.adminEditDraft || {};
     var dCampus = d.campus!==undefined ? d.campus : (s.campus||'');
     var dDept = d.dept!==undefined ? d.dept : (s.dept||'');
+    /* "Works for YWAM GP": no campus job, so the campus-job fields fold away (still in the page, so the form reads as before) */
+    var dHome = d.gpHome!==undefined ? !!d.gpHome : !!s.gpHome, cj='<div class="admCampusJob"'+(dHome?' hidden':'')+'>';
     b+='<label class="f">'+esc(t('Full name'))+'</label><input type="text" id="adm_name" value="'+esc(d.name!==undefined?d.name:(s.name||''))+'">'+
       '<label class="f">'+esc(t('Username'))+'</label><input type="text" id="adm_username" autocapitalize="none" maxlength="20" value="'+esc(d.username!==undefined?d.username:(s.username||''))+'">'+
       '<label class="f">'+esc(t('Email'))+'</label><input type="email" id="adm_email" autocapitalize="none" autocomplete="off" maxlength="200" value="'+esc(d.email!==undefined?d.email:(s.email||''))+'">'+
       '<p class="hint" style="margin:4px 0 0">'+esc(t('Continue with Google finds a profile by this email — put the Gmail they use here.'))+'</p>'+
       '<label class="f">'+esc(t('Campus'))+'</label><select id="adm_campus">'+
       CAMPUSES.map(function(c){return '<option value="'+c.id+'"'+(dCampus===c.id?' selected':'')+'>'+c.name+'</option>';}).join('')+'</select>'+
-      '<label class="f">'+esc(t('Department'))+'</label><select id="adm_dept">'+
+      cj+'<label class="f">'+esc(t('Department'))+'</label><select id="adm_dept">'+
       deptsFor(dCampus).map(function(dp){return '<option value="'+esc(dp)+'"'+(dDept===dp?' selected':'')+'>'+esc(t(dp))+'</option>';}).join('')+'</select>'+
       '<label class="f">'+esc(t('Main ministry'))+'</label><select id="adm_ministry"></select>'+
       '<label class="f">'+esc(t('Other ministries'))+'</label>'+
       '<p class="hint" style="margin:0 0 6px">'+esc(t('The other ministries they serve in. They see and enter numbers for their main ministry and these.'))+'</p>'+
-      '<div class="leadsPick" id="adm_ministries">'+leadsPickHtml_(dCampus, d.ministries!==undefined?d.ministries:(s.ministries||[]), 'data-admmin', (s.dept||'')+'|'+(s.ministry||''))+'</div>'+
+      '<div class="leadsPick" id="adm_ministries">'+leadsPickHtml_(dCampus, d.ministries!==undefined?d.ministries:(s.ministries||[]), 'data-admmin', (s.dept||'')+'|'+(s.ministry||''))+'</div></div>'+
       '<label class="f">'+esc(t('Role / team'))+'</label><input type="text" id="adm_role" value="'+esc(d.role!==undefined?d.role:(s.role||''))+'">'+
       staffTypeFieldHtml('adm_type', d.staffType!==undefined?d.staffType:(s.staffType||''))+
       (function(){ var ck=d.cdKind!==undefined?d.cdKind:(s.cdKind||'');
-        return '<label class="f">🧭 '+esc(t('If Campus Director: which one'))+'</label><select id="adm_cdkind">'+
-          [['',t('—')],['international',t('International Campus Director')],['national',t('National Campus Director')]].map(function(o){ return '<option value="'+o[0]+'"'+(ck===o[0]?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('')+'</select>'; })()+
+        return cj+'<label class="f">🧭 '+esc(t('If Campus Director: which one'))+'</label><select id="adm_cdkind">'+
+          [['',t('—')],['international',t('International Campus Director')],['national',t('National Campus Director')]].map(function(o){ return '<option value="'+o[0]+'"'+(ck===o[0]?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('')+'</select></div>'; })()+
       admPositionsHtml_(s, d)+
       countryFieldHtml('adm_country', d.country!==undefined?d.country:(s.country||''))+
-      '<label class="f">👑 '+esc(t('Ministry leader of'))+'</label>'+
+      cj+'<label class="f">👑 '+esc(t('Ministry leader of'))+'</label>'+
       '<p class="hint" style="margin:0 0 6px">'+esc(t('A leader can add, rename, remove and re-time the metrics their ministry tracks. Anyone can still log the numbers.'))+'</p>'+
-      '<div class="leadsPick" id="adm_leads">'+leadsPickHtml_(dCampus, d.leads!==undefined?d.leads:(s.leads||[]))+'</div>'+
+      '<div class="leadsPick" id="adm_leads">'+leadsPickHtml_(dCampus, d.leads!==undefined?d.leads:(s.leads||[]))+'</div></div>'+
       '<label class="f" style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:400;font-size:13px;margin-top:12px">'+
         '<input type="checkbox" id="adm_hr"'+((d.hr!==undefined?d.hr:!!s.hr)?' checked':'')+'> 🗂️ '+esc(t('HR access — staff contracts and archiving'))+'</label>'+
       '<label class="f" style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:400;font-size:13px;margin-top:8px">'+
@@ -1107,15 +1114,26 @@ function adminRowBodyHtml_(s){
    campus role is the department and ministry above it; here, as many YWAM GP places as
    they hold, and their seat on the Advisory Board (made and linked to them on Save —
    its bio, photo and contact stay in Admin → Advisory Board). */
+/* where someone serves, in a line: their department and ministry — or, for someone whose job is YWAM GP itself, that and their titles */
+function admWhere_(x){
+  if(x && x.gpHome) return t('YWAM GP')+((x.gpRoles||[]).length ? ' · '+x.gpRoles.map(gpRoleLabel_).filter(Boolean).join(', ') : '');
+  return t(x.dept)+(x.ministry ? ' · '+t(x.ministry) : '');
+}
 function admPositionsHtml_(s, d){
   var gps = d.gpRoles!==undefined ? d.gpRoles : (s.gpRoles || (s.gpRole ? [s.gpRole] : []));
   var seat = d.board!==undefined ? d.board : (s.board ? { on:true, role:s.board.role } : { on:false, role:'Advisor' });
   var roles=['President','Secretary','Treasurer','Advisor'];
   if(seat.role && roles.indexOf(seat.role)===-1) roles.push(seat.role);
+  var home = d.gpHome!==undefined ? !!d.gpHome : !!s.gpHome;
   return '<div class="admPositions"><div class="admPosHead">🧭 '+esc(t('Positions'))+'</div>'+
     '<p class="hint" style="margin:0 0 6px">'+esc(t('One person can hold several: their campus role (the department and ministry above), YWAM GP places, and a seat on the Advisory Board.'))+'</p>'+
-    '<label class="f">🌏 '+esc(t('YWAM GP leadership team'))+'</label><div class="leadsPick admGpPick">'+GP_ROLES.map(function(r){
-      return '<label class="leadOpt"><input type="checkbox" data-admgp="'+r[0]+'"'+(gps.indexOf(r[0])>-1?' checked':'')+'> '+esc(t(r[1]))+'</label>'; }).join('')+'</div>'+
+    '<label class="f">🌏 '+esc(t('YWAM GP leadership team'))+'</label><div class="leadsPick admGpPick">'+gpRolesAll_().map(function(r){
+      return '<label class="leadOpt"><input type="checkbox" data-admgp="'+esc(r[0])+'"'+(gps.indexOf(r[0])>-1?' checked':'')+'> '+esc(r[1])+'</label>'; }).join('')+'</div>'+
+    '<p class="hint" style="margin:4px 0 0">'+esc(t('A job title missing? Add it on the YWAM GP page (☰ → YWAM GP), under YWAM GP job titles.'))+'</p>'+
+    '<label class="f remBox" style="margin-top:10px"><input type="checkbox" id="adm_gphome"'+(home?' checked':'')+'> 🌏 '+esc(t('Works for YWAM GP (not in a campus ministry)'))+'</label>'+
+    '<p class="hint" id="admGpHomeHint" style="margin:4px 0 0">'+esc(home
+      ? gpT('Their job is YWAM GP itself. They still count in {campus}’s staff number, because they live there — but they are off its org chart and its leadership team, and they read both campuses. Tick at least one YWAM GP role above.',{campus:t(campusName(d.campus!==undefined ? d.campus : (s.campus||'')))})
+      : t('Tick this for someone whose job is YWAM GP itself. They stay in their campus’s staff number (where they live) and leave its org chart, so their campus seat is free for someone else.'))+'</p>'+
     '<label class="f remBox" style="margin-top:10px"><input type="checkbox" id="adm_board"'+(seat.on?' checked':'')+'> 🛡️ '+esc(t('On the YWAM GP Advisory Board'))+'</label>'+
     '<div class="admBoardRole"'+(seat.on?'':' hidden')+'><label class="f" for="adm_boardrole">'+esc(t('Their role on the board'))+'</label><select id="adm_boardrole">'+
       roles.map(function(r){ return '<option value="'+esc(r)+'"'+(seat.role===r?' selected':'')+'>'+esc(t(r))+'</option>'; }).join('')+'</select>'+
@@ -1124,6 +1142,14 @@ function admPositionsHtml_(s, d){
 function bindAdmPositions_(admD){
   var gpBoxes=document.querySelectorAll('[data-admgp]');
   gpBoxes.forEach(function(c){ c.onchange=function(){ admD.gpRoles=[].filter.call(gpBoxes, function(x){ return x.checked; }).map(function(x){ return x.getAttribute('data-admgp'); }); }; });
+  /* Works for YWAM GP: the campus-job fields fold away; unticked, they come back with the job the person had before */
+  var gh=document.getElementById('adm_gphome');
+  if(gh) gh.onchange=function(){
+    admD.gpHome=gh.checked;
+    var s=(S.adminStaff||[]).filter(function(x){ return x.id===S.adminEditId; })[0]||{};
+    if(!gh.checked && s.gpHome){ var w=s.gpWas||{}, cm=admD.campus||s.campus; admD.dept=w.dept || deptsFor(cm)[0] || ''; admD.ministry=w.ministry||''; }
+    render();
+  };
   var bd=document.getElementById('adm_board'), br=document.getElementById('adm_boardrole');
   var keep=function(){ admD.board={ on:!!(bd && bd.checked), role:(br && br.value) || 'Advisor' }; };
   if(bd) bd.onchange=function(){ keep(); var w=document.querySelector('.admBoardRole'); if(w) w.hidden=!bd.checked; };
@@ -1825,7 +1851,7 @@ function bindAdmin(){
       S.adminEditId=id;
       S.adminEditDraft={ name:s.name||'', username:s.username||'', email:s.email||'', campus:s.campus||'', dept:s.dept||'', ministry:s.ministry||'',
         role:s.role||'', staffType:s.staffType||'', country:s.country||'', leads:(s.leads||[]).slice(), ministries:(s.ministries||[]).slice(),
-        gpRoles:(s.gpRoles || (s.gpRole ? [s.gpRole] : [])).slice(), board: s.board ? { on:true, role:s.board.role } : { on:false, role:'Advisor' } };
+        gpRoles:(s.gpRoles || (s.gpRole ? [s.gpRole] : [])).slice(), gpHome:!!s.gpHome, board: s.board ? { on:true, role:s.board.role } : { on:false, role:'Advisor' } };
       render();
     };
   });
@@ -1851,7 +1877,13 @@ function bindAdmin(){
     var admType=document.getElementById('adm_type');
     if(admType) admType.onchange=function(){ admD.staffType=admType.value; };
     var admMin=document.getElementById('adm_ministry');
-    if(admMin) admMin.onchange=function(){ admD.ministry=admMin.value; };
+    /* Campus Leadership's list offers "International / National Campus Director" as one pick ("Campus Director#national"):
+       the ministry is Campus Director, and "which one" below follows it — it used to be saved as written, '#' and all */
+    if(admMin) admMin.onchange=function(){
+      var mv=String(admMin.value||'').split('#'); admD.ministry=admMin.value;
+      var ck=document.getElementById('adm_cdkind'); if(mv[1] && ck){ ck.value=mv[1]; admD.cdKind=mv[1]; }
+    };
+    var admCk=document.getElementById('adm_cdkind'); if(admCk) admCk.onchange=function(){ admD.cdKind=admCk.value; };
     var admCampus=document.getElementById('adm_campus');
     if(admCampus) admCampus.onchange=function(){
       admD.campus=admCampus.value;
@@ -1893,11 +1925,12 @@ function bindAdmin(){
         email:((document.getElementById('adm_email')||{}).value||'').trim(),
         campus:document.getElementById('adm_campus').value,
         dept:document.getElementById('adm_dept').value,
-        ministry:(document.getElementById('adm_ministry')||{}).value||'',
+        ministry:String((document.getElementById('adm_ministry')||{}).value||'').split('#')[0],
         role:document.getElementById('adm_role').value.trim(),
         staffType:document.getElementById('adm_type').value,
         cdKind:(document.getElementById('adm_cdkind')||{}).value||'',
         gpRoles:[].map.call(document.querySelectorAll('[data-admgp]:checked'), function(c){ return c.getAttribute('data-admgp'); }),
+        gpHome:!!(document.getElementById('adm_gphome')||{}).checked,
         board:{ on:!!(document.getElementById('adm_board')||{}).checked, role:(document.getElementById('adm_boardrole')||{}).value||'Advisor' },
         country:countryValue('adm_country'),
         leads:[].map.call(document.querySelectorAll('[data-admlead]:checked'), function(c){ return c.getAttribute('data-admlead'); }),
@@ -1907,6 +1940,7 @@ function bindAdmin(){
         portalStaff:!!(document.getElementById('adm_portalstaff')||{}).checked,
         portalAdmin:!!(document.getElementById('adm_portaladmin')||{}).checked
       };
+      if(payload.gpHome && !payload.gpRoles.length){ showMsg(t('Tick at least one YWAM GP role first — a job in YWAM GP needs one.')); return; }
       b.disabled=true; b.textContent=t('Saving…');
       run('adminUpdateStaff',[S.auth.user,S.auth.pin,id,payload],function(d){
         if(d && d.ok){
@@ -1921,7 +1955,8 @@ function bindAdmin(){
         }
         else {
           b.disabled=false; b.textContent=t('Save');
-          showMsg(d && d.err==='username_taken' ? t('That username is already taken')
+          showMsg(d && d.err==='gp_role_needed' ? t('Tick at least one YWAM GP role first — a job in YWAM GP needs one.')
+            : d && d.err==='username_taken' ? t('That username is already taken')
             : d && d.err==='bad_username' ? t('Usernames are letters, numbers, . _ - (2–20 characters)')
             : d && d.err==='email_taken' ? t('Another profile already has that email')
             : d && d.err==='bad_email' ? t('That email doesn’t look right')

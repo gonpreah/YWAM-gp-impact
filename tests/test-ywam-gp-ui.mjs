@@ -335,6 +335,145 @@ const main = (page) => page.$eval('#main', e => e.innerText);
   await ctx.close();
 }
 
+/* ---------- YWAM GP's own job titles, and a job in YWAM GP itself (Nov 2026) ---------- */
+const fits = (page) => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1);
+let NM = '';
+{
+  const { ctx, page } = await open('uriah');
+  await page.evaluate(() => { S.view = 'ywamgp'; render(); }); await page.waitForSelector('#gpRolesAdmin');
+  ok('admins get “YWAM GP job titles” on the YWAM GP page', /YWAM GP job titles/i.test(await page.$eval('#gpRolesAdmin', e => e.innerText)) && await page.$('#gprAdd') !== null);
+  await page.click('#gprAdd'); await page.waitForTimeout(300);
+  ok('an empty title is not added', !mem.gpRolesCustom);
+  await page.fill('#gprEn', 'New Ministries Lead'); await page.fill('#gprKm', 'អ្នកដឹកនាំកិច្ចការបម្រើថ្មី');
+  await page.evaluate(() => render()); await page.waitForTimeout(200);
+  ok('what is typed survives a redraw', await page.$eval('#gprEn', e => e.value) === 'New Ministries Lead');
+  await page.click('#gprAdd'); await page.waitForFunction(() => document.querySelectorAll('[data-gprrow]').length === 1, null, { timeout: 8000 });
+  NM = mem.gpRolesCustom[0].id;
+  ok('an admin adds a job title', mem.gpRolesCustom.length === 1 && mem.gpRolesCustom[0].en === 'New Ministries Lead' && NM === 'c_new_ministries_lead');
+  let txt = await main(page);
+  ok('… it is a place on the YWAM GP team at once, “Not filled yet”', /New Ministries Lead/.test(txt) && await page.$eval('#gprEn', e => e.value) === '');
+  await page.fill('#gprEn', 'Temp Title'); await page.click('#gprAdd'); await page.waitForFunction(() => document.querySelectorAll('[data-gprrow]').length === 2, null, { timeout: 8000 });
+  const tmp = mem.gpRolesCustom[1].id;
+  await page.click('[data-gprolename="' + tmp + '"]'); await page.waitForSelector('#gprEditEn');
+  await page.fill('#gprEditEn', 'Ministry Growth Lead'); await page.click('#gprEditSave'); await page.waitForFunction(() => !document.getElementById('gprEditEn'), null, { timeout: 8000 });
+  ok('… renames one', mem.gpRolesCustom[1].en === 'Ministry Growth Lead' && mem.gpRolesCustom[1].id === tmp && /Ministry Growth Lead/.test(await main(page)));
+  await page.click('[data-gproledel="' + tmp + '"]'); await page.waitForFunction(() => document.querySelectorAll('[data-gprrow]').length === 1, null, { timeout: 8000 });
+  ok('… and removes one', mem.gpRolesCustom.length === 1 && !/Ministry Growth Lead/.test(await main(page)));
+  await (await page.$('#gpRolesAdmin')).screenshot({ path: OUT + '/gp-job-titles.png' });
+
+  /* Admin → Sokha → Positions */
+  await page.evaluate(() => { S.view = 'admin'; S.adminSub = 'person'; S.adminPersonId = 'st2'; S.adminStaff = null; render(); }); await page.waitForTimeout(1200);
+  await page.click('[data-adminedit="st2"]'); await page.waitForTimeout(400);
+  ok('Positions offers the new title beside the six built in', (await page.$$('[data-admgp]')).length === 7 && /New Ministries Lead/.test(await page.$eval('.admGpPick', e => e.innerText)));
+  ok('… and “Works for YWAM GP (not in a campus ministry)”, unticked, the campus job showing', /Works for YWAM GP \(not in a campus ministry\)/.test(await page.$eval('.admPositions', e => e.innerText)) && !(await page.$eval('#adm_gphome', e => e.checked)) && await page.isVisible('#adm_dept'));
+  await page.check('#adm_gphome'); await page.waitForTimeout(300);
+  ok('ticked, the campus job folds away (department, ministry, which director, leader of)', !(await page.isVisible('#adm_dept')) && !(await page.isVisible('#adm_cdkind')) && !(await page.isVisible('#adm_leads')) && await page.$eval('#adm_gphome', e => e.checked));
+  await page.click('[data-adminsave="st2"]'); await page.waitForTimeout(600);
+  ok('… it needs a YWAM GP role: said, and nothing saved', /at least one YWAM GP role/.test(await page.evaluate(() => (document.getElementById('msg') || document.querySelector('.toast,.msg') || {}).innerText || document.body.innerText)) && !mem.staff.find(x => x.id === 'st2').gpHome);
+  await page.check('[data-admgp="' + NM + '"]');
+  await (await page.$('.admPositions')).screenshot({ path: OUT + '/positions-gphome.png' });
+  await page.click('[data-adminsave="st2"]'); await page.waitForFunction(() => !document.querySelector('[data-adminsave]'), null, { timeout: 8000 });
+  const so = mem.staff.find(x => x.id === 'st2');
+  ok('saved: Sokha works for YWAM GP — no campus department or ministry, still on Siem Reap', so.gpHome === true && so.dept === '' && so.ministry === '' && so.campus === 'siemreap' && so.gpRoles.join() === NM && so.gpWas.ministry === 'Campus Director');
+  ok('… his account says so where the ministry stood', /YWAM GP · New Ministries Lead/.test(await main(page)), (await main(page)).slice(0, 200).replace(/\n/g, ' | '));
+  await page.evaluate(() => { S.view = 'admin'; S.adminSub = 'loose'; S.adminLoose = null; S.adminCampusTab = 'siemreap'; render(); }); await page.waitForTimeout(1300);
+  const loose = await main(page);
+  ok('Loose ends: the National Campus Director’s seat shows as empty', await page.$('[data-loosecd="national"]') !== null && await page.$('[data-loosecd="international"]') === null);
+  ok('… and he is not listed as having no department or ministry', !/Sokha Chan[\s\S]{0,40}no (department|ministry)/.test(loose) && !/no department/.test(loose), loose.slice(0, 300).replace(/\n/g, ' | '));
+  /* a new National Campus Director, the usual way */
+  await page.evaluate(() => { S.view = 'admin'; S.adminSub = 'person'; S.adminPersonId = 'st4'; render(); }); await page.waitForTimeout(700);
+  await page.click('[data-adminedit="st4"]'); await page.waitForTimeout(400);
+  await page.selectOption('#adm_dept', 'Campus Leadership'); await page.waitForTimeout(200);
+  await page.selectOption('#adm_ministry', 'Campus Director#national'); await page.waitForTimeout(150);
+  ok('picking “National Campus Director” as the ministry sets “which one” with it', await page.$eval('#adm_cdkind', e => e.value) === 'national');
+  await page.click('[data-adminsave="st4"]'); await page.waitForFunction(() => !document.querySelector('[data-adminsave]'), null, { timeout: 8000 });
+  const ka = mem.staff.find(x => x.id === 'st4');
+  ok('the free seat goes to someone else: Kanha is National Campus Director', ka.dept === 'Campus Leadership' && ka.ministry === 'Campus Director' && ka.cdKind === 'national');
+  await page.evaluate(() => { S.view = 'admin'; S.adminSub = 'loose'; S.adminLoose = null; S.adminStaff = null; render(); }); await page.waitForTimeout(1400);
+  ok('… and Loose ends no longer lists the seat', await page.$('[data-loosecd]') === null);
+  await ctx.close();
+}
+{
+  /* a teammate: the charts, the directory, his page */
+  const { ctx, page } = await open('dara');
+  ok('the staff count on Team still has everyone', /·\s*4\s*staff/.test((await (async () => { await page.evaluate(() => { S.view = 'team'; S.person = null; S.teamMode = 'dir'; S.teamCampus = 'siemreap'; render(); }); await page.waitForTimeout(600); return main(page); })()).replace(/\n/g, ' ')));
+  const dir = await page.$eval('#dirGpHome', e => e.innerText).catch(() => '');
+  ok('the directory keeps him on Siem Reap, under YWAM GP, with his title', /Sokha Chan/.test(dir) && /New Ministries Lead/.test(dir) && /count in this campus’s staff/i.test(dir), dir.replace(/\n/g, ' | '));
+  ok('… and the campus heading counts him', /YWAM Siem Reap\s*·\s*4/.test((await main(page)).replace(/\n/g, ' ')));
+  await page.evaluate(() => { S.teamMode = 'org'; S.sbTeam = false; render(); }); await page.waitForTimeout(900);
+  const chart = await main(page);
+  ok('Structure: he holds no box on the campus chart — one line says he lives here', await page.$('.orgChart [data-person="st2"]') === null && !/Not placed yet/.test(chart) && /YWAM GP team living here:\s*Sokha Chan/.test(chart));
+  ok('… and Kanha sits where the National Campus Director sits', await page.$('.orgChart [data-person="st4"]') !== null);
+  await page.evaluate(() => { S.teamCampus = 'ywamgp'; render(); }); await page.waitForTimeout(600);
+  const gpc = await page.$eval('.orgGpChart', e => e.innerText);
+  ok('the YWAM GP chart has him under his title, with where he lives', /Sokha Chan\s*New Ministries Lead · lives in Siem Reap/.test(gpc.replace(/\n+/g, ' ')), gpc.replace(/\n+/g, ' | ').slice(0, 400));
+  await page.evaluate(() => { S.teamMode = 'dir'; render(); }); await page.waitForTimeout(500);
+  ok('Team → Directory → YWAM GP lists the title and who holds it', await page.$('[data-gprole="' + NM + '"]') !== null && /Sokha Chan\s*lives in Siem Reap/.test((await page.$eval('[data-gprole="' + NM + '"]', e => e.innerText)).replace(/\n+/g, ' ')));
+  await page.evaluate(() => { S.view = 'ywamgp'; render(); }); await page.waitForTimeout(500);
+  ok('the YWAM GP page too — and no job-title editor for someone who is not an admin', /New Ministries Lead · lives in Siem Reap/.test(await main(page)) && await page.$('#gpRolesAdmin') === null);
+  await page.click('[data-orgperson="st2"]'); await page.waitForSelector('#personGpHome');
+  ok('his page reads “YWAM GP · New Ministries Lead” where a ministry would be', (await page.$eval('#personGpHome', e => e.innerText)) === 'YWAM GP · New Ministries Lead' && /lives in Siem Reap/.test(await main(page)));
+  ok('a teammate has no oversight in the menu', await page.evaluate(() => !gpOverCan_() && !bdCan_()));
+  await ctx.close();
+}
+{
+  /* Sokha himself */
+  const { ctx, page } = await open('sokha');
+  ok('his Home says YWAM GP and his title', /YWAM GP · New Ministries Lead/.test(await main(page)));
+  await page.evaluate(() => { S.view = 'ministry'; render(); }); await page.waitForSelector('#gpMinistry');
+  let txt = await main(page);
+  ok('My Ministry is YWAM GP’s page: his title, where he lives — no “choose my ministry”', /YWAM GP/.test(txt) && /New Ministries Lead · lives in Siem Reap/.test(await page.$eval('#gpmRoles', e => e.innerText)) && await page.$('#goProfile') === null && await page.$('#mmSwitch') === null);
+  ok('… no way into a campus ministry for someone who is not an admin', await page.$('#gpmCampusMin') === null);
+  await page.fill('[data-rkadd="gp|YWAM GP|"]', 'Start two new ministries'); await page.press('[data-rkadd="gp|YWAM GP|"]', 'Enter');
+  await page.waitForSelector('#gpRocks .lmRock', { timeout: 8000 });
+  const rk = () => mem.rocks.rocks.find(r => r.title === 'Start two new ministries');
+  ok('he adds a YWAM GP rock', rk() && rk().campus === 'gp' && rk().dept === 'YWAM GP' && rk().owner === 'st2');
+  await page.click('#gpRocks [data-rockst="' + rk().id + '|off"]'); await page.waitForTimeout(900);
+  ok('… and says where it stands', rk().status === 'off' && await page.$('#gpRocks .lmRock.off') !== null);
+  await page.click('[data-gpmtab="tasks"]'); await page.waitForTimeout(1200);
+  ok('Tasks is his own GP Tasks', await page.$('#gpMinistry .gtTab[data-gptlist]') !== null, (await main(page)).slice(0, 160).replace(/\n/g, ' | '));
+  await (await page.$('#gpMinistry')).screenshot({ path: OUT + '/gp-my-ministry.png' });
+  await page.click('#hamb').catch(() => {}); await page.evaluate(() => { S.menuOpen = true; renderMenu(); }); await page.waitForTimeout(300);
+  const menu = await page.evaluate(() => (document.getElementById('menu') || document.querySelector('.menu,.drawer') || document.body).innerText);
+  ok('☰ has “YWAM GP oversight”, not the Advisory Board', /YWAM GP oversight/.test(menu) && !/Advisory Board/.test(menu) && await page.evaluate(() => gpOverCan_() && bdCan_() && !bdRoomCan_()));
+  await page.evaluate(() => { S.menuOpen = false; renderMenu(); gpOverOpen_(); }); await page.waitForSelector('#bdOver', { timeout: 10000 });
+  ok('it opens the big picture of both campuses', /YWAM Poipet/.test(await main(page)) && /YWAM Siem Reap/.test(await main(page)));
+  ok('… with Overview · Campuses · Finances and no Board room', (await page.$$('[data-bdtab]')).length === 3 && await page.$('[data-bdtab="bdroom"]') === null);
+  await page.evaluate(() => { S.view = 'bdroom'; render(); }); await page.waitForTimeout(500);
+  ok('… the Board room cannot be opened by its address either', await page.evaluate(() => S.view === 'bdover' && !S.brActive));
+  await page.click('[data-bdtab="bdcamp"]'); await page.waitForTimeout(700);
+  ok('… the campuses, to read', await page.evaluate(() => S.view === 'bdcamp') && /Campus Leadership|leadership/i.test(await main(page)));
+  await page.evaluate(() => { S.view = 'profile'; render(); }); await page.waitForTimeout(600);
+  ok('Profile & settings says his job is YWAM GP and asks for no ministry', await page.isVisible('#profGpHome') && !(await page.isVisible('#p_dept')) && !(await page.isVisible('#p_ministry')) && await page.$('#myPosGpHome') !== null);
+  await page.click('#saveProfBtn'); await page.waitForTimeout(1200);
+  const so = mem.staff.find(x => x.id === 'st2');
+  ok('… saving his profile leaves his job where the admin put it', so.gpHome === true && so.dept === '' && so.ministry === '' && await page.evaluate(() => S.me.gpHome === true));
+  await ctx.close();
+}
+{
+  /* a 320px phone, in Khmer */
+  const { ctx, page } = await open('sokha', { small: true, km: true });
+  await page.evaluate(() => { S.view = 'ministry'; S.gpmTab = 'rocks'; render(); }); await page.waitForSelector('#gpMinistry');
+  ok('320px, Khmer: his My Ministry page fits', await fits(page) && /[ក-៿]/.test(await page.$eval('#gpMinistry .mmBannerNote', e => e.innerText)));
+  ok('… the job title is shown in the Khmer the admin gave', /អ្នកដឹកនាំកិច្ចការបម្រើថ្មី/.test(await page.$eval('#gpmRoles', e => e.innerText)));
+  await page.evaluate(() => { gpOverOpen_(); }); await page.waitForSelector('#bdOver', { timeout: 10000 });
+  ok('… the oversight pages fit', await fits(page));
+  await ctx.close();
+  const a = await open('uriah', { small: true });
+  await a.page.evaluate(() => { S.view = 'ywamgp'; render(); }); await a.page.waitForSelector('#gpRolesAdmin');
+  ok('320px: the job-title editor fits', await fits(a.page));
+  await a.page.evaluate(() => { S.view = 'admin'; S.adminSub = 'person'; S.adminPersonId = 'st2'; S.adminStaff = null; render(); }); await a.page.waitForTimeout(1200);
+  await a.page.click('[data-adminedit="st2"]'); await a.page.waitForTimeout(400);
+  ok('320px: Positions fits, the tick on, the campus job folded', await fits(a.page) && await a.page.$eval('#adm_gphome', e => e.checked) && !(await a.page.isVisible('#adm_dept')));
+  await a.page.uncheck('#adm_gphome'); await a.page.waitForTimeout(400);
+  ok('unticked, the campus job comes back with what he had before', await a.page.isVisible('#adm_dept') && await a.page.$eval('#adm_dept', e => e.value) === 'Campus Leadership' && await a.page.$eval('#adm_ministry', e => e.value) === 'Campus Director');
+  await a.page.selectOption('#adm_dept', 'Community Service'); await a.page.waitForTimeout(200); await a.page.selectOption('#adm_ministry', 'Cafe');
+  await a.page.click('[data-adminsave="st2"]'); await a.page.waitForFunction(() => !document.querySelector('[data-adminsave]'), null, { timeout: 8000 });
+  const so = mem.staff.find(x => x.id === 'st2');
+  ok('… saved: back in a campus ministry, off the YWAM GP job', !so.gpHome && so.dept === 'Community Service' && so.ministry === 'Cafe' && so.gpRoles.join() === NM);
+  await a.ctx.close();
+}
+
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 await browser.close(); srv.close();
