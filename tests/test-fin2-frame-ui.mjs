@@ -152,6 +152,24 @@ for (const vp of [{ width: 1440, height: 900 }, { width: 1024, height: 768 }]) {
   const f = await fr(page); await f.waitForSelector('#pane', { timeout: 10000 }); await page.waitForTimeout(800);
   const m = await page.evaluate(() => { const el = document.getElementById('fin2Frame'); return { h: el.offsetHeight, inner: el.contentDocument.body.scrollHeight }; });
   ok('leadership’s Finances tab is one page too', m.h >= m.inner - 2 && await f.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 2), JSON.stringify(m));
+  /* Ministries for leadership: read-only, nothing to put in or take out */
+  await page.click('[data-finlead="mins"]'); await page.waitForTimeout(2500);
+  const f2 = await fr(page); await f2.waitForFunction(() => typeof S !== 'undefined' && S.tab === 'mins' && document.querySelector('[data-dashmode]'), null, { timeout: 10000 });
+  ok('leadership can open Ministries (read-only)', await f2.evaluate(() => S.tab === 'mins' && document.body.classList.contains('ro')));
+  ok('… without the include / take-out buttons', await f2.evaluate(() => { const b = document.createElement('button'); b.className = 'mnPlBtn'; document.body.appendChild(b); const v = getComputedStyle(b).display; b.remove(); return v === 'none'; }));
+  await ctx.close();
+}
+/* the Finances office: Dashboard · Ministries · Input (Nov 2026: Ministries came to Impact) */
+{
+  const { ctx, page } = await open('finance');
+  await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(1500);
+  if (!(await page.$('#fin2Frame'))) { await page.click('#mmSwitch').catch(() => {}); await page.click('[data-mmpick="Skills Training|Finances"]').catch(() => {}); await page.waitForTimeout(1200); }
+  ok('the office has a Ministries tab between Dashboard and Input', await page.evaluate(() => [...document.querySelectorAll('.mmTabs [data-fintab]')].map(b => b.dataset.fintab).join() === 'fdash,fmins,finput'));
+  await page.click('.mmTabs [data-fintab="fmins"]'); await page.waitForTimeout(2500);
+  const f = await fr(page); await f.waitForFunction(() => typeof S !== 'undefined' && S.tab === 'mins' && document.querySelector('[data-dashmode]'), null, { timeout: 10000 });
+  await f.evaluate(() => { S.dashMode = 'live'; render(); });
+  ok('… it opens the finance tool on Ministries', await f.evaluate(() => S.tab === 'mins' && !document.body.classList.contains('ro') && !!document.getElementById('mnPickBtn')));
+  ok('… whose own tab bar stays hidden in the app', await f.evaluate(() => getComputedStyle(document.querySelector('nav.tabs')).display === 'none'));
   await ctx.close();
 }
 ok('no page errors', errors.length === 0, errors.join(' | '));

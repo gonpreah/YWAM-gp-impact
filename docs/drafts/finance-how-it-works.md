@@ -32,6 +32,26 @@ Income.
 
 ## 2. Each part, what it changes
 
+### 🔍 Search (top of Input, 26 Nov 2026)
+- A fold of its own above everything else (`inSearchHtml_`, `S.srch`): words (memo, name, kind, category, account, file,
+  the import description — every word must be there), from / to dates, an amount (exact, or the digits it starts with:
+  "134" finds $13,463.11), what it is (income, expense, transfer, Financial tools), the kind, the account (ABA, US, Cash,
+  no bank) and the category (`srMatch_`). Results update as you type (`#srOut`), newest first, 60 at most, with their
+  income − expenses. Each has **✏️ Edit** — the same edit as in the lists (`editBtnHtml_` → `startEdit_`: the entry
+  comes off and its form opens filled in) — or **✅ Approved**, which can't be edited. Clear the search empties it.
+- **✏️ Edit here** (26 Nov 2026, `srStart_` / `srEditHtml_` / `srSave_`, `S.srEdit`, `S.srD`): the entry opens for editing
+  right in its search result. Not approved: date, amount, kind, category (income: empty = follow the kind's formula),
+  account (or no bank), name, memo; transfers and Financial tools: from, to, and the 📈 tick. Saving takes the old effect
+  off the categories and puts the new one on (one 🕘 History step). **An entry in an approved report can be changed
+  in full too** (26 Nov 2026, `srApprDay_` — the newest approved day that holds it; its date stays on or before that
+  day). The form says what the change moves ("Kitchen $42 · Hospitality −$60 · Cash −$18", `srDelta_`) and asks the bulk
+  import's questions about that day (`srApprHtml_`): **change its approved total liquid assets?** (when an account moves;
+  No by default, Yes moves `P.bal` and its balances entry), **its approved allocations** — **Leave them** (default) with
+  **Yes — write a fix line** (default: a Financial tools adjustment per category, dated the day, in its report, undoing
+  the change — so Live doesn't move either and only the income and expenses change) or No — let Live move; or **Change
+  them** (the approved groups and Live both move) — then the day as it would be and the gap fix. Kept as an amendment
+  ("an approved entry edited").
+
 ### 🏦 Balances
 - One entry per day: ABA, US bank, Cash, for the **Reports as of** day. Saving the same day again
   replaces it (`BAL_DAYS`, newest first; `at` = when it was saved).
@@ -51,15 +71,193 @@ Income.
   The funds go up **at once, when it is saved** (`flApply_` → `fundMove_`).
 - **Accounts:** adds to the chosen account in the Live estimate (section 4).
 - Can come one at a time, or from a QuickBooks import / bulk import (same result per line).
+- **The Dashboard's Income allocation** (`flowHtml('inc')`) opens on **2026 so far** (26 Nov 2026; `S.flowPer.inc='ytd'`)
+  — the year up to the report day. Also: the report day's month (with ▲ / ▼ against the month before) and **Custom**
+  (from / to, `S.flowRange`, `flowRange_`: starts on the 1st of the month, never past the report day; no comparison).
+  Details › follows the same choice. **Expense allocation is the same choice**: picking a period (or a custom range)
+  on either moves both (`S.flowPer.inc` = `S.flowPer.exp`, one `S.flowRange.both`).
 
 ### 🧾 Expenses
-- Each expense has a kind (the QuickBooks account list, plus Honorarium 54000 and Not sure),
+- Each expense has a kind (the QuickBooks account list, plus Honorarium 54000, **Refund** — money given back to people —
+  and **Accounting** — tax and the like sent to the national office — both ours with no QuickBooks number (26 Nov 2026;
+  the import guesses them from "refund / reimburse / paid back" and "national office"), and Not sure),
   the category it is paid from (picked by hand, or from its QuickBooks class), a bank account,
   an amount and a date. No formulas.
 - **Funds:** that one fund goes down at once.
 - **Accounts:** takes off the chosen account in the Live estimate.
 
+### 📥 Bulk import — a QuickBooks Profit and Loss Detail, and a mix of places (25 Nov 2026)
+- **These lines are from** has **A mix of places — each line says which account** (`mix`): no one account for the
+  whole file; each line's own account column is used. **It is the default** (26 Nov 2026); pick a bank statement or the cash book
+  when every line in the file is from that one account.
+- **A Profit and Loss Detail** (QuickBooks: Transaction date · Transaction type · Number · Name · Location · Class
+  full name · Description · Item split account · Amount · Balance) is recognised by its Income / Expenses
+  sections (`bulkFromSheet_` → `isPL`). It is read as a mix of places unless an account was picked on purpose
+  (`S.bulkSrcSet`). For each line (`bulkGuess_`, `t.qbSec`):
+  - **income or expense** from the section it sits in (every amount is positive there; a negative one goes the
+    other way);
+  - **the kind** from the account heading above it: an expense by its account number (`expFromHead_`: 50500 Food,
+    53200 Supplies, 54000 → Honorarium, 57000 Vehicle Expenses…, else by the heading's words); income from the
+    account number too (26 Nov 2026, `INC_ACCOUNTS` / `incFromHead_`, from the office's chart of accounts): 41000
+    Donation, 41950 Undesignated donations and 43000 Gifts in kind → General donations; 41100 Khmer Staff support,
+    41200 Child Sponsorship, 41500 Specified Donation, 41900 Land/Building Projects → Designated donation; 45000
+    Training and 45100 Lecture Contribution → the school in the class or memo (DTS, DBS, SOMD; else Other schools);
+    45200 Outreach Contribution → DTS outreach (or the school named); **44000 Contribution** (staff *and* team
+    contributions) → from the memo: team → Team contributions, KSS / YAP, rent, Antonia, and staff or **a pledge →
+    Staff contributions**; anything else left to pick. 44500 Staff gathering and 49500 Miscellaneous are left to pick.
+    Income groups show the account numbers their lines came from ("💵 Income · Staff contributions · 44000");
+    **Office income** (a kind of its own since 26 Nov 2026, 100% to Office/General — any legal income): anything whose
+    words or account say **interest** or **tax** (whole word, so not "taxi"). **Guest** income is part of teams → Team
+    contributions. A line whose **name is one of our staff** (`isStaffName_`: the campus staff list, or a spelling linked
+    on Staff debt) and that is otherwise unclear (44000 Contribution, no kind found) → Staff contributions. An account
+    heading with no number ("Guest Income") is read as a heading too; QuickBooks' "Total for Income" is no longer
+    checked as if it were an account.
+  - **A Pledge** (QuickBooks' transaction type) with no account of its own goes **into ABA bank**;
+  - **the account** from Item split account (ABA → ABA bank, Cash on Hand → Cash, **Sub Splash** or US Bank → US
+    bank);
+  - **the category** from the class (`classFund_`): the one picked for that class before (`EXP_MAP['class:…']`),
+    else a school named in it (DTS, DBS, SOMD; **BCS, SMS or "school" → Other Schools**), else the class's words.
+    **Picking a category for a line with a class remembers it** for next time and gives every other line of that
+    class in the file the same (unless set by hand), with a toast saying how many.
+  - **A Journal Entry is worked out but waits for approval** (26 Nov 2026; before, it was never guessed): `bulkGuess_`
+    reads it like any line — income or expense from its P&L section, the kind from its account, the account from its
+    split account, the category from its class (or a transfer from two bank accounts) — and keeps `journal`. Journal
+    entries sit in their own groups first: **📓 Journal entries — income / expenses / transfers**, and "— not worked
+    out" for any it couldn't read. Each line has **✓ Approve** (ticks it; if something is still missing, its edit
+    opens), **✗ Leave out** and Edit; each group has **✓ Approve all** and **🗑 Leave all n out**; "Bring them back"
+    puts left-out ones back while the import is open. A journal entry that won't be income or an expense by itself —
+    admin, or a transfer touching a category — has **📈 Show in the Ministries profit and loss**
+    (`bulkPlAble_`, `[data-bulkpl]`; the group has "📈 All n in the profit and loss"); the adjustment or transfer it
+    becomes carries `pl`, so it counts as income or spending there. **Tick every complete line** skips journal entries, and the
+    description box doesn't change them.
+    **A journal entry is one of four** (26 Nov 2026): **💵 Income**, **🧾 Expense**, **🔁 Transfer** (moving categories) or
+    **🛠 Admin (fixing)** (journal entries only, `BULK_KIND.admin`; groups "📓 Journal entries — income / expenses /
+    transfers / admin (fixing)"). Its account can be **N/A — no bank**: one worked out as income or an expense with no
+    bank in its split account starts there. **Income and expense journal entries are real income and expenses**, in the
+    profit and loss and the income / expense allocation like any other — with N/A they are saved with no bank
+    (`bank:''`, `journal:true`), so they move the categories and no account. **Admin** picks a category and whether it
+    **adds to it** or **takes from it** (`adir`, from the line's direction by default) and is saved as a Financial tools
+    adjustment ("… · journal entry — admin (fixing)"): it moves the category, no bank, and isn't in the profit and loss
+    unless ticked.
+    **Every journal entry is from a category** (26 Nov 2026): its class's (`classFund_`, a class picked before, or a school
+    named in it), picked by hand, or **N/A — no category** (`fund:'na'`, `bulkJCatSel_`; the default when the class says
+    nothing). Income or an expense needs one of these before it can be approved. On journal income a category takes all
+    of it, whatever the kind's formula; N/A income follows the formula (a kind with no formula then needs a category). An
+    N/A expense is saved with no category (`split [{f:''}]`): it counts as spending and moves no category. Admin always
+    needs a real category.
+    "📓 Journal entries to check" has **🗑 Leave all n out** (`data-bulkgrpdrop`) — they are usually not needed in these
+    reports; "Bring them back" undoes it while the import is open (`S.bulkJOut`).
+- **A line stays put while it is being edited** (26 Nov 2026): it stays in the group it was in when ✏️ Edit was tapped
+  (`S.bulkEditKey`, `bulkPlace_`), whatever is changed, so it is easy to find. Changes are only collected
+  (`S.bulkSame.ch`, `bulkSet_`).
+- **Done, then the same for the rest of the group**: if what it is, its kind, category, account, from or to changed
+  and other lines in that group would change too, Done first asks under the line "Do the same for the other n lines in
+  “group”?" with every change listed — **Yes — all n** makes the same changes to them, **Just this one** doesn't. Then
+  the line closes (`bulkClose_`) and it (and any others changed) moves to its group.
+- The "Total for …" lines are QuickBooks' own sums: each account's lines are checked against them, "✓ Every account
+  adds up to QuickBooks' own total" or what doesn't match.
+- **Dates written as text** follow the file's day/month order, decided from all its dates (the reading where they sit
+  closest together, none in the future) and flippable with "Read them the other way" — not always QuickBooks'
+  MM/DD (the Poipet export is DD/MM). Dates stored as real spreadsheet dates are read as they are.
+
+### 📥 Bulk import — look out for duplicates (26 Nov 2026)
+- **🔍 Look out for duplicates** — a tick under the description (`#bulkDups`, `S.bulkDups`), also turned on by the words
+  ("look out for duplicates", "double entries", "already entered" — `bulkNoteRead_` → `dups`).
+- Each line read is checked against what is already entered (`bulkDupOf_` → `r.dupOf`): **same day, same amount, and
+  the same person when both have a name** — money in against the income, money out against the expenses, anything
+  against the transfers and Financial tools.
+- With it on, those lines come first in **⚠️ Possible duplicates — already entered?**, each saying what it matches
+  ("Already entered: 3 Nov · $50 · income · Staff contributions · Person A · from aba-nov.pdf"), with **✓ Input this
+  anyway** (`dupOk`: it goes back to its own group, ticked) or **🗑 Delete — already entered** (left out; "Bring them
+  back" undoes); the group has **Delete all — already entered** and **Input all anyway**. Without it, a same-day,
+  same-amount line only carries the quiet "already in?" tag and isn't ticked by Tick all, as before.
+
+### 📥 Bulk import — lines grouped by kind (25 Nov 2026)
+- The lines to check come in **groups**, one per kind of income or expense (`bulkGroupsHtml_`, key `bulkGroupKey_` =
+  kind + kind of income / expense — for a P&L Detail that is one per account code, e.g. "🧾 Expense · Food · 50500"),
+  plus "📓 Journal entries to check" and "❓ Not sure what they are" first, and "🔁 Transfers" last; income groups then
+  expense groups, biggest total first.
+- An open group has **Show all · n / Show ticked · n / Show unticked · n** (26 Nov 2026, `S.bulkShow`, `bulkShowHtml_`,
+  default Show all; one setting for every group; the line being edited always shows).
+- Each group's heading: its name, how many lines, where they go (one category, "shared out by its formula", or "n
+  categories"), how many are ticked, how many still need something, and its total. **Folded** until tapped
+  (`S.bulkOpen`; the group of a line being edited stays open).
+- **✓ Tick all** on a group ticks every complete line in it ("already in?" lines are left for a look); tapped again
+  when all are ticked, **Untick all**. Lines can still be ticked one by one inside. The "Tick every complete line" /
+  "Untick all" above still do the whole file. A line that is changed moves to its new group.
+
+### 📥 Bulk import — describing what is imported (25 Nov 2026)
+- Under "These lines are from" there is **Describe what you're importing** (optional, `S.bulkNote`), e.g. "This
+  import is the ABA expenses from the class Admin in QBO — this corresponds to Office/General in our system".
+- The page reads three things out of the words (`bulkNoteRead_`) and says what it found under the box as you type:
+  an **account** (ABA / US bank / Cash — "us" on its own is not the US bank), **what the lines are** (expenses,
+  income or transfers — only when the words name one kind) and a **category** — the sub-category named *last*, so
+  "class Admin … corresponds to Office/General" gives Office/General (a one-item category like Savings by its own
+  name too).
+- When a file is read, what it found goes on **every line** (`bulkNoteApply_`), over the guess from that line's own
+  words: the kind (not against the line's direction — an "expenses" description never turns money-in into an
+  expense), the account for income and expenses, the category for expenses (and for income of a kind with no
+  formula), marked "suggested — from your description". Changing the words after the file is read: **Put it on
+  every line**. Lines are still ticked by hand before they're added.
+- **A mix of categories, and classes** (26 Nov 2026): `bulkNoteRead_` now finds *every* category named, in order (by
+  name, the words in brackets "LT Fund", the part before a "/" "office", or the first word "kitchen" — never "other",
+  "general"…: `noteAliases_`, `noteFunds_`). Two or more — or one with "mix", "both", "various" — is **a mix**
+  ("a mix of Office and Kitchen", "DTS and DBS income"). "**class X is / = / → / goes to / corresponds to Y**" maps
+  a QuickBooks class to a category (also the old one-sentence form "the class Admin in QBO … corresponds to
+  Office/General"); each is remembered for next time like a category picked for a class (`EXP_MAP['class:…']`). On a
+  line (`noteFundFor_`): its class's category from the description, else the one of the mix its words or class name,
+  else — when one was named — that one; anything still open gets the mix as **one-tap buttons** under the line
+  (`r.mixOf`, `bulkMixHtml_`, `[data-bulkmix]`, "Which one?"). An income line put in a ministry takes the kind of
+  income that goes 100% there (`incTypeForFund_`: DTS → School contributions — DTS).
+- The words are kept on every entry added from that file (`impNote`) and show at the end of its memo in the
+  Detailed breakdown ("Import: …"). Once every line is added, the box empties for the next file.
+
+### 📥 Bulk import — lines on or before an approved day (25 Nov 2026, redone the same day)
+- A month imported in one go can hold lines dated on or before an approved day (e.g. the 16th). Tick **Some of these
+  lines are on or before an approved day** (shown once something is approved) and pick the day; each such line is
+  tagged "✅ in the … approved report" and, when added, goes into that day's approved report (`bulkPre_` →
+  `addToApproved_`, `x.preApproved`) — so it always **counts in the income and expenses** (profit and loss, Ministries).
+- **It asks by itself** (26 Nov 2026): when a file (PDF, Excel or CSV) is read and any line is dated on or before the
+  latest approved day, and the tick isn't on yet, the lines are held back behind "⚠️ n of these m lines are on or
+  before 16 Nov — already approved. Do you want to continue?" (`S.bulk.ask`, `bulkAskHtml_`, `#bulkAsk`): **Yes —
+  continue** turns the tick on with that day (the two questions below show); **Leave those n out, keep the rest**
+  (when some are later); **No — stop this import** (nothing added).
+  Two questions (`S.bulkPre = {on, day, liq, alloc, fix, gapTo}`), both with a default, so Add never waits:
+- **1. Should they change the 16 Nov approved total liquid assets?** **No** (default): the balances typed for that day
+  already hold them — ABA, US and Cash stay as approved, and in Live an approved line on or before the balances is
+  inside them (section 4). **Yes**: the bottom box shows each account old → new and the total, the Add button reads
+  **Approve adjustments to 16 Nov total liquid assets · add n lines**, and adding moves that day's approved balances
+  (`P.bal`) and its balances entry (`BAL_DAYS`, only by lines dated on or before it — later ones already count on top in
+  Live) (`bulkPreLiq_`). The page warns that Yes counts lines twice if the balances came from the statement / cash count.
+- **2. What happens to the 16 Nov approved allocations?** **Leave them** is the default (26 Nov 2026; it was Change
+  them): the allocations already had them; then **write a fix line** (also the default, `bulkFix_`: one Financial tools
+  adjustment per sub-category, dated the day, in its report, funds left as approved, `src:'bulkfix'`) or **let them go
+  down** in Live. **Change them** (a ministry spent or received money that wasn't in the allocations): each category
+  moves by its lines, in that day's approved groups and in Live. Lines after the approved day are never touched — they
+  are new spending. So by default (No · Leave them · Yes — write a fix line) lines on or before the day change only the
+  income and expenses: no bank, no approved allocation, no Live category.
+- **Is it still 100%?** The bottom box (`bulkPreSumHtml_`, `bulkPreDay_`) shows the day as it would be: total liquid
+  assets, allocated, and allocated as a % of it. When they differ (No + Change them always leaves a gap the size of the
+  lines) it says so — fine to leave, or **Put the $X into / Take the $X out of [category]** (`bulkGapTo`): one Financial
+  tools adjustment dated the day, in its report, moving the category there and in Live (`bulkGap_`, `src:'bulkgap'`).
+- **Amendments**: every import that changed an approved day is kept on it (`P.amend: [{at, file, n, liq, alloc, gap,
+  fix}]`); the Approved view's "Reports as of" bar shows **✏️ amended {date}**, which opens the list (`#amendList`).
+  The whole import is one 🕘 History entry, so Undo takes all of it back.
+
 ### 🔁 Internal transfers (`TRANSFERS`)
+- **Dated on or before the latest approved day** (26 Nov 2026 — the same options as bulk import; nothing shows for a
+  later date): the form shows "⚠️ {date} is on or before 16 Nov — already approved" (`xferPreHtml_`, `#xfPre`) and the
+  transfer goes in that approved report (`xferPreApply_` → `addToApproved_`). Only the questions that apply:
+  **Should it change the approved total liquid assets?** when a side is an account (No by default; Yes moves that day's
+  approved balances and its balances entry, shown old → new); **What happens to the approved allocations?** when a side
+  is a category (Change them — default — or **Leave them**, which asks the bulk import's second question: **Yes — write a
+  fix line** (default) — one Financial tools adjustment per category it moved, dated the approved day, in its report,
+  approved allocations left as they were (`src:'xffix'`, `fixOf`) — so **📡 Live doesn't change at all** while the
+  transfer still shows in each ministry's profit and loss (with "📈 Show in the Ministries profit and loss" ticked, as
+  income and spending); or **No — let them move** in Live). Then the day as it would be — total
+  liquid assets, allocated, the % — and, when it isn't 100%, the one-tap gap fix into a category. Kept on the day as an
+  amendment ("✏️ amended", "an internal transfer"). It replaces the old "Add it to the approved report as well" tick here
+  (income and expenses keep that tick).
 - **Fund → fund:** one fund down, the other up, at once. Accounts and the totals don't change.
 - **Account → account:** one account down, the other up, in the Live estimate. Funds and the
   totals don't change.
@@ -94,6 +292,8 @@ Income.
 ### 🗂 Category list
 - The list of categories and sub-categories everything else uses. A sub-category's key is
   `category|name` (e.g. `adm|Kitchen`).
+- **Teams** (`adm|Teams`, under Admin / Operational, before Other) was added 26 Nov 2026. A saved list from before gets
+  it once, at $0, on load — unless it was deleted (Category list → deleted). Add another this way in the same list.
 - **Rename / move:** the key changes, and everything that pointed at it follows — formulas,
   incomes, expenses, transfers, Financial tools, advances, remembered import answers, the
   saved allocation days and the approved days (`catRekey_`).
@@ -183,6 +383,69 @@ Income.
   $0 → "✓ Every dollar has a home"; otherwise how much has no home, or how much more is given a
   home than there is.
 - Everything that moves money is in it (advances are their own report and move nothing).
+
+### 🏛 Ministries (a tab of its own, 25 Nov 2026 — in Impact since 26 Nov 2026: the office's Ministries tab, read-only on leadership's Finances tab)
+- One allocation's own report — mostly the ministries, but any sub-category can be picked (`minsHtml_`, `S.mn`).
+  **Everything on it is the 📒 Detailed breakdown added up** for the sub-categories picked (matched by `cat`
+  = `fundLabel_`).
+- **✅ Approved / 📡 Live** on top — the Dashboard's own switch (one setting, `S.dashMode`, so changing it on either
+  tab changes both). **Approved** counts only lines that are in an approved report (`appr` set) — the fully
+  checked picture; it says which approved day is the latest and that anything after it isn't counted yet, and with
+  nothing approved it says so and points to Live. **Live** counts every line, approved or not — the newest picture,
+  marked estimated. The balance, its share of the total liquid assets (`ledgerLiquid_` on the same lines), the
+  profit and loss and the comparison all follow the switch.
+- **Time filter** on top (`MN_PERIODS`, `mnPeriod_`): This week (Monday to today) · This month · Last week ·
+  Last month · Year to date · All time · Custom (from / to); it opens on Year to date. Each is compared with the period before it: this
+  week / this month / year to date with the **same days** of last week / last month / last year (so a part
+  period isn't set against a whole one); last week and last month with the one before; custom with the same
+  number of days just before; all time with nothing.
+- **Picker** (`mnPickerHtml_`): Ministry budgets first, then "Other allocations". Tap to add or take one away;
+  "All n" — or tapping the category's name — picks a whole category (tapped again: just its first one). **Clear all** (shown when two or more are picked) empties the picks, back to
+  "Nothing selected yet" and N/A; taking away the last one does the same. Several picked are added together, with an "Each one" table under the report.
+  **Opens on Office/General.** Taking every pick away (Clear all, or untapping the last) leaves nothing selected:
+  "Showing" says "Nothing selected yet" and every figure reads **N/A** (the total liquid assets still shows — it is
+  the base's, not a ministry's) until one is picked.
+- **💰 Balance**: every Category amount of those sub-categories up to the period's last day (as `ledgerCats_`),
+  how it moved since the period's first day, and its share of the total liquid assets that day
+  (`ledgerLiquid_`).
+- **📈 Profit and loss**: Income = their Income lines' Category amounts in the period; Expenses = their Expense
+  lines' (shown as a positive number); Net = income − expenses; each with ▲ / ▼ against the period before (green
+  when income rises or spending falls). Then where the income came from and where the money went, by kind
+  of income / expense, and the transactions themselves (folded). **Each kind opens** (26 Nov 2026, `[data-mnkind]`,
+  `S.mn.kOpen`): tapped, a row of "Where the income came from" / "Where the money went" lists the lines behind it, with
+  how many — the incomes, the expenses, and the transfers ticked into the profit and loss ("🔁 From Office/General",
+  "🔁 To Hospitality") with their memo and the other side (`x.mnKey`, set in `mnPL_`).
+- **🔁 Internal transfers & adjustments** (25 Nov 2026; widened 26 Nov 2026), in grey
+  (`#mnXf`, below "Where the income came from / where the money went"): **everything of those sub-categories not in the profit and loss** — transfers between ministries without the
+  📈 tick, journal entries, Financial tools (the fix lines and gap fixes that keep the approved and live allocations
+  right among them) and manual allocations — as In, Out and In − out (`mnPL_` → `xin` / `xout` / `xnet`). Not in the
+  net. **Tapped, it opens as its own in and out** (`#mnXfBtn`, `S.mn.xfOpen`): Came in / Went out, grouped
+  (`mnXfGroup_`: 🔁 From / To each category, 📓 Journal entries, 🛠 Fix lines — to match the approved report, 🛠 To make
+  the allocations 100%, 🛠 Financial tools — Add / Remove income, 📊 Allocations), each group opening to its lines
+  (`[data-mnkind]` with `xin|` / `xout|`), with totals. (The old "Allocations and adjustments also moved it" line is part
+  of this now.) A transfer between two picked sub-categories shows both sides, so it nets to nothing.
+- **The transactions list's filters** (26 Nov 2026, `mnFiltHtml_` / `mnLineFilter_`, `S.mn.lf`): All / 💵 Income /
+  🧾 Expenses / 🔁 Transfers; a kind picker (the kinds of income or expense in the list, "Internal transfer"); and the
+  account — ABA bank / US bank / Cash on hand / **Other** (no account: a transfer between categories). Each with its
+  count; "Showing n of m · net …" and Clear filters.
+- **In the profit and loss or not** (26 Nov 2026): the list also holds what is *not* in the profit and loss — internal
+  transfers without the 📈 tick, Financial tools adjustments (journal entries set to N/A among them, marked 📓), manual
+  allocations — with **🛠 Adjustments** beside Transfers and a row **In or not · 📈 In the profit and loss · Not in it**
+  (`mnLineIn_`). A transfer or adjustment has a button on its row (`[data-mnpl]`, `mnLineCan_`): "Not in the profit and
+  loss — include" / "📈 In the profit and loss — take out", which sets or clears `pl` on the entry (one 🕘 History step);
+  the profit and loss above follows at once. Income and expenses are always in; manual allocations never.
+- **📈 Show in the Ministries profit and loss** (25 Nov 2026): a tick on the internal transfer form (`#xfPl`, `S.xfer.pl`)
+  and on each fund-to-fund transfer in "Transfers made" (`[data-xfpltog]`, changed any time, even once approved — it only
+  changes how the Ministries tab reads it). Saved as `pl: true` on the transfer. Ticked, it is paying for something
+  (accommodation, food): in `mnPL_` it counts as **spending** for the sub-category it leaves ("🔁 To Hospitality") and
+  **income** for the one it reaches ("🔁 From Office/General"), so it is in the net and the ▲ / ▼; it leaves the grey row.
+  Unticked (the default, for accounting moves) it stays grey. **A Financial tools adjustment on a category can have it
+  too** (26 Nov 2026 — the tick on the form was ignored for those before): Add income counts as income ("🛠 Added
+  (Financial tools)"), Remove income as spending ("🛠 Removed"); fix lines and gap fixes never offer it. With the tick,
+  the transactions list's Income / Expenses filters count it on that side. In ✅ Approved, as for everything, only once
+  it is in an approved report.
+- **Not income or expenses**: manual allocations and Financial tools move the balance only; their total for the
+  period is one line under the profit and loss.
 
 ---
 

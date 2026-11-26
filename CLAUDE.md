@@ -1235,9 +1235,9 @@ before changing a rule, and change it in the same commit.**
   browser) and has **📤 Copy my entries for Impact**; Input in Impact has **📥 Bring in entries from the demo**
   (the two are different websites, so the entries travel as pasted text).
 - **Where it shows**: My Ministry → Skills Training › Finances for the office (`finCanEditClient_`): tabs
-  **Dashboard · Input** (`fdash` / `finput`, `data-fintab`) then the app's own Tasks · OKRs; Campus Leadership's
-  **Finances** tab (`lwt==='money'`) shows the Dashboard read-only. Both are an iframe (`fin2FrameHtml_` in
-  teams/09-finance.js, `?embed=1&view=dash|input`) that is **one page with the app** (Nov 2026: "it does not act as
+  **Dashboard · Ministries · Input** (`fdash` / `fmins` / `finput`, `data-fintab`) then the app's own Tasks · OKRs; Campus
+  Leadership's **Finances** tab (`lwt==='money'`) shows the Dashboard or Ministries read-only. Both are an iframe
+  (`fin2FrameHtml_` in teams/09-finance.js, `?embed=1&view=dash|mins|input`) that is **one page with the app** (Nov 2026: "it does not act as
   one single page"): the page posts its height (`{gpFin:'h'}`) and the frame is made that tall (`fin2FrameSize_`), so
   nothing scrolls inside it; as the app scrolls it tells the page which part is on screen (`{gpFin:'view', top, h}`,
   `fin2FrameView_`) — the page keeps its "Reports as of" bar at the top of the screen (`finStick_`) and places its
@@ -1257,6 +1257,14 @@ before changing a rule, and change it in the same commit.**
   card, own reports), leadership's old dashboard (incl. the money ahead and the DTS lecture-fees card) and The
   numbers. getFinance / QuickBooks' nightly sync still run. tests/test-finance-ui.mjs and test-qbo-ui.mjs were
   retired with the screens; test-finance.mjs / test-qbo.mjs (server) stay.
+- **🏛 Ministries** (Nov 2026; in Impact since 26 Nov 2026): one allocation's own report — a time filter (opens on Year
+  to date), a picker (ministries first), its balance, its profit and loss against the period before, each kind opening
+  to its lines, the grey "Internal transfers & adjustments" in and out, and the transactions with filters and an
+  include / take-out button per transfer or adjustment (`minsHtml_`, `mnPeriod_`, `mnPL_`); see finance-how-it-works.md
+  §2. In Impact: the office's tab **Ministries** (`fmins`, `?view=mins`) between Dashboard and Input, and on leadership's
+  Finances tab a **Dashboard | Ministries** switch (`[data-finlead]`, `S.finLeadView`) — read-only there (`body.ro`
+  hides the include buttons). Input's Search, the bulk import's questions and the rest of this month's work came over
+  with the same build. tests/test-fin2-frame-ui.mjs.
 - **Khmer**: the tab label is in PENDING_KM (§136); the finance tool's own text is English only so far.
 - Tests: tests/test-fin2.mjs (server), tests/test-fin2-page.mjs (the page, real api.js).
 

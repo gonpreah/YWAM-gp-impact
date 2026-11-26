@@ -21,7 +21,7 @@
    top of Reports), the Profit and Loss and the A/R Ageing come in by themselves every night —
    see "QuickBooks" in api.js. The Burn Rate is their own spreadsheet, so it's still uploaded. */
 S.fin=null; S.finBalEdit=null; S.qboWaiting=false; S.finLoading=false; S.finErr=''; S.finPending=[]; S.finMonth=null; S.finAheadEdit=null; S.finReading=0;
-S.finTab=(lsGet('gp-fin-tab')==='finput' ? 'finput' : 'fdash');
+S.finTab=(['finput','fmins'].indexOf(lsGet('gp-fin-tab'))>-1 ? lsGet('gp-fin-tab') : 'fdash');
 function finCanEditClient_(){ return typeof canEnterStaffDebtClient_==='function' && canEnterStaffDebtClient_(); }
 function finLoad_(force){
   if(S.finLoading || (S.fin && !force)) return;
@@ -701,7 +701,7 @@ function finReportsHtml_(){
 function fin2FrameHtml_(view, campus){
   /* `campus`: the Advisory Board reading a campus's finances (teams/30-boardroom.js) — a board member's own sign-in is
      kept apart from a staff one (gp-board), so the page is told which to read (as=board); the server decides the rest */
-  var src='finance.html?embed=1&view='+(view==='input'?'input':'dash')+(campus ? '&campus='+encodeURIComponent(campus)+(S.board ? '&as=board' : '')
+  var src='finance.html?embed=1&view='+(view==='input'?'input':view==='mins'?'mins':'dash')+(campus ? '&campus='+encodeURIComponent(campus)+(S.board ? '&as=board' : '')
     : (S.me && S.me.isAdmin && S.me.campus ? '&campus='+encodeURIComponent(S.me.campus) : ''));
   return '<iframe class="fin2Frame" id="fin2Frame" scrolling="no" src="'+esc(src)+'" title="'+esc(t('Finances'))+'"></iframe>';
 }
@@ -760,6 +760,7 @@ function finMinistryTabsHtml_(){
 
 function bindFinance_(){
   fin2FrameSize_();
+  document.querySelectorAll('[data-finlead]').forEach(function(b){ b.onclick=function(){ gpTap(); S.finLeadView=b.getAttribute('data-finlead'); render(); }; });   // leadership: Dashboard / Ministries
   bindFinQr_();
   var be=document.getElementById('finBalEdit'); if(be) be.onclick=function(){
     var B=S.fin && S.fin.balances;
