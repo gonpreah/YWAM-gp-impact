@@ -42,8 +42,15 @@ Income.
 - **✏️ Edit here** (26 Nov 2026, `srStart_` / `srEditHtml_` / `srSave_`, `S.srEdit`, `S.srD`): the entry opens for editing
   right in its search result. Not approved: date, amount, kind, category (income: empty = follow the kind's formula),
   account (or no bank), name, memo; transfers and Financial tools: from, to, and the 📈 tick. Saving takes the old effect
-  off the categories and puts the new one on (one 🕘 History step). **In an approved report**: only the words — the kind
-  of expense, the name, the memo; its amount, date, categories and account stay as approved.
+  off the categories and puts the new one on (one 🕘 History step). **An entry in an approved report can be changed
+  in full too** (26 Nov 2026, `srApprDay_` — the newest approved day that holds it; its date stays on or before that
+  day). The form says what the change moves ("Kitchen $42 · Hospitality −$60 · Cash −$18", `srDelta_`) and asks the bulk
+  import's questions about that day (`srApprHtml_`): **change its approved total liquid assets?** (when an account moves;
+  No by default, Yes moves `P.bal` and its balances entry), **its approved allocations** — **Leave them** (default) with
+  **Yes — write a fix line** (default: a Financial tools adjustment per category, dated the day, in its report, undoing
+  the change — so Live doesn't move either and only the income and expenses change) or No — let Live move; or **Change
+  them** (the approved groups and Live both move) — then the day as it would be and the gap fix. Kept as an amendment
+  ("an approved entry edited").
 
 ### 🏦 Balances
 - One entry per day: ABA, US bank, Cash, for the **Reports as of** day. Saving the same day again

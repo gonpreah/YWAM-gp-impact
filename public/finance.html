@@ -855,48 +855,94 @@ function srOutHtml_(){ if(!srOn_()) return '<p class="hint" style="margin:8px 0 
    name, memo (the old effect comes off, the new one goes on). In an approved report: only the words (kind of
    expense, name, memo) — its amount, date, categories and account are what was approved. */
 function srFind_(k, id){ var L = k==='inc'?INCOMES : k==='exp'?EXPENSES : k==='xf'?TRANSFERS : TOOL_XFERS; return L.filter(function(x){ return x.id===id; })[0]; }
-function srEditHtml_(e){ var x=e.x, D=S.srD||{}, lock=anyApproved_(x, e.k), k=e.k;
-  var f=function(lbl, inner){ return '<label class="srEf">'+lbl+inner+'</label>'; }, inp=function(n, v, t){ return '<input type="'+(t||'text')+'" data-sre="'+n+'" value="'+esc(v==null?'':v)+'"'+(t==='date'?' max="'+TODAY+'"':'')+'>'; };
-  var h='<div class="srEd" id="srEd">'+(lock?'<p class="bulkNoteRead">✅ In an approved report — only the words can change here. Its amount, date, categories and account are what was approved.</p>':'');
-  if(!lock) h+='<div class="srGrid">'+f('Date', inp('date', D.date, 'date'))+f('Amount', '<div class="money"><span>$</span>'+inp('amt', D.amt)+'</div>')+'</div>';
-  if(k==='inc' || k==='exp'){
-    var curCat=D.cat||'', rules=k==='inc' ? (INC_RULES[D.type]||[]) : [];
-    if(k==='exp' || !lock) h+=f(k==='inc'?'Kind of income':'What it was for', flTypeSelect_(k, 'data-sre="type"', D.type, '— Kind —'));
-    if(!lock){ h+=f(k==='inc'?(rules.length?'Category (leave empty to follow the formula)':'Category'):'Paid from — which category', fundSelect_('srEdCat', curCat, 'Category').replace('<select ','<select data-sre="cat" ').replace('— Pick a fund —', k==='inc'&&rules.length?'— Follow its formula —':'— No category —'));
-      h+=f(k==='inc'?'Went into':'Paid out of', bankSelect_('srEdBank', D.bank||'', 'data-sre="bank"', '— No bank —')); }
-  } else if(!lock){
-    h+=f('From', fundSelect_('srEdFrom', D.from, 'From', TOOL_ADD, true).replace('<select ','<select data-sre="from" '))+f('To', fundSelect_('srEdTo', D.to, 'To', TOOL_REMOVE, true).replace('<select ','<select data-sre="to" '));
-  }
-  if(k==='inc' || k==='exp') h+=f(k==='inc'?'From who':'Paid to', inp('who', D.who));
+/* edit straight in the search result (26 Nov 2026) — everything: date, amount, kind, category, account, name, memo;
+   transfers and Financial tools: from, to, the 📈 tick. The old effect comes off, the new one goes on.
+   An entry in an approved report can be changed too (the newest approved day that holds it, srApprDay_), with the bulk
+   import's questions about that day: change its approved liquid assets? (No) · its approved allocations — Leave them
+   (+ a fix line, so Live doesn't move either) or Change them · then the day as it would be and the gap fix. Its date
+   stays on or before that day. */
+function srFind_(k, id){ var L = k==='inc'?INCOMES : k==='exp'?EXPENSES : k==='xf'?TRANSFERS : TOOL_XFERS; return L.filter(function(x){ return x.id===id; })[0]; }
+function srApprDay_(x, k){ return Object.keys(PUBLISHED).sort().reverse().filter(function(d){ var P=PUBLISHED[d]; return P.ids ? (P.ids[k]||[]).indexOf(x.id)>=0 : x.date<=d; })[0]||null; }
+/* what an entry does to the categories and the accounts */
+function srFx_(k, o){ var f={}, a={ aba:0, us:0, cash:0 }, add=function(key, v){ if(key && fundOf_(key)) f[key]=Math.round(((f[key]||0)+v)*100)/100; };
+  if(k==='inc' || k==='exp'){ var sg=k==='inc'?1:-1; (o.split||[]).forEach(function(sp){ add(sp.f, sg*sp.amt); }); if(PRE_ACCT[o.bank]) a[PRE_ACCT[o.bank]]+=sg*o.amt; }
+  else { add(o.from, -o.amt); add(o.to, o.amt); if(PRE_ACCT[o.from]) a[PRE_ACCT[o.from]]-=o.amt; if(PRE_ACCT[o.to]) a[PRE_ACCT[o.to]]+=o.amt; }
+  return { f:f, a:a }; }
+/* the draft as an entry (its split worked out) */
+function srDraftObj_(k, D){ var amt=Math.round((calc_(D.amt)||0)*100)/100;
+  if(k==='inc' || k==='exp') return { amt:amt, bank:D.bank, split: k==='exp' ? [{ f:D.cat||'', amt:amt }] : (D.cat ? [{ f:D.cat, amt:amt }] : (flSplit_('inc', D.type, amt, '')||[])) };
+  return { amt:amt, from:D.from, to:D.to }; }
+function srDelta_(k, x, D){ var o=srFx_(k, x), n=srFx_(k, srDraftObj_(k, D)), f={}, a={};
+  Object.keys(o.f).concat(Object.keys(n.f)).forEach(function(key){ var d=Math.round(((n.f[key]||0)-(o.f[key]||0))*100)/100; if(Math.abs(d)>=0.005) f[key]=d; });
+  ['aba','us','cash'].forEach(function(key){ a[key]=Math.round((n.a[key]-o.a[key])*100)/100; });
+  return { f:f, a:a, alloc:Math.round(Object.keys(f).reduce(function(s2,key){ return s2+f[key]; },0)*100)/100, liq:Math.round((a.aba+a.us+a.cash)*100)/100 }; }
+function srApprHtml_(k, x, D, day){ var Q=D.pre||(D.pre={ liq:'no', alloc:'leave', fix:'fix', gapTo:'' }), P=PUBLISHED[day], d=date(day), dl=srDelta_(k, x, D);
+  var seg=function(attr, val, opts){ return '<div class="seg bulkPreSeg">'+opts.map(function(o){ return '<button type="button" class="'+(val===o[0]?'on':'')+'" data-'+attr+'="'+o[0]+'">'+o[1]+'</button>'; }).join('')+'</div>'; };
+  var moved=Object.keys(dl.f).length || ['aba','us','cash'].some(function(key){ return Math.abs(dl.a[key])>=0.005; });
+  var h='<div class="bulkPre srAppr" id="srAppr"><b>✅ In the '+d+' approved report.</b> <span class="bulkNoteRead" style="display:inline">'+(moved ? 'Your changes move: '+Object.keys(dl.f).map(function(key){ return esc(fundNm_(key))+' '+mnSg_(dl.f[key]); }).concat(['aba','us','cash'].filter(function(key){ return Math.abs(dl.a[key])>=0.005; }).map(function(key){ return { aba:'ABA', us:'US bank', cash:'Cash' }[key]+' '+mnSg_(dl.a[key]); })).join(' · ') : 'Nothing that moves money has changed yet.')+'</span>';
+  if(!moved) return h+'</div>';
+  if(['aba','us','cash'].some(function(key){ return Math.abs(dl.a[key])>=0.005; })) h+='<label class="f" style="margin-top:6px">1. Should the change affect the '+d+' approved total liquid assets?</label>'+seg('srpreliq', Q.liq, [['no','No — keep them as approved'],['yes','Yes — adjust them']]);
+  if(Object.keys(dl.f).length){ h+='<label class="f" style="margin-top:6px">What happens to the '+d+' approved allocations?</label>'+seg('srprealloc', Q.alloc, [['change','Change them'],['leave','Leave them']]);
+    if(Q.alloc==='leave') h+='<label class="f" style="margin-top:6px">Then 📡 Live would move by the change. Keep it as it is?</label>'+seg('srprefix', Q.fix, [['fix','Yes — write a fix line'],['none','No — let Live move']])+
+      '<p class="bulkNoteRead">'+(Q.fix==='fix' ? 'A Financial tools adjustment per category, dated '+d+' and in its report, undoes the change in the categories — only the profit and loss changes.' : 'Live moves by the change; the approved allocations stay.')+'</p>';
+    else h+='<p class="bulkNoteRead">The approved allocations of '+d+' and 📡 Live both move by the change.</p>'; }
+  var liq0=preLiqOf_(P), al0=preAllocOf_(P), liq1 = liq0==null ? null : Math.round((liq0+(Q.liq==='yes' && P.bal ? dl.liq : 0))*100)/100, al1=Math.round((al0+(Q.alloc==='change' ? dl.alloc : 0))*100)/100, gap = liq1==null ? null : Math.round((liq1-al1)*100)/100;
+  var ar=function(p1,p2){ return p1===p2 ? money(p1,true) : money(p1,true)+' → <b>'+money(p2,true)+'</b>'; };
+  h+='<div class="bulkPreSum"><b>'+d+', approved — after this change</b><p class="preLine">Total liquid assets: '+(liq0==null?'— (no balances approved)':ar(liq0, liq1))+'</p><p class="preLine">Allocated: '+ar(al0, al1)+(liq1?' · <b>'+(Math.round(al1/liq1*1000)/10)+'%</b>':'')+'</p>';
+  if(gap!=null && Math.abs(gap)>=0.005) h+='<div class="preGap">⚠️ <b>The allocations aren’t 100%</b> — '+(gap>0?money(gap,true)+' has no category.':'they come to '+money(-gap,true)+' more than the total liquid assets.')+' Fine to leave, or: <label class="f">'+(gap>0?'Put it into':'Take it out of')+'</label>'+fundSelect_('srGapTo', Q.gapTo||'', 'Category').replace('<select ','<select data-srgap="1" ')+'</div>';
+  Q.gap=gap; return h+'</div></div>'; }
+function srEditHtml_(e){ var x=e.x, D=S.srD||{}, k=e.k, day=srApprDay_(x, k);
+  var f=function(lbl, inner){ return '<label class="srEf">'+lbl+inner+'</label>'; }, inp=function(n, v, t){ return '<input type="'+(t||'text')+'" data-sre="'+n+'" value="'+esc(v==null?'':v)+'"'+(t==='date'?' max="'+(day||TODAY)+'"':'')+'>'; };
+  var h='<div class="srEd" id="srEd"><div class="srGrid">'+f('Date', inp('date', D.date, 'date'))+f('Amount', '<div class="money"><span>$</span>'+inp('amt', D.amt)+'</div>')+'</div>';
+  if(k==='inc' || k==='exp'){ var rules=k==='inc' ? (INC_RULES[D.type]||[]) : [];
+    h+=f(k==='inc'?'Kind of income':'What it was for', flTypeSelect_(k, 'data-sre="type"', D.type, '— Kind —'));
+    h+=f(k==='inc'?(rules.length?'Category (leave empty to follow the formula)':'Category'):'Paid from — which category', fundSelect_('srEdCat', D.cat||'', 'Category').replace('<select ','<select data-sre="cat" ').replace('— Pick a fund —', k==='inc'&&rules.length?'— Follow its formula —':'— No category —'));
+    h+=f(k==='inc'?'Went into':'Paid out of', bankSelect_('srEdBank', D.bank||'', 'data-sre="bank"', '— No bank —'));
+    h+=f(k==='inc'?'From who':'Paid to', inp('who', D.who));
+  } else h+=f('From', fundSelect_('srEdFrom', D.from, 'From', TOOL_ADD, true).replace('<select ','<select data-sre="from" '))+f('To', fundSelect_('srEdTo', D.to, 'To', TOOL_REMOVE, true).replace('<select ','<select data-sre="to" '));
   h+=f('Memo', '<textarea data-sre="memo" rows="2">'+esc(D.memo||'')+'</textarea>');
   if((k==='xf' || k==='tool') && (fundOf_(D.from) || fundOf_(D.to))) h+='<label class="xfPlTog"><input type="checkbox" data-sre="pl"'+(D.pl?' checked':'')+'> 📈 Show in the Ministries profit and loss</label>';
+  if(day) h+=srApprHtml_(k, x, D, day);
   return h+(S.srErr?'<p class="inErr" role="alert">⚠️ '+esc(S.srErr)+'</p>':'')+'<div class="inBtns" style="margin-top:8px"><button class="btn" id="srSave">Save</button><button class="btn ghost" id="srCancel">Cancel</button></div></div>'; }
 function srStart_(k, id){ var x=srFind_(k, id); if(!x) return; S.srEdit=k+'|'+id; S.srErr='';
   var one=(x.split||[]).length===1 ? x.split[0].f : '', rules=k==='inc' ? (INC_RULES[x.type]||[]) : [];
   S.srD={ date:x.date, amt:x.amt.toFixed(2), type:x.type||'', cat: k==='exp' ? one : (k==='inc' && (!rules.length || x.journal || (one && !(rules.length===1 && rules[0].f===one))) ? one : ''), bank:x.bank||'', who:x.who||'', memo:x.memo||'', from:x.from||'', to:x.to||'', pl:!!x.pl };
   render(); }
-function srSave_(){ var p0=S.srEdit.split('|'), k=p0[0], id=p0.slice(1).join('|'), x=srFind_(k, id), D=S.srD, lock=anyApproved_(x, k); if(!x) return;
+function srSave_(){ var p0=S.srEdit.split('|'), k=p0[0], id=p0.slice(1).join('|'), x=srFind_(k, id), D=S.srD; if(!x) return; var day=srApprDay_(x, k);
   var a=calc_(D.amt), err='';
-  if(!lock){ if(isNaN(a) || !(a>0)) err='Type an amount more than 0.'; else if(!D.date || D.date>TODAY) err='Pick a date that isn’t in the future.';
-    else if(k==='inc' && !D.type) err='Pick the kind of income.'; else if(k==='exp' && !D.type) err='Pick what it was for.';
-    else if(k==='inc' && !(INC_RULES[D.type]||[]).length && !D.cat) err='This kind has no formula — pick its category.';
-    else if((k==='xf' || k==='tool') && (!D.from || !D.to || D.from===D.to)) err='Pick two different sides.';
-    else if(k==='xf' && ((isAcct_(D.from) && fundOf_(D.to)) || (isAcct_(D.to) && fundOf_(D.from)))) err='Money can’t move between a bank account and a category.';
-    else if(k==='xf' && (isTool_(D.from) || isTool_(D.to))) err='A transfer can’t have Financial tools on one side — make it a new Financial tools entry.';
-    else if(k==='tool' && !(isTool_(D.from) || isTool_(D.to))) err='One side of a Financial tools adjustment has to be Financial tools.'; }
+  if(isNaN(a) || !(a>0)) err='Type an amount more than 0.'; else if(!D.date || D.date>TODAY) err='Pick a date that isn’t in the future.';
+  else if(day && D.date>day) err='It is in the '+date(day)+' approved report, so its date stays on or before '+date(day)+'. To move it later, delete it and add it again.';
+  else if(k==='inc' && !D.type) err='Pick the kind of income.'; else if(k==='exp' && !D.type) err='Pick what it was for.';
+  else if(k==='inc' && !(INC_RULES[D.type]||[]).length && !D.cat) err='This kind has no formula — pick its category.';
+  else if((k==='xf' || k==='tool') && (!D.from || !D.to || D.from===D.to)) err='Pick two different sides.';
+  else if(k==='xf' && ((isAcct_(D.from) && fundOf_(D.to)) || (isAcct_(D.to) && fundOf_(D.from)))) err='Money can’t move between a bank account and a category.';
+  else if(k==='xf' && (isTool_(D.from) || isTool_(D.to))) err='A transfer can’t have Financial tools on one side — make it a new Financial tools entry.';
+  else if(k==='tool' && !(isTool_(D.from) || isTool_(D.to))) err='One side of a Financial tools adjustment has to be Financial tools.';
   S.srErr=err; if(err){ render(); return; }
+  var dl=day ? srDelta_(k, x, D) : null, Q=(D.pre||{ liq:'no', alloc:'leave', fix:'fix' });
   snap_('Put back '+money(x.amt,true)+' '+(SR_KIND[k]||'')+' of '+date(x.date)+' as it was before editing');
-  if(k==='inc' || k==='exp'){ if(lock){ if(k==='exp' && D.type) x.type=D.type; }
-    else { flApply_(k, x, -1); x.date=D.date; x.amt=Math.round(a*100)/100; x.type=D.type; x.bank=D.bank;
-      x.split = k==='exp' ? [{ f:D.cat||'', amt:x.amt }] : (D.cat ? [{ f:D.cat, amt:x.amt }] : flSplit_('inc', D.type, x.amt, ''));
-      flApply_(k, x, 1); flSort_(k); }
-    x.who=D.who; x.memo=D.memo; }
-  else { if(!lock){ if(fundOf_(x.from)) fundMove_(x.from, x.amt); if(fundOf_(x.to)) fundMove_(x.to, -x.amt);
-      x.date=D.date; x.amt=Math.round(a*100)/100; x.from=D.from; x.to=D.to;
-      if(fundOf_(x.from)) fundMove_(x.from, -x.amt); if(fundOf_(x.to)) fundMove_(x.to, x.amt);
-      (k==='xf'?TRANSFERS:TOOL_XFERS).sort(function(p1,p2){ return p1.date<p2.date?1:p1.date>p2.date?-1:0; }); }
-    x.memo=D.memo; if(D.pl && (fundOf_(x.from) || fundOf_(x.to))) x.pl=true; else delete x.pl; }
-  x.edited=Date.now(); S.srEdit=null; S.srD=null; xferSnap_(x.date); render(); toast('✓ Saved'); }
+  if(k==='inc' || k==='exp'){ flApply_(k, x, -1); x.date=D.date; x.amt=Math.round(a*100)/100; x.type=D.type; x.bank=D.bank;
+    x.split = srDraftObj_(k, D).split; flApply_(k, x, 1); flSort_(k); x.who=D.who; }
+  else { if(fundOf_(x.from)) fundMove_(x.from, x.amt); if(fundOf_(x.to)) fundMove_(x.to, -x.amt);
+    x.date=D.date; x.amt=Math.round(a*100)/100; x.from=D.from; x.to=D.to;
+    if(fundOf_(x.from)) fundMove_(x.from, -x.amt); if(fundOf_(x.to)) fundMove_(x.to, x.amt);
+    (k==='xf'?TRANSFERS:TOOL_XFERS).sort(function(p1,p2){ return p1.date<p2.date?1:p1.date>p2.date?-1:0; });
+    if(D.pl && (fundOf_(x.from) || fundOf_(x.to))) x.pl=true; else delete x.pl; }
+  x.memo=D.memo; x.edited=Date.now();
+  /* in an approved report: its answers */
+  if(day && dl){ var P=PUBLISHED[day], nFix=0, liqT=null, gapT=null;
+    if(Q.alloc==='change' && P.groups) Object.keys(dl.f).forEach(function(key){ var g=key.split('|')[0], name=key.slice(g.length+1); (P.groups[g]||[]).forEach(function(it){ if(it[0]===name) it[1]=Math.round((it[1]+dl.f[key])*100)/100; }); });
+    if(Q.alloc==='leave' && Q.fix==='fix') Object.keys(dl.f).forEach(function(key, i){ var d=dl.f[key], up=d<0, amt=Math.abs(d);   /* undo the change in Live */
+      var fx={ id:'f'+Date.now().toString(36)+'e'+i, at:Date.now(), date:day, from:up?TOOL_ADD:key, to:up?key:TOOL_REMOVE, amt:amt, src:'srfix', fixOf:x.id, memo:'Fix line — an approved entry was edited ('+money(x.amt,true)+', '+date(x.date)+'); the '+date(day)+' allocations stay as approved' };
+      fundMove_(key, up?amt:-amt); TOOL_XFERS.push(fx); addToApproved_(fx, 'tool', day, true); nFix++; });
+    if(Q.liq==='yes' && P.bal){ var row=BAL_DAYS.filter(function(r){ return r.asOf===P.bal.asOf; })[0]; liqT=dl.a;
+      ['aba','us','cash'].forEach(function(key){ P.bal[key]=Math.round((P.bal[key]+dl.a[key])*100)/100; if(row && x.date<=row.asOf) row[key]=Math.round((row[key]+dl.a[key])*100)/100; }); refreshBal_(); }
+    var gap=Q.gap; if(Q.gapTo && fundOf_(Q.gapTo) && gap!=null && Math.abs(gap)>=0.005){ var gu=gap>0, ga=Math.abs(gap);
+      var gt={ id:'f'+Date.now().toString(36)+'g', at:Date.now(), date:day, from:gu?TOOL_ADD:Q.gapTo, to:gu?Q.gapTo:TOOL_REMOVE, amt:ga, src:'srgap', memo:'So the '+date(day)+' allocations add up to its total liquid assets (after editing an approved entry)' };
+      fundMove_(Q.gapTo, gu?ga:-ga); TOOL_XFERS.push(gt); addToApproved_(gt, 'tool', day, false); gapT={ f:Q.gapTo, amt:gap }; }
+    (P.amend=P.amend||[]).push({ at:Date.now(), edit:true, n:1, liq:liqT, alloc:Q.alloc==='change'?dl.alloc:0, gap:gapT, fix:nFix });
+    TOOL_XFERS.sort(function(p1,p2){ return p1.date<p2.date?1:p1.date>p2.date?-1:0; }); }
+  S.srEdit=null; S.srD=null; xferSnap_(x.date); render(); toast('✓ Saved'+(day?' — the '+date(day)+' approved report updated as you said':'')); }
 function inSearchHtml_(){ var F=srS_(), open=S.foldOpen&&S.foldOpen.search;
   var types=[]; if(!F.kind || F.kind==='inc') types=types.concat(INC_TYPES); if(!F.kind || F.kind==='exp') types=types.concat(EXP_TYPES.filter(function(t){ return types.indexOf(t)<0; }));
   var opt=function(v, l, cur){ return '<option value="'+esc(v)+'"'+(cur===v?' selected':'')+'>'+esc(l)+'</option>'; };
@@ -2980,7 +3026,7 @@ function asOfBarHtml_(){
     (cur && PUBLISHED[cur] && (PUBLISHED[cur].amend||[]).length ? '<button class="more amendLink" id="amendOpen">✏️ amended '+date(new Date(PUBLISHED[cur].amend.slice(-1)[0].at).toISOString().slice(0,10))+'</button>' : '')+
     '<span class="sep">·</span><label for="viewDebtDay">💳 Staff debt as of</label>'+sel('viewDebtDay', dd, dcur, dd[0])+'</div>';
   var Pa=cur && PUBLISHED[cur]; if(S.amendOpen && Pa && (Pa.amend||[]).length) h+='<div class="pastNote amendList" id="amendList"><b>✏️ '+date(cur)+' was changed after it was approved</b>'+Pa.amend.map(function(m){
-      return '<div>'+date(new Date(m.at).toISOString().slice(0,10))+' · '+(m.xf ? 'an internal transfer' : m.n+' line'+(m.n>1?'s':'')+' imported from '+esc(m.file||'a file'))+
+      return '<div>'+date(new Date(m.at).toISOString().slice(0,10))+' · '+(m.edit ? 'an approved entry edited' : m.xf ? 'an internal transfer' : m.n+' line'+(m.n>1?'s':'')+' imported from '+esc(m.file||'a file'))+
         (m.liq ? ' · liquid assets '+(m.liq.aba+m.liq.us+m.liq.cash<0?'−':'+')+money(Math.abs(m.liq.aba+m.liq.us+m.liq.cash),true) : ' · liquid assets unchanged')+
         (m.alloc ? ' · allocations '+(m.alloc<0?'−':'+')+money(Math.abs(m.alloc),true) : '')+(m.fix ? ' · '+m.fix+' fix line'+(m.fix>1?'s':'') : '')+
         (m.gap ? ' · '+money(Math.abs(m.gap.amt),true)+(m.gap.amt>0?' into ':' out of ')+esc(fundNm_(m.gap.f)) : '')+'</div>'; }).join('')+'<small>Undo it from 🕘 History.</small></div>';
@@ -3148,8 +3194,11 @@ document.addEventListener('change', function(e){ if(e.target.dataset && e.target
 document.addEventListener('click', function(e){ if(e.target.id!=='srClear') return; S.srch=null; S.srEdit=null; render(); });
 document.addEventListener('click', function(e){ var b=e.target.closest && e.target.closest('[data-sredit]'); if(b){ var pp=b.dataset.sredit.split('|'); srStart_(pp[0], pp.slice(1).join('|')); return; }
   if(e.target.id==='srSave' && S.srEdit){ srSave_(); return; } if(e.target.id==='srCancel'){ S.srEdit=null; S.srD=null; S.srErr=''; render(); } });
-function srEd_(e){ var n=e.target.dataset && e.target.dataset.sre; if(!n || !S.srD) return; S.srD[n] = n==='pl' ? e.target.checked : e.target.value;
-  if(e.type==='change' && (n==='type' || n==='from' || n==='to')) render(); }
+function srEd_(e){ if(e.target.dataset && e.target.dataset.srgap && S.srD){ (S.srD.pre=S.srD.pre||{ liq:'no', alloc:'leave', fix:'fix' }).gapTo=e.target.value; return; }
+  var n=e.target.dataset && e.target.dataset.sre; if(!n || !S.srD) return; S.srD[n] = n==='pl' ? e.target.checked : e.target.value;
+  if(e.type==='change' && n!=='memo' && n!=='who' && n!=='pl') render(); }
+document.addEventListener('click', function(e){ var q=e.target.closest && e.target.closest('[data-srpreliq],[data-srprealloc],[data-srprefix]'); if(!q || !S.srD) return; var Q=S.srD.pre=S.srD.pre||{ liq:'no', alloc:'leave', fix:'fix', gapTo:'' };
+  if(q.dataset.srpreliq) Q.liq=q.dataset.srpreliq; else if(q.dataset.srprefix) Q.fix=q.dataset.srprefix; else Q.alloc=q.dataset.srprealloc; render(); });
 document.addEventListener('input', srEd_); document.addEventListener('change', srEd_);
 document.addEventListener('click', function(e){ var b=e.target.closest && e.target.closest('[data-mnkind]'); if(!b) return; var M=mnS_(), k=b.dataset.mnkind; M.kOpen=M.kOpen||{}; M.kOpen[k]=!M.kOpen[k]; render(); });
 document.addEventListener('click', function(e){ var b=e.target.closest && e.target.closest('[data-mnpl]'); if(!b) return; var id=b.dataset.mnpl, t=TRANSFERS.concat(TOOL_XFERS).filter(function(x){ return x.id===id; })[0]; if(!t) return;
