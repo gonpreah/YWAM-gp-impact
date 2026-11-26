@@ -51,6 +51,10 @@ Income.
   The funds go up **at once, when it is saved** (`flApply_` → `fundMove_`).
 - **Accounts:** adds to the chosen account in the Live estimate (section 4).
 - Can come one at a time, or from a QuickBooks import / bulk import (same result per line).
+- **The Dashboard's Income allocation** (`flowHtml('inc')`) opens on **2026 so far** (26 Nov 2026; `S.flowPer.inc='ytd'`)
+  — the year up to the report day. Also: the report day's month (with ▲ / ▼ against the month before) and **Custom**
+  (from / to, `S.flowRange`, `flowRange_`: starts on the 1st of the month, never past the report day; no comparison).
+  Details › follows the same choice. Expense allocation has the same three and still opens on the month.
 
 ### 🧾 Expenses
 - Each expense has a kind (the QuickBooks account list, plus Honorarium 54000 and Not sure),
