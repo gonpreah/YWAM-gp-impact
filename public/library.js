@@ -60,6 +60,13 @@ var GP_LIBRARY = {
    "emoji": "💍",
    "color": "#A4572A",
    "ink": "#7A3D1A"
+  },
+  {
+   "id": "eos",
+   "name": "Running on EOS",
+   "emoji": "⚙️",
+   "color": "#0E6E78",
+   "ink": "#08484F"
   }
  ],
  "cover": {
@@ -78,7 +85,7 @@ var GP_LIBRARY = {
   "plum": "#6B4FA0",
   "laterite": "#A4572A"
  },
- "tags": [{"id":"lead","name":"Leadership","emoji":"🧭"},{"id":"teams","name":"Teams","emoji":"🤝"},{"id":"conflict","name":"Conflict","emoji":"🕊️"},{"id":"comm","name":"Communication","emoji":"💬"},{"id":"habits","name":"Habits","emoji":"🔁"},{"id":"focus","name":"Focus & time","emoji":"🎯"},{"id":"growth","name":"Personal growth","emoji":"🌱"},{"id":"vision","name":"Vision","emoji":"🔭"},{"id":"money","name":"Money","emoji":"💵"},{"id":"create","name":"Creativity","emoji":"💡"},{"id":"faith","name":"Faith","emoji":"✝️"},{"id":"prayer","name":"Prayer","emoji":"🙏"},{"id":"mission","name":"Mission","emoji":"🌏"},{"id":"culture","name":"Culture","emoji":"🌉"},{"id":"marriage","name":"Marriage","emoji":"💍"},{"id":"parenting","name":"Parenting","emoji":"👶"}],
+ "tags": [{"id":"lead","name":"Leadership","emoji":"🧭"},{"id":"teams","name":"Teams","emoji":"🤝"},{"id":"conflict","name":"Conflict","emoji":"🕊️"},{"id":"comm","name":"Communication","emoji":"💬"},{"id":"habits","name":"Habits","emoji":"🔁"},{"id":"focus","name":"Focus & time","emoji":"🎯"},{"id":"growth","name":"Personal growth","emoji":"🌱"},{"id":"vision","name":"Vision","emoji":"🔭"},{"id":"money","name":"Money","emoji":"💵"},{"id":"create","name":"Creativity","emoji":"💡"},{"id":"faith","name":"Faith","emoji":"✝️"},{"id":"prayer","name":"Prayer","emoji":"🙏"},{"id":"mission","name":"Mission","emoji":"🌏"},{"id":"culture","name":"Culture","emoji":"🌉"},{"id":"marriage","name":"Marriage","emoji":"💍"},{"id":"parenting","name":"Parenting","emoji":"👶"},{"id":"eos","name":"EOS","emoji":"⚙️"}],
  "plans": [
   {
    "id": "new-staff",
@@ -156,6 +163,21 @@ var GP_LIBRARY = {
     "the-power-of-habit",
     "the-compound-effect",
     "deep-work"
+   ]
+  },
+  {
+   "id": "eos",
+   "name": "Running on EOS",
+   "emoji": "⚙️",
+   "desc": "How YWAM GP’s leadership runs: what EOS is, the tools behind Rocks, the Scorecard and the weekly meeting, and how to lead and manage well with them.",
+   "books": [
+    "what-the-heck-is-eos",
+    "traction",
+    "get-a-grip",
+    "how-to-be-a-great-boss",
+    "rocket-fuel",
+    "process-eos",
+    "the-eos-life"
    ]
   }
  ],
@@ -5148,6 +5170,518 @@ var GP_LIBRARY = {
     "b": "paper",
     "motif": "sprout",
     "layout": "top",
+    "font": "serif"
+   }
+  },
+  {
+   "id": "what-the-heck-is-eos",
+   "tags": [
+    "eos",
+    "teams"
+   ],
+   "title": "What the Heck Is EOS?",
+   "author": "Gino Wickman & Tom Bouwer",
+   "year": 2017,
+   "shelf": "eos",
+   "mins": 9,
+   "vibe": "A short, friendly guide for everyone on the team, not only the leaders, to how EOS works and where you fit.",
+   "bigIdea": "When a leadership team starts running on EOS, the rest of the team often hears new words all at once: Rocks, Scorecard, IDS, the Level 10 meeting, right people in the right seats. If nobody explains them, these words can feel like a new set of rules pushed down from the top. Gino Wickman, who created EOS, wrote this book with Tom Bouwer, an EOS implementer, for exactly those people. It is not a book for the boss. It is written for the person who does the daily work and wants to know what all of this means for them. The book explains each tool in plain language and then asks a simple question: what is your part in it? The answer is encouraging. EOS is not meant to watch people or squeeze more work out of them. It is meant to give everyone clarity about where the team is going, what their own job is, how they will know they are doing well, and how problems get solved instead of ignored. When each person understands the tools, the whole team can row in the same direction. The book is short on purpose, so a whole team can read it together and talk about it.",
+   "insights": [
+    {
+     "emoji": "🧭",
+     "title": "Why your team is doing this",
+     "body": "The book starts by explaining why a leadership team would choose EOS at all. Most organizations grow, and as they grow they hit a ceiling. Things that worked with five people stop working with twenty. Communication gets messy, the same problems come back every month, and people are not sure who is responsible for what. EOS is a simple set of tools to break through that ceiling. The authors describe six key parts of any organization: vision, people, data, issues, process and traction. When all six are strong, the team runs smoothly. When one is weak, everyone feels it. The point for you is that EOS is not a sign that something is wrong with you. It is a decision by your leaders to make the whole team healthier, clearer and easier to work in. Your leaders are asking for your help to make it work, and your honest part matters a lot."
+    },
+    {
+     "emoji": "🔭",
+     "title": "Know where we are going",
+     "body": "The first tool is the vision. EOS leaders write it on two pages, answering eight simple questions: what are our core values, what is our focus, where do we want to be in ten years, how do we reach the people we serve, what will we look like in three years, what must happen this year, what are this quarter's priorities, and what issues stand in the way. The authors say the vision is useless if it stays in the leaders' heads. Every person should know it well enough to explain it to a friend. That is why EOS leaders share the vision with the whole team, often more than once a year. Your part is to listen, ask questions until it is clear, and then check your daily work against it. If you cannot see how your work connects to the vision, say so. That honest question helps leaders explain it better, and it helps you see why your work matters."
+    },
+    {
+     "emoji": "🪑",
+     "title": "Right person, right seat",
+     "body": "EOS talks about two things for every person on a team. First, are you the right person? That means you share the team's core values, the few behaviours that describe who the team really is. Second, are you in the right seat? Each seat on the team has a few main responsibilities, drawn on what EOS calls the Accountability Chart. To fit a seat well, you need three things that EOS calls GWC: you Get it, meaning you understand the role deeply; you Want it, meaning you truly want to do it; and you have the Capacity to do it, meaning the time, skill and strength it needs. The book encourages you to ask yourself honestly if you have all three. If one is missing, that is not a disaster. It is information. Often a person thrives once they move to a seat that fits them better, and the whole team benefits."
+    },
+    {
+     "emoji": "🪨",
+     "title": "Rocks: a few things that matter most",
+     "body": "A Rock is a priority that must be finished in the next ninety days. The leadership team sets a few Rocks for the whole organization each quarter, and then each person may have one to three Rocks of their own. The authors explain that a Rock is not daily work. Daily work keeps going anyway. A Rock is the one important thing that moves the team forward, the thing that easily gets pushed aside by daily busyness. A good Rock is specific and can be checked at the end of the quarter: it is either done or not done. The book encourages you to take your Rocks seriously but not to take on too many. Three Rocks finished are worth more than seven Rocks half done. Each week, in the team meeting, you simply report whether your Rock is on track or off track. If it is off track, the team helps you solve it."
+    },
+    {
+     "emoji": "📊",
+     "title": "A number that tells you how you are doing",
+     "body": "EOS asks every team to keep a Scorecard: a short list of weekly numbers that show if things are healthy. The authors go further and say that ideally every person has at least one number of their own that shows if they are doing their job well. This can feel scary at first, as if someone is watching you. The book argues the opposite. Without a number, people rely on feelings and opinions, and you can be judged unfairly. With a clear number, you know exactly what a good week looks like, you can see problems early, and you can celebrate real progress. The number should be something you can influence and that matters to the team. When a number is off, nobody needs to panic or blame. It simply becomes an issue to discuss and solve together. Numbers turn vague worry into clear facts."
+    },
+    {
+     "emoji": "🔧",
+     "title": "Bring issues into the light",
+     "body": "An issue in EOS is anything that stands in the way: a problem, an idea, a worry, a question, an opportunity. The authors say healthy teams are not teams without issues. They are teams that bring issues into the open and solve them. Each team keeps an Issues List, and anyone can add to it. In the weekly meeting the team uses a simple method called IDS: Identify the real issue underneath the symptoms, Discuss it openly and briefly, then Solve it, usually with a clear action that one person owns. The book encourages you to be brave. If something bothers you, do not complain in the corner or wait until you are angry. Put it on the list. The team would rather hear it early. Solving one real issue for good is worth more than talking about ten issues for an hour and solving none."
+    },
+    {
+     "emoji": "⏱️",
+     "title": "The weekly meeting that works",
+     "body": "Many people dread meetings. EOS replaces long, aimless meetings with a weekly team meeting of the same length, on the same day, at the same time, following the same agenda. EOS calls it the Level 10 Meeting, because the goal is for everyone to rate it ten out of ten. It starts on time, shares some good news, checks the Scorecard numbers, checks if Rocks are on track, shares short headlines about people and work, reviews last week's to-dos, and then spends most of the time solving the top issues using IDS. At the end the team agrees on new to-dos, things to be done within a week. The authors explain your part: come prepared, update your numbers and Rocks before the meeting, be honest, stay on topic, and finish your to-dos. When everyone does this, the meeting becomes the most useful hour of the week."
+    },
+    {
+     "emoji": "🔁",
+     "title": "Doing things the same way",
+     "body": "The last part the book explains is process. Every organization has a handful of core processes, the main ways work gets done, such as welcoming a new person, handling money, or running a programme. EOS asks the team to write each one down simply, keeping only the key steps, and then to make sure everyone follows them. The authors explain why this helps you. When a process is clear, you do not have to guess or reinvent the work every time. New people learn faster. Mistakes go down. You also have a way to suggest improvements: if a step does not work, raise it as an issue and the team can change the process for everyone. The book closes by saying that EOS works best when the whole team owns it. Leaders cannot do it alone. Your honesty, your Rocks, your number and your issues are what make the tools come alive."
+    }
+   ],
+   "tryThis": [
+    "Ask your leader to walk you through the team's vision for ten minutes, then explain it back in your own words.",
+    "Write down your seat's three to five main responsibilities and rate yourself honestly on Get it, Want it and Capacity.",
+    "Add one real issue to your team's Issues List this week instead of keeping it to yourself."
+   ],
+   "forUs": "YWAM GP's leadership now runs its weekly leadership meeting in an EOS way, and the app already carries the tools. Rocks are on My Ministry, each ministry has a Scorecard of weekly numbers, and the leadership board has Headlines, Issues and To-dos. This book is the best first read for anyone who hears these words and wonders what they mean for them. A ministry team could read it together over two weeks and talk about one question each time: what is my part? For a Khmer staff member, the idea of bringing an issue openly to a leader may feel uncomfortable, because in our culture we often avoid making the leader lose face. EOS gives a safe, agreed place for that: the Issues List. It is not rude to put something there. It is how the team serves each other. For international staff, the book is a reminder that the tools are for clarity and care, not for control. Read it, then ask your ministry leader which Rocks and numbers belong to you.",
+   "oneLine": "EOS gives everyone on the team clarity on the vision, their seat, their Rocks, their number and how issues get solved.",
+   "cover": {
+    "bg": "teal",
+    "fg": "paper",
+    "a": "paper",
+    "b": "marigold",
+    "motif": "gears",
+    "layout": "top",
+    "font": "display",
+    "upper": true
+   }
+  },
+  {
+   "id": "traction",
+   "tags": [
+    "eos",
+    "lead",
+    "vision"
+   ],
+   "title": "Traction",
+   "author": "Gino Wickman",
+   "year": 2007,
+   "shelf": "eos",
+   "mins": 9,
+   "vibe": "The handbook of EOS: six parts of a healthy organization and simple tools to make each one strong.",
+   "bigIdea": "Gino Wickman grew up working in his family's business and later helped rescue it when it was in trouble. Through that experience and his work with hundreds of leadership teams, he noticed the same problems again and again. Leaders felt stuck. They worked long hours but the organization did not grow. People were unclear about the vision, the same issues came up week after week, and nobody quite knew who was responsible for what. Wickman built a simple system to fix this, which he called the Entrepreneurial Operating System, or EOS. Traction is the main book that explains it. The big idea is that every organization has six key parts: vision, people, data, issues, process and traction. If a leadership team works on all six with a few simple tools, the organization becomes healthier and moves forward. Vision means everyone sees where you are going. People means the right people are in the right seats. Data means a few numbers tell you how you are doing. Issues means problems are solved, not ignored. Process means the main ways of working are clear and followed. Traction means the team turns vision into action every week and every quarter.",
+   "insights": [
+    {
+     "emoji": "🧱",
+     "title": "Hitting the ceiling",
+     "body": "Wickman begins with a common experience. An organization grows, and then it hits a ceiling. Growth stops, frustration rises, and the leaders feel like they are pushing harder for the same results. He says this is normal and happens to every growing team. The way through is for the leaders to grow their own abilities. He names five: simplify, delegate, predict, systemize and structure. Simplify means cutting complexity so people can understand and follow. Delegate means letting go of tasks so the leader can rise to the work only they can do. Predict means looking ahead and solving problems before they become crises. Systemize means making the main ways of working consistent. Structure means having a clear shape for the team so everyone knows who is responsible for what. The rest of the book gives tools that build these five abilities across the whole organization."
+    },
+    {
+     "emoji": "🔭",
+     "title": "Vision on two pages",
+     "body": "The first component is vision. Wickman believes many leadership teams think they share a vision, but if you ask each leader separately, you hear different answers. His tool is a two-page document he calls the Vision/Traction Organizer. It answers eight questions: What are our core values? What is our core focus, meaning our purpose and what we do best? What is our ten-year target? What is our marketing strategy, meaning who we serve and why they choose us? What does our picture look like three years from now? What must we achieve this year? What are our Rocks for this quarter? And what is on our issues list? Leaders work these out together, argue them through, and agree. Then they share the vision with everyone, again and again, until each person can say where the organization is going and how their work fits in."
+    },
+    {
+     "emoji": "💎",
+     "title": "Core values and core focus",
+     "body": "Two parts of the vision deserve special attention. Core values are a small set of behaviours, usually three to seven, that describe who you really are at your best, not who you wish you were. Wickman suggests finding them by thinking of the people who best show your culture and naming what they have in common. Once agreed, core values become a tool: you hire by them, review people by them, and recognize people by them. Core focus is the second part. It names your purpose, the reason you exist, and your niche, the thing you do best. Wickman warns that many organizations get distracted by shiny new opportunities that pull them away from what they do well. A clear core focus helps leaders say no to good things in order to say yes to the best things. Together, values and focus act like guard rails for every decision."
+    },
+    {
+     "emoji": "🪑",
+     "title": "Right people, right seats",
+     "body": "The second component is people. Wickman says you need the right people in the right seats. The right people share your core values. To check this he offers a simple tool, the People Analyzer, where leaders rate each person on each core value as mostly, sometimes or not really. The right seat means each person has a role that fits them. To define seats, the team draws an Accountability Chart. It is like an organization chart, but it starts with the functions the organization needs, not with the people you already have, and it lists the five or so main responsibilities of each seat. Then for each person, ask if they Get it, Want it and have the Capacity to do it, which EOS shortens to GWC. Wickman is honest that this can lead to hard conversations. But he argues it is kinder to help someone find a seat where they can thrive than to leave everyone frustrated."
+    },
+    {
+     "emoji": "📊",
+     "title": "A Scorecard of weekly numbers",
+     "body": "The third component is data. Wickman says leaders often manage by feelings and stories, which leads to surprises and arguments. Instead, the leadership team should look every week at a Scorecard: a short list of five to fifteen numbers that give an absolute pulse on the organization. Each number has an owner and a weekly goal. When you look at the same numbers every week, you start to see patterns and spot trouble early, often weeks before it would show up in a monthly report. Wickman also encourages measurables for every person, so each one knows clearly what success looks like in their seat. He explains that numbers are not about blame. They create accountability and clarity, and they reduce emotional arguments, because the team can look at the same facts together. A good number leads to a good conversation about what is really happening."
+    },
+    {
+     "emoji": "🔧",
+     "title": "Solving issues with IDS",
+     "body": "The fourth component is issues. Every organization has problems, ideas, obstacles and opportunities. Wickman says healthy teams do not have fewer issues. They are simply better at solving them. The first step is to make it safe and normal to raise issues, writing them on an Issues List. The second step is a method he calls IDS: Identify, Discuss and Solve. Identify means finding the real root issue, because what people first say is often just a symptom. Discuss means everyone shares their view openly, once, without repeating speeches. Solve means agreeing on a solution, usually an action someone will take, so the issue goes away for good. Wickman encourages teams to tackle issues in order of importance, not in the order they were written, and to be willing to say hard things. Open and honest leaders, he says, solve issues much faster."
+    },
+    {
+     "emoji": "🔁",
+     "title": "Documenting core processes",
+     "body": "The fifth component is process. Wickman notices that many organizations do the same work in many different ways, depending on who is doing it. This causes mistakes, makes training slow and stops the organization from growing. He suggests first naming the handful of core processes, usually between four and ten, such as how you welcome and care for people, how money flows, and how your main programme runs. Then document each one simply, focusing on the twenty percent of steps that produce eighty percent of the results. This is not about writing a thick manual nobody reads. It is about agreeing on the key steps. Finally, make sure the processes are followed by everyone, which EOS shortens to FBA. When the main ways of working are clear, quality goes up, new people learn quickly, and leaders can finally stop solving the same problems again and again."
+    },
+    {
+     "emoji": "🚀",
+     "title": "Traction: Rocks and the meeting pulse",
+     "body": "The sixth component is traction, which means turning vision into action. Wickman's two tools here are Rocks and the meeting pulse. Rocks are three to seven priorities the leadership team must finish in the next ninety days. Each leader then sets their own few Rocks. Ninety days is short enough to stay focused and long enough to get something real done. The meeting pulse is a regular rhythm of meetings, especially a weekly leadership meeting he calls the Level 10 Meeting. It lasts ninety minutes, at the same time each week, with the same agenda: a short good news check-in, the Scorecard, Rock review, headlines about customers and staff, to-dos from last week, and then most of the time on solving issues with IDS. It ends with a recap and a rating out of ten. This rhythm is what keeps the whole system alive week after week."
+    }
+   ],
+   "tryThis": [
+    "With your leadership team, answer the eight vision questions on two pages, even roughly, and notice where you disagree.",
+    "Write down five to ten weekly numbers that would tell you if your ministry is healthy, and give each one an owner.",
+    "In your next meeting, pick the top three issues and work through each with Identify, Discuss, Solve."
+   ],
+   "forUs": "YWAM GP's leadership team has chosen to work in an EOS way, so this is the book behind much of what you see in the app. The Rocks on My Ministry are EOS Rocks. Each ministry's Scorecard is the weekly numbers Wickman describes. The leadership board's meeting with Headlines, Issues and To-dos follows the shape of his weekly meeting. Reading Traction helps you understand why these tools exist and how they fit together. A ministry is not a business, and our purpose is the Great Commission, not profit. But the six components fit us well. We need a shared vision rooted in God's call, people who share YWAM GP's values (our FIGHT values work like Wickman's core values), honest numbers about the lives we touch, a safe place to raise issues, clear ways of doing our main work, and steady weekly follow-through. Ministry leaders could read this book with their team and ask one question per component: where are we strong, and where are we weak?",
+   "oneLine": "Strengthen six parts of your organization, vision, people, data, issues, process and traction, with a few simple tools used every week.",
+   "cover": {
+    "bg": "ink",
+    "fg": "paper",
+    "a": "marigold",
+    "b": "paper",
+    "motif": "gears",
+    "layout": "top",
+    "font": "display",
+    "upper": true
+   }
+  },
+  {
+   "id": "get-a-grip",
+   "tags": [
+    "eos",
+    "teams",
+    "lead"
+   ],
+   "title": "Get a Grip",
+   "author": "Gino Wickman & Mike Paton",
+   "year": 2012,
+   "shelf": "eos",
+   "mins": 9,
+   "vibe": "EOS told as a story: a struggling leadership team learns, over many months, to work as one.",
+   "bigIdea": "Some people learn best from a manual. Many more learn from a story. Gino Wickman and Mike Paton, an experienced EOS implementer, wrote Get a Grip as a business fable. It follows a mid-sized company whose leaders are tired and frustrated. Sales have stalled, the leaders argue or avoid each other, and the owner feels that everything depends on him. They bring in an outside guide who teaches them EOS step by step, through a series of full-day sessions spread over many months. The reader sits in the room with them. We hear their excuses, their arguments and their breakthroughs. Through the story, the authors show the same tools as Traction: the vision on two pages, core values, the Accountability Chart, Rocks, the Scorecard, the weekly meeting and IDS. But they also show what the tools feel like in real life. Change is messy. Some leaders resist. One person turns out not to fit the team's values. Hard conversations are needed. The big idea is that a leadership team can get a grip on its organization, but only if the leaders are honest with each other, willing to be held accountable, and patient enough to keep going.",
+   "insights": [
+    {
+     "emoji": "😓",
+     "title": "Stuck and tired",
+     "body": "The story opens with a leadership team that is stuck. The organization has grown, but now growth has stopped. The leaders work hard but feel they are running in circles. Meetings are long and go nowhere. People complain behind each other's backs. The owner feels alone, as if nobody else truly cares as much as he does. The authors use this opening to name feelings many leaders recognize: frustration, a lack of control, little traction, and the sense that the organization is running the leaders rather than the leaders running it. They suggest that this is not a sign of bad people. It is a sign of a missing system. When leaders do not share one clear way of working, everyone uses their own, and the results are confusing. The rest of the story shows how a simple shared system helps tired, good people start to enjoy leading again."
+    },
+    {
+     "emoji": "🤝",
+     "title": "Starting with honesty",
+     "body": "In the first session, the outside guide asks the leaders to be open and honest with each other, even when it is uncomfortable. At first they hold back. They are polite in the room and critical outside it. The guide keeps pushing gently, asking what is really going on. Slowly the leaders start to say what they think. The authors show that this honesty is the foundation for everything else. Tools like Rocks or the Scorecard will not help if leaders are not willing to tell each other the truth. In the story, the guide also asks them to agree on one simple commitment: to work as a leadership team first, putting the good of the whole organization above their own department. This shift is hard for some of them, because they are used to defending their own area. But it changes how they talk and decide together."
+    },
+    {
+     "emoji": "🗺️",
+     "title": "Building the vision together",
+     "body": "Over two sessions, the leaders work through their vision. They argue about core values, testing each suggested value against real people in the company. They wrestle with their core focus and realize they have been chasing too many different kinds of work. They set a ten-year target, picture where they want to be in three years, and agree on goals for the year. The authors show that this is not a quick exercise. Leaders disagree, sometimes strongly, and the guide lets them. The point is not to write nice words but to reach real agreement. When they finally finish, they have a short, clear vision that every leader can explain. Then they share it with the whole company. Some staff are excited, some are unsure, but for the first time everyone hears the same story about where they are going."
+    },
+    {
+     "emoji": "🪑",
+     "title": "The hardest conversation",
+     "body": "One of the most important parts of the story is the people component. The leaders draw an Accountability Chart, starting with the seats the organization needs, not the people they have. This reveals uncomfortable truths. Some seats have nobody clearly responsible. Some people sit in seats that do not fit them. When they rate people against their core values, one leader on the team clearly does not share the values, even though he is talented. The story does not hide how painful this is. The owner has to face a hard conversation with someone he likes. The authors show that delaying such decisions usually hurts everyone, including the person in the wrong seat. In the story, the change is handled with respect, and afterwards the team becomes much healthier. The lesson is that values matter more than talent alone."
+    },
+    {
+     "emoji": "🪨",
+     "title": "Learning to set Rocks",
+     "body": "At the end of the early sessions, the leaders set their first Rocks: a few priorities for the next ninety days. The story shows them making typical mistakes. They choose too many Rocks. Some Rocks are vague, like improving communication, which can never be checked. Some leaders take on Rocks that are really someone else's responsibility. The guide helps them cut the list down and make each Rock specific and measurable, so that at the end of the quarter it is clearly done or not done. At the next quarterly session, they see that some Rocks were finished and others were not. Instead of blaming, they talk about why. Over several quarters they get better at choosing Rocks that matter, saying no to good ideas that can wait, and keeping their promises to each other. Their confidence grows as they see real progress."
+    },
+    {
+     "emoji": "📊",
+     "title": "Facing the numbers",
+     "body": "The leaders also build a Scorecard of weekly numbers. At first some of them resist. They worry the numbers will be used against them, or they feel that their area is too complex to measure. The guide listens but keeps asking: what would tell you, each week, that things are going well or badly? Gradually they agree on a short list of numbers, each with an owner and a goal. In the weeks that follow, the numbers start to show problems early. A drop in one number leads to a discussion that uncovers a deeper issue. The authors show that the Scorecard changes the tone of leadership meetings. Instead of opinions and defending, the leaders look at the same facts and solve problems together. The numbers do not replace care for people, but they make conversations clearer and fairer."
+    },
+    {
+     "emoji": "⏱️",
+     "title": "Meetings that actually solve things",
+     "body": "The story shows the leadership team moving from long, frustrating meetings to a weekly ninety-minute meeting with a set agenda. At first they struggle to follow it. They run late, chase side topics, and spend too long on updates. The guide teaches them to keep reports short and save most of the time for solving issues with IDS: identify the real issue, discuss it, and solve it with a clear action. Over time the meeting becomes the most valuable time of their week. Issues that have hung around for years are finally solved. To-dos are done because everyone knows they will be checked next week. The leaders start rating their meetings higher and higher. The authors use this part to show that a good weekly rhythm is not an extra burden. It saves time, reduces stress and builds trust."
+    },
+    {
+     "emoji": "🌱",
+     "title": "Patience and ownership",
+     "body": "By the end of the story, the company is growing again and the leaders enjoy working together. But the authors are clear that it took time, roughly two years of steady practice, setbacks and learning. The guide does not fix the company. The leaders do the work, and eventually they own the system so well that they no longer need outside help. The book ends with practical guidance for readers who want to start: commit as a leadership team, be patient, keep the tools simple, and do not try to change everything at once. The lesson is that EOS is not magic. It is a set of simple habits, and habits take time to form. Leaders who stay honest, keep their weekly rhythm, and hold each other accountable with care slowly see their organization become clearer, calmer and more fruitful."
+    }
+   ],
+   "tryThis": [
+    "Ask each person on your leadership team to say, honestly, what frustrates them most about how the team works.",
+    "Look at your current priorities and cut them down to three you will truly finish in the next ninety days.",
+    "Run your next team meeting with a fixed agenda and a time limit, and rate it out of ten at the end."
+   ],
+   "forUs": "Get a Grip is the friendliest way into EOS for YWAM GP's ministry leaders who prefer stories to manuals. Our leadership team is learning these tools now, and the story shows what that learning can really feel like: slow at first, uncomfortable at times, and worth it. Many of the struggles in the book fit a ministry well. We can be polite in meetings and quiet about real problems, especially across cultures where saying no to a leader feels disrespectful. We can carry too many priorities because every need feels urgent. We can avoid hard conversations about someone in the wrong role because we love them. The book shows a kind way through all of these. A ministry team could read one or two chapters a week and ask: where do we see ourselves in this story? The app's Rocks, Scorecard and the leadership meeting's Issues and To-dos are the same tools the characters learn, so you can try each one as you read.",
+   "oneLine": "Through honesty, a shared vision, clear seats, Rocks, numbers and a weekly meeting, a tired team learns to lead together again.",
+   "cover": {
+    "bg": "blue",
+    "fg": "paper",
+    "a": "paper",
+    "b": "marigold",
+    "motif": "steps",
+    "layout": "top",
+    "font": "sans"
+   }
+  },
+  {
+   "id": "rocket-fuel",
+   "tags": [
+    "eos",
+    "lead",
+    "teams"
+   ],
+   "title": "Rocket Fuel",
+   "author": "Gino Wickman & Mark C. Winters",
+   "year": 2015,
+   "shelf": "eos",
+   "mins": 9,
+   "vibe": "Big ideas need someone to carry them out: why the dreamer and the doer need each other.",
+   "bigIdea": "Many organizations are started by a person full of ideas, energy and vision. Gino Wickman calls this person the Visionary. But ideas alone do not build something that lasts. Someone also needs to turn the vision into daily reality: organizing people, keeping plans on track, solving the conflicts and holding the team accountable. Wickman and his co-author Mark Winters call this person the Integrator. The big idea of Rocket Fuel is that these two roles are very different, and when the right Visionary and the right Integrator work together well, the combination is like rocket fuel for an organization. The book explains each role, helps readers discover which one they are, and gives practical rules for how the two can work together without hurting each other. Winters describes himself as a natural Integrator and Wickman as a natural Visionary, so the book also comes from their own experience. The authors point to famous pairs in history, such as Walt Disney and his brother Roy, where one dreamed and the other made the dream work. They also warn that the relationship can easily break down if the two roles are not clear and respected.",
+   "insights": [
+    {
+     "emoji": "💡",
+     "title": "The Visionary",
+     "body": "The Visionary is often the founder or the person with the big picture. The authors describe Visionaries as people who generate many ideas, see opportunities others miss, build important relationships, and are good at solving big, complex problems. They bring passion and energy, and people are drawn to their vision. But Visionaries also have weaknesses. They can get bored with details, change direction often, start more projects than the team can finish, and frustrate people with constant new ideas. They may struggle to stick with systems and routines. The authors stress that these are not bad people. They are wired a certain way. The problem comes when a Visionary is expected to also run the daily operation. Then the organization swings from one idea to the next, and staff become tired and confused. A Visionary is at their best when they are free to dream, while someone else keeps the team steady."
+    },
+    {
+     "emoji": "⚙️",
+     "title": "The Integrator",
+     "body": "The Integrator is the person who makes the vision happen. The authors describe this role as the one who brings the main parts of the organization together, leads and manages the leadership team, holds people accountable, carries out the plan, and owns the results. Integrators are steady, organized and good at follow-through. They like clarity, plans and solving problems. They often act as the glue between different departments and the tie-breaker when leaders disagree. Integrators also have weaknesses. They may struggle to dream big, can become too cautious, and sometimes feel unappreciated because their work is less visible than the Visionary's. The authors say many organizations have a Visionary but no real Integrator, or someone in the role who does not truly fit. Finding and empowering the right Integrator can unlock growth that has been stuck for years. Both roles are leadership; they are simply different kinds."
+    },
+    {
+     "emoji": "🔍",
+     "title": "Which one are you?",
+     "body": "The book encourages readers to discover honestly which role fits them. Some people are clearly Visionaries. They love new ideas and get restless with routine. Others are clearly Integrators. They love making things run well and feel stressed by constant change. A few people are a mix, and many people are neither, which is also fine, because most seats in an organization need other gifts. The authors offer simple self-assessments to help. They warn against pretending to be what you are not. A Visionary who tries to act as the Integrator will usually do it poorly and feel miserable. An Integrator who tries to be the Visionary may freeze or copy others' ideas. Knowing your role is freeing. It lets you focus on your strengths and look for a partner who covers your weaknesses. This honesty is the first step to the rocket fuel combination."
+    },
+    {
+     "emoji": "📐",
+     "title": "The roles on the chart",
+     "body": "In the EOS Accountability Chart, the Visionary and the Integrator sit at the top, with the Integrator directly over the leaders of the main functions. The authors explain why this matters. The leaders of each area report to the Integrator, not to the Visionary, for their daily work. This keeps the team from being pulled in two directions. The Visionary focuses on the future, key relationships, culture and big problems, while the Integrator runs the leadership team and the weekly rhythm. The authors list the main responsibilities of each seat clearly so there is no confusion. They also explain that the Visionary seat is optional for some organizations, but every organization needs someone in the Integrator seat. Drawing these roles clearly on the chart prevents a lot of hidden conflict and helps everyone know who to go to for what."
+    },
+    {
+     "emoji": "📏",
+     "title": "Five rules for the pair",
+     "body": "The authors give five rules to keep the partnership healthy. First, stay on the same page: the two must agree before they speak to the team. Second, no end runs: the Visionary must not go around the Integrator to give leaders new directions, and leaders must not go to the Visionary to get around the Integrator. Third, the Integrator is the tie-breaker when the leadership team cannot agree. Fourth, when the Visionary works inside the daily operation, in a particular area, they act as a member of that team and follow its leader, not as the boss of everything. Fifth, maintain mutual respect: never criticize each other in front of others, and settle disagreements in private. These rules sound simple, but the authors say breaking them is the most common reason Visionary and Integrator partnerships fall apart. Keeping them builds deep trust over time."
+    },
+    {
+     "emoji": "📅",
+     "title": "The monthly same-page meeting",
+     "body": "To stay united, the authors recommend that the Visionary and the Integrator meet regularly, ideally once a month, in what they call a Same Page Meeting. It is a few hours set aside just for the two of them. They share what is on their minds, raise their concerns openly, work through disagreements, and make decisions together using the same Identify, Discuss, Solve method EOS uses for any issue. The goal is to leave the meeting fully aligned, so they can lead the team with one voice. The authors say this meeting prevents small frustrations from growing into big conflicts. It also helps the Visionary feel heard and the Integrator feel trusted. Without this time, misunderstandings pile up quietly, and the team starts to sense a split at the top. With it, the pair becomes a strong, united foundation for the whole organization."
+    },
+    {
+     "emoji": "🔥",
+     "title": "When it goes wrong",
+     "body": "The book is honest that many partnerships struggle. The authors describe common problems. A Visionary may hire an Integrator and then refuse to let go, second-guessing every decision. An Integrator may become so controlling that the Visionary feels shut out of their own organization. The two may compete for the team's loyalty. Staff may play one against the other. Sometimes the wrong person is in the Integrator seat, for example someone who is loyal but not truly gifted for the role. The authors encourage pairs to face these problems early, using the five rules and the monthly meeting. They also say that sometimes a change of person is needed. Ending a partnership is painful, but staying in an unhealthy one hurts the whole team. Naming the problem honestly is the beginning of fixing it."
+    },
+    {
+     "emoji": "🚀",
+     "title": "Better together",
+     "body": "The final message of Rocket Fuel is hopeful. When a Visionary and an Integrator find each other and work together with clear roles and real respect, both can do what they love and do best. The Visionary feels free to dream, connect and lead the future. The Integrator feels trusted to build and run the organization. The team gets both a clear direction and a steady daily rhythm. The authors describe this as freedom, not only for the two leaders but for everyone. They also note that it takes humility. Each must admit they need the other. Neither role is more important. The book closes with practical steps for finding the right partner, setting up the relationship, and keeping it strong over many years. The picture is of two very different people, each humble about their weaknesses, building something together that neither could build alone."
+    }
+   ],
+   "tryThis": [
+    "Think about your own wiring: are you more of a Visionary, an Integrator, a bit of both, or neither? Ask someone who knows you well.",
+    "Write the five or so main responsibilities of the Visionary and Integrator seats in your team, and see if they are clear.",
+    "If you lead in a pair, set a two-hour meeting this month just to get on the same page."
+   ],
+   "forUs": "YWAM GP has many visionary leaders: people who see a need, hear from God, and start something new. We also have quiet, faithful people who make things actually work. Rocket Fuel helps us honour both gifts. In a ministry setting, the Visionary might be a campus director or a ministry founder, and the Integrator might be the person who runs the weekly leadership meeting, follows up Rocks, and keeps the Scorecard honest. Leaders could use this book to talk about how their own teams are shaped. Who carries the vision? Who carries the follow-through? Are those people working together, or pulling in different directions? The five rules fit ministry well, especially no end runs and settling disagreements privately. Across cultures, this matters even more: Khmer staff may feel caught between two leaders who give different directions. Leaders agreeing first, then speaking with one voice, is a real gift to the whole team. This book does not set any roles at YWAM GP; it gives leaders a helpful way to think and talk.",
+   "oneLine": "A Visionary dreams and an Integrator delivers; with clear roles, five simple rules and real respect, together they are rocket fuel.",
+   "cover": {
+    "bg": "marigold",
+    "fg": "ink",
+    "a": "ink",
+    "b": "paper",
+    "motif": "arrowup",
+    "layout": "top",
+    "font": "display",
+    "upper": true
+   }
+  },
+  {
+   "id": "how-to-be-a-great-boss",
+   "tags": [
+    "eos",
+    "lead",
+    "teams"
+   ],
+   "title": "How to Be a Great Boss",
+   "author": "Gino Wickman & René Boer",
+   "year": 2016,
+   "shelf": "eos",
+   "mins": 9,
+   "vibe": "A simple way to lead and manage the people you are responsible for, so they grow and you get time back.",
+   "bigIdea": "Many people become a boss because they were good at their work, not because they were trained to lead people. Suddenly they are responsible for others and do not know what to do. Some become too controlling, others too hands-off. Gino Wickman and René Boer, an EOS implementer, wrote this book to give every leader and manager a simple, practical way to do the job well. Their big idea is that being a great boss means doing two things well: leading and managing. Leading is about working on the future, giving direction and creating the space for people to grow. Managing is about the present, making expectations clear, staying connected and following up. When you do both, you get real accountability: people own their work, the team moves forward, and you no longer need to watch over every task. The authors give five leadership practices and five management practices, plus a few tools, such as a quarterly one-to-one conversation, that any boss can start using quickly. They say the goal is that your people will love working for you and that you will love leading them, because everyone knows what is expected and is growing in their role.",
+   "insights": [
+    {
+     "emoji": "⚖️",
+     "title": "Lead and manage",
+     "body": "The authors start with a simple formula: leadership plus management equals accountability. Leadership is working on the team: setting direction, thinking ahead, creating a healthy environment and stepping back so people can grow. Management is working with the team: making sure each person knows exactly what is expected, communicating often, meeting regularly and following up. Many bosses lean too far one way. Some are inspiring leaders who never follow up, so things fall through the cracks. Others manage every detail but never give a clear direction, so people feel micromanaged and lost. The authors argue that great bosses do both, and that both can be learned. They also make the point that the right people in the right seats are the foundation. A good boss with someone who does not share the values or fit the seat will struggle. With the right people, these simple practices become powerful."
+    },
+    {
+     "emoji": "🧭",
+     "title": "Give clear direction",
+     "body": "The first leadership practice is to give clear direction. People cannot follow a vision they do not understand. The authors encourage bosses to share regularly where the organization is going, what the team is aiming for, and how each person's work fits in. This is not a one-time speech. Repeat it, ask people to explain it back, and connect everyday tasks to the bigger picture. The second leadership practice is to provide the tools people need: training, equipment, time and the right information. A boss who demands results without giving the means to reach them is setting people up to fail. The authors suggest asking your people directly what they need to do their job well, then removing obstacles where you can. Clear direction and the right tools together tell your people that you take their work seriously and want them to succeed."
+    },
+    {
+     "emoji": "🖐️",
+     "title": "Let go of the vine",
+     "body": "The third leadership practice the authors call letting go of the vine. Many bosses hold on to tasks they should delegate, because they think they can do it faster or better, or because they fear losing control. This keeps the boss overwhelmed and keeps the team small. The authors encourage you to delegate work that others can do, and to rise to the work only you can do. They suggest a simple exercise: list everything you do and sort it by what you love and are great at, versus what you do not enjoy or are not good at. Then give away the parts others could do better. At first, results may dip as people learn. That is normal. Over time your team grows in skill and confidence, and you find time for thinking, planning and caring for people, which is the real work of a leader."
+    },
+    {
+     "emoji": "🌍",
+     "title": "The greater good and clarity breaks",
+     "body": "The fourth leadership practice is to act with the greater good in mind. A boss should make decisions that are best for the whole organization, not just for their own team or their own comfort. When your people see you do this, they learn to do the same. The fifth practice is to take regular clarity breaks. A clarity break is time set aside, away from the busyness, to think about your team, your plans and yourself. The authors suggest an hour or so each week, alone, with a notepad and no phone. In that time you step back, see what is really going on, spot problems early and come up with better solutions. Many bosses never stop long enough to think, so they only react. The authors say even a short regular clarity break can change the quality of your leadership more than almost anything else."
+    },
+    {
+     "emoji": "📋",
+     "title": "Keep expectations clear",
+     "body": "The first management practice is to keep expectations clear, and to make sure they go both ways. Each person should know their main responsibilities, their few priorities for the quarter, and the numbers that show if they are doing well. The authors say much frustration at work comes from unclear expectations: the boss expected one thing, the team member understood another, and both feel let down. Write them down and agree on them together. Clear expectations also go from the team member to the boss: what they need from you, how often, and in what way. The second management practice is to communicate well. This means listening more than talking, asking good questions, and keeping your people informed. The authors encourage short, regular contact, so problems are shared early and your people feel known rather than only checked on."
+    },
+    {
+     "emoji": "📆",
+     "title": "The right rhythm of meetings",
+     "body": "The third management practice is to keep the right meeting pulse. The authors recommend a weekly team meeting with a set agenda, like the EOS weekly meeting: quick good news, numbers, priorities on or off track, headlines, last week's to-dos and then solving issues together. They also suggest regular one-to-one time with each person who reports to you. A steady rhythm means you do not have to chase people between meetings, and they do not have to wonder when they will be able to raise a concern. Everyone knows there is a reliable time each week when issues will be heard and solved. The authors warn against cancelling meetings when you are busy. That is usually when they are most needed. A regular, well-run rhythm builds trust, keeps the team aligned and saves far more time than it costs."
+    },
+    {
+     "emoji": "☕",
+     "title": "Quarterly conversations",
+     "body": "The fourth management practice is to have a quarterly conversation with each person who reports to you. It is an informal, honest, two-way talk, not a formal performance review. The authors suggest structuring it around three areas: how the person is living the team's core values, how they are doing in the main responsibilities of their seat, and how their priorities for the quarter went. Both the boss and the team member come prepared. You talk about what is working and what is not, and each person also says what they need from the other. Done every ninety days, these conversations stop small problems from becoming big ones and make annual reviews free of surprises. The fifth management practice is to reward and recognize: notice good work quickly and specifically, and address problems early and kindly. People need to know where they stand."
+    },
+    {
+     "emoji": "🌱",
+     "title": "Becoming a great boss",
+     "body": "The authors close by encouraging bosses to start small. You do not have to master all ten practices at once. Pick one or two that you know are weak, work on them for a quarter, then add another. They also include a simple self-check so bosses can rate themselves on each practice and see where to grow. They remind readers that some people problems are not solved by better leadership and management. If someone does not share the team's values or does not fit their seat, the kindest thing may be to help them find a better place. But in most cases, a boss who gives clear direction, provides tools, lets go, thinks clearly, keeps expectations clear, communicates, keeps a steady rhythm, talks honestly each quarter and recognizes good work will see their people grow. The authors suggest the result is freedom for the boss and real growth for the team."
+    }
+   ],
+   "tryThis": [
+    "Take a one-hour clarity break this week: no phone, a notebook, and three questions about your team.",
+    "List everything you do and mark what someone else could do; hand one of those tasks over this month.",
+    "Plan a quarterly conversation with one person you lead: values, their main responsibilities, and their Rocks."
+   ],
+   "forUs": "At YWAM GP many people lead others without ever being trained for it. A ministry leader may lead volunteers, students, Khmer and international staff, all at once. This book gives a simple, practical picture of what good leading and managing look like, and it fits the tools YWAM GP's leadership is using now. Clear expectations connect to each person's Rocks and their Scorecard numbers. The meeting rhythm fits the weekly leadership meeting and ministry meetings. The quarterly conversation fits naturally beside the mentoring 1-on-1s many of us already have: a mentor's 1-on-1 cares for the whole person, while a boss's quarterly conversation is about the work, values and the seat. Across cultures, the book's call for clear, two-way expectations is especially helpful. Khmer staff may not say when something is unclear; international leaders may assume they were understood. Writing expectations down together, and asking what each person needs from you, prevents a lot of hurt. Try one practice at a time and talk about it with your own leader.",
+   "oneLine": "Lead by giving direction, tools and freedom; manage with clear expectations, steady meetings and honest quarterly talks; together that is accountability.",
+   "cover": {
+    "bg": "berry",
+    "fg": "paper",
+    "a": "paper",
+    "b": "marigold",
+    "motif": "compass",
+    "layout": "top",
+    "font": "sans"
+   }
+  },
+  {
+   "id": "process-eos",
+   "tags": [
+    "eos",
+    "habits",
+    "teams"
+   ],
+   "title": "Process!",
+   "author": "Mike Paton & Lisa González",
+   "shelf": "eos",
+   "mins": 9,
+   "vibe": "Write down how your main work gets done, keep it simple, and help everyone follow it; that discipline brings freedom.",
+   "bigIdea": "Of the six parts of EOS, the one teams most often skip is process. Writing down how work gets done sounds boring, and many leaders fear it will create a pile of rules and paperwork. Mike Paton and Lisa González, both experienced EOS implementers, wrote Process! to change that view. Their big idea is that discipline and consistency set you free. When the main ways of working are clear and followed by everyone, people do not have to guess, reinvent the work, or fix the same mistakes again and again. Quality becomes steady. New people learn quickly. Leaders can step back without everything falling apart. And the organization can grow, because it does not depend on a few heroes who carry everything in their heads. The authors keep their method very simple. Name your few core processes. Document each one at a high level, focusing only on the key steps. Then make sure everyone follows them, and keep improving them over time. They also show how to deal with the human side: resistance, excuses, and the feeling that process kills creativity. Done well, they argue, process actually makes space for creativity and care.",
+   "insights": [
+    {
+     "emoji": "🧩",
+     "title": "Why process matters",
+     "body": "The authors start by explaining what goes wrong without clear processes. Different people do the same job in different ways. A new person learns by watching whoever happens to be nearby, picking up good habits and bad ones. When a key person is sick or leaves, the work stops or suffers. Leaders spend their time solving the same problems again and again. People get frustrated because the rules seem to change depending on who you ask. The authors say these are not signs of lazy or careless people. They are signs that the organization has never agreed on how its main work should be done. A clear process is simply a shared agreement. It protects quality, makes training easier, and lets people focus their energy on real problems instead of confusion. The authors call this the foundation that lets an organization grow with less stress."
+    },
+    {
+     "emoji": "📇",
+     "title": "Name your core processes",
+     "body": "The first step is to name the handful of core processes that make up how your organization works. The authors suggest that most organizations have somewhere between five and ten. Typical ones include how you find and welcome new people, how you care for and develop your team, how you reach and serve the people you exist for, how you deliver your main programme or service, how money comes in and goes out, and how you keep the people you serve coming back. The leadership team agrees on a short list and gives each process a clear name and an owner. The authors stress keeping the list small. If you name thirty processes, nobody will remember or follow them. When the core processes are named, everyone can see the whole organization at a glance and understand how their work fits into it."
+    },
+    {
+     "emoji": "✂️",
+     "title": "Document only what matters",
+     "body": "The second step is to write each core process down. Here the authors give one of their most important pieces of advice: do not write a thick manual. Instead, capture the twenty percent of steps that produce eighty percent of the results. Start with the major steps, perhaps a handful, and under each list a few key points. The goal is a short document that a new person could read in a few minutes and understand how the work is done. The authors warn against two mistakes. The first is making it too detailed, which makes it hard to read and impossible to keep up to date. The second is never finishing, because people keep polishing it. A simple, good-enough document that people actually use is far better than a perfect one nobody reads. The owner of each process writes it with the people who do the work."
+    },
+    {
+     "emoji": "🔗",
+     "title": "Simplify before you write",
+     "body": "As teams document their processes, they often discover that the work has grown messy. There are extra steps nobody needs, approvals that slow everything down, and different people doing the same thing in different ways. The authors encourage teams to use the documenting step as a chance to simplify. Ask of each step: why do we do this, and does it add value? Remove what is not needed. Combine what overlaps. Agree on the single best way. This often brings quick improvements, because simpler processes are easier to follow and less likely to go wrong. The authors note that the people who do the work every day are often the best at seeing where things can be simplified. Inviting them in also builds their ownership. A process that the team helped to shape is a process the team is much more likely to follow."
+    },
+    {
+     "emoji": "✅",
+     "title": "Followed by all",
+     "body": "The third step is the one many teams skip: making sure the processes are followed by everyone. EOS calls this FBA, followed by all. A documented process that sits in a folder changes nothing. The authors suggest several ways to make processes real. Train people on them, especially new people. Build them into tools, checklists and forms so the right way is the easy way. Measure a few key numbers that show if the process is working. Talk about them in team meetings and quarterly conversations. Leaders must follow the processes themselves, because people quickly notice when the rules do not apply at the top. When someone does not follow a process, treat it first as an issue to understand, not a reason to blame. Maybe the process is unclear or does not fit reality. Either fix the process or help the person follow it."
+    },
+    {
+     "emoji": "🧠",
+     "title": "Overcoming resistance",
+     "body": "The authors are honest that people often resist process. Some feel it insults their experience. Others fear it will make the work rigid and boring. Creative people may feel boxed in. Long-serving staff may say they have always done it their way and it works. The authors respond with patience. They explain that a process captures what already works well, often the wisdom of the most experienced people, so that others can learn it too. They also point out that a good process covers the key steps, leaving plenty of room for judgment, creativity and care in how each step is done. Involving people in writing the process, listening to their concerns, and showing early benefits, like fewer mistakes or easier training, usually lowers resistance. Over time, most people find that clear processes reduce their stress rather than add to it."
+    },
+    {
+     "emoji": "📈",
+     "title": "Measuring and improving",
+     "body": "A process is never truly finished. The authors encourage teams to measure how well each core process is working, with one or two simple numbers that show quality or speed. When a number drops, it becomes an issue the team can discuss and solve. Perhaps the process needs a change, or people need more training. The authors also suggest reviewing each core process at least once a year to update it as the organization changes. They warn against changing processes too often or without telling everyone, which creates confusion. Instead, improvements should be agreed, written down, and shared, so the whole team moves together. This steady cycle of document, follow, measure and improve is what turns process from a one-time project into a healthy habit that keeps the organization getting better year after year."
+    },
+    {
+     "emoji": "🕊️",
+     "title": "Discipline that sets you free",
+     "body": "The book's closing message is that process brings freedom. When the main work runs consistently, leaders can take time off without fear, because the team knows what to do. New people become productive faster and feel more confident. Fewer things go wrong, so there is less stress and blame. The organization can grow or open new locations, because what works in one place can be repeated in another. And people have more energy for the parts of the work that truly need creativity, relationships and wisdom. The authors admit that building processes takes discipline and some boring effort. But they argue the reward is worth it: a calmer, clearer, stronger organization where everyone can do their best work. They encourage readers to start with just one core process this quarter, document it simply, and help everyone follow it."
+    }
+   ],
+   "tryThis": [
+    "With your team, list the five to ten core processes of your ministry and give each one an owner.",
+    "Pick one process and write only its main steps on one page, with the people who do the work.",
+    "Choose one simple number that would show if that process is working, and add it to your Scorecard."
+   ],
+   "forUs": "YWAM GP is growing, with two campuses, many ministries, students, teams and guests coming and going all the time. Much of our work still lives in a few people's heads. When they travel, go on break or move on, the work suffers and new staff feel lost. Process! offers a simple, gentle way to change that. Think of the work that repeats: welcoming a new staff member, hosting an outreach team, running a school, handling money, entering a ministry's weekly numbers, keeping our people safe. Some of this already has clear steps; much does not. A ministry could choose one core process this quarter as a Rock, write it simply with the people who do it, and keep one number for it on their Scorecard. Writing processes in plain English and Khmer also helps across cultures, because spoken instructions are easy to misunderstand. Clear steps are a way of caring for the people who come after us. The book does not set YWAM GP's processes; it shows how a team can write its own.",
+   "oneLine": "Name a few core processes, write down only the key steps, help everyone follow them and keep improving; that discipline sets a team free.",
+   "cover": {
+    "bg": "paper",
+    "fg": "ink",
+    "a": "teal",
+    "b": "marigold",
+    "motif": "checklist",
+    "layout": "top",
+    "font": "display",
+    "upper": true
+   }
+  },
+  {
+   "id": "the-eos-life",
+   "tags": [
+    "eos",
+    "growth",
+    "focus"
+   ],
+   "title": "The EOS Life",
+   "author": "Gino Wickman",
+   "shelf": "eos",
+   "mins": 9,
+   "vibe": "What all the tools are for: a life of doing what you love, with people you love, making a difference.",
+   "bigIdea": "After many years of helping leadership teams run their organizations better, Gino Wickman noticed something. The tools of EOS were not only making organizations healthier. For many leaders they were also creating a better life: more time, less stress, clearer focus and deeper joy. In The EOS Life, Wickman describes the kind of life he believes leaders can aim for, and how the same simple tools can help get there. He sums it up in five parts: doing what you love, with people you love, making a huge difference, being paid fairly for it, and having time for your other passions. He admits that this picture comes partly from his own journey, including years when he worked too much and felt pulled in every direction. The big idea is that leaders do not have to accept burnout as the price of leadership. By being clear about what they love, building a team they trust, focusing their time, and stepping back to think, leaders can lead well and live well. The book is shorter and more personal than Traction, and it invites readers to ask what an ideal life would look like for them.",
+   "insights": [
+    {
+     "emoji": "❤️",
+     "title": "Doing what you love",
+     "body": "The first part of Wickman's picture is doing what you love. He means spending most of your time on work that gives you energy and uses your best gifts. Many leaders spend their days on tasks they dislike or are not good at, simply because nobody else is doing them. Over time this drains them. Wickman encourages readers to list all their activities and sort them into what they love and are great at, what they like and are good at, what they do not like but can do, and what they neither like nor do well. Then the goal is to give away more and more of the tasks in the lower groups to others who are better suited to them. He admits this takes time and the right people around you. But he says a leader who lives mostly in their sweet spot leads with more joy, more creativity and more lasting energy."
+    },
+    {
+     "emoji": "🤝",
+     "title": "With people you love",
+     "body": "The second part is working with people you love. Wickman does not mean everyone must be close friends. He means working with people who share your values, whom you respect and trust, and with whom you enjoy spending time. He points out that many leaders put up with people who drain the team: someone talented who does not share the values, or someone who has been around a long time but no longer fits. Living with this wears everyone down. Wickman links this to the EOS people tools: knowing your core values, and making sure the right people are in the right seats. He encourages leaders to have honest, kind conversations rather than avoiding them for years. When a team is made of people who share the same values and care about one another, work becomes a place of friendship and joy, not only of tasks."
+    },
+    {
+     "emoji": "🌟",
+     "title": "Making a huge difference",
+     "body": "The third part is making a huge difference. Wickman says people need to know their work matters. For some it is the difference they make for the people they serve; for others it is the growth of their team or the good their organization does in the community. He encourages leaders to stay connected to that purpose and not to lose it in the daily rush. A leader who remembers why the work matters can push through hard seasons. A leader who has forgotten easily becomes cynical. He suggests regularly reflecting on the difference you are making, telling stories of impact to your team, and making sure your time goes to the things that matter most. The EOS vision tools, like knowing your purpose and your core focus, help here. When a whole team knows the difference they are making, their energy and commitment rise."
+    },
+    {
+     "emoji": "⚖️",
+     "title": "Fairly paid, and time for life",
+     "body": "The fourth part of Wickman's picture is being compensated appropriately. He means being paid fairly for the value you bring, in a way that lets you live without constant money worry. The fifth part is having time for your other passions: family, friends, health, faith, rest and hobbies. Wickman tells how, in his early years, work swallowed almost everything, and he learned the hard way that a life of only work is not a good life. He encourages leaders to decide how much time they truly want to work and to protect time away. Some leaders plan their time off first, then fit work around it. Others set a limit on hours or days. The point is to be intentional. He argues that leaders who rest well usually lead better, think more clearly and stay in their role longer. Rest is not laziness; it is wisdom."
+    },
+    {
+     "emoji": "🎯",
+     "title": "Know what you want",
+     "body": "Wickman encourages readers to define their own ideal life clearly. What would it look like for you to do what you love, with people you love, making a difference, fairly paid, with time for other passions? He suggests writing it down in concrete terms: how many days a week you want to work, what kind of work, who you want around you, what difference you want to make. Many people never stop to think about this, so they drift wherever busyness takes them. Once you have a clear picture, you can compare it with your life today and see the gaps. Then you can set a few priorities, much like Rocks for your life, and work on them one quarter at a time. He admits not everyone can change everything quickly. But he says clarity is the first step, and small steady moves add up over a few years."
+    },
+    {
+     "emoji": "🧘",
+     "title": "Clarity breaks",
+     "body": "One habit Wickman stresses is the clarity break: time set aside regularly to step away from the busyness and think. He suggests an hour or more each week, alone, without a phone or computer, just a notebook. In that time you look at your work and life from above, ask what is really going on, and decide what matters most. Many leaders spend all their time reacting to emails, messages and emergencies. They rarely stop to think, so they make the same mistakes and never see the bigger picture. Wickman says his own best ideas and clearest decisions have come in clarity breaks. He also suggests longer breaks now and then, such as a day away each quarter, to reflect deeply. A leader who takes time to think, he argues, leads with more wisdom and less stress, and the whole team benefits."
+    },
+    {
+     "emoji": "🖐️",
+     "title": "Delegate to rise",
+     "body": "Wickman returns often to one idea: you cannot live the life he describes if you try to do everything yourself. Leaders must delegate. He links this to letting go of tasks you do not love or are not great at, so you can rise to the work only you can do. Delegating well means having the right people, giving them clear expectations, and trusting them with real responsibility, not just small tasks. It also means accepting that others may do things differently from you, and that is often fine. Wickman admits delegation feels slow at first, because you must teach and support. But over time it multiplies the team's strength and frees the leader. He also encourages leaders to delegate decisions, not just tasks, so the team grows in judgment. A leader who holds everything becomes a bottleneck; a leader who delegates builds a strong team."
+    },
+    {
+     "emoji": "🌅",
+     "title": "A life worth living",
+     "body": "The book closes by inviting leaders to take their own life seriously. Wickman says the tools of EOS are not the goal; they are a means to a good organization and a good life. He encourages readers to start small: write down what their ideal life would look like, take a weekly clarity break, give away one task they dislike, and protect some time for family and rest. He admits that a perfect life is not possible and that seasons of hard work will come. But he argues that many leaders accept far more stress and imbalance than they need to. With clear values, the right people, focused priorities and a steady rhythm, leaders can build organizations that thrive without consuming their whole lives. The last word is hopeful: the life you want is more possible than you think, if you are honest, intentional and patient."
+    }
+   ],
+   "tryThis": [
+    "Write one page about your ideal life using the five parts: what you love, who with, what difference, fair pay and time for other things.",
+    "Sort your weekly tasks into what you love and are great at, and what drains you; pick one draining task to hand over.",
+    "Put a weekly one-hour clarity break in your calendar for the next month and protect it."
+   ],
+   "forUs": "Ministry life at YWAM GP can easily swallow everything. We live on base, the needs never stop, and serving God can make it feel wrong to rest. The EOS Life is a business book, and some of its goals, like making money, do not fit us in the same way: we live on support and serve as volunteers. But its main message fits our calling well. God does not want his people to burn out. Jesus withdrew to quiet places to pray, and the Sabbath is a gift, not a rule to escape. Read this book with your own faith in mind. Doing what you love can mean serving in your gifts. People you love means a team that shares our FIGHT values. Making a difference is our whole reason for being here. Time for other passions means family, friendships and rest. Leaders could use the weekly clarity break as a time of prayer and planning, and talk with their mentor about the gaps between their life now and the life God is calling them to.",
+   "oneLine": "The point of good systems is a good life: do what you love, with people you love, making a difference, with time for rest and family.",
+   "cover": {
+    "bg": "laterite",
+    "fg": "paper",
+    "a": "marigold",
+    "b": "paper",
+    "motif": "hammock",
+    "layout": "bottom",
     "font": "serif"
    }
   }

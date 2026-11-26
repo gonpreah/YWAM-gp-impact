@@ -2867,6 +2867,13 @@ leading at YWAM GP (culture, teams, hard conversations, vision, systems, executi
   it is debated; the summary says so plainly, keeps discipline general, and points health questions to a doctor). In
   English and Khmer, written by Claude without the books to hand; details it was unsure of were left out, so someone
   who has read them should check. The test expects 44 + the GP guides + 10 classics + 7 here.
+- **Running on EOS** (shelf `eos`, ⚙️, deep teal; shown right after Made at YWAM GP, before Marriage & family —
+  `libShelvesShown_`; Nov 2026, Uriah: "train our guys on EOS"): What the Heck Is EOS?, Traction, Get a Grip, Rocket Fuel,
+  How to Be a Great Boss, Process! (id `process-eos`) and The EOS Life, in English and Khmer, tag `eos`, reading plan
+  "Running on EOS". Shorter than the rest on purpose (8 key ideas, ~1,650 words, `mins` 9; the test's floor for this
+  shelf is 1,500). Each `forUs` ties the book to the app's Rocks, Scorecard and the leadership meeting. Their page carries
+  a trademark line (`libEosFine_`: EOS® etc. are EOS Worldwide's; our summaries, not affiliated). Written by Claude
+  without the books to hand — details it was unsure of were left out. The test expects 44 + GP guides + 10 + 7 + 7.
 - **YWAM classics** (shelf `ywam`, 🌊, cobalt; shown right after Made at YWAM GP; Oct 2026):
   ten foundational YWAM books in the same ten-minute shape, in English and Khmer — Is That
   Really You, God?, Making Jesus Lord, Daring to Live on the Edge (Loren Cunningham),

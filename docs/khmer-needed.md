@@ -7075,3 +7075,25 @@ The line above the board once a quarter is live, the question before Apply again
 | Stays in {box} | នៅតែក្នុង {box} |
 | Also serves here | បម្រើនៅទីនេះផងដែរ |
 | For someone in two ministries: they keep their main one and serve here too. | សម្រាប់អ្នកដែលនៅក្នុងកិច្ចការបម្រើពីរ៖ ពួកគេរក្សាកិច្ចការបម្រើចម្បងរបស់ពួកគេ ហើយបម្រើនៅទីនេះផងដែរ។ |
+
+## 148. The Running on EOS shelf (☰ → Library, Nov 2026)
+
+A new Library shelf of seven EOS books for YWAM GP's leadership, a reading plan, the tag and the trademark line on each EOS book's page. The seven summaries' Khmer (library-km.js) is Claude's translation, not yet reviewed; terms follow the app's own: Rocks ថ្មធំ, Scorecard តារាងពិន្ទុ, Issues បញ្ហា, To-dos កិច្ចការត្រូវធ្វើ, Visionary អ្នកមានចក្ខុវិស័យ, Integrator អ្នកសម្របសម្រួលអនុវត្ត.
+
+| English | Khmer (draft) |
+|---|---|
+| Running on EOS | ដំណើរការតាម EOS |
+| How YWAM GP’s leadership runs: what EOS is, the tools behind Rocks, the Scorecard and the weekly meeting, and how to lead and manage well with them. | របៀបដែលថ្នាក់ដឹកនាំ YWAM GP ដំណើរការ៖ EOS ជាអ្វី ឧបករណ៍នៅពីក្រោយថ្មធំ តារាងពិន្ទុ និងកិច្ចប្រជុំប្រចាំសប្តាហ៍ និងរបៀបដឹកនាំ និងគ្រប់គ្រងឲ្យបានល្អជាមួយវា។ |
+| EOS®, Traction® and the EOS tools are trademarks of EOS Worldwide. These are our own summaries, not connected with or endorsed by EOS Worldwide. | EOS®, Traction® និងឧបករណ៍ EOS គឺជាពាណិជ្ជសញ្ញារបស់ EOS Worldwide។ ទាំងនេះជាសេចក្តីសង្ខេបរបស់យើងផ្ទាល់ មិនទាក់ទង ឬមិនត្រូវបានគាំទ្រដោយ EOS Worldwide ទេ។ |
+
+Book titles and authors (library-km.js):
+
+| English | Khmer (draft) |
+|---|---|
+| What the Heck Is EOS? — Gino Wickman & Tom Bouwer | EOS ជាអ្វីទៅ? — ជីណូ វិកមែន និង ថម បូវើ |
+| Traction — Gino Wickman | ត្រាក់សិន — ជីណូ វិកមែន |
+| Get a Grip — Gino Wickman & Mike Paton | ចាប់ឲ្យជាប់ — ជីណូ វិកមែន និង ម៉ៃក៍ ផេតុន |
+| Rocket Fuel — Gino Wickman & Mark C. Winters | ឥន្ធនៈរ៉ុក្កែត — ជីណូ វិកមែន និង ម៉ាក ស៊ី. វីនធើស |
+| How to Be a Great Boss — Gino Wickman & René Boer | របៀបក្លាយជាប្រធានដ៏ល្អ — ជីណូ វិកមែន និង រ៉េណេ បួរ |
+| Process! — Mike Paton & Lisa González | ដំណើរការ! — ម៉ៃក៍ ផេតុន និង លីសា ហ្គនហ្សាឡេស |
+| The EOS Life — Gino Wickman | ជីវិត EOS — ជីណូ វិកមែន |

@@ -509,7 +509,7 @@ function libAuthor_(b){
 }
 /* Shelves in the order the home shows them: the guides made at YWAM GP first. */
 /* Made at YWAM GP first, then Marriage & family (Nov 2026, Uriah: pre-marriage and marriage training starts), then the rest. */
-function libShelvesShown_(){ var first=['gp','family']; return first.map(function(id){ return GP_LIBRARY.shelves.filter(function(x){ return x.id===id; })[0]; }).filter(Boolean).concat(GP_LIBRARY.shelves.filter(function(x){ return first.indexOf(x.id)===-1; })); }
+function libShelvesShown_(){ var first=['gp','eos','family']; return first.map(function(id){ return GP_LIBRARY.shelves.filter(function(x){ return x.id===id; })[0]; }).filter(Boolean).concat(GP_LIBRARY.shelves.filter(function(x){ return first.indexOf(x.id)===-1; })); }
 /* In Khmer, the Khmer library is fetched the first time it's needed; until it
    arrives everything shows in English, and a failed fetch says so. */
 function libKmEnsure_(){
@@ -865,8 +865,13 @@ function libBookHtml_(b){
   h+='<div class="btnRow" style="margin-top:14px">'+
     '<button class="btn ghost" id="libMarkRead" data-libid="'+esc(b.id)+'">'+esc(read ? '✓ '+t('Read') : t('Mark as read'))+'</button>'+
     (next && next!==b ? '<button class="btn ghost" data-libbook="'+esc(next.id)+'">'+esc(t('Next book'))+' →</button>' : '')+'</div>';
+  h+=libEosFine_(b);
   return h+'<p class="pFine">'+esc(b.original ? t('An original guide written for YWAM GP — not a published book. Every person is different: use it to start conversations, not to put people in boxes.')
     : t('Summary written for YWAM GP in our own words — not by the author or publisher.'))+'</p>';
+}
+/* The EOS shelf's fine print (Nov 2026): the names are EOS Worldwide's trademarks; ours are summaries, not theirs. */
+function libEosFine_(b){
+  return b.shelf==='eos' ? '<p class="pFine">'+esc(t('EOS®, Traction® and the EOS tools are trademarks of EOS Worldwide. These are our own summaries, not connected with or endorsed by EOS Worldwide.'))+'</p>' : '';
 }
 /* The FIGHT book's first page also carries the overview the 1-on-1 check-in shows
    (Oct 2026, Uriah): how the five build (OO_FLOW), then each value — its letter,
