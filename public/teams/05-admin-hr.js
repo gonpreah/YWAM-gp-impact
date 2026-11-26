@@ -1967,7 +1967,7 @@ function bindAdmin(){
    custom metric's name carries its own aggregation the same way every
    built-in one already does — "(1-10)" for a score, "(%)" for a percentage,
    plain otherwise for a running total — so modeOf() in taxonomy.js picks it
-   up with no extra code, and it shows up on Base, the Scoreboard,
+   up with no extra code, and it shows up on Base, the Scorecard,
    everywhere getDepartments() is read, the moment it's saved. */
 function metricOverrideFor_(campus, dept, ministry){
   var rec = ((S.base && S.base.metricOverrides) || []).find(function(r){

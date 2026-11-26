@@ -1332,10 +1332,10 @@ function goalsCardHtml(wk){
             ? '<div class="wgTop"><input type="text" class="addGoalInput" id="editGoalText" maxlength="200" value="'+esc(g.text)+'" style="flex:1"></div>'
             : '<div class="wgTop"><span class="wgText">'+esc(g.text)+'</span>'+
               '<span class="wgPct" style="color:'+pctColor(gp)+'">'+gp+'% · '+esc(pctWord(gp))+'</span></div>')+
-          (S.student ? '' :   // students have no ministry scoreboard
+          (S.student ? '' :   // students have no ministry scorecard
           '<label class="goalLink'+(g.metricKey?'':' unlinked')+'" style="display:flex;align-items:center;gap:4px">📊 '+
             '<select class="goalLinkSel" data-goallink="'+i+'" style="border:0;background:none;color:inherit;font:inherit;padding:0">'+
-            metricLinkOptions_(g.metricKey, g.metricKey ? 'Not linked to a scoreboard number' : 'Link to a scoreboard number')+
+            metricLinkOptions_(g.metricKey, g.metricKey ? 'Not linked to a scorecard number' : 'Link to a scorecard number')+
             '</select></label>')+
           (isNext ? '' : '<input type="range" class="gSlide" min="0" max="100" step="5" value="'+gp+'" data-goalpct="'+i+'"'+
             ' style="'+ringVars(gp)+'"'+
@@ -1445,7 +1445,7 @@ function levelPrevSubHtml_(p, metric, carried, typed){
   return out;
 }
 
-/* Beside a number being typed: its weekly goal on the Scoreboard, when the ministry has set one
+/* Beside a number being typed: its weekly goal on the Scorecard, when the ministry has set one
    (sbdGoals_, teams/28-rocks.js) — so whoever enters it sees what it is held against. (Until Nov 2026
    this line said which objective the number fed; objectives became rocks, which have no numbers.) */
 function metricGoalNote_(campus, dept, ministry, metric){
@@ -1516,7 +1516,7 @@ function kpiCardHtml(wk){
   var metrics=metricsFor(S.me.campus, S.me.dept, S.me.ministry).filter(function(m){ return auto.indexOf(m)===-1; });
   if(!metrics.length){
     return '<div class="card"><p class="sub" style="margin:4px 0">'+
-      esc(gpT('No scoreboard numbers are set for {ministry} yet.',{ministry:t(S.me.ministry)}))+'</p></div>';
+      esc(gpT('No scorecard numbers are set for {ministry} yet.',{ministry:t(S.me.ministry)}))+'</p></div>';
   }
   var entries=(S.ministry&&S.ministry.entries)||{};
   var prevMap=(S.ministry&&S.ministry.prev)||{};
@@ -1711,7 +1711,7 @@ function ovWeekRowsHtml_(dept, ministry, data, wk){
   var metrics = metricsFor(S.me.campus, dept, ministry).filter(function(m){ return auto.indexOf(m)===-1; });
   if(!metrics.length){
     return '<div class="card"><p class="sub" style="margin:4px 0">'+
-      esc(gpT('No scoreboard numbers are set for {ministry} yet.',{ministry:t(ministry)}))+'</p></div>';
+      esc(gpT('No scorecard numbers are set for {ministry} yet.',{ministry:t(ministry)}))+'</p></div>';
   }
   var entries=(data&&data.entries)||{};
   var prevMap=(data&&data.prev)||{};

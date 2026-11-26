@@ -2411,7 +2411,7 @@ async function deleteObjective(id, code, username, pin) {
 
 /* ==================== Rocks (Nov 2026, Uriah) ====================
    "I'm going to move OKRs to rocks … as the OKRs are too complicated. Across the whole app we're
-   going to move away from OKRs and move to rocks and scoreboard."
+   going to move away from OKRs and move to rocks and scorecard."
    A rock is one of a team's few priorities for a quarter: a title, whose it is, on track / off
    track / done, and a note. No percentages and no targets. One store for the whole base —
    'rocks' = { rocks: [{id, campus, dept, ministry ('' = the department's, or leadership's own),
@@ -4309,14 +4309,14 @@ async function saveMetricOverrides(username, pin, campus, dept, ministry, hidden
   }
 
   const rec = { campus: campus, dept: dept, ministry: ministry, hidden: cleanHidden, custom: cleanCustom, cadence: cleanCadence, updated: new Date().toISOString() };
-  if (existing && existing.goals && typeof existing.goals === 'object') rec.goals = existing.goals;   // the Scoreboard's weekly goals (saveMetricGoals) ride on the same row
+  if (existing && existing.goals && typeof existing.goals === 'object') rec.goals = existing.goals;   // the Scorecard's weekly goals (saveMetricGoals) ride on the same row
   if (idx > -1) rows[idx] = rec; else rows.push(rec);
   await writeJSON('metricOverrides', rows);
   return { ok: true, metricOverrides: rows };
 }
 
-/* ---- the Scoreboard's weekly goals (Nov 2026, Uriah: "move the KPI and numbers things to scoreboard") ----
-   A ministry's numbers page is its Scoreboard: each number can have a goal for a week and which way
+/* ---- the Scorecard's weekly goals (Nov 2026, Uriah: "move the KPI and numbers things to scorecard") ----
+   A ministry's numbers page is its Scorecard: each number can have a goal for a week and which way
    is good — at least ('gte') or at most ('lte') — and the page marks each week ✓ or ✗ against it.
    Set by whoever may change what the ministry tracks (canEditMetrics_). Kept as `goals`
    {metric: {goal, dir}} on the ministry's metricOverrides row, so it reaches every page with getData

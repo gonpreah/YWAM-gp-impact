@@ -770,7 +770,7 @@ function mmOptionLabel_(o){
 /* ---------- My Ministry's shell (Oct 2026, Uriah: "so cluttered, a lot of boxes") ----------
    One flat header — the ministry's name, where it sits, Switch ▾ to pick another (a sheet,
    grouped by department, with a search for admins) — then ONE row of tabs for that ministry
-   (the Cafe: Today · Till · Rota · Week · Scoreboard · Tasks · Rocks; most: Scoreboard · Schedule ·
+   (the Cafe: Today · Till · Rota · Week · Scorecard · Tasks · Rocks; most: Scorecard · Schedule ·
    Tasks · Rocks; Campus Leadership: its own tabs), and the tab's content as flat sections under
    hairlines, not cards in cards. Stats are a strip, not a grid of boxes. */
 function mmPickerHtml_(opts, sel){   // the Switch ▾ sheet
@@ -826,20 +826,20 @@ function mmTabsFor_(sel, mine, schedH){
   var out=[];
   if(sel.dept==='Community Service' && sel.min==='Cafe'){
     out=[['today',t('Today'),'data-cafetab'],['till',t('Till'),'data-cafetab'],['rota',t('Rota'),'data-cafetab'],['week',t('Week'),'data-cafetab']].concat(S.cafe && S.cafe.canSetup ? [['setup',t('Set up'),'data-cafetab']] : []);
-    out.push(['numbers',t('Scoreboard')]);
+    out.push(['numbers',t('Scorecard')]);
   } else if(sel.dept==='Skills Training' && sel.min==='Finances' && finCanEditClient_()){
     out=[['fdash',t('Dashboard'),'data-fintab'],['finput',t('Input'),'data-fintab']];   // the finance tool (public/finance.html, teams/09-finance.js fin2FrameHtml_)
   } else if(isTeamsMinistry_(sel.dept, sel.min)){
     out=[['teams',t('Teams')]];
   } else if(isIcpMinistry_(sel.dept, sel.min)){
-    out=icpTabs_(); out.push(['numbers',t('Scoreboard')]);   // Intercession: its Wednesdays and the fast, then Numbers for the one typed figure (teams/25-intercession.js)
+    out=icpTabs_(); out.push(['numbers',t('Scorecard')]);   // Intercession: its Wednesdays and the fast, then Numbers for the one typed figure (teams/25-intercession.js)
   } else if(isWorshipMinistry_(sel.dept, sel.min)){
-    out=wsTabs_().concat([['numbers',t('Scoreboard')]]);   // Worship's rota, team, songs — the numbers count themselves but Salvations (teams/26-worship.js)
+    out=wsTabs_().concat([['numbers',t('Scorecard')]]);   // Worship's rota, team, songs — the numbers count themselves but Salvations (teams/26-worship.js)
   } else if(isDtsMinistry_(sel.dept, sel.min)){
     out=dtsTabs_();   // GPDTS: the school's home — every number counts itself, so no Numbers tab (teams/16-dts.js)
   } else if(isSchoolMinistry_(sel.dept, sel.min)){
     out=schTabs_();   // the school tool (YDC): roll, students, tests, payments — every number counts itself (teams/24-school.js)
-  } else out=[['numbers',t('Scoreboard')]];   // the ministry's weekly numbers page (key still 'numbers')
+  } else out=[['numbers',t('Scorecard')]];   // the ministry's weekly numbers page (key still 'numbers')
   if(schedH && !isTeamsMinistry_(sel.dept, sel.min)) out.push(['sched',t('Schedule')]);
   if(sel.dept==='Skills Training' && sel.min==='Hospitality' && canHospClient_()) out.push(['goHosp',t('SR Hospitality'),'id']);   // a way in, not a tab (#goHosp opens it)
   out.push(['tasks',t('Tasks')]); out.push(['okr',t('Rocks')]);   // the quarter's priorities (key still 'okr'; teams/28-rocks.js)
@@ -857,7 +857,7 @@ function mmCurTab_(sel, tabs){
   if(sel.dept==='Skills Training' && sel.min==='Finances' && finCanEditClient_()) return keys.indexOf(S.finTab)>-1 ? S.finTab : 'fdash';
   return keys[0];
 }
-/* the month / quarter / year figures, folded under the Scoreboard so the page is the board, the week and no more
+/* the month / quarter / year figures, folded under the Scorecard so the page is the board, the week and no more
    (open or shut is remembered for the visit) */
 function mmGlanceHtml_(inner){
   return inner ? '<details class="mmGlance" id="mmGlance"'+(S.mmGlanceOpen?' open':'')+'><summary>📈 '+esc(t('Month, quarter and year totals'))+'</summary>'+inner+'</details>' : '';
@@ -867,7 +867,7 @@ function myMinistryHtml(){
   var opts=mmOptions_(), sel=mmSelected_(opts);
   if(!sel){
     return h+'<h2>'+esc(t('My Ministry'))+'</h2><div class="card"><p class="sub" style="margin:4px 0 10px">'+
-      esc(t('Set your ministry on the Profile tab and your team’s Scoreboard will show up here, ready to fill in.'))+'</p>'+
+      esc(t('Set your ministry on the Profile tab and your team’s Scorecard will show up here, ready to fill in.'))+'</p>'+
       '<button class="btn ghost" id="goProfile">'+esc(t('Choose my ministry'))+'</button></div>';
   }
   var selMine = sel.dept===S.me.dept && (sel.dept===BL_DEPT ? sel.min===blMyKey_() : sel.min===S.me.ministry);

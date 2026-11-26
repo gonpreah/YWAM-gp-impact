@@ -2,7 +2,7 @@
 
    Until Nov 2026 this file drove the OKR editor (objectives, key results with a slider or a count,
    headings, Paste OKRs). Uriah: "the OKRs are too complicated … across the whole app we're going to
-   move away from OKRs and move to rocks and scoreboard." The screens that replaced it are tested in
+   move away from OKRs and move to rocks and scorecard." The screens that replaced it are tested in
    tests/test-rocks-ui.mjs; this file holds the other half of that decision, from the source:
      - the page's code no longer has the OKR editor, its bindings or its words (dead code was
        deleted, not left unreachable), and no screen calls saveObjective / deleteObjective;
@@ -46,12 +46,12 @@ const objWords = lits.filter(s => /\b[Oo]bjectives?\b/.test(s));
 ok('“objectives” is said only of the earlier ones, kept as history', objWords.length > 0 && objWords.every(s => /^Earlier objectives/.test(s)), objWords.join(' | '));
 const kpiWords = lits.filter(s => /\bKPIs?\b/.test(s));
 ok('no translated string says KPI', kpiWords.length === 0, kpiWords.slice(0, 5).join(' | '));
-const tabNames = lits.filter(s => /^(Numbers|The numbers|Scorecard)$/.test(s));
-ok('no tab or page is called “Numbers” or “Scorecard” — it is the Scoreboard', tabNames.length === 0 && lits.includes('Scoreboard') && lits.includes('Rocks'), tabNames.join(' | '));
+const tabNames = lits.filter(s => /^(Numbers|The numbers|Scoreboard)$/.test(s));
+ok('no tab or page is called “Numbers” or “Scoreboard” — it is the Scorecard, EOS’s word', tabNames.length === 0 && lits.includes('Scorecard') && lits.includes('Rocks'), tabNames.join(' | '));
 const html = fs.readFileSync(PUBLIC + '/teams.html', 'utf8').replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<!--[\s\S]*?-->/g, '').replace(/<[^>]+>/g, ' ');
 ok('teams.html’s own words neither', !/\bOKR|\bKPI|[Kk]ey result/.test(html));
 const help = fs.readFileSync(PUBLIC + '/help.html', 'utf8');
-ok('the guide is the Scoreboard guide in its title and heading', /<title>[^<]*Scoreboard Guide<\/title>/.test(help) && /Ministry Scoreboard Guide/.test(help) && !/KPI Guide|your KPIs/.test(help));
+ok('the guide is the Scorecard guide in its title and heading', /<title>[^<]*Scorecard Guide<\/title>/.test(help) && /Ministry Scorecard Guide/.test(help) && !/KPI Guide|your KPIs/.test(help));
 
 console.log('=== what was stored is still there ===');
 const api = fs.readFileSync(REPO + '/netlify/functions/api.js', 'utf8');

@@ -11,7 +11,7 @@ var FIND_WORDS={ qreport:'report quarter quarterly donors government ministry st
   prayer:'pray requests', p360:'feedback review peers', tests:'personality strengths apest gifts couple marriage quiz', leave:'time off holiday vacation pto away',
   library:'books read reading summaries', sched:'cooking chores kitchen duty rota', hosp:'rooms beds bookings guests', students:'dts school', portal:'applications applicants teams',
   hr:'contracts candidates human resources', admin:'accounts approvals settings', kmreview:'translation', khmer:'language vocabulary english flashcards',
-  'tab:week':'home goals habits', 'tab:ministry':'scoreboard rocks numbers kpis okrs metrics priorities goals', 'tab:team':'directory people staff structure', 'tab:health':'check-in checkin weekly', 'tab:profile':'settings photo pin password reminders appearance dark',
+  'tab:week':'home goals habits', 'tab:ministry':'scorecard rocks numbers kpis okrs metrics priorities goals', 'tab:team':'directory people staff structure', 'tab:health':'check-in checkin weekly', 'tab:profile':'settings photo pin password reminders appearance dark',
   mycontract:'contract papers sign legal', mentor:'mentorship mentor mentee one-on-one 1-on-1', goals:'annual goals smart tasks', support:'support raising partners donors fundraising', whoshere:'on campus who is here' };
 function gpFindPages_(){
   var out=[], seen={};

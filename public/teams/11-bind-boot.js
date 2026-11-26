@@ -1367,7 +1367,7 @@ function bind(){
     weekClear();
   };
 
-  /* --- Rocks and the Scoreboard (teams/28-rocks.js) --- */
+  /* --- Rocks and the Scorecard (teams/28-rocks.js) --- */
   bindRocks_();
 
   /* --- Goals & Tasks page --- */

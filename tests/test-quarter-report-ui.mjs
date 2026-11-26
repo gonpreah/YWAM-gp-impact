@@ -1,5 +1,5 @@
 /* The quarterly report on the page (Nov 2026), with the real api.js: Campus Leadership finds it in ☰, picks the
-   quarter, the audience and the language; a ministry's page has its Scoreboard with ▲/▼ and what its tool counted;
+   quarter, the audience and the language; a ministry's page has its Scorecard with ▲/▼ and what its tool counted;
    a story is written (typing kept across a redraw and on the phone) and shows; the Donor view hides Challenges and
    money; the Government view is Khmer with the faith tick off until ticked; printing hides the app and breaks a
    page per department, black on white; Khmer and 320px; a leader's own page from My Ministry; the board's
@@ -143,7 +143,7 @@ const KH = /[ក-៿]/;
   const cafe = await minText(page, CAFE);
   ok('a ministry’s page: what it is for, who serves', /Cafe/.test(cafe) && /1 serve in this ministry/.test(cafe) && cafe.length > 200);
   let r = await row(page, CAFE, 'Cups Sold');
-  ok('Scoreboard: this quarter by the metric’s own rule, ▲ on last quarter, year to date', r && /^150 ▲ 88%$/.test(r[0]) && r[1] === '80' && r[2] === '230', JSON.stringify(r));
+  ok('Scorecard: this quarter by the metric’s own rule, ▲ on last quarter, year to date', r && /^150 ▲ 88%$/.test(r[0]) && r[1] === '80' && r[2] === '230', JSON.stringify(r));
   r = await row(page, CAFE, 'Weekly Expenses ($)');
   ok('… a fall in expenses reads as good news (▼, the “up” colour)', r && /\$30 ▼ 50%/.test(r[0]) && await page.evaluate(() => { const m = document.querySelector('.qrMin[data-qrmin="Community Service|Cafe"]'); const tr = [...m.querySelectorAll('tbody tr')].find(x => /Expenses/.test(x.innerText)); return tr.querySelector('.trend').classList.contains('up'); }), JSON.stringify(r));
   ok('… the Cafe’s till counts, no money among them', /This quarter in numbers/i.test(cafe) && /Days open\s+5/.test(cafe) && /Cups sold\s+150/.test(cafe));
@@ -208,8 +208,8 @@ const KH = /[ក-៿]/;
 
   /* ---------- both languages ---------- */
   await page.click('[data-qrlang="both"]'); await page.waitForTimeout(400);
-  const bi = await page.evaluate(() => { const b = [...document.querySelectorAll('#qrDoc .qrBi')].find(x => /Scoreboard/.test(x.textContent)); if (!b) return null; const s = b.querySelectorAll('span'); return { en: s[0].textContent, km: s[1].textContent, a: parseFloat(getComputedStyle(s[0]).fontSize), b: parseFloat(getComputedStyle(s[1]).fontSize) }; });
-  ok('Both: English and Khmer side by side, Khmer never smaller', bi && bi.en === 'Scoreboard' && KH.test(bi.km) && bi.b >= bi.a, JSON.stringify(bi));
+  const bi = await page.evaluate(() => { const b = [...document.querySelectorAll('#qrDoc .qrBi')].find(x => /Scorecard/.test(x.textContent)); if (!b) return null; const s = b.querySelectorAll('span'); return { en: s[0].textContent, km: s[1].textContent, a: parseFloat(getComputedStyle(s[0]).fontSize), b: parseFloat(getComputedStyle(s[1]).fontSize) }; });
+  ok('Both: English and Khmer side by side, Khmer never smaller', bi && bi.en === 'Scorecard' && KH.test(bi.km) && bi.b >= bi.a, JSON.stringify(bi));
   ok('… still fits the phone', await wide(page));
 
   /* ---------- print ---------- */
@@ -280,7 +280,7 @@ const KH = /[ក-៿]/;
   await page.click('#mmBanner .qrMmLink'); await page.waitForSelector('#qrDoc'); await page.waitForTimeout(400);
   ok('it opens her ministry’s page alone — no cover, no other ministry', (await page.$$eval('.qrMin', e => e.map(x => x.getAttribute('data-qrmin')))).join() === YDC && !(await page.$('#qrCover')) && !(await page.$('.qrDept')));
   const t = await doc(page);
-  ok('… with its numbers, highlights and story', /Students enrolled\s+2/.test(t) && /Bopha/.test(t) && /Scoreboard/i.test(t));
+  ok('… with its numbers, highlights and story', /Students enrolled\s+2/.test(t) && /Bopha/.test(t) && /Scorecard/i.test(t));
   ok('… no campus picker, and she can write and print', !(await page.$('[data-qrcampus]')) && !!(await page.$('[data-qrwrite="siemreap|' + YDC + '"]')) && !!(await page.$('#qrPrint')));
   ok('… nothing of another ministry reached her phone', await page.evaluate(() => { const d = S.qr.data[Object.keys(S.qr.data)[0]]; return d.full === false && Object.keys(d.entries).every(k => k.indexOf('Youth Education|YDC|') === 0) && !d.mix && !d.health; }));
   await page.emulateMedia({ media: 'print' });

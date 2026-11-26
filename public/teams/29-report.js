@@ -4,7 +4,7 @@
    page of figures; this is the document behind it (S.view='qreport', qrHtml_ / bindReport_):
      - a cover (YWAM GP or a campus, the quarter and its dates, headline figures, the leadership team, a
        letter from leadership), then a page per department and per ministry: what the ministry is for, who
-       leads it and how many serve, the Scoreboard (every metric: this quarter by its own sum / latest /
+       leads it and how many serve, the Scorecard (every metric: this quarter by its own sum / latest /
        average rule, last quarter with ▲/▼, year to date), what its tool counted, Priorities this quarter,
        and what the ministry wrote — Highlights, A story, Challenges, Prayer and needs;
      - three audiences (S.qr.aud): 'min' our ministries (everything), 'donor' (stories first; no challenges,
@@ -203,7 +203,7 @@ function qrToolItems_(c, dept, min, X){
     (lines.length ? '<ul class="qrList">'+lines.map(function(l){ return '<li>'+l+'</li>'; }).join('')+'</ul>' : '');
 }
 
-/* ---------- the Scoreboard: every metric of the ministry, by its own rule ---------- */
+/* ---------- the Scorecard: every metric of the ministry, by its own rule ---------- */
 function qrScoreHtml_(c, dept, min, metrics, X){
   var Q=qrS_(), rows='';
   metrics.filter(qrMetricShown_).forEach(function(metric){
@@ -267,7 +267,7 @@ function qrMinHtml_(c, dept, min, metrics, X){
   if(focus) h+='<p class="qrFocus">'+(lang==='km' ? '<small class="qrEnTag">'+qrD_(function(){ return t('English'); })+'</small> ' : '')+esc(focus)+'</p>';
   h+='<div class="qrWho">'+(p.leaders.length ? '<span>👑 '+qrD_(function(){ return gpT('Led by {names}',{names:p.leaders.join(', ')}); })+'</span>' : '')+
     (p.n ? '<span>'+qrD_(function(){ return gpT('{n} serve in this ministry',{n:p.n}); })+'</span>' : '')+'</div>';
-  var score=qrBlock_('qrScore', qrD_(function(){ return t('Scoreboard'); }), qrScoreHtml_(c, dept, min, metrics, X));
+  var score=qrBlock_('qrScore', qrD_(function(){ return t('Scorecard'); }), qrScoreHtml_(c, dept, min, metrics, X));
   var tool=qrBlock_('qrTool', qrD_(function(){ return t('This quarter in numbers'); }), qrToolItems_(c, dept, min, X));
   var story=editing ? qrFormHtml_(c, key) : qrStoryHtml_(st)+(qrMayWrite_(d, key) ? qrWriteBtn_(c, key, !!st) : '');
   var pri='';
