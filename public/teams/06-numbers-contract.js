@@ -865,6 +865,12 @@ function mmGlanceHtml_(inner){
 function myMinistryHtml(){
   var h='<button class="linkbtn" id="ministryBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('My Home'))+'</button>';
   var opts=mmOptions_(), sel=mmSelected_(opts);
+  /* someone whose job is YWAM GP itself: their page is YWAM GP's — no campus ministry is asked for (an admin among them
+     can still open a campus ministry from it, and comes back by the link on top) */
+  if(gpHomeIs_(S.me)){
+    if(!sel || !S.gpmAway) return h+gpMinistryHtml_(opts.length>0);
+    h+='<button class="linkbtn" id="gpmBack" style="text-align:left;text-decoration:none;padding-left:0">🌏 '+esc(t('Back to YWAM GP'))+'</button>';
+  }
   if(!sel){
     return h+'<h2>'+esc(t('My Ministry'))+'</h2><div class="card"><p class="sub" style="margin:4px 0 10px">'+
       esc(t('Set your ministry on the Profile tab and your team’s Scorecard will show up here, ready to fill in.'))+'</p>'+

@@ -181,6 +181,14 @@ mem.staff = mem.staff.map(x => ({ ...x, active: true }));   // an admin approved
   vm.runInContext('var B3 = gpRollup({entries:{},survey:[],roster:null,week:52}).staffBreakdown(["poipet"]);', ctx);
   ok('no roster at all is null, not a fake zero', g('B3') === null);
 
+  /* Someone whose job is YWAM GP itself (gpHome, Nov 2026) has no campus department or ministry — and still counts
+     in the staff number and the mix of the campus they live on, and in no other. */
+  ctx.__G = { entries: {}, survey: [], week: 52, roster: roster.concat([{ id: '9', campus: 'siemreap', dept: '', ministry: '', gpHome: true, staffType: 'campus', country: 'Cambodia' }]) };
+  vm.runInContext('var RG = gpRollup(__G); var BG = RG.staffBreakdown(["siemreap"]); var BGP = RG.staffBreakdown(["poipet"]);', ctx);
+  ok('a YWAM GP person counts on the campus they live on', g('BG.counted') === 2 && g('BG.types.campus') === 1 && g('BG.khmer') === 1, g('BG.counted'));
+  ok('… in its headline staff number too', g('RG.totalStaff(["siemreap"])') === 2, g('RG.totalStaff(["siemreap"])'));
+  ok('… and not on the other campus', g('BGP.counted') === 7);
+
   /* What actually reaches the screen. */
   const html = g('gpStaffMixHtml(B)');
   ok('the mix renders the three kinds of staff',

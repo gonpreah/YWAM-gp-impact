@@ -875,12 +875,14 @@ function selfStaff_(s, extra) {
   return Object.assign(publicStaff_(s), { photo: s.photo || '', hasThumb: !!s.photoThumb }, s.setupTodo ? { setupTodo: true } : {}, extra || {});
 }
 function publicStaff_(s) {
-  return {
+  const out = {
     id: s.id, name: s.name, username: s.username, campus: s.campus, dept: s.dept,
     ministry: s.ministry || '', role: s.role, photo: photoOf_(s), mentorId: s.mentorId || '',
     staffType: cleanStaffType_(s.staffType), country: s.country || '',
     leads: leadsOf_(s), ministries: ministriesOf_(s)
   };
+  if (s.gpHome) out.gpHome = true;   // their job is YWAM GP: a directory fact like a department (only ever present when true)
+  return out;
 }
 
 /* ==================== ministry leaders ====================
@@ -1236,6 +1238,7 @@ function adminStaffOut_(s) {
     portalScope: portalSetScope_(s), portal: !isApplicant_(s) && canPortal_(s), portalSees: canPortal_(s) ? portalTypes_(s) : [],
     staffType: s.staffType || '', country: s.country || '', email: s.email || '',
     cdKind: s.cdKind || '', gpRole: gpRolesOf_(s)[0] || '', gpRoles: gpRolesOf_(s), cltRequest: cltRequestOut_(s),
+    gpHome: gpHome_(s), gpWas: gpHome_(s) && s.gpWas ? { dept: s.gpWas.dept || '', ministry: s.gpWas.ministry || '' } : null,
     mentorId: s.mentorId || '', mentorStatus: s.mentorStatus || '',
     leads: leadsOf_(s), ministries: ministriesOf_(s),
     archived: archivedOf_(s),
@@ -1491,24 +1494,51 @@ async function adminUpdateStaff(username, pin, staffId, payload) {
   if (payload && payload.username !== undefined && (await getBoard_()).some(function (b) { return b.username === normUser_(payload.username); })) {
     return { ok: false, err: 'username_taken' };
   }
+  payload = payload && typeof payload === 'object' ? payload : {};
+  const gpCustom = await getGpRolesCustom_();
   const r = await mutateStaff_(function (rows) {
     const idx = rows.findIndex(function (r) { return r.id === staffId; });
     if (idx === -1) return { abort: true, ok: false, err: 'not_found' };
     const rec = rows[idx];
+    /* "Works for YWAM GP (not in a campus ministry)" — gpHome_. Ticking it clears their campus job (kept in gpWas);
+       unticking gives it back, unless this same save names another. While it is on, no campus job can be set. */
+    const wasHome = gpHome_(rec), home = payload.gpHome !== undefined ? !!payload.gpHome : wasHome;
+    if (home && isApplicant_(rec)) return { abort: true, ok: false, err: 'is_applicant' };
+    if (wasHome && !home) {
+      const w = rec.gpWas && typeof rec.gpWas === 'object' ? rec.gpWas : {};
+      rec.dept = w.dept || ''; rec.ministry = w.ministry || ''; rec.cdKind = w.cdKind || '';
+      rec.ministries = Array.isArray(w.ministries) ? w.ministries : []; rec.leads = Array.isArray(w.leads) ? w.leads : [];
+      delete rec.gpHome; delete rec.gpWas;
+    }
     if (payload.name !== undefined) rec.name = payload.name;
     if (payload.campus !== undefined && CAMPUS_IDS_.indexOf(payload.campus) > -1) rec.campus = payload.campus;   // a real campus or nothing
-    if (payload.dept !== undefined) rec.dept = normDept_(payload.dept);
-    if (payload.ministry !== undefined) rec.ministry = normMinistry_(rec.dept, payload.ministry);
-    rec.dept = normDept_(rec.dept, rec.ministry);   // a ministry that moved department goes where it is now
+    if (!home) {
+      if (payload.dept !== undefined) rec.dept = normDept_(payload.dept);
+      /* the page's pick for a Campus Director is "Campus Director#national": the ministry, and which one */
+      const mPick = payload.ministry !== undefined ? String(payload.ministry == null ? '' : payload.ministry).split('#') : null;
+      if (mPick && mPick.length === 2 && CD_KINDS.indexOf(mPick[1]) > -1) { payload = Object.assign({}, payload, { ministry: mPick[0] }); if (!payload.cdKind) payload.cdKind = mPick[1]; }
+      if (payload.ministry !== undefined) rec.ministry = normMinistry_(rec.dept, payload.ministry);
+      rec.dept = normDept_(rec.dept, rec.ministry);   // a ministry that moved department goes where it is now
+    }
     if (payload.role !== undefined) rec.role = payload.role;
     if (payload.staffType !== undefined) rec.staffType = cleanStaffType_(payload.staffType);
     if (payload.country !== undefined) rec.country = cleanCountry_(payload.country);
     // YWAM GP: which Campus Director (international / national), and an organisation-wide role
-    if (payload.cdKind !== undefined) rec.cdKind = CD_KINDS.indexOf(payload.cdKind) > -1 ? payload.cdKind : '';
+    if (!home && payload.cdKind !== undefined) rec.cdKind = CD_KINDS.indexOf(payload.cdKind) > -1 ? payload.cdKind : '';
     // several YWAM GP places may be one person's (gpRoles); a single gpRole still works
     if (payload.gpRoles !== undefined || payload.gpRole !== undefined) {
-      rec.gpRoles = cleanGpRoles_(payload.gpRoles !== undefined ? payload.gpRoles : [payload.gpRole]);
+      rec.gpRoles = cleanGpRoles_(payload.gpRoles !== undefined ? payload.gpRoles : [payload.gpRole], gpCustom);
       rec.gpRole = rec.gpRoles[0] || '';
+    }
+    if (home) {
+      if (!gpRolesOf_(rec).length) return { abort: true, ok: false, err: 'gp_role_needed' };   // a job in YWAM GP is a YWAM GP role
+      if (!wasHome) {
+        rec.gpWas = { dept: rec.dept || '', ministry: rec.ministry || '', cdKind: rec.cdKind || '', ministries: ministriesOf_(rec).slice(), leads: leadsOf_(rec).slice(), at: new Date().toISOString(), by: admin.id };
+        rec.gpHome = true;
+      }
+      rec.dept = ''; rec.ministry = ''; rec.cdKind = ''; rec.ministries = []; rec.leads = [];
+      delete rec.cltRequest;
+      payload = Object.assign({}, payload); delete payload.ministries; delete payload.leads;
     }
     if (payload.username !== undefined) {
       // Same shape sign-up already enforces (staffRegister above) — a username
@@ -1698,6 +1728,8 @@ async function updateProfile_(s, payload) {
        rest of the profile saves; the move is kept as a request (cltRequest) that an
        admin approves or declines in Admin → Approvals. Already in it, you move freely. */
     let cltPending = false;
+    /* someone whose job is YWAM GP (gpHome_) has no campus job to pick: only an admin moves them back (adminUpdateStaff) */
+    if (gpHome_(rec)) { payload = Object.assign({}, payload); delete payload.dept; delete payload.ministry; delete payload.cdKind; delete payload.ministries; delete payload.cancelCltRequest; }
     const wasLeadership = deptOf_(rec) === LEADERSHIP_DEPT;
     const wantDept = payload.dept !== undefined ? normDept_(payload.dept, payload.ministry) : rec.dept;
     if (!wasLeadership && wantDept === LEADERSHIP_DEPT) {
@@ -2555,6 +2587,7 @@ async function rocksMutate_(fn) {
 function canWriteRock_(s, campus, dept, ministry) {
   if (boardScope.getStore()) return !!(s && s.boardRoom && campus === BOARD_ROOM && dept === LEADERSHIP_DEPT && !ministry);   // in the board room: the board's rocks, by its members
   if (!s || isApplicant_(s) || s.active === false || !campus || !dept) return false;
+  if (campus === GP_CAMPUS) return dept === GP_DEPT && !ministry && !!(s.isAdmin || gpHome_(s));   // YWAM GP's own rocks: the people whose job it is, and admins
   if (s.isAdmin) return true;
   if (campus !== s.campus) return false;
   if (dept === LEADERSHIP_DEPT) return deptOf_(s) === LEADERSHIP_DEPT;
@@ -2578,9 +2611,11 @@ async function rockSave_(s, x, only) {
     else {
       campus = str_(x.campus, 40) || s.campus; ministry = str_(x.ministry, 80) || '';
       dept = x.dept ? normDept_(str_(x.dept, 80), ministry) : deptOf_(s);
-      if (dept === LEADERSHIP_DEPT) ministry = '';
+      if (!inRoom && !x.campus && !x.dept && gpHome_(s)) { campus = GP_CAMPUS; dept = GP_DEPT; }   // no place named, and their job is YWAM GP: YWAM GP's own
+      if (dept === LEADERSHIP_DEPT || campus === GP_CAMPUS) ministry = '';
     }
-    if ((inRoom ? campus !== BOARD_ROOM : CAMPUS_IDS_.indexOf(campus) === -1) || !dept) return { abort: true, ok: false, err: 'bad_target' };
+    const gpRock = !inRoom && campus === GP_CAMPUS && dept === GP_DEPT;
+    if ((inRoom ? campus !== BOARD_ROOM : (CAMPUS_IDS_.indexOf(campus) === -1 && !gpRock)) || !dept) return { abort: true, ok: false, err: 'bad_target' };
     if (only && !only({ campus: campus, dept: dept, ministry: ministry })) return { abort: true, ok: false, err: 'not_found' };
     if (!canWriteRock_(s, campus, dept, ministry)) return { abort: true, ok: false, err: 'not_authorized' };
     let year = Number(x.year), q = Number(x.q);
@@ -2588,7 +2623,7 @@ async function rockSave_(s, x, only) {
       if (!((prev.year === n.year && prev.q === n.q) || (prev.year === next.year && prev.q === next.q))) return { abort: true, ok: false, err: 'past' };   // an earlier quarter is history
       if (!((year === n.year && q === n.q) || (year === next.year && q === next.q))) { year = prev.year; q = prev.q; }
     } else if (!(year === next.year && q === next.q)) { year = n.year; q = n.q; }
-    const who = typeof x.owner === 'string' && (inRoom ? inRoom[x.owner] != null : staff.some(function (p) { return p.id === x.owner && p.campus === campus && p.active !== false && !p.archived && !isApplicant_(p); }));
+    const who = typeof x.owner === 'string' && (inRoom ? inRoom[x.owner] != null : staff.some(function (p) { return p.id === x.owner && (gpRock ? (gpHome_(p) || gpRolesOf_(p).length > 0) : p.campus === campus) && p.active !== false && !p.archived && !isApplicant_(p); }));
     const owner = who ? x.owner : (prev && x.owner === prev.owner ? prev.owner || '' : '');   // someone who has since left keeps their rock until it is given to another
     const same = function (r) { return r !== prev && r.campus === campus && r.dept === dept && (r.ministry || '') === ministry && (r.owner || '') === owner && r.year === year && r.q === q; };
     if ((!prev || (prev.owner || '') !== owner || prev.year !== year || prev.q !== q) && d.rocks.filter(same).length >= ROCK_MAX.each) return { abort: true, ok: false, err: 'too_many' };
@@ -3379,7 +3414,7 @@ async function fin2DeptDebt_(c, st, by) {
 async function fin2Get(username, pin, campus) {
   const v = await boardViewer_(username, pin);   // staff, or a board member's own sign-in
   if (!v) return { ok: false };
-  const s = v.kind === 'staff' ? v.who : null, seat = boardSees_(v);
+  const s = v.kind === 'staff' ? v.who : null, seat = boardSees_(v) || gpTeamSees_(s);   // the board, and YWAM GP's own team: to read
   /* the Advisory Board reads either campus's finances (what its Campus Leadership reads) and can never save:
      fin2Out_ with nobody gives canEdit false and no staff list. A board member who is also staff keeps their
      own campus's page as it was; the other campus opens for them the board's way. */
@@ -6738,6 +6773,7 @@ function structApplyRows_(rows, campus, plan, isAdmin, only) {
   const changes = [], waiting = [], now = new Date().toISOString();
   rows.forEach(function (rec) {
     if (!rec || !rec.active || rec.archived || isApplicant_(rec) || rec.campus !== campus) return;
+    if (gpHome_(rec)) return;   // their job is YWAM GP: on no campus chart, so no quarter ever moves them
     if (only && !only[rec.id]) return;
     if (students[rec.id]) return;
     const pl = place[rec.id];
@@ -6874,7 +6910,7 @@ async function structEditor_(username, pin, campus) {
    in snapshots saved before that rule. */
 function structPeopleOnly_(doc, rows) {
   if (!doc || !Array.isArray(doc.people)) return doc;
-  const applicants = {}; (rows || []).forEach(function (r) { if (isApplicant_(r)) applicants[r.id] = 1; });
+  const applicants = {}; (rows || []).forEach(function (r) { if (isApplicant_(r)) applicants[r.id] = 1; });   // (a snapshot from when someone was still on the campus chart keeps them: that quarter is history)
   return Object.assign({}, doc, { people: doc.people.filter(function (p) { return p && !applicants[p.id]; }) });
 }
 async function getStructure(username, pin, campus, year, quarter) {
@@ -6899,7 +6935,7 @@ async function saveStructurePlan(username, pin, campus, year, quarter, students,
   const y = finiteNum_(year, 2020, 2100), q = finiteNum_(quarter, 1, 4);
   if (y == null || q == null) return { ok: false, err: 'bad_quarter' };
   const staff = await getStaff_();
-  const here = {}; staff.forEach(function (r) { if (r.active && !r.archived && !isApplicant_(r) && r.campus === campus) here[r.id] = 1; });
+  const here = {}; staff.forEach(function (r) { if (r.active && !r.archived && !isApplicant_(r) && !gpHome_(r) && r.campus === campus) here[r.id] = 1; });   // not YWAM GP's own people: they are on no campus chart
   const clean = {};
   Object.keys(students && typeof students === 'object' ? students : {}).forEach(function (id) {
     const school = String(students[id] || '').toLowerCase();
@@ -6955,7 +6991,7 @@ async function saveStructurePlan(username, pin, campus, year, quarter, students,
 function structPeople_(staff, campus, plan) {
   const place = plan.place || {}, students = plan.students || {}, leads = plan.leads;
   const leadsFor = function (id, own) { if (!leads) return own; return Object.keys(leads).filter(function (k) { return leads[k].indexOf(id) > -1; }); };
-  const people = staff.filter(function (r) { return r.active && !r.archived && !isApplicant_(r) && r.campus === campus; })
+  const people = staff.filter(function (r) { return r.active && !r.archived && !isApplicant_(r) && !gpHome_(r) && r.campus === campus; })
     .map(function (r) { const pl = place[r.id]; const o = { id: r.id, name: r.name, dept: pl ? pl.dept : r.dept, ministry: pl ? pl.ministry : (r.ministry || ''), role: r.role || '', leads: leadsFor(r.id, leadsOf_(r)), photo: '' };
       const al = structAlsoOf_(plan, r, o.dept, o.ministry).filter(function (k) { return k !== o.dept + '|' + o.ministry; }); if (al.length && o.dept !== STRUCT_OFF && !students[r.id]) o.also = al;
       if (students[r.id]) o.student = students[r.id]; return o; });
@@ -8653,6 +8689,7 @@ async function setMinistryLeader(username, pin, dept, ministry, staffId, on) {
   return mutateStaff_(function (rows) {
     const r = rows.find(function (x) { return x.id === id; });
     if (!r || isApplicant_(r) || r.active === false || r.archived || r.campus !== a.campus) return { abort: true, ok: false, err: 'not_found' };
+    if (on && gpHome_(r)) return { abort: true, ok: false, err: 'gp_home' };   // their job is YWAM GP: no seat on the campus chart
     const leads = leadsOf_(r).filter(function (k) { return k !== key; });
     if (on) leads.push(key);
     r.leads = cleanLeads_(leads);
@@ -16064,15 +16101,92 @@ async function getBoard_() { return readJSON('board', []); }
 /* The YWAM GP places someone holds — several are allowed (Oct 2026, Uriah: "select multiple
    positions … for me I'm on the board, YWAM GP & Siem Reap Leadership"). Kept as gpRoles;
    gpRole is the first of them, for anything that still reads one. */
-function cleanGpRoles_(list) {
+/* YWAM GP's own job titles (Nov 2026, Uriah: "I can't add those jobs yet in the admin"): beside the six built-in places an
+   admin adds, renames and removes titles of their own — blob `gpRolesCustom` = [{id:'c_<slug>', en, km}], ≤ GP_ROLE_CUSTOM_MAX.
+   A staff record holds ids only. cleanGpRoles_(list, custom): with the custom list (every write) only built-in ids and
+   titles that exist; without it (reads — gpRolesOf_ is called everywhere and cannot wait for a blob) the shape of an id,
+   and getYwamGp, the one place titles are listed for people, drops any id whose title is gone. */
+const GP_ROLE_CUSTOM_MAX = 20;
+const GP_ROLE_CUSTOM_RE = /^c_[a-z0-9_]{1,40}$/;
+async function getGpRolesCustom_() {
+  return (await readJSON('gpRolesCustom', [])).filter(function (r) { return r && GP_ROLE_CUSTOM_RE.test(String(r.id)) && r.en; })
+    .map(function (r) { return { id: r.id, en: String(r.en), km: String(r.km || '') }; });
+}
+function cleanGpRoles_(list, custom) {
   const out = [];
-  (Array.isArray(list) ? list : []).forEach(function (g) { if (GP_ROLE_IDS.indexOf(g) > -1 && out.indexOf(g) === -1) out.push(g); });
-  return out;
+  (Array.isArray(list) ? list : []).forEach(function (g) {
+    const ok = GP_ROLE_IDS.indexOf(g) > -1 || (typeof g === 'string' && GP_ROLE_CUSTOM_RE.test(g) && (!custom || custom.some(function (c) { return c.id === g; })));
+    if (ok && out.indexOf(g) === -1) out.push(g);
+  });
+  return out.slice(0, GP_ROLE_IDS.length + GP_ROLE_CUSTOM_MAX);
 }
 function gpRolesOf_(s) {
   if (!s) return [];
   if (Array.isArray(s.gpRoles)) return cleanGpRoles_(s.gpRoles);
   return GP_ROLE_IDS.indexOf(s.gpRole) > -1 ? [s.gpRole] : [];
+}
+/* Someone whose JOB is YWAM GP itself (`gpHome`, Nov 2026, Uriah: "move some of our guys into YWAM GP and outside of YWAM
+   Siem Reap … still anchored in the Siem Reap staff numbers, because we live there … but not in the direct org chart").
+   Admin-set only (adminUpdateStaff). Their campus stays — every headcount, the roster, who's here and the health pooling
+   count them there as before — and they have no campus department or ministry (what they had is kept in `gpWas`), so they
+   hold no seat on the campus chart and no Campus Leadership rights. They need at least one YWAM GP role. */
+function gpHome_(s) { return !!(s && s.gpHome); }
+/* YWAM GP's team reads what the Advisory Board reads (gpTeamSees_ — a sibling of boardSees_, NOT a seat on the board):
+   people whose job is YWAM GP, and YWAM GP's Director. Both campuses, to read; it gives no write anywhere, and never the
+   Board room. Everything the board is never sent, they are never sent by this either. */
+function gpTeamSees_(s) {
+  return !!(s && !isApplicant_(s) && s.active !== false && !s.archived && (gpHome_(s) || gpRolesOf_(s).indexOf('director') > -1));
+}
+const GP_CAMPUS = 'gp', GP_DEPT = 'YWAM GP';   // where YWAM GP's own rocks live in the `rocks` store
+async function adminSaveGpRole(username, pin, role) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  role = role && typeof role === 'object' ? role : {};
+  const en = ooText_(role.en, 60), km = ooText_(role.km, 80), id = String(role.id || '');
+  if (!en) return { ok: false, err: 'bad_title' };
+  const out = await mutateKey_('gpRolesCustom', [], function (rows) {
+    const same = function (r) { return r && r.id !== id && String(r.en || '').toLowerCase() === en.toLowerCase(); };
+    if (rows.some(same)) return { abort: true, ok: false, err: 'exists' };
+    if (id) {
+      const r = rows.find(function (x) { return x && x.id === id; });
+      if (!r) return { abort: true, ok: false, err: 'not_found' };
+      r.en = en; r.km = km; r.updated = new Date().toISOString();
+      return { ok: true, id: id };
+    }
+    if (rows.length >= GP_ROLE_CUSTOM_MAX) return { abort: true, ok: false, err: 'too_many' };
+    const slug = en.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 30) || 'role';
+    let nid = 'c_' + slug, n = 2;
+    while (rows.some(function (x) { return x && x.id === nid; })) nid = 'c_' + slug + '_' + (n++);
+    rows.push({ id: nid, en: en, km: km, by: admin.id, at: new Date().toISOString() });
+    return { ok: true, id: nid };
+  });
+  if (!out || !out.ok) return out || { ok: false };
+  return { ok: true, id: out.id, gpRolesCustom: await getGpRolesCustom_() };
+}
+/* Removing a title takes it off whoever held it. Refused while it is the ONLY YWAM GP role of someone whose job is
+   YWAM GP (`only_role`, with their names) — they would be left with no job at all; give them another first. */
+async function adminDeleteGpRole(username, pin, id) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  id = String(id || '');
+  if (!GP_ROLE_CUSTOM_RE.test(id) || !(await getGpRolesCustom_()).some(function (r) { return r.id === id; })) return { ok: false, err: 'not_found' };
+  const off = await mutateStaff_(function (rows) {
+    const stuck = rows.filter(function (r) { return r && gpHome_(r) && !r.archived && gpRolesOf_(r).length === 1 && gpRolesOf_(r)[0] === id; });
+    if (stuck.length) return { abort: true, ok: false, err: 'only_role', names: stuck.map(function (r) { return r.name; }) };
+    let n = 0;
+    rows.forEach(function (r) {
+      if (!r || gpRolesOf_(r).indexOf(id) === -1) return;
+      r.gpRoles = gpRolesOf_(r).filter(function (g) { return g !== id; }); r.gpRole = r.gpRoles[0] || ''; r.updated = new Date().toISOString(); n++;
+    });
+    return n ? { ok: true, n: n } : { abort: true, ok: true, n: 0 };
+  });
+  if (!off || !off.ok) return off || { ok: false };
+  await mutateKey_('gpRolesCustom', [], function (rows) {
+    const i = rows.findIndex(function (r) { return r && r.id === id; });
+    if (i === -1) return { abort: true, ok: true };
+    rows.splice(i, 1); return { ok: true };
+  });
+  return { ok: true, removedFrom: off.n, gpRolesCustom: await getGpRolesCustom_() };
 }
 /* A staff member's seat on the Advisory Board, set from their own account in Admin with
    their other positions: on → their linked board member (made if there isn't one, brought
@@ -16142,10 +16256,11 @@ async function getYwamGp(username, pin) {
   if (!v) return { ok: false };
   const staff = (await getStaff_()).filter(function (r) { return r.active && !r.archived && !isApplicant_(r); });
   const person = function (r) { return { id: r.id, name: r.name, photo: photoOf_(r), campus: r.campus }; };
-  const titles = {}, gp = [];
+  const titles = {}, gp = [], custom = await getGpRolesCustom_();
+  const order = GP_ROLE_IDS.concat(custom.map(function (c) { return c.id; }));
   staff.forEach(function (r) {
     const tl = orgTitle_(r); if (tl) titles[r.id] = tl;
-    gpRolesOf_(r).forEach(function (g) { gp.push(Object.assign(person(r), { gpRole: g })); });   // a row for each place they hold
+    cleanGpRoles_(gpRolesOf_(r), custom).forEach(function (g) { gp.push(Object.assign(person(r), { gpRole: g }, gpHome_(r) ? { home: true } : {})); });   // a row for each place they hold
   });
   const campuses = CAMPUS_IDS_.map(function (c) {
     const here = staff.filter(function (r) { return r.campus === c; });
@@ -16160,15 +16275,18 @@ async function getYwamGp(username, pin) {
     here.forEach(function (r) { leadsOf_(r).forEach(function (k) { (leaders[k] = leaders[k] || []).push(r.name); }); });
     const counts = {};
     here.forEach(function (r) { const d = deptOf_(r); if (d && d !== LEADERSHIP_DEPT) counts[d] = (counts[d] || 0) + 1; });
-    return { id: c, staff: here.length, clt: clt, leaders: leaders, deptStaff: counts };
+    /* people living here whose job is YWAM GP: counted in `staff`, on no campus chart */
+    const gpHere = here.filter(gpHome_).map(person).sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
+    return { id: c, staff: here.length, clt: clt, leaders: leaders, deptStaff: counts, gpHome: gpHere };
   });
   const board = (await getBoard_()).filter(function (b) { return b.active !== false; })
     .map(function (b) { return boardOut_(b, staff); }).sort(boardSort_);
   /* the board's quarter report lists each campus's rocks: title and status, nothing else (staff have them all from their boot) */
   const rocks = v.kind === 'board' ? (await getRocks_()).map(function (r) { return { id: r.id, campus: r.campus, dept: r.dept, ministry: r.ministry || '', year: r.year, q: r.q, title: r.title, status: r.status }; }) : undefined;
   return { ok: true, viewer: v.kind, me: v.kind === 'board' ? boardOut_(v.who, staff) : null, rocks: rocks,
-    titles: titles, gpRoles: GP_ROLE_IDS,
-    gp: gp.sort(function (a, b) { return GP_ROLE_IDS.indexOf(a.gpRole) - GP_ROLE_IDS.indexOf(b.gpRole) || String(a.name).localeCompare(String(b.name)); }),
+    titles: titles, gpRoles: order, gpRolesCustom: custom,
+    oversee: v.kind === 'staff' && gpTeamSees_(v.who),
+    gp: gp.sort(function (a, b) { return order.indexOf(a.gpRole) - order.indexOf(b.gpRole) || String(a.name).localeCompare(String(b.name)); }),
     campuses: campuses, board: board, boardRoles: BOARD_ROLES };
 }
 
@@ -16266,7 +16384,7 @@ async function boardRoomIds_() {
 async function overseeAuth_(username, pin, campus) {
   const v = await boardViewer_(username, pin);
   if (!v) return { out: { ok: false } };
-  if (!boardSees_(v) && !(v.kind === 'staff' && v.who.isAdmin)) return { out: { ok: false, err: 'not_authorized' } };
+  if (!boardSees_(v) && !(v.kind === 'staff' && (v.who.isAdmin || gpTeamSees_(v.who)))) return { out: { ok: false, err: 'not_authorized' } };   // YWAM GP's own team reads it too (gpTeamSees_)
   if (campus !== undefined && CAMPUS_IDS_.indexOf(campus) === -1) return { out: { ok: false, err: 'bad_campus' } };
   return { v: v };
 }
@@ -16815,7 +16933,7 @@ async function qrViewer_(username, pin, campus) {
   const s = v.who;
   if (isApplicant_(s) || s.active === false) return { out: { ok: false } };
   if (s.isAdmin || (canLead_(s) && s.campus === campus)) return { s: s, full: true };
-  if (boardSees_(await boardViewer_(username, pin))) return { s: s, full: true, keys: s.campus === campus ? qrKeysOf_(s) : [], seat: true };   // on the board too: reads it all, writes only what they could before
+  if (gpTeamSees_(s) || boardSees_(await boardViewer_(username, pin))) return { s: s, full: true, keys: s.campus === campus ? qrKeysOf_(s) : [], seat: true };   // on the board too: reads it all, writes only what they could before
   const keys = s.campus === campus ? qrKeysOf_(s) : [];
   if (!keys.length) return { out: { ok: false, err: 'not_authorized' } };
   return { s: s, full: false, keys: keys };
@@ -17086,6 +17204,8 @@ const HANDLERS = {
   adminDeleteStaff: function (a) { return adminDeleteStaff(a[0], a[1], a[2]); },
   adminMergeStaff: function (a) { return adminMergeStaff(a[0], a[1], a[2], a[3]); },
   adminUpdateStaff: function (a) { return adminUpdateStaff(a[0], a[1], a[2], a[3]); },
+  adminSaveGpRole: function (a) { return adminSaveGpRole(a[0], a[1], a[2]); },
+  adminDeleteGpRole: function (a) { return adminDeleteGpRole(a[0], a[1], a[2]); },
   getKmReview: function (a) { return getKmReview(a[0], a[1]); },
   savePushSub: function (a) { return savePushSub(a[0], a[1], a[2], a[3]); },
   getMySupport: function (a) { return getMySupport(a[0], a[1]); },

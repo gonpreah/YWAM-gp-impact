@@ -962,8 +962,8 @@ function miniDashboardHtml(){
       '<div class="baseMe">'+avatarHtml(S.me,'')+
         '<div><div class="pmeta">'+esc(t(greeting()))+'</div>'+
         '<div class="pname">'+esc(S.me.name)+'</div>'+
-        '<div class="pmeta">'+esc(t(S.me.role||S.me.dept))+
-          (S.me.ministry?' · '+esc(t(S.me.ministry)):'')+'</div>'+
+        '<div class="pmeta">'+(gpHomeIs_(S.me) ? esc(gpHomeLine_(S.me)) : esc(t(S.me.role||S.me.dept))+
+          (S.me.ministry?' · '+esc(t(S.me.ministry)):''))+'</div>'+
         '</div></div>'+
       '<button class="dashSettingBtn'+(open?' on':'')+'" id="dashCustomizeBtn" aria-pressed="'+(open?'true':'false')+'" aria-label="'+esc(t('Customize dashboard'))+'">'+
         '<span class="ic">⚙️</span></button>'+

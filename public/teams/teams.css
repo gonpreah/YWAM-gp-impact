@@ -4216,3 +4216,13 @@ button.bdLine { cursor:pointer; }
 #bdInvite h2 { overflow-wrap:anywhere; }
 #bdLeadGo { margin:0 0 12px; }
 @media (min-width:900px){ #bdCamp, #bdFin, #bdInvite { max-width:900px; } }
+
+/* YWAM GP → (admins) YWAM GP job titles */
+.gprRow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.gprRow.editing{display:block}
+.gprName{flex:1;min-width:140px}
+.gprName b{display:block;overflow-wrap:anywhere}
+.gprName small{display:block;color:var(--muted);font-size:12.5px;overflow-wrap:anywhere}
+.gprRow .linkbtn.inline{width:auto;padding:4px 0;margin:0}
+.gprRow .gprDel{color:var(--bad)}
+.orgGpHere{overflow-wrap:anywhere}

@@ -57,7 +57,7 @@ function sbModel_(campus, plan){
   var deps=getDepartments(campus), depts=Object.keys(deps).filter(function(d){ return d!==BL_DEPT; });
   var people={}, order=[];
   (S.roster||[]).forEach(function(p){
-    if(p.campus!==campus || p.kind==='applicant') return;
+    if(p.campus!==campus || p.kind==='applicant' || p.gpHome) return;   // gpHome: their job is YWAM GP — on no campus chart, tray included
     people[p.id]={ id:p.id, name:p.name, photo:p.photo, avatar:p.avatar, real:true,
       prof:{ dept:p.dept==='Base Director' ? BL_DEPT : (p.dept||''), ministry:p.ministry||'' }, profLeads:(p.leads||[]).slice(), profAlso:(p.ministries||[]).slice() };
     order.push(p.id);
@@ -234,6 +234,7 @@ function sbBoardHtml_(campus, year, q, edit){
       '<p class="sbTrayHint">'+esc(t('Drop a face here to take them off the chart for this quarter.'))+'</p></div>';
   }
   h+='</div>';
+  if(!B.full) h+=orgGpHereHtml_(campus);   // who lives here and works for YWAM GP: on this campus's staff, not on its chart
   if(edit && B.sheet) h+=sbSheetHtml_(M, B.sheet);
   if(edit && B.drop && !B.sheet) h+=sbDropHtml_(M, B.drop);
   return h;

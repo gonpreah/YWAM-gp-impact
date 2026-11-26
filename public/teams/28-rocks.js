@@ -26,6 +26,7 @@
 
 /* ---------- rocks: what there is ---------- */
 var ROCK_ST=[['on','On track'],['off','Off track'],['done','Done']];
+var GP_ROCK={ campus:'gp', dept:'YWAM GP' };   // YWAM GP's own rocks in the one store (api.js GP_CAMPUS / GP_DEPT)
 function rkT_(){ return S.rk || (S.rk={ q:'now', d:{}, form:null, deptAdd:{} }); }
 function rocksAll_(){ return S.rocks || (S.org && S.org.rocks) || []; }
 /* this quarter or the next — the app's 13-week quarters of the week year, as the server's meetQ_ */
@@ -42,6 +43,7 @@ function rkKey_(campus, dept, ministry){ return campus+'|'+dept+'|'+(ministry||'
 /* who may write a rock here — the server's canWriteRock_, only to decide what to draw */
 function rkCanWrite_(campus, dept, ministry){
   var me=S.me; if(!me || !S.auth || !S.auth.user || S.guest || S.stuPreview) return false;
+  if(campus===GP_ROCK.campus) return dept===GP_ROCK.dept && !ministry && !!(me.isAdmin || me.gpHome);   // YWAM GP's own rocks: the people whose job it is, and admins
   if(me.isAdmin) return true;
   if(campus!==me.campus) return false;
   if(dept===BL_DEPT) return me.dept===BL_DEPT;
@@ -51,6 +53,10 @@ function rkCanWrite_(campus, dept, ministry){
   return !!ministry && ((me.ministries||[]).indexOf(k)>-1 || (me.leads||[]).indexOf(k)>-1);
 }
 function rkPeople_(campus, dept, ministry){
+  /* YWAM GP's own rocks: whoever holds a place on YWAM GP's team, from either campus */
+  if(campus===GP_ROCK.campus){ var gp={}; ((S.org && S.org.gp)||[]).forEach(function(g){ gp[g.id]=1; });
+    return (S.roster||[]).filter(function(p){ return gp[p.id] || p.gpHome; }).sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); })
+      .map(function(p){ return { id:p.id, name:p.name, sub:gpRolesOfPerson_(p.id).join(', '), first:true, group:t('YWAM GP') }; }); }
   var k=dept+'|'+ministry;
   return (S.roster||[]).filter(function(p){ return p.campus===campus; }).sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); }).map(function(p){
     var f = ministry ? ((p.dept===dept && p.ministry===ministry) || (p.ministries||[]).indexOf(k)>-1 || (p.leads||[]).indexOf(k)>-1) : p.dept===dept;
@@ -269,7 +275,7 @@ function rkFind_(id){ return rocksAll_().filter(function(r){ return r.id===id; }
 function rkAdd_(key){
   var T=rkT_(), p=key.split('|'), title=String(T.d[key]||'').trim(); if(!title){ showMsg(t('Give it a name first.')); return; }
   var Q=rkQ_(T.q);
-  rkCall_('saveRock', { campus:p[0], dept:p[1], ministry:p[2]||'', title:title, owner:(S.me.campus===p[0] && p[1]!==BL_DEPT) ? S.me.id : '', year:Q.year, q:Q.q, status:'on', note:'' }, function(){ T.d[key]=''; });
+  rkCall_('saveRock', { campus:p[0], dept:p[1], ministry:p[2]||'', title:title, owner:(p[0]===GP_ROCK.campus ? !!S.me.gpHome : (S.me.campus===p[0] && p[1]!==BL_DEPT)) ? S.me.id : '', year:Q.year, q:Q.q, status:'on', note:'' }, function(){ T.d[key]=''; });
 }
 function bindRocks_(){
   var T=rkT_(), each=function(sel, fn){ document.querySelectorAll(sel).forEach(function(b){ b.onclick=function(){ gpTap(); fn(b); }; }); };
