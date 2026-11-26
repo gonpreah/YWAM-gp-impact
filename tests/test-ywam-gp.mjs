@@ -180,6 +180,105 @@ r = await call('adminUpdateStaff', ['sokha', '1234', 'st_nat', { gpRoles: ['dire
 ok('… and only an admin sets any of it', r.body.ok === false && mem.staff.find((x) => x.id === 'st_nat').gpRoles.join() === 'campuses,leaders' && JSON.parse(JSON.stringify(mem.board)).find((b) => b.staffId === 'st_nat').active === false);
 ok('the roster still gains nothing', (await call('teamRoster', ['kanha', '1234'])).body.every((p) => !('gpRoles' in p) && !('board' in p)));
 
+/* ---------- YWAM GP's own job titles, and a job in YWAM GP itself (Nov 2026) ---------- */
+const U = ['uriah', '1234'], gpOf = async (who) => (await call('getYwamGp', [who || 'kanha', '1234'])).body;
+r = await call('adminSaveGpRole', ['kanha', '1234', { en: 'Chief Wizard' }]);
+ok('only an admin adds a YWAM GP job title', r.body.ok === false && !mem.gpRolesCustom);
+r = await call('adminSaveGpRole', U.concat([{ en: '  New Ministries Lead ', km: 'អ្នកដឹកនាំកិច្ចការបម្រើថ្មី' }]));
+const NM = r.body.id;
+ok('an admin adds one: a title in English, Khmer if given', r.body.ok && NM === 'c_new_ministries_lead' && r.body.gpRolesCustom.length === 1 && r.body.gpRolesCustom[0].en === 'New Ministries Lead' && /ថ្មី/.test(r.body.gpRolesCustom[0].km));
+ok('… not the same title twice, and not an empty one', (await call('adminSaveGpRole', U.concat([{ en: 'new ministries lead' }]))).body.err === 'exists' && (await call('adminSaveGpRole', U.concat([{ en: '  ' }]))).body.err === 'bad_title');
+r = await call('adminSaveGpRole', U.concat([{ en: 'Campus Health Lead' }]));
+const CH = r.body.id;
+r = await call('adminSaveGpRole', U.concat([{ id: CH, en: 'Campus Health & Care Lead' }]));
+ok('… and renames one (its id, and whoever holds it, stay)', r.body.ok && r.body.id === CH && r.body.gpRolesCustom.find((x) => x.id === CH).en === 'Campus Health & Care Lead');
+let G = await gpOf();
+ok('everyone is told the titles: the six built in, then YWAM GP’s own', G.gpRoles.join() === 'director,campuses,leaders,music,media,education,' + NM + ',' + CH && G.gpRolesCustom.length === 2);
+r = await call('adminUpdateStaff', U.concat(['st_cafe', { gpRoles: [NM, 'c_made_up', 'wizard'] }]));
+ok('a person can be given a title that exists — never one that doesn’t', r.body.ok && r.body.staff.gpRoles.join() === NM);
+G = await gpOf();
+ok('… and shows under it on the YWAM GP page', G.gp.some((p) => p.id === 'st_cafe' && p.gpRole === NM && !p.home));
+
+r = await call('adminUpdateStaff', U.concat(['st_cs', { gpHome: true }]));
+ok('“Works for YWAM GP” needs a YWAM GP role', r.body.ok === false && r.body.err === 'gp_role_needed' && !mem.staff.find((x) => x.id === 'st_cs').gpHome && mem.staff.find((x) => x.id === 'st_cs').dept === 'Campus Leadership');
+const beforeGp = await gpOf();
+ok('(before) Sokha is Siem Reap’s National Campus Director', beforeGp.campuses.find((c) => c.id === 'siemreap').clt.some((p) => p.id === 'st_nat' && p.title === 'National Campus Director'));
+r = await call('adminUpdateStaff', ['sokha', '1234', 'st_nat', { gpHome: true }]);
+ok('nobody ticks it for themselves', r.body.ok === false && !mem.staff.find((x) => x.id === 'st_nat').gpHome);
+r = await call('updateProfile', ['sokha', '1234', { gpHome: true, gpRoles: ['director'] }]);
+ok('… nor through their own profile', !mem.staff.find((x) => x.id === 'st_nat').gpHome && mem.staff.find((x) => x.id === 'st_nat').gpRoles.join() === 'campuses,leaders');
+r = await call('adminUpdateStaff', U.concat(['st_nat', { gpHome: true, dept: 'Community Service', ministry: 'Cafe', leads: ['Community Service|Cafe'], ministries: ['Community Service|LTN'], cdKind: 'national' }]));
+let sok = mem.staff.find((x) => x.id === 'st_nat');
+ok('an admin moves someone to YWAM GP: no campus department, ministry, title, other ministry or ministry led', r.body.ok && r.body.staff.gpHome === true && sok.gpHome === true && sok.dept === '' && sok.ministry === '' && !sok.cdKind && !sok.ministries.length && !sok.leads.length);
+ok('… their campus stays (where they live), and what they had is kept to offer back', sok.campus === 'siemreap' && sok.gpWas.dept === 'Campus Leadership' && sok.gpWas.ministry === 'Campus Director' && sok.gpWas.cdKind === 'national' && r.body.staff.gpWas.ministry === 'Campus Director');
+G = await gpOf();
+const srC = G.campuses.find((c) => c.id === 'siemreap');
+ok('they still count in their campus’s staff number', srC.staff === beforeGp.campuses.find((c) => c.id === 'siemreap').staff && srC.staff === 4);
+ok('… but hold no seat on its leadership team: the director’s seat is free', !srC.clt.some((p) => p.id === 'st_nat') && !G.titles.st_nat && !srC.clt.some((p) => p.title === 'National Campus Director'));
+ok('… listed as YWAM GP team living there, and under their roles with where they live', srC.gpHome.map((p) => p.id).join() === 'st_nat' && G.gp.filter((p) => p.id === 'st_nat').every((p) => p.home === true && p.campus === 'siemreap') && G.gp.filter((p) => p.id === 'st_nat').length === 2);
+const rosGp = (await call('teamRoster', ['kanha', '1234'])).body;
+ok('the roster keeps them on their campus, marked, and marks nobody else', rosGp.find((p) => p.id === 'st_nat').campus === 'siemreap' && rosGp.find((p) => p.id === 'st_nat').gpHome === true && rosGp.filter((p) => 'gpHome' in p).length === 1);
+r = await call('updateProfile', ['sokha', '1234', { dept: 'Community Service', ministry: 'Cafe', ministries: ['Community Service|LTN'], role: 'Starting new things' }]);
+sok = mem.staff.find((x) => x.id === 'st_nat');
+ok('they cannot give themselves a campus job back (the rest of their profile saves)', r.body.ok && sok.dept === '' && sok.ministry === '' && !sok.ministries.length && sok.role === 'Starting new things' && r.body.staff.gpHome === true);
+r = await call('updateProfile', ['sokha', '1234', { dept: 'Campus Leadership', ministry: 'Campus Director', cdKind: 'national' }]);
+ok('… nor ask to move into Campus Leadership', !mem.staff.find((x) => x.id === 'st_nat').cltRequest && r.body.cltPending !== true);
+r = await call('setMinistryLeader', U.concat(['Community Service', 'Cafe', 'st_nat', true]));
+ok('… nor be made a campus ministry’s leader', r.body.ok === false && r.body.err === 'gp_home');
+r = await call('adminUpdateStaff', U.concat(['st_nat', { gpRoles: [] }]));
+ok('their last YWAM GP role cannot be taken while YWAM GP is their job', r.body.err === 'gp_role_needed' && mem.staff.find((x) => x.id === 'st_nat').gpRoles.length === 2);
+
+/* the rights they lose, and the reading they gain */
+ok('Campus Leadership’s rights are gone: the leadership meeting is not theirs', (await call('getLeadMeeting', ['sokha', '1234'])).body.ok === false);
+r = await call('saveRock', ['sokha', '1234', { campus: 'siemreap', dept: 'Campus Leadership', title: 'A leadership rock' }]);
+ok('… nor a leadership rock', r.body.ok === false && r.body.err === 'not_authorized');
+r = await call('getBoardOverview', ['sokha', '1234']);
+ok('they read the big picture of both campuses (as the board does)', r.body.ok && r.body.campuses.poipet && r.body.campuses.siemreap && r.body.me.member === false);
+ok('… each campus’s leadership team, to read', (await call('getBoardLeadership', ['sokha', '1234', 'poipet'])).body.ok === true);
+r = await call('fin2Get', ['sokha', '1234', 'poipet']);
+ok('… and its finances, never to edit', r.body.ok && r.body.canEdit === false && (await call('fin2Save', ['sokha', '1234', 'poipet', {}, 0])).body.ok === false);
+ok('… and the quarterly report of the other campus', (await call('getQuarterReport', ['sokha', '1234', 'poipet', new Date().getFullYear(), 4])).body.ok === true);
+ok('the Board room stays the board’s', (await call('boardRoom', ['sokha', '1234', 'getLeadBoard', []])).body.err === 'not_authorized');
+ok('someone with a YWAM GP title but a campus job reads none of it', (await call('getBoardOverview', ['kanha', '1234'])).body.err === 'not_authorized' && (await call('fin2Get', ['kanha', '1234', 'poipet'])).body.ok !== true);
+ok('getYwamGp tells each of them', (await gpOf('sokha')).oversee === true && (await gpOf('kanha')).oversee === false);
+r = await call('adminUpdateStaff', U.concat(['st_pp', { gpRoles: ['director'] }]));
+ok('YWAM GP’s Director reads it too, with a campus job', (await call('getBoardOverview', ['vanna', '1234'])).body.ok === true && mem.staff.find((x) => x.id === 'st_pp').dept === 'Campus Leadership');
+
+/* YWAM GP's own rocks */
+r = await call('saveRock', ['sokha', '1234', { title: 'Start two new ministries' }]);
+const gpRock = r.body.ok && r.body.rocks.find((x) => x.title === 'Start two new ministries');
+ok('a rock from someone whose job is YWAM GP is YWAM GP’s own', gpRock && gpRock.campus === 'gp' && gpRock.dept === 'YWAM GP' && gpRock.ministry === '');
+r = await call('saveRock', ['sokha', '1234', Object.assign({}, gpRock, { status: 'off', owner: 'st_nat' })]);
+ok('… they move it and own it', r.body.ok && r.body.rocks.find((x) => x.id === gpRock.id).status === 'off' && r.body.rocks.find((x) => x.id === gpRock.id).owner === 'st_nat');
+r = await call('saveRock', ['kanha', '1234', { campus: 'gp', dept: 'YWAM GP', title: 'Sneak' }]);
+ok('nobody else writes one — not with a YWAM GP title and a campus job', r.body.ok === false && r.body.err === 'not_authorized');
+ok('… nor changes or deletes it', (await call('saveRock', ['kanha', '1234', Object.assign({}, gpRock, { title: 'Mine now' })])).body.ok === false && (await call('deleteRock', ['kanha', '1234', gpRock.id])).body.ok === false);
+ok('an admin does', (await call('saveRock', U.concat([{ campus: 'gp', dept: 'YWAM GP', title: 'Both campuses healthy' }]))).body.ok === true);
+ok('a made-up place is still refused', (await call('saveRock', U.concat([{ campus: 'gp', dept: 'Community Service', title: 'x' }]))).body.err === 'bad_target' && (await call('saveRock', U.concat([{ campus: 'mars', dept: 'YWAM GP', title: 'x' }]))).body.err === 'bad_target');
+ok('every staff member reads YWAM GP’s rocks (their boot)', (await call('getMyBoot', ['kanha', '1234'])).body.rocks.filter((x) => x.campus === 'gp').length === 2);
+
+/* new campus directors, and back again */
+r = await call('adminUpdateStaff', U.concat(['st_cafe', { dept: 'Campus Leadership', ministry: 'Campus Director', cdKind: 'national' }]));
+G = await gpOf();
+ok('the free seat is given to someone else the usual way', r.body.ok && G.campuses.find((c) => c.id === 'siemreap').clt.some((p) => p.id === 'st_cafe' && p.title === 'National Campus Director'));
+r = await call('adminUpdateStaff', U.concat(['st_cafe', { gpHome: true, gpRoles: [CH] }]));
+r = await call('adminDeleteGpRole', U.concat([CH]));
+ok('a title that is someone’s only YWAM GP job is not removed', r.body.ok === false && r.body.err === 'only_role' && r.body.names.join() === 'Kanha' && mem.gpRolesCustom.length === 2);
+await call('adminUpdateStaff', U.concat(['st_cafe', { gpRoles: [CH, NM, 'media'] }]));
+ok('only an admin removes one', (await call('adminDeleteGpRole', ['sokha', '1234', CH])).body.ok === false);
+r = await call('adminDeleteGpRole', U.concat([CH]));
+ok('removed, it comes off whoever held it', r.body.ok && r.body.removedFrom === 1 && r.body.gpRolesCustom.length === 1 && mem.staff.find((x) => x.id === 'st_cafe').gpRoles.join() === NM + ',media');
+G = await gpOf();
+ok('… and off the YWAM GP page', G.gpRoles.indexOf(CH) === -1 && !G.gp.some((p) => p.gpRole === CH));
+mem.staff.find((x) => x.id === 'st_cafe').gpRoles.push('c_ghost');
+ok('an id whose title is gone is never listed', !(await gpOf()).gp.some((p) => p.gpRole === 'c_ghost'));
+r = await call('adminUpdateStaff', U.concat(['st_nat', { gpHome: false }]));
+sok = mem.staff.find((x) => x.id === 'st_nat');
+ok('unticked, they are given back the campus job they had', r.body.ok && !sok.gpHome && !sok.gpWas && sok.dept === 'Campus Leadership' && sok.ministry === 'Campus Director' && sok.cdKind === 'national' && r.body.staff.gpHome === false);
+ok('… and are staff of that campus’s chart again, without the reading', (await gpOf()).campuses.find((c) => c.id === 'siemreap').clt.some((p) => p.id === 'st_nat') && (await call('getBoardOverview', ['sokha', '1234'])).body.err === 'not_authorized');
+r = await call('adminUpdateStaff', U.concat(['st_cafe', { gpHome: false, dept: 'Community Service', ministry: 'LTN' }]));
+ok('… or put straight into another one', r.body.ok && r.body.staff.dept === 'Community Service' && r.body.staff.ministry === 'LTN' && !mem.staff.find((x) => x.id === 'st_cafe').gpHome);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 fs.rmSync(TMP, { recursive: true, force: true });
 process.exit(fail ? 1 : 0);
