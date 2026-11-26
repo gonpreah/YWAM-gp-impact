@@ -591,8 +591,36 @@ in the leadership My Ministry, and it shows in Team → Structure … profile fa
   one (`#sbMainTag`), each other with **Make this their main ministry** (`[data-sbmain="key|id"]`, the two swap) and ×
   (`[data-sbalsorm]`), and **Also serves in…** (`#sbAlsoSel` / `#sbAlsoAdd`). The tree (`M.alsoOf`, `M.alsoBoxes`) and Team →
   Structure's list (`orgChartHtml_(…, alsoMap)`) show them in each box, the second face dashed with an "also" tag
-  (`.sbFace.also`, `.orgPerson.also`) and counted apart ("2 +1"). Dragging moves the MAIN place only; leading a second
-  ministry leaves the main one where it is.
+  (`.sbFace.also`, `.orgPerson.also`) and counted apart ("2 +1"). Leading a second ministry leaves the main one where it is.
+- **A dragged person lands; main job or second job; nobody on the board too much** (Nov 2026, Uriah: "if I grab them and move
+  them, they don't drop into the new thing … assign first / primary, secondary jobs … the director of one department is in every
+  single ministry. I don't want that"). What was wrong: the tab opens on View, where a grabbed face did nothing at all; a
+  Director was drawn dashed in up to four ministries (their profile's `ministries`, which directors tick to reach those pages,
+  and their `leads`) and dragging one of THOSE faces moved their main place while the grabbed face stayed; a face dragged from
+  the tray towards a box more to the side than up never left the tray; a non-admin's move into Campus Leadership looked done
+  ("profile is updated") while it waited for an admin.
+  - **One face each** (`M.boxFaces(key)` → `{solid, also, leads}`; the list: `orgChartHtml_`): solid at the main job; dashed
+    for a second job chosen on the board, and for someone who leads a ministry from another one (dashed + 👑); never both in
+    one box. **Campus Leadership is on the chart once**: a department's Director is never in that department's ministries
+    (`structOversees_`, page and api.js), and nobody in Campus Leadership is in a ministry because their profile lists it or
+    because they lead it (`alsoOf`, `structAlsoOf_(plan, r, dept, ministry)`) — only an explicit `also` in another
+    department shows. The ＋ sheet still lists a box's leaders, a director included.
+  - **The board only ADDS a ministry page to someone in Campus Leadership** (`structApplyRows_`): making a quarter live never
+    drops a director's `ministries` (so no access is lost and they never show as "differs"); a department's overseer reaches
+    their ministries through `canLogFor_` anyway. A director moved into a ministry is an ordinary member again.
+  - **The chooser** (`sbDropped_` → `S.sb.drop`, `sbDropHtml_`, `#sbDrop` where the face was let go): a solid face on a
+    ministry, when they have a main job elsewhere → **⭐ Main job here** (`#sbDropMain` → `sbMove_`, which also takes them off
+    the old ministry's leaders) / **Second job here** (`#sbDropAlso` → `sbAlsoAdd_`; left out with the reason `#sbDropWhy`
+    when it can't be: they direct that department, it is already their second job, or they have `SB_ALSO_MAX`) / Cancel
+    (`#sbDropCancel`, `#sbDropScrim`). No place yet → lands as main, no question; a Director spot, Campus Leadership,
+    Students and the tray as before. **A dashed face is that second job**: on another ministry it moves there
+    (`sbAlsoMove_`), on the tray it comes off (`sbAlsoRm_`); the main job stays.
+  - **Never silent**: View mode + a drag on a face → `#sbNudge` with **Switch to Edit** (`sbNudge_`; View stays the
+    default); a drop is taken by the box under the pointer or a ministry within 26px (`sbDropAt_`), and a miss says where a
+    face can go; a tray drag's direction is decided once, and only a finger that sets off sideways scrolls the row; into
+    Campus Leadership by a non-admin says so at the drop (6.5 s — `showMsg(text, ms)`) and the face keeps ⏳ (`sbWaits_`,
+    `[data-sbwait]`); the save's "profile is updated" no longer counts a move that waits.
+  - Khmer §146. tests/test-structure.mjs, test-structure-board-ui.mjs (a leader and a Director landing, mouse and touch).
 - **Make a quarter live → profiles** (Nov 2026, Uriah: "move people around … and for that to automatically change in their
   profile"; this replaces Andrew's "not synced into our staff profile"). `applyStructure(user, pin, campus, year, q, {dry})`
   (`structEditor_`; a quarter already over → `past_quarter`): `structApplyRows_` lays the plan over the campus's active staff —
@@ -3476,6 +3504,13 @@ also carries `menteeId`, the mentee's `prep`, and once it happened `heldOn`, `no
   only once accepted. The boot's own staff card now carries `mentorStatus` (the page read `S.me.mentorStatus`, which
   was only on the profile: every 1-on-1 with one's own mentor also showed in the top "Asking you" list, and Leave said
   "Save this request" instead of "Send to {mentor} for Approval"). Khmer §107.
+- **How the people I mentor are doing with THEIR 1-on-1s** (Nov 2026, Uriah: "how many one-on-ones have they done and
+  logged this month?"): `getMyMentees` (so the boot's `mentees` — no new call) gives a mentee who mentors other people
+  `oo` = {held, met, people: [{id, name (first name), held}]} — their approved, active mentees and the 1-on-1s held with
+  each this month (Cambodia's calendar, `heldOn`, the mentee as the mentor). Mentorship's row says "Their 1-on-1s this
+  month: 3 held with 2 of 4 people" (`ooTheirsLineHtml_`, `[data-ootheirs]`); the mentee's page lists each first name with
+  ●○ of 2 (`ooTheirsListHtml_`, `#ooTheirs`, `[data-ootheirsrow]`). Nothing for a mentee who mentors nobody. Counts and
+  first names only, to that mentee's own approved mentor — never a check-in, a note or a follow-up. Khmer §146.
 - **Two a month** (`OO_PER_MONTH`), counted by `heldOn`: ●○ dots on My Home's Mentorship
   card (each mentee, and your own), on the Mentor page and on a mentee's page (which also
   lists their 1-on-1s). The monthly health question "2 one-on-ones?" shows the count.

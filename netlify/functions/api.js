@@ -2101,7 +2101,28 @@ async function getMyMentees(username, pin) {
   if (!s) return { ok: false };
   const rows = await getStaff_();
   const mine = rows.filter(function (x) { return x.active && x.mentorId === s.id && x.mentorStatus === 'approved'; }).map(publicStaff_);
-  return { ok: true, mentees: mine };
+  /* How my mentees are doing with THEIR 1-on-1s (Nov 2026, Uriah: "looking at the people I'm mentoring, how they're doing
+     with their one-on-ones — how many have they done and logged this month?"). For a mentee who mentors other people:
+     each of those people's first name and how many 1-on-1s the mentee has held with them this month (Cambodia's
+     calendar, by heldOn). Counts and first names only, to the mentee's own approved mentor and nobody else — never a
+     check-in, a note or a follow-up of someone else's 1-on-1. Nothing extra for a mentee who mentors nobody. */
+  if (mine.length) {
+    const ones = await getOneOnOnes_(), month = baseToday_().slice(0, 7);
+    mine.forEach(function (m) {
+      const theirs = rows.filter(function (x) { return x.active && !x.archived && !isApplicant_(x) && x.mentorId === m.id && x.mentorStatus === 'approved'; });
+      if (!theirs.length) return;
+      const people = theirs.map(function (x) {
+        const held = ones.filter(function (r) {
+          if (r.status !== 'held' || String(r.heldOn || '').slice(0, 7) !== month) return false;
+          if (!((r.fromId === m.id && r.toId === x.id) || (r.fromId === x.id && r.toId === m.id))) return false;
+          return ooMenteeOf_(r, rows) === x.id;
+        }).length;
+        return { id: x.id, name: String(x.name || '').trim().split(/\s+/)[0] || '', held: held };
+      }).sort(function (a, b) { return a.name < b.name ? -1 : a.name > b.name ? 1 : 0; });
+      m.oo = { held: people.reduce(function (n, x) { return n + x.held; }, 0), met: people.filter(function (x) { return x.held > 0; }).length, people: people };
+    });
+  }
+  return { ok: true, mentees: mine, perMonth: OO_PER_MONTH };
 }
 async function getMenteeLogs(username, pin, menteeId) {
   const s = await verifyStaff_(username, pin);
@@ -6421,9 +6442,19 @@ function cleanStructAlso_(also, here, place, students, byId) {
   return out;
 }
 /* the other ministries someone serves in that quarter: the plan's when it has its own, else their profile's */
-function structAlsoOf_(plan, r) {
-  if (plan && plan.also) return plan.also[r.id] || [];
-  return ministriesOf_(r).filter(function (k) { return k.split('|')[0] !== LEADERSHIP_DEPT && k !== r.dept + '|' + (r.ministry || ''); }).slice(0, STRUCT_ALSO_MAX);
+/* Someone whose main place is Campus Leadership is on the chart once (Nov 2026, Uriah: "the director of one department is
+   in every single ministry. I don't want that"): a department's Director is never also in that department's ministries
+   (structOversees_ — they oversee them already), and no director is put in a ministry just because their profile lists
+   it; only a second job chosen on the board (the plan's own `also`) counts. dept / ministry: where the plan puts them. */
+function structOversees_(dept, ministry, key) {
+  return dept === LEADERSHIP_DEPT && !!ministry && ministry !== 'Campus Director' && String(key).indexOf(ministry + '|') === 0;
+}
+function structAlsoOf_(plan, r, dept, ministry) {
+  if (dept === undefined) { dept = r.dept; ministry = r.ministry || ''; }
+  const list = plan && plan.also ? (plan.also[r.id] || [])
+    : dept === LEADERSHIP_DEPT ? []
+    : ministriesOf_(r).filter(function (k) { return k.split('|')[0] !== LEADERSHIP_DEPT && k !== r.dept + '|' + (r.ministry || ''); }).slice(0, STRUCT_ALSO_MAX);
+  return list.filter(function (k) { return !structOversees_(dept, ministry, k); });
 }
 
 /* ---- a quarter's structure made live: the arrangement becomes people's profiles (Nov 2026, Uriah) ----
@@ -6468,6 +6499,10 @@ function structApplyRows_(rows, campus, plan, isAdmin, only) {
     const curMin = ministriesOf_(rec);
     let wantMin = also ? cleanMinistries_((also[rec.id] || []).concat(curMin.filter(function (k) { return k.split('|')[0] === LEADERSHIP_DEPT; })), rec) : cleanMinistries_(curMin, rec);
     if (deptOf_(rec) !== LEADERSHIP_DEPT) wantMin = wantMin.filter(function (k) { return k.split('|')[0] !== LEADERSHIP_DEPT; });
+    /* Campus Leadership: the board only ever ADDS a ministry page. Directors tick ministries on their profile to reach
+       those pages, and the chart no longer draws them there — so a quarter made live must not take that access away,
+       nor list them as "differs" for ever. */
+    else if (also) wantMin = cleanMinistries_(curMin.concat(wantMin), rec);
     if (!structSameSet_(curMin, wantMin)) {
       ch.alsoAdd = wantMin.filter(function (k) { return curMin.indexOf(k) === -1; });
       ch.alsoDrop = curMin.filter(function (k) { return wantMin.indexOf(k) === -1 && k !== main; });
@@ -6656,7 +6691,7 @@ function structPeople_(staff, campus, plan) {
   const leadsFor = function (id, own) { if (!leads) return own; return Object.keys(leads).filter(function (k) { return leads[k].indexOf(id) > -1; }); };
   const people = staff.filter(function (r) { return r.active && !r.archived && !isApplicant_(r) && r.campus === campus; })
     .map(function (r) { const pl = place[r.id]; const o = { id: r.id, name: r.name, dept: pl ? pl.dept : r.dept, ministry: pl ? pl.ministry : (r.ministry || ''), role: r.role || '', leads: leadsFor(r.id, leadsOf_(r)), photo: '' };
-      const al = structAlsoOf_(plan, r).filter(function (k) { return k !== o.dept + '|' + o.ministry; }); if (al.length && o.dept !== STRUCT_OFF && !students[r.id]) o.also = al;
+      const al = structAlsoOf_(plan, r, o.dept, o.ministry).filter(function (k) { return k !== o.dept + '|' + o.ministry; }); if (al.length && o.dept !== STRUCT_OFF && !students[r.id]) o.also = al;
       if (students[r.id]) o.student = students[r.id]; return o; });
   (plan.extra || []).forEach(function (x) { const pl = place[x.id] || { dept: STRUCT_OFF, ministry: '' }; const o = { id: x.id, name: x.name, dept: pl.dept, ministry: pl.ministry, role: '', leads: leadsFor(x.id, []), photo: '', extra: true };
     if (plan.also && plan.also[x.id] && pl.dept !== STRUCT_OFF) o.also = plan.also[x.id]; people.push(o); });
