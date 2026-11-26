@@ -7,7 +7,7 @@
    A department leader's page leads with the department as it is this week,
    with nothing to type: numbers in on time, headcount and who is away, the
    health check-ins (two numbers only, none under the server's minimum —
-   getDeptPulse), 1-on-1s this month, OKR progress this quarter and staff
+   getDeptPulse), 1-on-1s this month, the quarter's rocks on track and staff
    debt (entered monthly by the Finance office). The Campus Director sees
    one for every department, plus the quarter's own scores to enter. */
 var PULSE_DEPTS_ = ['Community Service','Youth Education','Leadership Development','Skills Training'];
@@ -30,12 +30,6 @@ function pulseLoad_(dept){
     if(S.view==='ministry') render();
   });
 }
-function pulseOkr_(dept){
-  var okrs=((S.base && S.base.okrs)||[]).filter(function(o){ return o.campus===S.me.campus && o.dept===dept && Number(o.quarter)===leadQNow_(); });
-  if(!okrs.length || typeof baseR!=='function') return null;
-  var R=baseR();
-  return { n:okrs.length, pct:Math.round(okrs.reduce(function(a,o){ return a+R.objProgress(o); },0)/okrs.length) };
-}
 function pulseTile_(label, big, sub){
   return '<div class="pulseTile"><div class="pulseLabel">'+esc(label)+'</div><div class="pulseBig">'+big+'</div>'+
     (sub?'<div class="pulseSub">'+sub+'</div>':'')+'</div>';
@@ -51,7 +45,7 @@ function pulseCardHtml_(dept, compact){
   var st=numbersDueState_(wk, inN===mins.length);
   var hNow=P.health[0], hLast=P.health[1]||null;
   var hShow=(hLast && hLast.score!==undefined) ? hLast : (hNow.score!==undefined ? hNow : null);
-  var okr=pulseOkr_(dept);
+  var rk=rkPulse_(dept);   // the department's rocks this quarter: how many are on track (teams/28-rocks.js)
   h+='<div class="pulseGrid">';
   h+=pulseTile_(t('Numbers in'), inN+' / '+mins.length,
     esc(st==='done'?t('all in'):(st==='late'?t('overdue'):(st==='today'?t('due today'):gpT('due Friday, {date}',{date:shortDay_(weekFriday_(wk))})))));
@@ -60,7 +54,7 @@ function pulseCardHtml_(dept, compact){
     esc(hShow ? gpT('{n} of {total} answered · week {wk}',{n:hShow.answered,total:hShow.total,wk:hShow.week})
               : gpT('{n} answered — too few to show',{n:(hLast||hNow).answered})));
   h+=pulseTile_(t('1-on-1s'), String(P.oneOnOnes), esc(t('this month')));
-  h+=pulseTile_(t('OKRs'), okr ? okr.pct+'%' : '—', esc(okr ? gpT('{n} objectives · Q{q}',{n:okr.n,q:leadQNow_()}) : t('none this quarter')));
+  h+=pulseTile_(t('Rocks'), rk ? rk.on+' / '+rk.n : '—', esc(rk ? gpT('on track · Q{q}',{q:leadQNow_()}) : t('none this quarter')));
   h+=pulseTile_(t('Staff debt'), P.staffDebt ? fmt(P.staffDebt.value, 'Staff Debt ($)') : '—',
     esc(P.staffDebt ? gpT('from Finance, {date}',{date:P.staffDebt.at ? shortDay_(new Date(P.staffDebt.at)) : ''}) : t('not entered yet')));
   h+='</div>';
@@ -708,7 +702,7 @@ function teamsMinistryHtml_(campus){
    Outreach Teams is entered on its own Teams Database page instead.
 
    A Campus Leadership person's own row is their team's section: no weekly
-   numbers (hidden for now) — the Leadership OKRs as its dashboard and the
+   numbers (hidden for now) — leadership's rocks and the
    Monday meeting board (leadSectionHtml_). It sits last in the picker as
    "Campus Leadership" and is where the page opens for them. The person's own
    four personal numbers are off the page altogether for now (personalCardHtml_
@@ -764,7 +758,7 @@ function mmSelected_(opts){
   // a department picked with no ministry yet (the admin's Department select) → its first weekly ministry
   var inDept=opts.filter(function(o){ return o.dept===S.mmBrowseDept; });
   if(inDept.length) return inDept.filter(function(o){ return !isTeamsMinistry_(o.dept, o.min); })[0] || inDept[0];
-  // your own first — for Campus Leadership that is its OKRs and meeting board
+  // your own first — for Campus Leadership that is its rocks and meeting board
   var own = opts.filter(function(o){ return o.dept===S.me.dept && o.min===(o.dept===BL_DEPT ? blMyKey_() : S.me.ministry); })[0];
   // otherwise the first weekly ministry — Outreach Teams is its own page
   return own || opts.filter(function(o){ return !isTeamsMinistry_(o.dept, o.min); })[0] || opts[0];
@@ -776,8 +770,8 @@ function mmOptionLabel_(o){
 /* ---------- My Ministry's shell (Oct 2026, Uriah: "so cluttered, a lot of boxes") ----------
    One flat header — the ministry's name, where it sits, Switch ▾ to pick another (a sheet,
    grouped by department, with a search for admins) — then ONE row of tabs for that ministry
-   (the Cafe: Today · Till · Rota · Week · Numbers · Tasks · OKRs; most: Numbers · Schedule ·
-   Tasks · OKRs; Campus Leadership: its own tabs), and the tab's content as flat sections under
+   (the Cafe: Today · Till · Rota · Week · Scorecard · Tasks · Rocks; most: Scorecard · Schedule ·
+   Tasks · Rocks; Campus Leadership: its own tabs), and the tab's content as flat sections under
    hairlines, not cards in cards. Stats are a strip, not a grid of boxes. */
 function mmPickerHtml_(opts, sel){   // the Switch ▾ sheet
   if(!S.mmPickOpen || opts.length<2) return '';
@@ -806,8 +800,20 @@ function mmHeadHtml_(opts, sel, mine){
   if(leaders.length) sub+=' · 👑 '+esc(t('Led by'))+' '+leaders.map(function(p){ return esc(p.name); }).join(', ');
   var note = isBL ? '' : mine ? t('Your main ministry — you are entering its numbers') : sel.role==='member' ? t('One of your ministries — you are entering its numbers') : sel.role==='leader' ? t('You lead this ministry — you are entering its numbers') : sel.role==='admin' ? t('As an admin you can see and enter its numbers') : sel.role==='oversee' ? t('Viewing as its director') : '';
   return '<div class="mmHead'+(isBL?' leadBanner':'')+'" id="mmBanner"><div class="eyebrow">'+esc(t('My Ministry'))+'</div>'+
-    '<div class="mmHeadRow"><span class="mmBannerEmoji">'+emoji+'</span><div class="mmHeadText"><div class="mmBannerName">'+esc(name)+'</div><div class="rowSub">'+sub+(note ? '<span class="mmBannerNote">'+esc(note)+'</span>' : '')+'</div></div>'+
+    '<div class="mmHeadRow"><span class="mmBannerEmoji">'+emoji+'</span><div class="mmHeadText"><div class="mmBannerName">'+esc(name)+'</div><div class="rowSub">'+sub+(note ? '<span class="mmBannerNote">'+esc(note)+'</span>' : '')+'</div>'+(typeof qrMmLinkHtml_==='function' ? qrMmLinkHtml_(sel) : '')+'</div>'+
     (opts.length>1 ? '<button class="mmSwitch" id="mmSwitch" aria-haspopup="dialog">'+esc(t('Switch'))+' ▾</button>' : '')+'</div></div>';
+}
+/* In two to four ministries of your own (Nov 2026, Uriah: "some people will have 2 ministry jobs … there needs to be
+   some clarity around that"): one slim row under the header naming them, the open one marked, a tap opens the other.
+   Only the ministries that are yours — main, the others on your profile, any you lead — never the ones an admin or a
+   director can merely open; Switch ▾ stays for those. Its own attribute (data-mmgo), so Switch ▾'s rows are untouched. */
+function mmMineHtml_(opts, sel){
+  var own=opts.filter(function(o){ return o.role==='main' || o.role==='member' || o.role==='leader'; });
+  if(own.length<2 || own.length>4) return '';
+  return '<div class="mmMine" id="mmMine" role="group" aria-label="'+esc(t('Your ministries'))+'"><span class="mmMineLbl">'+esc(t('Your ministries'))+'</span>'+
+    own.map(function(o){ var on=o.dept===sel.dept && o.min===sel.min;
+      return '<button type="button" class="mmMinePill'+(on?' on':'')+'" data-mmgo="'+esc(o.dept)+'|'+esc(o.min)+'" aria-pressed="'+on+'">'+(o.dept===BL_DEPT ? '🧭 '+esc(t('Campus Leadership')) : mmOptionLabel_(o))+
+        (o.role==='main' ? ' <small>'+esc(t('main'))+'</small>' : '')+'</button>'; }).join('')+'</div>';
 }
 /* the one row of tabs: [key, label, attr] — most keys are data-mmtab; a tool's own keys keep their
    own attribute (data-cafetab, data-fintab) so the tool's handlers work as before */
@@ -820,23 +826,23 @@ function mmTabsFor_(sel, mine, schedH){
   var out=[];
   if(sel.dept==='Community Service' && sel.min==='Cafe'){
     out=[['today',t('Today'),'data-cafetab'],['till',t('Till'),'data-cafetab'],['rota',t('Rota'),'data-cafetab'],['week',t('Week'),'data-cafetab']].concat(S.cafe && S.cafe.canSetup ? [['setup',t('Set up'),'data-cafetab']] : []);
-    out.push(['numbers',t('Numbers')]);
+    out.push(['numbers',t('Scorecard')]);
   } else if(sel.dept==='Skills Training' && sel.min==='Finances' && finCanEditClient_()){
     out=[['fdash',t('Dashboard'),'data-fintab'],['fmins',t('Ministries'),'data-fintab'],['finput',t('Input'),'data-fintab']];   // the finance tool (public/finance.html, teams/09-finance.js fin2FrameHtml_)
   } else if(isTeamsMinistry_(sel.dept, sel.min)){
     out=[['teams',t('Teams')]];
   } else if(isIcpMinistry_(sel.dept, sel.min)){
-    out=icpTabs_(); out.push(['numbers',t('Numbers')]);   // Intercession: its Wednesdays and the fast, then Numbers for the one typed figure (teams/25-intercession.js)
+    out=icpTabs_(); out.push(['numbers',t('Scorecard')]);   // Intercession: its Wednesdays and the fast, then Numbers for the one typed figure (teams/25-intercession.js)
   } else if(isWorshipMinistry_(sel.dept, sel.min)){
-    out=wsTabs_().concat([['numbers',t('Numbers')]]);   // Worship's rota, team, songs — the numbers count themselves but Salvations (teams/26-worship.js)
+    out=wsTabs_().concat([['numbers',t('Scorecard')]]);   // Worship's rota, team, songs — the numbers count themselves but Salvations (teams/26-worship.js)
   } else if(isDtsMinistry_(sel.dept, sel.min)){
     out=dtsTabs_();   // GPDTS: the school's home — every number counts itself, so no Numbers tab (teams/16-dts.js)
   } else if(isSchoolMinistry_(sel.dept, sel.min)){
     out=schTabs_();   // the school tool (YDC): roll, students, tests, payments — every number counts itself (teams/24-school.js)
-  } else out=[['numbers',t('Numbers')]];
+  } else out=[['numbers',t('Scorecard')]];   // the ministry's weekly numbers page (key still 'numbers')
   if(schedH && !isTeamsMinistry_(sel.dept, sel.min)) out.push(['sched',t('Schedule')]);
   if(sel.dept==='Skills Training' && sel.min==='Hospitality' && canHospClient_()) out.push(['goHosp',t('SR Hospitality'),'id']);   // a way in, not a tab (#goHosp opens it)
-  out.push(['tasks',t('Tasks')]); out.push(['okr',t('OKRs')]);
+  out.push(['tasks',t('Tasks')]); out.push(['okr',t('Rocks')]);   // the quarter's priorities (key still 'okr'; teams/28-rocks.js)
   return out;
 }
 /* the tab you were on last time, per ministry, kept on this phone (the Cafe's old "tool or numbers" choice counts too) */
@@ -851,22 +857,27 @@ function mmCurTab_(sel, tabs){
   if(sel.dept==='Skills Training' && sel.min==='Finances' && finCanEditClient_()) return keys.indexOf(S.finTab)>-1 ? S.finTab : 'fdash';
   return keys[0];
 }
+/* the month / quarter / year figures, folded under the Scorecard so the page is the board, the week and no more
+   (open or shut is remembered for the visit) */
+function mmGlanceHtml_(inner){
+  return inner ? '<details class="mmGlance" id="mmGlance"'+(S.mmGlanceOpen?' open':'')+'><summary>📈 '+esc(t('Month, quarter and year totals'))+'</summary>'+inner+'</details>' : '';
+}
 function myMinistryHtml(){
   var h='<button class="linkbtn" id="ministryBack" style="text-align:left;text-decoration:none;padding-left:0">← '+esc(t('My Home'))+'</button>';
   var opts=mmOptions_(), sel=mmSelected_(opts);
   if(!sel){
     return h+'<h2>'+esc(t('My Ministry'))+'</h2><div class="card"><p class="sub" style="margin:4px 0 10px">'+
-      esc(t('Set your ministry on the Profile tab and your team’s KPIs will show up here, ready to log.'))+'</p>'+
+      esc(t('Set your ministry on the Profile tab and your team’s Scorecard will show up here, ready to fill in.'))+'</p>'+
       '<button class="btn ghost" id="goProfile">'+esc(t('Choose my ministry'))+'</button></div>';
   }
   var selMine = sel.dept===S.me.dept && (sel.dept===BL_DEPT ? sel.min===blMyKey_() : sel.min===S.me.ministry);
   var leadRow = !!(sel.dept===BL_DEPT && ((selMine && S.me.ministry) || (!selMine && blViewOf_(sel.min))));   // the rows with LW tabs
-  /* anything that asks for "the OKRs tab" (S.mmTab='okr') lands on a leadership row's own OKRs tab */
+  /* anything that asks for "the Rocks tab" (S.mmTab='okr') lands on a leadership row's own Rocks tab */
   if(leadRow && S.mmTab==='okr'){ S.lwTab='okrs'; S.mmTab='ministry'; }
   S.mmBrowseDept=sel.dept; S.mmBrowseMinistry=sel.min;
   var mine = selMine;
-  h+='<div class="mmPage">'+mmHeadHtml_(opts, sel, mine)+mmPickerHtml_(opts, sel);
-  // Campus Leadership: its OKRs and the Monday meeting board, no weekly numbers (hidden for now)
+  h+='<div class="mmPage">'+mmHeadHtml_(opts, sel, mine)+mmMineHtml_(opts, sel)+mmPickerHtml_(opts, sel);
+  // Campus Leadership: its rocks and the Monday meeting board, no weekly numbers (hidden for now)
   S.leadShown = sel.dept===BL_DEPT;
   if(S.leadShown){
     var view = mine ? null : blViewOf_(sel.min);   // another leadership role's board, as they see it
@@ -888,7 +899,7 @@ function myMinistryHtml(){
         var myTitle=orgTitleOf_(S.me);
         if(myTitle) h+='<div class="orgYou">🧭 '+esc(gpT('Your role: {title}',{title:orgTitleText_(myTitle)}))+'</div>';
       }
-      var TABS={ week:t('My week'), base: role==='dept' ? (view ? t(view.key) : t('My department')) : t('Overview'), money:t('Finances'), board:t('Board'), okrs:t('OKRs'), struct:t('Structure') };
+      var TABS={ week:t('My week'), base: role==='dept' ? (view ? t(view.key) : t('My department')) : t('Overview'), money:t('Finances'), board:t('Board'), okrs:t('Rocks'), struct:t('Structure') };
       h+=mmTabsHtml_(tabList.map(function(k){ return [k, TABS[k], 'data-lwtab']; }), lwt, 'lwSeg');
       if(R.focus) h+='<p class="hint lwFocus">'+esc(t(R.focus))+'</p>';
       var pane;
@@ -896,12 +907,12 @@ function myMinistryHtml(){
       // the base's finances: the finance tool's Dashboard (public/finance.html, teams/09-finance.js)
       else if(lwt==='money') pane='<div class="campusSeg fin2LeadSeg" style="max-width:none">'+[['dash',t('Dashboard')],['mins',t('Ministries')]].map(function(x){ return '<button class="campusBtn'+((S.finLeadView||'dash')===x[0]?' on':'')+'" data-finlead="'+x[0]+'">'+esc(x[1])+'</button>'; }).join('')+'</div>'+fin2FrameHtml_(S.finLeadView==='mins' ? 'mins' : 'dash');   // the finance tool, read-only for leadership: its Dashboard or Ministries
       else if(lwt==='struct') pane=sbLeadHtml_();   // the quarter's structure as a whiteboard tree (teams/23-structure.js)
-      else if(lwt==='okrs') pane=okrTabHtml_();   // the OKRs page itself — yours, leadership's, and (admins) every department's
+      else if(lwt==='okrs') pane=rocksTabHtml_({ dept:BL_DEPT, min:'' });   // leadership's rocks — the ones the meeting shows — and (admins) every department's
       else if(lwt==='base') pane=leadBaseHtml_(ph)+orgCltCardHtml_(S.me.campus);   // the role's own numbers first; who is on the leadership team at the foot
       else pane=leadSectionHtml_();
       return h+'<div class="mmPane">'+pane+'</div></div>';
     }
-    return h+'<div class="mmPane">'+ph+orgCltCardHtml_(S.me.campus)+leadOkrDashHtml_()+leadSectionHtml_()+'</div></div>';
+    return h+'<div class="mmPane">'+ph+orgCltCardHtml_(S.me.campus)+leadRocksDashHtml_()+leadSectionHtml_()+'</div></div>';
   }
   var schedH = (typeof dutyHtml==='function') ? schedMinistryHtml_(sel.dept, sel.min) : '';
   var tabs=mmTabsFor_(sel, mine, schedH), cur=mmCurTab_(sel, tabs);
@@ -914,7 +925,7 @@ function myMinistryHtml(){
   else if(WS_TABS.indexOf(cur)>-1) pane=wsPaneHtml_(cur);
   else if(SCH_TABS.indexOf(cur)>-1) pane=schPaneHtml_(cur);
   else if(ICP_TABS.indexOf(cur)>-1) pane=icpPaneHtml_(cur);
-  else if(cur==='okr') pane=okrTabHtml_();
+  else if(cur==='okr') pane=rocksTabHtml_(sel);
   else if(cur==='tasks'){ S.gptFrom='ministry'; pane=gptPageHtml_({ dept:sel.dept, min:sel.min }, true); }
   else if(cur==='sched') pane=schedH;
   else if(cur==='teams'){
@@ -937,10 +948,11 @@ function myMinistryHtml(){
         S.kpiInputOpen=!ministryWeekLogged_(S.ministry, wk);
         if(S.kpiInputOpen){ S.dbAcc.kpiDay=true; S.dbAcc.kpiWeek=true; S.dbAcc.kpiMonth=true; S.dbAcc.kpiQuarter=true; }
       }
+      pane+=scoreBoardHtml_(S.me.campus, sel.dept, sel.min, S.ministry, wk);   // the board: each number against its goal (teams/28-rocks.js)
       pane+=ministryWeekStatusHtml_(S.ministry, wk, null);
       if(S.kpiInputOpen) pane+=kpiCardHtml(wk);
       if(sel.dept==='Skills Training' && sel.min==='Finances') pane+=staffDebtCardHtml_();
-      pane+=ministryDashboardHtml_(S.me.campus, sel.dept, sel.min, S.ministry);
+      pane+=mmGlanceHtml_(ministryDashboardHtml_(S.me.campus, sel.dept, sel.min, S.ministry));
     } else {
       var data=S.oversee[sel.min];
       if(!data && S.ovError[sel.min]){
@@ -953,10 +965,11 @@ function myMinistryHtml(){
         var owk=ovWeekFor_(sel.min), okey=sel.dept+'|'+sel.min+'|'+owk;
         S.ovAutoKey=S.ovAutoKey||{};
         if(S.ovAutoKey[sel.min]!==okey){ S.ovAutoKey[sel.min]=okey; S.ovInputOpen[sel.min]=!ministryWeekLogged_(data, owk); }
+        pane+=scoreBoardHtml_(S.me.campus, sel.dept, sel.min, data, owk);
         pane+=ministryWeekStatusHtml_(data, owk, sel.min);
         if(S.ovInputOpen[sel.min]) pane+=ovWeekRowsHtml_(sel.dept, sel.min, data, owk);
         if(sel.dept==='Skills Training' && sel.min==='Finances') pane+=staffDebtCardHtml_();
-        pane+=ministryDashboardHtml_(S.me.campus, sel.dept, sel.min, data);
+        pane+=mmGlanceHtml_(ministryDashboardHtml_(S.me.campus, sel.dept, sel.min, data));
       }
     }
     if(canEditMetricsClient_(S.me.campus, sel.dept, sel.min)){

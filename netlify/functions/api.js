@@ -1136,6 +1136,8 @@ async function staffLoginGoogle(token) {
   // the Google account linked to a profile first (staffLinkGoogle, made while signed in with the PIN), then the email
   const rec = rows.find(function (r) { return r && !isApplicant_(r) && r.google && r.google.sub && r.google.sub === gg.sub; }) || staffByEmail_(rows, gg.email);
   if (!rec) {
+    const bd = await boardGoogleLogin_(gg);   // not staff: perhaps a board member with their own sign-in
+    if (bd) return bd;
     const app = rows.find(function (r) { return r && isApplicant_(r) && (r.email === gg.email || r.username === gg.email); });
     return app ? { ok: false, err: 'applicant' } : { ok: false, err: 'new', email: gg.email, name: gg.name };
   }
@@ -2101,7 +2103,28 @@ async function getMyMentees(username, pin) {
   if (!s) return { ok: false };
   const rows = await getStaff_();
   const mine = rows.filter(function (x) { return x.active && x.mentorId === s.id && x.mentorStatus === 'approved'; }).map(publicStaff_);
-  return { ok: true, mentees: mine };
+  /* How my mentees are doing with THEIR 1-on-1s (Nov 2026, Uriah: "looking at the people I'm mentoring, how they're doing
+     with their one-on-ones — how many have they done and logged this month?"). For a mentee who mentors other people:
+     each of those people's first name and how many 1-on-1s the mentee has held with them this month (Cambodia's
+     calendar, by heldOn). Counts and first names only, to the mentee's own approved mentor and nobody else — never a
+     check-in, a note or a follow-up of someone else's 1-on-1. Nothing extra for a mentee who mentors nobody. */
+  if (mine.length) {
+    const ones = await getOneOnOnes_(), month = baseToday_().slice(0, 7);
+    mine.forEach(function (m) {
+      const theirs = rows.filter(function (x) { return x.active && !x.archived && !isApplicant_(x) && x.mentorId === m.id && x.mentorStatus === 'approved'; });
+      if (!theirs.length) return;
+      const people = theirs.map(function (x) {
+        const held = ones.filter(function (r) {
+          if (r.status !== 'held' || String(r.heldOn || '').slice(0, 7) !== month) return false;
+          if (!((r.fromId === m.id && r.toId === x.id) || (r.fromId === x.id && r.toId === m.id))) return false;
+          return ooMenteeOf_(r, rows) === x.id;
+        }).length;
+        return { id: x.id, name: String(x.name || '').trim().split(/\s+/)[0] || '', held: held };
+      }).sort(function (a, b) { return a.name < b.name ? -1 : a.name > b.name ? 1 : 0; });
+      m.oo = { held: people.reduce(function (n, x) { return n + x.held; }, 0), met: people.filter(function (x) { return x.held > 0; }).length, people: people };
+    });
+  }
+  return { ok: true, mentees: mine, perMonth: OO_PER_MONTH };
 }
 async function getMenteeLogs(username, pin, menteeId) {
   const s = await verifyStaff_(username, pin);
@@ -2237,6 +2260,8 @@ async function getData(code, year) {
   // single tile, so a custom metric shows up on the dashboard the same week
   // it's added, no separate sync step.
   const metricOverrides = await getMetricOverrides_();
+  /* `okrs` stays for the folded "Earlier objectives"; the rocks that replaced them are NOT here — this answers
+     anyone on the internet — they ride the signed-in boot (getMyBoot's `rocks`) and, for the board, getYwamGp. */
   return { leader: leader, year: yr, entries: entries, okrs: okrs, survey: survey, roster: roster, metricOverrides: metricOverrides };
 }
 
@@ -2384,6 +2409,221 @@ async function deleteObjective(id, code, username, pin) {
   rows = rows.filter(function (r) { return String(r.id) !== String(id); });
   await writeJSON('okrs', rows);
   return getData(code);
+}
+
+/* ==================== Rocks (Nov 2026, Uriah) ====================
+   "I'm going to move OKRs to rocks … as the OKRs are too complicated. Across the whole app we're
+   going to move away from OKRs and move to rocks and scorecard."
+   A rock is one of a team's few priorities for a quarter: a title, whose it is, on track / off
+   track / done, and a note. No percentages and no targets. One store for the whole base —
+   'rocks' = { rocks: [{id, campus, dept, ministry ('' = the department's, or leadership's own),
+   owner (a staff id, '' = the team's), year, q, title, status on|off|done, note, by, at, updated,
+   updatedBy, fromOkr?, fromLead?}], seeded } — written with mutateKey_. The leadership meeting's
+   rocks are the ones with dept Campus Leadership and no ministry (saveLeadRock writes here).
+   Quarters are the app's 13-week quarters of the week year (meetQ_). This quarter and the next can
+   be written; earlier ones are history.
+
+   Who reads: every staff member, every rock on both campuses — they ride the signed-in boot
+   (getMyBoot's `rocks`), never the public getData; a board member gets title and status only, for
+   the quarter report (getYwamGp). Applicants, students and guests get none. Who writes (canWriteRock_): an admin any; Campus Leadership their
+   campus's leadership rocks; anyone their own campus + department's (both read from the STAFF
+   RECORD — a payload naming another is refused, and an existing rock is only writable where it
+   already is); a ministry's people, its leader and its department's director that ministry's.
+
+   What was there before is brought in ONCE and never deleted (rocksSeed_): each objective of the
+   quarter the app moved in (ROCKS_START), and any written ahead for the quarter after it, becomes
+   a rock — status done at 100%, its key results as lines of the note — and the leadership
+   meeting's own rocks (leadMeet:<campus>.rocks) come across with their ids. Until the first write
+   that is worked out on every read and nothing is stored (a page open writes no blob); the first
+   write stores it inside the same mutateKey_ and marks the store seeded, so two phones at once
+   cannot make two of anything. The 'okrs' blob and leadMeet's old list are left as they are. */
+const ROCKS_START = { year: 2026, q: 4, from: '2026-09-28' };   // the quarter the app moved to rocks in; its first Monday
+const ROCK_STATUS = ['on', 'off', 'done'];
+const ROCK_MAX = { title: 120, note: 1200, each: 10, total: 8000 };
+/* How a metric adds up over weeks — public/taxonomy.js's modeOf() and its LATEST_SET, mirrored
+   (tests/test-rocks.mjs fails if they drift). Only used to read an objective's progress once. */
+const LATEST_SET_ = ['Total Staff', 'Staff Debt ($)', 'Base Finances ($)', 'Total in Bank Account ($)',
+  'Base Cash Reserve ($)', 'Finances Consolidated ($)',
+  'Schools', 'Ministry Staff', 'Students Enrolled', 'Students Supported Financially',
+  'Students Given Food & Housing', 'Current Coaches', 'Coaches in Training', 'Musicians in Training',
+  'Students Struggling', 'Potential Staff', 'Total Kids', 'Churches Being Led',
+  'Improvement Projects in Progress', 'Projects in Process', 'Base Plants in Planning',
+  'Youth Enrolled', 'Highest Viewed Video Views', 'Trainees in Track',
+  'Students in Discipleship', 'Players Being Discipled',
+  'Partner Churches Supported', 'Combined Congregation Attendance'];
+function modeOf_(metric) {
+  metric = String(metric || '');
+  if (metric.indexOf('(1-10)') > -1 || metric.indexOf('(%)') > -1) return 'avg';
+  if (LATEST_SET_.indexOf(metric) > -1) return 'latest';
+  const parts = metric.split(' '), last = parts[parts.length - 1];
+  if (last === 'Pages' || last === 'Followers') return 'latest';
+  return 'sum';
+}
+function rocksFix_(d) { if (!Array.isArray(d.rocks)) d.rocks = []; return d; }
+function rockNext_(n) { return n.q === 4 ? { year: n.year + 1, q: 1 } : { year: n.year, q: n.q + 1 }; }
+function isLeadRock_(r, campus) { return r.campus === campus && r.dept === LEADERSHIP_DEPT && !r.ministry; }
+/* the objectives as getData gives them, one per id, with when they were last edited */
+function okrObjects_(rows) {
+  const out = [], byId = {};
+  (rows || []).forEach(function (o) {
+    if (!o || !o.id) return;
+    if (!byId[o.id]) { byId[o.id] = { id: String(o.id), campus: o.campus, quarter: Number(o.quarter), dept: o.dept, objective: o.objective, krs: [], updated: '', year: yearOf_(o) }; out.push(byId[o.id]); }
+    if (String(o.updated || '') > byId[o.id].updated) byId[o.id].updated = String(o.updated || '');
+    byId[o.id].krs.push({ text: o.kr, metricKey: o.metricKey || '', target: Number(o.target) || 0, manual: Number(o.manualPct) || 0, kind: o.kind === 'count' ? 'count' : '', current: Number(o.current) || 0 });
+  });
+  return out;
+}
+/* rollup.js's krProgress, for the one reading the move needs: a linked key result is the
+   quarter's figure against its target, a count is the count so far, anything else the typed %. */
+function okrKrPct_(o, kr, idx) {
+  if (kr.metricKey) {
+    const wks = idx[o.campus + '|' + kr.metricKey + '|' + o.year] || {}, pairs = [];
+    Object.keys(wks).forEach(function (w) { if (meetQ_(Number(w)) === o.quarter) pairs.push([Number(w), wks[w]]); });
+    if (!pairs.length) return 0;
+    pairs.sort(function (a, b) { return a[0] - b[0]; });
+    const mode = modeOf_(kr.metricKey.split('|')[2]);
+    let actual = 0; pairs.forEach(function (p) { actual += p[1]; });
+    if (mode === 'avg') actual = actual / pairs.length; else if (mode === 'latest') actual = pairs[pairs.length - 1][1];
+    return Math.max(0, Math.min(100, kr.target > 0 ? Math.round(actual / kr.target * 100) : 0));
+  }
+  if (kr.kind === 'count') return Math.min(100, kr.target > 0 ? Math.round(Math.max(0, kr.current) / kr.target * 100) : 0);
+  return Math.min(100, Math.max(0, kr.manual));
+}
+/* Bring in what was there before, into `d`, unless it is in already. Pure: `ctx` holds what was read. */
+function rocksSeed_(d, ctx) {
+  const have = {}; d.rocks.forEach(function (r) { have[r.id] = 1; });
+  const idx = {};
+  (ctx.entries || []).forEach(function (r) {
+    const v = Number(r.value); if (!r.campus || isNaN(v) || SENSITIVE.indexOf(r.metric) > -1) return;
+    const k = r.campus + '|' + normDept_(r.dept, r.ministry) + '|' + r.ministry + '|' + r.metric + '|' + yearOf_(r);
+    (idx[k] = idx[k] || {})[String(r.week)] = v;
+  });
+  okrObjects_(ctx.okrs).forEach(function (o) {
+    let year = 0, q = 0;
+    if (o.quarter === ROCKS_START.q && o.year === ROCKS_START.year) { year = ROCKS_START.year; q = ROCKS_START.q; }
+    else if (o.quarter === 1 && ROCKS_START.q === 4 && o.updated.slice(0, 10) >= ROCKS_START.from) { year = ROCKS_START.year + 1; q = 1; o.year = year; }   // written ahead for the quarter after
+    const id = 'rk_o_' + o.id;
+    if (!year || have[id] || !o.campus || !o.dept || !String(o.objective || '').trim()) return;
+    const pcts = o.krs.map(function (kr) { return okrKrPct_(o, kr, idx); });
+    const pct = pcts.length ? Math.round(pcts.reduce(function (a, b) { return a + b; }, 0) / pcts.length) : 0;
+    const full = String(o.objective).trim(), lines = full.length > ROCK_MAX.title ? [full] : [];
+    o.krs.forEach(function (kr, i) { const tx = String(kr.text || '').trim(); if (tx) lines.push('• ' + (tx.length > 90 ? tx.slice(0, 89) + '…' : tx) + ' — ' + pcts[i] + '%'); });
+    /* clearly one ministry's: every linked key result reads that same ministry of this department */
+    const mins = {}; let linked = 0;
+    o.krs.forEach(function (kr) { if (!kr.metricKey) return; const p = kr.metricKey.split('|'); linked++; if (normDept_(p[0], p[1]) === normDept_(o.dept)) mins[p[1]] = 1; else mins['?'] = 1; });
+    const only = Object.keys(mins);
+    const dept = normDept_(o.dept);
+    d.rocks.push({ id: id, campus: o.campus, dept: dept, ministry: (dept !== LEADERSHIP_DEPT && linked && only.length === 1 && only[0] !== '?') ? only[0] : '', owner: '',
+      year: year, q: q, title: full.slice(0, ROCK_MAX.title), status: pct >= 100 ? 'done' : 'on', note: lines.join('\n').slice(0, ROCK_MAX.note),
+      by: '', at: o.updated || '', updated: o.updated || '', fromOkr: o.id });
+    have[id] = 1;
+  });
+  Object.keys(ctx.lead || {}).forEach(function (campus) {
+    (ctx.lead[campus] || []).forEach(function (r) {
+      if (!r || !r.id || have[r.id] || !String(r.title || '').trim()) return;
+      d.rocks.push({ id: String(r.id), campus: campus, dept: LEADERSHIP_DEPT, ministry: '', owner: typeof r.owner === 'string' ? r.owner : '', year: Number(r.year), q: Number(r.q),
+        title: String(r.title).slice(0, ROCK_MAX.title), status: ROCK_STATUS.indexOf(r.status) > -1 ? r.status : 'on', note: String(r.note || '').slice(0, ROCK_MAX.note),
+        by: r.by || '', at: r.created || r.updated || '', updated: r.updated || '', updatedBy: r.updatedBy || '', okrId: r.okrId || '', fromLead: true });
+      have[r.id] = 1;
+    });
+  });
+  return d;
+}
+async function rocksCtx_() {
+  const [okrs, rows, docs] = await Promise.all([getOkrs_(), getEntries_(), Promise.all(CAMPUS_IDS_.map(function (c) { return readJSON(meetKey_(c), {}); }))]);
+  const lead = {}; CAMPUS_IDS_.forEach(function (c, i) { lead[c] = Array.isArray(docs[i] && docs[i].rocks) ? docs[i].rocks : []; });
+  return { okrs: okrs, entries: await withTeamRows_(rows), lead: lead };
+}
+/* Every rock, to read. Before the first write the old objectives and the meeting's rocks are laid in here, unsaved. */
+function rocksKey_() { return boardScope.getStore() ? 'rocks:' + BOARD_ROOM : 'rocks'; }   // the board room keeps its rocks apart: no staff read ever opens them
+async function getRocks_() {
+  if (boardScope.getStore()) return rocksFix_(await readJSON(rocksKey_(), {})).rocks;
+  const d = rocksFix_(await readJSON('rocks', {}));
+  if (!d.seeded) rocksSeed_(d, await rocksCtx_());
+  return d.rocks;
+}
+async function rocksMutate_(fn) {
+  if (boardScope.getStore()) return mutateKey_(rocksKey_(), {}, function (d) { rocksFix_(d); return fn(d); });
+  const first = rocksFix_(await readJSON('rocks', {}));
+  const ctx = first.seeded ? null : await rocksCtx_();
+  return mutateKey_('rocks', {}, function (d) {
+    rocksFix_(d);
+    if (!d.seeded) { rocksSeed_(d, ctx || {}); d.seeded = baseToday_(); }
+    return fn(d);
+  });
+}
+function canWriteRock_(s, campus, dept, ministry) {
+  if (boardScope.getStore()) return !!(s && s.boardRoom && campus === BOARD_ROOM && dept === LEADERSHIP_DEPT && !ministry);   // in the board room: the board's rocks, by its members
+  if (!s || isApplicant_(s) || s.active === false || !campus || !dept) return false;
+  if (s.isAdmin) return true;
+  if (campus !== s.campus) return false;
+  if (dept === LEADERSHIP_DEPT) return deptOf_(s) === LEADERSHIP_DEPT;
+  if (deptOf_(s) === dept) return true;                                     // your own department's, as its objectives were
+  if (deptOf_(s) === LEADERSHIP_DEPT && s.ministry === dept) return true;   // its director
+  return !!ministry && canLogFor_(s, campus, dept, ministry);              // a ministry you are in (main or other) or lead
+}
+/* One rock in or changed. `x`: {id?, campus?, dept?, ministry?, title, owner, year, q, status, note}. A new rock
+   with no place named is the caller's own campus and department's; an existing one stays where it is. */
+async function rockSave_(s, x, only) {
+  x = x && typeof x === 'object' ? x : {};
+  const title = dutyText_(x.title, ROCK_MAX.title); if (!title) return { ok: false, err: 'bad_title' };
+  const n = meetNow_(), next = rockNext_(n), staff = await getStaff_();
+  const inRoom = boardScope.getStore() ? await boardRoomIds_() : null;
+  return rocksMutate_(function (d) {
+    const id = dutyText_(x.id, 120), i = id ? d.rocks.findIndex(function (r) { return r.id === id; }) : -1;
+    if (id && i === -1) return { abort: true, ok: false, err: 'not_found' };
+    const prev = i > -1 ? d.rocks[i] : null;
+    let campus, dept, ministry;
+    if (prev) { campus = prev.campus; dept = prev.dept; ministry = prev.ministry || ''; }
+    else {
+      campus = str_(x.campus, 40) || s.campus; ministry = str_(x.ministry, 80) || '';
+      dept = x.dept ? normDept_(str_(x.dept, 80), ministry) : deptOf_(s);
+      if (dept === LEADERSHIP_DEPT) ministry = '';
+    }
+    if ((inRoom ? campus !== BOARD_ROOM : CAMPUS_IDS_.indexOf(campus) === -1) || !dept) return { abort: true, ok: false, err: 'bad_target' };
+    if (only && !only({ campus: campus, dept: dept, ministry: ministry })) return { abort: true, ok: false, err: 'not_found' };
+    if (!canWriteRock_(s, campus, dept, ministry)) return { abort: true, ok: false, err: 'not_authorized' };
+    let year = Number(x.year), q = Number(x.q);
+    if (prev) {
+      if (!((prev.year === n.year && prev.q === n.q) || (prev.year === next.year && prev.q === next.q))) return { abort: true, ok: false, err: 'past' };   // an earlier quarter is history
+      if (!((year === n.year && q === n.q) || (year === next.year && q === next.q))) { year = prev.year; q = prev.q; }
+    } else if (!(year === next.year && q === next.q)) { year = n.year; q = n.q; }
+    const who = typeof x.owner === 'string' && (inRoom ? inRoom[x.owner] != null : staff.some(function (p) { return p.id === x.owner && p.campus === campus && p.active !== false && !p.archived && !isApplicant_(p); }));
+    const owner = who ? x.owner : (prev && x.owner === prev.owner ? prev.owner || '' : '');   // someone who has since left keeps their rock until it is given to another
+    const same = function (r) { return r !== prev && r.campus === campus && r.dept === dept && (r.ministry || '') === ministry && (r.owner || '') === owner && r.year === year && r.q === q; };
+    if ((!prev || (prev.owner || '') !== owner || prev.year !== year || prev.q !== q) && d.rocks.filter(same).length >= ROCK_MAX.each) return { abort: true, ok: false, err: 'too_many' };
+    if (!prev && d.rocks.length >= ROCK_MAX.total) return { abort: true, ok: false, err: 'too_many' };
+    const now = new Date().toISOString();
+    const rec = Object.assign({}, prev || {}, { id: prev ? prev.id : meetId_('rk_'), campus: campus, dept: dept, ministry: ministry, owner: owner, year: year, q: q, title: title,
+      status: ROCK_STATUS.indexOf(x.status) > -1 ? x.status : (prev ? prev.status : 'on'), note: String(x.note == null ? (prev ? prev.note || '' : '') : x.note).trim().slice(0, ROCK_MAX.note),
+      updated: now, updatedBy: s.id });
+    if (x.okrId !== undefined) rec.okrId = dutyText_(x.okrId, 60);   // an old link is kept; nothing shows it
+    if (!prev) { rec.at = now; rec.by = s.id; }
+    if (i > -1) d.rocks[i] = rec; else d.rocks.push(rec);
+    return { ok: true, saved: rec.id, rocks: d.rocks };
+  });
+}
+async function rockDelete_(s, id, only) {
+  const n = meetNow_(), next = rockNext_(n);
+  return rocksMutate_(function (d) {
+    const i = d.rocks.findIndex(function (r) { return r.id === id; });
+    if (i === -1 || (only && !only(d.rocks[i]))) return { abort: true, ok: false, err: 'not_found' };
+    const r = d.rocks[i];
+    if (!canWriteRock_(s, r.campus, r.dept, r.ministry || '')) return { abort: true, ok: false, err: 'not_authorized' };
+    if (!((r.year === n.year && r.q === n.q) || (r.year === next.year && r.q === next.q))) return { abort: true, ok: false, err: 'past' };
+    d.rocks.splice(i, 1);
+    return { ok: true, rocks: d.rocks };
+  });
+}
+async function saveRock(username, pin, x) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  return rockSave_(s, x);
+}
+async function deleteRock(username, pin, id) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  return rockDelete_(s, String(id || ''));
 }
 
 /* ==================== weekly goals ====================
@@ -3137,8 +3377,18 @@ async function fin2DeptDebt_(c, st, by) {
   for (const dept of PULSE_DEPTS) await saveMinistryInternal_(c, 'Campus Leadership', dept, wk, [{ metric: 'Staff Debt ($)', value: Math.round(sums[dept] || 0) }], by, thisWeekYear_());
 }
 async function fin2Get(username, pin, campus) {
-  const s = await verifyStaff_(username, pin);
-  if (!s) return { ok: false };
+  const v = await boardViewer_(username, pin);   // staff, or a board member's own sign-in
+  if (!v) return { ok: false };
+  const s = v.kind === 'staff' ? v.who : null, seat = boardSees_(v);
+  /* the Advisory Board reads either campus's finances (what its Campus Leadership reads) and can never save:
+     fin2Out_ with nobody gives canEdit false and no staff list. A board member who is also staff keeps their
+     own campus's page as it was; the other campus opens for them the board's way. */
+  const other = CAMPUS_IDS_.indexOf(campus) > -1 && (!s || (campus !== s.campus && !s.isAdmin));
+  if (seat && (other || !s || !finCanView_(s))) {
+    const bc = CAMPUS_IDS_.indexOf(campus) > -1 ? campus : (s && CAMPUS_IDS_.indexOf(s.campus) > -1 ? s.campus : 'siemreap');
+    return Object.assign(await fin2Out_(null, bc, await readJSON(fin2Key_(bc), {})), { board: true });
+  }
+  if (!s) return { ok: false, err: 'not_authorized' };
   if (!finCanView_(s)) return { ok: false, err: 'not_authorized' };
   const c = finCampus_(s, campus);
   return fin2Out_(s, c, await readJSON(fin2Key_(c), {}));
@@ -4076,9 +4326,43 @@ async function saveMetricOverrides(username, pin, campus, dept, ministry, hidden
   }
 
   const rec = { campus: campus, dept: dept, ministry: ministry, hidden: cleanHidden, custom: cleanCustom, cadence: cleanCadence, updated: new Date().toISOString() };
+  if (existing && existing.goals && typeof existing.goals === 'object') rec.goals = existing.goals;   // the Scorecard's weekly goals (saveMetricGoals) ride on the same row
   if (idx > -1) rows[idx] = rec; else rows.push(rec);
   await writeJSON('metricOverrides', rows);
   return { ok: true, metricOverrides: rows };
+}
+
+/* ---- the Scorecard's weekly goals (Nov 2026, Uriah: "move the KPI and numbers things to scorecard") ----
+   A ministry's numbers page is its Scorecard: each number can have a goal for a week and which way
+   is good — at least ('gte') or at most ('lte') — and the page marks each week ✓ or ✗ against it.
+   Set by whoever may change what the ministry tracks (canEditMetrics_). Kept as `goals`
+   {metric: {goal, dir}} on the ministry's metricOverrides row, so it reaches every page with getData
+   and costs no call of its own. The whole map is sent each time; a metric left out has no goal.
+   A goal outside a score's or a percentage's edges (kpiRange_) is refused and named in `rejected`,
+   the good ones beside it kept — as a typed number is. */
+const MAX_METRIC_GOALS = 60;
+async function saveMetricGoals(username, pin, campus, dept, ministry, goals) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  campus = str_(campus, 40); ministry = str_(ministry, 80); dept = normDept_(str_(dept, 80), ministry);
+  if (!campus || !dept || !ministry) return { ok: false, err: 'bad_target' };
+  if (!canEditMetrics_(s, campus, dept, ministry)) return { ok: false, err: 'not_authorized' };
+  const clean = {}, rejected = [];
+  Object.keys(goals && typeof goals === 'object' && !Array.isArray(goals) ? goals : {}).forEach(function (m) {
+    const name = str_(m, 80), g = goals[m];
+    if (!name || SENSITIVE.indexOf(name) > -1 || !g || typeof g !== 'object' || g.goal === '' || g.goal == null) return;
+    const v = finiteNum_(g.goal, -1e9, 1e9);
+    if (v == null || kpiOutOfRange_(ministry, name, v)) { rejected.push(name); return; }
+    if (Object.keys(clean).length >= MAX_METRIC_GOALS) { rejected.push(name); return; }
+    clean[name] = { goal: v, dir: g.dir === 'lte' ? 'lte' : 'gte' };
+  });
+  const rows = await getMetricOverrides_();
+  const idx = rows.findIndex(function (r) { return r.campus === campus && r.dept === dept && r.ministry === ministry; });
+  const rec = idx > -1 ? rows[idx] : { campus: campus, dept: dept, ministry: ministry, hidden: [], custom: [], cadence: {} };
+  rec.goals = clean; rec.goalsBy = s.id; rec.updated = new Date().toISOString();
+  if (idx === -1) rows.push(rec);
+  await writeJSON('metricOverrides', rows);
+  return { ok: true, metricOverrides: rows, rejected: rejected };
 }
 
 /* Renaming a metric the ministry added itself. The name is the join key for
@@ -4106,6 +4390,7 @@ async function renameCustomMetric(username, pin, campus, dept, ministry, oldName
   const now = new Date().toISOString();
   rec.custom = rec.custom.map(function (m) { return m === oldName ? newName : m; });
   if (rec.cadence && rec.cadence[oldName]) { rec.cadence[newName] = rec.cadence[oldName]; delete rec.cadence[oldName]; }
+  if (rec.goals && rec.goals[oldName]) { rec.goals[newName] = rec.goals[oldName]; delete rec.goals[oldName]; }
   rec.updated = now;
   await writeJSON('metricOverrides', rows);
 
@@ -5805,6 +6090,8 @@ const PUSH_TEXT = {
   title: { en: 'My YWAM GP', km: 'My YWAM GP' },
   weeklyTue: { en: 'It’s Tuesday — answer your weekly health check-in at the staff meeting.', km: 'ថ្ងៃនេះជាថ្ងៃអង្គារ — សូមឆ្លើយការពិនិត្យសុខភាពប្រចាំសប្តាហ៍របស់អ្នក ក្នុងពេលប្រជុំបុគ្គលិក។' },
   weekly: { en: 'Your weekly health check-in for this week isn’t in yet.', km: 'ការពិនិត្យសុខភាពប្រចាំសប្តាហ៍របស់អ្នកសម្រាប់សប្តាហ៍នេះ មិនទាន់មាននៅឡើយទេ។' },
+  structServe: { en: 'From Q{q} {year} you serve in {where}. Open My Ministry.', km: 'ចាប់ពីត្រីមាសទី {q} ឆ្នាំ {year} អ្នកបម្រើនៅ {where}។ សូមបើក កិច្ចការបម្រើរបស់ខ្ញុំ។' },
+  structServeLead: { en: 'From Q{q} {year} you serve in {where} and lead {lead}. Open My Ministry.', km: 'ចាប់ពីត្រីមាសទី {q} ឆ្នាំ {year} អ្នកបម្រើនៅ {where} ហើយដឹកនាំ {lead}។ សូមបើក កិច្ចការបម្រើរបស់ខ្ញុំ។' },
   fastDay: { en: 'Day {n} of {title}: {focus}', km: 'ថ្ងៃទី {n} នៃ {title}៖ {focus}' },
   daily: { en: 'Your check-in for today isn’t in yet.', km: 'ការរាយការណ៍ប្រចាំថ្ងៃរបស់អ្នកសម្រាប់ថ្ងៃនេះ មិនទាន់មាននៅឡើយទេ។' },
   oneonone: { en: '{n} of 2 1-on-1s with {name} this month.', km: 'ជួបមួយទល់មួយជាមួយ {name} បាន {n} ក្នុងចំណោម 2 ដងក្នុងខែនេះ។' },
@@ -6196,7 +6483,7 @@ async function getTasksBoot(username, pin, calFrom) {
 }
 
 const BOOT_KEYS = ['libClub', 'entries', 'survey', 'okrs', 'dailyLogs', 'goals', 'holidays', 'smartGoals', 'broadcasts',
-  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks', 'holidayCatch', 'libHl', 'worshipWeeks:poipet', 'worshipWeeks:siemreap'];
+  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks', 'holidayCatch', 'libHl', 'worshipWeeks:poipet', 'worshipWeeks:siemreap', 'structurePlans', 'rocks', 'leadMeet:poipet', 'leadMeet:siemreap', 'qreport:poipet', 'qreport:siemreap'];
 async function awaitingBoot_(username, pin) {
   const w = await verifyAwaiting_(username, pin);
   if (!w) return null;
@@ -6290,11 +6577,14 @@ async function getMyBoot(username, pin) {
     required: (reqDocs && !isApplicant_(s)) ? requiredFor_(s, reqDocs) : null,
     // admins only: when the nightly backup last ran (netlify/functions/backup.js)
     org: await part(function () { return getYwamGp(username, pin); }),   // titles, YWAM GP roles, the advisory board
+    rocks: (await part(getRocks_)) || [],   // the quarter's priorities, every team's on both campuses (they replaced the objectives)
     kmFixes: await part(async function () { return kmFixesOf_(await getKmReview_()); }),   // a Khmer reviewer's corrections, live for everyone
     push: await part(async function () { const k = await pushKeys_(); return k ? { key: k.pub, prefs: pushPrefsOf_(s) } : null; }),   // reminders: the app's public key and your times
     backup: s.isAdmin ? await part(backupStatus_) : null,
+    structReady: canLead_(s) ? await part(function () { return structReady_(s); }) : null,   // this quarter's structure is arranged and not live yet (the bell, 23-structure.js)
     hospNews: canHosp_(s) ? await part(function () { return hospNews_(s.campus); }) : null,
     worship: await part(async function () { return { mine: await worshipMine_(s), canEdit: canWorship_(s) }; }),   // the Worship rota: the services I'm on in the next eight days (teams/26-worship.js)   // SR Hospitality: a team's new dates, someone who left
+    qstory: await part(function () { return qrGlance_(s); }),   // the quarterly report: ministries I lead with no story written yet (teams/29-report.js)
     fast: await part(function () { return fastGlance_(s); }),   // the campus's fast, running or coming (Intercession): the bell and ☰   // SR Hospitality: a team's new dates, someone who left
     // the roster is already top-level above; no need to ship it twice in one response
     base: base ? Object.assign({}, base, { roster: undefined }) : null
@@ -6336,11 +6626,13 @@ async function getPlans_() { return readJSON('structurePlans', []); }
    arrangement (students never carry over; they are per quarter). */
 function planFor_(plans, campus, y, q) {
   const p = plans.find(function (r) { return r.campus === campus && Number(r.year) === y && Number(r.quarter) === q; });
-  if (p) return { students: p.students || {}, place: p.place || {}, leads: p.leads || null, extra: p.extra || [], schools: Array.isArray(p.schools) ? p.schools : null, inherited: false };
+  if (p) return { students: p.students || {}, place: p.place || {}, leads: p.leads || null, extra: p.extra || [], schools: Array.isArray(p.schools) ? p.schools : null,
+    also: p.also && typeof p.also === 'object' ? p.also : null, live: p.live || null, inherited: false };
   const earlier = plans.filter(function (r) { return r.campus === campus && r.place && Object.keys(r.place).length && (Number(r.year) * 10 + Number(r.quarter)) < y * 10 + q; })
     .sort(function (a, b) { return (Number(b.year) * 10 + Number(b.quarter)) - (Number(a.year) * 10 + Number(a.quarter)); })[0];
   return { students: {}, place: (earlier && earlier.place) || {}, leads: (earlier && earlier.leads) || null, extra: (earlier && earlier.extra) || [],
     schools: earlier && Array.isArray(earlier.schools) ? earlier.schools : null,
+    also: (earlier && earlier.also && typeof earlier.also === 'object') ? earlier.also : null, live: null,
     inherited: !!earlier, from: earlier ? { year: Number(earlier.year), quarter: Number(earlier.quarter) } : null };
 }
 function cleanPlace_(place, here) {
@@ -6389,6 +6681,188 @@ function cleanStructLeads_(leads, here) {
   });
   return out;
 }
+/* A person in more than one ministry that quarter (Nov 2026, Uriah: "some people will have 2 ministry jobs"): `also` =
+   {staffId: ['Dept|Ministry', …]} — the ministries they serve in besides their main place. Never the main place itself,
+   never a Campus Leadership row (that one waits for an admin), never for someone off the chart or a student that quarter,
+   ≤ STRUCT_ALSO_MAX each. null = what the profiles say (`ministries`). The server has no copy of the taxonomy, so the
+   page offers only real ministries and this keeps the shape. */
+const STRUCT_ALSO_MAX = 4;
+function cleanStructAlso_(also, here, place, students, byId) {
+  if (also === null || also === undefined || typeof also !== 'object' || Array.isArray(also)) return null;
+  const out = {};
+  Object.keys(also).slice(0, 600).forEach(function (id) {
+    if (!here[id] || (students && students[id])) return;
+    const pl = place && place[id], r = byId && byId[id];
+    if (pl && pl.dept === STRUCT_OFF) return;
+    const main = pl ? pl.dept + '|' + (pl.ministry || '') : r ? r.dept + '|' + (r.ministry || '') : '';
+    const list = [];
+    (Array.isArray(also[id]) ? also[id] : []).forEach(function (k) {
+      const raw = str_(k, 160);
+      if (!raw || raw.split('|').length !== 2) return;
+      const key = normKey_(raw, 2), p = key.split('|');
+      if (!p[0] || !p[1] || p[0] === LEADERSHIP_DEPT || p[0] === STRUCT_OFF || key === main || list.indexOf(key) > -1) return;
+      list.push(key);
+    });
+    if (list.length) out[id] = list.slice(0, STRUCT_ALSO_MAX);
+  });
+  return out;
+}
+/* the other ministries someone serves in that quarter: the plan's when it has its own, else their profile's */
+/* Someone whose main place is Campus Leadership is on the chart once (Nov 2026, Uriah: "the director of one department is
+   in every single ministry. I don't want that"): a department's Director is never also in that department's ministries
+   (structOversees_ — they oversee them already), and no director is put in a ministry just because their profile lists
+   it; only a second job chosen on the board (the plan's own `also`) counts. dept / ministry: where the plan puts them. */
+function structOversees_(dept, ministry, key) {
+  return dept === LEADERSHIP_DEPT && !!ministry && ministry !== 'Campus Director' && String(key).indexOf(ministry + '|') === 0;
+}
+function structAlsoOf_(plan, r, dept, ministry) {
+  if (dept === undefined) { dept = r.dept; ministry = r.ministry || ''; }
+  const list = plan && plan.also ? (plan.also[r.id] || [])
+    : dept === LEADERSHIP_DEPT ? []
+    : ministriesOf_(r).filter(function (k) { return k.split('|')[0] !== LEADERSHIP_DEPT && k !== r.dept + '|' + (r.ministry || ''); }).slice(0, STRUCT_ALSO_MAX);
+  return list.filter(function (k) { return !structOversees_(dept, ministry, k); });
+}
+
+/* ---- a quarter's structure made live: the arrangement becomes people's profiles (Nov 2026, Uriah) ----
+   "Really easy every quarter for anyone in the campus leadership roles to move people around … and for that to
+   automatically change in their profile." structApplyRows_ lays one quarter's plan over the staff rows it is given and
+   says what it changed — the same code for a look first (on a copy) and for the write (inside mutateStaff_).
+   For each active staff member of the campus: their main place → dept + ministry, the plan's `also` → ministries,
+   the plan's leaders → leads (Campus Leadership's own keys are kept — the board has no leaders for those rows).
+   Left alone: anyone off the chart, a student that quarter, a place with no ministry, names typed in, and everything
+   else on a profile. A move INTO Campus Leadership by someone who is not an admin is not written: it becomes the
+   person's cltRequest, as when they ask themselves (updateProfile), and waits in Admin → Approvals. */
+function structSameSet_(a, b) { return a.length === b.length && a.every(function (k) { return b.indexOf(k) > -1; }); }
+function structApplyRows_(rows, campus, plan, isAdmin, only) {
+  const place = plan.place || {}, students = plan.students || {}, leads = plan.leads, also = plan.also;
+  const changes = [], waiting = [], now = new Date().toISOString();
+  rows.forEach(function (rec) {
+    if (!rec || !rec.active || rec.archived || isApplicant_(rec) || rec.campus !== campus) return;
+    if (only && !only[rec.id]) return;
+    if (students[rec.id]) return;
+    const pl = place[rec.id];
+    if (pl && pl.dept === STRUCT_OFF) return;
+    const ch = { id: rec.id, name: rec.name, from: (rec.dept || '') + '|' + (rec.ministry || ''), to: '', waits: '', alsoAdd: [], alsoDrop: [], leadAdd: [], leadDrop: [] };
+    const want = pl && pl.dept && pl.ministry ? { dept: normDept_(pl.dept, pl.ministry), ministry: normMinistry_(pl.dept, pl.ministry) } : null;
+    if (want && (want.dept !== rec.dept || want.ministry !== (rec.ministry || ''))) {
+      if (want.dept === LEADERSHIP_DEPT && deptOf_(rec) !== LEADERSHIP_DEPT && !isAdmin) {
+        const w = { id: rec.id, name: rec.name, waits: LEADERSHIP_DEPT + '|' + want.ministry };
+        if (rec.cltRequest && rec.cltRequest.ministry === want.ministry) { waiting.push(w); return; }   // already asked: nothing new
+        rec.cltRequest = { ministry: want.ministry, cdKind: '', at: now, by: 'structure' };
+        rec.updated = now;
+        ch.waits = w.waits; changes.push(ch);
+        return;   // the rest of their profile waits with it
+      }
+      rec.dept = want.dept; rec.ministry = want.ministry;
+      if (rec.cdKind && !(rec.dept === LEADERSHIP_DEPT && rec.ministry === 'Campus Director')) rec.cdKind = '';
+      if (rec.cltRequest) delete rec.cltRequest;
+      ch.to = rec.dept + '|' + rec.ministry;
+    } else if (want && rec.cltRequest && rec.cltRequest.by === 'structure') {
+      delete rec.cltRequest;   // the board asked for it and the board took it back
+      ch.unasked = true;
+    }
+    const main = (rec.dept || '') + '|' + (rec.ministry || '');
+    const curMin = ministriesOf_(rec);
+    let wantMin = also ? cleanMinistries_((also[rec.id] || []).concat(curMin.filter(function (k) { return k.split('|')[0] === LEADERSHIP_DEPT; })), rec) : cleanMinistries_(curMin, rec);
+    if (deptOf_(rec) !== LEADERSHIP_DEPT) wantMin = wantMin.filter(function (k) { return k.split('|')[0] !== LEADERSHIP_DEPT; });
+    /* Campus Leadership: the board only ever ADDS a ministry page. Directors tick ministries on their profile to reach
+       those pages, and the chart no longer draws them there — so a quarter made live must not take that access away,
+       nor list them as "differs" for ever. */
+    else if (also) wantMin = cleanMinistries_(curMin.concat(wantMin), rec);
+    if (!structSameSet_(curMin, wantMin)) {
+      ch.alsoAdd = wantMin.filter(function (k) { return curMin.indexOf(k) === -1; });
+      ch.alsoDrop = curMin.filter(function (k) { return wantMin.indexOf(k) === -1 && k !== main; });
+      rec.ministries = wantMin;
+      ch.min = true;
+    }
+    if (leads) {
+      const cur = leadsOf_(rec);
+      const wantL = cur.filter(function (k) { return k.split('|')[0] === LEADERSHIP_DEPT; });
+      Object.keys(leads).forEach(function (k) { if (k.split('|')[0] !== LEADERSHIP_DEPT && leads[k].indexOf(rec.id) > -1 && wantL.indexOf(k) === -1) wantL.push(k); });
+      if (!structSameSet_(cur, wantL)) {
+        ch.leadAdd = wantL.filter(function (k) { return cur.indexOf(k) === -1; });
+        ch.leadDrop = cur.filter(function (k) { return wantL.indexOf(k) === -1; });
+        rec.leads = cleanLeads_(wantL);
+      }
+    }
+    if (!(ch.to || ch.min || ch.unasked || ch.leadAdd.length || ch.leadDrop.length)) return;
+    delete ch.min; delete ch.unasked;
+    rec.updated = now;
+    ch.now = { dept: rec.dept, ministry: rec.ministry || '', ministries: ministriesOf_(rec).slice(), leads: leadsOf_(rec).slice() };
+    changes.push(ch);
+  });
+  return { changes: changes, waiting: waiting };
+}
+/* what a look-first says to whoever may edit that campus's quarter (the page's "n profiles would change") */
+function structDiff_(staff, campus, plan, editor) {
+  const r = structApplyRows_(copy_(staff), campus, plan, !!(editor && editor.isAdmin));
+  return { changes: r.changes, waiting: r.waiting };
+}
+/* Tell each person whose ministry, other ministries or leading changed — the bell on their phone. Never throws. */
+async function structTell_(changes, y, q) {
+  for (const ch of changes) {
+    if (ch.waits || !ch.now) continue;
+    const name = function (k) { return k.slice(k.indexOf('|') + 1); };
+    const n = ch.now, mins = [n.ministry || n.dept].concat(n.ministries.filter(function (k) { return k.split('|')[0] !== LEADERSHIP_DEPT; }).map(name));
+    const leadsNow = n.leads.filter(function (k) { return k.split('|')[0] !== LEADERSHIP_DEPT; }).map(name);
+    const lead = ch.leadAdd.length && leadsNow.length;
+    const join = function (list, lang) { return list.length < 2 ? list.join('') : list.slice(0, -1).join(', ') + (lang === 'km' ? ' និង ' : ' and ') + list[list.length - 1]; };
+    await pushNow_(ch.id, lead ? 'structServeLead' : 'structServe', function (lang) { return { q: q, year: y, where: join(mins, lang), lead: join(leadsNow, lang) }; }, 'teams.html?view=ministry');
+  }
+}
+/* the quarter's saved snapshot follows the arrangement (this quarter or a later one) */
+async function structSnapFollow_(campus, y, q, rec, staff) {
+  const rows = await getStructures_();
+  const snap = rows.find(function (r) { return r.campus === campus && Number(r.year) === y && Number(r.quarter) === q; });
+  if (!snap || y * 10 + q < currentYear_() * 10 + currentQuarter_()) return snap || null;
+  snap.people = structPeople_(staff, campus, rec);
+  snap.schools = rec.schools || null;
+  await writeJSON('structure', rows);
+  return snap;
+}
+function structPlanOut_(rec) {
+  return { students: rec.students || {}, place: rec.place || {}, leads: rec.leads || null, extra: rec.extra || [], schools: Array.isArray(rec.schools) ? rec.schools : null,
+    also: rec.also || null, live: rec.live || null, inherited: false };
+}
+/* applyStructure(user, pin, campus, year, q, {dry}) — the same right as arranging the quarter. dry: the list of changes
+   and nothing written. Otherwise ONE write of the staff list, the plan marked `live: {at, by}` (an inherited
+   arrangement becomes the quarter's own), its snapshot rebuilt, and each person told. A quarter already over is refused. */
+async function applyStructure(username, pin, campus, year, quarter, opts) {
+  campus = str_(campus, 40);
+  const ed = await structEditor_(username, pin, campus);
+  if (!ed) return { ok: false, err: 'not_authorized' };
+  campus = campus || ed.campus;
+  if (CAMPUS_IDS_.indexOf(campus) === -1) return { ok: false, err: 'bad_campus' };
+  const y = finiteNum_(year, 2020, 2100), q = finiteNum_(quarter, 1, 4);
+  if (y == null || q == null) return { ok: false, err: 'bad_quarter' };
+  if (y * 10 + q < currentYear_() * 10 + currentQuarter_()) return { ok: false, err: 'past_quarter' };
+  const plan = planFor_(await getPlans_(), campus, y, q);
+  if (opts && opts.dry) return Object.assign({ ok: true, dry: true, live: plan.live || null }, structDiff_(await getStaff_(), campus, plan, ed));
+  const res = await mutateStaff_(function (rows) {
+    const r = structApplyRows_(rows, campus, plan, !!ed.isAdmin);
+    return r.changes.length ? { ok: true, changes: r.changes, waiting: r.waiting } : { abort: true, ok: true, changes: [], waiting: r.waiting };
+  });
+  if (!res || !res.ok) return res || { ok: false };
+  const plans = await getPlans_();
+  const idx = plans.findIndex(function (r) { return r.campus === campus && Number(r.year) === y && Number(r.quarter) === q; });
+  const rec = idx > -1 ? plans[idx] : { campus: campus, year: y, quarter: q, students: plan.students, place: plan.place, leads: plan.leads, extra: plan.extra, schools: plan.schools, also: plan.also, savedAt: new Date().toISOString(), savedBy: ed.id };
+  rec.live = { at: new Date().toISOString(), by: ed.id };
+  if (idx > -1) plans[idx] = rec; else plans.push(rec);
+  await writeJSON('structurePlans', plans);
+  const staff = await getStaff_();
+  const snap = await structSnapFollow_(campus, y, q, rec, staff);
+  await structTell_(res.changes, y, q);
+  return { ok: true, campus: campus, year: y, quarter: q, changes: res.changes, waiting: res.waiting, plan: structPlanOut_(rec),
+    diff: structDiff_(staff, campus, rec, ed), doc: snap ? structPeopleOnly_(snap, staff) : null };
+}
+/* Campus Leadership's bell (the boot): this quarter has an arrangement of its own that nobody has made live yet. */
+async function structReady_(s) {
+  if (!canLead_(s) || CAMPUS_IDS_.indexOf(s.campus) === -1) return null;
+  const y = currentYear_(), q = currentQuarter_();
+  const p = (await getPlans_()).find(function (r) { return r.campus === s.campus && Number(r.year) === y && Number(r.quarter) === q; });
+  if (!p || p.live || !p.place || !Object.keys(p.place).length) return null;
+  return { year: y, q: q };
+}
 /* Who may arrange a campus's quarter: an admin (any campus), or Campus Leadership on that campus. */
 async function structEditor_(username, pin, campus) {
   const s = await verifyStaff_(username, pin);
@@ -6410,9 +6884,13 @@ async function getStructure(username, pin, campus, year, quarter) {
   const y = finiteNum_(year, 2020, 2100) || currentYear_();
   const q = finiteNum_(quarter, 1, 4) || currentQuarter_();
   const found = structFind_(await getStructures_(), campus, y, q);
-  return { ok: true, campus: campus, year: y, quarter: q, doc: structPeopleOnly_(found.doc, await getStaff_()), source: found.source, plan: planFor_(await getPlans_(), campus, y, q) };
+  const plan = planFor_(await getPlans_(), campus, y, q), staff = await getStaff_();
+  const out = { ok: true, campus: campus, year: y, quarter: q, doc: structPeopleOnly_(found.doc, staff), source: found.source, plan: plan };
+  // whoever may arrange this quarter also hears what making it live would change on people's profiles
+  if (canLead_(s) && (s.isAdmin || campus === s.campus) && y * 10 + q >= currentYear_() * 10 + currentQuarter_()) out.diff = structDiff_(staff, campus, plan, s);
+  return out;
 }
-async function saveStructurePlan(username, pin, campus, year, quarter, students, place, leads, extra, schools) {
+async function saveStructurePlan(username, pin, campus, year, quarter, students, place, leads, extra, schools, also) {
   campus = str_(campus, 40);
   const admin = await structEditor_(username, pin, campus);
   if (!admin) return { ok: false, err: 'not_authorized' };
@@ -6437,19 +6915,28 @@ async function saveStructurePlan(username, pin, campus, year, quarter, students,
   const studentsClean = students === undefined || students === null ? before.students : clean;
   const leadsClean = leads === undefined ? cleanStructLeads_(before.leads, hereAll) : cleanStructLeads_(leads, hereAll);
   const schoolsClean = schools === undefined ? cleanStructSchools_(before.schools) : cleanStructSchools_(schools);
-  const rec = { campus: campus, year: y, quarter: q, students: studentsClean, place: placeClean, leads: leadsClean, extra: extraClean, schools: schoolsClean, savedAt: new Date().toISOString(), savedBy: admin.id };
+  const byId = {}; staff.forEach(function (r) { byId[r.id] = r; });
+  const alsoClean = cleanStructAlso_(also === undefined ? before.also : also, hereAll, placeClean, studentsClean, byId);
+  const rec = { campus: campus, year: y, quarter: q, students: studentsClean, place: placeClean, leads: leadsClean, extra: extraClean, schools: schoolsClean, also: alsoClean, savedAt: new Date().toISOString(), savedBy: admin.id };
+  /* a quarter made live stays live through later changes; put back to "everyone's profile" (no places, no leaders, no
+     other ministries of its own) it is an ordinary quarter again */
+  const reset = !Object.keys(placeClean).length && leadsClean === null && alsoClean === null;
+  if (idx > -1 && plans[idx].live && !reset) rec.live = plans[idx].live;
   if (idx > -1) plans[idx] = rec; else plans.push(rec);
   await writeJSON('structurePlans', plans);
+  /* A save never writes a profile (Nov 2026, Andrew: "make sure what's edited and changed there doesn't affect anything
+     else"). Profiles change only through applyStructure — Make live / Apply again, after the list of changes is shown;
+     until then a change on the board shows as `diff` ("n profiles differ"). Uriah's live quarter used to apply each save. */
+  const applied = [], staffNow = staff;
   // a snapshot already saved for that quarter follows
   const rows = await getStructures_();
   const snap = rows.find(function (r) { return r.campus === campus && Number(r.year) === y && Number(r.quarter) === q; });
   if (snap && y * 10 + q >= currentYear_() * 10 + currentQuarter_()) {
     // this quarter or a later one: the snapshot is the arrangement as it now stands
-    snap.people = structPeople_(staff, campus, rec);
+    snap.people = structPeople_(staffNow, campus, rec);
     snap.schools = schoolsClean;
     await writeJSON('structure', rows);
   } else if (snap) {
-    const byId = {}; staff.forEach(function (r) { byId[r.id] = r; });
     snap.people = snap.people.map(function (p) {
       const o = Object.assign({}, p), r = byId[p.id];
       if (studentsClean[p.id]) o.student = studentsClean[p.id]; else delete o.student;
@@ -6459,7 +6946,9 @@ async function saveStructurePlan(username, pin, campus, year, quarter, students,
     });
     await writeJSON('structure', rows);
   }
-  return { ok: true, campus: campus, year: y, quarter: q, plan: { students: studentsClean, place: placeClean, leads: leadsClean, extra: extraClean, schools: schoolsClean, inherited: false }, doc: snap ? structPeopleOnly_(snap, staff) : null };
+  const out = { ok: true, campus: campus, year: y, quarter: q, plan: structPlanOut_(rec), doc: snap ? structPeopleOnly_(snap, staffNow) : null, applied: applied };
+  if (y * 10 + q >= currentYear_() * 10 + currentQuarter_()) out.diff = structDiff_(staffNow, campus, rec, admin);
+  return out;
 }
 /* The people of a snapshot: the campus's staff where the quarter's arrangement puts them (else their profile), who leads
    what that quarter (else the profiles'), and the names typed in on the whiteboard. */
@@ -6467,8 +6956,11 @@ function structPeople_(staff, campus, plan) {
   const place = plan.place || {}, students = plan.students || {}, leads = plan.leads;
   const leadsFor = function (id, own) { if (!leads) return own; return Object.keys(leads).filter(function (k) { return leads[k].indexOf(id) > -1; }); };
   const people = staff.filter(function (r) { return r.active && !r.archived && !isApplicant_(r) && r.campus === campus; })
-    .map(function (r) { const pl = place[r.id]; const o = { id: r.id, name: r.name, dept: pl ? pl.dept : r.dept, ministry: pl ? pl.ministry : (r.ministry || ''), role: r.role || '', leads: leadsFor(r.id, leadsOf_(r)), photo: '' }; if (students[r.id]) o.student = students[r.id]; return o; });
-  (plan.extra || []).forEach(function (x) { const pl = place[x.id] || { dept: STRUCT_OFF, ministry: '' }; people.push({ id: x.id, name: x.name, dept: pl.dept, ministry: pl.ministry, role: '', leads: leadsFor(x.id, []), photo: '', extra: true }); });
+    .map(function (r) { const pl = place[r.id]; const o = { id: r.id, name: r.name, dept: pl ? pl.dept : r.dept, ministry: pl ? pl.ministry : (r.ministry || ''), role: r.role || '', leads: leadsFor(r.id, leadsOf_(r)), photo: '' };
+      const al = structAlsoOf_(plan, r, o.dept, o.ministry).filter(function (k) { return k !== o.dept + '|' + o.ministry; }); if (al.length && o.dept !== STRUCT_OFF && !students[r.id]) o.also = al;
+      if (students[r.id]) o.student = students[r.id]; return o; });
+  (plan.extra || []).forEach(function (x) { const pl = place[x.id] || { dept: STRUCT_OFF, ministry: '' }; const o = { id: x.id, name: x.name, dept: pl.dept, ministry: pl.ministry, role: '', leads: leadsFor(x.id, []), photo: '', extra: true };
+    if (plan.also && plan.also[x.id] && pl.dept !== STRUCT_OFF) o.also = plan.also[x.id]; people.push(o); });
   return people.slice(0, STRUCT_MAX);
 }
 async function saveStructure(username, pin, campus, year, quarter) {
@@ -7250,6 +7742,9 @@ async function getWhosHere(username, pin, campus) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false, err: 'auth' };
   campus = CAMPUS_IDS_.indexOf(campus) > -1 ? campus : s.campus;
+  return whosHere_(campus);
+}
+async function whosHere_(campus) {   // also read by the board's Overview (getBoardOverview), which keeps only the counts
   const today = baseToday_();
   const away = {};
   (await getTrips_()).forEach(function (t) {
@@ -8085,9 +8580,19 @@ const LEAD_DEFAULT = {
   areas: [{ id: 'finances', title: 'Siem Reap finances' }, { id: 'ministries', title: 'Siem Reap ministries' }, { id: 'construction', title: 'Construction' }],
   standing: [{ id: 'updates', title: 'Department and ministry updates' }, { id: 'events', title: 'Events coming up' }]
 };
+const BOARD_ROOM_AREAS = [{ id: 'governance', title: 'Governance' }, { id: 'finances', title: 'Finances' }, { id: 'people', title: 'People and safeguarding' }];
 function canLead_(s) { return !!(s && !isApplicant_(s) && s.active !== false && (s.isAdmin || deptOf_(s) === 'Campus Leadership')); }
 function leadKey_(campus) { return 'leadBoard:' + campus; }
+/* The Advisory Board runs itself the way a campus's leadership team does (Nov 2026, Uriah: "we'll try to run our
+   board by the EOS system too"): the same handlers, with the board in a campus's place. boardRoom() checks the
+   caller is on the board and runs the handler inside this scope; leadAuth_ then answers with campus 'board', so
+   every blob is the board's own (leadBoard:board, leadMeet:board, rocks:board) and nothing of a campus is read
+   or written — and outside the scope no handler can reach the board's. */
+const boardScope = new AsyncLocalStorage();
+const BOARD_ROOM = 'board';
 async function leadAuth_(username, pin) {
+  const br = boardScope.getStore();   // inside boardRoom(): the Advisory Board's own room — already verified there, its own blobs
+  if (br) return { s: br.s, campus: BOARD_ROOM, board: true };
   const s = await verifyStaff_(username, pin);
   if (!s) return { out: { ok: false } };
   if (!canLead_(s)) return { out: { ok: false, err: 'not_authorized' } };
@@ -8097,14 +8602,15 @@ async function getLeadDoc_(campus) {
   const d = await readJSON(leadKey_(campus), {});
   return {
     cols: Array.isArray(d.cols) && d.cols.length ? d.cols : JSON.parse(JSON.stringify(LEAD_DEFAULT.cols)),
-    areas: Array.isArray(d.areas) ? d.areas : JSON.parse(JSON.stringify(LEAD_DEFAULT.areas)),
+    areas: Array.isArray(d.areas) ? d.areas : JSON.parse(JSON.stringify(campus === BOARD_ROOM ? BOARD_ROOM_AREAS : LEAD_DEFAULT.areas)),
     standing: Array.isArray(d.standing) ? d.standing : JSON.parse(JSON.stringify(LEAD_DEFAULT.standing)),
     cards: Array.isArray(d.cards) ? d.cards : [],
     notes: Array.isArray(d.notes) ? d.notes : [],
-    tues: Array.isArray(d.tues) ? d.tues : []
+    tues: Array.isArray(d.tues) ? d.tues : [],
+    meetDay: meetDay_(d.meetDay)   // the leadership meeting's weekday (0 Sunday … 6 Saturday; Tuesday unless changed)
   };
 }
-function leadOut_(campus, d, extra) { return Object.assign({ ok: true, campus: campus, cols: d.cols, areas: d.areas, standing: d.standing, cards: d.cards, notes: d.notes, tues: d.tues || [] }, extra || {}); }
+function leadOut_(campus, d, extra) { return Object.assign({ ok: true, campus: campus, cols: d.cols, areas: d.areas, standing: d.standing, cards: d.cards, notes: d.notes, tues: d.tues || [], meetDay: meetDay_(d.meetDay) }, extra || {}); }
 async function getLeadBoard(username, pin) {
   const a = await leadAuth_(username, pin); if (a.out) return a.out;
   return leadOut_(a.campus, await getLeadDoc_(a.campus));
@@ -8131,7 +8637,7 @@ function cleanLeadCard_(c, prev, d) {
     owner: str_(c.owner, 60) || '', due: isoDate_(c.due) || '',
     okrId: str_(c.okrId, 60) || '', meeting: isoDate_(c.meeting) || '',
     /* for a ministry (or a whole department, 'Dept|'): the card is also a task in its GP Tasks list */
-    taskMin: c.taskMin ? (function (k) { const p = String(k).split('|'); return p.length === 2 && p[0] ? normKey_((str_(p[0], 80) || '') + '|' + (str_(p[1], 80) || ''), 2) : ''; })(c.taskMin) : '',
+    taskMin: (c.taskMin && !boardScope.getStore()) ? (function (k) { const p = String(k).split('|'); return p.length === 2 && p[0] ? normKey_((str_(p[0], 80) || '') + '|' + (str_(p[1], 80) || ''), 2) : ''; })(c.taskMin) : '',
     fromNotes: !!(c.fromNotes || (prev && prev.fromNotes))
   });
 }
@@ -8140,6 +8646,7 @@ function cleanLeadCard_(c, prev, d) {
    admins name a ministry's leader from the overview — the same `leads` key an admin sets on the profile */
 async function setMinistryLeader(username, pin, dept, ministry, staffId, on) {
   const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  if (a.board) return { ok: false, err: 'not_authorized' };
   const key = normKey_((str_(dept, 80) || '') + '|' + (str_(ministry, 80) || ''), 2), kp = key.split('|');
   if (kp.length !== 2 || !kp[0] || !kp[1]) return { ok: false, err: 'bad_ministry' };
   const id = str_(staffId, 40); if (!id) return { ok: false, err: 'bad_staff' };
@@ -8170,7 +8677,7 @@ async function saveLeadCard(username, pin, card) {
   rec.updated = now; rec.updatedBy = a.s.id;
   if (idx > -1) cards[idx] = rec; else cards.push(rec);
   await writeJSON(leadKey_(a.campus), d);
-  await gptFromCard_(a.s, Object.assign({}, rec, { done: doneCol(rec.col) }));   // a ministry's task, if it is linked to one
+  if (!a.board) await gptFromCard_(a.s, Object.assign({}, rec, { done: doneCol(rec.col) }));   // a ministry's task, if it is linked to one (never from the board room: its to-dos stay on its own Kanban)
   return leadOut_(a.campus, d, { saved: rec });
 }
 async function deleteLeadCard(username, pin, id) {
@@ -8181,7 +8688,7 @@ async function deleteLeadCard(username, pin, id) {
   const gone = (d.cards[idx].tasks || []).map(function (tk) { return tk.id; });
   d.cards.splice(idx, 1);
   await writeJSON(leadKey_(a.campus), d);
-  if (gone.length) await gptDropLeadTasks_(gone);
+  if (gone.length && !a.board) await gptDropLeadTasks_(gone);
   return leadOut_(a.campus, d);
 }
 /* One task on a card: add it (no id), change it (tick it off, rename it,
@@ -8203,7 +8710,7 @@ async function saveLeadTask(username, pin, cardId, task) {
   if (idx === -1) { rec.created = now; rec.createdBy = a.s.id; tasks.push(rec); } else tasks[idx] = rec;
   card.tasks = tasks; card.updated = now; card.updatedBy = a.s.id;
   await writeJSON(leadKey_(a.campus), d);
-  await gptFromLeadTask_(a.s, a.campus, card, rec);   // and in the Leadership team's GP Tasks
+  if (!a.board) await gptFromLeadTask_(a.s, a.campus, card, rec);   // and in the Leadership team's GP Tasks
   return leadOut_(a.campus, d, { saved: rec, card: card.id });
 }
 async function deleteLeadTask(username, pin, cardId, taskId) {
@@ -8215,7 +8722,7 @@ async function deleteLeadTask(username, pin, cardId, taskId) {
   const gone = card.tasks[idx].id;
   card.tasks.splice(idx, 1);
   await writeJSON(leadKey_(a.campus), d);
-  await gptDropLeadTasks_([gone]);
+  if (!a.board) await gptDropLeadTasks_([gone]);
   return leadOut_(a.campus, d);
 }
 /* A Monday's notes. Empty notes take the day away. If someone else saved
@@ -8280,6 +8787,361 @@ async function saveLeadSettings(username, pin, settings) {
   d.cols = cols; d.areas = areas; d.standing = standing;
   await writeJSON(leadKey_(a.campus), d);
   return leadOut_(a.campus, d);
+}
+
+/* ==================== the leadership meeting (Nov 2026, Uriah) ====================
+   "We want to move more to an EOS-style leadership meeting, and still use our Kanban board …
+   who's going to lead the Tuesday morning leadership meeting, topics and all that … where
+   everyone is clear on their departments … rocks."
+   A weekly 90-minute meeting in seven parts, built ON the board above, not beside it:
+     - the issues list IS the board's first column (saveLeadCard);
+     - the to-dos ARE the board's little tasks, and so GP Tasks (saveLeadTask → gptFromLeadTask_);
+     - who leads comes from the meeting-day schedule (saveLeadTuesday; `meetDay` on the board doc
+       says which weekday that is — 2, Tuesday, unless changed).
+   What is new lives in its own blob, leadMeet:<campus> (mutateKey_):
+     minutes   {checkin, score, rocks, headlines, todos, issues, wrap} — the agenda's lengths
+     score     the scorecard: [{id, name, owner, goal, dir 'gte'|'lte', src 'manual'|'metric',
+               metric {dept, ministry, metric}, vals {'YYYY-W': n}}] — a linked one reads `entries`
+     rocks     [{id, title, owner ('' = the team's), year, q, okrId, status on|off|done, note}]
+     headlines [{id, text, kind good|hard, by, at}] — archived with the meeting they were read in
+     todoCard  the board card that holds to-dos made in a meeting but not under an issue
+     run       the meeting going on now, or null: {date, startedAt, by, leader, part, partAt,
+               spent {part: seconds}, present, top (the three issues picked), issue, identify,
+               solved, todos, carried (to-dos moved on a week: still not done), messages, ratings} — on the server, so every phone shows the same part
+     past      the records, newest last (MEET_MAX.past kept)
+   Campus Leadership on the campus and admins (leadAuth_) read and write all of it; nobody else. */
+const MEET_PARTS = ['checkin', 'score', 'rocks', 'headlines', 'todos', 'issues', 'wrap'];
+const MEET_MINUTES = { checkin: 5, score: 5, rocks: 5, headlines: 5, todos: 5, issues: 60, wrap: 5 };
+const MEET_MAX = { score: 15, rocks: 400, rocksEach: 10, headlines: 40, past: 120, messages: 12, solved: 30, present: 40, todos: 40, vals: 80 };
+const MEET_WEEKS = 13, MEET_ROCK_STATUS = ['on', 'off', 'done'];
+function meetKey_(campus) { return 'leadMeet:' + campus; }
+function meetId_(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function meetDay_(v) { const n = Number(v); return (v !== '' && v != null && Number.isInteger(n) && n >= 0 && n <= 6) ? n : 2; }
+function meetMinutes_(m) {
+  const out = {}; m = m && typeof m === 'object' ? m : {};
+  MEET_PARTS.forEach(function (k) { const n = finiteNum_(m[k], 1, 180); out[k] = n == null ? MEET_MINUTES[k] : Math.round(n); });
+  return out;
+}
+/* put a stored doc into shape, in place (mutateKey_ hands the raw value) */
+function meetFix_(d) {
+  d.minutes = meetMinutes_(d.minutes);
+  ['score', 'rocks', 'headlines', 'past'].forEach(function (k) { if (!Array.isArray(d[k])) d[k] = []; });
+  d.run = d.run && typeof d.run === 'object' && !Array.isArray(d.run) ? d.run : null;
+  d.todoCard = typeof d.todoCard === 'string' ? d.todoCard : '';
+  return d;
+}
+async function getMeetDoc_(campus) { return meetFix_(await readJSON(meetKey_(campus), {})); }
+/* the app's quarter of a week: 13-week blocks, like the roll-up's qOf */
+function meetQ_(week) { return Math.min(4, Math.floor((Number(week) - 1) / 13) + 1); }
+function meetNow_() { const today = baseToday_(), wk = isoWeek_(today), yr = weekYear_(today); return { today: today, week: wk, year: yr, q: meetQ_(wk) }; }
+/* this week and the twelve before it, newest first; a week belongs to a week year */
+function meetWeeks_() {
+  const n = meetNow_(), out = []; let y = n.year, w = n.week;
+  for (let i = 0; i < MEET_WEEKS; i++) { out.push({ year: y, week: w, key: y + '-' + w }); w--; if (w < 1) { w = 52; y--; } }
+  return out;
+}
+async function meetCampusIds_(campus) {
+  if (campus === BOARD_ROOM) return boardRoomIds_();   // the board room's people are the board's members
+  const ids = {};
+  (await getStaff_()).forEach(function (p) { if (p.campus === campus && p.active !== false && !p.archived && !isApplicant_(p)) ids[p.id] = p.name || ''; });
+  return ids;
+}
+/* what a to-do week looks like: done since the last meeting, or still open and due by today
+   (an open one with no day counts once it is older than that meeting) — never one made in the
+   meeting going on. Mirrored on the page (lmTodoWeek_). */
+function meetTodoStats_(lead, since, today, skip, carried) {
+  let done = 0, total = 0;
+  (lead.cards || []).forEach(function (c) { (c.tasks || []).forEach(function (tk) {
+    if (!tk || (skip || []).indexOf(tk.id) > -1) return;
+    if (tk.done) { if (String(tk.doneAt || '') >= since) { done++; total++; } }
+    else if ((carried || []).indexOf(tk.id) > -1 || (tk.due ? tk.due <= today : String(tk.created || '') < since)) total++;   // carried on a week in this meeting is still not done
+  }); });
+  return { done: done, total: total, pct: total ? Math.round(done / total * 100) : null };
+}
+function meetSince_(d) {
+  const last = d.past.length ? d.past[d.past.length - 1] : null;
+  return (last && last.endedAt) || new Date(Date.now() - 7 * 86400000).toISOString();
+}
+async function meetOut_(campus, d, extra) {
+  const weeks = meetWeeks_();
+  let idx = null;
+  if (d.score.some(function (m) { return m.src === 'metric'; })) {
+    idx = {};
+    const anyCampus = campus === BOARD_ROOM;   // the board's scorecard links to either campus's numbers
+    (await withTeamRows_(await getEntries_())).forEach(function (r) {
+      if ((anyCampus ? CAMPUS_IDS_.indexOf(r.campus) === -1 : r.campus !== campus) || SENSITIVE.indexOf(r.metric) > -1) return;
+      const v = Number(r.value); if (isNaN(v)) return;
+      const k = (anyCampus ? r.campus + '|' : '') + normDept_(r.dept, r.ministry) + '|' + r.ministry + '|' + r.metric + '|' + yearOf_(r) + '-' + Number(r.week);
+      idx[k] = (idx[k] || 0) + v;
+    });
+  }
+  const score = d.score.map(function (m) {
+    const vals = {};
+    weeks.forEach(function (w) {
+      let v = null;
+      if (m.src === 'metric' && m.metric) { const k = (campus === BOARD_ROOM ? (m.metric.campus || '') + '|' : '') + m.metric.dept + '|' + m.metric.ministry + '|' + m.metric.metric + '|' + w.key; v = k in idx ? idx[k] : null; }
+      else if (m.vals && m.vals[w.key] != null) v = Number(m.vals[w.key]);
+      vals[w.key] = v;
+    });
+    return { id: m.id, name: m.name, owner: m.owner || '', goal: m.goal == null ? null : m.goal, dir: m.dir === 'lte' ? 'lte' : 'gte', src: m.src === 'metric' ? 'metric' : 'manual', metric: m.metric || null, vals: vals };
+  });
+  const n = meetNow_();
+  return Object.assign({ ok: true, campus: campus, now: new Date().toISOString(), week: n.week, year: n.year, q: n.q, weeks: weeks, minutes: d.minutes, parts: MEET_PARTS,
+    score: score, rocks: (await getRocks_()).filter(function (r) { return isLeadRock_(r, campus); }), headlines: d.headlines, run: d.run, past: d.past, todoSince: meetSince_(d), todoCard: d.todoCard }, extra || {});
+}
+/* One load for the Meeting tab: the meeting, and the board it stands on. */
+async function getLeadMeeting(username, pin) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  return meetOut_(a.campus, await getMeetDoc_(a.campus), { board: leadOut_(a.campus, await getLeadDoc_(a.campus)) });
+}
+async function meetMutate_(a, fn, extra) {
+  const r = await mutateKey_(meetKey_(a.campus), {}, function (d) { meetFix_(d); const x = fn(d); return x && x.abort ? x : Object.assign({ ok: true }, x || {}); });
+  if (!r || !r.ok) return r || { ok: false };
+  return meetOut_(a.campus, await getMeetDoc_(a.campus), Object.assign({}, r, extra || {}));
+}
+/* The meeting's day and the agenda's minutes. The day is the board's (`meetDay`): the schedule of
+   who leads lives there. Changing it moves the weeks still to come onto the new weekday, in the
+   same Monday-to-Sunday week; the past stays as it was. */
+async function saveLeadMeetSettings(username, pin, x) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  x = x && typeof x === 'object' ? x : {};
+  const lead = await getLeadDoc_(a.campus);
+  if (x.day != null && x.day !== '') {
+    const n = Number(x.day);
+    if (!Number.isInteger(n) || n < 0 || n > 6) return { ok: false, err: 'bad_day' };
+    if (n !== lead.meetDay) {
+      const today = baseToday_(), have = {};
+      lead.tues.forEach(function (t) { have[t.date] = 1; });
+      lead.tues.forEach(function (t) {
+        if (t.date < today) return;
+        const dow = new Date(t.date + 'T12:00:00Z').getUTCDay();
+        const to = addDays_(t.date, ((n + 6) % 7) - ((dow + 6) % 7));
+        if (to === t.date || have[to]) return;
+        delete have[t.date]; have[to] = 1; t.date = to;
+      });
+      lead.tues.sort(function (p, q) { return p.date < q.date ? -1 : 1; });
+      lead.meetDay = n;
+      await writeJSON(leadKey_(a.campus), lead);
+    }
+  }
+  return meetMutate_(a, function (d) { if (x.minutes && typeof x.minutes === 'object') d.minutes = meetMinutes_(Object.assign({}, d.minutes, x.minutes)); }, { board: leadOut_(a.campus, lead) });
+}
+/* ---- the scorecard ---- */
+async function saveLeadScore(username, pin, x) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  x = x && typeof x === 'object' ? x : {};
+  const name = dutyText_(x.name, 80); if (!name) return { ok: false, err: 'bad_name' };
+  const ids = await meetCampusIds_(a.campus);
+  const owner = typeof x.owner === 'string' && ids[x.owner] != null ? x.owner : '';
+  const goal = (x.goal === '' || x.goal == null) ? null : finiteNum_(x.goal, -1e9, 1e9);
+  let metric = null;
+  if (x.src === 'metric') {
+    const m = x.metric && typeof x.metric === 'object' ? x.metric : {};
+    const ministry = dutyText_(m.ministry, 80), mt = dutyText_(m.metric, 80), dept = normDept_(dutyText_(m.dept, 80), ministry);
+    if (!dept || !ministry || !mt || SENSITIVE.indexOf(mt) > -1) return { ok: false, err: 'bad_metric' };
+    metric = { dept: dept, ministry: ministry, metric: mt };
+    if (a.board) { if (CAMPUS_IDS_.indexOf(m.campus) === -1) return { ok: false, err: 'bad_metric' }; metric.campus = m.campus; }   // the board says which campus's number
+  }
+  return meetMutate_(a, function (d) {
+    const id = dutyText_(x.id, 40), i = id ? d.score.findIndex(function (m) { return m.id === id; }) : -1;
+    if (id && i === -1) return { abort: true, ok: false, err: 'not_found' };
+    if (i === -1 && d.score.length >= MEET_MAX.score) return { abort: true, ok: false, err: 'too_many' };
+    const prev = i > -1 ? d.score[i] : null;
+    const rec = { id: prev ? prev.id : meetId_('sc_'), name: name, owner: owner, goal: goal, dir: x.dir === 'lte' ? 'lte' : 'gte',
+      src: metric ? 'metric' : 'manual', metric: metric, vals: (prev && prev.vals) || {}, by: a.s.id, updated: new Date().toISOString() };
+    if (i > -1) d.score[i] = rec; else d.score.push(rec);
+    return { saved: rec.id };
+  });
+}
+async function deleteLeadScore(username, pin, id) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  return meetMutate_(a, function (d) {
+    const n = d.score.length; d.score = d.score.filter(function (m) { return m.id !== id; });
+    if (d.score.length === n) return { abort: true, ok: false, err: 'not_found' };
+  });
+}
+/* a week's number, typed by hand — only for a measurable that isn't linked, and only for the
+   thirteen weeks on show; '' takes it away */
+async function saveLeadScoreValue(username, pin, id, key, value) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  if (!meetWeeks_().some(function (w) { return w.key === key; })) return { ok: false, err: 'bad_week' };
+  const clear = value === '' || value == null, v = clear ? null : finiteNum_(String(value).replace(/,/g, ''), -1e9, 1e9);
+  if (!clear && v == null) return { ok: false, err: 'bad_value' };
+  return meetMutate_(a, function (d) {
+    const m = d.score.find(function (s) { return s.id === id; });
+    if (!m) return { abort: true, ok: false, err: 'not_found' };
+    if (m.src === 'metric') return { abort: true, ok: false, err: 'linked' };
+    m.vals = m.vals && typeof m.vals === 'object' ? m.vals : {};
+    if (clear) delete m.vals[key]; else m.vals[key] = v;
+    const keys = Object.keys(m.vals).sort(function (p, q) { const x = p.split('-').map(Number), y = q.split('-').map(Number); return (x[0] - y[0]) || (x[1] - y[1]); });
+    keys.slice(0, Math.max(0, keys.length - MEET_MAX.vals)).forEach(function (k) { delete m.vals[k]; });
+  });
+}
+/* ---- rocks: the quarter's few priorities, each person's and the team's ----
+   Since the whole app moved to rocks they live in the one 'rocks' store (rockSave_): leadership's are
+   the ones with dept Campus Leadership and no ministry on this campus. leadMeet's old list is left as it was. */
+async function saveLeadRock(username, pin, x) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  x = x && typeof x === 'object' ? x : {};
+  const r = await rockSave_(a.s, Object.assign({}, x, { campus: a.campus, dept: LEADERSHIP_DEPT, ministry: '' }),
+    function (place) { return isLeadRock_(place, a.campus); });
+  if (!r || !r.ok) return r || { ok: false };
+  return meetOut_(a.campus, await getMeetDoc_(a.campus), { saved: r.saved });
+}
+async function deleteLeadRock(username, pin, id) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  const r = await rockDelete_(a.s, String(id || ''), function (rock) { return isLeadRock_(rock, a.campus); });
+  if (!r || !r.ok) return r || { ok: false };
+  return meetOut_(a.campus, await getMeetDoc_(a.campus));
+}
+/* ---- headlines: a line of good or hard news, added through the week ---- */
+async function saveLeadHeadline(username, pin, x) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  x = x && typeof x === 'object' ? x : {};
+  const text = dutyText_(x.text, 200); if (!text) return { ok: false, err: 'bad_text' };
+  return meetMutate_(a, function (d) {
+    if (d.headlines.length >= MEET_MAX.headlines) return { abort: true, ok: false, err: 'too_many' };
+    d.headlines.push({ id: meetId_('hl_'), text: text, kind: x.kind === 'hard' ? 'hard' : 'good', by: a.s.id, at: new Date().toISOString() });
+  });
+}
+async function deleteLeadHeadline(username, pin, id) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  return meetMutate_(a, function (d) {
+    const n = d.headlines.length; d.headlines = d.headlines.filter(function (h) { return h.id !== id; });
+    if (d.headlines.length === n) return { abort: true, ok: false, err: 'not_found' };
+  });
+}
+/* ---- running it ---- */
+function meetSpend_(run, nowMs) {
+  const k = MEET_PARTS[run.part] || MEET_PARTS[0], t0 = Date.parse(run.partAt) || nowMs;
+  run.spent = run.spent && typeof run.spent === 'object' ? run.spent : {};
+  run.spent[k] = Math.round((Number(run.spent[k]) || 0) + Math.max(0, Math.min(6 * 3600, (nowMs - t0) / 1000)));
+  run.partAt = new Date(nowMs).toISOString();
+}
+/* Start the meeting. One at a time on a campus: a second Start joins the one going on. Who leads
+   is the day's facilitator on the schedule when one is set, else whoever started it. */
+async function leadMeetStart(username, pin) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  const lead = await getLeadDoc_(a.campus), today = baseToday_();
+  const row = lead.tues.filter(function (t) { return t.date === today; })[0], fac = row && row.facilitator;
+  return meetMutate_(a, function (d) {
+    if (d.run) return { already: true };
+    const now = new Date().toISOString();
+    d.run = { date: today, startedAt: now, by: a.s.id, leader: fac ? { id: fac.id || '', name: fac.name || '' } : { id: a.s.id, name: '' },
+      part: 0, partAt: now, spent: {}, present: [a.s.id], top: [], issue: '', identify: '', solved: [], todos: [], messages: [], ratings: {} };
+  });
+}
+/* Move it on, and everything the meeting keeps as it goes. Only the keys sent are changed. */
+async function leadMeetUpdate(username, pin, x) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  x = x && typeof x === 'object' ? x : {};
+  const ids = await meetCampusIds_(a.campus);
+  return meetMutate_(a, function (d) {
+    const r = d.run; if (!r) return { abort: true, ok: false, err: 'no_meeting' };
+    if (x.part != null) {
+      const p = Number(x.part);
+      if (!Number.isInteger(p) || p < 0 || p >= MEET_PARTS.length) return { abort: true, ok: false, err: 'bad_part' };
+      if (p !== r.part) { meetSpend_(r, Date.now()); r.part = p; }
+    }
+    if (Array.isArray(x.present)) r.present = x.present.filter(function (id, i, arr) { return typeof id === 'string' && ids[id] != null && arr.indexOf(id) === i; }).slice(0, MEET_MAX.present);
+    if (x.leader && typeof x.leader === 'object') {
+      const id = typeof x.leader.id === 'string' && ids[x.leader.id] != null ? x.leader.id : '', name = id ? '' : dutyText_(x.leader.name, 60);
+      if (id || name) r.leader = { id: id, name: name };
+    }
+    if (Array.isArray(x.top)) r.top = x.top.filter(function (id, i, arr) { return typeof id === 'string' && id && id.length <= 60 && arr.indexOf(id) === i; }).slice(0, 3);
+    if (typeof x.issue === 'string') { if (x.issue !== r.issue) r.identify = ''; r.issue = x.issue.slice(0, 60); }
+    if (typeof x.identify === 'string') r.identify = dutyText_(x.identify, 300);
+    if (Array.isArray(x.carried)) r.carried = x.carried.filter(function (id, i, arr) { return typeof id === 'string' && id && id.length <= 60 && arr.indexOf(id) === i; }).slice(0, MEET_MAX.todos);
+    if (Array.isArray(x.messages)) r.messages = x.messages.map(function (m) { return dutyText_(m, 200); }).filter(Boolean).slice(0, MEET_MAX.messages);
+    /* a rating: your own; whoever leads or started the meeting (or an admin) may enter everyone's */
+    const all = a.s.isAdmin || r.by === a.s.id || (r.leader && r.leader.id === a.s.id);
+    const rate = function (id, v) {
+      if (ids[id] == null || (!all && id !== a.s.id)) return;
+      if (v === '' || v == null) { delete r.ratings[id]; return; }
+      const n = finiteNum_(v, 1, 10); if (n != null) r.ratings[id] = Math.round(n);
+    };
+    r.ratings = r.ratings && typeof r.ratings === 'object' ? r.ratings : {};
+    if ('rating' in x) rate(a.s.id, x.rating);
+    if (x.ratings && typeof x.ratings === 'object') Object.keys(x.ratings).slice(0, MEET_MAX.present).forEach(function (id) { rate(id, x.ratings[id]); });
+  });
+}
+/* A to-do: a seven-day action for one person. It is a task on the board — under the issue it came
+   from (cardId), else on the meeting's own "to-dos" card — saved through saveLeadTask, so it is in
+   the Leadership team's GP Tasks list, that person's Inbox and their calendar like any other. */
+async function leadMeetTodo(username, pin, x) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  x = x && typeof x === 'object' ? x : {};
+  const text = dutyText_(x.text, 200); if (!text) return { ok: false, err: 'bad_task' };
+  const lead = await getLeadDoc_(a.campus), meet = await getMeetDoc_(a.campus);
+  const has = function (id) { return !!id && lead.cards.some(function (c) { return c.id === id; }); };
+  let cardId = has(x.cardId) ? x.cardId : has(meet.todoCard) ? meet.todoCard : '', made = '';
+  if (!cardId) {
+    const col = lead.cols.filter(function (c, i) { return i > 0 && !c.done; })[0] || lead.cols.filter(function (c, i) { return i > 0; })[0] || lead.cols[0];
+    const c = await saveLeadCard(username, pin, { title: dutyText_(x.cardTitle, 80) || 'Meeting to-dos', type: 'project', col: col.id });
+    if (!c || !c.ok) return c || { ok: false };
+    cardId = made = c.saved.id;
+  }
+  const ids = await meetCampusIds_(a.campus);
+  const r = await saveLeadTask(username, pin, cardId, { text: text, owner: typeof x.owner === 'string' && ids[x.owner] != null ? x.owner : '',
+    due: isoDate_(x.due) || addDays_(baseToday_(), 7), meeting: meet.run ? meet.run.date : '' });
+  if (!r || !r.ok) return r || { ok: false };
+  return meetMutate_(a, function (d) {
+    if (made) d.todoCard = made;
+    if (d.run) { d.run.todos = (Array.isArray(d.run.todos) ? d.run.todos : []).concat([r.saved.id]).slice(-MEET_MAX.todos); }
+  }, { board: r, todo: r.saved.id });
+}
+/* Solve an issue: the decision is written on its card and the card goes to the finished column —
+   through saveLeadCard, so a card that is also a department's task is ticked there too. */
+async function leadMeetSolve(username, pin, x) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  x = x && typeof x === 'object' ? x : {};
+  const decision = dutyText_(x.decision, 600); if (!decision) return { ok: false, err: 'bad_decision' };
+  const issue = dutyText_(x.issue, 300);
+  const lead = await getLeadDoc_(a.campus), card = lead.cards.find(function (c) { return c.id === x.cardId; });
+  if (!card) return { ok: false, err: 'not_found' };
+  const doneCol = lead.cols.filter(function (c) { return c.done; })[0];
+  const add = (issue ? '❓ ' + issue + '\n' : '') + '✅ ' + baseToday_() + ' — ' + decision;
+  const old = String(card.notes || '').slice(0, Math.max(0, 2000 - add.length - 2));
+  const r = await saveLeadCard(username, pin, Object.assign({}, card, { notes: (old ? old + '\n\n' : '') + add, col: doneCol ? doneCol.id : card.col }));
+  if (!r || !r.ok) return r || { ok: false };
+  return meetMutate_(a, function (d) {
+    const run = d.run; if (!run) return;
+    run.solved = (Array.isArray(run.solved) ? run.solved : []).filter(function (s) { return s.id !== card.id; }).concat([{ id: card.id, title: card.title, decision: decision }]).slice(-MEET_MAX.solved);
+    run.top = (run.top || []).filter(function (id) { return id !== card.id; });
+    if (run.issue === card.id) { run.issue = ''; run.identify = ''; }
+  }, { board: r });
+}
+/* End it: the record is written and the headlines go into it. {cancel:true} drops the meeting
+   with no record (started by mistake); the headlines stay for the real one. */
+async function leadMeetEnd(username, pin, x) {
+  const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  x = x && typeof x === 'object' ? x : {};
+  const lead = await getLeadDoc_(a.campus), names = {};
+  (await getStaff_()).forEach(function (p) { names[p.id] = p.name || ''; });
+  if (a.board) Object.assign(names, await boardRoomIds_());
+  const who = function (id) { return { id: id, name: names[id] || '' }; };
+  return meetMutate_(a, function (d) {
+    const r = d.run; if (!r) return { abort: true, ok: false, err: 'no_meeting' };
+    if (x.cancel) { d.run = null; return { cancelled: true }; }
+    const nowMs = Date.now(), since = meetSince_(d);
+    meetSpend_(r, nowMs);
+    const mins = {}; let total = 0;
+    MEET_PARTS.forEach(function (k) { mins[k] = Math.round((Number(r.spent[k]) || 0) / 60); total += Number(r.spent[k]) || 0; });
+    const tasks = {}; lead.cards.forEach(function (c) { (c.tasks || []).forEach(function (tk) { tasks[tk.id] = tk; }); });
+    const ratings = Object.keys(r.ratings || {}).map(function (id) { return { id: id, name: names[id] || '', n: r.ratings[id] }; });
+    const rec = { id: meetId_('mt_'), date: r.date, startedAt: r.startedAt, endedAt: new Date(nowMs).toISOString(),
+      leader: r.leader && r.leader.id ? who(r.leader.id) : { id: '', name: (r.leader && r.leader.name) || '' },
+      present: (r.present || []).map(who), mins: mins, total: Math.round(total / 60), planned: MEET_PARTS.reduce(function (s, k) { return s + d.minutes[k]; }, 0),
+      todo: meetTodoStats_(lead, since, baseToday_(), r.todos, r.carried),
+      solved: (r.solved || []).map(function (s) { return { title: s.title, decision: s.decision }; }),
+      newTodos: (r.todos || []).map(function (id) { const tk = tasks[id]; return tk ? { text: tk.text, owner: names[tk.owner] || '', due: tk.due || '' } : null; }).filter(Boolean),
+      headlines: d.headlines.map(function (h) { return { text: h.text, kind: h.kind, by: names[h.by] || '' }; }),
+      messages: (r.messages || []).slice(), ratings: ratings,
+      avg: ratings.length ? Math.round(ratings.reduce(function (s, q) { return s + q.n; }, 0) / ratings.length * 10) / 10 : null, by: a.s.id };
+    d.past.push(rec); if (d.past.length > MEET_MAX.past) d.past.splice(0, d.past.length - MEET_MAX.past);
+    d.headlines = []; d.run = null;
+    return { ended: rec.id };
+  });
 }
 
 /* ==================== human resources ====================
@@ -12926,11 +13788,9 @@ async function markSeen(username, pin, time) {
 async function adminLooseEnds(username, pin) {
   const s = await adminGate_(username, pin);
   if (!s) return { ok: false, err: 'not_authorized' };
-  const [np, entries, okrs, seenRec] = await Promise.all([getNumbersPeople_(), getEntries_(), getOkrs_(), readJSON('lastSeen', {})]);
-  /* Numbers are keyed by week, so they are read in this week's year; objectives
-     have no year of their own (yearOf_ reads their edit stamp) and go by the
-     calendar quarter, so they keep the calendar year. */
-  const yr = currentYear_(), today = baseToday_(), wk = isoWeek_(today), wkYr = weekYear_(today);
+  const [np, entries, rocks, seenRec] = await Promise.all([getNumbersPeople_(), getEntries_(), getRocks_(), readJSON('lastSeen', {})]);
+  /* Numbers are keyed by week, so they are read in this week's year; rocks carry their own. */
+  const today = baseToday_(), wk = isoWeek_(today), wkYr = weekYear_(today);
   const lastWeek = {};
   entries.forEach(function (r) {
     if (yearOf_(r) !== wkYr || r.value === null || r.value === undefined) return;
@@ -12939,19 +13799,14 @@ async function adminLooseEnds(username, pin) {
   });
   const people = {};
   Object.keys(np).forEach(function (k) { people[k] = { main: np[k].main || '', backup: np[k].backup || '' }; });
-  const quarter = Math.floor((Number(today.slice(5, 7)) - 1) / 3) + 1;
-  const objectives = {};
-  okrs.forEach(function (r) {
-    if (yearOf_(r) !== yr || Number(r.quarter) !== quarter) return;
-    const k = r.campus + '|' + r.dept + '|' + r.id;
-    const o = objectives[k] || (objectives[k] = { campus: r.campus, dept: r.dept, objective: r.objective, updated: '', fed: false });
-    if ((r.updated || '') > o.updated) o.updated = r.updated || '';
-    if (r.metricKey) o.fed = true;   // fed by a ministry's numbers: it moves without anyone editing it
-  });
+  /* this quarter's rocks (the app's 13-week quarter of the week year) that are still open, with when each was last touched */
+  const quarter = meetQ_(wk);
+  const open = rocks.filter(function (r) { return r.year === wkYr && r.q === quarter && r.status !== 'done'; })
+    .map(function (r) { return { id: r.id, campus: r.campus, dept: r.dept, ministry: r.ministry || '', title: r.title, status: r.status, updated: r.updated || r.at || '' }; });
   return {
     ok: true, today: today, week: wk, quarter: quarter, lastWeek: lastWeek, people: people,
     seenSince: seenRec.started || '', seen: (seenRec.seen && typeof seenRec.seen === 'object') ? seenRec.seen : {},
-    objectives: Object.keys(objectives).map(function (k) { return objectives[k]; })
+    rocks: open
   };
 }
 
@@ -15112,11 +15967,12 @@ async function saveLeadTuesday(username, pin, m) {
   const a = await leadAuth_(username, pin); if (a.out) return a.out;
   const x = m && typeof m === 'object' ? m : {};
   const date = isoDate_(x.date);
-  if (!date || new Date(date + 'T12:00:00Z').getUTCDay() !== 2) return { ok: false, err: 'bad_date' };
+  if (!date) return { ok: false, err: 'bad_date' };
   /* who can be picked: the leadership team (Campus Leadership on this campus) — and whoever
      was already set for this Tuesday, so editing the topics never drops an earlier pick */
   const ids = {}; (await getStaff_()).forEach(function (p) { if (p.campus === a.campus && p.active !== false && !isApplicant_(p) && deptOf_(p) === LEADERSHIP_DEPT) ids[p.id] = 1; });
   const d = await getLeadDoc_(a.campus);
+  if (new Date(date + 'T12:00:00Z').getUTCDay() !== d.meetDay) return { ok: false, err: 'bad_date' };   // the meeting's own weekday (Tuesday unless changed)
   const prev = d.tues.filter(function (t) { return t.date === date; })[0];
   if (prev) ['facilitator', 'translator'].forEach(function (k) { if (prev[k] && prev[k].id) ids[prev[k].id] = 1; });
   const lines = function (v, max) { return (Array.isArray(v) ? v : []).map(function (t) { return str_(t, max); }).filter(Boolean).slice(0, 15); };
@@ -15241,7 +16097,7 @@ function boardOut_(b, staff) {
     safeguarding: !!b.safeguarding };
 }
 function boardAdminOut_(b, staff) {
-  return Object.assign(boardOut_(b, staff), { username: b.username || '', hasLogin: !!b.pinHash, active: b.active !== false });
+  return Object.assign(boardOut_(b, staff), { username: b.username || '', hasLogin: !!(b.pinHash || (b.google && b.google.sub)), signIn: b.staffId ? 'staff' : (b.google && b.google.sub) ? 'google' : b.pinHash ? 'pin' : '', active: b.active !== false });
 }
 function boardSort_(a, b) {
   const ra = BOARD_ROLES.indexOf(a.role), rb = BOARD_ROLES.indexOf(b.role);
@@ -15308,7 +16164,9 @@ async function getYwamGp(username, pin) {
   });
   const board = (await getBoard_()).filter(function (b) { return b.active !== false; })
     .map(function (b) { return boardOut_(b, staff); }).sort(boardSort_);
-  return { ok: true, viewer: v.kind, me: v.kind === 'board' ? boardOut_(v.who, staff) : null,
+  /* the board's quarter report lists each campus's rocks: title and status, nothing else (staff have them all from their boot) */
+  const rocks = v.kind === 'board' ? (await getRocks_()).map(function (r) { return { id: r.id, campus: r.campus, dept: r.dept, ministry: r.ministry || '', year: r.year, q: r.q, title: r.title, status: r.status }; }) : undefined;
+  return { ok: true, viewer: v.kind, me: v.kind === 'board' ? boardOut_(v.who, staff) : null, rocks: rocks,
     titles: titles, gpRoles: GP_ROLE_IDS,
     gp: gp.sort(function (a, b) { return GP_ROLE_IDS.indexOf(a.gpRole) - GP_ROLE_IDS.indexOf(b.gpRole) || String(a.name).localeCompare(String(b.name)); }),
     campuses: campuses, board: board, boardRoles: BOARD_ROLES };
@@ -15318,7 +16176,8 @@ async function adminListBoard(username, pin) {
   const admin = await adminGate_(username, pin);
   if (!admin) return { ok: false };
   const staff = await getStaff_();
-  return { ok: true, board: (await getBoard_()).map(function (b) { return boardAdminOut_(b, staff); }).sort(boardSort_), roles: BOARD_ROLES };
+  return { ok: true, board: (await getBoard_()).map(function (b) { return boardAdminOut_(b, staff); }).sort(boardSort_), roles: BOARD_ROLES,
+    invites: (await getBoardInvites_()).map(boardInviteOut_) };
 }
 async function adminSaveBoardMember(username, pin, m) {
   const admin = await adminGate_(username, pin);
@@ -15345,7 +16204,7 @@ async function adminSaveBoardMember(username, pin, m) {
   Object.assign(rec, { name: name, role: role, email: email || '', phone: ooText_(m.phone, 40), bio: ooText_(m.bio, 600),
     photo: photo, staffId: linked ? linked.id : '', order: Number(m.order) || 0, active: m.active !== false,
     safeguarding: !!m.safeguarding, updated: new Date().toISOString() });
-  if (linked) { delete rec.username; delete rec.pinHash; delete rec.pinSalt; }
+  if (linked) { delete rec.username; delete rec.pinHash; delete rec.pinSalt; delete rec.google; delete rec.tokens; }
   else if (m.username !== undefined || m.newPin) {
     const u = normUser_(m.username !== undefined ? m.username : rec.username);
     if (u) {
@@ -15371,6 +16230,264 @@ async function adminDeleteBoardMember(username, pin, id) {
   if (left.length === rows.length) return { ok: false, err: 'not_found' };
   await writeJSON('board', left);
   return adminListBoard(username, pin);
+}
+
+/* ==================== The Advisory Board: an invite link, oversight of the whole base, and its own room ====================
+   Nov 2026 (Uriah): "an easy link to send our board people to sign up with their roles and be able to view all of the
+   base app activity, finances, and everything — full access, not admin control, but full oversight of the whole base …
+   Even a special My Ministry thing for them, similar to our leadership team, where we have projects and tasks and rocks —
+   we'll try to run our board by the EOS system too."
+   THE RULE, in one place (boardSees_): an active board member — signed in through the board store, or as the staff
+   member their seat is linked to — may READ what a Campus Leadership member of a campus may read, for BOTH campuses,
+   and may WRITE nothing outside the board's own room. Reads: getBoardOverview, getBoardLeadership, fin2Get,
+   getQuarterReport, getYwamGp. Writes: only boardRoom(), which runs the leadership team's own handlers on the board's
+   own blobs (boardScope, above leadAuth_).
+   NEVER, even for the board: anyone's health answers, score or token; 1-on-1 check-ins, notes or follow-ups; prayer
+   requests; support raising; HR files and contracts; PIN / password / token material and Google ids; a student's or
+   child's name, photo, guardian or payment; who fasts; 360 reviews; the week's board; leave reasons; any Admin tool.
+   tests/test-board-room.mjs walks every handler with a board sign-in and scans every answer it can get. */
+const BOARD_INVITE_DAYS = [3, 7, 14, 30];
+async function boardViewer_(username, pin) {
+  const v = await verifyViewer_(username, pin);
+  if (!v) return null;
+  if (v.kind === 'board') return { kind: 'board', who: v.who, seat: v.who };
+  const seat = (await getBoard_()).find(function (b) { return b && b.staffId === v.who.id && b.active !== false; }) || null;
+  return { kind: 'staff', who: v.who, seat: seat };
+}
+function boardSees_(v) { return !!(v && v.seat && v.seat.active !== false); }
+/* who someone is in the board room: the staff id of a linked member (their own app knows them by it), else their board id */
+function boardPid_(b) { return b.staffId || b.id; }
+async function boardRoomIds_() {
+  const staff = await getStaff_(), ids = {};
+  (await getBoard_()).forEach(function (b) { if (b && b.active !== false) ids[boardPid_(b)] = boardOut_(b, staff).name || ''; });
+  return ids;
+}
+/* oversight: a board member, or an admin (who reads everything anyway) */
+async function overseeAuth_(username, pin, campus) {
+  const v = await boardViewer_(username, pin);
+  if (!v) return { out: { ok: false } };
+  if (!boardSees_(v) && !(v.kind === 'staff' && v.who.isAdmin)) return { out: { ok: false, err: 'not_authorized' } };
+  if (campus !== undefined && CAMPUS_IDS_.indexOf(campus) === -1) return { out: { ok: false, err: 'bad_campus' } };
+  return { v: v };
+}
+
+/* ---- the invite link: teams.html?board=<48 hex>, for one person, kept only as a hash ---- */
+async function getBoardInvites_() { return readJSON('boardInvites', []); }
+function boardInviteOut_(r) {
+  return { id: r.id, role: r.role || 'Advisor', note: r.note || '', used: (r.used || []).map(function (u) { return { name: u.name || '', at: u.at || '', linked: !!u.staffId }; }),
+    exp: r.exp, off: !!r.off, byName: r.byName || '', at: r.at, state: inviteState_(r) };
+}
+async function adminMakeBoardInvite(username, pin, p) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  p = p && typeof p === 'object' ? p : {};
+  const role = ooText_(p.role, 40) || 'Advisor';
+  const days = BOARD_INVITE_DAYS.indexOf(Number(p.days)) > -1 ? Number(p.days) : 7;
+  const token = crypto.randomBytes(24).toString('hex'), salt = crypto.randomBytes(8).toString('hex');
+  const rec = { id: 'bin' + crypto.randomBytes(6).toString('hex'), hash: hashPin_(token, salt), salt: salt, role: role, note: str_(p.note, 80) || '', uses: 1, used: [],
+    exp: new Date(Date.now() + days * 864e5).toISOString(), off: false, by: admin.id, byName: admin.name || '', at: new Date().toISOString() };
+  const r = await mutateKey_('boardInvites', [], function (rows) {
+    for (let i = rows.length - 1; i >= 0; i--) if (!rows[i] || !(Date.parse(rows[i].exp) > Date.now() - 60 * 864e5)) rows.splice(i, 1);   // ended ones go after two months
+    rows.unshift(rec); rows.splice(100);
+    return { ok: true };
+  });
+  if (!r || !r.ok) return r || { ok: false };
+  return { ok: true, token: token, invite: boardInviteOut_(rec), invites: (await getBoardInvites_()).map(boardInviteOut_) };
+}
+async function adminBoardInviteOff(username, pin, id) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  const r = await mutateKey_('boardInvites', [], function (rows) {
+    const x = rows.find(function (y) { return y && y.id === id; });
+    if (!x) return { abort: true, ok: false, err: 'not_found' };
+    x.off = true; return { ok: true };
+  });
+  if (!r || !r.ok) return r || { ok: false };
+  return { ok: true, invites: (await getBoardInvites_()).map(boardInviteOut_) };
+}
+/* public: what the page says before anyone signs up — the role, who invited them, and whether Google is on */
+async function boardInviteInfo(token) {
+  const r = inviteFind_(await getBoardInvites_(), token), st = inviteState_(r);
+  if (st !== 'ok') return { ok: false, err: st };
+  return { ok: true, role: r.role || 'Advisor', byName: r.byName || '', google: googleClientId_() };
+}
+/* Use the link. Three ways in:
+     - {googleToken}: the Google account is the sign-in (a device token comes back, as for staff);
+     - {username, pin, email}: a username and a 4-digit PIN;
+     - {staff:{user, pin}}: someone signed in to the app as staff takes the seat with that profile.
+   A Google account or a signed-in profile that IS a staff member is never given a second identity: the seat is linked
+   to the profile (staffId) and they open the app as usual. An email only typed proves nothing, so a typed email that
+   belongs to a staff profile is turned away (`staff_email`) — otherwise whoever holds the link could put a seat on
+   anyone. The link is claimed first, in one checked write, so it can never be used twice. */
+async function boardJoin(token, p) {
+  p = p && typeof p === 'object' ? p : {};
+  const inv0 = inviteFind_(await getBoardInvites_(), token), st0 = inviteState_(inv0);
+  if (st0 !== 'ok') return { ok: false, err: 'invite_' + st0 };
+  const staffRows = await getStaff_();
+  let gg = null, st = null;
+  if (p.staff && typeof p.staff === 'object') {
+    st = await verifyStaff_(p.staff.user, p.staff.pin);
+    if (!st) return { ok: false, err: 'auth' };
+  } else if (p.googleToken) {
+    gg = await verifyGoogleToken_(p.googleToken);
+    if (!gg) return { ok: false, err: 'google' };
+    st = staffRows.find(function (r) { return r && !isApplicant_(r) && r.google && r.google.sub && r.google.sub === gg.sub; }) || staffByEmail_(staffRows, gg.email);
+    if (st && (st.archived || st.active === false)) return { ok: false, err: 'staff_inactive' };
+  }
+  const email = st ? (st.email || '') : gg ? gg.email : cleanEmail_(p.email);
+  if (!st) {
+    if (email === null) return { ok: false, err: 'bad_email' };
+    if (!email) return { ok: false, err: 'email_required' };
+    if (!gg && staffByEmail_(staffRows, email)) return { ok: false, err: 'staff_email' };
+  }
+  const name = st ? (st.name || '') : (ooText_(p.name, 80) || (gg && gg.name) || '');
+  if (!name) return { ok: false, err: 'name_required' };
+  const phone = ooText_(p.phone, 40), bio = ooText_(p.bio, 600), now = new Date().toISOString();
+  let username = '';
+  if (!st) {
+    if (gg) {
+      const base = (gg.email.split('@')[0] || 'board').toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 16) || 'board';
+      const board = await getBoard_();
+      const taken = function (x) { return !!findStaff_(staffRows, x) || board.some(function (b) { return b.username === x; }); };
+      let cand = base.length >= 2 ? base : base + '00', n = 1;
+      while (taken(cand) && n < 999) { n++; cand = base.slice(0, 16) + n; }
+      username = cand;
+    } else {
+      username = normUser_(p.username);
+      if (!/^[a-z0-9._-]{2,20}$/.test(username)) return { ok: false, err: 'bad_username' };
+      if (!/^\d{4}$/.test(String(p.pin))) return { ok: false, err: 'bad_pin' };
+      if (await usernameTaken_(username)) return { ok: false, err: 'username_taken' };
+    }
+  }
+  /* claim the link (single use), then make the seat; a seat that can't be made gives the link back */
+  const claim = await mutateKey_('boardInvites', [], function (rows) {
+    const r = inviteFind_(rows, token), state = inviteState_(r);
+    if (state !== 'ok') return { abort: true, ok: false, err: 'invite_' + state };
+    r.used = [{ name: name, at: now, staffId: st ? st.id : '' }];
+    return { ok: true, id: r.id, role: r.role || 'Advisor' };
+  });
+  if (!claim || !claim.ok) return claim || { ok: false };
+  const release = function () { return mutateKey_('boardInvites', [], function (rows) { const r = rows.find(function (x) { return x && x.id === claim.id; }); if (r) r.used = []; return { ok: true }; }); };
+  const newId = 'bd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  let rec = null, gtok = '';
+  const made = await mutateKey_('board', [], function (rows) {
+    if (st) {
+      const i = rows.findIndex(function (b) { return b && b.staffId === st.id; });
+      if (i > -1) { Object.assign(rows[i], { role: claim.role, active: true, updated: now }); if (!rows[i].bio && bio) rows[i].bio = bio; if (!rows[i].phone && phone) rows[i].phone = phone; rec = rows[i]; }
+      else { rec = { id: newId, created: now, name: '', role: claim.role, email: '', phone: phone, bio: bio, photo: '', staffId: st.id, order: 0, active: true, safeguarding: false, updated: now, invite: claim.id }; rows.push(rec); }
+      return { ok: true };
+    }
+    const mine = function (b) { return b && !b.staffId && ((gg && b.google && b.google.sub === gg.sub) || (b.email && emailKey_(b.email) === emailKey_(email))); };
+    if (rows.some(mine)) return { abort: true, ok: false, err: 'already_member' };
+    if (rows.some(function (b) { return b && b.username === username; })) return { abort: true, ok: false, err: 'username_taken' };
+    rec = { id: newId, created: now, name: name, role: claim.role, email: email, phone: phone, bio: bio, photo: '', staffId: '', order: 0, active: true, safeguarding: false,
+      username: username, updated: now, invite: claim.id };
+    if (gg) { gtok = addDeviceToken_(rec); rec.google = { sub: gg.sub, lastAt: now }; }
+    else { rec.pinSalt = pinSalt_(); rec.pinHash = hashPin_(p.pin, rec.pinSalt); }
+    rows.push(rec);
+    return { ok: true };
+  });
+  if (!made || !made.ok) { await release(); return made || { ok: false }; }
+  if (st) return { ok: true, linked: true, name: st.name || '', role: claim.role };
+  return { ok: true, member: boardOut_(rec, []), user: username, token: gtok || undefined };
+}
+/* Continue with Google, for a board member with their own sign-in: found by the Google account, else by the
+   email on their seat. Answered through staffLoginGoogle as err 'board' with the session beside it, so the
+   staff door's `ok` still only ever means staff. */
+async function boardGoogleLogin_(gg) {
+  const rows = await getBoard_();
+  const hit = rows.find(function (b) { return b && !b.staffId && b.active !== false && b.google && b.google.sub && b.google.sub === gg.sub; }) ||
+    rows.find(function (b) { return b && !b.staffId && b.active !== false && b.username && b.email && emailKey_(b.email) === emailKey_(gg.email); });
+  if (!hit) return null;
+  let tok = '', out = null;
+  const r = await mutateKey_('board', [], function (all) {
+    const b = all.find(function (x) { return x && x.id === hit.id; });
+    if (!b) return { abort: true, ok: false };
+    tok = addDeviceToken_(b); b.google = { sub: gg.sub, lastAt: new Date().toISOString() }; out = b;
+    return { ok: true };
+  });
+  if (!r || !r.ok) return null;
+  await clearLoginThrottle_(hit.username);
+  return { ok: false, err: 'board', member: boardOut_(out, []), user: out.username, token: tok };
+}
+
+/* ---- the board's own room: the leadership team's tools, on the board's own blobs ---- */
+const BOARD_ROOM_FNS = ['getLeadBoard', 'saveLeadCard', 'deleteLeadCard', 'saveLeadTask', 'deleteLeadTask', 'saveLeadNote', 'saveLeadSettings',
+  'getLeadMeeting', 'saveLeadMeetSettings', 'saveLeadScore', 'deleteLeadScore', 'saveLeadScoreValue', 'saveLeadRock', 'deleteLeadRock',
+  'saveLeadHeadline', 'deleteLeadHeadline', 'leadMeetStart', 'leadMeetUpdate', 'leadMeetTodo', 'leadMeetSolve', 'leadMeetEnd'];
+async function boardRoom(username, pin, fn, args) {
+  if (BOARD_ROOM_FNS.indexOf(fn) === -1) return { ok: false, err: 'not_allowed' };
+  if (boardScope.getStore() || demoScope.getStore()) return { ok: false };
+  const v = await boardViewer_(username, pin);
+  if (!v) return { ok: false };
+  const admin = v.kind === 'staff' && !!v.who.isAdmin;
+  if (!boardSees_(v) && !admin) return { ok: false, err: 'not_authorized' };   // the board's members, and admins — nobody else, Campus Leadership included
+  const s = { id: v.seat ? boardPid_(v.seat) : v.who.id, name: v.seat ? (v.seat.name || v.who.name || '') : (v.who.name || ''), campus: BOARD_ROOM, isAdmin: admin, active: true, boardRoom: true };
+  return boardScope.run({ s: s }, function () { return HANDLERS[fn]([username, pin].concat(Array.isArray(args) ? args : [])); });
+}
+
+/* ---- the big picture: one call for the board's Overview ----
+   Counts and figures only, for both campuses, each blob read once. The headline figures themselves (staff mix, the
+   Staff Health Score, salvations, the scorecards' ✓ and ✗) are worked out on the page with rollup.js from what
+   getData already gives everyone — no roll-up rule is written again here. */
+async function getBoardOverview(username, pin) {
+  const A = await overseeAuth_(username, pin); if (A.out) return A.out;
+  const v = A.v, today = baseToday_(), wk = isoWeek_(today), yr = weekYear_(today), month = today.slice(0, 7);
+  const [staffAll, board, entries, trips, ones, rocks] = await Promise.all([getStaff_(), getBoard_(), getEntries_(), getTrips_(), getOneOnOnes_(), getRocks_()]);
+  const mon = new Date(today + 'T00:00:00Z'); mon.setUTCDate(mon.getUTCDate() - ((mon.getUTCDay() + 6) % 7));
+  const sun = new Date(mon); sun.setUTCDate(sun.getUTCDate() + 6);
+  const wa = mon.toISOString().slice(0, 10), wb = sun.toISOString().slice(0, 10);
+  const names = {}, campuses = {};
+  const weeks = [wk]; if (wk > 1) weeks.push(wk - 1);
+  for (const c of CAMPUS_IDS_) {
+    const staff = staffAll.filter(function (r) { return r && r.active && !r.archived && !isApplicant_(r) && r.campus === c; });
+    const ids = {}; staff.forEach(function (r) { ids[r.id] = 1; names[r.id] = r.name || ''; });
+    const people = {};
+    staff.forEach(function (r) {
+      const d = deptOf_(r), seen = {};
+      [d && r.ministry ? d + '|' + r.ministry : ''].concat(ministriesOf_(r)).forEach(function (k) { if (k && !seen[k]) { seen[k] = 1; people[k] = (people[k] || 0) + 1; } });
+    });
+    const awayIds = {};
+    trips.forEach(function (t) { if (t && ids[t.staffId] && (t.status === 'approved' || t.status === 'noted') && isDate_(t.from) && isDate_(t.to) && overlaps_(t.from, t.to, wa, wb)) awayIds[t.staffId] = 1; });
+    /* whose numbers are in, this week and last: typed rows only — what a tool counts by itself was never due */
+    const logged = {}; weeks.forEach(function (w) { logged[w] = {}; });
+    const debt = {};
+    entries.forEach(function (r) {
+      if (!r || r.campus !== c) return;
+      if (yearOf_(r) === yr && logged[Number(r.week)] && !/^tool:/.test(String(r.by || ''))) logged[Number(r.week)][normDept_(r.dept, r.ministry) + '|' + r.ministry] = 1;
+    });
+    PULSE_DEPTS.forEach(function (d) { const x = staffDebtFor_(entries, staffAll, c, d); if (x) debt[d] = { value: x.value, at: x.at }; });
+    const lg = {}; weeks.forEach(function (w) { lg[w] = Object.keys(logged[w]); });
+    const oneOnOnes = ones.filter(function (o) {
+      if (!o || !(ids[o.fromId] || ids[o.toId])) return false;
+      if (o.status === 'held') return String(o.heldOn || '').slice(0, 7) === month;
+      return o.status === 'accepted' && String(o.decidedAt || o.created || '').slice(0, 7) === month;
+    }).length;
+    let here = null;
+    try { const W = await whosHere_(c); here = { count: W.count, staffHere: W.staffHere, staffAway: W.staffAway, beds: W.beds, capacity: W.capacity }; } catch (e) { here = null; }
+    /* the balance the Finances office last entered, and whether it was reconciled */
+    let fin = null;
+    const fd = await readJSON(fin2Key_(c), {}), bal = fd && fd.state && Array.isArray(fd.state.bal) ? fd.state.bal.filter(function (b) { return b && b.asOf; }).sort(function (x, y) { return x.asOf < y.asOf ? 1 : -1; })[0] : null;
+    if (bal) fin = { total: (Number(bal.aba) || 0) + (Number(bal.us) || 0) + (Number(bal.cash) || 0), asOf: String(bal.asOf), reconciled: bal.rec ? String(bal.rec) : '' };
+    /* leadership's meeting: the last one's rating and to-dos, and what is open on its Kanban */
+    const md = await getMeetDoc_(c), ld = await getLeadDoc_(c), last = md.past.length ? md.past[md.past.length - 1] : null;
+    const doneCols = {}; ld.cols.forEach(function (x) { if (x.done) doneCols[x.id] = 1; });
+    const firstCol = ld.cols.length ? ld.cols[0].id : '';
+    campuses[c] = { staff: staff.length, away: Object.keys(awayIds).length, people: people, logged: lg, oneOnOnes: oneOnOnes, debt: debt, here: here, fin: fin,
+      meet: { last: last ? { date: last.date, avg: last.avg == null ? null : last.avg, todoPct: last.todo && last.todo.pct != null ? last.todo.pct : null, solved: (last.solved || []).length } : null,
+        held: md.past.length, running: !!md.run, numbers: md.score.length,
+        open: ld.cards.filter(function (x) { return !doneCols[x.col]; }).length, issues: ld.cards.filter(function (x) { return x.col === firstCol && !doneCols[x.col]; }).length } };
+  }
+  const members = board.filter(function (b) { return b && b.active !== false; }).map(function (b) { const o = boardOut_(b, staffAll); return { id: boardPid_(b), name: o.name, role: o.role, photo: o.photo, staff: !!b.staffId }; });
+  return { ok: true, today: today, week: wk, year: yr, q: meetQ_(wk), weeks: weeks,
+    me: v.seat ? { id: boardPid_(v.seat), role: v.seat.role || 'Advisor', member: true } : { id: v.who.id, role: '', member: false },
+    members: members, names: names, rocks: rocks, campuses: campuses };
+}
+/* A campus's leadership team as it runs itself, to read: its Scorecard, rocks, headlines, past meetings and Kanban.
+   The same answer its own team gets from getLeadMeeting — and no way to change any of it from here. */
+async function getBoardLeadership(username, pin, campus) {
+  const A = await overseeAuth_(username, pin, campus); if (A.out) return A.out;
+  return meetOut_(campus, await getMeetDoc_(campus), { board: leadOut_(campus, await getLeadDoc_(campus)), readOnly: true });
 }
 
 /* ===== Talk it through → tasks (Nov 2026, Uriah: "voice stream of consciousness into our tasks app and
@@ -15539,7 +16656,7 @@ function demoStore_(data) {
   };
 }
 const DEMO_USER = 'demo', DEMO_PIN = '0000';
-const DEMO_WRITES = ['saveDaily', 'saveGoals', 'saveMyWeek', 'deleteMyWeek', 'saveMyHabits', 'saveGpTask', 'deleteGpTask', 'respondGpTask',
+const DEMO_WRITES = ['saveRock', 'deleteRock', 'saveDaily', 'saveGoals', 'saveMyWeek', 'deleteMyWeek', 'saveMyHabits', 'saveGpTask', 'deleteGpTask', 'respondGpTask',
   'orderGpTasks', 'fileGpTask', 'saveGpTaskList', 'saveGpListOrder', 'saveGpTaskFilter', 'saveTask', 'deleteTask', 'clearDoneTasks',
   'saveDashLayout', 'saveQuickApps', 'libSaveReads', 'libSaveMine', 'markSeen', 'catchSanta', 'catchHoliday', 'saveMyKpiDay',
   'saveMyMinistry', 'staffProfile', 'teamRoster', 'savePrayer', 'prayedFor', 'saveMyPersonality', 'saveMyGStrengths', 'saveMyApest',
@@ -15611,11 +16728,15 @@ function demoData_() {
       { text: 'Train the new barista', pct: 100, done: true, metricKey: '' }, { text: 'Visit a church in town', pct: 100, done: true, metricKey: '' },
       { text: 'Language study 3 times', pct: 70, done: false, metricKey: '' }] }
   ];
-  const quarter = Math.min(4, Math.floor((wk - 1) / 13) + 1); /* objectives keep quarters 1–4 (okrSectionHtml's qNow) */
-  const okr = function (id, dept, objective, krs) { return krs.map(function (k) { return Object.assign({ campus: 'siemreap', quarter: quarter, dept: dept, id: id, objective: objective, kr: '', metricKey: '', target: 0, manualPct: 0, group: '', kind: '', current: 0, updated: now }, k); }); };
-  const okrs = [].concat(
-    okr('demo-o1', 'Community Service', 'Make the cafe a place people meet Jesus', [{ kr: 'Serve 2,500 cups this quarter', metricKey: 'Community Service|Cafe|Cups Sold', target: 2500 }, { kr: 'Train two new baristas', kind: 'count', target: 2, current: 1 }, { kr: 'A prayer corner in the cafe', manualPct: 40 }]),
-    okr('demo-o2', 'Campus Leadership', 'Every staff member walks with a mentor', [{ kr: 'Two 1-on-1s a month for everyone', manualPct: 65 }, { kr: 'Every new staff member has a mentor in their first month', manualPct: 80 }]));
+  /* the quarter's rocks (they replaced the objectives): the Cafe's, its department's and leadership's */
+  const rq = meetNow_();
+  const rock = function (id, dept, ministry, owner, title, status, note) { return { id: id, campus: 'siemreap', dept: dept, ministry: ministry, owner: owner, year: rq.year, q: rq.q, title: title, status: status, note: note, by: 'dm3', at: now, updated: now }; };
+  const rocks = { seeded: 'demo', rocks: [
+    rock('demo-r1', 'Community Service', 'Cafe', 'dm1', 'Train two new baristas', 'on', 'One is trained; the second starts next week'),
+    rock('demo-r2', 'Community Service', 'Cafe', '', 'A prayer corner in the cafe', 'off', 'Waiting on the shelves'),
+    rock('demo-r3', 'Community Service', '', '', 'Every ministry serves one new village this quarter', 'on', ''),
+    rock('demo-r4', 'Campus Leadership', '', '', 'Every staff member walks with a mentor', 'on', ''),
+    rock('demo-r5', 'Campus Leadership', '', '', 'Two 1-on-1s a month for everyone', 'done', '')] };
   const gpTasks = {
     lists: [{ id: 'demo-l1', campus: 'siemreap', scope: 'personal', dept: '', ministry: '', ownerId: 'dm1', shared: false, title: 'Inbox', inboxKept: true, order: 0, created: now, by: 'dm1' },
       { id: 'demo-l2', campus: 'siemreap', scope: 'ministry', dept: 'Community Service', ministry: 'Cafe', ownerId: '', shared: false, title: 'Cafe', order: 1, created: now, by: 'dm3' }],
@@ -15629,7 +16750,7 @@ function demoData_() {
   const prayers = [
     { id: 'demo-p1', staffId: 'dm5', campus: 'siemreap', scope: 'campus', text: 'For the DTS students arriving next month — safe travel and open hearts.', created: now, prayed: ['dm2', 'dm3'], answered: '', answerNote: '' },
     { id: 'demo-p2', staffId: 'dm8', campus: 'siemreap', scope: 'campus', text: 'My family back home, and my visa renewal.', created: now, prayed: ['dm1'], answered: '', answerNote: '' }];
-  return { staff: staff, entries: entries, survey: survey, dailyLogs: dailyLogs, goals: goals, okrs: okrs, gpTasks: gpTasks, prayers: prayers, loginThrottle: {} };
+  return { staff: staff, entries: entries, survey: survey, dailyLogs: dailyLogs, goals: goals, rocks: rocks, metricOverrides: [{ campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', hidden: [], custom: [], cadence: {}, goals: { 'Cups Sold': { goal: 150, dir: 'gte' } } }], gpTasks: gpTasks, prayers: prayers, loginThrottle: {} };
 }
 async function demoCall(fn, args) {
   fn = String(fn || '');
@@ -15640,7 +16761,287 @@ async function demoCall(fn, args) {
   });
 }
 
+/* ==================== The quarterly report, ministry by ministry (Nov 2026, Uriah) ====================
+   "Automatically feed information to a quarterly report that we can give to ministries and donors, the
+   government Ministry, and to donors." The board's quarter report (teams/03-library-org.js) is one page of
+   figures; this is the document behind it — a page per ministry, for three audiences, printed from
+   teams/29-report.js. ONE call per campus and quarter, getQuarterReport, gives the page:
+     - the weekly rows of that week year for the campus (and last year's, for Q1's "last quarter"), which the
+       page rolls up with rollup.js — no roll-up rule lives here;
+     - who leads each ministry (names) and how many serve in it (a count), the campus's staff as kind and
+       country only (for the Khmer / international split), and the Staff Health Score as two numbers per
+       quarter — never from fewer than QR_MIN_ANSWERS check-ins, never a row or a token;
+     - each tool's highlights for the quarter, COUNTS ONLY, each tool's blob read once (qrTools_);
+     - what the ministry wrote for the quarter (qreport:<campus>).
+   Never in it: a student's name, photo, guardian or payment, anyone's health answers, staff debt, a prayer
+   need's words, who fasts, 1-on-1s, leave, or a finance figure.
+   Who: the whole campus — its Campus Leadership, admins (any campus), and an Advisory Board member's own
+   sign-in (read only); anyone else on staff — only the ministries they are part of or lead, on their own
+   campus. Applicants never (verifyStaff_ refuses them).
+   qreport:<campus> = { 'YYYY-Qn': { letter:{text,by,byName,at}, ministries:{ 'Dept|Ministry': { highlights,
+   story, challenges, needs, by, byName, at } } } }, written with mutateKey_. */
+const QR_MIN_ANSWERS = 3, QR_TEXT_MAX = 1200, QR_LETTER_MAX = 3000, QR_YEAR_FROM = 2024;
+const QR_FIELDS = ['highlights', 'story', 'challenges', 'needs'];
+const QR_NEVER = SENSITIVE.concat(['Staff Debt ($)']);   // never in the report, whatever the audience
+const QR_HOSP_KEY = 'Skills Training|Hospitality';
+function qrWeeks_(q) { return [(q - 1) * 13 + 1, q === 4 ? 52 : q * 13]; }
+/* the quarter's first and last day: 13-week blocks of the week year; Q4 runs to the day before next year's week 1 */
+function qrRange_(year, q) {
+  const w = qrWeeks_(q), m1 = mondayOfWeek1No_(year);
+  return { from: dayOfNo_(m1 + (w[0] - 1) * 7), to: q === 4 ? dayOfNo_(mondayOfWeek1No_(year + 1) - 1) : dayOfNo_(m1 + w[1] * 7 - 1) };
+}
+function qrQuarterOf_(day) { return { year: weekYear_(day), q: meetQ_(isoWeek_(day)) }; }
+/* a year and quarter that has begun: from QR_YEAR_FROM to the quarter it is now */
+function qrAsk_(year, q) {
+  const y = Math.round(Number(year)), n = Math.round(Number(q)), now = qrQuarterOf_(baseToday_());
+  if (!(y >= QR_YEAR_FROM && y <= now.year) || !(n >= 1 && n <= 4)) return null;
+  if (y === now.year && n > now.q) return null;
+  return { year: y, q: n, id: y + '-Q' + n };
+}
+function qrText_(v, n) { return String(v == null ? '' : v).replace(/\r/g, '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, n); }
+function qrKeysOf_(s) {
+  const out = [];
+  const add = function (k) { if (k && k.split('|').length === 2 && k.indexOf('Campus Leadership|') !== 0 && out.indexOf(k) === -1) out.push(k); };
+  if (s.dept && s.ministry) add(deptOf_(s) + '|' + s.ministry);
+  ministriesOf_(s).forEach(add); leadsOf_(s).forEach(add);
+  return out;
+}
+/* what this person may open: everything on the campus, or only their own ministries */
+async function qrViewer_(username, pin, campus) {
+  const v = await verifyViewer_(username, pin);
+  if (!v) return { out: { ok: false } };
+  if (CAMPUS_IDS_.indexOf(campus) === -1) return { out: { ok: false, err: 'bad_campus' } };
+  if (v.kind === 'board') return { board: true, full: true, s: null };
+  const s = v.who;
+  if (isApplicant_(s) || s.active === false) return { out: { ok: false } };
+  if (s.isAdmin || (canLead_(s) && s.campus === campus)) return { s: s, full: true };
+  if (boardSees_(await boardViewer_(username, pin))) return { s: s, full: true, keys: s.campus === campus ? qrKeysOf_(s) : [], seat: true };   // on the board too: reads it all, writes only what they could before
+  const keys = s.campus === campus ? qrKeysOf_(s) : [];
+  if (!keys.length) return { out: { ok: false, err: 'not_authorized' } };
+  return { s: s, full: false, keys: keys };
+}
+function qrMayWrite_(V, campus, key) {
+  if (!V.s || V.board) return false;
+  const p = key.split('|');
+  return !!(V.s.isAdmin || (canLead_(V.s) && V.s.campus === campus) || canLogFor_(V.s, campus, p[0], p[1]));
+}
+function qrStoryOut_(m) {
+  const o = { byName: (m && m.byName) || '', at: (m && m.at) || '' };
+  QR_FIELDS.forEach(function (f) { o[f] = (m && m[f]) || ''; });
+  return o;
+}
+async function qrDoc_(campus) {
+  const d = await readJSON('qreport:' + campus, {});
+  return d && typeof d === 'object' && !Array.isArray(d) ? d : {};
+}
+function qrHasStory_(m) { return !!(m && QR_FIELDS.some(function (f) { return m[f]; })); }
+
+/* ---- each tool's highlights for the quarter: counts, and names only of places and of visiting teams ---- */
+async function qrTools_(campus, R, want, today) {
+  const out = {}, inR = function (d) { return !!d && d >= R.from && d <= R.to && d <= today; };
+  const part = async function (key, fn) { if (!want(key)) return; try { const v = await fn(); if (v) out[key] = v; } catch (e) { console.error('quarter report', key, e && e.message); } };
+  /* the school tool: students by location, attendance, tests, the faith ticks dated in the quarter */
+  for (const key of Object.keys(SCHOOL_TOOL)) {
+    await part(key, async function () {
+      const raw = await readJSON('school:' + campus + ':' + key, null); if (!raw) return null;
+      const doc = schDoc_(raw), settings = schSettings_(doc.settings), rolls = schRollsOut_(await readJSON('schoolRoll:' + campus + ':' + key, { rolls: {} }));
+      const end = R.to < today ? R.to : today, locOf = {}, locName = {}, byLoc = {};
+      doc.locations.forEach(function (l) { locName[l.id] = l.name || ''; });
+      doc.classes.forEach(function (c) { locOf[c.id] = c.locationId || ''; });
+      const active = doc.students.filter(function (st) { return schActiveOn_(st, end); });
+      active.forEach(function (st) { const l = locOf[st.classId] || ''; byLoc[l] = (byLoc[l] || 0) + 1; });
+      let here = 0, marks = 0; const days = {};
+      rolls.forEach(function (r) { if (!inR(r.date)) return; days[r.date] = 1; Object.keys(r.marks || {}).forEach(function (id) { marks++; if (r.marks[id] !== 'a') here++; }); });
+      let tests = 0, scored = 0, passed = 0;
+      doc.tests.forEach(function (t) { if (!inR(t.date)) return; tests++;
+        Object.keys(t.scores || {}).forEach(function (id) { scored++; if (Number(t.scores[id]) / t.outOf * 100 >= settings.passMark) passed++; }); });
+      const tick = function (k) { return doc.students.filter(function (st) { return inR(st.faith && st.faith[k]); }).length; };
+      if (!doc.students.length && !doc.classes.length) return null;
+      return { kind: 'school', students: active.length, classes: doc.classes.length,
+        byLocation: Object.keys(byLoc).map(function (l) { return { name: locName[l] || '', n: byLoc[l] }; }).sort(function (a, b) { return b.n - a.n; }),
+        classDays: Object.keys(days).length, attendance: marks ? Math.round(here / marks * 100) : null,
+        tests: tests, passRate: scored ? Math.round(passed / scored * 100) : null, salvations: tick('salv'), baptisms: tick('bapt') };
+    });
+  }
+  /* Outreach Teams: the teams that left in the quarter (a team is an organisation — its name is fine to print) */
+  await part(TEAM_DEPT + '|' + TEAM_MIN, async function () {
+    const pend = await pendingTeamIds_(), seen = {};
+    const trips = (await getTeamTrips_()).filter(function (t) { return t.campus === campus && t.status !== 'cancelled' && inR(isoDate_(t.to)) && !(t.candidateId && pend[t.candidateId]); });
+    if (!trips.length) return null;
+    trips.sort(function (a, b) { return a.to < b.to ? -1 : 1; });
+    trips.forEach(function (t) { if (t.country) seen[t.country] = 1; });
+    return { kind: 'teams', teams: trips.length, people: trips.reduce(function (a, t) { return a + (Number(t.size) || 0); }, 0), countries: Object.keys(seen).sort(),
+      list: trips.slice(0, 60).map(function (t) { return { name: t.name || '', country: t.country || '', size: t.size == null ? null : Number(t.size) }; }) };
+  });
+  /* GPDTS: the outreach teams' weeks that began in the quarter */
+  if (DTS_TOOL[campus]) await part(DTS_DEPT + '|' + DTS_TOOL[campus], async function () {
+    const db = dtsDbOut_(await readJSON('dtsDb:' + campus, DTS_DB_FALLBACK)), sum = { male: 0, female: 0, salvations: 0, healings: 0, gospel: 0 }, places = {}, teams = {};
+    (db.teams || []).forEach(function (tm) { Object.keys(DTS_PHASES).forEach(function (ph) {
+      const p = tm[ph]; if (!p || !p.from) return;
+      (p.weeks || []).forEach(function (w, i) {
+        if (!inR(addDays_(p.from, i * 7))) return;
+        teams[tm.id] = 1; if (p.place) places[p.place] = 1;
+        DTS_REACH.forEach(function (k) { sum[k] += Number(w && w[k]) || 0; });
+      });
+    }); });
+    if (!Object.keys(teams).length) return null;
+    return { kind: 'dts', outreachTeams: Object.keys(teams).length, places: Object.keys(places).sort().slice(0, 20), reached: sum.male + sum.female,
+      salvations: sum.salvations, healings: sum.healings, gospel: sum.gospel };
+  });
+  /* Intercession: the Wednesdays held, and each fast that touched the quarter — how many joined, never who */
+  await part(ICP_DEPT + '|' + ICP_MIN, async function () {
+    const doc = await icpDoc_(campus), fd = await fastDoc_(campus), joins = await readJSON('fastJoin:' + campus, {});
+    let held = 0, hours = 0, tes = 0, cameN = 0, came = 0; const mins = {};
+    Object.keys(doc.weds).forEach(function (d) {
+      const x = doc.weds[d]; if (!x || x.held !== true || !inR(d)) return;
+      held++; hours += Number(x.hours) || 0; tes += (x.testimonies || []).length;
+      if (x.came != null) { cameN++; came += Number(x.came) || 0; }
+      (x.mins || []).forEach(function (m) { mins[m] = 1; });
+    });
+    let gheld = 0;
+    const fasts = [];
+    fd.fasts.forEach(function (f) {
+      if (!f || !f.start || f.start > R.to || fastEnd_(f) < R.from || f.start > today) return;
+      (f.gatherings || []).forEach(function (g) { if (g.held === true && inR(addDays_(f.start, g.day - 1))) { gheld++; hours += Number(g.hours) || 0; } });
+      const j = joins && joins[f.id]; 
+      fasts.push({ title: f.title || '', days: f.days, joined: j && typeof j === 'object' ? Object.keys(j).length : 0 });
+    });
+    if (!held && !gheld && !fasts.length) return null;
+    return { kind: 'icp', wedsHeld: held, gatheringsHeld: gheld, hours: Math.round(hours * 100) / 100, ministries: Object.keys(mins).length, testimonies: tes,
+      avgCame: cameN ? Math.round(came / cameN) : null, fasts: fasts };
+  });
+  /* Worship: services held and who came, the team in training today, our own songs written in the quarter */
+  await part(WORSHIP_DEPT + '|' + WORSHIP_MIN, async function () {
+    const weeks = await wsWeeks_(campus), doc = await wsDoc_(campus);
+    let held = 0, counted = 0, people = 0;
+    Object.keys(weeks).forEach(function (w) { ((weeks[w] && weeks[w].services) || []).forEach(function (x) {
+      if (x.off || x.held !== true || !inR(wsDate_(w, x.day))) return;
+      held++; if (x.count != null) { counted++; people += Number(x.count) || 0; }
+    }); });
+    const written = doc.songs.filter(function (s) { return inR(s.own && s.own.written); }).length;
+    if (!held && !written && !doc.team.length) return null;
+    return { kind: 'worship', held: held, avg: counted ? Math.round(people / counted) : null, team: doc.team.length,
+      training: doc.team.filter(function (m) { return m.training; }).length, songsWritten: written };
+  });
+  /* Hospitality: nights hosted for visitors (guests, speakers, teams), and the teams housed */
+  await part(QR_HOSP_KEY, async function () {
+    const stored = await readJSON(hospKey_(campus), null); if (!stored || !Array.isArray(stored.bookings)) return null;
+    const last = R.to < today ? R.to : today; let nights = 0, teams = 0, guests = 0;
+    stored.bookings.forEach(function (b) {
+      if (!b || !b.from || ['guest', 'speaker', 'team'].indexOf(b.category) === -1) return;
+      const a = b.from > R.from ? b.from : R.from, z0 = b.permanent || !b.to ? addDays_(last, 1) : b.to, z = z0 > addDays_(last, 1) ? addDays_(last, 1) : z0;   // `to` is the morning they leave
+      const n = dayNo_(z) - dayNo_(a); if (!(n > 0)) return;
+      const count = Math.max(Number(b.count) || 0, Array.isArray(b.bedIds) ? b.bedIds.length : 0, 1);
+      nights += n * count; if (b.category === 'team') teams++; else guests += count;
+    });
+    if (!nights) return null;
+    return { kind: 'hosp', guestNights: nights, teams: teams, guests: guests };
+  });
+  return out;
+}
+
+async function getQuarterReport(username, pin, campus, year, q) {
+  campus = str_(campus, 20) || '';
+  const V = await qrViewer_(username, pin, campus); if (V.out) return V.out;
+  const Q = qrAsk_(year, q); if (!Q) return { ok: false, err: 'bad_quarter' };
+  const today = baseToday_(), R = qrRange_(Q.year, Q.q), wk = qrWeeks_(Q.q);
+  const want = function (key) { return V.full || V.keys.indexOf(key) > -1; };
+  const [rows, staffAll, survey, doc] = await Promise.all([withTeamRows_(await getEntries_()), getStaff_(), V.full ? getSurvey_() : [], qrDoc_(campus)]);
+  /* the weekly rows: this week year's, and last year's when "last quarter" is its Q4 */
+  const entries = {}, prev = {};
+  rows.forEach(function (r) {
+    if (r.campus !== campus || QR_NEVER.indexOf(r.metric) > -1) return;
+    const dept = normDept_(r.dept, r.ministry), val = Number(r.value), y = yearOf_(r);
+    if (isNaN(val) || !want(dept + '|' + r.ministry)) return;
+    const into = y === Q.year ? entries : (Q.q === 1 && y === Q.year - 1 ? prev : null); if (!into) return;
+    const key = dept + '|' + r.ministry + '|' + r.metric;
+    (into[key] = into[key] || {})[String(r.week)] = val;
+  });
+  /* people: names only of who leads; everyone else is a count */
+  const staff = staffAll.filter(function (r) { return r.active && !r.archived && !isApplicant_(r) && r.campus === campus; });
+  const people = {}, depts = {};
+  const slot = function (key) { return people[key] || (people[key] = { n: 0, leaders: [] }); };
+  staff.forEach(function (r) {
+    const d = deptOf_(r), seen = {};
+    if (d && d !== 'Campus Leadership' && V.full) (depts[d] = depts[d] || { n: 0, directors: [] }).n++;
+    if (d === 'Campus Leadership' && r.ministry && r.ministry !== 'Campus Director' && V.full) (depts[r.ministry] = depts[r.ministry] || { n: 0, directors: [] }).directors.push(r.name || '');
+    [d && r.ministry ? d + '|' + r.ministry : ''].concat(ministriesOf_(r)).forEach(function (k) { if (k && !seen[k] && want(k)) { seen[k] = 1; slot(k).n++; } });
+    leadsOf_(r).forEach(function (k) { if (want(k) && slot(k).leaders.indexOf(r.name || '') === -1) slot(k).leaders.push(r.name || ''); });
+  });
+  const out = { ok: true, campus: campus, year: Q.year, q: Q.q, from: R.from, to: R.to, weeks: wk, today: today, done: R.to < today,
+    full: V.full, board: !!V.board, entries: entries, prev: Q.q === 1 ? prev : null, people: people };
+  if (V.full) {
+    out.depts = depts;
+    out.mix = staff.map(function (r) { return { campus: campus, staffType: r.staffType || '', country: r.country || '' }; });
+    /* the Staff Health Score: how many check-ins and their average — nothing under QR_MIN_ANSWERS */
+    const health = function (yr, qn) {
+      const w = qrWeeks_(qn), got = survey.filter(function (r) { return r.campus === campus && yearOf_(r) === yr && Number(r.week) >= w[0] && Number(r.week) <= w[1]; });
+      return { n: got.length, score: got.length >= QR_MIN_ANSWERS ? Math.round(got.reduce(function (a, r) { return a + compositeOf_(r); }, 0) / got.length * 10) / 10 : null };
+    };
+    out.health = { now: health(Q.year, Q.q), prev: Q.q > 1 ? health(Q.year, Q.q - 1) : health(Q.year - 1, 4), minN: QR_MIN_ANSWERS };
+  }
+  out.tools = await qrTools_(campus, R, want, today);
+  const saved = doc[Q.id] && typeof doc[Q.id] === 'object' ? doc[Q.id] : {}, sm = saved.ministries && typeof saved.ministries === 'object' ? saved.ministries : {};
+  out.stories = {};
+  Object.keys(sm).forEach(function (k) { if (want(k) && qrHasStory_(sm[k])) out.stories[k] = qrStoryOut_(sm[k]); });
+  out.letter = V.full && saved.letter && saved.letter.text ? { text: saved.letter.text, byName: saved.letter.byName || '', at: saved.letter.at || '' } : null;
+  out.can = { letter: !!(V.s && (V.s.isAdmin || (canLead_(V.s) && V.s.campus === campus))),
+    write: V.board ? [] : (V.s.isAdmin || (canLead_(V.s) && V.s.campus === campus)) ? 'all' : V.keys.filter(function (k) { return qrMayWrite_(V, campus, k); }) };
+  return out;
+}
+/* A ministry's words for the quarter (key 'Dept|Ministry'), or leadership's letter (key '@letter'). */
+async function saveQuarterStory(username, pin, campus, year, q, key, rec) {
+  campus = str_(campus, 20) || '';
+  const s = await verifyStaff_(username, pin); if (!s) return { ok: false };
+  if (CAMPUS_IDS_.indexOf(campus) === -1) return { ok: false, err: 'bad_campus' };
+  const Q = qrAsk_(year, q); if (!Q) return { ok: false, err: 'bad_quarter' };
+  const V = { s: s }, r = rec && typeof rec === 'object' ? rec : {}, now = new Date().toISOString();
+  const letter = key === '@letter';
+  let k = '';
+  if (letter) { if (!(s.isAdmin || (canLead_(s) && s.campus === campus))) return { ok: false, err: 'not_authorized' }; }
+  else {
+    const raw = str_(key, 160); if (!raw || !/^[^|]+\|[^|]+$/.test(raw)) return { ok: false, err: 'bad_ministry' };
+    k = normKey_(raw, 2);
+    if (k.indexOf('Campus Leadership|') === 0) return { ok: false, err: 'bad_ministry' };
+    if (!qrMayWrite_(V, campus, k)) return { ok: false, err: 'not_authorized' };
+  }
+  const res = await mutateKey_('qreport:' + campus, {}, function (d) {
+    const Qd = d[Q.id] && typeof d[Q.id] === 'object' ? d[Q.id] : (d[Q.id] = {});
+    if (letter) {
+      const text = qrText_(r.letter, QR_LETTER_MAX);
+      if (text) Qd.letter = { text: text, by: s.id, byName: s.name || '', at: now }; else delete Qd.letter;
+      return { ok: true, letter: Qd.letter ? { text: text, byName: s.name || '', at: now } : null };
+    }
+    if (!Qd.ministries || typeof Qd.ministries !== 'object') Qd.ministries = {};
+    const m = { by: s.id, byName: s.name || '', at: now };
+    QR_FIELDS.forEach(function (f) { m[f] = qrText_(r[f], QR_TEXT_MAX); });
+    if (qrHasStory_(m)) Qd.ministries[k] = m; else delete Qd.ministries[k];
+    return { ok: true, key: k, story: qrHasStory_(m) ? qrStoryOut_(m) : null };
+  });
+  return res || { ok: false, err: 'busy' };
+}
+/* The bell: in the last two weeks of a quarter and the first two of the next, the ministries this person leads
+   that have nothing written for it. Read with the boot (qreport:<campus> is in BOOT_KEYS) — no call of its own. */
+function qrWindow_(today) {
+  const wk = isoWeek_(today), yr = weekYear_(today), qn = meetQ_(wk), pos = wk - (qn - 1) * 13;
+  if (pos >= 12) return { year: yr, q: qn, since: dayOfNo_(mondayOfWeek1No_(yr) + ((qn - 1) * 13 + 11) * 7) };
+  if (pos <= 2) return qn === 1 ? { year: yr - 1, q: 4, since: dayOfNo_(mondayOfWeek1No_(yr - 1) + 50 * 7) }
+    : { year: yr, q: qn - 1, since: dayOfNo_(mondayOfWeek1No_(yr) + ((qn - 2) * 13 + 11) * 7) };
+  return null;
+}
+async function qrGlance_(s) {
+  if (!s || isApplicant_(s) || CAMPUS_IDS_.indexOf(s.campus) === -1) return null;
+  const W = qrWindow_(baseToday_()); if (!W) return null;
+  const mine = leadsOf_(s).filter(function (k) { return k && k.split('|').length === 2 && k.indexOf('Campus Leadership|') !== 0; });
+  if (!mine.length) return null;
+  const doc = await qrDoc_(s.campus), Qd = doc[W.year + '-Q' + W.q], sm = (Qd && Qd.ministries) || {};
+  const keys = mine.filter(function (k) { return !qrHasStory_(sm[k]); });
+  return keys.length ? { year: W.year, q: W.q, since: W.since, keys: keys } : null;
+}
+
 const HANDLERS = {
+  getQuarterReport: function (a) { return getQuarterReport(a[0], a[1], a[2], a[3], a[4]); },
+  saveQuarterStory: function (a) { return saveQuarterStory(a[0], a[1], a[2], a[3], a[4], a[5], a[6]); },
   fin2Get: function (a) { return fin2Get(a[0], a[1], a[2]); },
   fin2Save: function (a) { return fin2Save(a[0], a[1], a[2], a[3], a[4]); },
   demoCall: function (a) { return demoCall(a[0], a[1]); },
@@ -15665,6 +17066,9 @@ const HANDLERS = {
   getData: function (a) { return getData(a[0], a[1]); },
   saveEntries: function (a) { return saveEntries(a[0], a[1], a[2], a[3], a[4]); },
   saveObjective: function (a) { return saveObjective(a[0], a[1], a[2], a[3]); },
+  saveRock: function (a) { return saveRock(a[0], a[1], a[2]); },
+  deleteRock: function (a) { return deleteRock(a[0], a[1], a[2]); },
+  saveMetricGoals: function (a) { return saveMetricGoals(a[0], a[1], a[2], a[3], a[4], a[5]); },
   deleteObjective: function (a) { return deleteObjective(a[0], a[1], a[2], a[3]); },
   teamRoster: function (a) { return teamRoster(a[0], a[1]); },
   saveMyPersonality: function (a) { return saveMyPersonality(a[0], a[1], a[2]); },
@@ -15792,6 +17196,13 @@ const HANDLERS = {
   adminListBoard: function (a) { return adminListBoard(a[0], a[1]); },
   adminSaveBoardMember: function (a) { return adminSaveBoardMember(a[0], a[1], a[2]); },
   adminDeleteBoardMember: function (a) { return adminDeleteBoardMember(a[0], a[1], a[2]); },
+  adminMakeBoardInvite: function (a) { return adminMakeBoardInvite(a[0], a[1], a[2]); },
+  adminBoardInviteOff: function (a) { return adminBoardInviteOff(a[0], a[1], a[2]); },
+  boardInviteInfo: function (a) { return boardInviteInfo(a[0]); },
+  boardJoin: function (a) { return boardJoin(a[0], a[1]); },
+  boardRoom: function (a) { return boardRoom(a[0], a[1], a[2], a[3]); },
+  getBoardOverview: function (a) { return getBoardOverview(a[0], a[1]); },
+  getBoardLeadership: function (a) { return getBoardLeadership(a[0], a[1], a[2]); },
   requestOneOnOne: function (a) { return requestOneOnOne(a[0], a[1], a[2], a[3], a[4], a[5]); },
   saveOneOnOnePrep: function (a) { return saveOneOnOnePrep(a[0], a[1], a[2], a[3]); },
   saveOneOnOneNotes: function (a) { return saveOneOnOneNotes(a[0], a[1], a[2], a[3], a[4], a[5]); },
@@ -15837,7 +17248,8 @@ const HANDLERS = {
   adminDecideTrip: function (a) { return adminDecideTrip(a[0], a[1], a[2], a[3]); },
   adminSaveHolidays: function (a) { return adminSaveHolidays(a[0], a[1], a[2]); },
   saveStructure: function (a) { return saveStructure(a[0], a[1], a[2], a[3], a[4]); },
-  saveStructurePlan: function (a) { return saveStructurePlan(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]); },
+  saveStructurePlan: function (a) { return saveStructurePlan(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10]); },
+  applyStructure: function (a) { return applyStructure(a[0], a[1], a[2], a[3], a[4], a[5]); },
   hrCandidates: function (a) { return hrCandidates(a[0], a[1]); },
   hrSaveCandidate: function (a) { return hrSaveCandidate(a[0], a[1], a[2]); },
   hrCandidateNote: function (a) { return hrCandidateNote(a[0], a[1], a[2], a[3]); },
@@ -15941,6 +17353,20 @@ const HANDLERS = {
   saveLeadCard: function (a) { return saveLeadCard(a[0], a[1], a[2]); },
   deleteLeadCard: function (a) { return deleteLeadCard(a[0], a[1], a[2]); },
   saveLeadSettings: function (a) { return saveLeadSettings(a[0], a[1], a[2]); },
+  getLeadMeeting: function (a) { return getLeadMeeting(a[0], a[1]); },
+  saveLeadMeetSettings: function (a) { return saveLeadMeetSettings(a[0], a[1], a[2]); },
+  saveLeadScore: function (a) { return saveLeadScore(a[0], a[1], a[2]); },
+  deleteLeadScore: function (a) { return deleteLeadScore(a[0], a[1], a[2]); },
+  saveLeadScoreValue: function (a) { return saveLeadScoreValue(a[0], a[1], a[2], a[3], a[4]); },
+  saveLeadRock: function (a) { return saveLeadRock(a[0], a[1], a[2]); },
+  deleteLeadRock: function (a) { return deleteLeadRock(a[0], a[1], a[2]); },
+  saveLeadHeadline: function (a) { return saveLeadHeadline(a[0], a[1], a[2]); },
+  deleteLeadHeadline: function (a) { return deleteLeadHeadline(a[0], a[1], a[2]); },
+  leadMeetStart: function (a) { return leadMeetStart(a[0], a[1]); },
+  leadMeetUpdate: function (a) { return leadMeetUpdate(a[0], a[1], a[2]); },
+  leadMeetTodo: function (a) { return leadMeetTodo(a[0], a[1], a[2]); },
+  leadMeetSolve: function (a) { return leadMeetSolve(a[0], a[1], a[2]); },
+  leadMeetEnd: function (a) { return leadMeetEnd(a[0], a[1], a[2]); },
   saveLeadTask: function (a) { return saveLeadTask(a[0], a[1], a[2], a[3]); },
   deleteLeadTask: function (a) { return deleteLeadTask(a[0], a[1], a[2], a[3]); },
   saveLeadNote: function (a) { return saveLeadNote(a[0], a[1], a[2]); },

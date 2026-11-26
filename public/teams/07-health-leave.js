@@ -397,70 +397,38 @@ function canLogForClient_(dept, min){
 
 /* ---------- Campus Leadership on My Ministry ----------
    Campus Leadership doesn't log weekly numbers (they're hidden for now), so
-   its section of My Ministry is two things: its OKRs as the dashboard — this
-   quarter's Campus Leadership objectives, how far along, each key result —
+   its section of My Ministry is two things: its rocks — this quarter's
+   priorities, each on track, off track or done (teams/28-rocks.js) —
    and the board for the Monday leadership meeting: agenda items and projects
    in columns (Agenda / In progress / Done to start), each with a focus area
    (Siem Reap finances, Siem Reap ministries, Construction to start), an
-   owner, a due date and the Leadership OKR it moves forward, under the
+   owner and a due date, under the
    agenda items every Monday has (Department and ministry updates, Events
    coming up). Columns, focus areas and standing items are all theirs to
    change — "Edit the board" (getLeadBoard / saveLeadCard / saveLeadSettings
    in api.js). Each card holds a checklist of tasks (saveLeadTask /
    deleteLeadTask), and a third tab keeps the notes of each Monday's meeting
    (saveLeadNote), where any line can be put on the board as a card or a task.
-   An objective shows how many of its cards are done; a card shows its
-   objective's progress. Progress is edited where it always was, on the OKRs
-   tab. On a computer the board's columns sit side by side; on a phone one
+   (A card could once be tied to an OKR objective; the link is kept on old
+   cards and no longer shown.) On a computer the board's columns sit side by side; on a phone one
    column shows at a time, picked by tabs. */
 function leadCols_(){ return (S.lead && S.lead.cols) || []; }
 function leadDoneId_(){ var d=leadCols_().filter(function(c){ return c.done; })[0]; return d ? d.id : ''; }
 function leadAreaName_(id){ var a=((S.lead && S.lead.areas) || []).filter(function(x){ return x.id===id; })[0]; return a ? a.title : ''; }
 function leadQNow_(){ return Math.min(4, Math.floor((thisWeek()-1)/13)+1); }
-function leadOkrs_(){
-  var q=leadQNow_();
-  return ((S.base && S.base.okrs) || []).filter(function(o){ return o.campus===S.me.campus && Number(o.quarter)===q && o.dept==='Campus Leadership'; });
-}
 function leadNextMonday_(){ var d=new Date(); d.setHours(12,0,0,0); var add=(8-d.getDay())%7; d.setDate(d.getDate()+add); return calIso_(d); }
 function leadSectionHtml_(){
-  /* OKRs are their own tab now (beside My department, Board, My week, Finances) — the board
+  /* Rocks are their own tab (beside My department, Board, My week, Finances) — the board
      keeps the meeting board, Tuesday and the notes */
-  var tab=S.leadTab==='notes' || S.leadTab==='tues' ? S.leadTab : 'board';
+  var tab=S.leadTab==='notes' || S.leadTab==='tues' || S.leadTab==='meet' ? S.leadTab : 'board';
+  var day=typeof lmDay_==='function' ? lmDay_() : 2;   // the meeting's weekday is a setting now (teams/27-meeting.js); Tuesday unless changed
+  var br=brOn_(); if(br && tab==='tues') tab='meet';   // the Advisory Board's room (teams/30-boardroom.js): its meeting, its Kanban, its notes — no weekly rota
   var h='<div class="leadFilters leadTabs" role="tablist">'+
-    '<button class="leadSeg'+(tab==='board'?' on':'')+'" role="tab" data-leadtab="board" title="'+esc(t('Monday meetings'))+'">🗂️ '+esc(t('Board'))+'</button>'+
-    '<button class="leadSeg'+(tab==='tues'?' on':'')+'" role="tab" data-leadtab="tues" title="'+esc(t('Tuesday morning meeting'))+'">🎤 '+esc(t('Tuesday'))+'</button>'+
+    '<button class="leadSeg'+(tab==='meet'?' on':'')+'" role="tab" data-leadtab="meet" title="'+esc(br ? t('Board meeting') : t('Leadership meeting'))+'">▶ '+esc(br ? t('Board meeting') : t('Meeting'))+'</button>'+
+    '<button class="leadSeg'+(tab==='board'?' on':'')+'" role="tab" data-leadtab="board" title="'+esc(br ? t('Issues and To-Dos') : t('Monday meetings'))+'">🗂️ '+esc(br ? t('Issues and To-Dos') : t('Board'))+'</button>'+
+    (br ? '' : '<button class="leadSeg'+(tab==='tues'?' on':'')+'" role="tab" data-leadtab="tues" title="'+esc(day===2 ? t('Tuesday morning meeting') : t('Who leads each week'))+'">🎤 '+esc(day===2 ? t('Tuesday') : t(LM_DAYS[day]))+'</button>')+
     '<button class="leadSeg'+(tab==='notes'?' on':'')+'" role="tab" data-leadtab="notes" title="'+esc(t('Meeting notes'))+'">📝 '+esc(t('Notes'))+'</button></div>';
-  return h+(tab==='notes' ? leadNotesHtml_() : tab==='tues' ? leadTuesHtml_() : leadBoardHtml_());
-}
-function leadCardsFor_(okrId){ return ((S.lead && S.lead.cards) || []).filter(function(c){ return c.okrId===okrId; }); }
-function leadOkrDashHtml_(){
-  var R=baseR(), objs=leadOkrs_(), q=leadQNow_(), wk=thisWeek(), wq=Math.max(1, Math.min(13, wk-(q-1)*13));
-  var h='<div id="leadOkrs">';
-  if(!objs.length) return h+'<div class="card"><p class="sub" style="margin:0 0 10px">'+esc(gpT('No Campus Leadership OKRs for Q{q} yet.',{q:q}))+'</p>'+
-    '<button class="btn" id="leadGoOkr" style="margin-top:0">🎯 '+esc(t('Set this quarter’s OKRs'))+'</button></div></div>';
-  var avg=Math.round(objs.reduce(function(a,o){ return a+R.objProgress(o); },0)/objs.length);
-  var krs=0, krsOn=0; objs.forEach(function(o){ (o.krs||[]).forEach(function(kr){ krs++; if(R.krProgress(o,kr).pct>=Math.round(wq/13*100)) krsOn++; }); });
-  h+='<div class="mmGrid leadTiles">'+
-    '<div class="mmTile"><div class="mmTileName">'+esc(gpT('Q{q} progress',{q:q}))+'</div><div class="mmTileNum">'+avg+'%</div><div class="mmTileSub">'+esc(gpT('Week {n} of 13',{n:wq}))+'</div></div>'+
-    '<div class="mmTile"><div class="mmTileName">'+esc(t('Objectives'))+'</div><div class="mmTileNum">'+objs.length+'</div><div class="mmTileSub">'+esc(gpT('{n} key results',{n:krs}))+'</div></div>'+
-    '<div class="mmTile"><div class="mmTileName">'+esc(t('Key results on pace'))+'</div><div class="mmTileNum">'+krsOn+'/'+krs+'</div><div class="mmTileSub">'+esc(t('at or ahead of the quarter so far'))+'</div></div>'+
-    '<div class="mmTile"><div class="mmTileName">'+esc(t('Meeting board'))+'</div><div class="mmTileNum">'+(S.lead ? S.lead.cards.filter(function(c){ return c.col!==leadDoneId_(); }).length : '—')+'</div><div class="mmTileSub">'+esc(t('open agenda items and projects'))+'</div></div>'+
-  '</div>';
-  h+='<div class="leadPace"><div class="leadPaceFill" style="width:'+Math.round(wq/13*100)+'%"></div></div>';
-  objs.forEach(function(o, i){
-    var p=R.objProgress(o), cards=leadCardsFor_(o.id), done=cards.filter(function(c){ return c.col===leadDoneId_(); }).length;
-    h+='<div class="card slim leadObj" data-leadobj="'+esc(o.id)+'"><div class="teamHead"><div style="min-width:0"><div class="rowName"><b>'+(i+1)+'. '+esc(o.objective)+'</b></div></div>'+
-      '<b class="leadPct" style="color:'+gpRingColor(p)+'">'+p+'%</b></div>'+
-      '<div class="leadBar"><div style="width:'+p+'%;background:'+gpRingColor(p)+'"></div></div>';
-    (o.krs||[]).forEach(function(kr){
-      var kp=R.krProgress(o,kr);
-      h+='<div class="leadKr"><span class="leadKrText">'+esc(kr.text)+'</span><span class="leadKrPct">'+kp.pct+'%</span></div>';
-    });
-    if(cards.length) h+='<button class="linkbtn inline leadObjCards" data-leadobjcards="'+esc(o.id)+'">🗂️ '+esc(gpT('{d} of {n} meeting cards done',{d:done,n:cards.length}))+'</button>';
-    h+='</div>';
-  });
-  h+='<button class="btn ghost" id="leadGoOkr">🎯 '+esc(t('Update progress or change the OKRs'))+'</button>';
-  return h+'</div>';
+  return h+(tab==='meet' ? leadMeetHtml_() : tab==='notes' ? leadNotesHtml_() : tab==='tues' ? leadTuesHtml_() : leadBoardHtml_());
 }
 /* a ministry's people first, then everyone else on the campus */
 function leadTaskOwners_(key){
@@ -469,6 +437,7 @@ function leadTaskOwners_(key){
   return (S.roster||[]).filter(function(x){ return x.campus===S.me.campus; }).sort(function(a,b){ return (inIt(b)-inIt(a)) || String(a.name).localeCompare(String(b.name)); });
 }
 function leadOwnerOptions_(){
+  if(brOn_()) return bdMembers_();   // in the Advisory Board's room the people are its members
   var list=(S.roster||[]).filter(function(p){ return p.campus===S.me.campus && p.dept==='Campus Leadership'; });
   if(!list.some(function(p){ return p.id===S.me.id; })) list.push(S.me);
   return list.sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); });
@@ -497,12 +466,10 @@ function leadTaskAddHtml_(cid){
     '<button class="btn small" data-ltadd="'+esc(cid)+'" aria-label="'+esc(t('Add a task'))+'">＋</button></div>';
 }
 /* A card on the board is small on purpose: its title, then one line —
-   who owns it, when it's due, how many tasks are done — and a thin line
-   along the bottom for its OKR's progress. Everything else is in the sheet
+   who owns it, when it's due, how many tasks are done. Everything else is in the sheet
    that opens when it's tapped. Hold it (or on a computer just drag it) to
    move it to another column. */
-function leadCardHtml_(c, R, objs){
-  var o=c.okrId && ((S.base && S.base.okrs) || []).filter(function(x){ return x.id===c.okrId; })[0];
+function leadCardHtml_(c){
   var late=c.due && c.col!==leadDoneId_() && c.due<todayStr();
   var tasks=leadTasks_(c), td=tasks.filter(function(x){ return x.done; }).length;
   var meta=[];
@@ -512,16 +479,15 @@ function leadCardHtml_(c, R, objs){
   var h='<div class="leadCard '+esc(c.type)+'" data-leadcard="'+esc(c.id)+'" role="button" tabindex="0" aria-label="'+esc(c.title)+'">';
   h+='<div class="leadTitle">'+esc(c.title)+'</div>';
   if(meta.length) h+='<div class="leadMeta">'+meta.join('')+'</div>';
-  if(o){ var p=R.objProgress(o); h+='<div class="leadOkrLine" title="'+esc(o.objective+' · '+p+'%')+'"><span style="width:'+p+'%;background:'+gpRingColor(p)+'"></span></div>'; }
   return h+'</div>';
 }
 function leadBoardHtml_(){
   var h='<div id="leadBoard">';
   if(!S.lead){ return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.leadErr || t('Loading…'))+'</p></div></div>'; }
   ['cols','areas','standing','cards'].forEach(function(k){ if(!Array.isArray(S.lead[k])) S.lead[k]=[]; });   // a board with nothing in it yet
-  var R=baseR(), objs=leadOkrs_(), filter=S.leadFilter||'all', today=todayStr();
+  var filter=S.leadFilter||'all', today=todayStr();
   var nm=leadNextMonday_();
-  h+='<div class="leadHead"><div class="leadNext"><span class="leadNextLabel">'+esc(t('Next meeting'))+'</span> <b>'+esc(gpT('Monday {date}',{date:hospDate_(nm)}))+'</b></div>'+
+  h+='<div class="leadHead"><div class="leadNext">'+(brOn_() ? '<b>🧩 '+esc(t('The board’s Issues and To-Dos'))+'</b>' : '<span class="leadNextLabel">'+esc(t('Next meeting'))+'</span> <b>'+esc(gpT('Monday {date}',{date:hospDate_(nm)}))+'</b>')+'</div>'+
     '<div class="leadHeadBtns"><button class="leadIconBtn" id="leadEditBoard" aria-label="'+esc(t('Edit the board'))+'" title="'+esc(t('Edit the board'))+'">✏️</button>'+
     '<button class="btn small" id="leadNew">＋ '+esc(t('Card'))+'</button></div></div>';
   if(S.lead.standing.length) h+='<div class="leadStanding" id="leadStanding"><span class="leadNextLabel">'+esc(t('Every Monday'))+'</span> '+S.lead.standing.map(function(x){ return '<span class="leadStandItem">'+esc(x.title)+'</span>'; }).join('<span class="leadDot">·</span>')+'</div>';
@@ -546,13 +512,13 @@ function leadBoardHtml_(){
   h+='<div class="leadCols" style="--leadN:'+leadCols_().length+'">'+leadCols_().map(function(col, ci){
     var list=lists[ci].list, hidden=lists[ci].hidden;
     return '<div class="leadCol" data-leadcol="'+esc(col.id)+'"><div class="leadColHead"><span>'+esc(col.title)+'</span><span class="leadColN">'+list.length+'</span></div>'+
-      list.map(function(c){ return leadCardHtml_(c, R, objs); }).join('')+
+      list.map(function(c){ return leadCardHtml_(c); }).join('')+
       (!list.length?'<p class="hint leadEmpty">'+esc(t('Nothing here yet.'))+'</p>':'')+
       (hidden?'<button class="linkbtn inline" id="leadOld">'+esc(gpT('Show {n} older',{n:hidden}))+'</button>':'')+
     '</div>';
   }).join('')+'</div>';
   h+='<p class="hint leadDragHint">'+esc(t('Tap a card to open it. Hold and drag it to move it.'))+'</p>';
-  if(S.leadForm) h+=leadFormHtml_(objs);
+  if(S.leadForm) h+=leadFormHtml_();
   return h+'</div>';
 }
 /* Meeting notes, one page per Monday. Any line can be turned into an agenda
@@ -589,19 +555,6 @@ function leadNoteLinesHtml_(date, text){
     return h+'</div>';
   }).join('');
 }
-/* The quarter's Leadership OKRs in one quiet line above the notes — tap it
-   for each objective's progress. Closed unless opened. */
-function leadNoteOkrHtml_(){
-  var objs=leadOkrs_(); if(!objs.length) return '';
-  var R=baseR(), q=leadQNow_(), wq=Math.max(1, Math.min(13, thisWeek()-(q-1)*13));
-  var avg=Math.round(objs.reduce(function(a,o){ return a+R.objProgress(o); },0)/objs.length);
-  var krs=0, on=0; objs.forEach(function(o){ (o.krs||[]).forEach(function(kr){ krs++; if(R.krProgress(o,kr).pct>=Math.round(wq/13*100)) on++; }); });
-  return '<details class="leadNoteOkr" id="leadNoteOkr"'+(S.leadNoteOkrOpen?' open':'')+'><summary>🎯 '+esc(gpT('Q{q} OKRs',{q:q}))+' · <b>'+avg+'%</b>'+
-    (krs?' <span class="leadNoteOkrSub">· '+esc(gpT('{d} of {n} key results on pace',{d:on,n:krs}))+'</span>':'')+'</summary>'+
-    objs.map(function(o){ var p=R.objProgress(o);
-      return '<div class="leadNoteOkrRow"><span class="leadNoteOkrName">'+esc(o.objective)+'</span><span class="leadNoteOkrBar"><span style="width:'+p+'%;background:'+gpRingColor(p)+'"></span></span><b>'+p+'%</b></div>'; }).join('')+
-  '</details>';
-}
 function leadNotesHtml_(){
   var h='<div id="leadNotes">';
   if(!S.lead) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.leadErr || t('Loading…'))+'</p></div></div>';
@@ -612,7 +565,7 @@ function leadNotesHtml_(){
     '<button class="btn ghost small" data-lnweek="7" aria-label="'+esc(t('Later'))+'">›</button></div>';
   var past=((S.lead.notes)||[]).map(function(x){ return x.date; }).filter(function(x){ return x!==date; }).slice(-8).reverse();
   if(past.length) h+='<div class="chips leadNotePast"><span class="leadFilterLabel">'+esc(t('Earlier notes'))+'</span>'+past.map(function(x){ return '<button class="hospChip" data-lndate="'+esc(x)+'">'+esc(hospDate_(x))+'</button>'; }).join('')+'</div>';
-  h+=leadNoteOkrHtml_();
+  h+=leadRocksLineHtml_();   // the quarter's rocks in one quiet line (teams/28-rocks.js)
   h+='<div class="leadNoteGrid"><div class="card leadNoteCard">';
   if(!d.text) h+='<button class="btn ghost small" id="leadNoteStart">📋 '+esc(t('Start from the agenda'))+'</button>';
   h+='<textarea id="leadNoteText" rows="14" maxlength="8000" placeholder="'+esc(t('What came up, what was decided, who is doing what… One thing per line.'))+'">'+esc(d.text)+'</textarea>'+
@@ -645,19 +598,20 @@ function leadSettingsHtml_(){
     '<p class="hint">'+esc(t('Cards in a column you take away move to the first column. “Finished” is the column that counts as done.'))+'</p>'+
     '<button class="btn" id="leadSetSave">'+esc(t('Save the board'))+'</button><button class="btn ghost" id="leadSetCancel">'+esc(t('Cancel'))+'</button></div>';
 }
-function leadFormHtml_(objs){
+function leadFormHtml_(){
   var f=S.leadForm, isNew=!f.id;
   var h='<div class="scrim" id="leadScrim"></div><div class="schedSheet leadSheet" id="leadForm" role="dialog" aria-label="'+esc(isNew?t('New card'):f.title)+'">'+
     '<div class="schedSheetHead"><h3 style="margin:0">'+esc(isNew?t('New card'):t('Card'))+'</h3><button class="leadIconBtn" id="leadClose" aria-label="'+esc(t('Close'))+'">✕</button></div>';
   h+='<div class="chips hospChips">'+[['agenda','💬','Agenda item'],['project','🔨','Project']].map(function(x){
     return '<button class="hospChip'+(f.type===x[0]?' on':'')+'" data-lftype="'+x[0]+'">'+x[1]+' '+esc(t(x[2]))+'</button>'; }).join('')+'</div>';
+  if(brOn_()) f.taskMin='';   // the board's cards are never a department's task
   h+='<label class="f">'+esc(t('Title'))+'</label><input type="text" data-lf="title" maxlength="160" value="'+esc(f.title||'')+'" placeholder="'+esc(t('e.g. Staff retreat plan'))+'">';
   /* GP Tasks (Oct 2026, Uriah): for a department and a person, the card is also a task in that
      department's list, given to them, from Campus Leadership — and they hear of it. A department,
      not a ministry: its director hands it on to a ministry leader in GP Tasks. */
   var deps=getDepartments(S.me.campus), mins=[];
   Object.keys(deps).filter(function(d){ return d!==BL_DEPT; }).forEach(function(d){ mins.push([d+'|', t(d)]); });
-  h+='<label class="f">'+esc(t('A task for which department?'))+'</label><select data-lf="taskMin" data-lfre="1"><option value="">'+esc(t('— none: just on the board —'))+'</option>'+
+  if(!brOn_()) h+='<label class="f">'+esc(t('A task for which department?'))+'</label><select data-lf="taskMin" data-lfre="1"><option value="">'+esc(t('— none: just on the board —'))+'</option>'+
     mins.map(function(x){ return '<option value="'+esc(x[0])+'"'+(f.taskMin===x[0]?' selected':'')+'>'+esc(x[1])+'</option>'; }).join('')+'</select>'+
     (f.taskMin ? '<p class="hint" style="margin:4px 0 0">'+esc(t('It shows in that department’s GP Tasks list, given to the person below, from Campus Leadership — and in their Inbox.'))+'</p>' : '');
   var owners=f.taskMin ? leadTaskOwners_(f.taskMin) : leadOwnerOptions_();
@@ -669,10 +623,7 @@ function leadFormHtml_(objs){
     '<div><label class="f">'+esc(t('Due'))+'</label><input type="date" data-lf="due" value="'+esc(f.due||'')+'"></div></div>';
   h+='<label class="f">'+esc(t('Column'))+'</label><div class="leadFilters leadColPick">'+leadCols_().map(function(c){ return '<button class="leadSeg'+(f.col===c.id?' on':'')+'" data-lfcol="'+esc(c.id)+'">'+esc(c.title)+'</button>'; }).join('')+'</div>';
   h+='<div class="teamGrid2"><div><label class="f">'+esc(t('Focus area'))+'</label><select data-lf="area"><option value="">'+esc(t('— none —'))+'</option>'+(S.lead.areas||[]).map(function(a){ return '<option value="'+esc(a.id)+'"'+(f.area===a.id?' selected':'')+'>'+esc(a.title)+'</option>'; }).join('')+'</select></div>';
-  var known=objs.some(function(o){ return o.id===f.okrId; });
-  h+='<div><label class="f">'+esc(t('Moves forward which OKR?'))+'</label><select data-lf="okrId"><option value="">'+esc(t('— none —'))+'</option>'+
-    objs.map(function(o){ return '<option value="'+esc(o.id)+'"'+(f.okrId===o.id?' selected':'')+'>'+esc(o.objective)+'</option>'; }).join('')+
-    (f.okrId && !known ? '<option value="'+esc(f.okrId)+'" selected>'+esc(t('An earlier quarter’s objective'))+'</option>' : '')+'</select></div></div>';
+  h+='</div>';
   h+='<label class="f">'+esc(t('Notes'))+'</label><textarea data-lf="notes" rows="3" maxlength="2000" placeholder="'+esc(t('What to decide, next steps, who to ask…'))+'">'+esc(f.notes||'')+'</textarea>';
   /* an existing card's tasks save as they change; a new card's go with it */
   var cur=isNew ? null : S.lead.cards.filter(function(c){ return c.id===f.id; })[0], tasks=isNew ? (f.tasks||[]) : leadTasks_(cur);
@@ -746,11 +697,9 @@ function leadDrag_(onTap, onDrop){
 }
 function bindLead_(){
   document.querySelectorAll('[data-leadtab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.leadTab=b.getAttribute('data-leadtab'); render(); }; });
-  document.querySelectorAll('#leadGoOkr').forEach(function(b){ b.onclick=function(){ gpTap(); S.mmTab='okr'; S.lwTab='okrs'; lwTabKeep_('okrs'); render(); window.scrollTo(0,0); }; });
-  document.querySelectorAll('[data-leadobjcards]').forEach(function(b){ b.onclick=function(){ gpTap(); S.leadTab='board'; S.leadFilter='all'; render(); }; });
-  if((document.getElementById('leadBoard') || document.getElementById('leadOkrs') || document.getElementById('leadNotes') || document.getElementById('leadTues') || document.getElementById('leadBase')) && !S.lead && !S.leadLoading && !S.leadErr){
+  if((document.getElementById('leadBoard') || document.getElementById('leadRocksDash') || document.getElementById('leadNotes') || document.getElementById('leadTues') || document.getElementById('leadBase')) && !document.getElementById('leadMeet') && !S.lead && !S.leadLoading && !S.leadErr){
     S.leadLoading=true;
-    run('getLeadBoard',[S.auth.user,S.auth.pin],function(d){ S.leadLoading=false; if(d && d.ok) S.lead=d; else S.leadErr=(d && d.err==='not_authorized') ? t('The meeting board is for Campus Leadership.') : t('Could not load'); render(); },
+    run('getLeadBoard',[S.auth.user,S.auth.pin],function(d){ S.leadLoading=false; if(d && d.ok) S.lead=d; else S.leadErr=(d && d.err==='not_authorized') ? (brOn_() ? t('The board room is for the Advisory Board.') : t('The meeting board is for Campus Leadership.')) : t('Could not load'); render(); },
       function(e){ S.leadLoading=false; S.leadErr=(e && e.message) || t('Connection problem — try again.'); render(); });
   }
   if(!S.lead) return;
@@ -837,7 +786,6 @@ function bindLeadNotes_(save, saveTask, find){
   var thisMon=leadMonday_(), date=/^\d{4}-\d{2}-\d{2}$/.test(S.leadNoteDate||'') ? S.leadNoteDate : thisMon, d=leadDraft_(date);
   var ta=document.getElementById('leadNoteText'), state=document.getElementById('leadNoteState'), box=document.getElementById('leadNoteLines'), timer=null;
   var go=function(iso){ gpTap(); S.leadNoteDate=iso; S.leadNoteTask=''; render(); };
-  var okr=document.getElementById('leadNoteOkr'); if(okr) okr.ontoggle=function(){ S.leadNoteOkrOpen=okr.open; };
   document.querySelectorAll('[data-lnweek]').forEach(function(b){ b.onclick=function(){ go(leadAddDays_(date, Number(b.getAttribute('data-lnweek')))); }; });
   document.querySelectorAll('[data-lndate]').forEach(function(b){ b.onclick=function(){ go(b.getAttribute('data-lndate')); }; });
   var saveNote=function(then){
@@ -1089,6 +1037,7 @@ function gglCred_(resp){
   var tok=resp && (resp.access_token || resp.credential); _ggl.busy=false; _ggl.started=0;
   if(!tok){ render(); return; }
   S.gglHelp=null;
+  if(_ggl.mode==='board'){ bdInviteGoogle_(tok); return; }   // signing up from an Advisory Board invite (teams/30-boardroom.js)
   if(_ggl.mode==='link'){
     run('staffLinkGoogle',[S.auth.user,S.auth.pin,tok],function(d){
       if(d && d.ok){ S.auth.pin=d.token; lsSet('gp-staff', JSON.stringify(S.auth)); if(S.profile && !S.profile.email) S.profile.email=d.email; if(S.me){ S.me.google=true; S.me.signIn='google'; } showMsg(t('Done — sign in with Google from now on.')); }
@@ -1099,6 +1048,7 @@ function gglCred_(resp){
   }
   run('staffLoginGoogle',[tok],function(d){
     if(d && d.ok){ S.auth={ user:d.user, pin:d.token }; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; S.gglNew=null; afterLogin(); return; }
+    if(d && d.err==='board' && d.token && d.member && !gpTasksApp_()){ S.regMode=false; S.regGoogle=null; S.gglNew=null; boardEnter_(d.member, { user:d.user, pin:d.token }); return; }   // not staff: a member of the Advisory Board with their own sign-in
     /* a Google account no profile has yet: most often the person picked another Gmail than the one on their
        profile — so ask before making a new profile (that made duplicate sign-ups waiting on an admin) */
     if(d && d.err==='new' && _ggl.mode==='signup'){ S.regMode=true; S.regGoogle={ token:tok, email:d.email||'', name:d.name||'' }; S.gglNew=null; render(); return; }   // they came to make a profile: just their name now

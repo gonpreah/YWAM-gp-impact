@@ -6172,6 +6172,181 @@ The finance tool itself (public/finance.html) is English only for now — its Kh
 |---|---|
 | Input | បញ្ចូល |
 
+## 142. The leadership meeting (My Ministry → Campus Leadership → Board → Meeting, Nov 2026)
+Campus Leadership's weekly meeting, run one part a screen with a clock: Check-in · Scorecard · Rocks · Headlines · To-dos · Issues · Wrap up. "Rocks" (ថ្មធំ) are the quarter's three to seven priorities; the "scorecard" (តារាងពិន្ទុ) is five to fifteen weekly numbers; "issues" (បញ្ហា) are anything in the way; a "to-do" is a seven-day action. The tab labels and the part names have little room. The two lines under each part's title are coaching — what to do (✓) and what not to do (✗) — and the "Rules of thumb" are training for the team, so their tone matters: plain and kind, not bossy. The line about “Level 10” is fine print about a trademark and must keep “Level 10” and “EOS Worldwide” in Latin letters.
+
+| English | Khmer (draft) |
+|---|---|
+| Meeting | កិច្ចប្រជុំ |
+| Leadership meeting | កិច្ចប្រជុំថ្នាក់ដឹកនាំ |
+| Who leads each week | អ្នកដឹកនាំកិច្ចប្រជុំរៀងរាល់សប្តាហ៍ |
+| Plan who leads | រៀបចំថាអ្នកណាដឹកនាំ |
+| The weekly meeting: who facilitates, who translates, the topics to hit and the announcements. | កិច្ចប្រជុំប្រចាំសប្តាហ៍៖ អ្នកណាដឹកនាំ អ្នកណាបកប្រែ ប្រធានបទដែលត្រូវនិយាយ និងសេចក្តីប្រកាស។ |
+| The leadership meeting is for Campus Leadership. | កិច្ចប្រជុំថ្នាក់ដឹកនាំគឺសម្រាប់ថ្នាក់ដឹកនាំសាខា។ |
+| Next meeting · {day} {date} | កិច្ចប្រជុំបន្ទាប់ · {day} {date} |
+| Nobody is down to lead yet | មិនទាន់មានអ្នកដឹកនាំនៅឡើយ |
+| {n} minutes · seven parts · one screen each, with a clock | {n} នាទី · ប្រាំពីរផ្នែក · មួយផ្នែកមួយអេក្រង់ មាននាឡិកា |
+| Start the meeting | ចាប់ផ្តើមកិច្ចប្រជុំ |
+| Meeting day and minutes | ថ្ងៃប្រជុំ និងចំនួននាទី |
+| Something in the way? Add it to the issues list | មានអ្វីរាំងផ្លូវ? បន្ថែមទៅក្នុងបញ្ជីបញ្ហា |
+| An issue, a question, an idea… | បញ្ហា សំណួរ ឬគំនិត… |
+| {n} on the issues list — the first column of the board. | {n} ក្នុងបញ្ជីបញ្ហា — ជួរទីមួយនៃក្តារ។ |
+| Already on the issues list. | មានក្នុងបញ្ជីបញ្ហារួចហើយ។ |
+| On the issues list. | បានដាក់ក្នុងបញ្ជីបញ្ហា។ |
+| Scorecard | តារាងពិន្ទុ |
+| Rocks | ថ្មធំ |
+| Headlines | ដំណឹងខ្លីៗ |
+| To-dos | កិច្ចការត្រូវធ្វើ |
+| Issues | បញ្ហា |
+| Wrap up | បិទកិច្ចប្រជុំ |
+| Past meetings | កិច្ចប្រជុំកន្លងមក |
+| This follows the widely used “Level 10” weekly meeting format. YWAM GP is not affiliated with or endorsed by EOS Worldwide. | នេះធ្វើតាមទម្រង់កិច្ចប្រជុំប្រចាំសប្តាហ៍ “Level 10” ដែលគេប្រើទូទៅ។ YWAM GP មិនមានទំនាក់ទំនងជាមួយ ហើយក៏មិនត្រូវបានគាំទ្រដោយ EOS Worldwide ទេ។ |
+| How this meeting works | របៀបដំណើរការកិច្ចប្រជុំនេះ |
+| Ninety minutes, the same seven parts every week. The first five are quick reports; the sixth is where the work is done. | កៅសិបនាទី ប្រាំពីរផ្នែកដដែលរៀងរាល់សប្តាហ៍។ ប្រាំផ្នែកដំបូងជារបាយការណ៍ខ្លីៗ ហើយផ្នែកទីប្រាំមួយជាកន្លែងធ្វើការពិតប្រាកដ។ |
+| Rules of thumb | ក្បួនងាយចាំ |
+| We meet every | យើងប្រជុំរៀងរាល់ថ្ងៃ |
+| The plan of who leads follows this day. Weeks already planned move to it. | ផែនការអ្នកដឹកនាំទៅតាមថ្ងៃនេះ។ សប្តាហ៍ដែលបានរៀបចំរួចនឹងប្តូរមកថ្ងៃនេះ។ |
+| Minutes for each part | នាទីសម្រាប់ផ្នែកនីមួយៗ |
+| W{n} | ស.{n} |
+| Off track | មិនដើរតាមផែនការ |
+| No number yet | មិនទាន់មានលេខ |
+| No goal yet | មិនទាន់មានគោលដៅ |
+| Goal {sign} {n} | គោលដៅ {sign} {n} |
+| Drop it to Issues | ដាក់ទៅបញ្ជីបញ្ហា |
+| Five to fifteen numbers you can count every week. Each has one owner and a goal. Thirteen weeks, the newest first. | លេខប្រាំទៅដប់ប្រាំដែលអាចរាប់បានរៀងរាល់សប្តាហ៍។ លេខនីមួយៗមានម្ចាស់ម្នាក់ និងគោលដៅមួយ។ ដប់បីសប្តាហ៍ ថ្មីបំផុតនៅមុខគេ។ |
+| No numbers on the scorecard yet. | មិនទាន់មានលេខក្នុងតារាងពិន្ទុនៅឡើយ។ |
+| Add a number | បន្ថែមលេខ |
+| What do we count? | យើងរាប់អ្វី? |
+| e.g. 1-on-1s held this week | ឧ. ការជួបមួយទល់មួយក្នុងសប្តាហ៍នេះ |
+| At least or at most | យ៉ាងតិច ឬយ៉ាងច្រើន |
+| At least (≥) | យ៉ាងតិច (≥) |
+| At most (≤) | យ៉ាងច្រើន (≤) |
+| a number | លេខ |
+| Where does the number come from? | លេខនេះបានមកពីណា? |
+| We type it each week | យើងវាយបញ្ចូលរៀងរាល់សប្តាហ៍ |
+| A ministry’s number | លេខរបស់កិច្ចការបម្រើមួយ |
+| — department — | — ផ្នែក — |
+| — ministry — | — កិច្ចការបម្រើ — |
+| Which number | លេខមួយណា |
+| — which number — | — លេខមួយណា — |
+| It fills itself in from what that ministry enters each week. | វាបំពេញដោយខ្លួនឯងពីអ្វីដែលកិច្ចការបម្រើនោះបញ្ចូលរៀងរាល់សប្តាហ៍។ |
+| Take it off the scorecard | ដកចេញពីតារាងពិន្ទុ |
+| The three to seven things that must get done this quarter — each person’s, and the team’s. Rocks sit beside the OKRs; they don’t replace them. | រឿងបីទៅប្រាំពីរដែលត្រូវតែធ្វើឲ្យហើយក្នុងត្រីមាសនេះ — របស់ម្នាក់ៗ និងរបស់ក្រុម។ ថ្មធំនៅក្បែរ OKRs មិនមែនជំនួស OKRs ទេ។ |
+| This quarter · Q{q} {year} | ត្រីមាសនេះ · Q{q} {year} |
+| Next · Q{q} {year} | បន្ទាប់ · Q{q} {year} |
+| No rocks for Q{q} yet. | មិនទាន់មានថ្មធំសម្រាប់ Q{q} នៅឡើយ។ |
+| Someone who has left | អ្នកដែលបានចាកចេញ |
+| The whole team | ក្រុមទាំងមូល |
+| {d} of {n} on track | {d} ក្នុងចំណោម {n} ដើរតាមផែនការ |
+| Add a rock | បន្ថែមថ្មធំ |
+| The rock | ថ្មធំ |
+| e.g. The new dorm is open by the end of the quarter | ឧ. អន្តេវាសិកដ្ឋានថ្មីបើកនៅចុងត្រីមាស |
+| Whose is it? | ជារបស់អ្នកណា? |
+| Type a name — or leave empty for the whole team | វាយឈ្មោះ — ឬទុកចំហសម្រាប់ក្រុមទាំងមូល |
+| Nobody picked: it is the whole team’s rock. | មិនបានជ្រើសនរណាទេ៖ វាជាថ្មធំរបស់ក្រុមទាំងមូល។ |
+| A short note (optional) | កំណត់ចំណាំខ្លី (មិនចាំបាច់) |
+| What done looks like, or where it stands | ពេលធ្វើហើយមើលទៅយ៉ាងណា ឬឥឡូវដល់ណាហើយ |
+| Delete this rock | លុបថ្មធំនេះ |
+| Delete this rock? | លុបថ្មធំនេះឬ? |
+| One line of good or hard news about our staff or the people we serve. Add them through the week; they are read at the meeting and kept with it. | ដំណឹងល្អ ឬដំណឹងពិបាកមួយបន្ទាត់អំពីបុគ្គលិករបស់យើង ឬមនុស្សដែលយើងបម្រើ។ បន្ថែមពេញមួយសប្តាហ៍ ហើយនឹងត្រូវអានក្នុងកិច្ចប្រជុំ និងរក្សាទុកជាមួយកិច្ចប្រជុំនោះ។ |
+| No headlines yet this week. | សប្តាហ៍នេះមិនទាន់មានដំណឹងខ្លីៗទេ។ |
+| Good news | ដំណឹងល្អ |
+| Hard news | ដំណឹងពិបាក |
+| A headline, in one line | ដំណឹងមួយ ក្នុងមួយបន្ទាត់ |
+| A to-do: one action, one person, seven days | កិច្ចការមួយ៖ ទង្វើមួយ មនុស្សម្នាក់ ប្រាំពីរថ្ងៃ |
+| A to-do is one action for one person, due in seven days. These are the tasks on the board’s cards — the same ones as in GP Tasks. | កិច្ចការត្រូវធ្វើគឺទង្វើមួយសម្រាប់មនុស្សម្នាក់ ត្រូវហើយក្នុងប្រាំពីរថ្ងៃ។ ទាំងនេះជាកិច្ចការនៅលើកាតរបស់ក្តារ — ដូចគ្នានឹងក្នុង GP Tasks។ |
+| Last week’s to-dos | កិច្ចការត្រូវធ្វើពីសប្តាហ៍មុន |
+| {d} of {n} done | ធ្វើហើយ {d} ក្នុងចំណោម {n} |
+| We aim for nine in ten done. | យើងចង់ឲ្យធ្វើហើយប្រាំបួនក្នុងដប់។ |
+| Nothing was due this week. | សប្តាហ៍នេះគ្មានអ្វីដល់ពេលកំណត់ទេ។ |
+| Carry it on a week | បន្តមួយសប្តាហ៍ទៀត |
+| Carried on a week. | បានបន្តមួយសប្តាហ៍ទៀត។ |
+| {n} more are not due yet. | {n} ទៀតមិនទាន់ដល់ពេលកំណត់ទេ។ |
+| A new to-do | កិច្ចការថ្មី |
+| It lands in that person’s GP Tasks, due in seven days. | វានឹងចូលក្នុង GP Tasks របស់អ្នកនោះ ត្រូវហើយក្នុងប្រាំពីរថ្ងៃ។ |
+| No meetings on record yet. End a meeting and it is kept here. | មិនទាន់មានកិច្ចប្រជុំកត់ត្រាទុកទេ។ ពេលបញ្ចប់កិច្ចប្រជុំមួយ វានឹងរក្សាទុកនៅទីនេះ។ |
+| How we rated our meetings | របៀបដែលយើងដាក់ពិន្ទុកិច្ចប្រជុំរបស់យើង |
+| There | មានវត្តមាន |
+| {n} of {m} minutes | {n} ក្នុងចំណោម {m} នាទី |
+| Issues solved | បញ្ហាដែលបានដោះស្រាយ |
+| New to-dos | កិច្ចការថ្មី |
+| To tell our teams | ត្រូវប្រាប់ក្រុមរបស់យើង |
+| Part {n} of {m} | ផ្នែកទី {n} ក្នុងចំណោម {m} |
+| This part | ផ្នែកនេះ |
+| The whole meeting | កិច្ចប្រជុំទាំងមូល |
+| End the meeting | បញ្ចប់កិច្ចប្រជុំ |
+| Next: {part} | បន្ទាប់៖ {part} |
+| Started by mistake? Cancel this meeting | ចាប់ផ្តើមដោយច្រឡំ? បោះបង់កិច្ចប្រជុំនេះ |
+| Who is here? | អ្នកណាមានវត្តមាន? |
+| The issue on the table | បញ្ហាដែលកំពុងពិភាក្សា |
+| Identify | កំណត់ |
+| What is the real issue underneath? One sentence. | បញ្ហាពិតប្រាកដនៅពីក្រោមគឺអ្វី? មួយប្រយោគ។ |
+| The real issue is… | បញ្ហាពិតប្រាកដគឺ… |
+| Discuss | ពិភាក្សា |
+| Everyone says what they think, once. No repeating, no side roads. | ម្នាក់ៗនិយាយអ្វីដែលខ្លួនគិត ម្តងគត់។ កុំនិយាយដដែលៗ កុំចេញក្រៅរឿង។ |
+| Solve | ដោះស្រាយ |
+| Decide. Write the decision, and a to-do for whoever acts on it. | សម្រេចចិត្ត។ សរសេរការសម្រេចចិត្ត និងកិច្ចការមួយសម្រាប់អ្នកដែលត្រូវធ្វើ។ |
+| We decided… | យើងបានសម្រេចថា… |
+| Solved — write it on the card | ដោះស្រាយហើយ — សរសេរលើកាត |
+| Not today — back to the list | មិនមែនថ្ងៃនេះទេ — ត្រឡប់ទៅបញ្ជី |
+| The issues list | បញ្ជីបញ្ហា |
+| {n} picked of 3 | បានជ្រើស {n} ក្នុងចំណោម 3 |
+| Tap the three that matter most, in order. Then work on number 1. | ចុចលើបញ្ហាបីដែលសំខាន់បំផុត តាមលំដាប់។ រួចធ្វើការលើលេខ 1។ |
+| Nothing on the issues list. Add what is in the way. | គ្មានអ្វីក្នុងបញ្ជីបញ្ហាទេ។ បន្ថែមអ្វីដែលរាំងផ្លូវ។ |
+| From today’s topics | ពីប្រធានបទថ្ងៃនេះ |
+| Work on number 1: {title} | ធ្វើការលើលេខ 1៖ {title} |
+| Solved today · {n} | ដោះស្រាយថ្ងៃនេះ · {n} |
+| New to-dos · {n} | កិច្ចការថ្មី · {n} |
+| None yet. Read back who is doing what. | មិនទាន់មានទេ។ អានឡើងវិញថាអ្នកណាធ្វើអ្វី។ |
+| What do we need to tell our teams? | យើងត្រូវប្រាប់អ្វីដល់ក្រុមរបស់យើង? |
+| One message, in one line | សារមួយ ក្នុងមួយបន្ទាត់ |
+| Rate the meeting, 1 to 10 | ដាក់ពិន្ទុកិច្ចប្រជុំ ពី 1 ដល់ 10 |
+| Average {n} | មធ្យម {n} |
+| Did we start and end on time, stay on track, and solve what mattered? Under 8: say in a sentence what would make it better. | តើយើងចាប់ផ្តើម និងបញ្ចប់ទាន់ម៉ោង មិនចេញក្រៅរឿង ហើយដោះស្រាយអ្វីដែលសំខាន់ឬទេ? ក្រោម 8៖ សូមនិយាយមួយប្រយោគថាអ្វីនឹងធ្វើឲ្យវាប្រសើរជាង។ |
+| Write the issue first. | សូមសរសេរបញ្ហាជាមុនសិន។ |
+| Pick the department, the ministry and the number. | សូមជ្រើសផ្នែក កិច្ចការបម្រើ និងលេខ។ |
+| Take this number off the scorecard? Its weeks of numbers go with it. | ដកលេខនេះចេញពីតារាងពិន្ទុឬ? លេខប្រចាំសប្តាហ៍របស់វានឹងបាត់ទៅជាមួយ។ |
+| Scorecard: {name} | តារាងពិន្ទុ៖ {name} |
+| Rock off track: {title} | ថ្មធំមិនដើរតាមផែនការ៖ {title} |
+| Not done: {text} | មិនទាន់ធ្វើ៖ {text} |
+| Write the to-do first. | សូមសរសេរកិច្ចការជាមុនសិន។ |
+| Meeting to-dos | កិច្ចការពីកិច្ចប្រជុំ |
+| Added — it is in their GP Tasks. | បានបន្ថែម — វានៅក្នុង GP Tasks របស់ពួកគេ។ |
+| A meeting is already going — you’ve joined it. | កិច្ចប្រជុំមួយកំពុងដំណើរការ — អ្នកបានចូលរួមហើយ។ |
+| Checking… | កំពុងពិនិត្យ… |
+| Cancel this meeting? Nothing is recorded. The to-dos and cards already made stay. | បោះបង់កិច្ចប្រជុំនេះឬ? គ្មានអ្វីត្រូវបានកត់ត្រាទេ។ កិច្ចការ និងកាតដែលបានបង្កើតរួចនៅដដែល។ |
+| Meeting ended — it is in Past meetings. | កិច្ចប្រជុំបានបញ្ចប់ — វានៅក្នុងកិច្ចប្រជុំកន្លងមក។ |
+| Three at a time. Tap one to take it off first. | បីក្នុងមួយពេល។ សូមចុចលើមួយដើម្បីដកចេញសិន។ |
+| Write the decision first. | សូមសរសេរការសម្រេចចិត្តជាមុនសិន។ |
+| Solved. On to the next. | ដោះស្រាយហើយ។ ទៅបញ្ហាបន្ទាប់។ |
+| That’s the most this list can hold. | បញ្ជីនេះពេញហើយ។ |
+| The meeting has already ended. | កិច្ចប្រជុំបានបញ្ចប់រួចហើយ។ |
+| This number fills itself in. | លេខនេះបំពេញដោយខ្លួនឯង។ |
+| Type a number. | សូមវាយលេខ។ |
+| One piece of good news each — one from home, one from the work. Half a minute a person. | ម្នាក់ៗចែករំលែកដំណឹងល្អ — មួយពីផ្ទះ មួយពីការងារ។ កន្លះនាទីម្នាក់។ |
+| No updates and no problems yet. This part is only for arriving. | កុំទាន់រាយការណ៍ ឬលើកបញ្ហា។ ផ្នែកនេះគ្រាន់តែសម្រាប់មកជួបជុំគ្នា។ |
+| Read each number and say only “on track” or “off track”. | អានលេខនីមួយៗ ហើយនិយាយតែ “ដើរតាមផែនការ” ឬ “មិនដើរតាមផែនការ”។ |
+| No explaining and no fixing here. If a number is off, drop it to Issues and keep going. | កុំពន្យល់ ហើយកុំដោះស្រាយនៅទីនេះ។ បើលេខណាមិនដល់គោលដៅ សូមដាក់ទៅបញ្ជីបញ្ហា រួចបន្តទៅមុខ។ |
+| Each owner says “on track” or “off track” for each of their rocks. | ម្ចាស់ម្នាក់ៗនិយាយថា “ដើរតាមផែនការ” ឬ “មិនដើរតាមផែនការ” សម្រាប់ថ្មធំនីមួយៗរបស់ខ្លួន។ |
+| No stories. A rock that is off track goes to Issues. | កុំរៀបរាប់វែង។ ថ្មធំដែលមិនដើរតាមផែនការ ត្រូវដាក់ទៅបញ្ជីបញ្ហា។ |
+| One line each: good news or hard news about our staff and the people we serve. | ម្នាក់មួយបន្ទាត់៖ ដំណឹងល្អ ឬដំណឹងពិបាកអំពីបុគ្គលិករបស់យើង និងមនុស្សដែលយើងបម្រើ។ |
+| If a headline needs a conversation, drop it to Issues. | បើដំណឹងណាត្រូវការពិភាក្សា សូមដាក់ទៅបញ្ជីបញ្ហា។ |
+| Go down last week’s list: done, or not done. We aim for nine in ten done. | មើលបញ្ជីសប្តាហ៍មុនម្តងមួយៗ៖ ធ្វើហើយ ឬមិនទាន់ធ្វើ។ យើងចង់ឲ្យធ្វើហើយប្រាំបួនក្នុងដប់។ |
+| No reasons needed. Not done: carry it on a week, or drop it to Issues. | មិនចាំបាច់ប្រាប់ហេតុផលទេ។ មិនទាន់ធ្វើ៖ បន្តមួយសប្តាហ៍ទៀត ឬដាក់ទៅបញ្ជីបញ្ហា។ |
+| Pick the three that matter most. Then one at a time: name the real issue, talk it through, decide. | ជ្រើសបញ្ហាបីដែលសំខាន់បំផុត។ រួចម្តងមួយៗ៖ ប្រាប់បញ្ហាពិតប្រាកដ ពិភាក្សា ហើយសម្រេចចិត្ត។ |
+| Don’t start at the top of the list, and don’t work on three at once. One issue, one decision, then the next. | កុំចាប់ផ្តើមពីលើគេក្នុងបញ្ជី ហើយកុំធ្វើបីក្នុងពេលតែមួយ។ បញ្ហាមួយ ការសម្រេចចិត្តមួយ រួចទៅបញ្ហាបន្ទាប់។ |
+| Read back the new to-dos, agree what to tell our teams, and each rate the meeting from 1 to 10. | អានកិច្ចការថ្មីឡើងវិញ ព្រមព្រៀងគ្នាថាត្រូវប្រាប់អ្វីដល់ក្រុមរបស់យើង ហើយម្នាក់ៗដាក់ពិន្ទុកិច្ចប្រជុំពី 1 ដល់ 10។ |
+| End on time, even with issues left. They wait on the list for next week. | បញ្ចប់ទាន់ម៉ោង ទោះនៅសល់បញ្ហាក៏ដោយ។ វានៅរង់ចាំក្នុងបញ្ជីសម្រាប់សប្តាហ៍ក្រោយ។ |
+| Same day, same time, every week. Put it in the calendar once and guard it. | ថ្ងៃដដែល ម៉ោងដដែល រៀងរាល់សប្តាហ៍។ ដាក់ក្នុងប្រតិទិនម្តង ហើយការពារពេលនោះ។ |
+| Start on time and end on time, whoever is missing. | ចាប់ផ្តើមទាន់ម៉ោង និងបញ្ចប់ទាន់ម៉ោង ទោះខ្វះនរណាក៏ដោយ។ |
+| One person leads and keeps the clock. The leader moves the meeting on; they don’t have to have the answers. | មនុស្សម្នាក់ដឹកនាំ និងមើលម៉ោង។ អ្នកដឹកនាំជំរុញកិច្ចប្រជុំទៅមុខ មិនចាំបាច់មានចម្លើយទាំងអស់ទេ។ |
+| The first parts are reporting, kept short. Most of the meeting is for solving issues. | ផ្នែកដំបូងៗជាការរាយការណ៍ ធ្វើឲ្យខ្លី។ កិច្ចប្រជុំភាគច្រើនគឺសម្រាប់ដោះស្រាយបញ្ហា។ |
+| A scorecard number is something you can count every week that tells you early how things are going. Each has one owner and a goal. | លេខក្នុងតារាងពិន្ទុគឺជាអ្វីដែលអាចរាប់បានរៀងរាល់សប្តាហ៍ ដែលប្រាប់យើងឲ្យដឹងមុនថាការងារដើរយ៉ាងណា។ លេខនីមួយៗមានម្ចាស់ម្នាក់ និងគោលដៅមួយ។ |
+| A rock is one of the three to seven things that must get done this quarter. Each has one owner. Everyone knows everyone’s rocks. | ថ្មធំគឺជារឿងមួយក្នុងចំណោមបីទៅប្រាំពីរដែលត្រូវតែធ្វើឲ្យហើយក្នុងត្រីមាសនេះ។ នីមួយៗមានម្ចាស់ម្នាក់។ គ្រប់គ្នាដឹងពីថ្មធំរបស់គ្រប់គ្នា។ |
+| A to-do is one small action for one person, due in seven days. | កិច្ចការត្រូវធ្វើគឺទង្វើតូចមួយសម្រាប់មនុស្សម្នាក់ ត្រូវហើយក្នុងប្រាំពីរថ្ងៃ។ |
+| An issue is anything in the way: a problem, a question, an idea. Add it to the list the moment you think of it, any day of the week. | បញ្ហាគឺអ្វីក៏ដោយដែលរាំងផ្លូវ៖ បញ្ហា សំណួរ ឬគំនិត។ បន្ថែមទៅក្នុងបញ្ជីភ្លាមៗពេលនឹកឃើញ ថ្ងៃណាក៏បាន។ |
+| To solve an issue: say the real issue in one sentence, let everyone speak once, then decide and write down who does what. | ដើម្បីដោះស្រាយបញ្ហា៖ និយាយបញ្ហាពិតប្រាកដក្នុងមួយប្រយោគ ឲ្យម្នាក់ៗនិយាយម្តង រួចសម្រេចចិត្ត ហើយសរសេរថាអ្នកណាធ្វើអ្វី។ |
+
 ## 140. The Worship rota (My Ministry → Worship, ☰ → Worship rota, Nov 2026)
 Youth Education › Worship plans its four weekly services: who leads, sings and plays, the setlist, and after each service whether it happened and how many came. Tabs: This week · Rota · Team · Songs · Dashboard. "Filled" and the week strip labels have very little room. Role names (Worship leader, Vocals, Keys…) sit in a narrow column. "You’re on {role} — {service}" is one line on My Home's card; {service} is the service's own name as the team typed it (English). Draft translations by Claude.
 
@@ -6553,3 +6728,350 @@ The View / Edit switch above the board, the line under it, and the row of school
 | Not running this quarter: {list} | មិនដំណើរការក្នុងត្រីមាសនេះ៖ {list} |
 | Schools running in Q{q} {year}: {list} | សាលាដែលដំណើរការនៅ Q{q} {year}៖ {list} |
 | A school that isn’t running has no box this quarter. Add its leaders and staff in its box once it runs. | សាលាដែលមិនដំណើរការ គ្មានប្រអប់ក្នុងត្រីមាសនេះទេ។ បន្ថែមអ្នកដឹកនាំ និងបុគ្គលិករបស់វានៅក្នុងប្រអប់របស់វា នៅពេលវាដំណើរការ។ |
+
+## 141. The structure made live, and a second ministry (My Ministry → Structure, Team → Structure, My Ministry, Nov 2026)
+Campus Leadership arranges a quarter on the whiteboard; "Make Q1 2027 live" turns it into people's profiles. "live" here means "in use / in force now" — the word wants checking first, it is on the button. A person can serve in a second ministry: the tiny tag "also" sits under a face (about 40px wide) and beside a name, and "main" sits inside a small pill on My Ministry — both have almost no room. "{from} → {to}" lines in the list of changes use ministry names. "Q{q}’s structure is ready — make it live" is a bell line. Two phone notifications (in api.js PUSH_TEXT, not km.js): "From Q{q} {year} you serve in {where}. Open My Ministry." and "… and lead {lead}." Draft translations by Claude.
+
+| English | Khmer (draft) |
+|---|---|
+| Your ministries | កិច្ចការបម្រើរបស់អ្នក |
+| main | ចម្បង |
+| also | ផងដែរ |
+| also serves here | បម្រើនៅទីនេះផងដែរ |
+| Main: {main} | ចម្បង៖ {main} |
+| Also: {list} | ផងដែរ៖ {list} |
+| Their ministries this quarter | កិច្ចការបម្រើរបស់ពួកគេក្នុងត្រីមាសនេះ |
+| Also serves in… | បម្រើផងដែរនៅ… |
+| Choose a ministry | ជ្រើសរើសកិច្ចការបម្រើ |
+| Make this their main ministry | ធ្វើឲ្យនេះជាកិច្ចការបម្រើចម្បងរបស់ពួកគេ |
+| No longer also in {min} | លែងបម្រើនៅ {min} ផងដែរ |
+| {name} no longer also serves here | {name} លែងបម្រើនៅទីនេះផងដែរ |
+| They get both ministries’ pages on My Ministry. Dragging their face moves the main one. | ពួកគេមានទំព័រកិច្ចការបម្រើទាំងពីរនៅក្នុង កិច្ចការបម្រើរបស់ខ្ញុំ។ ការអូសមុខរបស់ពួកគេ ផ្លាស់ទីកិច្ចការបម្រើចម្បង។ |
+| Who is in which department and ministry this quarter, and who leads. Make the quarter live and it becomes everyone’s profile. | នរណានៅផ្នែក និងកិច្ចការបម្រើណាក្នុងត្រីមាសនេះ ហើយនរណាដឹកនាំ។ ពេលដាក់ត្រីមាសនេះឲ្យប្រើ វានឹងក្លាយជាប្រវត្តិរូបរបស់អ្នករាល់គ្នា។ |
+| Make Q{q} {year} live | ដាក់ Q{q} {year} ឲ្យប្រើ |
+| Q{q} {year} is live | Q{q} {year} កំពុងប្រើហើយ |
+| Q{q} {year} is live — changes here update profiles straight away. | Q{q} {year} កំពុងប្រើហើយ — ការផ្លាស់ប្តូរនៅទីនេះ កែប្រវត្តិរូបភ្លាមៗ។ |
+| Q{q} {year} is live — profiles match it. A change before it starts waits for Apply again. | Q{q} {year} កំពុងប្រើហើយ — ប្រវត្តិរូបត្រូវនឹងវា។ ការផ្លាស់ប្តូរមុនពេលវាចាប់ផ្តើម រង់ចាំការចុច អនុវត្តម្តងទៀត។ |
+| Q{q} {year} hasn’t started yet — profiles change today, not on its first day. | Q{q} {year} មិនទាន់ចាប់ផ្តើមទេ — ប្រវត្តិរូបផ្លាស់ប្តូរថ្ងៃនេះ មិនមែននៅថ្ងៃដំបូងរបស់វាទេ។ |
+| Q{q}’s structure is ready — make it live | រចនាសម្ព័ន្ធ Q{q} រួចរាល់ហើយ — សូមដាក់ឲ្យប្រើ |
+| 1 person’s profile would change | ប្រវត្តិរូបរបស់មនុស្ស ១ នាក់នឹងផ្លាស់ប្តូរ |
+| {n} people’s profiles would change | ប្រវត្តិរូបរបស់មនុស្ស {n} នាក់នឹងផ្លាស់ប្តូរ |
+| Everyone’s profile already matches this structure. | ប្រវត្តិរូបរបស់អ្នករាល់គ្នាត្រូវនឹងរចនាសម្ព័ន្ធនេះរួចហើយ។ |
+| 1 profile differs from this structure | ប្រវត្តិរូប ១ ខុសពីរចនាសម្ព័ន្ធនេះ |
+| {n} profiles differ from this structure | ប្រវត្តិរូប {n} ខុសពីរចនាសម្ព័ន្ធនេះ |
+| Profiles that differ from Q{q} {year} | ប្រវត្តិរូបដែលខុសពី Q{q} {year} |
+| Apply again | អនុវត្តម្តងទៀត |
+| Confirm | បញ្ជាក់ |
+| Confirm — from now on, changes here update profiles | បញ្ជាក់ — ចាប់ពីពេលនេះ ការផ្លាស់ប្តូរនៅទីនេះកែប្រវត្តិរូប |
+| These profiles change to match the structure. Each person is told. Nothing else on a profile changes. | ប្រវត្តិរូបទាំងនេះផ្លាស់ប្តូរឲ្យត្រូវនឹងរចនាសម្ព័ន្ធ។ ម្នាក់ៗនឹងទទួលដំណឹង។ គ្មានអ្វីផ្សេងទៀតនៅលើប្រវត្តិរូបផ្លាស់ប្តូរទេ។ |
+| Nobody’s profile changes now. | គ្មានប្រវត្តិរូបរបស់នរណាម្នាក់ផ្លាស់ប្តូរឥឡូវនេះទេ។ |
+| Left as they are: anyone off the chart, staff who are students this quarter, and names typed in. | ទុកដដែល៖ អ្នកដែលមិននៅលើតារាង បុគ្គលិកដែលជាសិស្សក្នុងត្រីមាសនេះ និងឈ្មោះដែលបានវាយបញ្ចូល។ |
+| Already waiting for an admin (Admin → Approvals): | កំពុងរង់ចាំអ្នកគ្រប់គ្រងរួចហើយ (អ្នកគ្រប់គ្រង → ការអនុម័ត)៖ |
+| 1 move into Campus Leadership is waiting for an admin | ការផ្លាស់ចូលថ្នាក់ដឹកនាំសាខា ១ កំពុងរង់ចាំអ្នកគ្រប់គ្រង |
+| {n} moves into Campus Leadership are waiting for an admin | ការផ្លាស់ចូលថ្នាក់ដឹកនាំសាខា {n} កំពុងរង់ចាំអ្នកគ្រប់គ្រង |
+| Change these profiles back to match the structure? Each person is told. | ប្តូរប្រវត្តិរូបទាំងនេះឲ្យត្រូវនឹងរចនាសម្ព័ន្ធវិញ? ម្នាក់ៗនឹងទទួលដំណឹង។ |
+| waits for an admin: {title} | រង់ចាំអ្នកគ្រប់គ្រង៖ {title} |
+| also {min} | {min} ផងដែរ |
+| no longer also {min} | លែងនៅ {min} ផងដែរ |
+| now leads {min} | ឥឡូវដឹកនាំ {min} |
+| no longer leads {min} | លែងដឹកនាំ {min} |
+| {name}’s profile is updated | ប្រវត្តិរូបរបស់ {name} ត្រូវបានកែហើយ |
+| 1 profile updated | បានកែប្រវត្តិរូប ១ |
+| {n} profiles updated | បានកែប្រវត្តិរូប {n} |
+| Still saving — try again in a moment. | កំពុងរក្សាទុកនៅឡើយ — សូមព្យាយាមម្តងទៀតបន្តិចទៀត។ |
+| Someone else is saving — try again. | មានអ្នកផ្សេងកំពុងរក្សាទុក — សូមព្យាយាមម្តងទៀត។ |
+| That quarter is over. | ត្រីមាសនោះបានកន្លងផុតហើយ។ |
+
+## 147. The Advisory Board: the invite link, the big picture, and the Board room (teams.html?board=…, ☰ → Advisory Board, Admin → Advisory Board, Nov 2026)
+For the members of the YWAM GP Advisory Board — several of them are not staff and may read these on a laptop. "Advisory Board" stays ក្រុមប្រឹក្សាយោបល់ (ក្តារ is the meeting Kanban, a different thing); the board's own page is the "Board room" (បន្ទប់ក្រុមប្រឹក្សា; on the bottom bar the short បន្ទប់ប្រឹក្សា, and ទូទៅ for Overview — both must fit a narrow tab). Rocks (ថ្មធំ), Scorecard (តារាងពិន្ទុ), To-Dos (កិច្ចការត្រូវធ្វើ), Issues (បញ្ហា) and Headlines keep the words the leadership meeting uses (§142, §144). The first lines below are the invitation a new member reads before anything else, and the long line starting "The board reads what…" is a promise about privacy — please check those first. Short lines with {d} of {n} are figures on small tiles.
+
+| English | Khmer (draft) |
+|---|---|
+| Add a board member by hand | បន្ថែមសមាជិកក្រុមប្រឹក្សាដោយដៃ |
+| signs in with Google | ចូលដោយ Google |
+| Board meeting | កិច្ចប្រជុំក្រុមប្រឹក្សា |
+| Issues and To-Dos | បញ្ហា និងកិច្ចការត្រូវធ្វើ |
+| The board’s Issues and To-Dos | បញ្ហា និងកិច្ចការត្រូវធ្វើរបស់ក្រុមប្រឹក្សា |
+| The board room is for the Advisory Board. | បន្ទប់ក្រុមប្រឹក្សាគឺសម្រាប់ក្រុមប្រឹក្សាយោបល់។ |
+| Whoever starts the meeting leads it. | អ្នកដែលចាប់ផ្ដើមកិច្ចប្រជុំ ជាអ្នកដឹកនាំវា។ |
+| The three to seven things the board must get done this quarter — each member’s, and the whole board’s. | កិច្ចការបីទៅប្រាំពីរដែលក្រុមប្រឹក្សាត្រូវធ្វើឲ្យហើយក្នុងត្រីមាសនេះ — របស់សមាជិកម្នាក់ៗ និងរបស់ក្រុមប្រឹក្សាទាំងមូល។ |
+| A To-Do is one action for one person, due in seven days. These are the tasks on the cards of the board’s Kanban. | កិច្ចការត្រូវធ្វើ គឺសកម្មភាពមួយសម្រាប់មនុស្សម្នាក់ ដែលត្រូវហើយក្នុងប្រាំពីរថ្ងៃ។ ទាំងនេះជាកិច្ចការនៅលើកាតនៃក្តារកិច្ចការរបស់ក្រុមប្រឹក្សា។ |
+| It is due in seven days, and stays on the board’s own Kanban. | វាត្រូវហើយក្នុងប្រាំពីរថ្ងៃ ហើយនៅលើក្តារកិច្ចការរបស់ក្រុមប្រឹក្សាផ្ទាល់។ |
+| This part is for the Advisory Board. | ផ្នែកនេះគឺសម្រាប់ក្រុមប្រឹក្សាយោបល់។ |
+| Board room | បន្ទប់ក្រុមប្រឹក្សា |
+| Tab: Board room | បន្ទប់ប្រឹក្សា |
+| Tab: Overview | ទូទៅ |
+| {k} Khmer · {i} international | ខ្មែរ {k} · អន្តរជាតិ {i} |
+| {n} check-ins · Q{q} | ការឆែក {n} · ត្រីមាស {q} |
+| Q{q} · {n} this year | ត្រីមាស {q} · ឆ្នាំនេះ {n} |
+| Q{q} | ត្រីមាស {q} |
+| {n} graduated this year | បញ្ចប់ការសិក្សា {n} នាក់ឆ្នាំនេះ |
+| The big picture | រូបភាពរួម |
+| All of YWAM GP · week {wk} · Q{q} {year} | YWAM GP ទាំងមូល · សប្ដាហ៍ {wk} · ត្រីមាស {q} {year} |
+| You: {role} | អ្នក៖ {role} |
+| On campus tonight | នៅមូលដ្ឋានយប់នេះ |
+| {pct}% of beds full | គ្រែពេញ {pct}% |
+| {n} staff away this week | បុគ្គលិក {n} នាក់មិននៅសប្ដាហ៍នេះ |
+| Scorecards | តារាងពិន្ទុ |
+| {d} of {n} numbers on target this week | លេខ {d} ក្នុងចំណោម {n} ដល់គោលដៅសប្ដាហ៍នេះ |
+| no goals set yet | មិនទាន់កំណត់គោលដៅ |
+| Numbers in on time | លេខបញ្ចូលទាន់ពេល |
+| {d} of {n} ministries this week | កិច្ចការបម្រើ {d} ក្នុងចំណោម {n} សប្ដាហ៍នេះ |
+| Liquid balance | សមតុល្យសាច់ប្រាក់ |
+| entered {date} | បញ្ចូល {date} |
+| reconciled {date} | ផ្ទៀងផ្ទាត់ {date} |
+| not reconciled | មិនទាន់ផ្ទៀងផ្ទាត់ |
+| rated {n} | ពិន្ទុ {n} |
+| not rated | មិនបានដាក់ពិន្ទុ |
+| {pct}% of To-Dos done | កិច្ចការត្រូវធ្វើហើយ {pct}% |
+| no meeting on record yet | មិនទាន់មានកំណត់ត្រាកិច្ចប្រជុំ |
+| Leadership’s Issues | បញ្ហារបស់ថ្នាក់ដឹកនាំ |
+| {n} open on their list | {n} នៅបើកក្នុងបញ្ជីរបស់ពួកគេ |
+| 1-on-1s held or set this month | ការជួបមួយទល់មួយដែលបានធ្វើ ឬបានកំណត់ខែនេះ |
+| The board reads what each campus’s leadership team reads, for both campuses, and changes nothing outside its own Board room. Health is a campus average, shown only from three check-ins or more — nobody’s own answers, 1-on-1s, prayer requests, support or HR papers are ever shown here. | ក្រុមប្រឹក្សាអានអ្វីដែលក្រុមដឹកនាំនៃមូលដ្ឋាននីមួយៗអាន សម្រាប់មូលដ្ឋានទាំងពីរ ហើយមិនផ្លាស់ប្ដូរអ្វីនៅក្រៅបន្ទប់ក្រុមប្រឹក្សារបស់ខ្លួនឡើយ។ សុខភាពគឺជាមធ្យមរបស់មូលដ្ឋាន បង្ហាញតែពេលមានការឆែកបីឬច្រើនជាងនេះ — ចម្លើយផ្ទាល់ខ្លួន ការជួបមួយទល់មួយ សំណូមពរអធិស្ឋាន ការឧបត្ថម្ភ ឬឯកសារធនធានមនុស្សរបស់នរណាម្នាក់ មិនដែលបង្ហាញនៅទីនេះទេ។ |
+| on target this week | ដល់គោលដៅសប្ដាហ៍នេះ |
+| ministries this week | កិច្ចការបម្រើសប្ដាហ៍នេះ |
+| The leadership team’s Scorecard, Rocks and meetings | តារាងពិន្ទុ ថ្មធំ និងកិច្ចប្រជុំរបស់ក្រុមដឹកនាំ |
+| To read — as they run their week | សម្រាប់អាន — ដូចដែលពួកគេដំណើរការសប្ដាហ៍របស់ខ្លួន |
+| Director: {name} | នាយក៖ {name} |
+| No director named yet | មិនទាន់មានឈ្មោះនាយក |
+| The base’s figures, section by section | តួលេខរបស់មូលដ្ឋាន តាមផ្នែកនីមួយៗ |
+| The department’s rocks · Q{q} | ថ្មធំរបស់នាយកដ្ឋាន · ត្រីមាស {q} |
+| No leader named yet | មិនទាន់មានឈ្មោះអ្នកដឹកនាំ |
+| {n} serve | {n} នាក់បម្រើ |
+| {d} of {n} on target | {d} ក្នុងចំណោម {n} ដល់គោលដៅ |
+| Serving | កំពុងបម្រើ |
+| Its page in the quarterly report | ទំព័ររបស់វាក្នុងរបាយការណ៍ប្រចាំត្រីមាស |
+| This ministry has no numbers on its Scorecard. | កិច្ចការបម្រើនេះមិនមានលេខនៅលើតារាងពិន្ទុទេ។ |
+| This quarter and this year | ត្រីមាសនេះ និងឆ្នាំនេះ |
+| Rocks · Q{q} | ថ្មធំ · ត្រីមាស {q} |
+| no To-Dos | គ្មានកិច្ចការត្រូវធ្វើ |
+| To read only: nothing here can be changed from the board’s side. | សម្រាប់អានប៉ុណ្ណោះ៖ គ្មានអ្វីនៅទីនេះអាចផ្លាស់ប្ដូរពីខាងក្រុមប្រឹក្សាបានទេ។ |
+| The Finances office’s dashboard, to read. Only the office can enter or change anything. | ផ្ទាំងរបស់ការិយាល័យហិរញ្ញវត្ថុ សម្រាប់អាន។ មានតែការិយាល័យទេដែលអាចបញ្ចូល ឬផ្លាស់ប្ដូរអ្វីបាន។ |
+| The Advisory Board’s own meeting, Rocks, Scorecard, Issues and To-Dos. Only board members (and admins) can open this. | កិច្ចប្រជុំ ថ្មធំ តារាងពិន្ទុ បញ្ហា និងកិច្ចការត្រូវធ្វើ របស់ក្រុមប្រឹក្សាយោបល់ផ្ទាល់។ មានតែសមាជិកក្រុមប្រឹក្សា (និងអ្នកគ្រប់គ្រង) ទេដែលអាចបើកវាបាន។ |
+| You’re invited to the YWAM GP Advisory Board as {role} | អ្នកត្រូវបានអញ្ជើញឲ្យចូលរួមក្រុមប្រឹក្សាយោបល់ YWAM GP ជា {role} |
+| An invitation to the YWAM GP Advisory Board | លិខិតអញ្ជើញចូលក្រុមប្រឹក្សាយោបល់ YWAM GP |
+| Welcome to the Advisory Board | សូមស្វាគមន៍មកកាន់ក្រុមប្រឹក្សាយោបល់ |
+| {name}, your seat on the board is linked to your staff profile. Open the app as usual — you’ll find 🛡️ Advisory Board in the menu. | {name} កៅអីរបស់អ្នកក្នុងក្រុមប្រឹក្សាត្រូវបានភ្ជាប់ទៅប្រវត្តិរូបបុគ្គលិករបស់អ្នក។ បើកកម្មវិធីដូចធម្មតា — អ្នកនឹងឃើញ 🛡️ ក្រុមប្រឹក្សាយោបល់ នៅក្នុងម៉ឺនុយ។ |
+| Invited by {name}. | អញ្ជើញដោយ {name}។ |
+| The board sees how the whole base is doing — every ministry, the finances, the leadership teams — and has its own room for its meetings, Rocks and Scorecard. It reads; it doesn’t run the base. | ក្រុមប្រឹក្សាឃើញថាមូលដ្ឋានទាំងមូលកំពុងដំណើរការយ៉ាងណា — កិច្ចការបម្រើនីមួយៗ ហិរញ្ញវត្ថុ ក្រុមដឹកនាំ — ហើយមានបន្ទប់ផ្ទាល់ខ្លួនសម្រាប់កិច្ចប្រជុំ ថ្មធំ និងតារាងពិន្ទុរបស់ខ្លួន។ ក្រុមប្រឹក្សាអាន មិនមែនដំណើរការមូលដ្ឋានទេ។ |
+| A short bio (optional) | ប្រវត្តិរូបសង្ខេប (មិនចាំបាច់) |
+| Who you are, in a few lines — staff see it on the YWAM GP page. | អ្នកជានរណា ក្នុងពីរបីបន្ទាត់ — បុគ្គលិកឃើញវានៅលើទំព័រ YWAM GP។ |
+| How you’ll sign in | របៀបដែលអ្នកនឹងចូល |
+| Join the board | ចូលរួមក្រុមប្រឹក្សា |
+| Use Continue with Google instead | ប្រើ «បន្តជាមួយ Google» ជំនួសវិញ |
+| Already on staff? Sign in to the app first, then open this link again — the seat is added to your profile, with the sign-in you already have. | ជាបុគ្គលិករួចហើយ? សូមចូលកម្មវិធីជាមុនសិន រួចបើកតំណនេះម្ដងទៀត — កៅអីនឹងត្រូវបន្ថែមទៅប្រវត្តិរូបរបស់អ្នក ជាមួយការចូលដែលអ្នកមានស្រាប់។ |
+| You’re signed in as {name}. Your seat on the board is added to this profile — no second sign-in. | អ្នកបានចូលជា {name}។ កៅអីរបស់អ្នកក្នុងក្រុមប្រឹក្សាត្រូវបន្ថែមទៅប្រវត្តិរូបនេះ — មិនចាំបាច់ចូលលើកទីពីរទេ។ |
+| You’re on the Advisory Board — it is in your menu. | អ្នកនៅក្នុងក្រុមប្រឹក្សាយោបល់ហើយ — វានៅក្នុងម៉ឺនុយរបស់អ្នក។ |
+| Invite a board member | អញ្ជើញសមាជិកក្រុមប្រឹក្សា |
+| Make a link for one person and send it to them. They add their name and choose how to sign in — Google, or a username and PIN — and are on the board straight away, with this role. Someone already on staff gets the seat on their own profile. | បង្កើតតំណសម្រាប់មនុស្សម្នាក់ ហើយផ្ញើទៅគាត់។ គាត់បញ្ចូលឈ្មោះ ហើយជ្រើសរើសរបៀបចូល — Google ឬឈ្មោះអ្នកប្រើនិងលេខ PIN — ហើយនៅក្នុងក្រុមប្រឹក្សាភ្លាម ជាមួយតួនាទីនេះ។ អ្នកដែលជាបុគ្គលិករួចហើយ ទទួលបានកៅអីនៅលើប្រវត្តិរូបផ្ទាល់ខ្លួន។ |
+| e.g. who it is for | ឧ. សម្រាប់នរណា |
+| For one person, as {role} — until {date}. Anyone who has the link can use it, so send it only to them. | សម្រាប់មនុស្សម្នាក់ ជា {role} — រហូតដល់ {date}។ អ្នកណាដែលមានតំណនេះអាចប្រើវាបាន ដូច្នេះសូមផ្ញើទៅគាត់តែប៉ុណ្ណោះ។ |
+| Turn this invite link off? It stops working at once. | បិទតំណអញ្ជើញនេះ? វានឹងឈប់ដំណើរការភ្លាម។ |
+| This invite link has already been used. Ask an admin for a new one. | តំណអញ្ជើញនេះត្រូវបានប្រើរួចហើយ។ សូមសុំតំណថ្មីពីអ្នកគ្រប់គ្រង។ |
+| This invite link has ended. Ask an admin for a new one. | តំណអញ្ជើញនេះបានផុតកំណត់ហើយ។ សូមសុំតំណថ្មីពីអ្នកគ្រប់គ្រង។ |
+| This invite link was turned off. Ask an admin for a new one. | តំណអញ្ជើញនេះត្រូវបានបិទ។ សូមសុំតំណថ្មីពីអ្នកគ្រប់គ្រង។ |
+| This invite link isn’t right. Ask an admin for a new one. | តំណអញ្ជើញនេះមិនត្រឹមត្រូវទេ។ សូមសុំតំណថ្មីពីអ្នកគ្រប់គ្រង។ |
+| Add your email | បញ្ចូលអ៉ីមែលរបស់អ្នក |
+| You already have a sign-in for the board — sign in with it. | អ្នកមានការចូលសម្រាប់ក្រុមប្រឹក្សារួចហើយ — សូមចូលដោយប្រើវា។ |
+| That email belongs to a staff profile. Sign in to the app first, then open this link again — your seat is added to your profile. | អ៉ីមែលនោះជារបស់ប្រវត្តិរូបបុគ្គលិក។ សូមចូលកម្មវិធីជាមុនសិន រួចបើកតំណនេះម្ដងទៀត — កៅអីរបស់អ្នកនឹងត្រូវបន្ថែមទៅប្រវត្តិរូបរបស់អ្នក។ |
+| That staff profile isn’t active — ask an admin. | ប្រវត្តិរូបបុគ្គលិកនោះមិនសកម្មទេ — សូមសួរអ្នកគ្រប់គ្រង។ |
+| {campus} · leadership team | {campus} · ក្រុមដឹកនាំ |
+
+## 145. The quarterly report, ministry by ministry (☰ → Quarterly report, My Ministry → This quarter’s report, Nov 2026)
+A printed document for three readers — our own ministries, donors, and the government — with a page for each ministry. Many of these are headings and table labels ON THE PRINTED REPORT, so they are read by people outside YWAM GP: please check "Report of activities", "Scorecard", "Highlights", "Prayer and needs" and the staff lines first. "Scorecard" (តារាងពិន្ទុ) is the table of a ministry's numbers for the quarter. The tick "Leave out faith numbers" is a promise about what the government's copy leaves out. The reminder under "A story" is about protecting children.
+
+| English | Khmer (draft) |
+|---|---|
+| Quarterly report | របាយការណ៍ប្រចាំត្រីមាស |
+| Ministry by ministry | តាមកិច្ចការបម្រើនីមួយៗ |
+| This quarter’s report | របាយការណ៍ត្រីមាសនេះ |
+| The quarter report | របាយការណ៍ត្រីមាស |
+| The whole report | របាយការណ៍ទាំងមូល |
+| A page for every ministry, filled in from what each ministry already records. Choose who it is for, then print it or save it as a PDF. | មួយទំព័រសម្រាប់កិច្ចការបម្រើនីមួយៗ បំពេញពីអ្វីដែលកិច្ចការបម្រើនីមួយៗបានកត់ត្រារួចហើយ។ ជ្រើសរើសថាសម្រាប់អ្នកណា រួចបោះពុម្ព ឬរក្សាទុកជា PDF។ |
+| Our ministries | កិច្ចការបម្រើរបស់យើង |
+| Donors | អ្នកឧបត្ថម្ភ |
+| Government | រដ្ឋាភិបាល |
+| Both | ទាំងពីរ |
+| For our ministries | សម្រាប់កិច្ចការបម្រើរបស់យើង |
+| For our partners and donors | សម្រាប់ដៃគូ និងអ្នកឧបត្ថម្ភរបស់យើង |
+| Report of activities | របាយការណ៍សកម្មភាព |
+| Quarterly report · Q{q} {year} | របាយការណ៍ប្រចាំត្រីមាស · ត្រីមាសទី {q} ឆ្នាំ {year} |
+| this quarter is still going | ត្រីមាសនេះមិនទាន់ចប់នៅឡើយ |
+| Made {date}. Staff numbers are as of today. | ធ្វើនៅ {date}។ ចំនួនបុគ្គលិកគិតត្រឹមថ្ងៃនេះ។ |
+| Leave out faith numbers (salvations, baptisms, gospel…) | មិនបញ្ចូលតួលេខផ្នែកជំនឿ (ការទទួលសង្គ្រោះ បុណ្យជ្រមុជទឹក ដំណឹងល្អ…) |
+| Also print each ministry’s story and its prayer and needs | បោះពុម្ពរឿង និងសេចក្តីអធិស្ឋាន និងតម្រូវការរបស់កិច្ចការបម្រើនីមួយៗផងដែរ |
+| Donors: stories first. No challenges, money, health or internal priorities. | អ្នកឧបត្ថម្ភ៖ រឿងមកមុន។ គ្មានបញ្ហាប្រឈម លុយ សុខភាព ឬអាទិភាពផ្ទៃក្នុងទេ។ |
+| Government: what we did and who we served, in Khmer unless you choose another language. Highlights only, unless you tick more. | រដ្ឋាភិបាល៖ អ្វីដែលយើងបានធ្វើ និងអ្នកដែលយើងបានបម្រើ ជាភាសាខ្មែរ លុះត្រាតែអ្នកជ្រើសភាសាផ្សេង។ មានតែចំណុចលេចធ្លោប៉ុណ្ណោះ លុះត្រាតែអ្នកគូសបន្ថែម។ |
+| Our ministries: everything — the numbers, priorities, and all four parts of each story. | កិច្ចការបម្រើរបស់យើង៖ ទាំងអស់ — តួលេខ អាទិភាព និងផ្នែកទាំងបួននៃរឿងនីមួយៗ។ |
+| Scorecard | តារាងពិន្ទុ |
+| What we count | អ្វីដែលយើងរាប់ |
+| This quarter in numbers | ត្រីមាសនេះជាតួលេខ |
+| Priorities this quarter | អាទិភាពក្នុងត្រីមាសនេះ |
+| No numbers were entered this quarter. | គ្មានតួលេខបានបញ្ចូលក្នុងត្រីមាសនេះទេ។ |
+| No ministry has people or numbers for this quarter yet. | មិនទាន់មានកិច្ចការបម្រើណាមានមនុស្ស ឬតួលេខសម្រាប់ត្រីមាសនេះនៅឡើយទេ។ |
+| Led by {names} | ដឹកនាំដោយ {names} |
+| {n} serve in this ministry | {n} នាក់បម្រើក្នុងកិច្ចការបម្រើនេះ |
+| {n} ministries | កិច្ចការបម្រើ {n} |
+| Just this ministry | តែកិច្ចការបម្រើនេះ |
+| Khmer staff | បុគ្គលិកខ្មែរ |
+| International staff | បុគ្គលិកអន្តរជាតិ |
+| Country not said yet | មិនទាន់ប្រាប់ប្រទេស |
+| Outreach teams hosted | ក្រុមចេញផ្សព្វផ្សាយដែលបានទទួល |
+| Highlights | ចំណុចលេចធ្លោ |
+| A story | រឿងមួយ |
+| Challenges | បញ្ហាប្រឈម |
+| Prayer and needs | សេចក្តីអធិស្ឋាន និងតម្រូវការ |
+| A letter from leadership | សំបុត្រពីថ្នាក់ដឹកនាំ |
+| Write this quarter’s story | សរសេររឿងសម្រាប់ត្រីមាសនេះ |
+| Change this quarter’s story | កែរឿងសម្រាប់ត្រីមាសនេះ |
+| Write the letter from leadership | សរសេរសំបុត្រពីថ្នាក់ដឹកនាំ |
+| Change the letter | កែសំបុត្រ |
+| Carry on writing — a draft is kept on this phone | សរសេរបន្ត — សេចក្តីព្រាងត្រូវបានរក្សាទុកក្នុងទូរស័ព្ទនេះ |
+| A short letter for the front of the report: what this quarter was about, and thank you. | សំបុត្រខ្លីមួយសម្រាប់ទំព័រមុខនៃរបាយការណ៍៖ ត្រីមាសនេះនិយាយអំពីអ្វី និងពាក្យអរគុណ។ |
+| One short story of a changed life. No child’s full name — change names where needed, and ask permission first. | រឿងខ្លីមួយអំពីជីវិតដែលបានផ្លាស់ប្រែ។ កុំដាក់ឈ្មោះពេញរបស់កុមារ — ប្តូរឈ្មោះបើចាំបាច់ ហើយសុំការអនុញ្ញាតជាមុនសិន។ |
+| Only our own ministries read this part. Donors and the government never see it. | មានតែកិច្ចការបម្រើរបស់យើងប៉ុណ្ណោះដែលអានផ្នែកនេះ។ អ្នកឧបត្ថម្ភ និងរដ្ឋាភិបាលមិនឃើញវាឡើយ។ |
+| What you type is kept on this phone until it is saved. | អ្វីដែលអ្នកវាយត្រូវបានរក្សាទុកក្នុងទូរស័ព្ទនេះ រហូតដល់បានរក្សាទុក។ |
+| Could not save — your words are kept on this phone. | មិនអាចរក្សាទុកបានទេ — ពាក្យរបស់អ្នកនៅរក្សាទុកក្នុងទូរស័ព្ទនេះ។ |
+| Only the ministry’s own people can write this. | មានតែមនុស្សក្នុងកិច្ចការបម្រើនេះប៉ុណ្ណោះដែលអាចសរសេរបាន។ |
+| This report is for Campus Leadership and each ministry’s own people. | របាយការណ៍នេះសម្រាប់ថ្នាក់ដឹកនាំសាខា និងមនុស្សក្នុងកិច្ចការបម្រើនីមួយៗ។ |
+| Could not load the report ({err}). | មិនអាចបើករបាយការណ៍បានទេ ({err})។ |
+| Write {ministry}’s story for Q{q} | សរសេររឿងរបស់ {ministry} សម្រាប់ត្រីមាសទី {q} |
+| Write it | សរសេរ |
+| Students enrolled | សិស្សដែលបានចុះឈ្មោះ |
+| Days with classes | ថ្ងៃដែលមានថ្នាក់រៀន |
+| Tests given | ការប្រឡងដែលបានធ្វើ |
+| Pass rate | អត្រាជាប់ |
+| New salvations | ការទទួលសង្គ្រោះថ្មី |
+| Teams hosted | ក្រុមដែលបានទទួល |
+| People who came | មនុស្សដែលបានមក |
+| Prayer gatherings in the fast | ការជួបជុំអធិស្ឋានក្នុងពេលតមអាហារ |
+| Hours in prayer | ម៉ោងអធិស្ឋាន |
+| Ministries covered in prayer | កិច្ចការបម្រើដែលបានអធិស្ឋានឲ្យ |
+| {n} joined | {n} នាក់បានចូលរួម |
+| Musicians in training | អ្នកលេងតន្ត្រីកំពុងហ្វឹកហាត់ |
+| Songs written | បទចម្រៀងដែលបាននិពន្ធ |
+| Guest nights hosted | ចំនួនយប់ដែលបានទទួលភ្ញៀវ |
+| Teams housed | ក្រុមដែលបានស្នាក់នៅ |
+| Guests and speakers | ភ្ញៀវ និងវាគ្មិន |
+| Students applied | សិស្សដែលបានដាក់ពាក្យ |
+| Students accepted | សិស្សដែលបានទទួល |
+| Students here | សិស្សដែលនៅទីនេះ |
+| Students graduated | សិស្សដែលបានបញ្ចប់ |
+| Outreach teams sent | ក្រុមចេញផ្សព្វផ្សាយដែលបានបញ្ជូន |
+| Outreach places | កន្លែងចេញផ្សព្វផ្សាយ |
+| People reached on outreach | មនុស្សដែលបានជួបពេលចេញផ្សព្វផ្សាយ |
+| Salvations on outreach | ការទទួលសង្គ្រោះពេលចេញផ្សព្វផ្សាយ |
+| Healings on outreach | ការប្រោសឲ្យជាពេលចេញផ្សព្វផ្សាយ |
+| Heard the gospel on outreach | បានឮដំណឹងល្អពេលចេញផ្សព្វផ្សាយ |
+| Customers served | អតិថិជនដែលបានបម្រើ |
+## 144. Rocks and the Scorecard — in place of OKRs and “Numbers” (My Ministry, Team, Admin, the quarter report, Nov 2026)
+Across the whole app the quarter's priorities are **Rocks** (ថ្មធំ — the word the leadership meeting already used) and a ministry's weekly numbers page is its **Scorecard** (តារាងពិន្ទុ; the meeting's “Scorecard” was តារាងពិន្ទុ and now uses the same new word). “Scorecard”, “Rocks” and “Q{q} Rocks” are tab and tile labels with very little room. A rock is “on track” (ដើរតាមផែនការ), “off track” or “done” — the three words are buttons side by side on a phone. “On target / Off target” is a number against its weekly goal, which is a different thing from a rock being on track; please check the two read differently. “Earlier objectives” (គោលបំណងពីមុន) is the folded list of what was there before rocks.
+
+| English | Khmer (draft) |
+|---|---|
+| Scorecard | តារាងពិន្ទុ |
+| Q{q} Rocks | ថ្មធំ ត្រីមាស {q} |
+| Rocks for Q{q} | ថ្មធំសម្រាប់ត្រីមាស {q} |
+| on track | ដើរតាមផែនការ |
+| on track · Q{q} | ដើរតាមផែនការ · ត្រីមាស {q} |
+| The team | ក្រុម |
+| +{n} more | +{n} ទៀត |
+| {name}’s rocks | ថ្មធំរបស់ {name} |
+| {team}’s rocks | ថ្មធំរបស់ {team} |
+| Leadership’s rocks | ថ្មធំរបស់ថ្នាក់ដឹកនាំ |
+| Every department’s rocks | ថ្មធំរបស់គ្រប់ផ្នែក |
+| {dept} — the whole department | {dept} — ផ្នែកទាំងមូល |
+| A rock for the whole department | ថ្មធំមួយសម្រាប់ផ្នែកទាំងមូល |
+| A rock: one thing that must get done this quarter | ថ្មធំ៖ រឿងមួយដែលត្រូវតែធ្វើឲ្យហើយក្នុងត្រីមាសនេះ |
+| The few things that must get done this quarter. Tap one to say where it stands: on track, off track or done. | រឿងមួយចំនួនតូចដែលត្រូវតែធ្វើឲ្យហើយក្នុងត្រីមាសនេះ។ ចុចលើមួយដើម្បីប្រាប់ថាវាដល់ណាហើយ៖ ដើរតាមផែនការ មិនដើរតាមផែនការ ឬរួចរាល់។ |
+| No rocks yet for this quarter. | មិនទាន់មានថ្មធំសម្រាប់ត្រីមាសនេះនៅឡើយ។ |
+| No rocks for the whole team yet. | មិនទាន់មានថ្មធំសម្រាប់ក្រុមទាំងមូលនៅឡើយ។ |
+| No leadership rocks yet for this quarter. | មិនទាន់មានថ្មធំរបស់ថ្នាក់ដឹកនាំសម្រាប់ត្រីមាសនេះនៅឡើយ។ |
+| No rocks for this department yet. | មិនទាន់មានថ្មធំសម្រាប់ផ្នែកនេះនៅឡើយ។ |
+| No rocks for this ministry yet. | មិនទាន់មានថ្មធំសម្រាប់កិច្ចការបម្រើនេះនៅឡើយ។ |
+| No rocks for the whole department yet. | មិនទាន់មានថ្មធំសម្រាប់ផ្នែកទាំងមូលនៅឡើយ។ |
+| No rocks anywhere yet for this quarter. | មិនទាន់មានថ្មធំនៅកន្លែងណាសម្រាប់ត្រីមាសនេះនៅឡើយ។ |
+| No rocks set for their team this quarter. | ក្រុមរបស់គាត់មិនទាន់មានថ្មធំសម្រាប់ត្រីមាសនេះទេ។ |
+| Earlier objectives ({n}) | គោលបំណងពីមុន ({n}) |
+| Earlier objectives · Q{q} | គោលបំណងពីមុន · ត្រីមាស {q} |
+| From before we moved to rocks. Kept as they were — nothing here can be changed. | ពីមុនពេលយើងប្តូរមកប្រើថ្មធំ។ រក្សាទុកដូចដើម — មិនអាចកែអ្វីនៅទីនេះបានទេ។ |
+| Only that team can change its rocks. | មានតែក្រុមនោះទេដែលអាចកែថ្មធំរបស់ខ្លួន។ |
+| An earlier quarter’s rocks are kept as they were. | ថ្មធំរបស់ត្រីមាសមុនត្រូវបានរក្សាទុកដូចដើម។ |
+| That rock is no longer there. | ថ្មធំនោះលែងមានទៀតហើយ។ |
+| The three to seven things that must get done this quarter — each person’s, and the team’s. Every ministry has its own rocks too, on its Rocks tab. | រឿងបីទៅប្រាំពីរដែលត្រូវតែធ្វើឲ្យហើយក្នុងត្រីមាសនេះ — របស់ម្នាក់ៗ និងរបស់ក្រុម។ កិច្ចការបម្រើនីមួយៗក៏មានថ្មធំរបស់ខ្លួនដែរ នៅផ្ទាំង «ថ្មធំ» របស់ខ្លួន។ |
+| Q{q} rocks nobody has updated in 30 days | ថ្មធំត្រីមាស {q} ដែលគ្មាននរណាធ្វើបច្ចុប្បន្នភាពក្នុង ៣០ ថ្ងៃ |
+| A rock should be looked at every week: on track, off track or done. | ថ្មធំគួរត្រូវបានមើលរៀងរាល់សប្តាហ៍៖ ដើរតាមផែនការ មិនដើរតាមផែនការ ឬរួចរាល់។ |
+| last updated {date} | ធ្វើបច្ចុប្បន្នភាពចុងក្រោយ {date} |
+| never updated | មិនដែលធ្វើបច្ចុប្បន្នភាព |
+| Month, quarter and year totals | សរុបប្រចាំខែ ត្រីមាស និងឆ្នាំ |
+| No numbers on the scorecard yet. | មិនទាន់មានលេខក្នុងតារាងពិន្ទុនៅឡើយ។ |
+| Take it off the scorecard | ដកចេញពីតារាងពិន្ទុ |
+| Take this number off the scorecard? Its weeks of numbers go with it. | ដកលេខនេះចេញពីតារាងពិន្ទុឬ? លេខប្រចាំសប្តាហ៍របស់វានឹងបាត់ទៅជាមួយ។ |
+| Scorecard: {name} | តារាងពិន្ទុ៖ {name} |
+| A scorecard number is something you can count every week that tells you early how things are going. Each has one owner and a goal. | លេខក្នុងតារាងពិន្ទុគឺជាអ្វីដែលអាចរាប់បានរៀងរាល់សប្តាហ៍ ដែលប្រាប់យើងឲ្យដឹងមុនថាការងារដើរយ៉ាងណា។ លេខនីមួយៗមានម្ចាស់ម្នាក់ និងគោលដៅមួយ។ |
+| {d} of {n} on target this week | {d} ក្នុងចំណោម {n} ដល់គោលដៅសប្តាហ៍នេះ |
+| {d} of {n} on target in week {wk} | {d} ក្នុងចំណោម {n} ដល់គោលដៅក្នុងសប្តាហ៍ទី {wk} |
+| {n} not entered yet | {n} មិនទាន់បញ្ចូល |
+| No goals yet. Set a goal for a number and each week shows ✓ or ✗ against it. | មិនទាន់មានគោលដៅនៅឡើយ។ កំណត់គោលដៅសម្រាប់លេខមួយ នោះសប្តាហ៍នីមួយៗនឹងបង្ហាញ ✓ ឬ ✗ ធៀបនឹងវា។ |
+| No goals set yet for these numbers. | លេខទាំងនេះមិនទាន់មានគោលដៅនៅឡើយ។ |
+| Set goals | កំណត់គោលដៅ |
+| A goal is for one week. Leave a box empty for no goal. | គោលដៅគឺសម្រាប់មួយសប្តាហ៍។ ទុកប្រអប់ឲ្យទទេបើគ្មានគោលដៅ។ |
+| Goal for {metric} | គោលដៅសម្រាប់ {metric} |
+| goal {goal} | គោលដៅ {goal} |
+| On target | ដល់គោលដៅ |
+| Off target | មិនដល់គោលដៅ |
+| Not entered yet | មិនទាន់បញ្ចូល |
+| The last {n} weeks | {n} សប្តាហ៍ចុងក្រោយ |
+| Show all {n} numbers | បង្ហាញលេខទាំង {n} |
+| {metric}: type a number. | {metric}៖ សូមវាយលេខ។ |
+| {metric} goes from {min} to {max}. | {metric} គឺពី {min} ដល់ {max}។ |
+| Saved — but a goal outside its range was left out. | បានរក្សាទុក — ប៉ុន្តែគោលដៅដែលនៅក្រៅកម្រិតត្រូវបានទុកចោល។ |
+| Only the ministry’s leader, Campus Leadership or an admin sets the goals. | មានតែអ្នកដឹកនាំកិច្ចការបម្រើ ថ្នាក់ដឹកនាំសាខា ឬអ្នកគ្រប់គ្រងប៉ុណ្ណោះដែលកំណត់គោលដៅ។ |
+| Link to a scorecard number | ភ្ជាប់ទៅលេខក្នុងតារាងពិន្ទុ |
+| Not linked to a scorecard number | មិនបានភ្ជាប់ទៅលេខក្នុងតារាងពិន្ទុទេ |
+| No scorecard numbers are set for {ministry} yet. | មិនទាន់មានលេខតារាងពិន្ទុសម្រាប់ {ministry} នៅឡើយទេ។ |
+| Set your ministry on the Profile tab and your team’s Scorecard will show up here, ready to fill in. | កំណត់កិច្ចការបម្រើរបស់អ្នកនៅផ្ទាំងប្រវត្តិរូប នោះតារាងពិន្ទុរបស់ក្រុមអ្នកនឹងបង្ហាញនៅទីនេះ រួចរាល់សម្រាប់បំពេញ។ |
+| Scorecard (now reads as Scorecard) | តារាងពិន្ទុ |
+## 146. The structure board: main job and second job; a mentee's own 1-on-1s (My Ministry → Structure, Mentorship, Nov 2026)
+On the structure whiteboard a face dropped on a ministry asks, in a small box right there, "Main job here" (moves the person) or "Second job here" (they keep their main ministry and also serve here — the dashed face). "job" here is the ministry someone serves in, not paid work; if កិច្ចការបម្រើ reads better than ការងារ, use it everywhere in this section. "admin" is a tiny tag under a face (about 40px wide) — it must stay very short. "Let go" = lift your finger / release the mouse. The toasts are on screen for a few seconds. On Mentorship, one quiet line under a person I mentor says how many 1-on-1s THEY have held this month with the people they mentor; the long sentence is a privacy promise (only the count is shown, never what was said) — check that one first.
+
+| English | Khmer (draft) |
+|---|---|
+| Waits for an admin | រង់ចាំអ្នកគ្រប់គ្រង |
+| admin | អ្នកគ្រប់គ្រង |
+| You’re looking only, so nobody moves. To move people, switch to Edit. | អ្នកកំពុងមើលតែប៉ុណ្ណោះ ដូច្នេះគ្មាននរណាផ្លាស់ទីទេ។ ដើម្បីផ្លាស់ទីមនុស្ស សូមប្តូរទៅ កែសម្រួល។ |
+| Switch to Edit | ប្តូរទៅ កែសម្រួល |
+| They get both ministries’ pages on My Ministry. Drag their solid face to move the main job, the dashed one to move the second. | ពួកគេមានទំព័រកិច្ចការបម្រើទាំងពីរនៅក្នុង កិច្ចការបម្រើរបស់ខ្ញុំ។ អូសមុខបន្ទាត់ជាប់របស់ពួកគេ ដើម្បីផ្លាស់ទីការងារចម្បង ហើយអូសមុខបន្ទាត់ដាច់ៗ ដើម្បីផ្លាស់ទីការងារទីពីរ។ |
+| {name} is on the chart as {box}. Their profile changes only once an admin says yes (Admin → Approvals). | {name} នៅលើតារាងជា {box} ហើយ។ ប្រវត្តិរូបរបស់ពួកគេនឹងផ្លាស់ប្តូរ លុះត្រាតែអ្នកគ្រប់គ្រងយល់ព្រម (អ្នកគ្រប់គ្រង → ការអនុម័ត)។ |
+| They already oversee this ministry as the department’s Director. | ពួកគេមើលការខុសត្រូវលើកិច្ចការបម្រើនេះរួចហើយ ក្នុងនាមជានាយកផ្នែក។ |
+| This is already their second job. | នេះជាការងារទីពីររបស់ពួកគេរួចហើយ។ |
+| They already have {n} second jobs. | ពួកគេមានការងារទីពីរ {n} រួចហើយ។ |
+| {box} is already {name}’s main job | {box} ជាការងារចម្បងរបស់ {name} រួចហើយ |
+| {name} no longer also serves in {box} | {name} លែងបម្រើនៅ {box} ផងដែរហើយ |
+| {name}’s second job moved to {box} | ការងារទីពីររបស់ {name} បានផ្លាស់ទីទៅ {box} |
+| {name} in {box} | {name} នៅ {box} |
+| Main job here | ការងារចម្បងនៅទីនេះ |
+| moves from {box} | ផ្លាស់ចេញពី {box} |
+| Second job here | ការងារទីពីរនៅទីនេះ |
+| stays in {box} too | នៅ {box} ដដែលផងដែរ |
+| Let go on a ministry, a Director spot or the row of faces below. | សូមលែងនៅលើកិច្ចការបម្រើ កន្លែងនាយក ឬជួរមុខមនុស្សខាងក្រោម។ |
+| {name} also serves in {box} now | ឥឡូវ {name} បម្រើនៅ {box} ផងដែរ |
+| Their 1-on-1s this month: {held} held with their 1 person | ការជួបមួយទល់មួយរបស់ពួកគេខែនេះ៖ បានជួប {held} ដង ជាមួយមនុស្ស ១ នាក់របស់ពួកគេ |
+| Their 1-on-1s this month: {held} held with {met} of {n} people | ការជួបមួយទល់មួយរបស់ពួកគេខែនេះ៖ បានជួប {held} ដង ជាមួយ {met} នាក់ ក្នុងចំណោម {n} នាក់ |
+| {name}’s own 1-on-1s this month | ការជួបមួយទល់មួយផ្ទាល់របស់ {name} ខែនេះ |
+| The people {name} mentors, and the 1-on-1s {name} has held with each this month. Only the count — what they talked about stays between the two of them. | មនុស្សដែល {name} ណែនាំ និងចំនួនការជួបមួយទល់មួយដែល {name} បានជួបជាមួយម្នាក់ៗក្នុងខែនេះ។ មានតែចំនួនប៉ុណ្ណោះ — អ្វីដែលពួកគេបាននិយាយគ្នា នៅរវាងពួកគេទាំងពីរ។ |
+| {n} of {target} ✓ | {n} ក្នុងចំណោម {target} ✓ |
+| {n} of {target} | {n} ក្នុងចំណោម {target} |
+## 143. The structure whiteboard: changes wait for Apply again, and the SR Ministries group (My Ministry → Structure)
+
+The line above the board once a quarter is live, the question before Apply again, and the heading the board puts over Sry Noi, LTN and Ponlork Hope.
+
+| English | Khmer (draft) |
+|---|---|
+| Q{q} {year} is live — profiles match it. A change on the board waits until you tap Apply again. | Q{q} {year} ដំណើរការហើយ — ប្រវត្តិរូបត្រូវគ្នានឹងវា។ ការផ្លាស់ប្តូរលើក្តារ រង់ចាំរហូតដល់អ្នកចុច អនុវត្តម្តងទៀត។ |
+| Update these profiles to match the structure? Each person is told. | ធ្វើបច្ចុប្បន្នភាពប្រវត្តិរូបទាំងនេះ ឲ្យត្រូវនឹងរចនាសម្ព័ន្ធឬ? ម្នាក់ៗនឹងត្រូវបានប្រាប់។ |
+| SR Ministries | កិច្ចការបម្រើ SR |
+| Stays in {box} | នៅតែក្នុង {box} |
+| Also serves here | បម្រើនៅទីនេះផងដែរ |
+| For someone in two ministries: they keep their main one and serve here too. | សម្រាប់អ្នកដែលនៅក្នុងកិច្ចការបម្រើពីរ៖ ពួកគេរក្សាកិច្ចការបម្រើចម្បងរបស់ពួកគេ ហើយបម្រើនៅទីនេះផងដែរ។ |

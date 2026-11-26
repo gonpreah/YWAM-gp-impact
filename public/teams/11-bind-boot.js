@@ -511,6 +511,9 @@ function bindAway(){
     var bindMmPick=function(){ document.querySelectorAll('[data-mmpick]').forEach(function(b){
       b.onclick=function(){ var v=b.getAttribute('data-mmpick'), i=v.lastIndexOf('|'); gpTap(); S.mmBrowseDept=v.slice(0,i); S.mmBrowseMinistry=v.slice(i+1); S.mmPickOpen=false; S.mmPickQ=''; S.mmTab='ministry'; S.mmTabTouched=false; render(); window.scrollTo(0,0); }; }); };
     bindMmPick();
+    /* the slim row of your own ministries under the header (2–4 of them): one tap, no sheet */
+    document.querySelectorAll('[data-mmgo]').forEach(function(b){
+      b.onclick=function(){ var v=b.getAttribute('data-mmgo'), i=v.lastIndexOf('|'); gpTap(); S.mmBrowseDept=v.slice(0,i); S.mmBrowseMinistry=v.slice(i+1); S.mmPickOpen=false; S.mmPickQ=''; S.mmTab='ministry'; S.mmTabTouched=false; render(); window.scrollTo(0,0); }; });
     document.querySelectorAll('[data-mmpick-none]').forEach(function(b){
     });
     var mbd=document.getElementById('mmBrowseDeptSel');
@@ -560,6 +563,7 @@ function bindAway(){
   bindOrg_();
   bindKmReview_();
   bindBoardReport_();
+  bindReport_();   // the quarterly report, ministry by ministry (29-report.js)
   bindF30_();
   bindSupport_();
   bindPrayer_();
@@ -567,7 +571,8 @@ function bindAway(){
   bindTests_();
   bindLibPlus_();
   bindHosp();
-  if(S.view==='ministry') bindLead_();
+  if(S.view==='ministry' || S.view==='bdroom'){ bindLead_(); bindMeeting_(); }   // the board, and the weekly leadership meeting on it (27-meeting.js) — and the same tools in the Advisory Board's room
+  bindBoardroom_();   // the Advisory Board: its invite page, the big picture, the campuses, finances, its room (30-boardroom.js)
   if(typeof dutyHtml==='function') bindSched_();
 
   if(!S.leaveDraft) S.leaveDraft={from:'',to:'',type:'',reason:'',coverage:'',ack:false};
@@ -1186,6 +1191,7 @@ function bind(){
   /* GP Tasks: the page and its buttons */
   bindGpTasks_(); bindVoice_();
   bindPeoplePick_();   // every people picker with a search box on the page (12-tasks.js)
+  if(typeof bindGoStruct_==='function') bindGoStruct_('#main [data-gostruct]');   // "Q1's structure is ready — make it live" (23-structure.js)
   if(S.view==='ministry' && typeof bindSbLead_==='function' && document.querySelector('#sbWrap, [data-sbq]')) bindSbLead_();   // Campus Leadership → Structure, the whiteboard (23-structure.js)
   if(!document.getElementById('sbWrap')) document.body.classList.remove('sbFullOn');
   bindKhmer_();   // Learn Khmer (15-khmer.js)
@@ -1362,84 +1368,8 @@ function bind(){
     weekClear();
   };
 
-  /* --- OKRs --- */
-  var onb=document.getElementById('okrNewBtn');
-  if(onb) onb.onclick=function(){ S.okrAdmin=null; S.okrForm=true; S.okrEditId=null; S.okrPaste=false; render(); };
-  var ocb=document.getElementById('okrCancelBtn');
-  if(ocb) ocb.onclick=function(){ S.okrForm=false; S.okrEditId=null; S.okrAdmin=null; render(); };
-  var osb=document.getElementById('okrSaveBtn');
-  if(osb) osb.onclick=function(){ okrSave(osb); };
-  okrKrRows_().forEach(function(r){ okrBindKrRow_(r.getAttribute('data-okr-kr')); });
-  document.querySelectorAll('#okrKrList .okrRow').forEach(okrBindRm_);
-  var oka=document.getElementById('okrKrAddBtn');
-  if(oka) oka.onclick=function(){ gpTap(); okrAddKr_(); };
-  var okh=document.getElementById('okrHeadAddBtn');
-  if(okh) okh.onclick=function(){ gpTap(); okrAddHead_(); };
-  var opb=document.getElementById('okrPasteBtn');
-  if(opb) opb.onclick=function(){ gpTap(); S.okrPaste=true; S.okrPasteParsed=null; render();
-    var ta=document.getElementById('okrPasteText'); if(ta) ta.focus(); };
-  var opp=document.getElementById('okrPastePreview');
-  if(opp) opp.onclick=function(){
-    S.okrPasteText = document.getElementById('okrPasteText').value;
-    var parsed = okrParsePaste_(S.okrPasteText);
-    if(!parsed.objectives.length){ showMsg(t('Nothing to add yet — paste your OKRs in the box.')); return; }
-    S.okrPasteParsed = parsed; render();
-  };
-  var opk=document.getElementById('okrPasteBack');
-  if(opk) opk.onclick=function(){ S.okrPasteParsed=null; render(); };
-  var opc=document.getElementById('okrPasteCancel');
-  if(opc) opc.onclick=function(){ S.okrPaste=false; S.okrPasteParsed=null; S.okrPasteText=''; render(); };
-  var ops=document.getElementById('okrPasteSave');
-  if(ops) ops.onclick=function(){ okrPasteSave_(ops); };
-  document.querySelectorAll('[data-okr-edit]').forEach(function(b){
-    b.onclick=function(){
-      var id=b.getAttribute('data-okr-edit'), o=okrFind_(id);
-      // an admin editing from "Every department's OKRs" writes that objective's own campus / department
-      S.okrAdmin = (o && S.me.isAdmin && b.closest('[data-okradmin]')) ? { campus:o.campus, dept:o.dept } : null;
-      S.okrEditId=id; S.okrForm=true; S.okrPaste=false; render();
-      var f=document.getElementById('okrForm'); if(f) f.scrollIntoView({behavior:'smooth', block:'start'});
-    };
-  });
-  var oac=document.getElementById('okrAdmCampus');
-  if(oac) oac.onchange=function(){ S.okrAdminPick={ campus:oac.value, dept:'' }; render(); };
-  var oad=document.getElementById('okrAdmDept');
-  if(oad) oad.onchange=function(){ S.okrAdminPick=Object.assign({}, S.okrAdminPick||{}, { dept:oad.value }); };
-  var oan=document.getElementById('okrAdmNewBtn');
-  if(oan) oan.onclick=function(){ var p=S.okrAdminPick||{}; if(!p.campus || !p.dept) return; S.okrAdmin={ campus:p.campus, dept:p.dept }; S.okrEditId=null; S.okrForm=true; render(); var f=document.getElementById('okrForm'); if(f) f.scrollIntoView({behavior:'smooth', block:'start'}); };
-  document.querySelectorAll('[data-okr-del]').forEach(function(b){
-    b.onclick=function(){
-      if(!gpAsk_(t('Delete this objective?'))) return;
-      okrDelete(b.getAttribute('data-okr-del'));
-    };
-  });
-  document.querySelectorAll('[data-okr-manual]').forEach(function(inp){
-    var ref = inp.getAttribute('data-okr-manual');
-    inp.oninput=function(){
-      inp.style.setProperty('--p', inp.value+'%');
-      var lbl=document.querySelector('[data-okr-pct="'+ref+'"]');
-      if(lbl) lbl.textContent=(Number(inp.value)>=100?'✓ ':'')+inp.value+'%';
-    };
-    inp.onchange=function(){
-      var parts=ref.split('|');
-      okrSetManual(parts[0], Number(parts[1]), inp.value);
-    };
-  });
-  document.querySelectorAll('[data-okr-step]').forEach(function(b){
-    b.onclick=function(){
-      gpTap();
-      var parts=b.getAttribute('data-okr-step').split('|'), o=okrFind_(parts[0]), kr=o && o.krs[Number(parts[1])];
-      if(kr) okrSetCount(parts[0], Number(parts[1]), (Number(kr.current)||0)+Number(parts[2]));
-    };
-  });
-  document.querySelectorAll('[data-okr-count]').forEach(function(b){
-    b.onclick=function(){
-      var parts=b.getAttribute('data-okr-count').split('|'), o=okrFind_(parts[0]), kr=o && o.krs[Number(parts[1])];
-      if(!kr) return;
-      var v = gpAskText_(t('How many so far?'), String(Number(kr.current)||0));
-      if(v===null || v.trim()==='' || isNaN(Number(v))) return;
-      okrSetCount(parts[0], Number(parts[1]), Number(v));
-    };
-  });
+  /* --- Rocks and the Scorecard (teams/28-rocks.js) --- */
+  bindRocks_();
 
   /* --- Goals & Tasks page --- */
   var ggm=document.getElementById('goGoalsFromMe');
@@ -1792,7 +1722,7 @@ function bind(){
       S.structLoading[sKey]=true;
       run('getStructure',[S.auth.user,S.auth.pin,sCampus,sYear,sQ],function(d){
         S.structLoading[sKey]=false;
-        if(d && d.ok) S.structCache[sKey]={ doc:d.doc, source:d.source, plan:d.plan }; else S.structError[sKey]=(d && d.err) || t('The server answered without the saved structure.');
+        if(d && d.ok) S.structCache[sKey]={ doc:d.doc, source:d.source, plan:d.plan, diff:d.diff||null }; else S.structError[sKey]=(d && d.err) || t('The server answered without the saved structure.');
         render();
       }, function(e){ S.structLoading[sKey]=false; S.structError[sKey]=(e && e.message) || t('Connection problem — try again.'); render(); });
     }
@@ -1801,7 +1731,7 @@ function bind(){
       S.structLoading[sKey]=true;
       run('getStructure',[S.auth.user,S.auth.pin,sCampus,sYear,sQ],function(d){
         S.structLoading[sKey]=false;
-        S.structCache[sKey] = (d && d.ok) ? { doc:d.doc, source:d.source, plan:d.plan } : { doc:null, source:'none' };
+        S.structCache[sKey] = (d && d.ok) ? { doc:d.doc, source:d.source, plan:d.plan, diff:d.diff||null } : { doc:null, source:'none' };
         render();
       }, function(e){ S.structLoading[sKey]=false; S.structCache[sKey]={ doc:null, source:'none' }; render(); });
     }
@@ -2019,7 +1949,7 @@ function runP(fn, args){
 
 function refreshAll(){
   if(!S.me) return Promise.resolve();
-  if(S.board){ S.orgLoading=false; orgLoad_(); return gpGuestLoadBase_(); }
+  if(S.board){ S.orgLoading=false; orgLoad_(); if(S.bd && S.bd.ov) bdLoad_(true); return gpGuestLoadBase_(); }   // pull to refresh: the board's Overview again too
   if(S.guest) return gpGuestLoadBase_();
   var u=S.auth.user, k=S.auth.pin;
   if(gpTasksApp_()) return runP('getTasksBoot',[u,k,gpTaCalFrom_()]).then(function(d){ if(d && d.ok){ S.me=d.staff; S.profile=d.profile||{}; applyBoot(d); } });   // the tasks app: its own boot again
@@ -2050,7 +1980,7 @@ function refreshAll(){
    ?fresh). If the page itself came from the offline copy (the worker leaves a
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
-var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/20-game.js','teams/21-voice.js','teams/22-setup.js','teams/23-structure.js','teams/24-school.js','teams/25-intercession.js','teams/26-worship.js','teams/24-school.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
+var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/20-game.js','teams/21-voice.js','teams/22-setup.js','teams/23-structure.js','teams/24-school.js','teams/25-intercession.js','teams/26-worship.js','teams/27-meeting.js','teams/28-rocks.js','teams/24-school.js','teams/11-bind-boot.js','finance.js','km.js','library.js', 'teams/29-report.js', 'teams/30-boardroom.js'];
 if(gpTasksApp_()) GP_VER_FILES=['tasks.html'].concat(GP_VER_FILES.slice(1), ['teams/12-tasks.js','teams/13-calendar.js']);   // the tasks app's page is tasks.html
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){

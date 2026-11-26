@@ -50,7 +50,8 @@ const srow = (id) => ({ campus: 'siemreap', week: WK, year: YR, device: 'tok_' +
 mem.survey = [srow('st1'), srow('st2'), srow('st3')];
 mem.entries = [{ campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', metric: 'Salvations', week: WK, year: YR, value: 5, updated: '' },
   { campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', metric: 'Salvations', week: Math.max(1, WK - 13), year: YR, value: 2, updated: '' }];
-mem.okrs = [{ id: 'o1', campus: 'siemreap', dept: 'Community Service', quarter: Math.min(3, Math.floor((WK - 1) / 13)) + 1, year: YR, objective: 'Open the second cafe', krs: [] }];
+/* the quarter's rocks (they replaced the objectives): the board's report lists them with where each stands — never a note */
+mem.rocks = { seeded: 'test', rocks: [{ id: 'k1', campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', owner: '', year: YR, q: Math.min(3, Math.floor((WK - 1) / 13)) + 1, title: 'Open the second cafe', status: 'off', note: 'A note only staff read', by: '', at: '', updated: '' }] };
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer(async (req, res) => {
   if (req.url.indexOf('/.netlify/functions/api') === 0) {
@@ -259,11 +260,18 @@ const main = (page) => page.$eval('#main', e => e.innerText);
   await page.fill('#li_user', 'mary'); await page.fill('#li_pin', '4321');
   await page.click('#loginBtn'); await page.waitForTimeout(1500);
   const tabs = await page.$$eval('nav.bottom button', (b) => b.map((x) => x.textContent.trim()));
-  ok('a board member signs in on the same screen and gets their own app: YWAM GP · Campuses · Report · Library', tabs.join('|') === 'YWAM GP|Campuses|Report|Library', tabs.join('|'));
+  /* Nov 2026 (the Advisory Board's oversight, teams/30-boardroom.js): the bar is Overview · Campuses · Finances · Board room · Report;
+     the YWAM GP page and the campus page with the public base figures moved to ☰ (YWAM GP, Base). The checks below are the same, reached from there. */
+  ok('a board member signs in on the same screen and gets their own app: Overview · Campuses · Finances · Board room · Report', tabs.join('|') === 'Overview|Campuses|Finances|Board room|Report', tabs.join('|'));
+  await page.click('#menuBtn'); await page.waitForTimeout(200);
+  const menuItems = await page.$$eval('[data-menu-item]', (b) => b.map((x) => x.getAttribute('data-menu-item')).join());
+  ok('… with YWAM GP, Base and the Library in ☰', menuItems === 'bdhub,ywamgp,base,qreport,p360,library,boardlogout', menuItems);
+  await page.click('[data-menu-item="ywamgp"]'); await page.waitForTimeout(500);
   let txt = await main(page);
   ok('… welcomed by name and role', /Welcome, Mary Board/.test(txt) && /President/i.test(txt));
   ok('… with no staff sign-in behind it', await page.evaluate(() => !S.auth.user && S.board && S.guest));
-  await page.click('nav.bottom [data-tab="base"]'); await page.waitForTimeout(800);
+  await page.click('#menuBtn'); await page.waitForTimeout(200);
+  await page.click('[data-menu-item="base"]'); await page.waitForTimeout(800);
   txt = await main(page);
   ok('Campuses: each campus\'s leadership, departments with their directors and ministry leaders', /Campus Leadership Team/i.test(txt) && /Departments/i.test(txt) && /Director: Dara Sok/.test(txt) && /Cafe · Kanha Lim/.test(txt));
   ok('… without the staff-only prompt to fill in a profile', !/Add it to my profile/.test(txt));
@@ -271,8 +279,8 @@ const main = (page) => page.$eval('#main', e => e.innerText);
   ok('the board view fits a 320px phone', await page.evaluate(() => document.documentElement.scrollWidth <= 321));
   await page.click('nav.bottom [data-tab="report"]'); await page.waitForTimeout(700);
   const rep = await main(page);
-  ok('Report: the quarter for YWAM GP and each campus — staff, health from 3+ check-ins, salvations against last quarter, objectives',
-    /Q\d \d{4} report/.test(rep) && /YWAM Poipet/.test(rep) && /YWAM Siem Reap/.test(rep) && /3 check-ins/.test(rep) && /needs 3 check-ins or more/.test(rep) && /Salvations\n5\nQ\d: \d/.test(rep) && /Open the second cafe/.test(rep) && /Dara Sok/.test(rep), rep.slice(0, 400).replace(/\n/g, ' / '));
+  ok('Report: the quarter for YWAM GP and each campus — staff, health from 3+ check-ins, salvations against last quarter, the quarter’s rocks with where each stands (title and status, no note)',
+    /Q\d \d{4} report/.test(rep) && /YWAM Poipet/.test(rep) && /YWAM Siem Reap/.test(rep) && /3 check-ins/.test(rep) && /needs 3 check-ins or more/.test(rep) && /Salvations\n5\nQ\d: \d/.test(rep) && /Rocks for Q\d/i.test(rep) && /Open the second cafe/.test(rep) && /Off track/.test(rep) && !/A note only staff read/.test(rep) && !/[Oo]bjective|OKR/.test(rep) && /Dara Sok/.test(rep), rep.slice(0, 400).replace(/\n/g, ' / '));
   ok('… with Print or save as PDF, and it fits the phone too', !!(await page.$('#repPrint')) && await page.evaluate(() => document.documentElement.scrollWidth <= 321));
   await page.screenshot({ path: OUT + '/board-report.png', fullPage: true });
   await page.screenshot({ path: OUT + '/board-campus.png', fullPage: true });

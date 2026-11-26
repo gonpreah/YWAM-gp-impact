@@ -37,6 +37,8 @@ const SERVER = [
   'test-boot.mjs',       // getMyBoot: one call per page open
   'test-week-auth.mjs',  // weekly health: anonymity + mentor visibility
   'test-okr-auth.mjs',   // OKR writes stay inside your campus + department
+  'test-okr-easy.mjs',   // (was the OKR editor) the OKR pages are gone from the page's code and its words; the stored objectives and their handlers stay
+  'test-rocks.mjs',      // Rocks: who writes which (campus and department from the staff record), every staff member reads; objectives and the meeting's rocks move across once; the Scorecard's goals
   'test-year.mjs',       // weeks belong to a year; writing numbers needs a name
   'test-week-year.mjs',  // 28–31 Dec 2026 are week 1 of 2027: both pages and the server agree, and a week 1 saved then lands in 2027
   'test-read-your-writes.mjs', // a save answers with what it saved, not a stale read
@@ -51,6 +53,9 @@ const SERVER = [
   'test-hospitality.mjs', // SR Hospitality: Hospitality ministry + admins only; buildings, rooms, beds; bookings cleaned, no bed in two bookings a night, maintenance beds out; upcoming Teams Database teams are bed requests until booked; bed board moves / swaps / placing / taking off
   'test-duty.mjs', // weekly schedules: Culinary makes the cooking schedule, Hospitality the morning chores (and admins); new weeks from the template then the week before; drafts hidden until published; names on offer (campus staff, other staff, teams here, guests, typed before); a team sees them in the portal once arrived
   'test-holidays.mjs', // national holidays aren't leave: Khmer New Year and Christmas week (Mon–Fri of their week, every year) and dated Pchum Ben, counted out of every request on file; admin keeps the dated list; schedules leave out staff on leave all week
+  'test-lead-meeting.mjs', // the leadership meeting: Campus Leadership + admins only; the meeting day; scorecard (typed / linked to a metric), rocks, headlines; the running state on the server; to-dos through the board into GP Tasks; issues solved through their card; the record
+  'test-quarter-report.mjs', // the quarterly report, ministry by ministry: who opens what (whole campus / own ministries / the board), the one call, each tool's highlights, nothing private in any answer, the story's rights and caps, quarter edges, the bell's boot field
+  'test-board-room.mjs',   // the Advisory Board: the invite link (hash only, one use, Google / PIN / a staff profile), the read matrix for both campuses, every handler walked with a board sign-in (no write outside its room), the room's blobs apart from a campus's, the privacy scan
   'test-lead-board.mjs', // the leadership meeting board: Campus Leadership + admins only, cards (agenda item / project, owner, due, OKR link) cleaned, Done stamped and cleared, campuses apart
   'test-structure.mjs', // quarterly org-structure snapshots: admin-only save built on the server from active staff, read exact / latest-earlier (copied) / none, per campus, replace on re-save
   'test-admin-leave.mjs', // Admin → Leave: only an admin reads everyone's requests (who, campus, dept, mentor, reason) and year totals; admin decides waiting/noted ones, not decided ones
@@ -133,6 +138,9 @@ const BROWSER = [
   'test-hospitality-page.mjs', // SR Hospitality page: menu + My Ministry door for Hospitality and admins only, tonight tiles, week/month/quarter bars, team requests fit / short, Book beds + Pick beds for me, bed clashes, rooms; the 14-day bed calendar; the bed board's tap-to-move, swap and drag; phone and desktop
   'test-duty-page.mjs', // weekly schedules page: My Home card with your duties, the menu, the table (scrolls in its card), Share as image (a PNG), Culinary's draft from last week + name picker + rows + Publish, Hospitality's chores place by place; phone and desktop
   'test-holidays-page.mjs', // national holidays on the leave page (listed, left out of a new request's count, with why) and in Admin → Leave (dated ones edited and saved)
+  'test-lead-meeting-ui.mjs', // Board → Meeting against the real api.js: set up, a whole meeting start to end on two phones, Past meetings, the weekday setting, Khmer, 320px, a wide screen
+  'test-quarter-report-ui.mjs', // the quarterly report on the page, real api.js: ☰, a ministry page with ▲/▼ and tool highlights, writing a story, Donor and Government views, both languages, print rules, Khmer, 320px, a leader's own page, the board, the bell
+  'test-board-room-ui.mjs', // the Advisory Board on the page, real api.js: an invite opened three ways, the Overview (390 / 320 / 1024), a ministry's Scorecard and Rocks to read, Finances, a board meeting in the Board room, Khmer, a staff member's ☰ entry
   'test-lead-board-page.mjs', // Campus Leadership on My Ministry: no weekly numbers, OKRs as the dashboard, the Monday meeting board (standing items, focus areas, cards with OKR links, arrows / drag, editing the board); phone and desktop
   'test-menu.mjs', // the hamburger menu by role, in sections: everyone (My Ministry, Leave, Operations → Weekly schedules), Hospitality (+ SR Hospitality), portal people (Applications → Portal), HR and admins (Admin); no Weekly Check-in or GP Dashboard
   'test-admin-select.mjs', // Admin: home menu → Accounts (campus chips, search) → a row opens that person's page → Back keeps the search and the narrowed list
@@ -198,13 +206,13 @@ const BROWSER = [
   'test-ministry-kpis.mjs', // the ministry's whole log form on My week: which card, and carry-forward
   'test-mentor-health.mjs', // a mentor sees a mentee by name
   'test-mentor-weeks.mjs',  // a mentor can look back at any week: picker, check-in, habits, goals, logs
-  'test-okr-easy.mjs',      // OKRs the SugarOKR way: all on one page, a slider or count per key result, headings, Paste OKRs
+  'test-rocks-ui.mjs',      // Rocks and the Scorecard on the page: a ministry's Rocks tab (add in a line, on / off / done, a note, next quarter), the Scorecard with goals and ✓ / ✗, Campus Leadership and its meeting, a teammate's page, Khmer, 320px, dark
   'test-notif-bell-actions.mjs', // an action button drawn in the bell drawer actually works, not just the inline card
-  'test-okr-admin-view.mjs', // admin sees every department's OKRs, collapsed, read-only; non-admin sees none of it
+  'test-okr-admin-view.mjs', // (was the admin's OKR view) an admin sees every department's rocks on both campuses, folded, and changes or adds any; a non-admin sees none of it
   'test-ministry-browse.mjs', // My Ministry's "jump to any ministry" picker: admin authorization, and Save Week uses the browsed ministry's own dept
   'test-personal-metrics-cadence.mjs', // Campus Leadership personal figures move to the weekly card; Total Staff/Staff Debt get their own Department Headcount section
   'test-metric-cadence.mjs', // admin-only monthly/quarterly cadence per metric; the monthly/quarterly section writes to its own anchor week
-  'test-metric-okr-feeds.mjs', // a metric's own row shows which OKR(s) it feeds, scoped to its own campus
+  'test-metric-okr-feeds.mjs', // (was “feeds an objective”) the box a number is typed in says the weekly goal it is held against, its own ministry's only
   'test-pull-jitter.mjs', // a scroll-down swipe's initial settling jitter must not get mistaken for a pull-to-refresh and cancel native scrolling
   'audit-load.mjs',         // one function invocation per page open
   'audit-paint.mjs',        // first paint even with the font CDN hanging

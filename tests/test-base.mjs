@@ -77,6 +77,13 @@ const OKRS = [{
   krs: [{ text: 'Students in discipleship', metricKey: 'Youth Education|YDC|Students in Discipleship', target: 30, manual: 0 }]
 }];
 let OKR_STORE = OKRS.map(o => ({ ...o, krs: o.krs.map(k => ({ ...k })) }));
+/* The quarter's rocks (they replaced the objectives on screen, Nov 2026): mine, my teammate's ministry's, and a working store. */
+const RK = (id, dept, ministry, owner, title, status) => ({ id, campus: P, dept, ministry, owner, year: NOW.getFullYear(), q: Q, title, status, note: '', by: 'st1', at: '', updated: '' });
+let ROCK_STORE = [
+  RK('k1', 'Community Service', 'Outreach Teams', 'st1', 'Every outreach team leaves a village with a church contact', 'on'),
+  RK('k2', 'Youth Education', 'YDC', 'st2', 'YDC students know they are known', 'off'),
+  RK('k3', 'Youth Education', 'YDC', '', 'A second classroom', 'on')];
+const ROCK_SAVES = [];
 const DATA = {
   /* getData carries the roster in production — the dashboard's staff figures are
      counted from it, so leaving it out here would test a page that cannot count. */
@@ -111,19 +118,20 @@ async function newPage(seed) {
     if (b.fn === 'getMyBoot') out = { ok: true, staff: ME, profile: {}, roster: [ME, MATE],
       logs: [], habits: null, mentees: [], mentorRequests: [], goals: [], checkins: CHECKIN_STORE,
       trips: { ok: true, trips: [], totals: {}, reasons: { work: ['Ministry trip'], personal: ['Family'] }, hasMentor: false },
-      tripRequests: [], ministry: null, base: { ...DATA, okrs: OKR_STORE } };
+      tripRequests: [], ministry: null, base: { ...DATA, okrs: OKR_STORE }, rocks: ROCK_STORE };
     else     if (b.fn === 'teamRoster') out = [ME, MATE];
     else if (b.fn === 'staffProfile') out = { ok: true, staff: MATE, goals: [],
       activity: { weeksTracked: 4, daysLogged: 18, lastLogged: '2026-08-10' }, awayWork: {}, isMe: false };
-    // a working store, so the editor's writes really come back
-    else if (b.fn === 'saveObjective') {
-      const o = b.args[0];
-      OKR_STORE = OKR_STORE.filter(x => x.id !== o.id).concat([{ ...o, krs: o.krs.map(k => ({ ...k })) }]);
-      out = { ...DATA, okrs: OKR_STORE };
-    } else if (b.fn === 'deleteObjective') {
-      OKR_STORE = OKR_STORE.filter(x => x.id !== b.args[0]);
-      out = { ...DATA, okrs: OKR_STORE };
-    }
+    // a working store, so a rock's writes really come back
+    else if (b.fn === 'saveRock') {
+      const x = b.args[2]; ROCK_SAVES.push(x);
+      if (x.id) ROCK_STORE = ROCK_STORE.map(k => k.id === x.id ? { ...k, title: x.title, status: x.status || k.status, note: x.note || '', owner: x.owner || '' } : k);
+      else ROCK_STORE = ROCK_STORE.concat([{ ...RK('n' + ROCK_SAVES.length, x.dept, x.ministry || '', x.owner || '', x.title, 'on'), year: x.year, q: x.q }]);
+      out = { ok: true, saved: x.id || 'n' + ROCK_SAVES.length, rocks: ROCK_STORE };
+    } else if (b.fn === 'deleteRock') {
+      ROCK_STORE = ROCK_STORE.filter(k => k.id !== b.args[2]);
+      out = { ok: true, rocks: ROCK_STORE };
+    } else if (b.fn === 'saveObjective' || b.fn === 'deleteObjective') { errors.push('the page called ' + b.fn + ' — no screen should any more'); }
     else if (b.fn === 'staffLogin') out = { ok: true, staff: ME, profile: {} };
     else if (b.fn === 'getMyTrips') out = { ok: true, trips: [], totals: {}, reasons: { work: ['Ministry trip'], personal: ['Family'] }, hasMentor: false };
     else if (b.fn === 'getMyWeekly') out = { ok: true, goals: [], checkins: CHECKIN_STORE };
@@ -247,7 +255,7 @@ console.log('quarter chip title: ' + await page.$eval('.ddHead h3', e => e.textC
 await page.click('#ddClose');
 
 
-// 9. OKR block + full-page screenshot
+// 9. no OKR block on Base + full-page screenshot
 console.log('OKR block on Base: ' + await page.evaluate(() => document.body.innerText.includes('OKRs')));
 await page.screenshot({ path: OUT + 'base-full.png', fullPage: true });
 
@@ -267,27 +275,50 @@ if (ydcRow) {
   await page.click('#ddClose');
 }
 
-// 10a. OKRs: off Base, on My Home (mine only), and on a teammate's page
-console.log('\n=== OKRs ===');
-console.log('OKR heading on Base:  ' + await page.evaluate(() =>
-  Array.from(document.querySelectorAll('#main h3')).some(h => /OKR/.test(h.textContent))));
+// 10a. Rocks (they replaced the OKRs): off Base, on My Ministry's Rocks tab, and on a teammate's page
+const need = (name, cond, extra) => { console.log((cond ? 'ok   ' : 'FAIL ') + name + (cond || extra === undefined ? '' : '  → ' + extra)); if (!cond) process.exitCode = 1; };
+console.log('\n=== ROCKS ===');
+need('no OKR or Rocks heading on Base', !(await page.evaluate(() => Array.from(document.querySelectorAll('#main h3')).some(h => /OKR|Rocks/.test(h.textContent)))));
 const tabs = await page.$$eval('nav.bottom button', b => b.map(x => x.textContent.trim()));
 console.log('tabs (no OKR tab):    ' + tabs.join(' | '));
+need('the bottom bar has no OKR or Rocks tab of its own', !tabs.some(x => /OKR|Rocks/.test(x)));
 
 await page.click('nav.bottom [data-tab="week"]');
 await page.waitForTimeout(1100);
-console.log('\n-- My Home --');
-console.log('OKR entry card: ' + await page.$$eval('#main h3', e => e.map(x => x.textContent.trim()).filter(x => /OKR/.test(x)).join(', ')));
-await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(400); await page.click('[data-mmtab="okr"]');   // OKRs: My Ministry's second tab
+console.log('\n-- My Ministry → Rocks --');
+await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(400); await page.click('[data-mmtab="okr"]');   // Rocks: the tab's key is still 'okr'
 await page.waitForTimeout(1100);
-console.log('OKR heading:   ' + await page.$$eval('#main h3, #main h2', e => e.map(x => x.textContent.trim()).filter(x => /OKR/.test(x)).join(', ')));
-console.log('focus card:    ' + await page.$eval('.focusCard', e => e.innerText.replace(/\n+/g, ' | ').slice(0, 120)).catch(() => '(none on your own OKR page — the page is just the OKRs)'));
-console.log('my objectives: ' + await page.$$eval('.okrCard', e => e.length));
-console.log('key results:   ' + (await page.$$eval('.kr', e => e.map(x => x.innerText.replace(/\n+/g, ' | ')))).join('  //  '));
-console.log('other depts shown (should be 0): ' + await page.evaluate(() =>
-  Array.from(document.querySelectorAll('.okrObj')).filter(o => /YDC students/.test(o.textContent)).length));
-console.log('no fold-away button: ' + await page.evaluate(() => !document.querySelector('#okrOtherBtn')));
-await page.screenshot({ path: OUT + 'me-okr.png', fullPage: true });
+const rkHead = await page.$$eval('#main h3, #main h2', e => e.map(x => x.textContent.trim()).filter(x => /Rocks/.test(x)).join(', '));
+need('the tab is headed with the quarter’s Rocks, not OKRs', new RegExp('Q' + Q + ' Rocks').test(rkHead) && !/OKR/.test(await page.$eval('#main', e => e.innerText)), rkHead);
+const mineRocks = await page.$$eval('[data-rkscope$="|Community Service|Outreach Teams"] .lmName', e => e.map(x => x.textContent));
+need('my ministry’s rocks are on it', mineRocks.join() === 'Every outreach team leaves a village with a church contact', mineRocks.join());
+need('another department’s rocks are not', !(await page.evaluate(() => /YDC students/.test(document.getElementById('rocksTab').innerText))));
+need('no percentages, sliders or key results: three buttons a rock', (await page.$$('[data-rock="k1"] .lmSt')).length === 3 && !(await page.$('#rocksTab input[type=range], #rocksTab .kr, #rocksTab .okrCard')));
+await page.screenshot({ path: OUT + 'me-rocks.png', fullPage: true });
+
+// add, mark, edit, delete — the whole of what a rock can do
+await page.fill('[data-rkadd$="|Community Service|Outreach Teams"]', 'Plant a church in every village we reach');
+await page.click('[data-rkaddbtn$="|Community Service|Outreach Teams"]'); await page.waitForTimeout(900);
+let sv = ROCK_SAVES[ROCK_SAVES.length - 1];
+need('one line adds a rock for my ministry, this quarter, mine', sv && sv.title === 'Plant a church in every village we reach' && sv.dept === 'Community Service' && sv.ministry === 'Outreach Teams' && sv.owner === 'st1' && sv.q === Q && sv.campus === P, JSON.stringify(sv));
+need('… and it shows', (await page.$$eval('#rocksTab .lmName', e => e.map(x => x.textContent))).includes('Plant a church in every village we reach'));
+const newId = ROCK_STORE[ROCK_STORE.length - 1].id;
+await page.click('[data-rockst="' + newId + '|off"]'); await page.waitForTimeout(900);
+sv = ROCK_SAVES[ROCK_SAVES.length - 1];
+need('a tap marks it off track', sv.id === newId && sv.status === 'off' && await page.$eval('[data-rockst="' + newId + '|off"]', b => b.classList.contains('sel')));
+await page.click('[data-rockedit="' + newId + '"]'); await page.waitForTimeout(500);
+need('Edit opens its form with the title in it', (await page.$eval('[data-rkf="title"]', e => e.value)) === 'Plant a church in every village we reach');
+await page.fill('[data-rkf="title"]', 'Plant a church in every village (revised)');
+await page.click('#rkSave'); await page.waitForTimeout(900);
+need('the new title is saved and shown', ROCK_SAVES[ROCK_SAVES.length - 1].title === 'Plant a church in every village (revised)' && (await page.$$eval('#rocksTab .lmName', e => e.map(x => x.textContent))).some(x => /revised/.test(x)));
+page.on('dialog', d => d.accept());
+const beforeDel = await page.$$eval('#rocksTab [data-rock]', e => e.length);
+await page.click('[data-rockedit="' + newId + '"]'); await page.waitForTimeout(400);
+await page.click('#rkDel'); await page.waitForTimeout(600);
+if (await page.$('#askYes')) { await page.click('#askYes'); await page.waitForTimeout(900); }
+const afterDel = await page.$$eval('#rocksTab [data-rock]', e => e.length);
+need('the form’s last button takes the rock away', afterDel === beforeDel - 1 && !ROCK_STORE.some(k => k.id === newId), beforeDel + ' -> ' + afterDel);
+await page.screenshot({ path: OUT + 'rocks-editor.png', fullPage: true });
 
 console.log('\n-- a teammate in Team --');
 await page.click('nav.bottom [data-tab="team"]');
@@ -298,116 +329,14 @@ if (card) {
   await card.click();
   await page.waitForTimeout(1200);
   console.log('their name:      ' + await page.$eval('.pcard .pname', e => e.textContent.trim()));
-  console.log('OKR heading:     ' + await page.$$eval('#main h3', e => e.map(x => x.textContent.trim()).filter(x => /OKR/.test(x)).join(', ')));
+  const ph = await page.$$eval('#main h3', e => e.map(x => x.textContent.trim()).filter(x => /Rocks|OKR/.test(x)).join(', '));
+  need('their page is headed with the quarter’s Rocks', /Rocks/.test(ph) && !/OKR/.test(ph), ph);
   console.log('focus label:     ' + await page.$eval('.focusCard .fLabel', e => e.textContent.trim()).catch(() => '(no focus card)'));
-  console.log('their objectives: ' + await page.$$eval('.okrCard', e => e.length));
   console.log('goals heading:   ' + await page.$$eval('#main h3', e => e.map(x => x.textContent.trim()).filter(x => /goals/i.test(x)).join(', ')));
-  // their objective must be their department's, not the reader's
-  console.log('their objective: ' + await page.$eval('.okrObj', e => e.textContent.trim()));
-  console.log('their dept line: ' + await page.$eval('.okrDept', e => e.textContent.trim()));
-  console.log('mine leaked in:  ' + await page.evaluate(() =>
-    Array.from(document.querySelectorAll('.okrObj')).some(o => /outreach team leaves/i.test(o.textContent))));
-  await page.screenshot({ path: OUT + 'person-okr.png', fullPage: true });
-}
-
-// 10c. the editor: create, edit, hand-tracked %, delete
-// Every objective is on the page at once (no pager), so this just finds the
-// card by its title.
-async function okrPageTo(re) {
-  return page.evaluate(src => Array.from(document.querySelectorAll('.okrCard .okrObj')).some(o => new RegExp(src).test(o.textContent)), re.source);
-}
-async function okrCardClick(re, sel) {
-  const h = await page.evaluateHandle(({ src, sel }) => {
-    const c = Array.from(document.querySelectorAll('.okrCard')).find(x => new RegExp(src).test(x.textContent));
-    return c && c.querySelector(sel);
-  }, { src: re.source, sel });
-  await h.asElement().click();
-}
-console.log('\n=== OKR EDITOR (on its own page) ===');
-await page.click('nav.bottom [data-tab="week"]');
-await page.waitForTimeout(1000);
-await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(400); await page.click('[data-mmtab="okr"]');   // OKRs: My Ministry's second tab
-await page.waitForTimeout(1000);
-console.log('starting objectives: ' + await page.$$eval('.okrCard', e => e.length));
-console.log('edit + delete shown: ' + await page.evaluate(() =>
-  !!document.querySelector('[data-okr-edit]') && !!document.querySelector('[data-okr-del]')));
-console.log('hand-tracked % input: ' + await page.evaluate(() => !!document.querySelector('[data-okr-manual]')));
-
-// create
-await page.click('#okrNewBtn'); await page.waitForTimeout(600);
-await page.fill('#okrObjText', 'Plant a church in every village we reach');
-await page.fill('#okrKrText0', 'Villages with a new church');
-await page.selectOption('#okrKrMetric0', 'Community Service|Outreach Teams|People Connected to Local Church');
-/* 5 is under what Outreach Teams has already logged for this metric this
-   quarter, so the editor has to say so before the objective is ever saved —
-   this is the one moment the target can be got right. */
-await page.fill('#okrKrTarget0', '5');
-await page.waitForTimeout(300);
-const tgtNote = await page.$eval('#okrKrWarn0', e => e.textContent.trim()).catch(() => '');
-console.log('editor warns on a too-low target: ' + (tgtNote || '(nothing said)'));
-if (!/a target of 5 is passed/.test(tgtNote)) {
-  console.log('  ^ a target already passed was accepted in silence'); process.exitCode = 1;
-}
-await page.fill('#okrKrText1', 'Debrief within a week');
-await page.click('#okrSaveBtn'); await page.waitForTimeout(1800);
-console.log('no pager, both objectives on the page: ' + await page.evaluate(() => !document.querySelector('#okrNext') && document.querySelectorAll('.okrCard').length >= 2));
-console.log('paged to the new one: ' + await okrPageTo(/Plant a church/));
-console.log('new one shows figure/target: ' + await page.evaluate(() => {
-  const c = Array.from(document.querySelectorAll('.okrCard')).find(x => /Plant a church/.test(x.textContent));
-  if (!c) return 'card missing';
-  const m = c.textContent.match(/(\d+)\s*\/\s*5/);
-  return m ? m[0] : 'no figure/target found';
-}));
-
-// edit — the new objective's own Edit button
-await okrCardClick(/Plant a church/, '[data-okr-edit]'); await page.waitForTimeout(700);
-console.log('form prefilled: ' + await page.$eval('#okrObjText', e => e.value));
-await page.fill('#okrObjText', 'Plant a church in every village (revised)');
-await page.click('#okrSaveBtn'); await page.waitForTimeout(1800);
-console.log('paged to the edited one: ' + await okrPageTo(/revised/));
-console.log('after edit: ' + await page.evaluate(() => Array.from(document.querySelectorAll('.okrObj')).map(o => o.textContent.trim()).find(x => /revised/.test(x)) || '(not found)'));
-
-// hand-tracked percentage (a slider now) saves on change — key results show
-// without opening anything
-
-/* Same target, now saved: the row reads 100% because the percentage is capped,
-   so the row itself has to say the target is the thing that is wrong. */
-const krWarn = await page.evaluate(() => {
-  const c = Array.from(document.querySelectorAll('.okrCard')).find(x => /revised/.test(x.textContent));
-  const w = c && c.querySelector('.krWarn');
-  return w ? w.textContent.trim() : '';
-});
-console.log('row says the target was passed: ' + (krWarn || '(nothing said)'));
-const krPct = Number((krWarn.match(/(\d+)%/) || [])[1]);
-if (!(krPct > 100)) {
-  console.log('  ^ a full bar with nothing saying why reads as an objective met'); process.exitCode = 1;
-}
-const manKey = await page.$eval('[data-okr-manual]', e => e.getAttribute('data-okr-manual'));
-console.log('editing manual kr: ' + manKey);
-await page.$eval('[data-okr-manual="' + manKey + '"]', e => { e.value = '80'; e.dispatchEvent(new Event('input')); e.dispatchEvent(new Event('change')); });
-await page.waitForTimeout(1800);
-console.log('manual % persisted: ' + await page.$eval('[data-okr-manual="' + manKey + '"]', e => e.value));
-console.log('its bar reflects it: ' + await page.evaluate(k => {
-  const inp = document.querySelector('[data-okr-manual=\"' + k + '\"]');
-  const kr = inp && inp.closest('.kr');
-  return kr ? kr.querySelector('.krPctLbl').textContent.trim() : 'not found';
-}, manKey));
-
-// delete the revised objective
-page.on('dialog', d => d.accept());
-const beforeDel = await page.$$eval('.okrCard', e => e.length);
-await okrCardClick(/revised/, '[data-okr-del]'); await page.waitForTimeout(1800);
-console.log('objectives ' + beforeDel + ' -> ' + await page.$$eval('.okrCard', e => e.length) + ' after delete (revised gone: ' +
-  !(await okrPageTo(/revised/)) + ')');
-await page.screenshot({ path: OUT + 'okr-editor.png', fullPage: true });
-
-// a teammate's page must stay read-only
-await page.click('nav.bottom [data-tab="team"]'); await page.waitForTimeout(1100);
-const c2 = await page.$('#main [data-person]');
-if (c2) {
-  await c2.click(); await page.waitForTimeout(1300);
-  console.log('teammate page editable: ' + await page.evaluate(() =>
-    !!document.querySelector('[data-okr-edit], [data-okr-del], [data-okr-manual], #okrNewBtn')));
+  const theirs = await page.$$eval('[data-rkperson] .lmName, [data-rkteam] .lmName', e => e.map(x => x.textContent));
+  need('their own rock and their ministry’s — not the reader’s', theirs.join(' | ') === 'YDC students know they are known | A second classroom', theirs.join(' | '));
+  need('a teammate’s page stays read-only: a badge, nothing to press', !(await page.$('[data-rockst], [data-rockedit], [data-rkadd]')) && (await page.$$('.rkBadge')).length === 2);
+  await page.screenshot({ path: OUT + 'person-rocks.png', fullPage: true });
 }
 
 // 10d. Health: the weekly form, history with trends, anonymous base average

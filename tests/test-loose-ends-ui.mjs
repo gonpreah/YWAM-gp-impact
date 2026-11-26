@@ -2,7 +2,7 @@
    campus with a count; ministries with nobody set (or someone no longer active);
    ministries with no numbers for three weeks; people not seen in 30 days (not
    yesterday's, not inactive ones, not another campus's); no department or
-   ministry; no mentor; objectives nobody edited in 30 days (not ones a
+   ministry; no mentor; this quarter's rocks nobody updated in 30 days (it was objectives: not ones a
    ministry's numbers feed); tapping a person or a ministry goes there; the other
    campus; before 30 days of counting it says when; opening the app marks the
    day seen. */
@@ -95,11 +95,10 @@ const WK = isoWeek(TODAY), Q = Math.floor((Number(TODAY.slice(5, 7)) - 1) / 3) +
 mem.lastSeen = { started: day(60), seen: { dr: day(1), od: day(40) } };
 mem.numbersPeople = { 'siemreap|Community Service|Cafe': { main: 'dr', backup: '' }, 'siemreap|Community Service|Ponlork School': { main: 'gh', backup: '' } };
 mem.entries = [{ campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', metric: 'Cups Sold', week: WK, year: YR, value: 9, updated: '' }];
-mem.okrs = [
-  { campus: 'siemreap', dept: 'Community Service', quarter: Q, year: YR, id: 'o1', objective: 'Open a second cafe', kr: 'a', metricKey: '', target: 1, updated: day(45) + 'T00:00:00Z' },
-  { campus: 'siemreap', dept: 'Community Service', quarter: Q, year: YR, id: 'o2', objective: 'Pray every day', kr: 'b', metricKey: 'Community Service|Ponlork School|Hours', target: 10, updated: day(45) + 'T00:00:00Z' },
-  { campus: 'siemreap', dept: 'Community Service', quarter: Q, year: YR, id: 'o3', objective: 'Fresh this week', kr: 'c', metricKey: '', target: 1, updated: day(2) + 'T00:00:00Z' }
-];
+/* this quarter's rocks (13-week quarters, as the app counts them): one untouched for 45 days, one that is done, one fresh */
+const RQ = Math.min(4, Math.floor((WK - 1) / 13) + 1);
+const rk = (id, title, status, updated) => ({ id, campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', owner: '', year: YR, q: RQ, title, status, note: '', by: 'dr', at: updated, updated });
+mem.rocks = { seeded: 'test', rocks: [rk('k1', 'Open a second cafe', 'on', day(45) + 'T00:00:00Z'), rk('k2', 'Pray every day', 'done', day(45) + 'T00:00:00Z'), rk('k3', 'Fresh this week', 'off', day(2) + 'T00:00:00Z')] };
 const toLoose = async page => {
   await page.evaluate(() => { S.view = 'admin'; S.adminSub = 'home'; render(); }); await page.waitForTimeout(800);
   await page.click('[data-adminsub="loose"]'); await page.waitForTimeout(1200);
@@ -126,9 +125,9 @@ const section = (page, emoji) => page.$$eval('.looseCard', (cs, e) => { cs.forEa
   ok('no department or ministry', /Mealea Sok · no ministry/.test(s4));
   const s5 = await section(page, '🤝');
   ok('no mentor is empty when everyone has one', /Nothing here/.test(s5), s5.slice(0, 80));
-  const s6 = await section(page, '🎯');
-  ok('an objective nobody touched in 30 days is listed', /Open a second cafe/.test(s6) && /last edited/.test(s6));
-  ok('… not one fed by a ministry’s numbers, nor a fresh one', !/Pray every day/.test(s6) && !/Fresh this week/.test(s6));
+  const s6 = await section(page, '🪨');
+  ok('a rock nobody has updated in 30 days is listed, with its ministry', /Open a second cafe/.test(s6) && /last updated/.test(s6) && /Cafe/.test(s6) && /rocks nobody has updated in 30 days/.test(s6), s6.slice(0, 200));
+  ok('… not one that is done, nor a fresh one — and nothing says objectives', !/Pray every day/.test(s6) && !/Fresh this week/.test(s6) && !/objective/i.test(s6));
   await page.evaluate(() => { S.adminLoose = S.adminLoose; render(); }); await page.waitForTimeout(200);
   const folded = await page.$$eval('.looseCard', cs => cs.map(c => ({ shown: [...c.children].filter(x => x.classList.contains('looseRow')).length, more: !!c.querySelector('details.looseMore') })));
   ok('a long list shows five and folds the rest', folded.some(f => f.shown === 5 && f.more) && folded.every(f => f.shown <= 5), JSON.stringify(folded));

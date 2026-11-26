@@ -32,6 +32,9 @@ function ok(name, cond, extra) {
 const base = { campus: 'siemreap', photo: '', mentorId: '', isAdmin: false, leads: [], ministries: [], staffType: 'campus', role: '' };
 const DEE = { ...base, id: 'st_d', name: 'Dee Director', username: 'dee', dept: 'Campus Leadership', ministry: 'Campus Director' };
 const OLI = { ...base, id: 'st_o', name: 'Oli Overseer', username: 'oli', dept: 'Campus Leadership', ministry: 'Community Service' };
+/* Leadership's rocks for the quarter (they replaced the OKRs, Nov 2026): two of its own and one that is another department's */
+const RK = (id, dept, title, status, owner) => ({ id, campus: 'siemreap', dept, ministry: '', owner: owner || '', year: 2026, q: 4, title, status, note: '', by: 'st_d', at: '', updated: '' });
+const ROCKS = [RK('k1', 'Campus Leadership', 'Healthy finances', 'on', 'st_o'), RK('k2', 'Campus Leadership', 'Construction started', 'off'), RK('k3', 'Community Service', 'Not leadership', 'on')];
 const OKRS = [
   { id: 'o1', campus: 'siemreap', quarter: 4, dept: 'Campus Leadership', objective: 'Healthy finances', krs: [{ text: 'Budget approved', metricKey: '', target: 0, manual: 50, group: '', kind: '', current: 0 }, { text: 'Donors met', metricKey: '', target: 10, manual: 0, group: '', kind: 'count', current: 5 }] },
   { id: 'o2', campus: 'siemreap', quarter: 4, dept: 'Campus Leadership', objective: 'Construction started', krs: [{ text: 'Permit', metricKey: '', target: 0, manual: 0, group: '', kind: '', current: 0 }] },
@@ -61,7 +64,7 @@ async function open(who, viewport) {
     const bo = () => ({ ok: true, campus: 'siemreap', ...JSON.parse(JSON.stringify(board)) });
     if (b.fn === 'getMyBoot') out = { ok: true, staff: who, profile: {}, roster: [DEE, OLI], logs: [], habits: null, mentees: [], mentorRequests: [], goals: [], checkins: [],
       ministry: { ok: true, campus: 'siemreap', dept: who.dept, ministry: who.ministry, entries: {}, daily: {}, prev: {}, pins: [] }, personal: { ok: true, entries: {} },
-      trips: { ok: true, trips: [], totals: {} }, tripRequests: [], base: { leader: false, entries: { siemreap: {} }, okrs: OKRS, survey: [], metricOverrides: [] } };
+      trips: { ok: true, trips: [], totals: {} }, tripRequests: [], base: { leader: false, entries: { siemreap: {} }, okrs: OKRS, survey: [], metricOverrides: [] }, rocks: ROCKS };
     else if (b.fn === 'getData') out = { entries: {}, okrs: OKRS, survey: [] };
     else if (b.fn === 'getLeadBoard') out = bo();
     else if (b.fn === 'saveLeadCard') { const c = { ...b.args[2] }; if (!c.id) c.id = 'new' + (++n); const i = board.cards.findIndex(x => x.id === c.id); if (i > -1) board.cards[i] = c; else board.cards.push(c); out = { ...bo(), saved: c }; }
@@ -86,15 +89,15 @@ async function open(who, viewport) {
 }
 const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
 
-console.log('=== the OKRs: a tile on the dashboard, a tab of their own (Oct 2026) ===');
+console.log('=== the rocks: a tile on the dashboard, a tab of their own (they replaced the OKRs, Nov 2026) ===');
 const { ctx, page, errors, sent, board } = await open(DEE);
 ok('My Ministry opens on Campus Leadership, on the Board tab kept from last time', /Campus Leadership/.test(await page.$eval('#mmBanner', e => e.textContent)) && !!(await page.$('.lwSeg [data-lwtab="board"].on')));
 ok('no weekly numbers: no week strip, no number boxes', !(await page.$('#mmWeekCard')) && !(await page.$('#kpiInputBtn')) && !(await page.$('.wkStrip')));
-ok('the Board tab is Board, Tuesday and Notes — the OKRs aren\'t in it twice', (await page.$$eval('[data-leadtab]', b => b.map(x => x.getAttribute('data-leadtab')).join())) === 'board,tues,notes');
+ok('the Board tab is Meeting, Board, Tuesday and Notes — the rocks aren\'t in it twice — and it still opens on the board', (await page.$$eval('[data-leadtab]', b => b.map(x => x.getAttribute('data-leadtab')).join())) === 'meet,board,tues,notes' && !!(await page.$('[data-leadtab="board"].on')));
 await page.click('.lwSeg [data-lwtab="base"]'); await page.waitForTimeout(500);
-ok('the dashboard\'s OKR tile: this quarter\'s progress, 25%', /25%/.test(await page.$eval('#lbOkrTile', e => e.textContent)));
+ok('the dashboard\'s Rocks tile: how many of this quarter\'s are on track, 1 of 2 — no percentage', /Q4 Rocks/.test(await page.$eval('#lbOkrTile', e => e.textContent)) && (await page.$eval('#lbOkrTile .mmTileNum', e => e.textContent)) === '1/2' && !/%|OKR/.test(await page.$eval('#lbOkrTile', e => e.textContent)));
 await page.click('#lbOkrTile'); await page.waitForTimeout(500);
-ok('… tapping it opens the OKRs tab: Campus Leadership\'s objectives', !!(await page.$('.lwSeg [data-lwtab="okrs"].on')) && /OKRs/.test(await page.$eval('#main', e => e.innerText)));
+ok('… tapping it opens the Rocks tab: Campus Leadership\'s rocks, not another department\'s', !!(await page.$('.lwSeg [data-lwtab="okrs"].on')) && /Healthy finances/.test(await page.$eval('#rocksTab', e => e.innerText)) && !/Not leadership/.test(await page.$eval('#rocksTab [data-rkscope]', e => e.innerText)) && !/OKR/.test(await page.$eval('#main', e => e.innerText)));
 await page.click('.lwSeg [data-lwtab="board"]'); await page.waitForTimeout(500);
 
 console.log('=== the Monday meeting board ===');
@@ -109,7 +112,7 @@ const fit = await page.evaluate(() => { const b = document.querySelector('.leadC
 ok('on a phone all three columns fit side by side — no sliding', fit.all && !fit.scroll, JSON.stringify(fit));
 const h1 = await page.$eval('[data-leadcard="c3"]', e => e.getBoundingClientRect().height);
 ok('a card is small', h1 < 70, h1);
-ok('a card shows its owner, late due date, tasks done and its OKR as a thin line — not more', await page.$eval('[data-leadcard="c1"]', e => e.querySelector('.leadWho').textContent === 'OO' && !!e.querySelector('.leadDue.late') && e.querySelector('.leadTaskCount').textContent === '☑ 1/2' && e.querySelector('.leadOkrLine span').style.width === '50%' && !/Siem Reap finances/.test(e.textContent)));
+ok('a card shows its owner, late due date and tasks done — not more (an old OKR link is kept but no longer drawn)', await page.$eval('[data-leadcard="c1"]', e => e.querySelector('.leadWho').textContent === 'OO' && !!e.querySelector('.leadDue.late') && e.querySelector('.leadTaskCount').textContent === '☑ 1/2' && !e.querySelector('.leadOkrLine') && !/Siem Reap finances/.test(e.textContent)));
 const segs = await page.$$eval('#leadBoard .leadFilters [data-leadfilter]', b => b.map(x => x.textContent.replace(/^[^A-Za-z]+/, '')));
 ok('one slim “show” switch: All / Agenda / Projects / Mine', segs.join(' / ') === 'All / Agenda / Projects / Mine', segs.join(' / '));
 ok('Edit the board sits with Add a card', !!(await page.$('.leadHead #leadEditBoard')) && !!(await page.$('.leadHead #leadNew')));
@@ -148,10 +151,10 @@ ok('a new card can be given tasks before it is added', (await page.$$('#leadForm
 await page.selectOption('[data-lf="area"]', 'construction');
 await page.fill('[data-lf="title"]', 'Roof quote');
 await page.fill('[data-ppickq="lead"]', 'd'); await page.waitForTimeout(200); await page.click('[data-ppickit="lead|st_d"]'); await page.waitForTimeout(300);
-await page.selectOption('[data-lf="okrId"]', 'o2');
+ok('the card form no longer asks which OKR it moves forward', !(await page.$('[data-lf="okrId"]')));
 await page.click('#leadSave'); await page.waitForTimeout(300);
 let sv = sent.filter(b => b.fn === 'saveLeadCard').pop();
-ok('the card is saved with its focus area, owner, OKR and tasks', sv && sv.args[2].title === 'Roof quote' && sv.args[2].area === 'construction' && sv.args[2].owner === 'st_d' && sv.args[2].okrId === 'o2' && sv.args[2].col === 'agenda' && sv.args[2].tasks.map(x => x.text).join() === 'Get two quotes,Check the permit', JSON.stringify(sv && sv.args[2]));
+ok('the card is saved with its focus area, owner and tasks', sv && sv.args[2].title === 'Roof quote' && sv.args[2].area === 'construction' && sv.args[2].owner === 'st_d' && !sv.args[2].okrId && sv.args[2].col === 'agenda' && sv.args[2].tasks.map(x => x.text).join() === 'Get two quotes,Check the permit', JSON.stringify(sv && sv.args[2]));
 await page.click('[data-leadcard="c3"]'); await page.waitForTimeout(250);
 await page.click('[data-lfcol="doing"]'); await page.fill('[data-lf="notes"]', 'Ask the churches'); await page.click('#leadSave'); await page.waitForTimeout(300);
 sv = sent.filter(b => b.fn === 'saveLeadCard').pop();
@@ -175,11 +178,11 @@ console.log('=== meeting notes ===');
 await page.click('[data-leadtab="notes"]'); await page.waitForTimeout(300);
 ok('a Meeting notes tab opens on this week’s Monday', /Monday Oct 5/.test(await page.$eval('.leadNoteDate', e => e.textContent)) && /This week’s meeting/.test(await page.$eval('.leadNoteDate', e => e.textContent)));
 ok('earlier weeks with notes are a tap away', !!(await page.$('[data-lndate="2026-09-28"]')));
-const okrLine = await page.$eval('#leadNoteOkr summary', e => e.textContent.replace(/\s+/g, ' ').trim());
-ok('the OKRs sit in one quiet line above the notes, closed', /^🎯 Q4 OKRs · 25% · 2 of 3 key results on pace/.test(okrLine) && !(await page.$eval('#leadNoteOkr', d => d.open)) && !(await page.isVisible('.leadNoteOkrRow')), okrLine);
-await page.click('#leadNoteOkr summary'); await page.waitForTimeout(150);
-const okrRows = await page.$$eval('.leadNoteOkrRow', r => r.map(x => x.textContent.trim()));
-ok('tapped, each Leadership objective with its progress (not other departments’)', okrRows.length === 2 && /^Healthy finances.*50%$/.test(okrRows[0]) && /^Construction started/.test(okrRows[1]), okrRows.join(' | '));
+const rkLine = await page.$eval('#leadNoteRocks summary', e => e.textContent.replace(/\s+/g, ' ').trim());
+ok('the quarter’s rocks sit in one quiet line above the notes, closed', /^🪨 Q4 Rocks · 1 of 2 on track/.test(rkLine) && !(await page.$eval('#leadNoteRocks', d => d.open)) && !(await page.isVisible('.leadNoteOkrRow')), rkLine);
+await page.click('#leadNoteRocks summary'); await page.waitForTimeout(150);
+const rkRows = await page.$$eval('.leadNoteOkrRow', r => r.map(x => x.textContent.trim()));
+ok('tapped, each leadership rock with where it stands (not other departments’)', rkRows.length === 2 && /^Healthy finances.*On track$/.test(rkRows[0]) && /^Construction started.*Off track$/.test(rkRows[1]), rkRows.join(' | '));
 await page.click('#leadNoteStart'); await page.waitForTimeout(200);
 const started = await page.$eval('#leadNoteText', e => e.value);
 ok('“Start from the agenda” lays out the standing items and the agenda items waiting (not projects)', started === 'Department and ministry updates\n- \nEvents coming up\n- ', JSON.stringify(started));

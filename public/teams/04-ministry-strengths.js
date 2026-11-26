@@ -11,7 +11,7 @@
    api.js) — so nobody types Cups Sold or One-on-Ones Held. */
 function money_(n){ return '$'+(Number(n)||0).toFixed(2); }
 function shortTime_(iso){ var d=new Date(iso); return isNaN(d) ? '' : ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
-function staffName_(id){ var p=(S.roster||[]).filter(function(x){ return x.id===id; })[0]; return p ? p.name : (S.me && S.me.id===id ? S.me.name : ''); }
+function staffName_(id){ var p=(S.roster||[]).filter(function(x){ return x.id===id; })[0]; return p ? p.name : (S.me && S.me.id===id ? S.me.name : ((typeof bdName_==='function' && bdName_(id)) || '')); }
 
 /* ---------- Campus Leadership: My week ---------- */
 var LW_KINDS=[['oneonone','🤝','One-on-one'],['partner','🙏','Partner connection'],['church','⛪','Spoke at a church'],['base','🏠','Spoke at a YWAM base'],
@@ -395,7 +395,10 @@ function leadScopeDepts_(){
   return all.indexOf(S.me.ministry)>-1 ? [S.me.ministry] : all;
 }
 function leadIsDirector_(){ return !!(S.me && (S.me.ministry==='Campus Director' || S.me.isAdmin)); }
-function leadTuesdays_(n){ var d=new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()+((2-d.getDay()+7)%7)); var out=[]; for(var i=0;i<n;i++){ out.push(calIso_(d)); d.setDate(d.getDate()+7); } return out; }
+/* the meeting's day: Tuesday unless the team changed it (Board → Meeting → Meeting day and minutes) */
+function leadMeetDay_(){ var v=S.lead && S.lead.meetDay, n=Number(v); return (v!=null && v!=='' && n>=0 && n<=6) ? n : 2; }
+function leadDayDate_(date){ var day=leadMeetDay_(); return day===2 ? gpT('Tuesday {date}',{date:hospDate_(date)}) : t(['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][day])+' '+hospDate_(date); }
+function leadTuesdays_(n){ var d=new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()+((leadMeetDay_()-d.getDay()+7)%7)); var out=[]; for(var i=0;i<n;i++){ out.push(calIso_(d)); d.setDate(d.getDate()+7); } return out; }
 function leadTuesFor_(date){ return ((S.lead && S.lead.tues) || []).filter(function(x){ return x.date===date; })[0] || null; }
 function leadTuesWho_(p){ return p ? (p.id ? staffName_(p.id) : p.name) : ''; }
 function leadBaseHtml_(pulse){
@@ -414,8 +417,8 @@ function leadBaseHtml_(pulse){
   /* The four numbers at the top, each opening onto where it comes from — which four is the
      role's (LW_ROLES): partners and new bases for the International Director, the staff and
      the week for the National Director, the whole base for a Campus Director. */
-  /* The dashboard (Uriah, Oct 2026): this quarter's OKR progress and the board lead for
-     every role, each opening its tab; then the role's own (LW_ROLES). */
+  /* The dashboard (Uriah, Oct 2026): this quarter's rocks (how many are on track — they replaced the
+     OKR percentage, Nov 2026) and the board lead for every role, each opening its tab; then the role's own (LW_ROLES). */
   var tiles=['okr','board'].concat(many ? LW_ROLES[V ? V.role : lwRole_()].tiles : []);
   if(V) tiles=tiles.map(function(k){ return k==='partners' ? 'numbers' : k; });   // partners are each director's own
   if(tiles.indexOf('partners')>-1 || tiles.indexOf('plants')>-1){ if(!S.lw && !S.lwLoading && !S.lwErr) lwLoad_(S.lwWeek||thisWeek()); }
@@ -424,15 +427,13 @@ function leadBaseHtml_(pulse){
   var L=S.lw, today=new Date(todayStr()+'T00:00:00');
   var due=L ? L.partners.filter(function(p){ return !p.last || (today-new Date(p.last+'T00:00:00'))/86400000>30; }).length : null;
   var plans=L ? L.plants.filter(function(p){ return p.stage!=='launched'; }).length : null;
-  var lo=leadOkrs_(), lR=baseR(), okrPct=lo.length ? Math.round(lo.reduce(function(a,o){ return a+lR.objProgress(o); },0)/lo.length) : null;
   var openCards=S.lead && S.lead.cards ? S.lead.cards.filter(function(c){ return c.col!==leadDoneId_(); }).length : null;
   var TILE={
-    okr:'<button class="mmTile lbTileBtn lbNav" data-lwtab="okrs" id="lbOkrTile"><div class="mmTileName">🎯 '+esc(gpT('Q{q} OKRs',{q:leadQNow_()}))+'</div><div class="mmTileNum">'+(okrPct===null ? '—' : okrPct+'%')+'</div>'+
-      (okrPct===null ? '<div class="mmTileSub">'+esc(t('None set yet'))+'</div>' : '<div class="leadBar"><div style="width:'+okrPct+'%;background:'+gpRingColor(okrPct)+'"></div></div>')+'</button>',
+    okr:rkLeadTile_(),   // 🪨 Rocks: n of m on track (teams/28-rocks.js)
     board:'<button class="mmTile lbTileBtn lbNav" data-lwtab="board" id="lbBoardTile"><div class="mmTileName">📋 '+esc(t('Board'))+'</div><div class="mmTileNum">'+(openCards===null ? '…' : openCards)+'</div><div class="mmTileSub">'+esc(t('open cards'))+'</div></button>',
     leaders:'<a class="mmTile" href="#lbLeaders"><div class="mmTileName">👑 '+esc(t('Clear leaders'))+'</div><div class="mmTileNum">'+(rows.length-none.length)+' / '+rows.length+'</div></a>',
     numbers:'<a class="mmTile" href="#lbPulse"><div class="mmTileName">📊 '+esc(t('Numbers in'))+'</div><div class="mmTileNum">'+(pulseIn && ofN ? inN+' / '+ofN : '…')+'</div></a>',
-    tues:'<a class="mmTile" href="#lbTues"><div class="mmTileName">🎤 '+esc(gpT('Tuesday {date}',{date:hospDate_(next)}))+'</div><div class="mmTileNum lbTileWho">'+esc(leadTuesWho_(tr && tr.facilitator) || '—')+'</div></a>',
+    tues:'<a class="mmTile" href="#lbTues"><div class="mmTileName">🎤 '+esc(leadDayDate_(next))+'</div><div class="mmTileNum lbTileWho">'+esc(leadTuesWho_(tr && tr.facilitator) || '—')+'</div></a>',
     money:'<button class="mmTile lbTileBtn" data-lwtab="money"><div class="mmTileName">💵 '+esc(t('Money ahead'))+'</div><div class="mmTileNum lbTileWho'+(pj && pj.short?' lbNone':'')+'">'+esc(!pj ? '…' : pj.short ? gpT('short in {month}',{month:lmMonthName_(pj.short)}) : lmMoney_(pj.end))+'</div></button>',
     partners:'<button class="mmTile lbTileBtn" data-lwtab="week"><div class="mmTileName">🙏 '+esc(t('Partners to reach'))+'</div><div class="mmTileNum'+(due?' lbNone':'')+'">'+(due===null ? '…' : L.partners.length ? due+' / '+L.partners.length : '—')+'</div></button>',
     plants:'<'+(V?'div':'button')+' class="mmTile lbTileBtn"'+(V?'':' data-lwtab="week"')+'><div class="mmTileName">🌱 '+esc(t('Base Plants in Planning'))+'</div><div class="mmTileNum">'+(plans===null ? (S.lwErr ? '—' : '…') : plans)+'</div></'+(V?'div':'button')+'>',
@@ -440,6 +441,7 @@ function leadBaseHtml_(pulse){
     oneonones:'<a class="mmTile" href="#lbPulse"><div class="mmTileName">🤝 '+esc(t('1-on-1s this month'))+'</div><div class="mmTileNum">'+(pulseIn ? ones : '…')+'</div></a>'
   };
   if(tiles.length) h+='<div class="mmGrid lbGlance">'+tiles.map(function(k){ return TILE[k]; }).join('')+'</div>';
+  if(!V && typeof lmOverviewHtml_==='function') h+=lmOverviewHtml_();   // the way in to the weekly leadership meeting (teams/27-meeting.js)
   /* Clear leaders: the ones without, a line per department; who leads what folded. */
   h+='<div class="card" id="lbLeaders"><div class="goalCardTitle" style="margin-bottom:6px">👑 '+esc(t('Clear leaders'))+'</div>'+
     '<p class="lbBig"><b>'+(rows.length-none.length)+' / '+rows.length+'</b> '+esc(t('ministries have a clear leader'))+'</p>';
@@ -459,13 +461,13 @@ function leadBaseHtml_(pulse){
           onPick:function(id){ lbSetLeader_(r.dept, r.min, id, true); }, onRemove:function(id){ lbSetLeader_(r.dept, r.min, id, false); } })+'</div>' : ''); }).join('')+
     '<p class="hint" style="margin:6px 0 0">'+esc(canSet ? t('Tap ＋ by a ministry to name its leader. It is the same leader as on their profile in Admin.') : t('A leader is set on each person’s profile by an admin.'))+'</p></details></div>';
   /* Tuesday morning. */
-  h+='<div class="card" id="lbTues"><div class="goalCardTitle" style="margin-bottom:6px">🎤 '+esc(gpT('Tuesday {date}',{date:hospDate_(next)}))+'</div>';
+  h+='<div class="card" id="lbTues"><div class="goalCardTitle" style="margin-bottom:6px">🎤 '+esc(leadDayDate_(next))+'</div>';
   if(!S.lead) h+='<p class="sub" style="margin:0">'+esc(S.leadErr || t('Loading…'))+'</p>';
   else {
     h+='<div class="lbWho"><span>'+esc(t('Facilitating'))+'</span><b>'+esc(leadTuesWho_(tr && tr.facilitator) || t('Nobody yet'))+'</b></div>'+
       '<div class="lbWho"><span>'+esc(t('Translating'))+'</span><b>'+esc(leadTuesWho_(tr && tr.translator) || t('Nobody yet'))+'</b></div>';
     h+=leadTueListsHtml_(tr);
-    h+='<button class="btn ghost" id="lbGoTues" style="margin-top:8px">'+esc(t('Plan the Tuesdays'))+'</button>';
+    h+='<button class="btn ghost" id="lbGoTues" style="margin-top:8px">'+esc(leadMeetDay_()===2 ? t('Plan the Tuesdays') : t('Plan who leads'))+'</button>';
   }
   h+='</div>';
   /* Each department's pulse last: one open for an overseer, folded for the Director. */
@@ -489,11 +491,11 @@ function leadTueListsHtml_(r){
 function leadTuesHtml_(){
   var h='<div id="leadTues">';
   if(!S.lead) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.leadErr || t('Loading…'))+'</p></div></div>';
-  h+='<p class="sub">'+esc(t('The Tuesday morning meeting: who facilitates, who translates, the topics to hit and the announcements.'))+'</p>';
+  h+='<p class="sub">'+esc(leadMeetDay_()===2 ? t('The Tuesday morning meeting: who facilitates, who translates, the topics to hit and the announcements.') : t('The weekly meeting: who facilitates, who translates, the topics to hit and the announcements.'))+'</p>';
   leadTuesdays_(8).forEach(function(date, i){
     var r=leadTuesFor_(date), open=S.ltOpen===date, fac=leadTuesWho_(r && r.facilitator), tr=leadTuesWho_(r && r.translator);
     h+='<div class="card leadTue'+(i===0?' next':'')+'"><button class="leadTueHead" data-ltopen="'+date+'" aria-expanded="'+open+'">'+
-      '<span class="leadTueDate">'+esc(gpT('Tuesday {date}',{date:hospDate_(date)}))+(i===0?' <span class="leadTueNext">'+esc(t('next'))+'</span>':'')+'</span>'+
+      '<span class="leadTueDate">'+esc(leadDayDate_(date))+(i===0?' <span class="leadTueNext">'+esc(t('next'))+'</span>':'')+'</span>'+
       '<span class="leadTueWho">🎤 '+esc(fac || '—')+' · 🗣️ '+esc(tr || '—')+(r && r.topics.length ? ' · 📌 '+r.topics.length : '')+(r && (r.announcements||[]).length ? ' · 📣 '+r.announcements.length : '')+'</span></button>';
     if(open) h+=leadTueFormHtml_(date, r);
     else h+=leadTueListsHtml_(r);
@@ -1330,10 +1332,10 @@ function goalsCardHtml(wk){
             ? '<div class="wgTop"><input type="text" class="addGoalInput" id="editGoalText" maxlength="200" value="'+esc(g.text)+'" style="flex:1"></div>'
             : '<div class="wgTop"><span class="wgText">'+esc(g.text)+'</span>'+
               '<span class="wgPct" style="color:'+pctColor(gp)+'">'+gp+'% · '+esc(pctWord(gp))+'</span></div>')+
-          (S.student ? '' :   // students have no ministry KPIs
+          (S.student ? '' :   // students have no ministry scorecard
           '<label class="goalLink'+(g.metricKey?'':' unlinked')+'" style="display:flex;align-items:center;gap:4px">📊 '+
             '<select class="goalLinkSel" data-goallink="'+i+'" style="border:0;background:none;color:inherit;font:inherit;padding:0">'+
-            okrMetricOptions(g.metricKey, g.metricKey ? 'Not linked to a KPI' : 'Link to a KPI')+
+            metricLinkOptions_(g.metricKey, g.metricKey ? 'Not linked to a scorecard number' : 'Link to a scorecard number')+
             '</select></label>')+
           (isNext ? '' : '<input type="range" class="gSlide" min="0" max="100" step="5" value="'+gp+'" data-goalpct="'+i+'"'+
             ' style="'+ringVars(gp)+'"'+
@@ -1443,22 +1445,12 @@ function levelPrevSubHtml_(p, metric, carried, typed){
   return out;
 }
 
-/* The reverse of kr.metricKey: an OKR key result links FROM the objective TO
-   a metric (dept|ministry|metric) to pull its progress live — this is a
-   metric asking the question the other way, for whoever is typing the
-   number: does this feed anything? Reads S.base.okrs, already on the page
-   for everyone by boot time (My Home's roll-up needs it too), so no
-   extra fetch. Scoped to the metric's own campus, same as krProgress(). */
-function metricOkrNote_(campus, dept, ministry, metric){
-  var key = dept+'|'+ministry+'|'+metric;
-  var okrs = ((S.base && S.base.okrs) || []).filter(function(o){
-    return o.campus===campus && (o.krs||[]).some(function(kr){ return kr.metricKey===key; });
-  });
-  if(!okrs.length) return '';
-  var label = okrs.length===1
-    ? gpT('feeds “{objective}”', {objective: okrs[0].objective})
-    : gpT('feeds {n} objectives', {n: okrs.length});
-  return ' · <span class="okrFeeds">🎯 '+esc(label)+'</span>';
+/* Beside a number being typed: its weekly goal on the Scorecard, when the ministry has set one
+   (sbdGoals_, teams/28-rocks.js) — so whoever enters it sees what it is held against. (Until Nov 2026
+   this line said which objective the number fed; objectives became rocks, which have no numbers.) */
+function metricGoalNote_(campus, dept, ministry, metric){
+  var g=sbdGoals_(campus, dept, ministry)[metric];
+  return g ? ' · <span class="okrFeeds sbdGoalNote">🎯 '+esc(gpT('goal {goal}',{goal:sbdGoalText_(g, metric)}))+'</span>' : '';
 }
 
 /* One row of a weekly figure — latest (carries forward), avg (a score), or
@@ -1491,7 +1483,7 @@ function kpiWeekRowHtml_(metric, wk, entries, prevMap, draft, campus, dept, mini
     sub = esc(t('avg'))+' '+fmt(agg2, metric)+
       gpVsLastWeek(wks, wk, metric, draft[metric]!==undefined ? draft[metric] : thisWk);
   }
-  if(campus && dept && ministry) sub += metricOkrNote_(campus, dept, ministry, metric);
+  if(campus && dept && ministry) sub += metricGoalNote_(campus, dept, ministry, metric);
   if(draft[metric]!==undefined) cur=draft[metric];
   return '<div class="row"><div>'+kpiNameHtml_(metric, ministry||(S.me&&S.me.ministry))+
     '<div class="rowSub">'+sub+'</div></div>'+
@@ -1508,7 +1500,7 @@ function kpiPeriodRowHtml_(metric, anchorWeek, entries, draft, attr, campus, dep
   var stored = wks[String(anchorWeek)];
   var cur = draft[metric]!==undefined ? draft[metric] : (stored!==undefined ? stored : '');
   var sub = stored!==undefined ? (esc(t('logged'))+' '+fmt(Number(stored), metric)) : esc(t('nothing logged yet'));
-  if(campus && dept && ministry) sub += metricOkrNote_(campus, dept, ministry, metric);
+  if(campus && dept && ministry) sub += metricGoalNote_(campus, dept, ministry, metric);
   return '<div class="row"><div>'+kpiNameHtml_(metric, ministry||(S.me&&S.me.ministry))+
     '<div class="rowSub">'+sub+'</div></div>'+
     '<input type="number" inputmode="decimal" class="kpiIn" data-'+attr+'="'+esc(metric)+'" value="'+esc(String(cur))+'"></div>';
@@ -1524,7 +1516,7 @@ function kpiCardHtml(wk){
   var metrics=metricsFor(S.me.campus, S.me.dept, S.me.ministry).filter(function(m){ return auto.indexOf(m)===-1; });
   if(!metrics.length){
     return '<div class="card"><p class="sub" style="margin:4px 0">'+
-      'No KPIs are defined for '+esc(S.me.ministry)+' yet.</p></div>';
+      esc(gpT('No scorecard numbers are set for {ministry} yet.',{ministry:t(S.me.ministry)}))+'</p></div>';
   }
   var entries=(S.ministry&&S.ministry.entries)||{};
   var prevMap=(S.ministry&&S.ministry.prev)||{};
@@ -1622,7 +1614,7 @@ function kpiCardHtml(wk){
         b+='<div class="row"><div>'+kpiNameHtml_(metric, S.me.ministry)+
           '<div class="rowSub">'+esc(t('week total'))+' '+fmt(weekVal===undefined?null:Number(weekVal), metric)+
           gpVsLastWeek(entries[metric], wk, metric, weekVal)+
-          metricOkrNote_(S.me.campus, S.me.dept, S.me.ministry, metric)+
+          metricGoalNote_(S.me.campus, S.me.dept, S.me.ministry, metric)+
           '<span class="newTot"></span></div></div>'+
           '<input type="number" inputmode="decimal" class="kpiIn" placeholder="+0" data-kpi="'+esc(metric)+
           '" data-metric="'+esc(metric)+'" data-mode="sum" data-run="'+base+
@@ -1719,7 +1711,7 @@ function ovWeekRowsHtml_(dept, ministry, data, wk){
   var metrics = metricsFor(S.me.campus, dept, ministry).filter(function(m){ return auto.indexOf(m)===-1; });
   if(!metrics.length){
     return '<div class="card"><p class="sub" style="margin:4px 0">'+
-      esc(gpT('No KPIs are defined for {ministry} yet.',{ministry:t(ministry)}))+'</p></div>';
+      esc(gpT('No scorecard numbers are set for {ministry} yet.',{ministry:t(ministry)}))+'</p></div>';
   }
   var entries=(data&&data.entries)||{};
   var prevMap=(data&&data.prev)||{};
@@ -1783,89 +1775,4 @@ function myMinistryEntryHtml(){
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--faint);flex:0 0 auto"><path d="M9 6l6 6-6 6"/></svg></button>';
 }
 
-/* Same "tappable card on My Home, full page behind it" shape as My
-   Ministry just above — OKRs used to be an inline accordion here too,
-   which made the page long whether or not you had anything to update this
-   week. The department/ministry context now shows once, at the top of the
-   page, instead of being implied by wherever the card happened to sit. */
-function myOkrEntryHtml(){
-  return '<h3 id="sec-okr">🎯 '+esc(t('OKRs'))+'</h3>'+
-    '<button class="card leaveEntry" id="goOkrFromMe">'+
-    '<span class="leaveEntryIcon">🎯</span>'+
-    '<span style="flex:1"><div style="font-size:13.5px;font-weight:700">'+esc(t('OKRs'))+'</div>'+
-    (S.me.ministry?'<div class="pmeta">'+esc(t(S.me.ministry))+'</div>':'')+'</span>'+
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--faint);flex:0 0 auto"><path d="M9 6l6 6-6 6"/></svg></button>';
-}
-/* Leadership's OKRs for everyone to see (Uriah, Oct 2026) — read only: the
-   cards have no slider, no − / +, no Edit or Delete. Your own campus first.
-   Not for Campus Leadership (theirs are their own, above) nor admins (they
-   have every department's, editable, below). */
-function leadershipOkrsHtml_(q){
-  var myDept = S.me.dept==='Base Director' ? 'Campus Leadership' : S.me.dept;
-  if(myDept==='Campus Leadership' || S.me.isAdmin || !S.base) return '';
-  var list = (S.base.okrs||[]).filter(function(o){ return o.dept==='Campus Leadership' && Number(o.quarter)===q; });
-  var camps = CAMPUSES.map(function(c){ return c.id; }).sort(function(a,b){ return a===S.me.campus ? -1 : b===S.me.campus ? 1 : 0; });
-  var h='<h3 id="leadOkrs">🧭 '+esc(t('Leadership OKRs'))+'</h3><p class="sub" style="margin:0 0 6px">'+esc(t('What the leadership team is working on this quarter — to see, not to change.'))+'</p>';
-  if(!list.length) return h+'<p class="sub">'+esc(t('No leadership objectives set yet this quarter.'))+'</p>';
-  var R = baseR(), shown=0;
-  camps.forEach(function(c){
-    var mine = list.filter(function(o){ return o.campus===c; });
-    if(!mine.length) return;
-    h+='<div class="mentorLabel" style="margin:10px 0 6px">'+esc(campusName(c))+'</div><div data-leadokrs="'+esc(c)+'">';
-    mine.forEach(function(o, i){ h+=okrCardHtml(o, R, false, i+1); shown++; });
-    h+='</div>';
-  });
-  return h;
-}
-/* The OKR tab of My Ministry — what used to be its own page. */
-function okrTabHtml_(){
-  var wk = thisWeek(), qNow = Math.min(4, Math.floor((wk-1)/13)+1);
-  var h='<h3 style="margin-top:0">🎯 Q'+qNow+' '+esc(t('OKRs'))+'</h3>';
-  h+='<p class="sub" style="margin:0 0 2px">'+esc(t(S.me.dept))+(S.me.ministry?' · '+esc(t(S.me.ministry)):'')+'</p>';
-  h+=okrSectionHtml(S.me, true, true);
-  h+=leadershipOkrsHtml_(qNow);
-
-  /* Admin sees — and can edit, delete and add — every department's objectives
-     on both campuses, collapsed by default so the page still opens on your
-     own. The server lets an admin write any campus / department. */
-  if(S.me.isAdmin && S.base){
-    var qOkrs = (S.base.okrs||[]).filter(function(o){ return Number(o.quarter)===qNow; });
-    h += '<h3 id="adminOkrs">🗂️ '+esc(t('Every department’s OKRs'))+'</h3>';
-    var pick = S.okrAdminPick || { campus:S.me.campus, dept:'' };
-    var pickDepts = Object.keys(getDepartments(pick.campus));
-    if(pickDepts.indexOf(pick.dept)===-1) pick.dept = pickDepts[0] || '';
-    S.okrAdminPick = pick;
-    if(S.okrForm && S.okrAdmin){
-      var aEditing = null;
-      if(S.okrEditId) (S.base.okrs||[]).forEach(function(o){ if(o.id===S.okrEditId) aEditing=o; });
-      h += okrFormHtml(aEditing, S.okrAdmin);
-    } else {
-      h += '<div class="okrAdminNew"><label class="pick"><span>'+esc(t('Campus'))+'</span><select id="okrAdmCampus">'+CAMPUSES.map(function(c){ return '<option value="'+esc(c.id)+'"'+(c.id===pick.campus?' selected':'')+'>'+esc(c.short)+'</option>'; }).join('')+'</select></label>'+
-        '<label class="pick"><span>'+esc(t('Department'))+'</span><select id="okrAdmDept">'+pickDepts.map(function(d){ return '<option value="'+esc(d)+'"'+(d===pick.dept?' selected':'')+'>'+esc(t(d))+'</option>'; }).join('')+'</select></label>'+
-        '<button class="btn ghost" id="okrAdmNewBtn" style="width:auto;margin:0">+ '+esc(t('New objective'))+'</button></div>';
-    }
-    if(!qOkrs.length){
-      h += '<p class="sub">'+esc(t('No objectives set anywhere yet this quarter.'))+'</p>';
-    } else {
-      var groups = {};
-      qOkrs.forEach(function(o){
-        var key = o.campus+'|'+o.dept;
-        (groups[key] = groups[key] || []).push(o);
-      });
-      var R = baseR();
-      Object.keys(groups).sort().forEach(function(key){
-        var parts = key.split('|'), campus = parts[0], dept = parts[1];
-        var list = groups[key];
-        var title = (MIN_EMOJI[dept]?MIN_EMOJI[dept]+' ':'')+esc(t(dept))+' · '+esc(campusName(campus));
-        var summary = list.length===1 ? esc(t('1 objective')) : esc(gpT('{n} objectives',{n:list.length}));
-        h += accRowHtml('adminOkrAcc', key, title, summary, function(){
-          var b = '';
-          list.forEach(function(o){ b += okrCardHtml(o, R, true); });
-          return '<div data-okradmin="1">'+b+'</div>';
-        });
-      });
-    }
-  }
-  return h;
-}
-
+/* My Ministry's Rocks tab — what used to be the OKRs page — is rocksTabHtml_ in teams/28-rocks.js. */

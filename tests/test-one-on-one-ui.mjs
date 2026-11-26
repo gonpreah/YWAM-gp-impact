@@ -329,6 +329,43 @@ mem.oneOnOnes.push({ id: 'ooU', fromId: 'st4', toId: 'st5', menteeId: 'st4', not
   await c.ctx.close();
 }
 
+/* ---- Mentorship: how the people I mentor are doing with THEIR 1-on-1s (Nov 2026, Uriah) ---- */
+{
+  const today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+  mem.staff = [
+    mk({ id: 'top', name: 'Tola Top', username: 'tola', email: 't@e.com', dept: 'Campus Leadership', ministry: 'Campus Director' }),
+    mk({ id: 'mid', name: 'Maly Mid', username: 'maly', email: 'ma@e.com', mentorId: 'top', mentorStatus: 'approved' }),
+    mk({ id: 'solo', name: 'Sina Solo', username: 'sina', email: 'si@e.com', mentorId: 'top', mentorStatus: 'approved' }),
+    mk({ id: 'a1', name: 'Ary One', username: 'ary', email: 'a1@e.com', mentorId: 'mid', mentorStatus: 'approved' }),
+    mk({ id: 'a2', name: 'Bora Two', username: 'bora', email: 'a2@e.com', mentorId: 'mid', mentorStatus: 'approved' }),
+    mk({ id: 'a3', name: 'Chea Three', username: 'chea', email: 'a3@e.com', mentorId: 'mid', mentorStatus: 'approved' }),
+    mk({ id: 'a4', name: 'Dara Four', username: 'dara4', email: 'a4@e.com', mentorId: 'mid', mentorStatus: 'approved' })
+  ];
+  const row = (id, to, heldOn) => ({ id, fromId: 'mid', toId: to, menteeId: to, status: 'held', heldOn, created: today + 'T01:00:00.000Z', notes: 'SECRET-NOTES', prep: { helpWith: 'SECRET-PREP' } });
+  mem.oneOnOnes = [row('x1', 'a1', today), row('x2', 'a1', today), row('x3', 'a2', today)];
+  for (const small of [false, true]) {
+    const c = await open('tola', { small });
+    await c.page.evaluate(() => { S.view = 'mentor'; S.mentee = null; render(); }); await c.page.waitForSelector('#mentee-mid', { timeout: 8000 });
+    const line = await c.page.$eval('#mentee-mid [data-ootheirs="mid"]', e => e.textContent).catch(() => '');
+    ok((small ? '320px: ' : '') + 'You mentor: a mentee who mentors others has one quiet line about THEIR 1-on-1s this month', line === 'Their 1-on-1s this month: 3 held with 2 of 4 people', line);
+    ok((small ? '320px: ' : '') + 'a mentee who mentors nobody shows nothing extra; nothing slides sideways', !(await c.page.$('#mentee-solo [data-ootheirs]')) && await c.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+    if (!small) {
+      await c.page.click('#mentee-mid [data-mentee="mid"]'); await c.page.waitForSelector('#ooTheirs', { timeout: 8000 });
+      const rows = await c.page.$$eval('[data-ootheirsrow]', rs => rs.map(r => r.querySelector('.ooTheirsName').textContent + ':' + r.querySelectorAll('.ooDot.on').length + '/' + r.querySelectorAll('.ooDot').length));
+      ok('on that mentee’s page: each of their people by first name with ●○ of 2', JSON.stringify(rows) === JSON.stringify(['Ary:2/2', 'Bora:1/2', 'Chea:0/2', 'Dara:0/2']), JSON.stringify(rows));
+      ok('… and nothing of what was said in those 1-on-1s is on the page or on the phone', !/SECRET/.test(await c.page.evaluate(() => document.body.innerText + JSON.stringify(S.mentees) + JSON.stringify(S.oneOnOnes))));
+      await c.page.evaluate(() => { S.mentee = null; S.view = 'mentor'; render(); });
+      await c.page.evaluate(() => { S.view = 'mentor'; S.mentee = (S.mentees || []).filter(p => p.id === 'solo')[0] || null; render(); }); await c.page.waitForTimeout(600);
+      ok('a mentee who mentors nobody has no such list on their page', !(await c.page.$('#ooTheirs')));
+    }
+    await c.ctx.close();
+  }
+  const km = await open('tola', { km: true });
+  await km.page.evaluate(() => { S.view = 'mentor'; S.mentee = null; render(); }); await km.page.waitForSelector('#mentee-mid [data-ootheirs]', { timeout: 8000 });
+  ok('in Khmer the line is Khmer', /[ក-៿]/.test(await km.page.$eval('#mentee-mid [data-ootheirs]', e => e.textContent)) && !/Their 1-on-1s/.test(await km.page.$eval('#mentee-mid [data-ootheirs]', e => e.textContent)));
+  await km.ctx.close();
+}
+
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 await browser.close(); srv.close();
