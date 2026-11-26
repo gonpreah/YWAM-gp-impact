@@ -2462,19 +2462,20 @@ function bindKmReview_(){
 
 /* ---------- a board member's own sign-in (not staff) ---------- */
 var BOARD_KEY='gp-board';
-var BOARD_VIEWS=['ywamgp','base','report','qreport','library','p360'];   // p360: a board member answers 360 reviews
+var BOARD_VIEWS=['bdover','bdcamp','bdfin','bdroom','ywamgp','base','report','qreport','library','p360'];   // the bd… views: the board's oversight and its own room (teams/30-boardroom.js); p360: a board member answers 360 reviews
 function boardEnter_(member, creds){
   lsSet(BOARD_KEY, JSON.stringify(creds));
   S.board=member; S.boardAuth=creds; S.guest=true;
-  S.me={ id:'board', name:member.name, photo:member.photo||'', boardRole:member.role, username:'', campus:lsGet('gp-guest-campus')||'siemreap',
+  S.me={ id:member.id||'board', name:member.name, photo:member.photo||'', boardRole:member.role, username:'', campus:lsGet('gp-guest-campus')||'siemreap',
     dept:'', ministry:'', role:'', staffType:'', country:'', ministries:[], leads:[], guest:true };
-  S.profile={}; S.auth={ user:'', pin:'' }; S.regMode=false; S.view='ywamgp'; S.roster=[]; S.required=null; S.reqDocs=[];
+  S.profile={}; S.auth={ user:'', pin:'' }; S.regMode=false; S.view='bdover'; S.roster=[]; S.required=null; S.reqDocs=[];
+  S.bd=null; S.bdInv=null;
   gpGuestLoadBase_(); orgLoad_();
   render(); window.scrollTo(0,0);
 }
 function boardLeave_(expired){
   lsDel(BOARD_KEY);
-  S.board=null; S.boardAuth=null; S.guest=false; S.me=null; S.base=null; S.org=null; S.menuOpen=false; S.view='week';
+  S.board=null; S.boardAuth=null; S.guest=false; S.me=null; S.base=null; S.org=null; S.menuOpen=false; S.view='week'; S.bd=null;
   renderMenu(); render(); window.scrollTo(0,0);
   if(expired) showMsg(t('Please sign in again'));
 }
@@ -2494,11 +2495,11 @@ function adminBoardHtml_(){
   }
   var B=S.adminBoard.board, ed=S.adminBoardEdit;
   var h='<p class="sub">'+esc(t('The YWAM GP Advisory Board — not staff, so never in a roster, headcount or campus chart. Every staff member can see them on the YWAM GP page and contact them. Someone already on staff is linked to their profile; anyone else gets their own username and PIN for a board-only view.'))+'</p>';
-  if(!ed) h+='<button class="btn" id="bdAdd">＋ '+esc(t('Add a board member'))+'</button>';
+  if(!ed) h+=bdAdminInviteHtml_()+'<button class="btn ghost" id="bdAdd">＋ '+esc(t('Add a board member by hand'))+'</button>';   // the invite link first (teams/30-boardroom.js)
   if(ed) h+=adminBoardFormHtml_(ed);
   B.forEach(function(b){
     h+='<div class="card"><div class="mentorBlock" style="padding:0">'+avatarHtml(b,'sm')+'<div style="flex:1;min-width:0"><div class="mentorName">'+esc(b.name)+'</div>'+
-      '<div class="mentorMeta">'+esc(t(b.role))+(b.safeguarding ? ' · 🛡️' : '')+(b.staffId ? ' · '+esc(t('on staff')) : b.hasLogin ? ' · '+esc(gpT('signs in as {u}',{u:b.username})) : ' · '+esc(t('no sign-in yet')))+'</div></div>'+
+      '<div class="mentorMeta">'+esc(t(b.role))+(b.safeguarding ? ' · 🛡️' : '')+(b.staffId ? ' · '+esc(t('on staff')) : b.signIn==='google' ? ' · '+esc(t('signs in with Google')) : b.hasLogin ? ' · '+esc(gpT('signs in as {u}',{u:b.username})) : ' · '+esc(t('no sign-in yet')))+'</div></div>'+
       '<button class="linkbtn" style="width:auto;margin:0" data-bdedit="'+esc(b.id)+'">'+esc(t('Edit'))+'</button></div></div>';
   });
   return h;
@@ -2524,6 +2525,7 @@ function adminBoardFormHtml_(ed){
     (ed.id ? '<button class="linkbtn" id="bdDelete" style="color:var(--bad)">'+esc(t('Remove from the board'))+'</button>' : '')+'</div>';
 }
 function bindAdminBoard_(){
+  bindBdAdminInvite_();
   var add=document.getElementById('bdAdd');
   if(add) add.onclick=function(){ S.adminBoardEdit={ role:'Advisor' }; render(); };
   document.querySelectorAll('[data-bdedit]').forEach(function(b){

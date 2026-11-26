@@ -218,7 +218,7 @@ function rocksPersonHtml_(who){
 }
 
 /* ---------- the small places that used to say "OKR progress" ---------- */
-function leadRocks_(){ return rocksFor_(S.me.campus, BL_DEPT, '', 'now'); }
+function leadRocks_(){ if(brOn_()){ var Q=rkQ_('now'); return ((S.meet && S.meet.rocks) || []).filter(function(r){ return r.year===Q.year && r.q===Q.q; }); } return rocksFor_(S.me.campus, BL_DEPT, '', 'now'); }
 /* Campus Leadership's Overview tile (#lbOkrTile opens the Rocks tab) */
 function rkLeadTile_(){
   var l=leadRocks_(), q=rkQ_('now').q;
@@ -253,6 +253,7 @@ function rocksTake_(list){
 }
 /* the meeting saved one of leadership's rocks: the same rocks everywhere else on the page */
 function rocksFromMeet_(m){
+  if(brOn_()) return;   // the Advisory Board's rocks are its own: never among the campuses'
   if(!m || !m.campus || !Array.isArray(m.rocks) || !Array.isArray(S.rocks)) return;
   S.rocks=S.rocks.filter(function(r){ return !(r.campus===m.campus && r.dept===BL_DEPT && !r.ministry); }).concat(m.rocks);
 }
@@ -323,10 +324,10 @@ function sbdGoalText_(g, m){ return (g.dir==='lte' ? '≤ ' : '≥ ')+fmt(g.goal
 function sbdDefaultDir_(m){ return (typeof LOWER_BETTER!=='undefined' && LOWER_BETTER[m]) ? 'lte' : 'gte'; }
 /* The board at the top of a ministry's Scorecard: "n of m on target", then each number with its goal,
    the week's figure and its mark, and thirteen weeks of marks. `wk` is the week the page is on. */
-function scoreBoardHtml_(campus, dept, ministry, data, wk){
+function scoreBoardHtml_(campus, dept, ministry, data, wk, readOnly){
   var metrics=metricsFor(campus, dept, ministry); if(!metrics.length) return '';
   var entries=(data && data.entries) || {}, goals=sbdGoals_(campus, dept, ministry), key=rkKey_(campus, dept, ministry);
-  var canSet=canEditMetricsClient_(campus, dept, ministry), E=S.sbd && S.sbd.key===key ? S.sbd : null;
+  var canSet=!readOnly && canEditMetricsClient_(campus, dept, ministry), E=!readOnly && S.sbd && S.sbd.key===key ? S.sbd : null;   // readOnly: the Advisory Board looking in
   var isCur=Number(wk)===Number(thisWeek());
   var withGoal=metrics.filter(function(m){ return goals[m]; }), on=0, waiting=0;
   withGoal.forEach(function(m){ var v=(entries[m]||{})[String(wk)], o=sbdOn_(goals[m], v); if(o===true) on++; else if(o===null) waiting++; });

@@ -55,7 +55,7 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   (personality, Library, papers, guest, YWAM GP & the board, report, first 30 days, prayer,
   support raising, reminders, Khmer review) · `04-ministry-strengths.js` · `05-admin-hr.js` ·
   `06-numbers-contract.js` · `07-health-leave.js` · `08-team-profile.js` · `09-finance.js`
-  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app); later ones (12-tasks … 29-report) load before 11. `finance.js` (public/,
+  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app); later ones (12-tasks … 30-boardroom) load before 11. `finance.js` (public/,
   shared like taxonomy.js) reads the reports; `vendor/pdfjs/` is pdf.js, loaded on demand. **One global scope**, exactly as when it was one inline
   script: any function may call any other, but code that RUNS while a file loads (not
   inside a function) may only use what that file or an earlier one defines. Add new code to
@@ -512,10 +512,13 @@ Uriah: YWAM GP is YWAM Poipet, YWAM Siem Reap, **YWAM GP** (the organisation) an
   counts, org). "Print or save as PDF" → window.print(); `body.repOn` print rules hide the
   app around it.
 - **A board member's sign-in** is a guest-mode variant (`S.board`, `S.guest` true, staff
-  `S.auth` empty, `gp-board` in localStorage; index.html sends them here): tabs YWAM GP ·
-  Campuses (each campus's leadership, departments with directors and ministry leaders,
-  then the public base figures) · Library; nothing staff. The login screen tries
-  `boardLogin` after a staff login fails with no other reason.
+  `S.auth` empty, `gp-board` in localStorage; index.html sends them here). Since Nov 2026 its
+  tabs are **Overview · Campuses · Finances · Board room · Report** (`bdover` / `bdcamp` /
+  `bdfin` / `bdroom` / `report`), with YWAM GP, Base (the public base figures), the Quarterly
+  report, 360 reviews and the Library in ☰ — see "The Advisory Board: invite link, oversight
+  and its own room". (Until then: YWAM GP · Campuses · Report · Library.) Nothing staff. The
+  login screen tries `boardLogin` after a staff login fails with no other reason, and
+  Continue with Google finds a board member's own sign-in (`staffLoginGoogle` → err `board`).
 - tests/test-ywam-gp.mjs (server, 40), tests/test-ywam-gp-ui.mjs (browser, 47).
 
 ## Team → Structure (the org chart)
@@ -1665,6 +1668,98 @@ we can give to ministries and donors, the government Ministry, and to donors." T
   one ministry's page.
 - tests/test-quarter-report.mjs (server, 92), tests/test-quarter-report-ui.mjs (browser, 83; `QR_SHOTS=<folder>` saves
   pictures). Khmer: docs/khmer-needed.md §145. sw.js SHELL v34.
+
+## The Advisory Board: invite link, oversight and its own room (teams/30-boardroom.js, Nov 2026, Uriah)
+"An easy link to send our board people to sign up with their roles and be able to view all of the base app activity,
+finances, and everything — full access, not admin control, but full oversight of the whole base … Even a special My Ministry
+thing for them, similar to our leadership team, where we have projects and tasks and rocks — we'll try to run our board by
+the EOS system too."
+- **THE RULE, in one helper** (api.js `boardSees_(viewer)`, with `boardViewer_` = `verifyViewer_` + the seat): an active board
+  member — signed in through the `board` store, or as the staff member their seat is linked to (`staffId`) — may **read what a
+  Campus Leadership member of a campus reads, for BOTH campuses, and write nothing outside the board's own room**.
+  `overseeAuth_` (a member, or an admin) gates the reads: `getBoardOverview`, `getBoardLeadership(campus)`; `fin2Get` and
+  `getQuarterReport` (`qrViewer_`) ask the same helper; `getYwamGp` as before. The only writes are `boardRoom`'s.
+- **NEVER, even for the board**: anyone's health answers, score or token; 1-on-1 check-ins, notes or follow-ups; prayer
+  requests; support raising; HR files and contracts; PIN / password / token material and Google ids; a student's or child's
+  name, photo, guardian or payment; who fasts; 360 reviews; the week's board; leave reasons (counts are fine); any Admin tool.
+  tests/test-board-room.mjs plants a marker for each, **calls every handler in HANDLERS with a board member's own sign-in**
+  (like test-applicant-walls: `BOARD_OK` is the list that may answer ok, only `boardRoom` may write, and only to its three
+  blobs) and scans every answer. A new handler is covered without editing the test; add it to `BOARD_OK` only after reading why.
+  (The public `getData` has always carried each check-in row's token with no name; what is checked is that no answer puts a
+  token beside a person.)
+- **Staff debt**: the board gets exactly what Campus Leadership gets from the finance tool — the `fin2` document, whose
+  `debt.people` **names who owes and how much**. The Overview itself carries only each department's total. If the board should
+  not see names, that is a change to `fin2Get`'s board branch (strip `state.debt.people`), not to the page.
+- **The invite link** (Admin → Advisory Board → **Invite a board member**, `bdAdminInviteHtml_`, `#bdiForm`: `#bdiRole` with
+  the roles as a datalist, `[data-bdidays]` 3 / 7 / 14 / 30, `#bdiNote`, `#bdiMake` → `adminMakeBoardInvite` → `#bdiLink` shown
+  once with `#bdiCopy` / `#bdiShare`; `#bdiList` with who used each and `[data-bdioff]` → `adminBoardInviteOff`): the staff
+  invite's pattern — `teams.html?board=<48 hex>`, **only a salted hash kept** (blob `boardInvites` = [{id, hash, salt, role,
+  note, uses:1, used:[{name, at, staffId}], exp, off, by, byName, at}], `inviteFind_` / `inviteState_`), one person, an end
+  date, can be turned off. The page takes the token out of the address before boot (`bdInviteTake_`, sessionStorage
+  `gp-board-invite`, `S.bdInv`) and asks `boardInviteInfo` (public: role, who invited, whether Google is on).
+  - Signed out: `bdInviteHtml_` (`#bdInvite`, `#bdInvForm`): "You're invited to the YWAM GP Advisory Board as {role}", name,
+    phone and a short bio (optional), then **Continue with Google** (`#bdInvGoogle` → `gglGo_('board')` → `bdInviteGoogle_`)
+    or, behind `#bdInvPinWay`, an email, a username and a 4-digit PIN (`#bdInvJoin`). `boardJoin(token, {googleToken} |
+    {email, username, pin} | {staff:{user, pin}})` claims the link in one checked write, makes the seat, and gives the link
+    back if the seat can't be made. They are in at once (`boardEnter_`); a Google member holds a device token as the "pin"
+    (`credOk_`), and next time **Continue with Google on the sign-in screen** finds them (`boardGoogleLogin_`, answered
+    through `staffLoginGoogle` as `{ok:false, err:'board', member, user, token}` so the staff door's `ok` only ever means
+    staff — by Google id, else the email on the seat, so a member an admin made by hand can use it too).
+  - **A staff member never gets a second identity**: a Google account that is a staff profile (its linked Google id, or its
+    email), or someone signed in to the app as staff when they open the link (`bdInviteStaffHtml_`, `#bdInvStaff`,
+    `#bdInvStaffJoin`, `S.view='bdinvite'`), gets the seat **linked to their profile** and opens the app as usual. **A typed
+    email proves nothing**, so a typed email that belongs to a staff profile is turned away (`staff_email`: "sign in to the
+    app first") — otherwise whoever holds a link could put a seat on anyone.
+  - A used / ended / turned-off link says so plainly (`#bdInvGone`, `BD_INV_ERR`). Usernames stay one namespace with staff.
+- **A board member's screens** (`BD_VIEWS`; the bottom bar in the board's own sign-in, a row of four on top for staff —
+  `bdSegHtml_`, `[data-bdtab]`). `S.bd` holds it; `bdAuth_()` is the board's sign-in or the staff one.
+  - **Overview** (`bdover`, `bdOverHtml_`, `#bdOver`; one `getBoardOverview`): "The big picture" — all of YWAM GP (`#bdAll`)
+    and a card a campus (`[data-bdcard]`, side by side from 900px): staff with Khmer / international (`staffBreakdown`), the
+    Staff Health Score (`repHealth_`, never under `REP_MIN_ANSWERS`), salvations, the schools — **all rolled up on the page
+    with `baseR()`**, no rule written again — who is on campus tonight and how full the beds are (`whosHere_`, counts only);
+    then lines that open the detail (`[data-bdgo="camp|campus|dept" | "lead|campus" | "fin|campus"]`): **Scorecards "n of m
+    numbers on target this week"** with each department's (`bdScore_`: the goals in `metricOverrides` against `S.base.entries`),
+    **Rocks "n of m on track"** with each department's and leadership's, numbers in on time (typed rows only), the liquid
+    balance the office last entered and whether it was reconciled (`fin2` `state.bal`), leadership's last meeting (date,
+    rating, To-Dos done %) and open issues, 1-on-1s this month (a count), staff debt (a total).
+  - **Campuses** (`bdcamp`): a campus (`[data-bdcampus]`) → its leadership team, its departments (`[data-bddept]`) → a
+    department's own rocks and its ministries (`[data-bdmin]`) → a ministry (`#bdMin`): who leads it, how many serve, its
+    **Scorecard** (`scoreBoardHtml_(…, readOnly)` — no Goals button), period totals (`#bdTotals`, by each number's own rule),
+    its **Rocks** (`rockHtml_` with no `edit`: one badge), and **Its page in the quarterly report** (`#bdMinReport` →
+    `qrOpen_`). `#bdLeadGo` → the campus's leadership team to read (`bdLeadHtml_`, `#bdLead`, one `getBoardLeadership`:
+    Scorecard, Rocks, the Kanban as a list, past meetings via `lmPastHtml_`) — not an input anywhere. `#bdBaseGo` → Base.
+  - **Finances** (`bdfin`): `fin2FrameHtml_('dash', campus)` — the finance tool's Dashboard for either campus. The frame is
+    told `as=board` for a board member's own sign-in, and finance.html's `finAuth_` then reads `gp-board` instead of
+    `gp-staff` (the draft, rebuilt). The server decides: `fin2Out_(null, …)` → `canEdit:false`, no staff list; `fin2Save`
+    still needs the Finances office.
+  - **Report**: the board's quarter report, and the quarterly report (a staff member on the board reads every ministry on
+    both campuses there too — `qrViewer_`'s `seat`, writing only what they could before).
+- **The Board room** (`bdroom`, `bdRoomHtml_` = `leadSectionHtml_()` in the board's scope): **Board meeting** (the seven
+  parts, clocks, coaching lines, ratings, past meetings — 27-meeting.js unchanged), with its sections Scorecard · Rocks ·
+  Headlines · To-Dos · Past; **Issues and To-Dos** (the Kanban, 07-health-leave.js); Notes. No weekly rota (whoever starts
+  the meeting leads it). `#lmFine` — not affiliated with EOS Worldwide — shows wherever the meeting does.
+  - **A scope, not a copy.** Server: `boardRoom(user, pin, fn, args)` checks the caller is on the board (or an admin), that
+    `fn` is in `BOARD_ROOM_FNS` (21: the lead* handlers but `saveLeadTuesday` and `setMinistryLeader`), and runs the SAME
+    handler inside `boardScope` (an AsyncLocalStorage). `leadAuth_` then answers `{s, campus:'board', board:true}`, so every
+    blob is the board's own — `leadBoard:board`, `leadMeet:board`, and **`rocks:board`** (`rocksKey_`; the board's rocks are
+    NOT in the campuses' `rocks` store, so no staff boot, `saveRock` answer or report can ever carry one). Outside the scope
+    no handler can reach those keys; inside it nothing of a campus is read but a linked scorecard number, which names its
+    campus (`metric.campus`). `meetCampusIds_('board')` = the active board members (`boardRoomIds_`), by **`boardPid_`**: a
+    linked member's staff id (their own app knows them by it), else the board id.
+  - **To-Dos never become GP Tasks in the room** (`if (!a.board)` round `gptFromCard_` / `gptFromLeadTask_` /
+    `gptDropLeadTasks_`; a card's `taskMin` is dropped): a board member who is not staff has no GP Tasks, and a linked
+    member's would have landed in a campus list other staff read. They live on the board's Kanban for everyone alike.
+  - Page: `BR_FNS` mirrors the server's list (test-checked). While `S.view==='bdroom'` `brOn_()` is true: `run()` sends those
+    calls as `boardRoom` with `bdAuth_()`; an answer that lands after the room was left (or entered) is dropped; and
+    `brSync_()` (start of every signed-in render) swaps `BR_KEYS` (`S.lead`, `S.meet`, `S.mt`, `S.leadTab`, forms, drafts…)
+    between the room and the campus (`S.brStash`), so a Campus Leadership member who is also on the board never sees one in
+    the other's place. `leadOwnerOptions_` → `bdMembers_()`; `staffName_` / `nameOf` fall back to `bdName_`; the score form
+    gains a campus picker; `rocksFromMeet_` does nothing.
+- **A staff member on the board** keeps their app and gets ☰ → **🛡️ Advisory Board** (`bdhub`, `bdCan_()`: `bdSeat_()` from
+  the boot's `org.board`, or an admin) — the same four pages with the same rights, the other campus included.
+- Khmer: docs/khmer-needed.md §147 ("Advisory Board" stays ក្រុមប្រឹក្សាយោបល់; the tab's short labels are `Tab: Board room` /
+  `Tab: Overview`). sw.js SHELL v36. tests/test-board-room.mjs (server, 116), tests/test-board-room-ui.mjs (browser, 91;
+  `BD_SHOTS=<folder>` saves pictures).
 
 ## Who's here (Oct 2026, Uriah)
 Base's hero has **🏠 On campus now · N** (`#goWhosHere`, loaded by `whosHereLoad_` when Base

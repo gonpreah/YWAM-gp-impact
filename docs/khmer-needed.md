@@ -6782,6 +6782,102 @@ Campus Leadership arranges a quarter on the whiteboard; "Make Q1 2027 live" turn
 | Someone else is saving — try again. | មានអ្នកផ្សេងកំពុងរក្សាទុក — សូមព្យាយាមម្តងទៀត។ |
 | That quarter is over. | ត្រីមាសនោះបានកន្លងផុតហើយ។ |
 
+## 147. The Advisory Board: the invite link, the big picture, and the Board room (teams.html?board=…, ☰ → Advisory Board, Admin → Advisory Board, Nov 2026)
+For the members of the YWAM GP Advisory Board — several of them are not staff and may read these on a laptop. "Advisory Board" stays ក្រុមប្រឹក្សាយោបល់ (ក្តារ is the meeting Kanban, a different thing); the board's own page is the "Board room" (បន្ទប់ក្រុមប្រឹក្សា; on the bottom bar the short បន្ទប់ប្រឹក្សា, and ទូទៅ for Overview — both must fit a narrow tab). Rocks (ថ្មធំ), Scorecard (តារាងពិន្ទុ), To-Dos (កិច្ចការត្រូវធ្វើ), Issues (បញ្ហា) and Headlines keep the words the leadership meeting uses (§142, §144). The first lines below are the invitation a new member reads before anything else, and the long line starting "The board reads what…" is a promise about privacy — please check those first. Short lines with {d} of {n} are figures on small tiles.
+
+| English | Khmer (draft) |
+|---|---|
+| Add a board member by hand | បន្ថែមសមាជិកក្រុមប្រឹក្សាដោយដៃ |
+| signs in with Google | ចូលដោយ Google |
+| Board meeting | កិច្ចប្រជុំក្រុមប្រឹក្សា |
+| Issues and To-Dos | បញ្ហា និងកិច្ចការត្រូវធ្វើ |
+| The board’s Issues and To-Dos | បញ្ហា និងកិច្ចការត្រូវធ្វើរបស់ក្រុមប្រឹក្សា |
+| The board room is for the Advisory Board. | បន្ទប់ក្រុមប្រឹក្សាគឺសម្រាប់ក្រុមប្រឹក្សាយោបល់។ |
+| Whoever starts the meeting leads it. | អ្នកដែលចាប់ផ្ដើមកិច្ចប្រជុំ ជាអ្នកដឹកនាំវា។ |
+| The three to seven things the board must get done this quarter — each member’s, and the whole board’s. | កិច្ចការបីទៅប្រាំពីរដែលក្រុមប្រឹក្សាត្រូវធ្វើឲ្យហើយក្នុងត្រីមាសនេះ — របស់សមាជិកម្នាក់ៗ និងរបស់ក្រុមប្រឹក្សាទាំងមូល។ |
+| A To-Do is one action for one person, due in seven days. These are the tasks on the cards of the board’s Kanban. | កិច្ចការត្រូវធ្វើ គឺសកម្មភាពមួយសម្រាប់មនុស្សម្នាក់ ដែលត្រូវហើយក្នុងប្រាំពីរថ្ងៃ។ ទាំងនេះជាកិច្ចការនៅលើកាតនៃក្តារកិច្ចការរបស់ក្រុមប្រឹក្សា។ |
+| It is due in seven days, and stays on the board’s own Kanban. | វាត្រូវហើយក្នុងប្រាំពីរថ្ងៃ ហើយនៅលើក្តារកិច្ចការរបស់ក្រុមប្រឹក្សាផ្ទាល់។ |
+| This part is for the Advisory Board. | ផ្នែកនេះគឺសម្រាប់ក្រុមប្រឹក្សាយោបល់។ |
+| Board room | បន្ទប់ក្រុមប្រឹក្សា |
+| Tab: Board room | បន្ទប់ប្រឹក្សា |
+| Tab: Overview | ទូទៅ |
+| {k} Khmer · {i} international | ខ្មែរ {k} · អន្តរជាតិ {i} |
+| {n} check-ins · Q{q} | ការឆែក {n} · ត្រីមាស {q} |
+| Q{q} · {n} this year | ត្រីមាស {q} · ឆ្នាំនេះ {n} |
+| Q{q} | ត្រីមាស {q} |
+| {n} graduated this year | បញ្ចប់ការសិក្សា {n} នាក់ឆ្នាំនេះ |
+| The big picture | រូបភាពរួម |
+| All of YWAM GP · week {wk} · Q{q} {year} | YWAM GP ទាំងមូល · សប្ដាហ៍ {wk} · ត្រីមាស {q} {year} |
+| You: {role} | អ្នក៖ {role} |
+| On campus tonight | នៅមូលដ្ឋានយប់នេះ |
+| {pct}% of beds full | គ្រែពេញ {pct}% |
+| {n} staff away this week | បុគ្គលិក {n} នាក់មិននៅសប្ដាហ៍នេះ |
+| Scorecards | តារាងពិន្ទុ |
+| {d} of {n} numbers on target this week | លេខ {d} ក្នុងចំណោម {n} ដល់គោលដៅសប្ដាហ៍នេះ |
+| no goals set yet | មិនទាន់កំណត់គោលដៅ |
+| Numbers in on time | លេខបញ្ចូលទាន់ពេល |
+| {d} of {n} ministries this week | កិច្ចការបម្រើ {d} ក្នុងចំណោម {n} សប្ដាហ៍នេះ |
+| Liquid balance | សមតុល្យសាច់ប្រាក់ |
+| entered {date} | បញ្ចូល {date} |
+| reconciled {date} | ផ្ទៀងផ្ទាត់ {date} |
+| not reconciled | មិនទាន់ផ្ទៀងផ្ទាត់ |
+| rated {n} | ពិន្ទុ {n} |
+| not rated | មិនបានដាក់ពិន្ទុ |
+| {pct}% of To-Dos done | កិច្ចការត្រូវធ្វើហើយ {pct}% |
+| no meeting on record yet | មិនទាន់មានកំណត់ត្រាកិច្ចប្រជុំ |
+| Leadership’s Issues | បញ្ហារបស់ថ្នាក់ដឹកនាំ |
+| {n} open on their list | {n} នៅបើកក្នុងបញ្ជីរបស់ពួកគេ |
+| 1-on-1s held or set this month | ការជួបមួយទល់មួយដែលបានធ្វើ ឬបានកំណត់ខែនេះ |
+| The board reads what each campus’s leadership team reads, for both campuses, and changes nothing outside its own Board room. Health is a campus average, shown only from three check-ins or more — nobody’s own answers, 1-on-1s, prayer requests, support or HR papers are ever shown here. | ក្រុមប្រឹក្សាអានអ្វីដែលក្រុមដឹកនាំនៃមូលដ្ឋាននីមួយៗអាន សម្រាប់មូលដ្ឋានទាំងពីរ ហើយមិនផ្លាស់ប្ដូរអ្វីនៅក្រៅបន្ទប់ក្រុមប្រឹក្សារបស់ខ្លួនឡើយ។ សុខភាពគឺជាមធ្យមរបស់មូលដ្ឋាន បង្ហាញតែពេលមានការឆែកបីឬច្រើនជាងនេះ — ចម្លើយផ្ទាល់ខ្លួន ការជួបមួយទល់មួយ សំណូមពរអធិស្ឋាន ការឧបត្ថម្ភ ឬឯកសារធនធានមនុស្សរបស់នរណាម្នាក់ មិនដែលបង្ហាញនៅទីនេះទេ។ |
+| on target this week | ដល់គោលដៅសប្ដាហ៍នេះ |
+| ministries this week | កិច្ចការបម្រើសប្ដាហ៍នេះ |
+| The leadership team’s Scorecard, Rocks and meetings | តារាងពិន្ទុ ថ្មធំ និងកិច្ចប្រជុំរបស់ក្រុមដឹកនាំ |
+| To read — as they run their week | សម្រាប់អាន — ដូចដែលពួកគេដំណើរការសប្ដាហ៍របស់ខ្លួន |
+| Director: {name} | នាយក៖ {name} |
+| No director named yet | មិនទាន់មានឈ្មោះនាយក |
+| The base’s figures, section by section | តួលេខរបស់មូលដ្ឋាន តាមផ្នែកនីមួយៗ |
+| The department’s rocks · Q{q} | ថ្មធំរបស់នាយកដ្ឋាន · ត្រីមាស {q} |
+| No leader named yet | មិនទាន់មានឈ្មោះអ្នកដឹកនាំ |
+| {n} serve | {n} នាក់បម្រើ |
+| {d} of {n} on target | {d} ក្នុងចំណោម {n} ដល់គោលដៅ |
+| Serving | កំពុងបម្រើ |
+| Its page in the quarterly report | ទំព័ររបស់វាក្នុងរបាយការណ៍ប្រចាំត្រីមាស |
+| This ministry has no numbers on its Scorecard. | កិច្ចការបម្រើនេះមិនមានលេខនៅលើតារាងពិន្ទុទេ។ |
+| This quarter and this year | ត្រីមាសនេះ និងឆ្នាំនេះ |
+| Rocks · Q{q} | ថ្មធំ · ត្រីមាស {q} |
+| no To-Dos | គ្មានកិច្ចការត្រូវធ្វើ |
+| To read only: nothing here can be changed from the board’s side. | សម្រាប់អានប៉ុណ្ណោះ៖ គ្មានអ្វីនៅទីនេះអាចផ្លាស់ប្ដូរពីខាងក្រុមប្រឹក្សាបានទេ។ |
+| The Finances office’s dashboard, to read. Only the office can enter or change anything. | ផ្ទាំងរបស់ការិយាល័យហិរញ្ញវត្ថុ សម្រាប់អាន។ មានតែការិយាល័យទេដែលអាចបញ្ចូល ឬផ្លាស់ប្ដូរអ្វីបាន។ |
+| The Advisory Board’s own meeting, Rocks, Scorecard, Issues and To-Dos. Only board members (and admins) can open this. | កិច្ចប្រជុំ ថ្មធំ តារាងពិន្ទុ បញ្ហា និងកិច្ចការត្រូវធ្វើ របស់ក្រុមប្រឹក្សាយោបល់ផ្ទាល់។ មានតែសមាជិកក្រុមប្រឹក្សា (និងអ្នកគ្រប់គ្រង) ទេដែលអាចបើកវាបាន។ |
+| You’re invited to the YWAM GP Advisory Board as {role} | អ្នកត្រូវបានអញ្ជើញឲ្យចូលរួមក្រុមប្រឹក្សាយោបល់ YWAM GP ជា {role} |
+| An invitation to the YWAM GP Advisory Board | លិខិតអញ្ជើញចូលក្រុមប្រឹក្សាយោបល់ YWAM GP |
+| Welcome to the Advisory Board | សូមស្វាគមន៍មកកាន់ក្រុមប្រឹក្សាយោបល់ |
+| {name}, your seat on the board is linked to your staff profile. Open the app as usual — you’ll find 🛡️ Advisory Board in the menu. | {name} កៅអីរបស់អ្នកក្នុងក្រុមប្រឹក្សាត្រូវបានភ្ជាប់ទៅប្រវត្តិរូបបុគ្គលិករបស់អ្នក។ បើកកម្មវិធីដូចធម្មតា — អ្នកនឹងឃើញ 🛡️ ក្រុមប្រឹក្សាយោបល់ នៅក្នុងម៉ឺនុយ។ |
+| Invited by {name}. | អញ្ជើញដោយ {name}។ |
+| The board sees how the whole base is doing — every ministry, the finances, the leadership teams — and has its own room for its meetings, Rocks and Scorecard. It reads; it doesn’t run the base. | ក្រុមប្រឹក្សាឃើញថាមូលដ្ឋានទាំងមូលកំពុងដំណើរការយ៉ាងណា — កិច្ចការបម្រើនីមួយៗ ហិរញ្ញវត្ថុ ក្រុមដឹកនាំ — ហើយមានបន្ទប់ផ្ទាល់ខ្លួនសម្រាប់កិច្ចប្រជុំ ថ្មធំ និងតារាងពិន្ទុរបស់ខ្លួន។ ក្រុមប្រឹក្សាអាន មិនមែនដំណើរការមូលដ្ឋានទេ។ |
+| A short bio (optional) | ប្រវត្តិរូបសង្ខេប (មិនចាំបាច់) |
+| Who you are, in a few lines — staff see it on the YWAM GP page. | អ្នកជានរណា ក្នុងពីរបីបន្ទាត់ — បុគ្គលិកឃើញវានៅលើទំព័រ YWAM GP។ |
+| How you’ll sign in | របៀបដែលអ្នកនឹងចូល |
+| Join the board | ចូលរួមក្រុមប្រឹក្សា |
+| Use Continue with Google instead | ប្រើ «បន្តជាមួយ Google» ជំនួសវិញ |
+| Already on staff? Sign in to the app first, then open this link again — the seat is added to your profile, with the sign-in you already have. | ជាបុគ្គលិករួចហើយ? សូមចូលកម្មវិធីជាមុនសិន រួចបើកតំណនេះម្ដងទៀត — កៅអីនឹងត្រូវបន្ថែមទៅប្រវត្តិរូបរបស់អ្នក ជាមួយការចូលដែលអ្នកមានស្រាប់។ |
+| You’re signed in as {name}. Your seat on the board is added to this profile — no second sign-in. | អ្នកបានចូលជា {name}។ កៅអីរបស់អ្នកក្នុងក្រុមប្រឹក្សាត្រូវបន្ថែមទៅប្រវត្តិរូបនេះ — មិនចាំបាច់ចូលលើកទីពីរទេ។ |
+| You’re on the Advisory Board — it is in your menu. | អ្នកនៅក្នុងក្រុមប្រឹក្សាយោបល់ហើយ — វានៅក្នុងម៉ឺនុយរបស់អ្នក។ |
+| Invite a board member | អញ្ជើញសមាជិកក្រុមប្រឹក្សា |
+| Make a link for one person and send it to them. They add their name and choose how to sign in — Google, or a username and PIN — and are on the board straight away, with this role. Someone already on staff gets the seat on their own profile. | បង្កើតតំណសម្រាប់មនុស្សម្នាក់ ហើយផ្ញើទៅគាត់។ គាត់បញ្ចូលឈ្មោះ ហើយជ្រើសរើសរបៀបចូល — Google ឬឈ្មោះអ្នកប្រើនិងលេខ PIN — ហើយនៅក្នុងក្រុមប្រឹក្សាភ្លាម ជាមួយតួនាទីនេះ។ អ្នកដែលជាបុគ្គលិករួចហើយ ទទួលបានកៅអីនៅលើប្រវត្តិរូបផ្ទាល់ខ្លួន។ |
+| e.g. who it is for | ឧ. សម្រាប់នរណា |
+| For one person, as {role} — until {date}. Anyone who has the link can use it, so send it only to them. | សម្រាប់មនុស្សម្នាក់ ជា {role} — រហូតដល់ {date}។ អ្នកណាដែលមានតំណនេះអាចប្រើវាបាន ដូច្នេះសូមផ្ញើទៅគាត់តែប៉ុណ្ណោះ។ |
+| Turn this invite link off? It stops working at once. | បិទតំណអញ្ជើញនេះ? វានឹងឈប់ដំណើរការភ្លាម។ |
+| This invite link has already been used. Ask an admin for a new one. | តំណអញ្ជើញនេះត្រូវបានប្រើរួចហើយ។ សូមសុំតំណថ្មីពីអ្នកគ្រប់គ្រង។ |
+| This invite link has ended. Ask an admin for a new one. | តំណអញ្ជើញនេះបានផុតកំណត់ហើយ។ សូមសុំតំណថ្មីពីអ្នកគ្រប់គ្រង។ |
+| This invite link was turned off. Ask an admin for a new one. | តំណអញ្ជើញនេះត្រូវបានបិទ។ សូមសុំតំណថ្មីពីអ្នកគ្រប់គ្រង។ |
+| This invite link isn’t right. Ask an admin for a new one. | តំណអញ្ជើញនេះមិនត្រឹមត្រូវទេ។ សូមសុំតំណថ្មីពីអ្នកគ្រប់គ្រង។ |
+| Add your email | បញ្ចូលអ៉ីមែលរបស់អ្នក |
+| You already have a sign-in for the board — sign in with it. | អ្នកមានការចូលសម្រាប់ក្រុមប្រឹក្សារួចហើយ — សូមចូលដោយប្រើវា។ |
+| That email belongs to a staff profile. Sign in to the app first, then open this link again — your seat is added to your profile. | អ៉ីមែលនោះជារបស់ប្រវត្តិរូបបុគ្គលិក។ សូមចូលកម្មវិធីជាមុនសិន រួចបើកតំណនេះម្ដងទៀត — កៅអីរបស់អ្នកនឹងត្រូវបន្ថែមទៅប្រវត្តិរូបរបស់អ្នក។ |
+| That staff profile isn’t active — ask an admin. | ប្រវត្តិរូបបុគ្គលិកនោះមិនសកម្មទេ — សូមសួរអ្នកគ្រប់គ្រង។ |
+| {campus} · leadership team | {campus} · ក្រុមដឹកនាំ |
+
 ## 145. The quarterly report, ministry by ministry (☰ → Quarterly report, My Ministry → This quarter’s report, Nov 2026)
 A printed document for three readers — our own ministries, donors, and the government — with a page for each ministry. Many of these are headings and table labels ON THE PRINTED REPORT, so they are read by people outside YWAM GP: please check "Report of activities", "Scorecard", "Highlights", "Prayer and needs" and the staff lines first. "Scorecard" (តារាងពិន្ទុ) is the table of a ministry's numbers for the quarter. The tick "Leave out faith numbers" is a promise about what the government's copy leaves out. The reminder under "A story" is about protecting children.
 

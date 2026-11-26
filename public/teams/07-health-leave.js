@@ -422,10 +422,11 @@ function leadSectionHtml_(){
      keeps the meeting board, Tuesday and the notes */
   var tab=S.leadTab==='notes' || S.leadTab==='tues' || S.leadTab==='meet' ? S.leadTab : 'board';
   var day=typeof lmDay_==='function' ? lmDay_() : 2;   // the meeting's weekday is a setting now (teams/27-meeting.js); Tuesday unless changed
+  var br=brOn_(); if(br && tab==='tues') tab='meet';   // the Advisory Board's room (teams/30-boardroom.js): its meeting, its Kanban, its notes — no weekly rota
   var h='<div class="leadFilters leadTabs" role="tablist">'+
-    '<button class="leadSeg'+(tab==='meet'?' on':'')+'" role="tab" data-leadtab="meet" title="'+esc(t('Leadership meeting'))+'">▶ '+esc(t('Meeting'))+'</button>'+
-    '<button class="leadSeg'+(tab==='board'?' on':'')+'" role="tab" data-leadtab="board" title="'+esc(t('Monday meetings'))+'">🗂️ '+esc(t('Board'))+'</button>'+
-    '<button class="leadSeg'+(tab==='tues'?' on':'')+'" role="tab" data-leadtab="tues" title="'+esc(day===2 ? t('Tuesday morning meeting') : t('Who leads each week'))+'">🎤 '+esc(day===2 ? t('Tuesday') : t(LM_DAYS[day]))+'</button>'+
+    '<button class="leadSeg'+(tab==='meet'?' on':'')+'" role="tab" data-leadtab="meet" title="'+esc(br ? t('Board meeting') : t('Leadership meeting'))+'">▶ '+esc(br ? t('Board meeting') : t('Meeting'))+'</button>'+
+    '<button class="leadSeg'+(tab==='board'?' on':'')+'" role="tab" data-leadtab="board" title="'+esc(br ? t('Issues and To-Dos') : t('Monday meetings'))+'">🗂️ '+esc(br ? t('Issues and To-Dos') : t('Board'))+'</button>'+
+    (br ? '' : '<button class="leadSeg'+(tab==='tues'?' on':'')+'" role="tab" data-leadtab="tues" title="'+esc(day===2 ? t('Tuesday morning meeting') : t('Who leads each week'))+'">🎤 '+esc(day===2 ? t('Tuesday') : t(LM_DAYS[day]))+'</button>')+
     '<button class="leadSeg'+(tab==='notes'?' on':'')+'" role="tab" data-leadtab="notes" title="'+esc(t('Meeting notes'))+'">📝 '+esc(t('Notes'))+'</button></div>';
   return h+(tab==='meet' ? leadMeetHtml_() : tab==='notes' ? leadNotesHtml_() : tab==='tues' ? leadTuesHtml_() : leadBoardHtml_());
 }
@@ -436,6 +437,7 @@ function leadTaskOwners_(key){
   return (S.roster||[]).filter(function(x){ return x.campus===S.me.campus; }).sort(function(a,b){ return (inIt(b)-inIt(a)) || String(a.name).localeCompare(String(b.name)); });
 }
 function leadOwnerOptions_(){
+  if(brOn_()) return bdMembers_();   // in the Advisory Board's room the people are its members
   var list=(S.roster||[]).filter(function(p){ return p.campus===S.me.campus && p.dept==='Campus Leadership'; });
   if(!list.some(function(p){ return p.id===S.me.id; })) list.push(S.me);
   return list.sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); });
@@ -485,7 +487,7 @@ function leadBoardHtml_(){
   ['cols','areas','standing','cards'].forEach(function(k){ if(!Array.isArray(S.lead[k])) S.lead[k]=[]; });   // a board with nothing in it yet
   var filter=S.leadFilter||'all', today=todayStr();
   var nm=leadNextMonday_();
-  h+='<div class="leadHead"><div class="leadNext"><span class="leadNextLabel">'+esc(t('Next meeting'))+'</span> <b>'+esc(gpT('Monday {date}',{date:hospDate_(nm)}))+'</b></div>'+
+  h+='<div class="leadHead"><div class="leadNext">'+(brOn_() ? '<b>🧩 '+esc(t('The board’s Issues and To-Dos'))+'</b>' : '<span class="leadNextLabel">'+esc(t('Next meeting'))+'</span> <b>'+esc(gpT('Monday {date}',{date:hospDate_(nm)}))+'</b>')+'</div>'+
     '<div class="leadHeadBtns"><button class="leadIconBtn" id="leadEditBoard" aria-label="'+esc(t('Edit the board'))+'" title="'+esc(t('Edit the board'))+'">✏️</button>'+
     '<button class="btn small" id="leadNew">＋ '+esc(t('Card'))+'</button></div></div>';
   if(S.lead.standing.length) h+='<div class="leadStanding" id="leadStanding"><span class="leadNextLabel">'+esc(t('Every Monday'))+'</span> '+S.lead.standing.map(function(x){ return '<span class="leadStandItem">'+esc(x.title)+'</span>'; }).join('<span class="leadDot">·</span>')+'</div>';
@@ -602,13 +604,14 @@ function leadFormHtml_(){
     '<div class="schedSheetHead"><h3 style="margin:0">'+esc(isNew?t('New card'):t('Card'))+'</h3><button class="leadIconBtn" id="leadClose" aria-label="'+esc(t('Close'))+'">✕</button></div>';
   h+='<div class="chips hospChips">'+[['agenda','💬','Agenda item'],['project','🔨','Project']].map(function(x){
     return '<button class="hospChip'+(f.type===x[0]?' on':'')+'" data-lftype="'+x[0]+'">'+x[1]+' '+esc(t(x[2]))+'</button>'; }).join('')+'</div>';
+  if(brOn_()) f.taskMin='';   // the board's cards are never a department's task
   h+='<label class="f">'+esc(t('Title'))+'</label><input type="text" data-lf="title" maxlength="160" value="'+esc(f.title||'')+'" placeholder="'+esc(t('e.g. Staff retreat plan'))+'">';
   /* GP Tasks (Oct 2026, Uriah): for a department and a person, the card is also a task in that
      department's list, given to them, from Campus Leadership — and they hear of it. A department,
      not a ministry: its director hands it on to a ministry leader in GP Tasks. */
   var deps=getDepartments(S.me.campus), mins=[];
   Object.keys(deps).filter(function(d){ return d!==BL_DEPT; }).forEach(function(d){ mins.push([d+'|', t(d)]); });
-  h+='<label class="f">'+esc(t('A task for which department?'))+'</label><select data-lf="taskMin" data-lfre="1"><option value="">'+esc(t('— none: just on the board —'))+'</option>'+
+  if(!brOn_()) h+='<label class="f">'+esc(t('A task for which department?'))+'</label><select data-lf="taskMin" data-lfre="1"><option value="">'+esc(t('— none: just on the board —'))+'</option>'+
     mins.map(function(x){ return '<option value="'+esc(x[0])+'"'+(f.taskMin===x[0]?' selected':'')+'>'+esc(x[1])+'</option>'; }).join('')+'</select>'+
     (f.taskMin ? '<p class="hint" style="margin:4px 0 0">'+esc(t('It shows in that department’s GP Tasks list, given to the person below, from Campus Leadership — and in their Inbox.'))+'</p>' : '');
   var owners=f.taskMin ? leadTaskOwners_(f.taskMin) : leadOwnerOptions_();
@@ -696,7 +699,7 @@ function bindLead_(){
   document.querySelectorAll('[data-leadtab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.leadTab=b.getAttribute('data-leadtab'); render(); }; });
   if((document.getElementById('leadBoard') || document.getElementById('leadRocksDash') || document.getElementById('leadNotes') || document.getElementById('leadTues') || document.getElementById('leadBase')) && !document.getElementById('leadMeet') && !S.lead && !S.leadLoading && !S.leadErr){
     S.leadLoading=true;
-    run('getLeadBoard',[S.auth.user,S.auth.pin],function(d){ S.leadLoading=false; if(d && d.ok) S.lead=d; else S.leadErr=(d && d.err==='not_authorized') ? t('The meeting board is for Campus Leadership.') : t('Could not load'); render(); },
+    run('getLeadBoard',[S.auth.user,S.auth.pin],function(d){ S.leadLoading=false; if(d && d.ok) S.lead=d; else S.leadErr=(d && d.err==='not_authorized') ? (brOn_() ? t('The board room is for the Advisory Board.') : t('The meeting board is for Campus Leadership.')) : t('Could not load'); render(); },
       function(e){ S.leadLoading=false; S.leadErr=(e && e.message) || t('Connection problem — try again.'); render(); });
   }
   if(!S.lead) return;
@@ -1034,6 +1037,7 @@ function gglCred_(resp){
   var tok=resp && (resp.access_token || resp.credential); _ggl.busy=false; _ggl.started=0;
   if(!tok){ render(); return; }
   S.gglHelp=null;
+  if(_ggl.mode==='board'){ bdInviteGoogle_(tok); return; }   // signing up from an Advisory Board invite (teams/30-boardroom.js)
   if(_ggl.mode==='link'){
     run('staffLinkGoogle',[S.auth.user,S.auth.pin,tok],function(d){
       if(d && d.ok){ S.auth.pin=d.token; lsSet('gp-staff', JSON.stringify(S.auth)); if(S.profile && !S.profile.email) S.profile.email=d.email; if(S.me){ S.me.google=true; S.me.signIn='google'; } showMsg(t('Done — sign in with Google from now on.')); }
@@ -1044,6 +1048,7 @@ function gglCred_(resp){
   }
   run('staffLoginGoogle',[tok],function(d){
     if(d && d.ok){ S.auth={ user:d.user, pin:d.token }; S.me=d.staff; S.profile=d.profile; S.regMode=false; S.regGoogle=null; S.gglNew=null; afterLogin(); return; }
+    if(d && d.err==='board' && d.token && d.member && !gpTasksApp_()){ S.regMode=false; S.regGoogle=null; S.gglNew=null; boardEnter_(d.member, { user:d.user, pin:d.token }); return; }   // not staff: a member of the Advisory Board with their own sign-in
     /* a Google account no profile has yet: most often the person picked another Gmail than the one on their
        profile — so ask before making a new profile (that made duplicate sign-ups waiting on an admin) */
     if(d && d.err==='new' && _ggl.mode==='signup'){ S.regMode=true; S.regGoogle={ token:tok, email:d.email||'', name:d.name||'' }; S.gglNew=null; render(); return; }   // they came to make a profile: just their name now

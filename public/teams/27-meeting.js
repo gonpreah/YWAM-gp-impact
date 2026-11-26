@@ -91,7 +91,7 @@ function lmLoad_(force){
   S.meetLoading=true; S.meetErr='';
   run('getLeadMeeting',[S.auth.user,S.auth.pin],function(d){ S.meetLoading=false;
     if(d && d.ok && Array.isArray(d.parts)) lmApply_(d);
-    else S.meetErr=(d && d.err==='not_authorized') ? t('The leadership meeting is for Campus Leadership.') : t('Could not load');
+    else S.meetErr=(d && d.err==='not_authorized') ? (brOn_() ? t('The board room is for the Advisory Board.') : t('The leadership meeting is for Campus Leadership.')) : t('Could not load');
     render(); },
     function(e){ S.meetLoading=false; S.meetErr=(e && e.message) || t('Connection problem — try again.'); render(); });
 }
@@ -157,11 +157,13 @@ function leadMeetHtml_(){
   if(!S.lead) return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.leadErr || t('Loading…'))+'</p></div></div>';
   if(M.run) return h+lmRunHtml_()+lmFineHtml_()+'</div>';
   var next=lmNextDate_(), tr=leadTuesFor_(next), who=leadTuesWho_(tr && tr.facilitator), total=LM_PARTS.reduce(function(a,k){ return a+(Number(M.minutes[k])||0); },0);
-  h+='<div class="card lmHead"><div class="lmNextLine"><span class="leadNextLabel">'+esc(t('Next meeting'))+'</span> <b>'+esc(lmDayName_()+' '+hospDate_(next))+'</b></div>'+
-    '<div class="lmLedBy">🎤 '+(who ? esc(gpT('Led by {name}',{name:who})) : esc(t('Nobody is down to lead yet'))+' · <button class="linkbtn inline" id="lmPlanWho">'+esc(t('Plan who leads'))+'</button>')+'</div>'+
+  /* the Advisory Board's room: its meeting has no weekly day or rota — whoever starts it leads, and can hand that on */
+  h+='<div class="card lmHead">'+(brOn_() ? '<div class="lmNextLine"><b>🛡️ '+esc(t('Board meeting'))+'</b></div><div class="lmLedBy">🎤 '+esc(t('Whoever starts the meeting leads it.'))+'</div>'
+    : '<div class="lmNextLine"><span class="leadNextLabel">'+esc(t('Next meeting'))+'</span> <b>'+esc(lmDayName_()+' '+hospDate_(next))+'</b></div>'+
+    '<div class="lmLedBy">🎤 '+(who ? esc(gpT('Led by {name}',{name:who})) : esc(t('Nobody is down to lead yet'))+' · <button class="linkbtn inline" id="lmPlanWho">'+esc(t('Plan who leads'))+'</button>')+'</div>')+
     '<div class="hint" style="margin:2px 0 10px">'+esc(gpT('{n} minutes · seven parts · one screen each, with a clock',{n:total}))+'</div>'+
     '<button class="btn" id="lmStart" style="margin-top:0">▶ '+esc(t('Start the meeting'))+'</button>'+
-    '<button class="linkbtn inline" id="lmSetOpen">⚙️ '+esc(t('Meeting day and minutes'))+'</button></div>';
+    '<button class="linkbtn inline" id="lmSetOpen">⚙️ '+esc(brOn_() ? t('Minutes for each part') : t('Meeting day and minutes'))+'</button></div>';
   if(T.set) h+=lmSettingsHtml_();
   h+=lmGuideHtml_();
   h+='<div class="card lmQuick"><label class="f" style="margin-top:0">🧩 '+esc(t('Something in the way? Add it to the issues list'))+'</label><div class="lmAddRow">'+lmIn_('issue', t('An issue, a question, an idea…'), 160, ' id="lmIssueText"')+
@@ -182,9 +184,9 @@ function lmGuideHtml_(){
 }
 function lmSettingsHtml_(){
   var st=lmT_().set;
-  var h='<div class="card" id="lmSettings"><h3 style="margin-top:0">⚙️ '+esc(t('Meeting day and minutes'))+'</h3><label class="f">'+esc(t('We meet every'))+'</label><select id="lmSetDay">'+
+  var h='<div class="card" id="lmSettings"><h3 style="margin-top:0">⚙️ '+esc(brOn_() ? t('Minutes for each part') : t('Meeting day and minutes'))+'</h3>'+(brOn_() ? '' : '<label class="f">'+esc(t('We meet every'))+'</label><select id="lmSetDay">'+
     LM_DAYS.map(function(d, i){ return '<option value="'+i+'"'+(Number(st.day)===i?' selected':'')+'>'+esc(t(d))+'</option>'; }).join('')+'</select>'+
-    '<p class="hint" style="margin:4px 0 8px">'+esc(t('The plan of who leads follows this day. Weeks already planned move to it.'))+'</p><label class="f">'+esc(t('Minutes for each part'))+'</label>';
+    '<p class="hint" style="margin:4px 0 8px">'+esc(t('The plan of who leads follows this day. Weeks already planned move to it.'))+'</p><label class="f">'+esc(t('Minutes for each part'))+'</label>');
   LM_PARTS.forEach(function(k){ h+='<div class="lmSetRow"><span>'+LM_INFO[k].icon+' '+esc(t(LM_INFO[k].name))+'</span><input type="number" inputmode="numeric" min="1" max="180" data-lmsetmin="'+k+'" value="'+esc(st.minutes[k])+'" aria-label="'+esc(t(LM_INFO[k].name))+'"></div>'; });
   return h+'<div class="btnRow" style="margin-top:10px"><button class="btn" id="lmSetSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="lmSetCancel">'+esc(t('Cancel'))+'</button></div></div>';
 }
@@ -192,7 +194,7 @@ function lmSettingsHtml_(){
 /* ---------- the scorecard (its ids keep "score") ---------- */
 function lmScoreRowHtml_(m, meeting){
   var M=lmM_(), wks=M.weeks, h='<div class="card slim lmScoreRow" data-lmscore="'+esc(m.id)+'"><div class="lmRowHead"><div style="min-width:0"><b class="lmName">'+esc(m.name)+'</b>'+
-    '<div class="rowSub">'+(m.owner ? '👤 '+esc(lmFirst_(m.owner))+' · ' : '')+esc(lmGoalText_(m))+(m.src==='metric' && m.metric ? ' · 🔗 '+esc(t(m.metric.ministry)+' › '+t(m.metric.metric)) : '')+'</div></div>'+
+    '<div class="rowSub">'+(m.owner ? '👤 '+esc(lmFirst_(m.owner))+' · ' : '')+esc(lmGoalText_(m))+(m.src==='metric' && m.metric ? ' · 🔗 '+esc((m.metric.campus ? campusName(m.metric.campus)+' › ' : '')+t(m.metric.ministry)+' › '+t(m.metric.metric)) : '')+'</div></div>'+
     (meeting ? '' : '<button class="linkbtn inline" data-lmscoreedit="'+esc(m.id)+'">'+esc(t('Edit'))+'</button>')+'</div>';
   var cell=function(w, i){
     var v=m.vals ? m.vals[w.key] : null, on=lmOn_(m, v), lab=i===0 ? t('This week') : i===1 ? t('Last week') : gpT('W{n}',{n:w.week});
@@ -219,8 +221,8 @@ function lmScoreHtml_(meeting){
   return h+'</div>';
 }
 function lmScoreFormHtml_(){
-  var f=lmT_().scoreForm, deps=getDepartments(S.me.campus), mins=f.dept && deps[f.dept] ? Object.keys(deps[f.dept]) : [];
-  var mets=(f.dept && f.ministry) ? metricsFor(S.me.campus, f.dept, f.ministry) : [];
+  var f=lmT_().scoreForm, cam=brOn_() ? (f.campus || CAMPUSES[0].id) : S.me.campus, deps=getDepartments(cam), mins=f.dept && deps[f.dept] ? Object.keys(deps[f.dept]) : [];
+  var mets=(f.dept && f.ministry) ? metricsFor(cam, f.dept, f.ministry) : [];
   var opt=function(v, cur, label){ return '<option value="'+esc(v)+'"'+(cur===v?' selected':'')+'>'+esc(label)+'</option>'; };
   var h='<div class="card" id="lmScoreForm"><label class="f" style="margin-top:0">'+esc(t('What do we count?'))+'</label><input type="text" data-lmsf="name" maxlength="80" value="'+esc(f.name||'')+'" placeholder="'+esc(t('e.g. 1-on-1s held this week'))+'">'+
     '<label class="f">'+esc(t('Who owns it'))+'</label>'+ppickHtml_({ key:'lmso', people:lmTeam_(), chosen:f.owner ? [f.owner] : [], multi:false, open:true, placeholder:t('Type a name…'),
@@ -230,6 +232,7 @@ function lmScoreFormHtml_(){
     '<label class="f">'+esc(t('Where does the number come from?'))+'</label><div class="leadFilters"><button class="leadSeg'+(f.src!=='metric'?' on':'')+'" data-lmsrc="manual">✏️ '+esc(t('We type it each week'))+'</button>'+
     '<button class="leadSeg'+(f.src==='metric'?' on':'')+'" data-lmsrc="metric">🔗 '+esc(t('A ministry’s number'))+'</button></div>';
   if(f.src==='metric'){
+    if(brOn_()) h+='<select data-lmsf="campus" data-lmre="1" aria-label="'+esc(t('Campus'))+'">'+CAMPUSES.map(function(c){ return opt(c.id, cam, t(c.name)); }).join('')+'</select>';   // the board's scorecard takes a number from either campus
     h+='<select data-lmsf="dept" data-lmre="1" aria-label="'+esc(t('Department'))+'"><option value="">'+esc(t('— department —'))+'</option>'+Object.keys(deps).map(function(d){ return opt(d, f.dept, t(d)); }).join('')+'</select>'+
       '<select data-lmsf="ministry" data-lmre="1" aria-label="'+esc(t('Ministry'))+'"><option value="">'+esc(t('— ministry —'))+'</option>'+mins.map(function(m){ return opt(m, f.ministry, t(m)); }).join('')+'</select>'+
       '<select data-lmsf="metric" aria-label="'+esc(t('Which number'))+'"><option value="">'+esc(t('— which number —'))+'</option>'+mets.map(function(m){ return opt(m, f.metric, t(m)); }).join('')+'</select>'+
@@ -247,7 +250,7 @@ function lmRocksHtml_(meeting){
   var T=lmT_(), which=meeting ? 'now' : (T.rockQ==='next' ? 'next' : 'now'), Q=lmQ_(which), rocks=lmRocks_(which), h='<div id="lmRocks">';
   if(!meeting){
     var N=lmQ_('next'), C=lmQ_('now');
-    h+='<p class="sub">'+esc(t('The three to seven things that must get done this quarter — each person’s, and the team’s. Every ministry has its own rocks too, on its Rocks tab.'))+'</p>'+
+    h+='<p class="sub">'+esc(brOn_() ? t('The three to seven things the board must get done this quarter — each member’s, and the whole board’s.') : t('The three to seven things that must get done this quarter — each person’s, and the team’s. Every ministry has its own rocks too, on its Rocks tab.'))+'</p>'+
       '<div class="leadFilters"><button class="leadSeg'+(which==='now'?' on':'')+'" data-lmrq="now">'+esc(gpT('This quarter · Q{q} {year}',{q:C.q, year:C.year}))+'</button>'+
       '<button class="leadSeg'+(which==='next'?' on':'')+'" data-lmrq="next">'+esc(gpT('Next · Q{q} {year}',{q:N.q, year:N.year}))+'</button></div>';
   }
@@ -302,7 +305,7 @@ function lmTodoAddHtml_(key, cardId){
 }
 function lmTodosHtml_(meeting){
   var W=lmTodoWeek_(), h='<div id="lmTodos">';
-  if(!meeting) h+='<p class="sub">'+esc(t('A to-do is one action for one person, due in seven days. These are the tasks on the board’s cards — the same ones as in GP Tasks.'))+'</p>';
+  if(!meeting) h+='<p class="sub">'+esc(brOn_() ? t('A To-Do is one action for one person, due in seven days. These are the tasks on the cards of the board’s Kanban.') : t('A to-do is one action for one person, due in seven days. These are the tasks on the board’s cards — the same ones as in GP Tasks.'))+'</p>';
   h+='<div class="card"><div class="lmRowHead"><div class="goalCardTitle">'+esc(t('Last week’s to-dos'))+'</div>'+
     '<b class="lmPct'+(W.pct==null ? '' : W.pct>=90 ? ' on' : ' off')+'" id="lmTodoPct">'+(W.pct==null ? '—' : esc(gpT('{d} of {n} done',{d:W.done, n:W.total}))+' · '+W.pct+'%')+'</b></div>'+
     '<div class="hint" style="margin:0 0 6px">'+esc(t('We aim for nine in ten done.'))+'</div>';
@@ -315,7 +318,7 @@ function lmTodosHtml_(meeting){
   });
   if(W.later) h+='<div class="hint" style="margin:8px 0 0">'+esc(gpT('{n} more are not due yet.',{n:W.later}))+'</div>';
   h+='</div><div class="card"><div class="goalCardTitle" style="margin-bottom:6px">＋ '+esc(t('A new to-do'))+'</div>'+lmTodoAddHtml_('todo', '')+
-    '<p class="hint" style="margin:6px 0 0">'+esc(t('It lands in that person’s GP Tasks, due in seven days.'))+'</p></div>';
+    '<p class="hint" style="margin:6px 0 0">'+esc(brOn_() ? t('It is due in seven days, and stays on the board’s own Kanban.') : t('It lands in that person’s GP Tasks, due in seven days.'))+'</p></div>';
   return h+'</div>';
 }
 
@@ -462,16 +465,16 @@ function bindMeeting_(){
   /* scorecard */
   id('lmScoreAdd', function(){ T.scoreForm={ id:'', name:'', owner:'', goal:'', dir:'gte', src:'manual', dept:'', ministry:'', metric:'' }; render(); });
   on('[data-lmscoreedit]', function(b){ var m=M.score.filter(function(x){ return x.id===b.getAttribute('data-lmscoreedit'); })[0]; if(!m) return;
-    T.scoreForm={ id:m.id, name:m.name, owner:m.owner||'', goal:m.goal==null?'':m.goal, dir:m.dir, src:m.src, dept:m.metric?m.metric.dept:'', ministry:m.metric?m.metric.ministry:'', metric:m.metric?m.metric.metric:'' }; render(); });
+    T.scoreForm={ id:m.id, name:m.name, owner:m.owner||'', goal:m.goal==null?'':m.goal, dir:m.dir, src:m.src, campus:m.metric?m.metric.campus||'':'', dept:m.metric?m.metric.dept:'', ministry:m.metric?m.metric.ministry:'', metric:m.metric?m.metric.metric:'' }; render(); });
   root.querySelectorAll('[data-lmsf]').forEach(function(el){ var k=el.getAttribute('data-lmsf'), f=T.scoreForm; if(!f) return;
-    var set=function(){ f[k]=el.value; if(k==='dept'){ f.ministry=''; f.metric=''; } if(k==='ministry') f.metric=''; if(el.getAttribute('data-lmre')) render(); };
+    var set=function(){ f[k]=el.value; if(k==='campus'){ f.dept=''; f.ministry=''; f.metric=''; } if(k==='dept'){ f.ministry=''; f.metric=''; } if(k==='ministry') f.metric=''; if(el.getAttribute('data-lmre')) render(); };
     if(el.tagName==='SELECT') el.onchange=set; else el.oninput=set; });
   on('[data-lmsrc]', function(b){ T.scoreForm.src=b.getAttribute('data-lmsrc'); render(); });
   id('lmScoreCancel', function(){ T.scoreForm=null; render(); });
   id('lmScoreSave', function(){ var f=T.scoreForm;
     if(!String(f.name||'').trim()){ showMsg(t('Give it a name first.')); return; }
     if(f.src==='metric' && !(f.dept && f.ministry && f.metric)){ showMsg(t('Pick the department, the ministry and the number.')); return; }
-    lmCall_('saveLeadScore',[{ id:f.id, name:f.name, owner:f.owner, goal:String(f.goal).replace(/,/g,''), dir:f.dir, src:f.src, metric:{ dept:f.dept, ministry:f.ministry, metric:f.metric } }], function(){ T.scoreForm=null; showMsg(t('Saved')); }); });
+    lmCall_('saveLeadScore',[{ id:f.id, name:f.name, owner:f.owner, goal:String(f.goal).replace(/,/g,''), dir:f.dir, src:f.src, metric:{ campus:brOn_() ? (f.campus || CAMPUSES[0].id) : '', dept:f.dept, ministry:f.ministry, metric:f.metric } }], function(){ T.scoreForm=null; showMsg(t('Saved')); }); });
   id('lmScoreDel', function(){ if(!gpAsk_(t('Take this number off the scorecard? Its weeks of numbers go with it.'))) return; lmCall_('deleteLeadScore',[T.scoreForm.id], function(){ T.scoreForm=null; }); });
   root.querySelectorAll('[data-lmval]').forEach(function(el){ el.onchange=function(){ var p=el.getAttribute('data-lmval').split('|'); lmCall_('saveLeadScoreValue',[p[0], p[1], el.value.trim()]); }; });
   on('[data-lmscoredrop]', function(b){ var m=M.score.filter(function(x){ return x.id===b.getAttribute('data-lmscoredrop'); })[0]; if(!m) return; var w=M.weeks[1]||M.weeks[0], v=m.vals[w.key];
@@ -500,7 +503,7 @@ function bindMeeting_(){
     if(M.run) lmPatch_({ carried:(M.run.carried||[]).concat([x.tk.id]) }); });
   on('[data-lmtododrop]', function(b){ var x=taskOf(b.getAttribute('data-lmtododrop')); if(x) lmDrop_(gpT('Not done: {text}',{text:x.tk.text}), (x.tk.owner ? staffName_(x.tk.owner)+' · ' : '')+x.c.title); });
   on('[data-lmtodoadd]', function(b){ var key=b.getAttribute('data-lmtodoadd'), v=(T.d[key]||'').trim(); if(!v){ showMsg(t('Write the to-do first.')); return; }
-    lmCall_('leadMeetTodo',[{ text:v, owner:T.d['own:'+key]||'', cardId:b.getAttribute('data-lmcard')||'', cardTitle:t('Meeting to-dos') }], function(){ T.d[key]=''; T.d['own:'+key]=''; if(S.ppick['lmt_'+key]) S.ppick['lmt_'+key].q=''; showMsg(t('Added — it is in their GP Tasks.')); }); });
+    lmCall_('leadMeetTodo',[{ text:v, owner:T.d['own:'+key]||'', cardId:b.getAttribute('data-lmcard')||'', cardTitle:t('Meeting to-dos') }], function(){ T.d[key]=''; T.d['own:'+key]=''; if(S.ppick['lmt_'+key]) S.ppick['lmt_'+key].q=''; showMsg(brOn_() ? t('Added') : t('Added — it is in their GP Tasks.')); }); });
   root.querySelectorAll('[data-lmtodoin]').forEach(function(el){ el.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); var b=root.querySelector('[data-lmtodoadd="'+el.getAttribute('data-lmtodoin')+'"]'); if(b) b.click(); } }; });
   /* past */
   root.querySelectorAll('[data-lmpast]').forEach(function(d){ d.ontoggle=function(){ if(d.open) T.pastOpen=d.getAttribute('data-lmpast'); else if(T.pastOpen===d.getAttribute('data-lmpast')) T.pastOpen=null; }; });

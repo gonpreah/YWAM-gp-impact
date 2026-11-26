@@ -1136,6 +1136,8 @@ async function staffLoginGoogle(token) {
   // the Google account linked to a profile first (staffLinkGoogle, made while signed in with the PIN), then the email
   const rec = rows.find(function (r) { return r && !isApplicant_(r) && r.google && r.google.sub && r.google.sub === gg.sub; }) || staffByEmail_(rows, gg.email);
   if (!rec) {
+    const bd = await boardGoogleLogin_(gg);   // not staff: perhaps a board member with their own sign-in
+    if (bd) return bd;
     const app = rows.find(function (r) { return r && isApplicant_(r) && (r.email === gg.email || r.username === gg.email); });
     return app ? { ok: false, err: 'applicant' } : { ok: false, err: 'new', email: gg.email, name: gg.name };
   }
@@ -2533,12 +2535,15 @@ async function rocksCtx_() {
   return { okrs: okrs, entries: await withTeamRows_(rows), lead: lead };
 }
 /* Every rock, to read. Before the first write the old objectives and the meeting's rocks are laid in here, unsaved. */
+function rocksKey_() { return boardScope.getStore() ? 'rocks:' + BOARD_ROOM : 'rocks'; }   // the board room keeps its rocks apart: no staff read ever opens them
 async function getRocks_() {
+  if (boardScope.getStore()) return rocksFix_(await readJSON(rocksKey_(), {})).rocks;
   const d = rocksFix_(await readJSON('rocks', {}));
   if (!d.seeded) rocksSeed_(d, await rocksCtx_());
   return d.rocks;
 }
 async function rocksMutate_(fn) {
+  if (boardScope.getStore()) return mutateKey_(rocksKey_(), {}, function (d) { rocksFix_(d); return fn(d); });
   const first = rocksFix_(await readJSON('rocks', {}));
   const ctx = first.seeded ? null : await rocksCtx_();
   return mutateKey_('rocks', {}, function (d) {
@@ -2548,6 +2553,7 @@ async function rocksMutate_(fn) {
   });
 }
 function canWriteRock_(s, campus, dept, ministry) {
+  if (boardScope.getStore()) return !!(s && s.boardRoom && campus === BOARD_ROOM && dept === LEADERSHIP_DEPT && !ministry);   // in the board room: the board's rocks, by its members
   if (!s || isApplicant_(s) || s.active === false || !campus || !dept) return false;
   if (s.isAdmin) return true;
   if (campus !== s.campus) return false;
@@ -2562,6 +2568,7 @@ async function rockSave_(s, x, only) {
   x = x && typeof x === 'object' ? x : {};
   const title = dutyText_(x.title, ROCK_MAX.title); if (!title) return { ok: false, err: 'bad_title' };
   const n = meetNow_(), next = rockNext_(n), staff = await getStaff_();
+  const inRoom = boardScope.getStore() ? await boardRoomIds_() : null;
   return rocksMutate_(function (d) {
     const id = dutyText_(x.id, 120), i = id ? d.rocks.findIndex(function (r) { return r.id === id; }) : -1;
     if (id && i === -1) return { abort: true, ok: false, err: 'not_found' };
@@ -2573,7 +2580,7 @@ async function rockSave_(s, x, only) {
       dept = x.dept ? normDept_(str_(x.dept, 80), ministry) : deptOf_(s);
       if (dept === LEADERSHIP_DEPT) ministry = '';
     }
-    if (CAMPUS_IDS_.indexOf(campus) === -1 || !dept) return { abort: true, ok: false, err: 'bad_target' };
+    if ((inRoom ? campus !== BOARD_ROOM : CAMPUS_IDS_.indexOf(campus) === -1) || !dept) return { abort: true, ok: false, err: 'bad_target' };
     if (only && !only({ campus: campus, dept: dept, ministry: ministry })) return { abort: true, ok: false, err: 'not_found' };
     if (!canWriteRock_(s, campus, dept, ministry)) return { abort: true, ok: false, err: 'not_authorized' };
     let year = Number(x.year), q = Number(x.q);
@@ -2581,7 +2588,7 @@ async function rockSave_(s, x, only) {
       if (!((prev.year === n.year && prev.q === n.q) || (prev.year === next.year && prev.q === next.q))) return { abort: true, ok: false, err: 'past' };   // an earlier quarter is history
       if (!((year === n.year && q === n.q) || (year === next.year && q === next.q))) { year = prev.year; q = prev.q; }
     } else if (!(year === next.year && q === next.q)) { year = n.year; q = n.q; }
-    const who = typeof x.owner === 'string' && staff.some(function (p) { return p.id === x.owner && p.campus === campus && p.active !== false && !p.archived && !isApplicant_(p); });
+    const who = typeof x.owner === 'string' && (inRoom ? inRoom[x.owner] != null : staff.some(function (p) { return p.id === x.owner && p.campus === campus && p.active !== false && !p.archived && !isApplicant_(p); }));
     const owner = who ? x.owner : (prev && x.owner === prev.owner ? prev.owner || '' : '');   // someone who has since left keeps their rock until it is given to another
     const same = function (r) { return r !== prev && r.campus === campus && r.dept === dept && (r.ministry || '') === ministry && (r.owner || '') === owner && r.year === year && r.q === q; };
     if ((!prev || (prev.owner || '') !== owner || prev.year !== year || prev.q !== q) && d.rocks.filter(same).length >= ROCK_MAX.each) return { abort: true, ok: false, err: 'too_many' };
@@ -3370,8 +3377,18 @@ async function fin2DeptDebt_(c, st, by) {
   for (const dept of PULSE_DEPTS) await saveMinistryInternal_(c, 'Campus Leadership', dept, wk, [{ metric: 'Staff Debt ($)', value: Math.round(sums[dept] || 0) }], by, thisWeekYear_());
 }
 async function fin2Get(username, pin, campus) {
-  const s = await verifyStaff_(username, pin);
-  if (!s) return { ok: false };
+  const v = await boardViewer_(username, pin);   // staff, or a board member's own sign-in
+  if (!v) return { ok: false };
+  const s = v.kind === 'staff' ? v.who : null, seat = boardSees_(v);
+  /* the Advisory Board reads either campus's finances (what its Campus Leadership reads) and can never save:
+     fin2Out_ with nobody gives canEdit false and no staff list. A board member who is also staff keeps their
+     own campus's page as it was; the other campus opens for them the board's way. */
+  const other = CAMPUS_IDS_.indexOf(campus) > -1 && (!s || (campus !== s.campus && !s.isAdmin));
+  if (seat && (other || !s || !finCanView_(s))) {
+    const bc = CAMPUS_IDS_.indexOf(campus) > -1 ? campus : (s && CAMPUS_IDS_.indexOf(s.campus) > -1 ? s.campus : 'siemreap');
+    return Object.assign(await fin2Out_(null, bc, await readJSON(fin2Key_(bc), {})), { board: true });
+  }
+  if (!s) return { ok: false, err: 'not_authorized' };
   if (!finCanView_(s)) return { ok: false, err: 'not_authorized' };
   const c = finCampus_(s, campus);
   return fin2Out_(s, c, await readJSON(fin2Key_(c), {}));
@@ -7725,6 +7742,9 @@ async function getWhosHere(username, pin, campus) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false, err: 'auth' };
   campus = CAMPUS_IDS_.indexOf(campus) > -1 ? campus : s.campus;
+  return whosHere_(campus);
+}
+async function whosHere_(campus) {   // also read by the board's Overview (getBoardOverview), which keeps only the counts
   const today = baseToday_();
   const away = {};
   (await getTrips_()).forEach(function (t) {
@@ -8560,9 +8580,19 @@ const LEAD_DEFAULT = {
   areas: [{ id: 'finances', title: 'Siem Reap finances' }, { id: 'ministries', title: 'Siem Reap ministries' }, { id: 'construction', title: 'Construction' }],
   standing: [{ id: 'updates', title: 'Department and ministry updates' }, { id: 'events', title: 'Events coming up' }]
 };
+const BOARD_ROOM_AREAS = [{ id: 'governance', title: 'Governance' }, { id: 'finances', title: 'Finances' }, { id: 'people', title: 'People and safeguarding' }];
 function canLead_(s) { return !!(s && !isApplicant_(s) && s.active !== false && (s.isAdmin || deptOf_(s) === 'Campus Leadership')); }
 function leadKey_(campus) { return 'leadBoard:' + campus; }
+/* The Advisory Board runs itself the way a campus's leadership team does (Nov 2026, Uriah: "we'll try to run our
+   board by the EOS system too"): the same handlers, with the board in a campus's place. boardRoom() checks the
+   caller is on the board and runs the handler inside this scope; leadAuth_ then answers with campus 'board', so
+   every blob is the board's own (leadBoard:board, leadMeet:board, rocks:board) and nothing of a campus is read
+   or written — and outside the scope no handler can reach the board's. */
+const boardScope = new AsyncLocalStorage();
+const BOARD_ROOM = 'board';
 async function leadAuth_(username, pin) {
+  const br = boardScope.getStore();   // inside boardRoom(): the Advisory Board's own room — already verified there, its own blobs
+  if (br) return { s: br.s, campus: BOARD_ROOM, board: true };
   const s = await verifyStaff_(username, pin);
   if (!s) return { out: { ok: false } };
   if (!canLead_(s)) return { out: { ok: false, err: 'not_authorized' } };
@@ -8572,7 +8602,7 @@ async function getLeadDoc_(campus) {
   const d = await readJSON(leadKey_(campus), {});
   return {
     cols: Array.isArray(d.cols) && d.cols.length ? d.cols : JSON.parse(JSON.stringify(LEAD_DEFAULT.cols)),
-    areas: Array.isArray(d.areas) ? d.areas : JSON.parse(JSON.stringify(LEAD_DEFAULT.areas)),
+    areas: Array.isArray(d.areas) ? d.areas : JSON.parse(JSON.stringify(campus === BOARD_ROOM ? BOARD_ROOM_AREAS : LEAD_DEFAULT.areas)),
     standing: Array.isArray(d.standing) ? d.standing : JSON.parse(JSON.stringify(LEAD_DEFAULT.standing)),
     cards: Array.isArray(d.cards) ? d.cards : [],
     notes: Array.isArray(d.notes) ? d.notes : [],
@@ -8607,7 +8637,7 @@ function cleanLeadCard_(c, prev, d) {
     owner: str_(c.owner, 60) || '', due: isoDate_(c.due) || '',
     okrId: str_(c.okrId, 60) || '', meeting: isoDate_(c.meeting) || '',
     /* for a ministry (or a whole department, 'Dept|'): the card is also a task in its GP Tasks list */
-    taskMin: c.taskMin ? (function (k) { const p = String(k).split('|'); return p.length === 2 && p[0] ? normKey_((str_(p[0], 80) || '') + '|' + (str_(p[1], 80) || ''), 2) : ''; })(c.taskMin) : '',
+    taskMin: (c.taskMin && !boardScope.getStore()) ? (function (k) { const p = String(k).split('|'); return p.length === 2 && p[0] ? normKey_((str_(p[0], 80) || '') + '|' + (str_(p[1], 80) || ''), 2) : ''; })(c.taskMin) : '',
     fromNotes: !!(c.fromNotes || (prev && prev.fromNotes))
   });
 }
@@ -8616,6 +8646,7 @@ function cleanLeadCard_(c, prev, d) {
    admins name a ministry's leader from the overview — the same `leads` key an admin sets on the profile */
 async function setMinistryLeader(username, pin, dept, ministry, staffId, on) {
   const a = await leadAuth_(username, pin); if (a.out) return a.out;
+  if (a.board) return { ok: false, err: 'not_authorized' };
   const key = normKey_((str_(dept, 80) || '') + '|' + (str_(ministry, 80) || ''), 2), kp = key.split('|');
   if (kp.length !== 2 || !kp[0] || !kp[1]) return { ok: false, err: 'bad_ministry' };
   const id = str_(staffId, 40); if (!id) return { ok: false, err: 'bad_staff' };
@@ -8646,7 +8677,7 @@ async function saveLeadCard(username, pin, card) {
   rec.updated = now; rec.updatedBy = a.s.id;
   if (idx > -1) cards[idx] = rec; else cards.push(rec);
   await writeJSON(leadKey_(a.campus), d);
-  await gptFromCard_(a.s, Object.assign({}, rec, { done: doneCol(rec.col) }));   // a ministry's task, if it is linked to one
+  if (!a.board) await gptFromCard_(a.s, Object.assign({}, rec, { done: doneCol(rec.col) }));   // a ministry's task, if it is linked to one (never from the board room: its to-dos stay on its own Kanban)
   return leadOut_(a.campus, d, { saved: rec });
 }
 async function deleteLeadCard(username, pin, id) {
@@ -8657,7 +8688,7 @@ async function deleteLeadCard(username, pin, id) {
   const gone = (d.cards[idx].tasks || []).map(function (tk) { return tk.id; });
   d.cards.splice(idx, 1);
   await writeJSON(leadKey_(a.campus), d);
-  if (gone.length) await gptDropLeadTasks_(gone);
+  if (gone.length && !a.board) await gptDropLeadTasks_(gone);
   return leadOut_(a.campus, d);
 }
 /* One task on a card: add it (no id), change it (tick it off, rename it,
@@ -8679,7 +8710,7 @@ async function saveLeadTask(username, pin, cardId, task) {
   if (idx === -1) { rec.created = now; rec.createdBy = a.s.id; tasks.push(rec); } else tasks[idx] = rec;
   card.tasks = tasks; card.updated = now; card.updatedBy = a.s.id;
   await writeJSON(leadKey_(a.campus), d);
-  await gptFromLeadTask_(a.s, a.campus, card, rec);   // and in the Leadership team's GP Tasks
+  if (!a.board) await gptFromLeadTask_(a.s, a.campus, card, rec);   // and in the Leadership team's GP Tasks
   return leadOut_(a.campus, d, { saved: rec, card: card.id });
 }
 async function deleteLeadTask(username, pin, cardId, taskId) {
@@ -8691,7 +8722,7 @@ async function deleteLeadTask(username, pin, cardId, taskId) {
   const gone = card.tasks[idx].id;
   card.tasks.splice(idx, 1);
   await writeJSON(leadKey_(a.campus), d);
-  await gptDropLeadTasks_([gone]);
+  if (!a.board) await gptDropLeadTasks_([gone]);
   return leadOut_(a.campus, d);
 }
 /* A Monday's notes. Empty notes take the day away. If someone else saved
@@ -8810,6 +8841,7 @@ function meetWeeks_() {
   return out;
 }
 async function meetCampusIds_(campus) {
+  if (campus === BOARD_ROOM) return boardRoomIds_();   // the board room's people are the board's members
   const ids = {};
   (await getStaff_()).forEach(function (p) { if (p.campus === campus && p.active !== false && !p.archived && !isApplicant_(p)) ids[p.id] = p.name || ''; });
   return ids;
@@ -8835,10 +8867,11 @@ async function meetOut_(campus, d, extra) {
   let idx = null;
   if (d.score.some(function (m) { return m.src === 'metric'; })) {
     idx = {};
+    const anyCampus = campus === BOARD_ROOM;   // the board's scorecard links to either campus's numbers
     (await withTeamRows_(await getEntries_())).forEach(function (r) {
-      if (r.campus !== campus || SENSITIVE.indexOf(r.metric) > -1) return;
+      if ((anyCampus ? CAMPUS_IDS_.indexOf(r.campus) === -1 : r.campus !== campus) || SENSITIVE.indexOf(r.metric) > -1) return;
       const v = Number(r.value); if (isNaN(v)) return;
-      const k = normDept_(r.dept, r.ministry) + '|' + r.ministry + '|' + r.metric + '|' + yearOf_(r) + '-' + Number(r.week);
+      const k = (anyCampus ? r.campus + '|' : '') + normDept_(r.dept, r.ministry) + '|' + r.ministry + '|' + r.metric + '|' + yearOf_(r) + '-' + Number(r.week);
       idx[k] = (idx[k] || 0) + v;
     });
   }
@@ -8846,7 +8879,7 @@ async function meetOut_(campus, d, extra) {
     const vals = {};
     weeks.forEach(function (w) {
       let v = null;
-      if (m.src === 'metric' && m.metric) { const k = m.metric.dept + '|' + m.metric.ministry + '|' + m.metric.metric + '|' + w.key; v = k in idx ? idx[k] : null; }
+      if (m.src === 'metric' && m.metric) { const k = (campus === BOARD_ROOM ? (m.metric.campus || '') + '|' : '') + m.metric.dept + '|' + m.metric.ministry + '|' + m.metric.metric + '|' + w.key; v = k in idx ? idx[k] : null; }
       else if (m.vals && m.vals[w.key] != null) v = Number(m.vals[w.key]);
       vals[w.key] = v;
     });
@@ -8907,6 +8940,7 @@ async function saveLeadScore(username, pin, x) {
     const ministry = dutyText_(m.ministry, 80), mt = dutyText_(m.metric, 80), dept = normDept_(dutyText_(m.dept, 80), ministry);
     if (!dept || !ministry || !mt || SENSITIVE.indexOf(mt) > -1) return { ok: false, err: 'bad_metric' };
     metric = { dept: dept, ministry: ministry, metric: mt };
+    if (a.board) { if (CAMPUS_IDS_.indexOf(m.campus) === -1) return { ok: false, err: 'bad_metric' }; metric.campus = m.campus; }   // the board says which campus's number
   }
   return meetMutate_(a, function (d) {
     const id = dutyText_(x.id, 40), i = id ? d.score.findIndex(function (m) { return m.id === id; }) : -1;
@@ -9084,6 +9118,7 @@ async function leadMeetEnd(username, pin, x) {
   x = x && typeof x === 'object' ? x : {};
   const lead = await getLeadDoc_(a.campus), names = {};
   (await getStaff_()).forEach(function (p) { names[p.id] = p.name || ''; });
+  if (a.board) Object.assign(names, await boardRoomIds_());
   const who = function (id) { return { id: id, name: names[id] || '' }; };
   return meetMutate_(a, function (d) {
     const r = d.run; if (!r) return { abort: true, ok: false, err: 'no_meeting' };
@@ -16062,7 +16097,7 @@ function boardOut_(b, staff) {
     safeguarding: !!b.safeguarding };
 }
 function boardAdminOut_(b, staff) {
-  return Object.assign(boardOut_(b, staff), { username: b.username || '', hasLogin: !!b.pinHash, active: b.active !== false });
+  return Object.assign(boardOut_(b, staff), { username: b.username || '', hasLogin: !!(b.pinHash || (b.google && b.google.sub)), signIn: b.staffId ? 'staff' : (b.google && b.google.sub) ? 'google' : b.pinHash ? 'pin' : '', active: b.active !== false });
 }
 function boardSort_(a, b) {
   const ra = BOARD_ROLES.indexOf(a.role), rb = BOARD_ROLES.indexOf(b.role);
@@ -16141,7 +16176,8 @@ async function adminListBoard(username, pin) {
   const admin = await adminGate_(username, pin);
   if (!admin) return { ok: false };
   const staff = await getStaff_();
-  return { ok: true, board: (await getBoard_()).map(function (b) { return boardAdminOut_(b, staff); }).sort(boardSort_), roles: BOARD_ROLES };
+  return { ok: true, board: (await getBoard_()).map(function (b) { return boardAdminOut_(b, staff); }).sort(boardSort_), roles: BOARD_ROLES,
+    invites: (await getBoardInvites_()).map(boardInviteOut_) };
 }
 async function adminSaveBoardMember(username, pin, m) {
   const admin = await adminGate_(username, pin);
@@ -16168,7 +16204,7 @@ async function adminSaveBoardMember(username, pin, m) {
   Object.assign(rec, { name: name, role: role, email: email || '', phone: ooText_(m.phone, 40), bio: ooText_(m.bio, 600),
     photo: photo, staffId: linked ? linked.id : '', order: Number(m.order) || 0, active: m.active !== false,
     safeguarding: !!m.safeguarding, updated: new Date().toISOString() });
-  if (linked) { delete rec.username; delete rec.pinHash; delete rec.pinSalt; }
+  if (linked) { delete rec.username; delete rec.pinHash; delete rec.pinSalt; delete rec.google; delete rec.tokens; }
   else if (m.username !== undefined || m.newPin) {
     const u = normUser_(m.username !== undefined ? m.username : rec.username);
     if (u) {
@@ -16194,6 +16230,264 @@ async function adminDeleteBoardMember(username, pin, id) {
   if (left.length === rows.length) return { ok: false, err: 'not_found' };
   await writeJSON('board', left);
   return adminListBoard(username, pin);
+}
+
+/* ==================== The Advisory Board: an invite link, oversight of the whole base, and its own room ====================
+   Nov 2026 (Uriah): "an easy link to send our board people to sign up with their roles and be able to view all of the
+   base app activity, finances, and everything — full access, not admin control, but full oversight of the whole base …
+   Even a special My Ministry thing for them, similar to our leadership team, where we have projects and tasks and rocks —
+   we'll try to run our board by the EOS system too."
+   THE RULE, in one place (boardSees_): an active board member — signed in through the board store, or as the staff
+   member their seat is linked to — may READ what a Campus Leadership member of a campus may read, for BOTH campuses,
+   and may WRITE nothing outside the board's own room. Reads: getBoardOverview, getBoardLeadership, fin2Get,
+   getQuarterReport, getYwamGp. Writes: only boardRoom(), which runs the leadership team's own handlers on the board's
+   own blobs (boardScope, above leadAuth_).
+   NEVER, even for the board: anyone's health answers, score or token; 1-on-1 check-ins, notes or follow-ups; prayer
+   requests; support raising; HR files and contracts; PIN / password / token material and Google ids; a student's or
+   child's name, photo, guardian or payment; who fasts; 360 reviews; the week's board; leave reasons; any Admin tool.
+   tests/test-board-room.mjs walks every handler with a board sign-in and scans every answer it can get. */
+const BOARD_INVITE_DAYS = [3, 7, 14, 30];
+async function boardViewer_(username, pin) {
+  const v = await verifyViewer_(username, pin);
+  if (!v) return null;
+  if (v.kind === 'board') return { kind: 'board', who: v.who, seat: v.who };
+  const seat = (await getBoard_()).find(function (b) { return b && b.staffId === v.who.id && b.active !== false; }) || null;
+  return { kind: 'staff', who: v.who, seat: seat };
+}
+function boardSees_(v) { return !!(v && v.seat && v.seat.active !== false); }
+/* who someone is in the board room: the staff id of a linked member (their own app knows them by it), else their board id */
+function boardPid_(b) { return b.staffId || b.id; }
+async function boardRoomIds_() {
+  const staff = await getStaff_(), ids = {};
+  (await getBoard_()).forEach(function (b) { if (b && b.active !== false) ids[boardPid_(b)] = boardOut_(b, staff).name || ''; });
+  return ids;
+}
+/* oversight: a board member, or an admin (who reads everything anyway) */
+async function overseeAuth_(username, pin, campus) {
+  const v = await boardViewer_(username, pin);
+  if (!v) return { out: { ok: false } };
+  if (!boardSees_(v) && !(v.kind === 'staff' && v.who.isAdmin)) return { out: { ok: false, err: 'not_authorized' } };
+  if (campus !== undefined && CAMPUS_IDS_.indexOf(campus) === -1) return { out: { ok: false, err: 'bad_campus' } };
+  return { v: v };
+}
+
+/* ---- the invite link: teams.html?board=<48 hex>, for one person, kept only as a hash ---- */
+async function getBoardInvites_() { return readJSON('boardInvites', []); }
+function boardInviteOut_(r) {
+  return { id: r.id, role: r.role || 'Advisor', note: r.note || '', used: (r.used || []).map(function (u) { return { name: u.name || '', at: u.at || '', linked: !!u.staffId }; }),
+    exp: r.exp, off: !!r.off, byName: r.byName || '', at: r.at, state: inviteState_(r) };
+}
+async function adminMakeBoardInvite(username, pin, p) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  p = p && typeof p === 'object' ? p : {};
+  const role = ooText_(p.role, 40) || 'Advisor';
+  const days = BOARD_INVITE_DAYS.indexOf(Number(p.days)) > -1 ? Number(p.days) : 7;
+  const token = crypto.randomBytes(24).toString('hex'), salt = crypto.randomBytes(8).toString('hex');
+  const rec = { id: 'bin' + crypto.randomBytes(6).toString('hex'), hash: hashPin_(token, salt), salt: salt, role: role, note: str_(p.note, 80) || '', uses: 1, used: [],
+    exp: new Date(Date.now() + days * 864e5).toISOString(), off: false, by: admin.id, byName: admin.name || '', at: new Date().toISOString() };
+  const r = await mutateKey_('boardInvites', [], function (rows) {
+    for (let i = rows.length - 1; i >= 0; i--) if (!rows[i] || !(Date.parse(rows[i].exp) > Date.now() - 60 * 864e5)) rows.splice(i, 1);   // ended ones go after two months
+    rows.unshift(rec); rows.splice(100);
+    return { ok: true };
+  });
+  if (!r || !r.ok) return r || { ok: false };
+  return { ok: true, token: token, invite: boardInviteOut_(rec), invites: (await getBoardInvites_()).map(boardInviteOut_) };
+}
+async function adminBoardInviteOff(username, pin, id) {
+  const admin = await adminGate_(username, pin);
+  if (!admin) return { ok: false };
+  const r = await mutateKey_('boardInvites', [], function (rows) {
+    const x = rows.find(function (y) { return y && y.id === id; });
+    if (!x) return { abort: true, ok: false, err: 'not_found' };
+    x.off = true; return { ok: true };
+  });
+  if (!r || !r.ok) return r || { ok: false };
+  return { ok: true, invites: (await getBoardInvites_()).map(boardInviteOut_) };
+}
+/* public: what the page says before anyone signs up — the role, who invited them, and whether Google is on */
+async function boardInviteInfo(token) {
+  const r = inviteFind_(await getBoardInvites_(), token), st = inviteState_(r);
+  if (st !== 'ok') return { ok: false, err: st };
+  return { ok: true, role: r.role || 'Advisor', byName: r.byName || '', google: googleClientId_() };
+}
+/* Use the link. Three ways in:
+     - {googleToken}: the Google account is the sign-in (a device token comes back, as for staff);
+     - {username, pin, email}: a username and a 4-digit PIN;
+     - {staff:{user, pin}}: someone signed in to the app as staff takes the seat with that profile.
+   A Google account or a signed-in profile that IS a staff member is never given a second identity: the seat is linked
+   to the profile (staffId) and they open the app as usual. An email only typed proves nothing, so a typed email that
+   belongs to a staff profile is turned away (`staff_email`) — otherwise whoever holds the link could put a seat on
+   anyone. The link is claimed first, in one checked write, so it can never be used twice. */
+async function boardJoin(token, p) {
+  p = p && typeof p === 'object' ? p : {};
+  const inv0 = inviteFind_(await getBoardInvites_(), token), st0 = inviteState_(inv0);
+  if (st0 !== 'ok') return { ok: false, err: 'invite_' + st0 };
+  const staffRows = await getStaff_();
+  let gg = null, st = null;
+  if (p.staff && typeof p.staff === 'object') {
+    st = await verifyStaff_(p.staff.user, p.staff.pin);
+    if (!st) return { ok: false, err: 'auth' };
+  } else if (p.googleToken) {
+    gg = await verifyGoogleToken_(p.googleToken);
+    if (!gg) return { ok: false, err: 'google' };
+    st = staffRows.find(function (r) { return r && !isApplicant_(r) && r.google && r.google.sub && r.google.sub === gg.sub; }) || staffByEmail_(staffRows, gg.email);
+    if (st && (st.archived || st.active === false)) return { ok: false, err: 'staff_inactive' };
+  }
+  const email = st ? (st.email || '') : gg ? gg.email : cleanEmail_(p.email);
+  if (!st) {
+    if (email === null) return { ok: false, err: 'bad_email' };
+    if (!email) return { ok: false, err: 'email_required' };
+    if (!gg && staffByEmail_(staffRows, email)) return { ok: false, err: 'staff_email' };
+  }
+  const name = st ? (st.name || '') : (ooText_(p.name, 80) || (gg && gg.name) || '');
+  if (!name) return { ok: false, err: 'name_required' };
+  const phone = ooText_(p.phone, 40), bio = ooText_(p.bio, 600), now = new Date().toISOString();
+  let username = '';
+  if (!st) {
+    if (gg) {
+      const base = (gg.email.split('@')[0] || 'board').toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 16) || 'board';
+      const board = await getBoard_();
+      const taken = function (x) { return !!findStaff_(staffRows, x) || board.some(function (b) { return b.username === x; }); };
+      let cand = base.length >= 2 ? base : base + '00', n = 1;
+      while (taken(cand) && n < 999) { n++; cand = base.slice(0, 16) + n; }
+      username = cand;
+    } else {
+      username = normUser_(p.username);
+      if (!/^[a-z0-9._-]{2,20}$/.test(username)) return { ok: false, err: 'bad_username' };
+      if (!/^\d{4}$/.test(String(p.pin))) return { ok: false, err: 'bad_pin' };
+      if (await usernameTaken_(username)) return { ok: false, err: 'username_taken' };
+    }
+  }
+  /* claim the link (single use), then make the seat; a seat that can't be made gives the link back */
+  const claim = await mutateKey_('boardInvites', [], function (rows) {
+    const r = inviteFind_(rows, token), state = inviteState_(r);
+    if (state !== 'ok') return { abort: true, ok: false, err: 'invite_' + state };
+    r.used = [{ name: name, at: now, staffId: st ? st.id : '' }];
+    return { ok: true, id: r.id, role: r.role || 'Advisor' };
+  });
+  if (!claim || !claim.ok) return claim || { ok: false };
+  const release = function () { return mutateKey_('boardInvites', [], function (rows) { const r = rows.find(function (x) { return x && x.id === claim.id; }); if (r) r.used = []; return { ok: true }; }); };
+  const newId = 'bd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  let rec = null, gtok = '';
+  const made = await mutateKey_('board', [], function (rows) {
+    if (st) {
+      const i = rows.findIndex(function (b) { return b && b.staffId === st.id; });
+      if (i > -1) { Object.assign(rows[i], { role: claim.role, active: true, updated: now }); if (!rows[i].bio && bio) rows[i].bio = bio; if (!rows[i].phone && phone) rows[i].phone = phone; rec = rows[i]; }
+      else { rec = { id: newId, created: now, name: '', role: claim.role, email: '', phone: phone, bio: bio, photo: '', staffId: st.id, order: 0, active: true, safeguarding: false, updated: now, invite: claim.id }; rows.push(rec); }
+      return { ok: true };
+    }
+    const mine = function (b) { return b && !b.staffId && ((gg && b.google && b.google.sub === gg.sub) || (b.email && emailKey_(b.email) === emailKey_(email))); };
+    if (rows.some(mine)) return { abort: true, ok: false, err: 'already_member' };
+    if (rows.some(function (b) { return b && b.username === username; })) return { abort: true, ok: false, err: 'username_taken' };
+    rec = { id: newId, created: now, name: name, role: claim.role, email: email, phone: phone, bio: bio, photo: '', staffId: '', order: 0, active: true, safeguarding: false,
+      username: username, updated: now, invite: claim.id };
+    if (gg) { gtok = addDeviceToken_(rec); rec.google = { sub: gg.sub, lastAt: now }; }
+    else { rec.pinSalt = pinSalt_(); rec.pinHash = hashPin_(p.pin, rec.pinSalt); }
+    rows.push(rec);
+    return { ok: true };
+  });
+  if (!made || !made.ok) { await release(); return made || { ok: false }; }
+  if (st) return { ok: true, linked: true, name: st.name || '', role: claim.role };
+  return { ok: true, member: boardOut_(rec, []), user: username, token: gtok || undefined };
+}
+/* Continue with Google, for a board member with their own sign-in: found by the Google account, else by the
+   email on their seat. Answered through staffLoginGoogle as err 'board' with the session beside it, so the
+   staff door's `ok` still only ever means staff. */
+async function boardGoogleLogin_(gg) {
+  const rows = await getBoard_();
+  const hit = rows.find(function (b) { return b && !b.staffId && b.active !== false && b.google && b.google.sub && b.google.sub === gg.sub; }) ||
+    rows.find(function (b) { return b && !b.staffId && b.active !== false && b.username && b.email && emailKey_(b.email) === emailKey_(gg.email); });
+  if (!hit) return null;
+  let tok = '', out = null;
+  const r = await mutateKey_('board', [], function (all) {
+    const b = all.find(function (x) { return x && x.id === hit.id; });
+    if (!b) return { abort: true, ok: false };
+    tok = addDeviceToken_(b); b.google = { sub: gg.sub, lastAt: new Date().toISOString() }; out = b;
+    return { ok: true };
+  });
+  if (!r || !r.ok) return null;
+  await clearLoginThrottle_(hit.username);
+  return { ok: false, err: 'board', member: boardOut_(out, []), user: out.username, token: tok };
+}
+
+/* ---- the board's own room: the leadership team's tools, on the board's own blobs ---- */
+const BOARD_ROOM_FNS = ['getLeadBoard', 'saveLeadCard', 'deleteLeadCard', 'saveLeadTask', 'deleteLeadTask', 'saveLeadNote', 'saveLeadSettings',
+  'getLeadMeeting', 'saveLeadMeetSettings', 'saveLeadScore', 'deleteLeadScore', 'saveLeadScoreValue', 'saveLeadRock', 'deleteLeadRock',
+  'saveLeadHeadline', 'deleteLeadHeadline', 'leadMeetStart', 'leadMeetUpdate', 'leadMeetTodo', 'leadMeetSolve', 'leadMeetEnd'];
+async function boardRoom(username, pin, fn, args) {
+  if (BOARD_ROOM_FNS.indexOf(fn) === -1) return { ok: false, err: 'not_allowed' };
+  if (boardScope.getStore() || demoScope.getStore()) return { ok: false };
+  const v = await boardViewer_(username, pin);
+  if (!v) return { ok: false };
+  const admin = v.kind === 'staff' && !!v.who.isAdmin;
+  if (!boardSees_(v) && !admin) return { ok: false, err: 'not_authorized' };   // the board's members, and admins — nobody else, Campus Leadership included
+  const s = { id: v.seat ? boardPid_(v.seat) : v.who.id, name: v.seat ? (v.seat.name || v.who.name || '') : (v.who.name || ''), campus: BOARD_ROOM, isAdmin: admin, active: true, boardRoom: true };
+  return boardScope.run({ s: s }, function () { return HANDLERS[fn]([username, pin].concat(Array.isArray(args) ? args : [])); });
+}
+
+/* ---- the big picture: one call for the board's Overview ----
+   Counts and figures only, for both campuses, each blob read once. The headline figures themselves (staff mix, the
+   Staff Health Score, salvations, the scorecards' ✓ and ✗) are worked out on the page with rollup.js from what
+   getData already gives everyone — no roll-up rule is written again here. */
+async function getBoardOverview(username, pin) {
+  const A = await overseeAuth_(username, pin); if (A.out) return A.out;
+  const v = A.v, today = baseToday_(), wk = isoWeek_(today), yr = weekYear_(today), month = today.slice(0, 7);
+  const [staffAll, board, entries, trips, ones, rocks] = await Promise.all([getStaff_(), getBoard_(), getEntries_(), getTrips_(), getOneOnOnes_(), getRocks_()]);
+  const mon = new Date(today + 'T00:00:00Z'); mon.setUTCDate(mon.getUTCDate() - ((mon.getUTCDay() + 6) % 7));
+  const sun = new Date(mon); sun.setUTCDate(sun.getUTCDate() + 6);
+  const wa = mon.toISOString().slice(0, 10), wb = sun.toISOString().slice(0, 10);
+  const names = {}, campuses = {};
+  const weeks = [wk]; if (wk > 1) weeks.push(wk - 1);
+  for (const c of CAMPUS_IDS_) {
+    const staff = staffAll.filter(function (r) { return r && r.active && !r.archived && !isApplicant_(r) && r.campus === c; });
+    const ids = {}; staff.forEach(function (r) { ids[r.id] = 1; names[r.id] = r.name || ''; });
+    const people = {};
+    staff.forEach(function (r) {
+      const d = deptOf_(r), seen = {};
+      [d && r.ministry ? d + '|' + r.ministry : ''].concat(ministriesOf_(r)).forEach(function (k) { if (k && !seen[k]) { seen[k] = 1; people[k] = (people[k] || 0) + 1; } });
+    });
+    const awayIds = {};
+    trips.forEach(function (t) { if (t && ids[t.staffId] && (t.status === 'approved' || t.status === 'noted') && isDate_(t.from) && isDate_(t.to) && overlaps_(t.from, t.to, wa, wb)) awayIds[t.staffId] = 1; });
+    /* whose numbers are in, this week and last: typed rows only — what a tool counts by itself was never due */
+    const logged = {}; weeks.forEach(function (w) { logged[w] = {}; });
+    const debt = {};
+    entries.forEach(function (r) {
+      if (!r || r.campus !== c) return;
+      if (yearOf_(r) === yr && logged[Number(r.week)] && !/^tool:/.test(String(r.by || ''))) logged[Number(r.week)][normDept_(r.dept, r.ministry) + '|' + r.ministry] = 1;
+    });
+    PULSE_DEPTS.forEach(function (d) { const x = staffDebtFor_(entries, staffAll, c, d); if (x) debt[d] = { value: x.value, at: x.at }; });
+    const lg = {}; weeks.forEach(function (w) { lg[w] = Object.keys(logged[w]); });
+    const oneOnOnes = ones.filter(function (o) {
+      if (!o || !(ids[o.fromId] || ids[o.toId])) return false;
+      if (o.status === 'held') return String(o.heldOn || '').slice(0, 7) === month;
+      return o.status === 'accepted' && String(o.decidedAt || o.created || '').slice(0, 7) === month;
+    }).length;
+    let here = null;
+    try { const W = await whosHere_(c); here = { count: W.count, staffHere: W.staffHere, staffAway: W.staffAway, beds: W.beds, capacity: W.capacity }; } catch (e) { here = null; }
+    /* the balance the Finances office last entered, and whether it was reconciled */
+    let fin = null;
+    const fd = await readJSON(fin2Key_(c), {}), bal = fd && fd.state && Array.isArray(fd.state.bal) ? fd.state.bal.filter(function (b) { return b && b.asOf; }).sort(function (x, y) { return x.asOf < y.asOf ? 1 : -1; })[0] : null;
+    if (bal) fin = { total: (Number(bal.aba) || 0) + (Number(bal.us) || 0) + (Number(bal.cash) || 0), asOf: String(bal.asOf), reconciled: bal.rec ? String(bal.rec) : '' };
+    /* leadership's meeting: the last one's rating and to-dos, and what is open on its Kanban */
+    const md = await getMeetDoc_(c), ld = await getLeadDoc_(c), last = md.past.length ? md.past[md.past.length - 1] : null;
+    const doneCols = {}; ld.cols.forEach(function (x) { if (x.done) doneCols[x.id] = 1; });
+    const firstCol = ld.cols.length ? ld.cols[0].id : '';
+    campuses[c] = { staff: staff.length, away: Object.keys(awayIds).length, people: people, logged: lg, oneOnOnes: oneOnOnes, debt: debt, here: here, fin: fin,
+      meet: { last: last ? { date: last.date, avg: last.avg == null ? null : last.avg, todoPct: last.todo && last.todo.pct != null ? last.todo.pct : null, solved: (last.solved || []).length } : null,
+        held: md.past.length, running: !!md.run, numbers: md.score.length,
+        open: ld.cards.filter(function (x) { return !doneCols[x.col]; }).length, issues: ld.cards.filter(function (x) { return x.col === firstCol && !doneCols[x.col]; }).length } };
+  }
+  const members = board.filter(function (b) { return b && b.active !== false; }).map(function (b) { const o = boardOut_(b, staffAll); return { id: boardPid_(b), name: o.name, role: o.role, photo: o.photo, staff: !!b.staffId }; });
+  return { ok: true, today: today, week: wk, year: yr, q: meetQ_(wk), weeks: weeks,
+    me: v.seat ? { id: boardPid_(v.seat), role: v.seat.role || 'Advisor', member: true } : { id: v.who.id, role: '', member: false },
+    members: members, names: names, rocks: rocks, campuses: campuses };
+}
+/* A campus's leadership team as it runs itself, to read: its Scorecard, rocks, headlines, past meetings and Kanban.
+   The same answer its own team gets from getLeadMeeting — and no way to change any of it from here. */
+async function getBoardLeadership(username, pin, campus) {
+  const A = await overseeAuth_(username, pin, campus); if (A.out) return A.out;
+  return meetOut_(campus, await getMeetDoc_(campus), { board: leadOut_(campus, await getLeadDoc_(campus)), readOnly: true });
 }
 
 /* ===== Talk it through → tasks (Nov 2026, Uriah: "voice stream of consciousness into our tasks app and
@@ -16521,6 +16815,7 @@ async function qrViewer_(username, pin, campus) {
   const s = v.who;
   if (isApplicant_(s) || s.active === false) return { out: { ok: false } };
   if (s.isAdmin || (canLead_(s) && s.campus === campus)) return { s: s, full: true };
+  if (boardSees_(await boardViewer_(username, pin))) return { s: s, full: true, keys: s.campus === campus ? qrKeysOf_(s) : [], seat: true };   // on the board too: reads it all, writes only what they could before
   const keys = s.campus === campus ? qrKeysOf_(s) : [];
   if (!keys.length) return { out: { ok: false, err: 'not_authorized' } };
   return { s: s, full: false, keys: keys };
@@ -16901,6 +17196,13 @@ const HANDLERS = {
   adminListBoard: function (a) { return adminListBoard(a[0], a[1]); },
   adminSaveBoardMember: function (a) { return adminSaveBoardMember(a[0], a[1], a[2]); },
   adminDeleteBoardMember: function (a) { return adminDeleteBoardMember(a[0], a[1], a[2]); },
+  adminMakeBoardInvite: function (a) { return adminMakeBoardInvite(a[0], a[1], a[2]); },
+  adminBoardInviteOff: function (a) { return adminBoardInviteOff(a[0], a[1], a[2]); },
+  boardInviteInfo: function (a) { return boardInviteInfo(a[0]); },
+  boardJoin: function (a) { return boardJoin(a[0], a[1]); },
+  boardRoom: function (a) { return boardRoom(a[0], a[1], a[2], a[3]); },
+  getBoardOverview: function (a) { return getBoardOverview(a[0], a[1]); },
+  getBoardLeadership: function (a) { return getBoardLeadership(a[0], a[1], a[2]); },
   requestOneOnOne: function (a) { return requestOneOnOne(a[0], a[1], a[2], a[3], a[4], a[5]); },
   saveOneOnOnePrep: function (a) { return saveOneOnOnePrep(a[0], a[1], a[2], a[3]); },
   saveOneOnOneNotes: function (a) { return saveOneOnOneNotes(a[0], a[1], a[2], a[3], a[4], a[5]); },
