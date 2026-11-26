@@ -620,7 +620,7 @@ in the leadership My Ministry, and it shows in Team → Structure … profile fa
     face can go; a tray drag's direction is decided once, and only a finger that sets off sideways scrolls the row; into
     Campus Leadership by a non-admin says so at the drop (6.5 s — `showMsg(text, ms)`) and the face keeps ⏳ (`sbWaits_`,
     `[data-sbwait]`); the save's "profile is updated" no longer counts a move that waits.
-  - Khmer §143. tests/test-structure.mjs, test-structure-board-ui.mjs (a leader and a Director landing, mouse and touch).
+  - Khmer §146. tests/test-structure.mjs, test-structure-board-ui.mjs (a leader and a Director landing, mouse and touch).
 - **Make a quarter live → profiles** (Nov 2026, Uriah: "move people around … and for that to automatically change in their
   profile"; this replaces Andrew's "not synced into our staff profile"). `applyStructure(user, pin, campus, year, q, {dry})`
   (`structEditor_`; a quarter already over → `past_quarter`): `structApplyRows_` lays the plan over the campus's active staff —
@@ -649,8 +649,21 @@ in the leadership My Ministry, and it shows in Team → Structure … profile fa
   main / member / leader options count, never what an admin or director can merely open. Profile → My positions says
   "Main: … · Also: …" (`#myPosMin`). Every tool already let a second ministry in (`canLogFor_` / `memberOf_` on the server,
   `ministries` in each client gate).
+- **Nothing on the board reaches a profile except through the button** (Nov 2026, Andrew: "make sure what's edited and changed
+  there doesn't affect anything else"; this replaces Uriah's "once THIS quarter is live, saveStructurePlan applies what that save
+  changed" above): `saveStructurePlan` never writes a profile (`applied` is always []). After a quarter is live, a change on the
+  board shows as `diff` — "n profiles differ from this structure" with See / **Apply again** — and only `applyStructure` writes,
+  after the list is shown. The live line says so ("A change on the board waits until you tap Apply again").
+- **SR Ministries** (Nov 2026, Andrew: "put Srey Noi, LTN and Ponlork Hope into one ministry named SR ministries … sub
+  categories"): `SB_GROUPS` (23-structure.js) draws Sry Noi, LTN and Ponlork School under one heading in Community Service
+  (`[data-sbgroup="srmin"]`, `.sbGroup`, `sbMinBoxHtml_`), the board calling Ponlork School "Ponlork Hope" (`sbMinName_`, also in
+  `sbBoxName_`). **Only how the board draws them**: each is still its own ministry — its numbers, profiles, tasks, its own drop
+  box — and taxonomy.js is unchanged. Team → Structure's list is unchanged.
+- **Also serves here** (Nov 2026, Andrew: "put people in multiple ministries"): a ministry's ＋ sheet has a second picker
+  (`#sbAddAlso`, people picker key `sbalso`) of people placed elsewhere — a pick adds the ministry as their "also"
+  (`sbAlsoAdd_`), their main place unchanged.
 - tests/test-structure.mjs (server), tests/test-structure-board-ui.mjs (mouse and touch; the second ministry, making a
-  quarter live, the bell, the pills). Khmer: docs/khmer-needed.md §135, §137, §141. sw.js SHELL v29.
+  quarter live, the bell, the pills, SR Ministries, Also serves here). Khmer: docs/khmer-needed.md §135, §137, §141, §143. sw.js SHELL v29.
 
 ## Outreach Teams — one record per team, not a weekly form
 Outreach Teams (Community Service) doesn't log week by week: a team comes for a stretch
@@ -3497,7 +3510,7 @@ also carries `menteeId`, the mentee's `prep`, and once it happened `heldOn`, `no
   each this month (Cambodia's calendar, `heldOn`, the mentee as the mentor). Mentorship's row says "Their 1-on-1s this
   month: 3 held with 2 of 4 people" (`ooTheirsLineHtml_`, `[data-ootheirs]`); the mentee's page lists each first name with
   ●○ of 2 (`ooTheirsListHtml_`, `#ooTheirs`, `[data-ootheirsrow]`). Nothing for a mentee who mentors nobody. Counts and
-  first names only, to that mentee's own approved mentor — never a check-in, a note or a follow-up. Khmer §143.
+  first names only, to that mentee's own approved mentor — never a check-in, a note or a follow-up. Khmer §146.
 - **Two a month** (`OO_PER_MONTH`), counted by `heldOn`: ●○ dots on My Home's Mentorship
   card (each mentee, and your own), on the Mentor page and on a mentee's page (which also
   lists their 1-on-1s). The monthly health question "2 one-on-ones?" shows the count.

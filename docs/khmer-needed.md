@@ -6782,7 +6782,7 @@ Campus Leadership arranges a quarter on the whiteboard; "Make Q1 2027 live" turn
 | Someone else is saving — try again. | មានអ្នកផ្សេងកំពុងរក្សាទុក — សូមព្យាយាមម្តងទៀត។ |
 | That quarter is over. | ត្រីមាសនោះបានកន្លងផុតហើយ។ |
 
-## 143. The structure board: main job and second job; a mentee's own 1-on-1s (My Ministry → Structure, Mentorship, Nov 2026)
+## 146. The structure board: main job and second job; a mentee's own 1-on-1s (My Ministry → Structure, Mentorship, Nov 2026)
 On the structure whiteboard a face dropped on a ministry asks, in a small box right there, "Main job here" (moves the person) or "Second job here" (they keep their main ministry and also serve here — the dashed face). "job" here is the ministry someone serves in, not paid work; if កិច្ចការបម្រើ reads better than ការងារ, use it everywhere in this section. "admin" is a tiny tag under a face (about 40px wide) — it must stay very short. "Let go" = lift your finger / release the mouse. The toasts are on screen for a few seconds. On Mentorship, one quiet line under a person I mentor says how many 1-on-1s THEY have held this month with the people they mentor; the long sentence is a privacy promise (only the count is shown, never what was said) — check that one first.
 
 | English | Khmer (draft) |
@@ -6812,3 +6812,15 @@ On the structure whiteboard a face dropped on a ministry asks, in a small box ri
 | The people {name} mentors, and the 1-on-1s {name} has held with each this month. Only the count — what they talked about stays between the two of them. | មនុស្សដែល {name} ណែនាំ និងចំនួនការជួបមួយទល់មួយដែល {name} បានជួបជាមួយម្នាក់ៗក្នុងខែនេះ។ មានតែចំនួនប៉ុណ្ណោះ — អ្វីដែលពួកគេបាននិយាយគ្នា នៅរវាងពួកគេទាំងពីរ។ |
 | {n} of {target} ✓ | {n} ក្នុងចំណោម {target} ✓ |
 | {n} of {target} | {n} ក្នុងចំណោម {target} |
+## 143. The structure whiteboard: changes wait for Apply again, and the SR Ministries group (My Ministry → Structure)
+
+The line above the board once a quarter is live, the question before Apply again, and the heading the board puts over Sry Noi, LTN and Ponlork Hope.
+
+| English | Khmer (draft) |
+|---|---|
+| Q{q} {year} is live — profiles match it. A change on the board waits until you tap Apply again. | Q{q} {year} ដំណើរការហើយ — ប្រវត្តិរូបត្រូវគ្នានឹងវា។ ការផ្លាស់ប្តូរលើក្តារ រង់ចាំរហូតដល់អ្នកចុច អនុវត្តម្តងទៀត។ |
+| Update these profiles to match the structure? Each person is told. | ធ្វើបច្ចុប្បន្នភាពប្រវត្តិរូបទាំងនេះ ឲ្យត្រូវនឹងរចនាសម្ព័ន្ធឬ? ម្នាក់ៗនឹងត្រូវបានប្រាប់។ |
+| SR Ministries | កិច្ចការបម្រើ SR |
+| Stays in {box} | នៅតែក្នុង {box} |
+| Also serves here | បម្រើនៅទីនេះផងដែរ |
+| For someone in two ministries: they keep their main one and serve here too. | សម្រាប់អ្នកដែលនៅក្នុងកិច្ចការបម្រើពីរ៖ ពួកគេរក្សាកិច្ចការបម្រើចម្បងរបស់ពួកគេ ហើយបម្រើនៅទីនេះផងដែរ។ |

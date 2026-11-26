@@ -6658,25 +6658,10 @@ async function saveStructurePlan(username, pin, campus, year, quarter, students,
   if (idx > -1 && plans[idx].live && !reset) rec.live = plans[idx].live;
   if (idx > -1) plans[idx] = rec; else plans.push(rec);
   await writeJSON('structurePlans', plans);
-  /* THIS quarter, live: what just changed on the board is people's profile at once. Only the people this save moved —
-     a profile someone edited themselves is not swept back by an unrelated change. A later quarter never writes a
-     profile until someone makes it live. */
-  let applied = [], staffNow = staff;
-  if (rec.live && y === currentYear_() && q === currentQuarter_()) {
-    const sig = function (p, id) {
-      return JSON.stringify([p.place && p.place[id] || null, p.also ? (p.also[id] || []) : null, (p.students || {})[id] || '',
-        p.leads ? Object.keys(p.leads).filter(function (k) { return p.leads[k].indexOf(id) > -1; }).sort() : null]);
-    };
-    const only = {}; let any = false;
-    Object.keys(here).forEach(function (id) { if (sig(before, id) !== sig(rec, id)) { only[id] = 1; any = true; } });
-    if (any) {
-      const res = await mutateStaff_(function (rws) {
-        const r = structApplyRows_(rws, campus, rec, !!admin.isAdmin, only);
-        return r.changes.length ? { ok: true, changes: r.changes } : { abort: true, ok: true, changes: [] };
-      });
-      if (res && res.ok && res.changes.length) { applied = res.changes; staffNow = await getStaff_(); await structTell_(applied, y, q); }
-    }
-  }
+  /* A save never writes a profile (Nov 2026, Andrew: "make sure what's edited and changed there doesn't affect anything
+     else"). Profiles change only through applyStructure — Make live / Apply again, after the list of changes is shown;
+     until then a change on the board shows as `diff` ("n profiles differ"). Uriah's live quarter used to apply each save. */
+  const applied = [], staffNow = staff;
   // a snapshot already saved for that quarter follows
   const rows = await getStructures_();
   const snap = rows.find(function (r) { return r.campus === campus && Number(r.year) === y && Number(r.quarter) === q; });
