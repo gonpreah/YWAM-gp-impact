@@ -39,6 +39,11 @@ Income.
   no bank) and the category (`srMatch_`). Results update as you type (`#srOut`), newest first, 60 at most, with their
   income − expenses. Each has **✏️ Edit** — the same edit as in the lists (`editBtnHtml_` → `startEdit_`: the entry
   comes off and its form opens filled in) — or **✅ Approved**, which can't be edited. Clear the search empties it.
+- **✏️ Edit here** (26 Nov 2026, `srStart_` / `srEditHtml_` / `srSave_`, `S.srEdit`, `S.srD`): the entry opens for editing
+  right in its search result. Not approved: date, amount, kind, category (income: empty = follow the kind's formula),
+  account (or no bank), name, memo; transfers and Financial tools: from, to, and the 📈 tick. Saving takes the old effect
+  off the categories and puts the new one on (one 🕘 History step). **In an approved report**: only the words — the kind
+  of expense, the name, the memo; its amount, date, categories and account stay as approved.
 
 ### 🏦 Balances
 - One entry per day: ABA, US bank, Cash, for the **Reports as of** day. Saving the same day again

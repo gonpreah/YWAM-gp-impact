@@ -567,6 +567,9 @@ button.tick.done{ background:var(--good); }
 .srWhat{ font-size:13.5px; margin-top:2px; }
 .srMemo{ font-size:12.5px; color:var(--muted); margin-top:2px; }
 .srList .rowBtns{ margin-top:4px; }
+.srEd{ margin-top:8px; padding:10px; border-radius:10px; background:var(--surface2); }
+.srEf{ display:flex; flex-direction:column; gap:3px; font-size:12.5px; color:var(--muted); font-weight:600; margin:6px 0; }
+.srEf input, .srEf select, .srEf textarea{ width:100%; min-width:0; }
 .mnPlBtn{ display:inline-block; margin-top:4px; border:1px solid var(--line); background:var(--surface); color:var(--muted); border-radius:999px; padding:3px 10px; font-size:12px; font-weight:700; cursor:pointer; }
 .mnPlBtn.on{ border-color:var(--accent); color:var(--accent); background:var(--accentSoft); }
 .mnNotIn{ display:inline-block; margin-top:4px; font-size:12px; color:var(--muted); }
@@ -844,7 +847,53 @@ function srOutHtml_(){ if(!srOn_()) return '<p class="hint" style="margin:8px 0 
       : esc(xferShort_(x.from))+' → '+esc(xferShort_(x.to));
     return '<li><div class="srTop"><b class="'+(e.k==='exp'?'mnOut':e.k==='inc'?'mnIn':'mnXfAmt')+'">'+(e.k==='exp'?'−':'')+money(x.amt,true)+'</b><span class="dsub" style="display:inline">'+date(x.date)+' · '+SR_KIND[e.k]+(x.journal?' · 📓':'')+'</span></div>'+
       '<div class="srWhat">'+what+'</div>'+((x.who||x.memo)?'<div class="srMemo">'+esc([x.who, x.memo].filter(Boolean).join(' · '))+'</div>':'')+
-      '<div class="rowBtns">'+editBtnHtml_(e.k, x)+'</div></li>'; }).join('')+'</ul>'+(tot?'<p class="srSum">Income − expenses of these: '+mnSg_(Math.round(tot*100)/100)+'</p>':''); }
+      (S.srEdit===e.k+'|'+x.id ? srEditHtml_(e) : '<div class="rowBtns"><button class="editBtn" data-sredit="'+e.k+'|'+esc(x.id)+'">✏️ Edit here</button>'+(anyApproved_(x, e.k)?'<span class="apprTag">✅ Approved</span>':'')+'</div>')+'</li>'; }).join('')+'</ul>'+(tot?'<p class="srSum">Income − expenses of these: '+mnSg_(Math.round(tot*100)/100)+'</p>':''); }
+/* edit straight in the search result (26 Nov 2026). Not approved: everything — date, amount, kind, category, account,
+   name, memo (the old effect comes off, the new one goes on). In an approved report: only the words (kind of
+   expense, name, memo) — its amount, date, categories and account are what was approved. */
+function srFind_(k, id){ var L = k==='inc'?INCOMES : k==='exp'?EXPENSES : k==='xf'?TRANSFERS : TOOL_XFERS; return L.filter(function(x){ return x.id===id; })[0]; }
+function srEditHtml_(e){ var x=e.x, D=S.srD||{}, lock=anyApproved_(x, e.k), k=e.k;
+  var f=function(lbl, inner){ return '<label class="srEf">'+lbl+inner+'</label>'; }, inp=function(n, v, t){ return '<input type="'+(t||'text')+'" data-sre="'+n+'" value="'+esc(v==null?'':v)+'"'+(t==='date'?' max="'+TODAY+'"':'')+'>'; };
+  var h='<div class="srEd" id="srEd">'+(lock?'<p class="bulkNoteRead">✅ In an approved report — only the words can change here. Its amount, date, categories and account are what was approved.</p>':'');
+  if(!lock) h+='<div class="srGrid">'+f('Date', inp('date', D.date, 'date'))+f('Amount', '<div class="money"><span>$</span>'+inp('amt', D.amt)+'</div>')+'</div>';
+  if(k==='inc' || k==='exp'){
+    var curCat=D.cat||'', rules=k==='inc' ? (INC_RULES[D.type]||[]) : [];
+    if(k==='exp' || !lock) h+=f(k==='inc'?'Kind of income':'What it was for', flTypeSelect_(k, 'data-sre="type"', D.type, '— Kind —'));
+    if(!lock){ h+=f(k==='inc'?(rules.length?'Category (leave empty to follow the formula)':'Category'):'Paid from — which category', fundSelect_('srEdCat', curCat, 'Category').replace('<select ','<select data-sre="cat" ').replace('— Pick a fund —', k==='inc'&&rules.length?'— Follow its formula —':'— No category —'));
+      h+=f(k==='inc'?'Went into':'Paid out of', bankSelect_('srEdBank', D.bank||'', 'data-sre="bank"', '— No bank —')); }
+  } else if(!lock){
+    h+=f('From', fundSelect_('srEdFrom', D.from, 'From', TOOL_ADD, true).replace('<select ','<select data-sre="from" '))+f('To', fundSelect_('srEdTo', D.to, 'To', TOOL_REMOVE, true).replace('<select ','<select data-sre="to" '));
+  }
+  if(k==='inc' || k==='exp') h+=f(k==='inc'?'From who':'Paid to', inp('who', D.who));
+  h+=f('Memo', '<textarea data-sre="memo" rows="2">'+esc(D.memo||'')+'</textarea>');
+  if((k==='xf' || k==='tool') && (fundOf_(D.from) || fundOf_(D.to))) h+='<label class="xfPlTog"><input type="checkbox" data-sre="pl"'+(D.pl?' checked':'')+'> 📈 Show in the Ministries profit and loss</label>';
+  return h+(S.srErr?'<p class="inErr" role="alert">⚠️ '+esc(S.srErr)+'</p>':'')+'<div class="inBtns" style="margin-top:8px"><button class="btn" id="srSave">Save</button><button class="btn ghost" id="srCancel">Cancel</button></div></div>'; }
+function srStart_(k, id){ var x=srFind_(k, id); if(!x) return; S.srEdit=k+'|'+id; S.srErr='';
+  var one=(x.split||[]).length===1 ? x.split[0].f : '', rules=k==='inc' ? (INC_RULES[x.type]||[]) : [];
+  S.srD={ date:x.date, amt:x.amt.toFixed(2), type:x.type||'', cat: k==='exp' ? one : (k==='inc' && (!rules.length || x.journal || (one && !(rules.length===1 && rules[0].f===one))) ? one : ''), bank:x.bank||'', who:x.who||'', memo:x.memo||'', from:x.from||'', to:x.to||'', pl:!!x.pl };
+  render(); }
+function srSave_(){ var p0=S.srEdit.split('|'), k=p0[0], id=p0.slice(1).join('|'), x=srFind_(k, id), D=S.srD, lock=anyApproved_(x, k); if(!x) return;
+  var a=calc_(D.amt), err='';
+  if(!lock){ if(isNaN(a) || !(a>0)) err='Type an amount more than 0.'; else if(!D.date || D.date>TODAY) err='Pick a date that isn’t in the future.';
+    else if(k==='inc' && !D.type) err='Pick the kind of income.'; else if(k==='exp' && !D.type) err='Pick what it was for.';
+    else if(k==='inc' && !(INC_RULES[D.type]||[]).length && !D.cat) err='This kind has no formula — pick its category.';
+    else if((k==='xf' || k==='tool') && (!D.from || !D.to || D.from===D.to)) err='Pick two different sides.';
+    else if(k==='xf' && ((isAcct_(D.from) && fundOf_(D.to)) || (isAcct_(D.to) && fundOf_(D.from)))) err='Money can’t move between a bank account and a category.';
+    else if(k==='xf' && (isTool_(D.from) || isTool_(D.to))) err='A transfer can’t have Financial tools on one side — make it a new Financial tools entry.';
+    else if(k==='tool' && !(isTool_(D.from) || isTool_(D.to))) err='One side of a Financial tools adjustment has to be Financial tools.'; }
+  S.srErr=err; if(err){ render(); return; }
+  snap_('Put back '+money(x.amt,true)+' '+(SR_KIND[k]||'')+' of '+date(x.date)+' as it was before editing');
+  if(k==='inc' || k==='exp'){ if(lock){ if(k==='exp' && D.type) x.type=D.type; }
+    else { flApply_(k, x, -1); x.date=D.date; x.amt=Math.round(a*100)/100; x.type=D.type; x.bank=D.bank;
+      x.split = k==='exp' ? [{ f:D.cat||'', amt:x.amt }] : (D.cat ? [{ f:D.cat, amt:x.amt }] : flSplit_('inc', D.type, x.amt, ''));
+      flApply_(k, x, 1); flSort_(k); }
+    x.who=D.who; x.memo=D.memo; }
+  else { if(!lock){ if(fundOf_(x.from)) fundMove_(x.from, x.amt); if(fundOf_(x.to)) fundMove_(x.to, -x.amt);
+      x.date=D.date; x.amt=Math.round(a*100)/100; x.from=D.from; x.to=D.to;
+      if(fundOf_(x.from)) fundMove_(x.from, -x.amt); if(fundOf_(x.to)) fundMove_(x.to, x.amt);
+      (k==='xf'?TRANSFERS:TOOL_XFERS).sort(function(p1,p2){ return p1.date<p2.date?1:p1.date>p2.date?-1:0; }); }
+    x.memo=D.memo; if(D.pl && (fundOf_(x.from) || fundOf_(x.to))) x.pl=true; else delete x.pl; }
+  x.edited=Date.now(); S.srEdit=null; S.srD=null; xferSnap_(x.date); render(); toast('✓ Saved'); }
 function inSearchHtml_(){ var F=srS_(), open=S.foldOpen&&S.foldOpen.search;
   var types=[]; if(!F.kind || F.kind==='inc') types=types.concat(INC_TYPES); if(!F.kind || F.kind==='exp') types=types.concat(EXP_TYPES.filter(function(t){ return types.indexOf(t)<0; }));
   var opt=function(v, l, cur){ return '<option value="'+esc(v)+'"'+(cur===v?' selected':'')+'>'+esc(l)+'</option>'; };
@@ -3093,7 +3142,12 @@ function srUpd_(e){ var k=e.target.dataset && e.target.dataset.srch; if(!k) retu
   render(); }
 document.addEventListener('input', function(e){ if(e.target.dataset && (e.target.dataset.srch==='q' || e.target.dataset.srch==='amt')) srUpd_(e); });
 document.addEventListener('change', function(e){ if(e.target.dataset && e.target.dataset.srch && e.target.dataset.srch!=='q' && e.target.dataset.srch!=='amt') srUpd_(e); });
-document.addEventListener('click', function(e){ if(e.target.id!=='srClear') return; S.srch=null; render(); });
+document.addEventListener('click', function(e){ if(e.target.id!=='srClear') return; S.srch=null; S.srEdit=null; render(); });
+document.addEventListener('click', function(e){ var b=e.target.closest && e.target.closest('[data-sredit]'); if(b){ var pp=b.dataset.sredit.split('|'); srStart_(pp[0], pp.slice(1).join('|')); return; }
+  if(e.target.id==='srSave' && S.srEdit){ srSave_(); return; } if(e.target.id==='srCancel'){ S.srEdit=null; S.srD=null; S.srErr=''; render(); } });
+function srEd_(e){ var n=e.target.dataset && e.target.dataset.sre; if(!n || !S.srD) return; S.srD[n] = n==='pl' ? e.target.checked : e.target.value;
+  if(e.type==='change' && (n==='type' || n==='from' || n==='to')) render(); }
+document.addEventListener('input', srEd_); document.addEventListener('change', srEd_);
 document.addEventListener('click', function(e){ var b=e.target.closest && e.target.closest('[data-mnkind]'); if(!b) return; var M=mnS_(), k=b.dataset.mnkind; M.kOpen=M.kOpen||{}; M.kOpen[k]=!M.kOpen[k]; render(); });
 document.addEventListener('click', function(e){ var b=e.target.closest && e.target.closest('[data-mnpl]'); if(!b) return; var id=b.dataset.mnpl, t=TRANSFERS.concat(TOOL_XFERS).filter(function(x){ return x.id===id; })[0]; if(!t) return;
   var on=!t.pl; snap_((on?'Took ':'Put ')+money(t.amt,true)+' '+(isToolX_(t)?'(Financial tools)':'transfer')+(on?' out of':' back in')+' the Ministries profit and loss'); if(on) t.pl=true; else delete t.pl; keep_(); render(); toast(on?'📈 Now in the profit and loss':'Taken out of the profit and loss'); });
