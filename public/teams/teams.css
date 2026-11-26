@@ -4264,3 +4264,18 @@ button.bdLine { cursor:pointer; }
 .lwFold > summary::after { content:'›'; color:var(--muted); font-size:20px; transition:transform .15s; }
 .lwFold[open] > summary::after { transform:rotate(90deg); }
 .lwFold[open] > summary { margin-bottom:8px; }
+
+/* GPDTS → Finances: the two places money is typed in, apart from the pages to read (Nov 2026, Andrew) */
+.dtsFinLook { margin-bottom:12px; }
+.dtsFinEnter { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin:0 0 14px; }
+.dtsFinEnter.one { grid-template-columns:minmax(0,1fr); }
+.dtsFinEnterBtn { display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-width:0; padding:12px 14px; border-radius:14px; border:1.5px solid var(--border2); background:var(--surface); color:var(--ink); font:inherit; text-align:left; cursor:pointer; }
+.dtsFinEnterBtn .dtsFinEnterName { font-weight:800; font-size:15px; }
+.dtsFinEnterBtn .dtsFinEnterSum { font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.dtsFinEnterBtn.in { border-color:var(--good); background:var(--goodSoft); }
+.dtsFinEnterBtn.out { border-color:var(--bad); background:var(--badSoft); }
+.dtsFinEnterBtn.on { box-shadow:0 0 0 2px var(--accent); }
+.dtsFinEnterBtn.in.on { box-shadow:0 0 0 2px var(--good); }
+.dtsFinEnterBtn.out.on { box-shadow:0 0 0 2px var(--bad); }
+.dtsFinInCard { border-left:4px solid var(--good); }
+.dtsFinOutCard { border-left:4px solid var(--bad); }

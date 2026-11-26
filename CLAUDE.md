@@ -1043,7 +1043,11 @@ school's home.
   pool** (''), amount in US$, note. Expense: date, category (honorarium, supplies, coffee, food, transport,
   other), memo (needed), who made it (campus staff), amount, `hasReceipt`, and in the list a second tick
   `toOffice` ("Receipt given to the office") that saves on the spot. The **budget** is the lecture fees of
-  the students accepted; **left** = budget − spent; **in hand** = received − spent. Server: `dtsFinSave` /
+  the students accepted; **left** = budget − spent; **in hand** = received − spent.
+  **Where money is typed stands apart** (Nov 2026, Andrew: "separate the income and expenses a bit since they are the ones
+  where you input the amount"): `#dtsFinSecs` is the pages to read (`.dtsFinLook` chips: Overview · Budget · Students),
+  then "✏️ Enter money" with two buttons (`.dtsFinEnter .dtsFinEnterBtn.in` Income, green; `.out` Expenses, red — outreach
+  has Income only), each with its total so far; the Income and Expenses cards carry the same colour down their edge. Server: `dtsFinSave` /
   `dtsFinDelete` (`dtsGate_`, `cleanDtsFin_`; outreach takes income only for now), blob `dtsFin:<campus>` =
   {entries}, on the board as `fin`; a school with money on it can't be deleted. The **Dashboard** keeps only
   numbers (Nov 2026: "I want the dashboard to only have the metric informations") and ends with a short
