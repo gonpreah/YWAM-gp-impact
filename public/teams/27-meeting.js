@@ -10,7 +10,7 @@
      - To-dos ARE the board's little tasks, and so GP Tasks (saveLeadTask; a new one: leadMeetTodo);
      - who leads is the facilitator on the meeting-day schedule (the "Tuesday" tab, whose weekday is now a
        setting: S.lead.meetDay).
-   New, in leadMeet:<campus> (one getLeadMeeting when the tab opens → S.meet): the scoreboard (5–15 weekly
+   New, in leadMeet:<campus> (one getLeadMeeting when the tab opens → S.meet): the scorecard (5–15 weekly
    numbers, typed or linked to a ministry's metric), rocks (the quarter's few priorities, by person),
    headlines, the meeting going on (kept on the server, so every phone shows the same part after
    "Check again") and the record of each past meeting.
@@ -23,7 +23,7 @@ var LM_INFO={
   checkin:{ icon:'👋', name:'Check-in',
     yes:'One piece of good news each — one from home, one from the work. Half a minute a person.',
     no:'No updates and no problems yet. This part is only for arriving.' },
-  score:{ icon:'📊', name:'Scoreboard',
+  score:{ icon:'📊', name:'Scorecard',
     yes:'Read each number and say only “on track” or “off track”.',
     no:'No explaining and no fixing here. If a number is off, drop it to Issues and keep going.' },
   rocks:{ icon:'🪨', name:'Rocks',
@@ -47,7 +47,7 @@ var LM_GUIDE=[
   'Start on time and end on time, whoever is missing.',
   'One person leads and keeps the clock. The leader moves the meeting on; they don’t have to have the answers.',
   'The first parts are reporting, kept short. Most of the meeting is for solving issues.',
-  'A scoreboard number is something you can count every week that tells you early how things are going. Each has one owner and a goal.',
+  'A scorecard number is something you can count every week that tells you early how things are going. Each has one owner and a goal.',
   'A rock is one of the three to seven things that must get done this quarter. Each has one owner. Everyone knows everyone’s rocks.',
   'A to-do is one small action for one person, due in seven days.',
   'An issue is anything in the way: a problem, a question, an idea. Add it to the list the moment you think of it, any day of the week.',
@@ -166,7 +166,7 @@ function leadMeetHtml_(){
   h+=lmGuideHtml_();
   h+='<div class="card lmQuick"><label class="f" style="margin-top:0">🧩 '+esc(t('Something in the way? Add it to the issues list'))+'</label><div class="lmAddRow">'+lmIn_('issue', t('An issue, a question, an idea…'), 160, ' id="lmIssueText"')+
     '<button class="btn small" id="lmIssueAdd">'+esc(t('Add'))+'</button></div><div class="hint" style="margin:6px 0 0">'+esc(gpT('{n} on the issues list — the first column of the board.',{n:lmIssues_().length}))+'</div></div>';
-  var secs=[['score','📊',t('Scoreboard')],['rocks','🪨',t('Rocks')],['headlines','📣',t('Headlines')],['todos','☑️',t('To-dos')],['past','🗂️',t('Past meetings')]];
+  var secs=[['score','📊',t('Scorecard')],['rocks','🪨',t('Rocks')],['headlines','📣',t('Headlines')],['todos','☑️',t('To-dos')],['past','🗂️',t('Past meetings')]];
   var sec=secs.some(function(x){ return x[0]===T.sec; }) ? T.sec : 'score';
   h+='<div class="lmSecs" role="tablist">'+secs.map(function(x){ return '<button class="lmSec'+(sec===x[0]?' on':'')+'" role="tab" data-lmsec="'+x[0]+'"><span aria-hidden="true">'+x[1]+'</span> '+esc(x[2])+'</button>'; }).join('')+'</div>';
   h+= sec==='rocks' ? lmRocksHtml_(false) : sec==='headlines' ? lmHeadsHtml_() : sec==='todos' ? lmTodosHtml_() : sec==='past' ? lmPastHtml_() : lmScoreHtml_();
@@ -189,7 +189,7 @@ function lmSettingsHtml_(){
   return h+'<div class="btnRow" style="margin-top:10px"><button class="btn" id="lmSetSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="lmSetCancel">'+esc(t('Cancel'))+'</button></div></div>';
 }
 
-/* ---------- the scoreboard (its ids keep "score") ---------- */
+/* ---------- the scorecard (its ids keep "score") ---------- */
 function lmScoreRowHtml_(m, meeting){
   var M=lmM_(), wks=M.weeks, h='<div class="card slim lmScoreRow" data-lmscore="'+esc(m.id)+'"><div class="lmRowHead"><div style="min-width:0"><b class="lmName">'+esc(m.name)+'</b>'+
     '<div class="rowSub">'+(m.owner ? '👤 '+esc(lmFirst_(m.owner))+' · ' : '')+esc(lmGoalText_(m))+(m.src==='metric' && m.metric ? ' · 🔗 '+esc(t(m.metric.ministry)+' › '+t(m.metric.metric)) : '')+'</div></div>'+
@@ -210,7 +210,7 @@ function lmScoreRowHtml_(m, meeting){
 function lmScoreHtml_(meeting){
   var M=lmM_(), T=lmT_(), h='<div id="lmScore">';
   if(!meeting) h+='<p class="sub">'+esc(t('Five to fifteen numbers you can count every week. Each has one owner and a goal. Thirteen weeks, the newest first.'))+'</p>';
-  if(!M.score.length) h+='<div class="card"><p class="sub" style="margin:0">'+esc(t('No numbers on the scoreboard yet.'))+'</p></div>';
+  if(!M.score.length) h+='<div class="card"><p class="sub" style="margin:0">'+esc(t('No numbers on the scorecard yet.'))+'</p></div>';
   M.score.forEach(function(m){ h+=(T.scoreForm && T.scoreForm.id===m.id && !meeting) ? lmScoreFormHtml_() : lmScoreRowHtml_(m, meeting); });
   if(!meeting){
     if(T.scoreForm && !T.scoreForm.id) h+=lmScoreFormHtml_();
@@ -236,7 +236,7 @@ function lmScoreFormHtml_(){
       '<p class="hint" style="margin:4px 0 0">'+esc(t('It fills itself in from what that ministry enters each week.'))+'</p>';
   }
   h+='<div class="btnRow" style="margin-top:10px"><button class="btn" id="lmScoreSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="lmScoreCancel">'+esc(t('Cancel'))+'</button></div>';
-  if(f.id) h+='<button class="linkbtn teamDelete" id="lmScoreDel">'+esc(t('Take it off the scoreboard'))+'</button>';
+  if(f.id) h+='<button class="linkbtn teamDelete" id="lmScoreDel">'+esc(t('Take it off the scorecard'))+'</button>';
   return h+'</div>';
 }
 
@@ -459,7 +459,7 @@ function bindMeeting_(){
   /* an issue from anywhere */
   id('lmIssueAdd', function(){ var v=(T.d.issue||'').trim(); if(!v){ showMsg(t('Write the issue first.')); return; } T.d.issue=''; lmDrop_(v, ''); });
   enter('lmIssueText', 'lmIssueAdd');
-  /* scoreboard */
+  /* scorecard */
   id('lmScoreAdd', function(){ T.scoreForm={ id:'', name:'', owner:'', goal:'', dir:'gte', src:'manual', dept:'', ministry:'', metric:'' }; render(); });
   on('[data-lmscoreedit]', function(b){ var m=M.score.filter(function(x){ return x.id===b.getAttribute('data-lmscoreedit'); })[0]; if(!m) return;
     T.scoreForm={ id:m.id, name:m.name, owner:m.owner||'', goal:m.goal==null?'':m.goal, dir:m.dir, src:m.src, dept:m.metric?m.metric.dept:'', ministry:m.metric?m.metric.ministry:'', metric:m.metric?m.metric.metric:'' }; render(); });
@@ -472,10 +472,10 @@ function bindMeeting_(){
     if(!String(f.name||'').trim()){ showMsg(t('Give it a name first.')); return; }
     if(f.src==='metric' && !(f.dept && f.ministry && f.metric)){ showMsg(t('Pick the department, the ministry and the number.')); return; }
     lmCall_('saveLeadScore',[{ id:f.id, name:f.name, owner:f.owner, goal:String(f.goal).replace(/,/g,''), dir:f.dir, src:f.src, metric:{ dept:f.dept, ministry:f.ministry, metric:f.metric } }], function(){ T.scoreForm=null; showMsg(t('Saved')); }); });
-  id('lmScoreDel', function(){ if(!gpAsk_(t('Take this number off the scoreboard? Its weeks of numbers go with it.'))) return; lmCall_('deleteLeadScore',[T.scoreForm.id], function(){ T.scoreForm=null; }); });
+  id('lmScoreDel', function(){ if(!gpAsk_(t('Take this number off the scorecard? Its weeks of numbers go with it.'))) return; lmCall_('deleteLeadScore',[T.scoreForm.id], function(){ T.scoreForm=null; }); });
   root.querySelectorAll('[data-lmval]').forEach(function(el){ el.onchange=function(){ var p=el.getAttribute('data-lmval').split('|'); lmCall_('saveLeadScoreValue',[p[0], p[1], el.value.trim()]); }; });
   on('[data-lmscoredrop]', function(b){ var m=M.score.filter(function(x){ return x.id===b.getAttribute('data-lmscoredrop'); })[0]; if(!m) return; var w=M.weeks[1]||M.weeks[0], v=m.vals[w.key];
-    lmDrop_(gpT('Scoreboard: {name}',{name:m.name}), lmGoalText_(m)+' · '+gpT('W{n}',{n:w.week})+': '+lmNum_(v)); });
+    lmDrop_(gpT('Scorecard: {name}',{name:m.name}), lmGoalText_(m)+' · '+gpT('W{n}',{n:w.week})+': '+lmNum_(v)); });
   /* rocks */
   on('[data-lmrq]', function(b){ T.rockQ=b.getAttribute('data-lmrq'); T.rockForm=null; render(); });
   id('lmRockAdd', function(){ var Q=lmQ_(T.rockQ); T.rockForm={ id:'', title:'', owner:'', note:'', status:'on', year:Q.year, q:Q.q }; render(); });

@@ -75,7 +75,7 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   then the hero, salvations by department, both school groups, outreach, churches, the
   gospel totals, media, base health and the department explorer. A test asserts Base and
   the dashboard render the same section list, so the two can't quietly drift apart.
-  *(Replaced, Nov 2026 — OKRs became **Rocks**, the Numbers tab the **Scoreboard**; see "Rocks and the Scoreboard". The OKR notes below, down to "A teammate's page has no controls at all", are history: that page code is deleted.)*
+  *(Replaced, Nov 2026 — OKRs became **Rocks**, the Numbers tab the **Scorecard**; see "Rocks and the Scorecard". The OKR notes below, down to "A teammate's page has no controls at all", are history: that page code is deleted.)*
   **OKRs belong to a person, not to a tab.** `okrSectionHtml(who, mine)` renders one
   person's objectives, framed as a job description: that ministry's focus (from
   `jobfocus.js`) on a black card, then the objectives for **their department** — the only
@@ -355,7 +355,7 @@ history is orphaned (`test-numbers-people.mjs` §5 covers the move).
   (`mmPickerHtml_`, `S.mmPickOpen`, `#mmPickScrim`, `.mmPickList`, grouped by department, a search
   `#mmPickFind` when there are more than 8, `data-mmpick="dept|min"` rows, the current one `.on`).
   No chips, no Department/Ministry selects any more.
-- *(Nov 2026: the tabs read **Scoreboard** for Numbers and **Rocks** for OKRs; the keys `numbers` / `okr` are unchanged.)*
+- *(Nov 2026: the tabs read **Scorecard** for Numbers and **Rocks** for OKRs; the keys `numbers` / `okr` are unchanged.)*
 - **One row of tabs per ministry** (`mmTabsHtml_` → `.gtBar.mmTabsBar .gtTabs.mmTabs .gtTab`,
   `mmTabsFor_`): most ministries Numbers · (Schedule) · Tasks · OKRs; the Cafe Today · Till · Rota ·
   Week (· Set up) · Numbers · Tasks · OKRs — its own keys keep `data-cafetab` so `cafeHtml_(true)`
@@ -1411,7 +1411,7 @@ has no such connection; this is Online only.)
   queries) for one made-up company.
 
 ## Campus Leadership on My Ministry: OKRs and the Monday meeting board
-*(Nov 2026: the OKR parts here are replaced by Rocks — the tab `okrs` is **Rocks** (`rocksTabHtml_`), `#lbOkrTile` reads "n/m on track", the notes' line is `leadRocksLineHtml_` (`#leadNoteRocks`), `leadOkrDashHtml_` is `leadRocksDashHtml_`, and a card's `okrId` is kept but no longer shown or picked. See "Rocks and the Scoreboard".)*
+*(Nov 2026: the OKR parts here are replaced by Rocks — the tab `okrs` is **Rocks** (`rocksTabHtml_`), `#lbOkrTile` reads "n/m on track", the notes' line is `leadRocksLineHtml_` (`#leadNoteRocks`), `leadOkrDashHtml_` is `leadRocksDashHtml_`, and a card's `okrId` is kept but no longer shown or picked. See "Rocks and the Scorecard".)*
 Campus Leadership doesn't log weekly numbers (hidden for now). Its own row in the picker
 ("🧭 Campus Leadership", where My Ministry opens for anyone in Campus Leadership —
 `mmSelected_` defaults to your own row) renders `leadSectionHtml_` instead of the dashboard /
@@ -1509,16 +1509,16 @@ Tuesday schedule — nothing of those was replaced.
 - Drafts are in `S.mt.d` (`[data-lmd]`), forms in `S.mt.scoreForm` / `rockForm` / `set`: typing survives every redraw.
 - tests/test-lead-meeting.mjs (server), tests/test-lead-meeting-ui.mjs (the real api.js: set up, a whole meeting on two
   phones, Khmer, 320px, a wide screen). Khmer: docs/khmer-needed.md §142. sw.js SHELL v33.
-- **Since the whole app moved to rocks (the next section)**: the meeting's "Scorecard" reads **Scoreboard** (ids keep `score`);
+- **Since the whole app moved to rocks (the next section)**: the meeting's "Scorecard" reads **Scorecard** (ids keep `score`);
   its rocks ARE the app's rocks for dept Campus Leadership with no ministry — `saveLeadRock` / `deleteLeadRock` write the one
   `rocks` store (`leadMeet:<campus>.rocks` is left as it was and no longer read once the store is seeded), `lmRockHtml_` is
   `rockHtml_` with the `lmrock` prefix, and the rock form no longer asks "Moves forward which OKR?".
 
-## Rocks and the Scoreboard (teams/28-rocks.js, Nov 2026, Uriah)
-"I'm going to move OKRs to rocks. And we're going to move the KPI and numbers things to scoreboard across our whole thing, as
-the OKRs are too complicated. Across the whole app we're going to move away from OKRs and move to rocks and scoreboard."
+## Rocks and the Scorecard (teams/28-rocks.js, Nov 2026, Uriah)
+"I'm going to move OKRs to rocks. And we're going to move the KPI and numbers things to scorecard across our whole thing, as
+the OKRs are too complicated. Across the whole app we're going to move away from OKRs and move to rocks and scorecard."
 **Words**: on screen there are no OKRs, objectives or key results (but the folded "Earlier objectives"), no "KPI"; the
-quarter's priorities are **Rocks** (ថ្មធំ), a ministry's weekly numbers page is its **Scoreboard** (តារាងពិន្ទុ). A single figure
+quarter's priorities are **Rocks** (ថ្មធំ), a ministry's weekly numbers page is its **Scorecard** (តារាងពិន្ទុ). A single figure
 is still a number (or a metric, in the editor). Code names, blob keys and handlers kept their names: the tab keys are still
 `okr` / `okrs` / `numbers`, the tile `#lbOkrTile`, `S.view==='okr'` still lands on the tab. tests/test-okr-easy.mjs reads
 the source and fails if the old words or the old page code come back.
@@ -1564,7 +1564,7 @@ the source and fails if the old words or the old page code come back.
   (`leadRocksLineHtml_`), the quarter report (`rkReportHtml_`; a quarter from before rocks shows the objectives it had),
   Admin → Loose ends (this quarter's open rocks not updated in 30 days — `adminLooseEnds.rocks`). Drafts are in `S.rk`
   (typing survives a redraw).
-- **The Scoreboard** (the tab key is still `numbers`): on top, the board (`scoreBoardHtml_`, `#scoreBoard`): "n of m on
+- **The Scorecard** (the tab key is still `numbers`): on top, the board (`scoreBoardHtml_`, `#scoreBoard`): "n of m on
   target this week" (`#sbdHeadline`), each number (`[data-sbdrow]`: those with a goal first, then those with figures; six
   shown, `#sbdAll`) with its goal ("≥ 150"), the week's figure and ✓ / ✗ / – (`.sbdMark`, with an aria-label — never colour
   alone), and thirteen weeks of marks (`.sbdC`, the page's week last); a number with no goal shows its figure and ▲/▼ as
@@ -1576,7 +1576,7 @@ the source and fails if the old words or the old page code come back.
   ministry's `metricOverrides` row (so it rides `getData`; `saveMetricOverrides` keeps it, `renameCustomMetric` moves it),
   ≤60, a goal outside `kpiRange_` named in `rejected`. The box a number is typed in says "🎯 goal ≥ 150"
   (`metricGoalNote_` — it used to say which objective the number fed).
-- Weekly goals' link reads "Link to a scoreboard number" (`metricLinkOptions_`). help.html is the "Ministry Scoreboard
+- Weekly goals' link reads "Link to a scorecard number" (`metricLinkOptions_`). help.html is the "Ministry Scorecard
   Guide" in its title and heading; its per-number lines are unchanged (their Khmer is keyed by the English).
 - tests/test-rocks.mjs (server), tests/test-rocks-ui.mjs (the pages, Khmer, 320px, dark), test-okr-easy.mjs (the old code
   and words are gone, the data is not), test-okr-admin-view.mjs (an admin's every department), test-metric-okr-feeds.mjs

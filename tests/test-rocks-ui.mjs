@@ -1,7 +1,7 @@
-/* Rocks and the Scoreboard on the page (teams/28-rocks.js) — against the real api.js.
+/* Rocks and the Scorecard on the page (teams/28-rocks.js) — against the real api.js.
 
    Nov 2026 (Uriah): "Across the whole app we're going to move away from OKRs and move to rocks and
-   scoreboard." A ministry's My Ministry has a Scoreboard tab (its weekly numbers, each against a
+   scorecard." A ministry's My Ministry has a Scorecard tab (its weekly numbers, each against a
    weekly goal, ✓ / ✗) and a Rocks tab (the quarter's few priorities: add in one line, tap on track /
    off track / done, a note). Campus Leadership's Rocks are the ones the leadership meeting shows.
    A teammate's page shows their rocks. Nothing on screen says OKR any more; what was there before
@@ -107,13 +107,13 @@ const sideways = (p) => p.evaluate(() => document.documentElement.scrollWidth - 
 const rocksIn = (p, sel) => p.$$eval(sel + ' .lmRock .lmName', (e) => e.map((x) => x.textContent));
 const stored = (id) => mem.rocks.rocks.find((r) => r.id === id);
 
-/* ---------- a ministry's Scoreboard ---------- */
-console.log('=== a ministry’s Scoreboard ===');
+/* ---------- a ministry's Scorecard ---------- */
+console.log('=== a ministry’s Scorecard ===');
 {
   const { ctx, page } = await open('kim');
   const labels = await tabLabels(page);
-  ok('the tabs are Scoreboard · Tasks · Rocks — no “Numbers”, no “OKRs”', labels.join() === 'Scoreboard,Tasks,Rocks', labels.join());
-  ok('it opens on the Scoreboard, the board on top of the week card', (await page.$eval('.mmTabs .gtTab.on', (b) => b.getAttribute('data-mmtab'))) === 'numbers'
+  ok('the tabs are Scorecard · Tasks · Rocks — no “Numbers”, no “OKRs”', labels.join() === 'Scorecard,Tasks,Rocks', labels.join());
+  ok('it opens on the Scorecard, the board on top of the week card', (await page.$eval('.mmTabs .gtTab.on', (b) => b.getAttribute('data-mmtab'))) === 'numbers'
     && await page.evaluate(() => { const a = document.getElementById('scoreBoard'), b = document.getElementById('mmWeekCard'); return !!a && !!b && a.getBoundingClientRect().top < b.getBoundingClientRect().top; }));
   ok('the headline counts what is on target this week (5 games ≥ 4 ✓, 20 youth ≥ 40 ✗)', /1 of 2 on target this week/.test(await txt(page, '#sbdHeadline')), await txt(page, '#sbdHeadline'));
   const row = (m) => page.$eval('[data-sbdrow="' + m + '"]', (e) => ({ cls: e.className, goal: (e.querySelector('.sbdGoal') || {}).textContent || '', val: e.querySelector('.sbdVal').textContent, mark: (e.querySelector('.sbdMark') || {}).textContent || '', label: e.querySelector('.sbdMark') ? e.querySelector('.sbdMark').getAttribute('aria-label') : '', cells: [...e.querySelectorAll('.sbdC')].map((c) => c.textContent || ' ').join('') }));
@@ -126,7 +126,7 @@ console.log('=== a ministry’s Scoreboard ===');
   ok('the month / quarter / year totals are folded away under it', await page.$eval('#mmGlance', (d) => !d.open && !!d.querySelector('.mmGrid')));
   await page.click('#mmGlance > summary'); await page.waitForTimeout(200);
   ok('… and open with a tap', await page.$eval('#mmGlance', (d) => d.open) && await page.isVisible('#mmGlance .mmTile'));
-  await shot(page, SHOTS + '/scoreboard-390.png');
+  await shot(page, SHOTS + '/scorecard-390.png');
 
   /* the leader sets the goals */
   await page.click('#sbdEdit'); await page.waitForTimeout(200);
@@ -141,7 +141,7 @@ console.log('=== a ministry’s Scoreboard ===');
   ok('saved on the server', goals.Salvations && goals.Salvations.goal === 1 && goals['Youth Participating'].goal === 15 && goals['Games Played'].goal === 4, goals);
   ok('the board follows: three goals, all on target', /3 of 3 on target this week/.test(await txt(page, '#sbdHeadline')) && (await row('Salvations')).mark === '✓', await txt(page, '#sbdHeadline'));
   ok('the box where the number is typed says what it is held against', await page.evaluate(() => { S.kpiInputOpen = true; S.dbAcc.kpiDay = true; S.dbAcc.kpiWeek = true; render(); return /goal ≥ 4/.test(document.getElementById('main').innerText); }));
-  ok('nothing on the Scoreboard says OKR or KPI', !/OKR|KPI|[Kk]ey result/.test(await txt(page, '#main')));
+  ok('nothing on the Scorecard says OKR or KPI', !/OKR|KPI|[Kk]ey result/.test(await txt(page, '#main')));
   await ctx.close();
 }
 {
@@ -227,7 +227,7 @@ console.log('=== Campus Leadership ===');
   /* the same rocks in the leadership meeting */
   await page.click('[data-lwtab="board"]'); await page.waitForTimeout(300);
   await page.click('[data-leadtab="meet"]'); await page.waitForSelector('#leadMeet [data-lmsec]', { timeout: 10000 });
-  ok('the meeting’s numbers part is the Scoreboard', /Scoreboard/.test(await txt(page, '[data-lmsec="score"]')) && !/Scorecard/.test(await txt(page, '#leadMeet')));
+  ok('the meeting’s numbers part is the Scorecard', /Scorecard/.test(await txt(page, '[data-lmsec="score"]')) && !/Scoreboard/i.test(await txt(page, '#leadMeet')));
   await page.click('[data-lmsec="rocks"]'); await page.waitForTimeout(300);
   ok('the meeting shows the very same rocks', !!(await page.$('#lmRocks [data-lmrock="r4"]')) && !!(await page.$('#lmRocks [data-lmrock="' + kit.id + '"]')) && !(await page.$('#lmRocks select[data-lmrf="okrId"]')));
   await page.click('[data-lmrockst="' + kit.id + '|off"]'); await page.waitForTimeout(600);
@@ -274,8 +274,8 @@ console.log('=== Khmer, a small phone, the dark theme ===');
   const { ctx, page } = await open('kim', { km: true, width: 320 });
   const labels = await tabLabels(page);
   ok('Khmer: the tabs are តារាងពិន្ទុ and ថ្មធំ', labels[0] === 'តារាងពិន្ទុ' && labels[labels.length - 1] === 'ថ្មធំ', labels.join());
-  ok('Khmer at 320px: the Scoreboard does not slide sideways', (await sideways(page)) <= 0, String(await sideways(page)));
-  ok('… and is in Khmer', /ដល់គោលដៅ/.test(await txt(page, '#scoreBoard')) && !/on target|Scoreboard/.test(await txt(page, '#scoreBoard')), (await txt(page, '#scoreBoard')).slice(0, 120));
+  ok('Khmer at 320px: the Scorecard does not slide sideways', (await sideways(page)) <= 0, String(await sideways(page)));
+  ok('… and is in Khmer', /ដល់គោលដៅ/.test(await txt(page, '#scoreBoard')) && !/on target|Scorecard/.test(await txt(page, '#scoreBoard')), (await txt(page, '#scoreBoard')).slice(0, 120));
   await page.click('#sbdEdit'); await page.waitForTimeout(200);
   ok('… nor the goals form', (await sideways(page)) <= 0, String(await sideways(page)));
   await page.click('#sbdCancel');
@@ -289,7 +289,7 @@ console.log('=== Khmer, a small phone, the dark theme ===');
 }
 {
   const { ctx, page } = await open('dara', { width: 320 });
-  ok('English at 320px: the Scoreboard fits', (await sideways(page)) <= 0, String(await sideways(page)));
+  ok('English at 320px: the Scorecard fits', (await sideways(page)) <= 0, String(await sideways(page)));
   await page.click('[data-mmtab="okr"]'); await page.waitForTimeout(300);
   ok('English at 320px: the Rocks tab fits', (await sideways(page)) <= 0, String(await sideways(page)));
   await ctx.close();
@@ -311,8 +311,8 @@ console.log('=== Khmer, a small phone, the dark theme ===');
   }, sel);
   const dark = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   const sb = await contrast('#scoreBoard .sbdName, #scoreBoard .sbdGoal, #scoreBoard .sbdVal, #scoreBoard .sbdMark, #scoreBoard .sbdC.on, #scoreBoard .sbdC.off, #scoreBoard .sbdLine b, #scoreBoard .sbdSub');
-  ok('dark theme: every word and mark on the Scoreboard reads (4.5:1 or better)', sb.length >= 10 && Math.min(...sb) >= 4.5, dark + ' ' + JSON.stringify(sb));
-  await shot(page, SHOTS + '/scoreboard-390-dark.png');
+  ok('dark theme: every word and mark on the Scorecard reads (4.5:1 or better)', sb.length >= 10 && Math.min(...sb) >= 4.5, dark + ' ' + JSON.stringify(sb));
+  await shot(page, SHOTS + '/scorecard-390-dark.png');
   await page.click('[data-mmtab="okr"]'); await page.waitForTimeout(300);
   const rk = await contrast('#rocksTab .lmName, #rocksTab .lmSt, #rocksTab .rkCount, #rocksTab .rkNote, #rocksTab .rkBadge, #rocksTab .rkOld span, #rocksTab .rkOld b, #rocksTab .leadSeg');
   ok('dark theme: the Rocks tab reads too', rk.length >= 10 && Math.min(...rk) >= 4.5, JSON.stringify(rk));

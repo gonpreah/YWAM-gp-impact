@@ -1,4 +1,4 @@
-/* My Ministry, redesigned: one page with two tabs (the Scoreboard — it was Numbers — and Rocks — it was OKRs), a
+/* My Ministry, redesigned: one page with two tabs (the Scorecard — it was Numbers — and Rocks — it was OKRs), a
    dashboard of the ministry's own figures, a week strip that shows which
    weeks have nothing logged, one button that unfolds the whole metric form,
    the person's own four numbers, and an editor only a leader sees.
@@ -84,7 +84,7 @@ console.log('=== the leader’s page ===');
     personal: document.querySelectorAll('[data-personal]').length,
     overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
   }));
-  ok('one row of tabs for the ministry — Scoreboard, Tasks, Rocks among them — and it opens where it was left (the numbers)', JSON.stringify(s.tabs) === '["numbers","tasks","okr"]' && !!(await page.$('.mmTabs .gtTab.on[data-mmtab="numbers"]')), JSON.stringify(s.tabs));
+  ok('one row of tabs for the ministry — Scorecard, Tasks, Rocks among them — and it opens where it was left (the numbers)', JSON.stringify(s.tabs) === '["numbers","tasks","okr"]' && !!(await page.$('.mmTabs .gtTab.on[data-mmtab="numbers"]')), JSON.stringify(s.tabs));
   ok('the dashboard shows the ministry’s own metrics as tiles', s.tiles === 6, s.tiles);
   /* This week is in the current quarter by definition, so a count logged
      this week must show a real quarter total — "—" here meant the quarter
@@ -148,12 +148,12 @@ console.log('\n=== an ordinary member ===');
   ok('a member gets no “Edit what we track” at all', !s.editor);
   ok('but can still open the form and log', s.btn);
   ok('and sees no personal numbers either', s.personal === 0);
-  // the Rocks tab is a tap from the Scoreboard on the same page
+  // the Rocks tab is a tap from the Scorecard on the same page
   await page.click('#ministryBack');
   await page.waitForTimeout(400);
   await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(400); await page.click('[data-mmtab="okr"]');   // Rocks (key 'okr')
   await page.waitForTimeout(500);
-  ok('My Ministry on its Rocks tab, the Scoreboard tab a tap away', await page.evaluate(() => S.view === 'ministry' && S.mmTab === 'okr' && !!document.querySelector('.mmTabs .gtTab.on[data-mmtab="okr"]') && !!document.querySelector('.mmTabs [data-mmtab="numbers"]')));
+  ok('My Ministry on its Rocks tab, the Scorecard tab a tap away', await page.evaluate(() => S.view === 'ministry' && S.mmTab === 'okr' && !!document.querySelector('.mmTabs .gtTab.on[data-mmtab="okr"]') && !!document.querySelector('.mmTabs [data-mmtab="numbers"]')));
   ok('no console/page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
   await ctx.close();
 }

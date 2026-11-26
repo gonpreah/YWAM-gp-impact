@@ -1,7 +1,7 @@
-/* Rocks and the Scoreboard's goals — against the real api.js.
+/* Rocks and the Scorecard's goals — against the real api.js.
 
    Nov 2026 (Uriah): "I'm going to move OKRs to rocks. And we're going to move the KPI and numbers
-   things to scoreboard … as the OKRs are too complicated."
+   things to scorecard … as the OKRs are too complicated."
    A rock is a quarter's priority — a title, whose it is, on track / off track / done, a note — kept in
    one store ('rocks') for every team on both campuses; the leadership meeting's rocks are the ones
    with dept Campus Leadership and no ministry. What this holds:
@@ -10,7 +10,7 @@
      2. the one-time move: this quarter's objectives and the meeting's own rocks come across once,
         nothing is lost or made twice (two phones at once included), and a page open writes nothing;
      3. the leadership meeting still reads and writes its rocks;
-     4. the Scoreboard's weekly goals: who sets them, cleaned, range-checked, kept through other edits;
+     4. the Scorecard's weekly goals: who sets them, cleaned, range-checked, kept through other edits;
      5. the server's copy of how a metric adds up (modeOf_) matches taxonomy.js.
    Every name is made up. */
 import { REPO, tmpDir } from './env.mjs';
@@ -208,8 +208,8 @@ ok('… and removes its own', m.ok && !byId(m.rocks, kM) && !byId(await rocksOf(
 ok('Poipet’s meeting has only Poipet’s', (await call('getLeadMeeting', P('pol'))).rocks.every(x => x.campus === 'poipet'));
 ok('someone outside leadership still cannot use the meeting’s door', (await call('saveLeadRock', P('cam').concat([{ title: 'x' }]))).err === 'not_authorized');
 
-/* ---------- 4: the Scoreboard's goals ---------- */
-console.log('=== the Scoreboard’s weekly goals ===');
+/* ---------- 4: the Scorecard's goals ---------- */
+console.log('=== the Scorecard’s weekly goals ===');
 const T = ['siemreap', 'Community Service', 'Cafe'];
 ok('a ministry’s ordinary staff cannot set goals', (await call('saveMetricGoals', P('cam').concat(T, [{ 'Cups Sold': { goal: 150 } }]))).err === 'not_authorized');
 mem.staff.find(s => s.id === 'st_c').leads = ['Community Service|Cafe'];

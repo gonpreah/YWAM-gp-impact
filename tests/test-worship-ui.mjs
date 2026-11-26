@@ -83,7 +83,7 @@ console.log('=== the worship team ===');
 let { ctx, page } = await open('wren');
 await toWorship(page);
 const tabs = await page.$$eval('.mmTabs [data-mmtab]', els => els.map(e => e.getAttribute('data-mmtab')).join(' '));
-ok('Worship’s tabs: This week · Rota · Team · Songs · Dashboard · Scoreboard · Tasks · Rocks', tabs === 'wsweek wsrota wsteam wssongs wsdash numbers tasks okr', tabs);
+ok('Worship’s tabs: This week · Rota · Team · Songs · Dashboard · Scorecard · Tasks · Rocks', tabs === 'wsweek wsrota wsteam wssongs wsdash numbers tasks okr', tabs);
 ok('This week opens first, the four services and how many are filled', await page.locator('.wsSvc').count() === 4 && /0 of 4 services filled/.test(await page.textContent('#wsStatus')));
 
 await tab(page, 'wssongs');

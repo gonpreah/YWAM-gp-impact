@@ -4043,9 +4043,9 @@ body.sbDragging, body.sbDragging * { cursor:grabbing !important; }
 .mmMinePill small { font-weight:600; color:var(--muted); }
 .mmMinePill.on small { color:inherit; }
 
-/* ==================== Rocks and the Scoreboard (teams/28-rocks.js, Nov 2026) ====================
+/* ==================== Rocks and the Scorecard (teams/28-rocks.js, Nov 2026) ====================
    A rock is drawn with the leadership meeting's own classes (.lmRock, .lmSt …); these are only what the
-   Rocks tab and the Scoreboard add. Theme tokens only. */
+   Rocks tab and the Scorecard add. Theme tokens only. */
 .rkGroup .lmRock:first-of-type { border-top:0; }
 .rkGroup .goalCardTitle { overflow-wrap:anywhere; min-width:0; }
 .rkCount { white-space:nowrap; flex:0 0 auto; }

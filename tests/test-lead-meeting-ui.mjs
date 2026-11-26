@@ -1,6 +1,6 @@
 /* The leadership meeting, in the browser — against the real api.js (Nov 2026, Uriah).
 
-   Campus Leadership → Board → Meeting: set up a scoreboard number (typed, and one linked to a ministry's
+   Campus Leadership → Board → Meeting: set up a scorecard number (typed, and one linked to a ministry's
    metric), a rock, a headline; run a whole meeting start to end — the clock, one part a screen, who is here,
    drop an off-track number to Issues, tick and carry to-dos, rank the issues 1-2-3, identify / discuss /
    solve one (the decision lands on its card, a to-do lands in GP Tasks), messages, ratings, End — and find
@@ -129,7 +129,7 @@ ok('typing survives a redraw', (await page.$eval('#lmIssueText', e => e.value)) 
 await page.press('#lmIssueText', 'Enter'); await wait(page, 700);
 ok('Enter adds it to the board’s first column', mem['leadBoard:siemreap'].cards.some(c => c.title === 'Kitchen budget is over' && c.col === 'agenda') && /3 on the issues list/.test(await txt(page, '.lmQuick')) && (await page.$eval('#lmIssueText', e => e.value)) === '');
 
-console.log('=== the scoreboard ===');
+console.log('=== the scorecard ===');
 await page.click('#lmScoreAdd'); await page.waitForSelector('#lmScoreForm');
 await page.fill('[data-lmsf="name"]', '1-on-1s held');
 await page.fill('[data-ppickq="lmso"]', 'Oli'); await wait(page, 200); await page.click('[data-ppickit="lmso|st_o"]'); await wait(page, 200);
@@ -190,11 +190,11 @@ mem['leadMeet:siemreap'].run.partAt = new Date(Date.now() - 6 * 60000).toISOStri
 await page.click('#lmRefresh'); await wait(page, 1500);
 ok('over time the clock turns amber — and Next still works', await page.$eval('#lmPartClock', e => e.classList.contains('over')) && !(await page.$eval('#lmTotalClock', e => e.classList.contains('over'))));
 await page.click('#lmNext'); await wait(page, 800);
-ok('Next: the Scoreboard — last week’s numbers, on or off track', (await page.$eval('#lmRun', e => e.getAttribute('data-lmpartnow'))) === 'score' && /Off track/.test(await txt(page, '.lmScoreRow')) && /On track/.test(await page.$$eval('.lmScoreRow', r => r[1].innerText)));
+ok('Next: the Scorecard — last week’s numbers, on or off track', (await page.$eval('#lmRun', e => e.getAttribute('data-lmpartnow'))) === 'score' && /Off track/.test(await txt(page, '.lmScoreRow')) && /On track/.test(await page.$$eval('.lmScoreRow', r => r[1].innerText)));
 ok('… “no discussion here”', /No explaining and no fixing here/.test(await txt(page, '.lmDont')));
 ok('only the off-track number has “Drop it to Issues”', (await page.$$('[data-lmscoredrop]')).length === 1);
 await page.click('[data-lmscoredrop]'); await wait(page, 800);
-ok('… and it lands on the issues list', mem['leadBoard:siemreap'].cards.some(c => c.title === 'Scoreboard: 1-on-1s held' && c.col === 'agenda'));
+ok('… and it lands on the issues list', mem['leadBoard:siemreap'].cards.some(c => c.title === 'Scorecard: 1-on-1s held' && c.col === 'agenda'));
 
 console.log('=== a second leader’s phone ===');
 const two = await open('oli');
@@ -233,10 +233,10 @@ ok('a new to-do goes through the board into that person’s GP Tasks, due in sev
 console.log('=== issues: pick three, then identify, discuss, solve ===');
 await page.click('#lmNext'); await wait(page, 800);
 const issueTitles = await page.$$eval('.lmIssue .lmIssueTitle', l => l.map(x => x.textContent));
-ok('the issues list is the board’s first column', (await page.$eval('#lmRun', e => e.getAttribute('data-lmpartnow'))) === 'issues' && issueTitles.length === 4 && issueTitles.some(x => /Water pump/.test(x)) && issueTitles.some(x => /Scoreboard: 1-on-1s held/.test(x)), issueTitles.join(' | '));
+ok('the issues list is the board’s first column', (await page.$eval('#lmRun', e => e.getAttribute('data-lmpartnow'))) === 'issues' && issueTitles.length === 4 && issueTitles.some(x => /Water pump/.test(x)) && issueTitles.some(x => /Scorecard: 1-on-1s held/.test(x)), issueTitles.join(' | '));
 ok('today’s topic on the schedule is offered as an issue', /Christmas outreach plan/.test(await txt(page, '[data-lmtopic]')));
 const idOf = (re) => page.$$eval('.lmIssue', (l, src) => { const x = l.find(b => new RegExp(src).test(b.textContent)); return x.getAttribute('data-lmrank'); }, re.source);
-const pump = await idOf(/Water pump/), recep = await idOf(/reception/), kitchen = await idOf(/Kitchen budget/), scoreI = await idOf(/Scoreboard/);
+const pump = await idOf(/Water pump/), recep = await idOf(/reception/), kitchen = await idOf(/Kitchen budget/), scoreI = await idOf(/Scorecard/);
 await page.click(`[data-lmrank="${pump}"]`); await page.click(`[data-lmrank="${kitchen}"]`); await page.click(`[data-lmrank="${recep}"]`); await wait(page, 1200);
 const ranks = await page.$$eval('.lmIssue.picked', l => l.map(x => x.querySelector('.lmRank').textContent + x.querySelector('.lmIssueTitle').textContent.slice(0, 5)).sort().join());
 ok('three fast taps rank them 1-2-3 — all three reach the server, in order', mem['leadMeet:siemreap'].run.top.join() === [pump, kitchen, recep].join() && /^1Water,2Kitch,3Who c$/.test(ranks), ranks);
@@ -317,7 +317,7 @@ console.log('=== Khmer, and a 320px phone ===');
   ok('every setup page fits 320px', !(await overflow(k.page)));
   await k.page.click('[data-lmsec="score"]'); await wait(k.page, 300);
   await k.page.click('#lmScoreAdd'); await wait(k.page, 300); await k.page.click('[data-lmsrc="metric"]'); await wait(k.page, 300);
-  ok('… and the scoreboard form', !(await overflow(k.page)));
+  ok('… and the scorecard form', !(await overflow(k.page)));
   await k.page.click('#lmScoreCancel'); await wait(k.page, 200);
   await k.page.click('#lmStart'); await k.page.waitForSelector('#lmRun'); await wait(k.page);
   let fits = true, kmParts = true;

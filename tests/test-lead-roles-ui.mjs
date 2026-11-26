@@ -104,7 +104,7 @@ const firstKinds = async (p) => { await p.click('[data-lwtab="week"]'); await p.
   const nums = await page.$$eval('.lbGlance .mmTile:not(.lbNav) .mmTileNum', (e) => e.map((x) => x.textContent));
   ok('… counted from their own partners and plants', nums[0] === '2 / 2' && nums[1] === '1', nums.join(' | '));
   ok('the dashboard leads with this quarter’s rocks and the board', !!(await page.$('.lbGlance #lbOkrTile')) && !!(await page.$('.lbGlance #lbBoardTile')));
-  ok('no Scoreboard / Rocks switch on top of a leadership row', !(await page.$('[data-mmtab]')));
+  ok('no Scorecard / Rocks switch on top of a leadership row', !(await page.$('[data-mmtab]')));
   await page.click('#lbOkrTile'); await page.waitForTimeout(400);
   ok('tapping Rocks opens the Rocks tab — leadership’s rocks', (await tabOn(page)) === 'okrs' && !!(await page.$('#rocksTab')) && /Rocks/.test(await page.$eval('#main', (e) => e.innerText)) && !/OKR/.test(await page.$eval('#main', (e) => e.innerText)));
   await page.click('[data-lwtab="board"]'); await page.waitForTimeout(400);

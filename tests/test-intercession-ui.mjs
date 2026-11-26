@@ -76,7 +76,7 @@ const wide = p => p.evaluate(() => document.documentElement.scrollWidth <= windo
   const { ctx, page } = await open('ina');
   await page.evaluate(() => { S.view = 'ministry'; render(); }); await page.waitForTimeout(1200);
   const tabs = (await page.$$eval('.mmTabs .gtTab', b => b.map(x => x.textContent))).join();
-  ok('Intercession’s tabs: Wednesdays · 21-day fast · Requests · Dashboard · Scoreboard · Tasks · Rocks', tabs === 'Wednesdays,21-day fast,Requests,Dashboard,Scoreboard,Tasks,Rocks', tabs);
+  ok('Intercession’s tabs: Wednesdays · 21-day fast · Requests · Dashboard · Scorecard · Tasks · Rocks', tabs === 'Wednesdays,21-day fast,Requests,Dashboard,Scorecard,Tasks,Rocks', tabs);
   ok('it opens on Wednesdays, asking about the last one', !!(await page.$('.mmTabs .gtTab.on[data-mmtab="icwed"]')) && !!(await page.$('#icpAskHeld')));
   ok('the next 8 Wednesdays are there', (await page.$$('.icpWed')).length >= 8);
   await page.click('#icpAskHeld [data-icpwed]'); await page.waitForTimeout(400);

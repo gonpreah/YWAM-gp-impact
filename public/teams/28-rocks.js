@@ -1,5 +1,5 @@
-/* ==================== Rocks and the Scoreboard (Nov 2026, Uriah) ====================
-   "I'm going to move OKRs to rocks. And we're going to move the KPI and numbers things to scoreboard
+/* ==================== Rocks and the Scorecard (Nov 2026, Uriah) ====================
+   "I'm going to move OKRs to rocks. And we're going to move the KPI and numbers things to scorecard
    across our whole thing, as the OKRs are too complicated."
 
    ROCKS — a team's few priorities for a quarter: a title, whose it is, on track / off track / done,
@@ -19,7 +19,7 @@
      - rkEarlierHtml_            the objectives of earlier quarters, read only (nothing was deleted).
    Drafts live in S.rk (typing survives every redraw).
 
-   THE SCOREBOARD — a ministry's weekly numbers page, with a goal per number (scoreBoardHtml_): each
+   THE SCORECARD — a ministry's weekly numbers page, with a goal per number (scoreBoardHtml_): each
    number, its goal, this week's figure with ✓ / ✗ (a mark, never colour alone) and the last thirteen
    weeks as small cells. Goals are set by whoever may change what the ministry tracks
    (canEditMetricsClient_) and live on the ministry's metricOverrides row (saveMetricGoals). */
@@ -311,7 +311,7 @@ function metricLinkOptions_(selected, noneLabel, campus){
   return h;
 }
 
-/* ==================== the Scoreboard ==================== */
+/* ==================== the Scorecard ==================== */
 var SBD_WEEKS=13, SBD_SHOW=6;
 function sbdGoals_(campus, dept, ministry){
   var rec=((S.base && S.base.metricOverrides) || []).filter(function(r){ return r.campus===campus && r.dept===dept && r.ministry===ministry; })[0];
@@ -321,7 +321,7 @@ function sbdGoals_(campus, dept, ministry){
 function sbdOn_(g, v){ if(!g || g.goal==null || v==null || v==='' || isNaN(Number(v))) return null; return g.dir==='lte' ? Number(v)<=g.goal : Number(v)>=g.goal; }
 function sbdGoalText_(g, m){ return (g.dir==='lte' ? '≤ ' : '≥ ')+fmt(g.goal, m); }
 function sbdDefaultDir_(m){ return (typeof LOWER_BETTER!=='undefined' && LOWER_BETTER[m]) ? 'lte' : 'gte'; }
-/* The board at the top of a ministry's Scoreboard: "n of m on target", then each number with its goal,
+/* The board at the top of a ministry's Scorecard: "n of m on target", then each number with its goal,
    the week's figure and its mark, and thirteen weeks of marks. `wk` is the week the page is on. */
 function scoreBoardHtml_(campus, dept, ministry, data, wk){
   var metrics=metricsFor(campus, dept, ministry); if(!metrics.length) return '';
@@ -330,7 +330,7 @@ function scoreBoardHtml_(campus, dept, ministry, data, wk){
   var isCur=Number(wk)===Number(thisWeek());
   var withGoal=metrics.filter(function(m){ return goals[m]; }), on=0, waiting=0;
   withGoal.forEach(function(m){ var v=(entries[m]||{})[String(wk)], o=sbdOn_(goals[m], v); if(o===true) on++; else if(o===null) waiting++; });
-  var h='<div class="card sbd" id="scoreBoard" data-sbd="'+esc(key)+'"><div class="lmRowHead sbdHead"><div style="min-width:0"><div class="goalCardTitle">📊 '+esc(t('Scoreboard'))+'</div>'+
+  var h='<div class="card sbd" id="scoreBoard" data-sbd="'+esc(key)+'"><div class="lmRowHead sbdHead"><div style="min-width:0"><div class="goalCardTitle">📊 '+esc(t('Scorecard'))+'</div>'+
     '<div class="sbdLine" id="sbdHeadline">'+(withGoal.length
       ? '<b>'+esc(gpT(isCur ? '{d} of {n} on target this week' : '{d} of {n} on target in week {wk}',{d:on, n:withGoal.length, wk:wk}))+'</b>'+(waiting ? ' <span class="hint">· '+esc(gpT('{n} not entered yet',{n:waiting}))+'</span>' : '')
       : '<span class="hint">'+esc(canSet ? t('No goals yet. Set a goal for a number and each week shows ✓ or ✗ against it.') : t('No goals set yet for these numbers.'))+'</span>')+'</div></div>'+

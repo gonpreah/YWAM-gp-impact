@@ -2,7 +2,7 @@
 
    Until Nov 2026 that line said which OKR objective the number fed (metricOkrNote_). The app moved
    from OKRs to rocks, which have no numbers behind them, so the question "does typing this number
-   move anything?" is now answered by the Scoreboard: the ministry's weekly goal for that number
+   move anything?" is now answered by the Scorecard: the ministry's weekly goal for that number
    (metricGoalNote_ in teams/04-ministry-strengths.js, from sbdGoals_). Scoped to the number's own
    campus and ministry — another campus's goal for the same number must not show. (The file keeps
    its old name; it is the same row of the same form.) */
