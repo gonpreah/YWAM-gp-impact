@@ -84,15 +84,33 @@ function sbModel_(campus, plan){
   /* the other ministries someone serves in this quarter (Nov 2026, Uriah: "some people will have 2 ministry jobs"): the
      plan's `also` when it has its own, else their profile's — never their main place, never a Campus Leadership row.
      `any` keeps a school that isn't running this quarter (for the plan), without it only boxes on the chart. */
+  /* Nov 2026, Uriah: "the director of one department is in every single ministry … people are around a little too much".
+     Someone whose main place is Campus Leadership is on the chart ONCE, there: a department's Director is never drawn
+     in that department's ministries (they oversee them already — `oversees`), and no director is put in a ministry just
+     because their profile lists it (directors tick ministries on their profile to reach those pages). Only a second job
+     chosen on this board (the plan's own `also`) shows, dashed. */
+  var inLead=function(id){ if(plan.students[id]) return false; var w=pos(id); return w.dept===BL_DEPT; };
+  var oversees=function(id, key){ if(plan.students[id]) return false; var w=pos(id); return structOversees_(w.dept, w.ministry, key); };
   var alsoOf=function(id, any){
     var p=people[id]; if(!p || plan.students[id]) return [];
     var w=pos(id), main=w.dept+'|'+(w.ministry||''); if(w.dept==='_off') return [];
-    var list=plan.also ? (plan.also[id]||[]) : (p.profAlso||[]);
-    return list.filter(function(k, i){ return k!==main && k.indexOf(BL_DEPT+'|')!==0 && (any ? all[k] : known[k]) && list.indexOf(k)===i; }).slice(0, SB_ALSO_MAX);
+    var list=plan.also ? (plan.also[id]||[]) : (w.dept===BL_DEPT ? [] : (p.profAlso||[]));
+    return list.filter(function(k, i){ return k!==main && k.indexOf(BL_DEPT+'|')!==0 && (any ? all[k] : known[k]) && list.indexOf(k)===i && !structOversees_(w.dept, w.ministry, k); }).slice(0, SB_ALSO_MAX);
   };
   var alsoBoxes={};
   order.forEach(function(id){ if(!placed[id] || placed[id]==='_students') return; alsoOf(id).forEach(function(k){ (alsoBoxes[k]=alsoBoxes[k]||[]).push(id); }); });
+  /* One box's faces: `solid` — the people whose main job is here (its leaders first); `also` — a dashed face for each
+     second job chosen here, and for someone who leads this ministry from another one (leading it IS their second job).
+     Nobody is in a box twice, and Campus Leadership is never here just for leading or overseeing. */
+  var boxFaces=function(key){
+    var leads=leadsOf(key), here=boxes[key]||[], al=alsoBoxes[key]||[];
+    var solid=here.filter(function(id){ return leads.indexOf(id)>-1; }).concat(here.filter(function(id){ return leads.indexOf(id)===-1; }));
+    var also=al.filter(function(id){ return here.indexOf(id)===-1; });
+    leads.forEach(function(id){ if(here.indexOf(id)===-1 && also.indexOf(id)===-1 && placed[id] && placed[id]!=='_students' && !inLead(id)) also.unshift(id); });
+    return { solid:solid, also:also, leads:leads };
+  };
   return { campus:campus, deps:deps, depts:depts, people:people, order:order, boxes:boxes, students:students, tray:tray, leadsOf:leadsOf, pos:pos, placed:placed, alsoOf:alsoOf, alsoBoxes:alsoBoxes, known:known,
+    boxFaces:boxFaces, oversees:oversees, inLead:inLead,
     all:all, plan:plan, notRunning:notRunning, runs:function(m){ return sbRuns_(plan, m); } };
 }
 function sbBoxName_(key){
@@ -109,10 +127,21 @@ function sbFace_(M, id, o){
   var p=M.people[id]; if(!p) return '';
   var first=String(p.name||'').split(/\s+/)[0];
   var attr = o.edit ? ' data-sbp="'+esc(id)+'"'+(o.from?' data-sbfrom="'+esc(o.from)+'"':'') : (p.real && !o.noOpen ? ' data-person="'+esc(id)+'"' : '');
+  var wait = !o.also && sbWaits_(M, id, o.from||'');
   /* o.also: this is their second ministry — the face is marked so nobody counts them twice */
   return '<button type="button" class="sbFace'+(o.lead?' lead':'')+(p.extra?' extra':'')+(o.also?' also':'')+'"'+attr+(o.also?' data-sbalso="1"':'')+' title="'+esc(p.name)+(o.lead?' · '+esc(t('Leader')):'')+(o.also?' · '+esc(t('also serves here')):'')+'">'+
     '<span class="sbFaceImg">'+avatarHtml(p,'sm')+(o.lead?'<span class="sbCrown" aria-hidden="true">👑</span>':'')+'</span>'+
-    '<span class="sbFaceName">'+esc(first)+'</span>'+(o.also?'<span class="sbAlsoTag">'+esc(t('also'))+'</span>':'')+'</button>';
+    '<span class="sbFaceName">'+esc(first)+'</span>'+(o.also?'<span class="sbAlsoTag">'+esc(t('also'))+'</span>':'')+
+    (wait?'<span class="sbWaitTag" data-sbwait="'+esc(id)+'" title="'+esc(t('Waits for an admin'))+'">⏳ '+esc(t('admin'))+'</span>':'')+'</button>';
+}
+/* A move INTO Campus Leadership made by someone who is not an admin reaches the person's profile only once an admin says
+   yes (Admin → Approvals). The board shows them in the spot — with this tag, so it never looks like nothing happened. */
+function sbWaits_(M, id, key){
+  var p=M.people[id]; if(!p || !p.real || String(key).indexOf(BL_DEPT+'|')!==0) return false;
+  if(p.prof.dept===BL_DEPT) return false;
+  if(!S.me.isAdmin) return true;
+  var c=S.sb && S.sb.cur && S.structCache[S.sb.cur.key], d=c && c.diff;
+  return !!(d && (d.waiting||[]).concat(d.changes||[]).some(function(x){ return x.id===id && x.waits; }));
 }
 function sbPlus_(key, edit){ return edit ? '<button type="button" class="sbPlus" data-sbbox="'+esc(key)+'" aria-label="'+esc(gpT('Add to {box}',{box:sbBoxName_(key)}))+'">＋</button>' : ''; }
 function sbTreeHtml_(M, edit, title){
@@ -133,13 +162,11 @@ function sbTreeHtml_(M, edit, title){
         ? '<div class="sbNotRun" id="sbNotRun">'+esc(gpT('Not running this quarter: {list}',{list:M.notRunning.map(function(m){ return t(m); }).join(' · ')}))+'</div>' : '')+'</div>';
     h+='<div class="sbMins">';
     mins.forEach(function(m){
-      var key=dept+'|'+m, leads=M.leadsOf(key), here=(M.boxes[key]||[]).filter(function(id){ return leads.indexOf(id)===-1; });
-      var all=leads.length+here.length;
-      var also=(M.alsoBoxes[key]||[]).filter(function(id){ return leads.indexOf(id)===-1; }), isAlso=function(id){ return M.placed[id]!==key && (M.alsoBoxes[key]||[]).indexOf(id)>-1; };
+      var key=dept+'|'+m, F=M.boxFaces(key), leads=F.leads, all=F.solid.length, also=F.also;
       h+='<div class="sbNode sbMin'+(all||also.length?'':' bare')+'" data-sbdrop="'+esc(key)+'"><div class="sbHead"><span>'+(MIN_EMOJI[m]?MIN_EMOJI[m]+' ':'')+esc(t(m))+'</span>'+
         '<span class="sbHeadR"><span class="sbN">'+(all||(also.length?'0':'—'))+(also.length?' <span class="sbNAlso">+'+also.length+'</span>':'')+'</span>'+sbPlus_(key, edit)+'</span></div>'+
-        (all||also.length ? '<div class="sbFaces">'+leads.map(function(id){ return sbFace_(M, id, { edit:edit, from:key, lead:true, also:isAlso(id) }); }).join('')+here.map(function(id){ return sbFace_(M, id, { edit:edit, from:key }); }).join('')+
-          also.map(function(id){ return sbFace_(M, id, { edit:edit, from:key, also:true }); }).join('')+'</div>' : '')+'</div>';
+        (all||also.length ? '<div class="sbFaces">'+F.solid.map(function(id){ return sbFace_(M, id, { edit:edit, from:key, lead:leads.indexOf(id)>-1 }); }).join('')+
+          also.map(function(id){ return sbFace_(M, id, { edit:edit, from:key, also:true, lead:leads.indexOf(id)>-1 }); }).join('')+'</div>' : '')+'</div>';
     });
     h+='</div></div>';
   });
@@ -168,6 +195,9 @@ function sbBoardHtml_(campus, year, q, edit){
     '<button type="button" class="sbZb" id="sbFull" aria-label="'+esc(B.full ? t('Close full screen') : t('Full screen'))+'">'+(B.full?'✕':'⛶')+'</button></div>'+
     (edit ? '<span class="sbSaved" id="sbSaved">'+esc(B.saving ? t('Saving…') : B.saved ? t('Saved ✓') : '')+'</span>' : '')+
     (B.full && B.canEdit ? sbModeHtml_() : '')+'</div>';
+  /* View mode: someone tries to drag a face — say why nothing moves, with the way to Edit (shown by sbNudge_, no redraw) */
+  if(!edit && B.canEdit) h+='<div class="sbNudge" id="sbNudge" role="status" hidden><span>'+esc(t('You’re looking only, so nobody moves. To move people, switch to Edit.'))+'</span>'+
+    '<button type="button" class="btn small" id="sbNudgeEdit">✏️ '+esc(t('Switch to Edit'))+'</button></div>';
   h+='<div class="sbView" id="sbView"><div class="sbCanvas" id="sbCanvas" style="transform:translate('+B.x+'px,'+B.y+'px) scale('+B.k+')">'+sbTreeHtml_(M, edit, title)+'</div>'+
     '<p class="sbHint">'+esc(edit ? t('Drag a face onto a box. Tap ＋ to add, tap a face for more.') : B.canEdit ? t('Looking only — nobody moves. Tap Edit to make changes.') : t('Pinch or scroll to zoom, drag to move around.'))+'</p></div>';
   if(edit){
@@ -183,6 +213,7 @@ function sbBoardHtml_(campus, year, q, edit){
   }
   h+='</div>';
   if(edit && B.sheet) h+=sbSheetHtml_(M, B.sheet);
+  if(edit && B.drop && !B.sheet) h+=sbDropHtml_(M, B.drop);
   return h;
 }
 
@@ -243,13 +274,13 @@ function sbAlsoHtml_(M, id, main){
   if(list.length<SB_ALSO_MAX){
     var opts='';
     M.depts.forEach(function(d){
-      var ms=Object.keys(M.deps[d]||{}).filter(function(m){ var k=d+'|'+m; return M.known[k] && k!==main && list.indexOf(k)===-1; });
+      var ms=Object.keys(M.deps[d]||{}).filter(function(m){ var k=d+'|'+m; return M.known[k] && k!==main && list.indexOf(k)===-1 && !M.oversees(id, k); });
       if(ms.length) opts+='<optgroup label="'+esc(t(d))+'">'+ms.map(function(m){ return '<option value="'+esc(d+'|'+m)+'">'+esc(t(m))+'</option>'; }).join('')+'</optgroup>';
     });
     h+='<label class="f" for="sbAlsoSel">'+esc(t('Also serves in…'))+'</label><div class="sbNewRow"><select id="sbAlsoSel"><option value="">'+esc(t('Choose a ministry'))+'</option>'+opts+'</select>'+
       '<button type="button" class="btn small" id="sbAlsoAdd" data-sbid="'+esc(id)+'">'+esc(t('Add'))+'</button></div>';
   }
-  return h+'<p class="hint" style="margin:4px 0 0">'+esc(t('They get both ministries’ pages on My Ministry. Dragging their face moves the main one.'))+'</p></div>';
+  return h+'<p class="hint" style="margin:4px 0 0">'+esc(t('They get both ministries’ pages on My Ministry. Drag their solid face to move the main job, the dashed one to move the second.'))+'</p></div>';
 }
 function sbTargetsHtml_(M, cur){
   var opt=function(k, label){ return '<option value="'+esc(k)+'"'+(k===cur?' selected':'')+'>'+esc(label)+'</option>'; };
@@ -299,7 +330,8 @@ function sbSave_(){
       B.saving=0;
       if(d && d.ok){ B.saved=Date.now(); if(d.doc){ cache.doc=d.doc; cache.source='saved'; } if(d.diff) cache.diff=d.diff; if(cache.plan && d.plan) cache.plan.live=d.plan.live||null; }
       else showMsg(d && d.err==='not_authorized' ? t('Only Campus Leadership and admins can change the structure.') : t('Could not save'));
-      if(d && d.ok && d.applied && d.applied.length) showMsg(d.applied.length===1 ? gpT('{name}’s profile is updated',{name:d.applied[0].name}) : gpT('{n} profiles updated',{n:d.applied.length}));
+      var done=(d && d.ok && d.applied || []).filter(function(x){ return !x.waits; });   // a move that waits for an admin changed no profile
+      if(done.length) showMsg(done.length===1 ? gpT('{name}’s profile is updated',{name:done[0].name}) : gpT('{n} profiles updated',{n:done.length}));
       sbLiveRefresh_();
       var el=document.getElementById('sbSaved'); if(el) el.textContent = d && d.ok ? t('Saved ✓') : '';
     }, function(){ B.saving=0; showMsg(t('Connection problem — try again.')); var el=document.getElementById('sbSaved'); if(el) el.textContent=''; });
@@ -324,7 +356,73 @@ function sbMove_(id, target){
   var who=M && M.people[id] ? M.people[id].name : '';
   var isStu=target.slice(0,5)==='_stu'+':', boxLabel=isStu ? target.slice(5).toUpperCase() : sbBoxName_(target);
   if(who && target==='_off') showMsg(gpT('{name} is off the chart for this quarter',{name:who}));
+  /* into Campus Leadership by someone who is not an admin: on the chart now, on the profile once an admin says yes — said
+     at the drop, so it never looks like nothing happened (the face keeps a ⏳ tag) */
+  else if(who && !S.me.isAdmin && sbWaits_(M, id, target)) showMsg(gpT('{name} is on the chart as {box}. Their profile changes only once an admin says yes (Admin → Approvals).',{name:who, box:sbKeyShort_(target)}), 6500);
   else if(who) showMsg(gpT('{name} moved to {box}',{name:who, box:boxLabel}));
+}
+/* ---- a face let go on a box (Nov 2026, Uriah: "easily move them around … assign first / primary, secondary jobs") ----
+   A solid face (their main job) on a ministry, when they already have a main job somewhere else: a small chooser right
+   there — Main job here (moves them) or Second job here (dashed). With no place yet they just land. A dashed face is
+   that one second job: on another ministry it moves there, on the tray it comes off; the main job stays put. A Director
+   spot, Campus Leadership, Students and the tray take a solid face as before, with no question. */
+function sbCurModel_(){ var c=S.sb && S.sb.cur; return c ? sbModel_(c.campus, sbPlan_(c.campus, c.year, c.q)) : null; }
+function sbIsMin_(key){ return !!key && key.charAt(0)!=='_' && key.indexOf(BL_DEPT+'|')!==0; }
+function sbDropWhy_(M, id, to){
+  if(M.oversees(id, to)) return t('They already oversee this ministry as the department’s Director.');
+  var a=M.alsoOf(id, true);
+  if(a.indexOf(to)>-1) return t('This is already their second job.');
+  if(a.length>=SB_ALSO_MAX) return gpT('They already have {n} second jobs.',{n:SB_ALSO_MAX});
+  return '';
+}
+function sbDropped_(id, from, to, isAlso, x, y){
+  var B=sbState_(), M=sbCurModel_(); if(!M || !M.people[id] || !to) return;
+  var main=M.placed[id]||'', name=M.people[id].name;
+  if(isAlso){
+    if(to===from) return;
+    if(to===main){ showMsg(gpT('{box} is already {name}’s main job',{box:sbBoxName_(to), name:name})); return; }
+    if(to==='_off'){ sbAlsoRm_(id, from); showMsg(gpT('{name} no longer also serves in {box}',{name:name, box:sbBoxName_(from)})); return; }
+    if(sbIsMin_(to)){
+      var why=M.alsoOf(id, true).indexOf(to)>-1 ? '' : sbDropWhy_(M, id, to);
+      if(why){ showMsg(why, 4000); return; }
+      sbAlsoMove_(id, from, to); showMsg(gpT('{name}’s second job moved to {box}',{name:name, box:sbBoxName_(to)})); return;
+    }
+  }
+  if(to===main) return;
+  if(sbIsMin_(to) && main && main!=='_students'){ B.drop={ id:id, to:to, x:x||0, y:y||0 }; render(); return; }
+  sbMove_(id, to);
+}
+function sbDropHtml_(M, D){
+  var p=M.people[D.id]; if(!p || !sbIsMin_(D.to)) return '';
+  var cur=M.placed[D.id]||'', why=sbDropWhy_(M, D.id, D.to);
+  var vw=window.innerWidth||360, vh=window.innerHeight||640, W=Math.min(300, vw-16);
+  var left=Math.max(8, Math.min(vw-W-8, Math.round(D.x-W/2))), top=Math.max(8, Math.min(vh-270, Math.round(D.y+14)));
+  return '<div class="sbScrim sbDropScrim" id="sbDropScrim"></div>'+
+    '<div class="sbDrop" id="sbDrop" role="dialog" aria-modal="true" aria-label="'+esc(gpT('{name} in {box}',{name:p.name, box:sbBoxName_(D.to)}))+'" style="left:'+left+'px;top:'+top+'px;width:'+W+'px">'+
+    '<div class="sbDropHead">'+avatarHtml(p,'sm')+'<div><b>'+esc(p.name)+'</b><span>→ '+esc(sbBoxName_(D.to))+'</span></div></div>'+
+    '<button type="button" class="btn sbDropMain" id="sbDropMain">⭐ '+esc(t('Main job here'))+'<span>'+esc(gpT('moves from {box}',{box:sbBoxName_(cur)}))+'</span></button>'+
+    (why ? '<p class="hint sbDropWhy" id="sbDropWhy">'+esc(why)+'</p>'
+         : '<button type="button" class="btn ghost sbDropAlso" id="sbDropAlso">'+esc(t('Second job here'))+'<span>'+esc(gpT('stays in {box} too',{box:sbBoxName_(cur)}))+'</span></button>')+
+    '<button type="button" class="linkbtn" id="sbDropCancel">'+esc(t('Cancel'))+'</button></div>';
+}
+/* the nearest box to where a face was let go: the one under the pointer, else one within a finger's width (the gaps
+   between ministries and the lines of the tree are not places to lose a drop) */
+function sbDropAt_(x, y){
+  var el=document.elementFromPoint(x, y), tg=el && el.closest ? el.closest('[data-sbdrop]') : null;
+  if(tg) return tg;
+  var v=document.getElementById('sbView'); if(!v) return null;
+  var vr=v.getBoundingClientRect(); if(x<vr.left || x>vr.right || y<vr.top || y>vr.bottom) return null;
+  var best=null, bd=26;
+  v.querySelectorAll('.sbMin[data-sbdrop]').forEach(function(b){   // ministries only: nobody lands in Campus Leadership by a near miss
+    var r=b.getBoundingClientRect(), dx=Math.max(r.left-x, 0, x-r.right), dy=Math.max(r.top-y, 0, y-r.bottom), d=Math.hypot(dx, dy);
+    if(d<bd){ bd=d; best=b; }
+  });
+  return best;
+}
+/* View mode: a face someone tries to drag doesn't move — say so, with the way to Edit */
+function sbNudge_(){
+  var n=document.getElementById('sbNudge'); if(!n) return;
+  n.hidden=false; clearTimeout(n._t); n._t=setTimeout(function(){ n.hidden=true; }, 8000);
 }
 function sbToggleLead_(key, id){
   sbChange_(function(p){
@@ -343,9 +441,16 @@ function sbAlsoAdd_(id, key){
 }
 function sbAlsoRm_(id, key){
   sbChange_(function(p){
-    if(!p.also || !p.also[id]) return;
-    p.also[id]=p.also[id].filter(function(k){ return k!==key; }); if(!p.also[id].length) delete p.also[id];
+    if(p.also && p.also[id]){ p.also[id]=p.also[id].filter(function(k){ return k!==key; }); if(!p.also[id].length) delete p.also[id]; }
     if(p.leads && p.leads[key]){ p.leads[key]=p.leads[key].filter(function(x){ return x!==id; }); if(!p.leads[key].length) delete p.leads[key]; }
+  });
+}
+/* a second job dragged from one ministry to another: the main job stays where it is */
+function sbAlsoMove_(id, from, to){
+  sbChange_(function(p){
+    p.also=p.also||{};
+    var l=(p.also[id]||[]).filter(function(k){ return k!==from && k!==to; }); l.push(to); p.also[id]=l.slice(0, SB_ALSO_MAX);
+    if(p.leads && p.leads[from]){ p.leads[from]=p.leads[from].filter(function(x){ return x!==id; }); if(!p.leads[from].length) delete p.leads[from]; }
   });
 }
 function sbMakeMain_(id, key){
@@ -409,8 +514,10 @@ function bindSb_(){
   var pts={}, start=null, moved=false;
   var pinchStart=function(){ var ids=Object.keys(pts), r=v.getBoundingClientRect(), a=pts[ids[0]], b=pts[ids[1]];
     start={ mode:'pinch', d:Math.hypot(a.x-b.x, a.y-b.y)||1, k:B.k, cx:(a.x+b.x)/2-r.left, cy:(a.y+b.y)/2-r.top, bx:B.x, by:B.y }; moved=true; B.pinch=true; };
+  var grab=null;   // View mode: a face someone tries to drag
   v.addEventListener('pointerdown', function(e){
     var onFace=!!(e.target.closest && e.target.closest('[data-sbp]'));
+    grab = (!onFace && B.canEdit && c && !c.edit && e.target.closest && e.target.closest('.sbFace')) ? { x:e.clientX, y:e.clientY, id:e.pointerId } : null;
     if(!onFace && e.target.closest && e.target.closest('.sbPlus, button, input, select, a')) return;
     pts[e.pointerId]={ x:e.clientX, y:e.clientY, face:onFace };
     var ids=Object.keys(pts);
@@ -440,7 +547,10 @@ function bindSb_(){
     else start=null;
   };
   v.addEventListener('pointerup', up, true); v.addEventListener('pointercancel', up, true);
-  v.addEventListener('click', function(e){ if(moved){ e.stopPropagation(); e.preventDefault(); moved=false; } }, true);
+  var dragged=false;
+  v.addEventListener('pointermove', function(e){ if(grab && grab.id===e.pointerId && Math.abs(e.clientX-grab.x)+Math.abs(e.clientY-grab.y)>9){ grab=null; dragged=true; sbNudge_(); } }, true);
+  v.addEventListener('click', function(e){ if(moved || dragged){ e.stopPropagation(); e.preventDefault(); moved=false; dragged=false; } }, true);
+  on('sbNudgeEdit', function(){ gpTap(); B.editing=true; B.sheet=null; render(); });
   v.onwheel=function(e){
     e.preventDefault();
     var r=v.getBoundingClientRect();
@@ -455,6 +565,7 @@ function bindSb_(){
       if(e.button>0) return;
       e.stopPropagation();
       var id=f.getAttribute('data-sbp'), from=f.getAttribute('data-sbfrom')||'', sx=e.clientX, sy=e.clientY, ghost=null, over=null, inTray=!!f.closest('#sbTray'), edgeT=null, last=null;
+      var isAlso=f.getAttribute('data-sbalso')==='1', scroll=null;
       try{ f.setPointerCapture(e.pointerId); }catch(err){}
       var edge=function(){ if(!ghost || !last) return; var r=v.getBoundingClientRect(), dx=0, dy=0;
         if(last.x<r.left+30) dx=12; else if(last.x>r.right-30) dx=-12; if(last.y<r.top+30) dy=12; else if(last.y>r.bottom-30 && last.y<r.bottom) dy=-12;
@@ -467,13 +578,16 @@ function bindSb_(){
         var dx=ev.clientX-sx, dy=ev.clientY-sy;
         if(!ghost){
           if(Math.abs(dx)+Math.abs(dy)<7) return;
-          if(inTray && Math.abs(dx)>Math.abs(dy)*1.3) return;   // sideways in the tray scrolls it
-          ghost=f.cloneNode(true); ghost.className='sbFace sbGhost'+(f.classList.contains('lead')?' lead':''); ghost.removeAttribute('data-sbp'); document.body.appendChild(ghost);
+          /* in the tray a FINGER that sets off sideways scrolls the row; decided once, at the start — it used to be asked
+             on every move, so a face dragged towards a box more to the side than up never left the tray (the mouse too) */
+          if(inTray && scroll===null) scroll = ev.pointerType!=='mouse' && Math.abs(dx)>Math.abs(dy)*1.3;
+          if(scroll) return;
+          ghost=f.cloneNode(true); ghost.className='sbFace sbGhost'+(f.classList.contains('lead')?' lead':'')+(isAlso?' also':''); ghost.removeAttribute('data-sbp'); document.body.appendChild(ghost);
           f.classList.add('dragging'); document.body.classList.add('sbDragging'); edgeT=requestAnimationFrame(edge);
         }
         ev.preventDefault();
         ghost.style.left=(ev.clientX-24)+'px'; ghost.style.top=(ev.clientY-30)+'px';
-        var el=document.elementFromPoint(ev.clientX, ev.clientY), tg=el && el.closest ? el.closest('[data-sbdrop]') : null;
+        var tg=sbDropAt_(ev.clientX, ev.clientY);
         if(over!==tg){ if(over) over.classList.remove('sbOver'); over=tg; if(over) over.classList.add('sbOver'); }
       };
       var end=function(ev){
@@ -482,7 +596,9 @@ function bindSb_(){
         if(edgeT) cancelAnimationFrame(edgeT);
         document.body.classList.remove('sbDragging');
         if(ghost){ ghost.remove(); f.classList.remove('dragging');
-          if(over){ over.classList.remove('sbOver'); var to=over.getAttribute('data-sbdrop'); if(ev.type==='pointerup' && to && to!==from) sbMove_(id, to); }
+          if(ev.type==='pointerup' && typeof ev.clientX==='number'){ var at=sbDropAt_(ev.clientX, ev.clientY); if(at && at!==over){ if(over) over.classList.remove('sbOver'); over=at; } }
+          if(over){ over.classList.remove('sbOver'); var to=over.getAttribute('data-sbdrop'); if(ev.type==='pointerup' && to && to!==from) sbDropped_(id, from, to, isAlso, ev.clientX, ev.clientY); }
+          else if(ev.type==='pointerup') showMsg(t('Let go on a ministry, a Director spot or the row of faces below.'), 3500);
           return; }
         if(ev.type==='pointerup'){ gpTap(); B.sheet={ kind:'person', id:id }; render(); }
       };
@@ -492,6 +608,12 @@ function bindSb_(){
   document.querySelectorAll('[data-sbbox]').forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); gpTap(); if(S.ppick) S.ppick.sb={ q:'' }; B.sheet={ kind:'box', key:b.getAttribute('data-sbbox') }; render(); }; });
   var tq=document.getElementById('sbTrayQ');
   if(tq) tq.oninput=function(){ B.trayQ=tq.value; var pos=tq.selectionStart; render(); var t2=document.getElementById('sbTrayQ'); if(t2){ t2.focus(); try{ t2.setSelectionRange(pos, pos); }catch(err){} } };
+  // the chooser after a drop: main job or second job
+  var dropShut=function(){ B.drop=null; render(); };
+  on('sbDropScrim', dropShut); on('sbDropCancel', dropShut);
+  on('sbDropMain', function(){ var D=B.drop; B.drop=null; gpTap(); if(D) sbMove_(D.id, D.to); else render(); });
+  on('sbDropAlso', function(){ var D=B.drop; B.drop=null; gpTap(); if(!D){ render(); return; } var M2=sbCurModel_(), nm=M2 && M2.people[D.id] ? M2.people[D.id].name : '';
+    sbAlsoAdd_(D.id, D.to); if(nm) showMsg(gpT('{name} also serves in {box} now',{name:nm, box:sbBoxName_(D.to)})); });
   // the sheet
   var shut=function(){ B.sheet=null; render(); };
   on('sbScrim', shut); on('sbSheetClose', shut);
@@ -519,7 +641,7 @@ function sbModeHtml_(){
 }
 function bindSbMode_(){
   var B=sbState_();
-  var set=function(v){ if(!!B.editing===v) return; gpTap(); B.editing=v; B.sheet=null; render(); };
+  var set=function(v){ if(!!B.editing===v) return; gpTap(); B.editing=v; B.sheet=null; B.drop=null; render(); };
   document.querySelectorAll('#sbModeView').forEach(function(b){ b.onclick=function(){ set(false); }; });
   document.querySelectorAll('#sbModeEdit').forEach(function(b){ b.onclick=function(){ set(true); }; });
 }

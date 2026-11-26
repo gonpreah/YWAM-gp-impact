@@ -6781,3 +6781,34 @@ Campus Leadership arranges a quarter on the whiteboard; "Make Q1 2027 live" turn
 | Still saving — try again in a moment. | កំពុងរក្សាទុកនៅឡើយ — សូមព្យាយាមម្តងទៀតបន្តិចទៀត។ |
 | Someone else is saving — try again. | មានអ្នកផ្សេងកំពុងរក្សាទុក — សូមព្យាយាមម្តងទៀត។ |
 | That quarter is over. | ត្រីមាសនោះបានកន្លងផុតហើយ។ |
+
+## 143. The structure board: main job and second job; a mentee's own 1-on-1s (My Ministry → Structure, Mentorship, Nov 2026)
+On the structure whiteboard a face dropped on a ministry asks, in a small box right there, "Main job here" (moves the person) or "Second job here" (they keep their main ministry and also serve here — the dashed face). "job" here is the ministry someone serves in, not paid work; if កិច្ចការបម្រើ reads better than ការងារ, use it everywhere in this section. "admin" is a tiny tag under a face (about 40px wide) — it must stay very short. "Let go" = lift your finger / release the mouse. The toasts are on screen for a few seconds. On Mentorship, one quiet line under a person I mentor says how many 1-on-1s THEY have held this month with the people they mentor; the long sentence is a privacy promise (only the count is shown, never what was said) — check that one first.
+
+| English | Khmer (draft) |
+|---|---|
+| Waits for an admin | រង់ចាំអ្នកគ្រប់គ្រង |
+| admin | អ្នកគ្រប់គ្រង |
+| You’re looking only, so nobody moves. To move people, switch to Edit. | អ្នកកំពុងមើលតែប៉ុណ្ណោះ ដូច្នេះគ្មាននរណាផ្លាស់ទីទេ។ ដើម្បីផ្លាស់ទីមនុស្ស សូមប្តូរទៅ កែសម្រួល។ |
+| Switch to Edit | ប្តូរទៅ កែសម្រួល |
+| They get both ministries’ pages on My Ministry. Drag their solid face to move the main job, the dashed one to move the second. | ពួកគេមានទំព័រកិច្ចការបម្រើទាំងពីរនៅក្នុង កិច្ចការបម្រើរបស់ខ្ញុំ។ អូសមុខបន្ទាត់ជាប់របស់ពួកគេ ដើម្បីផ្លាស់ទីការងារចម្បង ហើយអូសមុខបន្ទាត់ដាច់ៗ ដើម្បីផ្លាស់ទីការងារទីពីរ។ |
+| {name} is on the chart as {box}. Their profile changes only once an admin says yes (Admin → Approvals). | {name} នៅលើតារាងជា {box} ហើយ។ ប្រវត្តិរូបរបស់ពួកគេនឹងផ្លាស់ប្តូរ លុះត្រាតែអ្នកគ្រប់គ្រងយល់ព្រម (អ្នកគ្រប់គ្រង → ការអនុម័ត)។ |
+| They already oversee this ministry as the department’s Director. | ពួកគេមើលការខុសត្រូវលើកិច្ចការបម្រើនេះរួចហើយ ក្នុងនាមជានាយកផ្នែក។ |
+| This is already their second job. | នេះជាការងារទីពីររបស់ពួកគេរួចហើយ។ |
+| They already have {n} second jobs. | ពួកគេមានការងារទីពីរ {n} រួចហើយ។ |
+| {box} is already {name}’s main job | {box} ជាការងារចម្បងរបស់ {name} រួចហើយ |
+| {name} no longer also serves in {box} | {name} លែងបម្រើនៅ {box} ផងដែរហើយ |
+| {name}’s second job moved to {box} | ការងារទីពីររបស់ {name} បានផ្លាស់ទីទៅ {box} |
+| {name} in {box} | {name} នៅ {box} |
+| Main job here | ការងារចម្បងនៅទីនេះ |
+| moves from {box} | ផ្លាស់ចេញពី {box} |
+| Second job here | ការងារទីពីរនៅទីនេះ |
+| stays in {box} too | នៅ {box} ដដែលផងដែរ |
+| Let go on a ministry, a Director spot or the row of faces below. | សូមលែងនៅលើកិច្ចការបម្រើ កន្លែងនាយក ឬជួរមុខមនុស្សខាងក្រោម។ |
+| {name} also serves in {box} now | ឥឡូវ {name} បម្រើនៅ {box} ផងដែរ |
+| Their 1-on-1s this month: {held} held with their 1 person | ការជួបមួយទល់មួយរបស់ពួកគេខែនេះ៖ បានជួប {held} ដង ជាមួយមនុស្ស ១ នាក់របស់ពួកគេ |
+| Their 1-on-1s this month: {held} held with {met} of {n} people | ការជួបមួយទល់មួយរបស់ពួកគេខែនេះ៖ បានជួប {held} ដង ជាមួយ {met} នាក់ ក្នុងចំណោម {n} នាក់ |
+| {name}’s own 1-on-1s this month | ការជួបមួយទល់មួយផ្ទាល់របស់ {name} ខែនេះ |
+| The people {name} mentors, and the 1-on-1s {name} has held with each this month. Only the count — what they talked about stays between the two of them. | មនុស្សដែល {name} ណែនាំ និងចំនួនការជួបមួយទល់មួយដែល {name} បានជួបជាមួយម្នាក់ៗក្នុងខែនេះ។ មានតែចំនួនប៉ុណ្ណោះ — អ្វីដែលពួកគេបាននិយាយគ្នា នៅរវាងពួកគេទាំងពីរ។ |
+| {n} of {target} ✓ | {n} ក្នុងចំណោម {target} ✓ |
+| {n} of {target} | {n} ក្នុងចំណោម {target} |

@@ -185,6 +185,10 @@ div.orgCltRow { cursor:default; }
 .ooTxt { margin-left:3px; }
 .ooMonth.ok .ooTxt { color:var(--good); font-weight:700; }
 .dircard .ooMonth { justify-content:center; }
+.ooTheirs { display:block; margin-top:3px; font-size:11.5px; color:var(--muted); line-height:1.35; overflow-wrap:anywhere; }
+.ooTheirsRow { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid var(--line); }
+.ooTheirsRow:last-child { border-bottom:0; }
+.ooTheirsName { font-weight:600; min-width:0; overflow-wrap:anywhere; }
 .openBtn.ooHas { position:relative; }
 .ooBadge { position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:var(--amber); border:2px solid var(--surface); }
 .ooRow { display:flex; align-items:center; width:100%; gap:8px; text-align:left; background:none; border:0; border-bottom:1px solid var(--line); padding:10px 0; font:inherit; color:var(--ink); cursor:pointer; }
@@ -3654,7 +3658,7 @@ body.sbFullOn nav.bottom { display:none; }
 .sbWrap.full .sbView { flex:1 1 auto; height:auto; }
 .sbView:active { cursor:grabbing; }
 .sbCanvas { position:absolute; left:0; top:0; transform-origin:0 0; will-change:transform; }
-.sbHint { position:absolute; left:10px; bottom:8px; margin:0; font-size:11px; color:var(--faint); pointer-events:none; }
+.sbHint { position:absolute; left:8px; bottom:6px; max-width:calc(100% - 16px); box-sizing:border-box; margin:0; padding:2px 8px; border-radius:999px; background:var(--surface); font-size:11px; color:var(--muted); pointer-events:none; }
 @media (min-width:900px) { .sbView { height:min(70vh, 720px); } }
 
 /* the tree: the campus, Campus Leadership, then a column per department with its ministries under it */
@@ -3997,6 +4001,25 @@ body.sbDragging, body.sbDragging * { cursor:grabbing !important; }
 .sbAlsoTag, .orgAlsoTag { display:inline-block; padding:0 5px; border:1px dashed var(--muted); border-radius:999px; font-size:9.5px; font-weight:700; line-height:1.5; color:var(--muted); text-transform:lowercase; white-space:nowrap; }
 .sbFace .sbAlsoTag { margin-top:-1px; }
 .sbNAlso { font-weight:600; color:var(--muted); }
+/* Nov 2026 (Uriah): a face let go on a ministry asks main job or second job, right where it was dropped; View mode says why a face won't move */
+.sbNudge { display:flex; align-items:center; flex-wrap:wrap; gap:6px 10px; padding:8px 10px; border-bottom:1px solid var(--border); background:var(--surface2); color:var(--ink); font-size:13px; font-weight:600; }
+.sbNudge[hidden] { display:none; }
+.sbNudge span { flex:1 1 180px; min-width:0; }
+.sbNudge .btn { width:auto; margin:0; flex:0 0 auto; }
+.sbDropScrim { background:transparent; }
+.sbDrop { position:fixed; z-index:62; box-sizing:border-box; padding:12px; border:1.5px solid var(--accent); border-radius:14px; background:var(--surface); color:var(--ink); box-shadow:var(--shadow, 0 10px 30px rgba(0,0,0,.25)); display:flex; flex-direction:column; gap:8px; }
+.sbDropHead { display:flex; align-items:center; gap:10px; min-width:0; }
+.sbDropHead div { min-width:0; display:flex; flex-direction:column; }
+.sbDropHead b, .sbDropHead span { overflow-wrap:anywhere; }
+.sbDropHead span { font-size:13px; color:var(--muted); }
+.sbDrop .btn { margin:0; display:flex; flex-direction:column; align-items:center; gap:1px; }
+.sbDrop .btn span { font-size:11.5px; font-weight:500; opacity:.85; overflow-wrap:anywhere; }
+.sbDrop .sbDropMain { padding:13px 12px; font-size:16px; }
+.sbDrop .sbDropAlso { border-style:dashed; }
+.sbDropWhy { margin:0; }
+.sbDrop .linkbtn { margin:0; align-self:center; }
+.sbWaitTag { display:inline-block; padding:0 5px; border-radius:999px; background:var(--amber); color:var(--amberInk); font-size:9.5px; font-weight:700; line-height:1.5; white-space:nowrap; }
+.sbGhost.also .avatar { outline:2px dashed var(--muted); outline-offset:1px; }
 .orgPerson.also .avatar { outline:2px dashed var(--muted); outline-offset:1px; opacity:.85; }
 .orgPerson.also > span { color:var(--muted); }
 .sbAlso .sbAlsoRow { flex-wrap:wrap; gap:6px 8px; }

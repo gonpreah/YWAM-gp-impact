@@ -20,6 +20,12 @@ function orgPersonChip_(p, lead, also){
   return '<button class="orgPerson'+(lead?' lead':'')+(also?' also':'')+'" '+(S.orgArranging ? 'data-arrange' : 'data-person')+'="'+esc(p.id)+'">'+avatarHtml(p,'sm')+
     '<span>'+(lead?'👑 ':'')+esc(p.name)+tag+(title && !also ? '<small class="orgChipTitle">'+esc(orgTitleText_(title))+'</small>' : '')+'</span></button>';
 }
+/* A department's Director (main place 'Campus Leadership|<dept>') already oversees every ministry of that department:
+   they are never drawn in one of them as well (Nov 2026, Uriah: "the director of one department is in every single
+   ministry. I don't want that"). Shared by Team → Structure's list and the whiteboard. */
+function structOversees_(mainDept, mainMin, key){
+  return mainDept===BL_DEPT && !!mainMin && mainMin!=='Campus Director' && String(key).indexOf(mainMin+'|')===0;
+}
 function orgPeople_(list, leads, also){
   return '<div class="orgPeople">'+list.map(function(p){ return orgPersonChip_(p, leads.indexOf(p)>-1, !!also && also.indexOf(p)>-1); }).join('')+'</div>';
 }
@@ -182,7 +188,9 @@ function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging, planLea
     var pl=placeMap && placeMap[p.id], o=pl ? Object.assign({}, p, { dept:pl.dept, ministry:pl.ministry }) : p;
     if(planLeads) o=Object.assign({}, o, { leads:Object.keys(planLeads).filter(function(k){ return planLeads[k].indexOf(p.id)>-1; }) });
     /* the other ministries they serve in: the quarter's (alsoMap), a snapshot's own (`also`), else their profile's */
-    o=Object.assign({}, o, { alsoIn: (alsoMap ? (alsoMap[p.id]||[]) : (p.also || p.ministries || [])).filter(function(k){ return k!==o.dept+'|'+(o.ministry||'') && String(k).indexOf(BL_DEPT+'|')!==0; }) });
+    /* someone in Campus Leadership is on the chart once: never in a ministry just because their profile lists it, and a
+       department's Director never in that department's ministries (structOversees_) */
+    o=Object.assign({}, o, { alsoIn: (alsoMap ? (alsoMap[p.id]||[]) : (p.also || (o.dept===BL_DEPT ? [] : p.ministries) || [])).filter(function(k){ return k!==o.dept+'|'+(o.ministry||'') && String(k).indexOf(BL_DEPT+'|')!==0 && !structOversees_(o.dept, o.ministry, k); }) });
     return o; });
   S.orgArranging = !!arranging;
   /* Staff doing a school this quarter (the quarter's plan, or a snapshot's
@@ -222,11 +230,15 @@ function orgChartHtml_(campus, roster, studentsMap, placeMap, arranging, planLea
     h+='<div class="orgMins">';
     mins.forEach(function(min){
       var key=dept+'|'+min;
-      var leads=here.filter(function(p){ return (p.leads||[]).indexOf(key)>-1; });
-      var members=here.filter(function(p){ return p.dept===dept && p.ministry===min && leads.indexOf(p)===-1; });
-      var all=leads.concat(members);
+      /* one solid chip where their main job is; a dashed one for a second job here, or for leading this ministry from
+         another one; Campus Leadership is never here just for leading or overseeing it */
+      var isHere=function(p){ return p.dept===dept && p.ministry===min; };
+      var leadsAll=here.filter(function(p){ return (p.leads||[]).indexOf(key)>-1; });
+      var all=leadsAll.filter(isHere).concat(here.filter(function(p){ return isHere(p) && leadsAll.indexOf(p)===-1; }));
       all.forEach(function(p){ placed[p.id]=1; });
-      var alsoHere=here.filter(function(p){ return p.dept!=='_off' && (p.alsoIn||[]).indexOf(key)>-1 && all.indexOf(p)===-1; });
+      var alsoHere=here.filter(function(p){ return p.dept!=='_off' && !isHere(p) && ((p.alsoIn||[]).indexOf(key)>-1 || (leadsAll.indexOf(p)>-1 && p.dept!==BL_DEPT && !!p.dept)); });
+      alsoHere.forEach(function(p){ if(leadsAll.indexOf(p)>-1) placed[p.id]=1; });
+      var leads=leadsAll.filter(function(p){ return all.indexOf(p)>-1 || alsoHere.indexOf(p)>-1; });
       h+='<div class="orgMin'+(all.length||alsoHere.length?'':' bare')+'" data-orgmin="'+esc(key)+'"'+(arranging?' data-drop="'+esc(key)+'"':'')+'><div class="orgMinHead"><span>'+(MIN_EMOJI[min]?MIN_EMOJI[min]+' ':'')+esc(t(min))+'</span>'+
         '<span class="orgMinN">'+(all.length||(alsoHere.length?'0':'—'))+(alsoHere.length?' +'+alsoHere.length:'')+'</span></div>'+
         (all.length||alsoHere.length ? orgPeople_(all.concat(alsoHere), leads, alsoHere) : '')+'</div>';
@@ -716,7 +728,7 @@ function mentorHtml(){
     S.mentees.forEach(function(p){
       var o=ooRelRow_(p.id, p.id);
       h+='<div class="mentorRow'+(o && o.status==='pending' && !o.mine ? ' ooWaiting' : '')+'" id="mentee-'+esc(p.id)+'"><button class="mentorRowMain" data-mentee="'+esc(p.id)+'">'+avatarHtml(p,'sm')+
-        '<span class="mentorRowTxt"><span class="mentorName">'+esc(p.name)+'</span><span class="mentorMeta">'+esc(t(p.ministry||p.dept||''))+'</span>'+ooMonthHtml_(p.id)+'</span><span class="ooChev">›</span></button>'+
+        '<span class="mentorRowTxt"><span class="mentorName">'+esc(p.name)+'</span><span class="mentorMeta">'+esc(t(p.ministry||p.dept||''))+'</span>'+ooMonthHtml_(p.id)+ooTheirsLineHtml_(p.id)+'</span><span class="ooChev">›</span></button>'+
         ooRelHtml_(o, p.id, p.name)+'</div>';
     });
     h+='</div>';

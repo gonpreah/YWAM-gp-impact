@@ -891,6 +891,32 @@ function ooMonthHtml_(menteeId){
   return '<div class="ooMonth'+(ok?' ok':'')+'">'+dots+'<span class="ooTxt">'+
     esc(ok ? gpT('{n} 1-on-1s this month ✓',{n:n}) : gpT('{n} of {target} 1-on-1s this month',{n:n,target:OO_PER_MONTH}))+'</span></div>';
 }
+/* How a mentee is doing with THEIR 1-on-1s (Nov 2026, Uriah): for a mentee who mentors other people, getMyMentees (and
+   the boot's mentees) carries `oo` = { held, met, people:[{id, name (first name), held}] } for this month — counts and
+   first names only. One quiet line on Mentorship's row; the short list on the mentee's own page. Nothing for a mentee who
+   mentors nobody. */
+function ooTheirsOf_(menteeId){
+  var m=(S.mentees||[]).filter(function(p){ return p.id===menteeId; })[0];
+  return m && m.oo && m.oo.people && m.oo.people.length ? m.oo : null;
+}
+function ooTheirsLineHtml_(menteeId){
+  var o=ooTheirsOf_(menteeId); if(!o) return '';
+  var n=o.people.length;
+  return '<span class="ooTheirs" data-ootheirs="'+esc(menteeId)+'">'+esc(n===1
+    ? gpT('Their 1-on-1s this month: {held} held with their 1 person',{held:o.held})
+    : gpT('Their 1-on-1s this month: {held} held with {met} of {n} people',{held:o.held, met:o.met, n:n}))+'</span>';
+}
+function ooTheirsListHtml_(m){
+  var o=ooTheirsOf_(m.id); if(!o) return '';
+  var first=String(m.name||'').split(' ')[0];
+  return '<h3 id="ooTheirs">🤝 '+esc(gpT('{name}’s own 1-on-1s this month',{name:first}))+' <small>· '+o.held+'</small></h3><div class="card">'+
+    '<p class="sub" style="margin:0 0 6px">'+esc(gpT('The people {name} mentors, and the 1-on-1s {name} has held with each this month. Only the count — what they talked about stays between the two of them.',{name:first}))+'</p>'+
+    o.people.map(function(x){
+      var dots='', ok=x.held>=OO_PER_MONTH;
+      for(var i=0;i<Math.max(OO_PER_MONTH, x.held);i++) dots+='<i class="ooDot'+(i<x.held?' on':'')+'"></i>';
+      return '<div class="ooTheirsRow" data-ootheirsrow="'+esc(x.id)+'"><span class="ooTheirsName">'+esc(x.name)+'</span><span class="ooMonth'+(ok?' ok':'')+'" style="margin:0">'+dots+
+        '<span class="ooTxt">'+esc(ok ? gpT('{n} of {target} ✓',{n:x.held, target:OO_PER_MONTH}) : gpT('{n} of {target}',{n:x.held, target:OO_PER_MONTH}))+'</span></span></div>'; }).join('')+'</div>';
+}
 /* A 1-on-1's day on Cambodia's calendar: the day it was held, else the day it was
    asked. heldOn is a Phnom Penh date already; `created` is a UTC timestamp, whose
    first ten characters are the UTC date — between midnight and 7am that was
@@ -1214,7 +1240,8 @@ function ooHistRowHtml_(o){
 /* fmtDateShort_ lives in 04-ministry-strengths.js (a second copy here was always overridden by it) */
 /* On a mentee's page: this month's count, then their whole 1-on-1 history —
    what's still to happen first, then every one held, newest first. */
-function ooMenteeSectionHtml_(m){
+function ooMenteeSectionHtml_(m){ return ooMenteeSectionHtml0_(m)+ooTheirsListHtml_(m); }
+function ooMenteeSectionHtml0_(m){
   var rows=ooPairRows_(m.id), first=String(m.name||'').split(' ')[0];
   var open=rows.filter(ooOpen_), held=rows.filter(function(o){ return o.status==='held'; });
   var h='<h3 id="ooHistory">☕ '+esc(t('1-on-1 history'))+' <small>· '+held.length+'</small></h3><div class="card">'+ooMonthHtml_(m.id);

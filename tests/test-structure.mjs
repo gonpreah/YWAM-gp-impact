@@ -295,5 +295,41 @@ ok('arranged and not live: the boot says which quarter', r.body.structReady && r
 r = await call('getMyBoot', ['maly', '1234']);
 ok('never for someone outside Campus Leadership', r.body.ok && !r.body.structReady);
 
+console.log('\n=== Campus Leadership is on the chart once (Nov 2026, Uriah: "the director of one department is in every single ministry") ===');
+{
+  const CS = 'Community Service', FY = CY + 2;   // a quarter of its own, well ahead
+  mem.staff = [
+    withPin({ id: 'ad', name: 'Adam Admin', username: 'adam', campus: 'siemreap', dept: 'Campus Leadership', ministry: 'Campus Director', active: true, isAdmin: true }),
+    withPin({ id: 'bo', name: 'Boss Hill', username: 'boss', campus: 'siemreap', dept: 'Campus Leadership', ministry: 'Campus Director', active: true, ministries: [CS + '|Cafe'] }),
+    withPin({ id: 'di', name: 'Dana Direct', username: 'dana', campus: 'siemreap', dept: 'Campus Leadership', ministry: CS, active: true,
+      ministries: [CS + '|Cafe', CS + '|LTN', 'Youth Education|Worship'], leads: [CS + '|Cafe'] }),
+    withPin({ id: 're', name: 'Rey Regular', username: 'rey', campus: 'siemreap', dept: CS, ministry: 'Cafe', active: true, ministries: ['Youth Education|Worship'] }),
+  ];
+  mem.structurePlans = []; mem.structure = [];
+  r = await call('saveStructure', ['adam', '1234', 'siemreap', FY, 1]);
+  const snap = id => r.body.doc.people.find(p => p.id === id);
+  ok('from profiles: a director is not put in a ministry because their profile lists it; anyone else still is', r.body.ok && !snap('di').also && !snap('bo').also && JSON.stringify(snap('re').also) === JSON.stringify(['Youth Education|Worship']), JSON.stringify([snap('di').also, snap('bo').also, snap('re').also]));
+  const place = { ad: { dept: 'Campus Leadership', ministry: 'Campus Director' }, bo: { dept: 'Campus Leadership', ministry: 'Campus Director' }, di: { dept: 'Campus Leadership', ministry: CS }, re: { dept: CS, ministry: 'Cafe' } };
+  r = await call('saveStructurePlan', ['boss', '1234', 'siemreap', FY, 1, {}, place, { [CS + '|Cafe']: ['di'] }, [], null, { di: [CS + '|LTN', 'Skills Training|Hospitality'], re: ['Youth Education|Worship'] }]);
+  ok('the quarter’s own second jobs: a Director’s second job in the department they direct is never on the chart; one in another department is',
+    r.body.ok && JSON.stringify(snap('di').also) === JSON.stringify(['Skills Training|Hospitality']), JSON.stringify(snap('di').also));
+  ok('“n profiles would change” does not count a director for the ministries on their profile', r.body.diff.changes.length === 1 && r.body.diff.changes[0].id === 'di' && JSON.stringify(r.body.diff.changes[0].alsoAdd) === JSON.stringify(['Skills Training|Hospitality']) && r.body.diff.changes[0].alsoDrop.length === 0, JSON.stringify(r.body.diff.changes));
+  r = await call('applyStructure', ['boss', '1234', 'siemreap', FY, 1, {}]);
+  const di = () => mem.staff.find(x => x.id === 'di'), bo = () => mem.staff.find(x => x.id === 'bo');
+  ok('made live: the board only ever ADDS a ministry page to someone in Campus Leadership — nothing they had is taken away',
+    r.body.ok && [CS + '|Cafe', CS + '|LTN', 'Youth Education|Worship', 'Skills Training|Hospitality'].every(k => di().ministries.indexOf(k) > -1) && JSON.stringify(bo().ministries) === JSON.stringify([CS + '|Cafe']) && JSON.stringify(di().leads) === JSON.stringify([CS + '|Cafe']), JSON.stringify([di().ministries, bo().ministries, di().leads]));
+  ok('… and afterwards nobody “differs”', r.body.diff.changes.length === 0, JSON.stringify(r.body.diff.changes));
+  r = await call('saveStructurePlan', ['boss', '1234', 'siemreap', FY, 1, {}, place, {}, [], null, {}]);
+  ok('second jobs and leading taken off the board for everyone: a director loses the leading, never a ministry page; the regular staff member loses the second job', r.body.ok && r.body.diff.changes.map(c => c.id).sort().join() === 'di,re' && r.body.diff.changes.find(c => c.id === 'di').alsoDrop.length === 0 && JSON.stringify(r.body.diff.changes.find(c => c.id === 're').alsoDrop) === JSON.stringify(['Youth Education|Worship']), JSON.stringify(r.body.diff.changes));
+  r = await call('getMinistryFor', ['dana', '1234', CS, 'LTN']);
+  ok('a Director reaches every ministry of their department whatever the chart says', r.body && r.body.ok !== false && r.body.err !== 'not_authorized', JSON.stringify(r.body).slice(0, 80));
+  mem.staff.find(x => x.id === 'di').ministries = [];
+  r = await call('getMinistryFor', ['dana', '1234', CS, 'Sry Noi']);
+  ok('… even with nothing on their profile (the overseer’s right)', r.body && r.body.err !== 'not_authorized', JSON.stringify(r.body).slice(0, 80));
+  /* a Director moved to a ministry is an ordinary member again: the plan's second jobs are theirs exactly */
+  r = await call('saveStructurePlan', ['adam', '1234', 'siemreap', FY, 1, {}, Object.assign({}, place, { di: { dept: CS, ministry: 'LTN' } }), {}, [], null, { di: [CS + '|Cafe'] }]);
+  ok('moved out of Campus Leadership into a ministry, a second job in that department shows again', r.body.ok && JSON.stringify(snap('di').also) === JSON.stringify([CS + '|Cafe']) && snap('di').ministry === 'LTN', JSON.stringify(snap('di')));
+}
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
