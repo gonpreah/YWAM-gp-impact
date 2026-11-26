@@ -110,12 +110,15 @@ Income.
     (`bulkPlAble_`, `[data-bulkpl]`; the group has "📈 All n in the profit and loss"); the adjustment or transfer it
     becomes carries `pl`, so it counts as income or spending there. **Tick every complete line** skips journal entries, and the
     description box doesn't change them.
-    **A journal entry's account can be N/A** (26 Nov 2026) — often it moved money between QuickBooks accounts, not in a
-    bank. One worked out as income or an expense with no bank in its split account starts on N/A (the account picker
-    has "N/A — no account (Financial tools)", journal entries only). Added, an N/A one is **written up as Financial
-    tools**, not as income or an expense: income → "Add income" to each fund its kind's formula (or its fund) reaches;
-    an expense → "Remove income" from its category; memo "… · journal entry — {kind}, no account", `journal: true`. So
-    it moves the categories and no bank, and it isn't in the profit and loss.
+    **A journal entry is one of four** (26 Nov 2026): **💵 Income**, **🧾 Expense**, **🔁 Transfer** (moving categories) or
+    **🛠 Admin (fixing)** (journal entries only, `BULK_KIND.admin`; groups "📓 Journal entries — income / expenses /
+    transfers / admin (fixing)"). Its account can be **N/A — no bank**: one worked out as income or an expense with no
+    bank in its split account starts there. **Income and expense journal entries are real income and expenses**, in the
+    profit and loss and the income / expense allocation like any other — with N/A they are saved with no bank
+    (`bank:''`, `journal:true`), so they move the categories and no account. **Admin** picks a category and whether it
+    **adds to it** or **takes from it** (`adir`, from the line's direction by default) and is saved as a Financial tools
+    adjustment ("… · journal entry — admin (fixing)"): it moves the category, no bank, and isn't in the profit and loss
+    unless ticked.
     "📓 Journal entries to check" has **🗑 Leave all n out** (`data-bulkgrpdrop`) — they are usually not needed in these
     reports; "Bring them back" undoes it while the import is open (`S.bulkJOut`).
 - **A line stays put while it is being edited** (26 Nov 2026): it stays in the group it was in when ✏️ Edit was tapped
