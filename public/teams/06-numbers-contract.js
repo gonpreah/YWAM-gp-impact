@@ -822,7 +822,7 @@ function mmTabsFor_(sel, mine, schedH){
     out=[['today',t('Today'),'data-cafetab'],['till',t('Till'),'data-cafetab'],['rota',t('Rota'),'data-cafetab'],['week',t('Week'),'data-cafetab']].concat(S.cafe && S.cafe.canSetup ? [['setup',t('Set up'),'data-cafetab']] : []);
     out.push(['numbers',t('Numbers')]);
   } else if(sel.dept==='Skills Training' && sel.min==='Finances' && finCanEditClient_()){
-    out=[['fdash',t('Dashboard'),'data-fintab'],['finput',t('Input'),'data-fintab']];   // the finance tool (public/finance.html, teams/09-finance.js fin2FrameHtml_)
+    out=[['fdash',t('Dashboard'),'data-fintab'],['fmins',t('Ministries'),'data-fintab'],['finput',t('Input'),'data-fintab']];   // the finance tool (public/finance.html, teams/09-finance.js fin2FrameHtml_)
   } else if(isTeamsMinistry_(sel.dept, sel.min)){
     out=[['teams',t('Teams')]];
   } else if(isIcpMinistry_(sel.dept, sel.min)){
@@ -894,7 +894,7 @@ function myMinistryHtml(){
       var pane;
       if(lwt==='week') pane=lwHtml_();
       // the base's finances: the finance tool's Dashboard (public/finance.html, teams/09-finance.js)
-      else if(lwt==='money') pane=fin2FrameHtml_('dash');   // the finance tool's Dashboard, read-only for leadership
+      else if(lwt==='money') pane='<div class="campusSeg fin2LeadSeg" style="max-width:none">'+[['dash',t('Dashboard')],['mins',t('Ministries')]].map(function(x){ return '<button class="campusBtn'+((S.finLeadView||'dash')===x[0]?' on':'')+'" data-finlead="'+x[0]+'">'+esc(x[1])+'</button>'; }).join('')+'</div>'+fin2FrameHtml_(S.finLeadView==='mins' ? 'mins' : 'dash');   // the finance tool, read-only for leadership: its Dashboard or Ministries
       else if(lwt==='struct') pane=sbLeadHtml_();   // the quarter's structure as a whiteboard tree (teams/23-structure.js)
       else if(lwt==='okrs') pane=okrTabHtml_();   // the OKRs page itself — yours, leadership's, and (admins) every department's
       else if(lwt==='base') pane=leadBaseHtml_(ph)+orgCltCardHtml_(S.me.campus);   // the role's own numbers first; who is on the leadership team at the foot
@@ -922,7 +922,7 @@ function myMinistryHtml(){
       esc(t('Teams are entered one at a time, once their visit is over — not week by week. Each team counts in the week it leaves, and the Base dashboard picks it up from there.'))+'</p>'+
       '<button class="btn" id="goTeamsDb" style="margin-top:0">🗂️ '+esc(t('Open the Teams Database'))+'</button></div>';
   }
-  else if(cur==='fdash' || cur==='finput') pane=fin2FrameHtml_(cur==='finput' ? 'input' : 'dash');
+  else if(cur==='fdash' || cur==='finput' || cur==='fmins') pane=fin2FrameHtml_(cur==='finput' ? 'input' : cur==='fmins' ? 'mins' : 'dash');
   else if(cur!=='numbers') pane=cafeHtml_(true);   // the Cafe runs its day here — open, sell, close, the rota — and its numbers fill themselves in
   else {
     /* The week's numbers — status, who is responsible, and the boxes themselves, already open when

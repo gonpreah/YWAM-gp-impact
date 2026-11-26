@@ -384,7 +384,7 @@ Income.
   home than there is.
 - Everything that moves money is in it (advances are their own report and move nothing).
 
-### 🏛 Ministries (a tab of its own, 25 Nov 2026 — in the demo only, not in Impact yet)
+### 🏛 Ministries (a tab of its own, 25 Nov 2026 — in Impact since 26 Nov 2026: the office's Ministries tab, read-only on leadership's Finances tab)
 - One allocation's own report — mostly the ministries, but any sub-category can be picked (`minsHtml_`, `S.mn`).
   **Everything on it is the 📒 Detailed breakdown added up** for the sub-categories picked (matched by `cat`
   = `fundLabel_`).

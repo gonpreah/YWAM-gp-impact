@@ -34,7 +34,7 @@ body{ font-family:'Kantumruy Pro','Hanken Grotesk',system-ui,sans-serif; font-si
 button{ font:inherit; color:inherit; }
 /* in Impact (window.GP_FIN_APP, public/finance.html — built from this file): no draft bar, no header of its
    own; inside My Ministry (?embed=1) no tab row either (the app shows Dashboard · Input · Tasks · OKRs) */
-body.app .draftBar, body.app header.app, body.app .mmHead, body.app .tab[data-tab="tasks"], body.app .tab[data-tab="okrs"], body.app .tab[data-tab="mins"]{ display:none; }   /* Ministries: in the demo only for now (25 Nov 2026) */
+body.app .draftBar, body.app header.app, body.app .mmHead, body.app .tab[data-tab="tasks"], body.app .tab[data-tab="okrs"]{ display:none; }   /* Ministries: in the demo only for now (25 Nov 2026) */
 body.embed nav.tabs{ display:none; }
 /* inside My Ministry the frame is as tall as the page, so the app scrolls the two as one. The app says
    which part of the frame is on screen (--vt: its top, --vh: its height), and what floated over the
@@ -574,6 +574,7 @@ button.tick.done{ background:var(--good); }
 .srEf{ display:flex; flex-direction:column; gap:3px; font-size:12.5px; color:var(--muted); font-weight:600; margin:6px 0; }
 .srEf input, .srEf select, .srEf textarea{ width:100%; min-width:0; }
 .mnPlBtn{ display:inline-block; margin-top:4px; border:1px solid var(--line); background:var(--surface); color:var(--muted); border-radius:999px; padding:3px 10px; font-size:12px; font-weight:700; cursor:pointer; }
+body.ro .mnPlBtn{ display:none; }   /* read-only (leadership): nothing to put in or take out */
 .mnPlBtn.on{ border-color:var(--accent); color:var(--accent); background:var(--accentSoft); }
 .mnNotIn{ display:inline-block; margin-top:4px; font-size:12px; color:var(--muted); }
 .mnFSum{ margin:4px 0 0; font-size:13px; color:var(--muted); }
@@ -789,7 +790,7 @@ ALLOC.forEach(function(a){ a.amt=a.items.reduce(function(s,i){ return s+i[1]; },
 /* ---- helpers ---- */
 var S = { tab:'dash', open:null };
 var APP=!!window.GP_FIN_APP, QS=new URLSearchParams(location.search);
-if(APP){ document.body.classList.add('app'); if(QS.get('embed')){ document.body.classList.add('embed'); document.documentElement.classList.add('embed'); } if(QS.get('view')==='input') S.tab='input';
+if(APP){ document.body.classList.add('app'); if(QS.get('embed')){ document.body.classList.add('embed'); document.documentElement.classList.add('embed'); } if(QS.get('view')==='input') S.tab='input'; if(QS.get('view')==='mins') S.tab='mins';
   try { var th=localStorage.getItem('gp-theme'); if(th==='dark' || (!th && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.dataset.theme='dark'; } catch(e){} }
 function money(n, cents){ var s=Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:cents?2:0, maximumFractionDigits:cents?2:0}); return (n<0?'−$':'$')+s; }
 function date(iso){ var d=new Date(iso+'T00:00:00'); return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
@@ -3785,7 +3786,7 @@ function finBoot_(){
     FIN.rev=d.rev||0; FIN.campus=d.campus; FIN.canEdit=!!d.canEdit;
     SAMPLE_STAFF.length=0; (d.staff||[]).forEach(function(x){ SAMPLE_STAFF.push(x); });
     resetState_(); if(d.state) loadState_(d.state); refreshBal_();
-    if(!FIN.canEdit){ document.body.classList.add('ro'); S.tab='dash'; }
+    if(!FIN.canEdit){ document.body.classList.add('ro'); S.tab = S.tab==='mins' ? 'mins' : 'dash'; }   /* leadership: the Dashboard or Ministries, read-only */
     document.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('on', b.dataset.tab===S.tab); });
     render(); finStatus_();
   }).catch(function(){ finMsg_('No connection — try again when you are online.'); }); }
