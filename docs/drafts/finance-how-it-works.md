@@ -99,8 +99,14 @@ Income.
     else a school named in it (DTS, DBS, SOMD; **BCS, SMS or "school" → Other Schools**), else the class's words.
     **Picking a category for a line with a class remembers it** for next time and gives every other line of that
     class in the file the same (unless set by hand), with a toast saying how many.
-  - **A Journal Entry** is never guessed: it waits, tagged "📓 journal entry — check it", until the office says
-    whether it is income, an expense or a transfer (the description box doesn't decide it either).
+  - **A Journal Entry is worked out but waits for approval** (26 Nov 2026; before, it was never guessed): `bulkGuess_`
+    reads it like any line — income or expense from its P&L section, the kind from its account, the account from its
+    split account, the category from its class (or a transfer from two bank accounts) — and keeps `journal`. Journal
+    entries sit in their own groups first: **📓 Journal entries — income / expenses / transfers**, and "— not worked
+    out" for any it couldn't read. Each line has **✓ Approve** (ticks it; if something is still missing, its edit
+    opens), **✗ Leave out** and Edit; each group has **✓ Approve all** and **🗑 Leave all n out**; "Bring them back"
+    puts left-out ones back while the import is open. **Tick every complete line** skips journal entries, and the
+    description box doesn't change them.
     "📓 Journal entries to check" has **🗑 Leave all n out** (`data-bulkgrpdrop`) — they are usually not needed in these
     reports; "Bring them back" undoes it while the import is open (`S.bulkJOut`).
 - **A line stays put while it is being edited** (26 Nov 2026): it stays in the group it was in when ✏️ Edit was tapped

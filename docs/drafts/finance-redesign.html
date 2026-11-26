@@ -502,6 +502,8 @@ button.tick.done{ background:var(--good); }
 .bulkShow{ margin:6px 0 2px; display:flex; flex-wrap:wrap; }
 .bulkShow button{ flex:1 1 auto; font-size:12.5px; }
 .bulkMix{ margin:6px 0 2px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.bulkRow .rowBtns{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.bulkRow .jYes{ color:var(--good); }
 .bulkJBack{ margin:6px 0; font-size:13px; color:var(--muted); }
 .bulkPreSum{ margin:12px 0 4px; padding:10px 12px; border-radius:10px; background:var(--surface2); border:1px solid var(--line); }
 .bulkPreSum .preTbl{ width:100%; border-collapse:collapse; margin:6px 0 2px; font-size:14px; }
@@ -1965,7 +1967,10 @@ function classFund_(cls){ var r=expClassFund_(cls); if(r.f) return r; var c=Stri
 function bulkGuess_(t, src){
   var d=String(t.desc||'').toLowerCase(), qb=t.qbType||'', g={ kind:'', type:'', fund:'', bank:'', from:'', to:'', hint:'' };
   /* a journal entry could be anything — it waits for the office to say what it really is */
-  if(t.journal){ g.bank=bankGuess_(t.qbSplit); g.hint='journal entry — check what it really is'; return g; }
+  /* a journal entry (26 Nov 2026): worked out like any line — its P&L section and account, or its accounts and words —
+     but it stays a journal entry: it sits in its own groups and waits for the office to approve it or leave it out */
+  if(t.journal){ var gj=bulkGuess_(Object.assign({}, t, { journal:false }), src);
+    gj.hint = gj.kind ? 'journal entry — worked out from its '+(t.qbSec?'section and account':'accounts and words')+'; approve it or leave it out' : 'journal entry — check what it really is'; return gj; }
   var acc = /^acct\|/.test(src) ? src : /^qbo\|/.test(src) ? src.slice(4) : '';
   /* mixed QuickBooks: the bank is whichever account column names one */
   var bA=bankGuess_(t.qbAcct), bS=bankGuess_(t.qbSplit);
@@ -2211,7 +2216,7 @@ function inBulkHtml_(){
   h+='<div class="upSum"><b>'+esc(U.file)+'</b> · '+R.length+' lines · '+ready.length+' with everything filled in · '+R.filter(function(r){ return !r.kind; }).length+' not sure'+(jn?' · <b>'+jn+' journal entr'+(jn>1?'ies':'y')+' to check</b>':'')+
     (U.isPL ? '<br>📊 Read as a QuickBooks <b>Profit and Loss Detail</b>: income or expense from its section, the kind from each account heading, the account from the split account'+(S.bulkSrc==='mix'?'':' (but you picked one account for every line above)')+', the category from the class.'+
       ((U.checks||[]).length ? (bad.length ? '<br><span style="color:var(--bad)">⚠️ Doesn’t match QuickBooks’ totals: '+bad.map(function(x){ return esc(x.head)+' read '+money(x.read,true)+', QuickBooks '+money(x.qb,true); }).join(' · ')+'</span>' : '<br>✓ Every account adds up to QuickBooks’ own total ('+U.checks.length+' checked).') : '') : '')+'</div>'+
-    '<div class="bulkTools"><button class="linkAdd" id="bulkTickAll">✓ Tick every complete line</button><button class="linkAdd" id="bulkUntick">Untick all</button></div>';
+    '<div class="bulkTools"><button class="linkAdd" id="bulkTickAll">✓ Tick every complete line (not journal entries)</button><button class="linkAdd" id="bulkUntick">Untick all</button></div>';
   h+=bulkGroupsHtml_(R);
   h+='<div class="bulkTot">Ticked: '+ticked.length+' · income '+money(tot('inc'),true)+' · expenses '+money(tot('exp'),true)+' · transfers '+money(tot('xf'),true)+'</div>'+
     (S.bulkSaveErr ? '<p class="inErr" role="alert">⚠️ '+esc(S.bulkSaveErr)+'</p>' : '')+
@@ -2221,10 +2226,10 @@ function inBulkHtml_(){
 function bulkRowHtml_(r, i){ var need=bulkNeeds_(r), ed=S.bulkEdit===i;
     return '<div class="bulkRow'+(r.ok&&!need.length?' ok':'')+(need.length?' need':'')+'">'+
       '<label class="bulkChk"><input type="checkbox" data-bulkok="'+i+'"'+(r.ok&&!need.length?' checked':'')+(need.length?' disabled':'')+' aria-label="Right"></label>'+
-      '<div class="bulkMain"><div class="bulkTop"><b>'+money(r.amt,true)+'</b><span class="dsub" style="display:inline">'+(r.date?date(r.date):'no date')+(r.dir?(r.dir==='in'?' · in':' · out'):'')+'</span>'+(r.dup?' <span class="tag">already in?</span>':'')+(r.journal?' <span class="tag jTag">📓 journal entry — check it</span>':'')+(bulkPreIn_(r)?' <span class="tag preTag">✅ in the '+date(S.bulkPre.day)+' approved report</span>':'')+'</div>'+
+      '<div class="bulkMain"><div class="bulkTop"><b>'+money(r.amt,true)+'</b><span class="dsub" style="display:inline">'+(r.date?date(r.date):'no date')+(r.dir?(r.dir==='in'?' · in':' · out'):'')+'</span>'+(r.dup?' <span class="tag">already in?</span>':'')+(r.journal?' <span class="tag jTag">📓 journal entry'+(r.kind?(r.ok&&!need.length?' — approved':' — approve or leave out'):' — check it')+'</span>':'')+(bulkPreIn_(r)?' <span class="tag preTag">✅ in the '+date(S.bulkPre.day)+' approved report</span>':'')+'</div>'+
       '<div class="bulkDesc">'+esc(r.desc||'—')+(r.qbHead?' <span class="dsub" style="display:inline">· '+esc(r.qbHead)+(r.cls?' · '+esc(r.cls):'')+'</span>':'')+'</div><div class="bulkGuess">'+bulkSummary_(r)+'</div>'+
       (need.length ? '<div class="bulkNeed">Needs: '+esc(need.join(', '))+'</div>' : '')+bulkMixHtml_(r, i)+
-      (ed ? bulkEditHtml_(r, i) : '<button class="editBtn" data-bulkedit="'+i+'">✏️ Edit</button>')+'</div></div>'; }
+      (ed ? bulkEditHtml_(r, i) : '<div class="rowBtns">'+(r.journal ? (r.ok&&!need.length ? '<button class="editBtn" data-bulkjno="'+i+'">↩ Unapprove</button>' : '<button class="editBtn jYes" data-bulkjyes="'+i+'">✓ Approve</button>')+'<button class="delBtn" data-bulkjout="'+i+'">✗ Leave out</button>' : '')+'<button class="editBtn" data-bulkedit="'+i+'">✏️ Edit</button></div>')+'</div></div>'; }
 /* the lines, put together by kind (Nov 2026: "split it into income and expense per category… each one i can click
    into, look over and either tick individually or tick all"): one group per kind of income or expense — for a P&L
    Detail that is one per account code — with its count and total; folded until opened; Tick all ticks every
@@ -2233,14 +2238,15 @@ function bulkRowHtml_(r, i){ var need=bulkNeeds_(r), ed=S.bulkEdit===i;
 /* where a line sits: while it is open for editing it stays in the group it was in when Edit was tapped (26 Nov 2026:
    "do not move it until i select done") — it moves after Done (and the "do the same for all?" answer) */
 function bulkPlace_(r, i){ return i===S.bulkEdit && S.bulkEditKey ? S.bulkEditKey : bulkGroupKey_(r); }
-function bulkGroupKey_(r){ return !r.kind ? (r.journal ? 'j' : 'x') : r.kind==='xf' ? 'xf' : r.kind+'|'+(r.type||'?'); }
-function bulkGroupName_(k){ if(k==='j') return '📓 Journal entries to check'; if(k==='x') return '❓ Not sure what they are'; if(k==='xf') return '🔁 Transfers';
+function bulkGroupKey_(r){ if(r.journal) return r.kind ? 'j'+r.kind : 'j'; return !r.kind ? 'x' : r.kind==='xf' ? 'xf' : r.kind+'|'+(r.type||'?'); }
+function bulkIsJGroup_(k){ return /^j/.test(k); }
+function bulkGroupName_(k){ if(k==='j') return '📓 Journal entries — not worked out'; if(k==='jinc') return '📓 Journal entries — income'; if(k==='jexp') return '📓 Journal entries — expenses'; if(k==='jxf') return '📓 Journal entries — transfers'; if(k==='x') return '❓ Not sure what they are'; if(k==='xf') return '🔁 Transfers';
   var p=k.split('|'), t=k.slice(p[0].length+1); return (p[0]==='inc'?'💵 Income · ':'🧾 Expense · ')+(t==='?'?'kind not picked yet':t+(p[0]==='exp' && EXP_NUM[t] ? ' · '+EXP_NUM[t] : '')+(p[0]==='inc' && S.bulk ? bulkIncCodes_(t) : '')); }
 /* the QuickBooks income accounts a group's lines came from ("· 44000") */
 function bulkIncCodes_(t){ var c={}; S.bulk.rows.forEach(function(r){ var m=r.kind==='inc' && (r.type||'?')===t && /^(\d{4,6})\s/.exec(r.qbHead||''); if(m) c[m[1]]=1; }); var k=Object.keys(c).sort(); return k.length ? ' · '+k.join(', ') : ''; }
 function bulkGroupsHtml_(R){ var G={}, order=[];
   R.forEach(function(r, i){ var k=bulkPlace_(r, i); if(!G[k]){ G[k]={ k:k, idx:[], tot:0 }; order.push(k); } G[k].idx.push(i); G[k].tot+=r.amt; });
-  var rank=function(k){ return k==='j'?0 : k==='x'?1 : /^inc/.test(k)?2 : /^exp/.test(k)?3 : 4; };
+  var rank=function(k){ return k==='j'?0 : k==='jinc'?0.1 : k==='jexp'?0.2 : k==='jxf'?0.3 : k==='x'?1 : /^inc/.test(k)?2 : /^exp/.test(k)?3 : 4; };
   order.sort(function(a,b){ return rank(a)-rank(b) || G[b].tot-G[a].tot; });
   var open=S.bulkOpen||(S.bulkOpen={}); if(S.bulkEdit!=null && R[S.bulkEdit]) open[bulkPlace_(R[S.bulkEdit], S.bulkEdit)]=true;
   var back = (S.bulkJOut||[]).length ? '<div class="bulkJBack">🗑 '+S.bulkJOut.length+' journal entr'+(S.bulkJOut.length>1?'ies':'y')+' left out. <button class="linkAdd" id="bulkJBack">Bring them back</button></div>' : '';
@@ -2252,8 +2258,8 @@ function bulkGroupsHtml_(R){ var G={}, order=[];
     return '<div class="bulkGrp'+(isOpen?' open':'')+(allOn?' allOn':'')+'"><div class="bulkGrpHead"><button class="bulkGrpBtn" data-bulkgrp="'+esc(k)+'" aria-expanded="'+isOpen+'">'+
       '<span><b>'+esc(bulkGroupName_(k))+'</b><span class="dsub">'+rows.length+' line'+(rows.length>1?'s':'')+(fl?' · '+esc(fl):'')+' · '+on.length+' ticked'+(need?' · <span class="bulkGrpNeed">'+need+' need'+(need>1?'':'s')+' something</span>':'')+'</span></span>'+
       '<span class="bulkGrpTot">'+money(g.tot,true)+'</span><span class="chev">▾</span></button>'+
-      (k==='j' ? '<button class="btn ghost bulkGrpTick bulkGrpDrop" data-bulkgrpdrop="j">🗑 Leave all '+rows.length+' out</button>' : '')+
-      (done.length ? '<button class="btn'+(allOn?' ghost':'')+' bulkGrpTick" data-bulkgrptick="'+esc(k)+'">'+(allOn?'Untick all':'✓ Tick all'+(done.length<rows.length?' '+done.length:''))+'</button>' : '')+'</div>'+
+      (bulkIsJGroup_(k) ? '<button class="btn ghost bulkGrpTick bulkGrpDrop" data-bulkgrpdrop="'+k+'">🗑 Leave all '+rows.length+' out</button>' : '')+
+      (done.length ? '<button class="btn'+(allOn?' ghost':'')+' bulkGrpTick" data-bulkgrptick="'+esc(k)+'">'+(allOn?(bulkIsJGroup_(k)?'Unapprove all':'Untick all'):(bulkIsJGroup_(k)?'✓ Approve all':'✓ Tick all')+(done.length<rows.length?' '+done.length:''))+'</button>' : '')+'</div>'+
       (isOpen ? bulkShowHtml_(g.idx.map(function(i){ return R[i]; }))+'<div class="bulkGrpRows">'+g.idx.filter(function(i){ return bulkShows_(R[i], i); }).map(function(i){ return bulkRowHtml_(R[i], i); }).join('')+'</div>' : '')+'</div>'; }).join('')+'</div>'; }
 /* an open group's filter (26 Nov 2026): Show all (default) · Show ticked · Show unticked — one setting for every group;
    the line being edited always shows */
@@ -3157,7 +3163,7 @@ document.addEventListener('click', function(e){
     if(bg.dataset.bulkgrp){ open[gk]=!open[gk]; render(); return; }
     var gr=S.bulk.rows.filter(function(r){ return bulkGroupKey_(r)===gk && !bulkNeeds_(r).length; }), all=gr.length && gr.every(function(r){ return r.ok; });
     gr.forEach(function(r){ if(all) r.ok=false; else if(!r.dup) r.ok=true; }); render(); return; }
-  if(e.target.id==='bulkTickAll' && S.bulk){ S.bulk.rows.forEach(function(r){ if(!bulkNeeds_(r).length && !r.dup) r.ok=true; }); render(); return; }
+  if(e.target.id==='bulkTickAll' && S.bulk){ S.bulk.rows.forEach(function(r){ if(!bulkNeeds_(r).length && !r.dup && !r.journal) r.ok=true; }); render(); return; }   /* journal entries are approved on their own */
   if(e.target.id==='bulkUntick' && S.bulk){ S.bulk.rows.forEach(function(r){ r.ok=false; }); render(); return; }
   if(e.target.id==='bulkAdd'){ bulkAdd_(); return; }
   if(e.target.id==='amendOpen'){ S.amendOpen=!S.amendOpen; render(); return; }
@@ -3167,8 +3173,12 @@ document.addEventListener('click', function(e){
     bulkClose_(); render(); toast(list2.length+' more line'+(list2.length>1?'s':'')+' changed'); return; }
   if(e.target.id==='bulkSameNo'){ bulkClose_(); render(); return; }
   var bmx=e.target.closest && e.target.closest('[data-bulkmix]'); if(bmx && S.bulk){ var mp=bmx.dataset.bulkmix.split('|'), mr=S.bulk.rows[+mp[0]]; if(mr){ bulkPutFund_(mr, mp.slice(1).join('|'), 'picked from the mix'); mr.ok=false; if(!bulkNeeds_(mr).length) mr.ok=true; } render(); return; }
+  var bjy=e.target.closest && e.target.closest('[data-bulkjyes]'); if(bjy && S.bulk){ var ji=+bjy.dataset.bulkjyes, jr=S.bulk.rows[ji];
+    if(bulkNeeds_(jr).length){ S.bulkEdit=ji; S.bulkEditKey=bulkGroupKey_(jr); S.bulkSame=null; } else jr.ok=true; render(); return; }
+  var bjn=e.target.closest && e.target.closest('[data-bulkjno]'); if(bjn && S.bulk){ S.bulk.rows[+bjn.dataset.bulkjno].ok=false; render(); return; }
+  var bjo=e.target.closest && e.target.closest('[data-bulkjout]'); if(bjo && S.bulk){ var jo=S.bulk.rows.splice(+bjo.dataset.bulkjout,1); S.bulkJOut=(S.bulkJOut||[]).concat(jo); S.bulkEdit=null; S.bulkEditKey=null; S.bulkSame=null; render(); toast('Left out — “Bring them back” at the top of the list puts it back'); return; }
   var bsh=e.target.closest && e.target.closest('[data-bulkshow]'); if(bsh){ S.bulkShow=bsh.dataset.bulkshow; render(); return; }
-  var gd=e.target.closest && e.target.closest('[data-bulkgrpdrop]'); if(gd && S.bulk){ var keepR=[], outR=[]; S.bulk.rows.forEach(function(o){ (bulkGroupKey_(o)==='j' ? outR : keepR).push(o); });
+  var gd=e.target.closest && e.target.closest('[data-bulkgrpdrop]'); if(gd && S.bulk){ var keepR=[], outR=[], gdk=gd.dataset.bulkgrpdrop; S.bulk.rows.forEach(function(o){ (bulkGroupKey_(o)===gdk ? outR : keepR).push(o); });
     S.bulkJOut=(S.bulkJOut||[]).concat(outR); S.bulk.rows=keepR; S.bulkEdit=null; S.bulkEditKey=null; S.bulkSame=null; render(); toast('Left out '+outR.length+' journal entr'+(outR.length>1?'ies':'y')); return; }
   if(e.target.id==='bulkJBack' && S.bulk){ S.bulk.rows=S.bulk.rows.concat(S.bulkJOut||[]); S.bulkJOut=null; S.bulkEdit=null; render(); return; }
   var be=e.target.closest && e.target.closest('[data-bulkedit]'); if(be){ S.bulkEdit=+be.dataset.bulkedit; S.bulkEditKey=bulkGroupKey_(S.bulk.rows[S.bulkEdit]); S.bulkSame=null; render(); return; }
