@@ -1366,84 +1366,8 @@ function bind(){
     weekClear();
   };
 
-  /* --- OKRs --- */
-  var onb=document.getElementById('okrNewBtn');
-  if(onb) onb.onclick=function(){ S.okrAdmin=null; S.okrForm=true; S.okrEditId=null; S.okrPaste=false; render(); };
-  var ocb=document.getElementById('okrCancelBtn');
-  if(ocb) ocb.onclick=function(){ S.okrForm=false; S.okrEditId=null; S.okrAdmin=null; render(); };
-  var osb=document.getElementById('okrSaveBtn');
-  if(osb) osb.onclick=function(){ okrSave(osb); };
-  okrKrRows_().forEach(function(r){ okrBindKrRow_(r.getAttribute('data-okr-kr')); });
-  document.querySelectorAll('#okrKrList .okrRow').forEach(okrBindRm_);
-  var oka=document.getElementById('okrKrAddBtn');
-  if(oka) oka.onclick=function(){ gpTap(); okrAddKr_(); };
-  var okh=document.getElementById('okrHeadAddBtn');
-  if(okh) okh.onclick=function(){ gpTap(); okrAddHead_(); };
-  var opb=document.getElementById('okrPasteBtn');
-  if(opb) opb.onclick=function(){ gpTap(); S.okrPaste=true; S.okrPasteParsed=null; render();
-    var ta=document.getElementById('okrPasteText'); if(ta) ta.focus(); };
-  var opp=document.getElementById('okrPastePreview');
-  if(opp) opp.onclick=function(){
-    S.okrPasteText = document.getElementById('okrPasteText').value;
-    var parsed = okrParsePaste_(S.okrPasteText);
-    if(!parsed.objectives.length){ showMsg(t('Nothing to add yet — paste your OKRs in the box.')); return; }
-    S.okrPasteParsed = parsed; render();
-  };
-  var opk=document.getElementById('okrPasteBack');
-  if(opk) opk.onclick=function(){ S.okrPasteParsed=null; render(); };
-  var opc=document.getElementById('okrPasteCancel');
-  if(opc) opc.onclick=function(){ S.okrPaste=false; S.okrPasteParsed=null; S.okrPasteText=''; render(); };
-  var ops=document.getElementById('okrPasteSave');
-  if(ops) ops.onclick=function(){ okrPasteSave_(ops); };
-  document.querySelectorAll('[data-okr-edit]').forEach(function(b){
-    b.onclick=function(){
-      var id=b.getAttribute('data-okr-edit'), o=okrFind_(id);
-      // an admin editing from "Every department's OKRs" writes that objective's own campus / department
-      S.okrAdmin = (o && S.me.isAdmin && b.closest('[data-okradmin]')) ? { campus:o.campus, dept:o.dept } : null;
-      S.okrEditId=id; S.okrForm=true; S.okrPaste=false; render();
-      var f=document.getElementById('okrForm'); if(f) f.scrollIntoView({behavior:'smooth', block:'start'});
-    };
-  });
-  var oac=document.getElementById('okrAdmCampus');
-  if(oac) oac.onchange=function(){ S.okrAdminPick={ campus:oac.value, dept:'' }; render(); };
-  var oad=document.getElementById('okrAdmDept');
-  if(oad) oad.onchange=function(){ S.okrAdminPick=Object.assign({}, S.okrAdminPick||{}, { dept:oad.value }); };
-  var oan=document.getElementById('okrAdmNewBtn');
-  if(oan) oan.onclick=function(){ var p=S.okrAdminPick||{}; if(!p.campus || !p.dept) return; S.okrAdmin={ campus:p.campus, dept:p.dept }; S.okrEditId=null; S.okrForm=true; render(); var f=document.getElementById('okrForm'); if(f) f.scrollIntoView({behavior:'smooth', block:'start'}); };
-  document.querySelectorAll('[data-okr-del]').forEach(function(b){
-    b.onclick=function(){
-      if(!gpAsk_(t('Delete this objective?'))) return;
-      okrDelete(b.getAttribute('data-okr-del'));
-    };
-  });
-  document.querySelectorAll('[data-okr-manual]').forEach(function(inp){
-    var ref = inp.getAttribute('data-okr-manual');
-    inp.oninput=function(){
-      inp.style.setProperty('--p', inp.value+'%');
-      var lbl=document.querySelector('[data-okr-pct="'+ref+'"]');
-      if(lbl) lbl.textContent=(Number(inp.value)>=100?'✓ ':'')+inp.value+'%';
-    };
-    inp.onchange=function(){
-      var parts=ref.split('|');
-      okrSetManual(parts[0], Number(parts[1]), inp.value);
-    };
-  });
-  document.querySelectorAll('[data-okr-step]').forEach(function(b){
-    b.onclick=function(){
-      gpTap();
-      var parts=b.getAttribute('data-okr-step').split('|'), o=okrFind_(parts[0]), kr=o && o.krs[Number(parts[1])];
-      if(kr) okrSetCount(parts[0], Number(parts[1]), (Number(kr.current)||0)+Number(parts[2]));
-    };
-  });
-  document.querySelectorAll('[data-okr-count]').forEach(function(b){
-    b.onclick=function(){
-      var parts=b.getAttribute('data-okr-count').split('|'), o=okrFind_(parts[0]), kr=o && o.krs[Number(parts[1])];
-      if(!kr) return;
-      var v = gpAskText_(t('How many so far?'), String(Number(kr.current)||0));
-      if(v===null || v.trim()==='' || isNaN(Number(v))) return;
-      okrSetCount(parts[0], Number(parts[1]), Number(v));
-    };
-  });
+  /* --- Rocks and the Scoreboard (teams/28-rocks.js) --- */
+  bindRocks_();
 
   /* --- Goals & Tasks page --- */
   var ggm=document.getElementById('goGoalsFromMe');
@@ -2054,7 +1978,7 @@ function refreshAll(){
    ?fresh). If the page itself came from the offline copy (the worker leaves a
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
-var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/20-game.js','teams/21-voice.js','teams/22-setup.js','teams/23-structure.js','teams/24-school.js','teams/25-intercession.js','teams/26-worship.js','teams/27-meeting.js','teams/24-school.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
+var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/20-game.js','teams/21-voice.js','teams/22-setup.js','teams/23-structure.js','teams/24-school.js','teams/25-intercession.js','teams/26-worship.js','teams/27-meeting.js','teams/28-rocks.js','teams/24-school.js','teams/11-bind-boot.js','finance.js','km.js','library.js'];
 if(gpTasksApp_()) GP_VER_FILES=['tasks.html'].concat(GP_VER_FILES.slice(1), ['teams/12-tasks.js','teams/13-calendar.js']);   // the tasks app's page is tasks.html
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){

@@ -4019,3 +4019,48 @@ body.sbDragging, body.sbDragging * { cursor:grabbing !important; }
 .mmMinePill.on { background:var(--accent); border-color:var(--accent); color:var(--accentInk); }
 .mmMinePill small { font-weight:600; color:var(--muted); }
 .mmMinePill.on small { color:inherit; }
+
+/* ==================== Rocks and the Scoreboard (teams/28-rocks.js, Nov 2026) ====================
+   A rock is drawn with the leadership meeting's own classes (.lmRock, .lmSt …); these are only what the
+   Rocks tab and the Scoreboard add. Theme tokens only. */
+.rkGroup .lmRock:first-of-type { border-top:0; }
+.rkGroup .goalCardTitle { overflow-wrap:anywhere; min-width:0; }
+.rkCount { white-space:nowrap; flex:0 0 auto; }
+.rkNote { white-space:pre-line; overflow-wrap:anywhere; }
+.rkNoteFold > summary { cursor:pointer; list-style:none; overflow-wrap:anywhere; } .rkNoteFold > summary::-webkit-details-marker { display:none; }
+.rkNoteFold > summary .hint { white-space:nowrap; }
+.rkBadge { cursor:default; display:inline-block; }
+.rkAdd { margin:10px 0 0; } .rkAdd input { font-size:16px; }
+.rkAddOpen { margin:8px 0 0; padding-left:0; }
+.rkQSeg { margin:0 0 10px; }
+.rkForm textarea { width:100%; box-sizing:border-box; }
+.rkAdminNew { margin:0 0 8px; }
+.rkEarlier > summary { cursor:pointer; }
+.rkOld, .rkLine { display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:7px 0; border-top:1px solid var(--line); font-size:13.5px; }
+.rkOld span { min-width:0; overflow-wrap:anywhere; color:var(--ink); } .rkOld small { display:block; color:var(--muted); font-size:12px; }
+.rkOld b { color:var(--muted); font-variant-numeric:tabular-nums; }
+.rkLineSt { font-size:12.5px; font-weight:800; white-space:nowrap; color:var(--muted); }
+.rkLineSt.on { color:var(--good); } .rkLineSt.off { color:var(--bad); } .rkLineSt.done { color:var(--ink); }
+.rkLine .leadNoteOkrName { flex:1 1 auto; min-width:0; overflow-wrap:anywhere; }
+
+.sbd .sbdHead { margin:0 0 4px; }
+.sbdLine { font-size:14px; color:var(--ink); margin:2px 0 0; overflow-wrap:anywhere; }
+.sbdRow { padding:8px 0; border-top:1px solid var(--line); }
+.sbdTop { display:flex; align-items:baseline; gap:8px; }
+.sbdName { flex:1 1 auto; min-width:0; font-size:13.5px; font-weight:700; color:var(--ink); overflow-wrap:anywhere; }
+.sbdGoal { flex:0 0 auto; font-size:12px; color:var(--muted); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.sbdVal { flex:0 0 auto; font-size:15px; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; min-width:34px; text-align:right; }
+.sbdMark { flex:0 0 auto; width:16px; text-align:center; font-size:14px; }
+.sbdRow.on .sbdMark { color:var(--good); } .sbdRow.off .sbdMark { color:var(--bad); }
+.sbdSub { font-size:12px; color:var(--muted); margin:2px 0 0; }
+.sbdCells { display:flex; gap:3px; margin:6px 0 0; }
+.sbdC { flex:1 1 0; max-width:22px; height:18px; display:flex; align-items:center; justify-content:center; border:1.5px solid var(--border); border-radius:5px; font-size:10.5px; font-weight:800; line-height:1; color:var(--muted); background:var(--bg); }
+.sbdC.on { border-color:var(--good); color:var(--good); } .sbdC.off { border-color:var(--bad); color:var(--bad); }
+.sbdC.cur { box-shadow:0 0 0 1.5px var(--ink); }
+.sbdSet { display:flex; align-items:center; gap:6px; padding:6px 0; border-top:1px solid var(--line); flex-wrap:wrap; }
+.sbdSet .sbdName { flex:1 1 130px; }
+.sbdSet select { flex:0 1 128px; min-width:0; margin:0; padding:7px 6px; font-size:13px; }
+.sbdSet input { flex:0 0 76px; width:76px; margin:0; padding:7px 6px; text-align:right; font-size:16px; }
+.mmGlance { margin:10px 0; border-top:1px solid var(--line); padding:10px 0 0; }
+.mmGlance > summary { cursor:pointer; font-size:14px; font-weight:700; color:var(--ink); }
+.mmGlance > h3:first-of-type { margin-top:10px; }

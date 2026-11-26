@@ -2237,6 +2237,8 @@ async function getData(code, year) {
   // single tile, so a custom metric shows up on the dashboard the same week
   // it's added, no separate sync step.
   const metricOverrides = await getMetricOverrides_();
+  /* `okrs` stays for the folded "Earlier objectives"; the rocks that replaced them are NOT here — this answers
+     anyone on the internet — they ride the signed-in boot (getMyBoot's `rocks`) and, for the board, getYwamGp. */
   return { leader: leader, year: yr, entries: entries, okrs: okrs, survey: survey, roster: roster, metricOverrides: metricOverrides };
 }
 
@@ -2384,6 +2386,216 @@ async function deleteObjective(id, code, username, pin) {
   rows = rows.filter(function (r) { return String(r.id) !== String(id); });
   await writeJSON('okrs', rows);
   return getData(code);
+}
+
+/* ==================== Rocks (Nov 2026, Uriah) ====================
+   "I'm going to move OKRs to rocks … as the OKRs are too complicated. Across the whole app we're
+   going to move away from OKRs and move to rocks and scoreboard."
+   A rock is one of a team's few priorities for a quarter: a title, whose it is, on track / off
+   track / done, and a note. No percentages and no targets. One store for the whole base —
+   'rocks' = { rocks: [{id, campus, dept, ministry ('' = the department's, or leadership's own),
+   owner (a staff id, '' = the team's), year, q, title, status on|off|done, note, by, at, updated,
+   updatedBy, fromOkr?, fromLead?}], seeded } — written with mutateKey_. The leadership meeting's
+   rocks are the ones with dept Campus Leadership and no ministry (saveLeadRock writes here).
+   Quarters are the app's 13-week quarters of the week year (meetQ_). This quarter and the next can
+   be written; earlier ones are history.
+
+   Who reads: every staff member, every rock on both campuses — they ride the signed-in boot
+   (getMyBoot's `rocks`), never the public getData; a board member gets title and status only, for
+   the quarter report (getYwamGp). Applicants, students and guests get none. Who writes (canWriteRock_): an admin any; Campus Leadership their
+   campus's leadership rocks; anyone their own campus + department's (both read from the STAFF
+   RECORD — a payload naming another is refused, and an existing rock is only writable where it
+   already is); a ministry's people, its leader and its department's director that ministry's.
+
+   What was there before is brought in ONCE and never deleted (rocksSeed_): each objective of the
+   quarter the app moved in (ROCKS_START), and any written ahead for the quarter after it, becomes
+   a rock — status done at 100%, its key results as lines of the note — and the leadership
+   meeting's own rocks (leadMeet:<campus>.rocks) come across with their ids. Until the first write
+   that is worked out on every read and nothing is stored (a page open writes no blob); the first
+   write stores it inside the same mutateKey_ and marks the store seeded, so two phones at once
+   cannot make two of anything. The 'okrs' blob and leadMeet's old list are left as they are. */
+const ROCKS_START = { year: 2026, q: 4, from: '2026-09-28' };   // the quarter the app moved to rocks in; its first Monday
+const ROCK_STATUS = ['on', 'off', 'done'];
+const ROCK_MAX = { title: 120, note: 1200, each: 10, total: 8000 };
+/* How a metric adds up over weeks — public/taxonomy.js's modeOf() and its LATEST_SET, mirrored
+   (tests/test-rocks.mjs fails if they drift). Only used to read an objective's progress once. */
+const LATEST_SET_ = ['Total Staff', 'Staff Debt ($)', 'Base Finances ($)', 'Total in Bank Account ($)',
+  'Base Cash Reserve ($)', 'Finances Consolidated ($)',
+  'Schools', 'Ministry Staff', 'Students Enrolled', 'Students Supported Financially',
+  'Students Given Food & Housing', 'Current Coaches', 'Coaches in Training', 'Musicians in Training',
+  'Students Struggling', 'Potential Staff', 'Total Kids', 'Churches Being Led',
+  'Improvement Projects in Progress', 'Projects in Process', 'Base Plants in Planning',
+  'Youth Enrolled', 'Highest Viewed Video Views', 'Trainees in Track',
+  'Students in Discipleship', 'Players Being Discipled',
+  'Partner Churches Supported', 'Combined Congregation Attendance'];
+function modeOf_(metric) {
+  metric = String(metric || '');
+  if (metric.indexOf('(1-10)') > -1 || metric.indexOf('(%)') > -1) return 'avg';
+  if (LATEST_SET_.indexOf(metric) > -1) return 'latest';
+  const parts = metric.split(' '), last = parts[parts.length - 1];
+  if (last === 'Pages' || last === 'Followers') return 'latest';
+  return 'sum';
+}
+function rocksFix_(d) { if (!Array.isArray(d.rocks)) d.rocks = []; return d; }
+function rockNext_(n) { return n.q === 4 ? { year: n.year + 1, q: 1 } : { year: n.year, q: n.q + 1 }; }
+function isLeadRock_(r, campus) { return r.campus === campus && r.dept === LEADERSHIP_DEPT && !r.ministry; }
+/* the objectives as getData gives them, one per id, with when they were last edited */
+function okrObjects_(rows) {
+  const out = [], byId = {};
+  (rows || []).forEach(function (o) {
+    if (!o || !o.id) return;
+    if (!byId[o.id]) { byId[o.id] = { id: String(o.id), campus: o.campus, quarter: Number(o.quarter), dept: o.dept, objective: o.objective, krs: [], updated: '', year: yearOf_(o) }; out.push(byId[o.id]); }
+    if (String(o.updated || '') > byId[o.id].updated) byId[o.id].updated = String(o.updated || '');
+    byId[o.id].krs.push({ text: o.kr, metricKey: o.metricKey || '', target: Number(o.target) || 0, manual: Number(o.manualPct) || 0, kind: o.kind === 'count' ? 'count' : '', current: Number(o.current) || 0 });
+  });
+  return out;
+}
+/* rollup.js's krProgress, for the one reading the move needs: a linked key result is the
+   quarter's figure against its target, a count is the count so far, anything else the typed %. */
+function okrKrPct_(o, kr, idx) {
+  if (kr.metricKey) {
+    const wks = idx[o.campus + '|' + kr.metricKey + '|' + o.year] || {}, pairs = [];
+    Object.keys(wks).forEach(function (w) { if (meetQ_(Number(w)) === o.quarter) pairs.push([Number(w), wks[w]]); });
+    if (!pairs.length) return 0;
+    pairs.sort(function (a, b) { return a[0] - b[0]; });
+    const mode = modeOf_(kr.metricKey.split('|')[2]);
+    let actual = 0; pairs.forEach(function (p) { actual += p[1]; });
+    if (mode === 'avg') actual = actual / pairs.length; else if (mode === 'latest') actual = pairs[pairs.length - 1][1];
+    return Math.max(0, Math.min(100, kr.target > 0 ? Math.round(actual / kr.target * 100) : 0));
+  }
+  if (kr.kind === 'count') return Math.min(100, kr.target > 0 ? Math.round(Math.max(0, kr.current) / kr.target * 100) : 0);
+  return Math.min(100, Math.max(0, kr.manual));
+}
+/* Bring in what was there before, into `d`, unless it is in already. Pure: `ctx` holds what was read. */
+function rocksSeed_(d, ctx) {
+  const have = {}; d.rocks.forEach(function (r) { have[r.id] = 1; });
+  const idx = {};
+  (ctx.entries || []).forEach(function (r) {
+    const v = Number(r.value); if (!r.campus || isNaN(v) || SENSITIVE.indexOf(r.metric) > -1) return;
+    const k = r.campus + '|' + normDept_(r.dept, r.ministry) + '|' + r.ministry + '|' + r.metric + '|' + yearOf_(r);
+    (idx[k] = idx[k] || {})[String(r.week)] = v;
+  });
+  okrObjects_(ctx.okrs).forEach(function (o) {
+    let year = 0, q = 0;
+    if (o.quarter === ROCKS_START.q && o.year === ROCKS_START.year) { year = ROCKS_START.year; q = ROCKS_START.q; }
+    else if (o.quarter === 1 && ROCKS_START.q === 4 && o.updated.slice(0, 10) >= ROCKS_START.from) { year = ROCKS_START.year + 1; q = 1; o.year = year; }   // written ahead for the quarter after
+    const id = 'rk_o_' + o.id;
+    if (!year || have[id] || !o.campus || !o.dept || !String(o.objective || '').trim()) return;
+    const pcts = o.krs.map(function (kr) { return okrKrPct_(o, kr, idx); });
+    const pct = pcts.length ? Math.round(pcts.reduce(function (a, b) { return a + b; }, 0) / pcts.length) : 0;
+    const full = String(o.objective).trim(), lines = full.length > ROCK_MAX.title ? [full] : [];
+    o.krs.forEach(function (kr, i) { const tx = String(kr.text || '').trim(); if (tx) lines.push('• ' + (tx.length > 90 ? tx.slice(0, 89) + '…' : tx) + ' — ' + pcts[i] + '%'); });
+    /* clearly one ministry's: every linked key result reads that same ministry of this department */
+    const mins = {}; let linked = 0;
+    o.krs.forEach(function (kr) { if (!kr.metricKey) return; const p = kr.metricKey.split('|'); linked++; if (normDept_(p[0], p[1]) === normDept_(o.dept)) mins[p[1]] = 1; else mins['?'] = 1; });
+    const only = Object.keys(mins);
+    const dept = normDept_(o.dept);
+    d.rocks.push({ id: id, campus: o.campus, dept: dept, ministry: (dept !== LEADERSHIP_DEPT && linked && only.length === 1 && only[0] !== '?') ? only[0] : '', owner: '',
+      year: year, q: q, title: full.slice(0, ROCK_MAX.title), status: pct >= 100 ? 'done' : 'on', note: lines.join('\n').slice(0, ROCK_MAX.note),
+      by: '', at: o.updated || '', updated: o.updated || '', fromOkr: o.id });
+    have[id] = 1;
+  });
+  Object.keys(ctx.lead || {}).forEach(function (campus) {
+    (ctx.lead[campus] || []).forEach(function (r) {
+      if (!r || !r.id || have[r.id] || !String(r.title || '').trim()) return;
+      d.rocks.push({ id: String(r.id), campus: campus, dept: LEADERSHIP_DEPT, ministry: '', owner: typeof r.owner === 'string' ? r.owner : '', year: Number(r.year), q: Number(r.q),
+        title: String(r.title).slice(0, ROCK_MAX.title), status: ROCK_STATUS.indexOf(r.status) > -1 ? r.status : 'on', note: String(r.note || '').slice(0, ROCK_MAX.note),
+        by: r.by || '', at: r.created || r.updated || '', updated: r.updated || '', updatedBy: r.updatedBy || '', okrId: r.okrId || '', fromLead: true });
+      have[r.id] = 1;
+    });
+  });
+  return d;
+}
+async function rocksCtx_() {
+  const [okrs, rows, docs] = await Promise.all([getOkrs_(), getEntries_(), Promise.all(CAMPUS_IDS_.map(function (c) { return readJSON(meetKey_(c), {}); }))]);
+  const lead = {}; CAMPUS_IDS_.forEach(function (c, i) { lead[c] = Array.isArray(docs[i] && docs[i].rocks) ? docs[i].rocks : []; });
+  return { okrs: okrs, entries: await withTeamRows_(rows), lead: lead };
+}
+/* Every rock, to read. Before the first write the old objectives and the meeting's rocks are laid in here, unsaved. */
+async function getRocks_() {
+  const d = rocksFix_(await readJSON('rocks', {}));
+  if (!d.seeded) rocksSeed_(d, await rocksCtx_());
+  return d.rocks;
+}
+async function rocksMutate_(fn) {
+  const first = rocksFix_(await readJSON('rocks', {}));
+  const ctx = first.seeded ? null : await rocksCtx_();
+  return mutateKey_('rocks', {}, function (d) {
+    rocksFix_(d);
+    if (!d.seeded) { rocksSeed_(d, ctx || {}); d.seeded = baseToday_(); }
+    return fn(d);
+  });
+}
+function canWriteRock_(s, campus, dept, ministry) {
+  if (!s || isApplicant_(s) || s.active === false || !campus || !dept) return false;
+  if (s.isAdmin) return true;
+  if (campus !== s.campus) return false;
+  if (dept === LEADERSHIP_DEPT) return deptOf_(s) === LEADERSHIP_DEPT;
+  if (deptOf_(s) === dept) return true;                                     // your own department's, as its objectives were
+  if (deptOf_(s) === LEADERSHIP_DEPT && s.ministry === dept) return true;   // its director
+  return !!ministry && canLogFor_(s, campus, dept, ministry);              // a ministry you are in (main or other) or lead
+}
+/* One rock in or changed. `x`: {id?, campus?, dept?, ministry?, title, owner, year, q, status, note}. A new rock
+   with no place named is the caller's own campus and department's; an existing one stays where it is. */
+async function rockSave_(s, x, only) {
+  x = x && typeof x === 'object' ? x : {};
+  const title = dutyText_(x.title, ROCK_MAX.title); if (!title) return { ok: false, err: 'bad_title' };
+  const n = meetNow_(), next = rockNext_(n), staff = await getStaff_();
+  return rocksMutate_(function (d) {
+    const id = dutyText_(x.id, 120), i = id ? d.rocks.findIndex(function (r) { return r.id === id; }) : -1;
+    if (id && i === -1) return { abort: true, ok: false, err: 'not_found' };
+    const prev = i > -1 ? d.rocks[i] : null;
+    let campus, dept, ministry;
+    if (prev) { campus = prev.campus; dept = prev.dept; ministry = prev.ministry || ''; }
+    else {
+      campus = str_(x.campus, 40) || s.campus; ministry = str_(x.ministry, 80) || '';
+      dept = x.dept ? normDept_(str_(x.dept, 80), ministry) : deptOf_(s);
+      if (dept === LEADERSHIP_DEPT) ministry = '';
+    }
+    if (CAMPUS_IDS_.indexOf(campus) === -1 || !dept) return { abort: true, ok: false, err: 'bad_target' };
+    if (only && !only({ campus: campus, dept: dept, ministry: ministry })) return { abort: true, ok: false, err: 'not_found' };
+    if (!canWriteRock_(s, campus, dept, ministry)) return { abort: true, ok: false, err: 'not_authorized' };
+    let year = Number(x.year), q = Number(x.q);
+    if (prev) {
+      if (!((prev.year === n.year && prev.q === n.q) || (prev.year === next.year && prev.q === next.q))) return { abort: true, ok: false, err: 'past' };   // an earlier quarter is history
+      if (!((year === n.year && q === n.q) || (year === next.year && q === next.q))) { year = prev.year; q = prev.q; }
+    } else if (!(year === next.year && q === next.q)) { year = n.year; q = n.q; }
+    const who = typeof x.owner === 'string' && staff.some(function (p) { return p.id === x.owner && p.campus === campus && p.active !== false && !p.archived && !isApplicant_(p); });
+    const owner = who ? x.owner : (prev && x.owner === prev.owner ? prev.owner || '' : '');   // someone who has since left keeps their rock until it is given to another
+    const same = function (r) { return r !== prev && r.campus === campus && r.dept === dept && (r.ministry || '') === ministry && (r.owner || '') === owner && r.year === year && r.q === q; };
+    if ((!prev || (prev.owner || '') !== owner || prev.year !== year || prev.q !== q) && d.rocks.filter(same).length >= ROCK_MAX.each) return { abort: true, ok: false, err: 'too_many' };
+    if (!prev && d.rocks.length >= ROCK_MAX.total) return { abort: true, ok: false, err: 'too_many' };
+    const now = new Date().toISOString();
+    const rec = Object.assign({}, prev || {}, { id: prev ? prev.id : meetId_('rk_'), campus: campus, dept: dept, ministry: ministry, owner: owner, year: year, q: q, title: title,
+      status: ROCK_STATUS.indexOf(x.status) > -1 ? x.status : (prev ? prev.status : 'on'), note: String(x.note == null ? (prev ? prev.note || '' : '') : x.note).trim().slice(0, ROCK_MAX.note),
+      updated: now, updatedBy: s.id });
+    if (x.okrId !== undefined) rec.okrId = dutyText_(x.okrId, 60);   // an old link is kept; nothing shows it
+    if (!prev) { rec.at = now; rec.by = s.id; }
+    if (i > -1) d.rocks[i] = rec; else d.rocks.push(rec);
+    return { ok: true, saved: rec.id, rocks: d.rocks };
+  });
+}
+async function rockDelete_(s, id, only) {
+  const n = meetNow_(), next = rockNext_(n);
+  return rocksMutate_(function (d) {
+    const i = d.rocks.findIndex(function (r) { return r.id === id; });
+    if (i === -1 || (only && !only(d.rocks[i]))) return { abort: true, ok: false, err: 'not_found' };
+    const r = d.rocks[i];
+    if (!canWriteRock_(s, r.campus, r.dept, r.ministry || '')) return { abort: true, ok: false, err: 'not_authorized' };
+    if (!((r.year === n.year && r.q === n.q) || (r.year === next.year && r.q === next.q))) return { abort: true, ok: false, err: 'past' };
+    d.rocks.splice(i, 1);
+    return { ok: true, rocks: d.rocks };
+  });
+}
+async function saveRock(username, pin, x) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  return rockSave_(s, x);
+}
+async function deleteRock(username, pin, id) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  return rockDelete_(s, String(id || ''));
 }
 
 /* ==================== weekly goals ====================
@@ -4076,9 +4288,43 @@ async function saveMetricOverrides(username, pin, campus, dept, ministry, hidden
   }
 
   const rec = { campus: campus, dept: dept, ministry: ministry, hidden: cleanHidden, custom: cleanCustom, cadence: cleanCadence, updated: new Date().toISOString() };
+  if (existing && existing.goals && typeof existing.goals === 'object') rec.goals = existing.goals;   // the Scoreboard's weekly goals (saveMetricGoals) ride on the same row
   if (idx > -1) rows[idx] = rec; else rows.push(rec);
   await writeJSON('metricOverrides', rows);
   return { ok: true, metricOverrides: rows };
+}
+
+/* ---- the Scoreboard's weekly goals (Nov 2026, Uriah: "move the KPI and numbers things to scoreboard") ----
+   A ministry's numbers page is its Scoreboard: each number can have a goal for a week and which way
+   is good — at least ('gte') or at most ('lte') — and the page marks each week ✓ or ✗ against it.
+   Set by whoever may change what the ministry tracks (canEditMetrics_). Kept as `goals`
+   {metric: {goal, dir}} on the ministry's metricOverrides row, so it reaches every page with getData
+   and costs no call of its own. The whole map is sent each time; a metric left out has no goal.
+   A goal outside a score's or a percentage's edges (kpiRange_) is refused and named in `rejected`,
+   the good ones beside it kept — as a typed number is. */
+const MAX_METRIC_GOALS = 60;
+async function saveMetricGoals(username, pin, campus, dept, ministry, goals) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  campus = str_(campus, 40); ministry = str_(ministry, 80); dept = normDept_(str_(dept, 80), ministry);
+  if (!campus || !dept || !ministry) return { ok: false, err: 'bad_target' };
+  if (!canEditMetrics_(s, campus, dept, ministry)) return { ok: false, err: 'not_authorized' };
+  const clean = {}, rejected = [];
+  Object.keys(goals && typeof goals === 'object' && !Array.isArray(goals) ? goals : {}).forEach(function (m) {
+    const name = str_(m, 80), g = goals[m];
+    if (!name || SENSITIVE.indexOf(name) > -1 || !g || typeof g !== 'object' || g.goal === '' || g.goal == null) return;
+    const v = finiteNum_(g.goal, -1e9, 1e9);
+    if (v == null || kpiOutOfRange_(ministry, name, v)) { rejected.push(name); return; }
+    if (Object.keys(clean).length >= MAX_METRIC_GOALS) { rejected.push(name); return; }
+    clean[name] = { goal: v, dir: g.dir === 'lte' ? 'lte' : 'gte' };
+  });
+  const rows = await getMetricOverrides_();
+  const idx = rows.findIndex(function (r) { return r.campus === campus && r.dept === dept && r.ministry === ministry; });
+  const rec = idx > -1 ? rows[idx] : { campus: campus, dept: dept, ministry: ministry, hidden: [], custom: [], cadence: {} };
+  rec.goals = clean; rec.goalsBy = s.id; rec.updated = new Date().toISOString();
+  if (idx === -1) rows.push(rec);
+  await writeJSON('metricOverrides', rows);
+  return { ok: true, metricOverrides: rows, rejected: rejected };
 }
 
 /* Renaming a metric the ministry added itself. The name is the join key for
@@ -4106,6 +4352,7 @@ async function renameCustomMetric(username, pin, campus, dept, ministry, oldName
   const now = new Date().toISOString();
   rec.custom = rec.custom.map(function (m) { return m === oldName ? newName : m; });
   if (rec.cadence && rec.cadence[oldName]) { rec.cadence[newName] = rec.cadence[oldName]; delete rec.cadence[oldName]; }
+  if (rec.goals && rec.goals[oldName]) { rec.goals[newName] = rec.goals[oldName]; delete rec.goals[oldName]; }
   rec.updated = now;
   await writeJSON('metricOverrides', rows);
 
@@ -6198,7 +6445,7 @@ async function getTasksBoot(username, pin, calFrom) {
 }
 
 const BOOT_KEYS = ['libClub', 'entries', 'survey', 'okrs', 'dailyLogs', 'goals', 'holidays', 'smartGoals', 'broadcasts',
-  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks', 'holidayCatch', 'libHl', 'worshipWeeks:poipet', 'worshipWeeks:siemreap', 'structurePlans'];
+  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks', 'holidayCatch', 'libHl', 'worshipWeeks:poipet', 'worshipWeeks:siemreap', 'structurePlans', 'rocks', 'leadMeet:poipet', 'leadMeet:siemreap'];
 async function awaitingBoot_(username, pin) {
   const w = await verifyAwaiting_(username, pin);
   if (!w) return null;
@@ -6292,6 +6539,7 @@ async function getMyBoot(username, pin) {
     required: (reqDocs && !isApplicant_(s)) ? requiredFor_(s, reqDocs) : null,
     // admins only: when the nightly backup last ran (netlify/functions/backup.js)
     org: await part(function () { return getYwamGp(username, pin); }),   // titles, YWAM GP roles, the advisory board
+    rocks: (await part(getRocks_)) || [],   // the quarter's priorities, every team's on both campuses (they replaced the objectives)
     kmFixes: await part(async function () { return kmFixesOf_(await getKmReview_()); }),   // a Khmer reviewer's corrections, live for everyone
     push: await part(async function () { const k = await pushKeys_(); return k ? { key: k.pub, prefs: pushPrefsOf_(s) } : null; }),   // reminders: the app's public key and your times
     backup: s.isAdmin ? await part(backupStatus_) : null,
@@ -8585,7 +8833,7 @@ async function meetOut_(campus, d, extra) {
   });
   const n = meetNow_();
   return Object.assign({ ok: true, campus: campus, now: new Date().toISOString(), week: n.week, year: n.year, q: n.q, weeks: weeks, minutes: d.minutes, parts: MEET_PARTS,
-    score: score, rocks: d.rocks, headlines: d.headlines, run: d.run, past: d.past, todoSince: meetSince_(d), todoCard: d.todoCard }, extra || {});
+    score: score, rocks: (await getRocks_()).filter(function (r) { return isLeadRock_(r, campus); }), headlines: d.headlines, run: d.run, past: d.past, todoSince: meetSince_(d), todoCard: d.todoCard }, extra || {});
 }
 /* One load for the Meeting tab: the meeting, and the board it stands on. */
 async function getLeadMeeting(username, pin) {
@@ -8674,39 +8922,22 @@ async function saveLeadScoreValue(username, pin, id, key, value) {
     keys.slice(0, Math.max(0, keys.length - MEET_MAX.vals)).forEach(function (k) { delete m.vals[k]; });
   });
 }
-/* ---- rocks: the quarter's few priorities, each person's and the team's ---- */
+/* ---- rocks: the quarter's few priorities, each person's and the team's ----
+   Since the whole app moved to rocks they live in the one 'rocks' store (rockSave_): leadership's are
+   the ones with dept Campus Leadership and no ministry on this campus. leadMeet's old list is left as it was. */
 async function saveLeadRock(username, pin, x) {
   const a = await leadAuth_(username, pin); if (a.out) return a.out;
   x = x && typeof x === 'object' ? x : {};
-  const title = dutyText_(x.title, 120); if (!title) return { ok: false, err: 'bad_title' };
-  const ids = await meetCampusIds_(a.campus), n = meetNow_();
-  const owner = typeof x.owner === 'string' && ids[x.owner] != null ? x.owner : '';
-  const next = n.q === 4 ? { year: n.year + 1, q: 1 } : { year: n.year, q: n.q + 1 };
-  return meetMutate_(a, function (d) {
-    const id = dutyText_(x.id, 40), i = id ? d.rocks.findIndex(function (r) { return r.id === id; }) : -1;
-    if (id && i === -1) return { abort: true, ok: false, err: 'not_found' };
-    const prev = i > -1 ? d.rocks[i] : null;
-    let year = Number(x.year), q = Number(x.q);
-    const okQ = (year === n.year && q === n.q) || (year === next.year && q === next.q) || (prev && year === prev.year && q === prev.q);
-    if (!okQ) { if (prev) { year = prev.year; q = prev.q; } else { year = n.year; q = n.q; } }
-    if (!prev || prev.owner !== owner || prev.year !== year || prev.q !== q) {
-      if (d.rocks.filter(function (r) { return r !== prev && r.owner === owner && r.year === year && r.q === q; }).length >= MEET_MAX.rocksEach) return { abort: true, ok: false, err: 'too_many' };
-    }
-    const now = new Date().toISOString();
-    const rec = Object.assign({}, prev || {}, { id: prev ? prev.id : meetId_('rk_'), title: title, owner: owner, year: year, q: q, okrId: dutyText_(x.okrId, 60),
-      status: MEET_ROCK_STATUS.indexOf(x.status) > -1 ? x.status : 'on', note: dutyText_(x.note, 300), updated: now, updatedBy: a.s.id });
-    if (!prev) { rec.created = now; rec.by = a.s.id; }
-    if (i > -1) d.rocks[i] = rec; else d.rocks.push(rec);
-    if (d.rocks.length > MEET_MAX.rocks) d.rocks.splice(0, d.rocks.length - MEET_MAX.rocks);
-    return { saved: rec.id };
-  });
+  const r = await rockSave_(a.s, Object.assign({}, x, { campus: a.campus, dept: LEADERSHIP_DEPT, ministry: '' }),
+    function (place) { return isLeadRock_(place, a.campus); });
+  if (!r || !r.ok) return r || { ok: false };
+  return meetOut_(a.campus, await getMeetDoc_(a.campus), { saved: r.saved });
 }
 async function deleteLeadRock(username, pin, id) {
   const a = await leadAuth_(username, pin); if (a.out) return a.out;
-  return meetMutate_(a, function (d) {
-    const n = d.rocks.length; d.rocks = d.rocks.filter(function (r) { return r.id !== id; });
-    if (d.rocks.length === n) return { abort: true, ok: false, err: 'not_found' };
-  });
+  const r = await rockDelete_(a.s, String(id || ''), function (rock) { return isLeadRock_(rock, a.campus); });
+  if (!r || !r.ok) return r || { ok: false };
+  return meetOut_(a.campus, await getMeetDoc_(a.campus));
 }
 /* ---- headlines: a line of good or hard news, added through the week ---- */
 async function saveLeadHeadline(username, pin, x) {
@@ -13501,11 +13732,9 @@ async function markSeen(username, pin, time) {
 async function adminLooseEnds(username, pin) {
   const s = await adminGate_(username, pin);
   if (!s) return { ok: false, err: 'not_authorized' };
-  const [np, entries, okrs, seenRec] = await Promise.all([getNumbersPeople_(), getEntries_(), getOkrs_(), readJSON('lastSeen', {})]);
-  /* Numbers are keyed by week, so they are read in this week's year; objectives
-     have no year of their own (yearOf_ reads their edit stamp) and go by the
-     calendar quarter, so they keep the calendar year. */
-  const yr = currentYear_(), today = baseToday_(), wk = isoWeek_(today), wkYr = weekYear_(today);
+  const [np, entries, rocks, seenRec] = await Promise.all([getNumbersPeople_(), getEntries_(), getRocks_(), readJSON('lastSeen', {})]);
+  /* Numbers are keyed by week, so they are read in this week's year; rocks carry their own. */
+  const today = baseToday_(), wk = isoWeek_(today), wkYr = weekYear_(today);
   const lastWeek = {};
   entries.forEach(function (r) {
     if (yearOf_(r) !== wkYr || r.value === null || r.value === undefined) return;
@@ -13514,19 +13743,14 @@ async function adminLooseEnds(username, pin) {
   });
   const people = {};
   Object.keys(np).forEach(function (k) { people[k] = { main: np[k].main || '', backup: np[k].backup || '' }; });
-  const quarter = Math.floor((Number(today.slice(5, 7)) - 1) / 3) + 1;
-  const objectives = {};
-  okrs.forEach(function (r) {
-    if (yearOf_(r) !== yr || Number(r.quarter) !== quarter) return;
-    const k = r.campus + '|' + r.dept + '|' + r.id;
-    const o = objectives[k] || (objectives[k] = { campus: r.campus, dept: r.dept, objective: r.objective, updated: '', fed: false });
-    if ((r.updated || '') > o.updated) o.updated = r.updated || '';
-    if (r.metricKey) o.fed = true;   // fed by a ministry's numbers: it moves without anyone editing it
-  });
+  /* this quarter's rocks (the app's 13-week quarter of the week year) that are still open, with when each was last touched */
+  const quarter = meetQ_(wk);
+  const open = rocks.filter(function (r) { return r.year === wkYr && r.q === quarter && r.status !== 'done'; })
+    .map(function (r) { return { id: r.id, campus: r.campus, dept: r.dept, ministry: r.ministry || '', title: r.title, status: r.status, updated: r.updated || r.at || '' }; });
   return {
     ok: true, today: today, week: wk, quarter: quarter, lastWeek: lastWeek, people: people,
     seenSince: seenRec.started || '', seen: (seenRec.seen && typeof seenRec.seen === 'object') ? seenRec.seen : {},
-    objectives: Object.keys(objectives).map(function (k) { return objectives[k]; })
+    rocks: open
   };
 }
 
@@ -15884,7 +16108,9 @@ async function getYwamGp(username, pin) {
   });
   const board = (await getBoard_()).filter(function (b) { return b.active !== false; })
     .map(function (b) { return boardOut_(b, staff); }).sort(boardSort_);
-  return { ok: true, viewer: v.kind, me: v.kind === 'board' ? boardOut_(v.who, staff) : null,
+  /* the board's quarter report lists each campus's rocks: title and status, nothing else (staff have them all from their boot) */
+  const rocks = v.kind === 'board' ? (await getRocks_()).map(function (r) { return { id: r.id, campus: r.campus, dept: r.dept, ministry: r.ministry || '', year: r.year, q: r.q, title: r.title, status: r.status }; }) : undefined;
+  return { ok: true, viewer: v.kind, me: v.kind === 'board' ? boardOut_(v.who, staff) : null, rocks: rocks,
     titles: titles, gpRoles: GP_ROLE_IDS,
     gp: gp.sort(function (a, b) { return GP_ROLE_IDS.indexOf(a.gpRole) - GP_ROLE_IDS.indexOf(b.gpRole) || String(a.name).localeCompare(String(b.name)); }),
     campuses: campuses, board: board, boardRoles: BOARD_ROLES };
@@ -16115,7 +16341,7 @@ function demoStore_(data) {
   };
 }
 const DEMO_USER = 'demo', DEMO_PIN = '0000';
-const DEMO_WRITES = ['saveDaily', 'saveGoals', 'saveMyWeek', 'deleteMyWeek', 'saveMyHabits', 'saveGpTask', 'deleteGpTask', 'respondGpTask',
+const DEMO_WRITES = ['saveRock', 'deleteRock', 'saveDaily', 'saveGoals', 'saveMyWeek', 'deleteMyWeek', 'saveMyHabits', 'saveGpTask', 'deleteGpTask', 'respondGpTask',
   'orderGpTasks', 'fileGpTask', 'saveGpTaskList', 'saveGpListOrder', 'saveGpTaskFilter', 'saveTask', 'deleteTask', 'clearDoneTasks',
   'saveDashLayout', 'saveQuickApps', 'libSaveReads', 'libSaveMine', 'markSeen', 'catchSanta', 'catchHoliday', 'saveMyKpiDay',
   'saveMyMinistry', 'staffProfile', 'teamRoster', 'savePrayer', 'prayedFor', 'saveMyPersonality', 'saveMyGStrengths', 'saveMyApest',
@@ -16187,11 +16413,15 @@ function demoData_() {
       { text: 'Train the new barista', pct: 100, done: true, metricKey: '' }, { text: 'Visit a church in town', pct: 100, done: true, metricKey: '' },
       { text: 'Language study 3 times', pct: 70, done: false, metricKey: '' }] }
   ];
-  const quarter = Math.min(4, Math.floor((wk - 1) / 13) + 1); /* objectives keep quarters 1–4 (okrSectionHtml's qNow) */
-  const okr = function (id, dept, objective, krs) { return krs.map(function (k) { return Object.assign({ campus: 'siemreap', quarter: quarter, dept: dept, id: id, objective: objective, kr: '', metricKey: '', target: 0, manualPct: 0, group: '', kind: '', current: 0, updated: now }, k); }); };
-  const okrs = [].concat(
-    okr('demo-o1', 'Community Service', 'Make the cafe a place people meet Jesus', [{ kr: 'Serve 2,500 cups this quarter', metricKey: 'Community Service|Cafe|Cups Sold', target: 2500 }, { kr: 'Train two new baristas', kind: 'count', target: 2, current: 1 }, { kr: 'A prayer corner in the cafe', manualPct: 40 }]),
-    okr('demo-o2', 'Campus Leadership', 'Every staff member walks with a mentor', [{ kr: 'Two 1-on-1s a month for everyone', manualPct: 65 }, { kr: 'Every new staff member has a mentor in their first month', manualPct: 80 }]));
+  /* the quarter's rocks (they replaced the objectives): the Cafe's, its department's and leadership's */
+  const rq = meetNow_();
+  const rock = function (id, dept, ministry, owner, title, status, note) { return { id: id, campus: 'siemreap', dept: dept, ministry: ministry, owner: owner, year: rq.year, q: rq.q, title: title, status: status, note: note, by: 'dm3', at: now, updated: now }; };
+  const rocks = { seeded: 'demo', rocks: [
+    rock('demo-r1', 'Community Service', 'Cafe', 'dm1', 'Train two new baristas', 'on', 'One is trained; the second starts next week'),
+    rock('demo-r2', 'Community Service', 'Cafe', '', 'A prayer corner in the cafe', 'off', 'Waiting on the shelves'),
+    rock('demo-r3', 'Community Service', '', '', 'Every ministry serves one new village this quarter', 'on', ''),
+    rock('demo-r4', 'Campus Leadership', '', '', 'Every staff member walks with a mentor', 'on', ''),
+    rock('demo-r5', 'Campus Leadership', '', '', 'Two 1-on-1s a month for everyone', 'done', '')] };
   const gpTasks = {
     lists: [{ id: 'demo-l1', campus: 'siemreap', scope: 'personal', dept: '', ministry: '', ownerId: 'dm1', shared: false, title: 'Inbox', inboxKept: true, order: 0, created: now, by: 'dm1' },
       { id: 'demo-l2', campus: 'siemreap', scope: 'ministry', dept: 'Community Service', ministry: 'Cafe', ownerId: '', shared: false, title: 'Cafe', order: 1, created: now, by: 'dm3' }],
@@ -16205,7 +16435,7 @@ function demoData_() {
   const prayers = [
     { id: 'demo-p1', staffId: 'dm5', campus: 'siemreap', scope: 'campus', text: 'For the DTS students arriving next month — safe travel and open hearts.', created: now, prayed: ['dm2', 'dm3'], answered: '', answerNote: '' },
     { id: 'demo-p2', staffId: 'dm8', campus: 'siemreap', scope: 'campus', text: 'My family back home, and my visa renewal.', created: now, prayed: ['dm1'], answered: '', answerNote: '' }];
-  return { staff: staff, entries: entries, survey: survey, dailyLogs: dailyLogs, goals: goals, okrs: okrs, gpTasks: gpTasks, prayers: prayers, loginThrottle: {} };
+  return { staff: staff, entries: entries, survey: survey, dailyLogs: dailyLogs, goals: goals, rocks: rocks, metricOverrides: [{ campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', hidden: [], custom: [], cadence: {}, goals: { 'Cups Sold': { goal: 150, dir: 'gte' } } }], gpTasks: gpTasks, prayers: prayers, loginThrottle: {} };
 }
 async function demoCall(fn, args) {
   fn = String(fn || '');
@@ -16241,6 +16471,9 @@ const HANDLERS = {
   getData: function (a) { return getData(a[0], a[1]); },
   saveEntries: function (a) { return saveEntries(a[0], a[1], a[2], a[3], a[4]); },
   saveObjective: function (a) { return saveObjective(a[0], a[1], a[2], a[3]); },
+  saveRock: function (a) { return saveRock(a[0], a[1], a[2]); },
+  deleteRock: function (a) { return deleteRock(a[0], a[1], a[2]); },
+  saveMetricGoals: function (a) { return saveMetricGoals(a[0], a[1], a[2], a[3], a[4], a[5]); },
   deleteObjective: function (a) { return deleteObjective(a[0], a[1], a[2], a[3]); },
   teamRoster: function (a) { return teamRoster(a[0], a[1]); },
   saveMyPersonality: function (a) { return saveMyPersonality(a[0], a[1], a[2]); },

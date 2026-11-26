@@ -2,8 +2,10 @@
    the day someone opened the app — the date only, at most one write a day, never
    from the boot; the facts come back as the page needs them: the last week each
    ministry has numbers for this year (blank values and other years ignored), who
-   is set to enter each ministry's numbers, and this quarter's objectives with
-   when they were last edited and whether a ministry's numbers feed them. */
+   is set to enter each ministry's numbers, and this quarter's open rocks with
+   when each was last updated (until Nov 2026: objectives, marked when a
+   ministry's numbers fed them — rocks have no numbers behind them, so that
+   mark is gone). */
 import { REPO, tmpDir } from './env.mjs';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
@@ -43,12 +45,16 @@ mem.entries = [
   { campus: 'siemreap', dept: 'Community Service', ministry: 'Ponlork School', metric: 'Hours', week: 50, year: Y - 1, value: 2 },
 ];
 mem.numbersPeople = { 'siemreap|Community Service|Cafe': { main: 'st_dara', backup: '' } };
-mem.okrs = [
-  { campus: 'siemreap', dept: 'Community Service', quarter: Q, year: Y, id: 'o1', objective: 'Grow the cafe', kr: 'a', metricKey: '', updated: '2000-01-01T00:00:00Z' },
-  { campus: 'siemreap', dept: 'Community Service', quarter: Q, year: Y, id: 'o1', objective: 'Grow the cafe', kr: 'b', metricKey: '', updated: Y + '-01-05T00:00:00Z' },
-  { campus: 'siemreap', dept: 'Community Service', quarter: Q, year: Y, id: 'o2', objective: 'Pray more', kr: 'c', metricKey: 'Community Service|Ponlork School|Hours', updated: '2000-01-01T00:00:00Z' },
-  { campus: 'siemreap', dept: 'Community Service', quarter: Q === 4 ? 1 : Q + 1, year: Y, id: 'o3', objective: 'Another quarter', kr: 'd', metricKey: '', updated: '' },
-];
+/* the server's own week and quarter: 13-week quarters of the week year (as the Rocks tab counts them) */
+const meetNow = (await call('getLeadMeeting', ['uriah', '1234'])).body, RQ = meetNow.q, RY = meetNow.year;
+const rk = (id, title, status, updated, extra) => Object.assign({ id, campus: 'siemreap', dept: 'Community Service', ministry: '', owner: '', year: RY, q: RQ, title, status, note: 'private-ish note', by: 'st_dara', at: '2000-01-01T00:00:00Z', updated }, extra || {});
+mem.rocks = { seeded: 'test', rocks: [
+  rk('k1', 'Grow the cafe', 'on', RY + '-01-05T00:00:00Z', { ministry: 'Cafe' }),
+  rk('k2', 'Pray more', 'off', ''),
+  rk('k3', 'Already done', 'done', '2000-01-01T00:00:00Z'),
+  rk('k4', 'Another quarter', 'on', '', RQ === 4 ? { year: RY + 1, q: 1 } : { q: RQ + 1 }),
+  rk('k5', 'Last year', 'on', '', { year: RY - 1 })
+] };
 async function call(fn, args) {
   const res = await api.default({ method: 'POST', json: async () => ({ fn, args }), headers: new Map() }, {});
   return { status: res.status, body: await res.json().catch(() => null) };
@@ -87,11 +93,12 @@ ok('the last week with numbers this year, per ministry — a blank value does no
 ok('… and last year’s numbers do not count', !('siemreap|Community Service|Ponlork School' in L.lastWeek));
 ok('who is set to enter numbers', L.people['siemreap|Community Service|Cafe'].main === 'st_dara');
 ok('when each person last opened the app, and since when that is counted', L.seen.st_dara === TODAY && L.seenSince === '2026-01-01');
-const o1 = L.objectives.find((o) => o.objective === 'Grow the cafe'), o2 = L.objectives.find((o) => o.objective === 'Pray more');
-ok('this quarter’s objectives, each once, with its latest edit', L.objectives.length === 2 && o1.updated.startsWith(Y + '-01-05'));
-ok('… marked when a ministry’s numbers feed it', o2.fed === true && o1.fed === false);
-ok('… and the quarter and today', L.quarter === Q && L.today === TODAY);
-ok('nothing private comes along', !/pinHash|surveyToken|tok_/.test(JSON.stringify(L)));
+const o1 = L.rocks.find((o) => o.title === 'Grow the cafe'), o2 = L.rocks.find((o) => o.title === 'Pray more');
+ok('this quarter’s open rocks, each once, with when it was last updated', L.rocks.length === 2 && o1.updated.startsWith(RY + '-01-05') && o1.ministry === 'Cafe' && o2.status === 'off', JSON.stringify(L.rocks));
+ok('… a rock that is done, another quarter’s and another year’s are not listed', !L.rocks.some((o) => /Already done|Another quarter|Last year/.test(o.title)));
+ok('… one never touched since it was made goes by the day it was made', o2.updated === '2000-01-01T00:00:00Z');
+ok('… and the quarter and today', L.quarter === RQ && L.today === TODAY);
+ok('nothing private comes along — nor a rock’s note or owner, which the list does not need', !/pinHash|surveyToken|tok_|private-ish/.test(JSON.stringify(L)));
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

@@ -50,7 +50,8 @@ const srow = (id) => ({ campus: 'siemreap', week: WK, year: YR, device: 'tok_' +
 mem.survey = [srow('st1'), srow('st2'), srow('st3')];
 mem.entries = [{ campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', metric: 'Salvations', week: WK, year: YR, value: 5, updated: '' },
   { campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', metric: 'Salvations', week: Math.max(1, WK - 13), year: YR, value: 2, updated: '' }];
-mem.okrs = [{ id: 'o1', campus: 'siemreap', dept: 'Community Service', quarter: Math.min(3, Math.floor((WK - 1) / 13)) + 1, year: YR, objective: 'Open the second cafe', krs: [] }];
+/* the quarter's rocks (they replaced the objectives): the board's report lists them with where each stands — never a note */
+mem.rocks = { seeded: 'test', rocks: [{ id: 'k1', campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe', owner: '', year: YR, q: Math.min(3, Math.floor((WK - 1) / 13)) + 1, title: 'Open the second cafe', status: 'off', note: 'A note only staff read', by: '', at: '', updated: '' }] };
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
 const srv = http.createServer(async (req, res) => {
   if (req.url.indexOf('/.netlify/functions/api') === 0) {
@@ -271,8 +272,8 @@ const main = (page) => page.$eval('#main', e => e.innerText);
   ok('the board view fits a 320px phone', await page.evaluate(() => document.documentElement.scrollWidth <= 321));
   await page.click('nav.bottom [data-tab="report"]'); await page.waitForTimeout(700);
   const rep = await main(page);
-  ok('Report: the quarter for YWAM GP and each campus — staff, health from 3+ check-ins, salvations against last quarter, objectives',
-    /Q\d \d{4} report/.test(rep) && /YWAM Poipet/.test(rep) && /YWAM Siem Reap/.test(rep) && /3 check-ins/.test(rep) && /needs 3 check-ins or more/.test(rep) && /Salvations\n5\nQ\d: \d/.test(rep) && /Open the second cafe/.test(rep) && /Dara Sok/.test(rep), rep.slice(0, 400).replace(/\n/g, ' / '));
+  ok('Report: the quarter for YWAM GP and each campus — staff, health from 3+ check-ins, salvations against last quarter, the quarter’s rocks with where each stands (title and status, no note)',
+    /Q\d \d{4} report/.test(rep) && /YWAM Poipet/.test(rep) && /YWAM Siem Reap/.test(rep) && /3 check-ins/.test(rep) && /needs 3 check-ins or more/.test(rep) && /Salvations\n5\nQ\d: \d/.test(rep) && /Rocks for Q\d/i.test(rep) && /Open the second cafe/.test(rep) && /Off track/.test(rep) && !/A note only staff read/.test(rep) && !/[Oo]bjective|OKR/.test(rep) && /Dara Sok/.test(rep), rep.slice(0, 400).replace(/\n/g, ' / '));
   ok('… with Print or save as PDF, and it fits the phone too', !!(await page.$('#repPrint')) && await page.evaluate(() => document.documentElement.scrollWidth <= 321));
   await page.screenshot({ path: OUT + '/board-report.png', fullPage: true });
   await page.screenshot({ path: OUT + '/board-campus.png', fullPage: true });

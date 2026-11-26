@@ -240,6 +240,8 @@ console.log('\n=== a Cafe member: period toggle, folded personal card, teams rea
   ok('the Cafe page keeps its week strip and form button', s.strip && s.form && !s.teamsPage);
   ok('the dashboard opens on the quarter', await page.evaluate(() => document.querySelector('[data-mmperiod].on').getAttribute('data-mmperiod')) === 'quarter');
   const q = await tileOf(page, 'Cups Sold');
+  ok('the month / quarter / year totals are folded under the Scoreboard until opened', await page.$eval('#mmGlance', d => !d.open));
+  await page.click('#mmGlance > summary'); await page.waitForTimeout(200);
   await page.click('[data-mmperiod="year"]');
   await page.waitForTimeout(300);
   const yr = await tileOf(page, 'Cups Sold');

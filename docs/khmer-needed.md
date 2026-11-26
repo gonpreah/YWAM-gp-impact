@@ -6781,3 +6781,72 @@ Campus Leadership arranges a quarter on the whiteboard; "Make Q1 2027 live" turn
 | Still saving — try again in a moment. | កំពុងរក្សាទុកនៅឡើយ — សូមព្យាយាមម្តងទៀតបន្តិចទៀត។ |
 | Someone else is saving — try again. | មានអ្នកផ្សេងកំពុងរក្សាទុក — សូមព្យាយាមម្តងទៀត។ |
 | That quarter is over. | ត្រីមាសនោះបានកន្លងផុតហើយ។ |
+
+## 144. Rocks and the Scoreboard — in place of OKRs and “Numbers” (My Ministry, Team, Admin, the quarter report, Nov 2026)
+Across the whole app the quarter's priorities are **Rocks** (ថ្មធំ — the word the leadership meeting already used) and a ministry's weekly numbers page is its **Scoreboard** (តារាងពិន្ទុ; the meeting's “Scorecard” was តារាងលេខ and now uses the same new word). “Scoreboard”, “Rocks” and “Q{q} Rocks” are tab and tile labels with very little room. A rock is “on track” (ដើរតាមផែនការ), “off track” or “done” — the three words are buttons side by side on a phone. “On target / Off target” is a number against its weekly goal, which is a different thing from a rock being on track; please check the two read differently. “Earlier objectives” (គោលបំណងពីមុន) is the folded list of what was there before rocks.
+
+| English | Khmer (draft) |
+|---|---|
+| Scoreboard | តារាងពិន្ទុ |
+| Q{q} Rocks | ថ្មធំ ត្រីមាស {q} |
+| Rocks for Q{q} | ថ្មធំសម្រាប់ត្រីមាស {q} |
+| on track | ដើរតាមផែនការ |
+| on track · Q{q} | ដើរតាមផែនការ · ត្រីមាស {q} |
+| The team | ក្រុម |
+| +{n} more | +{n} ទៀត |
+| {name}’s rocks | ថ្មធំរបស់ {name} |
+| {team}’s rocks | ថ្មធំរបស់ {team} |
+| Leadership’s rocks | ថ្មធំរបស់ថ្នាក់ដឹកនាំ |
+| Every department’s rocks | ថ្មធំរបស់គ្រប់ផ្នែក |
+| {dept} — the whole department | {dept} — ផ្នែកទាំងមូល |
+| A rock for the whole department | ថ្មធំមួយសម្រាប់ផ្នែកទាំងមូល |
+| A rock: one thing that must get done this quarter | ថ្មធំ៖ រឿងមួយដែលត្រូវតែធ្វើឲ្យហើយក្នុងត្រីមាសនេះ |
+| The few things that must get done this quarter. Tap one to say where it stands: on track, off track or done. | រឿងមួយចំនួនតូចដែលត្រូវតែធ្វើឲ្យហើយក្នុងត្រីមាសនេះ។ ចុចលើមួយដើម្បីប្រាប់ថាវាដល់ណាហើយ៖ ដើរតាមផែនការ មិនដើរតាមផែនការ ឬរួចរាល់។ |
+| No rocks yet for this quarter. | មិនទាន់មានថ្មធំសម្រាប់ត្រីមាសនេះនៅឡើយ។ |
+| No rocks for the whole team yet. | មិនទាន់មានថ្មធំសម្រាប់ក្រុមទាំងមូលនៅឡើយ។ |
+| No leadership rocks yet for this quarter. | មិនទាន់មានថ្មធំរបស់ថ្នាក់ដឹកនាំសម្រាប់ត្រីមាសនេះនៅឡើយ។ |
+| No rocks for this department yet. | មិនទាន់មានថ្មធំសម្រាប់ផ្នែកនេះនៅឡើយ។ |
+| No rocks for this ministry yet. | មិនទាន់មានថ្មធំសម្រាប់កិច្ចការបម្រើនេះនៅឡើយ។ |
+| No rocks for the whole department yet. | មិនទាន់មានថ្មធំសម្រាប់ផ្នែកទាំងមូលនៅឡើយ។ |
+| No rocks anywhere yet for this quarter. | មិនទាន់មានថ្មធំនៅកន្លែងណាសម្រាប់ត្រីមាសនេះនៅឡើយ។ |
+| No rocks set for their team this quarter. | ក្រុមរបស់គាត់មិនទាន់មានថ្មធំសម្រាប់ត្រីមាសនេះទេ។ |
+| Earlier objectives ({n}) | គោលបំណងពីមុន ({n}) |
+| Earlier objectives · Q{q} | គោលបំណងពីមុន · ត្រីមាស {q} |
+| From before we moved to rocks. Kept as they were — nothing here can be changed. | ពីមុនពេលយើងប្តូរមកប្រើថ្មធំ។ រក្សាទុកដូចដើម — មិនអាចកែអ្វីនៅទីនេះបានទេ។ |
+| Only that team can change its rocks. | មានតែក្រុមនោះទេដែលអាចកែថ្មធំរបស់ខ្លួន។ |
+| An earlier quarter’s rocks are kept as they were. | ថ្មធំរបស់ត្រីមាសមុនត្រូវបានរក្សាទុកដូចដើម។ |
+| That rock is no longer there. | ថ្មធំនោះលែងមានទៀតហើយ។ |
+| The three to seven things that must get done this quarter — each person’s, and the team’s. Every ministry has its own rocks too, on its Rocks tab. | រឿងបីទៅប្រាំពីរដែលត្រូវតែធ្វើឲ្យហើយក្នុងត្រីមាសនេះ — របស់ម្នាក់ៗ និងរបស់ក្រុម។ កិច្ចការបម្រើនីមួយៗក៏មានថ្មធំរបស់ខ្លួនដែរ នៅផ្ទាំង «ថ្មធំ» របស់ខ្លួន។ |
+| Q{q} rocks nobody has updated in 30 days | ថ្មធំត្រីមាស {q} ដែលគ្មាននរណាធ្វើបច្ចុប្បន្នភាពក្នុង ៣០ ថ្ងៃ |
+| A rock should be looked at every week: on track, off track or done. | ថ្មធំគួរត្រូវបានមើលរៀងរាល់សប្តាហ៍៖ ដើរតាមផែនការ មិនដើរតាមផែនការ ឬរួចរាល់។ |
+| last updated {date} | ធ្វើបច្ចុប្បន្នភាពចុងក្រោយ {date} |
+| never updated | មិនដែលធ្វើបច្ចុប្បន្នភាព |
+| Month, quarter and year totals | សរុបប្រចាំខែ ត្រីមាស និងឆ្នាំ |
+| No numbers on the scoreboard yet. | មិនទាន់មានលេខក្នុងតារាងពិន្ទុនៅឡើយ។ |
+| Take it off the scoreboard | ដកចេញពីតារាងពិន្ទុ |
+| Take this number off the scoreboard? Its weeks of numbers go with it. | ដកលេខនេះចេញពីតារាងពិន្ទុឬ? លេខប្រចាំសប្តាហ៍របស់វានឹងបាត់ទៅជាមួយ។ |
+| Scoreboard: {name} | តារាងពិន្ទុ៖ {name} |
+| A scoreboard number is something you can count every week that tells you early how things are going. Each has one owner and a goal. | លេខក្នុងតារាងពិន្ទុគឺជាអ្វីដែលអាចរាប់បានរៀងរាល់សប្តាហ៍ ដែលប្រាប់យើងឲ្យដឹងមុនថាការងារដើរយ៉ាងណា។ លេខនីមួយៗមានម្ចាស់ម្នាក់ និងគោលដៅមួយ។ |
+| {d} of {n} on target this week | {d} ក្នុងចំណោម {n} ដល់គោលដៅសប្តាហ៍នេះ |
+| {d} of {n} on target in week {wk} | {d} ក្នុងចំណោម {n} ដល់គោលដៅក្នុងសប្តាហ៍ទី {wk} |
+| {n} not entered yet | {n} មិនទាន់បញ្ចូល |
+| No goals yet. Set a goal for a number and each week shows ✓ or ✗ against it. | មិនទាន់មានគោលដៅនៅឡើយ។ កំណត់គោលដៅសម្រាប់លេខមួយ នោះសប្តាហ៍នីមួយៗនឹងបង្ហាញ ✓ ឬ ✗ ធៀបនឹងវា។ |
+| No goals set yet for these numbers. | លេខទាំងនេះមិនទាន់មានគោលដៅនៅឡើយ។ |
+| Set goals | កំណត់គោលដៅ |
+| A goal is for one week. Leave a box empty for no goal. | គោលដៅគឺសម្រាប់មួយសប្តាហ៍។ ទុកប្រអប់ឲ្យទទេបើគ្មានគោលដៅ។ |
+| Goal for {metric} | គោលដៅសម្រាប់ {metric} |
+| goal {goal} | គោលដៅ {goal} |
+| On target | ដល់គោលដៅ |
+| Off target | មិនដល់គោលដៅ |
+| Not entered yet | មិនទាន់បញ្ចូល |
+| The last {n} weeks | {n} សប្តាហ៍ចុងក្រោយ |
+| Show all {n} numbers | បង្ហាញលេខទាំង {n} |
+| {metric}: type a number. | {metric}៖ សូមវាយលេខ។ |
+| {metric} goes from {min} to {max}. | {metric} គឺពី {min} ដល់ {max}។ |
+| Saved — but a goal outside its range was left out. | បានរក្សាទុក — ប៉ុន្តែគោលដៅដែលនៅក្រៅកម្រិតត្រូវបានទុកចោល។ |
+| Only the ministry’s leader, Campus Leadership or an admin sets the goals. | មានតែអ្នកដឹកនាំកិច្ចការបម្រើ ថ្នាក់ដឹកនាំសាខា ឬអ្នកគ្រប់គ្រងប៉ុណ្ណោះដែលកំណត់គោលដៅ។ |
+| Link to a scoreboard number | ភ្ជាប់ទៅលេខក្នុងតារាងពិន្ទុ |
+| Not linked to a scoreboard number | មិនបានភ្ជាប់ទៅលេខក្នុងតារាងពិន្ទុទេ |
+| No scoreboard numbers are set for {ministry} yet. | មិនទាន់មានលេខតារាងពិន្ទុសម្រាប់ {ministry} នៅឡើយទេ។ |
+| Set your ministry on the Profile tab and your team’s Scoreboard will show up here, ready to fill in. | កំណត់កិច្ចការបម្រើរបស់អ្នកនៅផ្ទាំងប្រវត្តិរូប នោះតារាងពិន្ទុរបស់ក្រុមអ្នកនឹងបង្ហាញនៅទីនេះ រួចរាល់សម្រាប់បំពេញ។ |
+| Scorecard (now reads as Scoreboard) | តារាងពិន្ទុ |

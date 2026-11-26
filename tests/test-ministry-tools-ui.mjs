@@ -112,7 +112,7 @@ const txt = p => p.$eval('#main', e => e.innerText);
 }
 {
   const { ctx, page } = await open('vanna');
-  ok('the cafe’s My Ministry opens on the cafe tool, Today — one row of tabs: Today · Till · Rota · Week · Numbers · Tasks · OKRs', !!(await page.$('.mmTabs .gtTab.on[data-cafetab="today"]')) && (await page.$$eval('.mmTabs .gtTab', b => b.map(x => x.textContent))).join() === 'Today,Till,Rota,Week,Numbers,Tasks,OKRs' && !!(await page.$('#cafeOpenBtn')) && (await page.$$('.cafeTick')).length >= 4);
+  ok('the cafe’s My Ministry opens on the cafe tool, Today — one row of tabs: Today · Till · Rota · Week · Scoreboard · Tasks · Rocks', !!(await page.$('.mmTabs .gtTab.on[data-cafetab="today"]')) && (await page.$$eval('.mmTabs .gtTab', b => b.map(x => x.textContent))).join() === 'Today,Till,Rota,Week,Scoreboard,Tasks,Rocks' && !!(await page.$('#cafeOpenBtn')) && (await page.$$('.cafeTick')).length >= 4);
   ok('… and a barista gets no Set up tab', !(await page.$('[data-cafetab="setup"]')));
   const ticks = await page.$$('[data-cafetick^="open|"]'); await ticks[0].check(); await ticks[1].check();
   await page.screenshot({ path: OUT + '/cafe-open.png' });

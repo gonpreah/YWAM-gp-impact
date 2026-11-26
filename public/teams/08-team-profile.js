@@ -378,10 +378,10 @@ function personHtml(){
       h+='</div>';
     });
   }
-  /* Their objectives too — tapping a teammate should answer "what is this person
-     working toward", not just "did they tick their boxes". Department-level, so
-     nothing here is private to them. */
-  h+=okrSectionHtml(p, false);
+  /* Their rocks too — tapping a teammate should answer "what is this person working toward",
+     not just "did they tick their boxes": their own rocks and their ministry's (every staff
+     member can read every rock, so nothing here is private to them). */
+  h+=rocksPersonHtml_(p);
 
   h+='<p class="hint">🔒 '+esc(t('Daily check-ins, health answers and anything private stay between this person and their mentor.'))+'</p>';
   return h;
