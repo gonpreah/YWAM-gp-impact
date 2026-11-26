@@ -216,7 +216,11 @@ Income.
   transfer goes in that approved report (`xferPreApply_` → `addToApproved_`). Only the questions that apply:
   **Should it change the approved total liquid assets?** when a side is an account (No by default; Yes moves that day's
   approved balances and its balances entry, shown old → new); **What happens to the approved allocations?** when a side
-  is a category (Change them — default — or Leave them: then only Live moves). Then the day as it would be — total
+  is a category (Change them — default — or **Leave them**, which asks the bulk import's second question: **Yes — write a
+  fix line** (default) — one Financial tools adjustment per category it moved, dated the approved day, in its report,
+  approved allocations left as they were (`src:'xffix'`, `fixOf`) — so **📡 Live doesn't change at all** while the
+  transfer still shows in each ministry's profit and loss (with "📈 Show in the Ministries profit and loss" ticked, as
+  income and spending); or **No — let them move** in Live). Then the day as it would be — total
   liquid assets, allocated, the % — and, when it isn't 100%, the one-tap gap fix into a category. Kept on the day as an
   amendment ("✏️ amended", "an internal transfer"). It replaces the old "Add it to the approved report as well" tick here
   (income and expenses keep that tick).
