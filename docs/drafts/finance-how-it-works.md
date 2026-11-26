@@ -58,7 +58,9 @@ Income.
   on either moves both (`S.flowPer.inc` = `S.flowPer.exp`, one `S.flowRange.both`).
 
 ### 🧾 Expenses
-- Each expense has a kind (the QuickBooks account list, plus Honorarium 54000 and Not sure),
+- Each expense has a kind (the QuickBooks account list, plus Honorarium 54000, **Refund** — money given back to people —
+  and **Accounting** — tax and the like sent to the national office — both ours with no QuickBooks number (26 Nov 2026;
+  the import guesses them from "refund / reimburse / paid back" and "national office"), and Not sure),
   the category it is paid from (picked by hand, or from its QuickBooks class), a bank account,
   an amount and a date. No formulas.
 - **Funds:** that one fund goes down at once.

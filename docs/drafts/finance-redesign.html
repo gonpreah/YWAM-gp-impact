@@ -1471,7 +1471,9 @@ var FK={
 var EXP_ACCOUNTS=[['Rent /Lease',50300],['Electricity, Water, Garbage',50400],['Food',50500],['Equipment & Furniture',51000],['Repair & Maintenance',52000],
   ['Service Expenses',52100],['Program Expenses',53000],['Supplies',53200],['Hospitality',53800],['Honorarium',54000],['Salary',55000],['Staff Training',55500],
   ['Khmer Language Training',55510],['Entertainment / Meals',56000],['Conference/Meeting Expense',56500],['Vehicle Expenses',57000],['Travel & Transportation',57500],
-  ['Taxes',59100],['Bank Charge',59200],['Miscellaneous Expenses',59600],['Contract Expenses',60100],['Materials',60200],['Expendable Assets',60500],['IT Equipment',60510],['Not sure',null]];
+  ['Taxes',59100],['Bank Charge',59200],['Miscellaneous Expenses',59600],['Contract Expenses',60100],['Materials',60200],['Expendable Assets',60500],['IT Equipment',60510],
+  ['Refund',null],['Accounting',null],   /* ours, no QuickBooks number (26 Nov 2026): money given back to people; tax and the like sent to the national office */
+  ['Not sure',null]];
 var EXP_TYPES=EXP_ACCOUNTS.map(function(x){ return x[0]; });
 var EXP_NUM={}; EXP_ACCOUNTS.forEach(function(x){ if(x[1]) EXP_NUM[x[0]]=x[1]; });
 /* the kinds used before → the QuickBooks account (anything unclear → Not sure) */
@@ -1524,6 +1526,8 @@ function expGuess_(txt){
   /* "Program Expenses:Outreach Expenses" → its main account; longest names first so "IT Equipment" isn't "Equipment" */
   var named=EXP_TYPES.filter(function(n){ return n!=='Not sure'; }).sort(function(a,b){ return b.length-a.length; }).filter(function(n){ return t.indexOf(n.toLowerCase())>=0; })[0];
   if(named) return named;
+  if(/refund|reimburse|paid back|money back/.test(t)) return 'Refund';
+  if(/nation(al)? office|\bnational\b.*\btax|tax.*\bnational\b/.test(t)) return 'Accounting';
   if(/honorar|speaker/.test(t)) return 'Honorarium';
   if(/food|grocer|kitchen|market|rice|vegetable/.test(t)) return 'Food';
   if(/\brent\b|lease/.test(t)) return 'Rent /Lease';
