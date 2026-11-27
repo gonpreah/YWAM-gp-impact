@@ -7202,7 +7202,7 @@ The line above the board once a quarter is live, the question before Apply again
 | Also serves here | បម្រើនៅទីនេះផងដែរ |
 | For someone in two ministries: they keep their main one and serve here too. | សម្រាប់អ្នកដែលនៅក្នុងកិច្ចការបម្រើពីរ៖ ពួកគេរក្សាកិច្ចការបម្រើចម្បងរបស់ពួកគេ ហើយបម្រើនៅទីនេះផងដែរ។ |
 
-## 152. My Ministry → Today, step 2: the compact strip, each ministry’s own prompt, Hospitality’s tonight, Ask Technical, the community schools (Nov 2026)
+## 153. My Ministry → Today, step 2: the compact strip, each ministry’s own prompt, Hospitality’s tonight, Ask Technical, the community schools (Nov 2026)
 
 Short labels on My Ministry’s Today screen and the one-row strip on tool ministries; “Win” is a small button (very little room). The “Ask Technical” sheet is for every staff member.
 
