@@ -799,9 +799,14 @@ function mmHeadHtml_(opts, sel, mine){
   var sub=[isBL ? '' : t(sel.dept), campusName(S.me.campus)].filter(Boolean).join(' · ');
   if(leaders.length) sub+=' · 👑 '+esc(t('Led by'))+' '+leaders.map(function(p){ return esc(p.name); }).join(', ');
   var note = isBL ? '' : mine ? t('Your main ministry — you are entering its numbers') : sel.role==='member' ? t('One of your ministries — you are entering its numbers') : sel.role==='leader' ? t('You lead this ministry — you are entering its numbers') : sel.role==='admin' ? t('As an admin you can see and enter its numbers') : sel.role==='oversee' ? t('Viewing as its director') : '';
-  return '<div class="mmHead'+(isBL?' leadBanner':'')+'" id="mmBanner"><div class="eyebrow">'+esc(t('My Ministry'))+'</div>'+
-    '<div class="mmHeadRow"><span class="mmBannerEmoji">'+emoji+'</span><div class="mmHeadText"><div class="mmBannerName">'+esc(name)+'</div><div class="rowSub">'+sub+(note ? '<span class="mmBannerNote">'+esc(note)+'</span>' : '')+'</div>'+(typeof qrMmLinkHtml_==='function' ? qrMmLinkHtml_(sel) : '')+'</div>'+
-    (opts.length>1 ? '<button class="mmSwitch" id="mmSwitch" aria-haspopup="dialog">'+esc(t('Switch'))+' ▾</button>' : '')+'</div></div>';
+  /* one row (Nov 2026, Uriah: "how can we simplify them?"): emoji, name, Switch ▾. Where it sits, who leads it, whose
+     numbers these are and the quarter's report are behind a tap on the name (#mmAbout — always in the page, hidden
+     until opened, flipped without a redraw). */
+  var open=!!S.mmAboutOpen;
+  return '<div class="mmHead'+(isBL?' leadBanner':'')+'" id="mmBanner">'+
+    '<div class="mmHeadRow"><button type="button" class="mmNameBtn" id="mmNameBtn" aria-expanded="'+open+'" aria-controls="mmAbout" title="'+esc(t('About this ministry'))+'"><span class="mmBannerEmoji" aria-hidden="true">'+emoji+'</span><span class="mmBannerName">'+esc(name)+'</span><span class="mmNameChev" aria-hidden="true">ⓘ</span></button>'+
+    (opts.length>1 ? '<button class="mmSwitch" id="mmSwitch" aria-haspopup="dialog">'+esc(t('Switch'))+' ▾</button>' : '')+'</div>'+
+    '<div class="mmAbout" id="mmAbout"'+(open ? '' : ' hidden')+'><div class="rowSub">'+sub+(note ? '<span class="mmBannerNote">'+esc(note)+'</span>' : '')+'</div>'+(typeof qrMmLinkHtml_==='function' ? qrMmLinkHtml_(sel) : '')+'</div></div>';
 }
 /* In two to four ministries of your own (Nov 2026, Uriah: "some people will have 2 ministry jobs … there needs to be
    some clarity around that"): one slim row under the header naming them, the open one marked, a tap opens the other.

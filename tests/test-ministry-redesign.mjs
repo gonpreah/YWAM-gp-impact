@@ -80,7 +80,7 @@ console.log('=== the leader’s page ===');
     status: (document.querySelector('.mmStatus') || {}).textContent || '',
     btn: (document.querySelector('#kpiInputBtn') || {}).textContent || '',
     formShowing: !!document.querySelector('#kpiDayCard'),
-    ledBy: document.body.innerText.includes('Led by'),
+    ledBy: /Led by/.test((document.querySelector('#mmAbout') || {}).textContent || '') && !!document.querySelector('#mmNameBtn'),   // behind a tap on the name since the one-line header
     editor: !!document.querySelector('[data-acc="kpiMetrics"]'),
     personal: document.querySelectorAll('[data-personal]').length,
     overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
@@ -99,7 +99,7 @@ console.log('=== the leader’s page ===');
   ok('and marks exactly the weeks that have numbers in', s.onDots === 3, s.onDots);
   ok('this week reads as logged', /is logged/.test(s.status), s.status);
   ok('the form is folded away until asked for', !s.formShowing && /Edit this week/.test(s.btn), s.btn);
-  ok('the leader is named', s.ledBy);
+  ok('the leader is named (behind a tap on the ministry’s name)', s.ledBy);
   ok('the leader sees “Edit what we track”', s.editor);
   ok('the personal numbers are off the page for now — the ministry is the focus', s.personal === 0, s.personal);
   ok('nothing scrolls sideways', !s.overflow);

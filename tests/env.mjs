@@ -62,3 +62,9 @@ export const SCORECARD_FIRST = (() => {
   for (const c of Object.keys(box.__d)) for (const d of Object.keys(box.__d[c])) for (const m of Object.keys(box.__d[c][d])) map[d + '|' + m] = 'numbers';
   return 'try { if (!sessionStorage.getItem("gp-mm-tab")) sessionStorage.setItem("gp-mm-tab", ' + JSON.stringify(JSON.stringify(map)) + '); } catch (e) {}';
 })();
+
+/* My Ministry, simpler (Nov 2026). The header is one row; where the ministry sits, who leads it, whose numbers these
+   are and "This quarter's report" are behind a tap on the name. mmAbout(page) opens that fold when it is shut. */
+export async function mmAbout(page) {
+  if (await page.$('#mmAbout[hidden]')) { await page.click('#mmNameBtn'); await page.waitForSelector('#mmAbout:not([hidden])'); }
+}

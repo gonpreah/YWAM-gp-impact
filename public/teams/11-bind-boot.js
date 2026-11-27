@@ -504,6 +504,7 @@ function bindAway(){
     }
     var ovr=document.getElementById('ovRetry');
     if(ovr) ovr.onclick=function(){ var m=ovr.getAttribute('data-ministry'); S.ovError[m]=''; S.ovLoading[m]=false; render(); };
+    var mnb=document.getElementById('mmNameBtn'); if(mnb) mnb.onclick=function(){ gpTap(); S.mmAboutOpen=!S.mmAboutOpen; var ab=document.getElementById('mmAbout'); if(ab) ab.hidden=!S.mmAboutOpen; mnb.setAttribute('aria-expanded', S.mmAboutOpen ? 'true' : 'false'); };
     var msw=document.getElementById('mmSwitch'); if(msw) msw.onclick=function(){ gpTap(); S.mmPickOpen=true; S.mmPickQ=''; render(); var f=document.getElementById('mmPickFind'); if(f) f.focus(); };
     var mps=document.getElementById('mmPickScrim'); if(mps) mps.onclick=function(){ S.mmPickOpen=false; render(); };
     var mpf=document.getElementById('mmPickFind'); if(mpf) mpf.oninput=function(){ S.mmPickQ=mpf.value; var box=document.querySelector('.mmPickList'); if(!box) return;
