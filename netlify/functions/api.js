@@ -2204,7 +2204,7 @@ async function getMenteeLogs(username, pin, menteeId) {
     checkins: checkins,
     profile: { debt: m.debt },
     support: (m.support && m.support.mentorVisible) ? supportSummary_(m.support) : null,   // totals only, and only when shared
-    library: { read: cleanLibRead_(m.libRead), plans: libMine_(m).plans, goal: libMine_(m).goal },   // what they've read and their reading plans — never their notes
+    library: { read: cleanLibRead_(m.libRead), plans: libMine_(m).plans, goal: libMine_(m).goal, quiz: libMine_(m).quiz },   // what they've read and their reading plans — never their notes
     ministry: await ministryDataFor_(m),
     trips: { trips: menteeTrips.map(tripOut_), totals: awayTotals_(menteeTrips), ptoCap: PTO_ANNUAL_CAP, holidays: holidayList_() },
     smartGoals: smartGoalsOut_(menteeSmart, menteeTasks)
@@ -9576,7 +9576,18 @@ function libMine_(s) {
   const plans = {};
   Object.keys(l.plans || {}).slice(0, 20).forEach(function (k) { const x = l.plans[k]; if (/^[a-z0-9-]{1,40}$/.test(k) && x) plans[k] = { at: x.at || '', by: x.by || '' }; });
   const g = Math.round(Number(l.goal));
-  return { share: l.share === true, shareAsked: l.share === true || l.share === false, goal: g >= 1 && g <= 200 ? g : 0, notes: notes, plans: plans };
+  return { share: l.share === true, shareAsked: l.share === true || l.share === false, goal: g >= 1 && g <= 200 ? g : 0, notes: notes, plans: plans, quiz: libQuizClean_(l.quiz) };
+}
+/* A book's little quiz (Nov 2026, Uriah: "a couple of multiple-choice questions to see if they read it, and their
+   score"): only the best score is kept, as counts — { bookId: { best, of, at } }. No answers, no points. */
+const LIB_QUIZ_MAX_Q = 10;
+function libQuizClean_(q) {
+  const out = {};
+  Object.keys(q || {}).slice(0, LIB_MAX).forEach(function (k) {
+    const x = q[k], of = Math.round(Number(x && x.of)), best = Math.round(Number(x && x.best));
+    if (LIB_ID.test(k) && of >= 1 && of <= LIB_QUIZ_MAX_Q && best >= 0 && best <= of) out[k] = { best: best, of: of, at: String((x && x.at) || '').slice(0, 30) };
+  });
+  return out;
 }
 function libOnCampus_(staff, campus) {
   return (staff || []).filter(function (r) { return r && r.campus === campus && r.active !== false && !r.archived && !isApplicant_(r); });
@@ -9641,6 +9652,11 @@ async function libSaveMine(username, pin, p) {
   p = p || {};
   if (p.note && !LIB_ID.test(String(p.note.bookId || ''))) return { ok: false, err: 'bad_book' };
   if (p.plan && !/^[a-z0-9-]{1,40}$/.test(String(p.plan.id || ''))) return { ok: false, err: 'bad_plan' };
+  if (p.quiz) {
+    const of = Math.round(Number(p.quiz.of)), sc = Math.round(Number(p.quiz.score));
+    if (!LIB_ID.test(String(p.quiz.bookId || ''))) return { ok: false, err: 'bad_book' };
+    if (!(of >= 1 && of <= LIB_QUIZ_MAX_Q && sc >= 0 && sc <= of)) return { ok: false, err: 'bad_score' };
+  }
   const res = await mutateStaff_(function (rows) {
     const i = rows.findIndex(function (r) { return r.id === s.id; });
     if (i === -1) return { abort: true, ok: false, err: 'not_found' };
@@ -9651,6 +9667,11 @@ async function libSaveMine(username, pin, p) {
       l.notes = Object.assign({}, l.notes || {});
       const text = String(p.note.text || '').trim().slice(0, LIB_NOTE_MAX);
       if (text) l.notes[p.note.bookId] = { text: text, at: new Date().toISOString() }; else delete l.notes[p.note.bookId];
+    }
+    if (p.quiz) {
+      l.quiz = libQuizClean_(l.quiz);
+      const id = String(p.quiz.bookId), of = Math.round(Number(p.quiz.of)), sc = Math.round(Number(p.quiz.score)), old = l.quiz[id];
+      if (!old || old.of !== of || sc > old.best) l.quiz[id] = { best: sc, of: of, at: new Date().toISOString() };
     }
     if (p.plan) {
       l.plans = Object.assign({}, l.plans || {});

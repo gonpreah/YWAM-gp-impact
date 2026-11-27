@@ -92,7 +92,7 @@ const openLib = async page => { await page.click('#menuBtn'); await page.waitFor
   ok('Library is in the ☰ menu (Profile took its place in the bottom bar)', !(await page.$('nav.bottom [data-tab="library"]')) && !!(await page.$('nav.bottom [data-tab="profile"]')));
   await page.click('#menuBtn'); await page.waitForTimeout(250); await page.click('[data-menu-item="library"]'); await page.waitForTimeout(900);
   const rows = await page.$$eval('.libSecHead', hs => hs.map(h => h.innerText.replace(/\s+/g, ' ')));
-  const SHOWN = ['gp', 'family'].map(id => C.L.shelves.find(x => x.id === id)).concat(C.L.shelves.filter(x => x.id !== 'gp' && x.id !== 'family'));
+  const SHOWN = ['gp', 'eos', 'family'].map(id => C.L.shelves.find(x => x.id === id)).concat(C.L.shelves.filter(x => x.id !== 'gp' && x.id !== 'eos' && x.id !== 'family'));
   ok('the home is rows: Start here, the GP guides, then one per shelf, each with See all', rows.length === 1 + SHOWN.length && /Start here/.test(rows[0]) && /Made at YWAM GP/.test(rows[1]) && rows.slice(1).every((r, i) => r.includes(SHOWN[i].name) && /See all/.test(r)), rows.join(' | '));
   const ids = new Set(await page.$$eval('.libTile', ts => ts.map(t => t.getAttribute('data-libbook'))));
   ok('every book is on its shelf’s row', ids.size === BOOKS.length && BOOKS.every(b => ids.has(b.id)), ids.size + ' of ' + BOOKS.length);
@@ -103,7 +103,7 @@ const openLib = async page => { await page.click('#menuBtn'); await page.waitFor
   ok('every book has a drawn cover with its title on it', flat.length === BOOKS.length && flat.every(c => c.title.toLowerCase() === BOOKS.find(b => b.id === c.id).title.toLowerCase() && c.svg.length > 50));
   ok('… all the same shape', flat.every(c => Math.abs(c.ratio - 1.5) < 0.02));
   ok('… and no two side by side on a shelf share a pattern', shelfRows.every(r => r.every((c, i) => i === 0 || c.svg !== r[i - 1].svg)));
-  ok('under each: minutes and how many key ideas', flat.every(c => /1[04] min · 💡 \d/.test(c.meta)), flat[0].meta);
+  ok('under each: minutes and how many key ideas', flat.every(c => /(9|1[04]) min · 💡 \d/.test(c.meta)), flat[0].meta);
   ok('each book has its own cover design — a motif, in the app’s colours', flat.every(c => /<(path|circle|rect|text|ellipse|line)/.test(c.svg)) && new Set(flat.map(c => c.svg)).size === flat.length);
   ok('covers move only while on screen: the ones in view are live', await page.evaluate(() => { const v = [...document.querySelectorAll('.libCover.cv')].filter(e => { const r = e.getBoundingClientRect(); return r.top < innerHeight && r.bottom > 0 && r.left < innerWidth && r.right > 0; }); return v.length > 0 && v.every(e => e.classList.contains('live')); }));
   ok('no cover is fetched from anywhere — they show at once, offline too', imageFetches.length === 0 && !(await page.$('.libCover img')), imageFetches.slice(0, 3).join(' '));

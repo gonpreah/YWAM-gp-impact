@@ -4231,6 +4231,18 @@ button.bdLine { cursor:pointer; }
 #bdLeadGo { margin:0 0 12px; }
 @media (min-width:900px){ #bdCamp, #bdFin, #bdInvite { max-width:900px; } }
 
+/* A book's little quiz (18-library-plus.js) */
+.libQuiz { position:relative; margin-bottom:14px; border:2px solid var(--accent); }
+.libQuizQ { font-weight:700; margin:6px 0 10px; }
+.libQuizOpts { display:flex; flex-direction:column; gap:8px; }
+.libQuizOpt { text-align:left; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:var(--surface); color:var(--ink); font:inherit; cursor:pointer; min-height:44px; }
+.libQuizOpt:hover, .libQuizOpt:focus-visible { border-color:var(--accent); }
+.libQuizScore { font-size:1.25rem; font-weight:800; margin:6px 0 8px; }
+.libQuizReview { margin:0 0 12px; padding-left:20px; display:flex; flex-direction:column; gap:8px; }
+.libQuizReview li.ok > div:first-child span { color:var(--good); }
+.libQuizReview li.no > div:first-child span { color:var(--bad); }
+.libQuizGo { width:100%; margin-top:8px; }
+.libQuizSum { margin-top:6px; }
 /* YWAM GP → (admins) YWAM GP job titles */
 .gprRow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);flex-wrap:wrap}
 .gprRow.editing{display:block}

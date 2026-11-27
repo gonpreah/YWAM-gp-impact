@@ -509,7 +509,7 @@ function libAuthor_(b){
 }
 /* Shelves in the order the home shows them: the guides made at YWAM GP first. */
 /* Made at YWAM GP first, then Marriage & family (Nov 2026, Uriah: pre-marriage and marriage training starts), then the rest. */
-function libShelvesShown_(){ var first=['gp','family']; return first.map(function(id){ return GP_LIBRARY.shelves.filter(function(x){ return x.id===id; })[0]; }).filter(Boolean).concat(GP_LIBRARY.shelves.filter(function(x){ return first.indexOf(x.id)===-1; })); }
+function libShelvesShown_(){ var first=['gp','eos','family']; return first.map(function(id){ return GP_LIBRARY.shelves.filter(function(x){ return x.id===id; })[0]; }).filter(Boolean).concat(GP_LIBRARY.shelves.filter(function(x){ return first.indexOf(x.id)===-1; })); }
 /* In Khmer, the Khmer library is fetched the first time it's needed; until it
    arrives everything shows in English, and a failed fetch says so. */
 function libKmEnsure_(){
@@ -849,12 +849,13 @@ function libBookHtml_(b){
     '<span class="libShelfTag">'+(sh.emoji||'')+' '+esc(t(sh.name))+'</span>'+(b.original?' <span class="libShelfTag">✨ '+esc(t('Original GP guide'))+'</span>':'')+
     '<h2 class="libTitle">'+esc(libTitle_(b))+'</h2><div class="libAuthor">'+esc(libAuthor_(b))+(b.year?' · '+b.year:'')+'</div>'+
     '<div class="libVibe">'+esc(T.vibe)+'</div>'+
-    '<div class="libStats"><span>⏱ '+esc(gpT('{n}-minute read',{n:b.mins||5}))+'</span><span>💡 '+esc(gpT('{n} key ideas',{n:b.insights.length}))+'</span>'+(read?'<span>✓ '+esc(t('Read'))+'</span>':'')+'</div>'+
+    '<div class="libStats"><span>⏱ '+esc(gpT('{n}-minute read',{n:b.mins||5}))+'</span><span>💡 '+esc(gpT('{n} key ideas',{n:b.insights.length}))+'</span>'+(read?'<span>✓ '+esc(t('Read'))+'</span>':'')+(typeof libQuizBest_==='function' && libQuizBest_(b.id) ? '<span id="libQuizBest">🧠 '+esc(gpT('Quiz {n}/{m}',{n:libQuizBest_(b.id).best, m:libQuizBest_(b.id).of}))+'</span>' : '')+'</div>'+
     '<div class="libBookTags">'+libBookTagsHtml_(b)+'</div></div>';
-  h=libDoneCardHtml_(b)+h;
+  h=libQuizHtml_(b)+libDoneCardHtml_(b)+h;
   h+='<button class="btn libCta" id="libStart" style="background:'+sh.color+';border-color:'+sh.color+'">'+
     esc(at && !read ? gpT('Continue — key idea {n}',{n:Math.min(at, b.insights.length)}) : read ? t('Read again') : '▶ '+t('Start reading'))+'</button>'+
-    (libAudioOk_() ? '<button class="btn ghost libListenCta" id="libListenStart">🎧 '+esc(t('Listen'))+'</button>' : '');
+    (libAudioOk_() ? '<button class="btn ghost libListenCta" id="libListenStart">🎧 '+esc(t('Listen'))+'</button>' : '')+
+    (typeof libQuizBtnHtml_==='function' ? libQuizBtnHtml_(b) : '');
   h+=libBookExtrasHtml_(b);
   h+='<div class="libSec'+(T.km?' libKm':'')+'"><h3>'+esc(t('What’s it about?'))+'</h3>'+libParas_(T.bigIdea)+'</div>';
   h+='<div class="libSec'+(T.km?' libKm':'')+'"><h3>'+esc(t('What’s inside'))+'</h3><div class="libInside">'+T.insights.map(function(x, k){
@@ -865,8 +866,13 @@ function libBookHtml_(b){
   h+='<div class="btnRow" style="margin-top:14px">'+
     '<button class="btn ghost" id="libMarkRead" data-libid="'+esc(b.id)+'">'+esc(read ? '✓ '+t('Read') : t('Mark as read'))+'</button>'+
     (next && next!==b ? '<button class="btn ghost" data-libbook="'+esc(next.id)+'">'+esc(t('Next book'))+' →</button>' : '')+'</div>';
+  h+=libEosFine_(b);
   return h+'<p class="pFine">'+esc(b.original ? t('An original guide written for YWAM GP — not a published book. Every person is different: use it to start conversations, not to put people in boxes.')
     : t('Summary written for YWAM GP in our own words — not by the author or publisher.'))+'</p>';
+}
+/* The EOS shelf's fine print (Nov 2026): the names are EOS Worldwide's trademarks; ours are summaries, not theirs. */
+function libEosFine_(b){
+  return b.shelf==='eos' ? '<p class="pFine">'+esc(t('EOS®, Traction® and the EOS tools are trademarks of EOS Worldwide. These are our own summaries, not connected with or endorsed by EOS Worldwide.'))+'</p>' : '';
 }
 /* The FIGHT book's first page also carries the overview the 1-on-1 check-in shows
    (Oct 2026, Uriah): how the five build (OO_FLOW), then each value — its letter,

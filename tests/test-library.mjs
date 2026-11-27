@@ -15,7 +15,7 @@ function ok(name, cond, extra) {
 const ctx = {}; vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(PUBLIC + '/library.js', 'utf8') + ';this.L=GP_LIBRARY;', ctx);
 const L = ctx.L, shelves = L.shelves.map((s) => s.id), books = L.books;
-ok('four shelves of 44 books, the Made at GP guides, the ten YWAM classics and seven on marriage & family', shelves.length === 7 && books.filter((b) => !b.original && b.shelf !== 'ywam' && b.shelf !== 'family').length === 44 && books.filter((b) => b.original && b.shelf === 'gp').length >= 2 && books.filter((b) => b.shelf === 'ywam').length === 10 && books.filter((b) => b.shelf === 'family').length === 7, shelves.join() + ' · ' + books.length + ' books');
+ok('four shelves of 44 books, the Made at GP guides, the ten YWAM classics, seven on marriage & family and seven on EOS', shelves.length === 8 && books.filter((b) => b.shelf === 'eos').length === 7 && books.filter((b) => !b.original && b.shelf !== 'ywam' && b.shelf !== 'family' && b.shelf !== 'eos').length === 44 && books.filter((b) => b.original && b.shelf === 'gp').length >= 2 && books.filter((b) => b.shelf === 'ywam').length === 10 && books.filter((b) => b.shelf === 'family').length === 7, shelves.join() + ' · ' + books.length + ' books');
 ok('every shelf has a name, an emoji and two colours', L.shelves.every((s) => s.name && s.emoji && /^#[0-9A-F]{6}$/i.test(s.color) && /^#[0-9A-F]{6}$/i.test(s.ink)));
 ok('ids are unique slugs', new Set(books.map((b) => b.id)).size === books.length && books.every((b) => /^[a-z0-9-]+$/.test(b.id)));
 const str = (v) => typeof v === 'string' && v.trim().length > 0;
@@ -28,8 +28,8 @@ const thin = books.filter((b) => b.insights.some((x) => x.body.split(/\s+/).leng
 ok('every key idea is worth its own screen (100+ words)', thin.length === 0, thin.map((b) => b.id).join(', '));
 ok('three things to try this week', books.every((b) => b.tryThis.length === 3 && b.tryThis.every(str)));
 const words = (b) => [b.vibe, b.bigIdea, b.forUs, b.oneLine].concat(b.insights.map((x) => x.title + ' ' + x.body), b.tryThis).join(' ').split(/\s+/).length;
-const long = books.filter((b) => words(b) < 1900 || words(b) > (b.shelf === 'gp' ? 3500 : 2600));
-ok('each is an honest ten-minute read (about 2,000–2,500 words; the GP guides up to 3,400)', long.length === 0, long.map((b) => b.id + ':' + words(b)).join(', ') || ('' + Math.min(...books.map(words)) + '–' + Math.max(...books.map(words)) + ' words'));
+const long = books.filter((b) => words(b) < (b.shelf === 'eos' ? 1500 : 1900) || words(b) > (b.shelf === 'gp' ? 3500 : 2600));
+ok('each is an honest ten-minute read (about 2,000–2,500 words; the EOS shelf from 1,500; the GP guides up to 3,400)', long.length === 0, long.map((b) => b.id + ':' + words(b)).join(', ') || ('' + Math.min(...books.map(words)) + '–' + Math.max(...books.map(words)) + ' words'));
 const isbn13 = (s) => /^97[89]\d{10}$/.test(s) && (10 - [...s.slice(0, 12)].reduce((a, d, i) => a + Number(d) * (i % 2 ? 3 : 1), 0) % 10) % 10 === Number(s[12]);
 const badIsbn = books.filter((b) => b.isbn && !isbn13(b.isbn));
 ok('an ISBN, when given, is a valid ISBN-13', badIsbn.length === 0, badIsbn.map((b) => b.id + ':' + b.isbn).join(', '));
@@ -52,5 +52,15 @@ const notKhmer = books.filter((b) => KM[b.id] && kmTexts(KM[b.id]).some((x) => k
 ok('… and it is Khmer, not English left in place', notKhmer.length === 0, notKhmer.map((b) => b.id).join(', '));
 const kmQuoted = books.filter((b) => KM[b.id] && kmTexts(KM[b.id]).some((x) => /[“"][^”"]{40,}[”"]/.test(x)));
 ok('… with no long quotations either', kmQuoted.length === 0, kmQuoted.map((b) => b.id).join(', '));
+/* The quiz after a book: three questions, four options, a right answer in range — and the same in Khmer. */
+const quizBad = books.filter((b) => b.quiz !== undefined && !(Array.isArray(b.quiz) && b.quiz.length === 3 && b.quiz.every((x) => str(x.q) && Array.isArray(x.a) && x.a.length === 4 &&
+  x.a.every(str) && new Set(x.a).size === 4 && Number.isInteger(x.c) && x.c >= 0 && x.c < 4)));
+ok('every quiz is three questions of four different options with one right answer', quizBad.length === 0, quizBad.map((b) => b.id).join(', '));
+const quizKm = books.filter((b) => b.quiz && !(KM[b.id] && Array.isArray(KM[b.id].quiz) && KM[b.id].quiz.length === b.quiz.length &&
+  KM[b.id].quiz.every((x, i) => str(x.q) && Array.isArray(x.a) && x.a.length === b.quiz[i].a.length && x.a.every(str) && khmerShare(x.q) > 0.6)));
+ok('… and each is in Khmer, same shape', quizKm.length === 0, quizKm.map((b) => b.id).join(', '));
+const quizzed = books.filter((b) => b.quiz);
+ok('quizzes on the EOS shelf, Start here, the GP guides and Lead & grow', ['eos', 'gp', 'lead'].every((sh) => books.filter((b) => b.shelf === sh).every((b) => b.quiz)) && start.every((id) => books.find((b) => b.id === id).quiz),
+  quizzed.length + ' of ' + books.length + ' books');
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
