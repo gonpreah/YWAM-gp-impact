@@ -1422,7 +1422,7 @@ function renderMenu(){
     { title:'', items:[it('library', t('Library')), it('guestreg', t('Create my profile')), it('guestlogin', t('Log in'))] }
   ] : [
     { title:'', items:[it('base', t('Base')), it('caltasks', t('GP Calendar/Tasks')), it('ywamgp', t('YWAM GP'))].concat(bdRoomCan_() ? [it('bdhub', '🛡️ '+t('Advisory Board'))] : gpOverCan_() ? [it('gpover', '🌏 '+t('YWAM GP oversight'))] : [], qrMenu_() ? [it('qreport', t('Quarterly report'))] : [], [it('prayer', t('Prayer'))], S.fast ? [it('fast', S.fast.title)] : [], [ it('p360', t('360 reviews')), it('tests', t('Tests')), it('leave', t('Leave Request')), it('library', t('Library'))], S.student ? [] : [it('support', t('Support raising'))]) },
-    { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], [it('worship', t('Worship rota'))], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : [], canStudentsClient_() ? [it('students', t('Students'))] : []) },
+    { title:t('Operations'), items:[].concat(typeof dutyHtml==='function' ? [it('sched', t('Weekly schedules'))] : [], [it('worship', t('Worship rota'))], S.student ? [] : [{ id:'asktech', icon:'<span aria-hidden="true">🔧</span>', label:t('Ask Technical') }], canHospClient_() ? [it('hosp', t('SR Hospitality'))] : [], canStudentsClient_() ? [it('students', t('Students'))] : []) },
     { title:t('Applications'), items:(S.me.isAdmin || S.me.portalStaff || S.me.portalAdmin || S.me.portal) ? [it('portal', t('YWAM GP Portal')), it('portalapp', t('The Portal on your phone'))] : [] },
     { title:t('Admin'), items:[].concat((S.me.isAdmin || S.me.hr) ? [it('hr', t('HR')+(hrN ? ' · '+hrN : ''))] : [], S.me.isAdmin ? [it('admin', t('Admin'))] : [], kmrCan_() ? [it('kmreview', t('Khmer review'))] : []) },
     { title:t('Language'), items:[it('khmer', t('Learn Khmer / English'))] }
@@ -1459,6 +1459,7 @@ function renderMenu(){
       else if(id==='calendar' || id==='caltasks'){ S.view='calendar'; S.cal=null; S.calFrom=null; render(); window.scrollTo(0,0); }
       else if(id==='prayer'){ S.view='prayer'; S.pr=null; render(); window.scrollTo(0,0); }
       else if(id==='fast'){ icpOpen_('fast'); }
+      else if(id==='asktech'){ renderMenu(); tdAskTechOpen_(); }   // a work request for Technical: a GP Task asked of it (31-today.js)
       else if(id==='khmer'){ khOpen_(); }
       else if(id==='p360'){ S.view='p360'; S.p3Sub='home'; S.p3=null; render(); window.scrollTo(0,0); }
       else if(id==='tests'){ S.tests.mc=null; testsOpen_('home'); }

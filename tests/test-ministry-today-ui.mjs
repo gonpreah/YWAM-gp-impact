@@ -40,7 +40,9 @@ mem.staff = [
   mk({ id: 'dara', name: 'Dara Sok', username: 'dara' }),
   mk({ id: 'ada', name: 'Ada Min', username: 'ada', dept: 'Skills Training', ministry: 'Technical', isAdmin: true }),
   mk({ id: 'cora', name: 'Cora Cup', username: 'cora', dept: 'Community Service', ministry: 'Cafe' }),
-  mk({ id: 'vee', name: 'Vee Film', username: 'vee', dept: 'Youth Education', ministry: 'GP Media' })
+  mk({ id: 'vee', name: 'Vee Film', username: 'vee', dept: 'Youth Education', ministry: 'GP Media' }),
+  mk({ id: 'tom', name: 'Tom Fixit', username: 'tom', dept: 'Skills Training', ministry: 'Technical' }),
+  mk({ id: 'hana', name: 'Hana Host', username: 'hana', dept: 'Skills Training', ministry: 'Hospitality' })
 ];
 /* the page's clock: the Wednesday of this very week (so Monday and Tuesday are behind it), and its Friday for the wrap.
    The server keeps the real clock — the same week, which is all it needs. */
@@ -284,6 +286,88 @@ console.log('=== Khmer, 320px ===');
   ok('a tap works there too', await num(page, 'Games Won') === '3');
   await page.waitForTimeout(1500);
   await shot(page, SHOTS + '/today-320-km.png');
+  await ctx.close();
+}
+
+/* ---------- step 2: each ministry's own touches (TD_MIN) ---------- */
+console.log('=== each ministry’s own prompt, tile order and icons ===');
+{
+  const { ctx, page } = await open('dara');
+  ok('Sports has its own line above the tiles', /Log each game as it ends/.test(await txt(page, '#tdPrompt')));
+  ok('… and an emoji on the tiles it names', /⚽/.test(await txt(page, tile('Games Played') + ' .tdName')) && /🏆/.test(await txt(page, tile('Games Won') + ' .tdName')));
+  const order = await page.$$eval('#tdTiles [data-tdtile]', (x) => x.map((e) => e.getAttribute('data-tdtile')));
+  ok('the leader’s goals still lead, then the ministry’s own order', order[0] === 'Sessions / Leagues Run' && order[1] === 'Games Played' && order[2] === 'Games Won', order);
+  const names = await page.evaluate(() => { const out = []; Object.keys(TD_MIN).forEach((k) => { const i = k.indexOf('|'), d = k.slice(0, i), m = k.slice(i + 1); const have = [].concat(metricsFor('siemreap', d, m), metricsFor('poipet', d, m)); TD_MIN[k].lead.concat(Object.keys(TD_MIN[k].icons)).forEach((x) => { if (have.indexOf(x) === -1) out.push(k + ' → ' + x); }); }); return out; });
+  ok('the table names only metrics the taxonomy has — nothing invented', names.length === 0, names);
+  await ctx.close();
+  const g = await open('vee');
+  ok('a ministry in the table gets its line (GP Media)', /Tap when something goes out/.test(await txt(g.page, '#tdPrompt')));
+  const gOrder = await g.page.$$eval('#tdTiles [data-tdtile]', (x) => x.map((e) => e.getAttribute('data-tdtile')));
+  ok('… and its tiles in its own order: what went out on each platform first', gOrder.join('|') === 'Instagram Pieces Published|Facebook Pieces Published|YouTube Pieces Published|TikTok Pieces Published', gOrder);
+  await g.ctx.close();
+}
+
+console.log('=== Ask Technical: a work request is a GP Task asked of Technical ===');
+{
+  const { ctx, page } = await open('dara');
+  await page.click('#menuBtn').catch(async () => { await page.evaluate(() => { S.menuOpen = true; renderMenu(); }); });
+  await page.waitForSelector('#menuRoot [data-menu-item="asktech"]');
+  ok('☰ → Operations has Ask Technical, for any staff member', /Ask Technical/.test(await txt(page, '#menuRoot [data-menu-item="asktech"]')));
+  await page.click('#menuRoot [data-menu-item="asktech"]');
+  await page.waitForSelector('#atSheet #atWhat');
+  await page.click('#atSend'); await page.waitForTimeout(150);
+  ok('nothing is sent without saying what', !calls.includes('saveGpTask') && !!(await page.$('#atWhat')));
+  await page.fill('#atWhat', 'The tap is leaking'); await page.fill('#atWhere', 'Room 203'); await page.fill('#atMore', 'Since Monday');
+  await page.click('#atSend'); await page.waitForSelector('#atSent');
+  const T = () => (mem.gpTasks.tasks || []).filter((x) => x.title === 'The tap is leaking');
+  const L = () => mem.gpTasks.lists.find((l) => l.scope === 'ministry' && l.dept === 'Skills Training' && l.ministry === 'Technical' && l.campus === 'siemreap');
+  ok('it is ONE task in Technical’s own list, a request from Sports, with where it is', T().length === 1 && !!L() && T()[0].listId === L().id && T()[0].status === 'request' && T()[0].from && T()[0].from.label === 'Sports' && /^📍 Room 203\nSince Monday$/.test(T()[0].notes), T());
+  await page.click('#atCancel'); await page.waitForTimeout(100);
+  ok('the sheet closes', !(await page.$('#atSheet')));
+  await ctx.close();
+  /* an older one, so "the oldest three" has an order to keep */
+  mem.gpTasks.tasks.push({ id: 'tk_old', listId: L().id, title: 'Fan is broken', notes: '📍 Dining hall', due: '', time: '', done: false, assignees: [], assignedAt: {}, status: 'open', from: { id: 'kim', label: 'Sports' }, created: day(-2).toISOString(), by: 'kim', updated: day(-2).toISOString(), order: 0 },
+    { id: 'tk_own', listId: L().id, title: 'Our own job', notes: '', due: '', time: '', done: false, assignees: [], assignedAt: {}, status: 'open', from: null, created: day(-1).toISOString(), by: 'tom', updated: day(-1).toISOString(), order: 1 });
+
+  const t2 = await open('tom');
+  await t2.page.waitForSelector('#tdReq[data-n]');
+  ok('Technical’s Today has its own line', /Tap each project you finish/.test(await txt(t2.page, '#tdPrompt')));
+  ok('… and says how many requests are open (asked from outside — not its own tasks)', (await t2.page.getAttribute('#tdReq', 'data-n')) === '2' && /2 open requests/.test(await txt(t2.page, '#tdReq')));
+  const rows = await t2.page.$$eval('#tdReq [data-tdreq] b', (x) => x.map((e) => e.textContent));
+  ok('… the oldest first, with where and who asked', rows[0] === 'Fan is broken' && rows[1] === 'The tap is leaking' && /Room 203/.test(await txt(t2.page, '#tdReq')) && /Dara/.test(await txt(t2.page, '#tdReq')), rows);
+  ok('… every Done button is 44px or more', await t2.page.$$eval('#tdReq [data-tdreqdone]', (bs) => bs.length === 2 && bs.every((b) => b.getBoundingClientRect().height >= 44)));
+  ok('the page does not slide sideways', (await sideways(t2.page)) <= 0);
+  await shot(t2.page, SHOTS + '/today-technical-requests.png');
+  const id = T()[0].id;
+  await t2.page.click('[data-tdreqdone="' + id + '"]');
+  await t2.page.waitForSelector('#tdReq[data-n="1"]');
+  ok('Done takes the request and ticks it (the existing handlers)', T()[0].done === true && T()[0].status === 'open' && T()[0].doneBy === 'tom' && calls.includes('respondGpTask'), T()[0]);
+  ok('… and no number was written for it — the tile is still theirs to tap', !(mem.kpiDaily || []).some((r) => r.ministry === 'Technical') && !(mem.entries || []).some((r) => r.ministry === 'Technical'));
+  ok('… a tile for Projects Completed is there to tap', !!(await t2.page.$(tile('Projects Completed') + ' [data-tdtap]')));
+  await t2.ctx.close();
+}
+
+console.log('=== Hospitality: tonight from the booking book, and the week’s chores ===');
+{
+  const dd = (n) => iso(day(2 + n));
+  mem['hosp:siemreap'] = { buildings: [{ id: 'b1', name: 'Main house' }],
+    rooms: [{ id: 'r1', buildingId: 'b1', name: 'Room 1', style: 'mixed', notes: '', beds: [{ id: 'bd1', label: 'A' }, { id: 'bd2', label: 'B' }, { id: 'bd3', label: 'C' }, { id: 'bd4', label: 'D' }] }],
+    bookings: [{ id: 'k1', category: 'guest', name: 'Made-up guests', from: dd(0), to: dd(3), permanent: false, males: 1, females: 1, count: 2, family: false, bedIds: [], notes: '' },
+      { id: 'k2', category: 'guest', name: 'Made-up visitor', from: dd(-3), to: dd(0), permanent: false, males: 1, females: 0, count: 1, family: false, bedIds: [], notes: '' }] };
+  const before = calls.filter((f) => f === 'getHospitality').length;
+  const { ctx, page } = await open('hana');
+  await page.waitForSelector('#tdTonight[data-cap]');
+  const a = await page.$eval('#tdTonight', (e) => [e.getAttribute('data-held'), e.getAttribute('data-cap'), e.getAttribute('data-arr'), e.getAttribute('data-lv'), e.innerText]);
+  ok('Tonight: beds filled and free, who arrives and leaves today', a[0] === '2' && a[1] === '4' && a[2] === '2' && a[3] === '1' && /2 of 4 beds filled/.test(a[4]) && /2 free/.test(a[4]) && /Arriving today 2/.test(a[4]) && /leaving today 1/.test(a[4]), a);
+  ok('… asked for once, when the tab opened', calls.filter((f) => f === 'getHospitality').length === before + 1);
+  const hasSched = await page.evaluate(() => !!S.sched);
+  const line = await page.$('#tdSched[data-tdsched="chores"]');
+  ok('the week’s morning chores: published or not yet (only once the week’s schedules are on the phone)', hasSched ? (!!line && (await line.getAttribute('data-now')) === '0' && /not yet/.test(await line.innerText())) : !line);
+  ok('Hospitality’s own line and tiles', /Tap as you welcome each guest/.test(await txt(page, '#tdPrompt')) && /🤗/.test(await txt(page, tile('Guests Welcomed') + ' .tdName')));
+  ok('the page does not slide sideways', (await sideways(page)) <= 0);
+  await shot(page, SHOTS + '/today-hospitality.png');
+  await page.click('#tdTonight'); await page.waitForSelector('#hospPage');
+  ok('a tap opens SR Hospitality', await page.evaluate(() => S.view === 'hosp'));
   await ctx.close();
 }
 

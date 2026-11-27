@@ -7210,3 +7210,39 @@ Short labels on My Ministry’s Today screen and the one-row strip on tool minis
 |---|---|
 | Streak, this week and badges | ថ្ងៃជាប់គ្នា សប្ដាហ៍នេះ និងមេដាយ |
 | Win | ដំណឹងល្អ |
+| Log each game as it ends. | កត់ត្រាការប្រកួតនីមួយៗ ពេលវាចប់។ |
+| Tap when something goes out. | ចុច ពេលមានអ្វីមួយត្រូវបានផ្សាយចេញ។ |
+| Tap each project you finish. | ចុច រាល់គម្រោងដែលអ្នកធ្វើចប់។ |
+| Tap after each meal service. | ចុច ក្រោយពេលបម្រើអាហារម្ដងៗ។ |
+| Tap as you welcome each guest. | ចុច ពេលអ្នកស្វាគមន៍ភ្ញៀវម្នាក់ៗ។ |
+| Tap after each conversation. | ចុច ក្រោយការសន្ទនាម្ដងៗ។ |
+| After each church visit, share a win. The churches’ numbers go in Friday’s wrap. | ក្រោយពេលទៅសួរសុខទុក្ខក្រុមជំនុំម្ដងៗ សូមចែករំលែកដំណឹងល្អមួយ។ តួលេខរបស់ក្រុមជំនុំ បញ្ចូលនៅពេលបូកសរុបថ្ងៃសុក្រ។ |
+| − takes one off, ✎ types the number. | − ដកមួយចេញ ✎ វាយលេខ។ |
+| Tonight | យប់នេះ |
+| Tonight: {n} of {cap} beds filled · {free} free | យប់នេះ៖ គ្រែ {n} នៃ {cap} មានអ្នកគេង · ទំនេរ {free} |
+| Arriving today {a} · leaving today {l} | មកដល់ថ្ងៃនេះ {a} · ចេញថ្ងៃនេះ {l} |
+| published ✓ | បានផ្សាយ ✓ |
+| not yet | មិនទាន់ |
+| This week’s {name}: {state} | {name} សប្ដាហ៍នេះ៖ {state} |
+| Next week: {state} | សប្ដាហ៍ក្រោយ៖ {state} |
+| Work requests | សំណើការងារ |
+| 1 open request | សំណើ 1 កំពុងរង់ចាំ |
+| {n} open requests | សំណើ {n} កំពុងរង់ចាំ |
+| Nothing is waiting. Anyone can ask from ☰ → Ask Technical. | គ្មានអ្វីរង់ចាំទេ។ អ្នកណាក៏អាចស្នើបានពី ☰ → ស្នើផ្នែកបច្ចេកទេស។ |
+| Mark “{title}” done | សម្គាល់ “{title}” ថារួចរាល់ |
+| Done | រួចរាល់ |
+| See all {n} in Tasks | មើលទាំង {n} ក្នុងកិច្ចការ |
+| Open them in Tasks | បើកវាក្នុងកិច្ចការ |
+| Done — thank you | រួចរាល់ — អរគុណ |
+| Ask Technical | ស្នើផ្នែកបច្ចេកទេស |
+| Ask Technical to fix something | ស្នើផ្នែកបច្ចេកទេសឲ្យជួសជុលអ្វីមួយ |
+| Sent to Technical. They see it on their page, and you can follow it in GP Tasks → Inbox. | បានផ្ញើទៅផ្នែកបច្ចេកទេសហើយ។ ពួកគេឃើញវានៅលើទំព័ររបស់ពួកគេ ហើយអ្នកអាចតាមដានវាក្នុង GP Tasks → ប្រអប់ទទួល។ |
+| What needs fixing? | តើអ្វីត្រូវជួសជុល? |
+| e.g. The tap is leaking | ឧ. ក្បាលរ៉ូប៊ីណេលេចទឹក |
+| Where is it? | តើវានៅឯណា? |
+| e.g. Room 203, the kitchen | ឧ. បន្ទប់ 203 ផ្ទះបាយ |
+| Anything else they should know? (optional) | មានអ្វីផ្សេងទៀតដែលពួកគេគួរដឹងទេ? (មិនចាំបាច់) |
+| Sending… | កំពុងផ្ញើ… |
+| Send to Technical | ផ្ញើទៅផ្នែកបច្ចេកទេស |
+| Say what needs fixing. | សូមប្រាប់ថាអ្វីត្រូវជួសជុល។ |
+| No connection — try again when you’re back online. | គ្មានការតភ្ជាប់ — សូមព្យាយាមម្ដងទៀតពេលមានអ៊ីនធឺណិតវិញ។ |

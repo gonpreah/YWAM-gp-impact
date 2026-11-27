@@ -1842,6 +1842,24 @@ numbers are counted but never part of it (no tile, no ring, no celebration, no b
   `#tdBarRing` · 🏅 `#tdBarBadges` · **＋ Win** `#tdBarWin`; ≤72px) — a tap (`#tdBarOpen`, `S.td.stripOpen`) opens the
   full pieces under it (`#tdStripMore`), ＋ Win opens it on the win box. **`gp-cafe-view` is no longer read**: a test
   about the Scorecard adds `SCORECARD_FIRST` (tests/env.mjs — the visit's own `gp-mm-tab`, every ministry on `numbers`).
+- **Each ministry's own touches** (`TD_MIN` in 31-today.js, keyed `Dept|Ministry`; a ministry not in it gets the generic
+  screen; nothing stored, no metric invented — a test checks every name against the taxonomy): `prompt` (a function, so
+  it goes through `t()`; shown as `#tdPrompt` in the how-line's place — "Log each game as it ends." for Sports, GP Media,
+  Technical, Culinary, Hospitality, Evangelism, Church Partnerships), `lead` (tile order after the leader's goals),
+  `icons` (an emoji by a tile's name, `tdIcon_`), and `extra`:
+  - `hosp` — Hospitality's **Tonight** line (`#tdTonight`, `tdTonightHtml_`): beds filled / free tonight, arriving and
+    leaving today, from `S.hosp` — `getHospitality`, asked for once when the tab is open (never on app open) — a tap opens
+    SR Hospitality;
+  - `sched:kitchen` / `sched:chores` — Culinary's and Hospitality's "This week's cooking schedule / morning chores:
+    published ✓ / not yet", and next week's (`#tdSched`, from the boot's `S.sched`; a tap opens the schedule, to edit when
+    `canEdit`);
+  - `tech` — Technical's **work requests** (`#tdReq`, under the tiles): GP Tasks in Technical's designated list that were
+    asked from outside (`from`), not done — "n open requests", the oldest three, **✓ Done** (`tdReqDone_`:
+    `respondGpTask` if it still waits, then `saveGpTask {done}`), "Open them in Tasks". No store of its own, and **no
+    number is written** — a request fixed isn't a "Project Completed", so the tile stays theirs to tap.
+  **Ask Technical** (☰ → Operations `asktech`, so search and the quick apps have it; `tdAskTechOpen_`, `#atSheet` in
+  `#atRoot`, drawn without a render): what, where, anything else → `saveGpTask {askMin:'Skills Training|Technical', title,
+  notes:'📍 where…', rid}` — the existing "Ask another ministry" path (text only: GP Tasks holds no photos).
 - **The quarter's story** (29-report.js `qrFormHtml_`): above Highlights, "This quarter's wins — tap one to add it"
   (`tdReportWinsHtml_`, `#tdQrWins`, `[data-qrwin]`, bound in `bindToday_`) — for the writer's own campus and only when
   that ministry's payload is already on the phone (their own ministry, or one they opened this visit); read-only reuse.

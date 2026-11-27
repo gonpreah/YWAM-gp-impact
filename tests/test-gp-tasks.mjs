@@ -282,5 +282,33 @@ ok('a code that isn’t one is ignored', r.ok && !mem.gpTasks.tasks.some(t => t.
 r = await call('getGpTasks', as('cora'));
 ok('the code never goes out to a phone', !JSON.stringify(r).includes('rabc123def'));
 
+console.log('=== "Ask Technical to fix something": a work request is a task asked of Technical (My Ministry → Today) ===');
+{
+  mem.staff.push(mk({ id: 't1', name: 'Tom Fixit', username: 'tom', dept: 'Skills Training', ministry: 'Technical' }));
+  const ask = { askMin: 'Skills Training|Technical', title: 'The tap is leaking', notes: '📍 Room 203\nSince Monday', rid: 'at1abc2def3' };
+  r = await call('saveGpTask', [...as('cora'), ask]);
+  const tech = mem.gpTasks.lists.filter(l => l.scope === 'ministry' && l.dept === 'Skills Training' && l.ministry === 'Technical' && l.campus === 'siemreap');
+  const mine = () => mem.gpTasks.tasks.filter(t => t.title === 'The tap is leaking');
+  ok('it lands in Technical’s ONE designated list, named after it, as a request from the asker’s ministry', r.ok && tech.length === 1 && tech[0].title === 'Technical' && mine().length === 1 && mine()[0].listId === tech[0].id && mine()[0].status === 'request' && mine()[0].from.label === 'Cafe' && mine()[0].notes === '📍 Room 203\nSince Monday', mine());
+  r = await call('saveGpTask', [...as('cora'), ask]);
+  ok('sent twice (a second tap, a lost answer) it is still one request', r.ok && r.again === true && mine().length === 1);
+  r = await call('saveGpTask', [...as('cora'), { id: mine()[0].id, done: true }]);
+  ok('a request still waiting cannot be ticked — Technical takes it first', mine()[0].done === false);
+  r = await call('getGpTasks', as('tom'));
+  const seen = r.tasks.find(t => t.title === 'The tap is leaking'), L = r.lists.find(l => l.id === tech[0].id);
+  ok('Technical’s people see it in their list, with who asked', !!seen && !!L && !L.onlyAssigned && seen.from && seen.from.label === 'Cafe' && seen.by === 'c1');
+  r = await call('getGpTasks', as('pp'));
+  ok('the other campus sees nothing of it', !r.tasks.some(t => t.title === 'The tap is leaking'));
+  r = await call('respondGpTask', [...as('hana'), mine()[0].id, true]);
+  ok('someone outside Technical cannot take it', r.ok === false && mine()[0].status === 'request');
+  r = await call('respondGpTask', [...as('tom'), mine()[0].id, true]);
+  r = await call('saveGpTask', [...as('tom'), { id: mine()[0].id, done: true }]);
+  ok('Technical takes it and marks it done', r.ok && mine()[0].status === 'open' && mine()[0].done === true && mine()[0].doneBy === 't1');
+  ok('… and no ministry number was written for it', !(mem.entries || []).some(e => e.ministry === 'Technical') && !(mem.kpiDaily || []).some(e => e.ministry === 'Technical'));
+  r = await call('saveGpTask', [...as('uriah'), { askMin: 'Skills Training|Technical', title: 'Paint the gate' }]);
+  const cl = mem.gpTasks.tasks.find(t => t.title === 'Paint the gate');
+  ok('Campus Leadership’s ask lands straight in the list — still marked as asked from outside', r.ok && cl.listId === tech[0].id && cl.status === 'open' && !!cl.from);
+}
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
