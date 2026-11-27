@@ -1776,7 +1776,6 @@ numbers are counted but never part of it (no tile, no ring, no celebration, no b
   `#tdToday[data-tdkey]`): every ministry with no daily home of its own — Today · Scorecard · (Schedule) · Tasks · Rocks.
   **A ministry's page opens on its first tab every time the app is opened**: `mmTabKeep_` / `mmTabKept_` are
   sessionStorage now (`gp-mm-tab`, per ministry — a tab chosen stays for that visit only, as Campus Leadership's do).
-  The old `gp-cafe-view=numbers` on a phone still opens the Scorecard (many tests use it to say "the Scorecard").
   **The ministries with their own daily home keep it first** (`tdToolMin_`: the Cafe, Outreach Teams, Intercession,
   Worship, GPDTS, the school tool) and get **the strip** on top of that first tab (`todayStripHtml_`,
   `#tdToday[data-tdstrip]`, through `mmTop`): streak, ring, win of the day, badges — no counters (their numbers are their
@@ -1837,6 +1836,12 @@ numbers are counted but never part of it (no tile, no ring, no celebration, no b
   drops what is older than `WIN_KEEP_DAYS` 60 for the whole campus; `deleteMinistryWin(…, id)` — the writer, the
   ministry's leader, an admin. What is sent is `{id, text, name, date, at, mine}` — never the writer's id — and only
   inside that ministry's payload, so only to people who can open it. Both are in `DEMO_WRITES` with `saveKpiDayFor`.
+- **Step 2 fixes (Nov 2026, Uriah: "Keep improving the My Ministry pages")**: wins are kept `WIN_KEEP_DAYS` **200** days
+  (this quarter and the one before, so the quarter's story finds them; `WIN_ROWS_MAX` 400 a ministry) — Today's feed
+  still shows two months (`TD_FEED_DAYS`). **The strip is ONE row** (`#tdBar`: 🔥 streak `#tdBarStreak` · the ring
+  `#tdBarRing` · 🏅 `#tdBarBadges` · **＋ Win** `#tdBarWin`; ≤72px) — a tap (`#tdBarOpen`, `S.td.stripOpen`) opens the
+  full pieces under it (`#tdStripMore`), ＋ Win opens it on the win box. **`gp-cafe-view` is no longer read**: a test
+  about the Scorecard adds `SCORECARD_FIRST` (tests/env.mjs — the visit's own `gp-mm-tab`, every ministry on `numbers`).
 - **The quarter's story** (29-report.js `qrFormHtml_`): above Highlights, "This quarter's wins — tap one to add it"
   (`tdReportWinsHtml_`, `#tdQrWins`, `[data-qrwin]`, bound in `bindToday_`) — for the writer's own campus and only when
   that ministry's payload is already on the phone (their own ministry, or one they opened this visit); read-only reuse.

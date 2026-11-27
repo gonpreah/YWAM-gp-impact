@@ -5,7 +5,7 @@
    leader seeing it; the Campus Director seeing every department and entering
    the quarter's own scores (a 70 caught, a 7 saved for the quarter); ordinary
    staff seeing none of it. */
-import { REPO, PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
+import { REPO, PUBLIC, tmpDir, CHROMIUM, SCORECARD_FIRST } from './env.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -70,8 +70,9 @@ async function open(user, opts) {
   page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/net::|ERR_/.test(m.text())) errors.push('CONSOLE ' + m.text()); });
   await page.route('**fonts.g**', r => r.abort());
+  await page.addInitScript(SCORECARD_FIRST);   // this test is about the Scorecard: start the visit on it, not on Today
   await page.addInitScript(a => {
-    localStorage.setItem('gp-cafe-view', 'numbers'); sessionStorage.setItem('gp-lw-tab', 'base');
+    sessionStorage.setItem('gp-lw-tab', 'base');
     localStorage.setItem('gp-staff', JSON.stringify({ user: a.u, pin: '1234' }));
     if (a.km) localStorage.setItem('gp-lang', 'km');
   }, { u: user, km: !!opts.km });

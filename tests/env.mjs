@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 
 export const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const PUBLIC = path.join(REPO, 'public');
@@ -48,3 +49,16 @@ export function pageSource(file, root) {
     .replace(/<script src="(teams\/[^"]+\.js)"><\/script>/g, function (m, f) { return '<script>\n' + fs.readFileSync(path.join(dir, f), 'utf8') + '</script>'; });
 }
 
+
+/* "This test is about the Scorecard": a ministry's page opens on its first tab (Today), and a tab somebody picks stays
+   for that visit in sessionStorage (gp-mm-tab, by 'Dept|Ministry'). SCORECARD_FIRST is an init script that starts the
+   visit with the Scorecard already picked for every ministry in the taxonomy — the page's own mechanism, pre-seeded,
+   as tests do for gp-lw-tab. Use: await page.addInitScript(SCORECARD_FIRST). (It replaces the October phone flag
+   gp-cafe-view=numbers, which real phones no longer honour.) */
+export const SCORECARD_FIRST = (() => {
+  const box = {}; vm.createContext(box);
+  vm.runInContext(fs.readFileSync(path.join(PUBLIC, 'taxonomy.js'), 'utf8') + '\n;this.__d = { poipet: getBaselineDepartments("poipet"), siemreap: getBaselineDepartments("siemreap") };', box);
+  const map = {};
+  for (const c of Object.keys(box.__d)) for (const d of Object.keys(box.__d[c])) for (const m of Object.keys(box.__d[c][d])) map[d + '|' + m] = 'numbers';
+  return 'try { if (!sessionStorage.getItem("gp-mm-tab")) sessionStorage.setItem("gp-mm-tab", ' + JSON.stringify(JSON.stringify(map)) + '); } catch (e) {}';
+})();

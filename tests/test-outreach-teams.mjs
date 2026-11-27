@@ -7,7 +7,7 @@
    and a Cafe member browsing to Outreach Teams sees the page read-only. The
    ministry dashboard's period toggle and the folded personal card are
    checked on a Cafe page too. */
-import { PUBLIC, CHROMIUM } from './env.mjs';
+import { PUBLIC, CHROMIUM, SCORECARD_FIRST } from './env.mjs';
 import { testNow, pinClock, weekOf, weekYearOf, quarterOf } from './clock.mjs';
 /* Two clocks. The trips are one year's story — teams that came January to May,
    one next January — so those pages run on a fixed day after them (12 Aug).
@@ -92,7 +92,8 @@ async function open(who, opts) {
     else if (/^getMy/.test(b.fn)) out = { ok: true, logs: [], goals: [], checkins: [], mentees: [], requests: [] };
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(out) });
   });
-  await page.addInitScript(u => { localStorage.setItem('gp-cafe-view', 'numbers'); sessionStorage.setItem('gp-lw-tab', 'board'); localStorage.setItem('gp-staff', JSON.stringify({ user: u, pin: '1234' })); }, who.username);
+  await page.addInitScript(SCORECARD_FIRST);   // this test is about the Scorecard: start the visit on it, not on Today
+  await page.addInitScript(u => { sessionStorage.setItem('gp-lw-tab', 'board'); localStorage.setItem('gp-staff', JSON.stringify({ user: u, pin: '1234' })); }, who.username);
   await page.goto('http://localhost:4494/teams.html', { waitUntil: 'load' });
   await page.waitForSelector('.hero', { timeout: 15000 });
   await page.waitForTimeout(500);

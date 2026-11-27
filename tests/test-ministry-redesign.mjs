@@ -5,7 +5,7 @@
 
    Drives the real page. The ministry data is stubbed so the strip has
    something to say — three of the last eight weeks logged, five not. */
-import { PUBLIC, CHROMIUM } from './env.mjs';
+import { PUBLIC, CHROMIUM, SCORECARD_FIRST } from './env.mjs';
 import { chromium } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -60,7 +60,8 @@ async function open(who) {
     else if (/^getMy/.test(b.fn)) out = { ok: true, logs: [], goals: [], checkins: [], mentees: [], requests: [] };
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(out) });
   });
-  await page.addInitScript(u => (localStorage.setItem('gp-cafe-view', 'numbers'), localStorage.setItem('gp-staff', JSON.stringify({ user: u, pin: '1234' }))), who.username);
+  await page.addInitScript(SCORECARD_FIRST);   // this test is about the Scorecard: start the visit on it, not on Today
+  await page.addInitScript(u => (localStorage.setItem('gp-staff', JSON.stringify({ user: u, pin: '1234' }))), who.username);
   await page.goto('http://localhost:4492/teams.html', { waitUntil: 'load' });
   await page.waitForSelector('.hero', { timeout: 15000 });
   await page.waitForTimeout(700);

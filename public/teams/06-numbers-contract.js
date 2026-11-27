@@ -846,11 +846,11 @@ function mmTabsFor_(sel, mine, schedH){
   return out;
 }
 /* Every time the app is opened a ministry's page opens on its FIRST tab — Today (Nov 2026, Uriah; teams/31-today.js).
-   A tab chosen stays for that visit only (sessionStorage, as Campus Leadership's tabs do), per ministry. The one thing
-   still kept on the phone is the old "tool or numbers" choice (gp-cafe-view=numbers): it opens on the Scorecard. */
+   A tab chosen stays for that visit only (sessionStorage, as Campus Leadership's tabs do), per ministry. (The October
+   "tool or numbers" flag on the phone, gp-cafe-view, is no longer read.) */
 function mmTabKey_(){ return (S.mmBrowseDept||'')+'|'+(S.mmBrowseMinistry||''); }
 function mmTabKeep_(k){ try { var m=JSON.parse(sessionStorage.getItem('gp-mm-tab')||'{}'); m[mmTabKey_()]=k; sessionStorage.setItem('gp-mm-tab', JSON.stringify(m)); } catch(e){} }
-function mmTabKept_(){ try { var m=JSON.parse(sessionStorage.getItem('gp-mm-tab')||'{}'); return m[mmTabKey_()] || (lsGet('gp-cafe-view')==='numbers' ? 'numbers' : ''); } catch(e){ return ''; } }
+function mmTabKept_(){ try { var m=JSON.parse(sessionStorage.getItem('gp-mm-tab')||'{}'); return m[mmTabKey_()] || ''; } catch(e){ return ''; } }
 function mmCurTab_(sel, tabs){
   var keys=tabs.map(function(x){ return x[0]; });
   if(MM_SHELL_KEYS.indexOf(S.mmTab)>-1 && keys.indexOf(S.mmTab)>-1) return S.mmTab;

@@ -4354,7 +4354,13 @@ button.tdTap:active { background:var(--accentSoft); }
 .tdBadges li { font-size:14px; }
 .tdBadges li i { font-style:normal; }
 .tdBadges li:not(.on) > i { filter:grayscale(1); opacity:.45; }
-.tdStrip { margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid var(--line); }
+.tdStrip { margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+.tdBar { display:flex; align-items:center; gap:8px; min-width:0; }
+.tdBarMain { flex:1 1 auto; min-width:0; min-height:48px; display:flex; align-items:center; gap:12px; padding:4px 10px; border:1.5px solid var(--border); border-radius:14px; background:var(--surface); color:var(--ink); font:inherit; font-size:15px; cursor:pointer; touch-action:manipulation; }
+.tdBarIt { display:inline-flex; align-items:center; gap:4px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.tdBarChev { margin-left:auto; color:var(--muted); font-size:12px; }
+.tdBarWin { flex:0 0 auto; min-height:48px; padding:4px 12px; border:1.5px solid var(--accent); border-radius:14px; background:var(--accentSoft); color:var(--ink); font:inherit; font-weight:800; font-size:14px; cursor:pointer; white-space:nowrap; touch-action:manipulation; }
+.tdStripMore { display:flex; flex-direction:column; gap:10px; min-width:0; }
 .tdQrWins { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 8px; }
 .tdQrWins .hint { flex:1 1 100%; margin:0; }
 .tdQrWin { border:1.5px solid var(--border); border-radius:12px; background:var(--surface); color:var(--ink); padding:8px 10px; min-height:44px; font:inherit; font-size:13.5px; text-align:left; cursor:pointer; max-width:100%; overflow-wrap:anywhere; }

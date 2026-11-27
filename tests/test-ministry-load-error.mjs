@@ -6,7 +6,7 @@
    says it couldn't load, shows the server's own error text, and offers Try
    again; a good answer on the retry brings the numbers in. The Teams
    Database page gets the same treatment for getTeamTrips. */
-import { PUBLIC, CHROMIUM } from './env.mjs';
+import { PUBLIC, CHROMIUM, SCORECARD_FIRST } from './env.mjs';
 import { chromium } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -51,7 +51,8 @@ async function open(who, failFn) {
     else if (/^getMy/.test(b.fn)) out = { ok: true, logs: [], goals: [], checkins: [], mentees: [], requests: [] };
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(out) });
   });
-  await page.addInitScript(u => (sessionStorage.setItem('gp-lw-tab', 'board'), localStorage.setItem('gp-cafe-view', 'numbers'), localStorage.setItem('gp-staff', JSON.stringify({ user: u, pin: '1234' }))), who.username);
+  await page.addInitScript(SCORECARD_FIRST);   // this test is about the Scorecard: start the visit on it, not on Today
+  await page.addInitScript(u => (sessionStorage.setItem('gp-lw-tab', 'board'), localStorage.setItem('gp-staff', JSON.stringify({ user: u, pin: '1234' }))), who.username);
   await page.goto('http://localhost:4496/teams.html', { waitUntil: 'load' });
   await page.waitForSelector('.hero', { timeout: 15000 });
   await page.waitForTimeout(500);

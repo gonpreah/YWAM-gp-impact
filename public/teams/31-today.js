@@ -7,7 +7,7 @@
      1. tap counters — a big tile per daily count (tap +1, − undoes, ✎ or a long press types today's number);
      2. this week's ring — goals on target (the Scorecard's own goals and maths), or days logged this week;
      3. the team streak — days in a row anyone logged anything, Sundays and national holidays skipped;
-     4. win of the day — one line of something good that happened (kept 60 days, offered to the quarter's story);
+     4. win of the day — one line of something good that happened (kept 200 days, offered to the quarter's story);
      5. the Friday wrap — the weekly numbers, carried forward as the weekly form does, then "Week n complete";
      6. badges — the ministry's, worked out here from what is already stored.
 
@@ -19,8 +19,8 @@
    0.8 s after the last tap — so three quick taps are one save of "3", and sending it twice changes nothing. What has
    not reached the server yet is kept on the phone (gp-td-pending, by user + ministry + date + metric, the last value
    wins) and sent when the connection is back. A tap paints its own tile; it never redraws the page. */
-var TD_TILES=4, TD_SAVE_MS=800, TD_HOLD_MS=500, TD_PENDING='gp-td-pending', TD_BADGES='gp-td-badges', TD_WINS_SHOWN=3;
-S.td={ more:false, edit:null, winDraft:'', winsAll:false, wrapOpen:false, wrapDraft:{}, wrapDone:'', flying:false, note:'', timer:null, winBusy:false };
+var TD_TILES=4, TD_SAVE_MS=800, TD_HOLD_MS=500, TD_PENDING='gp-td-pending', TD_BADGES='gp-td-badges', TD_WINS_SHOWN=3, TD_FEED_DAYS=60;
+S.td={ more:false, edit:null, winDraft:'', winsAll:false, wrapOpen:false, wrapDraft:{}, wrapDone:'', flying:false, note:'', timer:null, winBusy:false, stripOpen:'' };
 
 /* out of the game: salvations, baptisms, healings (Uriah's three). The quarterly report's wider GP_FAITH_RE also names
    churches, worship, prayer… — those are a ministry's ordinary daily counts (Evangelism, Church Partnerships), so they are tiles. */
@@ -218,7 +218,7 @@ function tdAlsoHtml_(sel, data, M, can){
            : '<span class="tdAlsoVal">'+fmt(x.today, m)+'</span>')+
       '<span class="tdAlsoWk">'+esc(t('This week'))+' '+fmt(x.week, m)+'</span></div>'; }).join('')+'</div>';
 }
-function tdRingHtml_(sel, data, M, can){
+function tdRingCalc_(sel, data, M){
   var c=S.me.campus, wk=thisWeek(), entries=(data && data.entries) || {};
   var withGoal=Object.keys(M.goals).filter(function(m){ return !tdIsFaith_(m) && metricsFor(c, sel.dept, sel.min).indexOf(m)>-1; }), on=0;
   withGoal.forEach(function(m){
@@ -233,10 +233,13 @@ function tdRingHtml_(sel, data, M, can){
     tdWeekDays_().forEach(function(x){ var iso=tdIso_(x); if(iso>today) return; if(set[iso]) d++; if(set[iso] || !tdClosed_(x, hol)) n++; });
     line=gpT('{d} of {n} days logged this week',{d:d, n:n});
   }
-  var p=n ? Math.round(d/n*100) : 0;
-  return '<div class="tdRing" id="tdRing"><div class="gRing lg" style="'+gpRingVars(p)+'" role="img" aria-label="'+esc(line)+'"><span>'+d+'/'+n+'</span></div>'+
-    '<div class="tdRingText"><b id="tdRingLine">'+esc(line)+'</b>'+(sub ? '<span class="hint">'+esc(sub)+'</span>' : '')+
-    (!withGoal.length && can && canEditMetricsClient_(c, sel.dept, sel.min) && M.taps.concat(M.levels).length ? '<button type="button" class="linkbtn inline" id="tdSetGoals">🎯 '+esc(t('Set this week’s goals'))+'</button>' : '')+'</div></div>';
+  return { d:d, n:n, line:line, sub:sub, goals:withGoal.length, p:n ? Math.round(d/n*100) : 0 };
+}
+function tdRingHtml_(sel, data, M, can){
+  var c=S.me.campus, R=tdRingCalc_(sel, data, M);
+  return '<div class="tdRing" id="tdRing"><div class="gRing lg" style="'+gpRingVars(R.p)+'" role="img" aria-label="'+esc(R.line)+'"><span>'+R.d+'/'+R.n+'</span></div>'+
+    '<div class="tdRingText"><b id="tdRingLine">'+esc(R.line)+'</b>'+(R.sub ? '<span class="hint">'+esc(R.sub)+'</span>' : '')+
+    (!R.goals && can && canEditMetricsClient_(c, sel.dept, sel.min) && M.taps.concat(M.levels).length ? '<button type="button" class="linkbtn inline" id="tdSetGoals">🎯 '+esc(t('Set this week’s goals'))+'</button>' : '')+'</div></div>';
 }
 function tdStreakHtml_(sel, data){
   var set=tdActive_(sel, data), n=tdStreak_(set), hol=tdClosedSet_(), today=todayStr(), names=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -253,7 +256,8 @@ function tdWhen_(date){
   return date===today ? t('today') : date===tdIso_(y) ? t('yesterday') : teamDate_(date).replace(/, \d{4}$/, '');
 }
 function tdWinsHtml_(sel, data, can){
-  var wins=(data && data.wins) || [], list=S.td.winsAll ? wins : wins.slice(0, TD_WINS_SHOWN);
+  var feedFrom=new Date(); feedFrom.setDate(feedFrom.getDate()-TD_FEED_DAYS); feedFrom=tdIso_(feedFrom);
+  var wins=((data && data.wins) || []).filter(function(w){ return w.date>=feedFrom; }), list=S.td.winsAll ? wins : wins.slice(0, TD_WINS_SHOWN);   // the feed: two months; the store keeps 200 days for the quarter's story
   var h='<div class="tdWin" id="tdWin"><div class="tdHead">🌟 '+esc(t('Win of the day'))+'</div>';
   if(can) h+='<div class="tdWinRow"><input type="text" id="tdWinText" maxlength="200" value="'+esc(S.td.winDraft||'')+'" placeholder="'+esc(t('Something good that happened today'))+'" aria-label="'+esc(t('Something good that happened today'))+'" autocomplete="off">'+
     '<button type="button" class="btn small" id="tdWinSave"'+(S.td.winBusy ? ' disabled' : '')+'>'+esc(t('Share'))+'</button></div>'+
@@ -322,9 +326,17 @@ function todayPaneHtml_(sel){
    pieces in one strip at the top of its first tab — its counting stays its tool's */
 function todayStripHtml_(sel){
   var data=tdData_(sel); if(!data) return '';
-  var can=tdCanLog_(sel), M=tdMetrics_(sel);
-  return '<div class="tdToday tdStrip" id="tdToday" data-tdstrip="1" data-tdkey="'+esc(tdKey_(sel))+'">'+
-    '<div class="tdPair">'+tdStreakHtml_(sel, data)+tdRingHtml_(sel, data, M, false)+'</div>'+tdWinsHtml_(sel, data, can)+tdBadgesHtml_(sel, data)+'</div>';
+  var can=tdCanLog_(sel), M=tdMetrics_(sel), key=tdKey_(sel), open=S.td.stripOpen===key;
+  var n=tdStreak_(tdActive_(sel, data)), R=tdRingCalc_(sel, data, M), got=tdBadges_(sel, data).filter(function(b){ return b.on; }).length;
+  /* ONE row (Nov 2026: the full pieces were ~330px and pushed the tool down): streak · ring · badges, and ＋ Win; a tap opens the rest */
+  var bar='<div class="tdBar" id="tdBar"><button type="button" class="tdBarMain" id="tdBarOpen" aria-expanded="'+(open ? 'true' : 'false')+'" aria-controls="tdStripMore" aria-label="'+esc(t('Streak, this week and badges'))+'">'+
+    '<span class="tdBarIt" id="tdBarStreak" data-n="'+n+'" title="'+esc(n>0 ? gpT('{n}-day team streak',{n:n}) : t('Start the team streak today'))+'"><span aria-hidden="true">🔥</span> <b>'+n+'</b></span>'+
+    '<span class="tdBarIt" id="tdBarRing" title="'+esc(R.line)+'"><span class="gRing sm" style="'+gpRingVars(R.p)+'" role="img" aria-label="'+esc(R.line)+'"><span>'+R.d+'/'+R.n+'</span></span></span>'+
+    '<span class="tdBarIt" id="tdBarBadges" data-n="'+got+'" title="'+esc(t('Our badges'))+'"><span aria-hidden="true">🏅</span> <b>'+got+'</b></span>'+
+    '<span class="tdBarChev" aria-hidden="true">'+(open ? '▴' : '▾')+'</span></button>'+
+    (can ? '<button type="button" class="tdBarWin" id="tdBarWin">＋ '+esc(t('Win'))+'</button>' : '')+'</div>';
+  return '<div class="tdToday tdStrip'+(open ? ' open' : '')+'" id="tdToday" data-tdstrip="1" data-tdkey="'+esc(key)+'">'+bar+
+    (open ? '<div class="tdStripMore" id="tdStripMore"><div class="tdPair">'+tdStreakHtml_(sel, data)+tdRingHtml_(sel, data, M, false)+'</div>'+tdWinsHtml_(sel, data, can)+tdBadgesHtml_(sel, data)+'</div>' : '')+'</div>';
 }
 
 /* ---------- painting without a redraw ---------- */
@@ -347,7 +359,7 @@ function tdRefresh_(){
   tmp.innerHTML=box.getAttribute('data-tdstrip') ? todayStripHtml_(sel) : todayPaneHtml_(sel);
   var nb=tmp.querySelector('#tdToday'); if(!nb) return;
   var open=box.querySelector('#tdBadges'); if(open && open.open){ var nd=nb.querySelector('#tdBadges'); if(nd) nd.open=true; }
-  box.innerHTML=nb.innerHTML;
+  box.innerHTML=nb.innerHTML; box.className=nb.className;
   bindToday_();
 }
 
@@ -395,6 +407,8 @@ function bindToday_(){
   }; });
   var box=document.getElementById('tdToday'), sel=tdSel_(); if(!box || !sel) return;
   var data=tdData_(sel);
+  var bo=document.getElementById('tdBarOpen'); if(bo) bo.onclick=function(){ gpTap(); S.td.stripOpen=S.td.stripOpen===tdKey_(sel) ? '' : tdKey_(sel); tdRefresh_(); };
+  var bw=document.getElementById('tdBarWin'); if(bw) bw.onclick=function(){ gpTap(); S.td.stripOpen=tdKey_(sel); tdRefresh_(); var i=document.getElementById('tdWinText'); if(i) i.focus(); };
   box.querySelectorAll('[data-tdtap]').forEach(function(b){
     var m=b.getAttribute('data-tdtap'), hold=null, held=false;
     var stop=function(){ if(hold){ clearTimeout(hold); hold=null; } };

@@ -4244,7 +4244,7 @@ async function getMinistryFor(username, pin, dept, ministry) {
      wins   — "win of the day": one line a day or so of something good that happened, the last WIN_KEEP_DAYS.
    mwins:<campus> = { 'Dept|Ministry': [{ id, text, by, name (first name), date, at }] }, written with mutateKey_ by
    anyone who can log for that ministry (canLogFor_). The page reminds people: no child's full name. */
-const TODAY_ACTIVE_DAYS = 100, WIN_MAX = 200, WIN_KEEP_DAYS = 60, WIN_DAY_CAP = 10, WIN_ROWS_MAX = 300;
+const TODAY_ACTIVE_DAYS = 100, WIN_MAX = 200, WIN_KEEP_DAYS = 200, WIN_DAY_CAP = 10, WIN_ROWS_MAX = 400;   // 200 days: this quarter and the one before, for the quarter's story
 function rowDays_(days, day) {
   const d = (Array.isArray(days) ? days : []).filter(function (x) { return typeof x === 'string' && x !== day; });
   d.push(day);
@@ -4285,7 +4285,7 @@ async function saveMinistryWin(username, pin, dept, ministry, text) {
   if (!clean) return { ok: false, err: 'empty' };
   const today = baseToday_(), cut = addDays_(today, -WIN_KEEP_DAYS), key = dept + '|' + ministry;
   const res = await mutateKey_(winsKey_(s.campus), {}, function (doc) {
-    Object.keys(doc).forEach(function (k) {   // the 60-day keep, for every ministry on the campus
+    Object.keys(doc).forEach(function (k) {   // the keep (WIN_KEEP_DAYS), for every ministry on the campus
       doc[k] = (Array.isArray(doc[k]) ? doc[k] : []).filter(function (r) { return r && r.date >= cut; });
       if (!doc[k].length && k !== key) delete doc[k];
     });

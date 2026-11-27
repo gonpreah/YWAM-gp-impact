@@ -14,7 +14,7 @@
    than append. A deliberate second tap still edits in place — that is asserted
    here too, because "select everything, always" would make correcting one digit
    of a four-digit bank balance impossible. */
-import { PUBLIC, CHROMIUM } from './env.mjs';
+import { PUBLIC, CHROMIUM, SCORECARD_FIRST } from './env.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -76,8 +76,9 @@ async function open(url) {
     else if (b.fn === 'getMySmartGoals') out = { ok: true, smartGoals: SMART };
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(out) });
   });
+  await page.addInitScript(SCORECARD_FIRST);   // this test is about the Scorecard: start the visit on it, not on Today
   await page.addInitScript(() => {
-    localStorage.setItem('gp-cafe-view', 'numbers'); sessionStorage.setItem('gp-lw-tab', 'board');
+    sessionStorage.setItem('gp-lw-tab', 'board');
     localStorage.setItem('gp-staff', JSON.stringify({ user: 'sreilea', pin: '1234' }));
     /* A signed-in session sends index.html straight to teams.html; this is the
        same flag the app itself sets when a leader chooses the dashboard. */
