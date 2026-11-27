@@ -116,7 +116,7 @@ const txt = p => p.$eval('#main', e => e.innerText);
 }
 {
   const { ctx, page } = await open('vanna');
-  ok('the cafe’s My Ministry opens on the cafe tool, Today — one row of tabs: Today · Till · Rota · Week · Scorecard · Tasks · Rocks', !!(await page.$('.mmTabs .gtTab.on[data-cafetab="today"]')) && (await page.$$eval('.mmTabs .gtTab', b => b.map(x => x.textContent))).join() === 'Today,Our tools,Our plan' && !!(await page.$('#cafeOpenBtn')) && (await page.$$('.cafeTick')).length >= 4);
+  ok('the cafe’s My Ministry opens on the cafe tool, Today — one row of tabs: Today · Till · Rota · Week · Scorecard · Tasks · Rocks', !!(await page.$('.mmTabs .gtTab.on[data-cafetab="today"]')) && (await page.$$eval('.mmTabs .gtTab', b => b.map(x => x.textContent))).join() === 'Today,Our tools,Scorecard' && !!(await page.$('#cafeOpenBtn')) && (await page.$$('.cafeTick')).length >= 4);
   await page.click('.mmTabs [data-mmtab="mmtools"]'); await page.waitForSelector('#mmTools');
   ok('Our tools is one page of big buttons: Till · Rota · Week, each with a line under it', (await page.$$eval('#mmTools .mmTool', b => b.map(x => x.getAttribute('data-cafetab')).join())) === 'till,rota,week' && await page.$$eval('#mmTools .mmTool', b => b.every(x => x.querySelector('small') && x.querySelector('small').textContent.length > 5 && x.getBoundingClientRect().height >= 44)));
   ok('… and a barista gets no Set up tab', !(await page.$('[data-cafetab="setup"]')));

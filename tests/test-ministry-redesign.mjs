@@ -152,9 +152,21 @@ console.log('\n=== an ordinary member ===');
   // the Rocks tab is a tap from the Scorecard on the same page
   await page.click('#ministryBack');
   await page.waitForTimeout(400);
-  await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(400); await mmGo(page, 'okr');   // Rocks (key 'okr')
-  await page.waitForTimeout(500);
-  ok('My Ministry on its Rocks tab, the Scorecard tab a tap away', await page.evaluate(() => S.view === 'ministry' && S.mmTab === 'okr' && !!document.querySelector('.mmTabs .gtTab.on[data-mmtab="mmplan"]') && !!document.querySelector('#mmPlan_okr.open #rocksTab') && !!document.querySelector('[data-mmplan="numbers"]')));
+  await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(400);
+  /* Rocks and Tasks are for those who lead (Nov 2026, Uriah): a member has Today, the tools and the Scorecard */
+  await page.evaluate(() => { S.mmTab = 'okr'; render(); }); await page.waitForTimeout(300);
+  ok('a member has no Rocks and no Tasks on the ministry page — a link to Rocks lands on Today', await page.evaluate(() => S.view === 'ministry' && !document.querySelector('#rocksTab') && !document.querySelector('[data-mmplan]') && [].map.call(document.querySelectorAll('.mmTabs .gtTab'), (b) => b.textContent.trim()).join() === 'Today,Our tools,Scorecard' && !!document.querySelector('.mmTabs .gtTab.on[data-cafetab="today"]')), await page.evaluate(() => [].map.call(document.querySelectorAll('.mmTabs .gtTab'), (b) => b.textContent.trim()).join()));
+  await mmGo(page, 'numbers'); await page.waitForTimeout(300);
+  ok('… the Scorecard is its own tab', await page.evaluate(() => !!document.querySelector('.mmTabs .gtTab.on[data-mmtab="mmplan"]') && !!document.querySelector('#mmPlan_numbers')));
+  ok('no console/page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
+  await ctx.close();
+}
+console.log('\n=== the leader keeps Rocks and Tasks ===');
+{
+  const { ctx, page, errors } = await open(LEADER);
+  await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(600);
+  await mmGo(page, 'okr'); await page.waitForTimeout(500);
+  ok('My Ministry on its Rocks section, the Scorecard and Tasks beside it in Our plan', await page.evaluate(() => S.view === 'ministry' && S.mmTab === 'okr' && !!document.querySelector('.mmTabs .gtTab.on[data-mmtab="mmplan"]') && !!document.querySelector('#mmPlan_okr.open #rocksTab') && !!document.querySelector('[data-mmplan="numbers"]') && !!document.querySelector('[data-mmplan="tasks"]')));
   ok('no console/page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
   await ctx.close();
 }

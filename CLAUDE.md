@@ -371,6 +371,13 @@ history is orphaned (`test-numbers-people.mjs` §5 covers the move).
     ✅ Tasks ("4 open", once GP Tasks is on the phone) — `mmPlanSum_`. Open: the section asked for (`S.mmTab` = its key —
     scrolled to once, `mmPlanAfter_`), whatever was opened earlier in the visit (`gp-mm-plan` in sessionStorage,
     `mmPlanSet_`), and, arriving on Our plan itself, the Scorecard. Closing the asked-for one sets `S.mmTab='mmplan'`.
+  - **Rocks and Tasks are for those who lead** (Nov 2026, Uriah: "Remove all rocks from ministry pages and tasks … Leave them for
+    leaders and departments. Just need to get the ministries using their app for gathering data for now"): `mmTabsFor_` adds
+    `tasks` / `okr` only when `mmLeads_(sel)` — the ministry's leader, Campus Leadership, an admin (`canEditMetricsClient_`).
+    Everyone else has Today · Our tools · **Scorecard**: with only `numbers` left the third tab reads Scorecard and shows it
+    directly (`#mmPlan.mmPlanOne`, `#mmPlan_numbers`, no `[data-mmplan]` heads); a ministry with no Scorecard tab (GPDTS,
+    Outreach Teams) has no third tab; `S.mmTab='okr'` for a member lands on Today. Nothing is deleted — the rocks, the
+    ministry's GP Tasks list and the server's rules are as they were.
   - Tests: `mmGo(page, key)` / `openPlan` / `openTool` / `mmMap(page)` / `mmAbout(page)` in tests/env.mjs — a test that used to
     click a tab says `mmGo(page, 'okr')`. `SCORECARD_FIRST` still means "open on the Scorecard" (now inside Our plan).
     Khmer: docs/khmer-needed.md §154 ('Tab: Our tools' / 'Tab: Our plan' are the short tab labels).

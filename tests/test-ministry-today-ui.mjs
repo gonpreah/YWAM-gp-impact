@@ -112,7 +112,7 @@ const weekRow = (metric, w) => (mem.entries || []).find((r) => r.ministry === 'S
 console.log('=== My Ministry opens on Today ===');
 {
   const { ctx, page } = await open('dara');
-  ok('Today is the first tab, then Our plan (the Scorecard, Rocks and Tasks) — a ministry with no tool of its own has no Our tools', JSON.stringify(await tabLabels(page)) === JSON.stringify(['Today', 'Our plan']), await tabLabels(page));
+  ok('Today is the first tab, then the Scorecard (Rocks and Tasks are for those who lead) — a ministry with no tool of its own has no Our tools', JSON.stringify(await tabLabels(page)) === JSON.stringify(['Today', 'Scorecard']), await tabLabels(page));
   ok('… and it is the one that opens', await onTab(page) === 'Today' && !!(await page.$('#tdToday')) && !(await page.$('#scoreBoard')));
   const tiles = await page.$$eval('[data-tdtile]', (e) => e.map((x) => x.getAttribute('data-tdtile')));
   ok('a tile for each daily count, the ones with a goal first, four at most', tiles.length >= 2 && tiles.length <= 4 && tiles[0] === 'Sessions / Leagues Run' && tiles[1] === 'Games Played', tiles);
@@ -199,7 +199,7 @@ console.log('=== My Ministry opens on Today ===');
 
   console.log('=== the Scorecard is one tap away, as it was ===');
   await mmGo(page, 'numbers'); await page.waitForTimeout(300);
-  ok('the board and the week card, on Our plan with the Scorecard open — Rocks and Tasks a line each', !!(await page.$('#mmPlan_numbers.open #scoreBoard')) && await onTab(page) === 'Our plan' && (await page.$$eval('[data-mmplan]', (b) => b.map((x) => x.getAttribute('data-mmplan') + ':' + x.getAttribute('aria-expanded')).join())) === 'numbers:true,okr:false,tasks:false', await page.$$eval('[data-mmplan]', (b) => b.map((x) => x.getAttribute('data-mmplan') + ':' + x.getAttribute('aria-expanded')).join()));
+  ok('the board and the week card, on the Scorecard tab — no Rocks, no Tasks, nothing to fold', !!(await page.$('#mmPlan_numbers.open #scoreBoard')) && await onTab(page) === 'Scorecard' && (await page.$$eval('[data-mmplan]', (b) => b.map((x) => x.getAttribute('data-mmplan') + ':' + x.getAttribute('aria-expanded')).join())) === '' && !(await page.$('#rocksTab')), await page.$$eval('[data-mmplan]', (b) => b.map((x) => x.getAttribute('data-mmplan') + ':' + x.getAttribute('aria-expanded')).join()));
   ok('the tab is kept for this visit only (not on the phone)', await page.evaluate(() => !localStorage.getItem('gp-mm-tab') && JSON.parse(sessionStorage.getItem('gp-mm-tab'))['Youth Education|Sports'] === 'mmplan'));
   await page.click('[data-mmtab="mmtoday"]'); await page.waitForTimeout(300);
 
@@ -271,7 +271,7 @@ console.log('=== the Cafe keeps its own Today, with the strip on top ===');
 {
   const { ctx, page } = await open('cora');
   const tabs = await tabLabels(page);
-  ok('the Cafe: Today · Our tools · Our plan, its own Today first', JSON.stringify(tabs) === JSON.stringify(['Today', 'Our tools', 'Our plan']), tabs);
+  ok('the Cafe: Today · Our tools · Scorecard, its own Today first', JSON.stringify(tabs) === JSON.stringify(['Today', 'Our tools', 'Scorecard']), tabs);
   ok('… and it is the Cafe’s tool that opens', !!(await page.$('.mmTabs [data-cafetab="today"].on')));
   /* the strip is ONE compact row (streak · ring · badges · ＋ Win) until it is tapped */
   ok('the shared strip sits on top as one row: streak, ring, badges, ＋ Win', !!(await page.$('#tdToday[data-tdstrip] #tdBarStreak')) && !!(await page.$('#tdBarRing .gRing')) && !!(await page.$('#tdBarBadges')) && !!(await page.$('#tdBarWin')));

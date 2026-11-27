@@ -102,7 +102,7 @@ await p.goto(`http://localhost:${PORT}/teams.html`); await p.waitForSelector('na
 await p.waitForTimeout(600);
 await p.click('nav.bottom [data-tab="ministry"]'); await p.waitForTimeout(800);
 const tabs = await mmMap(p);
-ok('GPDTS: Today (its Dashboard) · Our tools (Database, Finances) · Our plan (Rocks, Tasks) — no Scorecard', JSON.stringify(tabs.top) === '["Today","Our tools","Our plan"]' && JSON.stringify(tabs.tools) === '["dtsdb","dtsfin"]' && JSON.stringify(tabs.plan) === '["okr","tasks"]' && !!(await p.$('.mmTabs .gtTab.on[data-mmtab="dtsdash"]')), JSON.stringify(tabs));
+ok('GPDTS: Today (its Dashboard) · Our tools (Database, Finances) · no Scorecard, and for someone who doesn’t lead it no Rocks or Tasks', JSON.stringify(tabs.top) === '["Today","Our tools"]' && JSON.stringify(tabs.tools) === '["dtsdb","dtsfin"]' && JSON.stringify(tabs.plan) === '[]' && !!(await p.$('.mmTabs .gtTab.on[data-mmtab="dtsdash"]')), JSON.stringify(tabs));
 ok('the Dashboard ends with the school’s finances: lecture budget, received, spent, left; outreach received', (await p.$eval('#dtsPane, #main', e => e.querySelector('.card:last-of-type') ? 1 : 1)) && !!(await p.$('#dtsFinDash')) &&
   /Budget\s*\$2,620/.test(await p.$eval('#dtsFinDash', e => e.innerText)) && /Left in the budget\s*\$2,620/.test(await p.$eval('#dtsFinDash', e => e.innerText)), await p.$eval('#dtsFinDash', e => e.innerText.replace(/\n/g, ' / ')));
 ok('it opens on the Dashboard: where everyone is', !!(await p.$('#dtsPipe')) && /Reaching out/.test(await p.$eval('#dtsPipe', e => e.textContent)));

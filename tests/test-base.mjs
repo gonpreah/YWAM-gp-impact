@@ -62,7 +62,7 @@ const MY_CHECKINS = [NOWWK, NOWWK-1, NOWWK-2].map((w,i) => ({
 }));
 CHECKIN_STORE = MY_CHECKINS.map(c => ({ ...c, source: 'daily' }));
 const MATE = { id: 'st2', name: 'Mealea Sok', username: 'mealea', campus: P, dept: 'Youth Education', ministry: 'YDC', role: 'YDC teacher', photo: '', mentorId: '', staffType: 'ministry', country: 'Cambodia' };
-const ME = { id: 'st1', name: 'Sokha Chan', username: 'sokha', campus: P, dept: 'Community Service', ministry: 'Outreach Teams', role: 'Outreach coordinator', photo: '', mentorId: '', staffType: 'campus', country: 'United States' };
+const ME = { id: 'st1', name: 'Sokha Chan', username: 'sokha', campus: P, dept: 'Community Service', ministry: 'Outreach Teams', role: 'Outreach coordinator', leads: ['Community Service|Outreach Teams'], photo: '', mentorId: '', staffType: 'campus', country: 'United States' };
 const Q = quarterOf(NOWWK) + 1;   // the app's quarter: 13-week blocks of the week number
 const OKRS = [{
   id: 'o1', campus: P, quarter: Q,
