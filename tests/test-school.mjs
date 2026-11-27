@@ -161,6 +161,7 @@ console.log('=== the roll ===');
   ok('sending the same roll again replaces it (one roll for that class and day)', r.body.ok && Object.keys(after).length === 1 && JSON.stringify(Object.values(after)[0].marks) === JSON.stringify(Object.values(JSON.parse(before))[0].marks));
   await call('schoolRoll', ['tom', '1234', SC, clsId, dayAdd(-1), { [s1]: 'p', [s2]: 'p' }]);
   ok('Days with Classes counts the days with a roll', rows('Days with Classes').reduce((a, x) => a + x.value, 0) >= 1 && rows('Days with Classes').every(x => x.by === 'tool:school'));
+  ok('… and each row carries the days the roll was taken, so taking the roll counts toward the team streak (Today)', rows('Days with Classes').every(x => Array.isArray(x.days) && x.days.length === x.value && x.days.every(d => /^\d{4}-\d{2}-\d{2}$/.test(d))), rows('Days with Classes'));
 }
 
 console.log('=== tests ===');

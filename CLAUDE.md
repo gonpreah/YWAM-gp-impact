@@ -1789,6 +1789,9 @@ we can give to ministries and donors, the government Ministry, and to donors." T
   pictures). Khmer: docs/khmer-needed.md §145. sw.js SHELL v34.
 
 ## My Ministry opens on Today (teams/31-today.js, Nov 2026, Uriah)
+*(Also Nov 2026: taking the roll counts toward a school's team streak — `schoolSync_` keeps the roll's days on the "days with
+classes" row's `days`; and whoever asked another ministry for something (Ask Technical…) is told on their phone when it is
+ticked done — `saveGpTask` → `pushNow_` `taskAskDone`, never failing the save.)*
 *(Simpler since the three-tab shell, Nov 2026 — where the list below differs, this is how it is now.)* Top to bottom: the
 ministry's one prompt line (`#tdHow`), its own lines, **the tiles**, the Friday wrap, **ONE slim line** (`tdBarHtml_`, `#tdBar` /
 `#tdBarOpen`: 🔥 streak · ring · 🏅 badges — the same row tool ministries have; a tap opens `#tdStripMore` with the ring, the

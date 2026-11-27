@@ -6233,6 +6233,7 @@ const PUSH_TEXT = {
   taskAssigned: { en: '{name} gave you a task: {title}', km: '{name} បានផ្តល់ភារកិច្ចមួយដល់អ្នក៖ {title}' },
   taskRequest: { en: '{name} is asking your ministry for help: {title}', km: '{name} កំពុងសុំជំនួយពីក្រសួងរបស់អ្នក៖ {title}' },
   taskDeclined: { en: '{name} can’t take on: {title}', km: '{name} មិនអាចទទួលយក៖ {title}' },
+  taskAskDone: { en: 'Done — {name} finished what you asked for: {title}', km: 'រួចរាល់ — {name} បានធ្វើអ្វីដែលអ្នកបានស្នើសុំ៖ {title}' },
   ooAsk: { en: '{name} asked you for a 1-on-1. Open Mentorship to set a time.', km: '{name} បានសុំជួបមួយទល់មួយជាមួយអ្នក។ បើកការណែនាំ ដើម្បីកំណត់ពេល។' },
   contractSigned: { en: '{name} signed their staff contract — open their HR profile to approve it.', km: '{name} បានចុះហត្ថលេខាលើកិច្ចសន្យាបុគ្គលិករបស់ពួកគេ — បើកប្រវត្តិរូប HR របស់ពួកគេដើម្បីអនុម័ត។' },
   ooAskWhen: { en: '{name} asked you for a 1-on-1 on {when}. Open Mentorship to accept it or pick another time.', km: '{name} បានសុំជួបមួយទល់មួយជាមួយអ្នកនៅ {when}។ បើកការណែនាំ ដើម្បីយល់ព្រម ឬជ្រើសរើសពេលផ្សេង។' },
@@ -15105,8 +15106,14 @@ async function schoolSync_(g) {
       if (r && r.by !== SCHOOL_TAG) return;   // a number someone typed stays as it is
       const v = want[k][w], has = v !== undefined && (isLevel || v > 0);
       if (has) {
-        if (!r) { rows.push({ campus: g.campus, dept: g.dept, ministry: g.ministry, metric: metric, week: w, year: yr, value: v, updated: now, by: SCHOOL_TAG }); changed = true; }
-        else if (Number(r.value) !== v) { r.value = v; r.updated = now; changed = true; }
+        /* taking the roll is showing up (My Ministry → Today's team streak): the "days with classes" row carries the
+           days the roll was taken that week, as every other tool's row carries its days (rowDays_, todayActive_) */
+        const rollDays = k === 'days' && days[w] ? Object.keys(days[w]).sort().slice(-7) : null;
+        if (!r) { const nr = { campus: g.campus, dept: g.dept, ministry: g.ministry, metric: metric, week: w, year: yr, value: v, updated: now, by: SCHOOL_TAG }; if (rollDays) nr.days = rollDays; rows.push(nr); changed = true; }
+        else {
+          if (Number(r.value) !== v) { r.value = v; r.updated = now; changed = true; }
+          if (rollDays && JSON.stringify(r.days || []) !== JSON.stringify(rollDays)) { r.days = rollDays; changed = true; }
+        }
       } else if (r) { rows.splice(idx, 1); changed = true; }
     });
   });
@@ -15939,7 +15946,8 @@ async function saveGpTask(username, pin, task) {
   if (x.subs !== undefined) t.subs = gptSubs_(x.subs, t.subs);
   if (x.due !== undefined) t.due = gptDue_(x.due);
   if (x.time !== undefined) t.time = t.due ? gptTime_(x.time) : '';
-  if (x.done !== undefined && t.status !== 'request') { t.done = !!x.done; t.doneAt = t.done ? now : ''; t.doneBy = t.done ? s.id : ''; if (t.leadId) await gptLeadDone_(L.campus, t.leadId, t.done, s.id); }
+  let askDone = false;   // something asked of another ministry (Ask Technical…) was just finished: its asker hears of it
+  if (x.done !== undefined && t.status !== 'request') { askDone = !!x.done && !t.done && !!t.from && !!t.by && t.by !== s.id; t.done = !!x.done; t.doneAt = t.done ? now : ''; t.doneBy = t.done ? s.id : ''; if (t.leadId) await gptLeadDone_(L.campus, t.leadId, t.done, s.id); }
   if (x.listId && x.listId !== t.listId && edits) { const to = d.lists.find(function (l) { return l.id === x.listId; }); if (to && gptEdits_(s, to)) t.listId = to.id; }
   if (Array.isArray(x.assignees) && (edits || t.by === s.id)) {
     const next = []; x.assignees.forEach(function (id) { if (onCampus[id] && onCampus[id].campus === L.campus && next.indexOf(id) === -1 && next.length < GPT_MAX.assignees) next.push(id); });
@@ -15951,6 +15959,7 @@ async function saveGpTask(username, pin, task) {
   t.updated = now;
   await writeJSON('gpTasks', d);
   for (const id of fresh) await pushNow_(id, 'taskAssigned', { name: s.name, title: t.title }, 'teams.html?view=tasks');
+  if (askDone) { try { await pushNow_(t.by, 'taskAskDone', { name: s.name, title: t.title }, 'teams.html?view=tasks'); } catch (e) { /* a notice must never cost the save */ } }
   if (t.status === 'request' && !x.id) {   // the ministry's people hear of a request
     const to = staff.filter(function (r) { return r.active !== false && !r.archived && r.id !== s.id && gptIn_(r, L); }).slice(0, 20);
     for (const r of to) await pushNow_(r.id, 'taskRequest', { name: s.name, title: t.title }, 'teams.html?view=tasks');
