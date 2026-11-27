@@ -19,8 +19,9 @@
    0.8 s after the last tap — so three quick taps are one save of "3", and sending it twice changes nothing. What has
    not reached the server yet is kept on the phone (gp-td-pending, by user + ministry + date + metric, the last value
    wins) and sent when the connection is back. A tap paints its own tile; it never redraws the page. */
-var TD_TILES=4, TD_SAVE_MS=800, TD_HOLD_MS=500, TD_PENDING='gp-td-pending', TD_BADGES='gp-td-badges', TD_WINS_SHOWN=3, TD_FEED_DAYS=60;
-S.td={ more:false, edit:null, winDraft:'', winsAll:false, wrapOpen:false, wrapDraft:{}, wrapDone:'', flying:false, note:'', timer:null, winBusy:false, stripOpen:'', reqBusy:'' };
+var TD_TILES=4, TD_SAVE_MS=800, TD_HOLD_MS=450, TD_PENDING='gp-td-pending', TD_BADGES='gp-td-badges', TD_WINS_SHOWN=3, TD_FEED_DAYS=60;
+S.td={ more:false, edit:null, winDraft:'', winsAll:false, wrapOpen:false, wrapDraft:{}, wrapDone:'', flying:false, note:'', timer:null, winBusy:false, stripOpen:'', reqBusy:'', pop:null, winOpen:false, alsoOpen:false };
+var TD_HELD='gp-td-held';   // this phone has long-pressed a tile once: the hint under the tiles goes
 
 /* out of the game: salvations, baptisms, healings (Uriah's three). The quarterly report's wider GP_FAITH_RE also names
    churches, worship, prayer… — those are a ministry's ordinary daily counts (Evangelism, Church Partnerships), so they are tiles. */
@@ -223,28 +224,36 @@ function tdTileHtml_(sel, data, m, can){
       '<div class="tdTypeRow"><input type="number" inputmode="decimal" id="tdTypeBox" class="tdType" value="'+esc(String(x.has ? x.today : ''))+'"><button type="button" class="btn small" id="tdTypeOk" data-tdtypeok="'+esc(m)+'">'+esc(t('OK'))+'</button></div>'+
       '<button type="button" class="linkbtn inline" id="tdTypeCancel">'+esc(t('Cancel'))+'</button></div>';
   }
-  var body='<span class="tdNum">'+fmt(x.today, m)+'</span><span class="tdName">'+tdIcon_(sel, m)+esc(t(m))+'</span><span class="tdWk">'+wkLine+'</span>';
+  var body='<span class="tdNum">'+fmt(x.today, m)+'</span><span class="tdTxt"><span class="tdName">'+tdIcon_(sel, m)+esc(t(m))+'</span><span class="tdWk">'+wkLine+'</span></span>';
   if(!can) return '<div class="tdTile ro" data-tdtile="'+esc(m)+'"><div class="tdTap">'+body+'</div></div>';
-  return '<div class="tdTile" data-tdtile="'+esc(m)+'"><button type="button" class="tdTap" data-tdtap="'+esc(m)+'" aria-label="'+esc(gpT('Add 1 to {metric}',{metric:t(m)}))+'">'+body+'<span class="tdPlus" aria-hidden="true">+1</span></button>'+
-    '<div class="tdTileBtns"><button type="button" class="tdMini" data-tdminus="'+esc(m)+'" aria-label="'+esc(gpT('Take 1 off {metric}',{metric:t(m)}))+'">−</button>'+
-    '<button type="button" class="tdMini" data-tdedit="'+esc(m)+'" aria-label="'+esc(gpT('Type today’s number for {metric}',{metric:t(m)}))+'">✎</button></div></div>';
+  /* held (or right-clicked, or its "more options" button): − 1, type the number, cancel — in the tile's place */
+  if(S.td.pop===m) return '<div class="tdTile pop" data-tdtile="'+esc(m)+'" id="tdPop" role="group" aria-label="'+esc(t(m))+'"><div class="tdPopHead">'+body+'</div>'+
+    '<div class="tdPopBtns"><button type="button" class="tdMini" data-tdminus="'+esc(m)+'" aria-label="'+esc(gpT('Take 1 off {metric}',{metric:t(m)}))+'">− 1</button>'+
+    '<button type="button" class="tdMini" data-tdedit="'+esc(m)+'" aria-label="'+esc(gpT('Type today’s number for {metric}',{metric:t(m)}))+'">✎ '+esc(t('Type the number'))+'</button>'+
+    '<button type="button" class="tdMini quiet" id="tdPopCancel">'+esc(t('Cancel'))+'</button></div></div>';
+  /* the whole tile is the +1 button; the options button is for a keyboard or a screen reader (shown when it has the focus) */
+  return '<div class="tdTile" data-tdtile="'+esc(m)+'"><button type="button" class="tdTap" data-tdtap="'+esc(m)+'" aria-label="'+esc(gpT('Add 1 to {metric}',{metric:t(m)}))+'">'+body+'</button>'+
+    '<button type="button" class="tdOpt" data-tdopt="'+esc(m)+'" aria-label="'+esc(gpT('More options for {metric}',{metric:t(m)}))+'">⋯</button></div>';
 }
 function tdCountersHtml_(sel, data, M, can){
   if(!M.taps.length) return '';
   var list=S.td.more ? M.taps : M.taps.slice(0, TD_TILES);
   var h='<div class="tdTiles'+(list.length===1 ? ' one' : '')+'" id="tdTiles">'+list.map(function(m){ return tdTileHtml_(sel, data, m, can); }).join('')+'</div>';
+  if(can && lsGet(TD_HELD)!=='1') h+='<p class="hint tdHint" id="tdHint">'+esc(t('Hold a tile to take one off or type a number.'))+'</p>';
   if(M.taps.length>TD_TILES) h+='<button type="button" class="linkbtn inline tdMore" id="tdMore">'+esc(S.td.more ? t('Show fewer') : gpT('{n} more…',{n:M.taps.length-TD_TILES}))+'</button>';
   return h;
 }
 /* faith numbers: counted, plainly — no tile, no ring, no celebration */
 function tdAlsoHtml_(sel, data, M, can){
   if(!M.faith.length) return '';
-  return '<div class="tdAlso" id="tdAlso"><div class="tdAlsoHead">'+esc(t('Also today'))+'</div>'+M.faith.map(function(m, i){
+  var n=0; M.faith.forEach(function(m){ var x=tdVals_(sel, data, m); if(x.has && x.today>0) n+=x.today; });
+  /* still daily (a Tuesday salvation is entered on Tuesday), but folded: one line until somebody opens it */
+  return '<details class="tdAlso" id="tdAlso"'+(S.td.alsoOpen ? ' open' : '')+'><summary class="tdAlsoHead"><span>'+esc(t('Also today'))+'</span>'+(n ? ' <b class="tdAlsoN" id="tdAlsoN">'+fmt(n, M.faith[0])+'</b>' : '')+'</summary>'+M.faith.map(function(m, i){
     var x=tdVals_(sel, data, m), id='tdAlso'+i;
     return '<div class="tdAlsoRow"><label for="'+id+'">'+esc(t(m))+'</label>'+
       (can ? '<input type="number" inputmode="numeric" id="'+id+'" data-tdalso="'+esc(m)+'" value="'+esc(x.has ? String(x.today) : '')+'" placeholder="0">'
            : '<span class="tdAlsoVal">'+fmt(x.today, m)+'</span>')+
-      '<span class="tdAlsoWk">'+esc(t('This week'))+' '+fmt(x.week, m)+'</span></div>'; }).join('')+'</div>';
+      '<span class="tdAlsoWk">'+esc(t('This week'))+' '+fmt(x.week, m)+'</span></div>'; }).join('')+'</details>';
 }
 function tdRingCalc_(sel, data, M){
   var c=S.me.campus, wk=thisWeek(), entries=(data && data.entries) || {};
@@ -299,6 +308,14 @@ function tdWinsHtml_(sel, data, can){
 }
 /* The Friday wrap: the week's own numbers (levels and scores), drawn by the weekly form's own row (kpiWeekRowHtml_,
    carried-forward values and all) and saved by its own path (gpSaveMinistry_ → saveMyMinistry / saveMinistryFor). */
+/* Today shows one button and the last win as a quiet line; the box and the feed open on a tap */
+function tdWinSlimHtml_(sel, data, can){
+  if(S.td.winOpen) return tdWinsHtml_(sel, data, can);
+  var last=((data && data.wins) || [])[0];
+  if(!can && !last) return '';
+  return '<div class="tdWin slim" id="tdWinSlim">'+(can ? '<button type="button" class="btn ghost tdWinOpen" id="tdWinOpen">＋ '+esc(t('Share a win'))+'</button>' : '')+
+    (last ? '<button type="button" class="tdWinLast" id="tdWinLast" aria-label="'+esc(t('See the wins'))+'">🌟 <span>'+esc(last.text)+'</span> <small>'+esc(last.name||'')+(last.name ? ' · ' : '')+esc(tdWhen_(last.date))+'</small></button>' : '')+'</div>';
+}
 function tdWrapDue_(){ var dow=new Date().getDay(); return dow===5 || dow===6 || dow===0; }
 function tdWrapHtml_(sel, data, M, can){
   if(!can || !M.levels.length || !tdWrapDue_()) return '';
@@ -460,13 +477,26 @@ function tdInnerHtml_(sel){
   var cfg=tdCfg_(sel);
   if(!can) h+='<p class="hint" id="tdReadOnly">👀 '+esc(t('You can look, but only this ministry’s own people enter its numbers.'))+'</p>';
   else if(!M.taps.length) h+='<p class="hint" id="tdCalm">'+esc(cfg && cfg.prompt ? cfg.prompt() : M.levels.length ? t('Nothing to count day by day here. Share a win when there is one, and wrap up the week on Friday.') : t('Nothing to count day by day here. Share a win when there is one.'))+'</p>';
-  else if(cfg && cfg.prompt) h+='<p class="hint" id="tdHow"><b class="tdPrompt" id="tdPrompt">'+esc(cfg.prompt())+'</b> '+esc(t('− takes one off, ✎ types the number.'))+'</p>';   // the ministry's own line, in the generic line's place
-  else h+='<p class="hint" id="tdHow">'+esc(t('Tap a tile each time it happens. − takes one off, ✎ types the number.'))+'</p>';
+  else if(cfg && cfg.prompt) h+='<p class="hint" id="tdHow"><b class="tdPrompt" id="tdPrompt">'+esc(cfg.prompt())+'</b></p>';   // the ministry's own line, in the generic line's place
+  else h+='<p class="hint" id="tdHow">'+esc(t('Tap a tile each time it happens.'))+'</p>';
   h+=tdExtrasHtml_(sel, can);
+  var open=S.td.stripOpen===tdKey_(sel);
+  /* less at once (Nov 2026): the tiles, ONE slim line (streak · ring · badges, opening on a tap), the faith numbers folded, one button for a win */
   h+=tdCountersHtml_(sel, data, M, can)+tdNoteHtml_()+tdExtrasHtml_(sel, can, true)+tdWrapHtml_(sel, data, M, can)+
-    '<div class="tdPair">'+tdRingHtml_(sel, data, M, can)+tdStreakHtml_(sel, data)+'</div>'+
-    tdAlsoHtml_(sel, data, M, can)+tdWinsHtml_(sel, data, can)+tdBadgesHtml_(sel, data);
+    tdBarHtml_(sel, data, M, false, open)+
+    (open ? '<div class="tdStripMore" id="tdStripMore"><div class="tdPair">'+tdRingHtml_(sel, data, M, can)+tdStreakHtml_(sel, data)+'</div>'+tdBadgesHtml_(sel, data)+'</div>' : '')+
+    tdAlsoHtml_(sel, data, M, can)+tdWinSlimHtml_(sel, data, can);
   return h;
+}
+/* the one slim row: streak · ring · badges (and ＋ Win on a tool ministry's strip); a tap opens the rest */
+function tdBarHtml_(sel, data, M, win, open){
+  var n=tdStreak_(tdActive_(sel, data)), R=tdRingCalc_(sel, data, M), got=tdBadges_(sel, data).filter(function(b){ return b.on; }).length;
+  return '<div class="tdBar" id="tdBar"><button type="button" class="tdBarMain" id="tdBarOpen" aria-expanded="'+(open ? 'true' : 'false')+'" aria-controls="tdStripMore" aria-label="'+esc(t('Streak, this week and badges'))+'">'+
+    '<span class="tdBarIt" id="tdBarStreak" data-n="'+n+'" title="'+esc(n>0 ? gpT('{n}-day team streak',{n:n}) : t('Start the team streak today'))+'"><span aria-hidden="true">🔥</span> <b>'+n+'</b></span>'+
+    '<span class="tdBarIt" id="tdBarRing" title="'+esc(R.line)+'"><span class="gRing sm" style="'+gpRingVars(R.p)+'" role="img" aria-label="'+esc(R.line)+'"><span>'+R.d+'/'+R.n+'</span></span></span>'+
+    '<span class="tdBarIt" id="tdBarBadges" data-n="'+got+'" title="'+esc(t('Our badges'))+'"><span aria-hidden="true">🏅</span> <b>'+got+'</b></span>'+
+    '<span class="tdBarChev" aria-hidden="true">'+(open ? '▴' : '▾')+'</span></button>'+
+    (win ? '<button type="button" class="tdBarWin" id="tdBarWin">＋ '+esc(t('Win'))+'</button>' : '')+'</div>';
 }
 function todayPaneHtml_(sel){
   if(!tdData_(sel)) return tdLoadingHtml_(sel);
@@ -477,14 +507,7 @@ function todayPaneHtml_(sel){
 function todayStripHtml_(sel){
   var data=tdData_(sel); if(!data) return '';
   var can=tdCanLog_(sel), M=tdMetrics_(sel), key=tdKey_(sel), open=S.td.stripOpen===key;
-  var n=tdStreak_(tdActive_(sel, data)), R=tdRingCalc_(sel, data, M), got=tdBadges_(sel, data).filter(function(b){ return b.on; }).length;
-  /* ONE row (Nov 2026: the full pieces were ~330px and pushed the tool down): streak · ring · badges, and ＋ Win; a tap opens the rest */
-  var bar='<div class="tdBar" id="tdBar"><button type="button" class="tdBarMain" id="tdBarOpen" aria-expanded="'+(open ? 'true' : 'false')+'" aria-controls="tdStripMore" aria-label="'+esc(t('Streak, this week and badges'))+'">'+
-    '<span class="tdBarIt" id="tdBarStreak" data-n="'+n+'" title="'+esc(n>0 ? gpT('{n}-day team streak',{n:n}) : t('Start the team streak today'))+'"><span aria-hidden="true">🔥</span> <b>'+n+'</b></span>'+
-    '<span class="tdBarIt" id="tdBarRing" title="'+esc(R.line)+'"><span class="gRing sm" style="'+gpRingVars(R.p)+'" role="img" aria-label="'+esc(R.line)+'"><span>'+R.d+'/'+R.n+'</span></span></span>'+
-    '<span class="tdBarIt" id="tdBarBadges" data-n="'+got+'" title="'+esc(t('Our badges'))+'"><span aria-hidden="true">🏅</span> <b>'+got+'</b></span>'+
-    '<span class="tdBarChev" aria-hidden="true">'+(open ? '▴' : '▾')+'</span></button>'+
-    (can ? '<button type="button" class="tdBarWin" id="tdBarWin">＋ '+esc(t('Win'))+'</button>' : '')+'</div>';
+  var bar=tdBarHtml_(sel, data, M, can, open);
   return '<div class="tdToday tdStrip'+(open ? ' open' : '')+'" id="tdToday" data-tdstrip="1" data-tdkey="'+esc(key)+'">'+bar+
     (open ? '<div class="tdStripMore" id="tdStripMore"><div class="tdPair">'+tdStreakHtml_(sel, data)+tdRingHtml_(sel, data, M, false)+'</div>'+tdWinsHtml_(sel, data, can)+tdBadgesHtml_(sel, data)+'</div>' : '')+'</div>';
 }
@@ -577,18 +600,21 @@ function bindToday_(){
   var ra=document.getElementById('tdReqAll'); if(ra) ra.onclick=function(){ gpTap(); S.mmTab='tasks'; S.mmTabTouched=true; mmTabKeep_('tasks'); render(); window.scrollTo(0,0); };
   var bo=document.getElementById('tdBarOpen'); if(bo) bo.onclick=function(){ gpTap(); S.td.stripOpen=S.td.stripOpen===tdKey_(sel) ? '' : tdKey_(sel); tdRefresh_(); };
   var bw=document.getElementById('tdBarWin'); if(bw) bw.onclick=function(){ gpTap(); S.td.stripOpen=tdKey_(sel); tdRefresh_(); var i=document.getElementById('tdWinText'); if(i) i.focus(); };
+  var popOpen=function(m){ gpTap(); try { lsSet(TD_HELD, '1'); } catch(e){} S.td.pop=m; S.td.edit=null; tdRefresh_(); var f=document.querySelector('#tdPop [data-tdminus]'); if(f) f.focus(); };
   box.querySelectorAll('[data-tdtap]').forEach(function(b){
     var m=b.getAttribute('data-tdtap'), hold=null, held=false;
     var stop=function(){ if(hold){ clearTimeout(hold); hold=null; } };
-    b.addEventListener('pointerdown', function(){ held=false; stop(); hold=setTimeout(function(){ held=true; hold=null; gpTap(); S.td.edit=m; tdRefresh_(); var i=document.getElementById('tdTypeBox'); if(i){ i.focus(); i.select(); } }, S.tdHoldMs||TD_HOLD_MS); });
+    b.addEventListener('pointerdown', function(e){ if(e.button) return; held=false; stop(); hold=setTimeout(function(){ held=true; hold=null; popOpen(m); }, S.tdHoldMs||TD_HOLD_MS); });
     ['pointerup','pointerleave','pointercancel'].forEach(function(ev){ b.addEventListener(ev, stop); });
-    b.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+    b.addEventListener('contextmenu', function(e){ e.preventDefault(); stop(); if(!held){ held=true; popOpen(m); } });   // a right-click on a computer; a phone's own long-press menu never shows
     b.onclick=function(){ if(held){ held=false; return; } gpTap(); tdSet_(sel, m, tdVals_(sel, tdData_(sel), m).today+1); };
   });
+  box.querySelectorAll('[data-tdopt]').forEach(function(b){ b.onclick=function(){ popOpen(b.getAttribute('data-tdopt')); }; });
+  var pc=document.getElementById('tdPopCancel'); if(pc) pc.onclick=function(){ var m=S.td.pop; S.td.pop=null; tdRefresh_(); var f=m && document.querySelector('[data-tdtap="'+String(m).replace(/"/g,'\\"')+'"]'); if(f) f.focus(); };
   box.querySelectorAll('[data-tdminus]').forEach(function(b){ b.onclick=function(){
     var m=b.getAttribute('data-tdminus'), x=tdVals_(sel, tdData_(sel), m); if(x.today<=0) return;
     gpTap(); tdSet_(sel, m, x.today-1); }; });
-  box.querySelectorAll('[data-tdedit]').forEach(function(b){ b.onclick=function(){ gpTap(); S.td.edit=b.getAttribute('data-tdedit'); tdRefresh_(); var i=document.getElementById('tdTypeBox'); if(i){ i.focus(); i.select(); } }; });
+  box.querySelectorAll('[data-tdedit]').forEach(function(b){ b.onclick=function(){ gpTap(); S.td.pop=null; S.td.edit=b.getAttribute('data-tdedit'); tdRefresh_(); var i=document.getElementById('tdTypeBox'); if(i){ i.focus(); i.select(); } }; });
   var ok=document.getElementById('tdTypeOk'), tb=document.getElementById('tdTypeBox'), typeDone=function(){
     var m=ok.getAttribute('data-tdtypeok'), raw=String(tb.value).trim();
     if(raw!=='' && !isFinite(Number(raw))) return;
@@ -603,6 +629,9 @@ function bindToday_(){
     var raw=String(inp.value).trim(); if(raw!=='' && !isFinite(Number(raw))) return;
     tdSet_(sel, inp.getAttribute('data-tdalso'), raw==='' ? null : Number(raw)); }; });
   var sg=document.getElementById('tdSetGoals'); if(sg) sg.onclick=function(){ gpTap(); S.mmTab='numbers'; S.mmTabTouched=true; mmTabKeep_('numbers'); S.sbd={ key:rkKey_(S.me.campus, sel.dept, sel.min), vals:{} }; render(); window.scrollTo(0,0); };
+  var al=document.getElementById('tdAlso'); if(al) al.addEventListener('toggle', function(){ S.td.alsoOpen=al.open; });
+  var wop=document.getElementById('tdWinOpen'); if(wop) wop.onclick=function(){ gpTap(); S.td.winOpen=true; tdRefresh_(); var i=document.getElementById('tdWinText'); if(i) i.focus(); };
+  var wl=document.getElementById('tdWinLast'); if(wl) wl.onclick=function(){ gpTap(); S.td.winOpen=true; tdRefresh_(); };
   var wt=document.getElementById('tdWinText'); if(wt){ wt.oninput=function(){ S.td.winDraft=wt.value; }; wt.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); tdWinSave_(sel); } }; }
   var ws=document.getElementById('tdWinSave'); if(ws) ws.onclick=function(){ gpTap(); tdWinSave_(sel); };
   var wa=document.getElementById('tdWinsAll'); if(wa) wa.onclick=function(){ S.td.winsAll=!S.td.winsAll; tdRefresh_(); };
