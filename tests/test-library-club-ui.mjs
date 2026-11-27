@@ -197,6 +197,38 @@ const rec = (id) => mem.staff.find((s) => s.id === id);
   await ctx.close();
 }
 
+/* The quiz after a book: offered on the finish card, three questions, the score and the right answers, the best kept. */
+{
+  const { ctx, page } = await open('cy');
+  await lib(page);
+  await page.evaluate(() => { S.libBook = 'traction'; render(); }); await page.waitForTimeout(300);
+  ok('a book not read yet offers no quiz on its page', !(await page.$('#libQuizGo')));
+  await page.click('#libStart'); await page.waitForTimeout(300);
+  await page.evaluate((n) => libGo_(n), await page.evaluate(() => libById_('traction').insights.length + 1)); await page.waitForTimeout(300);
+  await page.click('#libFinish'); await page.waitForTimeout(500);
+  ok('the finish card offers “Check what you remember”', !!(await page.$('#libDone #libQuizGo')));
+  await page.click('#libQuizGo'); await page.waitForTimeout(300);
+  const right = await page.evaluate(() => libById_('traction').quiz.map((x) => x.c));
+  ok('one question at a time, four choices', /Question 1 of 3/.test(await page.$eval('#libQuiz', (e) => e.innerText)) && (await page.$$('#libQuiz [data-libqa]')).length === 4);
+  for (let i = 0; i < 3; i++) { await page.click('#libQuiz [data-libqa="' + (i < 2 ? right[i] : (right[i] + 1) % 4) + '"]'); await page.waitForTimeout(250); }
+  await page.waitForTimeout(900);
+  const res = await page.$eval('#libQuiz', (e) => e.innerText);
+  ok('the score and the right answers', /2 of 3 right/.test(res) && (await page.$$('#libQuiz .libQuizReview li')).length === 3 && /You chose/.test(res), res.slice(0, 160));
+  const q1 = () => ((rec('st4').lib || {}).quiz || {}).traction || {};
+  ok('the best score is kept on the account, as counts', q1().best === 2 && q1().of === 3);
+  await page.click('#libQuizAgain'); await page.waitForTimeout(300);
+  for (let i = 0; i < 3; i++) { await page.click('#libQuiz [data-libqa="' + right[i] + '"]'); await page.waitForTimeout(250); }
+  await page.waitForTimeout(900);
+  ok('trying again: 3 of 3, and the best goes up', /3 of 3 right/.test(await page.$eval('#libQuiz', (e) => e.innerText)) && q1().best === 3);
+  await page.click('#libQuizDone'); await page.waitForTimeout(300);
+  await page.evaluate(() => { S.libDone = null; render(); }); await page.waitForTimeout(300);
+  ok('the book’s page shows the best score and a way to try again', (await page.$eval('#libQuizBest', (e) => e.innerText)).includes('Quiz 3/3') && !!(await page.$('#libQuizGo')));
+  await page.click('#libBack'); await page.waitForTimeout(400);
+  ok('My reading counts the quizzes', (await page.$eval('#libQuizSum', (e) => e.innerText)).includes('1 taken · 3 of 3 right'));
+  ok('nothing wider than the phone', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+  await ctx.close();
+}
+
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 await browser.close(); srv.close();
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

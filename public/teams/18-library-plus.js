@@ -15,7 +15,7 @@
    they get the search, topics, plans (on the phone) and badges only. */
 S.lib=null; S.libQ=''; S.libPlan=null; S.libDone=null; S.libNewBadges=[]; S.libRecOpen=false; S.libRecTo=''; S.libGoalOpen=false; S.libBusy=false;
 function libOn_(){ return !!(S.lib && S.auth && S.auth.user && !S.guest && !S.student && !S.stuPreview); }
-function libMineS_(){ return (S.lib && S.lib.mine) || { share:false, shareAsked:false, goal:0, notes:{}, plans:{} }; }
+function libMineS_(){ var m=(S.lib && S.lib.mine) || { share:false, shareAsked:false, goal:0, notes:{}, plans:{} }; if(!m.quiz) m.quiz={}; return m; }
 function libTake_(d, after){
   S.libBusy=false;
   if(!d || !d.ok){
@@ -81,6 +81,7 @@ function libMineHtml_(read){
     (M.goal ? '<div class="libProgressBar libGoalBar"><span style="width:'+Math.min(100, Math.round(yr/M.goal*100))+'%"></span></div>' : '')+
     '<div class="libBadges" id="libBadges">'+have.map(function(x){ return '<span class="libBadge" title="'+esc(x.name)+'">'+x.emoji+'</span>'; }).join('')+
       (next ? '<span class="libBadge next" title="'+esc(next.name)+'">'+next.emoji+'</span><span class="libBadgeNext">'+esc(gpT('Next: {name}',{name:next.name}))+'</span>' : '')+'</div>';
+  h+=libQuizSumHtml_(M.quiz, 'libQuizSum');
   if(libOn_()){
     h+=S.libGoalOpen
       ? '<div class="libGoalPick" id="libGoalPick"><span class="pmeta">'+esc(t('How many books this year?'))+'</span> '+[6,12,24,52].map(function(n){ return '<button class="libShelfBtn'+(M.goal===n?' on':'')+'" data-libgoal="'+n+'">'+n+'</button>'; }).join('')+
@@ -182,6 +183,7 @@ function libDoneCardHtml_(b){
     if(!M.shareAsked) h+='<div class="libAsk" id="libShareAsk"><div>'+esc(t('Show the books you finish to your campus? It encourages others to read.'))+'</div>'+
       '<div class="btnRow"><button class="btn ghost" id="libShareYes">'+esc(t('Yes, share'))+'</button><button class="btn ghost" id="libShareNo">'+esc(t('No thanks'))+'</button></div></div>';
   }
+  if(b.quiz && !(S.libQuiz && S.libQuiz.id===b.id)) h+='<button class="btn ghost libQuizGo" id="libQuizGo" style="margin-top:12px">🧠 '+esc(t('Check what you remember'))+' · '+esc(gpT('{n} questions',{n:b.quiz.length}))+'</button>';
   var sug=libSuggest_(b, read), prog=libProg_();
   if(sug.length) h+='<div class="libKicker" style="margin-top:14px">📖 '+esc(t('Read next'))+'</div><div class="libScroll libNextRow" id="libNextRow">'+sug.map(function(x){ return libTileHtml_(x, read, prog); }).join('')+'</div>';
   return h+'</div>';
@@ -267,6 +269,7 @@ function libMenteeHtml_(m){
   var read=L.read||{}, n=Object.keys(read).length, h='<h3>📚 '+esc(t('Reading'))+'</h3><div class="card" id="libMentee">';
   if(typeof GP_LIBRARY==='undefined'){ libLoad_(); return h+'<p class="sub" style="margin:0">'+esc(gpT('{n} books read',{n:n}))+'</p></div>'; }
   h+='<div><b>'+libYearN_(read)+'</b> '+esc(L.goal ? gpT('of {n} books this year',{n:L.goal}) : t('books this year'))+' · '+esc(gpT('{n} books read',{n:n}))+'</div>';
+  h+=libQuizSumHtml_(L.quiz, 'libMenteeQuiz');
   var plans=GP_LIBRARY.plans||[], given=plans.filter(function(p){ return L.plans && L.plans[p.id]; });
   given.forEach(function(p){ var d=libPlanDone_(p, read), st=L.plans[p.id];
     h+='<div class="libMenteePlan" data-libmplan="'+esc(p.id)+'"><div>'+p.emoji+' <b>'+esc(t(p.name))+'</b> <span class="pmeta">'+esc(gpT('{n} of {m} read',{n:d, m:p.books.length}))+'</span>'+
@@ -283,7 +286,7 @@ function libFinish_(id){
   var before=libBadges_(libRead_()).filter(function(x){ return x.have; }).map(function(x){ return x.id; });
   libSetRead_(id, true); libSetProg_(id, 0);
   S.libNewBadges=libBadges_(libRead_()).filter(function(x){ return x.have && before.indexOf(x.id)===-1; });
-  S.libDone=id; S.libStep=null; lsDel('gp-lib-last');
+  S.libDone=id; S.libStep=null; S.libQuiz=null; lsDel('gp-lib-last');
   render(); window.scrollTo(0,0);
   var el=document.getElementById('libDone'); if(el && typeof gpConfetti==='function') gpConfetti(el);
 }
@@ -317,6 +320,7 @@ function bindLibPlus_(){
   on('libShareNo', function(){ libCall_('libSaveMine', [{ share:false }]); });
   document.querySelectorAll('[data-librecdone]').forEach(function(b){ b.onclick=function(){ libCall_('libRecDone', [b.getAttribute('data-librecdone')]); }; });
   on('libDoneClose', function(){ S.libDone=null; render(); });
+  bindLibQuiz_();
   on('libNoteEdit', function(){ S.libDone=S.libBook; S.libNewBadges=[]; render(); var x=document.getElementById('libTakeText'); if(x) x.focus(); });
   on('libTakeSave', function(){
     var txt=(document.getElementById('libTakeText')||{}).value||'', g=document.getElementById('libTakeGoal'), id=S.libBook, text=txt.trim();
@@ -633,4 +637,67 @@ function lnSync_(){
   Array.prototype.forEach.call(document.querySelectorAll('[data-lnfeed]'), function(x){ x.onclick=function(){ gpTap(); var v=x.getAttribute('data-lnfeed').split('|');
     S.libBook=v[0]; S.libStep=null; S.libDone=null; S.ln.open=v[1]; if(S.ln.cache[v[0]]) delete S.ln.cache[v[0]]; render(); window.scrollTo(0,0); }; });
   var bk=document.getElementById('lnBook'); if(bk) lnBindCards_(bk);
+}
+
+/* ---------- a book's little quiz (Nov 2026, Uriah: "when they finish reading, a couple of multiple-choice questions to
+   see if they read it, and their score") ----------
+   Three questions from the book's own summary (`quiz` in library.js, its Khmer in library-km.js), offered on the finish
+   card and on a read book's page. One at a time, the options in a new order each try; then the score and the right
+   answers. Skippable, never needed to mark a book read, no points. The best score is kept on the person's record
+   (libSaveMine {quiz}) — only the count reaches their mentor. */
+function libQuizQs_(b){
+  var en=b.quiz||[], k=(libLang_()==='km' && typeof GP_LIBRARY_KM!=='undefined' && GP_LIBRARY_KM[b.id]) ? GP_LIBRARY_KM[b.id].quiz : null;
+  return en.map(function(x, i){ var y=(k && k[i] && k[i].a && k[i].a.length===x.a.length) ? k[i] : null; return { q:y ? y.q : x.q, a:y ? y.a : x.a, c:x.c }; });
+}
+function libQuizStart_(id){
+  var b=libById_(id); if(!b || !b.quiz) return;
+  S.libQuiz={ id:id, i:0, picks:[], order:b.quiz.map(function(x){ var o=x.a.map(function(_, j){ return j; });
+    for(var j=o.length-1;j>0;j--){ var r=Math.floor(Math.random()*(j+1)), tmp=o[j]; o[j]=o[r]; o[r]=tmp; } return o; }) };
+  render(); var el=document.getElementById('libQuiz'); if(el && el.scrollIntoView) el.scrollIntoView({ block:'start' });
+}
+function libQuizBest_(id){ var q=libMineS_().quiz[id]; return q && q.of ? q : null; }
+function libQuizBtnHtml_(b){
+  if(!b.quiz || (S.libQuiz && S.libQuiz.id===b.id) || S.libDone===b.id || !libRead_()[b.id]) return '';
+  var best=libQuizBest_(b.id);
+  return '<button class="btn ghost libQuizGo" id="libQuizGo">🧠 '+esc(best ? t('Try the quiz again') : t('Check what you remember'))+
+    (best ? ' · '+esc(gpT('best {n} of {m}',{n:best.best, m:best.of})) : '')+'</button>';
+}
+function libQuizHtml_(b){
+  var Q=S.libQuiz; if(!Q || Q.id!==b.id || !b.quiz) return '';
+  var qs=libQuizQs_(b), n=qs.length, km=libLang_()==='km';
+  var h='<div class="card libQuiz'+(km?' libKm':'')+'" id="libQuiz"><button class="gptX libDoneX" id="libQuizClose" aria-label="'+esc(t('Close'))+'">×</button>'+
+    '<div class="libKicker">🧠 '+esc(t('Check what you remember'))+'</div>';
+  if(Q.i<n){
+    var x=qs[Q.i];
+    h+='<div class="pmeta" id="libQuizStep">'+esc(gpT('Question {n} of {m}',{n:Q.i+1, m:n}))+'</div><p class="libQuizQ">'+esc(x.q)+'</p><div class="libQuizOpts">'+
+      Q.order[Q.i].map(function(j){ return '<button class="libQuizOpt" data-libqa="'+j+'">'+esc(x.a[j])+'</button>'; }).join('')+'</div>';
+    return h+'</div>';
+  }
+  var right=0; qs.forEach(function(x, i){ if(Q.picks[i]===x.c) right++; });
+  h+='<div class="libQuizScore" id="libQuizScore">'+esc(gpT('{n} of {m} right',{n:right, m:n}))+(right===n ? ' 🎉' : '')+'</div>';
+  h+='<ol class="libQuizReview">'+qs.map(function(x, i){ var ok=Q.picks[i]===x.c;
+    return '<li class="'+(ok?'ok':'no')+'"><div><span aria-hidden="true">'+(ok?'✓':'✗')+'</span> '+esc(x.q)+'</div>'+
+      '<div class="pmeta">'+esc(gpT('Answer: {a}',{a:x.a[x.c]}))+(ok ? '' : ' · '+esc(gpT('You chose: {a}',{a:x.a[Q.picks[i]]})))+'</div></li>'; }).join('')+'</ol>';
+  return h+'<div class="btnRow"><button class="btn ghost" id="libQuizAgain">'+esc(t('Try again'))+'</button><button class="btn ghost" id="libQuizDone">'+esc(t('Done'))+'</button></div></div>';
+}
+function libQuizSumHtml_(quiz, id){
+  var ks=Object.keys(quiz||{}); if(!ks.length) return '';
+  var r=0, all=0; ks.forEach(function(k){ r+=quiz[k].best||0; all+=quiz[k].of||0; });
+  return '<div class="pmeta libQuizSum" id="'+id+'">🧠 '+esc(gpT('Quizzes: {n} taken · {r} of {m} right',{n:ks.length, r:r, m:all}))+'</div>';
+}
+function bindLibQuiz_(){
+  var on=function(id, f){ var e=document.getElementById(id); if(e) e.onclick=f; };
+  on('libQuizGo', function(){ gpTap(); libQuizStart_(S.libBook); });
+  on('libQuizAgain', function(){ libQuizStart_(S.libBook); });
+  on('libQuizClose', function(){ S.libQuiz=null; render(); });
+  on('libQuizDone', function(){ S.libQuiz=null; render(); });
+  document.querySelectorAll('[data-libqa]').forEach(function(btn){ btn.onclick=function(){
+    var Q=S.libQuiz, b=Q && libById_(Q.id); if(!b) return;
+    gpTap(); Q.picks[Q.i]=Number(btn.getAttribute('data-libqa')); Q.i++;
+    if(Q.i<b.quiz.length){ render(); return; }
+    var right=0; b.quiz.forEach(function(x, i){ if(Q.picks[i]===x.c) right++; });
+    render();
+    var el=document.getElementById('libQuiz'); if(right===b.quiz.length && el && typeof gpConfetti==='function') gpConfetti(el);
+    if(libOn_()) libCall_('libSaveMine', [{ quiz:{ bookId:b.id, score:right, of:b.quiz.length } }]);
+  }; });
 }

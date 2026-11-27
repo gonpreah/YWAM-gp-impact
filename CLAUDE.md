@@ -3038,6 +3038,13 @@ leading at YWAM GP (culture, teams, hard conversations, vision, systems, executi
   it is debated; the summary says so plainly, keeps discipline general, and points health questions to a doctor). In
   English and Khmer, written by Claude without the books to hand; details it was unsure of were left out, so someone
   who has read them should check. The test expects 44 + the GP guides + 10 classics + 7 here.
+- **Running on EOS** (shelf `eos`, ⚙️, deep teal; shown right after Made at YWAM GP, before Marriage & family —
+  `libShelvesShown_`; Nov 2026, Uriah: "train our guys on EOS"): What the Heck Is EOS?, Traction, Get a Grip, Rocket Fuel,
+  How to Be a Great Boss, Process! (id `process-eos`) and The EOS Life, in English and Khmer, tag `eos`, reading plan
+  "Running on EOS". Shorter than the rest on purpose (8 key ideas, ~1,650 words, `mins` 9; the test's floor for this
+  shelf is 1,500). Each `forUs` ties the book to the app's Rocks, Scorecard and the leadership meeting. Their page carries
+  a trademark line (`libEosFine_`: EOS® etc. are EOS Worldwide's; our summaries, not affiliated). Written by Claude
+  without the books to hand — details it was unsure of were left out. The test expects 44 + GP guides + 10 + 7 + 7.
 - **YWAM classics** (shelf `ywam`, 🌊, cobalt; shown right after Made at YWAM GP; Oct 2026):
   ten foundational YWAM books in the same ten-minute shape, in English and Khmer — Is That
   Really You, God?, Making Jesus Lord, Daring to Live on the Edge (Loren Cunningham),
@@ -3118,6 +3125,15 @@ none of it (`libOn_()`).
   month's book, a recommendation waiting. `teams.html?view=library` opens the Library.
 - **The weekly nudge** (Profile → Reminders: `#remRead`, `#remReadDay`; `push.reading`, `push.readDay`, Saturday by
   default): on that day the daily reminder adds the month's book if unread (`libMonth`), else a ten-minute read (`libRead`).
+- **A quiz after a book** (end of 18-library-plus.js, Nov 2026, Uriah: "a couple of multiple-choice questions to see if
+  they read it, and their score"): a book's `quiz` (library.js: three `{q, a:[4], c}` written from that book's own summary;
+  its Khmer `quiz` in library-km.js, same order, `c` from the English). Offered on the finish card and on a read book's page
+  (`#libQuizGo`, `libQuizBtnHtml_`): one question at a time (`#libQuiz`, `[data-libqa]`, options shuffled each try,
+  `S.libQuiz`), then "2 of 3 right" with each right answer and what was chosen; Try again / Done. Skippable, no points.
+  The best score is kept as `lib.quiz[bookId] = {best, of, at}` (`libSaveMine {quiz}`, `libQuizClean_`); the book page shows
+  "🧠 Quiz 3/3" (`#libQuizBest`), My reading and a mentor's Reading card the totals (`libQuizSumHtml_`; `getMenteeLogs.
+  library.quiz` — counts only). So far on the EOS shelf, Start here, Made at YWAM GP and Lead & grow (28 books); a book
+  without `quiz` simply has no button. tests/test-library.mjs (shape, Khmer), test-library-club(-ui).mjs.
 - New Library sections use `.libHead2` / `.libScroll`, never `.libSecHead` / `.libRow` — test-library-ui counts those as
   shelves. tests/test-library-club.mjs (server), tests/test-library-club-ui.mjs. Khmer: docs/khmer-needed.md §109.
 

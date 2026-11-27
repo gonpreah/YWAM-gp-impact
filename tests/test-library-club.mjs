@@ -125,6 +125,18 @@ r = await call('savePushPrefs', ['dara', '1234', { hour: 19, reading: false, rea
 ok('… off is off, and a day that isn’t a day falls back to Saturday', r.prefs.reading === false && r.prefs.readDay === 6);
 r = await call('libSetMonth', ['lena', '1234', '', '', '']);
 ok('leadership takes the book of the month down', r.ok && r.lib.month === null);
+/* A book's quiz: only the best score is kept, as counts; only the counts reach the mentor. */
+r = await call('libSaveMine', ['dara', '1234', { quiz: { bookId: 'grit', score: 2, of: 3 } }]);
+ok('a quiz score is kept', r.ok && r.lib.mine.quiz.grit && r.lib.mine.quiz.grit.best === 2 && r.lib.mine.quiz.grit.of === 3, JSON.stringify(r.lib && r.lib.mine.quiz));
+r = await call('libSaveMine', ['dara', '1234', { quiz: { bookId: 'grit', score: 1, of: 3 } }]);
+ok('… a lower try does not replace the best', r.ok && r.lib.mine.quiz.grit.best === 2);
+r = await call('libSaveMine', ['dara', '1234', { quiz: { bookId: 'grit', score: 3, of: 3 } }]);
+ok('… a better one does', r.ok && r.lib.mine.quiz.grit.best === 3);
+ok('a score above the questions, or a bad book id, is refused', !(await call('libSaveMine', ['dara', '1234', { quiz: { bookId: 'grit', score: 4, of: 3 } }])).ok &&
+  !(await call('libSaveMine', ['dara', '1234', { quiz: { bookId: '../x', score: 1, of: 3 } }])).ok && !(await call('libSaveMine', ['dara', '1234', { quiz: { bookId: 'grit', score: 1, of: 50 } }])).ok);
+const menQ = await call('getMenteeLogs', ['tom', '1234', 's_dara']);
+const mq = menQ.library && menQ.library.quiz && menQ.library.quiz.grit;
+ok('the mentor sees the quiz score as counts only', !!mq && mq.best === 3 && mq.of === 3 && Object.keys(mq).sort().join() === 'at,best,of', JSON.stringify(mq));
 ok('no sign-in, nothing', !(await call('libState', ['nobody', '1234'])).ok && !(await call('libSaveMine', ['nobody', '1234', { share: true }])).ok);
 ok('a staff record keeps it all under lib', !!(await staffRow('s_dara')).lib && (await staffRow('s_dara')).lib.goal === 12);
 
