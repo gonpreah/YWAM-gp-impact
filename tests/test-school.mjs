@@ -253,6 +253,87 @@ console.log('=== nothing leaks ===');
   ok('not in the preview', !(r.body && r.body.ok === true && r.body.data));
 }
 
+console.log('=== the community schools: their own school each, on their own campus, counting only once switched on ===');
+{
+  mem.staff.push(
+    withPin({ id: 'cs_lead', name: 'Pola Lead', username: 'pola', dept: 'Community Service', ministry: 'Ponlork School', leads: ['Community Service|Ponlork School'] }),
+    withPin({ id: 'cs_teach', name: 'Pen Teach', username: 'pen', dept: 'Community Service', ministry: 'Ponlork School' }),
+    withPin({ id: 'cs_ltn', name: 'Lot Teach', username: 'lot', dept: 'Community Service', ministry: 'LTN' }),
+    withPin({ id: 'cs_gpe', name: 'Gia Teach', username: 'gia', campus: 'poipet', dept: 'Community Service', ministry: 'GP Education', leads: ['Community Service|GP Education'] }));
+  const PK = { dept: 'Community Service', ministry: 'Ponlork School' }, LT = { dept: 'Community Service', ministry: 'LTN' }, GE = { dept: 'Community Service', ministry: 'GP Education' };
+  const PKEY = 'siemreap:Community Service|Ponlork School';
+  const prow = (m, min) => (mem.entries || []).filter(r => r.ministry === (min || 'Ponlork School') && r.metric === m);
+  /* who may open it — the same matrix as YDC */
+  let r = await call('schoolBoard', ['pen', '1234', PK]);
+  ok('a Ponlork member opens Ponlork’s school — an opt-in one', r.body && r.body.ok && r.body.canSetup === false && r.body.optIn === true && r.body.data.settings.count === false);
+  ok('… with only the four metrics that truly match', JSON.stringify(r.body.metrics) === JSON.stringify(['Students Enrolled', 'Students in Discipleship', 'Salvations', 'Baptisms']));
+  r = await call('schoolBoard', ['pola', '1234', PK]);
+  ok('its leader can set it up', r.body && r.body.ok && r.body.canSetup === true);
+  for (const [who, why] of [['lot', 'a teacher at another community school'], ['tom', 'a YDC teacher'], ['cal', 'someone at the Cafe']]) {
+    r = await call('schoolBoard', [who, '1234', PK]);
+    ok(why + ' cannot open Ponlork’s', r.body && r.body.ok === false && r.body.err === 'not_authorized' && !r.body.data);
+  }
+  r = await call('schoolBoard', ['app', '1234', PK]);
+  ok('an applicant cannot', r.body && r.body.ok === false && !r.body.data);
+  r = await call('schoolBoard', ['pen', '9999', PK]);
+  ok('a wrong PIN cannot', r.body && r.body.ok === false && !r.body.data);
+  r = await call('schoolBoard', ['ada', '1234', { ...PK, campus: 'poipet' }]);
+  ok('Poipet has no Ponlork School — not even for an admin', r.body && r.body.err === 'no_school');
+  r = await call('schoolBoard', ['ada', '1234', { ...GE, campus: 'siemreap' }]);
+  ok('… and Siem Reap no GP Education', r.body && r.body.err === 'no_school');
+  r = await call('schoolBoard', ['gia', '1234', GE]);
+  ok('GP Education is Poipet’s', r.body && r.body.ok && r.body.campus === 'poipet' && r.body.optIn === true);
+  r = await call('schoolBoard', ['pip', '1234', SC]);
+  ok('YDC is still on both campuses, and counts as before', r.body && r.body.ok && r.body.optIn === false);
+
+  /* a typed number from before, then the school set up and students put in */
+  const wkNow = Math.max(...rows('Youth Enrolled').map(x => x.week)), yr = rows('Youth Enrolled')[0].year;
+  mem.entries.push({ campus: 'siemreap', dept: 'Community Service', ministry: 'Ponlork School', metric: 'Students Enrolled', week: wkNow, year: yr, value: 120, updated: new Date().toISOString(), by: 'cs_lead' });
+  r = await call('schoolSave', ['pen', '1234', PK, 'location', { name: 'Made-up village' }]);
+  ok('a member cannot set up', r.body.err === 'not_setup');
+  r = await call('schoolSave', ['pola', '1234', PK, 'location', { name: 'Made-up village' }]);
+  const loc = r.body.saved;
+  r = await call('schoolSave', ['pola', '1234', PK, 'class', { name: 'Grade 1', locationId: loc, days: [1, 3] }]);
+  const cls = r.body.saved;
+  r = await call('schoolSave', ['pen', '1234', PK, 'student', { en: 'Rith Madeup', classId: cls, start: dayAdd(-30), guardian: 'Aunt Madeup', guardianPhone: '011 000 111', faith: { disc: dayAdd(-5), salv: TODAY } }]);
+  ok('a student goes into Ponlork’s own store', r.body.ok && mem['school:' + PKEY].students.length === 1 && !mem['school:siemreap:Community Service|LTN']);
+  await call('schoolRoll', ['pen', '1234', PK, cls, TODAY, { [r.body.saved]: 'p' }]);
+  ok('until it is switched on the tool writes NOTHING: the typed 120 stands alone', prow('Students Enrolled').length === 1 && prow('Students Enrolled')[0].value === 120 && prow('Students Enrolled')[0].by === 'cs_lead' && !mem.entries.some(e => e.ministry === 'Ponlork School' && e.by === 'tool:school'));
+  r = await call('schoolBoard', ['lot', '1234', LT]);
+  ok('LTN’s school is its own — none of Ponlork’s students, classes or rolls', r.body && r.body.ok && r.body.data.students.length === 0 && r.body.data.classes.length === 0 && r.body.rolls.length === 0 && !JSON.stringify(r.body).includes('Rith Madeup'));
+  r = await call('schoolBoard', ['tom', '1234', SC]);
+  ok('… and YDC sees none of them either', !JSON.stringify(r.body).includes('Rith Madeup') && !JSON.stringify(r.body).includes('Aunt Madeup'));
+
+  /* switching the count on: its leader's */
+  r = await call('schoolSave', ['pen', '1234', PK, 'settings', { count: true }]);
+  ok('a member cannot switch the count on', r.body.err === 'not_setup' && !mem['school:' + PKEY].settings.count);
+  r = await call('schoolSave', ['pola', '1234', PK, 'settings', { count: true }]);
+  ok('its leader can', r.body.ok && r.body.data.settings.count === true);
+  ok('the week with a typed number keeps it', prow('Students Enrolled').find(x => x.week === wkNow).value === 120 && prow('Students Enrolled').find(x => x.week === wkNow).by === 'cs_lead');
+  ok('the weeks with none count from the tool (the student started a month ago)', prow('Students Enrolled').some(x => x.week !== wkNow && x.by === 'tool:school' && x.value === 1));
+  ok('Students in Discipleship and Salvations count from their dates', prow('Students in Discipleship').some(x => x.by === 'tool:school' && x.value === 1) && prow('Salvations').reduce((a, x) => a + x.value, 0) === 1);
+  ok('nothing the school has no metric for is written (no Days with Classes, Youth Enrolled, Tests Held…)', !['Days with Classes', 'Youth Enrolled', 'Tests Held', 'Passing Rate (%)', 'Parties Thrown', 'Competitions Held', 'Students Brought to Local Church'].some(m => prow(m).length));
+  ok('… and nothing for another school', !mem.entries.some(e => (e.ministry === 'LTN' || e.ministry === 'Sry Noi' || e.ministry === 'GP Education')));
+  const typedRow = mem.entries.find(e => e.ministry === 'Ponlork School' && e.metric === 'Students Enrolled' && e.week === wkNow);
+  mem.entries.splice(mem.entries.indexOf(typedRow), 1);
+  r = await call('schoolSave', ['pola', '1234', PK, 'settings', { count: false }]);
+  ok('switched off again, the tool takes back everything it wrote', r.body.ok && r.body.data.settings.count === false && !mem.entries.some(e => e.ministry === 'Ponlork School'));
+  mem.entries.push(typedRow);
+
+  /* nothing leaks */
+  r = await call('teamRoster', ['pen', '1234']);
+  ok('not on the roster', !JSON.stringify(r.body).includes('Rith Madeup') && !JSON.stringify(r.body).includes('011 000 111'));
+  r = await call('getData', ['']);
+  ok('not in getData', !JSON.stringify(r.body).includes('Rith Madeup') && !JSON.stringify(r.body).includes('Aunt Madeup'));
+  r = await call('getMyBoot', ['lot', '1234']);
+  ok("not in another school's boot", !JSON.stringify(r.body).includes('Rith Madeup'));
+  r = await call('getMyBoot', ['pen', '1234']);
+  ok('not even in the teacher’s own boot', !JSON.stringify(r.body).includes('Aunt Madeup'));
+  ok('a community school still gets its numbers-due reminders (it is not exempt, YDC is)', (() => { const src = fs.readFileSync(REPO + '/netlify/functions/api.js', 'utf8'); return /isSchoolMinistry_\(dept, ministry\) && !schoolConf_\(dept, ministry\)\.optIn/.test(src); })());
+  r = await call('getMyMinistry', ['pen', '1234']);
+  ok('its Scorecard payload is the ministry’s own, typed number and all', r.body && r.body.ok && r.body.ministry === 'Ponlork School' && r.body.entries['Students Enrolled'][String(wkNow)] === 120);
+}
+
 console.log('=== the two lists agree ===');
 {
   const tax = fs.readFileSync(REPO + '/public/taxonomy.js', 'utf8');
@@ -260,6 +341,12 @@ console.log('=== the two lists agree ===');
   const grab = (s) => { const m = s.match(/SCHOOL_TOOL = (\{[\s\S]*?\n\});/); return m ? m[1] : ''; };
   const norm = (s) => { try { return JSON.stringify(Function('return ' + s)()); } catch (e) { return 'x' + s; } };
   ok("SCHOOL_TOOL in taxonomy.js matches api.js's", grab(tax) && norm(grab(tax)) === norm(grab(src)));
+  ok('each community school maps only metrics its own list has, on the campus that has it', (() => {
+    const box = {}; Function('box', tax + '\n;box.T = SCHOOL_TOOL; box.get = getBaselineDepartments; box.auto = autoMetricsFor;')(box);
+    return Object.keys(box.T).filter(k => box.T[k].optIn).every(k => { const [d, m] = k.split('|');
+      return box.T[k].campuses.every(c => { const list = (box.get(c)[d] || {})[m]; return !!list && Object.values(box.T[k].metrics).every(x => list.includes(x)) && box.auto(c, d, m).length === 0; }) &&
+        ['poipet', 'siemreap'].filter(c => !box.T[k].campuses.includes(c)).every(c => !(box.get(c)[d] || {})[m]); }) && Object.keys(box.T).filter(k => box.T[k].optIn).length === 4;
+  })());
   ok('every YDC metric in the taxonomy counts itself', /'YDC': \['Days with Classes','Youth Enrolled','Tests Held','Passing Rate \(%\)',\s*'Parties Thrown','Competitions Held','Salvations','Baptisms',\s*'Students in Discipleship','Students Brought to Local Church'\]/.test(tax));
 }
 

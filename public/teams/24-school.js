@@ -11,7 +11,16 @@
    Children's details: only the ministry's own people see any of it. */
 var SCH_TABS=['sctoday','scstu','sctest','scpay','scdash'];
 function isSchoolMinistry_(dept, min){ return typeof schoolToolFor==='function' && !!schoolToolFor(dept, min); }
-function schTabs_(){ return [['sctoday',t('Today')],['scstu',t('Students')],['sctest',t('Tests')],['scpay',t('Payments')],['scdash',t('Dashboard')]]; }
+/* a community school (SCHOOL_TOOL optIn — Ponlork School, LTN, Sry Noi, GP Education): its page still opens on the shared
+   Today and keeps its Scorecard — every metric typed as before — with the school tool's tabs between them. The tool
+   counts nothing until its leader switches it on (the Dashboard's #schCount). */
+function schOptIn_(dept, min){ var c=typeof schoolToolFor==='function' ? schoolToolFor(dept, min) : null; return !!(c && c.optIn); }
+function schTabs_(sel){
+  var own=[['sctoday',t('Today')],['scstu',t('Students')],['sctest',t('Tests')],['scpay',t('Payments')],['scdash',t('Dashboard')]];
+  if(!sel || !schOptIn_(sel.dept, sel.min)) return own;
+  own[0]=['sctoday',t('Roll')];
+  return [['mmtoday',t('Today')]].concat(own, [['numbers',t('Scorecard')]]);
+}
 function schScope_(){ var d=S.sch && S.sch.d; return { dept:S.mmBrowseDept, ministry:S.mmBrowseMinistry, campus:(d && d.campus) || S.me.campus }; }
 function schKey_(){ return (S.mmBrowseDept||'')+'|'+(S.mmBrowseMinistry||''); }
 function schD_(){ return S.sch && S.sch.key===schKey_() ? S.sch.d : null; }
@@ -345,6 +354,15 @@ function schDashHtml_(d){
   var active=d.data.students.filter(function(s){ return schActiveOn_(s, today); });
   var h='';
   if(d.canSetup) h+='<button class="btn ghost" id="schSetupGo" style="margin-top:0">⚙️ '+esc(t('Set up the school'))+'</button>';
+  if(d.optIn){   // a community school: the tool counts nothing until its leader says so
+    var on=!!d.data.settings.count, names=(d.metrics||[]).map(function(m){ return t(m); }).join(', ');
+    h+='<div class="card" id="schCount" data-on="'+(on ? 1 : 0)+'"><h3 style="margin-top:0">🔢 '+esc(t('Count our numbers from the school tool'))+'</h3>'+
+      '<p class="sub" style="margin:0 0 8px">'+esc(on ? gpT('On — these count themselves from the tool now: {list}. A number someone types for a week still wins for that week.',{list:names})
+        : gpT('Off — your numbers are typed on the Scorecard, as before. Once every student is in the tool, switch this on and these count themselves: {list}.',{list:names}))+'</p>'+
+      '<p class="hint" style="margin:0 0 8px">'+esc(gpT('The tool has {n} students right now. The other numbers stay typed on the Scorecard.',{n:active.length}))+'</p>'+
+      (d.canSetup ? '<button class="btn'+(on ? ' ghost' : '')+'" id="schCountBtn" style="margin-top:0"'+(S.schBusy ? ' disabled' : '')+'>'+esc(on ? t('Switch it off — we type them again') : t('Switch it on'))+'</button>'
+        : '<p class="hint" style="margin:0">'+esc(t('Only the ministry’s leaders can change the set-up.'))+'</p>')+'</div>';
+  }
   // attendance this month
   var n=0, here=0; (d.rolls||[]).forEach(function(r){ if(r.date.slice(0,7)!==mo) return; Object.keys(r.marks||{}).forEach(function(k){ n++; if(r.marks[k]!=='a') here++; }); });
   var owed=schOwes_(schCurPeriod_()).reduce(function(a,o){ return a+o.owes; },0);
@@ -502,6 +520,11 @@ function bindSchool_(){
   var rt=document.getElementById('schRetry'); if(rt) rt.onclick=function(){ schLoad_(); render(); };
   var d=schD_(); if(!d) return;
   var on=function(id, fn){ var el=document.getElementById(id); if(el) el.onclick=fn; };
+  on('schCountBtn', function(){
+    var cur=!!d.data.settings.count, n=d.data.students.filter(function(x){ return schActiveOn_(x, schToday_()); }).length;
+    if(!cur && !gpAsk_(gpT('Count from the school tool from now on? It has {n} students right now — that is the number the base will see for Students Enrolled.',{n:n}))) return;
+    gpTap(); schCall_('schoolSave',['settings', Object.assign({}, d.data.settings, { count:!cur })], cur ? t('Switched off') : t('Switched on ✓'), function(){ S.schSet=null; });
+  });
   on('schBack', function(){ gpTap(); var pg=S.schPage||''; S.schForm=null; S.schSet=null;
     S.schPage = (pg.indexOf('report:')===0) ? 'student:'+pg.slice(7) : (pg==='form' && S.schFormFrom) ? S.schFormFrom : null; S.schFormFrom=null; render(); window.scrollTo(0,0); });
   document.querySelectorAll('#schSetupGo').forEach(function(b){ b.onclick=function(){ gpTap(); S.schSet=null; schGo_('setup'); }; });

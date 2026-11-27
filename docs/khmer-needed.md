@@ -7246,3 +7246,18 @@ Short labels on My Ministry’s Today screen and the one-row strip on tool minis
 | Send to Technical | ផ្ញើទៅផ្នែកបច្ចេកទេស |
 | Say what needs fixing. | សូមប្រាប់ថាអ្វីត្រូវជួសជុល។ |
 | No connection — try again when you’re back online. | គ្មានការតភ្ជាប់ — សូមព្យាយាមម្ដងទៀតពេលមានអ៊ីនធឺណិតវិញ។ |
+| Roll | បញ្ជីវត្តមាន |
+| Count our numbers from the school tool | រាប់តួលេខរបស់យើងពីឧបករណ៍សាលា |
+| On — these count themselves from the tool now: {list}. A number someone types for a week still wins for that week. | បើក — ឥឡូវនេះតួលេខទាំងនេះរាប់ដោយខ្លួនឯងពីឧបករណ៍៖ {list}។ លេខដែលនរណាម្នាក់វាយសម្រាប់សប្ដាហ៍ណាមួយ នៅតែត្រូវប្រើសម្រាប់សប្ដាហ៍នោះ។ |
+| Off — your numbers are typed on the Scorecard, as before. Once every student is in the tool, switch this on and these count themselves: {list}. | បិទ — តួលេខរបស់អ្នកត្រូវវាយនៅលើតារាងពិន្ទុ ដូចពីមុន។ ពេលសិស្សទាំងអស់នៅក្នុងឧបករណ៍ហើយ សូមបើកវា នោះតួលេខទាំងនេះនឹងរាប់ដោយខ្លួនឯង៖ {list}។ |
+| The tool has {n} students right now. The other numbers stay typed on the Scorecard. | ឧបករណ៍មានសិស្ស {n} នាក់នៅពេលនេះ។ តួលេខផ្សេងទៀតនៅតែវាយនៅលើតារាងពិន្ទុ។ |
+| Switch it off — we type them again | បិទវា — យើងវាយវាម្ដងទៀត |
+| Switch it on | បើកវា |
+| Count from the school tool from now on? It has {n} students right now — that is the number the base will see for Students Enrolled. | រាប់ពីឧបករណ៍សាលាចាប់ពីពេលនេះទៅ? ឥឡូវវាមានសិស្ស {n} នាក់ — នោះជាលេខដែលមូលដ្ឋាននឹងឃើញសម្រាប់សិស្សចុះឈ្មោះ។ |
+| Switched off | បានបិទ |
+| Switched on ✓ | បានបើក ✓ |
+| The school tool is ready for you | ឧបករណ៍សាលារួចរាល់សម្រាប់អ្នកហើយ |
+| Students, the roll, tests and payments. Your numbers stay as they are. | សិស្ស បញ្ជីវត្តមាន ការប្រឡង និងការបង់ប្រាក់។ តួលេខរបស់អ្នកនៅដដែល។ |
+| Today’s roll is taken ✓ | បានស្រង់វត្តមានថ្ងៃនេះហើយ ✓ |
+| Take today’s roll | ស្រង់វត្តមានថ្ងៃនេះ |
+| {n} students | សិស្ស {n} នាក់ |

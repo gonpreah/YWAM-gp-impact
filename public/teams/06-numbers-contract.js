@@ -838,7 +838,7 @@ function mmTabsFor_(sel, mine, schedH){
   } else if(isDtsMinistry_(sel.dept, sel.min)){
     out=dtsTabs_();   // GPDTS: the school's home — every number counts itself, so no Numbers tab (teams/16-dts.js)
   } else if(isSchoolMinistry_(sel.dept, sel.min)){
-    out=schTabs_();   // the school tool (YDC): roll, students, tests, payments — every number counts itself (teams/24-school.js)
+    out=schTabs_(sel);   // the school tool (YDC; a community school keeps the shared Today and its Scorecard round it): roll, students, tests, payments — every number counts itself (teams/24-school.js)
   } else out=[['mmtoday',t('Today')],['numbers',t('Scorecard')]];   // Today first (teams/31-today.js), then the ministry's weekly numbers page (key still 'numbers')
   if(schedH && !isTeamsMinistry_(sel.dept, sel.min)) out.push(['sched',t('Schedule')]);
   if(sel.dept==='Skills Training' && sel.min==='Hospitality' && canHospClient_()) out.push(['goHosp',t('SR Hospitality'),'id']);   // a way in, not a tab (#goHosp opens it)

@@ -219,6 +219,47 @@ const noSideways = p => p.evaluate(() => document.documentElement.scrollWidth <=
   ok('… and the server says no', r && r.ok === false && !r.data);
   await ctx.close();
 }
+/* 4. a community school (Ponlork School): the shared Today and its Scorecard stay, the school tool sits between them,
+      and the tool counts nothing until its leader switches it on. Made-up names. */
+{
+  mem.staff.push(mk({ id: 'cs1', name: 'Pola Lead', username: 'pola', email: 'p@e.com', dept: 'Community Service', ministry: 'Ponlork School', leads: ['Community Service|Ponlork School'] }));
+  const d0 = new Date(), yr0 = d0.getFullYear();
+  const { ctx, page } = await open('pola');
+  const wkNow = await page.evaluate(() => Number(thisWeek())), wy = await page.evaluate(() => thisWeekYear());
+  mem.entries.push({ campus: 'siemreap', dept: 'Community Service', ministry: 'Ponlork School', metric: 'Students Enrolled', week: wkNow - 1, year: wy, value: 120, updated: new Date().toISOString(), by: 'cs1' });
+  await page.reload({ waitUntil: 'load' }); await page.waitForSelector('nav.bottom button'); await wait(page, 400);
+  await page.evaluate(() => { S.view = 'ministry'; render(); window.scrollTo(0, 0); }); await wait(page, 1500);
+  const tabs = await page.$$eval('.mmTabs .gtTab', b => b.map(x => x.textContent.trim()));
+  ok('a community school’s tabs: Today, the school tool, the Scorecard', tabs.join('|') === 'Today|Roll|Students|Tests|Payments|Dashboard|Scorecard|Tasks|Rocks', tabs.join('|'));
+  ok('it opens on the shared Today — not a strip, not the roll', !!(await page.$('#tdToday:not([data-tdstrip])')) && !(await page.$('#schNoClass')));
+  await page.waitForSelector('#tdSchool');
+  ok('Today says the school tool is ready, and that the numbers stay as they are', (await page.getAttribute('#tdSchool', 'data-tdschool')) === 'setup' && /Your numbers stay as they are/.test(await page.$eval('#tdSchool', e => e.innerText)));
+  await page.click('[data-mmtab="numbers"]'); await wait(page, 600);
+  ok('the Scorecard is as it was: Students Enrolled is still there, with the typed 120', /Students Enrolled/.test(await txt(page)) && /120/.test(await txt(page)));
+  await page.click('[data-mmtab="mmtoday"]'); await wait(page, 400);
+  await page.click('#tdSchool'); await wait(page, 500);
+  ok('the line opens the roll, which asks for the set-up first', !!(await page.$('#schNoClass')) && !!(await page.$('.mmTabs [data-mmtab="sctoday"].on')));
+  /* set up one class and one student through the real handlers, then look again */
+  const r = await page.evaluate(async () => {
+    const call = (fn, extra) => new Promise(res => run(fn, [S.auth.user, S.auth.pin, { dept: 'Community Service', ministry: 'Ponlork School' }].concat(extra), res, () => res(null)));
+    const l = await call('schoolSave', ['location', { name: 'Made-up village' }]);
+    const c = await call('schoolSave', ['class', { name: 'Grade 1', locationId: l.saved, days: [0, 1, 2, 3, 4, 5, 6] }]);
+    const st = await call('schoolSave', ['student', { en: 'Rith Madeup', classId: c.saved, start: '2026-01-05' }]);
+    S.sch = null; S.mmTab = 'mmtoday'; render();
+    return !!(st && st.ok);
+  });
+  await page.waitForSelector('#tdSchool[data-tdschool="due"]');
+  ok('with a class and a student, Today offers the roll', r && (await page.getAttribute('#tdSchool', 'data-n')) === '1' && /Take today’s roll/.test(await page.$eval('#tdSchool', e => e.innerText)));
+  ok('… and the tool has written no number', !(mem.entries || []).some(e => e.ministry === 'Ponlork School' && e.by === 'tool:school'));
+  ok('nothing scrolls sideways', await noSideways(page));
+  await page.screenshot({ path: OUT + '/community-school-today.png', fullPage: true });
+  await page.click('[data-mmtab="scdash"]'); await page.waitForSelector('#schCount');
+  ok('the Dashboard says the count is off, and names what it would count', (await page.getAttribute('#schCount', 'data-on')) === '0' && /Students Enrolled/.test(await page.$eval('#schCount', e => e.innerText)) && /Off/.test(await page.$eval('#schCount', e => e.innerText)));
+  await page.click('#schCountBtn'); await page.waitForSelector('#schCount[data-on="1"]');
+  const mine = (mem.entries || []).filter(e => e.ministry === 'Ponlork School' && e.metric === 'Students Enrolled');
+  ok('its leader switches it on: this week counts from the tool, last week’s typed 120 stays', mine.some(e => e.week === wkNow && e.by === 'tool:school' && e.value === 1) && mine.some(e => e.week === wkNow - 1 && e.by === 'cs1' && e.value === 120), mine.map(e => [e.week, e.value, e.by]));
+  await ctx.close();
+}
 ok('no script errors', errors.length === 0, errors.slice(0, 5).join(' | '));
 await browser.close(); srv.close();
 console.log(`\n${pass} passed, ${fail} failed`);

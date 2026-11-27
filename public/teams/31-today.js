@@ -29,7 +29,7 @@ function tdIsFaith_(m){ return TD_FAITH_RE.test(m); }
 /* the ministries that already have a daily home of their own: it stays their first tab, with the shared strip on top */
 function tdToolMin_(sel){
   return (sel.dept==='Community Service' && sel.min==='Cafe') || isTeamsMinistry_(sel.dept, sel.min) || isIcpMinistry_(sel.dept, sel.min) ||
-    isWorshipMinistry_(sel.dept, sel.min) || isDtsMinistry_(sel.dept, sel.min) || isSchoolMinistry_(sel.dept, sel.min);
+    isWorshipMinistry_(sel.dept, sel.min) || isDtsMinistry_(sel.dept, sel.min) || (isSchoolMinistry_(sel.dept, sel.min) && !schOptIn_(sel.dept, sel.min));   // a community school keeps the shared Today
 }
 function tdMine_(sel){ return sel.dept===S.me.dept && sel.min===S.me.ministry; }
 function tdData_(sel){ return tdMine_(sel) ? S.ministry : (S.oversee||{})[sel.min]; }
@@ -377,8 +377,17 @@ function tdReqHtml_(can){
   if(list.length) h+='<button type="button" class="linkbtn inline" id="tdReqAll">'+esc(list.length>TD_REQ_SHOWN ? gpT('See all {n} in Tasks',{n:list.length}) : t('Open them in Tasks'))+'</button>';
   return h+'</div>';
 }
+/* a community school (the school tool, optIn): today's roll, one tap away (S.sch — the school's own load, 24-school.js) */
+function tdSchoolLineHtml_(sel){
+  var d=(S.sch && S.sch.key===sel.dept+'|'+sel.min) ? S.sch.d : null; if(!d) return '';
+  var today=d.today || todayStr();
+  if(!d.data.classes.length) return tdLine_('tdSchool', ' data-tdschool="setup"', '🏫', esc(t('The school tool is ready for you')), esc(t('Students, the roll, tests and payments. Your numbers stay as they are.')));
+  var n=d.data.students.filter(function(x){ return schActiveOn_(x, today); }).length;
+  var taken=(d.rolls||[]).some(function(r){ return r.date===today && r.marks && Object.keys(r.marks).length; });
+  return tdLine_('tdSchool', ' data-tdschool="'+(taken ? 'taken' : 'due')+'" data-n="'+n+'"', '🏫', esc(taken ? t('Today’s roll is taken ✓') : t('Take today’s roll')), esc(gpT('{n} students',{n:n})));
+}
 function tdExtrasHtml_(sel, can, below){   // one-line ones above the tiles; the requests box under them, so the counters still need no scrolling
-  var c=tdCfg_(sel), h=''; if(!c || !c.extra) return '';
+  var c=tdCfg_(sel), h=(!below && typeof schOptIn_==='function' && schOptIn_(sel.dept, sel.min)) ? tdSchoolLineHtml_(sel) : ''; if(!c || !c.extra) return h;
   c.extra.forEach(function(x){
     if(x==='tech'){ if(below) h+=tdReqHtml_(can); }
     else if(below) return;
@@ -561,6 +570,7 @@ function bindToday_(){
         function(){ S.gptLoading=false; S.gptErr='offline'; tdRefresh_(); });
     }
   }
+  var scl=document.getElementById('tdSchool'); if(scl) scl.onclick=function(){ gpTap(); S.mmTab='sctoday'; S.mmTabTouched=true; mmTabKeep_('sctoday'); render(); window.scrollTo(0,0); };
   var tn=document.getElementById('tdTonight'); if(tn) tn.onclick=function(){ gpTap(); S.view='hosp'; S.hospTab='dash'; render(); window.scrollTo(0,0); };
   var sl=document.getElementById('tdSched'); if(sl) sl.onclick=function(){ gpTap(); var k=sl.getAttribute('data-tdsched'); schedOpen_(k, !!(S.sched && S.sched.canEdit && S.sched.canEdit[k]), 'ministry'); };
   box.querySelectorAll('[data-tdreqdone]').forEach(function(b){ b.onclick=function(){ gpTap(); tdReqDone_(b.getAttribute('data-tdreqdone')); }; });

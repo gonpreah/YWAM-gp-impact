@@ -1860,6 +1860,19 @@ numbers are counted but never part of it (no tile, no ring, no celebration, no b
   **Ask Technical** (☰ → Operations `asktech`, so search and the quick apps have it; `tdAskTechOpen_`, `#atSheet` in
   `#atRoot`, drawn without a render): what, where, anything else → `saveGpTask {askMin:'Skills Training|Technical', title,
   notes:'📍 where…', rid}` — the existing "Ask another ministry" path (text only: GP Tasks holds no photos).
+- **The community schools on the school tool** (step 3; `SCHOOL_TOOL` in taxonomy.js and api.js, `optIn: true`,
+  `campuses`): Ponlork School, LTN, Sry Noi (Siem Reap) and GP Education (Poipet) — `schoolGate_` answers `no_school` on
+  a campus that hasn't the school; each school's store is its own (`school:<campus>:<dept>|<ministry>`). **Only four of
+  their metrics truly match**: enrolled → Students Enrolled, disc → Students in Discipleship, salv → Salvations, bapt →
+  Baptisms; Schools, Ministry Staff, Students Supported Financially and Students Given Food & Housing stay typed.
+  **The tool counts NOTHING for an optIn school until its leader switches it on** — the Dashboard's `#schCount` /
+  `#schCountBtn` (`settings.count`, kept by `schSettings_`; `schoolSync_` empties `want` while off, which also takes back
+  its own rows) — so the typed numbers and the Base dashboard are exactly as they were, and one student typed in can't
+  drop "Students Enrolled" from 120 to 1. On, a typed week still wins. Their page: **Today (the shared one) · Roll ·
+  Students · Tests · Payments · Dashboard · Scorecard** (`schTabs_(sel)`, `schOptIn_`); every metric stays on the
+  Scorecard (`autoMetricsFor` skips optIn — so a Friday wrap can still type over a counted week: accepted), they keep
+  their numbers-due reminders (`numbersExempt_`), and Today carries `#tdSchool` ("Take today's roll" / taken ✓ / "The
+  school tool is ready for you"). YDC is unchanged. tests/test-school.mjs (rights, isolation, the switch), -ui.
 - **The quarter's story** (29-report.js `qrFormHtml_`): above Highlights, "This quarter's wins — tap one to add it"
   (`tdReportWinsHtml_`, `#tdQrWins`, `[data-qrwin]`, bound in `bindToday_`) — for the writer's own campus and only when
   that ministry's payload is already on the phone (their own ministry, or one they opened this visit); read-only reuse.
