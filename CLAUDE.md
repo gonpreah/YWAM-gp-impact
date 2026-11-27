@@ -1769,8 +1769,9 @@ ministry … a fun game they're doing each day, while also getting all the data 
 government. And when they go to My Ministry they wouldn't be overwhelmed either." Step 1 of that: one shared screen.
 **The rule of the game**: rewards are for showing up and logging honestly — never for the size of a number — and faith
 numbers are counted but never part of it (no tile, no ring, no celebration, no badge). **Game points are unchanged.**
-- **The faith list is ONE regex**, `GP_FAITH_RE` in taxonomy.js (salvation, baptis, gospel, healing, discipl, church,
-  prayer, testimon, worship, bible, evangel, congregation); the quarterly report's `QR_FAITH` is the same object.
+- **Out of the game: salvations, baptisms, healings** (`TD_FAITH_RE` in 31-today.js — Uriah's three). The quarterly report's
+  wider `GP_FAITH_RE` (taxonomy.js; `QR_FAITH` is the same object) also names churches, worship, prayer, the gospel…; on
+  Today those are ordinary tiles, or Evangelism and Church Partnerships would have nothing to tap.
 - **A new first tab, Today** (`mmtoday`, in `MM_SHELL_KEYS`, `mmTabsFor_`'s default branch → `todayPaneHtml_(sel)`,
   `#tdToday[data-tdkey]`): every ministry with no daily home of its own — Today · Scorecard · (Schedule) · Tasks · Rocks.
   **A ministry's page opens on its first tab every time the app is opened**: `mmTabKeep_` / `mmTabKept_` are

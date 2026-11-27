@@ -22,7 +22,10 @@
 var TD_TILES=4, TD_SAVE_MS=800, TD_HOLD_MS=500, TD_PENDING='gp-td-pending', TD_BADGES='gp-td-badges', TD_WINS_SHOWN=3;
 S.td={ more:false, edit:null, winDraft:'', winsAll:false, wrapOpen:false, wrapDraft:{}, wrapDone:'', flying:false, note:'', timer:null, winBusy:false };
 
-function tdIsFaith_(m){ return typeof GP_FAITH_RE!=='undefined' && GP_FAITH_RE.test(m); }
+/* out of the game: salvations, baptisms, healings (Uriah's three). The quarterly report's wider GP_FAITH_RE also names
+   churches, worship, prayer… — those are a ministry's ordinary daily counts (Evangelism, Church Partnerships), so they are tiles. */
+var TD_FAITH_RE=/salvation|baptis|healing/i;
+function tdIsFaith_(m){ return TD_FAITH_RE.test(m); }
 /* the ministries that already have a daily home of their own: it stays their first tab, with the shared strip on top */
 function tdToolMin_(sel){
   return (sel.dept==='Community Service' && sel.min==='Cafe') || isTeamsMinistry_(sel.dept, sel.min) || isIcpMinistry_(sel.dept, sel.min) ||
