@@ -1,5 +1,5 @@
 /* GP Tasks in the browser (Oct 2026): a ministry's list, adding with Enter, a day, a time and a person; ticking off; the bell; asking another ministry and the request taken on; My Ministry's Tasks tab; Campus Leadership's view, its saved filter, and a board card that becomes a ministry's task. Real api.js, fake store. */
-import { REPO, PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
+import { REPO, PUBLIC, tmpDir, CHROMIUM, mmGo } from './env.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -345,8 +345,8 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
 {
   const { ctx, page } = await open('kanha');
   await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(600);
-  ok('My Ministry: one row of tabs with Tasks among them; the Cafe opens on its tool', !!(await page.$('.mmTabs [data-mmtab="tasks"]')) && !!(await page.$('.mmTabs .gtTab.on[data-cafetab="today"]')) && !(await page.$('#mtFold')));
-  await page.click('.mmTabs [data-mmtab="tasks"]'); await page.waitForTimeout(900);
+  ok('My Ministry: one row of tabs with Our plan (Tasks is in it); the Cafe opens on its tool', !!(await page.$('.mmTabs [data-mmtab="mmplan"]')) && !!(await page.$('.mmTabs .gtTab.on[data-cafetab="today"]')) && !(await page.$('#mtFold')));
+  await mmGo(page, 'tasks'); await page.waitForTimeout(900);
   const mp = await main(page);
   ok('the Tasks tab: the Cafe\'s list, right there under the tabs — no Inbox, no New list', await page.evaluate(() => S.view === 'ministry') && /Cafe jobs/.test(mp) && /Order milk/.test(mp) && !/Inbox/.test(mp) && !(await page.$('#gptNewListBtn')) && !!(await page.$('.gtFab')), mp.slice(0, 200));
   await page.click('.mmTabs [data-cafetab="today"]'); await page.waitForTimeout(500);

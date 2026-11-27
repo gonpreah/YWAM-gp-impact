@@ -6,7 +6,7 @@
    (metricGoalNote_ in teams/04-ministry-strengths.js, from sbdGoals_). Scoped to the number's own
    campus and ministry — another campus's goal for the same number must not show. (The file keeps
    its old name; it is the same row of the same form.) */
-import { PUBLIC, CHROMIUM } from './env.mjs';
+import { PUBLIC, CHROMIUM, SCORECARD_FIRST } from './env.mjs';
 import { chromium } from 'playwright';
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 
@@ -46,7 +46,8 @@ await p.route('**/.netlify/functions/api', r => {
   else if (/^getMy/.test(q.fn)) o = { ok: true, logs: [], goals: [], checkins: [], mentees: [], requests: [] };
   r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(o) });
 });
-await p.addInitScript((u) => { localStorage.setItem('gp-cafe-view', 'numbers'); sessionStorage.setItem('gp-lw-tab', 'board'); localStorage.setItem('gp-staff', JSON.stringify({ user: u, pin: '1234' })); }, ME.username);
+await p.addInitScript(SCORECARD_FIRST);   // this test is about the Scorecard: start the visit on it, not on Today
+await p.addInitScript((u) => { sessionStorage.setItem('gp-lw-tab', 'board'); localStorage.setItem('gp-staff', JSON.stringify({ user: u, pin: '1234' })); }, ME.username);
 await p.goto('http://localhost:4420/teams.html'); await p.waitForSelector('nav.bottom button', { timeout: 15000 });
 await p.waitForTimeout(700);
 await p.click('nav.bottom [data-tab="week"]');

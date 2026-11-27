@@ -207,7 +207,7 @@ function bindLw_(){
 }
 
 /* ---------- the Cafe ---------- */
-S.cafe=null; S.cafeDate=null; S.cafeLoading=false; S.cafeErr=''; S.cafeTab='today'; S.cafeView=(lsGet('gp-cafe-view')==='numbers'?'numbers':'tool'); S.cafeOrder={}; S.cafeTicks={ open:{}, close:{} }; S.cafeCell=null; S.cafeEdit=null;
+S.cafe=null; S.cafeDate=null; S.cafeLoading=false; S.cafeErr=''; S.cafeTab='today'; S.cafeView='tool'; S.cafeOrder={}; S.cafeTicks={ open:{}, close:{} }; S.cafeCell=null; S.cafeEdit=null;
 function cafeLoad_(date){
   if(S.cafeLoading) return; S.cafeLoading=true; S.cafeErr='';
   run('cafeGet',[S.auth.user,S.auth.pin,date],function(d){ S.cafeLoading=false; if(d && d.ok && d.date===date) S.cafe=d; else S.cafeErr=(d&&d.err)||'error'; if(S.view==='ministry') render(); },
@@ -347,8 +347,8 @@ function bindCafe_(){
   var done=function(d){ S.cafeBusy=false; if(d && d.ok){ S.cafe=d; } else showMsg(d && d.err==='empty' ? t('The order is empty.') : d && d.err==='not_leader' ? t('Only the cafe’s leader can change the menu.') : t('Could not save — try again.')); render(); };
   var call=function(fn,args,then){ if(S.cafeBusy) return; S.cafeBusy=true; run(fn,[S.auth.user,S.auth.pin].concat(args),function(d){ done(d); if(then && d && d.ok) then(d); },function(){ S.cafeBusy=false; showMsg(t('No connection — try again when you are online.')); render(); }); };
   var rt=document.getElementById('cafeRetry'); if(rt) rt.onclick=function(){ S.cafeErr=''; render(); };
-  document.querySelectorAll('[data-cafeview]').forEach(function(b){ b.onclick=function(){ gpTap(); S.cafeView=b.getAttribute('data-cafeview'); lsSet('gp-cafe-view', S.cafeView); render(); }; });
-  document.querySelectorAll('[data-cafetab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.cafeTab=b.getAttribute('data-cafetab'); S.mmTab='ministry'; S.mmTabTouched=true; if(b.closest('.mmTabs')) mmTabKeep_(S.cafeTab); S.cafeEdit=null; render(); }; });
+  document.querySelectorAll('[data-cafeview]').forEach(function(b){ b.onclick=function(){ gpTap(); S.cafeView=b.getAttribute('data-cafeview'); render(); }; });
+  document.querySelectorAll('[data-cafetab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.cafeTab=b.getAttribute('data-cafetab'); S.mmTab='ministry'; S.mmTabTouched=true; if(b.closest('.mmTabs,.mmTools')) mmTabKeep_(S.cafeTab); S.cafeEdit=null; render(); }; });
   var shift=function(n){ var d=new Date((S.cafeDate||todayStr())+'T00:00:00'); d.setDate(d.getDate()+n); var s=isoDateOf_(d); if(s>todayStr()) return; S.cafeDate=s; S.cafeTicks={open:{},close:{}}; render(); };
   var pd=document.getElementById('cafePrevDay'), nd=document.getElementById('cafeNextDay');
   if(pd) pd.onclick=function(){ shift(-1); }; if(nd) nd.onclick=function(){ shift(1); };

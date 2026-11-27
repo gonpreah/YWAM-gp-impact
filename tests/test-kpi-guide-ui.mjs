@@ -2,7 +2,7 @@
    guide's line on what to count (hidden until tapped, never disturbing a number
    half typed, in Khmer when the app is), and a 1–10 score that is caught before
    it is saved when it is out of range. Outreach Teams is left as it is. */
-import { PUBLIC, CHROMIUM } from './env.mjs';
+import { PUBLIC, CHROMIUM, mmGo } from './env.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -65,7 +65,7 @@ async function open(data, opts) {
   await page.waitForSelector('nav.bottom button', { timeout: 15000 });
   await page.click('nav.bottom button[data-tab="week"]'); await page.waitForTimeout(400);
   await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(400);
-  if (await page.$('.mmTabs [data-mmtab="numbers"]')) { await page.click('.mmTabs [data-mmtab="numbers"]'); await page.waitForTimeout(300); }   // My Ministry opens on Today (31-today.js); the boxes with the ⓘ are on the Scorecard
+  if (await page.$('.mmTabs [data-mmtab="mmplan"]')) { await page.click('.mmTabs [data-mmtab="mmplan"]'); await page.waitForSelector('#mmPlan'); if (await page.$('[data-mmplan="numbers"]')) await mmGo(page, 'numbers'); else await page.click('.mmTabs .gtTab:first-child'); await page.waitForTimeout(300); }   // My Ministry opens on Today (31-today.js); the boxes with the ⓘ are on the Scorecard
   // the boxes open by themselves for a week with nothing in; tap only if they are still shut (any language)
   if (await page.$('#kpiInputBtn') && !(await page.$('[data-kpiweek], [data-kpi]'))) { await page.click('#kpiInputBtn'); await page.waitForTimeout(400); }
   return { ctx, page };

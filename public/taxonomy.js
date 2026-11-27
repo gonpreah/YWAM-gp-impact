@@ -84,8 +84,13 @@ var ICP_AUTO_METRICS = ['Prayer Meetings Held','Prayer Hours Covered','Ministrie
    compares the two): change one, change both. */
 var SCHOOL_TOOL = {
   'Youth Education|YDC': { metrics: { days: 'Days with Classes', enrolled: 'Youth Enrolled', tests: 'Tests Held', pass: 'Passing Rate (%)',
-    parties: 'Parties Thrown', comps: 'Competitions Held', salv: 'Salvations', bapt: 'Baptisms', disc: 'Students in Discipleship', church: 'Students Brought to Local Church' } }
+    parties: 'Parties Thrown', comps: 'Competitions Held', salv: 'Salvations', bapt: 'Baptisms', disc: 'Students in Discipleship', church: 'Students Brought to Local Church' } },
+  'Community Service|Ponlork School': { optIn: true, campuses: ['siemreap'], metrics: { enrolled: 'Students Enrolled', disc: 'Students in Discipleship', salv: 'Salvations', bapt: 'Baptisms' } },
+  'Community Service|LTN': { optIn: true, campuses: ['siemreap'], metrics: { enrolled: 'Students Enrolled', disc: 'Students in Discipleship', salv: 'Salvations', bapt: 'Baptisms' } },
+  'Community Service|Sry Noi': { optIn: true, campuses: ['siemreap'], metrics: { enrolled: 'Students Enrolled', disc: 'Students in Discipleship', salv: 'Salvations', bapt: 'Baptisms' } },
+  'Community Service|GP Education': { optIn: true, campuses: ['poipet'], metrics: { enrolled: 'Students Enrolled', disc: 'Students in Discipleship', salv: 'Salvations', bapt: 'Baptisms' } }
 };
+/* The community schools (Nov 2026): optIn — the tool counts nothing until the school's leader switches it on — and only on the campus that has them. */
 function schoolToolFor(dept, ministry) { var k = dept + '|' + ministry; return Object.prototype.hasOwnProperty.call(SCHOOL_TOOL, k) ? SCHOOL_TOOL[k] : null; }
 /* Worship's rota counts these (Nov 2026; "Worship" in api.js, WORSHIP_AUTO — keep the two lists the same):
    services held, attendance, practice hours, musicians in training, and our own songs written, recorded and
@@ -100,7 +105,7 @@ function autoMetricsFor(campus, dept, ministry) {
   if (dept === 'Youth Education' && ministry === 'Worship') return WORSHIP_AUTO_METRICS.slice();
   if (dept === 'Youth Education' && ministry === 'Intercession') return ICP_AUTO_METRICS.slice();
   var sc = schoolToolFor(dept, ministry);
-  if (sc) return Object.keys(sc.metrics).map(function (k) { return sc.metrics[k]; });
+  if (sc && !sc.optIn) return Object.keys(sc.metrics).map(function (k) { return sc.metrics[k]; });   // a community school (optIn) keeps every metric on its Scorecard: typed until its leader switches the tool's count on
   return campus === 'siemreap' && dept === 'Leadership Development' && ministry === 'GPDTS'
     ? DTS_AUTO_METRICS.slice() : [];
 }

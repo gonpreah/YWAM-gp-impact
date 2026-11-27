@@ -64,13 +64,13 @@ async function menuOf(who) {
 /* Language is Learn Khmer / English for everyone (Oct 2026); Khmer review sits under Admin for its reviewers.
    Quarterly report (qreport, Nov 2026): Campus Leadership, admins and anyone who leads a ministry */
 const EXPECT = {
-  staff: 'base caltasks ywamgp prayer p360 tests leave library support # Operations sched worship # Language khmer',
-  hosp: 'base caltasks ywamgp prayer p360 tests leave library support # Operations sched worship hosp students # Language khmer',
-  hospLeader: 'base caltasks ywamgp qreport prayer p360 tests leave library support # Operations sched worship hosp students # Language khmer',
-  teamsLeader: 'base caltasks ywamgp qreport prayer p360 tests leave library support # Operations sched worship students # Applications portal portalapp # Language khmer',
-  cafeLeader: 'base caltasks ywamgp qreport prayer p360 tests leave library support # Operations sched worship # Language khmer',
-  hr: 'base caltasks ywamgp prayer p360 tests leave library support # Operations sched worship students # Admin hr # Language khmer',
-  admin: 'base caltasks ywamgp bdhub qreport prayer p360 tests leave library support # Operations sched worship hosp students # Applications portal portalapp # Admin hr admin kmreview # Language khmer',   // bdhub: 🛡️ Advisory Board — an admin (and a staff member on the board) opens the board's Overview and room (Nov 2026)
+  staff: 'base caltasks ywamgp prayer p360 tests leave library support # Operations sched worship asktech # Language khmer',
+  hosp: 'base caltasks ywamgp prayer p360 tests leave library support # Operations sched worship asktech hosp students # Language khmer',
+  hospLeader: 'base caltasks ywamgp qreport prayer p360 tests leave library support # Operations sched worship asktech hosp students # Language khmer',
+  teamsLeader: 'base caltasks ywamgp qreport prayer p360 tests leave library support # Operations sched worship asktech students # Applications portal portalapp # Language khmer',
+  cafeLeader: 'base caltasks ywamgp qreport prayer p360 tests leave library support # Operations sched worship asktech # Language khmer',
+  hr: 'base caltasks ywamgp prayer p360 tests leave library support # Operations sched worship asktech students # Admin hr # Language khmer',
+  admin: 'base caltasks ywamgp bdhub qreport prayer p360 tests leave library support # Operations sched worship asktech hosp students # Applications portal portalapp # Admin hr admin kmreview # Language khmer',   // bdhub: 🛡️ Advisory Board — an admin (and a staff member on the board) opens the board's Overview and room (Nov 2026)
 };
 for (const k of Object.keys(EXPECT)) {
   const { out, errors } = await menuOf(WHO[k]);

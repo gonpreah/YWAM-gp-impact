@@ -4366,7 +4366,33 @@ button.tdTap:active { background:var(--accentSoft); }
 .tdBadges li { font-size:14px; }
 .tdBadges li i { font-style:normal; }
 .tdBadges li:not(.on) > i { filter:grayscale(1); opacity:.45; }
-.tdStrip { margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid var(--line); }
+.tdStrip { margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+.tdBar { display:flex; align-items:center; gap:8px; min-width:0; }
+.tdBarMain { flex:1 1 auto; min-width:0; min-height:48px; display:flex; align-items:center; gap:12px; padding:4px 10px; border:1.5px solid var(--border); border-radius:14px; background:var(--surface); color:var(--ink); font:inherit; font-size:15px; cursor:pointer; touch-action:manipulation; }
+.tdBarIt { display:inline-flex; align-items:center; gap:4px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.tdBarChev { margin-left:auto; color:var(--muted); font-size:12px; }
+.tdBarWin { flex:0 0 auto; min-height:48px; padding:4px 12px; border:1.5px solid var(--accent); border-radius:14px; background:var(--accentSoft); color:var(--ink); font:inherit; font-weight:800; font-size:14px; cursor:pointer; white-space:nowrap; touch-action:manipulation; }
+.tdPrompt { font-weight:800; color:var(--ink); }
+.tdIc { font-style:normal; }
+.tdLine { display:flex; align-items:center; gap:10px; width:100%; min-height:48px; padding:8px 12px; border:1.5px solid var(--border); border-radius:14px; background:var(--surface); color:var(--ink); font:inherit; text-align:left; cursor:pointer; touch-action:manipulation; }
+.tdLineIc { flex:0 0 auto; font-size:20px; }
+.tdLineTxt { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:1px; font-size:14px; line-height:1.3; overflow-wrap:anywhere; }
+.tdLineTxt small { font-size:12.5px; color:var(--muted); }
+.tdLineGo { flex:0 0 auto; color:var(--muted); }
+.tdReq { border:1.5px solid var(--border); border-radius:14px; background:var(--surface); padding:12px; }
+.tdReq .hint { margin:0; }
+.tdReqList { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+.tdReqList li { display:flex; align-items:center; gap:10px; padding-top:8px; border-top:1px solid var(--line); }
+.tdReqList li:first-child { border-top:0; padding-top:0; }
+.tdReqTxt { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:1px; font-size:14.5px; overflow-wrap:anywhere; }
+.tdReqTxt small { font-size:12.5px; color:var(--muted); }
+.tdReq .tdReqDone { flex:0 0 auto; width:auto; margin:0; min-height:44px; white-space:nowrap; }
+.tdReq > .linkbtn { min-height:44px; padding-left:0; }
+.atScrim { position:fixed; inset:0; background:var(--scrim); z-index:60; }
+.atSheet input, .atSheet textarea { margin:0; font-size:16px; }
+.atSheet label.f { margin:4px 0 0; }
+.atSheet .btn { margin-top:4px; }
+.tdStripMore { display:flex; flex-direction:column; gap:10px; min-width:0; }
 .tdQrWins { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 8px; }
 .tdQrWins .hint { flex:1 1 100%; margin:0; }
 .tdQrWin { border:1.5px solid var(--border); border-radius:12px; background:var(--surface); color:var(--ink); padding:8px 10px; min-height:44px; font:inherit; font-size:13.5px; text-align:left; cursor:pointer; max-width:100%; overflow-wrap:anywhere; }
@@ -4378,3 +4404,68 @@ button.tdTap:active { background:var(--accentSoft); }
   .tdAlsoWk { display:none; }
 }
 @media (prefers-reduced-motion: reduce){ .tdNum.bump { animation:none; } }
+
+/* ---------- My Ministry, simpler (Nov 2026): the one-line header ---------- */
+.mmHead { margin:2px 0 8px; }
+.mmNameBtn { flex:1 1 auto; min-width:0; min-height:44px; display:flex; align-items:center; gap:8px; padding:2px 0; border:0; background:none; color:var(--ink); font:inherit; text-align:left; cursor:pointer; }
+.mmNameBtn .mmBannerEmoji { font-size:24px; }
+.mmHead .mmNameBtn .mmBannerName { font-size:22px; min-width:0; overflow-wrap:anywhere; }
+.leadBanner .mmNameBtn .mmBannerName { font-size:18px; }
+.mmNameChev { flex:0 0 auto; font-size:13px; color:var(--muted); }
+.mmSwitch { align-self:center; min-height:44px; }
+.mmAbout { margin:2px 0 4px; padding:8px 12px; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+.mmAbout[hidden] { display:none; }
+.mmAbout .rowSub { margin:0; }
+
+/* ---------- Today, less at once (Nov 2026): the whole tile is the +1 button, half as tall ---------- */
+.tdTiles { gap:8px; }
+.tdTile { border-radius:14px; }
+.tdTap { flex-direction:row; align-items:center; gap:10px; min-height:50px; padding:4px 10px; border-radius:14px; }
+.tdTile.ro .tdTap { min-height:52px; }
+.tdNum { font-size:28px; flex:0 0 auto; min-width:30px; text-align:center; }
+.tdTxt { display:flex; flex-direction:column; gap:1px; min-width:0; flex:1 1 auto; }
+.tdName { font-size:13px; line-height:1.15; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.tdWk { font-size:11.5px; line-height:1.2; }
+.tdOpt { position:absolute; top:4px; right:4px; width:44px; height:44px; padding:0; border:1.5px solid var(--accent); border-radius:12px; background:var(--surface); color:var(--ink); font-size:18px; font-weight:800; cursor:pointer; opacity:0; pointer-events:none; }
+.tdOpt:focus-visible { opacity:1; pointer-events:auto; }
+.tdTile.pop { grid-column:1 / -1; flex-direction:column; gap:8px; padding:10px; border-color:var(--accent); }
+.tdPopHead { display:flex; align-items:center; gap:10px; min-width:0; }
+.tdPopBtns { display:flex; flex-wrap:wrap; gap:8px; }
+.tdPopBtns .tdMini { flex:1 1 auto; width:auto; min-height:44px; height:auto; padding:6px 12px; font-size:15px; }
+.tdPopBtns .tdMini.quiet { border-color:transparent; background:none; color:var(--muted); }
+.tdTile.editing { grid-column:1 / -1; }
+.tdHint { margin:6px 0 0; }
+.tdToday:not(.tdStrip) > .tdBar { margin-top:2px; }
+details.tdAlso > summary { cursor:pointer; min-height:44px; display:flex; align-items:center; gap:8px; margin:0; list-style:none; }
+details.tdAlso > summary::-webkit-details-marker { display:none; }
+details.tdAlso > summary::after { content:'▸'; color:var(--muted); font-size:12px; }
+details.tdAlso[open] > summary::after { content:'▾'; }
+.tdAlsoN { color:var(--ink); font-variant-numeric:tabular-nums; }
+.tdWin.slim { display:flex; flex-direction:column; gap:6px; }
+.tdWinOpen { margin:0; min-height:44px; }
+.tdWinLast { display:block; width:100%; min-height:44px; padding:4px 0; border:0; background:none; color:var(--muted); font:inherit; font-size:13.5px; text-align:left; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tdWinLast span { color:var(--ink); }
+@media (max-width:359px){ .tdNum { font-size:24px; min-width:24px; } .tdTap { gap:8px; padding:6px 8px; } }
+
+/* ---------- My Ministry in three tabs (Nov 2026): Today · Our tools · Our plan ---------- */
+.mmTabs.mmTop3 { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:6px; overflow:visible; }
+.mmTabs.mmTop3 .gtTab { min-width:0; min-height:44px; justify-content:center; text-align:center; white-space:normal; overflow-wrap:anywhere; padding-left:6px; padding-right:6px; }
+.mmTools { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
+.mmTool { display:flex; flex-direction:column; align-items:flex-start; gap:4px; min-width:0; min-height:96px; padding:12px; border:1.5px solid var(--border); border-radius:16px; background:var(--surface); color:var(--ink); font:inherit; text-align:left; cursor:pointer; touch-action:manipulation; }
+.mmTool:active { background:var(--accentSoft); }
+.mmToolIc { font-size:26px; line-height:1; }
+.mmTool b { font-size:16px; line-height:1.2; overflow-wrap:anywhere; }
+.mmTool small { font-size:12.5px; line-height:1.3; color:var(--muted); overflow-wrap:anywhere; }
+.mmToolBack { display:flex; align-items:center; gap:10px; margin:0 0 10px; min-width:0; }
+.mmToolBack .linkbtn { flex:0 0 auto; width:auto; min-height:44px; padding:0 4px 0 0; text-decoration:none; font-weight:700; }
+.mmToolBack b { min-width:0; overflow-wrap:anywhere; color:var(--muted); font-size:14px; }
+.mmPlan { display:flex; flex-direction:column; min-width:0; }
+.mmPlanSec { border-top:1px solid var(--line); min-width:0; }
+.mmPlanSec:first-child { border-top:0; }
+.mmPlanHead { display:flex; align-items:center; gap:8px; width:100%; min-height:52px; padding:6px 0; border:0; background:none; color:var(--ink); font:inherit; font-size:16px; text-align:left; cursor:pointer; }
+.mmPlanIc { flex:0 0 auto; font-size:20px; }
+.mmPlanHead b { flex:0 0 auto; }
+.mmPlanSum { flex:1 1 auto; min-width:0; font-size:13px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mmPlanChev { margin-left:auto; flex:0 0 auto; color:var(--muted); font-size:13px; }
+.mmPlanBody { padding:2px 0 14px; min-width:0; }
+.mmPlanSec { scroll-margin-top:70px; }

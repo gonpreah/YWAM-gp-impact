@@ -2944,7 +2944,7 @@ function numbersKey_(campus, dept, ministry) { return campus + '|' + dept + '|' 
 function isTeamsMinistry_(dept, ministry) { return dept === TEAM_DEPT && ministry === TEAM_MIN; }
 /* Outreach Teams (the Teams Database) and Campus Leadership's own rows (OKRs and
    the Monday board, no weekly numbers) have no numbers people. */
-function numbersExempt_(dept, ministry) { return isTeamsMinistry_(dept, ministry) || dept === 'Campus Leadership' || (dept === 'Leadership Development' && ministry === 'GPDTS') || isSchoolMinistry_(dept, ministry); }   // GPDTS and the school tool (YDC) count themselves
+function numbersExempt_(dept, ministry) { return isTeamsMinistry_(dept, ministry) || dept === 'Campus Leadership' || (dept === 'Leadership Development' && ministry === 'GPDTS') || (isSchoolMinistry_(dept, ministry) && !schoolConf_(dept, ministry).optIn); }   // GPDTS and the school tool (YDC) count themselves
 async function getNumbersPeople_() {
   const v = await readJSON('numbersPeople', {});
   if (!(v && typeof v === 'object' && !Array.isArray(v))) return {};
@@ -4244,7 +4244,7 @@ async function getMinistryFor(username, pin, dept, ministry) {
      wins   — "win of the day": one line a day or so of something good that happened, the last WIN_KEEP_DAYS.
    mwins:<campus> = { 'Dept|Ministry': [{ id, text, by, name (first name), date, at }] }, written with mutateKey_ by
    anyone who can log for that ministry (canLogFor_). The page reminds people: no child's full name. */
-const TODAY_ACTIVE_DAYS = 100, WIN_MAX = 200, WIN_KEEP_DAYS = 60, WIN_DAY_CAP = 10, WIN_ROWS_MAX = 300;
+const TODAY_ACTIVE_DAYS = 100, WIN_MAX = 200, WIN_KEEP_DAYS = 200, WIN_DAY_CAP = 10, WIN_ROWS_MAX = 400;   // 200 days: this quarter and the one before, for the quarter's story
 function rowDays_(days, day) {
   const d = (Array.isArray(days) ? days : []).filter(function (x) { return typeof x === 'string' && x !== day; });
   d.push(day);
@@ -4285,7 +4285,7 @@ async function saveMinistryWin(username, pin, dept, ministry, text) {
   if (!clean) return { ok: false, err: 'empty' };
   const today = baseToday_(), cut = addDays_(today, -WIN_KEEP_DAYS), key = dept + '|' + ministry;
   const res = await mutateKey_(winsKey_(s.campus), {}, function (doc) {
-    Object.keys(doc).forEach(function (k) {   // the 60-day keep, for every ministry on the campus
+    Object.keys(doc).forEach(function (k) {   // the keep (WIN_KEEP_DAYS), for every ministry on the campus
       doc[k] = (Array.isArray(doc[k]) ? doc[k] : []).filter(function (r) { return r && r.date >= cut; });
       if (!doc[k].length && k !== key) delete doc[k];
     });
@@ -6233,6 +6233,7 @@ const PUSH_TEXT = {
   taskAssigned: { en: '{name} gave you a task: {title}', km: '{name} បានផ្តល់ភារកិច្ចមួយដល់អ្នក៖ {title}' },
   taskRequest: { en: '{name} is asking your ministry for help: {title}', km: '{name} កំពុងសុំជំនួយពីក្រសួងរបស់អ្នក៖ {title}' },
   taskDeclined: { en: '{name} can’t take on: {title}', km: '{name} មិនអាចទទួលយក៖ {title}' },
+  taskAskDone: { en: 'Done — {name} finished what you asked for: {title}', km: 'រួចរាល់ — {name} បានធ្វើអ្វីដែលអ្នកបានស្នើសុំ៖ {title}' },
   ooAsk: { en: '{name} asked you for a 1-on-1. Open Mentorship to set a time.', km: '{name} បានសុំជួបមួយទល់មួយជាមួយអ្នក។ បើកការណែនាំ ដើម្បីកំណត់ពេល។' },
   contractSigned: { en: '{name} signed their staff contract — open their HR profile to approve it.', km: '{name} បានចុះហត្ថលេខាលើកិច្ចសន្យាបុគ្គលិករបស់ពួកគេ — បើកប្រវត្តិរូប HR របស់ពួកគេដើម្បីអនុម័ត។' },
   ooAskWhen: { en: '{name} asked you for a 1-on-1 on {when}. Open Mentorship to accept it or pick another time.', km: '{name} បានសុំជួបមួយទល់មួយជាមួយអ្នកនៅ {when}។ បើកការណែនាំ ដើម្បីយល់ព្រម ឬជ្រើសរើសពេលផ្សេង។' },
@@ -14805,9 +14806,20 @@ async function worshipMine_(s) {
    from the roll, enrolled from the students (a level), tests held and the passing rate from the tests,
    parties and competitions from the events, salvations and baptisms by their dates, discipleship and
    local church as levels. A number someone typed is never overwritten. */
+/* The community schools (Nov 2026, step 3): Ponlork School, LTN and Sry Noi in Siem Reap, GP Education in Poipet —
+   `campuses` (a campus only has the schools its taxonomy has) and `optIn`: their numbers have been typed for
+   years, so the tool counts NOTHING for them until the school's leader switches it on (settings.count, the
+   Dashboard's "Count our numbers from the school tool") — until then, and for every week with a typed number
+   after, the Scorecard is exactly as it was. Only four of their metrics have a true match in the tool; Schools,
+   Ministry Staff, Students Supported Financially and Students Given Food & Housing stay typed. They keep their
+   numbers-due reminders (numbersExempt_) and every metric stays on the Scorecard (autoMetricsFor skips optIn). */
 const SCHOOL_TOOL = {
   'Youth Education|YDC': { metrics: { days: 'Days with Classes', enrolled: 'Youth Enrolled', tests: 'Tests Held', pass: 'Passing Rate (%)',
-    parties: 'Parties Thrown', comps: 'Competitions Held', salv: 'Salvations', bapt: 'Baptisms', disc: 'Students in Discipleship', church: 'Students Brought to Local Church' } }
+    parties: 'Parties Thrown', comps: 'Competitions Held', salv: 'Salvations', bapt: 'Baptisms', disc: 'Students in Discipleship', church: 'Students Brought to Local Church' } },
+  'Community Service|Ponlork School': { optIn: true, campuses: ['siemreap'], metrics: { enrolled: 'Students Enrolled', disc: 'Students in Discipleship', salv: 'Salvations', bapt: 'Baptisms' } },
+  'Community Service|LTN': { optIn: true, campuses: ['siemreap'], metrics: { enrolled: 'Students Enrolled', disc: 'Students in Discipleship', salv: 'Salvations', bapt: 'Baptisms' } },
+  'Community Service|Sry Noi': { optIn: true, campuses: ['siemreap'], metrics: { enrolled: 'Students Enrolled', disc: 'Students in Discipleship', salv: 'Salvations', bapt: 'Baptisms' } },
+  'Community Service|GP Education': { optIn: true, campuses: ['poipet'], metrics: { enrolled: 'Students Enrolled', disc: 'Students in Discipleship', salv: 'Salvations', bapt: 'Baptisms' } }
 };
 const SCHOOL_TAG = 'tool:school';
 const SCHOOL_MAX = { locations: 40, classes: 80, students: 800, tests: 1500, payments: 6000, events: 400, terms: 12, papers: 6 };
@@ -14829,6 +14841,8 @@ async function schoolGate_(username, pin, scope) {
   let campus = s.campus;
   const asked = str_(sc.campus, 20);
   if (asked && asked !== s.campus) { if (!s.isAdmin || CAMPUS_IDS_.indexOf(asked) === -1) return { out: { ok: false, err: 'not_authorized' } }; campus = asked; }
+  const onCampus = schoolConf_(dept, ministry).campuses;
+  if (onCampus && onCampus.indexOf(campus) === -1) return { out: { ok: false, err: 'no_school' } };   // a campus only has the schools its taxonomy has
   if (!(s.isAdmin || canLogFor_(s, campus, dept, ministry))) return { out: { ok: false, err: 'not_authorized' } };
   return { s: s, campus: campus, dept: dept, ministry: ministry, key: schoolKey_(campus, dept, ministry), setup: schoolSetupOk_(s, dept, ministry) };
 }
@@ -14846,7 +14860,7 @@ function schSettings_(st) {
   st = st && typeof st === 'object' ? st : {};
   const pm = Math.round(Number(st.passMark));
   const fee = st.fee && typeof st.fee === 'object' ? st.fee : {};
-  return { passMark: pm >= 1 && pm <= 100 ? pm : 50,
+  return { passMark: pm >= 1 && pm <= 100 ? pm : 50, count: st.count === true,   // count: an optIn school's numbers come from the tool (its leader's switch)
     fee: { amount: schMoney_(fee.amount) || 0, per: fee.per === 'term' ? 'term' : 'month' },
     terms: (Array.isArray(st.terms) ? st.terms : []).map(function (x) {
       const from = schDate_(x && x.from), to = schDate_(x && x.to), name = schText_(x && x.name, 40);
@@ -14922,7 +14936,7 @@ async function schoolOut_(g) {
   const ids = {}; doc.students.forEach(function (x) { ids[x.id] = 1; });
   const th = {}; Object.keys(thumbs || {}).forEach(function (k) { if (ids[k] && typeof thumbs[k] === 'string') th[k] = thumbs[k]; });
   return { ok: true, campus: g.campus, dept: g.dept, ministry: g.ministry, canSetup: g.setup, today: baseToday_(), data: doc, rolls: rolls, thumbs: th,
-    metrics: schoolAutoMetrics_(g.dept, g.ministry) };
+    metrics: schoolAutoMetrics_(g.dept, g.ministry), optIn: !!schoolConf_(g.dept, g.ministry).optIn };
 }
 async function schoolBoard(username, pin, scope) {
   const g = await schoolGate_(username, pin, scope); if (g.out) return g.out;
@@ -15051,7 +15065,7 @@ async function schoolSync_(g) {
   const M = conf.metrics, doc = schDoc_(await readJSON('school:' + g.key, {})), settings = schSettings_(doc.settings);
   const rolls = schRollsOut_(await readJSON('schoolRoll:' + g.key, { rolls: {} }));
   const yr = thisWeekYear_(), today = baseToday_(), curWk = isoWeek_(today);
-  const want = {}; Object.keys(M).forEach(function (k) { want[k] = {}; });
+  const want = {}; ['days', 'enrolled', 'tests', 'pass', 'parties', 'comps', 'salv', 'bapt', 'disc', 'church'].forEach(function (k) { want[k] = {}; });   // every output; a school maps the ones it has (M)
   const wkOf = function (day) { return day && day <= today && weekYear_(day) === yr ? isoWeek_(day) : 0; };
   const add = function (k, day, n) { const w = wkOf(day); if (w) want[k][w] = (want[k][w] || 0) + (n === undefined ? 1 : n); };
   const days = {};
@@ -15077,6 +15091,7 @@ async function schoolSync_(g) {
       if (seen) want[k][w] = n;
     }
   });
+  if (conf.optIn && !settings.count) Object.keys(want).forEach(function (k) { want[k] = {}; });   // not switched on: the tool counts nothing (and takes back what it wrote)
   const rows = await getEntries_(), now = new Date().toISOString();
   let changed = false;
   Object.keys(M).forEach(function (k) {
@@ -15091,8 +15106,14 @@ async function schoolSync_(g) {
       if (r && r.by !== SCHOOL_TAG) return;   // a number someone typed stays as it is
       const v = want[k][w], has = v !== undefined && (isLevel || v > 0);
       if (has) {
-        if (!r) { rows.push({ campus: g.campus, dept: g.dept, ministry: g.ministry, metric: metric, week: w, year: yr, value: v, updated: now, by: SCHOOL_TAG }); changed = true; }
-        else if (Number(r.value) !== v) { r.value = v; r.updated = now; changed = true; }
+        /* taking the roll is showing up (My Ministry → Today's team streak): the "days with classes" row carries the
+           days the roll was taken that week, as every other tool's row carries its days (rowDays_, todayActive_) */
+        const rollDays = k === 'days' && days[w] ? Object.keys(days[w]).sort().slice(-7) : null;
+        if (!r) { const nr = { campus: g.campus, dept: g.dept, ministry: g.ministry, metric: metric, week: w, year: yr, value: v, updated: now, by: SCHOOL_TAG }; if (rollDays) nr.days = rollDays; rows.push(nr); changed = true; }
+        else {
+          if (Number(r.value) !== v) { r.value = v; r.updated = now; changed = true; }
+          if (rollDays && JSON.stringify(r.days || []) !== JSON.stringify(rollDays)) { r.days = rollDays; changed = true; }
+        }
       } else if (r) { rows.splice(idx, 1); changed = true; }
     });
   });
@@ -15925,7 +15946,8 @@ async function saveGpTask(username, pin, task) {
   if (x.subs !== undefined) t.subs = gptSubs_(x.subs, t.subs);
   if (x.due !== undefined) t.due = gptDue_(x.due);
   if (x.time !== undefined) t.time = t.due ? gptTime_(x.time) : '';
-  if (x.done !== undefined && t.status !== 'request') { t.done = !!x.done; t.doneAt = t.done ? now : ''; t.doneBy = t.done ? s.id : ''; if (t.leadId) await gptLeadDone_(L.campus, t.leadId, t.done, s.id); }
+  let askDone = false;   // something asked of another ministry (Ask Technical…) was just finished: its asker hears of it
+  if (x.done !== undefined && t.status !== 'request') { askDone = !!x.done && !t.done && !!t.from && !!t.by && t.by !== s.id; t.done = !!x.done; t.doneAt = t.done ? now : ''; t.doneBy = t.done ? s.id : ''; if (t.leadId) await gptLeadDone_(L.campus, t.leadId, t.done, s.id); }
   if (x.listId && x.listId !== t.listId && edits) { const to = d.lists.find(function (l) { return l.id === x.listId; }); if (to && gptEdits_(s, to)) t.listId = to.id; }
   if (Array.isArray(x.assignees) && (edits || t.by === s.id)) {
     const next = []; x.assignees.forEach(function (id) { if (onCampus[id] && onCampus[id].campus === L.campus && next.indexOf(id) === -1 && next.length < GPT_MAX.assignees) next.push(id); });
@@ -15937,6 +15959,7 @@ async function saveGpTask(username, pin, task) {
   t.updated = now;
   await writeJSON('gpTasks', d);
   for (const id of fresh) await pushNow_(id, 'taskAssigned', { name: s.name, title: t.title }, 'teams.html?view=tasks');
+  if (askDone) { try { await pushNow_(t.by, 'taskAskDone', { name: s.name, title: t.title }, 'teams.html?view=tasks'); } catch (e) { /* a notice must never cost the save */ } }
   if (t.status === 'request' && !x.id) {   // the ministry's people hear of a request
     const to = staff.filter(function (r) { return r.active !== false && !r.archived && r.id !== s.id && gptIn_(r, L); }).slice(0, 20);
     for (const r of to) await pushNow_(r.id, 'taskRequest', { name: s.name, title: t.title }, 'teams.html?view=tasks');

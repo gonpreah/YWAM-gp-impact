@@ -349,6 +349,31 @@ Education (Oct 2026). Move a ministry in taxonomy.js AND add it to `MINISTRY_MOV
 history is orphaned (`test-numbers-people.mjs` §5 covers the move).
 
 ## My Ministry — the shell (Oct 2026, Uriah: "so cluttered, a lot of boxes")
+- **Three tabs, a one-line header (Nov 2026, Uriah: "how can we simplify them?" — "Do all and keep improving")** — this replaces
+  the header and the row of up to nine tabs described below for every ministry but Campus Leadership's rows and the
+  Finances office (the finance tool), which are as they were (`mmSimple_`).
+  - **Header** (`mmHeadHtml_`, still `#mmBanner`): one row — `#mmNameBtn` (emoji, name, ⓘ) and Switch ▾ (`#mmSwitch`). A tap on
+    the name opens `#mmAbout` (department · campus · 👑 led by, `.mmBannerNote`, `.qrMmLink` "This quarter's report") — always
+    in the page, `hidden` until opened, flipped without a redraw (`S.mmAboutOpen`). No eyebrow. The pills row (`#mmMine`) stays.
+  - **Today · Our tools · Our plan** (`.mmTabs.mmTop3`). `mmTabsFor_` is still the truth of what a ministry has; the shell
+    groups its keys: the FIRST is Today (it keeps its own key and attribute — `mmtoday`, `data-cafetab="today"`, `dtsdash`,
+    `icwed`, `wsweek`, `sctoday`, `teams` — but reads "Today"); `numbers` / `okr` / `tasks` (`MM_PLAN_KEYS`) are **Our plan**
+    (`mmplan`); every other key is a big button on **Our tools** (`mmtools`; no tools → no tab). So `S.mmTab='okr'`,
+    `S.cafeTab='till'`, the tab kept for the visit, `?view=gpdts`, the bell and every link still land where they did.
+  - **Our tools** (`mmToolsHtml_`, `#mmTools .mmTool`, two a row): emoji, name and one line (`MM_TOOL_INFO`, static text), each
+    button carrying the attribute the old tab had (`data-cafetab`, `data-mmtab`, `id="goHosp"`), so the tools' handlers are
+    unchanged. A tool opens in place under `.mmToolBack` (`#mmToolBack` "← Our tools" + its name), Our tools still marked.
+    Cafe: Till · Rota · Week (· Set up); school: (Roll ·) Students · Tests · Payments · Dashboard; GPDTS: Database · Finances;
+    Intercession: 21-day fast · Requests · Dashboard; Worship: Rota · Team · Songs · Dashboard; Culinary / Hospitality:
+    Schedule (+ SR Hospitality). Outreach Teams has none: its Today is the door to the Teams Database.
+  - **Our plan** (`mmPlanHtml_`, `#mmPlan`, `section#mmPlan_<key>.mmPlanSec`, head `[data-mmplan]` with `aria-expanded`, body
+    `#mmPlanBody_<key>` drawn only when open): 📊 Scorecard (the whole old Scorecard tab), 🪨 Rocks ("2 of 3 on track"),
+    ✅ Tasks ("4 open", once GP Tasks is on the phone) — `mmPlanSum_`. Open: the section asked for (`S.mmTab` = its key —
+    scrolled to once, `mmPlanAfter_`), whatever was opened earlier in the visit (`gp-mm-plan` in sessionStorage,
+    `mmPlanSet_`), and, arriving on Our plan itself, the Scorecard. Closing the asked-for one sets `S.mmTab='mmplan'`.
+  - Tests: `mmGo(page, key)` / `openPlan` / `openTool` / `mmMap(page)` / `mmAbout(page)` in tests/env.mjs — a test that used to
+    click a tab says `mmGo(page, 'okr')`. `SCORECARD_FIRST` still means "open on the Scorecard" (now inside Our plan).
+    Khmer: docs/khmer-needed.md §154 ('Tab: Our tools' / 'Tab: Our plan' are the short tab labels).
 - **One flat header** (`mmHeadHtml_`, `#mmBanner`, `.mmHead`): eyebrow "My Ministry", the ministry's
   emoji and name, "dept · campus · 👑 Led by …", a one-line note on whose numbers these are
   (`.mmBannerNote`), and **Switch ▾** (`#mmSwitch`, only with 2+ options) opening a sheet
@@ -1764,6 +1789,19 @@ we can give to ministries and donors, the government Ministry, and to donors." T
   pictures). Khmer: docs/khmer-needed.md §145. sw.js SHELL v34.
 
 ## My Ministry opens on Today (teams/31-today.js, Nov 2026, Uriah)
+*(Also Nov 2026: taking the roll counts toward a school's team streak — `schoolSync_` keeps the roll's days on the "days with
+classes" row's `days`; and whoever asked another ministry for something (Ask Technical…) is told on their phone when it is
+ticked done — `saveGpTask` → `pushNow_` `taskAskDone`, never failing the save.)*
+*(Simpler since the three-tab shell, Nov 2026 — where the list below differs, this is how it is now.)* Top to bottom: the
+ministry's one prompt line (`#tdHow`), its own lines, **the tiles**, the Friday wrap, **ONE slim line** (`tdBarHtml_`, `#tdBar` /
+`#tdBarOpen`: 🔥 streak · ring · 🏅 badges — the same row tool ministries have; a tap opens `#tdStripMore` with the ring, the
+streak and the badges), **Also today ▸** (`details#tdAlso`, the faith numbers still DAILY but folded, with today's count
+`#tdAlsoN` when anything is in; `S.td.alsoOpen`), and **＋ Share a win** (`#tdWinOpen`, the last win as one quiet line
+`#tdWinLast`; either opens the box and the feed, `S.td.winOpen`). **The whole tile is the +1 button** (`.tdTap`, number left,
+name and week right; four tiles ≈ 120px at 390px): no − or ✎ in sight. A hold (`TD_HOLD_MS` 450), a right-click, or the tile's
+"more options" button (`[data-tdopt]`, invisible until it has the keyboard's focus) opens the options in the tile's place
+(`#tdPop`, `S.td.pop`): **− 1** (`[data-tdminus]`), **Type the number** (`[data-tdedit]` → `#tdTypeBox`), Cancel (`#tdPopCancel`).
+"Hold a tile to take one off or type a number." (`#tdHint`) shows until this phone has done it once (`gp-td-held`).
 "My ministry page could have a fun and simple way to use it daily, and gamify the inputting of data as a tool for each
 ministry … a fun game they're doing each day, while also getting all the data needed for our board, donors and the
 government. And when they go to My Ministry they wouldn't be overwhelmed either." Step 1 of that: one shared screen.
@@ -1776,7 +1814,6 @@ numbers are counted but never part of it (no tile, no ring, no celebration, no b
   `#tdToday[data-tdkey]`): every ministry with no daily home of its own — Today · Scorecard · (Schedule) · Tasks · Rocks.
   **A ministry's page opens on its first tab every time the app is opened**: `mmTabKeep_` / `mmTabKept_` are
   sessionStorage now (`gp-mm-tab`, per ministry — a tab chosen stays for that visit only, as Campus Leadership's do).
-  The old `gp-cafe-view=numbers` on a phone still opens the Scorecard (many tests use it to say "the Scorecard").
   **The ministries with their own daily home keep it first** (`tdToolMin_`: the Cafe, Outreach Teams, Intercession,
   Worship, GPDTS, the school tool) and get **the strip** on top of that first tab (`todayStripHtml_`,
   `#tdToday[data-tdstrip]`, through `mmTop`): streak, ring, win of the day, badges — no counters (their numbers are their
@@ -1837,6 +1874,43 @@ numbers are counted but never part of it (no tile, no ring, no celebration, no b
   drops what is older than `WIN_KEEP_DAYS` 60 for the whole campus; `deleteMinistryWin(…, id)` — the writer, the
   ministry's leader, an admin. What is sent is `{id, text, name, date, at, mine}` — never the writer's id — and only
   inside that ministry's payload, so only to people who can open it. Both are in `DEMO_WRITES` with `saveKpiDayFor`.
+- **Step 2 fixes (Nov 2026, Uriah: "Keep improving the My Ministry pages")**: wins are kept `WIN_KEEP_DAYS` **200** days
+  (this quarter and the one before, so the quarter's story finds them; `WIN_ROWS_MAX` 400 a ministry) — Today's feed
+  still shows two months (`TD_FEED_DAYS`). **The strip is ONE row** (`#tdBar`: 🔥 streak `#tdBarStreak` · the ring
+  `#tdBarRing` · 🏅 `#tdBarBadges` · **＋ Win** `#tdBarWin`; ≤72px) — a tap (`#tdBarOpen`, `S.td.stripOpen`) opens the
+  full pieces under it (`#tdStripMore`), ＋ Win opens it on the win box. **`gp-cafe-view` is no longer read**: a test
+  about the Scorecard adds `SCORECARD_FIRST` (tests/env.mjs — the visit's own `gp-mm-tab`, every ministry on `numbers`).
+- **Each ministry's own touches** (`TD_MIN` in 31-today.js, keyed `Dept|Ministry`; a ministry not in it gets the generic
+  screen; nothing stored, no metric invented — a test checks every name against the taxonomy): `prompt` (a function, so
+  it goes through `t()`; shown as `#tdPrompt` in the how-line's place — "Log each game as it ends." for Sports, GP Media,
+  Technical, Culinary, Hospitality, Evangelism, Church Partnerships), `lead` (tile order after the leader's goals),
+  `icons` (an emoji by a tile's name, `tdIcon_`), and `extra`:
+  - `hosp` — Hospitality's **Tonight** line (`#tdTonight`, `tdTonightHtml_`): beds filled / free tonight, arriving and
+    leaving today, from `S.hosp` — `getHospitality`, asked for once when the tab is open (never on app open) — a tap opens
+    SR Hospitality;
+  - `sched:kitchen` / `sched:chores` — Culinary's and Hospitality's "This week's cooking schedule / morning chores:
+    published ✓ / not yet", and next week's (`#tdSched`, from the boot's `S.sched`; a tap opens the schedule, to edit when
+    `canEdit`);
+  - `tech` — Technical's **work requests** (`#tdReq`, under the tiles): GP Tasks in Technical's designated list that were
+    asked from outside (`from`), not done — "n open requests", the oldest three, **✓ Done** (`tdReqDone_`:
+    `respondGpTask` if it still waits, then `saveGpTask {done}`), "Open them in Tasks". No store of its own, and **no
+    number is written** — a request fixed isn't a "Project Completed", so the tile stays theirs to tap.
+  **Ask Technical** (☰ → Operations `asktech`, so search and the quick apps have it; `tdAskTechOpen_`, `#atSheet` in
+  `#atRoot`, drawn without a render): what, where, anything else → `saveGpTask {askMin:'Skills Training|Technical', title,
+  notes:'📍 where…', rid}` — the existing "Ask another ministry" path (text only: GP Tasks holds no photos).
+- **The community schools on the school tool** (step 3; `SCHOOL_TOOL` in taxonomy.js and api.js, `optIn: true`,
+  `campuses`): Ponlork School, LTN, Sry Noi (Siem Reap) and GP Education (Poipet) — `schoolGate_` answers `no_school` on
+  a campus that hasn't the school; each school's store is its own (`school:<campus>:<dept>|<ministry>`). **Only four of
+  their metrics truly match**: enrolled → Students Enrolled, disc → Students in Discipleship, salv → Salvations, bapt →
+  Baptisms; Schools, Ministry Staff, Students Supported Financially and Students Given Food & Housing stay typed.
+  **The tool counts NOTHING for an optIn school until its leader switches it on** — the Dashboard's `#schCount` /
+  `#schCountBtn` (`settings.count`, kept by `schSettings_`; `schoolSync_` empties `want` while off, which also takes back
+  its own rows) — so the typed numbers and the Base dashboard are exactly as they were, and one student typed in can't
+  drop "Students Enrolled" from 120 to 1. On, a typed week still wins. Their page: **Today (the shared one) · Roll ·
+  Students · Tests · Payments · Dashboard · Scorecard** (`schTabs_(sel)`, `schOptIn_`); every metric stays on the
+  Scorecard (`autoMetricsFor` skips optIn — so a Friday wrap can still type over a counted week: accepted), they keep
+  their numbers-due reminders (`numbersExempt_`), and Today carries `#tdSchool` ("Take today's roll" / taken ✓ / "The
+  school tool is ready for you"). YDC is unchanged. tests/test-school.mjs (rights, isolation, the switch), -ui.
 - **The quarter's story** (29-report.js `qrFormHtml_`): above Highlights, "This quarter's wins — tap one to add it"
   (`tdReportWinsHtml_`, `#tdQrWins`, `[data-qrwin]`, bound in `bindToday_`) — for the writer's own campus and only when
   that ministry's payload is already on the phone (their own ministry, or one they opened this visit); read-only reuse.

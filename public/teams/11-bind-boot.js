@@ -306,7 +306,15 @@ function bindAway(){
   if(dth) dth.onclick=function(){ gpTap(); S.view='health'; render(); };
 
   document.querySelectorAll('[data-mmtab]').forEach(function(b){
-    b.onclick=function(){ gpTap(); S.mmTab=b.getAttribute('data-mmtab'); S.mmTabTouched=true; S.schPage=null; S.schForm=null; if(b.closest('.mmTabs') && typeof mmTabKeep_==='function') mmTabKeep_(S.mmTab); render(); };
+    b.onclick=function(){ gpTap(); S.mmTab=b.getAttribute('data-mmtab'); S.mmTabTouched=true; S.schPage=null; S.schForm=null; if(b.closest('.mmTabs,.mmTools,.mmToolBack') && typeof mmTabKeep_==='function') mmTabKeep_(S.mmTab); render(); };
+  });
+  /* Our plan's three sections: a tap opens or folds one, in place */
+  document.querySelectorAll('[data-mmplan]').forEach(function(b){
+    b.onclick=function(){ gpTap(); var k=b.getAttribute('data-mmplan'), open=b.getAttribute('aria-expanded')==='true', y=window.scrollY;
+      mmPlanSet_(k, !open);
+      if(open){ if(S.mmTab===k || S.mmTab==='ministry') S.mmTab='mmplan'; } else S.mmTab=k;
+      S.mmTabTouched=true; mmTabKeep_(S.mmTab); S.mmPlanDone=mmTabKey_()+'|'+(open ? '' : k);
+      render(); window.scrollTo(0, y); };
   });
   /* The metric form is folded away until asked for — the page opens on the
      dashboard and the week's status, and this one button is how you get to
@@ -489,7 +497,7 @@ function bindAway(){
     // The picked ministry, if it isn't your own, loads lazily the first time
     // it's picked — cached in S.oversee by ministry name until logout.
     var bDept=S.mmBrowseDept, bMin=S.mmBrowseMinistry;
-    if(bDept && bMin && bDept!==BL_DEPT && !(bDept===S.me.dept && bMin===S.me.ministry) && !isTeamsMinistry_(bDept,bMin) && !isDtsMinistry_(bDept,bMin) && !isSchoolMinistry_(bDept,bMin) &&
+    if(bDept && bMin && bDept!==BL_DEPT && !(bDept===S.me.dept && bMin===S.me.ministry) && !isTeamsMinistry_(bDept,bMin) && !isDtsMinistry_(bDept,bMin) && !(isSchoolMinistry_(bDept,bMin) && !schOptIn_(bDept,bMin)) &&
        !S.oversee[bMin] && !S.ovLoading[bMin] && !S.ovError[bMin]){
       S.ovLoading[bMin]=true; S.ovError[bMin]='';
       run('getMinistryFor',[S.auth.user,S.auth.pin,bDept,bMin],function(d){
@@ -504,6 +512,7 @@ function bindAway(){
     }
     var ovr=document.getElementById('ovRetry');
     if(ovr) ovr.onclick=function(){ var m=ovr.getAttribute('data-ministry'); S.ovError[m]=''; S.ovLoading[m]=false; render(); };
+    var mnb=document.getElementById('mmNameBtn'); if(mnb) mnb.onclick=function(){ gpTap(); S.mmAboutOpen=!S.mmAboutOpen; var ab=document.getElementById('mmAbout'); if(ab) ab.hidden=!S.mmAboutOpen; mnb.setAttribute('aria-expanded', S.mmAboutOpen ? 'true' : 'false'); };
     var msw=document.getElementById('mmSwitch'); if(msw) msw.onclick=function(){ gpTap(); S.mmPickOpen=true; S.mmPickQ=''; render(); var f=document.getElementById('mmPickFind'); if(f) f.focus(); };
     var mps=document.getElementById('mmPickScrim'); if(mps) mps.onclick=function(){ S.mmPickOpen=false; render(); };
     var mpf=document.getElementById('mmPickFind'); if(mpf) mpf.oninput=function(){ S.mmPickQ=mpf.value; var box=document.querySelector('.mmPickList'); if(!box) return;
@@ -564,6 +573,7 @@ function bindAway(){
   bindKmReview_();
   bindBoardReport_();
   bindReport_();   // the quarterly report, ministry by ministry (29-report.js)
+  if(typeof mmPlanAfter_==='function') mmPlanAfter_();   // Our plan: a section asked for from elsewhere is scrolled to, once
   bindToday_();   // My Ministry → Today: tap counters, streak, win of the day, the Friday wrap (31-today.js)
   bindF30_();
   bindSupport_();

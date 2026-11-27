@@ -2,7 +2,7 @@
    in), planning the next one from last week's, planning a fast from our template, Numbers asking only for the
    director's score; then someone else on staff: the fast in ☰ and the bell, joining and ticking a day, sending a
    need from the page reached through ☰ → Prayer — and it reaching the team's Requests. Khmer and 320px too. */
-import { REPO, PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
+import { REPO, PUBLIC, tmpDir, CHROMIUM, mmGo, mmMap } from './env.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -75,8 +75,8 @@ const wide = p => p.evaluate(() => document.documentElement.scrollWidth <= windo
 {
   const { ctx, page } = await open('ina');
   await page.evaluate(() => { S.view = 'ministry'; render(); }); await page.waitForTimeout(1200);
-  const tabs = (await page.$$eval('.mmTabs .gtTab', b => b.map(x => x.textContent))).join();
-  ok('Intercession’s tabs: Wednesdays · 21-day fast · Requests · Dashboard · Scorecard · Tasks · Rocks', tabs === 'Wednesdays,21-day fast,Requests,Dashboard,Scorecard,Tasks,Rocks', tabs);
+  const tabs = await mmMap(page);
+  ok('Intercession: Today (its Wednesdays) · Our tools (21-day fast · Requests · Dashboard) · Our plan (Scorecard · Rocks · Tasks)', tabs.top.join() === 'Today,Our tools,Our plan' && tabs.toolNames.join() === '21-day fast,Requests,Dashboard' && tabs.plan.join() === 'numbers,okr,tasks', JSON.stringify(tabs));
   ok('it opens on Wednesdays, asking about the last one', !!(await page.$('.mmTabs .gtTab.on[data-mmtab="icwed"]')) && !!(await page.$('#icpAskHeld')));
   ok('the next 8 Wednesdays are there', (await page.$$('.icpWed')).length >= 8);
   await page.click('#icpAskHeld [data-icpwed]'); await page.waitForTimeout(400);
@@ -103,7 +103,7 @@ const wide = p => p.evaluate(() => document.documentElement.scrollWidth <= windo
   ok('the next Wednesday is planned', /The nation/.test(await txt(page)));
   ok('nothing scrolls sideways', await wide(page));
   /* the fast */
-  await page.click('[data-mmtab="icfast"]'); await page.waitForTimeout(500);
+  await mmGo(page, 'icfast'); await page.waitForTimeout(500);
   await page.click('#fastNew'); await page.waitForTimeout(400);
   await page.fill('#fastTitle', 'January fast');
   await page.fill('#fastStart', await page.evaluate(() => todayStr()));
@@ -117,12 +117,12 @@ const wide = p => p.evaluate(() => document.documentElement.scrollWidth <= windo
   ok('the fast is saved, with its gathering', fasts.length === 1 && fasts[0].title === 'January fast' && fasts[0].plan[0].focus === 'Seeking God first' && fasts[0].gatherings[0].place === 'Chapel');
   ok('the tab shows it running, with counts (nobody yet)', /Day 1 of 21/.test(await txt(page)) && !!(await page.$('[data-fastcounts]')));
   /* Numbers asks for the director's score only */
-  await page.click('[data-mmtab="numbers"]'); await page.waitForTimeout(800);
+  await mmGo(page, 'numbers'); await page.waitForTimeout(800);
   if (!(await page.$('[data-kpi], [data-kpiweek]'))) { const b = await page.$('#kpiInputBtn'); if (b) { await b.click(); await page.waitForTimeout(500); } }
   const asked = await page.$$eval('[data-kpi], [data-kpiweek]', a => a.map(x => x.getAttribute('data-kpi') || x.getAttribute('data-kpiweek')));
   ok('Numbers asks only for the director’s weekly score', asked.length > 0 && asked.every(m => m === 'Director Weekly Score (1-10)'), asked.join());
   ok('… and says the rest count themselves', /count themselves from the Wednesdays/.test(await txt(page)));
-  await page.click('[data-mmtab="icdash"]'); await page.waitForTimeout(500);
+  await mmGo(page, 'icdash'); await page.waitForTimeout(500);
   ok('the dashboard: 1 Wednesday held, 14 came, 1.5 hours', /Wednesdays held\s*1/.test(await txt(page)) && /Average attendance\s*14/.test(await txt(page)) && /Prayer hours\s*1\.5/.test(await txt(page)));
   await ctx.close();
 }
@@ -155,7 +155,7 @@ const wide = p => p.evaluate(() => document.documentElement.scrollWidth <= windo
   ok('the need reaches the team’s Requests, with who sent it', /Pray for our new barista/.test(await txt(page)) && /Cal Fay/.test(await txt(page)));
   await page.click('[data-icpneed$="|prayed"]'); await page.waitForTimeout(1200);
   ok('marked prayed', mem['icp:siemreap'].needs[0].status === 'prayed');
-  await page.click('[data-mmtab="icfast"]'); await page.waitForTimeout(800);
+  await mmGo(page, 'icfast'); await page.waitForTimeout(800);
   ok('the team sees 1 joined, 1 prayed today — and no name', /Joined\s*1/.test(await txt(page)) && /Prayed today\s*1/.test(await txt(page)) && !/Cal Fay/.test(await txt(page)));
   await ctx.close();
 }

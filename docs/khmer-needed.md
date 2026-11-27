@@ -7202,6 +7202,65 @@ The line above the board once a quarter is live, the question before Apply again
 | Also serves here | បម្រើនៅទីនេះផងដែរ |
 | For someone in two ministries: they keep their main one and serve here too. | សម្រាប់អ្នកដែលនៅក្នុងកិច្ចការបម្រើពីរ៖ ពួកគេរក្សាកិច្ចការបម្រើចម្បងរបស់ពួកគេ ហើយបម្រើនៅទីនេះផងដែរ។ |
 
+## 153. My Ministry → Today, step 2: the compact strip, each ministry’s own prompt, Hospitality’s tonight, Ask Technical, the community schools (Nov 2026)
+
+Short labels on My Ministry’s Today screen and the one-row strip on tool ministries; “Win” is a small button (very little room). The “Ask Technical” sheet is for every staff member.
+
+| English | Khmer (draft) |
+|---|---|
+| Streak, this week and badges | ថ្ងៃជាប់គ្នា សប្ដាហ៍នេះ និងមេដាយ |
+| Win | ដំណឹងល្អ |
+| Log each game as it ends. | កត់ត្រាការប្រកួតនីមួយៗ ពេលវាចប់។ |
+| Tap when something goes out. | ចុច ពេលមានអ្វីមួយត្រូវបានផ្សាយចេញ។ |
+| Tap each project you finish. | ចុច រាល់គម្រោងដែលអ្នកធ្វើចប់។ |
+| Tap after each meal service. | ចុច ក្រោយពេលបម្រើអាហារម្ដងៗ។ |
+| Tap as you welcome each guest. | ចុច ពេលអ្នកស្វាគមន៍ភ្ញៀវម្នាក់ៗ។ |
+| Tap after each conversation. | ចុច ក្រោយការសន្ទនាម្ដងៗ។ |
+| After each church visit, share a win. The churches’ numbers go in Friday’s wrap. | ក្រោយពេលទៅសួរសុខទុក្ខក្រុមជំនុំម្ដងៗ សូមចែករំលែកដំណឹងល្អមួយ។ តួលេខរបស់ក្រុមជំនុំ បញ្ចូលនៅពេលបូកសរុបថ្ងៃសុក្រ។ |
+| − takes one off, ✎ types the number. | − ដកមួយចេញ ✎ វាយលេខ។ |
+| Tonight | យប់នេះ |
+| Tonight: {n} of {cap} beds filled · {free} free | យប់នេះ៖ គ្រែ {n} នៃ {cap} មានអ្នកគេង · ទំនេរ {free} |
+| Arriving today {a} · leaving today {l} | មកដល់ថ្ងៃនេះ {a} · ចេញថ្ងៃនេះ {l} |
+| published ✓ | បានផ្សាយ ✓ |
+| not yet | មិនទាន់ |
+| This week’s {name}: {state} | {name} សប្ដាហ៍នេះ៖ {state} |
+| Next week: {state} | សប្ដាហ៍ក្រោយ៖ {state} |
+| Work requests | សំណើការងារ |
+| 1 open request | សំណើ 1 កំពុងរង់ចាំ |
+| {n} open requests | សំណើ {n} កំពុងរង់ចាំ |
+| Nothing is waiting. Anyone can ask from ☰ → Ask Technical. | គ្មានអ្វីរង់ចាំទេ។ អ្នកណាក៏អាចស្នើបានពី ☰ → ស្នើផ្នែកបច្ចេកទេស។ |
+| Mark “{title}” done | សម្គាល់ “{title}” ថារួចរាល់ |
+| Done | រួចរាល់ |
+| See all {n} in Tasks | មើលទាំង {n} ក្នុងកិច្ចការ |
+| Open them in Tasks | បើកវាក្នុងកិច្ចការ |
+| Done — thank you | រួចរាល់ — អរគុណ |
+| Ask Technical | ស្នើផ្នែកបច្ចេកទេស |
+| Ask Technical to fix something | ស្នើផ្នែកបច្ចេកទេសឲ្យជួសជុលអ្វីមួយ |
+| Sent to Technical. They see it on their page, and you can follow it in GP Tasks → Inbox. | បានផ្ញើទៅផ្នែកបច្ចេកទេសហើយ។ ពួកគេឃើញវានៅលើទំព័ររបស់ពួកគេ ហើយអ្នកអាចតាមដានវាក្នុង GP Tasks → ប្រអប់ទទួល។ |
+| What needs fixing? | តើអ្វីត្រូវជួសជុល? |
+| e.g. The tap is leaking | ឧ. ក្បាលរ៉ូប៊ីណេលេចទឹក |
+| Where is it? | តើវានៅឯណា? |
+| e.g. Room 203, the kitchen | ឧ. បន្ទប់ 203 ផ្ទះបាយ |
+| Anything else they should know? (optional) | មានអ្វីផ្សេងទៀតដែលពួកគេគួរដឹងទេ? (មិនចាំបាច់) |
+| Sending… | កំពុងផ្ញើ… |
+| Send to Technical | ផ្ញើទៅផ្នែកបច្ចេកទេស |
+| Say what needs fixing. | សូមប្រាប់ថាអ្វីត្រូវជួសជុល។ |
+| No connection — try again when you’re back online. | គ្មានការតភ្ជាប់ — សូមព្យាយាមម្ដងទៀតពេលមានអ៊ីនធឺណិតវិញ។ |
+| Roll | បញ្ជីវត្តមាន |
+| Count our numbers from the school tool | រាប់តួលេខរបស់យើងពីឧបករណ៍សាលា |
+| On — these count themselves from the tool now: {list}. A number someone types for a week still wins for that week. | បើក — ឥឡូវនេះតួលេខទាំងនេះរាប់ដោយខ្លួនឯងពីឧបករណ៍៖ {list}។ លេខដែលនរណាម្នាក់វាយសម្រាប់សប្ដាហ៍ណាមួយ នៅតែត្រូវប្រើសម្រាប់សប្ដាហ៍នោះ។ |
+| Off — your numbers are typed on the Scorecard, as before. Once every student is in the tool, switch this on and these count themselves: {list}. | បិទ — តួលេខរបស់អ្នកត្រូវវាយនៅលើតារាងពិន្ទុ ដូចពីមុន។ ពេលសិស្សទាំងអស់នៅក្នុងឧបករណ៍ហើយ សូមបើកវា នោះតួលេខទាំងនេះនឹងរាប់ដោយខ្លួនឯង៖ {list}។ |
+| The tool has {n} students right now. The other numbers stay typed on the Scorecard. | ឧបករណ៍មានសិស្ស {n} នាក់នៅពេលនេះ។ តួលេខផ្សេងទៀតនៅតែវាយនៅលើតារាងពិន្ទុ។ |
+| Switch it off — we type them again | បិទវា — យើងវាយវាម្ដងទៀត |
+| Switch it on | បើកវា |
+| Count from the school tool from now on? It has {n} students right now — that is the number the base will see for Students Enrolled. | រាប់ពីឧបករណ៍សាលាចាប់ពីពេលនេះទៅ? ឥឡូវវាមានសិស្ស {n} នាក់ — នោះជាលេខដែលមូលដ្ឋាននឹងឃើញសម្រាប់សិស្សចុះឈ្មោះ។ |
+| Switched off | បានបិទ |
+| Switched on ✓ | បានបើក ✓ |
+| The school tool is ready for you | ឧបករណ៍សាលារួចរាល់សម្រាប់អ្នកហើយ |
+| Students, the roll, tests and payments. Your numbers stay as they are. | សិស្ស បញ្ជីវត្តមាន ការប្រឡង និងការបង់ប្រាក់។ តួលេខរបស់អ្នកនៅដដែល។ |
+| Today’s roll is taken ✓ | បានស្រង់វត្តមានថ្ងៃនេះហើយ ✓ |
+| Take today’s roll | ស្រង់វត្តមានថ្ងៃនេះ |
+| {n} students | សិស្ស {n} នាក់ |
 ## 152. The Running on EOS shelf (☰ → Library, Nov 2026)
 
 A new Library shelf of seven EOS books for YWAM GP's leadership, a reading plan, the tag and the trademark line on each EOS book's page. The seven summaries' Khmer (library-km.js) is Claude's translation, not yet reviewed; terms follow the app's own: Rocks ថ្មធំ, Scorecard តារាងពិន្ទុ, Issues បញ្ហា, To-dos កិច្ចការត្រូវធ្វើ, Visionary អ្នកមានចក្ខុវិស័យ, Integrator អ្នកសម្របសម្រួលអនុវត្ត.
@@ -7238,3 +7297,44 @@ The book quiz (Check what you remember, after Done — mark as read). The three 
 | You chose: {a} | អ្នកបានជ្រើសរើស៖ {a} |
 | Quizzes: {n} taken · {r} of {m} right | សំណួរ៖ បានធ្វើ {n} · ត្រូវ {r} ក្នុងចំណោម {m} |
 | Quiz {n}/{m} | សំណួរ {n}/{m} |
+
+
+## 154. My Ministry, simpler: three tabs, the one-line header, Today with less on it (Nov 2026)
+
+My Ministry now has three tabs — Today · Our tools · Our plan. “Tab: …” are the short forms for the tab row (three must fit on a 320px phone). The lines under each button on Our tools are one short line each. “Hold a tile…” is a one-time hint under Today’s tiles; “{n} open” counts tasks not yet done.
+
+| English | Khmer (draft) |
+|---|---|
+| About this ministry | អំពីកិច្ចការបម្រើនេះ |
+| Type the number | វាយលេខ |
+| More options for {metric} | ជម្រើសផ្សេងទៀតសម្រាប់ {metric} |
+| Hold a tile to take one off or type a number. | ចុចប្រអប់មួយឲ្យជាប់ ដើម្បីដកមួយចេញ ឬវាយលេខ។ |
+| Tap a tile each time it happens. | ចុចប្រអប់មួយរាល់ពេលដែលវាកើតឡើង។ |
+| Share a win | ចែករំលែកដំណឹងល្អ |
+| See the wins | មើលដំណឹងល្អ |
+| Our tools | ឧបករណ៍របស់យើង |
+| Our plan | ផែនការរបស់យើង |
+| Tab: Our tools | ឧបករណ៍ |
+| Tab: Our plan | ផែនការ |
+| None yet | មិនទាន់មាន |
+| {n} open | {n} មិនទាន់រួច |
+| Take orders and count the day’s sales | ទទួលការកុម្ម៉ង់ និងរាប់ការលក់ប្រចាំថ្ងៃ |
+| Who is on which shift | នរណានៅវេនណា |
+| The week’s cups, sales and best sellers | ចំនួនកែវ ការលក់ និងមុខទំនិញលក់ដាច់ប្រចាំសប្តាហ៍ |
+| Menu, checklists and shifts | ម៉ឺនុយ បញ្ជីត្រួតពិនិត្យ និងវេន |
+| Take today’s roll | ស្រង់វត្តមានថ្ងៃនេះ |
+| Every student’s page | ទំព័ររបស់សិស្សម្នាក់ៗ |
+| Test scores and passing | ពិន្ទុតេស្ត និងការជាប់ |
+| Who has paid | នរណាបានបង់ប្រាក់ |
+| Enrolment, attendance and results | ការចុះឈ្មោះ វត្តមាន និងលទ្ធផល |
+| Speakers, students, events and outreach | វាគ្មិន សិស្ស ព្រឹត្តិការណ៍ និងការផ្សព្វផ្សាយ |
+| Fees, income, expenses and the budget | ថ្លៃសិក្សា ចំណូល ចំណាយ និងថវិកា |
+| Plan the fast and its gatherings | រៀបចំការតមអាហារ និងការជួបជុំ |
+| Prayer needs sent to the team | សេចក្តីត្រូវការអធិស្ឋានដែលបានផ្ញើមកក្រុម |
+| Wednesdays, hours and testimonies | ថ្ងៃពុធ ម៉ោង និងទីបន្ទាល់ |
+| Who plays and sings each service | នរណាលេងភ្លេង និងច្រៀងក្នុងកម្មវិធីនីមួយៗ |
+| The musicians and what they play | តន្ត្រីករ និងឧបករណ៍ដែលពួកគេលេង |
+| Our song list | បញ្ជីចម្រៀងរបស់យើង |
+| Services, practice and training | កម្មវិធី ការហាត់សម និងការបណ្តុះបណ្តាល |
+| This week’s schedule | កាលវិភាគសប្តាហ៍នេះ |
+| Rooms, beds and bookings | បន្ទប់ គ្រែ និងការកក់ |

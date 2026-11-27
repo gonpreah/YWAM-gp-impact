@@ -3,7 +3,7 @@
    Nov 2026 (Uriah): every ministry's page opens on Today — tap counters, the team streak, the win of the day.
    What this holds:
      1. the win of the day: who may write one (canLogFor_ — the ministry's people, its leader, its director, an admin;
-        nobody else, no other campus, no applicant), cleaned to one line of 200, a cap a person a day, 60 days kept,
+        nobody else, no other campus, no applicant), cleaned to one line of 200, a cap a person a day, 200 days kept,
         who may take one off; and who is ever sent them (only someone who can open that ministry);
      2. a tap counter's save is the DAY's own value: sending it twice changes nothing, the week is the sum of its days;
      3. the days a ministry was active (`active`) — a weekly row keeps the days it was written on, so a tool's daily
@@ -101,12 +101,12 @@ console.log('=== 1. the win of the day ===');
   ok('whoever wrote it can', (await call('deleteMinistryWin', ['dara', '1234', ...SP, own])).ok && !winsOf().some((w) => w.id === own));
   ok('one that is not there says so', (await call('deleteMinistryWin', ['dara', '1234', ...SP, 'nope'])).err === 'not_found');
 
-  /* sixty days */
-  mem['mwins:siemreap']['Youth Education|Sports'].push({ id: 'old1', text: 'Long ago', by: 'kim', name: 'Kim', date: addDays(today, -61), at: addDays(today, -61) + 'T03:00:00.000Z' },
-    { id: 'old2', text: 'Just inside', by: 'kim', name: 'Kim', date: addDays(today, -59), at: addDays(today, -59) + 'T03:00:00.000Z' });
-  mem['mwins:siemreap']['Youth Education|GP Media'] = [{ id: 'old3', text: 'Media, long ago', by: 'vee', name: 'Vee', date: addDays(today, -90), at: addDays(today, -90) + 'T03:00:00.000Z' }];
+  /* two hundred days: this quarter and the one before, for the quarter's story */
+  mem['mwins:siemreap']['Youth Education|Sports'].push({ id: 'old1', text: 'Long ago', by: 'kim', name: 'Kim', date: addDays(today, -201), at: addDays(today, -201) + 'T03:00:00.000Z' },
+    { id: 'old2', text: 'Just inside', by: 'kim', name: 'Kim', date: addDays(today, -199), at: addDays(today, -199) + 'T03:00:00.000Z' });
+  mem['mwins:siemreap']['Youth Education|GP Media'] = [{ id: 'old3', text: 'Media, long ago', by: 'vee', name: 'Vee', date: addDays(today, -260), at: addDays(today, -260) + 'T03:00:00.000Z' }];
   const seen = (await call('getMyMinistry', ['dara', '1234'])).wins.map((w) => w.id);
-  ok('a win older than 60 days is not sent', !seen.includes('old1') && seen.includes('old2'), seen);
+  ok('a win older than 200 days is not sent', !seen.includes('old1') && seen.includes('old2'), seen);
   await call('saveMinistryWin', ['kim', '1234', ...SP, 'A new one']);
   ok('… and the next save drops it from the store, for every ministry on the campus', !winsOf().some((w) => w.id === 'old1') && winsOf().some((w) => w.id === 'old2') && !('Youth Education|GP Media' in mem['mwins:siemreap']), Object.keys(mem['mwins:siemreap']));
 }

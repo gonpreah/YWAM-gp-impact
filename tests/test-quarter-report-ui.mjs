@@ -4,7 +4,7 @@
    money; the Government view is Khmer with the faith tick off until ticked; printing hides the app and breaks a
    page per department, black on white; Khmer and 320px; a leader's own page from My Ministry; the board's
    sign-in; the bell. One fixed scenario, both clocks pinned to 18 Nov 2026 (week 47, Q4). Made-up names only. */
-import { REPO, PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
+import { REPO, PUBLIC, tmpDir, CHROMIUM, mmAbout } from './env.mjs';
 import { pinClock } from './clock.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
@@ -277,7 +277,7 @@ const KH = /[ក-៿]/;
   await page.click('#menuCloseBtn');
   await page.evaluate(() => { S.view = 'ministry'; render(); }); await page.waitForTimeout(900);
   ok('My Ministry has the quiet link: This quarter’s report', /This quarter’s report/.test(await page.$eval('#mmBanner .qrMmLink', e => e.textContent)));
-  await page.click('#mmBanner .qrMmLink'); await page.waitForSelector('#qrDoc'); await page.waitForTimeout(400);
+  await mmAbout(page); await page.click('#mmBanner .qrMmLink'); await page.waitForSelector('#qrDoc'); await page.waitForTimeout(400);
   ok('it opens her ministry’s page alone — no cover, no other ministry', (await page.$$eval('.qrMin', e => e.map(x => x.getAttribute('data-qrmin')))).join() === YDC && !(await page.$('#qrCover')) && !(await page.$('.qrDept')));
   const t = await doc(page);
   ok('… with its numbers, highlights and story', /Students enrolled\s+2/.test(t) && /Bopha/.test(t) && /Scorecard/i.test(t));
@@ -296,7 +296,7 @@ const KH = /[ក-៿]/;
   ok('someone who leads nothing has no ☰ item', !(await page.$('[data-menu-item="qreport"]')));
   await page.click('#menuCloseBtn');
   await page.evaluate(() => { S.view = 'ministry'; render(); }); await page.waitForTimeout(900);
-  await page.click('#mmBanner .qrMmLink'); await page.waitForSelector('#qrDoc'); await page.waitForTimeout(300);
+  await mmAbout(page); await page.click('#mmBanner .qrMmLink'); await page.waitForSelector('#qrDoc'); await page.waitForTimeout(300);
   ok('… but reaches their own ministry’s page from My Ministry', (await page.$$eval('.qrMin', e => e.map(x => x.getAttribute('data-qrmin')))).join() === CAFE);
   await ctx.close();
 }

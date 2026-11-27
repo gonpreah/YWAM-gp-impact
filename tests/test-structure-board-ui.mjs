@@ -414,7 +414,8 @@ const personSheet = async (page, id) => { await page.evaluate((id) => { sbState_
   ok('Switch ▾ is still there, and the row fits a 320px phone', await page.$('#mmSwitch') !== null && await page.evaluate(() => document.scrollingElement.scrollWidth <= window.innerWidth + 1));
   await page.click('[data-mmgo="Community Service|Cafe"]'); await page.waitForTimeout(900);
   ok('a tap opens the other ministry — its name, “One of your ministries”, the pill marked', /Cafe/.test(await page.$eval('.mmBannerName', e => e.textContent)) && /One of your ministries/.test(await page.$eval('.mmBannerNote', e => e.textContent)) && await page.$('[data-mmgo="Community Service|Cafe"].on') !== null);
-  ok('… with that ministry’s own tool tabs (the Cafe’s), and the server lets them in', (await page.$$('[data-cafetab]')).length >= 4 && await page.evaluate(() => !!S.cafe && !S.cafeErr), await page.evaluate(() => String(S.cafeErr || '')));
+  await page.click('.mmTabs [data-mmtab="mmtools"]'); await page.waitForSelector('#mmTools'); const cafeTools = (await page.$$('#mmTools [data-cafetab]')).length; await page.click('.mmTabs [data-cafetab="today"]'); await page.waitForTimeout(300);
+  ok('… with that ministry’s own tools (the Cafe’s Today, and Till · Rota · Week on Our tools), and the server lets them in', cafeTools >= 3 && !!(await page.$('.mmTabs [data-cafetab="today"].on')) && await page.evaluate(() => !!S.cafe && !S.cafeErr), await page.evaluate(() => String(S.cafeErr || '')));
   if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/mm-pills.png' });
   await page.click('#mmSwitch'); await page.waitForSelector('[data-mmpick="Skills Training|Hospitality"]');
   await page.click('[data-mmpick="Skills Training|Hospitality"]'); await page.waitForTimeout(400);
