@@ -847,7 +847,11 @@ function mmTabsFor_(sel, mine, schedH){
   } else out=[['mmtoday',t('Today')],['numbers',t('Scorecard')]];   // Today first (teams/31-today.js), then the ministry's weekly numbers page (key still 'numbers')
   if(schedH && !isTeamsMinistry_(sel.dept, sel.min)) out.push(['sched',t('Schedule')]);
   if(sel.dept==='Skills Training' && sel.min==='Hospitality' && canHospClient_()) out.push(['goHosp',t('SR Hospitality'),'id']);   // a way in, not a tab (#goHosp opens it)
-  out.push(['tasks',t('Tasks')]); out.push(['okr',t('Rocks')]);   // the quarter's priorities (key still 'okr'; teams/28-rocks.js)
+  /* Rocks and Tasks are for those who lead (Nov 2026, Uriah: "Remove all rocks from ministry pages and tasks … Leave them for
+     leaders and departments. Just need to get the ministries using their app for gathering data for now"): the ministry's
+     leader, Campus Leadership (its department's director) and admins still have both; everyone else has Today, the tools
+     and the Scorecard. Nothing is deleted — the rocks and the ministry's task list are where they were. */
+  if(mmLeads_(sel)){ out.push(['tasks',t('Tasks')]); out.push(['okr',t('Rocks')]); }   // the quarter's priorities (key still 'okr'; teams/28-rocks.js)
   return out;
 }
 /* Every time the app is opened a ministry's page opens on its FIRST tab — Today (Nov 2026, Uriah; teams/31-today.js).
@@ -869,6 +873,7 @@ var MM_TOOL_INFO={
   wsrota:['🗓️','Who plays and sings each service'], wsteam:['🎸','The musicians and what they play'], wssongs:['🎵','Our song list'], wsdash:['📊','Services, practice and training'],
   sched:['📅','This week’s schedule'], goHosp:['🛏️','Rooms, beds and bookings']
 };
+function mmLeads_(sel){ return sel.dept===BL_DEPT || canEditMetricsClient_(S.me.campus, sel.dept, sel.min); }
 function mmSimple_(sel){ return sel.dept!==BL_DEPT && !(sel.dept==='Skills Training' && sel.min==='Finances' && finCanEditClient_()); }
 function mmPlanMem_(){ if(!S.mmPlanOpen){ try { S.mmPlanOpen=JSON.parse(sessionStorage.getItem('gp-mm-plan')||'{}') || {}; } catch(e){ S.mmPlanOpen={}; } } return S.mmPlanOpen; }
 function mmPlanSet_(k, on){ var m=mmPlanMem_(); m[k]=!!on; try { sessionStorage.setItem('gp-mm-plan', JSON.stringify(m)); } catch(e){} }
@@ -987,11 +992,13 @@ function myMinistryHtml(){
     planKeys=MM_PLAN_KEYS.filter(function(k){ return tabs.some(function(x){ return x[0]===k; }); });
     tools=tabs.slice(1).filter(function(x){ return MM_PLAN_KEYS.indexOf(x[0])===-1; });
   }
-  var cur=mmCurTab_(sel, simple ? tabs.concat(tools.length ? [['mmtools']] : [], [['mmplan']]) : tabs);
-  if(simple) top = cur===tabs[0][0] ? 'today' : (cur==='mmplan' || planKeys.indexOf(cur)>-1) ? 'plan' : 'tools';
+  var planOne=planKeys.length===1, planTab=!planKeys.length ? [] : [['mmplan', planOne ? t('Scorecard') : navLabel_('Our plan')]];   // only the Scorecard left: the tab is the Scorecard itself, nothing to fold
+  var cur=mmCurTab_(sel, simple ? tabs.concat(tools.length ? [['mmtools']] : [], planTab) : tabs);
+  if(simple) top = cur===tabs[0][0] ? 'today' : (cur==='mmplan' || planKeys.indexOf(cur)>-1) ? 'plan' : (MM_PLAN_KEYS.indexOf(cur)>-1 || !tools.length) ? 'today' : 'tools';
+  if(simple && top==='today') cur=tabs[0][0];
   S.mmPlanWant = top==='plan' && cur!=='mmplan' ? cur : '';
   if(sel.dept==='Community Service' && sel.min==='Cafe' && cur!=='numbers' && MM_SHELL_KEYS.indexOf(cur)===-1) S.cafeTab=cur;
-  if(simple) h+=mmTabsHtml_([[tabs[0][0], t('Today'), tabs[0][2]]].concat(tools.length ? [['mmtools', navLabel_('Our tools')]] : [], [['mmplan', navLabel_('Our plan')]]), top==='today' ? tabs[0][0] : top==='tools' ? 'mmtools' : 'mmplan', 'mmTop3');
+  if(simple) h+=mmTabsHtml_([[tabs[0][0], t('Today'), tabs[0][2]]].concat(tools.length ? [['mmtools', navLabel_('Our tools')]] : [], planTab), top==='today' ? tabs[0][0] : top==='tools' ? 'mmtools' : 'mmplan', 'mmTop3');
   else h+=mmTabsHtml_(tabs, cur);
   var pane='';
   var mmTop=(sel.dept==='Skills Training' && sel.min==='Hospitality' && canHospClient_()) ? hospChangesHtml_(S.hospNews, false) : '';   // a team's new dates, someone who left (Nov 2026)
@@ -1060,7 +1067,8 @@ function myMinistryHtml(){
     }
     return pane;
   };
-  if(top==='plan') pane=mmPlanHtml_(sel, cur, planKeys, function(k){
+  if(top==='plan' && planOne) pane='<div id="mmPlan" class="mmPlanOne"><div id="mmPlan_numbers" data-mmplansec="numbers" class="open"><div id="mmPlanBody_numbers">'+numbersPane()+'</div></div></div>';
+  else if(top==='plan') pane=mmPlanHtml_(sel, cur, planKeys, function(k){
     if(k==='okr') return rocksTabHtml_(sel);
     if(k==='tasks'){ S.gptFrom='ministry'; return gptPageHtml_({ dept:sel.dept, min:sel.min }, true); }
     return numbersPane(); });
