@@ -148,7 +148,8 @@ const txt = p => p.$eval('#main', e => e.innerText);
   ok('closing for the day keeps the cash', /Closed at .* cash \$25\.50/.test(await txt(page)));
   await page.click('.mmTabs [data-mmtab="numbers"]'); await page.waitForTimeout(600);
   ok('"The numbers" is the usual page, saying the tool fills it', /fill themselves in/.test(await txt(page)));
-  ok('… and the phone remembers that choice for next time', await page.evaluate(() => (JSON.parse(localStorage.getItem('gp-mm-tab') || '{}')['Community Service|Cafe'])) === 'numbers');
+  /* Nov 2026 (Uriah): a ministry's page opens on its first tab every time the app is opened; a tab chosen stays for the visit (31-today.js) */
+  ok('… and that choice is kept for this visit (not on the phone: the next open is Today again)', await page.evaluate(() => (JSON.parse(sessionStorage.getItem('gp-mm-tab') || '{}')['Community Service|Cafe']) === 'numbers' && !localStorage.getItem('gp-mm-tab')));
   ok('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await ctx.close();
 }

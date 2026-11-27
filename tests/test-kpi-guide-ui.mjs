@@ -65,6 +65,7 @@ async function open(data, opts) {
   await page.waitForSelector('nav.bottom button', { timeout: 15000 });
   await page.click('nav.bottom button[data-tab="week"]'); await page.waitForTimeout(400);
   await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(400);
+  if (await page.$('.mmTabs [data-mmtab="numbers"]')) { await page.click('.mmTabs [data-mmtab="numbers"]'); await page.waitForTimeout(300); }   // My Ministry opens on Today (31-today.js); the boxes with the ⓘ are on the Scorecard
   // the boxes open by themselves for a week with nothing in; tap only if they are still shut (any language)
   if (await page.$('#kpiInputBtn') && !(await page.$('[data-kpiweek], [data-kpi]'))) { await page.click('#kpiInputBtn'); await page.waitForTimeout(400); }
   return { ctx, page };

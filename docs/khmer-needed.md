@@ -6782,6 +6782,60 @@ Campus Leadership arranges a quarter on the whiteboard; "Make Q1 2027 live" turn
 | Someone else is saving — try again. | មានអ្នកផ្សេងកំពុងរក្សាទុក — សូមព្យាយាមម្តងទៀត។ |
 | That quarter is over. | ត្រីមាសនោះបានកន្លងផុតហើយ។ |
 
+## 151. My Ministry → Today: tap counters, the team streak, the win of the day, the Friday wrap (Nov 2026)
+
+The first screen of every ministry’s page, used every day, so these are read more than almost anything else in the app. The tiles are small: “{n}-day team streak”, “{d} of {n} goals on target” and the badge names sit in half a phone’s width. “Win” (ដំណឹងល្អ here) is one short line of something good that happened — not a competition won; please say if a warmer everyday word fits. “Streak” is days in a row that anyone on the team logged something. “Wrap up the week” is Friday’s few weekly numbers. The line starting “Badges are the whole ministry’s…” is a promise about how the game works (never about how big a number is) — please check it first, with “No child’s full name.”
+
+| English | Khmer (draft) |
+|---|---|
+| Tap a tile each time it happens. − takes one off, ✎ types the number. | ចុចប្រអប់មួយរាល់ពេលវាកើតឡើង។ − ដកមួយចេញ ✎ វាយលេខ។ |
+| Add 1 to {metric} | បន្ថែម ១ ទៅ {metric} |
+| Take 1 off {metric} | ដក ១ ចេញពី {metric} |
+| Type today’s number for {metric} | វាយលេខថ្ងៃនេះសម្រាប់ {metric} |
+| Today’s number | លេខថ្ងៃនេះ |
+| {n} more… | {n} ទៀត… |
+| Also today | ថ្ងៃនេះផងដែរ |
+| {d} of {n} goals on target | គោលដៅ {d} ក្នុងចំណោម {n} សម្រេចបាន |
+| {d} of {n} days logged this week | បានកត់ត្រា {d} ថ្ងៃ ក្នុងចំណោម {n} ថ្ងៃ សប្ដាហ៍នេះ |
+| {d} of 7 days logged this week | បានកត់ត្រា {d} ថ្ងៃ ក្នុងចំណោម ៧ ថ្ងៃ សប្ដាហ៍នេះ |
+| {n}-day team streak | ក្រុមកត់ត្រាជាប់គ្នា {n} ថ្ងៃ |
+| Start the team streak today | ចាប់ផ្ដើមកត់ត្រាជាប់គ្នាជាក្រុមថ្ងៃនេះ |
+| Win of the day | ដំណឹងល្អប្រចាំថ្ងៃ |
+| Something good that happened today | រឿងល្អមួយដែលបានកើតឡើងថ្ងៃនេះ |
+| One line, for your team. No child’s full name. | មួយបន្ទាត់ សម្រាប់ក្រុមរបស់អ្នក។ កុំដាក់ឈ្មោះពេញរបស់កុមារ។ |
+| Take this win off | ដកដំណឹងល្អនេះចេញ |
+| Take this win off? | ដកដំណឹងល្អនេះចេញឬ? |
+| No wins shared yet. | មិនទាន់មានដំណឹងល្អចែករំលែកនៅឡើយទេ។ |
+| Show all {n} wins | បង្ហាញដំណឹងល្អទាំង {n} |
+| Shared with your team | បានចែករំលែកជាមួយក្រុមរបស់អ្នក |
+| That is plenty for one day — more tomorrow. | គ្រប់គ្រាន់ហើយសម្រាប់មួយថ្ងៃ — ថ្ងៃស្អែកបន្តទៀត។ |
+| No connection — your win is kept here until you can send it. | គ្មានការតភ្ជាប់ — ដំណឹងល្អរបស់អ្នកត្រូវបានរក្សាទុកនៅទីនេះ រហូតដល់អ្នកអាចផ្ញើបាន។ |
+| Wrap up the week | បិទបញ្ចប់សប្ដាហ៍ |
+| {n} numbers for the whole week — most are already filled in from last week. | លេខ {n} សម្រាប់ពេញមួយសប្ដាហ៍ — ភាគច្រើនបានបំពេញរួចហើយពីសប្ដាហ៍មុន។ |
+| Save week {wk} | រក្សាទុកសប្ដាហ៍ទី {wk} |
+| Week {wk} complete | សប្ដាហ៍ទី {wk} បានបញ្ចប់ |
+| The week’s numbers are in. Thank you. | លេខប្រចាំសប្ដាហ៍បានបញ្ចូលហើយ។ សូមអរគុណ។ |
+| Change them | កែប្រែ |
+| Our badges | មេដាយរបស់យើង |
+| earned | ទទួលបានហើយ |
+| not yet | មិនទាន់ |
+| Badges are the whole ministry’s, for showing up and logging honestly — never for how big a number is. | មេដាយជារបស់កិច្ចការបម្រើទាំងមូល សម្រាប់ការមកចូលរួម និងការកត់ត្រាដោយស្មោះត្រង់ — មិនមែនសម្រាប់លេខធំឬតូចឡើយ។ |
+| First full week | សប្ដាហ៍ពេញដំបូង |
+| 4 full weeks in a row | ៤ សប្ដាហ៍ពេញជាប់គ្នា |
+| A whole quarter — 13 weeks in a row | ពេញមួយត្រីមាស — ១៣ សប្ដាហ៍ជាប់គ្នា |
+| 10-day streak | ជាប់គ្នា ១០ ថ្ងៃ |
+| 30-day streak | ជាប់គ្នា ៣០ ថ្ងៃ |
+| Goals set | បានកំណត់គោលដៅ |
+| 5 wins shared | បានចែករំលែកដំណឹងល្អ ៥ |
+| New badge for {ministry}: {badge} | មេដាយថ្មីសម្រាប់ {ministry}៖ {badge} |
+| Saved on this phone — it will send when you’re back online. | បានរក្សាទុកក្នុងទូរសព្ទនេះ — វានឹងផ្ញើនៅពេលអ្នកមានអ៊ីនធឺណិតវិញ។ |
+| Not saved yet — it will try again. | មិនទាន់បានរក្សាទុកទេ — វានឹងព្យាយាមម្ដងទៀត។ |
+| You can look, but only this ministry’s own people enter its numbers. | អ្នកអាចមើលបាន ប៉ុន្តែមានតែសមាជិកកិច្ចការបម្រើនេះប៉ុណ្ណោះដែលបញ្ចូលលេខ។ |
+| Nothing to count day by day here. Share a win when there is one, and wrap up the week on Friday. | នៅទីនេះគ្មានអ្វីត្រូវរាប់ប្រចាំថ្ងៃទេ។ សូមចែករំលែកដំណឹងល្អពេលមាន ហើយបិទបញ្ចប់សប្ដាហ៍នៅថ្ងៃសុក្រ។ |
+| Nothing to count day by day here. Share a win when there is one. | នៅទីនេះគ្មានអ្វីត្រូវរាប់ប្រចាំថ្ងៃទេ។ សូមចែករំលែកដំណឹងល្អពេលមាន។ |
+| Highlights is full. | ផ្នែកចំណុចលេចធ្លោពេញហើយ។ |
+| This quarter’s wins — tap one to add it to Highlights | ដំណឹងល្អក្នុងត្រីមាសនេះ — ចុចមួយដើម្បីបន្ថែមទៅចំណុចលេចធ្លោ |
+
 ## 150. Rocks with a slider; Campus Leadership tidied (My Ministry → Rocks, Campus Leadership’s Overview, My week and Board, Nov 2026)
 
 Each rock now has a 0–100% slider (“How far along”), and a team’s rocks say “{p}% done” together. On Campus Leadership’s page the next meeting is one card with “Open the meeting”; “My week” puts each kind’s count on its button and folds the reflection, partners and base plants into one line each (“None yet”, “{n} in planning”, “{n} · {d} to reach” — partners, and how many are due a contact). The Board tab says “Every meeting” instead of “Every Monday”, since the meeting day can be any day. On GPDTS → Finances, “Enter money” is the small heading over the Income and Expenses buttons.
