@@ -4209,7 +4209,7 @@ async function ministryDataFor_(s) {
 async function getMyMinistry(username, pin) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
-  return withNumbers_(await ministryDataFor_(s), s);
+  return withToday_(await withNumbers_(await ministryDataFor_(s), s), s);
 }
 
 /* Who sees and enters a ministry's numbers on My Ministry: the people IN it.
@@ -4232,7 +4232,89 @@ async function getMinistryFor(username, pin, dept, ministry) {
   const s = await verifyStaff_(username, pin);
   if (!s) return { ok: false };
   if (!canLogFor_(s, s.campus, dept, ministry)) return { ok: false, err: 'not_authorized' };
-  return withNumbers_(await ministryDataFor2_(s.campus, dept, ministry), s);
+  return withToday_(await withNumbers_(await ministryDataFor2_(s.campus, dept, ministry), s), s);
+}
+
+/* ==================== My Ministry → Today (public/teams/31-today.js) ====================
+   The Today screen is drawn from what a ministry's payload already carries (entries, daily) plus two things added
+   here, for the people who can open that ministry (its own payload — getMyMinistry, getMinistryFor — and nobody else):
+     active — the days (Cambodia), in the last TODAY_ACTIVE_DAYS, on which a weekly row of this ministry was written:
+              each row's `days` (saveMinistryInternal_, so a tool's daily use counts) and the day of its `updated`.
+              The daily counts carry their own dates in `daily`. Dates only — never who or what.
+     wins   — "win of the day": one line a day or so of something good that happened, the last WIN_KEEP_DAYS.
+   mwins:<campus> = { 'Dept|Ministry': [{ id, text, by, name (first name), date, at }] }, written with mutateKey_ by
+   anyone who can log for that ministry (canLogFor_). The page reminds people: no child's full name. */
+const TODAY_ACTIVE_DAYS = 100, WIN_MAX = 200, WIN_KEEP_DAYS = 60, WIN_DAY_CAP = 10, WIN_ROWS_MAX = 300;
+function rowDays_(days, day) {
+  const d = (Array.isArray(days) ? days : []).filter(function (x) { return typeof x === 'string' && x !== day; });
+  d.push(day);
+  return d.slice(-7);
+}
+function baseDayOf_(iso) { const t = Date.parse(iso || ''); return isNaN(t) ? '' : new Date(t + 7 * 3600 * 1000).toISOString().slice(0, 10); }
+async function todayActive_(campus, dept, ministry) {
+  const cut = addDays_(baseToday_(), -TODAY_ACTIVE_DAYS), set = {};
+  (await getEntries_()).forEach(function (r) {
+    if (r.campus !== campus || r.dept !== dept || r.ministry !== ministry) return;
+    (Array.isArray(r.days) ? r.days : []).concat([baseDayOf_(r.updated)]).forEach(function (d) { if (d && d >= cut) set[d] = 1; });
+  });
+  return Object.keys(set).sort();
+}
+function winsKey_(campus) { return 'mwins:' + campus; }
+function winText_(v) { return (typeof v === 'string' ? v : '').replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, WIN_MAX).trim(); }
+function winsOut_(doc, dept, ministry, s) {
+  const cut = addDays_(baseToday_(), -WIN_KEEP_DAYS);
+  const rows = (doc && typeof doc === 'object' && Array.isArray(doc[dept + '|' + ministry])) ? doc[dept + '|' + ministry] : [];
+  return rows.filter(function (r) { return r && r.date >= cut; })
+    .sort(function (a, b) { return (a.at || '') < (b.at || '') ? 1 : -1; })
+    .map(function (r) { return { id: r.id, text: r.text, name: r.name || '', date: r.date, at: r.at, mine: r.by === s.id }; });
+}
+async function withToday_(d, s) {
+  if (!d || !d.ok || !d.ministry) return d;
+  try {
+    d.active = await todayActive_(d.campus, d.dept, d.ministry);
+    d.wins = winsOut_(await readJSON(winsKey_(d.campus), {}), d.dept, d.ministry, s);
+  } catch (e) { d.active = d.active || []; d.wins = d.wins || []; }
+  return d;
+}
+async function saveMinistryWin(username, pin, dept, ministry, text) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  dept = str_(dept, 80); ministry = str_(ministry, 80);
+  if (!dept || !ministry || !canLogFor_(s, s.campus, dept, ministry)) return { ok: false, err: 'not_authorized' };
+  const clean = winText_(text);
+  if (!clean) return { ok: false, err: 'empty' };
+  const today = baseToday_(), cut = addDays_(today, -WIN_KEEP_DAYS), key = dept + '|' + ministry;
+  const res = await mutateKey_(winsKey_(s.campus), {}, function (doc) {
+    Object.keys(doc).forEach(function (k) {   // the 60-day keep, for every ministry on the campus
+      doc[k] = (Array.isArray(doc[k]) ? doc[k] : []).filter(function (r) { return r && r.date >= cut; });
+      if (!doc[k].length && k !== key) delete doc[k];
+    });
+    const rows = doc[key] || (doc[key] = []);
+    if (rows.filter(function (r) { return r.by === s.id && r.date === today; }).length >= WIN_DAY_CAP) return { abort: true, ok: false, err: 'too_many' };
+    rows.push({ id: 'w' + Date.now().toString(36) + crypto.randomBytes(3).toString('hex'), text: clean, by: s.id,
+      name: String(s.name || '').trim().split(/\s+/)[0] || '', date: today, at: new Date().toISOString() });
+    if (rows.length > WIN_ROWS_MAX) rows.splice(0, rows.length - WIN_ROWS_MAX);
+    return { ok: true };
+  });
+  if (!res.ok) return res;
+  return { ok: true, wins: winsOut_(await readJSON(winsKey_(s.campus), {}), dept, ministry, s) };
+}
+/* Take one back: whoever wrote it, the ministry's leader, or an admin. */
+async function deleteMinistryWin(username, pin, dept, ministry, id) {
+  const s = await verifyStaff_(username, pin);
+  if (!s) return { ok: false };
+  dept = str_(dept, 80); ministry = str_(ministry, 80);
+  if (!dept || !ministry || !canLogFor_(s, s.campus, dept, ministry)) return { ok: false, err: 'not_authorized' };
+  const res = await mutateKey_(winsKey_(s.campus), {}, function (doc) {
+    const rows = Array.isArray(doc[dept + '|' + ministry]) ? doc[dept + '|' + ministry] : [];
+    const i = rows.findIndex(function (r) { return r && r.id === String(id); });
+    if (i < 0) return { abort: true, ok: false, err: 'not_found' };
+    if (!(rows[i].by === s.id || s.isAdmin || isLeaderOf_(s, dept, ministry))) return { abort: true, ok: false, err: 'not_authorized' };
+    rows.splice(i, 1);
+    return { ok: true };
+  });
+  if (!res.ok) return res;
+  return { ok: true, wins: winsOut_(await readJSON(winsKey_(s.campus), {}), dept, ministry, s) };
 }
 
 /* A score is 1–10 and a percentage 0–100; anything else would be a typo that
@@ -4258,7 +4340,7 @@ async function saveMinistryInternal_(campus, dept, ministry, week, updates, by, 
   const rows = await getEntries_();
   const now = new Date().toISOString();
   const yr = finiteNum_(year, YEAR_MIN, YEAR_MAX) || yearForWeek_(wk);
-  const rejected = [];
+  const rejected = [], touchedOn = baseToday_();
   (Array.isArray(updates) ? updates : []).forEach(function (u) {
     const metric = str_(u && u.metric, 80);
     if (!metric || SENSITIVE.indexOf(metric) > -1) return;
@@ -4273,9 +4355,10 @@ async function saveMinistryInternal_(campus, dept, ministry, week, updates, by, 
     const value = finiteNum_(u.value, -1e9, 1e9);
     if (value == null) return;
     if (kpiOutOfRange_(ministry, metric, value)) { rejected.push(metric); return; }
-    /* who typed it, for "last entered by" on My Ministry */
-    if (idx > -1) { rows[idx].value = value; rows[idx].updated = now; if (by) rows[idx].by = by; }
-    else rows.push(Object.assign({ campus: campus, dept: dept, ministry: ministry, metric: metric, week: wk, year: yr, value: value, updated: now }, by ? { by: by } : {}));
+    /* who typed it, for "last entered by" on My Ministry; `days` = the last days this row was written on (a tool
+       writes its week's row every day it is used), which is what the Today screen's team streak reads (todayActive_) */
+    if (idx > -1) { rows[idx].value = value; rows[idx].updated = now; if (by) rows[idx].by = by; rows[idx].days = rowDays_(rows[idx].days, touchedOn); }
+    else rows.push(Object.assign({ campus: campus, dept: dept, ministry: ministry, metric: metric, week: wk, year: yr, value: value, updated: now, days: [touchedOn] }, by ? { by: by } : {}));
   });
   await writeJSON('entries', rows);
   return { ok: true, rejected: rejected };
@@ -6530,7 +6613,7 @@ async function getTasksBoot(username, pin, calFrom) {
 }
 
 const BOOT_KEYS = ['libClub', 'entries', 'survey', 'okrs', 'dailyLogs', 'goals', 'holidays', 'smartGoals', 'broadcasts',
-  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks', 'holidayCatch', 'gameWeeks', 'libHl', 'worshipWeeks:poipet', 'worshipWeeks:siemreap', 'structurePlans', 'rocks', 'leadMeet:poipet', 'leadMeet:siemreap', 'qreport:poipet', 'qreport:siemreap'];
+  'personalKpi', 'trips', 'kpiDaily', 'oneOnOnes', 'numbersPeople', 'metricOverrides', 'teamTrips', 'tasks', 'reqDocs', 'board', 'kmReview', 'pushKeys', 'lastSeen', 'gpTasks', 'holidayCatch', 'gameWeeks', 'libHl', 'worshipWeeks:poipet', 'worshipWeeks:siemreap', 'structurePlans', 'rocks', 'leadMeet:poipet', 'leadMeet:siemreap', 'qreport:poipet', 'qreport:siemreap', 'mwins:poipet', 'mwins:siemreap'];
 async function awaitingBoot_(username, pin) {
   const w = await verifyAwaiting_(username, pin);
   if (!w) return null;
@@ -16857,7 +16940,7 @@ function demoStore_(data) {
 const DEMO_USER = 'demo', DEMO_PIN = '0000';
 const DEMO_WRITES = ['saveRock', 'deleteRock', 'saveDaily', 'saveGoals', 'saveMyWeek', 'deleteMyWeek', 'saveMyHabits', 'saveGpTask', 'deleteGpTask', 'respondGpTask',
   'orderGpTasks', 'fileGpTask', 'saveGpTaskList', 'saveGpListOrder', 'saveGpTaskFilter', 'saveTask', 'deleteTask', 'clearDoneTasks',
-  'saveDashLayout', 'saveQuickApps', 'libSaveReads', 'libSaveMine', 'markSeen', 'catchSanta', 'catchHoliday', 'saveMyKpiDay',
+  'saveDashLayout', 'saveQuickApps', 'libSaveReads', 'libSaveMine', 'markSeen', 'catchSanta', 'catchHoliday', 'saveMyKpiDay', 'saveKpiDayFor', 'saveMinistryWin', 'deleteMinistryWin',
   'saveMyMinistry', 'staffProfile', 'teamRoster', 'savePrayer', 'prayedFor', 'saveMyPersonality', 'saveMyGStrengths', 'saveMyApest',
   'cafeGet', 'libNotes', 'myContract', 'mcList', 'leadWeek', 'whosHereTeamPhotos', 'requestOneOnOne', 'respondToOneOnOne', 'logOneOnOne',
   'tickOneOnOneFollowUp', 'updateProfile', 'uploadPhoto', 'savePhotoThumb'];
@@ -17374,6 +17457,8 @@ const HANDLERS = {
   getMinistryFor: function (a) { return getMinistryFor(a[0], a[1], a[2], a[3]); },
   saveMinistryFor: function (a) { return saveMinistryFor(a[0], a[1], a[2], a[3], a[4], a[5]); },
   saveKpiDayFor: function (a) { return saveKpiDayFor(a[0], a[1], a[2], a[3], a[4], a[5]); },
+  saveMinistryWin: function (a) { return saveMinistryWin(a[0], a[1], a[2], a[3], a[4]); },
+  deleteMinistryWin: function (a) { return deleteMinistryWin(a[0], a[1], a[2], a[3], a[4]); },
   saveMyKpiPins: function (a) { return saveMyKpiPins(a[0], a[1], a[2]); },
   staffProfile: function (a) { return staffProfile(a[0], a[1], a[2]); },
   getMyTrips: function (a) { return getMyTrips(a[0], a[1]); },

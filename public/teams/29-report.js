@@ -19,7 +19,7 @@
    (gp-qr-draft). Printing: body.qrOn's print rules in teams.css (A4, a page per department). */
 var QR_KEY='gp-qr', QR_DRAFT_KEY='gp-qr-draft', QR_TEXT_MAX=1200, QR_LETTER_MAX=3000, QR_YEAR_FROM=2024;
 var QR_NEVER=SENSITIVE.concat(['Staff Debt ($)']);   // never printed, whatever the audience (api.js QR_NEVER)
-var QR_FAITH=/salvation|baptis|gospel|healing|discipl|church|prayer|testimon|worship|bible|evangel|congregation/i;
+var QR_FAITH=GP_FAITH_RE;   // the app's one list of faith numbers (taxonomy.js)
 var QR_FIELDS=[['highlights','Highlights'],['story','A story'],['challenges','Challenges'],['needs','Prayer and needs']];
 var QR_AUDS=[['min','Our ministries'],['donor','Donors'],['gov','Government']];
 var QR_LANGS=[['en','English'],['km','ខ្មែរ'],['both','Both']];
@@ -242,6 +242,7 @@ function qrFormHtml_(c, key){
     h+='<label class="f">'+esc(t(f[1]))+'</label>'+
       (f[0]==='story' ? '<p class="hint">'+esc(t('One short story of a changed life. No child’s full name — change names where needed, and ask permission first.'))+'</p>' : '')+
       (f[0]==='challenges' ? '<p class="hint">'+esc(t('Only our own ministries read this part. Donors and the government never see it.'))+'</p>' : '')+
+      (f[0]==='highlights' && typeof tdReportWinsHtml_==='function' ? tdReportWinsHtml_(c, key, Q.year, Q.q) : '')+   // this quarter's wins of the day (31-today.js)
       '<textarea data-qrf="'+f[0]+'" rows="4" maxlength="'+QR_TEXT_MAX+'">'+esc(v[f[0]]||'')+'</textarea>'+qrCountHtml_(f[0], v[f[0]], QR_TEXT_MAX);
   });
   return h+'<p class="hint">'+esc(t('What you type is kept on this phone until it is saved.'))+'</p>'+
