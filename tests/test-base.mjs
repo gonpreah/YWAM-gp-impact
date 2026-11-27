@@ -293,7 +293,7 @@ need('the tab is headed with the quarter’s Rocks, not OKRs', new RegExp('Q' + 
 const mineRocks = await page.$$eval('[data-rkscope$="|Community Service|Outreach Teams"] .lmName', e => e.map(x => x.textContent));
 need('my ministry’s rocks are on it', mineRocks.join() === 'Every outreach team leaves a village with a church contact', mineRocks.join());
 need('another department’s rocks are not', !(await page.evaluate(() => /YDC students/.test(document.getElementById('rocksTab').innerText))));
-need('no percentages, sliders or key results: three buttons a rock', (await page.$$('[data-rock="k1"] .lmSt')).length === 3 && !(await page.$('#rocksTab input[type=range], #rocksTab .kr, #rocksTab .okrCard')));
+need('no key results: three buttons a rock, and one slider for how far along (Nov 2026, Andrew)', (await page.$$('[data-rock="k1"] .lmSt')).length === 3 && (await page.$$('[data-rock="k1"] input[type=range]')).length === 1 && !(await page.$('#rocksTab .kr, #rocksTab .okrCard')));
 await page.screenshot({ path: OUT + 'me-rocks.png', fullPage: true });
 
 // add, mark, edit, delete — the whole of what a rock can do
