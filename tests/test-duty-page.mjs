@@ -8,7 +8,7 @@
    last week, a name picker grouped by who is here (search, tap, type a new
    name), rows to change, and Publish; Hospitality fills its morning chores
    place by place. Every name is made up. */
-import { PUBLIC, CHROMIUM } from './env.mjs';
+import { PUBLIC, CHROMIUM, mmGo } from './env.mjs';
 import { testNow, pinClock } from './clock.mjs';
 import { chromium } from 'playwright';
 import http from 'node:http';
@@ -140,8 +140,9 @@ console.log('=== Culinary makes next week ===');
 {
   const { ctx, page, errors, sent, store } = await open(KARA);
   await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(500);
-  ok('My Ministry (Culinary) has a Schedule tab', !!(await page.$('.mmTabs [data-mmtab="sched"]')));
-  await page.click('.mmTabs [data-mmtab="sched"]'); await page.waitForTimeout(400);
+  await page.click('.mmTabs [data-mmtab="mmtools"]'); await page.waitForSelector('#mmTools');
+  ok('My Ministry (Culinary) has the Schedule on Our tools', !!(await page.$('#mmTools [data-mmtab="sched"]')));
+  await mmGo(page, 'sched'); await page.waitForTimeout(400);
   ok('… with the way in', !!(await page.$('#goSchedEdit')));
   await page.click('#goSchedEdit'); await page.waitForTimeout(400);
   ok('it opens this week, editable, already published', /Published/.test(await page.$eval('#schedState', e => e.textContent)) && !!(await page.$('[data-dcell="bf|mon"]')));
@@ -184,7 +185,7 @@ console.log('=== Hospitality fills the morning chores ===');
 {
   const { ctx, page, errors, sent } = await open(HANA);
   await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(500);
-  await page.click('.mmTabs [data-mmtab="sched"]'); await page.waitForTimeout(400);
+  await mmGo(page, 'sched'); await page.waitForTimeout(400);
   await page.click('#goSchedEdit'); await page.waitForTimeout(400);
   ok('Hospitality’s way in opens the morning chores', /Morning chores/.test(await page.$eval('.campusBtn.on', e => e.textContent)) && !!(await page.$('[data-dcell="base|c1"]')));
   await page.click('[data-dcell="base|c1"]'); await page.waitForTimeout(200);

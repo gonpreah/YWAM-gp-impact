@@ -306,7 +306,15 @@ function bindAway(){
   if(dth) dth.onclick=function(){ gpTap(); S.view='health'; render(); };
 
   document.querySelectorAll('[data-mmtab]').forEach(function(b){
-    b.onclick=function(){ gpTap(); S.mmTab=b.getAttribute('data-mmtab'); S.mmTabTouched=true; S.schPage=null; S.schForm=null; if(b.closest('.mmTabs') && typeof mmTabKeep_==='function') mmTabKeep_(S.mmTab); render(); };
+    b.onclick=function(){ gpTap(); S.mmTab=b.getAttribute('data-mmtab'); S.mmTabTouched=true; S.schPage=null; S.schForm=null; if(b.closest('.mmTabs,.mmTools,.mmToolBack') && typeof mmTabKeep_==='function') mmTabKeep_(S.mmTab); render(); };
+  });
+  /* Our plan's three sections: a tap opens or folds one, in place */
+  document.querySelectorAll('[data-mmplan]').forEach(function(b){
+    b.onclick=function(){ gpTap(); var k=b.getAttribute('data-mmplan'), open=b.getAttribute('aria-expanded')==='true', y=window.scrollY;
+      mmPlanSet_(k, !open);
+      if(open){ if(S.mmTab===k || S.mmTab==='ministry') S.mmTab='mmplan'; } else S.mmTab=k;
+      S.mmTabTouched=true; mmTabKeep_(S.mmTab); S.mmPlanDone=mmTabKey_()+'|'+(open ? '' : k);
+      render(); window.scrollTo(0, y); };
   });
   /* The metric form is folded away until asked for — the page opens on the
      dashboard and the week's status, and this one button is how you get to
@@ -565,6 +573,7 @@ function bindAway(){
   bindKmReview_();
   bindBoardReport_();
   bindReport_();   // the quarterly report, ministry by ministry (29-report.js)
+  if(typeof mmPlanAfter_==='function') mmPlanAfter_();   // Our plan: a section asked for from elsewhere is scrolled to, once
   bindToday_();   // My Ministry → Today: tap counters, streak, win of the day, the Friday wrap (31-today.js)
   bindF30_();
   bindSupport_();

@@ -349,6 +349,31 @@ Education (Oct 2026). Move a ministry in taxonomy.js AND add it to `MINISTRY_MOV
 history is orphaned (`test-numbers-people.mjs` §5 covers the move).
 
 ## My Ministry — the shell (Oct 2026, Uriah: "so cluttered, a lot of boxes")
+- **Three tabs, a one-line header (Nov 2026, Uriah: "how can we simplify them?" — "Do all and keep improving")** — this replaces
+  the header and the row of up to nine tabs described below for every ministry but Campus Leadership's rows and the
+  Finances office (the finance tool), which are as they were (`mmSimple_`).
+  - **Header** (`mmHeadHtml_`, still `#mmBanner`): one row — `#mmNameBtn` (emoji, name, ⓘ) and Switch ▾ (`#mmSwitch`). A tap on
+    the name opens `#mmAbout` (department · campus · 👑 led by, `.mmBannerNote`, `.qrMmLink` "This quarter's report") — always
+    in the page, `hidden` until opened, flipped without a redraw (`S.mmAboutOpen`). No eyebrow. The pills row (`#mmMine`) stays.
+  - **Today · Our tools · Our plan** (`.mmTabs.mmTop3`). `mmTabsFor_` is still the truth of what a ministry has; the shell
+    groups its keys: the FIRST is Today (it keeps its own key and attribute — `mmtoday`, `data-cafetab="today"`, `dtsdash`,
+    `icwed`, `wsweek`, `sctoday`, `teams` — but reads "Today"); `numbers` / `okr` / `tasks` (`MM_PLAN_KEYS`) are **Our plan**
+    (`mmplan`); every other key is a big button on **Our tools** (`mmtools`; no tools → no tab). So `S.mmTab='okr'`,
+    `S.cafeTab='till'`, the tab kept for the visit, `?view=gpdts`, the bell and every link still land where they did.
+  - **Our tools** (`mmToolsHtml_`, `#mmTools .mmTool`, two a row): emoji, name and one line (`MM_TOOL_INFO`, static text), each
+    button carrying the attribute the old tab had (`data-cafetab`, `data-mmtab`, `id="goHosp"`), so the tools' handlers are
+    unchanged. A tool opens in place under `.mmToolBack` (`#mmToolBack` "← Our tools" + its name), Our tools still marked.
+    Cafe: Till · Rota · Week (· Set up); school: (Roll ·) Students · Tests · Payments · Dashboard; GPDTS: Database · Finances;
+    Intercession: 21-day fast · Requests · Dashboard; Worship: Rota · Team · Songs · Dashboard; Culinary / Hospitality:
+    Schedule (+ SR Hospitality). Outreach Teams has none: its Today is the door to the Teams Database.
+  - **Our plan** (`mmPlanHtml_`, `#mmPlan`, `section#mmPlan_<key>.mmPlanSec`, head `[data-mmplan]` with `aria-expanded`, body
+    `#mmPlanBody_<key>` drawn only when open): 📊 Scorecard (the whole old Scorecard tab), 🪨 Rocks ("2 of 3 on track"),
+    ✅ Tasks ("4 open", once GP Tasks is on the phone) — `mmPlanSum_`. Open: the section asked for (`S.mmTab` = its key —
+    scrolled to once, `mmPlanAfter_`), whatever was opened earlier in the visit (`gp-mm-plan` in sessionStorage,
+    `mmPlanSet_`), and, arriving on Our plan itself, the Scorecard. Closing the asked-for one sets `S.mmTab='mmplan'`.
+  - Tests: `mmGo(page, key)` / `openPlan` / `openTool` / `mmMap(page)` / `mmAbout(page)` in tests/env.mjs — a test that used to
+    click a tab says `mmGo(page, 'okr')`. `SCORECARD_FIRST` still means "open on the Scorecard" (now inside Our plan).
+    Khmer: docs/khmer-needed.md §154 ('Tab: Our tools' / 'Tab: Our plan' are the short tab labels).
 - **One flat header** (`mmHeadHtml_`, `#mmBanner`, `.mmHead`): eyebrow "My Ministry", the ministry's
   emoji and name, "dept · campus · 👑 Led by …", a one-line note on whose numbers these are
   (`.mmBannerNote`), and **Switch ▾** (`#mmSwitch`, only with 2+ options) opening a sheet
@@ -1764,6 +1789,16 @@ we can give to ministries and donors, the government Ministry, and to donors." T
   pictures). Khmer: docs/khmer-needed.md §145. sw.js SHELL v34.
 
 ## My Ministry opens on Today (teams/31-today.js, Nov 2026, Uriah)
+*(Simpler since the three-tab shell, Nov 2026 — where the list below differs, this is how it is now.)* Top to bottom: the
+ministry's one prompt line (`#tdHow`), its own lines, **the tiles**, the Friday wrap, **ONE slim line** (`tdBarHtml_`, `#tdBar` /
+`#tdBarOpen`: 🔥 streak · ring · 🏅 badges — the same row tool ministries have; a tap opens `#tdStripMore` with the ring, the
+streak and the badges), **Also today ▸** (`details#tdAlso`, the faith numbers still DAILY but folded, with today's count
+`#tdAlsoN` when anything is in; `S.td.alsoOpen`), and **＋ Share a win** (`#tdWinOpen`, the last win as one quiet line
+`#tdWinLast`; either opens the box and the feed, `S.td.winOpen`). **The whole tile is the +1 button** (`.tdTap`, number left,
+name and week right; four tiles ≈ 120px at 390px): no − or ✎ in sight. A hold (`TD_HOLD_MS` 450), a right-click, or the tile's
+"more options" button (`[data-tdopt]`, invisible until it has the keyboard's focus) opens the options in the tile's place
+(`#tdPop`, `S.td.pop`): **− 1** (`[data-tdminus]`), **Type the number** (`[data-tdedit]` → `#tdTypeBox`), Cancel (`#tdPopCancel`).
+"Hold a tile to take one off or type a number." (`#tdHint`) shows until this phone has done it once (`gp-td-held`).
 "My ministry page could have a fun and simple way to use it daily, and gamify the inputting of data as a tool for each
 ministry … a fun game they're doing each day, while also getting all the data needed for our board, donors and the
 government. And when they go to My Ministry they wouldn't be overwhelmed either." Step 1 of that: one shared screen.

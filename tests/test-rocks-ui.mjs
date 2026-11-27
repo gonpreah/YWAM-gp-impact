@@ -7,7 +7,7 @@
    A teammate's page shows their rocks. Nothing on screen says OKR any more; what was there before
    sits folded under "Earlier objectives". Checked in English and Khmer, at 320px, and in the dark
    theme (contrast of the new marks). Every name is made up. */
-import { REPO, PUBLIC, tmpDir, CHROMIUM, SCORECARD_FIRST } from './env.mjs';
+import { REPO, PUBLIC, tmpDir, CHROMIUM, SCORECARD_FIRST, mmGo } from './env.mjs';
 import { testNow, weekOf, quarterOf, weekYearOf } from './clock.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
@@ -113,8 +113,9 @@ console.log('=== a ministry’s Scorecard ===');
 {
   const { ctx, page } = await open('kim');
   const labels = await tabLabels(page);
-  ok('the tabs are Today · Scorecard · Tasks · Rocks — no “Numbers”, no “OKRs”', labels.join() === 'Today,Scorecard,Tasks,Rocks', labels.join());
-  ok('the Scorecard (asked for here; a ministry’s page opens on Today) has the board on top of the week card', (await page.$eval('.mmTabs .gtTab.on', (b) => b.getAttribute('data-mmtab'))) === 'numbers'
+  const secs = await page.$$eval('[data-mmplan] b', (b) => b.map((x) => x.textContent.trim()));
+  ok('the tabs are Today · Our plan, whose sections are Scorecard · Rocks · Tasks — no “Numbers”, no “OKRs”', labels.join() === 'Today,Our plan' && secs.join() === 'Scorecard,Rocks,Tasks', labels.join() + ' / ' + secs.join());
+  ok('the Scorecard (asked for here; a ministry’s page opens on Today) has the board on top of the week card', (await page.$eval('.mmTabs .gtTab.on', (b) => b.getAttribute('data-mmtab'))) === 'mmplan' && !!(await page.$('[data-mmplan="numbers"][aria-expanded="true"]'))
     && await page.evaluate(() => { const a = document.getElementById('scoreBoard'), b = document.getElementById('mmWeekCard'); return !!a && !!b && a.getBoundingClientRect().top < b.getBoundingClientRect().top; }));
   ok('the headline counts what is on target this week (5 games ≥ 4 ✓, 20 youth ≥ 40 ✗)', /1 of 2 on target this week/.test(await txt(page, '#sbdHeadline')), await txt(page, '#sbdHeadline'));
   const row = (m) => page.$eval('[data-sbdrow="' + m + '"]', (e) => ({ cls: e.className, goal: (e.querySelector('.sbdGoal') || {}).textContent || '', val: e.querySelector('.sbdVal').textContent, mark: (e.querySelector('.sbdMark') || {}).textContent || '', label: e.querySelector('.sbdMark') ? e.querySelector('.sbdMark').getAttribute('aria-label') : '', cells: [...e.querySelectorAll('.sbdC')].map((c) => c.textContent || ' ').join('') }));
@@ -155,7 +156,7 @@ console.log('=== a ministry’s Scorecard ===');
 console.log('=== a ministry’s Rocks ===');
 {
   const { ctx, page } = await open('dara');
-  await page.click('[data-mmtab="okr"]'); await page.waitForTimeout(300);
+  await mmGo(page, 'okr'); await page.waitForTimeout(300);
   const S1 = '[data-rkscope="siemreap|Youth Education|Sports"]', S2 = '[data-rkscope="siemreap|Youth Education|"]';
   ok('the Rocks tab: this quarter’s rocks for the ministry', (await rocksIn(page, S1)).join(' | ') === 'Start a girls’ football league | Train four new coaches', (await rocksIn(page, S1)).join(' | '));
   ok('… “1 of 2 on track”, whose each is, and its note', /1 of 2 on track/.test(await txt(page, S1 + ' .rkCount')) && /Dara/.test(await txt(page, '[data-rock="r1"]')) && /Six teams signed up/.test(await txt(page, '[data-rock="r1"]')) && /The team/.test(await txt(page, '[data-rock="r2"]')));
@@ -212,7 +213,7 @@ console.log('=== a ministry’s Rocks ===');
   /* the page only offers what the server would take (rkCanWrite_ mirrors canWriteRock_) */
   const { ctx, page } = await open('dara');
   const can = await page.evaluate(() => [rkCanWrite_('siemreap', 'Youth Education', 'Sports'), rkCanWrite_('siemreap', 'Youth Education', ''), rkCanWrite_('siemreap', 'Skills Training', 'Technical'), rkCanWrite_('poipet', 'Youth Education', 'Sports'), rkCanWrite_('siemreap', 'Campus Leadership', '')]);
-  await page.click('[data-mmtab="okr"]'); await page.waitForTimeout(300);
+  await mmGo(page, 'okr'); await page.waitForTimeout(300);
   ok('someone who is not an admin gets no “Every department’s rocks”', !(await page.$('#adminRocks')) && !(await page.$('#rkAdmAdd')));
   ok('the page offers a staff member their own department’s rocks to change, and no other', can.join() === 'true,true,false,false,false', can.join());
   await ctx.close();
@@ -280,13 +281,14 @@ console.log('=== Khmer, a small phone, the dark theme ===');
 {
   const { ctx, page } = await open('kim', { km: true, width: 320 });
   const labels = await tabLabels(page);
-  ok('Khmer: the tabs are ថ្ងៃនេះ, តារាងពិន្ទុ … ថ្មធំ', labels[0] === 'ថ្ងៃនេះ' && labels[1] === 'តារាងពិន្ទុ' && labels[labels.length - 1] === 'ថ្មធំ', labels.join());
+  const kmSecs = await page.$$eval('[data-mmplan] b', (b) => b.map((x) => x.textContent.trim()));
+  ok('Khmer: the tabs are ថ្ងៃនេះ · ផែនការ, the sections តារាងពិន្ទុ … ថ្មធំ', labels[0] === 'ថ្ងៃនេះ' && labels[1] === 'ផែនការ' && kmSecs[0] === 'តារាងពិន្ទុ' && kmSecs.includes('ថ្មធំ'), labels.join() + ' / ' + kmSecs.join());
   ok('Khmer at 320px: the Scorecard does not slide sideways', (await sideways(page)) <= 0, String(await sideways(page)));
   ok('… and is in Khmer', /ដល់គោលដៅ/.test(await txt(page, '#scoreBoard')) && !/on target|Scorecard/.test(await txt(page, '#scoreBoard')), (await txt(page, '#scoreBoard')).slice(0, 120));
   await page.click('#sbdEdit'); await page.waitForTimeout(200);
   ok('… nor the goals form', (await sideways(page)) <= 0, String(await sideways(page)));
   await page.click('#sbdCancel');
-  await page.click('[data-mmtab="okr"]'); await page.waitForTimeout(300);
+  await mmGo(page, 'okr'); await page.waitForTimeout(300);
   ok('Khmer at 320px: the Rocks tab does not slide sideways, three buttons a rock still', (await sideways(page)) <= 0 && (await page.$$('[data-rock="r1"] .lmSt')).length === 3, String(await sideways(page)));
   const rt = await txt(page, '#rocksTab');
   ok('… and is in Khmer', /ថ្មធំ/.test(rt) && /ដើរតាមផែនការ/.test(rt) && !/On track|Off track|Rocks|Add a rock/.test(rt), rt.slice(0, 160));
@@ -297,7 +299,7 @@ console.log('=== Khmer, a small phone, the dark theme ===');
 {
   const { ctx, page } = await open('dara', { width: 320 });
   ok('English at 320px: the Scorecard fits', (await sideways(page)) <= 0, String(await sideways(page)));
-  await page.click('[data-mmtab="okr"]'); await page.waitForTimeout(300);
+  await mmGo(page, 'okr'); await page.waitForTimeout(300);
   ok('English at 320px: the Rocks tab fits', (await sideways(page)) <= 0, String(await sideways(page)));
   await ctx.close();
 }
@@ -320,7 +322,7 @@ console.log('=== Khmer, a small phone, the dark theme ===');
   const sb = await contrast('#scoreBoard .sbdName, #scoreBoard .sbdGoal, #scoreBoard .sbdVal, #scoreBoard .sbdMark, #scoreBoard .sbdC.on, #scoreBoard .sbdC.off, #scoreBoard .sbdLine b, #scoreBoard .sbdSub');
   ok('dark theme: every word and mark on the Scorecard reads (4.5:1 or better)', sb.length >= 10 && Math.min(...sb) >= 4.5, dark + ' ' + JSON.stringify(sb));
   await shot(page, SHOTS + '/scorecard-390-dark.png');
-  await page.click('[data-mmtab="okr"]'); await page.waitForTimeout(300);
+  await mmGo(page, 'okr'); await page.waitForTimeout(300);
   const rk = await contrast('#rocksTab .lmName, #rocksTab .lmSt, #rocksTab .rkCount, #rocksTab .rkNote, #rocksTab .rkBadge, #rocksTab .rkOld span, #rocksTab .rkOld b, #rocksTab .leadSeg');
   ok('dark theme: the Rocks tab reads too', rk.length >= 10 && Math.min(...rk) >= 4.5, JSON.stringify(rk));
   await shot(page, SHOTS + '/rocks-390-dark.png');

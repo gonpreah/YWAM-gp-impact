@@ -4446,3 +4446,26 @@ details.tdAlso[open] > summary::after { content:'▾'; }
 .tdWinLast { display:block; width:100%; min-height:44px; padding:4px 0; border:0; background:none; color:var(--muted); font:inherit; font-size:13.5px; text-align:left; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tdWinLast span { color:var(--ink); }
 @media (max-width:359px){ .tdNum { font-size:24px; min-width:24px; } .tdTap { gap:8px; padding:6px 8px; } }
+
+/* ---------- My Ministry in three tabs (Nov 2026): Today · Our tools · Our plan ---------- */
+.mmTabs.mmTop3 { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:6px; overflow:visible; }
+.mmTabs.mmTop3 .gtTab { min-width:0; min-height:44px; justify-content:center; text-align:center; white-space:normal; overflow-wrap:anywhere; padding-left:6px; padding-right:6px; }
+.mmTools { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
+.mmTool { display:flex; flex-direction:column; align-items:flex-start; gap:4px; min-width:0; min-height:96px; padding:12px; border:1.5px solid var(--border); border-radius:16px; background:var(--surface); color:var(--ink); font:inherit; text-align:left; cursor:pointer; touch-action:manipulation; }
+.mmTool:active { background:var(--accentSoft); }
+.mmToolIc { font-size:26px; line-height:1; }
+.mmTool b { font-size:16px; line-height:1.2; overflow-wrap:anywhere; }
+.mmTool small { font-size:12.5px; line-height:1.3; color:var(--muted); overflow-wrap:anywhere; }
+.mmToolBack { display:flex; align-items:center; gap:10px; margin:0 0 10px; min-width:0; }
+.mmToolBack .linkbtn { flex:0 0 auto; width:auto; min-height:44px; padding:0 4px 0 0; text-decoration:none; font-weight:700; }
+.mmToolBack b { min-width:0; overflow-wrap:anywhere; color:var(--muted); font-size:14px; }
+.mmPlan { display:flex; flex-direction:column; min-width:0; }
+.mmPlanSec { border-top:1px solid var(--line); min-width:0; }
+.mmPlanSec:first-child { border-top:0; }
+.mmPlanHead { display:flex; align-items:center; gap:8px; width:100%; min-height:52px; padding:6px 0; border:0; background:none; color:var(--ink); font:inherit; font-size:16px; text-align:left; cursor:pointer; }
+.mmPlanIc { flex:0 0 auto; font-size:20px; }
+.mmPlanHead b { flex:0 0 auto; }
+.mmPlanSum { flex:1 1 auto; min-width:0; font-size:13px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mmPlanChev { margin-left:auto; flex:0 0 auto; color:var(--muted); font-size:13px; }
+.mmPlanBody { padding:2px 0 14px; min-width:0; }
+.mmPlanSec { scroll-margin-top:70px; }

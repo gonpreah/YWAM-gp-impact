@@ -68,3 +68,41 @@ export const SCORECARD_FIRST = (() => {
 export async function mmAbout(page) {
   if (await page.$('#mmAbout[hidden]')) { await page.click('#mmNameBtn'); await page.waitForSelector('#mmAbout:not([hidden])'); }
 }
+
+/* Three tabs (Nov 2026): Today · Our tools · Our plan. The old tabs' keys still name where things are — 'numbers' /
+   'okr' / 'tasks' are the folding sections of Our plan, every other key is a big button on Our tools (with the
+   attribute it always had: data-mmtab, data-cafetab) — so a test that used to click a tab says mmGo(page, key):
+   it clicks the top tab if the key is one (the first tab keeps its key), opens the section of Our plan, or opens
+   Our tools and taps the tool. openPlan / openTool are the same thing by name. */
+export async function mmGo(page, key) {
+  const top = '.mmTabs [data-mmtab="' + key + '"], .mmTabs [data-cafetab="' + key + '"]';
+  if (await page.$(top)) { await page.click(top); return; }
+  if (['numbers', 'okr', 'tasks'].includes(key)) {
+    if (!(await page.$('#mmPlan'))) { await page.click('.mmTabs [data-mmtab="mmplan"]'); await page.waitForSelector('#mmPlan'); }
+    if (await page.$('[data-mmplan="' + key + '"][aria-expanded="false"]')) await page.click('[data-mmplan="' + key + '"]');
+    await page.waitForSelector('#mmPlanBody_' + key);
+    return;
+  }
+  if (!(await page.$('#mmTools'))) { await page.click('.mmTabs [data-mmtab="mmtools"]'); await page.waitForSelector('#mmTools'); }
+  await page.click('#mmTools [data-mmtab="' + key + '"], #mmTools [data-cafetab="' + key + '"]');
+}
+export const openPlan = (page, which) => mmGo(page, { scorecard: 'numbers', rocks: 'okr', tasks: 'tasks' }[which] || which);
+export const openTool = mmGo;
+
+/* what a ministry's page is made of now: the top tabs' labels, the tools' keys (Our tools' buttons, in order) and the
+   plan's sections — it looks at each tab and comes back to the first. */
+export async function mmMap(page) {
+  const top = await page.$$eval('.mmTabs .gtTab', (b) => b.map((x) => x.textContent.trim()));
+  let tools = [], toolNames = [], plan = [];
+  if (await page.$('.mmTabs [data-mmtab="mmtools"]')) {
+    await page.click('.mmTabs [data-mmtab="mmtools"]'); await page.waitForSelector('#mmTools');
+    tools = await page.$$eval('#mmTools .mmTool', (b) => b.map((x) => x.getAttribute('data-mmtab') || x.getAttribute('data-cafetab') || x.id));
+    toolNames = await page.$$eval('#mmTools .mmTool b', (b) => b.map((x) => x.textContent.trim()));
+  }
+  if (await page.$('.mmTabs [data-mmtab="mmplan"]')) {
+    await page.click('.mmTabs [data-mmtab="mmplan"]'); await page.waitForSelector('#mmPlan');
+    plan = await page.$$eval('[data-mmplan]', (b) => b.map((x) => x.getAttribute('data-mmplan')));
+  }
+  await page.click('.mmTabs .gtTab:first-child'); await page.waitForTimeout(300);
+  return { top, tools, toolNames, plan };
+}

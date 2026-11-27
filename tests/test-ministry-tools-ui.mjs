@@ -1,7 +1,7 @@
 /* Ministry tools on the page: Campus Leadership's "My week" and the Cafe's
    Today / Till / Rota / Week / Set up, each filling its numbers by itself. */
 import vm from 'node:vm';
-import { REPO, PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
+import { REPO, PUBLIC, tmpDir, CHROMIUM, mmGo } from './env.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -116,8 +116,14 @@ const txt = p => p.$eval('#main', e => e.innerText);
 }
 {
   const { ctx, page } = await open('vanna');
-  ok('the cafe’s My Ministry opens on the cafe tool, Today — one row of tabs: Today · Till · Rota · Week · Scorecard · Tasks · Rocks', !!(await page.$('.mmTabs .gtTab.on[data-cafetab="today"]')) && (await page.$$eval('.mmTabs .gtTab', b => b.map(x => x.textContent))).join() === 'Today,Till,Rota,Week,Scorecard,Tasks,Rocks' && !!(await page.$('#cafeOpenBtn')) && (await page.$$('.cafeTick')).length >= 4);
+  ok('the cafe’s My Ministry opens on the cafe tool, Today — one row of tabs: Today · Till · Rota · Week · Scorecard · Tasks · Rocks', !!(await page.$('.mmTabs .gtTab.on[data-cafetab="today"]')) && (await page.$$eval('.mmTabs .gtTab', b => b.map(x => x.textContent))).join() === 'Today,Our tools,Our plan' && !!(await page.$('#cafeOpenBtn')) && (await page.$$('.cafeTick')).length >= 4);
+  await page.click('.mmTabs [data-mmtab="mmtools"]'); await page.waitForSelector('#mmTools');
+  ok('Our tools is one page of big buttons: Till · Rota · Week, each with a line under it', (await page.$$eval('#mmTools .mmTool', b => b.map(x => x.getAttribute('data-cafetab')).join())) === 'till,rota,week' && await page.$$eval('#mmTools .mmTool', b => b.every(x => x.querySelector('small') && x.querySelector('small').textContent.length > 5 && x.getBoundingClientRect().height >= 44)));
   ok('… and a barista gets no Set up tab', !(await page.$('[data-cafetab="setup"]')));
+  await page.click('#mmTools [data-cafetab="rota"]'); await page.waitForTimeout(300);
+  ok('a button opens that tool in place, under one “← Our tools” line', !!(await page.$('#mmToolBack')) && !!(await page.$('.mmTabs .gtTab.on[data-mmtab="mmtools"]')) && !(await page.$('#mmTools')));
+  await page.click('#mmToolBack'); await page.waitForSelector('#mmTools');
+  await page.click('.mmTabs [data-cafetab="today"]'); await page.waitForTimeout(300);
   const ticks = await page.$$('[data-cafetick^="open|"]'); await ticks[0].check(); await ticks[1].check();
   await page.screenshot({ path: OUT + '/cafe-open.png' });
   await page.click('#cafeOpenBtn'); await page.waitForTimeout(1200);
@@ -134,10 +140,10 @@ const txt = p => p.$eval('#main', e => e.innerText);
   ok('the conversation and salvation counters fill their numbers', ent('Cafe', 'Gospel Conversations').value === 1 && ent('Cafe', 'Salvations').value === 1);
   await page.fill('#cafeExpAmt', '4'); await page.fill('#cafeExpNote', 'ice'); await page.click('#cafeExpAdd'); await page.waitForTimeout(1200);
   ok('an expense goes into the week’s expenses', ent('Cafe', 'Weekly Expenses ($)').value === 4);
-  await page.click('[data-cafetab="week"]'); await page.waitForTimeout(400);
+  await mmGo(page, 'week'); await page.waitForTimeout(400);
   ok('Week shows the numbers the tool fills in', /Cups sold\s*3/i.test(await txt(page)) && (await page.$$('.cafeBar')).length === 7);
   await page.screenshot({ path: OUT + '/cafe-week.png', fullPage: true });
-  await page.click('[data-cafetab="rota"]'); await page.waitForTimeout(400);
+  await mmGo(page, 'rota'); await page.waitForTimeout(400);
   await page.click('[data-cafecell="0|0"]'); await page.waitForTimeout(300);
   await page.click('[data-cafewho="st3"]'); await page.waitForTimeout(1200);
   ok('the rota: tap a shift, pick who', /Vanna/.test(await page.$eval('[data-cafecell="0|0"]', e => e.innerText)));
@@ -146,37 +152,37 @@ const txt = p => p.$eval('#main', e => e.innerText);
   const ct = await page.$$('[data-cafetick^="close|"]'); await ct[0].check();
   await page.fill('#cafeCash', '25.5'); await page.click('#cafeCloseBtn'); await page.waitForTimeout(1200);
   ok('closing for the day keeps the cash', /Closed at .* cash \$25\.50/.test(await txt(page)));
-  await page.click('.mmTabs [data-mmtab="numbers"]'); await page.waitForTimeout(600);
+  await mmGo(page, 'numbers'); await page.waitForTimeout(600);
   ok('"The numbers" is the usual page, saying the tool fills it', /fill themselves in/.test(await txt(page)));
   /* Nov 2026 (Uriah): a ministry's page opens on its first tab every time the app is opened; a tab chosen stays for the visit (31-today.js) */
-  ok('… and that choice is kept for this visit (not on the phone: the next open is Today again)', await page.evaluate(() => (JSON.parse(sessionStorage.getItem('gp-mm-tab') || '{}')['Community Service|Cafe']) === 'numbers' && !localStorage.getItem('gp-mm-tab')));
+  ok('… and that choice is kept for this visit (not on the phone: the next open is Today again)', await page.evaluate(() => (JSON.parse(sessionStorage.getItem('gp-mm-tab') || '{}')['Community Service|Cafe']) === 'mmplan' && !localStorage.getItem('gp-mm-tab')));
   ok('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await ctx.close();
 }
 {
   const { ctx, page } = await open('kanha');
-  await page.click('[data-cafetab="setup"]'); await page.waitForTimeout(300);
+  await mmGo(page, 'setup'); await page.waitForTimeout(300);
   ok('the cafe’s leader has Set up: the menu and checklists', (await page.$$('.cafeMenuRow')).length >= 4 && !!(await page.$('#cafeSetOpen')));
   await page.click('#cafeMenuAdd'); await page.waitForTimeout(200);
   const rows = await page.$$('.cafeMenuRow'); const last = rows[rows.length - 1];
   await (await last.$('[data-cafemenu$="|name"]')).fill('Mango smoothie'); await (await last.$('[data-cafemenu$="|price"]')).fill('2.75');
   await page.click('#cafeSetSave'); await page.waitForTimeout(1200);
-  await page.click('[data-cafetab="till"]'); await page.waitForTimeout(300);
+  await mmGo(page, 'till'); await page.waitForTimeout(300);
   ok('a new menu item is on the till', /Mango smoothie/.test(await txt(page)));
   await ctx.close();
 }
 {
   const { ctx, page } = await open('vanna', { small: true, km: true });
   ok('in Khmer at 320px the cafe tool fits', await page.evaluate(() => document.documentElement.scrollWidth <= 321));
-  await page.click('[data-cafetab="till"]'); await page.waitForTimeout(300);
+  await mmGo(page, 'till'); await page.waitForTimeout(300);
   ok('… and so does the till', await page.evaluate(() => document.documentElement.scrollWidth <= 321));
   await ctx.close();
 }
 {
   const { ctx, page } = await open('kanha');
-  await page.click('[data-cafetab="setup"]'); await page.waitForTimeout(300);
+  await mmGo(page, 'setup'); await page.waitForTimeout(300);
   await page.click('[data-cafetill="hangpopok"]'); await page.waitForTimeout(1200);
-  await page.click('[data-cafetab="till"]'); await page.waitForTimeout(300);
+  await mmGo(page, 'till'); await page.waitForTimeout(300);
   ok('with HangPopok as the till, the Till tab asks for the day’s totals instead of the menu', !!(await page.$('#cafePosSales')) && !(await page.$('.cafeMenu')));
   const before = ent('Cafe', 'Cups Sold').value;
   await page.fill('#cafePosSales', '84.50'); await page.fill('#cafePosReceipts', '31'); await page.fill('#cafePosCups', '40');

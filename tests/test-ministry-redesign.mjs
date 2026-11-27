@@ -5,7 +5,7 @@
 
    Drives the real page. The ministry data is stubbed so the strip has
    something to say — three of the last eight weeks logged, five not. */
-import { PUBLIC, CHROMIUM, SCORECARD_FIRST } from './env.mjs';
+import { PUBLIC, CHROMIUM, SCORECARD_FIRST, mmGo } from './env.mjs';
 import { chromium } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -85,7 +85,7 @@ console.log('=== the leader’s page ===');
     personal: document.querySelectorAll('[data-personal]').length,
     overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
   }));
-  ok('one row of tabs for the ministry — Scorecard, Tasks, Rocks among them — and it opens where it was left (the numbers)', JSON.stringify(s.tabs) === '["numbers","tasks","okr"]' && !!(await page.$('.mmTabs .gtTab.on[data-mmtab="numbers"]')), JSON.stringify(s.tabs));
+  ok('one row of tabs for the ministry — Scorecard, Tasks, Rocks among them — and it opens where it was left (the numbers)', JSON.stringify(s.tabs) === '["mmtools","mmplan"]' && !!(await page.$('.mmTabs .gtTab.on[data-mmtab="mmplan"]')) && (await page.$$eval('[data-mmplan]', b => b.map(x => x.getAttribute('data-mmplan')).join())) === 'numbers,okr,tasks' && !!(await page.$('[data-mmplan="numbers"][aria-expanded="true"]')), JSON.stringify(s.tabs));   // three tabs since Nov 2026: the Scorecard, Rocks and Tasks are the sections of Our plan
   ok('the dashboard shows the ministry’s own metrics as tiles', s.tiles === 6, s.tiles);
   /* This week is in the current quarter by definition, so a count logged
      this week must show a real quarter total — "—" here meant the quarter
@@ -131,9 +131,9 @@ console.log('=== the leader’s page ===');
   const rn = sent.find(x => x.fn === 'renameCustomMetric');
   ok('Rename posts old and new names for this ministry', !!rn && rn.args[5] === 'Latte Art Score (1-10)' && rn.args[6] === 'Latte Art (1-10)', rn && JSON.stringify(rn.args.slice(2)));
 
-  await page.click('[data-mmtab="okr"]');
+  await mmGo(page, 'okr');
   await page.waitForTimeout(500);
-  const okr = await page.evaluate(() => ({ add: !!document.querySelector('#rocksTab [data-rkadd]'), form: !!document.querySelector('#kpiDayCard'), h3: document.querySelector('#main h3').textContent, old: !!document.querySelector('#okrNewBtn, #okrPasteBtn') }));
+  const okr = await page.evaluate(() => ({ add: !!document.querySelector('#mmPlanBody_okr #rocksTab [data-rkadd]'), form: !!document.querySelector('#mmPlanBody_okr #kpiDayCard'), h3: document.querySelector('#mmPlanBody_okr h3').textContent, old: !!document.querySelector('#okrNewBtn, #okrPasteBtn') }));
   ok('the Rocks tab shows the quarter’s rocks with a line to add one — no OKR editor', okr.add && /Rocks/.test(okr.h3) && !okr.old, okr.h3);
   ok('and none of the numbers form', !okr.form);
   ok('no console/page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
@@ -152,9 +152,9 @@ console.log('\n=== an ordinary member ===');
   // the Rocks tab is a tap from the Scorecard on the same page
   await page.click('#ministryBack');
   await page.waitForTimeout(400);
-  await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(400); await page.click('[data-mmtab="okr"]');   // Rocks (key 'okr')
+  await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(400); await mmGo(page, 'okr');   // Rocks (key 'okr')
   await page.waitForTimeout(500);
-  ok('My Ministry on its Rocks tab, the Scorecard tab a tap away', await page.evaluate(() => S.view === 'ministry' && S.mmTab === 'okr' && !!document.querySelector('.mmTabs .gtTab.on[data-mmtab="okr"]') && !!document.querySelector('.mmTabs [data-mmtab="numbers"]')));
+  ok('My Ministry on its Rocks tab, the Scorecard tab a tap away', await page.evaluate(() => S.view === 'ministry' && S.mmTab === 'okr' && !!document.querySelector('.mmTabs .gtTab.on[data-mmtab="mmplan"]') && !!document.querySelector('#mmPlan_okr.open #rocksTab') && !!document.querySelector('[data-mmplan="numbers"]')));
   ok('no console/page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
   await ctx.close();
 }

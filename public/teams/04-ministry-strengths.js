@@ -348,7 +348,7 @@ function bindCafe_(){
   var call=function(fn,args,then){ if(S.cafeBusy) return; S.cafeBusy=true; run(fn,[S.auth.user,S.auth.pin].concat(args),function(d){ done(d); if(then && d && d.ok) then(d); },function(){ S.cafeBusy=false; showMsg(t('No connection — try again when you are online.')); render(); }); };
   var rt=document.getElementById('cafeRetry'); if(rt) rt.onclick=function(){ S.cafeErr=''; render(); };
   document.querySelectorAll('[data-cafeview]').forEach(function(b){ b.onclick=function(){ gpTap(); S.cafeView=b.getAttribute('data-cafeview'); render(); }; });
-  document.querySelectorAll('[data-cafetab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.cafeTab=b.getAttribute('data-cafetab'); S.mmTab='ministry'; S.mmTabTouched=true; if(b.closest('.mmTabs')) mmTabKeep_(S.cafeTab); S.cafeEdit=null; render(); }; });
+  document.querySelectorAll('[data-cafetab]').forEach(function(b){ b.onclick=function(){ gpTap(); S.cafeTab=b.getAttribute('data-cafetab'); S.mmTab='ministry'; S.mmTabTouched=true; if(b.closest('.mmTabs,.mmTools')) mmTabKeep_(S.cafeTab); S.cafeEdit=null; render(); }; });
   var shift=function(n){ var d=new Date((S.cafeDate||todayStr())+'T00:00:00'); d.setDate(d.getDate()+n); var s=isoDateOf_(d); if(s>todayStr()) return; S.cafeDate=s; S.cafeTicks={open:{},close:{}}; render(); };
   var pd=document.getElementById('cafePrevDay'), nd=document.getElementById('cafeNextDay');
   if(pd) pd.onclick=function(){ shift(-1); }; if(nd) nd.onclick=function(){ shift(1); };

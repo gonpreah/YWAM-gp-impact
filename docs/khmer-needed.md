@@ -7297,3 +7297,44 @@ The book quiz (Check what you remember, after Done — mark as read). The three 
 | You chose: {a} | អ្នកបានជ្រើសរើស៖ {a} |
 | Quizzes: {n} taken · {r} of {m} right | សំណួរ៖ បានធ្វើ {n} · ត្រូវ {r} ក្នុងចំណោម {m} |
 | Quiz {n}/{m} | សំណួរ {n}/{m} |
+
+
+## 154. My Ministry, simpler: three tabs, the one-line header, Today with less on it (Nov 2026)
+
+My Ministry now has three tabs — Today · Our tools · Our plan. “Tab: …” are the short forms for the tab row (three must fit on a 320px phone). The lines under each button on Our tools are one short line each. “Hold a tile…” is a one-time hint under Today’s tiles; “{n} open” counts tasks not yet done.
+
+| English | Khmer (draft) |
+|---|---|
+| About this ministry | អំពីកិច្ចការបម្រើនេះ |
+| Type the number | វាយលេខ |
+| More options for {metric} | ជម្រើសផ្សេងទៀតសម្រាប់ {metric} |
+| Hold a tile to take one off or type a number. | ចុចប្រអប់មួយឲ្យជាប់ ដើម្បីដកមួយចេញ ឬវាយលេខ។ |
+| Tap a tile each time it happens. | ចុចប្រអប់មួយរាល់ពេលដែលវាកើតឡើង។ |
+| Share a win | ចែករំលែកដំណឹងល្អ |
+| See the wins | មើលដំណឹងល្អ |
+| Our tools | ឧបករណ៍របស់យើង |
+| Our plan | ផែនការរបស់យើង |
+| Tab: Our tools | ឧបករណ៍ |
+| Tab: Our plan | ផែនការ |
+| None yet | មិនទាន់មាន |
+| {n} open | {n} មិនទាន់រួច |
+| Take orders and count the day’s sales | ទទួលការកុម្ម៉ង់ និងរាប់ការលក់ប្រចាំថ្ងៃ |
+| Who is on which shift | នរណានៅវេនណា |
+| The week’s cups, sales and best sellers | ចំនួនកែវ ការលក់ និងមុខទំនិញលក់ដាច់ប្រចាំសប្តាហ៍ |
+| Menu, checklists and shifts | ម៉ឺនុយ បញ្ជីត្រួតពិនិត្យ និងវេន |
+| Take today’s roll | ស្រង់វត្តមានថ្ងៃនេះ |
+| Every student’s page | ទំព័ររបស់សិស្សម្នាក់ៗ |
+| Test scores and passing | ពិន្ទុតេស្ត និងការជាប់ |
+| Who has paid | នរណាបានបង់ប្រាក់ |
+| Enrolment, attendance and results | ការចុះឈ្មោះ វត្តមាន និងលទ្ធផល |
+| Speakers, students, events and outreach | វាគ្មិន សិស្ស ព្រឹត្តិការណ៍ និងការផ្សព្វផ្សាយ |
+| Fees, income, expenses and the budget | ថ្លៃសិក្សា ចំណូល ចំណាយ និងថវិកា |
+| Plan the fast and its gatherings | រៀបចំការតមអាហារ និងការជួបជុំ |
+| Prayer needs sent to the team | សេចក្តីត្រូវការអធិស្ឋានដែលបានផ្ញើមកក្រុម |
+| Wednesdays, hours and testimonies | ថ្ងៃពុធ ម៉ោង និងទីបន្ទាល់ |
+| Who plays and sings each service | នរណាលេងភ្លេង និងច្រៀងក្នុងកម្មវិធីនីមួយៗ |
+| The musicians and what they play | តន្ត្រីករ និងឧបករណ៍ដែលពួកគេលេង |
+| Our song list | បញ្ជីចម្រៀងរបស់យើង |
+| Services, practice and training | កម្មវិធី ការហាត់សម និងការបណ្តុះបណ្តាល |
+| This week’s schedule | កាលវិភាគសប្តាហ៍នេះ |
+| Rooms, beds and bookings | បន្ទប់ គ្រែ និងការកក់ |

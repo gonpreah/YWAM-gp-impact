@@ -2,7 +2,7 @@
    Also re-checks the dashboard's own drill-down, since it now shares the sheet. */
 /* Paths and the browser binary come from tests/env.mjs so this runs from a clone
    rather than from one machine's scratch directory. */
-import { PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
+import { PUBLIC, tmpDir, CHROMIUM, mmGo } from './env.mjs';
 import { testNow, pinClock, weekOf, quarterOf } from './clock.mjs';
 /* The fixtures below are one year's story up to Q3 — data in weeks 1–20, Q3
    objectives measured by weeks 30/32 — so the page runs on a fixed day in
@@ -286,7 +286,7 @@ need('the bottom bar has no OKR or Rocks tab of its own', !tabs.some(x => /OKR|R
 await page.click('nav.bottom [data-tab="week"]');
 await page.waitForTimeout(1100);
 console.log('\n-- My Ministry → Rocks --');
-await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(400); await page.click('[data-mmtab="okr"]');   // Rocks: the tab's key is still 'okr'
+await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(400); await mmGo(page, 'okr');   // Rocks: the tab's key is still 'okr'
 await page.waitForTimeout(1100);
 const rkHead = await page.$$eval('#main h3, #main h2', e => e.map(x => x.textContent.trim()).filter(x => /Rocks/.test(x)).join(', '));
 need('the tab is headed with the quarter’s Rocks, not OKRs', new RegExp('Q' + Q + ' Rocks').test(rkHead) && !/OKR/.test(await page.$eval('#main', e => e.innerText)), rkHead);

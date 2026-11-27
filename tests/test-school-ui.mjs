@@ -3,7 +3,7 @@
    camera (a file here), takes the roll — once online, once with no connection (kept on the phone, sent
    later) — types a paper test's scores, records a payment and sees the receipt; the dashboard adds it
    up, and YDC's numbers have filled in by themselves. Every name is made up. */
-import { REPO, PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
+import { REPO, PUBLIC, tmpDir, CHROMIUM, mmGo } from './env.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -85,7 +85,12 @@ const noSideways = p => p.evaluate(() => document.documentElement.scrollWidth <=
 {
   const { ctx, page } = await open('lina');
   const tabs = await page.$$eval('.mmTabs .gtTab', b => b.map(x => x.textContent));
-  ok('YDC’s tabs: Today · Students · Tests · Payments · Dashboard · Tasks · Rocks — no Scorecard tab (every number counts itself)', tabs.join() === 'Today,Students,Tests,Payments,Dashboard,Tasks,Rocks', tabs.join());
+  await page.click('.mmTabs [data-mmtab="mmtools"]'); await page.waitForSelector('#mmTools');
+  const tools = await page.$$eval('#mmTools .mmTool b', b => b.map(x => x.textContent));
+  await page.click('.mmTabs [data-mmtab="mmplan"]'); await page.waitForSelector('#mmPlan');
+  const plan = await page.$$eval('[data-mmplan]', b => b.map(x => x.getAttribute('data-mmplan')));
+  await page.click('.mmTabs [data-mmtab="sctoday"]'); await wait(page, 300);
+  ok('YDC: Today · Our tools (Students · Tests · Payments · Dashboard) · Our plan (Rocks · Tasks) — no Scorecard (every number counts itself)', tabs.join() === 'Today,Our tools,Our plan' && tools.join() === 'Students,Tests,Payments,Dashboard' && plan.join() === 'okr,tasks', tabs.join() + ' / ' + tools.join() + ' / ' + plan.join());
   ok('with no classes yet, Today says to set up', !!(await page.$('#schNoClass')) && !!(await page.$('#schSetupGo')));
   await page.click('#schSetupGo'); await wait(page, 400);
   await page.click('#schAddLoc'); await wait(page, 300);
@@ -108,10 +113,10 @@ const noSideways = p => p.evaluate(() => document.documentElement.scrollWidth <=
 /* 2. a teacher adds students, takes a photo, the roll, a test, a payment */
 {
   const { ctx, page } = await open('tom');
-  await page.click('[data-mmtab="scstu"]'); await wait(page, 400);
+  await mmGo(page, 'scstu'); await wait(page, 400);
   ok('a teacher gets no Set up button', !(await page.$('#schSetupGo')));
   for (const [kh, en, sex] of [['សុខា', 'Sokha Test', 'f'], ['', 'Dara Test', 'm'], ['', 'Bopha Test', 'f']]) {
-    await page.click('[data-mmtab="scstu"]'); await wait(page, 300);
+    await mmGo(page, 'scstu'); await wait(page, 300);
     await page.click('#schAddStu'); await wait(page, 300);
     if (kh) await page.fill('#scf_kh', kh);
     await page.fill('#scf_en', en); await page.selectOption('#scf_sex', sex);
@@ -123,7 +128,7 @@ const noSideways = p => p.evaluate(() => document.documentElement.scrollWidth <=
   ok('three students added; a new one opens on their page', (doc().students || []).length === 3 && !!(await page.$('#schStu')));
   // the photo, from the phone's camera (a file here)
   ok('the photo button asks for the camera', await page.$eval('#schPhotoIn', e => e.getAttribute('capture') === 'environment' && e.accept === 'image/*'));
-  await page.click('[data-mmtab="scstu"]'); await wait(page, 300);
+  await mmGo(page, 'scstu'); await wait(page, 300);
   const sokha = doc().students.find(s => s.en === 'Sokha Test');
   await page.click('[data-scstu="' + sokha.id + '"]'); await wait(page, 400);
   await page.setInputFiles('#schPhotoIn', path.join(PUBLIC, 'icon-512.png')); await wait(page, 1800);
@@ -134,7 +139,7 @@ const noSideways = p => p.evaluate(() => document.documentElement.scrollWidth <=
   ok('a faith tick saves with today’s date and counts a salvation', !!doc().students.find(s => s.id === sokha.id).faith.salv && ent('Salvations').reduce((a, r) => a + r.value, 0) === 1);
   await page.screenshot({ path: OUT + '/student.png', fullPage: true });
   // the roll
-  await page.click('[data-mmtab="sctoday"]'); await wait(page, 500);
+  await mmGo(page, 'sctoday'); await wait(page, 500);
   ok('Today: the class, everyone here to start', (await page.$$('#schRoll [data-scmark]')).length === 3 && (await page.$$('#schRoll .schFace.m-p')).length === 3);
   const dara = doc().students.find(s => s.en === 'Dara Test'), bopha = doc().students.find(s => s.en === 'Bopha Test');
   await page.click('[data-scmark="' + dara.id + '"]'); await wait(page, 150);
@@ -159,7 +164,7 @@ const noSideways = p => p.evaluate(() => document.documentElement.scrollWidth <=
   await page.evaluate(() => { gpQueuePut_(schQueueKey_(S.schRoll.classId, S.schRoll.date), 'schoolRoll', [S.auth.user, S.auth.pin, schScope_(), S.schRoll.classId, S.schRoll.date, S.schRoll.marks]); gpQueueFlush(); }); await wait(page, 1500);
   ok('sending it again changes nothing (one roll a class a day)', Object.keys(mem['schoolRoll:' + KEY].rolls).length === 2);
   // a test
-  await page.click('[data-mmtab="sctest"]'); await wait(page, 400);
+  await mmGo(page, 'sctest'); await wait(page, 400);
   await page.click('#schAddTest'); await wait(page, 300);
   await page.fill('#scf_subject', 'Maths'); await page.fill('#scf_outOf', '20'); await page.dispatchEvent('#scf_outOf', 'change'); await wait(page, 300);
   await page.fill('#scsc_' + sokha.id, '18'); await page.fill('#scsc_' + dara.id, '9');
@@ -173,7 +178,7 @@ const noSideways = p => p.evaluate(() => document.documentElement.scrollWidth <=
   ok('a photo of the marked papers is kept with the test', (doc().tests[0].papers || []).length === 1 && !!(await page.$('.schPaper img')));
   await page.click('#schFormCancel'); await wait(page, 300);
   // a payment
-  await page.click('[data-mmtab="scpay"]'); await wait(page, 400);
+  await mmGo(page, 'scpay'); await wait(page, 400);
   const owesText = await page.$eval('#schPay', e => e.innerText);
   ok('who still owes this month: the two paying ones, not the sponsored one', (await page.$$('#schOwes [data-scowe]')).length === 2 && !/Bopha Test/.test(owesText) && /\$10/.test(await page.$eval('#schOwedTotal', e => e.innerText)));
   await page.click('#schOwes [data-scpayfor="' + sokha.id + '"]'); await wait(page, 300);
@@ -184,7 +189,7 @@ const noSideways = p => p.evaluate(() => document.documentElement.scrollWidth <=
   await page.click('#schBack'); await wait(page, 300);
   ok('… and Sokha no longer owes', (await page.$$('#schOwes [data-scowe]')).length === 1 && /\$5/.test(await page.$eval('#schMonthTotal', e => e.innerText)));
   // the report card
-  await page.click('[data-mmtab="scstu"]'); await wait(page, 300);
+  await mmGo(page, 'scstu'); await wait(page, 300);
   await page.click('[data-scstu="' + sokha.id + '"]'); await wait(page, 400);
   await page.click('[data-screport="' + sokha.id + '"]'); await wait(page, 400);
   ok('the report card: attendance and the test', /Maths/.test(await page.$eval('#schReport', e => e.innerText)) && /90%/.test(await page.$eval('#schReport', e => e.innerText)) && !!(await page.$('#schPrint')));
@@ -192,7 +197,7 @@ const noSideways = p => p.evaluate(() => document.documentElement.scrollWidth <=
   await page.click('#schPrint'); await wait(page, 200);
   ok('Print prints the report card alone', await page.evaluate(() => window.__printed === true));
   // events and the dashboard
-  await page.click('[data-mmtab="scdash"]'); await wait(page, 400);
+  await mmGo(page, 'scdash'); await wait(page, 400);
   await page.click('#schAddEvent'); await wait(page, 300);
   await page.fill('#scf_title', 'Christmas party'); await page.click('#schFormSave'); await wait(page);
   ok('a party counts in Parties Thrown', ent('Parties Thrown').some(r => r.value === 1));
@@ -206,7 +211,7 @@ const noSideways = p => p.evaluate(() => document.documentElement.scrollWidth <=
 {
   const { ctx, page } = await open('tom', { km: true });
   ok('in Khmer the tabs are Khmer', /[ក-៿]/.test(await page.$eval('.mmTabs', e => e.innerText)));
-  await page.click('[data-mmtab="scstu"]'); await wait(page, 400);
+  await mmGo(page, 'scstu'); await wait(page, 400);
   ok('a student’s Khmer name shows first in Khmer', /សុខា/.test(await page.$eval('#schStudents', e => e.innerText)));
   ok('fits a phone in Khmer', await noSideways(page));
   await ctx.close();
@@ -230,15 +235,20 @@ const noSideways = p => p.evaluate(() => document.documentElement.scrollWidth <=
   await page.reload({ waitUntil: 'load' }); await page.waitForSelector('nav.bottom button'); await wait(page, 400);
   await page.evaluate(() => { S.view = 'ministry'; render(); window.scrollTo(0, 0); }); await wait(page, 1500);
   const tabs = await page.$$eval('.mmTabs .gtTab', b => b.map(x => x.textContent.trim()));
-  ok('a community school’s tabs: Today, the school tool, the Scorecard', tabs.join('|') === 'Today|Roll|Students|Tests|Payments|Dashboard|Scorecard|Tasks|Rocks', tabs.join('|'));
+  await page.click('.mmTabs [data-mmtab="mmtools"]'); await page.waitForSelector('#mmTools');
+  const tools2 = await page.$$eval('#mmTools .mmTool b', b => b.map(x => x.textContent.trim()));
+  await page.click('.mmTabs [data-mmtab="mmplan"]'); await page.waitForSelector('#mmPlan');
+  const plan2 = await page.$$eval('[data-mmplan]', b => b.map(x => x.getAttribute('data-mmplan')));
+  await page.click('.mmTabs [data-mmtab="mmtoday"]'); await wait(page, 400);
+  ok('a community school: Today · Our tools (the school tool) · Our plan (with the Scorecard)', tabs.join('|') === 'Today|Our tools|Our plan' && tools2.join('|') === 'Roll|Students|Tests|Payments|Dashboard' && plan2.join('|') === 'numbers|okr|tasks', tabs.join('|') + ' / ' + tools2.join('|') + ' / ' + plan2.join('|'));
   ok('it opens on the shared Today — not a strip, not the roll', !!(await page.$('#tdToday:not([data-tdstrip])')) && !(await page.$('#schNoClass')));
   await page.waitForSelector('#tdSchool');
   ok('Today says the school tool is ready, and that the numbers stay as they are', (await page.getAttribute('#tdSchool', 'data-tdschool')) === 'setup' && /Your numbers stay as they are/.test(await page.$eval('#tdSchool', e => e.innerText)));
-  await page.click('[data-mmtab="numbers"]'); await wait(page, 600);
+  await mmGo(page, 'numbers'); await wait(page, 600);
   ok('the Scorecard is as it was: Students Enrolled is still there, with the typed 120', /Students Enrolled/.test(await txt(page)) && /120/.test(await txt(page)));
   await page.click('[data-mmtab="mmtoday"]'); await wait(page, 400);
   await page.click('#tdSchool'); await wait(page, 500);
-  ok('the line opens the roll, which asks for the set-up first', !!(await page.$('#schNoClass')) && !!(await page.$('.mmTabs [data-mmtab="sctoday"].on')));
+  ok('the line opens the roll, which asks for the set-up first', !!(await page.$('#schNoClass')) && !!(await page.$('.mmTabs [data-mmtab="mmtools"].on')) && /Roll/.test(await page.$eval('.mmToolBack', e => e.innerText)));
   /* set up one class and one student through the real handlers, then look again */
   const r = await page.evaluate(async () => {
     const call = (fn, extra) => new Promise(res => run(fn, [S.auth.user, S.auth.pin, { dept: 'Community Service', ministry: 'Ponlork School' }].concat(extra), res, () => res(null)));
@@ -253,7 +263,7 @@ const noSideways = p => p.evaluate(() => document.documentElement.scrollWidth <=
   ok('… and the tool has written no number', !(mem.entries || []).some(e => e.ministry === 'Ponlork School' && e.by === 'tool:school'));
   ok('nothing scrolls sideways', await noSideways(page));
   await page.screenshot({ path: OUT + '/community-school-today.png', fullPage: true });
-  await page.click('[data-mmtab="scdash"]'); await page.waitForSelector('#schCount');
+  await mmGo(page, 'scdash'); await page.waitForSelector('#schCount');
   ok('the Dashboard says the count is off, and names what it would count', (await page.getAttribute('#schCount', 'data-on')) === '0' && /Students Enrolled/.test(await page.$eval('#schCount', e => e.innerText)) && /Off/.test(await page.$eval('#schCount', e => e.innerText)));
   await page.click('#schCountBtn'); await page.waitForSelector('#schCount[data-on="1"]');
   const mine = (mem.entries || []).filter(e => e.ministry === 'Ponlork School' && e.metric === 'Students Enrolled');

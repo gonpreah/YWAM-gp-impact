@@ -6,7 +6,7 @@
    undo, a long press to type; a week typed as one total is kept; offline then back; the Friday wrap; read-only; an
    admin on another ministry; a ministry with its own daily home keeps it with the strip; Khmer; 320px.
    Every name is made up. */
-import { REPO, PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
+import { REPO, PUBLIC, tmpDir, CHROMIUM, mmGo } from './env.mjs';
 import { testNow, pinClock, weekOf, weekYearOf } from './clock.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
@@ -112,7 +112,7 @@ const weekRow = (metric, w) => (mem.entries || []).find((r) => r.ministry === 'S
 console.log('=== My Ministry opens on Today ===');
 {
   const { ctx, page } = await open('dara');
-  ok('Today is the first tab, then the Scorecard, Tasks and Rocks', JSON.stringify(await tabLabels(page)) === JSON.stringify(['Today', 'Scorecard', 'Tasks', 'Rocks']), await tabLabels(page));
+  ok('Today is the first tab, then Our plan (the Scorecard, Rocks and Tasks) — a ministry with no tool of its own has no Our tools', JSON.stringify(await tabLabels(page)) === JSON.stringify(['Today', 'Our plan']), await tabLabels(page));
   ok('… and it is the one that opens', await onTab(page) === 'Today' && !!(await page.$('#tdToday')) && !(await page.$('#scoreBoard')));
   const tiles = await page.$$eval('[data-tdtile]', (e) => e.map((x) => x.getAttribute('data-tdtile')));
   ok('a tile for each daily count, the ones with a goal first, four at most', tiles.length >= 2 && tiles.length <= 4 && tiles[0] === 'Sessions / Leagues Run' && tiles[1] === 'Games Played', tiles);
@@ -198,9 +198,9 @@ console.log('=== My Ministry opens on Today ===');
   await shot(page, SHOTS + '/today-390.png');
 
   console.log('=== the Scorecard is one tap away, as it was ===');
-  await page.click('[data-mmtab="numbers"]'); await page.waitForTimeout(300);
-  ok('the board and the week card', !!(await page.$('#scoreBoard')) && await onTab(page) === 'Scorecard');
-  ok('the tab is kept for this visit only (not on the phone)', await page.evaluate(() => !localStorage.getItem('gp-mm-tab') && JSON.parse(sessionStorage.getItem('gp-mm-tab'))['Youth Education|Sports'] === 'numbers'));
+  await mmGo(page, 'numbers'); await page.waitForTimeout(300);
+  ok('the board and the week card, on Our plan with the Scorecard open — Rocks and Tasks a line each', !!(await page.$('#mmPlan_numbers.open #scoreBoard')) && await onTab(page) === 'Our plan' && (await page.$$eval('[data-mmplan]', (b) => b.map((x) => x.getAttribute('data-mmplan') + ':' + x.getAttribute('aria-expanded')).join())) === 'numbers:true,okr:false,tasks:false', await page.$$eval('[data-mmplan]', (b) => b.map((x) => x.getAttribute('data-mmplan') + ':' + x.getAttribute('aria-expanded')).join()));
+  ok('the tab is kept for this visit only (not on the phone)', await page.evaluate(() => !localStorage.getItem('gp-mm-tab') && JSON.parse(sessionStorage.getItem('gp-mm-tab'))['Youth Education|Sports'] === 'mmplan'));
   await page.click('[data-mmtab="mmtoday"]'); await page.waitForTimeout(300);
 
   console.log('=== offline: kept on the phone, sent once ===');
@@ -271,7 +271,7 @@ console.log('=== the Cafe keeps its own Today, with the strip on top ===');
 {
   const { ctx, page } = await open('cora');
   const tabs = await tabLabels(page);
-  ok('the Cafe’s own tabs, its Today first', tabs[0] === 'Today' && tabs.includes('Till') && tabs.filter((x) => x === 'Today').length === 1, tabs);
+  ok('the Cafe: Today · Our tools · Our plan, its own Today first', JSON.stringify(tabs) === JSON.stringify(['Today', 'Our tools', 'Our plan']), tabs);
   ok('… and it is the Cafe’s tool that opens', !!(await page.$('.mmTabs [data-cafetab="today"].on')));
   /* the strip is ONE compact row (streak · ring · badges · ＋ Win) until it is tapped */
   ok('the shared strip sits on top as one row: streak, ring, badges, ＋ Win', !!(await page.$('#tdToday[data-tdstrip] #tdBarStreak')) && !!(await page.$('#tdBarRing .gRing')) && !!(await page.$('#tdBarBadges')) && !!(await page.$('#tdBarWin')));
@@ -291,7 +291,7 @@ console.log('=== the Cafe keeps its own Today, with the strip on top ===');
   await page.waitForSelector('#tdWinList li');
   ok('a win can be shared from the strip', ((mem['mwins:siemreap'] || {})['Community Service|Cafe'] || []).length === 1);
   await shot(page, SHOTS + '/today-tool-strip.png');
-  await page.click('.mmTabs [data-cafetab="till"]'); await page.waitForTimeout(300);
+  await mmGo(page, 'till'); await page.waitForTimeout(300);
   ok('the strip is only on the first tab', !(await page.$('#tdToday')));
   await ctx.close();
 }
@@ -306,6 +306,7 @@ console.log('=== Khmer, 320px ===');
   ok('no English sentence is left on it', !/Tap a tile|Hold a tile|Share a win|Win of the day|Also today|goals on target|team streak|This week|Our badges|Share\b/.test(all), all.slice(0, 300));
   ok('nothing runs off a 320px phone', (await sideways(page)) <= 0, await sideways(page));
   ok('the tabs fit their row or scroll inside it', await page.$eval('.mmTabs', (e) => e.getBoundingClientRect().right <= window.innerWidth + 1 || getComputedStyle(e).overflowX !== 'visible'));
+  ok('… each tab inside the screen, in Khmer', await page.$$eval('.mmTabs .gtTab', (b) => b.every((x) => x.getBoundingClientRect().right <= window.innerWidth + 1 && /[ក-៿]/.test(x.textContent))));
   await page.click('[data-tdtap="Games Won"]');
   ok('a tap works there too', await num(page, 'Games Won') === '3');
   await page.waitForTimeout(1500);

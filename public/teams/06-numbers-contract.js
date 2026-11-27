@@ -826,7 +826,7 @@ function mmTabsHtml_(tabs, cur, extraClass){
   return '<div class="gtBar mmTabsBar"><div class="gtTabs mmTabs'+(extraClass?' '+extraClass:'')+'" role="tablist">'+tabs.map(function(x){
     return '<button class="gtTab'+(cur===x[0]?' on':'')+'" '+(x[2]||'data-mmtab')+'="'+esc(x[0])+'" role="tab">'+esc(x[1])+'</button>'; }).join('')+'</div></div>';
 }
-var MM_SHELL_KEYS=['mmtoday','numbers','sched','tasks','okr','teams','dtsdash','dtsdb','dtsfin','sctoday','scstu','sctest','scpay','scdash','icwed','icfast','icreq','icdash','wsweek','wsrota','wsteam','wssongs','wsdash'];
+var MM_SHELL_KEYS=['mmtools','mmplan','mmtoday','numbers','sched','tasks','okr','teams','dtsdash','dtsdb','dtsfin','sctoday','scstu','sctest','scpay','scdash','icwed','icfast','icreq','icdash','wsweek','wsrota','wsteam','wssongs','wsdash'];
 function mmTabsFor_(sel, mine, schedH){
   var out=[];
   if(sel.dept==='Community Service' && sel.min==='Cafe'){
@@ -853,6 +853,60 @@ function mmTabsFor_(sel, mine, schedH){
 /* Every time the app is opened a ministry's page opens on its FIRST tab — Today (Nov 2026, Uriah; teams/31-today.js).
    A tab chosen stays for that visit only (sessionStorage, as Campus Leadership's tabs do), per ministry. (The October
    "tool or numbers" flag on the phone, gp-cafe-view, is no longer read.) */
+/* ---------- Three tabs (Nov 2026, Uriah: "how can we simplify them?" — "Do all") ----------
+   Every ministry: Today · Our tools · Our plan. mmTabsFor_ is still the truth of what a ministry has (its keys, their
+   attributes); the shell only groups them: the first is Today, 'numbers' / 'okr' / 'tasks' are the three folding
+   sections of Our plan, and every other key is a big button on Our tools that opens its pane in place under one
+   "← Our tools" line. So S.mmTab='okr', S.cafeTab='till', the tab kept for the visit and every deep link still land
+   where they did: the section opened (and scrolled to), the tool's pane opened. Campus Leadership's rows and the
+   Finances office (the finance tool) keep their own tabs. */
+var MM_PLAN_KEYS=['numbers','okr','tasks'];
+var MM_TOOL_INFO={
+  till:['🧾','Take orders and count the day’s sales'], rota:['🗓️','Who is on which shift'], week:['📈','The week’s cups, sales and best sellers'], setup:['⚙️','Menu, checklists and shifts'],
+  sctoday:['✅','Take today’s roll'], scstu:['🎒','Every student’s page'], sctest:['📝','Test scores and passing'], scpay:['💵','Who has paid'], scdash:['📊','Enrolment, attendance and results'],
+  dtsdb:['🗂️','Speakers, students, events and outreach'], dtsfin:['💰','Fees, income, expenses and the budget'],
+  icfast:['🕊️','Plan the fast and its gatherings'], icreq:['🙏','Prayer needs sent to the team'], icdash:['📊','Wednesdays, hours and testimonies'],
+  wsrota:['🗓️','Who plays and sings each service'], wsteam:['🎸','The musicians and what they play'], wssongs:['🎵','Our song list'], wsdash:['📊','Services, practice and training'],
+  sched:['📅','This week’s schedule'], goHosp:['🛏️','Rooms, beds and bookings']
+};
+function mmSimple_(sel){ return sel.dept!==BL_DEPT && !(sel.dept==='Skills Training' && sel.min==='Finances' && finCanEditClient_()); }
+function mmPlanMem_(){ if(!S.mmPlanOpen){ try { S.mmPlanOpen=JSON.parse(sessionStorage.getItem('gp-mm-plan')||'{}') || {}; } catch(e){ S.mmPlanOpen={}; } } return S.mmPlanOpen; }
+function mmPlanSet_(k, on){ var m=mmPlanMem_(); m[k]=!!on; try { sessionStorage.setItem('gp-mm-plan', JSON.stringify(m)); } catch(e){} }
+/* open: the one asked for; what was opened earlier in the visit; and, arriving on Our plan itself, the first (the Scorecard) */
+function mmPlanIsOpen_(k, cur, first){ var m=mmPlanMem_(); if(cur===k) return true; return m[k]!==undefined ? !!m[k] : (cur==='mmplan' && k===first); }
+function mmPlanSum_(k, sel){
+  try {
+    if(k==='okr'){ var l=rocksFor_(S.me.campus, sel.dept, sel.min, 'now'); return l.length ? gpT('{d} of {n} on track',{d:rkOnTrack_(l), n:l.length}) : t('None yet'); }
+    if(k==='tasks'){ if(!S.gpt) return ''; var ids=gptLists_({ dept:sel.dept, min:sel.min }).map(function(L){ return L.id; });
+      return gpT('{n} open',{n:(S.gpt.tasks||[]).filter(function(x){ return ids.indexOf(x.listId)>-1 && !x.done && x.status!=='declined'; }).length}); }
+    if(k==='numbers'){ var data=tdData_(sel); if(!data) return ''; var R=tdRingCalc_(sel, data, tdMetrics_(sel)); return R.goals ? R.line : ''; }
+  } catch(e){}
+  return '';
+}
+/* Our plan: the Scorecard, the Rocks and the Tasks, stacked — each a line until opened (which are open is kept for the visit) */
+function mmPlanHtml_(sel, cur, keys, paneOf){
+  var NAMES={ numbers:['📊',t('Scorecard')], okr:['🪨',t('Rocks')], tasks:['✅',t('Tasks')] };
+  return '<div class="mmPlan" id="mmPlan">'+keys.map(function(k){
+    var open=mmPlanIsOpen_(k, cur, keys[0]), sum=mmPlanSum_(k, sel);
+    if(open) mmPlanMem_()[k]=true;
+    return '<section class="mmPlanSec'+(open?' open':'')+'" id="mmPlan_'+k+'" data-mmplansec="'+k+'"><button type="button" class="mmPlanHead" data-mmplan="'+k+'" aria-expanded="'+open+'" aria-controls="mmPlanBody_'+k+'">'+
+      '<span class="mmPlanIc" aria-hidden="true">'+NAMES[k][0]+'</span><b>'+esc(NAMES[k][1])+'</b>'+(sum ? '<span class="mmPlanSum">'+esc(sum)+'</span>' : '')+'<span class="mmPlanChev" aria-hidden="true">'+(open ? '▾' : '▸')+'</span></button>'+
+      (open ? '<div class="mmPlanBody" id="mmPlanBody_'+k+'">'+paneOf(k)+'</div>' : '')+'</section>'; }).join('')+'</div>';
+}
+/* Our tools: one big button per tool page, each with its own attribute (data-cafetab, data-mmtab, an id) so the tool's handlers work as before */
+function mmToolsHtml_(tools){
+  return '<div class="mmTools" id="mmTools">'+tools.map(function(x){ var info=MM_TOOL_INFO[x[0]] || ['🧰',''];
+    return '<button type="button" class="mmTool" '+(x[2]||'data-mmtab')+'="'+esc(x[0])+'"><span class="mmToolIc" aria-hidden="true">'+info[0]+'</span><b>'+esc(x[1])+'</b>'+(info[1] ? '<small>'+esc(t(info[1]))+'</small>' : '')+'</button>'; }).join('')+'</div>';
+}
+function mmToolBackHtml_(name){ return '<div class="mmToolBack"><button type="button" class="linkbtn" id="mmToolBack" data-mmtab="mmtools">← '+esc(t('Our tools'))+'</button><b>'+esc(name)+'</b></div>'; }
+/* after a draw: a section asked for from elsewhere (S.mmTab='okr' — the bell, a link, search) is scrolled to, once */
+function mmPlanAfter_(){
+  var sec=S.mmPlanWant && document.getElementById('mmPlan_'+S.mmPlanWant), stamp=mmTabKey_()+'|'+S.mmPlanWant;
+  if(!sec || S.view!=='ministry'){ if(!document.getElementById('mmPlan')) S.mmPlanDone=''; return; }
+  if(S.mmPlanDone===stamp) return; S.mmPlanDone=stamp;
+  if(S.mmPlanWant==='numbers' && sec===sec.parentNode.firstElementChild) return;
+  setTimeout(function(){ var el=document.getElementById(sec.id); if(el && el.scrollIntoView) el.scrollIntoView({ block:'start' }); }, 40);
+}
 function mmTabKey_(){ return (S.mmBrowseDept||'')+'|'+(S.mmBrowseMinistry||''); }
 function mmTabKeep_(k){ try { var m=JSON.parse(sessionStorage.getItem('gp-mm-tab')||'{}'); m[mmTabKey_()]=k; sessionStorage.setItem('gp-mm-tab', JSON.stringify(m)); } catch(e){} }
 function mmTabKept_(){ try { var m=JSON.parse(sessionStorage.getItem('gp-mm-tab')||'{}'); return m[mmTabKey_()] || ''; } catch(e){ return ''; } }
@@ -928,9 +982,17 @@ function myMinistryHtml(){
     return h+'<div class="mmPane">'+ph+orgCltCardHtml_(S.me.campus)+leadRocksDashHtml_()+leadSectionHtml_()+'</div></div>';
   }
   var schedH = (typeof dutyHtml==='function') ? schedMinistryHtml_(sel.dept, sel.min) : '';
-  var tabs=mmTabsFor_(sel, mine, schedH), cur=mmCurTab_(sel, tabs);
+  var tabs=mmTabsFor_(sel, mine, schedH), simple=mmSimple_(sel), top='', planKeys=[], tools=[];
+  if(simple){
+    planKeys=MM_PLAN_KEYS.filter(function(k){ return tabs.some(function(x){ return x[0]===k; }); });
+    tools=tabs.slice(1).filter(function(x){ return MM_PLAN_KEYS.indexOf(x[0])===-1; });
+  }
+  var cur=mmCurTab_(sel, simple ? tabs.concat(tools.length ? [['mmtools']] : [], [['mmplan']]) : tabs);
+  if(simple) top = cur===tabs[0][0] ? 'today' : (cur==='mmplan' || planKeys.indexOf(cur)>-1) ? 'plan' : 'tools';
+  S.mmPlanWant = top==='plan' && cur!=='mmplan' ? cur : '';
   if(sel.dept==='Community Service' && sel.min==='Cafe' && cur!=='numbers' && MM_SHELL_KEYS.indexOf(cur)===-1) S.cafeTab=cur;
-  h+=mmTabsHtml_(tabs, cur);
+  if(simple) h+=mmTabsHtml_([[tabs[0][0], t('Today'), tabs[0][2]]].concat(tools.length ? [['mmtools', navLabel_('Our tools')]] : [], [['mmplan', navLabel_('Our plan')]]), top==='today' ? tabs[0][0] : top==='tools' ? 'mmtools' : 'mmplan', 'mmTop3');
+  else h+=mmTabsHtml_(tabs, cur);
   var pane='';
   var mmTop=(sel.dept==='Skills Training' && sel.min==='Hospitality' && canHospClient_()) ? hospChangesHtml_(S.hospNews, false) : '';   // a team's new dates, someone who left (Nov 2026)
   S.mmSkip=autoMetricsFor(S.me.campus, sel.dept, sel.min);   // what counts itself (GPDTS) is not "logged" by hand
@@ -940,6 +1002,8 @@ function myMinistryHtml(){
   else if(WS_TABS.indexOf(cur)>-1) pane=wsPaneHtml_(cur);
   else if(SCH_TABS.indexOf(cur)>-1) pane=schPaneHtml_(cur);
   else if(ICP_TABS.indexOf(cur)>-1) pane=icpPaneHtml_(cur);
+  else if(cur==='mmtools') pane=mmToolsHtml_(tools);
+  else if(top==='plan') pane='';   // built below, once the Scorecard's pane can be asked for
   else if(cur==='okr') pane=rocksTabHtml_(sel);
   else if(cur==='tasks'){ S.gptFrom='ministry'; pane=gptPageHtml_({ dept:sel.dept, min:sel.min }, true); }
   else if(cur==='sched') pane=schedH;
@@ -949,8 +1013,9 @@ function myMinistryHtml(){
       '<button class="btn" id="goTeamsDb" style="margin-top:0">🗂️ '+esc(t('Open the Teams Database'))+'</button></div>';
   }
   else if(cur==='fdash' || cur==='finput' || cur==='fmins') pane=fin2FrameHtml_(cur==='finput' ? 'input' : cur==='fmins' ? 'mins' : 'dash');
-  else if(cur!=='numbers') pane=cafeHtml_(true);   // the Cafe runs its day here — open, sell, close, the rota — and its numbers fill themselves in
-  else {
+  else if(cur!=='numbers' && top!=='plan') pane=cafeHtml_(true);   // the Cafe runs its day here — open, sell, close, the rota — and its numbers fill themselves in
+  var numbersPane=function(){
+    var pane='';
     /* The week's numbers — status, who is responsible, and the boxes themselves, already open when
        the week has nothing in yet — then the at-a-glance figures. */
     if(sel.dept==='Community Service' && sel.min==='Cafe') pane+='<p class="hint">'+esc(t('When the cafe tool is used, these numbers fill themselves in from it.'))+'</p>';
@@ -993,7 +1058,14 @@ function myMinistryHtml(){
         esc(t('Add, rename or remove metrics; move a count to monthly or quarterly')),
         function(){ return metricEditorHtml_(S.me.campus, sel.dept, sel.min); })+'</div>';
     }
-  }
+    return pane;
+  };
+  if(top==='plan') pane=mmPlanHtml_(sel, cur, planKeys, function(k){
+    if(k==='okr') return rocksTabHtml_(sel);
+    if(k==='tasks'){ S.gptFrom='ministry'; return gptPageHtml_({ dept:sel.dept, min:sel.min }, true); }
+    return numbersPane(); });
+  else if(cur==='numbers') pane=numbersPane();
+  else if(top==='tools' && cur!=='mmtools'){ var tl=tabs.filter(function(x){ return x[0]===cur; })[0]; pane=mmToolBackHtml_(tl ? tl[1] : '')+pane; }
   return h+'<div class="mmPane">'+mmTop+pane+'</div></div>';
 }
 

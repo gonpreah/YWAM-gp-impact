@@ -4,7 +4,7 @@
    publishing, the Numbers tab asking only for what the rota can't count. Someone on the team sees the line
    on My Home's card; the bell says it the day before; anyone on the campus reads the published week from
    ☰ → Worship rota. A phone at 320px doesn't slide sideways. Every name here is made up. */
-import { REPO, PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
+import { REPO, PUBLIC, tmpDir, CHROMIUM, mmGo, mmMap } from './env.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -77,13 +77,13 @@ async function toWorship(page, tab) {
   await page.evaluate(t => { S.view = 'ministry'; S.mmBrowseDept = 'Youth Education'; S.mmBrowseMinistry = 'Worship'; if (t) { S.mmTab = t; S.mmTabTouched = true; } render(); window.scrollTo(0, 0); }, tab || '');
   await page.waitForTimeout(800);
 }
-async function tab(page, key) { await page.click('[data-mmtab="' + key + '"]'); await page.waitForTimeout(700); }
+async function tab(page, key) { await mmGo(page, key); await page.waitForTimeout(700); }
 
 console.log('=== the worship team ===');
 let { ctx, page } = await open('wren');
 await toWorship(page);
-const tabs = await page.$$eval('.mmTabs [data-mmtab]', els => els.map(e => e.getAttribute('data-mmtab')).join(' '));
-ok('Worship’s tabs: This week · Rota · Team · Songs · Dashboard · Scorecard · Tasks · Rocks', tabs === 'wsweek wsrota wsteam wssongs wsdash numbers tasks okr', tabs);
+const tabs = await mmMap(page);
+ok('Worship: Today (This week) · Our tools (Rota · Team · Songs · Dashboard) · Our plan (Scorecard · Rocks · Tasks)', tabs.top.join() === 'Today,Our tools,Our plan' && tabs.tools.join(' ') === 'wsrota wsteam wssongs wsdash' && tabs.plan.join(' ') === 'numbers okr tasks' && !!(await page.$('.mmTabs .gtTab.on[data-mmtab="wsweek"]')), JSON.stringify(tabs));
 ok('This week opens first, the four services and how many are filled', await page.locator('.wsSvc').count() === 4 && /0 of 4 services filled/.test(await page.textContent('#wsStatus')));
 
 await tab(page, 'wssongs');

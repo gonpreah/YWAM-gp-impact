@@ -5,7 +5,7 @@
    staff side for a DTS staff member: only the DTS tab, "You see: DTS", ＋ Add a contact, Follow-ups
    due, a contact with no account (the link to apply, their details), and logging a contact with
    how. Admin → Portal access: the "Sees" line and changing it. */
-import { PUBLIC, tmpDir, CHROMIUM } from './env.mjs';
+import { PUBLIC, tmpDir, CHROMIUM, mmGo, mmMap } from './env.mjs';
 import { chromium } from 'playwright';
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 
@@ -101,8 +101,8 @@ await p.addInitScript(() => localStorage.setItem('gp-staff', JSON.stringify({ us
 await p.goto(`http://localhost:${PORT}/teams.html`); await p.waitForSelector('nav.bottom button', { timeout: 15000 });
 await p.waitForTimeout(600);
 await p.click('nav.bottom [data-tab="ministry"]'); await p.waitForTimeout(800);
-const tabs = await p.$$eval('.mmTabs .gtTab', b => b.map(x => x.getAttribute('data-mmtab')));
-ok('GPDTS has five tabs: Dashboard, Database, Finances, Tasks, Rocks — no Scorecard tab', JSON.stringify(tabs) === '["dtsdash","dtsdb","dtsfin","tasks","okr"]', JSON.stringify(tabs));
+const tabs = await mmMap(p);
+ok('GPDTS: Today (its Dashboard) · Our tools (Database, Finances) · Our plan (Rocks, Tasks) — no Scorecard', JSON.stringify(tabs.top) === '["Today","Our tools","Our plan"]' && JSON.stringify(tabs.tools) === '["dtsdb","dtsfin"]' && JSON.stringify(tabs.plan) === '["okr","tasks"]' && !!(await p.$('.mmTabs .gtTab.on[data-mmtab="dtsdash"]')), JSON.stringify(tabs));
 ok('the Dashboard ends with the school’s finances: lecture budget, received, spent, left; outreach received', (await p.$eval('#dtsPane, #main', e => e.querySelector('.card:last-of-type') ? 1 : 1)) && !!(await p.$('#dtsFinDash')) &&
   /Budget\s*\$2,620/.test(await p.$eval('#dtsFinDash', e => e.innerText)) && /Left in the budget\s*\$2,620/.test(await p.$eval('#dtsFinDash', e => e.innerText)), await p.$eval('#dtsFinDash', e => e.innerText.replace(/\n/g, ' / ')));
 ok('it opens on the Dashboard: where everyone is', !!(await p.$('#dtsPipe')) && /Reaching out/.test(await p.$eval('#dtsPipe', e => e.textContent)));
@@ -121,7 +121,7 @@ ok('and a year-by-year table', !!(await p.$('#dtsYears')) && (await p.$$eval('#d
 /* ---- the Database: one school at a time, a page of tiles, one part open at a time ---- */
 /* back to the tiles (from a student: first to the list), then into a part */
 const goPart = async (sec) => { for (let i = 0; i < 3 && !(await p.$('#dtsHome0')); i++) { await p.click('#dtsHome'); await p.waitForTimeout(200); } await p.click('[data-dtssec="' + sec + '"]'); await p.waitForTimeout(250); };
-await p.click('[data-mmtab="dtsdb"]'); await p.waitForTimeout(300);
+await mmGo(p, 'dtsdb'); await p.waitForTimeout(300);
 ok('the follow-up due opens that record in the portal', (await p.getAttribute('[data-dtsdue="c_kh"]', 'href')) === 'portal.html?open=c_kh' && /Call her pastor/.test(await p.$eval('#dtsDue', e => e.textContent)));
 ok('a way into the DTS list in the portal', (await p.getAttribute('#dtsOpenPortal', 'href')) === 'portal.html?what=dts');
 ok('the portal’s DTS list and ＋ Add a contact sit at the top of Database', (await p.$eval('#dtsPortalBar', e => e.innerText)).includes('Add a contact'));
@@ -273,7 +273,7 @@ await p.click('#dtsResSave'); await p.waitForTimeout(400);
 ok('a resource with its link', dbSaves.some(x => x[0] === 'resource' && x[1].url === 'https://example.org/c') && (await p.getAttribute('#dtsResources a', 'href')) === 'https://example.org/c');
 /* ---- Finances: income and expenses, lecture and outreach apart ---- */
 await p.evaluate(() => window.scrollTo(0, 0));
-await p.click('.mmTabs [data-mmtab="dtsfin"]'); await p.waitForTimeout(300);
+await mmGo(p, 'dtsfin'); await p.waitForTimeout(300);
 ok('Finances opens on the lecture phase: budget, received, spent, left', /Budget\s*\$2,620/.test(await p.$eval('#dtsFinTiles', e => e.innerText)) && (await p.$eval('[data-dtsfinphase="lecture"]', e => e.classList.contains('on'))) &&
   JSON.stringify(await p.$$eval('#dtsFinSecs [data-dtsfinsec]', b => b.map(x => x.getAttribute('data-dtsfinsec')))) === '["overview","budget","students","income","expenses"]');
 ok('… income and expenses stand apart, under "Enter money", each with its total (Nov 2026, Andrew)', JSON.stringify(await p.$$eval('.dtsFinEnter [data-dtsfinsec]', b => b.map(x => x.getAttribute('data-dtsfinsec') + ':' + x.className.split(' ').filter(c => c === 'in' || c === 'out').join()))) === '["income:in","expenses:out"]' && /Enter money/.test(await p.$eval('#dtsFinSecs', e => e.textContent)) && /\$/.test(await p.$eval('.dtsFinEnterBtn.in', e => e.innerText)));
