@@ -37,7 +37,8 @@ const H = (p, s) => crypto.createHash('sha256').update(s + ':' + String(p), 'utf
 const mk = (o) => Object.assign({ active: true, campus: 'siemreap', dept: 'Youth Education', ministry: 'Sports', role: 'Staff', staffType: 'campus', country: 'Cambodia', surveyToken: 'tok_' + o.id }, o, { pinSalt: o.id, pinHash: H('1234', o.id) });
 mem.staff = [
   mk({ id: 'kim', name: 'Kim Coach', username: 'kim', leads: ['Youth Education|Sports'] }),
-  mk({ id: 'dara', name: 'Dara Sok', username: 'dara' }),
+  mk({ id: 'dara', name: 'Dara Sok', username: 'dara', leads: ['Youth Education|Sports'] }),   // Rocks are for those who lead (Nov 2026)
+  mk({ id: 'nel', name: 'Nel Member', username: 'nel' }),
   mk({ id: 'dee', name: 'Dee Director', username: 'dee', dept: 'Campus Leadership', ministry: 'Campus Director' }),
   mk({ id: 'oli', name: 'Oli Overseer', username: 'oli', dept: 'Campus Leadership', ministry: 'Youth Education' }),
   mk({ id: 'ada', name: 'Ada Min', username: 'ada', dept: 'Skills Training', ministry: 'Technical', isAdmin: true }),
@@ -147,8 +148,8 @@ console.log('=== a ministry’s Scorecard ===');
   await ctx.close();
 }
 {
-  const { ctx, page } = await open('dara');
-  ok('someone who is not the leader sees the board but cannot set goals', !!(await page.$('#scoreBoard')) && !(await page.$('#sbdEdit')));
+  const { ctx, page } = await open('nel');
+  ok('someone who is not the leader sees the board but cannot set goals — and has no Rocks or Tasks there', !(await page.$('[data-mmplan="okr"]')) && !(await page.$('[data-mmplan="tasks"]')) && !!(await page.$('#scoreBoard')) && !(await page.$('#sbdEdit')));
   await ctx.close();
 }
 

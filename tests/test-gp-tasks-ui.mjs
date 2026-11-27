@@ -28,7 +28,7 @@ const H = (p, s) => crypto.createHash('sha256').update(s + ':' + String(p), 'utf
 const mk = o => Object.assign({ active: true, campus: 'siemreap', dept: 'Community Service', ministry: 'Cafe',
   role: 'Staff', staffType: 'campus', country: 'Cambodia', surveyToken: 'tok_' + o.id }, o, { pinSalt: o.id, pinHash: H('1234', o.id) });
 mem.staff = [
-  mk({ id: 'c1', name: 'Cora Cafe', username: 'cora', email: 'c@e.com' }),
+  mk({ id: 'c1', name: 'Cora Cafe', username: 'cora', email: 'c@e.com', leads: ['Community Service|Cafe'] }),   // the ministry's Tasks are for those who lead (Nov 2026)
   mk({ id: 'c2', name: 'Kanha Cafe', username: 'kanha', email: 'k@e.com' }),
   mk({ id: 'h1', name: 'Hana Host', username: 'hana', email: 'h@e.com', dept: 'Skills Training', ministry: 'Hospitality' }),
   mk({ id: 'l1', name: 'Uriah Lead', username: 'uriah', email: 'u@e.com', dept: 'Campus Leadership', ministry: 'Campus Director' })
@@ -343,7 +343,7 @@ const kInboxId = (mem) => ((mem.gpTasks.lists || []).find(l => l.scope === 'pers
 }
 /* ---------- Kanha in My Ministry: the Cafe's Tasks tab ---------- */
 {
-  const { ctx, page } = await open('kanha');
+  const { ctx, page } = await open('cora');
   await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(600);
   ok('My Ministry: one row of tabs with Our plan (Tasks is in it); the Cafe opens on its tool', !!(await page.$('.mmTabs [data-mmtab="mmplan"]')) && !!(await page.$('.mmTabs .gtTab.on[data-cafetab="today"]')) && !(await page.$('#mtFold')));
   await mmGo(page, 'tasks'); await page.waitForTimeout(900);

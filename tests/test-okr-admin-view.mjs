@@ -29,7 +29,7 @@ const ROCKS = () => [
   rock('k3', 'siemreap', 'Skills Training', '', 'The other campus’s rock', 'on')
 ];
 const ADMIN = { id: 'st_admin', name: 'Ada Admin', username: 'ada', campus: 'poipet', dept: 'Community Service', ministry: 'Outreach Teams', role: '', photo: '', mentorId: '', isAdmin: true };
-const STAFF = { id: 'st_staff', name: 'Dara Sok', username: 'dara', campus: 'poipet', dept: 'Community Service', ministry: 'Outreach Teams', role: '', photo: '', mentorId: '', isAdmin: false };
+const STAFF = { id: 'st_staff', name: 'Dara Sok', username: 'dara', campus: 'poipet', dept: 'Community Service', ministry: 'Outreach Teams', role: '', photo: '', mentorId: '', isAdmin: false, leads: ['Community Service|Outreach Teams'] };   // Rocks are for those who lead (Nov 2026); a member has none on the ministry page
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra) {
@@ -70,7 +70,7 @@ const text = (p) => p.$eval('#main', e => e.innerText);
 {
   const { p, errs } = await open(STAFF);
   const t = await text(p);
-  ok('a non-admin sees their own ministry’s rock', t.includes('My own ministry’s rock'), t.slice(0, 200));
+  ok('a non-admin who leads the ministry sees its rock', t.includes('My own ministry’s rock'), t.slice(0, 200));
   ok('a non-admin gets no cross-department section at all', !(await p.$('#adminRocks')) && !t.includes('Every department’s rocks'));
   ok('and never sees another department’s rock, nor the other campus’s', !t.includes('A different department’s rock') && !t.includes('The other campus’s rock'));
   ok('non-admin: no console/page errors', errs.length === 0, errs.slice(0, 3).join(' | '));
