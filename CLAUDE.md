@@ -55,7 +55,7 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   (personality, Library, papers, guest, YWAM GP & the board, report, first 30 days, prayer,
   support raising, reminders, Khmer review) · `04-ministry-strengths.js` · `05-admin-hr.js` ·
   `06-numbers-contract.js` · `07-health-leave.js` · `08-team-profile.js` · `09-finance.js`
-  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app); later ones (12-tasks … 30-boardroom) load before 11. `finance.js` (public/,
+  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app); later ones (12-tasks … 31-today) load before 11. `finance.js` (public/,
   shared like taxonomy.js) reads the reports; `vendor/pdfjs/` is pdf.js, loaded on demand. **One global scope**, exactly as when it was one inline
   script: any function may call any other, but code that RUNS while a file loads (not
   inside a function) may only use what that file or an earlier one defines. Add new code to
@@ -356,6 +356,7 @@ history is orphaned (`test-numbers-people.mjs` §5 covers the move).
   `#mmPickFind` when there are more than 8, `data-mmpick="dept|min"` rows, the current one `.on`).
   No chips, no Department/Ministry selects any more.
 - *(Nov 2026: the tabs read **Scorecard** for Numbers and **Rocks** for OKRs; the keys `numbers` / `okr` are unchanged.)*
+- *(Nov 2026: most ministries' first tab is **Today** (`mmtoday`), and the tab is no longer remembered on the phone — every open lands on the first tab, a chosen tab stays for the visit (sessionStorage). See "My Ministry opens on Today".)*
 - **One row of tabs per ministry** (`mmTabsHtml_` → `.gtBar.mmTabsBar .gtTabs.mmTabs .gtTab`,
   `mmTabsFor_`): most ministries Numbers · (Schedule) · Tasks · OKRs; the Cafe Today · Till · Rota ·
   Week (· Set up) · Numbers · Tasks · OKRs — its own keys keep `data-cafetab` so `cafeHtml_(true)`
@@ -1761,6 +1762,90 @@ we can give to ministries and donors, the government Ministry, and to donors." T
   one ministry's page.
 - tests/test-quarter-report.mjs (server, 92), tests/test-quarter-report-ui.mjs (browser, 83; `QR_SHOTS=<folder>` saves
   pictures). Khmer: docs/khmer-needed.md §145. sw.js SHELL v34.
+
+## My Ministry opens on Today (teams/31-today.js, Nov 2026, Uriah)
+"My ministry page could have a fun and simple way to use it daily, and gamify the inputting of data as a tool for each
+ministry … a fun game they're doing each day, while also getting all the data needed for our board, donors and the
+government. And when they go to My Ministry they wouldn't be overwhelmed either." Step 1 of that: one shared screen.
+**The rule of the game**: rewards are for showing up and logging honestly — never for the size of a number — and faith
+numbers are counted but never part of it (no tile, no ring, no celebration, no badge). **Game points are unchanged.**
+- **The faith list is ONE regex**, `GP_FAITH_RE` in taxonomy.js (salvation, baptis, gospel, healing, discipl, church,
+  prayer, testimon, worship, bible, evangel, congregation); the quarterly report's `QR_FAITH` is the same object.
+- **A new first tab, Today** (`mmtoday`, in `MM_SHELL_KEYS`, `mmTabsFor_`'s default branch → `todayPaneHtml_(sel)`,
+  `#tdToday[data-tdkey]`): every ministry with no daily home of its own — Today · Scorecard · (Schedule) · Tasks · Rocks.
+  **A ministry's page opens on its first tab every time the app is opened**: `mmTabKeep_` / `mmTabKept_` are
+  sessionStorage now (`gp-mm-tab`, per ministry — a tab chosen stays for that visit only, as Campus Leadership's do).
+  The old `gp-cafe-view=numbers` on a phone still opens the Scorecard (many tests use it to say "the Scorecard").
+  **The ministries with their own daily home keep it first** (`tdToolMin_`: the Cafe, Outreach Teams, Intercession,
+  Worship, GPDTS, the school tool) and get **the strip** on top of that first tab (`todayStripHtml_`,
+  `#tdToday[data-tdstrip]`, through `mmTop`): streak, ring, win of the day, badges — no counters (their numbers are their
+  tool's), and only when that ministry's payload is on the phone (`S.ministry`, or `S.oversee[min]` once loaded).
+  Campus Leadership's rows and the Finances office are untouched. The Scorecard, the week card and the entry form are
+  as they were, one tap away.
+- **The screen, top to bottom** (`tdInnerHtml_`; data = `tdData_(sel)`: `S.ministry` for your own, else `S.oversee[min]`):
+  1. **Tap counters** (`#tdTiles`, `tdMetrics_(sel).taps`): a tile (`[data-tdtile]`) per weekly-cadence `sum` metric
+     that no tool fills and that isn't a faith number — the ones with a Scorecard goal first, then taxonomy order,
+     `TD_TILES` (4), "n more…" (`#tdMore`). The tile shows today's count (`.tdNum`) and the week's (`.tdWkN`, with the
+     goal). A tap (`[data-tdtap]`) adds 1, − (`[data-tdminus]`, never below 0) takes one off, ✎ (`[data-tdedit]`) or a
+     long press (`TD_HOLD_MS`) opens a box to type today's number (`#tdTypeBox`, `#tdTypeOk`, `S.td.edit`).
+  2. **The Friday wrap** (`tdWrapHtml_`, `#tdWrap`; Friday to Sunday, for whoever can log, when the ministry has weekly
+     numbers — `latest` / `avg`, `M.levels`): "Wrap up the week" (`#tdWrapOpen`) → the weekly form's own rows
+     (`kpiWeekRowHtml_`, carried-forward values and all, its attribute renamed `data-tdweek` so the Scorecard's handlers
+     stay out) → `#tdWrapSave` → **`gpSaveMinistry_`** with `saveMyMinistry` / `saveMinistryFor` (the same save and the
+     same offline queue — there is no second path) → `#tdWrapDone` "Week n complete" with `gpConfetti` once. No weekly
+     numbers → no card. The week counts as wrapped once any weekly number is in (a box may be left empty).
+  3. **The ring** (`#tdRing`): "d of n goals on target" from the Scorecard's goals and maths (`sbdGoals_`, `sbdOn_`),
+     never counting a goal on a faith number; with no goals, "d of n days logged this week", and for whoever may set
+     them (`canEditMetricsClient_`) "Set this week's goals" (`#tdSetGoals` → the Scorecard with its goals open).
+  4. **The team streak** (`#tdStreak`, `#tdStreakN[data-n]`, seven `.tdDot[data-tddot]` on / off / today / closed /
+     future): days in a row anyone logged anything for the ministry. Sundays and national holidays
+     (`leaveHolidaySet_(S.trips.holidays)`) never break it; today isn't counted against it until it's over.
+     Active days (`tdActive_`): the daily counts' dates, the payload's `active`, the wins' days, and what is waiting on
+     this phone. **A win shared counts as showing up** — otherwise a ministry with only weekly numbers could never
+     have a streak.
+  5. **Also today** (`#tdAlso`, `[data-tdalso]`): the faith daily counts as plain number boxes, saved on change by the
+     same path. Nothing moves, pops or rings for them.
+  6. **Win of the day** (`#tdWin`, `#tdWinText` ≤200, `#tdWinSave`, the feed `#tdWinList` — first name and day, three
+     then "Show all"; ✕ on your own, through gpAsk_), with "No child's full name."
+  7. **Badges** (`#tdBadges`, folded; `tdBadges_`): the MINISTRY's, worked out on the page, nothing stored — first full
+     week, 4 and 13 full weeks in a row (a week is "full" when anything was logged for it, `tdWeekIn_`), a 10- and a
+     30-day streak, goals set, 5 wins shared. A new one pops once per phone (`gp-td-badges`; the first look at a
+     ministry only remembers what it has). Weeks are counted within this week year, streaks within ~110 days.
+- **Saving a count** (`tdSet_` → `tdFlush_`): the tile repaints at once (`tdPaint_` — text only, **never `render()`**;
+  `tdRefresh_` rebuilds only `#tdToday` after a save, and not while someone is typing in it), and `TD_SAVE_MS` (800 ms)
+  after the last tap the DAY's absolute value goes through the existing daily path — `saveMyKpiDay` for your own
+  ministry, `saveKpiDayFor` for another — so three taps are one save and a resend changes nothing. What hasn't reached
+  the server is `gp-td-pending` on the phone (user + dept + ministry + date + metric → value, the last wins): sent one
+  day of one ministry at a time, oldest first, on the timer, on `online`, and when Today is next drawn; meanwhile
+  `#tdNote` says "Saved on this phone". This is NOT the ministry-numbers queue (`gpSaveMinistry_`), which must not carry
+  daily counts.
+  **A week typed as one total is kept**: the server makes a week the sum of its days the moment a day is saved, so when
+  the week's figure is more than its days (someone typed it on the Scorecard), the first tap also puts that difference
+  on the week's Monday (a second pending day, sent first) — on a Monday it folds into today.
+- **Read-only** for anyone who can open a ministry but not log for it (`tdCanLog_` = `canLogForClient_`): the figures
+  and wins, no taps, boxes or wrap (`#tdReadOnly`). (Today every option in the picker is one `canLogFor_` allows, so
+  this is the page's guard; the server refuses regardless.) A ministry with no daily counts gets one calm line
+  (`#tdCalm`), the ring, streak, win and the Friday wrap.
+- **Server** (api.js "My Ministry → Today"): `getMyMinistry` and `getMinistryFor` add, through `withToday_`, **`active`**
+  (the days in the last `TODAY_ACTIVE_DAYS` 100 on which a weekly row of the ministry was written — each row now keeps
+  `days`, the last seven days it was written on, `rowDays_` in `saveMinistryInternal_`, so a tool's daily use counts;
+  rows from before only have their `updated` day; dates only) and **`wins`**. Blob `mwins:<campus>` = {'Dept|Ministry':
+  [{id, text, by, name (first name), date, at}]} (in `BOOT_KEYS`, both campuses; no call of its own on open),
+  `mutateKey_`: `saveMinistryWin(user, pin, dept, ministry, text)` — `canLogFor_`; one line (control characters and
+  line breaks to spaces), cut at `WIN_MAX` 200; `WIN_DAY_CAP` 10 a person a ministry a day (`too_many`); every save
+  drops what is older than `WIN_KEEP_DAYS` 60 for the whole campus; `deleteMinistryWin(…, id)` — the writer, the
+  ministry's leader, an admin. What is sent is `{id, text, name, date, at, mine}` — never the writer's id — and only
+  inside that ministry's payload, so only to people who can open it. Both are in `DEMO_WRITES` with `saveKpiDayFor`.
+- **The quarter's story** (29-report.js `qrFormHtml_`): above Highlights, "This quarter's wins — tap one to add it"
+  (`tdReportWinsHtml_`, `#tdQrWins`, `[data-qrwin]`, bound in `bindToday_`) — for the writer's own campus and only when
+  that ministry's payload is already on the phone (their own ministry, or one they opened this visit); read-only reuse.
+  **TODO**: wins are kept 60 days, so a quarter's first weeks may be gone by the time its story is written, and a
+  leader whose main ministry is another one sees none until they open that ministry — fix both by keeping wins a
+  quarter and sending them with the report's own data (`qreport`), if the hook proves worth it.
+- **Next steps not built** (Uriah's plan beyond this one): per-ministry games on top of this screen; wins in the
+  campus feed; the previous week's wrap offered on Monday.
+- tests/test-ministry-today.mjs (server), tests/test-ministry-today-ui.mjs (the real api.js; the page's clock pinned to
+  this week's Wednesday and Friday). Khmer: docs/khmer-needed.md §151. sw.js SHELL v37.
 
 ## The Advisory Board: invite link, oversight and its own room (teams/30-boardroom.js, Nov 2026, Uriah)
 "An easy link to send our board people to sign up with their roles and be able to view all of the base app activity,

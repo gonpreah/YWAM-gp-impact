@@ -101,6 +101,7 @@ ok('a line says it is a copy, from when, and that saves will send later', /No co
 /* ---------- 4. numbers typed offline ---------- */
 await page.click('nav.bottom [data-tab="ministry"]'); await page.waitForTimeout(800);
 ok('the offline line is on My Ministry too', !!(await page.$('#offlineBanner')));
+await page.click('.mmTabs [data-mmtab="numbers"]'); await page.waitForTimeout(300);   // My Ministry opens on Today (31-today.js); the week's boxes this part is about are on the Scorecard
 await page.screenshot({ path: OUT + '/offline-ministry.png' });
 if (!(await page.$('[data-kpiweek]'))) { await page.click('#kpiInputBtn').catch(() => {}); await page.waitForTimeout(300); }
 const boxes = await page.$$eval('[data-kpiweek]', els => els.map(e => e.getAttribute('data-kpiweek')));
