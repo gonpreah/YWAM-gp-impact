@@ -6782,6 +6782,38 @@ Campus Leadership arranges a quarter on the whiteboard; "Make Q1 2027 live" turn
 | Someone else is saving — try again. | មានអ្នកផ្សេងកំពុងរក្សាទុក — សូមព្យាយាមម្តងទៀត។ |
 | That quarter is over. | ត្រីមាសនោះបានកន្លងផុតហើយ។ |
 
+## 150. Rocks with a slider; Campus Leadership tidied (My Ministry → Rocks, Campus Leadership’s Overview, My week and Board, Nov 2026)
+
+Each rock now has a 0–100% slider (“How far along”), and a team’s rocks say “{p}% done” together. On Campus Leadership’s page the next meeting is one card with “Open the meeting”; “My week” puts each kind’s count on its button and folds the reflection, partners and base plants into one line each (“None yet”, “{n} in planning”, “{n} · {d} to reach” — partners, and how many are due a contact). The Board tab says “Every meeting” instead of “Every Monday”, since the meeting day can be any day. On GPDTS → Finances, “Enter money” is the small heading over the Income and Expenses buttons.
+
+| English | Khmer (draft) |
+|---|---|
+| Tap one as it happens. The number is this week’s, and it becomes your leadership numbers. | ចុចមួយនៅពេលវាកើតឡើង។ លេខនេះជារបស់សប្ដាហ៍នេះ ហើយវាក្លាយជាលេខដឹកនាំរបស់អ្នក។ |
+| {n} · {d} to reach | {n} · {d} នាក់ត្រូវទាក់ទង |
+| None yet | មិនទាន់មាន |
+| {n} in planning | {n} កំពុងរៀបចំផែនការ |
+| Open the meeting | បើកកិច្ចប្រជុំ |
+| Every meeting | រាល់កិច្ចប្រជុំ |
+| Every meeting’s agenda | របៀបវារៈរាល់កិច្ចប្រជុំ |
+| How far along? | ដំណើរការដល់ណាហើយ? |
+| {p}% done | រួចរាល់ {p}% |
+| Enter money | បញ្ចូលប្រាក់ |
+| The few things that must get done this quarter. Slide each one to show how far along it is, and say if it is on track. | រឿងមួយចំនួនដែលត្រូវតែធ្វើឲ្យរួចក្នុងត្រីមាសនេះ។ រំកិលនីមួយៗ ដើម្បីបង្ហាញថាវាដំណើរការដល់ណាហើយ ហើយប្រាប់ថាវាដើរត្រូវផ្លូវឬអត់។ |
+
+## 149. The week’s board: All time (Team → 🏆 This week, My Home’s points line, Nov 2026)
+
+The fourth tab on the week’s board — every point since the board began, added up — and the line under my own figures. “All time” is a short tab label beside People, Readers and Ministries, so keep it short. {d} is a date such as “16 Nov”.
+
+| English | Khmer (draft) |
+|---|---|
+| All time | គ្រប់ពេល |
+| points all time | ពិន្ទុសរុបគ្រប់ពេល |
+| Every point since the board began on {d} — {n} weeks, this one included. | ពិន្ទុទាំងអស់ចាប់តាំងពីតារាងចាប់ផ្ដើមនៅ {d} — {n} សប្ដាហ៍ រួមទាំងសប្ដាហ៍នេះ។ |
+| Nobody has points yet. Tick a habit and be the first. | មិនទាន់មាននរណាមានពិន្ទុទេ។ គូសទម្លាប់មួយ ហើយក្លាយជាអ្នកទីមួយ។ |
+| {n} more have no points yet. | {n} នាក់ទៀតមិនទាន់មានពិន្ទុទេ។ |
+| {n} points this week | {n} ពិន្ទុសប្ដាហ៍នេះ |
+| All time keeps adding up. Each week still starts again on Monday. | ពិន្ទុគ្រប់ពេលនៅតែបូកបន្ថែមជានិច្ច។ សប្ដាហ៍នីមួយៗនៅតែចាប់ផ្ដើមឡើងវិញនៅថ្ងៃចន្ទ។ |
+
 ## 148. YWAM GP’s own job titles, and a job in YWAM GP itself (☰ → YWAM GP, Admin → a person → Positions, My Ministry, Team → Structure, Nov 2026)
 
 For admins (the job-title editor on the YWAM GP page, the “Works for YWAM GP” tick under Positions, Loose ends) and for the few people whose job is YWAM GP itself: their My Ministry page, their line on their profile, and the quiet line under a campus’s chart. “Job title” is មុខតំណែងការងារ; a title an admin types is shown as typed and is not in this list. “lives in {campus}” takes the campus’s short name (Siem Reap).

@@ -103,7 +103,7 @@ await page.click('.lwSeg [data-lwtab="board"]'); await page.waitForTimeout(500);
 console.log('=== the Monday meeting board ===');
 await page.click('[data-leadtab="board"]'); await page.waitForTimeout(300);
 ok('the standing agenda items for every Monday', /Department and ministry updates/.test(await page.$eval('#leadStanding', e => e.textContent)) && /Events coming up/.test(await page.$eval('#leadStanding', e => e.textContent)));
-ok('the next meeting is Monday Oct 12', /Next meeting\s*Monday Oct 12/i.test(await page.$eval('.leadHead', e => e.textContent)));
+ok('the next meeting is the meeting day, Tuesday Oct 13 — not a Monday (Nov 2026)', /Next meeting\s*Tuesday Oct 13/i.test(await page.$eval('.leadHead', e => e.textContent)));
 const cols = await page.$$eval('[data-leadcol]', c => c.map(x => x.getAttribute('data-leadcol') + ':' + x.querySelectorAll('[data-leadcard]').length));
 ok('three columns with their cards', cols.join() === 'agenda:1,doing:1,done:1', cols.join());
 const heads = await page.$$eval('.leadColHead', h => h.map(x => x.textContent.replace(/\s+/g, ' ').trim()));

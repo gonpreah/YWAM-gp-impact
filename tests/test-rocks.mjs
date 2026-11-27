@@ -98,6 +98,7 @@ const byId = (list, id) => list.filter(r => r.id === id)[0];
 let R = boot.rocks;
 const cafe = byId(R, 'rk_o_o_cafe');
 ok('this quarter’s objective is a rock in the same campus and department, for 2026 Q4', cafe && cafe.campus === 'siemreap' && cafe.dept === 'Community Service' && cafe.year === 2026 && cafe.q === 4 && cafe.title === 'Make the cafe a place people meet Jesus' && cafe.fromOkr === 'o_cafe', cafe);
+ok('… and its slider starts where the objective stood (the three at 60, 50 and 40 = 50%)', cafe && cafe.pct === 50, cafe && cafe.pct);
 ok('… its key results are the note, each with its progress (120 of 200 cups = 60%; 1 of 2; 40%)', cafe && cafe.note === '• Serve 200 cups — 60%\n• Train two baristas — 50%\n• A prayer corner — 40%', cafe && cafe.note);
 ok('… on track while under 100%, and clearly the Cafe’s (its only linked number is the Cafe’s)', cafe && cafe.status === 'on' && cafe.ministry === 'Cafe');
 ok('an objective at 100% is a rock that is done', byId(R, 'rk_o_o_done') && byId(R, 'rk_o_o_done').status === 'done' && byId(R, 'rk_o_o_done').ministry === '');
@@ -183,13 +184,27 @@ for (let i = 0; i < 12; i++) r = await call('saveRock', P('lee').concat([{ title
 ok('ten a person a team a quarter at most', r.err === 'too_many' && (await rocksOf('lee')).filter(x => x.dept === 'Skills Training' && x.owner === 'st_l').length === 10);
 r = await call('saveRock', P('cam').concat([{ title: 'x'.repeat(300), note: 'y'.repeat(3000), ...Q }]));
 ok('a title is cut at 120 and a note at 1200', r.ok && byId(r.rocks, r.saved).title.length === 120 && byId(r.rocks, r.saved).note.length === 1200);
+/* how far along (Nov 2026, Andrew: "slider bars like we have for the health check in") */
+r = await call('saveRock', P('cam').concat([{ title: 'Paint the cafe', ...Q }]));
+const kp = r.saved;
+ok('a new rock starts at 0%', byId(r.rocks, kp).pct === 0, byId(r.rocks, kp));
+r = await call('saveRock', P('cam').concat([{ id: kp, title: 'Paint the cafe', ...Q, pct: 43 }]));
+ok('a slide saves to the nearest 5', r.ok && byId(r.rocks, kp).pct === 45, byId(r.rocks, kp));
+r = await call('saveRock', P('cam').concat([{ id: kp, title: 'Paint the cafe', ...Q, note: 'Two walls done' }]));
+ok('a save without a figure keeps it', byId(r.rocks, kp).pct === 45 && byId(r.rocks, kp).note === 'Two walls done');
+r = await call('saveRock', P('cam').concat([{ id: kp, title: 'Paint the cafe', ...Q, status: 'done' }]));
+ok('marked done with no figure: 100%', byId(r.rocks, kp).pct === 100 && byId(r.rocks, kp).status === 'done');
+r = await call('saveRock', P('cam').concat([{ id: kp, title: 'Paint the cafe', ...Q, pct: 250 }]));
+ok('a figure outside 0–100 is not taken', byId(r.rocks, kp).pct === 100, byId(r.rocks, kp));
+r = await call('saveRock', P('cam').concat([{ id: kp, title: 'Paint the cafe', ...Q, pct: 'lots', status: 'on' }]));
+ok('… nor a word; out of done keeps the figure it had', byId(r.rocks, kp).pct === 100 && byId(r.rocks, kp).status === 'on', byId(r.rocks, kp));
 
 console.log('=== who reads ===');
 const forCam = await rocksOf('cam'), forPat = await rocksOf('pat');
 ok('every staff member reads every rock on both campuses', forCam.length === forPat.length && forCam.some(x => x.campus === 'poipet') && forPat.some(x => x.dept === 'Campus Leadership' && x.campus === 'siemreap'));
 ok('an applicant’s sign-in gets none', (await call('getMyBoot', P('appy'))).rocks === undefined);
 const org = await call('getYwamGp', P('bo'));
-ok('a board member gets title and status for the quarter report — no notes, no owners', org.ok && org.rocks.length === forCam.length && Object.keys(org.rocks[0]).sort().join() === 'campus,dept,id,ministry,q,status,title,year');
+ok('a board member gets title and status for the quarter report — no notes, no owners', org.ok && org.rocks.length === forCam.length && Object.keys(org.rocks[0]).sort().join() === 'campus,dept,id,ministry,pct,q,status,title,year');
 ok('staff do not get a second copy with the YWAM GP page', (await call('getYwamGp', P('cam'))).rocks === undefined);
 ok('nothing of it is on the public roster', !/Fix the grinder|New menu board/.test(JSON.stringify(await call('teamRoster', []))));
 

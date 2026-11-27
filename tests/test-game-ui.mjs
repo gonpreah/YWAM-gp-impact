@@ -91,6 +91,8 @@ mem.staff.push(mk({ id: 'st7', name: 'Ev Sixth', username: 'ev', email: 'e@e.com
 mem.lastSeen = { started: '2026-01-01', seen: {}, days: { st1: [day(today, -1), today], st5: [day(today, -2), day(today, -1), today], st2: [today], st7: [today], st6: [today] } };
 mem.staff.find(x => x.id === 'st5').libRead = { 'atomic-habits': today };
 /* Mark ticks two habits today as well, so he is second on any day of the week — on a Monday his yesterday is last week's (it failed on 23 Nov 2026) */
+/* All time: a banked first week where Ev did a lot — she leads all time, though not this week */
+mem.gameWeeks = { weeks: { '2026-11-16': { st7: 500, st1: 40 } } };
 mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: true }, updated: nowIso }, { staffId: 'st7', date: today, habits: { bible: true }, updated: nowIso }, { staffId: 'st1', date: today, habits: { bible: true, prayer: true }, updated: nowIso }];
 
 /* ---------- 1. My Home ---------- */
@@ -128,6 +130,22 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   ok('Readers: books this year, and what a book is worth', /Di Sok/.test(bk) && /📚 1/.test(bk) && /30 points/.test(bk) && !/Mark Hill/.test(bk), bk.slice(0, 120));
   await page.click('[data-gametab="min"]'); await page.waitForTimeout(200);
   ok('ministries by average', /Average points a person/.test(await main(page)) || /No ministry has two people/.test(await main(page)));
+  /* All time (Nov 2026, Andrew) */
+  const meAll = await page.$eval('#gameMeAll', e => e.innerText.replace(/\s+/g, ' ')).catch(() => '');
+  const wkMark = await page.evaluate(() => S.game.me.pts);
+  ok('my card has my all-time points and place', new RegExp('🏆 ' + (40 + wkMark) + ' points all time · #2').test(meAll) || /points all time/.test(meAll) && await page.evaluate(() => S.game.me.all >= 40 + S.game.me.pts), meAll);
+  await page.click('#gameTabAll'); await page.waitForTimeout(200);
+  const at = await page.$$eval('#gameAllTime .gameRow', els => els.map(e => e.innerText.replace(/\s+/g, ' ').trim()));
+  ok('All time: Ev leads with her banked week, though not first this week', /Ev Sixth/.test(at[0]) && /🥇/.test(at[0]) && /\b5\d\d\b/.test(at[0]) && !/Ev Sixth/.test(rows[0]), at.join(' / '));
+  ok('… each row says this week too; mine is marked', /points this week/.test(at[0]) && await page.$('#gameAllTime .gameRow.me') !== null);
+  const atTxt = await page.$eval('#gameAllTime', e => e.innerText);
+  ok('… and says since when', /since the board began on 16 Nov/.test(atTxt) && /this one included/.test(atTxt), atTxt.slice(0, 120));
+  ok('… the foot says all time keeps adding up', /All time keeps adding up/.test(await main(page)));
+  ok('… no sideways scroll', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+  if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/alltime.png', fullPage: true });
+  await page.click('[data-gametab="people"]'); await page.waitForTimeout(200);
+  await page.click('#gameMeAll'); await page.waitForTimeout(200);
+  ok('the line on my card opens All time', await page.$('#gameAllTime') !== null);
   await page.click('[data-gametab="people"]'); await page.waitForTimeout(200);
   await page.click('[data-gamecampus="poipet"]'); await page.waitForSelector('#gameList', { timeout: 5000 }); await page.waitForTimeout(200);
   const pp = await main(page);
@@ -255,6 +273,10 @@ mem.dailyLogs = [{ staffId: 'st5', date: today, habits: { bible: true, prayer: t
   const txt = await main(page);
   ok('Khmer on the board', !/active this week|People\b|Ministries/.test(txt), '');
   ok('fits a 320px phone', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+  await page.click('#gameTabAll'); await page.waitForTimeout(200);
+  const kat = await main(page);
+  ok('All time in Khmer, and it fits', !/All time|since the board began|this week/.test(kat) && KH.test(kat) && await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), kat.slice(0, 160));
+  if (process.env.GP_SHOT) await page.screenshot({ path: process.env.GP_SHOT + '/alltime-km.png', fullPage: true });
   await ctx.close();
 }
 {

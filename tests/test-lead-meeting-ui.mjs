@@ -94,7 +94,7 @@ const overflow = (page) => page.evaluate(() => document.documentElement.scrollWi
 console.log('=== the way in ===');
 const { ctx, page } = await open('dee', { tab: 'base' });
 await page.waitForSelector('#lbMeetGo', { timeout: 8000 });
-ok('the Overview has a way in: the next meeting and who leads, beside the tiles that were there', /Next meeting/.test(await txt(page, '#lbMeetGo')) && /Nobody is down to lead yet/.test(await txt(page, '#lbMeetGo')) && !!(await page.$('#lbOkrTile')) && !!(await page.$('#lbBoardTile')));
+ok('the Overview has a way in: one card with the next meeting and who leads it, beside the tiles that were there', /Next meeting/.test(await txt(page, '#lbTues')) && /Nobody yet/.test(await txt(page, '#lbTues')) && !!(await page.$('#lbTues #lbMeetGo')) && (await page.$$('#lbMeetGo')).length === 1 && !!(await page.$('#lbOkrTile')) && !!(await page.$('#lbBoardTile')));
 let mark = sent.length;
 await page.click('#lbMeetGo'); await page.waitForSelector('#lmStart', { timeout: 8000 });
 ok('it opens Board → Meeting, the first of four tabs — the board one tap away', (await page.$$eval('[data-leadtab]', b => b.map(x => x.getAttribute('data-leadtab')).join())) === 'meet,board,tues,notes' && !!(await page.$('[data-leadtab="meet"].on')));

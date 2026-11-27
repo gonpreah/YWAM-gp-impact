@@ -93,12 +93,16 @@ const txt = p => p.$eval('#main', e => e.innerText);
   await page.click('[data-lwkind="gospel"]'); await page.waitForTimeout(200);
   await page.fill('#lwQty', '2.5'); await page.click('#lwSave'); await page.waitForTimeout(1200);
   ok('gospel hours count as hours', /2\.5h/.test(await page.$eval('.lwTotals', e => e.innerText)) && ent('Campus Director', 'Hours Sharing the Gospel').value === 2.5);
+  ok('… the rest folded, each with a line saying where it stands', (await page.$$('details.lwFold:not([open])')).length >= 2);
+  await page.click('[data-lwfold="partners"] > summary'); await page.waitForTimeout(150);
   await page.fill('#lwPName', 'Grace Church'); await page.fill('#lwPOrg', 'Siem Reap'); await page.click('#lwPAdd'); await page.waitForTimeout(1200);
   await page.click('[data-lwconnect]'); await page.waitForTimeout(1200);
   ok('a partner, and "Connected" logs a partner connection', /Partner connection · Grace Church/.test(await txt(page)) && ent('Campus Director', 'Partner Connections').value === 1);
+  if (await page.$('[data-lwfold="reflect"]:not([open])')) { await page.click('[data-lwfold="reflect"] > summary'); await page.waitForTimeout(150); }
   await page.click('[data-lwrate="vision|8"]'); await page.click('[data-lwrate="comms|7"]'); await page.click('[data-lwrate="partners|9"]');
   await page.click('#lwRateSave'); await page.waitForTimeout(1200);
   ok('the Director’s reflection fills the three scores', ent('Campus Director', 'Base Vision (1-10)').value === 8 && ent('Campus Director', 'Partner Relationships (1-10)').value === 9);
+  if (await page.$('[data-lwfold="plants"]:not([open])')) { await page.click('[data-lwfold="plants"] > summary'); await page.waitForTimeout(150); }
   await page.fill('#lwBName', 'YWAM Battambang'); await page.fill('#lwBPlace', 'Battambang'); await page.click('#lwBAdd'); await page.waitForTimeout(1200);
   ok('a base plant on the list counts as in planning', /YWAM Battambang/.test(await txt(page)) && ent('Campus Director', 'Base Plants in Planning').value === 1);
   await page.evaluate(() => window.scrollTo(0, 0)); await page.waitForTimeout(200);
@@ -183,6 +187,8 @@ const txt = p => p.$eval('#main', e => e.innerText);
 {
   const { ctx, page } = await open('cd', { lw: 'base' });
   ok('a Director’s Overview: the departments’ pulse and who leads what', !!(await page.$('#leadBase')) && (await page.$$('.pulseCard')).length >= 3 && /Clear leaders/.test(await txt(page)));
+  ok('Clear leaders is one folded line, with its count', !(await page.$eval('#lbLeaders', d => d.open)) && /Clear leaders\s*1 \/ \d+/.test(await page.$eval('#lbLeaders > summary', e => e.innerText)));
+  await page.click('#lbLeaders > summary'); await page.waitForTimeout(150);
   ok('… with the ministries that have no leader yet', (await page.$$('.lbDeptLine')).length >= 3 && /\b1 \/ \d+/.test(await page.$eval('.lbBig', e => e.innerText)));
   ok('… and the money ahead, a tile that opens the Finances tab (no leadership code any more)', !!(await page.$('.mmTile[data-lwtab="money"]')) && !(await page.$('#lmUnlock')) && !(await page.$('.lmTable')));
   await page.click('#lbGoTues'); await page.waitForTimeout(800);

@@ -772,8 +772,11 @@ body.libReading nav.bottom { display:none; } body.libReading { overflow:hidden; 
 .mmSheet .gtPickIt.on { color:var(--accent); font-weight:700; }
 .mmTabsBar { margin:0 0 12px; }
 .mmTabs .gtTab { padding:9px 10px 8px; font-size:14px; }
-.mmTabs.lwSeg { display:flex; width:auto; }
-.mmTabs.lwSeg .gtTab { white-space:nowrap; }
+/* Campus Leadership's six tabs, every one in sight (Nov 2026, Andrew: "too much going on" — the last was cut off and
+   had to be scrolled to): two rows of three on a phone, one row from 700px */
+.mmTabs.lwSeg { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:2px 4px; width:100%; overflow:visible; }
+.mmTabs.lwSeg .gtTab { white-space:nowrap; text-align:center; justify-content:center; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+@media (min-width:700px) { .mmTabs.lwSeg { display:flex; } .mmTabs.lwSeg .gtTab { flex:1 1 0; } }
 /* the tab's content: sections under hairlines, not boxes — the cards keep their padding rhythm, lose their frames */
 .mmPane > .card, .mmPane > .accCard, .mmPane > .gtList { background:none; border:0; border-radius:0; box-shadow:none; padding:0 0 14px; margin:0 0 14px; border-bottom:1px solid var(--line); }
 .mmPane > .card:last-child, .mmPane > .accCard:last-child { border-bottom:0; }
@@ -3213,6 +3216,8 @@ body.findOn { overflow:hidden; }
 .gameStat { flex:1 1 0; min-width:0; text-align:center; }
 .gameStat b { display:block; font-size:22px; font-weight:800; }
 .gameStat small { display:block; color:var(--muted); font-size:12px; }
+.gameMeAll { display:block; width:100%; margin:10px 0 0; padding:4px 0; background:none; border:0; text-align:center; font:inherit; font-size:14px; color:var(--muted); cursor:pointer; }
+.gameMeAll b { color:var(--ink); }
 .gameHow { margin-top:10px; border-top:1px solid var(--border); padding-top:8px; }
 .gameHow summary { cursor:pointer; font-weight:700; font-size:14px; }
 .gamePart { display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--border); }
@@ -3222,7 +3227,7 @@ body.findOn { overflow:hidden; }
 .gamePartText b { display:block; font-size:14px; }
 .gamePartText small { display:block; color:var(--muted); font-size:12px; }
 .gamePartN { font-weight:800; }
-.gameTabs { margin:12px 0 8px; }
+.gameTabs { margin:12px 0 8px; display:grid; grid-template-columns:repeat(auto-fit, minmax(118px, 1fr)); width:100%; max-width:560px; }
 .gameRow { display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px solid var(--border); cursor:pointer; }
 .gameRow:first-of-type { border-top:0; }
 .gameRow.min { cursor:default; }
@@ -3446,7 +3451,8 @@ body.findOn { overflow:hidden; }
 .myHero .heroRow .whoCap { color:var(--onDarkFaint); opacity:1; }
 
 /* ---------- My Home's card as widgets (02-goals-okrs.js heroWidgetsHtml_, Nov 2026) ---------- */
-.heroWidgets { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; margin:4px 0 6px; }   /* a bit of air between the widgets (Andrew, Nov 2026) */
+.heroWidgets { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:16px 14px; margin:8px 0 10px; }   /* air between the widgets (Andrew, Nov 2026: "a bit more gaps") */
+@media (max-width:359px) { .heroWidgets { gap:12px 10px; } }
 .heroW { display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0; padding:10px 2px 8px; border:0; border-radius:14px; background:rgba(255,255,255,.07); color:var(--onDark); font-family:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
 .heroW:active { opacity:.75; }
 .hero .heroWRing.gRing { width:46px; height:46px; }
@@ -4138,9 +4144,17 @@ body.sbDragging, body.sbDragging * { cursor:grabbing !important; }
    Rocks tab and the Scorecard add. Theme tokens only. */
 .rkGroup .lmRock:first-of-type { border-top:0; }
 .rkGroup .goalCardTitle { overflow-wrap:anywhere; min-width:0; }
-.rkCount { white-space:nowrap; flex:0 0 auto; }
+.rkCount { flex:0 1 auto; text-align:right; }
 .rkNote { white-space:pre-line; overflow-wrap:anywhere; }
 .rkNoteFold > summary { cursor:pointer; list-style:none; overflow-wrap:anywhere; } .rkNoteFold > summary::-webkit-details-marker { display:none; }
+/* a rock's progress: the weekly goals' slider (.gSlide), the figure beside it; read-only a thin bar (Nov 2026, Andrew) */
+.rkPctRow { display:flex; align-items:center; gap:10px; margin:6px 0 2px; }
+.rkPctRow .rkSlide { flex:1 1 auto; min-width:0; }
+.rkPctVal { flex:0 0 3.2em; text-align:right; font-weight:800; font-size:15px; font-variant-numeric:tabular-nums; }
+.rkPctRead { display:flex; align-items:center; gap:10px; margin:6px 0 2px; }
+.rkPctBar { flex:1 1 auto; height:8px; border-radius:99px; background:var(--border); overflow:hidden; }
+.rkPctBar i { display:block; height:100%; border-radius:99px; }
+.rkPctRead b { flex:0 0 3.2em; text-align:right; font-size:14px; font-variant-numeric:tabular-nums; }
 .rkNoteFold > summary .hint { white-space:nowrap; }
 .rkBadge { cursor:default; display:inline-block; }
 .rkAdd { margin:10px 0 0; } .rkAdd input { font-size:16px; }
@@ -4226,3 +4240,42 @@ button.bdLine { cursor:pointer; }
 .gprRow .linkbtn.inline{width:auto;padding:4px 0;margin:0}
 .gprRow .gprDel{color:var(--bad)}
 .orgGpHere{overflow-wrap:anywhere}
+
+/* Campus Leadership's Overview and My week, tidied (Nov 2026, Andrew: "clean up … easier to navigate") */
+.mmPane .mmGrid.lbGlance { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; overflow:visible; border-bottom:0; }
+.mmPane .mmGrid.lbGlance .mmTile { min-width:0; max-width:none; border:1px solid var(--line); border-radius:12px; padding:10px 12px; }
+.lbMeetBtns { margin-top:10px; gap:8px; }
+.lbMeetBtns .btn { flex:1 1 0; margin:0; }
+.lbLeadersFold > summary { cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px; margin:0; }
+.lbLeadersFold > summary::-webkit-details-marker { display:none; }
+.lbLeadersFold > summary::after { content:'›'; margin-left:auto; color:var(--muted); font-size:20px; transition:transform .15s; }
+.lbLeadersFold[open] > summary::after { transform:rotate(90deg); }
+.lbLeadersFold[open] > summary { margin-bottom:8px; }
+.lbLeadersN { font-weight:800; }
+.lwKinds.lwTotals .lwKind { display:flex; align-items:center; gap:8px; text-align:left; }
+.lwKind .lwKindName { flex:1 1 auto; min-width:0; font-size:13.5px; }
+.lwKind .lwTotal { flex:0 0 auto; min-width:26px; padding:2px 7px; border-radius:99px; background:var(--surface2); color:var(--muted); font-size:13px; text-align:center; }
+.lwKind.has .lwTotal { background:var(--accent); color:var(--accentInk); }
+.lwFold { margin:14px 0 0; }
+.lwFold > summary { cursor:pointer; list-style:none; display:flex; align-items:baseline; gap:8px; }
+.lwFold > summary::-webkit-details-marker { display:none; }
+.lwFold > summary h3 { margin:0; }
+.lwFold > summary .lwFoldSub { margin-left:auto; color:var(--muted); font-size:13px; }
+.lwFold > summary::after { content:'›'; color:var(--muted); font-size:20px; transition:transform .15s; }
+.lwFold[open] > summary::after { transform:rotate(90deg); }
+.lwFold[open] > summary { margin-bottom:8px; }
+
+/* GPDTS → Finances: the two places money is typed in, apart from the pages to read (Nov 2026, Andrew) */
+.dtsFinLook { margin-bottom:12px; }
+.dtsFinEnter { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin:0 0 14px; }
+.dtsFinEnter.one { grid-template-columns:minmax(0,1fr); }
+.dtsFinEnterBtn { display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-width:0; padding:12px 14px; border-radius:14px; border:1.5px solid var(--border2); background:var(--surface); color:var(--ink); font:inherit; text-align:left; cursor:pointer; }
+.dtsFinEnterBtn .dtsFinEnterName { font-weight:800; font-size:15px; }
+.dtsFinEnterBtn .dtsFinEnterSum { font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.dtsFinEnterBtn.in { border-color:var(--good); background:var(--goodSoft); }
+.dtsFinEnterBtn.out { border-color:var(--bad); background:var(--badSoft); }
+.dtsFinEnterBtn.on { box-shadow:0 0 0 2px var(--accent); }
+.dtsFinEnterBtn.in.on { box-shadow:0 0 0 2px var(--good); }
+.dtsFinEnterBtn.out.on { box-shadow:0 0 0 2px var(--bad); }
+.dtsFinInCard { border-left:4px solid var(--good); }
+.dtsFinOutCard { border-left:4px solid var(--bad); }

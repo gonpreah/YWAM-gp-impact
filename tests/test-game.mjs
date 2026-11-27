@@ -77,7 +77,7 @@ ok('books: a count this week and this year, never which', row('c1').books === 1 
 ok('a book is 30 (Andrew, Nov 2026), still the biggest single thing; the everyday things as balanced', P.book === 30 && P.bookCap === 90 && P.habit === 3 && P.habitDayCap === 15 && P.oneOnOne === 20 && P.goalsSet === 15 && P.goalsPct === 25 && P.taskCap === 40 && P.santa === 5 && P.santaDayCap === 3 && P.santa * P.santaDayCap < P.book && ['open', 'habit', 'goalsSet', 'goalsPct', 'task', 'numbers', 'oneOnOne', 'holiday', 'santa'].every(k => P[k] < P.book), P);
 ok('the streak bonus is in my parts; a 1-day streak gets none', g.me.parts.streak === Math.round(coraBase * P.streakBonus) && row('c2').streak === 1 && row('c2').pts === P.open + P.habitDayCap, [g.me.parts, row('c2')]);
 ok('active counts', g.of === 4 && g.active === 3 && g.activeToday === 3, [g.of, g.active, g.activeToday]);
-ok('a row is only id, points, streak, week, rank and book counts', g.people.every(p => Object.keys(p).sort().join() === 'books,booksYear,id,pts,rank,streak,week'), g.people[0]);
+ok('a row is only id, points, streak, week, rank, book counts and the all-time points and place', g.people.every(p => Object.keys(p).sort().join() === 'all,allRank,books,booksYear,id,pts,rank,streak,week'), g.people[0]);
 ok('nothing of what anyone did leaves', !/bible|prayer|atomic|Cups|tok-c3/.test(JSON.stringify(g)));
 ok('the ministry board needs two people', g.ministries.length === 1 && g.ministries[0].ministry === 'Cafe' && g.ministries[0].n === 4 && g.ministries[0].active === 3, g.ministries);
 
@@ -151,6 +151,42 @@ const pp = await call('getGame', ['cora', '1234', 'poipet']);
 ok('another campus can be read', pp.ok && pp.campus === 'poipet' && pp.people.length === 1 && pp.me === null, pp);
 const boot = await call('getMyBoot', ['cora', '1234']);
 ok('the boot carries it', boot.ok && boot.game && boot.game.ok && boot.game.me.pts === row('c1').pts, boot.game && boot.game.me);
+
+console.log('5. all time (Nov 2026, Andrew: "can you also show an all time board?")');
+{
+  const lastMon = day(monday, -7), lastSun = day(monday, -1);
+  /* Kanha last week: opened two days, two habits on the first — 10 + 6, no streak by its Sunday */
+  mem.lastSeen.days.c2 = [lastMon, day(lastMon, 1), today];
+  mem.dailyLogs.push({ staffId: 'c2', date: lastMon, habits: { bible: true, prayer: true }, updated: nowIso });
+  /* Pich (Poipet) last week, and someone archived: neither is on Siem Reap's board */
+  mem.lastSeen.days.p1 = [lastMon, today];
+  delete mem.gameWeeks;
+  const weeks = (() => { let n = 0, m = '2026-11-16'; while (m <= monday) { n++; m = day(m, 7); } return n; })();
+  const a = await call('getGame', ['kanha', '1234', 'siemreap']);
+  const k = a.people.find(p => p.id === 'c2');
+  ok('all time = last week (worked out) + this week', k && k.all === 16 + k.pts && a.me.all === k.all, [k, a.me && a.me.all]);
+  ok('counted from the week the board began, this week included', a.allTime && a.allTime.from === '2026-11-16' && a.allTime.weeks === weeks, a.allTime);
+  ok('an all-time place for everyone, by all-time points', a.people.every(p => p.allRank >= 1) && a.people.slice().sort((x, y) => x.allRank - y.allRank).every((p, i, arr) => !i || arr[i - 1].all >= p.all), a.people);
+  ok('reading writes nothing (the board is worked out, not stored)', !('gameWeeks' in mem));
+  await call('getMyBoot', ['kanha', '1234']);
+  ok('… a page open neither', !('gameWeeks' in mem));
+  const r1 = await api.runGameBank();
+  ok('the hourly job banks the finished weeks', r1.ok && r1.banked.includes(lastMon) && mem.gameWeeks.weeks[lastMon].c2 === 16 && mem.gameWeeks.weeks[lastMon].p1 === P.open, [r1, mem.gameWeeks]);
+  ok('… everyone active on both campuses, nobody archived or applying', !('ar' in mem.gameWeeks.weeks[lastMon]) && !('ap' in mem.gameWeeks.weeks[lastMon]));
+  ok('… never this week', !mem.gameWeeks.weeks[monday]);
+  const r2 = await api.runGameBank();
+  ok('a second run banks nothing again', r2.ok && r2.banked.length === 0, r2);
+  /* the opened-days history is kept only 90 days: a banked week keeps its points once it has gone */
+  mem.lastSeen.days.c2 = [today];
+  mem.dailyLogs = mem.dailyLogs.filter(r => r.date !== lastMon);
+  const b = await call('getGame', ['kanha', '1234', 'siemreap']);
+  ok('a banked week keeps its points when the evidence has gone', b.people.find(p => p.id === 'c2').all === 16 + b.people.find(p => p.id === 'c2').pts, b.people.find(p => p.id === 'c2'));
+  mem.gameWeeks.weeks[lastMon].c2 = 'lots'; mem.gameWeeks.weeks[lastMon].c3 = -50;
+  const c = await call('getGame', ['kanha', '1234', 'siemreap']);
+  ok('a bad banked value counts as nothing', c.people.find(p => p.id === 'c2').all === c.people.find(p => p.id === 'c2').pts && c.people.find(p => p.id === 'c3').all === c.people.find(p => p.id === 'c3').pts);
+  ok('Poipet\'s board has its own people, with their banked weeks', (await call('getGame', ['kanha', '1234', 'poipet'])).people.find(p => p.id === 'p1').all >= P.open);
+  ok('nothing of what anyone did leaves', !/bible|prayer|atomic|Cups|tok-c3/.test(JSON.stringify(c)));
+}
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

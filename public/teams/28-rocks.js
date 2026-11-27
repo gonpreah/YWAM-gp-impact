@@ -36,6 +36,30 @@ function rocksFor_(campus, dept, ministry, which){
   return rocksAll_().filter(function(r){ return r.campus===campus && r.dept===dept && (ministry==null || (r.ministry||'')===ministry) && r.year===Q.year && r.q===Q.q; });
 }
 function rkOnTrack_(list){ return list.filter(function(r){ return r.status!=='off'; }).length; }
+/* how far along (Nov 2026, Andrew: "slider bars like we have for the health check in"): 0–100, an old rock without one
+   reads 100 when done, else 0 */
+function rockPctOf_(r){ var n=Number(r && r.pct); return (r && r.pct!=null && !isNaN(n)) ? Math.max(0, Math.min(100, Math.round(n))) : (r && r.status==='done' ? 100 : 0); }
+function rkAvgPct_(list){ return list.length ? Math.round(list.reduce(function(a, r){ return a+rockPctOf_(r); }, 0)/list.length) : 0; }
+/* the slider, or — for someone who may only read — a thin bar with the figure */
+function rkPctHtml_(r, p, edit){
+  var v=rockPctOf_(r);
+  if(!edit) return '<div class="rkPctRead"><span class="rkPctBar"><i style="width:'+v+'%;background:'+pctColor(v)+'"></i></span><b style="color:'+pctColor(v)+'">'+v+'%</b></div>';
+  return '<div class="rkPctRow"><input type="range" class="gSlide rkSlide" min="0" max="100" step="5" value="'+v+'" data-'+p+'pct="'+esc(r.id)+'" style="'+ringVars(v)+'" aria-label="'+esc(t('How far along'))+': '+esc(r.title)+'">'+
+    '<span class="rkPctVal" style="color:'+pctColor(v)+'">'+v+'%</span></div>';
+}
+/* the sliders, wherever rocks are drawn: the bar and figure follow the finger, one save on release (as the weekly
+   goals'); at 100% the rock is done, and a done rock pulled back is on track again */
+function rkBindSliders_(p, save){
+  document.querySelectorAll('[data-'+p+'pct]').forEach(function(sl){
+    var row=sl.closest('.rkPctRow'), val=row && row.querySelector('.rkPctVal');
+    function paint(){ var v=Number(sl.value)||0; sl.setAttribute('style', ringVars(v)); if(val){ val.textContent=v+'%'; val.style.color=pctColor(v); } }
+    var guard=gpSlideGuard(sl, null, function(){ paint(); });
+    sl.oninput=function(){ if(guard.scrolling()) return; paint(); gpTap(4); };
+    sl.onchange=function(){ if(guard.scrolling()) return; paint();
+      var id=sl.getAttribute('data-'+p+'pct'), v=Number(sl.value)||0; save(id, v); };
+  });
+}
+function rkPctStatus_(r, v){ return v>=100 ? 'done' : (r.status==='done' ? 'on' : (r.status||'on')); }
 function rkMark_(s){ return s==='on' ? '✓ ' : s==='off' ? '✗ ' : '★ '; }
 var RK_ST_NAME={ on:'On track', off:'Off track', done:'Done' };
 function rkStName_(s){ return t(RK_ST_NAME[s] || RK_ST_NAME.on); }
@@ -79,6 +103,7 @@ function rockHtml_(r, o){
   var h='<div class="lmRock '+st+'" data-'+p+'="'+esc(r.id)+'"><div class="lmRowHead"><div style="min-width:0"><b class="lmName">'+esc(r.title)+'</b>'+
     (sub.length ? '<div class="rowSub">'+sub.join(' · ')+'</div>' : '')+note+'</div>'+
     (o.edit && !o.meeting ? '<button class="linkbtn inline" data-'+p+'edit="'+esc(r.id)+'">'+esc(t('Edit'))+'</button>' : '')+'</div>';
+  h+=rkPctHtml_(r, p, !!o.edit);
   if(o.edit){
     h+='<div class="lmStRow" role="group" aria-label="'+esc(t('Status'))+'">'+ROCK_ST.map(function(s){ return '<button class="lmSt '+s[0]+(st===s[0]?' sel':'')+'" data-'+p+'st="'+esc(r.id)+'|'+s[0]+'" aria-pressed="'+(st===s[0])+'">'+rkMark_(s[0])+esc(t(s[1]))+'</button>'; }).join('')+
       (st==='off' && o.drop ? '<button class="hospChip" data-'+p+'drop="'+esc(r.id)+'">🧩 '+esc(t('Drop it to Issues'))+'</button>' : '')+'</div>';
@@ -92,6 +117,7 @@ function rkFormHtml_(){
     '<label class="f">'+esc(t('Whose is it?'))+'</label>'+ppickHtml_({ key:'rko', people:rkPeople_(f.campus, f.dept, f.ministry), chosen:f.owner ? [f.owner] : [], multi:false, placeholder:t('Type a name — or leave empty for the whole team'),
       onPick:function(id){ rkT_().form.owner=id; render(); }, onRemove:function(){ rkT_().form.owner=''; render(); } })+
     (f.owner ? '' : '<p class="hint" style="margin:4px 0 0">🤝 '+esc(t('Nobody picked: it is the whole team’s rock.'))+'</p>')+
+    '<label class="f">'+esc(t('How far along?'))+'</label><div class="rkPctRow"><input type="range" class="gSlide rkSlide" min="0" max="100" step="5" value="'+(f.pct||0)+'" data-rkfpct="1" style="'+ringVars(f.pct||0)+'" aria-label="'+esc(t('How far along'))+'"><span class="rkPctVal" style="color:'+pctColor(f.pct||0)+'">'+(f.pct||0)+'%</span></div>'+
     '<label class="f">'+esc(t('A short note (optional)'))+'</label><textarea data-rkf="note" rows="3" maxlength="1200" placeholder="'+esc(t('What done looks like, or where it stands'))+'">'+esc(f.note||'')+'</textarea>'+
     '<div class="btnRow" style="margin-top:10px"><button class="btn" id="rkSave">'+esc(t('Save'))+'</button><button class="btn ghost" id="rkCancel">'+esc(t('Cancel'))+'</button></div>'+
     '<button class="linkbtn teamDelete" id="rkDel">'+esc(t('Delete this rock'))+'</button>';
@@ -102,7 +128,7 @@ function rkFormHtml_(){
 function rkGroupHtml_(g){
   var T=rkT_(), key=rkKey_(g.campus, g.dept, g.ministry), list=g.rocks, canAdd=g.edit && g.add!==false;
   var h='<div class="card rkGroup" data-rkscope="'+esc(key)+'"><div class="lmRowHead"><div class="goalCardTitle">'+g.title+'</div>'+
-    (list.length ? '<span class="hint rkCount">'+esc(gpT('{d} of {n} on track',{d:rkOnTrack_(list), n:list.length}))+'</span>' : '')+'</div>';
+    (list.length ? '<span class="hint rkCount">'+esc(gpT('{d} of {n} on track',{d:rkOnTrack_(list), n:list.length}))+' · '+esc(gpT('{p}% done',{p:rkAvgPct_(list)}))+'</span>' : '')+'</div>';
   if(!list.length) h+='<p class="sub rkEmpty" style="margin:0 0 6px">'+esc(g.empty || t('No rocks yet for this quarter.'))+'</p>';
   list.forEach(function(r){ h+=(T.form && T.form.id===r.id && g.edit) ? rkFormHtml_() : rockHtml_(r, { edit:g.edit, who:g.who!==false, where:g.where ? g.where(r) : '' }); });
   if(canAdd){
@@ -138,7 +164,7 @@ function rocksTabHtml_(sel){
   var T=rkT_(), which=T.q==='next' ? 'next' : 'now', campus=S.me.campus, Q=rkQ_(which);
   var isBL = sel.dept===BL_DEPT, myDept = S.me.dept;
   var h='<div id="rocksTab"><h3 style="margin-top:0">🪨 '+esc(gpT('Q{q} Rocks',{q:Q.q}))+'</h3>'+
-    '<p class="sub" style="margin:0 0 8px">'+esc(t('The few things that must get done this quarter. Tap one to say where it stands: on track, off track or done.'))+'</p>'+rkQuarterSegHtml_();
+    '<p class="sub" style="margin:0 0 8px">'+esc(t('The few things that must get done this quarter. Slide each one to show how far along it is, and say if it is on track.'))+'</p>'+rkQuarterSegHtml_();
   var earlier=[];
   if(isBL){
     h+=rkLeadGroupsHtml_(campus, rkCanWrite_(campus, BL_DEPT, ''), which);
@@ -286,13 +312,19 @@ function bindRocks_(){
     inp.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); T.d[k]=inp.value; rkAdd_(k); } }; });
   each('[data-rkaddbtn]', function(b){ rkAdd_(b.getAttribute('data-rkaddbtn')); });
   each('[data-rockst]', function(b){ var p=b.getAttribute('data-rockst').split('|'), r=rkFind_(p[0]); if(!r || r.status===p[1]) return;
-    rkCall_('saveRock', { id:r.id, title:r.title, owner:r.owner||'', year:r.year, q:r.q, status:p[1], note:r.note||'' }); });
+    var x={ id:r.id, title:r.title, owner:r.owner||'', year:r.year, q:r.q, status:p[1], note:r.note||'' };
+    if(p[1]==='done') x.pct=100; else if(rockPctOf_(r)>=100) x.pct=90;   // done is 100%; out of done, just short of it
+    rkCall_('saveRock', x); });
+  rkBindSliders_('rock', function(id, v){ var r=rkFind_(id); if(!r || v===rockPctOf_(r)) return;
+    rkCall_('saveRock', { id:r.id, title:r.title, owner:r.owner||'', year:r.year, q:r.q, status:rkPctStatus_(r, v), note:r.note||'', pct:v }); });
+  var fp=document.querySelector('[data-rkfpct]'); if(fp){ var fpv=fp.parentNode.querySelector('.rkPctVal'), fpg=gpSlideGuard(fp, null, function(){});
+    fp.oninput=function(){ if(fpg.scrolling()) return; var v=Number(fp.value)||0; fp.setAttribute('style', ringVars(v)); if(fpv){ fpv.textContent=v+'%'; fpv.style.color=pctColor(v); } if(T.form){ T.form.pct=v; T.form.status=rkPctStatus_(T.form, v); } }; }
   each('[data-rockedit]', function(b){ var r=rkFind_(b.getAttribute('data-rockedit')); if(!r) return;
-    T.form={ id:r.id, title:r.title, owner:r.owner||'', note:r.note||'', status:r.status, year:r.year, q:r.q, campus:r.campus, dept:r.dept, ministry:r.ministry||'' }; render();
+    T.form={ id:r.id, title:r.title, owner:r.owner||'', note:r.note||'', status:r.status, pct:rockPctOf_(r), year:r.year, q:r.q, campus:r.campus, dept:r.dept, ministry:r.ministry||'' }; render();
     var f=document.getElementById('rkForm'); if(f && f.scrollIntoView) f.scrollIntoView({ block:'nearest' }); });
   document.querySelectorAll('[data-rkf]').forEach(function(el){ el.oninput=function(){ if(T.form) T.form[el.getAttribute('data-rkf')]=el.value; }; });
   var sv=document.getElementById('rkSave'); if(sv) sv.onclick=function(){ var f=T.form; if(!String(f.title||'').trim()){ showMsg(t('Give it a name first.')); return; }
-    rkCall_('saveRock', { id:f.id, title:f.title, owner:f.owner, year:f.year, q:f.q, status:f.status, note:f.note }, function(){ T.form=null; showMsg(t('Saved')); }); };
+    rkCall_('saveRock', { id:f.id, title:f.title, owner:f.owner, year:f.year, q:f.q, status:f.status, note:f.note, pct:f.pct }, function(){ T.form=null; showMsg(t('Saved')); }); };
   var cn=document.getElementById('rkCancel'); if(cn) cn.onclick=function(){ T.form=null; render(); };
   var dl=document.getElementById('rkDel'); if(dl) dl.onclick=function(){ if(!gpAsk_(t('Delete this rock?'))) return; rkCall_('deleteRock', T.form.id, function(){ T.form=null; }); };
   var ac=document.getElementById('rkAdmCampus'); if(ac) ac.onchange=function(){ T.adm={ campus:ac.value, dept:'' }; render(); };
