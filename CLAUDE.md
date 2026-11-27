@@ -55,7 +55,7 @@ Netlify iframe "shell" — that setup is retired; see git history if you need it
   (personality, Library, papers, guest, YWAM GP & the board, report, first 30 days, prayer,
   support raising, reminders, Khmer review) · `04-ministry-strengths.js` · `05-admin-hr.js` ·
   `06-numbers-contract.js` · `07-health-leave.js` · `08-team-profile.js` · `09-finance.js`
-  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app); later ones (12-tasks … 30-boardroom) load before 11. `finance.js` (public/,
+  (the finance tool) · `10-review360.js` (360 reviews) · `11-bind-boot.js` (bind() and starting the app); later ones (12-tasks … 31-today) load before 11. `finance.js` (public/,
   shared like taxonomy.js) reads the reports; `vendor/pdfjs/` is pdf.js, loaded on demand. **One global scope**, exactly as when it was one inline
   script: any function may call any other, but code that RUNS while a file loads (not
   inside a function) may only use what that file or an earlier one defines. Add new code to
@@ -356,6 +356,7 @@ history is orphaned (`test-numbers-people.mjs` §5 covers the move).
   `#mmPickFind` when there are more than 8, `data-mmpick="dept|min"` rows, the current one `.on`).
   No chips, no Department/Ministry selects any more.
 - *(Nov 2026: the tabs read **Scorecard** for Numbers and **Rocks** for OKRs; the keys `numbers` / `okr` are unchanged.)*
+- *(Nov 2026: most ministries' first tab is **Today** (`mmtoday`), and the tab is no longer remembered on the phone — every open lands on the first tab, a chosen tab stays for the visit (sessionStorage). See "My Ministry opens on Today".)*
 - **One row of tabs per ministry** (`mmTabsHtml_` → `.gtBar.mmTabsBar .gtTabs.mmTabs .gtTab`,
   `mmTabsFor_`): most ministries Numbers · (Schedule) · Tasks · OKRs; the Cafe Today · Till · Rota ·
   Week (· Set up) · Numbers · Tasks · OKRs — its own keys keep `data-cafetab` so `cafeHtml_(true)`
@@ -1043,7 +1044,11 @@ school's home.
   pool** (''), amount in US$, note. Expense: date, category (honorarium, supplies, coffee, food, transport,
   other), memo (needed), who made it (campus staff), amount, `hasReceipt`, and in the list a second tick
   `toOffice` ("Receipt given to the office") that saves on the spot. The **budget** is the lecture fees of
-  the students accepted; **left** = budget − spent; **in hand** = received − spent. Server: `dtsFinSave` /
+  the students accepted; **left** = budget − spent; **in hand** = received − spent.
+  **Where money is typed stands apart** (Nov 2026, Andrew: "separate the income and expenses a bit since they are the ones
+  where you input the amount"): `#dtsFinSecs` is the pages to read (`.dtsFinLook` chips: Overview · Budget · Students),
+  then "✏️ Enter money" with two buttons (`.dtsFinEnter .dtsFinEnterBtn.in` Income, green; `.out` Expenses, red — outreach
+  has Income only), each with its total so far; the Income and Expenses cards carry the same colour down their edge. Server: `dtsFinSave` /
   `dtsFinDelete` (`dtsGate_`, `cleanDtsFin_`; outreach takes income only for now), blob `dtsFin:<campus>` =
   {entries}, on the board as `fin`; a school with money on it can't be deleted. The **Dashboard** keeps only
   numbers (Nov 2026: "I want the dashboard to only have the metric informations") and ends with a short
@@ -1512,6 +1517,21 @@ week strip / input: two tabs.
 - **The Overview is the dashboard**: its tiles lead with **🎯 Q OKRs %** (mean `objProgress` of
   leadership's objectives this quarter, with a bar; opens the OKRs tab) and **📋 Board · open cards**
   (opens the Board) — `.lbNav`, `#lbOkrTile`, `#lbBoardTile` — then the role's own tiles.
+## Campus Leadership's page, tidied (Nov 2026, Andrew: "make it easier to navigate and use … too much going on")
+- **Every tab in sight**: the six tabs (`.mmTabs.lwSeg`) are two rows of three on a phone, one row from 700px — the last
+  one used to be cut off.
+- **Overview**: the glance tiles are a 2 × 2 grid (`.lbGlance`); **the next meeting is one card** (`#lbTues`: the day, who
+  facilitates and translates, the topics, ▶ Open the meeting `#lbMeetGo`, Plan who leads `#lbGoTues`) — it was a "Next
+  meeting" line, a card for the day and a tile for it; no role has a "Tuesday" tile now (ncd's fourth is the money
+  ahead, cd's away this week). **Clear leaders is one folded line** with its count (`details#lbLeaders`, open state
+  `S.lbLeadersOpen`; "Who leads what" folds inside it as before).
+- **My week**: one grid — each kind is a button with this week's count on it (`.lwKind .lwTotal`; the totals were a
+  second grid of the same eight); the reflection, partners and base plants fold to a line each (`details.lwFold
+  [data-lwfold]`, `S.lwOpen`, "Not yet / ✓ Saved", "n · d to reach", "n in planning").
+- **Board**: "Next meeting" names the meeting day (`leadDayDate_`), not always Monday; the standing items are "Every
+  meeting"; a new card's meeting date is the next meeting day.
+- tests: test-lead-roles-ui, test-lead-meeting-ui, test-ministry-tools-ui, test-lead-board-page. Khmer §150.
+
 ## The leadership meeting (teams/27-meeting.js, Nov 2026, Uriah)
 "We want to move more to an EOS-style leadership meeting, and still use our Kanban board … we need a little more training
 to do the meeting well … who's going to lead the Tuesday morning leadership meeting, topics and all that … where everyone is
@@ -1520,7 +1540,8 @@ Tuesday schedule — nothing of those was replaced.
 - **Where**: Campus Leadership → Board → **Meeting** (`S.leadTab='meet'`, the first of `[data-leadtab]` meet · board · tues ·
   notes; the Board tab still opens on the Kanban — every older test lands there). `leadMeetHtml_` / `bindMeeting_`
   (`#leadMeet`). One `getLeadMeeting` when it opens (→ `S.meet`, and `S.lead` from its `board`, so `bindLead_` asks nothing
-  more); nothing on the boot. The Overview has a way in under its tiles (`#lbMeetGo`, `lmOverviewHtml_`: "Next meeting ·
+  more); nothing on the boot. The Overview has a way in: its one meeting card (`#lbTues`, with `#lbMeetGo` "Open the
+  meeting" — since Nov 2026; before that a separate `lmOverviewHtml_` line: "Next meeting ·
   {day} {date}", who leads; `#lbOkrTile` / `#lbBoardTile` untouched).
 - **The page, no meeting running**: the head (`.lmHead`: next date, "Led by" from the schedule or `#lmPlanWho`, **▶ Start the
   meeting** `#lmStart`, `#lmSetOpen`), the folded guide (`#lmGuide`: the seven parts, "Rules of thumb" `LM_GUIDE`), one line
@@ -1618,7 +1639,15 @@ the source and fails if the old words or the old page code come back.
   (`rkEarlierHtml_`, `#rkEarlier`: the ones no rock came from — title and final %).
 - **Drawn one way** (`rockHtml_(r, {p, edit, meeting, drop, who, where})`): the meeting's look — `.lmRock`, three `.lmSt`
   buttons (✓ On track · ✗ Off track · ★ Done, `data-<p>st="id|on"`), Edit (`data-<p>edit`); read-only it is one badge
-  (`.rkBadge`). `p` is `rock` everywhere and `lmrock` in the meeting. A note of three lines or more folds to its first.
+  (`.rkBadge`).
+- **How far along — a slider** (Nov 2026, Andrew: "easier to input and with slider bars like we have for the health check
+  in"): a rock carries `pct` (0–100, steps of 5; `rockPct_` on the server: sent → kept to the nearest 5, not sent → kept,
+  marked done with none sent → 100; a moved objective starts at its old %). Each rock has the weekly goals' slider
+  (`.gSlide.rkSlide`, `data-<p>pct="id"`, `rkPctHtml_`; read-only a thin bar and the figure, `.rkPctRead`), bound by
+  `rkBindSliders_(p, save)` (bindRocks_ and the meeting's binder) — paints as it moves, one save on release, guarded by
+  `gpSlideGuard`. 100% makes it done; out of done goes to 90 / on track (`rkPctStatus_`). The form has the slider too
+  (`data-rkfpct`); a team's heading says "n of m on track · p% done" (`rkAvgPct_`). Old rocks without `pct` read 100 when
+  done, else 0 (`rockPctOf_`). The board's copy (`getYwamGp` rocks) carries `pct`. Khmer §150. `p` is `rock` everywhere and `lmrock` in the meeting. A note of three lines or more folds to its first.
 - **Where**: My Ministry → **Rocks** (`rocksTabHtml_(sel)`, `#rocksTab`) for every ministry and tool: This quarter / Next
   (`[data-rkq]`), the ministry's rocks (`[data-rkscope="campus|dept|ministry"]`, "n of m on track"), one line to add
   (`[data-rkadd]` + Enter or `[data-rkaddbtn]`; the owner is me), the department's own under it ("A rock for the whole
@@ -1733,6 +1762,91 @@ we can give to ministries and donors, the government Ministry, and to donors." T
   one ministry's page.
 - tests/test-quarter-report.mjs (server, 92), tests/test-quarter-report-ui.mjs (browser, 83; `QR_SHOTS=<folder>` saves
   pictures). Khmer: docs/khmer-needed.md §145. sw.js SHELL v34.
+
+## My Ministry opens on Today (teams/31-today.js, Nov 2026, Uriah)
+"My ministry page could have a fun and simple way to use it daily, and gamify the inputting of data as a tool for each
+ministry … a fun game they're doing each day, while also getting all the data needed for our board, donors and the
+government. And when they go to My Ministry they wouldn't be overwhelmed either." Step 1 of that: one shared screen.
+**The rule of the game**: rewards are for showing up and logging honestly — never for the size of a number — and faith
+numbers are counted but never part of it (no tile, no ring, no celebration, no badge). **Game points are unchanged.**
+- **Out of the game: salvations, baptisms, healings** (`TD_FAITH_RE` in 31-today.js — Uriah's three). The quarterly report's
+  wider `GP_FAITH_RE` (taxonomy.js; `QR_FAITH` is the same object) also names churches, worship, prayer, the gospel…; on
+  Today those are ordinary tiles, or Evangelism and Church Partnerships would have nothing to tap.
+- **A new first tab, Today** (`mmtoday`, in `MM_SHELL_KEYS`, `mmTabsFor_`'s default branch → `todayPaneHtml_(sel)`,
+  `#tdToday[data-tdkey]`): every ministry with no daily home of its own — Today · Scorecard · (Schedule) · Tasks · Rocks.
+  **A ministry's page opens on its first tab every time the app is opened**: `mmTabKeep_` / `mmTabKept_` are
+  sessionStorage now (`gp-mm-tab`, per ministry — a tab chosen stays for that visit only, as Campus Leadership's do).
+  The old `gp-cafe-view=numbers` on a phone still opens the Scorecard (many tests use it to say "the Scorecard").
+  **The ministries with their own daily home keep it first** (`tdToolMin_`: the Cafe, Outreach Teams, Intercession,
+  Worship, GPDTS, the school tool) and get **the strip** on top of that first tab (`todayStripHtml_`,
+  `#tdToday[data-tdstrip]`, through `mmTop`): streak, ring, win of the day, badges — no counters (their numbers are their
+  tool's), and only when that ministry's payload is on the phone (`S.ministry`, or `S.oversee[min]` once loaded).
+  Campus Leadership's rows and the Finances office are untouched. The Scorecard, the week card and the entry form are
+  as they were, one tap away.
+- **The screen, top to bottom** (`tdInnerHtml_`; data = `tdData_(sel)`: `S.ministry` for your own, else `S.oversee[min]`):
+  1. **Tap counters** (`#tdTiles`, `tdMetrics_(sel).taps`): a tile (`[data-tdtile]`) per weekly-cadence `sum` metric
+     that no tool fills and that isn't a faith number — the ones with a Scorecard goal first, then taxonomy order,
+     `TD_TILES` (4), "n more…" (`#tdMore`). The tile shows today's count (`.tdNum`) and the week's (`.tdWkN`, with the
+     goal). A tap (`[data-tdtap]`) adds 1, − (`[data-tdminus]`, never below 0) takes one off, ✎ (`[data-tdedit]`) or a
+     long press (`TD_HOLD_MS`) opens a box to type today's number (`#tdTypeBox`, `#tdTypeOk`, `S.td.edit`).
+  2. **The Friday wrap** (`tdWrapHtml_`, `#tdWrap`; Friday to Sunday, for whoever can log, when the ministry has weekly
+     numbers — `latest` / `avg`, `M.levels`): "Wrap up the week" (`#tdWrapOpen`) → the weekly form's own rows
+     (`kpiWeekRowHtml_`, carried-forward values and all, its attribute renamed `data-tdweek` so the Scorecard's handlers
+     stay out) → `#tdWrapSave` → **`gpSaveMinistry_`** with `saveMyMinistry` / `saveMinistryFor` (the same save and the
+     same offline queue — there is no second path) → `#tdWrapDone` "Week n complete" with `gpConfetti` once. No weekly
+     numbers → no card. The week counts as wrapped once any weekly number is in (a box may be left empty).
+  3. **The ring** (`#tdRing`): "d of n goals on target" from the Scorecard's goals and maths (`sbdGoals_`, `sbdOn_`),
+     never counting a goal on a faith number; with no goals, "d of n days logged this week", and for whoever may set
+     them (`canEditMetricsClient_`) "Set this week's goals" (`#tdSetGoals` → the Scorecard with its goals open).
+  4. **The team streak** (`#tdStreak`, `#tdStreakN[data-n]`, seven `.tdDot[data-tddot]` on / off / today / closed /
+     future): days in a row anyone logged anything for the ministry. Sundays and national holidays
+     (`leaveHolidaySet_(S.trips.holidays)`) never break it; today isn't counted against it until it's over.
+     Active days (`tdActive_`): the daily counts' dates, the payload's `active`, the wins' days, and what is waiting on
+     this phone. **A win shared counts as showing up** — otherwise a ministry with only weekly numbers could never
+     have a streak.
+  5. **Also today** (`#tdAlso`, `[data-tdalso]`): the faith daily counts as plain number boxes, saved on change by the
+     same path. Nothing moves, pops or rings for them.
+  6. **Win of the day** (`#tdWin`, `#tdWinText` ≤200, `#tdWinSave`, the feed `#tdWinList` — first name and day, three
+     then "Show all"; ✕ on your own, through gpAsk_), with "No child's full name."
+  7. **Badges** (`#tdBadges`, folded; `tdBadges_`): the MINISTRY's, worked out on the page, nothing stored — first full
+     week, 4 and 13 full weeks in a row (a week is "full" when anything was logged for it, `tdWeekIn_`), a 10- and a
+     30-day streak, goals set, 5 wins shared. A new one pops once per phone (`gp-td-badges`; the first look at a
+     ministry only remembers what it has). Weeks are counted within this week year, streaks within ~110 days.
+- **Saving a count** (`tdSet_` → `tdFlush_`): the tile repaints at once (`tdPaint_` — text only, **never `render()`**;
+  `tdRefresh_` rebuilds only `#tdToday` after a save, and not while someone is typing in it), and `TD_SAVE_MS` (800 ms)
+  after the last tap the DAY's absolute value goes through the existing daily path — `saveMyKpiDay` for your own
+  ministry, `saveKpiDayFor` for another — so three taps are one save and a resend changes nothing. What hasn't reached
+  the server is `gp-td-pending` on the phone (user + dept + ministry + date + metric → value, the last wins): sent one
+  day of one ministry at a time, oldest first, on the timer, on `online`, and when Today is next drawn; meanwhile
+  `#tdNote` says "Saved on this phone". This is NOT the ministry-numbers queue (`gpSaveMinistry_`), which must not carry
+  daily counts.
+  **A week typed as one total is kept**: the server makes a week the sum of its days the moment a day is saved, so when
+  the week's figure is more than its days (someone typed it on the Scorecard), the first tap also puts that difference
+  on the week's Monday (a second pending day, sent first) — on a Monday it folds into today.
+- **Read-only** for anyone who can open a ministry but not log for it (`tdCanLog_` = `canLogForClient_`): the figures
+  and wins, no taps, boxes or wrap (`#tdReadOnly`). (Today every option in the picker is one `canLogFor_` allows, so
+  this is the page's guard; the server refuses regardless.) A ministry with no daily counts gets one calm line
+  (`#tdCalm`), the ring, streak, win and the Friday wrap.
+- **Server** (api.js "My Ministry → Today"): `getMyMinistry` and `getMinistryFor` add, through `withToday_`, **`active`**
+  (the days in the last `TODAY_ACTIVE_DAYS` 100 on which a weekly row of the ministry was written — each row now keeps
+  `days`, the last seven days it was written on, `rowDays_` in `saveMinistryInternal_`, so a tool's daily use counts;
+  rows from before only have their `updated` day; dates only) and **`wins`**. Blob `mwins:<campus>` = {'Dept|Ministry':
+  [{id, text, by, name (first name), date, at}]} (in `BOOT_KEYS`, both campuses; no call of its own on open),
+  `mutateKey_`: `saveMinistryWin(user, pin, dept, ministry, text)` — `canLogFor_`; one line (control characters and
+  line breaks to spaces), cut at `WIN_MAX` 200; `WIN_DAY_CAP` 10 a person a ministry a day (`too_many`); every save
+  drops what is older than `WIN_KEEP_DAYS` 60 for the whole campus; `deleteMinistryWin(…, id)` — the writer, the
+  ministry's leader, an admin. What is sent is `{id, text, name, date, at, mine}` — never the writer's id — and only
+  inside that ministry's payload, so only to people who can open it. Both are in `DEMO_WRITES` with `saveKpiDayFor`.
+- **The quarter's story** (29-report.js `qrFormHtml_`): above Highlights, "This quarter's wins — tap one to add it"
+  (`tdReportWinsHtml_`, `#tdQrWins`, `[data-qrwin]`, bound in `bindToday_`) — for the writer's own campus and only when
+  that ministry's payload is already on the phone (their own ministry, or one they opened this visit); read-only reuse.
+  **TODO**: wins are kept 60 days, so a quarter's first weeks may be gone by the time its story is written, and a
+  leader whose main ministry is another one sees none until they open that ministry — fix both by keeping wins a
+  quarter and sending them with the report's own data (`qreport`), if the hook proves worth it.
+- **Next steps not built** (Uriah's plan beyond this one): per-ministry games on top of this screen; wins in the
+  campus feed; the previous week's wrap offered on Monday.
+- tests/test-ministry-today.mjs (server), tests/test-ministry-today-ui.mjs (the real api.js; the page's clock pinned to
+  this week's Wednesday and Friday). Khmer: docs/khmer-needed.md §151. sw.js SHELL v37.
 
 ## The Advisory Board: invite link, oversight and its own room (teams/30-boardroom.js, Nov 2026, Uriah)
 "An easy link to send our board people to sign up with their roles and be able to view all of the base app activity,
@@ -1865,7 +1979,7 @@ tests/test-bottom-bar.mjs §3.
 leave form is already in there, why is it on twice?")** — each thing is on My Home once:
 - **The dark card** (arranged by each person since Nov 2026 — see "My Home's dashboard card, arranged like a phone's Home
   Screen") is: the quick apps (the dock), then **four widgets in one row** (`heroWidgetsHtml_`,
-  `.heroWidgets`, `.heroW`): Goals (this week's done/written, `data-jump="sec-goals"`), Habits (today's,
+  `.heroWidgets`, `.heroW`; 16px / 14px gaps, Andrew: "a bit more gaps"): Goals (this week's done/written, `data-jump="sec-goals"`), Habits (today's,
   `data-jump="sec-habits"`), Health (`#goMyHealth`, the weekly check-in score), Tasks (`#goGpTasks`, the Inbox's red
   number, else the open count, quiet) — three when GP Tasks hasn't loaded; then this week's chores / cooking line,
   the 📚 reading row, and the base at a glance with **On campus** as its fourth figure (`#goWhosHereHome` inside
@@ -3192,8 +3306,17 @@ no extra call on open. `getGame(user, pin, campus)` reads the other campus on de
   **Don't show this when I open the app** (`#gameIntroOff`). The first time it says "Points are here!", after that "Your
   points this week". On the phone as `gp-game-intro-v2` = {n, last, off}. The slide-down reminder and Santa wait while
   it is open. Not under a test browser unless `gp-intro-test` is set. Khmer: docs/khmer-needed.md §118.
+- **All time** (Nov 2026, Andrew: "can you also show an all time board?"): the fourth tab, 🏆 All time (`S.gameTab='all'`,
+  `#gameTabAll`, `#gameAllTime`), and a line on my card (`#gameMeAll`: "🏆 n points all time · #place", opens the tab) —
+  every point since the board began (`GAME_FROM` = 2026-11-16), this week included. Some evidence is kept only a while
+  (opened days 90, snowflakes and Santa 60), so a finished week is **banked**: `gameWeeks` = {weeks: {'Monday': {staffId:
+  pts}}} (in BOOT_KEYS), written only by `runGameBank` (exported, run by reminders.js every hour, everyone active on both
+  campuses, a week once) — a page open still writes nothing. Until banked, the board works a finished week out on read
+  (`gamePast_`, the newest `GAME_READ_WEEKS` 8). `gameScore_(src, people, from, today)` is one week's points (the board's
+  maths, a finished week to its Sunday); rows carry `all` and `allRank`, `me` too, the board `allTime {from, weeks}`.
+  Points only, like the week's. Khmer §149.
 - **Streak**: days in a row with any use (the same evidence as Admin → App use), ending today or yesterday.
-- **What others see**: `people` rows are exactly `{id, pts, streak, week, rank, books, booksYear}` (books finished this
+- **What others see**: `people` rows are exactly `{id, pts, streak, week, rank, books, booksYear, all, allRank}` (books finished this
   week and this year — counts, as every profile already shows; never which book) (`week` = seven characters, 1 / 0 / -
   for a day to come) — never what was done. `me` adds `parts` (where my points came from). **Everyone active on the campus is on the
   board — there is no switch to step off** (Uriah, Nov 2026: "no need to put the option, leave them on"; a first
@@ -4410,10 +4533,10 @@ A fixture that pairs a year with a week takes it from `weekYearOf(now)`, not
   (`'cand'`). The old selects stay in the DOM hidden (`data-lf="owner"`, `data-ltowner`, `data-cf`) so
   the forms' field readers still work. Rows: `[data-ppickit="key|id"]`, chips `[data-ppickrm="key|id"]`,
   the box `[data-ppickq="key"]`; until you type, only the `first` group shows (or the first few).
-  **A ministry's own tasks page shows everything its people are on** (Andrew, Oct 2026: "it only shows
-  a few"): the list's tasks, plus tasks in other lists given to any of its people (`team` in
-  `gtListHtml_` when `S.gptScope` is set — the department's list where board cards land, another
-  ministry's), each with a chip saying where it is from and no grip (they are ordered in their own list).
+  **A ministry's list shows only its own tasks** (Nov 2026, Andrew: "if I make a task in teams and assign it to someone,
+  it only shows it in the teams task list"; this replaces October's "a ministry's page also shows what its people were
+  given in other lists"): a task given to someone is in its own list and in that person's Inbox — never in the other
+  ministries' lists they belong to.
   **The year shows on a day outside this year** (`gptDateFmt_`): task chips, day dividers, calendar labels.
   **‹ › on the list's head** (`#gtPrevList`/`#gtNextList`, `.gtListNav`, greyed at the ends) step through
   the lists like the swipe (Andrew, Oct 2026: "the slide isn't working the best — small arrows?").

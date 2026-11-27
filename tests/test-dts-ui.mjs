@@ -275,7 +275,8 @@ ok('a resource with its link', dbSaves.some(x => x[0] === 'resource' && x[1].url
 await p.evaluate(() => window.scrollTo(0, 0));
 await p.click('.mmTabs [data-mmtab="dtsfin"]'); await p.waitForTimeout(300);
 ok('Finances opens on the lecture phase: budget, received, spent, left', /Budget\s*\$2,620/.test(await p.$eval('#dtsFinTiles', e => e.innerText)) && (await p.$eval('[data-dtsfinphase="lecture"]', e => e.classList.contains('on'))) &&
-  JSON.stringify(await p.$$eval('#dtsFinSecs [data-dtsfinsec]', b => b.map(x => x.getAttribute('data-dtsfinsec')))) === '["overview","budget","income","expenses","students"]');
+  JSON.stringify(await p.$$eval('#dtsFinSecs [data-dtsfinsec]', b => b.map(x => x.getAttribute('data-dtsfinsec')))) === '["overview","budget","students","income","expenses"]');
+ok('… income and expenses stand apart, under "Enter money", each with its total (Nov 2026, Andrew)', JSON.stringify(await p.$$eval('.dtsFinEnter [data-dtsfinsec]', b => b.map(x => x.getAttribute('data-dtsfinsec') + ':' + x.className.split(' ').filter(c => c === 'in' || c === 'out').join()))) === '["income:in","expenses:out"]' && /Enter money/.test(await p.$eval('#dtsFinSecs', e => e.textContent)) && /\$/.test(await p.$eval('.dtsFinEnterBtn.in', e => e.innerText)));
 ok('… on its Overview: the budget, where money came from and went, who owes', !!(await p.$('#dtsFinSpentMeter')) && !!(await p.$('#dtsFinFrom')) && !!(await p.$('#dtsFinWent')) && /Still owe\s*2/.test(await p.$eval('#dtsFinOwing', e => e.innerText)));
 await p.click('[data-dtsfinsec="income"]'); await p.waitForTimeout(200);
 await p.click('#dtsFinAddInc'); await p.waitForTimeout(200);
@@ -287,6 +288,7 @@ await p.click('#dtsFinSave'); await p.waitForTimeout(400);
 ok('income for one student: the day, ABA, Arno, $1,500', finSaves.length === 1 && finSaves[0].kind === 'income' && finSaves[0].phase === 'lecture' && finSaves[0].method === 'aba' && finSaves[0].studentId === 'c_ar' && finSaves[0].amount === 1500 && finSaves[0].schoolId === 'sc1' && finSaves[0].date === TODAY, JSON.stringify(finSaves[0]));
 await p.click('#dtsFinAddInc'); await p.waitForTimeout(200);
 await p.click('[data-dfimethod="cash"]'); await p.fill('#dfi_amount', '200'); await p.click('#dtsFinSave'); await p.waitForTimeout(400);
+if (process.env.GP_SHOT) await p.screenshot({ path: process.env.GP_SHOT + '/dts-fin.png', fullPage: true });
 ok('income to the general DTS pool', finSaves.length === 2 && finSaves[1].studentId === '' && finSaves[1].method === 'cash');
 ok('the income list: who it was for and how it came in', /Arno Here/.test(await p.$eval('#dtsFinIncome', e => e.innerText)) && /General DTS pool/.test(await p.$eval('#dtsFinIncome', e => e.innerText)) && /Cash \$200 · ABA \$1,500/.test(await p.$eval('#dtsFinIncome', e => e.innerText)), await p.$eval('#dtsFinIncome', e => e.innerText.replace(/\n/g, ' / ')));
 ok('received counts both', /Received\s*\$1,700/.test(await p.$eval('#dtsFinTiles', e => e.innerText)));
@@ -310,7 +312,7 @@ const bopha = await p.$eval('[data-dtsfinstu="c_ar2"]', e => e.innerText.replace
 ok('Students: what each owes — Arno $2,000 less $1,500 = $500, Bopha $620', /\$2,000 \$1,500 \$500/.test(arno) && /\$620 \$0 \$620/.test(bopha), arno + ' | ' + bopha);
 ok('the general pool is said apart', /General DTS pool: \$200/.test(await p.$eval('#dtsFinPool', e => e.innerText)));
 await p.click('[data-dtsfinphase="outreach"]'); await p.waitForTimeout(250);
-ok('Outreach is kept apart: nothing yet, overview, income and students', /Received\s*\$0/.test(await p.$eval('#dtsFinTiles', e => e.innerText)) && JSON.stringify(await p.$$eval('#dtsFinSecs [data-dtsfinsec]', b => b.map(x => x.getAttribute('data-dtsfinsec')))) === '["overview","income","students"]');
+ok('Outreach is kept apart: nothing yet, overview, income and students', /Received\s*\$0/.test(await p.$eval('#dtsFinTiles', e => e.innerText)) && JSON.stringify(await p.$$eval('#dtsFinSecs [data-dtsfinsec]', b => b.map(x => x.getAttribute('data-dtsfinsec')))) === '["overview","students","income"]');
 await p.click('[data-dtsfinsec="income"]'); await p.waitForTimeout(200);
 await p.click('#dtsFinAddInc'); await p.waitForTimeout(200);
 await p.click('[data-dfimethod="subsplash"]'); await p.fill('#dfi_amount', '300'); await p.selectOption('#dfi_student', 'c_ar2'); await p.click('#dtsFinSave'); await p.waitForTimeout(400);

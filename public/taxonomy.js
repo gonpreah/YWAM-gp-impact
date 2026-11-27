@@ -92,6 +92,10 @@ function schoolToolFor(dept, ministry) { var k = dept + '|' + ministry; return O
    uploaded. Salvations stays typed on the Numbers tab. Both campuses. */
 var WORSHIP_AUTO_METRICS = ['Worship Nights Hosted','Attendance at Gatherings','Musicians in Training','Hours Spent Practicing',
   'Songs Written','Songs Recorded','Songs Uploaded to Social Media'];
+/* Faith numbers — salvations, baptisms, healings, the gospel heard and the rest. ONE list for the whole app: the quarterly
+   report's "leave out faith numbers" tick (29-report.js) and My Ministry's Today screen (31-today.js), where they are
+   counted in a plain row and are never part of the game — no tile, no ring, no celebration, no badge. */
+var GP_FAITH_RE = /salvation|baptis|gospel|healing|discipl|church|prayer|testimon|worship|bible|evangel|congregation/i;
 function autoMetricsFor(campus, dept, ministry) {
   if (dept === 'Youth Education' && ministry === 'Worship') return WORSHIP_AUTO_METRICS.slice();
   if (dept === 'Youth Education' && ministry === 'Intercession') return ICP_AUTO_METRICS.slice();

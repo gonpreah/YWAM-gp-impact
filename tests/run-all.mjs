@@ -39,6 +39,7 @@ const SERVER = [
   'test-okr-auth.mjs',   // OKR writes stay inside your campus + department
   'test-okr-easy.mjs',   // (was the OKR editor) the OKR pages are gone from the page's code and its words; the stored objectives and their handlers stay
   'test-rocks.mjs',      // Rocks: who writes which (campus and department from the staff record), every staff member reads; objectives and the meeting's rocks move across once; the Scorecard's goals
+  'test-ministry-today.mjs',   // My Ministry → Today on the server: the win of the day (who writes, one line of 200, ten a day, 60 days), the day's own value saved twice is saved once, the days a ministry was active, a page open writes nothing
   'test-year.mjs',       // weeks belong to a year; writing numbers needs a name
   'test-week-year.mjs',  // 28–31 Dec 2026 are week 1 of 2027: both pages and the server agree, and a week 1 saved then lands in 2027
   'test-read-your-writes.mjs', // a save answers with what it saved, not a stale read
@@ -207,6 +208,7 @@ const BROWSER = [
   'test-mentor-health.mjs', // a mentor sees a mentee by name
   'test-mentor-weeks.mjs',  // a mentor can look back at any week: picker, check-in, habits, goals, logs
   'test-rocks-ui.mjs',      // Rocks and the Scorecard on the page: a ministry's Rocks tab (add in a line, on / off / done, a note, next quarter), the Scorecard with goals and ✓ / ✗, Campus Leadership and its meeting, a teammate's page, Khmer, 320px, dark
+  'test-ministry-today-ui.mjs',   // My Ministry opens on Today: tap +1 (three taps, one save), undo, a long press to type, faith numbers plain, the ring, the streak, the win of the day, the Friday wrap, offline then back, read-only, a tool ministry's strip, Khmer, 320px
   'test-notif-bell-actions.mjs', // an action button drawn in the bell drawer actually works, not just the inline card
   'test-okr-admin-view.mjs', // (was the admin's OKR view) an admin sees every department's rocks on both campuses, folded, and changes or adds any; a non-admin sees none of it
   'test-ministry-browse.mjs', // My Ministry's "jump to any ministry" picker: admin authorization, and Save Week uses the browsed ministry's own dept

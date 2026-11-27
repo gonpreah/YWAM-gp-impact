@@ -6782,6 +6782,92 @@ Campus Leadership arranges a quarter on the whiteboard; "Make Q1 2027 live" turn
 | Someone else is saving — try again. | មានអ្នកផ្សេងកំពុងរក្សាទុក — សូមព្យាយាមម្តងទៀត។ |
 | That quarter is over. | ត្រីមាសនោះបានកន្លងផុតហើយ។ |
 
+## 151. My Ministry → Today: tap counters, the team streak, the win of the day, the Friday wrap (Nov 2026)
+
+The first screen of every ministry’s page, used every day, so these are read more than almost anything else in the app. The tiles are small: “{n}-day team streak”, “{d} of {n} goals on target” and the badge names sit in half a phone’s width. “Win” (ដំណឹងល្អ here) is one short line of something good that happened — not a competition won; please say if a warmer everyday word fits. “Streak” is days in a row that anyone on the team logged something. “Wrap up the week” is Friday’s few weekly numbers. The line starting “Badges are the whole ministry’s…” is a promise about how the game works (never about how big a number is) — please check it first, with “No child’s full name.”
+
+| English | Khmer (draft) |
+|---|---|
+| Tap a tile each time it happens. − takes one off, ✎ types the number. | ចុចប្រអប់មួយរាល់ពេលវាកើតឡើង។ − ដកមួយចេញ ✎ វាយលេខ។ |
+| Add 1 to {metric} | បន្ថែម ១ ទៅ {metric} |
+| Take 1 off {metric} | ដក ១ ចេញពី {metric} |
+| Type today’s number for {metric} | វាយលេខថ្ងៃនេះសម្រាប់ {metric} |
+| Today’s number | លេខថ្ងៃនេះ |
+| {n} more… | {n} ទៀត… |
+| Also today | ថ្ងៃនេះផងដែរ |
+| {d} of {n} goals on target | គោលដៅ {d} ក្នុងចំណោម {n} សម្រេចបាន |
+| {d} of {n} days logged this week | បានកត់ត្រា {d} ថ្ងៃ ក្នុងចំណោម {n} ថ្ងៃ សប្ដាហ៍នេះ |
+| {d} of 7 days logged this week | បានកត់ត្រា {d} ថ្ងៃ ក្នុងចំណោម ៧ ថ្ងៃ សប្ដាហ៍នេះ |
+| {n}-day team streak | ក្រុមកត់ត្រាជាប់គ្នា {n} ថ្ងៃ |
+| Start the team streak today | ចាប់ផ្ដើមកត់ត្រាជាប់គ្នាជាក្រុមថ្ងៃនេះ |
+| Win of the day | ដំណឹងល្អប្រចាំថ្ងៃ |
+| Something good that happened today | រឿងល្អមួយដែលបានកើតឡើងថ្ងៃនេះ |
+| One line, for your team. No child’s full name. | មួយបន្ទាត់ សម្រាប់ក្រុមរបស់អ្នក។ កុំដាក់ឈ្មោះពេញរបស់កុមារ។ |
+| Take this win off | ដកដំណឹងល្អនេះចេញ |
+| Take this win off? | ដកដំណឹងល្អនេះចេញឬ? |
+| No wins shared yet. | មិនទាន់មានដំណឹងល្អចែករំលែកនៅឡើយទេ។ |
+| Show all {n} wins | បង្ហាញដំណឹងល្អទាំង {n} |
+| Shared with your team | បានចែករំលែកជាមួយក្រុមរបស់អ្នក |
+| That is plenty for one day — more tomorrow. | គ្រប់គ្រាន់ហើយសម្រាប់មួយថ្ងៃ — ថ្ងៃស្អែកបន្តទៀត។ |
+| No connection — your win is kept here until you can send it. | គ្មានការតភ្ជាប់ — ដំណឹងល្អរបស់អ្នកត្រូវបានរក្សាទុកនៅទីនេះ រហូតដល់អ្នកអាចផ្ញើបាន។ |
+| Wrap up the week | បិទបញ្ចប់សប្ដាហ៍ |
+| {n} numbers for the whole week — most are already filled in from last week. | លេខ {n} សម្រាប់ពេញមួយសប្ដាហ៍ — ភាគច្រើនបានបំពេញរួចហើយពីសប្ដាហ៍មុន។ |
+| Save week {wk} | រក្សាទុកសប្ដាហ៍ទី {wk} |
+| Week {wk} complete | សប្ដាហ៍ទី {wk} បានបញ្ចប់ |
+| The week’s numbers are in. Thank you. | លេខប្រចាំសប្ដាហ៍បានបញ្ចូលហើយ។ សូមអរគុណ។ |
+| Change them | កែប្រែ |
+| Our badges | មេដាយរបស់យើង |
+| earned | ទទួលបានហើយ |
+| not yet | មិនទាន់ |
+| Badges are the whole ministry’s, for showing up and logging honestly — never for how big a number is. | មេដាយជារបស់កិច្ចការបម្រើទាំងមូល សម្រាប់ការមកចូលរួម និងការកត់ត្រាដោយស្មោះត្រង់ — មិនមែនសម្រាប់លេខធំឬតូចឡើយ។ |
+| First full week | សប្ដាហ៍ពេញដំបូង |
+| 4 full weeks in a row | ៤ សប្ដាហ៍ពេញជាប់គ្នា |
+| A whole quarter — 13 weeks in a row | ពេញមួយត្រីមាស — ១៣ សប្ដាហ៍ជាប់គ្នា |
+| 10-day streak | ជាប់គ្នា ១០ ថ្ងៃ |
+| 30-day streak | ជាប់គ្នា ៣០ ថ្ងៃ |
+| Goals set | បានកំណត់គោលដៅ |
+| 5 wins shared | បានចែករំលែកដំណឹងល្អ ៥ |
+| New badge for {ministry}: {badge} | មេដាយថ្មីសម្រាប់ {ministry}៖ {badge} |
+| Saved on this phone — it will send when you’re back online. | បានរក្សាទុកក្នុងទូរសព្ទនេះ — វានឹងផ្ញើនៅពេលអ្នកមានអ៊ីនធឺណិតវិញ។ |
+| Not saved yet — it will try again. | មិនទាន់បានរក្សាទុកទេ — វានឹងព្យាយាមម្ដងទៀត។ |
+| You can look, but only this ministry’s own people enter its numbers. | អ្នកអាចមើលបាន ប៉ុន្តែមានតែសមាជិកកិច្ចការបម្រើនេះប៉ុណ្ណោះដែលបញ្ចូលលេខ។ |
+| Nothing to count day by day here. Share a win when there is one, and wrap up the week on Friday. | នៅទីនេះគ្មានអ្វីត្រូវរាប់ប្រចាំថ្ងៃទេ។ សូមចែករំលែកដំណឹងល្អពេលមាន ហើយបិទបញ្ចប់សប្ដាហ៍នៅថ្ងៃសុក្រ។ |
+| Nothing to count day by day here. Share a win when there is one. | នៅទីនេះគ្មានអ្វីត្រូវរាប់ប្រចាំថ្ងៃទេ។ សូមចែករំលែកដំណឹងល្អពេលមាន។ |
+| Highlights is full. | ផ្នែកចំណុចលេចធ្លោពេញហើយ។ |
+| This quarter’s wins — tap one to add it to Highlights | ដំណឹងល្អក្នុងត្រីមាសនេះ — ចុចមួយដើម្បីបន្ថែមទៅចំណុចលេចធ្លោ |
+
+## 150. Rocks with a slider; Campus Leadership tidied (My Ministry → Rocks, Campus Leadership’s Overview, My week and Board, Nov 2026)
+
+Each rock now has a 0–100% slider (“How far along”), and a team’s rocks say “{p}% done” together. On Campus Leadership’s page the next meeting is one card with “Open the meeting”; “My week” puts each kind’s count on its button and folds the reflection, partners and base plants into one line each (“None yet”, “{n} in planning”, “{n} · {d} to reach” — partners, and how many are due a contact). The Board tab says “Every meeting” instead of “Every Monday”, since the meeting day can be any day. On GPDTS → Finances, “Enter money” is the small heading over the Income and Expenses buttons.
+
+| English | Khmer (draft) |
+|---|---|
+| Tap one as it happens. The number is this week’s, and it becomes your leadership numbers. | ចុចមួយនៅពេលវាកើតឡើង។ លេខនេះជារបស់សប្ដាហ៍នេះ ហើយវាក្លាយជាលេខដឹកនាំរបស់អ្នក។ |
+| {n} · {d} to reach | {n} · {d} នាក់ត្រូវទាក់ទង |
+| None yet | មិនទាន់មាន |
+| {n} in planning | {n} កំពុងរៀបចំផែនការ |
+| Open the meeting | បើកកិច្ចប្រជុំ |
+| Every meeting | រាល់កិច្ចប្រជុំ |
+| Every meeting’s agenda | របៀបវារៈរាល់កិច្ចប្រជុំ |
+| How far along? | ដំណើរការដល់ណាហើយ? |
+| {p}% done | រួចរាល់ {p}% |
+| Enter money | បញ្ចូលប្រាក់ |
+| The few things that must get done this quarter. Slide each one to show how far along it is, and say if it is on track. | រឿងមួយចំនួនដែលត្រូវតែធ្វើឲ្យរួចក្នុងត្រីមាសនេះ។ រំកិលនីមួយៗ ដើម្បីបង្ហាញថាវាដំណើរការដល់ណាហើយ ហើយប្រាប់ថាវាដើរត្រូវផ្លូវឬអត់។ |
+
+## 149. The week’s board: All time (Team → 🏆 This week, My Home’s points line, Nov 2026)
+
+The fourth tab on the week’s board — every point since the board began, added up — and the line under my own figures. “All time” is a short tab label beside People, Readers and Ministries, so keep it short. {d} is a date such as “16 Nov”.
+
+| English | Khmer (draft) |
+|---|---|
+| All time | គ្រប់ពេល |
+| points all time | ពិន្ទុសរុបគ្រប់ពេល |
+| Every point since the board began on {d} — {n} weeks, this one included. | ពិន្ទុទាំងអស់ចាប់តាំងពីតារាងចាប់ផ្ដើមនៅ {d} — {n} សប្ដាហ៍ រួមទាំងសប្ដាហ៍នេះ។ |
+| Nobody has points yet. Tick a habit and be the first. | មិនទាន់មាននរណាមានពិន្ទុទេ។ គូសទម្លាប់មួយ ហើយក្លាយជាអ្នកទីមួយ។ |
+| {n} more have no points yet. | {n} នាក់ទៀតមិនទាន់មានពិន្ទុទេ។ |
+| {n} points this week | {n} ពិន្ទុសប្ដាហ៍នេះ |
+| All time keeps adding up. Each week still starts again on Monday. | ពិន្ទុគ្រប់ពេលនៅតែបូកបន្ថែមជានិច្ច។ សប្ដាហ៍នីមួយៗនៅតែចាប់ផ្ដើមឡើងវិញនៅថ្ងៃចន្ទ។ |
+
 ## 148. YWAM GP’s own job titles, and a job in YWAM GP itself (☰ → YWAM GP, Admin → a person → Positions, My Ministry, Team → Structure, Nov 2026)
 
 For admins (the job-title editor on the YWAM GP page, the “Works for YWAM GP” tick under Positions, Loose ends) and for the few people whose job is YWAM GP itself: their My Ministry page, their line on their profile, and the quiet line under a campus’s chart. “Job title” is មុខតំណែងការងារ; a title an admin types is shown as typed and is not in this list. “lives in {campus}” takes the campus’s short name (Siem Reap).
@@ -7116,7 +7202,7 @@ The line above the board once a quarter is live, the question before Apply again
 | Also serves here | បម្រើនៅទីនេះផងដែរ |
 | For someone in two ministries: they keep their main one and serve here too. | សម្រាប់អ្នកដែលនៅក្នុងកិច្ចការបម្រើពីរ៖ ពួកគេរក្សាកិច្ចការបម្រើចម្បងរបស់ពួកគេ ហើយបម្រើនៅទីនេះផងដែរ។ |
 
-## 149. The Running on EOS shelf (☰ → Library, Nov 2026)
+## 152. The Running on EOS shelf (☰ → Library, Nov 2026)
 
 A new Library shelf of seven EOS books for YWAM GP's leadership, a reading plan, the tag and the trademark line on each EOS book's page. The seven summaries' Khmer (library-km.js) is Claude's translation, not yet reviewed; terms follow the app's own: Rocks ថ្មធំ, Scorecard តារាងពិន្ទុ, Issues បញ្ហា, To-dos កិច្ចការត្រូវធ្វើ, Visionary អ្នកមានចក្ខុវិស័យ, Integrator អ្នកសម្របសម្រួលអនុវត្ត.
 

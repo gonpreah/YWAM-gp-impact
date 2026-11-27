@@ -425,7 +425,7 @@ function leadSectionHtml_(){
   var br=brOn_(); if(br && tab==='tues') tab='meet';   // the Advisory Board's room (teams/30-boardroom.js): its meeting, its Kanban, its notes — no weekly rota
   var h='<div class="leadFilters leadTabs" role="tablist">'+
     '<button class="leadSeg'+(tab==='meet'?' on':'')+'" role="tab" data-leadtab="meet" title="'+esc(br ? t('Board meeting') : t('Leadership meeting'))+'">▶ '+esc(br ? t('Board meeting') : t('Meeting'))+'</button>'+
-    '<button class="leadSeg'+(tab==='board'?' on':'')+'" role="tab" data-leadtab="board" title="'+esc(br ? t('Issues and To-Dos') : t('Monday meetings'))+'">🗂️ '+esc(br ? t('Issues and To-Dos') : t('Board'))+'</button>'+
+    '<button class="leadSeg'+(tab==='board'?' on':'')+'" role="tab" data-leadtab="board" title="'+esc(t('Issues and To-Dos'))+'">🗂️ '+esc(br ? t('Issues and To-Dos') : t('Board'))+'</button>'+
     (br ? '' : '<button class="leadSeg'+(tab==='tues'?' on':'')+'" role="tab" data-leadtab="tues" title="'+esc(day===2 ? t('Tuesday morning meeting') : t('Who leads each week'))+'">🎤 '+esc(day===2 ? t('Tuesday') : t(LM_DAYS[day]))+'</button>')+
     '<button class="leadSeg'+(tab==='notes'?' on':'')+'" role="tab" data-leadtab="notes" title="'+esc(t('Meeting notes'))+'">📝 '+esc(t('Notes'))+'</button></div>';
   return h+(tab==='meet' ? leadMeetHtml_() : tab==='notes' ? leadNotesHtml_() : tab==='tues' ? leadTuesHtml_() : leadBoardHtml_());
@@ -486,11 +486,10 @@ function leadBoardHtml_(){
   if(!S.lead){ return h+'<div class="card"><p class="sub" style="margin:0">'+esc(S.leadErr || t('Loading…'))+'</p></div></div>'; }
   ['cols','areas','standing','cards'].forEach(function(k){ if(!Array.isArray(S.lead[k])) S.lead[k]=[]; });   // a board with nothing in it yet
   var filter=S.leadFilter||'all', today=todayStr();
-  var nm=leadNextMonday_();
-  h+='<div class="leadHead"><div class="leadNext">'+(brOn_() ? '<b>🧩 '+esc(t('The board’s Issues and To-Dos'))+'</b>' : '<span class="leadNextLabel">'+esc(t('Next meeting'))+'</span> <b>'+esc(gpT('Monday {date}',{date:hospDate_(nm)}))+'</b>')+'</div>'+
+  h+='<div class="leadHead"><div class="leadNext">'+(brOn_() ? '<b>🧩 '+esc(t('The board’s Issues and To-Dos'))+'</b>' : '<span class="leadNextLabel">'+esc(t('Next meeting'))+'</span> <b>'+esc(leadDayDate_(leadTuesdays_(1)[0]))+'</b>')+'</div>'+
     '<div class="leadHeadBtns"><button class="leadIconBtn" id="leadEditBoard" aria-label="'+esc(t('Edit the board'))+'" title="'+esc(t('Edit the board'))+'">✏️</button>'+
     '<button class="btn small" id="leadNew">＋ '+esc(t('Card'))+'</button></div></div>';
-  if(S.lead.standing.length) h+='<div class="leadStanding" id="leadStanding"><span class="leadNextLabel">'+esc(t('Every Monday'))+'</span> '+S.lead.standing.map(function(x){ return '<span class="leadStandItem">'+esc(x.title)+'</span>'; }).join('<span class="leadDot">·</span>')+'</div>';
+  if(S.lead.standing.length) h+='<div class="leadStanding" id="leadStanding"><span class="leadNextLabel">'+esc(t('Every meeting'))+'</span> '+S.lead.standing.map(function(x){ return '<span class="leadStandItem">'+esc(x.title)+'</span>'; }).join('<span class="leadDot">·</span>')+'</div>';
   /* Which cards to show: everything, one kind, or only mine (cards I own
      or have an open task on). */
   h+='<div class="leadFilters" role="group" aria-label="'+esc(t('Show'))+'">'+
@@ -594,7 +593,7 @@ function leadSettingsHtml_(){
   return '<div class="card" id="leadSettings"><h3 style="margin-top:0">✏️ '+esc(t('Edit the board'))+'</h3>'+
     list('cols', t('Columns'), t('Add a column'), true)+
     list('areas', t('Focus areas'), t('Add a focus area'), false)+
-    list('standing', t('Every Monday’s agenda'), t('Add an agenda item'), false)+
+    list('standing', t('Every meeting’s agenda'), t('Add an agenda item'), false)+
     '<p class="hint">'+esc(t('Cards in a column you take away move to the first column. “Finished” is the column that counts as done.'))+'</p>'+
     '<button class="btn" id="leadSetSave">'+esc(t('Save the board'))+'</button><button class="btn ghost" id="leadSetCancel">'+esc(t('Cancel'))+'</button></div>';
 }
@@ -740,7 +739,7 @@ function bindLead_(){
   document.querySelectorAll('[data-ltnew]').forEach(function(inp){ inp.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); addTask(inp.getAttribute('data-ltnew')); } }; });
   if(document.getElementById('leadNotes')) bindLeadNotes_(save, saveTask, find);
   if(!document.getElementById('leadBoard')) return;
-  var nw=document.getElementById('leadNew'); if(nw) nw.onclick=function(){ gpTap(); S.leadForm={ id:'', type: S.leadFilter==='project' ? 'project' : 'agenda', col:(leadCols_()[0]||{}).id||'', area:'', title:'', owner:'', due:'', okrId:'', notes:'', meeting:leadNextMonday_(), tasks:[] }; render(); var el=document.querySelector('#leadForm [data-lf="title"]'); if(el) el.focus(); };
+  var nw=document.getElementById('leadNew'); if(nw) nw.onclick=function(){ gpTap(); S.leadForm={ id:'', type: S.leadFilter==='project' ? 'project' : 'agenda', col:(leadCols_()[0]||{}).id||'', area:'', title:'', owner:'', due:'', okrId:'', notes:'', meeting:leadTuesdays_(1)[0], tasks:[] }; render(); var el=document.querySelector('#leadForm [data-lf="title"]'); if(el) el.focus(); };
   document.querySelectorAll('[data-leadfilter]').forEach(function(b){ b.onclick=function(){ gpTap(); S.leadFilter=b.getAttribute('data-leadfilter'); render(); }; });
   var lo=document.getElementById('leadOld'); if(lo) lo.onclick=function(){ S.leadOld=true; render(); };
   var openCard=function(id){ var c=find(id); if(!c) return; gpTap(); S.leadForm=JSON.parse(JSON.stringify(c)); render(); };

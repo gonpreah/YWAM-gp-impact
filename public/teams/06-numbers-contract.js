@@ -821,7 +821,7 @@ function mmTabsHtml_(tabs, cur, extraClass){
   return '<div class="gtBar mmTabsBar"><div class="gtTabs mmTabs'+(extraClass?' '+extraClass:'')+'" role="tablist">'+tabs.map(function(x){
     return '<button class="gtTab'+(cur===x[0]?' on':'')+'" '+(x[2]||'data-mmtab')+'="'+esc(x[0])+'" role="tab">'+esc(x[1])+'</button>'; }).join('')+'</div></div>';
 }
-var MM_SHELL_KEYS=['numbers','sched','tasks','okr','teams','dtsdash','dtsdb','dtsfin','sctoday','scstu','sctest','scpay','scdash','icwed','icfast','icreq','icdash','wsweek','wsrota','wsteam','wssongs','wsdash'];
+var MM_SHELL_KEYS=['mmtoday','numbers','sched','tasks','okr','teams','dtsdash','dtsdb','dtsfin','sctoday','scstu','sctest','scpay','scdash','icwed','icfast','icreq','icdash','wsweek','wsrota','wsteam','wssongs','wsdash'];
 function mmTabsFor_(sel, mine, schedH){
   var out=[];
   if(sel.dept==='Community Service' && sel.min==='Cafe'){
@@ -839,16 +839,18 @@ function mmTabsFor_(sel, mine, schedH){
     out=dtsTabs_();   // GPDTS: the school's home — every number counts itself, so no Numbers tab (teams/16-dts.js)
   } else if(isSchoolMinistry_(sel.dept, sel.min)){
     out=schTabs_();   // the school tool (YDC): roll, students, tests, payments — every number counts itself (teams/24-school.js)
-  } else out=[['numbers',t('Scorecard')]];   // the ministry's weekly numbers page (key still 'numbers')
+  } else out=[['mmtoday',t('Today')],['numbers',t('Scorecard')]];   // Today first (teams/31-today.js), then the ministry's weekly numbers page (key still 'numbers')
   if(schedH && !isTeamsMinistry_(sel.dept, sel.min)) out.push(['sched',t('Schedule')]);
   if(sel.dept==='Skills Training' && sel.min==='Hospitality' && canHospClient_()) out.push(['goHosp',t('SR Hospitality'),'id']);   // a way in, not a tab (#goHosp opens it)
   out.push(['tasks',t('Tasks')]); out.push(['okr',t('Rocks')]);   // the quarter's priorities (key still 'okr'; teams/28-rocks.js)
   return out;
 }
-/* the tab you were on last time, per ministry, kept on this phone (the Cafe's old "tool or numbers" choice counts too) */
+/* Every time the app is opened a ministry's page opens on its FIRST tab — Today (Nov 2026, Uriah; teams/31-today.js).
+   A tab chosen stays for that visit only (sessionStorage, as Campus Leadership's tabs do), per ministry. The one thing
+   still kept on the phone is the old "tool or numbers" choice (gp-cafe-view=numbers): it opens on the Scorecard. */
 function mmTabKey_(){ return (S.mmBrowseDept||'')+'|'+(S.mmBrowseMinistry||''); }
-function mmTabKeep_(k){ try { var m=JSON.parse(lsGet('gp-mm-tab')||'{}'); m[mmTabKey_()]=k; lsSet('gp-mm-tab', JSON.stringify(m)); } catch(e){} }
-function mmTabKept_(){ try { var m=JSON.parse(lsGet('gp-mm-tab')||'{}'); return m[mmTabKey_()] || (lsGet('gp-cafe-view')==='numbers' ? 'numbers' : ''); } catch(e){ return ''; } }
+function mmTabKeep_(k){ try { var m=JSON.parse(sessionStorage.getItem('gp-mm-tab')||'{}'); m[mmTabKey_()]=k; sessionStorage.setItem('gp-mm-tab', JSON.stringify(m)); } catch(e){} }
+function mmTabKept_(){ try { var m=JSON.parse(sessionStorage.getItem('gp-mm-tab')||'{}'); return m[mmTabKey_()] || (lsGet('gp-cafe-view')==='numbers' ? 'numbers' : ''); } catch(e){ return ''; } }
 function mmCurTab_(sel, tabs){
   var keys=tabs.map(function(x){ return x[0]; });
   if(MM_SHELL_KEYS.indexOf(S.mmTab)>-1 && keys.indexOf(S.mmTab)>-1) return S.mmTab;
@@ -927,7 +929,9 @@ function myMinistryHtml(){
   var pane='';
   var mmTop=(sel.dept==='Skills Training' && sel.min==='Hospitality' && canHospClient_()) ? hospChangesHtml_(S.hospNews, false) : '';   // a team's new dates, someone who left (Nov 2026)
   S.mmSkip=autoMetricsFor(S.me.campus, sel.dept, sel.min);   // what counts itself (GPDTS) is not "logged" by hand
-  if(DTS_TABS.indexOf(cur)>-1) pane=dtsPaneHtml_(cur);
+  if(cur===tabs[0][0] && tdToolMin_(sel)) mmTop+=todayStripHtml_(sel);   // a ministry with its own daily home: the streak, the ring, the win of the day on top of it (teams/31-today.js)
+  if(cur==='mmtoday') pane=todayPaneHtml_(sel);   // Today: tap counters, the week's ring, the streak, the win of the day, the Friday wrap
+  else if(DTS_TABS.indexOf(cur)>-1) pane=dtsPaneHtml_(cur);
   else if(WS_TABS.indexOf(cur)>-1) pane=wsPaneHtml_(cur);
   else if(SCH_TABS.indexOf(cur)>-1) pane=schPaneHtml_(cur);
   else if(ICP_TABS.indexOf(cur)>-1) pane=icpPaneHtml_(cur);

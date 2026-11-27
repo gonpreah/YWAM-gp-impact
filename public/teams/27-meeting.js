@@ -143,12 +143,7 @@ function lmDraft_(k){ return lmT_().d[k]||''; }
 function lmIn_(k, ph, max, extra){ return '<input type="text" data-lmd="'+esc(k)+'" maxlength="'+(max||200)+'" value="'+esc(lmDraft_(k))+'" placeholder="'+esc(ph)+'" aria-label="'+esc(ph)+'"'+(extra||'')+'>'; }
 
 /* ---------- the way in from the Overview ---------- */
-function lmOverviewHtml_(){
-  if(!S.lead) return '';
-  var next=lmNextDate_(), tr=leadTuesFor_(next), who=leadTuesWho_(tr && tr.facilitator);
-  return '<button class="lmGo" id="lbMeetGo"><span class="lmGoMain">🗓️ '+esc(gpT('Next meeting · {day} {date}',{day:lmDayName_(), date:hospDate_(next)}))+
-    '<span class="lmGoSub">'+esc(who ? gpT('Led by {name}',{name:who}) : t('Nobody is down to lead yet'))+'</span></span><span class="lmGoOpen">'+esc(t('Open'))+' ›</span></button>';
-}
+/* the way in from the Overview is the Overview's meeting card (#lbMeetGo, leadBaseHtml_ in 04) */
 
 /* ---------- the Meeting tab ---------- */
 function leadMeetHtml_(){
@@ -488,7 +483,9 @@ function bindMeeting_(){
   id('lmRockCancel', function(){ T.rockForm=null; render(); });
   id('lmRockSave', function(){ var f=T.rockForm; if(!String(f.title||'').trim()){ showMsg(t('Give it a name first.')); return; } lmCall_('saveLeadRock',[f], function(){ T.rockForm=null; showMsg(t('Saved')); }); });
   id('lmRockDel', function(){ if(!gpAsk_(t('Delete this rock?'))) return; lmCall_('deleteLeadRock',[T.rockForm.id], function(){ T.rockForm=null; }); });
-  on('[data-lmrockst]', function(b){ var p=b.getAttribute('data-lmrockst').split('|'), r=rockOf(p[0]); if(!r || r.status===p[1]) return; lmCall_('saveLeadRock',[Object.assign({}, r, { status:p[1] })]); });
+  on('[data-lmrockst]', function(b){ var p=b.getAttribute('data-lmrockst').split('|'), r=rockOf(p[0]); if(!r || r.status===p[1]) return;
+    var x=Object.assign({}, r, { status:p[1] }); if(p[1]==='done') x.pct=100; else if(rockPctOf_(r)>=100) x.pct=90; lmCall_('saveLeadRock',[x]); });
+  rkBindSliders_('lmrock', function(rid, v){ var r=rockOf(rid); if(!r || v===rockPctOf_(r)) return; lmCall_('saveLeadRock',[Object.assign({}, r, { pct:v, status:rkPctStatus_(r, v) })]); });
   on('[data-lmrockdrop]', function(b){ var r=rockOf(b.getAttribute('data-lmrockdrop')); if(r) lmDrop_(gpT('Rock off track: {title}',{title:r.title}), (r.owner ? staffName_(r.owner)+'. ' : '')+(r.note||'')); });
   /* headlines */
   on('[data-lmhk]', function(b){ T.hlKind=b.getAttribute('data-lmhk'); render(); });

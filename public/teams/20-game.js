@@ -4,7 +4,8 @@
    board") and carried on the boot as `game` — nothing extra is asked for on open. Two places:
    - My Home: one line under Today (gameHomeHtml_, #gameHome) — my streak, my points, my place; tap → the board.
    - Team → 🏆 This week (gameTeamHtml_, S.teamMode 'game'): the top three, everyone, the ministries, how points
-     work. Everyone active on the campus is on it.
+     work. Everyone active on the campus is on it. 🏆 All time (S.gameTab 'all', #gameAllTime): every week since the
+     board began added up — the server banks each finished week (api.js "All time").
    Others see points, a streak and which days someone was active — never what they did. */
 
 function gameOn_(){ return !!(S.me && !S.guest && !S.student && !S.board && !S.stuPreview && !S.awaiting && !S.me.setupTodo); }
@@ -83,7 +84,7 @@ function gameTeamHtml_(){
     gameLoad_(campus);
     return h+'<div class="card"><p class="sub" style="margin:0">'+esc(t('Loading…'))+'</p></div>';
   }
-  var me=(campus===S.me.campus) ? G.me : null, tab=S.gameTab==='min' ? 'min' : S.gameTab==='books' ? 'books' : 'people';
+  var me=(campus===S.me.campus) ? G.me : null, tab=S.gameTab==='min' ? 'min' : S.gameTab==='books' ? 'books' : (S.gameTab==='all' && G.allTime) ? 'all' : 'people';
   /* the campus together, first: this is a team's week before it is a race */
   var pct=G.of ? Math.round(100*G.active/G.of) : 0;
   h+='<div class="card gameCampus" id="gameCampus"><div class="gameCampusTop"><b>'+esc(gpT('{a} of {n} active this week',{a:G.active, n:G.of}))+'</b><span>'+esc(gpT('{n} today',{n:G.activeToday}))+'</span></div>'+
@@ -93,13 +94,29 @@ function gameTeamHtml_(){
       '<div class="gameStat"><b>🔥 '+me.streak+'</b><small>'+esc(me.streak===1 ? t('day in a row') : t('days in a row'))+'</small></div>'+
       '<div class="gameStat"><b>⭐ '+me.pts+'</b><small>'+esc(t('points this week'))+'</small></div>'+
       '<div class="gameStat"><b>'+(me.rank ? '#'+me.rank : '—')+'</b><small>'+esc(gpT('of {n}',{n:G.people.length}))+'</small></div></div>'+
+      (G.allTime && me.all!=null ? '<button class="gameMeAll" id="gameMeAll" data-gametab="all">🏆 <b>'+me.all+'</b> '+esc(t('points all time'))+(me.allRank ? ' · <b>#'+me.allRank+'</b>' : '')+' ›</button>' : '')+
       '<details class="gameHow" id="gameHow"'+(S.gameHowOpen?' open':'')+'><summary>'+esc(t('Where my points came from'))+'</summary>'+gamePartsHtml_(me, G)+
       '<p class="sub" style="margin:8px 0 0">'+esc(t('The weekly health check-in gives no points on purpose: it is anonymous, and points would show who answered.'))+'</p></details></div>';
   }
   h+='<div class="campusSeg gameTabs"><button class="campusBtn'+(tab==='people'?' on':'')+'" data-gametab="people">👤 '+esc(t('People'))+'</button>'+
+    (G.allTime ? '<button class="campusBtn'+(tab==='all'?' on':'')+'" data-gametab="all" id="gameTabAll">🏆 '+esc(t('All time'))+'</button>' : '')+
     '<button class="campusBtn'+(tab==='books'?' on':'')+'" data-gametab="books">📚 '+esc(t('Readers'))+'</button>'+
     '<button class="campusBtn'+(tab==='min'?' on':'')+'" data-gametab="min">🤝 '+esc(t('Ministries'))+'</button></div>';
-  if(tab==='books'){
+  if(tab==='all'){
+    /* All time: every week since the board began, this one included (api.js "All time") */
+    var ap=G.people.filter(function(p){ return p.all>0; }).sort(function(a,b){ return (a.allRank||0)-(b.allRank||0) || b.pts-a.pts; });
+    var arest=G.people.length-ap.length, ashow=S.gameAll ? ap : ap.slice(0, 10);
+    if(me && me.allRank && !ashow.some(function(p){ return p.id===S.me.id; })){ var amine=ap.filter(function(p){ return p.id===S.me.id; })[0]; if(amine) ashow=ashow.concat([amine]); }
+    h+='<div class="card gameList" id="gameAllTime"><p class="sub" style="margin:0 0 6px">'+esc(gpT('Every point since the board began on {d} — {n} weeks, this one included.',{d:fmtDateNice_(G.allTime.from), n:G.allTime.weeks}))+'</p>'+
+      (ap.length ? ashow.map(function(p){
+        var who=gamePerson_(p.id), mine=p.id===S.me.id, r=p.allRank;
+        return '<div class="gameRow'+(mine?' me':'')+(r<=3?' big':'')+'" data-person="'+esc(p.id)+'"><span class="gameRank">'+(r===1?'🥇':r===2?'🥈':r===3?'🥉':r)+'</span>'+avatarHtml(who,'sm')+
+          '<span class="gameWho"><b>'+esc(who.name||'—')+(mine?' <small>· '+esc(t('you'))+'</small>':'')+'</b><small>'+esc(gpT('{n} points this week',{n:p.pts}))+'</small></span>'+
+          '<span class="gamePts">'+p.all+'</span></div>';
+      }).join('') : '<p class="sub" style="margin:0">'+esc(t('Nobody has points yet. Tick a habit and be the first.'))+'</p>')+
+      (ap.length>10 && !S.gameAll ? '<button class="linkbtn" id="gameMore">'+esc(gpT('Show all {n}',{n:ap.length}))+'</button>' : '')+
+      (arest>0 && ap.length ? '<p class="sub" style="margin:8px 0 0">'+esc(gpT('{n} more have no points yet.',{n:arest}))+'</p>' : '')+'</div>';
+  } else if(tab==='books'){
     var rd=G.people.filter(function(p){ return p.booksYear>0; }).sort(function(a,b){ return b.booksYear-a.booksYear || b.books-a.books; });
     h+='<div class="card gameList" id="gameBooks"><p class="sub" style="margin:0 0 6px">'+esc(gpT('Books finished this year. Each one is worth {n} points the week you finish it.',{n:G.pts.book}))+'</p>'+
       (rd.length ? rd.slice(0, S.gameAll ? 999 : 15).map(function(p, i){
@@ -126,7 +143,7 @@ function gameTeamHtml_(){
         (rest>0 ? '<p class="sub" style="margin:8px 0 0">'+esc(gpT('{n} more have no points yet this week.',{n:rest}))+'</p>' : '')+'</div>';
     }
   }
-  h+='<p class="sub gameFoot">'+esc(t('The week runs Monday to Sunday and starts again each Monday.'))+'</p>';
+  h+='<p class="sub gameFoot">'+esc(tab==='all' ? t('All time keeps adding up. Each week still starts again on Monday.') : t('The week runs Monday to Sunday and starts again each Monday.'))+'</p>';
   return h;
 }
 
@@ -139,7 +156,7 @@ function bindGame_(){
     b.onclick=function(){ gpTap(); S.gameCampus=b.getAttribute('data-gamecampus'); S.gameAll=false; S.gameErr=''; render(); };
   });
   Array.prototype.forEach.call(root.querySelectorAll('[data-gametab]'), function(b){
-    b.onclick=function(){ gpTap(); S.gameTab=b.getAttribute('data-gametab'); render(); };
+    b.onclick=function(){ gpTap(); S.gameTab=b.getAttribute('data-gametab'); S.gameAll=false; render(); };
   });
   var more=document.getElementById('gameMore'); if(more) more.onclick=function(){ S.gameAll=true; render(); };
   var how=document.getElementById('gameHow'); if(how) how.addEventListener('toggle', function(){ S.gameHowOpen=how.open; });

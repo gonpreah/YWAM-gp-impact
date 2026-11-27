@@ -91,7 +91,7 @@ async function open(user, opts) {
   page.on('pageerror', (e) => errors.push('PAGEERROR ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/net::|ERR_/.test(m.text())) errors.push('CONSOLE ' + m.text()); });
   await page.route('**fonts.g**', (r) => r.abort());
-  await page.addInitScript((a) => { localStorage.setItem('gp-staff', JSON.stringify({ user: a.u, pin: '1234' })); localStorage.setItem('gp-ask-test', '1'); if (a.km) localStorage.setItem('gp-lang', 'km'); }, { u: user, km: !!opts.km });
+  await page.addInitScript((a) => { localStorage.setItem('gp-staff', JSON.stringify({ user: a.u, pin: '1234' })); localStorage.setItem('gp-ask-test', '1'); localStorage.setItem('gp-cafe-view', 'numbers');   /* this test is about the Scorecard: open on it, not on Today (31-today.js) */ if (a.km) localStorage.setItem('gp-lang', 'km'); }, { u: user, km: !!opts.km });
   await page.goto(BASE + '/teams.html', { waitUntil: 'load' });
   await page.waitForSelector('nav.bottom button', { timeout: 15000 });
   await page.waitForTimeout(400);
@@ -112,8 +112,8 @@ console.log('=== a ministry’s Scorecard ===');
 {
   const { ctx, page } = await open('kim');
   const labels = await tabLabels(page);
-  ok('the tabs are Scorecard · Tasks · Rocks — no “Numbers”, no “OKRs”', labels.join() === 'Scorecard,Tasks,Rocks', labels.join());
-  ok('it opens on the Scorecard, the board on top of the week card', (await page.$eval('.mmTabs .gtTab.on', (b) => b.getAttribute('data-mmtab'))) === 'numbers'
+  ok('the tabs are Today · Scorecard · Tasks · Rocks — no “Numbers”, no “OKRs”', labels.join() === 'Today,Scorecard,Tasks,Rocks', labels.join());
+  ok('the Scorecard (asked for here; a ministry’s page opens on Today) has the board on top of the week card', (await page.$eval('.mmTabs .gtTab.on', (b) => b.getAttribute('data-mmtab'))) === 'numbers'
     && await page.evaluate(() => { const a = document.getElementById('scoreBoard'), b = document.getElementById('mmWeekCard'); return !!a && !!b && a.getBoundingClientRect().top < b.getBoundingClientRect().top; }));
   ok('the headline counts what is on target this week (5 games ≥ 4 ✓, 20 youth ≥ 40 ✗)', /1 of 2 on target this week/.test(await txt(page, '#sbdHeadline')), await txt(page, '#sbdHeadline'));
   const row = (m) => page.$eval('[data-sbdrow="' + m + '"]', (e) => ({ cls: e.className, goal: (e.querySelector('.sbdGoal') || {}).textContent || '', val: e.querySelector('.sbdVal').textContent, mark: (e.querySelector('.sbdMark') || {}).textContent || '', label: e.querySelector('.sbdMark') ? e.querySelector('.sbdMark').getAttribute('aria-label') : '', cells: [...e.querySelectorAll('.sbdC')].map((c) => c.textContent || ' ').join('') }));
@@ -159,7 +159,13 @@ console.log('=== a ministry’s Rocks ===');
   ok('the Rocks tab: this quarter’s rocks for the ministry', (await rocksIn(page, S1)).join(' | ') === 'Start a girls’ football league | Train four new coaches', (await rocksIn(page, S1)).join(' | '));
   ok('… “1 of 2 on track”, whose each is, and its note', /1 of 2 on track/.test(await txt(page, S1 + ' .rkCount')) && /Dara/.test(await txt(page, '[data-rock="r1"]')) && /Six teams signed up/.test(await txt(page, '[data-rock="r1"]')) && /The team/.test(await txt(page, '[data-rock="r2"]')));
   ok('the department’s own rocks sit under it, a long note folded to its first line', (await rocksIn(page, S2)).join() === 'Every ministry visits one school' && await page.$eval('[data-rock="r3"] .rkNoteFold', (d) => !d.open && /Sports — 60%/.test(d.querySelector('summary').textContent) && /\+3 more/.test(d.querySelector('summary').textContent)));
-  ok('no percentages to slide, no targets: three buttons a rock', (await page.$$('[data-rock="r1"] .lmSt')).length === 3 && !(await page.$('#rocksTab input[type=range]')) && !(await page.$('#rocksTab .krSlider')));
+  ok('three buttons a rock, and a slider for how far along (Nov 2026, Andrew) — no targets', (await page.$$('[data-rock="r1"] .lmSt')).length === 3 && !!(await page.$('[data-rock="r1"] input[type=range][data-rockpct="r1"]')) && !(await page.$('#rocksTab .krSlider')));
+  /* slide it: the figure follows the finger, one save on release */
+  await page.$eval('[data-rockpct="r1"]', (sl) => { sl.value = '35'; sl.dispatchEvent(new Event('input', { bubbles: true })); });
+  ok('… the figure follows the slider', /35%/.test(await txt(page, '[data-rock="r1"] .rkPctVal')));
+  await page.$eval('[data-rockpct="r1"]', (sl) => sl.dispatchEvent(new Event('change', { bubbles: true }))); await page.waitForTimeout(500);
+  ok('… and is saved on release', stored('r1').pct === 35 && stored('r1').status !== 'done', stored('r1'));
+  ok('… the group shows how far along it is together', /% done/.test(await txt(page, S1 + ' .rkCount')), await txt(page, S1 + ' .rkCount'));
   await page.fill('[data-rkadd="siemreap|Youth Education|Sports"]', 'Buy twenty footballs');
   await page.evaluate(() => render()); await page.waitForTimeout(100);
   ok('a half-typed rock survives a redraw', await page.$eval('[data-rkadd="siemreap|Youth Education|Sports"]', (i) => i.value) === 'Buy twenty footballs');
@@ -273,7 +279,7 @@ console.log('=== Khmer, a small phone, the dark theme ===');
 {
   const { ctx, page } = await open('kim', { km: true, width: 320 });
   const labels = await tabLabels(page);
-  ok('Khmer: the tabs are តារាងពិន្ទុ and ថ្មធំ', labels[0] === 'តារាងពិន្ទុ' && labels[labels.length - 1] === 'ថ្មធំ', labels.join());
+  ok('Khmer: the tabs are ថ្ងៃនេះ, តារាងពិន្ទុ … ថ្មធំ', labels[0] === 'ថ្ងៃនេះ' && labels[1] === 'តារាងពិន្ទុ' && labels[labels.length - 1] === 'ថ្មធំ', labels.join());
   ok('Khmer at 320px: the Scorecard does not slide sideways', (await sideways(page)) <= 0, String(await sideways(page)));
   ok('… and is in Khmer', /ដល់គោលដៅ/.test(await txt(page, '#scoreBoard')) && !/on target|Scorecard/.test(await txt(page, '#scoreBoard')), (await txt(page, '#scoreBoard')).slice(0, 120));
   await page.click('#sbdEdit'); await page.waitForTimeout(200);

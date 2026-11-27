@@ -996,7 +996,15 @@ function dtsFinHtml_(d){
   if(phase==='lecture') h+='<div class="mmGrid" id="dtsFinTiles">'+dtsFinTile_(t('Left in the budget'), n.left, gpT('{money} in hand',{money:dtsMoney2_(n.inHand)}), n.left<0 ? 'dtsFinNeg' : '')+
     dtsFinTile_(t('Budget'), n.budget, t('the fees of the students accepted'))+dtsFinTile_(t('Received'), n.received)+dtsFinTile_(t('Spent'), n.spent)+'</div>';
   else h+='<div class="mmGrid" id="dtsFinTiles">'+dtsFinTile_(t('Received'), n.oReceived)+dtsFinTile_(t('For students'), n.oReceived-n.oPool)+dtsFinTile_(t('General DTS pool'), n.oPool)+'</div>';
-  h+='<div class="chips" id="dtsFinSecs">'+secs.map(function(x){ return '<button class="chip'+(x[0]===sec?' on':'')+'" data-dtsfinsec="'+x[0]+'">'+x[1]+' '+esc(t(x[2]))+'</button>'; }).join('')+'</div>';
+  /* where money is typed in stands apart (Nov 2026, Andrew: "separate the income and expenses a bit since they are the
+     ones where you input the amount"): the pages to read in one row, then "Enter money" — Income in green, Expenses
+     in red — each with its total so far */
+  var look=secs.filter(function(x){ return x[0]!=='income' && x[0]!=='expenses'; }), enter=secs.filter(function(x){ return x[0]==='income' || x[0]==='expenses'; });
+  var tot={ income:dtsFinSum_(dtsFinIn_(phase,'income')), expenses:dtsFinSum_(dtsFinIn_('lecture','expense')) };
+  h+='<div id="dtsFinSecs"><div class="chips dtsFinLook">'+look.map(function(x){ return '<button class="chip'+(x[0]===sec?' on':'')+'" data-dtsfinsec="'+x[0]+'">'+x[1]+' '+esc(t(x[2]))+'</button>'; }).join('')+'</div>'+
+    '<div class="dtsFinLabel">✏️ '+esc(t('Enter money'))+'</div><div class="dtsFinEnter'+(enter.length===1?' one':'')+'">'+enter.map(function(x){
+      return '<button class="dtsFinEnterBtn '+(x[0]==='income'?'in':'out')+(x[0]===sec?' on':'')+'" data-dtsfinsec="'+x[0]+'" aria-pressed="'+(x[0]===sec)+'">'+
+        '<span class="dtsFinEnterName">'+x[1]+' '+esc(t(x[2]))+'</span><span class="dtsFinEnterSum">'+esc(dtsMoney2_(tot[x[0]]))+'</span></button>'; }).join('')+'</div></div>';
   if(sec==='expenses') return h+dtsFinExpHtml_(sch);
   if(sec==='budget') return h+dtsBudHtml_(sch);
   if(sec==='students') return h+dtsFinStuHtml_(phase, sch);
@@ -1075,7 +1083,7 @@ function dtsFinIncFormHtml_(f, phase){
 function dtsFinIncHtml_(phase, sch){
   var list=dtsFinIn_(phase,'income'), f=S.dtsFinForm;
   var h=(f && f.kind==='income') ? dtsFinIncFormHtml_(f, phase) : '<button class="btn small dtsAdd" id="dtsFinAddInc">＋ '+esc(t('Add income'))+'</button>';
-  h+='<div class="card" id="dtsFinIncome"><h3 style="margin-top:0">💵 '+esc(t('Income'))+(list.length ? ' · '+esc(dtsMoney2_(dtsFinSum_(list))) : '')+'</h3>';
+  h+='<div class="card dtsFinInCard" id="dtsFinIncome"><h3 style="margin-top:0">💵 '+esc(t('Income'))+(list.length ? ' · '+esc(dtsMoney2_(dtsFinSum_(list))) : '')+'</h3>';
   if(!list.length) return h+'<p class="sub" style="margin:0">'+esc(t('Nothing in yet. Add each gift as it comes in — the day, how it came, who it is for and how much.'))+'</p></div>';
   var by={}; DTS_FIN_METHODS.forEach(function(m){ var s=dtsFinSum_(list.filter(function(e){ return e.method===m[0]; })); if(s) by[m[0]]=s; });
   h+='<p class="hint" style="margin:0 0 6px">'+DTS_FIN_METHODS.filter(function(m){ return by[m[0]]; }).map(function(m){ return esc(t(m[1]))+' '+esc(dtsMoney2_(by[m[0]])); }).join(' · ')+'</p>';
@@ -1100,7 +1108,7 @@ function dtsFinExpFormHtml_(f){
 function dtsFinExpHtml_(sch){
   var list=dtsFinIn_('lecture','expense'), f=S.dtsFinForm, n=dtsFinNums_();
   var h=(f && f.kind==='expense') ? dtsFinExpFormHtml_(f) : '<button class="btn small dtsAdd" id="dtsFinAddExp">＋ '+esc(t('Add an expense'))+'</button>';
-  h+='<div class="card" id="dtsFinExpenses"><h3 style="margin-top:0">🧾 '+esc(t('Expenses'))+(list.length ? ' · '+esc(dtsMoney2_(dtsFinSum_(list))) : '')+'</h3>';
+  h+='<div class="card dtsFinOutCard" id="dtsFinExpenses"><h3 style="margin-top:0">🧾 '+esc(t('Expenses'))+(list.length ? ' · '+esc(dtsMoney2_(dtsFinSum_(list))) : '')+'</h3>';
   if(!list.length) return h+'<p class="sub" style="margin:0">'+esc(t('Nothing spent yet. Add each expense — the day, what kind, what it was for, who made it and how much.'))+'</p></div>';
   h+='<div class="dtsFinCats">'+DTS_FIN_CATS.map(function(c){ var s=dtsFinSum_(list.filter(function(e){ return e.category===c[0]; })); return s ? '<span>'+esc(t(c[1]))+' <b>'+esc(dtsMoney2_(s))+'</b></span>' : ''; }).join('')+'</div>';
   if(n.receiptsOut) h+='<p class="hint" style="margin:6px 0 0" id="dtsFinReceiptsOut">🧾 '+esc(gpT('{n} receipts not given to the office yet',{n:n.receiptsOut}))+(n.noReceipt ? ' · '+esc(gpT('{n} with no receipt',{n:n.noReceipt})) : '')+'</p>';

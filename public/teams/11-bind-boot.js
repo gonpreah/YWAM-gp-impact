@@ -564,6 +564,7 @@ function bindAway(){
   bindKmReview_();
   bindBoardReport_();
   bindReport_();   // the quarterly report, ministry by ministry (29-report.js)
+  bindToday_();   // My Ministry → Today: tap counters, streak, win of the day, the Friday wrap (31-today.js)
   bindF30_();
   bindSupport_();
   bindPrayer_();
@@ -1980,7 +1981,7 @@ function refreshAll(){
    ?fresh). If the page itself came from the offline copy (the worker leaves a
    note in the gp-meta cache), the first pull that reaches the server reloads. */
 /* the page and its code (teams/*) — a change to any of them is a new version */
-var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/20-game.js','teams/21-voice.js','teams/22-setup.js','teams/23-structure.js','teams/24-school.js','teams/25-intercession.js','teams/26-worship.js','teams/27-meeting.js','teams/28-rocks.js','teams/24-school.js','teams/11-bind-boot.js','finance.js','km.js','library.js', 'teams/29-report.js', 'teams/30-boardroom.js'];
+var GP_VER_FILES=['teams.html','teams/teams.css','teams/01-core.js','teams/02-goals-okrs.js','teams/03-library-org.js','teams/04-ministry-strengths.js','teams/05-admin-hr.js','teams/06-numbers-contract.js','teams/07-health-leave.js','teams/08-team-profile.js','teams/09-finance.js','teams/10-review360.js','teams/16-dts.js','teams/17-tests.js','teams/18-library-plus.js','teams/19-ux.js','teams/20-game.js','teams/21-voice.js','teams/22-setup.js','teams/23-structure.js','teams/24-school.js','teams/25-intercession.js','teams/26-worship.js','teams/27-meeting.js','teams/28-rocks.js','teams/24-school.js','teams/11-bind-boot.js','finance.js','km.js','library.js', 'teams/29-report.js', 'teams/30-boardroom.js','teams/31-today.js'];
 if(gpTasksApp_()) GP_VER_FILES=['tasks.html'].concat(GP_VER_FILES.slice(1), ['teams/12-tasks.js','teams/13-calendar.js']);   // the tasks app's page is tasks.html
 var gpVerBase=null, gpVerStale=false;
 function gpVerSig_(){
