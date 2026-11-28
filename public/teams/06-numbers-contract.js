@@ -131,7 +131,7 @@ function numbersDueState_(wk, logged){
 }
 function numbersProgress_(campus, dept, min, data, wk){
   var auto=autoMetricsFor(campus, dept, min);   // GPDTS's pipeline counts those; only the rest are "entered"
-  var metrics=metricsFor(campus, dept, min).filter(function(m){ return auto.indexOf(m)===-1; }), entries=(data&&data.entries)||{}, daily=(data&&data.daily)||{};
+  var metrics=inputMetricsFor(campus, dept, min).filter(function(m){ return auto.indexOf(m)===-1; }), entries=(data&&data.entries)||{}, daily=(data&&data.daily)||{};
   var b=weekBounds_(wk), n=0;
   metrics.forEach(function(m){
     if(entries[m] && entries[m][String(wk)]!==undefined){ n++; return; }
@@ -1058,6 +1058,12 @@ function myMinistryHtml(){
         if(sel.dept==='Skills Training' && sel.min==='Finances') pane+=staffDebtCardHtml_();
         pane+=mmGlanceHtml_(ministryDashboardHtml_(S.me.campus, sel.dept, sel.min, data));
       }
+    }
+    if(coreMetricsFor(sel.dept, sel.min)){
+      var nAll=metricsFor(S.me.campus, sel.dept, sel.min).filter(function(m){ return S.mmSkip.indexOf(m)===-1; }).length, nCore=inputMetricsFor(S.me.campus, sel.dept, sel.min).filter(function(m){ return S.mmSkip.indexOf(m)===-1; }).length;
+      var coreOn=mmCoreOn_(sel.dept, sel.min);
+      pane+='<p class="hint" id="mmCoreNote">'+esc(coreOn ? t('For now we only ask for our core numbers — the few we report. Keep it simple.') : t('Showing all our numbers.'))+
+        (mmLeads_(sel) && (!coreOn || nAll>nCore) ? ' <button type="button" class="linkbtn" id="mmCoreToggle" data-mmcore="'+esc(sel.dept+'|'+sel.min)+'">'+esc(coreOn ? gpT('Show all our numbers ({n} more)',{n:nAll-nCore}) : t('Back to our core numbers'))+'</button>' : '')+'</p>';
     }
     if(canEditMetricsClient_(S.me.campus, sel.dept, sel.min)){
       S.metricEditTarget = { campus:S.me.campus, dept:sel.dept, ministry:sel.min };

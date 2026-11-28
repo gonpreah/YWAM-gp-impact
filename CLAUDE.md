@@ -371,6 +371,17 @@ history is orphaned (`test-numbers-people.mjs` §5 covers the move).
     ✅ Tasks ("4 open", once GP Tasks is on the phone) — `mmPlanSum_`. Open: the section asked for (`S.mmTab` = its key —
     scrolled to once, `mmPlanAfter_`), whatever was opened earlier in the visit (`gp-mm-plan` in sessionStorage,
     `mmPlanSet_`), and, arriving on Our plan itself, the Scorecard. Closing the asked-for one sets `S.mmTab='mmplan'`.
+  - **Phase one: the core numbers** (Nov 2026, Uriah: "phased rollouts of the My Ministry page … simple core metrics that we need
+    to report to government and stuff … as simple as possible, as easy, fun, chill as possible"). `CORE_METRICS` in taxonomy.js
+    (`coreMetricsFor(dept, ministry)`) names the three or four numbers a ministry's page ASKS for — sixteen ministries: the
+    community schools, Sports, GP Media, DTS / DBS / BCS / SOMD / SMS, Evangelism, Church Partnerships, Hospitality, Technical,
+    Culinary. Not the Cafe, Campus Leadership, the Finances office, or the ministries whose numbers count themselves (GPDTS,
+    YDC, Worship, Intercession, Outreach Teams). `inputMetricsFor` (01-core.js) is that list — plus any metric the leader
+    added by hand — and is what Today's tiles, the Scorecard's board, boxes, "n of N entered" and the totals fold read;
+    the editor, the dashboards, the reports and the server still use every metric, and nothing saved is touched. The
+    Scorecard says so (`#mmCoreNote`); a leader has **Show all our numbers (n more)** for the visit (`#mmCoreToggle`,
+    `S.mmAllNums['Dept|Min']`). To end phase one for a ministry, delete its line in `CORE_METRICS`. Tests written round
+    a whole list start with `ALL_NUMBERS` (tests/env.mjs → `gp-core-off` on the phone). Khmer §155.
   - **Rocks and Tasks are for those who lead** (Nov 2026, Uriah: "Remove all rocks from ministry pages and tasks … Leave them for
     leaders and departments. Just need to get the ministries using their app for gathering data for now"): `mmTabsFor_` adds
     `tasks` / `okr` only when `mmLeads_(sel)` — the ministry's leader, Campus Leadership, an admin (`canEditMetricsClient_`).

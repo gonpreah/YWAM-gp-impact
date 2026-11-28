@@ -20,6 +20,18 @@ function ministriesFor(campusId, dept){
   var d = getDepartments(campusId||'poipet')[dept];
   return d ? Object.keys(d) : [];
 }
+/* What a ministry's page ASKS for (Today's tiles, the Scorecard's board and boxes, "n of N entered"): in phase one its core
+   numbers (taxonomy.js CORE_METRICS) — in the ministry's own order, only those it still tracks, plus anything its leader
+   added by hand — unless "Show all our numbers" was tapped this visit (S.mmAllNums by 'Dept|Ministry'). Everything else
+   (the editor, the dashboards, the report) keeps reading metricsFor. */
+function mmCoreOn_(dept, ministry){ return !!coreMetricsFor(dept, ministry) && !((S.mmAllNums||{})[dept+'|'+ministry]) && !lsGet('gp-core-off'); }   // gp-core-off: older tests work a ministry's whole list (tests/env.mjs ALL_NUMBERS)
+function inputMetricsFor(campusId, dept, ministry){
+  var all=metricsFor(campusId, dept, ministry), core=coreMetricsFor(dept, ministry);
+  if(!core || !mmCoreOn_(dept, ministry)) return all;
+  var base=(getBaselineDepartments(campusId||'poipet')[dept]||{})[ministry]||[];
+  var out=all.filter(function(m){ return core.indexOf(m)>-1 || base.indexOf(m)===-1; });
+  return out.length ? out : all;
+}
 function metricsFor(campusId, dept, ministry){
   var d = getDepartments(campusId||'poipet')[dept];
   var list = (d && d[ministry]) ? d[ministry] : [];

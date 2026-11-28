@@ -7338,3 +7338,13 @@ My Ministry now has three tabs — Today · Our tools · Our plan. “Tab: …�
 | Services, practice and training | កម្មវិធី ការហាត់សម និងការបណ្តុះបណ្តាល |
 | This week’s schedule | កាលវិភាគសប្តាហ៍នេះ |
 | Rooms, beds and bookings | បន្ទប់ គ្រែ និងការកក់ |
+
+
+## 155. My Ministry, phase one — the core numbers (Nov 2026)
+
+A short line under a ministry's Scorecard, and the leader's link beside it.
+
+- For now we only ask for our core numbers — the few we report. Keep it simple.
+- Showing all our numbers.
+- Show all our numbers ({n} more)
+- Back to our core numbers

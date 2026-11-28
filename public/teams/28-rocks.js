@@ -363,7 +363,7 @@ function sbdDefaultDir_(m){ return (typeof LOWER_BETTER!=='undefined' && LOWER_B
 /* The board at the top of a ministry's Scorecard: "n of m on target", then each number with its goal,
    the week's figure and its mark, and thirteen weeks of marks. `wk` is the week the page is on. */
 function scoreBoardHtml_(campus, dept, ministry, data, wk, readOnly){
-  var metrics=metricsFor(campus, dept, ministry); if(!metrics.length) return '';
+  var metrics=inputMetricsFor(campus, dept, ministry); if(!metrics.length) return '';
   var entries=(data && data.entries) || {}, goals=sbdGoals_(campus, dept, ministry), key=rkKey_(campus, dept, ministry);
   var canSet=!readOnly && canEditMetricsClient_(campus, dept, ministry), E=!readOnly && S.sbd && S.sbd.key===key ? S.sbd : null;   // readOnly: the Advisory Board looking in
   var isCur=Number(wk)===Number(thisWeek());

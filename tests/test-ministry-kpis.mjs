@@ -9,7 +9,7 @@
    wrong twice: you do not add up students, and the daily roll-up owns any metric
    it touches, so the two writers would fight over the same weekly cell. This
    drives the real pages and captures what they send. */
-import { PUBLIC, CHROMIUM, SCORECARD_FIRST } from './env.mjs';
+import { PUBLIC, CHROMIUM, SCORECARD_FIRST, ALL_NUMBERS } from './env.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -89,7 +89,8 @@ await page.route('**/api', function (r) {
   else if (b.fn === 'saveMyKpiDay' || b.fn === 'saveMyMinistry') out = MINISTRY;
   r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(out) });
 });
-await page.addInitScript(SCORECARD_FIRST);   // this test is about the Scorecard: start the visit on it, not on Today
+await page.addInitScript(SCORECARD_FIRST);
+await page.addInitScript(ALL_NUMBERS);   // the whole list, not only the core numbers   // this test is about the Scorecard: start the visit on it, not on Today
 await page.addInitScript(() => (localStorage.setItem('gp-staff', JSON.stringify({ user: 'sreilea', pin: '1234' }))));
 await page.goto(BASE + '/teams.html', { waitUntil: 'load' });
 await page.waitForSelector('nav.bottom button', { timeout: 15000 });
@@ -183,7 +184,8 @@ function ok(name, cond, extra) {
     else if (b.fn === 'getData') out = BOOT.base;
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(out) });
   });
-  await p3.addInitScript(SCORECARD_FIRST);   // this test is about the Scorecard: start the visit on it, not on Today
+  await p3.addInitScript(SCORECARD_FIRST);
+  await p3.addInitScript(ALL_NUMBERS);   // the whole list, not only the core numbers   // this test is about the Scorecard: start the visit on it, not on Today
   await p3.addInitScript(() => (localStorage.setItem('gp-staff', JSON.stringify({ user: 'sreilea', pin: '1234' }))));
   await p3.goto(BASE + '/teams.html', { waitUntil: 'load' });
   await p3.waitForSelector('nav.bottom button', { timeout: 15000 });
@@ -343,7 +345,8 @@ function ok(name, cond, extra) {
     else if (b.fn === 'getData') out = BOOT.base;
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(out) });
   });
-  await p2.addInitScript(SCORECARD_FIRST);   // this test is about the Scorecard: start the visit on it, not on Today
+  await p2.addInitScript(SCORECARD_FIRST);
+  await p2.addInitScript(ALL_NUMBERS);   // the whole list, not only the core numbers   // this test is about the Scorecard: start the visit on it, not on Today
   await p2.addInitScript(() => (localStorage.setItem('gp-staff', JSON.stringify({ user: 'sreilea', pin: '1234' }))));
   await p2.goto(BASE + '/teams.html', { waitUntil: 'load' });
   await p2.waitForSelector('nav.bottom button');

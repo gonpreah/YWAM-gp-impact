@@ -2,7 +2,7 @@
    guide's line on what to count (hidden until tapped, never disturbing a number
    half typed, in Khmer when the app is), and a 1–10 score that is caught before
    it is saved when it is out of range. Outreach Teams is left as it is. */
-import { PUBLIC, CHROMIUM, mmGo } from './env.mjs';
+import { PUBLIC, CHROMIUM, mmGo, ALL_NUMBERS } from './env.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -56,6 +56,7 @@ async function open(data, opts) {
     else if (b.fn === 'getMySmartGoals') out = { ok: true, smartGoals: [] };
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(out) });
   });
+  await page.addInitScript(ALL_NUMBERS);   // the whole list, not only the core numbers
   await page.addInitScript(km => {
     localStorage.setItem('gp-staff', JSON.stringify({ user: 'sreilea', pin: '1234' }));
     sessionStorage.setItem('gp-skip-teams', '1');

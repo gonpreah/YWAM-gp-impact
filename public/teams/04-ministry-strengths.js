@@ -1524,7 +1524,7 @@ function kpiCardHtml(wk){
       '<button class="btn ghost" id="goProfile">'+esc(t('Choose my ministry'))+'</button></div>';
   }
   var auto=autoMetricsFor(S.me.campus, S.me.dept, S.me.ministry);   // counted from the pipeline, never typed (GPDTS)
-  var metrics=metricsFor(S.me.campus, S.me.dept, S.me.ministry).filter(function(m){ return auto.indexOf(m)===-1; });
+  var metrics=inputMetricsFor(S.me.campus, S.me.dept, S.me.ministry).filter(function(m){ return auto.indexOf(m)===-1; });
   if(!metrics.length){
     return '<div class="card"><p class="sub" style="margin:4px 0">'+
       esc(gpT('No scorecard numbers are set for {ministry} yet.',{ministry:t(S.me.ministry)}))+'</p></div>';
@@ -1719,7 +1719,7 @@ function kpiCardHtml(wk){
 function ovWeekRowsHtml_(dept, ministry, data, wk){
   S.ovDeptOf[ministry] = dept;
   var auto = autoMetricsFor(S.me.campus, dept, ministry);   // counted from the pipeline, never typed (GPDTS)
-  var metrics = metricsFor(S.me.campus, dept, ministry).filter(function(m){ return auto.indexOf(m)===-1; });
+  var metrics = inputMetricsFor(S.me.campus, dept, ministry).filter(function(m){ return auto.indexOf(m)===-1; });
   if(!metrics.length){
     return '<div class="card"><p class="sub" style="margin:4px 0">'+
       esc(gpT('No scorecard numbers are set for {ministry} yet.',{ministry:t(ministry)}))+'</p></div>';
