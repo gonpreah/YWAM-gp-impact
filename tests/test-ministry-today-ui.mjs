@@ -6,7 +6,7 @@
    undo, a long press to type; a week typed as one total is kept; offline then back; the Friday wrap; read-only; an
    admin on another ministry; a ministry with its own daily home keeps it with the strip; Khmer; 320px.
    Every name is made up. */
-import { REPO, PUBLIC, tmpDir, CHROMIUM, mmGo } from './env.mjs';
+import { REPO, PUBLIC, tmpDir, CHROMIUM, mmGo, ALL_NUMBERS } from './env.mjs';
 import { testNow, pinClock, weekOf, weekYearOf } from './clock.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
@@ -88,6 +88,7 @@ async function open(user, opts) {
   page.on('pageerror', (e) => errors.push('PAGEERROR ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/net::|ERR_/.test(m.text())) errors.push('CONSOLE ' + m.text()); });
   await page.route('**fonts.g**', (r) => r.abort());
+  if (!opts || !opts.core) await page.addInitScript(ALL_NUMBERS);   // the whole list, not only the core numbers
   await page.addInitScript((a) => { localStorage.setItem('gp-staff', JSON.stringify({ user: a.u, pin: '1234' })); localStorage.setItem('gp-ask-test', '1'); if (a.km) localStorage.setItem('gp-lang', 'km'); }, { u: user, km: !!opts.km });
   await page.goto(BASE + '/teams.html', { waitUntil: 'load' });
   await page.waitForSelector('nav.bottom button', { timeout: 15000 });
@@ -393,6 +394,31 @@ console.log('=== Hospitality: tonight from the booking book, and the week’s ch
   await shot(page, SHOTS + '/today-hospitality.png');
   await page.click('#tdTonight'); await page.waitForSelector('#hospPage');
   ok('a tap opens SR Hospitality', await page.evaluate(() => S.view === 'hosp'));
+  await ctx.close();
+}
+
+/* ---------- phase one: only the core numbers (Nov 2026) ---------- */
+console.log('=== phase one: the core numbers ===');
+{
+  const { ctx, page } = await open('dara', { core: true });
+  const tiles = await page.$$eval('[data-tdtap]', (b) => b.map((x) => x.getAttribute('data-tdtap')));
+  ok('Sports asks only for its core counts on Today — no Games Played, no Games Won', tiles.join() === 'Sessions / Leagues Run' || (tiles.includes('Sessions / Leagues Run') && !tiles.includes('Games Played') && !tiles.includes('Games Won')), tiles);
+  await mmGo(page, 'numbers'); await page.waitForTimeout(400);
+  ok('the Scorecard says so, and a member has no way to bring the rest back', /only ask for our core numbers/.test(await page.$eval('#mmCoreNote', (e) => e.textContent)) && !(await page.$('#mmCoreToggle')));
+  ok('… and its boxes are the core ones (no Games Played, no Coaches in Training)', await page.evaluate(() => { const h = document.querySelector('.mmPane').innerHTML; return /Youth Participating/.test(h) && /Current Coaches/.test(h) && !/Games Played/.test(h) && !/Coaches in Training/.test(h); }));
+  await ctx.close();
+}
+{
+  const { ctx, page } = await open('kim', { core: true });
+  await mmGo(page, 'numbers'); await page.waitForTimeout(400);
+  ok('the leader can show all the numbers for this visit', /Show all our numbers \(4 more\)/.test(await page.$eval('#mmCoreToggle', (e) => e.textContent)), await page.$eval('#mmCoreToggle', (e) => e.textContent));
+  await page.click('#mmCoreToggle'); await page.waitForTimeout(400);
+  ok('… and they are all asked for again, with the way back', await page.evaluate(() => /Games Played/.test(document.querySelector('.mmPane').innerHTML) && /Back to our core numbers/.test(document.getElementById('mmCoreToggle').textContent)));
+  await ctx.close();
+}
+{
+  const { ctx, page } = await open('cora', { core: true });
+  ok('the Cafe is not in phase one: no core note', !(await page.$('#mmCoreNote')));
   await ctx.close();
 }
 

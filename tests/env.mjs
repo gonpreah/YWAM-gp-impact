@@ -65,6 +65,10 @@ export const SCORECARD_FIRST = (() => {
 
 /* My Ministry, simpler (Nov 2026). The header is one row; where the ministry sits, who leads it, whose numbers these
    are and "This quarter's report" are behind a tap on the name. mmAbout(page) opens that fold when it is shut. */
+/* Phase one (Nov 2026): a ministry's page asks only for its core numbers (taxonomy.js CORE_METRICS). A test written
+   around a ministry's whole list starts with every number on: await page.addInitScript(ALL_NUMBERS). */
+export const ALL_NUMBERS = 'try { localStorage.setItem("gp-core-off", "1"); } catch (e) {}';
+
 export async function mmAbout(page) {
   if (await page.$('#mmAbout[hidden]')) { await page.click('#mmNameBtn'); await page.waitForSelector('#mmAbout:not([hidden])'); }
 }

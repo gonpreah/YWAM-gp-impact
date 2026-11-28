@@ -66,7 +66,7 @@ function tdHasExtra_(sel, x){ var c=tdCfg_(sel); return !!(c && c.extra && c.ext
 /* ---------- which numbers go where ---------- */
 function tdMetrics_(sel){
   var c=S.me.campus, auto=autoMetricsFor(c, sel.dept, sel.min);
-  var all=metricsFor(c, sel.dept, sel.min).filter(function(m){ return auto.indexOf(m)===-1; });
+  var all=inputMetricsFor(c, sel.dept, sel.min).filter(function(m){ return auto.indexOf(m)===-1; });
   var weekly=all.filter(function(m){ return cadenceOf(c, sel.dept, sel.min, m)==='week'; });
   var counts=weekly.filter(function(m){ return modeOf(m)==='sum' && WEEKLY_ONLY_METRICS.indexOf(m)===-1; });
   var goals=sbdGoals_(c, sel.dept, sel.min);
@@ -257,7 +257,7 @@ function tdAlsoHtml_(sel, data, M, can){
 }
 function tdRingCalc_(sel, data, M){
   var c=S.me.campus, wk=thisWeek(), entries=(data && data.entries) || {};
-  var withGoal=Object.keys(M.goals).filter(function(m){ return !tdIsFaith_(m) && metricsFor(c, sel.dept, sel.min).indexOf(m)>-1; }), on=0;
+  var withGoal=Object.keys(M.goals).filter(function(m){ return !tdIsFaith_(m) && inputMetricsFor(c, sel.dept, sel.min).indexOf(m)>-1; }), on=0;
   withGoal.forEach(function(m){
     var v=(entries[m]||{})[String(wk)];
     if(M.taps.indexOf(m)>-1) v=tdVals_(sel, data, m).week;

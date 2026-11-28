@@ -101,6 +101,31 @@ var WORSHIP_AUTO_METRICS = ['Worship Nights Hosted','Attendance at Gatherings','
    report's "leave out faith numbers" tick (29-report.js) and My Ministry's Today screen (31-today.js), where they are
    counted in a plain row and are never part of the game — no tile, no ring, no celebration, no badge. */
 var GP_FAITH_RE = /salvation|baptis|gospel|healing|discipl|church|prayer|testimon|worship|bible|evangel|congregation/i;
+/* ---------- The core numbers (Nov 2026, Uriah: "phased rollouts of the My Ministry page … simple core metrics that we need
+   to report to government and stuff … as simple as possible, as easy, fun, chill as possible") ----------
+   Phase one: a ministry's page asks for these few and nothing else — who we served, what we ran, who we trained, plus
+   Salvations where the ministry counts them. Every other metric is still in the taxonomy, still saved, still on the
+   dashboards and in "Edit what we track"; it is only not ASKED for until its leader taps "Show all our numbers".
+   Not here on purpose: the Cafe, Campus Leadership, the Finances office (their own tools) and ministries whose numbers
+   count themselves (GPDTS, YDC, Worship, Intercession, Outreach Teams). To end phase one for a ministry, delete its line. */
+var SCHOOL_CORE = ['Students Enrolled', 'Students Graduated', 'Outreach Locations Reached', 'Salvations'];
+var COMMUNITY_SCHOOL_CORE = ['Students Enrolled', 'Students Supported Financially', 'Students Given Food & Housing', 'Salvations'];
+var CORE_METRICS = {
+  'Community Service|GP Education': COMMUNITY_SCHOOL_CORE, 'Community Service|Ponlork School': COMMUNITY_SCHOOL_CORE,
+  'Community Service|LTN': COMMUNITY_SCHOOL_CORE, 'Community Service|Sry Noi': COMMUNITY_SCHOOL_CORE,
+  'Youth Education|Sports': ['Sessions / Leagues Run', 'Youth Participating', 'Current Coaches', 'Salvations'],
+  'Youth Education|GP Media': ['Facebook Followers', 'Instagram Followers', 'TikTok Followers', 'YouTube Followers', 'Salvations'],
+  'Leadership Development|DTS': SCHOOL_CORE, 'Leadership Development|DBS': SCHOOL_CORE,
+  'Leadership Development|BCS': SCHOOL_CORE, 'Leadership Development|SOMD': SCHOOL_CORE,
+  'Leadership Development|SMS': ['Students Enrolled', 'Students Graduated', 'Content Pieces Posted', 'Salvations'],
+  'Leadership Development|Evangelism': ['Evangelistic Events Held', 'People Reached with Gospel', 'Salvations'],
+  'Leadership Development|Church Partnerships': ['Partner Churches Supported', 'Combined Congregation Attendance', 'Salvations'],
+  'Skills Training|Hospitality': ['Guests Welcomed', 'Trainees in Track', 'Training Hours Delivered'],
+  'Skills Training|Technical': ['Projects Completed', 'Trainees in Track', 'Training Hours Delivered'],
+  'Skills Training|Culinary': ['People Cooked For', 'Trainees in Track', 'Training Hours Delivered']
+};
+function coreMetricsFor(dept, ministry) { var l = CORE_METRICS[dept + '|' + ministry]; return l ? l.slice() : null; }
+
 function autoMetricsFor(campus, dept, ministry) {
   if (dept === 'Youth Education' && ministry === 'Worship') return WORSHIP_AUTO_METRICS.slice();
   if (dept === 'Youth Education' && ministry === 'Intercession') return ICP_AUTO_METRICS.slice();

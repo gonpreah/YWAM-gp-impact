@@ -7,7 +7,7 @@
    A teammate's page shows their rocks. Nothing on screen says OKR any more; what was there before
    sits folded under "Earlier objectives". Checked in English and Khmer, at 320px, and in the dark
    theme (contrast of the new marks). Every name is made up. */
-import { REPO, PUBLIC, tmpDir, CHROMIUM, SCORECARD_FIRST, mmGo } from './env.mjs';
+import { REPO, PUBLIC, tmpDir, CHROMIUM, SCORECARD_FIRST, ALL_NUMBERS, mmGo } from './env.mjs';
 import { testNow, weekOf, quarterOf, weekYearOf } from './clock.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
@@ -92,7 +92,8 @@ async function open(user, opts) {
   page.on('pageerror', (e) => errors.push('PAGEERROR ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/net::|ERR_/.test(m.text())) errors.push('CONSOLE ' + m.text()); });
   await page.route('**fonts.g**', (r) => r.abort());
-  await page.addInitScript(SCORECARD_FIRST);   // this test is about the Scorecard: start the visit on it, not on Today
+  await page.addInitScript(SCORECARD_FIRST);
+  await page.addInitScript(ALL_NUMBERS);   // the whole list, not only the core numbers   // this test is about the Scorecard: start the visit on it, not on Today
   await page.addInitScript((a) => { localStorage.setItem('gp-staff', JSON.stringify({ user: a.u, pin: '1234' })); localStorage.setItem('gp-ask-test', '1');   /* this test is about the Scorecard: open on it, not on Today (31-today.js) */ if (a.km) localStorage.setItem('gp-lang', 'km'); }, { u: user, km: !!opts.km });
   await page.goto(BASE + '/teams.html', { waitUntil: 'load' });
   await page.waitForSelector('nav.bottom button', { timeout: 15000 });

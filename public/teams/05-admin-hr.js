@@ -2178,7 +2178,7 @@ function periodChipsHtml_(attr, cur){
     return '<button class="campusBtn'+(cur===o[0]?' on':'')+'" '+attr+'="'+o[0]+'">'+esc(t(o[1]))+'</button>'; }).join('')+'</div>';
 }
 function ministryDashboardHtml_(campus, dept, ministry, data){
-  var metrics=metricsFor(campus, dept, ministry);
+  var metrics=inputMetricsFor(campus, dept, ministry);   // phase one: the core numbers (01-core.js)
   if(!metrics.length) return '';
   var entries=(data&&data.entries)||{};
   // aggregate() takes rollup.js's 0-based quarter (qOf); people read Q1–Q4.

@@ -5,7 +5,7 @@
    queue, show at once, and a second save to the same week merges rather than
    replaces; back online they reach the server and the page boots itself again;
    another person's copy is never shown; logging out deletes it. */
-import { REPO, PUBLIC, tmpDir, CHROMIUM, mmGo } from './env.mjs';
+import { REPO, PUBLIC, tmpDir, CHROMIUM, mmGo, ALL_NUMBERS } from './env.mjs';
 import { chromium, devices } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -68,6 +68,7 @@ const ctx = await browser.newContext({ ...devices['iPhone 13'], timezoneId: 'Asi
 const page = await ctx.newPage();
 page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
 await page.route('**fonts.g**', r => r.abort());
+await page.addInitScript(ALL_NUMBERS);   // the whole list, not only the core numbers
 await page.addInitScript(() => {
   localStorage.setItem('gp-sw-test', '1');   // let the worker register under a test browser
   if (!localStorage.getItem('gp-staff') && !sessionStorage.getItem('loggedOut')) localStorage.setItem('gp-staff', JSON.stringify({ user: 'sreilea', pin: '1234' }));
@@ -147,6 +148,7 @@ await page.evaluate(() => {
   localStorage.setItem('gp-boot-cache', JSON.stringify(old));
   sessionStorage.setItem('noRoom', '1');
 });
+await page.addInitScript(ALL_NUMBERS);   // the whole list, not only the core numbers
 await page.addInitScript(() => {
   if (!sessionStorage.getItem('noRoom')) return;
   const set = Storage.prototype.setItem;

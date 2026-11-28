@@ -573,6 +573,7 @@ function bindAway(){
   bindKmReview_();
   bindBoardReport_();
   bindReport_();   // the quarterly report, ministry by ministry (29-report.js)
+  var mct=document.getElementById('mmCoreToggle'); if(mct) mct.onclick=function(){ var k=mct.getAttribute('data-mmcore'); S.mmAllNums=S.mmAllNums||{}; S.mmAllNums[k]=!S.mmAllNums[k]; S.kpiAutoKey=''; render(); };   // phase one: the core numbers, or all of them for this visit (leaders)
   if(typeof mmPlanAfter_==='function') mmPlanAfter_();   // Our plan: a section asked for from elsewhere is scrolled to, once
   bindToday_();   // My Ministry → Today: tap counters, streak, win of the day, the Friday wrap (31-today.js)
   bindF30_();
